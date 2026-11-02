@@ -12,29 +12,27 @@
 #include "scrap/game.h"
 
 int Game_Dir(char *dir, size_t size);
-int Game_Start(uintptr_t base, const char *dir);
+int Game_Start(const char *dir);
 [[noreturn]] void Crt_Main(char *cmdLine);
 void Log_Open(const char *dir);
 
-static int Main_Start(char *cmdLine, uintptr_t base) {
+static int Main_Start(char *cmdLine) {
 	char dir[1024];
 
 	if (!Game_Dir(dir, sizeof(dir))) {
 		return 1;
 	}
 	Log_Open(dir);
-	Game_Start(base, dir);
+	Game_Start(dir);
 	Crt_Main(cmdLine);
 }
 
 #ifdef _WIN32
 int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
-	(void)prev, (void)show;
-	return Main_Start(cmd, (uintptr_t)inst);
+	(void)inst, (void)prev, (void)show;
+	return Main_Start(cmd);
 }
 #else
-extern char __executable_start[];	/* the start of the image (ld), 0x400000 as on Windows (CMakeLists.txt) */
-
 /* the arguments joined with spaces, the ones with a space quoted: the command line the game parses */
 int main(int argc, char **argv) {
 	static char cmd[4096];
@@ -49,6 +47,6 @@ int main(int argc, char **argv) {
 		}
 		n += (size_t)w;
 	}
-	return Main_Start(cmd, (uintptr_t)__executable_start);
+	return Main_Start(cmd);
 }
 #endif

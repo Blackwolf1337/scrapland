@@ -23,7 +23,6 @@ typedef struct cWavFmt {
 	uint16_t blockAlign;		/* 0x14 */
 	uint16_t bits;			/* 0x16 */
 } cWavFmt;
-SD_SIZE(cWavFmt, 0x18);
 
 /* reads a dword, which must be id unless id is 0; 0 or -1 */
 int Wav_ReadChunk(cAbstractFile *file, uint32_t *out, uint32_t id) {

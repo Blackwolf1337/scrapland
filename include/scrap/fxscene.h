@@ -50,8 +50,6 @@ typedef struct cObjElementFXSceneBeatPickus {
 	float hitT;			/* 0x238 until the next hit */
 	byte started;			/* 0x23c */
 } cObjElementFXSceneBeatPickus;
-SD_OFFSET(cObjElementFXSceneBeatPickus, sparks, 0x184);
-SD_OFFSET(cObjElementFXSceneBeatPickus, started, 0x23c);
 
 typedef struct cObjElementFXSceneBillArrives_A {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -67,8 +65,6 @@ typedef struct cObjElementFXSceneBillArrives_A {
 	vec3_t dummy2;			/* 0xdc DM_Effects_BillArrives_A_02 */
 	byte started;			/* 0xe8 */
 } cObjElementFXSceneBillArrives_A;
-SD_OFFSET(cObjElementFXSceneBillArrives_A, dummy2, 0xdc);
-SD_OFFSET(cObjElementFXSceneBillArrives_A, started, 0xe8);
 
 typedef struct cObjElementFXSceneBishops {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -83,9 +79,6 @@ typedef struct cObjElementFXSceneBishops {
 	CGameTrail trails[FXBISHOPS_TRAILS];	/* 0x184 */
 	byte started;			/* 0x1b4 */
 } cObjElementFXSceneBishops;
-SD_OFFSET(cObjElementFXSceneBishops, glow, 0xbc);
-SD_OFFSET(cObjElementFXSceneBishops, trails, 0x184);
-SD_OFFSET(cObjElementFXSceneBishops, started, 0x1b4);
 
 typedef struct cObjElementFXSceneDecontamination {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -108,11 +101,6 @@ typedef struct cObjElementFXSceneDecontamination {
 	vec3_t vel[FXDECON_RAYS][FXDECON_POINTS];	/* 0x0c48 their velocities */
 	byte started;			/* 0x11e8 */
 } cObjElementFXSceneDecontamination;
-SD_OFFSET(cObjElementFXSceneDecontamination, height, 0xfc);
-SD_OFFSET(cObjElementFXSceneDecontamination, trails, 0x248);
-SD_OFFSET(cObjElementFXSceneDecontamination, end, 0x4c8);
-SD_OFFSET(cObjElementFXSceneDecontamination, vel, 0xc48);
-SD_OFFSET(cObjElementFXSceneDecontamination, started, 0x11e8);
 
 typedef struct cObjElementFXSceneEnterMatrix {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -136,11 +124,6 @@ typedef struct cObjElementFXSceneEnterMatrix {
 	void *flare;			/* 0x790 CGameLensFlare */
 	byte started;			/* 0x794 */
 } cObjElementFXSceneEnterMatrix;
-SD_OFFSET(cObjElementFXSceneEnterMatrix, center, 0x180);
-SD_OFFSET(cObjElementFXSceneEnterMatrix, trails, 0x28c);
-SD_OFFSET(cObjElementFXSceneEnterMatrix, kind, 0x68c);
-SD_OFFSET(cObjElementFXSceneEnterMatrix, lastKind, 0x78c);
-SD_OFFSET(cObjElementFXSceneEnterMatrix, started, 0x794);
 
 typedef struct cObjElementFXSceneHumanCD {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -153,8 +136,6 @@ typedef struct cObjElementFXSceneHumanCD {
 	float sparkT;			/* 0x17c */
 	byte started;			/* 0x180 */
 } cObjElementFXSceneHumanCD;
-SD_OFFSET(cObjElementFXSceneHumanCD, sparks, 0xc0);
-SD_OFFSET(cObjElementFXSceneHumanCD, started, 0x180);
 
 typedef struct cObjElementFXSceneTheEndB {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -166,8 +147,6 @@ typedef struct cObjElementFXSceneTheEndB {
 	void *flare;			/* 0xc4 CGameLensFlare */
 	byte started;			/* 0xc8 */
 } cObjElementFXSceneTheEndB;
-SD_OFFSET(cObjElementFXSceneTheEndB, flare, 0xc4);
-SD_OFFSET(cObjElementFXSceneTheEndB, started, 0xc8);
 
 typedef struct cObjElementFXSceneYakuzzi {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -179,8 +158,6 @@ typedef struct cObjElementFXSceneYakuzzi {
 	vec3_t dummy;			/* 0xc4 DM_Element_TempleYakuzzi_00 */
 	byte started;			/* 0xd0 */
 } cObjElementFXSceneYakuzzi;
-SD_OFFSET(cObjElementFXSceneYakuzzi, dummy, 0xc4);
-SD_OFFSET(cObjElementFXSceneYakuzzi, started, 0xd0);
 
 /* at the start of the FXVehicle.cpp code: the target entity name and its action of the
  * rays (31 characters at most), the height */

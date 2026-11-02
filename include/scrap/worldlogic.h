@@ -42,7 +42,6 @@ typedef struct cInfItemVtbl {
 	cItemDesc *(*FirstAmmo)(cInfItem *self, int kind, void **iter);	/* 0x14 */
 	cItemDesc *(*NextAmmo)(cInfItem *self, int kind, void **iter);	/* 0x18 */
 } cInfItemVtbl;
-SD_OFFSET(cInfItemVtbl, AddAmmo, 0x10);
 
 typedef struct cCTFEnemies {
 	cCTFEnemiesData *d;
@@ -57,30 +56,24 @@ typedef struct cDeathMatch {
 	float timer;			/* 0x0 */
 	cEntityListData *list;		/* 0x4 "DeathMatch" */
 } cDeathMatch;
-SD_SIZE(cDeathMatch, 8);
 
 /* Domination.cpp, 0x10 bytes */
 struct cDominationLogic {
 	const cDominationLogicVtbl *vftable;	/* 0x00 */
 	HashTable assigned;		/* 0x04 of cNameItem: the zone (value) of a ship (name) */
 };
-SD_SIZE(cDominationLogic, 0x10);
 
 /* DominationEnemies.cpp, 0x14 bytes */
 typedef struct cDominationEnemiesLogic {
 	cDominationLogic base;		/* 0x00 */
 	cDominationSide *side;		/* 0x10 */
 } cDominationEnemiesLogic;
-SD_OFFSET(cDominationEnemiesLogic, side, 0x10);
-SD_SIZE(cDominationEnemiesLogic, 0x14);
 
 /* DominationFriends.cpp, 0x14 bytes */
 typedef struct cDominationFriendsLogic {
 	cDominationLogic base;		/* 0x00 */
 	cDominationFriendsSide *side;	/* 0x10 */
 } cDominationFriendsLogic;
-SD_OFFSET(cDominationFriendsLogic, side, 0x10);
-SD_SIZE(cDominationFriendsLogic, 0x14);
 
 /* Enemies.cpp: g_pWorld->logic.enemies, the ships of the list "Enemies" attack the player */
 typedef struct cEnemies {
@@ -92,7 +85,6 @@ typedef struct cEnemies {
 	float timer;			/* 0x8 Think every 0.5 s */
 	cEntityListData *list;		/* 0xc "Enemies" */
 } cEnemies;
-SD_SIZE(cEnemies, 0x10);
 
 /* ExtPolice.cpp: g_pWorld->logic.extPolice, the police cars of the outdoor maps ("OutCop") */
 typedef struct cExtPolice {
@@ -104,21 +96,18 @@ typedef struct cExtPolice {
 	int raised;			/* 0x10 1 when the last think set the alarm, else -1 */
 	cEntityListData *list;		/* 0x14 "OutCop" */
 } cExtPolice;
-SD_SIZE(cExtPolice, 0x18);
 
 /* Friends.cpp: g_pWorld->logic.friends, the friend ships of the outdoor missions ("Friends") */
 typedef struct cFriends {
 	float timer;			/* 0x0 Think every 1.5 s */
 	cEntityListData *list;		/* 0x4 "Friends" */
 } cFriends;
-SD_SIZE(cFriends, 8);
 
 /* GateKeeperLogic.cpp: the gatekeepers ("GateKeeper", g_pWorld->logic.gateKeepers), every sqrt(2) s their logics update */
 typedef struct cGateKeepers {
 	float timer;			/* 0x0 */
 	cEntityListData *list;		/* 0x4 "GateKeeper" */
 } cGateKeepers;
-SD_SIZE(cGateKeepers, 8);
 
 /* GenCharGroup.cpp: g_pWorld->logic.genChars, the lists of the generic characters and the maker of their logics */
 typedef struct cGenCharGroup {
@@ -130,7 +119,6 @@ typedef struct cGenCharGroup {
 	cEntityListData *bishops;	/* 0x14 "Bishop" */
 	cMessengers *messengers;	/* 0x18 MessengerLogic.cpp */
 } cGenCharGroup;
-SD_SIZE(cGenCharGroup, 0x1c);
 
 typedef DLIST(cInfItemNode) cInfItemList;
 
@@ -141,7 +129,6 @@ typedef struct cInfItem {
 	cInfItemList ammo2;		/* 0x34 kind 2 */
 	cInfItemList ammo1;		/* 0x4c kind 1 */
 } cInfItem;
-SD_SIZE(cInfItem, 0x64);
 
 /* IntPolice.cpp: the AI control of the indoor police (g_pWorld->logic.aiCtrl): the sentinels
  * search and accuse, the gears attack; two police of the second GenChar list fuse into gears that fight */
@@ -166,9 +153,6 @@ typedef struct cAICtrl {
 	cEntityListData *sentinels;	/* 0x34 "Sentinel" */
 	cEntityListData *gears;		/* 0x38 "Gear" */
 } cAICtrl;
-SD_OFFSET(cAICtrl, watch, 0x1c);
-SD_OFFSET(cAICtrl, gears, 0x38);
-SD_SIZE(cAICtrl, 0x3c);
 
 typedef DLIST(cParkingNode) cParkingList;
 
@@ -177,8 +161,6 @@ typedef struct cParking {
 	cParkingList ships;		/* 0x04 flag 0, iter the zone checked last */
 	cParkingList items;		/* 0x1c flag 1, checked only while the player is in a ship */
 } cParking;
-SD_OFFSET(cParking, items, 0x1c);
-SD_SIZE(cParking, 0x34);
 
 typedef struct cShipRegen {
 	byte unused_00;			/* 0x00 0, not used */
@@ -189,7 +171,6 @@ typedef struct cShipRegen {
 	byte pad_d[3];
 	int life;			/* 0x10 of the player at the last check */
 } cShipRegen;
-SD_SIZE(cShipRegen, 0x14);
 
 typedef struct cShipGroup {
 	cShipGroupData *d;
@@ -207,15 +188,12 @@ typedef struct cEnemiesTraffic {
 	cEntityListData *chasing;	/* 0x24 "ChasingTraffic" */
 	cEntityListData *enemies;	/* 0x28 "EnemiesTraffic" */
 } cEnemiesTraffic;
-SD_OFFSET(cEnemiesTraffic, enemies, 0x28);
-SD_SIZE(cEnemiesTraffic, 0x2c);
 
 /* Logic.cpp: the nurses of the logic control (g_pWorld->logic.nurses) */
 typedef struct cNurses {
 	float timer;			/* 0x0 Think every 0.73 s */
 	cEntityListData *list;		/* 0x4 "Nurse" */
 } cNurses;
-SD_SIZE(cNurses, 8);
 
 typedef struct cLogicControlVtbl {
 	struct cLogicControl *(*Delete)(struct cLogicControl *self, byte flags);	/* 0x00 */
@@ -248,15 +226,5 @@ typedef struct cLogicControl {
 	cGenCharGroup genChars;		/* 0x1a4 */
 	cGateKeepers gateKeepers;	/* 0x1c0 */
 } cLogicControl;
-SD_OFFSET(cLogicControl, items, 0x4c);
-SD_OFFSET(cLogicControl, extPolice, 0xc4);
-SD_OFFSET(cLogicControl, mosquitos, 0xf4);
-SD_OFFSET(cLogicControl, dominFriends, 0x10c);
-SD_OFFSET(cLogicControl, dominEnemies, 0x120);
-SD_OFFSET(cLogicControl, aiCtrl, 0x134);
-SD_OFFSET(cLogicControl, nurses, 0x19c);
-SD_OFFSET(cLogicControl, genChars, 0x1a4);
-SD_OFFSET(cLogicControl, gateKeepers, 0x1c0);
-SD_SIZE(cLogicControl, 0x1c8);
 
 #endif

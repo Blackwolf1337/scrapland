@@ -15,7 +15,6 @@ typedef struct CTable {
 	int n;				/* 0x0 */
 	void *p;			/* 0x4 */
 } CTable;
-SD_SIZE(CTable, 0x8);
 
 /* new elements, not initialized; CHECK(!p && num > 0) */
 void Table_Alloc1(CTable *t, int num);

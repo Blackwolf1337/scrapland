@@ -21,9 +21,6 @@ typedef struct cAlarm {
 	byte tauntReady;		/* 0x40e the police taunt of the next full alarm */
 	byte pad_40f;
 } cAlarm;
-SD_OFFSET(cAlarm, lastChars, 0x209);
-SD_OFFSET(cAlarm, locked, 0x40d);
-SD_SIZE(cAlarm, 0x410);
 
 cAlarm *Alarm_ctor(cAlarm *self);
 void Alarm_Reset(cAlarm *self);

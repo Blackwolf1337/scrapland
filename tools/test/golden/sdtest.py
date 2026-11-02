@@ -1,7 +1,7 @@
 # Menu checks: calls engine script functions and writes the results to sdtest.out (Python 1.5.2 syntax).
-# tools/test/difftest.sh runs it with the C functions and with the originals and compares the outputs. The game
-# reads it from its root directory through -PythonExecute:execfile(...); the engine's command line drops quotes
-# and splits at spaces, so difftest.sh spells the file name with chr().
+# tools/test/golden.sh runs it on the 64-bit Linux build and compares the output with the stored one. The game reads
+# it from its root directory through -PythonExecute:execfile(...); the engine's command line drops quotes and splits at
+# spaces, so golden.sh spells the file name with chr().
 OUT = 'sdtest.out'
 execfile('sdlib.py')
 import Scrap, SWeap, SVec, SAct, SFX, SLogic, SSound, SInput, SAI, SNet, SScorer

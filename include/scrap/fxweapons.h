@@ -115,15 +115,6 @@ typedef struct cObjElementFXATPC {
 	byte on;			/* 0x1e4 */
 	byte pad_1e5[3];
 } cObjElementFXATPC;
-SD_OFFSET(cObjElementFXATPC, from, 0x8);
-SD_OFFSET(cObjElementFXATPC, particles2, 0xd0);
-SD_OFFSET(cObjElementFXATPC, time, 0x180);
-SD_OFFSET(cObjElementFXATPC, slotPos, 0x190);
-SD_OFFSET(cObjElementFXATPC, width, 0x1c0);
-SD_OFFSET(cObjElementFXATPC, core, 0x1c4);
-SD_OFFSET(cObjElementFXATPC, angle, 0x1dc);
-SD_OFFSET(cObjElementFXATPC, on, 0x1e4);
-SD_SIZE(cObjElementFXATPC, 0x1e8);
 
 /* the Devastator shot: a trail that fades in (0x14 bytes, constructor rva 0x1f9770) */
 typedef struct cObjElementFXDevastatorShoot {
@@ -135,8 +126,6 @@ typedef struct cObjElementFXDevastatorShoot {
 	byte on;			/* 0x11 */
 	byte pad_12[2];
 } cObjElementFXDevastatorShoot;
-SD_OFFSET(cObjElementFXDevastatorShoot, first, 0x10);
-SD_SIZE(cObjElementFXDevastatorShoot, 0x14);
 
 /* the Inferno explosion: rays out of the center drawn as trails and the core particles (0x24c8 bytes, constructor
  * rva 0x1f97e0) */
@@ -162,14 +151,6 @@ typedef struct cObjElementFXInfernoExplosion {
 	byte on;			/* 0x24c4 */
 	byte pad_24c5[3];
 } cObjElementFXInfernoExplosion;
-SD_OFFSET(cObjElementFXInfernoExplosion, cores, 0xb4);
-SD_OFFSET(cObjElementFXInfernoExplosion, rayBase, 0x184);
-SD_OFFSET(cObjElementFXInfernoExplosion, rayDir, 0xc04);
-SD_OFFSET(cObjElementFXInfernoExplosion, rayLen, 0x1684);
-SD_OFFSET(cObjElementFXInfernoExplosion, rayMax, 0x2104);
-SD_OFFSET(cObjElementFXInfernoExplosion, trails, 0x2484);
-SD_OFFSET(cObjElementFXInfernoExplosion, numRays, 0x24c0);
-SD_SIZE(cObjElementFXInfernoExplosion, 0x24c8);
 
 /* the Inferno missile: its smoke trail, particles and a lens flare (0xe4 bytes, constructor rva 0x1f9880) */
 typedef struct cObjElementFXInfernoMissile {
@@ -188,9 +169,6 @@ typedef struct cObjElementFXInfernoMissile {
 	byte on;			/* 0xe0 */
 	byte pad_e1[3];
 } cObjElementFXInfernoMissile;
-SD_OFFSET(cObjElementFXInfernoMissile, last, 0xb8);
-SD_OFFSET(cObjElementFXInfernoMissile, flare, 0xdc);
-SD_SIZE(cObjElementFXInfernoMissile, 0xe4);
 
 /* the laser shot: a beam from start to end that moves along (0x124 bytes, constructor rva 0x1f9900) */
 typedef struct cObjElementFXLaser {
@@ -213,10 +191,6 @@ typedef struct cObjElementFXLaser {
 	byte on;			/* 0x121 */
 	byte pad_122[2];
 } cObjElementFXLaser;
-SD_OFFSET(cObjElementFXLaser, time, 0xc4);
-SD_OFFSET(cObjElementFXLaser, pos, 0x100);
-SD_OFFSET(cObjElementFXLaser, drawn, 0x120);
-SD_SIZE(cObjElementFXLaser, 0x124);
 
 /* the Swarm missile: its trail and the motor particles (0xe0 bytes, constructor rva 0x1f9970) */
 typedef struct cObjElementFXSwarmMissile {
@@ -233,9 +207,6 @@ typedef struct cObjElementFXSwarmMissile {
 	byte on;			/* 0xdc */
 	byte pad_dd[3];
 } cObjElementFXSwarmMissile;
-SD_OFFSET(cObjElementFXSwarmMissile, last, 0xbc);
-SD_OFFSET(cObjElementFXSwarmMissile, lastShrink, 0xd8);
-SD_SIZE(cObjElementFXSwarmMissile, 0xe0);
 
 /* the Tesla ray from the weapon slots of the emitter to the target: per slot a Bezier curve through numPts points
  * that wander by random offsets (0x768 bytes, constructor rva 0x1f99e0) */
@@ -264,17 +235,6 @@ typedef struct cObjElementFXTesla {
 	byte on;			/* 0x764 */
 	byte pad_765[3];
 } cObjElementFXTesla;
-SD_OFFSET(cObjElementFXTesla, target, 0x88);
-SD_OFFSET(cObjElementFXTesla, numSlots, 0x98);
-SD_OFFSET(cObjElementFXTesla, particles, 0xa0);
-SD_OFFSET(cObjElementFXTesla, numPts, 0x150);
-SD_OFFSET(cObjElementFXTesla, pts, 0x514);
-SD_OFFSET(cObjElementFXTesla, trails, 0x6f4);
-SD_OFFSET(cObjElementFXTesla, time, 0x744);
-SD_OFFSET(cObjElementFXTesla, shooting, 0x74c);
-SD_OFFSET(cObjElementFXTesla, stepTime, 0x750);
-SD_OFFSET(cObjElementFXTesla, followTime, 0x760);
-SD_SIZE(cObjElementFXTesla, 0x768);
 
 /* the helpers of the constructors and destructors of the effects (also FXVehicle.c) */
 #define CGAMETRAIL_CTOR 0x21ddb0

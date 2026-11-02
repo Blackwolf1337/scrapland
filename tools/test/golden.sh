@@ -29,7 +29,7 @@ while kill -0 "$pid" 2> /dev/null; do
 	sleep 1
 done
 wait "$pid" 2> /dev/null
-rm -f "$game"/Save/SDTest.sav
+rm -f "$game"/Save/SDTest.sav	# the save game round trip of sdtest.py
 if ! tail -n 1 "$game/sdtest.out" 2> /dev/null | grep -qx 'done'; then
 	echo "golden: output incomplete, see $game/sdtest.out and $build/golden.log" >&2
 	exit 1

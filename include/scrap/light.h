@@ -35,7 +35,6 @@ static inline const char *Light_TypeStr(int type) {
 typedef struct {
 	float r, g, b, a;
 } color4_t;
-SD_SIZE(color4_t, 16);
 
 /* D3DLIGHT8 (the same layout as D3DLIGHT9) */
 typedef struct D3DLight {
@@ -53,14 +52,12 @@ typedef struct D3DLight {
 	float Theta;			/* 0x60 radians */
 	float Phi;			/* 0x64 */
 } D3DLight;
-SD_SIZE(D3DLight, 0x68);
 
 /* Engine/RenderCalcIlum.cpp (RenderCalcIllum.c): a light with the distance from which it fades out to its range */
 typedef struct IllumLight {
 	D3DLight d3d;			/* 0x00 */
 	float rangeIni;			/* 0x68 */
 } IllumLight;
-SD_SIZE(IllumLight, 0x6c);
 #define ILLUM_SOFT 0x1		/* smooth fades instead of the D3D attenuation */
 /* v smoothed by the weight g_IllumSmooth */
 float Illum_Smooth(float v);
@@ -107,10 +104,6 @@ typedef struct CLight {
 	CNode3D *node;			/* 0xc4 */
 	CNode3D *nodeTarget;		/* 0xc8 the direction points at it (R_LightTarget) */
 } CLight;
-SD_OFFSET(CLight, d3d, 0x4c);
-SD_OFFSET(CLight, indexD3D, 0xb4);
-SD_OFFSET(CLight, node, 0xc4);
-SD_SIZE(CLight, 0xcc);
 
 CLight *CLight_ctor(CLight *self);
 void CLight_dtor(CLight *self);

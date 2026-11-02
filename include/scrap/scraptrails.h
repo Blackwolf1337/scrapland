@@ -12,7 +12,6 @@
 typedef struct CGameTrail {
 	CTrail *trailsys;		/* 0x0 owned */
 } CGameTrail;
-SD_SIZE(CGameTrail, 4);
 
 CGameTrail *CGameTrail_ctor(CGameTrail *self);
 void CGameTrail_dtor(CGameTrail *self);

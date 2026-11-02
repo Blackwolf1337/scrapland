@@ -93,7 +93,6 @@ typedef struct cDynList {
 	byte changed;			/* 0x16 set by every change */
 	byte unused17;			/* 0x17 cleared by the constructor */
 } cDynList;
-SD_SIZE(cDynList, 0x18);
 
 void DynList_Free(cDynList *dyn);
 cDynList *DynList_New(uint16_t elemSize);	/* blocks of 256 */
@@ -132,7 +131,6 @@ typedef struct cDatLine {
 	int type;			/* 0x8 LINEA_ */
 	char *text;			/* 0xc String_Dup */
 } cDatLine;
-SD_SIZE(cDatLine, 0x10);
 
 typedef struct cDataFile {
 	uint32_t id;			/* 0x00 DATAFILE_ID */
@@ -142,7 +140,6 @@ typedef struct cDataFile {
 	int curIdx;			/* 0x10 its index, -1 for none */
 	int caseSensitive;		/* 0x14 names of sections and keys */
 } cDataFile;
-SD_SIZE(cDataFile, 0x18);
 
 void DataFile_AddSection(cDataFile *dat, const char *name, int idx);	/* "[name]" after line idx */
 void DataFile_AddLine(cDataFile *dat, const char *text, int idx);
@@ -235,9 +232,6 @@ typedef struct PcxHeader {
 	uint16_t ly;			/* 0x48 */
 	byte pad_4a[0x36];
 } PcxHeader;
-SD_OFFSET(PcxHeader, planes, 0x41);
-SD_OFFSET(PcxHeader, lx, 0x46);
-SD_SIZE(PcxHeader, 0x80);
 
 /* the error code of a header that is no 8 bit PCX (errno) */
 extern const int g_ErrPcxFormat;
@@ -261,6 +255,5 @@ typedef struct cProcType {
 	const void *data;		/* 0x4 the "IDENT value" list of Proc_TypeLookup */
 	proctype_t convert;		/* 0x8 NULL: Proc_TypeLookup */
 } cProcType;
-SD_SIZE(cProcType, 0xc);
 
 #endif

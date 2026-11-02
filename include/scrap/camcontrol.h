@@ -35,10 +35,6 @@ typedef struct cCamControl {
 	int slot;			/* 0x0b8 the view it shows ("UsrControl"), -1 for none */
 	char link[0x80];		/* 0x0bc "EntityLink": the object whose camera node it uses, "" for none */
 } cCamControl;
-SD_OFFSET(cCamControl, cam, 0x7c);
-SD_OFFSET(cCamControl, slot, 0xb8);
-SD_OFFSET(cCamControl, link, 0xbc);
-SD_SIZE(cCamControl, 0x13c);
 
 /* a point of the path ("NameNN" variables of the CamPath, NN 00 to 32: the index 32 is past the array) */
 typedef struct cCamPathPoint {
@@ -54,9 +50,6 @@ typedef struct cCamPathPoint {
 	byte pad_aa[2];
 	float quake;			/* 0xac "QuakeNN" 0: the random shake of the angles */
 } cCamPathPoint;
-SD_OFFSET(cCamPathPoint, pos, 0x80);
-SD_OFFSET(cCamPathPoint, fadeIn, 0xa8);
-SD_SIZE(cCamPathPoint, 0xb0);
 
 #define CAMPATH_POINTS 32
 
@@ -67,9 +60,6 @@ typedef struct cCamPathEntity {
 	int numPoints;			/* 0x154 "nWayPoint" */
 	cCamPathPoint points[CAMPATH_POINTS];	/* 0x158 */
 } cCamPathEntity;
-SD_OFFSET(cCamPathEntity, onEnd, 0x13c);
-SD_OFFSET(cCamPathEntity, points, 0x158);
-SD_SIZE(cCamPathEntity, 0x1758);
 
 typedef struct cFollowCamEntity {
 	cCamControl base;		/* 0x000 */
@@ -101,15 +91,6 @@ typedef struct cFollowCamEntity {
 	float vSpeed;			/* 0x22c "VSpeed" 5 */
 	cPy_Function onSwitch;		/* 0x230 "OnSwitch" (name, slot), on every target change */
 } cFollowCamEntity;
-SD_OFFSET(cFollowCamEntity, target, 0x13c);
-SD_OFFSET(cFollowCamEntity, mainTarget, 0x141);
-SD_OFFSET(cFollowCamEntity, hSpeedTo, 0x1c4);
-SD_OFFSET(cFollowCamEntity, dist, 0x1f0);
-SD_OFFSET(cFollowCamEntity, slowFrames, 0x200);
-SD_OFFSET(cFollowCamEntity, camDist, 0x214);
-SD_OFFSET(cFollowCamEntity, vSpeed, 0x22c);
-SD_OFFSET(cFollowCamEntity, onSwitch, 0x230);
-SD_SIZE(cFollowCamEntity, 0x244);
 
 /* the slots of the camera vtables after the 23 of cEntity */
 typedef struct cCamControlVtbl {
@@ -121,8 +102,6 @@ typedef struct cCamControlVtbl {
 	byte(*SetTarget)(cEntity *self, const char *name);			/* 0x6c vf27 "EntityLink" */
 	void(*UpdateOff)(cEntity *self, float dt);				/* 0x70 vf28 */
 } cCamControlVtbl;
-SD_OFFSET(cCamControlVtbl, GetCamPos, 0x5c);
-SD_OFFSET(cCamControlVtbl, SetTarget, 0x6c);
 extern const cCamControlVtbl cCamPathEntity_vftable;
 #define CCAMPATHENTITY_VFTABLE (&cCamPathEntity_vftable.base)
 extern const cCamControlVtbl cCamControl_vftable;
@@ -134,7 +113,6 @@ typedef struct cFollowCamVtbl {
 	void(*GetAng2)(cEntity *self, float *ang);				/* 0x74 vf29 */
 	void(*SetAng2)(cEntity *self, const float *ang);			/* 0x78 vf30 */
 } cFollowCamVtbl;
-SD_OFFSET(cFollowCamVtbl, SetAng2, 0x78);
 extern const cFollowCamVtbl cFollowCamEntity_vftable;
 #define CFOLLOWCAMENTITY_VFTABLE (&cFollowCamEntity_vftable.base.base)
 

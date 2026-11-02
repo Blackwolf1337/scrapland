@@ -102,7 +102,6 @@ typedef struct RTVert {
 	uint32_t specular;
 	float u, v;
 } RTVert;
-SD_SIZE(RTVert, 0x20);
 
 /* a screen rectangle as a strip of four vertices: x0 y0, x1 y0, x0 y1, x1 y1 */
 static void RT_Quad(RTVert *v, float x0, float y0, float x1, float y1, uint32_t color, float u0, float v0, float u1,
@@ -155,7 +154,6 @@ typedef struct RTVert2 {
 	uint32_t specular;
 	float t[2][2];
 } RTVert2;
-SD_SIZE(RTVert2, 0x28);
 
 /* FVF 0x444: XYZRHW, DIFFUSE, TEX4 */
 #define RT_FVF4 0x444
@@ -164,7 +162,6 @@ typedef struct RTVert4 {
 	uint32_t diffuse;
 	float t[4][2];
 } RTVert4;
-SD_SIZE(RTVert4, 0x34);
 
 /* the viewport w x h from 0, 0 with two texture sets, each 0..1 moved by the texel center of its texture size;
  * in texels with g_RTLinNonPow2 */
@@ -1196,7 +1193,6 @@ typedef struct DuDvVert {
 	float t1[3];			/* the first row of the bump matrix (stage 1, no texture) */
 	float t2[3];			/* the source, with the second row */
 } DuDvVert;
-SD_SIZE(DuDvVert, 0x34);
 
 byte g_TexRepeat;
 byte g_TexNoPow2;

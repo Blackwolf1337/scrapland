@@ -40,9 +40,6 @@ typedef struct cVehicleTrails {
 	float segment;			/* 0x50 approaches the segment length */
 	vec3_t root;			/* 0x54 the node DC_Root */
 } cVehicleTrails;
-SD_OFFSET(cVehicleTrails, nodes, 0x1c);
-SD_OFFSET(cVehicleTrails, time, 0x48);
-SD_SIZE(cVehicleTrails, 0x60);
 
 /* the escape tubes of the SLifeBoat at the nodes DF_EscapeTube_01, 02 (0x17c bytes) */
 typedef struct cVehicleTubes {
@@ -54,8 +51,6 @@ typedef struct cVehicleTubes {
 	int nodes[VEFF_TUBES];		/* 0x14 -1 for none */
 	CGameParticles particles[VEFF_TUBES];	/* 0x1c */
 } cVehicleTubes;
-SD_OFFSET(cVehicleTubes, particles, 0x1c);
-SD_SIZE(cVehicleTubes, 0x17c);
 
 typedef struct cVehicleEffects {
 	cVehicleEntity *owner;		/* 0x00 m_Owner */
@@ -71,8 +66,6 @@ typedef struct cVehicleEffects {
 	cVehicleTrails *trails;		/* 0x1c NULL for none */
 	cVehicleTubes *tubes;		/* 0x20 NULL for none */
 } cVehicleEffects;
-SD_OFFSET(cVehicleEffects, trails, 0x1c);
-SD_SIZE(cVehicleEffects, 0x24);
 
 /* the engine variables of the effects */
 extern cGVar GVar_FXVehicleDamageFile;

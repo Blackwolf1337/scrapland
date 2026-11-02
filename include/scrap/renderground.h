@@ -16,7 +16,6 @@ typedef struct BatchMesh {
 	uint32_t tex;			/* 0x4 the device texture of map 0, halved, 0 without */
 	float z;			/* 0x8 the box center in view space */
 } BatchMesh;
-SD_SIZE(BatchMesh, 0xc);
 
 extern CTable g_BatchTab;	/* BATCH_MAX BatchMesh, made on the first use */
 extern BatchMesh * g_BatchOrder[512];	/* [BATCH_MAX] */

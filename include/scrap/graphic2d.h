@@ -42,7 +42,6 @@ typedef struct CGraphic2D {
 	CMaterial *Mat;			/* 0x3c */
 	CAnimMat *AnimMat;		/* 0x40 the own copy of the animation of the map */
 } CGraphic2D;
-SD_SIZE(CGraphic2D, 0x44);
 
 /* a pretransformed vertex (D3DFVF_XYZRHW | DIFFUSE | SPECULAR | TEX1) */
 #define D3DFVF_2D 0x1c4
@@ -52,7 +51,6 @@ typedef struct Vert2D {
 	uint32_t specular;		/* 0x14 */
 	float u, v;			/* 0x18 */
 } Vert2D;
-SD_SIZE(Vert2D, 0x20);
 
 /* the 2D screen size and its inverses */
 extern int g_Screen2DW;

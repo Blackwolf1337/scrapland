@@ -22,7 +22,6 @@ typedef struct WorldDummy {
 	vec3_t rot;			/* 0x14 radians */
 	CIniFile *ini;			/* 0x20 the user properties of the node, owned */
 } WorldDummy;
-SD_SIZE(WorldDummy, 0x24);
 
 typedef struct CWorld {
 	CFog fog;			/* 0x00 */
@@ -40,9 +39,6 @@ typedef struct CWorld {
 	byte pad_c1[3];
 	WorldDummy *dummies;		/* 0xc4 */
 } CWorld;
-SD_OFFSET(CWorld, camera, 0x2c);
-SD_OFFSET(CWorld, dummies, 0xc4);
-SD_SIZE(CWorld, 0xc8);
 
 extern CWorld *g_World;
 

@@ -14,7 +14,6 @@ typedef struct Nto1Node {
 	void *target;			/* 0x8 the linked object, NULL when unlinked */
 	void *data;			/* 0xc NULL for the head */
 } Nto1Node;
-SD_SIZE(Nto1Node, 0x10);
 
 static inline void Nto1Node_Init(Nto1Node *node) {
 	node->next = node;

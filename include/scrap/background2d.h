@@ -14,13 +14,11 @@ typedef struct NodeGraphic2D {
 	struct NodeGraphic2D *next;		/* 0x0 */
 	CGraphic2D *graphic;		/* 0x4 */
 } NodeGraphic2D;
-SD_SIZE(NodeGraphic2D, 0x8);
 
 typedef struct CGraphic2DList {
 	NodeGraphic2D *first;			/* 0x0 */
 	NodeGraphic2D *last;			/* 0x4 */
 } CGraphic2DList;
-SD_SIZE(CGraphic2DList, 0x8);
 
 CGraphic2DList *CGraphic2DList_ctor(CGraphic2DList *self);
 /* the sprites deleted */
@@ -38,7 +36,6 @@ typedef struct CBackground2D {
 	ColorIntens color;		/* 0x0c 0xffffff, 1 */
 	CMaterial *Mat;			/* 0x14 shared, its map 0 gets the pieces */
 } CBackground2D;
-SD_SIZE(CBackground2D, 0x18);
 
 CBackground2D *CBackground2D_ctorFile(CBackground2D *self, const char *name);
 CBackground2D *CBackground2D_ctor(CBackground2D *self);

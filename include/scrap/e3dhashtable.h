@@ -13,14 +13,12 @@ typedef struct CHashTableNode {
 	char *key;			/* 0x4 */
 	void *value;			/* 0x8 */
 } CHashTableNode;
-SD_SIZE(CHashTableNode, 0xc);
 
 typedef struct CHashTable {
 	int num;			/* 0x0 slots */
 	CHashTableNode **slots;		/* 0x4 */
 	int lock;			/* 0x8 lists out */
 } CHashTable;
-SD_SIZE(CHashTable, 0xc);
 
 CHashTable *CHashTable_ctor(CHashTable *self, int num);
 void CHashTable_dtor(CHashTable *self);

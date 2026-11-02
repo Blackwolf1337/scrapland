@@ -19,7 +19,6 @@ typedef struct cMemBlocks {
 	uint32_t *status;		/* 0x10 bit set: block in use */
 	byte *data;			/* 0x14 */
 } cMemBlocks;
-SD_SIZE(cMemBlocks, 0x18);
 
 typedef struct cMemPool {
 	cMemBlocks **blocks;		/* 0x00 MEMPOOL_CLASSES, class i has blocks of (i + 1) * 4 bytes */
@@ -28,7 +27,6 @@ typedef struct cMemPool {
 	const char *name;		/* 0x0c */
 	struct cMemPool *next;		/* 0x10 g_MemPools */
 } cMemPool;
-SD_SIZE(cMemPool, 0x14);
 
 extern cMemPool *g_PyPool;
 extern cMemPool *g_MemPools;

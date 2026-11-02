@@ -15,13 +15,11 @@ typedef struct CAnimVert {
 	float scale;			/* 0x8 */
 	int8_t *Tr2;			/* 0xc compressed */
 } CAnimVert;
-SD_SIZE(CAnimVert, 0x10);
 
 typedef struct CEVA {
 	uint32_t nV;			/* 0x0 */
 	CAnimVert *AnimV;		/* 0x4 new[] of nV */
 } CEVA;
-SD_SIZE(CEVA, 0x8);
 
 CAnimVert *CAnimVert_ctor(CAnimVert *self);
 CEVA *CEVA_ctor(CEVA *self);

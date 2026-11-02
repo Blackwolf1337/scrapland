@@ -33,9 +33,6 @@ typedef struct cObjMove {
 	byte viewAng;			/* 0x6c "MoveViewAng" */
 	byte pad_6d[3];
 } cObjMove;
-SD_OFFSET(cObjMove, active, 0x38);
-SD_OFFSET(cObjMove, onEnd, 0x54);
-SD_SIZE(cObjMove, 0x70);
 
 typedef struct cModMove {
 	cEntity *parent;		/* 0x00 the object */
@@ -49,9 +46,6 @@ typedef struct cModMove {
 	byte offPosAsPos;		/* 0x3d "OffModPosAsPos": the model at offPos */
 	byte pad_3e[2];
 } cModMove;
-SD_OFFSET(cModMove, link, 0x14);
-SD_OFFSET(cModMove, offPos, 0x28);
-SD_SIZE(cModMove, 0x40);
 
 cModMove *cModMove_ctor(cModMove *self);
 void cModMove_dtor(cModMove *self);

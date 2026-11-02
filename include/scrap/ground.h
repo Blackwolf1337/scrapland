@@ -32,7 +32,6 @@ typedef struct CCollideTri {
 	uint16_t v[3];			/* 0x14 */
 	uint16_t flags;			/* 0x1a */
 } CCollideTri;
-SD_SIZE(CCollideTri, 0x1c);
 
 typedef struct CCollideMesh {
 	int Refs;			/* 0x00 the quads that use it */
@@ -57,7 +56,6 @@ typedef struct CCollideMesh {
 		};
 	};
 } CCollideMesh;
-SD_SIZE(CCollideMesh, 0x34);
 /* the size the files keep: the 32 bit one (the fields are read one by one) */
 #define CCOLLIDEMESH_FILESIZE 0x34
 /* the tables freed, CHECK(!Refs) (an inline of ground.h, rva 0x20eb70) */
@@ -79,7 +77,6 @@ typedef struct CCollideQuad {
 	uint32_t dwParam;		/* 0x1c the triangles counted while the quads are built */
 	struct CCollideQuad *next;	/* 0x20 the quad of the next mesh in the same cell */
 } CCollideQuad;
-SD_SIZE(CCollideQuad, 0x24);
 
 /* CGround.heights, its own this in the quad functions */
 typedef struct CHeights {
@@ -105,11 +102,6 @@ typedef struct CHeights {
 	float invZ;			/* 0x34ac */
 	CCollideQuad *outSector;	/* 0x34b0 */
 } CHeights;
-SD_OFFSET(CHeights, CollideMesh1, 0x3404);
-SD_OFFSET(CHeights, ext, 0x346c);
-SD_OFFSET(CHeights, nQuads, 0x3490);
-SD_OFFSET(CHeights, outSector, 0x34b0);
-SD_SIZE(CHeights, 0x34b4);
 
 /* the triangle a segment hit (CGround_TraceSeg): quad->pTri[tri] in the mesh of the quad */
 typedef struct CGroundHit {
@@ -143,9 +135,6 @@ typedef struct CGround {
 	int CollideTri;			/* 0x6c the triangles that collide */
 	CHeights heights;		/* 0x70 */
 } CGround;
-SD_OFFSET(CGround, Ext, 0x30);
-SD_OFFSET(CGround, heights, 0x70);
-SD_SIZE(CGround, 0x3524);
 
 /* the quads of cell x z of the grid, NULL outside it (the accessor of table.h inlined) */
 static inline CCollideQuad *Heights_Cell(CHeights *alt, uint32_t x, uint32_t z) {
@@ -165,7 +154,6 @@ typedef struct CollideVert {
 	uint32_t color;			/* 0x0c */
 	float u, v;			/* 0x10 */
 } CollideVert;
-SD_SIZE(CollideVert, 0x18);
 /* the three vertices of a triangle, shaded by its normal with the texture projected along its main axis in the
  * solid view (ShowMapSolid) */
 void Collide_TriVerts(CollideVert *out, const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color);
@@ -344,8 +332,6 @@ typedef struct CCollisionBBox {
 	byte pad_58[0x24];
 	int calc_response;		/* 0x7c must be 0 */
 } CCollisionBBox;
-SD_OFFSET(CCollisionBBox, use_minmax, 0x54);
-SD_SIZE(CCollisionBBox, 0x80);
 
 /* the queries against the triangles of the floor (suelo.cpp and checkbbox.cpp, src/imports.inc); the last
  * arguments are 0 in all callers */

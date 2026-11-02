@@ -35,7 +35,6 @@ typedef struct cMemStats {
 	int allocs;			/* 0x10 */
 	int frees;			/* 0x14 */
 } cMemStats;
-SD_SIZE(cMemStats, 0x18);
 
 extern cMemStats g_MemStats;
 extern cMemStats *g_MemStatsContext;
@@ -103,7 +102,6 @@ typedef struct HashTable {
 	byte caseSensitive;		/* 0x9 */
 	byte pad_a[2];
 } HashTable;
-SD_OFFSET(HashTable, caseSensitive, 0x9);
 
 /* the instance functions with a pointer value (src/game/Global/HashTable.c, include/scrap/hashtable.h) */
 uint32_t HashTable_Slot(HashTable *self, const char *key);

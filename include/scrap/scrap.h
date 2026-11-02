@@ -57,7 +57,6 @@ typedef struct cFuncGvar {
 	const cGVarListVtbl *vftable;	/* 0x00 */
 	cGvar gvar;			/* 0x04 g_GVars points here */
 } cFuncGvar;
-SD_SIZE(cFuncGvar, 0x14);
 #define GVar_ListObj(v) ((void *)((byte *)(v) - offsetof(cFuncGvar, gvar)))
 #define GVar_ListVtbl(v) (*(const cGVarListVtbl **)GVar_ListObj(v))
 
@@ -72,7 +71,6 @@ typedef struct cGVarFunction {
 		};
 	};
 } cGVarFunction;
-SD_SIZE(cGVarFunction, 0x24);
 
 extern cGVar *g_GVars;		/* every variable, newest first */
 extern HashTable *g_GVarTable;	/* by name after GVars_Init */
@@ -95,7 +93,6 @@ typedef struct cStaticBuffer {
 	uint32_t size;			/* 0x4 */
 	byte lock;			/* 0x8 */
 } cStaticBuffer;
-SD_OFFSET(cStaticBuffer, lock, 0x8);
 /* at least size bytes, locks the buffer */
 void *cStaticBuffer_Get(cStaticBuffer *self, uint32_t size);
 /* the end of the use of the buffer (CHECK lock); inlined in most places */
@@ -133,9 +130,6 @@ typedef struct cDebrisSys {
 	int fxType;			/* 0x30 the cObjElementFX of each debris (cDebris_SetFX), 0 for none */
 	struct cDebrisSys *next;	/* 0x34 g_pWorld->debrisList */
 } cDebrisSys;
-SD_OFFSET(cDebrisSys, flag, 0x24);
-SD_OFFSET(cDebrisSys, maxIdle, 0x2c);
-SD_SIZE(cDebrisSys, 0x38);
 
 struct cDebris {
 	CGameModel Mod;			/* 0x00 first: Debris_Model casts the debris */
@@ -144,8 +138,6 @@ struct cDebris {
 	cDebris *next;			/* 0x50 in the idle or active list */
 	struct cObjElementFX *fx;	/* 0x54 */
 };
-SD_OFFSET(cDebris, life, 0x4c);
-SD_SIZE(cDebris, 0x58);
 #define Debris_Mod(d) (&(d)->Mod)
 
 extern vec3_t g_DebrisDrop[4];	/* [4]: position, angles (rad), velocity, angle speed (rad) */
@@ -207,6 +199,5 @@ typedef struct cSaveVar {
 	char *value;			/* 0x4 cString */
 	struct cSaveVar *next;		/* 0x8 g_SaveVars */
 } cSaveVar;
-SD_SIZE(cSaveVar, 0xc);
 
 #endif

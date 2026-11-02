@@ -28,12 +28,6 @@
 
 
 
-SD_OFFSET(CAnimCtrl, speed, 0x0c);
-SD_OFFSET(CAnimCtrl, ofs, 0x20);
-SD_OFFSET(CAnimCtrl, node, 0x30);
-SD_OFFSET(CAnimCtrl, frame, 0x50);
-SD_OFFSET(CAnimCtrl, events, 0x3c);
-SD_SIZE(CAnimCtrl, 0x84);
 
 typedef struct MorphData {
 	char Tag[2];			/* 0x0 */
@@ -44,7 +38,6 @@ typedef struct MorphData {
 	byte NextMax;			/* 0x6 */
 	byte param7;			/* 0x7 100 by default */
 } MorphData;
-SD_SIZE(MorphData, 8);
 
 typedef struct CAnimGroup {
 	char *name;			/* 0x00 String_Set */
@@ -61,14 +54,10 @@ typedef struct CAnimGroup {
 	uint16_t pad_92;
 	CScene *Anim;			/* 0x94 a reference */
 } CAnimGroup;
-SD_OFFSET(CAnimGroup, morph, 0x8c);
-SD_OFFSET(CAnimGroup, Anim, 0x94);
-SD_SIZE(CAnimGroup, 0x98);
 
 typedef struct CAnimGroups {
 	CAnimGroup *g[MAX_ANIMGROUPS];
 } CAnimGroups;
-SD_SIZE(CAnimGroups, 0xb0);
 
 /* of other modules, called in the exe */
 /* Engine/Nodo3D.cpp: the node named name from self on (self itself with incl), by next */

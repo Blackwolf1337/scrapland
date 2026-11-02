@@ -19,7 +19,6 @@ typedef struct cGvar {
 	byte type;			/* 0x0d GVAR_ */
 	byte pad_e[2];
 } cGvar;
-SD_SIZE(cGvar, 0x10);
 
 /*
  * an engine variable (Global/Gvars.cpp). The pointers in g_GVars point 4 bytes into the object: a GVAR_FUNCTION
@@ -40,10 +39,7 @@ typedef struct cGVar {
 		float f;
 	} def;
 } cGVar;
-SD_OFFSET(cGVar, def, 0x14);
 /* GVAR_SCRIPT_FUNCTION keeps a cPy_Function at +0x10 instead of value/def */
 #define GVar_Function(v) ((cPy_Function *)&(v)->value)
-SD_OFFSET(cGvar, type, 0x0d);
-SD_OFFSET(cGVar, value, 0x10);
 
 #endif

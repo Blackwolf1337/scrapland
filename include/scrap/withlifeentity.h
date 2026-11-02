@@ -48,18 +48,6 @@ typedef struct cWithLifeEntity {
 	cString headModel;		/* 0x3e0 "HeadModel" */
 	int headAnim;			/* 0x3e4 "HeadAnimIndex" */
 } cWithLifeEntity;
-SD_OFFSET(cWithLifeEntity, burnAcc, 0x228);
-SD_OFFSET(cWithLifeEntity, actCtrl, 0x234);
-SD_OFFSET(cWithLifeEntity, burner, 0x240);
-SD_OFFSET(cWithLifeEntity, onDeath, 0x264);
-SD_OFFSET(cWithLifeEntity, fireAtt, 0x28c);
-SD_OFFSET(cWithLifeEntity, attack, 0x298);
-SD_OFFSET(cWithLifeEntity, arrow, 0x314);
-SD_OFFSET(cWithLifeEntity, prim, 0x39c);
-SD_OFFSET(cWithLifeEntity, hitSounds, 0x3a8);
-SD_OFFSET(cWithLifeEntity, lifeSounds, 0x3c4);
-SD_OFFSET(cWithLifeEntity, headAnim, 0x3e4);
-SD_SIZE(cWithLifeEntity, 0x3e8);
 
 /* cWithLifeEntity::vftable continues the one of cObjEntity; characters, vehicles and missiles continue it */
 typedef struct cWithLifeEntityVtbl {
@@ -75,10 +63,6 @@ typedef struct cWithLifeEntityVtbl {
 	void(*SetActCtrl)(cEntity *self, const char *cls);				/* 0xd8 vf54 */
 	byte(*IsEMIed)(cEntity *self);						/* 0xdc vf55 */
 } cWithLifeEntityVtbl;
-SD_OFFSET(cWithLifeEntityVtbl, CheckLife, 0xbc);
-SD_OFFSET(cWithLifeEntityVtbl, SetMass, 0xcc);
-SD_OFFSET(cWithLifeEntityVtbl, GetActCtrl, 0xd4);
-SD_OFFSET(cWithLifeEntityVtbl, IsEMIed, 0xdc);
 extern const cWithLifeEntityVtbl cWithLifeEntity_vftable;
 #define CWITHLIFEENTITY_VFTABLE (&cWithLifeEntity_vftable.base.base)
 

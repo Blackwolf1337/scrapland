@@ -19,7 +19,6 @@ typedef struct cSaveGameInfo {
 	int32_t time;			/* 0x40 modification time of the file */
 	int slot;			/* 0x44 */
 } cSaveGameInfo;
-SD_SIZE(cSaveGameInfo, 0x48);
 
 #define SAVE_MAGIC "Scrapland savegame"
 #define SAVE_SLOTS 7

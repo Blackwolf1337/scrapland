@@ -41,7 +41,6 @@ typedef struct CFXTexLava {
 	CBmp *orig;			/* 0x08 a copy of it */
 	uint32_t lastTime;		/* 0x0c */
 } CFXTexLava;
-SD_SIZE(CFXTexLava, 0x10);
 
 typedef struct CFXTexScroll {
 	IFXTexture base;
@@ -51,13 +50,11 @@ typedef struct CFXTexScroll {
 	int offset;			/* 0x10 the pixels scrolled */
 	int unused_14;			/* 0x14 */
 } CFXTexScroll;
-SD_SIZE(CFXTexScroll, 0x18);
 
 typedef struct CFXNewsPanel {
 	IFXTexture base;
 	int time;			/* 0x4 of the last update */
 } CFXNewsPanel;
-SD_SIZE(CFXNewsPanel, 0x8);
 
 /* the cos of the 256 angles of the lava, made by the first lava */
 extern float g_LavaCos[256];

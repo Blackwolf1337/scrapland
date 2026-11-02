@@ -38,7 +38,6 @@ typedef struct CAnimSlot {
 	byte prevSubset;		/* 0xd */
 	byte pad_e[2];
 } CAnimSlot;
-SD_SIZE(CAnimSlot, 0x10);
 
 struct CModel;
 
@@ -47,7 +46,6 @@ typedef struct CLod {
 	struct CModel *model;		/* 0x0 */
 	int unused_04;				/* 0x4 */
 } CLod;
-SD_SIZE(CLod, 8);
 
 /* called before (after 0) and after (1) the model is drawn */
 typedef void (*modelCallback_t)(struct CModel *m, int after, void *arg, void *arg2);
@@ -98,16 +96,6 @@ typedef struct CModel {
 	CAnimGroups anims;		/* 0x12c */
 	SectorVis sector;		/* 0x1dc the sector lookup of the position */
 } CModel;
-SD_OFFSET(CModel, local, 0x5c);
-SD_OFFSET(CModel, showBox, 0x9c);
-SD_OFFSET(CModel, slots, 0xa4);
-SD_OFFSET(CModel, mRender, 0xb0);
-SD_OFFSET(CModel, lods, 0x100);
-SD_OFFSET(CModel, enable, 0x120);
-SD_OFFSET(CModel, scene, 0x124);
-SD_OFFSET(CModel, anims, 0x12c);
-SD_OFFSET(CModel, sector, 0x1dc);
-SD_SIZE(CModel, 0x1f0);
 
 /* util_escena.cpp: an entry of the scene list */
 typedef struct CSceneList {
@@ -118,7 +106,6 @@ typedef struct CSceneList {
 	uint32_t flags;			/* 0x18 ESCENA_* */
 	struct CSceneList *next;	/* 0x1c */
 } CSceneList;
-SD_SIZE(CSceneList, 0x20);
 
 /* an entry of the model list; the models to render point to their entry from gModelosRender */
 typedef struct CModelList {
@@ -130,7 +117,6 @@ typedef struct CModelList {
 	int renderIndex;		/* 0x14 in gModelosRender, -1 none */
 	float sortKey;			/* 0x18 */
 } CModelList;
-SD_SIZE(CModelList, 0x1c);
 
 
 

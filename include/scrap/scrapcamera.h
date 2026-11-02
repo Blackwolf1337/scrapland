@@ -25,8 +25,6 @@ typedef struct CGameCamera {
 	CCamera *Camera;		/* 0x34 owned */
 	CRenderNode *Node;			/* 0x38 a reference (CGameModel_RenderNodeRef) */
 } CGameCamera;
-SD_OFFSET(CGameCamera, Camera, 0x34);
-SD_SIZE(CGameCamera, 0x3c);
 
 /* the engine variables (Gvars) */
 extern cGVar GVar_CameraDefViewAspect;

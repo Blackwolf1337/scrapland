@@ -24,7 +24,6 @@ typedef struct CObjBase3D {
 	IObject3D base;			/* 0x0 */
 	CNode3D *node;			/* 0x8 counted (CObjBase3D_SetNode) */
 } CObjBase3D;
-SD_SIZE(CObjBase3D, 0xc);
 
 /* CParticleSystem.params.flags */
 #define PARTICLESYSTEM_LOCALPOS 0x01		/* the positions follow the node */
@@ -64,7 +63,6 @@ struct CParticle {
 };
 
 void CParticle_UpdateNop(CParticle *self, struct CParticleSystem *sp, float dt, void *multiSpr);
-SD_SIZE(CParticle, 0x34);
 #define PARTICLE_TYPE(p) ((p)->vftable->Type(p))
 /* CParticle is the abstract CParticulaBase (vftable rva 0x3ddc3c, all pure); the static particle adds no members */
 typedef CParticle CParticleBase;
@@ -98,7 +96,6 @@ typedef struct CParticleActive {
 	byte bounce;			/* 0x8c on the floor */
 	byte pad_8d[3];
 } CParticleActive;
-SD_SIZE(CParticleActive, 0x90);
 
 /* the parameters of a type of particle system (the section of the type in the particle ini) */
 typedef struct ParticleSystemParams {
@@ -141,7 +138,6 @@ typedef struct ParticleSystemParams {
 	byte pad_e1[3];
 	float zBias;			/* 0xe4 */
 } ParticleSystemParams;
-SD_SIZE(ParticleSystemParams, 0xe8);
 
 typedef struct CParticleSystem {
 	union {
@@ -178,9 +174,6 @@ typedef struct CParticleSystem {
 	byte emitIdx;			/* 0x14d */
 	byte pad_14e[2];
 } CParticleSystem;
-SD_SIZE(CParticleSystem, 0x150);
-SD_OFFSET(CParticleSystem, params, 0x0c);
-SD_OFFSET(CParticleSystem, Particles, 0x11c);
 
 /* the switches of the particle systems */
 extern cGVar GVar_R_Particles;

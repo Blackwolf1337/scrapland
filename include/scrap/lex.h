@@ -31,7 +31,6 @@ typedef struct cLexFile {
 	struct cLexFile *parent;	/* 0x1c the including file */
 	int escapes;			/* 0x20 '\\' escapes in strings */
 } cLexFile;
-SD_SIZE(cLexFile, 0x24);
 
 /* the current token of cmd_lex */
 typedef struct cClex {
@@ -42,7 +41,6 @@ typedef struct cClex {
 		double d;		/* CLEX_FLOAT */
 	} value;			/* 0x8 */
 } cClex;
-SD_SIZE(cClex, 0x10);
 
 extern cLexFile *g_Lex;
 extern int g_LexCh;	/* the next character, -1 at the end */

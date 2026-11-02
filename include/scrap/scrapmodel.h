@@ -21,7 +21,6 @@ typedef struct CGameModel {
 	float animBaseFPS;		/* 0x14 AnimBaseFPS of the ini, the frames of the animations scaled to it */
 	int frame;			/* 0x18 g_FrameCount of the last transform of the render nodes */
 } CGameModel;
-SD_SIZE(CGameModel, 0x1c);
 
 #define MODEL_EFFECT_LAST 8
 #define MAX_RENDERFX_PARAM 1

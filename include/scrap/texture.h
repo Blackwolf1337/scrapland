@@ -33,7 +33,6 @@ typedef struct MSprite {
 	uint16_t x, y;			/* 0x0 */
 	uint16_t cx, cy;		/* 0x4 */
 } MSprite;
-SD_SIZE(MSprite, 0x8);
 
 typedef struct CMultiSprite {
 	int width;			/* 0x0 of the texture */
@@ -46,7 +45,6 @@ typedef struct CMultiSprite {
 		};
 	};
 } CMultiSprite;
-SD_SIZE(CMultiSprite, 0x10);
 
 #define MST_VER 100
 extern cGVar GVar_BuildMST;
@@ -81,11 +79,6 @@ typedef struct CTexture {
 	byte pad_246[2];
 	CMultiSprite multi;		/* 0x248 */
 } CTexture;
-SD_SIZE(CTexture, 0x258);
-SD_OFFSET(CTexture, width, 0x210);
-SD_OFFSET(CTexture, tex, 0x228);
-SD_OFFSET(CTexture, mipmap, 0x23c);
-SD_OFFSET(CTexture, multi, 0x248);
 
 extern CTexture *g_TexList;
 

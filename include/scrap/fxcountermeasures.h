@@ -24,7 +24,6 @@ typedef struct cObjElementFXVtbl {
 	void(*Start)(cObjElementFX *self, cDebris *debris);			/* 0x0c vf03 */
 	void(*Reset)(cObjElementFX *self, cDebris *debris);			/* 0x10 vf04 */
 } cObjElementFXVtbl;
-SD_SIZE(cObjElementFXVtbl, 0x14);
 
 struct cObjElementFX {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -73,11 +72,6 @@ typedef struct cObjElementFXHook {
 	byte on;			/* 0x158 */
 	byte pad_159[3];
 } cObjElementFXHook;
-SD_OFFSET(cObjElementFXHook, trail, 0x18);
-SD_OFFSET(cObjElementFXHook, numPoints, 0x98);
-SD_OFFSET(cObjElementFXHook, particles, 0x9c);
-SD_OFFSET(cObjElementFXHook, withTarget, 0x150);
-SD_SIZE(cObjElementFXHook, 0x15c);
 
 /* the electromagnetic impulse (0xd20 bytes, destructor rva 0x1c9a10): up to 8 lightning bolts from the missile to
  * the world or to entities near it, each a trail along the Bezier curve of its control points that follow its points,
@@ -103,14 +97,6 @@ typedef struct cObjElementFXEMI {
 	byte on;			/* 0xd1c set by the countermeasure that drops it */
 	byte pad_d1d[3];
 } cObjElementFXEMI;
-SD_OFFSET(cObjElementFXEMI, particles, 0xc);
-SD_OFFSET(cObjElementFXEMI, trails, 0xf4);
-SD_OFFSET(cObjElementFXEMI, ctrl, 0x114);
-SD_OFFSET(cObjElementFXEMI, pts, 0x4d4);
-SD_OFFSET(cObjElementFXEMI, stepTime, 0xc54);
-SD_OFFSET(cObjElementFXEMI, links, 0xc94);
-SD_OFFSET(cObjElementFXEMI, on, 0xd1c);
-SD_SIZE(cObjElementFXEMI, 0xd20);
 
 /* the sonic mine explosion: rings that grow and fade (0x220 bytes, destructor rva 0x1c9b00) */
 typedef struct cObjElementFXSonicExplosion {
@@ -129,10 +115,6 @@ typedef struct cObjElementFXSonicExplosion {
 	byte on;			/* 0x21c set by the mine that drops it */
 	byte pad_21d[3];
 } cObjElementFXSonicExplosion;
-SD_OFFSET(cObjElementFXSonicExplosion, rings, 0xb4);
-SD_OFFSET(cObjElementFXSonicExplosion, pos, 0x16c);
-SD_OFFSET(cObjElementFXSonicExplosion, ringFade, 0x1fc);
-SD_SIZE(cObjElementFXSonicExplosion, 0x220);
 
 /* the debris cloud countermeasure (0x1f4 bytes, destructor rva 0x1c99d0) */
 typedef struct cObjElementFXDebrisCloud {
@@ -147,9 +129,6 @@ typedef struct cObjElementFXDebrisCloud {
 	byte on;			/* 0x1f0 set by the countermeasure that drops it */
 	byte pad_1f1[3];
 } cObjElementFXDebrisCloud;
-SD_OFFSET(cObjElementFXDebrisCloud, rands, 0xd0);
-SD_OFFSET(cObjElementFXDebrisCloud, on, 0x1f0);
-SD_SIZE(cObjElementFXDebrisCloud, 0x1f4);
 
 /* the fields of the ships the hook reads */
 #define WEAPON_LASER 0x18						/* the slot of the laser in Entity_Weapons */
@@ -161,7 +140,6 @@ typedef struct cWeaponSlot {
 	int upgrade;			/* 0x4 */
 	float uammo;			/* 0x8 the ammo of the upgrade, 0..200 */
 } cWeaponSlot;
-SD_SIZE(cWeaponSlot, 0xc);
 
 /* the render nodes of one ammo kind, per slot (a pointer to it, see tri16_t in meshd3d.h) */
 typedef int ammoNodes_t[4];
@@ -190,11 +168,6 @@ typedef struct cTargetLock {
 	byte teslaFiring;	/* 0x46 a Tesla ray of a net shot is on (Tesla_CreateNative), cleared when it ends */
 	byte pad_47;
 } cTargetLock;
-SD_OFFSET(cTargetLock, weaps, 0x18);
-SD_OFFSET(cTargetLock, lock, 0x28);
-SD_OFFSET(cTargetLock, point, 0x38);
-SD_OFFSET(cTargetLock, on, 0x44);
-SD_SIZE(cTargetLock, 0x48);
 
 /* rva 0x11a740, 0x11a720: the point of a lock without entity, the name of the locked entity (NULL when off) */
 vec3_t *cTargetLock_GetPoint(cTargetLock *self);

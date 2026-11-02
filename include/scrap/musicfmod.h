@@ -22,7 +22,6 @@ typedef struct cMusicVoice {
 	uint32_t waitTime;		/* 0x194 the last time it was seen opening (debug info) */
 	uint32_t playTime;		/* 0x198 */
 } cMusicVoice;
-SD_SIZE(cMusicVoice, 0x19c);
 
 extern int g_FmodState;		/* > 0 running, < 0 failed */
 extern cMusicVoice cMusicVoice_MusicVoices[8];

@@ -41,10 +41,6 @@ struct cNetVController {
 	uint16_t keys;			/* 0x74 the controls of the client */
 	byte pad_76[2];
 };
-SD_OFFSET(cNetVController, vehicle, 0x5c);
-SD_OFFSET(cNetVController, hit, 0x64);
-SD_OFFSET(cNetVController, keys, 0x74);
-SD_SIZE(cNetVController, CNETVCONTROLLER_SIZE);
 
 #define VEH_TARGETS 16
 
@@ -55,15 +51,12 @@ typedef struct cVehicleTargetList {
 	float time;			/* 0x808 the world time of the last choice */
 	int cur;			/* 0x80c */
 } cVehicleTargetList;
-SD_OFFSET(cVehicleTargetList, time, 0x808);
-SD_SIZE(cVehicleTargetList, 0x810);
 
 typedef struct cVehicleTargets {
 	cEntity *owner;			/* 0x00 */
 	cVehicleTargetList *list;	/* 0x04 only for the player slots */
 	char target[0x80];		/* 0x08 the "Target" of the vehicle */
 } cVehicleTargets;
-SD_SIZE(cVehicleTargets, 0x88);
 
 struct cVehicleEntity {
 	cWithLifeEntity wl;		/* 0x000 */
@@ -146,25 +139,6 @@ struct cVehicleEntity {
 	int money;			/* 0x7ec "Money" */
 	cVehicleEffects effects;	/* 0x7f0 */
 };
-SD_OFFSET(cVehicleEntity, collision, 0x3f0);
-SD_OFFSET(cVehicleEntity, slot, 0x410);
-SD_OFFSET(cVehicleEntity, controls, 0x414);
-SD_OFFSET(cVehicleEntity, wRadius, 0x458);
-SD_OFFSET(cVehicleEntity, speed, 0x46c);
-SD_OFFSET(cVehicleEntity, acMass, 0x4a8);
-SD_OFFSET(cVehicleEntity, localAcc, 0x4f0);
-SD_OFFSET(cVehicleEntity, pilot, 0x500);
-SD_OFFSET(cVehicleEntity, pilotAnimLen, 0x554);
-SD_OFFSET(cVehicleEntity, typeName, 0x568);
-SD_OFFSET(cVehicleEntity, emi, 0x58c);
-SD_OFFSET(cVehicleEntity, hitTime, 0x5c0);
-SD_OFFSET(cVehicleEntity, weapons, 0x5f0);
-SD_OFFSET(cVehicleEntity, fixedModel, 0x638);
-SD_OFFSET(cVehicleEntity, target, 0x650);
-SD_OFFSET(cVehicleEntity, autoAim, 0x6d0);
-SD_OFFSET(cVehicleEntity, motors, 0x720);
-SD_OFFSET(cVehicleEntity, effects, 0x7f0);
-SD_SIZE(cVehicleEntity, 0x814);
 
 static inline cVehicleEntity *Veh(cEntity *e) {
 	return (cVehicleEntity *)e;
@@ -202,10 +176,6 @@ typedef struct cVehicleEntityVtbl {
 	byte(*GetPilotPos)(cEntity *self, int slot, vec3_t *pos, vec3_t *ang);	/* 0x100 vf64 */
 	void(*Crash)(cEntity *self, const vec3_t *acc, float force);	/* 0x104 vf65 */
 } cVehicleEntityVtbl;
-SD_OFFSET(cVehicleEntityVtbl, UpdateSounds, 0xe0);
-SD_OFFSET(cVehicleEntityVtbl, EnableAI, 0xe8);
-SD_OFFSET(cVehicleEntityVtbl, SetPilot, 0xf0);
-SD_OFFSET(cVehicleEntityVtbl, Crash, 0x104);
 extern const cVehicleEntityVtbl cVehicleEntity_vftable;
 #define CVEHICLEENTITY_VFTABLE (&cVehicleEntity_vftable.base.base.base)
 

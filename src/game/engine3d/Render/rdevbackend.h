@@ -92,18 +92,4 @@ int Vk_XMeshGetAttributeTable(void *mesh, void *table, uint32_t *size);
 uint32_t Vk_XMeshGetNumFaces(void *mesh);
 uint32_t Vk_XMeshGetNumVertices(void *mesh);
 
-
-/* the D3D log of the tests (RdevLog.c): calls on rd_logDevice are written, then go to rd_logReal */
-extern void *rd_logDevice;
-extern void *rd_logReal;
-void RdLog_Call(uint32_t slot, const uint32_t *a);
-
-static inline uint32_t Rd_FloatBits(float f) {
-	union {
-		float f;
-		uint32_t u;
-	} x = { f };
-	return x.u;
-}
-
 #endif

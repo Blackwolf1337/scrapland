@@ -25,7 +25,6 @@ typedef struct cPy_Function {
 	byte flags;			/* 0x10 PYF_ */
 	byte pad_11[3];
 } cPy_Function;
-SD_SIZE(cPy_Function, 0x14);
 
 /* an entry of the registry of C functions, a binary tree by name (static objects of the engine) */
 typedef struct cPy_NativeFunc {

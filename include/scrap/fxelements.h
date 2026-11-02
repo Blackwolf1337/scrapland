@@ -21,7 +21,6 @@ typedef struct cMapElementVtbl {
 	byte(*Init)(cMapElement *self);			/* 0x4 vf01 after the creation, 1 */
 	void(*Update)(cMapElement *self, float dt);		/* 0x8 vf02 every frame */
 } cMapElementVtbl;
-SD_SIZE(cMapElementVtbl, 0xc);
 
 /* World/MapElement: an element of the level with its model (0x2c bytes) */
 struct cMapElement {
@@ -31,8 +30,6 @@ struct cMapElement {
 	char *name;			/* 0x24 cString */
 	cMapElement *next;		/* 0x28 g_pWorld->elements */
 };
-SD_OFFSET(cMapElement, next, 0x28);
-SD_SIZE(cMapElement, 0x2c);
 
 #define World_Elements(w) ((w)->elements)
 
@@ -77,8 +74,6 @@ typedef struct cFXElementsOrbitBuoy {
 	byte pad_3c[4];
 	CGameParticles light;		/* 0x40 DF_Light */
 } cFXElementsOrbitBuoy;
-SD_OFFSET(cFXElementsOrbitBuoy, light, 0x40);
-SD_SIZE(cFXElementsOrbitBuoy, 0xf0);
 
 /* the buoys by column and number, their lights blink in turns (0x1ac bytes, constructor rva 0x1d5820) */
 typedef struct cFXElementsOrbitBuoyController {
@@ -87,9 +82,6 @@ typedef struct cFXElementsOrbitBuoyController {
 	int type[FXORBITBOYACOLUMNS][FXORBITBOYACOLUMNCOUNT];			/* 0x0ac the look of the light, 0 or 1 */
 	float fade[FXORBITBOYACOLUMNS][FXORBITBOYACOLUMNCOUNT];			/* 0x12c 1 down to 0, again */
 } cFXElementsOrbitBuoyController;
-SD_OFFSET(cFXElementsOrbitBuoyController, type, 0xac);
-SD_OFFSET(cFXElementsOrbitBuoyController, fade, 0x12c);
-SD_SIZE(cFXElementsOrbitBuoyController, 0x1ac);
 
 cFXElementsOrbitBuoyController *cFXElementsOrbitBuoyController_ctor(cFXElementsOrbitBuoyController *self,
 	const char *name, const vec3_t *pos, const vec3_t *rot);
@@ -129,7 +121,6 @@ typedef struct cFXElementsMentalController {
 	byte nearCam;			/* 0x3c */
 	byte pad_3d[3];
 } cFXElementsMentalController;
-SD_SIZE(cFXElementsMentalController, 0x40);
 
 /* the damaged controller of the epilogue: smoke and flashes from emitter nodes (0x3f8 bytes) */
 typedef struct cFXElementsMentalControllerDamageFX {
@@ -160,11 +151,6 @@ typedef struct cFXElementsMentalControllerDamageFX {
 	int flashSparksMin[FXMENTALDAMAGEEMITTERS];	/* 0x3d8 */
 	int flashSparksMax[FXMENTALDAMAGEEMITTERS];	/* 0x3e8 */
 } cFXElementsMentalControllerDamageFX;
-SD_OFFSET(cFXElementsMentalControllerDamageFX, smokeSizeIni, 0x224);
-SD_OFFSET(cFXElementsMentalControllerDamageFX, flash, 0x264);
-SD_OFFSET(cFXElementsMentalControllerDamageFX, flashRot, 0x358);
-SD_OFFSET(cFXElementsMentalControllerDamageFX, flashSparksMax, 0x3e8);
-SD_SIZE(cFXElementsMentalControllerDamageFX, 0x3f8);
 
 /* the main controller: the data fluid in the tubes to the controllers (0x4278 bytes) */
 typedef struct cFXElementsMentalControllerMainFX {
@@ -205,23 +191,6 @@ typedef struct cFXElementsMentalControllerMainFX {
 	float scale;				/* 0x4270 */
 	int last;				/* 0x4274 */
 } cFXElementsMentalControllerMainFX;
-SD_OFFSET(cFXElementsMentalControllerMainFX, levels, 0x74);
-SD_OFFSET(cFXElementsMentalControllerMainFX, fluidEnd, 0xb20);
-SD_OFFSET(cFXElementsMentalControllerMainFX, fluidNormal, 0x2038);
-SD_OFFSET(cFXElementsMentalControllerMainFX, fluidPhase, 0x2ac4);
-SD_OFFSET(cFXElementsMentalControllerMainFX, fluidWidth, 0x31cc);
-SD_OFFSET(cFXElementsMentalControllerMainFX, fluidTube, 0x3550);
-SD_OFFSET(cFXElementsMentalControllerMainFX, fluidActive, 0x3d80);
-SD_OFFSET(cFXElementsMentalControllerMainFX, glowTime, 0x3f14);
-SD_OFFSET(cFXElementsMentalControllerMainFX, glowOffset, 0x4010);
-SD_OFFSET(cFXElementsMentalControllerMainFX, tubeTrails, 0x3c58);
-SD_OFFSET(cFXElementsMentalControllerMainFX, dataFluid, 0x3c94);
-SD_OFFSET(cFXElementsMentalControllerMainFX, glowTrails, 0x3d44);
-SD_OFFSET(cFXElementsMentalControllerMainFX, tubeGlow, 0x3e64);
-SD_OFFSET(cFXElementsMentalControllerMainFX, glowSpeed, 0x3f98);
-SD_OFFSET(cFXElementsMentalControllerMainFX, topTrails, 0x4178);
-SD_OFFSET(cFXElementsMentalControllerMainFX, glowColor, 0x41f8);
-SD_SIZE(cFXElementsMentalControllerMainFX, 0x4278);
 
 /* the main controller of the level, NULL before the Press elements are made */
 extern cFXElementsMentalControllerMainFX *g_MentalMainFX;
@@ -294,17 +263,12 @@ typedef struct cFXElementsFireDrop {
 	float area;			/* 0x110 Area */
 	float life;			/* 0x114 Life */
 } cFXElementsFireDrop;
-SD_OFFSET(cFXElementsFireDrop, drops, 0x3c);
-SD_OFFSET(cFXElementsFireDrop, burstTime, 0xf0);
-SD_OFFSET(cFXElementsFireDrop, scale, 0x104);
-SD_SIZE(cFXElementsFireDrop, 0x118);
 
 /* a lens flare (0x30 bytes, its CGameLensFlare at 0x2c) */
 typedef struct cFXElementsLensFlare {
 	cMapElement base;
 	byte flare[4];			/* 0x2c CGameLensFlare */
 } cFXElementsLensFlare;
-SD_SIZE(cFXElementsLensFlare, 0x30);
 
 #define FXLIGHTINGBOLTS 10
 #define FXLIGHTINGLINKS 4
@@ -361,16 +325,6 @@ typedef struct cFXElementsLighting {
 	vec3_t pts[FXLIGHTINGBOLTS][FXLIGHTINGPOINTS];	/* 0x9d4 the control points of the bolt */
 	int numPts;					/* 0xe84 6 */
 } cFXElementsLighting;
-SD_OFFSET(cFXElementsLighting, link, 0x100);
-SD_OFFSET(cFXElementsLighting, glow, 0x218);
-SD_OFFSET(cFXElementsLighting, pointSizeMax, 0x560);
-SD_OFFSET(cFXElementsLighting, randVarMax, 0x790);
-SD_OFFSET(cFXElementsLighting, anmLoopReset, 0x830);
-SD_OFFSET(cFXElementsLighting, offsetSpeed, 0x844);
-SD_OFFSET(cFXElementsLighting, glowSize, 0x95c);
-SD_OFFSET(cFXElementsLighting, trails, 0x9ac);
-SD_OFFSET(cFXElementsLighting, numPts, 0xe84);
-SD_SIZE(cFXElementsLighting, 0xe88);
 
 extern cGVar GVar_FXElementsFireDropMaxDist;
 #define g_FireDropMaxDist (GVar_FXElementsFireDropMaxDist.value.f)	/* FXElementsFireDropMaxDist */
@@ -437,12 +391,6 @@ typedef struct cFXElementsABFakeLimit {
 	vec3_t ringOfs[FXABRINGS];			/* 0x388 */
 	CGameTrail rings[FXABRINGS][FXABRINGTRAILS];	/* 0x3b8 */
 } cFXElementsABFakeLimit;
-SD_OFFSET(cFXElementsABFakeLimit, lighting, 0x38);
-SD_OFFSET(cFXElementsABFakeLimit, bolts, 0x110);
-SD_OFFSET(cFXElementsABFakeLimit, boltCtrl, 0x1d8);
-SD_OFFSET(cFXElementsABFakeLimit, nearParts, 0x2c8);
-SD_OFFSET(cFXElementsABFakeLimit, rings, 0x3b8);
-SD_SIZE(cFXElementsABFakeLimit, 0x498);
 
 #define FXABMETEORS 500
 #define FXABMETEORSPLIT 250	/* the meteors after this one are in the second particle system */
@@ -462,12 +410,6 @@ typedef struct cFXElementsABFakeMeteors {
 	CGameParticles parts[2];		/* 0x561c Dummy01, Dummy02 */
 	CGameTrail curve;			/* 0x577c only its Bezier helpers are used */
 } cFXElementsABFakeMeteors;
-SD_OFFSET(cFXElementsABFakeMeteors, ofs, 0xfcc);
-SD_OFFSET(cFXElementsABFakeMeteors, size, 0x273c);
-SD_OFFSET(cFXElementsABFakeMeteors, fadeSpeed, 0x4e4c);
-SD_OFFSET(cFXElementsABFakeMeteors, parts, 0x561c);
-SD_OFFSET(cFXElementsABFakeMeteors, curve, 0x577c);
-SD_SIZE(cFXElementsABFakeMeteors, 0x5780);
 
 /* the engine variables FXABFakeLimit* */
 extern cGVar GVar_FXABFakeLimitRingRotSpeed;

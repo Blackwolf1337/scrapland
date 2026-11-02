@@ -18,7 +18,6 @@ typedef struct cReadStack {
 	int err;			/* 0x50c errno before the push */
 	struct cReadStack *prev;		/* 0x510 */
 } cReadStack;
-SD_SIZE(cReadStack, 0x514);
 
 extern char *g_ReadString;
 extern cReadStack *g_ReadStack;

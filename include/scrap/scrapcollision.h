@@ -21,7 +21,6 @@ typedef struct CSphereBox {
 	int id;				/* 0x04 g_QuadTriCacheID when it was built */
 	box_t box;			/* 0x08 */
 } CSphereBox;
-SD_SIZE(CSphereBox, 0x20);
 
 /* the triangle a segment hit, for Engine_TestLine */
 typedef struct CCollisionTri {
@@ -30,7 +29,6 @@ typedef struct CCollisionTri {
 	vec3_t hit;			/* 0x34 */
 	int noCollisions;		/* 0x40 bit 4 of the triangle flags */
 } CCollisionTri;
-SD_SIZE(CCollisionTri, 0x44);
 
 /* the engine variables of the collisions (Gvars) */
 extern cGVar GVar_c_schk;

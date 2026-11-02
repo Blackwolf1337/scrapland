@@ -64,7 +64,6 @@ typedef struct FXVExhaust {
 	int motor;			/* 0x0 FXVeh_Motor */
 	int side;			/* 0x4 0 or 1 */
 } FXVExhaust;
-SD_SIZE(FXVExhaust, 8);
 
 /* the debris fired out of a ship and its smoke: particles emitted along the way of the debris (0xdc bytes) */
 typedef struct cObjElementFXFiredDebris {
@@ -81,10 +80,6 @@ typedef struct cObjElementFXFiredDebris {
 	byte on;			/* 0xd8 */
 	byte pad_d9[3];
 } cObjElementFXFiredDebris;
-SD_OFFSET(cObjElementFXFiredDebris, time, 0xb4);
-SD_OFFSET(cObjElementFXFiredDebris, last, 0xc0);
-SD_OFFSET(cObjElementFXFiredDebris, on, 0xd8);
-SD_SIZE(cObjElementFXFiredDebris, 0xdc);
 
 typedef cObjElementFXFiredDebris cObjElementFXSmokeDebris;
 
@@ -104,16 +99,12 @@ typedef struct cObjElementFXFiredEntity {
 	byte on;			/* 0xd0 */
 	byte pad_d1[3];
 } cObjElementFXFiredEntity;
-SD_OFFSET(cObjElementFXFiredEntity, particles, 0x1c);
-SD_OFFSET(cObjElementFXFiredEntity, on, 0xd0);
-SD_SIZE(cObjElementFXFiredEntity, 0xd4);
 
 /* the two inner control points of a ray of the accelerator, offsets that move at random */
 typedef struct FXVAccelCtrl {
 	vec3_t a;			/* 0x00 */
 	vec3_t b;			/* 0x0c */
 } FXVAccelCtrl;
-SD_SIZE(FXVAccelCtrl, 0x18);
 
 /* the rays of the accelerator: Bezier curves from a vertex of the ship (0x4c0 bytes) */
 typedef struct cObjElementFXVehicleAccelerator {
@@ -131,12 +122,6 @@ typedef struct cObjElementFXVehicleAccelerator {
 	byte on;			/* 0x4bc */
 	byte pad_4bd[3];
 } cObjElementFXVehicleAccelerator;
-SD_OFFSET(cObjElementFXVehicleAccelerator, delay, 0xfc);
-SD_OFFSET(cObjElementFXVehicleAccelerator, trails, 0x13c);
-SD_OFFSET(cObjElementFXVehicleAccelerator, from, 0x1bc);
-SD_OFFSET(cObjElementFXVehicleAccelerator, ctrl, 0x27c);
-SD_OFFSET(cObjElementFXVehicleAccelerator, to, 0x3fc);
-SD_SIZE(cObjElementFXVehicleAccelerator, 0x4c0);
 
 /* the damage of a ship: smoke and sparks at the motors while the life is low (0x2d0 bytes) */
 typedef struct cObjElementFXVehicleDamage {
@@ -164,13 +149,6 @@ typedef struct cObjElementFXVehicleDamage {
 	byte on;			/* 0x2cc */
 	byte pad_2cd[3];
 } cObjElementFXVehicleDamage;
-SD_OFFSET(cObjElementFXVehicleDamage, parts3, 0x1c);
-SD_OFFSET(cObjElementFXVehicleDamage, parts2, 0xcc);
-SD_OFFSET(cObjElementFXVehicleDamage, parts1, 0x184);
-SD_OFFSET(cObjElementFXVehicleDamage, pos, 0x234);
-SD_OFFSET(cObjElementFXVehicleDamage, exhausts, 0x24c);
-SD_OFFSET(cObjElementFXVehicleDamage, on, 0x2cc);
-SD_SIZE(cObjElementFXVehicleDamage, 0x2d0);
 
 /* the electromagnetic interference of a ship: rays that jump along the vertices of the ship or of one of its motors,
  * drawn as Bezier trails through their last points (0x82e4 bytes) */
@@ -202,15 +180,6 @@ typedef struct cObjElementFXVehicleEMI {
 	byte on;			/* 0x82e0 */
 	byte pad_82e1[3];
 } cObjElementFXVehicleEMI;
-SD_OFFSET(cObjElementFXVehicleEMI, dir, 0xd0);
-SD_OFFSET(cObjElementFXVehicleEMI, numExhausts, 0xdc);
-SD_OFFSET(cObjElementFXVehicleEMI, part, 0x160);
-SD_OFFSET(cObjElementFXVehicleEMI, pts, 0x1e0);
-SD_OFFSET(cObjElementFXVehicleEMI, vidx, 0x31e0);
-SD_OFFSET(cObjElementFXVehicleEMI, head, 0x41e0);
-SD_OFFSET(cObjElementFXVehicleEMI, marks, 0x42a0);
-SD_OFFSET(cObjElementFXVehicleEMI, trails, 0x82a0);
-SD_SIZE(cObjElementFXVehicleEMI, 0x82e4);
 
 /* the fire at the motors of a ship (0x1fc bytes) */
 typedef struct cObjElementFXVehicleFire {
@@ -227,10 +196,6 @@ typedef struct cObjElementFXVehicleFire {
 	byte on;			/* 0x1f8 */
 	byte pad_1f9[3];
 } cObjElementFXVehicleFire;
-SD_OFFSET(cObjElementFXVehicleFire, particlesOut, 0xb8);
-SD_OFFSET(cObjElementFXVehicleFire, numExhausts, 0x174);
-SD_OFFSET(cObjElementFXVehicleFire, on, 0x1f8);
-SD_SIZE(cObjElementFXVehicleFire, 0x1fc);
 
 /* the spawn of a ship: rays from vertices of its model, drawn as trails (0xdd8 bytes) */
 #define FXVSPAWN_RAYS 75
@@ -253,11 +218,6 @@ typedef struct cObjElementFXVehicleSpawn {
 	byte on;			/* 0xdd4 */
 	byte pad_dd5[3];
 } cObjElementFXVehicleSpawn;
-SD_OFFSET(cObjElementFXVehicleSpawn, rayDir, 0x45c);
-SD_OFFSET(cObjElementFXVehicleSpawn, rayMax, 0xb64);
-SD_OFFSET(cObjElementFXVehicleSpawn, trails, 0xc90);
-SD_OFFSET(cObjElementFXVehicleSpawn, numRays, 0xdd0);
-SD_SIZE(cObjElementFXVehicleSpawn, 0xdd8);
 
 /* the Sputnik of a ship: rays from the Sputnik to points of the ship drawn as trails, a glow at the Sputnik
  * (0x1720 bytes) */
@@ -284,16 +244,6 @@ typedef struct cObjElementFXVehicleSputnik {
 	byte on;			/* 0x171c */
 	byte pad_171d[3];
 } cObjElementFXVehicleSputnik;
-SD_OFFSET(cObjElementFXVehicleSputnik, active, 0xc8);
-SD_OFFSET(cObjElementFXVehicleSputnik, sputnikNode, 0x190);
-SD_OFFSET(cObjElementFXVehicleSputnik, trails, 0x194);
-SD_OFFSET(cObjElementFXVehicleSputnik, rayPos, 0x1c8);
-SD_OFFSET(cObjElementFXVehicleSputnik, rayLife, 0xaec);
-SD_OFFSET(cObjElementFXVehicleSputnik, rayLifeMax, 0xdf8);
-SD_OFFSET(cObjElementFXVehicleSputnik, rayDelay, 0x1104);
-SD_OFFSET(cObjElementFXVehicleSputnik, rayWidth, 0x1410);
-SD_OFFSET(cObjElementFXVehicleSputnik, on, 0x171c);
-SD_SIZE(cObjElementFXVehicleSputnik, 0x1720);
 
 /* the constructors (return self), destructors and deleting destructors */
 void *cObjElementFXFiredDebris_ctor(void *self);

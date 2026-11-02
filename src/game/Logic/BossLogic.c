@@ -13,7 +13,6 @@ typedef struct cLogicBossAIVtbl {
 	void *vf00_12[19];
 	byte(*Arrived)(void *self);	/* 0x4c */
 } cLogicBossAIVtbl;
-SD_OFFSET(cLogicBossAIVtbl, Arrived, 0x4c);
 
 cBossLocalLogic *cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity *parent) {
 	char name[0x80];

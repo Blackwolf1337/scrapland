@@ -18,7 +18,6 @@
 typedef struct FntGlyph {
 	float u0, v0, u1, v1;
 } FntGlyph;
-SD_SIZE(FntGlyph, 0x10);
 
 typedef struct CFont3 {
 	float x, y;			/* 0x00 the end of the last string */
@@ -39,7 +38,6 @@ typedef struct CFont3 {
 	int bmpWidth;			/* 0x40 the size of the texture */
 	int bmpHeight;			/* 0x44 */
 } CFont3;
-SD_SIZE(CFont3, 0x48);
 
 /* CFont3.flags */
 #define FNT_SHADOW 0x20000		/* Font_Printf with FNT_PRINT_SHADOW draws a shadow */
@@ -67,7 +65,6 @@ typedef struct CFontGrid {
 	int unused_54;			/* 0x54 */
 	float space;			/* 0x58 the advance */
 } CFontGrid;
-SD_SIZE(CFontGrid, 0x5c);
 
 typedef struct CDigits {
 	CGraphic2D digit[10];		/* 0x000 bmp/digitos/digito0001.tga .. 0010 */
@@ -75,7 +72,6 @@ typedef struct CDigits {
 	int unused_2ac;			/* 0x2ac */
 	float unused_2b0;			/* 0x2b0 24 */
 } CDigits;
-SD_SIZE(CDigits, 0x2b4);
 
 typedef struct CUnifont {
 	uint16_t first, last;		/* 0x0 the unicode range of map */
@@ -83,7 +79,6 @@ typedef struct CUnifont {
 	CGraphic2D *graphic;		/* 0x8 */
 	CMultiSprite *sprites;		/* 0xc */
 } CUnifont;
-SD_SIZE(CUnifont, 0x10);
 
 extern CUnifont g_Unifont;
 extern const char *g_FontsDir;	/* "2d/fonts-drm/" */

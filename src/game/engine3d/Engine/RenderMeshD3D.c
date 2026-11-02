@@ -112,11 +112,7 @@ int RenderMesh_Compare(const void *a, const void *b) {
 	if (d) {
 		return d;
 	}
-#if SD_32BIT
-	d = (int)((uint32_t)ea->mesh->mat - (uint32_t)eb->mesh->mat);	/* the difference of the addresses, as the original */
-#else
 	d = (ea->mesh->mat > eb->mesh->mat) - (ea->mesh->mat < eb->mesh->mat);
-#endif
 	if (d) {
 		return d;
 	}

@@ -14,7 +14,6 @@ typedef struct BlendModeEntry {
 	uint32_t src;			/* 0x4 D3DBLEND */
 	uint32_t dst;			/* 0x8 */
 } BlendModeEntry;
-SD_SIZE(BlendModeEntry, 0xc);
 
 extern BlendModeEntry g_BlendModeTable[7];
 

@@ -61,7 +61,6 @@ typedef struct cNetMsgNode {
 	byte *data;			/* 0x4 data[0] the sequence number (7 bits), then the message */
 	struct cNetMsgNode *next;	/* 0x8 */
 } cNetMsgNode;
-SD_SIZE(cNetMsgNode, 0xc);
 
 typedef struct cNetClient cNetClient;
 typedef struct cUserNetManager cUserNetManager;
@@ -78,7 +77,6 @@ typedef struct cServerNetManagerVtbl {
 	cUserNetManagerVtbl base;
 	void(*SendHello)(cUserNetManager *self, byte type);				/* 0x10 */
 } cServerNetManagerVtbl;
-SD_OFFSET(cServerNetManagerVtbl, SendHello, 0x10);
 
 /* the base of the user managers (msgman.cpp, 0xc bytes), made by g_NetUserFactory for each cNetClient */
 struct cUserNetManager {
@@ -86,7 +84,6 @@ struct cUserNetManager {
 	int slot;			/* 0x4 the client slot of the server, -1 on a client */
 	cNetClient *client;		/* 0x8 */
 };
-SD_SIZE(cUserNetManager, 0xc);
 
 #define NET_NAME_SIZE 0x80
 
@@ -95,8 +92,6 @@ typedef struct cNetShip {
 	cUserNetManager base;
 	char name[NET_NAME_SIZE];	/* 0x0c the entity of the own ship ("net<n>") */
 } cNetShip;
-SD_OFFSET(cNetShip, name, 0xc);
-SD_SIZE(cNetShip, 0x8c);
 typedef cNetShip cServerNetManager;
 
 /* cClientNetManager (ManServer.cpp, 0x49c bytes): on the server, one client and its ship */
@@ -115,9 +110,6 @@ typedef struct cClientNetManager {
 	uint16_t sends;			/* 0x498 counts the sends, picks the client of the ping byte */
 	byte pad_49a[2];
 } cClientNetManager;
-SD_OFFSET(cClientNetManager, team, 0x48c);
-SD_OFFSET(cClientNetManager, sends, 0x498);
-SD_SIZE(cClientNetManager, 0x49c);
 
 extern const cUserNetManagerVtbl cUserNetManager_vftable;
 #define g_UserNetManagerVftable (&cUserNetManager_vftable)
@@ -157,10 +149,6 @@ struct cNetClient {
 		cUserNetManager *user;
 	};
 };
-SD_OFFSET(cNetClient, state, 0x10);
-SD_OFFSET(cNetClient, ping, 0x1c);
-SD_OFFSET(cNetClient, ship, 0x28);
-SD_SIZE(cNetClient, 0x2c);
 
 typedef cUserNetManager *(*netuserfactory_t)(cNetClient *client, int slot);
 
@@ -187,9 +175,6 @@ typedef struct cNetRandom {
 	int mti;			/* 0x11c8 NETRAND_NN + 1 before the first seed */
 } cNetRandom;
 #pragma pack(pop)
-SD_OFFSET(cNetRandom, mt, 0x808);
-SD_OFFSET(cNetRandom, mti, 0x11c8);
-SD_SIZE(cNetRandom, 0x11cc);
 
 /* a growing byte array of the transport (the data of a packet for the Poly1305 tag) */
 typedef struct cNetBuffer {
@@ -197,13 +182,11 @@ typedef struct cNetBuffer {
 	uint32_t cap;			/* 0x4 */
 	byte *data;			/* 0x8 Mem_Alloc */
 } cNetBuffer;
-SD_SIZE(cNetBuffer, 0xc);
 
 /* the ChaCha20 state */
 typedef struct cChaCha {
 	uint32_t state[16];
 } cChaCha;
-SD_SIZE(cChaCha, 0x40);
 
 /* a sockaddr_in (16 bytes, the same on Winsock and BSD sockets) */
 typedef struct NetAddr {
@@ -212,7 +195,6 @@ typedef struct NetAddr {
 	uint32_t addr;			/* 0x4 */
 	byte zero[8];			/* 0x8 */
 } NetAddr;
-SD_SIZE(NetAddr, 0x10);
 
 /* the servers to ping in browser mode, 0x200 of them */
 #define NET_PING_SERVERS 0x200
@@ -220,7 +202,6 @@ typedef struct NetPingServer {
 	NetAddr addr;			/* 0x00 port 0: free */
 	uint32_t time;			/* 0x10 timeGetTime of the ping */
 } NetPingServer;
-SD_SIZE(NetPingServer, 0x14);
 
 /* the answer to a ping of the browser (0x5c bytes) */
 typedef struct NetServerInfo {
@@ -235,8 +216,6 @@ typedef struct NetServerInfo {
 	char map[0x20];			/* 0x3b the level path after "Levels/" */
 	byte pad_5b;
 } NetServerInfo;
-SD_OFFSET(NetServerInfo, map, 0x3b);
-SD_SIZE(NetServerInfo, 0x5c);
 
 /* GameClient */
 extern char g_NetClientServer[256];	/* [0x100] the server address, "" when not connected */

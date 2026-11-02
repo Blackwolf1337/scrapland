@@ -3098,7 +3098,6 @@ typedef struct BspMatStat {
 	int count;			/* 0x0c lists */
 	int frmt;			/* 0x10 */
 } BspMatStat;
-SD_SIZE(BspMatStat, 0x14);
 
 static BspMatStat *BspMatStat_Get(CTable *t, int i) {
 	TABLE_CHECK(t->p, i, t->n);

@@ -88,10 +88,6 @@ typedef struct cObjElementFXCharacterConversion {
 	float scale[FXCONVERSION_POINTS];	/* 0x76c 0.7..1.5 */
 	byte started;			/* 0x898 */
 } cObjElementFXCharacterConversion;
-SD_OFFSET(cObjElementFXCharacterConversion, trails, 0x17c);
-SD_OFFSET(cObjElementFXCharacterConversion, phase, 0x514);
-SD_OFFSET(cObjElementFXCharacterConversion, started, 0x898);
-SD_SIZE(cObjElementFXCharacterConversion, 0x89c);
 
 typedef struct cObjElementFXCharacterConversor {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -116,11 +112,6 @@ typedef struct cObjElementFXCharacterConversor {
 	int numPoints;			/* 0x290 the control points used, 5 */
 	byte started;			/* 0x294 */
 } cObjElementFXCharacterConversor;
-SD_OFFSET(cObjElementFXCharacterConversor, nodeWall, 0xd8);
-SD_OFFSET(cObjElementFXCharacterConversor, trails, 0x110);
-SD_OFFSET(cObjElementFXCharacterConversor, pts, 0x11c);
-SD_OFFSET(cObjElementFXCharacterConversor, width, 0x284);
-SD_SIZE(cObjElementFXCharacterConversor, 0x298);
 
 typedef struct cObjElementFXCharacterDeath {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -139,10 +130,6 @@ typedef struct cObjElementFXCharacterDeath {
 	uint32_t color[FXDEATH_POINTS];	/* 0xd84 */
 	byte started;			/* 0xf64 */
 } cObjElementFXCharacterDeath;
-SD_OFFSET(cObjElementFXCharacterDeath, trails, 0x224);
-SD_OFFSET(cObjElementFXCharacterDeath, phase, 0x7e4);
-SD_OFFSET(cObjElementFXCharacterDeath, color, 0xd84);
-SD_SIZE(cObjElementFXCharacterDeath, 0xf68);
 
 typedef struct cObjElementFXCharacterTeleport {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -157,8 +144,6 @@ typedef struct cObjElementFXCharacterTeleport {
 	float emitT;			/* 0xd0 since the last particles */
 	byte started;			/* 0xd4 */
 } cObjElementFXCharacterTeleport;
-SD_OFFSET(cObjElementFXCharacterTeleport, mode, 0xbc);
-SD_SIZE(cObjElementFXCharacterTeleport, 0xd8);
 
 typedef struct cObjElementFXMaintenanceWork {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -174,9 +159,6 @@ typedef struct cObjElementFXMaintenanceWork {
 	int sound;			/* 0xd8 the handle of the work sound */
 	byte started;			/* 0xdc */
 } cObjElementFXMaintenanceWork;
-SD_OFFSET(cObjElementFXMaintenanceWork, trails, 0xc8);
-SD_OFFSET(cObjElementFXMaintenanceWork, sound, 0xd8);
-SD_SIZE(cObjElementFXMaintenanceWork, 0xe0);
 
 typedef struct cObjElementFXMoneyTransfer {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -188,8 +170,6 @@ typedef struct cObjElementFXMoneyTransfer {
 	int unused_c4;			/* 0xc4 */
 	byte started;			/* 0xc8 */
 } cObjElementFXMoneyTransfer;
-SD_OFFSET(cObjElementFXMoneyTransfer, emitT, 0xbc);
-SD_SIZE(cObjElementFXMoneyTransfer, 0xcc);
 
 typedef struct cObjElementFXSputnik {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -204,9 +184,6 @@ typedef struct cObjElementFXSputnik {
 	float moveT;			/* 0xd8 */
 	byte started;			/* 0xdc */
 } cObjElementFXSputnik;
-SD_OFFSET(cObjElementFXSputnik, duration, 0xc0);
-SD_OFFSET(cObjElementFXSputnik, last, 0xcc);
-SD_SIZE(cObjElementFXSputnik, 0xe0);
 
 /* World/FX/FXCharActions.cpp: the start of the Functionary special action on the element of e */
 void cObjElementFXFunctionarySpecialAction_Start(void *self, cEntity *e);

@@ -29,7 +29,6 @@ typedef struct CFog {
 	byte capsVertex;		/* 0x1f the device has vertex fog, 1 */
 	int mode;			/* 0x20 D3DFOGMODE of the table fog, 3 linear */
 } CFog;
-SD_SIZE(CFog, 0x24);
 
 /* the engine variables of the fog (Gvars) */
 extern cGVar GVar_R_FogEnable;

@@ -12,7 +12,6 @@ typedef struct cLogicBishopAIVtbl {
 	void *vf00_24[37];
 	byte(*Vf94)(void *self);	/* 0x94 */
 } cLogicBishopAIVtbl;
-SD_OFFSET(cLogicBishopAIVtbl, Vf94, 0x94);
 
 cBishopLocalLogic *cBishopLocalLogic_ctor(cBishopLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);

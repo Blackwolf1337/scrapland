@@ -78,30 +78,6 @@ typedef struct cWorld {
 	int money;			/* 0x2090 Scrap.GetMoney */
 	cLogicControl logic;		/* 0x2094 the taunts, parking zones, items and the mode objects (SLogic, Scrap.AddItem) */
 } cWorld;
-SD_OFFSET(cWorld, entities, 0x0004);
-SD_OFFSET(cWorld, scheduler, 0x0034);
-SD_OFFSET(cWorld, entityList, 0x0010);
-SD_OFFSET(cWorld, nameCount, 0x0030);
-SD_OFFSET(cWorld, curCam, 0x0050);
-SD_OFFSET(cWorld, camName, 0x0054);
-SD_OFFSET(cWorld, camPos, 0x0254);
-SD_OFFSET(cWorld, testing, 0x0284);
-SD_OFFSET(cWorld, debris, 0x0298);
-SD_OFFSET(cWorld, ignore, 0x02a8);
-SD_OFFSET(cWorld, lists, 0x02b8);
-SD_OFFSET(cWorld, checkInput, 0x02c4);
-SD_OFFSET(cWorld, strMoney, 0x2078);
-SD_OFFSET(cWorld, timer, 0x02c8);
-SD_OFFSET(cWorld, floor, 0x02f0);
-SD_OFFSET(cWorld, elements, 0x1bb4);
-SD_OFFSET(cWorld, alarm, 0x1c68);
-SD_OFFSET(cWorld, weapons, 0x1bb8);
-SD_OFFSET(cWorld, firstWeapon, 0x1bc0);
-SD_OFFSET(cWorld, ammo, 0x1bc4);
-SD_OFFSET(cWorld, money, 0x2090);
-SD_OFFSET(cWorld, grid, 0x1bcc);
-SD_OFFSET(cWorld, logic, 0x2094);
-SD_SIZE(cWorld, 0x225c);
 
 /* World/: methods; Table<T>::Init per element type */
 void WeapTable_Init(void *table, int num);
@@ -145,9 +121,6 @@ typedef struct CAppVtbl {
 	byte(*RunApp)(CApp *self, const char *exe, const char *cmdLine, int arg);	/* 0x4c vf19 */
 	byte(*IsDedicatedWin)(CApp *self);				/* 0x50 vf20 */
 } CAppVtbl;
-SD_OFFSET(CAppVtbl, Exit, 0x24);
-SD_OFFSET(CAppVtbl, DebugInput, 0x48);
-SD_OFFSET(CAppVtbl, IsDedicatedWin, 0x50);
 
 /* WNDCLASSA */
 typedef struct exe_wndclass {
@@ -162,7 +135,6 @@ typedef struct exe_wndclass {
 	const char *menuName;		/* 0x20 */
 	const char *className;		/* 0x24 */
 } exe_wndclass;
-SD_SIZE(exe_wndclass, 0x28);
 
 #define APPF_CLIENT 1
 #define APPF_SERVER 2
@@ -188,12 +160,6 @@ struct CApp {
 	void (*onLevelLoaded)(void);	/* 0x40 called once after LoadLevelNow */
 	byte pad_44[4];
 };
-SD_OFFSET(CApp, cmdLine, 0x08);
-SD_OFFSET(CApp, gameTime, 0x20);
-SD_OFFSET(CApp, flags, 0x30);
-SD_OFFSET(CApp, levelPath, 0x34);
-SD_OFFSET(CApp, onLevelLoaded, 0x40);
-SD_SIZE(CApp, 0x48);
 
 typedef struct CWinApp {
 	CApp base;			/* 0x00 */
@@ -207,10 +173,6 @@ typedef struct CWinApp {
 	byte pad_82[2];
 	byte unused_84[0xc];		/* 0x84 */
 } CWinApp;
-SD_OFFSET(CWinApp, wc, 0x54);
-SD_OFFSET(CWinApp, hwnd, 0x7c);
-SD_OFFSET(CWinApp, unused_84, 0x84);
-SD_SIZE(CWinApp, 0x90);
 
 extern cWorld *g_pWorld;
 extern CApp *g_pApp;

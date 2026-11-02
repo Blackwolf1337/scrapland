@@ -13,14 +13,11 @@ typedef struct cEntityRef {
 	Nto1Node link;			/* 0x0 target the cEntity, data the cEntityRef */
 	char name[0x80];		/* 0x10 */
 } cEntityRef;
-SD_OFFSET(cEntityRef, name, 0x10);
-SD_SIZE(cEntityRef, 0x90);
 
 typedef struct cPyEntity {
 	PyObject_HEAD
 	cEntityRef *ref;		/* 0x8 */
 } cPyEntity;
-SD_OFFSET(cPyEntity, ref, 0x8);
 
 static inline cEntity *PyEntity_Get(PyObject *self) {
 	return ((cPyEntity *)self)->ref->link.target;

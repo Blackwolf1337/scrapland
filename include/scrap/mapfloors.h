@@ -20,15 +20,11 @@ typedef struct MapLevel {
 	float downAng[MAX_2D_LINKS];	/* 0x0ec */
 	char name[0x80];		/* 0x10c behind DM_2DMapSwitch */
 } MapLevel;
-SD_OFFSET(MapLevel, nDown, 0x88);
-SD_OFFSET(MapLevel, name, 0x10c);
-SD_SIZE(MapLevel, 0x18c);
 
 typedef struct MapFloors {
 	int count;			/* 0x000 */
 	MapLevel levels[MAX_2D_MAPS];	/* 0x004 sorted by y */
 } MapFloors;
-SD_SIZE(MapFloors, 0x18c4);
 
 MapFloors *Floor_ctor(MapFloors *self);
 void Floor_dtor(MapFloors *self);

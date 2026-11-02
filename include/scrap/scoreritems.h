@@ -108,7 +108,6 @@ typedef struct cSpriteScorer {
 	CPsaImage *img;			/* 0xbc */
 	char *file;			/* 0xc0 cString */
 } cSpriteScorer;
-SD_SIZE(cSpriteScorer, 0xc4);
 void cSpriteScorer_SetMultiSprite(cSpriteScorer *self, byte on);
 
 cSpriteScorer *cSpriteScorer_ctor(cSpriteScorer *self);
@@ -136,7 +135,6 @@ typedef struct cAbstractTextScorer {
 	char *fontName;			/* 0xbc cString */
 	char *text;			/* 0xc0 cString */
 } cAbstractTextScorer;
-SD_SIZE(cAbstractTextScorer, 0xc4);
 
 /* the credits: 20 lines in two fonts, faded in a render target (0x32dc bytes) */
 #define CREDITS_LINES 20
@@ -152,7 +150,6 @@ typedef struct cCreditsScorer {
 	/* Text0..Text19; a text in line 8 puts the lines in three columns, without the fades */
 	char lines[CREDITS_LINES][CREDITS_LINE_SIZE];	/* 0xdc */
 } cCreditsScorer;
-SD_SIZE(cCreditsScorer, 0x32dc);
 
 /* the hint of the cursor item and the label text (the same layout), with a frame behind (0xd0 bytes) */
 typedef struct cHintScorer {
@@ -161,7 +158,6 @@ typedef struct cHintScorer {
 	int tabIndex;			/* 0xc8 the first frame of Menu_DrawFrame, none if <= 0 */
 	int tabBlend;			/* 0xcc 0..6 */
 } cHintScorer;
-SD_SIZE(cHintScorer, 0xd0);
 typedef cHintScorer cLabelScorer;
 
 /* the message text of Scorer_SetMsgText (0xc8 bytes) */
@@ -169,7 +165,6 @@ typedef struct cMsgScorer {
 	cAbstractTextScorer base;	/* 0x00 */
 	float lineHeight;		/* 0xc4 the height of "W" */
 } cMsgScorer;
-SD_SIZE(cMsgScorer, 0xc8);
 
 /* the engine variables of the credits render target */
 extern cGVar GVar_R_CreditsX;
@@ -251,7 +246,6 @@ typedef struct cBarScorer {
 	uint32_t mainColor;		/* 0x100 */
 	uint32_t blackColor;		/* 0x104 */
 } cBarScorer;
-SD_SIZE(cBarScorer, 0x108);
 
 /* IsAutoUpdatable: 1 down to AutoUpdateStopValue, 2 up to the maximum, by the frame time and the speed */
 extern cGVar GVar_BarValue;
@@ -331,9 +325,6 @@ typedef struct cButtonScorer {
 	CPsaImage *focusImg;		/* 0x160 the highlight and border frames (File) */
 	int highLightBlend;		/* 0x164 3 */
 } cButtonScorer;
-SD_SIZE(cButtonScorer, 0x168);
-SD_OFFSET(cButtonScorer, hasText, 0x100);
-SD_OFFSET(cButtonScorer, minX, 0x154);
 
 /* the Global/Table.h functions of cString and byte tables compiled here */
 void StrTable_Free(cStrTable *self);
@@ -381,7 +372,6 @@ typedef struct cCannonScorer {
 	int aimIndex[CANNON_WEAPONS];	/* 0xcc the aim frame per weapon, none if 0 */
 	int aimAc;			/* 0xe8 the weapon of AimIndex */
 } cCannonScorer;
-SD_SIZE(cCannonScorer, 0xec);
 
 extern cGVar GVar_CannonScorerNoAmmoSound;
 #define g_CannonNoAmmoSound (GVar_CannonScorerNoAmmoSound.value.s)	/* CannonScorerNoAmmoSound */
@@ -420,14 +410,12 @@ typedef struct cChatScorer {
 	CFont *font;			/* 0xb4 HoratioSmall */
 	float lineHeight;		/* 0xb8 14 */
 } cChatScorer;
-SD_SIZE(cChatScorer, 0xbc);
 
 /* a chat line, the oldest first */
 typedef struct cChatMsg {
 	char text[0x50];		/* 0x00 */
 	uint32_t color;			/* 0x50 */
 } cChatMsg;
-SD_SIZE(cChatMsg, 0x54);
 
 extern cChatMsg g_ChatMsgs[16];	/* CHAT_MSGS */
 extern float g_ChatTime;		/* of the last scroll */
@@ -460,7 +448,6 @@ typedef struct cCircuitScorer {
 	CPsaImage *circuit;		/* 0xc0 */
 	CPsaImage *flare;		/* 0xc4 frames 1 (head) and 2 (trail) */
 } cCircuitScorer;
-SD_SIZE(cCircuitScorer, 0xc8);
 
 /* a path of the board in pixels of the picture, with the lengths of its segments */
 typedef struct cCircuitPath {
@@ -472,7 +459,6 @@ typedef struct cCircuitPath {
 	float normEnd[32];		/* 0x284 (segStart + segLen) / total */
 	float total;			/* 0x304 */
 } cCircuitPath;
-SD_SIZE(cCircuitPath, 0x308);
 
 /* a flare on a path, then a pause */
 typedef struct cCircuitFlare {
@@ -483,7 +469,6 @@ typedef struct cCircuitFlare {
 	int reverse;			/* 0x10 */
 	int unused_14;			/* 0x14 */
 } cCircuitFlare;
-SD_SIZE(cCircuitFlare, 0x18);
 
 extern cCircuitFlare g_CircuitFlares[4];	/* CIRCUIT_FLARES */
 #define g_CircuitInit (*(byte *)&g_CircuitFlares[3].unused_14)
@@ -528,7 +513,6 @@ typedef struct cCopMeterScorer {
 	float fade;			/* 0xe8 0..1 */
 	float blink;			/* 0xec 0..0.9 the blink phase */
 } cCopMeterScorer;
-SD_SIZE(cCopMeterScorer, 0xf0);
 
 cCopMeterScorer *cCopMeterScorer_ctor(cCopMeterScorer *self);
 void cCopMeterScorer_dtor(cCopMeterScorer *self);
@@ -556,7 +540,6 @@ typedef struct cHangarShipScorer {
 	float camDist;			/* 0xe8 100 */
 	float camFov;			/* 0xec 20 degrees */
 } cHangarShipScorer;
-SD_SIZE(cHangarShipScorer, 0xf0);
 
 cHangarShipScorer *cHangarShipScorer_ctor(cHangarShipScorer *self);
 void cHangarShipScorer_dtor(cHangarShipScorer *self);
@@ -577,8 +560,6 @@ typedef struct cScorerModel {
 	float height;			/* 0x68 the eyes */
 	struct cEmbeddedFX *extra;	/* 0x6c its Tick draws after the model */
 } cScorerModel;
-SD_OFFSET(cScorerModel, numAnims, 0x3c);
-SD_OFFSET(cScorerModel, extra, 0x6c);
 
 /* the model of that name of the scorer, NULL if none */
 cScorerModel *cScorer_FindModel(cScorer *scorer, const char *name);
@@ -604,7 +585,6 @@ typedef struct cHeadScorer {
 	CGameCamera *cam;		/* 0xb8 */
 	float vw, vh;			/* 0xbc the view size */
 } cHeadScorer;
-SD_SIZE(cHeadScorer, 0xc4);
 
 /* the head slots of the vtables of cHeadScorer and cMonitorScorer */
 #define HeadScorer_SetAnim(self, a) \
@@ -644,7 +624,6 @@ typedef struct cMissionScorer {
 	int tabIndex;			/* 0xe4 */
 	int tabBlend;			/* 0xe8 0..6 */
 } cMissionScorer;
-SD_SIZE(cMissionScorer, 0xec);
 
 extern int g_MissionBlinkOn;
 extern float g_MissionBlinkTime;	/* BlinkTime: the icons blink until 0 */
@@ -726,11 +705,6 @@ typedef struct cMonitorScorer {
 	CPsaImage *noiseImg;		/* 0x34c */
 	CPsaImage *img350;		/* 0x350 white */
 } cMonitorScorer;
-SD_SIZE(cMonitorScorer, 0x354);
-SD_OFFSET(cMonitorScorer, model, 0x208);
-SD_OFFSET(cMonitorScorer, objName, 0x224);
-SD_OFFSET(cMonitorScorer, objWas, 0x2a8);
-SD_OFFSET(cMonitorScorer, weapon, 0x2ac);
 
 /* the head and text of Scorer_SetHeadMonitor */
 extern char g_HeadMonitorName[128];	/* 0x80, the scorer model */
@@ -771,7 +745,6 @@ typedef struct cNetStatsScorer {
 	int recvBytes[NETSTATS_SLOTS];	/* 0x1ec */
 	CPsaImage *img;			/* 0x22c white */
 } cNetStatsScorer;
-SD_SIZE(cNetStatsScorer, 0x230);
 
 extern cGVar GVar_ClientPingX;
 #define g_ClientPingX (GVar_ClientPingX.value.f)	/* ClientPingX */
@@ -900,9 +873,6 @@ typedef struct cRadarScorer {
 	float menuScaleSpeed;		/* 0x940 10 */
 	float scrollX, scrollY;		/* 0x944 of the menu map */
 } cRadarScorer;
-SD_SIZE(cRadarScorer, 0x94c);
-SD_OFFSET(cRadarScorer, noise, 0x8c4);
-SD_OFFSET(cRadarScorer, map2dScale, 0x91c);
 
 /* a floor of the world (0x18c bytes from world + 0x2f4, their count at 0x2f0): its lowest height first */
 /* the view of the radar: the turn and center of the map, its scale */
@@ -1134,7 +1104,6 @@ typedef struct cScraplandMainMenuScorer {
 	CPsaImage *neon;		/* 0xc0 FileNeon */
 	CPsaImage *lighting;		/* 0xc4 FileLighting */
 } cScraplandMainMenuScorer;
-SD_SIZE(cScraplandMainMenuScorer, 0xc8);
 
 /* the logo of a sub menu with its rings (0xd8 bytes) */
 typedef struct cScraplandSubMenuScorer {
@@ -1151,7 +1120,6 @@ typedef struct cScraplandSubMenuScorer {
 	CPsaImage *ringBorder;		/* 0xd0 FileRingBorder */
 	float scale;			/* 0xd4 Scale 1 */
 } cScraplandSubMenuScorer;
-SD_SIZE(cScraplandSubMenuScorer, 0xd8);
 
 /* the global animation state, set up once by the first constructor (random times) */
 extern byte g_MainMenuAnimInit;
@@ -1232,7 +1200,6 @@ typedef struct cSliderScorer {
 	cPy_Function onChange;		/* 0xe0 OnChange (player, name) */
 	CPsaImage *img;			/* 0xf4 File, its color by Red, Green, Blue, Alpha; Unit its b22 */
 } cSliderScorer;
-SD_SIZE(cSliderScorer, 0xf8);
 
 cSliderScorer *cSliderScorer_ctor(cSliderScorer *self);
 void cSliderScorer_dtor(cSliderScorer *self);
@@ -1278,10 +1245,6 @@ typedef struct cSpecialActionScorer {
 	uint32_t energyBackColor;	/* 0x130 0x5cffcc00 */
 	uint32_t batteryColor;		/* 0x134 0xffffffff */
 } cSpecialActionScorer;
-SD_SIZE(cSpecialActionScorer, 0x138);
-SD_OFFSET(cSpecialActionScorer, textFont, 0xf0);
-SD_OFFSET(cSpecialActionScorer, iconIndex, 0x11c);
-SD_OFFSET(cSpecialActionScorer, energyBackColor, 0x130);
 
 extern cGVar GVar_SpecialActionActive;
 #define g_SpecialActionActive (GVar_SpecialActionActive.value.i)	/* SpecialActionActive 0 off, 1 blink, 2 on */

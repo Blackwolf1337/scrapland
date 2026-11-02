@@ -46,9 +46,6 @@ typedef struct BspRegion {
 	float accum[4];			/* 0x50 received */
 	BspLink *links;		/* 0x60 */
 } BspRegion;
-SD_OFFSET(BspRegion, center, 0x1c);
-SD_OFFSET(BspRegion, accum, 0x50);
-SD_SIZE(BspRegion, 0x64);
 
 /* the names of the area lights of a list */
 typedef struct BspName {
@@ -56,7 +53,6 @@ typedef struct BspName {
 	char *name;			/* 0x04 Cad */
 	byte pad08[0x18];
 } BspName;
-SD_SIZE(BspName, 0x20);
 
 /* a page of light maps; lmap2 is the page of the secondary maps */
 typedef struct BspLMap {
@@ -68,7 +64,6 @@ typedef struct BspLMap {
 	int id;				/* 0x28 */
 	struct BspLMap *lmap2;		/* 0x2c */
 } BspLMap;
-SD_SIZE(BspLMap, 0x30);
 
 /* a light map texel of a list: the sample point and its weight (CTable of 0x18 bytes) */
 typedef struct BspArea {
@@ -77,7 +72,6 @@ typedef struct BspArea {
 	uint16_t x, y;			/* 0x10 */
 	float glow;			/* 0x14 the mean glow of the texel */
 } BspArea;
-SD_SIZE(BspArea, 0x18);
 
 /* a list: triangles of one surface with one light map (0x224 bytes) */
 typedef struct BspTri {
@@ -138,16 +132,6 @@ typedef struct BspTri {
 	int baseVert;			/* 0x21c of the vertex buffer */
 	int startTri;			/* 0x220 */
 } BspTri;
-SD_OFFSET(BspTri, plane, 0x94);
-SD_OFFSET(BspTri, Mat, 0xac);
-SD_OFFSET(BspTri, mask, 0x114);
-SD_OFFSET(BspTri, name, 0x138);
-SD_OFFSET(BspTri, glowMax, 0x178);
-SD_OFFSET(BspTri, areas, 0x184);
-SD_OFFSET(BspTri, region, 0x1bc);
-SD_OFFSET(BspTri, lv, 0x1d8);
-SD_OFFSET(BspTri, pVertVB, 0x214);
-SD_SIZE(BspTri, 0x224);
 
 #define BSPTRI_NOLMAP 0x1		/* flags: no light map, the vertex colors */
 
@@ -181,7 +165,6 @@ typedef struct BspNode {
 	CVertList lv;			/* 0x14 */
 	void *pVertVB;			/* 0x28 */
 } BspNode;
-SD_SIZE(BspNode, 0x2c);
 
 /* a sector: its lists (through zone_next) and the vertex buffers by vertex format */
 typedef struct BspZone {
@@ -190,7 +173,6 @@ typedef struct BspZone {
 	CRenderVB vb[8];		/* 0x08 */
 	CRenderIB ib;			/* 0xa8 */
 } BspZone;
-SD_SIZE(BspZone, 0xb4);
 
 /* the map (gBSP, 0x61aa8 bytes) */
 typedef struct CBsp {
@@ -206,10 +188,6 @@ typedef struct CBsp {
 	CMaterial *matFX;		/* 0x61aa0 */
 	CMaterial *matWire;		/* 0x61aa4 the wire frame material */
 } CBsp;
-SD_OFFSET(CBsp, num_lists, 0x4e208);
-SD_OFFSET(CBsp, num_nolmap, 0x61a8c);
-SD_OFFSET(CBsp, zones, 0x61a98);
-SD_SIZE(CBsp, 0x61aa8);
 
 /* the TXF cache of the computed light maps: one file a list, "<map>_TXF/<name>.<ext>.<n>.%05d.TXF" */
 typedef struct BspTxf {
@@ -228,8 +206,6 @@ typedef struct BspTxf {
 	int rebuild;			/* 0x248 */
 	uint32_t start;		/* 0x24c timeGetTime */
 } BspTxf;
-SD_OFFSET(BspTxf, team, 0x210);
-SD_SIZE(BspTxf, 0x250);
 
 /* a light of the compiler, taken from the lights of the scene (0x118 bytes) */
 typedef struct BspLight {
@@ -244,9 +220,6 @@ typedef struct BspLight {
 	CGroundHit cache;		/* 0x8c the last hit of the shadow traces (CGround_Trace) */
 	char name[0x80];		/* 0x98 of the node */
 } BspLight;
-SD_OFFSET(BspLight, illum, 0x20);
-SD_OFFSET(BspLight, name, 0x98);
-SD_SIZE(BspLight, 0x118);
 
 extern CBsp *g_Bsp;
 extern BspLMap *g_BspLMaps;	/* the pages */
@@ -511,7 +484,6 @@ typedef struct Bsp2Tri {
 	plane_t plane;			/* 0x24 */
 	CMaterial *Mat;			/* 0x34 */
 } Bsp2Tri;
-SD_SIZE(Bsp2Tri, 0x38);
 
 typedef struct Bsp2Node {
 	plane_t plane;			/* 0x00 */
@@ -519,7 +491,6 @@ typedef struct Bsp2Node {
 	struct Bsp2Node *back;		/* 0x14 */
 	CTable tris;			/* 0x18 Bsp2Tri, of the leaves */
 } Bsp2Node;
-SD_SIZE(Bsp2Node, 0x20);
 
 typedef struct BspLights {
 	Bsp2Node *root;			/* 0x0 */
@@ -575,14 +546,12 @@ typedef struct RadAreaLight {
 	float atten[2];			/* 0x14 */
 	float falloff;			/* 0x1c */
 } RadAreaLight;
-SD_SIZE(RadAreaLight, 0x20);
 
 typedef struct CRadiosity {
 	CIniFile ini;			/* 0x0 the .rad files */
 	CHashTable *table;		/* 0x4 the area lights by material */
 	RadAreaLight *list;		/* 0x8 */
 } CRadiosity;
-SD_SIZE(CRadiosity, 0xc);
 
 /* the links alive */
 extern int g_BspNumLinks;

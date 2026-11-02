@@ -17,7 +17,6 @@ typedef struct cScheduledFunc {
 	byte active;			/* 0x8c 0 while it runs, so Scrap.RemoveScheduledFunc leaves it */
 	byte pad_8d[3];
 } cScheduledFunc;
-SD_SIZE(cScheduledFunc, 0x90);
 
 extern const cScheduledFuncStackVtbl cScheduledFuncStack_vftable;
 #define CSCHEDULEDFUNCSTACK_VFTABLE (&cScheduledFuncStack_vftable)

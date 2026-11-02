@@ -22,7 +22,6 @@ typedef struct CMeshTri {
 	void *mat;			/* 0x3c material (Engine/render.cpp) */
 	uint32_t flags;			/* 0x40 */
 } CMeshTri;
-SD_SIZE(CMeshTri, 0x44);
 
 typedef struct CTriMesh {
 	union {
@@ -45,7 +44,6 @@ typedef struct CTriMesh {
 	CMeshD3D *d3d;			/* 0x30 deleted with the mesh */
 	box_t box;			/* 0x34 of the vertices, CTriMesh_CalcBox */
 } CTriMesh;
-SD_SIZE(CTriMesh, 0x4c);
 
 /* ListaVert.h, instanced in MallaTri.cpp: the normal and the texture coordinates of vertex i; a format without them
  * is a failed CHECK and zeros */

@@ -107,20 +107,6 @@ typedef struct cAIVehicleControl {
 	vec3_t corridor[9][2];		/* 0x1b0 the segments of the last free TestCorridor */
 	vec3_t endCap[2][2];		/* 0x288 the segments of the last free TestEnd */
 } cAIVehicleControl;
-SD_OFFSET(cAIVehicleControl, ai, 0x28);
-SD_OFFSET(cAIVehicleControl, params, 0x4c);
-SD_OFFSET(cAIVehicleControl, dest, 0x7c);
-SD_OFFSET(cAIVehicleControl, slotPath, 0xb4);
-SD_OFFSET(cAIVehicleControl, path, 0xd0);
-SD_OFFSET(cAIVehicleControl, accel, 0xfc);
-SD_OFFSET(cAIVehicleControl, slotChase, 0x10c);
-SD_OFFSET(cAIVehicleControl, target, 0x15c);
-SD_OFFSET(cAIVehicleControl, inSight, 0x174);
-SD_OFFSET(cAIVehicleControl, pathState, 0x18c);
-SD_OFFSET(cAIVehicleControl, dir, 0x1a0);
-SD_OFFSET(cAIVehicleControl, corridor, 0x1b0);
-SD_OFFSET(cAIVehicleControl, endCap, 0x288);
-SD_SIZE(cAIVehicleControl, 0x2b8);
 
 /* the weapons of the shoot control: LASER (the hook), VULCAN, DEVASTATOR, ATPC, TESLA, SWARM, INFERNO */
 enum {
@@ -137,7 +123,6 @@ typedef struct cAIVSWeap {
 	byte avail;			/* 0x15 the vehicle has slots for it */
 	byte pad_16[2];
 } cAIVSWeap;
-SD_SIZE(cAIVSWeap, 0x18);
 
 typedef struct cAIVehicleShootVtbl {
 	struct cAIVehicleShoot *(*Delete)(struct cAIVehicleShoot *self, byte flags);	/* 0x00 */
@@ -174,13 +159,6 @@ typedef struct cAIVehicleShoot {
 	byte damaged;			/* 0x180 the vehicle lost life since the last fire step */
 	byte pad_181[3];
 } cAIVehicleShoot;
-SD_OFFSET(cAIVehicleShoot, weaps, 0x4c);
-SD_OFFSET(cAIVehicleShoot, weap, 0xf4);
-SD_OFFSET(cAIVehicleShoot, mode, 0x124);
-SD_OFFSET(cAIVehicleShoot, params, 0x12c);
-SD_OFFSET(cAIVehicleShoot, target, 0x174);
-SD_OFFSET(cAIVehicleShoot, damaged, 0x180);
-SD_SIZE(cAIVehicleShoot, 0x184);
 /* the class name in the exe (0x184 bytes, the constructor of cAIVehicle) */
 typedef cAIVehicleShoot cAIVehicleShootControl;
 

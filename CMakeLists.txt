@@ -12,8 +12,10 @@ if(CCACHE)
 endif()
 
 if(NOT (WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux"))
-	message(FATAL_ERROR "ScrapC builds for Windows (cmake/mingw-i686.cmake, cmake/mingw-x86_64.cmake) "
-		"and Linux (cmake/linux-i686.cmake, cmake/linux-x86_64.cmake)")
+	message(FATAL_ERROR "ScrapC builds for Windows (cmake/mingw-x86_64.cmake) and Linux (cmake/linux-x86_64.cmake)")
+endif()
+if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+	message(FATAL_ERROR "ScrapC builds for 64 bit only")
 endif()
 
 # the game code of ScrapC.exe, in the folder layout of the original sources (paths from the asserts in Scrap.exe)
@@ -23,7 +25,6 @@ file(GLOB_RECURSE LIB_SOURCES CONFIGURE_DEPENDS src/lib/*.c)
 add_library(scrapcode OBJECT
 	src/core/game.c
 	src/core/log.c
-	src/core/testmod.c
 	${GAME_SOURCES}
 	${LIB_SOURCES}
 	# the sound output and the .ogg decoder (third_party, public domain), without the warnings of the game code
@@ -213,9 +214,6 @@ else()
 	add_executable(ScrapC src/standalone/main.c src/standalone/crt.c src/standalone/crtposix.c
 		src/standalone/crtinit.c src/standalone/crtxc.c)
 	target_link_libraries(ScrapC PRIVATE scrapcode python152 ${FFMPEG_LIBS} ${SDL3_LIB} m dl pthread)
-	# the FFmpeg libraries next to the game; the image at 0x400000 like the exe on Windows, where the test scripts
-	# take their addresses from (src/core/testmod.c)
+	# the FFmpeg libraries next to the game
 	set_target_properties(ScrapC PROPERTIES BUILD_RPATH "$ORIGIN" INSTALL_RPATH "$ORIGIN")
-	set_target_properties(scrapcode python152 PROPERTIES POSITION_INDEPENDENT_CODE OFF)
-	target_link_options(ScrapC PRIVATE -no-pie -Wl,-Ttext-segment=0x400000)
 endif()

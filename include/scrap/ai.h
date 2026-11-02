@@ -69,16 +69,13 @@ struct cAIVehicleGroup {
 	int numElevators;		/* 0xec */
 	float reposTime;		/* 0xf0 the world time of the last repositioning */
 };
-SD_OFFSET(cAIVehicleGroup, numStoppedRoute, 0x70);
-SD_OFFSET(cAIVehicleGroup, numElevators, 0xec);
-SD_SIZE(cAIVehicleGroup, 0xf4);
 
 /* ---- cAI (AI/AI.cpp, src/game/AI/AI.c): the base of every AI (0x38 bytes), the entity, the time of the frame and
  * of the state, and the slot of the reactions ---- */
 
 typedef struct cAI cAI;
 
-/* the slots of cAI::vftable (Debugf is pure there); variadic methods are __cdecl with self on the stack */
+/* the slots of cAI::vftable (Debugf is pure there) */
 typedef struct cAIBaseVtbl {
 	cAI *(*Delete)(cAI *self, byte flags);					/* 0x00 */
 	void(*Update)(cAI *self, float dt);						/* 0x04 */
@@ -95,8 +92,6 @@ typedef struct cAIBaseVtbl {
 	void(*GetEventName)(cAI *self, int ev, char *out);				/* 0x30 */
 	void(*OnEvent)(cAI *self, int ev);						/* 0x34 */
 } cAIBaseVtbl;
-SD_OFFSET(cAIBaseVtbl, Debugf, 0x18);
-SD_OFFSET(cAIBaseVtbl, OnEvent, 0x34);
 extern const cAIBaseVtbl cAI_vftable;
 #define CAI_VFTABLE (&cAI_vftable)
 
@@ -122,9 +117,6 @@ struct cAI {
 	float waitTime;			/* 0x30 counts while seen is 0 */
 	int seen;			/* 0x34 0 out of view, 1 seen, 2 not seen yet */
 };
-SD_OFFSET(cAI, slotThink, 0x10);
-SD_OFFSET(cAI, changed, 0x28);
-SD_SIZE(cAI, 0x38);
 
 /* the AI of an entity (cEntity::ai, GetAI) */
 static inline const cAIBaseVtbl *AI_Vtbl(void *ai) {
@@ -188,8 +180,6 @@ typedef struct cAIMoveVtbl {
 	byte(*IsMoving)(cAI *self);						/* 0x5c */
 	byte(*CanTarget)(cAI *self, cEntity *e);					/* 0x60 */
 } cAIMoveVtbl;
-SD_OFFSET(cAIMoveVtbl, GetTarget, 0x38);
-SD_OFFSET(cAIMoveVtbl, CanTarget, 0x60);
 extern const cAIMoveVtbl cAIMove_vftable;
 #define CAIMOVE_VFTABLE (&cAIMove_vftable)
 
@@ -221,12 +211,6 @@ struct cAIMove {
 	byte pad_89[3];
 	float stopTime;			/* 0x8c the time without a velocity */
 };
-SD_OFFSET(cAIMove, target, 0x38);
-SD_OFFSET(cAIMove, dest, 0x4c);
-SD_OFFSET(cAIMove, center, 0x70);
-SD_OFFSET(cAIMove, trafficPlaced, 0x88);
-SD_OFFSET(cAIMove, stopTime, 0x8c);
-SD_SIZE(cAIMove, 0x90);
 
 cAIMove *cAIMove_ctor(cAIMove *self, cEntity *e);
 cAIMove *cAIMove_ctorDefault(cAIMove *self);
@@ -276,13 +260,10 @@ typedef struct cAICharSaved {
 	byte back;			/* 0xc6 */
 	byte orient;			/* 0xc7 */
 } cAICharSaved;
-SD_OFFSET(cAICharSaved, target, 0x1c);
-SD_OFFSET(cAICharSaved, center, 0xac);
-SD_SIZE(cAICharSaved, 0xc8);
 
 typedef struct cAICharControl cAICharControl;
 
-/* cAIChar::vftable (99 slots, rva 0x3a49b4); the variadic ones are __cdecl with self on the stack */
+/* cAIChar::vftable (99 slots) */
 typedef struct cAICharVtbl {
 	cAIMoveVtbl base;									/* 0x00 */
 	void(*CheckParams)(cAI *self, int stupidPathfinding);				/* 0x64 */
@@ -361,17 +342,6 @@ typedef struct cAICharVtbl {
 	void(*CheckTalk)(cAI *self);							/* 0x184 */
 	byte(*Facing)(cAI *self, cEntity *a, cEntity *b);				/* 0x188 */
 } cAICharVtbl;
-SD_OFFSET(cAICharVtbl, SetState, 0x6c);
-SD_OFFSET(cAICharVtbl, GetState, 0x7c);
-SD_OFFSET(cAICharVtbl, GetDirect, 0x94);
-SD_OFFSET(cAICharVtbl, SaveTo, 0xa4);
-SD_OFFSET(cAICharVtbl, GetRepos, 0xac);
-SD_OFFSET(cAICharVtbl, SetStateIntern, 0xc8);
-SD_OFFSET(cAICharVtbl, SaveState, 0xf0);
-SD_OFFSET(cAICharVtbl, EventDefault, 0x114);
-SD_OFFSET(cAICharVtbl, Think, 0x14c);
-SD_OFFSET(cAICharVtbl, Facing, 0x188);
-SD_SIZE(cAICharVtbl, 99 * 4);
 
 /* 0x380 bytes */
 struct cAIChar {
@@ -414,15 +384,6 @@ struct cAIChar {
 	byte pad_371[3];
 	vec3_t lostPoint;		/* 0x374 -FLT_MAX for none */
 };
-SD_OFFSET(cAIChar, pending, 0x90);
-SD_OFFSET(cAIChar, slotAction, 0x158);
-SD_OFFSET(cAIChar, ent, 0x198);
-SD_OFFSET(cAIChar, pauses, 0x1c0);
-SD_OFFSET(cAIChar, resume, 0x1c4);
-SD_OFFSET(cAIChar, last, 0x28c);
-SD_OFFSET(cAIChar, actTime, 0x354);
-SD_OFFSET(cAIChar, lostPoint, 0x374);
-SD_SIZE(cAIChar, 0x380);
 
 /* the three parameter blocks of SAI.EnableAIVehicle, named by the CHECKs of cAIVehicle_CheckParams1..3 */
 typedef struct cAIVehicleParams1 {
@@ -438,7 +399,6 @@ typedef struct cAIVehicleParams1 {
 	int percHook;			/* 0x24 USE_PERC_HOOK 0..100 */
 	int percHookGetAway;		/* 0x28 USE_PERC_HOOK_GET_AWAY 0..100 */
 } cAIVehicleParams1;
-SD_SIZE(cAIVehicleParams1, 0x2c);
 
 typedef struct cAIVehicleParams2 {
 	int stupidPathfinding;		/* 0x00 STUPID_PATHFINDING, must be 0 */
@@ -448,7 +408,6 @@ typedef struct cAIVehicleParams2 {
 	float maxVelStrafe;		/* 0x10 MAX_VEL_STRAFE 0..1 */
 	int aim;			/* 0x14 CONTROL_AIM 1..10 */
 } cAIVehicleParams2;
-SD_SIZE(cAIVehicleParams2, 0x18);
 
 typedef struct cAIVehicleParams3 {
 	int cadence;			/* 0x00 CADENCE_SHOOT 0..100 */
@@ -459,7 +418,6 @@ typedef struct cAIVehicleParams3 {
 	int percSonic;			/* 0x14 USE_PERC_SONIC 0..100 */
 	int percElectro;		/* 0x18 USE_PERC_ELECTRO 0..100 */
 } cAIVehicleParams3;
-SD_SIZE(cAIVehicleParams3, 0x1c);
 
 extern cGVar GVar_IsMapOutDoor;
 #define g_IsMapOutDoor (GVar_IsMapOutDoor.value.i)	/* value of the engine variable IsMapOutDoor */
@@ -522,13 +480,9 @@ extern cGVar GVar_MaxDistChaseAI;
 #define CAIENTITYGROUP_SIZE sizeof(cAIEntityGroup)
 
 
-SD_OFFSET(cAIEntityGroupVtbl, Update, 0x20);
 extern const cAIEntityGroupVtbl cAIEntityGroup_vftable;
 #define CAIENTITYGROUP_VFTABLE (&cAIEntityGroup_vftable)
 
-SD_OFFSET(cAIEntityGroup, num, 0x54);
-SD_OFFSET(cAIEntityGroup, changeTime, 0x5c);
-SD_SIZE(cAIEntityGroup, 0x60);
 
 extern cGVar GVar_TimeBetwChangeStateAI;
 #define g_TimeBetwChangeStateAI (GVar_TimeBetwChangeStateAI.value.f)	/* "TimeBetwChangeStateAI" */
@@ -578,7 +532,6 @@ typedef struct cAIBank {
 	cAIChar base;			/* 0x000 */
 	int money;			/* 0x380 the money of the character at the demand of the attack (state 2) */
 } cAIBank;
-SD_SIZE(cAIBank, 0x384);
 typedef cAIBank cAIBankDirector;
 typedef cAIBank cAIBankMaster;
 
@@ -600,7 +553,6 @@ typedef struct cAIBishop {
 	float shootTime;		/* 0x390 TimeShootBishopAI */
 	float shootDist;		/* 0x394 DistMaxShootBishopAI */
 } cAIBishop;
-SD_SIZE(cAIBishop, 0x398);
 
 /* the gear (0x390 bytes): the shot of the bishop without the time of the button */
 typedef struct cAIGear {
@@ -611,7 +563,6 @@ typedef struct cAIGear {
 	int shootFactor;		/* 0x388 ShootGearAI */
 	float shootAng;			/* 0x38c OffsetAngShootGearAI */
 } cAIGear;
-SD_SIZE(cAIGear, 0x390);
 
 /* the messenger (0x390 bytes) */
 typedef struct cAIMessenger {
@@ -621,7 +572,6 @@ typedef struct cAIMessenger {
 	float shootTime;		/* 0x388 TimeShootMessengerAI */
 	float shootDist;		/* 0x38c DistMaxShootMessengerAI */
 } cAIMessenger;
-SD_SIZE(cAIMessenger, 0x390);
 
 /* the nurse (0x384 bytes) */
 typedef struct cAINurse {
@@ -629,7 +579,6 @@ typedef struct cAINurse {
 	byte fresh;			/* 0x380 set by the start of state 2: the action within actMax at once */
 	byte pad_381[3];
 } cAINurse;
-SD_SIZE(cAINurse, 0x384);
 
 /* AIBankDirector.c, AIBankMaster.c */
 cAI *cAIBankDirector_Delete(cAI *elem, byte flags);

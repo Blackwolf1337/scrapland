@@ -55,10 +55,6 @@ struct cNetController {
 	byte pending[6];		/* 0x54 1 after Reset: the part may count down once */
 	byte pad_5a[2];
 };
-SD_OFFSET(cNetController, flags, 0x38);
-SD_OFFSET(cNetController, left, 0x3c);
-SD_OFFSET(cNetController, pending, 0x54);
-SD_SIZE(cNetController, 0x5c);
 
 typedef struct cObjEntity {
 	cEntity base;			/* 0x000 */
@@ -89,21 +85,6 @@ typedef struct cObjEntity {
 	cModMove mod;			/* 0x1e4 */
 	struct cEmbeddedFX *fx;		/* 0x224 */
 } cObjEntity;
-SD_OFFSET(cObjEntity, slotAng, 0x7c);
-SD_OFFSET(cObjEntity, renderPos, 0xa0);
-SD_OFFSET(cObjEntity, ang, 0xac);
-SD_OFFSET(cObjEntity, model, 0xb8);
-SD_OFFSET(cObjEntity, vel, 0xd4);
-SD_OFFSET(cObjEntity, cam, 0xf0);
-SD_OFFSET(cObjEntity, camOff, 0xf8);
-SD_OFFSET(cObjEntity, timer, 0x110);
-SD_OFFSET(cObjEntity, slot, 0x140);
-SD_OFFSET(cObjEntity, snd, 0x144);
-SD_OFFSET(cObjEntity, onObjSlot, 0x160);
-SD_OFFSET(cObjEntity, move, 0x174);
-SD_OFFSET(cObjEntity, mod, 0x1e4);
-SD_OFFSET(cObjEntity, fx, 0x224);
-SD_SIZE(cObjEntity, 0x228);
 
 /* the sound interface of an object (the weapon and effect sounds by index) */
 
@@ -136,11 +117,6 @@ typedef struct cObjEntityVtbl {
 	void(*SetEffectParam)(cEntity *self, int i, float v);			/* 0xb4 */
 	void(*Render)(cEntity *self);						/* 0xb8 */
 } cObjEntityVtbl;
-SD_OFFSET(cObjEntityVtbl, Tick, 0x5c);
-SD_OFFSET(cObjEntityVtbl, GetAng, 0x80);
-SD_OFFSET(cObjEntityVtbl, GetModel, 0x98);
-SD_OFFSET(cObjEntityVtbl, SetEffect, 0xb0);
-SD_OFFSET(cObjEntityVtbl, Render, 0xb8);
 extern const cObjEntityVtbl cObjEntity_vftable;
 #define COBJENTITY_VFTABLE (&cObjEntity_vftable.base)
 

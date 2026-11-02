@@ -33,12 +33,6 @@ typedef struct cWalkCharControl {
 	byte pad_21[3];
 	Nto1Node target;		/* 0x24 the entity the view turns to */
 } cWalkCharControl;
-SD_OFFSET(cWalkCharControl, walk, 0x0c);
-SD_OFFSET(cWalkCharControl, act, 0x18);
-SD_OFFSET(cWalkCharControl, disabled, 0x1e);
-SD_OFFSET(cWalkCharControl, lock, 0x20);
-SD_OFFSET(cWalkCharControl, target, 0x24);
-SD_SIZE(cWalkCharControl, 0x34);
 
 extern cGVar GVar_WalkCameraCenter;
 #define g_WalkCameraCenter (GVar_WalkCameraCenter.value.f)	/* "WalkCameraCenter" */

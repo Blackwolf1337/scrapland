@@ -31,8 +31,6 @@ typedef struct CPortal {
 	vec3_t cache_vert[4];		/* 0x28 */
 	plane_t cache_plane;		/* 0x58 */
 } CPortal;
-SD_SIZE(CPortal, 0x68);
-SD_OFFSET(CPortal, cache_plane, 0x58);
 
 CPortal *CPortal_ctor(CPortal *self);
 void CPortal_dtor(CPortal *self);

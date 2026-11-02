@@ -46,14 +46,12 @@ typedef struct BspQ3Header {
 	int ver;			/* 0x04 */
 	BspQ3Lump lumps[BSPQ3_NUM_LUMPS];	/* 0x08 */
 } BspQ3Header;
-SD_SIZE(BspQ3Header, 0x90);
 
 typedef struct BspQ3Shader {
 	char name[64];			/* 0x00 the texture, without extension */
 	int flags;			/* 0x40 surface flags, 0x20: no light map */
 	int contents;			/* 0x44 */
 } BspQ3Shader;
-SD_SIZE(BspQ3Shader, 0x48);
 
 typedef struct BspQ3Vert {
 	vec3_t pos;			/* 0x00 z up */
@@ -62,7 +60,6 @@ typedef struct BspQ3Vert {
 	vec3_t n;			/* 0x1c */
 	byte color[4];			/* 0x28 */
 } BspQ3Vert;
-SD_SIZE(BspQ3Vert, 0x2c);
 
 /* a face of the file */
 typedef struct BspQ3FileFace {
@@ -81,7 +78,6 @@ typedef struct BspQ3FileFace {
 	vec3_t normal;			/* 0x54 */
 	int size[2];			/* 0x60 */
 } BspQ3FileFace;
-SD_SIZE(BspQ3FileFace, 0x68);
 
 /* a face as the loader keeps it */
 typedef struct BspQ3Face {
@@ -99,7 +95,6 @@ typedef struct BspQ3Face {
 	vec3_t origin;			/* 0x34 polygon */
 	vec3_t lmVecs[2];		/* 0x40 patch */
 } BspQ3Face;
-SD_SIZE(BspQ3Face, 0x58);
 
 /* 8 bytes a face */
 typedef struct BspQ3FaceRef {
@@ -115,7 +110,6 @@ typedef struct BspQ3LMap {
 	int bpp;			/* 0x10 3 */
 	CMaterial *mat;			/* 0x14 "Lightmap Mat %04d" */
 } BspQ3LMap;
-SD_SIZE(BspQ3LMap, 0x18);
 
 /* the triangles of one material and light map: the vertices in VERT_TEX2 (0x28 bytes) */
 typedef struct BspQ3Mesh {
@@ -127,13 +121,11 @@ typedef struct BspQ3Mesh {
 	void *pVertVB;			/* 0x24 */
 	void *pVertIB;			/* 0x28 */
 } BspQ3Mesh;
-SD_SIZE(BspQ3Mesh, 0x2c);
 
 typedef struct BspQ3Meshes {
 	BspQ3Mesh *m[BSPQ3_MAX_MESHES];	/* 0x000 */
 	int n;				/* 0x400 */
 } BspQ3Meshes;
-SD_SIZE(BspQ3Meshes, 0x404);
 
 typedef struct CBspQ3 {
 	char *name;			/* 0x00 Cad */
@@ -158,9 +150,6 @@ typedef struct CBspQ3 {
 	void *pMesh;			/* 0x64 ID3DXMesh, drawn instead with the L key held */
 	BspQ3Meshes *MeshList;	/* 0x68 */
 } CBspQ3;
-SD_OFFSET(CBspQ3, verts, 0x40);
-SD_OFFSET(CBspQ3, MeshD3D, 0x60);
-SD_SIZE(CBspQ3, 0x6c);
 
 extern CBspQ3 *g_BspQ3;
 /* the corners of the face being cut into triangles: for the CTriMesh and for the vertex lists */

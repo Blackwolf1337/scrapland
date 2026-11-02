@@ -31,9 +31,6 @@ typedef struct cInputAction {
 	byte latch;			/* 0x78 keeps pressed over a set change */
 	byte pad_79[3];
 } cInputAction;
-SD_SIZE(cInputAction, 0x7c);
-SD_OFFSET(cInputAction, func, 0x28);
-SD_OFFSET(cInputAction, latch, 0x78);
 
 typedef TABLE(cInputAction) cInputActionTable;
 
@@ -41,7 +38,6 @@ typedef struct cActionSet {
 	char *name;			/* 0x0 */
 	cInputActionTable actions;	/* 0x4 */
 } cActionSet;
-SD_SIZE(cActionSet, 0xc);
 typedef TABLE(cActionSet) cActionSetTable;
 
 /* the text input of a player: typed through the virtual keyboard grid, the cursor is a cell of it */
@@ -59,10 +55,6 @@ typedef struct cPlayerInput {
 	byte active;			/* 0xb0 the cursor follows mouse and pad */
 	byte pad_b1[3];
 } cPlayerInput;
-SD_SIZE(cPlayerInput, 0xb4);
-SD_OFFSET(cPlayerInput, cursorX, 0x8c);
-SD_OFFSET(cPlayerInput, func, 0x9c);
-SD_OFFSET(cPlayerInput, active, 0xb0);
 
 /* the rumble state of a player */
 typedef struct cPad {
@@ -73,7 +65,6 @@ typedef struct cPad {
 	float duration;			/* 0x18 seconds left */
 	void (*onRumble)(int index, float left, float right);	/* 0x1c */
 } cPad;
-SD_SIZE(cPad, 0x20);
 
 typedef struct cVirtualKeyboard {
 	char text[0x100];		/* 0x000 the characters of the grid, row by row */
@@ -81,8 +72,6 @@ typedef struct cVirtualKeyboard {
 	int b;				/* 0x104 rows */
 	int len;			/* 0x108 */
 } cVirtualKeyboard;
-SD_OFFSET(cVirtualKeyboard, a, 0x100);
-SD_OFFSET(cVirtualKeyboard, len, 0x108);
 
 extern cActionSetTable g_ActionSets;
 extern cPlayerInput g_PlayerInput[4];	/* [MAX_LOCAL_PLAYERS] */
@@ -167,7 +156,6 @@ typedef struct cDevEntry {
 		int action;
 	} sets[NUM_SETS];		/* 0x08 */
 } cDevEntry;
-SD_SIZE(cDevEntry, 0x28);
 
 typedef struct cAbstractIDevice cAbstractIDevice;
 typedef struct cAbstractIDeviceVtbl {
@@ -181,14 +169,12 @@ typedef struct cAbstractIDeviceVtbl {
 	byte(*IsReserved)(cAbstractIDevice *self, int entry);		/* 0x1c */
 	byte(*SetEntry)(cAbstractIDevice *self, int entry, int set, int player, int action, byte check);	/* 0x20 */
 } cAbstractIDeviceVtbl;
-SD_OFFSET(cAbstractIDeviceVtbl, SetEntry, 0x20);
 
 /* the engine variable of a device: its bindings as lines of Scrap.cfg */
 typedef struct cFuncGvarDevices {
 	cFuncGvar base;			/* 0x00 the variable is named after the device */
 	cAbstractIDevice *device;	/* 0x14 */
 } cFuncGvarDevices;
-SD_SIZE(cFuncGvarDevices, 0x18);
 
 struct cAbstractIDevice {
 	const cAbstractIDeviceVtbl *vftable;	/* 0x00 */
@@ -196,7 +182,6 @@ struct cAbstractIDevice {
 	int nEntries;			/* 0x08 */
 	cDevEntry *entries;		/* 0x0c Mem_Alloc */
 };
-SD_SIZE(cAbstractIDevice, 0x10);
 
 /* PcKeyboard.cpp: the keyboard adds no members ((&g_Keyboard), 0x10 bytes) */
 typedef cAbstractIDevice cPcKeyboard;
@@ -207,7 +192,6 @@ typedef struct cPcMouse {
 	float move[2];			/* 0x18 moved in this period */
 	float time;			/* 0x20 */
 } cPcMouse;
-SD_SIZE(cPcMouse, 0x24);
 
 /* XINPUT_STATE */
 typedef struct exe_xinput_state {
@@ -218,7 +202,6 @@ typedef struct exe_xinput_state {
 	int16_t thumbLX, thumbLY;	/* 0x08 */
 	int16_t thumbRX, thumbRY;	/* 0x0c */
 } exe_xinput_state;
-SD_SIZE(exe_xinput_state, 0x10);
 
 typedef struct cPcPad {
 	cAbstractIDevice base;		/* 0x00 */
@@ -228,8 +211,6 @@ typedef struct cPcPad {
 	byte f25[4];			/* 0x25 cleared by the constructor, unaligned */
 	byte pad_29[3];
 } cPcPad;
-SD_SIZE(cPcPad, 0x2c);
-SD_OFFSET(cPcPad, state, 0x14);
 
 /* the node data of the device list */
 typedef struct cInputDevNode {

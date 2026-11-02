@@ -49,28 +49,13 @@ typedef struct cEntityVtbl {
 	int(*Vf21)(cEntity *self, int a);			/* 0x54 vf21 */
 	void *(*GetAI)(cEntity *self);				/* 0x58 vf22 */
 } cEntityVtbl;
-SD_SIZE(cEntityVtbl, 23 * 4);
 
-SD_OFFSET(cEntityVtbl, GetClassName, 0x10);
-SD_OFFSET(cEntityVtbl, IsType, 0x14);
-SD_OFFSET(cEntityVtbl, SetActive, 0x20);
-SD_OFFSET(cEntityVtbl, GetPos, 0x18);
-SD_OFFSET(cEntityVtbl, SetModel, 0x30);
-SD_OFFSET(cEntityVtbl, GetTargetAngle, 0x34);
-SD_OFFSET(cEntityVtbl, AimWeapon, 0x38);
-SD_OFFSET(cEntityVtbl, SetEmbeddedFX, 0x3c);
-SD_OFFSET(cEntityVtbl, VarI, 0x40);
-SD_OFFSET(cEntityVtbl, VarF, 0x44);
-SD_OFFSET(cEntityVtbl, VarS, 0x48);
-SD_OFFSET(cEntityVtbl, VarV, 0x4c);
-SD_OFFSET(cEntityVtbl, GetAI, 0x58);
 
 /* Nto1Links.h with a shared count: the head (data NULL) owns the int, every linked node points to it */
 typedef struct EntityDNode {
 	Nto1Node node;			/* 0x00 */
 	int *numElems;			/* 0x10 */
 } EntityDNode;
-SD_SIZE(EntityDNode, 0x14);
 
 /* Entities/Entity.cpp (src/game/Entities/Entity.c), 0x7c bytes */
 struct cEntity {
@@ -89,14 +74,6 @@ struct cEntity {
 	void *lLogic;			/* 0x74 local logic made by the list ("LLogic" variables) */
 	void *ai;			/* 0x78 the AI (GetAI, "AI_" variables) */
 };
-SD_OFFSET(cEntity, name, 0x4);
-SD_OFFSET(cEntity, pos, 0x28);
-SD_OFFSET(cEntity, mask, 0x48);
-SD_OFFSET(cEntity, active, 0x4c);
-SD_OFFSET(cEntity, listNode, 0x50);
-SD_OFFSET(cEntity, links, 0x64);
-SD_OFFSET(cEntity, ai, 0x78);
-SD_SIZE(cEntity, 0x7c);
 
 extern const cEntityVtbl cEntity_vftable;
 #define CENTITY_VFTABLE (&cEntity_vftable)
@@ -124,8 +101,6 @@ typedef struct cEntityList {
 	};
 	int *numElems;			/* 0x40 */
 } cEntityList;
-SD_OFFSET(cEntityList, ring, 0x30);
-SD_SIZE(cEntityList, 0x44);
 
 /* list of the world by name ("Traffic", "Enemies", ...), rva 0x209240 */
 cEntityList *cWorld_GetList(cWorld *world, const char *name);

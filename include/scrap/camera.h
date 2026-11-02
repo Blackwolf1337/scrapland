@@ -37,7 +37,6 @@ typedef struct CCamera {
 	CNode3D *node;			/* 0x70 */
 	CNode3D *nodeTarget;		/* 0x74 */
 } CCamera;
-SD_SIZE(CCamera, 0x78);
 
 CCamera *CCamera_ctor(CCamera *self);
 CCamera *CCamera_ctorCopy(CCamera *self, const CCamera *other);

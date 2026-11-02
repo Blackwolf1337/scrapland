@@ -30,7 +30,6 @@ typedef struct CGraphic3D {
 	CAnimMat *AnimMat;		/* 0x24 of an animated texture */
 	SectorVis vis;			/* 0x28 */
 } CGraphic3D;
-SD_SIZE(CGraphic3D, 0x3c);
 
 /* a vertex of the square (D3DFVF_XYZ | DIFFUSE | SPECULAR | TEX1) */
 typedef struct Graphic3DVert {
@@ -39,7 +38,6 @@ typedef struct Graphic3DVert {
 	uint32_t specular;
 	float u, v;
 } Graphic3DVert;
-SD_SIZE(Graphic3DVert, 0x1c);
 
 CGraphic3D *CGraphic3D_ctorTex(CGraphic3D *self, const char *tex, const vec3_t *pos, const float *size);
 /* with the texture and its opacity map (CGraphic3D_SetTexture) */

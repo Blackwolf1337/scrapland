@@ -60,8 +60,6 @@ typedef struct cEmbeddedFXAmplifier {
 	CGameTrail trail;		/* 0xc4 */
 	float t;			/* 0xc8 */
 } cEmbeddedFXAmplifier;
-SD_OFFSET(cEmbeddedFXAmplifier, trail, 0xc4);
-SD_SIZE(cEmbeddedFXAmplifier, 0xcc);
 
 #define FXBATTERY_TRAILS 3
 
@@ -84,10 +82,6 @@ typedef struct cEmbeddedFXBattery {
 	float life[FXBATTERY_TRAILS];	/* 0x11c of the ray */
 	float delay[FXBATTERY_TRAILS];	/* 0x128 to the next ray, 0.4..1.2 after the Reset */
 } cEmbeddedFXBattery;
-SD_OFFSET(cEmbeddedFXBattery, trails, 0xc8);
-SD_OFFSET(cEmbeddedFXBattery, rays, 0xd4);
-SD_OFFSET(cEmbeddedFXBattery, life, 0x11c);
-SD_SIZE(cEmbeddedFXBattery, 0x134);
 
 #define FXBOSSSHIELD_TRAILS 16
 #define FXBOSSSHIELD_SLOTS 0xff
@@ -107,11 +101,6 @@ typedef struct cEmbeddedFXBossShield {
 	float f1cac;			/* 0x1cac */
 	CGameTrail trails[FXBOSSSHIELD_TRAILS];	/* 0x1cb0 the rings */
 } cEmbeddedFXBossShield;
-SD_OFFSET(cEmbeddedFXBossShield, dir, 0x8b0);
-SD_OFFSET(cEmbeddedFXBossShield, color, 0x18a0);
-SD_OFFSET(cEmbeddedFXBossShield, mode, 0x1c9c);
-SD_OFFSET(cEmbeddedFXBossShield, trails, 0x1cb0);
-SD_SIZE(cEmbeddedFXBossShield, 0x1cf0);
 
 #define FXCAPSULE_MOTORS 3
 
@@ -119,7 +108,6 @@ typedef struct cEmbeddedFXCapsule {
 	cEmbeddedFX base;
 	CGameParticles motors[FXCAPSULE_MOTORS];	/* 0x08 DS_CapsulaBill_Motor_01.. */
 } cEmbeddedFXCapsule;
-SD_SIZE(cEmbeddedFXCapsule, 0x218);
 
 /* the coins; the items use the same layout and Init */
 typedef struct cEmbeddedFXCoin {
@@ -131,13 +119,11 @@ typedef struct cEmbeddedFXCoin {
 	float scale;			/* 0xc0 */
 	uint32_t color;			/* 0xc4 */
 } cEmbeddedFXCoin;
-SD_SIZE(cEmbeddedFXCoin, 0xc8);
 
 typedef struct cEmbeddedFXItem {
 	cEmbeddedFXCoin coin;
 	int phase;			/* 0xc8 0..511 */
 } cEmbeddedFXItem;
-SD_SIZE(cEmbeddedFXItem, 0xcc);
 
 typedef struct cEmbeddedFXConversor {
 	cEmbeddedFX base;
@@ -147,7 +133,6 @@ typedef struct cEmbeddedFXConversor {
 	CGameParticles glow;		/* 0x10 */
 	float t;			/* 0xc0 */
 } cEmbeddedFXConversor;
-SD_SIZE(cEmbeddedFXConversor, 0xc4);
 
 typedef struct cEmbeddedFXDTritusDesktop {
 	cEmbeddedFX base;
@@ -160,8 +145,6 @@ typedef struct cEmbeddedFXDTritusDesktop {
 	float arcT;			/* 0xc8 0..1 */
 	CGameTrail trail;		/* 0xcc */
 } cEmbeddedFXDTritusDesktop;
-SD_OFFSET(cEmbeddedFXDTritusDesktop, trail, 0xcc);
-SD_SIZE(cEmbeddedFXDTritusDesktop, 0xd0);
 
 typedef struct cEmbeddedFXDataCube {
 	cEmbeddedFX base;
@@ -170,7 +153,6 @@ typedef struct cEmbeddedFXDataCube {
 	int dummyFlares;		/* 0xbc DOB_DataCube_Flares */
 	CGameParticles flares;		/* 0xc0 */
 } cEmbeddedFXDataCube;
-SD_SIZE(cEmbeddedFXDataCube, 0x170);
 
 typedef struct cEmbeddedFXDataPack {
 	cEmbeddedFX base;
@@ -189,9 +171,6 @@ typedef struct cEmbeddedFXDataPack {
 	CGameParticles laser;		/* 0x18c */
 	CGameTrail trail;		/* 0x23c */
 } cEmbeddedFXDataPack;
-SD_OFFSET(cEmbeddedFXDataPack, codec, 0xd8);
-SD_OFFSET(cEmbeddedFXDataPack, trail, 0x23c);
-SD_SIZE(cEmbeddedFXDataPack, 0x240);
 
 typedef struct cEmbeddedFXExtraLife {
 	cEmbeddedFX base;
@@ -205,8 +184,6 @@ typedef struct cEmbeddedFXExtraLife {
 	float scale;			/* 0xcc */
 	float t;			/* 0xd0 the pulse of the bar glows */
 } cEmbeddedFXExtraLife;
-SD_OFFSET(cEmbeddedFXExtraLife, trail, 0xc8);
-SD_SIZE(cEmbeddedFXExtraLife, 0xd4);
 
 typedef struct cEmbeddedFXFlag {
 	cEmbeddedFX base;
@@ -219,7 +196,6 @@ typedef struct cEmbeddedFXFlag {
 	uint32_t color;			/* 0xc8 */
 	uint32_t color2;		/* 0xcc */
 } cEmbeddedFXFlag;
-SD_SIZE(cEmbeddedFXFlag, 0xd0);
 
 typedef struct cEmbeddedFXMatrix {
 	cEmbeddedFX base;
@@ -237,10 +213,6 @@ typedef struct cEmbeddedFXMatrix {
 	CGameTrail trail;		/* 0x1b4 */
 	float scale;			/* 0x1b8 1, MatrixExt 6 */
 } cEmbeddedFXMatrix;
-SD_OFFSET(cEmbeddedFXMatrix, flares, 0xc4);
-SD_OFFSET(cEmbeddedFXMatrix, off, 0x190);
-SD_OFFSET(cEmbeddedFXMatrix, trail, 0x1b4);
-SD_SIZE(cEmbeddedFXMatrix, 0x1bc);
 
 typedef struct cEmbeddedFXMeetingPoint {
 	cEmbeddedFX base;
@@ -255,9 +227,6 @@ typedef struct cEmbeddedFXMeetingPoint {
 	float countA;			/* 0x228 */
 	float countB;			/* 0x22c */
 } cEmbeddedFXMeetingPoint;
-SD_OFFSET(cEmbeddedFXMeetingPoint, flares, 0xc4);
-SD_OFFSET(cEmbeddedFXMeetingPoint, countDown, 0x178);
-SD_SIZE(cEmbeddedFXMeetingPoint, 0x230);
 
 #define FXBIKE_ENGINES 3
 #define FXBIKE_DOWN 2
@@ -276,12 +245,6 @@ typedef struct cEmbeddedFXBike {
 	byte on;			/* 0x7dc the engines run (SetF7d4) */
 	byte pad_7dd[3];
 } cEmbeddedFXBike;
-SD_OFFSET(cEmbeddedFXBike, nodeEngine, 0x38);
-SD_OFFSET(cEmbeddedFXBike, engine, 0x44);
-SD_OFFSET(cEmbeddedFXBike, down, 0x254);
-SD_OFFSET(cEmbeddedFXBike, tube, 0x3b4);
-SD_OFFSET(cEmbeddedFXBike, throttle, 0x7d4);
-SD_SIZE(cEmbeddedFXBike, 0x7e0);
 
 typedef struct cEmbeddedFXTreasure {
 	cEmbeddedFX base;
@@ -300,9 +263,6 @@ typedef struct cEmbeddedFXTreasure {
 	int type;			/* 0xe8 1 A, 2 B, 3 C */
 	float scale;			/* 0xec */
 } cEmbeddedFXTreasure;
-SD_OFFSET(cEmbeddedFXTreasure, rotSpeed, 0xe0);
-SD_OFFSET(cEmbeddedFXTreasure, trail, 0xe4);
-SD_SIZE(cEmbeddedFXTreasure, 0xf0);
 
 /* the effect of the object model replaces *fx; other models leave *fx as it is */
 void EmbeddedFXMisc_Create(cEntity *obj, const char *model, cEmbeddedFX **fx);

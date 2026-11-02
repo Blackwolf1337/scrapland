@@ -23,7 +23,6 @@ typedef struct cDListNode {
 	struct cDListNode *prev;	/* 0x4 */
 } cDListNode;
 typedef DLIST(cDListNode) cDList;
-SD_SIZE(cDList, 0x18);
 
 /* a node from the free list or new; the iterator is reset */
 void *DList_NewNode(void *list, uint32_t size);

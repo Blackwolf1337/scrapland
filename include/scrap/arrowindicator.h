@@ -27,14 +27,12 @@ typedef struct cArrowGlow {
 	int ramp;			/* 0xb4 1 for "/SM" models */
 	float scale;			/* 0xb8 1 for "/B" models, else 0.1 */
 } cArrowGlow;
-SD_SIZE(cArrowGlow, 0xbc);
 
 /* a model of the pool: the next free one after the CGameModel */
 typedef struct cArrowModel {
 	CGameModel model;		/* 0x00 */
 	struct cArrowModel *next;	/* 0x1c */
 } cArrowModel;
-SD_SIZE(cArrowModel, 0x20);
 
 typedef struct cArrowIndicator {
 	cEntity *parent;		/* 0x00 */
@@ -67,11 +65,6 @@ typedef struct cArrowIndicator {
 	byte useAbsAngSel;		/* 0x86 "UseAbsAngSel" */
 	byte useMapCheck;		/* 0x87 "UseMapCheck" */
 } cArrowIndicator;
-SD_OFFSET(cArrowIndicator, opts, 0x24);
-SD_OFFSET(cArrowIndicator, onView, 0x58);
-SD_OFFSET(cArrowIndicator, selected, 0x6c);
-SD_OFFSET(cArrowIndicator, coneFov, 0x7c);
-SD_SIZE(cArrowIndicator, 0x88);
 
 /* the arrow and the collision sphere of an entity with life */
 

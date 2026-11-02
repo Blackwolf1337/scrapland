@@ -94,8 +94,6 @@ typedef struct cObjElementFXItemFade {
 	byte done;			/* 0xc8 */
 	byte started;			/* 0xc9 */
 } cObjElementFXItemFade;
-SD_OFFSET(cObjElementFXItemFade, mode, 0xb8);
-SD_OFFSET(cObjElementFXItemFade, started, 0xc9);
 
 typedef struct cObjElementFXItemTake {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -116,9 +114,6 @@ typedef struct cObjElementFXItemTake {
 	byte done;			/* 0x644 */
 	byte started;			/* 0x645 */
 } cObjElementFXItemTake;
-SD_OFFSET(cObjElementFXItemTake, trail, 0xec);
-SD_OFFSET(cObjElementFXItemTake, color, 0x550);
-SD_OFFSET(cObjElementFXItemTake, started, 0x645);
 
 /* the start of the effect classes that the setters by name reach (FXMisc_SetEntity, SetF8, SetFC, SetI8): the
  * vtable, the entity, two words and the started flag */
@@ -132,7 +127,6 @@ typedef struct FXElemHead {
 	float fC;			/* 0x0c */
 	byte started;			/* 0x10 */
 } FXElemHead;
-SD_OFFSET(FXElemHead, started, 0x10);
 
 typedef struct cObjElementFXModelFade {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -142,7 +136,6 @@ typedef struct cObjElementFXModelFade {
 	byte unused_10;			/* 0x10 */
 	byte pad_11[3];
 } cObjElementFXModelFade;
-SD_SIZE(cObjElementFXModelFade, 0x14);
 
 typedef struct cObjElementFXModelNoise {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -152,7 +145,6 @@ typedef struct cObjElementFXModelNoise {
 	byte unused_10;			/* 0x10 */
 	byte pad_11[3];
 } cObjElementFXModelNoise;
-SD_SIZE(cObjElementFXModelNoise, 0x14);
 
 typedef struct cObjElementFXParticleSystem {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -160,7 +152,6 @@ typedef struct cObjElementFXParticleSystem {
 	byte move;			/* 0xb4 the debris moves */
 	byte on;			/* 0xb5 */
 } cObjElementFXParticleSystem;
-SD_OFFSET(cObjElementFXParticleSystem, move, 0xb4);
 /* the same with the particles on "Dummy01 (+dudv_pass)" (0xb8 bytes) */
 typedef cObjElementFXParticleSystem cObjElementFXParticleSystemDuDv;
 
@@ -192,11 +183,6 @@ typedef struct cObjElementFXSparks {
 	byte on;				/* 0xc6c set by the hook laser that emits */
 	byte pad_c6d[3];
 } cObjElementFXSparks;
-SD_SIZE(cObjElementFXSparks, 0xc70);
-SD_OFFSET(cObjElementFXSparks, life, 0x630);
-SD_OFFSET(cObjElementFXSparks, trailT, 0x9b0);
-SD_OFFSET(cObjElementFXSparks, trails, 0xb3c);
-SD_OFFSET(cObjElementFXSparks, particles, 0xbbc);
 
 typedef struct cObjElementFXTrail {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -208,7 +194,6 @@ typedef struct cObjElementFXTrail {
 	byte unused_1a;			/* 0x1a cleared with on by the constructor */
 	byte pad_1b;
 } cObjElementFXTrail;
-SD_OFFSET(cObjElementFXTrail, on, 0x19);
 
 typedef struct cObjElementFXFadeOutTrail {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -218,7 +203,6 @@ typedef struct cObjElementFXFadeOutTrail {
 	byte running;			/* 0x10 */
 	byte on;			/* 0x11 */
 } cObjElementFXFadeOutTrail;
-SD_OFFSET(cObjElementFXFadeOutTrail, on, 0x11);
 
 /* ScrapEngLensFlares.cpp: the lens flare holder of the scene elements */
 void *CGameLensFlare_ctor(void *self);

@@ -103,7 +103,6 @@ typedef struct {
 	uint32_t Width;			/* 0x18 */
 	uint32_t Height;		/* 0x1c */
 } d3dSurfaceDesc_t;
-SD_SIZE(d3dSurfaceDesc_t, 0x20);
 
 typedef struct {
 	int Pitch;			/* 0x0 */
@@ -284,10 +283,6 @@ typedef struct D3DCaps8 {
 	uint32_t PixelShaderVersion;		/* 0xcc */
 	float MaxPixelShaderValue;		/* 0xd0 */
 } D3DCaps8;
-SD_OFFSET(D3DCaps8, RasterCaps, 0x24);
-SD_OFFSET(D3DCaps8, MaxAnisotropy, 0x6c);
-SD_OFFSET(D3DCaps8, PixelShaderVersion, 0xcc);
-SD_SIZE(D3DCaps8, 0xd4);
 
 /* D3DDISPLAYMODE */
 typedef struct D3DDisplayMode {
@@ -296,7 +291,6 @@ typedef struct D3DDisplayMode {
 	uint32_t RefreshRate;		/* 0x8 */
 	uint32_t Format;		/* 0xc */
 } D3DDisplayMode;
-SD_SIZE(D3DDisplayMode, 0x10);
 
 /* D3DPRESENT_PARAMETERS */
 typedef struct D3DPresentParams {
@@ -314,7 +308,6 @@ typedef struct D3DPresentParams {
 	uint32_t FullScreen_RefreshRateInHz;	/* 0x2c */
 	uint32_t FullScreen_PresentationInterval;	/* 0x30 */
 } D3DPresentParams;
-SD_SIZE(D3DPresentParams, 0x34);
 #define D3DSWAPEFFECT_DISCARD 1
 #define D3DSWAPEFFECT_COPY_VSYNC 4
 #define D3DPRESENT_INTERVAL_IMMEDIATE 0x80000000
@@ -337,7 +330,6 @@ typedef struct D3DAdapterId {
 	byte DeviceIdentifier[16];	/* 0x418 */
 	uint32_t WHQLLevel;		/* 0x428 */
 } D3DAdapterId;
-SD_SIZE(D3DAdapterId, 0x42c);
 
 /* the D3DX math of the exe (stdcall; src/lib/d3dx8/D3dxMath.c, hooks on its dispatcher stubs) */
 vec3_t *__stdcall D3DX_Vec3Normalize(vec3_t *out, const vec3_t *v);

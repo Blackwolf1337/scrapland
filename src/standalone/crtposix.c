@@ -274,8 +274,6 @@ typedef struct CrtStat32 {
 	uint32_t rdev;
 	int32_t size, atime, mtime, ctime;
 } CrtStat32;
-SD_SIZE(CrtStat32, 0x24);
-SD_OFFSET(CrtStat32, mtime, 0x1c);
 
 static void Crt_Stat32(const struct stat *s, void *out) {
 	/* the drive number (Z: is 25) in st_dev and st_rdev and no inode, as the runtime of Windows gives them */

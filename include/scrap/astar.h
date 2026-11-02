@@ -24,7 +24,6 @@ typedef struct ElemAStar {
 	float g;			/* 0x0c the cost from the start */
 	cAStarInfo *info;		/* 0x10 its item in the table, index and state set when it moves in the heap */
 } ElemAStar;
-SD_SIZE(ElemAStar, 0x14);
 
 /* the callbacks get pointers to the elements in the heap (cdecl) */
 typedef byte (*binHeapLess_t)(void *const *a, void *const *b);
@@ -56,7 +55,6 @@ struct cBinaryHeap {
 	binHeapEq_t equals;		/* 0x14 */
 	binHeapIndex_t setIndex;	/* 0x18 may be NULL */
 };
-SD_SIZE(cBinaryHeap, 0x1c);
 /* the only instance */
 typedef cBinaryHeap cBinaryHeap_ElemAStarPtr;
 
@@ -88,7 +86,6 @@ typedef struct cAStarItem {
 	intptr_t key;			/* 0x0c the node */
 	struct cAStarItem *next;	/* 0x10 */
 } cAStarItem;
-SD_SIZE(cAStarItem, 0x14);
 
 /* the number hash of HashTable.h: the nibbles from the low end */
 uint32_t AStarTable_Slot(HashTable *self, uintptr_t key);
@@ -132,7 +129,6 @@ typedef struct CAStarVtbl {
 	/* the states of the closed and open nodes to 2, the lists emptied */
 	void(*Reset)(CAStarSup *self);							/* 0x48 */
 } CAStarVtbl;
-SD_OFFSET(CAStarVtbl, Reset, 0x48);
 
 struct CAStarSup {
 	const CAStarVtbl *vftable;	/* 0x00 */
@@ -149,15 +145,12 @@ struct CAStarSup {
 	vec3_t goal;			/* 0x34 */
 	float radius;			/* 0x40 */
 };
-SD_OFFSET(CAStarSup, radius, 0x40);
-SD_SIZE(CAStarSup, 0x44);		/* CAStarSup_Delete */
 
 /* the search on CNodesWorld (0x48 bytes, SAIPy.c) */
 typedef struct CAStar {
 	CAStarSup base;			/* 0x00 */
 	CNodesWorld *nodes;		/* 0x44 */
 } CAStar;
-SD_SIZE(CAStar, 0x48);
 
 /* the search on CNodesWorld2D (0x50 bytes, SAIPy.c) with the heights of the body for the tests on the floor. The
  * graph is at 0x44 as in CAStar, the code shared by both classes takes it as a CAStar */
@@ -167,9 +160,6 @@ typedef struct CAStar2D {
 	float h1;			/* 0x48 */
 	float h2;			/* 0x4c */
 } CAStar2D;
-SD_OFFSET(CAStar2D, nodes, 0x44);
-SD_OFFSET(CAStar2D, h1, 0x48);
-SD_SIZE(CAStar2D, 0x50);
 
 extern cGVar GVar_ShowAStarAI;
 #define g_AStarDrawMode (GVar_ShowAStarAI.value.i)	/* 1 closed, 2 open, 3 both */

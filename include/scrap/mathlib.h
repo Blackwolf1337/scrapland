@@ -24,19 +24,16 @@ static inline double Rad2Deg(double rad) {
 typedef struct {
 	float x, y, z;
 } vec3_t;
-SD_SIZE(vec3_t, 12);
 
 typedef struct {
 	vec3_t min, max;
 } box_t;
-SD_SIZE(box_t, 24);
 
 /* n.p + d = 0 */
 typedef struct {
 	vec3_t n;
 	float d;
 } plane_t;
-SD_SIZE(plane_t, 16);
 
 /* _fpclass results */
 enum { FPCLASS_NN = 0x8, FPCLASS_NZ = 0x20, FPCLASS_PZ = 0x40, FPCLASS_PN = 0x100 };
@@ -84,12 +81,10 @@ typedef struct {
 		};
 	};
 } matrix_t;
-SD_SIZE(matrix_t, 64);
 
 typedef struct {
 	float x, y, z, w;
 } quat_t;
-SD_SIZE(quat_t, 16);
 
 /* Math/Matrix.cpp (src/game/Math/Matrix.c) */
 void Matrix_Identity(matrix_t *self);

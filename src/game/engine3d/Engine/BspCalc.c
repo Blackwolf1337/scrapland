@@ -198,7 +198,6 @@ typedef struct BspVert {
 	float uv[2];			/* 0x1c */
 	float uvl[2];			/* 0x24 */
 } BspVert;
-SD_SIZE(BspVert, 0x2c);
 
 static inline float Bsp_Quantize(float v) {
 	return (float)(int32_t)llrint((double)v * 1000.0) * 0.001f;

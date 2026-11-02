@@ -120,9 +120,6 @@ typedef struct cObjElementFXBankMasterAttack {
 	float t;			/* 0xcc the time out of the action */
 	byte started;			/* 0xd0 */
 } cObjElementFXBankMasterAttack;
-SD_OFFSET(cObjElementFXBankMasterAttack, trail, 0xc0);
-SD_OFFSET(cObjElementFXBankMasterAttack, started, 0xd0);
-SD_SIZE(cObjElementFXBankMasterAttack, 0xd4);
 
 typedef struct cObjElementFXBankMasterSuction {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -139,9 +136,6 @@ typedef struct cObjElementFXBankMasterSuction {
 	int lastSound;			/* 0x1e4 */
 	byte started;			/* 0x1e8 */
 } cObjElementFXBankMasterSuction;
-SD_OFFSET(cObjElementFXBankMasterSuction, dir, 0xfc);
-SD_OFFSET(cObjElementFXBankMasterSuction, trail, 0x1dc);
-SD_SIZE(cObjElementFXBankMasterSuction, 0x1ec);
 
 typedef struct cObjElementFXBankerSteal {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -154,8 +148,6 @@ typedef struct cObjElementFXBankerSteal {
 	int lastSound;			/* 0xc8 0..2, -1 */
 	byte started;			/* 0xcc */
 } cObjElementFXBankerSteal;
-SD_OFFSET(cObjElementFXBankerSteal, node, 0xbc);
-SD_SIZE(cObjElementFXBankerSteal, 0xd0);
 
 typedef struct cObjElementFXBertoAttack {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -167,8 +159,6 @@ typedef struct cObjElementFXBertoAttack {
 	int nodeGlass;		/* 0xc4 R_Berto_TroncoInf-cristal */
 	byte started;			/* 0xc8 */
 } cObjElementFXBertoAttack;
-SD_OFFSET(cObjElementFXBertoAttack, nodeGlass, 0xc4);
-SD_SIZE(cObjElementFXBertoAttack, 0xcc);
 
 typedef struct cObjElementFXBertoFlash {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -182,9 +172,6 @@ typedef struct cObjElementFXBertoFlash {
 	CGameTrail trails[FXBERTOFLASH_TRAILS];	/* 0x664 */
 	byte started;			/* 0x674 */
 } cObjElementFXBertoFlash;
-SD_OFFSET(cObjElementFXBertoFlash, dir2, 0x394);
-SD_OFFSET(cObjElementFXBertoFlash, trails, 0x664);
-SD_SIZE(cObjElementFXBertoFlash, 0x678);
 
 typedef struct cObjElementFXBettyAttack {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -202,9 +189,6 @@ typedef struct cObjElementFXBettyAttack {
 	void *flare;			/* 0x1a0 CGameLensFlare */
 	byte started;			/* 0x1a4 */
 } cObjElementFXBettyAttack;
-SD_OFFSET(cObjElementFXBettyAttack, trails, 0x180);
-SD_OFFSET(cObjElementFXBettyAttack, flare, 0x1a0);
-SD_SIZE(cObjElementFXBettyAttack, 0x1a8);
 
 /* BettyKill and DTritusKill */
 typedef struct cObjElementFXKill {
@@ -222,10 +206,6 @@ typedef struct cObjElementFXKill {
 	vec3_t angles;			/* 0x908 the turn of the beams */
 	byte started;			/* 0x914 */
 } cObjElementFXKill;
-SD_OFFSET(cObjElementFXKill, point, 0x1ec);
-SD_OFFSET(cObjElementFXKill, lenTarget, 0x7c8);
-SD_OFFSET(cObjElementFXKill, trails, 0x8f4);
-SD_SIZE(cObjElementFXKill, 0x918);
 typedef cObjElementFXKill cObjElementFXBettyKill;
 typedef cObjElementFXKill cObjElementFXDTritusKill;
 
@@ -242,9 +222,6 @@ typedef struct cObjElementFXBishopAttack {
 	vec3_t dir;			/* 0xec from -> to normalized */
 	byte started;			/* 0xf8 */
 } cObjElementFXBishopAttack;
-SD_OFFSET(cObjElementFXBishopAttack, trails, 0xc4);
-SD_OFFSET(cObjElementFXBishopAttack, dir, 0xec);
-SD_SIZE(cObjElementFXBishopAttack, 0xfc);
 
 typedef struct cObjElementFXBishopSellLife {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -257,8 +234,6 @@ typedef struct cObjElementFXBishopSellLife {
 	int nodeHand[2];		/* 0x174 R_Bishop_Mano_Izq, R_Bishop_Mano_Der */
 	byte started;			/* 0x17c */
 } cObjElementFXBishopSellLife;
-SD_OFFSET(cObjElementFXBishopSellLife, nodeHand, 0x174);
-SD_SIZE(cObjElementFXBishopSellLife, 0x180);
 
 typedef struct cObjElementFXDTritusAttack {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -275,10 +250,6 @@ typedef struct cObjElementFXDTritusAttack {
 	CGameTrail trails[FXDTRITUSATTACK_TRAILS];	/* 0x112c */
 	byte started;			/* 0x1154 */
 } cObjElementFXDTritusAttack;
-SD_OFFSET(cObjElementFXDTritusAttack, point, 0x31c);
-SD_OFFSET(cObjElementFXDTritusAttack, lenTarget, 0xed4);
-SD_OFFSET(cObjElementFXDTritusAttack, trails, 0x112c);
-SD_SIZE(cObjElementFXDTritusAttack, 0x1158);
 
 typedef struct cObjElementFXFunctionarySpecialAction {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -292,9 +263,6 @@ typedef struct cObjElementFXFunctionarySpecialAction {
 	float alpha;			/* 0x1a4 the model effect, up with the speed of the character */
 	byte started;			/* 0x1a8 */
 } cObjElementFXFunctionarySpecialAction;
-SD_OFFSET(cObjElementFXFunctionarySpecialAction, trails, 0xc4);
-SD_OFFSET(cObjElementFXFunctionarySpecialAction, pos, 0xfc);
-SD_SIZE(cObjElementFXFunctionarySpecialAction, 0x1ac);
 
 /* the electric ball of Gear: lightning bolts to the world or to entities near it, puffs, sparks and a tail */
 typedef struct cObjElementFXGearMissile {
@@ -316,12 +284,6 @@ typedef struct cObjElementFXGearMissile {
 	float boltScale[FXGEARMISSILE_TRAILS];	/* 0x690 0.5: the width of the trail and the end glows */
 	byte started;			/* 0x6b8 */
 } cObjElementFXGearMissile;
-SD_OFFSET(cObjElementFXGearMissile, sparks, 0xc0);
-SD_OFFSET(cObjElementFXGearMissile, lastPos, 0x17c);
-SD_OFFSET(cObjElementFXGearMissile, trails, 0x1b8);
-SD_OFFSET(cObjElementFXGearMissile, pts, 0x1e0);
-SD_OFFSET(cObjElementFXGearMissile, boltScale, 0x690);
-SD_SIZE(cObjElementFXGearMissile, 0x6bc);
 
 typedef struct cObjElementFXMercenaryDrink {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -333,8 +295,6 @@ typedef struct cObjElementFXMercenaryDrink {
 	int nodeJar;			/* 0xcc OB_JarraMercurio_MercA */
 	byte started;			/* 0xd0 */
 } cObjElementFXMercenaryDrink;
-SD_OFFSET(cObjElementFXMercenaryDrink, nodeJar, 0xcc);
-SD_SIZE(cObjElementFXMercenaryDrink, 0xd4);
 
 typedef struct cObjElementFXMessengerAttack {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -352,10 +312,6 @@ typedef struct cObjElementFXMessengerAttack {
 	float width[1 + FXMESSENGER_LINES];	/* 0x3d0 */
 	byte started;			/* 0x3e8 */
 } cObjElementFXMessengerAttack;
-SD_OFFSET(cObjElementFXMessengerAttack, trails, 0xe8);
-SD_OFFSET(cObjElementFXMessengerAttack, lines, 0x100);
-SD_OFFSET(cObjElementFXMessengerAttack, width, 0x3d0);
-SD_SIZE(cObjElementFXMessengerAttack, 0x3ec);
 
 typedef struct cObjElementFXMessengerTakeDataPack {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -368,9 +324,6 @@ typedef struct cObjElementFXMessengerTakeDataPack {
 	float width[FXDATAPACK_TRAILS];	/* 0x160 0.6..1 */
 	byte started;			/* 0x170 */
 } cObjElementFXMessengerTakeDataPack;
-SD_OFFSET(cObjElementFXMessengerTakeDataPack, points, 0xd0);
-SD_OFFSET(cObjElementFXMessengerTakeDataPack, width, 0x160);
-SD_SIZE(cObjElementFXMessengerTakeDataPack, 0x174);
 
 typedef struct cObjElementFXPoliceGearConversion {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -402,15 +355,6 @@ typedef struct cObjElementFXPoliceGearConversion {
 	float pieceTime[FXGEAR_ARMORS][FXGEAR_PIECES];	/* 0x99c the times the pieces fall off */
 	byte started;			/* 0xa50 */
 } cObjElementFXPoliceGearConversion;
-SD_OFFSET(cObjElementFXPoliceGearConversion, bubbleH, 0x474);
-SD_OFFSET(cObjElementFXPoliceGearConversion, bubbleMax, 0x744);
-SD_OFFSET(cObjElementFXPoliceGearConversion, pieceTime, 0x99c);
-SD_OFFSET(cObjElementFXPoliceGearConversion, particles2, 0xd4);
-SD_OFFSET(cObjElementFXPoliceGearConversion, trails, 0x834);
-SD_OFFSET(cObjElementFXPoliceGearConversion, armor, 0x84c);
-SD_OFFSET(cObjElementFXPoliceGearConversion, piece, 0x8b8);
-SD_OFFSET(cObjElementFXPoliceGearConversion, pieceOff, 0x96c);
-SD_SIZE(cObjElementFXPoliceGearConversion, 0xa54);
 
 typedef struct cObjElementFXPoliceSteal {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -422,7 +366,6 @@ typedef struct cObjElementFXPoliceSteal {
 	int unused_c4;			/* 0xc4 */
 	byte started;			/* 0xc8 */
 } cObjElementFXPoliceSteal;
-SD_SIZE(cObjElementFXPoliceSteal, 0xcc);
 
 typedef struct cObjElementFXSebastianFlash {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
@@ -435,9 +378,6 @@ typedef struct cObjElementFXSebastianFlash {
 	CGameTrail trails[FXSEBASTIAN_TRAILS];	/* 0x7c8 */
 	byte started;			/* 0x7dc */
 } cObjElementFXSebastianFlash;
-SD_OFFSET(cObjElementFXSebastianFlash, dir2, 0x444);
-SD_OFFSET(cObjElementFXSebastianFlash, trails, 0x7c8);
-SD_SIZE(cObjElementFXSebastianFlash, 0x7e0);
 
 /* the constructors, destructors and deleting destructors (vf00) */
 void *cObjElementFXBankMasterAttack_ctor(void *self);

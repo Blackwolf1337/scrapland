@@ -36,7 +36,6 @@ typedef struct TrailPoint {
 	uint32_t color;			/* 0x0c the alpha byte is 255 - alpha */
 	float width;			/* 0x10 */
 } TrailPoint;
-SD_SIZE(TrailPoint, 0x14);
 
 /* FVF 0x1c2: XYZ, DIFFUSE, SPECULAR, TEX1 */
 typedef struct TrailVertex {
@@ -45,7 +44,6 @@ typedef struct TrailVertex {
 	uint32_t specular;		/* 0x10 always 0 */
 	float u, v;			/* 0x14 */
 } TrailVertex;
-SD_SIZE(TrailVertex, 0x1c);
 
 typedef struct CTrail {
 	byte render;			/* 0x00 in gTrailsRender (Trails_UpdateRender) */
@@ -76,9 +74,6 @@ typedef struct CTrail {
 	float uLen;			/* 0x4c the points for du */
 	float unused_50;			/* 0x50 */
 } CTrail;
-SD_SIZE(CTrail, 0x54);
-SD_OFFSET(CTrail, m_pTrails, 0x28);
-SD_OFFSET(CTrail, orientVec, 0x40);
 
 /* the lists of the active trails and the shared buffers (IDirect3DVertexBuffer8, IDirect3DIndexBuffer8) */
 extern struct CMaterial * g_TrailsMat[17];	/* [MAX_TRAILS_TEXTURES] */

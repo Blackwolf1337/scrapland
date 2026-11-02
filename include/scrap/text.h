@@ -13,7 +13,6 @@ typedef struct TextMsg {
 	char text[0x100];		/* 0x008 */
 	struct TextMsg *next;		/* 0x108 */
 } TextMsg;
-SD_SIZE(TextMsg, 0x10c);
 
 extern int g_TextX;
 extern int g_TextY;

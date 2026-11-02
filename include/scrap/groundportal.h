@@ -30,8 +30,6 @@ typedef struct CZone {
 	byte outside;		/* 0x13a "(+out_sector)" */
 	byte pad_13b;
 } CZone;
-SD_SIZE(CZone, 0x13c);
-SD_OFFSET(CZone, numPortals, 0x134);
 
 /* the cached sector of a position (the vis member of objects that ask for their visibility) */
 typedef struct SectorVis {
@@ -65,7 +63,6 @@ typedef struct PaintZone {
 	box_t rect;			/* 0x04 */
 	int times;			/* 0x1c how many portals it was seen through */
 } PaintZone;
-SD_SIZE(PaintZone, 0x20);
 extern PaintZone g_PaintZones[128];
 extern int g_NumPaintZones;
 /* the union of the rectangles of the seen sectors with sky */
@@ -138,7 +135,6 @@ typedef struct GroundRay {
 	struct CCollideTri *tri;	/* 0x18 out, NULL for the top of a sector */
 	int sector;			/* 0x1c out, -1 none */
 } GroundRay;
-SD_SIZE(GroundRay, 0x20);
 /* GETY_INFO_MAXY|GETY_INFO_SECTOR only; with g_RayVertSectors the top of the sector the ray starts in */
 byte CGround_RayVert(void *ground, float x, float z, GroundRay *res);
 /* the highest triangle point between minY and y with the flags of info; 1 when found */

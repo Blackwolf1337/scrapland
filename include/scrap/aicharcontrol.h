@@ -176,46 +176,6 @@ typedef struct cAICharControlVtbl {
 	byte(*StartOrbit)(cAICharControl *self, float dist);				/* 0x188 */
 	void(*Stop2)(cAICharControl *self);						/* 0x18c */
 } cAICharControlVtbl;
-SD_OFFSET(cAICharControlVtbl, Update, 0x14);
-SD_OFFSET(cAICharControlVtbl, SetMove, 0x18);
-SD_OFFSET(cAICharControlVtbl, Stop, 0x24);
-SD_OFFSET(cAICharControlVtbl, TestPath, 0x38);
-SD_OFFSET(cAICharControlVtbl, GetAvoidA, 0x44);
-SD_OFFSET(cAICharControlVtbl, ClearAvoid, 0x4c);
-SD_OFFSET(cAICharControlVtbl, GetAvoidEnt, 0x60);
-SD_OFFSET(cAICharControlVtbl, Nop, 0x64);
-SD_OFFSET(cAICharControlVtbl, CheckTarget, 0x70);
-SD_OFFSET(cAICharControlVtbl, SetTurnSpeed, 0x74);
-SD_OFFSET(cAICharControlVtbl, StrafeFwd, 0x7c);
-SD_OFFSET(cAICharControlVtbl, TryStrafe, 0x80);
-SD_OFFSET(cAICharControlVtbl, TestPathEnd, 0xa0);
-SD_OFFSET(cAICharControlVtbl, Away, 0xac);
-SD_OFFSET(cAICharControlVtbl, AwayWalk, 0xb8);
-SD_OFFSET(cAICharControlVtbl, Behind, 0xbc);
-SD_OFFSET(cAICharControlVtbl, UpdateDir, 0xcc);
-SD_OFFSET(cAICharControlVtbl, CheckArrived, 0xd8);
-SD_OFFSET(cAICharControlVtbl, CanMove, 0xdc);
-SD_OFFSET(cAICharControlVtbl, GoTo, 0xe0);
-SD_OFFSET(cAICharControlVtbl, UpdateGoTo, 0xf4);
-SD_OFFSET(cAICharControlVtbl, NextGoal, 0x104);
-SD_OFFSET(cAICharControlVtbl, CheckPathEnd, 0x110);
-SD_OFFSET(cAICharControlVtbl, Turn, 0x118);
-SD_OFFSET(cAICharControlVtbl, Strafe, 0x11c);
-SD_OFFSET(cAICharControlVtbl, Avoid, 0x124);
-SD_OFFSET(cAICharControlVtbl, CharsNear, 0x12c);
-SD_OFFSET(cAICharControlVtbl, SideBlocked, 0x130);
-SD_OFFSET(cAICharControlVtbl, WalkFwd, 0x138);
-SD_OFFSET(cAICharControlVtbl, FindRoute, 0x148);
-SD_OFFSET(cAICharControlVtbl, TurnFollow, 0x14c);
-SD_OFFSET(cAICharControlVtbl, Follow, 0x150);
-SD_OFFSET(cAICharControlVtbl, Wait, 0x158);
-SD_OFFSET(cAICharControlVtbl, Vf89, 0x164);
-SD_OFFSET(cAICharControlVtbl, Walk, 0x16c);
-SD_OFFSET(cAICharControlVtbl, UpdateFollow, 0x174);
-SD_OFFSET(cAICharControlVtbl, FollowPath, 0x17c);
-SD_OFFSET(cAICharControlVtbl, Orbit, 0x184);
-SD_OFFSET(cAICharControlVtbl, Stop2, 0x18c);
-SD_SIZE(cAICharControlVtbl, 100 * 4);
 
 /* the slots the 2D and the 3D control add */
 typedef struct cAICharControl2DVtbl {
@@ -224,7 +184,6 @@ typedef struct cAICharControl2DVtbl {
 	byte(*FloorAt)(cAICharControl *self, const vec3_t *p, vec3_t *out);		/* 0x194 */
 	byte(*TestStep)(cAICharControl *self, const vec3_t *a, const vec3_t *b, const vec3_t *c, float r);	/* 0x198 */
 } cAICharControl2DVtbl;
-SD_SIZE(cAICharControl2DVtbl, 103 * 4);
 extern const cAICharControl2DVtbl cAICharControl2D_vftable;
 #define CAICHARCONTROL2D_VFTABLE (&cAICharControl2D_vftable.base)
 
@@ -232,7 +191,6 @@ typedef struct cAICharControl3DVtbl {
 	cAICharControlVtbl base;
 	byte(*TestStep)(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);	/* 0x190 */
 } cAICharControl3DVtbl;
-SD_SIZE(cAICharControl3DVtbl, 101 * 4);
 extern const cAICharControl3DVtbl cAICharControl3D_vftable;
 #define CAICHARCONTROL3D_VFTABLE (&cAICharControl3D_vftable.base)
 
@@ -348,37 +306,6 @@ struct cAICharControl {
 	cNWVecList debugStrafeInner;	/* 0x330 the same with a smaller radius */
 	cNWSegList debugPath;		/* 0x348 the segments of the path tests (ShowTestCanGoAI) */
 };
-SD_OFFSET(cAICharControl, ai, 0x44);
-SD_OFFSET(cAICharControl, dest, 0x68);
-SD_OFFSET(cAICharControl, turnGain, 0x8c);
-SD_OFFSET(cAICharControl, strafeDir, 0x9c);
-SD_OFFSET(cAICharControl, avoidA, 0xa4);
-SD_OFFSET(cAICharControl, avoidTime, 0xc0);
-SD_OFFSET(cAICharControl, link, 0xc4);
-SD_OFFSET(cAICharControl, avoidDir, 0xd8);
-SD_OFFSET(cAICharControl, collEventTime, 0xe8);
-SD_OFFSET(cAICharControl, speed, 0xf4);
-SD_OFFSET(cAICharControl, slotPath, 0xfc);
-SD_OFFSET(cAICharControl, goal, 0x10c);
-SD_OFFSET(cAICharControl, path, 0x118);
-SD_OFFSET(cAICharControl, pathPoint, 0x130);
-SD_OFFSET(cAICharControl, goalLost, 0x141);
-SD_OFFSET(cAICharControl, slotDirect, 0x144);
-SD_OFFSET(cAICharControl, slotWait, 0x1a4);
-SD_OFFSET(cAICharControl, target, 0x1b4);
-SD_OFFSET(cAICharControl, direct, 0x1d0);
-SD_OFFSET(cAICharControl, waitTime, 0x1d4);
-SD_OFFSET(cAICharControl, lastTargetPos, 0x1f0);
-SD_OFFSET(cAICharControl, pathRes, 0x1fc);
-SD_OFFSET(cAICharControl, orbitSide, 0x20c);
-SD_OFFSET(cAICharControl, orbitDir, 0x214);
-SD_OFFSET(cAICharControl, dir, 0x220);
-SD_OFFSET(cAICharControl, seen, 0x22d);
-SD_OFFSET(cAICharControl, routePoint, 0x230);
-SD_OFFSET(cAICharControl, debugSegs, 0x240);
-SD_OFFSET(cAICharControl, debugStrafe, 0x318);
-SD_OFFSET(cAICharControl, debugPath, 0x348);
-SD_SIZE(cAICharControl, 0x360);
 /* the 2D and the 3D control add only vtable slots (both 0x360 bytes, the constructor of cAIChar) */
 typedef cAICharControl cAICharControl2D;
 typedef cAICharControl cAICharControl3D;
@@ -708,9 +635,6 @@ typedef struct cAIControlShoot {
 	float strafeTime;		/* 0x37c TimeStrafeUnderAttack<Class>AI (the sentinel: the gvar itself) */
 	float strafeAng;		/* 0x380 AngleStrafeUnderAttack<Class>AI */
 } cAIControlShoot;
-SD_OFFSET(cAIControlShoot, side, 0x370);
-SD_OFFSET(cAIControlShoot, strafeTime, 0x37c);
-SD_SIZE(cAIControlShoot, 0x384);
 typedef cAIControlShoot cAIControlBishop;
 typedef cAIControlShoot cAIControlGear;
 
@@ -730,8 +654,6 @@ typedef struct cAIControlSentinel {
 	byte other;			/* 0x378 the side was blocked: the other side next */
 	byte pad_379[3];
 } cAIControlSentinel;
-SD_OFFSET(cAIControlSentinel, side, 0x370);
-SD_SIZE(cAIControlSentinel, 0x37c);
 
 /* the strafe parameters by the target (with an AI or not) */
 extern cGVar GVar_TimeStrafeUnderAttackBishopAI;

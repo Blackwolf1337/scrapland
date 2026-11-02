@@ -15,7 +15,6 @@ typedef struct cBlockFile {
 	int pos;			/* 0x4 offset of the size field */
 	struct cBlockFile *prev;		/* 0x8 */
 } cBlockFile;
-SD_SIZE(cBlockFile, 0xc);
 
 typedef struct CFileIO {
 	byte error;			/* 0x0 every call fails once set */
@@ -24,7 +23,6 @@ typedef struct CFileIO {
 	cAbstractFile *f;		/* 0x8 a cFilePack */
 	cBlockFile *block;			/* 0xc the open block */
 } CFileIO;
-SD_SIZE(CFileIO, 0x10);
 
 
 CFileIO *CFileIO_ctor(CFileIO *self, const char *name, const char *mode);
@@ -77,7 +75,6 @@ typedef struct cDataFile cDataFile;
 typedef struct CIniFile {
 	cDataFile *dat;		/* 0x0 */
 } CIniFile;
-SD_SIZE(CIniFile, 4);
 
 CIniFile *CIniFile_ctorLoad(CIniFile *self, const char *name, const char *dir);
 CIniFile *CIniFile_ctor(CIniFile *self);

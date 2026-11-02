@@ -28,7 +28,6 @@ typedef struct cPtrItem {
 	const char *key;		/* 0x4 */
 	struct cPtrItem *next;		/* 0x8 */
 } cPtrItem;
-SD_SIZE(cPtrItem, 0xc);
 
 cPtrItem *PtrTable_Insert(HashTable *self, const char *key, uint32_t slot, void *const *value);
 byte PtrTable_Add(HashTable *self, const char *key, void *const *value, byte warn);
@@ -154,7 +153,6 @@ typedef struct cWorldStrItem {
 	char *key;			/* 0x0c cString */
 	struct cWorldStrItem *next;	/* 0x10 */
 } cWorldStrItem;
-SD_SIZE(cWorldStrItem, 0x14);
 
 cWorldStrItem *WorldStrTable_Find(HashTable *self, const char *key, uint32_t slot);
 cWorldStrItem *WorldStrTable_Insert(HashTable *self, const char *key, uint32_t slot, const cValue12 *v);

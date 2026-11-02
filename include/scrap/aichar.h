@@ -53,14 +53,12 @@ typedef struct cAICGPoint {
 	Nto1Node link;			/* 0x00 data the point itself, target the character that took it */
 	vec3_t pos;			/* 0x10 */
 } cAICGPoint;
-SD_SIZE(cAICGPoint, 0x1c);
 
 typedef struct cAICGZone {
 	char name[0x80];		/* 0x00 */
 	cAICGPoint *points;		/* 0x80 */
 	int numPoints;			/* 0x84 */
 } cAICGZone;
-SD_SIZE(cAICGZone, 0x88);
 
 /* the lists of the dummies while the zones are made (Global/DList.h instances) */
 typedef struct cAICGPosNode {
@@ -68,21 +66,18 @@ typedef struct cAICGPosNode {
 	struct cAICGPosNode *prev;	/* 0x04 */
 	vec3_t pos;			/* 0x08 */
 } cAICGPosNode;
-SD_SIZE(cAICGPosNode, 0x14);
 typedef DLIST(cAICGPosNode) cAICGPosList;
 
 typedef struct cAICGZoneData {
 	char name[0x80];		/* 0x00 */
 	cAICGPosList points;		/* 0x80 */
 } cAICGZoneData;
-SD_SIZE(cAICGZoneData, 0x98);
 
 typedef struct cAICGZoneNode {
 	struct cAICGZoneNode *next;	/* 0x00 */
 	struct cAICGZoneNode *prev;	/* 0x04 */
 	cAICGZoneData zone;		/* 0x08 */
 } cAICGZoneNode;
-SD_SIZE(cAICGZoneNode, 0xa0);
 typedef DLIST(cAICGZoneNode) cAICGZoneList;
 
 /* the slots of cAIEntityGroup with the group as self */
@@ -94,8 +89,6 @@ struct cAICharGroup {
 	cAICGZone *zones;		/* 0x60 Mem_Alloc */
 	int numZones;			/* 0x64 */
 };
-SD_OFFSET(cAICharGroup, zones, 0x60);
-SD_SIZE(cAICharGroup, 0x68);
 
 /* the constructor and GetReposPos (SAI.GetReposPos) are declared in ai.h */
 cAICGPoint *cAICGPoint_ctor(cAICGPoint *self);

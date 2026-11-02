@@ -22,9 +22,6 @@ typedef struct WorldNodeInfo {
 	matrix_t m;			/* 0x4c */
 	byte dummy;			/* 0x8c 1 for a world dummy; for a node: it has no 3D object */
 } WorldNodeInfo;
-SD_OFFSET(WorldNodeInfo, pos, 0x40);
-SD_OFFSET(WorldNodeInfo, m, 0x4c);
-SD_OFFSET(WorldNodeInfo, dummy, 0x8c);
 
 /* the state of the walk */
 extern int g_CountSprite2D;

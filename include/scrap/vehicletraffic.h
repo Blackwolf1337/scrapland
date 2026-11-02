@@ -22,10 +22,6 @@ typedef struct cVehicleTraffic {
 	byte off;			/* 0x28 moves go through without slide */
 	byte pad_29[3];
 } cVehicleTraffic;
-SD_OFFSET(cVehicleTraffic, active, 0x1c);
-SD_OFFSET(cVehicleTraffic, speed, 0x20);
-SD_OFFSET(cVehicleTraffic, off, 0x28);
-SD_SIZE(cVehicleTraffic, 0x2c);
 
 /* the engine variables */
 extern cGVar GVar_UseTrafficCollisionSkip;

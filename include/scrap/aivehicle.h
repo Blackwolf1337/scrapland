@@ -70,9 +70,6 @@ typedef struct cAIVehicleSaved {
 	float rotA;			/* 0xc4 */
 	float rotB;			/* 0xc8 */
 } cAIVehicleSaved;
-SD_OFFSET(cAIVehicleSaved, target, 0x19);
-SD_OFFSET(cAIVehicleSaved, dir, 0x9c);
-SD_SIZE(cAIVehicleSaved, 0xcc);
 
 struct cAIVehicle {
 	union {
@@ -142,19 +139,6 @@ struct cAIVehicle {
 	byte pad_3ab;
 	int ammoSearch;			/* 0x3ac the nearest ammo first (0) or the farthest (1), 3 none */
 };
-SD_OFFSET(cAIVehicle, pending, 0x90);
-SD_OFFSET(cAIVehicle, onArrive, 0x15c);
-SD_OFFSET(cAIVehicle, vehicle, 0x190);
-SD_OFFSET(cAIVehicle, params, 0x1b4);
-SD_OFFSET(cAIVehicle, saved, 0x20c);
-SD_OFFSET(cAIVehicle, track, 0x2d8);
-SD_OFFSET(cAIVehicle, maxDistRepos, 0x2f4);
-SD_OFFSET(cAIVehicle, trackType, 0x31c);
-SD_OFFSET(cAIVehicle, itemLife, 0x344);
-SD_OFFSET(cAIVehicle, itemAmmo, 0x358);
-SD_OFFSET(cAIVehicle, itemAmmoBest, 0x38c);
-SD_OFFSET(cAIVehicle, unused_3a8, 0x3a8);
-SD_SIZE(cAIVehicle, 0x3b0);
 
 static inline cEntity *AIV_Target(const cAIVehicle *ai) {
 	return ai->base.target.target;

@@ -1,18 +1,16 @@
 #!/bin/bash
 # Builds the SDL3 that ScrapC.exe uses for its window, input, timers and Vulkan surface: a shared SDL3.dll for mingw
-# i686 or x86_64 from the signed release source (the Linux build takes the SDL3 of the system).
+# x86_64 from the signed release source (the Linux build takes the SDL3 of the system).
 #
-# usage: tools/sdl3.sh [build dir [win64]]   default build/sdl3 (i686); the result is in <build dir>/install
-#        (bin/SDL3.dll, lib/libSDL3.dll.a, include, lib/cmake), which CMakeLists.txt takes from there. For the 64 bit
-#        Windows build: tools/sdl3.sh build-win64/sdl3 win64
+# usage: tools/sdl3.sh [build dir]   default build-win64/sdl3; the result is in <build dir>/install (bin/SDL3.dll,
+#        lib/libSDL3.dll.a, include, lib/cmake), which CMakeLists.txt takes from there
 set -e
 root=$(cd "$(dirname "$0")/.." && pwd)
-out=$(realpath -m "${1:-$root/build/sdl3}")
+out=$(realpath -m "${1:-$root/build-win64/sdl3}")
 ver=3.4.18
 sha=9c75cf16330322c217dedd2e0609f1124f1b54b8633e763467b4684d0f4334a3
 tar=$out/SDL3-$ver.tar.gz
-arch=i686
-[ "$2" = win64 ] && arch=x86_64
+arch=x86_64
 
 mkdir -p "$out"
 if [ ! -f "$tar" ]; then

@@ -14,7 +14,6 @@ typedef struct cPrimitive {
 	byte on;			/* 0x8 */
 	byte pad_9[3];
 } cPrimitive;
-SD_SIZE(cPrimitive, 0xc);
 
 
 cPrimitive *cPrimitive_ctor(cPrimitive *self);

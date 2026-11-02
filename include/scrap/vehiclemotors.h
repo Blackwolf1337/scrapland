@@ -57,14 +57,6 @@ typedef struct cVehicleMotorsEffects {
 	byte pad_a1[3];
 	float smokeTime;		/* 0xa4 since the last smoke particles */
 } cVehicleMotorsEffects;
-SD_OFFSET(cVehicleMotorsEffects, type, 0x10);
-SD_OFFSET(cVehicleMotorsEffects, particleSystem, 0x24);
-SD_OFFSET(cVehicleMotorsEffects, trail, 0x38);
-SD_OFFSET(cVehicleMotorsEffects, trailsOn, 0x68);
-SD_OFFSET(cVehicleMotorsEffects, numExhausts, 0x7c);
-SD_OFFSET(cVehicleMotorsEffects, exhaustSide, 0x98);
-SD_OFFSET(cVehicleMotorsEffects, smokeTime, 0xa4);
-SD_SIZE(cVehicleMotorsEffects, 0xa8);
 
 /* a motor kind of the ship (0x11c bytes, constructor rva 0x10bb90, destructor 0x10bcb0) */
 struct cVehicleMotor {
@@ -80,11 +72,6 @@ struct cVehicleMotor {
 	float durF;			/* 0x70 the animation of channel 0 (EngAnmF) */
 	cVehicleMotorsEffects effects;	/* 0x74 */
 };
-SD_OFFSET(cVehicleMotor, node, 0x38);
-SD_OFFSET(cVehicleMotor, name, 0x40);
-SD_OFFSET(cVehicleMotor, durF, 0x70);
-SD_OFFSET(cVehicleMotor, effects, 0x74);
-SD_SIZE(cVehicleMotor, 0x11c);
 
 /* the motors of a ship (0xc8 bytes at +0x720 of the vehicle, constructor rva 0x10bc20) */
 typedef struct cVehicleMotorsVtbl {
@@ -106,10 +93,6 @@ struct cVehicleMotors {
 	float speed;			/* 0x1c approaches the speed of the ship */
 	cVehicleMotorsEffects effects;	/* 0x20 */
 };
-SD_OFFSET(cVehicleMotors, motor, 0x8);
-SD_OFFSET(cVehicleMotors, speed, 0x1c);
-SD_OFFSET(cVehicleMotors, effects, 0x20);
-SD_SIZE(cVehicleMotors, 0xc8);
 
 #define Vehicle_Motors(e) (&((cVehicleEntity *)(e))->motors)
 

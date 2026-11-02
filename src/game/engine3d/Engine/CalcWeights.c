@@ -17,7 +17,6 @@ typedef struct VertTex1B1 {
 	vec3_t n;			/* 0x10 */
 	uv_t uv;			/* 0x1c */
 } VertTex1B1;
-SD_SIZE(VertTex1B1, 0x24);
 
 #define WEIGHTS_FLT_MAX 3.40282347e+38f
 

@@ -16,21 +16,18 @@ typedef struct cNW2DRegion {
 	int id;				/* 0x00 */
 	cNWVecList points;		/* 0x04 */
 } cNW2DRegion;
-SD_SIZE(cNW2DRegion, 0x1c);
 
 typedef struct cNW2DRegionNode {
 	struct cNW2DRegionNode *next;	/* 0x00 */
 	struct cNW2DRegionNode *prev;	/* 0x04 */
 	cNW2DRegion r;			/* 0x08 */
 } cNW2DRegionNode;
-SD_SIZE(cNW2DRegionNode, 0x24);
 typedef DLIST(cNW2DRegionNode) cNW2DRegionList;
 
 struct CNodesWorld2D {
 	CNodesWorldSup sup;		/* 0x000 the code uses the CNodesWorld layout (NW2D_SUP) */
 	cNW2DRegionList regions;	/* 0x360 */
 };
-SD_SIZE(CNodesWorld2D, 0x378);
 
 /* the CNodesWorldSup part */
 #define NW2D_SUP(self) ((CNodesWorld *)(self))
@@ -46,7 +43,6 @@ typedef struct cNW2DBody {
 	float h2;			/* 0x8 */
 	float foot;			/* 0xc */
 } cNW2DBody;
-SD_SIZE(cNW2DBody, 0x10);
 
 extern cNW2DBody g_NW2DBodies[3];
 extern cGVar GVar_ShowNodes2DAI;

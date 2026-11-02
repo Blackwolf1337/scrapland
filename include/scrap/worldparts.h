@@ -14,7 +14,6 @@ typedef struct cSchedNode {
 	struct cSchedNode *prev;	/* 0x4 */
 	struct cScheduledFunc *func;	/* 0x8 */
 } cSchedNode;
-SD_SIZE(cSchedNode, 0xc);
 
 typedef DLIST(cSchedNode) cSchedList;
 
@@ -26,7 +25,6 @@ typedef struct cScheduledFuncStack {
 	const cScheduledFuncStackVtbl *vftable;			/* 0x00 */
 	cSchedList list;		/* 0x04 */
 } cScheduledFuncStack;
-SD_SIZE(cScheduledFuncStack, 0x1c);
 
 typedef struct cCollisionGrid {
 	vec3_t min;			/* 0x00 */
@@ -47,10 +45,5 @@ typedef struct cCollisionGrid {
 	vec3_t ext;			/* 0x8c the size of the box along the segment */
 	int steps;			/* 0x98 boxes left along the segment, 0 for a box query */
 } cCollisionGrid;
-SD_OFFSET(cCollisionGrid, outside, 0x30);
-SD_OFFSET(cCollisionGrid, stamp, 0x4c);
-SD_OFFSET(cCollisionGrid, segPos, 0x74);
-SD_OFFSET(cCollisionGrid, steps, 0x98);
-SD_SIZE(cCollisionGrid, 0x9c);
 
 #endif

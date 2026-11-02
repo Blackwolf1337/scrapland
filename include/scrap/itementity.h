@@ -46,13 +46,6 @@ typedef struct cItemEntity {
 	cPy_Function onTake;		/* 0x370 (item, taker) */
 	cPy_Function onReset;		/* 0x384 (item) */
 } cItemEntity;
-SD_OFFSET(cItemEntity, respawn, 0x228);
-SD_OFFSET(cItemEntity, origin, 0x2b0);
-SD_OFFSET(cItemEntity, takeSound, 0x2c8);
-SD_OFFSET(cItemEntity, taker, 0x34c);
-SD_OFFSET(cItemEntity, radius, 0x360);
-SD_OFFSET(cItemEntity, onTake, 0x370);
-SD_SIZE(cItemEntity, 0x398);
 
 extern cGVar GVar_FXItemFadeMaxDist;
 #define g_ItemFxDist (GVar_FXItemFadeMaxDist.value.f)		/* the fade effects only nearer (60000) */

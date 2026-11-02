@@ -71,7 +71,6 @@ typedef struct cLocalLogicVtbl {
 	byte(*VarS)(cLocalLogic *self, const char *name, char **s, byte set);	/* 0x14 */
 	byte(*VarV)(cLocalLogic *self, const char *name, double *x, double *y, double *z, byte set); /* 0x18 */
 } cLocalLogicVtbl;
-SD_SIZE(cLocalLogicVtbl, 0x1c);
 
 /* the slots of cBaseLocalLogic, the logic of a character */
 typedef struct cBaseLocalLogicVtbl {
@@ -95,9 +94,6 @@ typedef struct cBaseLocalLogicVtbl {
 	void(*SetOriginAng)(cLocalLogic *self, float x, float y, float z);		/* 0x5c */
 	void(*RestartState)(cLocalLogic *self);						/* 0x60 the return value of some is not used */
 } cBaseLocalLogicVtbl;
-SD_OFFSET(cBaseLocalLogicVtbl, Update, 0x44);
-SD_OFFSET(cBaseLocalLogicVtbl, SetState, 0x4c);
-SD_OFFSET(cBaseLocalLogicVtbl, RestartState, 0x60);
 
 static inline const cBaseLocalLogicVtbl *Logic_Vtbl(const void *l) {
 	return *(const cBaseLocalLogicVtbl *const *)l;
@@ -118,9 +114,6 @@ typedef struct cGenCharLocalLogicVtbl {
 	void(*GoTo)(cLocalLogic *self, struct cAIChar *ai, cEntity *e);		/* 0x88 vf34 the AI walks to e */
 	void(*UpdateGetIt)(cLocalLogic *self, struct cAIChar *ai, float dt);	/* 0x8c vf35 state 10 */
 } cGenCharLocalLogicVtbl;
-SD_OFFSET(cGenCharLocalLogicVtbl, CanAttack, 0x64);
-SD_OFFSET(cGenCharLocalLogicVtbl, UpdateView, 0x68);
-SD_OFFSET(cGenCharLocalLogicVtbl, Work, 0x80);
 
 static inline const cGenCharLocalLogicVtbl *GenChar_Vtbl(const void *l) {
 	return *(const cGenCharLocalLogicVtbl *const *)l;
@@ -136,9 +129,6 @@ typedef struct cFunctionaryLocalLogicVtbl {
 	void(*AssignDesktop)(cLocalLogic *self, float maxDist);				/* 0xa0 vf40 */
 	void(*ReleaseDesktop)(cLocalLogic *self);					/* 0xa4 vf41 */
 } cFunctionaryLocalLogicVtbl;
-SD_OFFSET(cFunctionaryLocalLogicVtbl, CanTalk, 0x90);
-SD_OFFSET(cFunctionaryLocalLogicVtbl, FastEscape, 0x9c);
-SD_OFFSET(cFunctionaryLocalLogicVtbl, AssignDesktop, 0xa0);
 
 static inline const cFunctionaryLocalLogicVtbl *Functionary_Vtbl(const void *l) {
 	return *(const cFunctionaryLocalLogicVtbl *const *)l;
@@ -158,7 +148,6 @@ typedef struct cSentinelLocalLogicVtbl {
 	byte(*Seen)(cLocalLogic *self);					/* 0x64 */
 	void(*Think)(cLocalLogic *self, float dt, byte other);		/* 0x68 */
 } cSentinelLocalLogicVtbl;
-SD_OFFSET(cSentinelLocalLogicVtbl, Seen, 0x64);
 
 static inline const cSentinelLocalLogicVtbl *Sentinel_Vtbl(const void *l) {
 	return *(const cSentinelLocalLogicVtbl *const *)l;
@@ -169,7 +158,6 @@ struct cLocalLogic {
 	const cLocalLogicVtbl *vftable;	/* 0x00 */
 	cEntity *parent;		/* 0x04 */
 };
-SD_SIZE(cLocalLogic, 8);
 
 /* BaseLogic.cpp, 0x48 bytes: the logic of a character ("WalkChar") */
 typedef struct cBaseLocalLogic {
@@ -194,9 +182,6 @@ typedef struct cBaseLocalLogic {
 	vec3_t origin;			/* 0x30 "Origin" */
 	vec3_t originAng;		/* 0x3c "OriginAng" */
 } cBaseLocalLogic;
-SD_OFFSET(cBaseLocalLogic, target, 0x08);
-SD_OFFSET(cBaseLocalLogic, actionRadius, 0x2c);
-SD_SIZE(cBaseLocalLogic, 0x48);
 
 /* GenCharLogic.cpp, 0x68 bytes */
 typedef struct cGenCharLocalLogic {
@@ -213,9 +198,6 @@ typedef struct cGenCharLocalLogic {
 	float searchTime;		/* 0x60 the next target search when below 0 */
 	int alarmState;			/* 0x64 Bishop: the state at an alarm (BishopAttackOnAlarm) */
 } cGenCharLocalLogic;
-SD_OFFSET(cGenCharLocalLogic, specialOn, 0x59);
-SD_OFFSET(cGenCharLocalLogic, alarmState, 0x64);
-SD_SIZE(cGenCharLocalLogic, 0x68);
 
 /* FunctionaryLogic.cpp, 0xb8 bytes */
 typedef struct cFunctionaryLocalLogic {
@@ -247,12 +229,6 @@ typedef struct cFunctionaryLocalLogic {
 	byte pad_b3;
 	int prevState;			/* 0xb4 the state before the special action */
 } cFunctionaryLocalLogic;
-SD_OFFSET(cFunctionaryLocalLogic, forced, 0x78);
-SD_OFFSET(cFunctionaryLocalLogic, goToWorkSpeed, 0xa4);
-SD_OFFSET(cFunctionaryLocalLogic, stopInRelax, 0xb2);
-SD_OFFSET(cFunctionaryLocalLogic, prevState, 0xb4);
-SD_OFFSET(cFunctionaryLocalLogic, desktop, 0x68);
-SD_SIZE(cFunctionaryLocalLogic, 0xb8);
 
 /* BertoLogic.cpp, BettyLogic.cpp and HumphreyLogic.cpp, 0xbc bytes each: a functionary that takes its desktop at the
  * first update when it is the default character ("Berto_Default", "Betty_Default", "Humphrey_Default") */
@@ -261,24 +237,18 @@ typedef struct cBertoLocalLogic {
 	byte isDefault;			/* 0xb8 */
 	byte pad_b9[3];
 } cBertoLocalLogic;
-SD_OFFSET(cBertoLocalLogic, isDefault, 0xb8);
-SD_SIZE(cBertoLocalLogic, 0xbc);
 
 typedef struct cBettyLocalLogic {
 	cFunctionaryLocalLogic base;	/* 0x00 */
 	byte isDefault;			/* 0xb8 */
 	byte pad_b9[3];
 } cBettyLocalLogic;
-SD_OFFSET(cBettyLocalLogic, isDefault, 0xb8);
-SD_SIZE(cBettyLocalLogic, 0xbc);
 
 typedef struct cHumphreyLocalLogic {
 	cFunctionaryLocalLogic base;	/* 0x00 */
 	byte isDefault;			/* 0xb8 */
 	byte pad_b9[3];
 } cHumphreyLocalLogic;
-SD_OFFSET(cHumphreyLocalLogic, isDefault, 0xb8);
-SD_SIZE(cHumphreyLocalLogic, 0xbc);
 
 /* BossLogic.cpp, 0x80 bytes */
 typedef struct cBossLocalLogic {
@@ -287,8 +257,6 @@ typedef struct cBossLocalLogic {
 	float workAng[2];		/* 0x74 */
 	float time;			/* 0x7c in the walk or the work */
 } cBossLocalLogic;
-SD_OFFSET(cBossLocalLogic, time, 0x7c);
-SD_SIZE(cBossLocalLogic, 0x80);
 
 /* the GenChar logics that add no members (0x68 bytes in GenCharGroup_MakeLogic) */
 typedef cGenCharLocalLogic cBankDirectorLocalLogic;
@@ -543,7 +511,6 @@ typedef struct cCTFEnemiesData {
 	float bonus;			/* 0x0c the leader goes for the player while > 0 */
 	int numAttack;			/* 0x10 the ships attacking the player */
 } cCTFEnemiesData;
-SD_SIZE(cCTFEnemiesData, 0x14);
 
 /* CTFFriends.cpp: g_pWorld->logic.ctfFriends holds the pointer */
 typedef struct cCTFFriendsData {
@@ -551,7 +518,6 @@ typedef struct cCTFFriendsData {
 	float timer;			/* 0x04 */
 	int numAttack;			/* 0x08 the ships attacking the leader */
 } cCTFFriendsData;
-SD_SIZE(cCTFFriendsData, 0xc);
 
 
 extern cGVar GVar_LeaderFlag;
@@ -632,14 +598,12 @@ typedef struct cDominationSide {
 	int zone;			/* 0x8 the zone the leader goes to, -1 none */
 	float timer;			/* 0xc Think every 0.5 s */
 } cDominationSide;
-SD_SIZE(cDominationSide, 0x10);
 
 typedef struct cDominationFriendsSide {
 	cDominationLogic *owner;	/* 0x0 */
 	cEntityListData *list;		/* 0x4 "DominationFriends" */
 	float timer;			/* 0x8 */
 } cDominationFriendsSide;
-SD_SIZE(cDominationFriendsSide, 0xc);
 
 extern const cDominationLogicVtbl cDominationLogic_vftable;
 #define CDOMINATIONLOGIC_VFTABLE (&cDominationLogic_vftable)
@@ -724,7 +688,6 @@ typedef struct cGateKeeperLocalLogic {
 	cBaseLocalLogic base;		/* 0x00 */
 	float hiddenTime;		/* 0x48 GateKeeperHiddenTime when it hides */
 } cGateKeeperLocalLogic;
-SD_SIZE(cGateKeeperLocalLogic, 0x4c);
 
 extern cGVar GVar_GateKeeperStdFar;
 #define g_GateKeeperStdFar (GVar_GateKeeperStdFar.value.f)
@@ -755,7 +718,6 @@ typedef struct cGearLocalLogic {
 	int defaultState;		/* 0x54 "DefaultState" */
 	char *defaultTarget;		/* 0x58 cString "DefaultTarget" */
 } cGearLocalLogic;
-SD_SIZE(cGearLocalLogic, 0x5c);
 
 /* the view cone of the arrow of a character (its AI sees in it) */
 
@@ -884,7 +846,6 @@ typedef struct cHumanLocalLogic {
 	cBaseLocalLogic base;		/* 0x00 */
 	cPy_Function func;		/* 0x48 HumanLogic_Escape */
 } cHumanLocalLogic;
-SD_SIZE(cHumanLocalLogic, 0x5c);
 
 extern const cBaseLocalLogicVtbl cHumanLocalLogic_vftable;
 #define CHUMANLOCALLOGIC_VFTABLE (&cHumanLocalLogic_vftable)
@@ -901,7 +862,6 @@ typedef struct cInfItemNode {
 	struct cInfItemNode *prev;	/* 0x4 */
 	cItemDesc item;			/* 0x8 */
 } cInfItemNode;
-SD_SIZE(cInfItemNode, 0x10);
 
 extern const cInfItemVtbl cInfItem_vftable;
 #define CINFITEM_VFTABLE (&cInfItem_vftable)
@@ -939,7 +899,6 @@ typedef struct cSentinelLocalLogic {
 	byte seen;			/* 0x4c the player was in view at the last think */
 	byte pad_4d[3];
 } cSentinelLocalLogic;
-SD_SIZE(cSentinelLocalLogic, 0x50);
 
 void *cSentinelLocalLogic_ctor(void *self, cEntity *parent);
 /* to the place pos to watch it */
@@ -969,7 +928,6 @@ typedef struct cLittlePoliceLocalLogicVtbl {
 	cGenCharLocalLogicVtbl base;
 	void(*UpdateLook)(cLocalLogic *self);			/* 0x90 vf36 */
 } cLittlePoliceLocalLogicVtbl;
-SD_OFFSET(cLittlePoliceLocalLogicVtbl, UpdateLook, 0x90);
 
 typedef struct cLittlePoliceLocalLogic {
 	cGenCharLocalLogic base;	/* 0x00 specialTime: the time of the chase in state 4 */
@@ -979,8 +937,6 @@ typedef struct cLittlePoliceLocalLogic {
 	byte pad_71[3];
 	int policeResult;		/* 0x74 "PoliceResult": 1 when it goes to the main mission */
 } cLittlePoliceLocalLogic;
-SD_OFFSET(cLittlePoliceLocalLogic, policeResult, 0x74);
-SD_SIZE(cLittlePoliceLocalLogic, 0x78);
 
 extern const cLittlePoliceLocalLogicVtbl cLittlePoliceLocalLogic_vftable;
 #define CLITTLEPOLICELOCALLOGIC_VFTABLE (&cLittlePoliceLocalLogic_vftable.base.base)
@@ -1003,14 +959,12 @@ typedef struct cParkingZone {
 	vec3_t pos;			/* 0x0 */
 	cString name;			/* 0xc "_Junkyard" is not found in ring 0 */
 } cParkingZone;
-SD_SIZE(cParkingZone, 0x10);
 
 typedef struct cParkingNode {
 	struct cParkingNode *next;	/* 0x00 */
 	struct cParkingNode *prev;	/* 0x04 */
 	cParkingZone zone;		/* 0x08 */
 } cParkingNode;
-SD_SIZE(cParkingNode, 0x18);
 
 /* ShipRegen.cpp: the life regeneration of the player, and the ship of SLogic.SetShipToRegenerate */
 typedef struct cShipRegenShip {
@@ -1020,7 +974,6 @@ typedef struct cShipRegenShip {
 	float endRate;			/* 0x88 1 / endSpeed: at full life */
 	int life;			/* 0x8c at the last update */
 } cShipRegenShip;
-SD_SIZE(cShipRegenShip, 0x90);
 
 /* Scrapyard.cpp: a group of ships that guard their lairs ("Mosquitos", "MadHunters"), behind a pointer */
 typedef struct cShipGroupData {
@@ -1030,7 +983,6 @@ typedef struct cShipGroupData {
 	cEntityListData *list;		/* 0x24 */
 	float timer;			/* 0x28 think every 0.5 s */
 } cShipGroupData;
-SD_SIZE(cShipGroupData, 0x2c);
 
 cShipGroupData *cShipGroupData_ctor(cShipGroupData *self, const char *list);
 void cShipGroupData_SetLair(cShipGroupData *self, const char *name, const vec3_t *pos);
@@ -1056,8 +1008,6 @@ typedef struct cMaintenanceLocalLogic {
 	int point;			/* 0xd4 the corner it walks to, -1 */
 	float timer;			/* 0xd8 MaintenanceTimeToNextPos */
 } cMaintenanceLocalLogic;
-SD_OFFSET(cMaintenanceLocalLogic, reposition, 0xc8);
-SD_SIZE(cMaintenanceLocalLogic, 0xdc);
 
 extern const cGenCharLocalLogicVtbl cMaintenanceLocalLogic_vftable;
 #define CMAINTENANCELOCALLOGIC_VFTABLE (&cMaintenanceLocalLogic_vftable.base)
@@ -1073,7 +1023,6 @@ typedef struct cMayorLocalLogic {
 	cGenCharLocalLogic base;	/* 0x00 */
 	char listener[0x80];		/* 0x68 the character that talks to the mayor, "" none */
 } cMayorLocalLogic;
-SD_SIZE(cMayorLocalLogic, 0xe8);
 
 extern const cGenCharLocalLogicVtbl cMayorLocalLogic_vftable;
 #define CMAYORLOCALLOGIC_VFTABLE (&cMayorLocalLogic_vftable.base)
@@ -1095,7 +1044,6 @@ typedef struct cMessengers {
 	int count;			/* 0x0c the most desks of the type seen, 5 */
 	cEntityListData *list;		/* 0x10 "Messenger" */
 } cMessengers;
-SD_SIZE(cMessengers, 0x14);
 
 extern const cGenCharLocalLogicVtbl cMessengerLocalLogic_vftable;
 #define CMESSENGERLOCALLOGIC_VFTABLE (&cMessengerLocalLogic_vftable.base)
@@ -1126,7 +1074,6 @@ typedef struct cStrMoney {
 	float timer;			/* 0x14 StrMoneyUpdate */
 	int money;			/* 0x18 cWorld.money */
 } cStrMoney;
-SD_OFFSET(cStrMoney, money, 0x18);
 /* the digits from the first one not "0", "0" for none */
 const char *cStrMoney_GetStr(cStrMoney *self);
 
@@ -1141,7 +1088,6 @@ typedef struct cNurseLocalLogic {
 	cBaseLocalLogic base;		/* 0x00 */
 	float time;			/* 0x48 of the escape (state 2) or the pick up (3) */
 } cNurseLocalLogic;
-SD_SIZE(cNurseLocalLogic, 0x4c);
 
 extern const cBaseLocalLogicVtbl cNurseLocalLogic_vftable;
 #define CNURSELOCALLOGIC_VFTABLE (&cNurseLocalLogic_vftable)
@@ -1232,7 +1178,6 @@ typedef struct cRustyLocalLogic {
 	cEntity *junk;			/* 0x68 the junk point */
 	byte pad_6c[0x84 - 0x6c];
 } cRustyLocalLogic;
-SD_SIZE(cRustyLocalLogic, 0x84);
 
 cLocalLogic *cRustyLocalLogic_Delete(cLocalLogic *elem, byte flags);
 void Rusty_LoopDone(cAbstractFile *params);

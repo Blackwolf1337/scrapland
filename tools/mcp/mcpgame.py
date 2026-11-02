@@ -6,10 +6,6 @@
 import Scrap
 import string
 import sys
-try:
-	import SDTest
-except ImportError:
-	pass
 
 mcpSeen = -1
 

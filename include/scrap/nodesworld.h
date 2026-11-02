@@ -24,7 +24,6 @@ typedef struct cNWIntNode {
 	struct cNWIntNode *prev;	/* 0x4 */
 	void *data;			/* 0x8 */
 } cNWIntNode;
-SD_SIZE(cNWIntNode, 0xc);
 typedef DLIST(cNWIntNode) cNWIntList;
 
 /* a node with 12 bytes: a point, or a cell index with two pointers (0x14 bytes) */
@@ -33,7 +32,6 @@ typedef struct cNWVecNode {
 	struct cNWVecNode *prev;	/* 0x04 */
 	vec3_t v;			/* 0x08 */
 } cNWVecNode;
-SD_SIZE(cNWVecNode, 0x14);
 typedef DLIST(cNWVecNode) cNWVecList;
 
 /* a segment of the debug view of the path tests (0x20 bytes) */
@@ -42,7 +40,6 @@ typedef struct cNWSegNode {
 	struct cNWSegNode *prev;	/* 0x04 */
 	vec3_t a, b;			/* 0x08 */
 } cNWSegNode;
-SD_SIZE(cNWSegNode, 0x20);
 typedef DLIST(cNWSegNode) cNWSegList;
 
 /* a point of visibility of the generation, with the points it sees (0x44 bytes) */
@@ -54,7 +51,6 @@ typedef struct cNWPointNode {
 	vec3_t boxA;			/* 0x2c */
 	vec3_t boxB;			/* 0x38 */
 } cNWPointNode;
-SD_SIZE(cNWPointNode, 0x44);
 typedef DLIST(cNWPointNode) cNWPointList;
 
 /* a triangle with an inverted normal found by Analyze (0x44 bytes, 15 words of data) */
@@ -63,7 +59,6 @@ typedef struct cNWTriNode {
 	struct cNWTriNode *prev;	/* 0x04 */
 	float data[15];			/* 0x08 */
 } cNWTriNode;
-SD_SIZE(cNWTriNode, 0x44);
 typedef DLIST(cNWTriNode) cNWTriList;
 
 /* a pair of points (the positions in their cNWPointNode) with the square of their distance */
@@ -72,14 +67,12 @@ typedef struct cNWPair {
 	const vec3_t *b;		/* 0x4 */
 	float dist;			/* 0x8 */
 } cNWPair;
-SD_SIZE(cNWPair, 0xc);
 
 typedef struct cNWPairNode {
 	struct cNWPairNode *next;	/* 0x00 */
 	struct cNWPairNode *prev;	/* 0x04 */
 	cNWPair p;			/* 0x08 */
 } cNWPairNode;
-SD_SIZE(cNWPairNode, 0x14);
 typedef DLIST(cNWPairNode) cNWPairList;
 
 /* the box the generation fills (FLT_MAX first, -FLT_MAX after) */
@@ -95,7 +88,6 @@ typedef struct cNWNode {
 	int numLinks;			/* 0x0c */
 	struct cNWNode **links;		/* 0x10 */
 } cNWNode;
-SD_SIZE(cNWNode, 0x14);
 
 /* the set of points of visibility seen from cells of the generation buffer (InfPointVis), shared by the cells with
  * the same set: refs counts them; the sets are kept in the hash lists sets[hash] (0x24 bytes) */
@@ -105,14 +97,12 @@ typedef struct cNWVis {
 	struct cNWVisNode *node;	/* 0x08 its node in that list */
 	cNWIntList points;		/* 0x0c the pos of the points, sorted by address */
 } cNWVis;
-SD_SIZE(cNWVis, 0x24);
 
 typedef struct cNWVisNode {
 	struct cNWVisNode *next;	/* 0x00 */
 	struct cNWVisNode *prev;	/* 0x04 */
 	cNWVis vis;			/* 0x08 */
 } cNWVisNode;
-SD_SIZE(cNWVisNode, 0x2c);
 typedef DLIST(cNWVisNode) cNWVisList;
 
 /* a cell of the generation buffer */
@@ -120,7 +110,6 @@ typedef struct cNWCell {
 	int state;			/* 0x0 0, 3, 4, 5, 6: the cellLists of GetInfoNodes */
 	cNWVis *vis;			/* 0x4 */
 } cNWCell;
-SD_SIZE(cNWCell, 0x8);
 
 typedef struct CNodesWorldVtbl {
 	CNodesWorld *(*Delete)(CNodesWorld *self, byte flags);	/* 0x00 */
@@ -173,17 +162,6 @@ typedef struct CNodesWorldVtbl {
 	void(*ClearLists)(CNodesWorld *self);			/* 0x98 CNodesWorld_ClearLists */
 	byte(*SaveInfPath)(CNodesWorld *self, const char *path);	/* 0x9c */
 } CNodesWorldVtbl;
-SD_OFFSET(CNodesWorldVtbl, GetVisPoint, 0x2c);
-SD_OFFSET(CNodesWorldVtbl, SavePath, 0x3c);
-SD_OFFSET(CNodesWorldVtbl, BufferPos, 0x4c);
-SD_OFFSET(CNodesWorldVtbl, Create, 0x10);
-SD_OFFSET(CNodesWorldVtbl, BuildGrid, 0x44);
-SD_OFFSET(CNodesWorldVtbl, Unreachable, 0x70);
-SD_OFFSET(CNodesWorldVtbl, FreeGraph, 0x8c);
-SD_OFFSET(CNodesWorldVtbl, FreeTemp, 0x90);
-SD_OFFSET(CNodesWorldVtbl, InList, 0x94);
-SD_OFFSET(CNodesWorldVtbl, ClearLists, 0x98);
-SD_OFFSET(CNodesWorldVtbl, SaveInfPath, 0x9c);
 
 /* the base class (AI/NodesWorldSup.cpp, abstract): the first 0x360 bytes of CNodesWorld and CNodesWorld2D. The code
  * of both works on the CNodesWorld layout, which repeats these members */
@@ -232,14 +210,6 @@ typedef struct CNodesWorldSup {
 	byte unused_35c;			/* 0x35c */
 	byte pad_35d[3];
 } CNodesWorldSup;
-SD_OFFSET(CNodesWorldSup, maxVisDist, 0x60);
-SD_OFFSET(CNodesWorldSup, name, 0x8c);
-SD_OFFSET(CNodesWorldSup, grid, 0x18c);
-SD_OFFSET(CNodesWorldSup, buffer, 0x1b0);
-SD_OFFSET(CNodesWorldSup, sets, 0x1e8);
-SD_OFFSET(CNodesWorldSup, numFiles, 0x258);
-SD_OFFSET(CNodesWorldSup, errCollide, 0x310);
-SD_SIZE(CNodesWorldSup, 0x360);
 
 struct CNodesWorld {
 	CNodesWorldSup sup;		/* 0x000 */
@@ -257,20 +227,6 @@ struct CNodesWorld {
 	vec3_t hitTo;			/* 0x3cc */
 	cNWTriList tris;		/* 0x3d8 */
 };
-SD_OFFSET(CNodesWorld, sup.maxVisDist, 0x60);
-SD_OFFSET(CNodesWorld, sup.name, 0x8c);
-SD_OFFSET(CNodesWorld, sup.grid, 0x18c);
-SD_OFFSET(CNodesWorld, sup.numNodes, 0x1ac);
-SD_OFFSET(CNodesWorld, sup.buffer, 0x1b0);
-SD_OFFSET(CNodesWorld, sup.sets, 0x1e8);
-SD_OFFSET(CNodesWorld, sup.extraPoints, 0x1f0);
-SD_OFFSET(CNodesWorld, sup.numFiles, 0x258);
-SD_OFFSET(CNodesWorld, sup.openPos, 0x304);
-SD_OFFSET(CNodesWorld, sup.errCollide, 0x310);
-SD_OFFSET(CNodesWorld, analyzing, 0x360);
-SD_OFFSET(CNodesWorld, hitFrom, 0x3c0);
-SD_OFFSET(CNodesWorld, tris, 0x3d8);
-SD_SIZE(CNodesWorld, 0x3f0);
 
 extern const CNodesWorldVtbl CNodesWorld_vftable;
 #define CNODESWORLD_VFTABLE (&CNodesWorld_vftable)

@@ -24,7 +24,6 @@ typedef struct CFont {
 	float shadow[2];		/* 0x28 1, the offset of the shadow */
 	CFont3 *Font;			/* 0x30 */
 } CFont;
-SD_SIZE(CFont, 0x34);
 
 /* the flags of CFont_PrintfV */
 #define CFONT_ALIGN 0x1

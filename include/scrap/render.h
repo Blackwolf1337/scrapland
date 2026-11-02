@@ -184,7 +184,6 @@ typedef struct ShaderTab {
 	uint32_t flags;			/* 0x10 0x100, 0x101 */
 	shaderRender_t fnRender;	/* 0x14 */
 } ShaderTab;
-SD_SIZE(ShaderTab, 0x18);
 extern ShaderTab g_ShaderTab[32];	/* [32], ends with a NULL name */
 extern ShaderTab g_ShaderTab2[32];
 /* the pixel shaders: on (the device has them), their handles, the ones switched off (a bit each from 0x200000) */
@@ -262,7 +261,6 @@ typedef struct CRenderIB {
 	int Total;			/* 0x4 triangles */
 	int Used;			/* 0x8 */
 } CRenderIB;
-SD_SIZE(CRenderIB, 0xc);
 
 /* a dynamic vertex buffer */
 typedef struct CRenderVB {
@@ -272,7 +270,6 @@ typedef struct CRenderVB {
 	int Size;			/* 0x0c of a vertex */
 	uint32_t FVF;			/* 0x10 */
 } CRenderVB;
-SD_SIZE(CRenderVB, 0x14);
 
 /* pixel shader i on (flags 1) or off (flags 2), the fixed texture stages (Render_PSFixed) without it; arg is not
  * used */
@@ -518,7 +515,6 @@ typedef struct RenderMeshEntry {
 	int list;			/* 0x48 the batch count when the list of the mesh was queued */
 	struct CRenderNode *r;		/* 0x4c */
 } RenderMeshEntry;
-SD_SIZE(RenderMeshEntry, 0x50);
 typedef struct RenderTranspEntry {
 	struct CMeshD3D *mesh;	/* 0x00 */
 	matrix_t world;			/* 0x04 */
@@ -526,14 +522,12 @@ typedef struct RenderTranspEntry {
 	struct CRenderNode *r;		/* 0x48 */
 	float dist2;			/* 0x4c to the eye, squared */
 } RenderTranspEntry;
-SD_SIZE(RenderTranspEntry, 0x50);
 typedef struct RenderObjEntry {
 	struct IObject3D *obj;		/* 0x00 a CParticleSystem or a CFlare */
 	matrix_t world;			/* 0x04 */
 	struct CRenderNode *r;		/* 0x44 */
 	float dist2;			/* 0x48 */
 } RenderObjEntry;
-SD_SIZE(RenderObjEntry, 0x4c);
 extern CTable g_TabMesh;		/* TabMallaD3D: RenderMeshEntry */
 extern RenderMeshEntry *g_MeshList[1024];
 extern int g_UsedMesh;

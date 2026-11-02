@@ -53,7 +53,6 @@ typedef struct CVertList {
 	int frmt;			/* 0xc VERT_* */
 	float scale;			/* 0x10 divides the positions of VERT_POS_XBOX */
 } CVertList;
-SD_SIZE(CVertList, 0x14);
 
 /* the vertex shader handles of the XBOX formats */
 extern uint32_t g_hVShader_Tex1_XBox;

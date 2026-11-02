@@ -21,7 +21,6 @@ typedef struct cScorerItemVtbl {
 	int(*Var)(cScorerItem *self, const char *name, int set, char **s, double *d, int *i);	/* 0x8 */
 	cScorerItem *(*Delete)(cScorerItem *self, byte flags);			/* 0xc */
 } cScorerItemVtbl;
-SD_SIZE(cScorerItemVtbl, 0x10);
 
 /* the items of a scorer (Scorer.cpp, vftable rva 0x3c3ba0), 0xac bytes */
 struct cScorerItem {
@@ -46,10 +45,6 @@ struct cScorerItem {
 	byte multiPress;		/* 0xa8 */
 	byte pad_a9[3];
 };
-SD_SIZE(cScorerItem, 0xac);
-SD_OFFSET(cScorerItem, visible, 0x29);
-SD_OFFSET(cScorerItem, onAccept, 0x44);
-SD_OFFSET(cScorerItem, multiPress, 0xa8);
 
 /* the base class (Scorer.cpp): constructor and destructor */
 cScorerItem *cScorerItem_ctor(cScorerItem *self);
@@ -66,7 +61,6 @@ typedef struct ScorerCinema {
 	byte pad_9[3];
 	float height;			/* 0xc CinemaBlackBandHeight while on */
 } ScorerCinema;
-SD_SIZE(ScorerCinema, 0x10);
 
 /* a fade of the whole screen (SScorer.Fade): the colors as floats 0..255, 0x28 bytes */
 typedef struct ScorerFade {
@@ -75,7 +69,6 @@ typedef struct ScorerFade {
 	float time;			/* 0x20 counts down to 0 */
 	float life;			/* 0x24 */
 } ScorerFade;
-SD_SIZE(ScorerFade, 0x28);
 
 typedef struct cScorerVtbl {
 	struct cScorer *(*Delete)(struct cScorer *self, byte flags);	/* 0x00 */
@@ -117,19 +110,6 @@ typedef struct cScorer {
 	byte focusSound;		/* 0x100 the focus sound plays on the next cursor move */
 	byte pad_101[3];
 } cScorer;
-SD_SIZE(cScorer, 0x104);
-SD_OFFSET(cScorer, time, 0x20);
-SD_OFFSET(cScorer, frameTime, 0x28);
-SD_OFFSET(cScorer, specialHint, 0x34);
-SD_OFFSET(cScorer, hintWidth, 0x3c);
-SD_OFFSET(cScorer, visible, 0x44);
-SD_OFFSET(cScorer, cursor, 0x50);
-SD_OFFSET(cScorer, onSpecialHint, 0x90);
-SD_OFFSET(cScorer, models, 0xa8);
-SD_OFFSET(cScorer, fade, 0xb0);
-SD_OFFSET(cScorer, cinema, 0xd8);
-SD_OFFSET(cScorer, mpFunc, 0xec);
-SD_OFFSET(cScorer, focusSound, 0x100);
 
 cScorer *Scorer_Get(int player);
 cScorerItem *cScorer_FindItem(cScorer *scorer, const char *name);
@@ -148,7 +128,6 @@ typedef struct cPyMenuEntity {
 	int player;			/* 0x8 */
 	char *name;			/* 0xc Mem_Alloc copy */
 } cPyMenuEntity;
-SD_SIZE(cPyMenuEntity, 0x10);
 
 extern PyTypeObject cPyMenuEntity_Type;
 

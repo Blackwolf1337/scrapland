@@ -20,7 +20,6 @@ typedef struct D3DGuid {
 	uint16_t Data3;
 	byte Data4[8];
 } D3DGuid;
-SD_SIZE(D3DGuid, 0x10);
 
 /* the adapters of CD3DApplication with their devices and modes */
 typedef struct D3DModeInfo {
@@ -30,7 +29,6 @@ typedef struct D3DModeInfo {
 	uint32_t dwBehavior;		/* 0x0c */
 	uint32_t DepthStencilFormat;	/* 0x10 */
 } D3DModeInfo;
-SD_SIZE(D3DModeInfo, 0x14);
 
 #define MAX_D3DMODES 150
 #define MAX_D3DDEVICES 5
@@ -46,8 +44,6 @@ typedef struct D3DDeviceInfo {
 	int bWindowed;			/* 0xca0 */
 	uint32_t MultiSampleType;	/* 0xca4 */
 } D3DDeviceInfo;
-SD_OFFSET(D3DDeviceInfo, dwCurrentMode, 0xc9c);
-SD_SIZE(D3DDeviceInfo, 0xca8);
 
 typedef struct D3DAdapterInfo {
 	D3DAdapterId id;			/* 0x0000 */
@@ -56,10 +52,6 @@ typedef struct D3DAdapterInfo {
 	D3DDeviceInfo devices[MAX_D3DDEVICES];	/* 0x0440 */
 	int dwCurrentDevice;			/* 0x4388 */
 } D3DAdapterInfo;
-SD_OFFSET(D3DAdapterInfo, desktopMode, 0x42c);
-SD_OFFSET(D3DAdapterInfo, dwNumDevices, 0x43c);
-SD_OFFSET(D3DAdapterInfo, dwCurrentDevice, 0x4388);
-SD_SIZE(D3DAdapterInfo, 0x438c);
 
 #define MAX_D3DADAPTERS 10
 
@@ -125,16 +117,6 @@ struct CD3DApplication {
 	int height;				/* 0x2a5d4 */
 	int bpp;				/* 0x2a5d8 */
 };
-SD_OFFSET(CD3DApplication, numAdapters, 0x2a37c);
-SD_OFFSET(CD3DApplication, presentParams, 0x2a398);
-SD_OFFSET(CD3DApplication, caps, 0x2a3dc);
-SD_OFFSET(CD3DApplication, backBufferDesc, 0x2a4b0);
-SD_OFFSET(CD3DApplication, createFlags, 0x2a4f0);
-SD_OFFSET(CD3DApplication, time, 0x2a518);
-SD_OFFSET(CD3DApplication, frameStats, 0x2a57e);
-SD_OFFSET(CD3DApplication, devId, 0x2a5a8);
-SD_OFFSET(CD3DApplication, vsync, 0x2a5c8);
-SD_SIZE(CD3DApplication, 0x2a5dc);
 
 /* g_pD3DApp of d3dapp.cpp: the application of the engine3d (a CMotorApp, g_Engine3D of Engine.c) */
 extern struct CD3DApplication *g_Engine;

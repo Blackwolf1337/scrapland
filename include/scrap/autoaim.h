@@ -36,9 +36,6 @@ typedef struct cAutoAim {
 	byte on;			/* 0x4c */
 	byte pad_4d[3];
 } cAutoAim;
-SD_OFFSET(cAutoAim, target, 0x14);
-SD_OFFSET(cAutoAim, status, 0x48);
-SD_SIZE(cAutoAim, 0x50);
 
 cAutoAim *cAutoAim_ctor(cAutoAim *self);
 byte cAutoAim_VarF(cAutoAim *self, const char *name, double *d, int set);

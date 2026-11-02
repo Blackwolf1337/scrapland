@@ -1732,11 +1732,6 @@ void NWSup_DrawFound(CNodesWorld *self, cNWVecList *list, float r, uint32_t colo
 		vec3_t c;
 		self->sup.vftable->BufferPos(self, &c, d[0]);
 		DebugUtils_DrawSphere(&c, r, color, 2, 2);
-#if SD_32BIT
-		/* the found entry keeps the pair as two pointers in its words (NWSup_LinkFound); they do not fit on 64 bit */
-		DebugUtils_DrawLine(&c, (const vec3_t *)(uintptr_t)d[1], color);
-		DebugUtils_DrawLine(&c, (const vec3_t *)(uintptr_t)d[2], color);
-#endif
 		n = list->iter = list->iter->next;
 		if (n == list->head) {
 			break;

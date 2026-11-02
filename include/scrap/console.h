@@ -19,7 +19,6 @@ typedef struct cConLine {
 	char text[CON_LINE_LEN];	/* 0x00 */
 	uint32_t color;			/* 0x80 0xBBGGRR, set when the line ends */
 } cConLine;
-SD_SIZE(cConLine, 0x84);
 
 extern cConLine g_ConLines[23];	/* CON_LINES */
 extern int g_ConLine;		/* the line written now */

@@ -38,14 +38,12 @@ typedef struct CAnimNode {
 	byte *Visible;			/* 0x1c */
 	CEVA *EVA;			/* 0x20 */
 } CAnimNode;
-SD_SIZE(CAnimNode, 0x24);
 
 typedef struct CAnimBlock {
 	byte *MemBlock;			/* 0x0 */
 	int SizeBlock;			/* 0x4 */
 	int UsedBlock;			/* 0x8 */
 } CAnimBlock;
-SD_SIZE(CAnimBlock, 0xc);
 
 typedef struct CAnimation {
 	char *name;			/* 0x00 String_Set */
@@ -60,16 +58,12 @@ typedef struct CAnimation {
 	int num_objects;		/* 0x24 */
 	CAnimBlock AnimBlock;		/* 0x28 */
 } CAnimation;
-SD_OFFSET(CAnimation, table, 0x18);
-SD_OFFSET(CAnimation, AnimBlock, 0x28);
-SD_SIZE(CAnimation, 0x34);
 
 /* a stream while it is built */
 typedef struct CAnimStream {
 	byte *p;			/* 0x0 Mem_Realloc */
 	int len;			/* 0x4 */
 } CAnimStream;
-SD_SIZE(CAnimStream, 0x8);
 
 /* the block the tracks of the nodes are read into, set while an animation reads or deletes its nodes */
 extern CAnimBlock *g_ActAnimBlock;

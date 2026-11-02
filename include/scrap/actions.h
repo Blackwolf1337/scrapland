@@ -46,7 +46,6 @@ typedef struct cActNodeMod {
 	int node;			/* 0x00 render node of the model, ACT_NODE_ */
 	float ang[ACT_NODEMOD_ANGS][2];	/* 0x04 "NodeN_Mx", "NodeN_My" */
 } cActNodeMod;
-SD_SIZE(cActNodeMod, 0x3c);
 
 /* the camera of a class (radians): the distance and angles and the FOV that zooms between MinFOV and MaxFOV */
 typedef struct cActClassCam {
@@ -61,7 +60,6 @@ typedef struct cActClassCam {
 	float camRot;			/* 0x20 "CamRot" */
 	float fov;			/* 0x24 "FOV" without the zoom */
 } cActClassCam;
-SD_SIZE(cActClassCam, 0x28);
 
 typedef struct cActClassVtbl {
 	struct cActClass *(*Delete)(struct cActClass *self, byte flags);	/* 0x00 */
@@ -118,14 +116,6 @@ struct cActClass {
 	byte dynShip;			/* 0x208 "DinaShip": the controller moves the parts of a ship */
 	byte pad_209[3];
 };
-SD_OFFSET(cActClass, defAction, 0x20);
-SD_OFFSET(cActClass, sounds, 0x40);
-SD_OFFSET(cActClass, nodes, 0x5c);
-SD_OFFSET(cActClass, cam, 0x110);
-SD_OFFSET(cActClass, fallSound, 0x15c);
-SD_OFFSET(cActClass, initEndWalkInterpFactor, 0x18c);
-SD_OFFSET(cActClass, onFreeResources, 0x1f4);
-SD_SIZE(cActClass, 0x20c);
 
 /* the classes by name (0x10 bytes, g_pActClassList) */
 typedef struct cActClassListVtbl {
@@ -138,7 +128,6 @@ struct cActClassList {
 	const cActClassListVtbl *vftable;		/* 0x00 */
 	HashTable classes;		/* 0x04 457 slots */
 };
-SD_SIZE(cActClassList, 0x10);
 
 /* an event of an action: Func is called with the entity name, the event name and the time */
 struct cActEvent {
@@ -149,7 +138,6 @@ struct cActEvent {
 	byte discardable;		/* 0x20 skipped when a new action jumps over it */
 	byte pad_21[3];
 };
-SD_SIZE(cActEvent, 0x24);
 
 /* an action (cActionMove, 0x6c bytes) */
 typedef struct cActionVtbl {
@@ -192,11 +180,6 @@ struct cAction {
 	int priority;			/* 0x64 "PriorityLevel" */
 	int chanel;			/* 0x68 "Chanel": its layer */
 };
-SD_OFFSET(cAction, events, 0x24);
-SD_OFFSET(cAction, isLoop, 0x34);
-SD_OFFSET(cAction, slideAsFly, 0x4c);
-SD_OFFSET(cAction, priority, 0x64);
-SD_SIZE(cAction, 0x6c);
 /* the class name in the exe */
 typedef cAction cActionMove;
 
@@ -208,7 +191,6 @@ typedef struct cActLayer {
 	byte on;			/* 0x0c */
 	byte pad_d[3];
 } cActLayer;
-SD_SIZE(cActLayer, 0x10);
 
 /* the blend of the angles of a turned node from the last NodeModifier to the new one */
 typedef struct cActHead {
@@ -216,7 +198,6 @@ typedef struct cActHead {
 	float to[2];			/* 0x08 */
 	float cur[2];			/* 0x10 */
 } cActHead;
-SD_SIZE(cActHead, 0x18);
 
 /* the action controller of an entity (0x7c bytes) */
 struct cActCtrl {
@@ -233,10 +214,6 @@ struct cActCtrl {
 	vec3_t rootMove;		/* 0x6c rootSum per second */
 	float walkSpeed;		/* 0x78 0..1 between the MinSpeed and MaxSpeed of the actions */
 };
-SD_OFFSET(cActCtrl, layers, 0x10);
-SD_OFFSET(cActCtrl, headMod, 0x50);
-SD_OFFSET(cActCtrl, rootSum, 0x5c);
-SD_SIZE(cActCtrl, 0x7c);
 
 /* Actions/ActClass.cpp (src/game/Actions/ActClass.c) */
 cActClass *cActClass_ctor(cActClass *self, const char *name);

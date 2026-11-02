@@ -30,11 +30,6 @@ typedef struct cVehicleAttack {
 	byte pad_75[3];
 	float resetTime;		/* 0x78 the world time the shots on the target are dropped */
 } cVehicleAttack;
-SD_OFFSET(cVehicleAttack, point, 0x30);
-SD_OFFSET(cVehicleAttack, owner, 0x3c);
-SD_OFFSET(cVehicleAttack, netFlags, 0x5c);
-SD_OFFSET(cVehicleAttack, hitBy, 0x60);
-SD_SIZE(cVehicleAttack, 0x7c);
 
 extern cGVar GVar_WeapHitClientResetTime;
 #define g_VehicleAttackReset (GVar_WeapHitClientResetTime.value.f)	/* the time the shots on a target are kept */

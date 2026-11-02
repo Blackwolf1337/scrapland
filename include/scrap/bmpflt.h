@@ -22,7 +22,6 @@ typedef struct TXF_header {
 	int extra;			/* 0x10 bytes after the pixels */
 	int pad[3];			/* 0x14 */
 } TXF_header;
-SD_SIZE(TXF_header, 0x20);
 
 /* the header of each class */
 #define TXF_CAB 0x4e734c

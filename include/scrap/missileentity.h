@@ -57,13 +57,6 @@ typedef struct cMissileEntity {
 	cPy_Function onBeeDeath;	/* 0x7c0 (missile, x, y, z) */
 	cPy_Function onHit;		/* 0x7d4 (missile, parent, target or the entity it went through, ...) */
 } cMissileEntity;
-SD_OFFSET(cMissileEntity, hideMain, 0x3e8);
-SD_OFFSET(cMissileEntity, parent, 0x3fc);
-SD_OFFSET(cMissileEntity, type, 0x57c);
-SD_OFFSET(cMissileEntity, swarmCount, 0x588);
-SD_OFFSET(cMissileEntity, hits, 0x5b4);
-SD_OFFSET(cMissileEntity, hitType, 0x7b4);
-SD_OFFSET(cMissileEntity, onHit, 0x7d4);
 
 static inline cMissileEntity *Missile(const void *e) {
 	return (cMissileEntity *)e;
@@ -89,16 +82,12 @@ typedef struct cMissileEntityVtbl {
 	void(*SetSwarm)(cEntity *self, int n);			/* 0x104 */
 	void(*Explode)(cEntity *self, const vec3_t *at);		/* 0x108 */
 } cMissileEntityVtbl;
-SD_OFFSET(cMissileEntityVtbl, Wobble, 0xe0);
-SD_OFFSET(cMissileEntityVtbl, Swarm, 0xec);
-SD_OFFSET(cMissileEntityVtbl, Explode, 0x108);
 extern const cMissileEntityVtbl cMissileEntity_vftable;
 #define CMISSILEENTITY_VFTABLE (&cMissileEntity_vftable.base.base.base)
 
 static inline const cMissileEntityVtbl *Missile_Vtbl(cMissileEntity *e) {
 	return (const cMissileEntityVtbl *)e->wl.obj.base.vftable;
 }
-SD_SIZE(cMissileEntity, 0x7e8);
 
 /* the WithLife entities the missiles touched, by name (4 of 0x80) */
 extern char g_MissileHits[4][0x80];

@@ -13,7 +13,6 @@ typedef struct CImage {
 	int height;			/* 0x4 */
 	void *img;			/* 0x8 rows of pixels */
 } CImage;
-SD_SIZE(CImage, 0xc);
 typedef CImage CBmp;
 
 /* the pixel at x, y with CHECKs */
@@ -88,7 +87,6 @@ typedef struct {
 	uint32_t offBits;		/* 0xa */
 } bmpFileCab_t;
 #pragma pack(pop)
-SD_SIZE(bmpFileCab_t, 0xe);
 
 typedef struct {
 	uint32_t size;			/* 0x00 */
@@ -103,7 +101,6 @@ typedef struct {
 	uint32_t clrUsed;		/* 0x20 */
 	uint32_t clrImportant;		/* 0x24 */
 } bmpInfoCab_t;
-SD_SIZE(bmpInfoCab_t, 0x28);
 
 typedef struct {
 	uint32_t magic;			/* 0x00 "TEX\x1a" */
@@ -112,7 +109,6 @@ typedef struct {
 	int32_t height;			/* 0x0c */
 	uint32_t pad[4];		/* 0x10 */
 } texCab_t;
-SD_SIZE(texCab_t, 0x20);
 
 #pragma pack(push, 1)
 typedef struct {
@@ -126,6 +122,5 @@ typedef struct {
 	byte desc;			/* 0x11 0x20 top down */
 } tgaCab_t;
 #pragma pack(pop)
-SD_SIZE(tgaCab_t, 0x12);
 
 #endif

@@ -14,14 +14,12 @@ typedef struct MeshSeg {
 	uint16_t tri[2];		/* 0x0 */
 	uint16_t v[2];			/* 0x4 */
 } MeshSeg;
-SD_SIZE(MeshSeg, 0x8);
 
 /* the plane of a triangle */
 typedef struct TriMeshSeg {
 	float d;			/* 0x0 */
 	vec3_t n;			/* 0x4 */
 } TriMeshSeg;
-SD_SIZE(TriMeshSeg, 0x10);
 
 /* the triangle accessor of MeshD3D.h */
 static uint16_t *MeshD3D_Tri(CMeshD3D *m, uint32_t i) {

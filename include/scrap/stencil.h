@@ -36,7 +36,6 @@ typedef struct StencilBlock {
 	int unused_78;			/* 0x78 */
 	int utri;			/* 0x7c the cap triangles end here */
 } StencilBlock;
-SD_SIZE(StencilBlock, 0x80);
 
 extern StencilBlock *g_StencilBlock;	/* new[] of STENCIL_MAX_GROUPS */
 extern int g_StencilGroups;

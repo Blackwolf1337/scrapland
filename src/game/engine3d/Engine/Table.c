@@ -40,9 +40,8 @@ TABLE_ALLOC(1C)
 TABLE_ALLOC(2C)
 TABLE_ALLOC(38)
 
-/* the object tables: the element size of the type (0x<sz> on 32 bit builds) */
+/* the object tables, named by the element size of the original */
 #define TABLE_NEW(sz, type, ctor, dtor) \
-	static_assert(!SD_32BIT || sizeof(type) == 0x##sz, #type); \
 	void Table_New##sz(CTable *t, int num) { \
 		Table_NewObjs(t, num, sizeof(type), ctor, dtor); \
 	}

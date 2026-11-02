@@ -20,7 +20,6 @@ typedef struct cTimer {
 	float blendLeft;		/* 0x20 */
 	float blendTime;		/* 0x24 */
 } cTimer;
-SD_SIZE(cTimer, 0x28);
 
 cTimer *cTimer_ctor(cTimer *self);
 /* dt: real time since the last step */

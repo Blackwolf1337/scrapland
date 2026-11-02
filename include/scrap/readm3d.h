@@ -85,14 +85,12 @@ typedef struct M3DTable {
 	byte fixed;			/* 0x8 one run over all frames: constant */
 	byte pad9[3];
 } M3DTable;
-SD_SIZE(M3DTable, 0xc);
 extern M3DTable *g_M3DSceneTables;	/* 6: the animated ambient and background colors */
 
 /* the tables of a vector or rotation: x, then z and y (the files are z up), then w or the angle */
 typedef struct M3DTable4 {
 	M3DTable t[4];			/* 0x00 */
 } M3DTable4;
-SD_SIZE(M3DTable4, 0x30);
 
 /* the animation of a node: PosX..Z, Sgn, QRotX..A, URotX..A, EscX..Z; the rotations turned into quaternions */
 typedef struct M3DTrack {
@@ -102,7 +100,6 @@ typedef struct M3DTrack {
 	M3DTable4 rotScale;		/* 0x6c */
 	M3DTable4 scale;			/* 0x9c */
 } M3DTrack;
-SD_SIZE(M3DTrack, 0xcc);
 
 /* the Physique weights of a vertex */
 #define SKIN_MAX_BONES 3
@@ -111,7 +108,6 @@ typedef struct M3DSkinVert {
 	char *bone[SKIN_MAX_BONES];	/* 0x04 Cad */
 	float weight[SKIN_MAX_BONES];	/* 0x10 */
 } M3DSkinVert;
-SD_SIZE(M3DSkinVert, 0x1c);
 
 /* a transform of the scene nodes ("MT:" blocks) */
 typedef struct m3dTransform_t {
@@ -121,7 +117,6 @@ typedef struct m3dTransform_t {
 	vec3_t scale;			/* 0x2c */
 	float sign;			/* 0x38 */
 } m3dTransform_t;
-SD_SIZE(m3dTransform_t, 0x3c);
 
 /* what the reader keeps of each object of the file (CNode3D index) */
 typedef struct M3DNode {
@@ -137,9 +132,6 @@ typedef struct M3DNode {
 	M3DTrack track2;		/* 0x1d8 */
 	M3DTable t2a4[6];		/* 0x2a4 */
 } M3DNode;
-SD_OFFSET(M3DNode, AnimNode, 0x100);
-SD_OFFSET(M3DNode, track, 0x10c);
-SD_SIZE(M3DNode, 0x2ec);
 extern M3DNode *g_M3DNodes;	/* new[] of the objects */
 
 /* text: the line must start with the label (or just the next line without labels); binary: the stored label must

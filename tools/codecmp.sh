@@ -13,7 +13,7 @@ flags="-DSD_CODECMP -Wno-builtin-macro-redefined -D__FILE__=\\\"\\\" -D__TIMESTA
 # build <source dir> <build dir>
 build() {
 	if [ ! -f "$2/CMakeCache.txt" ]; then
-		cmake -S "$1" -B "$2" -DCMAKE_TOOLCHAIN_FILE="$1/cmake/mingw-i686.cmake" -DCMAKE_C_FLAGS="$flags" \
+		cmake -S "$1" -B "$2" -DCMAKE_TOOLCHAIN_FILE="$1/cmake/mingw-x86_64.cmake" -DCMAKE_C_FLAGS="$flags" \
 			-DCMAKE_C_COMPILER_LAUNCHER=ccache > /dev/null || return 1
 	fi
 	cmake --build "$2" -j"$(nproc)" --target ScrapC > "$2.log" 2>&1 || { tail -20 "$2.log"; return 1; }
@@ -31,8 +31,8 @@ build "$root" "$out/work" || exit 1
 rc=0
 for f in ScrapC.exe; do
 	for sec in .text .rdata .data .bss; do
-		a=$(i686-w64-mingw32-objcopy -O binary --only-section=$sec "$out/base/$f" /dev/stdout | sha1sum)
-		b=$(i686-w64-mingw32-objcopy -O binary --only-section=$sec "$out/work/$f" /dev/stdout | sha1sum)
+		a=$(x86_64-w64-mingw32-objcopy -O binary --only-section=$sec "$out/base/$f" /dev/stdout | sha1sum)
+		b=$(x86_64-w64-mingw32-objcopy -O binary --only-section=$sec "$out/work/$f" /dev/stdout | sha1sum)
 		if [ "$a" = "$b" ]; then
 			echo "$f $sec identical"
 		else

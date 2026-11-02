@@ -2126,12 +2126,7 @@ void FXSwarm_BeeDeath(float x, float y, float z, float vx, float vy, float vz, f
 			break;
 		}
 		CGameParticles_Apply(p);
-#if SD_32BIT
-		/* ramp 1 or the 9 words after the table (the original reads the window sizes and fog values there) */
-		CGameParticles_SetColorRamp(p, (&FXSWARM_FLASH_RAMPS[9]) + 9 * (crt_rand() & 1));
-#else
 		CGameParticles_SetColorRamp(p, FXSWARM_FLASH_RAMPS + 9 * (crt_rand() & 1));
-#endif
 		CGameParticles_EmitDt(p, 1, 1, FXW_Rand(0.10000000149011612, 0.0));
 		a = step + a;
 	} while (6.283185307179586 > (double)a);

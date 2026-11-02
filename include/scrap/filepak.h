@@ -24,7 +24,6 @@ typedef struct cFile2 {
 	cFile file;
 	int curPos;			/* 0x10 */
 } cFile2;
-SD_SIZE(cFile2, 0x14);
 
 typedef struct cFilePack {
 	cFile file;			/* used directly for a file on disk */
@@ -32,7 +31,6 @@ typedef struct cFilePack {
 	int size;			/* 0x14 */
 	int pack;			/* 0x18 index in g_PackFiles, -1 */
 } cFilePack;
-SD_SIZE(cFilePack, 0x1c);
 
 /* a value of the index */
 typedef struct cPackLocation {
@@ -48,14 +46,12 @@ typedef struct cPackIndexItem {
 	char *key;			/* 0x0c cString */
 	struct cPackIndexItem *next;	/* 0x10 */
 } cPackIndexItem;
-SD_SIZE(cPackIndexItem, 0x14);
 
 typedef struct cNameItem {
 	intptr_t value;			/* 0x0 a number, the bits of a float or a pointer */
 	char *key;			/* 0x4 cString */
 	struct cNameItem *next;		/* 0x8 */
 } cNameItem;
-SD_SIZE(cNameItem, 0xc);
 
 /* the cNameItem instance of HashTable.h (FilePak.c, also the assigned zones of Logic/Domination.c) */
 cNameItem *NameTable_Find(HashTable *self, const char *key, uint32_t slot);
@@ -71,7 +67,6 @@ typedef struct cPackEntry {
 	int offset;			/* 0x104 */
 	int size;			/* 0x108 */
 } cPackEntry;
-SD_SIZE(cPackEntry, 0x10c);
 
 
 typedef struct cPackEntryNode {
@@ -79,14 +74,12 @@ typedef struct cPackEntryNode {
 	struct cPackEntryNode *prev;	/* 0x4 */
 	cPackEntry e;			/* 0x8 */
 } cPackEntryNode;
-SD_SIZE(cPackEntryNode, 0x114);
 
 typedef struct cStringNode {
 	struct cStringNode *next;	/* 0x0 */
 	struct cStringNode *prev;	/* 0x4 */
 	char *str;			/* 0x8 cString */
 } cStringNode;
-SD_SIZE(cStringNode, 0xc);
 
 typedef DLIST(cPackEntryNode) cPackEntryList;
 typedef DLIST(cStringNode) cStringList;

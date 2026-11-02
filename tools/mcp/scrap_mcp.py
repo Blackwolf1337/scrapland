@@ -4,7 +4,7 @@ so an AI assistant can test it: start named games, run Python in them, wait for 
 screenshots (cropped, zoomed, side by side), read the logs, trace the render calls of one frame and list the Vulkan
 validation errors that are ours.
 
-Each game runs in a slot of its own (build/mcp/slot-<name>, made by tools/test/mkgame.sh --into: the game data
+Each game runs in a slot of its own (build-mcp/slot-<name>, made by tools/test/mkgame.sh --into: the game data
 linked, Bin, the configs and the Wine prefix copied), through tools/test/wine.sh (gamescope headless, muted). The
 game side is tools/mcp/mcpgame.py, started with -PythonExecute. The server speaks the Model Context Protocol over
 stdio (JSON-RPC 2.0, one message a line) and needs only the Python standard library; Pillow does crops, zoom and
@@ -25,12 +25,12 @@ VERSION = '0.1.0'
 PROTOCOLS = ('2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05')
 ROOT = os.environ.get('SCRAP_MCP_ROOT') or os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 REF_EXE = os.path.join(ROOT, 'build-ref-noexact', 'ScrapC.exe')
-SLOTS = os.path.join(ROOT, 'build', 'mcp')
+SLOTS = os.path.join(ROOT, 'build-mcp')
 RUNTIME = os.environ.get('XDG_RUNTIME_DIR') or '/run/user/%d' % os.getuid()
 INSTRUCTIONS = (
     'Runs ScrapC.exe of the Scrapland checkout without a window (gamescope headless, Wine, muted, on the AMD 610M). '
     'launch starts a named game (exe c = the build, ref = the frozen reference; map= loads a level), wait kind=ready '
-    'waits until the menu or the level runs, python runs code in the game (Scrap, SDTest), screenshot and compare show '
+    'waits until the menu or the level runs, python runs code in the game (Scrap and the other script modules), screenshot and compare show '
     'the window, log reads log.html or scrapdecomp.log, trace and vkcheck need launch with trace= or validation=true. '
     'quit ends a game. Build first (cmake --build build); launch copies build/ScrapC.exe into the slot.')
 
@@ -53,8 +53,8 @@ def sockets(since=0.0):
 
 # the native Linux builds by their exe name
 # the Windows builds by their exe name (the DLLs of FFmpeg and SDL3 from the same folder)
-WIN_BUILDS = {'c': 'build', 'c64': 'build-win64'}
-NATIVE_BUILDS = {'native': 'build-linux', 'native64': 'build-linux64', 'native64asan': 'build-linux64-asan'}
+WIN_BUILDS = {'c64': 'build-win64'}
+NATIVE_BUILDS = {'native64': 'build-linux64', 'native64asan': 'build-linux64-asan'}
 
 
 class Game:
@@ -98,7 +98,7 @@ class Game:
                 else:
                     shutil.copy2(p, dst)
         with open(os.path.join(binDir, 'scrapdecomp.ini'), 'w') as f:
-            f.write('[general]\ntestmod=1\n')
+            f.write('[general]\n')
         shutil.copy2(os.path.join(ROOT, 'tools', 'mcp', 'mcpgame.py'), self.game)
         for n in ('mcp_cmd.txt', 'mcp_reply.txt', 'log.html'):
             p = os.path.join(self.game, n)
@@ -115,7 +115,7 @@ class Game:
             if r.returncode:
                 raise RuntimeError('mkgame.sh failed: %s' % (r.stderr or r.stdout))
         binDir = os.path.join(self.game, 'Bin')
-        build = WIN_BUILDS.get(exe, 'build')
+        build = WIN_BUILDS.get(exe, 'build-win64')
         src = os.path.join(ROOT, build, 'ScrapC.exe') if exe in WIN_BUILDS else REF_EXE
         if not os.path.isfile(src):
             raise RuntimeError('%s is missing (build first)' % src)
@@ -126,7 +126,7 @@ class Game:
                     if n.endswith('.dll'):
                         shutil.copy2(os.path.join(d, n), binDir)
         with open(os.path.join(binDir, 'scrapdecomp.ini'), 'w') as f:
-            f.write('[general]\ntestmod=1\n')
+            f.write('[general]\n')
         shutil.copy2(os.path.join(ROOT, 'tools', 'mcp', 'mcpgame.py'), self.game)
         for n in ('mcp_cmd.txt', 'mcp_reply.txt', 'log.html'):
             p = os.path.join(self.game, n)
@@ -136,7 +136,7 @@ class Game:
     def start(self, a):
         if self.running():
             raise RuntimeError('game %s runs already; quit it first' % self.name)
-        exe = a.get('exe', 'c')
+        exe = a.get('exe', 'native64')
         if exe != 'ref' and exe not in WIN_BUILDS and exe not in NATIVE_BUILDS:
             raise RuntimeError("exe is one of: ref, %s" % ', '.join(list(WIN_BUILDS) + list(NATIVE_BUILDS)))
         self.prepare(exe)
@@ -398,10 +398,10 @@ TOOLS = [
     {'name': 'launch', 'description': 'Start a game in its own slot (no window, muted, AMD 610M). Returns at once; '
      'then wait kind=ready.', 'inputSchema': schema({
          'name': NAME,
-         'exe': {'type': 'string', 'enum': ['c', 'c64', 'ref', 'native', 'native64', 'native64asan'], 'description': 'c: build/ScrapC.exe, c64: build-win64/ScrapC.exe (x64) '
-                 '(default), ref: the frozen reference build-ref-noexact/ScrapC.exe (Direct3D 8 through Wine), native: '
-                 'the Linux build build-linux/ScrapC (i686), native64: build-linux64/ScrapC (x86_64), native64asan: '
-                 'build-linux64-asan/ScrapC (AddressSanitizer, its report in the log, which=wine)'},
+         'exe': {'type': 'string', 'enum': ['native64', 'native64asan', 'c64', 'ref'], 'description': 'native64: build-linux64/ScrapC '
+                 '(default), native64asan: build-linux64-asan/ScrapC (AddressSanitizer, its report in the log, '
+                 'which=wine), c64: build-win64/ScrapC.exe under Wine, ref: the frozen reference '
+                 'build-ref-noexact/ScrapC.exe (i686, Direct3D 8 through Wine)'},
          'map': {'type': 'string', 'description': 'a level for -imap: (FZ or Levels/FZ)'},
          'args': {'type': 'array', 'items': {'type': 'string'}, 'description': 'more arguments of the game'},
          'env': {'type': 'object', 'description': 'more environment variables (SCRAP_VK_DEBUG, SCRAP_RD_DUMP, ...)'},
@@ -421,7 +421,7 @@ TOOLS = [
          'seconds': {'type': 'number', 'description': 'kind=time'},
          'timeout': {'type': 'number', 'description': 'default 120'},
          'screenshot': {'type': 'boolean', 'description': 'a screenshot after the wait'}}, ['kind'])},
-    {'name': 'python', 'description': 'Run Python 1.5.2 in the game (modules Scrap, SDTest, ...). An expression gives '
+    {'name': 'python', 'description': 'Run Python 1.5.2 in the game (modules Scrap, SAI, SVec, ...). An expression gives '
      'its repr; statements give the repr of the global result, or ok.', 'inputSchema': schema({
          'name': NAME, 'code': {'type': 'string'}, 'timeout': {'type': 'number', 'description': 'default 10'},
          'screenshot': {'type': 'boolean'}}, ['code'])},
@@ -459,7 +459,7 @@ def call(name, a):
             return [text('\n'.join(g.stop() for g in GAMES.values() if g.proc) or 'no game runs')]
         return [text(game_of(a).stop())]
     if name == 'status':
-        rows = ['%s: %s, %s%s' % (n, g.opts.get('exe', 'c'), 'runs' if g.running() else 'ended',
+        rows = ['%s: %s, %s%s' % (n, g.opts.get('exe', 'native64'), 'runs' if g.running() else 'ended',
                                   ', map ' + g.opts['map'] if g.opts.get('map') else '') for n, g in GAMES.items()]
         return [text('\n'.join(rows) or 'no game')]
     if name == 'wait':
@@ -495,7 +495,7 @@ def call(name, a):
         ims = [picture(g.screenshot(), a.get('crop')) for g in games]
         if any(i is None for i in ims):
             raise RuntimeError('compare needs Pillow')
-        labels = ['%s (%s)' % (g.name, g.opts.get('exe', 'c')) for g in games]
+        labels = ['%s (%s)' % (g.name, g.opts.get('exe', 'native64')) for g in games]
         return [image_content(im=strip(ims, labels))]
     if name == 'log':
         g = game_of(a)

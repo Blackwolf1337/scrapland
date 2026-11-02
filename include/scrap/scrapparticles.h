@@ -40,10 +40,6 @@ typedef struct CGameParticles {
 	CRenderNode *Node;			/* 0xa8 a reference (CGameModel_RenderNodeRef) */
 	CParticleSystem *ParticleSystem;		/* 0xac the object of Node */
 } CGameParticles;
-SD_OFFSET(CGameParticles, rotIni, 0x8c);
-SD_OFFSET(CGameParticles, sparkVelScale, 0x9c);
-SD_OFFSET(CGameParticles, Node, 0xa8);
-SD_SIZE(CGameParticles, 0xb0);
 
 CGameParticles *CGameParticles_ctor(CGameParticles *self);
 /* no node, the default parameters */

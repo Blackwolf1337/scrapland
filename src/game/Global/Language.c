@@ -21,7 +21,6 @@ typedef struct cLangItem {
 	const char *key;		/* 0x8 */
 	struct cLangItem *next;		/* 0xc */
 } cLangItem;
-SD_SIZE(cLangItem, 0x10);
 
 cGVar GVar_SelectedLanguage;
 

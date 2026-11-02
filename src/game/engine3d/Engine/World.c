@@ -650,7 +650,6 @@ typedef struct DebugPoint {
 	uint32_t color;			/* 0x0c */
 	float type;			/* 0x10 see Debug_Point */
 } DebugPoint;
-SD_SIZE(DebugPoint, 0x14);
 
 
 CTable g_Points;

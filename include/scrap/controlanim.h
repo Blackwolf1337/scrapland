@@ -32,7 +32,6 @@ typedef struct CAnimEvent {
 	float t;			/* 0x0c the frame */
 	uint32_t flags;			/* 0x10 1: in a list */
 } CAnimEvent;
-SD_SIZE(CAnimEvent, 0x14);
 
 /* Engine/EventoAnim.cpp: an event of the time t; ctorAdd puts it into the list */
 CAnimEvent *CAnimEvent_ctor(CAnimEvent *self, float t, int id, intptr_t arg);
@@ -77,9 +76,6 @@ typedef struct CAnimCtrl {
 	float lastFrame;		/* 0x7c */
 	CAnimEvent *event;		/* 0x80 the next event */
 } CAnimCtrl;
-SD_SIZE(CAnimCtrl, 0x84);
-SD_OFFSET(CAnimCtrl, frame, 0x50);
-SD_OFFSET(CAnimCtrl, event, 0x80);
 
 CAnimCtrl *CAnimCtrl_ctor(CAnimCtrl *self);
 /* rva 0x250f10, empty */

@@ -35,7 +35,6 @@ extern const INodeFXVtbl INodeFX_vftable;
 struct INodeFX {
 	const INodeFXVtbl *vftable;	/* 0x0 */
 };
-SD_SIZE(INodeFX, 4);
 
 typedef struct CNodeFX_Wheel {
 	union {
@@ -51,8 +50,6 @@ typedef struct CNodeFX_Wheel {
 	vec3_t ang;			/* 0x44 the angles given to look r1 */
 	uint32_t noiseBase;		/* 0x50 ms, random */
 } CNodeFX_Wheel;
-SD_OFFSET(CNodeFX_Wheel, ang, 0x44);
-SD_SIZE(CNodeFX_Wheel, 0x54);
 
 typedef struct CNodeFX_Spring {
 	union {
@@ -69,8 +66,6 @@ typedef struct CNodeFX_Spring {
 	float torsion;			/* 0x38 */
 	float damp2;			/* 0x3c */
 } CNodeFX_Spring;
-SD_OFFSET(CNodeFX_Spring, vel, 0x24);
-SD_SIZE(CNodeFX_Spring, 0x40);
 
 /* the engine variables of the effects */
 extern cGVar GVar_NodeFXSpringDamp1;

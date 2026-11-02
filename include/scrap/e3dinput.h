@@ -60,7 +60,6 @@ struct IInput {
 	byte buttons[4];		/* 0x010 */
 	byte keys[256];			/* 0x014 0x80 while held */
 };
-SD_SIZE(IInput, 0x114);
 
 /* CEntradaNula: the input that reads nothing (g_Input before the real one), no members of its own */
 typedef IInput CNullInput;

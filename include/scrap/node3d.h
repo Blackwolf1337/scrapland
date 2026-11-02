@@ -58,7 +58,6 @@ struct IObject3D {
 };
 extern const IObject3DVtbl IObject3D_vftable;
 #define IOBJECT3D_VFTABLE (&IObject3D_vftable)
-SD_SIZE(IObject3D, 8);
 
 
 /* a counted reference (objref.h): the head of CNode3D and CScene, the deleting destructor first */
@@ -72,7 +71,6 @@ typedef struct ObjRef {
 	char *name;			/* 0x4 */
 	int Refs;			/* 0x8 */
 } ObjRef;
-SD_OFFSET(ObjRef, Refs, 0x8);
 
 /* *slot released (objref.h): counted down, deleted when nobody holds it any more */
 static inline void ObjRef_Release(void *slot) {
@@ -114,7 +112,6 @@ typedef struct CRotation {
 	uint32_t flags;			/* 0x1c ROT_DIRTY, ROT_ZERO */
 	int mode;			/* 0x20 0: Quat_FromEuler of -ang, else the product of the axis rotations */
 } CRotation;
-SD_SIZE(CRotation, 0x24);
 #define ROT_DIRTY 1
 #define ROT_ZERO 2			/* all angles 0: the identity */
 
@@ -131,7 +128,6 @@ typedef struct NodeAnimChannel {
 	float t2;			/* 0x10 */
 	float blend;			/* 0x14 */
 } NodeAnimChannel;
-SD_SIZE(NodeAnimChannel, 0x18);
 
 /* the render state of a scene (RenderCtx.h) */
 typedef struct NodeAnimCtx {
@@ -140,7 +136,6 @@ typedef struct NodeAnimCtx {
 	struct CModel *model;		/* 0xa0 */
 	void *renderNodes;			/* 0xa4 set: the render nodes of model are drawn instead of the scene's */
 } NodeAnimCtx;
-SD_OFFSET(NodeAnimCtx, m, 0x60);
 
 /* a scene (Engine/escena.cpp): a list of nodes with their materials, an animation and the user properties */
 /* a color (r in the low byte, then g, b, a) and the intensity it is multiplied with (Color_ToD3D) */
@@ -148,7 +143,6 @@ typedef struct ColorIntens {
 	uint32_t rgba;			/* 0x0 */
 	float intens;			/* 0x4 */
 } ColorIntens;
-SD_SIZE(ColorIntens, 8);
 
 typedef struct CScene {
 	union {
@@ -174,13 +168,6 @@ typedef struct CScene {
 	CTable mats;			/* 0x58 TabMaterial: CMaterial * */
 	byte fromAmc;			/* 0x60 loaded from the .sm3 and the .amc */
 } CScene;
-SD_SIZE(CScene, 0x64);
-SD_OFFSET(CScene, anim, 0x10);
-SD_OFFSET(CScene, box, 0x24);
-SD_OFFSET(CScene, AnimM3D, 0x3c);
-SD_OFFSET(CScene, ini, 0x4c);
-SD_OFFSET(CScene, mats, 0x58);
-SD_OFFSET(CScene, fromAmc, 0x60);
 
 /* how a render node orients its node (CRenderNode look) */
 typedef struct NodeLook {
@@ -188,7 +175,6 @@ typedef struct NodeLook {
 	CRotation r1;			/* 0x04 */
 	CRotation r2;			/* 0x28 */
 } NodeLook;
-SD_OFFSET(NodeLook, r2, 0x28);
 
 /* the render instance of a node (Engine/NodoR.cpp, 0xa8 bytes) */
 typedef struct CRenderNode {
@@ -208,12 +194,6 @@ typedef struct CRenderNode {
 	struct INodeFX *obj3D2;		/* 0xa0 owned, the effect of the node (a copy of obj58) */
 	struct CNode3D *node;		/* 0xa4 a reference */
 } CRenderNode;
-SD_OFFSET(CRenderNode, flags, 0x04);
-SD_OFFSET(CRenderNode, m, 0x10);
-SD_OFFSET(CRenderNode, frame, 0x90);
-SD_OFFSET(CRenderNode, obj3D, 0x9c);
-SD_OFFSET(CRenderNode, node, 0xa4);
-SD_SIZE(CRenderNode, 0xa8);
 
 typedef struct CNode3D {
 	union {
@@ -245,12 +225,6 @@ typedef struct CNode3D {
 	vec3_t scale;			/* 0xec */
 	CIniFile *ini;			/* 0xf8 */
 } CNode3D;
-SD_OFFSET(CNode3D, flags, 0x18);
-SD_OFFSET(CNode3D, obj3D, 0x3c);
-SD_OFFSET(CNode3D, m, 0x5c);
-SD_OFFSET(CNode3D, qLook, 0xdc);
-SD_OFFSET(CNode3D, ini, 0xf8);
-SD_SIZE(CNode3D, 0xfc);
 
 CNode3D *CNode3D_ctor(CNode3D *self);
 void CNode3D_dtor(CNode3D *self);

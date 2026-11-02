@@ -34,7 +34,6 @@ typedef struct CLensFlare {
 	CGroundHit hit;			/* 0x40 the hit cache of the trace */
 	uint32_t lastTime;		/* 0x4c g_TimeMsF of the last render */
 } CLensFlare;
-SD_SIZE(CLensFlare, 0x50);
 
 /* a vertex of the sprites (D3DFVF_XYZ | DIFFUSE | SPECULAR | TEX1) */
 #define D3DFVF_LENSFLARE 0x1c2
@@ -44,7 +43,6 @@ typedef struct VertLensFlare {
 	uint32_t specular;		/* 0x10 */
 	float u, v;			/* 0x14 */
 } VertLensFlare;
-SD_SIZE(VertLensFlare, 0x1c);
 
 extern CMaterial *g_LensFlareMat;
 extern cGVar GVar_R_LensFlare;

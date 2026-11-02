@@ -67,11 +67,6 @@ typedef struct cEmbeddedFXVehicle {
 	cFXVehicleSirens *sirens;	/* 0x1a8 */
 	cEmbeddedFXVehicleSub *other;	/* 0x1ac Probe or Vote */
 } cEmbeddedFXVehicle;
-SD_OFFSET(cEmbeddedFXVehicle, follow, 0x28);
-SD_OFFSET(cEmbeddedFXVehicle, visible, 0x188);
-SD_OFFSET(cEmbeddedFXVehicle, alpha, 0x190);
-SD_OFFSET(cEmbeddedFXVehicle, attached, 0x1a4);
-SD_SIZE(cEmbeddedFXVehicle, 0x1b0);
 
 /* two flashes per period at the DF_SpeedTrail_01/02 dummies of the vehicle */
 struct cFXVehicleSirens {
@@ -80,7 +75,6 @@ struct cFXVehicleSirens {
 	float time;			/* 0x1c 0..0.9 */
 	float lastTime;			/* 0x20 */
 };
-SD_SIZE(cFXVehicleSirens, 0x24);
 
 #define PROBE_LIGHTS 4
 typedef struct cEmbeddedFXVehicleProbe {
@@ -99,9 +93,6 @@ typedef struct cEmbeddedFXVehicleProbe {
 	CGameTrail trail;		/* 0x388 the rings */
 	float ringTime;			/* 0x38c 0..1 */
 } cEmbeddedFXVehicleProbe;
-SD_OFFSET(cEmbeddedFXVehicleProbe, trans, 0x2cc);
-SD_OFFSET(cEmbeddedFXVehicleProbe, trail, 0x388);
-SD_SIZE(cEmbeddedFXVehicleProbe, 0x390);
 
 #define VOTE_MOTORS 3
 #define VOTE_MAYOR 1
@@ -121,10 +112,6 @@ typedef struct cEmbeddedFXVehicleVote {
 	CGameParticles motor[VOTE_MOTORS];	/* 0x0cc DF_MotorTrust_01..03 */
 	int type;			/* 0x2dc VOTE_MAYOR, VOTE_BISHOP */
 } cEmbeddedFXVehicleVote;
-SD_OFFSET(cEmbeddedFXVehicleVote, glow, 0x10);
-SD_OFFSET(cEmbeddedFXVehicleVote, trails, 0xc4);
-SD_OFFSET(cEmbeddedFXVehicleVote, type, 0x2dc);
-SD_SIZE(cEmbeddedFXVehicleVote, 0x2e0);
 
 /* the vehicle fields used here */
 

@@ -189,7 +189,6 @@ typedef struct cGradientScorer {
 	int colorSelected;		/* 0xc4 0..3, the corner of Red, Green, Blue, Alpha */
 	uint32_t colors[4];		/* 0xc8 0xffffffff */
 } cGradientScorer;
-SD_SIZE(cGradientScorer, 0xd8);
 
 cGradientScorer *cGradientScorer_ctor(cGradientScorer *self);
 cScorerItem *cGradientScorer_Delete(cScorerItem *base, byte flags);
@@ -246,11 +245,6 @@ typedef struct cStatusScorer {
 	uint32_t backColor;		/* 0x1f4 0x5cffcc00 */
 	uint32_t textBackColor;		/* 0x1f8 0xffffffff */
 } cStatusScorer;
-SD_SIZE(cStatusScorer, 0x1fc);
-SD_OFFSET(cStatusScorer, img, 0x130);
-SD_OFFSET(cStatusScorer, numLives, 0x160);
-SD_OFFSET(cStatusScorer, moneyBlink, 0x1b0);
-SD_OFFSET(cStatusScorer, flag, 0x1e8);
 
 extern cGVar GVar_DangerLifeSound;
 #define g_StatusLowLifeSound (GVar_DangerLifeSound.value.s)	/* the sound of the low life */
@@ -285,7 +279,6 @@ typedef struct cTabScorer {
 	int filled;			/* 0xe8 1 */
 	CPsaImage *img;			/* 0xec File */
 } cTabScorer;
-SD_SIZE(cTabScorer, 0xf0);
 
 extern float g_TabBackTextWidth;	/* the width of the back text, once */
 
@@ -338,9 +331,6 @@ typedef struct cTalkScorer {
 	float lineHeight;		/* 0x1a78 */
 	int maxLines;			/* 0x1a7c 3, shown at once */
 } cTalkScorer;
-SD_SIZE(cTalkScorer, 0x1a80);
-SD_OFFSET(cTalkScorer, useLines, 0x19bc);
-SD_OFFSET(cTalkScorer, tab, 0x1a64);
 
 /* the talk of Scorer_SetSpeechText */
 extern char g_TalkText[6400];		/* TALK_TEXT_SIZE */
@@ -384,7 +374,6 @@ typedef struct cTargetScorer {
 	int enemyFireIndex;		/* 0x140 */
 	int enemyIndex;			/* 0x144 0x31 */
 } cTargetScorer;
-SD_SIZE(cTargetScorer, 0x148);
 
 cTargetScorer *cTargetScorer_ctor(cTargetScorer *self);
 void cTargetScorer_dtor(cTargetScorer *self);
@@ -422,7 +411,6 @@ typedef struct cTextScorer {
 	byte isNumeric;			/* 0xd8 */
 	byte pad_d9[3];
 } cTextScorer;
-SD_SIZE(cTextScorer, 0xdc);
 
 /* a text typed in letter by letter (0xf4 bytes) */
 typedef struct cTextTypingScorer {
@@ -437,7 +425,6 @@ typedef struct cTextTypingScorer {
 	byte typingSound;		/* 0xf0 1 */
 	byte pad_f1[3];
 } cTextTypingScorer;
-SD_SIZE(cTextTypingScorer, 0xf4);
 
 /* the text edit of each player */
 extern cTextScorer * g_TextEditItem[4];	/* [4] */
@@ -481,7 +468,6 @@ typedef struct cTimerScorer {
 	cPy_Function onTimeExpired;	/* 0xc8 */
 	cPy_Function onTimeWarning;	/* 0xdc */
 } cTimerScorer;
-SD_SIZE(cTimerScorer, 0xf0);
 
 /* the time engine variables of the types, by type (their flags at -4, GVAR_FLAGS) */
 extern cGVar GVar_TimeToCancelCurrentMission;
@@ -529,7 +515,6 @@ typedef struct cWaypointScorer {
 	int dotIndex;			/* 0xbc WaypointDotIndex 1 */
 	CPsaImage *img;			/* 0xc0 Sprite */
 } cWaypointScorer;
-SD_SIZE(cWaypointScorer, 0xc4);
 
 cWaypointScorer *cWaypointScorer_ctor(cWaypointScorer *self);
 void cWaypointScorer_dtor(cWaypointScorer *self);
@@ -588,10 +573,6 @@ typedef struct cWeaponScorer {
 	int tabSpriteIndex;		/* 0x1bc */
 	int tabBlend;			/* 0x1c0 */
 } cWeaponScorer;
-SD_SIZE(cWeaponScorer, 0x1c4);
-SD_OFFSET(cWeaponScorer, upgradeIconAc, 0x12c);
-SD_OFFSET(cWeaponScorer, ammoIconAc, 0x168);
-SD_OFFSET(cWeaponScorer, fontBackIndex, 0x18c);
 
 cWeaponScorer *cWeaponScorer_ctor(cWeaponScorer *self);
 void cWeaponScorer_dtor(cWeaponScorer *self);
@@ -609,7 +590,6 @@ typedef struct cWindFxScorer {
 	float wind[4];			/* 0xb0 the free space left, right, up, down 0..1 */
 	cSound sound;			/* 0xc0 looped */
 } cWindFxScorer;
-SD_SIZE(cWindFxScorer, 0x100);
 
 extern cGVar GVar_WindFxScorerSound;
 #define g_WindFxSound (GVar_WindFxScorerSound.value.s)

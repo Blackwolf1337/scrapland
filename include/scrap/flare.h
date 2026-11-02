@@ -49,7 +49,6 @@ typedef struct CFlare {
 	CGraphic2D *graphic;		/* 0x34 owned */
 	float transp;			/* 0x38 1, the fade 0..1 */
 } CFlare;
-SD_SIZE(CFlare, 0x3c);
 
 /* rva 0x297bd0, not called: 1 if the 11 floats of a and b are equal */
 byte Floats11_Equal(const float *a, const float *b);

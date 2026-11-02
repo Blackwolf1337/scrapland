@@ -38,7 +38,6 @@ typedef struct CTextStatic {
 	void *tex;			/* 0x0 Texture_GetD3D */
 	void *Hint;			/* 0x4 CTexture, referenced */
 } CTextStatic;
-SD_SIZE(CTextStatic, 0x8);
 
 typedef struct CMap {
 	char *Name;			/* 0x00 as in the model */
@@ -70,9 +69,6 @@ typedef struct CMap {
 	int state;			/* 0x58 MAP_MISSING: the file was not found */
 	void *MultiSprite;		/* 0x5c */
 } CMap;
-SD_SIZE(CMap, 0x60);
-SD_OFFSET(CMap, staticTex, 0x34);
-SD_OFFSET(CMap, state, 0x58);
 
 #define MAP_MISSING 2
 
@@ -97,7 +93,6 @@ typedef struct CMatParams {
 	byte zWrite;			/* 0x3f D3DRS_ZWRITEENABLE */
 	int zFunc;			/* 0x40 D3DRS_ZFUNC: 4 less or equal, 8 always */
 } CMatParams;
-SD_SIZE(CMatParams, 0x34);
 
 /* the shader mode of a material for the renderer (Engine/RenderShader.cpp) */
 typedef struct CMatId {
@@ -108,19 +103,16 @@ typedef struct CMatId {
 	byte pad_7;
 	int gen;			/* 0x8 the shader mode mask it was registered with */
 } CMatId;
-SD_SIZE(CMatId, 0xc);
 
 /* the bases without a vtable of the named and counted objects of objref.h: CScene, CNode3D and CMaterial have the
  * name at 0x4 and the count at 0x8, CMatList only the name */
 typedef struct CObjName {
 	char *name;			/* 0x0 */
 } CObjName;
-SD_SIZE(CObjName, 4);
 
 typedef struct CObjRef {
 	int Refs;			/* 0x0 */
 } CObjRef;
-SD_SIZE(CObjRef, 4);
 
 typedef struct CMatList CMatList;
 
@@ -142,9 +134,6 @@ typedef struct CMaterial {
 	CMatId id;			/* 0x90 */
 	CMap *map[MAP_TOTAL];	/* 0x9c */
 } CMaterial;
-SD_SIZE(CMaterial, 0xb0);
-SD_OFFSET(CMaterial, next, 0x44);
-SD_OFFSET(CMaterial, map, 0x9c);
 
 typedef struct CMatListVtbl {
 	struct CMatList *(*Delete)(struct CMatList *self, byte flags);	/* 0x00 */
@@ -158,7 +147,6 @@ struct CMatList {
 	CMaterial *first;			/* 0x8 */
 	CMaterial *last;			/* 0xc */
 };
-SD_SIZE(CMatList, 0x10);
 
 /* the materials of the engine */
 extern CMatList g_MatList;
@@ -191,7 +179,6 @@ typedef struct CAnimMat {
 	uint32_t lastTime;		/* 0x24 g_TimeMs of the last step */
 	int lastFrame;			/* 0x28 g_FrameCount of the last step */
 } CAnimMat;
-SD_SIZE(CAnimMat, 0x2c);
 #define ANIMMAT_REPR 0			/* playing */
 #define ANIMMAT_PAUSE 1
 #define ANIMMAT_FADE_PAUSE 2		/* slowing down */

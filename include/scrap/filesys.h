@@ -27,20 +27,17 @@ typedef struct cAbstractFileVtbl {
 	int(*Size)(cAbstractFile *self);					/* 0x1c */
 	cAbstractFile *(*Destroy)(cAbstractFile *self, int flags);	/* 0x20 flags 1 frees */
 } cAbstractFileVtbl;
-SD_OFFSET(cAbstractFileVtbl, Destroy, 0x20);
 
 struct cAbstractFile {
 	const cAbstractFileVtbl *vftable;	/* 0x00 */
 	char *name;			/* 0x04 Mem_Alloc copy while open */
 	uint32_t mode;			/* 0x08 FILE_MODE_ */
 };
-SD_SIZE(cAbstractFile, 0xc);
 
 typedef struct cFile {
 	cAbstractFile base;
 	void *f;			/* 0x0c FILE of the exe's CRT */
 } cFile;
-SD_SIZE(cFile, 0x10);
 
 typedef struct cFileMem {
 	cAbstractFile base;
@@ -51,9 +48,6 @@ typedef struct cFileMem {
 	byte ownsBuffer;		/* 0x1c */
 	byte pad_1d[3];
 } cFileMem;
-SD_OFFSET(cFileMem, buffer, 0xc);
-SD_OFFSET(cFileMem, ownsBuffer, 0x1c);
-SD_SIZE(cFileMem, 0x20);
 
 extern const cAbstractFileVtbl cAbstractFile_vftable;
 #define CABSTRACTFILE_VFTABLE (&cAbstractFile_vftable)
@@ -106,13 +100,11 @@ typedef struct cFileBlockNode {
 	int pos;			/* 0x4 offset of the size field while writing */
 	struct cFileBlockNode *prev;	/* 0x8 */
 } cFileBlockNode;
-SD_SIZE(cFileBlockNode, 0xc);
 
 typedef struct cFileBlock {
 	cAbstractFile *f;		/* 0x0 */
 	cFileBlockNode *block;		/* 0x4 the open block */
 } cFileBlock;
-SD_SIZE(cFileBlock, 0x8);
 
 /* Open flags: bit 0 write (with bit 1 still a cFilePack), 0x10 only if the file exists */
 #define FILEBLOCK_WRITE 0x1

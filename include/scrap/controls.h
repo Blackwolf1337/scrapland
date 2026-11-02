@@ -34,10 +34,6 @@ typedef struct cVehicleControls {
 	float rumbleARate;		/* 0x3c per second */
 	float rumbleBRate;		/* 0x40 */
 } cVehicleControls;
-SD_OFFSET(cVehicleControls, fire, 0x22);
-SD_OFFSET(cVehicleControls, netFire, 0x27);
-SD_OFFSET(cVehicleControls, rumbleA, 0x34);
-SD_SIZE(cVehicleControls, 0x44);
 
 cVehicleControls *Controls_ctor(cVehicleControls *self);
 /* the first weapon of the world, everything else 0 */

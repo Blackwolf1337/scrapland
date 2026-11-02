@@ -29,13 +29,11 @@ typedef struct cEmbeddedFXVtbl {
 	void(*Tick)(cEmbeddedFX *self);				/* 0x10 */
 	void(*Stop)(cEmbeddedFX *self, byte keep);			/* 0x14 */
 } cEmbeddedFXVtbl;
-SD_OFFSET(cEmbeddedFXVtbl, Stop, 0x14);
 
 struct cEmbeddedFX {
 	const cEmbeddedFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x04 the character */
 };
-SD_SIZE(cEmbeddedFX, 8);
 
 /* stores the vtable of a class of the family */
 static inline void EFX_SetVtbl(void *self, const cEmbeddedFXVtbl *vt) {
@@ -57,9 +55,6 @@ typedef struct cEmbeddedFXAlarm {
 	byte lights;			/* 0xc4 the rotating lights shown */
 	byte pad_c5[3];
 } cEmbeddedFXAlarm;
-SD_OFFSET(cEmbeddedFXAlarm, on, 0xb4);
-SD_OFFSET(cEmbeddedFXAlarm, lights, 0xc4);
-SD_SIZE(cEmbeddedFXAlarm, 0xc8);
 
 typedef struct cEmbeddedFXBankDirector {
 	cEmbeddedFX base;
@@ -69,8 +64,6 @@ typedef struct cEmbeddedFXBankDirector {
 	byte wasOn;			/* 0xbd */
 	byte pad_be[2];
 } cEmbeddedFXBankDirector;
-SD_OFFSET(cEmbeddedFXBankDirector, on, 0xbc);
-SD_SIZE(cEmbeddedFXBankDirector, 0xc0);
 
 typedef struct cEmbeddedFXBankMaster {
 	cEmbeddedFX base;
@@ -81,8 +74,6 @@ typedef struct cEmbeddedFXBankMaster {
 	int dummyBaton;		/* 0xc0 */
 	CGameParticles baton;		/* 0xc4 the stick */
 } cEmbeddedFXBankMaster;
-SD_OFFSET(cEmbeddedFXBankMaster, baton, 0xc4);
-SD_SIZE(cEmbeddedFXBankMaster, 0x174);
 
 #define FXGAMBLER_ARCS 8
 #define FXGAMBLER_POINTS 0x37		/* the ring of points of an arc (60 slots) */
@@ -110,11 +101,6 @@ typedef struct cEmbeddedFXCrazyGambler {
 	byte unused_2188;			/* 0x2188 */
 	byte pad_2189[3];
 } cEmbeddedFXCrazyGambler;
-SD_OFFSET(cEmbeddedFXCrazyGambler, life, 0xd8);
-SD_OFFSET(cEmbeddedFXCrazyGambler, vertex, 0x1778);
-SD_OFFSET(cEmbeddedFXCrazyGambler, used, 0x1f58);
-SD_OFFSET(cEmbeddedFXCrazyGambler, trails, 0x2168);
-SD_SIZE(cEmbeddedFXCrazyGambler, 0x218c);
 
 typedef struct cEmbeddedFXGear {
 	cEmbeddedFX base;
@@ -124,8 +110,6 @@ typedef struct cEmbeddedFXGear {
 	byte pad_184[4];
 	CGameTrail trail;		/* 0x188 */
 } cEmbeddedFXGear;
-SD_OFFSET(cEmbeddedFXGear, shoot, 0xd4);
-SD_SIZE(cEmbeddedFXGear, 0x18c);
 
 typedef struct cEmbeddedFXMaintenance {
 	cEmbeddedFX base;
@@ -133,7 +117,6 @@ typedef struct cEmbeddedFXMaintenance {
 	float t;			/* 0xb8 */
 	float lastT;			/* 0xbc */
 } cEmbeddedFXMaintenance;
-SD_SIZE(cEmbeddedFXMaintenance, 0xc0);
 
 typedef struct cEmbeddedFXMercenary {
 	cEmbeddedFX base;
@@ -149,8 +132,6 @@ typedef struct cEmbeddedFXMercenary {
 	int dummyPipe;			/* 0x17c */
 	CGameParticles pipe;		/* 0x180 */
 } cEmbeddedFXMercenary;
-SD_OFFSET(cEmbeddedFXMercenary, isL, 0x178);
-SD_SIZE(cEmbeddedFXMercenary, 0x230);
 
 #define FXMESSENGER_RAYS 8
 #define FXEMBMESSENGER_TRAILS 12
@@ -173,18 +154,11 @@ typedef struct cEmbeddedFXMessenger {
 	byte unused_334;			/* 0x334 */
 	byte pad_335[3];
 } cEmbeddedFXMessenger;
-SD_OFFSET(cEmbeddedFXMessenger, life, 0x104);
-SD_OFFSET(cEmbeddedFXMessenger, verts, 0x194);
-SD_OFFSET(cEmbeddedFXMessenger, trails, 0x1f4);
-SD_OFFSET(cEmbeddedFXMessenger, offs, 0x224);
-SD_OFFSET(cEmbeddedFXMessenger, used, 0x2b4);
-SD_SIZE(cEmbeddedFXMessenger, 0x338);
 
 typedef struct cEmbeddedFXPolice {
 	cEmbeddedFX base;
 	cEmbeddedFXAlarm alarm;		/* 0x08 */
 } cEmbeddedFXPolice;
-SD_SIZE(cEmbeddedFXPolice, 0xd0);
 
 #define FXRUSTY_TRAILS 4
 
@@ -206,10 +180,6 @@ typedef struct cEmbeddedFXRusty {
 	float pause[FXRUSTY_TRAILS];	/* 0x2fc before the next bolt (never set by Reset) */
 	CGameTrail trails[FXRUSTY_TRAILS];	/* 0x30c */
 } cEmbeddedFXRusty;
-SD_OFFSET(cEmbeddedFXRusty, sparks, 0x178);
-SD_OFFSET(cEmbeddedFXRusty, glowLighting, 0x23c);
-SD_OFFSET(cEmbeddedFXRusty, trails, 0x30c);
-SD_SIZE(cEmbeddedFXRusty, 0x31c);
 
 #define FXSENTINEL_LASERS 4
 
@@ -231,10 +201,6 @@ typedef struct cEmbeddedFXSentinel {
 	int state;			/* 0x1f0 the cone status of the arrow (off, relax, alert, danger) */
 	cEmbeddedFXAlarm alarm;		/* 0x1f4 */
 } cEmbeddedFXSentinel;
-SD_OFFSET(cEmbeddedFXSentinel, beams, 0x174);
-SD_OFFSET(cEmbeddedFXSentinel, numLasers, 0x1a8);
-SD_OFFSET(cEmbeddedFXSentinel, alarm, 0x1f4);
-SD_SIZE(cEmbeddedFXSentinel, 0x2bc);
 
 /* EmbeddedFXCharHead.cpp: on the head model, +4 is the model of the character */
 typedef struct cEmbeddedFXHeadCrazyGambler {
@@ -246,7 +212,6 @@ typedef struct cEmbeddedFXHeadCrazyGambler {
 	byte unused_c0;			/* 0xc0 */
 	byte pad_c1[3];
 } cEmbeddedFXHeadCrazyGambler;
-SD_SIZE(cEmbeddedFXHeadCrazyGambler, 0xc4);
 
 /* the constructors and destructors (EmbeddedFXChar.c) */
 void cEmbeddedFX_dtor(cEmbeddedFX *self);

@@ -42,9 +42,6 @@ struct cWeapInfo {
 	byte upgrade[16];		/* 0x9c "UpgrdNN" reads byte 0x9b + NN */
 	float minAmmo;			/* 0xac */
 };
-SD_OFFSET(cWeapInfo, next, 0x90);
-SD_OFFSET(cWeapInfo, minAmmo, 0xac);
-SD_SIZE(cWeapInfo, 0xb0);
 
 /* an ammo type of g_pWorld->ammo (SWeap.InitAmmo) */
 struct cAmmoInfo {
@@ -56,8 +53,6 @@ struct cAmmoInfo {
 	cPy_Function onFire;		/* 0x34 */
 	cPy_Function onHit;		/* 0x48 */
 };
-SD_OFFSET(cAmmoInfo, onHit, 0x48);
-SD_SIZE(cAmmoInfo, 0x5c);
 
 /* the destructors of the table items (rva), for Delete_Objects */
 #define CAMMOINFO_DTOR 0x19fa40

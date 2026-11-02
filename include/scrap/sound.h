@@ -31,9 +31,6 @@ typedef struct cSoundDesc {
 	float param1;			/* 0x14 distance where the attenuation starts, 0: the global rolloff (p1) */
 	float param2;			/* 0x18 distance of silence, 0: no limit (p2) */
 } cSoundDesc;
-SD_SIZE(cSoundDesc, 0x1c);
-SD_OFFSET(cSoundDesc, prio, 0xd);
-SD_OFFSET(cSoundDesc, param3, 0x10);
 
 /* a sound by name with its parameters and the channel it plays on */
 typedef struct cSound {
@@ -41,7 +38,6 @@ typedef struct cSound {
 	char name[SOUND_NAME_MAX_LEN];	/* 0x1c */
 	int handle;			/* 0x3c mixer channel, 0 none */
 } cSound;
-SD_SIZE(cSound, 0x40);
 
 /* a view: position, angles (radians) and velocity, with sin and cos of the negated angles */
 typedef struct cSoundListener {
@@ -51,7 +47,6 @@ typedef struct cSoundListener {
 	vec3_t sin;			/* 0x24 */
 	vec3_t cos;			/* 0x30 */
 } cSoundListener;
-SD_SIZE(cSoundListener, 0x3c);
 
 typedef struct CSoundSys CSoundSys;
 
@@ -103,21 +98,12 @@ typedef struct CSoundSysVtbl {
 	int(*GetVoiceString)(CSoundSys *self, int voice, char *buf, int size);	/* 0x9c */
 	int(*VoiceUnused)(CSoundSys *self, int voice);			/* 0xa0 CHECK(0) */
 } CSoundSysVtbl;
-SD_OFFSET(CSoundSysVtbl, LoadSound, 0x14);
-SD_OFFSET(CSoundSysVtbl, PlaySound, 0x2c);
-SD_OFFSET(CSoundSysVtbl, StopSound, 0x40);
-SD_OFFSET(CSoundSysVtbl, SetListener, 0x5c);
-SD_OFFSET(CSoundSysVtbl, SetMusic, 0x64);
-SD_OFFSET(CSoundSysVtbl, GetSoundName, 0x78);
-SD_OFFSET(CSoundSysVtbl, OpenVoice, 0x80);
-SD_OFFSET(CSoundSysVtbl, VoiceUnused, 0xa0);
 
 struct CSoundSys {
 	const CSoundSysVtbl *vftable;			/* 0x00 */
 	cSoundListener listeners[SOUND_MAX_LISTENERS];	/* 0x04 */
 	int lastListener;				/* 0x7c the highest set, -1 none */
 };
-SD_SIZE(CSoundSys, 0x80);
 
 /* the mixer backend (include/scrap/snd.h; FMOD 3 in the original): the samples by name */
 typedef struct CSoundXBox {
@@ -127,7 +113,6 @@ typedef struct CSoundXBox {
 	byte swapPan;				/* 0x90 SoundSwapChannels */
 	byte pad_91[3];
 } CSoundXBox;
-SD_SIZE(CSoundXBox, 0x94);
 
 /* a value of the sample table: the sample, its parameters and its default frequency */
 typedef struct cSoundTableValue {
@@ -135,14 +120,12 @@ typedef struct cSoundTableValue {
 	cSoundDesc desc;			/* 0x04 */
 	int freq;				/* 0x20 */
 } cSoundTableValue;
-SD_SIZE(cSoundTableValue, 0x24);
 
 typedef struct cSoundStrItem {
 	cSoundTableValue value;			/* 0x00 */
 	char *key;				/* 0x24 cString */
 	struct cSoundStrItem *next;		/* 0x28 */
 } cSoundStrItem;
-SD_SIZE(cSoundStrItem, 0x2c);
 
 extern const CSoundSysVtbl CSoundSys_vftable;
 #define CSOUNDSYS_VFTABLE (&CSoundSys_vftable)
@@ -250,8 +233,6 @@ typedef struct cSoundPS {
 	float minInterval;		/* 0x64 "MinInterval" */
 	char *name;			/* 0x68 cString, the key in (&g_SndPSTable) */
 } cSoundPS;
-SD_SIZE(cSoundPS, 0x6c);
-SD_OFFSET(cSoundPS, loop, 0x58);
 
 extern HashTable g_SndPSTable;
 extern byte g_SndPSEnabled;
@@ -297,8 +278,6 @@ typedef struct cSndItem {
 	byte playing;			/* 0x9c */
 	byte pad_9d[3];
 } cSndItem;
-SD_SIZE(cSndItem, 0xa0);
-SD_OFFSET(cSndItem, ints, 0x88);
 
 typedef struct cEntity cEntity;
 typedef struct cSndInterface cSndInterface;
@@ -321,7 +300,6 @@ struct cSndInterface {
 	char id[4];			/* 0x14 three characters and 0 */
 	cEntity *owner;			/* 0x18 */
 };
-SD_SIZE(cSndInterface, 0x1c);
 
 extern const cSndInterfaceVtbl cSndInterface_vftable;
 #define CSNDINTERFACE_VFTABLE (&cSndInterface_vftable)
@@ -370,7 +348,6 @@ typedef struct cWavInfo {
 	int bits16;				/* 0x08 1: 16 bit, 0: 8 bit */
 	int samples;				/* 0x0c */
 } cWavInfo;
-SD_SIZE(cWavInfo, 0x10);
 
 typedef struct cAbstractFile cAbstractFile;
 

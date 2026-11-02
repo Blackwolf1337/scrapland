@@ -25,11 +25,9 @@ typedef struct cTrafficCellNode {
 	struct cTrafficCellNode *prev;	/* 0x4 */
 	InfoTrafficNode info;		/* 0x8 */
 } cTrafficCellNode;
-SD_SIZE(cTrafficCellNode, 0x10);
 
 /* the nodes of a cell (Global/DList.h) */
 typedef DLIST(cTrafficCellNode) cTrafficCell;
-SD_SIZE(cTrafficCell, 0x18);
 
 typedef struct cGridElements cGridElements;
 typedef struct cGridElementsVtbl {
@@ -47,7 +45,6 @@ typedef struct cGridElementsVtbl {
 	void(*Free)(cGridElements *self);						/* 0x24 */
 	int(*CellIndex)(cGridElements *self, const vec3_t *p);			/* 0x28 */
 } cGridElementsVtbl;
-SD_OFFSET(cGridElementsVtbl, CellIndex, 0x28);
 
 struct cGridElements {
 	const cGridElementsVtbl *vftable;	/* 0x00 */
@@ -58,8 +55,6 @@ struct cGridElements {
 	int nx, ny, nz;			/* 0x24 */
 	vec3_t cell;			/* 0x30 the size of a cell */
 };
-SD_OFFSET(cGridElements, nx, 0x24);
-SD_SIZE(cGridElements, 0x3c);
 typedef cGridElements cGridElements_InfoTrafficNode;
 
 extern const cGridElementsVtbl cGridElements_InfoTrafficNode_vftable;
@@ -118,7 +113,6 @@ typedef struct cTrafficTrack {
 	int numVehicles;		/* 0x1c the vehicles on the track (AddVehicle, RemoveVehicle) */
 	int density;			/* 0x20 TRAFFIC_DENSITY_* */
 } cTrafficTrack;
-SD_SIZE(cTrafficTrack, 0x24);
 
 /* what GetInfo returns of a track */
 typedef struct cTrafficTrackInfo {
@@ -130,7 +124,6 @@ typedef struct cTrafficTrackInfo {
 	float radius;			/* 0x10 */
 	int id;				/* 0x14 */
 } cTrafficTrackInfo;
-SD_SIZE(cTrafficTrackInfo, 0x18);
 
 /* a point where a track hits the level (AnalizeTraffic) */
 typedef struct cTrafficErrorNode {
@@ -139,7 +132,6 @@ typedef struct cTrafficErrorNode {
 	vec3_t pos;			/* 0x08 */
 	float radius;			/* 0x14 */
 } cTrafficErrorNode;
-SD_SIZE(cTrafficErrorNode, 0x18);
 
 typedef struct CNodesTraffic CNodesTraffic;
 typedef struct CNodesTrafficVtbl {
@@ -178,9 +170,6 @@ typedef struct CNodesTrafficVtbl {
 		float distMin, float distMax, int unused, const vec3_t *dir, float maxAngle, vec3_t *out, int *outTrack,
 		int *outNode);								/* 0x5c */
 } CNodesTrafficVtbl;
-SD_OFFSET(CNodesTrafficVtbl, Init, 0x1c);
-SD_OFFSET(CNodesTrafficVtbl, Analyze, 0x40);
-SD_OFFSET(CNodesTrafficVtbl, RandomPointAhead, 0x5c);
 
 typedef DLIST(cTrafficErrorNode) cTrafficErrorList;
 
@@ -205,10 +194,6 @@ struct CNodesTraffic {
 	vec3_t min;			/* 0x4c */
 	cTrafficErrorList errors;	/* 0x58 */
 };
-SD_OFFSET(CNodesTraffic, numTracks, 0x24);
-SD_OFFSET(CNodesTraffic, max, 0x40);
-SD_OFFSET(CNodesTraffic, errors, 0x58);
-SD_SIZE(CNodesTraffic, 0x70);
 
 extern const CNodesTrafficVtbl CNodesTraffic_vftable;
 #define CNODESTRAFFIC_VFTABLE (&CNodesTraffic_vftable)
@@ -301,7 +286,6 @@ typedef struct cTrafficSector {
 	byte visible;			/* 0x14 Sector_Visible at the last update */
 	byte pad_15[3];
 } cTrafficSector;
-SD_SIZE(cTrafficSector, 0x18);
 
 typedef struct cTrafficSectorList {
 	cTrafficSector *list;		/* 0x0 */
@@ -314,7 +298,6 @@ typedef struct cTrafficSeen {
 	int num;			/* 0x50 */
 	int numNodes;			/* 0x54 */
 } cTrafficSeen;
-SD_SIZE(cTrafficSeen, 0x58);
 
 typedef struct CNodesTrafficInDoor {
 	CNodesTraffic base;		/* 0x000 */
@@ -335,10 +318,6 @@ typedef struct CNodesTrafficInDoor {
 	cTrafficSeen seenHeavyLight;	/* 0xef4 */
 	cTrafficSeen seenMediumLight;	/* 0xf4c */
 } CNodesTrafficInDoor;
-SD_OFFSET(CNodesTrafficInDoor, heavyAI, 0x98);
-SD_OFFSET(CNodesTrafficInDoor, numLightAI, 0xde8);
-SD_OFFSET(CNodesTrafficInDoor, seenMediumLight, 0xf4c);
-SD_SIZE(CNodesTrafficInDoor, 0xfa4);
 
 extern const CNodesTrafficVtbl CNodesTrafficInDoor_vftable;
 #define CNODESTRAFFICINDOOR_VFTABLE (&CNodesTrafficInDoor_vftable)

@@ -1,9 +1,9 @@
 #!/bin/bash
 # Makes game/ and prefix/ for the tests from the ones of the main checkout: in a git worktree, so several worktrees
-# can run tools/test/difftest.sh at the same time, or with --into in any directory (the slots of difftest.sh, one
-# game per scenario). The data that is only read (the .packed files, Video, tmp, ...) is linked; what the game writes
-# or the tests change (Bin with scrapdecomp.ini, Scrap.cfg, commonappdata, the logs and outputs in game/) is a copy,
-# and so is the Wine prefix. Nothing of the main checkout is changed.
+# can run the game at the same time, or with --into in any directory (a slot of the scrap MCP server). The data that
+# is only read (the .packed files, Video, tmp, ...) is linked; what the game writes or the tests change (Bin with
+# scrapdecomp.ini, Scrap.cfg, commonappdata, the logs and outputs in game/) is a copy, and so is the Wine prefix.
+# Nothing of the main checkout is changed.
 #
 # usage: tools/test/mkgame.sh [main checkout]   (run inside the worktree; default /home/claude/projects/scrapland)
 #        tools/test/mkgame.sh --into <dir> [main checkout]   (<dir>/game and <dir>/prefix)

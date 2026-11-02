@@ -72,20 +72,6 @@ typedef struct cWalkCharEntity {
 	float abortTime;		/* 0x56c the selection is kept that long without a change */
 	int abortOpt;			/* 0x570 the option of the arrow at the last slot */
 } cWalkCharEntity;
-SD_OFFSET(cWalkCharEntity, collide, 0x3e8);
-SD_OFFSET(cWalkCharEntity, sphereBox, 0x404);
-SD_OFFSET(cWalkCharEntity, ownerSlot, 0x424);
-SD_OFFSET(cWalkCharEntity, renderView, 0x44c);
-SD_OFFSET(cWalkCharEntity, falling, 0x464);
-SD_OFFSET(cWalkCharEntity, fallVel, 0x480);
-SD_OFFSET(cWalkCharEntity, onEnergyFull, 0x49c);
-SD_OFFSET(cWalkCharEntity, reposHead, 0x4bc);
-SD_OFFSET(cWalkCharEntity, viewLock, 0x4d4);
-SD_OFFSET(cWalkCharEntity, control, 0x4ec);
-SD_OFFSET(cWalkCharEntity, listen, 0x520);
-SD_OFFSET(cWalkCharEntity, victim, 0x534);
-SD_OFFSET(cWalkCharEntity, abortSelect, 0x558);
-SD_SIZE(cWalkCharEntity, 0x574);
 
 static inline cWalkCharEntity *WChar(const void *e) {
 	return (cWalkCharEntity *)e;
@@ -112,8 +98,6 @@ typedef struct cWalkCharVtbl {
 	void(*SetViewAng)(cEntity *self, const vec3_t *ang);			/* 0x10c vf67 */
 	void(*SetYModelDisp)(cEntity *self, float y);			/* 0x110 vf68 */
 } cWalkCharVtbl;
-SD_OFFSET(cWalkCharVtbl, EnableAI, 0xe0);
-SD_OFFSET(cWalkCharVtbl, SetYModelDisp, 0x110);
 extern const cWalkCharVtbl cWalkCharEntity_vftable;
 #define CWALKCHARENTITY_VFTABLE (&cWalkCharEntity_vftable.base.base.base)
 

@@ -40,10 +40,6 @@ typedef struct CEngineApp {
 	byte canMenu9c5c;			/* 0x2a5fb */
 	int menuMode;				/* 0x2a5fc */
 } CEngineApp;
-SD_OFFSET(CEngineApp, table, 0x2a5e4);
-SD_OFFSET(CEngineApp, overlay, 0x2a5f0);
-SD_OFFSET(CEngineApp, canWBuffer, 0x2a5f8);
-SD_SIZE(CEngineApp, 0x2a600);
 
 /* a camera of the game (0x3c bytes) over a CCamera of the engine */
 
@@ -67,8 +63,6 @@ struct CPsaImage {
 	void *sprite;			/* 0x3c */
 	int frame;			/* 0x40 the frame drawn, 0 between the draws */
 };
-SD_SIZE(CPsaImage, 0x44);
-SD_OFFSET(CPsaImage, color, 0x34);
 
 /* the size in pixels of a frame of the sheet */
 byte CPsaImage_GetFrameSize(CPsaImage *self, int frame, int *w, int *h);

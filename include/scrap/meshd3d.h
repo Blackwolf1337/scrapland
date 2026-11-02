@@ -30,7 +30,6 @@ typedef struct CTriMesh CTriMesh;
 typedef struct {
 	float u, v;
 } uv_t;
-SD_SIZE(uv_t, 8);
 
 /* a corner of a triangle as the D3D device draws it */
 typedef struct CMeshVert {
@@ -38,7 +37,6 @@ typedef struct CMeshVert {
 	vec3_t n;			/* 0x0c */
 	uv_t uv;			/* 0x18 */
 } CMeshVert;
-SD_SIZE(CMeshVert, 0x20);
 
 /* the 3 vertex indices of a triangle. A member points to it as tri16_t *, not as uint16_t (*)[3]: Ghidra's C parser
  * drops the pointer of a pointer to an array (docs/ghidra.md). */
@@ -88,21 +86,12 @@ typedef struct CMeshD3D {
 	void *pc0;			/* 0xc0 COM objects released with the buffers */
 	void *pc4;			/* 0xc4 */
 } CMeshD3D;
-SD_OFFSET(CMeshD3D, vert, 0x14);
-SD_OFFSET(CMeshD3D, triFlags, 0x48);
-SD_OFFSET(CMeshD3D, mat, 0x4c);
-SD_OFFSET(CMeshD3D, box, 0x54);
-SD_OFFSET(CMeshD3D, center, 0x84);
-SD_OFFSET(CMeshD3D, skinRef, 0x98);
-SD_OFFSET(CMeshD3D, node, 0xb4);
-SD_SIZE(CMeshD3D, 0xc8);
 
 /* the plane of a triangle in pSeg: n.p + d = 0 */
 typedef struct TriMeshPlane {
 	float d;			/* 0x0 */
 	vec3_t n;			/* 0x4 */
 } TriMeshPlane;
-SD_SIZE(TriMeshPlane, 0x10);
 
 /* the context of Read and Write: the materials of the model (a CTable of CMaterial *) and the node */
 typedef struct MeshD3D_FileCtx {
@@ -117,7 +106,6 @@ typedef struct MeshD3DVert {
 	byte bone;			/* 0x22 byte 1 of its skin */
 	byte pad;			/* 0x23 0 */
 } MeshD3DVert;
-SD_SIZE(MeshD3DVert, 0x24);
 
 #pragma pack(push, 1)
 typedef struct MeshD3DTri {
@@ -125,7 +113,6 @@ typedef struct MeshD3DTri {
 	uint16_t v[3];			/* 0x4 */
 } MeshD3DTri;
 #pragma pack(pop)
-SD_SIZE(MeshD3DTri, 10);
 
 /* a material group of the CTriMesh, the vertices and triangles still separate (Mem_Alloc) */
 typedef struct MeshD3DObj {
@@ -135,7 +122,6 @@ typedef struct MeshD3DObj {
 	MeshD3DVert *pVert;		/* 0x0c */
 	MeshD3DTri *pTri;		/* 0x10 */
 } MeshD3DObj;
-SD_SIZE(MeshD3DObj, 0x14);
 
 /* a triangle of the CTriMesh while the mesh is made */
 typedef struct MeshD3DTriTmp {
@@ -144,7 +130,6 @@ typedef struct MeshD3DTriTmp {
 	int group;			/* 0x70 */
 	uint32_t flags;			/* 0x74 */
 } MeshD3DTriTmp;
-SD_SIZE(MeshD3DTriTmp, 0x78);
 
 /* a material group in the cDynList of CMeshD3D_Build */
 typedef struct MeshD3DGroup {
@@ -153,7 +138,6 @@ typedef struct MeshD3DGroup {
 	int idx;			/* 0x8 the index before sorting, then the MeshD3DObj */
 	int used;			/* 0xc triangles placed */
 } MeshD3DGroup;
-SD_SIZE(MeshD3DGroup, 0x10);
 
 #define MAX_D3D_OBJ 0x200
 extern MeshD3DObj g_D3DObj[512];
