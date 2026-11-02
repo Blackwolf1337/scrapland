@@ -1,8 +1,9 @@
 /*
  * The part of the C runtime of include/scrap/crt.h for systems other than Windows: the MSVC names of the file system,
- * path, string and 32 bit time functions on POSIX, with what the game expects from Windows. Paths take '\\' or '/',
- * a drive letter is dropped, and a part of a path that does not exist is looked up without case (the files of the
- * game are named in any case). A file opened for reading in text mode drops the '\r' of its line ends. stat fills
+ * path, string and 32 bit time functions on POSIX, with what the game expects from Windows. The file system shows as
+ * drive Z: with '\\' (as Wine does: getcwd gives "Z:\\home\\..."); paths take '\\' or '/', a drive letter is
+ * dropped, and a part of a path that does not exist is looked up without case (the files of the game are named in
+ * any case). A file opened for reading in text mode drops the '\r' of its line ends. stat fills
  * the layout of struct _stat32, which the callers read by offset.
  */
 #define _GNU_SOURCE
@@ -92,6 +93,12 @@ static const char *Crt_Path(const char *in, char *out) {
 		p = e + 1;
 	}
 	out[o] = 0;
+	return out;
+}
+
+char *crt_syspath(const char *path, char *out, int size) {
+	char tmp[CRT_PATH];
+	snprintf(out, (size_t)size, "%s", Crt_Path(path, tmp));
 	return out;
 }
 
@@ -407,17 +414,30 @@ int crt_mkdir(const char *dir) {
 	return mkdir(Crt_Path(dir, path), 0755);
 }
 
+/* the working directory as Windows names it: "Z:" and the path with '\\' */
 char *crt_getcwd(char *buf, int size) {
-	return getcwd(buf, (size_t)size);
+	char cwd[CRT_PATH];
+
+	if (!getcwd(cwd, sizeof(cwd)) || (int)strlen(cwd) + 3 > size) {
+		errno = ERANGE;
+		return NULL;
+	}
+	snprintf(buf, (size_t)size, "Z:%s", cwd);
+	for (char *c = buf; *c; c++) {
+		if (*c == '/') {
+			*c = '\\';
+		}
+	}
+	return buf;
 }
 
-/* no drives: always C: */
+/* one drive, Z: (26), the root of the file system */
 int crt_getdrive(void) {
-	return 3;
+	return 26;
 }
 
 int crt_chdrive(int drive) {
-	return drive == 3 ? 0 : -1;
+	return drive == 26 ? 0 : -1;
 }
 
 /* _splitpath: the drive "X:", the directory with its last separator, the name, the extension with its dot */
@@ -627,4 +647,109 @@ int crt_fpclass(double x) {
 	default:
 		return neg ? 8 : 0x100;
 	}
+}
+
+/* ---- the math and strtod of the MSVC runtime, for Python 1.5.2 (src/python/pyshim.h) ----
+ * Python turns errno after a libm call into an exception. glibc sets ERANGE on every underflow and on the overflow
+ * of ldexp, and EDOM for fmod(x, 0) of a finite x; the runtime of Windows does neither (the result is the answer: 0, inf or
+ * NaN), but gives EDOM for sqrt and asin of NaN. */
+
+/* ERANGE kept only for an overflow (an infinite result) unless over says the runtime has none there either */
+static double Crt_MsRange(double r, int over) {
+	if (errno == ERANGE && (isfinite(r) || over)) {
+		errno = 0;
+	}
+	return r;
+}
+
+double crt_ms_pow(double x, double y) {
+	return Crt_MsRange(pow(x, y), 0);
+}
+
+double crt_ms_exp(double x) {
+	return Crt_MsRange(exp(x), 0);
+}
+
+double crt_ms_ldexp(double x, int e) {
+	return Crt_MsRange(ldexp(x, e), 1);
+}
+
+double crt_ms_sinh(double x) {
+	return Crt_MsRange(sinh(x), 0);
+}
+
+double crt_ms_cosh(double x) {
+	return Crt_MsRange(cosh(x), 0);
+}
+
+double crt_ms_asin(double x) {
+	double r = asin(x);
+	if (isnan(x)) {
+		errno = EDOM;
+	}
+	return r;
+}
+
+double crt_ms_atan2(double y, double x) {
+	return Crt_MsRange(atan2(y, x), 0);
+}
+
+double crt_ms_hypot(double x, double y) {
+	return Crt_MsRange(hypot(x, y), 0);
+}
+
+double crt_ms_fmod(double x, double y) {
+	double r = fmod(x, y);
+	if (errno == EDOM && isfinite(x)) {
+		errno = 0;
+	}
+	return r;
+}
+
+double crt_ms_sqrt(double x) {
+	double r = sqrt(x);
+	if (isnan(x)) {
+		errno = EDOM;
+	}
+	return r;
+}
+
+/* strtod as the runtime of Windows reads: 'd' or 'D' as the exponent like 'e', no "nan(...)" with a payload, and
+ * no ERANGE for a result that is only denormal */
+double crt_ms_strtod(const char *s, char **end) {
+	const char *p = s;
+	char buf[512];
+
+	while (isspace((unsigned char)*p)) {
+		p++;
+	}
+	if (*p == '+' || *p == '-') {
+		p++;
+	}
+	if (!strncasecmp(p, "nan(", 4)) {
+		if (end) {
+			*end = (char *)s;
+		}
+		return 0.0;
+	}
+	const char *q = p;
+	while (isdigit((unsigned char)*q) || *q == '.') {
+		q++;
+	}
+	const char *src = s;
+	if ((*q == 'd' || *q == 'D') && (isdigit((unsigned char)q[1]) || ((q[1] == '+' || q[1] == '-')
+		&& isdigit((unsigned char)q[2]))) && strlen(s) < sizeof(buf)) {
+		snprintf(buf, sizeof(buf), "%s", s);
+		buf[q - s] = 'e';
+		src = buf;
+	}
+	char *e;
+	double r = strtod(src, &e);
+	if (end) {
+		*end = (char *)s + (e - src);
+	}
+	if (errno == ERANGE && r != 0.0 && isfinite(r)) {
+		errno = 0;
+	}
+	return r;
 }

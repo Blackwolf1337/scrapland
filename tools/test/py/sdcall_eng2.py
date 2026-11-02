@@ -283,7 +283,8 @@ en2free(en2mats)
 # the CTable instances
 en2tab = en2z(8)
 check('Table_AllocC', lambda: (SDTest.Call('Table_AllocC@2d2e10', 'tvii', en2tab, 4), en2i(en2tab), en2i(en2tab + 4) != 0))
-SDTest.Call('operator_delete_array', 'vi', en2i(en2tab))
+# the elements, not the count at 0 (the Windows heap let that bad pointer pass, glibc does not)
+SDTest.Call('operator_delete_array', 'vi', en2i(en2tab + 4))
 en2poke(en2tab, 0)
 en2poke(en2tab + 4, 0)
 # only the elements written before are printed

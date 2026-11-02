@@ -17,6 +17,31 @@
 #ifndef _WIN32
 /* the static getline of Objects/fileobject.c, not the one of POSIX 2008 in stdio.h */
 #define getline py152_getline
+
+/* the libm and strtod of the Windows runtime as Python sees them through errno (src/standalone/crtposix.c) */
+#include <math.h>
+double crt_ms_pow(double x, double y);
+double crt_ms_exp(double x);
+double crt_ms_ldexp(double x, int e);
+double crt_ms_sinh(double x);
+double crt_ms_cosh(double x);
+double crt_ms_atan2(double y, double x);
+double crt_ms_hypot(double x, double y);
+double crt_ms_fmod(double x, double y);
+double crt_ms_sqrt(double x);
+double crt_ms_asin(double x);
+double crt_ms_strtod(const char *s, char **end);
+#define pow crt_ms_pow
+#define exp crt_ms_exp
+#define ldexp crt_ms_ldexp
+#define sinh crt_ms_sinh
+#define cosh crt_ms_cosh
+#define atan2 crt_ms_atan2
+#define hypot crt_ms_hypot
+#define fmod crt_ms_fmod
+#define sqrt crt_ms_sqrt
+#define asin crt_ms_asin
+#define strtod crt_ms_strtod
 #endif
 
 /* C code of the engine, declared here because its headers are C23 (python.h, e3dutil.h) */

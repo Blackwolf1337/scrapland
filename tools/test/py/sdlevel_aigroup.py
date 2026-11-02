@@ -150,7 +150,10 @@ agrZ2 = agrNew(0xa0)
 for agrZ in (agrZ1, agrZ2):
 	for agrO in (0x88, 0x8c, 0x90, 0x94, 0x98, 0x9c):
 		agrPoke(agrZ + agrO, 0)
-agrPoke(agrZ2 + 0x94, agrNew(0x14))
+# the free node with its next pointer set (the fresh heap memory of Windows happened to be zero, glibc's is not)
+agrN = agrNew(0x14)
+agrPoke(agrN, 0)
+agrPoke(agrZ2 + 0x94, agrN)
 agrPoke(agrZ2 + 0x98, 1)
 agrPoke(agrZ1, agrZ2)
 agrPoke(agrZ1 + 4, agrZ2)

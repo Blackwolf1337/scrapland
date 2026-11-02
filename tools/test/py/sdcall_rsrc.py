@@ -27,19 +27,23 @@ def rssum(p, n):
 		i = i + 1
 	return s
 
-rsmod = rsw('GetModuleHandleA', 'iz', (None,))[0]
-check('rs GetModuleHandleA', lambda: rsmod == 0x400000)
+# only the exe of Windows has resources (the native Linux build has none: one line says so)
+if SDTest.Proc('kernel32.dll', 'GetModuleHandleA') is None:
+	check('rs no resources on this system', lambda: 1)
+else:
+	rsmod = rsw('GetModuleHandleA', 'iz', (None,))[0]
+	check('rs GetModuleHandleA', lambda: rsmod == 0x400000)
 
-# (type, id): RT_ICON, RT_GROUP_ICON, RT_MANIFEST
-rsres = ((3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (14, 101), (14, 106), (24, 1))
-def rsfind(k):
-	h = rsw('FindResourceA', 'iiii', (rsmod, k[1], k[0]))[0]
-	if not h:
-		return 0
-	n = rsw('SizeofResource', 'iii', (rsmod, h))[0]
-	p = rsw('LockResource', 'ii', (rsw('LoadResource', 'iii', (rsmod, h))[0],))[0]
-	return 1, n, rssum(p, n)
-for rsk in rsres:
-	check('rs FindResourceA' + fmt(rsk), lambda k=rsk: rsfind(k))
-for rsk in (101, 106):
-	check('rs LoadIconA' + fmt((rsk,)), lambda k=rsk: rsw('LoadIconA', 'iii', (rsmod, k))[0] != 0)
+	# (type, id): RT_ICON, RT_GROUP_ICON, RT_MANIFEST
+	rsres = ((3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (14, 101), (14, 106), (24, 1))
+	def rsfind(k):
+		h = rsw('FindResourceA', 'iiii', (rsmod, k[1], k[0]))[0]
+		if not h:
+			return 0
+		n = rsw('SizeofResource', 'iii', (rsmod, h))[0]
+		p = rsw('LockResource', 'ii', (rsw('LoadResource', 'iii', (rsmod, h))[0],))[0]
+		return 1, n, rssum(p, n)
+	for rsk in rsres:
+		check('rs FindResourceA' + fmt(rsk), lambda k=rsk: rsfind(k))
+	for rsk in (101, 106):
+		check('rs LoadIconA' + fmt((rsk,)), lambda k=rsk: rsw('LoadIconA', 'iii', (rsmod, k))[0] != 0)

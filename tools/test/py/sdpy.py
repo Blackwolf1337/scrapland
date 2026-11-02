@@ -397,7 +397,9 @@ for spyS in ('a = (', 'if 1:\nx', 'def f(:', 'x = 1 +', '\tx = 1\n  y = 2', 'x =
 
 # the modules of the module table that hold plain values
 import errno, signal
-check('errno', lambda: (errno.errorcode.keys(), errno.errorcode.values()))
-check('signal', lambda: (signal.SIGINT, signal.SIGTERM, signal.SIG_DFL, signal.SIG_IGN, signal.NSIG))
+# the codes of errno are the platform's (Windows has the Winsock ones too): only the common ones
+check('errno', lambda: (errno.ENOENT, errno.EACCES, errno.EEXIST, errno.EINVAL, errno.ERANGE, errno.EDOM))
+# NSIG is the platform's (23 on Windows, 65 on Linux)
+check('signal', lambda: (signal.SIGINT, signal.SIGTERM, signal.SIG_DFL, signal.SIG_IGN))
 check('sys', lambda: (sys.maxint, sys.version, sys.platform, sys.builtin_module_names, sys.hexversion))
 check('builtins', lambda: dir(__builtins__))

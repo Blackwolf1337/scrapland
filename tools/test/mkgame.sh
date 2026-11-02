@@ -41,6 +41,13 @@ cp -a "$main/game/Scrap.cfg" "$g/"
 rm -rf "$g/commonappdata"
 cp -a "$main/game/commonappdata" "$g/"
 if [ -n "$native" ]; then
+	# the scripts and the tests look for it
+	ln -sfn "$main/game/Bin/Scrap.exe" "$g/Bin/Scrap.exe"
+	# the folder of the configuration and the saves (XDG_DATA_HOME of native.sh) as in the Wine prefix
+	rm -rf "$g/xdg-data"
+	mkdir -p "$g/xdg-data/MercurySteam"
+	cp -a "$main/prefix/drive_c/users/claude/Documents/MercurySteam/Scrapland" "$g/xdg-data/MercurySteam/" 2> /dev/null ||
+		mkdir -p "$g/xdg-data/MercurySteam/Scrapland"
 	echo "mkgame.sh: native game folder ready in $g"
 	exit 0
 fi

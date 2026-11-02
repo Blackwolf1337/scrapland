@@ -724,13 +724,15 @@ uint32_t Plat_Ticks(void) {
 	return (uint32_t)SDL_GetTicks();
 }
 
+/* the counter in 100 ns ticks (10 MHz) on every system, as QueryPerformanceCounter on Windows: the game's integer
+ * time math was made for that frequency (SDL's counter on Linux counts nanoseconds) */
 int Plat_Counter(int64_t *out) {
-	*out = (int64_t)SDL_GetPerformanceCounter();
+	*out = (int64_t)(SDL_GetTicksNS() / 100);
 	return 1;
 }
 
 int Plat_Frequency(int64_t *out) {
-	*out = (int64_t)SDL_GetPerformanceFrequency();
+	*out = 10000000;
 	return 1;
 }
 

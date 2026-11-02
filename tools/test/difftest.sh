@@ -14,6 +14,9 @@
 #        DIFFTEST_TIMEOUT  seconds per run, default 240
 #        DIFFTEST_JOBS     scenarios at the same time, default 3
 #        DIFFTEST_NOCACHE=1  run the reference even when its outputs are cached
+#        DIFFTEST_NATIVE=1   the current build is the native Linux one (build-linux/ScrapC, through native.sh in the
+#                            same game folder of the slot, so the paths are the same); the reference stays the Windows
+#                            exe in Wine. The outputs are compared without the CR of the Windows line ends.
 root=$(cd "$(dirname "$0")/../.." && pwd)
 ref=${DIFFTEST_REF:-$root/build-ref-noexact/ScrapC.exe}
 out=$root/build/difftest
@@ -27,7 +30,12 @@ for s in "${scenarios[@]}"; do
 	[ -n "${extra[$s]+x}" ] || { echo "difftest.sh: unknown scenario $s" >&2; exit 1; }
 done
 [ -f "$ref" ] || { echo "difftest.sh: no reference exe $ref" >&2; exit 1; }
-[ -f "$root/build/ScrapC.exe" ] || { echo "difftest.sh: build/ScrapC.exe missing, build first" >&2; exit 1; }
+native=${DIFFTEST_NATIVE:-0}
+if [ "$native" = 1 ]; then
+	[ -f "$root/build-linux/ScrapC" ] || { echo "difftest.sh: build-linux/ScrapC missing, build first" >&2; exit 1; }
+else
+	[ -f "$root/build/ScrapC.exe" ] || { echo "difftest.sh: build/ScrapC.exe missing, build first" >&2; exit 1; }
+fi
 python3 "$root/tools/test/sigcheck.py" "$root"/tools/test/py/*.py || exit 1
 "$root/tools/test/install.sh" > /dev/null || exit 1
 scripts=$(cat "$root"/tools/test/py/*.py | sha256sum | cut -c1-16)
@@ -53,6 +61,22 @@ slot_prepare() {
 	rm -f "$dir"/game/sd*.py "$dir"/game/sd*.out
 	cp "$root"/tools/test/py/*.py "$dir/game/" || return 1
 	printf '[general]\ntestmod=1\n' > "$dir/game/Bin/scrapdecomp.ini"
+	if [ "$native" = 1 ]; then
+		# the configuration and the saves of native.sh (XDG_DATA_HOME), fresh from the prefix like the Wine runs see
+		rm -rf "$dir/game/xdg-data"
+		mkdir -p "$dir/game/xdg-data/MercurySteam"
+		cp -a "$dir/prefix/drive_c/users/claude/Documents/MercurySteam/Scrapland" "$dir/game/xdg-data/MercurySteam/" ||
+			return 1
+	fi
+}
+
+# the native games of a game folder: killed, as wineserver -k kills the Windows ones (a quit would save the
+# configuration the scripts changed)
+native_stop() {
+	local exe=$1/Bin/ScrapC p
+	for p in /proc/[0-9]*; do
+		[ "$(readlink "$p/exe" 2> /dev/null)" = "$exe" ] && kill -9 "${p#/proc/}" 2> /dev/null
+	done
 }
 
 # run <scenario> <exe> <tag>: one game in the slot of the scenario, its output in $out/<tag>.out
@@ -63,16 +87,26 @@ run() {
 	arg="-PythonExecute:execfile($(python3 -I -c "print('+'.join('chr(%d)' % ord(c) for c in '$name.py'))"))"
 	rm -f "$result"
 	rm_written "$game"
-	# shellcheck disable=SC2086 # extra arguments of the scenario, word split on purpose
-	SCRAP_GAME_DIR=$game SCRAP_PREFIX=$dir/prefix HEADLESS_TIMEOUT=${DIFFTEST_TIMEOUT:-240} \
-		WINEDLLOVERRIDES="dinput8=b" WINE_LOG="$out/wine-$tag.log" \
-		"$root/tools/test/wine.sh" "$exe" -fullscreen:0 ${extra[$name]} "$arg" &
+	if [ "$exe" = native ]; then
+		# shellcheck disable=SC2086 # extra arguments of the scenario, word split on purpose
+		SCRAP_GAME_DIR=$game HEADLESS_TIMEOUT=${DIFFTEST_TIMEOUT:-240} NATIVE_LOG="$out/native-$tag.log" \
+			"$root/tools/test/native.sh" -fullscreen:0 ${extra[$name]} "$arg" &
+	else
+		# shellcheck disable=SC2086 # extra arguments of the scenario, word split on purpose
+		SCRAP_GAME_DIR=$game SCRAP_PREFIX=$dir/prefix HEADLESS_TIMEOUT=${DIFFTEST_TIMEOUT:-240} \
+			WINEDLLOVERRIDES="dinput8=b" WINE_LOG="$out/wine-$tag.log" \
+			"$root/tools/test/wine.sh" "$exe" -fullscreen:0 ${extra[$name]} "$arg" &
+	fi
 	local pid=$!
-	# the script writes "done" as its last line (CRLF, Python runs on Windows); then the game is stopped
+	# the script writes "done" as its last line (CRLF when Python runs on Windows); then the game is stopped
 	# (Scrap.Exit() from the startup script did not quit reliably)
 	while kill -0 "$pid" 2> /dev/null; do
 		if tail -n 1 "$result" 2> /dev/null | tr -d '\r' | grep -qx 'done'; then
-			WINEPREFIX=$dir/prefix wineserver -k 2> /dev/null
+			if [ "$exe" = native ]; then
+				native_stop "$game"
+			else
+				WINEPREFIX=$dir/prefix wineserver -k 2> /dev/null
+			fi
 			break
 		fi
 		sleep 1
@@ -99,7 +133,11 @@ scenario() {
 	local key
 	key=$cache/$refsum-$scripts-$(printf '%s' "${extra[$s]}" | sha256sum | cut -c1-8)
 	slot_prepare "$s" || { echo "$s: the slot could not be made" > "$out/$s.result"; return 1; }
-	run "$s" ScrapC.exe "$s-c"; c=$?
+	if [ "$native" = 1 ]; then
+		run "$s" native "$s-c"; c=$?
+	else
+		run "$s" ScrapC.exe "$s-c"; c=$?
+	fi
 	if [ "${DIFFTEST_NOCACHE:-0}" != 1 ] && [ -f "$key-$s.out" ]; then
 		cp "$key-$s.out" "$out/$s-orig.out"
 	else
@@ -110,7 +148,14 @@ scenario() {
 		echo "$s: incomplete" > "$out/$s.result"
 		return 1
 	fi
-	if diff -u "$out/$s-orig.out" "$out/$s-c.out" > "$out/$s.diff"; then
+	local a=$out/$s-orig.out b=$out/$s-c.out
+	if [ "$native" = 1 ]; then
+		# the NaN text of the two runtimes ("-nan(ind)" of Windows, "-nan" of glibc) made the same
+		a=$out/$s-orig.norm b=$out/$s-c.norm
+		sed -E 's/-?nan\((ind|snan)\)|-nan\b/nan/g' "$out/$s-orig.out" > "$a"
+		sed -E 's/-?nan\((ind|snan)\)|-nan\b/nan/g' "$out/$s-c.out" > "$b"
+	fi
+	if diff -u --strip-trailing-cr "$a" "$b" > "$out/$s.diff"; then
 		echo "$s: $(($(wc -l < "$out/$s-c.out") - 1)) checks match" \
 			"($(grep -c ' = exception ' "$out/$s-c.out") raise an exception in both)" > "$out/$s.result"
 		return 0

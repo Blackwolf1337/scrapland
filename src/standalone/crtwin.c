@@ -244,3 +244,8 @@ int *crt_errno(void) {
 int crt_fpclass(double x) {
 	return _fpclass(x);
 }
+
+char *crt_syspath(const char *path, char *out, int size) {
+	snprintf(out, (size_t)size, "%s", path);
+	return out;
+}

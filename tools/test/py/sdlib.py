@@ -30,11 +30,19 @@ def rdcall(name, obj, off, sig, args):
 	return apply(SDTest.Call, (com, 't' + sig[0] + 'i' + sig[1:], 0, obj) + args)
 
 # R_LastDevice is "<adapter> [<driver>]  <driver version>": the driver of the reference is Wine's Direct3D 8, the
-# current one is Vulkan, so only the adapter compares
+# current one is Vulkan, and the adapter is named by the driver of the system (Wine's or Mesa's), so only that there
+# is a name compares
 def devname(v, s):
-	if v == 'R_LastDevice' and type(s) == type('') and strop.find(s, ' [') >= 0:
-		return s[:strop.find(s, ' [')]
+	if v == 'R_LastDevice' and type(s) == type(''):
+		return s != ''
 	return s
+
+# the getters of Scrap whose value is the platform's: the number of the current video mode (an index into the modes
+# of the platform, see Scrap.GetVideoModes in sdtest.py)
+def platvalue(name, v):
+	if name == 'GetVideoCurrentMode':
+		return v >= 0
+	return v
 
 # the pixel shader handles in the D3D logs (SDTest.Out) as the index of the shader in g_PSHandles: Wine's Direct3D 8
 # numbers them 0xf0000000 + n, the Vulkan backend 1 + its own index

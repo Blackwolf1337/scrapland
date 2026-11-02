@@ -165,12 +165,24 @@ int crt_atoi(const char *s) {
 	return atoi(s);
 }
 
+#ifndef _WIN32
+double crt_ms_strtod(const char *s, char **end);	/* crtposix.c: strtod as the runtime of Windows reads */
+#endif
+
 double crt_atof(const char *s) {
+#ifdef _WIN32
 	return atof(s);
+#else
+	return crt_ms_strtod(s, NULL);
+#endif
 }
 
 double crt_strtod(const char *s, char **end) {
+#ifdef _WIN32
 	return strtod(s, end);
+#else
+	return crt_ms_strtod(s, end);
+#endif
 }
 
 void crt_qsort(void *base, size_t n, size_t size, int (*cmp)(const void *, const void *)) {
@@ -235,12 +247,18 @@ char *crt_getenv(const char *name) {
 	return getenv(name);
 }
 
+/* rand of the MSVC runtime on every system (the game and its tests expect its numbers): the linear congruential
+ * generator x = x * 214013 + 2531011, the bits 16..30 of x; one state for the program (the runtime keeps one per
+ * thread, the game calls it from its main thread only) */
+static uint32_t crt_randState = 1;
+
 int crt_rand(void) {
-	return rand();
+	crt_randState = crt_randState * 214013u + 2531011u;
+	return (int)(crt_randState >> 16 & 0x7fff);
 }
 
 void crt_srand(unsigned int seed) {
-	srand(seed);
+	crt_randState = seed;
 }
 
 void (*crt_signal(int sig, void (*handler)(int)))(int) {

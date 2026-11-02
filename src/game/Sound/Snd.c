@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/crt.h"
 #include "scrap/snd.h"
 #include "sound/ma.h"
 
@@ -495,7 +496,7 @@ void Snd_MemoryStats(uint32_t *cur, uint32_t *max) {
 /* ---- streams ---- */
 
 SndStream *Snd_StreamOpen(const char *path, uint32_t offset, uint32_t size, byte loop) {
-	FILE *f = fopen(path, "rb");
+	FILE *f = crt_fopen(path, "rb");	/* the path of the game ("..\\English.packed") through the runtime layer */
 	if (!f) {
 		snd.error = SND_ERR_FILE_NOTFOUND;
 		return NULL;

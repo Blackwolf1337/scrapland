@@ -316,7 +316,7 @@ check('SScorer.SetSpeechText bad', lambda: SScorer.SetSpeechText('x', 1.0))
 # (launcher), ClosePack, BuildFont, CreateElements, Execute, DebugInput.
 for f in ('GetTimeSpeed', 'GetNetFlags', 'GetNewLevelPath', 'GetLanguage', 'GetGogID', 'IsSteam', 'GetSteamID',
 		'GetSteamTicket', 'GetFreeBlocks', 'GetSavedProfilesList', 'GetVideoCurrentMode', 'DeselectProfile'):
-	check('Scrap.%s()' % f, lambda f=getattr(Scrap, f): f())
+	check('Scrap.%s()' % f, lambda n=f, f=getattr(Scrap, f): platvalue(n, f()))
 for k in ('SDNoString', 'Menu_NewGame', ''):
 	check('Scrap.GetLangStr(%s)' % k, lambda k=k: Scrap.GetLangStr(k))
 check('Scrap.GetLangEntries(SDNo)', lambda: Scrap.GetLangEntries('SDNo'))
@@ -439,9 +439,13 @@ check('Scrap.CreateEntity bad', lambda: Scrap.CreateEntity('a', 1, 2, 3))
 check('Scrap.RunApp bad', lambda: Scrap.RunApp('a'))
 
 # Scrap batch 5 in the menu
-# mode numbers are not range checked: GetVideoModes(50) crashes the original (32 modes here)
-for i in (-1, 0, 1, 2, 31):
-	check('Scrap.GetVideoModes(%d)' % i, lambda i=i: Scrap.GetVideoModes(i))
+# mode numbers are not range checked: GetVideoModes(50) crashes the original. The modes are the ones of the
+# platform (Wine's table of virtual modes, or the modes of the display through SDL, one under gamescope on Linux):
+# only that there are some, in both formats, and the bpp of the first two
+sdmodes = Scrap.GetVideoModes(-1)
+check('Scrap.GetVideoModes(-1)', lambda: (sdmodes > 0, sdmodes % 2))
+for i in (0, 1):
+	check('Scrap.GetVideoModes(%d)' % i, lambda i=i: Scrap.GetVideoModes(i)[-9:])
 check('Scrap.SetSaveProfile(a, b)', lambda: Scrap.SetSaveProfile('a', 'b'))
 check('Scrap.EntityListGet(SDNoList, x)', lambda: Scrap.EntityListGet('SDNoList', 'x'))
 check('Scrap.EntityListSet(SDNoList, x, y)', lambda: Scrap.EntityListSet('SDNoList', 'x', 'y'))

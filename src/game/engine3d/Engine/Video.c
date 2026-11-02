@@ -10,6 +10,7 @@
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 
+#include "scrap/crt.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/d3d8.h"
@@ -185,7 +186,9 @@ static int Video_Open(const char *path) {
 		E3D_LogBlue(g_FileLog, "ERROR: no render device for the video");
 		return 0;
 	}
-	if (avformat_open_input(&video.fmt, path, NULL, NULL) < 0 || avformat_find_stream_info(video.fmt, NULL) < 0) {
+	char sys[0x400];
+	crt_syspath(path, sys, sizeof(sys));	/* FFmpeg opens the file itself */
+	if (avformat_open_input(&video.fmt, sys, NULL, NULL) < 0 || avformat_find_stream_info(video.fmt, NULL) < 0) {
 		E3D_LogBlue(g_FileLog, "ERROR: the video does not open: %s", path);
 		return 0;
 	}

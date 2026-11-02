@@ -1,7 +1,7 @@
 #!/bin/bash
 # Runs the native Linux ScrapC (build-linux/ScrapC) hidden and muted through headless.sh, in a game folder made by
 # tools/test/mkgame.sh --native (default build-linux/game, the Bin there gets the binary and its FFmpeg libraries
-# fresh from build-linux at every run). Sound: the null device of the mixer (SCRAP_SND_NULL=1) and PulseAudio and
+# fresh from build-linux at every run). The configuration and the saves go to <game>/xdg-data. Sound: the null device of the mixer (SCRAP_SND_NULL=1) and PulseAudio and
 # PipeWire pointed at sockets that do not exist. The working directory is game/Bin, as for the Windows exe.
 #
 # usage: tools/test/native.sh [arguments of the game]
@@ -16,6 +16,8 @@ game=${SCRAP_GAME_DIR:-$build/game}
 cp -a "$build/ScrapC" "$game/Bin/" || exit 1
 cp -a "$build"/ffmpeg/install/lib/lib*.so* "$game/Bin/" || exit 1
 export PULSE_SERVER=unix:/nonexistent PIPEWIRE_REMOTE=/nonexistent SCRAP_SND_NULL=1
+# the configuration and the saves in the game folder (SDL's user data folder), never in the home of the user
+export XDG_DATA_HOME=$game/xdg-data
 export SCRAP_VK_DEVICE=${SCRAP_VK_DEVICE:-1002:164e}
 cd "$game/Bin" || exit 1
 layers=()
