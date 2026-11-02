@@ -34,12 +34,13 @@ void CPortal_dtor(CPortal *self) {
 	CObjBase3D_dtor((CObjBase3D *)self);
 }
 
-CPortal *CPortal_Delete(CPortal *self, byte flags) {
+IObject3D *CPortal_Delete(IObject3D *base, byte flags) {
+	CPortal *self = (CPortal *)base;
 	CPortal_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CPortal));
 	}
-	return self;
+	return base;
 }
 
 void CPortal_LinkZones(CPortal *self) {
@@ -60,7 +61,8 @@ void CPortal_LinkZones(CPortal *self) {
 	}
 }
 
-byte CPortal_Read(CPortal *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+byte CPortal_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	CPortal *self = (CPortal *)base;
 	CObjBase3D_SetNode((CObjBase3D *)self, ctx->node);
 	CFileIO_BeginBlock(f, "PORT");
 	CHECK(CFileIO_ReadInt(f) == 1);
@@ -73,7 +75,8 @@ byte CPortal_Read(CPortal *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	return 1;
 }
 
-byte CPortal_Write(CPortal *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+byte CPortal_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	CPortal *self = (CPortal *)base;
 	CHECK(self->node == ctx->node);
 	CFileIO_BeginBlockWrite(f, "PORT");
 	CFileIO_WriteInt(f, 1);
@@ -85,7 +88,8 @@ byte CPortal_Write(CPortal *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	return 1;
 }
 
-void CPortal_Render(CPortal *self, void *dev, CRenderNode *r) {
+void CPortal_Render(IObject3D *base, void *dev, CRenderNode *r) {
+	CPortal *self = (CPortal *)base;
 	(void)dev;
 	CHECK(!r);
 	CHECK(self->node);
@@ -313,3 +317,14 @@ byte CPortal_ClipRect(CPortal *self, box_t *rect) {
 	}
 	return 1;
 }
+
+/* the vtable of CPortal */
+const IObject3DVtbl CPortal_vftable = {
+	.Delete = CPortal_Delete,
+	.Update = IObject3D_UpdateNop,
+	.Render = CPortal_Render,
+	.InitD3D = IObject3D_InitD3DNop,
+	.ReleaseD3D = IObject3D_ReleaseD3DNop,
+	.Write = CPortal_Write,
+	.Read = CPortal_Read,
+};

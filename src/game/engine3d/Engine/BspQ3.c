@@ -19,9 +19,6 @@
 /* 1 in the exe: the light map materials keep the blend of CMaterial_Prepare */
 #define g_BspQ3LMapNoBlend GAME_GLOBAL_IN(byte, group_432a7c, 1)
 
-typedef CMeshD3D *(*bspQ3MeshD3DDelete_t)(CMeshD3D *self, byte flags);
-typedef int(*bspQ3MeshD3DDev_t)(CMeshD3D *self, void *dev);
-typedef CTriMesh *(*bspQ3TriMeshDelete_t)(CTriMesh *self, byte flags);
 /* ID3DXBaseMesh */
 
 static void BspQ3_SetStage1(uint32_t colorOp, uint32_t alphaOp) {
@@ -81,7 +78,7 @@ void CBspQ3_dtor(CBspQ3 *self) {
 		self->pMesh = NULL;
 	}
 	if (self->MeshD3D) {
-		((bspQ3MeshD3DDelete_t)self->MeshD3D->vftable[MESHD3D_VF_DELETE])(self->MeshD3D, 1);
+		self->MeshD3D->vftable->Delete(&self->MeshD3D->base, 1);
 		self->MeshD3D = NULL;
 	}
 	if (self->name) {
@@ -127,7 +124,7 @@ long double Vec3_DotX87(const float *a, const float *b) {
 }
 
 void CBspQ3_ReleaseD3D(CBspQ3 *self) {
-	((bspQ3MeshD3DDev_t)self->MeshD3D->vftable[MESHD3D_VF_INVALIDATE])(self->MeshD3D, g_pd3dDevice);
+	self->MeshD3D->vftable->ReleaseD3D(&self->MeshD3D->base, g_pd3dDevice);
 	if (self->pMesh) {
 		Rd_Release(self->pMesh);
 		self->pMesh = NULL;
@@ -146,7 +143,7 @@ void CBspQ3_ReleaseD3D(CBspQ3 *self) {
 }
 
 void CBspQ3_InitD3D(CBspQ3 *self) {
-	((bspQ3MeshD3DDev_t)self->MeshD3D->vftable[MESHD3D_VF_RESTORE])(self->MeshD3D, g_pd3dDevice);
+	self->MeshD3D->vftable->InitD3D(&self->MeshD3D->base, g_pd3dDevice);
 	for (int i = 0; i < self->MeshList->n; i++) {
 		BspQ3Mesh *m = self->MeshList->m[i];
 		CHECK(Render_CreateVB(&m->pVertVB, &m->vert, 0) == 0);
@@ -476,7 +473,7 @@ void CBspQ3_Build(CBspQ3 *self) {
 	CMeshD3D *md = operator_new(sizeof(CMeshD3D));
 	self->MeshD3D = md ? CMeshD3D_ctorMesh(md, mt, 0, NULL) : NULL;
 	if (mt) {
-		((bspQ3TriMeshDelete_t)((void **)mt->vftable)[0])(mt, 1);
+		mt->vftable->Delete(&mt->base, 1);
 	}
 	for (int i = 0; i < self->MeshList->n; i++) {
 		BspQ3Mesh *m = self->MeshList->m[i];

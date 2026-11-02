@@ -23,8 +23,8 @@
 #include "scrap/scrapmain.h"
 #include "scrap/platform.h"
 
-#define CGROUND_VFTABLE GAME_VFTABLE(CGround_vftable)
-#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable)
+extern const IObject3DVtbl CGround_vftable;
+#define CGROUND_VFTABLE (&CGround_vftable)
 #define CCOLLIDEMESH_CTOR 0x2586b0
 #define CCOLLIDEMESH_DTOR 0x20eb70
 #define CCOLLIDEQUAD_DTOR 0x258ce0
@@ -289,12 +289,13 @@ void CGround_dtor(CGround *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-CGround *CGround_Delete(CGround *self, byte flags) {
+IObject3D *CGround_Delete(IObject3D *base, byte flags) {
+	CGround *self = (CGround *)base;
 	CGround_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 void CGround_Nop(CGround *self, void *arg) {
@@ -309,11 +310,13 @@ static void Ground_NodesCall(CGround *self, void *arg, int slot) {
 	}
 }
 
-void CGround_NodesVf3(CGround *self, void *arg) {
+void CGround_NodesVf3(IObject3D *base, void *arg) {
+	CGround *self = (CGround *)base;
 	Ground_NodesCall(self, arg, 3);
 }
 
-void CGround_NodesVf4(CGround *self, void *arg) {
+void CGround_NodesVf4(IObject3D *base, void *arg) {
+	CGround *self = (CGround *)base;
 	Ground_NodesCall(self, arg, 4);
 }
 
@@ -462,7 +465,8 @@ void CCollideQuad_Write(CCollideQuad *self, CFileIO *f) {
 	CFileIO_EndBlockWrite(f, "QUAD");
 }
 
-byte CGround_Read(CGround *self, CFileIO *f, void *ctx) {
+byte CGround_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	CGround *self = (CGround *)base;
 	(void)ctx;
 	CFileIO_BeginBlock(f, "SUEL");
 	CHECK(CFileIO_ReadInt(f) == 1);
@@ -477,7 +481,8 @@ byte CGround_Read(CGround *self, CFileIO *f, void *ctx) {
 	return 1;
 }
 
-byte CGround_Write(CGround *self, CFileIO *f, void *ctx) {
+byte CGround_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	CGround *self = (CGround *)base;
 	(void)ctx;
 	CFileIO_BeginBlockWrite(f, "SUEL");
 	CFileIO_WriteInt(f, 1);
@@ -1642,7 +1647,7 @@ void CGround_BuildSectorMesh(CGround *self, CCollideMesh *mesh, int mode, uint32
 		CTriMesh_AddD3D(m, d3d, 1);
 		CGround_AddMesh(self, mesh, m, NULL, NULL);
 		if (d3d) {
-			((objDelete_t)d3d->vftable[0])(d3d, 1);
+			d3d->vftable->Delete(&d3d->base, 1);
 		}
 	}
 	((objDelete_t)(*(void ***)m)[0])(m, 1);
@@ -1689,7 +1694,8 @@ void CGround_NodesToD3D(CGround *self, int fvf) {
 	}
 }
 
-void CGround_Draw(CGround *self, void *dev, int unused) {
+void CGround_Draw(IObject3D *base, void *dev, CRenderNode *unused) {
+	CGround *self = (CGround *)base;
 	(void)unused;
 	Render_SetWorldMatrix(g_MatIdentity, 0);
 	for (int i = 0; i < self->nNodes; i++) {
@@ -2305,3 +2311,14 @@ void CGround_DrawDebug(CGround *self) {
 	}
 	Debug_DrawBox(&self->CollideExt.min, &self->CollideExt.max, 0xff00);
 }
+
+/* the vtable of CGround */
+const IObject3DVtbl CGround_vftable = {
+	.Delete = CGround_Delete,
+	.Update = IObject3D_UpdateNop,
+	.Render = CGround_Draw,
+	.InitD3D = CGround_NodesVf3,
+	.ReleaseD3D = CGround_NodesVf4,
+	.Write = CGround_Write,
+	.Read = CGround_Read,
+};

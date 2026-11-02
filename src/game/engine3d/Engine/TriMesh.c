@@ -9,8 +9,8 @@
 #include "scrap/e3dutil.h"
 #include "scrap/trimesh.h"
 
-#define CTRIMESH_VFTABLE GAME_VFTABLE(CTriMesh_vftable)
-#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable)
+extern const IObject3DVtbl CTriMesh_vftable;
+#define CTRIMESH_VFTABLE (&CTriMesh_vftable)
 #define TRIMESH_SKIN 16
 /* the box before the first vertex, rva 0x3a3a38 and 0x3a512c */
 #define TRIMESH_FLT_MAX 3.4028234663852886e+38f
@@ -19,8 +19,6 @@
 #define g_MeshD3DOn GAME_GLOBAL_IN(byte, group_431bac, 1)
 /* statistics of the frame */
 
-typedef void(*meshD3DDelete_t)(CMeshD3D *self, int flags);
-typedef void(*meshD3DDraw_t)(CMeshD3D *self, void *dev, int arg);
 
 /* the counts as the add functions take them: 0 without the array */
 static int Mesh_NumVert(const CTriMesh *m) {
@@ -114,7 +112,7 @@ void CTriMesh_Clear(CTriMesh *self) {
 	self->pTVert = Mesh_Free(self->pTVert);
 	self->pTri = Mesh_Free(self->pTri);
 	if (self->d3d) {
-		((meshD3DDelete_t)self->d3d->vftable[0])(self->d3d, 1);
+		self->d3d->vftable->Delete(&self->d3d->base, 1);
 		self->d3d = NULL;
 	}
 	self->pSkin = Mesh_Free(self->pSkin);
@@ -133,12 +131,13 @@ void CTriMesh_dtor(CTriMesh *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-CTriMesh *CTriMesh_Delete(CTriMesh *self, byte flags) {
+IObject3D *CTriMesh_Delete(IObject3D *base, byte flags) {
+	CTriMesh *self = (CTriMesh *)base;
 	CTriMesh_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 byte CTriMesh_NoFile(CTriMesh *self, void *f, void *ctx) {
@@ -499,12 +498,13 @@ void CTriMesh_Transform(CTriMesh *self, const matrix_t *m) {
 	}
 }
 
-void CTriMesh_Draw(CTriMesh *self, void *dev, int unused) {
+void CTriMesh_Draw(IObject3D *elem, void *dev, CRenderNode *unused) {
+	CTriMesh *self = (CTriMesh *)elem;
 	(void)unused;
 	/* the meshes draw through their D3D mesh, this path is not meant to run */
 	CHECK(0);
 	if (self->d3d && g_MeshD3DOn) {
-		((meshD3DDraw_t)self->d3d->vftable[2])(self->d3d, dev, 0);
+		self->d3d->vftable->Render(&self->d3d->base, dev, NULL);
 		return;
 	}
 	if (!self->pTri || !self->pVert) {
@@ -629,3 +629,14 @@ uv_t *CVertList_GetUV(CVertList *self, uv_t *out, uint32_t i) {
 		return out;
 	}
 }
+
+/* the vtable of CTriMesh */
+const IObject3DVtbl CTriMesh_vftable = {
+	.Delete = CTriMesh_Delete,
+	.Update = IObject3D_UpdateNop,
+	.Render = CTriMesh_Draw,
+	.InitD3D = IObject3D_InitD3DNop,
+	.ReleaseD3D = IObject3D_ReleaseD3DNop,
+	.Write = IObject3D_WriteFalse,
+	.Read = IObject3D_ReadFalse,
+};

@@ -25,8 +25,13 @@ typedef struct CMeshTri {
 SD_SIZE(CMeshTri, 0x44);
 
 typedef struct CTriMesh {
-	void *vftable;			/* 0x00 */
-	uint32_t class;			/* 0x04 CLASS_OBJ3D_TRIMESH */
+	union {
+		IObject3D base;
+		struct {
+			const IObject3DVtbl *vftable;	/* 0x00 */
+			uint32_t class;			/* 0x04 CLASS_OBJ3D_TRIMESH */
+		};
+	};
 	int nVert;			/* 0x08 */
 	int nTVert;			/* 0x0c */
 	int nTri;			/* 0x10 */
@@ -55,7 +60,7 @@ CTriMesh *CTriMesh_ctorCopy(CTriMesh *self, const CTriMesh *orig);
 /* the meshes of src, with all its list */
 CTriMesh *CTriMesh_ctorD3D(CTriMesh *self, CMeshD3D *src, byte all);
 void CTriMesh_dtor(CTriMesh *self);
-CTriMesh *CTriMesh_Delete(CTriMesh *self, byte flags);
+IObject3D *CTriMesh_Delete(IObject3D *base, byte flags);
 /* the members after the vftable cleared, except the box */
 void CTriMesh_Init(CTriMesh *self);
 /* the arrays and the D3D mesh freed, everything 0 */
@@ -63,7 +68,7 @@ void CTriMesh_Clear(CTriMesh *self);
 /* the Read and Write slots of IObject3D: not supported, 0 */
 byte CTriMesh_NoFile(CTriMesh *self, void *f, void *ctx);
 /* through the D3D mesh when there is one and g_MeshD3DOn, else each triangle with DrawPrimitiveUP */
-void CTriMesh_Draw(CTriMesh *self, void *dev, int unused);
+void CTriMesh_Draw(IObject3D *elem, void *dev, CRenderNode *unused);
 
 /* the counts set; a larger one than allocated doubles the array (realloc: else CHECK there is none yet) */
 void CTriMesh_SetNumVert(CTriMesh *self, int n, byte realloc);

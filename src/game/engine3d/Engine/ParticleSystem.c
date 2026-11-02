@@ -191,20 +191,22 @@ ParticleSystemParams *ParticleSystemParams_Assign(ParticleSystemParams *self, co
 	return self;
 }
 
-CObjBase3D *CObjBase3D_Delete(CObjBase3D *self, byte flags) {
+IObject3D *CObjBase3D_Delete(IObject3D *base, byte flags) {
+	CObjBase3D *self = (CObjBase3D *)base;
 	CObjBase3D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
-CParticleSystem *CParticleSystem_Delete(CParticleSystem *self, byte flags) {
+IObject3D *CParticleSystem_Delete(IObject3D *base, byte flags) {
+	CParticleSystem *self = (CParticleSystem *)base;
 	CParticleSystem_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CParticleSystem));
 	}
-	return self;
+	return base;
 }
 
 void CParticleSystem_Init(CParticleSystem *self, CNode3D *node, const char *type, const ParticleSystemParams *params,
@@ -607,14 +609,16 @@ void CParticleSystem_EmitDt(CParticleSystem *self, int n, byte force, float dt) 
 	CParticleSystem_Emit(self, n, force, dt, g_MatIdentity);
 }
 
-byte CParticleSystem_Read(CParticleSystem *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+byte CParticleSystem_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	CParticleSystem *self = (CParticleSystem *)base;
 	(void)self;
 	(void)f;
 	CHECK(CIniFile_FindSection(ctx->node->ini, "Particles", 1));
 	return 1;
 }
 
-byte CParticleSystem_Write(CParticleSystem *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+byte CParticleSystem_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	CParticleSystem *self = (CParticleSystem *)base;
 	(void)self;
 	(void)f;
 	CHECK(CIniFile_FindSection(ctx->node->ini, "Particles", 1));
@@ -750,7 +754,8 @@ void ParticleSystem_LoadIni(const char *name, const char *dir) {
 	CIniFile_Load(g_ParticleSystemIni, name, dir, 1);
 }
 
-void CParticleSystem_Render(CParticleSystem *self, void *dev, CRenderNode *r) {
+void CParticleSystem_Render(IObject3D *base, void *dev, CRenderNode *r) {
+	CParticleSystem *self = (CParticleSystem *)base;
 	(void)dev;
 	if (!g_ParticleSystemOn) {
 		return;
@@ -902,7 +907,8 @@ void CParticleActive_Update(CParticleActive *self, CParticleSystem *sp, float dt
 	}
 }
 
-void CParticleSystem_Update(CParticleSystem *self, CRenderNode *r) {
+void CParticleSystem_Update(IObject3D *base, CRenderNode *r) {
+	CParticleSystem *self = (CParticleSystem *)base;
 	if (!g_ParticleSystemOn) {
 		return;
 	}
@@ -955,3 +961,36 @@ void CParticleSystem_Update(CParticleSystem *self, CRenderNode *r) {
 	}
 	self->lastPos = (vec3_t){ m->m[12], m->m[13], m->m[14] };
 }
+
+/* the vtable of IObject3D */
+const IObject3DVtbl IObject3D_vftable = {
+	.Delete = IObject3D_Delete,
+	.Update = (void *)crt_purecall,
+	.Render = (void *)crt_purecall,
+	.InitD3D = (void *)crt_purecall,
+	.ReleaseD3D = (void *)crt_purecall,
+	.Write = IObject3D_WriteFalse,
+	.Read = IObject3D_ReadFalse,
+};
+
+/* the vtable of CObjBase3D */
+const IObject3DVtbl CObjBase3D_vftable = {
+	.Delete = CObjBase3D_Delete,
+	.Update = IObject3D_UpdateNop,
+	.Render = IObject3D_RenderNop,
+	.InitD3D = IObject3D_InitD3DNop,
+	.ReleaseD3D = IObject3D_ReleaseD3DNop,
+	.Write = IObject3D_WriteFalse,
+	.Read = IObject3D_ReadFalse,
+};
+
+/* the vtable of CParticleSystem */
+const IObject3DVtbl CParticleSystem_vftable = {
+	.Delete = CParticleSystem_Delete,
+	.Update = CParticleSystem_Update,
+	.Render = CParticleSystem_Render,
+	.InitD3D = IObject3D_InitD3DNop,
+	.ReleaseD3D = IObject3D_ReleaseD3DNop,
+	.Write = CParticleSystem_Write,
+	.Read = CParticleSystem_Read,
+};

@@ -14,7 +14,8 @@
 #include "scrap/material.h"
 #include "scrap/table.h"
 
-#define CMESHD3D_VFTABLE GAME_VFTABLE(CMeshD3D_vftable)
+extern const IObject3DVtbl CMeshD3D_vftable;
+#define CMESHD3D_VFTABLE (&CMeshD3D_vftable)
 
 /* Build flags */
 #define MESHD3D_ONESIDED 0x01		/* no back faces for two sided materials */
@@ -39,24 +40,18 @@ typedef struct CMeshVert {
 } CMeshVert;
 SD_SIZE(CMeshVert, 0x20);
 
-/* IObject3D, the slots of vftable */
-enum {
-	MESHD3D_VF_DELETE = 0,		/* (byte flags) */
-	MESHD3D_VF_SETRENDER = 1,	/* (void *renderNode) */
-	MESHD3D_VF_DRAW = 2,		/* (void *dev, void *ctx) */
-	MESHD3D_VF_RESTORE = 3,	/* (void *dev): the buffers made */
-	MESHD3D_VF_INVALIDATE = 4,	/* (void *dev): the buffers released */
-	MESHD3D_VF_WRITE = 5,		/* (CFileIO *f, MeshD3D_FileCtx *ctx) */
-	MESHD3D_VF_READ = 6		/* (CFileIO *f, MeshD3D_FileCtx *ctx) */
-};
-
 /* the 3 vertex indices of a triangle. A member points to it as tri16_t *, not as uint16_t (*)[3]: Ghidra's C parser
  * drops the pointer of a pointer to an array (docs/ghidra.md). */
 typedef uint16_t tri16_t[3];
 
 typedef struct CMeshD3D {
-	void **vftable;			/* 0x00 MALLAD3D_VF_* */
-	uint32_t class;			/* 0x04 CLASS_OBJ3D_MESHD3D */
+	union {
+		IObject3D base;
+		struct {
+			const IObject3DVtbl *vftable;	/* 0x00 */
+			uint32_t class;			/* 0x04 CLASS_OBJ3D_MESHD3D */
+		};
+	};
 	struct CMeshD3D *next;		/* 0x08 the next mesh of the list, owned */
 	uint32_t nTri;			/* 0x0c */
 	tri16_t *pTri;			/* 0x10 new[] */
@@ -169,7 +164,7 @@ extern MeshD3DVert *g_WeldVert;
 extern int g_MaxTriGroup;
 
 /* the deleting destructor */
-CMeshD3D *CMeshD3D_Delete(CMeshD3D *self, byte flags);
+IObject3D *CMeshD3D_Delete(IObject3D *base, byte flags);
 CMeshD3D *CMeshD3D_ctor(CMeshD3D *self);
 /* made from mesh (MALLAD3D_* flags), the object of node when there is one */
 CMeshD3D *CMeshD3D_ctorMesh(CMeshD3D *self, CTriMesh *mesh, uint32_t flags, CNode3D *node);
@@ -179,12 +174,12 @@ void CMeshD3D_Init(CMeshD3D *self);
 void CMeshD3D_Build(CMeshD3D *self, CTriMesh *mesh, uint32_t flags);
 
 /* the slots of the vftable */
-void CMeshD3D_SetRender(CMeshD3D *self, void *renderNode);
-int CMeshD3D_Draw(CMeshD3D *self, void *dev, void *ctx);
-int CMeshD3D_Restore(CMeshD3D *self, void *dev);
-void CMeshD3D_Invalidate(CMeshD3D *self, void *dev);
-byte CMeshD3D_Write(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
-byte CMeshD3D_Read(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
+void CMeshD3D_SetRender(IObject3D *base, CRenderNode *renderNode);
+void CMeshD3D_Draw(IObject3D *base, void *dev, CRenderNode *ctx);
+void CMeshD3D_Restore(IObject3D *base, void *dev);
+void CMeshD3D_Invalidate(IObject3D *base, void *dev);
+byte CMeshD3D_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
+byte CMeshD3D_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
 
 /* the buffers of this mesh, 0 or E_FAIL without vertices or triangles */
 int CMeshD3D_CreateVB(CMeshD3D *self);

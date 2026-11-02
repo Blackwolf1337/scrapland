@@ -80,20 +80,23 @@ CNodeFX_Wheel *CNodeFX_Wheel_ctorCopy(CNodeFX_Wheel *self, const CNodeFX_Wheel *
 	return self;
 }
 
-CNodeFX_Wheel *CNodeFX_Wheel_Delete(CNodeFX_Wheel *self, byte flags) {
+INodeFX *CNodeFX_Wheel_Delete(INodeFX *base, byte flags) {
+	CNodeFX_Wheel *self = (CNodeFX_Wheel *)base;
 	self->vftable = INODEFX_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CNodeFX_Wheel));
 	}
-	return self;
+	return base;
 }
 
-byte CNodeFX_Wheel_Type(CNodeFX_Wheel *self) {
+byte CNodeFX_Wheel_Type(INodeFX *base) {
+	CNodeFX_Wheel *self = (CNodeFX_Wheel *)base;
 	(void)self;
 	return NODEFX_WHEEL;
 }
 
-int CNodeFX_Wheel_Apply(CNodeFX_Wheel *self, matrix_t *m, CNode3D *node, CRenderNode *r) {
+int CNodeFX_Wheel_Apply(INodeFX *base, matrix_t *m, CNode3D *node, CRenderNode *r) {
+	CNodeFX_Wheel *self = (CNodeFX_Wheel *)base;
 	CHECK(r && node && node->parent);
 	if (r->frame == g_FrameCount) {
 		return 0;
@@ -235,20 +238,23 @@ CNodeFX_Spring *CNodeFX_Spring_ctorCopy(CNodeFX_Spring *self, const CNodeFX_Spri
 	return self;
 }
 
-CNodeFX_Spring *CNodeFX_Spring_Delete(CNodeFX_Spring *self, byte flags) {
+INodeFX *CNodeFX_Spring_Delete(INodeFX *base, byte flags) {
+	CNodeFX_Spring *self = (CNodeFX_Spring *)base;
 	self->vftable = INODEFX_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CNodeFX_Spring));
 	}
-	return self;
+	return base;
 }
 
-byte CNodeFX_Spring_Type(CNodeFX_Spring *self) {
+byte CNodeFX_Spring_Type(INodeFX *base) {
+	CNodeFX_Spring *self = (CNodeFX_Spring *)base;
 	(void)self;
 	return NODEFX_SPRING;
 }
 
-int CNodeFX_Spring_Apply(CNodeFX_Spring *self, matrix_t *m, CNode3D *node, CRenderNode *r) {
+int CNodeFX_Spring_Apply(INodeFX *base, matrix_t *m, CNode3D *node, CRenderNode *r) {
+	CNodeFX_Spring *self = (CNodeFX_Spring *)base;
 	CNode3D *parent = node->parent;
 	float damping, spring, torsion, damp2;
 	vec3_t p;
@@ -393,8 +399,7 @@ void *NodeFX_New(const char *type, CNode3D *node) {
 	return NULL;
 }
 
-typedef byte(*nodeFXType_t)(INodeFX *self);
-#define NODEFX_TYPE(fx) ((nodeFXType_t)(fx)->vftable[NODEFX_VF_TYPE])(fx)
+#define NODEFX_TYPE(fx) ((fx)->vftable->Type(fx))
 
 void *NodeFX_Clone(INodeFX *fx) {
 	void *p;
@@ -411,3 +416,24 @@ void *NodeFX_Clone(INodeFX *fx) {
 	E3D_LogBlue(g_FileLog, "Unknown Node Effect: %d", NODEFX_TYPE(fx));
 	return NULL;
 }
+
+/* the vtable of INodeFX */
+const INodeFXVtbl INodeFX_vftable = {
+	.Delete = INodeFX_Delete,
+	.Type = INodeFX_Type,
+	.Apply = (void *)crt_purecall,
+};
+
+/* the vtable of CNodeFX_Wheel */
+const INodeFXVtbl CNodeFX_Wheel_vftable = {
+	.Delete = CNodeFX_Wheel_Delete,
+	.Type = CNodeFX_Wheel_Type,
+	.Apply = CNodeFX_Wheel_Apply,
+};
+
+/* the vtable of CNodeFX_Spring */
+const INodeFXVtbl CNodeFX_Spring_vftable = {
+	.Delete = CNodeFX_Spring_Delete,
+	.Type = CNodeFX_Spring_Type,
+	.Apply = CNodeFX_Spring_Apply,
+};

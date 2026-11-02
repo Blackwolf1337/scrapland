@@ -9,13 +9,19 @@
 #include "scrap/meshd3d.h"
 #include "scrap/groundportal.h"
 
-#define CGRAPHIC3D_VFTABLE GAME_VFTABLE(CGraphic3D_vftable)
+extern const IObject3DVtbl CGraphic3D_vftable;
+#define CGRAPHIC3D_VFTABLE (&CGraphic3D_vftable)
 extern cGVar GVar_R_SpriteSector;
 #define g_ShowSprites (GVar_R_SpriteSector.value.i)	/* 1: visibility, 2: drawn, 3: with the name */
 
 typedef struct CGraphic3D {
-	void **vftable;			/* 0x00 OBJ3D_VF_* */
-	uint32_t class;			/* 0x04 CLASS_OBJ3D_GRAPHIC3D */
+	union {
+		IObject3D base;
+		struct {
+			const IObject3DVtbl *vftable;	/* 0x00 */
+			uint32_t class;			/* 0x04 CLASS_OBJ3D_GRAPHIC3D */
+		};
+	};
 	vec3_t pos;			/* 0x08 */
 	float width;			/* 0x14 */
 	float height;			/* 0x18 */
@@ -41,11 +47,11 @@ CGraphic3D *CGraphic3D_ctorTex2(CGraphic3D *self, const char *tex, const char *o
 Graphic3DVert *Graphic3DVert_ctor(Graphic3DVert *self);
 CGraphic3D *CGraphic3D_ctor(CGraphic3D *self);
 void CGraphic3D_dtor(CGraphic3D *self);
-CGraphic3D *CGraphic3D_Delete(CGraphic3D *self, byte flags);
-byte CGraphic3D_Read(CGraphic3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
+IObject3D *CGraphic3D_Delete(IObject3D *base, byte flags);
+byte CGraphic3D_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
 void CGraphic3D_Draw(CGraphic3D *self);
-void CGraphic3D_Render(CGraphic3D *self, void *dev, CRenderNode *r);
-byte CGraphic3D_Write(CGraphic3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
+void CGraphic3D_Render(IObject3D *base, void *dev, CRenderNode *r);
+byte CGraphic3D_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
 void CGraphic3D_SetNode(CGraphic3D *self, CNode3D *node);
 /* the texture with its opacity map (additive alpha without one) */
 void CGraphic3D_SetTexture(CGraphic3D *self, const char *tex, const char *opac);

@@ -13,8 +13,13 @@
 #define CAMERA_LOOKAT 0x463		/* mode: the angles follow the target */
 
 typedef struct CCamera {
-	void *vftable;			/* 0x00 */
-	uint32_t class;			/* 0x04 CLASS_OBJ3D_CAMERA */
+	union {
+		IObject3D base;
+		struct {
+			const IObject3DVtbl *vftable;	/* 0x00 */
+			uint32_t class;			/* 0x04 CLASS_OBJ3D_CAMERA */
+		};
+	};
 	vec3_t rot;			/* 0x08 */
 	vec3_t pos;			/* 0x14 */
 	vec3_t target;			/* 0x20 */
@@ -37,14 +42,14 @@ SD_SIZE(CCamera, 0x78);
 CCamera *CCamera_ctor(CCamera *self);
 CCamera *CCamera_ctorCopy(CCamera *self, const CCamera *other);
 void CCamera_dtor(CCamera *self);
-CCamera *CCamera_Delete(CCamera *self, byte flags);
+IObject3D *CCamera_Delete(IObject3D *base, byte flags);
 /* the members after the copied ones cleared, the nodes forgotten (not released) */
 void CCamera_Clear(CCamera *self);
 void CCamera_SetNode(CCamera *self, CNode3D *node);
 void CCamera_SetNodeTarget(CCamera *self, CNode3D *node);
 /* the "CAM" block; ctx holds the node at 0x4 */
-int CCamera_Read(CCamera *self, CFileIO *f, void *ctx);
-int CCamera_Write(CCamera *self, CFileIO *f, void *ctx);
+byte CCamera_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
+byte CCamera_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
 /* dir and up from the angles, viewPos from pos */
 void CCamera_UpdateVectors(CCamera *self);
 /* the angles that look from pos at target */
@@ -60,7 +65,7 @@ void CCamera_Move(CCamera *self, float d);
 /* along the x axis of the angles and the up vector */
 void CCamera_Strafe(CCamera *self, float side, float rise);
 /* the IObject3D methods: Update follows the node with CamaraNodos, the others do nothing */
-void CCamera_Update(CCamera *self, CRenderNode *r);
+void CCamera_Update(IObject3D *base, CRenderNode *r);
 void CCamera_Render(CCamera *self, void *arg, CRenderNode *r);
 void CCamera_InitD3D(CCamera *self, void *dev);
 void CCamera_ReleaseD3D(CCamera *self, void *dev);

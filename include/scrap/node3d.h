@@ -37,26 +37,30 @@
 #define NODE_HIDE 0x88
 #define NODE_PASS3 0x40			/* drawn in the passes 3 and 13 also without the class bits 0xe0 */
 
-typedef struct IObject3D {
-	void **vftable;			/* 0x0 [0] deleting destructor, [1] Update(CRenderNode *), [2] Render(arg, CRenderNode *) */
+typedef struct IObject3D IObject3D;
+typedef struct CRenderNode CRenderNode;
+typedef struct MeshD3D_FileCtx MeshD3D_FileCtx;
+
+/* the slots of the 3D objects (objeto3d.h) */
+typedef struct IObject3DVtbl {
+	IObject3D *(*Delete)(IObject3D *self, byte flags);				/* 0x00 */
+	void(*Update)(IObject3D *self, CRenderNode *r);				/* 0x04 */
+	void(*Render)(IObject3D *self, void *dev, CRenderNode *r);			/* 0x08 */
+	void(*InitD3D)(IObject3D *self, void *dev);					/* 0x0c */
+	void(*ReleaseD3D)(IObject3D *self, void *dev);				/* 0x10 */
+	byte(*Write)(IObject3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);		/* 0x14 */
+	byte(*Read)(IObject3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);		/* 0x18 */
+} IObject3DVtbl;
+
+struct IObject3D {
+	const IObject3DVtbl *vftable;	/* 0x0 */
 	uint32_t class;			/* 0x4 */
-} IObject3D;
+};
+extern const IObject3DVtbl IObject3D_vftable;
+#define IOBJECT3D_VFTABLE (&IObject3D_vftable)
 SD_SIZE(IObject3D, 8);
 
-/* the slots of the vftable of the 3D objects (objeto3d.h) */
-enum {
-	OBJ3D_VF_DELETE = 0,		/* (int flags) */
-	OBJ3D_VF_UPDATE = 1,		/* (CRenderNode *) */
-	OBJ3D_VF_RENDER = 2,		/* (void *arg, CRenderNode *) */
-	OBJ3D_VF_INITD3D = 3,		/* (void *dev) */
-	OBJ3D_VF_RELEASED3D = 4,	/* (void *dev) */
-	OBJ3D_VF_WRITE = 5,		/* byte (CFileIO *f, MeshD3D_FileCtx *ctx) */
-	OBJ3D_VF_READ = 6		/* byte (CFileIO *f, MeshD3D_FileCtx *ctx) */
-};
 typedef void *(*objDelete_t)(void *self, int flags);	/* the deleting destructor of any object */
-typedef void(*objDev_t)(IObject3D *self, void *dev);
-typedef byte(*objFile_t)(IObject3D *self, CFileIO *f, void *ctx);
-#define OBJ3D_CALL(o, slot, type, ...) ((type)(o)->vftable[slot])((o), ##__VA_ARGS__)
 
 /* a counted reference (objref.h): the head of CNode3D and CScene, the deleting destructor first */
 typedef struct ObjRef {
@@ -191,7 +195,7 @@ typedef struct CRenderNode {
 	uint16_t slot;			/* 0x98 the animation slot of the owner model for the vertex animation */
 	int16_t skinFrame;		/* 0x9a the frame of that channel when CMeshD3D_SetRender set skin */
 	IObject3D *obj3D;		/* 0x9c instead of the node's, the same class */
-	IObject3D *obj3D2;		/* 0xa0 owned */
+	struct INodeFX *obj3D2;		/* 0xa0 owned, the effect of the node (a copy of obj58) */
 	struct CNode3D *node;		/* 0xa4 a reference */
 } CRenderNode;
 SD_OFFSET(CRenderNode, flags, 0x04);

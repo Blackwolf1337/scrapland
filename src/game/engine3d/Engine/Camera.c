@@ -7,8 +7,8 @@
 #include "scrap/camera.h"
 #include "scrap/scrapcamera.h"
 
-#define CCAMERA_VFTABLE GAME_VFTABLE(CCamera_vftable)
-#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable)
+extern const IObject3DVtbl CCamera_vftable;
+#define CCAMERA_VFTABLE (&CCamera_vftable)
 /* the limit of the projection, a float constant widened */
 #define CAMERA_EPS ((double)0.01f)
 
@@ -72,12 +72,13 @@ void CCamera_dtor(CCamera *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-CCamera *CCamera_Delete(CCamera *self, byte flags) {
+IObject3D *CCamera_Delete(IObject3D *base, byte flags) {
+	CCamera *self = (CCamera *)base;
 	CCamera_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 void CCamera_Clear(CCamera *self) {
@@ -105,7 +106,8 @@ static const struct {
 	{ offsetof(CCamera, aspectScreen), 4 }, { offsetof(CCamera, mode), 4 },
 };
 
-int CCamera_Read(CCamera *self, CFileIO *f, void *ctx) {
+byte CCamera_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	CCamera *self = (CCamera *)base;
 	CCamera_SetNode(self, ((MeshD3D_FileCtx *)ctx)->node);
 	CFileIO_BeginBlock(f, "CAM");
 	CHECK(CFileIO_ReadInt(f) == 1);
@@ -116,7 +118,8 @@ int CCamera_Read(CCamera *self, CFileIO *f, void *ctx) {
 	return 1;
 }
 
-int CCamera_Write(CCamera *self, CFileIO *f, void *ctx) {
+byte CCamera_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	CCamera *self = (CCamera *)base;
 	CHECK(self->node == ((MeshD3D_FileCtx *)ctx)->node);
 	CFileIO_BeginBlockWrite(f, "CAM");
 	CFileIO_WriteInt(f, 1);
@@ -248,8 +251,9 @@ void CCamera_Strafe(CCamera *self, float side, float rise) {
 	self->pos.z = self->pos.z + self->up.z * rise;
 }
 
-/* OBJ3D_VF_UPDATE: with CamaraNodos the fov and the position from the animated node */
-void CCamera_Update(CCamera *self, CRenderNode *r) {
+/* the slot Update: with CamaraNodos the fov and the position from the animated node */
+void CCamera_Update(IObject3D *base, CRenderNode *r) {
+	CCamera *self = (CCamera *)base;
 	(void)r;
 	if (!g_CameraNodes || !self->node || !CNode3D_Track(self->node, 0)) {
 		return;
@@ -260,7 +264,7 @@ void CCamera_Update(CCamera *self, CRenderNode *r) {
 	CCamera_UpdateVectors(self);
 }
 
-/* OBJ3D_VF_RENDER, OBJ3D_VF_INITD3D and OBJ3D_VF_RELEASED3D do nothing */
+/* the slots Render, InitD3D and ReleaseD3D do nothing */
 void CCamera_Render(CCamera *self, void *arg, CRenderNode *r) {
 	(void)self;
 	(void)arg;
@@ -276,3 +280,14 @@ void CCamera_ReleaseD3D(CCamera *self, void *dev) {
 	(void)self;
 	(void)dev;
 }
+
+/* the vtable of CCamera */
+const IObject3DVtbl CCamera_vftable = {
+	.Delete = CCamera_Delete,
+	.Update = CCamera_Update,
+	.Render = IObject3D_RenderNop,
+	.InitD3D = IObject3D_InitD3DNop,
+	.ReleaseD3D = IObject3D_ReleaseD3DNop,
+	.Write = CCamera_Write,
+	.Read = CCamera_Read,
+};

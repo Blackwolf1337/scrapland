@@ -2324,26 +2324,8 @@ void (*const CMaterial_vftable[1])(void) = {
 };
 
 /* .?AVIObjeto3D@@ */
-void (*const IObject3D_vftable[7])(void) = {
-	IObject3D_Delete,	/* 0x00 0x23aed0 */
-	crt_purecall,	/* 0x04 0x31951a */
-	crt_purecall,	/* 0x08 0x31951a */
-	crt_purecall,	/* 0x0c 0x31951a */
-	crt_purecall,	/* 0x10 0x31951a */
-	IObject3D_Write,	/* 0x14 0x23c360 */
-	IObject3D_Read,	/* 0x18 0x23ba30 */
-};
 
 /* .?AVCLuz@@ */
-void (*const CLight_vftable[7])(void) = {
-	CLight_Delete,	/* 0x00 0x23aea0 */
-	CLight_Update,	/* 0x04 0x23c370 */
-	CLight_Render,	/* 0x08 0x23bb70 */
-	CLight_Reset,	/* 0x0c 0x23b750 */
-	CLight_Hide,	/* 0x10 0x23b740 */
-	CLight_Write,	/* 0x14 0x23c1f0 */
-	CLight_Read,	/* 0x18 0x23b8a0 */
-};
 
 /* .?AVCNodo3D@@ */
 void (*const CNode3D_vftable[1])(void) = {
@@ -2361,39 +2343,12 @@ void (*const CModel_vftable[1])(void) = {
 };
 
 /* .?AVCSuelo@@ */
-void (*const CGround_vftable[7])(void) = {
-	CGround_Delete,	/* 0x00 0x258ee0 */
-	CGround_Nop,	/* 0x04 0x25d380 */
-	CGround_Draw,	/* 0x08 0x25c800 */
-	CGround_NodesVf3,	/* 0x0c 0x25af90 */
-	CGround_NodesVf4,	/* 0x10 0x25ac30 */
-	CGround_Write,	/* 0x14 0x25cd20 */
-	CGround_Read,	/* 0x18 0x25b9a0 */
-};
 
 /* .?AVCMallaTri@@ */
-void (*const CTriMesh_vftable[7])(void) = {
-	CTriMesh_Delete,	/* 0x00 0x2627b0 */
-	Stub_Nop1,	/* 0x04 0x262bf0 */
-	CTriMesh_Draw,	/* 0x08 0x262840 */
-	Stub_Nop1,	/* 0x0c 0x262820 */
-	Stub_Nop1,	/* 0x10 0x2627e0 */
-	CTriMesh_NoFile,	/* 0x14 0x262be0 */
-	CTriMesh_NoFile,	/* 0x18 0x262830 */
-};
 
 /* .?AVCD3DApplication@@ */
 
 /* .?AVCObjBase3D@@ */
-void (*const CObjBase3D_vftable[7])(void) = {
-	CObjBase3D_Delete,	/* 0x00 0x27a120 */
-	Stub_Nop1,	/* 0x04 0x27c8b0 */
-	Stub_Nop2,	/* 0x08 0x27bff0 */
-	Stub_Nop1,	/* 0x0c 0x27a9a0 */
-	Stub_Nop1,	/* 0x10 0x27a6d0 */
-	IObject3D_Write,	/* 0x14 0x23c360 */
-	IObject3D_Read,	/* 0x18 0x23ba30 */
-};
 
 /* .?AVCParticulaBase@@ */
 void (*const CParticleBase_vftable[3])(void) = {
@@ -2417,37 +2372,10 @@ void (*const CParticleActive_vftable[3])(void) = {
 };
 
 /* .?AVCSistPart@@ */
-void (*const CParticleSystem_vftable[7])(void) = {
-	CParticleSystem_Delete,	/* 0x00 0x27a190 */
-	CParticleSystem_Update,	/* 0x04 0x27c8c0 */
-	CParticleSystem_Render,	/* 0x08 0x27c000 */
-	Stub_Nop1,	/* 0x0c 0x27a9b0 */
-	Stub_Nop1,	/* 0x10 0x27a6e0 */
-	CParticleSystem_Write,	/* 0x14 0x27c250 */
-	CParticleSystem_Read,	/* 0x18 0x27b9c0 */
-};
 
 /* .?AVCFlare@@ */
-void (*const CFlare_vftable[7])(void) = {
-	CFlare_Delete,	/* 0x00 0x297da0 */
-	Stub_Nop1,	/* 0x04 0x27c8b0 */
-	CFlare_Render,	/* 0x08 0x297e50 */
-	Stub_Nop1,	/* 0x0c 0x27a9a0 */
-	Stub_Nop1,	/* 0x10 0x27a6d0 */
-	IObject3D_Write,	/* 0x14 0x23c360 */
-	IObject3D_Read,	/* 0x18 0x23ba30 */
-};
 
 /* .?AVCCamara@@ */
-void (*const CCamera_vftable[7])(void) = {
-	CCamera_Delete,	/* 0x00 0x29c300 */
-	CCamera_Update,	/* 0x04 0x29cba0 */
-	CCamera_Render,	/* 0x08 0x29c960 */
-	CCamera_InitD3D,	/* 0x0c 0x29c690 */
-	CCamera_ReleaseD3D,	/* 0x10 0x29c680 */
-	CCamera_Write,	/* 0x14 0x29c970 */
-	CCamera_Read,	/* 0x18 0x29c6a0 */
-};
 
 /* .?AVIEntrada@@ */
 void (*const IInput_vftable[8])(void) = {
@@ -2490,56 +2418,14 @@ void (*const CFXNewsPanel_vftable[3])(void) = {
 };
 
 /* .?AVCMallaD3D@@ */
-void (*const CMeshD3D_vftable[7])(void) = {
-	CMeshD3D_Delete,	/* 0x00 0x2afbe0 */
-	CMeshD3D_SetRender,	/* 0x04 0x2b0650 */
-	CMeshD3D_Draw,	/* 0x08 0x2b0330 */
-	CMeshD3D_Restore,	/* 0x0c 0x2aff60 */
-	CMeshD3D_Invalidate,	/* 0x10 0x2afea0 */
-	CMeshD3D_Write,	/* 0x14 0x2b0350 */
-	CMeshD3D_Read,	/* 0x18 0x2aff80 */
-};
 
 /* .?AVINodeFX@@ */
-void (*const INodeFX_vftable[3])(void) = {
-	INodeFX_Delete,	/* 0x00 0x2b2c90 */
-	INodeFX_Type,	/* 0x04 0x2b2fb0 */
-	crt_purecall,	/* 0x08 0x31951a */
-};
 
 /* .?AVCNodeFX_Wheel@@ */
-void (*const CNodeFX_Wheel_vftable[3])(void) = {
-	CNodeFX_Wheel_Delete,	/* 0x00 0x2b2c60 */
-	CNodeFX_Wheel_Type,	/* 0x04 0x2b2fa0 */
-	CNodeFX_Wheel_Apply,	/* 0x08 0x2b3c00 */
-};
 
 /* .?AVCNodeFX_Spring@@ */
-void (*const CNodeFX_Spring_vftable[3])(void) = {
-	CNodeFX_Spring_Delete,	/* 0x00 0x2b2c30 */
-	CNodeFX_Spring_Type,	/* 0x04 0x2b2f90 */
-	CNodeFX_Spring_Apply,	/* 0x08 0x2b2fc0 */
-};
 
 /* .?AVCGrafico3D@@ */
-void (*const CGraphic3D_vftable[7])(void) = {
-	CGraphic3D_Delete,	/* 0x00 0x2b96a0 */
-	FXMisc_Nop,	/* 0x04 0x2b9e40 */
-	CGraphic3D_Render,	/* 0x08 0x2b9c20 */
-	FXMisc_Nop,	/* 0x0c 0x2b96e0 */
-	FXMisc_Nop,	/* 0x10 0x2b96d0 */
-	CGraphic3D_Write,	/* 0x14 0x2b9d10 */
-	CGraphic3D_Read,	/* 0x18 0x2b96f0 */
-};
 
 /* .?AVCPortal@@ */
-void (*const CPortal_vftable[7])(void) = {
-	CPortal_Delete,	/* 0x00 0x2ba1e0 */
-	FXMisc_Nop,	/* 0x04 0x2ba7a0 */
-	CPortal_Render,	/* 0x08 0x2ba690 */
-	Stub_Nop1,	/* 0x0c 0x27a9a0 */
-	Stub_Nop1,	/* 0x10 0x27a6d0 */
-	CPortal_Write,	/* 0x14 0x2ba6f0 */
-	CPortal_Read,	/* 0x18 0x2ba410 */
-};
 

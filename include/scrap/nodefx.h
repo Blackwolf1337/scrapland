@@ -11,27 +11,35 @@
 #include "scrap/gvar.h"
 #include "scrap/node3d.h"
 
-#define INODEFX_VFTABLE GAME_VFTABLE(INodeFX_vftable)
-#define CNODEFX_WHEEL_VFTABLE GAME_VFTABLE(CNodeFX_Wheel_vftable)
-#define CNODEFX_SPRING_VFTABLE GAME_VFTABLE(CNodeFX_Spring_vftable)
 
 /* the types vftable[1] returns */
 enum { NODEFX_NONE = 0, NODEFX_WHEEL = 1, NODEFX_SPRING = 2 };
 
-/* the slots of the vftable */
-enum {
-	NODEFX_VF_DELETE = 0,		/* (byte flags) */
-	NODEFX_VF_TYPE = 1,		/* byte () */
-	NODEFX_VF_APPLY = 2		/* int (matrix_t *m, CNode3D *node, CRenderNode *r): m changed, 0 */
-};
+typedef struct INodeFX INodeFX;
 
-typedef struct INodeFX {
-	void **vftable;			/* 0x0 NODEFX_VF_* */
-} INodeFX;
+typedef struct INodeFXVtbl {
+	INodeFX *(*Delete)(INodeFX *self, byte flags);				/* 0x0 */
+	byte(*Type)(INodeFX *self);							/* 0x4 NODEFX_ */
+	/* m changed by the effect; 0 */
+	int(*Apply)(INodeFX *self, matrix_t *m, CNode3D *node, CRenderNode *r);	/* 0x8 */
+} INodeFXVtbl;
+extern const INodeFXVtbl CNodeFX_Spring_vftable;
+#define CNODEFX_SPRING_VFTABLE (&CNodeFX_Spring_vftable)
+extern const INodeFXVtbl CNodeFX_Wheel_vftable;
+#define CNODEFX_WHEEL_VFTABLE (&CNodeFX_Wheel_vftable)
+extern const INodeFXVtbl INodeFX_vftable;
+#define INODEFX_VFTABLE (&INodeFX_vftable)
+
+struct INodeFX {
+	const INodeFXVtbl *vftable;	/* 0x0 */
+};
 SD_SIZE(INodeFX, 4);
 
 typedef struct CNodeFX_Wheel {
-	void **vftable;			/* 0x00 */
+	union {
+		INodeFX base;
+		const INodeFXVtbl *vftable;	/* 0x00 */
+	};
 	float radius;			/* 0x04 0: no turn from the movement */
 	vec3_t rot;			/* 0x08 the axes turned by the distance moved */
 	vec3_t trans;			/* 0x14 the part of the movement along each axis that rolls, the rest slides */
@@ -45,7 +53,10 @@ SD_OFFSET(CNodeFX_Wheel, ang, 0x44);
 SD_SIZE(CNodeFX_Wheel, 0x54);
 
 typedef struct CNodeFX_Spring {
-	void **vftable;			/* 0x00 */
+	union {
+		INodeFX base;
+		const INodeFXVtbl *vftable;	/* 0x00 */
+	};
 	vec3_t prev;			/* 0x04 the position of the last step */
 	vec3_t next;			/* 0x10 the position of the next one */
 	uint32_t prevMSec;		/* 0x1c */
@@ -101,18 +112,18 @@ byte INodeFX_Type(INodeFX *self);
 CNodeFX_Wheel *CNodeFX_Wheel_ctor(CNodeFX_Wheel *self, CNode3D *node, int type);
 CNodeFX_Wheel *CNodeFX_Wheel_ctorCopy(CNodeFX_Wheel *self, const CNodeFX_Wheel *src);
 /* not to be used: CHECK(0) */
-CNodeFX_Wheel *CNodeFX_Wheel_Delete(CNodeFX_Wheel *self, byte flags);
-byte CNodeFX_Wheel_Type(CNodeFX_Wheel *self);
-int CNodeFX_Wheel_Apply(CNodeFX_Wheel *self, matrix_t *m, CNode3D *node, CRenderNode *r);
+INodeFX *CNodeFX_Wheel_Delete(INodeFX *base, byte flags);
+byte CNodeFX_Wheel_Type(INodeFX *base);
+int CNodeFX_Wheel_Apply(INodeFX *base, matrix_t *m, CNode3D *node, CRenderNode *r);
 /* ang 0 and a new noiseBase; the quotient of the random number by 20000 */
 int CNodeFX_Wheel_Reset(CNodeFX_Wheel *self);
 
 /* type 0 Spring, 1 Cloth, 2 Hair, 3 Bust */
 CNodeFX_Spring *CNodeFX_Spring_ctor(CNodeFX_Spring *self, CNode3D *node, int type);
 CNodeFX_Spring *CNodeFX_Spring_ctorCopy(CNodeFX_Spring *self, const CNodeFX_Spring *src);
-CNodeFX_Spring *CNodeFX_Spring_Delete(CNodeFX_Spring *self, byte flags);
-byte CNodeFX_Spring_Type(CNodeFX_Spring *self);
-int CNodeFX_Spring_Apply(CNodeFX_Spring *self, matrix_t *m, CNode3D *node, CRenderNode *r);
+INodeFX *CNodeFX_Spring_Delete(INodeFX *base, byte flags);
+byte CNodeFX_Spring_Type(INodeFX *base);
+int CNodeFX_Spring_Apply(INodeFX *base, matrix_t *m, CNode3D *node, CRenderNode *r);
 void CNodeFX_Spring_Reset(CNodeFX_Spring *self);
 
 /* other modules (src/imports.inc) */

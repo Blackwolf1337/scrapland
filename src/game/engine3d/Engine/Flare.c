@@ -53,12 +53,13 @@ void CFlare_dtor(CFlare *self) {
 	CObjBase3D_dtor((CObjBase3D *)self);
 }
 
-CFlare *CFlare_Delete(CFlare *self, byte flags) {
+IObject3D *CFlare_Delete(IObject3D *base, byte flags) {
+	CFlare *self = (CFlare *)base;
 	CFlare_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CFlare));
 	}
-	return self;
+	return base;
 }
 
 void CFlare_Draw(CFlare *self) {
@@ -81,7 +82,8 @@ static float CFlare_Fade(const CFlare *self, float dt) {
 	return t - k * dt * 0.2f;
 }
 
-void CFlare_Render(CFlare *self, void *dev, CRenderNode *r) {
+void CFlare_Render(IObject3D *base, void *dev, CRenderNode *r) {
+	CFlare *self = (CFlare *)base;
 	CHECK(self->graphic);
 	CHECK(self->node);
 	if (g_Overdraw || g_SkipFlares) {
@@ -166,3 +168,14 @@ void CFlare_SetTexture(CFlare *self, const char *tex, const char *opac, int src,
 void CFlare_SetTextureAdd(CFlare *self, const char *tex, const char *opac) {
 	CFlare_SetTexture(self, tex, opac, 5, 6, 0xff);
 }
+
+/* the vtable of CFlare */
+const IObject3DVtbl CFlare_vftable = {
+	.Delete = CFlare_Delete,
+	.Update = IObject3D_UpdateNop,
+	.Render = CFlare_Render,
+	.InitD3D = IObject3D_InitD3DNop,
+	.ReleaseD3D = IObject3D_ReleaseD3DNop,
+	.Write = IObject3D_WriteFalse,
+	.Read = IObject3D_ReadFalse,
+};

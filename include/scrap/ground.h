@@ -119,8 +119,13 @@ typedef struct CGroundHit {
 } CGroundHit;
 
 typedef struct CGround {
-	void *vftable;			/* 0x00 */
-	uint32_t class;			/* 0x04 CLASS_OBJ3D_GROUND */
+	union {
+		IObject3D base;
+		struct {
+			const IObject3DVtbl *vftable;	/* 0x00 */
+			uint32_t class;			/* 0x04 CLASS_OBJ3D_GROUND */
+		};
+	};
 	int traceStats[3];		/* 0x08 CGround_Trace: triangles tested, cache hits, cache misses */
 	CGroundHit cache;		/* 0x14 the last hit of CGround_Trace; cleared whenever the meshes change */
 	int nx;				/* 0x20 grid of the floor nodes */
@@ -247,13 +252,13 @@ void CHeights_QuadAddMesh(CHeights *self, CCollideMesh *mesh, int initTri);
 
 CGround *CGround_ctor(CGround *self);
 void CGround_dtor(CGround *self);
-CGround *CGround_Delete(CGround *self, byte flags);
+IObject3D *CGround_Delete(IObject3D *base, byte flags);
 void CGround_Nop(CGround *self, void *arg);
-void CGround_NodesVf3(CGround *self, void *arg);
-void CGround_NodesVf4(CGround *self, void *arg);
+void CGround_NodesVf3(IObject3D *base, void *arg);
+void CGround_NodesVf4(IObject3D *base, void *arg);
 /* the "SUEL" block: 1 */
-byte CGround_Read(CGround *self, CFileIO *f, void *ctx);
-byte CGround_Write(CGround *self, CFileIO *f, void *ctx);
+byte CGround_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
+byte CGround_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
 /* the .amc file of the scene name: 0 loaded, 1 older than the scene, -1 failed */
 int CGround_LoadCollision(CGround *self, const char *name);
 /* 0 written, -1 failed */
@@ -302,7 +307,7 @@ void CGround_Build(CGround *self, CScene *scn);
 /* the floor nodes to vertex buffer meshes */
 void CGround_NodesToD3D(CGround *self, int fvf);
 /* the vertex buffer meshes of the floor nodes */
-void CGround_Draw(CGround *self, void *dev, int unused);
+void CGround_Draw(IObject3D *base, void *dev, CRenderNode *unused);
 /* a debug box of half size r around c */
 void Ground_DrawBox(const vec3_t *c, float r, uint32_t color);
 /* the collision debug drawing of the floor of gMundo */

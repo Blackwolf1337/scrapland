@@ -8,13 +8,19 @@
 #include "scrap/gvar.h"
 #include "scrap/meshd3d.h"
 
-#define CPORTAL_VFTABLE GAME_VFTABLE(CPortal_vftable)
+extern const IObject3DVtbl CPortal_vftable;
+#define CPORTAL_VFTABLE (&CPortal_vftable)
 extern cGVar GVar_R_ShowPortals;
 #define g_ShowPortals (GVar_R_ShowPortals.value.i)	/* gvRenderShowPortals */
 
 typedef struct CPortal {
-	void **vftable;			/* 0x00 OBJ3D_VF_* */
-	uint32_t class;			/* 0x04 CLASS_OBJ3D_PORTAL */
+	union {
+		IObject3D base;
+		struct {
+			const IObject3DVtbl *vftable;	/* 0x00 */
+			uint32_t class;			/* 0x04 CLASS_OBJ3D_PORTAL */
+		};
+	};
 	CNode3D *node;			/* 0x08 CObjBase3D_SetNode */
 	float width;			/* 0x0c */
 	float height;			/* 0x10 */
@@ -30,12 +36,12 @@ SD_OFFSET(CPortal, cache_plane, 0x58);
 
 CPortal *CPortal_ctor(CPortal *self);
 void CPortal_dtor(CPortal *self);
-CPortal *CPortal_Delete(CPortal *self, byte flags);
+IObject3D *CPortal_Delete(IObject3D *base, byte flags);
 /* the sector nodes from the scene of the node, when none is set yet */
 void CPortal_LinkZones(CPortal *self);
-byte CPortal_Read(CPortal *self, CFileIO *f, MeshD3D_FileCtx *ctx);
-byte CPortal_Write(CPortal *self, CFileIO *f, MeshD3D_FileCtx *ctx);
-void CPortal_Render(CPortal *self, void *dev, CRenderNode *r);
+byte CPortal_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
+byte CPortal_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
+void CPortal_Render(IObject3D *base, void *dev, CRenderNode *r);
 /* the signed distance of p to the plane */
 float CPortal_PlaneDist(CPortal *self, const vec3_t *p);
 /* the distance of p to the rectangle */

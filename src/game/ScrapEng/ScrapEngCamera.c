@@ -22,7 +22,6 @@
 #define CAM_ASPECT_WIDE 0x1.c71c71c71c71cp+0	/* 16 / 9 */
 #define CAM_ASPECT_4_3 0x1.5555555555555p+0
 
-typedef void(*cameraDelete_t)(CCamera *self, int flags);
 
 CGameCamera *CGameCamera_ctor(CGameCamera *self) {
 	CCamera *c = operator_new(sizeof(CCamera));
@@ -46,7 +45,7 @@ void CGameCamera_dtor(CGameCamera *self) {
 	}
 	CAM_CHECK(self);
 	if (self->Camera) {
-		((cameraDelete_t)((void **)self->Camera->vftable)[0])(self->Camera, 1);
+		self->Camera->vftable->Delete(&self->Camera->base, 1);
 		self->Camera = NULL;
 	}
 }

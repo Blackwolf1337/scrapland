@@ -59,15 +59,17 @@ void CGraphic3D_dtor(CGraphic3D *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-CGraphic3D *CGraphic3D_Delete(CGraphic3D *self, byte flags) {
+IObject3D *CGraphic3D_Delete(IObject3D *base, byte flags) {
+	CGraphic3D *self = (CGraphic3D *)base;
 	CGraphic3D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CGraphic3D));
 	}
-	return self;
+	return base;
 }
 
-byte CGraphic3D_Read(CGraphic3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+byte CGraphic3D_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	CGraphic3D *self = (CGraphic3D *)base;
 	char tex[0x100], opac[0x100];
 	byte diffuse[4];
 
@@ -111,7 +113,8 @@ void CGraphic3D_Draw(CGraphic3D *self) {
 	g_RenderVerts += 4;
 }
 
-void CGraphic3D_Render(CGraphic3D *self, void *dev, CRenderNode *r) {
+void CGraphic3D_Render(IObject3D *base, void *dev, CRenderNode *r) {
+	CGraphic3D *self = (CGraphic3D *)base;
 	(void)dev;
 	CNode3D *n = self->node;
 	if (n) {
@@ -133,7 +136,8 @@ void CGraphic3D_Render(CGraphic3D *self, void *dev, CRenderNode *r) {
 	CGraphic3D_Draw(self);
 }
 
-byte CGraphic3D_Write(CGraphic3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+byte CGraphic3D_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	CGraphic3D *self = (CGraphic3D *)base;
 	CHECK(Wild_Match("sprite*", ctx->node->name));
 	CHECK(self->node == ctx->node);
 	CFileIO_BeginBlockWrite(f, "SPR3");
@@ -197,3 +201,14 @@ void CGraphic3D_Init(CGraphic3D *self) {
 	self->AnimMat = NULL;
 	self->node = NULL;
 }
+
+/* the vtable of CGraphic3D */
+const IObject3DVtbl CGraphic3D_vftable = {
+	.Delete = CGraphic3D_Delete,
+	.Update = IObject3D_UpdateNop,
+	.Render = CGraphic3D_Render,
+	.InitD3D = IObject3D_InitD3DNop,
+	.ReleaseD3D = IObject3D_ReleaseD3DNop,
+	.Write = CGraphic3D_Write,
+	.Read = CGraphic3D_Read,
+};

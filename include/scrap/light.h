@@ -74,8 +74,13 @@ int Illum_Light(color4_t *dest, const vec3_t *pos, const vec3_t *n, const float 
 	uint32_t flags);
 
 typedef struct CLight {
-	void *vftable;			/* 0x00 */
-	uint32_t class;			/* 0x04 CLASS_OBJ3D_LIGHT */
+	union {
+		IObject3D base;
+		struct {
+			const IObject3DVtbl *vftable;	/* 0x00 */
+			uint32_t class;			/* 0x04 CLASS_OBJ3D_LIGHT */
+		};
+	};
 	int type;			/* 0x08 LUZ_* */
 	byte show;			/* 0x0c drawn also without R_ShowLights */
 	byte shadow;			/* 0x0d casts shadows (with NODE_SHADOW) */
@@ -109,29 +114,35 @@ SD_SIZE(CLight, 0xcc);
 
 CLight *CLight_ctor(CLight *self);
 void CLight_dtor(CLight *self);
-CLight *CLight_Delete(CLight *self, byte flags);
+IObject3D *CLight_Delete(IObject3D *base, byte flags);
 void IObject3D_dtor(IObject3D *self);
 IObject3D *IObject3D_Delete(IObject3D *self, byte flags);
 /* the virtual Read and Write of IObject3D: nothing, 0 */
 byte IObject3D_Read(IObject3D *self, CFileIO *f, void *ctx);
 byte IObject3D_Write(IObject3D *self, CFileIO *f, void *ctx);
+void IObject3D_InitD3DNop(IObject3D *self, void *dev);
+byte IObject3D_ReadFalse(IObject3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
+void IObject3D_ReleaseD3DNop(IObject3D *self, void *dev);
+void IObject3D_RenderNop(IObject3D *self, void *dev, CRenderNode *r);
+void IObject3D_UpdateNop(IObject3D *self, CRenderNode *r);
+byte IObject3D_WriteFalse(IObject3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
 /* the lights for an object at pos (sphere center, radius) into out, sorted by weight; the first maxOn are enabled in
  * the device, the others and the rejected ones disabled; the count */
 int Light_Select(const vec3_t *pos, int sector, const vec3_t *center, float radius, CLight **out, int maxOn);
 /* on: three fixed directional lights (0..2) and the ambient of EnableMonitorLights instead of the scene lights; 0 */
 int Light_SetDefault(byte on);
 /* the virtual methods 1, 3 and 4; arg is not used */
-void CLight_Update(CLight *self, int arg);
-void CLight_Reset(CLight *self, int arg);
-void CLight_Hide(CLight *self, int arg);
+void CLight_Update(IObject3D *base, CRenderNode *arg);
+void CLight_Reset(IObject3D *elem, void *arg);
+void CLight_Hide(IObject3D *base, void *arg);
 /* the virtual Render: the debug drawing of the light (R_ShowLights) */
-void CLight_Render(CLight *self, void *dev, CRenderNode *r);
+void CLight_Render(IObject3D *base, void *dev, CRenderNode *r);
 /* a directional light without position into device light idx */
 void Light_SetDirLight(uint32_t idx, const color4_t *color, const vec3_t *dir);
 void CLight_EnableD3D(CLight *self, byte enable);
 /* the "LUZ" block; ctx holds the node at 0x4 */
-byte CLight_Read(CLight *self, CFileIO *f, void *ctx);
-byte CLight_Write(CLight *self, CFileIO *f, void *ctx);
+byte CLight_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
+byte CLight_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
 /* the list of the lights to the debug console */
 void Light_List(void);
 /* all lights of the list enabled in the device as they are set (act_D3D), or disabled */

@@ -11,7 +11,8 @@
 #include "scrap/graphic2d.h"
 #include "scrap/node3d.h"
 
-#define CFLARE_VFTABLE GAME_VFTABLE(CFlare_vftable)
+extern const IObject3DVtbl CFlare_vftable;
+#define CFLARE_VFTABLE (&CFlare_vftable)
 
 extern float g_FlareSize;		/* tam_def */
 extern int g_FlareAttenDist;	/* aten_dist */
@@ -28,8 +29,13 @@ extern int g_Overdraw;		/* video sobredib, the overdraw view */
 extern float g_TimeMsF;		/* the time of the engine in ms */
 
 typedef struct CFlare {
-	void **vftable;			/* 0x00 OBJ3D_VF_* */
-	uint32_t class;			/* 0x04 CLASS_OBJ3D_FLARE */
+	union {
+		IObject3D base;
+		struct {
+			const IObject3DVtbl *vftable;	/* 0x00 */
+			uint32_t class;			/* 0x04 CLASS_OBJ3D_FLARE */
+		};
+	};
 	CNode3D *node;			/* 0x08 counted */
 	vec3_t pos;			/* 0x0c for aten_dist */
 	float scale[2];		/* 0x18 tam_def */
@@ -49,10 +55,10 @@ SD_SIZE(CFlare, 0x3c);
 byte Floats11_Equal(const float *a, const float *b);
 CFlare *CFlare_ctor(CFlare *self);
 void CFlare_dtor(CFlare *self);
-CFlare *CFlare_Delete(CFlare *self, byte flags);
+IObject3D *CFlare_Delete(IObject3D *base, byte flags);
 /* the sprite with the color and the size (the deferred draw of CFlare_Render) */
 void CFlare_Draw(CFlare *self);
-void CFlare_Render(CFlare *self, void *dev, CRenderNode *r);
+void CFlare_Render(IObject3D *base, void *dev, CRenderNode *r);
 /* a new sprite of the texture, centered, size from scale */
 void CFlare_SetTexture(CFlare *self, const char *tex, const char *opac, int src, int dst, byte alpha);
 /* additive (5, 6, 255) */

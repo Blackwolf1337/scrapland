@@ -62,8 +62,6 @@ extern cGVar GVar_R_SkipTrans;
 	Con_FatalErrorf("\nFATAL ERROR: Check failed!\n\nError: %s\n\nExpression: %s\n\nFile: '%s'\nDate: %s\nLine: %d", \
 		(self)->name, expr, __FILE__, __TIMESTAMP__, __LINE__)
 
-typedef void(*objUpdate_t)(IObject3D *self, CRenderNode *r);
-typedef void(*objRender_t)(IObject3D *self, void *arg, CRenderNode *r);
 
 /* the casts of objeto3d.h: NULL after the failed check */
 /* the track set of an animation of a channel */
@@ -100,7 +98,7 @@ static void Node_Unref(CNode3D **slot) {
 
 static void Obj3D_Delete(IObject3D **slot) {
 	if (*slot) {
-		((objDelete_t)(*slot)->vftable[0])(*slot, 1);
+		(*slot)->vftable->Delete(*slot, 1);
 		*slot = NULL;
 	}
 }
@@ -404,7 +402,7 @@ void CNode3D_Render(CNode3D *self, void *arg, CRenderNode *r) {
 	Render_SetWorldMatrix(&self->m, 1);
 	o = CNode3D_GetObj3D(self, r);
 	if (o) {
-		((objRender_t)o->vftable[2])(o, arg, r);
+		o->vftable->Render(o, arg, r);
 	}
 }
 
@@ -523,7 +521,7 @@ void CNode3D_Update(CNode3D *self, CRenderNode *r) {
 	}
 	o = CNode3D_GetObj3D(self, r);
 	if (o) {
-		((objUpdate_t)o->vftable[1])(o, r);
+		o->vftable->Update(o, r);
 	}
 	if (r) {
 		r->frame = g_FrameCount;

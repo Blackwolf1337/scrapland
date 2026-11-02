@@ -17,8 +17,8 @@
 #include "scrap/groundportal.h"
 #include "scrap/utild3d.h"
 
-#define CLUZ_VFTABLE GAME_VFTABLE(CLight_vftable)
-#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable)
+extern const IObject3DVtbl CLight_vftable;
+#define CLUZ_VFTABLE (&CLight_vftable)
 #define LIGHT_INV255 (1.0f / 255.0f)
 /* "no limit" for the range of the device light and the start of the nearest search, a float constant of the exe */
 extern const float LIGHT_RANGE_INF;
@@ -89,7 +89,6 @@ static void D3D_SetRenderState(uint32_t state, uint32_t value) {
 }
 
 typedef void(*nodeDelete_t)(CNode3D *self, int flags);
-typedef void(*lightUpdate_t)(CLight *self, int arg);
 
 static void Light_Release(CNode3D **slot) {
 	if (*slot) {
@@ -212,12 +211,13 @@ void CLight_dtor(CLight *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-CLight *CLight_Delete(CLight *self, byte flags) {
+IObject3D *CLight_Delete(IObject3D *base, byte flags) {
+	CLight *self = (CLight *)base;
 	CLight_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 void IObject3D_dtor(IObject3D *self) {
@@ -351,16 +351,18 @@ int Light_SetDefault(byte on) {
 	return 0;
 }
 
-void CLight_Hide(CLight *self, int arg) {
+void CLight_Hide(IObject3D *base, void *arg) {
+	CLight *self = (CLight *)base;
 	(void)arg;
 	CLight_UpdateD3D(self, 1);
 }
 
-void CLight_Reset(CLight *self, int arg) {
+void CLight_Reset(IObject3D *elem, void *arg) {
+	CLight *self = (CLight *)elem;
 	(void)arg;
 	CLight_FillD3D(self, &self->d3d);
 	CLight_UpdateD3D(self, 0);
-	((lightUpdate_t)((void **)self->vftable)[1])(self, 0);
+	self->vftable->Update(&self->base, NULL);
 }
 
 /* R_ShowLights and the material of the debug drawing, a static of CLight_Render */
@@ -384,7 +386,8 @@ typedef struct LightVert {
 /* the virtual Render (dev, r not used): a light drawn only with show or R_ShowLights: a corner of the diffuse
  * color sized by the distance to the eye; from 2 the texts, from 3 the range sphere, the axes and the cone of a
  * spot light */
-void CLight_Render(CLight *self, void *dev, CRenderNode *r) {
+void CLight_Render(IObject3D *base, void *dev, CRenderNode *r) {
+	CLight *self = (CLight *)base;
 	LightVert v[5];
 	matrix_t m;
 	vec3_t p, a, b;
@@ -499,7 +502,8 @@ static const struct {
 	{ offsetof(CLight, phi), 4 }, { offsetof(CLight, mult), 4 }, { offsetof(CLight, radCoef), 4 },
 };
 
-byte CLight_Read(CLight *self, CFileIO *f, void *ctx) {
+byte CLight_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	CLight *self = (CLight *)base;
 	Light_Link(&self->node, ((MeshD3D_FileCtx *)ctx)->node);
 	CFileIO_BeginBlock(f, "LUZ");
 	CHECK(CFileIO_ReadInt(f) == 1);
@@ -525,7 +529,8 @@ void Light_List(void) {
 	E3D_DebugPrintf("\n  %d luces (%d activas, %d act_d3d)", g_LightsTotal, g_nLights, g_LightsD3D);
 }
 
-byte CLight_Write(CLight *self, CFileIO *f, void *ctx) {
+byte CLight_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	CLight *self = (CLight *)base;
 	CHECK(self->node == ((MeshD3D_FileCtx *)ctx)->node);
 	CFileIO_BeginBlockWrite(f, "LUZ");
 	CFileIO_WriteInt(f, 1);
@@ -540,7 +545,8 @@ byte CLight_Write(CLight *self, CFileIO *f, void *ctx) {
 	return 1;
 }
 
-void CLight_Update(CLight *self, int arg) {
+void CLight_Update(IObject3D *base, CRenderNode *arg) {
+	CLight *self = (CLight *)base;
 	(void)arg;
 	if (!self->active) {
 		return;
@@ -747,3 +753,55 @@ box_t *Box_Zero(box_t *self) {
 	self->max = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	return self;
 }
+
+/* the slot InitD3D of a class that does nothing there */
+void IObject3D_InitD3DNop(IObject3D *self, void *dev) {
+	(void)self;
+	(void)dev;
+}
+
+/* the slot Read of a class that does only return 0 */
+byte IObject3D_ReadFalse(IObject3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	(void)self;
+	(void)f;
+	(void)ctx;
+	return 0;
+}
+
+/* the slot ReleaseD3D of a class that does nothing there */
+void IObject3D_ReleaseD3DNop(IObject3D *self, void *dev) {
+	(void)self;
+	(void)dev;
+}
+
+/* the slot Render of a class that does nothing there */
+void IObject3D_RenderNop(IObject3D *self, void *dev, CRenderNode *r) {
+	(void)self;
+	(void)dev;
+	(void)r;
+}
+
+/* the slot Update of a class that does nothing there */
+void IObject3D_UpdateNop(IObject3D *self, CRenderNode *r) {
+	(void)self;
+	(void)r;
+}
+
+/* the slot Write of a class that does only return 0 */
+byte IObject3D_WriteFalse(IObject3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	(void)self;
+	(void)f;
+	(void)ctx;
+	return 0;
+}
+
+/* the vtable of CLight */
+const IObject3DVtbl CLight_vftable = {
+	.Delete = CLight_Delete,
+	.Update = CLight_Update,
+	.Render = CLight_Render,
+	.InitD3D = CLight_Reset,
+	.ReleaseD3D = CLight_Hide,
+	.Write = CLight_Write,
+	.Read = CLight_Read,
+};

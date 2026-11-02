@@ -11,7 +11,6 @@
 #include "scrap/misc.h"
 #include "scrap/model.h"
 
-#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable)
 
 /* the engine (g_pD3DApp) and its device */
 
@@ -21,10 +20,6 @@
 /* params.attrib: no back faces for two sided materials */
 #define MAT_ONESIDED 0x4000
 
-typedef CMeshD3D *(*meshD3DDelete_t)(CMeshD3D *self, byte flags);
-typedef int(*meshD3DRestore_t)(CMeshD3D *self, void *dev);
-typedef void(*meshD3DInvalidate_t)(CMeshD3D *self, void *dev);
-typedef byte(*meshD3DFile_t)(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
 typedef void(*nodeDelete_t)(CNode3D *self, int flags);
 
 /* IUnknown::Release of a COM object, the pointer cleared */
@@ -127,14 +122,14 @@ void CMeshD3D_dtor(CMeshD3D *self) {
 	self->vftable = CMESHD3D_VFTABLE;
 	if (self->pVertVB || self->pVertIB) {
 		CHECK(g_Engine && g_Engine->device);
-		CMeshD3D_Invalidate(self, g_Engine->device);
+		CMeshD3D_Invalidate(&self->base, g_Engine->device);
 	}
 	if (self->skinRef) {
 		self->pSkin = NULL;
 	}
 	CMeshD3D_SetNode(self, NULL);
 	if (self->next) {
-		((meshD3DDelete_t)self->next->vftable[MESHD3D_VF_DELETE])(self->next, 1);
+		self->next->vftable->Delete(&self->next->base, 1);
 		self->next = NULL;
 	}
 	MeshD3D_DeleteArray((void **)&self->pTri);
@@ -148,12 +143,13 @@ void CMeshD3D_dtor(CMeshD3D *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-CMeshD3D *CMeshD3D_Delete(CMeshD3D *self, byte flags) {
+IObject3D *CMeshD3D_Delete(IObject3D *base, byte flags) {
+	CMeshD3D *self = (CMeshD3D *)base;
 	CMeshD3D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 int MeshD3D_NewObj(void) {
@@ -204,9 +200,10 @@ void MeshD3DObj_Free(MeshD3DObj *obj) {
 	}
 }
 
-void CMeshD3D_Invalidate(CMeshD3D *self, void *dev) {
+void CMeshD3D_Invalidate(IObject3D *base, void *dev) {
+	CMeshD3D *self = (CMeshD3D *)base;
 	if (self->next) {
-		((meshD3DInvalidate_t)self->next->vftable[MESHD3D_VF_INVALIDATE])(self->next, dev);
+		self->next->vftable->ReleaseD3D(&self->next->base, dev);
 	}
 	MeshD3D_Release(&self->pVertVB);
 	MeshD3D_Release(&self->pVertIB);
@@ -222,15 +219,16 @@ void CMeshD3D_GetBox(CMeshD3D *self, box_t *out, byte recalc) {
 	*out = self->box;
 }
 
-int CMeshD3D_Restore(CMeshD3D *self, void *dev) {
-	int hr = CMeshD3D_CreateVB(self);
+void CMeshD3D_Restore(IObject3D *base, void *dev) {
+	CMeshD3D *self = (CMeshD3D *)base;
+	CMeshD3D_CreateVB(self);
 	if (self->next) {
-		return ((meshD3DRestore_t)self->next->vftable[MESHD3D_VF_RESTORE])(self->next, dev);
+		self->next->vftable->InitD3D(&self->next->base, dev);
 	}
-	return hr;
 }
 
-byte CMeshD3D_Read(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+byte CMeshD3D_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	CMeshD3D *self = (CMeshD3D *)base;
 	char tmp[256];
 	uint32_t n;
 
@@ -281,7 +279,7 @@ byte CMeshD3D_Read(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 			m = CMeshD3D_ctor(m);
 		}
 		self->next = m;
-		((meshD3DFile_t)m->vftable[MESHD3D_VF_READ])(m, f, ctx);
+		m->vftable->Read(&m->base, f, ctx);
 	}
 	CFileIO_Error(f, "MD3D");
 	return 1;
@@ -295,12 +293,14 @@ void CMeshD3D_CheckList(CMeshD3D *self) {
 	} while (self);
 }
 
-int CMeshD3D_Draw(CMeshD3D *self, void *dev, void *ctx) {
+void CMeshD3D_Draw(IObject3D *base, void *dev, CRenderNode *ctx) {
+	CMeshD3D *self = (CMeshD3D *)base;
 	(void)dev;
-	return MeshD3D_Render(self, ctx);
+	MeshD3D_Render(self, ctx);
 }
 
-byte CMeshD3D_Write(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+byte CMeshD3D_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	CMeshD3D *self = (CMeshD3D *)base;
 	CHECK(self->node == ctx->node);
 	CFileIO_BeginBlockWrite(f, "MD3D");
 	CFileIO_WriteInt(f, 1);
@@ -342,13 +342,14 @@ byte CMeshD3D_Write(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CFileIO_Write(f, &self->center, sizeof(self->center));
 	CFileIO_WriteInt(f, self->next != NULL);
 	if (self->next) {
-		((meshD3DFile_t)self->next->vftable[MESHD3D_VF_WRITE])(self->next, f, ctx);
+		self->next->vftable->Write(&self->next->base, f, ctx);
 	}
 	CFileIO_EndBlockWrite(f, "MD3D");
 	return 1;
 }
 
-void CMeshD3D_SetRender(CMeshD3D *self, void *renderNode) {
+void CMeshD3D_SetRender(IObject3D *base, CRenderNode *renderNode) {
+	CMeshD3D *self = (CMeshD3D *)base;
 	CRenderNode *r = renderNode;
 	int channel = 3;
 	void *eva = CNode3D_TrackData(self->node, 3);
@@ -811,3 +812,14 @@ int MeshD3DObj_Weld(MeshD3DObj *obj) {
 	Mem_Free(order);
 	return removed;
 }
+
+/* the vtable of CMeshD3D */
+const IObject3DVtbl CMeshD3D_vftable = {
+	.Delete = CMeshD3D_Delete,
+	.Update = CMeshD3D_SetRender,
+	.Render = CMeshD3D_Draw,
+	.InitD3D = CMeshD3D_Restore,
+	.ReleaseD3D = CMeshD3D_Invalidate,
+	.Write = CMeshD3D_Write,
+	.Read = CMeshD3D_Read,
+};

@@ -170,7 +170,7 @@ void CWorld_ReleaseD3D(CWorld *self) {
 	}
 	self->ini_D3D = 0;
 	void *dev = g_Engine->device;
-	OBJ3D_CALL((IObject3D *)self->cam, OBJ3D_VF_RELEASED3D, objDev_t, dev);
+	((IObject3D *)self->cam)->vftable->ReleaseD3D((IObject3D *)self->cam, dev);
 	if (self->Sky) {
 		CModel_ReleaseD3D(self->Sky, dev, 1);
 	}
@@ -186,7 +186,7 @@ void CWorld_InitD3D(CWorld *self) {
 	self->ini_D3D = 1;
 	void *dev = g_Engine->device;
 	CHECK(dev);
-	OBJ3D_CALL((IObject3D *)self->cam, OBJ3D_VF_INITD3D, objDev_t, dev);
+	((IObject3D *)self->cam)->vftable->InitD3D((IObject3D *)self->cam, dev);
 	if (self->Sky) {
 		CModel_InitD3D(self->Sky, dev, 1);
 	}

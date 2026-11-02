@@ -31,7 +31,7 @@ CScene *CScene_ctor(CScene *self);
 void CScene_dtor(CScene *self);
 CScene *CScene_Delete(CScene *self, byte flags);
 void CScene_Msg(CScene *self, int msg, int a, int b, int c, int d);
-/* OBJ3D_VF_RELEASED3D and OBJ3D_VF_INITD3D of the objects of all nodes */
+/* ReleaseD3D and InitD3D of the objects of all nodes */
 void CScene_ReleaseD3D(CScene *self, void *dev);
 void CScene_InitD3D(CScene *self, void *dev);
 /* rva 0x24ecb0, empty */
