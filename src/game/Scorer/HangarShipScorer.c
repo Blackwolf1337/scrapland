@@ -41,16 +41,17 @@ void cHangarShipScorer_dtor(cHangarShipScorer *self) {
 	cSpriteScorer_dtor(&self->base);
 }
 
-cHangarShipScorer *cHangarShipScorer_Delete(cHangarShipScorer *self, byte flags) {
+cScorerItem *cHangarShipScorer_Delete(cScorerItem *base, byte flags) {
+	cHangarShipScorer *self = (cHangarShipScorer *)base;
 	cHangarShipScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cHangarShipScorer));
 	}
-	return self;
+	return base;
 }
 
-int cHangarShipScorer_Var(cHangarShipScorer *self, const char *name, byte set, char **s, double *d,
-	int *i) {
+int cHangarShipScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cHangarShipScorer *self = (cHangarShipScorer *)base;
 	int r;
 
 	if (i) {
@@ -90,10 +91,11 @@ int cHangarShipScorer_Var(cHangarShipScorer *self, const char *name, byte set, c
 			return ScorerVar_Float(&self->camFov, set, d);
 		}
 	}
-	return cSpriteScorer_Var(&self->base, name, set, s, d, i);
+	return cSpriteScorer_Var(&self->base.base, name, set, s, d, i);
 }
 
-void cHangarShipScorer_Draw(cHangarShipScorer *self, int player) {
+void cHangarShipScorer_Draw(cScorerItem *base, int player) {
+	cHangarShipScorer *self = (cHangarShipScorer *)base;
 	cScorerItem *it = &self->base.base;
 	vec3_t tmp, ang;
 
@@ -153,3 +155,12 @@ void cHangarShipScorer_Draw(cHangarShipScorer *self, int player) {
 	}
 	Eng_ResetViewRect();
 }
+
+/* the vtable of cHangarShipScorer */
+const cSpriteScorerVtbl cHangarShipScorer_vftable = {
+	.base.Draw = cHangarShipScorer_Draw,
+	.base.SetParam = cScorerItem_SetParam,
+	.base.Var = cHangarShipScorer_Var,
+	.base.Delete = cHangarShipScorer_Delete,
+	.SetMultiSprite = cSpriteScorer_SetMultiSprite,
+};

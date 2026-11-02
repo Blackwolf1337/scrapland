@@ -115,12 +115,13 @@ void cButtonScorer_dtor(cButtonScorer *self) {
 	cSpriteScorer_dtor(&self->base);
 }
 
-cButtonScorer *cButtonScorer_Delete(cButtonScorer *self, byte flags) {
+cScorerItem *cButtonScorer_Delete(cScorerItem *base, byte flags) {
+	cButtonScorer *self = (cButtonScorer *)base;
 	cButtonScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cButtonScorer));
 	}
-	return self;
+	return base;
 }
 
 /* ---- the text ---- */
@@ -265,7 +266,8 @@ int cButtonScorer_SetText(cButtonScorer *self, const char *text) {
 
 /* ---- Var ---- */
 
-int cButtonScorer_Var(cButtonScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cButtonScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cButtonScorer *self = (cButtonScorer *)base;
 	cScorerItem *it = &self->base.base;
 	int r;
 
@@ -480,7 +482,7 @@ int cButtonScorer_Var(cButtonScorer *self, const char *name, byte set, char **s,
 			return 2;
 		}
 	}
-	return cSpriteScorer_Var(&self->base, name, set, s, d, i);
+	return cSpriteScorer_Var(&self->base.base, name, set, s, d, i);
 }
 
 /* ---- drawing ---- */
@@ -667,7 +669,8 @@ static uint32_t Button_PulseAlpha(const cScorer *sc) {
 	return (uint32_t)(byte)(v - 0x80) << 24;
 }
 
-void cButtonScorer_Draw(cButtonScorer *self, int player) {
+void cButtonScorer_Draw(cScorerItem *base, int player) {
+	cButtonScorer *self = (cButtonScorer *)base;
 	cSpriteScorer *sp = &self->base;
 
 	if (self->hasText) {
@@ -744,3 +747,12 @@ void cButtonScorer_Draw(cButtonScorer *self, int player) {
 		img->color = color;
 	}
 }
+
+/* the vtable of cButtonScorer */
+const cSpriteScorerVtbl cButtonScorer_vftable = {
+	.base.Draw = cButtonScorer_Draw,
+	.base.SetParam = cScorerItem_SetParam,
+	.base.Var = cButtonScorer_Var,
+	.base.Delete = cButtonScorer_Delete,
+	.SetMultiSprite = cSpriteScorer_SetMultiSprite,
+};

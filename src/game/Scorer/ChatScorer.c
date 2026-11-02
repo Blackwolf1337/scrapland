@@ -30,12 +30,13 @@ void cChatScorer_dtor(cChatScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cChatScorer *cChatScorer_Delete(cChatScorer *self, byte flags) {
+cScorerItem *cChatScorer_Delete(cScorerItem *base, byte flags) {
+	cChatScorer *self = (cChatScorer *)base;
 	cChatScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cChatScorer));
 	}
-	return self;
+	return base;
 }
 
 /* the static initializer: the lines empty and white */
@@ -58,14 +59,16 @@ void Scorer_AddChatMsg(const char *text, uint32_t rgb) {
 	g_ChatMsgs[CHAT_MSGS - 1].color = rgb;
 }
 
-int cChatScorer_Var(cChatScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cChatScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cChatScorer *self = (cChatScorer *)base;
 	if (i && !crt_stricmp(name, "NumMsg")) {
 		return ScorerVar_Int(&self->numMsg, set, i);
 	}
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void cChatScorer_Draw(cChatScorer *self, int player) {
+void cChatScorer_Draw(cScorerItem *base, int player) {
+	cChatScorer *self = (cChatScorer *)base;
 	(void)player;
 	float dt = Timer_GetTime(&g_pWorld->timer) - g_ChatTime;
 	if (dt > g_ChatScrollTime) {
@@ -84,3 +87,11 @@ void cChatScorer_Draw(cChatScorer *self, int player) {
 			+ self->base.y, m->color, "%s", m->text);
 	}
 }
+
+/* the vtable of cChatScorer */
+const cScorerItemVtbl cChatScorer_vftable = {
+	.Draw = cChatScorer_Draw,
+	.SetParam = cScorerItem_SetParam,
+	.Var = cChatScorer_Var,
+	.Delete = cChatScorer_Delete,
+};

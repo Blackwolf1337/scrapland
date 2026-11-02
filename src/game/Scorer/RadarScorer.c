@@ -109,12 +109,13 @@ cActionSet *ActionSetTable_At(void *table, uint32_t i) {
 	return TABLE_AT(*(TABLE(cActionSet) *)table, i);
 }
 
-cRadarScorer *cRadarScorer_Delete(cRadarScorer *self, byte flags) {
+cScorerItem *cRadarScorer_Delete(cScorerItem *base, byte flags) {
+	cRadarScorer *self = (cRadarScorer *)base;
 	cRadarScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cRadarScorer));
 	}
-	return self;
+	return base;
 }
 
 void cRadarScorer_UpdateFloor(cRadarScorer *self, float y) {
@@ -746,7 +747,8 @@ int cRadarScorer_FloorSide(cRadarScorer *self, float y) {
 	return !(g_pWorld->floor.levels[f + 1].y >= y);
 }
 
-int cRadarScorer_Var(cRadarScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cRadarScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cRadarScorer *self = (cRadarScorer *)base;
 	if (d) {
 		if (!crt_stricmp(name, "MenuScaleSpeed")) {
 			return ScorerVar_Float(&self->menuScaleSpeed, set, d);
@@ -855,7 +857,8 @@ static float Radar_ClampScroll(cRadarScorer *self, float a, float b, float half,
 	return Float_MinSS(big - m, scroll);
 }
 
-void cRadarScorer_Draw(cRadarScorer *self, int player) {
+void cRadarScorer_Draw(cScorerItem *base, int player) {
+	cRadarScorer *self = (cRadarScorer *)base;
 	const char *camName = cWorld_GetCamName(g_pWorld, player);
 	cEntity *cam = World_FindEntity(camName);
 	vec3_t c;
@@ -912,3 +915,11 @@ void cRadarScorer_Draw(cRadarScorer *self, int player) {
 	}
 	cRadarScorer_DrawRadar(self, target, cam);
 }
+
+/* the vtable of cRadarScorer */
+const cScorerItemVtbl cRadarScorer_vftable = {
+	.Draw = cRadarScorer_Draw,
+	.SetParam = cScorerItem_SetParam,
+	.Var = cRadarScorer_Var,
+	.Delete = cRadarScorer_Delete,
+};

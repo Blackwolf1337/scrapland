@@ -6511,157 +6511,40 @@ void (*const cSputnikJunkyardLocalLogic_vftable[36])(void) = {
 };
 
 /* .?AVcAbstractTextScorer@@ */
-void (*const cAbstractTextScorer_vftable[4])(void) = {
-	crt_purecall,	/* 0x00 0x31951a */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cAbstractTextScorer_Var,	/* 0x08 0x15ee10 */
-	cAbstractTextScorer_Delete,	/* 0x0c 0x15e9f0 */
-};
 
 /* .?AVcMsgScorer@@ */
-void (*const cMsgScorer_vftable[4])(void) = {
-	cMsgScorer_Draw,	/* 0x00 0x1602d0 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cAbstractTextScorer_Var,	/* 0x08 0x15fb70 */
-	cMsgScorer_Delete,	/* 0x0c 0x15eb70 */
-};
 
 /* .?AVcLabelScorer@@ */
-void (*const cLabelScorer_vftable[4])(void) = {
-	cLabelScorer_Draw,	/* 0x00 0x160100 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cHintScorer_Var,	/* 0x08 0x15f820 */
-	cLabelScorer_Delete,	/* 0x0c 0x15eb00 */
-};
 
 /* .?AVcHintScorer@@ */
-void (*const cHintScorer_vftable[4])(void) = {
-	cHintScorer_Draw,	/* 0x00 0x15fd90 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cHintScorer_Var,	/* 0x08 0x15f4d0 */
-	cHintScorer_Delete,	/* 0x0c 0x15ea90 */
-};
 
 /* .?AVcCreditsScorer@@ */
-void (*const cCreditsScorer_vftable[4])(void) = {
-	cCreditsScorer_Draw,	/* 0x00 0x15fb80 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cCreditsScorer_Var,	/* 0x08 0x15f2d0 */
-	cCreditsScorer_Delete,	/* 0x0c 0x15ea40 */
-};
 
 /* .?AVcBarScorer@@ */
-void (*const cBarScorer_vftable[5])(void) = {
-	cBarScorer_Draw,	/* 0x00 0x160c00 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cBarScorer_Var,	/* 0x08 0x160510 */
-	cBarScorer_Delete,	/* 0x0c 0x1604e0 */
-	cSpriteScorer_SetMultiSprite,	/* 0x10 0x17bf00 */
-};
 
 /* .?AVcButtonScorer@@ */
-void (*const cButtonScorer_vftable[5])(void) = {
-	cButtonScorer_Draw,	/* 0x00 0x1629b0 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cButtonScorer_Var,	/* 0x08 0x1617d0 */
-	cButtonScorer_Delete,	/* 0x0c 0x161380 */
-	cSpriteScorer_SetMultiSprite,	/* 0x10 0x17bf00 */
-};
 
 /* .?AVcCannonScorer@@ */
-void (*const cCannonScorer_vftable[5])(void) = {
-	cCannonScorer_Draw,	/* 0x00 0x1648e0 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cCannonScorer_Var,	/* 0x08 0x1646d0 */
-	cCannonScorer_Delete,	/* 0x0c 0x1640a0 */
-	cCannonScorer_DrawLock,	/* 0x10 0x1649f0 */
-};
 
 /* .?AVcChatScorer@@ */
-void (*const cChatScorer_vftable[4])(void) = {
-	cChatScorer_Draw,	/* 0x00 0x164d60 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cChatScorer_Var,	/* 0x08 0x164cf0 */
-	cChatScorer_Delete,	/* 0x0c 0x164c50 */
-};
 
 /* .?AVcCircuitScorer@@ */
-void (*const cCircuitScorer_vftable[4])(void) = {
-	cCircuitScorer_Draw,	/* 0x00 0x1658d0 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cCircuitScorer_Var,	/* 0x08 0x165600 */
-	cCircuitScorer_Delete,	/* 0x0c 0x164ff0 */
-};
 
 /* .?AVcCopMeterScorer@@ */
-void (*const cCopMeterScorer_vftable[4])(void) = {
-	cCopMeterScorer_Draw,	/* 0x00 0x166510 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cCopMeterScorer_Var,	/* 0x08 0x165f10 */
-	cCopMeterScorer_Delete,	/* 0x0c 0x165ea0 */
-};
 
 /* .?AVcHangarShipScorer@@ */
-void (*const cHangarShipScorer_vftable[5])(void) = {
-	cHangarShipScorer_Draw,	/* 0x00 0x167080 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cHangarShipScorer_Var,	/* 0x08 0x166c60 */
-	cHangarShipScorer_Delete,	/* 0x0c 0x166be0 */
-	cSpriteScorer_SetMultiSprite,	/* 0x10 0x17bf00 */
-};
 
 /* .?AVcHeadScorer@@ */
-void (*const cHeadScorer_vftable[6])(void) = {
-	cHeadScorer_Draw,	/* 0x00 0x167610 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cHeadScorer_Var,	/* 0x08 0x1674c0 */
-	cHeadScorer_Delete,	/* 0x0c 0x167460 */
-	cHeadScorer_SetAnim,	/* 0x10 0x167960 */
-	cHeadScorer_SetModel,	/* 0x14 0x1678a0 */
-};
 
 /* .?AVcMissionScorer@@ */
-void (*const cMissionScorer_vftable[5])(void) = {
-	cMissionScorer_Draw,	/* 0x00 0x168420 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cMissionScorer_Var,	/* 0x08 0x167b90 */
-	cMissionScorer_Delete,	/* 0x0c 0x167b30 */
-	cSpriteScorer_SetMultiSprite,	/* 0x10 0x17bf00 */
-};
 
 /* .?AVcMonitorScorer@@ */
-void (*const cMonitorScorer_vftable[6])(void) = {
-	cMonitorScorer_Draw,	/* 0x00 0x16b160 */
-	cMonitorScorer_SetParam,	/* 0x04 0x16a3a0 */
-	cMonitorScorer_Var,	/* 0x08 0x16a3d0 */
-	cMonitorScorer_Delete,	/* 0x0c 0x168c30 */
-	cMonitorScorer_SetAnim,	/* 0x10 0x16b410 */
-	cMonitorScorer_SetModel,	/* 0x14 0x16b2d0 */
-};
 
 /* .?AVcNetStatsScorer@@ */
-void (*const cNetStatsScorer_vftable[4])(void) = {
-	cNetStatsScorer_Draw,	/* 0x00 0x16b670 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cNetStatsScorer_Var,	/* 0x08 0x16b660 */
-	cNetStatsScorer_Delete,	/* 0x0c 0x16b610 */
-};
 
 /* .?AVcRadarScorer@@ */
-void (*const cRadarScorer_vftable[4])(void) = {
-	cRadarScorer_Draw,	/* 0x00 0x16efc0 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cRadarScorer_Var,	/* 0x08 0x16e8c0 */
-	cRadarScorer_Delete,	/* 0x0c 0x16c950 */
-};
 
 /* .?AVcScorerItem@@ */
-void (*const cScorerItem_vftable[4])(void) = {
-	crt_purecall,	/* 0x00 0x31951a */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cScorerItem_Var,	/* 0x08 0x171580 */
-	cScorerItem_Delete,	/* 0x0c 0x16fb20 */
-};
 
 /* .?AVcScorer@@ */
 void (*const cScorer_vftable[1])(void) = {
@@ -6669,138 +6552,36 @@ void (*const cScorer_vftable[1])(void) = {
 };
 
 /* .?AVcScraplandMainMenuScorer@@ */
-void (*const cScraplandMainMenuScorer_vftable[4])(void) = {
-	cScraplandMainMenuScorer_Draw,	/* 0x00 0x176130 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cScraplandMainMenuScorer_Var,	/* 0x08 0x175d10 */
-	cScraplandMainMenuScorer_Delete,	/* 0x0c 0x175190 */
-};
 
 /* .?AVcScraplandSubMenuScorer@@ */
-void (*const cScraplandSubMenuScorer_vftable[4])(void) = {
-	cScraplandSubMenuScorer_Draw,	/* 0x00 0x176d10 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cScraplandSubMenuScorer_Var,	/* 0x08 0x175ec0 */
-	cScraplandSubMenuScorer_Delete,	/* 0x0c 0x1751c0 */
-};
 
 /* .?AVcSliderScorer@@ */
-void (*const cSliderScorer_vftable[4])(void) = {
-	cSliderScorer_Draw,	/* 0x00 0x177c70 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cSliderScorer_Var,	/* 0x08 0x177670 */
-	cSliderScorer_Delete,	/* 0x0c 0x177560 */
-};
 
 /* .?AVcSpecialActionScorer@@ */
-void (*const cSpecialActionScorer_vftable[4])(void) = {
-	cSpecialActionScorer_Draw,	/* 0x00 0x17a950 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cSpecialActionScorer_Var,	/* 0x08 0x179060 */
-	cSpecialActionScorer_Delete,	/* 0x0c 0x178a30 */
-};
 
 /* .?AVcSpriteScorer@@ */
-void (*const cSpriteScorer_vftable[5])(void) = {
-	cSpriteScorer_Draw,	/* 0x00 0x17bdf0 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cSpriteScorer_Var,	/* 0x08 0x17b6e0 */
-	cSpriteScorer_Delete,	/* 0x0c 0x17b3e0 */
-	cSpriteScorer_SetMultiSprite,	/* 0x10 0x17bf00 */
-};
 
 /* .?AVcGradientScorer@@ */
-void (*const cGradientScorer_vftable[5])(void) = {
-	cGradientScorer_Draw,	/* 0x00 0x17bd60 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cGradientScorer_Var,	/* 0x08 0x17b500 */
-	cGradientScorer_Delete,	/* 0x0c 0x17b370 */
-	cSpriteScorer_SetMultiSprite,	/* 0x10 0x17bf00 */
-};
 
 /* .?AVcStatusScorer@@ */
-void (*const cStatusScorer_vftable[4])(void) = {
-	cStatusScorer_Draw,	/* 0x00 0x17d610 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cStatusScorer_Var,	/* 0x08 0x17c1f0 */
-	cStatusScorer_Delete,	/* 0x0c 0x17c1c0 */
-};
 
 /* .?AVcTabScorer@@ */
-void (*const cTabScorer_vftable[4])(void) = {
-	cTabScorer_Draw,	/* 0x00 0x17ed40 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cTabScorer_Var,	/* 0x08 0x17e740 */
-	cTabScorer_Delete,	/* 0x0c 0x17e640 */
-};
 
 /* .?AVcTalkScorer@@ */
-void (*const cTalkScorer_vftable[6])(void) = {
-	cTalkScorer_Draw,	/* 0x00 0x180c20 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cTalkScorer_Var,	/* 0x08 0x1806e0 */
-	cTalkScorer_Delete,	/* 0x0c 0x1805a0 */
-	cTalkScorer_DrawTalk,	/* 0x10 0x180c60 */
-	cTalkScorer_DrawUse,	/* 0x14 0x180f80 */
-};
 
 /* .?AVcTargetScorer@@ */
-void (*const cTargetScorer_vftable[4])(void) = {
-	cTargetScorer_Draw,	/* 0x00 0x1829c0 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cTargetScorer_Var,	/* 0x08 0x1827c0 */
-	cTargetScorer_Delete,	/* 0x0c 0x1815b0 */
-};
 
 /* .?AVcTextScorer@@ */
-void (*const cTextScorer_vftable[5])(void) = {
-	cTextScorer_Draw,	/* 0x00 0x1831e0 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cTextScorer_Var,	/* 0x08 0x182da0 */
-	cTextScorer_Delete,	/* 0x0c 0x182c30 */
-	cTextScorer_DrawKeyboard,	/* 0x10 0x183860 */
-};
 
 /* .?AVcTextTypingScorer@@ */
-void (*const cTextTypingScorer_vftable[5])(void) = {
-	cTextTypingScorer_Draw,	/* 0x00 0x183560 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cTextTypingScorer_Var,	/* 0x08 0x183020 */
-	cTextTypingScorer_Delete,	/* 0x0c 0x182c90 */
-	cTextScorer_DrawKeyboard,	/* 0x10 0x183860 */
-};
 
 /* .?AVcTimerScorer@@ */
-void (*const cTimerScorer_vftable[4])(void) = {
-	cTimerScorer_Draw,	/* 0x00 0x184560 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cTimerScorer_Var,	/* 0x08 0x1843f0 */
-	cTimerScorer_Delete,	/* 0x0c 0x1843a0 */
-};
 
 /* .?AVcWaypointScorer@@ */
-void (*const cWaypointScorer_vftable[4])(void) = {
-	cWaypointScorer_Draw,	/* 0x00 0x185c70 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cWaypointScorer_Var,	/* 0x08 0x185a70 */
-	cWaypointScorer_Delete,	/* 0x0c 0x185a20 */
-};
 
 /* .?AVcWeaponScorer@@ */
-void (*const cWeaponScorer_vftable[4])(void) = {
-	cWeaponScorer_Draw,	/* 0x00 0x188050 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cWeaponScorer_Var,	/* 0x08 0x186910 */
-	cWeaponScorer_Delete,	/* 0x0c 0x1868e0 */
-};
 
 /* .?AVcWindFxScorer@@ */
-void (*const cWindFxScorer_vftable[4])(void) = {
-	cWindFxScorer_Draw,	/* 0x00 0x188ea0 */
-	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
-	cScorerItem_Var,	/* 0x08 0x188e90 */
-	cWindFxScorer_Delete,	/* 0x0c 0x188e30 */
-};
 
 /* .?AVcServerNetManager@@ */
 void (*const cServerNetManager_vftable[5])(void) = {

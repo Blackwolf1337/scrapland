@@ -197,15 +197,17 @@ void cTargetScorer_dtor(cTargetScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cTargetScorer *cTargetScorer_Delete(cTargetScorer *self, byte flags) {
+cScorerItem *cTargetScorer_Delete(cScorerItem *base, byte flags) {
+	cTargetScorer *self = (cTargetScorer *)base;
 	cTargetScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cTargetScorer));
 	}
-	return self;
+	return base;
 }
 
-int cTargetScorer_Var(cTargetScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cTargetScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cTargetScorer *self = (cTargetScorer *)base;
 	if (s && !crt_stricmp(name, "Sprite") && set) {
 		self->img = ScorerImg_Replace(self->img, *s, 2, 0x10060);
 		return 1;
@@ -302,7 +304,8 @@ void cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship) {
 	}
 }
 
-void cTargetScorer_Draw(cTargetScorer *self, int player) {
+void cTargetScorer_Draw(cScorerItem *base, int player) {
+	cTargetScorer *self = (cTargetScorer *)base;
 	cEntity *ship;
 
 	if (!ScorerHud_CamShip(player, &ship)) {
@@ -316,3 +319,11 @@ void cTargetScorer_Draw(cTargetScorer *self, int player) {
 		self->testTime = 0.25f;
 	}
 }
+
+/* the vtable of cTargetScorer */
+const cScorerItemVtbl cTargetScorer_vftable = {
+	.Draw = cTargetScorer_Draw,
+	.SetParam = cScorerItem_SetParam,
+	.Var = cTargetScorer_Var,
+	.Delete = cTargetScorer_Delete,
+};

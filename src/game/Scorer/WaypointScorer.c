@@ -34,15 +34,17 @@ void cWaypointScorer_dtor(cWaypointScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cWaypointScorer *cWaypointScorer_Delete(cWaypointScorer *self, byte flags) {
+cScorerItem *cWaypointScorer_Delete(cScorerItem *base, byte flags) {
+	cWaypointScorer *self = (cWaypointScorer *)base;
 	cWaypointScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cWaypointScorer));
 	}
-	return self;
+	return base;
 }
 
-int cWaypointScorer_Var(cWaypointScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cWaypointScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cWaypointScorer *self = (cWaypointScorer *)base;
 	if (s && !crt_stricmp(name, "Sprite") && set) {
 		self->img = ScorerImg_Replace(self->img, *s, 2, 0x10060);
 		return 1;
@@ -186,7 +188,8 @@ void cWaypointScorer_DrawTarget(cWaypointScorer *self, cEntity *e, byte current)
 	}
 }
 
-void cWaypointScorer_Draw(cWaypointScorer *self, int player) {
+void cWaypointScorer_Draw(cScorerItem *base, int player) {
+	cWaypointScorer *self = (cWaypointScorer *)base;
 	static const vec3_t zero = {0.0f, 0.0f, 0.0f};
 	const vec3_t *p;
 	const char *key;
@@ -238,3 +241,11 @@ void cWaypointScorer_Draw(cWaypointScorer *self, int player) {
 		cWaypointScorer_DrawTarget(self, best, 0);
 	}
 }
+
+/* the vtable of cWaypointScorer */
+const cScorerItemVtbl cWaypointScorer_vftable = {
+	.Draw = cWaypointScorer_Draw,
+	.SetParam = cScorerItem_SetParam,
+	.Var = cWaypointScorer_Var,
+	.Delete = cWaypointScorer_Delete,
+};

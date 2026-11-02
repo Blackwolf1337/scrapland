@@ -42,12 +42,13 @@ void cTabScorer_dtor(cTabScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cTabScorer *cTabScorer_Delete(cTabScorer *self, byte flags) {
+cScorerItem *cTabScorer_Delete(cScorerItem *base, byte flags) {
+	cTabScorer *self = (cTabScorer *)base;
 	cTabScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cTabScorer));
 	}
-	return self;
+	return base;
 }
 
 void cTabScorer_SetFile(cTabScorer *self, uint32_t flags, const char *name) {
@@ -82,7 +83,8 @@ static int Tab_SetInt(cTabScorer *self, int *v, byte set, int *i) {
 	return 3;
 }
 
-int cTabScorer_Var(cTabScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cTabScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cTabScorer *self = (cTabScorer *)base;
 	static const char *const colors[4] = {"Red", "Green", "Blue", "Alpha"};
 	int r;
 
@@ -231,7 +233,8 @@ void cTabScorer_DrawCell(cTabScorer *self, CPsaImage *img, int x, int y, int fra
 
 /* the cells of the frame of the original are inlined copies of cTabScorer_DrawCell (rotations 0, 1, 3 and the
  * mirrored 0), called here */
-void cTabScorer_Draw(cTabScorer *self, int player) {
+void cTabScorer_Draw(cScorerItem *base, int player) {
+	cTabScorer *self = (cTabScorer *)base;
 	int saveInit, saveEnd, n, lim, k;
 
 	(void)player;
@@ -371,3 +374,11 @@ done:
 	self->tabInit = saveInit;
 	self->tabEnd = saveEnd;
 }
+
+/* the vtable of cTabScorer */
+const cScorerItemVtbl cTabScorer_vftable = {
+	.Draw = cTabScorer_Draw,
+	.SetParam = cScorerItem_SetParam,
+	.Var = cTabScorer_Var,
+	.Delete = cTabScorer_Delete,
+};

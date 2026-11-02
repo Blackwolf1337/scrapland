@@ -94,15 +94,17 @@ void cMonitorScorer_dtor(cMonitorScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cMonitorScorer *cMonitorScorer_Delete(cMonitorScorer *self, byte flags) {
+cScorerItem *cMonitorScorer_Delete(cScorerItem *base, byte flags) {
+	cMonitorScorer *self = (cMonitorScorer *)base;
 	cMonitorScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cMonitorScorer));
 	}
-	return self;
+	return base;
 }
 
-void cMonitorScorer_SetParam(cMonitorScorer *self, const char *name, const char *value) {
+void cMonitorScorer_SetParam(cScorerItem *base, const char *name, const char *value) {
+	cMonitorScorer *self = (cMonitorScorer *)base;
 	if (!crt_stricmp(name, "TargetView")) {
 		self->targetView = *value == '1';
 	}
@@ -115,7 +117,8 @@ static int Monitor_VarSprite(CPsaImage **img, const char *name, int blend, uint3
 	return 1;
 }
 
-int cMonitorScorer_Var(cMonitorScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cMonitorScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cMonitorScorer *self = (cMonitorScorer *)base;
 	if (s && !crt_stricmp(name, "PanelSprite") && set) {
 		return Monitor_VarSprite(&self->panel, *s, -1, 0x10040, 0xffffffff);
 	}
@@ -748,7 +751,8 @@ void cMonitorScorer_DrawMonitor(cMonitorScorer *self, int player, cEntity *targe
 	}
 }
 
-void cMonitorScorer_Draw(cMonitorScorer *self, int player) {
+void cMonitorScorer_Draw(cScorerItem *base, int player) {
+	cMonitorScorer *self = (cMonitorScorer *)base;
 	if (!(byte)Talk_IsShown() || !g_HeadMonitorName[0]) {
 		self->model = NULL;
 		if (g_HeadMonitorName[0]) {
@@ -785,7 +789,8 @@ void cMonitorScorer_Draw(cMonitorScorer *self, int player) {
 	}
 }
 
-byte cMonitorScorer_SetModel(cMonitorScorer *self, const char *name) {
+byte cMonitorScorer_SetModel(cScorerItem *base, const char *name) {
+	cMonitorScorer *self = (cMonitorScorer *)base;
 	cScorerModel *m = cScorer_FindModel(Scorer_Get(self->base.player), name);
 
 	self->model = m;
@@ -806,7 +811,8 @@ byte cMonitorScorer_SetModel(cMonitorScorer *self, const char *name) {
 	return self->model != NULL;
 }
 
-void cMonitorScorer_SetAnim(cMonitorScorer *self, int anim) {
+void cMonitorScorer_SetAnim(cScorerItem *base, int anim) {
+	cMonitorScorer *self = (cMonitorScorer *)base;
 	cScorerModel *m = self->model;
 
 	if (!m) {
@@ -841,3 +847,13 @@ void Monitor_RepeatPhotoMessage(void) {
 		Scorer_SetMsgText(g_FirstPhotoMessage, t + 0.1f, "Horatio");
 	}
 }
+
+/* the vtable of cMonitorScorer */
+const cHeadScorerVtbl cMonitorScorer_vftable = {
+	.base.Draw = cMonitorScorer_Draw,
+	.base.SetParam = cMonitorScorer_SetParam,
+	.base.Var = cMonitorScorer_Var,
+	.base.Delete = cMonitorScorer_Delete,
+	.SetAnim = cMonitorScorer_SetAnim,
+	.SetModel = cMonitorScorer_SetModel,
+};

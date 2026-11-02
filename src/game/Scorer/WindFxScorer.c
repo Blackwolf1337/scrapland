@@ -32,12 +32,13 @@ void cWindFxScorer_dtor(cWindFxScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cWindFxScorer *cWindFxScorer_Delete(cWindFxScorer *self, byte flags) {
+cScorerItem *cWindFxScorer_Delete(cScorerItem *base, byte flags) {
+	cWindFxScorer *self = (cWindFxScorer *)base;
 	cWindFxScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cWindFxScorer));
 	}
-	return self;
+	return base;
 }
 
 /* the engine variables of the wind (WindFxScorer*) */
@@ -95,7 +96,8 @@ static void WindFx_Bar(CPsaImage *img, float sx, float sy, float x, float y) {
 
 /* vf00: the free space around the ship of the camera (four line tests ahead to the sides, up and down) sets the
  * volume, pan and pitch of the wind */
-void cWindFxScorer_Draw(cWindFxScorer *self, int player) {
+void cWindFxScorer_Draw(cScorerItem *base, int player) {
+	cWindFxScorer *self = (cWindFxScorer *)base;
 	cEntity *ship;
 	vec3_t pos;
 	float to[4];
@@ -155,3 +157,11 @@ void cWindFxScorer_Draw(cWindFxScorer *self, int player) {
 	float r = (1.0f - pan) * vol * WINDFX_BAR;
 	WindFx_Bar(self->img, 20.0f, r, 400.0f, 220.0f - r);
 }
+
+/* the vtable of cWindFxScorer */
+const cScorerItemVtbl cWindFxScorer_vftable = {
+	.Draw = cWindFxScorer_Draw,
+	.SetParam = cScorerItem_SetParam,
+	.Var = cScorerItem_Var,
+	.Delete = cWindFxScorer_Delete,
+};

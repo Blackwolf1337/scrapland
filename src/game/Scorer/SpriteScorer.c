@@ -61,19 +61,21 @@ void cSpriteScorer_dtor(cSpriteScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cSpriteScorer *cSpriteScorer_Delete(cSpriteScorer *self, byte flags) {
+cScorerItem *cSpriteScorer_Delete(cScorerItem *base, byte flags) {
+	cSpriteScorer *self = (cSpriteScorer *)base;
 	cSpriteScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cSpriteScorer));
 	}
-	return self;
+	return base;
 }
 
 void cSpriteScorer_SetFile(cSpriteScorer *self, uint32_t flags, const char *name) {
 	self->img = ScorerImg_Replace(self->img, name, self->blendingMode, (self->discardable ? 0x40000 : 0) | flags);
 }
 
-int cSpriteScorer_Var(cSpriteScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cSpriteScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cSpriteScorer *self = (cSpriteScorer *)base;
 	if (i && !crt_stricmp(name, "FixPosition")) {
 		if (set) {
 			self->fixPosition = (byte)*i;
@@ -189,7 +191,8 @@ int cSpriteScorer_Var(cSpriteScorer *self, const char *name, byte set, char **s,
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void cSpriteScorer_Draw(cSpriteScorer *self, int player) {
+void cSpriteScorer_Draw(cScorerItem *base, int player) {
+	cSpriteScorer *self = (cSpriteScorer *)base;
 	float x = self->base.x;
 	float y = self->base.y;
 
@@ -224,15 +227,17 @@ cGradientScorer *cGradientScorer_ctor(cGradientScorer *self) {
 	return self;
 }
 
-cGradientScorer *cGradientScorer_Delete(cGradientScorer *self, byte flags) {
+cScorerItem *cGradientScorer_Delete(cScorerItem *base, byte flags) {
+	cGradientScorer *self = (cGradientScorer *)base;
 	cSpriteScorer_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cGradientScorer));
 	}
-	return self;
+	return base;
 }
 
-int cGradientScorer_Var(cGradientScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cGradientScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cGradientScorer *self = (cGradientScorer *)base;
 	static const char *const colors[4] = {"Red", "Green", "Blue", "Alpha"};
 	int r;
 
@@ -250,10 +255,11 @@ int cGradientScorer_Var(cGradientScorer *self, const char *name, byte set, char 
 			return r;
 		}
 	}
-	return cSpriteScorer_Var(&self->base, name, set, s, d, i);
+	return cSpriteScorer_Var(&self->base.base, name, set, s, d, i);
 }
 
-void cGradientScorer_Draw(cGradientScorer *self, int player) {
+void cGradientScorer_Draw(cScorerItem *base, int player) {
+	cGradientScorer *self = (cGradientScorer *)base;
 	/* the unit square, as positions (scaled by the image) and as texture coordinates */
 	static const float quad[8] = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
 	float pos[8], uv[8];
@@ -270,3 +276,21 @@ void cGradientScorer_Draw(cGradientScorer *self, int player) {
 	img->y = self->base.base.y;
 	CPsaImage_DrawPoly(img, pos, uv, self->colors, 4, 6);
 }
+
+/* the vtable of cSpriteScorer */
+const cSpriteScorerVtbl cSpriteScorer_vftable = {
+	.base.Draw = cSpriteScorer_Draw,
+	.base.SetParam = cScorerItem_SetParam,
+	.base.Var = cSpriteScorer_Var,
+	.base.Delete = cSpriteScorer_Delete,
+	.SetMultiSprite = cSpriteScorer_SetMultiSprite,
+};
+
+/* the vtable of cGradientScorer */
+const cSpriteScorerVtbl cGradientScorer_vftable = {
+	.base.Draw = cGradientScorer_Draw,
+	.base.SetParam = cScorerItem_SetParam,
+	.base.Var = cGradientScorer_Var,
+	.base.Delete = cGradientScorer_Delete,
+	.SetMultiSprite = cSpriteScorer_SetMultiSprite,
+};

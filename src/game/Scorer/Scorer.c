@@ -39,7 +39,8 @@
 #include "scrap/scorerhud.h"
 
 #define CSCORER_VFTABLE GAME_VFTABLE(cScorer_vftable)
-#define CSCORERITEM_VFTABLE GAME_VFTABLE(cScorerItem_vftable)
+extern const cScorerItemVtbl cScorerItem_vftable;
+#define CSCORERITEM_VFTABLE (&cScorerItem_vftable)
 #define EXE_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
 #define SCORER_NO_ACCEPT -10.0f			/* cScorer.acceptTime off */
 
@@ -465,7 +466,7 @@ cScorerItem *cScorer_AddItem(cScorer *scorer, const char *name, const char *type
 	return it;
 }
 
-int cScorerItem_Var(cScorerItem *self, const char *name, byte set, char **s, double *d, int *i) {
+int cScorerItem_Var(cScorerItem *self, const char *name, int set, char **s, double *d, int *i) {
 	static const char *const strNames[4] = {"Left", "Right", "Up", "Down"};
 	static const char *const funcNames[5] = {"OnLooseFocus", "OnGainFocus", "OnAccept", "OnDelete", "OnRender"};
 	static const char *const floatNames[6] = {"X", "Y", "W", "H", "FocusPivotX", "FocusPivotY"};
@@ -1824,3 +1825,11 @@ void Scorer_DrawDebug(void) {
 		}
 	}
 }
+
+/* the vtable of cScorerItem */
+const cScorerItemVtbl cScorerItem_vftable = {
+	.Draw = (void *)crt_purecall,
+	.SetParam = cScorerItem_SetParam,
+	.Var = cScorerItem_Var,
+	.Delete = cScorerItem_Delete,
+};

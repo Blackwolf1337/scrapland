@@ -37,15 +37,17 @@ void cBarScorer_dtor(cBarScorer *self) {
 	cSpriteScorer_dtor(&self->base);
 }
 
-cBarScorer *cBarScorer_Delete(cBarScorer *self, byte flags) {
+cScorerItem *cBarScorer_Delete(cScorerItem *base, byte flags) {
+	cBarScorer *self = (cBarScorer *)base;
 	cBarScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cBarScorer));
 	}
-	return self;
+	return base;
 }
 
-int cBarScorer_Var(cBarScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cBarScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cBarScorer *self = (cBarScorer *)base;
 	int r;
 
 	if (d) {
@@ -116,10 +118,11 @@ int cBarScorer_Var(cBarScorer *self, const char *name, byte set, char **s, doubl
 			return r;
 		}
 	}
-	return cSpriteScorer_Var(&self->base, name, set, s, d, i);
+	return cSpriteScorer_Var(&self->base.base, name, set, s, d, i);
 }
 
-void cBarScorer_Draw(cBarScorer *self, int player) {
+void cBarScorer_Draw(cScorerItem *base, int player) {
+	cBarScorer *self = (cBarScorer *)base;
 	cSpriteScorer *sp = &self->base;
 	int mode = g_BarAutoUpdate;
 	float frac;
@@ -171,3 +174,12 @@ void cBarScorer_Draw(cBarScorer *self, int player) {
 		self->mainUV1[0], self->mainUV1[1], self->blackUV0[0], self->blackUV0[1], self->blackUV1[0],
 		self->blackUV1[1], self->mainColor, self->blackColor);
 }
+
+/* the vtable of cBarScorer */
+const cSpriteScorerVtbl cBarScorer_vftable = {
+	.base.Draw = cBarScorer_Draw,
+	.base.SetParam = cScorerItem_SetParam,
+	.base.Var = cBarScorer_Var,
+	.base.Delete = cBarScorer_Delete,
+	.SetMultiSprite = cSpriteScorer_SetMultiSprite,
+};

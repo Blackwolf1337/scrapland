@@ -68,20 +68,22 @@ void cTextScorer_dtor(cTextScorer *self) {
 	cAbstractTextScorer_dtor(&self->base);
 }
 
-cTextScorer *cTextScorer_Delete(cTextScorer *self, byte flags) {
+cScorerItem *cTextScorer_Delete(cScorerItem *base, byte flags) {
+	cTextScorer *self = (cTextScorer *)base;
 	cTextScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cTextScorer));
 	}
-	return self;
+	return base;
 }
 
-cTextTypingScorer *cTextTypingScorer_Delete(cTextTypingScorer *self, byte flags) {
+cScorerItem *cTextTypingScorer_Delete(cScorerItem *base, byte flags) {
+	cTextTypingScorer *self = (cTextTypingScorer *)base;
 	cTextScorer_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cTextTypingScorer));
 	}
-	return self;
+	return base;
 }
 
 void TextEdit_End(int player) {
@@ -131,7 +133,8 @@ void TextEdit_Start(cAbstractFile *params) {
 	cString_Assign(&Scorer_Get(player)->hint, &g_TextEditItem[player]->editHint);
 }
 
-int cTextScorer_Var(cTextScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cTextScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cTextScorer *self = (cTextScorer *)base;
 	if (s && !crt_stricmp(name, "EditHint")) {
 		if (set) {
 			cString_Set(&self->editHint, *s);
@@ -175,11 +178,11 @@ int cTextScorer_Var(cTextScorer *self, const char *name, byte set, char **s, dou
 			return 3;
 		}
 	}
-	return cAbstractTextScorer_Var(&self->base, name, set, s, d, i);
+	return cAbstractTextScorer_Var(&self->base.base, name, set, s, d, i);
 }
 
-int cTextTypingScorer_Var(cTextTypingScorer *self, const char *name, byte set, char **s, double *d,
-	int *i) {
+int cTextTypingScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cTextTypingScorer *self = (cTextTypingScorer *)base;
 	if (d) {
 		/* the floats return 3 here */
 		if (!crt_stricmp(name, "TypingSpeed")) {
@@ -208,7 +211,7 @@ int cTextTypingScorer_Var(cTextTypingScorer *self, const char *name, byte set, c
 			return ScorerVar_Bool(&self->typingSound, set, i);
 		}
 	}
-	return cTextScorer_Var(&self->base, name, set, s, d, i);
+	return cTextScorer_Var(&self->base.base.base, name, set, s, d, i);
 }
 
 #define KEYS_COLOR 0xaee5fb
@@ -310,14 +313,14 @@ void cTextScorer_DrawKeyboard(cTextScorer *self, int player) {
 	}
 }
 
-void cTextScorer_Draw(cTextScorer *self, int player) {
+void cTextScorer_Draw(cScorerItem *base, int player) {
+	cTextScorer *self = (cTextScorer *)base;
 	cAbstractTextScorer *t = &self->base;
 	char buf[0x200];
 	cScorer *sc;
 
 	if (self->editing) {
-		/* the virtual keyboard (vf04) */
-		((void(*)(cTextScorer *, int))t->base.vftable->vf04)(self, player);
+		((const cTextScorerVtbl *)t->base.vftable)->DrawKeyboard(self, player);
 		return;
 	}
 	Text_Get(self, player, buf, sizeof(buf));
@@ -356,7 +359,8 @@ void cTextScorer_Draw(cTextScorer *self, int player) {
 	}
 }
 
-void cTextTypingScorer_Draw(cTextTypingScorer *self, int player) {
+void cTextTypingScorer_Draw(cScorerItem *base, int player) {
+	cTextTypingScorer *self = (cTextTypingScorer *)base;
 	cAbstractTextScorer *t = &self->base.base;
 	char buf[0x280];
 	float now, dt, time;
@@ -419,3 +423,21 @@ void cTextTypingScorer_Draw(cTextTypingScorer *self, int player) {
 	t->font->effects = (uint32_t)t->effect;
 	CFont_PrintfFlags(t->font, t->base.x, t->base.y, 0xb, "%s", buf);
 }
+
+/* the vtable of cTextScorer */
+const cTextScorerVtbl cTextScorer_vftable = {
+	.base.Draw = cTextScorer_Draw,
+	.base.SetParam = cScorerItem_SetParam,
+	.base.Var = cTextScorer_Var,
+	.base.Delete = cTextScorer_Delete,
+	.DrawKeyboard = cTextScorer_DrawKeyboard,
+};
+
+/* the vtable of cTextTypingScorer */
+const cTextScorerVtbl cTextTypingScorer_vftable = {
+	.base.Draw = cTextTypingScorer_Draw,
+	.base.SetParam = cScorerItem_SetParam,
+	.base.Var = cTextTypingScorer_Var,
+	.base.Delete = cTextTypingScorer_Delete,
+	.DrawKeyboard = cTextScorer_DrawKeyboard,
+};

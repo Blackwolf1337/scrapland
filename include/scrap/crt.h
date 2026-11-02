@@ -140,4 +140,7 @@ extern int crt_init_epoch;
 #define crt_InitEpoch() crt_init_epoch
 /* __security_cookie of the exe (the C of ScrapC.exe has no stack cookies, nothing reads it since stage 3c2) */
 
+/* the slot of a pure virtual function: reports the call and stops (put into typed vtables as (void *)) */
+[[noreturn]] void crt_purecall(void);
+
 #endif

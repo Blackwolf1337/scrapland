@@ -34,12 +34,13 @@ void cMissionScorer_dtor(cMissionScorer *self) {
 	cSpriteScorer_dtor(&self->base);
 }
 
-cMissionScorer *cMissionScorer_Delete(cMissionScorer *self, byte flags) {
+cScorerItem *cMissionScorer_Delete(cScorerItem *base, byte flags) {
+	cMissionScorer *self = (cMissionScorer *)base;
 	cMissionScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cMissionScorer));
 	}
-	return self;
+	return base;
 }
 
 /* Status0 of the scripts: the station text of the mission map, if it is not this level or the orbit */
@@ -81,7 +82,8 @@ static int Mission_VarStatus(cMissionScorer *self, int k, byte set, int *i) {
 	return 3;
 }
 
-int cMissionScorer_Var(cMissionScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cMissionScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cMissionScorer *self = (cMissionScorer *)base;
 	int r;
 
 	if (set && s && !crt_strncmp(name, "ForceMap", 8)) {
@@ -184,10 +186,11 @@ int cMissionScorer_Var(cMissionScorer *self, const char *name, byte set, char **
 			}
 		}
 	}
-	return cSpriteScorer_Var(&self->base, name, set, s, d, i);
+	return cSpriteScorer_Var(&self->base.base, name, set, s, d, i);
 }
 
-void cMissionScorer_Draw(cMissionScorer *self, int player) {
+void cMissionScorer_Draw(cScorerItem *base, int player) {
+	cMissionScorer *self = (cMissionScorer *)base;
 	cScorerItem *it = &self->base.base;
 	float ft = Scorer_Get(player)->frameTime;
 	float solid;
@@ -271,3 +274,12 @@ void cMissionScorer_Draw(cMissionScorer *self, int player) {
 	img->color = (uint32_t)((byte *)&img->color)[3] << 24 | 0xc8d2ff;
 	CPsaImage_DrawFrame(self->base.img, (g_IsXbox != 0) + 4, it->x + 24.0f, it->y + 16.0f);
 }
+
+/* the vtable of cMissionScorer */
+const cSpriteScorerVtbl cMissionScorer_vftable = {
+	.base.Draw = cMissionScorer_Draw,
+	.base.SetParam = cScorerItem_SetParam,
+	.base.Var = cMissionScorer_Var,
+	.base.Delete = cMissionScorer_Delete,
+	.SetMultiSprite = cSpriteScorer_SetMultiSprite,
+};

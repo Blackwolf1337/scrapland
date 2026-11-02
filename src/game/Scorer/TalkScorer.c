@@ -66,12 +66,13 @@ void cTalkScorer_dtor(cTalkScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cTalkScorer *cTalkScorer_Delete(cTalkScorer *self, byte flags) {
+cScorerItem *cTalkScorer_Delete(cScorerItem *base, byte flags) {
+	cTalkScorer *self = (cTalkScorer *)base;
 	cTalkScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cTalkScorer));
 	}
-	return self;
+	return base;
 }
 
 cEntity *Talk_GetUseTarget(int player) {
@@ -93,7 +94,8 @@ cEntity *Talk_GetUseTarget(int player) {
 	return WChar(t)->wl.arrow.canUse ? t : NULL;
 }
 
-int cTalkScorer_Var(cTalkScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cTalkScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cTalkScorer *self = (cTalkScorer *)base;
 	static const char *const colors[4] = {"TabRed", "TabGreen", "TabBlue", "TabAlpha"};
 	int r;
 
@@ -141,16 +143,16 @@ int cTalkScorer_Var(cTalkScorer *self, const char *name, byte set, char **s, dou
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-typedef void(*TalkDrawFn)(cTalkScorer *self, int player, float *pos);
 
-void cTalkScorer_Draw(cTalkScorer *self, int player) {
-	const cScorerItemVtbl *vt = self->base.vftable;
+void cTalkScorer_Draw(cScorerItem *base, int player) {
+	cTalkScorer *self = (cTalkScorer *)base;
+	const cTalkScorerVtbl *vt = (const cTalkScorerVtbl *)self->base.vftable;
 	float pos[2];
 
 	pos[0] = self->base.x;
 	pos[1] = self->base.y;
-	((TalkDrawFn)vt->vf05)(self, player, pos);
-	((TalkDrawFn)vt->vf04)(self, player, pos);
+	vt->DrawUse(self, player, pos);
+	vt->DrawTalk(self, player, pos);
 }
 
 void cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos) {
@@ -308,3 +310,13 @@ void Scorer_SetSpeechText(const char *text, float time, int r, int g, int b) {
 int Talk_IsShown(void) {
 	return g_RemainTalkTime > 0.01f;
 }
+
+/* the vtable of cTalkScorer */
+const cTalkScorerVtbl cTalkScorer_vftable = {
+	.base.Draw = cTalkScorer_Draw,
+	.base.SetParam = cScorerItem_SetParam,
+	.base.Var = cTalkScorer_Var,
+	.base.Delete = cTalkScorer_Delete,
+	.DrawTalk = cTalkScorer_DrawTalk,
+	.DrawUse = cTalkScorer_DrawUse,
+};

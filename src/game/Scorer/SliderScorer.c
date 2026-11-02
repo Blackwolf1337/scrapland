@@ -40,19 +40,21 @@ void cSliderScorer_dtor(cSliderScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cSliderScorer *cSliderScorer_Delete(cSliderScorer *self, byte flags) {
+cScorerItem *cSliderScorer_Delete(cScorerItem *base, byte flags) {
+	cSliderScorer *self = (cSliderScorer *)base;
 	cSliderScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cSliderScorer));
 	}
-	return self;
+	return base;
 }
 
 void cSliderScorer_SetFile(cSliderScorer *self, uint32_t flags, const char *file) {
 	self->img = ScorerImg_Replace(self->img, file, self->blend, flags);
 }
 
-int cSliderScorer_Var(cSliderScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cSliderScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cSliderScorer *self = (cSliderScorer *)base;
 	int r;
 
 	if (i) {
@@ -133,7 +135,8 @@ int cSliderScorer_Var(cSliderScorer *self, const char *name, byte set, char **s,
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void cSliderScorer_Draw(cSliderScorer *self, int player) {
+void cSliderScorer_Draw(cScorerItem *base, int player) {
+	cSliderScorer *self = (cSliderScorer *)base;
 	float uv0[2], uv1[2], suv0[2], suv1[2];
 	float frac, bw, bh, sw, sh, m;
 	cScorer *sc;
@@ -197,3 +200,11 @@ void cSliderScorer_Draw(cSliderScorer *self, int player) {
 		self->img->color = saved;
 	}
 }
+
+/* the vtable of cSliderScorer */
+const cScorerItemVtbl cSliderScorer_vftable = {
+	.Draw = cSliderScorer_Draw,
+	.SetParam = cScorerItem_SetParam,
+	.Var = cSliderScorer_Var,
+	.Delete = cSliderScorer_Delete,
+};

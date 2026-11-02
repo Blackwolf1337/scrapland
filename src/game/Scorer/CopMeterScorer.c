@@ -51,12 +51,13 @@ void cCopMeterScorer_dtor(cCopMeterScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cCopMeterScorer *cCopMeterScorer_Delete(cCopMeterScorer *self, byte flags) {
+cScorerItem *cCopMeterScorer_Delete(cScorerItem *base, byte flags) {
+	cCopMeterScorer *self = (cCopMeterScorer *)base;
 	cCopMeterScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cCopMeterScorer));
 	}
-	return self;
+	return base;
 }
 
 /* a value 0..100 of the scripts as 0..1 */
@@ -69,7 +70,8 @@ static int CopMeter_VarPercent(float *v, byte set, double *d) {
 	return 2;
 }
 
-int cCopMeterScorer_Var(cCopMeterScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cCopMeterScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cCopMeterScorer *self = (cCopMeterScorer *)base;
 	if (s && !crt_stricmp(name, "Sprite") && set) {
 		CopMeter_FreeImage(self->img);
 		self->img = CopMeter_NewImage(*s, 1);
@@ -126,7 +128,8 @@ static void CopMeter_Flash(cCopMeterScorer *self, float t, int frame, float x) {
 	CPsaImage_DrawFrame(self->flash, frame, x, (self->lightOffY + self->base.y) + 0.0f);
 }
 
-void cCopMeterScorer_Draw(cCopMeterScorer *self, int player) {
+void cCopMeterScorer_Draw(cScorerItem *base, int player) {
+	cCopMeterScorer *self = (cCopMeterScorer *)base;
 	float level = g_pWorld->alarm.value;
 	float v;
 
@@ -221,3 +224,11 @@ void cCopMeterScorer_Draw(cCopMeterScorer *self, int player) {
 		CopMeter_Flash(self, b - 0.2f, self->lightIndex + 1, (self->lightOffX + self->base.x) - 2.0f);
 	}
 }
+
+/* the vtable of cCopMeterScorer */
+const cScorerItemVtbl cCopMeterScorer_vftable = {
+	.Draw = cCopMeterScorer_Draw,
+	.SetParam = cScorerItem_SetParam,
+	.Var = cCopMeterScorer_Var,
+	.Delete = cCopMeterScorer_Delete,
+};

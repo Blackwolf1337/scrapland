@@ -14,23 +14,14 @@
 
 typedef struct cScorerItem cScorerItem;
 typedef struct cScorerItemVtbl {
-	union {
-		void *vf00_01[2];
-		struct {
-			void(*Draw)(cScorerItem *self, int player);				/* 0x0 */
-			/* a "name=value" parameter, nothing in most classes */
-			void(*SetParam)(cScorerItem *self, const char *name, const char *value);	/* 0x4 */
-		};
-	};
+	void(*Draw)(cScorerItem *self, int player);					/* 0x0 */
+	/* a "name=value" parameter, nothing in most classes */
+	void(*SetParam)(cScorerItem *self, const char *name, const char *value);	/* 0x4 */
 	/* like cActClass_Var: set != 0 writes *s or *d / *i; returns 1 string, 2 double, 3 int, 0 */
 	int(*Var)(cScorerItem *self, const char *name, int set, char **s, double *d, int *i);	/* 0x8 */
 	cScorerItem *(*Delete)(cScorerItem *self, byte flags);			/* 0xc */
-	/* only in some classes: SetAnim of the heads, the lock text of the cannon, a slot of cSpriteScorer */
-	void *vf04;										/* 0x10 */
-	void *vf05;										/* 0x14 SetModel of the heads */
 } cScorerItemVtbl;
-SD_OFFSET(cScorerItemVtbl, Var, 0x8);
-SD_OFFSET(cScorerItemVtbl, vf05, 0x14);
+SD_SIZE(cScorerItemVtbl, 0x10);
 
 /* the items of a scorer (Scorer.cpp, vftable rva 0x3c3ba0), 0xac bytes */
 struct cScorerItem {
@@ -65,7 +56,7 @@ cScorerItem *cScorerItem_ctor(cScorerItem *self);
 void cScorerItem_dtor(cScorerItem *self);
 /* Hint, MaxHintLineWidth, Name, DelMe, X, Y, W, H, FocusPivotX/Y, Left, Right, Up, Down, the On* functions,
  * MultiPress, Visible */
-int cScorerItem_Var(cScorerItem *self, const char *name, byte set, char **s, double *d, int *i);
+int cScorerItem_Var(cScorerItem *self, const char *name, int set, char **s, double *d, int *i);
 
 /* the cinema bars (SScorer.SetCinema), 0x10 bytes */
 typedef struct ScorerCinema {

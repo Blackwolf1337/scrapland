@@ -37,15 +37,17 @@ void cHeadScorer_dtor(cHeadScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cHeadScorer *cHeadScorer_Delete(cHeadScorer *self, byte flags) {
+cScorerItem *cHeadScorer_Delete(cScorerItem *base, byte flags) {
+	cHeadScorer *self = (cHeadScorer *)base;
 	cHeadScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cHeadScorer));
 	}
-	return self;
+	return base;
 }
 
-int cHeadScorer_Var(cHeadScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cHeadScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cHeadScorer *self = (cHeadScorer *)base;
 	if (set && s && !crt_stricmp(name, "HeadModel")) {
 		HeadScorer_SetModel(self, *s);
 		return 1;
@@ -69,7 +71,8 @@ int cHeadScorer_Var(cHeadScorer *self, const char *name, byte set, char **s, dou
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void cHeadScorer_Draw(cHeadScorer *self, int player) {
+void cHeadScorer_Draw(cScorerItem *base, int player) {
+	cHeadScorer *self = (cHeadScorer *)base;
 	vec3_t tmp;
 
 	if (!self->model) {
@@ -115,7 +118,8 @@ void cHeadScorer_Draw(cHeadScorer *self, int player) {
 	Eng_ResetViewRect();
 }
 
-byte cHeadScorer_SetModel(cHeadScorer *self, const char *name) {
+byte cHeadScorer_SetModel(cScorerItem *base, const char *name) {
+	cHeadScorer *self = (cHeadScorer *)base;
 	cScorerModel *m = cScorer_FindModel(Scorer_Get(self->base.player), name);
 
 	self->model = m;
@@ -131,7 +135,8 @@ byte cHeadScorer_SetModel(cHeadScorer *self, const char *name) {
 	return self->model != NULL;
 }
 
-void cHeadScorer_SetAnim(cHeadScorer *self, int anim) {
+void cHeadScorer_SetAnim(cScorerItem *base, int anim) {
+	cHeadScorer *self = (cHeadScorer *)base;
 	cScorerModel *m = self->model;
 
 	if (!m) {
@@ -148,3 +153,13 @@ void cHeadScorer_SetAnim(cHeadScorer *self, int anim) {
 		CGameModel_SetAnimLoop(&self->model->model, aidx, 1);
 	}
 }
+
+/* the vtable of cHeadScorer */
+const cHeadScorerVtbl cHeadScorer_vftable = {
+	.base.Draw = cHeadScorer_Draw,
+	.base.SetParam = cScorerItem_SetParam,
+	.base.Var = cHeadScorer_Var,
+	.base.Delete = cHeadScorer_Delete,
+	.SetAnim = cHeadScorer_SetAnim,
+	.SetModel = cHeadScorer_SetModel,
+};

@@ -85,20 +85,22 @@ void cScraplandSubMenuScorer_dtor(cScraplandSubMenuScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cScraplandMainMenuScorer *cScraplandMainMenuScorer_Delete(cScraplandMainMenuScorer *self, byte flags) {
+cScorerItem *cScraplandMainMenuScorer_Delete(cScorerItem *base, byte flags) {
+	cScraplandMainMenuScorer *self = (cScraplandMainMenuScorer *)base;
 	cScraplandMainMenuScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cScraplandMainMenuScorer));
 	}
-	return self;
+	return base;
 }
 
-cScraplandSubMenuScorer *cScraplandSubMenuScorer_Delete(cScraplandSubMenuScorer *self, byte flags) {
+cScorerItem *cScraplandSubMenuScorer_Delete(cScorerItem *base, byte flags) {
+	cScraplandSubMenuScorer *self = (cScraplandSubMenuScorer *)base;
 	cScraplandSubMenuScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cScraplandSubMenuScorer));
 	}
-	return self;
+	return base;
 }
 
 void cScraplandMainMenuScorer_Init(cScraplandMainMenuScorer *self) {
@@ -246,8 +248,8 @@ void cScraplandSubMenuScorer_SetRingReflection(cScraplandSubMenuScorer *self, ui
 	self->ringReflection = ScorerImg_Replace(self->ringReflection, file, 2, flags | 0x42010);
 }
 
-int cScraplandMainMenuScorer_Var(cScraplandMainMenuScorer *self, const char *name, byte set, char **s,
-	double *d, int *i) {
+int cScraplandMainMenuScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cScraplandMainMenuScorer *self = (cScraplandMainMenuScorer *)base;
 	if (i && !crt_stricmp(name, "HighRes")) {
 		CHECK(*i == 0 || *i == 1);
 		return ScorerVar_Int(&self->highRes, set, i);
@@ -273,8 +275,8 @@ int cScraplandMainMenuScorer_Var(cScraplandMainMenuScorer *self, const char *nam
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-int cScraplandSubMenuScorer_Var(cScraplandSubMenuScorer *self, const char *name, byte set, char **s,
-	double *d, int *i) {
+int cScraplandSubMenuScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cScraplandSubMenuScorer *self = (cScraplandSubMenuScorer *)base;
 	if (s) {
 		uint32_t flags = 0;
 		int k = -1;
@@ -345,7 +347,8 @@ static void SubMenu_Draw(CPsaImage *img, float scale, uint32_t color, byte setCo
 
 /* vf00: the logo, the ring mask, its reflection turning back and forth, the ring border and the flickering glow;
  * after a random wait a ring of lightning frames runs in or out */
-void cScraplandSubMenuScorer_Draw(cScraplandSubMenuScorer *self, int player) {
+void cScraplandSubMenuScorer_Draw(cScorerItem *base, int player) {
+	cScraplandSubMenuScorer *self = (cScraplandSubMenuScorer *)base;
 	static const float uv[4][2] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
 	static const float corners[4][2] = {{-0.5f, -0.5f}, {0.5f, -0.5f}, {0.5f, 0.5f}, {-0.5f, 0.5f}};
 	float pos[4][2];
@@ -589,7 +592,8 @@ static void MainMenu_Sparks(cScraplandMainMenuScorer *self, float dt) {
 
 /* vf00: the logo and its glow, the flickering neon tubes, the letters with their lighting, the sparks and the
  * pulsing "Remastered" */
-void cScraplandMainMenuScorer_Draw(cScraplandMainMenuScorer *self, int player) {
+void cScraplandMainMenuScorer_Draw(cScorerItem *base, int player) {
+	cScraplandMainMenuScorer *self = (cScraplandMainMenuScorer *)base;
 	static const char remastered[] = "Remastered";
 	float pos[2], dim[2];
 
@@ -641,3 +645,19 @@ void cScraplandMainMenuScorer_Draw(cScraplandMainMenuScorer *self, int player) {
 		off = dim[0] + off;
 	}
 }
+
+/* the vtable of cScraplandMainMenuScorer */
+const cScorerItemVtbl cScraplandMainMenuScorer_vftable = {
+	.Draw = cScraplandMainMenuScorer_Draw,
+	.SetParam = cScorerItem_SetParam,
+	.Var = cScraplandMainMenuScorer_Var,
+	.Delete = cScraplandMainMenuScorer_Delete,
+};
+
+/* the vtable of cScraplandSubMenuScorer */
+const cScorerItemVtbl cScraplandSubMenuScorer_vftable = {
+	.Draw = cScraplandSubMenuScorer_Draw,
+	.SetParam = cScorerItem_SetParam,
+	.Var = cScraplandSubMenuScorer_Var,
+	.Delete = cScraplandSubMenuScorer_Delete,
+};

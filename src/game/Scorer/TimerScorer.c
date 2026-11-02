@@ -21,15 +21,17 @@ void cTimerScorer_dtor(cTimerScorer *self) {
 	cAbstractTextScorer_dtor(&self->base);
 }
 
-cTimerScorer *cTimerScorer_Delete(cTimerScorer *self, byte flags) {
+cScorerItem *cTimerScorer_Delete(cScorerItem *base, byte flags) {
+	cTimerScorer *self = (cTimerScorer *)base;
 	cTimerScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cTimerScorer));
 	}
-	return self;
+	return base;
 }
 
-int cTimerScorer_Var(cTimerScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cTimerScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cTimerScorer *self = (cTimerScorer *)base;
 	static const char *const types[TIMER_TYPES] = {"TimeToCancel", "TimeToFinish", "TimeInactive",
 		"TimeSpecialUse"};
 
@@ -53,10 +55,11 @@ int cTimerScorer_Var(cTimerScorer *self, const char *name, byte set, char **s, d
 			return 1;
 		}
 	}
-	return cAbstractTextScorer_Var(&self->base, name, set, s, d, i);
+	return cAbstractTextScorer_Var(&self->base.base, name, set, s, d, i);
 }
 
-void cTimerScorer_Draw(cTimerScorer *self, int player) {
+void cTimerScorer_Draw(cScorerItem *base, int player) {
+	cTimerScorer *self = (cTimerScorer *)base;
 	cAbstractTextScorer *t = &self->base;
 	float *var = NULL;
 	float time, left;
@@ -108,3 +111,11 @@ void cTimerScorer_Draw(cTimerScorer *self, int player) {
 		cPy_Function_Execute(&self->onTimeExpired, 0);
 	}
 }
+
+/* the vtable of cTimerScorer */
+const cScorerItemVtbl cTimerScorer_vftable = {
+	.Draw = cTimerScorer_Draw,
+	.SetParam = cScorerItem_SetParam,
+	.Var = cTimerScorer_Var,
+	.Delete = cTimerScorer_Delete,
+};

@@ -26,19 +26,22 @@ void cNetStatsScorer_dtor(cNetStatsScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cNetStatsScorer *cNetStatsScorer_Delete(cNetStatsScorer *self, byte flags) {
+cScorerItem *cNetStatsScorer_Delete(cScorerItem *base, byte flags) {
+	cNetStatsScorer *self = (cNetStatsScorer *)base;
 	cNetStatsScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cNetStatsScorer));
 	}
-	return self;
+	return base;
 }
 
-int cNetStatsScorer_Var(cNetStatsScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cNetStatsScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cNetStatsScorer *self = (cNetStatsScorer *)base;
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void cNetStatsScorer_Draw(cNetStatsScorer *self, int player) {
+void cNetStatsScorer_Draw(cScorerItem *base, int player) {
+	cNetStatsScorer *self = (cNetStatsScorer *)base;
 	cScorerItem *it = &self->base;
 
 	if ((g_pApp->flags & APPF_CLIENT) && g_ShowClientPing && Net_GetClient()) {
@@ -114,3 +117,11 @@ void cNetStatsScorer_Draw(cNetStatsScorer *self, int player) {
 		g_NetStatRecv = 0;
 	}
 }
+
+/* the vtable of cNetStatsScorer */
+const cScorerItemVtbl cNetStatsScorer_vftable = {
+	.Draw = cNetStatsScorer_Draw,
+	.SetParam = cScorerItem_SetParam,
+	.Var = cNetStatsScorer_Var,
+	.Delete = cNetStatsScorer_Delete,
+};

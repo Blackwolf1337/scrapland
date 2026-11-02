@@ -66,12 +66,13 @@ void cStatusScorer_dtor(cStatusScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cStatusScorer *cStatusScorer_Delete(cStatusScorer *self, byte flags) {
+cScorerItem *cStatusScorer_Delete(cScorerItem *base, byte flags) {
+	cStatusScorer *self = (cStatusScorer *)base;
 	cStatusScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cStatusScorer));
 	}
-	return self;
+	return base;
 }
 
 #define SV(name, kind, field) {name, kind, offsetof(cStatusScorer, field)}
@@ -138,7 +139,8 @@ static const ScorerVarDef s_StatusVars6[] = {
 
 #define STATUS_TABLE(t) ScorerVar_Table(self, (t), sizeof(t) / sizeof((t)[0]), name, set, d, i)
 
-int cStatusScorer_Var(cStatusScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cStatusScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cStatusScorer *self = (cStatusScorer *)base;
 	int r;
 
 	if (s && !crt_stricmp(name, "Sprite") && set) {
@@ -358,7 +360,8 @@ static void Status_DrawBoostIcon(cStatusScorer *self) {
 
 /* vf00: the life of the target of the camera (blinking when in danger), the boost segments, the money and lives,
  * the team flag, the hull of a ship; the low life warning and the regeneration siren */
-void cStatusScorer_Draw(cStatusScorer *self, int player) {
+void cStatusScorer_Draw(cScorerItem *base, int player) {
+	cStatusScorer *self = (cStatusScorer *)base;
 	cEntity *e;
 
 	float time = Scorer_Get(player)->time;
@@ -481,3 +484,11 @@ void cStatusScorer_Draw(cStatusScorer *self, int player) {
 		Status_DrawBoostIcon(self);
 	}
 }
+
+/* the vtable of cStatusScorer */
+const cScorerItemVtbl cStatusScorer_vftable = {
+	.Draw = cStatusScorer_Draw,
+	.SetParam = cScorerItem_SetParam,
+	.Var = cStatusScorer_Var,
+	.Delete = cStatusScorer_Delete,
+};

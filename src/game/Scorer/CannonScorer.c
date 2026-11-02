@@ -37,12 +37,13 @@ void cCannonScorer_dtor(cCannonScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cCannonScorer *cCannonScorer_Delete(cCannonScorer *self, byte flags) {
+cScorerItem *cCannonScorer_Delete(cScorerItem *base, byte flags) {
+	cCannonScorer *self = (cCannonScorer *)base;
 	cCannonScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cCannonScorer));
 	}
-	return self;
+	return base;
 }
 
 /* the texture rectangle of a frame as the corners of a quad */
@@ -162,8 +163,7 @@ void cCannonScorer_DrawCenter(cCannonScorer *self, int player, cEntity *ship) {
 	img->x = 320.0f;
 	img->y = y;
 	CPsaImage_DrawPoly(self->img, corners, uv, 0, 4, 6);
-	((void(*)(cCannonScorer *, int, const float *))self->base.vftable->vf04)(self, player,
-		&self->img->x);
+	((const cCannonScorerVtbl *)self->base.vftable)->DrawLock(self, player, &self->img->x);
 	if (WLife(ship)->life * 100 / Veh(ship)->maxLife < g_WarningLifeLevel) {
 		cScorer *sc = Scorer_Get(player);
 		int v = Scorer_Abs((int)(sc->time * 1024.0f) % 511 - 255);
@@ -172,7 +172,8 @@ void cCannonScorer_DrawCenter(cCannonScorer *self, int player, cEntity *ship) {
 	}
 }
 
-int cCannonScorer_Var(cCannonScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cCannonScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cCannonScorer *self = (cCannonScorer *)base;
 	if (s && !crt_stricmp(name, "Sprite") && set) {
 		if (self->img) {
 			CPsaImage_dtor(self->img);
@@ -198,7 +199,8 @@ int cCannonScorer_Var(cCannonScorer *self, const char *name, byte set, char **s,
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void cCannonScorer_Draw(cCannonScorer *self, int player) {
+void cCannonScorer_Draw(cScorerItem *base, int player) {
+	cCannonScorer *self = (cCannonScorer *)base;
 	const char *camName = cWorld_GetCamName(g_pWorld, player);
 	cEntity *ship = NULL;
 
@@ -252,3 +254,12 @@ void cCannonScorer_DrawLock(cCannonScorer *self, int player, const float *pos) {
 	}
 	CFont_PrintfAlignColor(g_FontHoratio, pos[0], pos[1] - 50.0f, TEXTSCORER_CENTER, color, "%s", text);
 }
+
+/* the vtable of cCannonScorer */
+const cCannonScorerVtbl cCannonScorer_vftable = {
+	.base.Draw = cCannonScorer_Draw,
+	.base.SetParam = cScorerItem_SetParam,
+	.base.Var = cCannonScorer_Var,
+	.base.Delete = cCannonScorer_Delete,
+	.DrawLock = cCannonScorer_DrawLock,
+};

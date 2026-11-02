@@ -50,12 +50,13 @@ void cSpecialActionScorer_dtor(cSpecialActionScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cSpecialActionScorer *cSpecialActionScorer_Delete(cSpecialActionScorer *self, byte flags) {
+cScorerItem *cSpecialActionScorer_Delete(cScorerItem *base, byte flags) {
+	cSpecialActionScorer *self = (cSpecialActionScorer *)base;
 	cSpecialActionScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cSpecialActionScorer));
 	}
-	return self;
+	return base;
 }
 
 /* an int variable of the table, by name */
@@ -77,8 +78,8 @@ static int SpecialAction_VarOff(const char *name, const char *x, const char *y, 
 	return 0;
 }
 
-int cSpecialActionScorer_Var(cSpecialActionScorer *self, const char *name, byte set, char **s, double *d,
-	int *i) {
+int cSpecialActionScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+	cSpecialActionScorer *self = (cSpecialActionScorer *)base;
 	int r;
 
 	if (i && (r = SpecialAction_VarInt(name, "CharAction", &self->charAction, set, i))) {
@@ -157,7 +158,8 @@ int cSpecialActionScorer_Var(cSpecialActionScorer *self, const char *name, byte 
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void cSpecialActionScorer_Draw(cSpecialActionScorer *self, int player) {
+void cSpecialActionScorer_Draw(cScorerItem *base, int player) {
+	cSpecialActionScorer *self = (cSpecialActionScorer *)base;
 	if (!g_SpecialActionActive) {
 		return;
 	}
@@ -766,3 +768,11 @@ void cSpecialActionScorer_DrawGearAim(cSpecialActionScorer *self, int player) {
 	uint32_t alpha = (uint32_t)(-0x40 - (int)(a * 164.0f)) << 24;
 	cSpecialActionScorer_DrawCannon(self, player, pos, size, a * -3.1415927f, alpha | (color & 0xffffff));
 }
+
+/* the vtable of cSpecialActionScorer */
+const cScorerItemVtbl cSpecialActionScorer_vftable = {
+	.Draw = cSpecialActionScorer_Draw,
+	.SetParam = cScorerItem_SetParam,
+	.Var = cSpecialActionScorer_Var,
+	.Delete = cSpecialActionScorer_Delete,
+};
