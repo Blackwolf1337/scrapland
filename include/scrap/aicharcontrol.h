@@ -23,8 +23,6 @@
 #include "scrap/walkcharentity.h"
 
 #define CAICHARCONTROL_SIZE sizeof(cAICharControl)
-#define CAICHARCONTROL2D_VFTABLE GAME_VFTABLE(cAICharControl2D_vftable)
-#define CAICHARCONTROL3D_VFTABLE GAME_VFTABLE(cAICharControl3D_vftable)
 
 /* the moves of cAICharControl_SetMove (mode at 0x74) */
 enum {
@@ -225,6 +223,16 @@ typedef struct cAICharControl2DVtbl {
 	byte(*TestStep)(cAICharControl *self, const vec3_t *a, const vec3_t *b, const vec3_t *c, float r);	/* 0x198 */
 } cAICharControl2DVtbl;
 SD_SIZE(cAICharControl2DVtbl, 103 * 4);
+extern const cAICharControl2DVtbl cAICharControl2D_vftable;
+#define CAICHARCONTROL2D_VFTABLE (&cAICharControl2D_vftable.base)
+
+typedef struct cAICharControl3DVtbl {
+	cAICharControlVtbl base;
+	byte(*TestStep)(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);	/* 0x190 */
+} cAICharControl3DVtbl;
+SD_SIZE(cAICharControl3DVtbl, 101 * 4);
+extern const cAICharControl3DVtbl cAICharControl3D_vftable;
+#define CAICHARCONTROL3D_VFTABLE (&cAICharControl3D_vftable.base)
 
 /* the AI of the character (cAIChar, include/scrap/ai.h): the control calls GetTarget (0x38) and Event (0x58) */
 typedef cAICharVtbl cAICharCtlOwnerVtbl;
@@ -511,7 +519,8 @@ byte cAICharControl_Wait(cAICharControl *self, float dt);
 /* the control of the AI of a character (0x19c of cAIChar) */
 cAICharControl *cAIChar_GetControl(cAI *base);
 
-#define CAICHARCONTROL_VFTABLE GAME_VFTABLE(cAICharControl_vftable)
+extern const cAICharControlVtbl cAICharControl_vftable;
+#define CAICHARCONTROL_VFTABLE (&cAICharControl_vftable)
 
 /* the engine variables of the character AI */
 extern cGVar GVar_DepthPathRouteInDoorAI;
@@ -662,17 +671,26 @@ byte cAICharControl3D_InWay(cAICharControl3D *self, vec3_t dest, cEntity *hitEnt
 void cAICharControl3D_StepGoal(cAICharControl3D *self, vec3_t *p);
 byte cAICharControl3D_TryStrafe(cAICharControl3D *self, int side, cEntity *hitEnt, byte back, float keep,
 	byte fwd, float sd, byte e2);
+byte cAICharControl3D_StrafeBack(cAICharControl3D *self, const vec3_t *pos, const vec3_t *away, const vec3_t *dir, float dist, byte left, byte flag);
+byte cAICharControl3D_StrafeFwd(cAICharControl3D *self, const vec3_t *pos, const vec3_t *away, const vec3_t *dir, float dist, byte left, byte flag);
 
 /* ---- the move controls of the character classes (AI/AIControl<Class>.cpp, src/game/AI/AIControls.c): the 2D
  * control for the bank director, the bank master, the bishop and the gear, the 3D one for the messenger, the nurse and
  * the sentinel, each with some slots of its own ---- */
-#define CAICONTROLBANKDIRECTOR_VFTABLE GAME_VFTABLE(cAIControlBankDirector_vftable)
-#define CAICONTROLBANKMASTER_VFTABLE GAME_VFTABLE(cAIControlBankMaster_vftable)
-#define CAICONTROLBISHOP_VFTABLE GAME_VFTABLE(cAIControlBishop_vftable)
-#define CAICONTROLGEAR_VFTABLE GAME_VFTABLE(cAIControlGear_vftable)
-#define CAICONTROLMESSENGER_VFTABLE GAME_VFTABLE(cAIControlMessenger_vftable)
-#define CAICONTROLNURSE_VFTABLE GAME_VFTABLE(cAIControlNurse_vftable)
-#define CAICONTROLSENTINEL_VFTABLE GAME_VFTABLE(cAIControlSentinel_vftable)
+extern const cAICharControl2DVtbl cAIControlBankDirector_vftable;
+#define CAICONTROLBANKDIRECTOR_VFTABLE (&cAIControlBankDirector_vftable.base)
+extern const cAICharControl2DVtbl cAIControlBankMaster_vftable;
+#define CAICONTROLBANKMASTER_VFTABLE (&cAIControlBankMaster_vftable.base)
+extern const cAICharControl2DVtbl cAIControlBishop_vftable;
+#define CAICONTROLBISHOP_VFTABLE (&cAIControlBishop_vftable.base)
+extern const cAICharControl2DVtbl cAIControlGear_vftable;
+#define CAICONTROLGEAR_VFTABLE (&cAIControlGear_vftable.base)
+extern const cAICharControl3DVtbl cAIControlMessenger_vftable;
+#define CAICONTROLMESSENGER_VFTABLE (&cAIControlMessenger_vftable.base)
+extern const cAICharControl3DVtbl cAIControlNurse_vftable;
+#define CAICONTROLNURSE_VFTABLE (&cAIControlNurse_vftable.base)
+extern const cAICharControl3DVtbl cAIControlSentinel_vftable;
+#define CAICONTROLSENTINEL_VFTABLE (&cAIControlSentinel_vftable.base)
 #define CAICONTROLSHOOT_SIZE sizeof(cAIControlShoot)		/* the bishop and the gear */
 #define CAICONTROLSENTINEL_SIZE sizeof(cAIControlSentinel)		/* without strafeTime and strafeAng */
 
@@ -748,12 +766,12 @@ cAICharControl *cAIControlBishop_ctor(void *mem, cEntity *e, cAIChar *ai, int *a
 cAICharControl *cAIControlBishop_Delete(cAICharControl *self, byte flags);
 /* CheckWait, but not while the target plays its ActionEnd */
 byte cAIControlBishop_CheckWait(cAICharControl *self);
-void cAIControlBishop_Strafe2(cAIControlBishop *self);
+void cAIControlBishop_Strafe2(cAICharControl *elem);
 void cAIControlBishop_Strafe(cAIControlBishop *self);
 /* the 2D Walk without a strafe of its own (the gear too) */
-void cAIControlShoot_Walk(cAIControlShoot *self);
+void cAIControlShoot_Walk(cAICharControl *elem);
 /* Nop of the control: the strafe parameters by the target */
-void cAIControlBishop_SetParams(cAIControlBishop *self);
+void cAIControlBishop_SetParams(cAICharControl *elem);
 cAICharControl *cAIControlGear_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
 cAICharControl *cAIControlGear_Delete(cAICharControl *self, byte flags);
 /* CheckWait, but not while the target plays its ActionInit or ActionEnd */
@@ -762,11 +780,11 @@ byte cAIControlGear_CheckWait(cAICharControl *self);
 void cAIControlGear_TurnFollow(cAICharControl *self);
 void cAIControlGear_Turn(cAICharControl *self);
 void cAIControlGear_DirTurn(cAICharControl *self);
-void cAIControlGear_Strafe2(cAIControlGear *self);
+void cAIControlGear_Strafe2(cAICharControl *elem);
 void cAIControlGear_Strafe(cAIControlGear *self);
 /* vf89: the AI of the gear saw the way to the target blocked */
 byte cAIControlGear_Vf89(cAICharControl *self);
-void cAIControlGear_SetParams(cAIControlGear *self);
+void cAIControlGear_SetParams(cAICharControl *elem);
 void cAIControlGear_SetTurnSpeed(cAICharControl *self, float speed);
 cAICharControl *cAIControlMessenger_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
 cAIControlMessenger *cAIControlMessenger_Delete(cAIControlMessenger *self, byte flags);
@@ -778,10 +796,10 @@ cAIControlNurse *cAIControlNurse_Delete(cAIControlNurse *self, byte flags);
 void cAIControlNurse_Walk(cAIControlNurse *self);
 cAICharControl *cAIControlSentinel_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
 cAICharControl *cAIControlSentinel_Delete(cAICharControl *self, byte flags);
-void cAIControlSentinel_Strafe2(cAIControlShoot *self);
+void cAIControlSentinel_Strafe2(cAICharControl *elem);
 void cAIControlSentinel_Strafe(cAIControlShoot *self);
 /* the 3D Walk without a strafe of its own */
-void cAIControlSentinel_Walk(cAIControlShoot *self);
+void cAIControlSentinel_Walk(cAICharControl *elem);
 
 typedef cAICharControl *(*cAICharControlCtor_t)(void *mem, cEntity *e, cAIChar *ai, int *arg);
 
