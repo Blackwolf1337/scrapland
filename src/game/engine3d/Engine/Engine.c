@@ -509,7 +509,6 @@ extern int g_TexUsedPixels;
 
 void Engine_DrawStats(void) {
 	CCamera *cam;
-	uint32_t ms[16];		/* MEMORYSTATUSEX */
 	uint64_t used;
 	int d3d, act, tot, mode;
 
@@ -546,10 +545,7 @@ void Engine_DrawStats(void) {
 		Font_Printf(g_FntComic14, 10.0f, 32.0f, 2, "FreeTextMem: %d Mb (pool %d)",
 			Rd_DevGetAvailableTextureMem(g_pd3dDevice) >> 20,
 			g_TexturePool);
-		ms[0] = 0x40;
-		exe_GlobalMemoryStatusEx(ms);
-		/* ullTotalVirtual - ullAvailVirtual */
-		used = ((uint64_t)ms[11] << 32 | ms[10]) - ((uint64_t)ms[13] << 32 | ms[12]);
+		used = Plat_VirtualMemoryUsed();
 		Font_Printf(g_FntComic14, 10.0f, 96.0f, 2, "virtual memory used: %4d MB", (uint32_t)(used >> 20));
 		mode = g_ProfMode;
 	}

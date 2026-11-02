@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <windows.h>
 
 #include "scrap/platform.h"
 #include "../rdevbackend.h"
@@ -323,44 +322,34 @@ uint32_t Vk_Release(void *obj) {
 	return 0;
 }
 
+/* a RECT of Direct3D 8 */
+typedef struct VkRect {
+	int32_t left, top, right, bottom;
+} VkRect;
+typedef struct VkPoint {
+	int32_t x, y;
+} VkPoint;
+
 /* ---- IDirect3D8 ---- */
 
-/* the display modes of Windows (EnumDisplaySettings, as wined3d reports them) in 16 and 32 bits: R5G6B5 and
- * X8R8G8B8, without refresh rates, made once */
+/* the display modes of the platform layer in 16 and 32 bits (R5G6B5 and X8R8G8B8, as wined3d reports them), without
+ * refresh rates, made once */
 #define VK_MAX_MODES 256
 static D3DDisplayMode vk_modes[VK_MAX_MODES];
 static uint32_t vk_numModes;
 
 static void Vk_Modes(void) {
-	DEVMODEA dm;
+	int wh[2 * (VK_MAX_MODES / 2)];
 
 	if (vk_numModes) {
 		return;
 	}
-	memset(&dm, 0, sizeof(dm));
-	dm.dmSize = sizeof(dm);
-	for (DWORD i = 0; EnumDisplaySettingsA(NULL, i, &dm) && vk_numModes < VK_MAX_MODES; i++) {
-		if (dm.dmBitsPerPel != 16 && dm.dmBitsPerPel != 32) {
-			continue;
+	int n = Plat_DisplayModes(wh, VK_MAX_MODES / 2);
+	for (int f = 0; f < 2; f++) {
+		for (int i = 0; i < n; i++) {
+			vk_modes[vk_numModes++] = (D3DDisplayMode) { (uint32_t)wh[2 * i], (uint32_t)wh[2 * i + 1], 0,
+				f ? D3DFMT_X8R8G8B8 : D3DFMT_R5G6B5 };
 		}
-		D3DDisplayMode m = { dm.dmPelsWidth, dm.dmPelsHeight, 0,
-			dm.dmBitsPerPel == 16 ? D3DFMT_R5G6B5 : D3DFMT_X8R8G8B8 };
-		uint32_t k;
-		for (k = 0; k < vk_numModes; k++) {
-			if (vk_modes[k].Width == m.Width && vk_modes[k].Height == m.Height && vk_modes[k].Format == m.Format) {
-				break;
-			}
-		}
-		if (k == vk_numModes) {
-			vk_modes[vk_numModes++] = m;
-		}
-	}
-	if (!vk_numModes) {
-		/* no list from Windows: the desktop in both formats */
-		uint32_t w = (uint32_t)GetSystemMetrics(SM_CXSCREEN), h = (uint32_t)GetSystemMetrics(SM_CYSCREEN);
-		vk_modes[0] = (D3DDisplayMode) { w, h, 0, D3DFMT_R5G6B5 };
-		vk_modes[1] = (D3DDisplayMode) { w, h, 0, D3DFMT_X8R8G8B8 };
-		vk_numModes = 2;
 	}
 }
 
@@ -400,8 +389,10 @@ int Vk_D3DGetAdapterIdentifier(void *d3d, uint32_t adapter, uint32_t flags, void
 
 /* the desktop: the size of the screen in X8R8G8B8 */
 static void Vk_Desktop(D3DDisplayMode *m) {
-	m->Width = (uint32_t)GetSystemMetrics(SM_CXSCREEN);
-	m->Height = (uint32_t)GetSystemMetrics(SM_CYSCREEN);
+	int w, h;
+	Plat_DesktopSize(&w, &h);
+	m->Width = (uint32_t)w;
+	m->Height = (uint32_t)h;
 	m->RefreshRate = 60;
 	m->Format = D3DFMT_X8R8G8B8;
 }
@@ -1330,7 +1321,7 @@ int Vk_SurfUnlockRect(void *surf) {
 }
 
 /* copies rect of src to point of dst: GPU to GPU on the GPU, memory to GPU as an upload, GPU to memory as a readback */
-static void Vko_CopyRect(VkoSurf *src, const RECT *r, VkoSurf *dst, int dx, int dy) {
+static void Vko_CopyRect(VkoSurf *src, const VkRect *r, VkoSurf *dst, int dx, int dy) {
 	uint32_t w = (uint32_t)(r->right - r->left), h = (uint32_t)(r->bottom - r->top);
 	VkoFormat fs = Vko_Format(src->format), fd = Vko_Format(dst->format);
 	uint32_t bs = fs.bpp ? fs.bpp : 4, bd = fd.bpp ? fd.bpp : 4;
@@ -1381,14 +1372,14 @@ int Vk_DevCopyRects(void *dev, void *src, const void *rects, uint32_t n, void *d
 			d->height, d->format, n);
 	}
 	if (!rects || !n) {
-		RECT all = { 0, 0, (LONG)s->width, (LONG)s->height };
-		const POINT *p = points;
+		VkRect all = { 0, 0, (int32_t)s->width, (int32_t)s->height };
+		const VkPoint *p = points;
 		Vko_CopyRect(s, &all, d, p ? p->x : 0, p ? p->y : 0);
 		return D3D_OK;
 	}
 	for (uint32_t i = 0; i < n; i++) {
-		const RECT *r = (const RECT *)rects + i;
-		const POINT *p = points ? (const POINT *)points + i : NULL;
+		const VkRect *r = (const VkRect *)rects + i;
+		const VkPoint *p = points ? (const VkPoint *)points + i : NULL;
 		Vko_CopyRect(s, r, d, p ? p->x : r->left, p ? p->y : r->top);
 	}
 	return D3D_OK;

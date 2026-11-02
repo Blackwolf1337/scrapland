@@ -78,8 +78,6 @@ extern cGVar GVar_SaveDXT5;
 #define g_SaveDXT5 (GVar_SaveDXT5.value.i)
 
 /* kernel32 of the exe: the names compare in the user's locale */
-typedef int(__stdcall *lstrcmpi_t)(const char *a, const char *b);
-#define exe_lstrcmpiA GAME_IMPORT(lstrcmpi_t, lstrcmpiA, 8)
 
 /* the texture and surface methods */
 
@@ -505,14 +503,14 @@ void *Texture_GetD3D(CTexture *t, void *dev) {
 
 CTexture *Texture_Lookup(const char *name, const char *opac) {
 	for (CTexture *t = g_TexList; t; t = t->next) {
-		if (exe_lstrcmpiA(name, t->Name)) {
+		if (crt_stricmp(name, t->Name)) {
 			continue;
 		}
 		if ((!opac || !opac[0]) && !t->Opac[0]) {
 			return t;
 		}
 		if (opac && t->Opac[0]) {
-			if (!exe_lstrcmpiA(opac, t->Opac)) {
+			if (!crt_stricmp(opac, t->Opac)) {
 				return t;
 			}
 			E3D_LogVerbose(g_FileLog, "WARN: Same texture with different alpha: %s, %s, %s", name, opac, t->Opac);
@@ -541,15 +539,15 @@ int CTexture_LoadFile(CTexture *self, byte load) {
 	if (!ext) {
 		return TEX_E_INVALIDARG;
 	}
-	isBmp = !exe_lstrcmpiA(ext, ".bmp");
-	isTga = !exe_lstrcmpiA(ext, ".tga");
-	isTex = !exe_lstrcmpiA(ext, ".tex");
-	isPng = !exe_lstrcmpiA(ext, ".png");
-	isDdc = !exe_lstrcmpiA(ext, ".ddc");
-	isDds = !exe_lstrcmpiA(ext, ".dds");
-	self->ddx = !exe_lstrcmpiA(ext, ".ddx");
-	self->ddy = !exe_lstrcmpiA(ext, ".ddy");
-	self->ddv = !exe_lstrcmpiA(ext, ".ddv");
+	isBmp = !crt_stricmp(ext, ".bmp");
+	isTga = !crt_stricmp(ext, ".tga");
+	isTex = !crt_stricmp(ext, ".tex");
+	isPng = !crt_stricmp(ext, ".png");
+	isDdc = !crt_stricmp(ext, ".ddc");
+	isDds = !crt_stricmp(ext, ".dds");
+	self->ddx = !crt_stricmp(ext, ".ddx");
+	self->ddy = !crt_stricmp(ext, ".ddy");
+	self->ddv = !crt_stricmp(ext, ".ddv");
 	self->compressed = isDds || isDdc || self->ddx || self->ddy || self->ddv;
 	self->width = 0;
 	self->height = 0;

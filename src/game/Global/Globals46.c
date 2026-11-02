@@ -87,7 +87,6 @@
 #undef g_NetClientServer
 #undef g_NetClients
 #undef g_NetHeartbeat
-#undef g_NetHost
 #undef g_NetLocalAddr
 #undef g_NetMasterAddr
 #undef g_NetMasterOn
@@ -368,7 +367,6 @@ int g_NetMasterOn;
 int g_NetMaxClients;
 int g_NetNumClients;
 NetAddr *g_NetClientAddrs;
-void *g_NetHost;
 NetPingServer *g_NetPingServers;
 uint32_t g_NetBrowseStart;
 NetAddr g_NetMasterAddr;

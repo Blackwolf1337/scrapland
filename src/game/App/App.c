@@ -74,7 +74,8 @@ CApp *CApp_ctor(CApp *self, const char *cmdLine) {
 	g_AStar = NULL;
 	g_AStar2D = NULL;
 	self->dedicated = 0;
-	g_AppBlock = exe_VirtualAlloc(NULL, 0x10, 0x1000, 4);
+	static int block[4];
+	g_AppBlock = block;
 	g_AppBlock[3] = 0x16;
 	g_DrawNextFrame = 1;
 	Net_Init();
@@ -86,7 +87,6 @@ void CApp_dtor(CApp *self) {
 	Net_Done();
 	Mem_Free(self->cmdLine);
 	Python_Shutdown();
-	exe_VirtualFree(g_AppBlock, 0, 0x8000);
 	SaveVars_Delete("");
 	Lang_Free();
 	GVars_Done();

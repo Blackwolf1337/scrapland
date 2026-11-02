@@ -277,12 +277,12 @@ int CMaterial_Read(CMaterial *self, CFileIO *f) {
 
 /* SetFileAttributes with exactly attr, if the file has none of its bits */
 void DDS_Hide(const char *name, uint32_t attr) {
-	uint32_t a = exe_GetFileAttributesA(name);
+	uint32_t a = Plat_FileAttributes(name);
 
 	if (a == 0xffffffff || (attr & a)) {
 		return;
 	}
-	if (!exe_SetFileAttributesA(name, attr)) {
+	if (!Plat_SetFileAttributes(name, attr)) {
 		E3D_LogBlue(g_FileLog, "DDS: Could not hide: %s", name);
 		return;
 	}
@@ -290,13 +290,13 @@ void DDS_Hide(const char *name, uint32_t attr) {
 }
 
 void DDS_Unhide(const char *name, uint32_t attr) {
-	uint32_t a = exe_GetFileAttributesA(name);
+	uint32_t a = Plat_FileAttributes(name);
 
 	if (a == 0xffffffff || !(attr & a)) {
 		return;
 	}
 	E3D_LogBlue(g_FileLog, "DDS: Hidden file: %s", name);
-	if (!exe_SetFileAttributesA(name, ~attr & a)) {
+	if (!Plat_SetFileAttributes(name, ~attr & a)) {
 		E3D_LogBlue(g_FileLog, "DDS: Could not unhide: %s", name);
 		return;
 	}

@@ -1,5 +1,5 @@
 /*
- * Net/transport.cpp of the game: the UDP socket of the server, the client or the browser (Winsock 1.1 of the exe),
+ * Net/transport.cpp of the game: the UDP socket of the server, the client or the browser (Net/Sock.c),
  * the address table of the clients, the ping list of the browser, the master server and the encryption of every
  * packet (ChaCha20 with a random nonce, Poly1305 tag over nonce, data and lengths). See include/scrap/net.h.
  */
@@ -12,15 +12,11 @@
 #include "scrap/win32.h"
 
 #define NET_AF_INET 2
-#define NET_FIONBIO 0x8004667e
-#define NET_SOL_SOCKET 0xffff
-#define NET_SO_BROADCAST 0x20
 #define NET_PKT_MAX 0x800
 
-/* the hostent of Winsock: the first address of h_addr_list */
-static inline const byte *Net_HostAddr(void *host) {
-	return **(byte ***)((byte *)host + 0xc);
-}
+/* the address and the name of the last Transport_Resolve */
+static uint32_t net_hostAddr;
+static char net_hostName[256];
 
 /* the fixed key of every packet: 2, 4, 6, ... */
 static void Transport_Key(byte *key) {
@@ -32,15 +28,15 @@ static void Transport_Key(byte *key) {
 static void Transport_SetAddr(NetAddr *a, uint16_t port) {
 	memset(a, 0, sizeof(*a));
 	a->family = NET_AF_INET;
-	a->port = Wsock_htons(port);
-	a->addr = *(const uint32_t *)Net_HostAddr(g_NetHost);
+	a->port = Net_Htons(port);
+	a->addr = net_hostAddr;
 }
 
 static void Transport_CloseSocket(void) {
-	if (Wsock_closesocket(g_NetSocket)) {
+	if (Sock_Close(g_NetSocket)) {
 		Con_Print(0x8f008f, "Can't close socket!", 0);
 	}
-	Wsock_WSACleanup();
+	Sock_Cleanup();
 	g_NetSocket = 0;
 }
 
@@ -233,7 +229,7 @@ int Transport_PingTime(const NetAddr *addr) {
 }
 
 uint16_t Transport_GetLocalPort(void) {
-	return Wsock_ntohs(g_NetLocalAddr->port);
+	return Net_Htons(g_NetLocalAddr->port);
 }
 
 int Transport_SetMaster(const char *address, uint16_t port) {
@@ -242,9 +238,9 @@ int Transport_SetMaster(const char *address, uint16_t port) {
 	}
 	memset(g_NetMasterAddr, 0, sizeof(NetAddr));
 	g_NetMasterAddr->family = NET_AF_INET;
-	g_NetMasterAddr->port = Wsock_htons(port);
+	g_NetMasterAddr->port = Net_Htons(port);
 	g_NetMasterOn = 1;
-	g_NetMasterAddr->addr = *(const uint32_t *)Net_HostAddr(g_NetHost);
+	g_NetMasterAddr->addr = net_hostAddr;
 	return 1;
 }
 
@@ -278,9 +274,9 @@ int Transport_InitServer(int maxClients, uint16_t port) {
 	memset(g_NetLocalAddr, 0, sizeof(NetAddr));
 	g_NetLocalAddr->family = NET_AF_INET;
 	memset(g_NetServerAddr, 0, sizeof(NetAddr));
-	g_NetLocalAddr->port = Wsock_htons(port);
-	g_NetLocalAddr->addr = Wsock_htonl(0);
-	if (Wsock_bind(g_NetSocket, g_NetLocalAddr, sizeof(NetAddr))) {
+	g_NetLocalAddr->port = Net_Htons(port);
+	g_NetLocalAddr->addr = 0;
+	if (Sock_Bind(g_NetSocket, g_NetLocalAddr)) {
 		return 0;
 	}
 	g_NetMaxClients = maxClients;
@@ -292,20 +288,14 @@ int Transport_InitServer(int maxClients, uint16_t port) {
 }
 
 int Transport_Startup(void) {
-	uint32_t bcast = 1, nonblock = 1;
-	byte wsa[400];
-
 	if (g_NetSocket) {
 		return 1;
 	}
-	if (Wsock_WSAStartup(0x101, wsa)) {
+	if (!Sock_Startup()) {
 		return 0;
 	}
-	g_NetSocket = Wsock_socket(NET_AF_INET, 2, 0x11);
-	if (!g_NetSocket || Wsock_ioctlsocket(g_NetSocket, (int32_t)NET_FIONBIO, &nonblock) == -1) {
-		return 0;
-	}
-	return Wsock_setsockopt(g_NetSocket, NET_SOL_SOCKET, NET_SO_BROADCAST, &bcast, 4) != -1;
+	g_NetSocket = Sock_OpenUdp();
+	return g_NetSocket != 0;
 }
 
 int Net_PingInetSvrs(void) {
@@ -397,12 +387,12 @@ int Transport_MasterPacket(const byte *buf, int len) {
 			memcpy(&a.addr, p - 1, 4);
 			uint16_t port;
 			memcpy(&port, p + 3, 2);
-			a.port = Wsock_htons(port);
+			a.port = Net_Htons(port);
 			if (!a.addr) {
 				break;
 			}
 			const byte *ab = (const byte *)&a.addr;
-			Con_Debugf("IP From Master : %3d.%3d.%3d.%3d:%8d\n", ab[0], ab[1], ab[2], ab[3], Wsock_ntohs(a.port));
+			Con_Debugf("IP From Master : %3d.%3d.%3d.%3d:%8d\n", ab[0], ab[1], ab[2], ab[3], Net_Htons(a.port));
 			Transport_PingServer(&a);
 			p += 6;
 		} while ((int)(p - buf) + 5 <= len);
@@ -431,27 +421,17 @@ int Transport_SendNeedPassword(int slot) {
 
 const char *Transport_Resolve(const char *address, char *ip, uint32_t *addr) {
 	Transport_Startup();
-	g_NetHost = Wsock_gethostbyname(address);
-	if (!g_NetHost) {
-		int a = -1, b = -1, c = -1, d = -1;
-		crt_sscanf(address, "%d.%d.%d.%d", &a, &b, &c, &d);
-		if (a == -1 || b == -1 || c == -1 || d == -1) {
-			return NULL;
-		}
-		byte v[4] = { (byte)a, (byte)b, (byte)c, (byte)d };
-		g_NetHost = Wsock_gethostbyaddr(v, 4, NET_AF_INET);
-		if (!g_NetHost) {
-			return NULL;
-		}
+	if (!Sock_Resolve(address, &net_hostAddr, net_hostName, sizeof(net_hostName))) {
+		return NULL;
 	}
 	if (ip) {
-		const byte *h = Net_HostAddr(g_NetHost);
+		const byte *h = (const byte *)&net_hostAddr;
 		crt_sprintf(ip, "%d.%d.%d.%d", h[0], h[1], h[2], h[3]);
 	}
 	if (addr) {
-		*addr = *(const uint32_t *)Net_HostAddr(g_NetHost);
+		*addr = net_hostAddr;
 	}
-	return *(const char **)g_NetHost;
+	return net_hostName;
 }
 
 int Transport_PingMaster(void) {
@@ -511,11 +491,6 @@ byte cGVar_SetString(cGVar *self, const char *s) {
 int Transport_Wait(int ms) {
 	static uint32_t start;
 	static int waiting;
-	struct {
-		uint32_t count;
-		uint32_t sockets[64];
-	} fds;
-	const int32_t tv[2] = { 0, 0 };
 
 	if (g_NetMode != NETMODE_SERVER) {
 		return 1;
@@ -525,9 +500,7 @@ int Transport_Wait(int ms) {
 		waiting = 1;
 		start = now;
 	}
-	fds.sockets[0] = g_NetSocket;
-	fds.count = 1;
-	if (now - start < (uint32_t)ms && Wsock_select((int)g_NetSocket + 1, &fds, NULL, NULL, tv) <= 0) {
+	if (now - start < (uint32_t)ms && !Sock_Readable(g_NetSocket)) {
 		return 0;
 	}
 	waiting = 0;
@@ -555,7 +528,8 @@ int Transport_RecvFrom(uint32_t s, byte *buf, int len, int flags, NetAddr *from,
 	cNetBuffer nb;
 	(void)len;
 
-	int n = Wsock_recvfrom(s, pkt, NET_PKT_MAX, flags, from, fromlen);
+	(void)flags, (void)fromlen;
+	int n = Sock_RecvFrom(s, pkt, NET_PKT_MAX, from);
 	if (n < 0x30) {
 		return -1;
 	}
@@ -605,7 +579,8 @@ int Transport_SendTo(uint32_t s, const void *data, int len, int flags, const Net
 	cNetBuffer_WriteU64(&nb, (uint64_t)(int64_t)len);
 	Poly1305_Auth(mac, cNetBuffer_Data(&nb), cNetBuffer_Size(&nb), polyKey);
 	cNetBuffer_Append(&nb, mac, sizeof(mac));
-	int r2 = Wsock_sendto(s, cNetBuffer_Data(&nb), (int)cNetBuffer_Size(&nb), flags, to, tolen);
+	(void)flags, (void)tolen;
+	int r2 = Sock_SendTo(s, cNetBuffer_Data(&nb), (int)cNetBuffer_Size(&nb), to);
 	cNetBuffer_dtor(&nb);
 	return r2;
 }

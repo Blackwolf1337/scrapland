@@ -9,6 +9,8 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
+#include <errno.h>
+#include <stdio.h>
 #include <unistd.h>
 #endif
 
@@ -174,6 +176,39 @@ void Plat_SetFullscreen(byte on) {
 		SDL_SyncWindow(plat.window);
 		plat.fullscreen = on;
 	}
+}
+
+int Plat_DisplayModes(int *wh, int max) {
+	SDL_DisplayID display = SDL_GetPrimaryDisplay();
+	int count = 0, n = 0;
+	SDL_DisplayMode **modes = SDL_GetFullscreenDisplayModes(display, &count);
+
+	for (int i = 0; modes && i < count && n < max; i++) {
+		int k;
+		for (k = 0; k < n && (wh[2 * k] != modes[i]->w || wh[2 * k + 1] != modes[i]->h); k++) {
+		}
+		if (k == n) {
+			wh[2 * n] = modes[i]->w;
+			wh[2 * n + 1] = modes[i]->h;
+			n++;
+		}
+	}
+	SDL_free(modes);
+	if (!n && max > 0) {
+		const SDL_DisplayMode *d = SDL_GetDesktopDisplayMode(display);
+		if (d) {
+			wh[0] = d->w;
+			wh[1] = d->h;
+			n = 1;
+		}
+	}
+	return n;
+}
+
+void Plat_DesktopSize(int *w, int *h) {
+	const SDL_DisplayMode *d = SDL_GetDesktopDisplayMode(SDL_GetPrimaryDisplay());
+	*w = d ? d->w : 640;
+	*h = d ? d->h : 480;
 }
 
 void Plat_SetTitle(const char *title) {
@@ -613,6 +648,74 @@ const char *Plat_InstallLanguage(void) {
 #else
 	return NULL;
 #endif
+}
+
+/* ---- files, memory, errors ---- */
+
+uint32_t Plat_FileAttributes(const char *name) {
+#ifdef _WIN32
+	return GetFileAttributesA(name);
+#else
+	(void)name;
+	return 0xffffffff;
+#endif
+}
+
+int Plat_SetFileAttributes(const char *name, uint32_t attr) {
+#ifdef _WIN32
+	return SetFileAttributesA(name, attr) != 0;
+#else
+	(void)name, (void)attr;
+	return 0;
+#endif
+}
+
+uint64_t Plat_VirtualMemoryUsed(void) {
+#ifdef _WIN32
+	MEMORYSTATUSEX ms = { .dwLength = sizeof(ms) };
+	return GlobalMemoryStatusEx(&ms) ? ms.ullTotalVirtual - ms.ullAvailVirtual : 0;
+#else
+	unsigned long pages = 0;
+	FILE *f = fopen("/proc/self/statm", "r");
+	if (f) {
+		if (fscanf(f, "%lu", &pages) != 1) {
+			pages = 0;
+		}
+		fclose(f);
+	}
+	return (uint64_t)pages * (uint64_t)sysconf(_SC_PAGESIZE);
+#endif
+}
+
+uint32_t Plat_LastError(void) {
+#ifdef _WIN32
+	return GetLastError();
+#else
+	return (uint32_t)errno;
+#endif
+}
+
+byte Plat_DebuggerPresent(void) {
+#ifdef _WIN32
+	return IsDebuggerPresent() != 0;
+#else
+	char line[128];
+	int pid = 0;
+	FILE *f = fopen("/proc/self/status", "r");
+	if (f) {
+		while (fgets(line, sizeof(line), f)) {
+			if (sscanf(line, "TracerPid: %d", &pid) == 1) {
+				break;
+			}
+		}
+		fclose(f);
+	}
+	return pid != 0;
+#endif
+}
+
+void Plat_DebugBreak(void) {
+	SDL_TriggerBreakpoint();
 }
 
 /* ---- the timers ---- */

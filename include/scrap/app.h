@@ -54,7 +54,7 @@ extern cGVar GVar_LogFile;
 #define g_LogName (GVar_LogFile.value.s)
 
 /* App.cpp state */
-extern int *g_AppBlock;		/* 16 bytes of VirtualAlloc, [3] = 0x16 */
+extern int *g_AppBlock;		/* 16 bytes, [3] = 0x16 */
 extern void *g_AppPyOne;		/* Py_BuildValue("i", 1) of each level */
 /* the Xbox loading screen (Loading_Init, isXbox) */
 extern void *g_XLoadIcon;	/* CPsaImage (0x44 bytes) */

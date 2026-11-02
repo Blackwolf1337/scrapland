@@ -6,7 +6,6 @@
  */
 #include <stdarg.h>
 #include <string.h>
-#include <windows.h>
 
 #include "scrap/gvar.h"
 #include "scrap/console.h"
@@ -183,7 +182,7 @@ void Con_FatalErrorf(const char *fmt, ...) {
 	char buf[0x400];
 	va_list ap;
 
-	g_LastError = GetLastError();
+	g_LastError = Plat_LastError();
 	va_start(ap, fmt);
 	Str_VPrintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
@@ -243,21 +242,20 @@ void DebugLog_Init(void) {
 /* the message box of a fatal error; with a debugger attached it offers to break into it */
 void Con_Fatal(const char *msg) {
 	char text[0x420];
-	BOOL(WINAPI * isDebugger)(void) = (BOOL(WINAPI *)(void))(void *)GetProcAddress(GetModuleHandleA("KERNEL32.DLL"),
-		"IsDebuggerPresent");
+	byte debugger = Plat_DebuggerPresent();
 
-	if (isDebugger && isDebugger()) {
+	if (debugger) {
 		Str_PrintfQuiet(text, sizeof(text), "%s\n\nDebug the program?", msg);
-		if (Plat_MessageBox(text, "Scrap Fatal Error", 0x11114) != IDYES) {
+		if (Plat_MessageBox(text, "Scrap Fatal Error", 0x11114) != 6) {
 			DebugLog_CloseAll();
 			crt_exit_now(-1);
 		}
-		__asm__ volatile("int3");
+		Plat_DebugBreak();
 		return;
 	}
 	Str_PrintfQuiet(text, sizeof(text), "%s\n\nPress the button to exit.", msg);
 	Plat_MessageBox(text, "Scrap Fatal Error", 0x11010);
-	if (isDebugger && isDebugger()) {
+	if (debugger) {
 		return;
 	}
 	DebugLog_CloseAll();
@@ -268,7 +266,7 @@ void CheckFailed(const char *expr, const char *file, const char *date, int line)
 	char msg[0x400];
 	char exe[0x80];
 
-	g_LastError = GetLastError();
+	g_LastError = Plat_LastError();
 	LEVEL = 2;
 	App_GetPath(exe, sizeof(exe));
 	Str_PrintfQuiet(msg, sizeof(msg), "\nFATAL ERROR: Check failed!\n\nExpression: %s\n\nCompiled file info:\nFile: '%s' "

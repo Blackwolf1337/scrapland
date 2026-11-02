@@ -24,6 +24,11 @@ void Plat_WindowRect(int *r);
 void Plat_SetFullscreen(byte on);
 void Plat_SetTitle(const char *title);
 void Plat_ShowCursor(byte on);
+/* the sizes of the fullscreen modes of the main display as w, h pairs (largest first, each once, the desktop when
+ * there is no list); their count */
+int Plat_DisplayModes(int *wh, int max);
+/* the size of the desktop of the main display */
+void Plat_DesktopSize(int *w, int *h);
 
 /*
  * The events since the last call, handled: the window (focus, size, close), the keys, the text, the mouse motion
@@ -69,6 +74,19 @@ void Plat_ExePath(char *buf, int size);
 void Plat_ConfigDir(char *buf, int size);
 /* the language the installer wrote (the registry value LANGUAGE on Windows), NULL when there is none */
 const char *Plat_InstallLanguage(void);
+
+/*
+ * The attributes of a file as GetFileAttributes gives them (0xffffffff for no file, and always on a system without
+ * them) and set (1 when set); the bytes of virtual memory in use; the code of the last failed system call
+ * (GetLastError, errno)
+ */
+uint32_t Plat_FileAttributes(const char *name);
+int Plat_SetFileAttributes(const char *name, uint32_t attr);
+uint64_t Plat_VirtualMemoryUsed(void);
+uint32_t Plat_LastError(void);
+/* a debugger is attached; a break into it */
+byte Plat_DebuggerPresent(void);
+void Plat_DebugBreak(void);
 
 /* ms since the start (timeGetTime), the performance counter and its frequency (QueryPerformanceCounter/Frequency) */
 uint32_t Plat_Ticks(void);

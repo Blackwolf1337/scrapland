@@ -135,16 +135,6 @@ SD_SIZE(CD3DApplication, 0x2a5dc);
 #define g_Engine GAME_GLOBAL(CD3DApplication *, g_Engine)
 
 /* dxutil.cpp */
-/* cch characters with the end (-1: the whole string); the generic strings are ANSI (two copies in the exe) */
-void DXUtil_AnsiToGeneric(char *dst, const char *src, int cch);
-void DXUtil_AnsiToWide(uint16_t *dst, const char *src, int cch);
-void DXUtil_GenericToWide(uint16_t *dst, const char *src, int cch);
-void DXUtil_WideToAnsi(char *dst, const uint16_t *src, int cch);
-void DXUtil_WideToGeneric(char *dst, const uint16_t *src, int cch);
-/* "{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}" (39 bytes) */
-void DXUtil_GUIDToString(const D3DGuid *g, char *buf);
-/* 1 parsed, else 0 and the GUID cleared */
-int DXUtil_StringToGUID(const char *s, D3DGuid *g);
 /* the counter of the engine advanced by 1/fps seconds per call (frames of a fixed length), 0: the real counter
  * again; Timer_GetFreq (scrapmain.h) reads it */
 int Timer_FixedStep(float fps);

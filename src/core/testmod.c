@@ -142,12 +142,7 @@ static float Call_StdFloat(void *fn, const uint32_t *a, int n) {
 	TEST_STDCALL(D3DX_MatrixInverse) TEST_STDCALL(D3DX_MatrixMultiply) TEST_STDCALL(D3DX_MatrixRotationQuaternion) \
 	TEST_STDCALL(D3DX_MatrixRotationX) TEST_STDCALL(D3DX_MatrixRotationY) TEST_STDCALL(D3DX_MatrixRotationYPR) \
 	TEST_STDCALL(D3DX_MatrixRotationZ) TEST_STDCALL(D3DX_MatrixTranspose) TEST_STDCALL(D3DX_QuaternionRotationYPR) \
-	TEST_STDCALL(D3DX_Vec3Normalize) TEST_STDCALL(D3DX_Vec3Transform) \
-	TEST_STDCALL(Wsock_bind) \
-	TEST_STDCALL(Wsock_closesocket) TEST_STDCALL(Wsock_gethostbyaddr) TEST_STDCALL(Wsock_gethostbyname) \
-	TEST_STDCALL(Wsock_htonl) TEST_STDCALL(Wsock_htons) TEST_STDCALL(Wsock_ioctlsocket) TEST_STDCALL(Wsock_ntohs) \
-	TEST_STDCALL(Wsock_recvfrom) TEST_STDCALL(Wsock_select) TEST_STDCALL(Wsock_sendto) TEST_STDCALL(Wsock_setsockopt) \
-	TEST_STDCALL(Wsock_socket) TEST_STDCALL(Wsock_WSACleanup) TEST_STDCALL(Wsock_WSAStartup)
+	TEST_STDCALL(D3DX_Vec3Normalize) TEST_STDCALL(D3DX_Vec3Transform)
 TEST_STDCALLS
 #undef TEST_STDCALL
 #define TEST_STDCALL(name) sds_##name,

@@ -115,7 +115,9 @@ cNetRandom *cNetRandom_ctorSeeded(cNetRandom *self) {
 
 	cNetRandom_ctor(self);
 	cChaCha_ctor(&ctx);
-	cNetRandom_Seed(self, exe_GetTickCount64());
+	int64_t now;
+	Plat_Counter(&now);
+	cNetRandom_Seed(self, (uint64_t)now);
 	for (uint32_t n = 0; n < NETRAND_NN; n++) {
 		buf[n] = cNetRandom_Next(self);
 	}

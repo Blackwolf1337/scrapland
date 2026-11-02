@@ -26,8 +26,6 @@
 #include "scrap/misc.h"
 #include "scrap/win32.h"
 
-typedef uint32_t(__stdcall *getenvvar_t)(const char *name, char *buf, uint32_t size);
-#define exe_GetEnvironmentVariableA GAME_IMPORT(getenvvar_t, GetEnvironmentVariableA, 12)
 
 /* the "uint as double" conversions of the original: the int plus 2^32 for a set top bit */
 static inline float Uint_ToFloat(uint32_t u) {
@@ -116,7 +114,10 @@ BspTxf *BspTxf_ctor(BspTxf *self, const char *map, const char *name, int n, int 
 	Path_Format(self->base, map, self->base);
 	Path_MakePath(self->base);
 	memset(self->team, 0, sizeof(self->team));
-	exe_GetEnvironmentVariableA("COMPUTERNAME", self->team, sizeof(self->team));
+	const char *pc = crt_getenv("COMPUTERNAME");
+	if (pc) {
+		Str_Copy(self->team, pc, sizeof(self->team));
+	}
 	return self;
 }
 

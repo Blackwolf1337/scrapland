@@ -180,7 +180,7 @@ typedef struct cChaCha {
 } cChaCha;
 SD_SIZE(cChaCha, 0x40);
 
-/* a sockaddr_in of Winsock (16 bytes) */
+/* a sockaddr_in (16 bytes, the same on Winsock and BSD sockets) */
 typedef struct NetAddr {
 	uint16_t family;		/* 0x0 2: AF_INET */
 	uint16_t port;			/* 0x2 network order */
@@ -353,29 +353,27 @@ extern int g_NetMasterOn;
 extern int g_NetMaxClients;
 extern int g_NetNumClients;
 extern NetAddr *g_NetClientAddrs;	/* [g_NetMaxClients], family 0: free */
-extern void *g_NetHost;		/* hostent of the last Transport_Resolve */
 extern NetPingServer *g_NetPingServers;
 extern uint32_t g_NetBrowseStart;
 #define g_NetMasterAddr (&GAME_GLOBAL(NetAddr, g_NetMasterAddr))
 #define g_NetServerFullPkt (GAME_ARRAY(const byte, g_NetServerFullPkt))	/* 5 bytes: 0, 0, 0, 0, 8 */
 #define g_NetNeedPasswordPkt (GAME_ARRAY(const byte, g_NetNeedPasswordPkt))	/* 5 bytes: 0, 0, 0, 0, 9 */
 
-/* Winsock 1.1 of the exe: the jump thunks to wsock32 (src/game/Net/Wsock.c), stdcall */
-int __stdcall Wsock_bind(uint32_t s, const void *addr, int len);
-int __stdcall Wsock_closesocket(uint32_t s);
-int __stdcall Wsock_ioctlsocket(uint32_t s, int32_t cmd, uint32_t *arg);
-uint32_t __stdcall Wsock_htonl(uint32_t v);
-uint16_t __stdcall Wsock_htons(uint16_t v);
-uint16_t __stdcall Wsock_ntohs(uint16_t v);
-int __stdcall Wsock_recvfrom(uint32_t s, void *buf, int len, int flags, void *from, int *fromlen);
-int __stdcall Wsock_select(int n, void *readfds, void *writefds, void *exceptfds, const void *timeout);
-int __stdcall Wsock_sendto(uint32_t s, const void *buf, int len, int flags, const void *to, int tolen);
-int __stdcall Wsock_setsockopt(uint32_t s, int level, int name, const void *val, int len);
-uint32_t __stdcall Wsock_socket(int af, int type, int protocol);
-void *__stdcall Wsock_gethostbyaddr(const void *addr, int len, int type);
-void *__stdcall Wsock_gethostbyname(const char *name);
-int __stdcall Wsock_WSAStartup(uint16_t version, void *data);
-int __stdcall Wsock_WSACleanup(void);
+/* Net/Sock.c: the UDP socket on Winsock or BSD sockets */
+int Sock_Startup(void);			/* 1 when the network can be used */
+void Sock_Cleanup(void);
+uint32_t Sock_OpenUdp(void);		/* non-blocking, broadcast allowed; 0 on failure */
+int Sock_Close(uint32_t s);		/* 0 when closed */
+int Sock_Bind(uint32_t s, const NetAddr *a);	/* 0 when bound */
+int Sock_RecvFrom(uint32_t s, void *buf, int len, NetAddr *from);	/* the bytes, negative for none */
+int Sock_SendTo(uint32_t s, const void *buf, int len, const NetAddr *to);
+int Sock_Readable(uint32_t s);		/* a packet waits */
+/* the IPv4 address (network order) and the official name of a host name or a dotted address; 0 when not found */
+int Sock_Resolve(const char *name, uint32_t *addr, char *canon, int size);
+/* network order of the x86 targets */
+static inline uint16_t Net_Htons(uint16_t v) {
+	return (uint16_t)(v << 8 | v >> 8);
+}
 
 extern cGVar GVar_Fraglimit;
 #define g_Fraglimit (GVar_Fraglimit.value.i)
