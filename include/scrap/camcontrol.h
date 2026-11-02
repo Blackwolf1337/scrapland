@@ -19,9 +19,6 @@
 #define TYEN_CAMPATH "CamPath"
 #define TYEN_FCAM "FCam"
 
-#define CCAMCONTROL_VFTABLE GAME_VFTABLE(cCamControl_vftable)
-#define CCAMPATHENTITY_VFTABLE GAME_VFTABLE(cCamPathEntity_vftable)
-#define CFOLLOWCAMENTITY_VFTABLE GAME_VFTABLE(cFollowCamEntity_vftable)
 #define CCAMCONTROL_SIZE sizeof(cCamControl)
 #define CCAMPATHENTITY_SIZE sizeof(cCamPathEntity)
 #define CFOLLOWCAMENTITY_SIZE sizeof(cFollowCamEntity)
@@ -124,12 +121,23 @@ typedef struct cCamControlVtbl {
 	void(*Slot)(cEntity *self, float dt);				/* 0x68 vf26 */
 	byte(*SetTarget)(cEntity *self, const char *name);			/* 0x6c vf27 "EntityLink" */
 	void(*UpdateOff)(cEntity *self, float dt);				/* 0x70 vf28 */
-	void(*GetAng2)(cEntity *self, float *ang);				/* 0x74 vf29 FCam only */
-	void(*SetAng2)(cEntity *self, const float *ang);			/* 0x78 vf30 FCam only */
 } cCamControlVtbl;
 SD_OFFSET(cCamControlVtbl, GetCamPos, 0x5c);
 SD_OFFSET(cCamControlVtbl, SetTarget, 0x6c);
-SD_OFFSET(cCamControlVtbl, SetAng2, 0x78);
+extern const cCamControlVtbl cCamPathEntity_vftable;
+#define CCAMPATHENTITY_VFTABLE (&cCamPathEntity_vftable.base)
+extern const cCamControlVtbl cCamControl_vftable;
+#define CCAMCONTROL_VFTABLE (&cCamControl_vftable.base)
+
+/* the follow camera adds two */
+typedef struct cFollowCamVtbl {
+	cCamControlVtbl base;
+	void(*GetAng2)(cEntity *self, float *ang);				/* 0x74 vf29 */
+	void(*SetAng2)(cEntity *self, const float *ang);			/* 0x78 vf30 */
+} cFollowCamVtbl;
+SD_OFFSET(cFollowCamVtbl, SetAng2, 0x78);
+extern const cFollowCamVtbl cFollowCamEntity_vftable;
+#define CFOLLOWCAMENTITY_VFTABLE (&cFollowCamEntity_vftable.base.base)
 
 static inline const cCamControlVtbl *CamCtl_Vtbl(cEntity *e) {
 	return (const cCamControlVtbl *)e->vftable;
@@ -168,7 +176,7 @@ static inline float Cam_Deg2Rad(double v) {
 void cCamControl_dtor(cEntity *self);
 cEntity *cCamControl_Delete(cEntity *self, uint32_t flags);
 const char *cCamControl_GetClassName(cEntity *self);
-int cCamControl_IsType(cEntity *self, const char *type);
+byte cCamControl_IsType(cEntity *self, const char *type);
 byte cCamControl_VarI(cEntity *self, const char *name, int *i, int set);
 byte cCamControl_VarF(cEntity *self, const char *name, double *d, int set);
 byte cCamControl_VarS(cEntity *self, const char *name, char **s, int set);
@@ -187,7 +195,7 @@ void cCamPathEntity_dtor(cEntity *self);
 cEntity *cCamPathEntity_Delete(cEntity *self, uint32_t flags);
 cCamPathPoint *cCamPathPoint_ctor(cCamPathPoint *self);
 const char *cCamPathEntity_GetClassName(cEntity *self);
-int cCamPathEntity_IsType(cEntity *self, const char *type);
+byte cCamPathEntity_IsType(cEntity *self, const char *type);
 /* the index NN of name = prefix + two digits, -1 for none or over 32 */
 int cCamPathEntity_PointIndex(cEntity *self, const char *name, const char *prefix, uint32_t len);
 byte cCamPathEntity_VarI(cEntity *self, const char *name, int *i, int set);
@@ -204,7 +212,7 @@ void cCamPathEntity_Update(cEntity *self);
 void cFollowCamEntity_dtor(cEntity *self);
 cEntity *cFollowCamEntity_Delete(cEntity *self, uint32_t flags);
 const char *cFollowCamEntity_GetClassName(cEntity *self);
-int cFollowCamEntity_IsType(cEntity *self, const char *type);
+byte cFollowCamEntity_IsType(cEntity *self, const char *type);
 byte cFollowCamEntity_VarI(cEntity *self, const char *name, int *i, int set);
 byte cFollowCamEntity_VarF(cEntity *self, const char *name, double *d, int set);
 byte cFollowCamEntity_VarS(cEntity *self, const char *name, char **s, int set);

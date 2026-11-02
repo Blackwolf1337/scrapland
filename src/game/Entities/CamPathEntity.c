@@ -223,7 +223,7 @@ void cCamPathEntity_Interp(cEntity *self, cCamPathPoint *next, cCamPathPoint *cu
 	cam->rot.z = cam->rot.z + rz;
 }
 
-int cCamPathEntity_IsType(cEntity *self, const char *type) {
+byte cCamPathEntity_IsType(cEntity *self, const char *type) {
 	if (!strcmp(type, TYEN_CAMPATH)) {
 		return 1;
 	}
@@ -338,3 +338,36 @@ byte cCamPathEntity_VarV(cEntity *self, const char *name, double *x, double *y, 
 	}
 	return cCamControl_VarV(self, name, x, y, z, set);
 }
+
+/* the vtable of cCamPathEntity */
+const cCamControlVtbl cCamPathEntity_vftable = {
+	.base.Update = cCamPathEntity_Update,
+	.base.Render = cEntity_Render,
+	.base.UpdateOff = cEntity_UpdateOff,
+	.base.Delete = cCamPathEntity_Delete,
+	.base.GetClassName = cCamPathEntity_GetClassName,
+	.base.IsType = cCamPathEntity_IsType,
+	.base.GetPos = cEntity_GetPos,
+	.base.SetPos = cEntity_SetPos,
+	.base.SetActive = cEntity_SetActive,
+	.base.TestLine = cEntity_TestLine,
+	.base.TestSphere = cEntity_TestSphereFalse,
+	.base.Touch = cEntity_TouchNop,
+	.base.SetModel = cEntity_SetModel,
+	.base.GetTargetAngle = cEntity_GetTargetAngle,
+	.base.AimWeapon = cEntity_AimWeapon,
+	.base.SetEmbeddedFX = cEntity_SetEmbeddedFX,
+	.base.VarI = cCamPathEntity_VarI,
+	.base.VarF = cCamPathEntity_VarF,
+	.base.VarS = cCamPathEntity_VarS,
+	.base.VarV = cCamPathEntity_VarV,
+	.base.Vf20 = cEntity_Vf20,
+	.base.Vf21 = cEntity_Vf21,
+	.base.GetAI = cEntity_GetAI,
+	.GetCamPos = cCamControl_GetCamPos,
+	.SetCamPos = cCamControl_SetCamPos,
+	.Lerp = cCamControl_NopF,
+	.Slot = cCamControl_NopF,
+	.SetTarget = cCamControl_SetTarget,
+	.UpdateOff = cCamControl_NopF,
+};

@@ -818,7 +818,7 @@ end:
 	WChar_Vtbl(self)->FlySound(self, dt);
 }
 
-void *cWithLifeEntity_GetActCtrl(cEntity *self) {
+cActCtrl *cWithLifeEntity_GetActCtrl(cEntity *self) {
 	return WChar(self)->wl.actCtrl;
 }
 
@@ -1859,3 +1859,76 @@ byte cWalkCharEntity_IsStrafeAnim(cEntity *self) {
 	}
 	return WCE_Action0Is(w, "StrRight", 8) || WCE_Action0Is(w, "StrLeft", 7);
 }
+
+/* the vtable of cWalkCharEntity */
+const cWalkCharVtbl cWalkCharEntity_vftable = {
+	.base.base.base.Update = cWalkCharEntity_Update,
+	.base.base.base.Render = cEntity_Render,
+	.base.base.base.UpdateOff = cWithLifeEntity_UpdateOff,
+	.base.base.base.Delete = cWalkCharEntity_Delete,
+	.base.base.base.GetClassName = cWalkCharEntity_GetClassName,
+	.base.base.base.IsType = cWalkCharEntity_IsType,
+	.base.base.base.GetPos = cObjEntity_GetPos,
+	.base.base.base.SetPos = cWithLifeEntity_SetPos,
+	.base.base.base.SetActive = cWalkCharEntity_SetActive,
+	.base.base.base.TestLine = cWithLifeEntity_TestLine,
+	.base.base.base.TestSphere = cWithLifeEntity_TestSphere,
+	.base.base.base.Touch = cWalkCharEntity_Touch,
+	.base.base.base.SetModel = cWalkCharEntity_SetModel,
+	.base.base.base.GetTargetAngle = cObjEntity_GetTargetAngle,
+	.base.base.base.AimWeapon = cEntity_AimWeapon,
+	.base.base.base.SetEmbeddedFX = cWalkCharEntity_SetEmbeddedFX,
+	.base.base.base.VarI = cWalkCharEntity_VarI,
+	.base.base.base.VarF = cWalkCharEntity_VarF,
+	.base.base.base.VarS = cWalkCharEntity_VarS,
+	.base.base.base.VarV = cWalkCharEntity_VarV,
+	.base.base.base.Vf20 = cEntity_Vf20,
+	.base.base.base.Vf21 = cEntity_Vf21,
+	.base.base.base.GetAI = cEntity_GetAI,
+	.base.base.Tick = cWalkCharEntity_Tick,
+	.base.base.UpdateModel = cWalkCharEntity_UpdateModel,
+	.base.base.GetNodeSlot = cWithLifeEntity_GetNodeSlot,
+	.base.base.GetRenderPos = cObjEntity_GetRenderPos,
+	.base.base.GetRenderAng = cWalkCharEntity_GetRenderAng,
+	.base.base.GetSndAng = cWalkCharEntity_GetSndAng,
+	.base.base.GetViewPos = cObjEntity_GetRenderPos,
+	.base.base.GetViewAng = cObjEntity_GetRenderAng,
+	.base.base.GetSndPos = cWithLifeEntity_GetSndPos,
+	.base.base.GetAng = cObjEntity_GetAng,
+	.base.base.SetAng = cWalkCharEntity_SetAng,
+	.base.base.GetVel = cObjEntity_GetVel,
+	.base.base.SetVel = cWalkCharEntity_SetVel,
+	.base.base.GetRotVel = cObjEntity_GetRotVel,
+	.base.base.SetRotVel = cObjEntity_SetRotVel,
+	.base.base.GetModel = cObjEntity_GetModel,
+	.base.base.GetCamera = cWalkCharEntity_GetCamera,
+	.base.base.GetRadius = cWalkCharEntity_GetRadius,
+	.base.base.NetWrite = cEntity_NetWriteNop,
+	.base.base.NetNeedsSend = cEntity_NetNeedsSendTrue,
+	.base.base.NetRead = cEntity_NetReadNop,
+	.base.base.SetEffect = cObjEntity_SetEffect,
+	.base.base.SetEffectParam = cObjEntity_SetEffectParam,
+	.base.base.Render = cWithLifeEntity_RenderNow,
+	.base.CheckLife = cWithLifeEntity_CheckLife,
+	.base.UnlinkListen = cWalkCharEntity_UnlinkListen,
+	.base.OnDeath = cWithLifeEntity_OnDeath,
+	.base.OnDamage = cWithLifeEntity_OnDamage,
+	.base.SetMass = cWithLifeEntity_SetMass,
+	.base.GetAction = cWithLifeEntity_GetAction,
+	.base.GetActCtrl = cWithLifeEntity_GetActCtrl,
+	.base.SetActCtrl = cWithLifeEntity_SetActCtrl,
+	.base.IsEMIed = cWithLifeEntity_IsEMIed,
+	.EnableAI = cWalkCharEntity_EnableAI,
+	.UpdateSelect = cWalkCharEntity_UpdateSelect,
+	.Turn = cWalkCharEntity_Turn,
+	.Idle = cWalkCharEntity_Idle,
+	.Fall = cWalkCharEntity_Fall,
+	.Accel = cWalkCharEntity_Accel,
+	.WalkAnim = cWalkCharEntity_WalkAnim,
+	.ActionTick = cWalkCharEntity_ActionTick,
+	.Fly = cWalkCharEntity_Fly,
+	.FlySound = cWalkCharEntity_FlySound,
+	.WalkSound = cWalkCharEntity_WalkSound,
+	.SetViewAng = cWalkCharEntity_SetViewAng,
+	.SetYModelDisp = cWalkCharEntity_SetYModelDisp,
+};

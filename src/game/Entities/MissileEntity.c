@@ -106,29 +106,32 @@ void cMissileEntity_dtor(cMissileEntity *self) {
 
 	self->wl.obj.base.vftable = CMISSILEENTITY_VFTABLE;
 	if (n > 0 || self->wl.obj.base.active) {
-		cMissileEntity_Hit(self, n + 1, 0);
+		cMissileEntity_Hit(&self->wl.obj.base, n + 1, 0);
 	}
 	cPy_Function_dtor(&self->onHit);
 	cPy_Function_dtor(&self->onBeeDeath);
 	cWithLifeEntity_dtor(Missile_Ent(self));
 }
 
-cMissileEntity *cMissileEntity_Delete(cMissileEntity *self, uint32_t flags) {
+cEntity *cMissileEntity_Delete(cEntity *base, uint32_t flags) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	cMissileEntity_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CMISSILEENTITY_SIZE);
 	}
-	return self;
+	return base;
 }
 
-void cMissileEntity_RotStep(cMissileEntity *self, float dt) {
+void cMissileEntity_RotStep(cEntity *base, float dt) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	self->wl.obj.ang.y = self->wl.obj.rotVel.y * dt + self->wl.obj.ang.y;
 	self->wl.obj.ang.z = self->wl.obj.rotVel.z * dt + self->wl.obj.ang.z;
 	self->wl.obj.ang.x = self->wl.obj.ang.x + self->wl.obj.rotVel.x * dt;
-	Missile_Vtbl(self)->UpdateVel(self);
+	Missile_Vtbl(self)->UpdateVel(&self->wl.obj.base);
 }
 
-void cMissileEntity_Touch(cMissileEntity *self, cEntity *other, const vec3_t *point, const vec3_t *dir) {
+void cMissileEntity_Touch(cEntity *base, cEntity *other, const vec3_t *point, const vec3_t *dir) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	(void)point;
 	(void)dir;
 	if (!other) {
@@ -156,7 +159,8 @@ void cMissileEntity_Touch(cMissileEntity *self, cEntity *other, const vec3_t *po
 	}
 }
 
-void cMissileEntity_LifeTick(cMissileEntity *self) {
+void cMissileEntity_LifeTick(cEntity *elem) {
+	cMissileEntity *self = (cMissileEntity *)elem;
 	float t = (float)(self->lifeTime - (cTimer_GetDelta(&self->wl.obj.timer)));
 
 	self->lifeTime = t;
@@ -166,13 +170,14 @@ void cMissileEntity_LifeTick(cMissileEntity *self) {
 		}
 		self->target[0] = 0;
 		if (self->wl.obj.base.active) {
-			Missile_Vtbl(self)->Hit(self, self->swarmCount + 1, 0);
+			Missile_Vtbl(self)->Hit(&self->wl.obj.base, self->swarmCount + 1, 0);
 		}
 		cEntity_Del(Missile_Ent(self));
 	}
 }
 
-void cMissileEntity_Wobble(cMissileEntity *self, float k) {
+void cMissileEntity_Wobble(cEntity *base, float k) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	k = k * 0x1.921fb6p-2f;	/* pi / 8 */
 	float neg = -k;
 	double range = (double)(k - Float_Keep(neg));
@@ -196,10 +201,11 @@ void cMissileEntity_Wobble(cMissileEntity *self, float k) {
 	self->wl.obj.ang.x = self->wl.obj.ang.x + self->wl.obj.rotVel.x;
 	self->wl.obj.ang.y = self->wl.obj.rotVel.y + self->wl.obj.ang.y;
 	self->wl.obj.ang.z = self->wl.obj.rotVel.z + self->wl.obj.ang.z;
-	Missile_Vtbl(self)->UpdateVel(self);
+	Missile_Vtbl(self)->UpdateVel(&self->wl.obj.base);
 }
 
-void cMissileEntity_Fall(cMissileEntity *self, float dt) {
+void cMissileEntity_Fall(cEntity *base, float dt) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	if (self->wl.obj.ang.x > -MISSILE_PI_2) {
 		self->wl.obj.ang.x = self->wl.obj.ang.x - dt;
 	}
@@ -224,7 +230,8 @@ static inline void Missile_VarFloat(float *f, double *d, int set) {
 	}
 }
 
-byte cMissileEntity_VarF(cMissileEntity *self, const char *name, double *d, int set) {
+byte cMissileEntity_VarF(cEntity *base, const char *name, double *d, int set) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	if (!*name) {
 		return 0;
 	}
@@ -268,7 +275,7 @@ byte cMissileEntity_VarF(cMissileEntity *self, const char *name, double *d, int 
 	if (!strcmp(name, "Speed")) {
 		if ((byte)set) {
 			self->speed = (float)*d;
-			Missile_Vtbl(self)->UpdateVel(self);
+			Missile_Vtbl(self)->UpdateVel(&self->wl.obj.base);
 		} else {
 			*d = self->speed;
 		}
@@ -284,14 +291,16 @@ int cMissileEntity_GetSwarmCount(cMissileEntity *self) {
 	return self->swarmCount;
 }
 
-const char *cMissileEntity_GetClassName(cMissileEntity *self) {
+const char *cMissileEntity_GetClassName(cEntity *base) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	(void)self;
 	return MISSILE_CLASSNAME;
 }
 
-void cMissileEntity_UpdateOff(cMissileEntity *self) {
+void cMissileEntity_UpdateOff(cEntity *base) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	cObjEntity_UpdateTimer(Missile_Ent(self));
-	Missile_Vtbl(self)->LifeTick(self);
+	Missile_Vtbl(self)->LifeTick(&self->wl.obj.base);
 	cWithLifeEntity_UpdateOff(Missile_Ent(self));
 }
 
@@ -304,7 +313,8 @@ static inline void Missile_VarFlag(byte *flag, int *i, int set) {
 	}
 }
 
-byte cMissileEntity_VarI(cMissileEntity *self, const char *name, int *i, int set) {
+byte cMissileEntity_VarI(cEntity *base, const char *name, int *i, int set) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	if (!*name) {
 		return 0;
 	}
@@ -318,12 +328,12 @@ byte cMissileEntity_VarI(cMissileEntity *self, const char *name, int *i, int set
 		return 1;
 	}
 	if ((byte)set && !strcmp(name, "AddToSwarm")) {
-		Missile_Vtbl(self)->AddToSwarm(self, *i);
+		Missile_Vtbl(self)->AddToSwarm(&self->wl.obj.base, *i);
 		return 1;
 	}
 	if (!strcmp(name, "nSwarm")) {
 		if ((byte)set) {
-			Missile_Vtbl(self)->SetSwarm(self, *i);
+			Missile_Vtbl(self)->SetSwarm(&self->wl.obj.base, *i);
 		} else {
 			*i = self->swarmCount;
 		}
@@ -352,14 +362,16 @@ byte cMissileEntity_VarI(cMissileEntity *self, const char *name, int *i, int set
 	return cWithLifeEntity_VarI(Missile_Ent(self), name, i, set);
 }
 
-byte cMissileEntity_IsType(cMissileEntity *self, const char *type) {
+byte cMissileEntity_IsType(cEntity *base, const char *type) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	if (!strcmp(type, MISSILE_CLASSNAME)) {
 		return 1;
 	}
 	return cWithLifeEntity_IsType(Missile_Ent(self), type);
 }
 
-byte cMissileEntity_Hit(cMissileEntity *self, int n, int unused) {
+byte cMissileEntity_Hit(cEntity *elem, int n, float unused) {
+	cMissileEntity *self = (cMissileEntity *)elem;
 	vec3_t tmp;
 
 	(void)unused;
@@ -413,24 +425,27 @@ byte cMissileEntity_Hit(cMissileEntity *self, int n, int unused) {
 			at = t->vftable->GetPos(t, &tmp);
 		}
 	}
-	Missile_Vtbl(self)->Explode(self, at);
+	Missile_Vtbl(self)->Explode(&self->wl.obj.base, at);
 	Missile_Ent(self)->vftable->SetActive(Missile_Ent(self), 0);
 	return 1;
 }
 
-void cMissileEntity_OnDeath(cMissileEntity *self) {
+void cMissileEntity_OnDeath(cEntity *base) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	self->target[0] = 0;
 	cWithLifeEntity_OnDeath(Missile_Ent(self));
 }
 
-void cMissileEntity_SetActive(cMissileEntity *self, byte on) {
+void cMissileEntity_SetActive(cEntity *base, byte on) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	cWithLifeEntity_SetActive(Missile_Ent(self), on);
 	if (self->hideMain && CGameModel_IsLoaded(&self->wl.obj.model)) {
 		CGameModel_Disable(&self->wl.obj.model);
 	}
 }
 
-void cMissileEntity_SetAng(cMissileEntity *self, const vec3_t *ang) {
+void cMissileEntity_SetAng(cEntity *base, const vec3_t *ang) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	vec3_t n;
 	float x = NormAng(ang->x);
 	float y = NormAng(ang->y);
@@ -512,18 +527,19 @@ void cMissileEntity_SetRadiusGrow(cMissileEntity *self, float r) {
 
 void cMissileEntity_SetSpeed(cMissileEntity *self, float speed) {
 	self->speed = speed;
-	Missile_Vtbl(self)->UpdateVel(self);
+	Missile_Vtbl(self)->UpdateVel(&self->wl.obj.base);
 }
 
 void cMissileEntity_SetSwDthTime(cMissileEntity *self, float t) {
 	self->swDthTime = t;
 }
 
-void cMissileEntity_SetSwarm(cMissileEntity *self, int n) {
+void cMissileEntity_SetSwarm(cEntity *base, int n) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	int c = self->swarmCount;
 
 	if (n > c) {
-		Missile_Vtbl(self)->AddToSwarm(self, n - c);
+		Missile_Vtbl(self)->AddToSwarm(&self->wl.obj.base, n - c);
 		return;
 	}
 	if (self->hiddenSwarm) {
@@ -567,7 +583,8 @@ void cMissileEntity_SetTurnSpeed(cMissileEntity *self, float speed) {
 	self->turnSpeed = speed;
 }
 
-void cMissileEntity_UpdateVel(cMissileEntity *self) {
+void cMissileEntity_UpdateVel(cEntity *base) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	float sy, cy, sx, cx;
 
 	Float_SinCos(self->wl.obj.ang.y, &sy, &cy);
@@ -578,7 +595,8 @@ void cMissileEntity_UpdateVel(cMissileEntity *self) {
 	self->wl.obj.vel.y = speed * cx;
 }
 
-void cMissileEntity_SetVel(cMissileEntity *self, const vec3_t *vel) {
+void cMissileEntity_SetVel(cEntity *base, const vec3_t *vel) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	vec3_t neg, rot, ang;
 
 	neg.x = -vel->x;
@@ -588,10 +606,11 @@ void cMissileEntity_SetVel(cMissileEntity *self, const vec3_t *vel) {
 	ang = *r;
 	self->speed = (float)__builtin_sqrt((double)(vel->x * vel->x + vel->y * vel->y + vel->z * vel->z));
 	Obj_Vtbl(Missile_Ent(self))->SetAng(Missile_Ent(self), &ang);
-	Missile_Vtbl(self)->UpdateVel(self);
+	Missile_Vtbl(self)->UpdateVel(&self->wl.obj.base);
 }
 
-void cMissileEntity_Update(cMissileEntity *self) {
+void cMissileEntity_Update(cEntity *base) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	int saved = g_MissileUpdating;
 
 	g_MissileUpdating = 1;
@@ -601,15 +620,16 @@ void cMissileEntity_Update(cMissileEntity *self) {
 		for (cDebris *d = self->swarm; d; d = Debris_Next(d)) {
 			cDebris_Step(d, dt);
 		}
-		Missile_Vtbl(self)->Swarm(self, dt);
-		Missile_Vtbl(self)->LifeTick(self);
+		Missile_Vtbl(self)->Swarm(&self->wl.obj.base, dt);
+		Missile_Vtbl(self)->LifeTick(&self->wl.obj.base);
 		/* only here: a frame without time leaves it set */
 		g_MissileUpdating = saved;
 	}
 }
 
 /* the volume of the first sound by the number of bees (the most seen is kept in its ints[0]) */
-void cMissileEntity_ScaleSwarmSound(cMissileEntity *self, int unused) {
+void cMissileEntity_ScaleSwarmSound(cEntity *base, float unused) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	(void)unused;
 	cSndItem *snd = PtrArray_Get(&self->wl.obj.snd, 0);
 	if (!snd) {
@@ -627,7 +647,8 @@ void cMissileEntity_ScaleSwarmSound(cMissileEntity *self, int unused) {
 	}
 }
 
-byte cMissileEntity_VarS(cMissileEntity *self, const char *name, char **s, int set) {
+byte cMissileEntity_VarS(cEntity *base, const char *name, char **s, int set) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	static const char *const hitTypes[4] = { "None", "Hit", "InOut", "Inside" };
 	static const char *const types[4] = { "Linear", "Dumb", "Cloud", "Fall" };
 
@@ -708,14 +729,16 @@ byte cMissileEntity_VarS(cMissileEntity *self, const char *name, char **s, int s
 	return cWithLifeEntity_VarS(Missile_Ent(self), name, s, set);
 }
 
-byte cMissileEntity_VarV(cMissileEntity *self, const char *name, double *x, double *y, double *z, int set) {
+byte cMissileEntity_VarV(cEntity *base, const char *name, double *x, double *y, double *z, int set) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	if (!*name) {
 		return 0;
 	}
 	return cWithLifeEntity_VarV(Missile_Ent(self), name, x, y, z, set);
 }
 
-void cMissileEntity_SetModel(cMissileEntity *self, const char *file, float sx, float sy, float sz, int flag) {
+void cMissileEntity_SetModel(cEntity *elem, const char *file, float sx, float sy, float sz, int flag) {
+	cMissileEntity *self = (cMissileEntity *)elem;
 	vec3_t scale, root, link, rot, pos, cam;
 
 	(void)flag;
@@ -762,7 +785,8 @@ static cDebris *Missile_FXDebris(cMissileEntity *self, const char *sysName, byte
 	return d;
 }
 
-void cMissileEntity_SetEmbeddedFX(cMissileEntity *self, const char *name) {
+void cMissileEntity_SetEmbeddedFX(cEntity *elem, const char *name) {
+	cMissileEntity *self = (cMissileEntity *)elem;
 	if (self->wl.obj.base.deadNode.target) {
 		return;
 	}
@@ -841,7 +865,7 @@ static void Missile_NetTick(cMissileEntity *self, float dt) {
 		net->age = net->age - dt;
 		if (self->netSwarmCount < self->swarmCount && self->wl.obj.base.active) {
 			self->wl.obj.base.pos = net->pos;
-			Missile_Vtbl(self)->Hit(self, self->swarmCount - self->netSwarmCount, dt);
+			Missile_Vtbl(self)->Hit(&self->wl.obj.base, self->swarmCount - self->netSwarmCount, dt);
 			return;
 		}
 		self->wl.obj.base.pos.x = self->wl.obj.vel.x * dt + self->wl.obj.base.pos.x;
@@ -893,7 +917,7 @@ static void Missile_FollowTarget(cMissileEntity *self, float dt) {
 	self->wl.obj.ang.x = self->wl.obj.ang.x + cx;
 	self->wl.obj.ang.y = self->wl.obj.ang.y + cy;
 	self->wl.obj.ang.z = self->wl.obj.ang.z + 0.0f;
-	Missile_Vtbl(self)->UpdateVel(self);
+	Missile_Vtbl(self)->UpdateVel(&self->wl.obj.base);
 }
 
 /* InOut: OnHit (out) for the entities the missile left, OnHit (in) for the new ones in the free slots */
@@ -958,7 +982,7 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 
 	float n = (float)self->swarmCount * self->swDthTime;
 	if (n > self->lifeTime && self->swarmCount > (self->hideMain != 0)) {
-		Missile_Vtbl(self)->Hit(self, 1, dt);
+		Missile_Vtbl(self)->Hit(&self->wl.obj.base, 1, dt);
 	}
 	if (self->fallOut && Missile_Ent(self)->vftable->GetPos(Missile_Ent(self), &tmp)->y > g_AtmosphereLimit) {
 		self->fallOut = 0;
@@ -966,13 +990,13 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 	}
 	switch (self->type) {
 	case 1:
-		Missile_Vtbl(self)->Wobble(self, dt);
+		Missile_Vtbl(self)->Wobble(&self->wl.obj.base, dt);
 		break;
 	case 2:
-		Missile_Vtbl(self)->RotStep(self, dt);
+		Missile_Vtbl(self)->RotStep(&self->wl.obj.base, dt);
 		break;
 	case 3:
-		Missile_Vtbl(self)->Fall(self, dt);
+		Missile_Vtbl(self)->Fall(&self->wl.obj.base, dt);
 		break;
 	}
 	old = *pos;
@@ -995,7 +1019,7 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 		}
 		if (!hitWorld) {
 			int k = self->beesHit ? self->swarmCount + 1 : 1;
-			if (Missile_Vtbl(self)->Hit(self, k, dt)) {
+			if (Missile_Vtbl(self)->Hit(&self->wl.obj.base, k, dt)) {
 				return 1;
 			}
 		}
@@ -1007,7 +1031,7 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 		if (cWorld_TestSphereEntities(g_pWorld, Missile_Ent(self), MISSILE_ENTLIST, &old, self->radius,
 			&found, 1, pos)) {
 			Str_Copy(self->target, found->name, 0x80);
-			if (Missile_Vtbl(self)->Hit(self, self->swarmCount + 1, dt)) {
+			if (Missile_Vtbl(self)->Hit(&self->wl.obj.base, self->swarmCount + 1, dt)) {
 				return 1;
 			}
 		}
@@ -1028,14 +1052,15 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 			cMissileEntity_SetHitType(self, MISSILE_HIT_NONE);
 		}
 		self->target[0] = 0;
-		if (Missile_Vtbl(self)->Hit(self, self->swarmCount + 1, dt)) {
+		if (Missile_Vtbl(self)->Hit(&self->wl.obj.base, self->swarmCount + 1, dt)) {
 			return 1;
 		}
 	}
 	return 0;
 }
 
-void cMissileEntity_Tick(cMissileEntity *self, float dt) {
+void cMissileEntity_Tick(cEntity *base, float dt) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	if (Net_IsNetEntity(Missile_Ent(self))) {
 		Missile_NetTick(self, dt);
 	} else if (Missile_LocalTick(self, dt)) {
@@ -1047,7 +1072,7 @@ void cMissileEntity_Tick(cMissileEntity *self, float dt) {
 		self->radius = self->topRadius;
 		self->radiusGrow = 0.0f;
 	}
-	Missile_Vtbl(self)->ScaleSwarmSound(self, dt);
+	Missile_Vtbl(self)->ScaleSwarmSound(&self->wl.obj.base, dt);
 	cWithLifeEntity_Tick(Missile_Ent(self), dt);
 }
 
@@ -1058,7 +1083,8 @@ static inline uint32_t Missile_NetId(const char *name) {
 	return id == -1 ? MISSILE_NET_NONE : (uint32_t)(uint16_t)id;
 }
 
-void cMissileEntity_NetWrite(cMissileEntity *self, float dist2, void *msg, int full) {
+void cMissileEntity_NetWrite(cEntity *elem, float dist2, void *msg, int full) {
+	cMissileEntity *self = (cMissileEntity *)elem;
 	cAbstractFile *f = msg;
 	cNetController *net = WLife(self)->obj.net;
 	byte active = self->wl.obj.base.active;
@@ -1085,7 +1111,8 @@ void cMissileEntity_NetWrite(cMissileEntity *self, float dist2, void *msg, int f
 	f->vftable->Write(f, &v, 1);
 }
 
-void cMissileEntity_NetRead(cMissileEntity *self, void *msg, int isNew) {
+void cMissileEntity_NetRead(cEntity *base, void *msg, int isNew) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	cAbstractFile *f = msg;
 	uint16_t id = 0;
 	byte b = 0;
@@ -1141,7 +1168,8 @@ static void Missile_BeePush(cMissileEntity *self, cDebris *d, float dt, float sp
 	} while ((double)self->beeTime > 0.05);
 }
 
-void cMissileEntity_Swarm(cMissileEntity *self, float dt) {
+void cMissileEntity_Swarm(cEntity *base, float dt) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	vec3_t tmp, view, a, n;
 	float r2 = self->radius * self->radius;
 	float sp = self->swarmSpeed + self->speed;
@@ -1206,7 +1234,8 @@ void cMissileEntity_Swarm(cMissileEntity *self, float dt) {
 	self->lastPos = *Obj_Vtbl(Missile_Ent(self))->GetViewPos(Missile_Ent(self), &tmp);
 }
 
-void cMissileEntity_AddToSwarm(cMissileEntity *self, int n) {
+void cMissileEntity_AddToSwarm(cEntity *base, int n) {
+	cMissileEntity *self = (cMissileEntity *)base;
 	if (!self->hiddenSwarm) {
 		cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, self->swarmSys);
 		float ax = NormAng(self->wl.obj.ang.x);
@@ -1256,7 +1285,8 @@ void cMissileEntity_AddToSwarm(cMissileEntity *self, int n) {
 	}
 }
 
-void cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at) {
+void cMissileEntity_Explode(cEntity *elem, const vec3_t *at) {
+	cMissileEntity *self = (cMissileEntity *)elem;
 	vec3_t neg, rot;
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, self->swarmSys);
 
@@ -1322,3 +1352,74 @@ void cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at) {
 	}
 	self->swarmCount = 0;
 }
+
+/* the vtable of cMissileEntity */
+const cMissileEntityVtbl cMissileEntity_vftable = {
+	.base.base.base.Update = cMissileEntity_Update,
+	.base.base.base.Render = cEntity_Render,
+	.base.base.base.UpdateOff = cMissileEntity_UpdateOff,
+	.base.base.base.Delete = cMissileEntity_Delete,
+	.base.base.base.GetClassName = cMissileEntity_GetClassName,
+	.base.base.base.IsType = cMissileEntity_IsType,
+	.base.base.base.GetPos = cObjEntity_GetPos,
+	.base.base.base.SetPos = cWithLifeEntity_SetPos,
+	.base.base.base.SetActive = cMissileEntity_SetActive,
+	.base.base.base.TestLine = cWithLifeEntity_TestLine,
+	.base.base.base.TestSphere = cWithLifeEntity_TestSphere,
+	.base.base.base.Touch = cMissileEntity_Touch,
+	.base.base.base.SetModel = cMissileEntity_SetModel,
+	.base.base.base.GetTargetAngle = cObjEntity_GetTargetAngle,
+	.base.base.base.AimWeapon = cEntity_AimWeapon,
+	.base.base.base.SetEmbeddedFX = cMissileEntity_SetEmbeddedFX,
+	.base.base.base.VarI = cMissileEntity_VarI,
+	.base.base.base.VarF = cMissileEntity_VarF,
+	.base.base.base.VarS = cMissileEntity_VarS,
+	.base.base.base.VarV = cMissileEntity_VarV,
+	.base.base.base.Vf20 = cEntity_Vf20,
+	.base.base.base.Vf21 = cEntity_Vf21,
+	.base.base.base.GetAI = cEntity_GetAI,
+	.base.base.Tick = cMissileEntity_Tick,
+	.base.base.UpdateModel = cObjEntity_UpdateModel,
+	.base.base.GetNodeSlot = cWithLifeEntity_GetNodeSlot,
+	.base.base.GetRenderPos = cObjEntity_GetRenderPos,
+	.base.base.GetRenderAng = cObjEntity_GetRenderAng,
+	.base.base.GetSndAng = cObjEntity_GetSndAng,
+	.base.base.GetViewPos = cObjEntity_GetRenderPos,
+	.base.base.GetViewAng = cObjEntity_GetRenderAng,
+	.base.base.GetSndPos = cWithLifeEntity_GetSndPos,
+	.base.base.GetAng = cObjEntity_GetAng,
+	.base.base.SetAng = cMissileEntity_SetAng,
+	.base.base.GetVel = cObjEntity_GetVel,
+	.base.base.SetVel = cMissileEntity_SetVel,
+	.base.base.GetRotVel = cObjEntity_GetRotVel,
+	.base.base.SetRotVel = cObjEntity_SetRotVel,
+	.base.base.GetModel = cObjEntity_GetModel,
+	.base.base.GetCamera = cObjEntity_GetCamera,
+	.base.base.GetRadius = cWithLifeEntity_GetRadius,
+	.base.base.NetWrite = cMissileEntity_NetWrite,
+	.base.base.NetNeedsSend = cEntity_NetNeedsSendTrue,
+	.base.base.NetRead = cMissileEntity_NetRead,
+	.base.base.SetEffect = cObjEntity_SetEffect,
+	.base.base.SetEffectParam = cObjEntity_SetEffectParam,
+	.base.base.Render = cWithLifeEntity_RenderNow,
+	.base.CheckLife = cWithLifeEntity_CheckLife,
+	.base.UnlinkListen = cWithLifeEntity_Vf48,
+	.base.OnDeath = cMissileEntity_OnDeath,
+	.base.OnDamage = cWithLifeEntity_OnDamage,
+	.base.SetMass = cWithLifeEntity_SetMass,
+	.base.GetAction = cWithLifeEntity_GetAction,
+	.base.GetActCtrl = cWithLifeEntity_GetActCtrl,
+	.base.SetActCtrl = cWithLifeEntity_SetActCtrl,
+	.base.IsEMIed = cWithLifeEntity_IsEMIed,
+	.Wobble = cMissileEntity_Wobble,
+	.RotStep = cMissileEntity_RotStep,
+	.Fall = cMissileEntity_Fall,
+	.Swarm = cMissileEntity_Swarm,
+	.ScaleSwarmSound = cMissileEntity_ScaleSwarmSound,
+	.LifeTick = cMissileEntity_LifeTick,
+	.UpdateVel = cMissileEntity_UpdateVel,
+	.Hit = cMissileEntity_Hit,
+	.AddToSwarm = cMissileEntity_AddToSwarm,
+	.SetSwarm = cMissileEntity_SetSwarm,
+	.Explode = cMissileEntity_Explode,
+};

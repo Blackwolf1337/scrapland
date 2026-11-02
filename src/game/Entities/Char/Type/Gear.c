@@ -256,7 +256,7 @@ void ChType_GearShoot(cAbstractFile *params) {
 		} else if (target) {
 			cMissileEntity_SetTarget(m, target->name);
 		}
-		Missile_Vtbl(Missile(e))->AddToSwarm(Missile(e), 0);
+		Missile_Vtbl(Missile(e))->AddToSwarm(&(Missile(e))->wl.obj.base, 0);
 		e->vftable->SetEmbeddedFX(e, "GearMissile");
 		cSndInterface *snd = &WChar(e)->wl.obj.snd;
 		cSndInterface_Resize(snd, 1);

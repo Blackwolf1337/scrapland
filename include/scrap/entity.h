@@ -45,7 +45,8 @@ typedef struct cEntityVtbl {
 	byte(*VarF)(cEntity *self, const char *name, double *d, int set);			/* 0x44 vf17 */
 	byte(*VarS)(cEntity *self, const char *name, char **s, int set);			/* 0x48 vf18 */
 	byte(*VarV)(cEntity *self, const char *name, double *x, double *y, double *z, int set); /* 0x4c */
-	void *vf20_21[2];
+	void(*Vf20)(cEntity *self);				/* 0x50 vf20 */
+	int(*Vf21)(cEntity *self, int a);			/* 0x54 vf21 */
 	void *(*GetAI)(cEntity *self);				/* 0x58 vf22 */
 } cEntityVtbl;
 SD_SIZE(cEntityVtbl, 23 * 4);
@@ -97,7 +98,8 @@ SD_OFFSET(cEntity, links, 0x64);
 SD_OFFSET(cEntity, ai, 0x78);
 SD_SIZE(cEntity, 0x7c);
 
-#define CENTITY_VFTABLE GAME_VFTABLE(cEntity_vftable)
+extern const cEntityVtbl cEntity_vftable;
+#define CENTITY_VFTABLE (&cEntity_vftable)
 
 /* a vehicle ("Car"): include/scrap/vehicleentity.h */
 typedef struct cVehicleEntity cVehicleEntity;
@@ -161,7 +163,7 @@ void cEntity_Render(cEntity *self, void *arg);
 void cEntity_UpdateOff(cEntity *self);
 cEntity *cEntity_Delete(cEntity *self, uint32_t flags);
 const char *cEntity_GetClassName(cEntity *self);
-int cEntity_IsType(cEntity *self, const char *type);
+byte cEntity_IsType(cEntity *self, const char *type);
 vec3_t *cEntity_GetPos(cEntity *self, vec3_t *out);
 void cEntity_SetPos(cEntity *self, const vec3_t *pos);
 void cEntity_SetActive(cEntity *self, byte on);
@@ -181,6 +183,11 @@ byte cEntity_TestSphere(cEntity *self, cEntity *exclude, const vec3_t *center, f
 void cEntity_Vf11(cEntity *self, int a, int b, int c);
 void cEntity_Vf20(cEntity *self);
 int cEntity_Vf21(cEntity *self, int a);
+byte cEntity_NetNeedsSendTrue(cEntity *self, float dist2);
+void cEntity_NetReadNop(cEntity *self, void *msg, int isNew);
+void cEntity_NetWriteNop(cEntity *self, float dist2, void *msg, int full);
+byte cEntity_TestSphereFalse(cEntity *self, cEntity *exclude, const vec3_t *center, float radius, const vec3_t *prev);
+void cEntity_TouchNop(cEntity *self, cEntity *e, const vec3_t *point, const vec3_t *normal);
 
 /* the network game: an entity named "net..." of a client is the copy of a server one */
 byte Net_IsNetEntity(cEntity *e);

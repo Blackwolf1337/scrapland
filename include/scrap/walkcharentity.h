@@ -16,7 +16,6 @@
 #include "scrap/walkcharcontrol.h"
 #include "scrap/withlifeentity.h"
 
-#define CWALKCHARENTITY_VFTABLE GAME_VFTABLE(cWalkCharEntity_vftable)
 #define CWALKCHARENTITY_SIZE sizeof(cWalkCharEntity)
 
 typedef struct cWalkCharEntity {
@@ -115,6 +114,8 @@ typedef struct cWalkCharVtbl {
 } cWalkCharVtbl;
 SD_OFFSET(cWalkCharVtbl, EnableAI, 0xe0);
 SD_OFFSET(cWalkCharVtbl, SetYModelDisp, 0x110);
+extern const cWalkCharVtbl cWalkCharEntity_vftable;
+#define CWALKCHARENTITY_VFTABLE (&cWalkCharEntity_vftable.base.base.base)
 
 static inline const cWalkCharVtbl *WChar_Vtbl(const cEntity *e) {
 	return (const cWalkCharVtbl *)e->vftable;
@@ -188,7 +189,7 @@ byte cWalkCharEntity_VarF(cEntity *self, const char *name, double *d, int set);
 void cWalkCharEntity_Fall(cEntity *self, float dt);
 /* vf64: the flight of a class that can fly */
 void cWalkCharEntity_Fly(cEntity *self, float dt);
-void *cWithLifeEntity_GetActCtrl(cEntity *self);
+cActCtrl *cWithLifeEntity_GetActCtrl(cEntity *self);
 /* the fraction of the weapon energy above the full batteries */
 float cWalkCharEntity_GetEnergyFrac(cEntity *e);
 vec3_t *cWalkCharEntity_GetRenderAng(cEntity *self, vec3_t *out);

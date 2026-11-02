@@ -82,7 +82,7 @@ if vwpl:
 		vwpi(l + 0x250), vwpi(l + 0x3e0), vwpfl(l + 0x3a0, 1)))
 	check('cWithLifeEntity_GetClassName', lambda l=vwpl: SDTest.Call('cWithLifeEntity_GetClassName', 'tsi', l)[0])
 	for vwpn in ('WithLife', 'Obj', 'Entity', 'Car', 'SDNoType', ''):
-		check('cWithLifeEntity_IsType' + fmt((vwpn,)), lambda l=vwpl, n=vwpn: SDTest.Call('cWithLifeEntity_IsType', 'tiis', l, n)[0])
+		check('cWithLifeEntity_IsType' + fmt((vwpn,)), lambda l=vwpl, n=vwpn: SDTest.Call('cWithLifeEntity_IsType', 'tiis', l, n)[0] & 0xff)
 	check('cWithLifeEntity small', lambda l=vwpl: (SDTest.Call('cWithLifeEntity_GetRadius', 'tfi', l)[0],
 		SDTest.Call('cWithLifeEntity_GetNodeSlot', 'tii', l)[0], SDTest.Call('cWithLifeEntity_IsEMIed', 'tbi', l)[0], SDTest.Call('cWithLifeEntity_GetBurner', 'tii', l)[0],
 		SDTest.Call('cWithLifeEntity_GetAction', 'tiis', l, 'Walk')[0], SDTest.Call('cWithLifeEntity_GetSndPos', 'tiiF', l, (0.0, 0.0, 0.0))[1]))

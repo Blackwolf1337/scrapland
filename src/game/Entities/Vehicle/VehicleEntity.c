@@ -248,17 +248,19 @@ void cVehicleEntity_dtor(cVehicleEntity *self) {
 	cWithLifeEntity_dtor(&self->wl.obj.base);
 }
 
-cVehicleEntity *cVehicleEntity_Delete(cVehicleEntity *self, byte flags) {
+cEntity *cVehicleEntity_Delete(cEntity *base, uint32_t flags) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	cVehicleEntity_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 /* ---- the collision ---- */
 
-void cVehicleEntity_Touch(cVehicleEntity *self, cEntity *e, const vec3_t *point, const vec3_t *normal) {
+void cVehicleEntity_Touch(cEntity *elem, cEntity *e, const vec3_t *point, const vec3_t *normal) {
+	cVehicleEntity *self = (cVehicleEntity *)elem;
 	vec3_t tmp1, tmp2, out;
 
 	(void)point;
@@ -366,7 +368,8 @@ void cVehicleEntity_BoostTick(cVehicleEntity *self, float dt) {
 	}
 }
 
-byte cVehicleEntity_GetLaunchTaunts(cVehicleEntity *self) {
+byte cVehicleEntity_GetLaunchTaunts(cEntity *base) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	return self->launchTaunts;
 }
 
@@ -415,7 +418,8 @@ void cVehicleEntity_PushTick(cVehicleEntity *self, float dt) {
 	}
 }
 
-void cVehicleEntity_SetMass(cVehicleEntity *self, float mass) {
+void cVehicleEntity_SetMass(cEntity *base, float mass) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	CHECK(mass > 0.0f);
 	self->wl.mass = mass;
 	cVehicleEntity_UpdateTrust(self);
@@ -437,7 +441,8 @@ byte cVehicleEntity_IsBoostReady(cVehicleEntity *self) {
 	return self->boost == 0.0f;
 }
 
-int cVehicleEntity_IsEMIed(cVehicleEntity *self) {
+byte cVehicleEntity_IsEMIed(cEntity *base) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	return self->emi > 0.0f;
 }
 
@@ -449,7 +454,8 @@ int cVehicleEntity_CanFire(cVehicleEntity *self) {
 }
 
 /* the speed and the acceleration from the history, the crash sounds at a sudden change */
-void cVehicleEntity_UpdateHistory(cVehicleEntity *self) {
+void cVehicleEntity_UpdateHistory(cEntity *base) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	vec3_t acc, jerk;
 
 	float dt = (float)((Timer_GetTime(&self->wl.obj.timer)) - self->histTime);
@@ -468,7 +474,7 @@ void cVehicleEntity_UpdateHistory(cVehicleEntity *self) {
 	float jerkLen = (float)__builtin_sqrt((double)(jerk.y * jerk.y + jerk.x * jerk.x + jerk.z * jerk.z));
 	float since = (float)((Timer_GetTime(&self->wl.obj.timer)) - self->hitTime);
 	if (g_VehicleCrashMinTime > since && self->histAccLen > g_VehicleCrashAccLo) {
-		Veh_Vtbl(self)->Crash(self, &jerk, jerkLen);
+		Veh_Vtbl(self)->Crash(&self->wl.obj.base, &jerk, jerkLen);
 		self->histAcc.x = 0.0f;
 		accLen = 0.0f;
 		self->histAcc.y = 0.0f;
@@ -481,7 +487,8 @@ void cVehicleEntity_UpdateHistory(cVehicleEntity *self) {
 	self->histAccLen = accLen;
 }
 
-void cVehicleEntity_Crash(cVehicleEntity *self, const vec3_t *acc, float force) {
+void cVehicleEntity_Crash(cEntity *base, const vec3_t *acc, float force) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	(void)acc;
 	cFollowCamEntity *cam = (cFollowCamEntity *)self->wl.obj.cam;
 	int snd;
@@ -713,7 +720,8 @@ void cVehicleEntity_Move(cVehicleEntity *self, float dt) {
 	cVehicleEntity_Collide(self, &from, dt);
 }
 
-void cVehicleEntity_Tick(cVehicleEntity *self, float dt) {
+void cVehicleEntity_Tick(cEntity *elem, float dt) {
+	cVehicleEntity *self = (cVehicleEntity *)elem;
 	if ((Net_IsNetEntity(Veh_Ent(self)) && !Veh_IsPlayerSlot(self->slot)) || (Veh_IsServer() && self->netCtrl)) {
 		Controls_FromNet(&self->controls, Veh_Ent(self), dt);
 		if (self->boost == 0.0f && !(Veh_Net(self)->keys & 0x1000)) {
@@ -757,10 +765,11 @@ void cVehicleEntity_Tick(cVehicleEntity *self, float dt) {
 	}
 	self->wl.fireAtt = self->smoothSpeed / 16800.0f;
 	cWithLifeEntity_Tick(Veh_Ent(self), dt);
-	Veh_Vtbl(self)->UpdateHistory(self);
+	Veh_Vtbl(self)->UpdateHistory(&self->wl.obj.base);
 }
 
-void cVehicleEntity_Update(cVehicleEntity *self) {
+void cVehicleEntity_Update(cEntity *base) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	cObjEntity_UpdateTimer(Veh_Ent(self));
 	float dt = cTimer_GetDelta(&self->wl.obj.timer);
 	if (1e-06f >= dt) {
@@ -771,11 +780,12 @@ void cVehicleEntity_Update(cVehicleEntity *self) {
 		cVehicleControls_Tick(&self->controls, Veh_Ent(self), dt);
 	}
 	cWithLifeEntity_Update(Veh_Ent(self));
-	Veh_Vtbl(self)->UpdateSounds(self, dt);
+	Veh_Vtbl(self)->UpdateSounds(&self->wl.obj.base, dt);
 	cVehicleEntity_Smooth(self, dt);
 }
 
-void cVehicleEntity_SetVel(cVehicleEntity *self, const vec3_t *vel) {
+void cVehicleEntity_SetVel(cEntity *base, const vec3_t *vel) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	if (self->wl.obj.move.active) {
 		return;
 	}
@@ -827,7 +837,8 @@ static void Veh_MotorSnd(cSndItem *s, float t, float f, byte fast) {
 	s->volume = s->vols[0] * u + s->vols[1] * t;
 }
 
-void cVehicleEntity_UpdateSounds(cVehicleEntity *self, float dt) {
+void cVehicleEntity_UpdateSounds(cEntity *elem, float dt) {
+	cVehicleEntity *self = (cVehicleEntity *)elem;
 	cSndInterface *snd = &self->wl.obj.snd;
 	cSndItem *a, *b, *c, *d;
 	byte alt;
@@ -901,12 +912,14 @@ void cVehicleEntity_NetDelete(cVehicleEntity *self) {
 	}
 }
 
-void cVehicleEntity_NetRead(cVehicleEntity *self, void *msg, int unused) {
+void cVehicleEntity_NetRead(cEntity *elem, void *msg, int unused) {
+	cVehicleEntity *self = (cVehicleEntity *)elem;
 	(void)unused;
 	Veh_Net(self)->base.vftable->Read(&Veh_Net(self)->base, msg);
 }
 
-void cVehicleEntity_NetWrite(cVehicleEntity *self, float dist2, void *msg, int full) {
+void cVehicleEntity_NetWrite(cEntity *elem, float dist2, void *msg, int full) {
+	cVehicleEntity *self = (cVehicleEntity *)elem;
 	byte kind = 6;
 	if (12099999744.0f >= dist2) {
 		kind = 0x7e;
@@ -952,7 +965,8 @@ void cVehicleEntity_SetUsrControl(cVehicleEntity *self, int slot) {
 	cVehicleEntity_NetDelete(self);
 }
 
-void cVehicleEntity_EnableAI(cVehicleEntity *self, byte enable, void *p1, void *p2, void *p3) {
+void cVehicleEntity_EnableAI(cEntity *elem, byte enable, void *p1, void *p2, void *p3) {
+	cVehicleEntity *self = (cVehicleEntity *)elem;
 	if (!enable) {
 		if (self->wl.obj.base.ai) {
 			(*(void(**)(void *, int))*(void **)self->wl.obj.base.ai)(self->wl.obj.base.ai, 1);
@@ -968,14 +982,16 @@ void cVehicleEntity_EnableAI(cVehicleEntity *self, byte enable, void *p1, void *
 
 /* ---- the pilot ---- */
 
-const char *cVehicleEntity_GetPilot(cVehicleEntity *self, int slot) {
+const char *cVehicleEntity_GetPilot(cEntity *base, int slot) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	if (slot == 0 && *Veh_PilotNode(self, slot) != -1) {
 		return Veh_PilotName(self, 0);
 	}
 	return VEH_EMPTY;
 }
 
-byte cVehicleEntity_GetPilotPos(cVehicleEntity *self, int slot, vec3_t *pos, vec3_t *ang) {
+byte cVehicleEntity_GetPilotPos(cEntity *base, int slot, vec3_t *pos, vec3_t *ang) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	matrix_t m;
 	vec3_t e;
 
@@ -994,8 +1010,8 @@ byte cVehicleEntity_GetPilotPos(cVehicleEntity *self, int slot, vec3_t *pos, vec
 	return 1;
 }
 
-byte cVehicleEntity_SetPilot(cVehicleEntity *self, int slot, const char *name, float sx, float sy,
-	float sz) {
+byte cVehicleEntity_SetPilot(cEntity *elem, int slot, const char *name, float sx, float sy, float sz) {
+	cVehicleEntity *self = (cVehicleEntity *)elem;
 	char node[16];
 	char path[0x200];
 	vec3_t scale;
@@ -1039,7 +1055,8 @@ byte cVehicleEntity_SetPilot(cVehicleEntity *self, int slot, const char *name, f
 	return 1;
 }
 
-byte cVehicleEntity_SetPilotAnim(cVehicleEntity *self, int slot, int anim) {
+byte cVehicleEntity_SetPilotAnim(cEntity *base, int slot, int anim) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	char path[0x200];
 
 	CGameModel *m = Veh_PilotModel(self, slot);
@@ -1059,7 +1076,8 @@ byte cVehicleEntity_SetPilotAnim(cVehicleEntity *self, int slot, int anim) {
 }
 
 /* the lean of the pilot from the turn (anims 0, 1) and the vertical acceleration (2, 3), else the relax loop */
-void cVehicleEntity_UpdatePilot(cVehicleEntity *self, int slot, float dt) {
+void cVehicleEntity_UpdatePilot(cEntity *base, int slot, float dt) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	(void)dt;
 	CGameModel *m = Veh_PilotModel(self, slot);
 	float roll = self->wl.obj.renderAng.z;
@@ -1156,13 +1174,13 @@ void cVehicleEntity_UpdatePilotPos(cVehicleEntity *self, byte on) {
 	pos.y = m.m[13];
 	pos.z = m.m[14];
 	CGameModel_SetPos(pm, &pos);
-	Veh_Vtbl(self)->UpdatePilot(self, 0, dt);
+	Veh_Vtbl(self)->UpdatePilot(&self->wl.obj.base, 0, dt);
 }
 
 /* ---- the model ---- */
 
-void cVehicleEntity_SetModel(cVehicleEntity *self, const char *file, float sx, float sy, float sz,
-	byte inDir) {
+void cVehicleEntity_SetModel(cEntity *base, const char *file, float sx, float sy, float sz, int inDir) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	char path[0x200];
 	char node[256];
 	vec3_t tmp;
@@ -1213,7 +1231,8 @@ void cVehicleEntity_SetModel(cVehicleEntity *self, const char *file, float sx, f
 	Veh_Ent(self)->vftable->SetEmbeddedFX(Veh_Ent(self), "EmbeddedFX");
 }
 
-void cVehicleEntity_SetEmbeddedFX(cVehicleEntity *self, const char *fxType) {
+void cVehicleEntity_SetEmbeddedFX(cEntity *base, const char *fxType) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	if (!strcmp(fxType, "EmbeddedFX")) {
 		cEmbeddedFXVehicle *fx = Veh_FX(self);
 		if (fx) {
@@ -1240,7 +1259,8 @@ void cVehicleEntity_StartFade(cVehicleEntity *self) {
 	}
 }
 
-void cVehicleEntity_SetFX(cVehicleEntity *self, int fx) {
+void cVehicleEntity_SetFX(cEntity *base, uint32_t fx) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	cObjEntity_SetEffect(Veh_Ent(self), fx);
 	if (CGameModel_IsLoaded(&self->pilot)) {
 		CGameModel_SetEffect(&self->pilot, (uint32_t)fx);
@@ -1248,7 +1268,8 @@ void cVehicleEntity_SetFX(cVehicleEntity *self, int fx) {
 	cVehicleMotors_SetEffect(&self->motors, fx);
 }
 
-void cVehicleEntity_SetFXParam(cVehicleEntity *self, int i, float v) {
+void cVehicleEntity_SetFXParam(cEntity *base, int i, float v) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	cObjEntity_SetEffectParam(Veh_Ent(self), i, v);
 	if (CGameModel_IsLoaded(&self->pilot)) {
 		uint32_t bits;
@@ -1258,7 +1279,8 @@ void cVehicleEntity_SetFXParam(cVehicleEntity *self, int i, float v) {
 	cVehicleMotors_SetEffectParam(&self->motors, i, v);
 }
 
-void cVehicleEntity_SetActive(cVehicleEntity *self, byte on) {
+void cVehicleEntity_SetActive(cEntity *elem, byte on) {
+	cVehicleEntity *self = (cVehicleEntity *)elem;
 	if (on == self->wl.obj.base.active) {
 		return;
 	}
@@ -1283,7 +1305,8 @@ void cVehicleEntity_SetActive(cVehicleEntity *self, byte on) {
 }
 
 /* the model drawn once with the angles and position of its model (the render pos and rot kept) */
-void cVehicleEntity_RenderNow(cVehicleEntity *self) {
+void cVehicleEntity_RenderNow(cEntity *base) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	vec3_t tmp;
 
 	if (!Obj_Vtbl(Veh_Ent(self))->GetModel(Veh_Ent(self)) || !CGameModel_IsLoaded(Obj_Vtbl(Veh_Ent(self))->GetModel(Veh_Ent(self)))) {
@@ -1316,7 +1339,8 @@ void cVehicleEntity_RenderNow(cVehicleEntity *self) {
 	self->rendering = 0;
 }
 
-void cVehicleEntity_GetCamPoint(cVehicleEntity *self, vec3_t *pos, vec3_t *ang) {
+void cVehicleEntity_GetCamPoint(cEntity *elem, vec3_t *pos, vec3_t *ang) {
+	cVehicleEntity *self = (cVehicleEntity *)elem;
 	vec3_t v, r;
 
 	if (!Veh_IsServer() || !self->netCtrl) {
@@ -1339,7 +1363,8 @@ void cVehicleEntity_GetCamPoint(cVehicleEntity *self, vec3_t *pos, vec3_t *ang) 
 
 /* ---- the small vtable slots ---- */
 
-const char *cVehicleEntity_GetClassName(cVehicleEntity *self) {
+const char *cVehicleEntity_GetClassName(cEntity *base) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	(void)self;
 	return VEH_CLASSNAME;
 }
@@ -1348,16 +1373,19 @@ int cVehicleEntity_GetOwnerSlot(cEntity *e) {
 	return Veh(e)->slot;
 }
 
-float cVehicleEntity_GetWRadius(cVehicleEntity *self) {
+float cVehicleEntity_GetWRadius(cEntity *base) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	return self->wRadius;
 }
 
-void cVehicleEntity_UpdateOff(cVehicleEntity *self) {
+void cVehicleEntity_UpdateOff(cEntity *base) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	self->boost = 0.0f;
 	cWithLifeEntity_UpdateOff(Veh_Ent(self));
 }
 
-byte cVehicleEntity_IsType(cVehicleEntity *self, const char *type) {
+byte cVehicleEntity_IsType(cEntity *base, const char *type) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	if (!strcmp(type, TYEN_CAR)) {
 		return 1;
 	}
@@ -1405,7 +1433,8 @@ static inline byte Veh_VarFlag(byte *v, int *i, int set) {
 	return 1;
 }
 
-byte cVehicleEntity_VarF(cVehicleEntity *self, const char *name, double *d, int set) {
+byte cVehicleEntity_VarF(cEntity *base, const char *name, double *d, int set) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	if (!*name) {
 		return 0;
 	}
@@ -1506,7 +1535,8 @@ byte cVehicleEntity_VarF(cVehicleEntity *self, const char *name, double *d, int 
 	return cWithLifeEntity_VarF(Veh_Ent(self), name, d, set);
 }
 
-byte cVehicleEntity_VarI(cVehicleEntity *self, const char *name, int *i, int set) {
+byte cVehicleEntity_VarI(cEntity *base, const char *name, int *i, int set) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	if (!*name) {
 		return 0;
 	}
@@ -1519,7 +1549,7 @@ byte cVehicleEntity_VarI(cVehicleEntity *self, const char *name, int *i, int set
 		return 1;
 	}
 	if ((byte)set && len == 5 && name[4] == '0' && !strncmp(name, "AnmP", 4)) {
-		Veh_Vtbl(self)->SetPilotAnim(self, 0, *i);
+		Veh_Vtbl(self)->SetPilotAnim(&self->wl.obj.base, 0, *i);
 		return 1;
 	}
 	if (!strcmp(name, "FixedModel")) {
@@ -1591,7 +1621,8 @@ byte cVehicleEntity_VarI(cVehicleEntity *self, const char *name, int *i, int set
 	return cWithLifeEntity_VarI(Veh_Ent(self), name, i, set);
 }
 
-byte cVehicleEntity_VarS(cVehicleEntity *self, const char *name, char **s, int set) {
+byte cVehicleEntity_VarS(cEntity *base, const char *name, char **s, int set) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	if (!*name) {
 		return 0;
 	}
@@ -1609,10 +1640,10 @@ byte cVehicleEntity_VarS(cVehicleEntity *self, const char *name, char **s, int s
 	}
 	if (len == 5 && name[4] == '0' && !strncmp(name, "MPil", 4)) {
 		if ((byte)set) {
-			Veh_Vtbl(self)->SetPilot(self, 0, *s, 1.0f, 1.0f, 1.0f);
+			Veh_Vtbl(self)->SetPilot(&self->wl.obj.base, 0, *s, 1.0f, 1.0f, 1.0f);
 			return 1;
 		}
-		*s = (char *)Veh_Vtbl(self)->GetPilot(self, 0);
+		*s = (char *)Veh_Vtbl(self)->GetPilot(&self->wl.obj.base, 0);
 		return *s != NULL;
 	}
 	if (!strcmp(name, "Target")) {
@@ -1629,8 +1660,8 @@ byte cVehicleEntity_VarS(cVehicleEntity *self, const char *name, char **s, int s
 	return cWithLifeEntity_VarS(Veh_Ent(self), name, s, set);
 }
 
-byte cVehicleEntity_VarV(cVehicleEntity *self, const char *name, double *x, double *y, double *z,
-	int set) {
+byte cVehicleEntity_VarV(cEntity *base, const char *name, double *x, double *y, double *z, int set) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
 	vec3_t pos, ang;
 
 	if (!*name) {
@@ -1646,7 +1677,7 @@ byte cVehicleEntity_VarV(cVehicleEntity *self, const char *name, double *x, doub
 	}
 	if (!(byte)set && len == 5 && name[4] <= '3' && name[4] >= '0') {
 		if (!strncmp(name, "PPil", 4)) {
-			byte r = Veh_Vtbl(self)->GetPilotPos(self, name[4] - '0', &pos, &ang);
+			byte r = Veh_Vtbl(self)->GetPilotPos(&self->wl.obj.base, name[4] - '0', &pos, &ang);
 			if (r) {
 				*x = pos.x;
 				*y = pos.y;
@@ -1655,7 +1686,7 @@ byte cVehicleEntity_VarV(cVehicleEntity *self, const char *name, double *x, doub
 			return r;
 		}
 		if (!strncmp(name, "APil", 4)) {
-			byte r = Veh_Vtbl(self)->GetPilotPos(self, name[4] - '0', &pos, &ang);
+			byte r = Veh_Vtbl(self)->GetPilotPos(&self->wl.obj.base, name[4] - '0', &pos, &ang);
 			if (r) {
 				*x = (double)ang.x * VEH_DEG_PER_RAD_NUM / VEH_DEG_PER_RAD_DEN;
 				*y = (double)ang.y * VEH_DEG_PER_RAD_NUM / VEH_DEG_PER_RAD_DEN;
@@ -1993,10 +2024,11 @@ static void Veh_UpdatePilotModel(cVehicleEntity *self, const vec3_t *pos, float 
 	ppos.y = mtx.m[13];
 	ppos.z = mtx.m[14];
 	CGameModel_SetPos(&self->pilot, &ppos);
-	Veh_Vtbl(self)->UpdatePilot(self, 0, dt);
+	Veh_Vtbl(self)->UpdatePilot(&self->wl.obj.base, 0, dt);
 }
 
-void cVehicleEntity_UpdateModel(cVehicleEntity *self) {
+void cVehicleEntity_UpdateModel(cEntity *elem) {
+	cVehicleEntity *self = (cVehicleEntity *)elem;
 	vec3_t rot, pos;
 	float h = (self->wl.obj.base.pos.y - g_AtmosphereLimit) / (g_SpaceLimit - g_AtmosphereLimit);
 	float t = Timer_GetTime(&self->wl.obj.timer) + self->timeOfs;
@@ -2037,3 +2069,73 @@ void cVehicleEntity_UpdateModel(cVehicleEntity *self) {
 		Veh_FX(self)->vftable->Update(&(Veh_FX(self))->sub);
 	}
 }
+
+/* the vtable of cVehicleEntity */
+const cVehicleEntityVtbl cVehicleEntity_vftable = {
+	.base.base.base.Update = cVehicleEntity_Update,
+	.base.base.base.Render = cEntity_Render,
+	.base.base.base.UpdateOff = cVehicleEntity_UpdateOff,
+	.base.base.base.Delete = cVehicleEntity_Delete,
+	.base.base.base.GetClassName = cVehicleEntity_GetClassName,
+	.base.base.base.IsType = cVehicleEntity_IsType,
+	.base.base.base.GetPos = cObjEntity_GetPos,
+	.base.base.base.SetPos = cWithLifeEntity_SetPos,
+	.base.base.base.SetActive = cVehicleEntity_SetActive,
+	.base.base.base.TestLine = cWithLifeEntity_TestLine,
+	.base.base.base.TestSphere = cWithLifeEntity_TestSphere,
+	.base.base.base.Touch = cVehicleEntity_Touch,
+	.base.base.base.SetModel = cVehicleEntity_SetModel,
+	.base.base.base.GetTargetAngle = cObjEntity_GetTargetAngle,
+	.base.base.base.AimWeapon = cEntity_AimWeapon,
+	.base.base.base.SetEmbeddedFX = cVehicleEntity_SetEmbeddedFX,
+	.base.base.base.VarI = cVehicleEntity_VarI,
+	.base.base.base.VarF = cVehicleEntity_VarF,
+	.base.base.base.VarS = cVehicleEntity_VarS,
+	.base.base.base.VarV = cVehicleEntity_VarV,
+	.base.base.base.Vf20 = cEntity_Vf20,
+	.base.base.base.Vf21 = cEntity_Vf21,
+	.base.base.base.GetAI = cEntity_GetAI,
+	.base.base.Tick = cVehicleEntity_Tick,
+	.base.base.UpdateModel = cVehicleEntity_UpdateModel,
+	.base.base.GetNodeSlot = cWithLifeEntity_GetNodeSlot,
+	.base.base.GetRenderPos = cObjEntity_GetRenderPos,
+	.base.base.GetRenderAng = cObjEntity_GetRenderAng,
+	.base.base.GetSndAng = cObjEntity_GetSndAng,
+	.base.base.GetViewPos = cObjEntity_GetRenderPos,
+	.base.base.GetViewAng = cObjEntity_GetRenderAng,
+	.base.base.GetSndPos = cWithLifeEntity_GetSndPos,
+	.base.base.GetAng = cObjEntity_GetAng,
+	.base.base.SetAng = cObjEntity_SetAng,
+	.base.base.GetVel = cObjEntity_GetVel,
+	.base.base.SetVel = cVehicleEntity_SetVel,
+	.base.base.GetRotVel = cObjEntity_GetRotVel,
+	.base.base.SetRotVel = cObjEntity_SetRotVel,
+	.base.base.GetModel = cObjEntity_GetModel,
+	.base.base.GetCamera = cVehicleEntity_GetCamPoint,
+	.base.base.GetRadius = cVehicleEntity_GetWRadius,
+	.base.base.NetWrite = cVehicleEntity_NetWrite,
+	.base.base.NetNeedsSend = cEntity_NetNeedsSendTrue,
+	.base.base.NetRead = cVehicleEntity_NetRead,
+	.base.base.SetEffect = cVehicleEntity_SetFX,
+	.base.base.SetEffectParam = cVehicleEntity_SetFXParam,
+	.base.base.Render = cVehicleEntity_RenderNow,
+	.base.CheckLife = cWithLifeEntity_CheckLife,
+	.base.UnlinkListen = cWithLifeEntity_Vf48,
+	.base.OnDeath = cWithLifeEntity_OnDeath,
+	.base.OnDamage = cWithLifeEntity_OnDamage,
+	.base.SetMass = cVehicleEntity_SetMass,
+	.base.GetAction = cWithLifeEntity_GetAction,
+	.base.GetActCtrl = cWithLifeEntity_GetActCtrl,
+	.base.SetActCtrl = cWithLifeEntity_SetActCtrl,
+	.base.IsEMIed = cVehicleEntity_IsEMIed,
+	.UpdateSounds = cVehicleEntity_UpdateSounds,
+	.UpdateHistory = cVehicleEntity_UpdateHistory,
+	.EnableAI = cVehicleEntity_EnableAI,
+	.GetLaunchTaunts = cVehicleEntity_GetLaunchTaunts,
+	.SetPilot = cVehicleEntity_SetPilot,
+	.GetPilot = cVehicleEntity_GetPilot,
+	.SetPilotAnim = cVehicleEntity_SetPilotAnim,
+	.UpdatePilot = cVehicleEntity_UpdatePilot,
+	.GetPilotPos = cVehicleEntity_GetPilotPos,
+	.Crash = cVehicleEntity_Crash,
+};

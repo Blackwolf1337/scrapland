@@ -115,7 +115,7 @@ int Taunts_PoliceKind(cEntity *ship) {
 
 /* kind 8 plays only every second time, and only for ships with LaunchTaunts the other kinds */
 static byte Taunts_Allowed(cEntity *ship, int kind) {
-	if (!Veh_Vtbl(Veh(ship))->GetLaunchTaunts(Veh(ship))) {
+	if (!Veh_Vtbl(Veh(ship))->GetLaunchTaunts(&(Veh(ship))->wl.obj.base)) {
 		if (kind != 8) {
 			return 0;
 		}
@@ -129,7 +129,7 @@ void Taunts_Ship(cEntity *ship, int kind) {
 	if (!ship || !Taunts_Allowed(ship, kind)) {
 		return;
 	}
-	const char *pilot = Veh_Vtbl(Veh(ship))->GetPilot(Veh(ship), 0);
+	const char *pilot = Veh_Vtbl(Veh(ship))->GetPilot(&(Veh(ship))->wl.obj.base, 0);
 	if (pilot && strcmp(pilot, "")) {
 		Taunts_Play(ship->name, pilot + 2, kind);
 	}
@@ -179,7 +179,7 @@ void Taunts_Attacker(cEntity *usr, cEntity *ship) {
 	if (!t || !t->vftable->IsType(t, TYEN_CAR) || usr != t) {
 		return;
 	}
-	byte police = !strcmp(Veh_Vtbl(Veh(ship))->GetPilot(Veh(ship), 0) + 2, "Police");
+	byte police = !strcmp(Veh_Vtbl(Veh(ship))->GetPilot(&(Veh(ship))->wl.obj.base, 0) + 2, "Police");
 	int st = cAIVehicle_GetInternState(ai);
 	if (st == 5 || st == 4) {
 		Taunts_Ship(ship, police ? 9 : 5);

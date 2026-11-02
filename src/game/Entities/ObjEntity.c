@@ -454,7 +454,7 @@ byte cObjEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	return cEntity_VarI(self, name, i, set);
 }
 
-int cObjEntity_IsType(cEntity *self, const char *type) {
+byte cObjEntity_IsType(cEntity *self, const char *type) {
 	if (!strcmp(type, TYEN_OBJECT)) {
 		return 1;
 	}
@@ -1259,3 +1259,94 @@ void cNetController_Read(cNetController *self, void *m) {
 	}
 	self->age = 0.5f;
 }
+
+/* the slot NetNeedsSend of a class that does only return 1 */
+byte cEntity_NetNeedsSendTrue(cEntity *self, float dist2) {
+	(void)self;
+	(void)dist2;
+	return 1;
+}
+
+/* the slot NetRead of a class that does nothing there */
+void cEntity_NetReadNop(cEntity *self, void *msg, int isNew) {
+	(void)self;
+	(void)msg;
+	(void)isNew;
+}
+
+/* the slot NetWrite of a class that does nothing there */
+void cEntity_NetWriteNop(cEntity *self, float dist2, void *msg, int full) {
+	(void)self;
+	(void)dist2;
+	(void)msg;
+	(void)full;
+}
+
+/* the slot TestSphere of a class that does only return 0 */
+byte cEntity_TestSphereFalse(cEntity *self, cEntity *exclude, const vec3_t *center, float radius, const vec3_t *prev) {
+	(void)self;
+	(void)exclude;
+	(void)center;
+	(void)radius;
+	(void)prev;
+	return 0;
+}
+
+/* the slot Touch of a class that does nothing there */
+void cEntity_TouchNop(cEntity *self, cEntity *e, const vec3_t *point, const vec3_t *normal) {
+	(void)self;
+	(void)e;
+	(void)point;
+	(void)normal;
+}
+
+/* the vtable of cObjEntity */
+const cObjEntityVtbl cObjEntity_vftable = {
+	.base.Update = cObjEntity_Update,
+	.base.Render = cEntity_Render,
+	.base.UpdateOff = cObjEntity_UpdateOff,
+	.base.Delete = cObjEntity_Delete,
+	.base.GetClassName = cObjEntity_GetClassName,
+	.base.IsType = cObjEntity_IsType,
+	.base.GetPos = cObjEntity_GetPos,
+	.base.SetPos = cObjEntity_SetPos,
+	.base.SetActive = cObjEntity_SetActive,
+	.base.TestLine = cEntity_TestLine,
+	.base.TestSphere = cEntity_TestSphereFalse,
+	.base.Touch = cEntity_TouchNop,
+	.base.SetModel = cObjEntity_SetModel,
+	.base.GetTargetAngle = cObjEntity_GetTargetAngle,
+	.base.AimWeapon = cEntity_AimWeapon,
+	.base.SetEmbeddedFX = cObjEntity_SetEmbeddedFX,
+	.base.VarI = cObjEntity_VarI,
+	.base.VarF = cObjEntity_VarF,
+	.base.VarS = cObjEntity_VarS,
+	.base.VarV = cObjEntity_VarV,
+	.base.Vf20 = cEntity_Vf20,
+	.base.Vf21 = cEntity_Vf21,
+	.base.GetAI = cEntity_GetAI,
+	.Tick = cObjEntity_Tick,
+	.UpdateModel = cObjEntity_UpdateModel,
+	.GetNodeSlot = cObjEntity_GetNodeSlot,
+	.GetRenderPos = cObjEntity_GetRenderPos,
+	.GetRenderAng = cObjEntity_GetRenderAng,
+	.GetSndAng = cObjEntity_GetSndAng,
+	.GetViewPos = cObjEntity_GetRenderPos,
+	.GetViewAng = cObjEntity_GetRenderAng,
+	.GetSndPos = cObjEntity_GetSndPos,
+	.GetAng = cObjEntity_GetAng,
+	.SetAng = cObjEntity_SetAng,
+	.GetVel = cObjEntity_GetVel,
+	.SetVel = cObjEntity_SetVel,
+	.GetRotVel = cObjEntity_GetRotVel,
+	.SetRotVel = cObjEntity_SetRotVel,
+	.GetModel = cObjEntity_GetModel,
+	.GetCamera = cObjEntity_GetCamera,
+	.GetRadius = cObjEntity_GetRadius,
+	.NetWrite = cEntity_NetWriteNop,
+	.NetNeedsSend = cEntity_NetNeedsSendTrue,
+	.NetRead = cEntity_NetReadNop,
+	.SetEffect = cObjEntity_SetEffect,
+	.SetEffectParam = cObjEntity_SetEffectParam,
+	.Render = cObjEntity_Render,
+};

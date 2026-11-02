@@ -186,8 +186,8 @@ if vhecar:
 		check('cVehicleEntity_BoostTick' + fmt((vhea, vhedt)), lambda c=vhec, dt=vhedt: (SDTest.Call('cVehicleEntity_BoostTick', 'tvif', c,
 			dt), vhefl(c + 0x490, 1), SDTest.Call('cVehicleEntity_IsBoostReady', 'tbi', c)[0]))
 		vheset(vhec + 0x58c, (vhea,))
-		check('cVehicleEntity_EMITick' + fmt((vhea, vhedt)), lambda c=vhec, dt=vhedt: (SDTest.Call('cVehicleEntity_IsEMIed', 'tii', c)[0],
-			SDTest.Call('cVehicleEntity_EMITick', 'tvif', c, dt), vhefl(c + 0x58c, 1), SDTest.Call('cVehicleEntity_IsEMIed', 'tii', c)[0]))
+		check('cVehicleEntity_EMITick' + fmt((vhea, vhedt)), lambda c=vhec, dt=vhedt: (SDTest.Call('cVehicleEntity_IsEMIed', 'tii', c)[0] & 0xff,
+			SDTest.Call('cVehicleEntity_EMITick', 'tvif', c, dt), vhefl(c + 0x58c, 1), SDTest.Call('cVehicleEntity_IsEMIed', 'tii', c)[0] & 0xff))
 		vheset(vhec + 0x590, (vhea,))
 		vhesetbyte(vhec + 0x594, 1)
 		check('cVehicleEntity_CloudTick' + fmt((vhea, vhedt)), lambda c=vhec, dt=vhedt: (SDTest.Call('cVehicleEntity_CloudTick', 'tvif', c,

@@ -89,15 +89,17 @@ void cItemEntity_dtor(cItemEntity *self) {
 	cObjEntity_dtor(&self->base);
 }
 
-cItemEntity *cItemEntity_Delete(cItemEntity *self, uint32_t flags) {
+cEntity *cItemEntity_Delete(cEntity *base, uint32_t flags) {
+	cItemEntity *self = (cItemEntity *)base;
 	cItemEntity_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CITEMENTITY_SIZE);
 	}
-	return self;
+	return base;
 }
 
-void cItemEntity_Touch(cItemEntity *self, cEntity *other, const vec3_t *point, const vec3_t *dir) {
+void cItemEntity_Touch(cEntity *elem, cEntity *other, const vec3_t *point, const vec3_t *dir) {
+	cItemEntity *self = (cItemEntity *)elem;
 	cEntity *pl = Item_Usr0();
 
 	(void)point;
@@ -122,7 +124,8 @@ void cItemEntity_Touch(cItemEntity *self, cEntity *other, const vec3_t *point, c
 	cPy_Function_Execute(&self->onTake, 0);
 }
 
-byte cItemEntity_VarF(cItemEntity *self, const char *name, double *d, int set) {
+byte cItemEntity_VarF(cEntity *elem, const char *name, double *d, int set) {
+	cItemEntity *self = (cItemEntity *)elem;
 	if (!*name) {
 		return 0;
 	}
@@ -174,12 +177,14 @@ float cItemEntity_GetBackTime(cItemEntity *self) {
 	return self->backTime;
 }
 
-const char *cItemEntity_GetClassName(cItemEntity *self) {
+const char *cItemEntity_GetClassName(cEntity *base) {
+	cItemEntity *self = (cItemEntity *)base;
 	(void)self;
 	return ITEM_CLASSNAME;
 }
 
-float cItemEntity_GetRadius(cItemEntity *self) {
+float cItemEntity_GetRadius(cEntity *base) {
+	cItemEntity *self = (cItemEntity *)base;
 	return self->radius;
 }
 
@@ -192,7 +197,8 @@ static inline void Item_VarFlag(byte *flag, int *i, int set) {
 	}
 }
 
-byte cItemEntity_VarI(cItemEntity *self, const char *name, int *i, int set) {
+byte cItemEntity_VarI(cEntity *elem, const char *name, int *i, int set) {
+	cItemEntity *self = (cItemEntity *)elem;
 	if (!*name) {
 		return 0;
 	}
@@ -231,14 +237,16 @@ byte cItemEntity_VarI(cItemEntity *self, const char *name, int *i, int set) {
 	return cObjEntity_VarI(&self->base, name, i, set);
 }
 
-byte cItemEntity_IsType(cItemEntity *self, const char *type) {
+byte cItemEntity_IsType(cEntity *elem, const char *type) {
+	cItemEntity *self = (cItemEntity *)elem;
 	if (!strcmp(type, ITEM_CLASSNAME)) {
 		return 1;
 	}
 	return cObjEntity_IsType(&self->base, type);
 }
 
-void cItemEntity_NetRead(cItemEntity *self, void *msg, int unused) {
+void cItemEntity_NetRead(cEntity *base, void *msg, int unused) {
+	cItemEntity *self = (cItemEntity *)base;
 	(void)unused;
 	self->obj.net->vftable->Read(self->obj.net, msg);
 	if (self->obj.net->flags & 1) {
@@ -248,7 +256,8 @@ void cItemEntity_NetRead(cItemEntity *self, void *msg, int unused) {
 	}
 }
 
-void cItemEntity_NetWrite(cItemEntity *self, float dist2, void *msg, int full) {
+void cItemEntity_NetWrite(cEntity *base, float dist2, void *msg, int full) {
+	cItemEntity *self = (cItemEntity *)base;
 	(void)dist2;
 	byte all = (0.0f >= (float)self->syncTicks) | (byte)full;
 	self->obj.net->vftable->Write(self->obj.net, (0.0f >= self->respawn) + 2, Item_Ent(self), msg, all);
@@ -257,7 +266,8 @@ void cItemEntity_NetWrite(cItemEntity *self, float dist2, void *msg, int full) {
 	}
 }
 
-void cItemEntity_Tick(cItemEntity *self, float dt) {
+void cItemEntity_Tick(cEntity *elem, float dt) {
+	cItemEntity *self = (cItemEntity *)elem;
 	vec3_t to, hit;
 
 	if (Net_IsNetEntity(Item_Ent(self))) {
@@ -351,7 +361,8 @@ void cItemEntity_SetOwner(cItemEntity *self, const char *name) {
 	}
 }
 
-void cItemEntity_SetPos(cItemEntity *self, const vec3_t *pos) {
+void cItemEntity_SetPos(cEntity *base, const vec3_t *pos) {
+	cItemEntity *self = (cItemEntity *)base;
 	self->syncTicks = Net_GetSendRate() * 5;
 	cObjEntity_SetPos(Item_Ent(self), pos);
 }
@@ -463,7 +474,8 @@ void cItemEntity_SetTypeMarker(cItemEntity *self, const char *types) {
 	}
 }
 
-void cItemEntity_Update(cItemEntity *self) {
+void cItemEntity_Update(cEntity *elem) {
+	cItemEntity *self = (cItemEntity *)elem;
 	vec3_t tmp, ang;
 
 	cObjEntity_Update(Item_Ent(self));
@@ -496,8 +508,8 @@ void cItemEntity_Update(cItemEntity *self) {
 	}
 }
 
-byte cItemEntity_TestSphere(cItemEntity *self, cEntity *other, const vec3_t *center, float radius,
-	int arg) {
+byte cItemEntity_TestSphere(cEntity *elem, cEntity *other, const vec3_t *center, float radius, const vec3_t *arg) {
+	cItemEntity *self = (cItemEntity *)elem;
 	vec3_t tmp, dir, point;
 
 	(void)arg;
@@ -538,7 +550,8 @@ byte cItemEntity_TestSphere(cItemEntity *self, cEntity *other, const vec3_t *cen
 	return 1;
 }
 
-byte cItemEntity_VarS(cItemEntity *self, const char *name, char **s, int set) {
+byte cItemEntity_VarS(cEntity *base, const char *name, char **s, int set) {
+	cItemEntity *self = (cItemEntity *)base;
 	if (!*name) {
 		return 0;
 	}
@@ -575,7 +588,8 @@ byte cItemEntity_VarS(cItemEntity *self, const char *name, char **s, int set) {
 	return cObjEntity_VarS(Item_Ent(self), name, s, set);
 }
 
-byte cItemEntity_NetNeedsSend(cItemEntity *self, float dist2) {
+byte cItemEntity_NetNeedsSend(cEntity *base, float dist2) {
+	cItemEntity *self = (cItemEntity *)base;
 	if (self->syncTicks > 0) {
 		return 1;
 	}
@@ -590,7 +604,8 @@ byte cItemEntity_NetNeedsSend(cItemEntity *self, float dist2) {
 	return 0;
 }
 
-byte cItemEntity_VarV(cItemEntity *self, const char *name, double *x, double *y, double *z, int set) {
+byte cItemEntity_VarV(cEntity *elem, const char *name, double *x, double *y, double *z, int set) {
+	cItemEntity *self = (cItemEntity *)elem;
 	vec3_t v;
 
 	if (!*name) {
@@ -626,3 +641,54 @@ byte cItemEntity_VarV(cItemEntity *self, const char *name, double *x, double *y,
 	}
 	return cObjEntity_VarV(Item_Ent(self), name, x, y, z, set);
 }
+
+/* the vtable of cItemEntity */
+const cObjEntityVtbl cItemEntity_vftable = {
+	.base.Update = cItemEntity_Update,
+	.base.Render = cEntity_Render,
+	.base.UpdateOff = cObjEntity_UpdateOff,
+	.base.Delete = cItemEntity_Delete,
+	.base.GetClassName = cItemEntity_GetClassName,
+	.base.IsType = cItemEntity_IsType,
+	.base.GetPos = cObjEntity_GetPos,
+	.base.SetPos = cItemEntity_SetPos,
+	.base.SetActive = cObjEntity_SetActive,
+	.base.TestLine = cEntity_TestLine,
+	.base.TestSphere = cItemEntity_TestSphere,
+	.base.Touch = cItemEntity_Touch,
+	.base.SetModel = cObjEntity_SetModel,
+	.base.GetTargetAngle = cObjEntity_GetTargetAngle,
+	.base.AimWeapon = cEntity_AimWeapon,
+	.base.SetEmbeddedFX = cObjEntity_SetEmbeddedFX,
+	.base.VarI = cItemEntity_VarI,
+	.base.VarF = cItemEntity_VarF,
+	.base.VarS = cItemEntity_VarS,
+	.base.VarV = cItemEntity_VarV,
+	.base.Vf20 = cEntity_Vf20,
+	.base.Vf21 = cEntity_Vf21,
+	.base.GetAI = cEntity_GetAI,
+	.Tick = cItemEntity_Tick,
+	.UpdateModel = cObjEntity_UpdateModel,
+	.GetNodeSlot = cObjEntity_GetNodeSlot,
+	.GetRenderPos = cObjEntity_GetRenderPos,
+	.GetRenderAng = cObjEntity_GetRenderAng,
+	.GetSndAng = cObjEntity_GetSndAng,
+	.GetViewPos = cObjEntity_GetRenderPos,
+	.GetViewAng = cObjEntity_GetRenderAng,
+	.GetSndPos = cObjEntity_GetSndPos,
+	.GetAng = cObjEntity_GetAng,
+	.SetAng = cObjEntity_SetAng,
+	.GetVel = cObjEntity_GetVel,
+	.SetVel = cObjEntity_SetVel,
+	.GetRotVel = cObjEntity_GetRotVel,
+	.SetRotVel = cObjEntity_SetRotVel,
+	.GetModel = cObjEntity_GetModel,
+	.GetCamera = cObjEntity_GetCamera,
+	.GetRadius = cItemEntity_GetRadius,
+	.NetWrite = cItemEntity_NetWrite,
+	.NetNeedsSend = cItemEntity_NetNeedsSend,
+	.NetRead = cItemEntity_NetRead,
+	.SetEffect = cObjEntity_SetEffect,
+	.SetEffectParam = cObjEntity_SetEffectParam,
+	.Render = cObjEntity_Render,
+};

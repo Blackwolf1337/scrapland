@@ -19,7 +19,6 @@
 #include "scrap/world.h"
 
 #define TYEN_OBJECT "Obj"
-#define COBJENTITY_VFTABLE GAME_VFTABLE(cObjEntity_vftable)
 #define CNETCONTROLLER_VFTABLE GAME_VFTABLE(cNetController_vftable)
 #define COBJENTITY_SIZE sizeof(cObjEntity)
 
@@ -141,6 +140,8 @@ SD_OFFSET(cObjEntityVtbl, GetAng, 0x80);
 SD_OFFSET(cObjEntityVtbl, GetModel, 0x98);
 SD_OFFSET(cObjEntityVtbl, SetEffect, 0xb0);
 SD_OFFSET(cObjEntityVtbl, Render, 0xb8);
+extern const cObjEntityVtbl cObjEntity_vftable;
+#define COBJENTITY_VFTABLE (&cObjEntity_vftable.base)
 
 static inline cObjEntity *Obj(const void *e) {
 	return (cObjEntity *)e;
@@ -162,7 +163,7 @@ cEntity *cObjEntity_Delete(cEntity *self, uint32_t flags);
 void cObjEntity_Update(cEntity *self);
 void cObjEntity_UpdateOff(cEntity *self);
 const char *cObjEntity_GetClassName(cEntity *self);
-int cObjEntity_IsType(cEntity *self, const char *type);
+byte cObjEntity_IsType(cEntity *self, const char *type);
 vec3_t *cObjEntity_GetPos(cEntity *self, vec3_t *out);
 void cObjEntity_SetPos(cEntity *self, const vec3_t *pos);
 void cObjEntity_SetActive(cEntity *self, byte on);

@@ -21,7 +21,6 @@
 #include "scrap/sound.h"
 #include "scrap/vehicleattack.h"
 
-#define CWITHLIFEENTITY_VFTABLE GAME_VFTABLE(cWithLifeEntity_vftable)
 #define CWITHLIFEENTITY_SIZE sizeof(cWithLifeEntity)
 
 typedef struct cWithLifeEntity {
@@ -80,6 +79,8 @@ SD_OFFSET(cWithLifeEntityVtbl, CheckLife, 0xbc);
 SD_OFFSET(cWithLifeEntityVtbl, SetMass, 0xcc);
 SD_OFFSET(cWithLifeEntityVtbl, GetActCtrl, 0xd4);
 SD_OFFSET(cWithLifeEntityVtbl, IsEMIed, 0xdc);
+extern const cWithLifeEntityVtbl cWithLifeEntity_vftable;
+#define CWITHLIFEENTITY_VFTABLE (&cWithLifeEntity_vftable.base.base)
 
 static inline cWithLifeEntity *WLife(const void *e) {
 	return (cWithLifeEntity *)e;

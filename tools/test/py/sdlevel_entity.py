@@ -81,7 +81,7 @@ for v in ('Life', 'Bogus'):
 check('cEntity_GetPos(player)', lambda: (lambda r: (r[0] != 0, r[1]))(SDTest.Call('cEntity_GetPos', 'tiiF', ntplayer,
 	(0.0, 0.0, 0.0))))
 check('cEntity_GetAI(player)', lambda: SDTest.Call('cEntity_GetAI', 'tii', ntplayer)[0] != 0)
-check('cEntity_IsType(player)', lambda: map(lambda t: SDTest.Call('cEntity_IsType', 'tiis', ntplayer, t)[0],
+check('cEntity_IsType(player)', lambda: map(lambda t: SDTest.Call('cEntity_IsType', 'tiis', ntplayer, t)[0] & 0xff,
 	('Entity', 'entity', 'WalkChar', '', 'Entityx')))
 
 # plain entities: the second one with a taken name
@@ -103,7 +103,7 @@ check('cEntity_Next', lambda: (ntname(SDTest.Call('cEntity_Next', 'tii', nt3)[0]
 check('cWorld_GetFirstEntity new', lambda: ntname(SDTest.Call('cWorld_GetFirstEntity', 'tii', ntworld)[0]))
 check('Scrap.GetEntity(SDEnt).Name', lambda: Scrap.GetEntity('SDEnt').Name)
 check('cEntity_GetClassName', lambda: SDTest.Call('cEntity_GetClassName', 'tsi', nt1)[0])
-check('cEntity_IsType', lambda: map(lambda t: SDTest.Call('cEntity_IsType', 'tiis', nt1, t)[0], ('Entity', 'entity', 'Obj', '')))
+check('cEntity_IsType', lambda: map(lambda t: SDTest.Call('cEntity_IsType', 'tiis', nt1, t)[0] & 0xff, ('Entity', 'entity', 'Obj', '')))
 check('cEntity_GetAI', lambda: SDTest.Call('cEntity_GetAI', 'tii', nt1)[0])
 check('cEntity_Update/Render/UpdateOff', lambda: (SDTest.Call('cEntity_Update', 'tvi', nt1), SDTest.Call('cEntity_Render', 'tvii', nt1, 0),
 	SDTest.Call('cEntity_UpdateOff', 'tvi', nt1), ntfields(nt1)))

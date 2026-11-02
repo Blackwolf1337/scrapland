@@ -366,7 +366,7 @@ byte cFollowCamEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	return cCamControl_VarI(self, name, i, set);
 }
 
-int cFollowCamEntity_IsType(cEntity *self, const char *type) {
+byte cFollowCamEntity_IsType(cEntity *self, const char *type) {
 	if (!strcmp(type, TYEN_FCAM)) {
 		return 1;
 	}
@@ -550,3 +550,38 @@ byte cFollowCamEntity_VarV(cEntity *self, const char *name, double *x, double *y
 	}
 	return cCamControl_VarV(self, name, x, y, z, set);
 }
+
+/* the vtable of cFollowCamEntity */
+const cFollowCamVtbl cFollowCamEntity_vftable = {
+	.base.base.Update = cFollowCamEntity_Update,
+	.base.base.Render = cEntity_Render,
+	.base.base.UpdateOff = cEntity_UpdateOff,
+	.base.base.Delete = cFollowCamEntity_Delete,
+	.base.base.GetClassName = cFollowCamEntity_GetClassName,
+	.base.base.IsType = cFollowCamEntity_IsType,
+	.base.base.GetPos = cEntity_GetPos,
+	.base.base.SetPos = cEntity_SetPos,
+	.base.base.SetActive = cEntity_SetActive,
+	.base.base.TestLine = cEntity_TestLine,
+	.base.base.TestSphere = cEntity_TestSphereFalse,
+	.base.base.Touch = cEntity_TouchNop,
+	.base.base.SetModel = cEntity_SetModel,
+	.base.base.GetTargetAngle = cEntity_GetTargetAngle,
+	.base.base.AimWeapon = cEntity_AimWeapon,
+	.base.base.SetEmbeddedFX = cEntity_SetEmbeddedFX,
+	.base.base.VarI = cFollowCamEntity_VarI,
+	.base.base.VarF = cFollowCamEntity_VarF,
+	.base.base.VarS = cFollowCamEntity_VarS,
+	.base.base.VarV = cFollowCamEntity_VarV,
+	.base.base.Vf20 = cEntity_Vf20,
+	.base.base.Vf21 = cEntity_Vf21,
+	.base.base.GetAI = cEntity_GetAI,
+	.base.GetCamPos = cCamControl_GetCamPos,
+	.base.SetCamPos = cCamControl_SetCamPos,
+	.base.Lerp = cFollowCamEntity_Lerp,
+	.base.Slot = cFollowCamEntity_Slot,
+	.base.SetTarget = cFollowCamEntity_SetTargetName,
+	.base.UpdateOff = cFollowCamEntity_UpdateOff,
+	.GetAng2 = cFollowCamEntity_GetAng2,
+	.SetAng2 = cFollowCamEntity_SetAng2,
+};

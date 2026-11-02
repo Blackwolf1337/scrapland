@@ -295,7 +295,7 @@ byte cEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	return 0;
 }
 
-int cEntity_IsType(cEntity *self, const char *type) {
+byte cEntity_IsType(cEntity *self, const char *type) {
 	(void)self;
 	return !strcmp(type, "Entity");
 }
@@ -486,3 +486,30 @@ int cEntity_Vf21(cEntity *self, int a) {
 	(void)a;
 	return 0;
 }
+
+/* the vtable of cEntity */
+const cEntityVtbl cEntity_vftable = {
+	.Update = cEntity_Update,
+	.Render = cEntity_Render,
+	.UpdateOff = cEntity_UpdateOff,
+	.Delete = cEntity_Delete,
+	.GetClassName = cEntity_GetClassName,
+	.IsType = cEntity_IsType,
+	.GetPos = cEntity_GetPos,
+	.SetPos = cEntity_SetPos,
+	.SetActive = cEntity_SetActive,
+	.TestLine = cEntity_TestLine,
+	.TestSphere = cEntity_TestSphereFalse,
+	.Touch = cEntity_TouchNop,
+	.SetModel = cEntity_SetModel,
+	.GetTargetAngle = cEntity_GetTargetAngle,
+	.AimWeapon = cEntity_AimWeapon,
+	.SetEmbeddedFX = cEntity_SetEmbeddedFX,
+	.VarI = cEntity_VarI,
+	.VarF = cEntity_VarF,
+	.VarS = cEntity_VarS,
+	.VarV = cEntity_VarV,
+	.Vf20 = cEntity_Vf20,
+	.Vf21 = cEntity_Vf21,
+	.GetAI = cEntity_GetAI,
+};

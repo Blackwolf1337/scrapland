@@ -320,7 +320,7 @@ byte cWithLifeEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	return cObjEntity_VarI(self, name, i, set);
 }
 
-int cWithLifeEntity_IsType(cEntity *self, const char *type) {
+byte cWithLifeEntity_IsType(cEntity *self, const char *type) {
 	if (!strcmp(type, WL_CLASSNAME)) {
 		return 1;
 	}
@@ -633,3 +633,63 @@ byte cWithLifeEntity_IsEMIed(cEntity *self) {
 void cWithLifeEntity_Vf48(cEntity *self) {
 	(void)self;
 }
+
+/* the vtable of cWithLifeEntity */
+const cWithLifeEntityVtbl cWithLifeEntity_vftable = {
+	.base.base.Update = cWithLifeEntity_Update,
+	.base.base.Render = cEntity_Render,
+	.base.base.UpdateOff = cWithLifeEntity_UpdateOff,
+	.base.base.Delete = cWithLifeEntity_Delete,
+	.base.base.GetClassName = cWithLifeEntity_GetClassName,
+	.base.base.IsType = cWithLifeEntity_IsType,
+	.base.base.GetPos = cObjEntity_GetPos,
+	.base.base.SetPos = cWithLifeEntity_SetPos,
+	.base.base.SetActive = cWithLifeEntity_SetActive,
+	.base.base.TestLine = cWithLifeEntity_TestLine,
+	.base.base.TestSphere = cWithLifeEntity_TestSphere,
+	.base.base.Touch = cEntity_TouchNop,
+	.base.base.SetModel = cObjEntity_SetModel,
+	.base.base.GetTargetAngle = cObjEntity_GetTargetAngle,
+	.base.base.AimWeapon = cEntity_AimWeapon,
+	.base.base.SetEmbeddedFX = cWithLifeEntity_SetEmbeddedFX,
+	.base.base.VarI = cWithLifeEntity_VarI,
+	.base.base.VarF = cWithLifeEntity_VarF,
+	.base.base.VarS = cWithLifeEntity_VarS,
+	.base.base.VarV = cWithLifeEntity_VarV,
+	.base.base.Vf20 = cEntity_Vf20,
+	.base.base.Vf21 = cEntity_Vf21,
+	.base.base.GetAI = cEntity_GetAI,
+	.base.Tick = cWithLifeEntity_Tick,
+	.base.UpdateModel = cObjEntity_UpdateModel,
+	.base.GetNodeSlot = cWithLifeEntity_GetNodeSlot,
+	.base.GetRenderPos = cObjEntity_GetRenderPos,
+	.base.GetRenderAng = cObjEntity_GetRenderAng,
+	.base.GetSndAng = cObjEntity_GetSndAng,
+	.base.GetViewPos = cObjEntity_GetRenderPos,
+	.base.GetViewAng = cObjEntity_GetRenderAng,
+	.base.GetSndPos = cWithLifeEntity_GetSndPos,
+	.base.GetAng = cObjEntity_GetAng,
+	.base.SetAng = cObjEntity_SetAng,
+	.base.GetVel = cObjEntity_GetVel,
+	.base.SetVel = cObjEntity_SetVel,
+	.base.GetRotVel = cObjEntity_GetRotVel,
+	.base.SetRotVel = cObjEntity_SetRotVel,
+	.base.GetModel = cObjEntity_GetModel,
+	.base.GetCamera = cObjEntity_GetCamera,
+	.base.GetRadius = cWithLifeEntity_GetRadius,
+	.base.NetWrite = cEntity_NetWriteNop,
+	.base.NetNeedsSend = cEntity_NetNeedsSendTrue,
+	.base.NetRead = cEntity_NetReadNop,
+	.base.SetEffect = cObjEntity_SetEffect,
+	.base.SetEffectParam = cObjEntity_SetEffectParam,
+	.base.Render = cWithLifeEntity_RenderNow,
+	.CheckLife = cWithLifeEntity_CheckLife,
+	.UnlinkListen = cWithLifeEntity_Vf48,
+	.OnDeath = cWithLifeEntity_OnDeath,
+	.OnDamage = cWithLifeEntity_OnDamage,
+	.SetMass = cWithLifeEntity_SetMass,
+	.GetAction = cWithLifeEntity_GetAction,
+	.GetActCtrl = cWithLifeEntity_GetActCtrl,
+	.SetActCtrl = cWithLifeEntity_SetActCtrl,
+	.IsEMIed = cWithLifeEntity_IsEMIed,
+};

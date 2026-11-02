@@ -107,7 +107,7 @@ byte cCamControl_VarI(cEntity *self, const char *name, int *i, int set) {
 	return cEntity_VarI(self, name, i, set);
 }
 
-int cCamControl_IsType(cEntity *self, const char *type) {
+byte cCamControl_IsType(cEntity *self, const char *type) {
 	if (!strcmp(type, TYEN_CAM)) {
 		return 1;
 	}
@@ -203,3 +203,36 @@ byte cCamControl_VarV(cEntity *self, const char *name, double *x, double *y, dou
 	}
 	return cEntity_VarV(self, name, x, y, z, set);
 }
+
+/* the vtable of cCamControl */
+const cCamControlVtbl cCamControl_vftable = {
+	.base.Update = cEntity_Update,
+	.base.Render = cEntity_Render,
+	.base.UpdateOff = cEntity_UpdateOff,
+	.base.Delete = cCamControl_Delete,
+	.base.GetClassName = cCamControl_GetClassName,
+	.base.IsType = cCamControl_IsType,
+	.base.GetPos = cEntity_GetPos,
+	.base.SetPos = cEntity_SetPos,
+	.base.SetActive = cEntity_SetActive,
+	.base.TestLine = cEntity_TestLine,
+	.base.TestSphere = cEntity_TestSphereFalse,
+	.base.Touch = cEntity_TouchNop,
+	.base.SetModel = cEntity_SetModel,
+	.base.GetTargetAngle = cEntity_GetTargetAngle,
+	.base.AimWeapon = cEntity_AimWeapon,
+	.base.SetEmbeddedFX = cEntity_SetEmbeddedFX,
+	.base.VarI = cCamControl_VarI,
+	.base.VarF = cCamControl_VarF,
+	.base.VarS = cCamControl_VarS,
+	.base.VarV = cCamControl_VarV,
+	.base.Vf20 = cEntity_Vf20,
+	.base.Vf21 = cEntity_Vf21,
+	.base.GetAI = cEntity_GetAI,
+	.GetCamPos = cCamControl_GetCamPos,
+	.SetCamPos = cCamControl_SetCamPos,
+	.Lerp = cCamControl_NopF,
+	.Slot = cCamControl_NopF,
+	.SetTarget = cCamControl_SetTarget,
+	.UpdateOff = cCamControl_NopF,
+};
