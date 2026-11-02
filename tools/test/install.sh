@@ -1,7 +1,7 @@
 #!/bin/bash
-# Copies the built ScrapC.exe (build-win64) and the DLLs of FFmpeg and SDL3 into game/Bin. Refuses while the game of this checkout runs (one
-# started with its prefix; worktrees made by mkgame.sh have their own); copies to .new and renames, so a reader
-# never sees a half written file.
+# Copies the built ScrapC.exe (build-win64) and the DLLs of FFmpeg and SDL3 into game/Bin. Refuses while the game of
+# this checkout runs (one started with its prefix; worktrees made by mkgame.sh have their own); copies to .new and
+# renames, so a reader never sees a half written file.
 root=$(cd "$(dirname "$0")/../.." && pwd)
 for pid in $(pgrep -x 'Scrap\.exe|ScrapC\.exe|Dedicated\.exe'); do
 	if grep -qzx "WINEPREFIX=$root/prefix" "/proc/$pid/environ" 2> /dev/null; then
