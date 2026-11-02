@@ -8,23 +8,6 @@
 #include "scrap/console.h"
 #include "scrap/scorer.h"
 
-SD_SYM(PyType_Type);
-SD_SYM(str_3c75a8);
-SD_SYM(PyMenuEntity_Dealloc);
-SD_SYM(PyMenuEntity_Print);
-SD_SYM(PyMenuEntity_GetAttr);
-SD_SYM(PyMenuEntity_SetAttr);
-PyTypeObject cPyMenuEntity_Type = {
-	.ob_refcnt = 1,
-	.ob_type = (void *)sd_PyType_Type,
-	.tp_name = (void *)sd_str_3c75a8,
-	.tp_basicsize = sizeof(cPyMenuEntity),
-	.tp_dealloc = (void *)sd_PyMenuEntity_Dealloc,
-	.tp_print = (void *)sd_PyMenuEntity_Print,
-	.tp_getattr = (void *)sd_PyMenuEntity_GetAttr,
-	.tp_setattr = (void *)sd_PyMenuEntity_SetAttr,
-};
-
 PyObject *ScorerItem_PyNew(int player, const char *name) {
 	cScorer *scorer = Scorer_Get(player);
 	if (!scorer || !cScorer_FindItem(scorer, name)) {
@@ -148,3 +131,14 @@ int PyMenuEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
 
 const char str_3c75a8[] = "cPyMenuEntity";
 
+extern const char str_3c75a8[];
+PyTypeObject cPyMenuEntity_Type = {
+	.ob_refcnt = 1,
+	.ob_type = &PyType_Type,
+	.tp_name = (void *)str_3c75a8,
+	.tp_basicsize = sizeof(cPyMenuEntity),
+	.tp_dealloc = (void *)PyMenuEntity_Dealloc,
+	.tp_print = (void *)PyMenuEntity_Print,
+	.tp_getattr = (void *)PyMenuEntity_GetAttr,
+	.tp_setattr = (void *)PyMenuEntity_SetAttr,
+};

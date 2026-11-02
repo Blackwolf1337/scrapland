@@ -1551,14 +1551,9 @@ byte g_SceneFxOn[5];
 
 int g_SceneFxLast;
 
-SD_SYM(DuDv_IsOn);
-SD_SYM(Bloom_IsOn);
-SD_SYM(MotionBlur_IsOn);
-SD_SYM(RadialBlur_IsOn);
-SD_SYM(Blur_IsOn);
 rtFxOn_t g_RTFxOn[5] = {
-	(void *)sd_DuDv_IsOn, (void *)sd_Bloom_IsOn, (void *)sd_MotionBlur_IsOn, (void *)sd_RadialBlur_IsOn,
-	(void *)sd_Blur_IsOn,
+	(void *)DuDv_IsOn, (void *)Bloom_IsOn, (void *)MotionBlur_IsOn, (void *)RadialBlur_IsOn,
+	(void *)Blur_IsOn,
 };
 
 /* ---- Scene ---- */
@@ -1616,14 +1611,9 @@ byte Scene_Begin(void) {
 
 uint32_t g_SceneViewport[6];
 
-SD_SYM(DuDv_Render);
-SD_SYM(Bloom_Render);
-SD_SYM(MotionBlur_Render);
-SD_SYM(RadialBlur_Render);
-SD_SYM(Blur_Render);
 rtFxRender_t g_RTFxRender[5] = {
-	(void *)sd_DuDv_Render, (void *)sd_Bloom_Render, (void *)sd_MotionBlur_Render, (void *)sd_RadialBlur_Render,
-	(void *)sd_Blur_Render,
+	(void *)DuDv_Render, (void *)Bloom_Render, (void *)MotionBlur_Render, (void *)RadialBlur_Render,
+	(void *)Blur_Render,
 };
 
 void Scene_End(void) {

@@ -108,23 +108,6 @@ PyObject *cPyEntity_IsType(PyObject *self, PyObject *args) {
 	return Py_BuildValue("i", Entity_IsType(e, type) ? 1 : 0);
 }
 
-SD_SYM(PyType_Type);
-SD_SYM(str_3c7284);
-SD_SYM(PyEntity_Dealloc);
-SD_SYM(PyEntity_Print);
-SD_SYM(PyEntity_GetAttr);
-SD_SYM(PyEntity_SetAttr);
-PyTypeObject cPyEntity_Type = {
-	.ob_refcnt = 1,
-	.ob_type = (void *)sd_PyType_Type,
-	.tp_name = (void *)sd_str_3c7284,
-	.tp_basicsize = sizeof(cPyEntity),
-	.tp_dealloc = (void *)sd_PyEntity_Dealloc,
-	.tp_print = (void *)sd_PyEntity_Print,
-	.tp_getattr = (void *)sd_PyEntity_GetAttr,
-	.tp_setattr = (void *)sd_PyEntity_SetAttr,
-};
-
 /* type functions of cPyEntity (type object rva 0x428e18) */
 
 PyObject *PyEntity_New(const char *name) {
@@ -170,37 +153,31 @@ int PyEntity_Print(PyObject *self, FILE *fp, int flags) {
 	return 0;
 }
 
-SD_SYM(str_PyMethod_cPyEntity_Del);
-SD_SYM(cPyEntity_Del);
-SD_SYM(str_PyMethod_cPyEntity_SetModel);
-SD_SYM(cPyEntity_SetModel);
-SD_SYM(str_PyMethod_cPyEntity_SetFX);
-SD_SYM(cPyEntity_SetFX);
-SD_SYM(str_PyMethod_cPyEntity_GetTgAng);
-SD_SYM(cPyEntity_GetTgAng);
-SD_SYM(str_PyMethod_cPyEntity_DrawWeap);
-SD_SYM(cPyEntity_DrawWeap);
-SD_SYM(str_PyMethod_cPyEntity_IsType);
-SD_SYM(cPyEntity_IsType);
+extern const char str_PyMethod_cPyEntity_Del[];
+extern const char str_PyMethod_cPyEntity_DrawWeap[];
+extern const char str_PyMethod_cPyEntity_GetTgAng[];
+extern const char str_PyMethod_cPyEntity_IsType[];
+extern const char str_PyMethod_cPyEntity_SetFX[];
+extern const char str_PyMethod_cPyEntity_SetModel[];
 PyMethodDef cPyEntity_methods[7] = {
-	{ .ml_name = (void *)sd_str_PyMethod_cPyEntity_Del, .ml_meth = (void *)sd_cPyEntity_Del, .ml_flags = 1 },
+	{ .ml_name = (void *)str_PyMethod_cPyEntity_Del, .ml_meth = (void *)cPyEntity_Del, .ml_flags = 1 },
 	{
-		.ml_name = (void *)sd_str_PyMethod_cPyEntity_SetModel,
-		.ml_meth = (void *)sd_cPyEntity_SetModel,
+		.ml_name = (void *)str_PyMethod_cPyEntity_SetModel,
+		.ml_meth = (void *)cPyEntity_SetModel,
 		.ml_flags = 1,
 	},
-	{ .ml_name = (void *)sd_str_PyMethod_cPyEntity_SetFX, .ml_meth = (void *)sd_cPyEntity_SetFX, .ml_flags = 1 },
+	{ .ml_name = (void *)str_PyMethod_cPyEntity_SetFX, .ml_meth = (void *)cPyEntity_SetFX, .ml_flags = 1 },
 	{
-		.ml_name = (void *)sd_str_PyMethod_cPyEntity_GetTgAng,
-		.ml_meth = (void *)sd_cPyEntity_GetTgAng,
+		.ml_name = (void *)str_PyMethod_cPyEntity_GetTgAng,
+		.ml_meth = (void *)cPyEntity_GetTgAng,
 		.ml_flags = 1,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_cPyEntity_DrawWeap,
-		.ml_meth = (void *)sd_cPyEntity_DrawWeap,
+		.ml_name = (void *)str_PyMethod_cPyEntity_DrawWeap,
+		.ml_meth = (void *)cPyEntity_DrawWeap,
 		.ml_flags = 1,
 	},
-	{ .ml_name = (void *)sd_str_PyMethod_cPyEntity_IsType, .ml_meth = (void *)sd_cPyEntity_IsType, .ml_flags = 1 },
+	{ .ml_name = (void *)str_PyMethod_cPyEntity_IsType, .ml_meth = (void *)cPyEntity_IsType, .ml_flags = 1 },
 };
 
 /* a method of cPyEntity by name */
@@ -332,3 +309,14 @@ const char str_PyMethod_cPyEntity_DrawWeap[] = "DrawWeap";
 
 const char str_PyMethod_cPyEntity_IsType[] = "IsType";
 
+extern const char str_3c7284[];
+PyTypeObject cPyEntity_Type = {
+	.ob_refcnt = 1,
+	.ob_type = &PyType_Type,
+	.tp_name = (void *)str_3c7284,
+	.tp_basicsize = sizeof(cPyEntity),
+	.tp_dealloc = (void *)PyEntity_Dealloc,
+	.tp_print = (void *)PyEntity_Print,
+	.tp_getattr = (void *)PyEntity_GetAttr,
+	.tp_setattr = (void *)PyEntity_SetAttr,
+};

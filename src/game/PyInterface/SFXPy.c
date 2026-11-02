@@ -111,60 +111,54 @@ PyObject *SFX_EmbeddedSet(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-SD_SYM(str_PyMethod_SFX_ShipExplosion);
-SD_SYM(SFX_ShipExplosion);
-SD_SYM(str_PyDoc_SFX_ShipExplosion);
-SD_SYM(str_PyMethod_SFX_CharacterConversor);
-SD_SYM(SFX_CharacterConversor);
-SD_SYM(str_PyDoc_SFX_CharacterConversor);
-SD_SYM(str_PyMethod_SFX_CharacterConversion);
-SD_SYM(SFX_CharacterConversion);
-SD_SYM(str_PyDoc_SFX_CharacterConversion);
-SD_SYM(str_PyMethod_SFX_BishopSellLife);
-SD_SYM(SFX_BishopSellLife);
-SD_SYM(str_PyDoc_SFX_BishopSellLife);
-SD_SYM(str_PyMethod_SFX_MoneyTransfer);
-SD_SYM(SFX_MoneyTransfer);
-SD_SYM(str_PyDoc_SFX_MoneyTransfer);
-SD_SYM(str_PyMethod_SFX_EmbeddedSet);
-SD_SYM(SFX_EmbeddedSet);
-SD_SYM(str_PyDoc_SFX_EmbeddedSet);
+extern char str_PyDoc_SFX_BishopSellLife[];
+extern char str_PyDoc_SFX_CharacterConversion[88];
+extern char str_PyDoc_SFX_CharacterConversor[];
+extern char str_PyDoc_SFX_EmbeddedSet[];
+extern char str_PyDoc_SFX_MoneyTransfer[];
+extern char str_PyDoc_SFX_ShipExplosion[];
+extern const char str_PyMethod_SFX_BishopSellLife[];
+extern const char str_PyMethod_SFX_CharacterConversion[];
+extern const char str_PyMethod_SFX_CharacterConversor[];
+extern const char str_PyMethod_SFX_EmbeddedSet[];
+extern const char str_PyMethod_SFX_MoneyTransfer[];
+extern const char str_PyMethod_SFX_ShipExplosion[];
 PyMethodDef SFX_methods[7] = {
 	{
-		.ml_name = (void *)sd_str_PyMethod_SFX_ShipExplosion,
-		.ml_meth = (void *)sd_SFX_ShipExplosion,
+		.ml_name = (void *)str_PyMethod_SFX_ShipExplosion,
+		.ml_meth = (void *)SFX_ShipExplosion,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SFX_ShipExplosion,
+		.ml_doc = (void *)str_PyDoc_SFX_ShipExplosion,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SFX_CharacterConversor,
-		.ml_meth = (void *)sd_SFX_CharacterConversor,
+		.ml_name = (void *)str_PyMethod_SFX_CharacterConversor,
+		.ml_meth = (void *)SFX_CharacterConversor,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SFX_CharacterConversor,
+		.ml_doc = (void *)str_PyDoc_SFX_CharacterConversor,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SFX_CharacterConversion,
-		.ml_meth = (void *)sd_SFX_CharacterConversion,
+		.ml_name = (void *)str_PyMethod_SFX_CharacterConversion,
+		.ml_meth = (void *)SFX_CharacterConversion,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SFX_CharacterConversion,
+		.ml_doc = (void *)str_PyDoc_SFX_CharacterConversion,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SFX_BishopSellLife,
-		.ml_meth = (void *)sd_SFX_BishopSellLife,
+		.ml_name = (void *)str_PyMethod_SFX_BishopSellLife,
+		.ml_meth = (void *)SFX_BishopSellLife,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SFX_BishopSellLife,
+		.ml_doc = (void *)str_PyDoc_SFX_BishopSellLife,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SFX_MoneyTransfer,
-		.ml_meth = (void *)sd_SFX_MoneyTransfer,
+		.ml_name = (void *)str_PyMethod_SFX_MoneyTransfer,
+		.ml_meth = (void *)SFX_MoneyTransfer,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SFX_MoneyTransfer,
+		.ml_doc = (void *)str_PyDoc_SFX_MoneyTransfer,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SFX_EmbeddedSet,
-		.ml_meth = (void *)sd_SFX_EmbeddedSet,
+		.ml_name = (void *)str_PyMethod_SFX_EmbeddedSet,
+		.ml_meth = (void *)SFX_EmbeddedSet,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SFX_EmbeddedSet,
+		.ml_doc = (void *)str_PyDoc_SFX_EmbeddedSet,
 	},
 };
 

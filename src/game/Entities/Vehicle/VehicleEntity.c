@@ -1069,12 +1069,12 @@ byte cVehicleEntity_SetPilot(cEntity *elem, int slot, const char *name, float sx
 	return 1;
 }
 
-SD_SYM(str_3a3954);
-SD_SYM(str_3a395c);
-SD_SYM(str_3b53f4);
-SD_SYM(str_3ae0f4);
-SD_SYM(str_3ad2f4);
-const char *g_PilotAnimNames[6] = { (void *)sd_str_3a3954, (void *)sd_str_3a395c, (void *)sd_str_3b53f4, (void *)sd_str_3ae0f4, (void *)sd_str_3ad2f4 };
+extern const char str_3a3954[];
+extern const char str_3a395c[];
+extern const char str_3ad2f4[];
+extern const char str_3ae0f4[];
+extern const char str_3b53f4[];
+const char *g_PilotAnimNames[6] = { (void *)str_3a3954, (void *)str_3a395c, (void *)str_3b53f4, (void *)str_3ae0f4, (void *)str_3ad2f4 };
 
 byte cVehicleEntity_SetPilotAnim(cEntity *base, int slot, int anim) {
 	cVehicleEntity *self = (cVehicleEntity *)base;

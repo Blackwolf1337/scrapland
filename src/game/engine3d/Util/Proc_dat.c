@@ -77,22 +77,21 @@ procrange_t g_ProcRangeShort = { .lo = -32768, .hi = 32767 };
 
 procrange_t g_ProcRangeWord = { .hi = 65535 };
 
-SD_SYM(str_3dbf48);
-SD_SYM(data_432450);
-SD_SYM(str_3dbf54);
-SD_SYM(data_432470);
-SD_SYM(str_3dbf60);
-SD_SYM(Proc_Note);
-SD_SYM(str_3dbf6c);
-SD_SYM(data_432480);
-SD_SYM(str_3dbf80);
-SD_SYM(data_43249c);
+extern void *data_432450[8];
+extern void *data_432470[4];
+extern void *data_432480[7];
+extern void *data_43249c[7];
+extern const char str_3dbf48[];
+extern const char str_3dbf54[];
+extern const char str_3dbf60[];
+extern const char str_3dbf6c[];
+extern const char str_3dbf80[];
 cProcType g_ProcTypes[16] = {
-	{ .name = (void *)sd_str_3dbf48, .data = (void *)sd_data_432450 },
-	{ .name = (void *)sd_str_3dbf54, .data = (void *)sd_data_432470 },
-	{ .name = (void *)sd_str_3dbf60, .convert = (void *)sd_Proc_Note },
-	{ .name = (void *)sd_str_3dbf6c, .data = (void *)sd_data_432480 },
-	{ .name = (void *)sd_str_3dbf80, .data = (void *)sd_data_43249c },
+	{ .name = (void *)str_3dbf48, .data = (void *)data_432450 },
+	{ .name = (void *)str_3dbf54, .data = (void *)data_432470 },
+	{ .name = (void *)str_3dbf60, .convert = (void *)Proc_Note },
+	{ .name = (void *)str_3dbf6c, .data = (void *)data_432480 },
+	{ .name = (void *)str_3dbf80, .data = (void *)data_43249c },
 };
 
 /* one "&" field: *pfmt is at the '&'; both pointers move past what was read */
@@ -434,37 +433,17 @@ const char str_3dbf6c[] = "tipo_sample_signo";
 
 const char str_3dbf80[] = "tipo_sample_mnst";
 
-SD_SYM(str_3dbe94);
-SD_SYM(str_3dbe9c);
-SD_SYM(str_3dbea4);
-SD_SYM(str_3dbeac);
-SD_SYM(str_3dbeb4);
-SD_SYM(str_3dbebc);
-SD_SYM(str_3dbec4);
 void *data_432450[8] = {
-	(void *)sd_str_3dbe94, (void *)sd_str_3dbe9c, (void *)sd_str_3dbea4, (void *)sd_str_3dbeac,
-	(void *)sd_str_3dbeb4, (void *)sd_str_3dbebc, (void *)sd_str_3dbec4,
+	(void *)str_3dbe94, (void *)str_3dbe9c, (void *)str_3dbea4, (void *)str_3dbeac,
+	(void *)str_3dbeb4, (void *)str_3dbebc, (void *)str_3dbec4,
 };
 
-SD_SYM(str_3dbecc);
-SD_SYM(str_3dbed4);
-void *data_432470[4] = { (void *)sd_str_3dbe94, (void *)sd_str_3dbecc, (void *)sd_str_3dbed4 };
+void *data_432470[4] = { (void *)str_3dbe94, (void *)str_3dbecc, (void *)str_3dbed4 };
 
-SD_SYM(str_3dbee0);
-SD_SYM(str_3dbee4);
-SD_SYM(str_3dbef0);
-SD_SYM(str_3dbefc);
-SD_SYM(str_3dbf00);
-SD_SYM(str_3dbf0c);
 void *data_432480[7] = {
-	(void *)sd_str_3dbee0, (void *)sd_str_3dbee4, (void *)sd_str_3dbef0, (void *)sd_str_3dbefc,
-	(void *)sd_str_3dbf00, (void *)sd_str_3dbf0c,
+	(void *)str_3dbee0, (void *)str_3dbee4, (void *)str_3dbef0, (void *)str_3dbefc,
+	(void *)str_3dbf00, (void *)str_3dbf0c,
 };
 
-SD_SYM(str_3dbf18);
-SD_SYM(str_3dbf20);
-SD_SYM(str_3dbf28);
-SD_SYM(str_3dbf30);
-SD_SYM(str_3dbf3c);
-void *data_43249c[7] = { (void *)sd_str_3dbf18, (void *)sd_str_3dbf20, (void *)sd_str_3dbf28, (void *)sd_str_3dbf30, (void *)sd_str_3dbf3c };
+void *data_43249c[7] = { (void *)str_3dbf18, (void *)str_3dbf20, (void *)str_3dbf28, (void *)str_3dbf30, (void *)str_3dbf3c };
 

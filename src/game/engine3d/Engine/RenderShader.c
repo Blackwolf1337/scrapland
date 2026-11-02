@@ -42,238 +42,213 @@ byte CMatId_Check(CMatId *self, CMaterial *mat) {
 	return 1;
 }
 
-SD_SYM(str_3d9104);
-SD_SYM(Render_PSFixed);
-SD_SYM(str_3d910c);
-SD_SYM(str_3d8f68);
-SD_SYM(Shader_Envmap);
-SD_SYM(str_3d9114);
-SD_SYM(str_3d8ec8);
-SD_SYM(Shader_MaskEnvmap);
-SD_SYM(str_3d9120);
-SD_SYM(str_3d8eb4);
-SD_SYM(Shader_MaskEnvBump);
-SD_SYM(str_3d912c);
-SD_SYM(str_3d8f90);
-SD_SYM(Shader_Glowmap);
-SD_SYM(str_3d9134);
-SD_SYM(str_3d8edc);
-SD_SYM(Shader_GlowmapMaskEnvmap);
-SD_SYM(str_3d9148);
-SD_SYM(str_3d8e98);
-SD_SYM(Shader_GlowmapMaskEnvBump);
-SD_SYM(str_3d915c);
-SD_SYM(str_3d8f54);
-SD_SYM(Shader_Clouds);
-SD_SYM(str_3d9164);
-SD_SYM(str_3d8fb8);
-SD_SYM(Shader_Hologram);
-SD_SYM(str_3d9170);
-SD_SYM(str_3d917c);
-SD_SYM(str_3d8fe8);
-SD_SYM(Shader_Electric);
-SD_SYM(str_3bbe9c);
-SD_SYM(str_3d8ffc);
-SD_SYM(Shader_Fire);
-SD_SYM(str_3d9188);
-SD_SYM(str_3d900c);
-SD_SYM(Shader_Glass);
-SD_SYM(str_3d9190);
-SD_SYM(str_3d901c);
-SD_SYM(Shader_Waves);
-SD_SYM(str_3d9198);
-SD_SYM(Shader_Scroll);
-SD_SYM(str_3c2ddc);
-SD_SYM(str_3d902c);
-SD_SYM(Shader_Noise);
-SD_SYM(str_3d91a0);
-SD_SYM(str_3d903c);
-SD_SYM(Render_PS0);
-SD_SYM(str_3d91ac);
-SD_SYM(str_3d9050);
-SD_SYM(Render_PS1);
-SD_SYM(str_3d91b8);
-SD_SYM(str_3d9064);
-SD_SYM(Render_PS2);
-SD_SYM(str_3d91c4);
-SD_SYM(str_3d9078);
-SD_SYM(Render_PS3);
-SD_SYM(str_3d91d4);
-SD_SYM(str_3d9090);
-SD_SYM(Render_PS4);
-SD_SYM(str_3d91e8);
-SD_SYM(str_3d90ac);
-SD_SYM(Render_PS5);
-SD_SYM(str_3d91f4);
-SD_SYM(str_3d90c0);
-SD_SYM(Render_PS6);
-SD_SYM(str_3d9200);
-SD_SYM(str_3d90d4);
-SD_SYM(Render_PS7);
-SD_SYM(str_3d920c);
-SD_SYM(str_3d90e8);
-SD_SYM(Render_PS8);
-SD_SYM(str_3d9220);
-SD_SYM(Shader_DiffuseNoLit);
+extern const char str_3bbe9c[];
+extern const char str_3c2ddc[];
+extern const char str_3d8e98[];
+extern const char str_3d8eb4[];
+extern const char str_3d8ec8[];
+extern const char str_3d8edc[];
+extern const char str_3d8f54[];
+extern const char str_3d8f68[];
+extern const char str_3d8f90[];
+extern const char str_3d8fb8[];
+extern const char str_3d8fe8[];
+extern const char str_3d8ffc[];
+extern const char str_3d900c[];
+extern const char str_3d901c[];
+extern const char str_3d902c[];
+extern const char str_3d903c[];
+extern const char str_3d9050[];
+extern const char str_3d9064[];
+extern const char str_3d9078[];
+extern const char str_3d9090[];
+extern const char str_3d90ac[];
+extern const char str_3d90c0[];
+extern const char str_3d90d4[];
+extern const char str_3d90e8[];
+extern const char str_3d9104[];
+extern const char str_3d910c[];
+extern const char str_3d9114[];
+extern const char str_3d9120[];
+extern const char str_3d912c[];
+extern const char str_3d9134[];
+extern const char str_3d9148[];
+extern const char str_3d915c[];
+extern const char str_3d9164[];
+extern const char str_3d9170[];
+extern const char str_3d917c[];
+extern const char str_3d9188[];
+extern const char str_3d9190[];
+extern const char str_3d9198[];
+extern const char str_3d91a0[];
+extern const char str_3d91ac[];
+extern const char str_3d91b8[];
+extern const char str_3d91c4[];
+extern const char str_3d91d4[];
+extern const char str_3d91e8[];
+extern const char str_3d91f4[];
+extern const char str_3d9200[];
+extern const char str_3d920c[];
+extern const char str_3d9220[];
 ShaderTab g_ShaderTab[32] = {
-	{ .Name = (void *)sd_str_3d9104, .flags = 257, .fnRender = (void *)sd_Render_PSFixed },
+	{ .Name = (void *)str_3d9104, .flags = 257, .fnRender = (void *)Render_PSFixed },
 	{
 		.Index = 1,
-		.Name = (void *)sd_str_3d910c,
-		.File = (void *)sd_str_3d8f68,
+		.Name = (void *)str_3d910c,
+		.File = (void *)str_3d8f68,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_Envmap,
+		.fnRender = (void *)Shader_Envmap,
 	},
 	{
 		.Index = 2,
-		.Name = (void *)sd_str_3d9114,
-		.File = (void *)sd_str_3d8ec8,
+		.Name = (void *)str_3d9114,
+		.File = (void *)str_3d8ec8,
 		.flags = 256,
-		.fnRender = (void *)sd_Shader_MaskEnvmap,
+		.fnRender = (void *)Shader_MaskEnvmap,
 	},
 	{
 		.Index = 3,
-		.Name = (void *)sd_str_3d9120,
-		.File = (void *)sd_str_3d8eb4,
+		.Name = (void *)str_3d9120,
+		.File = (void *)str_3d8eb4,
 		.flags = 256,
-		.fnRender = (void *)sd_Shader_MaskEnvBump,
+		.fnRender = (void *)Shader_MaskEnvBump,
 	},
 	{
 		.Index = 4,
-		.Name = (void *)sd_str_3d912c,
-		.File = (void *)sd_str_3d8f90,
+		.Name = (void *)str_3d912c,
+		.File = (void *)str_3d8f90,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_Glowmap,
+		.fnRender = (void *)Shader_Glowmap,
 	},
 	{
 		.Index = 5,
-		.Name = (void *)sd_str_3d9134,
-		.File = (void *)sd_str_3d8edc,
+		.Name = (void *)str_3d9134,
+		.File = (void *)str_3d8edc,
 		.flags = 256,
-		.fnRender = (void *)sd_Shader_GlowmapMaskEnvmap,
+		.fnRender = (void *)Shader_GlowmapMaskEnvmap,
 	},
 	{
 		.Index = 6,
-		.Name = (void *)sd_str_3d9148,
-		.File = (void *)sd_str_3d8e98,
+		.Name = (void *)str_3d9148,
+		.File = (void *)str_3d8e98,
 		.flags = 256,
-		.fnRender = (void *)sd_Shader_GlowmapMaskEnvBump,
+		.fnRender = (void *)Shader_GlowmapMaskEnvBump,
 	},
 	{
 		.Index = 7,
-		.Name = (void *)sd_str_3d915c,
-		.File = (void *)sd_str_3d8f54,
+		.Name = (void *)str_3d915c,
+		.File = (void *)str_3d8f54,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_Clouds,
+		.fnRender = (void *)Shader_Clouds,
 	},
 	{
 		.Index = 8,
-		.Name = (void *)sd_str_3d9164,
-		.File = (void *)sd_str_3d8fb8,
+		.Name = (void *)str_3d9164,
+		.File = (void *)str_3d8fb8,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_Hologram,
+		.fnRender = (void *)Shader_Hologram,
 	},
-	{ .Index = 9, .Name = (void *)sd_str_3d9170, .flags = 257, .fnRender = (void *)sd_Shader_Glowmap },
+	{ .Index = 9, .Name = (void *)str_3d9170, .flags = 257, .fnRender = (void *)Shader_Glowmap },
 	{
 		.Index = 10,
-		.Name = (void *)sd_str_3d917c,
-		.File = (void *)sd_str_3d8fe8,
+		.Name = (void *)str_3d917c,
+		.File = (void *)str_3d8fe8,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_Electric,
+		.fnRender = (void *)Shader_Electric,
 	},
 	{
 		.Index = 11,
-		.Name = (void *)sd_str_3bbe9c,
-		.File = (void *)sd_str_3d8ffc,
+		.Name = (void *)str_3bbe9c,
+		.File = (void *)str_3d8ffc,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_Fire,
+		.fnRender = (void *)Shader_Fire,
 	},
 	{
 		.Index = 12,
-		.Name = (void *)sd_str_3d9188,
-		.File = (void *)sd_str_3d900c,
+		.Name = (void *)str_3d9188,
+		.File = (void *)str_3d900c,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_Glass,
+		.fnRender = (void *)Shader_Glass,
 	},
 	{
 		.Index = 13,
-		.Name = (void *)sd_str_3d9190,
-		.File = (void *)sd_str_3d901c,
+		.Name = (void *)str_3d9190,
+		.File = (void *)str_3d901c,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_Waves,
+		.fnRender = (void *)Shader_Waves,
 	},
-	{ .Index = 14, .Name = (void *)sd_str_3d9198, .flags = 257, .fnRender = (void *)sd_Shader_Scroll },
+	{ .Index = 14, .Name = (void *)str_3d9198, .flags = 257, .fnRender = (void *)Shader_Scroll },
 	{
 		.Index = 15,
-		.Name = (void *)sd_str_3c2ddc,
-		.File = (void *)sd_str_3d902c,
+		.Name = (void *)str_3c2ddc,
+		.File = (void *)str_3d902c,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_Noise,
+		.fnRender = (void *)Shader_Noise,
 	},
 	{
 		.Index = 16,
-		.Name = (void *)sd_str_3d91a0,
-		.File = (void *)sd_str_3d903c,
+		.Name = (void *)str_3d91a0,
+		.File = (void *)str_3d903c,
 		.flags = 257,
-		.fnRender = (void *)sd_Render_PS0,
+		.fnRender = (void *)Render_PS0,
 	},
 	{
 		.Index = 17,
-		.Name = (void *)sd_str_3d91ac,
-		.File = (void *)sd_str_3d9050,
+		.Name = (void *)str_3d91ac,
+		.File = (void *)str_3d9050,
 		.flags = 257,
-		.fnRender = (void *)sd_Render_PS1,
+		.fnRender = (void *)Render_PS1,
 	},
 	{
 		.Index = 18,
-		.Name = (void *)sd_str_3d91b8,
-		.File = (void *)sd_str_3d9064,
+		.Name = (void *)str_3d91b8,
+		.File = (void *)str_3d9064,
 		.flags = 257,
-		.fnRender = (void *)sd_Render_PS2,
+		.fnRender = (void *)Render_PS2,
 	},
 	{
 		.Index = 19,
-		.Name = (void *)sd_str_3d91c4,
-		.File = (void *)sd_str_3d9078,
+		.Name = (void *)str_3d91c4,
+		.File = (void *)str_3d9078,
 		.flags = 257,
-		.fnRender = (void *)sd_Render_PS3,
+		.fnRender = (void *)Render_PS3,
 	},
 	{
 		.Index = 20,
-		.Name = (void *)sd_str_3d91d4,
-		.File = (void *)sd_str_3d9090,
+		.Name = (void *)str_3d91d4,
+		.File = (void *)str_3d9090,
 		.flags = 257,
-		.fnRender = (void *)sd_Render_PS4,
+		.fnRender = (void *)Render_PS4,
 	},
 	{
 		.Index = 21,
-		.Name = (void *)sd_str_3d91e8,
-		.File = (void *)sd_str_3d90ac,
+		.Name = (void *)str_3d91e8,
+		.File = (void *)str_3d90ac,
 		.flags = 257,
-		.fnRender = (void *)sd_Render_PS5,
+		.fnRender = (void *)Render_PS5,
 	},
 	{
 		.Index = 22,
-		.Name = (void *)sd_str_3d91f4,
-		.File = (void *)sd_str_3d90c0,
+		.Name = (void *)str_3d91f4,
+		.File = (void *)str_3d90c0,
 		.flags = 257,
-		.fnRender = (void *)sd_Render_PS6,
+		.fnRender = (void *)Render_PS6,
 	},
 	{
 		.Index = 23,
-		.Name = (void *)sd_str_3d9200,
-		.File = (void *)sd_str_3d90d4,
+		.Name = (void *)str_3d9200,
+		.File = (void *)str_3d90d4,
 		.flags = 257,
-		.fnRender = (void *)sd_Render_PS7,
+		.fnRender = (void *)Render_PS7,
 	},
 	{
 		.Index = 24,
-		.Name = (void *)sd_str_3d920c,
-		.File = (void *)sd_str_3d90e8,
+		.Name = (void *)str_3d920c,
+		.File = (void *)str_3d90e8,
 		.flags = 257,
-		.fnRender = (void *)sd_Render_PS8,
+		.fnRender = (void *)Render_PS8,
 	},
-	{ .Index = 25, .Name = (void *)sd_str_3d9220, .flags = 257, .fnRender = (void *)sd_Shader_DiffuseNoLit },
+	{ .Index = 25, .Name = (void *)str_3d9220, .flags = 257, .fnRender = (void *)Shader_DiffuseNoLit },
 };
 
 int Shader_Find(const char *name) {

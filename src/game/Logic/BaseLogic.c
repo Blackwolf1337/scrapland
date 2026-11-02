@@ -256,46 +256,46 @@ void Logic_ShowShipList(const char *name, byte visible) {
 	}
 }
 
-SD_SYM(str_3bd078);
-SD_SYM(str_3bd084);
-SD_SYM(str_3bd090);
-SD_SYM(str_3bd09c);
-SD_SYM(str_3bd0b0);
-const char *LOGIC_GEARSTATES[5] = { (void *)sd_str_3bd078, (void *)sd_str_3bd084, (void *)sd_str_3bd090, (void *)sd_str_3bd09c, (void *)sd_str_3bd0b0 };
+extern const char str_3bd078[];
+extern const char str_3bd084[];
+extern const char str_3bd090[];
+extern const char str_3bd09c[];
+extern const char str_3bd0b0[];
+const char *LOGIC_GEARSTATES[5] = { (void *)str_3bd078, (void *)str_3bd084, (void *)str_3bd090, (void *)str_3bd09c, (void *)str_3bd0b0 };
 
-SD_SYM(str_3bd0bc);
-SD_SYM(str_3bd0cc);
-SD_SYM(str_3bd0dc);
-SD_SYM(str_3bd0ec);
-SD_SYM(str_3bd100);
-SD_SYM(str_3bd114);
-SD_SYM(str_3bd128);
+extern const char str_3bd0bc[];
+extern const char str_3bd0cc[];
+extern const char str_3bd0dc[];
+extern const char str_3bd0ec[];
+extern const char str_3bd100[];
+extern const char str_3bd114[];
+extern const char str_3bd128[];
 const char *LOGIC_SENTINELSTATES[7] = {
-	(void *)sd_str_3bd0bc, (void *)sd_str_3bd0cc, (void *)sd_str_3bd0dc, (void *)sd_str_3bd0ec,
-	(void *)sd_str_3bd100, (void *)sd_str_3bd114, (void *)sd_str_3bd128,
+	(void *)str_3bd0bc, (void *)str_3bd0cc, (void *)str_3bd0dc, (void *)str_3bd0ec,
+	(void *)str_3bd100, (void *)str_3bd114, (void *)str_3bd128,
 };
 
-SD_SYM(str_3bd13c);
-SD_SYM(str_3bd148);
-SD_SYM(str_3bd154);
-SD_SYM(str_3bd164);
-const char *LOGIC_NURSESTATES[4] = { (void *)sd_str_3bd13c, (void *)sd_str_3bd148, (void *)sd_str_3bd154, (void *)sd_str_3bd164 };
+extern const char str_3bd13c[];
+extern const char str_3bd148[];
+extern const char str_3bd154[];
+extern const char str_3bd164[];
+const char *LOGIC_NURSESTATES[4] = { (void *)str_3bd13c, (void *)str_3bd148, (void *)str_3bd154, (void *)str_3bd164 };
 
-SD_SYM(str_3bd174);
-SD_SYM(str_3bd184);
-SD_SYM(str_3bd194);
-SD_SYM(str_3bd1a4);
-SD_SYM(str_3bd1b4);
-SD_SYM(str_3bd1c4);
-SD_SYM(str_3bd1d4);
-SD_SYM(str_3bd1e4);
-SD_SYM(str_3bd200);
-SD_SYM(str_3bd21c);
-SD_SYM(str_3bd238);
+extern const char str_3bd174[];
+extern const char str_3bd184[];
+extern const char str_3bd194[];
+extern const char str_3bd1a4[];
+extern const char str_3bd1b4[];
+extern const char str_3bd1c4[];
+extern const char str_3bd1d4[];
+extern const char str_3bd1e4[];
+extern const char str_3bd200[];
+extern const char str_3bd21c[];
+extern const char str_3bd238[];
 const char *LOGIC_GENCHARSTATES[11] = {
-	(void *)sd_str_3bd174, (void *)sd_str_3bd184, (void *)sd_str_3bd194, (void *)sd_str_3bd1a4,
-	(void *)sd_str_3bd1b4, (void *)sd_str_3bd1c4, (void *)sd_str_3bd1d4, (void *)sd_str_3bd1e4,
-	(void *)sd_str_3bd200, (void *)sd_str_3bd21c, (void *)sd_str_3bd238,
+	(void *)str_3bd174, (void *)str_3bd184, (void *)str_3bd194, (void *)str_3bd1a4,
+	(void *)str_3bd1b4, (void *)str_3bd1c4, (void *)str_3bd1d4, (void *)str_3bd1e4,
+	(void *)str_3bd200, (void *)str_3bd21c, (void *)str_3bd238,
 };
 
 /* ShowAI: the ship lists of an outdoor map, else the character lists */

@@ -785,8 +785,8 @@ void Fonts_Init(void) {
 	g_FntTerm8->round = 1;
 }
 
-SD_SYM(str_3d3e38);
-const char *g_FontsDir = (void *)sd_str_3d3e38;
+extern const char str_3d3e38[];
+const char *g_FontsDir = (void *)str_3d3e38;
 
 void CUnifont_Load(CUnifont *self) {
 	cFilePack f;

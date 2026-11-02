@@ -218,114 +218,102 @@ PyObject *SLogic_UpdateTauntEndTime(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-SD_SYM(str_PyMethod_SLogic_SendSentinelToWatch);
-SD_SYM(SLogic_SendSentinelToWatch);
-SD_SYM(str_PyDoc_SLogic_SendSentinelToWatch);
-SD_SYM(str_PyMethod_SLogic_GearAttack);
-SD_SYM(SLogic_GearAttack);
-SD_SYM(str_PyDoc_SLogic_GearAttack);
-SD_SYM(str_PyMethod_SLogic_SetCharState);
-SD_SYM(SLogic_SetCharState);
-SD_SYM(str_PyDoc_SLogic_SetCharState);
-SD_SYM(str_PyMethod_SLogic_IsEnemyActive);
-SD_SYM(SLogic_IsEnemyActive);
-SD_SYM(str_PyDoc_SLogic_IsEnemyActive);
-SD_SYM(str_PyMethod_SLogic_GetNearestShip);
-SD_SYM(SLogic_GetNearestShip);
-SD_SYM(str_PyDoc_SLogic_GetNearestShip);
-SD_SYM(str_PyMethod_SLogic_SetOnFloor);
-SD_SYM(SLogic_SetOnFloor);
-SD_SYM(str_PyDoc_SLogic_SetOnFloor);
-SD_SYM(str_PyMethod_SLogic_Flash);
-SD_SYM(SLogic_Flash);
-SD_SYM(str_PyDoc_SLogic_Flash);
-SD_SYM(str_PyMethod_SLogic_SetShipToRegenerate);
-SD_SYM(SLogic_SetShipToRegenerate);
-SD_SYM(str_PyDoc_SLogic_SetShipToRegenerate);
-SD_SYM(str_PyMethod_SLogic_SetDominationZones);
-SD_SYM(SLogic_SetDominationZones);
-SD_SYM(str_PyDoc_SLogic_SetDominationZones);
-SD_SYM(str_PyMethod_SLogic_ChangeZoneState);
-SD_SYM(SLogic_ChangeZoneState);
-SD_SYM(str_PyDoc_SLogic_ChangeZoneState);
-SD_SYM(str_PyMethod_SLogic_ChangeBatonState);
-SD_SYM(SLogic_ChangeBatonState);
-SD_SYM(str_PyDoc_SLogic_ChangeBatonState);
-SD_SYM(str_PyMethod_SLogic_UpdateTauntEndTime);
-SD_SYM(SLogic_UpdateTauntEndTime);
-SD_SYM(str_PyDoc_SLogic_UpdateTauntEndTime);
+extern char str_PyDoc_SLogic_ChangeBatonState[];
+extern char str_PyDoc_SLogic_ChangeZoneState[];
+extern char str_PyDoc_SLogic_Flash[];
+extern char str_PyDoc_SLogic_GearAttack[72];
+extern char str_PyDoc_SLogic_GetNearestShip[];
+extern char str_PyDoc_SLogic_IsEnemyActive[];
+extern char str_PyDoc_SLogic_SendSentinelToWatch[88];
+extern char str_PyDoc_SLogic_SetCharState[];
+extern char str_PyDoc_SLogic_SetDominationZones[136];
+extern char str_PyDoc_SLogic_SetOnFloor[60];
+extern char str_PyDoc_SLogic_SetShipToRegenerate[];
+extern char str_PyDoc_SLogic_UpdateTauntEndTime[60];
+extern const char str_PyMethod_SLogic_ChangeBatonState[];
+extern const char str_PyMethod_SLogic_ChangeZoneState[];
+extern const char str_PyMethod_SLogic_Flash[];
+extern const char str_PyMethod_SLogic_GearAttack[];
+extern const char str_PyMethod_SLogic_GetNearestShip[];
+extern const char str_PyMethod_SLogic_IsEnemyActive[];
+extern const char str_PyMethod_SLogic_SendSentinelToWatch[];
+extern const char str_PyMethod_SLogic_SetCharState[];
+extern const char str_PyMethod_SLogic_SetDominationZones[];
+extern const char str_PyMethod_SLogic_SetOnFloor[];
+extern const char str_PyMethod_SLogic_SetShipToRegenerate[];
+extern const char str_PyMethod_SLogic_UpdateTauntEndTime[];
 PyMethodDef SLogic_methods[13] = {
 	{
-		.ml_name = (void *)sd_str_PyMethod_SLogic_SendSentinelToWatch,
-		.ml_meth = (void *)sd_SLogic_SendSentinelToWatch,
+		.ml_name = (void *)str_PyMethod_SLogic_SendSentinelToWatch,
+		.ml_meth = (void *)SLogic_SendSentinelToWatch,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SLogic_SendSentinelToWatch,
+		.ml_doc = (void *)str_PyDoc_SLogic_SendSentinelToWatch,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SLogic_GearAttack,
-		.ml_meth = (void *)sd_SLogic_GearAttack,
+		.ml_name = (void *)str_PyMethod_SLogic_GearAttack,
+		.ml_meth = (void *)SLogic_GearAttack,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SLogic_GearAttack,
+		.ml_doc = (void *)str_PyDoc_SLogic_GearAttack,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SLogic_SetCharState,
-		.ml_meth = (void *)sd_SLogic_SetCharState,
+		.ml_name = (void *)str_PyMethod_SLogic_SetCharState,
+		.ml_meth = (void *)SLogic_SetCharState,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SLogic_SetCharState,
+		.ml_doc = (void *)str_PyDoc_SLogic_SetCharState,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SLogic_IsEnemyActive,
-		.ml_meth = (void *)sd_SLogic_IsEnemyActive,
+		.ml_name = (void *)str_PyMethod_SLogic_IsEnemyActive,
+		.ml_meth = (void *)SLogic_IsEnemyActive,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SLogic_IsEnemyActive,
+		.ml_doc = (void *)str_PyDoc_SLogic_IsEnemyActive,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SLogic_GetNearestShip,
-		.ml_meth = (void *)sd_SLogic_GetNearestShip,
+		.ml_name = (void *)str_PyMethod_SLogic_GetNearestShip,
+		.ml_meth = (void *)SLogic_GetNearestShip,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SLogic_GetNearestShip,
+		.ml_doc = (void *)str_PyDoc_SLogic_GetNearestShip,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SLogic_SetOnFloor,
-		.ml_meth = (void *)sd_SLogic_SetOnFloor,
+		.ml_name = (void *)str_PyMethod_SLogic_SetOnFloor,
+		.ml_meth = (void *)SLogic_SetOnFloor,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SLogic_SetOnFloor,
+		.ml_doc = (void *)str_PyDoc_SLogic_SetOnFloor,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SLogic_Flash,
-		.ml_meth = (void *)sd_SLogic_Flash,
+		.ml_name = (void *)str_PyMethod_SLogic_Flash,
+		.ml_meth = (void *)SLogic_Flash,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SLogic_Flash,
+		.ml_doc = (void *)str_PyDoc_SLogic_Flash,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SLogic_SetShipToRegenerate,
-		.ml_meth = (void *)sd_SLogic_SetShipToRegenerate,
+		.ml_name = (void *)str_PyMethod_SLogic_SetShipToRegenerate,
+		.ml_meth = (void *)SLogic_SetShipToRegenerate,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SLogic_SetShipToRegenerate,
+		.ml_doc = (void *)str_PyDoc_SLogic_SetShipToRegenerate,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SLogic_SetDominationZones,
-		.ml_meth = (void *)sd_SLogic_SetDominationZones,
+		.ml_name = (void *)str_PyMethod_SLogic_SetDominationZones,
+		.ml_meth = (void *)SLogic_SetDominationZones,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SLogic_SetDominationZones,
+		.ml_doc = (void *)str_PyDoc_SLogic_SetDominationZones,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SLogic_ChangeZoneState,
-		.ml_meth = (void *)sd_SLogic_ChangeZoneState,
+		.ml_name = (void *)str_PyMethod_SLogic_ChangeZoneState,
+		.ml_meth = (void *)SLogic_ChangeZoneState,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SLogic_ChangeZoneState,
+		.ml_doc = (void *)str_PyDoc_SLogic_ChangeZoneState,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SLogic_ChangeBatonState,
-		.ml_meth = (void *)sd_SLogic_ChangeBatonState,
+		.ml_name = (void *)str_PyMethod_SLogic_ChangeBatonState,
+		.ml_meth = (void *)SLogic_ChangeBatonState,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SLogic_ChangeBatonState,
+		.ml_doc = (void *)str_PyDoc_SLogic_ChangeBatonState,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SLogic_UpdateTauntEndTime,
-		.ml_meth = (void *)sd_SLogic_UpdateTauntEndTime,
+		.ml_name = (void *)str_PyMethod_SLogic_UpdateTauntEndTime,
+		.ml_meth = (void *)SLogic_UpdateTauntEndTime,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SLogic_UpdateTauntEndTime,
+		.ml_doc = (void *)str_PyDoc_SLogic_UpdateTauntEndTime,
 	},
 };
 

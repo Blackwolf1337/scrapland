@@ -157,24 +157,13 @@ int cSpecialActionScorer_Var(cScorerItem *base, const char *name, int set, char 
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-SD_SYM(SpecialAction_DrawDefault);
-SD_SYM(SpecialAction_DrawBanker);
-SD_SYM(SpecialAction_DrawTarget);
-SD_SYM(SpecialAction_DrawGear);
-SD_SYM(SpecialAction_DrawVictim);
-SD_SYM(SpecialAction_DrawOn);
-SD_SYM(SpecialAction_DrawLowEnergy);
-SD_SYM(SpecialAction_DrawFunctionary);
-SD_SYM(SpecialAction_DrawEnergyOnly);
-SD_SYM(SpecialAction_DrawGear2);
-SD_SYM(SpecialAction_DrawGear3);
 typeof(void (*)(cSpecialActionScorer *, int)) g_SpecialActionDraw[15] = {
-	(void *)sd_SpecialAction_DrawDefault, (void *)sd_SpecialAction_DrawBanker, (void *)sd_SpecialAction_DrawTarget,
-	(void *)sd_SpecialAction_DrawGear, (void *)sd_SpecialAction_DrawVictim, (void *)sd_SpecialAction_DrawOn,
-	(void *)sd_SpecialAction_DrawOn, (void *)sd_SpecialAction_DrawOn, (void *)sd_SpecialAction_DrawLowEnergy,
-	(void *)sd_SpecialAction_DrawFunctionary, (void *)sd_SpecialAction_DrawEnergyOnly,
-	(void *)sd_SpecialAction_DrawGear2, (void *)sd_SpecialAction_DrawGear3, (void *)sd_SpecialAction_DrawOn,
-	(void *)sd_SpecialAction_DrawOn,
+	(void *)SpecialAction_DrawDefault, (void *)SpecialAction_DrawBanker, (void *)SpecialAction_DrawTarget,
+	(void *)SpecialAction_DrawGear, (void *)SpecialAction_DrawVictim, (void *)SpecialAction_DrawOn,
+	(void *)SpecialAction_DrawOn, (void *)SpecialAction_DrawOn, (void *)SpecialAction_DrawLowEnergy,
+	(void *)SpecialAction_DrawFunctionary, (void *)SpecialAction_DrawEnergyOnly,
+	(void *)SpecialAction_DrawGear2, (void *)SpecialAction_DrawGear3, (void *)SpecialAction_DrawOn,
+	(void *)SpecialAction_DrawOn,
 };
 
 void cSpecialActionScorer_Draw(cScorerItem *base, int player) {

@@ -192,114 +192,102 @@ PyObject *SVec_NormAng(PyObject *self, PyObject *args) {
 	return Py_BuildValue("d", Rad2Deg((double)NormAng((float)Deg2Rad(ang))));
 }
 
-SD_SYM(str_PyMethod_SScorer_Add);
-SD_SYM(SVec_Add);
-SD_SYM(str_PyDoc_SVec_Add);
-SD_SYM(str_PyMethod_SVec_Sub);
-SD_SYM(SVec_Sub);
-SD_SYM(str_PyDoc_SVec_Sub);
-SD_SYM(str_PyMethod_SVec_Mod);
-SD_SYM(SVec_Mod);
-SD_SYM(str_PyDoc_SVec_Mod);
-SD_SYM(str_PyMethod_SVec_ModSqr);
-SD_SYM(SVec_ModSqr);
-SD_SYM(str_PyDoc_SVec_ModSqr);
-SD_SYM(str_PyMethod_SVec_Norm);
-SD_SYM(SVec_Norm);
-SD_SYM(str_PyDoc_SVec_Norm);
-SD_SYM(str_PyMethod_SVec_Prod);
-SD_SYM(SVec_Prod);
-SD_SYM(str_PyDoc_SVec_Prod);
-SD_SYM(str_PyMethod_SVec_DProd);
-SD_SYM(SVec_DProd);
-SD_SYM(str_PyDoc_SVec_DProd);
-SD_SYM(str_PyMethod_SVec_CProd);
-SD_SYM(SVec_CProd);
-SD_SYM(str_PyDoc_SVec_CProd);
-SD_SYM(str_PyMethod_SVec_Rotate3D);
-SD_SYM(SVec_Rotate3D);
-SD_SYM(str_PyDoc_SVec_Rotate3D);
-SD_SYM(str_PyMethod_SVec_GetAngle);
-SD_SYM(SVec_GetAngle);
-SD_SYM(str_PyDoc_SVec_GetAngle);
-SD_SYM(str_PyMethod_SVec_GetRotAng);
-SD_SYM(SVec_GetRotAng);
-SD_SYM(str_PyDoc_SVec_GetRotAng);
-SD_SYM(str_PyMethod_SVec_NormAng);
-SD_SYM(SVec_NormAng);
-SD_SYM(str_PyDoc_SVec_NormAng);
+extern char str_PyDoc_SVec_Add[];
+extern char str_PyDoc_SVec_CProd[];
+extern char str_PyDoc_SVec_DProd[];
+extern char str_PyDoc_SVec_GetAngle[];
+extern char str_PyDoc_SVec_GetRotAng[];
+extern char str_PyDoc_SVec_Mod[];
+extern char str_PyDoc_SVec_ModSqr[];
+extern char str_PyDoc_SVec_Norm[];
+extern char str_PyDoc_SVec_NormAng[44];
+extern char str_PyDoc_SVec_Prod[];
+extern char str_PyDoc_SVec_Rotate3D[];
+extern char str_PyDoc_SVec_Sub[];
+extern const char str_PyMethod_SScorer_Add[];
+extern const char str_PyMethod_SVec_CProd[];
+extern const char str_PyMethod_SVec_DProd[];
+extern const char str_PyMethod_SVec_GetAngle[];
+extern const char str_PyMethod_SVec_GetRotAng[];
+extern const char str_PyMethod_SVec_Mod[];
+extern const char str_PyMethod_SVec_ModSqr[];
+extern const char str_PyMethod_SVec_Norm[];
+extern const char str_PyMethod_SVec_NormAng[];
+extern const char str_PyMethod_SVec_Prod[];
+extern const char str_PyMethod_SVec_Rotate3D[];
+extern const char str_PyMethod_SVec_Sub[];
 PyMethodDef SVec_methods[13] = {
 	{
-		.ml_name = (void *)sd_str_PyMethod_SScorer_Add,
-		.ml_meth = (void *)sd_SVec_Add,
+		.ml_name = (void *)str_PyMethod_SScorer_Add,
+		.ml_meth = (void *)SVec_Add,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SVec_Add,
+		.ml_doc = (void *)str_PyDoc_SVec_Add,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SVec_Sub,
-		.ml_meth = (void *)sd_SVec_Sub,
+		.ml_name = (void *)str_PyMethod_SVec_Sub,
+		.ml_meth = (void *)SVec_Sub,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SVec_Sub,
+		.ml_doc = (void *)str_PyDoc_SVec_Sub,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SVec_Mod,
-		.ml_meth = (void *)sd_SVec_Mod,
+		.ml_name = (void *)str_PyMethod_SVec_Mod,
+		.ml_meth = (void *)SVec_Mod,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SVec_Mod,
+		.ml_doc = (void *)str_PyDoc_SVec_Mod,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SVec_ModSqr,
-		.ml_meth = (void *)sd_SVec_ModSqr,
+		.ml_name = (void *)str_PyMethod_SVec_ModSqr,
+		.ml_meth = (void *)SVec_ModSqr,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SVec_ModSqr,
+		.ml_doc = (void *)str_PyDoc_SVec_ModSqr,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SVec_Norm,
-		.ml_meth = (void *)sd_SVec_Norm,
+		.ml_name = (void *)str_PyMethod_SVec_Norm,
+		.ml_meth = (void *)SVec_Norm,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SVec_Norm,
+		.ml_doc = (void *)str_PyDoc_SVec_Norm,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SVec_Prod,
-		.ml_meth = (void *)sd_SVec_Prod,
+		.ml_name = (void *)str_PyMethod_SVec_Prod,
+		.ml_meth = (void *)SVec_Prod,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SVec_Prod,
+		.ml_doc = (void *)str_PyDoc_SVec_Prod,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SVec_DProd,
-		.ml_meth = (void *)sd_SVec_DProd,
+		.ml_name = (void *)str_PyMethod_SVec_DProd,
+		.ml_meth = (void *)SVec_DProd,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SVec_DProd,
+		.ml_doc = (void *)str_PyDoc_SVec_DProd,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SVec_CProd,
-		.ml_meth = (void *)sd_SVec_CProd,
+		.ml_name = (void *)str_PyMethod_SVec_CProd,
+		.ml_meth = (void *)SVec_CProd,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SVec_CProd,
+		.ml_doc = (void *)str_PyDoc_SVec_CProd,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SVec_Rotate3D,
-		.ml_meth = (void *)sd_SVec_Rotate3D,
+		.ml_name = (void *)str_PyMethod_SVec_Rotate3D,
+		.ml_meth = (void *)SVec_Rotate3D,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SVec_Rotate3D,
+		.ml_doc = (void *)str_PyDoc_SVec_Rotate3D,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SVec_GetAngle,
-		.ml_meth = (void *)sd_SVec_GetAngle,
+		.ml_name = (void *)str_PyMethod_SVec_GetAngle,
+		.ml_meth = (void *)SVec_GetAngle,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SVec_GetAngle,
+		.ml_doc = (void *)str_PyDoc_SVec_GetAngle,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SVec_GetRotAng,
-		.ml_meth = (void *)sd_SVec_GetRotAng,
+		.ml_name = (void *)str_PyMethod_SVec_GetRotAng,
+		.ml_meth = (void *)SVec_GetRotAng,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SVec_GetRotAng,
+		.ml_doc = (void *)str_PyDoc_SVec_GetRotAng,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SVec_NormAng,
-		.ml_meth = (void *)sd_SVec_NormAng,
+		.ml_name = (void *)str_PyMethod_SVec_NormAng,
+		.ml_meth = (void *)SVec_NormAng,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SVec_NormAng,
+		.ml_doc = (void *)str_PyDoc_SVec_NormAng,
 	},
 };
 

@@ -821,166 +821,149 @@ void Mat_StageEnvMap(CMaterial *mat, uint32_t flags, uint32_t stage, float bias)
 	}
 }
 
-SD_SYM(str_3d9104);
-SD_SYM(Shader_DiffuseLightmap);
-SD_SYM(str_3d910c);
-SD_SYM(str_3d8f78);
-SD_SYM(Shader_EnvmapLightmap);
-SD_SYM(str_3d9114);
-SD_SYM(str_3d8f38);
-SD_SYM(Shader_MaskEnvmapLightmap);
-SD_SYM(str_3d9120);
-SD_SYM(str_3d8f1c);
-SD_SYM(Shader_MaskEnvBumpLightmap);
-SD_SYM(str_3d912c);
-SD_SYM(str_3d8fa0);
-SD_SYM(Shader_GlowmapLightmap);
-SD_SYM(str_3d9134);
-SD_SYM(str_3d8ef8);
-SD_SYM(Shader_GlowmapMaskEnvmapLightmap);
-SD_SYM(str_3d9148);
-SD_SYM(Shader_GlowmapMaskEnvBump);
-SD_SYM(str_3d915c);
-SD_SYM(Shader_Clouds);
-SD_SYM(str_3d9164);
-SD_SYM(str_3d8fb8);
-SD_SYM(Shader_Hologram);
-SD_SYM(str_3d9170);
-SD_SYM(str_3d8fcc);
-SD_SYM(Shader_GlowFlickLightmap);
-SD_SYM(str_3d917c);
-SD_SYM(str_3d8fe8);
-SD_SYM(Shader_Electric);
-SD_SYM(str_3bbe9c);
-SD_SYM(str_3d8ffc);
-SD_SYM(Shader_Fire);
-SD_SYM(str_3d9188);
-SD_SYM(str_3d900c);
-SD_SYM(Shader_Glass);
-SD_SYM(str_3d9190);
-SD_SYM(str_3d901c);
-SD_SYM(Shader_Waves);
-SD_SYM(str_3d9198);
-SD_SYM(Shader_ScrollLightmap);
-SD_SYM(str_3c2ddc);
-SD_SYM(str_3d902c);
-SD_SYM(Shader_Noise);
-SD_SYM(str_3d91a0);
-SD_SYM(str_3d91ac);
-SD_SYM(str_3d91b8);
-SD_SYM(str_3d91c4);
-SD_SYM(str_3d91d4);
-SD_SYM(str_3d91e8);
-SD_SYM(str_3d91f4);
-SD_SYM(str_3d9200);
-SD_SYM(str_3d920c);
-SD_SYM(str_3d9220);
-SD_SYM(Shader_DiffuseNoLit);
+extern const char str_3bbe9c[];
+extern const char str_3c2ddc[];
+extern const char str_3d8ef8[];
+extern const char str_3d8f1c[];
+extern const char str_3d8f38[];
+extern const char str_3d8f78[];
+extern const char str_3d8fa0[];
+extern const char str_3d8fb8[];
+extern const char str_3d8fcc[];
+extern const char str_3d8fe8[];
+extern const char str_3d8ffc[];
+extern const char str_3d900c[];
+extern const char str_3d901c[];
+extern const char str_3d902c[];
+extern const char str_3d9104[];
+extern const char str_3d910c[];
+extern const char str_3d9114[];
+extern const char str_3d9120[];
+extern const char str_3d912c[];
+extern const char str_3d9134[];
+extern const char str_3d9148[];
+extern const char str_3d915c[];
+extern const char str_3d9164[];
+extern const char str_3d9170[];
+extern const char str_3d917c[];
+extern const char str_3d9188[];
+extern const char str_3d9190[];
+extern const char str_3d9198[];
+extern const char str_3d91a0[];
+extern const char str_3d91ac[];
+extern const char str_3d91b8[];
+extern const char str_3d91c4[];
+extern const char str_3d91d4[];
+extern const char str_3d91e8[];
+extern const char str_3d91f4[];
+extern const char str_3d9200[];
+extern const char str_3d920c[];
+extern const char str_3d9220[];
 ShaderTab g_ShaderTab2[32] = {
-	{ .Name = (void *)sd_str_3d9104, .flags = 257, .fnRender = (void *)sd_Shader_DiffuseLightmap },
+	{ .Name = (void *)str_3d9104, .flags = 257, .fnRender = (void *)Shader_DiffuseLightmap },
 	{
 		.Index = 1,
-		.Name = (void *)sd_str_3d910c,
-		.File = (void *)sd_str_3d8f78,
+		.Name = (void *)str_3d910c,
+		.File = (void *)str_3d8f78,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_EnvmapLightmap,
+		.fnRender = (void *)Shader_EnvmapLightmap,
 	},
 	{
 		.Index = 2,
-		.Name = (void *)sd_str_3d9114,
-		.File = (void *)sd_str_3d8f38,
+		.Name = (void *)str_3d9114,
+		.File = (void *)str_3d8f38,
 		.flags = 256,
-		.fnRender = (void *)sd_Shader_MaskEnvmapLightmap,
+		.fnRender = (void *)Shader_MaskEnvmapLightmap,
 	},
 	{
 		.Index = 3,
-		.Name = (void *)sd_str_3d9120,
-		.File = (void *)sd_str_3d8f1c,
+		.Name = (void *)str_3d9120,
+		.File = (void *)str_3d8f1c,
 		.flags = 256,
-		.fnRender = (void *)sd_Shader_MaskEnvBumpLightmap,
+		.fnRender = (void *)Shader_MaskEnvBumpLightmap,
 	},
 	{
 		.Index = 4,
-		.Name = (void *)sd_str_3d912c,
-		.File = (void *)sd_str_3d8fa0,
+		.Name = (void *)str_3d912c,
+		.File = (void *)str_3d8fa0,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_GlowmapLightmap,
+		.fnRender = (void *)Shader_GlowmapLightmap,
 	},
 	{
 		.Index = 5,
-		.Name = (void *)sd_str_3d9134,
-		.File = (void *)sd_str_3d8ef8,
+		.Name = (void *)str_3d9134,
+		.File = (void *)str_3d8ef8,
 		.flags = 256,
-		.fnRender = (void *)sd_Shader_GlowmapMaskEnvmapLightmap,
+		.fnRender = (void *)Shader_GlowmapMaskEnvmapLightmap,
 	},
 	{
 		.Index = 6,
-		.Name = (void *)sd_str_3d9148,
-		.File = (void *)sd_str_3d8ef8,
+		.Name = (void *)str_3d9148,
+		.File = (void *)str_3d8ef8,
 		.flags = 256,
-		.fnRender = (void *)sd_Shader_GlowmapMaskEnvBump,
+		.fnRender = (void *)Shader_GlowmapMaskEnvBump,
 	},
-	{ .Index = 7, .Name = (void *)sd_str_3d915c, .flags = 257, .fnRender = (void *)sd_Shader_Clouds },
+	{ .Index = 7, .Name = (void *)str_3d915c, .flags = 257, .fnRender = (void *)Shader_Clouds },
 	{
 		.Index = 8,
-		.Name = (void *)sd_str_3d9164,
-		.File = (void *)sd_str_3d8fb8,
+		.Name = (void *)str_3d9164,
+		.File = (void *)str_3d8fb8,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_Hologram,
+		.fnRender = (void *)Shader_Hologram,
 	},
 	{
 		.Index = 9,
-		.Name = (void *)sd_str_3d9170,
-		.File = (void *)sd_str_3d8fcc,
+		.Name = (void *)str_3d9170,
+		.File = (void *)str_3d8fcc,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_GlowFlickLightmap,
+		.fnRender = (void *)Shader_GlowFlickLightmap,
 	},
 	{
 		.Index = 10,
-		.Name = (void *)sd_str_3d917c,
-		.File = (void *)sd_str_3d8fe8,
+		.Name = (void *)str_3d917c,
+		.File = (void *)str_3d8fe8,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_Electric,
+		.fnRender = (void *)Shader_Electric,
 	},
 	{
 		.Index = 11,
-		.Name = (void *)sd_str_3bbe9c,
-		.File = (void *)sd_str_3d8ffc,
+		.Name = (void *)str_3bbe9c,
+		.File = (void *)str_3d8ffc,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_Fire,
+		.fnRender = (void *)Shader_Fire,
 	},
 	{
 		.Index = 12,
-		.Name = (void *)sd_str_3d9188,
-		.File = (void *)sd_str_3d900c,
+		.Name = (void *)str_3d9188,
+		.File = (void *)str_3d900c,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_Glass,
+		.fnRender = (void *)Shader_Glass,
 	},
 	{
 		.Index = 13,
-		.Name = (void *)sd_str_3d9190,
-		.File = (void *)sd_str_3d901c,
+		.Name = (void *)str_3d9190,
+		.File = (void *)str_3d901c,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_Waves,
+		.fnRender = (void *)Shader_Waves,
 	},
-	{ .Index = 14, .Name = (void *)sd_str_3d9198, .flags = 257, .fnRender = (void *)sd_Shader_ScrollLightmap },
+	{ .Index = 14, .Name = (void *)str_3d9198, .flags = 257, .fnRender = (void *)Shader_ScrollLightmap },
 	{
 		.Index = 15,
-		.Name = (void *)sd_str_3c2ddc,
-		.File = (void *)sd_str_3d902c,
+		.Name = (void *)str_3c2ddc,
+		.File = (void *)str_3d902c,
 		.flags = 257,
-		.fnRender = (void *)sd_Shader_Noise,
+		.fnRender = (void *)Shader_Noise,
 	},
-	{ .Index = 16, .Name = (void *)sd_str_3d91a0, .flags = 257 },
-	{ .Index = 17, .Name = (void *)sd_str_3d91ac, .flags = 257 },
-	{ .Index = 18, .Name = (void *)sd_str_3d91b8, .flags = 257 },
-	{ .Index = 19, .Name = (void *)sd_str_3d91c4, .flags = 257 },
-	{ .Index = 20, .Name = (void *)sd_str_3d91d4, .flags = 257 },
-	{ .Index = 21, .Name = (void *)sd_str_3d91e8, .flags = 257 },
-	{ .Index = 22, .Name = (void *)sd_str_3d91f4, .flags = 257 },
-	{ .Index = 23, .Name = (void *)sd_str_3d9200, .flags = 257 },
-	{ .Index = 24, .Name = (void *)sd_str_3d920c, .flags = 257 },
-	{ .Index = 25, .Name = (void *)sd_str_3d9220, .flags = 257, .fnRender = (void *)sd_Shader_DiffuseNoLit },
+	{ .Index = 16, .Name = (void *)str_3d91a0, .flags = 257 },
+	{ .Index = 17, .Name = (void *)str_3d91ac, .flags = 257 },
+	{ .Index = 18, .Name = (void *)str_3d91b8, .flags = 257 },
+	{ .Index = 19, .Name = (void *)str_3d91c4, .flags = 257 },
+	{ .Index = 20, .Name = (void *)str_3d91d4, .flags = 257 },
+	{ .Index = 21, .Name = (void *)str_3d91e8, .flags = 257 },
+	{ .Index = 22, .Name = (void *)str_3d91f4, .flags = 257 },
+	{ .Index = 23, .Name = (void *)str_3d9200, .flags = 257 },
+	{ .Index = 24, .Name = (void *)str_3d920c, .flags = 257 },
+	{ .Index = 25, .Name = (void *)str_3d9220, .flags = 257, .fnRender = (void *)Shader_DiffuseNoLit },
 };
 
 void Render_Shader(uint32_t mode, void *a, void *b) {
@@ -1423,45 +1406,33 @@ void Render_DrawTexRect(const box_t *rect, uint32_t cLeft, uint32_t cRight, void
 
 byte g_D3DOn;
 
-SD_SYM(str_3d8e70);
-SD_SYM(str_3d8e84);
-SD_SYM(str_3d8e98);
-SD_SYM(str_3d8eb4);
-SD_SYM(str_3d8ec8);
-SD_SYM(str_3d8edc);
-SD_SYM(str_3d8ef8);
-SD_SYM(str_3d8f1c);
-SD_SYM(str_3d8f38);
-SD_SYM(str_3d8f54);
-SD_SYM(str_3d8f68);
-SD_SYM(str_3d8f78);
-SD_SYM(str_3d8f90);
-SD_SYM(str_3d8fa0);
-SD_SYM(str_3d8fb8);
-SD_SYM(str_3d8fcc);
-SD_SYM(str_3d8fe8);
-SD_SYM(str_3d8ffc);
-SD_SYM(str_3d900c);
-SD_SYM(str_3d901c);
-SD_SYM(str_3d902c);
-SD_SYM(str_3d903c);
-SD_SYM(str_3d9050);
-SD_SYM(str_3d9064);
-SD_SYM(str_3d9078);
-SD_SYM(str_3d9090);
-SD_SYM(str_3d90ac);
-SD_SYM(str_3d90c0);
-SD_SYM(str_3d90d4);
-SD_SYM(str_3d90e8);
+extern const char str_3d8e70[];
+extern const char str_3d8e84[];
+extern const char str_3d8e98[];
+extern const char str_3d8eb4[];
+extern const char str_3d8ec8[];
+extern const char str_3d8edc[];
+extern const char str_3d8f54[];
+extern const char str_3d8f68[];
+extern const char str_3d8f90[];
+extern const char str_3d903c[];
+extern const char str_3d9050[];
+extern const char str_3d9064[];
+extern const char str_3d9078[];
+extern const char str_3d9090[];
+extern const char str_3d90ac[];
+extern const char str_3d90c0[];
+extern const char str_3d90d4[];
+extern const char str_3d90e8[];
 const char *g_PSNames[32] = {
-	(void *)sd_str_3d8e70, (void *)sd_str_3d8e84, (void *)sd_str_3d8e98, (void *)sd_str_3d8eb4,
-	(void *)sd_str_3d8ec8, (void *)sd_str_3d8edc, (void *)sd_str_3d8ef8, (void *)sd_str_3d8f1c,
-	(void *)sd_str_3d8f38, (void *)sd_str_3d8f54, (void *)sd_str_3d8f68, (void *)sd_str_3d8f78,
-	(void *)sd_str_3d8f90, (void *)sd_str_3d8fa0, (void *)sd_str_3d8fb8, (void *)sd_str_3d8fcc,
-	(void *)sd_str_3d8fe8, (void *)sd_str_3d8ffc, (void *)sd_str_3d900c, (void *)sd_str_3d901c,
-	(void *)sd_str_3d902c, (void *)sd_str_3d903c, (void *)sd_str_3d9050, (void *)sd_str_3d9064,
-	(void *)sd_str_3d9078, (void *)sd_str_3d9090, (void *)sd_str_3d90ac, (void *)sd_str_3d90c0,
-	(void *)sd_str_3d90d4, (void *)sd_str_3d90e8,
+	(void *)str_3d8e70, (void *)str_3d8e84, (void *)str_3d8e98, (void *)str_3d8eb4,
+	(void *)str_3d8ec8, (void *)str_3d8edc, (void *)str_3d8ef8, (void *)str_3d8f1c,
+	(void *)str_3d8f38, (void *)str_3d8f54, (void *)str_3d8f68, (void *)str_3d8f78,
+	(void *)str_3d8f90, (void *)str_3d8fa0, (void *)str_3d8fb8, (void *)str_3d8fcc,
+	(void *)str_3d8fe8, (void *)str_3d8ffc, (void *)str_3d900c, (void *)str_3d901c,
+	(void *)str_3d902c, (void *)str_3d903c, (void *)str_3d9050, (void *)str_3d9064,
+	(void *)str_3d9078, (void *)str_3d9090, (void *)str_3d90ac, (void *)str_3d90c0,
+	(void *)str_3d90d4, (void *)str_3d90e8,
 };
 
 void Render_EndD3D(void) {

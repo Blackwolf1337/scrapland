@@ -20,12 +20,11 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
 
-SD_SYM(str_3c082c);
-SD_SYM(str_3c0830);
-SD_SYM(str_3c0834);
-SD_SYM(str_3c0838);
-SD_SYM(str_Empty);
-char *s_TauntRaces[5] = { (void *)sd_str_3c082c, (void *)sd_str_3c0830, (void *)sd_str_3c0834, (void *)sd_str_3c0838, (void *)sd_str_Empty };
+extern const char str_3c082c[];
+extern const char str_3c0830[];
+extern const char str_3c0834[];
+extern const char str_3c0838[];
+char *s_TauntRaces[5] = { (void *)str_3c082c, (void *)str_3c0830, (void *)str_3c0834, (void *)str_3c0838, (void *)str_Empty };
 
 /* the statics of the police taunts: the count per race, the races, the last race and the time */
 #define s_TauntLastRace (s_TauntRaces[4])

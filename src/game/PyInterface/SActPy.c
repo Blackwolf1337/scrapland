@@ -176,87 +176,78 @@ PyObject *SAct_GetAct(PyObject *self, PyObject *args) {
 		"Caution: SAct.GetAct('%s'): element not found.\n");
 }
 
-SD_SYM(str_PyMethod_SAct_CreateClass);
-SD_SYM(SAct_CreateClass);
-SD_SYM(str_PyDoc_SAct_CreateClass);
-SD_SYM(str_PyMethod_SAct_DelClass);
-SD_SYM(SAct_DelClass);
-SD_SYM(str_PyDoc_SAct_DelClass);
-SD_SYM(str_PyMethod_SAct_GetClass);
-SD_SYM(SAct_GetClass);
-SD_SYM(str_PyDoc_SAct_GetClass);
-SD_SYM(str_PyMethod_SAct_SetCls);
-SD_SYM(SAct_SetCls);
-SD_SYM(str_PyDoc_SAct_SetCls);
-SD_SYM(str_PyMethod_SAct_GetCls);
-SD_SYM(SAct_GetCls);
-SD_SYM(str_PyDoc_SAct_GetCls);
-SD_SYM(str_PyMethod_SAct_CreateAction);
-SD_SYM(SAct_CreateAction);
-SD_SYM(str_PyDoc_SAct_CreateAction);
-SD_SYM(str_PyMethod_SAct_GetAction);
-SD_SYM(SAct_GetAction);
-SD_SYM(str_PyDoc_SAct_GetAction);
-SD_SYM(str_PyMethod_SAct_SetAct);
-SD_SYM(SAct_SetAct);
-SD_SYM(str_PyDoc_SAct_SetAct);
-SD_SYM(str_PyMethod_SAct_GetAct);
-SD_SYM(SAct_GetAct);
-SD_SYM(str_PyDoc_SAct_GetAct);
+extern char str_PyDoc_SAct_CreateAction[];
+extern char str_PyDoc_SAct_CreateClass[];
+extern char str_PyDoc_SAct_DelClass[];
+extern char str_PyDoc_SAct_GetAct[];
+extern char str_PyDoc_SAct_GetAction[];
+extern char str_PyDoc_SAct_GetClass[];
+extern char str_PyDoc_SAct_GetCls[];
+extern char str_PyDoc_SAct_SetAct[104];
+extern char str_PyDoc_SAct_SetCls[];
+extern const char str_PyMethod_SAct_CreateAction[];
+extern const char str_PyMethod_SAct_CreateClass[];
+extern const char str_PyMethod_SAct_DelClass[];
+extern const char str_PyMethod_SAct_GetAct[];
+extern const char str_PyMethod_SAct_GetAction[];
+extern const char str_PyMethod_SAct_GetClass[];
+extern const char str_PyMethod_SAct_GetCls[];
+extern const char str_PyMethod_SAct_SetAct[];
+extern const char str_PyMethod_SAct_SetCls[];
 PyMethodDef SAct_methods[10] = {
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAct_CreateClass,
-		.ml_meth = (void *)sd_SAct_CreateClass,
+		.ml_name = (void *)str_PyMethod_SAct_CreateClass,
+		.ml_meth = (void *)SAct_CreateClass,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAct_CreateClass,
+		.ml_doc = (void *)str_PyDoc_SAct_CreateClass,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAct_DelClass,
-		.ml_meth = (void *)sd_SAct_DelClass,
+		.ml_name = (void *)str_PyMethod_SAct_DelClass,
+		.ml_meth = (void *)SAct_DelClass,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAct_DelClass,
+		.ml_doc = (void *)str_PyDoc_SAct_DelClass,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAct_GetClass,
-		.ml_meth = (void *)sd_SAct_GetClass,
+		.ml_name = (void *)str_PyMethod_SAct_GetClass,
+		.ml_meth = (void *)SAct_GetClass,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAct_GetClass,
+		.ml_doc = (void *)str_PyDoc_SAct_GetClass,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAct_SetCls,
-		.ml_meth = (void *)sd_SAct_SetCls,
+		.ml_name = (void *)str_PyMethod_SAct_SetCls,
+		.ml_meth = (void *)SAct_SetCls,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAct_SetCls,
+		.ml_doc = (void *)str_PyDoc_SAct_SetCls,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAct_GetCls,
-		.ml_meth = (void *)sd_SAct_GetCls,
+		.ml_name = (void *)str_PyMethod_SAct_GetCls,
+		.ml_meth = (void *)SAct_GetCls,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAct_GetCls,
+		.ml_doc = (void *)str_PyDoc_SAct_GetCls,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAct_CreateAction,
-		.ml_meth = (void *)sd_SAct_CreateAction,
+		.ml_name = (void *)str_PyMethod_SAct_CreateAction,
+		.ml_meth = (void *)SAct_CreateAction,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAct_CreateAction,
+		.ml_doc = (void *)str_PyDoc_SAct_CreateAction,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAct_GetAction,
-		.ml_meth = (void *)sd_SAct_GetAction,
+		.ml_name = (void *)str_PyMethod_SAct_GetAction,
+		.ml_meth = (void *)SAct_GetAction,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAct_GetAction,
+		.ml_doc = (void *)str_PyDoc_SAct_GetAction,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAct_SetAct,
-		.ml_meth = (void *)sd_SAct_SetAct,
+		.ml_name = (void *)str_PyMethod_SAct_SetAct,
+		.ml_meth = (void *)SAct_SetAct,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAct_SetAct,
+		.ml_doc = (void *)str_PyDoc_SAct_SetAct,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAct_GetAct,
-		.ml_meth = (void *)sd_SAct_GetAct,
+		.ml_name = (void *)str_PyMethod_SAct_GetAct,
+		.ml_meth = (void *)SAct_GetAct,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAct_GetAct,
+		.ml_doc = (void *)str_PyDoc_SAct_GetAct,
 	},
 };
 

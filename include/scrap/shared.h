@@ -47,8 +47,6 @@ typedef uint8_t byte;
 	static_assert(!SD_32BIT || offsetof(type, member) == (off), #type "." #member " is not at " #off)
 #define SD_SIZE(type, size) static_assert(!SD_32BIT || sizeof(type) == (size), "sizeof(" #type ") is not " #size)
 
-/* the address of a C symbol as the array sd_<name>, whatever its type (the pointers of the generated data) */
-#define SD_SYM(name) extern char sd_##name[] __asm__(SD_CPFX #name)
 
 void Com_Printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 

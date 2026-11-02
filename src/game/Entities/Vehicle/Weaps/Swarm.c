@@ -368,13 +368,12 @@ void Swarm_NetSetUpNative(cAbstractFile *f) {
 	Swarm_NetSetUp(name);
 }
 
-SD_SYM(GVar_SwarmNumber1);
-SD_SYM(GVar_SwarmNumber2);
-SD_SYM(GVar_SwarmNumber3);
-SD_SYM(GVar_SwarmNumber4);
+extern cGVar GVar_SwarmNumber2;
+extern cGVar GVar_SwarmNumber3;
+extern cGVar GVar_SwarmNumber4;
 int *g_SwarmSlotData[4] = {
-	&((cGVar *)sd_GVar_SwarmNumber1)->value.i, &((cGVar *)sd_GVar_SwarmNumber2)->value.i,
-	&((cGVar *)sd_GVar_SwarmNumber3)->value.i, &((cGVar *)sd_GVar_SwarmNumber4)->value.i,
+	&(&GVar_SwarmNumber1)->value.i, &(&GVar_SwarmNumber2)->value.i,
+	&(&GVar_SwarmNumber3)->value.i, &(&GVar_SwarmNumber4)->value.i,
 };
 
 /* the model, speeds, bees (SwarmNumber1..4 per mounted bay of the ship), the upgrade and the engine sound */

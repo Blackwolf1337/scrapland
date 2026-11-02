@@ -23,63 +23,63 @@ void Debug_Line(int x0, int y0, int x1, int y1, uint32_t color, int width) {
 	}
 }
 
-SD_SYM(str_3de0c4);
-SD_SYM(str_3de0cc);
-SD_SYM(str_3ca58c);
-SD_SYM(str_3de0e4);
-SD_SYM(str_3de0f4);
-SD_SYM(str_3de110);
-SD_SYM(str_3de124);
-SD_SYM(str_3de140);
-SD_SYM(str_3de154);
-SD_SYM(str_3de168);
-SD_SYM(str_3de17c);
-SD_SYM(str_3de190);
-SD_SYM(str_3de1b4);
-SD_SYM(str_3de1c8);
-SD_SYM(str_3de1dc);
-SD_SYM(str_3ca704);
-SD_SYM(str_3de1e8);
-SD_SYM(str_3de1f8);
-SD_SYM(str_3de20c);
-SD_SYM(str_3de21c);
-SD_SYM(str_3de22c);
-SD_SYM(str_3de23c);
-SD_SYM(str_3de24c);
-SD_SYM(str_3de260);
-SD_SYM(str_3de280);
-SD_SYM(str_3de294);
-SD_SYM(str_3de2b8);
-SD_SYM(str_3de2c8);
-SD_SYM(str_3de2e0);
-SD_SYM(str_3de2f0);
-SD_SYM(str_3de308);
-SD_SYM(str_3de318);
-SD_SYM(str_3de324);
-SD_SYM(str_3de334);
-SD_SYM(str_3de348);
-SD_SYM(str_3de364);
-SD_SYM(str_3de378);
-SD_SYM(str_3de38c);
-SD_SYM(str_3de3a8);
-SD_SYM(str_3de3bc);
-SD_SYM(str_3de3d4);
-SD_SYM(str_3de3e8);
-SD_SYM(str_3de3fc);
-SD_SYM(str_3de40c);
+extern const char str_3ca58c[];
+extern const char str_3ca704[];
+extern const char str_3de0c4[];
+extern const char str_3de0cc[];
+extern const char str_3de0e4[];
+extern const char str_3de0f4[];
+extern const char str_3de110[];
+extern const char str_3de124[];
+extern const char str_3de140[];
+extern const char str_3de154[];
+extern const char str_3de168[];
+extern const char str_3de17c[];
+extern const char str_3de190[];
+extern const char str_3de1b4[];
+extern const char str_3de1c8[];
+extern const char str_3de1dc[];
+extern const char str_3de1e8[];
+extern const char str_3de1f8[];
+extern const char str_3de20c[];
+extern const char str_3de21c[];
+extern const char str_3de22c[];
+extern const char str_3de23c[];
+extern const char str_3de24c[];
+extern const char str_3de260[];
+extern const char str_3de280[];
+extern const char str_3de294[];
+extern const char str_3de2b8[];
+extern const char str_3de2c8[];
+extern const char str_3de2e0[];
+extern const char str_3de2f0[];
+extern const char str_3de308[];
+extern const char str_3de318[];
+extern const char str_3de324[];
+extern const char str_3de334[];
+extern const char str_3de348[];
+extern const char str_3de364[];
+extern const char str_3de378[];
+extern const char str_3de38c[];
+extern const char str_3de3a8[];
+extern const char str_3de3bc[];
+extern const char str_3de3d4[];
+extern const char str_3de3e8[];
+extern const char str_3de3fc[];
+extern const char str_3de40c[];
 const char *g_ErrTable[200] = {
-	(void *)sd_str_3de0c4, (void *)sd_str_3de0cc, (void *)sd_str_3ca58c, (void *)sd_str_3de0e4,
-	(void *)sd_str_3de0f4, (void *)sd_str_3de110, (void *)sd_str_3de124, (void *)sd_str_3de140,
-	(void *)sd_str_3de154, (void *)sd_str_3de168, (void *)sd_str_3de17c, (void *)sd_str_3de190,
-	(void *)sd_str_3de1b4, (void *)sd_str_3de1c8, (void *)sd_str_3de1dc, (void *)sd_str_3ca704,
-	(void *)sd_str_3de1e8, (void *)sd_str_3de1f8, (void *)sd_str_3de20c, (void *)sd_str_3de21c,
-	(void *)sd_str_3de22c, (void *)sd_str_3de23c, (void *)sd_str_3de24c, (void *)sd_str_3de260,
-	(void *)sd_str_3de280, (void *)sd_str_3de294, (void *)sd_str_3ca704, (void *)sd_str_3de2b8,
-	(void *)sd_str_3de2c8, (void *)sd_str_3de2e0, (void *)sd_str_3de2f0, (void *)sd_str_3de308,
-	(void *)sd_str_3de318, (void *)sd_str_3de324, (void *)sd_str_3de334, (void *)sd_str_3ca704,
-	(void *)sd_str_3de348, (void *)sd_str_3ca704, (void *)sd_str_3de364, (void *)sd_str_3de378,
-	(void *)sd_str_3de38c, (void *)sd_str_3de3a8, (void *)sd_str_3de3bc, (void *)sd_str_3ca704, 0, 0, 0, 0, 0, 0,
-	(void *)sd_str_3de3d4, (void *)sd_str_3de3e8, (void *)sd_str_3de3fc, (void *)sd_str_3de40c,
+	(void *)str_3de0c4, (void *)str_3de0cc, (void *)str_3ca58c, (void *)str_3de0e4,
+	(void *)str_3de0f4, (void *)str_3de110, (void *)str_3de124, (void *)str_3de140,
+	(void *)str_3de154, (void *)str_3de168, (void *)str_3de17c, (void *)str_3de190,
+	(void *)str_3de1b4, (void *)str_3de1c8, (void *)str_3de1dc, (void *)str_3ca704,
+	(void *)str_3de1e8, (void *)str_3de1f8, (void *)str_3de20c, (void *)str_3de21c,
+	(void *)str_3de22c, (void *)str_3de23c, (void *)str_3de24c, (void *)str_3de260,
+	(void *)str_3de280, (void *)str_3de294, (void *)str_3ca704, (void *)str_3de2b8,
+	(void *)str_3de2c8, (void *)str_3de2e0, (void *)str_3de2f0, (void *)str_3de308,
+	(void *)str_3de318, (void *)str_3de324, (void *)str_3de334, (void *)str_3ca704,
+	(void *)str_3de348, (void *)str_3ca704, (void *)str_3de364, (void *)str_3de378,
+	(void *)str_3de38c, (void *)str_3de3a8, (void *)str_3de3bc, (void *)str_3ca704, 0, 0, 0, 0, 0, 0,
+	(void *)str_3de3d4, (void *)str_3de3e8, (void *)str_3de3fc, (void *)str_3de40c,
 };
 
 const char *Err_Unregister(int code) {

@@ -172,8 +172,7 @@ CMaterial *CMaterial_Delete(CMaterial *self, byte flags) {
 	return self;
 }
 
-SD_SYM(CMatList_vftable);
-CMatList g_MatList = { .vftable = (void *)sd_CMatList_vftable };
+CMatList g_MatList = { .vftable = &CMatList_vftable };
 
 uint32_t g_BlendTable[6] = { 1, 2, 3, 4, 5, 6 };
 

@@ -816,201 +816,179 @@ PyObject *SAI_GetOD(PyObject *self, PyObject *args) {
 	return (PyObject *)g_AppPyOne;
 }
 
-SD_SYM(str_PyMethod_SAI_AnalyzeMap);
-SD_SYM(SAI_AnalyzeMap);
-SD_SYM(str_PyDoc_SAI_AnalyzeMap);
-SD_SYM(str_PyMethod_SAI_AnalyzeGraph);
-SD_SYM(SAI_AnalyzeGraph);
-SD_SYM(str_PyDoc_SAI_AnalyzeGraph);
-SD_SYM(str_PyMethod_SAI_AnalyzeGraph2D);
-SD_SYM(SAI_AnalyzeGraph2D);
-SD_SYM(str_PyDoc_SAI_AnalyzeGraph2D);
-SD_SYM(str_PyMethod_SAI_AnalyzeTraffic);
-SD_SYM(SAI_AnalyzeTraffic);
-SD_SYM(str_PyDoc_SAI_AnalyzeTraffic);
-SD_SYM(str_PyMethod_SAI_BuildGraph);
-SD_SYM(SAI_BuildGraph);
-SD_SYM(str_PyDoc_SAI_BuildGraph);
-SD_SYM(str_PyMethod_SAI_BuildGraph2D);
-SD_SYM(SAI_BuildGraph2D);
-SD_SYM(str_PyDoc_SAI_BuildGraph2D);
-SD_SYM(str_PyMethod_SAI_SetStateVehicle);
-SD_SYM(SAI_SetStateVehicle);
-SD_SYM(str_PyDoc_SAI_SetStateVehicle);
-SD_SYM(str_PyMethod_SAI_SetStateChar);
-SD_SYM(SAI_SetStateChar);
-SD_SYM(str_PyDoc_SAI_SetStateChar);
-SD_SYM(str_PyMethod_SAI_GetStateVehicle);
-SD_SYM(SAI_GetStateVehicle);
-SD_SYM(str_PyDoc_SAI_GetStateVehicle);
-SD_SYM(str_PyMethod_SAI_GetStateChar);
-SD_SYM(SAI_GetStateChar);
-SD_SYM(str_PyDoc_SAI_GetStateChar);
-SD_SYM(str_PyMethod_SAI_EnableAIVehicle);
-SD_SYM(SAI_EnableAIVehicle);
-SD_SYM(str_PyDoc_SAI_EnableAIVehicle);
-SD_SYM(str_PyMethod_SAI_EnableAIChar);
-SD_SYM(SAI_EnableAIChar);
-SD_SYM(str_PyDoc_SAI_EnableAIChar);
-SD_SYM(str_PyMethod_SAI_IniAI);
-SD_SYM(SAI_IniAI);
-SD_SYM(str_PyDoc_SAI_IniAI);
-SD_SYM(str_PyMethod_SAI_GetNextRacePoint);
-SD_SYM(SAI_GetNextRacePoint);
-SD_SYM(str_PyDoc_SAI_GetNextRacePoint);
-SD_SYM(str_PyMethod_SAI_GetNearestItemLife);
-SD_SYM(SAI_GetNearestItemLife);
-SD_SYM(str_PyDoc_SAI_GetNearestItemLife);
-SD_SYM(str_PyMethod_SAI_GetRandomVisibilityPoint);
-SD_SYM(SAI_GetRandomVisibilityPoint);
-SD_SYM(str_PyDoc_SAI_GetRandomVisibilityPoint);
-SD_SYM(str_PyMethod_SAI_GetReposCharPos);
-SD_SYM(SAI_GetReposCharPos);
-SD_SYM(str_PyDoc_SAI_GetReposCharPos);
-SD_SYM(str_PyMethod_SAI_InitVehicleRace);
-SD_SYM(SAI_InitVehicleRace);
-SD_SYM(str_PyDoc_SAI_InitVehicleRace);
-SD_SYM(str_PyMethod_SAI_AddVehicleRace);
-SD_SYM(SAI_AddVehicleRace);
-SD_SYM(str_PyDoc_SAI_AddVehicleRace);
-SD_SYM(str_PyMethod_SAI_SetRotStaticObj);
-SD_SYM(SAI_SetRotStaticObj);
-SD_SYM(str_PyDoc_SAI_SetRotStaticObj);
-SD_SYM(str_PyMethod_SAI_SetInertia);
-SD_SYM(SAI_SetInertia);
-SD_SYM(str_PyDoc_SAI_SetInertia);
-SD_SYM(str_PyMethod_SAI_GetOD);
-SD_SYM(SAI_GetOD);
+extern char str_PyDoc_SAI_AddVehicleRace[];
+extern char str_PyDoc_SAI_AnalyzeGraph[];
+extern char str_PyDoc_SAI_AnalyzeGraph2D[];
+extern char str_PyDoc_SAI_AnalyzeMap[];
+extern char str_PyDoc_SAI_AnalyzeTraffic[56];
+extern char str_PyDoc_SAI_BuildGraph[];
+extern char str_PyDoc_SAI_BuildGraph2D[];
+extern char str_PyDoc_SAI_EnableAIChar[];
+extern char str_PyDoc_SAI_EnableAIVehicle[];
+extern char str_PyDoc_SAI_GetNearestItemLife[104];
+extern char str_PyDoc_SAI_GetNextRacePoint[256];
+extern char str_PyDoc_SAI_GetRandomVisibilityPoint[];
+extern char str_PyDoc_SAI_GetReposCharPos[];
+extern char str_PyDoc_SAI_GetStateChar[];
+extern char str_PyDoc_SAI_GetStateVehicle[];
+extern char str_PyDoc_SAI_IniAI[];
+extern char str_PyDoc_SAI_InitVehicleRace[60];
+extern char str_PyDoc_SAI_SetInertia[72];
+extern char str_PyDoc_SAI_SetRotStaticObj[];
+extern char str_PyDoc_SAI_SetStateChar[];
+extern char str_PyDoc_SAI_SetStateVehicle[872];
+extern const char str_PyMethod_SAI_AddVehicleRace[];
+extern const char str_PyMethod_SAI_AnalyzeGraph[];
+extern const char str_PyMethod_SAI_AnalyzeGraph2D[];
+extern const char str_PyMethod_SAI_AnalyzeMap[];
+extern const char str_PyMethod_SAI_AnalyzeTraffic[];
+extern const char str_PyMethod_SAI_BuildGraph[];
+extern const char str_PyMethod_SAI_BuildGraph2D[];
+extern const char str_PyMethod_SAI_EnableAIChar[];
+extern const char str_PyMethod_SAI_EnableAIVehicle[];
+extern const char str_PyMethod_SAI_GetNearestItemLife[];
+extern const char str_PyMethod_SAI_GetNextRacePoint[];
+extern const char str_PyMethod_SAI_GetOD[];
+extern const char str_PyMethod_SAI_GetRandomVisibilityPoint[];
+extern const char str_PyMethod_SAI_GetReposCharPos[];
+extern const char str_PyMethod_SAI_GetStateChar[];
+extern const char str_PyMethod_SAI_GetStateVehicle[];
+extern const char str_PyMethod_SAI_IniAI[];
+extern const char str_PyMethod_SAI_InitVehicleRace[];
+extern const char str_PyMethod_SAI_SetInertia[];
+extern const char str_PyMethod_SAI_SetRotStaticObj[];
+extern const char str_PyMethod_SAI_SetStateChar[];
+extern const char str_PyMethod_SAI_SetStateVehicle[];
 PyMethodDef SAI_methods[23] = {
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_AnalyzeMap,
-		.ml_meth = (void *)sd_SAI_AnalyzeMap,
+		.ml_name = (void *)str_PyMethod_SAI_AnalyzeMap,
+		.ml_meth = (void *)SAI_AnalyzeMap,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_AnalyzeMap,
+		.ml_doc = (void *)str_PyDoc_SAI_AnalyzeMap,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_AnalyzeGraph,
-		.ml_meth = (void *)sd_SAI_AnalyzeGraph,
+		.ml_name = (void *)str_PyMethod_SAI_AnalyzeGraph,
+		.ml_meth = (void *)SAI_AnalyzeGraph,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_AnalyzeGraph,
+		.ml_doc = (void *)str_PyDoc_SAI_AnalyzeGraph,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_AnalyzeGraph2D,
-		.ml_meth = (void *)sd_SAI_AnalyzeGraph2D,
+		.ml_name = (void *)str_PyMethod_SAI_AnalyzeGraph2D,
+		.ml_meth = (void *)SAI_AnalyzeGraph2D,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_AnalyzeGraph2D,
+		.ml_doc = (void *)str_PyDoc_SAI_AnalyzeGraph2D,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_AnalyzeTraffic,
-		.ml_meth = (void *)sd_SAI_AnalyzeTraffic,
+		.ml_name = (void *)str_PyMethod_SAI_AnalyzeTraffic,
+		.ml_meth = (void *)SAI_AnalyzeTraffic,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_AnalyzeTraffic,
+		.ml_doc = (void *)str_PyDoc_SAI_AnalyzeTraffic,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_BuildGraph,
-		.ml_meth = (void *)sd_SAI_BuildGraph,
+		.ml_name = (void *)str_PyMethod_SAI_BuildGraph,
+		.ml_meth = (void *)SAI_BuildGraph,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_BuildGraph,
+		.ml_doc = (void *)str_PyDoc_SAI_BuildGraph,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_BuildGraph2D,
-		.ml_meth = (void *)sd_SAI_BuildGraph2D,
+		.ml_name = (void *)str_PyMethod_SAI_BuildGraph2D,
+		.ml_meth = (void *)SAI_BuildGraph2D,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_BuildGraph2D,
+		.ml_doc = (void *)str_PyDoc_SAI_BuildGraph2D,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_SetStateVehicle,
-		.ml_meth = (void *)sd_SAI_SetStateVehicle,
+		.ml_name = (void *)str_PyMethod_SAI_SetStateVehicle,
+		.ml_meth = (void *)SAI_SetStateVehicle,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_SetStateVehicle,
+		.ml_doc = (void *)str_PyDoc_SAI_SetStateVehicle,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_SetStateChar,
-		.ml_meth = (void *)sd_SAI_SetStateChar,
+		.ml_name = (void *)str_PyMethod_SAI_SetStateChar,
+		.ml_meth = (void *)SAI_SetStateChar,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_SetStateChar,
+		.ml_doc = (void *)str_PyDoc_SAI_SetStateChar,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_GetStateVehicle,
-		.ml_meth = (void *)sd_SAI_GetStateVehicle,
+		.ml_name = (void *)str_PyMethod_SAI_GetStateVehicle,
+		.ml_meth = (void *)SAI_GetStateVehicle,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_GetStateVehicle,
+		.ml_doc = (void *)str_PyDoc_SAI_GetStateVehicle,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_GetStateChar,
-		.ml_meth = (void *)sd_SAI_GetStateChar,
+		.ml_name = (void *)str_PyMethod_SAI_GetStateChar,
+		.ml_meth = (void *)SAI_GetStateChar,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_GetStateChar,
+		.ml_doc = (void *)str_PyDoc_SAI_GetStateChar,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_EnableAIVehicle,
-		.ml_meth = (void *)sd_SAI_EnableAIVehicle,
+		.ml_name = (void *)str_PyMethod_SAI_EnableAIVehicle,
+		.ml_meth = (void *)SAI_EnableAIVehicle,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_EnableAIVehicle,
+		.ml_doc = (void *)str_PyDoc_SAI_EnableAIVehicle,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_EnableAIChar,
-		.ml_meth = (void *)sd_SAI_EnableAIChar,
+		.ml_name = (void *)str_PyMethod_SAI_EnableAIChar,
+		.ml_meth = (void *)SAI_EnableAIChar,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_EnableAIChar,
+		.ml_doc = (void *)str_PyDoc_SAI_EnableAIChar,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_IniAI,
-		.ml_meth = (void *)sd_SAI_IniAI,
+		.ml_name = (void *)str_PyMethod_SAI_IniAI,
+		.ml_meth = (void *)SAI_IniAI,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_IniAI,
+		.ml_doc = (void *)str_PyDoc_SAI_IniAI,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_GetNextRacePoint,
-		.ml_meth = (void *)sd_SAI_GetNextRacePoint,
+		.ml_name = (void *)str_PyMethod_SAI_GetNextRacePoint,
+		.ml_meth = (void *)SAI_GetNextRacePoint,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_GetNextRacePoint,
+		.ml_doc = (void *)str_PyDoc_SAI_GetNextRacePoint,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_GetNearestItemLife,
-		.ml_meth = (void *)sd_SAI_GetNearestItemLife,
+		.ml_name = (void *)str_PyMethod_SAI_GetNearestItemLife,
+		.ml_meth = (void *)SAI_GetNearestItemLife,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_GetNearestItemLife,
+		.ml_doc = (void *)str_PyDoc_SAI_GetNearestItemLife,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_GetRandomVisibilityPoint,
-		.ml_meth = (void *)sd_SAI_GetRandomVisibilityPoint,
+		.ml_name = (void *)str_PyMethod_SAI_GetRandomVisibilityPoint,
+		.ml_meth = (void *)SAI_GetRandomVisibilityPoint,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_GetRandomVisibilityPoint,
+		.ml_doc = (void *)str_PyDoc_SAI_GetRandomVisibilityPoint,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_GetReposCharPos,
-		.ml_meth = (void *)sd_SAI_GetReposCharPos,
+		.ml_name = (void *)str_PyMethod_SAI_GetReposCharPos,
+		.ml_meth = (void *)SAI_GetReposCharPos,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_GetReposCharPos,
+		.ml_doc = (void *)str_PyDoc_SAI_GetReposCharPos,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_InitVehicleRace,
-		.ml_meth = (void *)sd_SAI_InitVehicleRace,
+		.ml_name = (void *)str_PyMethod_SAI_InitVehicleRace,
+		.ml_meth = (void *)SAI_InitVehicleRace,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_InitVehicleRace,
+		.ml_doc = (void *)str_PyDoc_SAI_InitVehicleRace,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_AddVehicleRace,
-		.ml_meth = (void *)sd_SAI_AddVehicleRace,
+		.ml_name = (void *)str_PyMethod_SAI_AddVehicleRace,
+		.ml_meth = (void *)SAI_AddVehicleRace,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_AddVehicleRace,
+		.ml_doc = (void *)str_PyDoc_SAI_AddVehicleRace,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_SetRotStaticObj,
-		.ml_meth = (void *)sd_SAI_SetRotStaticObj,
+		.ml_name = (void *)str_PyMethod_SAI_SetRotStaticObj,
+		.ml_meth = (void *)SAI_SetRotStaticObj,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_SetRotStaticObj,
+		.ml_doc = (void *)str_PyDoc_SAI_SetRotStaticObj,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_SetInertia,
-		.ml_meth = (void *)sd_SAI_SetInertia,
+		.ml_name = (void *)str_PyMethod_SAI_SetInertia,
+		.ml_meth = (void *)SAI_SetInertia,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_SetInertia,
+		.ml_doc = (void *)str_PyDoc_SAI_SetInertia,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_GetOD,
-		.ml_meth = (void *)sd_SAI_GetOD,
+		.ml_name = (void *)str_PyMethod_SAI_GetOD,
+		.ml_meth = (void *)SAI_GetOD,
 		.ml_flags = 1,
 		.ml_doc = "",
 	},

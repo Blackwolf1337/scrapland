@@ -4,6 +4,9 @@ import os, re, glob, sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')) + '/'
 DATA = sorted(glob.glob(ROOT + 'src/game/Global/Globals*.c') + glob.glob(ROOT + 'src/game/Global/Strings*.c'))
+# after the move: the old data files as a snapshot (DATALIB_SNAPSHOT=<dir>) for the declarations
+if os.environ.get('DATALIB_SNAPSHOT'):
+    DATA = sorted(glob.glob(os.environ['DATALIB_SNAPSHOT'] + '/*.c'))
 
 
 def rel(p):

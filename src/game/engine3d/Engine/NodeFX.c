@@ -35,8 +35,8 @@ byte INodeFX_Type(INodeFX *self) {
 
 uint32_t g_TimeMs;
 
-SD_SYM(str_3e3bc8);
-const char *g_NodeEffectSect = (void *)sd_str_3e3bc8;
+extern const char str_3e3bc8[];
+const char *g_NodeEffectSect = (void *)str_3e3bc8;
 
 /* ---- CNodeFX_Wheel ---- */
 

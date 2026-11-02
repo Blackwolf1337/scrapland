@@ -268,186 +268,166 @@ PyObject *SInput_CheckPadButton(PyObject *self, PyObject *args) {
 	return Py_BuildValue("i", 0);
 }
 
-SD_SYM(str_PyMethod_SInput_SetActionSet);
-SD_SYM(SInput_SetActionSet);
-SD_SYM(str_PyDoc_SInput_SetActionSet);
-SD_SYM(str_PyMethod_SInput_GetActionSet);
-SD_SYM(SInput_GetActionSet);
-SD_SYM(str_PyDoc_SInput_GetActionSet);
-SD_SYM(str_PyMethod_SInput_AssingEntry);
-SD_SYM(SInput_AssingEntry);
-SD_SYM(str_PyDoc_SInput_AssingEntry);
-SD_SYM(str_PyMethod_SInput_GetEntry);
-SD_SYM(SInput_GetEntry);
-SD_SYM(str_PyDoc_SInput_GetEntry);
-SD_SYM(str_PyMethod_SInput_ListenToDefine);
-SD_SYM(SInput_ListenToDefine);
-SD_SYM(str_PyDoc_SInput_ListenToDefine);
-SD_SYM(str_PyMethod_SInput_AbortListenToDefine);
-SD_SYM(SInput_AbortListenToDefine);
-SD_SYM(str_PyDoc_SInput_AbortListenToDefine);
-SD_SYM(str_PyMethod_SInput_GetDefinedList);
-SD_SYM(SInput_GetDefinedList);
-SD_SYM(str_PyDoc_SInput_GetDefinedList);
-SD_SYM(str_PyMethod_SInput_GetDefinedEntry);
-SD_SYM(SInput_GetDefinedEntry);
-SD_SYM(str_PyDoc_SInput_GetDefinedEntry);
-SD_SYM(str_PyMethod_SInput_ClearDefinedList);
-SD_SYM(SInput_ClearDefinedList);
-SD_SYM(str_PyDoc_SInput_ClearDefinedList);
-SD_SYM(str_PyMethod_SInput_ResetToDefault);
-SD_SYM(SInput_ResetToDefault);
-SD_SYM(str_PyDoc_SInput_ResetToDefault);
-SD_SYM(str_PyMethod_SInput_SetString);
-SD_SYM(SInput_SetString);
-SD_SYM(str_PyDoc_SInput_SetString);
-SD_SYM(str_PyMethod_SInput_GetString);
-SD_SYM(SInput_GetString);
-SD_SYM(str_PyDoc_SInput_GetString);
-SD_SYM(str_PyMethod_SInput_GetCursorChar);
-SD_SYM(SInput_GetCursorChar);
-SD_SYM(str_PyDoc_SInput_GetCursorChar);
-SD_SYM(str_PyMethod_SInput_GetVirtualKeyboard);
-SD_SYM(SInput_GetVirtualKeyboard);
-SD_SYM(str_PyDoc_SInput_GetVirtualKeyboard);
-SD_SYM(str_PyMethod_SInput_SetVirtualKeyboard);
-SD_SYM(SInput_SetVirtualKeyboard);
-SD_SYM(str_PyDoc_SInput_SetVirtualKeyboard);
-SD_SYM(str_PyMethod_SInput_SetInputFunc);
-SD_SYM(SInput_SetInputFunc);
-SD_SYM(str_PyDoc_SInput_SetInputFunc);
-SD_SYM(str_PyMethod_SInput_Bind);
-SD_SYM(SInput_Bind);
-SD_SYM(str_PyDoc_SInput_Bind);
-SD_SYM(str_PyMethod_SInput_Rumble);
-SD_SYM(SInput_Rumble);
-SD_SYM(str_PyDoc_SInput_Rumble);
-SD_SYM(str_PyMethod_SInput_ResetToSplit);
-SD_SYM(SInput_ResetToSplit);
-SD_SYM(str_PyDoc_SInput_ResetToSplit);
-SD_SYM(str_PyMethod_SInput_CheckPadButton);
-SD_SYM(SInput_CheckPadButton);
-SD_SYM(str_PyDoc_SInput_CheckPadButton);
+extern char str_PyDoc_SInput_AbortListenToDefine[];
+extern char str_PyDoc_SInput_AssingEntry[];
+extern char str_PyDoc_SInput_Bind[88];
+extern char str_PyDoc_SInput_CheckPadButton[];
+extern char str_PyDoc_SInput_ClearDefinedList[];
+extern char str_PyDoc_SInput_GetActionSet[68];
+extern char str_PyDoc_SInput_GetCursorChar[];
+extern char str_PyDoc_SInput_GetDefinedEntry[];
+extern char str_PyDoc_SInput_GetDefinedList[];
+extern char str_PyDoc_SInput_GetEntry[];
+extern char str_PyDoc_SInput_GetString[];
+extern char str_PyDoc_SInput_GetVirtualKeyboard[88];
+extern char str_PyDoc_SInput_ListenToDefine[];
+extern char str_PyDoc_SInput_ResetToDefault[112];
+extern char str_PyDoc_SInput_ResetToSplit[96];
+extern char str_PyDoc_SInput_Rumble[72];
+extern char str_PyDoc_SInput_SetActionSet[];
+extern char str_PyDoc_SInput_SetInputFunc[];
+extern char str_PyDoc_SInput_SetString[];
+extern char str_PyDoc_SInput_SetVirtualKeyboard[];
+extern const char str_PyMethod_SInput_AbortListenToDefine[];
+extern const char str_PyMethod_SInput_AssingEntry[];
+extern const char str_PyMethod_SInput_Bind[];
+extern const char str_PyMethod_SInput_CheckPadButton[];
+extern const char str_PyMethod_SInput_ClearDefinedList[];
+extern const char str_PyMethod_SInput_GetActionSet[];
+extern const char str_PyMethod_SInput_GetCursorChar[];
+extern const char str_PyMethod_SInput_GetDefinedEntry[];
+extern const char str_PyMethod_SInput_GetDefinedList[];
+extern const char str_PyMethod_SInput_GetEntry[];
+extern const char str_PyMethod_SInput_GetString[];
+extern const char str_PyMethod_SInput_GetVirtualKeyboard[];
+extern const char str_PyMethod_SInput_ListenToDefine[];
+extern const char str_PyMethod_SInput_ResetToDefault[];
+extern const char str_PyMethod_SInput_ResetToSplit[];
+extern const char str_PyMethod_SInput_Rumble[];
+extern const char str_PyMethod_SInput_SetActionSet[];
+extern const char str_PyMethod_SInput_SetInputFunc[];
+extern const char str_PyMethod_SInput_SetString[];
+extern const char str_PyMethod_SInput_SetVirtualKeyboard[];
 PyMethodDef SInput_methods[21] = {
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_SetActionSet,
-		.ml_meth = (void *)sd_SInput_SetActionSet,
+		.ml_name = (void *)str_PyMethod_SInput_SetActionSet,
+		.ml_meth = (void *)SInput_SetActionSet,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_SetActionSet,
+		.ml_doc = (void *)str_PyDoc_SInput_SetActionSet,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_GetActionSet,
-		.ml_meth = (void *)sd_SInput_GetActionSet,
+		.ml_name = (void *)str_PyMethod_SInput_GetActionSet,
+		.ml_meth = (void *)SInput_GetActionSet,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_GetActionSet,
+		.ml_doc = (void *)str_PyDoc_SInput_GetActionSet,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_AssingEntry,
-		.ml_meth = (void *)sd_SInput_AssingEntry,
+		.ml_name = (void *)str_PyMethod_SInput_AssingEntry,
+		.ml_meth = (void *)SInput_AssingEntry,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_AssingEntry,
+		.ml_doc = (void *)str_PyDoc_SInput_AssingEntry,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_GetEntry,
-		.ml_meth = (void *)sd_SInput_GetEntry,
+		.ml_name = (void *)str_PyMethod_SInput_GetEntry,
+		.ml_meth = (void *)SInput_GetEntry,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_GetEntry,
+		.ml_doc = (void *)str_PyDoc_SInput_GetEntry,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_ListenToDefine,
-		.ml_meth = (void *)sd_SInput_ListenToDefine,
+		.ml_name = (void *)str_PyMethod_SInput_ListenToDefine,
+		.ml_meth = (void *)SInput_ListenToDefine,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_ListenToDefine,
+		.ml_doc = (void *)str_PyDoc_SInput_ListenToDefine,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_AbortListenToDefine,
-		.ml_meth = (void *)sd_SInput_AbortListenToDefine,
+		.ml_name = (void *)str_PyMethod_SInput_AbortListenToDefine,
+		.ml_meth = (void *)SInput_AbortListenToDefine,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_AbortListenToDefine,
+		.ml_doc = (void *)str_PyDoc_SInput_AbortListenToDefine,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_GetDefinedList,
-		.ml_meth = (void *)sd_SInput_GetDefinedList,
+		.ml_name = (void *)str_PyMethod_SInput_GetDefinedList,
+		.ml_meth = (void *)SInput_GetDefinedList,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_GetDefinedList,
+		.ml_doc = (void *)str_PyDoc_SInput_GetDefinedList,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_GetDefinedEntry,
-		.ml_meth = (void *)sd_SInput_GetDefinedEntry,
+		.ml_name = (void *)str_PyMethod_SInput_GetDefinedEntry,
+		.ml_meth = (void *)SInput_GetDefinedEntry,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_GetDefinedEntry,
+		.ml_doc = (void *)str_PyDoc_SInput_GetDefinedEntry,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_ClearDefinedList,
-		.ml_meth = (void *)sd_SInput_ClearDefinedList,
+		.ml_name = (void *)str_PyMethod_SInput_ClearDefinedList,
+		.ml_meth = (void *)SInput_ClearDefinedList,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_ClearDefinedList,
+		.ml_doc = (void *)str_PyDoc_SInput_ClearDefinedList,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_ResetToDefault,
-		.ml_meth = (void *)sd_SInput_ResetToDefault,
+		.ml_name = (void *)str_PyMethod_SInput_ResetToDefault,
+		.ml_meth = (void *)SInput_ResetToDefault,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_ResetToDefault,
+		.ml_doc = (void *)str_PyDoc_SInput_ResetToDefault,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_SetString,
-		.ml_meth = (void *)sd_SInput_SetString,
+		.ml_name = (void *)str_PyMethod_SInput_SetString,
+		.ml_meth = (void *)SInput_SetString,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_SetString,
+		.ml_doc = (void *)str_PyDoc_SInput_SetString,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_GetString,
-		.ml_meth = (void *)sd_SInput_GetString,
+		.ml_name = (void *)str_PyMethod_SInput_GetString,
+		.ml_meth = (void *)SInput_GetString,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_GetString,
+		.ml_doc = (void *)str_PyDoc_SInput_GetString,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_GetCursorChar,
-		.ml_meth = (void *)sd_SInput_GetCursorChar,
+		.ml_name = (void *)str_PyMethod_SInput_GetCursorChar,
+		.ml_meth = (void *)SInput_GetCursorChar,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_GetCursorChar,
+		.ml_doc = (void *)str_PyDoc_SInput_GetCursorChar,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_GetVirtualKeyboard,
-		.ml_meth = (void *)sd_SInput_GetVirtualKeyboard,
+		.ml_name = (void *)str_PyMethod_SInput_GetVirtualKeyboard,
+		.ml_meth = (void *)SInput_GetVirtualKeyboard,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_GetVirtualKeyboard,
+		.ml_doc = (void *)str_PyDoc_SInput_GetVirtualKeyboard,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_SetVirtualKeyboard,
-		.ml_meth = (void *)sd_SInput_SetVirtualKeyboard,
+		.ml_name = (void *)str_PyMethod_SInput_SetVirtualKeyboard,
+		.ml_meth = (void *)SInput_SetVirtualKeyboard,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_SetVirtualKeyboard,
+		.ml_doc = (void *)str_PyDoc_SInput_SetVirtualKeyboard,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_SetInputFunc,
-		.ml_meth = (void *)sd_SInput_SetInputFunc,
+		.ml_name = (void *)str_PyMethod_SInput_SetInputFunc,
+		.ml_meth = (void *)SInput_SetInputFunc,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_SetInputFunc,
+		.ml_doc = (void *)str_PyDoc_SInput_SetInputFunc,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_Bind,
-		.ml_meth = (void *)sd_SInput_Bind,
+		.ml_name = (void *)str_PyMethod_SInput_Bind,
+		.ml_meth = (void *)SInput_Bind,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_Bind,
+		.ml_doc = (void *)str_PyDoc_SInput_Bind,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_Rumble,
-		.ml_meth = (void *)sd_SInput_Rumble,
+		.ml_name = (void *)str_PyMethod_SInput_Rumble,
+		.ml_meth = (void *)SInput_Rumble,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_Rumble,
+		.ml_doc = (void *)str_PyDoc_SInput_Rumble,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_ResetToSplit,
-		.ml_meth = (void *)sd_SInput_ResetToSplit,
+		.ml_name = (void *)str_PyMethod_SInput_ResetToSplit,
+		.ml_meth = (void *)SInput_ResetToSplit,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_ResetToSplit,
+		.ml_doc = (void *)str_PyDoc_SInput_ResetToSplit,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SInput_CheckPadButton,
-		.ml_meth = (void *)sd_SInput_CheckPadButton,
+		.ml_name = (void *)str_PyMethod_SInput_CheckPadButton,
+		.ml_meth = (void *)SInput_CheckPadButton,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SInput_CheckPadButton,
+		.ml_doc = (void *)str_PyDoc_SInput_CheckPadButton,
 	},
 };
 
