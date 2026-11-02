@@ -176,7 +176,6 @@ char **PackNames_Find(const char *name) {
 }
 
 cPackEntryList g_PackEntries;
-
 uint32_t g_PackNumEntries;
 
 /* the entry of the build list with that name; the iterator of the list stays on it */
@@ -253,11 +252,8 @@ cAbstractFile *cFilePack_Destroy(cAbstractFile *elem, int flags) {
 }
 
 int g_NumPackFiles;
-
 cFile2 g_PackFiles[128];
-
 int g_PackLocked;
-
 void *g_LstFile;
 
 /*
@@ -628,7 +624,6 @@ int Pack_Extract(const char *dir) {
 /* building a pack: the files of filelist.2Bpack, then by mode files found below the directory */
 
 int g_PackDirLen;
-
 int g_PackBuildMode;
 
 /*
@@ -918,11 +913,8 @@ const cAbstractFileVtbl cFilePack_vftable = {
 };
 
 cGVar GVar_PathInPackFile;
-
 cGVar GVar_BuildPackPrompt;
-
 cGVar GVar_BuildPackExclude;
-
 cGVar GVar_BuildPackInclude;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

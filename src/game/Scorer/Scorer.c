@@ -1439,11 +1439,8 @@ byte Scorer_Render(void) {
 #define CONSOLE_ONINPUT 0x1741b0			/* Console_OnInput as the exe stores it */
 
 byte g_ConsoleOn;
-
 char *g_ConsoleHistory[16];
-
 int g_ConsoleHistoryPos;
-
 cPlayerInput g_PlayerInput[4];
 
 /* the line typed into the console: a Python line for FullScreenConsoleCallback, else a console command */
@@ -1494,19 +1491,12 @@ void Console_HistoryDown(void) {
 }
 
 byte g_ConsoleCheckInput;
-
 byte g_ConsoleClosing;
-
 byte g_ConsoleBusy;
-
 cVirtualKeyboard g_ConsoleSavedKeyboard;
-
 uint32_t g_ConsoleSavedSet;
-
 cPlayerInput g_ConsoleSavedInput;
-
 CPsaImage *g_ConsoleWhite;
-
 float g_ConsoleTime;
 
 void Scorer_SetConsole(int on) {
@@ -1868,75 +1858,40 @@ const cScorerVtbl cScorer_vftable = {
 };
 
 cGVar GVar_FileNameMap2D;
-
 cGVar GVar_CinemaBlackBandHeight;
-
 cGVar GVar_MotionBlurFactorBegin;
-
 cGVar GVar_OnAcceptSoundVol;
-
 cGVar GVar_CameraCloudPlaneSize;
-
 cGVar GVar_CameraCloudRed;
-
 cGVar GVar_XboxSavingMsgStr;
-
 cGVar GVar_XboxNoPadMsgP;
-
 cGVar GVar_OnFocusSoundVol;
-
 cGVar GVar_CameraCloudDistance;
-
 cGVar GVar_NoiseEndTime;
-
 cGVar GVar_NoiseFactor;
-
 cGVar GVar_MotionBlurEndTime;
-
 cGVar GVar_OnAcceptSound;
-
 cGVar GVar_XboxNoPadMsgPBig;
-
 cGVar GVar_NoiseTime;
-
 cGVar GVar_CameraCloudGreen;
-
 cGVar GVar_XboxSavingMsg;
-
 cGVar GVar_NoiseFactorBegin;
-
 cGVar GVar_ScorerMarker;
-
 cGVar GVar_MotionBlurTime;
-
 cGVar GVar_CameraScene;
-
 cGVar GVar_ScorerMarkerSpeed;
-
 cGVar GVar_OnFocusSound;
-
 cGVar GVar_CameraCloudBlue;
-
 cGVar GVar_MotionBlurFactorEnd;
-
 cGVar GVar_CameraCloudThickness;
-
 cGVar GVar_XboxNoPadMsg;
-
 cGVar GVar_CameraCloudAlpha;
-
 cGVar GVar_ScorerMarkerColor;
-
 cGVar GVar_MotionBlurOffVar;
-
 cGVar GVar_CShow;
-
 cGVarFunction GVar_FullScreenConsoleCallback;
-
 cGVar GVar_ShowConsoleLog;
-
 cGVar GVar_R_SceneMotionBlurOff;
-
 cGVar GVar_SplitScreen;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

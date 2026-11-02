@@ -28,7 +28,6 @@ static cEntity *FindAIEntity(const char *name, const char *type) {
 }
 
 CNodesTraffic *g_NodesTraffic;
-
 CNodesWorld *g_NodesWorld;
 
 /* IniAI(levelname, IsMapOutDoor) : creates the navigation graphs, traffic, A* and AI groups of the level */
@@ -1003,15 +1002,12 @@ char str_PyDoc_SAI_BuildGraph[] =
 	"ociado al Pathfinding";
 
 const char str_PyMethod_SAI_AnalyzeMap[] = "AnalizeMap";
-
 const char str_PyMethod_SAI_AnalyzeGraph[] = "AnalizeGraph";
-
 const char str_PyMethod_SAI_AnalyzeGraph2D[] = "AnalizeGraph2D";
 
 char str_PyDoc_SAI_AnalyzeMap[] = "AnalizeMap(float sizeNode) : Analiza características mapa.";
 
 const char str_PyMethod_SAI_AnalyzeTraffic[] = "AnalizeTraffic";
-
 const char str_PyMethod_SAI_BuildGraph[] = "BuildGraph";
 
 char str_PyDoc_SAI_AnalyzeGraph[] = "AnalizeGraph() : Analiza características grafo.";
@@ -1021,7 +1017,6 @@ const char str_PyMethod_SAI_BuildGraph2D[] = "BuildGraph2D";
 char str_PyDoc_SAI_AnalyzeGraph2D[] = "AnalizeGraph2D() : Analiza características grafo 2D.";
 
 const char str_PyMethod_SAI_SetStateVehicle[] = "SetStateVehicle";
-
 const char str_PyMethod_SAI_SetStateChar[] = "SetStateChar";
 
 char str_PyDoc_SAI_AnalyzeTraffic[56] = "AnalizeTraffic() : Analiza características tráfico.";
@@ -1033,9 +1028,7 @@ char str_PyDoc_SAI_BuildGraph2D[] =
 	"asociado al Pathfinding 2D";
 
 const char str_PyMethod_SAI_GetStateChar[] = "GetStateChar";
-
 const char str_PyMethod_SAI_EnableAIVehicle[] = "EnableAIVehicle";
-
 const char str_PyMethod_SAI_EnableAIChar[] = "EnableAIChar";
 
 char str_PyDoc_SAI_SetStateVehicle[872] =
@@ -1053,23 +1046,14 @@ char str_PyDoc_SAI_SetStateVehicle[872] =
 	"\n SetStateVehicle(9, string nameAgent) : Estado tráfico en interiores.\n";
 
 const char str_PyMethod_SAI_IniAI[] = "IniAI";
-
 const char str_PyMethod_SAI_GetNextRacePoint[] = "GetNextRacePoint";
-
 const char str_PyMethod_SAI_GetNearestItemLife[] = "GetNearestItemLife";
-
 const char str_PyMethod_SAI_GetRandomVisibilityPoint[] = "GetRandomVisibilityPoint";
-
 const char str_PyMethod_SAI_GetReposCharPos[] = "GetReposCharPos";
-
 const char str_PyMethod_SAI_InitVehicleRace[] = "InitVehicleRace";
-
 const char str_PyMethod_SAI_AddVehicleRace[] = "AddVehicleRace";
-
 const char str_PyMethod_SAI_SetRotStaticObj[] = "SetRotStaticObj";
-
 const char str_PyMethod_SAI_SetInertia[] = "SetInertia";
-
 const char str_PyMethod_SAI_GetOD[] = "GetOD";
 
 char str_PyDoc_SAI_GetStateVehicle[] =

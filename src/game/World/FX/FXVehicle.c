@@ -3452,9 +3452,7 @@ const cObjElementFXVtbl cObjElementFXVehicleAccelerator_vftable = {
 };
 
 cGVar GVar_FXShipExplosionFile;
-
 cGVar GVar_FXFiredDebrisFile;
-
 cGVar GVar_FXSmokeDebrisFile;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

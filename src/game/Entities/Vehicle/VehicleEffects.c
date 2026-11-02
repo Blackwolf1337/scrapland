@@ -1304,31 +1304,18 @@ void cVehicleEffects_Shoot(void *effects, int weap, int slot) {
 }
 
 cGVar GVar_FXVehicleSpeedTrailDist;
-
 cGVar GVar_WindFXSmokeSizeDiv;
-
 cGVar GVar_FXVehicleSputnikFile;
-
 cGVar GVar_WindFXSmokeTimeStep;
-
 cGVar GVar_WindFxSmoke;
-
 cGVar GVar_FXVehicleFireFile;
-
 cGVar GVar_WindFXSmokeMinVel;
-
 cGVar GVar_WindFxSmokeFile;
-
 cGVar GVar_FXVehicleDamageFile;
-
 cGVar GVar_FXVehicleSpeedTrailFadeOutH;
-
 cGVar GVar_FXVehicleSpeedTrailSize;
-
 cGVar GVar_FXSetOnFireLifePercent;
-
 cGVar GVar_WindFXSmokeMaxDist;
-
 cGVar GVar_FXVehicleEMIFile;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

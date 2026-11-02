@@ -215,7 +215,6 @@ void PyPool_Delete(void) {
 }
 
 cMemStats g_PyMemStats;
-
 cMemStats *g_MemStatsContext;
 
 /* the entry points set the statistics context only for the call (and leave it NULL) */

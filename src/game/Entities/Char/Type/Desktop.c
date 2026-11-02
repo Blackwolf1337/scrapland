@@ -262,17 +262,11 @@ void ChType_DesktopActionPress(cAbstractFile *params) {
 }
 
 cGVar GVar_DesktopJumpPrice;
-
 cGVar GVar_DesktopJumpSlideTime;
-
 cGVar GVar_FXDesktopFallEndDist;
-
 cGVar GVar_DesktopJumpSpeed;
-
 cGVar GVar_FXDesktopFallEndFile;
-
 cGVar GVar_FallSoundVel;
-
 cPy_NativeFunc NativeFunc_DesktopActionPress;
 cPy_NativeFunc NativeFunc_FXDesktopFallEnd;
 

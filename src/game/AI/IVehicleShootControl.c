@@ -1002,13 +1002,9 @@ const cAIVehicleShootVtbl cAIVehicleShootControl_vftable = {
 };
 
 cGVar GVar_NotShootAI;
-
 cGVar GVar_InfernoIDWeap;
-
 cGVar GVar_DevastatorDistLimit;
-
 cGVar GVar_InfernoDistLimit;
-
 cGVar GVar_LaserDistLimit;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

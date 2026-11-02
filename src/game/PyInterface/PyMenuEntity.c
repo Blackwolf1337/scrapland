@@ -130,7 +130,6 @@ int PyMenuEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
 }
 
 const char str_CPyMenuEntity[] = "cPyMenuEntity";
-
 extern const char str_CPyMenuEntity[];
 PyTypeObject cPyMenuEntity_Type = {
 	.ob_refcnt = 1,

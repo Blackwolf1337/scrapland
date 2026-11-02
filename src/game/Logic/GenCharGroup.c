@@ -12,9 +12,7 @@
 void *GenCharGroup_MakeLogic(cEntity *e);
 
 cGVar GVar_BankDirectorAgressive;
-
 cGVar GVar_BishopAttackOnAlarm;
-
 cGVar GVar_GenCharAttackActive;
 
 cGenCharGroup *cGenCharGroup_ctor(cGenCharGroup *self) {

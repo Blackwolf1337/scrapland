@@ -162,13 +162,9 @@ void ChType_FXBankMasterAttack(cAbstractFile *params) {
 }
 
 cGVar GVar_BankerStealAmount;
-
 cGVar GVar_FXBankMasterAttackFile;
-
 cGVar GVar_BankMasterAmmoCost;
-
 cGVar GVar_FXBankMasterSuctionFile;
-
 cPy_NativeFunc NativeFunc_BankMasterAttack;
 cPy_NativeFunc NativeFunc_BankMasterActionPress;
 cPy_NativeFunc NativeFunc_BankMasterHitEvent;

@@ -1526,15 +1526,10 @@ const cObjElementFXVtbl cObjElementFXDebrisCloud_vftable = {
 };
 
 cGVar GVar_EMILowRadiusFactor;
-
 cGVar GVar_FXHookFadeTime;
-
 cGVar GVar_FXHookSize;
-
 cGVar GVar_LaserHookSparksFile;
-
 cGVar GVar_FXHookTensor;
-
 cGVar GVar_FXSonicRadius;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

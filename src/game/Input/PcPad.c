@@ -403,29 +403,17 @@ const cAbstractIDeviceVtbl cPcPad_vftable = {
 };
 
 cGVar GVar_XBInvertCharYPad;
-
 cGVar GVar_XBInvertLRChar;
-
 cGVar GVar_XBCDigitalAsAnalog;
-
 cGVar GVar_XBVDigitalAsAnalog;
-
 cGVar GVar_XBInvertLRVehicle;
-
 cGVar GVar_XBInvertVehicleYPad;
-
 cGVar GVar_XBCameraAutoPad;
-
 cGVar GVar_XBVehicleAsFPS;
-
 cGVar GVar_IsUsingMouse;
-
 cGVar GVar_MainPcPad;
-
 cGVar GVar_PCPadDeadZone;
-
 cGVar GVar_PCPadConnected;
-
 cGVar GVar_PCPadForeground;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

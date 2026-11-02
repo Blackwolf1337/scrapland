@@ -255,17 +255,11 @@ void CHeights_dtor(CHeights *self) {
 }
 
 uint32_t g_CollisionCache;
-
 uint32_t g_CollisionNComp;
-
 uint32_t g_CollisionTests;
-
 uint32_t g_CollisionTestsTotal;
-
 uint32_t g_CollisionStats[6];
-
 uint32_t g_CollisionStats2;
-
 float g_CollisionEpsilon = 0.0001f;
 
 /* CGround */
@@ -2049,7 +2043,6 @@ void Collide_TriVerts(CollideVert *out, const vec3_t *a, const vec3_t *b, const 
 }
 
 int g_ShowCollision;
-
 CollideVert g_CollideVerts[3];
 
 /* the triangles of the mesh by their flags (g_ShowCollision 1: the marked ones, 3: those with flag 4 only, 4: the
@@ -2276,7 +2269,6 @@ static void Ground_AnalyzeQuads(CGround *self) {
 }
 
 CMaterial *g_MatGround;
-
 int g_CollideMatGuard[2];
 
 /* the debug view of the collision: the mode of c_show (6, 7 the solid views, 7 with a blinking background), the

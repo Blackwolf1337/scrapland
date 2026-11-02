@@ -144,7 +144,6 @@ int Bsp2_CheckLine(const vec3_t *a, const vec3_t *b, vec3_t *out, Bsp2Node *node
 }
 
 vec3_t g_Bsp2Eye;
-
 int g_Bsp2Color;
 
 void BspLights_Render(void *self) {
@@ -183,7 +182,6 @@ void Bsp2_AddTri(byte countOnly, Bsp2Node *node, uint32_t *nFront, uint32_t *nBa
 }
 
 int g_Bsp2Hits;
-
 int g_Bsp2Misses;
 
 void Bsp2_Stats(int print) {

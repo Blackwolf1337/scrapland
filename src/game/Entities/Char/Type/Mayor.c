@@ -124,11 +124,8 @@ sleep:
 }
 
 cGVar GVar_MayorListenPercent;
-
 cGVar GVar_MayorSleepPercent;
-
 cGVar GVar_MayorBlabliblaRadius;
-
 cPy_NativeFunc NativeFunc_MayorEndAction;
 cPy_NativeFunc NativeFunc_ListeningMayor;
 

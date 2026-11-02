@@ -30,7 +30,6 @@
 
 
 int g_BspNumLights;
-
 BspLight g_BspLights[512];
 
 /* the lights of the scene */
@@ -119,7 +118,6 @@ void Bsp_TakeLights(CScene *scn) {
 
 
 float g_ShadowMapScale = 1.0f;
-
 float g_ShadowMapRes = 0.5f;
 
 /* the texels of the lists */
@@ -772,7 +770,6 @@ static byte BspRad_List(BspTxf *txf, const char *fmt, int pass, int i, int n, in
 static const float bspMagenta[3] = { 1.0f, 0.0f, 1.0f };
 
 int g_BspLodCount[4];
-
 float g_BspLodLevel;
 
 float g_BspLodDist[6] = { 20.0f, 5.0f, 40.0f, 10.0f, 80.0f, 20.0f };
@@ -1578,13 +1575,9 @@ void CBsp_Calculate(CBsp *self) {
 }
 
 cGVar GVar_RadSkipBySectors;
-
 cGVar GVar_RadiosityPortals;
-
 cGVar GVar_RadiosityMinDist;
-
 cGVar GVar_TXF_Helper;
-
 cGVar GVar_TXF_CheckFiles;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

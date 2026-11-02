@@ -135,11 +135,8 @@ void CFog_SetRange(CFog *self, float start, float end) {
 }
 
 cGVar GVar_R_FogDensity;
-
 cGVar GVar_R_FogEnable;
-
 cGVar GVar_R_FogAbsDist;
-
 cGVar GVar_R_FogColor;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

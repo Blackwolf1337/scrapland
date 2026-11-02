@@ -35,7 +35,6 @@ byte INodeFX_Type(INodeFX *self) {
 }
 
 uint32_t g_TimeMs;
-
 extern const char str_NodeEffect[];
 const char *g_NodeEffectSect = (void *)str_NodeEffect;
 
@@ -445,29 +444,17 @@ const INodeFXVtbl CNodeFX_Spring_vftable = {
 };
 
 const char str_NodeEffect[] = "NodeEffect";
-
 cGVar GVar_NodeFXSpringMidP;
-
 cGVar GVar_NodeFXSpringDamp2;
-
 cGVar GVar_NodeFXWheelShow;
-
 cGVar GVar_NodeFXSpringMSec;
-
 cGVar GVar_NodeFXWheelRadius;
-
 cGVar GVar_NodeFXSpringDebug;
-
 cGVar GVar_NodeFXSpringRotX;
-
 cGVar GVar_NodeFXSpringShow;
-
 cGVar GVar_NodeFXSpringDamp1;
-
 cGVar GVar_NodeFXSpringRot;
-
 cGVar GVar_NodeFXWheelSlide;
-
 cGVar GVar_NodeFXSpringSprng;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

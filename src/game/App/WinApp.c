@@ -63,11 +63,8 @@ void CWinApp_ShowConsole(CApp *base, byte show) {
 }
 
 int g_WinWidth = 640;
-
 int g_WinHeight = 480;
-
 int g_WideWinWidth = 640;
-
 int g_WideWinHeight = 360;
 
 /* the main window through SDL: 640 x 480 (-widewindow 640 x 360), -dedicated 350 x 1 and not resizable */
@@ -152,17 +149,11 @@ void *App_GetHInstance(void) {
 }
 
 uint32_t g_TimeQPPause;
-
 uint32_t g_TimeMsPause;
-
 byte g_TimeInit;
-
 int g_TimeUseQP;
-
 int64_t g_TimeQPFreq;
-
 int64_t g_TimeQPStart;
-
 uint32_t g_TimeMsStart;
 
 /* vf14: seconds since the first call, by the performance counter if there is one, else by timeGetTime */
@@ -394,7 +385,6 @@ const CAppVtbl CWinApp_vftable = {
 };
 
 char str_Scrapland[] = "Scrapland";
-
 cGVar GVar_SoundInit;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

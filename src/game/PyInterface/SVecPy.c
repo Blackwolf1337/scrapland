@@ -294,25 +294,15 @@ PyMethodDef SVec_methods[13] = {
 SD_PY_MODULE(SVec, 0x42fc80)
 
 const char str_PyMethod_SVec_Sub[] = "Sub";
-
 const char str_PyMethod_SVec_Mod[] = "Mod";
-
 const char str_PyMethod_SVec_ModSqr[] = "ModSqr";
-
 const char str_PyMethod_SVec_Norm[] = "Norm";
-
 const char str_PyMethod_SVec_Prod[] = "Prod";
-
 const char str_PyMethod_SVec_DProd[] = "DProd";
-
 const char str_PyMethod_SVec_CProd[] = "CProd";
-
 const char str_PyMethod_SVec_Rotate3D[] = "Rotate3D";
-
 const char str_PyMethod_SVec_GetAngle[] = "GetAngle";
-
 const char str_PyMethod_SVec_GetRotAng[] = "GetRotAng";
-
 const char str_PyMethod_SVec_NormAng[] = "NormAng";
 
 char str_PyDoc_SVec_Add[] = "res Add(v1,v2) : suma dos vectores 3D";

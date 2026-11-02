@@ -71,17 +71,11 @@ void CGameModel_LoadScaled(CGameModel *self, const char *name, const vec3_t *sca
 }
 
 cGVar GVar_R_CoefMLODTraffic;
-
 cGVar GVar_R_CoefMLODEngines;
-
 cGVar GVar_R_CoefMLODOutElement;
-
 cGVar GVar_R_CoefMLODMenuElement;
-
 cGVar GVar_R_CoefMLODCharacters;
-
 cGVar GVar_R_CoefMLODPilots;
-
 cGVar GVar_R_CoefMLODShips;
 
 /* the LOD distance of the model times the coefficient of its LOD group */
@@ -1217,7 +1211,6 @@ void CRotation_SetEuler(CRotation *self, const vec3_t *ang) {
 }
 
 cGVar GVar_R_ForcePreRenderTransform;
-
 cGVar GVar_R_GetModelVertex;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

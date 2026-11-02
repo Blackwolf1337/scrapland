@@ -55,7 +55,6 @@ static PyObject *GetVar(PyObject *args, varfunc_t var, void *obj, const char *na
 }
 
 cActClassList *g_pActClassList;
-
 cActClass *g_pAuxActClass;
 
 /* CreateClass(classname) : Crea una clase de objeto animado. A parse error returns None with the error set. */
@@ -272,24 +271,19 @@ const char str_PyMethod_SAct_CreateClass[] = "CreateClass";
 char str_PyDoc_SAct_GetAction[] = "GetAction(varname) :  Obtiene una accion de la clase actual.";
 
 const char str_PyMethod_SAct_DelClass[] = "DelClass";
-
 const char str_PyMethod_SAct_GetClass[] = "GetClass";
 
 char str_PyDoc_SAct_SetAct[104] =
 	"SetAct(varname,value) :  Modifica el valor de una variable de la accion de una clase objeto animado";
 
 const char str_PyMethod_SAct_SetCls[] = "SetCls";
-
 const char str_PyMethod_SAct_GetCls[] = "GetCls";
-
 const char str_PyMethod_SAct_CreateAction[] = "CreateAction";
 
 char str_PyDoc_SAct_GetAct[] =
 	"GetAct(varname) :  Obtiene el valor de una variable de la accion de una clase objeto animado";
 
 const char str_PyMethod_SAct_GetAction[] = "GetAction";
-
 const char str_PyMethod_SAct_SetAct[] = "SetAct";
-
 const char str_PyMethod_SAct_GetAct[] = "GetAct";
 

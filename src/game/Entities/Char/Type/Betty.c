@@ -234,27 +234,16 @@ void ChType_FXBettyAttack(cAbstractFile *params) {
 }
 
 cGVar GVar_BettyHitTimeFader;
-
 cGVar GVar_FXBettyAttackFile;
-
 cGVar GVar_BettyHSpeed;
-
 cGVar GVar_BettyHitPosY;
-
 cGVar GVar_BettyHitRadius;
-
 cGVar GVar_BettyVSpeed;
-
 cGVar GVar_FXBettyKillFile;
-
 cGVar GVar_BettyHitTopLimit;
-
 cGVar GVar_BettyHitPosX;
-
 cGVar GVar_BettyHitTimeSpeed;
-
 cGVar GVar_BettyHitPosZ;
-
 cPy_NativeFunc NativeFunc_BettyActionPress;
 cPy_NativeFunc NativeFunc_BettyHitEvent;
 cPy_NativeFunc NativeFunc_BettyRestoreTime;

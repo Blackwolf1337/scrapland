@@ -23,7 +23,6 @@ static void Batch_Alloc(CTable *t, uint32_t size) {
 }
 
 CTable g_TabMesh;
-
 RenderMeshEntry *g_MeshList[1024];
 int g_UsedMesh;
 
@@ -125,10 +124,8 @@ int RenderMesh_Compare(const void *a, const void *b) {
 }
 
 CTable g_TabTransp;
-
 RenderTranspEntry *g_TranspList[1024];
 int g_UsedTransp;
-
 int g_TranspGroup = 1;
 
 int RenderMeshD3D_AddTransp(CMeshD3D *m, const matrix_t *world, byte cont, CRenderNode *r) {
@@ -220,7 +217,6 @@ int RenderTransp_Compare(const void *a, const void *b) {
 }
 
 CTable g_TabObj;
-
 RenderObjEntry *g_ObjList[1024];
 int g_UsedObj;
 
@@ -282,9 +278,7 @@ int RenderObj_Compare(const void *a, const void *b) {
 }
 
 cGVar GVar_R_MeshCache;
-
 cGVar GVar_R_TranspZBias;
-
 cGVar GVar_R_ShowTranspBox;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

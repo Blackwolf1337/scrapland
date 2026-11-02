@@ -98,15 +98,10 @@ void Doors_AutoDoorSlot(cAbstractFile *params) {
 }
 
 byte g_DoorFront;
-
 byte g_DoorBack;
-
 byte g_DoorUsrFront;
-
 byte g_DoorUsrBack;
-
 float g_DoorAngY;
-
 vec3_t g_DoorPos;
 
 /* params: the door, an unused float. The entities in the sphere of the door set the side flags first. */

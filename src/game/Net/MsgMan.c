@@ -9,7 +9,6 @@
 #include "scrap/staticinit.h"
 
 uint32_t g_NetWaitTime = 5000;
-
 uint32_t g_NetCloseTime = 2000;
 
 /* the time out of the state, the same code is inlined in Send */

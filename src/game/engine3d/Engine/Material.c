@@ -727,7 +727,6 @@ char *CMap_ResolvePath(CMap *self, byte load, CMap *alpha) {
 }
 
 int g_AnimCycleDefault;
-
 float g_AnimFpsDefault = 25.0f;
 
 void CMap_LoadTexture(CMap *self, void *dev, CMap *alpha, int kind) {

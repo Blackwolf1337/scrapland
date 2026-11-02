@@ -2329,19 +2329,12 @@ void cObjElementFXSceneDecontamination_SetFC(cObjElementFXSceneDecontamination *
 }
 
 cGVar GVar_FXSceneHumanCDFile;
-
 cGVar GVar_FXSceneEnterMatrixFile;
-
 cGVar GVar_FXSceneYakuzziFile;
-
 cGVar GVar_FXSceneDecontaminationFile;
-
 cGVar GVar_FXSceneBillArrives_AFile;
-
 cGVar GVar_FXSceneBeatPickusFile;
-
 cGVar GVar_FXSceneTheEndBFile;
-
 cGVar GVar_FXSceneBishopsFile;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

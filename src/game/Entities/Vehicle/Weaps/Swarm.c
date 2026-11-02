@@ -112,7 +112,6 @@ cEntity *Swarm_NetCreate(const char *name, vec3_t pos, vec3_t dir) {
 }
 
 char g_SwarmHudTarget[4][0x80];
-
 float g_SwarmHudTime[4];
 
 void Swarm_HudNative(cAbstractFile *f) {
@@ -481,85 +480,45 @@ void Swarm_InitAmmoCosts(void) {
 }
 
 cGVar GVar_SwarmIDWeap;
-
 cGVar GVar_SwarmHitSoundVol;
-
 cGVar GVar_SwarmMissileFile;
-
 cGVar GVar_SwarmUpTopSpeed;
-
 cGVar GVar_SwarmEngineSoundAttIni;
-
 cGVar GVar_SwarmBeeSoundAttEnd;
-
 cGVar GVar_SwarmDeathTime;
-
 cGVar GVar_SwarmBeeRadius;
-
 cGVar GVar_SwarmMinRadius;
-
 cGVar GVar_SwarmAmmoCost2;
-
 cGVar GVar_SwarmBeesSpeed;
-
 cGVar GVar_SwarmHitSound;
-
 cGVar GVar_SwarmHitSoundAttIni;
-
 cGVar GVar_SwarmNormSpeed;
-
 cGVar GVar_SwarmAmmoCost1;
-
 cGVar GVar_SwarmLifeTime;
-
 cGVar GVar_SwarmHitForce;
-
 cGVar GVar_SwarmTurnSpeedUPG;
-
 cGVar GVar_SwarmFastSpeed;
-
 cGVar GVar_SwarmTurnSpeed;
-
 cGVar GVar_SwarmAmmoCost3;
-
 cGVar GVar_SwarmArmor;
-
 cGVar GVar_SwarmAmmoCost4;
-
 cGVar GVar_SwarmEngineSound;
-
 cGVar GVar_SwarmBeeSoundVol;
-
 cGVar GVar_SwarmIDAmmo;
-
 cGVar GVar_SwarmEngineSoundVol;
-
 cGVar GVar_SwarmTimeDelay;
-
 cGVar GVar_SwarmBeeSoundAttIni;
-
 cGVar GVar_SwarmHitSoundAttEnd;
-
 cGVar GVar_SwarmBeeSound;
-
 cGVar GVar_SwarmNumber1;
-
 cGVar GVar_SwarmEngineSoundAttEnd;
-
 cGVar GVar_SwarmEngineSoundDoppler;
-
 cGVar GVar_TeslaDownRangeTimePad;
-
 cGVar GVar_TeslaMinAngRangePad;
-
 cGVar GVar_TeslaDownRangeTime;
-
 cGVar GVar_TeslaMinAngRangeUpg;
-
 cGVar GVar_TeslaMinAngRangeUpgPad;
-
 cGVar GVar_TeslaMinAngRange;
-
 cPy_NativeFunc NativeFunc_SwarmPress;
 cPy_NativeFunc NativeFunc_SwarmRelease;
 cPy_NativeFunc NativeFunc_SwarmOnEnd;

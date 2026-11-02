@@ -1868,9 +1868,7 @@ void cObjElementFXDTritusAttack_Start(cObjElementFXDTritusAttack *self, cEntity 
 }
 
 byte g_FXFunctionaryInit;
-
 int g_FXFunctionaryVertex[14];
-
 uint32_t g_FXFunctionaryColor[14];
 
 void cObjElementFXFunctionarySpecialAction_Start(void *self, cEntity *e) {
@@ -4471,23 +4469,14 @@ const cObjElementFXVtbl cObjElementFXMercenaryDrink_vftable = {
 };
 
 cGVar GVar_BankerStealSoundVol;
-
 cGVar GVar_BankerStealPosZ;
-
 cGVar GVar_BankerStealPosX;
-
 cGVar GVar_BankerSteal2Sound;
-
 cGVar GVar_BankerSteal3Sound;
-
 cGVar GVar_BankerStealPosY;
-
 cGVar GVar_BankerSteal1Sound;
-
 cGVar GVar_BankMasterBatonPosZ;
-
 cGVar GVar_BankMasterBatonPosY;
-
 cGVar GVar_BankMasterBatonPosX;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -355,7 +355,6 @@ void cAICharControl2D_Walk(cAICharControl2D *self) {
 }
 
 void *g_AStar2D;
-
 CNodesWorld2D *g_NodesWorld2D;
 
 /* the path of pathfinding to p; the point after the start becomes the goal */
@@ -1227,13 +1226,9 @@ const cAICharControl2DVtbl cAICharControl2D_vftable = {
 };
 
 cGVar GVar_DepthPathRouteInDoorAI;
-
 cGVar GVar_DistShirkCharAI;
-
 cGVar GVar_FactorDistTestColCharAI;
-
 cGVar GVar_FactorDistTestColBackCharAI;
-
 cGVar GVar_MarginCollCharAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

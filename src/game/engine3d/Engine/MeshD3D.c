@@ -152,7 +152,6 @@ IObject3D *CMeshD3D_Delete(IObject3D *base, byte flags) {
 }
 
 MeshD3DObj g_D3DObj[512];
-
 int g_NumD3DObj;
 
 int MeshD3D_NewObj(void) {

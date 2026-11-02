@@ -52,7 +52,6 @@ void ATPC_PlaySound(const char *name, const vec3_t *pos, float attIni, float att
 }
 
 char g_ATPCShooter[128];
-
 char g_ATPCVictim[128];
 
 /* "!ATPCCreate" (vehicle, hit point, target): the shot effect from the mounted slots (beyond the convergence distance
@@ -543,69 +542,37 @@ void Cloud_OnHit(cAbstractFile *params) {
 }
 
 cGVarFunction GVar_RestoreUpgradeFunc;
-
 cGVar GVar_ATPCIDWeap;
-
 cGVar GVar_ATPCCapsuleSoundAttEnd;
-
 cGVar GVar_ATPCCapsuleSoundAttIni;
-
 cGVar GVar_ATPCUpgradeDelay;
-
 cGVar GVar_ATPCCapsuleSound;
-
 cGVar GVar_ATPCCapsuleSoundRadius;
-
 cGVar GVar_ATPCAmmoCost;
-
 cGVar GVar_ATPCExtraDamage;
-
 cGVar GVar_ATPCExplosionRadius;
-
 cGVar GVar_ATPCCapsuleExtendedSound;
-
 cGVar GVar_ATPCHitSound;
-
 cGVar GVar_ATPCMainDamage;
-
 cGVar GVar_ATPCHitSoundAttEnd;
-
 cGVar GVar_ATPCHitSoundAttIni;
-
 cGVar GVar_ATPCHitSoundVol;
-
 cGVar GVar_ATPCDelay;
-
 cGVar GVar_ATPCHitForce;
-
 cGVar GVar_ATPCCapsuleSoundVol;
-
 cGVar GVar_ATPCRange;
-
 cGVar GVar_ATPCConvDist;
-
 cGVar GVar_ATPCShootFile;
-
 cGVar GVar_ATPCCapsuleExtendedSoundAttIni;
-
 cGVar GVar_ATPCCapsuleExtendedSoundAttEnd;
-
 cGVar GVar_ATPCCapsuleExtendedSoundVol;
-
 cGVar GVar_ATPCIDAmmo;
-
 cGVarFunction GVar_CreateCloudFunc;
-
 cGVar GVar_CloudLifeTime;
-
 cGVar GVar_CloudAmmoNeed;
-
 cGVar GVar_CloudIDAmmo;
-
 cGVar GVar_CloudRechargeTime;
-
 cGVarFunction GVar_SetUpCloudFunc;
-
 cPy_NativeFunc NativeFunc_ATPCOnEnd;
 cPy_NativeFunc NativeFunc_ATPCOnStart;
 cPy_NativeFunc NativeFunc_ATPCXplosionCall;

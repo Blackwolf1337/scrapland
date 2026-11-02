@@ -13,7 +13,6 @@ static const char *const fontNames[7] = {
 };
 
 CFont *g_FontTerminal8Fixed;
-
 CFont *g_FontBigNumbers;
 
 /* the global of the font, in the order of fontNames */

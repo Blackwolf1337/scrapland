@@ -193,7 +193,6 @@ byte ChType_Steal(cEntity **thief, cEntity **victim, int amount, const char *sta
 }
 
 cGVar GVar_FXBankerStealFile;
-
 cPy_NativeFunc NativeFunc_BankerAttack;
 cPy_NativeFunc NativeFunc_BankDirectorActionPress;
 cPy_NativeFunc NativeFunc_BankDirectorActionRelease;

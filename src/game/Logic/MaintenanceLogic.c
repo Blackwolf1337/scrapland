@@ -15,7 +15,6 @@
 #define MAINT_BASE(self) (&(self)->base.base)
 
 cEntity *g_MaintenanceShip;
-
 cEntity *g_MaintenanceFirstShip;
 
 void *cMaintenanceLocalLogic_ctor(void *mem, cEntity *parent) {
@@ -289,7 +288,6 @@ const cGenCharLocalLogicVtbl cMaintenanceLocalLogic_vftable = {
 };
 
 cGVar GVar_MaintenanceTimeToNextPos;
-
 cGVar GVar_MaintenanceSphereRadiusFactor;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

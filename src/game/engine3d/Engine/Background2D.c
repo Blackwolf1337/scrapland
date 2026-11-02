@@ -92,15 +92,10 @@ void Background2D_Reset(void) {
 }
 
 byte g_BackgroundPending;
-
 int g_BackgroundFrame;
-
 CGraphic2D *g_BackgroundGraphic;
-
 char g_BackgroundNew[264];
-
 uint32_t g_BackgroundColor = 0xffffff;
-
 uint32_t g_BackgroundColorNew = 0xffffff;
 
 void Background2D_Render(void) {

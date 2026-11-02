@@ -105,9 +105,7 @@ void CGameCamera_SetNode(CGameCamera *self, CRenderNode *node) {
 }
 
 int g_CamCompositeIdx;
-
 float g_CamCompositeFrame;
-
 float g_CamCompositeFPS = 1.0f;
 
 CNode3D *CamComposite_Find(CModel *model, CIniFile *ini) {
@@ -145,7 +143,6 @@ CNode3D *CamComposite_Find(CModel *model, CIniFile *ini) {
 }
 
 CFont *g_FontHoratioSmall;
-
 char g_CamCompositeName[128];
 
 void CamComposite_DrawDebug(void) {
@@ -241,9 +238,7 @@ vec3_t *CGameCamera_ToLocal(const CGameCamera *self, vec3_t *out, const vec3_t *
 }
 
 cGVar GVar_CameraDefViewAspect;
-
 cGVar GVar_ShowSceneCamera;
-
 cGVar GVar_PhysicalAspectRatio;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

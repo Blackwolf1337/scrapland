@@ -425,7 +425,6 @@ void BspQ3Meshes_Count(BspQ3Meshes *self, BspQ3Face *face, int ntri) {
 }
 
 byte g_BspQ3VertL[64];
-
 CMeshVert g_BspQ3Vert[64];
 
 void CBspQ3_Build(CBspQ3 *self) {

@@ -280,9 +280,7 @@ byte cAICharControl_UpdateFollowB(cAICharControl *self) {
 }
 
 cEntity *g_AICCNear[20];
-
 int g_AICCNumNear;
-
 cEntity *g_AICCNearSelf;
 
 /* the sphere test of CharsNear: the walking characters but the control's own one, up to 20 */
@@ -2130,31 +2128,18 @@ const cAICharControlVtbl cAICharControl_vftable = {
 };
 
 cGVar GVar_AngAttackBackCharAI;
-
 cGVar GVar_TimeEventCollCharAI;
-
 cGVar GVar_MinAngleSearchPointCharAI;
-
 cGVar GVar_NumPointsSearchSegmentCharAI;
-
 cGVar GVar_ShowCharAI;
-
 cGVar GVar_TimeTestCollCharAI;
-
 cGVar GVar_DistNextPosGoTargetCharAI;
-
 cGVar GVar_OffsetAngOrientCharAI;
-
 cGVar GVar_NameDebugShirkAI;
-
 cGVar GVar_MarginDetectCollCharAI;
-
 cGVar GVar_TimeStopCollCharAI;
-
 cGVar GVar_TimeBetweenEventCollCharAI;
-
 cGVar GVar_TimeStrafeLostObjCharAI;
-
 cGVar GVar_ShowTestCanGoAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

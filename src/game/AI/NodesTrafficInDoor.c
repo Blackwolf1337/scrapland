@@ -586,7 +586,6 @@ const CNodesTrafficVtbl CNodesTrafficInDoor_vftable = {
 };
 
 cGVar GVar_MaxNumTrackLowDensityAI;
-
 cGVar GVar_MaxNumTrackNormalDensityAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

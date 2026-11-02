@@ -755,49 +755,27 @@ void Sonic_ExplodeNative(cAbstractFile *f) {
 }
 
 cGVar GVar_LaserAmmoCost;
-
 cGVar GVar_LaserRange;
-
 cGVar GVar_LaserShootFile;
-
 cGVar GVar_LaserHitForce;
-
 cGVar GVar_LaserHitFile;
-
 cGVar GVar_HookEMITime;
-
 cGVar GVar_LaserTimeDelay;
-
 cGVar GVar_LaserRicSoundVol;
-
 cGVar GVar_LaserIDAmmo;
-
 cGVar GVar_LaserHookFile;
-
 cGVar GVar_LaserDamage;
-
 cGVar GVar_HookAccel;
-
 cGVar GVar_LaserMinSpeed;
-
 cGVar GVar_LaserRicSound;
-
 cGVar GVar_SonicRechargeTime;
-
 cGVar GVar_SonicArmor;
-
 cGVar GVar_FXSonicXpldeFile;
-
 cGVar GVar_SonicLifeTime;
-
 cGVar GVar_SonicIDAmmo;
-
 cGVar GVar_SonicAmmoNeed;
-
 cGVarFunction GVar_CreateSonicFunc;
-
 cGVarFunction GVar_SetUpSonicFunc;
-
 cPy_NativeFunc NativeFunc_LaserPress;
 cPy_NativeFunc NativeFunc_LaserRelease;
 cPy_NativeFunc NativeFunc_LaserCreate;

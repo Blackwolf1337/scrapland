@@ -44,11 +44,8 @@ static void Transport_CloseSocket(void) {
 }
 
 int g_NetStatRecvSlot;
-
 int g_NetStatRecv;
-
 int g_NetMode;
-
 NetPingServer *g_NetPingServers;
 
 int Transport_PingServer(const NetAddr *addr) {
@@ -640,7 +637,6 @@ int Transport_SendTo(uint32_t s, const void *data, int len, int flags, const Net
 }
 
 cGVar GVar_ClientConectionStatus;
-
 cGVar GVar_LastMasterCommandSent;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

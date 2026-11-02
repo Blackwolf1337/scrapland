@@ -104,27 +104,16 @@ cScorerItem *cScraplandSubMenuScorer_Delete(cScorerItem *base, byte flags) {
 }
 
 byte g_MainMenuAnimInit;
-
 float g_MainMenuWait[9];
-
 float g_MainMenuTime[9];
-
 float g_MainMenuLength[9];
-
 float g_MainMenuSparkWait[19];
-
 byte g_MainMenuSparkDir[19];
-
 float g_MainMenuSparkTime[19];
-
 float g_MainMenuNeonNext;
-
 float g_MainMenuSparkLength[19];
-
 float g_MainMenuNeonGroup[3];
-
 int g_MainMenuSparkFrame[19];
-
 float g_MainMenuNeonWait[21];
 
 void cScraplandMainMenuScorer_Init(cScraplandMainMenuScorer *self) {
@@ -200,11 +189,8 @@ static float SubMenu_RandRing(void) {
 }
 
 byte g_SubMenuAnimInit;
-
 float g_SubMenuWait;
-
 float g_SubMenuRingTime;
-
 float g_SubMenuRingWait;
 
 void cScraplandSubMenuScorer_Init(cScraplandSubMenuScorer *self) {
@@ -378,7 +364,6 @@ static void SubMenu_Draw(CPsaImage *img, float scale, uint32_t color, byte setCo
 }
 
 int g_SubMenuRingDir;
-
 int g_SubMenuRingFrame;
 
 /* vf00: the logo, the ring mask, its reflection turning back and forth, the ring border and the flickering glow;

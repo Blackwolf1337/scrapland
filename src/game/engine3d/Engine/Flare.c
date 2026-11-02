@@ -182,7 +182,6 @@ const IObject3DVtbl CFlare_vftable = {
 };
 
 cGVar GVar_R_ShowFlaresInfo;
-
 cGVar GVar_R_SkipFlares;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

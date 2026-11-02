@@ -258,9 +258,7 @@ static void Weapon_DrawAmmo(cWeaponScorer *self, cWeaponManager *wm, int w, int 
 }
 
 int g_WeaponSlotState[7];
-
 int g_WeaponSlotPlace[7];
-
 int g_WeaponSlotCount;
 
 /* the row of the weapon slots after a change: the weapons of the ship in their order, the selected one framed */

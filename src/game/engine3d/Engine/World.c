@@ -667,9 +667,7 @@ int Debug_PointLine(const vec3_t *a, const vec3_t *b, uint32_t ca, uint32_t cb) 
 }
 
 byte g_PointsOn;
-
 int g_NumPoints;
-
 int g_MaxPoints = 4000;
 
 int Debug_Point(const vec3_t *pos, uint32_t color, float type) {
@@ -721,21 +719,13 @@ int Debug_PointsDraw(void) {
 }
 
 cGVar GVar_RenderWorld;
-
 cGVar GVar_RenderSky;
-
 cGVar GVar_WorldPreIllum;
-
 cGVar GVar_SkyRotation;
-
 cGVar GVar_SkyZBuffer;
-
 cGVar GVar_SkyPosScale;
-
 cGVar GVar_SkyTubeTest;
-
 cGVar GVar_ShowWorldDummies;
-
 cGVar GVar_SkyInit;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

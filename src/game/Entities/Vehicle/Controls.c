@@ -830,17 +830,11 @@ void cVehicleControls_Tick(cVehicleControls *c, cEntity *v, float dt) {
 }
 
 cGVar GVar_CurrentWaypointName2;
-
 cGVar GVar_CurrentWaypointName;
-
 cGVar GVar_VehicleCamDist2;
-
 cGVarFunction GVar_OnLifeItemTaken;
-
 cGVar GVar_TgtRegenerationTime;
-
 cGVar GVar_VehicleCenterPadLock;
-
 cPy_NativeFunc NativeFunc_TakeLife;
 cPy_NativeFunc NativeFunc_TakePart;
 cPy_NativeFunc NativeFunc_TakeEner;

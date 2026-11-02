@@ -320,27 +320,16 @@ PyMethodDef SLogic_methods[13] = {
 SD_PY_MODULE(SLogic, 0x42dd20)
 
 const char str_PyMethod_SLogic_SendSentinelToWatch[] = "SendSentinelToWatch";
-
 const char str_PyMethod_SLogic_GearAttack[] = "GearAttack";
-
 const char str_PyMethod_SLogic_SetCharState[] = "SetCharState";
-
 const char str_PyMethod_SLogic_IsEnemyActive[] = "IsEnemyActive";
-
 const char str_PyMethod_SLogic_GetNearestShip[] = "GetNearestShip";
-
 const char str_PyMethod_SLogic_SetOnFloor[] = "SetOnFloor";
-
 const char str_PyMethod_SLogic_Flash[] = "Flash";
-
 const char str_PyMethod_SLogic_SetShipToRegenerate[] = "SetShipToRegenerate";
-
 const char str_PyMethod_SLogic_SetDominationZones[] = "SetDominationZones";
-
 const char str_PyMethod_SLogic_ChangeZoneState[] = "ChangeZoneState";
-
 const char str_PyMethod_SLogic_ChangeBatonState[] = "ChangeBatonState";
-
 const char str_PyMethod_SLogic_UpdateTauntEndTime[] = "UpdateTauntEndTime";
 
 char str_PyDoc_SLogic_SetCharState[] =

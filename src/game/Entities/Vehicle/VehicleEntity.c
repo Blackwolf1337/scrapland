@@ -2174,17 +2174,11 @@ const cVehicleEntityVtbl cVehicleEntity_vftable = {
 };
 
 const char str_Go[] = "Go";
-
 const char str_Left[] = "Left";
-
 const char str_Right[] = "Right";
-
 const char str_Relax[] = "Relax";
-
 const char str_Back[] = "Back";
-
 cGVar GVar_TopLimit;
-
 cGVar GVar_AtmosphereLimit;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

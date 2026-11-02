@@ -291,9 +291,7 @@ void cExtPolice_Update(cExtPolice *self, float dt) {
 }
 
 cGVarFunction GVar_PoliceWaveEliminated;
-
 cGVar GVar_DoResetOutPolice;
-
 cGVar GVar_TrafficFightingMaxDist;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

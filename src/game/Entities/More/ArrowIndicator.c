@@ -74,7 +74,6 @@ cArrowIndicator *cArrowIndicator_ctor(cArrowIndicator *self) {
 }
 
 cArrowModel *g_ArrowPool;
-
 int g_ArrowPoolCount;
 
 /* the model to the pool, or deleted when the pool is full */
@@ -833,19 +832,12 @@ void MissionArrows_Switch(const char *on, const char *off) {
 }
 
 cGVar GVar_ArrowViewRadius;
-
 cGVar GVar_ArrowActiveHorizontal;
-
 cGVar GVar_ArrowMissionFile;
-
 cGVar GVar_ArrowUseFile;
-
 cGVar GVar_ArrowTargetFile;
-
 cGVar GVar_FXArrowIndicatorFlash_SizeMax;
-
 cGVar GVar_FXArrowIndicatorFlash_DistGrow;
-
 cGVar GVar_FXArrowIndicatorFlash_SizeMin;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

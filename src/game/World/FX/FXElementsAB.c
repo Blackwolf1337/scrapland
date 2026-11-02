@@ -615,17 +615,11 @@ const cMapElementVtbl cFXElementsABFakeLimit_vftable = {
 };
 
 cGVar GVar_FXABFakeLimitSegmentStep;
-
 cGVar GVar_FXABFakeLimitRingRotSpeed;
-
 cGVar GVar_FXABFakeLimitRadius;
-
 cGVar GVar_FXABFakeLimitDistLighting;
-
 cGVar GVar_FXABFakeLimitSegmentSize;
-
 cGVar GVar_FXABFakeLimitQuakeFactor;
-
 cGVar GVar_FXABFakeLimitQuakeTime;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

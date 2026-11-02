@@ -70,9 +70,7 @@ void cStrMoney_Update(void *obj, float dt) {
 }
 
 cGVarFunction GVar_OnMoneyReachCallback;
-
 cGVar GVar_OnMoneyReachValue;
-
 cGVar GVar_StrMoneyUpdate;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

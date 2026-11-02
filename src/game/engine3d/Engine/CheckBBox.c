@@ -358,7 +358,6 @@ byte CGround_CollideOBB(CGround *self, const matrix_t *m, const vec3_t *half, ve
 }
 
 int g_NTortas;
-
 int g_NResponseFaces;
 
 /* with colis->calc_respuesta (a fatal CHECK) the original also collects the contact points and faces of the box

@@ -186,15 +186,10 @@ const cSpriteScorerVtbl cBarScorer_vftable = {
 };
 
 cGVarFunction GVar_OnFinishAutoUpdate;
-
 cGVar GVar_BlinkTime;
-
 cGVar GVar_IsAutoUpdatable;
-
 cGVar GVar_AutoUpdateSpeedFactor;
-
 cGVar GVar_AutoUpdateStopValue;
-
 cGVar GVar_BarValue;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

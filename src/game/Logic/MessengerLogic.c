@@ -430,11 +430,8 @@ const cGenCharLocalLogicVtbl cMessengerLocalLogic_vftable = {
 };
 
 cGVar GVar_MessengerDropPrice;
-
 cGVarFunction GVar_MessengerDropCallback;
-
 cGVar GVar_MessengerDataPackMissionArrow;
-
 cGVar GVar_MessengerGotoSpeed;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

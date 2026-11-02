@@ -70,13 +70,9 @@ extern float g_RealFrameSecs;
 #define WM_COMMAND 0x111
 
 int g_EngineIni7c;
-
 int g_EngineIni80;
-
 int g_EngineIni84;
-
 int g_EngineIni88;
-
 int g_EngineDef1cf4 = 16;
 
 CEngineApp *CEngineApp_ctor(CEngineApp *self) {
@@ -116,11 +112,8 @@ static void Engine_Free(CEngineApp *m) {
 }
 
 void *g_EngineInit;
-
 void *g_EngineFrame;
-
 void *g_EngineRelease;
-
 struct CEngineApp *g_Engine3D;
 
 /* the engine made (destroy 0) or freed */
@@ -164,7 +157,6 @@ void Engine3D_Shutdown(void) {
 }
 
 void *g_Input;
-
 void *g_E3DCmdProc;
 
 /* OneTimeSceneInit: the init callback of the game, the input, the fonts and trails, the global scene */
@@ -196,21 +188,13 @@ int CEngineApp_OneTimeSceneInit(CD3DApplication *base) {
 }
 
 float g_TimeMsF;
-
 double g_TimeD;
-
 int g_TimeMsInt;
-
 double g_GameTimeD;
-
 float g_FrameSec;
-
 float g_LastTime;
-
 float g_FpsTime;
-
 int g_FpsFrames;
-
 float g_Fps = 30.0f;
 
 /* FrameMove: the clock of the engine (real and game time, fps once a second) */
@@ -272,7 +256,6 @@ static byte Engine_PresentVSync(CD3DApplication *self) {
 }
 
 float g_LimitFps;
-
 uint32_t g_LimitNext;
 
 /* differs from the original on purpose (no sleeps): the original slept at the end of the frame until its time had
@@ -290,13 +273,9 @@ byte Engine_FrameDue(CD3DApplication *self) {
 }
 
 byte g_ResetDev;
-
 void *g_EngineInitNext;
-
 void *g_EngineFrameNext;
-
 void *g_EngineReleaseNext;
-
 byte g_ResetDevOnly = 1;
 
 /* a pending reset of the device objects (g_ResetDev): with g_ResetDevOnly 0 also the world through the release
@@ -354,15 +333,10 @@ int CEngineApp_ResetDevice(CEngineApp *self) {
 }
 
 int g_TimeScaled;
-
 int g_RenderCounts[10];
-
 uint32_t g_ZEnable;
-
 byte g_Engine431bae = 1;
-
 int g_Dither = 1;
-
 int g_TimeMult = 25;
 
 /* Render (vtable 0x18): the scene into the target "Scene", the 2D and the frame callback of the game on top, the
@@ -559,13 +533,9 @@ cGVar GVar_TexturePool;
 #define g_TexturePool (GVar_TexturePool.value.i)
 
 CFont3 *g_FntComic14;
-
 int g_TexCreated;
-
 int g_TexCached;
-
 int g_TexUsed;
-
 int g_TexUsedPixels;
 
 void Engine_DrawStats(void) {
@@ -665,47 +635,26 @@ enum { INI_BOOL, INI_LONG, INI_FLOAT, INI_TEXT };
 /* the ini name (in dir, NULL for the game directory) into the variables */
 extern int g_TextOpBPP;
 int g_Sharpen;
-
 int g_TexErrDif;
-
 int g_InputInvX;
-
 int g_InputInvY;
-
 int g_InputInvZ;
-
 uint32_t g_IniShadowObjFirst;
-
 int g_Overdraw;
-
 uint32_t g_IniShadowLight[16];
-
 int g_DbgConWindow;
-
 int g_DbgConStd;
-
 float g_MipmapBias2;
-
 float g_IniShadowLevel = 0.35f;
-
 uint32_t g_IniShadowObjLast = 0x7fffffff;
-
 uint32_t g_IniShadowFixNormals = 1;
-
 uint32_t g_IniShadowProcObjects = 1;
-
 uint32_t g_IniFilter = 1;
-
 int g_UseTextures = 1;
-
 uint32_t g_IniTexPersp = 1;
-
 uint32_t g_IniUseDInput = 1;
-
 int g_MouseExcl = 1;
-
 uint32_t g_IniMaxAniso = 2;
-
 int g_TextBPP = 16;
 
 void Engine_LoadVarsIni(const char *name, const char *dir) {
@@ -794,17 +743,11 @@ void Engine_LoadVarsIni(const char *name, const char *dir) {
 #define FPS_GRAPH 30
 
 char g_FpsText[64];
-
 float g_FpsTextTime;
-
 float g_FpsGraph[120];
-
 float g_FpsGraphPeak[120];
-
 int g_FpsGraphPos;
-
 float g_FpsScaleTime;
-
 float g_FpsScale = 100.0f;
 
 void Engine_DrawFpsGraph(float y) {
@@ -1050,7 +993,6 @@ const IInputVtbl CNullInput_vftable = {
 };
 
 cGVar GVar_R_ShowInfo;
-
 byte g_Engine4af7d4;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

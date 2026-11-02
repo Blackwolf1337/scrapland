@@ -393,7 +393,6 @@ cFXVehicleSirens *cFXVehicleSirens_ctor(cFXVehicleSirens *self, cEmbeddedFXVehic
 }
 
 int g_SirenRefs;
-
 CGameParticles g_SirenParticles;
 
 void cFXVehicleSirens_dtor(cFXVehicleSirens *self) {
@@ -1018,19 +1017,12 @@ const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicleVote_vftable = {
 };
 
 cGVar GVar_FXVehicleSiren_DistGrow;
-
 cGVar GVar_FXVehicleEmbeddedFile;
-
 cGVar GVar_FXVehicleProbeLight_SizeMin;
-
 cGVar GVar_FXVehicleSiren_SizeMin;
-
 cGVar GVar_FXTrafficEmbeddedFile;
-
 cGVar GVar_FXVehicleProbeLight_SizeMax;
-
 cGVar GVar_FXVehicleSiren_SizeMax;
-
 cGVar GVar_FXVehicleProbeLight_DistGrow;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -2415,35 +2415,20 @@ const cObjElementFXVtbl cObjElementFXInfernoExplosion_vftable = {
 };
 
 cGVar GVar_ATPCTrailTime;
-
 cGVar GVar_FXInfernoRayInitSizeMax;
-
 cGVar GVar_FXInfernoCoreSize;
-
 cGVar GVar_FXInfernoRayRadius;
-
 cGVar GVar_FXInfernoExplosionTime;
-
 cGVar GVar_FXInfernoRayAccMin;
-
 cGVar GVar_FXInfernoRaySpeedMin;
-
 cGVar GVar_FXInfernoExplosionFadeTime;
-
 cGVar GVar_FXInfernoRayInitSizeMin;
-
 cGVar GVar_FXInfernoRayAccMax;
-
 cGVar GVar_FXInfernoRayMinSize;
-
 cGVar GVar_FXInfernoRaySpeedMax;
-
 cGVar GVar_FXLaserBeamSize;
-
 cGVar GVar_FXLaserBeamHeight;
-
 cGVar GVar_FXTeslaFadeOutTime;
-
 cGVar GVar_FXTeslaFollowTime;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

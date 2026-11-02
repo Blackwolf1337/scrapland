@@ -40,15 +40,10 @@ static uint16_t Gamma_Channel(uint16_t w, float expo, float mult, float scale) {
 }
 
 int g_GammaLast2x;
-
 float g_GammaLastRGB = 1.0f;
-
 float g_GammaLastScale = 1.0f;
-
 float g_GammaLastRed = 1.0f;
-
 float g_GammaLastGreen = 1.0f;
-
 float g_GammaLastBlue = 1.0f;
 
 void RenderGamma_Begin(void) {

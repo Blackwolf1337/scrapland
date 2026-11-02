@@ -199,13 +199,9 @@ void ChType_FXDTritusAttack(cAbstractFile *params) {
 }
 
 cGVar GVar_DTritusHitTimeFader;
-
 cGVar GVar_FXDTritusAttackFile;
-
 cGVar GVar_DTritusHitTimeSpeed;
-
 cGVar GVar_FXDTritusKillFile;
-
 cPy_NativeFunc NativeFunc_DtritusActionPress;
 cPy_NativeFunc NativeFunc_DtritusHitEvent;
 cPy_NativeFunc NativeFunc_DtritusEndEvent;

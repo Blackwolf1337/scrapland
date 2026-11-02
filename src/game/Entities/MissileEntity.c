@@ -1434,7 +1434,6 @@ const cMissileEntityVtbl cMissileEntity_vftable = {
 };
 
 cGVar GVar_Gravity;
-
 cGVar GVar_ActiveExtrapolation;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

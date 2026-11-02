@@ -30,7 +30,6 @@ static byte Shot_Double(byte c) {
 }
 
 char g_ShotPath[260];
-
 int g_ShotNum = -1;
 
 /* the name of the next shot: "Shot*" (or the name set) with the first free number 1..9999 for the '*' */

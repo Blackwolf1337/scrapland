@@ -1285,21 +1285,13 @@ const cGridElementsVtbl cGridElements_InfoTrafficNode_vftable = {
 };
 
 cGVar GVar_MinDistNodeTrafficAI;
-
 cGVar GVar_DistGetPVisTrafficAI;
-
 cGVar GVar_ShowNumTrafficAI;
-
 cGVar GVar_ShowTrafficAI;
-
 cGVar GVar_HTrafficCapsule;
-
 cGVar GVar_MNTrafficCapsule;
-
 cGVar GVar_NTrafficCapsule;
-
 cGVar GVar_HNTrafficCapsule;
-
 cGVar GVar_MTrafficCapsule;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

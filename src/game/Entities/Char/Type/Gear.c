@@ -47,7 +47,6 @@ static void Gear_Sound(cEntity *v, byte usr, char *const *name, const float *vol
 }
 
 char g_GearTarget[128];
-
 cEntity *g_GearSw;
 
 /* the electric ball hits name (not the gear itself): it loses GearShootDamage of life (half against the AI in the
@@ -149,9 +148,7 @@ void ChType_GearSphereHit(cAbstractFile *params) {
 }
 
 cPy_Function g_ChTypeSphereFunc;
-
 char g_GearSwName[128];
-
 vec3_t g_GearXplodePos;
 
 /* the OnHit of the missile: params the missile, the gear, the entity it hit. The hit entity, then the ones in the
@@ -507,11 +504,8 @@ void ChType_GearShootLoad(cAbstractFile *params) {
 }
 
 vec3_t g_FlashPos;
-
 int g_FlashResult;
-
 int g_FlashMax;
-
 int g_FlashCount;
 
 /* the flash around pos (radius): ChType_FlashHit for each character in the sphere, at most max of them flashed (-1
@@ -601,41 +595,23 @@ void ChType_FlashHit(cAbstractFile *params) {
 }
 
 cGVar GVar_GearMissileSoundVol;
-
 cGVar GVar_GearLoadWeaponSound;
-
 cGVar GVar_GearShootDamage;
-
 cGVar GVar_GearMissileSound;
-
 cGVar GVar_GearShootPosX;
-
 cGVar GVar_GearShootDistance;
-
 cGVar GVar_GearLoadWeaponSoundVol;
-
 cGVar GVar_GearHitSound;
-
 cGVar GVar_GearHitSoundVol;
-
 cGVar GVar_GearShootPosZ;
-
 cGVar GVar_GearShootFailAlarm;
-
 cGVar GVar_GearShootHitAlarm;
-
 cGVar GVar_GearMissileSpeed;
-
 cGVar GVar_GearShootSound;
-
 cGVar GVar_GearShootSoundVol;
-
 cGVar GVar_GearShootPosY;
-
 cGVar GVar_GearXplodeRadius;
-
 cGVarFunction GVar_OnFlash;
-
 cPy_NativeFunc NativeFunc_GearHit;
 cPy_NativeFunc NativeFunc_GearShoot;
 cPy_NativeFunc NativeFunc_GearShootLoad;

@@ -2573,47 +2573,26 @@ void FX_CharacterTeleport(cAbstractFile *params) {
 }
 
 cGVar GVar_CharacterTeleportSoundVol;
-
 cGVar GVar_FXCharacterSputnikFile;
-
 cGVar GVar_FXCharacterConversorFile;
-
 cGVar GVar_FXCharacterConversionFile;
-
 cGVar GVar_CharacterDeathSound;
-
 cGVar GVar_FXCharacterDeathMinDist;
-
 cGVar GVar_FXCharacterBlaBliBlaFile;
-
 cGVar GVar_CharacterConversionSound;
-
 cGVar GVar_FXCharacterDazedFile;
-
 cGVar GVar_FXMoneyTransferFile;
-
 cGVar GVar_CharacterDeathSoundVol;
-
 cGVar GVar_CharacterTeleportUpSound;
-
 cGVar GVar_CharacterTeleportDownSound;
-
 cGVar GVar_FXCharacterDeathFile;
-
 cGVar GVar_CharacterConversionSoundVol;
-
 cGVar GVar_FXCharacterTeleportFile;
-
 cGVar GVar_FXFunctionarySpecialActionFile;
-
 cGVar GVar_MaintenanceWorkSoundVol;
-
 cGVar GVar_MaintenanceWorkSound;
-
 cGVar GVar_MaintenanceWorkSoundAttIni;
-
 cGVar GVar_MaintenanceWorkSoundAttEnd;
-
 cPy_NativeFunc NativeFunc_FXCharacterDazed;
 cPy_NativeFunc NativeFunc_FXCharacterBlaBliBla;
 cPy_NativeFunc NativeFunc_FXCharacterTeleport;

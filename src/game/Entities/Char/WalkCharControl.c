@@ -249,9 +249,7 @@ void cWalkCharControl_Update(cWalkCharControl *self, cEntity *wle, float dt) {
 }
 
 cGVar GVar_AlwaysRun;
-
 cGVar GVar_WalkCameraCenter;
-
 cGVar GVar_PadTurnSpeed;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

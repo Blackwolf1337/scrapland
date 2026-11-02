@@ -282,13 +282,9 @@ char str_PyDoc_SWeap_SetFWeap[80] =
 	"GetFWeap(numWeap,svar,fvalue) : Pone un valor numerico de las municiones";
 
 const char str_PyMethod_SWeap_SetSWeap[] = "SetSWeap";
-
 const char str_PyMethod_SWeap_FillPriority[] = "FillPriority";
-
 const char str_PyMethod_SWeap_GetFirstiWeap[] = "GetFirstiWeap";
-
 const char str_PyMethod_SWeap_NetExec[] = "NetExec";
-
 extern char str_PyDoc_SWeap_FillPriority[];
 extern char str_PyDoc_SWeap_GetFirstiWeap[];
 extern char str_PyDoc_SWeap_NetExec[];

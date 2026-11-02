@@ -257,11 +257,8 @@ const cBaseLocalLogicVtbl cGateKeeperLocalLogic_vftable = {
 };
 
 cGVar GVar_GateKeeperStdFar;
-
 cGVar GVar_GateKeeperStdFovY;
-
 cGVar GVar_GateKeeperHiddenTime;
-
 cGVar GVar_GateKeeperStdFovX;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

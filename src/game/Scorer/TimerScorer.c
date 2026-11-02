@@ -122,15 +122,10 @@ const cScorerItemVtbl cTimerScorer_vftable = {
 };
 
 cGVar GVar_TimeToFinishCurrentMission;
-
 cGVar GVar_TimeToCancelCurrentMission;
-
 cGVar GVar_CounterType;
-
 cGVar GVar_TimeInactiveTimer;
-
 cGVar GVar_TimeSpecialUseTimer;
-
 cGVar GVar_TimeWarning;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

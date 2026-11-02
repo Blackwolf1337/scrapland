@@ -628,19 +628,12 @@ const cLittlePoliceLocalLogicVtbl cLittlePoliceLocalLogic_vftable = {
 };
 
 cGVar GVar_GenCharStdFovX;
-
 cGVar GVar_GenCharStdFar;
-
 cGVar GVar_GenCharStdFovY;
-
 cGVar GVar_LittlePoliceStopAcusingMaxDistFromUser;
-
 cGVar GVar_LittlePoliceMaxDistFar;
-
 cGVar GVar_LittlePoliceAsksForMoney;
-
 cGVar GVar_LittlePoliceChasingTime;
-
 cGVar GVar_MainMissionStopDist;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

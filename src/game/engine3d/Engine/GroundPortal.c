@@ -741,15 +741,10 @@ byte Portals_SetView(const PaintZone *zp) {
 }
 
 cGVar GVar_R_PortalNorm;
-
 cGVar GVar_R_PortalPos;
-
 cGVar GVar_R_PortalDist;
-
 cGVar GVar_R_PortalExt;
-
 cGVar GVar_R_PortalEnd;
-
 cGVar GVar_R_ShowPortals;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

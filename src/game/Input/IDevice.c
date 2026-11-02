@@ -109,9 +109,7 @@ cAbstractIDevice *cAbstractIDevice_Delete(cAbstractIDevice *self, byte flags) {
 }
 
 int g_ToDefinePlayer = -1;
-
 int g_ToDefineAction = -1;
-
 uint32_t g_ToDefineSet = 0xffffffff;
 
 void Input_AbortListenToDefine(void) {
@@ -658,9 +656,7 @@ const cGVarListVtbl cFuncGvar_vftable = {
 };
 
 cGVar GVar_CheckInactivityTime;
-
 cGVarFunction GVar_CheckInactivityFunc;
-
 cGVar GVar_PauseInactivityTime;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

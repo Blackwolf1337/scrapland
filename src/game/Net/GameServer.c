@@ -35,13 +35,9 @@ void Net_ServerResetFuncs(void) {
 }
 
 char g_NetServerHost[256];
-
 char g_NetServerIP[256];
-
 uint16_t g_NetServerPort;
-
 void *g_NetServerData;
-
 void *g_NetServerCtl;
 
 byte Net_CloseServer(const char *msg) {
@@ -190,7 +186,6 @@ void Net_ServerFrameHead(void) {
 }
 
 int g_NetServerDataSize;
-
 int g_NetServerCtlSize;
 
 /* the rest after the wait: receive, send to the clients in turn, drop the ones that timed out */
@@ -282,11 +277,8 @@ void Net_DumpData(const char *title, const void *data, int size) {
 }
 
 cGVar GVar_BrowserCode;
-
 cGVarFunction GVar_OnClientJoin;
-
 cGVar GVar_HeartbeatTime;
-
 cGVar GVar_ServerMinSendDelay;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

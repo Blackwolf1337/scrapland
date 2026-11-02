@@ -152,7 +152,6 @@ void cDominationEnemiesLogic_Update(cDominationLogic *base, float dt) {
 }
 
 cGVarFunction GVar_OnDominEnemyDeath;
-
 cGVar GVar_LeaderName;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

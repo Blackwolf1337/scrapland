@@ -135,11 +135,8 @@ void cRadarScorer_UpdateFloor(cRadarScorer *self, float y) {
 }
 
 float g_RadarScale;
-
 float g_RadarAngle;
-
 float g_RadarCenterX;
-
 float g_RadarCenterZ;
 
 void cRadarScorer_DrawCone(cRadarScorer *self, const vec3_t *pos, float ang, float spread, float range,
@@ -936,7 +933,6 @@ const cScorerItemVtbl cRadarScorer_vftable = {
 };
 
 cGVar GVar_SuperDealAvaliable;
-
 cGVar GVar_RadarMMSelect;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

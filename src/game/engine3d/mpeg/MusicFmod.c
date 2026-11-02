@@ -122,7 +122,6 @@ void Voice_Wait(cMusicVoice *v, const char *what) {
 }
 
 int g_NumVoices;
-
 int g_NumVoiceovers;
 
 void Voice_Close(cMusicVoice *v) {
@@ -380,9 +379,7 @@ byte Voices_DrawDebugDefault(void) {
 }
 
 void *g_MusicStream;
-
 uint32_t g_MusicOpenTime;
-
 int g_MusicChannel = -1;
 
 /* the music */
@@ -402,19 +399,12 @@ byte Music_Ready(void) {
 }
 
 float g_RealFrameSecs;
-
 float g_MusicCurMainVolume;
-
 float g_MusicVolume = 1.0f;
-
 float g_MusicVoiceover = 1.0f;
-
 float g_MusicVoiceoverTarget = 1.0f;
-
 float g_MusicVoiceoverSpeed = 1.0f;
-
 float g_MusicFadeTarget = 1.0f;
-
 float g_MusicFadeSpeed = 1.0f;
 
 byte Music_UpdateVolumes(void) {
@@ -437,7 +427,6 @@ byte Music_UpdateVolumes(void) {
 }
 
 char g_MusicName[260];
-
 uint32_t g_MusicWaitTime;
 
 void Music_DrawDebug(int x, int y) {
@@ -648,9 +637,7 @@ void Music_Nop(void) {
 }
 
 cGVar GVar_TimerFreqMult;
-
 cMusicVoice cMusicVoice_MusicVoices[8];
-
 cGVar GVar_isDolby;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

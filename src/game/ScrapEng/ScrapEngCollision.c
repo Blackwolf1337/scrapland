@@ -374,23 +374,14 @@ done:
 }
 
 cGVar GVar_c_schk;
-
 cGVar GVar_c_sboxmult;
-
 cGVar GVar_c_sbox;
-
 cGVar GVar_c_iter;
-
 cGVar GVar_c_sld2;
-
 cGVar GVar_c_sldi;
-
 cGVar GVar_c_scts;
-
 cGVar GVar_c_sboxshow;
-
 cGVar GVar_c_caps;
-
 cGVar GVar_c_hold;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

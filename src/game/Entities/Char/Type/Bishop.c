@@ -213,31 +213,18 @@ void FX_BishopSellLife(cEntity *attacker, cEntity *attacked) {
 }
 
 cGVar GVar_BishopHitSound;
-
 cGVar GVar_BishopAngleVariation;
-
 cGVar GVar_BishopHitSoundVol;
-
 cGVar GVar_BishopWeaponDamage;
-
 cGVar GVar_BishopAttackPosZ;
-
 cGVar GVar_FXBishopSellLifeFile;
-
 cGVar GVar_FXBishopAttackFile;
-
 cGVar GVar_BishopAttackPosX;
-
 cGVar GVar_BishopAttackPosY;
-
 cGVar GVar_BishopAmmoCost;
-
 cGVar GVar_BishopAttackRandOff;
-
 cGVar GVar_BishopShootSoundVol;
-
 cGVar GVar_BishopShootSound;
-
 cPy_NativeFunc NativeFunc_BishopAttack;
 cPy_NativeFunc NativeFunc_BishopEndActionEnd;
 cPy_NativeFunc NativeFunc_FXBishopSellLife;

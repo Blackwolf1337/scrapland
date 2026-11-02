@@ -560,13 +560,9 @@ const CSoundSysVtbl CSoundSys_vftable = {
 };
 
 cGVar GVar_SoundDopplerLevel;
-
 cGVar GVar_SoundShowSetMode;
-
 cGVar GVar_SoundPanningFactor;
-
 cGVar GVar_SoundDistAttenuation;
-
 cGVar GVar_SoundAutoplayVolume;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

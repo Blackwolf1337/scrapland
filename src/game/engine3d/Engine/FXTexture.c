@@ -70,7 +70,6 @@ static void FXTex_FreeBmp(CBmp **bmp) {
 }
 
 float g_LavaCos[256];
-
 byte g_LavaCosInit;
 
 CFXTexLava *CFXTexLava_ctor(CFXTexLava *self, const char *file) {

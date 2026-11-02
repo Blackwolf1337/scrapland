@@ -2081,11 +2081,8 @@ const cObjElementFXVtbl cObjElementFXSceneTheEndB_vftable = {
 };
 
 cGVar GVar_FXItemTakeFile;
-
 cGVar GVar_FXItemFadeFile;
-
 cGVar GVar_FXItemBlinkFile;
-
 cGVar GVar_FXShipEditBuildFile;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

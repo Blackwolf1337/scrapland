@@ -879,7 +879,6 @@ const cTargetLockVtbl cWeaponManager_vftable = {
 };
 
 cGVar GVar_LaserIDWeap;
-
 cGVarFunction GVar_HookPlugFunc;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

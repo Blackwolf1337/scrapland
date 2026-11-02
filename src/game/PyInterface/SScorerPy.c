@@ -804,65 +804,35 @@ PyMethodDef SScorer_methods[34] = {
 SD_PY_MODULE(SScorer, 0x42ec68)
 
 const char str_PyMethod_SScorer_Hide[] = "Hide";
-
 const char str_PyMethod_SScorer_Add[] = "Add";
-
 const char str_PyMethod_SScorer_Clear[] = "Clear";
-
 const char str_PyMethod_SScorer_Show[] = "Show";
-
 const char str_PyMethod_SScorer_SetCursor[] = "SetCursor";
-
 const char str_PyMethod_SScorer_SetDefault[] = "SetDefault";
-
 const char str_PyMethod_SScorer_GetDefault[] = "GetDefault";
-
 const char str_PyMethod_SScorer_GetCurrent[] = "GetActual";
-
 const char str_PyMethod_SScorer_SetOnCancel[] = "SetOnCancel";
-
 const char str_PyMethod_SScorer_SetOnNext[] = "SetOnNext";
-
 const char str_PyMethod_SScorer_SetOnPrev[] = "SetOnPrev";
-
 const char str_PyMethod_SScorer_SetOnSpecialHint[] = "SetOnSpecialHint";
-
 const char str_PyMethod_SScorer_AddModel[] = "AddModel";
-
 const char str_PyMethod_SScorer_SetMPFunc[] = "SetMPFunc";
-
 const char str_PyMethod_SScorer_PreloadTexture[] = "PreloadTexture";
-
 const char str_PyMethod_SScorer_AddChatMsg[] = "AddChatMsg";
-
 const char str_PyMethod_SScorer_SetConsole[] = "SetConsole";
-
 const char str_PyMethod_SScorer_SetSpeechText[] = "SetSpeechText";
-
 const char str_PyMethod_SScorer_SetSpeechCallback[] = "SetSpeechCallback";
-
 const char str_PyMethod_SScorer_CancelSpeech[] = "CancelSpeech";
-
 const char str_PyMethod_SScorer_SetHeadMonitor[] = "SetHeadMonitor";
-
 const char str_PyMethod_SScorer_Fade[] = "Fade";
-
 const char str_PyMethod_SScorer_SetCinema[] = "SetCinema";
-
 const char str_PyMethod_SScorer_SetMsgText[] = "SetMsgText";
-
 const char str_PyMethod_SScorer_SetLabelText[] = "SetLabelText";
-
 const char str_PyMethod_SScorer_Get2DPos[] = "Get2DPos";
-
 const char str_PyMethod_SScorer_GetTextArea[] = "GetTextArea";
-
 const char str_PyMethod_SScorer_GetMenuAccept[] = "GetMenuAccept";
-
 const char str_PyMethod_SScorer_SetMarkerSprite[] = "SetMarkerSprite";
-
 const char str_PyMethod_SScorer_GetItem[] = "GetItem";
-
 const char str_PyMethod_SScorer_New[] = "New";
 
 char str_PyDoc_SScorer_PreloadTexture[] = "PreloadTexture(filename) : Precarga una textura";

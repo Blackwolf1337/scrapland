@@ -56,9 +56,7 @@ void CTrail_dtor(CTrail *self) {
 }
 
 CTrail *g_TrailsRender[17][MAX_TRAILS_RENDER];
-
 int g_nTrails;
-
 int g_nTrailsRender[17];
 
 void Trails_UpdateRender(CTrail *t) {
@@ -340,9 +338,7 @@ static void Trail_FadeLevels(const CTrail *t, int cnt, int i, uint32_t *a0, uint
 }
 
 int g_TrailsVertex;
-
 int g_TrailsPrims;
-
 int g_TrailsIndex;
 
 int CTrail_BuildRibbon(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
@@ -684,7 +680,6 @@ int Trails_ResetAll(void) {
 }
 
 void *g_TrailsVB;
-
 void *g_TrailsIB;
 
 int Trails_Release(void) {

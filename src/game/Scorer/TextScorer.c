@@ -88,7 +88,6 @@ cScorerItem *cTextTypingScorer_Delete(cScorerItem *base, byte flags) {
 }
 
 cTextScorer *g_TextEditItem[4];
-
 cScorerItem *g_TextEditCursor[4];
 
 void TextEdit_End(int player) {
@@ -450,9 +449,7 @@ const cTextScorerVtbl cTextTypingScorer_vftable = {
 };
 
 cGVar GVar_TextTypingSound;
-
 cGVar GVar_TextTypingSoundVol;
-
 cPy_NativeFunc NativeFunc_EditText;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -128,9 +128,7 @@ static void RT_QuadTexels(RTVert *v, float su, float sv) {
 }
 
 float g_SceneW;
-
 float g_SceneH;
-
 byte g_RTLinNonPow2;
 
 /* the viewport as a quad from 0, 0 with the texture coordinates 0..1 moved by du, dv (the texel centers), in
@@ -253,7 +251,6 @@ static void RT_Stages4(uint32_t filter, byte setTex, void *tex) {
 }
 
 void *g_RTBackBuffer;
-
 void *g_RTZBuffer;
 
 /* the back buffer and the depth buffer of the device kept in g_RTBackBuffer, g_RTZBuffer */
@@ -272,9 +269,7 @@ static void RT_RestoreBackBuffer(void) {
 }
 
 uint32_t g_RTSavedViewport[6];
-
 uint32_t g_RTSavedViewportFull[6];
-
 uint32_t g_ViewportFull[6];
 
 /* the viewports kept, the one of the target (surface 0 of tex, z) as both */
@@ -437,9 +432,7 @@ void RenderTarget_MakeSceneMatCopy(void) {
 }
 
 void *g_CreditsTarget;
-
 int g_CreditsSavedW;
-
 int g_CreditsSavedH;
 
 /* ---- Credits ---- */
@@ -497,7 +490,6 @@ static void Credits_Taps(float *taps, float d, float b, float o, float o2) {
 }
 
 byte g_RTLinPow2;
-
 uint32_t g_CreditsBlurTime;
 
 void Credits_Blur(void) {
@@ -624,7 +616,6 @@ int RenderTarget_VideoMemory(void) {
 }
 
 void *g_NewsPanelTarget;
-
 void *g_NewsPanelZ;
 
 /* ---- NewsPanel ---- */
@@ -779,7 +770,6 @@ void Bloom_Render(void) {
 }
 
 void *g_SceneSourceTexture;
-
 void *g_BloomTarget1;
 
 /* the source into the first bloom target through four taps, two horizontal and two vertical */
@@ -814,9 +804,7 @@ void Bloom_Filter(void) {
 }
 
 float g_BloomW;
-
 float g_BloomH;
-
 void *g_BloomTarget2;
 
 /* the passes of the blur between the two bloom targets: four taps horizontal into the second, four vertical back
@@ -1018,15 +1006,10 @@ byte Blur_IsOn(void) {
 }
 
 void *g_SceneDuDvSavedTexture;
-
 void *g_SceneDuDvSavedSurface;
-
 byte g_SceneNoSwap;
-
 void *g_SceneSourceSurface;
-
 void *g_SceneDuDvTarget;
-
 int g_SceneDuDvFrame;
 
 /* ---- DuDv ---- */
@@ -1216,7 +1199,6 @@ typedef struct DuDvVert {
 SD_SIZE(DuDvVert, 0x34);
 
 byte g_TexRepeat;
-
 byte g_TexNoPow2;
 
 /* the source deformed by the bump target into the target; with check the scale of a 640 x 480 test */
@@ -1328,9 +1310,7 @@ void MotionBlur_Render(void) {
 
 
 byte g_MotionBlurFilled;
-
 void *g_MotionBlurTarget;
-
 uint32_t g_MotionBlurLast;
 
 /* the source added to the motion blur target through four taps, about every 1/25 s of game time; the shader
@@ -1394,7 +1374,6 @@ void MotionBlur_Add(void) {
 }
 
 float g_MotionBlurW;
-
 float g_MotionBlurH;
 
 /* the source and the motion blur target mixed into the target by R_SceneMotionBlurValue (0..1) */
@@ -1539,17 +1518,11 @@ byte RadialBlur_IsOn(void) {
 }
 
 byte g_SceneOn;
-
 void *g_SceneTargetTexture;
-
 void *g_SceneRT1;
-
 void *g_SceneRT2;
-
 void *g_SceneRT3;
-
 byte g_SceneFxOn[5];
-
 int g_SceneFxLast;
 
 rtFxOn_t g_RTFxOn[5] = {
@@ -2115,69 +2088,37 @@ byte RenderTarget_PixelEqual(int pitchA, const byte *bitsA, int pitchB, const by
 }
 
 cGVar GVar_R_SceneBloomRTarget;
-
 cGVar GVar_R_SceneBloomBlurSize;
-
 cGVar GVar_R_SplitScreenCamera;
-
 cGVar GVar_R_CreditsPhase;
-
 cGVar GVar_R_SceneDuDvScale;
-
 cGVar GVar_R_SceneForceLinPow2;
-
 cGVar GVar_R_SceneBlurRTarget;
-
 cGVar GVar_R_SceneRTarget;
-
 cGVar GVar_R_SceneDuDvRTarget;
-
 cGVar GVar_R_SceneForceLinNonPow2;
-
 cGVar GVar_R_SceneRadialBlurOffset;
-
 cGVar GVar_R_SceneBloomBlurPasses;
-
 cGVar GVar_R_SceneBlurOffset;
-
 cGVar GVar_R_SceneRadialBlurRTarget;
-
 cGVar GVar_R_CreditsSizeX;
-
 cGVar GVar_R_NewsPanelRTarget;
-
 cGVar GVar_R_SceneDuDvCheckPixels;
-
 cGVar GVar_R_SceneMotionBlurValue;
-
 cGVar GVar_R_SceneCheckPixels;
-
 cGVar GVar_R_SplitScreen;
-
 cGVar GVar_R_SceneBloomBlurOffset;
-
 cGVar GVar_R_NewsPanelWire;
-
 cGVar GVar_R_SceneMotionBlurRTarget;
-
 cGVar GVar_R_SceneBlurValue;
-
 cGVar GVar_R_SceneRadialBlurValue;
-
 cGVar GVar_R_SceneDuDvFilter;
-
 cGVar GVar_R_SceneMotionBlurSize;
-
 cGVar GVar_R_SceneMotionBlurOffset;
-
 cGVar GVar_R_NewsPanelSize;
-
 cGVar GVar_R_SceneRTargetSwap;
-
 cGVar GVar_R_CreditsRTarget;
-
 cGVar GVar_R_CreditsSizeY;
-
 cGVar GVar_R_SceneDuDvForced;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

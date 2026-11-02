@@ -90,11 +90,8 @@ byte Sector_Visible(int sector) {
 }
 
 CNode3D *g_WorldInfoNode;
-
 WorldDummy *g_WorldInfoDummy;
-
 byte g_WorldInfoWild;
-
 char g_WorldInfoPattern[260];
 
 void WorldInfo_Begin(const char *pattern, byte wild) {
@@ -234,9 +231,7 @@ int Bool_GetSet(byte *flag, int value, byte set) {
 }
 
 byte g_TileOn;
-
 byte g_VertexSpecular;
-
 byte g_RenderMode100;
 
 int RenderMode(int mode, int value, byte set) {
@@ -380,7 +375,6 @@ static uint32_t Splash_Color(int c) {
 }
 
 char g_SplashLast[260];
-
 uint32_t g_SplashTime;
 
 void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut) {
@@ -543,9 +537,7 @@ void Loading_DrawBack(void) {
 }
 
 cGVar GVar_ShowProgressBar;
-
 cGVar GVar_SplashScreenFade;
-
 cGVar GVar_R_TexFilter;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -19,7 +19,6 @@
 #undef VKF_DEVICE
 
 VkCore vk;
-
 static PFN_vkGetInstanceProcAddr vk_getInstanceProcAddr;
 
 /* the objects to destroy once the GPU is past the frame that used them last */

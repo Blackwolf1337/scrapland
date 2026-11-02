@@ -2051,21 +2051,13 @@ const cAICharVtbl cAIChar_vftable = {
 };
 
 cGVar GVar_DistMinCheckPauseAI;
-
 cGVar GVar_DistRadPauseCharAI;
-
 cGVar GVar_MinNumTalksCharAI;
-
 cGVar GVar_MinTimeStoppedCharAI;
-
 cGVar GVar_MinTalkCharAI;
-
 cGVar GVar_DistMaxCheckPauseAI;
-
 cGVar GVar_MinTimeStopTempCharAI;
-
 cGVar GVar_DistMinCheckReposAI;
-
 cGVar GVar_DistMaxCheckReposAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -185,7 +185,6 @@ byte cVehicleTraffic_VarV(cVehicleTraffic *self, const char *name, double *x, do
 }
 
 cGVar GVar_UseTrafficCollisionSkip;
-
 cGVar GVar_TrafficSpeed;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

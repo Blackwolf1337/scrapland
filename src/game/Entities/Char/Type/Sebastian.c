@@ -23,7 +23,6 @@ void ChType_FXSebastianFlash(cAbstractFile *params) {
 }
 
 cGVar GVar_FXSebastianFlashFile;
-
 cPy_NativeFunc NativeFunc_FXSebastianFlash;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

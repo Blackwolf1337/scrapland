@@ -220,13 +220,9 @@ void ChType_FXRustyHit(cAbstractFile *params) {
 }
 
 cGVar GVar_RustyHitPosX;
-
 cGVar GVar_RustyHitPosZ;
-
 cGVar GVar_RustyHitPosY;
-
 cGVar GVar_FXRustyHitFile;
-
 cPy_NativeFunc NativeFunc_FXRustyHit;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

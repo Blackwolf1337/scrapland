@@ -434,43 +434,24 @@ PyMethodDef SInput_methods[21] = {
 SD_PY_MODULE(SInput, 0x42d790)
 
 const char str_PyMethod_SInput_SetActionSet[] = "SetActionSet";
-
 const char str_PyMethod_SInput_GetActionSet[] = "GetActionSet";
-
 const char str_PyMethod_SInput_AssingEntry[] = "AssingEntry";
-
 const char str_PyMethod_SInput_GetEntry[] = "GetEntry";
-
 const char str_PyMethod_SInput_ListenToDefine[] = "ListenToDefine";
-
 const char str_PyMethod_SInput_AbortListenToDefine[] = "AbortListenToDefine";
-
 const char str_PyMethod_SInput_GetDefinedList[] = "GetDefinedList";
-
 const char str_PyMethod_SInput_GetDefinedEntry[] = "GetDefinedEntry";
-
 const char str_PyMethod_SInput_ClearDefinedList[] = "ClearDefinedList";
-
 const char str_PyMethod_SInput_ResetToDefault[] = "ResetToDefault";
-
 const char str_PyMethod_SInput_SetString[] = "SetString";
-
 const char str_PyMethod_SInput_GetString[] = "GetString";
-
 const char str_PyMethod_SInput_GetCursorChar[] = "GetCursorChar";
-
 const char str_PyMethod_SInput_GetVirtualKeyboard[] = "GetVirtualKeyboard";
-
 const char str_PyMethod_SInput_SetVirtualKeyboard[] = "SetVirtualKeyboard";
-
 const char str_PyMethod_SInput_SetInputFunc[] = "SetInputFunc";
-
 const char str_PyMethod_SInput_Bind[] = "Bind";
-
 const char str_PyMethod_SInput_Rumble[] = "Rumble";
-
 const char str_PyMethod_SInput_ResetToSplit[] = "ResetToSplit";
-
 const char str_PyMethod_SInput_CheckPadButton[] = "CheckPadButton";
 
 char str_PyDoc_SInput_SetActionSet[] =

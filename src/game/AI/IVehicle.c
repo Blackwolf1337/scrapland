@@ -3313,21 +3313,13 @@ const cAIMoveVtbl cAIVehicle_vftable = {
 };
 
 cGVar GVar_MaxDistReposNotVisAI;
-
 cGVar GVar_MinDistReposNotVisAI;
-
 cGVarFunction GVar_OnObjectiveNullAI;
-
 cGVar GVar_MaxDistChaseAI;
-
 cGVar GVar_MinDistReposAI;
-
 cGVar GVar_MinDistChaseAI;
-
 cGVar GVar_TimeDamageAI;
-
 cGVarFunction GVar_OnItemTakenAI;
-
 cGVar GVar_HookRange;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

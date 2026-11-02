@@ -447,7 +447,6 @@ void cCreditsScorer_Draw(cScorerItem *base, int player) {
 }
 
 char *g_HintLines[2];
-
 char g_HintText[1280];
 
 void cHintScorer_Draw(cScorerItem *base, int player) {
@@ -505,7 +504,6 @@ void cHintScorer_Draw(cScorerItem *base, int player) {
 }
 
 char g_LabelText[250];
-
 float g_LabelTime;
 
 void cLabelScorer_Draw(cScorerItem *base, int player) {
@@ -543,7 +541,6 @@ void cLabelScorer_Draw(cScorerItem *base, int player) {
 }
 
 int g_MsgNumLines;
-
 char *g_MsgLines[20];
 
 void cMsgScorer_Draw(cScorerItem *base, int player) {
@@ -617,17 +614,11 @@ const cScorerItemVtbl cCreditsScorer_vftable = {
 };
 
 cGVar GVar_MissionScorerName;
-
 cGVar GVar_TimeToMsg;
-
 cGVar GVar_HintAppearsTime;
-
 cGVar GVar_R_CreditsX;
-
 cGVar GVar_R_CreditsY;
-
 cGVar GVar_R_CreditsClear;
-
 cGVar GVar_R_CreditsAlpha;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

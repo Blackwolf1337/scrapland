@@ -86,7 +86,6 @@ void Lex_String(void) {
 }
 
 char g_LexToken[1024];
-
 int g_LexTokenLen;
 
 /* "#inc "file"" */
@@ -336,9 +335,7 @@ int Lex_Peek(void) {
 }
 
 int g_LexErrors;
-
 int g_LexWarnings;
-
 char g_LexDir[260];
 
 /* relative to the current file first, then to g_LexDir */

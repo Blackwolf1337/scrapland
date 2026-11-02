@@ -142,7 +142,6 @@ static cShipGroup *ShipGroup_Of(cEntity *e) {
 }
 
 int g_ShipGroupFound;
-
 cEntity *g_ShipGroupShips[10];
 
 void cShipGroupData_Think(cShipGroupData *self) {

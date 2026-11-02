@@ -165,15 +165,10 @@ PyMethodDef SFX_methods[7] = {
 SD_PY_MODULE(SFX, 0x42d060)
 
 const char str_PyMethod_SFX_ShipExplosion[] = "ShipExplosion";
-
 const char str_PyMethod_SFX_CharacterConversor[] = "CharacterConversor";
-
 const char str_PyMethod_SFX_CharacterConversion[] = "CharacterConversion";
-
 const char str_PyMethod_SFX_BishopSellLife[] = "BishopSellLife";
-
 const char str_PyMethod_SFX_MoneyTransfer[] = "MoneyTransfer";
-
 const char str_PyMethod_SFX_EmbeddedSet[] = "EmbeddedSet";
 
 char str_PyDoc_SFX_ShipExplosion[] =

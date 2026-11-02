@@ -116,7 +116,6 @@ void Weap_UpdateHud(cAbstractFile *f, char (*targets)[0x80], float *times, int l
 }
 
 char g_InfernoHudTarget[4][0x80];
-
 float g_InfernoHudTime[4];
 
 void Inferno_HudNative(cAbstractFile *f) {
@@ -342,11 +341,8 @@ void Inferno_ServerHitNative(cAbstractFile *f) {
 }
 
 cEntity *g_InfernoOwner;
-
 float g_InfernoRange;
-
 cEntity *g_InfernoMissile;
-
 vec3_t g_InfernoPos;
 
 /* the explosion: the effect, then (not on clients) InfernoXplosionCall on the entities in the sphere */
@@ -531,71 +527,38 @@ void Inferno_SphereHit(cAbstractFile *f) {
 }
 
 cGVar GVar_CannonScorerColorRed;
-
 cGVar GVar_CannonScorerColorBlue;
-
 cGVar GVar_CannonScorerColorGreen;
-
 cGVar GVar_InfernoEngineSoundVol;
-
 cGVar GVar_InfernoRangeMin;
-
 cGVar GVar_InfernoTimeDelay;
-
 cGVar GVar_InfernoAmmoCost;
-
 cGVar GVar_InfernoUpTopSpeed;
-
 cGVar GVar_InfernoIDAmmo;
-
 cGVar GVar_InfernoLifeTime;
-
 cGVar GVar_InfernoEngineSoundAttIni;
-
 cGVar GVar_InfernoTurnSpeed;
-
 cGVar GVar_InfernoMaxDamage;
-
 cGVar GVar_InfernoHitSoundVol;
-
 cGVar GVar_InfernoHitSoundAttEndRadius;
-
 cGVar GVar_InfernoEngineSoundDoppler;
-
 cGVar GVar_InfernoBeesSpeed;
-
 cGVar GVar_InfernoUpgFireFactor;
-
 cGVar GVar_InfernoInvUpgExtraDamage;
-
 cGVar GVar_InfernoHitForce;
-
 cGVar GVar_InfernoRangeBay;
-
 cGVar GVar_InfernoArmor;
-
 cGVar GVar_InfernoUpgFireTime;
-
 cGVar GVar_InfernoHitSound;
-
 cGVar GVar_InfernoMinDamage;
-
 cGVar GVar_InfernoEngineSound;
-
 cGVar GVar_InfernoNormSpeed;
-
 cPy_NativeFunc NativeFunc_InfernoXplosionCall;
-
 cGVar GVar_InfernoMissileFile;
-
 cGVar GVar_FXInfernoExplosionMaxDist;
-
 cGVar GVar_InfernoHitSoundAttIniRadius;
-
 cGVar GVar_InfernoEngineSoundAttEnd;
-
 cGVar GVar_InfernoExplosionFile;
-
 cPy_NativeFunc NativeFunc_InfernoPress;
 cPy_NativeFunc NativeFunc_InfernoRelease;
 cPy_NativeFunc NativeFunc_InfernoOnEnd;

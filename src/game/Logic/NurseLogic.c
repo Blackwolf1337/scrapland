@@ -276,13 +276,9 @@ const cBaseLocalLogicVtbl cNurseLocalLogic_vftable = {
 };
 
 cGVar GVar_NurseBankerDetect;
-
 cGVar GVar_NursePoliceRefuse;
-
 cGVar GVar_NurseEscapeTime;
-
 cGVar GVar_NurseAlertSpeed;
-
 cGVar GVar_NurseRelaxSpeed;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

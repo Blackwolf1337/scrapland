@@ -111,7 +111,6 @@ void CApp_Nop(CApp *self) {
 }
 
 cGVar g_GVarMasterServerAddress;
-
 cGVar g_GVarMasterServerPort;
 
 /* vf00: the world and the subsystems of the level closed */
@@ -246,7 +245,6 @@ void CApp_Shutdown(CApp *self) {
 }
 
 void *g_XLoadIcon;
-
 byte g_XLoadOn;
 
 static void Loading_Stop(void) {
@@ -398,11 +396,8 @@ void Loading_Init(void) {
 }
 
 int g_XLoadFrames;
-
 int g_XLoadIconFrame;
-
 float g_XLoadStart;
-
 float g_XLoadLastStep;
 
 /* the loading icon of the Xbox loading screen; the original has an unused ecx */
@@ -1002,31 +997,18 @@ const CAppVtbl CApp_vftable = {
 };
 
 cGVar GVar_ServerMapList;
-
 cGVar GVar_iLoadMsgString;
-
 cGVar GVar_iMap;
-
 cGVar GVar_ReRunAtExitParams;
-
 cGVarFunction GVar_AfterDrawCallback;
-
 cGVar GVar_DrawNextFrame;
-
 cGVar GVar_DefaultMaxPlayersOnServer;
-
 cGVar GVar_ModFileName;
-
 cGVar GVar_DisableSkipSlot;
-
 cGVar GVar_ForceReload;
-
 cGVar GVar_isXbox;
-
 cGVar GVar_ModPathName;
-
 cGVar GVar_LoadMsgString;
-
 cGVar GVar_DefaultServerPort;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -21,9 +21,7 @@ static int Talk_Wrap(char *text, char **lines) {
 }
 
 char g_TalkText[6400];
-
 int g_TalkNumLines;
-
 char *g_TalkLines[40];
 
 cTalkScorer *cTalkScorer_ctor(cTalkScorer *self) {
@@ -333,11 +331,8 @@ const cTalkScorerVtbl cTalkScorer_vftable = {
 };
 
 cGVar GVar_MaxTalkLineSizePix;
-
 cGVar GVar_TimeToAbortChatText;
-
 cGVar GVar_RemainTalkTime;
-
 cGVar GVar_FullTalkTime;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

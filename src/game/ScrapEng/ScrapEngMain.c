@@ -197,9 +197,7 @@ void Engine_Close(void) {
 }
 
 CGameCamera *g_ViewerCamera;
-
 CPsaImage *g_Watermark;
-
 CWorld *g_World;
 
 byte Engine_FinalCleanup(void) {
@@ -278,33 +276,19 @@ int Video_GetStatus(void) {
 }
 
 int g_LightmapOff;
-
 float g_ClipNear;
-
 float g_ClipFar;
-
 char g_SkyPath[260];
-
 float g_SkyPosScaleIni;
-
 char g_GroundPath[260];
-
 float g_SkyRotationIni;
-
 int g_FogActiveIni;
-
 int g_FogTableMode;
-
 ColorIntens g_FogColorIni;
-
 ColorIntens g_ModelAmbientIni;
-
 int g_FogLinear = 1;
-
 float g_FogRangeIni = 0.5f;
-
 float g_FogRangeEnd = 1.0f;
-
 float g_FogDensityIni = 0.5f;
 
 vec3_t g_GroundScale = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
@@ -369,9 +353,7 @@ byte Engine_OneTimeInit(void) {
 }
 
 const int g_EngineVersion = 5624;
-
 byte g_MapTextSavingOn;
-
 int g_TimerQPMult = 1;
 
 void Engine_Init(void) {
@@ -446,11 +428,8 @@ void Engine_LevelEnd(void) {
 }
 
 int g_VideoBufferSize;
-
 int g_MapTextSaving;
-
 byte g_DrawProgressBar;
-
 void *g_MapTextDataFile;
 
 void Engine_LevelInit(void) {
@@ -804,7 +783,6 @@ cGVar GVar_ViewerCameraInv;
 #define DBG_VIEWER_PAN 18
 
 float g_FrameMs;
-
 float g_ViewerSpeed = 1.0f;
 
 /* the viewer camera by the debug actions: turned (or panned with the pan action) in free mode, orbiting the
@@ -890,9 +868,7 @@ void ViewerCamera_Move(CGameCamera *cam) {
 }
 
 cGVar g_GvEnvBump;
-
 cGVar g_GvGlowMap;
-
 cGVar g_GvEnvMap;
 
 byte Engine_DebugKeys(void) {
@@ -987,9 +963,7 @@ byte Eng_ResetViewRect(void) {
 }
 
 uint32_t g_AmbientD3D;
-
 byte g_UseVB = 1;
-
 byte g_ModelsOn = 1;
 
 byte Engine_FrameSetup(void) {
@@ -1292,21 +1266,13 @@ int g_FlareShowInfo;
 #define g_FlaresShowInfo g_FlareShowInfo
 
 int g_ShadowMapSoft;
-
 int g_ShadowMapWriteTemp;
-
 float g_ShadowMapAtten;
-
 int g_ShadowMapNoLightAmb;
-
 int g_ShadowMapUseTxf;
-
 int g_ShadowsDestAlpha;
-
 int g_ShadowMapDlg = 1;
-
 int g_ShadowMapBounces = 1;
-
 float g_ShadowMapCoefRad = 0.1f;
 
 void Engine_LoadIni(const char *name, const char *dir) {
@@ -1378,41 +1344,23 @@ void Engine_LoadIni(const char *name, const char *dir) {
 }
 
 char str_M3dIni[128] = "m3d.ini";
-
 cGVar GVar_RenderUseVB;
-
 cGVar GVar_ShowSplashScreen;
-
 cGVar GVar_ModelAmbient;
-
 cGVar GVar_ShowMapWireFrame;
-
 cGVar GVar_RenderLightmap;
-
 cGVar GVar_ComputeMapTextSaving;
-
 cGVar GVar_RenderModels;
-
 cGVar GVar_ProgressBar;
-
 cGVar GVar_PlayVideo;
-
 cGVar GVar_VideoHeight;
-
 cGVar GVar_VideoWidth;
-
 cGVar GVar_VideoBPP;
-
 cGVar GVar_CollisionEpsilon;
-
 cGVar GVar_ViewerCameraAnim;
-
 cGVar GVar_ShowMapCollision;
-
 cGVar GVar_FullScreen;
-
 cGVar GVar_VSync;
-
 cGVar GVar_isDemo;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

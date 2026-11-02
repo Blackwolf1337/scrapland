@@ -1283,39 +1283,22 @@ const cWorldVtbl cWorld_vftable = {
 };
 
 cGVar GVar_R_SplitScreenUpdate;
-
 cGVar GVar_PriorityWeapon;
-
 cGVarFunction GVar_QChatEvent2;
-
 cGVarFunction GVar_EscapeEvent;
-
 cGVarFunction GVar_QChatEvent3;
-
 cGVarFunction GVar_MainMissionEvent;
-
 cGVarFunction GVar_QChatEvent6;
-
 cGVar GVar_GridScaleY;
-
 cGVarFunction GVar_QChatEvent5;
-
 cGVar GVar_GridScaleZ;
-
 cGVar GVar_GameSkill;
-
 cGVar GVar_GridScaleX;
-
 cGVarFunction GVar_QChatEvent1;
-
 cGVar GVar_Max_Rad_Obj;
-
 cGVarFunction GVar_QChatEvent4;
-
 cGVarFunction GVar_ChatEvent;
-
 cGVar GVar_FreeSpaceMagnet;
-
 cGVar GVar_FXVehicleFloatingFactor;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

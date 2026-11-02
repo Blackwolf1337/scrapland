@@ -1934,17 +1934,11 @@ const cWalkCharVtbl cWalkCharEntity_vftable = {
 };
 
 cGVar GVar_EnergyRechargeTime;
-
 cGVar GVar_AbortSelectDistance;
-
 cGVar GVar_EnergyBarActive;
-
 cGVar GVar_SndLoopCharNPCMul;
-
 cGVar GVar_CharUsrPushSpeed;
-
 cGVar GVar_CharGrav;
-
 cGVar GVar_TimeToAbortSelectChar;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -183,9 +183,7 @@ const cGenCharLocalLogicVtbl cBossLocalLogic_vftable = {
 };
 
 cGVar GVar_BossWalkingTime;
-
 cGVar GVar_BossWorkPlace;
-
 cGVar GVar_BossWorkingTime;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

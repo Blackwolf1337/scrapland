@@ -14,7 +14,6 @@
 #include "scrap/staticinit.h"
 
 int g_DominNumZones;
-
 DominZone g_DominZones[4];
 
 void Domination_AddZone(cEntity *zone) {
@@ -25,7 +24,6 @@ void Domination_AddZone(cEntity *zone) {
 }
 
 vec3_t g_DominBatonPos;
-
 int g_DominBatonState;
 
 void Domination_SetBatonState(const vec3_t *pos, int state) {
@@ -329,17 +327,11 @@ const cDominationLogicVtbl cDominationEnemiesLogic_vftable = {
 };
 
 cGVar GVar_MaxDominDistChase;
-
 cGVar GVar_DominMaxRangeDist;
-
 cGVar GVar_MinDominDistChase;
-
 cGVar GVar_DominFightingFreezeControlAim;
-
 cGVar GVar_DominWithinRangeDist;
-
 cGVar GVar_DominFightingFreezeCadenceShoot;
-
 cGVar GVar_DominMinRangeDist;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

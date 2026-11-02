@@ -434,17 +434,11 @@ void NetData_OnBrowse(const char *ip, int port, const NetServerInfo *info, int p
 }
 
 cGVar GVar_NetMaxPlayersInitSend;
-
 cGVarFunction GVar_ClientSetConfig;
-
 cGVarFunction GVar_MasterCommandFunc;
-
 cGVarFunction GVar_ClientAddRes;
-
 cGVar GVar_ClientRemotePassword;
-
 cGVarFunction GVar_OnNetBrowseCallback;
-
 cGVarFunction GVar_ClientDelRes;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

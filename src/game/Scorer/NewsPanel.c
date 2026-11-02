@@ -278,33 +278,19 @@ void cNewsPanel_DrawNews(cNewsPanel *self, float dt) {
 }
 
 cGVar GVar_NewsPanelCloseSpeed;
-
 cGVar GVar_NewsLogoBmp;
-
 cGVar GVar_NewsPanelShowHead;
-
 cGVar GVar_NewsPanelW;
-
 cGVar GVar_NewsPanelX;
-
 cGVar GVar_NewsPanelOpenSpeed;
-
 cGVar GVar_NewsPanelDisplacement;
-
 cGVar GVar_NewsPanelH;
-
 cGVar GVar_BackNewsBmp;
-
 cGVar GVar_NewsPanelY;
-
 cGVar GVar_NewsPanelDistance;
-
 cGVar GVar_NewsHead;
-
 cGVar GVar_NewsPanelActive;
-
 cGVar GVar_NewsPanelMove;
-
 cGVar GVar_NewsPanelAspect;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

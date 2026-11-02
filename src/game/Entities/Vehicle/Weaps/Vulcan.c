@@ -565,45 +565,25 @@ void Vulcan_AimOn(cEntity *v) {
 }
 
 cGVar GVar_VulcanIDAmmo;
-
 cGVar GVar_FXVulcanHitDistance;
-
 cGVar GVar_VulcanTimeDelay;
-
 cGVar GVar_VulcanRic2Sound;
-
 cGVar GVar_VulcanRicSoundAttIni;
-
 cGVar GVar_VulcanTimeDelayUPG;
-
 cGVar GVar_VulcanHitForce;
-
 cGVar GVar_VulcanDamageEasy;
-
 cGVar GVar_VulcanHitFile;
-
 cGVar GVar_VulcanRic1Sound;
-
 cGVar GVar_VulcanRic0Sound;
-
 cGVar GVar_VulcanAmmoCost;
-
 cGVar GVar_VulcanBulletFile;
-
 cGVar GVar_VulcanDamage;
-
 cGVar GVar_VulcanHitUseNormal;
-
 cGVar GVar_VulcanRic0SoundVol;
-
 cGVar GVar_VulcanRic2SoundVol;
-
 cGVar GVar_VulcanRic1SoundVol;
-
 cGVar GVar_VulcanRange;
-
 cGVar GVar_VulcanRicSoundAttEnd;
-
 cPy_NativeFunc NativeFunc_VulcanPress;
 cPy_NativeFunc NativeFunc_VulcanRelease;
 cPy_NativeFunc NativeFunc_VulcanCreate;

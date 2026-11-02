@@ -136,7 +136,6 @@ static void Light_EnableD3D(CLight *l, byte enable) {
 }
 
 int g_nLights;
-
 CLight *g_Lights[1024];
 
 static void Light_Add(CLight *self) {
@@ -181,7 +180,6 @@ static float Light_DegToRad(float deg) {
 }
 
 uint32_t g_LightIndexD3D;
-
 int g_LightsTotal;
 
 CLight *CLight_ctor(CLight *self) {

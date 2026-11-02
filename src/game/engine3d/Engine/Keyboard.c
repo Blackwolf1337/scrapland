@@ -14,7 +14,6 @@ uint32_t Time_Get(void) {
 }
 
 int g_TimeResumed;
-
 uint32_t g_TimePause;
 
 void Time_Pause(int on) {
@@ -36,9 +35,7 @@ void Keyboard_Clear(void) {
 }
 
 uint16_t g_KeyboardBuf[32];
-
 int g_KeyboardBufStart;
-
 int g_KeyboardBufCount;
 
 int Keyboard_GetChars(uint16_t *dest, int n) {

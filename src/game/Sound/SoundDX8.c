@@ -499,13 +499,9 @@ const CSoundSysVtbl CSoundXBox_vftable = {
 };
 
 cGVar GVar_SoundMainVolume;
-
 cGVar GVar_S_SkipUpdates;
-
 cGVar GVar_SoundSwapChannels;
-
 cGVar GVar_S_PitchScale;
-
 cGVar GVar_S_SkipPlay;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

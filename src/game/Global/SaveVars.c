@@ -36,7 +36,6 @@ cGVarFunction GVar_OnCrazyDealFinished;
 #define g_OnAllCrazyDeals (((cPy_Function *)&GVar_OnCrazyDealFinished.func))
 
 cSaveVar *g_SaveVars;
-
 int g_SaveVarCount;
 
 cSaveVar *cSaveVar_ctor(cSaveVar *self, const char *name, const char *value) {

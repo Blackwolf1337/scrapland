@@ -217,9 +217,7 @@ const cAbstractIDeviceVtbl cPcMouse_vftable = {
 };
 
 cGVar GVar_MouseSensitivityV;
-
 cGVar GVar_MouseSensitivityH;
-
 cGVar GVar_InvertMouse;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

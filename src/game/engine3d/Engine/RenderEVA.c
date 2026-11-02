@@ -52,7 +52,6 @@ static void Buf_Unlock(void *buf) {
 }
 
 void *g_EVAVB;
-
 int g_EVAVBUsed;
 
 int RenderEVA_InitD3D(void) {
@@ -70,13 +69,9 @@ int RenderEVA_InitD3D(void) {
 }
 
 void *g_PartVB;
-
 void *g_PartIB;
-
 int g_PartVBUsed;
-
 uint16_t *g_PartTri;
-
 int g_PartNumTri;
 
 int RenderEVA_CreateParticles(void) {
@@ -541,27 +536,16 @@ int ParticleSystem_Draw2(CParticleSystem *sp, CRenderNode *r) {
 }
 
 cGVar GVar_R_ParticlesOne;
-
 cGVar GVar_R_UseSkin;
-
 cGVar GVar_R_MaxSparkSize;
-
 cGVar GVar_R_ShowSkin;
-
 cGVar GVar_R_ShowEVA;
-
 cGVar GVar_R_MinSparkDist;
-
 cGVar GVar_R_ParticlesDraw;
-
 cGVar GVar_R_ParticlesZBias;
-
 cGVar GVar_R_ParticlesAlphaDist;
-
 cGVar GVar_R_UseEVA;
-
 cGVar GVar_R_ParticlesLock;
-
 cGVar GVar_R_SkinNodeSpace;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -259,7 +259,6 @@ const cLogicControlVtbl cLogicControl_vftable = {
 };
 
 cGVar GVar_TimeBetweeenTaunts;
-
 cGVar GVar_TimeBetweeenWarnings;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

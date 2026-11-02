@@ -53,9 +53,7 @@ static inline float Dev_RandSym(float r) {
 }
 
 char g_DevShooter[128];
-
 char g_DevVictim[128];
-
 vec3_t g_DevCenter;
 
 uint32_t g_DevColorRamps[36] = {
@@ -722,61 +720,33 @@ void Inferno_ClientFireNet(cAbstractFile *params) {
 }
 
 cGVar GVar_DevastatorIDWeap;
-
 cGVar GVar_DevastatorBulletFile;
-
 cGVar GVar_FXDevastatorDistance;
-
 cGVar GVar_DevastatorRechargeTime;
-
 cGVar GVar_DevastatorExplosionRadius;
-
 cGVar GVar_DevastatorExtraDamage;
-
 cGVar GVar_DevastatorHitForce;
-
 cGVar GVar_DevastatorIDAmmo;
-
 cPy_NativeFunc NativeFunc_DevastatorXplosionCall;
-
 cGVar GVar_DevastatorShootFile;
-
 cGVar GVar_DevastatorBoomSoundVol;
-
 cGVar GVar_DevastatorMinDamage;
-
 cGVar GVar_DevastatorSpreadAngle;
-
 cGVar GVar_FXDevastatorRadius;
-
 cGVar GVar_DevastatorRange;
-
 cGVar GVar_DevastatorSparksFile;
-
 cGVar GVar_DevastatorBoomSoundAttEnd;
-
 cGVar GVar_DevastatorHitFile;
-
 cGVar GVar_DevastatorBoomSound;
-
 cGVar GVar_FXDevastatorScale;
-
 cGVar GVar_DevastatorAmmoCost;
-
 cGVar GVar_DevastatorBoomSoundAttIni;
-
 cGVarFunction GVar_CreateEMIFunc;
-
 cGVar GVar_EMIRechargeTime;
-
 cGVar GVar_EMIAmmoNeed;
-
 cGVarFunction GVar_SetUpEMIFunc;
-
 cGVar GVar_EMILifeTime;
-
 cGVar GVar_EMIIDAmmo;
-
 cPy_NativeFunc NativeFunc_DevastatorPress;
 cPy_NativeFunc NativeFunc_DevastatorRelease;
 cPy_NativeFunc NativeFunc_DevastatorCreate;

@@ -281,7 +281,6 @@ void BspLMap_dtor(BspLMap *self) {
 }
 
 int g_LmapInfo;
-
 int g_LmapInfo2 = 1;
 
 void BspLMap_Init(BspLMap *self, int width, int height) {
@@ -649,7 +648,6 @@ void BspTri_GetExt2(const BspTri *tri, int *x0, int *y0, int *x1, int *y1) {
 }
 
 int g_ShadowMapTexX = 256;
-
 int g_ShadowMapTexY = 256;
 
 byte BspTri_IsTexel(int x0, int y0, int x, int y, uint32_t color, const BspTri *tri) {
@@ -711,7 +709,6 @@ static byte Bsp_MatPass(const CMaterial *m) {
 }
 
 int g_BspTris;
-
 int g_BspVerts;
 
 void BspTri_Draw(BspTri *tri) {
@@ -728,7 +725,6 @@ void BspTri_Draw(BspTri *tri) {
 }
 
 int g_Gamma2x;
-
 int g_ShadowMapModulate4x;
 
 /* the modulation of the light maps: 4x with modulate4x on a device without gamma2x */
@@ -737,9 +733,7 @@ static inline int Bsp_LmapMode(void) {
 }
 
 int g_ShadowMapMultitext;
-
 int g_LightmapMode2;
-
 int g_RenderPass;
 
 void CBsp_DrawTri(CBsp *self, BspTri *tri, byte pass) {
@@ -931,11 +925,8 @@ void CBsp_Render(CBsp *self) {
 }
 
 byte g_BspSectorOk;
-
 int g_BspSectorErrors;
-
 int g_BspSectorSeen;
-
 vec3_t g_BspEyePrev;
 
 /* the sector of the eye for the portals (info: the counters on the screen instead) */
@@ -2037,7 +2028,6 @@ void Bsp_MatInfo(CMaterial *m) {
 }
 
 int g_BspDebugCnt;
-
 int g_BspDebugSel = -1;
 
 /* the boxes of the regions with links (and the selected one) and their links; the regions drawn */
@@ -2503,7 +2493,6 @@ static void Bsp_LogNodes(CScene *scn, const char *fmt, byte done) {
 }
 
 float g_ShadowMapGamma = 1.0f;
-
 float g_ShadowMapBrightness = 1.0f;
 
 void Bsp_Create(void) {
@@ -3255,29 +3244,17 @@ void Bsp_InitLights(void) {
 }
 
 cGVar GVar_LightmapDxtPadding;
-
 cGVar GVar_ShowInfoOnSectorError;
-
 cGVar GVar_MapDrawBySector;
-
 cGVar GVar_R_ForceLMap;
-
 cGVar GVar_MapRenderMat;
-
 cGVar GVar_RenderMap;
-
 cGVar GVar_R_UsePortals;
-
 cGVar GVar_MapSortByShader;
-
 cGVar GVar_LightmapLimitUV;
-
 cGVar GVar_RenderSectors;
-
 cGVar GVar_MapDrawSector;
-
 cGVar GVar_LightmapPackMode;
-
 cGVar GVar_MapRenderMap;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

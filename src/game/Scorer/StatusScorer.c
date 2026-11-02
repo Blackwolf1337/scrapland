@@ -506,7 +506,6 @@ const cScorerItemVtbl cStatusScorer_vftable = {
 };
 
 cGVar GVar_DangerLifeSound;
-
 cGVar GVar_RegenerationSound;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

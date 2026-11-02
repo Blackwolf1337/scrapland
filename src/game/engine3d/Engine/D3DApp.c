@@ -748,7 +748,6 @@ int CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 }
 
 float g_D3DAppLastTime;
-
 uint32_t g_D3DAppFrames;
 
 static void D3DApp_FrameStats(CD3DApplication *self) {

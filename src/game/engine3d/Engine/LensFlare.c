@@ -40,7 +40,6 @@ void CLensFlare_dtor(CLensFlare *self) {
 }
 
 CLensFlare *g_LensFlareRender[8];
-
 int g_nLensFlareRender;
 
 void LensFlare_Update(CLensFlare *lf) {

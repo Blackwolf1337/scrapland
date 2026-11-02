@@ -588,21 +588,13 @@ const cFollowCamVtbl cFollowCamEntity_vftable = {
 };
 
 cGVar GVar_FullCameraTest;
-
 cGVar GVar_VehicleCamFar;
-
 cGVar GVar_FreeCameraCollide;
-
 cGVar GVar_VehicleCamDist;
-
 cGVar GVar_VehicleCamNear;
-
 cGVar GVar_WalkCamFar;
-
 cGVar GVar_OutWalkCamFar;
-
 cGVar GVar_OutWalkCamNear;
-
 cGVar GVar_WalkCamNear;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

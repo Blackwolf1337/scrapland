@@ -502,53 +502,29 @@ PyMethodDef SNet_methods[26] = {
 SD_PY_MODULE(SNet, 0x42e610)
 
 const char str_PyMethod_SNet_InitServer[] = "InitServer";
-
 const char str_PyMethod_SNet_CloseServer[] = "CloseServer";
-
 const char str_PyMethod_SNet_ServerChangeLevel[] = "ServerChangeLevel";
-
 const char str_PyMethod_SNet_IsServer[] = "IsServer";
-
 const char str_PyMethod_SNet_IsDedicated[] = "IsDedicated";
-
 const char str_PyMethod_SNet_GetServerData[] = "GetServerData";
-
 const char str_PyMethod_SNet_AddResource[] = "AddResource";
-
 const char str_PyMethod_SNet_ModifyUsrData[] = "ModifyUsrData";
-
 const char str_PyMethod_SNet_GetBotName[] = "GetBotName";
-
 const char str_PyMethod_SNet_GetObjName[] = "GetObjName";
-
 const char str_PyMethod_SNet_Kick[] = "Kick";
-
 const char str_PyMethod_SNet_InitClient[] = "InitClient";
-
 const char str_PyMethod_SNet_CloseClient[] = "CloseClient";
-
 const char str_PyMethod_SNet_IsClient[] = "IsClient";
-
 const char str_PyMethod_SNet_GetClientData[] = "GetClientData";
-
 const char str_PyMethod_SNet_GetMyClientShip[] = "GetMyClientShip";
-
 const char str_PyMethod_SNet_InitBrowser[] = "InitBrowser";
-
 const char str_PyMethod_SNet_DoneBrowser[] = "DoneBrowser";
-
 const char str_PyMethod_SNet_SendUsrString[] = "SendUsrString";
-
 const char str_PyMethod_SNet_SendChatString[] = "SendChatString";
-
 const char str_PyMethod_SNet_SendCtrlString[] = "SendCtrlString";
-
 const char str_PyMethod_SNet_SendMasterString[] = "SendMasterString";
-
 const char str_PyMethod_SNet_IsMaster[] = "IsMaster";
-
 const char str_PyMethod_SNet_PingInetSvrs[] = "PingInetSvrs";
-
 const char str_PyMethod_SNet_GetPing[] = "GetPing";
 
 char str_PyDoc_SNet_ModifyUsrData[] =

@@ -63,7 +63,6 @@ void Misc_FiniFileLog(void) {
 }
 
 uint32_t g_LogFileMask;
-
 uint32_t g_LogConMask = 65535;
 
 void cLog_Write(cLog *self, uint32_t mask, const char *text) {

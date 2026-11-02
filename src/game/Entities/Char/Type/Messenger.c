@@ -179,29 +179,17 @@ void ChType_MessengerTakeDataPack(cAbstractFile *params) {
 }
 
 cGVar GVar_MessengerAttackPosZ;
-
 cGVar GVar_MessengerAmmoCost;
-
 cGVar GVar_MessengerAttackPosX;
-
 cGVar GVar_FXMessengerAttackFile;
-
 cGVar GVar_MessengerTakeDataPackSound;
-
 cGVar GVar_FXMessengerTakeDataPackFile;
-
 cGVar GVar_MessengerAttackPosY;
-
 cGVar GVar_MessengerShootSoundVol;
-
 cGVar GVar_MessengerShootSound;
-
 cGVar GVar_MessengerTakeDataPackSoundVol;
-
 cGVarFunction GVar_MessengerTakenCallback;
-
 cGVar GVar_MessengerDataPack;
-
 cPy_NativeFunc NativeFunc_MessengerTakeDataPack;
 cPy_NativeFunc NativeFunc_MessengerAttack;
 

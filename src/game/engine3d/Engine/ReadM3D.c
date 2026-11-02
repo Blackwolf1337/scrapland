@@ -166,9 +166,7 @@ static void M3D_ReadBinString(char *dest, int size) {
 }
 
 byte g_M3DBinary;
-
 byte g_M3DLabels;
-
 char g_M3DString[1024];
 
 void M3D_Label(const char *name) {
@@ -738,17 +736,11 @@ void Node_ClearName(char *name) {
 }
 
 byte g_M3DUseOpacity;
-
 byte g_M3DUseEnvmap;
-
 byte g_M3DUseBumpmap;
-
 byte g_M3DUseGlowmap;
-
 int g_UseEnvMap = 1;
-
 int g_UseBumpMap = 1;
-
 int g_UseGlowMap = 1;
 
 byte M3D_ActiveMap(const CMaterial *mat, int mapid) {
@@ -771,11 +763,8 @@ byte M3D_ActiveMap(const CMaterial *mat, int mapid) {
 
 
 int g_M3DNumMat;
-
 CMaterial *g_M3DMat[512];
-
 int g_M3DMatId[512];
-
 int g_M3DMatSub[512];
 
 /* the materials of the file */
@@ -1509,7 +1498,6 @@ void Scene_MatricesObj(CScene *scn) {
 }
 
 int g_M3DFirstFrame;
-
 int g_M3DLastFrame;
 
 void Scene_AnimLocal(CScene *scn, byte anim) {
@@ -2129,7 +2117,6 @@ static void M3D_Normalize(vec3_t *v) {
 }
 
 float g_M3DPreScaleU;
-
 float g_M3DPreScaleV;
 
 void M3D_ReadMesh(CNode3D *node, byte anim) {
@@ -3113,11 +3100,8 @@ static void M3D_ReadSceneColor(const char *tok, ColorIntens *c) {
 }
 
 char g_M3DDir[260];
-
 CIniFile *g_M3DFileINI;
-
 char g_M3DSceneMax[260];
-
 M3DTable *g_M3DSceneTables;
 
 /* the M3D file name (the model or, with g_SceneAnimParent set, an animation of it; the .CM3 of an animation first),
@@ -3408,17 +3392,11 @@ void ReadM3D_InitUseWSM(void) {
 }
 
 cGVar GVar_CM3_DeleteM3D;
-
 cGVar GVar_OptimizeNodes;
-
 cGVar GVar_CM3_UseScenes;
-
 cGVar GVar_SM3_CheckTime;
-
 cGVar GVar_SharedTexuresPath;
-
 cGVar GVar_CM3_CheckTime;
-
 cGVar GVar_SM3_UseScenes;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

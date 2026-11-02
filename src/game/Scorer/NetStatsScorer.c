@@ -42,7 +42,6 @@ int cNetStatsScorer_Var(cScorerItem *base, const char *name, int set, char **s, 
 }
 
 int g_NetStatSentSlot;
-
 int g_NetStatSent;
 
 void cNetStatsScorer_Draw(cScorerItem *base, int player) {
@@ -132,11 +131,8 @@ const cScorerItemVtbl cNetStatsScorer_vftable = {
 };
 
 cGVar GVar_ShowNetStatus;
-
 cGVar GVar_ShowClientPing;
-
 cGVar GVar_ClientPingY;
-
 cGVar GVar_ClientPingX;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -303,9 +303,7 @@ const cLocalLogicVtbl cCTFEnemiesLocalLogic_vftable = {
 };
 
 cGVar GVar_LeaderFlag;
-
 cGVar GVar_PlayerCTFTeamIsWinning;
-
 cGVar GVar_PercEnemiesAttackPlayerWhenWinning;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -1878,9 +1878,7 @@ const CNodesWorldVtbl CNodesWorld_vftable = {
 };
 
 cGVar GVar_ShowAI;
-
 cGVar GVar_ShowNodesAI;
-
 cGVar GVar_IsMapOutDoor;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -10,13 +10,9 @@
 #include "scrap/staticinit.h"
 
 char g_NetClientServer[256];
-
 uint16_t g_NetClientPort;
-
 cNetClient *g_NetClient;
-
 void *g_NetClientData;
-
 void *g_NetClientCtl;
 
 byte Net_CloseClient(void) {
@@ -72,7 +68,6 @@ static void Net_SetStatus(const char *s) {
 }
 
 int g_NetClientDataSize;
-
 int g_NetClientCtlSize;
 
 byte Net_ClientFrame(void) {
@@ -196,11 +191,8 @@ byte Net_ClientReady(void) {
 }
 
 cGVarFunction GVar_OnChatString;
-
 cGVar GVar_ClientPPS;
-
 cGVarFunction GVar_OnUsrString;
-
 cGVarFunction GVar_ClientSetPlayer;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

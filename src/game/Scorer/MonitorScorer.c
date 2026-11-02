@@ -755,7 +755,6 @@ void cMonitorScorer_DrawMonitor(cMonitorScorer *self, int player, cEntity *targe
 }
 
 char g_HeadMonitorText[128];
-
 int g_HeadMonitorAnim = 1;
 
 void cMonitorScorer_Draw(cScorerItem *base, int player) {

@@ -80,7 +80,6 @@ void Text_Pop(void) {
 }
 
 int g_TextX;
-
 int g_TextY;
 
 void Text_Printf3D(const vec3_t *pos, const char *fmt, ...) {

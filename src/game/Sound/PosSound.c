@@ -238,9 +238,7 @@ byte SndPS_Use(byte use) {
 }
 
 float g_MusicWait;
-
 int g_MusicAction;
-
 float g_MusicFade = 0.00001f;
 
 void Sound_ResetVolumes(void) {
@@ -390,7 +388,6 @@ void Sound_StopTalk(void) {
 }
 
 float g_TalkDelay;
-
 byte g_TalkStop;
 
 /* the talk voice name has ended: stops it, or later when it has not started yet */
@@ -604,7 +601,6 @@ void Sound_Update(float dt) {
 }
 
 cGVar GVar_ArrowDeactivationRadius;
-
 cGVar GVar_ArrowActiveRadius;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

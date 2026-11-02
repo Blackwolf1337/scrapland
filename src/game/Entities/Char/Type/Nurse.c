@@ -11,7 +11,6 @@
 #include "scrap/staticinit.h"
 
 char g_NurseName[128];
-
 cEntity *g_NurseTarget;
 
 /* the sphere test of the hit: params a character, not the nurse; the player is never the target */
@@ -468,15 +467,10 @@ void ChType_NurseTryHammerAgain(cAbstractFile *params) {
 }
 
 cGVarFunction GVar_OnSleep;
-
 cGVar GVar_NurseAlarmHit;
-
 cGVar GVar_NurseDispDist;
-
 cGVar GVar_FXHammerHitFile;
-
 cGVar GVar_NurseDispRad;
-
 cPy_NativeFunc NativeFunc_NurseActionRelease;
 cPy_NativeFunc NativeFunc_NurseDoHammerHit;
 cPy_NativeFunc NativeFunc_NurseBackHitControl;

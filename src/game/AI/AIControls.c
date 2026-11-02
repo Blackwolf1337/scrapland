@@ -1455,19 +1455,12 @@ const cAICharControl3DVtbl cAIControlSentinel_vftable = {
 };
 
 cGVar GVar_TimeStrafeUnderAttackBishopAI;
-
 cGVar GVar_AngleStrafeUnderAttackBishopAI;
-
 cGVar GVar_TimeStrafeUnderAttackGearAI;
-
 cGVar GVar_AngleStrafeUnderAttackGearAI;
-
 cGVar GVar_LimVelRotDynamicMessengerAI;
-
 cGVar GVar_VelRotDynamicMessengerAI;
-
 cGVar GVar_TimeStrafeUnderAttackSentinelAI;
-
 cGVar GVar_AngleStrafeUnderAttackSentinelAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

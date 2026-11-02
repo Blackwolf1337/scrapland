@@ -1587,11 +1587,8 @@ const CNodesWorldVtbl CNodesWorld2D_vftable = {
 };
 
 cGVar GVar_ShowNodes2DAI;
-
 cGVar GVar_AltPerpFloorAI;
-
 cGVar GVar_AltMinTestWalkAI;
-
 cGVar GVar_ShowInfoRegAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

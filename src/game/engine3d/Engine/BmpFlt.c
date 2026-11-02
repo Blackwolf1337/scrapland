@@ -24,7 +24,6 @@ typedef struct {
 } txfKind_t;
 
 TXF_header g_TXFCab;
-
 TXF_header g_TXFCab2;
 
 static TXF_header *TXF_Header(const txfKind_t *k) {

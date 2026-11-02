@@ -252,13 +252,9 @@ int NetServer_Receive(uint32_t time, void *data, int *dataSize, void *ctl, int *
 }
 
 cGVar GVar_UseServerPassword;
-
 cGVar GVar_ForceServerVehicle;
-
 cGVar GVar_ServerPassword;
-
 cGVar GVar_ServerName;
-
 cGVar GVar_ServerDataRateLimit;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

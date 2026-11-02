@@ -577,7 +577,6 @@ int cEntityList_Var(void *list, const char *name, int set, char **s, double *d, 
 }
 
 cGVar GVar_GridUseTopLimit;
-
 cGVar GVar_ShowDummy;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

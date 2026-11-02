@@ -263,11 +263,8 @@ const cAICharVtbl cAIBishop_vftable = {
 };
 
 cGVar GVar_ShootBishopAI;
-
 cGVar GVar_OffsetAngShootBishopAI;
-
 cGVar GVar_DistMaxShootBishopAI;
-
 cGVar GVar_TimeShootBishopAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

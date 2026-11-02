@@ -68,7 +68,6 @@ static void Mission_SetStation(cMissionScorer *self) {
 }
 
 int g_MissionStatus[3];
-
 float g_MissionStatusTime[3];
 
 /* Status0..2: the scorer time is taken on every set */
@@ -90,11 +89,8 @@ static int Mission_VarStatus(cMissionScorer *self, int k, byte set, int *i) {
 }
 
 int g_MissionBlinkOn;
-
 float g_MissionBlinkTime;
-
 float g_MissionBlinkLast;
-
 float g_MissionSolidTime;
 
 int cMissionScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
@@ -304,13 +300,9 @@ const cSpriteScorerVtbl cMissionScorer_vftable = {
 };
 
 cGVar GVar_NextMissionSecondLineOffsetXBox;
-
 cGVar GVar_NextMissionSecondLineOffsetPC;
-
 cGVar GVar_NextMissionFirstLineOffsetXBox;
-
 cGVar GVar_NextMissionFirstLineOffsetPC;
-
 cGVar GVar_ScorerMarginH;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

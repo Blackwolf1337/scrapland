@@ -266,7 +266,6 @@ const cCannonScorerVtbl cCannonScorer_vftable = {
 };
 
 cGVar GVar_CannonScorerNoAmmoSound;
-
 cGVar GVar_CannonScorerNoAmmoSoundVol;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -127,7 +127,6 @@ void Err_Report(int code, int fatal, const char *fmt, ...) {
 }
 
 int g_ErrLastCode;
-
 int g_ErrLastFatal;
 
 /* the text of the code and fmt after it; fatal into the log, else a message box */
@@ -149,90 +148,47 @@ void Err_VReport(int code, int fatal, const char *fmt, va_list ap) {
 }
 
 const char str_Error0[] = "Error 0";
-
 const char str_OperationNotPermitted[] = "Operation not permitted";
-
 const char str_NoSuchProcess[] = "No such process";
-
 const char str_InterruptedFunctionCall[] = "Interrupted function call";
-
 const char str_InputOutputError[] = "Input/output error";
-
 const char str_NoSuchDeviceOrAddress[] = "No such device or address";
-
 const char str_ArgListTooLong[] = "Arg list too long";
-
 const char str_ExecFormatError[] = "Exec format error";
-
 const char str_BadFileDescriptor[] = "Bad file descriptor";
-
 const char str_NoChildProcesses[] = "No child processes";
-
 const char str_ResourceTemporarilyUnavailable[] = "Resource temporarily unavailable";
-
 const char str_NotEnoughMemory[] = "Not enough memory";
-
 const char str_PermissionDenied[] = "Permission denied";
-
 const char str_BadAddress[] = "Bad address";
-
 const char str_ResourceDevice[] = "Resource device";
-
 const char str_FileAlreadyExists[] = "File already exists";
-
 const char str_ImproperLink[] = "Improper link";
-
 const char str_NoSuchDevice[] = "No such device";
-
 const char str_NotADirectory[] = "Not a directory";
-
 const char str_IsADirectory[] = "Is a directory";
-
 const char str_InvalidArgument[] = "Invalid argument";
-
 const char str_TooManyOpenFilesInSystem[] = "Too many open files in system";
-
 const char str_TooManyOpenFiles[] = "Too many open files";
-
 const char str_InappropriateIOControlOperation[] = "Inappropriate I/O control operation";
-
 const char str_FileTooLarge[] = "File too large";
-
 const char str_NoSpaceLeftOnDevice[] = "No space left on device";
-
 const char str_InvalidSeek[] = "Invalid seek";
-
 const char str_ReadOnlyFileSystem[] = "Read-only file system";
-
 const char str_TooManyLinks[] = "Too many links";
-
 const char str_BrokenPipe[] = "Broken pipe";
-
 const char str_DomainError[] = "Domain error";
-
 const char str_ResultTooLarge[] = "Result too large";
-
 const char str_ResourceDeadlockAvoided[] = "Resource deadlock avoided";
-
 const char str_FilenameTooLong[] = "Filename too long";
-
 const char str_NoLocksAvailable[] = "No locks available";
-
 const char str_FunctionNotImplemented[] = "Function not implemented";
-
 const char str_DirectoryNotEmpty[] = "Directory not empty";
-
 const char str_IllegalByteSequence[] = "Illegal byte sequence";
-
 const char str_InvalidFileFormat[] = "Invalid file format";
-
 const char str_FileHasZeroSize[] = "File has zero size";
-
 const char str_InvalidPath[] = "Invalid path";
-
 const char str_InvalidParameter[] = "Invalid parameter";
-
 const char str_FileNotFound[] = "File not found";
-
 const char str_UnknownError[] = "Unknown error";
 

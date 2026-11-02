@@ -935,7 +935,6 @@ const uint32_t VME_Exhaust10Table[10] = {
 };
 
 vec3_t VME_Exhaust10Pos[4];
-
 int VME_Exhaust10Table20[2];
 
 static void VME_Exhaust10(const VMExhaust *x) {
@@ -1043,7 +1042,6 @@ const uint32_t VME_Exhaust10Table3[10] = {
 };
 
 vec3_t VME_Exhaust10Pos2[6];
-
 int VME_Exhaust10Count;
 
 static void VME_Exhaust12(const VMExhaust *x) {
@@ -1094,7 +1092,6 @@ const uint32_t VME_Exhaust10Table4[10] = {
 };
 
 vec3_t VME_Exhaust10Pos3[2];
-
 int VME_Exhaust10Count2;
 
 static void VME_Exhaust13(const VMExhaust *x) {
@@ -1150,7 +1147,6 @@ const uint32_t VME_Exhaust10Table5[10] = {
 };
 
 vec3_t VME_Exhaust10Pos4[4];
-
 int VME_Exhaust10Table21[2];
 
 static void VME_Exhaust14(const VMExhaust *x) {
@@ -1541,7 +1537,6 @@ const uint32_t VME_Exhaust10Table11[10] = {
 };
 
 vec3_t VME_Exhaust10Pos6[4];
-
 int VME_Exhaust10Table22[2];
 
 static void VME_Exhaust27(const VMExhaust *x) {
@@ -1699,7 +1694,6 @@ const uint32_t VME_Exhaust10Table17[10] = {
 };
 
 vec3_t VME_Exhaust10Pos7[8];
-
 int VME_Exhaust10Count3;
 
 static void VME_Exhaust50(const VMExhaust *x) {
@@ -1752,7 +1746,6 @@ const uint32_t VME_Exhaust10Table19[10] = {
 };
 
 vec3_t VME_Exhaust10Pos8[3];
-
 int VME_Exhaust10Count4;
 
 static void VME_Exhaust60(const VMExhaust *x) {
@@ -1929,21 +1922,13 @@ void cVehicleMotorsEffects_Exhaust(cVehicleMotorsEffects *self, float thrust, fl
 }
 
 cGVar GVar_FXEngineTrailOffset;
-
 cGVar GVar_FXEngineTrailSize;
-
 cGVar GVar_FXEngineTrailDist;
-
 cGVar GVar_FXEngineGlowSizeAtt;
-
 cGVar GVar_FXEngineGlowDistFadeFrom;
-
 cGVar GVar_FXEngineBirthRate;
-
 cGVar GVar_FXEngineGlowSize;
-
 cGVar GVar_FXEngineGlowSizeMax;
-
 cGVar GVar_FXEngineTrailDistSpeedFactor;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

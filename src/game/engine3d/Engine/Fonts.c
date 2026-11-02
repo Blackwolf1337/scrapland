@@ -581,13 +581,9 @@ static void Fnt_Brightness(CFont3 *self, byte uni, float x, float y, uint32_t co
 }
 
 CMaterial *g_FntMatOutline;
-
 int g_FntMatOutlineInit;
-
 CMaterial *g_FntMatOutlineUni;
-
 int g_FntMatOutlineUniInit;
-
 CMaterial *g_MatFX1;
 
 void CFont3_PrintOutline(CFont3 *self, float x, float y, uint32_t color, const char *s) {

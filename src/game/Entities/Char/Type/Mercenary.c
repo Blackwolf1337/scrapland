@@ -30,13 +30,9 @@ void ChType_FXMercenaryDrink(cAbstractFile *params) {
 }
 
 cGVar GVar_MercenaryDrinkPosY;
-
 cGVar GVar_FXMercenaryDrinkFile;
-
 cGVar GVar_MercenaryDrinkPosX;
-
 cGVar GVar_MercenaryDrinkPosZ;
-
 cPy_NativeFunc NativeFunc_FXMercenaryDrink;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

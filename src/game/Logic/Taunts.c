@@ -64,9 +64,7 @@ cEntity *Logic_RandomCar(cEntityListData *list) {
 }
 
 int s_TauntCountsGuard;
-
 float s_TauntLastTime;
-
 int s_TauntTimeGuard;
 
 /* the kind of the police taunt of the ship (3, 4, 6 by the count of its race), -1 for none now */
@@ -313,17 +311,11 @@ byte Taunts_Warnings(float dt) {
 }
 
 const char str_SBi[] = "SBi";
-
 const char str_SBa[] = "SBa";
-
 const char str_SFu[] = "SFu";
-
 const char str_SPo[] = "SPo";
-
 cGVar GVar_PhoneCabWarningDist;
-
 cGVar GVar_TimeBetweeenTaunts2;
-
 cGVarFunction GVar_OnTaunt;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

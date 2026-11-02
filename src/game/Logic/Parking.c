@@ -154,7 +154,6 @@ static cParkingZone *Parking_Next(cParkingList *list) {
 }
 
 cEntity *g_ParkingShip;
-
 cEntity *g_ParkingOther;
 
 /* the ship (ParkingShip) or other entity (ParkingOther) in the zone, of the ParkingCheckRadius sphere */

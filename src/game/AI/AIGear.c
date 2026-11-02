@@ -256,7 +256,6 @@ const cAICharVtbl cAIGear_vftable = {
 };
 
 cGVar GVar_ShootGearAI;
-
 cGVar GVar_OffsetAngShootGearAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

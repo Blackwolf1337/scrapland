@@ -14,7 +14,6 @@ static BatchMesh *Batch_Entry(uint32_t i) {
 }
 
 BatchMesh *g_BatchOrder[512];
-
 uint32_t g_BatchUsed;
 
 void Batch_AddMesh(void *mesh, void *dev) {

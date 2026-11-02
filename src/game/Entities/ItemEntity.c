@@ -697,7 +697,6 @@ const cObjEntityVtbl cItemEntity_vftable = {
 };
 
 cGVar GVar_FXItemFadeMaxDist;
-
 cGVar GVar_NetItemDistAct;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

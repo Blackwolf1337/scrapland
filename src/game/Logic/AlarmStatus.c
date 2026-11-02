@@ -212,19 +212,12 @@ void Alarm_Update(cAlarm *self, float dt) {
 }
 
 cGVar GVar_AlarmFallDelta;
-
 cGVar GVar_PoliceTauntRace;
-
 cGVar GVar_AlarmGrowDelta;
-
 cGVar GVar_EasyAlarmFallFactor;
-
 cGVar GVar_AlarmFallMission;
-
 cGVarFunction GVar_AlarmCallback;
-
 cGVar GVar_UsrDefChar;
-
 cGVar GVar_GuaranteedChars;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

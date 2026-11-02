@@ -223,23 +223,14 @@ void Tesla_AimOn(cEntity *v) {
 }
 
 cGVar GVar_TeslaIDWeap;
-
 cGVar GVar_TeslaTrackForce;
-
 cGVar GVar_TeslaShootFile;
-
 cGVar GVar_TeslaMaxAngRangePad;
-
 cGVar GVar_TeslaUpRangeTime;
-
 cGVar GVar_TeslaHitForce;
-
 cGVar GVar_TeslaIDAmmo;
-
 cGVar GVar_TeslaAmmoCost;
-
 cGVar GVar_TeslaMaxAngRange;
-
 cPy_NativeFunc NativeFunc_TeslaPress;
 cPy_NativeFunc NativeFunc_TeslaRelease;
 cPy_NativeFunc NativeFunc_TeslaCreate;

@@ -204,7 +204,6 @@ const cAICharVtbl cAINurse_vftable = {
 };
 
 cGVar GVar_DistActionNurseAI;
-
 cGVar GVar_OffsetMoveNurseAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

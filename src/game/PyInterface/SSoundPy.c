@@ -397,37 +397,21 @@ PyMethodDef SSound_methods[18] = {
 SD_PY_MODULE(SSound, 0x42f558)
 
 const char str_PyMethod_SSound_LoadSound[] = "LoadSound";
-
 const char str_PyMethod_SSound_PlaySound[] = "PlaySound";
-
 const char str_PyMethod_SSound_Play[] = "Play";
-
 const char str_PyMethod_SSound_StopAllSounds[] = "StopAllSounds";
-
 const char str_PyMethod_SSound_SetPS[] = "SetPS";
-
 const char str_PyMethod_SSound_GetPS[] = "GetPS";
-
 const char str_PyMethod_SSound_UsePS[] = "UsePS";
-
 const char str_PyMethod_SSound_CreatePS[] = "CreatePS";
-
 const char str_PyMethod_SSound_SetMusic[] = "SetMusic";
-
 const char str_PyMethod_SSound_SetMusicVolume[] = "SetMusicVolume";
-
 const char str_PyMethod_SSound_OpenVoice[] = "OpenVoice";
-
 const char str_PyMethod_SSound_PlayVoice[] = "PlayVoice";
-
 const char str_PyMethod_SSound_StopVoice[] = "StopVoice";
-
 const char str_PyMethod_SSound_VoiceRemain[] = "VoiceRemain";
-
 const char str_PyMethod_SSound_SetVoiceVolume[] = "SetVoiceVolume";
-
 const char str_PyMethod_SSound_SetVoiceString[] = "SetVoiceString";
-
 const char str_PyMethod_SSound_DeleteAllSounds[] = "DeleteAllSounds";
 
 char str_PyDoc_SSound_SetVoiceVolume[] = "SetVoiceVolume(channel,volume) : set the volume of a voice.";

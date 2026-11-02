@@ -428,7 +428,6 @@ static int Img_SaveRefused(const char *name, uint32_t flags) {
 }
 
 bmpFileCab_t g_BmpFileHeader;
-
 bmpInfoCab_t g_BmpInfoCab;
 
 int BMP_Save(const char *name, const CBmp *orig, uint32_t flags) {

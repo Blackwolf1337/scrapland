@@ -935,23 +935,14 @@ const cVehicleMotorsVtbl cVehicleMotors_vftable = {
 };
 
 cGVar GVar_EnginePathFmt;
-
 cGVar GVar_FXVehicleDeathTrailFile;
-
 cGVar GVar_FXMotorSmokeFile;
-
 cGVar GVar_FXMotorHazeOffset;
-
 cGVar GVar_FXEngineTrailHideTime;
-
 cGVar GVar_FXEngineGlowDistFadeMid;
-
 cGVar GVar_FXMotorHaze;
-
 cGVar GVar_FXMotorHazeFile;
-
 cGVar GVar_FXEngineGlowDistFadeMult;
-
 cGVar GVar_FXEngineGlowDistFadeTo;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

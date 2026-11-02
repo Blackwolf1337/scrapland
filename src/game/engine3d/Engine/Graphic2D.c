@@ -61,9 +61,7 @@ static void Draw_Verts(void *dev, int type, uint32_t nPrim, const Vert2D *v, uin
 }
 
 Vert2D g_Verts2D[64];
-
 double g_Screen2DInvW = 0.00125;
-
 double g_Screen2DInvH = 0.0016666666666666668;
 
 int g_Graphic2DRot[4][4] = {
@@ -165,7 +163,6 @@ void CGraphic2D_Draw(CGraphic2D *self, const float *pos, const float *uv, const 
 }
 
 int g_Screen2DW = 800;
-
 int g_Screen2DH = 600;
 
 void Graphic2D_SetScreen(int w, int h) {

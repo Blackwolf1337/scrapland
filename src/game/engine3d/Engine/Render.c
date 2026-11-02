@@ -777,7 +777,6 @@ void Mat_StageEnvBump(CMaterial *mat, uint32_t flags, uint32_t stageEnv, uint32_
 }
 
 matrix_t g_MatBillboard;
-
 int g_UseHWEnvMap = 1;
 
 void Mat_StageEnvMap(CMaterial *mat, uint32_t flags, uint32_t stage, float bias) {
@@ -1406,7 +1405,6 @@ void Render_DrawTexRect(const box_t *rect, uint32_t cLeft, uint32_t cRight, void
 }
 
 byte g_D3DOn;
-
 extern const char str_BmpLightmapPsh[];
 extern const char str_BmpSpecularPsh[];
 extern const char str_BmpGlowmapMaskEnvBumpPsh[];
@@ -1477,9 +1475,7 @@ void Render_EndView(void) {
 }
 
 CMaterial *g_MatFX2;
-
 const CMaterial *g_MatFX3;
-
 const CMaterial *g_MatCurrent;
 
 void Render_ClearForced(void) {
@@ -1506,7 +1502,6 @@ static void Render_LogVersion(const char *fmt, uint32_t ver) {
 }
 
 D3DAdapterId g_Adapter;
-
 char g_DeviceStr[256];
 
 static void Render_LogDevice(const D3DCaps8 *caps, const d3dSurfaceDesc_t *mode, const d3dSurfaceDesc_t *zbuf) {
@@ -1555,21 +1550,13 @@ void Render_InitMatrices(void) {
 }
 
 int g_FrameCount;
-
 CMaterial *g_MatWhite;
-
 CMaterial *g_MatCheckerboard;
-
 CMaterial *g_MatGray;
-
 CMaterial *g_MatInvis;
-
 byte g_MipmapsOn;
-
 byte g_TexPow2;
-
 int g_DeviceLogged;
-
 byte g_UseShaders2;
 
 void Render_IniD3D(void) {
@@ -1714,7 +1701,6 @@ static int Render_WorldToDevice(const matrix_t *m) {
 }
 
 matrix_t g_MatWorld;
-
 int g_WorldSet = 1;
 
 int Render_SetWorldMatrix(const matrix_t *m, byte defer) {
@@ -1759,15 +1745,10 @@ int Render_SetWorld(void) {
 }
 
 byte g_StageMip[8];
-
 byte g_StageTile[8];
-
 uint32_t g_FilterMip = 1;
-
 uint32_t g_AnisotropyCur = 2;
-
 uint32_t g_FilterMin = 2;
-
 uint32_t g_FilterMag = 2;
 
 void Render_ResetState(void) {
@@ -1877,9 +1858,7 @@ static void Mat_Pass1(void *dev) {
 }
 
 CMaterial *g_MatCtx;
-
 int g_MatPass;
-
 int g_MatFrame;
 
 int Render_SetMaterial(void *m, int pass) {
@@ -1977,11 +1956,8 @@ static void Proj_Sub(matrix_t *out, const matrix_t *proj, float x0, float x1, fl
 }
 
 int g_TileState;
-
 int g_TileX;
-
 int g_TileY;
-
 int g_Tiles = 4;
 
 byte Render_ProjTile(const matrix_t *proj) {
@@ -2062,7 +2038,6 @@ typedef void(*fxTexUpdate_t)(void *fx, CMap *map);
 typedef void *(*fxTexGet_t)(void *fx);
 
 void *g_StageTex[8];
-
 int g_StageTexFrame[8];
 
 int Render_SetMap(uint32_t stage, CMap *map) {
@@ -2522,139 +2497,72 @@ int Render_MeshD3D(CMeshD3D *m, CRenderNode *r) {
 }
 
 const char str_BmpLightmapPsh[] = "bmp/lightmap.psh";
-
 const char str_BmpSpecularPsh[] = "bmp/specular.psh";
-
 const char str_BmpGlowmapMaskEnvBumpPsh[] = "bmp/GlowmapMaskEnvBump.psh";
-
 const char str_BmpMaskEnvBumpPsh[] = "bmp/MaskEnvBump.psh";
-
 const char str_BmpMaskEnvmapPsh[] = "bmp/MaskEnvmap.psh";
-
 const char str_BmpGlowmapMaskEnvmapPsh[] = "bmp/GlowmapMaskEnvmap.psh";
-
 const char str_BmpGlowmapMaskEnvmapLightmapPsh[] = "bmp/GlowmapMaskEnvmapLightmap.psh";
-
 const char str_BmpMaskEnvBumpLightmapPsh[] = "bmp/MaskEnvBumpLightmap.psh";
-
 const char str_BmpMaskEnvmapLightmapPsh[] = "bmp/MaskEnvmapLightmap.psh";
-
 const char str_BmpCloudTestPsh[] = "bmp/CloudTest.psh";
-
 const char str_BmpEnvmapPsh[] = "bmp/Envmap.psh";
-
 const char str_BmpEnvmapLightmapPsh[] = "bmp/EnvmapLightmap.psh";
-
 const char str_BmpGlowmapPsh[] = "bmp/Glowmap.psh";
-
 const char str_BmpGlowmapLightmapPsh[] = "bmp/GlowmapLightmap.psh";
-
 const char str_BmpHologramPsh[] = "bmp/Hologram.psh";
-
 const char str_BmpGlowFlickLightmapPsh[] = "bmp/GlowFlickLightmap.psh";
-
 const char str_BmpElectricPsh[] = "bmp/Electric.psh";
-
 const char str_BmpFirePsh[] = "bmp/Fire.psh";
-
 const char str_BmpGlassPsh[] = "bmp/Glass.psh";
-
 const char str_BmpWavesPsh[] = "bmp/Waves.psh";
-
 const char str_BmpNoisePsh[] = "bmp/Noise.psh";
-
 const char str_BmpBloomFilterPsh[] = "bmp/BloomFilter.psh";
-
 const char str_BmpBloomBlurPsh[] = "bmp/BloomBlur.psh";
-
 const char str_BmpBloomTargetPsh[] = "bmp/BloomTarget.psh";
-
 const char str_BmpMotionBlurAddPsh[] = "bmp/MotionBlurAdd.psh";
-
 const char str_BmpMotionBlurTargetPsh[] = "bmp/MotionBlurTarget.psh";
-
 const char str_BmpBlurTargetPsh[] = "bmp/BlurTarget.psh";
-
 const char str_BmpDUDVFilterPsh[] = "bmp/DUDVFilter.psh";
-
 const char str_BmpDUDVTargetPsh[] = "bmp/DUDVTarget.psh";
-
 const char str_BmpRadialBlurTargetPsh[] = "bmp/RadialBlurTarget.psh";
-
 cGVar GVar_R_VBIBTriLimit;
-
 cGVar GVar_R_CloudB;
-
 cGVar GVar_R_UseDefTexture;
-
 cGVar GVar_R_CloudScale1;
-
 cGVar GVar_R_GlowFlickMod;
-
 cGVar GVar_R_CloudEmi;
-
 cGVar GVar_R_LastDevice;
-
 cGVar GVar_R_UseDefMaterial;
-
 cGVar GVar_R_MipFilter;
-
 cGVar GVar_R_CullMode;
-
 CMaterial CMaterial_MatLine;
-
 cGVar GVar_R_EnvBlend;
-
 cGVar GVar_R_CloudG;
-
 cGVar GVar_R_EnvBumpScale;
-
 cGVar GVar_R_GlowFlickBump;
-
 cGVar GVar_R_CloudVel2x;
-
 cGVar GVar_R_MipmapBias;
-
 cGVar GVar_R_AlphaFog;
-
 cGVar GVar_R_PSMask;
-
 cGVar GVar_R_EnvMapOffset;
-
 cGVar GVar_R_CloudVel1y;
-
 cGVar GVar_R_CloudVel1x;
-
 cGVar GVar_R_CloudR;
-
 cGVar GVar_R_CloudVel2y;
-
 cGVar GVar_R_EnvMapScale;
-
 cGVar GVar_R_EnvMapViewDep;
-
 cGVar GVar_R_GlowFlickTile;
-
 cGVar GVar_R_CloudA;
-
 cGVar GVar_R_Anisotropy;
-
 cGVar GVar_R_EnvBumpBias;
-
 cGVar GVar_R_ShowSphereVis;
-
 cGVar GVar_R_MaterialLog;
-
 cGVar GVar_R_GlowFlickBRot;
-
 cGVar GVar_R_CloudScale2;
-
 cGVar GVar_R_GlowFlickRot;
-
 CMaterial CMaterial_MatDefault;
-
 cGVar GVar_R_PShaderCount;
-
 cGVar GVar_R_DecalZBias;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

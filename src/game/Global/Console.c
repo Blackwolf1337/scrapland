@@ -89,9 +89,7 @@ void DebugLog_Write(const char *text, uint32_t color, void *f) {
 }
 
 cConLine g_ConLines[23];
-
 int g_ConLine;
-
 int g_ConCol;
 
 /* the text into the ring of console lines; a line takes up to 127 characters, more are cut */
@@ -118,7 +116,6 @@ static void Con_AddLines(const char *text, uint32_t color) {
 }
 
 void *g_LogFile;
-
 void *g_LogAIFile;
 
 static void Con_Output(const char *text, uint32_t color) {

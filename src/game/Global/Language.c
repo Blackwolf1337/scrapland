@@ -94,7 +94,6 @@ void LangTable_Clear(HashTable *self) {
 }
 
 char *g_LangBuffer;
-
 char *g_IdLang;
 
 HashTable g_LangTable = { .numSlots = 457 };

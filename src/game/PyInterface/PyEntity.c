@@ -296,19 +296,12 @@ void cEntity_AddLink(cEntity *self, Nto1Node *node) {
 }
 
 const char str_CPyEntity[] = "cPyEntity";
-
 const char str_PyMethod_cPyEntity_Del[] = "Del";
-
 const char str_PyMethod_cPyEntity_SetModel[] = "SetModel";
-
 const char str_PyMethod_cPyEntity_SetFX[] = "SetFX";
-
 const char str_PyMethod_cPyEntity_GetTgAng[] = "GetTgAng";
-
 const char str_PyMethod_cPyEntity_DrawWeap[] = "DrawWeap";
-
 const char str_PyMethod_cPyEntity_IsType[] = "IsType";
-
 extern const char str_CPyEntity[];
 PyTypeObject cPyEntity_Type = {
 	.ob_refcnt = 1,

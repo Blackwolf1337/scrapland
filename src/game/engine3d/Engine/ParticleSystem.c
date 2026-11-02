@@ -1028,19 +1028,12 @@ const CParticleVtbl CParticleActive_vftable = {
 };
 
 cGVar GVar_R_Particles;
-
 cGVar GVar_R_ParticleScale;
-
 cGVar GVar_R_ParticleVelScale;
-
 cGVar GVar_R_ParticleFlags;
-
 cGVar GVar_R_ParticlesCount;
-
 cGVar GVar_R_ParticleSector;
-
 cGVar GVar_R_ParticleRate;
-
 cGVar GVar_R_ParticleLife;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

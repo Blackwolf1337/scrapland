@@ -384,53 +384,29 @@ done:
 }
 
 const char str_NO0[] = "NO 0";
-
 const char str_OFF0[] = "OFF 0";
-
 const char str_FALSE0[] = "FALSE 0";
-
 const char str_SI1[] = "SI 1";
-
 const char str_ON1[] = "ON 1";
-
 const char str_YES1[] = "YES 1";
-
 const char str_TRUE1[] = "TRUE 1";
-
 const char str_LOCAL1[] = "LOCAL 1";
-
 const char str_GLOBAL2[] = "GLOBAL 2";
-
 const char str_U0[] = "U 0";
-
 const char str_SINSIGNO0[] = "SIN_SIGNO 0";
-
 const char str_UNSIGNED0[] = "UNSIGNED 0";
-
 const char str_S1[] = "S 1";
-
 const char str_CONSIGNO1[] = "CON_SIGNO 1";
-
 const char str_SIGNED1[] = "SIGNED 1";
-
 const char str_MN0[] = "MN 0";
-
 const char str_MONO0[] = "MONO 0";
-
 const char str_ST1[] = "ST 1";
-
 const char str_ESTEREO1[] = "ESTEREO 1";
-
 const char str_STEREO1[] = "STEREO 1";
-
 const char str_TipoSiNo[] = "tipo_si_no";
-
 const char str_TipoBucle[] = "tipo_bucle";
-
 const char str_TipoNota[] = "tipo_nota";
-
 const char str_TipoSampleSigno[] = "tipo_sample_signo";
-
 const char str_TipoSampleMnst[] = "tipo_sample_mnst";
 
 void *ProcDat_YesNoNames[8] = {

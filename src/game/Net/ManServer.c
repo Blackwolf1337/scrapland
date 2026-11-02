@@ -269,7 +269,6 @@ static byte ClientNet_PingByte(cNetClient *c) {
 }
 
 const float g_NetMaxDist2 = 1.21e+10f;
-
 vec3_t g_NetOrigin;
 
 void cClientNetManager_Send(cUserNetManager *elem, uint32_t time) {
@@ -438,11 +437,8 @@ const cUserNetManagerVtbl cClientNetManager_vftable = {
 };
 
 cGVar GVar_NetMaxResourcesSend;
-
 cGVarFunction GVar_OnClientModify;
-
 cGVar GVar_ServerRemotePassword;
-
 cGVarFunction GVar_OnClientExit;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

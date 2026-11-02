@@ -22,7 +22,6 @@
 
 
 int g_NumScreens;
-
 CModel *g_Screens[10];
 
 void MeshEffect_AddScreen(CModel *m) {
@@ -32,7 +31,6 @@ void MeshEffect_AddScreen(CModel *m) {
 }
 
 int g_NumModels;
-
 CModel *g_Models[10];
 
 void MeshEffect_AddModel(CModel *m) {
@@ -65,11 +63,8 @@ static void MeshEffect_SetRS(uint32_t state, uint32_t value) {
 }
 
 int g_MeshEffectOn;
-
 int g_MeshEffectStencil;
-
 CMaterial g_MeshEffectMat;
-
 byte g_MeshEffectMatInit;
 
 void MeshEffect_Render(void) {

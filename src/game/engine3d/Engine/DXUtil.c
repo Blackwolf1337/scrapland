@@ -20,7 +20,6 @@ int Timer_CountTicks(int ms) {
 }
 
 int64_t g_TimerFixed;
-
 int64_t g_TimerBase;
 
 int Timer_GetFreq(int64_t *out) {
@@ -89,23 +88,14 @@ static float DXTimer_Seconds(int64_t t, int64_t freq) {
 }
 
 int g_DXTimerInit;
-
 int g_DXTimerQP;
-
 int64_t g_DXTimerFreq;
-
 int64_t g_DXTimerStop;
-
 int64_t g_DXTimerLast;
-
 int64_t g_DXTimerBase;
-
 double g_DXTimerLastD;
-
 double g_DXTimerBaseD;
-
 double g_DXTimerStopD;
-
 int g_DXTimerStopped = 1;
 
 float DXUtil_Timer(int cmd) {

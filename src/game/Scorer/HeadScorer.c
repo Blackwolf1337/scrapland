@@ -12,7 +12,6 @@
 #define HEAD_FOV 0.87266463f				/* 50 degrees */
 
 const double g_HeadRandOfs;
-
 const double g_HeadRandRange = 6.2831854820251465;
 
 cHeadScorer *cHeadScorer_ctor(cHeadScorer *self) {

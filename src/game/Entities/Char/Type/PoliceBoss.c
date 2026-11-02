@@ -186,27 +186,16 @@ void ChType_PoliceBossSphereHit(cAbstractFile *params) {
 }
 
 cGVar GVar_PoliceBossBrupBaseFile;
-
 cGVar GVar_PoliceBossBrupDebrisMax;
-
 cGVar GVar_PoliceBossBrupBounce1Sound;
-
 cGVar GVar_PoliceBossBrupDirRand;
-
 cGVar GVar_PoliceBossActionRadius;
-
 cGVar GVar_PoliceBossBrupPosY;
-
 cGVar GVar_PoliceBossBrupPosX;
-
 cGVar GVar_PoliceBossBrupBounceSoundVol;
-
 cGVar GVar_PoliceBossBrupBounce2Sound;
-
 cGVar GVar_PoliceBossBrupPosZ;
-
 cGVar GVar_PoliceBossBrupDebrisMin;
-
 cPy_NativeFunc NativeFunc_PoliceBossAction;
 cPy_NativeFunc NativeFunc_PoliceBossBrup;
 cPy_NativeFunc NativeFunc_FXPoliceBossBrup;

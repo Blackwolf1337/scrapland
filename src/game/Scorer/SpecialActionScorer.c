@@ -216,7 +216,6 @@ static byte SpecialAction_IsActive(cEntity *e, const char *action) {
 }
 
 int g_SpecialActionState = 1;
-
 float g_SpecialActionFade = 0.2f;
 
 /* the icon of the action in state (0 off, 1 on, 2 active), its color faded over 0.2 s after a change, and the
@@ -423,9 +422,7 @@ void SpecialAction_DrawTarget(cSpecialActionScorer *self, int player) {
 }
 
 int g_GearAimMode;
-
 float g_GearAimSpreadX = 1.5707964f;
-
 float g_GearAimSpreadY = 1.5707964f;
 
 /* 3, 11, 12: the gear aim with its cone and mode */
@@ -565,9 +562,7 @@ void cSpecialActionScorer_DrawCannon(cSpecialActionScorer *self, int player, con
 }
 
 cEntity *g_GearAimTarget;
-
 float g_GearAimOff[2];
-
 float g_GearAimBest = 3.4028235e+38f;
 
 float g_GearAimPos[2] = { 320.0f, 240.0f };
@@ -672,7 +667,6 @@ score:;
 }
 
 byte g_GearAimLocked;
-
 float g_GearAimLockTime;
 
 /* the special action of the gear: the target search around the player in a sphere, the aim cross that moves from the
@@ -801,11 +795,8 @@ const cScorerItemVtbl cSpecialActionScorer_vftable = {
 };
 
 cGVar GVar_GearTargetName;
-
 cGVar GVar_SpecialActionActive;
-
 cGVar GVar_FunctionarySpecialActionLow;
-
 cGVar GVar_GearLowWeaponEnergy;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

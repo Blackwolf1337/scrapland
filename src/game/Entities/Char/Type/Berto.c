@@ -94,17 +94,11 @@ void ChType_FXBertoAttack(cAbstractFile *params) {
 }
 
 cGVar GVar_FXBertoFlashFile;
-
 cGVar GVar_BertoFlashSound;
-
 cGVar GVar_BertoFlashDist;
-
 cGVar GVar_BertoFlashSoundVol;
-
 cGVar GVar_BertoAmmoCost;
-
 cGVar GVar_FXBertoAttackFile;
-
 cPy_NativeFunc NativeFunc_BertoAttack;
 cPy_NativeFunc NativeFunc_BertoHitEvent;
 cPy_NativeFunc NativeFunc_FXBertoAttack;

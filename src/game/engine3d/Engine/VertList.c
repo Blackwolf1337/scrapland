@@ -110,15 +110,10 @@ void CVertList_Write(CVertList *self, CFileIO *f) {
 }
 
 uint32_t g_hVShader_Tex1_XBox;
-
 uint32_t g_hVShader_Tex1C_XBox;
-
 uint32_t g_hVShader_LTex1_XBox;
-
 uint32_t g_hVShader_LTex1N_XBox;
-
 uint32_t g_hVShader_LTex2_XBox;
-
 uint32_t g_hVShader_LTex2N_XBox;
 
 uint32_t VertList_FormatFVF(int frmt) {

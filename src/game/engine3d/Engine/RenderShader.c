@@ -315,54 +315,29 @@ void RenderGamma_LogShaderMask(void) {
 }
 
 const char str_Fire[] = "Fire";
-
 const char str_Noise[] = "Noise";
-
 const char str_Diffuse[] = "Diffuse";
-
 const char str_Envmap[] = "Envmap";
-
 const char str_MaskEnvmap[] = "MaskEnvmap";
-
 const char str_MaskEnvBump[] = "MaskEnvBump";
-
 const char str_Glowmap[] = "Glowmap";
-
 const char str_GlowmapMaskEnvmap[] = "GlowmapMaskEnvmap";
-
 const char str_GlowmapMaskEnvBump[] = "GlowmapMaskEnvBump";
-
 const char str_Clouds[] = "Clouds";
-
 const char str_Hologram[] = "Hologram";
-
 const char str_GlowFlick[] = "GlowFlick";
-
 const char str_Electric[] = "Electric";
-
 const char str_Glass[] = "Glass";
-
 const char str_Waves[] = "Waves";
-
 const char str_Scroll[] = "Scroll";
-
 const char str_BloomFilter[] = "BloomFilter";
-
 const char str_BloomBlur[] = "BloomBlur";
-
 const char str_BloomTarget[] = "BloomTarget";
-
 const char str_MotionBlurAdd[] = "MotionBlurAdd";
-
 const char str_MotionBlurTarget[] = "MotionBlurTarget";
-
 const char str_BlurTarget[] = "BlurTarget";
-
 const char str_DUDVFilter[] = "DUDVFilter";
-
 const char str_DUDVTarget[] = "DUDVTarget";
-
 const char str_RadialBlurTarget[] = "RadialBlurTarget";
-
 const char str_DiffuseNoLit[] = "DiffuseNoLit";
 

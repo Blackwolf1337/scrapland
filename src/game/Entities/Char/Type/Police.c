@@ -264,13 +264,9 @@ void ChType_PoliceRestoreFreeTurn(cAbstractFile *params) {
 }
 
 cGVar GVar_FXPoliceStealFile;
-
 cGVar GVar_FXPoliceGearConversionFile;
-
 cGVar GVar_PoliceAlarmStepSTM;
-
 cGVar GVar_PoliceStealAmount;
-
 cPy_NativeFunc NativeFunc_PoliceActionPress;
 cPy_NativeFunc NativeFunc_PoliceRestoreFreeTurn;
 cPy_NativeFunc NativeFunc_PoliceEndActionMoney;

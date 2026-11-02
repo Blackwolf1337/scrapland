@@ -823,15 +823,10 @@ const cMapElementVtbl cFXElementsLensFlare_vftable = {
 };
 
 cGVar GVar_FXElementsFireDropMaxDist;
-
 cGVar GVar_FXElementsFireDropSoundAttIni;
-
 cGVar GVar_FXElementsFireDropSoundVol;
-
 cGVar GVar_FXElementsFireDropSoundAttEnd;
-
 cGVar GVar_FXElementsFireDropRateAtt;
-
 cGVar GVar_FXElementsFireDropSound;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -202,11 +202,8 @@ const cAICharVtbl cAIMessenger_vftable = {
 };
 
 cGVar GVar_OffsetAngShootMessengerAI;
-
 cGVar GVar_ShootMessengerAI;
-
 cGVar GVar_TimeShootMessengerAI;
-
 cGVar GVar_DistMaxShootMessengerAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

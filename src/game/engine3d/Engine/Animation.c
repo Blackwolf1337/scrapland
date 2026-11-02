@@ -1031,13 +1031,9 @@ void CAnimation_SwapNodes(CAnimation *self, uint32_t i, uint32_t j) {
 }
 
 cGVar GVar_OptAnimPosErr;
-
 cGVar GVar_OptimizeAnims;
-
 cGVar GVar_OptAnimFovErr;
-
 cGVar GVar_R_AnimNode_Count;
-
 cGVar GVar_OptAnimRotErr;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

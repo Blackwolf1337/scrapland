@@ -606,15 +606,10 @@ void AICtrl_SentinelDeath(cAbstractFile *params) {
 }
 
 cGVarFunction GVar_CreatePolice;
-
 cGVar GVar_PoliceLogicBelligerant;
-
 cGVarFunction GVar_CreateGear;
-
 cGVar GVar_SentinelNextGotoTime;
-
 cGVar GVar_SentinelAbortyNPCAttDist;
-
 cPy_NativeFunc NativeFunc_Police2GearEnd;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

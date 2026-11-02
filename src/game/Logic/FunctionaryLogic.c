@@ -801,7 +801,6 @@ const cFunctionaryLocalLogicVtbl cFunctionaryLocalLogic_vftable = {
 };
 
 cGVar GVar_FunctionarySpecialActionTime;
-
 cGVar GVar_GenCharRelaxSpeed;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

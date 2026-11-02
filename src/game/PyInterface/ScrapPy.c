@@ -2508,135 +2508,70 @@ PyMethodDef Scrap_methods[115] = {
 SD_PY_MODULE(Scrap, 0x42c610)
 
 const char str_PyMethod_Scrap_ScreenShot[] = "ScreenShot";
-
 const char str_PyMethod_Scrap_ProcessDVF[] = "ProcessDVF";
-
 const char str_PyMethod_Scrap_VideoPlayer[] = "VideoPlayer";
-
 const char str_PyMethod_Scrap_MusicPlayer[] = "MusicPlayer";
-
 const char str_PyMethod_Scrap_GetVideoCurrentMode[] = "GetVideoCurrentMode";
-
 const char str_PyMethod_Scrap_SetVideoCurrentMode[] = "SetVideoCurrentMode";
-
 const char str_PyMethod_Scrap_GetVideoModes[] = "GetVideoModes";
-
 const char str_PyMethod_Scrap_TestLine[] = "TestLine";
-
 const char str_PyMethod_Scrap_TestSphere[] = "TestSphere";
-
 const char str_PyMethod_Scrap_SphereCall[] = "SphereCall";
-
 const char str_PyMethod_Scrap_SetCallFunc[] = "SetCallFunc";
-
 const char str_PyMethod_Scrap_AddParamf[] = "AddParamf";
-
 const char str_PyMethod_Scrap_AddParami[] = "AddParami";
-
 const char str_PyMethod_Scrap_AddParams[] = "AddParams";
-
 const char str_PyMethod_Scrap_Execute[] = "Execute";
-
 const char str_PyMethod_Scrap_DelSaveVars[] = "DelSaveVars";
-
 const char str_PyMethod_Scrap_CreateSaveVar[] = "CreateSaveVar";
-
 const char str_PyMethod_Scrap_GetSaveVar[] = "GetSaveVar";
-
 const char str_PyMethod_Scrap_SetSaveVar[] = "SetSaveVar";
-
 const char str_PyMethod_Scrap_IncSaveVar[] = "IncSaveVar";
-
 const char str_PyMethod_Scrap_LoadGameVars[] = "LoadGameVars";
-
 const char str_PyMethod_Scrap_CreateSaveProfile[] = "CreateSaveProfile";
-
 const char str_PyMethod_Scrap_DeleteProfile[] = "DeleteProfile";
-
 const char str_PyMethod_Scrap_SetSaveProfile[] = "SetSaveProfile";
-
 const char str_PyMethod_Scrap_GetSavedProfilesList[] = "GetSavedProfilesList";
-
 const char str_PyMethod_Scrap_GetFreeBlocks[] = "GetFreeBlocks";
-
 const char str_PyMethod_Scrap_LaunchDashboard[] = "LaunchDashboard";
-
 const char str_PyMethod_Scrap_DeselectProfile[] = "DeselectProfile";
-
 const char str_PyMethod_Scrap_SaveGameVars[] = "SaveGameVars";
-
 const char str_PyMethod_Scrap_SaveConfig[] = "SaveConfig";
-
 const char str_PyMethod_Scrap_GetSaveGamesList[] = "GetSaveGamesList";
-
 const char str_PyMethod_Scrap_SetLanguage[] = "SetLanguage";
-
 const char str_PyMethod_Scrap_GetLanguage[] = "GetLanguage";
-
 const char str_PyMethod_Scrap_GetLangStr[] = "GetLangStr";
-
 const char str_PyMethod_Scrap_GetLangEntries[] = "GetLangEntries";
-
 const char str_PyMethod_Scrap_GetAlarm[] = "GetAlarm";
-
 const char str_PyMethod_Scrap_SetAlarm[] = "SetAlarm";
-
 const char str_PyMethod_Scrap_SetAlarmGrow[] = "SetAlarmGrow";
-
 const char str_PyMethod_Scrap_GetAlarmChars[] = "GetAlarmChars";
-
 const char str_PyMethod_Scrap_SetAlarmChar[] = "SetAlarmChar";
-
 const char str_PyMethod_Scrap_GetLockAlarm[] = "GetLockAlarm";
-
 const char str_PyMethod_Scrap_SetLockAlarm[] = "SetLockAlarm";
-
 const char str_PyMethod_Scrap_GetMoney[] = "GetMoney";
-
 const char str_PyMethod_Scrap_SetMoney[] = "SetMoney";
-
 const char str_PyMethod_Scrap_AddParkingZone[] = "AddParkingZone";
-
 const char str_PyMethod_Scrap_GetFarestParked[] = "GetFarestParked";
-
 const char str_PyMethod_Scrap_GetNearestParked[] = "GetNearestParked";
-
 const char str_PyMethod_Scrap_AddItem[] = "AddItem";
-
 const char str_PyMethod_Scrap_InitLoading[] = "InitLoading";
-
 const char str_PyMethod_Scrap_EndLoading[] = "EndLoading";
-
 const char str_PyMethod_Scrap_Exit[] = "Exit";
-
 const char str_PyMethod_Scrap_FileExist[] = "FileExist";
-
 const char str_PyMethod_Scrap_RunApp[] = "RunApp";
-
 const char str_PyMethod_Scrap_Achievement[] = "Achievement";
-
 const char str_PyMethod_Scrap_OpenStore[] = "OpenStore";
-
 const char str_PyMethod_Scrap_IsApp[] = "IsApp";
-
 const char str_PyMethod_Scrap_GetSteamID[] = "GetSteamID";
-
 const char str_PyMethod_Scrap_GetSteamTicket[] = "GetSteamTicket";
-
 const char str_PyMethod_Scrap_IsSteam[] = "IsSteam";
-
 const char str_PyMethod_Scrap_GetGogID[] = "GetGogID";
-
 const char str_PyMethod_Scrap_Print[] = "Print";
-
 const char str_PyMethod_Scrap_ConsoleOut[] = "ConsoleOut";
-
 const char str_PyMethod_Scrap_ConsoleError[] = "ConsoleError";
-
 const char str_PyMethod_Scrap_DebugInput[] = "DebugInput";
-
 const char str_PyMethod_Scrap_Verbose[] = "Verbose";
-
 const char str_PyMethod_Scrap_Ver[] = "Ver";
 
 char str_PyDoc_Scrap_EntityListGet[] =
@@ -2644,9 +2579,7 @@ char str_PyDoc_Scrap_EntityListGet[] =
 	"tidades";
 
 const char str_PyMethod_Scrap_ExtractPack[] = "ExtractPack";
-
 const char str_PyMethod_Scrap_OpenPack[] = "OpenPack";
-
 const char str_PyMethod_Scrap_ClosePack[] = "ClosePack";
 
 char str_PyDoc_Scrap_CreateEntityList[] = "CreateEntityList(listName) :  Crea una lista de entidades";
@@ -2660,33 +2593,28 @@ const char str_PyMethod_Scrap_Preload3DObject[] = "Preload3DObject";
 char str_PyDoc_Scrap_GetCam[] = "name GetCam(i) :  Obtiene el nombre de una entidad camara";
 
 const char str_PyMethod_Scrap_PreloadAnm[] = "PreloadAnm";
-
 const char str_PyMethod_Scrap_PythonCompileAll[] = "PythonCompileAll";
 
 char str_PyDoc_Scrap_GetMinCamDist[] =
 	"GetMinCamDist(x,y,z) :  Obtiene la distancia de un punto a la camara";
 
 const char str_PyMethod_SScorer_Get[] = "Get";
-
 const char str_PyMethod_Scrap_Def[] = "Def";
 
 char str_PyDoc_Scrap_LoadLevel[] = "LoadLevel(string name) :  Carga un nivel en el siguiente frame";
 
 const char str_PyMethod_Scrap_Des[] = "Des";
-
 const char str_PyMethod_SScorer_Set[] = "Set";
 
 char str_PyDoc_Scrap_GetLevelPath[] = "levelpath GetLevelPath() :  Obtiene el path del nivel actual";
 
 const char str_PyMethod_Scrap_ShowGVars[] = "ShowGVars";
-
 const char str_PyMethod_Scrap_SwitchMissionArrows[] = "SwitchMissionArrows";
 
 char str_PyDoc_Scrap_GetNewLevelPath[] =
 	"levelpath GetNewLevelPath() :  Obtiene el path del próximo nivel";
 
 const char str_PyMethod_Scrap_GetTime[] = "GetTime";
-
 const char str_PyMethod_Scrap_GetTimeSpeed[] = "GetTimeSpeed";
 
 char str_PyDoc_Scrap_GetFloor[] = "i GetFloor(y) :  Obtiene el numero de piso en el que esta.";
@@ -2697,27 +2625,23 @@ char str_PyDoc_Scrap_CreateElements[88] =
 	"CreateElements() :  Crea una lista de elementos estaticos que pertenecen al mapa.";
 
 const char str_PyMethod_Scrap_SetTimeSpeed[] = "SetTimeSpeed";
-
 const char str_PyMethod_Scrap_AddScheduledFunc[] = "AddScheduledFunc";
 
 char str_PyDoc_Scrap_CallElements[] =
 	"CallElements('Function') :  llama una funcion Function(Name,x,y,z,angx,angy)";
 
 const char str_PyMethod_Scrap_DeleteScheduledFuncs[] = "DeleteScheduledFuncs";
-
 const char str_PyMethod_Scrap_SetCam[] = "SetCam";
 
 char str_PyDoc_Scrap_SetGrid[] = "SetGrid(x,y,z) :  Modifica las dimensiones del grid de colision";
 
 const char str_PyMethod_Scrap_GetCam[] = "GetCam";
-
 const char str_PyMethod_Scrap_GetMinCamDist[] = "GetMinCamDist";
 
 char str_PyDoc_Scrap_GetNetFlags[] =
 	"GetNetFlags() :  Obtiene la tupla de flags : client, server, dedicated";
 
 const char str_PyMethod_Scrap_GetEntity[] = "GetEntity";
-
 const char str_PyMethod_Scrap_GetFirst[] = "GetFirst";
 
 char str_PyDoc_Scrap_Rand[] = "Rand(min,max) :  Obtiene un numero seudo-aleatorio entre (min,max)";
@@ -2727,21 +2651,18 @@ const char str_PyMethod_Scrap_CreateEntity[] = "CreateEntity";
 char str_PyDoc_Scrap_Round[] = "Round(num) : Redondea un numero real al entero más cercano.";
 
 const char str_PyMethod_Scrap_UsrEntity[] = "UsrEntity";
-
 const char str_PyMethod_Scrap_EntityListGet[] = "EntityListGet";
 
 char str_PyDoc_Scrap_NextDummySearch[] =
 	"(s(ddd)(dd)i) NextDummySearch() : Obtiene el proximo dummy, sino None";
 
 const char str_PyMethod_Scrap_EntityListSet[] = "EntityListSet";
-
 const char str_PyMethod_Scrap_CreateEntityList[] = "CreateEntityList";
 
 char str_PyDoc_Scrap_StartDummySearch[] =
 	"StartDummySearch(name,usewildcards) : Inicia la busqueda de dummies en el mapa";
 
 const char str_PyMethod_Scrap_LoadLevel[] = "LoadLevel";
-
 const char str_PyMethod_Scrap_GetLevelPath[] = "GetLevelPath";
 
 char str_PyDoc_Scrap_ModelInfo[] =
@@ -2752,20 +2673,17 @@ const char str_PyMethod_Scrap_GetNewLevelPath[] = "GetNewLevelPath";
 char str_PyDoc_Scrap_ListModels[] = "ListModels() : Muestra una lista de modelos y escenas";
 
 const char str_PyMethod_Scrap_SetGrid[] = "SetGrid";
-
 const char str_PyMethod_Scrap_GetFloor[] = "GetFloor";
 
 char str_PyDoc_Scrap_BuildFont[] =
 	"BuildFont(name,size) : Construye un archivo de fuente de letras a partir de un .TGA dado";
 
 const char str_PyMethod_Scrap_CreateElements[] = "CreateElements";
-
 const char str_PyMethod_Scrap_CallElements[] = "CallElements";
 
 char str_PyDoc_Scrap_ScreenShot[] = "ScreenShot(filename) : Screenshot of the current frame";
 
 const char str_PyMethod_Scrap_GetNetFlags[] = "GetNetFlags";
-
 const char str_PyMethod_Scrap_StartDummySearch[] = "StartDummySearch";
 
 char str_PyDoc_Scrap_ProcessDVF[] = "ProcessDVF(filename,command) : send a dvf command";
@@ -2779,19 +2697,16 @@ const char str_PyMethod_Scrap_Rand[] = "Rand";
 char str_PyDoc_Scrap_MusicPlayer[] = "MusicPlayer(filename[,command,param1]) : play music file";
 
 const char str_PyMethod_Scrap_Round[] = "Round";
-
 const char str_PyMethod_Scrap_SetDebrisSys[] = "SetDebrisSys";
 
 char str_PyDoc_Scrap_GetVideoCurrentMode[] = "GetVideoCurrentMode() : Get Video Current Mode Index";
 
 const char str_PyMethod_Scrap_DropDebris[] = "DropDebris";
-
 const char str_PyMethod_Scrap_SetDebrisValue[] = "SetDebrisValue";
 
 char str_PyDoc_Scrap_SetVideoCurrentMode[] = "SetVideoCurrentMode() : Set Video Current Mode Index";
 
 const char str_PyMethod_Scrap_ModelInfo[] = "ModelInfo";
-
 const char str_PyMethod_Scrap_ListModels[] = "ListModels";
 
 char str_PyDoc_Scrap_GetVideoModes[] = "GetVideoModes(NumMode) : Get Video Mode Info";

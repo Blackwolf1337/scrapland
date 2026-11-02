@@ -52,7 +52,6 @@ static void Stencil_RS(uint32_t state, uint32_t value) {
 }
 
 StencilBlock *g_StencilBlock;
-
 int g_StencilGroups;
 
 void StencilBlock_SetLights(byte on) {
@@ -165,11 +164,8 @@ static void Stencil_SetGroup(StencilBlock *b, void *vb) {
 }
 
 void *g_StencilVB;
-
 void *g_StencilIB;
-
 vec3_t *g_StencilSegments;
-
 int g_StencilSegs;
 
 /* the sides of the volumes: a quad from each silhouette segment to its far ends (pass 0 fills the buffer) */
@@ -208,11 +204,8 @@ void Stencil_DrawSegs(int pass) {
 }
 
 void *g_StencilVB2;
-
 void *g_StencilVB3;
-
 vec3_t *g_StencilTriInv;
-
 int g_StencilInv;
 
 /* the caps of the volumes: the triangles facing away from the light at their far ends and turned around in place
@@ -266,13 +259,9 @@ void Stencil_DrawTris(int pass) {
 }
 
 byte g_RenderFlagNeg;
-
 uint32_t g_RenderFlagMask;
-
 int g_ShadowsStencil;
-
 void *g_StencilRender;
-
 int g_StencilCapture;
 
 void ShadowsStencil_Set(byte on) {
@@ -311,15 +300,10 @@ void ShadowsStencil_Capture(byte on) {
 }
 
 vec3_t g_ShadowLightPos;
-
 vec3_t g_ShadowLightDir;
-
 CLight *g_ShadowLight;
-
 float g_ShadowCos;
-
 int g_ShadowLightType = 5002;
-
 float g_ShadowRange = 1000.0f;
 
 void E3D_SetShadowLight(CLight *l, int unused) {
@@ -565,7 +549,6 @@ cGVar GVar_R_StencilViewDisp;
 #define LIGHT_SPOT 0x1389
 
 byte g_TriFacing[65536];
-
 int g_StencilGroupsMax;
 
 void Stencil_Mesh(struct CVertList *v, const void *tris, uint32_t nTri, struct CMeshD3D *m, struct CRenderNode *r) {
@@ -738,17 +721,11 @@ done:
 }
 
 cGVar GVar_R_StencilRefModels;
-
 cGVar GVar_R_StencilMult;
-
 cGVar GVar_R_ShowStencil;
-
 cGVar GVar_R_StencilTog;
-
 cGVar GVar_R_StencilSelf;
-
 cGVar GVar_R_StencilRefWorld;
-
 cGVar GVar_R_StencilShadows;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
