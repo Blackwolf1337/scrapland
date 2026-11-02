@@ -15,16 +15,26 @@
 #include "scrap/fxmisc.h"
 #include "scrap/fxweapons.h"
 
-#define COBJELEMENTFXVEHICLEDAMAGE_VFTABLE GAME_VFTABLE(cObjElementFXVehicleDamage_vftable)
-#define COBJELEMENTFXVEHICLEFIRE_VFTABLE GAME_VFTABLE(cObjElementFXVehicleFire_vftable)
-#define COBJELEMENTFXFIREDENTITY_VFTABLE GAME_VFTABLE(cObjElementFXFiredEntity_vftable)
-#define COBJELEMENTFXVEHICLEEMI_VFTABLE GAME_VFTABLE(cObjElementFXVehicleEMI_vftable)
-#define COBJELEMENTFXFIREDDEBRIS_VFTABLE GAME_VFTABLE(cObjElementFXFiredDebris_vftable)
-#define COBJELEMENTFXSMOKEDEBRIS_VFTABLE GAME_VFTABLE(cObjElementFXSmokeDebris_vftable)
-#define COBJELEMENTFXVEHICLEDEATHTRAIL_VFTABLE GAME_VFTABLE(cObjElementFXVehicleDeathTrail_vftable)
-#define COBJELEMENTFXVEHICLESPUTNIK_VFTABLE GAME_VFTABLE(cObjElementFXVehicleSputnik_vftable)
-#define COBJELEMENTFXVEHICLESPAWN_VFTABLE GAME_VFTABLE(cObjElementFXVehicleSpawn_vftable)
-#define COBJELEMENTFXVEHICLEACCELERATOR_VFTABLE GAME_VFTABLE(cObjElementFXVehicleAccelerator_vftable)
+extern const cObjElementFXVtbl cObjElementFXVehicleDamage_vftable;
+#define COBJELEMENTFXVEHICLEDAMAGE_VFTABLE (&cObjElementFXVehicleDamage_vftable)
+extern const cObjElementFXVtbl cObjElementFXVehicleFire_vftable;
+#define COBJELEMENTFXVEHICLEFIRE_VFTABLE (&cObjElementFXVehicleFire_vftable)
+extern const cObjElementFXVtbl cObjElementFXFiredEntity_vftable;
+#define COBJELEMENTFXFIREDENTITY_VFTABLE (&cObjElementFXFiredEntity_vftable)
+extern const cObjElementFXVtbl cObjElementFXVehicleEMI_vftable;
+#define COBJELEMENTFXVEHICLEEMI_VFTABLE (&cObjElementFXVehicleEMI_vftable)
+extern const cObjElementFXVtbl cObjElementFXFiredDebris_vftable;
+#define COBJELEMENTFXFIREDDEBRIS_VFTABLE (&cObjElementFXFiredDebris_vftable)
+extern const cObjElementFXVtbl cObjElementFXSmokeDebris_vftable;
+#define COBJELEMENTFXSMOKEDEBRIS_VFTABLE (&cObjElementFXSmokeDebris_vftable)
+extern const cObjElementFXVtbl cObjElementFXVehicleDeathTrail_vftable;
+#define COBJELEMENTFXVEHICLEDEATHTRAIL_VFTABLE (&cObjElementFXVehicleDeathTrail_vftable)
+extern const cObjElementFXVtbl cObjElementFXVehicleSputnik_vftable;
+#define COBJELEMENTFXVEHICLESPUTNIK_VFTABLE (&cObjElementFXVehicleSputnik_vftable)
+extern const cObjElementFXVtbl cObjElementFXVehicleSpawn_vftable;
+#define COBJELEMENTFXVEHICLESPAWN_VFTABLE (&cObjElementFXVehicleSpawn_vftable)
+extern const cObjElementFXVtbl cObjElementFXVehicleAccelerator_vftable;
+#define COBJELEMENTFXVEHICLEACCELERATOR_VFTABLE (&cObjElementFXVehicleAccelerator_vftable)
 
 #define FXV_MOTORS 4
 #define FXV_EXHAUSTS (FXV_MOTORS * 2)
@@ -306,61 +316,57 @@ void cObjElementFXVehicleEMI_dtor(void *self);
 void cObjElementFXVehicleFire_dtor(void *self);
 void cObjElementFXVehicleSpawn_dtor(void *self);
 void cObjElementFXVehicleSputnik_dtor(void *self);
-void *cObjElementFXFiredDebris_Delete(void *self, uint32_t flags);
-void *cObjElementFXFiredEntity_Delete(void *self, uint32_t flags);
-void *cObjElementFXSmokeDebris_Delete(void *self, uint32_t flags);
-void *cObjElementFXVehicleAccelerator_Delete(void *self, uint32_t flags);
-void *cObjElementFXVehicleDamage_Delete(void *self, uint32_t flags);
-cObjElementFXVehicleDeathTrail *cObjElementFXVehicleDeathTrail_Delete(cObjElementFXVehicleDeathTrail *self,
-	uint32_t flags);
-void *cObjElementFXVehicleEMI_Delete(void *self, uint32_t flags);
-void *cObjElementFXVehicleFire_Delete(void *self, uint32_t flags);
-void *cObjElementFXVehicleSpawn_Delete(void *self, uint32_t flags);
-void *cObjElementFXVehicleSputnik_Delete(void *self, uint32_t flags);
+cObjElementFX *cObjElementFXFiredDebris_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXFiredEntity_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXSmokeDebris_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXVehicleAccelerator_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXVehicleDamage_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXVehicleDeathTrail_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXVehicleEMI_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXVehicleFire_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXVehicleSpawn_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXVehicleSputnik_Delete(cObjElementFX *base, byte flags);
 
 /* Update */
-void cObjElementFXFiredDebris_Update(cObjElementFXFiredDebris *self, cDebris *debris, float dt);
-void cObjElementFXFiredEntity_Update(cObjElementFXFiredEntity *self, cDebris *debris, float dt);
-void cObjElementFXVehicleAccelerator_Update(cObjElementFXVehicleAccelerator *self, cDebris *debris,
-	float dt);
+void cObjElementFXFiredDebris_Update(cObjElementFX *base, cDebris *debris, float dt);
+void cObjElementFXFiredEntity_Update(cObjElementFX *base, cDebris *debris, float dt);
+void cObjElementFXVehicleAccelerator_Update(cObjElementFX *base, cDebris *debris, float dt);
 /* while the ship is seen: debris, sparks, smoke and flames at its vertices by the damage level, the trail of smoke */
-void cObjElementFXVehicleDamage_Update(cObjElementFXVehicleDamage *self, cDebris *debris, float dt);
-void cObjElementFXVehicleEMI_Update(cObjElementFXVehicleEMI *self, cDebris *debris, float dt);
-void cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, cDebris *debris, float dt);
-void cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *self, cDebris *debris, float dt);
-void cObjElementFXSmokeDebris_Update(cObjElementFXSmokeDebris *self, cDebris *debris, float dt);
-void cObjElementFXVehicleSpawn_Update(cObjElementFXVehicleSpawn *self, cDebris *debris, float dt);
+void cObjElementFXVehicleDamage_Update(cObjElementFX *base, cDebris *debris, float dt);
+void cObjElementFXVehicleEMI_Update(cObjElementFX *base, cDebris *debris, float dt);
+void cObjElementFXVehicleFire_Update(cObjElementFX *base, cDebris *debris, float dt);
+void cObjElementFXVehicleSputnik_Update(cObjElementFX *base, cDebris *debris, float dt);
+void cObjElementFXSmokeDebris_Update(cObjElementFX *base, cDebris *debris, float dt);
+void cObjElementFXVehicleSpawn_Update(cObjElementFX *base, cDebris *debris, float dt);
 
 /* IsAlive; the ones of FiredDebris, SmokeDebris, Accelerator and Spawn are FXMisc_Alive, the DeathTrail is the
  * code of cObjElementFXDevastatorShoot (Update, IsAlive, Reset) */
-byte cObjElementFXFiredEntity_IsAlive(cObjElementFXFiredEntity *self, cDebris *debris, cDebrisSys *sys);
-byte cObjElementFXVehicleDamage_IsAlive(cObjElementFXVehicleDamage *self, cDebris *debris,
-	cDebrisSys *sys);
-byte cObjElementFXVehicleEMI_IsAlive(cObjElementFXVehicleEMI *self, cDebris *debris, cDebrisSys *sys);
-byte cObjElementFXVehicleFire_IsAlive(cObjElementFXVehicleFire *self, cDebris *debris, cDebrisSys *sys);
-byte cObjElementFXVehicleSputnik_IsAlive(cObjElementFXVehicleSputnik *self, cDebris *debris,
-	cDebrisSys *sys);
+byte cObjElementFXFiredEntity_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys);
+byte cObjElementFXVehicleDamage_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys);
+byte cObjElementFXVehicleEMI_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys);
+byte cObjElementFXVehicleFire_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys);
+byte cObjElementFXVehicleSputnik_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys);
 
-void cObjElementFXFiredDebris_Start(cObjElementFXFiredDebris *self, cDebris *debris);
-void cObjElementFXFiredEntity_Start(cObjElementFXFiredEntity *self, cDebris *debris);
-void cObjElementFXSmokeDebris_Start(cObjElementFXSmokeDebris *self, cDebris *debris);
-void cObjElementFXVehicleAccelerator_Start(cObjElementFXVehicleAccelerator *self, cDebris *debris);
-void cObjElementFXVehicleDamage_Start(cObjElementFXVehicleDamage *self, cDebris *debris);
-void cObjElementFXVehicleDeathTrail_Start(cObjElementFXVehicleDeathTrail *self, cDebris *debris);
-void cObjElementFXVehicleEMI_Start(cObjElementFXVehicleEMI *self, cDebris *debris);
-void cObjElementFXVehicleFire_Start(cObjElementFXVehicleFire *self, cDebris *debris);
-void cObjElementFXVehicleSpawn_Start(cObjElementFXVehicleSpawn *self, cDebris *debris);
-void cObjElementFXVehicleSputnik_Start(cObjElementFXVehicleSputnik *self, cDebris *debris);
+void cObjElementFXFiredDebris_Start(cObjElementFX *base, cDebris *debris);
+void cObjElementFXFiredEntity_Start(cObjElementFX *base, cDebris *debris);
+void cObjElementFXSmokeDebris_Start(cObjElementFX *base, cDebris *debris);
+void cObjElementFXVehicleAccelerator_Start(cObjElementFX *base, cDebris *debris);
+void cObjElementFXVehicleDamage_Start(cObjElementFX *base, cDebris *debris);
+void cObjElementFXVehicleDeathTrail_Start(cObjElementFX *base, cDebris *debris);
+void cObjElementFXVehicleEMI_Start(cObjElementFX *base, cDebris *debris);
+void cObjElementFXVehicleFire_Start(cObjElementFX *base, cDebris *debris);
+void cObjElementFXVehicleSpawn_Start(cObjElementFX *base, cDebris *debris);
+void cObjElementFXVehicleSputnik_Start(cObjElementFX *base, cDebris *debris);
 
-void cObjElementFXFiredDebris_Reset(cObjElementFXFiredDebris *self, cDebris *debris);
-void cObjElementFXFiredEntity_Reset(cObjElementFXFiredEntity *self, cDebris *debris);
-void cObjElementFXSmokeDebris_Reset(cObjElementFXSmokeDebris *self, cDebris *debris);
-void cObjElementFXVehicleAccelerator_Reset(cObjElementFXVehicleAccelerator *self, cDebris *debris);
-void cObjElementFXVehicleDamage_Reset(cObjElementFXVehicleDamage *self, cDebris *debris);
-void cObjElementFXVehicleEMI_Reset(cObjElementFXVehicleEMI *self, cDebris *debris);
-void cObjElementFXVehicleFire_Reset(cObjElementFXVehicleFire *self, cDebris *debris);
-void cObjElementFXVehicleSpawn_Reset(cObjElementFXVehicleSpawn *self, cDebris *debris);
-void cObjElementFXVehicleSputnik_Reset(cObjElementFXVehicleSputnik *self, cDebris *debris);
+void cObjElementFXFiredDebris_Reset(cObjElementFX *base, cDebris *debris);
+void cObjElementFXFiredEntity_Reset(cObjElementFX *base, cDebris *debris);
+void cObjElementFXSmokeDebris_Reset(cObjElementFX *base, cDebris *debris);
+void cObjElementFXVehicleAccelerator_Reset(cObjElementFX *base, cDebris *debris);
+void cObjElementFXVehicleDamage_Reset(cObjElementFX *base, cDebris *debris);
+void cObjElementFXVehicleEMI_Reset(cObjElementFX *base, cDebris *debris);
+void cObjElementFXVehicleFire_Reset(cObjElementFX *base, cDebris *debris);
+void cObjElementFXVehicleSpawn_Reset(cObjElementFX *base, cDebris *debris);
+void cObjElementFXVehicleSputnik_Reset(cObjElementFX *base, cDebris *debris);
 
 /* the setters after the start by the vehicle (Entities/Vehicle) */
 void cObjElementFXFiredEntity_SetEntity(cObjElementFXFiredEntity *self, cEntity *e);

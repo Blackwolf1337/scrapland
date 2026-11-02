@@ -37,11 +37,6 @@ static inline float FXA_Rand(double range, double add) {
 }
 
 /* the same helpers as the constructors of FXMisc.c (kept local, FXMisc.c has them static) */
-static inline void FXA_SetVtbl(void *self, void *vt) {
-	*(void **)self = NULL;
-	*(void **)self = vt;
-}
-
 static inline void FXA_TrailsCtor(CGameTrail *t, uint32_t n) {
 	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, (void *)CGameTrail_ctor, (void *)CGameTrail_dtor);
 }
@@ -116,7 +111,7 @@ static void FXA_RandomDirScaled(vec3_t *out, float r) {
 void *cObjElementFXBankMasterAttack_ctor(void *self) {
 	cObjElementFXBankMasterAttack *s = self;
 
-	FXA_SetVtbl(s, VT_FXBANKMASTERATTACK);
+	FXObj_SetVtbl(s, VT_FXBANKMASTERATTACK);
 	CGameParticles_ctor(&s->particles);
 	CGameTrail_ctor(&s->trail);
 	CGameTrail_ctor(&s->trail2);
@@ -130,7 +125,7 @@ void *cObjElementFXBankMasterAttack_ctor(void *self) {
 void *cObjElementFXBankMasterSuction_ctor(void *self) {
 	cObjElementFXBankMasterSuction *s = self;
 
-	FXA_SetVtbl(s, VT_FXBANKMASTERSUCTION);
+	FXObj_SetVtbl(s, VT_FXBANKMASTERSUCTION);
 	CGameParticles_ctor(&s->particles);
 	CGameTrail_ctor(&s->trail);
 	s->started = 0;
@@ -144,7 +139,7 @@ void *cObjElementFXBankMasterSuction_ctor(void *self) {
 void *cObjElementFXBankerSteal_ctor(void *self) {
 	cObjElementFXBankerSteal *s = self;
 
-	FXA_SetVtbl(s, VT_FXBANKERSTEAL);
+	FXObj_SetVtbl(s, VT_FXBANKERSTEAL);
 	CGameParticles_ctor(&s->particles);
 	s->started = 0;
 	s->ent = NULL;
@@ -159,7 +154,7 @@ void *cObjElementFXBankerSteal_ctor(void *self) {
 void *cObjElementFXBertoAttack_ctor(void *self) {
 	cObjElementFXBertoAttack *s = self;
 
-	FXA_SetVtbl(s, VT_FXBERTOATTACK);
+	FXObj_SetVtbl(s, VT_FXBERTOATTACK);
 	CGameParticles_ctor(&s->particles);
 	s->started = 0;
 	s->ent = NULL;
@@ -171,7 +166,7 @@ void *cObjElementFXBertoAttack_ctor(void *self) {
 void *cObjElementFXBertoFlash_ctor(void *self) {
 	cObjElementFXBertoFlash *s = self;
 
-	FXA_SetVtbl(s, VT_FXBERTOFLASH);
+	FXObj_SetVtbl(s, VT_FXBERTOFLASH);
 	CGameParticles_ctor(&s->particles);
 	FXA_TrailsCtor(s->trails, FXBERTOFLASH_TRAILS);
 	s->started = 0;
@@ -185,7 +180,7 @@ void *cObjElementFXBertoFlash_ctor(void *self) {
 void *cObjElementFXBettyAttack_ctor(void *self) {
 	cObjElementFXBettyAttack *s = self;
 
-	FXA_SetVtbl(s, VT_FXBETTYATTACK);
+	FXObj_SetVtbl(s, VT_FXBETTYATTACK);
 	CGameParticles_ctor(&s->particles);
 	CGameParticles_ctor(&s->particles2);
 	FXA_TrailsCtor(s->trails, 2);
@@ -200,8 +195,8 @@ void *cObjElementFXBettyAttack_ctor(void *self) {
 	return s;
 }
 
-static void FXKill_Ctor(cObjElementFXKill *s, void *vt) {
-	FXA_SetVtbl(s, vt);
+static void FXKill_Ctor(cObjElementFXKill *s, const cObjElementFXVtbl *vt) {
+	FXObj_SetVtbl(s, vt);
 	CGameParticles_ctor(&s->particles);
 	FXA_TrailsCtor(s->trails, FXKILL_TRAILS);
 	s->started = 0;
@@ -218,7 +213,7 @@ cObjElementFXBettyKill *cObjElementFXBettyKill_ctor(cObjElementFXBettyKill *self
 void *cObjElementFXBishopAttack_ctor(void *self) {
 	cObjElementFXBishopAttack *s = self;
 
-	FXA_SetVtbl(s, VT_FXBISHOPATTACK);
+	FXObj_SetVtbl(s, VT_FXBISHOPATTACK);
 	CGameParticles_ctor(&s->particles);
 	for (int i = 0; i < FXBISHOPATTACK_TRAILS; i++) {
 		CGameTrail_ctor(&s->trails[i]);
@@ -233,7 +228,7 @@ void *cObjElementFXBishopAttack_ctor(void *self) {
 void *cObjElementFXBishopSellLife_ctor(void *self) {
 	cObjElementFXBishopSellLife *s = self;
 
-	FXA_SetVtbl(s, VT_FXBISHOPSELLLIFE);
+	FXObj_SetVtbl(s, VT_FXBISHOPSELLLIFE);
 	CGameParticles_ctor(&s->glow);
 	CGameParticles_ctor(&s->dataCodec);
 	s->started = 0;
@@ -247,7 +242,7 @@ void *cObjElementFXBishopSellLife_ctor(void *self) {
 void *cObjElementFXDTritusAttack_ctor(void *self) {
 	cObjElementFXDTritusAttack *s = self;
 
-	FXA_SetVtbl(s, VT_FXDTRITUSATTACK);
+	FXObj_SetVtbl(s, VT_FXDTRITUSATTACK);
 	CGameParticles_ctor(&s->particles);
 	FXA_TrailsCtor(s->trails, FXDTRITUSATTACK_TRAILS);
 	s->started = 0;
@@ -265,7 +260,7 @@ cObjElementFXDTritusKill *cObjElementFXDTritusKill_ctor(cObjElementFXDTritusKill
 void *cObjElementFXFunctionarySpecialAction_ctor(void *self) {
 	cObjElementFXFunctionarySpecialAction *s = self;
 
-	FXA_SetVtbl(s, VT_FXFUNCTIONARYSPECIALACTION);
+	FXObj_SetVtbl(s, VT_FXFUNCTIONARYSPECIALACTION);
 	CGameParticles_ctor(&s->particles);
 	FXA_TrailsCtor(s->trails, FXFUNCTIONARY_TRAILS);
 	s->started = 0;
@@ -278,7 +273,7 @@ void *cObjElementFXFunctionarySpecialAction_ctor(void *self) {
 void *cObjElementFXGearMissile_ctor(void *self) {
 	cObjElementFXGearMissile *s = self;
 
-	FXA_SetVtbl(s, VT_FXGEARMISSILE);
+	FXObj_SetVtbl(s, VT_FXGEARMISSILE);
 	CGameParticles_ctor(&s->particles);
 	CGameParticles_ctor(&s->sparks);
 	CGameTrail_ctor(&s->trail);
@@ -295,7 +290,7 @@ void *cObjElementFXGearMissile_ctor(void *self) {
 void *cObjElementFXMercenaryDrink_ctor(void *self) {
 	cObjElementFXMercenaryDrink *s = self;
 
-	FXA_SetVtbl(s, VT_FXMERCENARYDRINK);
+	FXObj_SetVtbl(s, VT_FXMERCENARYDRINK);
 	CGameParticles_ctor(&s->particles);
 	s->started = 0;
 	s->ent = NULL;
@@ -307,7 +302,7 @@ void *cObjElementFXMercenaryDrink_ctor(void *self) {
 void *cObjElementFXMessengerAttack_ctor(void *self) {
 	cObjElementFXMessengerAttack *s = self;
 
-	FXA_SetVtbl(s, VT_FXMESSENGERATTACK);
+	FXObj_SetVtbl(s, VT_FXMESSENGERATTACK);
 	CGameParticles_ctor(&s->particles);
 	FXA_TrailsCtor(s->trails, FXMESSENGERATTACK_TRAILS);
 	s->started = 0;
@@ -320,7 +315,7 @@ void *cObjElementFXMessengerAttack_ctor(void *self) {
 void *cObjElementFXMessengerTakeDataPack_ctor(void *self) {
 	cObjElementFXMessengerTakeDataPack *s = self;
 
-	FXA_SetVtbl(s, VT_FXMESSENGERTAKEDATAPACK);
+	FXObj_SetVtbl(s, VT_FXMESSENGERTAKEDATAPACK);
 	CGameParticles_ctor(&s->particles);
 	FXA_TrailsCtor(s->trails, FXDATAPACK_TRAILS);
 	s->started = 0;
@@ -332,7 +327,7 @@ void *cObjElementFXMessengerTakeDataPack_ctor(void *self) {
 void *cObjElementFXPoliceGearConversion_ctor(void *self) {
 	cObjElementFXPoliceGearConversion *s = self;
 
-	FXA_SetVtbl(s, VT_FXPOLICEGEARCONVERSION);
+	FXObj_SetVtbl(s, VT_FXPOLICEGEARCONVERSION);
 	CGameParticles_ctor(&s->particles);
 	CGameParticles_ctor(&s->particles2);
 	FXA_TrailsCtor(s->trails, FXGEAR_TRAILS);
@@ -348,7 +343,7 @@ void *cObjElementFXPoliceGearConversion_ctor(void *self) {
 void *cObjElementFXPoliceSteal_ctor(void *self) {
 	cObjElementFXPoliceSteal *s = self;
 
-	FXA_SetVtbl(s, VT_FXPOLICESTEAL);
+	FXObj_SetVtbl(s, VT_FXPOLICESTEAL);
 	CGameParticles_ctor(&s->particles);
 	s->started = 0;
 	s->ent = NULL;
@@ -362,7 +357,7 @@ void *cObjElementFXPoliceSteal_ctor(void *self) {
 void *cObjElementFXSebastianFlash_ctor(void *self) {
 	cObjElementFXSebastianFlash *s = self;
 
-	FXA_SetVtbl(s, VT_FXSEBASTIANFLASH);
+	FXObj_SetVtbl(s, VT_FXSEBASTIANFLASH);
 	CGameParticles_ctor(&s->particles);
 	FXA_TrailsCtor(s->trails, FXSEBASTIAN_TRAILS);
 	s->started = 0;
@@ -377,7 +372,7 @@ void *cObjElementFXSebastianFlash_ctor(void *self) {
 void cObjElementFXBankMasterAttack_dtor(void *self) {
 	cObjElementFXBankMasterAttack *s = self;
 
-	*(void **)s = VT_FXBANKMASTERATTACK;
+	FXObj_SetVtbl(s, VT_FXBANKMASTERATTACK);
 	CGameTrail_dtor(&s->trail2);
 	CGameTrail_dtor(&s->trail);
 	CGameParticles_Release(&s->particles);
@@ -387,15 +382,15 @@ void cObjElementFXBankMasterAttack_dtor(void *self) {
 void cObjElementFXBankMasterSuction_dtor(void *self) {
 	cObjElementFXBankMasterSuction *s = self;
 
-	*(void **)s = VT_FXBANKMASTERSUCTION;
+	FXObj_SetVtbl(s, VT_FXBANKMASTERSUCTION);
 	CGameTrail_dtor(&s->trail);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }
 
 /* the classes with only their particles */
-static void FXA_DtorParts(void *self, void *vt, CGameParticles *parts) {
-	*(void **)self = vt;
+static void FXA_DtorParts(void *self, const cObjElementFXVtbl *vt, CGameParticles *parts) {
+	FXObj_SetVtbl(self, vt);
 	CGameParticles_Release(parts);
 	cObjElement_dtor(self);
 }
@@ -409,8 +404,9 @@ void cObjElementFXBertoAttack_dtor(void *self) {
 }
 
 /* the classes with particles and n trails */
-static void FXA_DtorTrails(void *self, void *vt, CGameParticles *parts, CGameTrail *trails, uint32_t n) {
-	*(void **)self = vt;
+static void FXA_DtorTrails(void *self, const cObjElementFXVtbl *vt, CGameParticles *parts, CGameTrail *trails,
+	uint32_t n) {
+	FXObj_SetVtbl(self, vt);
 	FXA_TrailsDtor(trails, n);
 	CGameParticles_Release(parts);
 	cObjElement_dtor(self);
@@ -423,7 +419,7 @@ void cObjElementFXBertoFlash_dtor(void *self) {
 void cObjElementFXBettyAttack_dtor(void *self) {
 	cObjElementFXBettyAttack *s = self;
 
-	*(void **)s = VT_FXBETTYATTACK;
+	FXObj_SetVtbl(s, VT_FXBETTYATTACK);
 	CGameLensFlare_dtor(&s->flare);
 	CGameTrail_dtor(&s->trail);
 	FXA_TrailsDtor(s->trails2, FXBETTYATTACK_TRAILS);
@@ -440,7 +436,7 @@ void cObjElementFXBettyKill_dtor(cObjElementFXBettyKill *self) {
 void cObjElementFXBishopAttack_dtor(void *self) {
 	cObjElementFXBishopAttack *s = self;
 
-	*(void **)s = VT_FXBISHOPATTACK;
+	FXObj_SetVtbl(s, VT_FXBISHOPATTACK);
 	for (int i = FXBISHOPATTACK_TRAILS - 1; i >= 0; i--) {
 		CGameTrail_dtor(&s->trails[i]);
 	}
@@ -451,7 +447,7 @@ void cObjElementFXBishopAttack_dtor(void *self) {
 void cObjElementFXBishopSellLife_dtor(void *self) {
 	cObjElementFXBishopSellLife *s = self;
 
-	*(void **)s = VT_FXBISHOPSELLLIFE;
+	FXObj_SetVtbl(s, VT_FXBISHOPSELLLIFE);
 	CGameParticles_Release(&s->dataCodec);
 	CGameParticles_Release(&s->glow);
 	cObjElement_dtor(s);
@@ -472,7 +468,7 @@ void cObjElementFXFunctionarySpecialAction_dtor(void *self) {
 void cObjElementFXGearMissile_dtor(void *self) {
 	cObjElementFXGearMissile *s = self;
 
-	*(void **)s = VT_FXGEARMISSILE;
+	FXObj_SetVtbl(s, VT_FXGEARMISSILE);
 	FXA_TrailsDtor(s->trails, FXGEARMISSILE_TRAILS);
 	CGameTrail_dtor(&s->trail);
 	CGameParticles_Release(&s->sparks);
@@ -495,7 +491,7 @@ void cObjElementFXMessengerTakeDataPack_dtor(void *self) {
 void cObjElementFXPoliceGearConversion_dtor(void *self) {
 	cObjElementFXPoliceGearConversion *s = self;
 
-	*(void **)s = VT_FXPOLICEGEARCONVERSION;
+	FXObj_SetVtbl(s, VT_FXPOLICEGEARCONVERSION);
 	crt_eh_vector_dtor(s->armor, sizeof(CGameModel), FXGEAR_ARMORS, (void *)CGameModel_Reset);
 	FXA_TrailsDtor(s->trails, FXGEAR_TRAILS);
 	CGameParticles_Release(&s->particles2);
@@ -513,97 +509,116 @@ void cObjElementFXSebastianFlash_dtor(void *self) {
 
 /* ---- deleting destructors (vf00) ---- */
 
-void *cObjElementFXBankMasterAttack_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXBankMasterAttack_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXBankMasterAttack_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXBankMasterAttack));
 }
 
-void *cObjElementFXBankMasterSuction_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXBankMasterSuction_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXBankMasterSuction_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXBankMasterSuction));
 }
 
-void *cObjElementFXBankerSteal_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXBankerSteal_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXBankerSteal_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXBankerSteal));
 }
 
-void *cObjElementFXBertoAttack_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXBertoAttack_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXBertoAttack_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXBertoAttack));
 }
 
-void *cObjElementFXBertoFlash_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXBertoFlash_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXBertoFlash_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXBertoFlash));
 }
 
-void *cObjElementFXBettyAttack_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXBettyAttack_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXBettyAttack_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXBettyAttack));
 }
 
-cObjElementFXBettyKill *cObjElementFXBettyKill_Delete(cObjElementFXBettyKill *self, uint32_t flags) {
+cObjElementFX *cObjElementFXBettyKill_Delete(cObjElementFX *base, byte flags) {
+	cObjElementFXBettyKill *self = (cObjElementFXBettyKill *)base;
 	cObjElementFXBettyKill_dtor(self);
 	return FXA_Delete(self, flags, sizeof(*self));
 }
 
-void *cObjElementFXBishopAttack_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXBishopAttack_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXBishopAttack_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXBishopAttack));
 }
 
-void *cObjElementFXBishopSellLife_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXBishopSellLife_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXBishopSellLife_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXBishopSellLife));
 }
 
-void *cObjElementFXDTritusAttack_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXDTritusAttack_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXDTritusAttack_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXDTritusAttack));
 }
 
-cObjElementFXDTritusKill *cObjElementFXDTritusKill_Delete(cObjElementFXDTritusKill *self, uint32_t flags) {
+cObjElementFX *cObjElementFXDTritusKill_Delete(cObjElementFX *base, byte flags) {
+	cObjElementFXDTritusKill *self = (cObjElementFXDTritusKill *)base;
 	cObjElementFXDTritusKill_dtor(self);
 	return FXA_Delete(self, flags, sizeof(*self));
 }
 
-void *cObjElementFXFunctionarySpecialAction_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXFunctionarySpecialAction_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXFunctionarySpecialAction_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXFunctionarySpecialAction));
 }
 
-void *cObjElementFXGearMissile_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXGearMissile_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXGearMissile_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXGearMissile));
 }
 
-void *cObjElementFXMercenaryDrink_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXMercenaryDrink_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXMercenaryDrink_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXMercenaryDrink));
 }
 
-void *cObjElementFXMessengerAttack_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXMessengerAttack_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXMessengerAttack_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXMessengerAttack));
 }
 
-void *cObjElementFXMessengerTakeDataPack_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXMessengerTakeDataPack_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXMessengerTakeDataPack_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXMessengerTakeDataPack));
 }
 
-void *cObjElementFXPoliceGearConversion_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXPoliceGearConversion_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXPoliceGearConversion_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXPoliceGearConversion));
 }
 
-void *cObjElementFXPoliceSteal_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXPoliceSteal_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXPoliceSteal_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXPoliceSteal));
 }
 
-void *cObjElementFXSebastianFlash_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXSebastianFlash_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXSebastianFlash_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXSebastianFlash));
 }
@@ -611,7 +626,8 @@ void *cObjElementFXSebastianFlash_Delete(void *self, uint32_t flags) {
 /* ---- Alive (vf02) ---- */
 
 /* BankMasterAttack and BertoAttack: the same start (vtable, entity, particles) */
-byte FXCharActions_AliveAction(void *self, cDebris *d, cDebrisSys *sys) {
+byte FXCharActions_AliveAction(cObjElementFX *base, cDebris *d, cDebrisSys *sys) {
+	void *self = (void *)base;
 	cObjElementFXBertoAttack *el = self;
 	cEntity *e = el->ent;
 
@@ -636,8 +652,8 @@ static void FXA_EffectOff(CGameModel *m) {
 	CGameModel_SetEffectParam(m, 0, 0);
 }
 
-byte cObjElementFXFunctionarySpecialAction_Alive(cObjElementFXFunctionarySpecialAction *self, cDebris *d,
-	cDebrisSys *sys) {
+byte cObjElementFXFunctionarySpecialAction_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys) {
+	cObjElementFXFunctionarySpecialAction *self = (cObjElementFXFunctionarySpecialAction *)base;
 	CGameModel *m;
 
 	if (!cDebris_Update(d, sys)) {
@@ -663,8 +679,8 @@ byte cObjElementFXFunctionarySpecialAction_Alive(cObjElementFXFunctionarySpecial
 	return 1;
 }
 
-byte cObjElementFXPoliceGearConversion_Alive(cObjElementFXPoliceGearConversion *self, cDebris *d,
-	cDebrisSys *sys) {
+byte cObjElementFXPoliceGearConversion_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys) {
+	cObjElementFXPoliceGearConversion *self = (cObjElementFXPoliceGearConversion *)base;
 	if (cDebris_Update(d, sys)) {
 		return 1;
 	}
@@ -676,7 +692,8 @@ byte cObjElementFXPoliceGearConversion_Alive(cObjElementFXPoliceGearConversion *
 
 /* ---- Attach (vf03) ---- */
 
-void cObjElementFXBankMasterAttack_Attach(cObjElementFXBankMasterAttack *self, cDebris *d) {
+void cObjElementFXBankMasterAttack_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXBankMasterAttack *self = (cObjElementFXBankMasterAttack *)base;
 	FXA_AttachDummy01(&self->particles, d);
 	CHECK(self->particles.ParticleSystem);
 	CGameTrail_SetMaxTrails(&self->trail, 20);
@@ -688,7 +705,8 @@ void cObjElementFXBankMasterAttack_Attach(cObjElementFXBankMasterAttack *self, c
 	self->t = 0.0f;
 }
 
-void cObjElementFXBankMasterSuction_Attach(cObjElementFXBankMasterSuction *self, cDebris *d) {
+void cObjElementFXBankMasterSuction_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXBankMasterSuction *self = (cObjElementFXBankMasterSuction *)base;
 	FXA_AttachDummy01(&self->particles, d);
 	CHECK(self->particles.ParticleSystem);
 	self->lastSound = 0;
@@ -696,25 +714,29 @@ void cObjElementFXBankMasterSuction_Attach(cObjElementFXBankMasterSuction *self,
 }
 
 /* BankerSteal and PoliceSteal: the same start (vtable, entity, target, particles) */
-void FXCharActions_AttachC(void *self, cDebris *d) {
+void FXCharActions_AttachC(cObjElementFX *base, cDebris *d) {
+	void *self = (void *)base;
 	FXA_AttachDummy01(&((cObjElementFXPoliceSteal *)self)->particles, d);
 }
 
 /* BertoAttack and MercenaryDrink: the same start (vtable, entity, particles) */
-void FXCharActions_Attach8(void *self, cDebris *d) {
+void FXCharActions_Attach8(cObjElementFX *base, cDebris *d) {
+	void *self = (void *)base;
 	CGameParticles *sp = &((cObjElementFXBertoAttack *)self)->particles;
 
 	FXA_AttachDummy01(sp, d);
 	CHECK(sp->ParticleSystem);
 }
 
-void cObjElementFXBertoFlash_Attach(cObjElementFXBertoFlash *self, cDebris *d) {
+void cObjElementFXBertoFlash_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXBertoFlash *self = (cObjElementFXBertoFlash *)base;
 	FXA_AttachDummy01(&self->particles, d);
 	FXA_Trails(self->trails, FXBERTOFLASH_TRAILS, 31, 2, 3);
 	CHECK(self->particles.ParticleSystem);
 }
 
-void cObjElementFXBettyAttack_Attach(cObjElementFXBettyAttack *self, cDebris *d) {
+void cObjElementFXBettyAttack_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXBettyAttack *self = (cObjElementFXBettyAttack *)base;
 	CGameModel *m = Debris_Model(d);
 
 	FXA_AttachDummy01(&self->particles, d);
@@ -731,7 +753,8 @@ void cObjElementFXBettyAttack_Attach(cObjElementFXBettyAttack *self, cDebris *d)
 	CGameLensFlare_SetType(&self->flare, 2);
 }
 
-void cObjElementFXKill_Attach(cObjElementFXKill *self, cDebris *d) {
+void cObjElementFXKill_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXKill *self = (cObjElementFXKill *)base;
 	FXA_AttachDummy01(&self->particles, d);
 	FXA_Trails(self->trails, FXKILL_TRAILS, 31, 10, 3);
 	CHECK(self->particles.ParticleSystem);
@@ -749,7 +772,8 @@ static void FXBishop_Trail(CGameTrail *t, byte segments, int texture, const floa
 	CGameTrail_SetPremul(t, 1);
 }
 
-void cObjElementFXBishopAttack_Attach(cObjElementFXBishopAttack *self, cDebris *d) {
+void cObjElementFXBishopAttack_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXBishopAttack *self = (cObjElementFXBishopAttack *)base;
 	static const float uv0[2] = { 4.0f, 1.0f };
 	static const float uv1[2] = { 16.0f, 0.5f };
 
@@ -761,20 +785,23 @@ void cObjElementFXBishopAttack_Attach(cObjElementFXBishopAttack *self, cDebris *
 	FXBishop_Trail(&self->trails[3], 31, 4, NULL);
 }
 
-void cObjElementFXBishopSellLife_Attach(cObjElementFXBishopSellLife *self, cDebris *d) {
+void cObjElementFXBishopSellLife_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXBishopSellLife *self = (cObjElementFXBishopSellLife *)base;
 	FXA_AttachDummy01(&self->glow, d);
 	CHECK(self->glow.ParticleSystem);
 	FXA_AttachNode(&self->dataCodec, Debris_Model(d), "Dummy02");
 	CHECK(self->dataCodec.ParticleSystem);
 }
 
-void cObjElementFXDTritusAttack_Attach(cObjElementFXDTritusAttack *self, cDebris *d) {
+void cObjElementFXDTritusAttack_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXDTritusAttack *self = (cObjElementFXDTritusAttack *)base;
 	FXA_AttachDummy01(&self->particles, d);
 	FXA_Trails(self->trails, FXDTRITUSATTACK_TRAILS, 31, 10, 3);
 	CHECK(self->particles.ParticleSystem);
 }
 
-void cObjElementFXFunctionarySpecialAction_Attach(cObjElementFXFunctionarySpecialAction *self, cDebris *d) {
+void cObjElementFXFunctionarySpecialAction_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXFunctionarySpecialAction *self = (cObjElementFXFunctionarySpecialAction *)base;
 	FXA_AttachDummy01(&self->particles, d);
 	for (int i = 0; i < FXFUNCTIONARY_TRAILS; i++) {
 		CGameTrail *t = &self->trails[i];
@@ -787,7 +814,8 @@ void cObjElementFXFunctionarySpecialAction_Attach(cObjElementFXFunctionarySpecia
 	self->alpha = 0.0f;
 }
 
-void cObjElementFXGearMissile_Attach(cObjElementFXGearMissile *self, cDebris *d) {
+void cObjElementFXGearMissile_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXGearMissile *self = (cObjElementFXGearMissile *)base;
 	CGameModel *m = Debris_Model(d);
 
 	CHECK(CGameModel_IsLoaded(m));
@@ -831,7 +859,8 @@ static void FXMessenger_Trail(CGameTrail *t, byte segments, byte main) {
 	}
 }
 
-void cObjElementFXMessengerAttack_Attach(cObjElementFXMessengerAttack *self, cDebris *d) {
+void cObjElementFXMessengerAttack_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXMessengerAttack *self = (cObjElementFXMessengerAttack *)base;
 	FXA_AttachDummy01(&self->particles, d);
 	CHECK(self->particles.ParticleSystem);
 	for (int i = 0; i < FXMESSENGERATTACK_TRAILS; i++) {
@@ -839,7 +868,8 @@ void cObjElementFXMessengerAttack_Attach(cObjElementFXMessengerAttack *self, cDe
 	}
 }
 
-void cObjElementFXMessengerTakeDataPack_Attach(cObjElementFXMessengerTakeDataPack *self, cDebris *d) {
+void cObjElementFXMessengerTakeDataPack_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXMessengerTakeDataPack *self = (cObjElementFXMessengerTakeDataPack *)base;
 	FXA_AttachDummy01(&self->particles, d);
 	CHECK(self->particles.ParticleSystem);
 	for (int i = 0; i < FXDATAPACK_TRAILS; i++) {
@@ -875,7 +905,8 @@ static const FXGearPiece fxa_gearPieces[] = {
 };
 static const int fxa_gearNumPieces[FXGEAR_ARMORS] = { 8, 12, 10 };
 
-void cObjElementFXPoliceGearConversion_Attach(cObjElementFXPoliceGearConversion *self, cDebris *d) {
+void cObjElementFXPoliceGearConversion_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXPoliceGearConversion *self = (cObjElementFXPoliceGearConversion *)base;
 	char buf[256];
 	int i, k;
 
@@ -914,7 +945,8 @@ void cObjElementFXPoliceGearConversion_Attach(cObjElementFXPoliceGearConversion 
 	self->smokeT = 0.0f;
 }
 
-void cObjElementFXSebastianFlash_Attach(cObjElementFXSebastianFlash *self, cDebris *d) {
+void cObjElementFXSebastianFlash_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXSebastianFlash *self = (cObjElementFXSebastianFlash *)base;
 	FXA_AttachDummy01(&self->particles, d);
 	FXA_Trails(self->trails, FXSEBASTIAN_TRAILS, 31, 2, 3);
 	CHECK(self->particles.ParticleSystem);
@@ -922,7 +954,8 @@ void cObjElementFXSebastianFlash_Attach(cObjElementFXSebastianFlash *self, cDebr
 
 /* ---- Reset (vf04) ---- */
 
-void cObjElementFXBankMasterAttack_Reset(cObjElementFXBankMasterAttack *self, int arg) {
+void cObjElementFXBankMasterAttack_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXBankMasterAttack *self = (cObjElementFXBankMasterAttack *)base;
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -931,7 +964,8 @@ void cObjElementFXBankMasterAttack_Reset(cObjElementFXBankMasterAttack *self, in
 	self->t = 0.0f;
 }
 
-void cObjElementFXBankMasterSuction_Reset(cObjElementFXBankMasterSuction *self, int arg) {
+void cObjElementFXBankMasterSuction_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXBankMasterSuction *self = (cObjElementFXBankMasterSuction *)base;
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -939,21 +973,24 @@ void cObjElementFXBankMasterSuction_Reset(cObjElementFXBankMasterSuction *self, 
 	self->lastSound = 0;
 }
 
-void cObjElementFXBankerSteal_Reset(cObjElementFXBankerSteal *self, int arg) {
+void cObjElementFXBankerSteal_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXBankerSteal *self = (cObjElementFXBankerSteal *)base;
 	(void)arg;
 	self->ent = NULL;
 	self->target = NULL;
 	self->time = 0.0f;
 }
 
-void cObjElementFXBertoAttack_Reset(cObjElementFXBertoAttack *self, int arg) {
+void cObjElementFXBertoAttack_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXBertoAttack *self = (cObjElementFXBertoAttack *)base;
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
 	CGameParticles_KillAll(&self->particles);
 }
 
-void cObjElementFXBertoFlash_Reset(cObjElementFXBertoFlash *self, int arg) {
+void cObjElementFXBertoFlash_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXBertoFlash *self = (cObjElementFXBertoFlash *)base;
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -961,7 +998,8 @@ void cObjElementFXBertoFlash_Reset(cObjElementFXBertoFlash *self, int arg) {
 	CGameParticles_KillAll(&self->particles);
 }
 
-void cObjElementFXBettyAttack_Reset(cObjElementFXBettyAttack *self, int arg) {
+void cObjElementFXBettyAttack_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXBettyAttack *self = (cObjElementFXBettyAttack *)base;
 	(void)arg;
 	self->time = 0.0f;
 	self->t2 = 0.0f;
@@ -976,7 +1014,8 @@ void cObjElementFXBettyAttack_Reset(cObjElementFXBettyAttack *self, int arg) {
 	self->ring = 0.0f;
 }
 
-void cObjElementFXKill_Reset(cObjElementFXKill *self, int arg) {
+void cObjElementFXKill_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXKill *self = (cObjElementFXKill *)base;
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -984,7 +1023,8 @@ void cObjElementFXKill_Reset(cObjElementFXKill *self, int arg) {
 	CGameParticles_KillAll(&self->particles);
 }
 
-void cObjElementFXBishopAttack_Reset(cObjElementFXBishopAttack *self, int arg) {
+void cObjElementFXBishopAttack_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXBishopAttack *self = (cObjElementFXBishopAttack *)base;
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -992,7 +1032,8 @@ void cObjElementFXBishopAttack_Reset(cObjElementFXBishopAttack *self, int arg) {
 	FXA_ClearTrails(self->trails, FXBISHOPATTACK_TRAILS);
 }
 
-void cObjElementFXBishopSellLife_Reset(cObjElementFXBishopSellLife *self, int arg) {
+void cObjElementFXBishopSellLife_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXBishopSellLife *self = (cObjElementFXBishopSellLife *)base;
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -1002,7 +1043,8 @@ void cObjElementFXBishopSellLife_Reset(cObjElementFXBishopSellLife *self, int ar
 	CGameParticles_KillAll(&self->dataCodec);
 }
 
-void cObjElementFXDTritusAttack_Reset(cObjElementFXDTritusAttack *self, int arg) {
+void cObjElementFXDTritusAttack_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXDTritusAttack *self = (cObjElementFXDTritusAttack *)base;
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -1010,7 +1052,8 @@ void cObjElementFXDTritusAttack_Reset(cObjElementFXDTritusAttack *self, int arg)
 	CGameParticles_KillAll(&self->particles);
 }
 
-void cObjElementFXFunctionarySpecialAction_Reset(cObjElementFXFunctionarySpecialAction *self, int arg) {
+void cObjElementFXFunctionarySpecialAction_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXFunctionarySpecialAction *self = (cObjElementFXFunctionarySpecialAction *)base;
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -1019,7 +1062,8 @@ void cObjElementFXFunctionarySpecialAction_Reset(cObjElementFXFunctionarySpecial
 	self->alpha = 0.0f;
 }
 
-void cObjElementFXGearMissile_Reset(cObjElementFXGearMissile *self, int arg) {
+void cObjElementFXGearMissile_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXGearMissile *self = (cObjElementFXGearMissile *)base;
 	(void)arg;
 	self->entity = NULL;
 	self->emitTime = 0.0f;
@@ -1033,13 +1077,15 @@ void cObjElementFXGearMissile_Reset(cObjElementFXGearMissile *self, int arg) {
 	CGameParticles_KillAll(&self->particles);
 }
 
-void cObjElementFXMercenaryDrink_Reset(cObjElementFXMercenaryDrink *self, int arg) {
+void cObjElementFXMercenaryDrink_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXMercenaryDrink *self = (cObjElementFXMercenaryDrink *)base;
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
 }
 
-void cObjElementFXMessengerAttack_Reset(cObjElementFXMessengerAttack *self, int arg) {
+void cObjElementFXMessengerAttack_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXMessengerAttack *self = (cObjElementFXMessengerAttack *)base;
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -1047,14 +1093,16 @@ void cObjElementFXMessengerAttack_Reset(cObjElementFXMessengerAttack *self, int 
 	FXA_ClearTrails(self->trails, FXMESSENGERATTACK_TRAILS);
 }
 
-void cObjElementFXMessengerTakeDataPack_Reset(cObjElementFXMessengerTakeDataPack *self, int arg) {
+void cObjElementFXMessengerTakeDataPack_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXMessengerTakeDataPack *self = (cObjElementFXMessengerTakeDataPack *)base;
 	(void)arg;
 	self->time = 0.0f;
 	CGameParticles_KillAll(&self->particles);
 	FXA_ClearTrails(self->trails, FXDATAPACK_TRAILS);
 }
 
-void cObjElementFXPoliceGearConversion_Reset(cObjElementFXPoliceGearConversion *self, int arg) {
+void cObjElementFXPoliceGearConversion_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXPoliceGearConversion *self = (cObjElementFXPoliceGearConversion *)base;
 	(void)arg;
 	self->time = 0.0f;
 	self->lastTime = 0.0f;
@@ -1072,14 +1120,16 @@ void cObjElementFXPoliceGearConversion_Reset(cObjElementFXPoliceGearConversion *
 	self->smokeT = 0.0f;
 }
 
-void cObjElementFXPoliceSteal_Reset(cObjElementFXPoliceSteal *self, int arg) {
+void cObjElementFXPoliceSteal_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXPoliceSteal *self = (cObjElementFXPoliceSteal *)base;
 	(void)arg;
 	self->ent = NULL;
 	self->target = NULL;
 	self->emitTime = 0.0f;
 }
 
-void cObjElementFXSebastianFlash_Reset(cObjElementFXSebastianFlash *self, int arg) {
+void cObjElementFXSebastianFlash_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXSebastianFlash *self = (cObjElementFXSebastianFlash *)base;
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -1621,7 +1671,8 @@ static void GM_FadeSparks(cObjElementFXGearMissile *self, cDebris *debris, float
 	CGameParticles_SetSparksOn(p, 0);
 }
 
-void cObjElementFXGearMissile_Update(cObjElementFXGearMissile *self, cDebris *debris, float dt) {
+void cObjElementFXGearMissile_Update(cObjElementFX *base, cDebris *debris, float dt) {
+	cObjElementFXGearMissile *self = (cObjElementFXGearMissile *)base;
 	CGameModel *model = Debris_Model(debris);
 	CGameParticles *p = &self->particles;
 	vec3_t pos, rot, a, b, tmp;
@@ -1911,7 +1962,8 @@ static float FXBetty_Yaw(const vec3_t *from, const vec3_t *to) {
 	return Vec3_GetRotAng(&ang, &n)->y;
 }
 
-void cObjElementFXBettyAttack_Update(cObjElementFXBettyAttack *self, cDebris *d, float dt) {
+void cObjElementFXBettyAttack_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXBettyAttack *self = (cObjElementFXBettyAttack *)base;
 	vec3_t p, rot, o, dir, ang, v;
 	float a;
 
@@ -2164,8 +2216,8 @@ static void FXA_Brake(CGameParticles *sp, float k) {
 	sp->initAccMax = sp->initAccMin;
 }
 
-void cObjElementFXPoliceGearConversion_Update(cObjElementFXPoliceGearConversion *self, cDebris *d,
-	float dt) {
+void cObjElementFXPoliceGearConversion_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXPoliceGearConversion *self = (cObjElementFXPoliceGearConversion *)base;
 	vec3_t p, rot, v, dir, o, ang, tmp, verts[6];
 	float a;
 	uint32_t bits;
@@ -2753,17 +2805,20 @@ static void FXKill_Update(cObjElementFXKill *self, cDebris *d, float sortBias, f
 	FXBeams_Draw(&b, self->time, dt, &pos, &rot);
 }
 
-void cObjElementFXBettyKill_Update(cObjElementFXBettyKill *self, cDebris *d, float dt) {
+void cObjElementFXBettyKill_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXBettyKill *self = (cObjElementFXBettyKill *)base;
 	(void)dt;
 	FXKill_Update(self, d, -88.0f, 0.28f, 0x40f54019, 0xffe1190a, 0xf54019);
 }
 
-void cObjElementFXDTritusKill_Update(cObjElementFXDTritusKill *self, cDebris *d, float dt) {
+void cObjElementFXDTritusKill_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXDTritusKill *self = (cObjElementFXDTritusKill *)base;
 	(void)dt;
 	FXKill_Update(self, d, -77.0f, 0.02f, 0x401940f5, 0xff0a19e1, 0x1940f5);
 }
 
-void cObjElementFXBankMasterAttack_Update(cObjElementFXBankMasterAttack *self, cDebris *d, float dt) {
+void cObjElementFXBankMasterAttack_Update(cObjElementFX *elem, cDebris *d, float dt) {
+	cObjElementFXBankMasterAttack *self = (cObjElementFXBankMasterAttack *)elem;
 	vec3_t pos, rot, base, v, ang, o1, o2, p;
 	matrix_t mtx;
 
@@ -2823,7 +2878,8 @@ void cObjElementFXBankMasterAttack_Update(cObjElementFXBankMasterAttack *self, c
 	CGameTrail_Add(&self->trail, base, 1.0f, color);
 }
 
-void cObjElementFXBertoAttack_Update(cObjElementFXBertoAttack *self, cDebris *d, float dt) {
+void cObjElementFXBertoAttack_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXBertoAttack *self = (cObjElementFXBertoAttack *)base;
 	vec3_t pos, rot, avg;
 	vec3_t pts[32];
 	float f;
@@ -2866,7 +2922,8 @@ void cObjElementFXBertoAttack_Update(cObjElementFXBertoAttack *self, cDebris *d,
 	CGameParticles_SetParticle(sp, 33, avg.x, avg.y, avg.z, FXA_Rand(50.0, 150.0), color, 2, 0.0f);
 }
 
-void cObjElementFXDTritusAttack_Update(cObjElementFXDTritusAttack *self, cDebris *d, float dt) {
+void cObjElementFXDTritusAttack_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXDTritusAttack *self = (cObjElementFXDTritusAttack *)base;
 	vec3_t pos, rot;
 
 	(void)dt;
@@ -2892,7 +2949,8 @@ void cObjElementFXDTritusAttack_Update(cObjElementFXDTritusAttack *self, cDebris
 
 #define FXA_RAMP_POLICESTEAL 0x4307ac
 
-void cObjElementFXPoliceSteal_Update(cObjElementFXPoliceSteal *self, cDebris *d, float dt) {
+void cObjElementFXPoliceSteal_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXPoliceSteal *self = (cObjElementFXPoliceSteal *)base;
 	vec3_t tmp, a, b, v, ang, dir;
 
 	(void)dt;
@@ -2959,7 +3017,8 @@ void cObjElementFXPoliceSteal_Update(cObjElementFXPoliceSteal *self, cDebris *d,
 	CGameParticles_EmitN(sp, 1, 0);
 }
 
-void cObjElementFXSebastianFlash_Update(cObjElementFXSebastianFlash *self, cDebris *d, float dt) {
+void cObjElementFXSebastianFlash_Update(cObjElementFX *elem, cDebris *d, float dt) {
+	cObjElementFXSebastianFlash *self = (cObjElementFXSebastianFlash *)elem;
 	vec3_t pos, rot, tmp, D, p1, p2, e, base;
 	float f;
 	int alpha;
@@ -3042,7 +3101,8 @@ void cObjElementFXSebastianFlash_Update(cObjElementFXSebastianFlash *self, cDebr
 	CGameParticles_SetParticle(sp, 1, base.x, base.y, base.z, FXA_Rand(50.0, 100.0), color, 2, 0.0f);
 }
 
-void cObjElementFXBertoFlash_Update(cObjElementFXBertoFlash *self, cDebris *d, float dt) {
+void cObjElementFXBertoFlash_Update(cObjElementFX *elem, cDebris *d, float dt) {
+	cObjElementFXBertoFlash *self = (cObjElementFXBertoFlash *)elem;
 	vec3_t pos, rot, tmp, tmp2, D, p1, p2, e, base;
 	float f, v;
 
@@ -3148,7 +3208,8 @@ static int FXA_StealSound(int last, CGameModel *m, const vec3_t *at) {
 	return s;
 }
 
-void cObjElementFXBankerSteal_Update(cObjElementFXBankerSteal *self, cDebris *d, float dt) {
+void cObjElementFXBankerSteal_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXBankerSteal *self = (cObjElementFXBankerSteal *)base;
 	vec3_t tmp, a, b, off, src, tp, v, ang, dir;
 	matrix_t mtx;
 
@@ -3247,7 +3308,8 @@ void cObjElementFXBankerSteal_Update(cObjElementFXBankerSteal *self, cDebris *d,
 	}
 }
 
-void cObjElementFXBankMasterSuction_Update(cObjElementFXBankMasterSuction *self, cDebris *d, float dt) {
+void cObjElementFXBankMasterSuction_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXBankMasterSuction *self = (cObjElementFXBankMasterSuction *)base;
 	vec3_t pos, rot, off, o, a, t, in, p, b;
 	vec3_t pts[4], coefs[4];
 
@@ -3343,8 +3405,8 @@ static inline uint32_t FXA_Bits(float f) {
 	return u;
 }
 
-void cObjElementFXFunctionarySpecialAction_Update(cObjElementFXFunctionarySpecialAction *self, cDebris *d,
-	float dt) {
+void cObjElementFXFunctionarySpecialAction_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXFunctionarySpecialAction *self = (cObjElementFXFunctionarySpecialAction *)base;
 	vec3_t pos, rot;
 	vec3_t pts[FXFUNCTIONARY_TRAILS];
 	float target;
@@ -3462,7 +3524,8 @@ static inline int FXA_Min255(int v) {
 	return v > 0xff ? 0xff : v;
 }
 
-void cObjElementFXMessengerAttack_Update(cObjElementFXMessengerAttack *self, cDebris *d, float dt) {
+void cObjElementFXMessengerAttack_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXMessengerAttack *self = (cObjElementFXMessengerAttack *)base;
 	vec3_t pos, rot, q, tmp;
 	vec3_t coefs[FXMESSENGER_POINTS];
 	float f, a;
@@ -3571,8 +3634,8 @@ void cObjElementFXMessengerAttack_Update(cObjElementFXMessengerAttack *self, cDe
 	}
 }
 
-void cObjElementFXMessengerTakeDataPack_Update(cObjElementFXMessengerTakeDataPack *self, cDebris *d,
-	float dt) {
+void cObjElementFXMessengerTakeDataPack_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXMessengerTakeDataPack *self = (cObjElementFXMessengerTakeDataPack *)base;
 	vec3_t pos, rot, ang, t1, t2, o1, o2, q, tmp;
 	vec3_t coefs[FXDATAPACK_POINTS];
 	float f, a;
@@ -3712,7 +3775,8 @@ static void FXMercenary_Drop(CGameParticles *sp, float life, byte second) {
 	CGameParticles_EmitDt(sp, 1, 0, FXA_Rand((double)0.05f, 0.0));
 }
 
-void cObjElementFXMercenaryDrink_Update(cObjElementFXMercenaryDrink *self, cDebris *d, float dt) {
+void cObjElementFXMercenaryDrink_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXMercenaryDrink *self = (cObjElementFXMercenaryDrink *)base;
 	vec3_t pos, rot, o, o2, dir, mouth, v, e, tmp;
 	vec3_t pts[2];
 	int idx[2] = { 1, 2 };
@@ -3877,7 +3941,8 @@ static void FXBishop_Flashes(CGameParticles *sp, int first, const vec3_t *end, c
 	}
 }
 
-void cObjElementFXBishopAttack_Update(cObjElementFXBishopAttack *self, cDebris *d, float dt) {
+void cObjElementFXBishopAttack_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXBishopAttack *self = (cObjElementFXBishopAttack *)base;
 	vec3_t pos, rot, tmp;
 	float f, a;
 	static const float fromSizes[3] = { 100.0f, 240.0f, 300.0f };
@@ -3983,7 +4048,8 @@ static inline void FXA_Still(CGameParticles *sp) {
 	sp->initAccMax = sp->initAccMin;
 }
 
-void cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *self, cDebris *d, float dt) {
+void cObjElementFXBishopSellLife_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXBishopSellLife *self = (cObjElementFXBishopSellLife *)base;
 	vec3_t hand[2], pts4[4], tmp, mid, cam, v, n, off, pos;
 	vec3_t pts[256];
 	float f;
@@ -4188,3 +4254,174 @@ void cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *self, cDebr
 	}
 	self->emitTime = 0.0f;
 }
+
+/* the vtable of cObjElementFXGearMissile */
+const cObjElementFXVtbl cObjElementFXGearMissile_vftable = {
+	.Delete = cObjElementFXGearMissile_Delete,
+	.Update = cObjElementFXGearMissile_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = cObjElementFXGearMissile_Attach,
+	.Reset = cObjElementFXGearMissile_Reset,
+};
+
+/* the vtable of cObjElementFXBankerSteal */
+const cObjElementFXVtbl cObjElementFXBankerSteal_vftable = {
+	.Delete = cObjElementFXBankerSteal_Delete,
+	.Update = cObjElementFXBankerSteal_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = FXCharActions_AttachC,
+	.Reset = cObjElementFXBankerSteal_Reset,
+};
+
+/* the vtable of cObjElementFXPoliceSteal */
+const cObjElementFXVtbl cObjElementFXPoliceSteal_vftable = {
+	.Delete = cObjElementFXPoliceSteal_Delete,
+	.Update = cObjElementFXPoliceSteal_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = FXCharActions_AttachC,
+	.Reset = cObjElementFXPoliceSteal_Reset,
+};
+
+/* the vtable of cObjElementFXFunctionarySpecialAction */
+const cObjElementFXVtbl cObjElementFXFunctionarySpecialAction_vftable = {
+	.Delete = cObjElementFXFunctionarySpecialAction_Delete,
+	.Update = cObjElementFXFunctionarySpecialAction_Update,
+	.IsAlive = cObjElementFXFunctionarySpecialAction_Alive,
+	.Start = cObjElementFXFunctionarySpecialAction_Attach,
+	.Reset = cObjElementFXFunctionarySpecialAction_Reset,
+};
+
+/* the vtable of cObjElementFXPoliceGearConversion */
+const cObjElementFXVtbl cObjElementFXPoliceGearConversion_vftable = {
+	.Delete = cObjElementFXPoliceGearConversion_Delete,
+	.Update = cObjElementFXPoliceGearConversion_Update,
+	.IsAlive = cObjElementFXPoliceGearConversion_Alive,
+	.Start = cObjElementFXPoliceGearConversion_Attach,
+	.Reset = cObjElementFXPoliceGearConversion_Reset,
+};
+
+/* the vtable of cObjElementFXDTritusAttack */
+const cObjElementFXVtbl cObjElementFXDTritusAttack_vftable = {
+	.Delete = cObjElementFXDTritusAttack_Delete,
+	.Update = cObjElementFXDTritusAttack_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = cObjElementFXDTritusAttack_Attach,
+	.Reset = cObjElementFXDTritusAttack_Reset,
+};
+
+/* the vtable of cObjElementFXDTritusKill */
+const cObjElementFXVtbl cObjElementFXDTritusKill_vftable = {
+	.Delete = cObjElementFXDTritusKill_Delete,
+	.Update = cObjElementFXDTritusKill_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = cObjElementFXKill_Attach,
+	.Reset = cObjElementFXKill_Reset,
+};
+
+/* the vtable of cObjElementFXBishopSellLife */
+const cObjElementFXVtbl cObjElementFXBishopSellLife_vftable = {
+	.Delete = cObjElementFXBishopSellLife_Delete,
+	.Update = cObjElementFXBishopSellLife_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = cObjElementFXBishopSellLife_Attach,
+	.Reset = cObjElementFXBishopSellLife_Reset,
+};
+
+/* the vtable of cObjElementFXBishopAttack */
+const cObjElementFXVtbl cObjElementFXBishopAttack_vftable = {
+	.Delete = cObjElementFXBishopAttack_Delete,
+	.Update = cObjElementFXBishopAttack_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = cObjElementFXBishopAttack_Attach,
+	.Reset = cObjElementFXBishopAttack_Reset,
+};
+
+/* the vtable of cObjElementFXBertoAttack */
+const cObjElementFXVtbl cObjElementFXBertoAttack_vftable = {
+	.Delete = cObjElementFXBertoAttack_Delete,
+	.Update = cObjElementFXBertoAttack_Update,
+	.IsAlive = FXCharActions_AliveAction,
+	.Start = FXCharActions_Attach8,
+	.Reset = cObjElementFXBertoAttack_Reset,
+};
+
+/* the vtable of cObjElementFXBertoFlash */
+const cObjElementFXVtbl cObjElementFXBertoFlash_vftable = {
+	.Delete = cObjElementFXBertoFlash_Delete,
+	.Update = cObjElementFXBertoFlash_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = cObjElementFXBertoFlash_Attach,
+	.Reset = cObjElementFXBertoFlash_Reset,
+};
+
+/* the vtable of cObjElementFXMessengerAttack */
+const cObjElementFXVtbl cObjElementFXMessengerAttack_vftable = {
+	.Delete = cObjElementFXMessengerAttack_Delete,
+	.Update = cObjElementFXMessengerAttack_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = cObjElementFXMessengerAttack_Attach,
+	.Reset = cObjElementFXMessengerAttack_Reset,
+};
+
+/* the vtable of cObjElementFXMessengerTakeDataPack */
+const cObjElementFXVtbl cObjElementFXMessengerTakeDataPack_vftable = {
+	.Delete = cObjElementFXMessengerTakeDataPack_Delete,
+	.Update = cObjElementFXMessengerTakeDataPack_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = cObjElementFXMessengerTakeDataPack_Attach,
+	.Reset = cObjElementFXMessengerTakeDataPack_Reset,
+};
+
+/* the vtable of cObjElementFXSebastianFlash */
+const cObjElementFXVtbl cObjElementFXSebastianFlash_vftable = {
+	.Delete = cObjElementFXSebastianFlash_Delete,
+	.Update = cObjElementFXSebastianFlash_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = cObjElementFXSebastianFlash_Attach,
+	.Reset = cObjElementFXSebastianFlash_Reset,
+};
+
+/* the vtable of cObjElementFXBettyAttack */
+const cObjElementFXVtbl cObjElementFXBettyAttack_vftable = {
+	.Delete = cObjElementFXBettyAttack_Delete,
+	.Update = cObjElementFXBettyAttack_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = cObjElementFXBettyAttack_Attach,
+	.Reset = cObjElementFXBettyAttack_Reset,
+};
+
+/* the vtable of cObjElementFXBettyKill */
+const cObjElementFXVtbl cObjElementFXBettyKill_vftable = {
+	.Delete = cObjElementFXBettyKill_Delete,
+	.Update = cObjElementFXBettyKill_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = cObjElementFXKill_Attach,
+	.Reset = cObjElementFXKill_Reset,
+};
+
+/* the vtable of cObjElementFXBankMasterAttack */
+const cObjElementFXVtbl cObjElementFXBankMasterAttack_vftable = {
+	.Delete = cObjElementFXBankMasterAttack_Delete,
+	.Update = cObjElementFXBankMasterAttack_Update,
+	.IsAlive = FXCharActions_AliveAction,
+	.Start = cObjElementFXBankMasterAttack_Attach,
+	.Reset = cObjElementFXBankMasterAttack_Reset,
+};
+
+/* the vtable of cObjElementFXBankMasterSuction */
+const cObjElementFXVtbl cObjElementFXBankMasterSuction_vftable = {
+	.Delete = cObjElementFXBankMasterSuction_Delete,
+	.Update = cObjElementFXBankMasterSuction_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = cObjElementFXBankMasterSuction_Attach,
+	.Reset = cObjElementFXBankMasterSuction_Reset,
+};
+
+/* the vtable of cObjElementFXMercenaryDrink */
+const cObjElementFXVtbl cObjElementFXMercenaryDrink_vftable = {
+	.Delete = cObjElementFXMercenaryDrink_Delete,
+	.Update = cObjElementFXMercenaryDrink_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = FXCharActions_Attach8,
+	.Reset = cObjElementFXMercenaryDrink_Reset,
+};

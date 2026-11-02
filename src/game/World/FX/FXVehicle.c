@@ -174,28 +174,28 @@ void *cObjElementFXVehicleSputnik_ctor(void *self) {
 
 void cObjElementFXFiredDebris_dtor(void *self) {
 	cObjElementFXFiredDebris *s = self;
-	*(void **)s = COBJELEMENTFXFIREDDEBRIS_VFTABLE;
+	FXObj_SetVtbl(s, COBJELEMENTFXFIREDDEBRIS_VFTABLE);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }
 
 void cObjElementFXFiredEntity_dtor(void *self) {
 	cObjElementFXFiredEntity *s = self;
-	*(void **)s = COBJELEMENTFXFIREDENTITY_VFTABLE;
+	FXObj_SetVtbl(s, COBJELEMENTFXFIREDENTITY_VFTABLE);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }
 
 void cObjElementFXSmokeDebris_dtor(void *self) {
 	cObjElementFXSmokeDebris *s = self;
-	*(void **)s = COBJELEMENTFXSMOKEDEBRIS_VFTABLE;
+	FXObj_SetVtbl(s, COBJELEMENTFXSMOKEDEBRIS_VFTABLE);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }
 
 void cObjElementFXVehicleAccelerator_dtor(void *self) {
 	cObjElementFXVehicleAccelerator *s = self;
-	*(void **)s = COBJELEMENTFXVEHICLEACCELERATOR_VFTABLE;
+	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLEACCELERATOR_VFTABLE);
 	FXObj_TrailsDtor(s->trails, FXVACCEL_TRAILS);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
@@ -203,7 +203,7 @@ void cObjElementFXVehicleAccelerator_dtor(void *self) {
 
 void cObjElementFXVehicleDamage_dtor(void *self) {
 	cObjElementFXVehicleDamage *s = self;
-	*(void **)s = COBJELEMENTFXVEHICLEDAMAGE_VFTABLE;
+	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLEDAMAGE_VFTABLE);
 	CGameParticles_Release(&s->parts1);
 	CGameParticles_Release(&s->parts2);
 	CGameParticles_Release(&s->parts3);
@@ -212,14 +212,14 @@ void cObjElementFXVehicleDamage_dtor(void *self) {
 
 void cObjElementFXVehicleDeathTrail_dtor(cObjElementFXVehicleDeathTrail *self) {
 	cObjElementFXDevastatorShoot *s = self;
-	*(void **)s = COBJELEMENTFXVEHICLEDEATHTRAIL_VFTABLE;
+	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLEDEATHTRAIL_VFTABLE);
 	CGameTrail_dtor(&s->trail);
 	cObjElement_dtor(s);
 }
 
 void cObjElementFXVehicleEMI_dtor(void *self) {
 	cObjElementFXVehicleEMI *s = self;
-	*(void **)s = COBJELEMENTFXVEHICLEEMI_VFTABLE;
+	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLEEMI_VFTABLE);
 	FXObj_TrailsDtor(s->trails, FXVEMI_TRAILS);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
@@ -227,7 +227,7 @@ void cObjElementFXVehicleEMI_dtor(void *self) {
 
 void cObjElementFXVehicleFire_dtor(void *self) {
 	cObjElementFXVehicleFire *s = self;
-	*(void **)s = COBJELEMENTFXVEHICLEFIRE_VFTABLE;
+	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLEFIRE_VFTABLE);
 	s->entity = NULL;
 	s->time = 0.0f;
 	CGameParticles_Release(&s->particlesOut);
@@ -237,7 +237,7 @@ void cObjElementFXVehicleFire_dtor(void *self) {
 
 void cObjElementFXVehicleSpawn_dtor(void *self) {
 	cObjElementFXVehicleSpawn *s = self;
-	*(void **)s = COBJELEMENTFXVEHICLESPAWN_VFTABLE;
+	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLESPAWN_VFTABLE);
 	FXObj_TrailsDtor(s->trails, FXVSPAWN_TRAILS);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
@@ -245,7 +245,7 @@ void cObjElementFXVehicleSpawn_dtor(void *self) {
 
 void cObjElementFXVehicleSputnik_dtor(void *self) {
 	cObjElementFXVehicleSputnik *s = self;
-	*(void **)s = COBJELEMENTFXVEHICLESPUTNIK_VFTABLE;
+	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLESPUTNIK_VFTABLE);
 	FXObj_TrailsDtor(s->trails, FXVSPUTNIK_TRAILS);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
@@ -253,53 +253,62 @@ void cObjElementFXVehicleSputnik_dtor(void *self) {
 
 /* ---- deleting destructors (vf00) ---- */
 
-void *cObjElementFXFiredDebris_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXFiredDebris_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXFiredDebris_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXFiredDebris));
 }
 
-void *cObjElementFXFiredEntity_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXFiredEntity_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXFiredEntity_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXFiredEntity));
 }
 
-void *cObjElementFXSmokeDebris_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXSmokeDebris_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXSmokeDebris_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXSmokeDebris));
 }
 
-void *cObjElementFXVehicleAccelerator_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXVehicleAccelerator_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXVehicleAccelerator_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleAccelerator));
 }
 
-void *cObjElementFXVehicleDamage_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXVehicleDamage_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXVehicleDamage_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleDamage));
 }
 
-cObjElementFXVehicleDeathTrail *cObjElementFXVehicleDeathTrail_Delete(cObjElementFXVehicleDeathTrail *self,
-	uint32_t flags) {
+cObjElementFX *cObjElementFXVehicleDeathTrail_Delete(cObjElementFX *base, byte flags) {
+	cObjElementFXVehicleDeathTrail *self = (cObjElementFXVehicleDeathTrail *)base;
 	cObjElementFXVehicleDeathTrail_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(*self));
 }
 
-void *cObjElementFXVehicleEMI_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXVehicleEMI_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXVehicleEMI_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleEMI));
 }
 
-void *cObjElementFXVehicleFire_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXVehicleFire_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXVehicleFire_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleFire));
 }
 
-void *cObjElementFXVehicleSpawn_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXVehicleSpawn_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXVehicleSpawn_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleSpawn));
 }
 
-void *cObjElementFXVehicleSputnik_Delete(void *self, uint32_t flags) {
+cObjElementFX *cObjElementFXVehicleSputnik_Delete(cObjElementFX *base, byte flags) {
+	void *self = (void *)base;
 	cObjElementFXVehicleSputnik_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleSputnik));
 }
@@ -364,7 +373,8 @@ static void FXV_FireSprites(CGameParticles *p) {
 #define FXV_RAMP_SMOKE 0x43119c		/* [2] */
 #define FXV_RAMP_SMOKE2 0x431178
 
-void cObjElementFXFiredDebris_Update(cObjElementFXFiredDebris *self, cDebris *debris, float dt) {
+void cObjElementFXFiredDebris_Update(cObjElementFX *base, cDebris *debris, float dt) {
+	cObjElementFXFiredDebris *self = (cObjElementFXFiredDebris *)base;
 	CGameModel *model = Debris_Model(debris);
 	CGameParticles *p = &self->particles;
 	vec3_t pos;
@@ -485,7 +495,8 @@ void cObjElementFXFiredDebris_Update(cObjElementFXFiredDebris *self, cDebris *de
 	}
 }
 
-void cObjElementFXSmokeDebris_Update(cObjElementFXSmokeDebris *self, cDebris *debris, float dt) {
+void cObjElementFXSmokeDebris_Update(cObjElementFX *base, cDebris *debris, float dt) {
+	cObjElementFXSmokeDebris *self = (cObjElementFXSmokeDebris *)base;
 	CGameModel *model = Debris_Model(debris);
 	CGameParticles *p = &self->particles;
 	vec3_t pos;
@@ -572,7 +583,8 @@ static inline void FXV_CheckEntity(cEntity **entity) {
 }
 
 /* the rays grow out of the vertices of the ship while it appears */
-void cObjElementFXVehicleSpawn_Update(cObjElementFXVehicleSpawn *self, cDebris *debris, float dt) {
+void cObjElementFXVehicleSpawn_Update(cObjElementFX *base, cDebris *debris, float dt) {
+	cObjElementFXVehicleSpawn *self = (cObjElementFXVehicleSpawn *)base;
 	(void)dt;
 	FXV_CheckEntity(&self->entity);
 	cEntity *e = self->entity;
@@ -687,7 +699,8 @@ static vec3_t *FXV_TurnZ(vec3_t *out, float z, const vec3_t *rot) {
 }
 
 /* the smoke and fire behind a burning entity, one emission per step of the way since the last one */
-void cObjElementFXFiredEntity_Update(cObjElementFXFiredEntity *self, cDebris *debris, float dt) {
+void cObjElementFXFiredEntity_Update(cObjElementFX *base, cDebris *debris, float dt) {
+	cObjElementFXFiredEntity *self = (cObjElementFXFiredEntity *)base;
 	(void)dt;
 	FXV_CheckEntity(&self->entity);
 	float d = cTimer_GetDelta(&g_pWorld->timer);
@@ -919,7 +932,8 @@ static inline uint16_t *FXV_EMIMark(cObjElementFXVehicleEMI *self, int i, int vi
 }
 
 /* the rays jump from vertex to vertex, each step to the nearest free one more than 16 away from the last point */
-void cObjElementFXVehicleEMI_Update(cObjElementFXVehicleEMI *self, cDebris *debris, float dt) {
+void cObjElementFXVehicleEMI_Update(cObjElementFX *base, cDebris *debris, float dt) {
+	cObjElementFXVehicleEMI *self = (cObjElementFXVehicleEMI *)base;
 	cEntity *e = self->entity;
 	if (e && (Entity_Removed(e) || !e->active)) {
 		Obj_Vtbl(e)->SetEffect(e, 0);
@@ -1170,7 +1184,8 @@ static inline float FXV_FireSize(float s, float r) {
 }
 
 /* the flames along the ship (16 of its vertices and 8 of a motor) and the smoke behind a fast AI ship */
-void cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, cDebris *debris, float dt) {
+void cObjElementFXVehicleFire_Update(cObjElementFX *base, cDebris *debris, float dt) {
+	cObjElementFXVehicleFire *self = (cObjElementFXVehicleFire *)base;
 	cEntity *e = self->entity;
 	if (e && (Entity_Removed(e) || !e->active)) {
 		Obj_Vtbl(e)->SetEffect(e, 0);
@@ -1858,7 +1873,8 @@ static void FXV_DamageTrail(cObjElementFXVehicleDamage *self, const vec3_t *pos,
 	self->pos = *pos;
 }
 
-void cObjElementFXVehicleDamage_Update(cObjElementFXVehicleDamage *self, cDebris *debris, float dt) {
+void cObjElementFXVehicleDamage_Update(cObjElementFX *base, cDebris *debris, float dt) {
+	cObjElementFXVehicleDamage *self = (cObjElementFXVehicleDamage *)base;
 	CGameModel *dm = Debris_Model(debris);
 	vec3_t pos, rot, c, sn;
 
@@ -2409,7 +2425,8 @@ static inline int FXV_RandMod(int n) {
 
 /* the phase 1 lets the ship appear (FX 8, parameter 1 - c), phase 2 vanish; the rays run from the Sputnik to random
  * points of the ship while 0 < c < 1 */
-void cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *self, cDebris *debris, float dt) {
+void cObjElementFXVehicleSputnik_Update(cObjElementFX *base, cDebris *debris, float dt) {
+	cObjElementFXVehicleSputnik *self = (cObjElementFXVehicleSputnik *)base;
 	(void)dt;
 	cEntity *e = self->entity;
 	if (e && (Entity_Removed(e) || !e->active)) {
@@ -2646,8 +2663,8 @@ void cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *self, cDebr
 /* ---- Accelerator ---- */
 
 /* the rays grow from the ship along their curves and fade out */
-void cObjElementFXVehicleAccelerator_Update(cObjElementFXVehicleAccelerator *self, cDebris *debris,
-	float dt) {
+void cObjElementFXVehicleAccelerator_Update(cObjElementFX *base, cDebris *debris, float dt) {
+	cObjElementFXVehicleAccelerator *self = (cObjElementFXVehicleAccelerator *)base;
 	FXV_CheckEntity(&self->owner);
 	if (!self->owner || !self->owner->active) {
 		return;
@@ -2801,7 +2818,8 @@ void cObjElementFXVehicleAccelerator_InitRays(cObjElementFXVehicleAccelerator *s
 
 /* ---- IsAlive (vf02) ---- */
 
-byte cObjElementFXFiredEntity_IsAlive(cObjElementFXFiredEntity *self, cDebris *debris, cDebrisSys *sys) {
+byte cObjElementFXFiredEntity_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys) {
+	cObjElementFXFiredEntity *self = (cObjElementFXFiredEntity *)base;
 	byte r = cDebris_Update(debris, sys);
 	if (!r) {
 		return r;
@@ -2816,8 +2834,8 @@ byte cObjElementFXFiredEntity_IsAlive(cObjElementFXFiredEntity *self, cDebris *d
 	return 1;
 }
 
-byte cObjElementFXVehicleDamage_IsAlive(cObjElementFXVehicleDamage *self, cDebris *debris,
-	cDebrisSys *sys) {
+byte cObjElementFXVehicleDamage_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys) {
+	cObjElementFXVehicleDamage *self = (cObjElementFXVehicleDamage *)base;
 	cEntity *e;
 	if (self->active && (e = self->entity) != NULL && e->active) {
 		self->life = 0;
@@ -2850,7 +2868,8 @@ byte cObjElementFXVehicleDamage_IsAlive(cObjElementFXVehicleDamage *self, cDebri
 	return 0;
 }
 
-byte cObjElementFXVehicleEMI_IsAlive(cObjElementFXVehicleEMI *self, cDebris *debris, cDebrisSys *sys) {
+byte cObjElementFXVehicleEMI_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys) {
+	cObjElementFXVehicleEMI *self = (cObjElementFXVehicleEMI *)base;
 	if (!self->entity) {
 		return 0;
 	}
@@ -2866,7 +2885,8 @@ byte cObjElementFXVehicleEMI_IsAlive(cObjElementFXVehicleEMI *self, cDebris *deb
 	return 0;
 }
 
-byte cObjElementFXVehicleFire_IsAlive(cObjElementFXVehicleFire *self, cDebris *debris, cDebrisSys *sys) {
+byte cObjElementFXVehicleFire_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys) {
+	cObjElementFXVehicleFire *self = (cObjElementFXVehicleFire *)base;
 	cEntity *e = self->entity;
 	if (!e) {
 		return 0;
@@ -2888,8 +2908,8 @@ byte cObjElementFXVehicleFire_IsAlive(cObjElementFXVehicleFire *self, cDebris *d
 	return 0;
 }
 
-byte cObjElementFXVehicleSputnik_IsAlive(cObjElementFXVehicleSputnik *self, cDebris *debris,
-	cDebrisSys *sys) {
+byte cObjElementFXVehicleSputnik_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys) {
+	cObjElementFXVehicleSputnik *self = (cObjElementFXVehicleSputnik *)base;
 	if (!self->entity) {
 		return 0;
 	}
@@ -2904,7 +2924,8 @@ byte cObjElementFXVehicleSputnik_IsAlive(cObjElementFXVehicleSputnik *self, cDeb
 
 /* ---- Start (vf03) ---- */
 
-void cObjElementFXFiredDebris_Start(cObjElementFXFiredDebris *self, cDebris *debris) {
+void cObjElementFXFiredDebris_Start(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXFiredDebris *self = (cObjElementFXFiredDebris *)base;
 	CGameModel *model = Debris_Model(debris);
 	int node = CGameModel_FindRenderNode(model, "Dummy01");
 	if (node != -1) {
@@ -2920,14 +2941,16 @@ void cObjElementFXFiredDebris_Start(cObjElementFXFiredDebris *self, cDebris *deb
 	self->last.z = 0.0f;
 }
 
-void cObjElementFXFiredEntity_Start(cObjElementFXFiredEntity *self, cDebris *debris) {
+void cObjElementFXFiredEntity_Start(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXFiredEntity *self = (cObjElementFXFiredEntity *)base;
 	CGameModel *model = Debris_Model(debris);
 	CGameParticles_Attach(&self->particles, model, FXV_Node(model, "Dummy01"));
 	self->time = 0.0f;
 	self->posValid = 0;
 }
 
-void cObjElementFXSmokeDebris_Start(cObjElementFXSmokeDebris *self, cDebris *debris) {
+void cObjElementFXSmokeDebris_Start(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXSmokeDebris *self = (cObjElementFXSmokeDebris *)base;
 	CGameModel *model = Debris_Model(debris);
 	int node = CGameModel_FindRenderNode(model, "Dummy01");
 	if (node != -1) {
@@ -2943,7 +2966,8 @@ void cObjElementFXSmokeDebris_Start(cObjElementFXSmokeDebris *self, cDebris *deb
 	self->last.z = 0.0f;
 }
 
-void cObjElementFXVehicleAccelerator_Start(cObjElementFXVehicleAccelerator *self, cDebris *debris) {
+void cObjElementFXVehicleAccelerator_Start(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXVehicleAccelerator *self = (cObjElementFXVehicleAccelerator *)base;
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
 	CGameParticles_Attach(&self->particles, model, FXV_Node(model, "Dummy01"));
@@ -2960,7 +2984,8 @@ void cObjElementFXVehicleAccelerator_Start(cObjElementFXVehicleAccelerator *self
 	}
 }
 
-void cObjElementFXVehicleDamage_Start(cObjElementFXVehicleDamage *self, cDebris *debris) {
+void cObjElementFXVehicleDamage_Start(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXVehicleDamage *self = (cObjElementFXVehicleDamage *)base;
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
 	self->model = model;
@@ -2976,12 +3001,14 @@ void cObjElementFXVehicleDamage_Start(cObjElementFXVehicleDamage *self, cDebris 
 	self->level = 0.0f;
 }
 
-void cObjElementFXVehicleDeathTrail_Start(cObjElementFXVehicleDeathTrail *self, cDebris *debris) {
+void cObjElementFXVehicleDeathTrail_Start(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXVehicleDeathTrail *self = (cObjElementFXVehicleDeathTrail *)base;
 	(void)debris;
 	CGameTrail_SetMaxTrails(&self->trail, 0x1e);
 }
 
-void cObjElementFXVehicleEMI_Start(cObjElementFXVehicleEMI *self, cDebris *debris) {
+void cObjElementFXVehicleEMI_Start(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXVehicleEMI *self = (cObjElementFXVehicleEMI *)base;
 	int node = FXV_NodeOrDebris(debris);
 	if (node != -1) {
 		CGameParticles_Attach(&self->particles, Debris_Model(debris), node);
@@ -2999,7 +3026,8 @@ void cObjElementFXVehicleEMI_Start(cObjElementFXVehicleEMI *self, cDebris *debri
 	}
 }
 
-void cObjElementFXVehicleFire_Start(cObjElementFXVehicleFire *self, cDebris *debris) {
+void cObjElementFXVehicleFire_Start(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXVehicleFire *self = (cObjElementFXVehicleFire *)base;
 	CGameModel *model = Debris_Model(debris);
 	int node = CGameModel_FindRenderNode(model, "Dummy01");
 	if (node != -1) {
@@ -3015,7 +3043,8 @@ void cObjElementFXVehicleFire_Start(cObjElementFXVehicleFire *self, cDebris *deb
 	self->numExhausts = 0;
 }
 
-void cObjElementFXVehicleSpawn_Start(cObjElementFXVehicleSpawn *self, cDebris *debris) {
+void cObjElementFXVehicleSpawn_Start(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXVehicleSpawn *self = (cObjElementFXVehicleSpawn *)base;
 	int node = FXV_NodeOrDebris(debris);
 	if (node != -1) {
 		CGameParticles_Attach(&self->particles, Debris_Model(debris), node);
@@ -3029,7 +3058,8 @@ void cObjElementFXVehicleSpawn_Start(cObjElementFXVehicleSpawn *self, cDebris *d
 	self->numRays = 0;
 }
 
-void cObjElementFXVehicleSputnik_Start(cObjElementFXVehicleSputnik *self, cDebris *debris) {
+void cObjElementFXVehicleSputnik_Start(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXVehicleSputnik *self = (cObjElementFXVehicleSputnik *)base;
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
 	CGameParticles_Attach(&self->particles, model, FXV_Node(model, "Dummy01"));
@@ -3045,7 +3075,8 @@ void cObjElementFXVehicleSputnik_Start(cObjElementFXVehicleSputnik *self, cDebri
 
 /* ---- Reset (vf04) ---- */
 
-void cObjElementFXFiredDebris_Reset(cObjElementFXFiredDebris *self, cDebris *debris) {
+void cObjElementFXFiredDebris_Reset(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXFiredDebris *self = (cObjElementFXFiredDebris *)base;
 	(void)debris;
 	self->first = 1;
 	self->interval = 0.09f;
@@ -3057,14 +3088,16 @@ void cObjElementFXFiredDebris_Reset(cObjElementFXFiredDebris *self, cDebris *deb
 	CGameParticles_KillAll(&self->particles);
 }
 
-void cObjElementFXFiredEntity_Reset(cObjElementFXFiredEntity *self, cDebris *debris) {
+void cObjElementFXFiredEntity_Reset(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXFiredEntity *self = (cObjElementFXFiredEntity *)base;
 	(void)debris;
 	self->entity = NULL;
 	self->time = 0.0f;
 	self->posValid = 0;
 }
 
-void cObjElementFXSmokeDebris_Reset(cObjElementFXSmokeDebris *self, cDebris *debris) {
+void cObjElementFXSmokeDebris_Reset(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXSmokeDebris *self = (cObjElementFXSmokeDebris *)base;
 	(void)debris;
 	self->first = 1;
 	self->time = 0.0f;
@@ -3074,7 +3107,8 @@ void cObjElementFXSmokeDebris_Reset(cObjElementFXSmokeDebris *self, cDebris *deb
 	CGameParticles_KillAll(&self->particles);
 }
 
-void cObjElementFXVehicleAccelerator_Reset(cObjElementFXVehicleAccelerator *self, cDebris *debris) {
+void cObjElementFXVehicleAccelerator_Reset(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXVehicleAccelerator *self = (cObjElementFXVehicleAccelerator *)base;
 	(void)debris;
 	for (int i = 0; i < FXVACCEL_TRAILS; i++) {
 		self->fade[i] = 0.0f;
@@ -3083,7 +3117,8 @@ void cObjElementFXVehicleAccelerator_Reset(cObjElementFXVehicleAccelerator *self
 	}
 }
 
-void cObjElementFXVehicleDamage_Reset(cObjElementFXVehicleDamage *self, cDebris *debris) {
+void cObjElementFXVehicleDamage_Reset(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXVehicleDamage *self = (cObjElementFXVehicleDamage *)base;
 	(void)debris;
 	self->entity = NULL;
 	self->numExhausts = 0;
@@ -3095,7 +3130,8 @@ void cObjElementFXVehicleDamage_Reset(cObjElementFXVehicleDamage *self, cDebris 
 	self->level = 0.0f;
 }
 
-void cObjElementFXVehicleEMI_Reset(cObjElementFXVehicleEMI *self, cDebris *debris) {
+void cObjElementFXVehicleEMI_Reset(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXVehicleEMI *self = (cObjElementFXVehicleEMI *)base;
 	(void)debris;
 	self->time = 0.0f;
 	self->stepTime = 0.0f;
@@ -3107,7 +3143,8 @@ void cObjElementFXVehicleEMI_Reset(cObjElementFXVehicleEMI *self, cDebris *debri
 	CGameParticles_KillAll(&self->particles);
 }
 
-void cObjElementFXVehicleFire_Reset(cObjElementFXVehicleFire *self, cDebris *debris) {
+void cObjElementFXVehicleFire_Reset(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXVehicleFire *self = (cObjElementFXVehicleFire *)base;
 	(void)debris;
 	self->entity = NULL;
 	self->time = 0.0f;
@@ -3115,7 +3152,8 @@ void cObjElementFXVehicleFire_Reset(cObjElementFXVehicleFire *self, cDebris *deb
 	self->numExhausts = 0;
 }
 
-void cObjElementFXVehicleSpawn_Reset(cObjElementFXVehicleSpawn *self, cDebris *debris) {
+void cObjElementFXVehicleSpawn_Reset(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXVehicleSpawn *self = (cObjElementFXVehicleSpawn *)base;
 	(void)debris;
 	self->time = 0.0f;
 	self->stepTime = 0.0f;
@@ -3126,7 +3164,8 @@ void cObjElementFXVehicleSpawn_Reset(cObjElementFXVehicleSpawn *self, cDebris *d
 	self->numRays = 0;
 }
 
-void cObjElementFXVehicleSputnik_Reset(cObjElementFXVehicleSputnik *self, cDebris *debris) {
+void cObjElementFXVehicleSputnik_Reset(cObjElementFX *base, cDebris *debris) {
+	cObjElementFXVehicleSputnik *self = (cObjElementFXVehicleSputnik *)base;
 	(void)debris;
 	self->time = 0.0f;
 	self->time2 = 0.0f;
@@ -3230,3 +3269,93 @@ void FXVehicle_RenderAttached(void *element) {
 	CGameParticles_SetVisible(&self->parts2, 0);
 	CGameParticles_SetVisible(&self->parts1, 1);
 }
+
+/* the vtable of cObjElementFXVehicleDamage */
+const cObjElementFXVtbl cObjElementFXVehicleDamage_vftable = {
+	.Delete = cObjElementFXVehicleDamage_Delete,
+	.Update = cObjElementFXVehicleDamage_Update,
+	.IsAlive = cObjElementFXVehicleDamage_IsAlive,
+	.Start = cObjElementFXVehicleDamage_Start,
+	.Reset = cObjElementFXVehicleDamage_Reset,
+};
+
+/* the vtable of cObjElementFXVehicleFire */
+const cObjElementFXVtbl cObjElementFXVehicleFire_vftable = {
+	.Delete = cObjElementFXVehicleFire_Delete,
+	.Update = cObjElementFXVehicleFire_Update,
+	.IsAlive = cObjElementFXVehicleFire_IsAlive,
+	.Start = cObjElementFXVehicleFire_Start,
+	.Reset = cObjElementFXVehicleFire_Reset,
+};
+
+/* the vtable of cObjElementFXFiredEntity */
+const cObjElementFXVtbl cObjElementFXFiredEntity_vftable = {
+	.Delete = cObjElementFXFiredEntity_Delete,
+	.Update = cObjElementFXFiredEntity_Update,
+	.IsAlive = cObjElementFXFiredEntity_IsAlive,
+	.Start = cObjElementFXFiredEntity_Start,
+	.Reset = cObjElementFXFiredEntity_Reset,
+};
+
+/* the vtable of cObjElementFXVehicleEMI */
+const cObjElementFXVtbl cObjElementFXVehicleEMI_vftable = {
+	.Delete = cObjElementFXVehicleEMI_Delete,
+	.Update = cObjElementFXVehicleEMI_Update,
+	.IsAlive = cObjElementFXVehicleEMI_IsAlive,
+	.Start = cObjElementFXVehicleEMI_Start,
+	.Reset = cObjElementFXVehicleEMI_Reset,
+};
+
+/* the vtable of cObjElementFXFiredDebris */
+const cObjElementFXVtbl cObjElementFXFiredDebris_vftable = {
+	.Delete = cObjElementFXFiredDebris_Delete,
+	.Update = cObjElementFXFiredDebris_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = cObjElementFXFiredDebris_Start,
+	.Reset = cObjElementFXFiredDebris_Reset,
+};
+
+/* the vtable of cObjElementFXSmokeDebris */
+const cObjElementFXVtbl cObjElementFXSmokeDebris_vftable = {
+	.Delete = cObjElementFXSmokeDebris_Delete,
+	.Update = cObjElementFXSmokeDebris_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = cObjElementFXSmokeDebris_Start,
+	.Reset = cObjElementFXSmokeDebris_Reset,
+};
+
+/* the vtable of cObjElementFXVehicleDeathTrail */
+const cObjElementFXVtbl cObjElementFXVehicleDeathTrail_vftable = {
+	.Delete = cObjElementFXVehicleDeathTrail_Delete,
+	.Update = cObjElementFXDevastatorShoot_Update,
+	.IsAlive = cObjElementFXDevastatorShoot_IsAlive,
+	.Start = cObjElementFXVehicleDeathTrail_Start,
+	.Reset = cObjElementFXDevastatorShoot_Reset,
+};
+
+/* the vtable of cObjElementFXVehicleSputnik */
+const cObjElementFXVtbl cObjElementFXVehicleSputnik_vftable = {
+	.Delete = cObjElementFXVehicleSputnik_Delete,
+	.Update = cObjElementFXVehicleSputnik_Update,
+	.IsAlive = cObjElementFXVehicleSputnik_IsAlive,
+	.Start = cObjElementFXVehicleSputnik_Start,
+	.Reset = cObjElementFXVehicleSputnik_Reset,
+};
+
+/* the vtable of cObjElementFXVehicleSpawn */
+const cObjElementFXVtbl cObjElementFXVehicleSpawn_vftable = {
+	.Delete = cObjElementFXVehicleSpawn_Delete,
+	.Update = cObjElementFXVehicleSpawn_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = cObjElementFXVehicleSpawn_Start,
+	.Reset = cObjElementFXVehicleSpawn_Reset,
+};
+
+/* the vtable of cObjElementFXVehicleAccelerator */
+const cObjElementFXVtbl cObjElementFXVehicleAccelerator_vftable = {
+	.Delete = cObjElementFXVehicleAccelerator_Delete,
+	.Update = cObjElementFXVehicleAccelerator_Update,
+	.IsAlive = FXMisc_Alive,
+	.Start = cObjElementFXVehicleAccelerator_Start,
+	.Reset = cObjElementFXVehicleAccelerator_Reset,
+};

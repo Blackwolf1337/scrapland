@@ -14,25 +14,44 @@
 #include "scrap/timer.h"
 
 /* the vtables */
-#define VT_FXBANKMASTERATTACK GAME_VFTABLE(cObjElementFXBankMasterAttack_vftable)
-#define VT_FXBANKMASTERSUCTION GAME_VFTABLE(cObjElementFXBankMasterSuction_vftable)
-#define VT_FXBANKERSTEAL GAME_VFTABLE(cObjElementFXBankerSteal_vftable)
-#define VT_FXBERTOATTACK GAME_VFTABLE(cObjElementFXBertoAttack_vftable)
-#define VT_FXBERTOFLASH GAME_VFTABLE(cObjElementFXBertoFlash_vftable)
-#define VT_FXBETTYATTACK GAME_VFTABLE(cObjElementFXBettyAttack_vftable)
-#define VT_FXBETTYKILL GAME_VFTABLE(cObjElementFXBettyKill_vftable)
-#define VT_FXBISHOPATTACK GAME_VFTABLE(cObjElementFXBishopAttack_vftable)
-#define VT_FXBISHOPSELLLIFE GAME_VFTABLE(cObjElementFXBishopSellLife_vftable)
-#define VT_FXDTRITUSATTACK GAME_VFTABLE(cObjElementFXDTritusAttack_vftable)
-#define VT_FXDTRITUSKILL GAME_VFTABLE(cObjElementFXDTritusKill_vftable)
-#define VT_FXFUNCTIONARYSPECIALACTION GAME_VFTABLE(cObjElementFXFunctionarySpecialAction_vftable)
-#define VT_FXGEARMISSILE GAME_VFTABLE(cObjElementFXGearMissile_vftable)
-#define VT_FXMERCENARYDRINK GAME_VFTABLE(cObjElementFXMercenaryDrink_vftable)
-#define VT_FXMESSENGERATTACK GAME_VFTABLE(cObjElementFXMessengerAttack_vftable)
-#define VT_FXMESSENGERTAKEDATAPACK GAME_VFTABLE(cObjElementFXMessengerTakeDataPack_vftable)
-#define VT_FXPOLICEGEARCONVERSION GAME_VFTABLE(cObjElementFXPoliceGearConversion_vftable)
-#define VT_FXPOLICESTEAL GAME_VFTABLE(cObjElementFXPoliceSteal_vftable)
-#define VT_FXSEBASTIANFLASH GAME_VFTABLE(cObjElementFXSebastianFlash_vftable)
+extern const cObjElementFXVtbl cObjElementFXBankMasterAttack_vftable;
+#define VT_FXBANKMASTERATTACK (&cObjElementFXBankMasterAttack_vftable)
+extern const cObjElementFXVtbl cObjElementFXBankMasterSuction_vftable;
+#define VT_FXBANKMASTERSUCTION (&cObjElementFXBankMasterSuction_vftable)
+extern const cObjElementFXVtbl cObjElementFXBankerSteal_vftable;
+#define VT_FXBANKERSTEAL (&cObjElementFXBankerSteal_vftable)
+extern const cObjElementFXVtbl cObjElementFXBertoAttack_vftable;
+#define VT_FXBERTOATTACK (&cObjElementFXBertoAttack_vftable)
+extern const cObjElementFXVtbl cObjElementFXBertoFlash_vftable;
+#define VT_FXBERTOFLASH (&cObjElementFXBertoFlash_vftable)
+extern const cObjElementFXVtbl cObjElementFXBettyAttack_vftable;
+#define VT_FXBETTYATTACK (&cObjElementFXBettyAttack_vftable)
+extern const cObjElementFXVtbl cObjElementFXBettyKill_vftable;
+#define VT_FXBETTYKILL (&cObjElementFXBettyKill_vftable)
+extern const cObjElementFXVtbl cObjElementFXBishopAttack_vftable;
+#define VT_FXBISHOPATTACK (&cObjElementFXBishopAttack_vftable)
+extern const cObjElementFXVtbl cObjElementFXBishopSellLife_vftable;
+#define VT_FXBISHOPSELLLIFE (&cObjElementFXBishopSellLife_vftable)
+extern const cObjElementFXVtbl cObjElementFXDTritusAttack_vftable;
+#define VT_FXDTRITUSATTACK (&cObjElementFXDTritusAttack_vftable)
+extern const cObjElementFXVtbl cObjElementFXDTritusKill_vftable;
+#define VT_FXDTRITUSKILL (&cObjElementFXDTritusKill_vftable)
+extern const cObjElementFXVtbl cObjElementFXFunctionarySpecialAction_vftable;
+#define VT_FXFUNCTIONARYSPECIALACTION (&cObjElementFXFunctionarySpecialAction_vftable)
+extern const cObjElementFXVtbl cObjElementFXGearMissile_vftable;
+#define VT_FXGEARMISSILE (&cObjElementFXGearMissile_vftable)
+extern const cObjElementFXVtbl cObjElementFXMercenaryDrink_vftable;
+#define VT_FXMERCENARYDRINK (&cObjElementFXMercenaryDrink_vftable)
+extern const cObjElementFXVtbl cObjElementFXMessengerAttack_vftable;
+#define VT_FXMESSENGERATTACK (&cObjElementFXMessengerAttack_vftable)
+extern const cObjElementFXVtbl cObjElementFXMessengerTakeDataPack_vftable;
+#define VT_FXMESSENGERTAKEDATAPACK (&cObjElementFXMessengerTakeDataPack_vftable)
+extern const cObjElementFXVtbl cObjElementFXPoliceGearConversion_vftable;
+#define VT_FXPOLICEGEARCONVERSION (&cObjElementFXPoliceGearConversion_vftable)
+extern const cObjElementFXVtbl cObjElementFXPoliceSteal_vftable;
+#define VT_FXPOLICESTEAL (&cObjElementFXPoliceSteal_vftable)
+extern const cObjElementFXVtbl cObjElementFXSebastianFlash_vftable;
+#define VT_FXSEBASTIANFLASH (&cObjElementFXSebastianFlash_vftable)
 
 #define FXBMSUCTION_POINTS 14
 #define FXBERTOFLASH_POINTS 60
@@ -459,75 +478,73 @@ void cObjElementFXMessengerTakeDataPack_dtor(void *self);
 void cObjElementFXPoliceGearConversion_dtor(void *self);
 void cObjElementFXPoliceSteal_dtor(void *self);
 void cObjElementFXSebastianFlash_dtor(void *self);
-void *cObjElementFXBankMasterAttack_Delete(void *self, uint32_t flags);
-void *cObjElementFXBankMasterSuction_Delete(void *self, uint32_t flags);
-void *cObjElementFXBankerSteal_Delete(void *self, uint32_t flags);
-void *cObjElementFXBertoAttack_Delete(void *self, uint32_t flags);
-void *cObjElementFXBertoFlash_Delete(void *self, uint32_t flags);
-void *cObjElementFXBettyAttack_Delete(void *self, uint32_t flags);
-cObjElementFXBettyKill *cObjElementFXBettyKill_Delete(cObjElementFXBettyKill *self, uint32_t flags);
-void *cObjElementFXBishopAttack_Delete(void *self, uint32_t flags);
-void *cObjElementFXBishopSellLife_Delete(void *self, uint32_t flags);
-void *cObjElementFXDTritusAttack_Delete(void *self, uint32_t flags);
-cObjElementFXDTritusKill *cObjElementFXDTritusKill_Delete(cObjElementFXDTritusKill *self, uint32_t flags);
-void *cObjElementFXFunctionarySpecialAction_Delete(void *self, uint32_t flags);
-void *cObjElementFXGearMissile_Delete(void *self, uint32_t flags);
-void *cObjElementFXMercenaryDrink_Delete(void *self, uint32_t flags);
-void *cObjElementFXMessengerAttack_Delete(void *self, uint32_t flags);
-void *cObjElementFXMessengerTakeDataPack_Delete(void *self, uint32_t flags);
-void *cObjElementFXPoliceGearConversion_Delete(void *self, uint32_t flags);
-void *cObjElementFXPoliceSteal_Delete(void *self, uint32_t flags);
-void *cObjElementFXSebastianFlash_Delete(void *self, uint32_t flags);
+cObjElementFX *cObjElementFXBankMasterAttack_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXBankMasterSuction_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXBankerSteal_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXBertoAttack_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXBertoFlash_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXBettyAttack_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXBettyKill_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXBishopAttack_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXBishopSellLife_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXDTritusAttack_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXDTritusKill_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXFunctionarySpecialAction_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXGearMissile_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXMercenaryDrink_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXMessengerAttack_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXMessengerTakeDataPack_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXPoliceGearConversion_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXPoliceSteal_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXSebastianFlash_Delete(cObjElementFX *base, byte flags);
 
 /* Alive (vf02); the 18 byte ones of the other classes are FXMisc_Alive */
 /* BankMasterAttack and BertoAttack: the debris lives while the action of the character runs */
-byte FXCharActions_AliveAction(void *self, cDebris *d, cDebrisSys *sys);
-byte cObjElementFXFunctionarySpecialAction_Alive(cObjElementFXFunctionarySpecialAction *self, cDebris *d,
-	cDebrisSys *sys);
-byte cObjElementFXPoliceGearConversion_Alive(cObjElementFXPoliceGearConversion *self, cDebris *d,
-	cDebrisSys *sys);
+byte FXCharActions_AliveAction(cObjElementFX *base, cDebris *d, cDebrisSys *sys);
+byte cObjElementFXFunctionarySpecialAction_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys);
+byte cObjElementFXPoliceGearConversion_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys);
 
 /* Attach (vf03) */
-void cObjElementFXBankMasterAttack_Attach(cObjElementFXBankMasterAttack *self, cDebris *d);
-void cObjElementFXBankMasterSuction_Attach(cObjElementFXBankMasterSuction *self, cDebris *d);
+void cObjElementFXBankMasterAttack_Attach(cObjElementFX *base, cDebris *d);
+void cObjElementFXBankMasterSuction_Attach(cObjElementFX *base, cDebris *d);
 /* BankerSteal and PoliceSteal: only the particles at 0xc */
-void FXCharActions_AttachC(void *self, cDebris *d);
+void FXCharActions_AttachC(cObjElementFX *base, cDebris *d);
 /* BertoAttack and MercenaryDrink: the particles at 0x8 */
-void FXCharActions_Attach8(void *self, cDebris *d);
-void cObjElementFXBertoFlash_Attach(cObjElementFXBertoFlash *self, cDebris *d);
-void cObjElementFXBettyAttack_Attach(cObjElementFXBettyAttack *self, cDebris *d);
-void cObjElementFXKill_Attach(cObjElementFXKill *self, cDebris *d);
-void cObjElementFXBishopAttack_Attach(cObjElementFXBishopAttack *self, cDebris *d);
-void cObjElementFXBishopSellLife_Attach(cObjElementFXBishopSellLife *self, cDebris *d);
-void cObjElementFXDTritusAttack_Attach(cObjElementFXDTritusAttack *self, cDebris *d);
-void cObjElementFXFunctionarySpecialAction_Attach(cObjElementFXFunctionarySpecialAction *self, cDebris *d);
-void cObjElementFXGearMissile_Attach(cObjElementFXGearMissile *self, cDebris *d);
-void cObjElementFXMessengerAttack_Attach(cObjElementFXMessengerAttack *self, cDebris *d);
-void cObjElementFXMessengerTakeDataPack_Attach(cObjElementFXMessengerTakeDataPack *self, cDebris *d);
-void cObjElementFXPoliceGearConversion_Attach(cObjElementFXPoliceGearConversion *self, cDebris *d);
-void cObjElementFXSebastianFlash_Attach(cObjElementFXSebastianFlash *self, cDebris *d);
+void FXCharActions_Attach8(cObjElementFX *base, cDebris *d);
+void cObjElementFXBertoFlash_Attach(cObjElementFX *base, cDebris *d);
+void cObjElementFXBettyAttack_Attach(cObjElementFX *base, cDebris *d);
+void cObjElementFXKill_Attach(cObjElementFX *base, cDebris *d);
+void cObjElementFXBishopAttack_Attach(cObjElementFX *base, cDebris *d);
+void cObjElementFXBishopSellLife_Attach(cObjElementFX *base, cDebris *d);
+void cObjElementFXDTritusAttack_Attach(cObjElementFX *base, cDebris *d);
+void cObjElementFXFunctionarySpecialAction_Attach(cObjElementFX *base, cDebris *d);
+void cObjElementFXGearMissile_Attach(cObjElementFX *base, cDebris *d);
+void cObjElementFXMessengerAttack_Attach(cObjElementFX *base, cDebris *d);
+void cObjElementFXMessengerTakeDataPack_Attach(cObjElementFX *base, cDebris *d);
+void cObjElementFXPoliceGearConversion_Attach(cObjElementFX *base, cDebris *d);
+void cObjElementFXSebastianFlash_Attach(cObjElementFX *base, cDebris *d);
 
 /* Reset (vf04) */
-void cObjElementFXBankMasterAttack_Reset(cObjElementFXBankMasterAttack *self, int arg);
-void cObjElementFXBankMasterSuction_Reset(cObjElementFXBankMasterSuction *self, int arg);
-void cObjElementFXBankerSteal_Reset(cObjElementFXBankerSteal *self, int arg);
-void cObjElementFXBertoAttack_Reset(cObjElementFXBertoAttack *self, int arg);
-void cObjElementFXBertoFlash_Reset(cObjElementFXBertoFlash *self, int arg);
-void cObjElementFXBettyAttack_Reset(cObjElementFXBettyAttack *self, int arg);
-void cObjElementFXKill_Reset(cObjElementFXKill *self, int arg);
-void cObjElementFXBishopAttack_Reset(cObjElementFXBishopAttack *self, int arg);
-void cObjElementFXBishopSellLife_Reset(cObjElementFXBishopSellLife *self, int arg);
-void cObjElementFXDTritusAttack_Reset(cObjElementFXDTritusAttack *self, int arg);
-void cObjElementFXFunctionarySpecialAction_Reset(cObjElementFXFunctionarySpecialAction *self, int arg);
-void cObjElementFXGearMissile_Reset(cObjElementFXGearMissile *self, int arg);
+void cObjElementFXBankMasterAttack_Reset(cObjElementFX *base, cDebris *arg);
+void cObjElementFXBankMasterSuction_Reset(cObjElementFX *base, cDebris *arg);
+void cObjElementFXBankerSteal_Reset(cObjElementFX *base, cDebris *arg);
+void cObjElementFXBertoAttack_Reset(cObjElementFX *base, cDebris *arg);
+void cObjElementFXBertoFlash_Reset(cObjElementFX *base, cDebris *arg);
+void cObjElementFXBettyAttack_Reset(cObjElementFX *base, cDebris *arg);
+void cObjElementFXKill_Reset(cObjElementFX *base, cDebris *arg);
+void cObjElementFXBishopAttack_Reset(cObjElementFX *base, cDebris *arg);
+void cObjElementFXBishopSellLife_Reset(cObjElementFX *base, cDebris *arg);
+void cObjElementFXDTritusAttack_Reset(cObjElementFX *base, cDebris *arg);
+void cObjElementFXFunctionarySpecialAction_Reset(cObjElementFX *base, cDebris *arg);
+void cObjElementFXGearMissile_Reset(cObjElementFX *base, cDebris *arg);
 /* vf01: the bolts, the tail, the glows, puffs and sparks of the ball and its fade at the end of the debris */
-void cObjElementFXGearMissile_Update(cObjElementFXGearMissile *self, cDebris *debris, float dt);
-void cObjElementFXMercenaryDrink_Reset(cObjElementFXMercenaryDrink *self, int arg);
-void cObjElementFXMessengerAttack_Reset(cObjElementFXMessengerAttack *self, int arg);
-void cObjElementFXMessengerTakeDataPack_Reset(cObjElementFXMessengerTakeDataPack *self, int arg);
-void cObjElementFXPoliceGearConversion_Reset(cObjElementFXPoliceGearConversion *self, int arg);
-void cObjElementFXPoliceSteal_Reset(cObjElementFXPoliceSteal *self, int arg);
-void cObjElementFXSebastianFlash_Reset(cObjElementFXSebastianFlash *self, int arg);
+void cObjElementFXGearMissile_Update(cObjElementFX *base, cDebris *debris, float dt);
+void cObjElementFXMercenaryDrink_Reset(cObjElementFX *base, cDebris *arg);
+void cObjElementFXMessengerAttack_Reset(cObjElementFX *base, cDebris *arg);
+void cObjElementFXMessengerTakeDataPack_Reset(cObjElementFX *base, cDebris *arg);
+void cObjElementFXPoliceGearConversion_Reset(cObjElementFX *base, cDebris *arg);
+void cObjElementFXPoliceSteal_Reset(cObjElementFX *base, cDebris *arg);
+void cObjElementFXSebastianFlash_Reset(cObjElementFX *base, cDebris *arg);
 
 /* the setters and starts; the entity at 0x4 of PoliceSteal, BankMasterSuction, BertoFlash, BettyAttack,
  * BishopAttack, MessengerAttack and SebastianFlash is FXMisc_SetEntity, the int at 0x8 of BankerSteal FXMisc_SetI8,
@@ -549,37 +566,35 @@ void cObjElementFXKill_Start(cObjElementFXKill *self, cEntity *e);
 void cObjElementFXKill_SetAngles(cObjElementFXKill *self, float x, float y, float z);
 /* the beams from the vertices of the character, fading in, and the particles at their roots */
 /* the swing of the baton while the action runs, fading out in 0.5 s after it */
-void cObjElementFXBankMasterAttack_Update(cObjElementFXBankMasterAttack *self, cDebris *d, float dt);
+void cObjElementFXBankMasterAttack_Update(cObjElementFX *base, cDebris *d, float dt);
 /* the particles on 32 vertices of the crystal of Berto */
-void cObjElementFXBertoAttack_Update(cObjElementFXBertoAttack *self, cDebris *d, float dt);
-void cObjElementFXDTritusAttack_Update(cObjElementFXDTritusAttack *self, cDebris *d, float dt);
+void cObjElementFXBertoAttack_Update(cObjElementFX *base, cDebris *d, float dt);
+void cObjElementFXDTritusAttack_Update(cObjElementFX *base, cDebris *d, float dt);
 /* the coins (particles) from the target to the police every 0.04 s */
-void cObjElementFXPoliceSteal_Update(cObjElementFXPoliceSteal *self, cDebris *d, float dt);
+void cObjElementFXPoliceSteal_Update(cObjElementFX *base, cDebris *d, float dt);
 /* the flash: random trails up from the character, in, out after 1.3 s, gone at 1.5 s */
-void cObjElementFXSebastianFlash_Update(cObjElementFXSebastianFlash *self, cDebris *d, float dt);
+void cObjElementFXSebastianFlash_Update(cObjElementFX *base, cDebris *d, float dt);
 /* the flash of Berto: trails from Berto to the target, in 0.2 s, out until 0.7 s */
-void cObjElementFXBertoFlash_Update(cObjElementFXBertoFlash *self, cDebris *d, float dt);
+void cObjElementFXBertoFlash_Update(cObjElementFX *base, cDebris *d, float dt);
 /* the coins from the target to the banker, faster when near, a steal sound every second coin */
-void cObjElementFXBankerSteal_Update(cObjElementFXBankerSteal *self, cDebris *d, float dt);
+void cObjElementFXBankerSteal_Update(cObjElementFX *base, cDebris *d, float dt);
 /* the money sucked from the target to the baton along a Bezier curve, a steal sound every 8 points */
-void cObjElementFXBankMasterSuction_Update(cObjElementFXBankMasterSuction *self, cDebris *d, float dt);
+void cObjElementFXBankMasterSuction_Update(cObjElementFX *base, cDebris *d, float dt);
 /* the trails of the Functionary while it runs fast (its speed above 1) */
-void cObjElementFXFunctionarySpecialAction_Update(cObjElementFXFunctionarySpecialAction *self, cDebris *d,
-	float dt);
+void cObjElementFXFunctionarySpecialAction_Update(cObjElementFX *base, cDebris *d, float dt);
 /* the lightning: the 6 trails along the Bezier curves of the lines, flashes at their ends */
-void cObjElementFXMessengerAttack_Update(cObjElementFXMessengerAttack *self, cDebris *d, float dt);
+void cObjElementFXMessengerAttack_Update(cObjElementFX *base, cDebris *d, float dt);
 /* the data pack trails from the owner to the item, the middle points following, flashes at the ends */
-void cObjElementFXMessengerTakeDataPack_Update(cObjElementFXMessengerTakeDataPack *self, cDebris *d,
-	float dt);
+void cObjElementFXMessengerTakeDataPack_Update(cObjElementFX *base, cDebris *d, float dt);
 /* the mercury drops out of the jar of the Mercenary from 0.5 to 1.3 s */
-void cObjElementFXMercenaryDrink_Update(cObjElementFXMercenaryDrink *self, cDebris *d, float dt);
+void cObjElementFXMercenaryDrink_Update(cObjElementFX *base, cDebris *d, float dt);
 /* the green ray of the Bishop from .. to with sparks at both ends */
-void cObjElementFXBishopAttack_Update(cObjElementFXBishopAttack *self, cDebris *d, float dt);
+void cObjElementFXBishopAttack_Update(cObjElementFX *base, cDebris *d, float dt);
 /* the life sold by the Bishop: glows and data codes from the hands of the attacker into the attacked and a ring
  * of them at the attacked facing the camera */
-void cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *self, cDebris *d, float dt);
-void cObjElementFXBettyKill_Update(cObjElementFXBettyKill *self, cDebris *d, float dt);
-void cObjElementFXDTritusKill_Update(cObjElementFXDTritusKill *self, cDebris *d, float dt);
+void cObjElementFXBishopSellLife_Update(cObjElementFX *base, cDebris *d, float dt);
+void cObjElementFXBettyKill_Update(cObjElementFX *base, cDebris *d, float dt);
+void cObjElementFXDTritusKill_Update(cObjElementFX *base, cDebris *d, float dt);
 void cObjElementFXDTritusAttack_Start(cObjElementFXDTritusAttack *self, cEntity *e);
 void cObjElementFXBishopAttack_SetLine(cObjElementFXBishopAttack *self, float fx, float fy, float fz,
 	float tx, float ty, float tz);
@@ -587,11 +602,10 @@ void cObjElementFXBishopAttack_SetLine(cObjElementFXBishopAttack *self, float fx
 void cObjElementFXBettyAttack_Emit(cObjElementFXBettyAttack *self, float x, float y, float z);
 /* the attack of Betty: bolts out of the center, a ring that grows with bolts and dust on the side away from the
  * camera, the ring line, a wave in the dudv pass and a flash */
-void cObjElementFXBettyAttack_Update(cObjElementFXBettyAttack *self, cDebris *d, float dt);
+void cObjElementFXBettyAttack_Update(cObjElementFX *base, cDebris *d, float dt);
 /* the conversion of the police into Gear: the armors fade in, bubbles with bolts rise around the waist, smoke, the
  * pieces of the armors fall off with sparks */
-void cObjElementFXPoliceGearConversion_Update(cObjElementFXPoliceGearConversion *self, cDebris *d,
-	float dt);
+void cObjElementFXPoliceGearConversion_Update(cObjElementFX *base, cDebris *d, float dt);
 /* the trails from the owner to the item, 3 points each */
 void cObjElementFXMessengerTakeDataPack_Start(cObjElementFXMessengerTakeDataPack *self);
 /* the lightning from .. to and 5 branches off its Bezier curve (stopped by the floor) */

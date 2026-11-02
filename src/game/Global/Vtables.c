@@ -6708,283 +6708,66 @@ void (*const CSoundXBox_vftable[41])(void) = {
 };
 
 /* .?AVcObjElementAbstract@@ */
-void (*const cObjElementAbstract_vftable[5])(void) = {
-	cObjElementAbstract_Delete,	/* 0x00 0x1a85a0 */
-	crt_purecall,	/* 0x04 0x31951a */
-	crt_purecall,	/* 0x08 0x31951a */
-	crt_purecall,	/* 0x0c 0x31951a */
-	crt_purecall,	/* 0x10 0x31951a */
-};
 
 /* .?AVcObjElementFXMoneyTransfer@@ */
-void (*const cObjElementFXMoneyTransfer_vftable[5])(void) = {
-	cObjElementFXMoneyTransfer_Delete,	/* 0x00 0x1a8840 */
-	cObjElementFXMoneyTransfer_Update,	/* 0x04 0x1b0f70 */
-	FXMisc_Alive,	/* 0x08 0x1b3d90 */
-	cObjElementFXMoneyTransfer_Attach,	/* 0x0c 0x1b3a30 */
-	cObjElementFXMoneyTransfer_Reset,	/* 0x10 0x1b4100 */
-};
 
 /* .?AVcObjElementFXCharacterTeleport@@ */
-void (*const cObjElementFXCharacterTeleport_vftable[5])(void) = {
-	cObjElementFXCharacterTeleport_Delete,	/* 0x00 0x1a8780 */
-	cObjElementFXCharacterTeleport_Update,	/* 0x04 0x1adf80 */
-	cObjElementFXCharacterTeleport_Alive,	/* 0x08 0x1b3cb0 */
-	cObjElementFXCharacterTeleport_Attach,	/* 0x0c 0x1b3910 */
-	cObjElementFXCharacterTeleport_Reset,	/* 0x10 0x1b4080 */
-};
 
 /* .?AVcObjElementFXCharacterConversor@@ */
-void (*const cObjElementFXCharacterConversor_vftable[5])(void) = {
-	cObjElementFXCharacterConversor_Delete,	/* 0x00 0x1a8660 */
-	cObjElementFXCharacterConversor_Update,	/* 0x04 0x1a99f0 */
-	cObjElementFXCharacterConversor_Alive,	/* 0x08 0x1b3ba0 */
-	cObjElementFXCharacterConversor_Attach,	/* 0x0c 0x1b36f0 */
-	cObjElementFXCharacterConversor_Reset,	/* 0x10 0x1b3f70 */
-};
 
 /* .?AVcObjElementFXCharacterDeath@@ */
-void (*const cObjElementFXCharacterDeath_vftable[5])(void) = {
-	cObjElementFXCharacterDeath_Delete,	/* 0x00 0x1a86e0 */
-	cObjElementFXCharacterDeath_Update,	/* 0x04 0x1ac1b0 */
-	FXMisc_Alive,	/* 0x08 0x1b3c90 */
-	cObjElementFXCharacterDeath_Attach,	/* 0x0c 0x1b37c0 */
-	cObjElementFXCharacterDeath_Reset,	/* 0x10 0x1b4020 */
-};
 
 /* .?AVcObjElementFXSputnik@@ */
-void (*const cObjElementFXSputnik_vftable[5])(void) = {
-	cObjElementFXSputnik_Delete,	/* 0x00 0x1a8880 */
-	cObjElementFXSputnik_Update,	/* 0x04 0x1b1370 */
-	cObjElementFXSputnik_Alive,	/* 0x08 0x1b3db0 */
-	cObjElementFXSputnik_Attach,	/* 0x0c 0x1b3ab0 */
-	cObjElementFXSputnik_Reset,	/* 0x10 0x1b4120 */
-};
 
 /* .?AVcObjElementFXCharacterConversion@@ */
-void (*const cObjElementFXCharacterConversion_vftable[5])(void) = {
-	cObjElementFXCharacterConversion_Delete,	/* 0x00 0x1a85d0 */
-	cObjElementFXCharacterConversion_Update,	/* 0x04 0x1a88c0 */
-	cObjElementFXCharacterConversion_Alive,	/* 0x08 0x1b3b00 */
-	cObjElementFXCharacterConversion_Attach,	/* 0x0c 0x1b34d0 */
-	cObjElementFXCharacterConversion_Reset,	/* 0x10 0x1b3de0 */
-};
 
 /* .?AVcObjElementFXMaintenanceWork@@ */
-void (*const cObjElementFXMaintenanceWork_vftable[5])(void) = {
-	cObjElementFXMaintenanceWork_Delete,	/* 0x00 0x1a87c0 */
-	cObjElementFXMaintenanceWork_Update,	/* 0x04 0x1b02f0 */
-	cObjElementFXMaintenanceWork_Alive,	/* 0x08 0x1b3d40 */
-	cObjElementFXMaintenanceWork_Attach,	/* 0x0c 0x1b3950 */
-	cObjElementFXMaintenanceWork_Reset,	/* 0x10 0x1b40b0 */
-};
 
 /* .?AVcObjElementFXGearMissile@@ */
-void (*const cObjElementFXGearMissile_vftable[5])(void) = {
-	cObjElementFXGearMissile_Delete,	/* 0x00 0x1b69b0 */
-	cObjElementFXGearMissile_Update,	/* 0x04 0x1bd740 */
-	FXMisc_Alive,	/* 0x08 0x1c6460 */
-	cObjElementFXGearMissile_Attach,	/* 0x0c 0x1c54f0 */
-	cObjElementFXGearMissile_Reset,	/* 0x10 0x1c68d0 */
-};
 
 /* .?AVcObjElementFXBankerSteal@@ */
-void (*const cObjElementFXBankerSteal_vftable[5])(void) = {
-	cObjElementFXBankerSteal_Delete,	/* 0x00 0x1b65c0 */
-	cObjElementFXBankerSteal_Update,	/* 0x04 0x1b7700 */
-	FXMisc_Alive,	/* 0x08 0x1c6190 */
-	FXCharActions_AttachC,	/* 0x0c 0x1c4b90 */
-	cObjElementFXBankerSteal_Reset,	/* 0x10 0x1c65d0 */
-};
 
 /* .?AVcObjElementFXPoliceSteal@@ */
-void (*const cObjElementFXPoliceSteal_vftable[5])(void) = {
-	cObjElementFXPoliceSteal_Delete,	/* 0x00 0x1b6c30 */
-	cObjElementFXPoliceSteal_Update,	/* 0x04 0x1c3b70 */
-	FXMisc_Alive,	/* 0x08 0x1c6520 */
-	FXCharActions_AttachC,	/* 0x0c 0x1c5fb0 */
-	cObjElementFXPoliceSteal_Reset,	/* 0x10 0x1c6a60 */
-};
 
 /* .?AVcObjElementFXFunctionarySpecialAction@@ */
-void (*const cObjElementFXFunctionarySpecialAction_vftable[5])(void) = {
-	cObjElementFXFunctionarySpecialAction_Delete,	/* 0x00 0x1b6930 */
-	cObjElementFXFunctionarySpecialAction_Update,	/* 0x04 0x1bcf50 */
-	cObjElementFXFunctionarySpecialAction_Alive,	/* 0x08 0x1c6300 */
-	cObjElementFXFunctionarySpecialAction_Attach,	/* 0x0c 0x1c5400 */
-	cObjElementFXFunctionarySpecialAction_Reset,	/* 0x10 0x1c6880 */
-};
 
 /* .?AVcObjElementFXPoliceGearConversion@@ */
-void (*const cObjElementFXPoliceGearConversion_vftable[5])(void) = {
-	cObjElementFXPoliceGearConversion_Delete,	/* 0x00 0x1b6b90 */
-	cObjElementFXPoliceGearConversion_Update,	/* 0x04 0x1c2170 */
-	cObjElementFXPoliceGearConversion_Alive,	/* 0x08 0x1c64e0 */
-	cObjElementFXPoliceGearConversion_Attach,	/* 0x0c 0x1c5990 */
-	cObjElementFXPoliceGearConversion_Reset,	/* 0x10 0x1c69e0 */
-};
 
 /* .?AVcObjElementFXDTritusAttack@@ */
-void (*const cObjElementFXDTritusAttack_vftable[5])(void) = {
-	cObjElementFXDTritusAttack_Delete,	/* 0x00 0x1b6830 */
-	cObjElementFXDTritusAttack_Update,	/* 0x04 0x1bc6d0 */
-	FXMisc_Alive,	/* 0x08 0x1c62c0 */
-	cObjElementFXDTritusAttack_Attach,	/* 0x0c 0x1c5260 */
-	cObjElementFXDTritusAttack_Reset,	/* 0x10 0x1c67e0 */
-};
 
 /* .?AVcObjElementFXDTritusKill@@ */
-void (*const cObjElementFXDTritusKill_vftable[5])(void) = {
-	cObjElementFXDTritusKill_Delete,	/* 0x00 0x1b68b0 */
-	cObjElementFXDTritusKill_Update,	/* 0x04 0x1bcb10 */
-	FXMisc_Alive,	/* 0x08 0x1c62e0 */
-	cObjElementFXKill_Attach,	/* 0x0c 0x1c5330 */
-	cObjElementFXKill_Reset,	/* 0x10 0x1c6830 */
-};
 
 /* .?AVcObjElementFXBishopSellLife@@ */
-void (*const cObjElementFXBishopSellLife_vftable[5])(void) = {
-	cObjElementFXBishopSellLife_Delete,	/* 0x00 0x1b67e0 */
-	cObjElementFXBishopSellLife_Update,	/* 0x04 0x1bb1b0 */
-	FXMisc_Alive,	/* 0x08 0x1c62a0 */
-	cObjElementFXBishopSellLife_Attach,	/* 0x0c 0x1c5160 */
-	cObjElementFXBishopSellLife_Reset,	/* 0x10 0x1c67a0 */
-};
 
 /* .?AVcObjElementFXBishopAttack@@ */
-void (*const cObjElementFXBishopAttack_vftable[5])(void) = {
-	cObjElementFXBishopAttack_Delete,	/* 0x00 0x1b6770 */
-	cObjElementFXBishopAttack_Update,	/* 0x04 0x1ba480 */
-	FXMisc_Alive,	/* 0x08 0x1c6280 */
-	cObjElementFXBishopAttack_Attach,	/* 0x0c 0x1c4fa0 */
-	cObjElementFXBishopAttack_Reset,	/* 0x10 0x1c6750 */
-};
 
 /* .?AVcObjElementFXBertoAttack@@ */
-void (*const cObjElementFXBertoAttack_vftable[5])(void) = {
-	cObjElementFXBertoAttack_Delete,	/* 0x00 0x1b6600 */
-	cObjElementFXBertoAttack_Update,	/* 0x04 0x1b7e20 */
-	FXCharActions_AliveAction,	/* 0x08 0x1c61b0 */
-	FXCharActions_Attach8,	/* 0x0c 0x1c4c10 */
-	cObjElementFXBertoAttack_Reset,	/* 0x10 0x1c65f0 */
-};
 
 /* .?AVcObjElementFXBertoFlash@@ */
-void (*const cObjElementFXBertoFlash_vftable[5])(void) = {
-	cObjElementFXBertoFlash_Delete,	/* 0x00 0x1b6640 */
-	cObjElementFXBertoFlash_Update,	/* 0x04 0x1b8230 */
-	FXMisc_Alive,	/* 0x08 0x1c6220 */
-	cObjElementFXBertoFlash_Attach,	/* 0x0c 0x1c4cb0 */
-	cObjElementFXBertoFlash_Reset,	/* 0x10 0x1c6610 */
-};
 
 /* .?AVcObjElementFXMessengerAttack@@ */
-void (*const cObjElementFXMessengerAttack_vftable[5])(void) = {
-	cObjElementFXMessengerAttack_Delete,	/* 0x00 0x1b6a90 */
-	cObjElementFXMessengerAttack_Update,	/* 0x04 0x1c0f40 */
-	FXMisc_Alive,	/* 0x08 0x1c64a0 */
-	cObjElementFXMessengerAttack_Attach,	/* 0x0c 0x1c5760 */
-	cObjElementFXMessengerAttack_Reset,	/* 0x10 0x1c6960 */
-};
 
 /* .?AVcObjElementFXMessengerTakeDataPack@@ */
-void (*const cObjElementFXMessengerTakeDataPack_vftable[5])(void) = {
-	cObjElementFXMessengerTakeDataPack_Delete,	/* 0x00 0x1b6b10 */
-	cObjElementFXMessengerTakeDataPack_Update,	/* 0x04 0x1c17d0 */
-	FXMisc_Alive,	/* 0x08 0x1c64c0 */
-	cObjElementFXMessengerTakeDataPack_Attach,	/* 0x0c 0x1c5870 */
-	cObjElementFXMessengerTakeDataPack_Reset,	/* 0x10 0x1c69a0 */
-};
 
 /* .?AVcObjElementFXSebastianFlash@@ */
-void (*const cObjElementFXSebastianFlash_vftable[5])(void) = {
-	cObjElementFXSebastianFlash_Delete,	/* 0x00 0x1b6c70 */
-	cObjElementFXSebastianFlash_Update,	/* 0x04 0x1c4030 */
-	FXMisc_Alive,	/* 0x08 0x1c6540 */
-	cObjElementFXSebastianFlash_Attach,	/* 0x0c 0x1c6030 */
-	cObjElementFXSebastianFlash_Reset,	/* 0x10 0x1c6a80 */
-};
 
 /* .?AVcObjElementFXBettyAttack@@ */
-void (*const cObjElementFXBettyAttack_vftable[5])(void) = {
-	cObjElementFXBettyAttack_Delete,	/* 0x00 0x1b66c0 */
-	cObjElementFXBettyAttack_Update,	/* 0x04 0x1b87a0 */
-	FXMisc_Alive,	/* 0x08 0x1c6240 */
-	cObjElementFXBettyAttack_Attach,	/* 0x0c 0x1c4d80 */
-	cObjElementFXBettyAttack_Reset,	/* 0x10 0x1c6660 */
-};
 
 /* .?AVcObjElementFXBettyKill@@ */
-void (*const cObjElementFXBettyKill_vftable[5])(void) = {
-	cObjElementFXBettyKill_Delete,	/* 0x00 0x1b66f0 */
-	cObjElementFXBettyKill_Update,	/* 0x04 0x1ba040 */
-	FXMisc_Alive,	/* 0x08 0x1c6260 */
-	cObjElementFXKill_Attach,	/* 0x0c 0x1c4ed0 */
-	cObjElementFXKill_Reset,	/* 0x10 0x1c6700 */
-};
 
 /* .?AVcObjElementFXBankMasterAttack@@ */
-void (*const cObjElementFXBankMasterAttack_vftable[5])(void) = {
-	cObjElementFXBankMasterAttack_Delete,	/* 0x00 0x1b6520 */
-	cObjElementFXBankMasterAttack_Update,	/* 0x04 0x1b6cf0 */
-	FXCharActions_AliveAction,	/* 0x08 0x1c6100 */
-	cObjElementFXBankMasterAttack_Attach,	/* 0x0c 0x1c49f0 */
-	cObjElementFXBankMasterAttack_Reset,	/* 0x10 0x1c6560 */
-};
 
 /* .?AVcObjElementFXBankMasterSuction@@ */
-void (*const cObjElementFXBankMasterSuction_vftable[5])(void) = {
-	cObjElementFXBankMasterSuction_Delete,	/* 0x00 0x1b6570 */
-	cObjElementFXBankMasterSuction_Update,	/* 0x04 0x1b70d0 */
-	FXMisc_Alive,	/* 0x08 0x1c6170 */
-	cObjElementFXBankMasterSuction_Attach,	/* 0x0c 0x1c4ae0 */
-	cObjElementFXBankMasterSuction_Reset,	/* 0x10 0x1c65a0 */
-};
 
 /* .?AVcObjElementFXMercenaryDrink@@ */
-void (*const cObjElementFXMercenaryDrink_vftable[5])(void) = {
-	cObjElementFXMercenaryDrink_Delete,	/* 0x00 0x1b6a50 */
-	cObjElementFXMercenaryDrink_Update,	/* 0x04 0x1c03e0 */
-	FXMisc_Alive,	/* 0x08 0x1c6480 */
-	FXCharActions_Attach8,	/* 0x0c 0x1c56c0 */
-	cObjElementFXMercenaryDrink_Reset,	/* 0x10 0x1c6940 */
-};
 
 /* .?AVcObjElementFXHook@@ */
-void (*const cObjElementFXHook_vftable[5])(void) = {
-	cObjElementFXHook_Delete,	/* 0x00 0x1c9ab0 */
-	cObjElementFXHook_Update,	/* 0x04 0x1cccb0 */
-	cObjElementFXHook_IsAlive,	/* 0x08 0x1cec60 */
-	cObjElementFXHook_Start,	/* 0x0c 0x1ceaf0 */
-	cObjElementFXHook_Reset,	/* 0x10 0x1cee70 */
-};
 
 /* .?AVcObjElementFXEMI@@ */
-void (*const cObjElementFXEMI_vftable[5])(void) = {
-	cObjElementFXEMI_Delete,	/* 0x00 0x1c9a10 */
-	cObjElementFXEMI_Update,	/* 0x04 0x1ca580 */
-	cObjElementFXEMI_IsAlive,	/* 0x08 0x1cec40 */
-	cObjElementFXEMI_Start,	/* 0x0c 0x1ce9f0 */
-	cObjElementFXEMI_Reset,	/* 0x10 0x1cedb0 */
-};
 
 /* .?AVcObjElementFXSonicExplosion@@ */
-void (*const cObjElementFXSonicExplosion_vftable[5])(void) = {
-	cObjElementFXSonicExplosion_Delete,	/* 0x00 0x1c9b00 */
-	cObjElementFXSonicExplosion_Update,	/* 0x04 0x1ce230 */
-	cObjElementFXSonicExplosion_IsAlive,	/* 0x08 0x1ced20 */
-	cObjElementFXSonicExplosion_Start,	/* 0x0c 0x1ceb70 */
-	cObjElementFXSonicExplosion_Reset,	/* 0x10 0x1ceea0 */
-};
 
 /* .?AVcObjElementFXDebrisCloud@@ */
-void (*const cObjElementFXDebrisCloud_vftable[5])(void) = {
-	cObjElementFXDebrisCloud_Delete,	/* 0x00 0x1c99d0 */
-	cObjElementFXDebrisCloud_Update,	/* 0x04 0x1c9b50 */
-	cObjElementFXDebrisCloud_IsAlive,	/* 0x08 0x1cec20 */
-	cObjElementFXDebrisCloud_Start,	/* 0x0c 0x1ce940 */
-	cObjElementFXDebrisCloud_Reset,	/* 0x10 0x1ced40 */
-};
 
 /* .?AVcFXElementsLighting@@ */
 void (*const cFXElementsLighting_vftable[3])(void) = {
@@ -7057,310 +6840,72 @@ void (*const cFXElementsMentalControllerMainFX_vftable[3])(void) = {
 };
 
 /* .?AVcObjElementFXSistPart@@ */
-void (*const cObjElementFXParticleSystem_vftable[5])(void) = {
-	cObjElementFXParticleSystem_Delete,	/* 0x00 0x1da800 */
-	cObjElementFXParticleSystem_Update,	/* 0x04 0x1db9c0 */
-	FXMisc_Alive,	/* 0x08 0x1dcfe0 */
-	cObjElementFXParticleSystem_Attach,	/* 0x0c 0x1dccd0 */
-	FXMisc_Nop,	/* 0x10 0x1dd1f0 */
-};
 
 /* .?AVcObjElementFXTrail@@ */
-void (*const cObjElementFXTrail_vftable[5])(void) = {
-	cObjElementFXTrail_Delete,	/* 0x00 0x1da910 */
-	cObjElementFXTrail_Update,	/* 0x04 0x1dbf20 */
-	cObjElementFXTrail_Alive,	/* 0x08 0x1dd040 */
-	FXMisc_Nop,	/* 0x0c 0x1dcef0 */
-	cObjElementFXTrail_Reset,	/* 0x10 0x1dd2b0 */
-};
 
 /* .?AVcObjElementFXFadeOutTrail@@ */
-void (*const cObjElementFXFadeOutTrail_vftable[5])(void) = {
-	cObjElementFXFadeOutTrail_Delete,	/* 0x00 0x1da6d0 */
-	cObjElementFXFadeOutTrail_Update,	/* 0x04 0x1da950 */
-	cObjElementFXFadeOutTrail_Alive,	/* 0x08 0x1dcf00 */
-	FXMisc_Nop,	/* 0x0c 0x1dcc20 */
-	cObjElementFXFadeOutTrail_Reset,	/* 0x10 0x1dd0a0 */
-};
 
 /* .?AVcObjElementFXItemTake@@ */
-void (*const cObjElementFXItemTake_vftable[5])(void) = {
-	cObjElementFXItemTake_Delete,	/* 0x00 0x1da750 */
-	cObjElementFXItemTake_Update,	/* 0x04 0x1dabd0 */
-	FXMisc_Alive,	/* 0x08 0x1dcf50 */
-	cObjElementFXItemTake_Attach,	/* 0x0c 0x1dcc70 */
-	cObjElementFXItemTake_Reset,	/* 0x10 0x1dd150 */
-};
 
 /* .?AVcObjElementFXItemFade@@ */
-void (*const cObjElementFXItemFade_vftable[5])(void) = {
-	cObjElementFXItemFade_Delete,	/* 0x00 0x1da710 */
-	cObjElementFXItemFade_Update,	/* 0x04 0x1da9d0 */
-	FXMisc_Alive,	/* 0x08 0x1dcf30 */
-	cObjElementFXItemFade_Attach,	/* 0x0c 0x1dcc30 */
-	cObjElementFXItemFade_Reset,	/* 0x10 0x1dd0d0 */
-};
 
 /* .?AVcObjElementFXSparks@@ */
-void (*const cObjElementFXSparks_vftable[5])(void) = {
-	cObjElementFXSparks_Delete,	/* 0x00 0x1da880 */
-	cObjElementFXSparks_Update,	/* 0x04 0x1dba20 */
-	FXMisc_Alive,	/* 0x08 0x1dd020 */
-	cObjElementFXSparks_Attach,	/* 0x0c 0x1dce10 */
-	cObjElementFXSparks_Reset,	/* 0x10 0x1dd210 */
-};
 
 /* .?AVcObjElementFXModelFade@@ */
-void (*const cObjElementFXModelFade_vftable[5])(void) = {
-	cObjElementFXModelFade_Delete,	/* 0x00 0x1da7a0 */
-	cObjElementFXModelFade_Update,	/* 0x04 0x1db830 */
-	cObjElementFXModelFade_Alive,	/* 0x08 0x1dcf70 */
-	FXMisc_Clear4,	/* 0x0c 0x1dccb0 */
-	FXMisc_Clear4,	/* 0x10 0x1dd1d0 */
-};
 
 /* .?AVcObjElementFXModelNoise@@ */
-void (*const cObjElementFXModelNoise_vftable[5])(void) = {
-	cObjElementFXModelNoise_Delete,	/* 0x00 0x1da7d0 */
-	cObjElementFXModelNoise_Update,	/* 0x04 0x1db900 */
-	cObjElementFXModelNoise_Alive,	/* 0x08 0x1dcfa0 */
-	FXMisc_Clear8,	/* 0x0c 0x1dccc0 */
-	FXMisc_Clear8,	/* 0x10 0x1dd1e0 */
-};
 
 /* .?AVcObjElementFXSistPartDuDv@@ */
-void (*const cObjElementFXParticleSystemDuDv_vftable[5])(void) = {
-	cObjElementFXParticleSystemDuDv_Delete,	/* 0x00 0x1da840 */
-	cObjElementFXParticleSystem_Update,	/* 0x04 0x1db9f0 */
-	FXMisc_Alive,	/* 0x08 0x1dd000 */
-	cObjElementFXParticleSystemDuDv_Attach,	/* 0x0c 0x1dcd70 */
-	FXMisc_Nop,	/* 0x10 0x1dd200 */
-};
 
 /* .?AVcObjElementFXSceneDecontamination@@ */
-void (*const cObjElementFXSceneDecontamination_vftable[5])(void) = {
-	cObjElementFXSceneDecontamination_Delete,	/* 0x00 0x1dea90 */
-	cObjElementFXSceneDecontamination_Update,	/* 0x04 0x1e3dc0 */
-	FXMisc_Alive,	/* 0x08 0x1e97a0 */
-	cObjElementFXSceneDecontamination_Attach,	/* 0x0c 0x1e9220 */
-	cObjElementFXSceneDecontamination_Reset,	/* 0x10 0x1e9920 */
-};
 
 /* .?AVcObjElementFXSceneBishops@@ */
-void (*const cObjElementFXSceneBishops_vftable[5])(void) = {
-	cObjElementFXSceneBishops_Delete,	/* 0x00 0x1dea00 */
-	cObjElementFXSceneBishops_Update,	/* 0x04 0x1e3050 */
-	FXMisc_Alive,	/* 0x08 0x1e9780 */
-	cObjElementFXSceneBishops_Attach,	/* 0x0c 0x1e90b0 */
-	cObjElementFXSceneBishops_Reset,	/* 0x10 0x1e98b0 */
-};
 
 /* .?AVcObjElementFXSceneBillArrives_A@@ */
-void (*const cObjElementFXSceneBillArrives_A_vftable[5])(void) = {
-	cObjElementFXSceneBillArrives_A_Delete,	/* 0x00 0x1de9c0 */
-	cObjElementFXSceneBillArrives_A_Update,	/* 0x04 0x1e0e50 */
-	FXMisc_Alive,	/* 0x08 0x1e9760 */
-	cObjElementFXSceneBillArrives_A_Attach,	/* 0x0c 0x1e8f50 */
-	cObjElementFXSceneBillArrives_A_Reset,	/* 0x10 0x1e9880 */
-};
 
 /* .?AVcObjElementFXSceneYakuzzi@@ */
-void (*const cObjElementFXSceneYakuzzi_vftable[5])(void) = {
-	cObjElementFXSceneYakuzzi_Delete,	/* 0x00 0x1dec50 */
-	cObjElementFXSceneYakuzzi_Update,	/* 0x04 0x1e8280 */
-	FXMisc_Alive,	/* 0x08 0x1e9820 */
-	cObjElementFXSceneYakuzzi_Attach,	/* 0x0c 0x1e9640 */
-	cObjElementFXSceneYakuzzi_Reset,	/* 0x10 0x1e9a90 */
-};
 
 /* .?AVcObjElementFXSceneBeatPickus@@ */
-void (*const cObjElementFXSceneBeatPickus_vftable[5])(void) = {
-	cObjElementFXSceneBeatPickus_Delete,	/* 0x00 0x1de970 */
-	cObjElementFXSceneBeatPickus_Update,	/* 0x04 0x1dec90 */
-	FXMisc_Alive,	/* 0x08 0x1e9740 */
-	cObjElementFXSceneBeatPickus_Attach,	/* 0x0c 0x1e8de0 */
-	cObjElementFXSceneBeatPickus_Reset,	/* 0x10 0x1e9840 */
-};
 
 /* .?AVcObjElementFXSceneHumanCD@@ */
-void (*const cObjElementFXSceneHumanCD_vftable[5])(void) = {
-	cObjElementFXSceneHumanCD_Delete,	/* 0x00 0x1debb0 */
-	cObjElementFXSceneHumanCD_Update,	/* 0x04 0x1e73e0 */
-	FXMisc_Alive,	/* 0x08 0x1e97e0 */
-	cObjElementFXSceneHumanCD_Attach,	/* 0x0c 0x1e9450 */
-	cObjElementFXSceneHumanCD_Reset,	/* 0x10 0x1e9a40 */
-};
 
 /* .?AVcObjElementFXSceneEnterMatrix@@ */
-void (*const cObjElementFXSceneEnterMatrix_vftable[5])(void) = {
-	cObjElementFXSceneEnterMatrix_Delete,	/* 0x00 0x1deb10 */
-	cObjElementFXSceneEnterMatrix_Update,	/* 0x04 0x1e4b90 */
-	FXMisc_Alive,	/* 0x08 0x1e97c0 */
-	cObjElementFXSceneEnterMatrix_Attach,	/* 0x0c 0x1e9350 */
-	cObjElementFXSceneEnterMatrix_Reset,	/* 0x10 0x1e99c0 */
-};
 
 /* .?AVcObjElementFXSceneTheEndB@@ */
-void (*const cObjElementFXSceneTheEndB_vftable[5])(void) = {
-	cObjElementFXSceneTheEndB_Delete,	/* 0x00 0x1dec00 */
-	cObjElementFXSceneTheEndB_Update,	/* 0x04 0x1e7dc0 */
-	FXMisc_Alive,	/* 0x08 0x1e9800 */
-	cObjElementFXSceneTheEndB_Attach,	/* 0x0c 0x1e95c0 */
-	cObjElementFXSceneTheEndB_Reset,	/* 0x10 0x1e9a70 */
-};
 
 /* .?AVcObjElementFXVehicleDamage@@ */
-void (*const cObjElementFXVehicleDamage_vftable[5])(void) = {
-	cObjElementFXVehicleDamage_Delete,	/* 0x00 0x1ea960 */
-	cObjElementFXVehicleDamage_Update,	/* 0x04 0x1ed9c0 */
-	cObjElementFXVehicleDamage_IsAlive,	/* 0x08 0x1f8a90 */
-	cObjElementFXVehicleDamage_Start,	/* 0x0c 0x1f8540 */
-	cObjElementFXVehicleDamage_Reset,	/* 0x10 0x1f8de0 */
-};
 
 /* .?AVcObjElementFXVehicleFire@@ */
-void (*const cObjElementFXVehicleFire_vftable[5])(void) = {
-	cObjElementFXVehicleFire_Delete,	/* 0x00 0x1eaa70 */
-	cObjElementFXVehicleFire_Update,	/* 0x04 0x1f1b90 */
-	cObjElementFXVehicleFire_IsAlive,	/* 0x08 0x1f8c00 */
-	cObjElementFXVehicleFire_Start,	/* 0x0c 0x1f87b0 */
-	cObjElementFXVehicleFire_Reset,	/* 0x10 0x1f8f30 */
-};
 
 /* .?AVcObjElementFXFiredEntity@@ */
-void (*const cObjElementFXFiredEntity_vftable[5])(void) = {
-	cObjElementFXFiredEntity_Delete,	/* 0x00 0x1ea860 */
-	cObjElementFXFiredEntity_Update,	/* 0x04 0x1eb8d0 */
-	cObjElementFXFiredEntity_IsAlive,	/* 0x08 0x1f8a00 */
-	cObjElementFXFiredEntity_Start,	/* 0x0c 0x1f8330 */
-	cObjElementFXFiredEntity_Reset,	/* 0x10 0x1f8d40 */
-};
 
 /* .?AVcObjElementFXVehicleEMI@@ */
-void (*const cObjElementFXVehicleEMI_vftable[5])(void) = {
-	cObjElementFXVehicleEMI_Delete,	/* 0x00 0x1ea9f0 */
-	cObjElementFXVehicleEMI_Update,	/* 0x04 0x1f0aa0 */
-	cObjElementFXVehicleEMI_IsAlive,	/* 0x08 0x1f8bb0 */
-	cObjElementFXVehicleEMI_Start,	/* 0x0c 0x1f8680 */
-	cObjElementFXVehicleEMI_Reset,	/* 0x10 0x1f8e60 */
-};
 
 /* .?AVcObjElementFXFiredDebris@@ */
-void (*const cObjElementFXFiredDebris_vftable[5])(void) = {
-	cObjElementFXFiredDebris_Delete,	/* 0x00 0x1ea820 */
-	cObjElementFXFiredDebris_Update,	/* 0x04 0x1eabd0 */
-	FXMisc_Alive,	/* 0x08 0x1f89e0 */
-	cObjElementFXFiredDebris_Start,	/* 0x0c 0x1f8290 */
-	cObjElementFXFiredDebris_Reset,	/* 0x10 0x1f8cf0 */
-};
 
 /* .?AVcObjElementFXSmokeDebris@@ */
-void (*const cObjElementFXSmokeDebris_vftable[5])(void) = {
-	cObjElementFXSmokeDebris_Delete,	/* 0x00 0x1ea8a0 */
-	cObjElementFXSmokeDebris_Update,	/* 0x04 0x1ec980 */
-	FXMisc_Alive,	/* 0x08 0x1f8a50 */
-	cObjElementFXSmokeDebris_Start,	/* 0x0c 0x1f8390 */
-	cObjElementFXSmokeDebris_Reset,	/* 0x10 0x1f8d60 */
-};
 
 /* .?AVcObjElementFXVehicleDeathTrail@@ */
-void (*const cObjElementFXVehicleDeathTrail_vftable[5])(void) = {
-	cObjElementFXVehicleDeathTrail_Delete,	/* 0x00 0x1ea9b0 */
-	cObjElementFXDevastatorShoot_Update,	/* 0x04 0x1f0a10 */
-	cObjElementFXDevastatorShoot_IsAlive,	/* 0x08 0x1f8b80 */
-	cObjElementFXVehicleDeathTrail_Start,	/* 0x0c 0x1f8670 */
-	cObjElementFXDevastatorShoot_Reset,	/* 0x10 0x1f8e30 */
-};
 
 /* .?AVcObjElementFXVehicleSputnik@@ */
-void (*const cObjElementFXVehicleSputnik_vftable[5])(void) = {
-	cObjElementFXVehicleSputnik_Delete,	/* 0x00 0x1eab50 */
-	cObjElementFXVehicleSputnik_Update,	/* 0x04 0x1f3960 */
-	cObjElementFXVehicleSputnik_IsAlive,	/* 0x08 0x1f8c80 */
-	cObjElementFXVehicleSputnik_Start,	/* 0x0c 0x1f88e0 */
-	cObjElementFXVehicleSputnik_Reset,	/* 0x10 0x1f8fb0 */
-};
 
 /* .?AVcObjElementFXVehicleSpawn@@ */
-void (*const cObjElementFXVehicleSpawn_vftable[5])(void) = {
-	cObjElementFXVehicleSpawn_Delete,	/* 0x00 0x1eaad0 */
-	cObjElementFXVehicleSpawn_Update,	/* 0x04 0x1f3140 */
-	FXMisc_Alive,	/* 0x08 0x1f8c60 */
-	cObjElementFXVehicleSpawn_Start,	/* 0x0c 0x1f8860 */
-	cObjElementFXVehicleSpawn_Reset,	/* 0x10 0x1f8f60 */
-};
 
 /* .?AVcObjElementFXVehicleAccelerator@@ */
-void (*const cObjElementFXVehicleAccelerator_vftable[5])(void) = {
-	cObjElementFXVehicleAccelerator_Delete,	/* 0x00 0x1ea8e0 */
-	cObjElementFXVehicleAccelerator_Update,	/* 0x04 0x1ed170 */
-	FXMisc_Alive,	/* 0x08 0x1f8a70 */
-	cObjElementFXVehicleAccelerator_Start,	/* 0x0c 0x1f8430 */
-	cObjElementFXVehicleAccelerator_Reset,	/* 0x10 0x1f8da0 */
-};
 
 /* .?AVcObjElementFXSwarmMissile@@ */
-void (*const cObjElementFXSwarmMissile_vftable[5])(void) = {
-	cObjElementFXSwarmMissile_Delete,	/* 0x00 0x1f9e30 */
-	cObjElementFXSwarmMissile_Update,	/* 0x04 0x1fbdd0 */
-	cObjElementFXSwarmMissile_IsAlive,	/* 0x08 0x201ae0 */
-	cObjElementFXSwarmMissile_Start,	/* 0x0c 0x201600 */
-	cObjElementFXSwarmMissile_Reset,	/* 0x10 0x201d80 */
-};
 
 /* .?AVcObjElementFXLaser@@ */
-void (*const cObjElementFXLaser_vftable[5])(void) = {
-	cObjElementFXLaser_Delete,	/* 0x00 0x1f9df0 */
-	cObjElementFXLaser_Update,	/* 0x04 0x1fb9a0 */
-	cObjElementFXLaser_IsAlive,	/* 0x08 0x201ac0 */
-	cObjElementFXLaser_Start,	/* 0x0c 0x201570 */
-	cObjElementFXLaser_Reset,	/* 0x10 0x201d40 */
-};
 
 /* .?AVcObjElementFXDevastatorShoot@@ */
-void (*const cObjElementFXDevastatorShoot_vftable[5])(void) = {
-	cObjElementFXDevastatorShoot_Delete,	/* 0x00 0x1f9cd0 */
-	cObjElementFXDevastatorShoot_Update,	/* 0x04 0x1fb0f0 */
-	cObjElementFXDevastatorShoot_IsAlive,	/* 0x08 0x201a00 */
-	cObjElementFXDevastatorShoot_Start,	/* 0x0c 0x2011d0 */
-	cObjElementFXDevastatorShoot_Reset,	/* 0x10 0x201c60 */
-};
 
 /* .?AVcObjElementFXTesla@@ */
-void (*const cObjElementFXTesla_vftable[5])(void) = {
-	cObjElementFXTesla_Delete,	/* 0x00 0x1f9e70 */
-	cObjElementFXTesla_Update,	/* 0x04 0x1fc0a0 */
-	cObjElementFXTesla_IsAlive,	/* 0x08 0x201b50 */
-	cObjElementFXTesla_Start,	/* 0x0c 0x2018d0 */
-	cObjElementFXTesla_Reset,	/* 0x10 0x201dc0 */
-};
 
 /* .?AVcObjElementFXATPC@@ */
-void (*const cObjElementFXATPC_vftable[5])(void) = {
-	cObjElementFXATPC_Delete,	/* 0x00 0x1f9ca0 */
-	cObjElementFXATPC_Update,	/* 0x04 0x1f9f00 */
-	FXMisc_Alive,	/* 0x08 0x2019e0 */
-	cObjElementFXATPC_Start,	/* 0x0c 0x201070 */
-	cObjElementFXATPC_Reset,	/* 0x10 0x201c00 */
-};
 
 /* .?AVcObjElementFXInfernoMissile@@ */
-void (*const cObjElementFXInfernoMissile_vftable[5])(void) = {
-	cObjElementFXInfernoMissile_Delete,	/* 0x00 0x1f9da0 */
-	cObjElementFXInfernoMissile_Update,	/* 0x04 0x1fb690 */
-	cObjElementFXInfernoMissile_IsAlive,	/* 0x08 0x201a50 */
-	cObjElementFXInfernoMissile_Start,	/* 0x0c 0x201300 */
-	cObjElementFXInfernoMissile_Reset,	/* 0x10 0x201cf0 */
-};
 
 /* .?AVcObjElementFXInfernoExplosion@@ */
-void (*const cObjElementFXInfernoExplosion_vftable[5])(void) = {
-	cObjElementFXInfernoExplosion_Delete,	/* 0x00 0x1f9d10 */
-	cObjElementFXInfernoExplosion_Update,	/* 0x04 0x1fb180 */
-	FXMisc_Alive,	/* 0x08 0x201a30 */
-	cObjElementFXInfernoExplosion_Start,	/* 0x0c 0x201210 */
-	cObjElementFXInfernoExplosion_Reset,	/* 0x10 0x201c90 */
-};
 
 /* .?AVcMapElement@@ */
 void (*const cMapElement_vftable[3])(void) = {

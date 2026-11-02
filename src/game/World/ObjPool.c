@@ -34,7 +34,8 @@ void *cObjElementFXSceneTheEndB_ctor(void *self);
 void *cObjElementFXSceneYakuzzi_ctor(void *self);
 void *cObjElementFXSputnik_ctor(void *self);
 
-#define COBJELEMENTABSTRACT_VFTABLE GAME_VFTABLE(cObjElementAbstract_vftable)
+extern const cObjElementFXVtbl cObjElementAbstract_vftable;
+#define COBJELEMENTABSTRACT_VFTABLE (&cObjElementAbstract_vftable)
 #define DEBRIS_STEP 0.05f
 #define DEBRIS_MAXSTEP 0.1f
 
@@ -500,3 +501,12 @@ void cDebrisSys_Update(cDebrisSys *sys, float dt) {
 		cDebris_Step(d, sys->time);
 	}
 }
+
+/* the vtable of cObjElementAbstract */
+const cObjElementFXVtbl cObjElementAbstract_vftable = {
+	.Delete = cObjElementAbstract_Delete,
+	.Update = (void *)crt_purecall,
+	.IsAlive = (void *)crt_purecall,
+	.Start = (void *)crt_purecall,
+	.Reset = (void *)crt_purecall,
+};

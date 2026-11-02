@@ -13,6 +13,7 @@
 #include "scrap/gvar.h"
 #include "scrap/crt.h"
 #include "scrap/entity.h"
+#include "scrap/fxcountermeasures.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcamera.h"
 #include "scrap/scrapparticles.h"
@@ -25,6 +26,7 @@
 /* Debris.cpp (rva 0x204940..) */
 /* the destructor of the base class: the vtable of cObjElementAbstract */
 void cObjElement_dtor(void *self);
+cObjElementFX *cObjElementAbstract_Delete(cObjElementFX *base, byte flags);
 /* the debris moved by its velocities over dt */
 void cDebris_Move(cDebris *self, float dt);
 /* the first idle debris of the system, else a new one */
@@ -227,42 +229,42 @@ double Vec3_Angle(const vec3_t *a, const vec3_t *b);
 vec3_t *Vec3_NormalizeTo(vec3_t *out, const vec3_t *in);
 
 /* the element methods; the same code of several classes is one function */
-byte FXMisc_Alive(void *self, cDebris *d, cDebrisSys *sys);
-void FXMisc_Nop(void *self, int arg);
-void FXMisc_Clear4(void *self, int arg);
-void FXMisc_Clear8(void *self, int arg);
-void cObjElementFXItemFade_Update(cObjElementFXItemFade *self, cDebris *d, float dt);
-void cObjElementFXItemFade_Attach(cObjElementFXItemFade *self, cDebris *d);
-void cObjElementFXItemFade_Reset(cObjElementFXItemFade *self, int arg);
+byte FXMisc_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys);
+void FXMisc_Nop(cObjElementFX *base, cDebris *arg);
+void FXMisc_Clear4(cObjElementFX *base, cDebris *arg);
+void FXMisc_Clear8(cObjElementFX *base, cDebris *arg);
+void cObjElementFXItemFade_Update(cObjElementFX *base, cDebris *d, float dt);
+void cObjElementFXItemFade_Attach(cObjElementFX *base, cDebris *d);
+void cObjElementFXItemFade_Reset(cObjElementFX *base, cDebris *arg);
 /* the fade of the model of e starts with the blink particles around it */
 void cObjElementFXItemFade_Start(cObjElementFXItemFade *self, cEntity *e);
-void cObjElementFXItemTake_Update(cObjElementFXItemTake *self, cDebris *d, float dt);
-void cObjElementFXItemTake_Attach(cObjElementFXItemTake *self, cDebris *d);
-void cObjElementFXItemTake_Reset(cObjElementFXItemTake *self, int arg);
+void cObjElementFXItemTake_Update(cObjElementFX *base, cDebris *d, float dt);
+void cObjElementFXItemTake_Attach(cObjElementFX *base, cDebris *d);
+void cObjElementFXItemTake_Reset(cObjElementFX *base, cDebris *arg);
 /* the random lines of particles from e (to the target set after it) */
 void cObjElementFXItemTake_Start(cObjElementFXItemTake *self, cEntity *e);
-void cObjElementFXModelFade_Update(cObjElementFXModelFade *self, cDebris *d, float dt);
-byte cObjElementFXModelFade_Alive(cObjElementFXModelFade *self, cDebris *d, cDebrisSys *sys);
-void cObjElementFXModelNoise_Update(cObjElementFXModelNoise *self, cDebris *d, float dt);
-byte cObjElementFXModelNoise_Alive(cObjElementFXModelNoise *self, cDebris *d, cDebrisSys *sys);
-void cObjElementFXParticleSystem_Update(cObjElementFXParticleSystem *self, cDebris *d, float dt);
-void cObjElementFXParticleSystem_Attach(cObjElementFXParticleSystem *self, cDebris *d);
-void cObjElementFXParticleSystemDuDv_Attach(cObjElementFXParticleSystemDuDv *self, cDebris *d);
-void cObjElementFXSparks_Update(cObjElementFXSparks *self, cDebris *d, float dt);
-void cObjElementFXSparks_Attach(cObjElementFXSparks *self, cDebris *d);
-void cObjElementFXSparks_Reset(cObjElementFXSparks *self, int arg);
+void cObjElementFXModelFade_Update(cObjElementFX *base, cDebris *d, float dt);
+byte cObjElementFXModelFade_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys);
+void cObjElementFXModelNoise_Update(cObjElementFX *base, cDebris *d, float dt);
+byte cObjElementFXModelNoise_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys);
+void cObjElementFXParticleSystem_Update(cObjElementFX *base, cDebris *d, float dt);
+void cObjElementFXParticleSystem_Attach(cObjElementFX *base, cDebris *d);
+void cObjElementFXParticleSystemDuDv_Attach(cObjElementFX *base, cDebris *d);
+void cObjElementFXSparks_Update(cObjElementFX *base, cDebris *d, float dt);
+void cObjElementFXSparks_Attach(cObjElementFX *base, cDebris *d);
+void cObjElementFXSparks_Reset(cObjElementFX *base, cDebris *arg);
 /* n sparks at p along dir turned by up to the spread angles; the pairs are random ranges */
 void cObjElementFXSparks_Emit(cObjElementFXSparks *self, int n, float px, float py, float pz, float dx,
 	float dy, float dz, float sx, float sy, float sz, float jx, float jy, float jz, float speedMin, float speedMax,
 	float sizeMin, float sizeMax, float scaleHead, float scaleTail, float lifeMin, float lifeMax, float lmMin,
 	float lmMax, float delayMin, float delayMax, uint32_t color, float noiseMin, float noiseMax, float segMin,
 	float segMax, int sprite);
-void cObjElementFXTrail_Update(cObjElementFXTrail *self, cDebris *d, float dt);
-byte cObjElementFXTrail_Alive(cObjElementFXTrail *self, cDebris *d, cDebrisSys *sys);
-void cObjElementFXTrail_Reset(cObjElementFXTrail *self, int arg);
-byte cObjElementFXFadeOutTrail_Alive(cObjElementFXFadeOutTrail *self, cDebris *d, cDebrisSys *sys);
-void cObjElementFXFadeOutTrail_Reset(cObjElementFXFadeOutTrail *self, int arg);
-void cObjElementFXFadeOutTrail_Update(cObjElementFXFadeOutTrail *self, cDebris *d, float dt);
+void cObjElementFXTrail_Update(cObjElementFX *base, cDebris *d, float dt);
+byte cObjElementFXTrail_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys);
+void cObjElementFXTrail_Reset(cObjElementFX *base, cDebris *arg);
+byte cObjElementFXFadeOutTrail_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys);
+void cObjElementFXFadeOutTrail_Reset(cObjElementFX *base, cDebris *arg);
+void cObjElementFXFadeOutTrail_Update(cObjElementFX *base, cDebris *d, float dt);
 /* the constructors and destructors (rva 0x1da190..0x1da6c8) and the deleting destructors (vtable slot
  * 0, rva 0x1da6d0..0x1da940) */
 void *cObjElementFXFadeOutTrail_ctor(void *self);
@@ -283,17 +285,15 @@ void cObjElementFXParticleSystem_dtor(void *self);
 void cObjElementFXParticleSystemDuDv_dtor(cObjElementFXParticleSystemDuDv *self);
 void cObjElementFXSparks_dtor(void *self);
 void cObjElementFXTrail_dtor(void *self);
-void *cObjElementFXFadeOutTrail_Delete(void *self, uint32_t flags);
-void *cObjElementFXItemFade_Delete(void *self, uint32_t flags);
-void *cObjElementFXItemTake_Delete(void *self, uint32_t flags);
-void *cObjElementFXModelFade_Delete(void *self, uint32_t flags);
-void *cObjElementFXModelNoise_Delete(void *self, uint32_t flags);
-void *cObjElementFXParticleSystem_Delete(void *self, uint32_t flags);
-cObjElementFXParticleSystemDuDv *cObjElementFXParticleSystemDuDv_Delete(
-	cObjElementFXParticleSystemDuDv *self,
-	uint32_t flags);
-void *cObjElementFXSparks_Delete(void *self, uint32_t flags);
-void *cObjElementFXTrail_Delete(void *self, uint32_t flags);
+cObjElementFX *cObjElementFXFadeOutTrail_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXItemFade_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXItemTake_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXModelFade_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXModelNoise_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXParticleSystem_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXParticleSystemDuDv_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXSparks_Delete(cObjElementFX *base, byte flags);
+cObjElementFX *cObjElementFXTrail_Delete(cObjElementFX *base, byte flags);
 /* the elements of the effects started by name: the entity (its model a CHECK), fields at 0x8 and 0xc */
 void FXMisc_SetEntity(void *self, cEntity *e);
 void FXMisc_SetF8(void *self, float v);

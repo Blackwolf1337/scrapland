@@ -89,8 +89,17 @@ def emit(struct, names):
         ref = '&%s%s' % (vt, '.' + bp if bp else '')
         if macro:
             t = open(mfile).read()
-            t = re.sub(r'#define %s\s+GAME_VFTABLE\(%s\)' % (macro, vt),
-                       'extern const %s %s;\n#define %s (%s)' % (struct, vt, macro, ref), t)
+            block = 'extern const %s %s;\n#define %s (%s)\n' % (struct, vt, macro, ref)
+            t = re.sub(r'#define %s\s+GAME_VFTABLE\(%s\)[^\n]*\n' % (macro, vt), lambda m: block, t)
+            # after the definition of the struct when that comes later in the same file
+            d = t.find('} %s;' % struct)
+            if d > t.find(block):
+                t = t.replace(block, '', 1)
+                d = t.find('} %s;' % struct)
+                e = t.index('\n', d) + 1
+                while t[e:].startswith('SD_'):
+                    e = t.index('\n', e) + 1
+                t = t[:e] + block + t[e:]
             open(mfile, 'w').write(t)
         # the array out of Vtables.c
         src = re.sub(r'void \(\*const %s\[\d+\]\)\(void\) = \{.*?\n\};\n' % vt, '', src, flags=re.S)
@@ -196,7 +205,7 @@ def fixsig(logfile):
                 continue
             if i == 0 and '*' in t and '*' in w:
                 if name and re.search(r'\b%s\b' % name, body):
-                    bname = 'base' if name != 'base' else 'obj'
+                    bname = 'base' if name != 'base' and not re.search(r'\bbase\b', body) else 'elem'
                     newp.append('%s%s%s' % (w, '' if w.endswith('*') else ' ', bname))
                     local = (t, name, bname)
                 else:

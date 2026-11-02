@@ -192,7 +192,8 @@ static void FXConversion_RandomPoints(cObjElementFXCharacterConversion *self) {
 	self->unused_178 = 0.0f;
 }
 
-void cObjElementFXCharacterConversion_Attach(cObjElementFXCharacterConversion *self, cDebris *d) {
+void cObjElementFXCharacterConversion_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXCharacterConversion *self = (cObjElementFXCharacterConversion *)base;
 	CGameModel *m = Debris_Model(d);
 	uint32_t i = CGameModel_IsLoaded(m) ? (uint32_t)CGameModel_FindRenderNode(m, "Dummy01") : (uint32_t)(uintptr_t)m;
 
@@ -214,7 +215,8 @@ void cObjElementFXCharacterConversion_Attach(cObjElementFXCharacterConversion *s
 	FXConversion_RandomPoints(self);
 }
 
-void cObjElementFXCharacterConversion_Reset(cObjElementFXCharacterConversion *self, int arg) {
+void cObjElementFXCharacterConversion_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXCharacterConversion *self = (cObjElementFXCharacterConversion *)base;
 	(void)arg;
 	self->time = 0.0f;
 	self->emitT = 0.0f;
@@ -226,7 +228,8 @@ void cObjElementFXCharacterConversion_Reset(cObjElementFXCharacterConversion *se
 	FXConversion_RandomPoints(self);
 }
 
-void cObjElementFXCharacterConversor_Attach(cObjElementFXCharacterConversor *self, cDebris *d) {
+void cObjElementFXCharacterConversor_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXCharacterConversor *self = (cObjElementFXCharacterConversor *)base;
 	FX_AttachDummy(&self->particles, Debris_Model(d));
 	self->numTrails = FXCONVERSOR_TRAILS;
 	for (int i = 0; i < self->numTrails; i++) {
@@ -243,7 +246,8 @@ void cObjElementFXCharacterConversor_Attach(cObjElementFXCharacterConversor *sel
 	self->numPoints = 5;
 }
 
-void cObjElementFXCharacterConversor_Reset(cObjElementFXCharacterConversor *self, int arg) {
+void cObjElementFXCharacterConversor_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXCharacterConversor *self = (cObjElementFXCharacterConversor *)base;
 	(void)arg;
 	self->time = 0.0f;
 	self->emitT = 0.0f;
@@ -278,7 +282,8 @@ static void FXDeath_ResetTrails(cObjElementFXCharacterDeath *self, byte attach) 
 	}
 }
 
-void cObjElementFXCharacterDeath_Attach(cObjElementFXCharacterDeath *self, cDebris *d) {
+void cObjElementFXCharacterDeath_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXCharacterDeath *self = (cObjElementFXCharacterDeath *)base;
 	CGameModel *m = Debris_Model(d);
 
 	CHECK(CGameModel_IsLoaded(m));
@@ -288,23 +293,27 @@ void cObjElementFXCharacterDeath_Attach(cObjElementFXCharacterDeath *self, cDebr
 	FXDeath_ResetTrails(self, 1);
 }
 
-void cObjElementFXCharacterDeath_Reset(cObjElementFXCharacterDeath *self, int arg) {
+void cObjElementFXCharacterDeath_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXCharacterDeath *self = (cObjElementFXCharacterDeath *)base;
 	(void)arg;
 	FXDeath_ResetTrails(self, 0);
 }
 
-void cObjElementFXCharacterTeleport_Attach(cObjElementFXCharacterTeleport *self, cDebris *d) {
+void cObjElementFXCharacterTeleport_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXCharacterTeleport *self = (cObjElementFXCharacterTeleport *)base;
 	FX_AttachDummy(&self->particles, Debris_Model(d));
 }
 
-void cObjElementFXCharacterTeleport_Reset(cObjElementFXCharacterTeleport *self, int arg) {
+void cObjElementFXCharacterTeleport_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXCharacterTeleport *self = (cObjElementFXCharacterTeleport *)base;
 	(void)arg;
 	self->t = 0.0f;
 	self->emitT = 0.0f;
 	self->mode = 0;
 }
 
-void cObjElementFXMaintenanceWork_Attach(cObjElementFXMaintenanceWork *self, cDebris *d) {
+void cObjElementFXMaintenanceWork_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXMaintenanceWork *self = (cObjElementFXMaintenanceWork *)base;
 	CGameModel *m = Debris_Model(d);
 
 	CHECK(CGameModel_IsLoaded(m));
@@ -318,7 +327,8 @@ void cObjElementFXMaintenanceWork_Attach(cObjElementFXMaintenanceWork *self, cDe
 	self->sound = 0;
 }
 
-void cObjElementFXMaintenanceWork_Reset(cObjElementFXMaintenanceWork *self, int arg) {
+void cObjElementFXMaintenanceWork_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXMaintenanceWork *self = (cObjElementFXMaintenanceWork *)base;
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -329,26 +339,30 @@ void cObjElementFXMaintenanceWork_Reset(cObjElementFXMaintenanceWork *self, int 
 	self->sound = 0;
 }
 
-void cObjElementFXMoneyTransfer_Attach(cObjElementFXMoneyTransfer *self, cDebris *d) {
+void cObjElementFXMoneyTransfer_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXMoneyTransfer *self = (cObjElementFXMoneyTransfer *)base;
 	CGameModel *m = Debris_Model(d);
 
 	CHECK(CGameModel_IsLoaded(m));
 	CGameParticles_Attach(&self->particles, m, FXC_Node(m, "Dummy01"));
 }
 
-void cObjElementFXMoneyTransfer_Reset(cObjElementFXMoneyTransfer *self, int arg) {
+void cObjElementFXMoneyTransfer_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXMoneyTransfer *self = (cObjElementFXMoneyTransfer *)base;
 	(void)arg;
 	self->from = NULL;
 	self->to = NULL;
 	self->emitT = 0.0f;
 }
 
-void cObjElementFXSputnik_Attach(cObjElementFXSputnik *self, cDebris *d) {
+void cObjElementFXSputnik_Attach(cObjElementFX *base, cDebris *d) {
+	cObjElementFXSputnik *self = (cObjElementFXSputnik *)base;
 	FX_AttachDummy(&self->particles, Debris_Model(d));
 	self->moveT = 0.0f;
 }
 
-void cObjElementFXSputnik_Reset(cObjElementFXSputnik *self, int arg) {
+void cObjElementFXSputnik_Reset(cObjElementFX *base, cDebris *arg) {
+	cObjElementFXSputnik *self = (cObjElementFXSputnik *)base;
 	(void)arg;
 	self->t = 0.0f;
 	self->emitT = 0.0f;
@@ -359,8 +373,8 @@ void cObjElementFXSputnik_Reset(cObjElementFXSputnik *self, int arg) {
 
 /* ---- Alive (vf02) ---- */
 
-byte cObjElementFXCharacterConversion_Alive(cObjElementFXCharacterConversion *self, cDebris *d,
-	cDebrisSys *sys) {
+byte cObjElementFXCharacterConversion_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys) {
+	cObjElementFXCharacterConversion *self = (cObjElementFXCharacterConversion *)base;
 	if (cDebris_Update(d, sys)) {
 		return 1;
 	}
@@ -375,8 +389,8 @@ byte cObjElementFXCharacterConversion_Alive(cObjElementFXCharacterConversion *se
 	return 0;
 }
 
-byte cObjElementFXCharacterConversor_Alive(cObjElementFXCharacterConversor *self, cDebris *d,
-	cDebrisSys *sys) {
+byte cObjElementFXCharacterConversor_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys) {
+	cObjElementFXCharacterConversor *self = (cObjElementFXCharacterConversor *)base;
 	if (cDebris_Update(d, sys)) {
 		return 1;
 	}
@@ -398,8 +412,8 @@ byte cObjElementFXCharacterConversor_Alive(cObjElementFXCharacterConversor *self
 	return 0;
 }
 
-byte cObjElementFXCharacterTeleport_Alive(cObjElementFXCharacterTeleport *self, cDebris *d,
-	cDebrisSys *sys) {
+byte cObjElementFXCharacterTeleport_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys) {
+	cObjElementFXCharacterTeleport *self = (cObjElementFXCharacterTeleport *)base;
 	if (cDebris_Update(d, sys)) {
 		return 1;
 	}
@@ -409,7 +423,8 @@ byte cObjElementFXCharacterTeleport_Alive(cObjElementFXCharacterTeleport *self, 
 	return 0;
 }
 
-byte cObjElementFXMaintenanceWork_Alive(cObjElementFXMaintenanceWork *self, cDebris *d, cDebrisSys *sys) {
+byte cObjElementFXMaintenanceWork_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys) {
+	cObjElementFXMaintenanceWork *self = (cObjElementFXMaintenanceWork *)base;
 	if (cDebris_Update(d, sys)) {
 		return 1;
 	}
@@ -421,7 +436,8 @@ byte cObjElementFXMaintenanceWork_Alive(cObjElementFXMaintenanceWork *self, cDeb
 	return 0;
 }
 
-byte cObjElementFXSputnik_Alive(cObjElementFXSputnik *self, cDebris *d, cDebrisSys *sys) {
+byte cObjElementFXSputnik_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys) {
+	cObjElementFXSputnik *self = (cObjElementFXSputnik *)base;
 	if (self->duration == 0.0f) {
 		d->life = 1.0f;
 	}
@@ -430,7 +446,8 @@ byte cObjElementFXSputnik_Alive(cObjElementFXSputnik *self, cDebris *d, cDebrisS
 
 /* ---- Update (vf01) ---- */
 
-void cObjElementFXMoneyTransfer_Update(cObjElementFXMoneyTransfer *self, cDebris *d, float dt) {
+void cObjElementFXMoneyTransfer_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXMoneyTransfer *self = (cObjElementFXMoneyTransfer *)base;
 	vec3_t a, b, mid, dir;
 
 	(void)dt;
@@ -525,7 +542,8 @@ static void FXConversion_Spark(CGameParticles *sp, const vec3_t *v, double range
 #define FXCONVERSION_SPARK_T 0.005000000353902578f
 #define FXCONVERSION_SPARK_VERTS 12
 
-void cObjElementFXCharacterConversion_Update(cObjElementFXCharacterConversion *self, cDebris *d, float dt) {
+void cObjElementFXCharacterConversion_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXCharacterConversion *self = (cObjElementFXCharacterConversion *)base;
 	vec3_t tmp, tmp2, pa, pb, D, nOut, verts[FXCONVERSION_SPARK_VERTS];
 	float fr;
 
@@ -705,7 +723,8 @@ static void FXC_SetStill(CGameParticles *sp, const vec3_t *p) {
 	sp->initAccMax = sp->initAccMin;
 }
 
-void cObjElementFXMaintenanceWork_Update(cObjElementFXMaintenanceWork *self, cDebris *d, float dt) {
+void cObjElementFXMaintenanceWork_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXMaintenanceWork *self = (cObjElementFXMaintenanceWork *)base;
 	vec3_t laserPos, c, diff, n, dir, rot;
 
 	self->maintenance = FXC_Keep(self->maintenance);
@@ -962,7 +981,8 @@ static void FXTeleport_Smoke(CGameParticles *sp, float life) {
 #define FXTELEPORT_VERTS 0x60
 #define FXTELEPORT_GLOWS 0x18
 
-void cObjElementFXCharacterTeleport_Update(cObjElementFXCharacterTeleport *self, cDebris *d, float dt) {
+void cObjElementFXCharacterTeleport_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXCharacterTeleport *self = (cObjElementFXCharacterTeleport *)base;
 	vec3_t c, p, diff, n, verts[FXTELEPORT_VERTS];
 	uint32_t bits;
 
@@ -1226,7 +1246,8 @@ static void FXDeath_Glow(CGameParticles *sp, const vec3_t *v, float r, double in
 	CGameParticles_EmitN(sp, 1, 0);
 }
 
-void cObjElementFXCharacterDeath_Update(cObjElementFXCharacterDeath *self, cDebris *d, float dt) {
+void cObjElementFXCharacterDeath_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXCharacterDeath *self = (cObjElementFXCharacterDeath *)base;
 	vec3_t p, dir, verts[FXDEATH_VERTS];
 	float a;
 	uint32_t bits;
@@ -1538,7 +1559,8 @@ static void FXConversor_Exit(CGameModel *mc, int node, const vec3_t *rot, vec3_t
 	Vec3_Rotate(dir, Vec3_Rotate(&o1, &up, rot), &eu);
 }
 
-void cObjElementFXCharacterConversor_Update(cObjElementFXCharacterConversor *self, cDebris *d, float dt) {
+void cObjElementFXCharacterConversor_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXCharacterConversor *self = (cObjElementFXCharacterConversor *)base;
 	vec3_t c, cc, rot, eu, o1, o2, p, pt, dir, verts[FXCONVERSOR_VERTS], coefs[FXCONVERSOR_POINTS];
 	matrix_t mat;
 	uint32_t bits;
@@ -1868,7 +1890,8 @@ static void FXSputnik_SetAcc(CGameParticles *sp) {
 	sp->initAccMax = sp->initAccMin;
 }
 
-void cObjElementFXSputnik_Update(cObjElementFXSputnik *self, cDebris *d, float dt) {
+void cObjElementFXSputnik_Update(cObjElementFX *base, cDebris *d, float dt) {
+	cObjElementFXSputnik *self = (cObjElementFXSputnik *)base;
 	vec3_t pos, rot, dir;
 	matrix_t mat;
 
