@@ -1,0 +1,15 @@
+# Vulkan validation messages that do not come from ScrapC.exe but from gamescope, seen when the validation layer was
+# on for gamescope too (VK_INSTANCE_LAYERS for the whole run). wine.sh with SCRAP_VK_VALIDATION=1 turns it on for
+# the game only, where none of these showed up (2026-11-02); vkcheck.sh and the scrap MCP server still leave them
+# out, in case a run validates gamescope again. One VUID per line, then the reason.
+VUID-RuntimeSpirv-None-12205	gamescope: compute shader of its compositor indexes YCbCr samplers
+VUID-VkApplicationInfo-sType-sType	winevulkan: its own instance of the host loader
+VUID-vkBindImageMemory-memory-02728	gamescope WSI: dma_buf memory bound to its swapchain images
+VUID-vkCreateDevice-ppEnabledExtensionNames-01387	gamescope WSI: dma_buf extension without external_memory_fd
+VUID-vkCreateInstance-ppEnabledExtensionNames-01388	gamescope WSI: wayland surface without VK_KHR_surface
+VUID-VkExportMemoryAllocateInfo-handleTypes-09860	gamescope WSI: export memory of its swapchain images
+VUID-vkGetImageSubresourceLayout-image-07790	gamescope WSI: layout query of optimal tiled images
+VUID-VkImageCreateInfo-pNext-pNext	gamescope WSI / winevulkan: structures the layer does not know
+VUID-VkMemoryAllocateInfo-pNext-pNext	gamescope WSI / winevulkan: structures the layer does not know
+VUID-VkMemoryMapInfo-flags-09651	winevulkan: placed memory maps of the 32 bit thunks
+VUID-vkQueueSubmit-pWaitDstStageMask-00066	gamescope: submit on its compute queue

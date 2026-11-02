@@ -1,75 +1,80 @@
 #!/bin/bash
-# Differential test of the C functions: runs the test scripts of tools/test/py in the game, each twice, with the
-# hooks of the DLL ([general] hooks=1) and with the original functions (hooks=0), and compares the outputs.
-# Hidden and muted through wine.sh. Exit code 0 when every run finished and the outputs match.
+# Differential test of ScrapC.exe: runs the test scripts of tools/test/py in the game, once with the current build and
+# once with a frozen reference ScrapC.exe, and compares the outputs. Hidden and muted through wine.sh. Exit code 0
+# when every run finished and the outputs match.
 #
-# Scenarios: sdtest.py in the main menu, sdcall.py there too (pure functions called by RVA through the module
-# SDTest of src/core/testmod.c), sdlevel.py in the multiplayer level FZ (-imap:Levels/FZ).
+# Scenarios: sdtest.py in the main menu, sdcall.py there too (functions called by name through the module SDTest of
+# src/core/testmod.c), sdlevel.py in the multiplayer level FZ (-imap:Levels/FZ). Each scenario runs in a game of its
+# own (build/difftest/slot-<scenario>, made once by mkgame.sh --into), so they run at the same time. The outputs of
+# the reference are cached by the hashes of the reference exe, the test scripts and the scenario arguments: the
+# reference does not change, so after the first run only the current build runs.
 #
 # usage: tools/test/difftest.sh [scenario ...]   (sdtest, sdcall, sdlevel; default all; builds nothing: run cmake first)
+#        DIFFTEST_REF      the reference exe, default build-ref-noexact/ScrapC.exe (tag ref-noexact)
 #        DIFFTEST_TIMEOUT  seconds per run, default 240
-#        DIFFTEST_WIPE=1   the hooked run of the hook DLL also fills the rest of every hooked original with int3
-#                          ([general] wipe), 2 the whole game code but for the hooks, 3 that with a probe that logs each
-#                          trap and goes on with the original code (src/core/hook.c)
-#        DIFFTEST_STANDALONE=1  the hooked run starts ScrapC.exe, the standalone exe (docs/standalone.md), which has no
-#                          original code and ignores wipe
-#        DIFFTEST_REF=exe  compare ScrapC.exe with a reference ScrapC.exe (copied to game/Bin/ScrapRef.exe) in place of
-#                          Scrap.exe, e.g. build-ref/ScrapC.exe built from the tag hooked-final; both use the builtin
-#                          dinput8 of Wine
+#        DIFFTEST_JOBS     scenarios at the same time, default 3
+#        DIFFTEST_NOCACHE=1  run the reference even when its outputs are cached
 root=$(cd "$(dirname "$0")/../.." && pwd)
-game=$root/game
-ini=$game/Bin/scrapdecomp.ini
+ref=${DIFFTEST_REF:-$root/build-ref-noexact/ScrapC.exe}
 out=$root/build/difftest
-mkdir -p "$out"
-fifo=$(mktemp -u)
-mkfifo "$fifo" && exec 3<> "$fifo" && rm -f "$fifo"
+cache=$out/refcache
+mkdir -p "$out" "$cache"
 
 declare -A extra=([sdtest]="" [sdcall]="" [sdlevel]="-imap:Levels/FZ")
 scenarios=("$@")
 [ ${#scenarios[@]} -gt 0 ] || scenarios=(sdtest sdcall sdlevel)
-
+for s in "${scenarios[@]}"; do
+	[ -n "${extra[$s]+x}" ] || { echo "difftest.sh: unknown scenario $s" >&2; exit 1; }
+done
+[ -f "$ref" ] || { echo "difftest.sh: no reference exe $ref" >&2; exit 1; }
+[ -f "$root/build/ScrapC.exe" ] || { echo "difftest.sh: build/ScrapC.exe missing, build first" >&2; exit 1; }
 python3 "$root/tools/test/sigcheck.py" "$root"/tools/test/py/*.py || exit 1
-"$root/tools/test/install.sh" || exit 1
-cp "$root"/tools/test/py/*.py "$game/" || exit 1
-if [ -n "$DIFFTEST_REF" ]; then
-	cp "$DIFFTEST_REF" "$game/Bin/ScrapRef.exe.new" && mv "$game/Bin/ScrapRef.exe.new" "$game/Bin/ScrapRef.exe" || exit 1
-fi
+"$root/tools/test/install.sh" > /dev/null || exit 1
+scripts=$(cat "$root"/tools/test/py/*.py | sha256sum | cut -c1-16)
+refsum=$(sha256sum "$ref" | cut -c1-16)
 
-# the files the scripts write
+# the files the scripts write into the game directory
 rm_written() {
 	shopt -s nocaseglob
-	rm -f "$game"/sd*.txt "$game"/sd*.txf "$game"/sd*.bmp "$game"/sd*.tga "$game"/sd*.tex "$game"/sd*.bak
-	rm -rf "$game"/sdbsctxf
+	rm -f "$1"/sd*.txt "$1"/sd*.txf "$1"/sd*.bmp "$1"/sd*.tga "$1"/sd*.tex "$1"/sd*.bak
+	rm -rf "$1"/sdbsctxf
 	shopt -u nocaseglob
 }
 
-# run <scenario> <hooks 1|0> <tag>
-run() {
-	local name=$1 result=$game/$1.out tag=$1-$3 exe=Scrap.exe
-	local arg
-	local dinput="dinput8=n,b"
-	[ "$2" = 1 ] && [ "${DIFFTEST_STANDALONE:-0}" = 1 ] && exe=ScrapC.exe
-	if [ -n "$DIFFTEST_REF" ]; then
-		exe=ScrapC.exe dinput="dinput8=b"
-		[ "$2" = 0 ] && exe=ScrapRef.exe
+# the slot of a scenario: its game and prefix, the exes, DLLs and scripts of now
+slot_prepare() {
+	local dir=$out/slot-$1
+	if [ ! -d "$dir/game/Bin" ] || [ ! -d "$dir/prefix" ]; then
+		"$root/tools/test/mkgame.sh" --into "$dir" "$root" > /dev/null || return 1
 	fi
+	cp "$root/game/Bin/ScrapC.exe" "$root"/game/Bin/av*.dll "$root"/game/Bin/swscale*.dll "$dir/game/Bin/" || return 1
+	cp "$ref" "$dir/game/Bin/ScrapRef.exe" || return 1
+	rm -f "$dir"/game/sd*.py "$dir"/game/sd*.out
+	cp "$root"/tools/test/py/*.py "$dir/game/" || return 1
+	printf '[general]\ntestmod=1\n' > "$dir/game/Bin/scrapdecomp.ini"
+}
+
+# run <scenario> <exe> <tag>: one game in the slot of the scenario, its output in $out/<tag>.out
+run() {
+	local name=$1 exe=$2 tag=$3 dir=$out/slot-$1
+	local game=$dir/game result=$dir/game/$1.out
+	local arg
 	arg="-PythonExecute:execfile($(python3 -I -c "print('+'.join('chr(%d)' % ord(c) for c in '$name.py'))"))"
-	printf '[general]\nhooks=%s\ntestmod=1\nwipe=%s\n' "$2" "$(($2 ? ${DIFFTEST_WIPE:-0} : 0))" > "$ini"
-	# so the second run does not find the files of the first
 	rm -f "$result"
-	rm_written
+	rm_written "$game"
 	# shellcheck disable=SC2086 # extra arguments of the scenario, word split on purpose
-	HEADLESS_TIMEOUT=${DIFFTEST_TIMEOUT:-240} WINEDLLOVERRIDES="$dinput" WINE_LOG="$out/wine-$tag.log" \
+	SCRAP_GAME_DIR=$game SCRAP_PREFIX=$dir/prefix HEADLESS_TIMEOUT=${DIFFTEST_TIMEOUT:-240} \
+		WINEDLLOVERRIDES="dinput8=b" WINE_LOG="$out/wine-$tag.log" \
 		"$root/tools/test/wine.sh" "$exe" -fullscreen:0 ${extra[$name]} "$arg" &
 	local pid=$!
 	# the script writes "done" as its last line (CRLF, Python runs on Windows); then the game is stopped
 	# (Scrap.Exit() from the startup script did not quit reliably)
 	while kill -0 "$pid" 2> /dev/null; do
 		if tail -n 1 "$result" 2> /dev/null | tr -d '\r' | grep -qx 'done'; then
-			WINEPREFIX=$root/prefix wineserver -k 2> /dev/null
+			WINEPREFIX=$dir/prefix wineserver -k 2> /dev/null
 			break
 		fi
-		read -rt 1 -u 3 # one second, without using CPU: nobody writes to the fifo
+		sleep 1
 	done
 	wait "$pid" 2> /dev/null
 	cp "$game/Bin/scrapdecomp.log" "$out/scrapdecomp-$tag.log" 2> /dev/null
@@ -79,29 +84,54 @@ run() {
 		echo "$tag: unhandled exception in the game log, see $out/log-$tag.html" >&2
 	fi
 	cp "$result" "$out/$tag.out" 2> /dev/null
+	rm_written "$game"
 	if ! tail -n 1 "$result" 2> /dev/null | tr -d '\r' | grep -qx 'done'; then
 		echo "$tag: output incomplete, last lines in $out/$tag.out" >&2
 		return 1
 	fi
 }
 
-rc=0
-for s in "${scenarios[@]}"; do
-	# both runs even if one stops: the last lines show whether the original stops at the same check
-	run "$s" 1 c; c=$?
-	run "$s" 0 orig; o=$?
+# scenario <name>: the current build, the reference (or its cached output), the comparison; the summary line in
+# $out/<name>.result, the exit code 0 when they match
+scenario() {
+	local s=$1 c o=0
+	local key
+	key=$cache/$refsum-$scripts-$(printf '%s' "${extra[$s]}" | sha256sum | cut -c1-8)
+	slot_prepare "$s" || { echo "$s: the slot could not be made" > "$out/$s.result"; return 1; }
+	run "$s" ScrapC.exe "$s-c"; c=$?
+	if [ "${DIFFTEST_NOCACHE:-0}" != 1 ] && [ -f "$key-$s.out" ]; then
+		cp "$key-$s.out" "$out/$s-orig.out"
+	else
+		run "$s" ScrapRef.exe "$s-orig"; o=$?
+		[ $o -eq 0 ] && cp "$out/$s-orig.out" "$key-$s.out"
+	fi
 	if [ $c -ne 0 ] || [ $o -ne 0 ]; then
-		rc=1
-		continue
+		echo "$s: incomplete" > "$out/$s.result"
+		return 1
 	fi
 	if diff -u "$out/$s-orig.out" "$out/$s-c.out" > "$out/$s.diff"; then
 		echo "$s: $(($(wc -l < "$out/$s-c.out") - 1)) checks match" \
-			"($(grep -c ' = exception ' "$out/$s-c.out") raise an exception in both)"
-	else
-		echo "$s: outputs differ, see $out/$s.diff" >&2
-		rc=1
+			"($(grep -c ' = exception ' "$out/$s-c.out") raise an exception in both)" > "$out/$s.result"
+		return 0
 	fi
+	echo "$s: outputs differ, see $out/$s.diff" > "$out/$s.result"
+	return 1
+}
+
+rc=0
+pids=()
+for s in "${scenarios[@]}"; do
+	while [ "$(jobs -rp | wc -l)" -ge "${DIFFTEST_JOBS:-3}" ]; do
+		wait -n
+	done
+	rm -f "$out/$s.result"
+	scenario "$s" &
+	pids+=($!)
 done
-rm -f "$ini" "$game"/sd*.py "$game"/sd*.out
-rm_written
+for p in "${pids[@]}"; do
+	wait "$p" || rc=1
+done
+for s in "${scenarios[@]}"; do
+	cat "$out/$s.result" 2> /dev/null || { echo "$s: no result" >&2; rc=1; }
+done
 exit $rc

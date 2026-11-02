@@ -7,14 +7,23 @@
 #
 # usage: tools/test/wine.sh <exe in game/Bin> [arguments]
 #        WINE_LOG   file for the output of Wine and the program, default nowhere
-#        HEADLESS_TIMEOUT, HEADLESS_SIZE as in headless.sh
+#        HEADLESS_TIMEOUT, HEADLESS_SIZE as in headless.sh; SCRAP_VK_DEVICE (default the AMD 610M, 1002:164e)
+#        SCRAP_VK_VALIDATION=1   the Vulkan validation layer for the program (messages in WINE_LOG)
+#        SCRAP_GAME_DIR, SCRAP_PREFIX   another game/ and prefix/ (a slot of mkgame.sh --into), default those of the
+#                   checkout
 root=$(cd "$(dirname "$0")/../.." && pwd)
-export WINEPREFIX=$root/prefix WINEARCH=win64 WINEDEBUG=${WINEDEBUG:--all}
+game=${SCRAP_GAME_DIR:-$root/game}
+export WINEPREFIX=${SCRAP_PREFIX:-$root/prefix} WINEARCH=win64 WINEDEBUG=${WINEDEBUG:--all}
 export PULSE_SERVER=unix:/nonexistent PIPEWIRE_REMOTE=/nonexistent
+# the Vulkan renderer on the AMD 610M (the RTX is shared with other guests)
+export SCRAP_VK_DEVICE=${SCRAP_VK_DEVICE:-1002:164e}
 overrides="winepulse.drv,winealsa.drv=d;mscoree,mshtml=${WINEDLLOVERRIDES:+;$WINEDLLOVERRIDES}"
-cd "$root/game/Bin" || exit 1
+cd "$game/Bin" || exit 1
+# the validation layer only for the program, not for gamescope (whose own messages would mix in)
+layers=()
+[ "${SCRAP_VK_VALIDATION:-0}" = 1 ] && layers=(VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation)
 # shellcheck disable=SC2016 # expanded by the shell inside gamescope
-HEADLESS_LOG=${WINE_LOG:-/dev/null} "$root/tools/test/headless.sh" WINEDLLOVERRIDES="$overrides" \
+HEADLESS_LOG=${WINE_LOG:-/dev/null} "$root/tools/test/headless.sh" WINEDLLOVERRIDES="$overrides" "${layers[@]}" \
 	sh -c 'wine "$@"; rc=$?; wineserver -k; exit $rc' wine "$@"
 rc=$?
 # a timeout kills gamescope but not the Wine services of the prefix, and a wineserver that is already gone leaves
