@@ -11,9 +11,9 @@
 CHashTable *CHashTable_ctor(CHashTable *self, int num) {
 	CHECK(num > 0);
 	self->num = num;
-	self->slots = New_Array(num, 4);
+	self->slots = New_Array(num, sizeof(*self->slots));
 	self->lock = 0;
-	memset(self->slots, 0, num * 4);
+	memset(self->slots, 0, num * sizeof(*self->slots));
 	return self;
 }
 
@@ -120,7 +120,7 @@ int CHashTable_GetList(CHashTable *self, CHashTableNode ***elems, int *num) {
 	CHECK(elems && num);
 	self->lock++;
 	int count = CHashTable_List(self, NULL, 0);
-	CHashTableNode **list = New_Array(count, 4);
+	CHashTableNode **list = New_Array(count, sizeof(*list));
 	CHECK(!CHashTable_List(self, list, count));
 	*elems = list;
 	*num = count;

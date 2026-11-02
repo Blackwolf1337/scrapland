@@ -393,31 +393,31 @@ void cObjElementFXBankMasterSuction_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-/* the classes with only the particles at off */
-static void FXA_DtorParts(void *self, void *vt, uint32_t off) {
+/* the classes with only their particles */
+static void FXA_DtorParts(void *self, void *vt, CGameParticles *parts) {
 	*(void **)self = vt;
-	CGameParticles_Release((CGameParticles *)((byte *)self + off));
+	CGameParticles_Release(parts);
 	cObjElement_dtor(self);
 }
 
 void cObjElementFXBankerSteal_dtor(void *self) {
-	FXA_DtorParts(self, VT_FXBANKERSTEAL, 0xc);
+	FXA_DtorParts(self, VT_FXBANKERSTEAL, &((cObjElementFXBankerSteal *)self)->particles);
 }
 
 void cObjElementFXBertoAttack_dtor(void *self) {
-	FXA_DtorParts(self, VT_FXBERTOATTACK, 0x8);
+	FXA_DtorParts(self, VT_FXBERTOATTACK, &((cObjElementFXBertoAttack *)self)->particles);
 }
 
-/* the classes with the particles at poff and n trails at toff */
-static void FXA_DtorTrails(void *self, void *vt, uint32_t poff, uint32_t toff, uint32_t n) {
+/* the classes with particles and n trails */
+static void FXA_DtorTrails(void *self, void *vt, CGameParticles *parts, CGameTrail *trails, uint32_t n) {
 	*(void **)self = vt;
-	FXA_TrailsDtor((CGameTrail *)((byte *)self + toff), n);
-	CGameParticles_Release((CGameParticles *)((byte *)self + poff));
+	FXA_TrailsDtor(trails, n);
+	CGameParticles_Release(parts);
 	cObjElement_dtor(self);
 }
 
 void cObjElementFXBertoFlash_dtor(void *self) {
-	FXA_DtorTrails(self, VT_FXBERTOFLASH, 0xc, 0x664, FXBERTOFLASH_TRAILS);
+	FXA_DtorTrails(self, VT_FXBERTOFLASH, &((cObjElementFXBertoFlash *)self)->particles, ((cObjElementFXBertoFlash *)self)->trails, FXBERTOFLASH_TRAILS);
 }
 
 void cObjElementFXBettyAttack_dtor(void *self) {
@@ -434,7 +434,7 @@ void cObjElementFXBettyAttack_dtor(void *self) {
 }
 
 void cObjElementFXBettyKill_dtor(cObjElementFXBettyKill *self) {
-	FXA_DtorTrails(self, VT_FXBETTYKILL, 0x8, 0x8f4, FXKILL_TRAILS);
+	FXA_DtorTrails(self, VT_FXBETTYKILL, &((cObjElementFXKill *)self)->particles, ((cObjElementFXKill *)self)->trails, FXKILL_TRAILS);
 }
 
 void cObjElementFXBishopAttack_dtor(void *self) {
@@ -458,15 +458,15 @@ void cObjElementFXBishopSellLife_dtor(void *self) {
 }
 
 void cObjElementFXDTritusAttack_dtor(void *self) {
-	FXA_DtorTrails(self, VT_FXDTRITUSATTACK, 0x8, 0x112c, FXDTRITUSATTACK_TRAILS);
+	FXA_DtorTrails(self, VT_FXDTRITUSATTACK, &((cObjElementFXDTritusAttack *)self)->particles, ((cObjElementFXDTritusAttack *)self)->trails, FXDTRITUSATTACK_TRAILS);
 }
 
 void cObjElementFXDTritusKill_dtor(cObjElementFXDTritusKill *self) {
-	FXA_DtorTrails(self, VT_FXDTRITUSKILL, 0x8, 0x8f4, FXKILL_TRAILS);
+	FXA_DtorTrails(self, VT_FXDTRITUSKILL, &((cObjElementFXKill *)self)->particles, ((cObjElementFXKill *)self)->trails, FXKILL_TRAILS);
 }
 
 void cObjElementFXFunctionarySpecialAction_dtor(void *self) {
-	FXA_DtorTrails(self, VT_FXFUNCTIONARYSPECIALACTION, 0x8, 0xc4, FXFUNCTIONARY_TRAILS);
+	FXA_DtorTrails(self, VT_FXFUNCTIONARYSPECIALACTION, &((cObjElementFXFunctionarySpecialAction *)self)->particles, ((cObjElementFXFunctionarySpecialAction *)self)->trails, FXFUNCTIONARY_TRAILS);
 }
 
 void cObjElementFXGearMissile_dtor(void *self) {
@@ -481,15 +481,15 @@ void cObjElementFXGearMissile_dtor(void *self) {
 }
 
 void cObjElementFXMercenaryDrink_dtor(void *self) {
-	FXA_DtorParts(self, VT_FXMERCENARYDRINK, 0x8);
+	FXA_DtorParts(self, VT_FXMERCENARYDRINK, &((cObjElementFXMercenaryDrink *)self)->particles);
 }
 
 void cObjElementFXMessengerAttack_dtor(void *self) {
-	FXA_DtorTrails(self, VT_FXMESSENGERATTACK, 0x14, 0xe8, FXMESSENGERATTACK_TRAILS);
+	FXA_DtorTrails(self, VT_FXMESSENGERATTACK, &((cObjElementFXMessengerAttack *)self)->particles, ((cObjElementFXMessengerAttack *)self)->trails, FXMESSENGERATTACK_TRAILS);
 }
 
 void cObjElementFXMessengerTakeDataPack_dtor(void *self) {
-	FXA_DtorTrails(self, VT_FXMESSENGERTAKEDATAPACK, 0x10, 0xc0, FXDATAPACK_TRAILS);
+	FXA_DtorTrails(self, VT_FXMESSENGERTAKEDATAPACK, &((cObjElementFXMessengerTakeDataPack *)self)->particles, ((cObjElementFXMessengerTakeDataPack *)self)->trails, FXDATAPACK_TRAILS);
 }
 
 void cObjElementFXPoliceGearConversion_dtor(void *self) {
@@ -504,11 +504,11 @@ void cObjElementFXPoliceGearConversion_dtor(void *self) {
 }
 
 void cObjElementFXPoliceSteal_dtor(void *self) {
-	FXA_DtorParts(self, VT_FXPOLICESTEAL, 0xc);
+	FXA_DtorParts(self, VT_FXPOLICESTEAL, &((cObjElementFXPoliceSteal *)self)->particles);
 }
 
 void cObjElementFXSebastianFlash_dtor(void *self) {
-	FXA_DtorTrails(self, VT_FXSEBASTIANFLASH, 0x8, 0x7c8, FXSEBASTIAN_TRAILS);
+	FXA_DtorTrails(self, VT_FXSEBASTIANFLASH, &((cObjElementFXSebastianFlash *)self)->particles, ((cObjElementFXSebastianFlash *)self)->trails, FXSEBASTIAN_TRAILS);
 }
 
 /* ---- deleting destructors (vf00) ---- */
@@ -610,15 +610,17 @@ void *cObjElementFXSebastianFlash_Delete(void *self, uint32_t flags) {
 
 /* ---- Alive (vf02) ---- */
 
+/* BankMasterAttack and BertoAttack: the same start (vtable, entity, particles) */
 byte FXCharActions_AliveAction(void *self, cDebris *d, cDebrisSys *sys) {
-	cEntity *e = *(cEntity **)((byte *)self + 4);
+	cObjElementFXBertoAttack *el = self;
+	cEntity *e = el->ent;
 
 	if (e && WithLife_Vtbl(e)->GetActCtrl(e)) {
-		e = *(cEntity **)((byte *)self + 4);
+		e = el->ent;
 		if (cActCtrl_IsActive(WithLife_Vtbl(e)->GetActCtrl(e), "Action")) {
 			d->life = 1.0f;
 		} else {
-			e = *(cEntity **)((byte *)self + 4);
+			e = el->ent;
 			if (cActCtrl_IsActive(WithLife_Vtbl(e)->GetActCtrl(e), "ActionInit")) {
 				d->life = 1.0f;
 			}
@@ -693,12 +695,14 @@ void cObjElementFXBankMasterSuction_Attach(cObjElementFXBankMasterSuction *self,
 	self->count = 0;
 }
 
+/* BankerSteal and PoliceSteal: the same start (vtable, entity, target, particles) */
 void FXCharActions_AttachC(void *self, cDebris *d) {
-	FXA_AttachDummy01((CGameParticles *)((byte *)self + 0xc), d);
+	FXA_AttachDummy01(&((cObjElementFXPoliceSteal *)self)->particles, d);
 }
 
+/* BertoAttack and MercenaryDrink: the same start (vtable, entity, particles) */
 void FXCharActions_Attach8(void *self, cDebris *d) {
-	CGameParticles *sp = (CGameParticles *)((byte *)self + 8);
+	CGameParticles *sp = &((cObjElementFXBertoAttack *)self)->particles;
 
 	FXA_AttachDummy01(sp, d);
 	CHECK(sp->ParticleSystem);
@@ -843,30 +847,31 @@ void cObjElementFXMessengerTakeDataPack_Attach(cObjElementFXMessengerTakeDataPac
 	}
 }
 
-/* the pieces of the Gear armors: armor, node name, the offset of its time in the element and the time */
+/* the pieces of the Gear armors: armor, node name, the index of its time in pieceTime (as one flat array) and the
+ * time */
 typedef struct FXGearPiece {
 	int armor;
 	const char *name;
-	uint32_t off;
+	uint32_t idx;
 	float time;
 } FXGearPiece;
 
 static const FXGearPiece fxa_gearPieces[] = {
-	{ 0, "OB_PiezasGear_08", 0x99c, 2.9f }, { 0, "OB_PiezasGear_09", 0x9a0, 2.9f },
-	{ 0, "OB_PiezasGear_10", 0x9a4, 2.83f }, { 0, "OB_PiezasGear_11", 0x9a8, 3.2f },
-	{ 0, "OB_PiezasGear_12", 0x9ac, 2.96f }, { 0, "OB_PiezasGear_13", 0x9b0, 3.03f },
-	{ 0, "OB_PiezasGear_14", 0x9b4, 3.16f }, { 0, "OB_PiezasGear_17", 0x9b8, 3.1f },
-	{ 1, "OB_PiezasGear_15", 0x9d8, 3.3f }, { 1, "OB_PiezasGear_16", 0x9dc, 3.36f },
-	{ 1, "OB_PiezasGear_18", 0x9e0, 3.13f }, { 1, "OB_PiezasGear_19", 0x9e4, 3.13f },
-	{ 1, "OB_PiezasGear_20", 0x9e8, 3.26f }, { 1, "OB_PiezasGear_21", 0x9ec, 3.33f },
-	{ 1, "OB_PiezasGear_22", 0x9f0, 3.4f }, { 1, "OB_PiezasGear_23", 0x9f4, 3.66f },
-	{ 1, "OB_PiezasGear_24", 0x9f8, 3.26f }, { 1, "OB_PiezasGear_38", 0x9fc, 3.43f },
-	{ 1, "OB_PiezasGear_39", 0xa00, 3.33f }, { 1, "OB_PiezasGear_40", 0xa04, 3.26f },
-	{ 2, "OB_PiezasGear_01", 0xa18, 3.66f }, { 2, "OB_PiezasGear_25", 0xa1c, 3.26f },
-	{ 2, "OB_PiezasGear_26", 0xa20, 3.33f }, { 2, "OB_PiezasGear_27", 0xa24, 3.46f },
-	{ 2, "OB_PiezasGear_28", 0xa28, 3.46f }, { 2, "OB_PiezasGear_29", 0xa2c, 3.53f },
-	{ 2, "OB_PiezasGear_30", 0xa30, 3.53f }, { 2, "OB_PiezasGear_31", 0xa34, 3.6f },
-	{ 2, "OB_PiezasGear_32", 0xa38, 3.6f }, { 2, "OB_PiezasGear_37", 0xa3c, 3.53f },
+	{ 0, "OB_PiezasGear_08", 0, 2.9f }, { 0, "OB_PiezasGear_09", 1, 2.9f },
+	{ 0, "OB_PiezasGear_10", 2, 2.83f }, { 0, "OB_PiezasGear_11", 3, 3.2f },
+	{ 0, "OB_PiezasGear_12", 4, 2.96f }, { 0, "OB_PiezasGear_13", 5, 3.03f },
+	{ 0, "OB_PiezasGear_14", 6, 3.16f }, { 0, "OB_PiezasGear_17", 7, 3.1f },
+	{ 1, "OB_PiezasGear_15", 15, 3.3f }, { 1, "OB_PiezasGear_16", 16, 3.36f },
+	{ 1, "OB_PiezasGear_18", 17, 3.13f }, { 1, "OB_PiezasGear_19", 18, 3.13f },
+	{ 1, "OB_PiezasGear_20", 19, 3.26f }, { 1, "OB_PiezasGear_21", 20, 3.33f },
+	{ 1, "OB_PiezasGear_22", 21, 3.4f }, { 1, "OB_PiezasGear_23", 22, 3.66f },
+	{ 1, "OB_PiezasGear_24", 23, 3.26f }, { 1, "OB_PiezasGear_38", 24, 3.43f },
+	{ 1, "OB_PiezasGear_39", 25, 3.33f }, { 1, "OB_PiezasGear_40", 26, 3.26f },
+	{ 2, "OB_PiezasGear_01", 31, 3.66f }, { 2, "OB_PiezasGear_25", 32, 3.26f },
+	{ 2, "OB_PiezasGear_26", 33, 3.33f }, { 2, "OB_PiezasGear_27", 34, 3.46f },
+	{ 2, "OB_PiezasGear_28", 35, 3.46f }, { 2, "OB_PiezasGear_29", 36, 3.53f },
+	{ 2, "OB_PiezasGear_30", 37, 3.53f }, { 2, "OB_PiezasGear_31", 38, 3.6f },
+	{ 2, "OB_PiezasGear_32", 39, 3.6f }, { 2, "OB_PiezasGear_37", 40, 3.53f },
 };
 static const int fxa_gearNumPieces[FXGEAR_ARMORS] = { 8, 12, 10 };
 
@@ -895,7 +900,7 @@ void cObjElementFXPoliceGearConversion_Attach(cObjElementFXPoliceGearConversion 
 		self->numPieces[i] = fxa_gearNumPieces[i];
 		for (k = 0; k < fxa_gearNumPieces[i]; k++, p++) {
 			self->piece[i][k] = CGameModel_FindRenderNodeWild(&self->armor[i], p->name);
-			*(float *)((byte *)self + p->off) = p->time;
+			(&self->pieceTime[0][0])[p->idx] = p->time;
 		}
 		for (; k < FXGEAR_PIECES; k++) {
 			self->piece[i][k] = -1;
@@ -1084,8 +1089,15 @@ void cObjElementFXSebastianFlash_Reset(cObjElementFXSebastianFlash *self, int ar
 
 /* ---- the setters and starts ---- */
 
+/* the effects that start with the vtable, their entity and a target entity (BankerSteal, PoliceSteal, ...) */
+typedef struct FXElemTarget {
+	void *vftable;			/* 0x00 */
+	cEntity *ent;			/* 0x04 */
+	cEntity *target;		/* 0x08 */
+} FXElemTarget;
+
 void FXCharActions_SetEntity8(void *self, cEntity *e) {
-	*(cEntity **)((byte *)self + 8) = e;
+	((FXElemTarget *)self)->target = e;
 	FXA_Model(e);
 }
 

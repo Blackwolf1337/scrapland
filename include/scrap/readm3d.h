@@ -45,7 +45,7 @@ extern cGVar GVar_SM3_UseScenes;
 extern cGVar GVar_CM3_DeleteM3D;
 #define g_CM3DeleteM3D (GVar_CM3_DeleteM3D.value.i)		/* CM3_DeleteM3D */
 #define g_M3DOk GAME_GLOBAL_IN(byte, group_432a7c, 0)
-#define g_ShowNodesTree GAME_GLOBAL_IN(int, g_ShowNodesTreeVar, 16)		/* ShowNodesTree */
+#define g_ShowNodesTree (*(int *)&GAME_GVAR(g_ShowNodesTreeVar)->value)		/* ShowNodesTree */
 /* the [Model] switches of the ini of the model being read */
 #define g_M3DUseOpacity GAME_GLOBAL_IN(byte, group_4e1fa4, 2)
 #define g_M3DUseEnvmap GAME_GLOBAL_IN(byte, group_4e1fa4, 3)
@@ -73,7 +73,7 @@ extern cGVar GVar_SharedTexuresPath;
 #define g_SharedTexturesPath (GVar_SharedTexuresPath.value.s)	/* gvar SharedTexuresPath, for "$name" maps */
 extern cGVar GVar_OptimizeNodes;
 #define g_OptimizeNodes (GVar_OptimizeNodes.value.i)	/* gvar: 1 delete unused nodes, 2 collapse to bip nodes, 4 AniMask */
-#define g_UseWSM GAME_GLOBAL_IN(int, g_UseWSMVar, 16)		/* gvar UseWSM */
+#define g_UseWSM (*(int *)&GAME_GVAR(g_UseWSMVar)->value)		/* gvar UseWSM */
 extern int g_UseTextures;		/* video UsarTexturas: without, maps of b8 1 become colors */
 
 /* an animation table of the file: one value a frame (CTable of int or float) */

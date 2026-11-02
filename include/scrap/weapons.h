@@ -66,15 +66,15 @@ extern cGVar GVar_ATPCDelay;
 #define g_ATPCDelay (GVar_ATPCDelay.value.f)
 extern cGVar GVar_ATPCUpgradeDelay;
 #define g_ATPCUpgradeDelay (GVar_ATPCUpgradeDelay.value.f)
-#define g_HookPlugFunc (GAME_ARRAY_IN(cPy_Function, GVar_HookPlugFunc, 16))
-#define g_RestoreUpgradeFunc (GAME_ARRAY_IN(cPy_Function, GVar_RestoreUpgradeFunc, 16))
+#define g_HookPlugFunc (((cPy_Function *)&GAME_GVARFUNC(GVar_HookPlugFunc)->func))
+#define g_RestoreUpgradeFunc (((cPy_Function *)&GAME_GVARFUNC(GVar_RestoreUpgradeFunc)->func))
 extern char g_WeapListBuf[512];		/* 0x200 bytes, GetWeapList */
 #define g_WeaponNeedOrder (GAME_ARRAY(const int[6], g_WeaponNeedOrder))	/* three orders of six weapons */
 extern cGVar GVar_VehicleCenterPadLock;
 #define g_VehicleCenterPadLock (GVar_VehicleCenterPadLock.value.f)
-#define g_CannonScorerColorRed GAME_GLOBAL_IN(uint32_t, GVar_CannonScorerColorRed, 16)
-#define g_CannonScorerColorGreen GAME_GLOBAL_IN(uint32_t, GVar_CannonScorerColorGreen, 16)
-#define g_CannonScorerColorBlue GAME_GLOBAL_IN(uint32_t, GVar_CannonScorerColorBlue, 16)
+#define g_CannonScorerColorRed (*(uint32_t *)&GAME_GVAR(GVar_CannonScorerColorRed)->value)
+#define g_CannonScorerColorGreen (*(uint32_t *)&GAME_GVAR(GVar_CannonScorerColorGreen)->value)
+#define g_CannonScorerColorBlue (*(uint32_t *)&GAME_GVAR(GVar_CannonScorerColorBlue)->value)
 
 /* the vehicle of that name, CHECKed (the start of every native function of a weapon) */
 static inline cEntity *Weap_GetVehicle(const char *name) {
@@ -174,7 +174,7 @@ extern cGVar GVar_ATPCCapsuleExtendedSoundAttEnd;
 #define g_ATPCCapsuleExtendedSoundAttEnd (GVar_ATPCCapsuleExtendedSoundAttEnd.value.f)
 extern cGVar GVar_ATPCCapsuleExtendedSoundVol;
 #define g_ATPCCapsuleExtendedSoundVol (GVar_ATPCCapsuleExtendedSoundVol.value.f)
-#define g_CreateCloudFunc (GAME_ARRAY_IN(cPy_Function, GVar_CreateCloudFunc, 16))
+#define g_CreateCloudFunc (((cPy_Function *)&GAME_GVARFUNC(GVar_CreateCloudFunc)->func))
 extern cGVar GVar_CloudLifeTime;
 #define g_CloudLifeTime (GVar_CloudLifeTime.value.f)
 extern cGVar GVar_CloudAmmoNeed;
@@ -183,7 +183,7 @@ extern cGVar GVar_CloudIDAmmo;
 #define g_CloudIDAmmo (GVar_CloudIDAmmo.value.i)
 extern cGVar GVar_CloudRechargeTime;
 #define g_CloudRechargeTime (GVar_CloudRechargeTime.value.f)
-#define g_SetUpCloudFunc (GAME_ARRAY_IN(cPy_Function, GVar_SetUpCloudFunc, 16))
+#define g_SetUpCloudFunc (((cPy_Function *)&GAME_GVARFUNC(GVar_SetUpCloudFunc)->func))
 
 /* a sound at pos with its attenuation and volume */
 void ATPC_PlaySound(const char *name, const vec3_t *pos, float attIni, float attEnd, float vol);
@@ -241,16 +241,16 @@ extern cGVar GVar_FXDevastatorRadius;
 #define g_FXDevastatorRadius (GVar_FXDevastatorRadius.value.f)
 extern cGVar GVar_FXDevastatorScale;
 #define g_FXDevastatorScale (GVar_FXDevastatorScale.value.f)
-#define g_DevXplosionNative GAME_GLOBAL_IN(nativefunc_t, NativeFunc_DevastatorXplosionCall, 4)	/* the function of "!DevastatorXplosionCall" */
+#define g_DevXplosionNative (GAME_GLOBAL(cPy_NativeFunc, NativeFunc_DevastatorXplosionCall).func)	/* the function of "!DevastatorXplosionCall" */
 extern uint32_t g_DevColorRamps[36];	/* three color ramps of 9 words */
-#define g_CreateEMIFunc (GAME_ARRAY_IN(cPy_Function, GVar_CreateEMIFunc, 16))
+#define g_CreateEMIFunc (((cPy_Function *)&GAME_GVARFUNC(GVar_CreateEMIFunc)->func))
 extern cGVar GVar_EMIRechargeTime;
 #define g_EMIRechargeTime (GVar_EMIRechargeTime.value.f)
 extern cGVar GVar_EMIAmmoNeed;
 #define g_EMIAmmoNeed (GVar_EMIAmmoNeed.value.i)
 extern cGVar GVar_EMILowRadiusFactor;
 #define g_EMILowRadiusFactor (GVar_EMILowRadiusFactor.value.f)
-#define g_SetUpEMIFunc (GAME_ARRAY_IN(cPy_Function, GVar_SetUpEMIFunc, 16))
+#define g_SetUpEMIFunc (((cPy_Function *)&GAME_GVARFUNC(GVar_SetUpEMIFunc)->func))
 extern cGVar GVar_EMILifeTime;
 #define g_EMILifeTime (GVar_EMILifeTime.value.f)
 extern cGVar GVar_EMIIDAmmo;

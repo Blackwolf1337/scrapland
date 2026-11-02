@@ -193,8 +193,8 @@ extern cGVar GVar_TimeDamageAI;
 #define g_TimeDamageAI (GVar_TimeDamageAI.value.f)
 extern cGVar GVar_HookRange;
 #define g_HookRange (GVar_HookRange.value.f)
-#define g_OnObjectiveNullAI (&GAME_GLOBAL_IN(cPy_Function, GVar_OnObjectiveNullAI, 16))
-#define g_OnItemTakenAI (&GAME_GLOBAL_IN(cPy_Function, GVar_OnItemTakenAI, 16))
+#define g_OnObjectiveNullAI (&(*(cPy_Function *)&GAME_GVARFUNC(GVar_OnObjectiveNullAI)->func))
+#define g_OnItemTakenAI (&(*(cPy_Function *)&GAME_GVARFUNC(GVar_OnItemTakenAI)->func))
 
 /* ---- AI/AIVehicle.cpp (src/game/AI/IVehicle.c); more in ai.h, nodestraffic.h, embeddedfxvehicle.h, weapons.h,
  * vehicletraffic.h and vehicleentity.h (the constructor) ---- */

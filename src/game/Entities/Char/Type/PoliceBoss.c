@@ -8,7 +8,7 @@
 #include "scrap/fxelements.h"
 
 #define PB_SYSTEMS 5		/* the debris systems <PoliceBossBrupBaseFile>A.M3D .. E.M3D */
-#define PB_Started(el) (*(byte *)((byte *)(el) + 0x10))
+#define PB_Started(el) (((FXElemHead *)(el))->started)
 
 /* params: the boss, an event and the life factor of the debris: PoliceBossBrupDebrisMin..Max debris out of the
  * mouth in random directions */

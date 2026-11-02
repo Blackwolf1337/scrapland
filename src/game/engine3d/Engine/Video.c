@@ -39,7 +39,7 @@
 #define VIDEO_RING (1u << 20)		/* bytes of decoded sound ahead of the mixer, about 6 s of 44.1 kHz stereo */
 
 extern int g_VideoPadHeld;
-#define g_VideoMirror GAME_GLOBAL_IN(uint32_t, GVar_PlayVideoFX, 16)	/* 1: up-down, 2: left-right */
+#define g_VideoMirror (*(uint32_t *)&GAME_GVAR(GVar_PlayVideoFX)->value)	/* 1: up-down, 2: left-right */
 
 byte Video_PadPressed(void) {
 	uint32_t state[4] = { 0, 0, 0, 0 };

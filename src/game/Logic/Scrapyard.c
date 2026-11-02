@@ -54,8 +54,8 @@ extern cEntity * g_ShipGroupShips[10];	/* [SHIPGROUP_MAX_FOUND] */
 cShipGroupData *cShipGroupData_ctor(cShipGroupData *self, const char *list) {
 	cPy_Function_ctor(&self->onSphere);
 	self->lairs.numSlots = 0x1c9;
-	self->lairs.slots = New_Array(0x1c9, 4);
-	memset(self->lairs.slots, 0, 0x724);
+	self->lairs.slots = New_Array(0x1c9, sizeof(*self->lairs.slots));
+	memset(self->lairs.slots, 0, 0x1c9 * sizeof(*self->lairs.slots));
 	self->lairs.locked = 0;
 	self->lairs.caseSensitive = 1;
 	self->listName = list;

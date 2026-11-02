@@ -95,8 +95,8 @@ extern char g_DVFName[256];		/* 0x100 */
 extern int g_LoadingScreen;	/* the last random loading screen */
 #define g_M3dIni GAME_STR(str_431bf0)		/* "m3d.ini" */
 /* the video to play at the start and after a level ("" when played, unless bit 0 of its flags) */
-#define g_StartVideo (GAME_ARRAY_IN(cString, GVar_PlayVideo, 16))
-#define g_StartVideoFlags GAME_GLOBAL_IN(uint32_t, GVar_PlayVideo, 12)
+#define g_StartVideo (((cString *)&GAME_GVAR(GVar_PlayVideo)->value))
+#define g_StartVideoFlags (*(uint32_t *)&GAME_GVAR(GVar_PlayVideo)->base.flags)
 extern cGVar GVar_isDemo;
 #define g_IsDemo (GVar_isDemo.value.i)
 extern cGVar GVar_isXbox;
@@ -140,7 +140,7 @@ extern cGVar GVar_RenderUseVB;
 #define g_RenderUseVB (GVar_RenderUseVB.value.i)
 extern cGVar GVar_RenderModels;
 #define g_RenderModels (GVar_RenderModels.value.i)
-#define g_ModelAmbient GAME_GLOBAL_IN(uint32_t, GVar_ModelAmbient, 16)	/* D3D color, 0: the one of m3d.ini */
+#define g_ModelAmbient (*(uint32_t *)&GAME_GVAR(GVar_ModelAmbient)->value)	/* D3D color, 0: the one of m3d.ini */
 extern cGVar GVar_TimerFreqMult;
 #define g_TimerFreqMult (GVar_TimerFreqMult.value.i)
 extern cGVar GVar_VideoWidth;

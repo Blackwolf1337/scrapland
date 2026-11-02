@@ -5,7 +5,7 @@
 #
 # usage: tools/ffmpeg.sh [build dir [linux]]   default build/ffmpeg for Windows; the result is in <build dir>/install
 #        (bin/*.dll and lib/*.dll.a, or lib/*.so; include), which CMakeLists.txt takes from there. For the Linux
-#        build: tools/ffmpeg.sh build-linux/ffmpeg linux
+#        build: tools/ffmpeg.sh build-linux/ffmpeg linux, for the 64 bit one build-linux64/ffmpeg linux64
 set -e
 root=$(cd "$(dirname "$0")/.." && pwd)
 out=$(realpath -m "${1:-$root/build/ffmpeg}")
@@ -25,6 +25,8 @@ tar -xf "$tar" -C "$out/src" --strip-components=1
 cd "$out/src"
 if [ "$2" = linux ]; then
 	target=(--target-os=linux --arch=x86 --cpu=i686 --cc="gcc -m32" --extra-ldflags=-m32 --disable-x86asm)
+elif [ "$2" = linux64 ]; then
+	target=(--target-os=linux --arch=x86_64 --disable-x86asm)
 else
 	target=(--target-os=mingw32 --arch=x86 --cpu=i686 --cross-prefix=i686-w64-mingw32- --enable-cross-compile
 		--extra-ldflags=-static-libgcc --extra-libs=-l:libwinpthread.a)

@@ -11,7 +11,7 @@
 #include "scrap/nto1links.h"
 
 typedef struct cEntity cEntity;
-typedef struct cEntityListData cEntityListData;
+typedef struct cEntityList cEntityListData;
 typedef struct cCTFEnemiesData cCTFEnemiesData;
 typedef struct cCTFFriendsData cCTFFriendsData;
 typedef struct cDominationLogic cDominationLogic;

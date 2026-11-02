@@ -16,7 +16,7 @@
 byte Logic_SetOriginCallback(cEntity *e);
 
 #define LOGIC_SETORIGINFUNC 0x151ce0
-#define g_NotCleanableByGearDef (GAME_ARRAY_IN(cString, GVar_NotCleanableByGear, 20))
+#define g_NotCleanableByGearDef (((cString *)&GAME_GVAR(GVar_NotCleanableByGear)->def))
 
 void *Logic_ctor(void *logic) {
 	cLogicControl *self = logic;

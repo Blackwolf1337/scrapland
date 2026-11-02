@@ -311,14 +311,14 @@ byte Engine_OneTimeInit(void) {
 	Fonts_Load();
 	Graphic2D_SetScreen(640, 480);
 	CHECK(!g_ViewerCamera);
-	p = operator_new(0x3c);
+	p = operator_new(sizeof(CGameCamera));
 	g_ViewerCamera = p ? CGameCamera_ctor(p) : NULL;
 	CCamera *cam = CWorld_GetCameraGround(World_Get(), 1);
 	if (!cam) {
 		cam = World_Get()->cam;
 	}
 	CGameCamera_FromCamera(g_ViewerCamera, cam);
-	p = operator_new(0x44);
+	p = operator_new(sizeof(CPsaImage));
 	g_Watermark = p ? CPsaImage_ctor(p, "bmp/norm1.alpha.psa", 0x10008) : NULL;
 	return 1;
 }

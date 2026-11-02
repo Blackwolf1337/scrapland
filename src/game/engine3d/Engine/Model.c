@@ -366,12 +366,12 @@ byte CModel_AddAnimEvents(CModel *self, const char *name, float start, float end
 	if (start < 0.0f) {
 		start = (float)a->ctrl.firstFrame;
 	}
-	ev = operator_new(0x14);
+	ev = operator_new(sizeof(CAnimEvent));
 	if (ev) {
 		CAnimEvent_ctor(ev, start, 0, 0);
 	}
 	first = AnimEvents_Add(&a->events, ev);
-	ev = operator_new(0x14);
+	ev = operator_new(sizeof(CAnimEvent));
 	if (ev) {
 		CAnimEvent_ctor(ev, end, 0xc, (int)first);
 	}
@@ -863,7 +863,7 @@ extern cGVar GVar_R_UseMLOD;
 #define g_UseMLOD (GVar_R_UseMLOD.value.i)		/* R_UseMLOD */
 extern cGVar GVar_R_DistMLOD1;
 #define g_DistMLOD1 (GVar_R_DistMLOD1.value.f)		/* R_DistMLOD1, the distance of LOD i is i times it */
-#define g_DrawMLODMask GAME_GLOBAL_IN(uint32_t, GVar_R_DrawMLODMask, 16)	/* R_DrawMLODMask: the LODs drawn as the main model */
+#define g_DrawMLODMask (*(uint32_t *)&GAME_GVAR(GVar_R_DrawMLODMask)->value)	/* R_DrawMLODMask: the LODs drawn as the main model */
 extern cGVar GVar_R_DrawMLODMin;
 #define g_DrawMLODMin (GVar_R_DrawMLODMin.value.i)		/* R_DrawMLODMin */
 extern cGVar GVar_R_DrawMLODPart;

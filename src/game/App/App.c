@@ -928,7 +928,7 @@ byte CApp_RunApp(CApp *self, const char *exe, const char *cmdLine, int arg) {
 }
 
 static void App_NewWorld(void) {
-	cWorld *w = operator_new(0x225c);
+	cWorld *w = operator_new(sizeof(cWorld));
 	g_pWorld = w ? cWorld_ctor(w) : NULL;
 	cWorld_ResetLogic(g_pWorld);
 	Con_Print(0, "World initialized.\n", 0);

@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/meshd3d.h"
 #include "scrap/rdev.h"
 #include "scrap/gvar.h"
 #include "scrap/d3d8.h"
@@ -39,7 +40,7 @@ extern cGVar GVar_R_SpotlightClamp;
 #define g_SpotlightClamp (GVar_R_SpotlightClamp.value.f)
 extern cGVar GVar_R_LightDesat;
 #define g_LightDesat (GVar_R_LightDesat.value.f)
-#define g_MonitorAmbient GAME_GLOBAL_IN(uint32_t, GVar_MonitorAmbient, 16)
+#define g_MonitorAmbient (*(uint32_t *)&GAME_GVAR(GVar_MonitorAmbient)->value)
 extern cGVar GVar_R_LightTrace;
 #define g_LightTrace (GVar_R_LightTrace.value.i)
 extern cGVar GVar_R_SpotlightAdjust;
@@ -499,7 +500,7 @@ static const struct {
 };
 
 byte CLight_Read(CLight *self, CFileIO *f, void *ctx) {
-	Light_Link(&self->node, *(CNode3D **)((byte *)ctx + 4));
+	Light_Link(&self->node, ((MeshD3D_FileCtx *)ctx)->node);
 	CFileIO_BeginBlock(f, "LUZ");
 	CHECK(CFileIO_ReadInt(f) == 1);
 	CHECK(self->sector == -1);
@@ -525,7 +526,7 @@ void Light_List(void) {
 }
 
 byte CLight_Write(CLight *self, CFileIO *f, void *ctx) {
-	CHECK(self->node == *(CNode3D **)((byte *)ctx + 4));
+	CHECK(self->node == ((MeshD3D_FileCtx *)ctx)->node);
 	CFileIO_BeginBlockWrite(f, "LUZ");
 	CFileIO_WriteInt(f, 1);
 	CHECK(!self->ena_D3D);

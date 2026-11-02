@@ -1636,7 +1636,7 @@ void CGround_BuildSectorMesh(CGround *self, CCollideMesh *mesh, int mode, uint32
 			memset(tri->n, 0, sizeof(tri->n));
 			memset(tri->tv, 0, sizeof(tri->tv));
 		}
-		CMeshD3D *d3d = operator_new(200);
+		CMeshD3D *d3d = operator_new(sizeof(CMeshD3D));
 		d3d = d3d ? CMeshD3D_ctorMesh(d3d, m, 0x21, 0) : NULL;
 		CTriMesh_Clear(m);
 		CTriMesh_AddD3D(m, d3d, 1);

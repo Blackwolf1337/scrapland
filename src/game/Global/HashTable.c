@@ -10,8 +10,8 @@
 HashTable *HashTable_ctor(HashTable *self, int numSlots, byte caseSensitive) {
 	CHECK(numSlots > 0);
 	self->numSlots = numSlots;
-	self->slots = New_Array(numSlots, 4);
-	memset(self->slots, 0, numSlots * 4);
+	self->slots = New_Array(numSlots, sizeof(HashNode *));
+	memset(self->slots, 0, numSlots * sizeof(HashNode *));
 	self->caseSensitive = caseSensitive;
 	self->locked = 0;
 	return self;

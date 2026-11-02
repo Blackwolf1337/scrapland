@@ -22,8 +22,8 @@ CSoundXBox *CSoundXBox_ctor(CSoundXBox *self) {
 	CSoundSys_ctor(&self->sys);
 	self->sys.vftable = CSoundXBox_vftable;
 	self->sounds.numSlots = SOUND_TABLE_SLOTS;
-	self->sounds.slots = operator_new_array(SOUND_TABLE_SLOTS * 4);
-	memset(self->sounds.slots, 0, SOUND_TABLE_SLOTS * 4);
+	self->sounds.slots = operator_new_array(SOUND_TABLE_SLOTS * sizeof(*self->sounds.slots));
+	memset(self->sounds.slots, 0, SOUND_TABLE_SLOTS * sizeof(*self->sounds.slots));
 	self->sounds.locked = 0;
 	self->volume = 0;
 	self->swapPan = 0;

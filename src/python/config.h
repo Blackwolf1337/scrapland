@@ -23,7 +23,11 @@
 #define HAVE_HYPOT
 #define DONT_HAVE_SIG_ALARM
 #define DONT_HAVE_SIG_PAUSE
+#if defined(__x86_64__) && !defined(_WIN32)
+#define LONG_BIT 64
+#else
 #define LONG_BIT 32
+#endif
 #define PREFIX ""
 #define EXEC_PREFIX ""
 
@@ -50,9 +54,14 @@ typedef int pid_t;
 
 #define PLATFORM "win32"
 #define SIZEOF_INT 4
+#if defined(__x86_64__) && !defined(_WIN32)
+#define SIZEOF_LONG 8
+#define VA_LIST_IS_ARRAY 1	/* the va_list of x86_64 is an array: copied with memcpy */
+#else
 #define SIZEOF_LONG 4
+#endif
 #define SIZEOF_LONG_LONG 8
-#define SIZEOF_VOID_P 4
+#define SIZEOF_VOID_P __SIZEOF_POINTER__
 #ifdef _WIN32
 #define CHECK_IMPORT_CASE
 #endif

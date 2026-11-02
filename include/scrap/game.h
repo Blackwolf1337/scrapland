@@ -27,6 +27,9 @@
 		extern char id[] __asm__(label); \
 		(void *)id; \
 	})
+/* a cGVar or cGVarFunction object by its name, without a declaration */
+#define GAME_GVAR(name) ((cGVar *)SD_REF_(sd_##name, SD_CPFX #name))
+#define GAME_GVARFUNC(name) ((cGVarFunction *)SD_REF_(sd_##name, SD_CPFX #name))
 #define GAME_GLOBAL(type, name) \
 	(*({ \
 		extern typeof(type) sd_obj_##name __asm__(SD_CPFX #name); \

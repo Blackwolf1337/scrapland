@@ -23,7 +23,7 @@
 /* the statics of the police taunts: the count per race, the races, the last race and the time */
 #define s_TauntRaceCounts (GAME_ARRAY(HashTable, s_TauntRaceCounts))	/* of cNameItem, 0x1c9 slots, case sensitive */
 extern char * s_TauntRaces[5];		/* "SBi", "SBa", "SFu", "SPo" */
-#define s_TauntLastRace GAME_GLOBAL_IN(char *, s_TauntRaces, 16)
+#define s_TauntLastRace (GAME_ARRAY(char *, s_TauntRaces)[4])
 extern int s_TauntPoliceCount;		/* -1 at the start */
 extern float s_TauntLastTime;
 #define s_TauntCountsGuard (&GAME_GLOBAL(int, s_TauntCountsGuard))
@@ -67,8 +67,8 @@ int Taunts_PoliceKind(cEntity *ship) {
 	if (*s_TauntCountsGuard > epoch) {
 		crt_Init_thread_header(s_TauntCountsGuard);
 		if (*s_TauntCountsGuard == -1) {
-			s_TauntRaceCounts->slots = New_Array(0x1c9, 4);
-			memset(s_TauntRaceCounts->slots, 0, 0x724);
+			s_TauntRaceCounts->slots = New_Array(0x1c9, sizeof(*s_TauntRaceCounts->slots));
+			memset(s_TauntRaceCounts->slots, 0, 0x1c9 * sizeof(*s_TauntRaceCounts->slots));
 			s_TauntRaceCounts->locked = 0;
 			s_TauntRaceCounts->caseSensitive = 1;
 			crt_atexit(Taunts_FiniCounts);

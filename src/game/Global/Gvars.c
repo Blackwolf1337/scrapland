@@ -85,8 +85,8 @@ void GVars_Init(void) {
 	HashTable *t = operator_new(sizeof(*t));
 	if (t) {
 		t->numSlots = 0x1c9;
-		t->slots = operator_new_array(0x1c9 * 4);
-		memset(t->slots, 0, 0x1c9 * 4);
+		t->slots = operator_new_array(0x1c9 * sizeof(*t->slots));
+		memset(t->slots, 0, 0x1c9 * sizeof(*t->slots));
 		t->locked = 0;
 		t->caseSensitive = 0;
 	}

@@ -578,6 +578,13 @@ int Plat_MessageBox(const char *text, const char *title, uint32_t flags) {
 	};
 	int id = -1;
 	byte grabbed = Plat_MouseGrabbed(), shown = SDL_CursorVisible();
+	const char *quiet = SDL_getenv("SCRAP_NO_MSGBOX");
+
+	/* the tests run without anybody to press a button: the text into the log and the default answer */
+	if (quiet && *quiet == '1') {
+		Com_Printf("message box: %s: %s\n", title, text);
+		return yn ? 7 : 1;
+	}
 
 	/* the box needs the cursor (ShowCursor(1) around it in the original) */
 	Plat_GrabMouse(0);

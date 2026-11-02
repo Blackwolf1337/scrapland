@@ -19,7 +19,7 @@
 #include "scrap/world.h"
 
 /* the engine variables */
-#define g_ShowVehWeapAI (&GAME_GLOBAL_IN(cString, GVar_ShowVehWeapAI, 16))
+#define g_ShowVehWeapAI (&(*(cString *)&GAME_GVAR(GVar_ShowVehWeapAI)->value))
 extern cGVar GVar_TimeShootAI;
 #define g_TimeShootAI (GVar_TimeShootAI.value.f)
 extern cGVar GVar_TimeShootCMAI;

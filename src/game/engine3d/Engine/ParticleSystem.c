@@ -512,7 +512,7 @@ void CParticleSystem_GenParticle(CParticleSystem *self, CParticle *p) {
 		}
 	}
 	if (PARTICLE_TYPE(p) == PARTICLE_STATIC && self->MultiSpr) {
-		CHECK((int)sprite < *(int *)((byte *)self->MultiSpr + 8));
+		CHECK((int)sprite < ((CMultiSprite *)self->MultiSpr)->n);
 		CMultiSprite_GetUV(self->MultiSpr, sprite, p->uv0, p->uv1);
 	}
 	if (PARTICLE_TYPE(p) != PARTICLE_ACTIVE) {
@@ -658,12 +658,12 @@ void CParticleSystem_CreateMat(CParticleSystem *self) {
 	}
 	if (pa->flags & PARTICLESYSTEM_MULTISPRITE) {
 		self->MultiSpr = CMaterial_GetMultiSprite(self->mat, 0);
-		CHECK(!self->MultiSpr || *(int *)((byte *)self->MultiSpr + 8) > 1);
+		CHECK(!self->MultiSpr || ((CMultiSprite *)self->MultiSpr)->n > 1);
 		if (pa->spriteIni == 0xff) {
 			pa->spriteIni = 1;
 		}
 		if (pa->spriteEnd == 0xff) {
-			pa->spriteEnd = (byte)(*(int *)((byte *)self->MultiSpr + 8) - 1);
+			pa->spriteEnd = (byte)(((CMultiSprite *)self->MultiSpr)->n - 1);
 		}
 	}
 }

@@ -9,7 +9,9 @@
 #include "scrap/crt.h"
 #include "scrap/hashtable.h"
 #include "scrap/input.h"
+#include "scrap/itementity.h"
 #include "scrap/material.h"
+#include "scrap/missileentity.h"
 #include "scrap/scheduler.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/scrapmain.h"
@@ -38,9 +40,9 @@ static cEntity *World_Lookup(cWorld *w, const char *name) {
 
 typedef cEntity *(*AIGetTarget_t)(void *ai);
 
-/* the target of an AI (vtable slot 0x48) */
+/* the target of an AI (vtable slot 18, 0x48 in the 32 bit vtable) */
 static cEntity *AI_GetTarget(void *ai) {
-	return (*(AIGetTarget_t *)(*(byte **)ai + 0x48))(ai);
+	return (*(AIGetTarget_t **)ai)[18](ai);
 }
 
 /* the update of an AI group (the vehicles or the characters) */
@@ -693,47 +695,47 @@ cEntity *cWorld_CreateEntity(cWorld *world, const char *className, float x, floa
 
 	(void)world;
 	if (!crt_stricmp(type, "Entity")) {
-		mem = operator_new(0x7c);
+		mem = operator_new(sizeof(cEntity));
 		return mem ? cEntity_ctor(mem, className, x, y, z) : NULL;
 	}
 	if (!crt_stricmp(type, "CamPath")) {
-		mem = operator_new(0x1758);
+		mem = operator_new(sizeof(cCamPathEntity));
 		return mem ? cCamPathEntity_ctor(mem, className, x, y, z) : NULL;
 	}
 	if (!crt_stricmp(type, TYEN_WALKCHAR)) {
-		mem = operator_new(0x574);
+		mem = operator_new(sizeof(cWalkCharEntity));
 		e = mem ? cWalkCharEntity_ctor(mem, className, x, y, z) : NULL;
 		Grid_Add(g_pWorld->grid, e);
 		return e;
 	}
 	if (!crt_stricmp(type, TYEN_CAR)) {
-		mem = operator_new(0x814);
+		mem = operator_new(sizeof(cVehicleEntity));
 		e = mem ? cVehicleEntity_ctor(mem, className, x, y, z) : NULL;
 		Grid_Add(g_pWorld->grid, e);
 		return e;
 	}
 	if (!crt_stricmp(type, "Cam")) {
-		mem = operator_new(0x13c);
+		mem = operator_new(sizeof(cCamControl));
 		return mem ? cCamEntity_ctor(mem, className, x, y, z) : NULL;
 	}
 	if (!crt_stricmp(type, "FCam")) {
-		mem = operator_new(0x244);
+		mem = operator_new(sizeof(cFollowCamEntity));
 		return mem ? cFollowCamEntity_ctor(mem, className, x, y, z) : NULL;
 	}
 	if (!crt_stricmp(type, "Missile")) {
-		mem = operator_new(0x7e8);
+		mem = operator_new(sizeof(cMissileEntity));
 		return mem ? cMissileEntity_ctor(mem, className, x, y, z) : NULL;
 	}
 	if (!crt_stricmp(type, "item")) {
-		mem = operator_new(0x398);
+		mem = operator_new(sizeof(cItemEntity));
 		return mem ? cItemEntity_ctor(mem, className, x, y, z) : NULL;
 	}
 	if (!crt_stricmp(type, TYEN_WITH_LIFE)) {
-		mem = operator_new(1000);
+		mem = operator_new(sizeof(cWithLifeEntity));
 		return mem ? cWithLifeEntity_ctor(mem, className, x, y, z) : NULL;
 	}
 	if (!crt_stricmp(type, "Obj")) {
-		mem = operator_new(0x228);
+		mem = operator_new(sizeof(cObjEntity));
 		return mem ? cObjEntity_ctor(mem, className, x, y, z) : NULL;
 	}
 	return NULL;
@@ -1042,7 +1044,7 @@ byte cWorld_TestLineEntities(cWorld *world, int arg, void *list, const vec3_t *f
 }
 
 void *cWorld_NewEntityList(cWorld *world, const char *name) {
-	void *mem = operator_new(0x44);
+	void *mem = operator_new(sizeof(cEntityList));
 	void *list = mem ? cEntityList_ctor(mem, name) : NULL;
 
 	PtrTable_Add(&world->lists, *(char **)list, (void *const *)&list, 1);

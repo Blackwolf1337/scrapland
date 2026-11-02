@@ -656,7 +656,7 @@ void CNodesWorldSup_AddVis(CNodesWorld *self, const vec3_t *point, int index) {
 		NWIntList_Append(&d->points, (void *const *)&point);
 		d->node = set->head;
 		self->sup.buffer[index].vis = d;
-		NWIntList_FreeAt0c(&tmp);
+		NWIntList_Free(&tmp.points);
 		return;
 	}
 	if (vis->refs == 1) {
@@ -716,7 +716,7 @@ void CNodesWorldSup_AddVis(CNodesWorld *self, const vec3_t *point, int index) {
 	}
 	self->sup.vftable->ReleaseVis(self, index);
 	self->sup.buffer[index].vis = d;
-	NWIntList_FreeAt0c(&tmp);
+	NWIntList_Free(&tmp.points);
 }
 
 int CNodesWorldSup_Hash(CNodesWorld *self, int a, int b) {
@@ -1649,7 +1649,7 @@ byte NWSup_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, co
 		}
 		more = ops->nextInit(self, &p);
 		Con_Printf(more ? "New Node Init Selected.\n" : "Last Node Init.\n");
-		NWIntList_FreeAt0c(&tmp.pos);
+		NWIntList_Free(&tmp.links);
 	} while (more);
 	NWIntList_Clear(&self->sup.edgeCells);
 	self->sup.vftable->LinkPoints(self);

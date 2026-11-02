@@ -177,7 +177,7 @@ void Mat_ConvertBlend(uint32_t *mode, byte toFile, byte legacy) {
 		CHECK(*mode - 1 < BLEND_MODES);
 		/* the original reads the word at 0x431d30 + 4 * mode: g_BlendTable[mode - 1], for 0 (after the CHECK) the last
 		 * word of g_MatList before it, a separate C object since stage 3c2 */
-		*mode = *mode ? g_BlendTable[*mode - 1] : GAME_GLOBAL_IN(uint32_t, g_MatList, 12);
+		*mode = *mode ? g_BlendTable[*mode - 1] : (uint32_t)(uintptr_t)GAME_GLOBAL(CMatList, g_MatList).last;	/* the word after the table: the last material of the list, as in the original */
 		return;
 	}
 	if (toFile) {

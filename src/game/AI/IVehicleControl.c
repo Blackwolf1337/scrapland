@@ -27,7 +27,7 @@ extern cGVar GVar_ShowPathAI;
 #define g_ShowPathAI (GVar_ShowPathAI.value.i)
 extern cGVar GVar_DepthPathRouteOutDoorAI;
 #define g_DepthPathRouteOutDoorAI (GVar_DepthPathRouteOutDoorAI.value.i)
-#define g_ShowVehAI (&GAME_GLOBAL_IN(cString, GVar_ShowVehAI, 16))
+#define g_ShowVehAI (&(*(cString *)&GAME_GVAR(GVar_ShowVehAI)->value))
 extern cGVar GVar_LimVelTurnObjectiveAI;
 #define g_LimVelTurnObjectiveAI (GVar_LimVelTurnObjectiveAI.value.f)
 extern cGVar GVar_DistBoostAI;

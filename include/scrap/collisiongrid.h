@@ -95,17 +95,8 @@ void Dummies_Draw(void);
 /* the next dummy of the search of DummySearch_Start: position and Euler angles; 0 at the end */
 byte DummySearch_NextEuler(char *buf, int size, vec3_t *pos, vec3_t *ang);
 
-/* the entity lists of g_pWorld->lists: the full layout of cEntityList (entity.h) */
-typedef struct cEntityListData {
-	char *name;			/* 0x00 string object */
-	cPy_Function onDeath;		/* 0x04 */
-	cPy_Function onDamage;		/* 0x18 */
-	int (*func)(void);		/* 0x2c returns 0 */
-	Nto1Node ring;			/* 0x30 head of the entities (data), target the list */
-	int *numElems;			/* 0x40 */
-} cEntityListData;
-SD_OFFSET(cEntityListData, ring, 0x30);
-SD_SIZE(cEntityListData, 0x44);
+/* the entity lists of g_pWorld->lists (cEntityList of entity.h) */
+typedef cEntityList cEntityListData;
 
 #define CENTITYLIST_FUNC 0x1a7f10
 

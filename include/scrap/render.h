@@ -52,7 +52,7 @@ extern cGVar GVar_R_TexFilter;
 #define g_TexFilter (GVar_R_TexFilter.value.i)		/* R_TexFilter 0 point, 1 linear, 2 anisotropic */
 extern cGVar GVar_R_MipFilter;
 #define g_MipFilter (GVar_R_MipFilter.value.i)		/* R_MipFilter 0 point, 1 linear */
-#define g_Anisotropy GAME_GLOBAL_IN(uint32_t, GVar_R_Anisotropy, 16)	/* R_Anisotropy */
+#define g_Anisotropy (*(uint32_t *)&GAME_GVAR(GVar_R_Anisotropy)->value)	/* R_Anisotropy */
 extern cGVar GVar_R_MipmapBias;
 #define g_MipmapBias (GVar_R_MipmapBias.value.f)		/* R_MipmapBias */
 extern float g_MipmapBias2;
@@ -64,7 +64,7 @@ extern byte g_StageTile[8];	/* the bc of the map: bit 0 wraps u, bit 1 v */
 extern void * g_StageTex[8];	/* [8] */
 extern int g_StageTexFrame[8];	/* [8] */
 #define g_TexChanges GAME_GLOBAL_IN(int, g_RenderCounts, 8)
-#define g_VBIBTriLimit GAME_GLOBAL_IN(uint32_t, GVar_R_VBIBTriLimit, 16)	/* R_VBIBTriLimit */
+#define g_VBIBTriLimit (*(uint32_t *)&GAME_GVAR(GVar_R_VBIBTriLimit)->value)	/* R_VBIBTriLimit */
 /* the projection split into g_Tiles x g_Tiles parts (screenshots larger than the screen), one per frame */
 extern int g_Tiles;
 extern int g_TileState;
@@ -84,7 +84,7 @@ extern CMaterial *g_LightmapMat;
 #define g_UseShaders GAME_GLOBAL_IN(byte, group_43240c, 1)
 extern cGVar GVar_R_MaterialLog;
 #define g_MaterialLog (GVar_R_MaterialLog.value.i)		/* R_MaterialLog */
-#define g_DecalZBias GAME_GLOBAL_IN(uint32_t, GVar_R_DecalZBias, 16)	/* R_DecalZBias */
+#define g_DecalZBias (*(uint32_t *)&GAME_GVAR(GVar_R_DecalZBias)->value)	/* R_DecalZBias */
 extern cGVar GVar_R_AlphaFog;
 #define g_AlphaFog (GVar_R_AlphaFog.value.i)		/* R_AlphaFog 0, 1 (only add blending), 2 */
 extern cGVar GVar_R_UseDefMaterial;
@@ -127,8 +127,8 @@ extern cGVar GVar_R_EnvMapScale;
 #define g_EnvMapScale (GVar_R_EnvMapScale.value.f)	/* R_EnvMapScale */
 extern cGVar GVar_R_EnvMapViewDep;
 #define g_EnvMapViewDep (GVar_R_EnvMapViewDep.value.i)	/* R_EnvMapViewDep 0, 1, 2 */
-#define g_EnvBump GAME_GLOBAL_IN(int, g_GvEnvBump, 16)		/* R_EnvBump */
-#define g_EnvMap GAME_GLOBAL_IN(int, g_GvEnvMap, 16)		/* R_EnvMap */
+#define g_EnvBump (*(int *)&GAME_GVAR(g_GvEnvBump)->value)		/* R_EnvBump */
+#define g_EnvMap (*(int *)&GAME_GVAR(g_GvEnvMap)->value)		/* R_EnvMap */
 extern cGVar GVar_R_EnvBlend;
 #define g_EnvBlend (GVar_R_EnvBlend.value.i)		/* R_EnvBlend */
 /* the engine variables of the Clouds and GlowFlick shader modes (R_CloudR and so on) */
@@ -206,7 +206,7 @@ enum {
 	PS_WAVES = 19,
 	PS_NOISE = 20,
 };
-#define g_PSOff GAME_GLOBAL_IN(uint32_t, GVar_R_PSMask, 16)
+#define g_PSOff (*(uint32_t *)&GAME_GVAR(GVar_R_PSMask)->value)
 /* all pixel shaders made from their files (the names end with NULL) */
 #define g_PSNames (GAME_ARRAY(const char *const, g_PSNames))
 extern uint32_t g_PSHandles[32];	/* [32], one per slot of g_PSNames */
@@ -235,7 +235,7 @@ extern byte g_RenderFlagNeg;	/* the last one Render_SetMaterial set */
 extern D3DAdapterId g_Adapter;
 extern char g_DriverStr[256];	/* 0x100 */
 extern char g_DeviceStr[256];	/* 0x100 */
-#define g_DriverName (GAME_ARRAY_IN(cString, GVar_R_LastDevice, 16))
+#define g_DriverName (((cString *)&GAME_GVAR(GVar_R_LastDevice)->value))
 extern int g_DeviceLogged;
 /* the identity scaled by 1/2048 */
 extern matrix_t g_MatBias;
@@ -525,14 +525,14 @@ typedef struct RenderObjEntry {
 SD_SIZE(RenderObjEntry, 0x4c);
 extern CTable g_TabMesh;		/* TabMallaD3D: RenderMeshEntry */
 extern RenderMeshEntry * g_MeshList[1026];
-#define g_UsedMesh GAME_GLOBAL_IN(int, g_MeshList, 4096)
+#define g_UsedMesh (*(int *)&GAME_ARRAY(void *, g_MeshList)[1024])
 extern CTable g_TabTransp;		/* RenderTranspEntry */
 extern RenderTranspEntry * g_TranspList[1026];
-#define g_UsedTransp GAME_GLOBAL_IN(int, g_TranspList, 4096)
+#define g_UsedTransp (*(int *)&GAME_ARRAY(void *, g_TranspList)[1024])
 extern int g_TranspGroup;		/* counted up for each mesh list, 1 after a flush */
 extern CTable g_TabObj;		/* TabObjBase3D: RenderObjEntry */
 extern RenderObjEntry * g_ObjList[1026];
-#define g_UsedObj GAME_GLOBAL_IN(int, g_ObjList, 4096)
+#define g_UsedObj (*(int *)&GAME_ARRAY(void *, g_ObjList)[1024])
 extern cGVar GVar_R_MeshCache;
 #define g_MeshCache (GVar_R_MeshCache.value.i)		/* R_MeshCache, 10 logs the batches */
 extern cGVar GVar_R_ShowTranspBox;

@@ -264,7 +264,7 @@ void AStarTable_Clear(HashTable *self) {
 			HashItem_Free(it);
 		}
 	}
-	memset(self->slots, 0, self->numSlots * 4);
+	memset(self->slots, 0, self->numSlots * sizeof(*self->slots));
 }
 
 void AStarTable_dtor(HashTable *self) {
@@ -291,19 +291,19 @@ static void AStarTable_AddNew(HashTable *t, int key, const cAStarInfo *v) {
 HashTable *AStarTable_ctor(HashTable *self, int size) {
 	CHECK(size > 0);
 	self->numSlots = size;
-	self->slots = New_Array(size, 4);
-	memset(self->slots, 0, size * 4);
+	self->slots = New_Array(size, sizeof(*self->slots));
+	memset(self->slots, 0, size * sizeof(*self->slots));
 	self->locked = 0;
 	return self;
 }
 
 CAStarSup *CAStarSup_ctor(CAStarSup *self) {
 	self->vftable = CASTARSUP_VFTABLE;
-	HashTable *t = operator_new(0xc);
+	HashTable *t = operator_new(sizeof(HashTable));
 	if (t) {
 		t->numSlots = 0x3f1;
-		t->slots = New_Array(0x3f1, 4);
-		memset(t->slots, 0, 0x3f1 * 4);
+		t->slots = New_Array(0x3f1, sizeof(HashNode *));
+		memset(t->slots, 0, 0x3f1 * sizeof(HashNode *));
 		t->locked = 0;
 	}
 	self->table = t;

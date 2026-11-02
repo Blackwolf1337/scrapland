@@ -118,6 +118,20 @@ SD_OFFSET(cObjElementFXItemTake, trail, 0xec);
 SD_OFFSET(cObjElementFXItemTake, color, 0x550);
 SD_OFFSET(cObjElementFXItemTake, started, 0x645);
 
+/* the start of the effect classes that the setters by name reach (FXMisc_SetEntity, SetF8, SetFC, SetI8): the
+ * vtable, the entity, two words and the started flag */
+typedef struct FXElemHead {
+	void *vftable;			/* 0x00 */
+	cEntity *ent;			/* 0x04 */
+	union {
+		float f;
+		int i;
+	} w8;				/* 0x08 */
+	float fC;			/* 0x0c */
+	byte started;			/* 0x10 */
+} FXElemHead;
+SD_OFFSET(FXElemHead, started, 0x10);
+
 typedef struct cObjElementFXModelFade {
 	void *vftable;			/* 0x00 */
 	float t;			/* 0x04 */
@@ -189,6 +203,8 @@ typedef struct cObjElementFXTrail {
 	float minDist;			/* 0x14 */
 	byte stopped;			/* 0x18 */
 	byte on;			/* 0x19 */
+	byte unused_1a;			/* 0x1a cleared with on by the constructor */
+	byte pad_1b;
 } cObjElementFXTrail;
 SD_OFFSET(cObjElementFXTrail, on, 0x19);
 

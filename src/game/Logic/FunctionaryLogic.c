@@ -19,7 +19,7 @@ extern cGVar GVar_DesktopsFunctionaryListName;
 #define g_DesktopsListName (GVar_DesktopsFunctionaryListName.value.s)	/* DesktopsFunctionaryListName */
 extern cGVar GVar_FunctionaryAssignWorkDistance;
 #define g_FunctionaryAssignWorkDistance (GVar_FunctionaryAssignWorkDistance.value.f)
-#define g_OnFunctionaryStartsWorking (GAME_ARRAY_IN(cPy_Function, GVar_OnFunctionaryStartsWorking, 16))
+#define g_OnFunctionaryStartsWorking (((cPy_Function *)&GAME_GVARFUNC(GVar_OnFunctionaryStartsWorking)->func))
 extern cGVar GVar_FunctionarySpecialActionStatesTransitionTime;
 #define g_FunctionarySpecialActionStatesTransitionTime (GVar_FunctionarySpecialActionStatesTransitionTime.value.f)
 extern cGVar GVar_FunctionaryMinTimeToSitDown;

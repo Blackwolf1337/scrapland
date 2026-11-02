@@ -586,7 +586,7 @@ void *AICtrl_MakeGearLogic(cEntity *e) {
 }
 
 void *AICtrl_MakeSentinelLogic(cEntity *e) {
-	void *m = operator_new(0x50);
+	void *m = operator_new(sizeof(cSentinelLocalLogic));
 
 	return m ? cSentinelLocalLogic_ctor(m, e) : NULL;
 }

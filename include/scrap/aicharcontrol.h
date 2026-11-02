@@ -550,7 +550,7 @@ extern cGVar GVar_TimeBetweenEventCollCharAI;
 #define g_TimeBetweenEventCollCharAI (GVar_TimeBetweenEventCollCharAI.value.f)	/* "TimeBetweenEventCollCharAI" */
 extern cGVar GVar_TimeStrafeLostObjCharAI;
 #define g_TimeStrafeLostObjCharAI (GVar_TimeStrafeLostObjCharAI.value.f)	/* "TimeStrafeLostObjCharAI" */
-#define g_ShowCharAI GAME_GLOBAL_IN(cString, GVar_ShowCharAI, 16)		/* "ShowCharAI": the name of the character shown */
+#define g_ShowCharAI (*(cString *)&GAME_GVAR(GVar_ShowCharAI)->value)		/* "ShowCharAI": the name of the character shown */
 extern cGVar GVar_NameDebugShirkAI;
 #define g_NameDebugShirkAI (GVar_NameDebugShirkAI.value.s)		/* "NameDebugShirkAI" (a cString) */
 

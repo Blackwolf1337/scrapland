@@ -167,9 +167,6 @@ SD_SYM(str_3dbf54);
 SD_SYM(str_3dbf60);
 SD_SYM(str_3dbf6c);
 SD_SYM(str_3dbf80);
-SD_SYM(str_3de080);
-SD_SYM(str_3de088);
-SD_SYM(str_3de0a4);
 SD_SYM(str_3de0b0);
 SD_SYM(str_3de0c4);
 SD_SYM(str_3de0cc);
@@ -1166,12 +1163,13 @@ int g_Screen2DW = 800;
 int g_Screen2DH = 600;
 double g_Screen2DInvW = 0.00125;
 double g_Screen2DInvH = 0.0016666666666666668;
-int g_Graphic2DRot[5][4] = {
+/* the uv corners of the four rotations (the fifth row of the old data was the version record of the next object of
+ * the original, unused) */
+int g_Graphic2DRot[4][4] = {
 	{ 0, 1, 2, 3 },
 	{ 2, 0, 3, 1 },
 	{ 3, 2, 1 },
 	{ 1, 3, 0, 2 },
-	{ (uintptr_t)(void *)sd_str_3de080, (uintptr_t)(void *)sd_str_3de088, 131, (uintptr_t)(void *)sd_str_3de0a4 },
 };
 const char *g_ErrTable[200] = {
 	(void *)sd_str_3de0c4, (void *)sd_str_3de0cc, (void *)sd_str_3ca58c, (void *)sd_str_3de0e4,

@@ -262,13 +262,13 @@ void FX_Sputnik(cEntity *e, const char *name) {
 		if (!CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e))) {
 			return;
 		}
-		byte *el = FX_DropNew(g_FXShipEditBuildFile, 0.45f);
+		FXElemHead *el = FX_DropNew(g_FXShipEditBuildFile, 0.45f);
 		if (el) {
-			if (!el[0x10]) {
-				el[0x10] = 1;
+			if (!el->started) {
+				el->started = 1;
 			}
 			FXMisc_SetEntity(el, e);
-			*(float *)(el + 0xc) = 0.45f;
+			el->fC = 0.45f;
 		}
 	}
 }
@@ -504,15 +504,15 @@ void cObjElementFXItemTake_Attach(cObjElementFXItemTake *self, cDebris *d) {
 	FX_AttachDummy(&self->particles, Debris_Model(d));
 }
 
-/* ModelFade (t at 0x4) and ModelNoise (t at 0x8): Attach and Reset */
+/* Attach and Reset of ModelFade and ModelNoise: the time back to 0 */
 void FXMisc_Clear4(void *self, int arg) {
 	(void)arg;
-	*(float *)((byte *)self + 4) = 0.0f;
+	((cObjElementFXModelFade *)self)->t = 0.0f;
 }
 
 void FXMisc_Clear8(void *self, int arg) {
 	(void)arg;
-	*(float *)((byte *)self + 8) = 0.0f;
+	((cObjElementFXModelNoise *)self)->t = 0.0f;
 }
 
 static void FX_ParticleSystemAttach(cObjElementFXParticleSystem *self, cDebris *d, const char *node) {
@@ -605,22 +605,22 @@ void cObjElementFXTrail_Reset(cObjElementFXTrail *self, int arg) {
 	CGameTrail_Clear(&self->trail);
 }
 
-/* the setters of the effects started by name */
+/* the setters of the effects started by name (the start of their classes, FXElemHead) */
 void FXMisc_SetEntity(void *self, cEntity *e) {
-	*(cEntity **)((byte *)self + 4) = e;
+	((FXElemHead *)self)->ent = e;
 	CHECK(CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e)));
 }
 
 void FXMisc_SetF8(void *self, float v) {
-	*(float *)((byte *)self + 8) = v;
+	((FXElemHead *)self)->w8.f = v;
 }
 
 void FXMisc_SetFC(void *self, float v) {
-	*(float *)((byte *)self + 0xc) = v;
+	((FXElemHead *)self)->fC = v;
 }
 
 void FXMisc_SetI8(void *self, int v) {
-	*(int *)((byte *)self + 8) = v;
+	((FXElemHead *)self)->w8.i = v;
 }
 
 /* a particle of the blink and fade effects: still, at pos, a random turn */
@@ -1537,22 +1537,14 @@ void *cObjElementFXSceneYakuzzi_Delete(void *self, uint32_t flags) {
 #define VT_FXSPARKS GAME_VFTABLE(cObjElementFXSparks_vftable)
 #define VT_FXTRAIL GAME_VFTABLE(cObjElementFXTrail_vftable)
 
-#define FX_U16(self, off) (*(uint16_t *)((byte *)(self) + (off)))
-
-static inline void FX_TrailCtor(void *self, uint32_t off) {
-	CGameTrail_ctor((CGameTrail *)((byte *)self + off));
-}
-
-static inline void FX_TrailDtor(void *self, uint32_t off) {
-	CGameTrail_dtor((CGameTrail *)((byte *)self + off));
-}
 
 void *cObjElementFXFadeOutTrail_ctor(void *self) {
 	cObjElementFXFadeOutTrail *s = self;
 
 	FX_SetVtbl(self, VT_FXFADEOUTTRAIL);
-	FX_TrailCtor(self, 0x4);
-	FX_U16(self, 0x10) = 1;		/* running 1, on 0 */
+	CGameTrail_ctor(&s->trail);
+	s->running = 1;
+	s->on = 0;
 	s->t = 0.0f;
 	s->duration = 0.0f;
 	return self;
@@ -1563,7 +1555,8 @@ void *cObjElementFXItemFade_ctor(void *self) {
 
 	FX_SetVtbl(self, VT_FXITEMFADE);
 	CGameParticles_ctor(&s->particles);
-	FX_U16(self, 0xc8) = 0;
+	s->done = 0;
+	s->started = 0;
 	s->t = 0.0f;
 	s->mode = 0;
 	s->duration = 0.0f;
@@ -1576,8 +1569,9 @@ void *cObjElementFXItemTake_ctor(void *self) {
 
 	FX_SetVtbl(self, VT_FXITEMTAKE);
 	CGameParticles_ctor(&s->particles);
-	FX_TrailCtor(self, 0xec);
-	FX_U16(self, 0x644) = 0;
+	CGameTrail_ctor(&s->trail);
+	s->done = 0;
+	s->started = 0;
 	s->t = 0.0f;
 	s->emitT = 0.0f;
 	s->mode = 0;
@@ -1612,7 +1606,8 @@ void *cObjElementFXParticleSystem_ctor(void *self) {
 
 	FX_SetVtbl(self, VT_FXPARTICLESYSTEM);
 	CGameParticles_ctor(&s->particles);
-	FX_U16(self, 0xb4) = 1;		/* move 1, on 0 */
+	s->move = 1;
+	s->on = 0;
 	return self;
 }
 
@@ -1620,7 +1615,8 @@ cObjElementFXParticleSystemDuDv *cObjElementFXParticleSystemDuDv_ctor(
 	cObjElementFXParticleSystemDuDv *self) {
 	FX_SetVtbl(self, VT_FXPARTICLESYSTEMDUDV);
 	CGameParticles_ctor(&self->particles);
-	FX_U16(self, 0xb4) = 1;
+	self->move = 1;
+	self->on = 0;
 	return self;
 }
 
@@ -1641,8 +1637,9 @@ void *cObjElementFXTrail_ctor(void *self) {
 	cObjElementFXTrail *s = self;
 
 	FX_SetVtbl(self, VT_FXTRAIL);
-	FX_TrailCtor(self, 0x4);
-	FX_U16(self, 0x19) = 1;		/* on 1 */
+	CGameTrail_ctor(&s->trail);
+	s->on = 1;
+	s->unused_1a = 0;
 	s->minDist = 200.0f;	/* minDist 200 */
 	s->stopped = 0;
 	return self;
@@ -1650,7 +1647,7 @@ void *cObjElementFXTrail_ctor(void *self) {
 
 void cObjElementFXFadeOutTrail_dtor(void *self) {
 	*(void **)self = VT_FXFADEOUTTRAIL;
-	FX_TrailDtor(self, 0x4);
+	CGameTrail_dtor(&((cObjElementFXFadeOutTrail *)self)->trail);
 	cObjElement_dtor(self);
 }
 
@@ -1666,7 +1663,7 @@ void cObjElementFXItemTake_dtor(void *self) {
 	cObjElementFXItemTake *s = self;
 
 	*(void **)self = VT_FXITEMTAKE;
-	FX_TrailDtor(self, 0xec);
+	CGameTrail_dtor(&s->trail);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(self);
 }
@@ -1696,7 +1693,7 @@ void cObjElementFXSparks_dtor(void *self) {
 
 void cObjElementFXTrail_dtor(void *self) {
 	*(void **)self = VT_FXTRAIL;
-	FX_TrailDtor(self, 0x4);
+	CGameTrail_dtor(&((cObjElementFXTrail *)self)->trail);
 	cObjElement_dtor(self);
 }
 

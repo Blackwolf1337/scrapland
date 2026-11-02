@@ -248,52 +248,52 @@ extern cGVar GVar_HeartbeatTime;
 #define g_HeartbeatTime (GVar_HeartbeatTime.value.f)
 extern cGVar GVar_ServerMinSendDelay;
 #define g_ServerMinSendDelay (GVar_ServerMinSendDelay.value.i)
-#define g_ClientConnectionStatus (GAME_ARRAY_IN(cString, GVar_ClientConectionStatus, 16))	/* ClientConectionStatus */
+#define g_ClientConnectionStatus (((cString *)&GAME_GVAR(GVar_ClientConectionStatus)->value))	/* ClientConectionStatus */
 extern cGVar GVar_UseServerPassword;
 #define g_UseServerPassword (GVar_UseServerPassword.value.i)
-#define g_MasterServerAddress GAME_GLOBAL_IN(char *, g_GVarMasterServerAddress, 16)
-#define g_MasterServerPortFlags GAME_GLOBAL_IN(byte, g_GVarMasterServerPort, 12)
-#define g_MasterServerPort GAME_GLOBAL_IN(int, g_GVarMasterServerPort, 16)
+#define g_MasterServerAddress (*(char * *)&GAME_GVAR(g_GVarMasterServerAddress)->value)
+#define g_MasterServerPortFlags (*(byte *)&GAME_GVAR(g_GVarMasterServerPort)->base.flags)
+#define g_MasterServerPort (*(int *)&GAME_GVAR(g_GVarMasterServerPort)->value)
 extern cGVar GVar_ClientPassword;
 #define g_ClientPassword (GVar_ClientPassword.value.s)
 extern cGVar GVar_ClientRemotePassword;
 #define g_ClientRemotePassword (GVar_ClientRemotePassword.value.s)
-#define g_ServerRemotePassword (GAME_ARRAY_IN(cString, GVar_ServerRemotePassword, 16))
+#define g_ServerRemotePassword (((cString *)&GAME_GVAR(GVar_ServerRemotePassword)->value))
 extern cGVar GVar_ForceServerVehicle;
 #define g_ForceServerVehicle (GVar_ForceServerVehicle.value.i)
-#define g_ServerPassword (GAME_ARRAY_IN(cString, GVar_ServerPassword, 16))
+#define g_ServerPassword (((cString *)&GAME_GVAR(GVar_ServerPassword)->value))
 extern cGVar GVar_ServerName;
 #define g_ServerName (GVar_ServerName.value.s)
 #define g_GVarServerType (GAME_ARRAY(cGVar, g_GVarServerType))
-#define g_ServerType GAME_GLOBAL_IN(char *, g_GVarServerType, 16)	/* ServerType (cString) */
-#define g_LastMasterCommandFlags GAME_GLOBAL_IN(byte, GVar_LastMasterCommandSent, 12)
-#define g_LastMasterCommand (GAME_ARRAY_IN(cString, GVar_LastMasterCommandSent, 16))	/* LastMasterCommandSent */
+#define g_ServerType (*(char * *)&GAME_GVAR(g_GVarServerType)->value)	/* ServerType (cString) */
+#define g_LastMasterCommandFlags (*(byte *)&GAME_GVAR(GVar_LastMasterCommandSent)->base.flags)
+#define g_LastMasterCommand (((cString *)&GAME_GVAR(GVar_LastMasterCommandSent)->value))	/* LastMasterCommandSent */
 extern cGVar GVar_ServerDataRateLimit;
 #define g_ServerDataRateLimit (GVar_ServerDataRateLimit.value.i)
 /* the script callbacks (cPy_Function in the gvar) and the flags of their gvars */
-#define g_OnClientJoinFlags GAME_GLOBAL_IN(byte, GVar_OnClientJoin, 12)
-#define g_OnClientJoin (GAME_ARRAY_IN(cPy_Function, GVar_OnClientJoin, 16))
-#define g_ClientSetConfig (GAME_ARRAY_IN(cPy_Function, GVar_ClientSetConfig, 16))
-#define g_OnChatStringFlags GAME_GLOBAL_IN(byte, GVar_OnChatString, 12)
-#define g_OnChatString (GAME_ARRAY_IN(cPy_Function, GVar_OnChatString, 16))
-#define g_MasterCommandFunc (GAME_ARRAY_IN(cPy_Function, GVar_MasterCommandFunc, 16))
-#define g_OnClientModify (GAME_ARRAY_IN(cPy_Function, GVar_OnClientModify, 16))
-#define g_ClientAddResFlags GAME_GLOBAL_IN(byte, GVar_ClientAddRes, 12)
-#define g_ClientAddRes (GAME_ARRAY_IN(cPy_Function, GVar_ClientAddRes, 16))
-#define g_OnUsrStringFlags GAME_GLOBAL_IN(byte, GVar_OnUsrString, 12)
-#define g_OnUsrString (GAME_ARRAY_IN(cPy_Function, GVar_OnUsrString, 16))
-#define g_OnNetBrowseFlags GAME_GLOBAL_IN(byte, GVar_OnNetBrowseCallback, 12)
-#define g_OnNetBrowseCallback (GAME_ARRAY_IN(cPy_Function, GVar_OnNetBrowseCallback, 16))
-#define g_OnClientExitFlags GAME_GLOBAL_IN(byte, GVar_OnClientExit, 12)
-#define g_OnClientExit (GAME_ARRAY_IN(cPy_Function, GVar_OnClientExit, 16))
-#define g_ClientDelResFlags GAME_GLOBAL_IN(byte, GVar_ClientDelRes, 12)
-#define g_ClientDelRes (GAME_ARRAY_IN(cPy_Function, GVar_ClientDelRes, 16))
-#define g_ClientSetPlayerFlags GAME_GLOBAL_IN(byte, GVar_ClientSetPlayer, 12)
-#define g_ClientSetPlayer (GAME_ARRAY_IN(cPy_Function, GVar_ClientSetPlayer, 16))
-#define g_ClientAfterCreateFlags GAME_GLOBAL_IN(byte, GVar_ClientAfterCreate, 12)
-#define g_ClientAfterCreate (GAME_ARRAY_IN(cPy_Function, GVar_ClientAfterCreate, 16))
-#define g_ClientCreateFlags GAME_GLOBAL_IN(byte, GVar_ClientCreate, 12)
-#define g_ClientCreate (GAME_ARRAY_IN(cPy_Function, GVar_ClientCreate, 16))
+#define g_OnClientJoinFlags (GAME_GVARFUNC(GVar_OnClientJoin)->head.flags)
+#define g_OnClientJoin (((cPy_Function *)&GAME_GVARFUNC(GVar_OnClientJoin)->func))
+#define g_ClientSetConfig (((cPy_Function *)&GAME_GVARFUNC(GVar_ClientSetConfig)->func))
+#define g_OnChatStringFlags (GAME_GVARFUNC(GVar_OnChatString)->head.flags)
+#define g_OnChatString (((cPy_Function *)&GAME_GVARFUNC(GVar_OnChatString)->func))
+#define g_MasterCommandFunc (((cPy_Function *)&GAME_GVARFUNC(GVar_MasterCommandFunc)->func))
+#define g_OnClientModify (((cPy_Function *)&GAME_GVARFUNC(GVar_OnClientModify)->func))
+#define g_ClientAddResFlags (GAME_GVARFUNC(GVar_ClientAddRes)->head.flags)
+#define g_ClientAddRes (((cPy_Function *)&GAME_GVARFUNC(GVar_ClientAddRes)->func))
+#define g_OnUsrStringFlags (GAME_GVARFUNC(GVar_OnUsrString)->head.flags)
+#define g_OnUsrString (((cPy_Function *)&GAME_GVARFUNC(GVar_OnUsrString)->func))
+#define g_OnNetBrowseFlags (GAME_GVARFUNC(GVar_OnNetBrowseCallback)->head.flags)
+#define g_OnNetBrowseCallback (((cPy_Function *)&GAME_GVARFUNC(GVar_OnNetBrowseCallback)->func))
+#define g_OnClientExitFlags (GAME_GVARFUNC(GVar_OnClientExit)->head.flags)
+#define g_OnClientExit (((cPy_Function *)&GAME_GVARFUNC(GVar_OnClientExit)->func))
+#define g_ClientDelResFlags (GAME_GVARFUNC(GVar_ClientDelRes)->head.flags)
+#define g_ClientDelRes (((cPy_Function *)&GAME_GVARFUNC(GVar_ClientDelRes)->func))
+#define g_ClientSetPlayerFlags (GAME_GVARFUNC(GVar_ClientSetPlayer)->head.flags)
+#define g_ClientSetPlayer (((cPy_Function *)&GAME_GVARFUNC(GVar_ClientSetPlayer)->func))
+#define g_ClientAfterCreateFlags (GAME_GVARFUNC(GVar_ClientAfterCreate)->head.flags)
+#define g_ClientAfterCreate (((cPy_Function *)&GAME_GVARFUNC(GVar_ClientAfterCreate)->func))
+#define g_ClientCreateFlags (GAME_GVARFUNC(GVar_ClientCreate)->head.flags)
+#define g_ClientCreate (((cPy_Function *)&GAME_GVARFUNC(GVar_ClientCreate)->func))
 /* the player config the client sends in its hello (gvar values) */
 extern cGVar GVar_PlayerName;
 #define g_PlayerNameStr (GVar_PlayerName.value.s)
@@ -322,7 +322,7 @@ extern uint32_t g_NetCloseTime;	/* 2000: after the goodbye */
 extern uint32_t g_NetSendDelay;	/* 100 */
 extern netuserfactory_t g_NetUserFactory;
 #define g_NetMsg (&GAME_GLOBAL(cFileMem, g_NetMsg))	/* the memory file messages are built and read in */
-#define g_NetStaticBuffer (&GAME_GLOBAL_IN(cStaticBuffer, cStaticBuffer_PyStaticBuffer, 12))
+#define g_NetStaticBuffer (&GAME_ARRAY(cStaticBuffer, cStaticBuffer_PyStaticBuffer)[1])
 #define g_PyStaticBuffer (&GAME_GLOBAL_IN(cStaticBuffer, cStaticBuffer_PyStaticBuffer, 0))
 extern vec3_t g_NetOrigin;
 #define g_NetMaxDist2 GAME_GLOBAL(float, g_NetMaxDist2)	/* the distance (squared) of the near entities */

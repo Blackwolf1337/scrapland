@@ -16,6 +16,8 @@ game=${SCRAP_GAME_DIR:-$build/game}
 cp -a "$build/ScrapC" "$game/Bin/" || exit 1
 cp -a "$build"/ffmpeg/install/lib/lib*.so* "$game/Bin/" || exit 1
 export PULSE_SERVER=unix:/nonexistent PIPEWIRE_REMOTE=/nonexistent SCRAP_SND_NULL=1
+# a message box would wait for a button nobody presses: its text goes to scrapdecomp.log
+export SCRAP_NO_MSGBOX=1
 # the configuration and the saves in the game folder (SDL's user data folder), never in the home of the user
 export XDG_DATA_HOME=$game/xdg-data
 export SCRAP_VK_DEVICE=${SCRAP_VK_DEVICE:-1002:164e}

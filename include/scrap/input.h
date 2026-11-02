@@ -254,7 +254,7 @@ extern cGVar GVar_LogRumble;
 extern cGVar GVar_CheckInactivityTime;
 #define g_InactivityTime (GVar_CheckInactivityTime.value.f)	/* CheckInactivityTime */
 #define g_InactivityTimeDef (GVar_CheckInactivityTime.def.f)
-#define g_InactivityFunc (GAME_ARRAY_IN(cPy_Function, GVar_CheckInactivityFunc, 16))
+#define g_InactivityFunc (((cPy_Function *)&GAME_GVARFUNC(GVar_CheckInactivityFunc)->func))
 #define g_DefineFunc (GAME_ARRAY(cPy_Function, g_DefineFunc))	/* the function of ListenToDefine */
 extern cInputDevList g_InputDevices;
 extern cGVar GVar_PauseInactivityTime;
@@ -311,7 +311,8 @@ byte cPcKeyboard_IsReserved(cPcKeyboard *self, int entry);
 /* Input/PcMouse.cpp */
 extern cGVar GVar_MouseSensitivityH;
 #define g_MouseSensH (GVar_MouseSensitivityH.value.f)		/* MouseSensitivityH */
-#define g_MouseSensV GAME_GLOBAL_IN(float, g_KeyNameBuf, 32)		/* MouseSensitivityV */
+extern cGVar GVar_MouseSensitivityV;
+#define g_MouseSensV (GVar_MouseSensitivityV.value.f)		/* MouseSensitivityV */
 extern cGVar GVar_InvertMouse;
 #define g_InvertMouse (GVar_InvertMouse.value.i)		/* InvertMouse */
 #define g_Mouse (GAME_ARRAY(cPcMouse, g_Mouse))

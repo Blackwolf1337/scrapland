@@ -144,8 +144,8 @@ static inline void Scene_Unref(CScene **slot) {
 extern CModelList *g_ModelList;
 extern CSceneList *g_SceneList;
 extern CModelList * g_ModelsRender[1026];
-#define g_NumModelsRender GAME_GLOBAL_IN(int, g_ModelsRender, 4096)
-#define g_MaxModelsRender GAME_GLOBAL_IN(int, g_ModelsRender, 4100)	/* the most there were */
+#define g_NumModelsRender (*(int *)&GAME_ARRAY(void *, g_ModelsRender)[1024])
+#define g_MaxModelsRender (*(int *)&GAME_ARRAY(void *, g_ModelsRender)[1025])	/* the most there were */
 
 /* Engine/Modelo.cpp (src/game/engine3d/Engine/Model.c) */
 CModel *CModel_ctor(CModel *self);

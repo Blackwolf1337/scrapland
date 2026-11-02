@@ -1143,6 +1143,8 @@ float g_InactivityTimer;
 cPcKeyboard g_Keyboard;
 char g_KeyState[256];
 char g_KeyNameBuf[40];
+/* the gvar the old data kept in the bytes after g_KeyNameBuf (the original's layout) */
+cGVar GVar_MouseSensitivityV;
 cPcMouse g_Mouse;
 cGVar GVar_MouseSensitivityH;
 cGVar GVar_InvertMouse;

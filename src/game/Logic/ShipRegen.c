@@ -26,7 +26,7 @@ extern cGVar GVar_RegenerationItem;
 #define g_RegenerationItem (GVar_RegenerationItem.value.s)
 extern cGVar GVar_LifeToLaunchCallback;
 #define g_LifeToLaunchCallback (GVar_LifeToLaunchCallback.value.i)
-#define g_LifeReachedCallback (GAME_ARRAY_IN(cPy_Function, GVar_LifeReachedCallback, 16))
+#define g_LifeReachedCallback (((cPy_Function *)&GAME_GVARFUNC(GVar_LifeReachedCallback)->func))
 
 cShipRegen *ShipRegen_ctor(cShipRegen *self) {
 	self->unused_00 = 0;

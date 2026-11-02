@@ -177,7 +177,7 @@ int CEngineApp_OneTimeSceneInit(CEngineApp *self) {
 		*(void **)mem = CNULLINPUT_VFTABLE;
 	}
 	g_Input = mem;
-	mem = operator_new(8);
+	mem = operator_new(sizeof(CGraphic2DList));
 	self->overlay = mem ? CGraphic2DList_ctor(mem) : NULL;
 	Fonts_Init();
 	Trails_InitLists();
@@ -232,7 +232,7 @@ extern int g_TimeMult;
 extern int g_TimeScaled;	/* Time_Get() * g_TimeMult / 1000 */
 extern cGVar GVar_AutoScreenShot;
 #define g_AutoShot (GVar_AutoScreenShot.value.i)		/* the console variable AutoScreenShot */
-#define g_StencilClear GAME_GLOBAL_IN(uint32_t, GVar_R_StencilRefClear, 16)
+#define g_StencilClear (*(uint32_t *)&GAME_GVAR(GVar_R_StencilRefClear)->value)
 #define g_ResetDev GAME_GLOBAL_IN(byte, group_4a8efc, 2)		/* the device objects made again at the next frame */
 #define g_ResetDevOnly GAME_GLOBAL_IN(byte, group_431bac, 3)	/* 1: without the world, 0: the game callbacks too */
 /* the callbacks of the game the reset puts in place */

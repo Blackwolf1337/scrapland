@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/meshd3d.h"
 #include "scrap/camera.h"
 #include "scrap/scrapcamera.h"
 
@@ -105,7 +106,7 @@ static const struct {
 };
 
 int CCamera_Read(CCamera *self, CFileIO *f, void *ctx) {
-	CCamera_SetNode(self, *(CNodeRef **)((byte *)ctx + 4));
+	CCamera_SetNode(self, (CNodeRef *)((MeshD3D_FileCtx *)ctx)->node);
 	CFileIO_BeginBlock(f, "CAM");
 	CHECK(CFileIO_ReadInt(f) == 1);
 	for (size_t i = 0; i < sizeof(cameraFields) / sizeof(cameraFields[0]); i++) {
@@ -116,7 +117,7 @@ int CCamera_Read(CCamera *self, CFileIO *f, void *ctx) {
 }
 
 int CCamera_Write(CCamera *self, CFileIO *f, void *ctx) {
-	CHECK(self->node == *(CNodeRef **)((byte *)ctx + 4));
+	CHECK(self->node == (CNodeRef *)((MeshD3D_FileCtx *)ctx)->node);
 	CFileIO_BeginBlockWrite(f, "CAM");
 	CFileIO_WriteInt(f, 1);
 	CHECK(!self->nodeTarget);

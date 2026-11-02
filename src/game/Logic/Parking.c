@@ -22,8 +22,8 @@ extern cGVar GVar_ParkingCharCheckDistance;
 #define g_ParkingCharCheckDistance (GVar_ParkingCharCheckDistance.value.f)
 extern cGVar GVar_ParkingVehicleCheckDistance;
 #define g_ParkingVehicleCheckDistance (GVar_ParkingVehicleCheckDistance.value.f)
-#define g_OnParkedOut (GAME_ARRAY_IN(cPy_Function, GVar_OnParkedOut, 16))
-#define g_OnParkingOccupied (GAME_ARRAY_IN(cPy_Function, GVar_OnParkingOccupied, 16))
+#define g_OnParkedOut (((cPy_Function *)&GAME_GVARFUNC(GVar_OnParkedOut)->func))
+#define g_OnParkingOccupied (((cPy_Function *)&GAME_GVARFUNC(GVar_OnParkingOccupied)->func))
 /* what the sphere native found: a ship, else the last other entity */
 extern cEntity *g_ParkingShip;
 extern cEntity *g_ParkingOther;

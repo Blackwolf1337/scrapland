@@ -8,6 +8,7 @@
 #include "scrap/game.h"
 #include "scrap/mathlib.h"
 #include "scrap/nto1links.h"
+#include "scrap/pyfunction.h"
 
 /* entity type names for IsType (the TYEN_ macros of the original) */
 #define TYEN_WALKCHAR "WalkChar"
@@ -108,11 +109,20 @@ typedef struct DListNode {
 	cEntity *data;			/* 0xc */
 } DListNode;
 
+/* an entity list of g_pWorld->lists (CollisionGrid.c makes them) */
 typedef struct cEntityList {
-	byte pad_0[0x30];
-	DListNode *head;		/* 0x30 */
+	char *name;			/* 0x00 string object */
+	cPy_Function onDeath;		/* 0x04 */
+	cPy_Function onDamage;		/* 0x18 */
+	int (*func)(void);		/* 0x2c returns 0 */
+	union {
+		Nto1Node ring;		/* 0x30 head of the entities (data), target the list */
+		DListNode *head;	/* 0x30 ring.next, the first node */
+	};
+	int *numElems;			/* 0x40 */
 } cEntityList;
-SD_OFFSET(cEntityList, head, 0x30);
+SD_OFFSET(cEntityList, ring, 0x30);
+SD_SIZE(cEntityList, 0x44);
 
 /* list of the world by name ("Traffic", "Enemies", ...), rva 0x209240 */
 cEntityList *cWorld_GetList(cWorld *world, const char *name);

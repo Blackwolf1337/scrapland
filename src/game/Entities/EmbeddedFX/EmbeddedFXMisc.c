@@ -95,7 +95,7 @@ cEmbeddedFXCapsule *cEmbeddedFXCapsule_ctor(cEmbeddedFXCapsule *self) {
 /* Coin, Conversor and Item: the vtable and one particle system at 0x10 */
 static void *EFXM_Ctor10(void *self, void *vt) {
 	EFXM_SetVtbl(self, vt);
-	CGameParticles_ctor((CGameParticles *)((byte *)self + 0x10));
+	CGameParticles_ctor(&((cEmbeddedFXCoin *)self)->glow);	/* the same prefix in the four classes */
 	((cEmbeddedFX *)self)->ent = NULL;
 	return self;
 }
@@ -234,7 +234,7 @@ void cEmbeddedFXCapsule_dtor(cEmbeddedFXCapsule *self) {
 /* Coin, Conversor, Flag and Item */
 static void EFXM_Dtor10(cEmbeddedFX *self, void *vt) {
 	self->vftable = vt;
-	CGameParticles_Release((CGameParticles *)((byte *)self + 0x10));
+	CGameParticles_Release(&((cEmbeddedFXCoin *)self)->glow);
 	cEmbeddedFX_dtor(self);
 }
 

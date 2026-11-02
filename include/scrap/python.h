@@ -12,8 +12,8 @@
 #include <Python.h>
 #include <compile.h>
 
-static_assert(sizeof(PyObject) == 8, "PyObject: ob_refcnt, ob_type");
-static_assert(sizeof(PyTypeObject) == 0x6c, "PyTypeObject of 1.5.2 without COUNT_ALLOCS");
+static_assert(!SD_32BIT || sizeof(PyObject) == 8, "PyObject: ob_refcnt, ob_type");
+static_assert(!SD_32BIT || sizeof(PyTypeObject) == 0x6c, "PyTypeObject of 1.5.2 without COUNT_ALLOCS");
 
 /* the exe has the function form of ceval.c, the header only the macro */
 #undef PyEval_CallObject

@@ -45,7 +45,7 @@ extern int g_ShadowsStencil;	/* [sombras_stencil] use */
 /* the splash screens and the loading bar */
 extern cGVar GVar_ShowSplashScreen;
 #define g_SplashOn (GVar_ShowSplashScreen.value.i)
-#define g_SplashFade GAME_GLOBAL_IN(uint32_t, GVar_SplashScreenFade, 16)	/* ms */
+#define g_SplashFade (*(uint32_t *)&GAME_GVAR(GVar_SplashScreenFade)->value)	/* ms */
 extern uint32_t g_SplashTime;	/* timeGetTime at the end of the last one */
 extern char g_SplashLast[260];	/* 0x104, the last one shown */
 #define g_LoadingOn GAME_GLOBAL_IN(byte, group_4a8324, 0)
@@ -56,8 +56,8 @@ extern cGVar GVar_ProgressBar;
 #define g_LoadingTotal (GVar_ProgressBar.value.i)
 #define g_LoadingDrawOn GAME_GLOBAL(byte, g_CallbacksOn)
 typedef void (*loadingDraw_t)(void);
-#define g_LoadingDraw GAME_GLOBAL_IN(loadingDraw_t, g_EngCallbacks, 12)	/* draws the loading screen without the bar */
-#define g_LoadingDraw2 GAME_GLOBAL_IN(loadingDraw_t, g_EngCallbacks, 8)
+#define g_LoadingDraw (*(loadingDraw_t *)&GAME_ARRAY(void (*)(void), g_EngCallbacks)[3])	/* draws the loading screen without the bar */
+#define g_LoadingDraw2 (*(loadingDraw_t *)&GAME_ARRAY(void (*)(void), g_EngCallbacks)[2])
 
 /* the world node info */
 void WorldInfo_FromDummy(WorldNodeInfo *info, const WorldDummy *dummy);

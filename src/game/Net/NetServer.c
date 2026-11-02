@@ -135,8 +135,8 @@ int NetServer_Init(int maxClients, uint16_t port, int arg) {
 	if (!Transport_InitServer(maxClients, port)) {
 		return 0;
 	}
-	g_NetClients = Mem_Alloc(maxClients << 2);
-	memset(g_NetClients, 0, maxClients << 2);
+	g_NetClients = Mem_Alloc(maxClients * sizeof(*g_NetClients));
+	memset(g_NetClients, 0, maxClients * sizeof(*g_NetClients));
 	g_NetNextSend = 0;
 	return 1;
 }

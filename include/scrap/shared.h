@@ -12,26 +12,38 @@
 #include <stddef.h>
 #include <stdint.h>
 
-static_assert(sizeof(void *) == 4, "Scrap.exe is 32 bit");
-static_assert(sizeof(long) == 4, "MSVC long is 4 bytes");
-
 typedef uint8_t byte;
+
+/* the layout checks hold the 32 bit layout of the original; a 64 bit build has its own (pointers of 8 bytes) */
+#if UINTPTR_MAX == 0xffffffffu
+#define SD_32BIT 1
+#else
+#define SD_32BIT 0
+#endif
 
 /* the prefix of C symbols in the assembler: an underscore on 32 bit Windows, none in ELF */
 #ifdef _WIN32
 #define SD_CPFX "_"
 #else
 #define SD_CPFX ""
-/* the calling conventions of the Windows build (the callbacks of Windows, COM and the tests' stdcall table) */
+/* the calling conventions of the Windows build (the callbacks of Windows, COM and the tests' stdcall table); x86_64
+ * has one convention */
+#ifdef __i386__
 #define __stdcall __attribute__((stdcall))
 #define __cdecl __attribute__((cdecl))
 #define __fastcall __attribute__((fastcall))
 #define __thiscall __attribute__((thiscall))
+#else
+#define __stdcall
+#define __cdecl
+#define __fastcall
+#define __thiscall
+#endif
 #endif
 
 #define SD_OFFSET(type, member, off) \
-	static_assert(offsetof(type, member) == (off), #type "." #member " is not at " #off)
-#define SD_SIZE(type, size) static_assert(sizeof(type) == (size), "sizeof(" #type ") is not " #size)
+	static_assert(!SD_32BIT || offsetof(type, member) == (off), #type "." #member " is not at " #off)
+#define SD_SIZE(type, size) static_assert(!SD_32BIT || sizeof(type) == (size), "sizeof(" #type ") is not " #size)
 
 /* the address of a C symbol as the array sd_<name>, whatever its type (the pointers of the generated data) */
 #define SD_SYM(name) extern char sd_##name[] __asm__(SD_CPFX #name)

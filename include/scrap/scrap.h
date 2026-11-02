@@ -18,7 +18,7 @@
 
 /* the function of Scrap.SetCallFunc with its parameters (AddParamX) for Scrap.Execute */
 #define g_CallFunc (GAME_ARRAY(cPy_Function, g_CallFunc))
-#define g_PackName (GAME_ARRAY_IN(cString, GVar_PathInPackFile, 16))	/* string object, the open pack */
+#define g_PackName (((cString *)&GAME_GVAR(GVar_PathInPackFile)->value))	/* string object, the open pack */
 extern cGVar GVar_SuperDealAvaliable;
 #define g_SuperDealAvaliable (GVar_SuperDealAvaliable.value.i)	/* SuperDealAvaliable, all three crazy deals done */
 
@@ -64,7 +64,7 @@ typedef struct cGVarFunction {
 	union {
 		cGVar var;
 		struct {
-			byte head[0x10];
+			cGvar head;
 			cPy_Function func;	/* 0x10 */
 		};
 	};

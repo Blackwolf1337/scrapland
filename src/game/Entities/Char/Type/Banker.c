@@ -94,7 +94,7 @@ void ChType_BankerAttack(cAbstractFile *params) {
 				el->started = 1;
 			}
 			cObjElementFXBankerSteal_SetEntity(el, v);
-			FXMisc_SetI8(el, (int)victim);
+			((cObjElementFXBankerSteal *)el)->target = victim;
 		}
 	}
 }

@@ -18,10 +18,10 @@
 /* engine variables (Gvars) */
 extern cGVar GVar_iLoadMsgString;
 #define g_LoadMsgIndex (GVar_iLoadMsgString.value.i)		/* iLoadMsgString: the next loading tip */
-#define g_iMap (GAME_ARRAY_IN(cString, GVar_iMap, 16))		/* iMap: the first level */
-#define g_iMapDefault (GAME_ARRAY_IN(cString, GVar_iMap, 20))	/* its default value */
-#define g_ReRunAtExitParams (GAME_ARRAY_IN(cString, GVar_ReRunAtExitParams, 16))	/* RunApp of the game with them at the end */
-#define g_AfterDrawCallback (GAME_ARRAY_IN(cPy_Function, GVar_AfterDrawCallback, 16))
+#define g_iMap (((cString *)&GAME_GVAR(GVar_iMap)->value))		/* iMap: the first level */
+#define g_iMapDefault (((cString *)&GAME_GVAR(GVar_iMap)->def))	/* its default value */
+#define g_ReRunAtExitParams (((cString *)&GAME_GVAR(GVar_ReRunAtExitParams)->value))	/* RunApp of the game with them at the end */
+#define g_AfterDrawCallback (((cPy_Function *)&GAME_GVARFUNC(GVar_AfterDrawCallback)->func))
 extern cGVar GVar_DrawNextFrame;
 #define g_DrawNextFrame (GVar_DrawNextFrame.value.i)
 extern cGVar GVar_DefaultMaxPlayersOnServer;
@@ -35,19 +35,19 @@ extern cGVar GVar_ForceReload;
 #define g_ForceReload (GVar_ForceReload.value.i)		/* reload the floor of the same level */
 extern cGVar GVar_ModPathName;
 #define g_ModPathName (GVar_ModPathName.value.s)	/* a directory of packs after "mods" */
-#define g_LoadMsgString (GAME_ARRAY_IN(cString, GVar_LoadMsgString, 16))	/* the loading tip */
-#define g_DefaultServerPort GAME_GLOBAL_IN(uint16_t, GVar_DefaultServerPort, 16)
+#define g_LoadMsgString (((cString *)&GAME_GVAR(GVar_LoadMsgString)->value))	/* the loading tip */
+#define g_DefaultServerPort (*(uint16_t *)&GAME_GVAR(GVar_DefaultServerPort)->value)
 extern cGVar GVar_InactiveBackgroundApp;
 #define g_InactiveBackgroundApp (GVar_InactiveBackgroundApp.value.i)	/* the frames go on without the focus */
-#define g_ServerMapList (GAME_ARRAY_IN(cString, GVar_ServerMapList, 16))
-#define g_PlayerName (GAME_ARRAY_IN(cString, GVar_PlayerName, 16))
+#define g_ServerMapList (((cString *)&GAME_GVAR(GVar_ServerMapList)->value))
+#define g_PlayerName (((cString *)&GAME_GVAR(GVar_PlayerName)->value))
 extern cGVar GVar_SoundInit;
 #define g_SoundInit (GVar_SoundInit.value.i)
 extern cGVar GVar_LoadTextures;
 #define g_LoadTextures (GVar_LoadTextures.value.i)
 #define g_GVarMasterServerAddress (GAME_ARRAY(cGVar, g_GVarMasterServerAddress))
 #define g_GVarMasterServerPort (GAME_ARRAY(cGVar, g_GVarMasterServerPort))
-#define g_LangName (GAME_ARRAY_IN(cString, GVar_SelectedLanguage, 16))		/* the language asked for */
+#define g_LangName (((cString *)&GAME_GVAR(GVar_SelectedLanguage)->value))		/* the language asked for */
 extern cGVar GVar_SelectedLanguage;
 #define g_LangDefault (GVar_SelectedLanguage.def.s)	/* the language when that file is missing */
 extern cGVar GVar_LogFile;

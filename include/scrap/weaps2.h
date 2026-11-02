@@ -96,7 +96,7 @@ extern cGVar GVar_InfernoEngineSound;
 #define g_InfernoEngineSound (GVar_InfernoEngineSound.value.s)
 extern cGVar GVar_InfernoNormSpeed;
 #define g_InfernoNormSpeed (GVar_InfernoNormSpeed.value.f)
-#define g_InfernoXplosionCall GAME_GLOBAL_IN(nativefunc_t, NativeFunc_InfernoXplosionCall, 4)	/* the function of the native "InfernoXplosionCall" */
+#define g_InfernoXplosionCall (GAME_GLOBAL(cPy_NativeFunc, NativeFunc_InfernoXplosionCall).func)	/* the function of the native "InfernoXplosionCall" */
 extern cGVar GVar_InfernoMissileFile;
 #define g_InfernoMissileFile (GVar_InfernoMissileFile.value.s)
 extern cGVar GVar_FXInfernoExplosionMaxDist;
@@ -149,8 +149,8 @@ extern cGVar GVar_SonicIDAmmo;
 #define g_SonicIDAmmo (GVar_SonicIDAmmo.value.i)
 extern cGVar GVar_SonicAmmoNeed;
 #define g_SonicAmmoNeed (GVar_SonicAmmoNeed.value.i)
-#define g_CreateSonicFunc (GAME_ARRAY_IN(cPy_Function, GVar_CreateSonicFunc, 16))
-#define g_SetUpSonicFunc (GAME_ARRAY_IN(cPy_Function, GVar_SetUpSonicFunc, 16))
+#define g_CreateSonicFunc (((cPy_Function *)&GAME_GVARFUNC(GVar_CreateSonicFunc)->func))
+#define g_SetUpSonicFunc (((cPy_Function *)&GAME_GVARFUNC(GVar_SetUpSonicFunc)->func))
 extern cGVar GVar_SwarmHitSoundVol;
 #define g_SwarmHitSoundVol (GVar_SwarmHitSoundVol.value.f)
 extern cGVar GVar_SwarmMissileFile;

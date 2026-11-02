@@ -244,7 +244,7 @@ extern cGVar GVar_IsAutoUpdatable;
 #define g_BarAutoUpdate (GVar_IsAutoUpdatable.value.i)	/* IsAutoUpdatable */
 extern cGVar GVar_BlinkTime;
 #define g_BarBlinkTime (GVar_BlinkTime.value.f)	/* BlinkTime */
-#define g_BarOnFinish (&GAME_GLOBAL_IN(cPy_Function, GVar_OnFinishAutoUpdate, 16))	/* OnFinishAutoUpdate */
+#define g_BarOnFinish (&(*(cPy_Function *)&GAME_GVARFUNC(GVar_OnFinishAutoUpdate)->func))	/* OnFinishAutoUpdate */
 
 cBarScorer *cBarScorer_ctor(cBarScorer *self);
 void cBarScorer_dtor(cBarScorer *self);
@@ -609,8 +609,8 @@ extern int g_MissionBlinkOn;
 extern float g_MissionBlinkTime;	/* BlinkTime: the icons blink until 0 */
 extern float g_MissionBlinkLast;	/* the blink time of the last toggle */
 extern int g_MissionStatus[3];		/* Status0..2 */
-extern float g_MissionStatusTime[4];	/* the scorer time each was set */
-#define g_MissionMapName GAME_GLOBAL_IN(const char *, g_MissionStatusTime, 12)	/* the language text of the station */
+extern float g_MissionStatusTime[3];	/* the scorer time each was set */
+extern const char *g_MissionMapName;	/* the language text of the station (the word after the times in the original) */
 extern cGVar GVar_ScorerMarginH;
 #define g_ScorerMarginH (GVar_ScorerMarginH.value.i)		/* ScorerMarginH */
 extern cGVar GVar_NextMissionFirstLineOffsetXBox;
@@ -781,9 +781,9 @@ extern cGVar GVar_NewsPanelOpenSpeed;
 #define g_NewsPanelOpenSpeed (GVar_NewsPanelOpenSpeed.value.f)	/* NewsPanelOpenSpeed */
 extern cGVar GVar_NewsPanelCloseSpeed;
 #define g_NewsPanelCloseSpeed (GVar_NewsPanelCloseSpeed.value.f)	/* NewsPanelCloseSpeed */
-#define g_NewsHead (&GAME_GLOBAL_IN(char *, GVar_NewsHead, 16))		/* NewsHead, a string variable */
-#define g_NewsLogoBmp (&GAME_GLOBAL_IN(char *, GVar_NewsLogoBmp, 16))		/* NewsLogoBmp */
-#define g_BackNewsBmp (&GAME_GLOBAL_IN(char *, GVar_BackNewsBmp, 16))		/* BackNewsBmp */
+#define g_NewsHead (&(*(char * *)&GAME_GVAR(GVar_NewsHead)->value))		/* NewsHead, a string variable */
+#define g_NewsLogoBmp (&(*(char * *)&GAME_GVAR(GVar_NewsLogoBmp)->value))		/* NewsLogoBmp */
+#define g_BackNewsBmp (&(*(char * *)&GAME_GVAR(GVar_BackNewsBmp)->value))		/* BackNewsBmp */
 extern cGVar GVar_NewsPanelAspect;
 #define g_NewsPanelAspect (GVar_NewsPanelAspect.value.f)	/* NewsPanelAspect */
 extern cGVar GVar_NewsPanelMove;
@@ -935,7 +935,7 @@ extern cGVar GVar_MotionBlurEndTime;
 #define g_MotionBlurEndTime (GVar_MotionBlurEndTime.value.f)	/* MotionBlurEndTime */
 extern cGVar GVar_MotionBlurOffVar;
 #define g_MotionBlurOffVar (GVar_MotionBlurOffVar.value.f)	/* MotionBlurOffVar */
-#define g_FullScreenConsoleCallback (&GAME_GLOBAL_IN(cPy_Function, GVar_FullScreenConsoleCallback, 16))	/* FullScreenConsoleCallback */
+#define g_FullScreenConsoleCallback (&(*(cPy_Function *)&GAME_GVARFUNC(GVar_FullScreenConsoleCallback)->func))	/* FullScreenConsoleCallback */
 extern cGVar GVar_CurrentWaypointName;
 #define g_CurrentWaypointName (GVar_CurrentWaypointName.value.s)	/* CurrentWaypointName */
 extern cGVar GVar_CurrentWaypointName2;
@@ -964,7 +964,7 @@ extern cGVar GVar_OnFocusSoundVol;
 #define g_OnFocusSoundVol (GVar_OnFocusSoundVol.value.f)	/* OnFocusSoundVol */
 extern cGVar GVar_ScorerMarker;
 #define g_ScorerMarkerOn (GVar_ScorerMarker.value.i)		/* ScorerMarker */
-#define g_ScorerMarkerColor GAME_GLOBAL_IN(uint32_t, GVar_ScorerMarkerColor, 16)	/* ScorerMarkerColor */
+#define g_ScorerMarkerColor (*(uint32_t *)&GAME_GVAR(GVar_ScorerMarkerColor)->value)	/* ScorerMarkerColor */
 extern cGVar GVar_ScorerMarkerSpeed;
 #define g_ScorerMarkerSpeed (GVar_ScorerMarkerSpeed.value.f)	/* ScorerMarkerSpeed */
 extern cGVar GVar_CShow;

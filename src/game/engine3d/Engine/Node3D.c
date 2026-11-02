@@ -4,6 +4,8 @@
  */
 #include <string.h>
 
+#include "scrap/animgroup.h"
+#include "scrap/meshd3d.h"
 #include "scrap/gvar.h"
 #include "scrap/camera.h"
 #include "scrap/console.h"
@@ -68,7 +70,7 @@ typedef void(*objRender_t)(IObject3D *self, void *arg, CRenderNode *r);
 /* the casts of objeto3d.h: NULL after the failed check */
 /* the track set of an animation of a channel */
 static void *Anim_Set(void *anim) {
-	return *(void **)(*(byte **)((byte *)anim + 0x94) + 0x3c);
+	return ((CAnimGroup *)anim)->Anim->AnimM3D;
 }
 
 /* channel 0 of the scene if it has an animation */
