@@ -262,3 +262,11 @@ void MsgMan_SetSendDelay(uint32_t ms) {
 void MsgMan_SetWaitTime(uint32_t ms) {
 	g_NetWaitTime = ms;
 }
+
+/* the vtable of cUserNetManager */
+const cUserNetManagerVtbl cUserNetManager_vftable = {
+	.Delete = cUserNetManager_Delete,
+	.OnReceive = (void *)crt_purecall,
+	.Send = (void *)crt_purecall,
+	.SetLocalData = cUserNetManager_Nop,
+};

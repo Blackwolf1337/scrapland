@@ -157,7 +157,7 @@ cGridElements_InfPointVisPtr *NWGrid_Delete(cGridElements_InfPointVisPtr *self, 
 	return self;
 }
 
-byte NWGrid_Add(cGridElements_InfPointVisPtr *self, const vec3_t *p, void *const *data) {
+byte NWGrid_Add(cGridElements_InfPointVisPtr *self, const vec3_t *p, const void *data) {
 	CHECK(!((p->x > self->max.x) || (p->x < self->min.x) || (p->y > self->max.y) || (p->y < self->min.y) ||
 		(p->z > self->max.z) || (p->z < self->min.z)));
 	int i = self->vftable->CellIndex(self, p);
@@ -169,7 +169,7 @@ byte NWGrid_Add(cGridElements_InfPointVisPtr *self, const vec3_t *p, void *const
 		}
 		cells[i] = cell;
 	}
-	NWIntList_Add(cells[i], data);
+	NWIntList_Add(cells[i], (void *const *)data);
 	return 1;
 }
 
@@ -269,14 +269,14 @@ byte CNodesWorldSup_SaveInfPath(CNodesWorld *self, const char *path) {
 	Con_Printf("Saving Inf. AI...\n");
 	crt_chmod(path, 0x180);
 	cFilePack_ctor(&f);
-	if (!cFilePack_Open(&f, path, 6)) {
+	if (!cFilePack_Open(&f.file.base, path, 6)) {
 		Con_Bluef("ERROR AI: File Inf. Path AI no abierto.\n");
 		ok = 0;
 	} else {
-		cFilePack_Write(&f, &self->sup.nodeSize, sizeof(self->sup.nodeSize));
-		cFilePack_Write(&f, &self->sup.min, sizeof(self->sup.min));
-		cFilePack_Write(&f, &self->sup.max, sizeof(self->sup.max));
-		if (!cFilePack_Close(&f)) {
+		cFilePack_Write(&f.file.base, &self->sup.nodeSize, sizeof(self->sup.nodeSize));
+		cFilePack_Write(&f.file.base, &self->sup.min, sizeof(self->sup.min));
+		cFilePack_Write(&f.file.base, &self->sup.max, sizeof(self->sup.max));
+		if (!cFilePack_Close(&f.file.base)) {
 			Con_Bluef("ERROR AI: File Inf. Path AI no cerrado.\n");
 			ok = 0;
 		} else {
@@ -298,22 +298,22 @@ byte CNodesWorldSup_LoadGraph(CNodesWorld *self, const char *path) {
 	for (file = 0;; file++) {
 		NWSup_FilePath(buf, path, file);
 		cFilePack_ctor(&f);
-		if (!cFilePack_Exists(&f, buf)) {
+		if (!cFilePack_Exists(&f.file.base, buf)) {
 			cFilePack_dtor(&f);
 			if (!file) {
 				return 0;
 			}
 			break;
 		}
-		if (!cFilePack_Open(&f, buf, 1)) {
+		if (!cFilePack_Open(&f.file.base, buf, 1)) {
 			Con_Bluef("ERROR AI: File Path AI no abierto.\n");
 			CHECK(!"CNodesWorldSup_LoadPath_File_Path_Not_Open");
 			cFilePack_dtor(&f);
 			return 0;
 		}
-		cFilePack_Read(&f, &n, 4);
+		cFilePack_Read(&f.file.base, &n, 4);
 		self->sup.numNodes += n;
-		if (!cFilePack_Close(&f)) {
+		if (!cFilePack_Close(&f.file.base)) {
 			Con_Bluef("ERROR AI: File Path AI no cerrado.\n");
 			CHECK(!"CNodesWorldSup_LoadPath_File_Path_Not_Closed");
 			cFilePack_dtor(&f);
@@ -331,28 +331,28 @@ byte CNodesWorldSup_LoadGraph(CNodesWorld *self, const char *path) {
 	for (file = 0;; file++) {
 		NWSup_FilePath(buf, path, file);
 		cFilePack_ctor(&f);
-		if (!cFilePack_Exists(&f, buf)) {
+		if (!cFilePack_Exists(&f.file.base, buf)) {
 			cFilePack_dtor(&f);
 			if (!file) {
 				return 0;
 			}
 			break;
 		}
-		if (!cFilePack_Open(&f, buf, 1)) {
+		if (!cFilePack_Open(&f.file.base, buf, 1)) {
 			Con_Bluef("ERROR AI: File Path AI no abierto.\n");
 			CHECK(!"CNodesWorldSup_LoadPath_File_Path_Not_Open");
 			cFilePack_dtor(&f);
 			return 0;
 		}
-		cFilePack_Read(&f, &n, 4);
+		cFilePack_Read(&f.file.base, &n, 4);
 		for (int k = first; k < n + first; k++) {
-			cFilePack_Read(&f, &self->sup.nodes[k].pos, sizeof(vec3_t));
+			cFilePack_Read(&f.file.base, &self->sup.nodes[k].pos, sizeof(vec3_t));
 		}
 		self->sup.fileStart[self->sup.numFiles] = &self->sup.nodes[first];
 		self->sup.numFiles++;
 		for (int k = first; k < n + first; k++) {
 			cNWNode *node = &self->sup.nodes[k];
-			cFilePack_Read(&f, &node->numLinks, 4);
+			cFilePack_Read(&f.file.base, &node->numLinks, 4);
 			node->links = Mem_Alloc(node->numLinks * sizeof(*node->links));
 			if (!node->links) {
 				Con_Bluef("ERROR: LoadPathAI - Insuficiente memoria Buffer Links Points Vis.\n");
@@ -360,7 +360,7 @@ byte CNodesWorldSup_LoadGraph(CNodesWorld *self, const char *path) {
 			}
 			for (int j = 0; j < self->sup.nodes[k].numLinks; j++) {
 				vec3_t p;
-				cFilePack_Read(&f, &p, sizeof(p));
+				cFilePack_Read(&f.file.base, &p, sizeof(p));
 				cNWNode *q = NWSup_FindNode(self->sup.nodes, first, n, &p);
 				if (q) {
 					self->sup.nodes[k].links[j] = q;
@@ -371,7 +371,7 @@ byte CNodesWorldSup_LoadGraph(CNodesWorld *self, const char *path) {
 			}
 			links += self->sup.nodes[k].numLinks;
 		}
-		if (!cFilePack_Close(&f)) {
+		if (!cFilePack_Close(&f.file.base)) {
 			Con_Bluef("ERROR AI: File Path AI no cerrado.\n");
 			CHECK(!"CNodesWorldSup_LoadPath_File_Path_Not_Closed");
 			cFilePack_dtor(&f);
@@ -1003,7 +1003,9 @@ static uintptr_t NWPair_Word(const cNWPair *p, int i) {
 	return i == 1 ? (uintptr_t)p->b : d.u;
 }
 
-byte CNodesWorldSup_HasPair(CNodesWorld *self, cNWPairList *list, const cNWPair *pair) {
+byte CNodesWorldSup_HasPair(CNodesWorld *self, void *vlist, const void *vpair) {
+	cNWPairList *list = vlist;
+	const cNWPair *pair = vpair;
 	(void)self;
 	cNWPairNode *saved = list->iter;
 	cNWPairNode *head = list->head;
@@ -1025,7 +1027,9 @@ byte CNodesWorldSup_HasPair(CNodesWorld *self, cNWPairList *list, const cNWPair 
 	return 0;
 }
 
-void CNodesWorldSup_InsertPair(CNodesWorld *self, cNWPairList *list, const cNWPair *pair) {
+void CNodesWorldSup_InsertPair(CNodesWorld *self, void *vlist, const void *vpair) {
+	cNWPairList *list = vlist;
+	const cNWPair *pair = vpair;
 	(void)self;
 	cNWPairNode *saved = list->iter;
 	cNWPairNode *head = list->head;
@@ -1827,3 +1831,62 @@ void NWSup_DrawExtra(CNodesWorld *self, float r, uint32_t color) {
 		}
 	}
 }
+
+/* the vtable of CNodesWorldSup */
+const CNodesWorldVtbl CNodesWorldSup_vftable = {
+	.Delete = CNodesWorldSup_Delete,
+	.GetBox = CNodesWorldSup_GetBox,
+	.LoadFiles = CNodesWorldSup_LoadGraph,
+	.LoadGraph = (void *)crt_purecall,
+	.Create = CNodesWorldSup_Create,
+	.FileOf = CNodesWorldSup_FileOf,
+	.CommonFile = CNodesWorldSup_CommonFile,
+	.SnapPos = CNodesWorldSup_SnapPos,
+	.OtherLinks = CNodesWorldSup_OtherLinks,
+	.IsCreated = CNodesWorldSup_IsCreated,
+	.LastNodePos = CNodesWorldSup_LastNodePos,
+	.GetVisPoint = CNodesWorldSup_GetVisPoint,
+	.NumVisPoints = CNodesWorldSup_NumVisPoints,
+	.GetMaxVisDist = CNodesWorldSup_GetMaxVisDist,
+	.InGrid = CNodesWorldSup_InGrid,
+	.SavePath = (void *)crt_purecall,
+	.CheckBuffer = CNodesWorldSup_CheckBuffer,
+	.BuildGrid = CNodesWorldSup_BuildGrid,
+	.BufferIndex = CNodesWorldSup_BufferIndex,
+	.BufferPos = CNodesWorldSup_BufferPos,
+	.GetInfoNodes = CNodesWorldSup_GetInfoNodes,
+	.AddVis = CNodesWorldSup_AddVis,
+	.Hash = CNodesWorldSup_Hash,
+	.ReleaseVis = CNodesWorldSup_ReleaseVis,
+	.LinkPoints = CNodesWorldSup_LinkPoints,
+	.LinkBack = CNodesWorldSup_LinkBack,
+	.PointLinked = CNodesWorldSup_PointLinked,
+	.LinkPoint = CNodesWorldSup_LinkPoint,
+	.Unreachable = CNodesWorldSup_Unreachable,
+	.BoxCells = CNodesWorldSup_BoxCells,
+	.FindSorted = CNodesWorldSup_FindSorted,
+	.HasPair = CNodesWorldSup_HasPair,
+	.InsertPair = CNodesWorldSup_InsertPair,
+	.VisHas = CNodesWorldSup_VisHas,
+	.Linked = CNodesWorldSup_Linked,
+	.FreeGraph = CNodesWorldSup_FreeGraph,
+	.FreeTemp = CNodesWorldSup_FreeTemp,
+	.InList = CNodesWorldSup_InList,
+	.ClearLists = (void *)crt_purecall,
+	.SaveInfPath = CNodesWorldSup_SaveInfPath,
+};
+
+/* the vtable of cGridElements_InfPointVis */
+const cGridElementsVtbl cGridElements_InfPointVis_vftable = {
+	.Delete = NWGrid_Delete,
+	.Add = NWGrid_Add,
+	.GetCellAt = cGridElements_GetCellAt,
+	.GetCell = cGridElements_GetCell,
+	.Draw = cGridElements_Draw,
+	.CellCoords = cGridElements_CellCoords,
+	.GetDivs = cGridElements_GetDivs,
+	.GetCellSize = cGridElements_GetCellSize,
+	.IsInside = cGridElements_IsInside,
+	.Free = NWGrid_Free,
+	.CellIndex = cGridElements_CellIndex,
+};

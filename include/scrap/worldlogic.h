@@ -33,7 +33,7 @@ typedef struct cItemDesc {
 /* the item list of the world (InfItem.cpp, g_pWorld->logic.items) */
 typedef struct cInfItem cInfItem;
 typedef struct cInfItemVtbl {
-	void *vf00;
+	cInfItem *(*Delete)(cInfItem *self, byte flags);		/* 0x00 */
 	void(*AddLife)(cInfItem *self, cItemDesc *item);			/* 0x04 */
 	/* the walk over the life items: iter is the cursor (one pointer), NULL after the last */
 	cItemDesc *(*FirstLife)(cInfItem *self, void **iter);		/* 0x08 */

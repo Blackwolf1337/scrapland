@@ -201,7 +201,7 @@ byte cSound_UpdateVP(cSound *self, int volume, int pan) {
 /* CSoundSys */
 
 CSoundSys *CSoundSys_ctor(CSoundSys *self) {
-	self->vftable = CSoundSys_vftable;
+	self->vftable = CSOUNDSYS_VFTABLE;
 	self->lastListener = -1;
 	for (int i = 0; i < SOUND_MAX_LISTENERS; i++) {
 		cSoundListener *l = &self->listeners[i];
@@ -213,11 +213,11 @@ CSoundSys *CSoundSys_ctor(CSoundSys *self) {
 }
 
 void CSoundSys_dtor(CSoundSys *self) {
-	self->vftable = CSoundSys_vftable;
+	self->vftable = CSOUNDSYS_VFTABLE;
 }
 
 CSoundSys *CSoundSys_Destroy(CSoundSys *self, byte flags) {
-	self->vftable = CSoundSys_vftable;
+	self->vftable = CSOUNDSYS_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CSoundSys));
 	}
@@ -243,9 +243,9 @@ void CSoundSys_CallVf1c(CSoundSys *self) {
 	self->vftable->vf1c(self);
 }
 
-int CSoundSys_InitFmod(CSoundSys *self) {
+void CSoundSys_InitFmod(CSoundSys *self) {
 	(void)self;
-	return Fmod_Init();
+	Fmod_Init();
 }
 
 void CSoundSys_Close(CSoundSys *self) {
@@ -481,7 +481,7 @@ int CSoundSys_StopVoice(CSoundSys *self, int voice) {
 	return Voice_Stop(voice);
 }
 
-int CSoundSys_VoiceRemain(CSoundSys *self, int voice, float *remain) {
+byte CSoundSys_VoiceRemain(CSoundSys *self, int voice, float *remain) {
 	(void)self;
 	return Voice_Remain(voice, remain);
 }
@@ -510,3 +510,48 @@ int CSoundSys_VoiceUnused(CSoundSys *self, int voice) {
 	(void)self;
 	return Voice_Unused(voice);
 }
+
+/* the vtable of CSoundSys */
+const CSoundSysVtbl CSoundSys_vftable = {
+	.Destroy = CSoundSys_Destroy,
+	.Init = CSoundSys_InitFmod,
+	.Close = CSoundSys_Close,
+	.Update = CSoundSys_Nop,
+	.LoadSound2 = (void *)crt_purecall,
+	.LoadSound = (void *)crt_purecall,
+	.DeleteSound = (void *)crt_purecall,
+	.StopAllSounds = (void *)crt_purecall,
+	.DeleteAllSounds = (void *)crt_purecall,
+	.GetDesc = (void *)crt_purecall,
+	.SetDesc = (void *)crt_purecall,
+	.PlaySound = (void *)crt_purecall,
+	.PlayName = (void *)crt_purecall,
+	.Play = (void *)crt_purecall,
+	.PlayAt = (void *)crt_purecall,
+	.UpdateSound = (void *)crt_purecall,
+	.StopSound = (void *)crt_purecall,
+	.SetVolume = CSoundSys_SetVolume,
+	.SetPan = CSoundSys_SetPan,
+	.SetFreq = CSoundSys_SetFreq,
+	.SetLoop = CSoundSys_SetLoop,
+	.SetPrio = CSoundSys_SetPrio,
+	.ResetListeners = CSoundSys_ResetListeners,
+	.SetListener = CSoundSys_SetListener,
+	.Compute3D = CSoundSys_Compute3D,
+	.SetMusic = CSoundSys_SetMusic,
+	.vf1a = CSoundSys_Nop,
+	.StopMusic = CSoundSys_StopMusic,
+	.vf1c = CSoundSys_Nop,
+	.SetMusicVolume = CSoundSys_SetMusicVolume,
+	.GetSoundName = CSoundSys_GetSoundName,
+	.DebugDraw = CSoundSys_Nop2,
+	.OpenVoice = CSoundSys_OpenVoice,
+	.PlayVoice = CSoundSys_PlayVoice,
+	.StopVoice = CSoundSys_StopVoice,
+	.VoiceRemain = CSoundSys_VoiceRemain,
+	.SetVoiceVolume = CSoundSys_SetVoiceVolume,
+	.SetVoiceParam = CSoundSys_SetVoiceParam,
+	.SetVoiceString = CSoundSys_SetVoiceString,
+	.GetVoiceString = CSoundSys_GetVoiceString,
+	.VoiceUnused = CSoundSys_VoiceUnused,
+};

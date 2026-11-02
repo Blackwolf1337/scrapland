@@ -369,7 +369,8 @@ void Input_SetToDefine(int player, int action, uint32_t set) {
 }
 
 /* the lines "set.action.player = entry" of the device up to "name = <end>" */
-void cFuncGvarDevices_Load(cFuncGvarDevices *self, void *f) {
+void cFuncGvarDevices_Load(struct cFuncGvar *elem, void *f) {
+	cFuncGvarDevices *self = (cFuncGvarDevices *)elem;
 	char line[0x200];
 	char *value;
 
@@ -463,7 +464,8 @@ void Input_ResetToDefault(void) {
 	}
 }
 
-void cFuncGvarDevices_Save(cFuncGvarDevices *self, void *f) {
+void cFuncGvarDevices_Save(struct cFuncGvar *elem, void *f) {
+	cFuncGvarDevices *self = (cFuncGvarDevices *)elem;
 	char buf[0x100];
 
 	for (int set = 0; set < NUM_SETS; set++) {
@@ -601,3 +603,34 @@ void Device_SetEntries(cAbstractIDevice *d, const byte (*t)[3], int n) {
 		cAbstractIDevice_SetEntry(d, t[i][0], t[i][1], 0, t[i][2], 0);
 	}
 }
+
+/* the slot IsReserved of a class that does only return 1 */
+byte cAbstractIDevice_IsReservedTrue(cAbstractIDevice *self, int entry) {
+	(void)self;
+	(void)entry;
+	return 1;
+}
+
+/* the slot SetGameDefaults of a class that does nothing there */
+void cAbstractIDevice_SetGameDefaultsNop(cAbstractIDevice *self) {
+	(void)self;
+}
+
+/* the vtable of cAbstractIDevice */
+const cAbstractIDeviceVtbl cAbstractIDevice_vftable = {
+	.Delete = cAbstractIDevice_Delete,
+	.SetDefaults = (void *)crt_purecall,
+	.SetGameDefaults = (void *)crt_purecall,
+	.GetName = (void *)crt_purecall,
+	.GetEntryLabel = (void *)crt_purecall,
+	.GetEntryName = (void *)crt_purecall,
+	.Update = (void *)crt_purecall,
+	.IsReserved = cAbstractIDevice_IsReserved,
+	.SetEntry = cAbstractIDevice_SetEntry,
+};
+
+/* the vtable of cFuncGvarDevices */
+const cGVarListVtbl cFuncGvarDevices_vftable = {
+	.Save = cFuncGvarDevices_Save,
+	.Load = cFuncGvarDevices_Load,
+};

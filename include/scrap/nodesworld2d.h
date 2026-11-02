@@ -35,7 +35,8 @@ SD_SIZE(CNodesWorld2D, 0x378);
 /* the CNodesWorldSup part */
 #define NW2D_SUP(self) ((CNodesWorld *)(self))
 
-#define CNODESWORLD2D_VFTABLE GAME_VFTABLE(CNodesWorld2D_vftable)
+extern const CNodesWorldVtbl CNodesWorld2D_vftable;
+#define CNODESWORLD2D_VFTABLE (&CNodesWorld2D_vftable)
 
 /* a body that walks the graph: a capsule of radius r - shrink between the heights h1 and h2 above a foot sphere of
  * radius foot */
@@ -73,14 +74,14 @@ void NW2DRegionList_FreePool(cNW2DRegionList *list);
 
 /* CNodesWorld2D_ctor: ai.h */
 void CNodesWorld2D_dtor(CNodesWorld2D *self);
-CNodesWorld2D *CNodesWorld2D_Delete(CNodesWorld2D *self, byte flags);
+CNodesWorld *CNodesWorld2D_Delete(CNodesWorld *base, byte flags);
 /* <name>/AI/Path2DAI of the base class */
-byte CNodesWorld2D_LoadGraph(CNodesWorld2D *self);
+byte CNodesWorld2D_LoadGraph(CNodesWorld *base);
 /* the floor points of the points and their links into <name>/AI/Path2DAI.pth (writes a file) */
-byte CNodesWorld2D_SavePath(CNodesWorld2D *self);
+byte CNodesWorld2D_SavePath(CNodesWorld *base);
 /* <name>/AI/InfPath2DAI.pth of the base class (writes a file) */
 byte CNodesWorld2D_SaveInfPath(CNodesWorld2D *self);
-void CNodesWorld2D_ClearLists(CNodesWorld2D *self);
+void CNodesWorld2D_ClearLists(CNodesWorld *base);
 /* the floor below p: at p, again at p + 0, then 15 higher, each g_NW2DGroundDist down; 1 with hit set (the probes
  * the callers inline, also AI/AICharControl2D.cpp) */
 int NW2D_Probe(const vec3_t *p, vec3_t *hit);

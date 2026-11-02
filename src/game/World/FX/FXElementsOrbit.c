@@ -47,21 +47,22 @@ void cFXElementsOrbitBuoyController_dtor(cFXElementsOrbitBuoyController *self) {
 	cMapElement_dtor(&self->base);
 }
 
-cFXElementsOrbitBuoy *cFXElementsOrbitBuoy_Delete(cFXElementsOrbitBuoy *self, byte flags) {
+cMapElement *cFXElementsOrbitBuoy_Delete(cMapElement *base, byte flags) {
+	cFXElementsOrbitBuoy *self = (cFXElementsOrbitBuoy *)base;
 	cFXElementsOrbitBuoy_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
-cFXElementsOrbitBuoyController *cFXElementsOrbitBuoyController_Delete(cFXElementsOrbitBuoyController *self,
-	byte flags) {
+cMapElement *cFXElementsOrbitBuoyController_Delete(cMapElement *base, byte flags) {
+	cFXElementsOrbitBuoyController *self = (cFXElementsOrbitBuoyController *)base;
 	cFXElementsOrbitBuoyController_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 void cFXElementsOrbitBuoy_ReleaseLight(cFXElementsOrbitBuoy *self) {
@@ -74,7 +75,8 @@ void cFXElementsOrbitBuoyController_Release(cFXElementsOrbitBuoyController *self
 
 /* ---- the elements ---- */
 
-byte cFXElementsOrbitBuoy_Init(cFXElementsOrbitBuoy *self) {
+byte cFXElementsOrbitBuoy_Init(cMapElement *elem) {
+	cFXElementsOrbitBuoy *self = (cFXElementsOrbitBuoy *)elem;
 	vec3_t tmp;
 
 	cMapElement_Init(&self->base);
@@ -87,17 +89,20 @@ byte cFXElementsOrbitBuoy_Init(cFXElementsOrbitBuoy *self) {
 	return 1;
 }
 
-void cFXElementsOrbitBuoy_Update(cFXElementsOrbitBuoy *self, float dt) {
+void cFXElementsOrbitBuoy_Update(cMapElement *elem, float dt) {
+	cFXElementsOrbitBuoy *self = (cFXElementsOrbitBuoy *)elem;
 	cMapElement_Update(&self->base, dt);
 }
 
-byte cFXElementsOrbitBuoyController_Init(cFXElementsOrbitBuoyController *self) {
+byte cFXElementsOrbitBuoyController_Init(cMapElement *elem) {
+	cFXElementsOrbitBuoyController *self = (cFXElementsOrbitBuoyController *)elem;
 	cMapElement_Init(&self->base);
 	return 1;
 }
 
 /* the lights of the buoys sized by the distance to the camera, faded by their turn */
-void cFXElementsOrbitBuoyController_Update(cFXElementsOrbitBuoyController *self, float dt) {
+void cFXElementsOrbitBuoyController_Update(cMapElement *elem, float dt) {
+	cFXElementsOrbitBuoyController *self = (cFXElementsOrbitBuoyController *)elem;
 	cMapElement_Update(&self->base, dt);
 	for (int col = 0; col < FXORBITBOYACOLUMNS; col++) {
 		for (int i = 0; i < FXORBITBOYACOLUMNCOUNT; i++) {
@@ -216,3 +221,17 @@ void FXElementsOrbit_Create(void) {
 		MapElement_Add(&b->base);
 	}
 }
+
+/* the vtable of cFXElementsOrbitBuoy */
+const cMapElementVtbl cFXElementsOrbitBuoy_vftable = {
+	.Delete = cFXElementsOrbitBuoy_Delete,
+	.Init = cFXElementsOrbitBuoy_Init,
+	.Update = cFXElementsOrbitBuoy_Update,
+};
+
+/* the vtable of cFXElementsOrbitBuoyController */
+const cMapElementVtbl cFXElementsOrbitBuoyController_vftable = {
+	.Delete = cFXElementsOrbitBuoyController_Delete,
+	.Init = cFXElementsOrbitBuoyController_Init,
+	.Update = cFXElementsOrbitBuoyController_Update,
+};

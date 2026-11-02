@@ -59,7 +59,7 @@ void cFileBlock_CreateFile(cFileBlock *self, uint32_t mode, byte flags) {
 		if (file) {
 			file->base.name = NULL;
 			file->base.mode = 0;
-			file->base.vftable = cFile_vftable;
+			file->base.vftable = CFILE_VFTABLE;
 			file->f = NULL;
 			self->f = &file->base;
 			return;

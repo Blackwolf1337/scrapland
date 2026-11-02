@@ -408,7 +408,7 @@ void cAIVehicle_Draw(cAI *elem) {
 
 void cAIVehicle_Update(cAI *elem, float dt) {
 	cAIVehicle *self = (cAIVehicle *)elem;
-	if (self->pending.state != AIV_STATE_NONE && g_VehicleGroup->vftable->CanChange(g_VehicleGroup)) {
+	if (self->pending.state != AIV_STATE_NONE && g_VehicleGroup->vftable->CanChange(&g_VehicleGroup->base)) {
 		cAIVehicle_RestoreState(self, &self->pending);
 	}
 	if (self->state == AIV_FREEZE) {
@@ -1688,7 +1688,7 @@ byte cAIVehicle_SetStateIntern(cAIVehicle *self, int state, ...) {
 	cAIVehicle_StateName(state, name);
 	self->vftable->base.Debugf(&self->base.base, "Demanda interna de CAMBIO de ESTADO -> %s", name);
 	if (!AIV_FreeState(state)) {
-		g_VehicleGroup->vftable->AllowChange(g_VehicleGroup);
+		g_VehicleGroup->vftable->AllowChange(&g_VehicleGroup->base);
 	}
 	va_start(ap, state);
 	byte r = cAIVehicle_ChangeState(self, state, ap);
@@ -1988,7 +1988,7 @@ byte cAIVehicle_ChangeState(cAIVehicle *self, int state, va_list ap) {
 		goto change;
 	}
 	if (!AIV_FreeState(state)) {
-		allowed = g_VehicleGroup->vftable->CanChange(g_VehicleGroup);
+		allowed = g_VehicleGroup->vftable->CanChange(&g_VehicleGroup->base);
 	}
 	if (state == AIV_LOST_PATH_CHASE || !AIV_VehTraffic(self->vehicle)->off) {
 		if (allowed) {
@@ -2195,7 +2195,7 @@ common: {
 			goto bad;
 		}
 		if (!AIV_FreeState(state)) {
-			g_VehicleGroup->vftable->ResetChange(g_VehicleGroup);
+			g_VehicleGroup->vftable->ResetChange(&g_VehicleGroup->base);
 		}
 		cAIVehicle_StateName(state, name);
 		if (!AIV_Target(self)) {
@@ -2890,9 +2890,9 @@ void cAIVehicle_ThinkRace(cAIVehicle *self) {
 			if (race == 0 || (race != 10 && crt_rand() % ((10 - race) * 2) != 0)) {
 				continue;
 			}
-			int n = g_VehicleGroup->vftable->NumVehicles(g_VehicleGroup);
+			int n = g_VehicleGroup->vftable->Num(&g_VehicleGroup->base);
 			for (int i = 0; i < n; i++) {
-				cEntity *e = g_VehicleGroup->vftable->GetVehicle(g_VehicleGroup, i);
+				cEntity *e = g_VehicleGroup->vftable->Get(&g_VehicleGroup->base, i);
 				if (e == self->vehicle || !self->vftable->CanTarget(&self->base.base, e) || !cAIVehicle_CanHook(self, e)) {
 					continue;
 				}

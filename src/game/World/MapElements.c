@@ -12,7 +12,8 @@
 #include "scrap/scrap.h"
 #include "scrap/world.h"
 
-#define CMAPELEMENT_VFTABLE GAME_VFTABLE(cMapElement_vftable)
+extern const cMapElementVtbl cMapElement_vftable;
+#define CMAPELEMENT_VFTABLE (&cMapElement_vftable)
 
 /* ElementModelPath, the folder of the element models (a cString, "Models/Elements/") */
 extern cGVar GVar_ElementModelPath;
@@ -223,3 +224,22 @@ void Elements_Load(cAbstractFile *f) {
 		CGameModel_Disable(&e->Mod);
 	}
 }
+
+/* the slot Init of a class that does only return 1 */
+byte cMapElement_InitTrue(cMapElement *self) {
+	(void)self;
+	return 1;
+}
+
+/* the slot Update of a class that does nothing there */
+void cMapElement_UpdateNop(cMapElement *self, float dt) {
+	(void)self;
+	(void)dt;
+}
+
+/* the vtable of cMapElement */
+const cMapElementVtbl cMapElement_vftable = {
+	.Delete = cMapElement_Delete,
+	.Init = cMapElement_Init,
+	.Update = cMapElement_Update,
+};

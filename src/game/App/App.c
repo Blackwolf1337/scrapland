@@ -955,3 +955,28 @@ byte CApp_IsDedicatedWin(CApp *self) {
 	(void)self;
 	return 0;
 }
+
+/* the vtable of CApp */
+const CAppVtbl CApp_vftable = {
+	.DoneGame = CApp_DoneGame,
+	.InitGame = CApp_InitGame,
+	.InitDebug = CApp_Nop,
+	.Delete = CApp_Delete,
+	.Init = CApp_Init,
+	.Frame = CApp_Frame,
+	.Shutdown = CApp_Shutdown,
+	.LoadLevelNow = CApp_LoadLevelNow,
+	.InitDedicated = CApp_Nop,
+	.Exit = CApp_Nop,
+	.Update = CApp_Update,
+	.Render = CApp_Render,
+	.ParseParam = CApp_ParseParam,
+	.ResetParams = CApp_ResetParams,
+	.GetTime = (void *)crt_purecall,
+	.GetGameTime = CApp_GetGameTime,
+	.ShowConsole = (void *)crt_purecall,
+	.ConsoleAdd = (void *)crt_purecall,
+	.DebugInput = (void *)crt_purecall,
+	.RunApp = CApp_RunApp,
+	.IsDedicatedWin = CApp_IsDedicatedWin,
+};

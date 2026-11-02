@@ -263,19 +263,19 @@ void Scene_LogTree(CScene *scn, CNode3D *node, int indent);
 /* a command of the debug console of the engine: listar, listar lights, arbol <scene>, ver uniones */
 void E3D_Command(char *cmd);
 void CEngineApp_UpdateMenu(CEngineApp *self);
-int CEngineApp_InitDeviceObjects(CEngineApp *self);
-int CEngineApp_ConfirmDevice(CEngineApp *self, D3DCaps8 *caps, uint32_t behavior, int format);
-int CEngineApp_RestoreDeviceObjects(CEngineApp *self);
-int CEngineApp_OneTimeSceneInit(CEngineApp *self);
-int CEngineApp_FrameMove(CEngineApp *self);
+int CEngineApp_InitDeviceObjects(CD3DApplication *elem);
+int CEngineApp_ConfirmDevice(CD3DApplication *base, D3DCaps8 *caps, uint32_t behavior, uint32_t format);
+int CEngineApp_RestoreDeviceObjects(CD3DApplication *base);
+int CEngineApp_OneTimeSceneInit(CD3DApplication *base);
+int CEngineApp_FrameMove(CD3DApplication *elem);
 /* Render (vtable 0x18): the frame, 1 to quit; at once 0 while Engine_FrameDue is 0 */
-int CEngineApp_Render(CEngineApp *self);
+int CEngineApp_Render(CD3DApplication *elem);
 /* the reset of the device objects that g_ResetDev asks for, the HRESULT */
 int CEngineApp_ResetDevice(CEngineApp *self);
 /* 0 while the frame limiter (limitaFPS, R_LimitFPS; none with vsync) holds the next frame back */
 byte Engine_FrameDue(CD3DApplication *self);
-int CEngineApp_DeleteDeviceObjects(CEngineApp *self);
-int CEngineApp_FinalCleanup(CEngineApp *self);
+int CEngineApp_DeleteDeviceObjects(CD3DApplication *base);
+int CEngineApp_FinalCleanup(CD3DApplication *base);
 int CD3DApplication_Nothing(CD3DApplication *self);
 char *Engine_ColorStr(const byte *c);
 const char *Engine_BoolStr(int b);

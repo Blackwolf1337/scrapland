@@ -17,7 +17,8 @@
 
 #define CAIVEHICLECONTROL_VFTABLE GAME_VFTABLE(cAIVehicleControl_vftable)
 #define CAIVEHICLESHOOT_VFTABLE GAME_VFTABLE(cAIVehicleShootControl_vftable)
-#define CAIVEHICLEGROUP_VFTABLE GAME_VFTABLE(cAIVehicleGroup_vftable)
+extern const cAIEntityGroupVtbl cAIVehicleGroup_vftable;
+#define CAIVEHICLEGROUP_VFTABLE (&cAIVehicleGroup_vftable)
 #define CAIVEHICLEGROUP_SIZE sizeof(cAIVehicleGroup)
 
 /* the one slot of both controllers */
@@ -238,7 +239,7 @@ void cAIVehicleControl_ClearAll(cAIVehicleControl *self);
 
 /* ---- cAIVehicleGroup (the same source; cAIVehicleGroup_ctor in ai.h) ---- */
 void cAIVehicleGroup_dtor(cAIVehicleGroup *self);
-cAIVehicleGroup *cAIVehicleGroup_Delete(cAIVehicleGroup *self, byte flags);
+cAIEntityGroup *cAIVehicleGroup_Delete(cAIEntityGroup *base, byte flags);
 byte cAIVehicleGroup_ReposReady(cAIVehicleGroup *self);
 void cAIVehicleGroup_Draw(cAIVehicleGroup *self);
 void cAIVehicleGroup_FindElevators(cAIVehicleGroup *self);

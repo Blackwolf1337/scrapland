@@ -64,12 +64,13 @@ void cClientNetManager_dtor(cClientNetManager *self) {
 	cUserNetManager_dtor(&self->base);
 }
 
-cClientNetManager *cClientNetManager_Delete(cClientNetManager *self, byte flags) {
+cUserNetManager *cClientNetManager_Delete(cUserNetManager *base, byte flags) {
+	cClientNetManager *self = (cClientNetManager *)base;
 	cClientNetManager_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 /* the hello of the client: id, version, password and the ship config */
@@ -92,29 +93,30 @@ static void ClientNet_ReadHello(cClientNetManager *self) {
 	}
 	cAbstractFile_ReadString8(f, self->weapons, sizeof(self->weapons));
 	f->vftable->Read(f, &self->team, 4);
-	cFileMem_Close(g_NetMsg);
+	cFileMem_Close(&g_NetMsg->base);
 }
 
-void cClientNetManager_OnReceive(cClientNetManager *self, void *data, int size, void *ctl, int ctlSize) {
+void cClientNetManager_OnReceive(cUserNetManager *elem, void *data, int size, void *ctl, int ctlSize) {
+	cClientNetManager *self = (cClientNetManager *)elem;
 	char s[0x80];
 	byte kind;
 	cEntity *e = World_FindEntity(self->name);
 
 	if (e && size > 0) {
 		cFileMem_SetBuffer(g_NetMsg, data, size, 0, 0);
-		cFileMem_Open(g_NetMsg, "", FILE_MODE_READ);
+		cFileMem_Open(&g_NetMsg->base, "", FILE_MODE_READ);
 		CHECK(e->vftable->IsType(e, TYEN_CAR));
 		Obj_Vtbl(e)->NetRead(e, g_NetMsg, 0);
-		cFileMem_Close(g_NetMsg);
+		cFileMem_Close(&g_NetMsg->base);
 	}
 	if (ctlSize < 1) {
 		return;
 	}
 	cFileMem_SetBuffer(g_NetMsg, ctl, ctlSize, 0, 0);
-	cFileMem_Open(g_NetMsg, "", FILE_MODE_READ);
+	cFileMem_Open(&g_NetMsg->base, "", FILE_MODE_READ);
 	g_NetMsg->base.vftable->Read(&g_NetMsg->base, &kind, 1);
 	if (!e && kind) {
-		cFileMem_Close(g_NetMsg);
+		cFileMem_Close(&g_NetMsg->base);
 		return;
 	}
 	switch (kind) {
@@ -142,32 +144,32 @@ void cClientNetManager_OnReceive(cClientNetManager *self, void *data, int size, 
 		return;
 	}
 	case NETMSG_GOODBYE:
-		cFileMem_Close(g_NetMsg);
+		cFileMem_Close(&g_NetMsg->base);
 		Con_Print(0x707000, "Goodbye recived!\n", 0);
 		return;
 	case NETMSG_CHAT:
 	case NETMSG_USR_STRING: {
 		cPy_Function *f = kind == NETMSG_CHAT ? g_OnChatString : g_OnUsrString;
 		cAbstractFile_ReadString8(&g_NetMsg->base, s, sizeof(s));
-		cFileMem_Close(g_NetMsg);
+		cFileMem_Close(&g_NetMsg->base);
 		cPy_Function_AddParamI(f, self->base.slot);
 		cPy_Function_AddParamS(f, s);
 		cPy_Function_Execute(f, 0);
 		return;
 	}
 	case NETMSG_USR_DATA:
-		cFileMem_Close(g_NetMsg);
+		cFileMem_Close(&g_NetMsg->base);
 		self->fullSends = 0;
 		return;
 	case NETMSG_CONSOLE:
 		cAbstractFile_ReadString8(&g_NetMsg->base, s, sizeof(s));
 		if (*g_ServerRemotePassword && **g_ServerRemotePassword && !cString_CmpStr(g_ServerRemotePassword, s)) {
 			cAbstractFile_ReadString8(&g_NetMsg->base, s, sizeof(s));
-			cFileMem_Close(g_NetMsg);
+			cFileMem_Close(&g_NetMsg->base);
 			Console_Execute(s);
 			return;
 		}
-		cFileMem_Close(g_NetMsg);
+		cFileMem_Close(&g_NetMsg->base);
 		return;
 	default:
 		/* the file stays open, as in the original */
@@ -191,12 +193,12 @@ void cClientNetManager_InitClient(cClientNetManager *self) {
 	CHECK(strcmp(self->name, e->name) == 0);
 	byte msg = NETMSG_LEVEL;
 	void *buf = ClientNet_Begin(24000);
-	cFileMem_Open(g_NetMsg, "", 6);
+	cFileMem_Open(&g_NetMsg->base, "", 6);
 	g_NetMsg->base.vftable->Write(&g_NetMsg->base, &msg, 1);
 	cAbstractFile_WriteString8(&g_NetMsg->base, g_pApp->levelPath);
 	cAbstractFile_WriteString8(&g_NetMsg->base, g_ServerType);
-	cNetClient_Push(self->base.client, buf, (uint16_t)cFileMem_Size(g_NetMsg));
-	cFileMem_Close(g_NetMsg);
+	cNetClient_Push(self->base.client, buf, (uint16_t)cFileMem_Size(&g_NetMsg->base));
+	cFileMem_Close(&g_NetMsg->base);
 	cStaticBuffer_Unlock(g_NetStaticBuffer);
 	cClientNetManager_SendResources(self);
 }
@@ -205,15 +207,15 @@ void ManServer_SendUsrData(int slot, byte toAll) {
 	byte msg = NETMSG_USR_DATA;
 	void *buf = ClientNet_Begin(24000);
 
-	cFileMem_Open(g_NetMsg, "", 6);
+	cFileMem_Open(&g_NetMsg->base, "", 6);
 	g_NetMsg->base.vftable->Write(&g_NetMsg->base, &msg, 1);
 	NetData_WriteUsr(&g_NetMsg->base, (uint16_t)slot);
 	if (toAll) {
-		NetServer_SendAll(buf, (uint16_t)cFileMem_Size(g_NetMsg));
+		NetServer_SendAll(buf, (uint16_t)cFileMem_Size(&g_NetMsg->base));
 	} else {
-		NetServer_SendAllBut(buf, (uint16_t)cFileMem_Size(g_NetMsg), slot);
+		NetServer_SendAllBut(buf, (uint16_t)cFileMem_Size(&g_NetMsg->base), slot);
 	}
-	cFileMem_Close(g_NetMsg);
+	cFileMem_Close(&g_NetMsg->base);
 	cStaticBuffer_Unlock(g_NetStaticBuffer);
 }
 
@@ -243,11 +245,11 @@ void cClientNetManager_SendResources(cClientNetManager *self) {
 		} while (i < NET_RESOURCES);
 		if (first != -1) {
 			byte msg = NETMSG_RESOURCES;
-			cFileMem_Open(g_NetMsg, "", 6);
+			cFileMem_Open(&g_NetMsg->base, "", 6);
 			g_NetMsg->base.vftable->Write(&g_NetMsg->base, &msg, 1);
 			NetData_WriteResources(&g_NetMsg->base, (uint16_t)first, (byte)((byte)last - (byte)first + 1));
-			cNetClient_Push(self->base.client, buf, (uint16_t)cFileMem_Size(g_NetMsg));
-			cFileMem_Close(g_NetMsg);
+			cNetClient_Push(self->base.client, buf, (uint16_t)cFileMem_Size(&g_NetMsg->base));
+			cFileMem_Close(&g_NetMsg->base);
 		}
 	} while (i < NET_RESOURCES);
 	cStaticBuffer_Unlock(g_NetStaticBuffer);
@@ -265,14 +267,15 @@ static byte ClientNet_PingByte(cNetClient *c) {
 	return (byte)v;
 }
 
-void cClientNetManager_Send(cClientNetManager *self, uint32_t time) {
+void cClientNetManager_Send(cUserNetManager *elem, uint32_t time) {
+	cClientNetManager *self = (cClientNetManager *)elem;
 	byte b[2];
 	uint32_t v;
 	vec3_t tmp;
 	cAbstractFile *f = &g_NetMsg->base;
 
 	void *buf = ClientNet_Begin(24000);
-	cFileMem_Open(g_NetMsg, "", 6);
+	cFileMem_Open(&g_NetMsg->base, "", 6);
 	uint32_t old = self->fullSends;
 	uint32_t count = 0, myIdx = 0xffff;
 	int full = old < 5;
@@ -359,7 +362,7 @@ void cClientNetManager_Send(cClientNetManager *self, uint32_t time) {
 				d2 = g_NetMaxDist2;
 			}
 			if (Obj_Vtbl(e)->NetNeedsSend(e, d2) || old < 5) {
-				cFileMem_Write(g_NetMsg, hdr, 3);
+				cFileMem_Write(&g_NetMsg->base, hdr, 3);
 				Obj_Vtbl(e)->NetWrite(e, d2, g_NetMsg, full);
 				count++;
 			}
@@ -370,7 +373,7 @@ void cClientNetManager_Send(cClientNetManager *self, uint32_t time) {
 			pass = 0;
 		}
 	}
-	cFileMem_Seek(g_NetMsg, 0);
+	cFileMem_Seek(&g_NetMsg->base, 0);
 	v = (uint16_t)myIdx;
 	f->vftable->Write(f, &v, 2);
 	v = (uint16_t)count;
@@ -378,10 +381,10 @@ void cClientNetManager_Send(cClientNetManager *self, uint32_t time) {
 	f->vftable->Write(f, &g_NetOrigin.x, 4);
 	f->vftable->Write(f, &g_NetOrigin.y, 4);
 	f->vftable->Write(f, &g_NetOrigin.z, 4);
-	if (NetServer_SendTo(time, self->base.slot, cFileMem_Size(g_NetMsg), buf)) {
+	if (NetServer_SendTo(time, self->base.slot, cFileMem_Size(&g_NetMsg->base), buf)) {
 		self->sends++;
 	}
-	cFileMem_Close(g_NetMsg);
+	cFileMem_Close(&g_NetMsg->base);
 	cStaticBuffer_Unlock(g_NetStaticBuffer);
 }
 
@@ -392,18 +395,19 @@ void cClientNetManager_SendUsers(cClientNetManager *self, byte local) {
 	if (!local) {
 		while (e) {
 			byte msg = NETMSG_USR_DATA;
-			cFileMem_Open(g_NetMsg, "", 6);
+			cFileMem_Open(&g_NetMsg->base, "", 6);
 			g_NetMsg->base.vftable->Write(&g_NetMsg->base, &msg, 1);
 			e = NetData_WriteUsrDescriptors(&g_NetMsg->base, e);
-			cNetClient_Push(self->base.client, buf, (uint16_t)cFileMem_Size(g_NetMsg));
-			cFileMem_Close(g_NetMsg);
+			cNetClient_Push(self->base.client, buf, (uint16_t)cFileMem_Size(&g_NetMsg->base));
+			cFileMem_Close(&g_NetMsg->base);
 		}
 	}
 	cStaticBuffer_Unlock(g_NetStaticBuffer);
 	ManServer_SendUsrData(self->base.slot, local);
 }
 
-void cClientNetManager_SetLocalData(cClientNetManager *self) {
+void cClientNetManager_SetLocalData(cUserNetManager *elem) {
+	cClientNetManager *self = (cClientNetManager *)elem;
 	cEntity *e = World_FindEntity(self->name);
 
 	Con_Printf("SetLocalData()->%s\n", self->name);
@@ -419,3 +423,11 @@ void cClientNetManager_SetLocalData(cClientNetManager *self) {
 	self->team = WLife(e)->arrow.tgType;
 	cClientNetManager_SendUsers(self, 1);
 }
+
+/* the vtable of cClientNetManager */
+const cUserNetManagerVtbl cClientNetManager_vftable = {
+	.Delete = cClientNetManager_Delete,
+	.OnReceive = cClientNetManager_OnReceive,
+	.Send = cClientNetManager_Send,
+	.SetLocalData = cClientNetManager_SetLocalData,
+};

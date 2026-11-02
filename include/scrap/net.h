@@ -54,9 +54,13 @@ typedef struct cUserNetManagerVtbl {
 	void(*OnReceive)(cUserNetManager *self, void *data, int size, void *ctl, int ctlSize);	/* 0x04 */
 	void(*Send)(cUserNetManager *self, uint32_t time);				/* 0x08 */
 	void(*SetLocalData)(cUserNetManager *self);					/* 0x0c */
-	void(*SendHello)(cUserNetManager *self, byte type);				/* 0x10 cServerNetManager */
 } cUserNetManagerVtbl;
-SD_OFFSET(cUserNetManagerVtbl, SendHello, 0x10);
+
+typedef struct cServerNetManagerVtbl {
+	cUserNetManagerVtbl base;
+	void(*SendHello)(cUserNetManager *self, byte type);				/* 0x10 */
+} cServerNetManagerVtbl;
+SD_OFFSET(cServerNetManagerVtbl, SendHello, 0x10);
 
 /* the base of the user managers (msgman.cpp, 0xc bytes), made by g_NetUserFactory for each cNetClient */
 struct cUserNetManager {
@@ -97,9 +101,12 @@ SD_OFFSET(cClientNetManager, team, 0x48c);
 SD_OFFSET(cClientNetManager, sends, 0x498);
 SD_SIZE(cClientNetManager, 0x49c);
 
-#define g_UserNetManagerVftable ((const cUserNetManagerVtbl *)GAME_VFTABLE(cUserNetManager_vftable))
-#define g_ServerNetManagerVftable ((const cUserNetManagerVtbl *)GAME_VFTABLE(cServerNetManager_vftable))
-#define g_ClientNetManagerVftable ((const cUserNetManagerVtbl *)GAME_VFTABLE(cClientNetManager_vftable))
+extern const cUserNetManagerVtbl cUserNetManager_vftable;
+#define g_UserNetManagerVftable (&cUserNetManager_vftable)
+extern const cServerNetManagerVtbl cServerNetManager_vftable;
+#define g_ServerNetManagerVftable (&cServerNetManager_vftable.base)
+extern const cUserNetManagerVtbl cClientNetManager_vftable;
+#define g_ClientNetManagerVftable (&cClientNetManager_vftable)
 
 /* cNetClient.state */
 #define NETCLIENT_CONNECTING 0
@@ -414,28 +421,28 @@ void Net_DumpData(const char *title, const void *data, int size);
 /* ManClient.cpp (src/game/Net/ManClient.c) */
 cServerNetManager *cServerNetManager_ctor(cServerNetManager *self, cNetClient *client, int slot);
 void cServerNetManager_dtor(cServerNetManager *self);
-cServerNetManager *cServerNetManager_Delete(cServerNetManager *self, byte flags);
-void cServerNetManager_OnReceive(cServerNetManager *self, void *data, int size, void *ctl, int ctlSize);
+cUserNetManager *cServerNetManager_Delete(cUserNetManager *base, byte flags);
+void cServerNetManager_OnReceive(cUserNetManager *elem, void *data, int size, void *ctl, int ctlSize);
 /* the ping of a client the server reported (2^(b/24)), 0 unknown */
 int Net_GetClientPing(uint32_t slot);
-void cServerNetManager_SendHello(cServerNetManager *self, byte type);
-void cServerNetManager_Send(cServerNetManager *self, uint32_t time);
+void cServerNetManager_SendHello(cUserNetManager *elem, byte type);
+void cServerNetManager_Send(cUserNetManager *base, uint32_t time);
 void cUserNetManager_Nop(cUserNetManager *self);
 
 /* ManServer.cpp (src/game/Net/ManServer.c) */
 cClientNetManager *cClientNetManager_ctor(cClientNetManager *self, cNetClient *client, int slot);
 void cClientNetManager_dtor(cClientNetManager *self);
-cClientNetManager *cClientNetManager_Delete(cClientNetManager *self, byte flags);
-void cClientNetManager_OnReceive(cClientNetManager *self, void *data, int size, void *ctl, int ctlSize);
+cUserNetManager *cClientNetManager_Delete(cUserNetManager *base, byte flags);
+void cClientNetManager_OnReceive(cUserNetManager *elem, void *data, int size, void *ctl, int ctlSize);
 /* creates the ship "net<slot>", sends the level and the resources */
 void cClientNetManager_InitClient(cClientNetManager *self);
 /* the descriptor of player slot to every client (toAll) or to all but that one */
 void ManServer_SendUsrData(int slot, byte toAll);
 void cClientNetManager_SendResources(cClientNetManager *self);
-void cClientNetManager_Send(cClientNetManager *self, uint32_t time);
+void cClientNetManager_Send(cUserNetManager *elem, uint32_t time);
 /* the descriptors of all players to this client (unless local), then this one's to the others */
 void cClientNetManager_SendUsers(cClientNetManager *self, byte local);
-void cClientNetManager_SetLocalData(cClientNetManager *self);
+void cClientNetManager_SetLocalData(cUserNetManager *elem);
 
 /* msgman.cpp (src/game/Net/MsgMan.c) */
 cNetClient *cNetClient_ctor(cNetClient *self, int slot);

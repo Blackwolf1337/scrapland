@@ -1739,13 +1739,6 @@ void (*const cActClassList_vftable[1])(void) = {
 };
 
 /* .?AVcActCtrl@@ */
-void (*const cActCtrl_vftable[5])(void) = {
-	cActCtrl_Delete,	/* 0x00 0x062780 */
-	cActCtrl_VarI,	/* 0x04 0x062ca0 */
-	cActCtrl_VarF,	/* 0x08 0x062c30 */
-	cActCtrl_VarS,	/* 0x0c 0x063380 */
-	cActCtrl_VarV,	/* 0x10 0x063610 */
-};
 
 /* .?AVcActionMove@@ */
 void (*const cActionMove_vftable[1])(void) = {
@@ -1769,17 +1762,6 @@ void (*const cActionMove_vftable[1])(void) = {
 /* .?AVcAICharControl3D@@ */
 
 /* .?AVcAICharGroup@@ */
-void (*const cAICharGroup_vftable[9])(void) = {
-	cAICharGroup_Delete,	/* 0x00 0x080a60 */
-	cAIEntityGroup_Clear,	/* 0x04 0x084750 */
-	cAIEntityGroup_Add,	/* 0x08 0x084690 */
-	cAIEntityGroup_Get,	/* 0x0c 0x084700 */
-	cAIEntityGroup_Num,	/* 0x10 0x084740 */
-	cAIEntityGroup_CanChange,	/* 0x14 0x084760 */
-	cAIEntityGroup_ResetChange,	/* 0x18 0x0846f0 */
-	cAIEntityGroup_AllowChange,	/* 0x1c 0x0846e0 */
-	cAIEntityGroup_Update,	/* 0x20 0x084770 */
-};
 
 /* .?AVcAIControlBankDirector@@ */
 
@@ -1798,17 +1780,6 @@ void (*const cAICharGroup_vftable[9])(void) = {
 /* .?AVcAIDesktop@@ */
 
 /* .?AVcAIEntityGroup@@ */
-void (*const cAIEntityGroup_vftable[9])(void) = {
-	cAIEntityGroup_Delete,	/* 0x00 0x084660 */
-	cAIEntityGroup_Clear,	/* 0x04 0x084750 */
-	cAIEntityGroup_Add,	/* 0x08 0x084690 */
-	cAIEntityGroup_Get,	/* 0x0c 0x084700 */
-	cAIEntityGroup_Num,	/* 0x10 0x084740 */
-	cAIEntityGroup_CanChange,	/* 0x14 0x084760 */
-	cAIEntityGroup_ResetChange,	/* 0x18 0x0846f0 */
-	cAIEntityGroup_AllowChange,	/* 0x1c 0x0846e0 */
-	cAIEntityGroup_Update,	/* 0x20 0x084770 */
-};
 
 /* .?AVcAIGear@@ */
 
@@ -1834,17 +1805,6 @@ void (*const cAIVehicleControl_vftable[1])(void) = {
 };
 
 /* .?AVcAIVehicleGroup@@ */
-void (*const cAIVehicleGroup_vftable[9])(void) = {
-	cAIVehicleGroup_Delete,	/* 0x00 0x096ca0 */
-	cAIEntityGroup_Clear,	/* 0x04 0x084750 */
-	cAIEntityGroup_Add,	/* 0x08 0x084690 */
-	cAIEntityGroup_Get,	/* 0x0c 0x084700 */
-	cAIEntityGroup_Num,	/* 0x10 0x084740 */
-	cAIEntityGroup_CanChange,	/* 0x14 0x084760 */
-	cAIEntityGroup_ResetChange,	/* 0x18 0x0846f0 */
-	cAIEntityGroup_AllowChange,	/* 0x1c 0x0846e0 */
-	cAIEntityGroup_Update,	/* 0x20 0x084770 */
-};
 
 /* .?AVcAIVehicleShootControl@@ */
 void (*const cAIVehicleShootControl_vftable[1])(void) = {
@@ -1852,27 +1812,6 @@ void (*const cAIVehicleShootControl_vftable[1])(void) = {
 };
 
 /* .?AVCAStar@@ */
-void (*const CAStar_vftable[19])(void) = {
-	CAStar_Delete,	/* 0x00 0x099590 */
-	CAStarSup_Draw,	/* 0x04 0x09af10 */
-	CAStarSup_GetTable,	/* 0x08 0x09b100 */
-	CAStar_TestPath,	/* 0x0c 0x0997e0 */
-	CAStar_NearestStart,	/* 0x10 0x099ae0 */
-	CAStar_PointsVis,	/* 0x14 0x099bb0 */
-	CAStar_PointsVisFile,	/* 0x18 0x099c30 */
-	CAStar_OtherLinks,	/* 0x1c 0x099e50 */
-	CAStarSup_Search,	/* 0x20 0x09b110 */
-	CAStarSup_BuildPath,	/* 0x24 0x09adb0 */
-	CAStarSup_Heuristic,	/* 0x28 0x09b060 */
-	CAStarSup_Dist,	/* 0x2c 0x09b000 */
-	CAStarSup_GetElem,	/* 0x30 0x09b690 */
-	CAStar_FileOf,	/* 0x34 0x099b10 */
-	CAStarSup_AddElem,	/* 0x38 0x09b760 */
-	CAStarSup_CloseAdd,	/* 0x3c 0x09ae80 */
-	CAStarSup_CloseRemove,	/* 0x40 0x09aed0 */
-	CAStarSup_TableGet,	/* 0x44 0x09b710 */
-	CAStarSup_Reset,	/* 0x48 0x09b7a0 */
-};
 
 /* .?AV?$cBinaryHeap@PAUElemAStar@@@@ */
 void (*const cBinaryHeap_ElemAStar_vftable[12])(void) = {
@@ -1891,268 +1830,22 @@ void (*const cBinaryHeap_ElemAStar_vftable[12])(void) = {
 };
 
 /* .?AVCAStar2D@@ */
-void (*const CAStar2D_vftable[19])(void) = {
-	CAStar2D_Delete,	/* 0x00 0x09a490 */
-	CAStarSup_Draw,	/* 0x04 0x09af10 */
-	CAStarSup_GetTable,	/* 0x08 0x09b100 */
-	CAStar2D_TestPath,	/* 0x0c 0x09a520 */
-	CAStar2D_NearestStart,	/* 0x10 0x09a5a0 */
-	CAStar2D_PointsVis,	/* 0x14 0x09a680 */
-	CAStar2D_PointsVisFile,	/* 0x18 0x09a740 */
-	CAStar_OtherLinks,	/* 0x1c 0x09a9c0 */
-	CAStarSup_Search,	/* 0x20 0x09b110 */
-	CAStarSup_BuildPath,	/* 0x24 0x09adb0 */
-	CAStarSup_Heuristic,	/* 0x28 0x09b060 */
-	CAStarSup_Dist,	/* 0x2c 0x09b000 */
-	CAStarSup_GetElem,	/* 0x30 0x09b690 */
-	CAStar_FileOf,	/* 0x34 0x09a5d0 */
-	CAStarSup_AddElem,	/* 0x38 0x09b760 */
-	CAStarSup_CloseAdd,	/* 0x3c 0x09ae80 */
-	CAStarSup_CloseRemove,	/* 0x40 0x09aed0 */
-	CAStarSup_TableGet,	/* 0x44 0x09b710 */
-	CAStarSup_Reset,	/* 0x48 0x09b7a0 */
-};
 
 /* .?AVCAStarSup@@ */
-void (*const CAStarSup_vftable[19])(void) = {
-	CAStarSup_Delete,	/* 0x00 0x09ad20 */
-	CAStarSup_Draw,	/* 0x04 0x09af10 */
-	CAStarSup_GetTable,	/* 0x08 0x09b100 */
-	crt_purecall,	/* 0x0c 0x31951a */
-	crt_purecall,	/* 0x10 0x31951a */
-	crt_purecall,	/* 0x14 0x31951a */
-	crt_purecall,	/* 0x18 0x31951a */
-	crt_purecall,	/* 0x1c 0x31951a */
-	CAStarSup_Search,	/* 0x20 0x09b110 */
-	CAStarSup_BuildPath,	/* 0x24 0x09adb0 */
-	CAStarSup_Heuristic,	/* 0x28 0x09b060 */
-	CAStarSup_Dist,	/* 0x2c 0x09b000 */
-	CAStarSup_GetElem,	/* 0x30 0x09b690 */
-	crt_purecall,	/* 0x34 0x31951a */
-	CAStarSup_AddElem,	/* 0x38 0x09b760 */
-	CAStarSup_CloseAdd,	/* 0x3c 0x09ae80 */
-	CAStarSup_CloseRemove,	/* 0x40 0x09aed0 */
-	CAStarSup_TableGet,	/* 0x44 0x09b710 */
-	CAStarSup_Reset,	/* 0x48 0x09b7a0 */
-};
 
 /* .?AVCNodesTraffic@@ */
-void (*const CNodesTraffic_vftable[24])(void) = {
-	CNodesTraffic_Delete,	/* 0x00 0x09bbf0 */
-	CNodesTraffic_AddVehicle,	/* 0x04 0x0a0620 */
-	CNodesTraffic_RemoveVehicle,	/* 0x08 0x09d280 */
-	CNodesTraffic_NumTracks,	/* 0x0c 0x09ece0 */
-	CNodesTraffic_NumByType,	/* 0x10 0x09ec90 */
-	CNodesTraffic_NumNodes,	/* 0x14 0x09ec70 */
-	CNodesTraffic_GetRadius,	/* 0x18 0x09ee90 */
-	CNodesTraffic_Init,	/* 0x1c 0x09f720 */
-	CNodesTraffic_Load,	/* 0x20 0x09f730 */
-	CNodesTraffic_RandomNode,	/* 0x24 0x09d9f0 */
-	CNodesTraffic_GetDirs,	/* 0x28 0x09f450 */
-	CNodesTraffic_NextAway,	/* 0x2c 0x09d8a0 */
-	CNodesTraffic_PrevAway,	/* 0x30 0x09ed50 */
-	CNodesTraffic_GetNode,	/* 0x34 0x09ecf0 */
-	CNodesTraffic_GetInfo,	/* 0x38 0x09d740 */
-	CNodesTraffic_Draw,	/* 0x3c 0x09cfa0 */
-	CNodesTraffic_Analyze,	/* 0x40 0x09bc90 */
-	CNodesTraffic_DrawTrack,	/* 0x44 0x09d040 */
-	CNodesTraffic_BuildGrid,	/* 0x48 0x0a0690 */
-	CNodesTraffic_FindNodes,	/* 0x4c 0x09dc40 */
-	CNodesTraffic_CollectCell,	/* 0x50 0x09eab0 */
-	CNodesTraffic_SearchRings,	/* 0x54 0x09ded0 */
-	CNodesTraffic_RandomPointNear,	/* 0x58 0x09eed0 */
-	CNodesTraffic_RandomPointAhead,	/* 0x5c 0x09f120 */
-};
 
 /* .?AV?$cGridElements@UInfoTrafficNode@@@@ */
-void (*const cGridElements_InfoTrafficNode_vftable[11])(void) = {
-	cGridElements_Delete,	/* 0x00 0x09bb90 */
-	cGridElements_Add,	/* 0x04 0x0a0540 */
-	cGridElements_GetCellAt,	/* 0x08 0x09d820 */
-	cGridElements_GetCell,	/* 0x0c 0x09d7b0 */
-	cGridElements_Draw,	/* 0x10 0x09d330 */
-	cGridElements_CellCoords,	/* 0x14 0x09d600 */
-	cGridElements_GetDivs,	/* 0x18 0x09ec50 */
-	cGridElements_GetCellSize,	/* 0x1c 0x09d9d0 */
-	cGridElements_IsInside,	/* 0x20 0x0a0640 */
-	cGridElements_Free,	/* 0x24 0x09d2a0 */
-	cGridElements_CellIndex,	/* 0x28 0x09d6e0 */
-};
 
 /* .?AVCNodesTrafficInDoor@@ */
-void (*const CNodesTrafficInDoor_vftable[24])(void) = {
-	CNodesTrafficInDoor_Delete,	/* 0x00 0x0a0bf0 */
-	CNodesTraffic_AddVehicle,	/* 0x04 0x0a0620 */
-	CNodesTraffic_RemoveVehicle,	/* 0x08 0x09d280 */
-	CNodesTraffic_NumTracks,	/* 0x0c 0x09ece0 */
-	CNodesTraffic_NumByType,	/* 0x10 0x09ec90 */
-	CNodesTraffic_NumNodes,	/* 0x14 0x09ec70 */
-	CNodesTraffic_GetRadius,	/* 0x18 0x09ee90 */
-	CNodesTrafficInDoor_Init,	/* 0x1c 0x0a1b70 */
-	CNodesTraffic_Load,	/* 0x20 0x09f730 */
-	CNodesTraffic_RandomNode,	/* 0x24 0x09d9f0 */
-	CNodesTraffic_GetDirs,	/* 0x28 0x09f450 */
-	CNodesTraffic_NextAway,	/* 0x2c 0x09d8a0 */
-	CNodesTraffic_PrevAway,	/* 0x30 0x09ed50 */
-	CNodesTraffic_GetNode,	/* 0x34 0x09ecf0 */
-	CNodesTraffic_GetInfo,	/* 0x38 0x09d740 */
-	CNodesTraffic_Draw,	/* 0x3c 0x0a10a0 */
-	CNodesTraffic_Analyze,	/* 0x40 0x09bc90 */
-	CNodesTraffic_DrawTrack,	/* 0x44 0x09d040 */
-	CNodesTrafficInDoor_BuildGrid,	/* 0x48 0x0a1dc0 */
-	CNodesTraffic_FindNodes,	/* 0x4c 0x09dc40 */
-	CNodesTraffic_CollectCell,	/* 0x50 0x09eab0 */
-	CNodesTraffic_SearchRings,	/* 0x54 0x09ded0 */
-	CNodesTraffic_RandomPointNear,	/* 0x58 0x09eed0 */
-	CNodesTraffic_RandomPointAhead,	/* 0x5c 0x09f120 */
-};
 
 /* .?AVCNodesWorld@@ */
-void (*const CNodesWorld_vftable[40])(void) = {
-	CNodesWorld_Delete,	/* 0x00 0x0a2430 */
-	CNodesWorldSup_GetBox,	/* 0x04 0x0b93f0 */
-	CNodesWorldSup_LoadGraph,	/* 0x08 0x0badb0 */
-	CNodesWorld_LoadGraph,	/* 0x0c 0x0ac500 */
-	CNodesWorldSup_Create,	/* 0x10 0x0bad90 */
-	CNodesWorldSup_FileOf,	/* 0x14 0x0b9bc0 */
-	CNodesWorldSup_CommonFile,	/* 0x18 0x0b9c30 */
-	CNodesWorldSup_SnapPos,	/* 0x1c 0x0b8de0 */
-	CNodesWorldSup_OtherLinks,	/* 0x20 0x0b9e90 */
-	CNodesWorldSup_IsCreated,	/* 0x24 0x0ba510 */
-	CNodesWorldSup_LastNodePos,	/* 0x28 0x0b9e00 */
-	CNodesWorldSup_GetVisPoint,	/* 0x2c 0x0b9e40 */
-	CNodesWorldSup_NumVisPoints,	/* 0x30 0x0b9cb0 */
-	CNodesWorldSup_GetMaxVisDist,	/* 0x34 0x0b9850 */
-	CNodesWorldSup_InGrid,	/* 0x38 0x0ba650 */
-	CNodesWorld_SavePath,	/* 0x3c 0x0ad180 */
-	CNodesWorldSup_CheckBuffer,	/* 0x40 0x0b8f00 */
-	CNodesWorldSup_BuildGrid,	/* 0x44 0x0baba0 */
-	CNodesWorldSup_BufferIndex,	/* 0x48 0x0b98c0 */
-	CNodesWorldSup_BufferPos,	/* 0x4c 0x0b9cc0 */
-	CNodesWorldSup_GetInfoNodes,	/* 0x50 0x0b9950 */
-	CNodesWorldSup_AddVis,	/* 0x54 0x0ba080 */
-	CNodesWorldSup_Hash,	/* 0x58 0x0b9a90 */
-	CNodesWorldSup_ReleaseVis,	/* 0x5c 0x0b9070 */
-	CNodesWorldSup_LinkPoints,	/* 0x60 0x0ba8d0 */
-	CNodesWorldSup_LinkBack,	/* 0x64 0x0baa70 */
-	CNodesWorldSup_PointLinked,	/* 0x68 0x0ba670 */
-	CNodesWorldSup_LinkPoint,	/* 0x6c 0x0ba740 */
-	CNodesWorldSup_Unreachable,	/* 0x70 0x0bb640 */
-	CNodesWorldSup_BoxCells,	/* 0x74 0x0bb4d0 */
-	CNodesWorldSup_FindSorted,	/* 0x78 0x0ba590 */
-	CNodesWorldSup_HasPair,	/* 0x7c 0x0ba520 */
-	CNodesWorldSup_InsertPair,	/* 0x80 0x0b9ff0 */
-	CNodesWorldSup_VisHas,	/* 0x84 0x0b8cc0 */
-	CNodesWorldSup_Linked,	/* 0x88 0x0b8d50 */
-	CNodesWorldSup_FreeGraph,	/* 0x8c 0x0b92d0 */
-	CNodesWorldSup_FreeTemp,	/* 0x90 0x0b9180 */
-	CNodesWorldSup_InList,	/* 0x94 0x0ba6c0 */
-	CNodesWorld_ClearLists,	/* 0x98 0x0a6a00 */
-	CNodesWorldSup_SaveInfPath,	/* 0x9c 0x0bba70 */
-};
 
 /* .?AVCNodesWorld2D@@ */
-void (*const CNodesWorld2D_vftable[40])(void) = {
-	CNodesWorld2D_Delete,	/* 0x00 0x0ada70 */
-	CNodesWorldSup_GetBox,	/* 0x04 0x0b93f0 */
-	CNodesWorldSup_LoadGraph,	/* 0x08 0x0badb0 */
-	CNodesWorld2D_LoadGraph,	/* 0x0c 0x0b6c00 */
-	CNodesWorldSup_Create,	/* 0x10 0x0bad90 */
-	CNodesWorldSup_FileOf,	/* 0x14 0x0b9bc0 */
-	CNodesWorldSup_CommonFile,	/* 0x18 0x0b9c30 */
-	CNodesWorldSup_SnapPos,	/* 0x1c 0x0b8de0 */
-	CNodesWorldSup_OtherLinks,	/* 0x20 0x0b9e90 */
-	CNodesWorldSup_IsCreated,	/* 0x24 0x0ba510 */
-	CNodesWorldSup_LastNodePos,	/* 0x28 0x0b9e00 */
-	CNodesWorldSup_GetVisPoint,	/* 0x2c 0x0b9e40 */
-	CNodesWorldSup_NumVisPoints,	/* 0x30 0x0b9cb0 */
-	CNodesWorldSup_GetMaxVisDist,	/* 0x34 0x0b9850 */
-	CNodesWorldSup_InGrid,	/* 0x38 0x0ba650 */
-	CNodesWorld2D_SavePath,	/* 0x3c 0x0b74d0 */
-	CNodesWorldSup_CheckBuffer,	/* 0x40 0x0b8f00 */
-	CNodesWorldSup_BuildGrid,	/* 0x44 0x0baba0 */
-	CNodesWorldSup_BufferIndex,	/* 0x48 0x0b98c0 */
-	CNodesWorldSup_BufferPos,	/* 0x4c 0x0b9cc0 */
-	CNodesWorldSup_GetInfoNodes,	/* 0x50 0x0b9950 */
-	CNodesWorldSup_AddVis,	/* 0x54 0x0ba080 */
-	CNodesWorldSup_Hash,	/* 0x58 0x0b9a90 */
-	CNodesWorldSup_ReleaseVis,	/* 0x5c 0x0b9070 */
-	CNodesWorldSup_LinkPoints,	/* 0x60 0x0ba8d0 */
-	CNodesWorldSup_LinkBack,	/* 0x64 0x0baa70 */
-	CNodesWorldSup_PointLinked,	/* 0x68 0x0ba670 */
-	CNodesWorldSup_LinkPoint,	/* 0x6c 0x0ba740 */
-	CNodesWorldSup_Unreachable,	/* 0x70 0x0bb640 */
-	CNodesWorldSup_BoxCells,	/* 0x74 0x0bb4d0 */
-	CNodesWorldSup_FindSorted,	/* 0x78 0x0ba590 */
-	CNodesWorldSup_HasPair,	/* 0x7c 0x0ba520 */
-	CNodesWorldSup_InsertPair,	/* 0x80 0x0b9ff0 */
-	CNodesWorldSup_VisHas,	/* 0x84 0x0b8cc0 */
-	CNodesWorldSup_Linked,	/* 0x88 0x0b8d50 */
-	CNodesWorldSup_FreeGraph,	/* 0x8c 0x0b92d0 */
-	CNodesWorldSup_FreeTemp,	/* 0x90 0x0b9180 */
-	CNodesWorldSup_InList,	/* 0x94 0x0ba6c0 */
-	CNodesWorld2D_ClearLists,	/* 0x98 0x0b1c30 */
-	CNodesWorldSup_SaveInfPath,	/* 0x9c 0x0bba70 */
-};
 
 /* .?AVCNodesWorldSup@@ */
-void (*const CNodesWorldSup_vftable[40])(void) = {
-	CNodesWorldSup_Delete,	/* 0x00 0x0b89f0 */
-	CNodesWorldSup_GetBox,	/* 0x04 0x0b93f0 */
-	CNodesWorldSup_LoadGraph,	/* 0x08 0x0badb0 */
-	crt_purecall,	/* 0x0c 0x31951a */
-	CNodesWorldSup_Create,	/* 0x10 0x0bad90 */
-	CNodesWorldSup_FileOf,	/* 0x14 0x0b9bc0 */
-	CNodesWorldSup_CommonFile,	/* 0x18 0x0b9c30 */
-	CNodesWorldSup_SnapPos,	/* 0x1c 0x0b8de0 */
-	CNodesWorldSup_OtherLinks,	/* 0x20 0x0b9e90 */
-	CNodesWorldSup_IsCreated,	/* 0x24 0x0ba510 */
-	CNodesWorldSup_LastNodePos,	/* 0x28 0x0b9e00 */
-	CNodesWorldSup_GetVisPoint,	/* 0x2c 0x0b9e40 */
-	CNodesWorldSup_NumVisPoints,	/* 0x30 0x0b9cb0 */
-	CNodesWorldSup_GetMaxVisDist,	/* 0x34 0x0b9850 */
-	CNodesWorldSup_InGrid,	/* 0x38 0x0ba650 */
-	crt_purecall,	/* 0x3c 0x31951a */
-	CNodesWorldSup_CheckBuffer,	/* 0x40 0x0b8f00 */
-	CNodesWorldSup_BuildGrid,	/* 0x44 0x0baba0 */
-	CNodesWorldSup_BufferIndex,	/* 0x48 0x0b98c0 */
-	CNodesWorldSup_BufferPos,	/* 0x4c 0x0b9cc0 */
-	CNodesWorldSup_GetInfoNodes,	/* 0x50 0x0b9950 */
-	CNodesWorldSup_AddVis,	/* 0x54 0x0ba080 */
-	CNodesWorldSup_Hash,	/* 0x58 0x0b9a90 */
-	CNodesWorldSup_ReleaseVis,	/* 0x5c 0x0b9070 */
-	CNodesWorldSup_LinkPoints,	/* 0x60 0x0ba8d0 */
-	CNodesWorldSup_LinkBack,	/* 0x64 0x0baa70 */
-	CNodesWorldSup_PointLinked,	/* 0x68 0x0ba670 */
-	CNodesWorldSup_LinkPoint,	/* 0x6c 0x0ba740 */
-	CNodesWorldSup_Unreachable,	/* 0x70 0x0bb640 */
-	CNodesWorldSup_BoxCells,	/* 0x74 0x0bb4d0 */
-	CNodesWorldSup_FindSorted,	/* 0x78 0x0ba590 */
-	CNodesWorldSup_HasPair,	/* 0x7c 0x0ba520 */
-	CNodesWorldSup_InsertPair,	/* 0x80 0x0b9ff0 */
-	CNodesWorldSup_VisHas,	/* 0x84 0x0b8cc0 */
-	CNodesWorldSup_Linked,	/* 0x88 0x0b8d50 */
-	CNodesWorldSup_FreeGraph,	/* 0x8c 0x0b92d0 */
-	CNodesWorldSup_FreeTemp,	/* 0x90 0x0b9180 */
-	CNodesWorldSup_InList,	/* 0x94 0x0ba6c0 */
-	crt_purecall,	/* 0x98 0x31951a */
-	CNodesWorldSup_SaveInfPath,	/* 0x9c 0x0bba70 */
-};
 
 /* .?AV?$cGridElements@PAUInfPointVis@@@@ */
-void (*const cGridElements_InfPointVis_vftable[11])(void) = {
-	NWGrid_Delete,	/* 0x00 0x0b8990 */
-	NWGrid_Add,	/* 0x04 0x0b9f10 */
-	cGridElements_GetCellAt,	/* 0x08 0x0b9b20 */
-	cGridElements_GetCell,	/* 0x0c 0x0b9ab0 */
-	cGridElements_Draw,	/* 0x10 0x0b9430 */
-	cGridElements_CellCoords,	/* 0x14 0x0b9770 */
-	cGridElements_GetDivs,	/* 0x18 0x0b9c90 */
-	cGridElements_GetCellSize,	/* 0x1c 0x0b9ba0 */
-	cGridElements_IsInside,	/* 0x20 0x0ba600 */
-	NWGrid_Free,	/* 0x24 0x0b90f0 */
-	cGridElements_CellIndex,	/* 0x28 0x0b9860 */
-};
 
 /* .?AVcCamControl@@ */
 
@@ -2231,34 +1924,14 @@ void (*const cGridElements_InfPointVis_vftable[11])(void) = {
 /* .?AVcMissileEntity@@ */
 
 /* .?AUcNetController@@ */
-void (*const cNetController_vftable[5])(void) = {
-	cNetController_Reset,	/* 0x00 0x0fc600 */
-	cNetController_Read,	/* 0x04 0x0fbb20 */
-	cNetController_Write,	/* 0x08 0x0fbef0 */
-	cNetController_Changed,	/* 0x0c 0x0fac90 */
-	cNetController_Apply,	/* 0x10 0x0fa610 */
-};
 
 /* .?AVcObjEntity@@ */
 
 /* .?AVcVehicleEntity@@ */
 
 /* .?AVcVehicleMotors@@ */
-void (*const cVehicleMotors_vftable[4])(void) = {
-	cVehicleMotors_VarI,	/* 0x00 0x10d020 */
-	cVehicleMotors_VarF,	/* 0x04 0x10cc30 */
-	cVehicleMotors_VarS,	/* 0x08 0x10dae0 */
-	cVehicleMotors_VarV,	/* 0x0c 0x10dc40 */
-};
 
 /* .?AUcNetVController@@ */
-void (*const cNetVController_vftable[5])(void) = {
-	cNetVController_Reset,	/* 0x00 0x119840 */
-	cNetVController_Read,	/* 0x04 0x118720 */
-	cNetVController_Write,	/* 0x08 0x118f20 */
-	cNetVController_Changed,	/* 0x0c 0x1186f0 */
-	cNetController_Apply,	/* 0x10 0x0fa610 */
-};
 
 /* .?AVcWeaponManager@@ */
 void (*const cWeaponManager_vftable[1])(void) = {
@@ -2268,79 +1941,18 @@ void (*const cWeaponManager_vftable[1])(void) = {
 /* .?AVcWithLifeEntity@@ */
 
 /* .?AVcAbstractFile@@ */
-void (*const cAbstractFile_vftable[9])(void) = {
-	cAbstractFile_Open,	/* 0x00 0x12d030 */
-	crt_purecall,	/* 0x04 0x31951a */
-	cAbstractFile_Close,	/* 0x08 0x12d000 */
-	crt_purecall,	/* 0x0c 0x31951a */
-	crt_purecall,	/* 0x10 0x31951a */
-	crt_purecall,	/* 0x14 0x31951a */
-	crt_purecall,	/* 0x18 0x31951a */
-	crt_purecall,	/* 0x1c 0x31951a */
-	cAbstractFile_Destroy,	/* 0x20 0x12cf90 */
-};
 
 /* .?AVcFile@@ */
-void (*const cFile_vftable[9])(void) = {
-	cFile_Open,	/* 0x00 0x12d3a0 */
-	cFile_Exists,	/* 0x04 0x12d350 */
-	cFile_Close,	/* 0x08 0x12d300 */
-	cFile_Read,	/* 0x0c 0x12d460 */
-	cFile_Write,	/* 0x10 0x12d580 */
-	cFile_Seek,	/* 0x14 0x12d4d0 */
-	cFile_Tell,	/* 0x18 0x12d370 */
-	cFile_Size,	/* 0x1c 0x12d520 */
-	cFile_Destroy,	/* 0x20 0x12d2c0 */
-};
 
 /* .?AVcFileMem@@ */
-void (*const cFileMem_vftable[9])(void) = {
-	cFileMem_Open,	/* 0x00 0x12e1b0 */
-	cFileMem_Exists,	/* 0x04 0x12e190 */
-	cFileMem_Close,	/* 0x08 0x12e180 */
-	cFileMem_Read,	/* 0x0c 0x12e1f0 */
-	cFileMem_Write,	/* 0x10 0x12e2b0 */
-	cFileMem_Seek,	/* 0x14 0x12e270 */
-	cFileMem_Tell,	/* 0x18 0x12e1a0 */
-	cFileMem_Size,	/* 0x1c 0x12e2a0 */
-	cFileMem_Destroy,	/* 0x20 0x12e100 */
-};
 
 /* .?AVcFile2@@ */
-void (*const cFile2_vftable[9])(void) = {
-	cFile2_Open,	/* 0x00 0x12e310 */
-	cFile_Exists,	/* 0x04 0x12d350 */
-	cFile_Close,	/* 0x08 0x12d300 */
-	cFile2_Read,	/* 0x0c 0x12e320 */
-	cFile2_Write,	/* 0x10 0x12e340 */
-	cFile2_Seek,	/* 0x14 0x12e360 */
-	cFile2_Tell,	/* 0x18 0x12e3a0 */
-	cFile_Size,	/* 0x1c 0x12d520 */
-	cFile2_Destroy,	/* 0x20 0x12e3d0 */
-};
 
 /* .?AVcFilePack@@ */
-void (*const cFilePack_vftable[9])(void) = {
-	cFilePack_Open,	/* 0x00 0x1307f0 */
-	cFilePack_Exists,	/* 0x04 0x12fb30 */
-	cFilePack_Close,	/* 0x08 0x12f940 */
-	cFilePack_Read,	/* 0x0c 0x1312b0 */
-	cFilePack_Write,	/* 0x10 0x1313b0 */
-	cFilePack_Seek,	/* 0x14 0x131340 */
-	cFilePack_Tell,	/* 0x18 0x1302b0 */
-	cFilePack_Size,	/* 0x1c 0x1313a0 */
-	cFilePack_Destroy,	/* 0x20 0x12e6e0 */
-};
 
 /* .?AVcSlotController@@ */
-void (*const cSlotController_vftable[1])(void) = {
-	cSlotController_Next,	/* 0x00 0x136160 */
-};
 
 /* .?AVcRndSlotController@@ */
-void (*const cRndSlotController_vftable[1])(void) = {
-	cRndSlotController_Next,	/* 0x00 0x1360f0 */
-};
 
 /* .?AVcFuncGvar@@ */
 void (*const cFuncGvar_vftable[2])(void) = {
@@ -2349,62 +1961,14 @@ void (*const cFuncGvar_vftable[2])(void) = {
 };
 
 /* .?AVcFuncGvarDevices@@ */
-void (*const cFuncGvarDevices_vftable[2])(void) = {
-	cFuncGvarDevices_Save,	/* 0x00 0x13c090 */
-	cFuncGvarDevices_Load,	/* 0x04 0x13bca0 */
-};
 
 /* .?AVcAbstractIDevice@@ */
-void (*const cAbstractIDevice_vftable[9])(void) = {
-	cAbstractIDevice_Delete,	/* 0x00 0x13aa90 */
-	crt_purecall,	/* 0x04 0x31951a */
-	crt_purecall,	/* 0x08 0x31951a */
-	crt_purecall,	/* 0x0c 0x31951a */
-	crt_purecall,	/* 0x10 0x31951a */
-	crt_purecall,	/* 0x14 0x31951a */
-	crt_purecall,	/* 0x18 0x31951a */
-	cAbstractIDevice_IsReserved,	/* 0x1c 0x13c600 */
-	cAbstractIDevice_SetEntry,	/* 0x20 0x13ab30 */
-};
 
 /* .?AVcPcKeyboard@@ */
-void (*const cPcKeyboard_vftable[9])(void) = {
-	cPcKeyboard_Delete,	/* 0x00 0x13c7f0 */
-	cPcKeyboard_SetDefaults,	/* 0x04 0x13d2c0 */
-	cPcKeyboard_SetGameDefaults,	/* 0x08 0x13d5e0 */
-	cPcKeyboard_GetName,	/* 0x0c 0x13c980 */
-	cPcKeyboard_GetEntryLabel,	/* 0x10 0x13d230 */
-	cPcKeyboard_GetEntryName,	/* 0x14 0x13c990 */
-	cPcKeyboard_Update,	/* 0x18 0x13d590 */
-	cPcKeyboard_IsReserved,	/* 0x1c 0x13d990 */
-	cPcKeyboard_SetEntry,	/* 0x20 0x13c8b0 */
-};
 
 /* .?AVcPcMouse@@ */
-void (*const cPcMouse_vftable[9])(void) = {
-	cPcMouse_Delete,	/* 0x00 0x13db50 */
-	cPcMouse_SetDefaults,	/* 0x04 0x13de80 */
-	cPcMouse_SetGameDefaults,	/* 0x08 0x13e210 */
-	cPcMouse_GetName,	/* 0x0c 0x13dc10 */
-	cPcMouse_GetEntryLabel,	/* 0x10 0x13dd00 */
-	cPcMouse_GetEntryName,	/* 0x14 0x13dc20 */
-	cPcMouse_Update,	/* 0x18 0x13dfa0 */
-	cPcMouse_IsReserved,	/* 0x1c 0x13e3e0 */
-	cPcMouse_SetEntry,	/* 0x20 0x13dba0 */
-};
 
 /* .?AVcPcPad@@ */
-void (*const cPcPad_vftable[9])(void) = {
-	cPcPad_Delete,	/* 0x00 0x13e4a0 */
-	cPcPad_SetDefaults,	/* 0x04 0x13efe0 */
-	cPcPad_SetGameDefaults,	/* 0x08 0x13fa70 */
-	cPcPad_GetName,	/* 0x0c 0x13ebc0 */
-	cPcPad_GetEntryLabel,	/* 0x10 0x13ec30 */
-	cPcPad_GetEntryName,	/* 0x14 0x13ec20 */
-	cPcPad_Update,	/* 0x18 0x13f2f0 */
-	cPcPad_IsReserved,	/* 0x1c 0x13fb00 */
-	cPcPad_SetEntry,	/* 0x20 0x13e5e0 */
-};
 
 /* .?AVcBankDirectorLocalLogic@@ */
 
@@ -2449,15 +2013,6 @@ void (*const cPcPad_vftable[9])(void) = {
 /* .?AVcHumphreyLocalLogic@@ */
 
 /* .?AVcInfItem@@ */
-void (*const cInfItem_vftable[7])(void) = {
-	cInfItem_Delete,	/* 0x00 0x14df00 */
-	cInfItem_AddLife,	/* 0x04 0x14e4f0 */
-	cInfItem_FirstLife,	/* 0x08 0x14e270 */
-	cInfItem_NextLife,	/* 0x0c 0x14e310 */
-	cInfItem_AddAmmo,	/* 0x10 0x14e470 */
-	cInfItem_FirstAmmo,	/* 0x14 0x14e210 */
-	cInfItem_NextAmmo,	/* 0x18 0x14e2b0 */
-};
 
 /* .?AVcLittlePoliceLocalLogic@@ */
 
@@ -2560,29 +2115,10 @@ void (*const cScorer_vftable[1])(void) = {
 /* .?AVcWindFxScorer@@ */
 
 /* .?AVcServerNetManager@@ */
-void (*const cServerNetManager_vftable[5])(void) = {
-	cServerNetManager_Delete,	/* 0x00 0x18b860 */
-	cServerNetManager_OnReceive,	/* 0x04 0x18b8e0 */
-	cServerNetManager_Send,	/* 0x08 0x18c270 */
-	cUserNetManager_Nop,	/* 0x0c 0x18c3a0 */
-	cServerNetManager_SendHello,	/* 0x10 0x18c0c0 */
-};
 
 /* .?AVcClientNetManager@@ */
-void (*const cClientNetManager_vftable[4])(void) = {
-	cClientNetManager_Delete,	/* 0x00 0x18c5e0 */
-	cClientNetManager_OnReceive,	/* 0x04 0x18c610 */
-	cClientNetManager_Send,	/* 0x08 0x18cfe0 */
-	cClientNetManager_SetLocalData,	/* 0x0c 0x18d710 */
-};
 
 /* .?AVcUserNetManager@@ */
-void (*const cUserNetManager_vftable[4])(void) = {
-	cUserNetManager_Delete,	/* 0x00 0x18da00 */
-	crt_purecall,	/* 0x04 0x31951a */
-	crt_purecall,	/* 0x08 0x31951a */
-	cUserNetManager_Nop,	/* 0x0c 0x18c3a0 */
-};
 
 /* .?AVcSndInterface@@ */
 void (*const cSndInterface_vftable[5])(void) = {
@@ -2594,94 +2130,8 @@ void (*const cSndInterface_vftable[5])(void) = {
 };
 
 /* .?AVCSoundSys@@ */
-void (*const CSoundSys_vftable[41])(void) = {
-	CSoundSys_Destroy,	/* 0x00 0x1a30a0 */
-	CSoundSys_InitFmod,	/* 0x04 0x1a3200 */
-	CSoundSys_Close,	/* 0x08 0x1a3140 */
-	CSoundSys_Nop,	/* 0x0c 0x1a3cd0 */
-	crt_purecall,	/* 0x10 0x31951a */
-	crt_purecall,	/* 0x14 0x31951a */
-	crt_purecall,	/* 0x18 0x31951a */
-	crt_purecall,	/* 0x1c 0x31951a */
-	crt_purecall,	/* 0x20 0x31951a */
-	crt_purecall,	/* 0x24 0x31951a */
-	crt_purecall,	/* 0x28 0x31951a */
-	crt_purecall,	/* 0x2c 0x31951a */
-	crt_purecall,	/* 0x30 0x31951a */
-	crt_purecall,	/* 0x34 0x31951a */
-	crt_purecall,	/* 0x38 0x31951a */
-	crt_purecall,	/* 0x3c 0x31951a */
-	crt_purecall,	/* 0x40 0x31951a */
-	CSoundSys_SetVolume,	/* 0x44 0x1a4290 */
-	CSoundSys_SetPan,	/* 0x48 0x1a41b0 */
-	CSoundSys_SetFreq,	/* 0x4c 0x1a40d0 */
-	CSoundSys_SetLoop,	/* 0x50 0x1a4140 */
-	CSoundSys_SetPrio,	/* 0x54 0x1a4220 */
-	CSoundSys_ResetListeners,	/* 0x58 0x1a32a0 */
-	CSoundSys_SetListener,	/* 0x5c 0x1a3ce0 */
-	CSoundSys_Compute3D,	/* 0x60 0x1a32b0 */
-	CSoundSys_SetMusic,	/* 0x64 0x1a3ea0 */
-	CSoundSys_Nop,	/* 0x68 0x1a3ba0 */
-	CSoundSys_StopMusic,	/* 0x6c 0x1a4370 */
-	CSoundSys_Nop,	/* 0x70 0x1a3130 */
-	CSoundSys_SetMusicVolume,	/* 0x74 0x1a3ec0 */
-	CSoundSys_GetSoundName,	/* 0x78 0x1a3a90 */
-	CSoundSys_Nop2,	/* 0x7c 0x1a3cc0 */
-	CSoundSys_OpenVoice,	/* 0x80 0x1a3a70 */
-	CSoundSys_PlayVoice,	/* 0x84 0x1a3ca0 */
-	CSoundSys_StopVoice,	/* 0x88 0x1a43e0 */
-	CSoundSys_VoiceRemain,	/* 0x8c 0x1a31c0 */
-	CSoundSys_SetVoiceVolume,	/* 0x90 0x1a4340 */
-	CSoundSys_SetVoiceParam,	/* 0x94 0x1a4300 */
-	CSoundSys_SetVoiceString,	/* 0x98 0x1a4320 */
-	CSoundSys_GetVoiceString,	/* 0x9c 0x1a31e0 */
-	CSoundSys_VoiceUnused,	/* 0xa0 0x1a45b0 */
-};
 
 /* .?AVCSoundXBox@@ */
-void (*const CSoundXBox_vftable[41])(void) = {
-	CSoundXBox_Destroy,	/* 0x00 0x1a4880 */
-	CSoundXBox_Init,	/* 0x04 0x1a52e0 */
-	CSoundXBox_Close,	/* 0x08 0x1a4ef0 */
-	CSoundXBox_Update,	/* 0x0c 0x1a5e50 */
-	CSoundXBox_LoadSound2,	/* 0x10 0x1a5620 */
-	CSoundXBox_LoadSound,	/* 0x14 0x1a5640 */
-	CSoundXBox_DeleteSound,	/* 0x18 0x1a4e70 */
-	CSoundXBox_StopAllSounds,	/* 0x1c 0x1a5f00 */
-	CSoundXBox_DeleteAllSounds,	/* 0x20 0x1a4d40 */
-	CSoundXBox_GetDesc,	/* 0x24 0x1a5160 */
-	CSoundXBox_SetDesc,	/* 0x28 0x1a5ed0 */
-	CSoundXBox_PlaySound,	/* 0x2c 0x1a57e0 */
-	CSoundXBox_PlayName,	/* 0x30 0x1a57c0 */
-	CSoundXBox_Play,	/* 0x34 0x1a5860 */
-	CSoundXBox_PlayAt,	/* 0x38 0x1a5810 */
-	CSoundXBox_UpdateSound,	/* 0x3c 0x1a6000 */
-	CSoundXBox_StopSound,	/* 0x40 0x1a5f30 */
-	CSoundSys_SetVolume,	/* 0x44 0x1a4290 */
-	CSoundSys_SetPan,	/* 0x48 0x1a41b0 */
-	CSoundSys_SetFreq,	/* 0x4c 0x1a40d0 */
-	CSoundSys_SetLoop,	/* 0x50 0x1a4140 */
-	CSoundSys_SetPrio,	/* 0x54 0x1a4220 */
-	CSoundSys_ResetListeners,	/* 0x58 0x1a32a0 */
-	CSoundSys_SetListener,	/* 0x5c 0x1a3ce0 */
-	CSoundSys_Compute3D,	/* 0x60 0x1a32b0 */
-	CSoundSys_SetMusic,	/* 0x64 0x1a3ea0 */
-	CSoundSys_Nop,	/* 0x68 0x1a3ba0 */
-	CSoundSys_StopMusic,	/* 0x6c 0x1a4370 */
-	CSoundSys_Nop,	/* 0x70 0x1a3130 */
-	CSoundSys_SetMusicVolume,	/* 0x74 0x1a3ec0 */
-	CSoundSys_GetSoundName,	/* 0x78 0x1a3a90 */
-	CSoundXBox_DebugDraw,	/* 0x7c 0x1a5880 */
-	CSoundSys_OpenVoice,	/* 0x80 0x1a3a70 */
-	CSoundSys_PlayVoice,	/* 0x84 0x1a3ca0 */
-	CSoundSys_StopVoice,	/* 0x88 0x1a43e0 */
-	CSoundSys_VoiceRemain,	/* 0x8c 0x1a31c0 */
-	CSoundSys_SetVoiceVolume,	/* 0x90 0x1a4340 */
-	CSoundSys_SetVoiceParam,	/* 0x94 0x1a4300 */
-	CSoundSys_SetVoiceString,	/* 0x98 0x1a4320 */
-	CSoundSys_GetVoiceString,	/* 0x9c 0x1a31e0 */
-	CSoundSys_VoiceUnused,	/* 0xa0 0x1a45b0 */
-};
 
 /* .?AVcObjElementAbstract@@ */
 
@@ -2746,74 +2196,24 @@ void (*const CSoundXBox_vftable[41])(void) = {
 /* .?AVcObjElementFXDebrisCloud@@ */
 
 /* .?AVcFXElementsLighting@@ */
-void (*const cFXElementsLighting_vftable[3])(void) = {
-	cFXElementsLighting_Delete,	/* 0x00 0x1cfbd0 */
-	cFXElementsLighting_Init,	/* 0x04 0x1cfe00 */
-	cFXElementsLighting_Update,	/* 0x08 0x1d1c60 */
-};
 
 /* .?AVcFXElementsFireDrop@@ */
-void (*const cFXElementsFireDrop_vftable[3])(void) = {
-	cFXElementsFireDrop_Delete,	/* 0x00 0x1cfb10 */
-	cFXElementsFireDrop_Init,	/* 0x04 0x1cfc50 */
-	cFXElementsFireDrop_Update,	/* 0x08 0x1d04b0 */
-};
 
 /* .?AVcFXElementsLensFlare@@ */
-void (*const cFXElementsLensFlare_vftable[3])(void) = {
-	cFXElementsLensFlare_Delete,	/* 0x00 0x1cfb90 */
-	cFXElementsLensFlare_Init,	/* 0x04 0x1cfdf0 */
-	cFXElementsLensFlare_Update,	/* 0x08 0x1d1c50 */
-};
 
 /* .?AVcFXElementsABFakeMeteors@@ */
-void (*const cFXElementsABFakeMeteors_vftable[3])(void) = {
-	cFXElementsABFakeMeteors_Delete,	/* 0x00 0x1d3560 */
-	cFXElementsABFakeMeteors_Init,	/* 0x04 0x1d3980 */
-	cFXElementsABFakeMeteors_Update,	/* 0x08 0x1d51e0 */
-};
 
 /* .?AVcFXElementsABFakeLimit@@ */
-void (*const cFXElementsABFakeLimit_vftable[3])(void) = {
-	cFXElementsABFakeLimit_Delete,	/* 0x00 0x1d34b0 */
-	cFXElementsABFakeLimit_Init,	/* 0x04 0x1d3650 */
-	cFXElementsABFakeLimit_Update,	/* 0x08 0x1d3e00 */
-};
 
 /* .?AVcFXElementsOrbitBoya@@ */
-void (*const cFXElementsOrbitBuoy_vftable[3])(void) = {
-	cFXElementsOrbitBuoy_Delete,	/* 0x00 0x1d5910 */
-	cFXElementsOrbitBuoy_Init,	/* 0x04 0x1d59e0 */
-	cFXElementsOrbitBuoy_Update,	/* 0x08 0x1d5ee0 */
-};
 
 /* .?AVcFXElementsOrbitBoyaController@@ */
-void (*const cFXElementsOrbitBuoyController_vftable[3])(void) = {
-	cFXElementsOrbitBuoyController_Delete,	/* 0x00 0x1d5990 */
-	cFXElementsOrbitBuoyController_Init,	/* 0x04 0x1d5aa0 */
-	cFXElementsOrbitBuoyController_Update,	/* 0x08 0x1d5f00 */
-};
 
 /* .?AVcFXElementsMentalController@@ */
-void (*const cFXElementsMentalController_vftable[3])(void) = {
-	cFXElementsMentalController_Delete,	/* 0x00 0x1d6530 */
-	cFXElementsMentalController_Init,	/* 0x04 0x1d66c0 */
-	cFXElementsMentalController_Update,	/* 0x08 0x1d7c30 */
-};
 
 /* .?AVcFXElementsMentalControllerDamageFX@@ */
-void (*const cFXElementsMentalControllerDamageFX_vftable[3])(void) = {
-	cFXElementsMentalControllerDamageFX_Delete,	/* 0x00 0x1d6560 */
-	cFXElementsMentalControllerDamageFX_Init,	/* 0x04 0x1d6750 */
-	cFXElementsMentalControllerDamageFX_Update,	/* 0x08 0x1d7d20 */
-};
 
 /* .?AVcFXElementsMentalControllerMainFX@@ */
-void (*const cFXElementsMentalControllerMainFX_vftable[3])(void) = {
-	cFXElementsMentalControllerMainFX_Delete,	/* 0x00 0x1d65f0 */
-	cFXElementsMentalControllerMainFX_Init,	/* 0x04 0x1d6d90 */
-	cFXElementsMentalControllerMainFX_Update,	/* 0x08 0x1d8960 */
-};
 
 /* .?AVcObjElementFXSistPart@@ */
 
@@ -2884,11 +2284,6 @@ void (*const cFXElementsMentalControllerMainFX_vftable[3])(void) = {
 /* .?AVcObjElementFXInfernoExplosion@@ */
 
 /* .?AVcMapElement@@ */
-void (*const cMapElement_vftable[3])(void) = {
-	cMapElement_Delete,	/* 0x00 0x202e60 */
-	cMapElement_Init,	/* 0x04 0x203310 */
-	cMapElement_Update,	/* 0x08 0x203520 */
-};
 
 /* .?AVcScheduledFuncStack@@ */
 void (*const cScheduledFuncStack_vftable[1])(void) = {
@@ -2901,54 +2296,8 @@ void (*const cWorld_vftable[1])(void) = {
 };
 
 /* .?AVCApp@@ */
-void (*const CApp_vftable[21])(void) = {
-	CApp_DoneGame,	/* 0x00 0x20a8d0 */
-	CApp_InitGame,	/* 0x04 0x20b1c0 */
-	CApp_Nop,	/* 0x08 0x20a8c0 */
-	CApp_Delete,	/* 0x0c 0x20a890 */
-	CApp_Init,	/* 0x10 0x20aee0 */
-	CApp_Frame,	/* 0x14 0x20b700 */
-	CApp_Shutdown,	/* 0x18 0x20ad00 */
-	CApp_LoadLevelNow,	/* 0x1c 0x20b350 */
-	CApp_Nop,	/* 0x20 0x20ace0 */
-	CApp_Nop,	/* 0x24 0x20ae30 */
-	CApp_Update,	/* 0x28 0x20c7e0 */
-	CApp_Render,	/* 0x2c 0x20acf0 */
-	CApp_ParseParam,	/* 0x30 0x20b8d0 */
-	CApp_ResetParams,	/* 0x34 0x20ae40 */
-	crt_purecall,	/* 0x38 0x31951a */
-	CApp_GetGameTime,	/* 0x3c 0x20ae50 */
-	crt_purecall,	/* 0x40 0x31951a */
-	crt_purecall,	/* 0x44 0x31951a */
-	crt_purecall,	/* 0x48 0x31951a */
-	CApp_RunApp,	/* 0x4c 0x20c2f0 */
-	CApp_IsDedicatedWin,	/* 0x50 0x20c800 */
-};
 
 /* .?AVCWinApp@@ */
-void (*const CWinApp_vftable[21])(void) = {
-	CApp_DoneGame,	/* 0x00 0x20a8d0 */
-	CApp_InitGame,	/* 0x04 0x20b1c0 */
-	CApp_Nop,	/* 0x08 0x20a8c0 */
-	CWinApp_Delete,	/* 0x0c 0x20c920 */
-	CWinApp_Init,	/* 0x10 0x20d2a0 */
-	CWinApp_Frame,	/* 0x14 0x20d510 */
-	CWinApp_Shutdown,	/* 0x18 0x20cf80 */
-	CApp_LoadLevelNow,	/* 0x1c 0x20b350 */
-	CWinApp_InitDedicated,	/* 0x20 0x20cf50 */
-	CWinApp_Exit,	/* 0x24 0x20cfd0 */
-	CApp_Update,	/* 0x28 0x20c7e0 */
-	CApp_Render,	/* 0x2c 0x20cf70 */
-	CWinApp_ParseParam,	/* 0x30 0x20d680 */
-	CWinApp_ResetParams,	/* 0x34 0x20cfe0 */
-	CWinApp_GetTime,	/* 0x38 0x20d1b0 */
-	CApp_GetGameTime,	/* 0x3c 0x20ae50 */
-	CWinApp_ShowConsole,	/* 0x40 0x20cda0 */
-	CWinApp_ConsoleAdd,	/* 0x44 0x20cd80 */
-	CWinApp_DebugInput,	/* 0x48 0x20cf30 */
-	CWinApp_RunApp,	/* 0x4c 0x20d6e0 */
-	CWinApp_IsDedicatedWin,	/* 0x50 0x20d8b0 */
-};
 
 /* .?AVCEntradaNula@@ */
 void (*const CNullInput_vftable[8])(void) = {
@@ -2963,22 +2312,6 @@ void (*const CNullInput_vftable[8])(void) = {
 };
 
 /* .?AVCMotorApp@@ */
-void (*const CEngineApp_vftable[14])(void) = {
-	CD3DApp_AdjustWindowForChange,	/* 0x00 0x2733e0 */
-	CEngineApp_ConfirmDevice,	/* 0x04 0x22da10 */
-	CEngineApp_OneTimeSceneInit,	/* 0x08 0x22f7f0 */
-	CEngineApp_InitDeviceObjects,	/* 0x0c 0x22f070 */
-	CEngineApp_RestoreDeviceObjects,	/* 0x10 0x22fd50 */
-	CEngineApp_FrameMove,	/* 0x14 0x22ef30 */
-	CEngineApp_Render,	/* 0x18 0x22f940 */
-	CD3DApplication_Nothing,	/* 0x1c 0x22f420 */
-	CEngineApp_DeleteDeviceObjects,	/* 0x20 0x22db70 */
-	CEngineApp_FinalCleanup,	/* 0x24 0x22ec80 */
-	CD3DApp_Create,	/* 0x28 0x273e20 */
-	NULL,	/* 0x2c 0x275570 */
-	NULL,	/* 0x30 0x22f440 */
-	CD3DApp_Pause,	/* 0x34 0x2750b0 */
-};
 
 /* .?AVCListaMat@@ */
 void (*const CMatList_vftable[1])(void) = {
@@ -3050,22 +2383,6 @@ void (*const CTriMesh_vftable[7])(void) = {
 };
 
 /* .?AVCD3DApplication@@ */
-void (*const CD3DApplication_vftable[14])(void) = {
-	CD3DApp_AdjustWindowForChange,	/* 0x00 0x2733e0 */
-	CD3DApp_ConfirmDevice,	/* 0x04 0x273e10 */
-	CD3DApp_Nop,	/* 0x08 0x2750a0 */
-	CD3DApp_Nop,	/* 0x0c 0x2747d0 */
-	CD3DApp_Nop,	/* 0x10 0x275560 */
-	CD3DApp_Nop,	/* 0x14 0x2747c0 */
-	CD3DApp_Nop,	/* 0x18 0x275460 */
-	CD3DApplication_Nothing,	/* 0x1c 0x22f420 */
-	CD3DApp_Nop,	/* 0x20 0x274030 */
-	CD3DApp_Nop,	/* 0x24 0x2743a0 */
-	CD3DApp_Create,	/* 0x28 0x273e20 */
-	NULL,	/* 0x2c 0x275570 */
-	NULL,	/* 0x30 0x274b60 */
-	CD3DApp_Pause,	/* 0x34 0x2750b0 */
-};
 
 /* .?AVCObjBase3D@@ */
 void (*const CObjBase3D_vftable[7])(void) = {

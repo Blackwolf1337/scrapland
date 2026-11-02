@@ -188,7 +188,7 @@ def inpmasklabel(v):
 	return string.replace(repr(v), inpkp8, 'NUMPAD8')
 for inpk in range(14):
 	check('cPcMouse names' + fmt((inpk,)), lambda inpk=inpk: (SDTest.Call('cPcMouse_GetEntryName', 'tsii', inpms, inpk)[0],
-		SDTest.Call('cPcMouse_GetEntryLabel', 'tsii', inpms, inpk)[0], SDTest.Call('cPcMouse_IsReserved', 'tiii', inpms, inpk)[0]))
+		SDTest.Call('cPcMouse_GetEntryLabel', 'tsii', inpms, inpk)[0], SDTest.Call('cPcMouse_IsReserved', 'tiii', inpms, inpk)[0] & 0xff))
 for inpk in range(0x3a):
 	check('cPcPad names' + fmt((inpk,)), lambda inpk=inpk: (SDTest.Call('cPcPad_GetEntryLabel', 'tsii', inppads[0], inpk)[0],
 		SDTest.Call('cPcPad_GetEntryName', 'tsii', inppads[1], inpk)[0], SDTest.Call('cPcPad_IsReserved', 'tbii', inppads[2], inpk)[0]))

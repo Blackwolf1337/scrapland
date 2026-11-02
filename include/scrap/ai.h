@@ -24,25 +24,41 @@ typedef struct cAIChar cAIChar;
 /* CNodesTraffic or CNodesTrafficInDoor */
 typedef struct CNodesTraffic CNodesTraffic;	/* include/scrap/nodestraffic.h */
 
-typedef struct cAIVehicleGroupVtbl {
-	void *vf00;
-	void(*InitRace)(cAIVehicleGroup *self);			/* 0x4 */
-	void(*AddVehicle)(cAIVehicleGroup *self, cEntity *vehicle);	/* 0x8 */
-	cEntity *(*GetVehicle)(cAIVehicleGroup *self, int i);	/* 0xc */
-	int(*NumVehicles)(cAIVehicleGroup *self);			/* 0x10 */
-	/* the time since the last change of state of a vehicle AI reached the limit */
-	byte(*CanChange)(cAIVehicleGroup *self);			/* 0x14 */
-	void(*ResetChange)(cAIVehicleGroup *self);			/* 0x18 the time to 0 */
-	void(*AllowChange)(cAIVehicleGroup *self);			/* 0x1c the time to the limit */
-} cAIVehicleGroupVtbl;
-SD_OFFSET(cAIVehicleGroupVtbl, AllowChange, 0x1c);
+#define CAIENTITYGROUP_MAX 20
+typedef struct cAIEntityGroup cAIEntityGroup;
+
+typedef struct cAIEntityGroupVtbl {
+	cAIEntityGroup *(*Delete)(cAIEntityGroup *self, byte flags);	/* 0x00 */
+	void(*Clear)(cAIEntityGroup *self);				/* 0x04 no entities */
+	byte(*Add)(cAIEntityGroup *self, cEntity *e);			/* 0x08 0 when full */
+	cEntity *(*Get)(cAIEntityGroup *self, int i);			/* 0x0c */
+	int(*Num)(cAIEntityGroup *self);				/* 0x10 */
+	byte(*CanChange)(cAIEntityGroup *self);			/* 0x14 */
+	void(*ResetChange)(cAIEntityGroup *self);			/* 0x18 the time to 0 */
+	void(*AllowChange)(cAIEntityGroup *self);			/* 0x1c the time to the limit */
+	void(*Update)(cAIEntityGroup *self, float dt);		/* 0x20 the time on */
+} cAIEntityGroupVtbl;
+
+struct cAIEntityGroup {
+	const cAIEntityGroupVtbl *vftable;	/* 0x00 */
+	cEntity *ents[CAIENTITYGROUP_MAX];	/* 0x04 */
+	int num;				/* 0x54 */
+	byte unused_58;				/* 0x58 */
+	byte pad_59[3];
+	float changeTime;			/* 0x5c */
+};
 
 struct cAIVehicleGroup {
-	const cAIVehicleGroupVtbl *vftable;	/* 0x00 */
-	byte pad_4[0x54 - 0x4];
-	int numVehicles;		/* 0x54 */
-	byte pad_58[0x5c - 0x58];
-	float changeTime;		/* 0x5c the time since the last change of state */
+	union {
+		cAIEntityGroup base;	/* 0x00 */
+		struct {
+			const cAIEntityGroupVtbl *vftable;	/* 0x00 */
+			byte pad_4[0x54 - 0x4];
+			int numVehicles;		/* 0x54 */
+			byte pad_58[0x5c - 0x58];
+			float changeTime;		/* 0x5c the time since the last change of state */
+		};
+	};
 	/* the vehicle AIs in the internal state STOPPED: all, the traffic by class (2, 1, 0) and IN_ROUTE */
 	int numStopped;			/* 0x60 */
 	int numStoppedHeavy;		/* 0x64 */
@@ -503,33 +519,13 @@ extern cGVar GVar_MaxDistChaseAI;
 /* ---- cAIEntityGroup (AI/AIEntityGroup.cpp, src/game/AI/AIEntityGroup.c): the base of the vehicle and the character
  * groups, up to 20 entities (a race) and the time since an AI of the group took a group state; the next one may take
  * one when the time reached TimeBetwChangeStateAI ---- */
-#define CAIENTITYGROUP_VFTABLE GAME_VFTABLE(cAIEntityGroup_vftable)
 #define CAIENTITYGROUP_SIZE sizeof(cAIEntityGroup)
-#define CAIENTITYGROUP_MAX 20
 
-typedef struct cAIEntityGroup cAIEntityGroup;
 
-typedef struct cAIEntityGroupVtbl {
-	cAIEntityGroup *(*Delete)(cAIEntityGroup *self, byte flags);	/* 0x00 */
-	void(*Clear)(cAIEntityGroup *self);				/* 0x04 no entities */
-	byte(*Add)(cAIEntityGroup *self, cEntity *e);			/* 0x08 0 when full */
-	cEntity *(*Get)(cAIEntityGroup *self, int i);			/* 0x0c */
-	int(*Num)(cAIEntityGroup *self);				/* 0x10 */
-	byte(*CanChange)(cAIEntityGroup *self);			/* 0x14 */
-	void(*ResetChange)(cAIEntityGroup *self);			/* 0x18 the time to 0 */
-	void(*AllowChange)(cAIEntityGroup *self);			/* 0x1c the time to the limit */
-	void(*Update)(cAIEntityGroup *self, float dt);		/* 0x20 the time on */
-} cAIEntityGroupVtbl;
 SD_OFFSET(cAIEntityGroupVtbl, Update, 0x20);
+extern const cAIEntityGroupVtbl cAIEntityGroup_vftable;
+#define CAIENTITYGROUP_VFTABLE (&cAIEntityGroup_vftable)
 
-struct cAIEntityGroup {
-	const cAIEntityGroupVtbl *vftable;	/* 0x00 */
-	cEntity *ents[CAIENTITYGROUP_MAX];	/* 0x04 */
-	int num;				/* 0x54 */
-	byte unused_58;				/* 0x58 */
-	byte pad_59[3];
-	float changeTime;			/* 0x5c */
-};
 SD_OFFSET(cAIEntityGroup, num, 0x54);
 SD_OFFSET(cAIEntityGroup, changeTime, 0x5c);
 SD_SIZE(cAIEntityGroup, 0x60);

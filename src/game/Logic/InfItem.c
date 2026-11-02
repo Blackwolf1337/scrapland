@@ -180,3 +180,14 @@ cItemDesc *cInfItem_FirstAmmo(cInfItem *self, int kind, void **iter) {
 cItemDesc *cInfItem_NextAmmo(cInfItem *self, int kind, void **iter) {
 	return InfItemList_Next(InfItem_AmmoList(self, kind), iter);
 }
+
+/* the vtable of cInfItem */
+const cInfItemVtbl cInfItem_vftable = {
+	.Delete = cInfItem_Delete,
+	.AddLife = cInfItem_AddLife,
+	.FirstLife = cInfItem_FirstLife,
+	.NextLife = cInfItem_NextLife,
+	.AddAmmo = cInfItem_AddAmmo,
+	.FirstAmmo = cInfItem_FirstAmmo,
+	.NextAmmo = cInfItem_NextAmmo,
+};

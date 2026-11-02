@@ -781,14 +781,14 @@ void CUnifont_Load(CUnifont *self) {
 	snprintf(uct, sizeof(uct), "%sUnicode.alpha.uct", g_FontsDir);
 	snprintf(tga, sizeof(tga), "%sUnicode.alpha.tga", g_FontsDir);
 	snprintf(ust, sizeof(ust), "%sUnicode.alpha.ust", g_FontsDir);
-	if (cFilePack_Exists(&f, uct)) {
-		cFilePack_Open(&f, uct, 1);
-		cFilePack_Read(&f, &self->first, 2);
-		cFilePack_Read(&f, &self->last, 2);
+	if (cFilePack_Exists(&f.file.base, uct)) {
+		cFilePack_Open(&f.file.base, uct, 1);
+		cFilePack_Read(&f.file.base, &self->first, 2);
+		cFilePack_Read(&f.file.base, &self->last, 2);
 		uint32_t size = ((uint32_t)self->last - self->first) * 2 + 2;
 		self->map = Mem_Alloc(size);
-		cFilePack_Read(&f, self->map, (int)size);
-		cFilePack_Close(&f);
+		cFilePack_Read(&f.file.base, self->map, (int)size);
+		cFilePack_Close(&f.file.base);
 		CGraphic2D *g = operator_new(sizeof(CGraphic2D));
 		self->graphic = g ? CGraphic2D_ctorTex(g, tga, NULL, GRAPHIC2D_SCREEN | GRAPHIC2D_SCREEN_SIZE) : NULL;
 		self->graphic->noTexture = 1;

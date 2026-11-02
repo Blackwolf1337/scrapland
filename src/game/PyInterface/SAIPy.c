@@ -753,7 +753,7 @@ PyObject *SAI_GetReposCharPos(PyObject *self, PyObject *args) {
 PyObject *SAI_InitVehicleRace(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	g_VehicleGroup->vftable->InitRace(g_VehicleGroup);
+	g_VehicleGroup->vftable->Clear(&g_VehicleGroup->base);
 	return Py_ReturnNone();
 }
 
@@ -765,7 +765,7 @@ PyObject *SAI_AddVehicleRace(PyObject *self, PyObject *args) {
 	if (PyArg_ParseTuple(args, "s", &name)) {
 		cEntity *e = FindAIEntity(name, TYEN_CAR);
 		if (e) {
-			g_VehicleGroup->vftable->AddVehicle(g_VehicleGroup, e);
+			g_VehicleGroup->vftable->Add(&g_VehicleGroup->base, e);
 		}
 	}
 	return Py_ReturnNone();

@@ -81,11 +81,11 @@ void Pack_PreloadLibrary(const char *name, const char *file) {
 	CHECK(Py_IsReady());
 	if (PackLog_Closed()) {
 		if (!PyDict_GetItemString(PyImport_GetModuleDict(), (char *)name)) {
-			CHECK(cFilePack_Open(&f, file, FILE_MODE_READ));
-			int size = cFilePack_Size(&f);
+			CHECK(cFilePack_Open(&f.file.base, file, FILE_MODE_READ));
+			int size = cFilePack_Size(&f.file.base);
 			char *data = cStaticBuffer_Get(g_PyStaticBuffer, size);
-			cFilePack_Read(&f, data, size);
-			CHECK(cFilePack_Close(&f));
+			cFilePack_Read(&f.file.base, data, size);
+			CHECK(cFilePack_Close(&f.file.base));
 			/* .pyc: magic and time, then the marshaled code object */
 			PyObject *co = PyMarshal_ReadObjectFromString(data + 8, size - 8);
 			CHECK(g_PyStaticBuffer->lock);

@@ -198,28 +198,25 @@ void CAStarSup_Reset(CAStarSup *self);
 
 /* CAStar and CAStar2D: CAStar_ctor and CAStar2D_ctor are in ai.h */
 void CAStar_dtor(CAStar *self);
-CAStar *CAStar_Delete(CAStar *self, byte flags);
+CAStarSup *CAStar_Delete(CAStarSup *elem, byte flags);
 void CAStar2D_dtor(CAStar2D *self);
-CAStar2D *CAStar2D_Delete(CAStar2D *self, byte flags);
+CAStarSup *CAStar2D_Delete(CAStarSup *elem, byte flags);
 /* the element and the table item of every point of visibility (both classes) */
 void CAStar_InitList(CAStar *self);
 /* Draw when g_AStarDrawMode is on */
 void CAStar_DrawDebug(CAStar *self);
 void CAStar2D_DrawDebug(CAStar *self);
-byte CAStar_TestPath(CAStar *self, const vec3_t *a, const vec3_t *b);
-byte CAStar2D_TestPath(CAStar2D *self, const vec3_t *a, const vec3_t *b);
-void CAStar_NearestStart(CAStar *self);
-void CAStar2D_NearestStart(CAStar2D *self);
-void CAStar_PointsVis(CAStar *self, const vec3_t *pos, const vec3_t **list, int max, int *count);
-void CAStar2D_PointsVis(CAStar2D *self, const vec3_t *pos, const vec3_t **list, int max, int *count);
-void CAStar_PointsVisFile(CAStar *self, const vec3_t *pos, const vec3_t **list, int max, int *count,
-	int *state, int file);
-void CAStar2D_PointsVisFile(CAStar2D *self, const vec3_t *pos, const vec3_t **list, int max, int *count,
-	int *state, int file);
+byte CAStar_TestPath(CAStarSup *elem, const vec3_t *a, const vec3_t *b);
+byte CAStar2D_TestPath(CAStarSup *elem, const vec3_t *a, const vec3_t *b);
+void CAStar_NearestStart(CAStarSup *elem);
+void CAStar2D_NearestStart(CAStarSup *elem);
+void CAStar_PointsVis(CAStarSup *base, const vec3_t *pos, const vec3_t **list, int max, int *count);
+void CAStar2D_PointsVis(CAStarSup *base, const vec3_t *pos, const vec3_t **list, int max, int *count);
+void CAStar_PointsVisFile(CAStarSup *base, const vec3_t *pos, const vec3_t **list, int max, int *count, int *state, int file);
+void CAStar2D_PointsVisFile(CAStarSup *base, const vec3_t *pos, const vec3_t **list, int max, int *count, int *state, int file);
 /* the slots that go on to the graph (both classes) */
-int CAStar_FileOf(CAStar *self, const vec3_t *node);
-void CAStar_OtherLinks(CAStar *self, const vec3_t *node, const vec3_t *pos, const vec3_t **list, int max,
-	int *count);
+int CAStar_FileOf(CAStarSup *base, const vec3_t *node);
+void CAStar_OtherLinks(CAStarSup *base, const vec3_t *node, const vec3_t *pos, const vec3_t **list, int max, int *count);
 /* CAStar_FindPath and CAStar_GetPointsVis: nodesworld.h; CAStar2D_FindPath and CAStar2D_GetPointsVis:
  * aicharcontrol.h */
 

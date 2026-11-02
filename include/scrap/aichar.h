@@ -44,7 +44,8 @@ enum {
  * a group state waits until the time reached the limit) with the points of the repositioning out of view, the dummies
  * "DM_NPC_Repos_<zone>_..." of the level by zone. The zone is the name of the action class of a character, a point
  * is taken by linking it to the head at 0x4bc of the character ---- */
-#define CAICHARGROUP_VFTABLE GAME_VFTABLE(cAICharGroup_vftable)
+extern const cAIEntityGroupVtbl cAICharGroup_vftable;
+#define CAICHARGROUP_VFTABLE (&cAICharGroup_vftable)
 #define CAICHARGROUP_SIZE sizeof(cAICharGroup)
 
 /* a point of a zone (0x1c bytes, new[] of the exe with the count before it) */
@@ -85,20 +86,10 @@ SD_SIZE(cAICGZoneNode, 0xa0);
 typedef DLIST(cAICGZoneNode) cAICGZoneList;
 
 /* the slots of cAIEntityGroup with the group as self */
-typedef struct cAICharGroupVtbl {
-	cAICharGroup *(*Delete)(cAICharGroup *self, byte flags);	/* 0x00 */
-	void *vf01_04[4];
-	byte(*CanChange)(cAICharGroup *self);	/* 0x14 */
-	void(*ResetChange)(cAICharGroup *self);	/* 0x18 the time to 0 */
-	void(*AllowChange)(cAICharGroup *self);	/* 0x1c the time to the limit */
-	void(*Update)(cAICharGroup *self, float dt);	/* 0x20 */
-} cAICharGroupVtbl;
-SD_OFFSET(cAICharGroupVtbl, AllowChange, 0x1c);
-
 struct cAICharGroup {
 	union {
 		cAIEntityGroup base;			/* 0x00 */
-		const cAICharGroupVtbl *vftable;
+		const cAIEntityGroupVtbl *vftable;
 	};
 	cAICGZone *zones;		/* 0x60 Mem_Alloc */
 	int numZones;			/* 0x64 */
@@ -114,7 +105,7 @@ void *cAICGPoint_Delete(cAICGPoint *self, uint32_t flags);
 /* the out of line Nto1Node_Unlink with the CHECK of Node for a node that may be NULL (stdcall) */
 void Nto1Node_UnlinkOpt(Nto1Node *node);
 void cAICharGroup_dtor(cAICharGroup *self);
-cAICharGroup *cAICharGroup_Delete(cAICharGroup *self, byte flags);
+cAIEntityGroup *cAICharGroup_Delete(cAIEntityGroup *base, byte flags);
 /* the zones and their points from the dummies of the level */
 void cAICharGroup_Init(cAICharGroup *self);
 cAICGZone *cAICharGroup_GetZones(cAICharGroup *self);

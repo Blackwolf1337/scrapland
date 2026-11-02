@@ -50,12 +50,13 @@ cPcMouse *cPcMouse_ctor(cPcMouse *self) {
 	return self;
 }
 
-cPcMouse *cPcMouse_Delete(cPcMouse *self, byte flags) {
+cAbstractIDevice *cPcMouse_Delete(cAbstractIDevice *elem, byte flags) {
+	cPcMouse *self = (cPcMouse *)elem;
 	cAbstractIDevice_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cPcMouse));
 	}
-	return self;
+	return elem;
 }
 
 void Mouse_Acquire(byte on) {
@@ -118,7 +119,8 @@ void Mouse_Init(void) {
  * The speed is the movement of the last 1/30 second (every frame in the menu); the sensitivity counts in the
  * character and vehicle sets only. The text cursor of player 0 moves twice per frame, as the original.
  */
-void cPcMouse_Update(cPcMouse *self, float dt) {
+void cPcMouse_Update(cAbstractIDevice *elem, float dt) {
+	cPcMouse *self = (cPcMouse *)elem;
 	g_MouseState.x = 0;
 	Mouse_Poll();
 	uint32_t set = Input_GetActionSet();
@@ -189,7 +191,20 @@ int32_t Mouse_Poll(void) {
 }
 
 /* the axes */
-int cPcMouse_IsReserved(cAbstractIDevice *self, int entry) {
+byte cPcMouse_IsReserved(cAbstractIDevice *self, int entry) {
 	(void)self;
 	return (uint32_t)(entry - 4) <= 3;
 }
+
+/* the vtable of cPcMouse */
+const cAbstractIDeviceVtbl cPcMouse_vftable = {
+	.Delete = cPcMouse_Delete,
+	.SetDefaults = cPcMouse_SetDefaults,
+	.SetGameDefaults = cPcMouse_SetGameDefaults,
+	.GetName = cPcMouse_GetName,
+	.GetEntryLabel = cPcMouse_GetEntryLabel,
+	.GetEntryName = cPcMouse_GetEntryName,
+	.Update = cPcMouse_Update,
+	.IsReserved = cPcMouse_IsReserved,
+	.SetEntry = cPcMouse_SetEntry,
+};

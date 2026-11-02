@@ -7,7 +7,7 @@
 #include "scrap/filesys.h"
 
 void cAbstractFile_dtor(cAbstractFile *self) {
-	self->vftable = cAbstractFile_vftable;
+	self->vftable = CABSTRACTFILE_VFTABLE;
 	if (self->name) {
 		Mem_Free(self->name);
 	}
@@ -78,3 +78,23 @@ int cAbstractFile_WriteString(cAbstractFile *self, const char *s) {
 	int res = self->vftable->Write(self, &len, sizeof(len));
 	return self->vftable->Write(self, s, len) + res;
 }
+
+/* the slot Exists of a class that does only return 1 */
+int cAbstractFile_ExistsTrue(cAbstractFile *self, const char *name) {
+	(void)self;
+	(void)name;
+	return 1;
+}
+
+/* the vtable of cAbstractFile */
+const cAbstractFileVtbl cAbstractFile_vftable = {
+	.Open = cAbstractFile_Open,
+	.Exists = (void *)crt_purecall,
+	.Close = cAbstractFile_Close,
+	.Read = (void *)crt_purecall,
+	.Write = (void *)crt_purecall,
+	.Seek = (void *)crt_purecall,
+	.Tell = (void *)crt_purecall,
+	.Size = (void *)crt_purecall,
+	.Destroy = cAbstractFile_Destroy,
+};

@@ -68,7 +68,7 @@ byte cAINurse_SetState(cAI *elem, int state, ...) {
 	va_list ap;
 
 	AIChar_DebugState(c, "Demanda externa de CAMBIO de ESTADO -> %s", state);
-	if (!c->vftable->IsGroupState(&c->base.base, state) || g_CharGroup->vftable->CanChange(g_CharGroup)) {
+	if (!c->vftable->IsGroupState(&c->base.base, state) || g_CharGroup->vftable->CanChange(&g_CharGroup->base)) {
 		c->vftable->BeginChange(&c->base.base, state);
 		if (c->state == 2) {
 			self->fresh = 1;
@@ -87,7 +87,7 @@ byte cAINurse_SetStateIntern(cAI *elem, int state, ...) {
 
 	AIChar_DebugState(c, "Demanda interna de CAMBIO de ESTADO -> %s", state);
 	if (c->vftable->IsGroupState(&c->base.base, state)) {
-		g_CharGroup->vftable->AllowChange(g_CharGroup);
+		g_CharGroup->vftable->AllowChange(&g_CharGroup->base);
 	}
 	c->vftable->BeginChange(&c->base.base, state);
 	if (c->state == 2) {

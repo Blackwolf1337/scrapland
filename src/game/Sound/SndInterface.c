@@ -104,7 +104,7 @@ void cSndInterface_Free(cSndInterface *self) {
 }
 
 cSndInterface *cSndInterface_ctor(cSndInterface *self, int n) {
-	self->vftable = cSndInterface_vftable;
+	self->vftable = CSNDINTERFACE_VFTABLE;
 	if (g_SndInterfaces) {
 		g_SndInterfaces->link = &self->next;
 	}
@@ -117,7 +117,7 @@ cSndInterface *cSndInterface_ctor(cSndInterface *self, int n) {
 }
 
 void cSndInterface_dtor(cSndInterface *self) {
-	self->vftable = cSndInterface_vftable;
+	self->vftable = CSNDINTERFACE_VFTABLE;
 	if (self->next) {
 		self->next->link = self->link;
 	}

@@ -34,7 +34,8 @@ SD_SIZE(cTrafficCell, 0x18);
 typedef struct cGridElements cGridElements;
 typedef struct cGridElementsVtbl {
 	cGridElements *(*Delete)(cGridElements *self, byte flags);			/* 0x00 */
-	byte(*Add)(cGridElements *self, const vec3_t *p, const InfoTrafficNode *info);	/* 0x04 */
+	/* the element: an InfoTrafficNode, a pointer to the pos of a point of visibility in the grid of CNodesWorldSup */
+	byte(*Add)(cGridElements *self, const vec3_t *p, const void *data);		/* 0x04 */
 	byte(*GetCellAt)(cGridElements *self, const vec3_t *p, cTrafficCell **out);	/* 0x08 */
 	byte(*GetCell)(cGridElements *self, const int *x, const int *y, const int *z, cTrafficCell **out);
 	byte(*Draw)(cGridElements *self, uint32_t color);				/* 0x10 */
@@ -60,12 +61,13 @@ SD_OFFSET(cGridElements, nx, 0x24);
 SD_SIZE(cGridElements, 0x3c);
 typedef cGridElements cGridElements_InfoTrafficNode;
 
-#define CGRIDELEMENTS_VFTABLE GAME_VFTABLE(cGridElements_InfoTrafficNode_vftable)
+extern const cGridElementsVtbl cGridElements_InfoTrafficNode_vftable;
+#define CGRIDELEMENTS_VFTABLE (&cGridElements_InfoTrafficNode_vftable)
 
 cGridElements *cGridElements_ctor(cGridElements *self, const vec3_t *max, const vec3_t *min, int nx,
 	int ny, int nz);
 /* the constructor of all instances, with the vtable (rva) of the instance */
-cGridElements *cGridElements_Init(cGridElements *self, void *vftable, const vec3_t *max, const vec3_t *min, int nx,
+cGridElements *cGridElements_Init(cGridElements *self, const cGridElementsVtbl *vftable, const vec3_t *max, const vec3_t *min, int nx,
 	int ny, int nz);
 /* the cells emptied with clear and freed with their free nodes of nodeSize bytes, then the cell array */
 void cGridElements_FreeCells(cGridElements *self, void(*clear)(void *cell), uint32_t nodeSize);
@@ -73,7 +75,7 @@ cGridElements *cGridElements_Delete(cGridElements *self, byte flags);
 /* the cells freed with their nodes, then the cell array */
 void cGridElements_Free(cGridElements *self);
 /* the node into the cell of p (a CHECK out of the box); 1 */
-byte cGridElements_Add(cGridElements *self, const vec3_t *p, const InfoTrafficNode *info);
+byte cGridElements_Add(cGridElements *self, const vec3_t *p, const void *data);
 byte cGridElements_GetCellAt(cGridElements *self, const vec3_t *p, cTrafficCell **out);
 byte cGridElements_GetCell(cGridElements *self, const int *x, const int *y, const int *z,
 	cTrafficCell **out);
@@ -208,7 +210,8 @@ SD_OFFSET(CNodesTraffic, max, 0x40);
 SD_OFFSET(CNodesTraffic, errors, 0x58);
 SD_SIZE(CNodesTraffic, 0x70);
 
-#define CNODESTRAFFIC_VFTABLE GAME_VFTABLE(CNodesTraffic_vftable)
+extern const CNodesTrafficVtbl CNodesTraffic_vftable;
+#define CNODESTRAFFIC_VFTABLE (&CNodesTraffic_vftable)
 
 /* the engine variables */
 extern cGVar GVar_DistGetPVisTrafficAI;
@@ -269,6 +272,9 @@ void CNodesTraffic_Draw(CNodesTraffic *self);
 void CNodesTraffic_Analyze(CNodesTraffic *self);
 void CNodesTraffic_DrawTrack(CNodesTraffic *self, int track);
 void CNodesTraffic_BuildGrid(CNodesTraffic *self);
+void CNodesTraffic_BuildGridNop(CNodesTraffic *self);
+void CNodesTraffic_SearchRings(CNodesTraffic *self, const vec3_t *pos, int type, InfoTrafficNode *list, int max, int *count,
+	float radius, float distMin, float distMax, byte soft, byte vis);
 /* the nodes of the type between distMin and distMax from pos: the cell of pos, then the rings around it; soft goes
  * on past distMax until one is found, vis keeps only nodes the visibility graph sees with radius */
 void CNodesTraffic_FindNodes(CNodesTraffic *self, const vec3_t *pos, int type, InfoTrafficNode *list,
@@ -334,11 +340,12 @@ SD_OFFSET(CNodesTrafficInDoor, numLightAI, 0xde8);
 SD_OFFSET(CNodesTrafficInDoor, seenMediumLight, 0xf4c);
 SD_SIZE(CNodesTrafficInDoor, 0xfa4);
 
-#define CNODESTRAFFICINDOOR_VFTABLE GAME_VFTABLE(CNodesTrafficInDoor_vftable)
+extern const CNodesTrafficVtbl CNodesTrafficInDoor_vftable;
+#define CNODESTRAFFICINDOOR_VFTABLE (&CNodesTrafficInDoor_vftable)
 #define TRAFFICINDOOR_FRAME 0x0a0c20
 
 void CNodesTrafficInDoor_dtor(CNodesTrafficInDoor *self);
-CNodesTrafficInDoor *CNodesTrafficInDoor_Delete(CNodesTrafficInDoor *self, byte flags);
+CNodesTraffic *CNodesTrafficInDoor_Delete(CNodesTraffic *base, byte flags);
 /* the engine callback 2 of the indoor levels: UpdateVehicles of g_NodesTrafficInDoor; 1 */
 byte TrafficInDoor_Frame(void);
 /* the vehicles waiting for a place (state 9) put on tracks of sectors that came into view */
@@ -352,7 +359,7 @@ int CNodesTrafficInDoor_HiddenNode(CNodesTrafficInDoor *self, int track);
 /* the sector lists of the tracks */
 void CNodesTrafficInDoor_InitSectors(CNodesTrafficInDoor *self);
 void TrafficSectors_Add(cTrafficSector *list, int *num, int sector);
-void CNodesTrafficInDoor_Init(CNodesTrafficInDoor *self);
+void CNodesTrafficInDoor_Init(CNodesTraffic *elem);
 /* vtable slot 0x48, empty (the slot 0x3c is CNodesTraffic_Draw) */
 void CNodesTrafficInDoor_BuildGrid(CNodesTrafficInDoor *self);
 void TrafficSectors_SetTracks(cTrafficSector *list, int num);

@@ -14,9 +14,12 @@
 #include "scrap/scrapmain.h"
 
 #define CBINARYHEAP_VFTABLE GAME_VFTABLE(cBinaryHeap_ElemAStar_vftable)
-#define CASTARSUP_VFTABLE GAME_VFTABLE(CAStarSup_vftable)
-#define CASTAR_VFTABLE GAME_VFTABLE(CAStar_vftable)
-#define CASTAR2D_VFTABLE GAME_VFTABLE(CAStar2D_vftable)
+extern const CAStarVtbl CAStarSup_vftable;
+#define CASTARSUP_VFTABLE (&CAStarSup_vftable)
+extern const CAStarVtbl CAStar_vftable;
+#define CASTAR_VFTABLE (&CAStar_vftable)
+extern const CAStarVtbl CAStar2D_vftable;
+#define CASTAR2D_VFTABLE (&CAStar2D_vftable)
 
 cBinaryHeap *cBinaryHeap_ctor(cBinaryHeap *self, int capacity, binHeapLess_t less, binHeapEq_t equals,
 	binHeapIndex_t setIndex) {
@@ -695,7 +698,7 @@ void *CAStar2D_ctor(void *mem, CNodesWorld2D *nodes) {
 	return self;
 }
 
-static void AStar_Free(CAStarSup *self, void *vftable) {
+static void AStar_Free(CAStarSup *self, const CAStarVtbl *vftable) {
 	void *list = self->list;
 
 	self->vftable = vftable;
@@ -711,24 +714,26 @@ void CAStar_dtor(CAStar *self) {
 	AStar_Free(&self->base, CASTAR_VFTABLE);
 }
 
-CAStar *CAStar_Delete(CAStar *self, byte flags) {
+CAStarSup *CAStar_Delete(CAStarSup *elem, byte flags) {
+	CAStar *self = (CAStar *)elem;
 	AStar_Free(&self->base, CASTAR_VFTABLE);
 	if (flags & 1) {
 		operator_delete_sized(self, 0x48);
 	}
-	return self;
+	return elem;
 }
 
 void CAStar2D_dtor(CAStar2D *self) {
 	AStar_Free(&self->base, CASTAR2D_VFTABLE);
 }
 
-CAStar2D *CAStar2D_Delete(CAStar2D *self, byte flags) {
+CAStarSup *CAStar2D_Delete(CAStarSup *elem, byte flags) {
+	CAStar2D *self = (CAStar2D *)elem;
 	AStar_Free(&self->base, CASTAR2D_VFTABLE);
 	if (flags & 1) {
 		operator_delete_sized(self, 0x50);
 	}
-	return self;
+	return elem;
 }
 
 void CAStar_InitList(CAStar *self) {
@@ -770,35 +775,40 @@ void CAStar2D_DrawDebug(CAStar *self) {
 	}
 }
 
-byte CAStar_TestPath(CAStar *self, const vec3_t *a, const vec3_t *b) {
+byte CAStar_TestPath(CAStarSup *elem, const vec3_t *a, const vec3_t *b) {
+	CAStar *self = (CAStar *)elem;
 	return CNodesWorld_TestPath(self->nodes, a, b, self->base.radius, self->base.radius, NULL, 0);
 }
 
-byte CAStar2D_TestPath(CAStar2D *self, const vec3_t *a, const vec3_t *b) {
+byte CAStar2D_TestPath(CAStarSup *elem, const vec3_t *a, const vec3_t *b) {
+	CAStar2D *self = (CAStar2D *)elem;
 	return CNodesWorld2D_TestPath(self->nodes, a, b, self->base.radius, self->base.radius, self->h1, self->h2,
 		NULL);
 }
 
-void CAStar_NearestStart(CAStar *self) {
+void CAStar_NearestStart(CAStarSup *elem) {
+	CAStar *self = (CAStar *)elem;
 	vec3_t p = self->base.start;
 
 	CNodesWorld_NearestPointVis(self->nodes, &p, &self->base.start);
 }
 
-void CAStar2D_NearestStart(CAStar2D *self) {
+void CAStar2D_NearestStart(CAStarSup *elem) {
+	CAStar2D *self = (CAStar2D *)elem;
 	vec3_t p = self->base.start;
 
 	CNodesWorld2D_NearestPointVis(self->nodes, &p, &self->base.start);
 }
 
-int CAStar_FileOf(CAStar *self, const vec3_t *node) {
+int CAStar_FileOf(CAStarSup *base, const vec3_t *node) {
+	CAStar *self = (CAStar *)base;
 	CNodesWorld *nw = AS_NODES(self);
 
 	return nw->sup.vftable->FileOf(nw, (const cNWNode *)node);
 }
 
-void CAStar_OtherLinks(CAStar *self, const vec3_t *node, const vec3_t *pos, const vec3_t **list, int max,
-	int *count) {
+void CAStar_OtherLinks(CAStarSup *base, const vec3_t *node, const vec3_t *pos, const vec3_t **list, int max, int *count) {
+	CAStar *self = (CAStar *)base;
 	CNodesWorld *nw = AS_NODES(self);
 
 	nw->sup.vftable->OtherLinks(nw, (const cNWNode *)node, pos, (cNWNode **)list, max, count);
@@ -818,11 +828,13 @@ static void AStar_Points(CAStar *self, byte flat, const vec3_t *pos, const vec3_
 	}
 }
 
-void CAStar_PointsVis(CAStar *self, const vec3_t *pos, const vec3_t **list, int max, int *count) {
+void CAStar_PointsVis(CAStarSup *base, const vec3_t *pos, const vec3_t **list, int max, int *count) {
+	CAStar *self = (CAStar *)base;
 	AStar_Points(self, 0, pos, list, max, count, 0, 0);
 }
 
-void CAStar2D_PointsVis(CAStar2D *self, const vec3_t *pos, const vec3_t **list, int max, int *count) {
+void CAStar2D_PointsVis(CAStarSup *base, const vec3_t *pos, const vec3_t **list, int max, int *count) {
+	CAStar2D *self = (CAStar2D *)base;
 	AStar_Points(AStar_Common(self), 1, pos, list, max, count, 0, 0);
 }
 
@@ -838,7 +850,7 @@ static void AStar_PointsVisFile(CAStar *self, byte flat, const vec3_t *pos, cons
 	CHECK(max > 0);
 	*state = 0;
 	AStar_Points(self, flat, pos, list, max < 7 ? max : 7, count, 0, 0);
-	if (*count > 0 && CAStar_FileOf(self, *list) != file) {
+	if (*count > 0 && CAStar_FileOf(&self->base, *list) != file) {
 		*count = 0;
 		return;
 	}
@@ -847,7 +859,7 @@ static void AStar_PointsVisFile(CAStar *self, byte flat, const vec3_t *pos, cons
 	}
 	*state = 1;
 	AStar_Points(self, flat, pos, list, 1, count, 0, 1);
-	if (*count > 0 && CAStar_FileOf(self, *list) != file) {
+	if (*count > 0 && CAStar_FileOf(&self->base, *list) != file) {
 		*count = 0;
 		return;
 	}
@@ -861,7 +873,7 @@ static void AStar_PointsVisFile(CAStar *self, byte flat, const vec3_t *pos, cons
 	AStar_Points(self, flat, pos, buf, max < 20 ? max : 20, &n, 1, 2);
 	best = NULL;
 	for (int i = 0; i < n; i++) {
-		if (CAStar_FileOf(self, buf[i]) != file) {
+		if (CAStar_FileOf(&self->base, buf[i]) != file) {
 			continue;
 		}
 		const vec3_t *q = buf[i];
@@ -887,13 +899,13 @@ static void AStar_PointsVisFile(CAStar *self, byte flat, const vec3_t *pos, cons
 	}
 }
 
-void CAStar_PointsVisFile(CAStar *self, const vec3_t *pos, const vec3_t **list, int max, int *count,
-	int *state, int file) {
+void CAStar_PointsVisFile(CAStarSup *base, const vec3_t *pos, const vec3_t **list, int max, int *count, int *state, int file) {
+	CAStar *self = (CAStar *)base;
 	AStar_PointsVisFile(self, 0, pos, list, max, count, state, file);
 }
 
-void CAStar2D_PointsVisFile(CAStar2D *self, const vec3_t *pos, const vec3_t **list, int max, int *count,
-	int *state, int file) {
+void CAStar2D_PointsVisFile(CAStarSup *base, const vec3_t *pos, const vec3_t **list, int max, int *count, int *state, int file) {
+	CAStar2D *self = (CAStar2D *)base;
 	AStar_PointsVisFile(AStar_Common(self), 1, pos, list, max, count, state, file);
 }
 
@@ -937,3 +949,72 @@ void CAStar2D_GetPointsVis(void *astar, const vec3_t *pos, const vec3_t **list, 
 
 	CNodesWorld2D_GetPointsVis(self->nodes, pos, list, max, count, r, h1, h2, 0.0f, self->base.maxDist, 0, 0);
 }
+
+/* the vtable of CAStar */
+const CAStarVtbl CAStar_vftable = {
+	.Delete = CAStar_Delete,
+	.Draw = CAStarSup_Draw,
+	.GetTable = CAStarSup_GetTable,
+	.TestPath = CAStar_TestPath,
+	.NearestStart = CAStar_NearestStart,
+	.PointsVis = CAStar_PointsVis,
+	.PointsVisFile = CAStar_PointsVisFile,
+	.OtherLinks = CAStar_OtherLinks,
+	.Search = CAStarSup_Search,
+	.BuildPath = CAStarSup_BuildPath,
+	.Heuristic = CAStarSup_Heuristic,
+	.Dist = CAStarSup_Dist,
+	.GetElem = CAStarSup_GetElem,
+	.FileOf = CAStar_FileOf,
+	.AddElem = CAStarSup_AddElem,
+	.CloseAdd = CAStarSup_CloseAdd,
+	.CloseRemove = CAStarSup_CloseRemove,
+	.TableGet = CAStarSup_TableGet,
+	.Reset = CAStarSup_Reset,
+};
+
+/* the vtable of CAStar2D */
+const CAStarVtbl CAStar2D_vftable = {
+	.Delete = CAStar2D_Delete,
+	.Draw = CAStarSup_Draw,
+	.GetTable = CAStarSup_GetTable,
+	.TestPath = CAStar2D_TestPath,
+	.NearestStart = CAStar2D_NearestStart,
+	.PointsVis = CAStar2D_PointsVis,
+	.PointsVisFile = CAStar2D_PointsVisFile,
+	.OtherLinks = CAStar_OtherLinks,
+	.Search = CAStarSup_Search,
+	.BuildPath = CAStarSup_BuildPath,
+	.Heuristic = CAStarSup_Heuristic,
+	.Dist = CAStarSup_Dist,
+	.GetElem = CAStarSup_GetElem,
+	.FileOf = CAStar_FileOf,
+	.AddElem = CAStarSup_AddElem,
+	.CloseAdd = CAStarSup_CloseAdd,
+	.CloseRemove = CAStarSup_CloseRemove,
+	.TableGet = CAStarSup_TableGet,
+	.Reset = CAStarSup_Reset,
+};
+
+/* the vtable of CAStarSup */
+const CAStarVtbl CAStarSup_vftable = {
+	.Delete = CAStarSup_Delete,
+	.Draw = CAStarSup_Draw,
+	.GetTable = CAStarSup_GetTable,
+	.TestPath = (void *)crt_purecall,
+	.NearestStart = (void *)crt_purecall,
+	.PointsVis = (void *)crt_purecall,
+	.PointsVisFile = (void *)crt_purecall,
+	.OtherLinks = (void *)crt_purecall,
+	.Search = CAStarSup_Search,
+	.BuildPath = CAStarSup_BuildPath,
+	.Heuristic = CAStarSup_Heuristic,
+	.Dist = CAStarSup_Dist,
+	.GetElem = CAStarSup_GetElem,
+	.FileOf = (void *)crt_purecall,
+	.AddElem = CAStarSup_AddElem,
+	.CloseAdd = CAStarSup_CloseAdd,
+	.CloseRemove = CAStarSup_CloseRemove,
+	.TableGet = CAStarSup_TableGet,
+	.Reset = CAStarSup_Reset,
+};

@@ -76,12 +76,13 @@ void CNodesTrafficInDoor_dtor(CNodesTrafficInDoor *self) {
 	CNodesTraffic_dtor(&self->base);
 }
 
-CNodesTrafficInDoor *CNodesTrafficInDoor_Delete(CNodesTrafficInDoor *self, byte flags) {
+CNodesTraffic *CNodesTrafficInDoor_Delete(CNodesTraffic *base, byte flags) {
+	CNodesTrafficInDoor *self = (CNodesTrafficInDoor *)base;
 	CNodesTrafficInDoor_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 byte TrafficInDoor_Frame(void) {
@@ -362,7 +363,8 @@ void CNodesTrafficInDoor_InitSectors(CNodesTrafficInDoor *self) {
 	Mem_Free(pairs);
 }
 
-void CNodesTrafficInDoor_Init(CNodesTrafficInDoor *self) {
+void CNodesTrafficInDoor_Init(CNodesTraffic *elem) {
+	CNodesTrafficInDoor *self = (CNodesTrafficInDoor *)elem;
 	self->base.vftable->Load(&self->base, 1);
 	if (self->base.numTracks > 0) {
 		CNodesTrafficInDoor_InitSectors(self);
@@ -553,3 +555,31 @@ byte CNodesTrafficInDoor_PickPoint(CNodesTrafficInDoor *self, int *outType, vec3
 	}
 	return 0;
 }
+
+/* the vtable of CNodesTrafficInDoor */
+const CNodesTrafficVtbl CNodesTrafficInDoor_vftable = {
+	.Delete = CNodesTrafficInDoor_Delete,
+	.AddVehicle = CNodesTraffic_AddVehicle,
+	.RemoveVehicle = CNodesTraffic_RemoveVehicle,
+	.NumTracks = CNodesTraffic_NumTracks,
+	.NumByType = CNodesTraffic_NumByType,
+	.NumNodes = CNodesTraffic_NumNodes,
+	.GetRadius = CNodesTraffic_GetRadius,
+	.Init = CNodesTrafficInDoor_Init,
+	.Load = CNodesTraffic_Load,
+	.RandomNode = CNodesTraffic_RandomNode,
+	.GetDirs = CNodesTraffic_GetDirs,
+	.NextAway = CNodesTraffic_NextAway,
+	.PrevAway = CNodesTraffic_PrevAway,
+	.GetNode = CNodesTraffic_GetNode,
+	.GetInfo = CNodesTraffic_GetInfo,
+	.Draw = CNodesTraffic_Draw,
+	.Analyze = CNodesTraffic_Analyze,
+	.DrawTrack = CNodesTraffic_DrawTrack,
+	.BuildGrid = CNodesTraffic_BuildGridNop,
+	.FindNodes = CNodesTraffic_FindNodes,
+	.CollectCell = CNodesTraffic_CollectCell,
+	.SearchRings = CNodesTraffic_SearchRings,
+	.RandomPointNear = CNodesTraffic_RandomPointNear,
+	.RandomPointAhead = CNodesTraffic_RandomPointAhead,
+};

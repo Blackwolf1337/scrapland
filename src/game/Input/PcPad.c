@@ -66,12 +66,13 @@ void PcPad_InitPads(void) {
 	crt_atexit(PcPad_FiniPads);
 }
 
-cPcPad *cPcPad_Delete(cPcPad *self, byte flags) {
+cAbstractIDevice *cPcPad_Delete(cAbstractIDevice *elem, byte flags) {
+	cPcPad *self = (cPcPad *)elem;
 	cAbstractIDevice_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cPcPad));
 	}
-	return self;
+	return elem;
 }
 
 /* the stick inside the dead zone is 0; outside, the length from the dead zone to 1 scaled to 0..1 */
@@ -92,7 +93,8 @@ void Pad_DeadZone(float *x, float *y, float dz) {
 }
 
 /* only the bindings of its own player (or none) */
-byte cPcPad_SetEntry(cPcPad *self, int entry, int set, int player, int action, byte check) {
+byte cPcPad_SetEntry(cAbstractIDevice *elem, int entry, int set, int player, int action, byte check) {
+	cPcPad *self = (cPcPad *)elem;
 	if (player != self->index && player != -1) {
 		return 0;
 	}
@@ -211,7 +213,8 @@ void cPcPad_SetCharDefaults(cPcPad *self) {
 	Pad_Bind(self, 9, 1, 31);
 }
 
-const char *cPcPad_GetName(cPcPad *self) {
+const char *cPcPad_GetName(cAbstractIDevice *base) {
+	cPcPad *self = (cPcPad *)base;
 	switch (self->index) {
 	case 0:
 		return "Pad1";	/* "Pad1" .. "Pad4", 8 bytes apart */
@@ -227,12 +230,14 @@ const char *cPcPad_GetName(cPcPad *self) {
 	}
 }
 
-const char *cPcPad_GetEntryName(cPcPad *self, int entry) {
+const char *cPcPad_GetEntryName(cAbstractIDevice *elem, int entry) {
+	cPcPad *self = (cPcPad *)elem;
 	return self->base.vftable->GetEntryLabel(&self->base, entry);
 }
 
 /* "A" .. "DOWN"; "But13" .. "But32" for the buttons without a name, "Unknow" above */
-const char *cPcPad_GetEntryLabel(cPcPad *self, int entry) {
+const char *cPcPad_GetEntryLabel(cAbstractIDevice *base, int entry) {
+	cPcPad *self = (cPcPad *)base;
 	(void)self;
 	CHECK(entry >= 0);
 	if ((uint32_t)entry <= 0x33 && pad_labels[entry]) {
@@ -256,13 +261,14 @@ int Pad_Init(void) {
 		cInputDevNode *n = DList_NewNode(&g_InputDevices, sizeof(cInputDevNode));
 		n->dev = &p->base;
 		DList_LinkFirst(&g_InputDevices, n);
-		Con_Printf("Input device: %s initialized.\n", cPcPad_GetName(p));
-		cPcPad_SetDefaults(p);
+		Con_Printf("Input device: %s initialized.\n", cPcPad_GetName(&p->base));
+		cPcPad_SetDefaults(&p->base);
 	}
 	return 0;
 }
 
-void cPcPad_SetDefaults(cPcPad *self) {
+void cPcPad_SetDefaults(cAbstractIDevice *base) {
+	cPcPad *self = (cPcPad *)base;
 	for (uint32_t i = 0; i < sizeof(pad_defaults) / sizeof(pad_defaults[0]); i++) {
 		Pad_Bind(self, pad_defaults[i][0], pad_defaults[i][1], pad_defaults[i][2]);
 	}
@@ -274,7 +280,8 @@ void cPcPad_SetDefaults(cPcPad *self) {
  * A frame of the pad: the sticks, A types the character under the cursor, X deletes, Y ends the line. Pad input
  * switches the mouse camera helpers back on.
  */
-void cPcPad_Update(cPcPad *self, float dt) {
+void cPcPad_Update(cAbstractIDevice *elem, float dt) {
+	cPcPad *self = (cPcPad *)elem;
 	Pad_Poll(self->index);
 	float lx = (float)self->state.thumbLX / 32767.0f;
 	float ly = (float)self->state.thumbLY / -32767.0f;
@@ -373,3 +380,16 @@ byte cPcPad_IsReserved(cPcPad *self, int entry) {
 	(void)entry;
 	return 1;
 }
+
+/* the vtable of cPcPad */
+const cAbstractIDeviceVtbl cPcPad_vftable = {
+	.Delete = cPcPad_Delete,
+	.SetDefaults = cPcPad_SetDefaults,
+	.SetGameDefaults = cAbstractIDevice_SetGameDefaultsNop,
+	.GetName = cPcPad_GetName,
+	.GetEntryLabel = cPcPad_GetEntryLabel,
+	.GetEntryName = cPcPad_GetEntryName,
+	.Update = cPcPad_Update,
+	.IsReserved = cAbstractIDevice_IsReservedTrue,
+	.SetEntry = cPcPad_SetEntry,
+};

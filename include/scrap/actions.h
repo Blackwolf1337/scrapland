@@ -33,7 +33,15 @@ typedef struct cActVtbl {
 
 #define CACTCLASS_VFTABLE GAME_VFTABLE(cActClass_vftable)
 #define CACTCLASSLIST_VFTABLE GAME_VFTABLE(cActClassList_vftable)
-#define CACTCTRL_VFTABLE GAME_VFTABLE(cActCtrl_vftable)
+typedef struct cActCtrlVarVtbl {
+	void *(*Delete)(cActCtrl *self, byte flags);				/* 0x00 */
+	byte(*VarI)(cActCtrl *self, const char *name, int *i, int set);		/* 0x04 */
+	byte(*VarF)(cActCtrl *self, const char *name, double *d, int set);		/* 0x08 */
+	byte(*VarS)(cActCtrl *self, const char *name, char **s, int set);		/* 0x0c */
+	byte(*VarV)(cActCtrl *self, const char *name, double *x, double *y, double *z, int set); /* 0x10 */
+} cActCtrlVarVtbl;
+extern const cActCtrlVarVtbl cActCtrl_vftable;
+#define CACTCTRL_VFTABLE (&cActCtrl_vftable)
 #define CACTIONMOVE_VFTABLE GAME_VFTABLE(cActionMove_vftable)
 
 #define ACT_LAYERS 4			/* the layers of a controller, the channels of the model */
@@ -203,7 +211,7 @@ SD_SIZE(cActHead, 0x18);
 
 /* the action controller of an entity (0x7c bytes) */
 struct cActCtrl {
-	const cActVtbl *vftable;		/* 0x00 */
+	const cActCtrlVarVtbl *vftable;		/* 0x00 */
 	cEntity *owner;			/* 0x04 */
 	cActClass *cls;			/* 0x08 */
 	cAction *defLoop;		/* 0x0c layer 0 goes back to it */
@@ -268,7 +276,7 @@ void ActClassList_Init(void);
  * callers declared them first. */
 cActCtrl *cActCtrl_ctor(cActCtrl *self, cEntity *owner, cActClass *cls);
 void cActCtrl_dtor(cActCtrl *self);
-cActCtrl *cActCtrl_Delete(cActCtrl *self, byte flags);
+void *cActCtrl_Delete(cActCtrl *self, byte flags);
 /* the model command (CGameModel_AnimCmd) on the model of the owner */
 void cActCtrl_AnimCmd(cActCtrl *self, const char *cmd);
 /* the model of the class on the owner with the animations of the actions */
@@ -278,9 +286,9 @@ void cActCtrl_Update(cActCtrl *self, float dt);
 /* the events of the layer chan up to t (FLT_MAX from the end of the action on); silent skips the discardable ones
  * and logs with Con_Verbosef */
 void cActCtrl_FireEvents(cActCtrl *self, int chan, float t, byte silent);
-byte cActCtrl_VarI(cActCtrl *self, const char *name, int *i, byte set);
+byte cActCtrl_VarI(cActCtrl *self, const char *name, int *i, int set);
 byte cActCtrl_VarF(cActCtrl *self, const char *name, double *d, byte set);
-byte cActCtrl_VarS(cActCtrl *self, const char *name, char **s, byte set);
+byte cActCtrl_VarS(cActCtrl *self, const char *name, char **s, int set);
 byte cActCtrl_VarV(cActCtrl *self, const char *name, double *x, double *y, double *z, byte set);
 /* the name of the action of layer i, "" when it does not run */
 const char *cActCtrl_GetActionName(void *ctrl, int i);
@@ -311,6 +319,8 @@ void cActHead_Set(cActHead *self, const float *to);
 void cActHead_Blend(cActHead *self, float t);
 /* the update of DinaShip classes: the parts of the ship (Motor, Rudder, Flaps, ...) by its state */
 void cActCtrl_UpdateShip(cActCtrl *self, float dt);
+byte cActCtrl_VarFFalse(cActCtrl *self, const char *name, double *d, int set);
+byte cActCtrl_VarVFalse(cActCtrl *self, const char *name, double *x, double *y, double *z, int set);
 
 /* Actions/Actions.cpp (src/game/Actions/Actions.c) */
 cAction *cAction_ctor(cAction *self, cActClass *parent, const char *name);

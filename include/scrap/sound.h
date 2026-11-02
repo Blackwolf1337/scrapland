@@ -144,8 +144,10 @@ typedef struct cSoundStrItem {
 } cSoundStrItem;
 SD_SIZE(cSoundStrItem, 0x2c);
 
-#define CSoundSys_vftable ((const CSoundSysVtbl *)GAME_VFTABLE(CSoundSys_vftable))
-#define CSoundXBox_vftable ((const CSoundSysVtbl *)GAME_VFTABLE(CSoundXBox_vftable))
+extern const CSoundSysVtbl CSoundSys_vftable;
+#define CSOUNDSYS_VFTABLE (&CSoundSys_vftable)
+extern const CSoundSysVtbl CSoundXBox_vftable;
+#define CSOUNDXBOX_VFTABLE (&CSoundXBox_vftable)
 
 extern CSoundSys *g_pSound;
 
@@ -204,10 +206,31 @@ void cSound_SetPosVel(cSound *self, const vec3_t *pos, const vec3_t *vel);
 
 CSoundSys *CSoundSys_ctor(CSoundSys *self);
 void CSoundSys_dtor(CSoundSys *self);
-int CSoundSys_InitFmod(CSoundSys *self);
+void CSoundSys_InitFmod(CSoundSys *self);
 void CSoundSys_Close(CSoundSys *self);
 void CSoundSys_Nop(CSoundSys *self);
 void CSoundSys_CallVf1c(CSoundSys *self);
+void CSoundSys_SetVolume(CSoundSys *self, const char *name, int volume);
+void CSoundSys_SetPan(CSoundSys *self, const char *name, int pan);
+void CSoundSys_SetFreq(CSoundSys *self, const char *name, float freq);
+void CSoundSys_SetLoop(CSoundSys *self, const char *name, byte loop);
+void CSoundSys_SetPrio(CSoundSys *self, const char *name, byte prio);
+void CSoundSys_ResetListeners(CSoundSys *self);
+void CSoundSys_SetListener(CSoundSys *self, int id, const vec3_t *pos, const vec3_t *ang, const vec3_t *vel);
+void CSoundSys_Compute3D(CSoundSys *self, cSoundDesc *d, const vec3_t *pos, const vec3_t *vel, byte doppler);
+void CSoundSys_SetMusic(CSoundSys *self, const char *name);
+void CSoundSys_StopMusic(CSoundSys *self);
+void CSoundSys_SetMusicVolume(CSoundSys *self, float volume);
+void CSoundSys_GetSoundName(CSoundSys *self, const char *file, char *out, int size);
+int CSoundSys_OpenVoice(CSoundSys *self, const char *name, int voice, int arg);
+int CSoundSys_PlayVoice(CSoundSys *self, int voice);
+int CSoundSys_StopVoice(CSoundSys *self, int voice);
+byte CSoundSys_VoiceRemain(CSoundSys *self, int voice, float *remain);
+int CSoundSys_SetVoiceVolume(CSoundSys *self, int voice, float volume);
+int CSoundSys_SetVoiceParam(CSoundSys *self, int voice, float v);
+int CSoundSys_SetVoiceString(CSoundSys *self, int voice, const char *text);
+int CSoundSys_GetVoiceString(CSoundSys *self, int voice, char *buf, int size);
+int CSoundSys_VoiceUnused(CSoundSys *self, int voice);
 void Sound_Nop(void);
 
 /*
@@ -289,7 +312,7 @@ typedef struct cSndInterface {
 } cSndInterface;
 SD_SIZE(cSndInterface, 0x1c);
 
-#define cSndInterface_vftable ((const void *)GAME_VFTABLE(cSndInterface_vftable))
+#define CSNDINTERFACE_VFTABLE GAME_VFTABLE(cSndInterface_vftable)
 extern cSndInterface *g_SndInterfaces;
 
 /* Sound/SndInterface.cpp (src/game/Sound/SndInterface.c) */

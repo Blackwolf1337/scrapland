@@ -46,7 +46,8 @@
 #include "scrap/misc.h"
 #include "scrap/platform.h"
 
-#define CMOTORAPP_VFTABLE GAME_VFTABLE(CEngineApp_vftable)
+extern const CD3DApplicationVtbl CEngineApp_vftable;
+#define CMOTORAPP_VFTABLE (&CEngineApp_vftable)
 #define CNULLINPUT_VFTABLE GAME_VFTABLE(CNullInput_vftable)
 #define CNULLINPUT_SIZE 0x114
 
@@ -162,7 +163,8 @@ void Engine3D_Shutdown(void) {
 }
 
 /* OneTimeSceneInit: the init callback of the game, the input, the fonts and trails, the global scene */
-int CEngineApp_OneTimeSceneInit(CEngineApp *self) {
+int CEngineApp_OneTimeSceneInit(CD3DApplication *base) {
+	CEngineApp *self = (CEngineApp *)base;
 	void *mem;
 
 	g_E3DCmdProc = (void *)E3D_Command;
@@ -189,7 +191,8 @@ int CEngineApp_OneTimeSceneInit(CEngineApp *self) {
 }
 
 /* FrameMove: the clock of the engine (real and game time, fps once a second) */
-int CEngineApp_FrameMove(CEngineApp *self) {
+int CEngineApp_FrameMove(CD3DApplication *elem) {
+	CEngineApp *self = (CEngineApp *)elem;
 	float t = self->base.time, d;
 
 	g_FrameDelta = t - g_LastTime;
@@ -322,7 +325,8 @@ int CEngineApp_ResetDevice(CEngineApp *self) {
 
 /* Render (vtable 0x18): the scene into the target "Scene", the 2D and the frame callback of the game on top, the
  * screenshot of AutoScreenShot, the frame limiter; 1 when the game callback asks to quit or the reset failed */
-int CEngineApp_Render(CEngineApp *self) {
+int CEngineApp_Render(CD3DApplication *elem) {
+	CEngineApp *self = (CEngineApp *)elem;
 	if (!Engine_FrameDue(&self->base)) {
 		return 0;
 	}
@@ -413,7 +417,8 @@ int CEngineApp_Render(CEngineApp *self) {
 }
 
 /* DeleteDeviceObjects: the device objects of the input, the textures, materials, shadows, trails and the world */
-int CEngineApp_DeleteDeviceObjects(CEngineApp *self) {
+int CEngineApp_DeleteDeviceObjects(CD3DApplication *base) {
+	CEngineApp *self = (CEngineApp *)base;
 	((void(*)(void *))(*(void ***)g_Input)[2])(g_Input);
 	Table_Free(&self->table);
 	Texture_ReleaseAllD3D();
@@ -428,7 +433,8 @@ int CEngineApp_DeleteDeviceObjects(CEngineApp *self) {
 }
 
 /* FinalCleanup: the global scene, the release callback of the game, everything of the engine */
-int CEngineApp_FinalCleanup(CEngineApp *self) {
+int CEngineApp_FinalCleanup(CD3DApplication *base) {
+	CEngineApp *self = (CEngineApp *)base;
 	CGraphic2DList *ov;
 
 	Engine_ReleaseScene(self);
@@ -466,14 +472,16 @@ int CEngineApp_FinalCleanup(CEngineApp *self) {
 }
 
 /* ConfirmDevice: no device with the pure behaviour 0x10 */
-int CEngineApp_ConfirmDevice(CEngineApp *self, D3DCaps8 *caps, uint32_t behavior, int format) {
+int CEngineApp_ConfirmDevice(CD3DApplication *base, D3DCaps8 *caps, uint32_t behavior, uint32_t format) {
+	CEngineApp *self = (CEngineApp *)base;
 	(void)self;
 	(void)caps;
 	(void)format;
 	return (byte)(behavior & 0x10) ? (int)0x80004005 : 0;
 }
 
-int CEngineApp_RestoreDeviceObjects(CEngineApp *self) {
+int CEngineApp_RestoreDeviceObjects(CD3DApplication *base) {
+	CEngineApp *self = (CEngineApp *)base;
 	(void)self;
 	g_EngineFrameCount++;
 	return 0;
@@ -813,7 +821,8 @@ extern int g_MouseExcl;		/* [dinput] raton_excl */
 #define ENGINE_BUILD 0x15f8
 
 /* InitDeviceObjects: the device objects of the engine, the cameras of the scene, the title, the input on the window */
-int CEngineApp_InitDeviceObjects(CEngineApp *self) {
+int CEngineApp_InitDeviceObjects(CD3DApplication *elem) {
+	CEngineApp *self = (CEngineApp *)elem;
 	void *dev = self->base.device;
 	char title[0x100];
 	int hr;
@@ -906,3 +915,21 @@ void CNullInput_Nothing4(CNullInput *self, int a, int b, int c, int d) {
 	(void)c;
 	(void)d;
 }
+
+/* the vtable of CEngineApp */
+const CD3DApplicationVtbl CEngineApp_vftable = {
+	.AdjustWindowForChange = CD3DApp_AdjustWindowForChange,
+	.ConfirmDevice = CEngineApp_ConfirmDevice,
+	.OneTimeSceneInit = CEngineApp_OneTimeSceneInit,
+	.InitDeviceObjects = CEngineApp_InitDeviceObjects,
+	.RestoreDeviceObjects = CEngineApp_RestoreDeviceObjects,
+	.FrameMove = CEngineApp_FrameMove,
+	.Render = CEngineApp_Render,
+	.InvalidateDeviceObjects = CD3DApplication_Nothing,
+	.DeleteDeviceObjects = CEngineApp_DeleteDeviceObjects,
+	.FinalCleanup = CEngineApp_FinalCleanup,
+	.Create = CD3DApp_Create,
+	.Run = NULL,
+	.msgProc = NULL,
+	.Pause = CD3DApp_Pause,
+};

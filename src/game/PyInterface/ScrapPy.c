@@ -1161,7 +1161,7 @@ PyObject *Scrap_FileExist(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	cFilePack_ctor(&pack);
-	PyObject *r = Py_BuildValue("i", cFilePack_Exists(&pack, name));
+	PyObject *r = Py_BuildValue("i", cFilePack_Exists(&pack.file.base, name));
 	cFilePack_dtor(&pack);
 	return r;
 }

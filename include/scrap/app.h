@@ -12,8 +12,10 @@
 #include "scrap/pyfunction.h"
 #include "scrap/scrap.h"
 
-#define g_CAppVftable ((const CAppVtbl *)GAME_VFTABLE(CApp_vftable))
-#define g_CWinAppVftable ((const CAppVtbl *)GAME_VFTABLE(CWinApp_vftable))
+extern const CAppVtbl CApp_vftable;
+#define g_CAppVftable (&CApp_vftable)
+extern const CAppVtbl CWinApp_vftable;
+#define g_CWinAppVftable (&CWinApp_vftable)
 
 /* engine variables (Gvars) */
 extern cGVar GVar_iLoadMsgString;
@@ -119,28 +121,28 @@ byte Loading_Draw(void);
 /* WinApp.c */
 CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char *cmdLine, int nCmdShow);
 void CWinApp_dtor(CWinApp *self);
-CWinApp *CWinApp_Delete(CWinApp *self, byte flags);
-int CWinApp_ConsoleAdd(CWinApp *self, const char *text, uint32_t color);
-int CWinApp_ShowConsole(CWinApp *self, byte show);
+CApp *CWinApp_Delete(CApp *base, byte flags);
+void CWinApp_ConsoleAdd(CApp *base, const char *text, uint32_t color);
+void CWinApp_ShowConsole(CApp *base, byte show);
 byte CWinApp_CreateMainWindow(CWinApp *self);
-const char *CWinApp_DebugInput(CWinApp *self, const char *prompt);
-void CWinApp_InitDedicated(CWinApp *self);
-void CWinApp_Shutdown(CWinApp *self);
-void CWinApp_Exit(CWinApp *self);
-void CWinApp_ResetParams(CWinApp *self);
+const char *CWinApp_DebugInput(CApp *base, const char *prompt);
+void CWinApp_InitDedicated(CApp *base);
+void CWinApp_Shutdown(CApp *elem);
+void CWinApp_Exit(CApp *base);
+void CWinApp_ResetParams(CApp *elem);
 int CWinApp_HasArg(CWinApp *self, const char *name);
 /* the path of the game into buf */
 void App_GetPath(char *buf, int size);
 void *App_GetHInstance(void);
-double CWinApp_GetTime(CWinApp *self);
+double CWinApp_GetTime(CApp *base);
 void *App_GetHWnd(void);
-byte CWinApp_Init(CWinApp *self);
-byte CWinApp_Frame(CWinApp *self);
+byte CWinApp_Init(CApp *elem);
+byte CWinApp_Frame(CApp *elem);
 void ConsoleWin_Add(const char *text, uint32_t color);
 void App_GetConfigDir(char *buf, int size);
-byte CWinApp_ParseParam(CWinApp *self, const char *param, const char *ext);
-byte CWinApp_RunApp(CWinApp *self, const char *exe, const char *cmdLine, int arg);
-byte CWinApp_IsDedicatedWin(CWinApp *self);
+byte CWinApp_ParseParam(CApp *elem, const char *param, const char *ext);
+byte CWinApp_RunApp(CApp *base, const char *exe, const char *cmdLine, int arg);
+byte CWinApp_IsDedicatedWin(CApp *base);
 int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow);
 
 /* C functions declared only in their files */

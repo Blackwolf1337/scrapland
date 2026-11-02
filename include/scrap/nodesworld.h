@@ -291,7 +291,8 @@ SD_OFFSET(CNodesWorld, hitFrom, 0x3c0);
 SD_OFFSET(CNodesWorld, tris, 0x3d8);
 SD_SIZE(CNodesWorld, 0x3f0);
 
-#define CNODESWORLD_VFTABLE GAME_VFTABLE(CNodesWorld_vftable)
+extern const CNodesWorldVtbl CNodesWorld_vftable;
+#define CNODESWORLD_VFTABLE (&CNodesWorld_vftable)
 
 /* the globals of the module */
 extern cGVar GVar_ShowTestCanGoAI;

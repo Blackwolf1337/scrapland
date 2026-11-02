@@ -118,12 +118,12 @@ void PackEntries_Clear(cPackEntryList *list);
 void PackIndexTable_Clear(HashTable *self);
 cFilePack *cFilePack_ctor(cFilePack *self);
 void cFilePack_dtor(cFilePack *self);
-int cFilePack_Open(cFilePack *self, const char *name, uint32_t mode);
-int cFilePack_Exists(cFilePack *self, const char *name);
-int cFilePack_Close(cFilePack *self);
-int cFilePack_Read(cFilePack *self, void *dst, int size);
-int cFilePack_Write(cFilePack *self, const void *src, int size);
-int cFilePack_Size(cFilePack *self);
+int cFilePack_Open(cAbstractFile *elem, const char *name, uint32_t mode);
+int cFilePack_Exists(cAbstractFile *base, const char *name);
+int cFilePack_Close(cAbstractFile *base);
+int cFilePack_Read(cAbstractFile *elem, void *dst, int size);
+int cFilePack_Write(cAbstractFile *base, const void *src, int size);
+int cFilePack_Size(cAbstractFile *base);
 
 /* 1 unless the file list is being recorded */
 int PackLog_Closed(void);
@@ -135,7 +135,9 @@ int PackLog_Add(const char *name);
 byte Pack_Open(const char *name, const char *dir, size_t bufSize);
 int Pack_Extract(const char *dir);
 
-#define cFile2_vftable ((const cAbstractFileVtbl *)GAME_VFTABLE(cFile2_vftable))
-#define cFilePack_vftable ((const cAbstractFileVtbl *)GAME_VFTABLE(cFilePack_vftable))
+extern const cAbstractFileVtbl cFile2_vftable;
+#define CFILE2_VFTABLE (&cFile2_vftable)
+extern const cAbstractFileVtbl cFilePack_vftable;
+#define CFILEPACK_VFTABLE (&cFilePack_vftable)
 
 #endif

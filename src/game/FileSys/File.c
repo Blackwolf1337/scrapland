@@ -8,26 +8,28 @@
 enum { CRT_SEEK_SET = 0, CRT_SEEK_END = 2 };
 
 void cFile_dtor(cFile *self) {
-	self->base.vftable = cFile_vftable;
+	self->base.vftable = CFILE_VFTABLE;
 	if (self->f) {
 		crt_fclose(self->f);
 	}
 	cAbstractFile_dtor(&self->base);
 }
 
-cFile *cFile_Destroy(cFile *self, int flags) {
+cAbstractFile *cFile_Destroy(cAbstractFile *base, int flags) {
+	cFile *self = (cFile *)base;
 	cFile_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 /*
  * Always 1: a file that does not open only logs "File could not be opened" and leaves f NULL. An unknown access
  * mode is a failed CHECK; the original then passes the mode number as the fopen mode string.
  */
-int cFile_Open(cFile *self, const char *name, uint32_t mode) {
+int cFile_Open(cAbstractFile *elem, const char *name, uint32_t mode) {
+	cFile *self = (cFile *)elem;
 	const char *m;
 
 	cAbstractFile_Open(&self->base, name, mode);
@@ -61,12 +63,14 @@ int cFile_Open(cFile *self, const char *name, uint32_t mode) {
 	return 1;
 }
 
-int cFile_Exists(cFile *self, const char *name) {
+int cFile_Exists(cAbstractFile *base, const char *name) {
+	cFile *self = (cFile *)base;
 	(void)self;
 	return File_Access(name, 0) == 0;
 }
 
-int cFile_Close(cFile *self) {
+int cFile_Close(cAbstractFile *elem) {
+	cFile *self = (cFile *)elem;
 	if (cAbstractFile_Close(&self->base)) {
 		int res = crt_fclose(self->f);
 		self->f = NULL;
@@ -76,31 +80,36 @@ int cFile_Close(cFile *self) {
 	return 0;
 }
 
-int cFile_Read(cFile *self, void *dst, int size) {
+int cFile_Read(cAbstractFile *base, void *dst, int size) {
+	cFile *self = (cFile *)base;
 	CHECK(self->f);
 	int n = (int)crt_fread(dst, 1, size, self->f);
 	CHECK(n == size);
 	return n;
 }
 
-int cFile_Write(cFile *self, const void *src, int size) {
+int cFile_Write(cAbstractFile *base, const void *src, int size) {
+	cFile *self = (cFile *)base;
 	CHECK(self->f);
 	int n = (int)crt_fwrite(src, 1, size, self->f);
 	CHECK(n == size);
 	return n;
 }
 
-int cFile_Seek(cFile *self, int pos) {
+int cFile_Seek(cAbstractFile *base, int pos) {
+	cFile *self = (cFile *)base;
 	CHECK(self->f);
 	return crt_fseek(self->f, pos, CRT_SEEK_SET) == 0 ? pos : -1;
 }
 
-int cFile_Tell(cFile *self) {
+int cFile_Tell(cAbstractFile *base) {
+	cFile *self = (cFile *)base;
 	CHECK(self->f);
 	return crt_ftell(self->f);
 }
 
-int cFile_Size(cFile *self) {
+int cFile_Size(cAbstractFile *base) {
+	cFile *self = (cFile *)base;
 	CHECK(self->f);
 	long pos = crt_ftell(self->f);
 	crt_fseek(self->f, 0, CRT_SEEK_END);

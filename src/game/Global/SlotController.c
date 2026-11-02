@@ -7,7 +7,8 @@
 #include "scrap/mathlib.h"
 #include "scrap/slotcontroller.h"
 
-#define cSlotController_vftable ((const cSlotControllerVtbl *)GAME_VFTABLE(cSlotController_vftable))
+extern const cSlotControllerVtbl cSlotController_vftable;
+#define CSLOTCONTROLLER_VFTABLE (&cSlotController_vftable)
 #define g_SlotEpsilon GAME_GLOBAL(float, g_SlotEpsilon)	/* 0.001 */
 
 /* rand() of the exe as a double in [0, 1] times range */
@@ -23,7 +24,7 @@ static void cSlotController_Start(cSlotController *self, float interval) {
 }
 
 cSlotController *cSlotController_ctor(cSlotController *self, float interval) {
-	self->vftable = cSlotController_vftable;
+	self->vftable = CSLOTCONTROLLER_VFTABLE;
 	self->minDiff = interval;
 	self->interval = interval;
 	cSlotController_Start(self, interval);
@@ -36,7 +37,8 @@ void cSlotController_Next(cSlotController *self) {
 	self->time += t;
 }
 
-void cRndSlotController_Next(cRndSlotController *self) {
+void cRndSlotController_Next(cSlotController *elem) {
+	cRndSlotController *self = (cRndSlotController *)elem;
 	self->base.time += self->base.interval;
 	float lo = self->base.minDiff, hi = self->maxDiff;
 	self->base.interval = (float)(RandRange(hi - lo) + (double)lo);
@@ -77,3 +79,13 @@ byte cSlotController_FireReset(cSlotController *self, float *out) {
 	}
 	return 0;
 }
+
+/* the vtable of cSlotController */
+const cSlotControllerVtbl cSlotController_vftable = {
+	.Next = cSlotController_Next,
+};
+
+/* the vtable of cRndSlotController */
+const cSlotControllerVtbl cRndSlotController_vftable = {
+	.Next = cRndSlotController_Next,
+};

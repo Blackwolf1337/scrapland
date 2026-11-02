@@ -85,7 +85,7 @@ byte cAIBank_SetState(cAI *elem, int state, ...) {
 		self->money = WChar(c->ent)->money;
 		state = 7;
 	}
-	if (!c->vftable->IsGroupState(&c->base.base, state) || g_CharGroup->vftable->CanChange(g_CharGroup)) {
+	if (!c->vftable->IsGroupState(&c->base.base, state) || g_CharGroup->vftable->CanChange(&g_CharGroup->base)) {
 		c->vftable->BeginChange(&c->base.base, state);
 	}
 	va_start(ap, state);
@@ -101,7 +101,7 @@ byte cAIBank_SetStateIntern(cAI *elem, int state, ...) {
 
 	AIChar_DebugState(c, "Demanda interna de CAMBIO de ESTADO -> %s", state);
 	if (c->vftable->IsGroupState(&c->base.base, state)) {
-		g_CharGroup->vftable->AllowChange(g_CharGroup);
+		g_CharGroup->vftable->AllowChange(&g_CharGroup->base);
 	}
 	if (state == 2) {
 		self->money = WChar(c->ent)->money;

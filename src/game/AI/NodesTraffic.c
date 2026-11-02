@@ -42,7 +42,7 @@ static int Grid_Outside(const cGridElements *self, const vec3_t *p) {
 		p->z > self->max.z || p->z < self->min.z;
 }
 
-cGridElements *cGridElements_Init(cGridElements *self, void *vftable, const vec3_t *max, const vec3_t *min, int nx,
+cGridElements *cGridElements_Init(cGridElements *self, const cGridElementsVtbl *vftable, const vec3_t *max, const vec3_t *min, int nx,
 	int ny, int nz) {
 	self->vftable = vftable;
 	CHECK((max->x >= min->x) && (max->y >= min->y) && (max->z >= min->z) && (nx > 0) && (ny > 0) && (nz > 0));
@@ -102,7 +102,8 @@ cGridElements *cGridElements_Delete(cGridElements *self, byte flags) {
 	return self;
 }
 
-byte cGridElements_Add(cGridElements *self, const vec3_t *p, const InfoTrafficNode *info) {
+byte cGridElements_Add(cGridElements *self, const vec3_t *p, const void *data) {
+	const InfoTrafficNode *info = data;
 	CHECK(!((p->x > self->max.x) || (p->x < self->min.x) || (p->y > self->max.y) || (p->y < self->min.y) ||
 		(p->z > self->max.z) || (p->z < self->min.z)));
 	int i = self->vftable->CellIndex(self, p);
@@ -1230,3 +1231,51 @@ void CNodesTraffic_Analyze(CNodesTraffic *self) {
 	}
 	self->vftable->Load(self, 1);
 }
+
+/* the slot BuildGrid of a class that does nothing there */
+void CNodesTraffic_BuildGridNop(CNodesTraffic *self) {
+	(void)self;
+}
+
+/* the vtable of CNodesTraffic */
+const CNodesTrafficVtbl CNodesTraffic_vftable = {
+	.Delete = CNodesTraffic_Delete,
+	.AddVehicle = CNodesTraffic_AddVehicle,
+	.RemoveVehicle = CNodesTraffic_RemoveVehicle,
+	.NumTracks = CNodesTraffic_NumTracks,
+	.NumByType = CNodesTraffic_NumByType,
+	.NumNodes = CNodesTraffic_NumNodes,
+	.GetRadius = CNodesTraffic_GetRadius,
+	.Init = CNodesTraffic_Init,
+	.Load = CNodesTraffic_Load,
+	.RandomNode = CNodesTraffic_RandomNode,
+	.GetDirs = CNodesTraffic_GetDirs,
+	.NextAway = CNodesTraffic_NextAway,
+	.PrevAway = CNodesTraffic_PrevAway,
+	.GetNode = CNodesTraffic_GetNode,
+	.GetInfo = CNodesTraffic_GetInfo,
+	.Draw = CNodesTraffic_Draw,
+	.Analyze = CNodesTraffic_Analyze,
+	.DrawTrack = CNodesTraffic_DrawTrack,
+	.BuildGrid = CNodesTraffic_BuildGrid,
+	.FindNodes = CNodesTraffic_FindNodes,
+	.CollectCell = CNodesTraffic_CollectCell,
+	.SearchRings = CNodesTraffic_SearchRings,
+	.RandomPointNear = CNodesTraffic_RandomPointNear,
+	.RandomPointAhead = CNodesTraffic_RandomPointAhead,
+};
+
+/* the vtable of cGridElements_InfoTrafficNode */
+const cGridElementsVtbl cGridElements_InfoTrafficNode_vftable = {
+	.Delete = cGridElements_Delete,
+	.Add = cGridElements_Add,
+	.GetCellAt = cGridElements_GetCellAt,
+	.GetCell = cGridElements_GetCell,
+	.Draw = cGridElements_Draw,
+	.CellCoords = cGridElements_CellCoords,
+	.GetDivs = cGridElements_GetDivs,
+	.GetCellSize = cGridElements_GetCellSize,
+	.IsInside = cGridElements_IsInside,
+	.Free = cGridElements_Free,
+	.CellIndex = cGridElements_CellIndex,
+};

@@ -110,15 +110,17 @@ void CNodesWorld2D_dtor(CNodesWorld2D *self) {
 	CNodesWorldSup_dtor(w);
 }
 
-CNodesWorld2D *CNodesWorld2D_Delete(CNodesWorld2D *self, byte flags) {
+CNodesWorld *CNodesWorld2D_Delete(CNodesWorld *base, byte flags) {
+	CNodesWorld2D *self = (CNodesWorld2D *)base;
 	CNodesWorld2D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
-byte CNodesWorld2D_LoadGraph(CNodesWorld2D *self) {
+byte CNodesWorld2D_LoadGraph(CNodesWorld *base) {
+	CNodesWorld2D *self = (CNodesWorld2D *)base;
 	char path[0x100];
 
 	Con_Printf("Loading Graph 2D AI...\n");
@@ -145,10 +147,11 @@ static void NW2D_WriteGround(CNodesWorld2D *self, cFilePack *f, const vec3_t *p)
 		Con_FatalErrorf("ERROR AI - PROBLEMA PUNTO INVALIDO GRAFO 2D: %f %f %f\n", (double)p->x, (double)p->y,
 			(double)p->z);
 	}
-	cFilePack_Write(f, &g, sizeof(g));
+	cFilePack_Write(&f->file.base, &g, sizeof(g));
 }
 
-byte CNodesWorld2D_SavePath(CNodesWorld2D *self) {
+byte CNodesWorld2D_SavePath(CNodesWorld *base) {
+	CNodesWorld2D *self = (CNodesWorld2D *)base;
 	CNodesWorld *w = NW2D_SUP(self);
 	char path[0x100];
 	cFilePack f;
@@ -158,13 +161,13 @@ byte CNodesWorld2D_SavePath(CNodesWorld2D *self) {
 	NW_LevelPath(path, w, "/AI/Path2DAI.pth");
 	crt_chmod(path, 0x180);
 	cFilePack_ctor(&f);
-	if (!cFilePack_Open(&f, path, 6)) {
+	if (!cFilePack_Open(&f.file.base, path, 6)) {
 		Con_Bluef("ERROR AI: File Path AI no abierto.\n");
 		CHECK(!"CNodesWorld2D_SavePath_File_Path_Not_Open");
 		ok = 0;
 	} else {
 		int n = w->sup.points.count;
-		cFilePack_Write(&f, &n, 4);
+		cFilePack_Write(&f.file.base, &n, 4);
 		cNWPointNode *p = w->sup.points.iter = w->sup.points.head;
 		while (p) {
 			NW2D_WriteGround(self, &f, &p->pos);
@@ -176,7 +179,7 @@ byte CNodesWorld2D_SavePath(CNodesWorld2D *self) {
 		p = w->sup.points.iter = w->sup.points.head;
 		while (p) {
 			int links = p->links.count;
-			cFilePack_Write(&f, &links, 4);
+			cFilePack_Write(&f.file.base, &links, 4);
 			cNWIntNode *l = p->links.iter = p->links.head;
 			while (l) {
 				NW2D_WriteGround(self, &f, l->data);
@@ -190,7 +193,7 @@ byte CNodesWorld2D_SavePath(CNodesWorld2D *self) {
 				break;
 			}
 		}
-		if (!cFilePack_Close(&f)) {
+		if (!cFilePack_Close(&f.file.base)) {
 			Con_Bluef("ERROR AI: File Path AI no cerrado.\n");
 			CHECK(!"CNodesWorld2D_SavePath_File_Path_Not_Closed");
 			ok = 0;
@@ -202,7 +205,8 @@ byte CNodesWorld2D_SavePath(CNodesWorld2D *self) {
 	return ok;
 }
 
-void CNodesWorld2D_ClearLists(CNodesWorld2D *self) {
+void CNodesWorld2D_ClearLists(CNodesWorld *base) {
+	CNodesWorld2D *self = (CNodesWorld2D *)base;
 	CNodesWorld *w = NW2D_SUP(self);
 
 	DListVec3_Clear(&w->sup.extraPoints);
@@ -1535,3 +1539,47 @@ static int NW2D_LinkFree(CNodesWorld *w, const vec3_t *q, int index) {
 byte CNodesWorld2D_UnreachableFree(CNodesWorld2D *self, const vec3_t *from, const vec3_t *to, int index) {
 	return NWSup_UnreachableBy(NW2D_SUP(self), from, to, index, NW2D_LinkFree);
 }
+
+/* the vtable of CNodesWorld2D */
+const CNodesWorldVtbl CNodesWorld2D_vftable = {
+	.Delete = CNodesWorld2D_Delete,
+	.GetBox = CNodesWorldSup_GetBox,
+	.LoadFiles = CNodesWorldSup_LoadGraph,
+	.LoadGraph = CNodesWorld2D_LoadGraph,
+	.Create = CNodesWorldSup_Create,
+	.FileOf = CNodesWorldSup_FileOf,
+	.CommonFile = CNodesWorldSup_CommonFile,
+	.SnapPos = CNodesWorldSup_SnapPos,
+	.OtherLinks = CNodesWorldSup_OtherLinks,
+	.IsCreated = CNodesWorldSup_IsCreated,
+	.LastNodePos = CNodesWorldSup_LastNodePos,
+	.GetVisPoint = CNodesWorldSup_GetVisPoint,
+	.NumVisPoints = CNodesWorldSup_NumVisPoints,
+	.GetMaxVisDist = CNodesWorldSup_GetMaxVisDist,
+	.InGrid = CNodesWorldSup_InGrid,
+	.SavePath = CNodesWorld2D_SavePath,
+	.CheckBuffer = CNodesWorldSup_CheckBuffer,
+	.BuildGrid = CNodesWorldSup_BuildGrid,
+	.BufferIndex = CNodesWorldSup_BufferIndex,
+	.BufferPos = CNodesWorldSup_BufferPos,
+	.GetInfoNodes = CNodesWorldSup_GetInfoNodes,
+	.AddVis = CNodesWorldSup_AddVis,
+	.Hash = CNodesWorldSup_Hash,
+	.ReleaseVis = CNodesWorldSup_ReleaseVis,
+	.LinkPoints = CNodesWorldSup_LinkPoints,
+	.LinkBack = CNodesWorldSup_LinkBack,
+	.PointLinked = CNodesWorldSup_PointLinked,
+	.LinkPoint = CNodesWorldSup_LinkPoint,
+	.Unreachable = CNodesWorldSup_Unreachable,
+	.BoxCells = CNodesWorldSup_BoxCells,
+	.FindSorted = CNodesWorldSup_FindSorted,
+	.HasPair = CNodesWorldSup_HasPair,
+	.InsertPair = CNodesWorldSup_InsertPair,
+	.VisHas = CNodesWorldSup_VisHas,
+	.Linked = CNodesWorldSup_Linked,
+	.FreeGraph = CNodesWorldSup_FreeGraph,
+	.FreeTemp = CNodesWorldSup_FreeTemp,
+	.InList = CNodesWorldSup_InList,
+	.ClearLists = CNodesWorld2D_ClearLists,
+	.SaveInfPath = CNodesWorldSup_SaveInfPath,
+};

@@ -65,3 +65,16 @@ void cAIEntityGroup_AllowChange(cAIEntityGroup *self) {
 void cAIEntityGroup_Update(cAIEntityGroup *self, float dt) {
 	self->changeTime = dt + self->changeTime;
 }
+
+/* the vtable of cAIEntityGroup */
+const cAIEntityGroupVtbl cAIEntityGroup_vftable = {
+	.Delete = cAIEntityGroup_Delete,
+	.Clear = cAIEntityGroup_Clear,
+	.Add = cAIEntityGroup_Add,
+	.Get = cAIEntityGroup_Get,
+	.Num = cAIEntityGroup_Num,
+	.CanChange = cAIEntityGroup_CanChange,
+	.ResetChange = cAIEntityGroup_ResetChange,
+	.AllowChange = cAIEntityGroup_AllowChange,
+	.Update = cAIEntityGroup_Update,
+};

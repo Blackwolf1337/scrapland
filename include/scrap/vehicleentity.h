@@ -214,12 +214,6 @@ static inline const cVehicleEntityVtbl *Veh_Vtbl(cVehicleEntity *v) {
 }
 
 /* the motors (rva 0x10d270.., not decompiled yet): their variables through the vtable at 0x720 */
-typedef struct cVehicleMotorsVtbl {
-	byte(*VarI)(void *self, const char *name, int *i, int set);			/* 0x00 */
-	byte(*VarF)(void *self, const char *name, double *d, int set);		/* 0x04 */
-	byte(*VarS)(void *self, const char *name, char **s, int set);		/* 0x08 */
-	byte(*VarV)(void *self, const char *name, double *x, double *y, double *z, int set); /* 0x0c */
-} cVehicleMotorsVtbl;
 
 static inline const cVehicleMotorsVtbl *Veh_MotorsVtbl(cVehicleEntity *v) {
 	return (const cVehicleMotorsVtbl *)v->motors.vftable;
@@ -279,10 +273,10 @@ cActCtrl *cWithLifeEntity_GetActCtrl(cEntity *self);
 void *cAIVehicle_ctor(void *mem, cEntity *v, void *p1, void *p2, void *p3);
 cNetVController *cNetVController_ctor(void *mem, cEntity *v);
 /* NetVController.c */
-byte cNetVController_Changed(cNetVController *self, byte flags, cEntity *e);
-void cNetVController_Reset(cNetVController *self);
-void cNetVController_Read(cNetVController *self, void *msg);
-void cNetVController_Write(cNetVController *self, byte flags, cEntity *e, void *msg, byte force);
+byte cNetVController_Changed(cNetController *elem, byte flags, cEntity *e);
+void cNetVController_Reset(cNetController *elem);
+void cNetVController_Read(cNetController *elem, void *m);
+void cNetVController_Write(cNetController *elem, int flags, cEntity *e, void *m, int force);
 
 /* VehicleEntity.c; the constructor is declared in world.h */
 void cVehicleEntity_dtor(cVehicleEntity *self);

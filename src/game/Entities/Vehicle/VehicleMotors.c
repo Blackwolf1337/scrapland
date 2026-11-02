@@ -310,7 +310,8 @@ void cVehicleMotors_InitEffects(cVehicleMotors *self) {
 }
 
 /* ShipMotorScale and ShipMotorOffset, compared without the terminator like the original */
-byte cVehicleMotors_VarF(cVehicleMotors *self, const char *name, double *v, byte set) {
+byte cVehicleMotors_VarF(struct cVehicleMotors *base, const char *name, double *v, int set) {
+	cVehicleMotors *self = (cVehicleMotors *)base;
 	if (!memcmp(name, "ShipMotorScale", 14)) {
 		if (set) {
 			cVehicleMotorsEffects_SetScale(&self->effects, (float)*v);
@@ -385,7 +386,8 @@ cEntity *cVehicleMotors_GetOwner(cVehicleMotors *self) {
 }
 
 /* get: NEng0..3 (the node count), nEng0..3 (the slot count); set: EngFxClass0..3, FxClass, ShipMotorColorR/G/B */
-byte cVehicleMotors_VarI(cVehicleMotors *self, const char *name, int *v, byte set) {
+byte cVehicleMotors_VarI(struct cVehicleMotors *base, const char *name, int *v, int set) {
+	cVehicleMotors *self = (cVehicleMotors *)base;
 	size_t len = strlen(name);
 	uint32_t c;
 
@@ -654,7 +656,8 @@ void cVehicleMotors_SetEffectParam(cVehicleMotors *self, int i, float v) {
 }
 
 /* MEng0..3: the file of the motor (set: loaded at scale 1); set only: EngAnmM0..3, EngAnmF0..3 */
-byte cVehicleMotors_VarS(cVehicleMotors *self, const char *name, char **v, byte set) {
+byte cVehicleMotors_VarS(struct cVehicleMotors *base, const char *name, char **v, int set) {
+	cVehicleMotors *self = (cVehicleMotors *)base;
 	size_t len = strlen(name);
 
 	if (len == 5 && VM_Digit(name[4]) && !memcmp(name, "MEng", 4)) {
@@ -683,8 +686,8 @@ static inline int VM_Side(char c) {
 }
 
 /* get only: PEng0A (position), AEng0A (angles in degrees) of the exhausts, PEngSlot0A of the slots */
-byte cVehicleMotors_VarV(cVehicleMotors *self, const char *name, double *x, double *y, double *z,
-	byte set) {
+byte cVehicleMotors_VarV(struct cVehicleMotors *base, const char *name, double *x, double *y, double *z, int set) {
+	cVehicleMotors *self = (cVehicleMotors *)base;
 	size_t len = strlen(name);
 	vec3_t pos, ang;
 	byte r;
@@ -920,3 +923,11 @@ void cVehicleMotors_dtor(void *motors) {
 	}
 	cVehicleMotorsEffects_dtor(&self->effects);
 }
+
+/* the vtable of cVehicleMotors */
+const cVehicleMotorsVtbl cVehicleMotors_vftable = {
+	.VarI = cVehicleMotors_VarI,
+	.VarF = cVehicleMotors_VarF,
+	.VarS = cVehicleMotors_VarS,
+	.VarV = cVehicleMotors_VarV,
+};

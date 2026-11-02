@@ -68,6 +68,10 @@ def emit(struct, names):
     bp = base_path(st, struct)
     src = open(v.VTABLES).read()
     for vt in names:
+        forced = None
+        if '@' in vt:	# vtable@file: no user of the vtable to find the owner by
+            vt, forced = vt.split('@')
+            forced = v.ROOT + forced
         count, slots, _, _ = vts[vt]
         if len(slots) != len(flds):
             sys.exit('%s: %d slots, %s has %d fields' % (vt, len(slots), struct, len(flds)))
@@ -77,7 +81,7 @@ def emit(struct, names):
             if m:
                 macro, mfile = m.group(1), f
                 break
-        own = owner(vt, macro)
+        own = forced or owner(vt, macro)
         if not own:
             sys.exit('%s: no owner file' % vt)
         lines = ['', '/* the vtable of %s */' % vt[:-len('_vftable')], 'const %s %s = {' % (struct, vt)]
@@ -509,10 +513,13 @@ def add_proto(fn, defs):
     cls = fn.rsplit('_', 1)[0]
     proto = '%s%s%s(%s);' % (ret.replace('static ', '').replace('inline ', '').strip(),
                              '' if ret.strip().endswith('*') else ' ', fn, ', '.join(params))
-    for g in v.sources():
-        if not g.endswith('.h'):
-            continue
+    hs = [g for g in v.sources() if g.endswith('.h')]
+    # the header that defines the class first
+    hs.sort(key=lambda g: 0 if re.search(r'^(typedef )?struct %s \{' % re.escape(cls), open(g, errors='replace').read(), re.M) else 1)
+    for g in hs:
         t = open(g, errors='replace').read()
+        if re.search(r'\b%s\(' % fn, t):
+            return None	# declared there already: the error has another cause
         ms = list(re.finditer(r'^[\w \*]*\b%s_\w+\([^;{]*\);\n' % re.escape(cls), t, re.M))
         if ms:
             t = t[:ms[-1].end()] + proto + '\n' + t[ms[-1].end():]

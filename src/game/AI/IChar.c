@@ -481,7 +481,7 @@ void cAIChar_Debugf(cAI *base, const char *fmt, ...) {
 
 void cAIChar_Update(cAI *elem, float dt) {
 	cAIChar *self = (cAIChar *)elem;
-	if (self->pending.state != AIC_STATE_NONE && g_CharGroup->vftable->CanChange(g_CharGroup)) {
+	if (self->pending.state != AIC_STATE_NONE && g_CharGroup->vftable->CanChange(&g_CharGroup->base)) {
 		self->vftable->RestoreState(&self->base.base, &self->pending);
 	}
 	self->base.base.dt = dt;
@@ -1549,7 +1549,7 @@ byte cAIChar_SetState(cAI *base, int state, ...) {
 
 	self->vftable->StateName(&self->base.base, state, buf);
 	self->vftable->base.base.Debugf(&self->base.base, "Demanda externa de CAMBIO de ESTADO -> %s", buf);
-	if (!self->vftable->IsGroupState(&self->base.base, state) || g_CharGroup->vftable->CanChange(g_CharGroup)) {
+	if (!self->vftable->IsGroupState(&self->base.base, state) || g_CharGroup->vftable->CanChange(&g_CharGroup->base)) {
 		self->vftable->BeginChange(&self->base.base, state);
 	}
 	va_start(ap, state);
@@ -1567,7 +1567,7 @@ byte cAIChar_SetStateIntern(cAI *base, int state, ...) {
 	self->vftable->StateName(&self->base.base, state, buf);
 	self->vftable->base.base.Debugf(&self->base.base, "Demanda interna de CAMBIO de ESTADO -> %s", buf);
 	if (self->vftable->IsGroupState(&self->base.base, state)) {
-		g_CharGroup->vftable->AllowChange(g_CharGroup);
+		g_CharGroup->vftable->AllowChange(&g_CharGroup->base);
 	}
 	self->vftable->BeginChange(&self->base.base, state);
 	va_start(ap, state);
@@ -1602,7 +1602,7 @@ byte cAIChar_ChangeState(cAI *elem, int state, va_list ap) {
 	float speed;
 	int intern;
 
-	if (self->vftable->IsGroupState(&self->base.base, state) && !(allowed = g_CharGroup->vftable->CanChange(g_CharGroup))) {
+	if (self->vftable->IsGroupState(&self->base.base, state) && !(allowed = g_CharGroup->vftable->CanChange(&g_CharGroup->base))) {
 		self->pending.state = state;
 	} else if (state != AIC_STATIC_CHANGE_STATE) {
 		self->pending.state = AIC_STATE_NONE;
@@ -1751,7 +1751,7 @@ byte cAIChar_ChangeState(cAI *elem, int state, va_list ap) {
 			goto fail;
 		}
 		if (self->vftable->IsGroupState(&self->base.base, state)) {
-			g_CharGroup->vftable->ResetChange(g_CharGroup);
+			g_CharGroup->vftable->ResetChange(&g_CharGroup->base);
 		}
 		self->vftable->StateName(&self->base.base, state, buf);
 		t = AIC_Target(self);

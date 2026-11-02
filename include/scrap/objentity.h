@@ -19,7 +19,6 @@
 #include "scrap/world.h"
 
 #define TYEN_OBJECT "Obj"
-#define CNETCONTROLLER_VFTABLE GAME_VFTABLE(cNetController_vftable)
 #define COBJENTITY_SIZE sizeof(cObjEntity)
 
 /* the flags of the network state */
@@ -39,6 +38,8 @@ typedef struct cNetControllerVtbl {
 	byte(*Changed)(cNetController *self, byte flags, cEntity *e);	/* 0x0c */
 	void(*Apply)(cNetController *self, cEntity *e, float dt, byte move);	/* 0x10 */
 } cNetControllerVtbl;
+extern const cNetControllerVtbl cNetController_vftable;
+#define CNETCONTROLLER_VFTABLE (&cNetController_vftable)
 
 struct cNetController {
 	const cNetControllerVtbl *vftable;	/* 0x00 */
@@ -210,7 +211,7 @@ cNetController *cNetController_ctor(cNetController *self);
 void cNetController_Reset(cNetController *self);
 void cNetController_Read(cNetController *self, void *msg);
 /* flags (only the changed parts unless force) and the packed (or full) state of e into msg */
-void cNetController_Write(cNetController *self, byte flags, cEntity *e, void *msg, byte force);
+void cNetController_Write(cNetController *self, int flags, cEntity *e, void *m, int force);
 /* the parts of flags that changed enough to be sent (the others count down) */
 byte cNetController_Changed(cNetController *self, byte flags, cEntity *e);
 /* the received state onto e; move: the client moves e by its velocities while no new state came */

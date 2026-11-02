@@ -72,7 +72,7 @@ void cActCtrl_dtor(cActCtrl *self) {
 	}
 }
 
-cActCtrl *cActCtrl_Delete(cActCtrl *self, byte flags) {
+void *cActCtrl_Delete(cActCtrl *self, byte flags) {
 	cActCtrl_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -187,7 +187,7 @@ void cActCtrl_FireEvents(cActCtrl *self, int chan, float t, byte silent) {
 	}
 }
 
-byte cActCtrl_VarI(cActCtrl *self, const char *name, int *i, byte set) {
+byte cActCtrl_VarI(cActCtrl *self, const char *name, int *i, int set) {
 	if (set && strcmp(name, "StopSecondary") == 0) {
 		cActCtrl_StopChan(self, *i);
 		return 1;
@@ -496,7 +496,7 @@ void cActCtrl_StopChan(cActCtrl *self, int i) {
 	l->event = NULL;
 }
 
-byte cActCtrl_VarS(cActCtrl *self, const char *name, char **s, byte set) {
+byte cActCtrl_VarS(cActCtrl *self, const char *name, char **s, int set) {
 	cAction *a;
 
 	if (set) {
@@ -565,3 +565,32 @@ byte cActCtrl_IsActive(void *ctrl, const char *action) {
 byte cActCtrl_IsDefLoop(cActCtrl *self, const char *action) {
 	return self->defLoop && strcmp(action, self->defLoop->name) == 0;
 }
+
+/* the slot VarF of a class that does only return 0 */
+byte cActCtrl_VarFFalse(cActCtrl *self, const char *name, double *d, int set) {
+	(void)self;
+	(void)name;
+	(void)d;
+	(void)set;
+	return 0;
+}
+
+/* the slot VarV of a class that does only return 0 */
+byte cActCtrl_VarVFalse(cActCtrl *self, const char *name, double *x, double *y, double *z, int set) {
+	(void)self;
+	(void)name;
+	(void)x;
+	(void)y;
+	(void)z;
+	(void)set;
+	return 0;
+}
+
+/* the vtable of cActCtrl */
+const cActCtrlVarVtbl cActCtrl_vftable = {
+	.Delete = cActCtrl_Delete,
+	.VarI = cActCtrl_VarI,
+	.VarF = cActCtrl_VarFFalse,
+	.VarS = cActCtrl_VarS,
+	.VarV = cActCtrl_VarVFalse,
+};

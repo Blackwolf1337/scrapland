@@ -18,7 +18,8 @@
 #include "scrap/platform.h"
 #include "scrap/platform.h"
 
-#define CD3DAPPLICATION_VFTABLE GAME_VFTABLE(CD3DApplication_vftable)
+extern const CD3DApplicationVtbl CD3DApplication_vftable;
+#define CD3DAPPLICATION_VFTABLE (&CD3DApplication_vftable)
 #define D3DAPP_TIMER_START 1
 #define D3DAPP_TIMER_STOP 2
 
@@ -863,3 +864,21 @@ int CD3DApp_Render(CD3DApplication *self) {
 }
 
 /* the message loop of the framework with the frame of CD3DApp_Render inside; until WM_QUIT */
+
+/* the vtable of CD3DApplication */
+const CD3DApplicationVtbl CD3DApplication_vftable = {
+	.AdjustWindowForChange = CD3DApp_AdjustWindowForChange,
+	.ConfirmDevice = CD3DApp_ConfirmDevice,
+	.OneTimeSceneInit = CD3DApp_Nop,
+	.InitDeviceObjects = CD3DApp_Nop,
+	.RestoreDeviceObjects = CD3DApp_Nop,
+	.FrameMove = CD3DApp_Nop,
+	.Render = CD3DApp_Nop,
+	.InvalidateDeviceObjects = CD3DApplication_Nothing,
+	.DeleteDeviceObjects = CD3DApp_Nop,
+	.FinalCleanup = CD3DApp_Nop,
+	.Create = CD3DApp_Create,
+	.Run = NULL,
+	.msgProc = NULL,
+	.Pause = CD3DApp_Pause,
+};

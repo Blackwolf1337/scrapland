@@ -19,7 +19,6 @@
 #define VM_MOTORS 4
 #define VM_SIDES 2
 
-#define CVEHICLEMOTORS_VFTABLE GAME_VFTABLE(cVehicleMotors_vftable)
 
 typedef struct cVehicleMotor cVehicleMotor;
 typedef struct cVehicleMotors cVehicleMotors;
@@ -88,8 +87,17 @@ SD_OFFSET(cVehicleMotor, effects, 0x74);
 SD_SIZE(cVehicleMotor, 0x11c);
 
 /* the motors of a ship (0xc8 bytes at +0x720 of the vehicle, constructor rva 0x10bc20) */
+typedef struct cVehicleMotorsVtbl {
+	byte(*VarI)(struct cVehicleMotors *self, const char *name, int *i, int set);			/* 0x00 */
+	byte(*VarF)(struct cVehicleMotors *self, const char *name, double *d, int set);		/* 0x04 */
+	byte(*VarS)(struct cVehicleMotors *self, const char *name, char **s, int set);		/* 0x08 */
+	byte(*VarV)(struct cVehicleMotors *self, const char *name, double *x, double *y, double *z, int set); /* 0x0c */
+} cVehicleMotorsVtbl;
+extern const cVehicleMotorsVtbl cVehicleMotors_vftable;
+#define CVEHICLEMOTORS_VFTABLE (&cVehicleMotors_vftable)
+
 struct cVehicleMotors {
-	const void *vftable;		/* 0x00 */
+	const cVehicleMotorsVtbl *vftable;	/* 0x00 */
 	cEntity *owner;			/* 0x04 */
 	cVehicleMotor *motor[VM_MOTORS];	/* 0x08 */
 	byte stopped;			/* 0x18 the ship stands still, the effects are not updated */
@@ -164,7 +172,7 @@ void cVehicleMotor_Reset(cVehicleMotor *self);
 void cVehicleMotors_Reset(cVehicleMotors *self);
 void cVehicleMotors_ClearEffects(cVehicleMotors *self);
 void cVehicleMotors_InitEffects(cVehicleMotors *self);
-byte cVehicleMotors_VarF(cVehicleMotors *self, const char *name, double *v, byte set);
+byte cVehicleMotors_VarF(struct cVehicleMotors *base, const char *name, double *v, int set);
 /* the position and the angles (radians) of the node of motor, side, in the ship model */
 byte cVehicleMotors_GetExhaust(cVehicleMotors *self, uint32_t motor, uint32_t side, vec3_t *pos,
 	vec3_t *ang);
@@ -176,7 +184,7 @@ const char *cVehicleMotors_GetMotorName(cVehicleMotors *self, uint32_t motor, in
 /* the slots DC_Engine<A + motor>_01, _02 of the ship model (0..2) */
 int cVehicleMotors_NumSlots(cVehicleMotors *self, byte motor);
 cEntity *cVehicleMotors_GetOwner(cVehicleMotors *self);
-byte cVehicleMotors_VarI(cVehicleMotors *self, const char *name, int *v, byte set);
+byte cVehicleMotors_VarI(struct cVehicleMotors *base, const char *name, int *v, int set);
 void cVehicleMotor_Render(cVehicleMotor *self);
 void cVehicleMotors_Render(cVehicleMotors *self);
 void cVehicleMotor_SetEnabled(cVehicleMotor *self, byte on);
@@ -200,9 +208,8 @@ void cVehicleMotor_SetEffect(cVehicleMotor *self, uint32_t fx);
 void cVehicleMotors_SetEffect(cVehicleMotors *self, uint32_t fx);
 void cVehicleMotor_SetEffectParam(cVehicleMotor *self, int i, float v);
 void cVehicleMotors_SetEffectParam(cVehicleMotors *self, int i, float v);
-byte cVehicleMotors_VarS(cVehicleMotors *self, const char *name, char **v, byte set);
-byte cVehicleMotors_VarV(cVehicleMotors *self, const char *name, double *x, double *y, double *z,
-	byte set);
+byte cVehicleMotors_VarS(struct cVehicleMotors *base, const char *name, char **v, int set);
+byte cVehicleMotors_VarV(struct cVehicleMotors *base, const char *name, double *x, double *y, double *z, int set);
 cVehicleMotorsEffects *cVehicleMotorsEffects_ctor(cVehicleMotorsEffects *self);
 void cVehicleMotorsEffects_dtor(cVehicleMotorsEffects *self);
 vec3_t *Vec3_Assign(vec3_t *self, const vec3_t *v);

@@ -44,9 +44,11 @@ cGVar *GVar_InitFunction(cGVar *v, const char *name, byte flags, const char *des
 /* "name = value # comment" of Scrap.cfg: cuts the comment, splits at '=' and trims both; 0 without '=' */
 byte Cfg_ParseLine(char *line, char **value);
 
+struct cFuncGvar;
+
 typedef struct cGVarListVtbl {
-	void(*Save)(void *self, void *f);	/* 0x0 */
-	void(*Load)(void *self, void *f);	/* 0x4 */
+	void(*Save)(struct cFuncGvar *self, void *f);	/* 0x0 */
+	void(*Load)(struct cFuncGvar *self, void *f);	/* 0x4 */
 } cGVarListVtbl;
 
 /* cFuncGvar, 0x14 bytes: the abstract base of the GVAR_FUNCTION variables (cFuncGvar::vftable rva 0x3bc2c8, Save and

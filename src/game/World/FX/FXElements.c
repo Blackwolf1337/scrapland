@@ -77,28 +77,31 @@ void cFXElementsLighting_dtor(cFXElementsLighting *self) {
 	cMapElement_dtor(&self->base);
 }
 
-cFXElementsFireDrop *cFXElementsFireDrop_Delete(cFXElementsFireDrop *self, byte flags) {
+cMapElement *cFXElementsFireDrop_Delete(cMapElement *base, byte flags) {
+	cFXElementsFireDrop *self = (cFXElementsFireDrop *)base;
 	cFXElementsFireDrop_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
-cFXElementsLensFlare *cFXElementsLensFlare_Delete(cFXElementsLensFlare *self, byte flags) {
+cMapElement *cFXElementsLensFlare_Delete(cMapElement *base, byte flags) {
+	cFXElementsLensFlare *self = (cFXElementsLensFlare *)base;
 	cFXElementsLensFlare_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
-cFXElementsLighting *cFXElementsLighting_Delete(cFXElementsLighting *self, byte flags) {
+cMapElement *cFXElementsLighting_Delete(cMapElement *base, byte flags) {
+	cFXElementsLighting *self = (cFXElementsLighting *)base;
 	cFXElementsLighting_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 void cFXElementsFireDrop_Release(cFXElementsFireDrop *self) {
@@ -118,7 +121,8 @@ void cFXElementsLighting_Release(cFXElementsLighting *self) {
 
 /* ---- cFXElementsFireDrop ---- */
 
-byte cFXElementsFireDrop_Init(cFXElementsFireDrop *self) {
+byte cFXElementsFireDrop_Init(cMapElement *elem) {
+	cFXElementsFireDrop *self = (cFXElementsFireDrop *)elem;
 	CGameModel *model = &self->base.Mod;
 	vec3_t tmp;
 
@@ -345,7 +349,8 @@ static void FireDrop_EmitDue(cFXElementsFireDrop *self, float *emitTime, float i
 }
 
 /* near the camera: a burst of drops (more the nearer) with the sound, then a pause */
-void cFXElementsFireDrop_Update(cFXElementsFireDrop *self, float dt) {
+void cFXElementsFireDrop_Update(cMapElement *elem, float dt) {
+	cFXElementsFireDrop *self = (cFXElementsFireDrop *)elem;
 	CGameModel *model = &self->base.Mod;
 	vec3_t tmp;
 
@@ -429,7 +434,8 @@ void cFXElementsLensFlare_Update(cFXElementsLensFlare *self, float dt) {
 
 /* ---- cFXElementsLighting ---- */
 
-byte cFXElementsLighting_Init(cFXElementsLighting *self) {
+byte cFXElementsLighting_Init(cMapElement *elem) {
+	cFXElementsLighting *self = (cFXElementsLighting *)elem;
 	CGameModel *model = &self->base.Mod;
 	char buf[0x100];
 	vec3_t tmp;
@@ -734,7 +740,8 @@ static void Lighting_Draw(cFXElementsLighting *self, int i, float dt, int from, 
 }
 
 /* every bolt with two links or more: drawn while its life lasts, then cleared until its pause is over */
-void cFXElementsLighting_Update(cFXElementsLighting *self, float dt) {
+void cFXElementsLighting_Update(cMapElement *elem, float dt) {
+	cFXElementsLighting *self = (cFXElementsLighting *)elem;
 	CGameModel *model = &self->base.Mod;
 
 	cMapElement_Update(&self->base, dt);
@@ -784,3 +791,24 @@ void cFXElementsLighting_Update(cFXElementsLighting *self, float dt) {
 		}
 	}
 }
+
+/* the vtable of cFXElementsLighting */
+const cMapElementVtbl cFXElementsLighting_vftable = {
+	.Delete = cFXElementsLighting_Delete,
+	.Init = cFXElementsLighting_Init,
+	.Update = cFXElementsLighting_Update,
+};
+
+/* the vtable of cFXElementsFireDrop */
+const cMapElementVtbl cFXElementsFireDrop_vftable = {
+	.Delete = cFXElementsFireDrop_Delete,
+	.Init = cFXElementsFireDrop_Init,
+	.Update = cFXElementsFireDrop_Update,
+};
+
+/* the vtable of cFXElementsLensFlare */
+const cMapElementVtbl cFXElementsLensFlare_vftable = {
+	.Delete = cFXElementsLensFlare_Delete,
+	.Init = cMapElement_InitTrue,
+	.Update = cMapElement_UpdateNop,
+};

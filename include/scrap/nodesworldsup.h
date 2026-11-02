@@ -14,8 +14,10 @@
 /* the cNWPointNode of a point pos (the data of the point lists and links) */
 #define NW_POINT(v) ((cNWPointNode *)((byte *)(v) - offsetof(cNWPointNode, pos)))
 
-#define NWGRID_VFTABLE GAME_VFTABLE(cGridElements_InfPointVis_vftable)
-#define CNODESWORLDSUP_VFTABLE GAME_VFTABLE(CNodesWorldSup_vftable)
+extern const cGridElementsVtbl cGridElements_InfPointVis_vftable;
+#define NWGRID_VFTABLE (&cGridElements_InfPointVis_vftable)
+extern const CNodesWorldVtbl CNodesWorldSup_vftable;
+#define CNODESWORLDSUP_VFTABLE (&CNodesWorldSup_vftable)
 
 /* ---- Global/DList.h instances ---- */
 
@@ -45,7 +47,7 @@ cGridElements_InfPointVisPtr *NWGrid_ctor(cGridElements_InfPointVisPtr *self, co
 void NWGrid_dtor(cGridElements_InfPointVisPtr *self);
 cGridElements_InfPointVisPtr *NWGrid_Delete(cGridElements_InfPointVisPtr *self, byte flags);
 void NWGrid_Free(cGridElements_InfPointVisPtr *self);
-byte NWGrid_Add(cGridElements_InfPointVisPtr *self, const vec3_t *p, void *const *data);
+byte NWGrid_Add(cGridElements_InfPointVisPtr *self, const vec3_t *p, const void *data);
 
 /* ---- CNodesWorldSup (on the CNodesWorld layout; vtable slots in CNodesWorldVtbl) ---- */
 
@@ -90,9 +92,9 @@ byte CNodesWorldSup_Unreachable(CNodesWorld *self, const vec3_t *from, const vec
 int CNodesWorldSup_BoxCells(CNodesWorld *self, const cNWBox *box);
 /* key in the list sorted by address: 1; else 0 and at the node to insert in front of */
 byte CNodesWorldSup_FindSorted(CNodesWorld *self, cNWIntList *list, const void *key, cNWIntNode **at);
-byte CNodesWorldSup_HasPair(CNodesWorld *self, cNWPairList *list, const cNWPair *pair);
+byte CNodesWorldSup_HasPair(CNodesWorld *self, void *list, const void *pair);
 /* the pair (a, b, dist) into the list sorted by distance, not twice */
-void CNodesWorldSup_InsertPair(CNodesWorld *self, cNWPairList *list, const cNWPair *pair);
+void CNodesWorldSup_InsertPair(CNodesWorld *self, void *list, const void *pair);
 byte CNodesWorldSup_VisHas(CNodesWorld *self, const vec3_t *point, int index);
 byte CNodesWorldSup_Linked(CNodesWorld *self, const vec3_t *a, const vec3_t *b);
 void CNodesWorldSup_FreeTemp(CNodesWorld *self);

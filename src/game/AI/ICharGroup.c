@@ -145,12 +145,13 @@ void cAICharGroup_dtor(cAICharGroup *self) {
 	cAIEntityGroup_dtor(&self->base);
 }
 
-cAICharGroup *cAICharGroup_Delete(cAICharGroup *self, byte flags) {
+cAIEntityGroup *cAICharGroup_Delete(cAIEntityGroup *base, byte flags) {
+	cAICharGroup *self = (cAICharGroup *)base;
 	cAICharGroup_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAICHARGROUP_SIZE);
 	}
-	return self;
+	return base;
 }
 
 cAICGZone *cAICharGroup_GetZones(cAICharGroup *self) {
@@ -431,3 +432,16 @@ byte cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity *e, float m
 	AICG_Take(AICG_Point(self, spareZone, sparePoint), e, out);
 	return 1;
 }
+
+/* the vtable of cAICharGroup */
+const cAIEntityGroupVtbl cAICharGroup_vftable = {
+	.Delete = cAICharGroup_Delete,
+	.Clear = cAIEntityGroup_Clear,
+	.Add = cAIEntityGroup_Add,
+	.Get = cAIEntityGroup_Get,
+	.Num = cAIEntityGroup_Num,
+	.CanChange = cAIEntityGroup_CanChange,
+	.ResetChange = cAIEntityGroup_ResetChange,
+	.AllowChange = cAIEntityGroup_AllowChange,
+	.Update = cAIEntityGroup_Update,
+};

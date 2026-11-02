@@ -186,9 +186,9 @@ int SaveVar_Inc(const char *name, int n) {
 byte SaveGame_ReadDesc(const char *path, char *desc) {
 	char buf[0x200];
 	byte ok;
-	cFile f = { { cFile_vftable, NULL, 0 }, NULL };
+	cFile f = { { CFILE_VFTABLE, NULL, 0 }, NULL };
 
-	cFile_Open(&f, path, FILE_MODE_READ | FILE_MODE_ABSOLUTE);
+	cFile_Open(&f.base, path, FILE_MODE_READ | FILE_MODE_ABSOLUTE);
 	cAbstractFile_ReadString(&f.base, buf, sizeof(buf));
 	if (!strcmp(SAVE_MAGIC, buf)) {
 		cAbstractFile_ReadString(&f.base, buf, sizeof(buf));
@@ -196,7 +196,7 @@ byte SaveGame_ReadDesc(const char *path, char *desc) {
 		size_t n = strlen(buf);
 		memset(desc, 0, 0x40);
 		memcpy(desc, buf, n < 0x40 ? n : 0x40);
-		cFile_Close(&f);
+		cFile_Close(&f.base);
 		ok = 1;
 	} else {
 		Con_Print(0xff, "Invalid Savegame file.\n", 0);
@@ -325,24 +325,24 @@ static void SaveGame_Path(char *path, int size, const char *name) {
 
 byte SaveGame_Load(const char *name) {
 	char path[0x200];
-	cFile f = { { cFile_vftable, NULL, 0 }, NULL };
+	cFile f = { { CFILE_VFTABLE, NULL, 0 }, NULL };
 
 	SaveGame_Path(path, sizeof(path), name);
-	cFile_Open(&f, path, FILE_MODE_READ | FILE_MODE_ABSOLUTE);
+	cFile_Open(&f.base, path, FILE_MODE_READ | FILE_MODE_ABSOLUTE);
 	SaveGame_ReadVars(&f.base);
-	cFile_Close(&f);
+	cFile_Close(&f.base);
 	cFile_dtor(&f);
 	return 1;
 }
 
 byte SaveGame_Save(const char *name, const char *desc) {
 	char path[0x200];
-	cFile f = { { cFile_vftable, NULL, 0 }, NULL };
+	cFile f = { { CFILE_VFTABLE, NULL, 0 }, NULL };
 
 	SaveGame_Path(path, sizeof(path), name);
-	cFile_Open(&f, path, FILE_MODE_WRITE | FILE_MODE_CREATE | FILE_MODE_ABSOLUTE);
+	cFile_Open(&f.base, path, FILE_MODE_WRITE | FILE_MODE_CREATE | FILE_MODE_ABSOLUTE);
 	SaveGame_WriteVars(&f.base, desc);
-	cFile_Close(&f);
+	cFile_Close(&f.base);
 	cFile_dtor(&f);
 	return 1;
 }

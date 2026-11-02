@@ -21,7 +21,8 @@
 #include "scrap/scrap.h"
 #include "scrap/world.h"
 
-#define CNETVCONTROLLER_VFTABLE GAME_VFTABLE(cNetVController_vftable)
+extern const cNetControllerVtbl cNetVController_vftable;
+#define CNETVCONTROLLER_VFTABLE (&cNetVController_vftable)
 
 cNetVController *cNetVController_ctor(void *mem, cEntity *v) {
 	cNetVController *self = (cNetVController *)cNetController_ctor(mem);
@@ -37,7 +38,8 @@ cNetVController *cNetVController_ctor(void *mem, cEntity *v) {
 }
 
 /* vf03: an active vehicle always sends its position */
-byte cNetVController_Changed(cNetVController *self, byte flags, cEntity *e) {
+byte cNetVController_Changed(cNetController *elem, byte flags, cEntity *e) {
+	cNetVController *self = (cNetVController *)elem;
 	if (self->vehicle->active) {
 		byte f = cNetController_Changed(&self->base, flags, e) | NETC_POS;
 		self->base.flags = f;
@@ -47,7 +49,8 @@ byte cNetVController_Changed(cNetVController *self, byte flags, cEntity *e) {
 }
 
 /* vf00 */
-void cNetVController_Reset(cNetVController *self) {
+void cNetVController_Reset(cNetController *elem) {
+	cNetVController *self = (cNetVController *)elem;
 	cNetController_Reset(&self->base);
 }
 
@@ -77,7 +80,8 @@ static inline void NetV_Read(cAbstractFile *msg, void *dst, int n) {
 /* vf01: a server reads the controls of the client (weapon, camera height, target); a client the ammo levels, the
  * lock, fire, cloud and EMI, the life, the weapon, the attack, the hits and the upgrades. Then the state of the
  * cNetController, and the hit flags when its flag bit 7 is set */
-void cNetVController_Read(cNetVController *self, void *m) {
+void cNetVController_Read(cNetController *elem, void *m) {
+	cNetVController *self = (cNetVController *)elem;
 	cAbstractFile *msg = m;
 	char name[0x40];
 	vec3_t q, clamped;
@@ -278,7 +282,8 @@ static void NetV_WriteOffset(cNetVController *self, cAbstractFile *msg, const ve
 /* vf02: the keys from the controls and the state of the vehicle; then the controls of a "net" vehicle (the client
  * side: weapon, camera height, the target of the camera), else the state Read takes on a client; then the state of
  * cNetController and the hit flags, whose counters step while hit and force are 2 */
-void cNetVController_Write(cNetVController *self, byte flags, cEntity *e, void *m, byte force) {
+void cNetVController_Write(cNetController *elem, int flags, cEntity *e, void *m, int force) {
+	cNetVController *self = (cNetVController *)elem;
 	cAbstractFile *msg = m;
 	cVehicleEntity *v = NETV_VEH(self);
 	cVehicleControls *c = &v->controls;
@@ -466,3 +471,12 @@ base:
 		NetV_Write(msg, &b, 1);
 	}
 }
+
+/* the vtable of cNetVController */
+const cNetControllerVtbl cNetVController_vftable = {
+	.Reset = cNetVController_Reset,
+	.Read = cNetVController_Read,
+	.Write = cNetVController_Write,
+	.Changed = cNetVController_Changed,
+	.Apply = cNetController_Apply,
+};

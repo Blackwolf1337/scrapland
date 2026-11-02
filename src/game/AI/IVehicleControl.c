@@ -2005,12 +2005,13 @@ void cAIVehicleGroup_dtor(cAIVehicleGroup *self) {
 	cAIEntityGroup_dtor(self);
 }
 
-cAIVehicleGroup *cAIVehicleGroup_Delete(cAIVehicleGroup *self, byte flags) {
+cAIEntityGroup *cAIVehicleGroup_Delete(cAIEntityGroup *base, byte flags) {
+	cAIVehicleGroup *self = (cAIVehicleGroup *)base;
 	cAIVehicleGroup_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIVEHICLEGROUP_SIZE);
 	}
-	return self;
+	return base;
 }
 
 /* the time since ResetRepos reached MinTimeReposAI */
@@ -2071,3 +2072,16 @@ void cAIVehicleGroup_FindElevators(cAIVehicleGroup *self) {
 void cAIVehicleGroup_ResetRepos(cAIVehicleGroup *self) {
 	self->reposTime = Timer_GetTime(&g_pWorld->timer);
 }
+
+/* the vtable of cAIVehicleGroup */
+const cAIEntityGroupVtbl cAIVehicleGroup_vftable = {
+	.Delete = cAIVehicleGroup_Delete,
+	.Clear = cAIEntityGroup_Clear,
+	.Add = cAIEntityGroup_Add,
+	.Get = cAIEntityGroup_Get,
+	.Num = cAIEntityGroup_Num,
+	.CanChange = cAIEntityGroup_CanChange,
+	.ResetChange = cAIEntityGroup_ResetChange,
+	.AllowChange = cAIEntityGroup_AllowChange,
+	.Update = cAIEntityGroup_Update,
+};

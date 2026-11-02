@@ -237,11 +237,16 @@ typedef struct cInputDevNode {
 } cInputDevNode;
 typedef DLIST(cInputDevNode) cInputDevList;
 
-#define CABSTRACTIDEVICE_VFTABLE GAME_VFTABLE(cAbstractIDevice_vftable)
-#define CFUNCGVARDEVICES_VFTABLE GAME_VFTABLE(cFuncGvarDevices_vftable)
-#define CPCKEYBOARD_VFTABLE GAME_VFTABLE(cPcKeyboard_vftable)
-#define CPCMOUSE_VFTABLE GAME_VFTABLE(cPcMouse_vftable)
-#define CPCPAD_VFTABLE GAME_VFTABLE(cPcPad_vftable)
+extern const cAbstractIDeviceVtbl cAbstractIDevice_vftable;
+#define CABSTRACTIDEVICE_VFTABLE (&cAbstractIDevice_vftable)
+extern const cGVarListVtbl cFuncGvarDevices_vftable;
+#define CFUNCGVARDEVICES_VFTABLE (&cFuncGvarDevices_vftable)
+extern const cAbstractIDeviceVtbl cPcKeyboard_vftable;
+#define CPCKEYBOARD_VFTABLE (&cPcKeyboard_vftable)
+extern const cAbstractIDeviceVtbl cPcMouse_vftable;
+#define CPCMOUSE_VFTABLE (&cPcMouse_vftable)
+extern const cAbstractIDeviceVtbl cPcPad_vftable;
+#define CPCPAD_VFTABLE (&cPcPad_vftable)
 
 /* the player, action and set waiting for the next key (SInput.ListenToDefine), -1 for none */
 extern int g_ToDefinePlayer;
@@ -274,8 +279,10 @@ void cAbstractIDevice_GetEntry(cAbstractIDevice *self, int entry, int set, int *
 void cAbstractIDevice_InitEntries(cAbstractIDevice *self, int n);
 void cAbstractIDevice_SetValue(cAbstractIDevice *self, int entry, float value);
 void cAbstractIDevice_SetAxis(cAbstractIDevice *self, int entry, float value);
-void cFuncGvarDevices_Save(cFuncGvarDevices *self, void *f);
-void cFuncGvarDevices_Load(cFuncGvarDevices *self, void *f);
+byte cAbstractIDevice_IsReservedTrue(cAbstractIDevice *self, int entry);
+void cAbstractIDevice_SetGameDefaultsNop(cAbstractIDevice *self);
+void cFuncGvarDevices_Save(struct cFuncGvar *elem, void *f);
+void cFuncGvarDevices_Load(struct cFuncGvar *elem, void *f);
 void InputDevices_Clear(cInputDevList *list);
 void InputDevices_Add(cInputDevList *list, cAbstractIDevice **dev);
 void Input_CheckInactivity(float dt);
@@ -325,7 +332,7 @@ extern exe_mouse_state g_MouseState;
 extern cGVar GVar_IsUsingMouse;
 #define g_IsUsingMouse (GVar_IsUsingMouse.value.i)		/* IsUsingMouse */
 cPcMouse *cPcMouse_ctor(cPcMouse *self);
-cPcMouse *cPcMouse_Delete(cPcMouse *self, byte flags);
+cAbstractIDevice *cPcMouse_Delete(cAbstractIDevice *elem, byte flags);
 void Mouse_Acquire(byte on);
 byte cPcMouse_SetEntry(cAbstractIDevice *self, int entry, int set, int player, int action, byte check);
 const char *cPcMouse_GetName(cAbstractIDevice *self);
@@ -333,10 +340,10 @@ const char *cPcMouse_GetEntryName(cAbstractIDevice *self, int entry);
 const char *cPcMouse_GetEntryLabel(cAbstractIDevice *self, int entry);
 void cPcMouse_SetDefaults(cAbstractIDevice *self);
 void Mouse_Init(void);
-void cPcMouse_Update(cPcMouse *self, float dt);
+void cPcMouse_Update(cAbstractIDevice *elem, float dt);
 void cPcMouse_SetGameDefaults(cAbstractIDevice *self);
 int32_t Mouse_Poll(void);
-int cPcMouse_IsReserved(cAbstractIDevice *self, int entry);
+byte cPcMouse_IsReserved(cAbstractIDevice *self, int entry);
 
 /* Input/PcPad.cpp: XInput pads */
 extern cGVar GVar_MainPcPad;
@@ -368,17 +375,17 @@ extern cGVar GVar_XBVDigitalAsAnalog;
 extern cGVar GVar_XBVehicleAsFPS;
 #define g_XBVehicleAsFPS (GVar_XBVehicleAsFPS.value.i)
 cPcPad *cPcPad_ctor(cPcPad *self, int index);
-cPcPad *cPcPad_Delete(cPcPad *self, byte flags);
+cAbstractIDevice *cPcPad_Delete(cAbstractIDevice *elem, byte flags);
 void Pad_DeadZone(float *x, float *y, float dz);
-byte cPcPad_SetEntry(cPcPad *self, int entry, int set, int player, int action, byte check);
+byte cPcPad_SetEntry(cAbstractIDevice *elem, int entry, int set, int player, int action, byte check);
 void cPcPad_SetVehicleDefaults(cPcPad *self);
 void cPcPad_SetCharDefaults(cPcPad *self);
-const char *cPcPad_GetName(cPcPad *self);
-const char *cPcPad_GetEntryName(cPcPad *self, int entry);
-const char *cPcPad_GetEntryLabel(cPcPad *self, int entry);
+const char *cPcPad_GetName(cAbstractIDevice *base);
+const char *cPcPad_GetEntryName(cAbstractIDevice *elem, int entry);
+const char *cPcPad_GetEntryLabel(cAbstractIDevice *base, int entry);
 int Pad_Init(void);
-void cPcPad_SetDefaults(cPcPad *self);
-void cPcPad_Update(cPcPad *self, float dt);
+void cPcPad_SetDefaults(cAbstractIDevice *base);
+void cPcPad_Update(cAbstractIDevice *elem, float dt);
 void cPcPad_SetGameDefaults(cPcPad *self);
 uint32_t Pad_Poll(int index);
 byte cPcPad_IsReserved(cPcPad *self, int entry);

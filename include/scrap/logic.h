@@ -891,7 +891,8 @@ typedef struct cInfItemNode {
 } cInfItemNode;
 SD_SIZE(cInfItemNode, 0x10);
 
-#define CINFITEM_VFTABLE GAME_VFTABLE(cInfItem_vftable)
+extern const cInfItemVtbl cInfItem_vftable;
+#define CINFITEM_VFTABLE (&cInfItem_vftable)
 
 cInfItem *cInfItem_ctor(cInfItem *self);
 void cInfItem_dtor(cInfItem *self);

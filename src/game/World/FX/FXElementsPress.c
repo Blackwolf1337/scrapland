@@ -77,31 +77,31 @@ void cFXElementsMentalControllerMainFX_dtor(cFXElementsMentalControllerMainFX *s
 	cMapElement_dtor(&self->base);
 }
 
-cFXElementsMentalController *cFXElementsMentalController_Delete(cFXElementsMentalController *self,
-	byte flags) {
+cMapElement *cFXElementsMentalController_Delete(cMapElement *base, byte flags) {
+	cFXElementsMentalController *self = (cFXElementsMentalController *)base;
 	cFXElementsMentalController_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
-cFXElementsMentalControllerDamageFX *cFXElementsMentalControllerDamageFX_Delete(
-	cFXElementsMentalControllerDamageFX *self, byte flags) {
+cMapElement *cFXElementsMentalControllerDamageFX_Delete(cMapElement *base, byte flags) {
+	cFXElementsMentalControllerDamageFX *self = (cFXElementsMentalControllerDamageFX *)base;
 	cFXElementsMentalControllerDamageFX_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
-cFXElementsMentalControllerMainFX *cFXElementsMentalControllerMainFX_Delete(
-	cFXElementsMentalControllerMainFX *self, byte flags) {
+cMapElement *cFXElementsMentalControllerMainFX_Delete(cMapElement *base, byte flags) {
+	cFXElementsMentalControllerMainFX *self = (cFXElementsMentalControllerMainFX *)base;
 	cFXElementsMentalControllerMainFX_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 void cFXElementsMentalControllerDamageFX_ReleaseParticles(cFXElementsMentalControllerDamageFX *self) {
@@ -138,12 +138,14 @@ static void MentalController_InitBase(cMapElement *e, int *dcRoot, vec3_t *pos) 
 	CHECK(*dcRoot != -1);
 }
 
-byte cFXElementsMentalController_Init(cFXElementsMentalController *self) {
+byte cFXElementsMentalController_Init(cMapElement *elem) {
+	cFXElementsMentalController *self = (cFXElementsMentalController *)elem;
 	MentalController_InitBase(&self->base, &self->dcRoot, &self->pos);
 	return 1;
 }
 
-void cFXElementsMentalController_Update(cFXElementsMentalController *self, float dt) {
+void cFXElementsMentalController_Update(cMapElement *elem, float dt) {
+	cFXElementsMentalController *self = (cFXElementsMentalController *)elem;
 	cMapElement_Update(&self->base, dt);
 	CHECK(CGameModel_IsLoaded(&self->base.Mod));
 	if (CGameModel_IsVisible(&self->base.Mod)) {
@@ -179,7 +181,8 @@ static void Press_NodePlace(CGameModel *model, int node, vec3_t *pos, vec3_t *ro
 	*rot = *Matrix_GetEuler(&mat, &tmp);
 }
 
-byte cFXElementsMentalControllerDamageFX_Init(cFXElementsMentalControllerDamageFX *self) {
+byte cFXElementsMentalControllerDamageFX_Init(cMapElement *elem) {
+	cFXElementsMentalControllerDamageFX *self = (cFXElementsMentalControllerDamageFX *)elem;
 	CGameModel *model = &self->base.base.Mod;
 	char buf[0x100];
 	vec3_t tmp, def;
@@ -284,7 +287,8 @@ static void DamageFX_Glow(CGameParticles *p, float s, double iniRange, double in
 	CGameParticles_EmitN(p, 1, 1);
 }
 
-void cFXElementsMentalControllerDamageFX_Update(cFXElementsMentalControllerDamageFX *self, float dt) {
+void cFXElementsMentalControllerDamageFX_Update(cMapElement *elem, float dt) {
+	cFXElementsMentalControllerDamageFX *self = (cFXElementsMentalControllerDamageFX *)elem;
 	CGameModel *model = &self->base.base.Mod;
 	vec3_t tmp, vel, acc, ang, dir, out;
 
@@ -464,7 +468,8 @@ static void MainFX_TubeTrail(CGameTrail *t, const vec3_t *up, byte mode, int tex
 	CGameTrail_SetTexture(t, tex);
 }
 
-byte cFXElementsMentalControllerMainFX_Init(cFXElementsMentalControllerMainFX *self) {
+byte cFXElementsMentalControllerMainFX_Init(cMapElement *elem) {
+	cFXElementsMentalControllerMainFX *self = (cFXElementsMentalControllerMainFX *)elem;
 	CGameModel *model = &self->base.Mod;
 	vec3_t up;
 	int node;
@@ -830,7 +835,8 @@ static void MainFX_TopGlows(cFXElementsMentalControllerMainFX *self, float dt) {
 	}
 }
 
-void cFXElementsMentalControllerMainFX_Update(cFXElementsMentalControllerMainFX *self, float dt) {
+void cFXElementsMentalControllerMainFX_Update(cMapElement *elem, float dt) {
+	cFXElementsMentalControllerMainFX *self = (cFXElementsMentalControllerMainFX *)elem;
 	CGameModel *model = &self->base.Mod;
 
 	if (!self->controllers[0]) {
@@ -987,3 +993,24 @@ void FXElementsPress_Create(void) {
 		cFXElementsMentalControllerMainFX_SetPhase(g_MentalMainFX, phase);
 	}
 }
+
+/* the vtable of cFXElementsMentalController */
+const cMapElementVtbl cFXElementsMentalController_vftable = {
+	.Delete = cFXElementsMentalController_Delete,
+	.Init = cFXElementsMentalController_Init,
+	.Update = cFXElementsMentalController_Update,
+};
+
+/* the vtable of cFXElementsMentalControllerDamageFX */
+const cMapElementVtbl cFXElementsMentalControllerDamageFX_vftable = {
+	.Delete = cFXElementsMentalControllerDamageFX_Delete,
+	.Init = cFXElementsMentalControllerDamageFX_Init,
+	.Update = cFXElementsMentalControllerDamageFX_Update,
+};
+
+/* the vtable of cFXElementsMentalControllerMainFX */
+const cMapElementVtbl cFXElementsMentalControllerMainFX_vftable = {
+	.Delete = cFXElementsMentalControllerMainFX_Delete,
+	.Init = cFXElementsMentalControllerMainFX_Init,
+	.Update = cFXElementsMentalControllerMainFX_Update,
+};

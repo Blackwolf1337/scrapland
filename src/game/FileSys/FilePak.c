@@ -34,50 +34,56 @@ cFile2 *cFile2_ctor(cFile2 *self) {
 	self->file.base.name = NULL;
 	self->file.base.mode = 0;
 	self->file.f = NULL;
-	self->file.base.vftable = cFile2_vftable;
+	self->file.base.vftable = CFILE2_VFTABLE;
 	self->curPos = 0;
 	return self;
 }
 
 void cFile2_dtor(cFile2 *self) {
-	self->file.base.vftable = cFile2_vftable;
+	self->file.base.vftable = CFILE2_VFTABLE;
 	cFile_dtor(&self->file);
 }
 
-cFile2 *cFile2_Destroy(cFile2 *self, int flags) {
-	self->file.base.vftable = cFile2_vftable;
+cAbstractFile *cFile2_Destroy(cAbstractFile *elem, int flags) {
+	cFile2 *self = (cFile2 *)elem;
+	self->file.base.vftable = CFILE2_VFTABLE;
 	cFile_dtor(&self->file);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return elem;
 }
 
-int cFile2_Open(cFile2 *self, const char *name, uint32_t mode) {
+int cFile2_Open(cAbstractFile *base, const char *name, uint32_t mode) {
+	cFile2 *self = (cFile2 *)base;
 	self->curPos = 0;
-	return cFile_Open(&self->file, name, mode);
+	return cFile_Open(&self->file.base, name, mode);
 }
 
-int cFile2_Read(cFile2 *self, void *dst, int size) {
-	int n = cFile_Read(&self->file, dst, size);
+int cFile2_Read(cAbstractFile *base, void *dst, int size) {
+	cFile2 *self = (cFile2 *)base;
+	int n = cFile_Read(&self->file.base, dst, size);
 	self->curPos += n;
 	return n;
 }
 
-int cFile2_Write(cFile2 *self, const void *src, int size) {
-	int n = cFile_Write(&self->file, src, size);
+int cFile2_Write(cAbstractFile *base, const void *src, int size) {
+	cFile2 *self = (cFile2 *)base;
+	int n = cFile_Write(&self->file.base, src, size);
 	self->curPos += n;
 	return n;
 }
 
-int cFile2_Seek(cFile2 *self, int pos) {
-	self->curPos = cFile_Seek(&self->file, pos);
+int cFile2_Seek(cAbstractFile *base, int pos) {
+	cFile2 *self = (cFile2 *)base;
+	self->curPos = cFile_Seek(&self->file.base, pos);
 	CHECK(self->curPos != -1);
 	return self->curPos;
 }
 
-int cFile2_Tell(cFile2 *self) {
-	CHECK(self->curPos == cFile_Tell(&self->file));
+int cFile2_Tell(cAbstractFile *base) {
+	cFile2 *self = (cFile2 *)base;
+	CHECK(self->curPos == cFile_Tell(&self->file.base));
 	return self->curPos;
 }
 
@@ -215,29 +221,31 @@ cFilePack *cFilePack_ctor(cFilePack *self) {
 	self->file.base.name = NULL;
 	self->file.base.mode = 0;
 	self->file.f = NULL;
-	self->file.base.vftable = cFilePack_vftable;
+	self->file.base.vftable = CFILEPACK_VFTABLE;
 	return self;
 }
 
 void cFilePack_dtor(cFilePack *self) {
-	self->file.base.vftable = cFilePack_vftable;
+	self->file.base.vftable = CFILEPACK_VFTABLE;
 	cFile_dtor(&self->file);
 }
 
-cFilePack *cFilePack_Destroy(cFilePack *self, int flags) {
-	self->file.base.vftable = cFilePack_vftable;
+cAbstractFile *cFilePack_Destroy(cAbstractFile *elem, int flags) {
+	cFilePack *self = (cFilePack *)elem;
+	self->file.base.vftable = CFILEPACK_VFTABLE;
 	cFile_dtor(&self->file);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return elem;
 }
 
 /*
  * name is relative to the open pack (g_PackName). A name in the index is read from its pack, else from disk; while
  * a file list is recorded every file is read from disk and listed. Always 1.
  */
-int cFilePack_Open(cFilePack *self, const char *name, uint32_t mode) {
+int cFilePack_Open(cAbstractFile *elem, const char *name, uint32_t mode) {
+	cFilePack *self = (cFilePack *)elem;
 	char path[0x104];
 
 	CHECK(mode == FILE_MODE_READ || g_LstFile);
@@ -266,20 +274,22 @@ int cFilePack_Open(cFilePack *self, const char *name, uint32_t mode) {
 		crt_fputs(name, g_LstFile);
 		crt_fputs("\n", g_LstFile);
 	}
-	return cFile_Open(&self->file, path, mode);
+	return cFile_Open(&self->file.base, path, mode);
 }
 
 /* only one cFilePack is open at a time (g_PackLocked) */
-int cFilePack_Close(cFilePack *self) {
+int cFilePack_Close(cAbstractFile *base) {
+	cFilePack *self = (cFilePack *)base;
 	CHECK(g_PackLocked != 0);
 	g_PackLocked = 0;
 	if (!self->start) {
-		return cFile_Close(&self->file);
+		return cFile_Close(&self->file.base);
 	}
 	return 1;
 }
 
-int cFilePack_Exists(cFilePack *self, const char *name) {
+int cFilePack_Exists(cAbstractFile *base, const char *name) {
+	cFilePack *self = (cFilePack *)base;
 	char path[0x104];
 
 	if (!g_LstFile) {
@@ -290,46 +300,51 @@ int cFilePack_Exists(cFilePack *self, const char *name) {
 		Con_Warnf("WARNING at cFilePack::Exist : File not in pak!\n  Trying with '%s'.\n", path);
 		name = path;
 	}
-	return cFile_Exists(&self->file, name);
+	return cFile_Exists(&self->file.base, name);
 }
 
-int cFilePack_Read(cFilePack *self, void *dst, int size) {
+int cFilePack_Read(cAbstractFile *elem, void *dst, int size) {
+	cFilePack *self = (cFilePack *)elem;
 	if (!self->start) {
-		return cFile_Read(&self->file, dst, size);
+		return cFile_Read(&self->file.base, dst, size);
 	}
 	int pos = self->file.base.vftable->Tell(&self->file.base);
 	CHECK(pos >= 0 && pos + size <= self->size);
 	cFile2 *pf = &g_PackFiles[self->pack];
-	int n = cFile_Read(&pf->file, dst, size);
+	int n = cFile_Read(&pf->file.base, dst, size);
 	pf->curPos += n;
 	return n;
 }
 
-int cFilePack_Write(cFilePack *self, const void *src, int size) {
+int cFilePack_Write(cAbstractFile *base, const void *src, int size) {
+	cFilePack *self = (cFilePack *)base;
 	CHECK(self->start == 0);
-	return cFile_Write(&self->file, src, size);
+	return cFile_Write(&self->file.base, src, size);
 }
 
-int cFilePack_Seek(cFilePack *self, int pos) {
+int cFilePack_Seek(cAbstractFile *base, int pos) {
+	cFilePack *self = (cFilePack *)base;
 	if (!self->start) {
-		return cFile_Seek(&self->file, pos);
+		return cFile_Seek(&self->file.base, pos);
 	}
 	cFile2 *pf = &g_PackFiles[self->pack];
-	pf->curPos = cFile_Seek(&pf->file, self->start + pos);
+	pf->curPos = cFile_Seek(&pf->file.base, self->start + pos);
 	CHECK(pf->curPos != -1);
 	return pf->curPos;
 }
 
-int cFilePack_Tell(cFilePack *self) {
+int cFilePack_Tell(cAbstractFile *base) {
+	cFilePack *self = (cFilePack *)base;
 	if (!self->start) {
-		return cFile_Tell(&self->file);
+		return cFile_Tell(&self->file.base);
 	}
 	return g_PackFiles[self->pack].curPos - self->start;
 }
 
-int cFilePack_Size(cFilePack *self) {
+int cFilePack_Size(cAbstractFile *base) {
+	cFilePack *self = (cFilePack *)base;
 	if (!self->start) {
-		return cFile_Size(&self->file);
+		return cFile_Size(&self->file.base);
 	}
 	return self->size;
 }
@@ -401,7 +416,7 @@ byte Pack_Open(const char *name, const char *dir, size_t bufSize) {
 	CHECK(g_PackLocked == 0);
 	Str_Printf(path, sizeof(path), "%s.%s", name, PACK_EXT);
 	cFile2 *pf = &g_PackFiles[g_NumPackFiles];
-	if (!cFile_Exists(&pf->file, path)) {
+	if (!cFile_Exists(&pf->file.base, path)) {
 		if (g_NumPackFiles >= 1) {
 			Con_Verbosef("Pack: %s not found\n", path);
 			return 0;
@@ -436,7 +451,7 @@ byte Pack_Open(const char *name, const char *dir, size_t bufSize) {
 		return 0;
 	}
 	pf->curPos = 0;
-	cFile_Open(&pf->file, path, FILE_MODE_READ);
+	cFile_Open(&pf->file.base, path, FILE_MODE_READ);
 	if (bufSize) {
 		crt_setvbuf(pf->file.f, NULL, 0, bufSize);
 	}
@@ -480,7 +495,7 @@ void Pack_CloseAll(void) {
 		PackEntries_Clear(g_PackEntries);
 		PackIndexTable_Clear(g_PackIndex);
 		for (int i = 0; i < g_NumPackFiles; i++) {
-			cFile_Close(&g_PackFiles[i].file);
+			cFile_Close(&g_PackFiles[i].file.base);
 		}
 		g_NumPackFiles = 0;
 		return;
@@ -552,22 +567,22 @@ int Pack_Extract(const char *dir) {
 		f.file.base.name = NULL;
 		f.file.base.mode = 0;
 		f.file.f = NULL;
-		f.file.base.vftable = cFilePack_vftable;
-		cFilePack_Open(&f, name->name, FILE_MODE_READ);
-		int size = f.start ? f.size : cFile_Size(&f.file);
+		f.file.base.vftable = CFILEPACK_VFTABLE;
+		cFilePack_Open(&f.file.base, name->name, FILE_MODE_READ);
+		int size = f.start ? f.size : cFile_Size(&f.file.base);
 		void *buf = Mem_Alloc(size);
 		if (!f.start) {
-			cFile_Read(&f.file, buf, size);
+			cFile_Read(&f.file.base, buf, size);
 		} else {
 			int pos = f.file.base.vftable->Tell(&f.file.base);
 			CHECK(pos >= 0 && pos + size <= f.size);
 			cFile2 *pf = &g_PackFiles[f.pack];
-			pf->curPos += cFile_Read(&pf->file, buf, size);
+			pf->curPos += cFile_Read(&pf->file.base, buf, size);
 		}
 		void *fo = File_OpenRel(out, "wb");
 		if (fo) {
-			int n = f.start ? f.size : cFile_Size(&f.file);
-			CHECK((int)crt_fwrite(buf, 1, n, fo) == (f.start ? f.size : cFile_Size(&f.file)));
+			int n = f.start ? f.size : cFile_Size(&f.file.base);
+			CHECK((int)crt_fwrite(buf, 1, n, fo) == (f.start ? f.size : cFile_Size(&f.file.base)));
 			CHECK(crt_fclose(fo) == 0);
 		} else {
 			Con_Bluef("ERROR: File could not be created: '%s'\n", out);
@@ -577,11 +592,11 @@ int Pack_Extract(const char *dir) {
 		CHECK(g_PackLocked != 0);
 		g_PackLocked = 0;
 		if (!f.start) {
-			cFile_Close(&f.file);
+			cFile_Close(&f.file.base);
 		}
 		list->iter = list->iter->prev;
 		name = list->iter == list->head->prev ? NULL : &list->iter->e;
-		f.file.base.vftable = cFilePack_vftable;
+		f.file.base.vftable = CFILEPACK_VFTABLE;
 		cFile_dtor(&f.file);
 	}
 	CHECK(name == NULL);
@@ -726,8 +741,8 @@ void Pack_Build(const char *dir, const char *outName, int mode) {
 		notFound);
 	Str_Printf(path, sizeof(path), "%s.%s", outName, PACK_EXT);
 	out->curPos = 0;
-	cFile_Open(&out->file, path, FILE_MODE_WRITE | FILE_MODE_CREATE);
-	cFile in = { { cFile_vftable, NULL, 0 }, NULL };
+	cFile_Open(&out->file.base, path, FILE_MODE_WRITE | FILE_MODE_CREATE);
+	cFile in = { { CFILE_VFTABLE, NULL, 0 }, NULL };
 	Con_Printf("Saving '%s'", path);
 	v = PACK_MAGIC;
 	out->file.base.vftable->Write(&out->file.base, &v, 4);
@@ -745,29 +760,29 @@ void Pack_Build(const char *dir, const char *outName, int mode) {
 	uint32_t pct = 100;
 	for (uint32_t i = 0; i < g_PackNumEntries; i++) {
 		Str_Printf(path, sizeof(path), "%s/%s", dir, pf->name);
-		cFile_Open(&in, path, FILE_MODE_READ);
-		pf->size = cFile_Size(&in);
-		CHECK(out->curPos == cFile_Tell(&out->file));
+		cFile_Open(&in.base, path, FILE_MODE_READ);
+		pf->size = cFile_Size(&in.base);
+		CHECK(out->curPos == cFile_Tell(&out->file.base));
 		pf->offset = out->curPos;
 		void *buf = Mem_Alloc(pf->size);
-		cFile_Read(&in, buf, pf->size);
-		out->curPos += cFile_Write(&out->file, buf, pf->size);
+		cFile_Read(&in.base, buf, pf->size);
+		out->curPos += cFile_Write(&out->file.base, buf, pf->size);
 		Mem_Free(buf);
-		cFile_Close(&in);
+		cFile_Close(&in.base);
 		pf = PackEntries_Next(list);
 		if (g_PackNumEntries > 20 && (i + 1) % (g_PackNumEntries / 10) == g_PackNumEntries % 10) {
 			Con_Verbosef("%d%%\n", pct / g_PackNumEntries);
 		}
 		pct += 100;
 	}
-	out->curPos = cFile_Seek(&out->file, 8);
+	out->curPos = cFile_Seek(&out->file.base, 8);
 	CHECK(out->curPos != -1);
 	v = g_PackNumEntries;
 	out->file.base.vftable->Write(&out->file.base, &v, 4);
 	Pack_WriteEntries(&out->file.base);
 	Con_Print(0, " Ok!\n", 0);
 	PackEntries_Clear(list);
-	cFile_Close(&out->file);
+	cFile_Close(&out->file.base);
 	g_LstFile = NULL;
 	Str_Printf(msg, sizeof(msg), "BuildPackFile finished\n\npath: %s.%s\n\ntotal files: %d\n\non list: %d  added: %d  "
 		"not found: %d\n\nExit now?", outName, PACK_EXT, g_PackNumEntries, onList, added, notFound);
@@ -836,3 +851,42 @@ void Python_CompileAll(void) {
 	g_PackDirLen = 2;
 	Dir_Walk("./", "py", Python_CompileFile);
 }
+
+/* the vtable of cFile */
+const cAbstractFileVtbl cFile_vftable = {
+	.Open = cFile_Open,
+	.Exists = cFile_Exists,
+	.Close = cFile_Close,
+	.Read = cFile_Read,
+	.Write = cFile_Write,
+	.Seek = cFile_Seek,
+	.Tell = cFile_Tell,
+	.Size = cFile_Size,
+	.Destroy = cFile_Destroy,
+};
+
+/* the vtable of cFile2 */
+const cAbstractFileVtbl cFile2_vftable = {
+	.Open = cFile2_Open,
+	.Exists = cFile_Exists,
+	.Close = cFile_Close,
+	.Read = cFile2_Read,
+	.Write = cFile2_Write,
+	.Seek = cFile2_Seek,
+	.Tell = cFile2_Tell,
+	.Size = cFile_Size,
+	.Destroy = cFile2_Destroy,
+};
+
+/* the vtable of cFilePack */
+const cAbstractFileVtbl cFilePack_vftable = {
+	.Open = cFilePack_Open,
+	.Exists = cFilePack_Exists,
+	.Close = cFilePack_Close,
+	.Read = cFilePack_Read,
+	.Write = cFilePack_Write,
+	.Seek = cFilePack_Seek,
+	.Tell = cFilePack_Tell,
+	.Size = cFilePack_Size,
+	.Destroy = cFilePack_Destroy,
+};

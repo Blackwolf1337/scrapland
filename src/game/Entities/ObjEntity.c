@@ -1141,7 +1141,7 @@ static inline float Net_PosClamp(float v) {
 	return -NET_POS_MAX >= v ? -NET_POS_MAX : Float_MinSS(NET_POS_MAX, v);
 }
 
-void cNetController_Write(cNetController *self, byte flags, cEntity *e, void *m, byte force) {
+void cNetController_Write(cNetController *self, int flags, cEntity *e, void *m, int force) {
 	cAbstractFile *msg = m;
 	cObjEntity *o = Obj(e);
 	byte f;
@@ -1349,4 +1349,13 @@ const cObjEntityVtbl cObjEntity_vftable = {
 	.SetEffect = cObjEntity_SetEffect,
 	.SetEffectParam = cObjEntity_SetEffectParam,
 	.Render = cObjEntity_Render,
+};
+
+/* the vtable of cNetController */
+const cNetControllerVtbl cNetController_vftable = {
+	.Reset = cNetController_Reset,
+	.Read = cNetController_Read,
+	.Write = cNetController_Write,
+	.Changed = cNetController_Changed,
+	.Apply = cNetController_Apply,
 };

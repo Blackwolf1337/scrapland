@@ -257,23 +257,23 @@ byte Lang_Set(const char *lang, byte force) {
 		cString_Set(g_LangName, lang);
 		name = lang;
 	}
-	cFile f = { { cFile_vftable, NULL, 0 }, NULL };
+	cFile f = { { CFILE_VFTABLE, NULL, 0 }, NULL };
 	Str_PrintfQuiet(path, sizeof(path), "Language/%s.txt", name);
-	if (!cFile_Exists(&f, path)) {
+	if (!cFile_Exists(&f.base, path)) {
 		name = g_LangDefault;
 		Str_PrintfQuiet(path, sizeof(path), "Language/%s.txt", name);
 	}
-	if (!cFile_Exists(&f, path)) {
+	if (!cFile_Exists(&f.base, path)) {
 		name = "Strings";
 		Str_PrintfQuiet(path, sizeof(path), "Language/%s.txt", name);
 	}
-	if (!cFile_Exists(&f, path)) {
+	if (!cFile_Exists(&f.base, path)) {
 		Con_FatalErrorf("Language file not found: %s\n\nReinstalling Scrapland should solve this problem.\n",
 			*g_LangName);
 	}
-	cFile_Open(&f, path, FILE_MODE_READ);
+	cFile_Open(&f.base, path, FILE_MODE_READ);
 	Lang_Load(name, &f.base);
-	cFile_Close(&f);
+	cFile_Close(&f.base);
 	cFile_dtor(&f);
 	return 1;
 }

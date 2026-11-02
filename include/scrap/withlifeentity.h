@@ -92,13 +92,6 @@ static inline const cWithLifeEntityVtbl *WithLife_Vtbl(const cEntity *e) {
 }
 
 /* the variable slots of cActCtrl::vftable */
-typedef struct cActCtrlVarVtbl {
-	void *(*Delete)(cActCtrl *self, byte flags);				/* 0x00 */
-	byte(*VarI)(cActCtrl *self, const char *name, int *i, int set);		/* 0x04 */
-	byte(*VarF)(cActCtrl *self, const char *name, double *d, int set);		/* 0x08 */
-	byte(*VarS)(cActCtrl *self, const char *name, char **s, int set);		/* 0x0c */
-	byte(*VarV)(cActCtrl *self, const char *name, double *x, double *y, double *z, int set); /* 0x10 */
-} cActCtrlVarVtbl;
 
 static inline const cActCtrlVarVtbl *ActCtrl_Vtbl(const cActCtrl *c) {
 	return (const cActCtrlVarVtbl *)c->vftable;

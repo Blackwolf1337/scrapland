@@ -169,3 +169,16 @@ byte cPcKeyboard_IsReserved(cPcKeyboard *self, int entry) {
 	(void)self;
 	return entry == 0x01 || entry == 0x29 || entry == 0x3b || entry == 0xdd;
 }
+
+/* the vtable of cPcKeyboard */
+const cAbstractIDeviceVtbl cPcKeyboard_vftable = {
+	.Delete = cPcKeyboard_Delete,
+	.SetDefaults = cPcKeyboard_SetDefaults,
+	.SetGameDefaults = cPcKeyboard_SetGameDefaults,
+	.GetName = cPcKeyboard_GetName,
+	.GetEntryLabel = cPcKeyboard_GetEntryLabel,
+	.GetEntryName = cPcKeyboard_GetEntryName,
+	.Update = cPcKeyboard_Update,
+	.IsReserved = cPcKeyboard_IsReserved,
+	.SetEntry = cPcKeyboard_SetEntry,
+};

@@ -55,9 +55,12 @@ SD_OFFSET(cFileMem, buffer, 0xc);
 SD_OFFSET(cFileMem, ownsBuffer, 0x1c);
 SD_SIZE(cFileMem, 0x20);
 
-#define cAbstractFile_vftable ((const cAbstractFileVtbl *)GAME_VFTABLE(cAbstractFile_vftable))
-#define cFile_vftable ((const cAbstractFileVtbl *)GAME_VFTABLE(cFile_vftable))
-#define cFileMem_vftable ((const cAbstractFileVtbl *)GAME_VFTABLE(cFileMem_vftable))
+extern const cAbstractFileVtbl cAbstractFile_vftable;
+#define CABSTRACTFILE_VFTABLE (&cAbstractFile_vftable)
+extern const cAbstractFileVtbl cFile_vftable;
+#define CFILE_VFTABLE (&cFile_vftable)
+extern const cAbstractFileVtbl cFileMem_vftable;
+#define CFILEMEM_VFTABLE (&cFileMem_vftable)
 
 void cAbstractFile_dtor(cAbstractFile *self);
 int cAbstractFile_Open(cAbstractFile *self, const char *name, uint32_t mode);
@@ -68,29 +71,31 @@ int cAbstractFile_ReadString(cAbstractFile *self, char *buf, int size);
 int cAbstractFile_WriteString(cAbstractFile *self, const char *s);
 
 void cFile_dtor(cFile *self);
-int cFile_Open(cFile *self, const char *name, uint32_t mode);
-int cFile_Exists(cFile *self, const char *name);
-int cFile_Close(cFile *self);
-int cFile_Read(cFile *self, void *dst, int size);
-int cFile_Write(cFile *self, const void *src, int size);
-int cFile_Seek(cFile *self, int pos);
-int cFile_Tell(cFile *self);
-int cFile_Size(cFile *self);
+int cFile_Open(cAbstractFile *elem, const char *name, uint32_t mode);
+int cFile_Exists(cAbstractFile *base, const char *name);
+int cFile_Close(cAbstractFile *elem);
+int cFile_Read(cAbstractFile *base, void *dst, int size);
+int cFile_Write(cAbstractFile *base, const void *src, int size);
+int cFile_Seek(cAbstractFile *base, int pos);
+int cFile_Tell(cAbstractFile *base);
+int cFile_Size(cAbstractFile *base);
+cAbstractFile *cFile_Destroy(cAbstractFile *base, int flags);
 
 cFileMem *cFileMem_ctor(cFileMem *self, void *buffer, int maxSize, byte ownsBuffer);
 void cFileMem_dtor(cFileMem *self);
 /* a new buffer with size bytes of data in it */
 void cFileMem_SetBuffer(cFileMem *self, void *buffer, int maxSize, byte ownsBuffer, int size);
-int cFileMem_Open(cFileMem *self, const char *name, uint32_t mode);
-int cFileMem_Close(cFileMem *self);
-int cFileMem_Read(cFileMem *self, void *dst, int size);
-int cFileMem_Write(cFileMem *self, const void *src, int size);
-int cFileMem_Seek(cFileMem *self, int pos);
-int cFileMem_Tell(cFileMem *self);
-int cFileMem_Size(cFileMem *self);
+int cFileMem_Open(cAbstractFile *elem, const char *name, uint32_t mode);
+int cFileMem_Close(cAbstractFile *base);
+int cFileMem_Read(cAbstractFile *base, void *dst, int size);
+int cFileMem_Write(cAbstractFile *base, const void *src, int size);
+int cFileMem_Seek(cAbstractFile *base, int pos);
+int cFileMem_Tell(cAbstractFile *base);
+int cFileMem_Size(cAbstractFile *base);
 /* a string with a length byte into buf of size bytes; one of less than 256 characters with its length byte */
 int cAbstractFile_ReadString8(cAbstractFile *self, char *buf, byte size);
 int cAbstractFile_WriteString8(cAbstractFile *self, const char *s);
+int cAbstractFile_ExistsTrue(cAbstractFile *self, const char *name);
 
 /*
  * FileSys/FileBlock.cpp: a file of nested blocks, each a 4 character id, the size of its data (int) and the data.
