@@ -15,12 +15,13 @@
  * file are copied), the mip levels made here (D3DX rounds them on another path), and the scaled filters LINEAR,
  * TRIANGLE and BOX (only used when the size changes, which the game never asks for).
  */
+#include <stdlib.h>
 #include <string.h>
 
 #include "scrap/rdev.h"
 #include "scrap/d3d8.h"
 
-#include <windows.h>
+
 
 #define D3DERR_NOTAVAILABLE ((int)0x8876086a)
 #define D3DERR_INVALIDCALL ((int)0x8876086c)
@@ -345,18 +346,21 @@ int __stdcall D3DX_CheckTextureRequirements(void *dev, uint32_t *pw, uint32_t *p
 /* ---- texels ---- */
 
 /* r g b a in 0..1; a signed channel s is held as (s + 1) / 2 */
+/* a RECT of Windows */
+typedef struct TexRect {
+	int32_t left, top, right, bottom;
+} TexRect;
+
 typedef struct {
 	float c[4];
 } texel_t;
 
 static void *Tex_Alloc(size_t n) {
-	return HeapAlloc(GetProcessHeap(), 0, n ? n : 1);
+	return malloc(n ? n : 1);
 }
 
 static void Tex_Free(void *p) {
-	if (p) {
-		HeapFree(GetProcessHeap(), 0, p);
-	}
+	free(p);
 }
 
 static uint32_t Tex_ReadWord(const byte *p, int bytes) {
@@ -926,10 +930,10 @@ static uint32_t Tex_Filter(uint32_t filter, uint32_t def) {
  */
 int __stdcall D3DX_LoadSurfaceFromSurface(void *dst, const void *dstPal, const void *dstRectArg, void *src,
 	const void *srcPal, const void *srcRectArg, uint32_t filter, uint32_t colorKey) {
-	const RECT *dstRect = dstRectArg, *srcRect = srcRectArg;
+	const TexRect *dstRect = dstRectArg, *srcRect = srcRectArg;
 	d3dSurfaceDesc_t sd, dd;
 	d3dLockedRect_t sl, dl;
-	RECT sr, dr;
+	TexRect sr, dr;
 	int hr;
 
 	(void)dstPal;
@@ -941,8 +945,8 @@ int __stdcall D3DX_LoadSurfaceFromSurface(void *dst, const void *dstPal, const v
 		|| (hr = Rd_SurfGetDesc(dst, &dd)) < 0) {
 		return hr;
 	}
-	sr = srcRect ? *srcRect : (RECT){ 0, 0, (LONG)sd.Width, (LONG)sd.Height };
-	dr = dstRect ? *dstRect : (RECT){ 0, 0, (LONG)dd.Width, (LONG)dd.Height };
+	sr = srcRect ? *srcRect : (TexRect){ 0, 0, (int32_t)sd.Width, (int32_t)sd.Height };
+	dr = dstRect ? *dstRect : (TexRect){ 0, 0, (int32_t)dd.Width, (int32_t)dd.Height };
 	if (sr.left < 0 || sr.top < 0 || sr.right <= sr.left || sr.bottom <= sr.top || (uint32_t)sr.right > sd.Width
 		|| (uint32_t)sr.bottom > sd.Height || dr.left < 0 || dr.top < 0 || dr.right <= dr.left
 		|| dr.bottom <= dr.top || (uint32_t)dr.right > dd.Width || (uint32_t)dr.bottom > dd.Height) {

@@ -11,8 +11,9 @@ if(CCACHE)
 	set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE})
 endif()
 
-if(NOT WIN32 OR NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
-	message(FATAL_ERROR "ScrapC.exe is 32 bit Windows only for now: cmake -B build -DCMAKE_TOOLCHAIN_FILE=cmake/mingw-i686.cmake")
+if(NOT CMAKE_SIZEOF_VOID_P EQUAL 4 OR NOT (WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux"))
+	message(FATAL_ERROR "ScrapC is 32 bit for now: cmake -B build -DCMAKE_TOOLCHAIN_FILE=cmake/mingw-i686.cmake (Windows) "
+		"or cmake -B build-linux -DCMAKE_TOOLCHAIN_FILE=cmake/linux-i686.cmake")
 endif()
 
 # the game code of ScrapC.exe, in the folder layout of the original sources (paths from the asserts in Scrap.exe)
@@ -45,7 +46,9 @@ target_compile_options(scrapcode PUBLIC -Wall -Wextra -O2 -g -fno-omit-frame-poi
 	-msse2 -mfpmath=sse -ffp-contract=off
 	# sources are UTF-8, the game's strings Windows-1252 (Spanish messages of the original)
 	-finput-charset=UTF-8 -fexec-charset=CP1252)
-target_link_options(scrapcode PUBLIC -static-libgcc -Wl,--enable-stdcall-fixup)
+if(WIN32)
+	target_link_options(scrapcode PUBLIC -static-libgcc -Wl,--enable-stdcall-fixup)
+endif()
 
 # the GLSL shaders of the Vulkan backend (shaders/), as SPIR-V words for #include
 find_program(GLSLANG glslangValidator REQUIRED)
@@ -74,23 +77,36 @@ foreach(s ff.vert ff.frag present.vert present.frag ${PS_SOURCES})
 endforeach()
 add_custom_target(shaders DEPENDS ${SHADER_INCS})
 
-# FFmpeg for the video player (Engine/Video.c), built by tools/ffmpeg.sh: its headers and import libraries
+# FFmpeg for the video player (Engine/Video.c), built by tools/ffmpeg.sh (Windows DLLs, or shared libraries for
+# Linux with "linux" as its second argument): its headers and libraries
 set(FFMPEG_DIR ${CMAKE_CURRENT_BINARY_DIR}/ffmpeg/install CACHE PATH "the FFmpeg of tools/ffmpeg.sh")
 if(NOT EXISTS ${FFMPEG_DIR}/include/libavformat/avformat.h)
 	message(FATAL_ERROR "no FFmpeg in ${FFMPEG_DIR}: run tools/ffmpeg.sh first")
 endif()
 set(FFMPEG_LIBS)
 foreach(l avformat avcodec avutil swscale)
-	list(APPEND FFMPEG_LIBS ${FFMPEG_DIR}/bin/${l}.lib)
+	if(WIN32)
+		list(APPEND FFMPEG_LIBS ${FFMPEG_DIR}/bin/${l}.lib)
+	else()
+		list(APPEND FFMPEG_LIBS ${FFMPEG_DIR}/lib/lib${l}.so)
+	endif()
 endforeach()
 
-# SDL3 for the window, the input, the timers and the Vulkan surface, built by tools/sdl3.sh
-set(SDL3_DIR ${CMAKE_CURRENT_BINARY_DIR}/sdl3/install CACHE PATH "the SDL3 of tools/sdl3.sh")
-if(NOT EXISTS ${SDL3_DIR}/include/SDL3/SDL.h)
-	message(FATAL_ERROR "no SDL3 in ${SDL3_DIR}: run tools/sdl3.sh first")
+# SDL3 for the window, the input, the timers and the Vulkan surface: built by tools/sdl3.sh for Windows, the
+# system's (lib32-sdl3) on Linux
+if(WIN32)
+	set(SDL3_DIR ${CMAKE_CURRENT_BINARY_DIR}/sdl3/install CACHE PATH "the SDL3 of tools/sdl3.sh")
+	if(NOT EXISTS ${SDL3_DIR}/include/SDL3/SDL.h)
+		message(FATAL_ERROR "no SDL3 in ${SDL3_DIR}: run tools/sdl3.sh first")
+	endif()
+	set(SDL3_INCLUDE ${SDL3_DIR}/include)
+	set(SDL3_LIB ${SDL3_DIR}/lib/libSDL3.dll.a)
+else()
+	find_path(SDL3_INCLUDE SDL3/SDL.h REQUIRED)
+	find_library(SDL3_LIB SDL3 REQUIRED)
 endif()
 add_dependencies(scrapcode shaders)
-target_include_directories(scrapcode PRIVATE ${SHADER_DIR} ${FFMPEG_DIR}/include ${SDL3_DIR}/include)
+target_include_directories(scrapcode PRIVATE ${SHADER_DIR} ${FFMPEG_DIR}/include ${SDL3_INCLUDE})
 
 # Python 1.5.2 for ScrapC.exe from third_party/python-1.5.2 (unchanged), configured like the one in Scrap.exe: our
 # config.h and inittab, pyshim.h for its libc (the exe's C runtime and the engine's Python pool) and the files of
@@ -140,8 +156,6 @@ add_library(python152 STATIC
 	${PY152}/Parser/parser.c
 	${PY152}/Parser/parsetok.c
 	${PY152}/Parser/tokenizer.c
-	${PY152}/PC/dl_nt.c
-	${PY152}/PC/import_nt.c
 	${PY152}/Python/bltinmodule.c
 	${PY152}/Python/ceval.c
 	${PY152}/Python/compile.c
@@ -164,6 +178,10 @@ add_library(python152 STATIC
 	${PY152}/Python/sysmodule.c
 	${PY152}/Python/traceback.c
 )
+if(WIN32)
+	# the registry lookup of modules and the DLL handle of the Windows build
+	target_sources(python152 PRIVATE ${PY152}/PC/dl_nt.c ${PY152}/PC/import_nt.c)
+endif()
 set_target_properties(python152 PROPERTIES C_STANDARD 90 C_EXTENSIONS ON) # gnu89
 target_compile_definitions(python152 PRIVATE NDEBUG) # a release build in the exe: no assert of longobject.c and regexpr.c
 target_include_directories(python152 PRIVATE src/python ${PY152}/Include ${PY152} ${PY152}/Python include)
@@ -175,50 +193,29 @@ target_compile_options(python152 PRIVATE -include ${CMAKE_SOURCE_DIR}/src/python
 set_source_files_properties(${PY152}/Modules/getbuildinfo.c PROPERTIES
 	COMPILE_DEFINITIONS "DATE=\"Nov 24 2021\";TIME=\"15:23:52\"")
 
-# ScrapC.exe: the standalone exe (docs/standalone.md), in game/Bin. A normal exe since stage 3c2: the default base
-# with dynamic base, the C objects of the original's data are plain globals. Neither the build nor ScrapC.exe needs
-# the original exe.
-# the resources of ScrapC.exe: src/standalone/scrap.rc and its files in res/ (taken from the original's .rsrc). An
-# object library of its own, so the C options of scrapcode do not reach windres.
-enable_language(RC)
-file(GLOB RES_FILES CONFIGURE_DEPENDS src/standalone/res/*)
-add_library(scrapres OBJECT src/standalone/scrap.rc)
-target_include_directories(scrapres PRIVATE src/standalone) # windres finds the res/ files from the include path
-set_source_files_properties(src/standalone/scrap.rc PROPERTIES OBJECT_DEPENDS "${RES_FILES}")
-add_executable(ScrapC WIN32 src/standalone/main.c src/standalone/crt.c src/standalone/crtinit.c src/standalone/crtxc.c
-	 $<TARGET_OBJECTS:scrapres>)
-# stage 3c1a: the DLLs of the original are imports of ScrapC.exe itself (GAME_IMPORT of include/scrap/game.h). fmod
-# (in game/Bin, next to ScrapC.exe) through an import library made from its .def file in src/standalone, the others
-# through the ones of mingw-w64. Galaxy.dll and steam_api.dll of
-# the original are no imports: the C has no GOG or Steam code.
-# ld sorts the import directory by the path of the import library, so the libraries of the game's DLLs are linked as
-# build/implib/<n>-lib<name>.a (dlltool output or a link to the mingw-w64 one), numbered in the order of the
-# original's import directory. kernel32, user32, gdi32, advapi32, shell32, comdlg32 and ole32 are in the default
-# libraries of the toolchain, so they keep their place in ld's order (a second path of one of them would split its
-# import descriptor).
-set(IMPLIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/implib)
-file(MAKE_DIRECTORY ${IMPLIB_DIR})
-set(IMPLIBS)
-set(n 10)
-foreach(dll winmm wsock32 comctl32)
-	string(TOLOWER ${dll} lib)
-	set(implib ${IMPLIB_DIR}/${n}-lib${lib}.a)
-	if(EXISTS ${CMAKE_SOURCE_DIR}/src/standalone/${dll}.def)
-		add_custom_command(OUTPUT ${implib}
-			COMMAND ${CMAKE_DLLTOOL} -d ${CMAKE_SOURCE_DIR}/src/standalone/${dll}.def -l ${n}-lib${lib}.a
-			WORKING_DIRECTORY ${IMPLIB_DIR}
-			DEPENDS src/standalone/${dll}.def
-			COMMENT "Import library of ${dll}.dll")
-	else()
-		find_library(IMPLIB_${lib} ${lib} REQUIRED)
-		file(CREATE_LINK ${IMPLIB_${lib}} ${implib} SYMBOLIC)
-	endif()
-	list(APPEND IMPLIBS ${implib})
-	math(EXPR n "${n} + 1")
-endforeach()
-add_custom_target(implibs DEPENDS ${IMPLIBS})
-add_dependencies(ScrapC implibs)
-target_link_libraries(ScrapC PRIVATE scrapcode python152 ${IMPLIBS} ${FFMPEG_LIBS} ${SDL3_DIR}/lib/libSDL3.dll.a kernel32 user32 gdi32 advapi32 shell32 comdlg32
-	ole32)
-# stage 3c2: the default base of ld with dynamic base (ASLR)
-target_link_options(ScrapC PRIVATE -Wl,--dynamicbase)
+# ScrapC: the standalone game (docs/standalone.md), in game/Bin; neither the build nor the game needs the original
+# exe
+if(WIN32)
+	# the resources of ScrapC.exe: src/standalone/scrap.rc and its files in res/. An object library of its own, so
+	# the C options of scrapcode do not reach windres.
+	enable_language(RC)
+	file(GLOB RES_FILES CONFIGURE_DEPENDS src/standalone/res/*)
+	add_library(scrapres OBJECT src/standalone/scrap.rc)
+	target_include_directories(scrapres PRIVATE src/standalone) # windres finds the res/ files from the include path
+	set_source_files_properties(src/standalone/scrap.rc PROPERTIES OBJECT_DEPENDS "${RES_FILES}")
+	add_executable(ScrapC WIN32 src/standalone/main.c src/standalone/crt.c src/standalone/crtwin.c
+		src/standalone/crtinit.c src/standalone/crtxc.c $<TARGET_OBJECTS:scrapres>)
+	target_link_libraries(ScrapC PRIVATE scrapcode python152 ${FFMPEG_LIBS} ${SDL3_LIB} wsock32 advapi32 user32
+		kernel32)
+	# the default base of ld with dynamic base (ASLR)
+	target_link_options(ScrapC PRIVATE -Wl,--dynamicbase)
+else()
+	add_executable(ScrapC src/standalone/main.c src/standalone/crt.c src/standalone/crtposix.c
+		src/standalone/crtinit.c src/standalone/crtxc.c)
+	target_link_libraries(ScrapC PRIVATE scrapcode python152 ${FFMPEG_LIBS} ${SDL3_LIB} m dl pthread)
+	# the FFmpeg libraries next to the game; the image at 0x400000 like the exe on Windows, where the test scripts
+	# take their addresses from (src/core/testmod.c)
+	set_target_properties(ScrapC PROPERTIES BUILD_RPATH "$ORIGIN" INSTALL_RPATH "$ORIGIN")
+	set_target_properties(scrapcode python152 PROPERTIES POSITION_INDEPENDENT_CODE OFF)
+	target_link_options(ScrapC PRIVATE -no-pie -Wl,-Ttext-segment=0x400000)
+endif()

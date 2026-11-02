@@ -36,7 +36,11 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 #include <string.h>
 
 #include "scrap/crt.h"
@@ -150,10 +154,19 @@ static const char *const testStdcalls[] = { TEST_STDCALLS };
 #undef TEST_STDCALL
 
 /* also every function outside the exe: the methods of COM objects and the Win32 functions of SDTest.Proc */
+#ifndef _WIN32
+extern char _end[];	/* the end of the image (ld) */
+#endif
+
 static int TestMod_IsStdcall(const void *fn) {
+#ifdef _WIN32
 	const IMAGE_DOS_HEADER *dos = (const IMAGE_DOS_HEADER *)game_base;
 	const IMAGE_NT_HEADERS32 *nt = (const IMAGE_NT_HEADERS32 *)(game_base + dos->e_lfanew);
-	if ((uintptr_t)fn < game_base || (uintptr_t)fn >= game_base + nt->OptionalHeader.SizeOfImage) {
+	uintptr_t end = game_base + nt->OptionalHeader.SizeOfImage;
+#else
+	uintptr_t end = (uintptr_t)_end;
+#endif
+	if ((uintptr_t)fn < game_base || (uintptr_t)fn >= end) {
 		return 1;
 	}
 	for (size_t i = 0; i < sizeof(testStdcalls) / sizeof(testStdcalls[0]); i++) {
@@ -643,8 +656,14 @@ static PyObject *SDTest_Proc(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "ss", &dll, &name)) {
 		return NULL;
 	}
+#ifdef _WIN32
 	HMODULE m = GetModuleHandleA(dll);
-	FARPROC fn = m ? GetProcAddress(m, name) : NULL;
+	void *fn = m ? (void *)GetProcAddress(m, name) : NULL;
+#else
+	/* a library of the process by its file name (the DLLs of Windows are not there) */
+	void *lib = dlopen(dll, RTLD_NOW | RTLD_NOLOAD);
+	void *fn = lib ? dlsym(lib, name) : NULL;
+#endif
 	if (!fn) {
 		Py_INCREF(Py_None);
 		return Py_None;
@@ -693,11 +712,14 @@ static PyObject *SDTest_D3DLog(PyObject *self, PyObject *args) {
 
 static PyObject *SDTest_HeapOk(PyObject *self, PyObject *args) {
 	(void)self;
-	HANDLE heaps[64];
-
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
+#ifndef _WIN32
+	/* no heap walk of the system: the heaps count as valid */
+	return Py_BuildValue("i", -1);
+#else
+	HANDLE heaps[64];
 	DWORD n = GetProcessHeaps(64, heaps);
 	if (n > 64) {
 		n = 64;
@@ -708,6 +730,7 @@ static PyObject *SDTest_HeapOk(PyObject *self, PyObject *args) {
 		}
 	}
 	return Py_BuildValue("i", -1);
+#endif
 }
 
 static PyMethodDef sdtest_methods[] = {

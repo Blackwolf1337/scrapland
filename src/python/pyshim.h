@@ -14,6 +14,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef _WIN32
+/* the static getline of Objects/fileobject.c, not the one of POSIX 2008 in stdio.h */
+#define getline py152_getline
+#endif
+
 /* C code of the engine, declared here because its headers are C23 (python.h, e3dutil.h) */
 void *PyPool_Malloc(size_t size);
 void *PyPool_Realloc(void *p, size_t size);

@@ -1,16 +1,22 @@
 /*
- * config.h of the Python 1.5.2 library of ScrapC.exe (mingw-w64, i686), derived from the MSVC section of
+ * config.h of the Python 1.5.2 library of ScrapC (mingw-w64 or Linux, i686), derived from the MSVC section of
  * third_party/python-1.5.2/PC/config.h with the choices of the build linked into Scrap.exe:
  * - static: no MS_COREDLL (_PyObject_New takes only the type, no sys.dllhandle or sys.winver)
  * - no WITH_THREAD: the exe has no thread module and no interpreter lock (no PyEval_AcquireThread)
  * - COMPILER and PLATFORM as in the exe, so sys.version and sys.platform read the same (the build date and time of
  *   the exe are set for Modules/getbuildinfo.c in CMakeLists.txt)
  * The libc of the library is the C runtime of the original (src/python/pyshim.h), as for the rest of the C code.
+ * On Linux the library is the POSIX one, with the same sys.version and sys.platform ("win32") for the scripts.
  */
 #ifndef Py_CONFIG_H
 #define Py_CONFIG_H
 
+#ifdef _WIN32
 #include <io.h>
+#else
+#include <unistd.h>
+#define HAVE_UNISTD_H 1
+#endif
 #include <stdio.h>
 
 #define HAVE_LIMITS_H
@@ -21,13 +27,17 @@
 #define PREFIX ""
 #define EXEC_PREFIX ""
 
+#ifdef _WIN32
 #define NT	/* NT is obsolete - please use MS_WIN32 instead */
 #define MS_WIN32
 #define MS_WINDOWS
+#endif
 
 #define COMPILER "[MSC 32 bit (Intel)]"
 #define PYTHONPATH ".\\DLLs;.\\lib;.\\lib\\plat-win;.\\lib\\lib-tk"
+#ifdef _WIN32
 typedef int pid_t;
+#endif
 #define WORD_BIT 32
 #define HAVE_CLOCK
 #define HAVE_STRFTIME
@@ -36,14 +46,16 @@ typedef int pid_t;
 #define DL_IMPORT(RTYPE) RTYPE
 #define DL_EXPORT(RTYPE) RTYPE
 #define HAVE_LONG_LONG 1
-#define LONG_LONG __int64
+#define LONG_LONG long long
 
 #define PLATFORM "win32"
 #define SIZEOF_INT 4
 #define SIZEOF_LONG 4
 #define SIZEOF_LONG_LONG 8
 #define SIZEOF_VOID_P 4
+#ifdef _WIN32
 #define CHECK_IMPORT_CASE
+#endif
 
 #define HAVE_TZNAME
 #define RETSIGTYPE void

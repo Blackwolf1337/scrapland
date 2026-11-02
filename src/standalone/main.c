@@ -33,6 +33,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
 	return Main_Start(cmd, (uintptr_t)inst);
 }
 #else
+extern char __executable_start[];	/* the start of the image (ld), 0x400000 as on Windows (CMakeLists.txt) */
+
 /* the arguments joined with spaces, the ones with a space quoted: the command line the game parses */
 int main(int argc, char **argv) {
 	static char cmd[4096];
@@ -47,6 +49,6 @@ int main(int argc, char **argv) {
 		}
 		n += (size_t)w;
 	}
-	return Main_Start(cmd, 0);
+	return Main_Start(cmd, (uintptr_t)__executable_start);
 }
 #endif

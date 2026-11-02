@@ -3,6 +3,7 @@
 /prefix/
 /ref/
 /build/
+/build-*/
 *.bin
 setup_*.exe
 *.packed

@@ -1,10 +1,11 @@
 #!/bin/bash
-# Builds the FFmpeg the video player of ScrapC.exe needs (src/game/engine3d/Engine/Video.c): shared LGPL DLLs for
-# mingw i686 with only the AVI demuxer, the MPEG-4 part 2 (XviD) and PCM decoders and swscale. The videos of the game
-# (game/Video/*.vds) are AVI files with XviD video and 16 bit PCM sound.
+# Builds the FFmpeg the video player of ScrapC needs (src/game/engine3d/Engine/Video.c): shared LGPL libraries
+# (DLLs for mingw i686, or i686 Linux .so files) with only the AVI demuxer, the MPEG-4 part 2 (XviD) and PCM decoders
+# and swscale. The videos of the game (game/Video/*.vds) are AVI files with XviD video and 16 bit PCM sound.
 #
-# usage: tools/ffmpeg.sh [build dir]   default build/ffmpeg; the result is in <build dir>/install (bin/*.dll,
-#        lib/*.dll.a, include), which CMakeLists.txt takes from there
+# usage: tools/ffmpeg.sh [build dir [linux]]   default build/ffmpeg for Windows; the result is in <build dir>/install
+#        (bin/*.dll and lib/*.dll.a, or lib/*.so; include), which CMakeLists.txt takes from there. For the Linux
+#        build: tools/ffmpeg.sh build-linux/ffmpeg linux
 set -e
 root=$(cd "$(dirname "$0")/.." && pwd)
 out=$(realpath -m "${1:-$root/build/ffmpeg}")
@@ -22,13 +23,17 @@ rm -rf "$out/src"
 mkdir -p "$out/src"
 tar -xf "$tar" -C "$out/src" --strip-components=1
 cd "$out/src"
-./configure --prefix="$out/install" --target-os=mingw32 --arch=x86 --cpu=i686 \
-	--cross-prefix=i686-w64-mingw32- --enable-cross-compile --pkg-config=false \
+if [ "$2" = linux ]; then
+	target=(--target-os=linux --arch=x86 --cpu=i686 --cc="gcc -m32" --extra-ldflags=-m32 --disable-x86asm)
+else
+	target=(--target-os=mingw32 --arch=x86 --cpu=i686 --cross-prefix=i686-w64-mingw32- --enable-cross-compile
+		--extra-ldflags=-static-libgcc --extra-libs=-l:libwinpthread.a)
+fi
+./configure --prefix="$out/install" "${target[@]}" --pkg-config=false \
 	--enable-shared --disable-static --disable-programs --disable-doc --disable-network --disable-autodetect \
 	--disable-everything --disable-avdevice --disable-avfilter --disable-swresample --disable-postproc \
 	--enable-avformat --enable-avcodec --enable-swscale \
-	--enable-demuxer=avi --enable-decoder=mpeg4,pcm_s16le --enable-parser=mpeg4video --enable-protocol=file \
-	--extra-ldflags=-static-libgcc --extra-libs=-l:libwinpthread.a
+	--enable-demuxer=avi --enable-decoder=mpeg4,pcm_s16le --enable-parser=mpeg4video --enable-protocol=file
 make -j"$(nproc)"
 make install
-ls "$out/install/bin"
+ls "$out/install/bin" "$out/install/lib" 2>/dev/null || true
