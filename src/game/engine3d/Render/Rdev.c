@@ -1,6 +1,6 @@
 /*
  * The public functions of the render device (include/scrap/rdev.h): a device call on the logged device is written to
- * the D3D log first (RdevLog.c), then every call goes to the backend.
+ * the D3D log first (RdevLog.c), then every call goes to the Vulkan backend (vk/RdevVk.c).
  */
 #include <stddef.h>
 #include <stdio.h>
@@ -10,71 +10,63 @@
 #include "rdevbackend.h"
 #include "scrap/rdev.h"
 
-const RdBackend *rd = &rd_d3d8;
-
-/* SCRAP_RENDER=vulkan picks the Vulkan backend (until it replaces the D3D8 one) */
 void *Rd_Direct3DCreate8(uint32_t sdk) {
-	const char *r = getenv("SCRAP_RENDER");
-	if (r && !strcmp(r, "vulkan")) {
-		rd = &rd_vk;
-	}
-	Com_Printf("render device: %s\n", rd->name);
-	return rd->Direct3DCreate8(sdk);
+	return Vk_Direct3DCreate8(sdk);
 }
 
 uint32_t Rd_AddRef(void *obj) {
-	return rd->AddRef(obj);
+	return Vk_AddRef(obj);
 }
 
 uint32_t Rd_Release(void *obj) {
-	return rd->Release(obj);
+	return Vk_Release(obj);
 }
 
 int Rd_D3DCheckDepthStencilMatch(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t rt, uint32_t ds) {
-	return rd->D3DCheckDepthStencilMatch(d3d, adapter, type, fmt, rt, ds);
+	return Vk_D3DCheckDepthStencilMatch(d3d, adapter, type, fmt, rt, ds);
 }
 
 int Rd_D3DCheckDeviceFormat(void *d3d, uint32_t adapter, int devType, int adapterFmt, uint32_t usage, int rtype,
 	int fmt) {
-	return rd->D3DCheckDeviceFormat(d3d, adapter, devType, adapterFmt, usage, rtype, fmt);
+	return Vk_D3DCheckDeviceFormat(d3d, adapter, devType, adapterFmt, usage, rtype, fmt);
 }
 
 int Rd_D3DCheckDeviceMultiSampleType(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, int windowed,
 	uint32_t ms) {
-	return rd->D3DCheckDeviceMultiSampleType(d3d, adapter, type, fmt, windowed, ms);
+	return Vk_D3DCheckDeviceMultiSampleType(d3d, adapter, type, fmt, windowed, ms);
 }
 
 int Rd_D3DCheckDeviceType(void *d3d, uint32_t adapter, uint32_t type, uint32_t dfmt, uint32_t bfmt, int windowed) {
-	return rd->D3DCheckDeviceType(d3d, adapter, type, dfmt, bfmt, windowed);
+	return Vk_D3DCheckDeviceType(d3d, adapter, type, dfmt, bfmt, windowed);
 }
 
 int Rd_D3DCreateDevice(void *d3d, uint32_t adapter, uint32_t type, void *hwnd, uint32_t behavior, void *pp,
 	void **dev) {
-	return rd->D3DCreateDevice(d3d, adapter, type, hwnd, behavior, pp, dev);
+	return Vk_D3DCreateDevice(d3d, adapter, type, hwnd, behavior, pp, dev);
 }
 
 int Rd_D3DEnumAdapterModes(void *d3d, uint32_t adapter, uint32_t mode, void *out) {
-	return rd->D3DEnumAdapterModes(d3d, adapter, mode, out);
+	return Vk_D3DEnumAdapterModes(d3d, adapter, mode, out);
 }
 
 uint32_t Rd_D3DGetAdapterCount(void *d3d) {
-	return rd->D3DGetAdapterCount(d3d);
+	return Vk_D3DGetAdapterCount(d3d);
 }
 
 int Rd_D3DGetAdapterDisplayMode(void *d3d, uint32_t adapter, void *out) {
-	return rd->D3DGetAdapterDisplayMode(d3d, adapter, out);
+	return Vk_D3DGetAdapterDisplayMode(d3d, adapter, out);
 }
 
 int Rd_D3DGetAdapterIdentifier(void *d3d, uint32_t adapter, uint32_t flags, void *id) {
-	return rd->D3DGetAdapterIdentifier(d3d, adapter, flags, id);
+	return Vk_D3DGetAdapterIdentifier(d3d, adapter, flags, id);
 }
 
 uint32_t Rd_D3DGetAdapterModeCount(void *d3d, uint32_t adapter) {
-	return rd->D3DGetAdapterModeCount(d3d, adapter);
+	return Vk_D3DGetAdapterModeCount(d3d, adapter);
 }
 
 int Rd_D3DGetDeviceCaps(void *d3d, uint32_t adapter, uint32_t type, void *caps) {
-	return rd->D3DGetDeviceCaps(d3d, adapter, type, caps);
+	return Vk_D3DGetDeviceCaps(d3d, adapter, type, caps);
 }
 
 int Rd_DevBeginScene(void *dev) {
@@ -82,7 +74,7 @@ int Rd_DevBeginScene(void *dev) {
 		RdLog_Call(0x88 / 4, NULL);
 		dev = rd_logReal;
 	}
-	return rd->DevBeginScene(dev);
+	return Vk_DevBeginScene(dev);
 }
 
 int Rd_DevClear(void *dev, uint32_t count, const void *rects, uint32_t flags, uint32_t color, float z,
@@ -93,7 +85,7 @@ int Rd_DevClear(void *dev, uint32_t count, const void *rects, uint32_t flags, ui
 		RdLog_Call(0x90 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevClear(dev, count, rects, flags, color, z, stencil);
+	return Vk_DevClear(dev, count, rects, flags, color, z, stencil);
 }
 
 int Rd_DevCopyRects(void *dev, void *src, const void *rects, uint32_t n, void *dst, const void *points) {
@@ -103,7 +95,7 @@ int Rd_DevCopyRects(void *dev, void *src, const void *rects, uint32_t n, void *d
 		RdLog_Call(0x70 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevCopyRects(dev, src, rects, n, dst, points);
+	return Vk_DevCopyRects(dev, src, rects, n, dst, points);
 }
 
 int Rd_DevCreateDepthStencilSurface(void *dev, uint32_t w, uint32_t h, int fmt, int multisample, void **surf) {
@@ -113,7 +105,7 @@ int Rd_DevCreateDepthStencilSurface(void *dev, uint32_t w, uint32_t h, int fmt, 
 		RdLog_Call(0x68 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevCreateDepthStencilSurface(dev, w, h, fmt, multisample, surf);
+	return Vk_DevCreateDepthStencilSurface(dev, w, h, fmt, multisample, surf);
 }
 
 int Rd_DevCreateImageSurface(void *dev, uint32_t w, uint32_t h, int fmt, void **surf) {
@@ -122,7 +114,7 @@ int Rd_DevCreateImageSurface(void *dev, uint32_t w, uint32_t h, int fmt, void **
 		RdLog_Call(0x6c / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevCreateImageSurface(dev, w, h, fmt, surf);
+	return Vk_DevCreateImageSurface(dev, w, h, fmt, surf);
 }
 
 int Rd_DevCreateIndexBuffer(void *dev, uint32_t len, uint32_t usage, int fmt, int pool, void **ib) {
@@ -132,7 +124,7 @@ int Rd_DevCreateIndexBuffer(void *dev, uint32_t len, uint32_t usage, int fmt, in
 		RdLog_Call(0x60 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevCreateIndexBuffer(dev, len, usage, fmt, pool, ib);
+	return Vk_DevCreateIndexBuffer(dev, len, usage, fmt, pool, ib);
 }
 
 int Rd_DevCreatePixelShader(void *dev, const char *name, const void *code, uint32_t *handle) {
@@ -141,7 +133,7 @@ int Rd_DevCreatePixelShader(void *dev, const char *name, const void *code, uint3
 		RdLog_Call(0x15c / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevCreatePixelShader(dev, name, code, handle);
+	return Vk_DevCreatePixelShader(dev, name, code, handle);
 }
 
 int Rd_DevCreateTexture(void *dev, uint32_t w, uint32_t h, uint32_t levels, uint32_t usage, int fmt, int pool,
@@ -152,7 +144,7 @@ int Rd_DevCreateTexture(void *dev, uint32_t w, uint32_t h, uint32_t levels, uint
 		RdLog_Call(0x50 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevCreateTexture(dev, w, h, levels, usage, fmt, pool, tex);
+	return Vk_DevCreateTexture(dev, w, h, levels, usage, fmt, pool, tex);
 }
 
 int Rd_DevCreateVertexBuffer(void *dev, uint32_t len, uint32_t usage, uint32_t fvf, int pool, void **vb) {
@@ -162,7 +154,7 @@ int Rd_DevCreateVertexBuffer(void *dev, uint32_t len, uint32_t usage, uint32_t f
 		RdLog_Call(0x5c / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevCreateVertexBuffer(dev, len, usage, fvf, pool, vb);
+	return Vk_DevCreateVertexBuffer(dev, len, usage, fvf, pool, vb);
 }
 
 int Rd_DevDeletePixelShader(void *dev, uint32_t handle) {
@@ -171,7 +163,7 @@ int Rd_DevDeletePixelShader(void *dev, uint32_t handle) {
 		RdLog_Call(0x168 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevDeletePixelShader(dev, handle);
+	return Vk_DevDeletePixelShader(dev, handle);
 }
 
 int Rd_DevDrawIndexedPrimitive(void *dev, int type, uint32_t minIndex, uint32_t numVertices, uint32_t startIndex,
@@ -182,7 +174,7 @@ int Rd_DevDrawIndexedPrimitive(void *dev, int type, uint32_t minIndex, uint32_t 
 		RdLog_Call(0x11c / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevDrawIndexedPrimitive(dev, type, minIndex, numVertices, startIndex, primCount);
+	return Vk_DevDrawIndexedPrimitive(dev, type, minIndex, numVertices, startIndex, primCount);
 }
 
 int Rd_DevDrawIndexedPrimitiveUP(void *dev, int type, uint32_t minIndex, uint32_t numVertices, uint32_t primCount,
@@ -193,7 +185,7 @@ int Rd_DevDrawIndexedPrimitiveUP(void *dev, int type, uint32_t minIndex, uint32_
 		RdLog_Call(0x124 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevDrawIndexedPrimitiveUP(dev, type, minIndex, numVertices, primCount, idx, idxFmt, data, stride);
+	return Vk_DevDrawIndexedPrimitiveUP(dev, type, minIndex, numVertices, primCount, idx, idxFmt, data, stride);
 }
 
 int Rd_DevDrawPrimitive(void *dev, int type, uint32_t start, uint32_t count) {
@@ -202,7 +194,7 @@ int Rd_DevDrawPrimitive(void *dev, int type, uint32_t start, uint32_t count) {
 		RdLog_Call(0x118 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevDrawPrimitive(dev, type, start, count);
+	return Vk_DevDrawPrimitive(dev, type, start, count);
 }
 
 int Rd_DevDrawPrimitiveUP(void *dev, int type, uint32_t count, const void *data, uint32_t stride) {
@@ -211,7 +203,7 @@ int Rd_DevDrawPrimitiveUP(void *dev, int type, uint32_t count, const void *data,
 		RdLog_Call(0x120 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevDrawPrimitiveUP(dev, type, count, data, stride);
+	return Vk_DevDrawPrimitiveUP(dev, type, count, data, stride);
 }
 
 int Rd_DevEndScene(void *dev) {
@@ -219,7 +211,7 @@ int Rd_DevEndScene(void *dev) {
 		RdLog_Call(0x8c / 4, NULL);
 		dev = rd_logReal;
 	}
-	return rd->DevEndScene(dev);
+	return Vk_DevEndScene(dev);
 }
 
 uint32_t Rd_DevGetAvailableTextureMem(void *dev) {
@@ -227,7 +219,7 @@ uint32_t Rd_DevGetAvailableTextureMem(void *dev) {
 		RdLog_Call(0x10 / 4, NULL);
 		dev = rd_logReal;
 	}
-	return rd->DevGetAvailableTextureMem(dev);
+	return Vk_DevGetAvailableTextureMem(dev);
 }
 
 int Rd_DevGetBackBuffer(void *dev, uint32_t i, int type, void **surf) {
@@ -236,7 +228,7 @@ int Rd_DevGetBackBuffer(void *dev, uint32_t i, int type, void **surf) {
 		RdLog_Call(0x40 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevGetBackBuffer(dev, i, type, surf);
+	return Vk_DevGetBackBuffer(dev, i, type, surf);
 }
 
 int Rd_DevGetDepthStencilSurface(void *dev, void **surf) {
@@ -245,7 +237,7 @@ int Rd_DevGetDepthStencilSurface(void *dev, void **surf) {
 		RdLog_Call(0x84 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevGetDepthStencilSurface(dev, surf);
+	return Vk_DevGetDepthStencilSurface(dev, surf);
 }
 
 int Rd_DevGetDeviceCaps(void *dev, void *caps) {
@@ -254,7 +246,7 @@ int Rd_DevGetDeviceCaps(void *dev, void *caps) {
 		RdLog_Call(0x1c / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevGetDeviceCaps(dev, caps);
+	return Vk_DevGetDeviceCaps(dev, caps);
 }
 
 int Rd_DevGetDirect3D(void *dev, void **d3d) {
@@ -263,7 +255,7 @@ int Rd_DevGetDirect3D(void *dev, void **d3d) {
 		RdLog_Call(0x18 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevGetDirect3D(dev, d3d);
+	return Vk_DevGetDirect3D(dev, d3d);
 }
 
 int Rd_DevGetDisplayMode(void *dev, void *mode) {
@@ -272,7 +264,7 @@ int Rd_DevGetDisplayMode(void *dev, void *mode) {
 		RdLog_Call(0x20 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevGetDisplayMode(dev, mode);
+	return Vk_DevGetDisplayMode(dev, mode);
 }
 
 int Rd_DevGetRenderState(void *dev, uint32_t state, uint32_t *value) {
@@ -281,7 +273,7 @@ int Rd_DevGetRenderState(void *dev, uint32_t state, uint32_t *value) {
 		RdLog_Call(0xcc / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevGetRenderState(dev, state, value);
+	return Vk_DevGetRenderState(dev, state, value);
 }
 
 int Rd_DevGetRenderTarget(void *dev, void **surf) {
@@ -290,7 +282,7 @@ int Rd_DevGetRenderTarget(void *dev, void **surf) {
 		RdLog_Call(0x80 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevGetRenderTarget(dev, surf);
+	return Vk_DevGetRenderTarget(dev, surf);
 }
 
 int Rd_DevGetTextureStageState(void *dev, uint32_t stage, uint32_t type, uint32_t *value) {
@@ -299,7 +291,7 @@ int Rd_DevGetTextureStageState(void *dev, uint32_t stage, uint32_t type, uint32_
 		RdLog_Call(0xf8 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevGetTextureStageState(dev, stage, type, value);
+	return Vk_DevGetTextureStageState(dev, stage, type, value);
 }
 
 int Rd_DevGetTransform(void *dev, uint32_t state, void *m) {
@@ -308,7 +300,7 @@ int Rd_DevGetTransform(void *dev, uint32_t state, void *m) {
 		RdLog_Call(0x98 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevGetTransform(dev, state, m);
+	return Vk_DevGetTransform(dev, state, m);
 }
 
 int Rd_DevGetViewport(void *dev, uint32_t *vp) {
@@ -317,7 +309,7 @@ int Rd_DevGetViewport(void *dev, uint32_t *vp) {
 		RdLog_Call(0xa4 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevGetViewport(dev, vp);
+	return Vk_DevGetViewport(dev, vp);
 }
 
 int Rd_DevLightEnable(void *dev, uint32_t idx, int enable) {
@@ -326,7 +318,7 @@ int Rd_DevLightEnable(void *dev, uint32_t idx, int enable) {
 		RdLog_Call(0xb8 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevLightEnable(dev, idx, enable);
+	return Vk_DevLightEnable(dev, idx, enable);
 }
 
 /* the back buffer as a 32 bit BMP (bottom up) through a copy in system memory, as the game's screenshots do it */
@@ -343,15 +335,15 @@ static void Rd_DumpFrame(void *dev) {
 	} lr;
 
 	frame++;
-	if (!dir || !n || frame % n || rd->DevGetBackBuffer(dev, 0, 0, &back) < 0) {
+	if (!dir || !n || frame % n || Vk_DevGetBackBuffer(dev, 0, 0, &back) < 0) {
 		return;
 	}
-	rd->SurfGetDesc(back, desc);
+	Vk_SurfGetDesc(back, desc);
 	uint32_t fmt = desc[0], w = desc[6], h = desc[7];
-	if (rd->DevCreateImageSurface(dev, w, h, (int)fmt, &img) >= 0) {
-		if (rd->DevCopyRects(dev, back, NULL, 0, img, NULL) >= 0 && rd->SurfLockRect(img, &lr, NULL, 0x10) >= 0) {
+	if (Vk_DevCreateImageSurface(dev, w, h, (int)fmt, &img) >= 0) {
+		if (Vk_DevCopyRects(dev, back, NULL, 0, img, NULL) >= 0 && Vk_SurfLockRect(img, &lr, NULL, 0x10) >= 0) {
 			char path[512];
-			snprintf(path, sizeof(path), "%s/%s%05u.bmp", dir, rd->name, frame);
+			snprintf(path, sizeof(path), "%s/%s%05u.bmp", dir, "vulkan", frame);
 			FILE *f = fopen(path, "wb");
 			if (f) {
 				byte hdr[54] = { 'B', 'M' };
@@ -380,11 +372,11 @@ static void Rd_DumpFrame(void *dev) {
 				}
 				fclose(f);
 			}
-			rd->SurfUnlockRect(img);
+			Vk_SurfUnlockRect(img);
 		}
-		rd->Release(img);
+		Vk_Release(img);
 	}
-	rd->Release(back);
+	Vk_Release(back);
 }
 
 int Rd_DevPresent(void *dev, const void *src, const void *dst, void *hwnd, const void *dirty) {
@@ -395,7 +387,7 @@ int Rd_DevPresent(void *dev, const void *src, const void *dst, void *hwnd, const
 		dev = rd_logReal;
 	}
 	Rd_DumpFrame(dev);
-	return rd->DevPresent(dev, src, dst, hwnd, dirty);
+	return Vk_DevPresent(dev, src, dst, hwnd, dirty);
 }
 
 int Rd_DevReset(void *dev, void *pp) {
@@ -404,7 +396,7 @@ int Rd_DevReset(void *dev, void *pp) {
 		RdLog_Call(0x38 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevReset(dev, pp);
+	return Vk_DevReset(dev, pp);
 }
 
 void Rd_DevSetCursorPosition(void *dev, int x, int y, uint32_t flags) {
@@ -413,7 +405,7 @@ void Rd_DevSetCursorPosition(void *dev, int x, int y, uint32_t flags) {
 		RdLog_Call(0x2c / 4, a);
 		dev = rd_logReal;
 	}
-	rd->DevSetCursorPosition(dev, x, y, flags);
+	Vk_DevSetCursorPosition(dev, x, y, flags);
 }
 
 int Rd_DevSetGammaRamp(void *dev, uint32_t flags, const void *ramp) {
@@ -422,7 +414,7 @@ int Rd_DevSetGammaRamp(void *dev, uint32_t flags, const void *ramp) {
 		RdLog_Call(0x48 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevSetGammaRamp(dev, flags, ramp);
+	return Vk_DevSetGammaRamp(dev, flags, ramp);
 }
 
 int Rd_DevSetIndices(void *dev, void *ib, uint32_t baseVertex) {
@@ -431,7 +423,7 @@ int Rd_DevSetIndices(void *dev, void *ib, uint32_t baseVertex) {
 		RdLog_Call(0x154 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevSetIndices(dev, ib, baseVertex);
+	return Vk_DevSetIndices(dev, ib, baseVertex);
 }
 
 int Rd_DevSetLight(void *dev, uint32_t idx, const void *l) {
@@ -440,7 +432,7 @@ int Rd_DevSetLight(void *dev, uint32_t idx, const void *l) {
 		RdLog_Call(0xb0 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevSetLight(dev, idx, l);
+	return Vk_DevSetLight(dev, idx, l);
 }
 
 int Rd_DevSetMaterial(void *dev, const void *mat) {
@@ -449,7 +441,7 @@ int Rd_DevSetMaterial(void *dev, const void *mat) {
 		RdLog_Call(0xa8 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevSetMaterial(dev, mat);
+	return Vk_DevSetMaterial(dev, mat);
 }
 
 int Rd_DevSetPixelShader(void *dev, uint32_t handle) {
@@ -458,7 +450,7 @@ int Rd_DevSetPixelShader(void *dev, uint32_t handle) {
 		RdLog_Call(0x160 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevSetPixelShader(dev, handle);
+	return Vk_DevSetPixelShader(dev, handle);
 }
 
 int Rd_DevSetPixelShaderConstant(void *dev, uint32_t reg, const void *data, uint32_t count) {
@@ -467,7 +459,7 @@ int Rd_DevSetPixelShaderConstant(void *dev, uint32_t reg, const void *data, uint
 		RdLog_Call(0x16c / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevSetPixelShaderConstant(dev, reg, data, count);
+	return Vk_DevSetPixelShaderConstant(dev, reg, data, count);
 }
 
 int Rd_DevSetRenderState(void *dev, uint32_t state, uint32_t value) {
@@ -476,7 +468,7 @@ int Rd_DevSetRenderState(void *dev, uint32_t state, uint32_t value) {
 		RdLog_Call(0xc8 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevSetRenderState(dev, state, value);
+	return Vk_DevSetRenderState(dev, state, value);
 }
 
 int Rd_DevSetRenderTarget(void *dev, void *rt, void *zs) {
@@ -485,7 +477,7 @@ int Rd_DevSetRenderTarget(void *dev, void *rt, void *zs) {
 		RdLog_Call(0x7c / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevSetRenderTarget(dev, rt, zs);
+	return Vk_DevSetRenderTarget(dev, rt, zs);
 }
 
 int Rd_DevSetStreamSource(void *dev, uint32_t stream, void *vb, uint32_t stride) {
@@ -494,7 +486,7 @@ int Rd_DevSetStreamSource(void *dev, uint32_t stream, void *vb, uint32_t stride)
 		RdLog_Call(0x14c / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevSetStreamSource(dev, stream, vb, stride);
+	return Vk_DevSetStreamSource(dev, stream, vb, stride);
 }
 
 int Rd_DevSetTexture(void *dev, uint32_t stage, void *tex) {
@@ -503,7 +495,7 @@ int Rd_DevSetTexture(void *dev, uint32_t stage, void *tex) {
 		RdLog_Call(0xf4 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevSetTexture(dev, stage, tex);
+	return Vk_DevSetTexture(dev, stage, tex);
 }
 
 int Rd_DevSetTextureStageState(void *dev, uint32_t stage, uint32_t type, uint32_t value) {
@@ -512,7 +504,7 @@ int Rd_DevSetTextureStageState(void *dev, uint32_t stage, uint32_t type, uint32_
 		RdLog_Call(0xfc / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevSetTextureStageState(dev, stage, type, value);
+	return Vk_DevSetTextureStageState(dev, stage, type, value);
 }
 
 int Rd_DevSetTransform(void *dev, uint32_t state, const void *m) {
@@ -521,7 +513,7 @@ int Rd_DevSetTransform(void *dev, uint32_t state, const void *m) {
 		RdLog_Call(0x94 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevSetTransform(dev, state, m);
+	return Vk_DevSetTransform(dev, state, m);
 }
 
 int Rd_DevSetVertexShader(void *dev, uint32_t fvf) {
@@ -530,7 +522,7 @@ int Rd_DevSetVertexShader(void *dev, uint32_t fvf) {
 		RdLog_Call(0x130 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevSetVertexShader(dev, fvf);
+	return Vk_DevSetVertexShader(dev, fvf);
 }
 
 int Rd_DevSetViewport(void *dev, const uint32_t *vp) {
@@ -539,7 +531,7 @@ int Rd_DevSetViewport(void *dev, const uint32_t *vp) {
 		RdLog_Call(0xa0 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevSetViewport(dev, vp);
+	return Vk_DevSetViewport(dev, vp);
 }
 
 int Rd_DevShowCursor(void *dev, int show) {
@@ -548,7 +540,7 @@ int Rd_DevShowCursor(void *dev, int show) {
 		RdLog_Call(0x30 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevShowCursor(dev, show);
+	return Vk_DevShowCursor(dev, show);
 }
 
 int Rd_DevTestCooperativeLevel(void *dev) {
@@ -556,7 +548,7 @@ int Rd_DevTestCooperativeLevel(void *dev) {
 		RdLog_Call(0xc / 4, NULL);
 		dev = rd_logReal;
 	}
-	return rd->DevTestCooperativeLevel(dev);
+	return Vk_DevTestCooperativeLevel(dev);
 }
 
 int Rd_DevUpdateTexture(void *dev, void *src, void *dst) {
@@ -565,77 +557,77 @@ int Rd_DevUpdateTexture(void *dev, void *src, void *dst) {
 		RdLog_Call(0x74 / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevUpdateTexture(dev, src, dst);
+	return Vk_DevUpdateTexture(dev, src, dst);
 }
 
 int Rd_TexGetDevice(void *tex, void **dev) {
-	return rd->TexGetDevice(tex, dev);
+	return Vk_TexGetDevice(tex, dev);
 }
 
 uint32_t Rd_TexGetLevelCount(void *tex) {
-	return rd->TexGetLevelCount(tex);
+	return Vk_TexGetLevelCount(tex);
 }
 
 int Rd_TexGetLevelDesc(void *tex, uint32_t level, void *desc) {
-	return rd->TexGetLevelDesc(tex, level, desc);
+	return Vk_TexGetLevelDesc(tex, level, desc);
 }
 
 int Rd_TexGetSurfaceLevel(void *tex, uint32_t level, void **surf) {
-	return rd->TexGetSurfaceLevel(tex, level, surf);
+	return Vk_TexGetSurfaceLevel(tex, level, surf);
 }
 
 int Rd_TexLockRect(void *tex, uint32_t level, void *locked, const void *rect, uint32_t flags) {
-	return rd->TexLockRect(tex, level, locked, rect, flags);
+	return Vk_TexLockRect(tex, level, locked, rect, flags);
 }
 
 uint32_t Rd_TexSetLOD(void *tex, uint32_t lod) {
-	return rd->TexSetLOD(tex, lod);
+	return Vk_TexSetLOD(tex, lod);
 }
 
 int Rd_TexUnlockRect(void *tex, uint32_t level) {
-	return rd->TexUnlockRect(tex, level);
+	return Vk_TexUnlockRect(tex, level);
 }
 
 int Rd_SurfGetDesc(void *surf, void *desc) {
-	return rd->SurfGetDesc(surf, desc);
+	return Vk_SurfGetDesc(surf, desc);
 }
 
 int Rd_SurfGetDevice(void *surf, void **dev) {
-	return rd->SurfGetDevice(surf, dev);
+	return Vk_SurfGetDevice(surf, dev);
 }
 
 int Rd_SurfLockRect(void *surf, void *lr, const void *rect, uint32_t flags) {
-	return rd->SurfLockRect(surf, lr, rect, flags);
+	return Vk_SurfLockRect(surf, lr, rect, flags);
 }
 
 int Rd_SurfUnlockRect(void *surf) {
-	return rd->SurfUnlockRect(surf);
+	return Vk_SurfUnlockRect(surf);
 }
 
 int Rd_BufLock(void *buf, uint32_t off, uint32_t size, void *data, uint32_t flags) {
-	return rd->BufLock(buf, off, size, data, flags);
+	return Vk_BufLock(buf, off, size, data, flags);
 }
 
 int Rd_BufUnlock(void *buf) {
-	return rd->BufUnlock(buf);
+	return Vk_BufUnlock(buf);
 }
 
 void *Rd_XBufGetBufferPointer(void *buf) {
-	return rd->XBufGetBufferPointer(buf);
+	return Vk_XBufGetBufferPointer(buf);
 }
 
 int Rd_XMeshDrawSubset(void *mesh, uint32_t attrib) {
-	return rd->XMeshDrawSubset(mesh, attrib);
+	return Vk_XMeshDrawSubset(mesh, attrib);
 }
 
 int Rd_XMeshGetAttributeTable(void *mesh, void *table, uint32_t *size) {
-	return rd->XMeshGetAttributeTable(mesh, table, size);
+	return Vk_XMeshGetAttributeTable(mesh, table, size);
 }
 
 uint32_t Rd_XMeshGetNumFaces(void *mesh) {
-	return rd->XMeshGetNumFaces(mesh);
+	return Vk_XMeshGetNumFaces(mesh);
 }
 
 uint32_t Rd_XMeshGetNumVertices(void *mesh) {
-	return rd->XMeshGetNumVertices(mesh);
+	return Vk_XMeshGetNumVertices(mesh);
 }

@@ -77,8 +77,7 @@ emctris = (((1.0, 2.0, 3.0), (20.0, 2.0, 3.0), (1.0, 300.0, 3.0)), ((5.0, -5.0, 
 	((7.0, 0.0, -9.0), (0.0, 1000.0, 0.0), (5.0, 5.0, 5.0)),
 	((-10.0, 20.0, 30.0), (60.0, -40.0, 30.0), (-10.0, -200.0, 30.0)), ((0.0, 0.0, 0.0), (1.0, 1.0, 1.0), (2.0, 2.0, 2.0)))
 def emcvbread(vb, n):
-	vt = emcri(vb)
-	hr = SDTest.Call(emcri(vt + 0x2c) - 0x400000, 'tiiiiipi', 0, vb, 0, 0, 0, 0)
+	hr = rdcall('Rd_BufLock', vb, 0x2c, 'iiiipi', (0, 0, 0, 0))
 	r = (hr[0],)
 	if hr[0] == 0:
 		k = 0
@@ -86,7 +85,7 @@ def emcvbread(vb, n):
 			c = min(n - k, 60)
 			r = r + emcrf(hr[1] + k * 4, c)
 			k = k + c
-		SDTest.Call(emcri(vt + 0x30) - 0x400000, 'tiii', 0, vb)
+		rdcall('Rd_BufUnlock', vb, 0x30, 'ii', ())
 	return r
 if emcblk and emcsegp and emctrip and emcvbs[0] and emcvbs[1] and emcvbs[2] and emcvbs[3]:
 	emcbs = []

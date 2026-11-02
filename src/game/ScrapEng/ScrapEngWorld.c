@@ -273,47 +273,6 @@ void File_FreeIndex(const char *fmt, int *n) {
 	}
 }
 
-/* src appended to dst of size bytes, cut to fit (the original appends unbounded) */
-static void Str_Append(char *dst, int size, const char *src) {
-	int len = (int)strlen(dst);
-
-	while (*src && len < size - 1) {
-		dst[len++] = *src++;
-	}
-	dst[len] = 0;
-}
-
-void Video_CheckCaps(void) {
-	D3DCaps8 caps;
-	D3DAdapterId id;
-	char text[0x400];
-
-	void *d3d = Rd_Direct3DCreate8(D3D_SDK_VERSION);
-	if (!d3d) {
-		return;
-	}
-	int hr = Rd_D3DGetDeviceCaps(d3d, 0, D3DDEVTYPE_HAL, &caps);
-	byte ok = hr >= 0 && caps.PixelShaderVersion >= D3DPS_VERSION(1, 1);
-	id.Description[0] = 0;
-	Rd_D3DGetAdapterIdentifier(d3d, 0, 0, &id);
-	if (!ok) {
-		const char *msg = Lang_GetStr("Menu_Video_Warning");
-		if (!msg) {
-			msg = "Warning: Your graphics card doesn't meet the hardware requirements.\nYou can notice an important "
-				"decrement on the quality of the image.";
-		}
-		Str_Copy(text, msg, sizeof(text));
-		Str_Append(text, sizeof(text), "\n");
-		if (id.Description[0]) {
-			Str_Append(text, sizeof(text), "\nVideo device: ");
-			Str_Append(text, sizeof(text), id.Description);
-		}
-		exe_MessageBoxA(NULL, text, "Warning", 0x11030);
-		exe_BringWindowToTop(App_GetHWnd());
-	}
-	Rd_Release(d3d);
-}
-
 byte Render_ClearRect(float x, float y, float w, float h, byte target, uint32_t color) {
 	box_t box;
 

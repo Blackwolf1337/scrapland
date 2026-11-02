@@ -341,9 +341,6 @@ void Engine_Init(void) {
 	if (APP_DEDICATED(g_pApp)) {
 		g_RenderOff = 1;
 	}
-	if (!APP_DEDICATED(g_pApp)) {
-		Video_CheckCaps();
-	}
 	void *hInst = App_GetHInstance();
 	void *hWnd = App_GetHWnd();
 	g_TimerQPMult = g_TimerFreqMult;

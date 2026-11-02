@@ -165,7 +165,8 @@ for i in range(16):
 check('Render_GetDriver', lambda: SDTest.Call('Render_GetDriver', 'i')[0] == sym('g_DriverStr') + 0x400000)
 # the state RenderIniD3D left: the device texts and the logged device, the 1/2048 matrix, the texture caps, the
 # shaders made, the default materials
-check('RenderIniD3D texts', lambda: (SDTest.Peek('g_DriverStr', 's'), SDTest.Peek('g_DeviceStr', 's'), SDTest.Peek('g_DriverName', 'p'),
+check('RenderIniD3D texts', lambda: (devname('R_LastDevice', SDTest.Peek('g_DriverStr', 's')), SDTest.Peek('g_DeviceStr', 's'),
+	devname('R_LastDevice', SDTest.Peek('g_DriverName', 'p')),
 	SDTest.Peek('g_VersionStr', 's'), SDTest.Peek('g_DeviceLogged', 'i')))
 def rdinistate():
 	r = []

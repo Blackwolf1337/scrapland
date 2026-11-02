@@ -418,8 +418,8 @@ check('Scrap.UsrEntity bad', lambda: Scrap.UsrEntity('x'))
 
 # Scrap batch 4 in the menu (CreateEntity and RunApp not here)
 for v in ('FullScreen', 'VideoWidth', 'VideoGammaRGB', 'R_LastDevice', 'PythonExecute', 'ClientDelRes', 'Pad1', 'SDNoVar'):
-	check('Scrap.Get(%s)' % v, lambda v=v: Scrap.Get(v))
-	check('Scrap.Def(%s)' % v, lambda v=v: Scrap.Def(v))
+	check('Scrap.Get(%s)' % v, lambda v=v: devname(v, Scrap.Get(v)))
+	check('Scrap.Def(%s)' % v, lambda v=v: devname(v, Scrap.Def(v)))
 for name, value in (('VideoGammaRGB', 1.25), ('VideoWidth', 1024.7), ('R_LastDevice', 'SDDevice'), ('FullScreen', 'x'),
 		('R_LastDevice', 3), ('SDNoVar', 1), ('SDNoVar', 'x')):
 	check('Scrap.Set(%s, %s)' % (name, repr(value)), lambda n=name, v=value: Scrap.Set(n, v))

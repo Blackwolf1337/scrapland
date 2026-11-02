@@ -4,6 +4,7 @@
  * VkDraw.c draws with them. Textures are images that a lock fills from system memory; the back buffer is an image of
  * its own that Present blits to the swapchain.
  */
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <windows.h>
@@ -26,8 +27,23 @@
 #define D3DFMT_X4R4G4B4 30
 #define D3DFMT_L8 50
 #define D3DFMT_A8L8 51
+#define D3DFMT_R3G3B2 27
+#define D3DFMT_A8R3G3B2 29
+#define D3DFMT_A2B10G10R10 31
+#define D3DFMT_G16R16 34
+#define D3DFMT_A8P8 40
+#define D3DFMT_P8 41
+#define D3DFMT_A4L4 52
 #define D3DFMT_V8U8 60
+#define D3DFMT_L6V5U5 61
+#define D3DFMT_X8L8V8U8 62
+#define D3DFMT_Q8W8V8U8 63
+#define D3DFMT_V16U16 64
+#define D3DFMT_W11V11U10 65
+#define D3DFMT_A2W10V10U10 67
 #define D3DFMT_D24S8 75
+#define D3DFMT_D24X8 77
+#define D3DFMT_D16 80
 #define D3DFMT_DXT1 0x31545844
 #define D3DFMT_DXT2 0x32545844
 #define D3DFMT_DXT3 0x33545844
@@ -47,54 +63,102 @@ typedef struct {
 	VkComponentMapping swizzle;
 	uint32_t bpp;			/* bytes per pixel of the D3D format, 0 for a block format */
 	uint32_t block;			/* bytes per 4 x 4 block */
-	byte convert;			/* the D3D data is converted to BGRA8 on upload */
+	byte convert;			/* the D3D data is converted on upload: to BGRA8, or RGBA16F for vk RGBA16F */
+	byte memOnly;			/* only for image surfaces in memory (D3DX converts into them), no texture */
 } VkoFormat;
 
 #define SW_ID { VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, \
 	VK_COMPONENT_SWIZZLE_IDENTITY }
+#define SW_RG11 { VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_ONE, \
+	VK_COMPONENT_SWIZZLE_ONE }
 #define SW_NOALPHA { VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, \
 	VK_COMPONENT_SWIZZLE_ONE }
 
 static VkoFormat Vko_Format(uint32_t fmt) {
 	switch (fmt) {
 	case D3DFMT_A8R8G8B8:
-		return (VkoFormat) { VK_FORMAT_B8G8R8A8_UNORM, SW_ID, 4, 0, 0 };
+		return (VkoFormat) { VK_FORMAT_B8G8R8A8_UNORM, SW_ID, 4, 0, 0, 0 };
 	case D3DFMT_X8R8G8B8:
-		return (VkoFormat) { VK_FORMAT_B8G8R8A8_UNORM, SW_NOALPHA, 4, 0, 0 };
+		return (VkoFormat) { VK_FORMAT_B8G8R8A8_UNORM, SW_NOALPHA, 4, 0, 0, 0 };
 	case D3DFMT_R5G6B5:
-		return (VkoFormat) { VK_FORMAT_R5G6B5_UNORM_PACK16, SW_ID, 2, 0, 0 };
+		return (VkoFormat) { VK_FORMAT_R5G6B5_UNORM_PACK16, SW_ID, 2, 0, 0, 0 };
 	case D3DFMT_A1R5G5B5:
-		return (VkoFormat) { VK_FORMAT_A1R5G5B5_UNORM_PACK16, SW_ID, 2, 0, 0 };
+		return (VkoFormat) { VK_FORMAT_A1R5G5B5_UNORM_PACK16, SW_ID, 2, 0, 0, 0 };
 	case D3DFMT_X1R5G5B5:
-		return (VkoFormat) { VK_FORMAT_A1R5G5B5_UNORM_PACK16, SW_NOALPHA, 2, 0, 0 };
+		return (VkoFormat) { VK_FORMAT_A1R5G5B5_UNORM_PACK16, SW_NOALPHA, 2, 0, 0, 0 };
 	case D3DFMT_A4R4G4B4:
 	case D3DFMT_X4R4G4B4:
 		return (VkoFormat) { VK_FORMAT_B8G8R8A8_UNORM, fmt == D3DFMT_A4R4G4B4 ? (VkComponentMapping)SW_ID
-			: (VkComponentMapping)SW_NOALPHA, 2, 0, 1 };
+			: (VkComponentMapping)SW_NOALPHA, 2, 0, 1, 0 };
 	case D3DFMT_R8G8B8:
-		return (VkoFormat) { VK_FORMAT_B8G8R8A8_UNORM, SW_NOALPHA, 3, 0, 1 };
+		/* (no texture, as on Direct3D 8 hardware: D3DX takes X8R8G8B8; render target readbacks use it) */
+		return (VkoFormat) { VK_FORMAT_B8G8R8A8_UNORM, SW_NOALPHA, 3, 0, 1, 1 };
+	case D3DFMT_A2B10G10R10:
+		return (VkoFormat) { VK_FORMAT_A2B10G10R10_UNORM_PACK32, SW_ID, 4, 0, 0, 0 };
+	case D3DFMT_G16R16:
+		return (VkoFormat) { VK_FORMAT_R16G16_UNORM, SW_RG11, 4, 0, 0, 0 };
+	case D3DFMT_V16U16:
+		return (VkoFormat) { VK_FORMAT_R16G16_SNORM, SW_RG11, 4, 0, 0, 0 };
+	case D3DFMT_R3G3B2:
+	case D3DFMT_A4L4:
+	case D3DFMT_P8:
+		return (VkoFormat) { VK_FORMAT_R8_UNORM, SW_ID, 1, 0, 0, 1 };
+	case D3DFMT_A8R3G3B2:
+	case D3DFMT_A8P8:
+		return (VkoFormat) { VK_FORMAT_R8G8_UNORM, SW_ID, 2, 0, 0, 1 };
+	case D3DFMT_W11V11U10:
+	case D3DFMT_A2W10V10U10:
+		return (VkoFormat) { VK_FORMAT_R8G8B8A8_UNORM, SW_ID, 4, 0, 0, 1 };
 	case D3DFMT_A8:
 		return (VkoFormat) { VK_FORMAT_R8_UNORM, { VK_COMPONENT_SWIZZLE_ZERO, VK_COMPONENT_SWIZZLE_ZERO,
-			VK_COMPONENT_SWIZZLE_ZERO, VK_COMPONENT_SWIZZLE_R }, 1, 0, 0 };
+			VK_COMPONENT_SWIZZLE_ZERO, VK_COMPONENT_SWIZZLE_R }, 1, 0, 0, 0 };
 	case D3DFMT_L8:
 		return (VkoFormat) { VK_FORMAT_R8_UNORM, { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_R,
-			VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_ONE }, 1, 0, 0 };
+			VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_ONE }, 1, 0, 0, 0 };
 	case D3DFMT_A8L8:
 		return (VkoFormat) { VK_FORMAT_R8G8_UNORM, { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_R,
-			VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G }, 2, 0, 0 };
+			VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G }, 2, 0, 0, 0 };
 	case D3DFMT_V8U8:
-		return (VkoFormat) { VK_FORMAT_R8G8_SNORM, SW_ID, 2, 0, 0 };
+		return (VkoFormat) { VK_FORMAT_R8G8_SNORM, SW_ID, 2, 0, 0, 0 };
+	case D3DFMT_Q8W8V8U8:
+		return (VkoFormat) { VK_FORMAT_R8G8B8A8_SNORM, SW_ID, 4, 0, 0, 0 };
+	/* signed du, dv and an unsigned luminance: no Vulkan format has that mix, so (du, dv, l, 1) in RGBA16F */
+	case D3DFMT_L6V5U5:
+		return (VkoFormat) { VK_FORMAT_R16G16B16A16_SFLOAT, SW_ID, 2, 0, 1, 0 };
+	case D3DFMT_X8L8V8U8:
+		return (VkoFormat) { VK_FORMAT_R16G16B16A16_SFLOAT, SW_ID, 4, 0, 1, 0 };
 	case D3DFMT_DXT1:
-		return (VkoFormat) { VK_FORMAT_BC1_RGBA_UNORM_BLOCK, SW_ID, 0, 8, 0 };
+		return (VkoFormat) { VK_FORMAT_BC1_RGBA_UNORM_BLOCK, SW_ID, 0, 8, 0, 0 };
 	case D3DFMT_DXT2:
 	case D3DFMT_DXT3:
-		return (VkoFormat) { VK_FORMAT_BC2_UNORM_BLOCK, SW_ID, 0, 16, 0 };
+		return (VkoFormat) { VK_FORMAT_BC2_UNORM_BLOCK, SW_ID, 0, 16, 0, 0 };
 	case D3DFMT_DXT4:
 	case D3DFMT_DXT5:
-		return (VkoFormat) { VK_FORMAT_BC3_UNORM_BLOCK, SW_ID, 0, 16, 0 };
+		return (VkoFormat) { VK_FORMAT_BC3_UNORM_BLOCK, SW_ID, 0, 16, 0, 0 };
 	default:
-		return (VkoFormat) { VK_FORMAT_UNDEFINED, SW_ID, 0, 0, 0 };
+		return (VkoFormat) { VK_FORMAT_UNDEFINED, SW_ID, 0, 0, 0, 0 };
 	}
+}
+
+/* the depth formats of Direct3D 8 the backend has (as Direct3D 8 reports them on this hardware): D16, D24X8 and
+ * D24S8, in their Vulkan format (D24X8 as D32F where the GPU has no X8_D24, D24S8 as D32F_S8 likewise) */
+static int Vko_IsDepthFormat(uint32_t fmt) {
+	return fmt == D3DFMT_D16 || fmt == D3DFMT_D24X8 || fmt == D3DFMT_D24S8;
+}
+
+static VkFormat Vko_DepthFormat(uint32_t fmt) {
+	if (fmt == D3DFMT_D16) {
+		return VK_FORMAT_D16_UNORM;
+	}
+	if (fmt == D3DFMT_D24X8) {
+		return Vk_DepthSupported(VK_FORMAT_X8_D24_UNORM_PACK32) ? VK_FORMAT_X8_D24_UNORM_PACK32 : VK_FORMAT_D32_SFLOAT;
+	}
+	return vk.depthFormat;
+}
+
+/* the display formats a device can have (the adapter format of the checks) */
+static int Vko_IsDisplayFormat(int fmt) {
+	return fmt == D3DFMT_X8R8G8B8 || fmt == D3DFMT_R5G6B5 || fmt == D3DFMT_X1R5G5B5;
 }
 
 static uint32_t Vko_Pitch(const VkoFormat *f, uint32_t w) {
@@ -108,6 +172,40 @@ static uint32_t Vko_Rows(const VkoFormat *f, uint32_t h) {
 static uint32_t Vko_Dim(uint32_t size, uint32_t level) {
 	uint32_t d = size >> level;
 	return d ? d : 1;
+}
+
+/* a float of -1..1 (or 0..1) as a half float */
+static uint16_t Vko_Half(float f) {
+	uint32_t u;
+	memcpy(&u, &f, 4);
+	uint32_t sign = u >> 16 & 0x8000, e = u >> 23 & 255, m = u & 0x7fffff;
+	if (e < 103) {
+		return (uint16_t)sign;			/* zero or too small for a half */
+	}
+	if (e < 113) {
+		return (uint16_t)(sign | (m | 0x800000) >> (126 - e));	/* subnormal half */
+	}
+	return (uint16_t)(sign | (e - 112) << 10 | m >> 13);
+}
+
+/* a pixel of L6V5U5 or X8L8V8U8 as (du, dv, l, 1) in half floats, the signed parts as Direct3D 8 reads them */
+static void Vko_ToBump(const byte *p, uint32_t fmt, uint16_t *out) {
+	float du, dv, l;
+	if (fmt == D3DFMT_L6V5U5) {
+		uint32_t c = (uint32_t)(p[0] | p[1] << 8);
+		int u5 = (int)(c & 31), v5 = (int)(c >> 5 & 31);
+		du = (float)(u5 >= 16 ? u5 - 32 : u5) / 15.0f;
+		dv = (float)(v5 >= 16 ? v5 - 32 : v5) / 15.0f;
+		l = (float)(c >> 10 & 63) / 63.0f;
+	} else {
+		du = (float)(signed char)p[0] / 127.0f;
+		dv = (float)(signed char)p[1] / 127.0f;
+		l = (float)p[2] / 255.0f;
+	}
+	out[0] = Vko_Half(du < -1.0f ? -1.0f : du);
+	out[1] = Vko_Half(dv < -1.0f ? -1.0f : dv);
+	out[2] = Vko_Half(l);
+	out[3] = 0x3c00;			/* 1.0 */
 }
 
 /* a pixel of a D3D format to BGRA8 (the formats of VkoFormat.convert) */
@@ -178,7 +276,7 @@ static void Vko_FreeTex(VkoTex *t) {
 }
 
 /* the surface of a texture level counts its references on the texture, as in Direct3D 8 */
-static uint32_t Vk_AddRef(void *obj) {
+uint32_t Vk_AddRef(void *obj) {
 	VkoObj *o = obj;
 	if (o->kind == VKO_SURF && ((VkoSurf *)obj)->tex) {
 		o = &((VkoSurf *)obj)->tex->o;
@@ -186,7 +284,7 @@ static uint32_t Vk_AddRef(void *obj) {
 	return ++o->refs;
 }
 
-static uint32_t Vk_Release(void *obj) {
+uint32_t Vk_Release(void *obj) {
 	VkoObj *o = obj;
 
 	if (o->kind == VKO_SURF && ((VkoSurf *)obj)->tex) {
@@ -226,14 +324,46 @@ static uint32_t Vk_Release(void *obj) {
 
 /* ---- IDirect3D8 ---- */
 
-static const uint32_t vk_modes[][2] = {
-	{ 640, 480 }, { 800, 600 }, { 1024, 768 }, { 1152, 864 }, { 1280, 720 }, { 1280, 800 }, { 1280, 960 },
-	{ 1280, 1024 }, { 1360, 768 }, { 1366, 768 }, { 1440, 900 }, { 1600, 900 }, { 1600, 1200 }, { 1680, 1050 },
-	{ 1920, 1080 }, { 1920, 1200 }, { 2560, 1080 }, { 2560, 1440 }, { 3440, 1440 }, { 3840, 2160 },
-};
-#define VK_NMODES ((uint32_t)(sizeof(vk_modes) / sizeof(vk_modes[0])))
+/* the display modes of Windows (EnumDisplaySettings, as wined3d reports them) in 16 and 32 bits: R5G6B5 and
+ * X8R8G8B8, without refresh rates, made once */
+#define VK_MAX_MODES 256
+static D3DDisplayMode vk_modes[VK_MAX_MODES];
+static uint32_t vk_numModes;
 
-static void *Vk_Direct3DCreate8(uint32_t sdk) {
+static void Vk_Modes(void) {
+	DEVMODEA dm;
+
+	if (vk_numModes) {
+		return;
+	}
+	memset(&dm, 0, sizeof(dm));
+	dm.dmSize = sizeof(dm);
+	for (DWORD i = 0; EnumDisplaySettingsA(NULL, i, &dm) && vk_numModes < VK_MAX_MODES; i++) {
+		if (dm.dmBitsPerPel != 16 && dm.dmBitsPerPel != 32) {
+			continue;
+		}
+		D3DDisplayMode m = { dm.dmPelsWidth, dm.dmPelsHeight, 0,
+			dm.dmBitsPerPel == 16 ? D3DFMT_R5G6B5 : D3DFMT_X8R8G8B8 };
+		uint32_t k;
+		for (k = 0; k < vk_numModes; k++) {
+			if (vk_modes[k].Width == m.Width && vk_modes[k].Height == m.Height && vk_modes[k].Format == m.Format) {
+				break;
+			}
+		}
+		if (k == vk_numModes) {
+			vk_modes[vk_numModes++] = m;
+		}
+	}
+	if (!vk_numModes) {
+		/* no list from Windows: the desktop in both formats */
+		uint32_t w = (uint32_t)GetSystemMetrics(SM_CXSCREEN), h = (uint32_t)GetSystemMetrics(SM_CYSCREEN);
+		vk_modes[0] = (D3DDisplayMode) { w, h, 0, D3DFMT_R5G6B5 };
+		vk_modes[1] = (D3DDisplayMode) { w, h, 0, D3DFMT_X8R8G8B8 };
+		vk_numModes = 2;
+	}
+}
+
+void *Vk_Direct3DCreate8(uint32_t sdk) {
 	(void)sdk;
 	if (!Vk_Init()) {
 		return NULL;
@@ -241,18 +371,29 @@ static void *Vk_Direct3DCreate8(uint32_t sdk) {
 	return Vko_New(sizeof(VkoD3D), VKO_D3D);
 }
 
-static uint32_t Vk_D3DGetAdapterCount(void *d3d) {
+uint32_t Vk_D3DGetAdapterCount(void *d3d) {
 	(void)d3d;
 	return 1;
 }
 
-static int Vk_D3DGetAdapterIdentifier(void *d3d, uint32_t adapter, uint32_t flags, void *id) {
+int Vk_D3DGetAdapterIdentifier(void *d3d, uint32_t adapter, uint32_t flags, void *id) {
 	D3DAdapterId *a = id;
+
+	VkPhysicalDeviceProperties p;
 
 	(void)d3d, (void)adapter, (void)flags;
 	memset(a, 0, sizeof(*a));
-	strcpy(a->Driver, "vulkan");
-	strcpy(a->Description, "Vulkan");
+	snprintf(a->Driver, sizeof(a->Driver), "vulkan-1.dll");
+	if (Vk_GpuProperties(&p)) {
+		snprintf(a->Description, sizeof(a->Description), "%s", p.deviceName);
+		a->VendorId = p.vendorID;
+		a->DeviceId = p.deviceID;
+		a->DriverVersion[2] = (uint16_t)VK_API_VERSION_MAJOR(p.driverVersion);
+		a->DriverVersion[1] = (uint16_t)VK_API_VERSION_MINOR(p.driverVersion);
+		a->DriverVersion[0] = (uint16_t)VK_API_VERSION_PATCH(p.driverVersion);
+	} else {
+		snprintf(a->Description, sizeof(a->Description), "Vulkan");
+	}
 	return D3D_OK;
 }
 
@@ -264,69 +405,54 @@ static void Vk_Desktop(D3DDisplayMode *m) {
 	m->Format = D3DFMT_X8R8G8B8;
 }
 
-static int Vk_D3DGetAdapterDisplayMode(void *d3d, uint32_t adapter, void *out) {
+int Vk_D3DGetAdapterDisplayMode(void *d3d, uint32_t adapter, void *out) {
 	(void)d3d, (void)adapter;
 	Vk_Desktop(out);
 	return D3D_OK;
 }
 
-/* the modes up to the desktop size, in X8R8G8B8 and R5G6B5 */
-static uint32_t Vk_D3DGetAdapterModeCount(void *d3d, uint32_t adapter) {
-	D3DDisplayMode desk;
-	uint32_t n = 0;
-
+uint32_t Vk_D3DGetAdapterModeCount(void *d3d, uint32_t adapter) {
 	(void)d3d, (void)adapter;
-	Vk_Desktop(&desk);
-	for (uint32_t i = 0; i < VK_NMODES; i++) {
-		n += vk_modes[i][0] <= desk.Width && vk_modes[i][1] <= desk.Height;
-	}
-	return n * 2;
+	Vk_Modes();
+	return vk_numModes;
 }
 
-static int Vk_D3DEnumAdapterModes(void *d3d, uint32_t adapter, uint32_t mode, void *out) {
-	D3DDisplayMode desk, *m = out;
-	uint32_t n = 0;
-
+int Vk_D3DEnumAdapterModes(void *d3d, uint32_t adapter, uint32_t mode, void *out) {
 	(void)d3d, (void)adapter;
-	Vk_Desktop(&desk);
-	for (uint32_t i = 0; i < VK_NMODES; i++) {
-		if (vk_modes[i][0] > desk.Width || vk_modes[i][1] > desk.Height) {
-			continue;
-		}
-		if (n == mode / 2) {
-			m->Width = vk_modes[i][0];
-			m->Height = vk_modes[i][1];
-			m->RefreshRate = 60;
-			m->Format = mode & 1 ? D3DFMT_R5G6B5 : D3DFMT_X8R8G8B8;
-			return D3D_OK;
-		}
-		n++;
+	Vk_Modes();
+	if (mode >= vk_numModes) {
+		return D3DERR_INVALIDCALL;
 	}
-	return D3DERR_INVALIDCALL;
+	*(D3DDisplayMode *)out = vk_modes[mode];
+	return D3D_OK;
 }
 
-static int Vk_D3DCheckDeviceType(void *d3d, uint32_t adapter, uint32_t type, uint32_t dfmt, uint32_t bfmt,
+int Vk_D3DCheckDeviceType(void *d3d, uint32_t adapter, uint32_t type, uint32_t dfmt, uint32_t bfmt,
 	int windowed) {
 	(void)d3d, (void)adapter, (void)dfmt, (void)bfmt, (void)windowed;
 	return type == 1 ? D3D_OK : D3DERR_NOTAVAILABLE;	/* only the HAL */
 }
 
-static int Vk_D3DCheckDeviceFormat(void *d3d, uint32_t adapter, int devType, int adapterFmt, uint32_t usage,
+int Vk_D3DCheckDeviceFormat(void *d3d, uint32_t adapter, int devType, int adapterFmt, uint32_t usage,
 	int rtype, int fmt) {
-	(void)d3d, (void)adapter, (void)devType, (void)adapterFmt, (void)rtype;
-	if (usage & D3DUSAGE_DEPTHSTENCIL) {
-		return fmt == D3DFMT_D24S8 ? D3D_OK : D3DERR_NOTAVAILABLE;
+	(void)d3d, (void)adapter, (void)devType, (void)rtype;
+	if (!Vko_IsDisplayFormat(adapterFmt)) {
+		return D3DERR_NOTAVAILABLE;
 	}
-	return Vko_Format((uint32_t)fmt).vk != VK_FORMAT_UNDEFINED ? D3D_OK : D3DERR_NOTAVAILABLE;
+	if (usage & D3DUSAGE_DEPTHSTENCIL) {
+		return Vko_IsDepthFormat((uint32_t)fmt) ? D3D_OK : D3DERR_NOTAVAILABLE;
+	}
+	VkoFormat f = Vko_Format((uint32_t)fmt);
+	return f.vk != VK_FORMAT_UNDEFINED && !f.memOnly ? D3D_OK : D3DERR_NOTAVAILABLE;
 }
 
-static int Vk_D3DCheckDepthStencilMatch(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t rt,
+int Vk_D3DCheckDepthStencilMatch(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t rt,
 	uint32_t ds) {
-	(void)d3d, (void)adapter, (void)type, (void)fmt, (void)rt;
-	return ds == D3DFMT_D24S8 ? D3D_OK : D3DERR_NOTAVAILABLE;
+	(void)d3d, (void)adapter, (void)type, (void)rt;
+	return Vko_IsDisplayFormat((int)fmt) && Vko_IsDepthFormat(ds) ? D3D_OK : D3DERR_NOTAVAILABLE;
 }
 
-static int Vk_D3DCheckDeviceMultiSampleType(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, int windowed,
+int Vk_D3DCheckDeviceMultiSampleType(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, int windowed,
 	uint32_t ms) {
 	(void)d3d, (void)adapter, (void)type, (void)fmt, (void)windowed;
 	return ms == 0 ? D3D_OK : D3DERR_NOTAVAILABLE;
@@ -347,11 +473,14 @@ static void Vk_Caps(D3DCaps8 *c) {
 	c->DestBlendCaps = 0x1fff;
 	c->AlphaCmpCaps = 0xff;
 	c->ShadeCaps = 0x8 | 0x200 | 0x4000 | 0x80000;
-	c->TextureCaps = 0x1 | 0x4 | 0x40 | 0x4000 | 0x10000;
+	/* PERSPECTIVE, ALPHA, MIPMAP, CUBEMAP (not TEXREPEATNOTSCALEDBYSIZE: the coordinates are normalized) */
+	c->TextureCaps = 0x1 | 0x4 | 0x4000 | 0x10000;
 	c->TextureFilterCaps = 0x0303 | 0x0400 | 0x03000000 | 0x0200 | 0x100 | 0x20000 | 0x10000;
 	c->TextureAddressCaps = 0x1f;
-	c->MaxTextureWidth = 4096;
-	c->MaxTextureHeight = 4096;
+	VkPhysicalDeviceProperties gp;
+	uint32_t maxTex = Vk_GpuProperties(&gp) ? gp.limits.maxImageDimension2D : 4096;
+	c->MaxTextureWidth = maxTex;
+	c->MaxTextureHeight = maxTex;
 	c->MaxTextureRepeat = 8192;
 	c->MaxTextureAspectRatio = 4096;
 	c->MaxAnisotropy = 16;
@@ -374,11 +503,12 @@ static void Vk_Caps(D3DCaps8 *c) {
 	c->MaxStreamStride = 256;
 	c->VertexShaderVersion = 0xfffe0101;
 	c->MaxVertexShaderConst = 96;
-	c->PixelShaderVersion = D3DPS_VERSION(1, 1);
+	/* 1.4 as every Direct3D 8.1 card reports it; the game has ps.1.1 shaders only (GLSL ports) */
+	c->PixelShaderVersion = D3DPS_VERSION(1, 4);
 	c->MaxPixelShaderValue = 1.0f;
 }
 
-static int Vk_D3DGetDeviceCaps(void *d3d, uint32_t adapter, uint32_t type, void *caps) {
+int Vk_D3DGetDeviceCaps(void *d3d, uint32_t adapter, uint32_t type, void *caps) {
 	(void)d3d, (void)adapter, (void)type;
 	Vk_Caps(caps);
 	return D3D_OK;
@@ -396,7 +526,7 @@ static VkoSurf *Vko_NewTargetSurf(uint32_t format, uint32_t w, uint32_t h, int d
 	s->height = h;
 	s->img = &s->own;
 	int ok = depth
-		? Vk_CreateImage(&s->own, vk.depthFormat, w, h, 1, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+		? Vk_CreateImage(&s->own, Vko_DepthFormat(format), w, h, 1, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
 			| VK_IMAGE_USAGE_TRANSFER_DST_BIT, (VkComponentMapping)SW_ID)
 		: Vk_CreateImage(&s->own, VK_FORMAT_B8G8R8A8_UNORM, w, h, 1, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
 			| VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -495,7 +625,7 @@ static void Vk_DefaultState(VkoDev *d) {
 	}
 }
 
-static int Vk_D3DCreateDevice(void *d3d, uint32_t adapter, uint32_t type, void *hwnd, uint32_t behavior, void *pp,
+int Vk_D3DCreateDevice(void *d3d, uint32_t adapter, uint32_t type, void *hwnd, uint32_t behavior, void *pp,
 	void **dev) {
 	(void)adapter, (void)type, (void)behavior;
 	VkoDev *d = Vko_New(sizeof(VkoDev), VKO_DEV);
@@ -519,7 +649,7 @@ static int Vk_D3DCreateDevice(void *d3d, uint32_t adapter, uint32_t type, void *
 	return D3D_OK;
 }
 
-static int Vk_DevReset(void *dev, void *pp) {
+int Vk_DevReset(void *dev, void *pp) {
 	VkoDev *d = dev;
 
 	Vkd_End();
@@ -540,30 +670,30 @@ static int Vk_DevReset(void *dev, void *pp) {
 	return D3D_OK;
 }
 
-static int Vk_DevTestCooperativeLevel(void *dev) {
+int Vk_DevTestCooperativeLevel(void *dev) {
 	(void)dev;
 	return D3D_OK;
 }
 
-static uint32_t Vk_DevGetAvailableTextureMem(void *dev) {
+uint32_t Vk_DevGetAvailableTextureMem(void *dev) {
 	(void)dev;
 	return 512u << 20;
 }
 
-static int Vk_DevGetDeviceCaps(void *dev, void *caps) {
+int Vk_DevGetDeviceCaps(void *dev, void *caps) {
 	(void)dev;
 	Vk_Caps(caps);
 	return D3D_OK;
 }
 
-static int Vk_DevGetDirect3D(void *dev, void **d3d) {
+int Vk_DevGetDirect3D(void *dev, void **d3d) {
 	VkoDev *d = dev;
 	Vk_AddRef(d->d3d);
 	*d3d = d->d3d;
 	return D3D_OK;
 }
 
-static int Vk_DevGetDisplayMode(void *dev, void *mode) {
+int Vk_DevGetDisplayMode(void *dev, void *mode) {
 	VkoDev *d = dev;
 	D3DDisplayMode *m = mode;
 	m->Width = d->pp.BackBufferWidth;
@@ -573,39 +703,39 @@ static int Vk_DevGetDisplayMode(void *dev, void *mode) {
 	return D3D_OK;
 }
 
-static int Vk_DevShowCursor(void *dev, int show) {
+int Vk_DevShowCursor(void *dev, int show) {
 	(void)dev, (void)show;
 	return 0;
 }
 
-static void Vk_DevSetCursorPosition(void *dev, int x, int y, uint32_t flags) {
+void Vk_DevSetCursorPosition(void *dev, int x, int y, uint32_t flags) {
 	(void)dev, (void)x, (void)y, (void)flags;
 }
 
-static int Vk_DevSetGammaRamp(void *dev, uint32_t flags, const void *ramp) {
+int Vk_DevSetGammaRamp(void *dev, uint32_t flags, const void *ramp) {
 	(void)flags;
 	memcpy(((VkoDev *)dev)->gamma, ramp, sizeof(((VkoDev *)dev)->gamma));
 	return D3D_OK;
 }
 
-static int Vk_DevBeginScene(void *dev) {
+int Vk_DevBeginScene(void *dev) {
 	((VkoDev *)dev)->inScene = 1;
 	return D3D_OK;
 }
 
-static int Vk_DevEndScene(void *dev) {
+int Vk_DevEndScene(void *dev) {
 	((VkoDev *)dev)->inScene = 0;
 	return D3D_OK;
 }
 
-static int Vk_DevPresent(void *dev, const void *src, const void *dst, void *hwnd, const void *dirty) {
+int Vk_DevPresent(void *dev, const void *src, const void *dst, void *hwnd, const void *dirty) {
 	VkoDev *d = dev;
 
 	(void)src, (void)dst, (void)hwnd, (void)dirty;
 	return Vkd_Present(d) ? D3D_OK : D3DERR_INVALIDCALL;
 }
 
-static int Vk_DevGetBackBuffer(void *dev, uint32_t i, int type, void **surf) {
+int Vk_DevGetBackBuffer(void *dev, uint32_t i, int type, void **surf) {
 	VkoDev *d = dev;
 	(void)i, (void)type;
 	Vk_AddRef(d->backBuffer);
@@ -613,7 +743,7 @@ static int Vk_DevGetBackBuffer(void *dev, uint32_t i, int type, void **surf) {
 	return D3D_OK;
 }
 
-static int Vk_DevGetDepthStencilSurface(void *dev, void **surf) {
+int Vk_DevGetDepthStencilSurface(void *dev, void **surf) {
 	VkoDev *d = dev;
 	if (!d->zs) {
 		*surf = NULL;
@@ -624,14 +754,14 @@ static int Vk_DevGetDepthStencilSurface(void *dev, void **surf) {
 	return D3D_OK;
 }
 
-static int Vk_DevGetRenderTarget(void *dev, void **surf) {
+int Vk_DevGetRenderTarget(void *dev, void **surf) {
 	VkoDev *d = dev;
 	Vk_AddRef(d->rt);
 	*surf = d->rt;
 	return D3D_OK;
 }
 
-static int Vk_DevSetRenderTarget(void *dev, void *rt, void *zs) {
+int Vk_DevSetRenderTarget(void *dev, void *rt, void *zs) {
 	VkoDev *d = dev;
 
 	Vkd_End();
@@ -653,7 +783,7 @@ static int Vk_DevSetRenderTarget(void *dev, void *rt, void *zs) {
 	return D3D_OK;
 }
 
-static int Vk_DevClear(void *dev, uint32_t count, const void *rects, uint32_t flags, uint32_t color, float z,
+int Vk_DevClear(void *dev, uint32_t count, const void *rects, uint32_t flags, uint32_t color, float z,
 	uint32_t stencil) {
 	if (Vkd_Tracing()) {
 		Com_Printf("clear %u rects flags %x color %08x z %g\n", count, flags, color, (double)z);
@@ -663,31 +793,31 @@ static int Vk_DevClear(void *dev, uint32_t count, const void *rects, uint32_t fl
 
 /* ---- states ---- */
 
-static int Vk_DevSetRenderState(void *dev, uint32_t state, uint32_t value) {
+int Vk_DevSetRenderState(void *dev, uint32_t state, uint32_t value) {
 	if (state < 256) {
 		((VkoDev *)dev)->rs[state] = value;
 	}
 	return D3D_OK;
 }
 
-static int Vk_DevGetRenderState(void *dev, uint32_t state, uint32_t *value) {
+int Vk_DevGetRenderState(void *dev, uint32_t state, uint32_t *value) {
 	*value = state < 256 ? ((VkoDev *)dev)->rs[state] : 0;
 	return D3D_OK;
 }
 
-static int Vk_DevSetTextureStageState(void *dev, uint32_t stage, uint32_t type, uint32_t value) {
+int Vk_DevSetTextureStageState(void *dev, uint32_t stage, uint32_t type, uint32_t value) {
 	if (stage < VKO_STAGES && type < 32) {
 		((VkoDev *)dev)->tss[stage][type] = value;
 	}
 	return D3D_OK;
 }
 
-static int Vk_DevGetTextureStageState(void *dev, uint32_t stage, uint32_t type, uint32_t *value) {
+int Vk_DevGetTextureStageState(void *dev, uint32_t stage, uint32_t type, uint32_t *value) {
 	*value = stage < VKO_STAGES && type < 32 ? ((VkoDev *)dev)->tss[stage][type] : 0;
 	return D3D_OK;
 }
 
-static int Vk_DevSetTexture(void *dev, uint32_t stage, void *tex) {
+int Vk_DevSetTexture(void *dev, uint32_t stage, void *tex) {
 	VkoDev *d = dev;
 	if (stage >= VKO_STAGES) {
 		return D3DERR_INVALIDCALL;
@@ -702,55 +832,60 @@ static int Vk_DevSetTexture(void *dev, uint32_t stage, void *tex) {
 	return D3D_OK;
 }
 
-static int Vk_DevSetTransform(void *dev, uint32_t state, const void *m) {
+int Vk_DevSetTransform(void *dev, uint32_t state, const void *m) {
 	if (state < 512) {
 		memcpy(((VkoDev *)dev)->transform[state], m, 64);
 	}
 	return D3D_OK;
 }
 
-static int Vk_DevGetTransform(void *dev, uint32_t state, void *m) {
+int Vk_DevGetTransform(void *dev, uint32_t state, void *m) {
 	if (state < 512) {
 		memcpy(m, ((VkoDev *)dev)->transform[state], 64);
 	}
 	return D3D_OK;
 }
 
-static int Vk_DevSetViewport(void *dev, const uint32_t *vp) {
-	memcpy(((VkoDev *)dev)->viewport, vp, 24);
+int Vk_DevSetViewport(void *dev, const uint32_t *vp) {
+	VkoDev *d = dev;
+	/* Direct3D 8 refuses a viewport outside the render target and keeps the one it had */
+	if ((uint64_t)vp[0] + vp[2] > d->rt->width || (uint64_t)vp[1] + vp[3] > d->rt->height) {
+		return D3DERR_INVALIDCALL;
+	}
+	memcpy(d->viewport, vp, 24);
 	return D3D_OK;
 }
 
-static int Vk_DevGetViewport(void *dev, uint32_t *vp) {
+int Vk_DevGetViewport(void *dev, uint32_t *vp) {
 	memcpy(vp, ((VkoDev *)dev)->viewport, 24);
 	return D3D_OK;
 }
 
-static int Vk_DevSetMaterial(void *dev, const void *mat) {
+int Vk_DevSetMaterial(void *dev, const void *mat) {
 	memcpy(((VkoDev *)dev)->material, mat, sizeof(((VkoDev *)dev)->material));
 	return D3D_OK;
 }
 
-static int Vk_DevSetLight(void *dev, uint32_t idx, const void *l) {
+int Vk_DevSetLight(void *dev, uint32_t idx, const void *l) {
 	if (idx < VKO_LIGHTS) {
 		memcpy(((VkoDev *)dev)->light[idx], l, sizeof(((VkoDev *)dev)->light[idx]));
 	}
 	return D3D_OK;
 }
 
-static int Vk_DevLightEnable(void *dev, uint32_t idx, int enable) {
+int Vk_DevLightEnable(void *dev, uint32_t idx, int enable) {
 	if (idx < VKO_LIGHTS) {
 		((VkoDev *)dev)->lightOn[idx] = enable != 0;
 	}
 	return D3D_OK;
 }
 
-static int Vk_DevSetVertexShader(void *dev, uint32_t fvf) {
+int Vk_DevSetVertexShader(void *dev, uint32_t fvf) {
 	((VkoDev *)dev)->fvf = fvf;
 	return D3D_OK;
 }
 
-static int Vk_DevSetStreamSource(void *dev, uint32_t stream, void *vb, uint32_t stride) {
+int Vk_DevSetStreamSource(void *dev, uint32_t stream, void *vb, uint32_t stride) {
 	VkoDev *d = dev;
 	if (stream) {
 		return D3DERR_INVALIDCALL;
@@ -760,25 +895,25 @@ static int Vk_DevSetStreamSource(void *dev, uint32_t stream, void *vb, uint32_t 
 	return D3D_OK;
 }
 
-static int Vk_DevSetIndices(void *dev, void *ib, uint32_t baseVertex) {
+int Vk_DevSetIndices(void *dev, void *ib, uint32_t baseVertex) {
 	VkoDev *d = dev;
 	d->indices = ib;
 	d->baseVertex = baseVertex;
 	return D3D_OK;
 }
 
-static int Vk_DevCreatePixelShader(void *dev, const char *name, const void *code, uint32_t *handle) {
+int Vk_DevCreatePixelShader(void *dev, const char *name, const void *code, uint32_t *handle) {
 	(void)dev, (void)code;
 	*handle = Vkd_CreatePixelShader(name);
 	return *handle ? D3D_OK : D3DERR_INVALIDCALL;
 }
 
-static int Vk_DevDeletePixelShader(void *dev, uint32_t handle) {
+int Vk_DevDeletePixelShader(void *dev, uint32_t handle) {
 	(void)dev, (void)handle;
 	return D3D_OK;
 }
 
-static int Vk_DevSetPixelShader(void *dev, uint32_t handle) {
+int Vk_DevSetPixelShader(void *dev, uint32_t handle) {
 	if (Vkd_Tracing()) {
 		Com_Printf("ps %u\n", handle);
 	}
@@ -786,7 +921,7 @@ static int Vk_DevSetPixelShader(void *dev, uint32_t handle) {
 	return D3D_OK;
 }
 
-static int Vk_DevSetPixelShaderConstant(void *dev, uint32_t reg, const void *data, uint32_t count) {
+int Vk_DevSetPixelShaderConstant(void *dev, uint32_t reg, const void *data, uint32_t count) {
 	VkoDev *d = dev;
 	if (reg + count > 8) {
 		return D3DERR_INVALIDCALL;
@@ -797,21 +932,21 @@ static int Vk_DevSetPixelShaderConstant(void *dev, uint32_t reg, const void *dat
 
 /* ---- draws ---- */
 
-static int Vk_DevDrawPrimitive(void *dev, int type, uint32_t start, uint32_t count) {
+int Vk_DevDrawPrimitive(void *dev, int type, uint32_t start, uint32_t count) {
 	return Vkd_Draw(dev, type, count, start, NULL, 0, NULL, 0, 0);
 }
 
-static int Vk_DevDrawIndexedPrimitive(void *dev, int type, uint32_t minIndex, uint32_t numVertices,
+int Vk_DevDrawIndexedPrimitive(void *dev, int type, uint32_t minIndex, uint32_t numVertices,
 	uint32_t startIndex, uint32_t primCount) {
 	(void)minIndex, (void)numVertices;
 	return Vkd_Draw(dev, type, primCount, startIndex, NULL, 0, NULL, 0, 1);
 }
 
-static int Vk_DevDrawPrimitiveUP(void *dev, int type, uint32_t count, const void *data, uint32_t stride) {
+int Vk_DevDrawPrimitiveUP(void *dev, int type, uint32_t count, const void *data, uint32_t stride) {
 	return Vkd_Draw(dev, type, count, 0, data, stride, NULL, 0, 0);
 }
 
-static int Vk_DevDrawIndexedPrimitiveUP(void *dev, int type, uint32_t minIndex, uint32_t numVertices,
+int Vk_DevDrawIndexedPrimitiveUP(void *dev, int type, uint32_t minIndex, uint32_t numVertices,
 	uint32_t primCount, const void *idx, int idxFmt, const void *data, uint32_t stride) {
 	(void)minIndex;
 	return Vkd_DrawIndexedUP(dev, type, primCount, numVertices, idx, idxFmt, data, stride);
@@ -819,11 +954,11 @@ static int Vk_DevDrawIndexedPrimitiveUP(void *dev, int type, uint32_t minIndex, 
 
 /* ---- textures ---- */
 
-static int Vk_DevCreateTexture(void *dev, uint32_t w, uint32_t h, uint32_t levels, uint32_t usage, int fmt, int pool,
+int Vk_DevCreateTexture(void *dev, uint32_t w, uint32_t h, uint32_t levels, uint32_t usage, int fmt, int pool,
 	void **tex) {
 	(void)dev;
 	VkoFormat f = Vko_Format((uint32_t)fmt);
-	if (f.vk == VK_FORMAT_UNDEFINED || !w || !h) {
+	if (f.vk == VK_FORMAT_UNDEFINED || f.memOnly || !w || !h) {
 		Com_Printf("vulkan: texture format %d not supported\n", fmt);
 		return D3DERR_INVALIDCALL;
 	}
@@ -863,7 +998,7 @@ static int Vk_DevCreateTexture(void *dev, uint32_t w, uint32_t h, uint32_t level
 	return D3D_OK;
 }
 
-static int Vk_TexGetDevice(void *tex, void **dev) {
+int Vk_TexGetDevice(void *tex, void **dev) {
 	(void)tex;
 	*dev = Vkd_Device();
 	if (*dev) {
@@ -872,11 +1007,11 @@ static int Vk_TexGetDevice(void *tex, void **dev) {
 	return D3D_OK;
 }
 
-static uint32_t Vk_TexGetLevelCount(void *tex) {
+uint32_t Vk_TexGetLevelCount(void *tex) {
 	return ((VkoTex *)tex)->levels;
 }
 
-static int Vk_TexGetLevelDesc(void *tex, uint32_t level, void *desc) {
+int Vk_TexGetLevelDesc(void *tex, uint32_t level, void *desc) {
 	VkoTex *t = tex;
 	d3dSurfaceDesc_t *d = desc;
 	if (level >= t->levels) {
@@ -894,7 +1029,7 @@ static int Vk_TexGetLevelDesc(void *tex, uint32_t level, void *desc) {
 	return D3D_OK;
 }
 
-static int Vk_TexGetSurfaceLevel(void *tex, uint32_t level, void **surf) {
+int Vk_TexGetSurfaceLevel(void *tex, uint32_t level, void **surf) {
 	VkoTex *t = tex;
 	if (level >= t->levels) {
 		return D3DERR_INVALIDCALL;
@@ -941,7 +1076,8 @@ static void Vko_Upload(VkImg *im, uint32_t level, uint32_t fmt, const byte *data
 		f.convert = 1;		/* a 16 bit render target filled from memory */
 	}
 	uint32_t rows = Vko_Rows(&f, h);
-	uint32_t rowBytes = f.convert ? w * 4 : Vko_Pitch(&f, w);
+	byte half = f.convert && f.vk == VK_FORMAT_R16G16B16A16_SFLOAT;
+	uint32_t rowBytes = f.convert ? w * (half ? 8 : 4) : Vko_Pitch(&f, w);
 	VkBuffer buf;
 	VkDeviceSize off;
 
@@ -964,6 +1100,12 @@ static void Vko_Upload(VkImg *im, uint32_t level, uint32_t fmt, const byte *data
 		byte *o = dst + (size_t)r * rowBytes;
 		if (!f.convert) {
 			memcpy(o, s, rowBytes);
+			continue;
+		}
+		if (half) {
+			for (uint32_t c = 0; c < w; c++) {
+				Vko_ToBump(s + c * f.bpp, fmt, (uint16_t *)(o + 8 * c));
+			}
 			continue;
 		}
 		for (uint32_t c = 0; c < w; c++) {
@@ -1032,7 +1174,7 @@ static void Vko_Readback(VkImg *im, uint32_t level, uint32_t fmt, byte *mem, uin
 	Vk_DestroyBuffer(&tmp);
 }
 
-static int Vk_TexLockRect(void *tex, uint32_t level, void *locked, const void *rect, uint32_t flags) {
+int Vk_TexLockRect(void *tex, uint32_t level, void *locked, const void *rect, uint32_t flags) {
 	VkoTex *t = tex;
 	d3dLockedRect_t *lr = locked;
 	(void)rect;
@@ -1057,7 +1199,7 @@ static int Vk_TexLockRect(void *tex, uint32_t level, void *locked, const void *r
 	return D3D_OK;
 }
 
-static int Vk_TexUnlockRect(void *tex, uint32_t level) {
+int Vk_TexUnlockRect(void *tex, uint32_t level) {
 	VkoTex *t = tex;
 	if (level >= t->levels || !t->lock[level]) {
 		return D3DERR_INVALIDCALL;
@@ -1076,12 +1218,12 @@ static int Vk_TexUnlockRect(void *tex, uint32_t level) {
 	return D3D_OK;
 }
 
-static uint32_t Vk_TexSetLOD(void *tex, uint32_t lod) {
+uint32_t Vk_TexSetLOD(void *tex, uint32_t lod) {
 	(void)tex, (void)lod;
 	return 0;
 }
 
-static int Vk_DevUpdateTexture(void *dev, void *src, void *dst) {
+int Vk_DevUpdateTexture(void *dev, void *src, void *dst) {
 	VkoTex *s = src, *t = dst;
 	(void)dev;
 	for (uint32_t l = 0; l < s->levels && l < t->levels; l++) {
@@ -1095,7 +1237,7 @@ static int Vk_DevUpdateTexture(void *dev, void *src, void *dst) {
 
 /* ---- surfaces ---- */
 
-static int Vk_DevCreateImageSurface(void *dev, uint32_t w, uint32_t h, int fmt, void **surf) {
+int Vk_DevCreateImageSurface(void *dev, uint32_t w, uint32_t h, int fmt, void **surf) {
 	(void)dev;
 	VkoFormat f = Vko_Format((uint32_t)fmt);
 	if (f.vk == VK_FORMAT_UNDEFINED) {
@@ -1118,31 +1260,38 @@ static int Vk_DevCreateImageSurface(void *dev, uint32_t w, uint32_t h, int fmt, 
 	return D3D_OK;
 }
 
-static int Vk_DevCreateDepthStencilSurface(void *dev, uint32_t w, uint32_t h, int fmt, int multisample, void **surf) {
+int Vk_DevCreateDepthStencilSurface(void *dev, uint32_t w, uint32_t h, int fmt, int multisample, void **surf) {
 	(void)dev, (void)multisample;
 	VkoSurf *s = Vko_NewTargetSurf((uint32_t)fmt, w, h, 1);
 	*surf = s;
 	return s ? D3D_OK : D3DERR_INVALIDCALL;
 }
 
-static int Vk_SurfGetDesc(void *surf, void *desc) {
+int Vk_SurfGetDesc(void *surf, void *desc) {
 	VkoSurf *s = surf;
 	d3dSurfaceDesc_t *d = desc;
 	memset(d, 0, sizeof(*d));
 	d->Format = (int)s->format;
 	d->Type = 1;
-	d->Usage = s->tex ? s->tex->usage : (s->img ? D3DUSAGE_RENDERTARGET : 0);
+	int depth = Vko_IsDepthFormat(s->format);
+	d->Usage = s->tex ? s->tex->usage : !s->img ? 0 : depth ? D3DUSAGE_DEPTHSTENCIL : D3DUSAGE_RENDERTARGET;
 	d->Pool = s->mem && !s->img ? 2 : 0;
 	d->Width = s->width;
 	d->Height = s->height;
+	if (depth) {
+		d->Size = s->width * s->height * (s->format == D3DFMT_D16 ? 2 : 4);
+	} else {
+		VkoFormat f = Vko_Format(s->format);
+		d->Size = Vko_Pitch(&f, s->width) * Vko_Rows(&f, s->height);
+	}
 	return D3D_OK;
 }
 
-static int Vk_SurfGetDevice(void *surf, void **dev) {
+int Vk_SurfGetDevice(void *surf, void **dev) {
 	return Vk_TexGetDevice(surf, dev);
 }
 
-static int Vk_SurfLockRect(void *surf, void *lr, const void *rect, uint32_t flags) {
+int Vk_SurfLockRect(void *surf, void *lr, const void *rect, uint32_t flags) {
 	VkoSurf *s = surf;
 	d3dLockedRect_t *l = lr;
 	(void)rect;
@@ -1167,7 +1316,7 @@ static int Vk_SurfLockRect(void *surf, void *lr, const void *rect, uint32_t flag
 	return D3D_OK;
 }
 
-static int Vk_SurfUnlockRect(void *surf) {
+int Vk_SurfUnlockRect(void *surf) {
 	VkoSurf *s = surf;
 	if (s->tex) {
 		return Vk_TexUnlockRect(s->tex, s->level);
@@ -1223,7 +1372,7 @@ static void Vko_CopyRect(VkoSurf *src, const RECT *r, VkoSurf *dst, int dx, int 
 	}
 }
 
-static int Vk_DevCopyRects(void *dev, void *src, const void *rects, uint32_t n, void *dst, const void *points) {
+int Vk_DevCopyRects(void *dev, void *src, const void *rects, uint32_t n, void *dst, const void *points) {
 	VkoSurf *s = src, *d = dst;
 	(void)dev;
 	if (Vkd_Tracing()) {
@@ -1268,12 +1417,12 @@ static int Vko_NewBuf(uint32_t kind, uint32_t len, uint32_t usage, uint32_t fvf,
 	return D3D_OK;
 }
 
-static int Vk_DevCreateVertexBuffer(void *dev, uint32_t len, uint32_t usage, uint32_t fvf, int pool, void **vb) {
+int Vk_DevCreateVertexBuffer(void *dev, uint32_t len, uint32_t usage, uint32_t fvf, int pool, void **vb) {
 	(void)dev;
 	return Vko_NewBuf(VKO_VB, len, usage, fvf, 0, pool, vb);
 }
 
-static int Vk_DevCreateIndexBuffer(void *dev, uint32_t len, uint32_t usage, int fmt, int pool, void **ib) {
+int Vk_DevCreateIndexBuffer(void *dev, uint32_t len, uint32_t usage, int fmt, int pool, void **ib) {
 	(void)dev;
 	return Vko_NewBuf(VKO_IB, len, usage, 0, fmt, pool, ib);
 }
@@ -1282,7 +1431,7 @@ static int Vk_DevCreateIndexBuffer(void *dev, uint32_t len, uint32_t usage, int 
  * A DISCARD lock of a buffer the GPU may still read swaps in a spare version that it does not (a new one up to
  * VKO_BUF_SPARES, then it waits); NOOVERWRITE writes where it is; another lock of a busy buffer waits for the GPU.
  */
-static int Vk_BufLock(void *buf, uint32_t off, uint32_t size, void *data, uint32_t flags) {
+int Vk_BufLock(void *buf, uint32_t off, uint32_t size, void *data, uint32_t flags) {
 	VkoBuf *b = buf;
 	int busy = b->used > vk.completed;
 
@@ -1311,117 +1460,34 @@ static int Vk_BufLock(void *buf, uint32_t off, uint32_t size, void *data, uint32
 	return D3D_OK;
 }
 
-static int Vk_BufUnlock(void *buf) {
+int Vk_BufUnlock(void *buf) {
 	(void)buf;
 	return D3D_OK;
 }
 
 /* ---- D3DX objects: their own vtables (the C of src/lib/d3dx8) ---- */
 
-static void *Vk_XBufGetBufferPointer(void *buf) {
+void *Vk_XBufGetBufferPointer(void *buf) {
 	return ((void *(__stdcall *)(void *))(*(void ***)buf)[0xc / 4])(buf);
 }
 
-static int Vk_XMeshDrawSubset(void *mesh, uint32_t attrib) {
+int Vk_XMeshDrawSubset(void *mesh, uint32_t attrib) {
 	(void)mesh, (void)attrib;
 	return D3D_OK;
 }
 
-static int Vk_XMeshGetAttributeTable(void *mesh, void *table, uint32_t *size) {
+int Vk_XMeshGetAttributeTable(void *mesh, void *table, uint32_t *size) {
 	(void)mesh, (void)table;
 	*size = 0;
 	return D3D_OK;
 }
 
-static uint32_t Vk_XMeshGetNumFaces(void *mesh) {
+uint32_t Vk_XMeshGetNumFaces(void *mesh) {
 	(void)mesh;
 	return 0;
 }
 
-static uint32_t Vk_XMeshGetNumVertices(void *mesh) {
+uint32_t Vk_XMeshGetNumVertices(void *mesh) {
 	(void)mesh;
 	return 0;
 }
-
-const RdBackend rd_vk = {
-	.name = "vulkan",
-	.Direct3DCreate8 = Vk_Direct3DCreate8,
-	.AddRef = Vk_AddRef,
-	.Release = Vk_Release,
-	.D3DCheckDepthStencilMatch = Vk_D3DCheckDepthStencilMatch,
-	.D3DCheckDeviceFormat = Vk_D3DCheckDeviceFormat,
-	.D3DCheckDeviceMultiSampleType = Vk_D3DCheckDeviceMultiSampleType,
-	.D3DCheckDeviceType = Vk_D3DCheckDeviceType,
-	.D3DCreateDevice = Vk_D3DCreateDevice,
-	.D3DEnumAdapterModes = Vk_D3DEnumAdapterModes,
-	.D3DGetAdapterCount = Vk_D3DGetAdapterCount,
-	.D3DGetAdapterDisplayMode = Vk_D3DGetAdapterDisplayMode,
-	.D3DGetAdapterIdentifier = Vk_D3DGetAdapterIdentifier,
-	.D3DGetAdapterModeCount = Vk_D3DGetAdapterModeCount,
-	.D3DGetDeviceCaps = Vk_D3DGetDeviceCaps,
-	.DevBeginScene = Vk_DevBeginScene,
-	.DevClear = Vk_DevClear,
-	.DevCopyRects = Vk_DevCopyRects,
-	.DevCreateDepthStencilSurface = Vk_DevCreateDepthStencilSurface,
-	.DevCreateImageSurface = Vk_DevCreateImageSurface,
-	.DevCreateIndexBuffer = Vk_DevCreateIndexBuffer,
-	.DevCreatePixelShader = Vk_DevCreatePixelShader,
-	.DevCreateTexture = Vk_DevCreateTexture,
-	.DevCreateVertexBuffer = Vk_DevCreateVertexBuffer,
-	.DevDeletePixelShader = Vk_DevDeletePixelShader,
-	.DevDrawIndexedPrimitive = Vk_DevDrawIndexedPrimitive,
-	.DevDrawIndexedPrimitiveUP = Vk_DevDrawIndexedPrimitiveUP,
-	.DevDrawPrimitive = Vk_DevDrawPrimitive,
-	.DevDrawPrimitiveUP = Vk_DevDrawPrimitiveUP,
-	.DevEndScene = Vk_DevEndScene,
-	.DevGetAvailableTextureMem = Vk_DevGetAvailableTextureMem,
-	.DevGetBackBuffer = Vk_DevGetBackBuffer,
-	.DevGetDepthStencilSurface = Vk_DevGetDepthStencilSurface,
-	.DevGetDeviceCaps = Vk_DevGetDeviceCaps,
-	.DevGetDirect3D = Vk_DevGetDirect3D,
-	.DevGetDisplayMode = Vk_DevGetDisplayMode,
-	.DevGetRenderState = Vk_DevGetRenderState,
-	.DevGetRenderTarget = Vk_DevGetRenderTarget,
-	.DevGetTextureStageState = Vk_DevGetTextureStageState,
-	.DevGetTransform = Vk_DevGetTransform,
-	.DevGetViewport = Vk_DevGetViewport,
-	.DevLightEnable = Vk_DevLightEnable,
-	.DevPresent = Vk_DevPresent,
-	.DevReset = Vk_DevReset,
-	.DevSetCursorPosition = Vk_DevSetCursorPosition,
-	.DevSetGammaRamp = Vk_DevSetGammaRamp,
-	.DevSetIndices = Vk_DevSetIndices,
-	.DevSetLight = Vk_DevSetLight,
-	.DevSetMaterial = Vk_DevSetMaterial,
-	.DevSetPixelShader = Vk_DevSetPixelShader,
-	.DevSetPixelShaderConstant = Vk_DevSetPixelShaderConstant,
-	.DevSetRenderState = Vk_DevSetRenderState,
-	.DevSetRenderTarget = Vk_DevSetRenderTarget,
-	.DevSetStreamSource = Vk_DevSetStreamSource,
-	.DevSetTexture = Vk_DevSetTexture,
-	.DevSetTextureStageState = Vk_DevSetTextureStageState,
-	.DevSetTransform = Vk_DevSetTransform,
-	.DevSetVertexShader = Vk_DevSetVertexShader,
-	.DevSetViewport = Vk_DevSetViewport,
-	.DevShowCursor = Vk_DevShowCursor,
-	.DevTestCooperativeLevel = Vk_DevTestCooperativeLevel,
-	.DevUpdateTexture = Vk_DevUpdateTexture,
-	.TexGetDevice = Vk_TexGetDevice,
-	.TexGetLevelCount = Vk_TexGetLevelCount,
-	.TexGetLevelDesc = Vk_TexGetLevelDesc,
-	.TexGetSurfaceLevel = Vk_TexGetSurfaceLevel,
-	.TexLockRect = Vk_TexLockRect,
-	.TexSetLOD = Vk_TexSetLOD,
-	.TexUnlockRect = Vk_TexUnlockRect,
-	.SurfGetDesc = Vk_SurfGetDesc,
-	.SurfGetDevice = Vk_SurfGetDevice,
-	.SurfLockRect = Vk_SurfLockRect,
-	.SurfUnlockRect = Vk_SurfUnlockRect,
-	.BufLock = Vk_BufLock,
-	.BufUnlock = Vk_BufUnlock,
-	.XBufGetBufferPointer = Vk_XBufGetBufferPointer,
-	.XMeshDrawSubset = Vk_XMeshDrawSubset,
-	.XMeshGetAttributeTable = Vk_XMeshGetAttributeTable,
-	.XMeshGetNumFaces = Vk_XMeshGetNumFaces,
-	.XMeshGetNumVertices = Vk_XMeshGetNumVertices,
-};

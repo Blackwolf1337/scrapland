@@ -15,6 +15,40 @@ def sym(name):
 def symva(name):
 	return 0x400000 + SDTest.Sym(name)
 
+# a method of a render device object: in the current ScrapC.exe the function name of the render device (Rd_*), in
+# the reference (Direct3D 8) the COM method at vtable offset off. sig: the return kind, then a kind for obj and for
+# each argument (a 'p' argument comes back in the result). The whole result tuple of SDTest.Call.
+try:
+	SDTest.Sym('Rd_Release')
+	RDEV = 1
+except:
+	RDEV = 0
+def rdcall(name, obj, off, sig, args):
+	if RDEV:
+		return apply(SDTest.Call, (name, sig, obj) + args)
+	com = SDTest.Peek(SDTest.Peek(obj, '@i') + off, '@i') - 0x400000
+	return apply(SDTest.Call, (com, 't' + sig[0] + 'i' + sig[1:], 0, obj) + args)
+
+# R_LastDevice is "<adapter> [<driver>]  <driver version>": the driver of the reference is Wine's Direct3D 8, the
+# current one is Vulkan, so only the adapter compares
+def devname(v, s):
+	if v == 'R_LastDevice' and type(s) == type('') and strop.find(s, ' [') >= 0:
+		return s[:strop.find(s, ' [')]
+	return s
+
+# the pixel shader handles in the D3D logs (SDTest.Out) as the index of the shader in g_PSHandles: Wine's Direct3D 8
+# numbers them 0xf0000000 + n, the Vulkan backend 1 + its own index
+sdOut = SDTest.Out
+def sdout():
+	s = sdOut()
+	if type(s) == type('') and strop.find(s, 'SetPixelShader(') >= 0:
+		for i in range(32):
+			h = SDTest.Peek(sym('g_PSHandles') + 4 * i, 'i')
+			if h:
+				s = strop.replace(s, 'SetPixelShader(%x)' % h, 'SetPixelShader(ps%d)' % i)
+	return s
+SDTest.Out = sdout
+
 if SDTest.Base() != 0x400000:
 	out.write('sdlib: the exe is loaded at %x, the scripts take 0x400000\n' % SDTest.Base())
 

@@ -17,9 +17,9 @@ def dxtpk(a):
 	return SDTest.Peek(a, '@i')
 def dxtpo(a, v):
 	SDTest.Poke(a - 0x400000, v)
-# a COM method: sig is the return kind, the object and the arguments
-def dxtcom(obj, off, sig, args):
-	return apply(SDTest.Call, (dxtpk(dxtpk(obj) + off) - 0x400000, 't' + sig[0] + 'i' + sig[1:], 0, obj) + args)[0]
+# a method of a render device object (sdlib rdcall): sig is the return kind, the object and the arguments
+def dxtcom(name, obj, off, sig, args):
+	return rdcall(name, obj, off, sig, args)[0]
 dxtdev = SDTest.Peek('g_pd3dDevice', 'i')
 dxterrdif = SDTest.Peek('g_TexErrDif', 'i')
 dxtbuild = SDTest.Peek('g_BuildDDS', 'i')
@@ -32,7 +32,9 @@ def dxtctr(w, h, lv, usage, f, pool):
 	return SDTest.Call('D3DX_CheckTextureRequirements', 'tiiipppipi', 0, dxtdev, w, h, lv, usage, f, pool)
 for f in (0, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x22, 0x28, 0x29, 0x32, 0x33, 0x34,
 		0x3c, 0x3d, 0x3e, 0x3f, 0x40, 0x41, 0x43, 0x31545844, 0x32545844, 0x33545844, 0x34545844, 0x35545844,
-		0x59565955, 0x32595559, 0x50, 0x46, 0x20, 99):
+		0x59565955, 0x32595559, 0x20, 99):
+	# (not D16 and D16_LOCKABLE: Wine's Direct3D 8 takes them as textures, the Vulkan backend has no depth textures and
+	# the game makes none)
 	check('dxt CheckTextureRequirements fmt' + fmt((f,)), lambda f=f: dxtctr(64, 32, 0, 0, f, 1))
 for w, h in ((0, 0), (1, 1), (3, 5), (100, 60), (812, 812), (1204, 1204), (4096, 4096), (8192, 64), (5000, 3), (2, 0),
 		(0, 7), (-1, -1), (-1, 16), (16, -1), (20000, 20000)):
@@ -249,17 +251,17 @@ def dxtfile(buf, size):
 	return r
 # the levels of a texture: (format, width, height, bytes)
 def dxttex(tex):
-	n = dxtcom(tex, 0x34, 'ii', ())
+	n = dxtcom('Rd_TexGetLevelCount', tex, 0x34, 'ii', ())
 	desc = dxtz(32)
 	lr = dxtz(8)
 	r = []
 	for lv in range(n):
-		dxtcom(tex, 0x38, 'iiii', (lv, desc))
+		dxtcom('Rd_TexGetLevelDesc', tex, 0x38, 'iiii', (lv, desc))
 		f, w, h = dxtpk(desc), dxtpk(desc + 0x18), dxtpk(desc + 0x1c)
 		b = None
-		if dxtcom(tex, 0x40, 'iiiiii', (lv, lr, 0, 0x10)) >= 0:
+		if dxtcom('Rd_TexLockRect', tex, 0x40, 'iiiiii', (lv, lr, 0, 0x10)) >= 0:
 			b = dxtlevelbytes(dxtpk(lr + 4), dxtpk(lr), f, w, h)
-			dxtcom(tex, 0x44, 'iii', (lv,))
+			dxtcom('Rd_TexUnlockRect', tex, 0x44, 'iii', (lv,))
 		r.append((f, w, h, b))
 	dxtfree(desc)
 	dxtfree(lr)
@@ -396,7 +398,7 @@ dxtpix = (0x00000000, 0xffffffff, 0x80808080, 0x7f7f7f7f, 0x12345678, 0xff0000ff
 	0xbbbbbbbb, 0x11223344, 0x55667788, 0x99aabbcc, 0xddeeff00)
 def dxtsurf(w, h, f):
 	p = dxtz(4)
-	hr = dxtcom(dxtdev, 0x6c, 'iiiiii', (w, h, f, p))
+	hr = dxtcom('Rd_DevCreateImageSurface', dxtdev, 0x6c, 'iiiiii', (w, h, f, p))
 	s = dxtpk(p)
 	dxtfree(p)
 	if hr < 0:
@@ -404,26 +406,26 @@ def dxtsurf(w, h, f):
 	return s
 def dxtsurfbytes(s, w, h, f):
 	lr = dxtz(8)
-	if dxtcom(s, 0x24, 'iiiii', (lr, 0, 0x10)) < 0:
+	if dxtcom('Rd_SurfLockRect', s, 0x24, 'iiiii', (lr, 0, 0x10)) < 0:
 		dxtfree(lr)
 		return None
 	r = dxtlevelbytes(dxtpk(lr + 4), dxtpk(lr), f, w, h)
-	dxtcom(s, 0x28, 'ii', ())
+	dxtcom('Rd_SurfUnlockRect', s, 0x28, 'ii', ())
 	dxtfree(lr)
 	return r
 def dxtfill(s, w, h, pix):
 	lr = dxtz(8)
-	dxtcom(s, 0x24, 'iiiii', (lr, 0, 0))
+	dxtcom('Rd_SurfLockRect', s, 0x24, 'iiiii', (lr, 0, 0))
 	base, pitch = dxtpk(lr + 4), dxtpk(lr)
 	k = 0
 	for y in range(h):
 		for x in range(w):
 			dxtpo(base + y * pitch + 4 * x, pix[k % len(pix)])
 			k = k + 1
-	dxtcom(s, 0x28, 'ii', ())
+	dxtcom('Rd_SurfUnlockRect', s, 0x28, 'ii', ())
 	dxtfree(lr)
 def dxtrelease(s):
-	dxtcom(s, 8, 'ii', ())
+	dxtcom('Rd_Release', s, 8, 'ii', ())
 def dxtlsfs(d, s, flt, ck):
 	return SDTest.Call('D3DX_LoadSurfaceFromSurface', 'tiiiiiiiiii', 0, d, 0, 0, s, 0, 0, flt, ck)[0]
 dxtsrc = dxtsurf(8, 4, 0x15)
@@ -477,13 +479,13 @@ for f in (0x16, 0x17, 0x18, 0x19, 0x1a, 0x3c, 0x3d, 0x3e, 0x3f):
 # every 5 and 6 bit value of R5G6B5 into the formats of the game
 dxt565 = dxtsurf(64, 1, 0x17)
 dxtlr = dxtz(8)
-dxtcom(dxt565, 0x24, 'iiiii', (dxtlr, 0, 0))
+dxtcom('Rd_SurfLockRect', dxt565, 0x24, 'iiiii', (dxtlr, 0, 0))
 for i in range(0, 64, 2):
 	v = long((i & 31) << 11 | i << 5 | (31 - (i & 31))) + long((i + 1 & 31) << 11 | (i + 1) << 5 | (31 - (i + 1 & 31))) * 65536L
 	if v >= 2147483648L:
 		v = v - 4294967296L
 	dxtpo(dxtpk(dxtlr + 4) + 2 * i, int(v))
-dxtcom(dxt565, 0x28, 'ii', ())
+dxtcom('Rd_SurfUnlockRect', dxt565, 0x28, 'ii', ())
 dxtfree(dxtlr)
 for f in (0x15, 0x16, 0x18, 0x1a, 0x3c, 0x3d, 0x3e, 0x3f):
 	d = dxtsurf(64, 1, f)

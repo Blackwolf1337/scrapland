@@ -299,12 +299,12 @@ static byte D3DApp_Recreate(CD3DApplication *self, int *err) {
 	self->vftable->InvalidateDeviceObjects(self);
 	self->vftable->DeleteDeviceObjects(self);
 	if (Rd_Release(self->device)) {
-		*err = CD3DApp_DisplayErrorMsg(self, 0x8200000a, 1);	/* D3DAPPERR_NONZEROREFCOUNT */
+		*err = CD3DApp_DisplayErrorMsg(0x8200000a);	/* D3DAPPERR_NONZEROREFCOUNT */
 		return 0;
 	}
 	int r = CD3DApp_Initialize3DEnvironment(self);
 	if (r < 0) {
-		*err = CD3DApp_DisplayErrorMsg(self, r, 1);
+		*err = CD3DApp_DisplayErrorMsg(r);
 		return 0;
 	}
 	return 1;
@@ -372,7 +372,7 @@ int CD3DApp_ToggleFullscreen(CD3DApplication *self) {
 		pp->FullScreen_PresentationInterval = self->vsync ? 0 : D3DPRESENT_INTERVAL_IMMEDIATE;
 	}
 	if (CD3DApp_Reset(self) < 0) {
-		return CD3DApp_DisplayErrorMsg(self, 0x8200000c, 1);	/* D3DAPPERR_RESIZEFAILED */
+		return CD3DApp_DisplayErrorMsg(0x8200000c);	/* D3DAPPERR_RESIZEFAILED */
 	}
 	if (self->windowed) {
 		/* the window rectangle, not topmost */
@@ -384,44 +384,15 @@ int CD3DApp_ToggleFullscreen(CD3DApplication *self) {
 	return 0;
 }
 
-typedef void *(__stdcall *getmodulehandle_t)(const char *name);
-#define exe_GetModuleHandleA GAME_IMPORT(getmodulehandle_t, GetModuleHandleA, 4)
-
-int CD3DApp_UserSelectNewDevice(CD3DApplication *self) {
-	if (!self->windowed && CD3DApp_ToggleFullscreen(self) < 0) {
-		CD3DApp_DisplayErrorMsg(self, 0x8200000c, 1);
-		return E_FAIL;
-	}
-	/* the device dialog (resource 0x90), SelectDeviceProc */
-	if (exe_DialogBoxParamA(exe_GetModuleHandleA(NULL), (const char *)0x90, self->hWnd, (void *)D3DApp_SelectDeviceProc,
-		(intptr_t)self) != 1) {
-		return 0;
-	}
-	self->windowed = D3DApp_CurDevice(self)->bWindowed;
-	int err;
-	if (!D3DApp_Recreate(self, &err)) {
-		return err;
-	}
-	D3DApp_SingleStep(self);
-	return 0;
-}
-
 /* D3DAPPERR_* */
 #define D3DAPPERR_NODIRECT3D 0x82000001
 #define D3DAPPERR_NOCOMPATIBLEDEVICES 0x82000003
 #define D3DAPPERR_NOWINDOWABLEDEVICES 0x82000004
-#define D3DAPPERR_NOHARDWAREDEVICE 0x82000005
-#define D3DAPPERR_HALNOTCOMPATIBLE 0x82000006
-#define D3DAPPERR_NOWINDOWEDHAL 0x82000007
-#define D3DAPPERR_NODESKTOPHAL 0x82000008
-#define D3DAPPERR_NOHALTHISMODE 0x82000009
 #define D3DAPPERR_RESIZEFAILED 0x8200000c
 #define D3DERR_DEVICELOST ((int)0x88760868)
 #define D3DERR_DEVICENOTRESET ((int)0x88760869)
 
 #define D3DDEVTYPE_HAL 1
-#define D3DDEVTYPE_REF 2
-#define D3DDEVTYPE_SW 3
 #define D3DFMT_R8G8B8 0x14
 #define D3DFMT_A8R8G8B8 0x15
 #define D3DFMT_R5G6B5 0x17
@@ -471,7 +442,7 @@ int CD3DApp_Create(CD3DApplication *self, void *inst) {
 
 	self->d3d = Rd_Direct3DCreate8(0xdc);	/* D3D_SDK_VERSION */
 	if (!self->d3d) {
-		return CD3DApp_DisplayErrorMsg(self, D3DAPPERR_NODIRECT3D, 1);
+		return CD3DApp_DisplayErrorMsg(D3DAPPERR_NODIRECT3D);
 	}
 	hr = CD3DApp_BuildDeviceList(self);
 	if (hr < 0) {
@@ -516,10 +487,10 @@ fail:
 		Rd_Release(self->d3d);
 		self->d3d = NULL;
 	}
-	return CD3DApp_DisplayErrorMsg(self, hr, 1);
+	return CD3DApp_DisplayErrorMsg(hr);
 }
 
-int CD3DApp_DisplayErrorMsg(CD3DApplication *self, int hr, int type) {
+int CD3DApp_DisplayErrorMsg(int hr) {
 	char msg[0x200];
 	const char *s;
 
@@ -540,21 +511,6 @@ int CD3DApp_DisplayErrorMsg(CD3DApplication *self, int hr, int type) {
 	case D3DAPPERR_NOWINDOWABLEDEVICES:
 		s = "This program cannot run in a desktop\nwindow with the current display settings.\nPlease change your desktop settings to a\n16- or 32-bit display mode and re-run this\nprogram.";
 		break;
-	case D3DAPPERR_NOHARDWAREDEVICE:
-		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd5e4, 0);
-		break;
-	case D3DAPPERR_HALNOTCOMPATIBLE:
-		s = "This program requires functionality that is\nnot available on your Direct3D hardware\naccelerator.";
-		break;
-	case D3DAPPERR_NOWINDOWEDHAL:
-		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd688, 0);
-		break;
-	case D3DAPPERR_NODESKTOPHAL:
-		s = "Your Direct3D hardware accelerator cannot\nrender into a window with the current\ndesktop display settings.\n";
-		break;
-	case D3DAPPERR_NOHALTHISMODE:
-		s = "This program requires functionality that is\nnot available on your Direct3D hardware\naccelerator with the current desktop display\nsettings.\n";
-		break;
 	case 0x8200000a:		/* D3DAPPERR_NONZEROREFCOUNT */
 		s = "A D3D object has a non-zero reference\ncount (meaning things were not properly\ncleaned up).";
 		break;
@@ -569,27 +525,16 @@ int CD3DApp_DisplayErrorMsg(CD3DApplication *self, int hr, int type) {
 		break;
 	}
 	Str_Copy(msg, s, sizeof(msg));
-	int fatal = 1;
-	if (type != 1) {
-		if (self->fullscreen) {
-			Err_Printf(1, "%s", msg);
-		}
-		D3DApp_Cat(msg, sizeof(msg), "\nUsing REF (allowed only in windowed)");
-		fatal = 0;
-	}
-	Err_Printf(fatal, "%s", msg);
+	Err_Printf(1, "%s", msg);
 	return hr;
 }
 
-/* the modes, depth formats and behaviors of the HAL and REF devices of all adapters, then the first fullscreen HAL
- * device (with fullscreen) or the first windowed one; the reasons a windowed REF had to be taken shown */
+/* the modes, depth formats and behaviors of the device of each adapter, then the first fullscreen one (with
+ * fullscreen) or the first windowed one */
 int CD3DApp_BuildDeviceList(CD3DApplication *self) {
-	static const uint32_t types[2] = { D3DDEVTYPE_HAL, D3DDEVTYPE_REF };
-	const char *names[2] = { "HAL", "REF" };	/* "HAL", "REF" */
 	D3DDisplayMode modes[100];
 	uint32_t fmts[20], behavior[20], depth[20];
 	int fmtOk[20];
-	int halExists = 0, halWindowed = 0, halDesktop = 0, halSample = 0;
 	void *d3d = self->d3d;
 
 	for (uint32_t a = 0; a < Rd_D3DGetAdapterCount(d3d);
@@ -638,15 +583,15 @@ int CD3DApp_BuildDeviceList(CD3DApplication *self) {
 			}
 		}
 		crt_qsort(modes, nModes, sizeof(D3DDisplayMode), (void *)D3DApp_SortModes);	/* D3DApp_SortModes */
-		for (int t = 0; t < 2; t++) {
+		{
 			D3DDeviceInfo *dev = &ad->devices[ad->dwNumDevices];
-			dev->DeviceType = types[t];
+			dev->DeviceType = D3DDEVTYPE_HAL;
 			d3d = self->d3d;
-			Rd_D3DGetDeviceCaps(d3d, a, types[t], &dev->d3dCaps);
+			Rd_D3DGetDeviceCaps(d3d, a, D3DDEVTYPE_HAL, &dev->d3dCaps);
 			dev->dwNumModes = 0;
 			dev->dwCurrentMode = 0;
 			dev->bCanDoWindowed = 0;
-			dev->strDesc = names[t];
+			dev->strDesc = "HAL";
 			dev->bWindowed = 0;
 			dev->MultiSampleType = 0;
 			for (uint32_t f = 0; f < nFmts; f++) {
@@ -656,15 +601,6 @@ int CD3DApp_BuildDeviceList(CD3DApplication *self) {
 				d3d = self->d3d;
 				if (Rd_D3DCheckDeviceType(d3d, a, dev->DeviceType, fmt, fmt, 0) < 0) {
 					continue;
-				}
-				if (dev->DeviceType == D3DDEVTYPE_HAL) {
-					halExists = 1;
-					if (dev->d3dCaps.Caps2 & D3DCAPS2_CANRENDERWINDOWED) {
-						halWindowed = 1;
-						if (f == 0) {
-							halDesktop = 1;
-						}
-					}
 				}
 				typeof(self->vftable->ConfirmDevice) confirm = self->vftable->ConfirmDevice;
 				if (dev->d3dCaps.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT) {
@@ -701,7 +637,7 @@ int CD3DApp_BuildDeviceList(CD3DApplication *self) {
 				}
 				if (!CD3DApp_FindDepthStencilFormat(self, a, dev->DeviceType, fmt, &depth[f])) {
 					fmtOk[f] = 0;
-				} else if (dev->DeviceType == D3DDEVTYPE_HAL) {
+				} else {
 					const char *ds = D3DFmt_Name((int)depth[f]);
 					E3D_LogDebug(g_FileLog, "Backbuffer format valid: %-8s %-8s", D3DFmt_Name((int)fmt), ds);
 				}
@@ -719,9 +655,6 @@ int CD3DApp_BuildDeviceList(CD3DApplication *self) {
 					mi->dwBehavior = behavior[f];
 					mi->DepthStencilFormat = depth[f];
 					dev->dwNumModes++;
-					if (dev->DeviceType == D3DDEVTYPE_HAL) {
-						halSample = 1;
-					}
 				}
 			}
 			/* the default mode: 640x480, then the size asked for, then that size in the bits asked for */
@@ -773,13 +706,11 @@ int CD3DApp_BuildDeviceList(CD3DApplication *self) {
 	if (self->fullscreen) {
 		for (uint32_t a = 0; a < self->numAdapters; a++) {
 			for (uint32_t d = 0; d < ads[a].dwNumDevices; d++) {
-				if (ads[a].devices[d].DeviceType == D3DDEVTYPE_HAL) {
-					ads[a].devices[d].bWindowed = 0;
-					ads[a].dwCurrentDevice = (int)d;
-					self->adapter = a;
-					self->windowed = 0;
-					return 0;
-				}
+				ads[a].devices[d].bWindowed = 0;
+				ads[a].dwCurrentDevice = (int)d;
+				self->adapter = a;
+				self->windowed = 0;
+				return 0;
 			}
 		}
 	}
@@ -791,21 +722,6 @@ int CD3DApp_BuildDeviceList(CD3DApplication *self) {
 			ads[a].dwCurrentDevice = (int)d;
 			self->adapter = a;
 			self->windowed = 1;
-			if (ads[a].devices[d].DeviceType == D3DDEVTYPE_REF) {
-				int why;
-				if (!halExists) {
-					why = (int)D3DAPPERR_NOHARDWAREDEVICE;
-				} else if (!halSample) {
-					why = (int)D3DAPPERR_HALNOTCOMPATIBLE;
-				} else if (!halWindowed) {
-					why = (int)D3DAPPERR_NOWINDOWEDHAL;
-				} else if (!halDesktop) {
-					why = (int)D3DAPPERR_NODESKTOPHAL;
-				} else {
-					why = (int)D3DAPPERR_NOHALTHISMODE;
-				}
-				CD3DApp_DisplayErrorMsg(self, why, 2);
-			}
 			return 0;
 		}
 	}
@@ -854,28 +770,19 @@ int CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 		Rd_DevGetDeviceCaps(d, &self->caps);
 		self->createFlags = mode->dwBehavior;
 		char *stats = self->deviceStats;
-		if (dev->DeviceType == D3DDEVTYPE_REF) {
-			Str_Copy(stats, "REF", sizeof(self->deviceStats));
-		} else if (dev->DeviceType == D3DDEVTYPE_HAL) {
-			Str_Copy(stats, "HAL", sizeof(self->deviceStats));
-		} else if (dev->DeviceType == D3DDEVTYPE_SW) {
-			Str_Copy(stats, "SW", sizeof(self->deviceStats));
-		}
+		Str_Copy(stats, "HAL", sizeof(self->deviceStats));
 		uint32_t b = mode->dwBehavior;
-		int hal = dev->DeviceType == D3DDEVTYPE_HAL;
 		if ((b & 0x50) == 0x50) {
-			D3DApp_Cat(stats, sizeof(self->deviceStats), hal ? " (pure hw vp)" : " (simulated pure hw vp)");
+			D3DApp_Cat(stats, sizeof(self->deviceStats), " (pure hw vp)");
 		} else if (b & D3DCREATE_HARDWARE_VERTEXPROCESSING) {
-			D3DApp_Cat(stats, sizeof(self->deviceStats), hal ? " (hw vp)" : " (simulated hw vp)");
+			D3DApp_Cat(stats, sizeof(self->deviceStats), " (hw vp)");
 		} else if (b & D3DCREATE_MIXED_VERTEXPROCESSING) {
-			D3DApp_Cat(stats, sizeof(self->deviceStats), hal ? " (mixed vp)" : " (simulated mixed vp)");
+			D3DApp_Cat(stats, sizeof(self->deviceStats), " (mixed vp)");
 		} else if (b & D3DCREATE_SOFTWARE_VERTEXPROCESSING) {
 			D3DApp_Cat(stats, sizeof(self->deviceStats), " (sw vp)");
 		}
-		if (dev->DeviceType == D3DDEVTYPE_HAL) {
-			D3DApp_Cat(stats, sizeof(self->deviceStats), ": ");
-			D3DApp_Cat(stats, sizeof(self->deviceStats), ad->id.Description);
-		}
+		D3DApp_Cat(stats, sizeof(self->deviceStats), ": ");
+		D3DApp_Cat(stats, sizeof(self->deviceStats), ad->id.Description);
 		CD3DApp_UpdateBackBufferDesc(self);
 		hr = self->vftable->InitDeviceObjects(self);
 		if (hr >= 0) {
@@ -892,22 +799,7 @@ int CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 			self->device = NULL;
 		}
 	}
-	/* a failed HAL: the error shown, then the first REF device of the first adapter */
-	if (dev->DeviceType == D3DDEVTYPE_HAL) {
-		CD3DApp_DisplayErrorMsg(self, hr, 1);
-		self->adapter = 0;
-		D3DAdapterInfo *a0 = self->adapters;
-		for (uint32_t d = 0; d < a0->dwNumDevices; d++) {
-			if (a0->devices[d].DeviceType == D3DDEVTYPE_REF) {
-				a0->dwCurrentDevice = (int)d;
-				self->windowed = a0->devices[d].bWindowed;
-				break;
-			}
-		}
-		if (a0->devices[a0->dwCurrentDevice].DeviceType == D3DDEVTYPE_REF) {
-			hr = CD3DApp_Initialize3DEnvironment(self);
-		}
-	}
+	CD3DApp_DisplayErrorMsg(hr);
 	return hr;
 }
 
@@ -949,22 +841,12 @@ intptr_t CD3DApp_MsgProc(CD3DApplication *self, void *hwnd, uint32_t msg, uintpt
 		break;
 	case 0x111:			/* WM_COMMAND */
 		switch (w & 0xffff) {
-		case 0x9c42:		/* IDM_CHANGEDEVICE */
-			if (!self->active || !self->ready) {
-				return 0;
-			}
-			self->vftable->Pause(self, 1);
-			if (CD3DApp_UserSelectNewDevice(self) < 0) {
-				return 0;
-			}
-			self->vftable->Pause(self, 0);
-			return 0;
 		case 0x9c43:		/* IDM_TOGGLEFULLSCREEN */
 			if (!self->active || !self->ready) {
 				return 0;
 			}
 			if (CD3DApp_ToggleFullscreen(self) < 0) {
-				CD3DApp_DisplayErrorMsg(self, (int)D3DAPPERR_RESIZEFAILED, 1);
+				CD3DApp_DisplayErrorMsg((int)D3DAPPERR_RESIZEFAILED);
 			}
 			return 0;
 		case 0x9c44: {		/* IDM_TOGGLESTART */
@@ -1031,7 +913,7 @@ intptr_t CD3DApp_MsgProc(CD3DApplication *self, void *hwnd, uint32_t msg, uintpt
 				self->presentParams.BackBufferWidth = (uint32_t)nw;
 				self->presentParams.BackBufferHeight = (uint32_t)(c->bottom - c->top);
 				if (CD3DApp_Reset(self) < 0) {
-					CD3DApp_DisplayErrorMsg(self, (int)D3DAPPERR_RESIZEFAILED, 1);
+					CD3DApp_DisplayErrorMsg((int)D3DAPPERR_RESIZEFAILED);
 					return 0;
 				}
 				self->ready = 1;
@@ -1121,7 +1003,7 @@ int CD3DApp_Render(CD3DApplication *self) {
 			}
 			hr = CD3DApp_Reset(self);
 			if (hr < 0) {
-				return CD3DApp_DisplayErrorMsg(self, (int)D3DAPPERR_RESIZEFAILED, 1);
+				return CD3DApp_DisplayErrorMsg((int)D3DAPPERR_RESIZEFAILED);
 			}
 			return hr;
 		}
@@ -1204,7 +1086,7 @@ int CD3DApp_Run(CD3DApplication *self) {
 					r = CD3DApp_Reset(self);
 					hr = r;
 					if (r < 0) {
-						CD3DApp_DisplayErrorMsg(self, (int)D3DAPPERR_RESIZEFAILED, 1);
+						CD3DApp_DisplayErrorMsg((int)D3DAPPERR_RESIZEFAILED);
 					}
 				}
 				goto failed;
@@ -1249,166 +1131,4 @@ failed:
 		}
 	}
 	return (int)msg.wParam;
-}
-
-/* the choice of the device dialog: the original values and those selected */
-#define g_SelApp GAME_GLOBAL(CD3DApplication *, g_SelApp)
-extern uint32_t g_OrigAdapter;
-extern uint32_t g_SelAdapter;
-extern uint32_t g_OrigDevice;
-extern uint32_t g_SelDevice;
-extern uint32_t g_OrigMode;
-extern uint32_t g_SelMode;
-extern int g_OrigWindowed;
-extern int g_SelWindowed;
-extern uint32_t g_OrigMultiSample;
-extern uint32_t g_SelMultiSample;
-
-typedef int(__cdecl *wsprintf_t)(char *buf, const char *fmt, ...);
-#define exe_wsprintfA GAME_IMPORT_CDECL(wsprintf_t, wsprintfA)
-
-#define IDC_ADAPTER_COMBO 0x3ea
-#define IDC_DEVICE_COMBO 0x3e8
-#define IDC_FULLSCREENMODES_COMBO 0x3e9
-#define IDC_WINDOW 0x3f4
-#define IDC_FULLSCREEN 0x3f8
-#define IDC_MULTISAMPLE_COMBO 0x3eb
-#define CB_ADDSTRING 0x143
-#define CB_RESETCONTENT 0x14b
-#define CB_GETCOUNT 0x146
-#define CB_GETCURSEL 0x147
-#define CB_SETCURSEL 0x14e
-#define CB_GETITEMDATA 0x150
-#define CB_SETITEMDATA 0x151
-#define BM_GETCHECK 0xf0
-#define BM_SETCHECK 0xf1
-
-/* a combo box entry with its item data, the selection on it when sel */
-static void D3DApp_ComboAdd(void *combo, const char *text, uint32_t data, int sel) {
-	intptr_t i = exe_SendMessageA(combo, CB_ADDSTRING, 0, (intptr_t)text);
-	exe_SendMessageA(combo, CB_SETITEMDATA, (uintptr_t)i, (intptr_t)data);
-	if (sel) {
-		exe_SendMessageA(combo, CB_SETCURSEL, (uintptr_t)i, 0);
-	}
-}
-
-static D3DAdapterInfo *D3DApp_SelAdapter(void) {
-	return &g_SelApp->adapters[g_SelAdapter];
-}
-
-intptr_t __stdcall D3DApp_SelectDeviceProc(void *dlg, uint32_t msg, uintptr_t w, intptr_t l) {
-	void *hAdapter = exe_GetDlgItem(dlg, IDC_ADAPTER_COMBO);
-	void *hDevice = exe_GetDlgItem(dlg, IDC_DEVICE_COMBO);
-	void *hMode = exe_GetDlgItem(dlg, IDC_FULLSCREENMODES_COMBO);
-	void *hWindowed = exe_GetDlgItem(dlg, IDC_WINDOW);
-	void *hFullscreen = exe_GetDlgItem(dlg, IDC_FULLSCREEN);
-	void *hMultiSample = exe_GetDlgItem(dlg, IDC_MULTISAMPLE_COMBO);
-	char buf[80], ms[52];
-
-	if (msg == 0x110) {		/* WM_INITDIALOG: the application in lParam */
-		CD3DApplication *app = (CD3DApplication *)l;
-		g_SelApp = app;
-		D3DAdapterInfo *ad = &app->adapters[app->adapter];
-		g_OrigAdapter = g_SelAdapter = app->adapter;
-		D3DDeviceInfo *dev = &ad->devices[ad->dwCurrentDevice];
-		g_OrigDevice = g_SelDevice = (uint32_t)ad->dwCurrentDevice;
-		g_OrigMode = g_SelMode = (uint32_t)dev->dwCurrentMode;
-		g_OrigWindowed = g_SelWindowed = dev->bWindowed;
-		g_OrigMultiSample = g_SelMultiSample = dev->MultiSampleType;
-	} else if (msg == 0x111) {	/* WM_COMMAND */
-		g_SelWindowed = (int)exe_SendMessageA(hWindowed, BM_GETCHECK, 0, 0);
-		uint16_t id = (uint16_t)w;
-		if (id == 1) {		/* IDOK: unchanged is a cancel */
-			if (g_SelAdapter == g_OrigAdapter && g_SelDevice == g_OrigDevice && g_SelMode == g_OrigMode &&
-				g_SelWindowed == g_OrigWindowed && g_SelMultiSample == g_OrigMultiSample) {
-				exe_EndDialog(dlg, 2);
-				return 1;
-			}
-			g_SelApp->adapter = g_SelAdapter;
-			D3DAdapterInfo *ad = D3DApp_SelAdapter();
-			ad->dwCurrentDevice = (int)g_SelDevice;
-			D3DDeviceInfo *dev = &ad->devices[g_SelDevice];
-			dev->dwCurrentMode = (int)g_SelMode;
-			dev->bWindowed = g_SelWindowed;
-			dev->MultiSampleType = g_SelMultiSample;
-			exe_EndDialog(dlg, 1);
-			return 1;
-		}
-		if (id == 2) {		/* IDCANCEL */
-			exe_EndDialog(dlg, 2);
-			return 1;
-		}
-		if ((uint16_t)(w >> 16) == 9) {	/* CBN_SELENDOK */
-			if (id == IDC_ADAPTER_COMBO) {
-				g_SelAdapter = (uint32_t)exe_SendMessageA(hAdapter, CB_GETCURSEL, 0, 0);
-				D3DAdapterInfo *ad = D3DApp_SelAdapter();
-				g_SelDevice = (uint32_t)ad->dwCurrentDevice;
-				g_SelMode = (uint32_t)ad->devices[g_SelDevice].dwCurrentMode;
-				g_SelWindowed = ad->devices[g_SelDevice].bWindowed;
-			} else if (id == IDC_DEVICE_COMBO) {
-				D3DAdapterInfo *ad = D3DApp_SelAdapter();
-				g_SelDevice = (uint32_t)exe_SendMessageA(hDevice, CB_GETCURSEL, 0, 0);
-				g_SelMode = (uint32_t)ad->devices[g_SelDevice].dwCurrentMode;
-				g_SelWindowed = ad->devices[g_SelDevice].bWindowed;
-			} else if (id == IDC_FULLSCREENMODES_COMBO) {
-				g_SelMode = (uint32_t)exe_SendMessageA(hMode, CB_GETCURSEL, 0, 0);
-			} else if (id == IDC_MULTISAMPLE_COMBO) {
-				intptr_t i = exe_SendMessageA(hMultiSample, CB_GETCURSEL, 0, 0);
-				g_SelMultiSample = (uint32_t)exe_SendMessageA(hMultiSample, CB_GETITEMDATA, (uintptr_t)i, 0);
-			}
-		}
-	} else {
-		return 0;
-	}
-	/* the lists filled again for the selection */
-	exe_SendMessageA(hAdapter, CB_RESETCONTENT, 0, 0);
-	exe_SendMessageA(hDevice, CB_RESETCONTENT, 0, 0);
-	exe_SendMessageA(hMode, CB_RESETCONTENT, 0, 0);
-	exe_SendMessageA(hMultiSample, CB_RESETCONTENT, 0, 0);
-	D3DAdapterInfo *ad = D3DApp_SelAdapter();
-	D3DDeviceInfo *dev = &ad->devices[g_SelDevice];
-	for (uint32_t a = 0; a < g_SelApp->numAdapters; a++) {
-		D3DApp_ComboAdd(hAdapter, g_SelApp->adapters[a].id.Description, a, a == g_SelAdapter);
-	}
-	for (uint32_t d = 0; d < ad->dwNumDevices; d++) {
-		D3DApp_ComboAdd(hDevice, ad->devices[d].strDesc, d, d == g_SelDevice);
-	}
-	for (uint32_t m = 0; m < (uint32_t)dev->dwNumModes; m++) {
-		uint32_t f = dev->modes[m].Format;
-		int bpp = (f == D3DFMT_X8R8G8B8 || f == D3DFMT_A8R8G8B8 || f == D3DFMT_R8G8B8) ? 32 : 16;
-		Bprintf(buf, sizeof(buf), "%ld x %ld x %ld", dev->modes[m].Width, dev->modes[m].Height, bpp);
-		D3DApp_ComboAdd(hMode, buf, m, m == g_SelMode);
-	}
-	for (uint32_t t = 0; t <= 16; t++) {
-		uint32_t fmt = g_SelWindowed ? g_SelApp->adapters[g_SelAdapter].desktopMode.Format :
-			dev->modes[g_SelMode].Format;
-		if (t == 1) {
-			continue;
-		}
-		void *d3d = g_SelApp->d3d;
-		if (Rd_D3DCheckDeviceMultiSampleType(d3d, g_SelAdapter,
-			dev->DeviceType, fmt, g_SelWindowed, t) < 0) {
-			continue;
-		}
-		if (!t) {
-			Str_Copy(ms, "none", sizeof(ms));	/* "none" */
-		} else {
-			exe_wsprintfA(ms, "%d samples", t);
-		}
-		D3DApp_ComboAdd(hMultiSample, ms, t, t == g_SelMultiSample || t == 0);
-	}
-	intptr_t i = exe_SendMessageA(hMultiSample, CB_GETCURSEL, 0, 0);
-	g_SelMultiSample = (uint32_t)exe_SendMessageA(hMultiSample, CB_GETITEMDATA, (uintptr_t)i, 0);
-	exe_EnableWindow(hMultiSample, exe_SendMessageA(hMultiSample, CB_GETCOUNT, 0, 0) > 1);
-	exe_EnableWindow(hWindowed, dev->bCanDoWindowed);
-	if (g_SelWindowed) {
-		exe_SendMessageA(hWindowed, BM_SETCHECK, 1, 0);
-		exe_SendMessageA(hFullscreen, BM_SETCHECK, 0, 0);
-		exe_EnableWindow(hMode, 0);
-	} else {
-		exe_SendMessageA(hWindowed, BM_SETCHECK, 0, 0);
-		exe_SendMessageA(hFullscreen, BM_SETCHECK, 1, 0);
-		exe_EnableWindow(hMode, 1);
-	}
-	return 1;
 }

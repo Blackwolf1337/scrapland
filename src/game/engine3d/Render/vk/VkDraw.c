@@ -40,6 +40,10 @@ typedef struct VkdPsCode {
 static const char *const vkd_psAlias[][2] = { { "fire", "electric" } };
 
 static VkShaderModule vkd_psModule[VKD_NUM_PS];
+/* the handles of CreatePixelShader: each call one of its own, holding the index of its GLSL port */
+#define VKD_MAX_PS_HANDLES 128
+static uint32_t vkd_psHandle[VKD_MAX_PS_HANDLES];
+static uint32_t vkd_numPsHandles;
 
 /* the uniform block of shaders/ff.glsl, std140 */
 typedef struct VkdFF {
@@ -86,6 +90,7 @@ static struct {
 } vkd_samplers[VKD_MAX_SAMPLERS];
 static int vkd_numSamplers;
 static VkImg vkd_white;			/* the texture of a stage without one */
+static VkImg vkd_feedback;		/* the copy of the render target for a draw that samples it */
 static VkBuf vkd_defaults;		/* the attributes a vertex format lacks, read with stride 0 */
 /* the present pass: the back buffer through the gamma ramp into the swapchain image */
 static struct {
@@ -226,6 +231,7 @@ void Vkd_Shutdown(void) {
 	}
 	vkd_numPipes = vkd_numSamplers = 0;
 	Vk_DestroyImage(&vkd_white);
+	Vk_DestroyImage(&vkd_feedback);
 	Vk_DestroyBuffer(&vkd_defaults);
 	Vkd_ShutdownPresent();
 	vkDestroyShaderModule(vk.device, vkd_vert, NULL);
@@ -289,7 +295,7 @@ static VkCommandBuffer Vkd_Begin(VkoDev *d) {
 		.colorAttachmentCount = 1,
 		.pColorAttachments = &color,
 		.pDepthAttachment = zs ? &depth : NULL,
-		.pStencilAttachment = zs ? &depth : NULL,
+		.pStencilAttachment = zs && Vk_HasStencil(zs->img->format) ? &depth : NULL,
 	};
 	vkCmdBeginRendering(cmd, &ri);
 	vkd_pass.active = 1;
@@ -310,9 +316,11 @@ int Vkd_Clear(VkoDev *d, uint32_t count, const void *rects, uint32_t flags, uint
 				(color & 255) / 255.0f, (color >> 24) / 255.0f },
 		};
 	}
-	if ((flags & 6) && d->zs) {
+	VkImageAspectFlags zmask = !d->zs ? 0 : (flags & 2 ? VK_IMAGE_ASPECT_DEPTH_BIT : 0)
+		| (flags & 4 && Vk_HasStencil(d->zs->img->format) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
+	if (zmask) {
 		att[na++] = (VkClearAttachment) {
-			.aspectMask = (flags & 2 ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) | (flags & 4 ? VK_IMAGE_ASPECT_STENCIL_BIT : 0),
+			.aspectMask = zmask,
 			.clearValue.depthStencil = { z, stencil },
 		};
 	}
@@ -528,8 +536,8 @@ static VkPipeline Vkd_Pipeline(const VkdPipeKey *k) {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
 		.colorAttachmentCount = 1,
 		.pColorAttachmentFormats = &color,
-		.depthAttachmentFormat = k->depth ? vk.depthFormat : VK_FORMAT_UNDEFINED,
-		.stencilAttachmentFormat = k->depth ? vk.depthFormat : VK_FORMAT_UNDEFINED,
+		.depthAttachmentFormat = (VkFormat)k->depth,
+		.stencilAttachmentFormat = Vk_HasStencil((VkFormat)k->depth) ? (VkFormat)k->depth : VK_FORMAT_UNDEFINED,
 	};
 	VkGraphicsPipelineCreateInfo ci = {
 		.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -619,6 +627,10 @@ static void Vkd_FrameDone(void) {
 	} else if (!vkd_traceState && vkd_traceAt && GetTickCount() >= vkd_traceAt) {
 		vkd_traceState = 1;
 	}
+}
+
+void Vkd_TraceStart(void) {
+	vkd_traceState = 1;
 }
 
 int Vkd_Tracing(void) {
@@ -818,6 +830,35 @@ static uint32_t Vkd_Prims(int type, uint32_t count, VkPrimitiveTopology *topo, u
 }
 
 /*
+ * A draw that samples its own render target (DuDv_Filter works on the bump target in place, each pixel reading its
+ * own texel, which Direct3D 8 allows): the target is copied into vkd_feedback first and the draw samples the copy.
+ * The view of the copy, VK_NULL_HANDLE when it cannot be made.
+ */
+static VkImageView Vkd_Feedback(VkImg *rt) {
+	if (vkd_feedback.img && (vkd_feedback.width != rt->width || vkd_feedback.height != rt->height
+		|| vkd_feedback.format != rt->format)) {
+		Vk_DeferImage(&vkd_feedback);
+	}
+	if (!vkd_feedback.img && !Vk_CreateImage(&vkd_feedback, rt->format, rt->width, rt->height, 1,
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, (VkComponentMapping) { 0 })) {
+		return VK_NULL_HANDLE;
+	}
+	Vkd_End();
+	VkCommandBuffer cmd = Vk_Cmd();
+	Vk_Transition(cmd, rt, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+	Vk_Transition(cmd, &vkd_feedback, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	VkImageCopy c = {
+		.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
+		.dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
+		.extent = { rt->width, rt->height, 1 },
+	};
+	vkCmdCopyImage(cmd, rt->img, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vkd_feedback.img,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &c);
+	Vk_Transition(cmd, &vkd_feedback, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	return vkd_feedback.view;
+}
+
+/*
  * Everything of a draw up to the draw command: the textures in the shader read layout (outside the render pass), the
  * render pass, the uniform block, the pipeline and the dynamic state, the descriptors and the vertex buffers.
  * vb/vbOff the vertices; 0 when the draw cannot happen.
@@ -839,7 +880,14 @@ static int Vkd_Prepare(VkoDev *d, uint32_t fvf, uint32_t stride, uint32_t cls, V
 		VkoTex *t = d->tex[s];
 		img[s] = (VkDescriptorImageInfo) { Vkd_Sampler(d->tss[s]), vkd_white.view,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
-		if (!t || t->img.img == d->rt->img->img) {
+		if (!t) {
+			continue;
+		}
+		if (t->img.img == d->rt->img->img) {
+			VkImageView v = Vkd_Feedback(d->rt->img);
+			if (v) {
+				img[s].imageView = v;
+			}
 			continue;
 		}
 		if (t->img.layout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
@@ -857,8 +905,8 @@ static int Vkd_Prepare(VkoDev *d, uint32_t fvf, uint32_t stride, uint32_t cls, V
 		.blend = (rs[27] ? 1 : 0) | (rs[19] & 31) << 1 | (rs[20] & 31) << 6 | (rs[171] & 7) << 11,
 		.writeMask = rs[168] & 15,
 		.fill = rs[8] == 1 ? 1 : rs[8] == 2 ? 2 : 3,
-		.ps = d->ps <= VKD_NUM_PS ? d->ps : 0,
-		.depth = d->zs != NULL,
+		.ps = d->ps && d->ps <= vkd_numPsHandles ? vkd_psHandle[d->ps - 1] + 1 : 0,
+		.depth = d->zs ? (uint32_t)d->zs->img->format : VK_FORMAT_UNDEFINED,
 	};
 	VkPipeline p = Vkd_Pipeline(&key);
 	if (!p) {
@@ -884,7 +932,7 @@ static int Vkd_Prepare(VkoDev *d, uint32_t fvf, uint32_t stride, uint32_t cls, V
 	vkCmdSetDepthCompareOp(cmd, Vkd_Cmp(rs[23]));
 	vkCmdSetDepthBiasEnable(cmd, rs[47] != 0);
 	vkCmdSetDepthBias(cmd, -(float)rs[47], 0.0f, -(float)rs[47] * 0.5f);
-	vkCmdSetStencilTestEnable(cmd, d->zs && rs[52]);
+	vkCmdSetStencilTestEnable(cmd, d->zs && Vk_HasStencil(d->zs->img->format) && rs[52]);
 	vkCmdSetStencilOp(cmd, VK_STENCIL_FACE_FRONT_AND_BACK, Vkd_StencilOp(rs[53]), Vkd_StencilOp(rs[55]),
 		Vkd_StencilOp(rs[54]), Vkd_Cmp(rs[56]));
 	vkCmdSetStencilCompareMask(cmd, VK_STENCIL_FACE_FRONT_AND_BACK, rs[58] & 0xff);
@@ -1005,8 +1053,9 @@ uint32_t Vkd_CreatePixelShader(const char *name) {
 		}
 	}
 	for (size_t i = 0; i < VKD_NUM_PS; i++) {
-		if (!strcmp(base, vkd_psCode[i].name)) {
-			return (uint32_t)i + 1;
+		if (!strcmp(base, vkd_psCode[i].name) && vkd_numPsHandles < VKD_MAX_PS_HANDLES) {
+			vkd_psHandle[vkd_numPsHandles++] = (uint32_t)i;
+			return vkd_numPsHandles;
 		}
 	}
 	Com_Printf("vulkan: no GLSL port of the pixel shader %s\n", name);

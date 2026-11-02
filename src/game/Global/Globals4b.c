@@ -58,22 +58,11 @@
 #undef g_MapTextSavingOn
 #undef g_NResponseFaces
 #undef g_NTortas
-#undef g_OrigAdapter
-#undef g_OrigDevice
-#undef g_OrigMode
-#undef g_OrigMultiSample
-#undef g_OrigWindowed
 #undef g_PaintAll
 #undef g_PaintZones
 #undef g_ParticleSystemIni
 #undef g_ResponseFaces
 #undef g_ScreenshotName
-#undef g_SelAdapter
-#undef g_SelApp
-#undef g_SelDevice
-#undef g_SelMode
-#undef g_SelMultiSample
-#undef g_SelWindowed
 #undef g_ShadowMapAtten
 #undef g_ShadowMapCalculate
 #undef g_ShadowMapIllumGlobal
@@ -121,17 +110,6 @@ int g_NTortas;
 int g_NResponseFaces;
 int g_ResponseFaces[64][3];
 struct CD3DApplication *g_Engine;
-struct CD3DApplication *g_SelApp;
-uint32_t g_OrigAdapter;
-uint32_t g_SelAdapter;
-uint32_t g_OrigDevice;
-uint32_t g_SelDevice;
-uint32_t g_OrigMode;
-uint32_t g_SelMode;
-int g_OrigWindowed;
-int g_SelWindowed;
-uint32_t g_OrigMultiSample;
-uint32_t g_SelMultiSample;
 float g_D3DAppLastTime;
 uint32_t g_D3DAppFrames;
 int g_AppPausedCount;

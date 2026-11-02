@@ -254,6 +254,10 @@ if fb1fx and fb1i(fb1fx) == 0x400000 + sym('cObjElementFXHook_vftable'):
 			fb1part(fx + 0x9c), fb1parts(fx + 0x9c, 0, 16), fb1trail(fx + 0x18), fb1trail(fx + 0x1c))
 	fb1dt(0.05)
 	fb1poke(fb1fx + 0x150, 0)
+	# the points the update does not write without an emitter: set, not what the heap left there
+	fb1poke(fb1fx + 0x10, 0)
+	fb1set(fb1fx + 0x14, (0.0,))
+	fb1set(fb1fx + 0x20, (0.0,) * 30)
 	check('cObjElementFXHook_Update point no emitter', lambda: (SDTest.Call('cObjElementFXHook_Update', 'tviif', fb1fx, fb1d, 0.0),
 		fb1hook(fb1fx)))
 	fb1poke(fb1fx + 0x150, 1)
@@ -320,6 +324,9 @@ if fb1walk and fb1hasmodel:
 	check('FB1 death', lambda: (fb1d != 0, fb1fx != 0 and fb1i(fb1fx) == 0x400000 + sym('cObjElementFXCharacterDeath_vftable')))
 	if fb1fx and fb1i(fb1fx) == 0x400000 + sym('cObjElementFXCharacterDeath_vftable'):
 		fb1poke(fb1fx + 4, fb1walk)
+		# the points on the vertices, written only while the model shows: set, not what the heap left there
+		fb1set(fb1fx + 0x244, (0.0,) * 30)
+		fb1set(fb1fx + 0xd84, (0.0,) * 15)
 		for fb1t, fb1et, fb1last, fb1delta in ((0.1, 0.03, 0.0, 0.05), (0.3, 0.03, 0.0, 0.05), (0.6, 0.0, 0.0, 0.05),
 				(0.8, 0.03, 0.0, 0.05), (1.05, 0.03, 0.9, 0.05), (1.2, 0.0, 1.1, 0.05), (1.7, 0.03, 1.6, 0.05)):
 			fb1set(fb1fx + 0x218, (fb1t, fb1et, fb1last))

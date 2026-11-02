@@ -3,6 +3,7 @@
  * the extended dynamic state, and VK_KHR_push_descriptor. The loader is vulkan-1.dll, loaded at run time.
  * SCRAP_VK_VALIDATION=1 switches the validation layer on.
  */
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <windows.h>
@@ -105,9 +106,19 @@ static VkPhysicalDevice Vk_PickGpu(void) {
 	if (vkEnumeratePhysicalDevices(vk.instance, &n, gpus) < 0 || !n) {
 		return VK_NULL_HANDLE;
 	}
+	/* SCRAP_VK_DEVICE: the index of the GPU, or its vendor:device ids in hex (1002:164e) */
 	const char *pick = getenv("SCRAP_VK_DEVICE");
-	if (pick && (uint32_t)atoi(pick) < n) {
+	unsigned vendor, device;
+	int ids = pick && sscanf(pick, "%x:%x", &vendor, &device) == 2;
+	if (pick && !ids && (uint32_t)atoi(pick) < n) {
 		return gpus[atoi(pick)];
+	}
+	for (uint32_t i = 0; ids && i < n; i++) {
+		VkPhysicalDeviceProperties p;
+		vkGetPhysicalDeviceProperties(gpus[i], &p);
+		if (p.vendorID == vendor && p.deviceID == device) {
+			return gpus[i];
+		}
 	}
 	for (uint32_t i = 0; i < n; i++) {
 		VkPhysicalDeviceProperties p;
@@ -117,6 +128,29 @@ static VkPhysicalDevice Vk_PickGpu(void) {
 		}
 	}
 	return gpus[0];
+}
+
+int Vk_GpuProperties(VkPhysicalDeviceProperties *out) {
+	VkPhysicalDevice gpu = vk.instance ? Vk_PickGpu() : VK_NULL_HANDLE;
+	if (!gpu) {
+		return 0;
+	}
+	vkGetPhysicalDeviceProperties(gpu, out);
+	return 1;
+}
+
+int Vk_HasStencil(VkFormat f) {
+	return f == VK_FORMAT_D24_UNORM_S8_UINT || f == VK_FORMAT_D32_SFLOAT_S8_UINT || f == VK_FORMAT_D16_UNORM_S8_UINT;
+}
+
+int Vk_IsDepth(VkFormat f) {
+	return Vk_HasStencil(f) || f == VK_FORMAT_D16_UNORM || f == VK_FORMAT_X8_D24_UNORM_PACK32 || f == VK_FORMAT_D32_SFLOAT;
+}
+
+int Vk_DepthSupported(VkFormat f) {
+	VkFormatProperties fp;
+	vkGetPhysicalDeviceFormatProperties(vk.gpu, f, &fp);
+	return (fp.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0;
 }
 
 static VkFormat Vk_PickDepth(void) {
@@ -533,7 +567,7 @@ void Vk_DestroyBuffer(VkBuf *b) {
 
 int Vk_CreateImage(VkImg *im, VkFormat format, uint32_t w, uint32_t h, uint32_t levels, VkImageUsageFlags usage,
 	VkComponentMapping swizzle) {
-	int depth = format == VK_FORMAT_D24_UNORM_S8_UINT || format == VK_FORMAT_D32_SFLOAT_S8_UINT;
+	int depth = Vk_IsDepth(format);
 	VkImageCreateInfo ci = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 		.imageType = VK_IMAGE_TYPE_2D,
@@ -565,7 +599,8 @@ int Vk_CreateImage(VkImg *im, VkFormat format, uint32_t w, uint32_t h, uint32_t 
 	}
 	vkBindImageMemory(vk.device, im->img, im->mem, 0);
 	im->format = format;
-	im->aspect = depth ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+	im->aspect = !depth ? VK_IMAGE_ASPECT_COLOR_BIT : Vk_HasStencil(format)
+		? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_DEPTH_BIT;
 	im->width = w;
 	im->height = h;
 	im->levels = levels;

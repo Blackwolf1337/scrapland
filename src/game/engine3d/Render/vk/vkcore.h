@@ -86,6 +86,12 @@ extern VkCore vk;
 
 /* the loader and the instance; 0 when there is no Vulkan */
 int Vk_Init(void);
+/* depth formats: whether one has stencil, whether the GPU renders into it */
+int Vk_HasStencil(VkFormat f);
+int Vk_IsDepth(VkFormat f);
+int Vk_DepthSupported(VkFormat f);
+/* the properties of the GPU Vk_CreateDevice will take (after Vk_Init); 0 when there is none */
+int Vk_GpuProperties(VkPhysicalDeviceProperties *out);
 /* the device and the swapchain on the window */
 int Vk_CreateDevice(void *hwnd, uint32_t width, uint32_t height, byte vsync);
 void Vk_DestroyDevice(void);

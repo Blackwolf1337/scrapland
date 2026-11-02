@@ -27,14 +27,6 @@ const float LIGHT_RANGE_INF = 1.8446e+19f;
 const color4_t colorRva_3d7bf0 = { .r = 0.383529f, .g = 0.430588f, .b = 0.517647f, .a = 1.0f };
 const color4_t colorRva_3d7c00 = { .r = 0.740392f, .g = 0.661961f, .b = 0.536471f, .a = 1.0f };
 const color4_t colorRva_3d7c10 = { .r = 0.909804f, .g = 0.882353f, .b = 0.827451f, .a = 1.0f };
-const uint32_t CD3DApp_DisplayErrorMsg_3dd5e4[13] = {
-	0x68206f4e, 0x77647261, 0x2d657261, 0x65636361, 0x6172656c, 0x20646574, 0x65726944, 0x44337463, 0x76656420,
-	0x73656369, 0x7265770a, 0x6f662065, 0x2e646e75,
-};
-const uint32_t CD3DApp_DisplayErrorMsg_3dd688[16] = {
-	0x72756f59, 0x72694420, 0x33746365, 0x61682044, 0x61776472, 0x61206572, 0x6c656363, 0x74617265, 0x6320726f,
-	0x6f6e6e61, 0x65720a74, 0x7265646e, 0x746e6920, 0x2061206f, 0x646e6977, 0xa2e776f,
-};
 const char CD3DApp_DisplayErrorMsg_3dd7cc[32] = "Could not load required media.";
 const char CD3DApp_DisplayErrorMsg_3dd84c[20] = "Not enough memory.";
 const uint32_t CD3DApp_DisplayErrorMsg_3dd860[6] = { 0x20746f4e, 0x756f6e65, 0x76206867, 0x6f656469, 0x6d656d20, 0x2e79726f };

@@ -92,8 +92,6 @@ int Bool_GetSet(byte *flag, int value, byte set);
 int RenderMode(int mode, int value, byte set);
 /* the first n (0..99, 99 also when all exist) with the file fmt % n missing */
 void File_FreeIndex(const char *fmt, int *n);
-/* a message box when the video card has no pixel shader 1.1 */
-void Video_CheckCaps(void);
 /* a clear of the rectangle in 640x480 coordinates, the color too with target; whether the device cleared */
 byte Render_ClearRect(float x, float y, float w, float h, byte target, uint32_t color);
 /* the back buffer through a copy into the front buffer and back after a Present */

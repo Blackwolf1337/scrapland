@@ -77,8 +77,6 @@ emcrestore(emcdbg, emcdbgs)
 emcvp = emcsave((sym('g_ViewportW'), sym('g_ViewportH')))
 SDTest.Poke('g_ViewportW', 640)
 SDTest.Poke('g_ViewportH', 480)
-def emccom(obj, off):
-	return emcri(emcri(obj) + off) - 0x400000
 emcdev = emcgi(sym('g_pd3dDevice'))
 emcbmp = emcnew(0xc)
 SDTest.Call('CBmp_ctor', 'tiiii', emcbmp, 5, 3)
@@ -89,7 +87,7 @@ for emcy in range(3):
 emclr = emcnew(8)
 emcmapa = SDTest.Call('Mem_Calloc', 'ii', 0x60)[0]
 def emctexread(tex, bpp, x, y, n):
-	hr = SDTest.Call(emccom(tex, 0x40), 'tiiiiiii', 0, tex, 0, emclr, 0, 0)[0]
+	hr = rdcall('Rd_TexLockRect', tex, 0x40, 'iiiiii', (0, emclr, 0, 0))[0]
 	r = (hr,)
 	if hr == 0:
 		pitch = emcri(emclr)
@@ -99,21 +97,21 @@ def emctexread(tex, bpp, x, y, n):
 			if bpp == 2:
 				v = v & 0xffff
 			r = r + (v,)
-		SDTest.Call(emccom(tex, 0x44), 'tiiii', 0, tex, 0)
+		rdcall('Rd_TexUnlockRect', tex, 0x44, 'iii', (0,))
 	return r
 def emctexclear(tex, h):
-	hr = SDTest.Call(emccom(tex, 0x40), 'tiiiiiii', 0, tex, 0, emclr, 0, 0)[0]
+	hr = rdcall('Rd_TexLockRect', tex, 0x40, 'iiiiii', (0, emclr, 0, 0))[0]
 	if hr == 0:
 		pitch = emcri(emclr)
 		bits = emcri(emclr + 4)
 		for j in range(h * pitch / 4):
 			emcwi(bits + j * 4, 0x11223344)
-		SDTest.Call(emccom(tex, 0x44), 'tiiii', 0, tex, 0)
+		rdcall('Rd_TexUnlockRect', tex, 0x44, 'iii', (0,))
 # (format, pool, bytes a pixel): A8R8G8B8, X8R8G8B8, R5G6B5 managed; A1R5G5B5 and system memory are refused
 for emct in ((21, 1, 4), (22, 1, 4), (23, 1, 2), (25, 1, 2), (21, 2, 4)):
 	emctex = 0
 	if emcdev:
-		emcr = SDTest.Call(emccom(emcdev, 0x50), 'tiiiiiiiiip', 0, emcdev, 32, 16, 1, 0, emct[0], emct[1], 0)
+		emcr = rdcall('Rd_DevCreateTexture', emcdev, 0x50, 'iiiiiiiip', (32, 16, 1, 0, emct[0], emct[1], 0))
 		emctex = emcr[1]
 		if emcr[0] < 0:
 			emctex = 0
@@ -128,7 +126,7 @@ for emct in ((21, 1, 4), (22, 1, 4), (23, 1, 2), (25, 1, 2), (21, 2, 4)):
 				emctexread(t, b, min(max(c[0], 0), 28), min(max(c[1], 0), 14), 4),
 				emctexread(t, b, min(max(c[0], 0), 28), min(max(c[1], 0), 14) + 1, 3)))
 		check('emc CMap_CopyBmp no image', lambda: SDTest.Call('CMap_CopyBmp', 'tbiiiiiiii', emcmapa, 0, 0, 0, 0, 0, 2, 2)[0])
-		SDTest.Call(emccom(emctex, 8), 'tiii', 0, emctex)
+		rdcall('Rd_Release', emctex, 8, 'ii', ())
 emcwi(emcmapa + 0x34, 0)
 check('emc CMap_CopyBmp no texture', lambda: SDTest.Call('CMap_CopyBmp', 'tbiiiiiiii', emcmapa, 0, 0, emcbmp, 0, 0, 2, 2)[0])
 SDTest.Call('Mem_Free', 'vi', emcmapa)

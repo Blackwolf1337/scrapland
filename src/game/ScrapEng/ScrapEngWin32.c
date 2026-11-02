@@ -25,13 +25,8 @@
 #define PBT_APMRESUMESUSPEND 7
 #define BROADCAST_QUERY_DENY 0x424d5144
 /* the commands of the menu of the D3D window */
-#define IDM_CHANGEDEVICE 0x9c42
 #define IDM_TOGGLEFULLSCREEN 0x9c43
 #define IDM_TILE 0x9ca5
-
-static void Engine_Pause(CD3DApplication *m, int on) {
-	m->vftable->Pause(m, on);
-}
 
 intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam) {
 	CD3DApplication *m = g_Engine;
@@ -60,14 +55,6 @@ intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lPa
 		break;
 	case WM_COMMAND:
 		switch ((uint16_t)wParam) {
-		case IDM_CHANGEDEVICE:
-			if (g_Engine && g_Engine->active && g_Engine->ready) {
-				Engine_Pause(g_Engine, 1);
-				if (CD3DApp_UserSelectNewDevice(g_Engine) >= 0) {
-					Engine_Pause(g_Engine, 0);
-				}
-			}
-			return 0;
 		case IDM_TOGGLEFULLSCREEN: {
 			void *fg = exe_GetForegroundWindow();
 

@@ -186,24 +186,18 @@ int CD3DApp_ConfirmDevice(CD3DApplication *self, D3DCaps8 *caps, uint32_t behavi
 /* windowed on a device that can, the environment made again */
 int CD3DApp_ForceWindowed(CD3DApplication *self);
 int CD3DApp_ToggleFullscreen(CD3DApplication *self);
-/* the device dialog, the environment made again for the choice */
-int CD3DApp_UserSelectNewDevice(CD3DApplication *self);
 /* the window messages of the framework */
 intptr_t CD3DApp_MsgProc(CD3DApplication *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 /* CD3DApp_Cleanup, CD3DApp_ResetDevice and CD3DApp_Reset: scrapmain.h */
 
-/* the error text of hr reported (type 1: fatal; else also fatal while fullscreen, then as a warning with the
- * note about the REF device), hr */
-int CD3DApp_DisplayErrorMsg(CD3DApplication *self, int hr, int type);
-/* the device of the current adapter, device and mode created and its objects made; a failed HAL falls back to the
- * REF device */
+/* the error text of hr reported as fatal, hr */
+int CD3DApp_DisplayErrorMsg(int hr);
+/* the device of the current adapter, device and mode created and its objects made */
 int CD3DApp_Initialize3DEnvironment(CD3DApplication *self);
 /* Direct3D, the device list, the window (if there is none yet) and the environment; the error shown */
 int CD3DApp_Create(CD3DApplication *self, void *inst);
 int CD3DApp_BuildDeviceList(CD3DApplication *self);
 /* the message loop with the frames, the wParam of WM_QUIT */
 int CD3DApp_Run(CD3DApplication *self);
-/* the device dialog (DialogBoxParam with the application) */
-intptr_t __stdcall D3DApp_SelectDeviceProc(void *dlg, uint32_t msg, uintptr_t w, intptr_t l);
 
 #endif

@@ -37,7 +37,7 @@ rsmod = rsw('GetModuleHandleA', 'iz', (None,))[0]
 check('rs GetModuleHandleA', lambda: rsmod == 0x400000)
 
 # (type, id): RT_BITMAP, RT_ICON, RT_MENU, RT_DIALOG, RT_ACCELERATOR, RT_GROUP_ICON, RT_MANIFEST
-rsres = ((2, 148), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (4, 141), (4, 142), (4, 210), (5, 143), (5, 144),
+rsres = ((2, 148), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (4, 141), (4, 142), (4, 210), (5, 143),
 	(5, 153), (5, 154), (5, 162), (5, 163), (5, 211), (9, 113), (9, 200), (9, 214), (14, 101), (14, 106), (24, 1))
 def rsfind(k):
 	h = rsw('FindResourceA', 'iiii', (rsmod, k[1], k[0]))[0]
@@ -47,6 +47,8 @@ def rsfind(k):
 	p = rsw('LockResource', 'ii', (rsw('LoadResource', 'iii', (rsmod, h))[0],))[0]
 	if k == (5, 153):
 		return 1, n	# windres writes the class name SysTreeView32 of a control in capitals
+	if k in ((4, 141), (4, 142), (4, 210), (9, 113), (9, 200), (9, 214)):
+		return 1	# the "change device" entries and keys are gone with the device dialog (Vulkan only)
 	return 1, n, rssum(p, n)
 for rsk in rsres:
 	check('rs FindResourceA' + fmt(rsk), lambda k=rsk: rsfind(k))
@@ -64,7 +66,8 @@ for rsk in (101, 106):
 	check('rs LoadIconA' + fmt((rsk,)), lambda k=rsk: rsw('LoadIconA', 'iii', (rsmod, k))[0] != 0)
 
 # the dialogs with the ids of their controls (not the IDC_STATIC ones)
-rsdlgs = ((143, (1,)), (144, (1002, 1000, 1012, 1014, 1001, 1, 2, 1013, 1003, 1016)), (153, (1, 2, 1015, 1020)),
+# (144, the device dialog, is gone with Direct3D 8)
+rsdlgs = ((143, (1,)), (153, (1, 2, 1015, 1020)),
 	(154, (1022, 1030, 1031)), (162, (1034, 1033, 1037, 1038, 1042, 1039, 1043, 1040, 1055, 1054, 1044, 1041, 1, 2,
 	1035, 1036, 1047, 1048, 1056, 1050, 1051, 1049)), (163, (1030, 1031, 1022)), (211, (1000, 1)))
 def rsdialog(did, ids):
