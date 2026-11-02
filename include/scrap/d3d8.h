@@ -170,6 +170,7 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DRS_AMBIENT 139
 #define D3DCULL_NONE 1
 #define D3DCULL_CCW 3
+#define D3DCLEAR_TARGET 1
 #define D3DCLEAR_ZBUFFER 2
 #define D3DCLEAR_STENCIL 4
 #define D3DTSS_COLOROP 1
@@ -216,6 +217,7 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DPOOL_SYSTEMMEM 2
 #define D3DPOOL_MANAGED 1
 #define D3DUSAGE_WRITEONLY_DYNAMIC 0x208
+#define D3DFMT_X8R8G8B8 22
 #define D3DFMT_INDEX16 101
 #define D3DFMT_D15S1 73
 #define D3DFMT_D24S8 75

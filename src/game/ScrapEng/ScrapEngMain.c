@@ -36,7 +36,6 @@
 extern cGVar GVar_Viewer;
 #define g_IsViewer (GVar_Viewer.value.i)
 #define D3DFMT_A8R8G8B8 21
-#define D3DFMT_X8R8G8B8 22
 #define D3DFMT_R5G6B5 23
 #define D3DFMT_X1R5G5B5 24
 #define D3DFMT_A1R5G5B5 25

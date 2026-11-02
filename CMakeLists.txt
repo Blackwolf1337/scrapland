@@ -67,8 +67,18 @@ foreach(s ff.vert ff.frag present.vert present.frag ${PS_SOURCES})
 	list(APPEND SHADER_INCS ${SHADER_DIR}/${n}.inc)
 endforeach()
 add_custom_target(shaders DEPENDS ${SHADER_INCS})
+
+# FFmpeg for the video player (Engine/Video.c), built by tools/ffmpeg.sh: its headers and import libraries
+set(FFMPEG_DIR ${CMAKE_CURRENT_BINARY_DIR}/ffmpeg/install CACHE PATH "the FFmpeg of tools/ffmpeg.sh")
+if(NOT EXISTS ${FFMPEG_DIR}/include/libavformat/avformat.h)
+	message(FATAL_ERROR "no FFmpeg in ${FFMPEG_DIR}: run tools/ffmpeg.sh first")
+endif()
+set(FFMPEG_LIBS)
+foreach(l avformat avcodec avutil swscale)
+	list(APPEND FFMPEG_LIBS ${FFMPEG_DIR}/bin/${l}.lib)
+endforeach()
 add_dependencies(scrapcode shaders)
-target_include_directories(scrapcode PRIVATE ${SHADER_DIR})
+target_include_directories(scrapcode PRIVATE ${SHADER_DIR} ${FFMPEG_DIR}/include)
 
 # Python 1.5.2 for ScrapC.exe from third_party/python-1.5.2 (unchanged), configured like the one in Scrap.exe: our
 # config.h and inittab, pyshim.h for its libc (the exe's C runtime and the engine's Python pool) and the files of
@@ -196,7 +206,7 @@ foreach(dll xinput9_1_0 winmm wsock32 fmod ddraw comctl32 d3d8)
 endforeach()
 add_custom_target(implibs DEPENDS ${IMPLIBS})
 add_dependencies(ScrapC implibs)
-target_link_libraries(ScrapC PRIVATE scrapcode python152 ${IMPLIBS} kernel32 user32 gdi32 advapi32 shell32 comdlg32
+target_link_libraries(ScrapC PRIVATE scrapcode python152 ${IMPLIBS} ${FFMPEG_LIBS} kernel32 user32 gdi32 advapi32 shell32 comdlg32
 	ole32)
 # stage 3c1b: the data formats c_dfDIKeyboard and c_dfDIMouse of mingw's libdinput8 and their GUIDs, static data
 # (no import of dinput8.dll), as -l flags

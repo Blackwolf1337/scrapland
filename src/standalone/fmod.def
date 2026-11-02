@@ -43,10 +43,13 @@ FSOUND_SetReserved@8 == _FSOUND_SetReserved@8
 FSOUND_SetVolume@8 == _FSOUND_SetVolume@8
 FSOUND_StopSound@4 == _FSOUND_StopSound@4
 FSOUND_Stream_Close@4 == _FSOUND_Stream_Close@4
+FSOUND_Stream_Create@20 == _FSOUND_Stream_Create@20
 FSOUND_Stream_GetLengthMs@4 == _FSOUND_Stream_GetLengthMs@4
 FSOUND_Stream_GetOpenState@4 == _FSOUND_Stream_GetOpenState@4
 FSOUND_Stream_GetSample@4 == _FSOUND_Stream_GetSample@4
 FSOUND_Stream_GetTime@4 == _FSOUND_Stream_GetTime@4
 FSOUND_Stream_Open@16 == _FSOUND_Stream_Open@16
+FSOUND_Stream_Play@8 == _FSOUND_Stream_Play@8
 FSOUND_Stream_PlayEx@16 == _FSOUND_Stream_PlayEx@16
 FSOUND_Stream_SetBufferSize@4 == _FSOUND_Stream_SetBufferSize@4
+FSOUND_Stream_Stop@4 == _FSOUND_Stream_Stop@4

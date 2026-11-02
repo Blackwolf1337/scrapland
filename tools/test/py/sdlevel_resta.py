@@ -40,6 +40,12 @@ def rsalog(fn):
 	SDTest.Poke('g_ViewportH', vp[1])
 	return (r, SDTest.Out())
 # the same with only the length of the log (the long logs of the font and debug draws)
+# fn and the number of console lines it writes (the count before differs: the reference logs a video that does not
+# open in the test prefix)
+def rsaconlines(fn):
+	start = SDTest.Peek('g_ConLine', 'i')
+	r = fn()
+	return (r, (SDTest.Peek('g_ConLine', 'i') - start) % 23)
 def rsaloglen(fn):
 	r = rsalog(fn)
 	return (r[0], len(r[1]))
@@ -425,10 +431,10 @@ rsaCShow = SDTest.Peek('g_CShow', 'i')
 rsaAnalize = SDTest.Peek('g_NWAnalyzeOn', 'i')
 for rsav in (1, 2, 3, 5, 7, 0, 9):
 	SDTest.Poke('g_CShow', rsav)
-	check('Scorer_DrawDebug' + fmt((rsav,)), lambda: (rsaloglen(lambda: SDTest.Call('Scorer_DrawDebug', 'v')), SDTest.Peek('g_ConLine', 'i')))
+	check('Scorer_DrawDebug' + fmt((rsav,)), lambda: rsaconlines(lambda: rsaloglen(lambda: SDTest.Call('Scorer_DrawDebug', 'v'))))
 SDTest.Poke('g_CShow', 0)
 SDTest.Poke('g_NWAnalyzeOn', 1)
-check('Scorer_DrawDebug NWAnalizeOn', lambda: (rsaloglen(lambda: SDTest.Call('Scorer_DrawDebug', 'v')), SDTest.Peek('g_ConLine', 'i')))
+check('Scorer_DrawDebug NWAnalizeOn', lambda: rsaconlines(lambda: rsaloglen(lambda: SDTest.Call('Scorer_DrawDebug', 'v'))))
 SDTest.Poke('g_NWAnalyzeOn', rsaAnalize)
 SDTest.Poke('g_CShow', rsaCShow)
 

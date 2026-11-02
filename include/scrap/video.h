@@ -1,5 +1,5 @@
 /*
- * The video player of the engine3d (Engine/Video.c): DirectShow multimedia streams into DirectDraw surfaces.
+ * The video player of the engine3d (Engine/Video.c): FFmpeg decodes, the render device draws, FMOD plays the sound.
  */
 #ifndef SCRAP_VIDEO_H
 #define SCRAP_VIDEO_H
@@ -15,20 +15,13 @@
 int Video_PlayFile(const char *name, const char *dir);
 /* dir + name, else the .vds of it; warn: a console warning when neither is found; the results of Video_PlayFile */
 int Video_PlayPath(const char *name, const char *dir, byte warn);
-/* the stream of the file with its video on dd and the sound to the default renderer; the HRESULT */
-int Video_OpenStream(const char *name, void *dd, void **out);
-/* the stream played onto primary, or without it through GDI onto the engine window; played 1 when a key or the
- * pad stopped it. When the stream runs, Video_Step plays its frames and stops it (played is written then). */
-int Video_RenderStream(void *dd, void *primary, void *ms, byte *played);
-/* one pass of the message loop while Video_Busy: the keys, the next frame and the blits of the stream; at its end
- * the rest of Video_PlayPath and the second name of a Video_PlayFile list */
+/* one pass of the message loop while Video_Busy: the keys, the pictures that are due and the sound; at the end of
+ * the file the second name of a Video_PlayFile list */
 void Video_Step(void);
 /* 1 while a video plays (Video_Step goes on with it) */
 byte Video_Busy(void);
 /* the result of the Video_PlayFile that ended last */
 int Video_Result(void);
-/* the source rectangle of the DirectDraw surface stretched onto the window */
-void Video_BltToWindow(void *hwnd, const exe_rect *dst, void *surf, const exe_rect *src);
 /* the keys that ended or started a video do not count for up to ms: the original waited that long while Escape,
  * Space or Enter was held, the C starts a hold that Video_KeysHeld ends (no blocking wait) */
 void Video_WaitKeysUp(int ms);

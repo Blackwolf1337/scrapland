@@ -101,16 +101,20 @@ if bscbsp:
 	check('Bsp_InitD3D', lambda: (SDTest.Call('Bsp_InitD3D', 'v'), bsczonas()))
 	check('Bsp_InitD3D lists', bsclistvb)
 	check('Bsp_InitD3D mats', lambda: (bscfxmats(), bsci(bscbsp + 0x61aa0) == bscfx[0], bsci(bscbsp + 0x61aa4) == bscfx[1]))
-	# the statistics at debug level 3: the console lines written last
-	def bscconsole():
-		r = [SDTest.Peek('g_ConLine', 'i')]
-		for i in range(23):
-			r.append(SDTest.Peek(sym('g_ConLines') + 0x84 * i, 's'))
-		return r
+	# the statistics at debug level 3: the console lines fn writes (the ring of 23 from the line it starts on; the
+	# number of lines before differs, the reference logs a video that does not open in the test prefix)
+	def bscconsole(fn):
+		start = SDTest.Peek('g_ConLine', 'i')
+		r = fn()
+		n = (SDTest.Peek('g_ConLine', 'i') - start) % 23
+		lines = []
+		for i in range(n + 1):
+			lines.append(SDTest.Peek(sym('g_ConLines') + 0x84 * ((start + i) % 23), 's'))
+		return (r, n, lines)
 	bsclevel = SDTest.Peek('g_DebugLevel', 'i')
-	check('CBsp_Prepare off', lambda: (SDTest.Call('CBsp_Prepare', 'tvi', bscbsp), SDTest.Peek('g_ConLine', 'i')))
+	check('CBsp_Prepare off', lambda: bscconsole(lambda: SDTest.Call('CBsp_Prepare', 'tvi', bscbsp))[0:2])
 	SDTest.Poke('g_DebugLevel', 3)
-	check('CBsp_Prepare', lambda: (SDTest.Call('CBsp_Prepare', 'tvi', bscbsp), bscconsole()))
+	check('CBsp_Prepare', lambda: bscconsole(lambda: SDTest.Call('CBsp_Prepare', 'tvi', bscbsp)))
 	SDTest.Poke('g_DebugLevel', bsclevel)
 	# a map without its .EMI
 	bscfake = bscz(0x61aa8)

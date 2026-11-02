@@ -1,75 +1,31 @@
 /*
- * The video player of the engine3d (the source between CaptPant.cpp and bsp.cpp, no CHECKs): a .avi or .vds file
- * played through the multimedia streams of DirectShow (amstream) into DirectDraw surfaces and blitted onto the
- * engine window, until a key, the pad or the end of the stream.
+ * The video player of the engine3d: a .avi or .vds file (AVI with XviD video and PCM sound) decoded by FFmpeg
+ * (libavformat, libavcodec, libswscale; tools/ffmpeg.sh builds them), its frames drawn through the render device and
+ * its sound played by an FMOD stream, until a key, the pad or the end of the file. The message loop drives it, one
+ * Video_Step per pass, which never waits: it decodes up to the frame that is due and draws that.
  */
 #include <string.h>
 
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
+
 #include "scrap/app.h"
 #include "scrap/console.h"
+#include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/filesys.h"
-#include "scrap/scrapmain.h"
+#include "scrap/fmod.h"
+#include "scrap/mathlib.h"
 #include "scrap/misc.h"
+#include "scrap/rdev.h"
+#include "scrap/render.h"
+#include "scrap/scrapmain.h"
 #include "scrap/video.h"
 #include "scrap/win32.h"
 
-/* ole32, ddraw and xinput through the import table */
-typedef int(__stdcall *coCreateInstance_t)(const void *clsid, void *outer, uint32_t ctx, const void *iid, void **out);
-typedef int(__stdcall *coInitialize_t)(void *reserved);
-typedef void(__stdcall *coUninitialize_t)(void);
-typedef int(__stdcall *directDrawCreate_t)(void *guid, void **dd, void *outer);
 typedef uint32_t(__stdcall *xinputGetState_t)(uint32_t user, void *state);
-#define exe_CoCreateInstance GAME_IMPORT(coCreateInstance_t, CoCreateInstance, 20)
-#define exe_CoInitialize GAME_IMPORT(coInitialize_t, CoInitialize, 4)
-#define exe_CoUninitialize GAME_IMPORT(coUninitialize_t, CoUninitialize, 0)
-#define exe_DirectDrawCreate GAME_IMPORT(directDrawCreate_t, DirectDrawCreate, 12)
 #define exe_XInputGetState GAME_IMPORT(xinputGetState_t, XInputGetState, 8)
-
-/* the GUIDs of the exe */
-#define CLSID_AMMultiMediaStream GAME_PTR(CLSID_AMMultiMediaStream, 0)
-#define IID_IAMMultiMediaStream GAME_PTR(IID_IAMMultiMediaStream, 0)
-#define IID_IDirectDrawMediaStream GAME_PTR(IID_IDirectDrawMediaStream, 0)
-#define MSPID_PrimaryVideo GAME_PTR(MSPID_PrimaryVideo, 0)
-#define MSPID_PrimaryAudio GAME_PTR(MSPID_PrimaryAudio, 0)
-
-/* COM methods by their vtable offset (IAMMultiMediaStream, IMediaStream, IDirectDrawMediaStream,
- * IDirectDrawStreamSample, IDirectDraw, IDirectDrawSurface) */
-#define AMMS_GETMEDIASTREAM 0x10
-#define AMMS_SETSTATE 0x1c
-#define AMMS_INITIALIZE 0x30
-#define AMMS_ADDMEDIASTREAM 0x3c
-#define AMMS_OPENFILE 0x40
-#define DDMS_CREATESAMPLE 0x34
-#define SAMPLE_UPDATE 0x18
-#define SAMPLE_COMPLETIONSTATUS 0x1c
-#define SAMPLE_GETSURFACE 0x20
-#define DD_CREATESURFACE 0x18
-#define DD_GETDISPLAYMODE 0x30
-#define DD_SETCOOPERATIVELEVEL 0x50
-#define DDS_BLT 0x14
-#define DDS_GETDC 0x44
-#define DDS_GETSURFACEDESC 0x58
-#define DDS_RELEASEDC 0x68
-typedef uint32_t(__stdcall *comUnk_t)(void *obj);
-typedef int(__stdcall *comQI_t)(void *obj, const void *iid, void **out);
-typedef int(__stdcall *ammsInitialize_t)(void *obj, uint32_t type, uint32_t flags, void *graph);
-typedef int(__stdcall *ammsAddMediaStream_t)(void *obj, void *src, const void *purpose, uint32_t flags, void **out);
-typedef int(__stdcall *ammsOpenFile_t)(void *obj, const uint16_t *name, uint32_t flags);
-typedef int(__stdcall *ammsGetMediaStream_t)(void *obj, const void *purpose, void **out);
-typedef int(__stdcall *ammsSetState_t)(void *obj, int state);
-typedef int(__stdcall *ddmsCreateSample_t)(void *obj, void *surf, const void *rect, uint32_t flags, void **out);
-typedef int(__stdcall *sampleGetSurface_t)(void *obj, void **surf, exe_rect *rect);
-typedef int(__stdcall *sampleUpdate_t)(void *obj, uint32_t flags, void *event, void *apc, uintptr_t ctx);
-typedef int(__stdcall *sampleCompletionStatus_t)(void *obj, uint32_t flags, uint32_t ms);
-typedef int(__stdcall *ddGetDesc_t)(void *obj, void *ddsd);
-typedef int(__stdcall *ddCreateSurface_t)(void *obj, void *ddsd, void **surf, void *outer);
-typedef int(__stdcall *ddSetCoop_t)(void *obj, void *hwnd, uint32_t flags);
-typedef int(__stdcall *ddsBlt_t)(void *obj, const exe_rect *dst, void *src, const exe_rect *srcRect, uint32_t flags,
-	void *fx);
-typedef int(__stdcall *ddsGetDC_t)(void *obj, void **dc);
-typedef int(__stdcall *ddsReleaseDC_t)(void *obj, void *dc);
-#define COM_CALL(obj, type, off) D3D_METHOD(obj, type, off)
 
 #define VK_ESCAPE 0x1b
 #define VK_SPACE 0x20
@@ -79,25 +35,16 @@ typedef int(__stdcall *ddsReleaseDC_t)(void *obj, void *dc);
 #define DIK_SPACE 0x39
 #define DIK_NUMPADENTER 0x9c
 #define XINPUT_GAMEPAD_A_B 0x3000
-#define DDSCL_NORMAL 8
-#define DDBLT_DDFX 0x800
-#define DDERR_WASSTILLDRAWING ((int)0x8876021c)
-#define SSUPDATE_ASYNC 1
-#define COMPSTAT_ABORT 4
-#define MS_S_PENDING 0x40001
 
-/* DDSURFACEDESC */
-typedef struct VideoDDSD {
-	uint32_t dwSize;		/* 0x00 */
-	uint32_t dwFlags;		/* 0x04 */
-	int dwHeight;			/* 0x08 */
-	int dwWidth;			/* 0x0c */
-	byte pad10[0x44];
-	int dwRGBBitCount;		/* 0x54 of the pixel format */
-	byte pad58[0x10];
-	uint32_t dwCaps;		/* 0x68 */
-} VideoDDSD;
-SD_SIZE(VideoDDSD, 0x6c);
+/* FMOD 3 stream modes */
+#define FSOUND_16BITS 0x10
+#define FSOUND_MONO 0x20
+#define FSOUND_SIGNED 0x100
+#define FSOUND_2D 0x2000
+
+#define VIDEO_PACKETS 32		/* packets read per Video_Step at most */
+#define VIDEO_RING (1u << 20)		/* bytes of decoded sound ahead of FMOD, about 6 s of 44.1 kHz stereo */
+#define VIDEO_FMOD_BLOCK 8192		/* bytes FMOD asks for per callback */
 
 extern int g_VideoPadHeld;
 #define g_VideoMirror GAME_GLOBAL_IN(uint32_t, GVar_PlayVideoFX, 16)	/* 1: up-down, 2: left-right */
@@ -133,7 +80,6 @@ byte Video_KeysHeld(void) {
 	return video_hold;
 }
 
-/* differs from the original on purpose (no blocking waits): it starts the hold instead of waiting it out */
 void Video_WaitKeysUp(int ms) {
 	video_holdEnd = exe_timeGetTime() + (uint32_t)ms;
 	video_hold = 1;
@@ -149,248 +95,252 @@ void Video_MaskHeldKeys(char *keys) {
 	}
 }
 
-int Video_OpenStream(const char *name, void *dd, void **out) {
-	uint16_t wpath[MAX_FILEPATH];
-	void *ms = NULL;
-	const char *what;
-
-	*out = NULL;
-	int hr = exe_CoCreateInstance(CLSID_AMMultiMediaStream, NULL, 1, IID_IAMMultiMediaStream, &ms);
-	if (hr < 0) {
-		what = "CoCreateInstance(CLSID_AMMultiMediaStream, NULL, CLSCTX_INPROC_SERVER, IID_IAMMultiMediaStream, "
-			"(void **)&pAMStream)";
-		goto failed;
-	}
-	hr = COM_CALL(ms, ammsInitialize_t, AMMS_INITIALIZE)(ms, 0, 0, NULL);
-	if (hr < 0) {
-		what = "pAMStream->Initialize(STREAMTYPE_READ, 0, NULL)";
-		goto failed;
-	}
-	hr = COM_CALL(ms, ammsAddMediaStream_t, AMMS_ADDMEDIASTREAM)(ms, dd, MSPID_PrimaryVideo, 0, NULL);
-	if (hr < 0) {
-		what = "pAMStream->AddMediaStream(pDD, &MSPID_PrimaryVideo, 0, NULL)";
-		goto failed;
-	}
-	/* the sound with the default renderer; MS_E_PURPOSEID (no audio) is fine */
-	hr = COM_CALL(ms, ammsAddMediaStream_t, AMMS_ADDMEDIASTREAM)(ms, NULL, MSPID_PrimaryAudio, 1, NULL);
-	if (hr < 0 && hr != (int)0x80040256) {
-		E3D_LogBlue(g_FileLog, "pAMStream->AddMediaStream()  failed with HRESULT(0x%8.8X)", hr);
-		goto done;
-	}
-	exe_MultiByteToWideChar(0, 0, name, -1, wpath, MAX_FILEPATH);
-	hr = COM_CALL(ms, ammsOpenFile_t, AMMS_OPENFILE)(ms, wpath, 0);
-	if (hr < 0) {
-		what = "pAMStream->OpenFile(wPath, 0)";
-		goto failed;
-	}
-	*out = ms;
-	COM_CALL(ms, comUnk_t, 0x4)(ms);
-	goto done;
-failed:
-	E3D_LogBlue(g_FileLog, "%s  failed with HRESULT(0x%8.8X)", what, hr);
-done:
-	if (!ms) {
-		E3D_LogBlue(g_FileLog, "ERROR: Could not create a CLSID_MultiMediaStream object\n"
-			"Check you have run regsvr32 amstream.dll");
-	}
-	if (ms) {
-		COM_RELEASE(ms);
-	}
-	return hr;
-}
-
-/* the width / height ratio of the log lines, through unsigned or signed values as the original */
-static double Video_RatioU(int w, int h) {
-	return (double)((float)(double)(uint32_t)w / (float)(double)(uint32_t)h);
-}
-
-static void Video_Release(void **obj) {
-	if (*obj) {
-		COM_RELEASE(*obj);
-		*obj = NULL;
-	}
-}
-
-/* the objects of Video_RenderStream released in the order of the original */
-static void Video_ReleaseStream(void **sec, void **surf, void **sample, void **dds, void *vid) {
-	Video_Release(sec);
-	Video_Release(surf);
-	Video_Release(sample);
-	Video_Release(dds);
-	if (vid) {
-		COM_RELEASE(vid);
-	}
-}
-
-/* the playback that the message loop drives (Video_Step): the frames of the stream Video_RenderStream started, then
- * the rest of its Video_PlayPath and the second name of a Video_PlayFile list */
 static struct {
 	byte busy;			/* a video plays, Video_Step goes on with it */
-	byte stream;			/* the frames of the stream run */
-	byte update;			/* an SSUPDATE_ASYNC Update is out */
-	byte frame;			/* a new frame in surf, not yet blitted */
-	byte secDone;			/* the blit into sec is done, the one onto primary not yet */
-	byte played;			/* the played of Video_PlayPath */
-	byte *playedOut;
-	void *primary, *ms, *vid, *dds, *sample, *surf, *sec;
-	exe_rect src, dst;
-	uint32_t fx[25];		/* DDBLTFX */
-	uint32_t bltFlags;
-	void *pathDD, *pathMS;		/* of Video_PlayPath, released after the stream */
+	byte stream;			/* the file is open and its frames run */
+	byte played;			/* stopped by a key or the pad */
+	byte eof;			/* every packet read */
+	byte pending;			/* frame holds a decoded picture not yet shown */
+	byte started;			/* the first picture is shown: t0 and the sound run */
+	AVFormatContext *fmt;
+	AVCodecContext *vdec, *adec;
+	int vidx, aidx;
+	AVPacket *pkt;
+	AVFrame *frame, *aframe;
+	struct SwsContext *sws;
+	void *tex;			/* the picture as an X8R8G8B8 texture of the render device */
+	int w, h;
+	uint32_t t0;			/* timeGetTime of pts 0 */
+	double pts;			/* of the pending picture, seconds */
+	void *sound;			/* the FMOD stream, NULL without sound */
 	const char *rest;		/* the name after the '|' of Video_PlayFile, played after the first one */
 	const char *restDir;
 	int result;			/* of the Video_PlayFile that ended last */
 } video;
 
-int Video_RenderStream(void *dd, void *primary, void *ms, byte *played) {
-	VideoDDSD ddsd;
-	exe_rect src, dst;
-	void *vid = NULL, *dds = NULL, *sample = NULL, *surf = NULL, *sec = NULL;
-	const char *what;
-	int hr;
+/*
+ * The decoded sound between Video_Step (the only writer of head) and the stream thread of FMOD (the only writer of
+ * tail): the bytes from tail to head are unplayed.
+ */
+static struct {
+	byte data[VIDEO_RING];
+	uint32_t head, tail;
+} video_ring;
 
-	CHECK(!video.stream);
-	E3D_LogDebug(g_FileLog, "RenderStreamToSurface():");
-	*played = 0;
-	hr = COM_CALL(ms, ammsGetMediaStream_t, AMMS_GETMEDIASTREAM)(ms, MSPID_PrimaryVideo, &vid);
-	if (hr < 0) {
-		what = "pMMStream->GetMediaStream(MSPID_PrimaryVideo, &pPrimaryVidStream)";
-		goto failed;
+static void Video_RingPut(const byte *p, uint32_t n) {
+	uint32_t head = video_ring.head;
+	uint32_t room = VIDEO_RING - (head - __atomic_load_n(&video_ring.tail, __ATOMIC_ACQUIRE));
+	if (n > room) {
+		n = room;		/* the sound runs too far ahead: the rest is lost */
 	}
-	hr = COM_CALL(vid, comQI_t, 0)(vid, IID_IDirectDrawMediaStream, &dds);
-	if (hr < 0) {
-		what = "pPrimaryVidStream->QueryInterface(IID_IDirectDrawMediaStream, (void **)&pDDStream)";
-		goto failed;
+	for (uint32_t i = 0; i < n; i++) {
+		video_ring.data[(head + i) & (VIDEO_RING - 1)] = p[i];
 	}
-	hr = COM_CALL(dds, ddmsCreateSample_t, DDMS_CREATESAMPLE)(dds, NULL, NULL, 0, &sample);
-	if (hr < 0) {
-		what = "pDDStream->CreateSample(NULL, NULL, 0, &pSample)";
-		goto failed;
-	}
-	hr = COM_CALL(sample, sampleGetSurface_t, SAMPLE_GETSURFACE)(sample, &surf, &src);
-	if (hr < 0) {
-		what = "pSample->GetSurface(&pSurface, &rect)";
-		goto failed;
-	}
-	ddsd.dwSize = sizeof(ddsd);
-	COM_CALL(surf, ddGetDesc_t, DDS_GETSURFACEDESC)(surf, &ddsd);
-	E3D_LogDebug(g_FileLog, "  orig: %d x %d x %d (%f)", ddsd.dwWidth, ddsd.dwHeight, ddsd.dwRGBBitCount,
-		Video_RatioU(ddsd.dwWidth, ddsd.dwHeight));
-	int origW = ddsd.dwWidth;
-	int origH = ddsd.dwHeight;
-	ddsd.dwSize = sizeof(ddsd);
-	if (primary) {
-		COM_CALL(primary, ddGetDesc_t, DDS_GETSURFACEDESC)(primary, &ddsd);
-	} else {
-		COM_CALL(dd, ddGetDesc_t, DD_GETDISPLAYMODE)(dd, &ddsd);
-	}
-	E3D_LogDebug(g_FileLog, "  disp: %d x %d x %d (%f)", ddsd.dwWidth, ddsd.dwHeight, ddsd.dwRGBBitCount,
-		Video_RatioU(ddsd.dwWidth, ddsd.dwHeight));
-	dst.right = ddsd.dwWidth;
-	dst.left = 0;
-	dst.top = 0;
-	dst.bottom = ddsd.dwHeight;
-	if (!Engine_IsFullScreen()) {
-		exe_point pt = { 0, 0 };
-		if (primary) {
-			exe_ClientToScreen(g_Engine->hWnd, &pt);
-		}
-		const exe_rect *cr = &g_Engine->windowClient;
-		dst.left = cr->left + pt.x;
-		dst.top = cr->top + pt.y;
-		dst.right = cr->right + pt.x;
-		dst.bottom = cr->bottom + pt.y;
-	}
-	int h = dst.bottom - dst.top;
-	int w = dst.right - dst.left;
-	E3D_LogDebug(g_FileLog, "  dest: %d x %d (%f)", w, h, (double)((float)w / (float)h));
-	/* the bars that keep the ratio of the video */
-	int bx = (int)(((float)w - (float)(h * origW) / (float)origH) * 0.5f);
-	if (bx <= 0) {
-		bx = 0;
-	}
-	int by = (int)(((float)h - (float)(w * origH) / (float)origW) * 0.5f);
-	if (by <= 0) {
-		by = 0;
-	}
-	E3D_LogDebug(g_FileLog, "  rect: (%d+%d,%d+%d)x(%d-%d,%d-%d)", dst.left, bx, dst.top, by, dst.right, bx,
-		dst.bottom, by);
-	dst.left += bx;
-	dst.right -= bx;
-	dst.top += by;
-	dst.bottom -= by;
-	if (bx || by) {
-		Dbg_FillRect(0, 0, w, h, 0);
-	}
-	ddsd.dwWidth = src.right - src.left;
-	ddsd.dwHeight = src.bottom - src.top;
-	ddsd.dwSize = sizeof(ddsd);
-	ddsd.dwFlags = 0x1007;		/* DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT */
-	ddsd.dwCaps = 0x4040;		/* DDSCAPS_OFFSCREENPLAIN | DDSCAPS_VIDEOMEMORY */
-	hr = COM_CALL(dd, ddCreateSurface_t, DD_CREATESURFACE)(dd, &ddsd, &sec, NULL);
-	if (hr < 0) {
-		what = "pDD->CreateSurface(&ddsd, &pSecSurf, NULL)";
-		goto failed;
-	}
-	Video_WaitKeysUp(1000);
-	hr = COM_CALL(ms, ammsSetState_t, AMMS_SETSTATE)(ms, 1);
-	if (hr < 0) {
-		what = "pMMStream->SetState(STREAMSTATE_RUN)";
-		goto failed;
-	}
-	/* DDBLTFX with the mirror flags */
-	memset(video.fx, 0, sizeof(video.fx));
-	video.fx[0] = sizeof(video.fx);
-	video.fx[1] = (g_VideoMirror & 1) << 2 | (g_VideoMirror & 2);
-	video.bltFlags = g_VideoMirror ? DDBLT_DDFX : 0;
-	/* differs from the original on purpose (no blocking waits): the loop over the frames is Video_Step, once per pass
-	 * of the message loop of App_WinMain, which also runs the end of the stream (Video_StreamStop) */
-	video.primary = primary;
-	video.ms = ms;
-	video.vid = vid;
-	video.dds = dds;
-	video.sample = sample;
-	video.surf = surf;
-	video.sec = sec;
-	video.src = src;
-	video.dst = dst;
-	video.playedOut = played;
-	video.update = 0;
-	video.frame = 0;
-	video.secDone = 0;
-	video.stream = 1;
-	video.busy = 1;
-	return hr;
-failed:
-	E3D_LogBlue(g_FileLog, "%s  failed with HRESULT(0x%8.8X)", what, hr);
-	Video_ReleaseStream(&sec, &surf, &sample, &dds, vid);
-	return hr;
+	__atomic_store_n(&video_ring.head, head + n, __ATOMIC_RELEASE);
 }
 
-/* the end of the stream: played 1 when a key or the pad stopped it, the hold of the keys, the stream stopped and its
- * objects released */
+/* FMOD asks for len bytes (on its stream thread); silence where the ring has none */
+static signed char __stdcall Video_SoundCallback(void *stream, void *buf, int len, void *user) {
+	uint32_t tail = video_ring.tail;
+	uint32_t have = __atomic_load_n(&video_ring.head, __ATOMIC_ACQUIRE) - tail;
+	uint32_t n = (uint32_t)len < have ? (uint32_t)len : have;
+	byte *out = buf;
+
+	(void)stream, (void)user;
+	for (uint32_t i = 0; i < n; i++) {
+		out[i] = video_ring.data[(tail + i) & (VIDEO_RING - 1)];
+	}
+	memset(out + n, 0, (size_t)len - n);
+	__atomic_store_n(&video_ring.tail, tail + n, __ATOMIC_RELEASE);
+	return 1;
+}
+
+static AVCodecContext *Video_OpenCodec(int idx) {
+	const AVCodecParameters *par = video.fmt->streams[idx]->codecpar;
+	const AVCodec *codec = avcodec_find_decoder(par->codec_id);
+	AVCodecContext *c = codec ? avcodec_alloc_context3(codec) : NULL;
+
+	if (!c || avcodec_parameters_to_context(c, par) < 0 || avcodec_open2(c, codec, NULL) < 0) {
+		avcodec_free_context(&c);
+	}
+	return c;
+}
+
+/* everything of the file closed, the sound stopped */
+static void Video_Close(void) {
+	if (video.sound) {
+		FSOUND_Stream_Stop(video.sound);
+		FSOUND_Stream_Close(video.sound);
+		video.sound = NULL;
+	}
+	if (video.tex) {
+		Rd_Release(video.tex);
+		video.tex = NULL;
+	}
+	sws_freeContext(video.sws);
+	video.sws = NULL;
+	av_frame_free(&video.frame);
+	av_frame_free(&video.aframe);
+	av_packet_free(&video.pkt);
+	avcodec_free_context(&video.vdec);
+	avcodec_free_context(&video.adec);
+	avformat_close_input(&video.fmt);
+	video.stream = 0;
+}
+
+/* the file opened with its decoders, the texture and the sound stream; 0 when it cannot play */
+static int Video_Open(const char *path) {
+	void *dev = g_Engine ? g_Engine->device : NULL;
+
+	if (!dev) {
+		E3D_LogBlue(g_FileLog, "ERROR: no render device for the video");
+		return 0;
+	}
+	if (avformat_open_input(&video.fmt, path, NULL, NULL) < 0 || avformat_find_stream_info(video.fmt, NULL) < 0) {
+		E3D_LogBlue(g_FileLog, "ERROR: the video does not open: %s", path);
+		return 0;
+	}
+	video.vidx = av_find_best_stream(video.fmt, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
+	video.aidx = av_find_best_stream(video.fmt, AVMEDIA_TYPE_AUDIO, -1, video.vidx, NULL, 0);
+	if (video.vidx < 0 || !(video.vdec = Video_OpenCodec(video.vidx))) {
+		E3D_LogBlue(g_FileLog, "ERROR: no video stream that decodes in %s", path);
+		return 0;
+	}
+	video.w = video.vdec->width;
+	video.h = video.vdec->height;
+	video.pkt = av_packet_alloc();
+	video.frame = av_frame_alloc();
+	video.aframe = av_frame_alloc();
+	video.sws = sws_getContext(video.w, video.h, video.vdec->pix_fmt, video.w, video.h, AV_PIX_FMT_BGRA,
+		SWS_POINT, NULL, NULL, NULL);
+	if (!video.pkt || !video.frame || !video.aframe || !video.sws
+		|| Rd_DevCreateTexture(dev, (uint32_t)video.w, (uint32_t)video.h, 1, 0, D3DFMT_X8R8G8B8, D3DPOOL_MANAGED,
+			&video.tex) < 0) {
+		return 0;
+	}
+	E3D_LogDebug(g_FileLog, "  video: %d x %d, %s", video.w, video.h, avcodec_get_name(video.vdec->codec_id));
+	/* the sound: 16 bit PCM through an FMOD stream that reads the ring; none when FMOD cannot */
+	video_ring.head = video_ring.tail = 0;
+	if (video.aidx >= 0 && (video.adec = Video_OpenCodec(video.aidx)) != NULL) {
+		int ch = video.adec->ch_layout.nb_channels;
+		if (video.adec->sample_fmt == AV_SAMPLE_FMT_S16 && (ch == 1 || ch == 2)) {
+			uint32_t mode = FSOUND_16BITS | FSOUND_SIGNED | FSOUND_2D | (ch == 2 ? FSOUND_STEREO : FSOUND_MONO);
+			video.sound = FSOUND_Stream_Create(Video_SoundCallback, VIDEO_FMOD_BLOCK, mode, video.adec->sample_rate,
+				NULL);
+		}
+		if (!video.sound) {
+			avcodec_free_context(&video.adec);
+		}
+	}
+	video.eof = 0;
+	video.pending = 0;
+	video.started = 0;
+	return 1;
+}
+
+/* the picture in frame into the texture, mirrored by PlayVideoFX */
+static void Video_Upload(void) {
+	d3dLockedRect_t lr;
+
+	if (Rd_TexLockRect(video.tex, 0, &lr, NULL, 0) < 0) {
+		return;
+	}
+	byte *dst = lr.pBits;
+	int pitch = lr.Pitch;
+	if (g_VideoMirror & 1) {
+		dst += (size_t)(video.h - 1) * (size_t)pitch;
+		pitch = -pitch;
+	}
+	sws_scale(video.sws, (const uint8_t *const *)video.frame->data, video.frame->linesize, 0, video.h, &dst, &pitch);
+	if (g_VideoMirror & 2) {
+		for (int y = 0; y < video.h; y++) {
+			uint32_t *row = (uint32_t *)((byte *)lr.pBits + (size_t)y * (size_t)lr.Pitch);
+			for (int a = 0, b = video.w - 1; a < b; a++, b--) {
+				uint32_t t = row[a];
+				row[a] = row[b];
+				row[b] = t;
+			}
+		}
+	}
+	Rd_TexUnlockRect(video.tex, 0);
+}
+
+/* the texture on the back buffer with bars that keep the ratio of the video, and the present */
+static void Video_Draw(void) {
+	void *dev = g_Engine->device, *back = NULL;
+	d3dSurfaceDesc_t desc;
+
+	if (Rd_DevGetBackBuffer(dev, 0, 0, &back) < 0) {
+		return;
+	}
+	int r = Rd_SurfGetDesc(back, &desc);
+	Rd_Release(back);
+	if (r < 0 || !desc.Width || !desc.Height) {
+		return;
+	}
+	float sx = (float)desc.Height * (float)video.w / ((float)video.h * (float)desc.Width);
+	float bx = sx < 1.0f ? (1.0f - sx) * 0.5f : 0.0f;
+	float by = sx > 1.0f ? (1.0f - 1.0f / sx) * 0.5f : 0.0f;
+	const box_t rect = { { bx, by, 0.0f }, { 1.0f - bx, 1.0f - by, 0.0f } };
+	Rd_DevBeginScene(dev);
+	Rd_DevClear(dev, 0, NULL, D3DCLEAR_TARGET, 0, 1.0f, 0);
+	Render_DrawTexRect(&rect, 0xffffffffu, 0xffffffffu, video.tex);
+	Rd_DevEndScene(dev);
+	Rd_DevPresent(dev, NULL, NULL, NULL, NULL);
+}
+
+/* the decoded sound of the packet into the ring */
+static void Video_DecodeSound(void) {
+	if (avcodec_send_packet(video.adec, video.pkt) < 0) {
+		return;
+	}
+	while (avcodec_receive_frame(video.adec, video.aframe) >= 0) {
+		int bytes = video.aframe->nb_samples * video.adec->ch_layout.nb_channels * 2;
+		Video_RingPut(video.aframe->data[0], (uint32_t)bytes);
+	}
+}
+
+/*
+ * The next picture in frame (pending): the decoded ones first, then up to VIDEO_PACKETS packets, whose sound goes
+ * into the ring. 0 when none is there yet in this pass, or at the end of the file (eof then).
+ */
+static int Video_NextPicture(void) {
+	for (int n = 0;;) {
+		int r = avcodec_receive_frame(video.vdec, video.frame);
+		if (r >= 0) {
+			int64_t ts = video.frame->best_effort_timestamp;
+			video.pts = ts == AV_NOPTS_VALUE ? 0.0 : (double)ts * av_q2d(video.fmt->streams[video.vidx]->time_base);
+			video.pending = 1;
+			return 1;
+		}
+		if (r == AVERROR_EOF || video.eof || n++ == VIDEO_PACKETS) {
+			return 0;
+		}
+		if (av_read_frame(video.fmt, video.pkt) < 0) {
+			video.eof = 1;
+			avcodec_send_packet(video.vdec, NULL);	/* the frames the decoder still holds */
+			continue;
+		}
+		if (video.pkt->stream_index == video.vidx) {
+			avcodec_send_packet(video.vdec, video.pkt);
+		} else if (video.pkt->stream_index == video.aidx && video.adec) {
+			Video_DecodeSound();
+		}
+		av_packet_unref(video.pkt);
+	}
+}
+
+/* the end of the stream: the hold of the keys, the file closed */
 static void Video_StreamStop(byte skipped) {
 	if (skipped) {
-		*video.playedOut = 1;
-	}
-	if (video.update) {
-		/* the frame asked for is not waited for */
-		COM_CALL(video.sample, sampleCompletionStatus_t, SAMPLE_COMPLETIONSTATUS)(video.sample, COMPSTAT_ABORT, 0);
-		video.update = 0;
+		video.played = 1;
 	}
 	Video_WaitKeysUp(1000);
-	COM_CALL(video.ms, ammsSetState_t, AMMS_SETSTATE)(video.ms, 0);
-	video.stream = 0;
-	Video_ReleaseStream(&video.sec, &video.surf, &video.sample, &video.dds, video.vid);
-	video.vid = NULL;
+	Video_Close();
 }
 
-/* one turn of the frame loop of the original: the keys and the pad, the next frame of the stream, the blits. The
- * Update is SSUPDATE_ASYNC and polled, the Blts are tried again on the next pass while the surface is busy. */
+/* one pass: the keys and the pad, the pictures that are due decoded, the last of them drawn */
 static void Video_StreamStep(void) {
-	int hr;
-
-	/* differs from the original on purpose (no blocking waits): the keys still held do not skip the video */
 	if (!Video_KeysHeld() && (exe_GetAsyncKeyState(VK_ESCAPE) || exe_GetAsyncKeyState(VK_SPACE)
 		|| exe_GetAsyncKeyState(VK_RETURN))) {
 		Video_StreamStop(1);
@@ -400,66 +350,33 @@ static void Video_StreamStep(void) {
 		Video_StreamStop(1);
 		return;
 	}
-	if (!video.frame) {
-		if (!video.update) {
-			hr = COM_CALL(video.sample, sampleUpdate_t, SAMPLE_UPDATE)(video.sample, SSUPDATE_ASYNC,
-				NULL, NULL, 0);
-			if (hr == MS_S_PENDING) {
-				video.update = 1;
-			} else if (hr) {
-				Video_StreamStop(0);
-				return;
-			} else {
-				video.frame = 1;
+	byte show = 0;
+	for (;;) {
+		if (!video.pending && !Video_NextPicture()) {
+			break;
+		}
+		if (!video.started) {
+			/* the clock and the sound start with the first picture */
+			video.t0 = exe_timeGetTime() - (uint32_t)(video.pts * 1000.0);
+			video.started = 1;
+			if (video.sound) {
+				FSOUND_Stream_Play(FSOUND_FREE, video.sound);
 			}
 		}
-		if (video.update) {
-			hr = COM_CALL(video.sample, sampleCompletionStatus_t, SAMPLE_COMPLETIONSTATUS)(video.sample, 0, 0);
-			if (hr == MS_S_PENDING) {
-				return;
-			}
-			video.update = 0;
-			if (hr) {
-				Video_StreamStop(0);
-				return;
-			}
-			video.frame = 1;
+		if (video.pts * 1000.0 > (double)(exe_timeGetTime() - video.t0)) {
+			break;			/* not due yet */
 		}
+		/* due: only the last due picture of this pass is drawn */
+		video.pending = 0;
+		show = 1;
+		Video_Upload();
 	}
-	if (!video.primary) {
-		Video_BltToWindow(g_Engine->hWnd, &video.dst, video.surf, &video.src);
-	} else {
-		if (!video.secDone) {
-			hr = COM_CALL(video.sec, ddsBlt_t, DDS_BLT)(video.sec, &video.src, video.surf, &video.src,
-				video.bltFlags, video.fx);
-			if (hr == DDERR_WASSTILLDRAWING) {
-				return;
-			}
-			video.secDone = 1;
-		}
-		hr = COM_CALL(video.primary, ddsBlt_t, DDS_BLT)(video.primary, &video.dst, video.sec, &video.src, 0, NULL);
-		if (hr == DDERR_WASSTILLDRAWING) {
-			return;
-		}
-		video.secDone = 0;
+	if (show) {
+		Video_Draw();
 	}
-	video.frame = 0;
-}
-
-void Video_BltToWindow(void *hwnd, const exe_rect *dst, void *surf, const exe_rect *src) {
-	void *sdc;
-
-	if (COM_CALL(surf, ddsGetDC_t, DDS_GETDC)(surf, &sdc) < 0) {
-		return;
+	if (video.eof && !video.pending && !show && !Video_NextPicture()) {
+		Video_StreamStop(0);
 	}
-	void *dc = exe_GetDC(hwnd);
-	if (dc) {
-		exe_SetStretchBltMode(dc, 3);	/* COLORONCOLOR */
-		exe_StretchBlt(dc, dst->left, dst->top, dst->right - dst->left, dst->bottom - dst->top, sdc, src->left,
-			src->top, src->right - src->left, src->bottom - src->top, 0xcc0020);
-		exe_ReleaseDC(hwnd, dc);
-	}
-	COM_CALL(surf, ddsReleaseDC_t, DDS_RELEASEDC)(surf, sdc);
 }
 
 /* name in the language directory of dir, else as it is (with the warning when neither is found) */
@@ -489,8 +406,7 @@ int Video_PlayFile(const char *name, const char *dir) {
 			name++;
 		}
 		if (r == VIDEO_PENDING) {
-			/* differs from the original on purpose (no blocking waits): b plays after the video of a, from
-			 * Video_Step */
+			/* b plays after the video of a, from Video_Step */
 			video.rest = name;
 			video.restDir = dir;
 			return VIDEO_PENDING;
@@ -499,18 +415,8 @@ int Video_PlayFile(const char *name, const char *dir) {
 	return Video_PlayName(name, dir);
 }
 
-/* the end of Video_PlayPath: DirectDraw released (dd NULL when it was not created), COM closed */
-static int Video_PlayPathEnd(void *dd) {
-	if (dd && COM_RELEASE(dd)) {
-		E3D_LogBlue(g_FileLog, "ERROR: A DirectDraw object has a non-zero reference count");
-	}
-	exe_CoUninitialize();
-	return video.played ? 2 : 1;
-}
-
 int Video_PlayPath(const char *name, const char *dir, byte warn) {
 	char path[MAX_FILEPATH];
-	void *dd, *ms;
 
 	Bprintf(path, sizeof(path), "%s%s", dir ? dir : "", name);
 	if (File_Access(path, 0)) {
@@ -524,27 +430,14 @@ int Video_PlayPath(const char *name, const char *dir, byte warn) {
 	}
 	E3D_LogPrint(g_FileLog, "VIDEO: %s", path);
 	video.played = 0;
-	exe_CoInitialize(NULL);
-	if (exe_DirectDrawCreate(NULL, &dd, NULL) < 0) {
-		E3D_LogBlue(g_FileLog, "ERROR: Could not open DirectDraw - check it is installed");
-		dd = NULL;
-	} else {
-		int hr = COM_CALL(dd, ddSetCoop_t, DD_SETCOOPERATIVELEVEL)(dd, g_Engine->hWnd, DDSCL_NORMAL);
-		if (hr < 0) {
-			E3D_LogBlue(g_FileLog, "ERROR: SetCooperativeLevel(): 0x%08X", hr);
-		} else if (Video_OpenStream(path, dd, &ms) >= 0) {
-			Video_RenderStream(dd, NULL, ms, &video.played);
-			if (video.stream) {
-				/* differs from the original on purpose (no blocking waits): the video plays on from Video_Step,
-				 * which then releases the stream and DirectDraw */
-				video.pathDD = dd;
-				video.pathMS = ms;
-				return VIDEO_PENDING;
-			}
-			COM_RELEASE(ms);
-		}
+	if (!Video_Open(path)) {
+		Video_Close();
+		return 1;
 	}
-	return Video_PlayPathEnd(dd);
+	Video_WaitKeysUp(1000);
+	video.stream = 1;
+	video.busy = 1;
+	return VIDEO_PENDING;
 }
 
 void Video_Step(void) {
@@ -558,13 +451,6 @@ void Video_Step(void) {
 		}
 	}
 	int r = video.played ? 2 : 1;
-	if (video.pathDD) {
-		void *dd = video.pathDD;
-		COM_RELEASE(video.pathMS);
-		video.pathDD = NULL;
-		video.pathMS = NULL;
-		r = Video_PlayPathEnd(dd);
-	}
 	if (video.rest) {
 		const char *name = video.rest;
 		video.rest = NULL;

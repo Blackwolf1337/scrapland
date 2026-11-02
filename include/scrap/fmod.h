@@ -65,5 +65,10 @@ void *__stdcall FSOUND_Stream_GetSample(void *stream);
 int __stdcall FSOUND_Stream_PlayEx(int channel, void *stream, void *dsp, byte paused);
 int __stdcall FSOUND_Stream_GetLengthMs(void *stream);
 int __stdcall FSOUND_Stream_GetTime(void *stream);
+/* a stream fed by callback (on the stream thread of FMOD) with len bytes in mode at rate; 1 from it goes on */
+typedef signed char(__stdcall *FSOUND_STREAMCALLBACK)(void *stream, void *buf, int len, void *user);
+void *__stdcall FSOUND_Stream_Create(FSOUND_STREAMCALLBACK callback, int len, uint32_t mode, int rate, void *user);
+int __stdcall FSOUND_Stream_Play(int channel, void *stream);
+byte __stdcall FSOUND_Stream_Stop(void *stream);
 
 #endif
