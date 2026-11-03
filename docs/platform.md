@@ -27,7 +27,7 @@ The i686 builds and the i686 difftest are retired. The tag `difftest-final` keep
 
 Paths come from the SDL base path and pref path. On Linux the config and the saves go to the SDL user data folder (`XDG_DATA_HOME`). The install language is read from a config file instead of the registry.
 
-Sound is an own mixer, `src/game/Sound/Snd.c`, with miniaudio for the output and stb_vorbis for decoding. `SCRAP_SND_NULL=1` picks the null device.
+Sound is an own mixer, `src/game/Sound/Snd.c`, with miniaudio for the output and stb_vorbis for decoding. `SCRAP_SND_NULL=1` picks the null device. `SCRAP_SND_WAV=<file>` also writes the mix into that file as a 32-bit float stereo WAV at 44100 Hz, for tests (it works with the null device too, so a headless run records what the game plays).
 
 Networking uses BSD sockets with a thin Winsock shim in `src/game/Net/Sock.c`.
 

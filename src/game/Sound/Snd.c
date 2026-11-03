@@ -59,6 +59,7 @@ static struct {
 	char name[320];
 	SndChannel ch[SND_CHANNELS];
 	uint32_t memCur, memMax;
+	FILE *wav;		/* SCRAP_SND_WAV: the mix also goes into this file (tests) */
 } snd;
 
 /* ---- the mixer (device thread) ---- */
@@ -195,7 +196,34 @@ static void Snd_DeviceData(ma_device *dev, void *output, const void *input, ma_u
 			}
 		}
 	}
+	if (snd.wav) {
+		fwrite(out, 2 * sizeof(float), frames, snd.wav);
+	}
 	ma_mutex_unlock(&snd.lock);
+}
+
+/* the WAV file of SCRAP_SND_WAV: 32-bit float stereo at SND_RATE; the sizes in the header are the largest possible,
+ * the file grows as the game plays (a killed game still leaves a readable file) */
+static void Snd_OpenWav(void) {
+	const char *path = getenv("SCRAP_SND_WAV");
+	if (!path || !*path || !(snd.wav = fopen(path, "wb"))) {
+		return;
+	}
+	const uint32_t rate = SND_RATE, big = 0xffffffffu, fmtSize = 16;
+	const uint16_t fmtFloat = 3, channels = 2, align = 8, bits = 32;
+	const uint32_t bytesPerSec = rate * align;
+	fwrite("RIFF", 1, 4, snd.wav);
+	fwrite(&big, 4, 1, snd.wav);
+	fwrite("WAVEfmt ", 1, 8, snd.wav);
+	fwrite(&fmtSize, 4, 1, snd.wav);
+	fwrite(&fmtFloat, 2, 1, snd.wav);
+	fwrite(&channels, 2, 1, snd.wav);
+	fwrite(&rate, 4, 1, snd.wav);
+	fwrite(&bytesPerSec, 4, 1, snd.wav);
+	fwrite(&align, 2, 1, snd.wav);
+	fwrite(&bits, 2, 1, snd.wav);
+	fwrite("data", 1, 4, snd.wav);
+	fwrite(&big, 4, 1, snd.wav);
 }
 
 /* ---- the output ---- */
@@ -241,6 +269,7 @@ int Snd_Init(void) {
 		return 0;
 	}
 	memset(snd.ch, 0, sizeof(snd.ch));
+	Snd_OpenWav();
 	snd.init = 1;
 	snd.error = SND_ERR_NONE;
 	return 1;
@@ -253,6 +282,10 @@ void Snd_Close(void) {
 	ma_device_uninit(&snd.device);
 	ma_context_uninit(&snd.ctx);
 	ma_mutex_uninit(&snd.lock);
+	if (snd.wav) {
+		fclose(snd.wav);
+		snd.wav = NULL;
+	}
 	snd.init = 0;
 	snd.ctxInit = 0;
 }
