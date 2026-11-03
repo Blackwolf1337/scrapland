@@ -53,6 +53,8 @@ Never keep a pointer in an int. Use `intptr_t` or the pointer type. A typical sy
 
 The vtables are typed `*Vtbl` structs with designated initializers, so the compiler checks every slot. This matters on x86_64: float arguments travel in other registers than integers, so a slot implemented with `int` where the caller passes `float` would shift all later arguments. On i386 every argument is a stack word, so the same mistake went unnoticed. GCC now reports such a mismatch.
 
+Calls go through wrapper functions named `Class_Slot(obj, ...)`, static inline and placed after each vtable type in its header. A wrapper reads the table with `VT(type, obj)` and calls the typed slot, so the slot signature is checked at every call as well. Classes whose vtable had only one implementation have no vtable and are called directly.
+
 `long` differs between the 64-bit targets. Linux x86_64 is LP64 (`long` is 64 bits), Windows x64 is LLP64 (`long` is 32 bits). The Python 1.5.2 config follows that (`src/python/config.h`): Python ints are 64 bits on Linux x86_64 and 32 bits on Windows x64. The pointer-to-long casts of Python itself are only in repr strings and hashes.
 
 Save games are name/value strings plus a count, so they do not depend on the pointer size.
