@@ -40,6 +40,10 @@ typedef struct cAIEntityGroupVtbl {
 } cAIEntityGroupVtbl;
 
 /* calls through the slots of cAIEntityGroupVtbl */
+static inline cAIEntityGroup *AIGroup_Delete(void *self, byte flags) {
+	return VT(cAIEntityGroupVtbl, self)->Delete(self, flags);
+}
+
 static inline byte AIGroup_Add(void *self, cEntity *e) {
 	return VT(cAIEntityGroupVtbl, self)->Add(self, e);
 }

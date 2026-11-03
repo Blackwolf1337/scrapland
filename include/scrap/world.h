@@ -150,6 +150,7 @@ void cWorld_AddIgnore(cWorld *self, cEntity *e);
 byte cWorld_LineCall(cWorld *self, uint32_t mask, const vec3_t *from, const vec3_t *to, float radius,
 	const char *func);
 void cWorld_Clear(cWorld *self);
+void cWorld_Free(cWorld *self);
 void *cWorld_GetObjData(cWorld *self, const char *name);
 void cWorld_ResetLogic(cWorld *self);
 byte World_IsEasySingle(void);

@@ -6,6 +6,7 @@
 
 #include "scrap/actions.h"
 #include "scrap/ai.h"
+#include "scrap/astar.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
@@ -14,6 +15,7 @@
 #include "scrap/input.h"
 #include "scrap/model.h"
 #include "scrap/net.h"
+#include "scrap/nodestraffic.h"
 #include "scrap/python.h"
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
@@ -64,15 +66,6 @@ static byte Loading_Draw(void);
 #define PSAIMAGE_SIZE sizeof(CPsaImage)
 
 static const vec3_t app_one = { 1.0f, 1.0f, 1.0f };
-
-/* delete of an object through its scalar deleting destructor (slot 0) and the pointer cleared */
-static void App_DeleteObj(void **pp) {
-	void *p = *pp;
-	if (p) {
-		(*(void(**)(void *, int)) * (void ***)p)(p, 1);
-		*pp = NULL;
-	}
-}
 
 /* strcpy of the original, cut at size */
 static void App_CopyStr(char *dst, const char *src, size_t size) {
@@ -163,26 +156,53 @@ void CApp_DoneGame(CApp *self) {
 	Con_Print(0, "World system clean.\n", 0);
 	Python_Close();
 	Con_Print(0, "Python script subsystem closed.\n", 0);
-	App_DeleteObj((void **)&g_NodesWorld);
+	if (g_NodesWorld) {
+		NodesWorld_Delete(g_NodesWorld, 1);
+		g_NodesWorld = NULL;
+	}
 	Con_Print(0, "NodesWorld closed.\n", 0);
-	App_DeleteObj((void **)&g_NodesWorld2D);
+	if (g_NodesWorld2D) {
+		NodesWorld_Delete(g_NodesWorld2D, 1);
+		g_NodesWorld2D = NULL;
+	}
 	Con_Print(0, "NodesWorld2D closed.\n", 0);
-	App_DeleteObj((void **)&g_NodesTraffic);
+	if (g_NodesTraffic) {
+		Traffic_Delete(g_NodesTraffic, 1);
+		g_NodesTraffic = NULL;
+	}
 	Con_Print(0, "NodesTraffic closed.\n", 0);
-	App_DeleteObj((void **)&g_NodesTrafficInDoor);
+	if (g_NodesTrafficInDoor) {
+		Traffic_Delete(g_NodesTrafficInDoor, 1);
+		g_NodesTrafficInDoor = NULL;
+	}
 	Con_Print(0, "NodesTrafficInDoor closed.\n", 0);
-	App_DeleteObj((void **)&g_AStar);
+	if (g_AStar) {
+		AStar_Delete(g_AStar, 1);
+		g_AStar = NULL;
+	}
 	Con_Print(0, "AStar closed.\n", 0);
-	App_DeleteObj((void **)&g_AStar2D);
+	if (g_AStar2D) {
+		AStar_Delete(g_AStar2D, 1);
+		g_AStar2D = NULL;
+	}
 	Con_Print(0, "AStar2D closed.\n", 0);
-	App_DeleteObj((void **)&g_VehicleGroup);
+	if (g_VehicleGroup) {
+		AIGroup_Delete(g_VehicleGroup, 1);
+		g_VehicleGroup = NULL;
+	}
 	Con_Print(0, "VehicleGroup closed.\n", 0);
-	App_DeleteObj((void **)&g_CharGroup);
+	if (g_CharGroup) {
+		AIGroup_Delete(g_CharGroup, 1);
+		g_CharGroup = NULL;
+	}
 	Con_Print(0, "CharGroup closed.\n", 0);
 	Scorer_Done();
 	Con_Print(0, "Scorer closed.\n", 0);
 	Input_ResetActions();
-	App_DeleteObj((void **)&g_pWorld);
+	if (g_pWorld) {
+		cWorld_Free(g_pWorld);
+		g_pWorld = NULL;
+	}
 	Con_Print(0, "World closed.\n", 0);
 	ActClassList_Done();
 	Con_Print(0, "Action class list closed.\n", 0);

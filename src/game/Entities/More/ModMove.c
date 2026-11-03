@@ -6,8 +6,8 @@
 #include "scrap/crt.h"
 #include "scrap/hashtable.h"
 #include "scrap/objentity.h"
+#include "scrap/walkcharentity.h"
 
-#define MODMOVE_WALKCHAR_SETANG 0x10c	/* the vtable slot of a character that takes the angles of its model */
 
 static inline cObjEntity *ModMove_Obj(cEntity *e) {
 	return (cObjEntity *)e;
@@ -162,8 +162,7 @@ void cModMove_Update(cModMove *self, float dt) {
 		p->renderAng.y = p->ang.y + n->y * m;
 	}
 	if (Entity_IsType(self->parent, TYEN_WALKCHAR)) {
-		(*(void(**)(cEntity *, const vec3_t *))((const byte *)self->parent->vftable +
-			MODMOVE_WALKCHAR_SETANG))(self->parent, &p->renderAng);
+		cWalkCharEntity_SetViewAng(WChar(self->parent), &p->renderAng);
 	}
 }
 

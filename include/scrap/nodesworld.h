@@ -164,6 +164,10 @@ typedef struct CNodesWorldVtbl {
 } CNodesWorldVtbl;
 
 /* calls through the slots of CNodesWorldVtbl */
+static inline CNodesWorld *NodesWorld_Delete(void *self, byte flags) {
+	return VT(CNodesWorldVtbl, self)->Delete(self, flags);
+}
+
 static inline void NodesWorld_AddVis(void *self, const vec3_t *point, int index) {
 	VT(CNodesWorldVtbl, self)->AddVis(self, point, index);
 }

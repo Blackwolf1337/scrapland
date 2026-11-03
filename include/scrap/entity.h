@@ -51,6 +51,10 @@ typedef struct cEntityVtbl {
 } cEntityVtbl;
 
 /* calls through the slots of cEntityVtbl */
+static inline void Entity_Unused20(void *self) {
+	VT(cEntityVtbl, self)->Unused20(self);
+}
+
 static inline void Entity_AimWeapon(void *self, float ax, float ay, float *dist, vec3_t *out, cEntity **target, int flags) {
 	VT(cEntityVtbl, self)->AimWeapon(self, ax, ay, dist, out, target, flags);
 }

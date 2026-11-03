@@ -198,6 +198,10 @@ typedef struct CNodesTrafficVtbl {
 } CNodesTrafficVtbl;
 
 /* calls through the slots of CNodesTrafficVtbl */
+static inline CNodesTraffic *Traffic_Delete(void *self, byte flags) {
+	return VT(CNodesTrafficVtbl, self)->Delete(self, flags);
+}
+
 static inline void Traffic_AddVehicle(void *self, int track) {
 	VT(CNodesTrafficVtbl, self)->AddVehicle(self, track);
 }

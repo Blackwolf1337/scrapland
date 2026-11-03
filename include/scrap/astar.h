@@ -83,6 +83,10 @@ typedef struct CAStarVtbl {
 } CAStarVtbl;
 
 /* calls through the slots of CAStarVtbl */
+static inline CAStarSup *AStar_Delete(void *self, byte flags) {
+	return VT(CAStarVtbl, self)->Delete(self, flags);
+}
+
 static inline byte AStar_AddElem(void *self, const ElemAStar *e) {
 	return VT(CAStarVtbl, self)->AddElem(self, e);
 }

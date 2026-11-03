@@ -1675,8 +1675,6 @@ enum {
 	CSHOW_GRID = 1, CSHOW_ENTITIES, CSHOW_SOUNDS, CSHOW_AI_HIDDEN, CSHOW_PYMEM, CSHOW_AI, CSHOW_SHIPS
 };
 
-/* slot off of the vftable of any object, called without arguments */
-#define DBG_VF(p, off) ((void(*)(void *))(*(void *const *const *)(p))[(off) / 4])
 #define DBG_ITEM_RADIUS(e) (((cItemEntity *)(e))->radius)
 #define DBG_FCAM_POS(e) (&((cFollowCamEntity *)(e))->center)	/* the point a "FCam" follows */
 #define DBG_FCAM_DIST(e) (((cCamControl *)(e))->cam.zNear)
@@ -1784,7 +1782,7 @@ static void Dbg_DrawEntities(void) {
 		if (Entity_IsType(e, "WalkChar")) {
 			Dbg_DrawWalkChar(e);
 		}
-		DBG_VF(e, 0x50)(e);
+		Entity_Unused20(e);	/* the debug draw slot of the entities, empty in every class */
 	}
 }
 

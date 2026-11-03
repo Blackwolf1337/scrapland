@@ -110,8 +110,7 @@ static void cWalkCharEntity_dtor(cEntity *self) {
 	if (w->wl.actCtrl) {
 		void *ai = self->ai;
 		if (ai) {
-			/* the deleting destructor of the AI */
-			(*(void(**)(void *, uint32_t))*(void **)ai)(ai, 1);
+			AI_Delete(ai, 1);
 		}
 		self->ai = NULL;
 	}
@@ -642,7 +641,7 @@ void cWalkCharEntity_EnableAI(cEntity *self, byte on, int *arg) {
 	if (!on) {
 		if (self->ai) {
 			/* the deleting destructor of the AI */
-			(*(void(**)(void *, uint32_t))*(void **)self->ai)(self->ai, 1);
+			AI_Delete(self->ai, 1);
 		}
 		self->ai = NULL;
 		return;

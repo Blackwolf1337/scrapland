@@ -70,13 +70,6 @@ static cEntity *World_Lookup(cWorld *w, const char *name) {
 	return it ? it->value : NULL;
 }
 
-typedef cEntity *(*AIGetTarget_t)(void *ai);
-
-/* the target of an AI (vtable slot 18, 0x48 in the 32 bit vtable) */
-static cEntity *AI_GetTarget(void *ai) {
-	return (*(AIGetTarget_t **)ai)[18](ai);
-}
-
 static int World_IsIgnoredInline(cWorld *self, cEntity *e) {
 	for (int i = 0; i < 4; i++) {
 		if (!self->ignore[i]) {
@@ -114,7 +107,7 @@ cEntity *Entity_FindInView(cEntity *self, float range, float *outDot, float *out
 	Obj_GetCamera(self, &pos, &ang);
 	ang.x = ang.x + PI_F;
 	byte hasAI = Entity_GetAI(self) != NULL;
-	cEntity *e = hasAI ? AI_GetTarget(Entity_GetAI(self)) : cWorld_GetFirstEntity(g_pWorld);
+	cEntity *e = hasAI ? AIMove_GetTargetEnt(Entity_GetAI(self)) : cWorld_GetFirstEntity(g_pWorld);
 	if (!e) {
 		return NULL;
 	}
@@ -689,6 +682,44 @@ void cWorld_Clear(cWorld *self) {
 	}
 	cWorld_DeleteLists(self);
 	GameModelList_Free();
+}
+
+static void AmmoTable_Free(void *table) {
+	cAmmoTable *t = table;
+
+	if (t->items) {
+		Delete_Objects(t->items, sizeof(cAmmoInfo), (void *)cAmmoInfo_dtor);
+		t->items = NULL;
+		t->count = 0;
+	}
+}
+
+static void WeapTable_Free(void *table) {
+	cWeapTable *t = table;
+
+	if (t->items) {
+		Delete_Objects(t->items, sizeof(cWeapInfo), (void *)cWeapInfo_dtor);
+		t->items = NULL;
+		t->count = 0;
+	}
+}
+
+/* the world and everything in it freed (the end of the game) */
+void cWorld_Free(cWorld *self) {
+	cWorld_Clear(self);
+	Logic_dtor(&self->logic);
+	Grid_dtor(&self->grid);
+	AmmoTable_Free(&self->ammo);
+	WeapTable_Free(&self->weapons);
+	Elements_dtor(&self->elements);
+	Floor_dtor(&self->floor);
+	PtrTable_Clear(&self->lists);
+	PtrTable_Clear(&self->debris);
+	cScheduledFuncStack_dtor(&self->scheduler);
+	Nto1Node_Done(&self->deadList);
+	Nto1Node_Done(&self->entityList);
+	PtrTable_Clear(&self->entities);
+	operator_delete_sized(self, CWORLD_SIZE);
 }
 
 static void cWorld_DeleteLists(cWorld *self) {

@@ -240,7 +240,7 @@ static void cVehicleEntity_dtor(cVehicleEntity *self) {
 		self->netCtrl = NULL;
 	}
 	if (self->wl.obj.base.ai) {
-		(*(void(**)(void *, int))*(void **)self->wl.obj.base.ai)(self->wl.obj.base.ai, 1);
+		AI_Delete(self->wl.obj.base.ai, 1);
 	}
 	self->wl.obj.base.ai = NULL;
 	cVehicleEffects_dtor(&self->effects);
@@ -938,7 +938,7 @@ static void cVehicleEntity_SetUsrControl(cVehicleEntity *self, int slot) {
 void cVehicleEntity_EnableAI(cVehicleEntity *self, byte enable, void *p1, void *p2, void *p3) {
 	if (!enable) {
 		if (self->wl.obj.base.ai) {
-			(*(void(**)(void *, int))*(void **)self->wl.obj.base.ai)(self->wl.obj.base.ai, 1);
+			AI_Delete(self->wl.obj.base.ai, 1);
 		}
 		self->wl.obj.base.ai = NULL;
 		return;
