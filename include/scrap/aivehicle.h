@@ -25,22 +25,6 @@
 #define CAIVEHICLECONTROL_SIZE sizeof(cAIVehicleControl)
 #define CAIVEHICLESHOOT_SIZE sizeof(cAIVehicleShoot)
 
-/* the external states (SAI.SetStateVehicle, the names of cAIVehicle_StateName) */
-enum {
-	AIV_FREEZE, AIV_GO_TO, AIV_FIGHTING, AIV_IN_ROUTE, AIV_TRAFFIC, AIV_GET_AWAY_STOP, AIV_RACE, AIV_CHASE,
-	AIV_FIGHTING_FREEZE, AIV_TRAFFIC_INDOOR, AIV_FIGHTING_HOOK, AIV_FREEZE_OBJ_NOT_ACCESS, AIV_GET_AWAY,
-	AIV_LOST_PATH, AIV_LOST_PATH_CHASE, AIV_FREEZE_LOST, AIV_FREEZE_CHANGE_STATE, AIV_STATE_NONE
-};
-
-/* the internal states of the move (cAIVehicle_InternStateName) */
-enum {
-	AIVI_STOPPED, AIVI_FINISHING_LINE, AIVI_FINISHING_LINE_WITH_SHOOT_CM, AIVI_FINISHING_LINE_DIRECT,
-	AIVI_FINISHING_LINE_LIFE, AIVI_FINISHING_LINE_AMMO, AIVI_CHASE_SHOOTING, AIVI_CHASE_NOT_SHOOTING,
-	AIVI_FOLLOW_THE_PATH, AIVI_FOLLOW_THE_PATH_WITH_SHOOT_CM, AIVI_ORIENT_SHOOTING, AIVI_STATE_INTERN_NONE
-};
-
-/* the events of the move (cAIVehicle_Event): 0 path lost, 1 target not reachable, 2 arrived, 3 target gone */
-
 /* a state with its arguments: the one to take when the vehicle group lets it (pending) and the one kept by
  * cAIVehicle_SaveState to come back to after an event (saved) */
 typedef struct cAIVehicleSaved {
