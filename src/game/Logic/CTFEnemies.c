@@ -294,7 +294,7 @@ static cLocalLogic *CTFEnemies_MakeLogic(cEntity *e) {
 static const cLocalLogicVtbl cCTFEnemiesLocalLogic_vftable = {
 	.Delete = cCTFEnemiesLocalLogic_Delete,
 	.GetName = cLocalLogic_GetName,
-	.Vf02 = cLocalLogic_Vf02True,
+	.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.VarI = cCTFEnemiesLocalLogic_VarI,
 	.VarF = cLocalLogic_VarFFalse,
 	.VarS = cLocalLogic_VarSFalse,

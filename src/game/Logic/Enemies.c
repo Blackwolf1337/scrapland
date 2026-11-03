@@ -198,7 +198,7 @@ static cLocalLogic *Enemies_MakeLogic(cEntity *e) {
 static const cLocalLogicVtbl cEnemiesLocalLogic_vftable = {
 	.Delete = cEnemiesLocalLogic_Delete,
 	.GetName = cLocalLogic_GetName,
-	.Vf02 = cLocalLogic_Vf02True,
+	.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.VarI = cEnemiesLocalLogic_VarI,
 	.VarF = cLocalLogic_VarFFalse,
 	.VarS = cLocalLogic_VarSFalse,

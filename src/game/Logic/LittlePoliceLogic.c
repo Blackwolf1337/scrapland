@@ -599,7 +599,7 @@ static byte cLittlePoliceLocalLogic_SetState(cLocalLogic *elem, int state, cEnti
 static const cLittlePoliceLocalLogicVtbl cLittlePoliceLocalLogic_vftable = {
 	.base.base.base.Delete = cLittlePoliceLocalLogic_Delete,
 	.base.base.base.GetName = cBaseLocalLogic_GetName,
-	.base.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.base.VarI = cLittlePoliceLocalLogic_VarI,
 	.base.base.base.VarF = cBaseLocalLogic_VarF,
 	.base.base.base.VarS = cGenCharLocalLogic_VarS,
@@ -630,7 +630,7 @@ static const cLittlePoliceLocalLogicVtbl cLittlePoliceLocalLogic_vftable = {
 	.base.FindTarget = cLittlePoliceLocalLogic_FindTarget,
 	.base.TargetDone = cLittlePoliceLocalLogic_TargetDone,
 	.base.Work = cLocalLogic_WorkNop,
-	.base.Vf33 = cLocalLogic_Vf33Nop,
+	.base.BreakWork = cLocalLogic_BreakWorkNop,
 	.base.GoTo = cLittlePoliceLocalLogic_GoTo,
 	.base.UpdateGetIt = cLittlePoliceLocalLogic_UpdateGetIt,
 	.UpdateLook = cLittlePoliceLocalLogic_UpdateLook,

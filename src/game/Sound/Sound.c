@@ -201,9 +201,9 @@ static void CSoundSys_Nop2(CSoundSys *self, int a, int b) {
 	(void)b;
 }
 
-/* vtable slot 0x70 called directly, a tail jump in the original */
-void CSoundSys_CallVf1c(CSoundSys *self) {
-	SoundSys_vf1c(self);
+/* the slot CloseHook called directly, a tail jump in the original */
+void CSoundSys_CallCloseHook(CSoundSys *self) {
+	SoundSys_CloseHook(self);
 }
 
 void CSoundSys_InitFmod(CSoundSys *self) {
@@ -212,7 +212,7 @@ void CSoundSys_InitFmod(CSoundSys *self) {
 }
 
 void CSoundSys_Close(CSoundSys *self) {
-	SoundSys_vf1c(self);
+	SoundSys_CloseHook(self);
 	Fmod_Close();
 }
 
@@ -502,9 +502,9 @@ static const CSoundSysVtbl CSoundSys_vftable = {
 	.SetListener = CSoundSys_SetListener,
 	.Compute3D = CSoundSys_Compute3D,
 	.SetMusic = CSoundSys_SetMusic,
-	.vf1a = CSoundSys_Nop,
+	.Unused1a = CSoundSys_Nop,
 	.StopMusic = CSoundSys_StopMusic,
-	.vf1c = CSoundSys_Nop,
+	.CloseHook = CSoundSys_Nop,
 	.SetMusicVolume = CSoundSys_SetMusicVolume,
 	.GetSoundName = CSoundSys_GetSoundName,
 	.DebugDraw = CSoundSys_Nop2,

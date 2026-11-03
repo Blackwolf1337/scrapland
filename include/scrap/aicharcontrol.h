@@ -160,7 +160,7 @@ typedef struct cAICharControlVtbl {
 	/* the strafe while the target goes out of sight (waitTime up to TimeStrafeLostObjCharAI) */
 	byte(*CheckWait)(cAICharControl *self);					/* 0x15c */
 	void(*StrafeWalk)(cAICharControl *self);					/* 0x160 */
-	byte(*Vf89)(cAICharControl *self);						/* 0x164 0 */
+	byte(*AIBlocked)(cAICharControl *self);						/* 0x164 the AI cannot go on (gear), 0 */
 	void(*Strafe2)(cAICharControl *self);					/* 0x168 */
 	void(*Walk)(cAICharControl *self);						/* 0x16c */
 	void(*Walk2)(cAICharControl *self);						/* 0x170 */
@@ -514,8 +514,8 @@ static inline byte AICC_UpdateRoutePath(void *self) {
 	return VT(cAICharControlVtbl, self)->UpdateRoutePath(self);
 }
 
-static inline byte AICC_Vf89(void *self) {
-	return VT(cAICharControlVtbl, self)->Vf89(self);
+static inline byte AICC_AIBlocked(void *self) {
+	return VT(cAICharControlVtbl, self)->AIBlocked(self);
 }
 
 static inline byte AICC_Wait(void *self, float dt) {
@@ -774,7 +774,7 @@ byte cAICharControl_StartOrbit(cAICharControl *self, float dist);
 void cAICharControl_Draw(cAICharControl *self);
 byte cAICharControl_DirectPath(cAICharControl *self, const vec3_t *p);
 void cAICharControl_Stop(cAICharControl *self);
-byte cAICharControl_Vf89(cAICharControl *self);
+byte cAICharControl_AIBlocked(cAICharControl *self);
 void cAICharControl_RestartSlots(cAICharControl *self);
 int cAICharControl_GetWalkDir(cAICharControl *self);
 void *cAICharControl_GetAvoidEnt(cAICharControl *self);

@@ -268,7 +268,7 @@ static byte cNurseLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *tar
 static const cBaseLocalLogicVtbl cNurseLocalLogic_vftable = {
 	.base.Delete = cNurseLocalLogic_Delete,
 	.base.GetName = cBaseLocalLogic_GetName,
-	.base.Vf02 = cLocalLogic_Vf02True,
+	.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.VarI = cBaseLocalLogic_VarI,
 	.base.VarF = cBaseLocalLogic_VarF,
 	.base.VarS = cBaseLocalLogic_VarS,

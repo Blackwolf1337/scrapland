@@ -43,7 +43,7 @@ typedef struct cLocalLogic cLocalLogic;
 typedef struct cLocalLogicVtbl {
 	cLocalLogic *(*Delete)(cLocalLogic *self, byte flags);			/* 0x00 */
 	const char *(*GetName)(cLocalLogic *self);				/* 0x04 "BaseLogic" */
-	byte(*Vf02)(cLocalLogic *self);						/* 0x08 */
+	byte(*AcceptsArrow)(cLocalLogic *self);						/* 0x08 the arrow (talk) of the player may run */
 	byte(*VarI)(cLocalLogic *self, const char *name, int *i, byte set);	/* 0x0c */
 	byte(*VarF)(cLocalLogic *self, const char *name, double *d, byte set);	/* 0x10 */
 	byte(*VarS)(cLocalLogic *self, const char *name, char **s, byte set);	/* 0x14 */
@@ -55,8 +55,8 @@ static inline const char *LocalLogic_GetName(void *self) {
 	return VT(cLocalLogicVtbl, self)->GetName(self);
 }
 
-static inline byte LocalLogic_Vf02(void *self) {
-	return VT(cLocalLogicVtbl, self)->Vf02(self);
+static inline byte LocalLogic_AcceptsArrow(void *self) {
+	return VT(cLocalLogicVtbl, self)->AcceptsArrow(self);
 }
 
 /* the slots of cBaseLocalLogic, the logic of a character */
@@ -166,14 +166,14 @@ typedef struct cGenCharLocalLogicVtbl {
 	cEntity *(*FindTarget)(cLocalLogic *self);			/* 0x78 vf30 of the special attack */
 	byte(*TargetDone)(cLocalLogic *self);				/* 0x7c vf31 the special attack ends */
 	void(*Work)(cLocalLogic *self, float dt);				/* 0x80 vf32 functionaries */
-	void(*Vf33)(cLocalLogic *self, byte restart);			/* 0x84 */
+	void(*BreakWork)(cLocalLogic *self, byte restart);			/* 0x84 busy or moved: stop the work */
 	void(*GoTo)(cLocalLogic *self, struct cAIChar *ai, cEntity *e);		/* 0x88 vf34 the AI walks to e */
 	void(*UpdateGetIt)(cLocalLogic *self, struct cAIChar *ai, float dt);	/* 0x8c vf35 state 10 */
 } cGenCharLocalLogicVtbl;
 
 /* calls through the slots of cGenCharLocalLogicVtbl */
-static inline void GenChar_Vf33(void *self, byte restart) {
-	VT(cGenCharLocalLogicVtbl, self)->Vf33(self, restart);
+static inline void GenChar_BreakWork(void *self, byte restart) {
+	VT(cGenCharLocalLogicVtbl, self)->BreakWork(self, restart);
 }
 
 static inline void GenChar_UpdateGetIt(void *self, struct cAIChar *ai, float dt) {
@@ -255,9 +255,9 @@ static inline void Functionary_AssignDesktop(void *self, float maxDist) {
 /* Berto: three more slots, all empty */
 typedef struct cBertoLocalLogicVtbl {
 	cFunctionaryLocalLogicVtbl base;
-	void(*Vf42)(cLocalLogic *self, int arg);				/* 0xa8 */
-	void(*Vf43)(cLocalLogic *self, int arg);				/* 0xac */
-	void(*Vf44)(cLocalLogic *self, int arg);				/* 0xb0 */
+	void(*Unused42)(cLocalLogic *self, int arg);				/* 0xa8 nothing, never called */
+	void(*Unused43)(cLocalLogic *self, int arg);				/* 0xac nothing, never called */
+	void(*Unused44)(cLocalLogic *self, int arg);				/* 0xb0 nothing, never called */
 } cBertoLocalLogicVtbl;
 
 /* the sentinels: the accuse when seen (no other sentinel accuses) and the think */
@@ -492,11 +492,11 @@ void cLocalLogic_UpdateNop(cLocalLogic *self, float dt);
 byte cLocalLogic_VarFFalse(cLocalLogic *self, const char *name, double *d, byte set);
 byte cLocalLogic_VarIFalse(cLocalLogic *self, const char *name, int *i, byte set);
 byte cLocalLogic_VarSFalse(cLocalLogic *self, const char *name, char **s, byte set);
-byte cLocalLogic_Vf02True(cLocalLogic *self);
-void cLocalLogic_Vf33Nop(cLocalLogic *self, byte restart);
-void cLocalLogic_Vf42Nop(cLocalLogic *self, int arg);
-void cLocalLogic_Vf43Nop(cLocalLogic *self, int arg);
-void cLocalLogic_Vf44Nop(cLocalLogic *self, int arg);
+byte cLocalLogic_AcceptsArrowTrue(cLocalLogic *self);
+void cLocalLogic_BreakWorkNop(cLocalLogic *self, byte restart);
+void cLocalLogic_Unused42Nop(cLocalLogic *self, int arg);
+void cLocalLogic_Unused43Nop(cLocalLogic *self, int arg);
+void cLocalLogic_Unused44Nop(cLocalLogic *self, int arg);
 void cLocalLogic_WorkNop(cLocalLogic *self, float dt);
 const char *cLocalLogic_GetName(cLocalLogic *self);
 byte cBaseLocalLogic_SetState(cLocalLogic *base, int state, cEntity *target);
@@ -537,7 +537,7 @@ void cFunctionaryLocalLogic_Update(cLocalLogic *elem, float dt);
 cEntity *cFunctionaryLocalLogic_GetDesktop(cFunctionaryLocalLogic *self);
 /* the desktop leaves its work action */
 void cFunctionaryLocalLogic_FreeDesktop(cFunctionaryLocalLogic *self);
-byte cFunctionaryLocalLogic_Vf02(cLocalLogic *elem);
+byte cFunctionaryLocalLogic_AcceptsArrow(cLocalLogic *elem);
 byte cFunctionaryLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, byte set);
 byte cFunctionaryLocalLogic_VarF(cLocalLogic *elem, const char *name, double *d, byte set);
 byte cFunctionaryLocalLogic_VarS(cLocalLogic *elem, const char *name, char **s, byte set);
@@ -546,7 +546,7 @@ byte cFunctionaryLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 void cFunctionaryLocalLogic_SetIdle(cLocalLogic *elem, byte idle);
 void cFunctionaryLocalLogic_UpdateView(cLocalLogic *elem);
 void cFunctionaryLocalLogic_Work(cLocalLogic *elem, float dt);
-void cFunctionaryLocalLogic_Vf33(cLocalLogic *elem, byte restart);
+void cFunctionaryLocalLogic_BreakWork(cLocalLogic *elem, byte restart);
 void cFunctionaryLocalLogic_StopWork(cLocalLogic *base, byte restart);
 /* GenCharLogic.cpp (imports): the variables, vf12 (a robbery seen) */
 byte cGenCharLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, byte set);

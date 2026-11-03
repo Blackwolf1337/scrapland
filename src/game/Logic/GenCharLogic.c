@@ -184,7 +184,7 @@ void cGenCharLocalLogic_Update(cLocalLogic *elem, float dt) {
 		self->accuseAgain = 0.0f;
 	}
 	if (b->busy) {
-		GenChar_Vf33(self, 1);
+		GenChar_BreakWork(self, 1);
 		return;
 	}
 	cEntity *usr = ChType_Usr0();
@@ -225,7 +225,7 @@ states:
 			}
 		} else if (Obj(p)->move.active && (b->idle || b->alwaysLock)) {
 			cObjMove_SetTime(&Obj(p)->move, 0.0f);
-			GenChar_Vf33(self, 0);
+			GenChar_BreakWork(self, 0);
 		} else if (!b->idle && !b->alwaysLock) {
 			cEntity *e;
 			if (GenChar_CanAttack(self, p) && (e = GenChar_FindTarget(self)) != NULL) {
@@ -549,7 +549,7 @@ byte cGenCharLocalLogic_CanAttack(cLocalLogic *base, cEntity *e) {
 static const cGenCharLocalLogicVtbl cGenCharLocalLogic_vftable = {
 	.base.base.Delete = cGenCharLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
-	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,
 	.base.base.VarF = cBaseLocalLogic_VarF,
 	.base.base.VarS = cGenCharLocalLogic_VarS,
@@ -580,7 +580,7 @@ static const cGenCharLocalLogicVtbl cGenCharLocalLogic_vftable = {
 	.FindTarget = (void *)crt_purecall,
 	.TargetDone = (void *)crt_purecall,
 	.Work = cLocalLogic_WorkNop,
-	.Vf33 = cLocalLogic_Vf33Nop,
+	.BreakWork = cLocalLogic_BreakWorkNop,
 	.GoTo = cGenCharLocalLogic_GoTo,
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };

@@ -1307,7 +1307,7 @@ void cAICharControl_Stop(cAICharControl *self) {
 	c->jump = 0.0f;
 }
 
-byte cAICharControl_Vf89(cAICharControl *self) {
+byte cAICharControl_AIBlocked(cAICharControl *self) {
 	(void)self;
 	return 0;
 }
@@ -2124,7 +2124,7 @@ static const cAICharControlVtbl cAICharControl_vftable = {
 	.Wait = cAICharControl_Wait,
 	.CheckWait = cAICharControl_CheckWait,
 	.StrafeWalk = cAICharControl_StrafeWalk,
-	.Vf89 = cAICharControl_Vf89,
+	.AIBlocked = cAICharControl_AIBlocked,
 	.Strafe2 = cAICharControl_Strafe2,
 	.Walk = (void *)crt_purecall,
 	.Walk2 = cAICharControl_Walk2,

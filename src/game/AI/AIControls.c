@@ -519,7 +519,7 @@ static void cAIControlGear_Strafe(cAIControlGear *self) {
 }
 
 /* vf89: the AI of the gear saw the way to the target blocked */
-static byte cAIControlGear_Vf89(cAICharControl *self) {
+static byte cAIControlGear_AIBlocked(cAICharControl *self) {
 	return cAIGear_IsBlocked((cAIGear *)self->ai);
 }
 
@@ -849,7 +849,7 @@ static const cAICharControl2DVtbl cAIControlBankDirector_vftable = {
 	.base.Wait = cAICharControl_Wait,
 	.base.CheckWait = cAICharControl_CheckWait,
 	.base.StrafeWalk = cAICharControl_StrafeWalk,
-	.base.Vf89 = cAICharControl_Vf89,
+	.base.AIBlocked = cAICharControl_AIBlocked,
 	.base.Strafe2 = cAICharControl_Strafe2,
 	.base.Walk = cAIControlBank_Walk,
 	.base.Walk2 = cAICharControl_Walk2,
@@ -956,7 +956,7 @@ static const cAICharControl2DVtbl cAIControlBankMaster_vftable = {
 	.base.Wait = cAICharControl_Wait,
 	.base.CheckWait = cAICharControl_CheckWait,
 	.base.StrafeWalk = cAICharControl_StrafeWalk,
-	.base.Vf89 = cAICharControl_Vf89,
+	.base.AIBlocked = cAICharControl_AIBlocked,
 	.base.Strafe2 = cAICharControl_Strafe2,
 	.base.Walk = cAIControlBank_Walk,
 	.base.Walk2 = cAICharControl_Walk2,
@@ -1063,7 +1063,7 @@ static const cAICharControl2DVtbl cAIControlBishop_vftable = {
 	.base.Wait = cAICharControl_Wait,
 	.base.CheckWait = cAIControlBishop_CheckWait,
 	.base.StrafeWalk = cAICharControl_StrafeWalk,
-	.base.Vf89 = cAICharControl_Vf89,
+	.base.AIBlocked = cAICharControl_AIBlocked,
 	.base.Strafe2 = cAIControlBishop_Strafe2,
 	.base.Walk = cAIControlShoot_Walk,
 	.base.Walk2 = cAICharControl_Walk2,
@@ -1170,7 +1170,7 @@ static const cAICharControl2DVtbl cAIControlGear_vftable = {
 	.base.Wait = cAICharControl_Wait,
 	.base.CheckWait = cAIControlGear_CheckWait,
 	.base.StrafeWalk = cAICharControl_StrafeWalk,
-	.base.Vf89 = cAIControlGear_Vf89,
+	.base.AIBlocked = cAIControlGear_AIBlocked,
 	.base.Strafe2 = cAIControlGear_Strafe2,
 	.base.Walk = cAIControlShoot_Walk,
 	.base.Walk2 = cAICharControl_Walk2,
@@ -1277,7 +1277,7 @@ static const cAICharControl3DVtbl cAIControlMessenger_vftable = {
 	.base.Wait = cAICharControl_Wait,
 	.base.CheckWait = cAICharControl_CheckWait,
 	.base.StrafeWalk = cAICharControl_StrafeWalk,
-	.base.Vf89 = cAICharControl_Vf89,
+	.base.AIBlocked = cAICharControl_AIBlocked,
 	.base.Strafe2 = cAICharControl_Strafe2,
 	.base.Walk = cAICharControl3D_Walk,
 	.base.Walk2 = cAICharControl_Walk2,
@@ -1382,7 +1382,7 @@ static const cAICharControl3DVtbl cAIControlNurse_vftable = {
 	.base.Wait = cAICharControl_Wait,
 	.base.CheckWait = cAICharControl_CheckWait,
 	.base.StrafeWalk = cAICharControl_StrafeWalk,
-	.base.Vf89 = cAICharControl_Vf89,
+	.base.AIBlocked = cAICharControl_AIBlocked,
 	.base.Strafe2 = cAICharControl_Strafe2,
 	.base.Walk = cAIControlNurse_Walk,
 	.base.Walk2 = cAICharControl_Walk2,
@@ -1487,7 +1487,7 @@ static const cAICharControl3DVtbl cAIControlSentinel_vftable = {
 	.base.Wait = cAICharControl_Wait,
 	.base.CheckWait = cAICharControl_CheckWait,
 	.base.StrafeWalk = cAICharControl_StrafeWalk,
-	.base.Vf89 = cAICharControl_Vf89,
+	.base.AIBlocked = cAICharControl_AIBlocked,
 	.base.Strafe2 = cAIControlSentinel_Strafe2,
 	.base.Walk = cAIControlSentinel_Walk,
 	.base.Walk2 = cAICharControl_Walk2,

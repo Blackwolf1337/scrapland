@@ -731,32 +731,32 @@ byte cLocalLogic_VarSFalse(cLocalLogic *self, const char *name, char **s, byte s
 	return 0;
 }
 
-/* the slot Vf02 of a class that does only return 1 */
-byte cLocalLogic_Vf02True(cLocalLogic *self) {
+/* the slot AcceptsArrow of a class that does only return 1 */
+byte cLocalLogic_AcceptsArrowTrue(cLocalLogic *self) {
 	(void)self;
 	return 1;
 }
 
-/* the slot Vf33 of a class that does nothing there */
-void cLocalLogic_Vf33Nop(cLocalLogic *self, byte restart) {
+/* the slot BreakWork of a class that does nothing there */
+void cLocalLogic_BreakWorkNop(cLocalLogic *self, byte restart) {
 	(void)self;
 	(void)restart;
 }
 
-/* the slot Vf42 of a class that does nothing there */
-void cLocalLogic_Vf42Nop(cLocalLogic *self, int arg) {
+/* the slot Unused42 of a class that does nothing there */
+void cLocalLogic_Unused42Nop(cLocalLogic *self, int arg) {
 	(void)self;
 	(void)arg;
 }
 
-/* the slot Vf43 of a class that does nothing there */
-void cLocalLogic_Vf43Nop(cLocalLogic *self, int arg) {
+/* the slot Unused43 of a class that does nothing there */
+void cLocalLogic_Unused43Nop(cLocalLogic *self, int arg) {
 	(void)self;
 	(void)arg;
 }
 
-/* the slot Vf44 of a class that does nothing there */
-void cLocalLogic_Vf44Nop(cLocalLogic *self, int arg) {
+/* the slot Unused44 of a class that does nothing there */
+void cLocalLogic_Unused44Nop(cLocalLogic *self, int arg) {
 	(void)self;
 	(void)arg;
 }
@@ -771,7 +771,7 @@ void cLocalLogic_WorkNop(cLocalLogic *self, float dt) {
 static const cLocalLogicVtbl cLocalLogic_vftable = {
 	.Delete = cLocalLogic_Delete,
 	.GetName = cLocalLogic_GetName,
-	.Vf02 = cLocalLogic_Vf02True,
+	.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.VarI = cLocalLogic_VarIFalse,
 	.VarF = cLocalLogic_VarFFalse,
 	.VarS = cLocalLogic_VarSFalse,
@@ -782,7 +782,7 @@ static const cLocalLogicVtbl cLocalLogic_vftable = {
 static const cBaseLocalLogicVtbl cBaseLocalLogic_vftable = {
 	.base.Delete = cBaseLocalLogic_Delete,
 	.base.GetName = cBaseLocalLogic_GetName,
-	.base.Vf02 = cLocalLogic_Vf02True,
+	.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.VarI = cBaseLocalLogic_VarI,
 	.base.VarF = cBaseLocalLogic_VarF,
 	.base.VarS = cBaseLocalLogic_VarS,

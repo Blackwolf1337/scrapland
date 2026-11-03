@@ -459,11 +459,11 @@ byte cEntity_TestLine(cEntity *self, const vec3_t *from, vec3_t *hit) {
 	return 0;
 }
 
-void cEntity_Vf20(cEntity *self) {
+void cEntity_Unused20(cEntity *self) {
 	(void)self;
 }
 
-int cEntity_Vf21(cEntity *self, int a) {
+int cEntity_Unused21(cEntity *self, int a) {
 	(void)self;
 	(void)a;
 	return 0;
@@ -491,7 +491,7 @@ static const cEntityVtbl cEntity_vftable = {
 	.VarF = cEntity_VarF,
 	.VarS = cEntity_VarS,
 	.VarV = cEntity_VarV,
-	.Vf20 = cEntity_Vf20,
-	.Vf21 = cEntity_Vf21,
+	.Unused20 = cEntity_Unused20,
+	.Unused21 = cEntity_Unused21,
 	.GetAI = cEntity_GetAI,
 };

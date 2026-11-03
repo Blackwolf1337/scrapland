@@ -243,7 +243,7 @@ static byte cGateKeeperLocalLogic_SetState(cLocalLogic *elem, int state, cEntity
 static const cBaseLocalLogicVtbl cGateKeeperLocalLogic_vftable = {
 	.base.Delete = cGateKeeperLocalLogic_Delete,
 	.base.GetName = cBaseLocalLogic_GetName,
-	.base.Vf02 = cLocalLogic_Vf02True,
+	.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.VarI = cBaseLocalLogic_VarI,
 	.base.VarF = cBaseLocalLogic_VarF,
 	.base.VarS = cBaseLocalLogic_VarS,

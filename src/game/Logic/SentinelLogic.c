@@ -411,7 +411,7 @@ static byte cSentinelLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *
 static const cSentinelLocalLogicVtbl cSentinelLocalLogic_vftable = {
 	.base.base.Delete = cSentinelLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
-	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cBaseLocalLogic_VarI,
 	.base.base.VarF = cBaseLocalLogic_VarF,
 	.base.base.VarS = cBaseLocalLogic_VarS,

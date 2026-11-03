@@ -22,17 +22,6 @@ static cGVar GVar_BossWorkingTime;
 static cGVar GVar_BossWorkPlace;
 static cGVar GVar_BossWalkingTime;
 
-/* the AI slot the boss asks */
-typedef struct cLogicBossAIVtbl {
-	void *vf00_12[19];
-	byte(*Arrived)(void *self);	/* 0x4c */
-} cLogicBossAIVtbl;
-
-/* calls through the slots of cLogicBossAIVtbl */
-static inline byte BossAI_Arrived(void *self) {
-	return VT(cLogicBossAIVtbl, self)->Arrived(self);
-}
-
 cBossLocalLogic *cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity *parent) {
 	char name[0x80];
 	byte flag;
@@ -57,7 +46,7 @@ static cLocalLogic *cBossLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 }
 
 /* vf33 (0x84): at work, the end of the work */
-static void cBossLocalLogic_Vf33(cLocalLogic *elem, byte on) {
+static void cBossLocalLogic_BreakWork(cLocalLogic *elem, byte on) {
 	cBossLocalLogic *self = (cBossLocalLogic *)elem;
 	if (self->base.base.state != BOSS_WORK || !on) {
 		return;
@@ -89,7 +78,7 @@ static void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
 			return;
 		}
 		void *ai = Entity_GetAI(p);
-		if (!ai || AIChar_GetState(ai) != AIC_STATIC || !BossAI_Arrived(ai)) {
+		if (!ai || AIChar_GetState(ai) != AIC_STATIC || !AIMove_GetArrived(ai)) {
 			return;
 		}
 		cObjMove *m = &Obj(p)->move;
@@ -164,7 +153,7 @@ static byte cBossLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 static const cGenCharLocalLogicVtbl cBossLocalLogic_vftable = {
 	.base.base.Delete = cBossLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
-	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,
 	.base.base.VarF = cBaseLocalLogic_VarF,
 	.base.base.VarS = cGenCharLocalLogic_VarS,
@@ -195,7 +184,7 @@ static const cGenCharLocalLogicVtbl cBossLocalLogic_vftable = {
 	.FindTarget = cLocalLogic_FindTargetNull,
 	.TargetDone = cLocalLogic_TargetDoneTrue,
 	.Work = cLocalLogic_WorkNop,
-	.Vf33 = cBossLocalLogic_Vf33,
+	.BreakWork = cBossLocalLogic_BreakWork,
 	.GoTo = cGenCharLocalLogic_GoTo,
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };

@@ -10,17 +10,6 @@
 #define CBISHOPLOCALLOGIC_VFTABLE (&cBishopLocalLogic_vftable.base)
 static const cGenCharLocalLogicVtbl cBishopLocalLogic_vftable;
 
-/* the AI slot the bishop asks */
-typedef struct cLogicBishopAIVtbl {
-	void *vf00_24[37];
-	byte(*Vf94)(void *self);	/* 0x94 */
-} cLogicBishopAIVtbl;
-
-/* calls through the slots of cLogicBishopAIVtbl */
-static inline byte BishopAI_Vf94(void *self) {
-	return VT(cLogicBishopAIVtbl, self)->Vf94(self);
-}
-
 cBishopLocalLogic *cBishopLocalLogic_ctor(cBishopLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
 	self->base.vftable = CBISHOPLOCALLOGIC_VFTABLE;
@@ -48,7 +37,7 @@ static byte cBishopLocalLogic_LoseTarget(cLocalLogic *elem) {
 	}
 	cEntity *p = self->base.parent;
 	void *ai = Entity_GetAI(p);
-	if (!BishopAI_Vf94(ai)) {
+	if (!AIChar_GetDirect(ai)) {
 		return 1;
 	}
 	cBaseLocalLogic *l = (cBaseLocalLogic *)Logic_GetLocalLogic(t);
@@ -115,7 +104,7 @@ static void cBishopLocalLogic_OnAlarm(cLocalLogic *elem, cEntity *target) {
 static const cGenCharLocalLogicVtbl cBishopLocalLogic_vftable = {
 	.base.base.Delete = cBishopLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
-	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,
 	.base.base.VarF = cBaseLocalLogic_VarF,
 	.base.base.VarS = cGenCharLocalLogic_VarS,
@@ -146,7 +135,7 @@ static const cGenCharLocalLogicVtbl cBishopLocalLogic_vftable = {
 	.FindTarget = cBishopLocalLogic_FindTarget,
 	.TargetDone = cBishopLocalLogic_LoseTarget,
 	.Work = cLocalLogic_WorkNop,
-	.Vf33 = cLocalLogic_Vf33Nop,
+	.BreakWork = cLocalLogic_BreakWorkNop,
 	.GoTo = cGenCharLocalLogic_GoTo,
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };

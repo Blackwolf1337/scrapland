@@ -64,7 +64,7 @@ static cLocalLogic *cHumanLocalLogic_Delete(cLocalLogic *base, byte flags) {
 static const cBaseLocalLogicVtbl cHumanLocalLogic_vftable = {
 	.base.Delete = cHumanLocalLogic_Delete,
 	.base.GetName = cBaseLocalLogic_GetName,
-	.base.Vf02 = cLocalLogic_Vf02True,
+	.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.VarI = cBaseLocalLogic_VarI,
 	.base.VarF = cBaseLocalLogic_VarF,
 	.base.VarS = cBaseLocalLogic_VarS,

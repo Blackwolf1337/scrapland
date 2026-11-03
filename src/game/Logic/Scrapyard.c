@@ -319,7 +319,7 @@ static cLocalLogic *ShipGroup_MakeLogic(cEntity *e) {
 static const cLocalLogicVtbl cScrapyardLocalLogic_vftable = {
 	.Delete = cScrapyardLocalLogic_Delete,
 	.GetName = cLocalLogic_GetName,
-	.Vf02 = cLocalLogic_Vf02True,
+	.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.VarI = cLocalLogic_VarIFalse,
 	.VarF = cLocalLogic_VarFFalse,
 	.VarS = cLocalLogic_VarSFalse,

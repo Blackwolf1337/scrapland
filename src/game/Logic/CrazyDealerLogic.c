@@ -33,7 +33,7 @@ static void cCrazyDealerLocalLogic_Update(cLocalLogic *base, float dt) {
 static const cGenCharLocalLogicVtbl cCrazyDealerLocalLogic_vftable = {
 	.base.base.Delete = cCrazyDealerLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
-	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,
 	.base.base.VarF = cBaseLocalLogic_VarF,
 	.base.base.VarS = cGenCharLocalLogic_VarS,
@@ -64,7 +64,7 @@ static const cGenCharLocalLogicVtbl cCrazyDealerLocalLogic_vftable = {
 	.FindTarget = cLocalLogic_FindTargetNull,
 	.TargetDone = cLocalLogic_TargetDoneTrue,
 	.Work = cLocalLogic_WorkNop,
-	.Vf33 = cLocalLogic_Vf33Nop,
+	.BreakWork = cLocalLogic_BreakWorkNop,
 	.GoTo = cGenCharLocalLogic_GoTo,
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };

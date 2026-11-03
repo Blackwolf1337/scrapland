@@ -212,7 +212,7 @@ static void CSoundXBox_DeleteAllSounds(CSoundSys *base) {
 	HashTable *t = &self->sounds;
 
 	SoundSys_StopAllSounds(self);
-	CSoundSys_CallVf1c(&self->sys);
+	CSoundSys_CallCloseHook(&self->sys);
 	for (;;) {
 		int i = 0;
 		if ((int)t->numSlots < 1) {
@@ -495,9 +495,9 @@ static const CSoundSysVtbl CSoundXBox_vftable = {
 	.SetListener = CSoundSys_SetListener,
 	.Compute3D = CSoundSys_Compute3D,
 	.SetMusic = CSoundSys_SetMusic,
-	.vf1a = CSoundSys_Nop,
+	.Unused1a = CSoundSys_Nop,
 	.StopMusic = CSoundSys_StopMusic,
-	.vf1c = CSoundSys_Nop,
+	.CloseHook = CSoundSys_Nop,
 	.SetMusicVolume = CSoundSys_SetMusicVolume,
 	.GetSoundName = CSoundSys_GetSoundName,
 	.DebugDraw = CSoundXBox_DebugDraw,

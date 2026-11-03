@@ -66,7 +66,7 @@ static void cBankMasterLocalLogic_OnAttack(cLocalLogic *elem, cEntity *attacker,
 static const cGenCharLocalLogicVtbl cBankMasterLocalLogic_vftable = {
 	.base.base.Delete = cBankMasterLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
-	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,
 	.base.base.VarF = cBaseLocalLogic_VarF,
 	.base.base.VarS = cGenCharLocalLogic_VarS,
@@ -97,7 +97,7 @@ static const cGenCharLocalLogicVtbl cBankMasterLocalLogic_vftable = {
 	.FindTarget = cBankMasterLocalLogic_FindTarget,
 	.TargetDone = cBankDirectorLocalLogic_LoseTarget,
 	.Work = cLocalLogic_WorkNop,
-	.Vf33 = cLocalLogic_Vf33Nop,
+	.BreakWork = cLocalLogic_BreakWorkNop,
 	.GoTo = cGenCharLocalLogic_GoTo,
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };

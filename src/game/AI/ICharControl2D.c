@@ -154,7 +154,7 @@ byte cAICharControl2D_UpdateFollow(cAICharControl2D *self) {
 		do {
 			float d = AICC2D_DistTo(self, T.x, T.z);
 			self->stuck = 0;
-			if (d > self->farDist || AICC_Vf89(self)) {
+			if (d > self->farDist || AICC_AIBlocked(self)) {
 				float r = self->radius;
 				if (!AICC_TestPathEnd(self, AICC_Pos(self, &buf), &T, r)) {
 					goto lost;
@@ -198,7 +198,7 @@ byte cAICharControl2D_UpdateFollow(cAICharControl2D *self) {
 	if (cSlotController_Tick(&self->slotSee, self->dt) && cSlotController_FireReset(&self->slotSee, &f)) {
 		do {
 			float d = AICC2D_DistTo(self, T.x, T.z);
-			if (d > self->farDist || AICC_Vf89(self)) {
+			if (d > self->farDist || AICC_AIBlocked(self)) {
 				float r = self->radius;
 				if (!AICC_TestPathEnd(self, AICC_Pos(self, &buf), &T, r)) {
 					continue;
@@ -1211,7 +1211,7 @@ static const cAICharControl2DVtbl cAICharControl2D_vftable = {
 	.base.Wait = cAICharControl_Wait,
 	.base.CheckWait = cAICharControl_CheckWait,
 	.base.StrafeWalk = cAICharControl_StrafeWalk,
-	.base.Vf89 = cAICharControl_Vf89,
+	.base.AIBlocked = cAICharControl_AIBlocked,
 	.base.Strafe2 = cAICharControl_Strafe2,
 	.base.Walk = cAICharControl2D_Walk,
 	.base.Walk2 = cAICharControl_Walk2,

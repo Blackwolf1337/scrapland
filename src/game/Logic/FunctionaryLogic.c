@@ -162,7 +162,7 @@ static void cFunctionaryLocalLogic_AssignDesktop(cLocalLogic *base, float maxDis
 /* vf02: an escaping functionary runs at normal speed; another type of player than "Functionary" makes it
  * suspicious (state 3) unless it wants to talk */
 static void cFunctionaryLocalLogic_NormalSpeed(cFunctionaryLocalLogic *self, cEntity *e);
-byte cFunctionaryLocalLogic_Vf02(cLocalLogic *elem) {
+byte cFunctionaryLocalLogic_AcceptsArrow(cLocalLogic *elem) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	if (Functionary_FastEscape(self) && (self->base.base.idle || self->base.base.alwaysLock ||
 		self->escapeInRadius)) {
@@ -179,7 +179,7 @@ byte cFunctionaryLocalLogic_Vf02(cLocalLogic *elem) {
 }
 
 /* vf33: back to the start while working with time left */
-void cFunctionaryLocalLogic_Vf33(cLocalLogic *elem, byte restart) {
+void cFunctionaryLocalLogic_BreakWork(cLocalLogic *elem, byte restart) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	if (self->base.base.state != FUNC_WORK) {
 		return;
@@ -758,7 +758,7 @@ static vec3_t *cFunctionaryLocalLogic_GetWorkAng(cLocalLogic *base, vec3_t *out)
 static const cFunctionaryLocalLogicVtbl cFunctionaryLocalLogic_vftable = {
 	.base.base.base.Delete = cFunctionaryLocalLogic_Delete,
 	.base.base.base.GetName = cBaseLocalLogic_GetName,
-	.base.base.base.Vf02 = cFunctionaryLocalLogic_Vf02,
+	.base.base.base.AcceptsArrow = cFunctionaryLocalLogic_AcceptsArrow,
 	.base.base.base.VarI = cFunctionaryLocalLogic_VarI,
 	.base.base.base.VarF = cFunctionaryLocalLogic_VarF,
 	.base.base.base.VarS = cFunctionaryLocalLogic_VarS,
@@ -789,7 +789,7 @@ static const cFunctionaryLocalLogicVtbl cFunctionaryLocalLogic_vftable = {
 	.base.FindTarget = cLocalLogic_FindTargetNull,
 	.base.TargetDone = cLocalLogic_TargetDoneTrue,
 	.base.Work = cFunctionaryLocalLogic_Work,
-	.base.Vf33 = cFunctionaryLocalLogic_Vf33,
+	.base.BreakWork = cFunctionaryLocalLogic_BreakWork,
 	.base.GoTo = cGenCharLocalLogic_GoTo,
 	.base.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 	.CanTalk = cFunctionaryLocalLogic_CanTalk,

@@ -182,7 +182,7 @@ static void cWalkCharEntity_ActionTick(cEntity *self, float dt) {
 				cPy_Function_Execute(&WCE_Class(w)->photoPress, 0);
 			} else {
 				cLocalLogic *l = t->lLogic;
-				if (!l || LocalLogic_Vf02(l)) {
+				if (!l || LocalLogic_AcceptsArrow(l)) {
 					cArrowIndicator_Execute(&WLife(t)->arrow, self);
 				}
 			}
@@ -1909,8 +1909,8 @@ static const cWalkCharVtbl cWalkCharEntity_vftable = {
 	.base.base.base.VarF = cWalkCharEntity_VarF,
 	.base.base.base.VarS = cWalkCharEntity_VarS,
 	.base.base.base.VarV = cWalkCharEntity_VarV,
-	.base.base.base.Vf20 = cEntity_Vf20,
-	.base.base.base.Vf21 = cEntity_Vf21,
+	.base.base.base.Unused20 = cEntity_Unused20,
+	.base.base.base.Unused21 = cEntity_Unused21,
 	.base.base.base.GetAI = cEntity_GetAI,
 	.base.base.Tick = cWalkCharEntity_Tick,
 	.base.base.UpdateModel = cWalkCharEntity_UpdateModel,

@@ -407,7 +407,7 @@ static void cMessengerLocalLogic_GoTo(cLocalLogic *elem, cAIChar *ai, cEntity *e
 static const cGenCharLocalLogicVtbl cMessengerLocalLogic_vftable = {
 	.base.base.Delete = cMessengerLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
-	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,
 	.base.base.VarF = cBaseLocalLogic_VarF,
 	.base.base.VarS = cGenCharLocalLogic_VarS,
@@ -438,7 +438,7 @@ static const cGenCharLocalLogicVtbl cMessengerLocalLogic_vftable = {
 	.FindTarget = cLocalLogic_FindTargetNull,
 	.TargetDone = cLocalLogic_TargetDoneFalse,
 	.Work = cLocalLogic_WorkNop,
-	.Vf33 = cLocalLogic_Vf33Nop,
+	.BreakWork = cLocalLogic_BreakWorkNop,
 	.GoTo = cMessengerLocalLogic_GoTo,
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };

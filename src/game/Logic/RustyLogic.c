@@ -229,7 +229,7 @@ static byte cRustyLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *tar
 static const cGenCharLocalLogicVtbl cRustyLocalLogic_vftable = {
 	.base.base.Delete = cRustyLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
-	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cRustyLocalLogic_VarI,
 	.base.base.VarF = cBaseLocalLogic_VarF,
 	.base.base.VarS = cRustyLocalLogic_VarS,
@@ -260,7 +260,7 @@ static const cGenCharLocalLogicVtbl cRustyLocalLogic_vftable = {
 	.FindTarget = cLocalLogic_FindTargetNull,
 	.TargetDone = cLocalLogic_TargetDoneTrue,
 	.Work = cLocalLogic_WorkNop,
-	.Vf33 = cLocalLogic_Vf33Nop,
+	.BreakWork = cLocalLogic_BreakWorkNop,
 	.GoTo = cGenCharLocalLogic_GoTo,
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };

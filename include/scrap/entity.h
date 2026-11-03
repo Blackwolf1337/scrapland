@@ -45,8 +45,8 @@ typedef struct cEntityVtbl {
 	byte(*VarF)(cEntity *self, const char *name, double *d, int set);			/* 0x44 vf17 */
 	byte(*VarS)(cEntity *self, const char *name, char **s, int set);			/* 0x48 vf18 */
 	byte(*VarV)(cEntity *self, const char *name, double *x, double *y, double *z, int set); /* 0x4c */
-	void(*Vf20)(cEntity *self);				/* 0x50 vf20 */
-	int(*Vf21)(cEntity *self, int a);			/* 0x54 vf21 */
+	void(*Unused20)(cEntity *self);				/* 0x50 vf20, nothing and never called */
+	int(*Unused21)(cEntity *self, int a);			/* 0x54 vf21, 0 and never called */
 	void *(*GetAI)(cEntity *self);				/* 0x58 vf22 */
 } cEntityVtbl;
 
@@ -225,8 +225,8 @@ byte cEntity_VarV(cEntity *self, const char *name, double *x, double *y, double 
 void *cEntity_GetAI(cEntity *self);
 /* the inline virtual functions of Entity.h: vf09 and vf10 (no hit), vf11, vf20 (nothing) and vf21 (0) */
 byte cEntity_TestLine(cEntity *self, const vec3_t *from, vec3_t *hit);
-void cEntity_Vf20(cEntity *self);
-int cEntity_Vf21(cEntity *self, int a);
+void cEntity_Unused20(cEntity *self);
+int cEntity_Unused21(cEntity *self, int a);
 byte cEntity_NetNeedsSendTrue(cEntity *self, float dist2);
 void cEntity_NetReadNop(cEntity *self, void *msg, int isNew);
 void cEntity_NetWriteNop(cEntity *self, float dist2, void *msg, int full);

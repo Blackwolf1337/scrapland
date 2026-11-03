@@ -478,7 +478,7 @@ static byte cGearLocalLogic_VarS(cLocalLogic *elem, const char *name, char **s, 
 static const cBaseLocalLogicVtbl cGearLocalLogic_vftable = {
 	.base.Delete = cGearLocalLogic_Delete,
 	.base.GetName = cBaseLocalLogic_GetName,
-	.base.Vf02 = cLocalLogic_Vf02True,
+	.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.VarI = cGearLocalLogic_VarI,
 	.base.VarF = cBaseLocalLogic_VarF,
 	.base.VarS = cGearLocalLogic_VarS,

@@ -112,7 +112,7 @@ void cBankDirectorLocalLogic_Update(cLocalLogic *base, float dt) {
 static const cGenCharLocalLogicVtbl cBankDirectorLocalLogic_vftable = {
 	.base.base.Delete = cBankDirectorLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
-	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,
 	.base.base.VarF = cBaseLocalLogic_VarF,
 	.base.base.VarS = cGenCharLocalLogic_VarS,
@@ -143,7 +143,7 @@ static const cGenCharLocalLogicVtbl cBankDirectorLocalLogic_vftable = {
 	.FindTarget = cBankDirectorLocalLogic_FindTarget,
 	.TargetDone = cBankDirectorLocalLogic_LoseTarget,
 	.Work = cLocalLogic_WorkNop,
-	.Vf33 = cLocalLogic_Vf33Nop,
+	.BreakWork = cLocalLogic_BreakWorkNop,
 	.GoTo = cGenCharLocalLogic_GoTo,
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };

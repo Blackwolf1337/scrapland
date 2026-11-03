@@ -81,9 +81,9 @@ typedef struct CSoundSysVtbl {
 	void(*Compute3D)(CSoundSys *self, cSoundDesc *d, const vec3_t *pos, const vec3_t *vel,
 		byte doppler);								/* 0x60 */
 	void(*SetMusic)(CSoundSys *self, const char *name);			/* 0x64 */
-	void(*vf1a)(CSoundSys *self);					/* 0x68 */
+	void(*Unused1a)(CSoundSys *self);					/* 0x68 nothing, never called */
 	void(*StopMusic)(CSoundSys *self);					/* 0x6c */
-	void(*vf1c)(CSoundSys *self);					/* 0x70 */
+	void(*CloseHook)(CSoundSys *self);					/* 0x70 nothing in every class, called by Close */
 	void(*SetMusicVolume)(CSoundSys *self, float volume);		/* 0x74 */
 	/* the sound name of a file name: without directory and extension */
 	void(*GetSoundName)(CSoundSys *self, const char *file, char *out, int size);	/* 0x78 */
@@ -224,8 +224,8 @@ static inline byte SoundSys_VoiceRemain(void *self, int voice, float *remain) {
 	return VT(CSoundSysVtbl, self)->VoiceRemain(self, voice, remain);
 }
 
-static inline void SoundSys_vf1c(void *self) {
-	VT(CSoundSysVtbl, self)->vf1c(self);
+static inline void SoundSys_CloseHook(void *self) {
+	VT(CSoundSysVtbl, self)->CloseHook(self);
 }
 
 struct CSoundSys {
@@ -297,7 +297,7 @@ void CSoundSys_dtor(CSoundSys *self);
 void CSoundSys_InitFmod(CSoundSys *self);
 void CSoundSys_Close(CSoundSys *self);
 void CSoundSys_Nop(CSoundSys *self);
-void CSoundSys_CallVf1c(CSoundSys *self);
+void CSoundSys_CallCloseHook(CSoundSys *self);
 void CSoundSys_SetVolume(CSoundSys *self, const char *name, int volume);
 void CSoundSys_SetPan(CSoundSys *self, const char *name, int pan);
 void CSoundSys_SetFreq(CSoundSys *self, const char *name, float freq);

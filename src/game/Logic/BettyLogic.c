@@ -52,7 +52,7 @@ static vec3_t *cBettyLocalLogic_GetWorkAng(cLocalLogic *elem, vec3_t *out) {
 static const cFunctionaryLocalLogicVtbl cBettyLocalLogic_vftable = {
 	.base.base.base.Delete = cBettyLocalLogic_Delete,
 	.base.base.base.GetName = cBaseLocalLogic_GetName,
-	.base.base.base.Vf02 = cFunctionaryLocalLogic_Vf02,
+	.base.base.base.AcceptsArrow = cFunctionaryLocalLogic_AcceptsArrow,
 	.base.base.base.VarI = cFunctionaryLocalLogic_VarI,
 	.base.base.base.VarF = cFunctionaryLocalLogic_VarF,
 	.base.base.base.VarS = cFunctionaryLocalLogic_VarS,
@@ -83,7 +83,7 @@ static const cFunctionaryLocalLogicVtbl cBettyLocalLogic_vftable = {
 	.base.FindTarget = cLocalLogic_FindTargetNull,
 	.base.TargetDone = cLocalLogic_TargetDoneTrue,
 	.base.Work = cFunctionaryLocalLogic_Work,
-	.base.Vf33 = cFunctionaryLocalLogic_Vf33,
+	.base.BreakWork = cFunctionaryLocalLogic_BreakWork,
 	.base.GoTo = cGenCharLocalLogic_GoTo,
 	.base.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 	.CanTalk = cLocalLogic_CanTalkTrue,
