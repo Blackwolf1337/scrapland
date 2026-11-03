@@ -638,7 +638,7 @@ static PyObject *SAI_EnableAIVehicle(PyObject *self, PyObject *args) {
 		*cAIVehicle_GetParams3(ai) = p3;
 	}
 	else {
-		Veh_EnableAI(e, on, &p1, &p2, &p3);
+		cVehicleEntity_EnableAI(Veh(e), on, &p1, &p2, &p3);
 	}
 	return Py_BuildValue("i", 1);
 }

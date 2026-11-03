@@ -432,7 +432,7 @@ static void cClientNetManager_SetLocalData(cUserNetManager *elem) {
 	Str_Copy(self->model, Veh(e)->typeName, sizeof(self->model));
 	self->maxLife = (uint16_t)Veh(e)->maxLife;
 	Str_Copy(self->usrName, WLife(e)->usrName ? WLife(e)->usrName : "", sizeof(self->usrName));
-	Str_Copy(self->pilot, Veh_GetPilot(Veh(e), 0), sizeof(self->pilot));
+	Str_Copy(self->pilot, cVehicleEntity_GetPilot(Veh(e), 0), sizeof(self->pilot));
 	for (uint32_t m = 0; m < 4; m++) {
 		Str_Copy(self->motors[m], cVehicleMotors_GetMotorName(NetEnt_Motors(e), m, NULL), sizeof(self->motors[m]));
 	}

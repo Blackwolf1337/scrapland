@@ -161,63 +161,6 @@ static inline struct cEmbeddedFXVehicle *Veh_FX(const cVehicleEntity *v) {
 #define Vehicle_Player(e) (Veh(e)->wl.obj.cam)		/* the follow camera: driven by a player */
 
 /* the cVehicleEntity vtable slots called here */
-/* cVehicleEntity::vftable: the slots of the vehicle after the ones of cWithLifeEntity */
-typedef struct cVehicleEntityVtbl {
-	cWithLifeEntityVtbl base;
-	void(*UpdateSounds)(cEntity *self, float dt);			/* 0xe0 vf56 */
-	void(*UpdateHistory)(cEntity *self);				/* 0xe4 vf57 */
-	void(*EnableAI)(cEntity *self, byte enable, void *p1, void *p2, void *p3);	/* 0xe8 vf58 */
-	byte(*GetLaunchTaunts)(cEntity *self);				/* 0xec vf59 */
-	byte(*SetPilot)(cEntity *self, int slot, const char *name, float sx, float sy, float sz);
-												/* 0xf0 vf60 */
-	const char *(*GetPilot)(cEntity *self, int slot);			/* 0xf4 vf61 */
-	byte(*SetPilotAnim)(cEntity *self, int slot, int anim);		/* 0xf8 vf62 */
-	void(*UpdatePilot)(cEntity *self, int slot, float dt);		/* 0xfc vf63 */
-	byte(*GetPilotPos)(cEntity *self, int slot, vec3_t *pos, vec3_t *ang);	/* 0x100 vf64 */
-	void(*Crash)(cEntity *self, const vec3_t *acc, float force);	/* 0x104 vf65 */
-} cVehicleEntityVtbl;
-
-/* calls through the slots of cVehicleEntityVtbl */
-static inline void Veh_Crash(void *self, const vec3_t *acc, float force) {
-	VT(cVehicleEntityVtbl, self)->Crash(self, acc, force);
-}
-
-static inline void Veh_EnableAI(void *self, byte enable, void *p1, void *p2, void *p3) {
-	VT(cVehicleEntityVtbl, self)->EnableAI(self, enable, p1, p2, p3);
-}
-
-static inline byte Veh_GetLaunchTaunts(void *self) {
-	return VT(cVehicleEntityVtbl, self)->GetLaunchTaunts(self);
-}
-
-static inline const char *Veh_GetPilot(void *self, int slot) {
-	return VT(cVehicleEntityVtbl, self)->GetPilot(self, slot);
-}
-
-static inline byte Veh_GetPilotPos(void *self, int slot, vec3_t *pos, vec3_t *ang) {
-	return VT(cVehicleEntityVtbl, self)->GetPilotPos(self, slot, pos, ang);
-}
-
-static inline byte Veh_SetPilot(void *self, int slot, const char *name, float sx, float sy, float sz) {
-	return VT(cVehicleEntityVtbl, self)->SetPilot(self, slot, name, sx, sy, sz);
-}
-
-static inline byte Veh_SetPilotAnim(void *self, int slot, int anim) {
-	return VT(cVehicleEntityVtbl, self)->SetPilotAnim(self, slot, anim);
-}
-
-static inline void Veh_UpdateHistory(void *self) {
-	VT(cVehicleEntityVtbl, self)->UpdateHistory(self);
-}
-
-static inline void Veh_UpdatePilot(void *self, int slot, float dt) {
-	VT(cVehicleEntityVtbl, self)->UpdatePilot(self, slot, dt);
-}
-
-static inline void Veh_UpdateSounds(void *self, float dt) {
-	VT(cVehicleEntityVtbl, self)->UpdateSounds(self, dt);
-}
-
 /* the motors (rva 0x10d270.., not decompiled yet): their variables through the vtable at 0x720 */
 
 /* the engine variables */
@@ -270,5 +213,9 @@ void cVehicleEntity_UpdatePilotPos(cVehicleEntity *self, byte on);
 void cVehicleEntity_StartFade(cVehicleEntity *self);
 /* < 0 when no player controls the entity (assumed from SAI.EnableAI*) */
 int cVehicleEntity_GetOwnerSlot(cEntity *e);
+const char *cVehicleEntity_GetPilot(cVehicleEntity *self, int slot);
+byte cVehicleEntity_GetLaunchTaunts(cVehicleEntity *self);
+void cVehicleEntity_EnableAI(cVehicleEntity *self, byte enable, void *p1, void *p2, void *p3);
+byte cVehicleEntity_SetPilot(cVehicleEntity *self, int slot, const char *name, float sx, float sy, float sz);
 
 #endif

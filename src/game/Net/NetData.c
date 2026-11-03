@@ -192,7 +192,7 @@ void NetData_ReadUsrDescriptors(cAbstractFile *f) {
 		cPy_Function_AddParamS(g_ClientSetConfig, Veh(e)->typeName);
 		cPy_Function_AddParamI(g_ClientSetConfig, Veh(e)->maxLife);
 		cPy_Function_AddParamS(g_ClientSetConfig, WLife(e)->usrName ? WLife(e)->usrName : "");
-		cPy_Function_AddParamS(g_ClientSetConfig, Veh_GetPilot(Veh(e), 0));
+		cPy_Function_AddParamS(g_ClientSetConfig, cVehicleEntity_GetPilot(Veh(e), 0));
 		for (uint32_t m = 0; m < 4; m++) {
 			cPy_Function_AddParamS(g_ClientSetConfig, cVehicleMotors_GetMotorName(NetEnt_Motors(e), m, NULL));
 		}
@@ -227,7 +227,7 @@ static void NetData_ReadUsrDescriptor(cAbstractFile *f, cEntity *e) {
 		cVehicleMotors_SetMotor(NetEnt_Motors(e), m, s, 1.0f, 1.0f, 1.0f);
 	}
 	cAbstractFile_ReadString8(f, s, sizeof(s));
-	Veh_SetPilot(Veh(e), 0, s, 1.0f, 1.0f, 1.0f);
+	cVehicleEntity_SetPilot(Veh(e), 0, s, 1.0f, 1.0f, 1.0f);
 	cAbstractFile_ReadString8(f, s, sizeof(s));
 	cWeaponManager_SetWeapList(NetEnt_Weapons(e), s);
 	VFile_Read(f, &team, 4);
@@ -347,7 +347,7 @@ static void NetData_WriteUsrDescriptor(cAbstractFile *f, cEntity *e) {
 	for (uint32_t m = 0; m < 4; m++) {
 		cAbstractFile_WriteString8(f, cVehicleMotors_GetMotorName(NetEnt_Motors(e), m, NULL));
 	}
-	cAbstractFile_WriteString8(f, Veh_GetPilot(Veh(e), 0));
+	cAbstractFile_WriteString8(f, cVehicleEntity_GetPilot(Veh(e), 0));
 	cAbstractFile_WriteString8(f, cWeaponManager_GetWeapList(NetEnt_Weapons(e)));
 	v = (uint32_t)WLife(e)->arrow.tgType;
 	VFile_Write(f, &v, 4);

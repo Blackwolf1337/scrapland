@@ -199,7 +199,7 @@ void Alarm_Update(cAlarm *self, float dt) {
 	if (Entity_IsType(usr, TYEN_WALKCHAR)) {
 		Str_Copy(self->chars, ChType_ActClass(ChType_ActCtrl(usr))->name, 0x200);
 	} else if (Entity_IsType(usr, TYEN_CAR)) {
-		const char *pilot = Veh_GetPilot(usr, 0);
+		const char *pilot = cVehicleEntity_GetPilot(Veh(usr), 0);
 		if (*pilot) {
 			Str_Copy(self->chars, pilot + 2, 0x200);
 		}
