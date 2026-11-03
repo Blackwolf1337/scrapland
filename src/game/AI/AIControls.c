@@ -434,7 +434,8 @@ static void cAIControlBishop_Strafe(cAIControlBishop *self) {
 /* Nop of the control: the strafe parameters by the target */
 static void cAIControlBishop_SetParams(cAICharControl *elem) {
 	cAIControlBishop *self = (cAIControlBishop *)elem;
-	if (!self->base.target) {
+	/* the target may have died since the link was set: then the link is there but empty */
+	if (!self->base.target || !self->base.target->target) {
 		return;
 	}
 	cEntity *t = self->base.target->target;

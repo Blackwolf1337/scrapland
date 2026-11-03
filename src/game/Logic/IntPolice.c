@@ -431,7 +431,7 @@ static void AICtrl_UpdateSentinels(void *ctrl) {
 	for (n = Logic_ListFirst(self->sentinels); n; n = Logic_ListNext(n)) {
 		cBaseLocalLogic *l = (cBaseLocalLogic *)Logic_GetLocalLogic(n->data);
 		AICtrl_SentinelUpdate(l, 0.5f, found != NULL);
-		if (l->state == 5) {
+		if (l->state == SENTINEL_WATCH) {
 			cEntity *e = n->data;
 			CHECK(w->data);
 			Nto1Node_Unlink(w);
@@ -441,7 +441,7 @@ static void AICtrl_UpdateSentinels(void *ctrl) {
 			w->prev = h;
 			h->next->prev = w;
 			h->next = w;
-		} else if (l->state == 6) {
+		} else if (l->state == SENTINEL_ACCUSE_NPC) {
 			self->alerted = 1;
 		}
 		if (AICtrl_SentinelAccuses(l) && !found) {
