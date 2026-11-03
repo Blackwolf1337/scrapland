@@ -134,7 +134,7 @@ static void CMeshD3D_dtor(CMeshD3D *self) {
 	}
 	CMeshD3D_SetNode(self, NULL);
 	if (self->next) {
-		self->next->vftable->Delete(&self->next->base, 1);
+		Object3D_Delete(self->next, 1);
 		self->next = NULL;
 	}
 	MeshD3D_DeleteArray((void **)&self->pTri);
@@ -213,7 +213,7 @@ static void MeshD3DObj_Free(MeshD3DObj *obj) {
 static void CMeshD3D_Invalidate(IObject3D *base, void *dev) {
 	CMeshD3D *self = (CMeshD3D *)base;
 	if (self->next) {
-		self->next->vftable->ReleaseD3D(&self->next->base, dev);
+		Object3D_ReleaseD3D(self->next, dev);
 	}
 	MeshD3D_Release(&self->pVertVB);
 	MeshD3D_Release(&self->pVertIB);
@@ -234,7 +234,7 @@ static void CMeshD3D_Restore(IObject3D *base, void *dev) {
 	CMeshD3D *self = (CMeshD3D *)base;
 	CMeshD3D_CreateVB(self);
 	if (self->next) {
-		self->next->vftable->InitD3D(&self->next->base, dev);
+		Object3D_InitD3D(self->next, dev);
 	}
 }
 
@@ -290,7 +290,7 @@ static byte CMeshD3D_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 			m = CMeshD3D_ctor(m);
 		}
 		self->next = m;
-		m->vftable->Read(&m->base, f, ctx);
+		Object3D_Read(m, f, ctx);
 	}
 	CFileIO_Error(f, "MD3D");
 	return 1;
@@ -345,7 +345,7 @@ static byte CMeshD3D_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CFileIO_Write(f, &self->center, sizeof(self->center));
 	CFileIO_WriteInt(f, self->next != NULL);
 	if (self->next) {
-		self->next->vftable->Write(&self->next->base, f, ctx);
+		Object3D_Write(self->next, f, ctx);
 	}
 	CFileIO_EndBlockWrite(f, "MD3D");
 	return 1;
@@ -705,7 +705,7 @@ static void CMeshD3D_SetNode(CMeshD3D *self, CNode3D *node) {
 			m->node->Refs--;
 			CNode3D *old = m->node;
 			if (old->Refs == 0 && old) {
-				old->vftable->Delete(&old->ref, 1);
+				ObjRef_Delete(old, 1);
 			}
 			m->node = NULL;
 		}

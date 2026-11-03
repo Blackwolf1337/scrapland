@@ -101,7 +101,7 @@ static void Node_Unref(CNode3D **slot) {
 
 static void Obj3D_Delete(IObject3D **slot) {
 	if (*slot) {
-		(*slot)->vftable->Delete(*slot, 1);
+		Object3D_Delete(*slot, 1);
 		*slot = NULL;
 	}
 }
@@ -401,7 +401,7 @@ void CNode3D_Render(CNode3D *self, void *arg, CRenderNode *r) {
 	Render_SetWorldMatrix(&self->m, 1);
 	o = CNode3D_GetObj3D(self, r);
 	if (o) {
-		o->vftable->Render(o, arg, r);
+		Object3D_Render(o, arg, r);
 	}
 }
 
@@ -524,7 +524,7 @@ void CNode3D_Update(CNode3D *self, CRenderNode *r) {
 	}
 	o = CNode3D_GetObj3D(self, r);
 	if (o) {
-		o->vftable->Update(o, r);
+		Object3D_Update(o, r);
 	}
 	if (r) {
 		r->frame = g_FrameCount;

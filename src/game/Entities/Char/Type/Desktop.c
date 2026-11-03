@@ -41,13 +41,13 @@ static void ChType_FXDesktopFallEnd(cAbstractFile *params) {
 	if (WChar(v)->wl.obj.cam) {
 		cPad_Rumble(&g_Pads[0], 0.5f, 0.0f, 0.125f);
 	}
-	const vec3_t *c = Obj_Vtbl(v)->GetViewPos(v, &tmp);
+	const vec3_t *c = Obj_GetViewPos(v, &tmp);
 	if (!FX_IsVisible(c->x, c->y, c->z, 250.0f, g_FXDesktopFallEndDist, NULL, 0)) {
 		return;
 	}
 	cWorld *w = g_pWorld;
 	vec3_t cp = w->camPos[w->curCam];
-	c = Obj_Vtbl(v)->GetViewPos(v, &tmp);
+	c = Obj_GetViewPos(v, &tmp);
 	float dx = cp.x - c->x;
 	float dy = cp.y - c->y;
 	float dz = cp.z - c->z;
@@ -58,8 +58,8 @@ static void ChType_FXDesktopFallEnd(cAbstractFile *params) {
 	if (fall.y > -g_FallSoundVel) {
 		return;
 	}
-	float r = Obj_Vtbl(v)->GetRadius(v);
-	vec3_t p = *v->vftable->GetPos(v, &tmp);
+	float r = Obj_GetRadius(v);
+	vec3_t p = *Entity_GetPos(v, &tmp);
 	vec3_t hit, to;
 	/* the point it lands on: the floor below the feet, else a bit under its center */
 	float ax = p.x + 0.0f;
@@ -75,7 +75,7 @@ static void ChType_FXDesktopFallEnd(cAbstractFile *params) {
 	}
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXDesktopFallEndFile);
 	cDebris *dbr = cDebrisSys_NewElement(sys);
-	CGameModel_SetPos(Debris_Model(dbr), Obj_Vtbl(v)->GetViewPos(v, &tmp));
+	CGameModel_SetPos(Debris_Model(dbr), Obj_GetViewPos(v, &tmp));
 	dbr->life = 1.0f;
 	cDebrisSys_Drop(sys, dbr);
 	cObjElementFXParticleSystem *el = Debris_Element(dbr);
@@ -228,19 +228,19 @@ static void ChType_DesktopActionPress(cAbstractFile *params) {
 		float len = (float)__builtin_sqrt((double)(WChar(v)->control.walk * WChar(v)->control.walk +
 			WChar(v)->control.strafe * WChar(v)->control.strafe));
 		const vec3_t *vel = Vec3_RotateXY(&t1, &up, len * 0.25f, yaw);
-		Obj_Vtbl(v)->SetVel(v, vel);
+		Obj_SetVel(v, vel);
 		cActCtrl_Play(ChType_ActCtrl(v), jump, 0, 1.0f);
 		return;
 	}
 	if (strncmp(act, "ActUp", 5)) {
 		return;
 	}
-	float vx = Obj_Vtbl(v)->GetVel(v, &t1)->x;
+	float vx = Obj_GetVel(v, &t1)->x;
 	float speed = g_DesktopJumpSpeed;
-	v3.z = Obj_Vtbl(v)->GetVel(v, &t2)->z;
+	v3.z = Obj_GetVel(v, &t2)->z;
 	v3.x = vx;
 	v3.y = speed;
-	Obj_Vtbl(v)->SetVel(v, &v3);
+	Obj_SetVel(v, &v3);
 	if (!strcmp(act, "ActUpB")) {
 		cActCtrl_Play(ChType_ActCtrl(v), "ActMoreB", 0, 1.0f);
 	} else if (!strcmp(act, "ActUpF")) {
@@ -252,15 +252,15 @@ static void ChType_DesktopActionPress(cAbstractFile *params) {
 		cActCtrl_Play(ChType_ActCtrl(v), "ActMoreF", 0, 1.0f);
 		WChar(v)->displAng = 1.04719758f;
 	}
-	const vec3_t *p = v->vftable->GetPos(v, &t3);
+	const vec3_t *p = Entity_GetPos(v, &t3);
 	c.x = p->x + 0.0f;
 	c.y = p->y - 400.0f;
 	c.z = p->z + 0.0f;
 	target = NULL;
 	float radius = WLife(v)->prim.radius;
-	p = v->vftable->GetPos(v, &t3);
+	p = Entity_GetPos(v, &t3);
 	if (!cWorld_TestSphereEntities(g_pWorld, v, 0x10, p, radius, &target, 1, &c) || !target ||
-		!target->vftable->IsType(target, TYEN_WALKCHAR) || !ChType_ActCtrl(target)) {
+		!Entity_IsType(target, TYEN_WALKCHAR) || !ChType_ActCtrl(target)) {
 		return;
 	}
 	g_pWorld->money += g_DesktopJumpPrice;

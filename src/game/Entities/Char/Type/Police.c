@@ -56,7 +56,7 @@ static void FX_PoliceSteal(cEntity *attacker, cEntity *attacked) {
 	CHECK(Entity_IsType(attacker, TYEN_WALKCHAR));
 	CHECK(attacked);
 	CHECK(Entity_IsType(attacked, TYEN_WALKCHAR));
-	const vec3_t *p = attacker->vftable->GetPos(attacker, &tmp);
+	const vec3_t *p = Entity_GetPos(attacker, &tmp);
 	if (!FX_IsVisible(p->x, p->y, p->z, 2500.0f, 0.0f, NULL, 0)) {
 		return;
 	}
@@ -88,11 +88,11 @@ static void ChType_ListeningPolice(cAbstractFile *params) {
 	cEntity *me = World_FindEntity(name);
 	CHECK(me);
 	CHECK(Entity_IsType(me, TYEN_WALKCHAR));
-	void *acm = WithLife_Vtbl(me)->GetAction(me, "PoliceListen");
+	void *acm = WithLife_GetAction(me, "PoliceListen");
 	cLocalLogic *ll = Logic_GetLocalLogic(me);
 	CHECK(ll && acm);
 	if (!ChLogic_Idle(ll) && !ChLogic_AlwaysLock(ll)) {
-		Logic_Vtbl(ll)->SetIdle(ll, 1);
+		Logic_SetIdle(ll, 1);
 	} else {
 		cEntity *police = WChar_Listen(me);
 		if (police && Entity_IsType(police, TYEN_WALKCHAR) &&
@@ -103,7 +103,7 @@ static void ChType_ListeningPolice(cAbstractFile *params) {
 	Nto1Node *n = &WChar(me)->listen;
 	CHECK(n->data);
 	Nto1Node_Unlink(n);
-	Logic_Vtbl(ll)->SetIdle(ll, 0);
+	Logic_SetIdle(ll, 0);
 	cActCtrl_Play(ChType_ActCtrl(me), "Relax", 1, 1.0f);
 }
 
@@ -126,7 +126,7 @@ byte ChType_PoliceFindListener(cEntity *v, cEntity **victim, byte *usr, void **a
 			ChLogic_PoliceResult(l) = 0;
 		}
 	}
-	if (!*victim || !(*victim)->vftable->IsType(*victim, TYEN_WALKCHAR)) {
+	if (!*victim || !Entity_IsType(*victim, TYEN_WALKCHAR)) {
 		return 0;
 	}
 	void *ctrl = ChType_ActCtrl(*victim);
@@ -172,24 +172,24 @@ static void ChType_PoliceActionPress(cAbstractFile *params) {
 		return;
 	}
 	cObjMove *move = &Obj(v)->move;
-	const vec3_t *tp = victim->vftable->GetPos(victim, &t1);
-	const vec3_t *vp = v->vftable->GetPos(v, &t2);
+	const vec3_t *tp = Entity_GetPos(victim, &t1);
+	const vec3_t *vp = Entity_GetPos(v, &t2);
 	float at = (float)atan2((double)(vp->x - tp->x), (double)(vp->z - tp->z));
 	move->moveAng.x = 0.0f;
 	move->moveAng.y = at;
 	move->moveAng.z = 0.0f;
-	move->movePos = *v->vftable->GetPos(v, &t2);
+	move->movePos = *Entity_GetPos(v, &t2);
 	cObjMove_SetTime(move, 0.200000003f);
 	move->viewAng = 0;
 	cActCtrl_SetDefLoop(ChType_ActCtrl(v), usr ? "Action" : "ActionNPC", 0);
 	if (usr) {
 		WChar(v)->listenOn = 0;
-		AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, v->vftable->GetPos(v, &t2));
+		AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, Entity_GetPos(v, &t2));
 	}
 	cLocalLogic *l = Logic_GetLocalLogic(victim);
 	if (l && WChar(victim)->wl.arrow.canUse && cActCtrl_PlayAction(ChType_ActCtrl(victim), action, 0, 1, 1.0f)) {
-		Logic_Vtbl(l)->SetIdle(l, 0);
-		Logic_Vtbl(l)->SetIdle(l, 1);
+		Logic_SetIdle(l, 0);
+		Logic_SetIdle(l, 1);
 		cEntity_AddLink(v, &WChar(victim)->listen);
 	}
 }
@@ -229,7 +229,7 @@ static void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 					act = "Relax";
 				}
 				if (cActCtrl_IsActive(ChType_ActCtrl(victim), "PoliceListen") &&
-					Logic_Vtbl(vl)->GivesMoney(vl, me) &&
+					Logic_GivesMoney(vl, me) &&
 					ChType_Steal(&me, &victim, g_PoliceStealAmount, "Stats.Police", 1.0f)) {
 					act = "ActionOK";
 					FX_PoliceSteal(me, victim);
@@ -238,7 +238,7 @@ static void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 		}
 	}
 	if (ll && strcmp(act, "Relax")) {
-		Logic_Vtbl(ll)->RestartState(ll);
+		Logic_RestartState(ll);
 	}
 	if (cWalkCharEntity_GetOwnerSlot(me) != -1) {
 		WChar(me)->listenOn = 1;
@@ -250,7 +250,7 @@ static void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 			if (!strcmp(cActCtrl_GetActionName(ChType_ActCtrl(me), 0), "Fusion")) {
 				return;
 			}
-			Logic_Vtbl(ll)->SetState(ll, 7, victim);
+			Logic_SetState(ll, 7, victim);
 		}
 	}
 	Nto1Node *n = &WChar(me)->listen;

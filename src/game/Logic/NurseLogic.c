@@ -28,8 +28,6 @@ static cGVar GVar_NurseAlertSpeed;
 static void *Nurses_MakeLogic(cEntity *e);
 
 #define NURSES_MAKELOGIC 0x154440
-#define NURSE_VT(self) ((self)->base.vftable)
-
 void *cNurses_ctor(cNurses *self) {
 	self->timer = 0.0f;
 	return self;
@@ -49,27 +47,27 @@ static void cNurses_Think(cNurses *self) {
 	}
 	for (; n; n = Logic_ListNext(n)) {
 		cLocalLogic *l = Logic_GetLocalLogic(n->data);
-		Logic_Vtbl(l)->Update(l, 0.73f);
+		Logic_Update(l, 0.73f);
 	}
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
-		if (!e->active || !e->vftable->IsType(e, TYEN_WALKCHAR) || !ChType_ActCtrl(e) ||
+		if (!e->active || !Entity_IsType(e, TYEN_WALKCHAR) || !ChType_ActCtrl(e) ||
 			!cActCtrl_IsActive(ChType_ActCtrl(e), "Dazed")) {
 			continue;
 		}
-		cEntity *nurse = cEntityList_Nearest(self->list, e->vftable->GetPos(e, &t), NULL, NULL);
+		cEntity *nurse = cEntityList_Nearest(self->list, Entity_GetPos(e, &t), NULL, NULL);
 		cBaseLocalLogic *l = nurse->lLogic;
 		if (l->state == 3) {
 			continue;
 		}
 		if ((l->idle || l->alwaysLock) && strncmp(cActCtrl_GetActionName(ChType_ActCtrl(nurse), 0), "Relax", 5)) {
-			cEntity *other = cEntityList_Nearest(self->list, e->vftable->GetPos(e, &t2), nurse, NULL);
+			cEntity *other = cEntityList_Nearest(self->list, Entity_GetPos(e, &t2), nurse, NULL);
 			if (other) {
 				cBaseLocalLogic *lo = other->lLogic;
-				lo->vftable->SetState(&lo->logic, 3, e);
+				Logic_SetState(lo, 3, e);
 				continue;
 			}
 		}
-		l->vftable->SetState(&l->logic, 3, e);
+		Logic_SetState(l, 3, e);
 	}
 }
 
@@ -96,7 +94,7 @@ static void *cNurseLocalLogic_ctor(void *mem, cEntity *parent) {
 	cNurseLocalLogic *self = mem;
 
 	cBaseLocalLogic_ctor(&self->base, parent);
-	NURSE_VT(self) = CNURSELOCALLOGIC_VFTABLE;
+	self->base.vftable = CNURSELOCALLOGIC_VFTABLE;
 	self->time = 0.0f;
 	cNurseLocalLogic_SetState(&self->base.logic, 0, NULL);
 	return self;
@@ -104,7 +102,7 @@ static void *cNurseLocalLogic_ctor(void *mem, cEntity *parent) {
 
 static cLocalLogic *cNurseLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
-	NURSE_VT(self) = CNURSELOCALLOGIC_VFTABLE;
+	self->base.vftable = CNURSELOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -115,9 +113,9 @@ static cLocalLogic *cNurseLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 /* back to the relax, the alert with the alarm */
 static byte cNurseLocalLogic_Relax(cNurseLocalLogic *self) {
 	if (g_pWorld->alarm.on) {
-		return NURSE_VT(self)->SetState(&self->base.logic, 1, NULL);
+		return Logic_SetState(self, 1, NULL);
 	}
-	return NURSE_VT(self)->SetState(&self->base.logic, 0, NULL);
+	return Logic_SetState(self, 0, NULL);
 }
 
 /* vf17 */
@@ -134,12 +132,12 @@ static void cNurseLocalLogic_Update(cLocalLogic *elem, float dt) {
 	switch (b->state) {
 	case 0:
 		if (g_pWorld->alarm.on) {
-			NURSE_VT(self)->SetState(&self->base.logic, 1, NULL);
+			Logic_SetState(self, 1, NULL);
 		}
 		return;
 	case 1:
 		if (!g_pWorld->alarm.on) {
-			NURSE_VT(self)->SetState(&self->base.logic, 0, NULL);
+			Logic_SetState(self, 0, NULL);
 		}
 		return;
 	case 2:
@@ -179,7 +177,7 @@ static void cNurseLocalLogic_Update(cLocalLogic *elem, float dt) {
 static void cNurseLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	if (amount > 0.0f && self->base.state != 3 && Logic_Chance(&self->base, e, g_NurseBankerDetect + amount)) {
-		NURSE_VT(self)->SetState(&self->base.logic, 2, e);
+		Logic_SetState(self, 2, e);
 	}
 }
 
@@ -191,7 +189,7 @@ static inline byte Nurse_Rand101(void) {
 static void cNurseLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	if (!self->base.busy && Nurse_Rand101() && self->base.state != 3) {
-		NURSE_VT(self)->SetState(&self->base.logic, 2, attacker);
+		Logic_SetState(self, 2, attacker);
 	}
 }
 
@@ -199,7 +197,7 @@ static void cNurseLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 static void cNurseLocalLogic_OnSeen(cLocalLogic *elem, cEntity *e) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	if (!self->base.busy && Nurse_Rand101() && e == ChType_Usr0() && self->base.state != 3) {
-		NURSE_VT(self)->SetState(&self->base.logic, 2, e);
+		Logic_SetState(self, 2, e);
 	}
 }
 
@@ -211,14 +209,14 @@ static byte cNurseLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *police) {
 	if (!self->base.busy && refuse > (float)(Weap_Rand01() * 100.0 + 0.0)) {
 		return 1;
 	}
-	NURSE_VT(self)->SetState(&self->base.logic, 2, police);
+	Logic_SetState(self, 2, police);
 	return 0;
 }
 
 /* vf24 */
 static void cNurseLocalLogic_RestartState(cLocalLogic *base) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)base;
-	NURSE_VT(self)->SetState(&self->base.logic, 0, NULL);
+	Logic_SetState(self, 0, NULL);
 }
 
 /* ---- part 2 ---- */
@@ -229,7 +227,7 @@ static byte cNurseLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *tar
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
 	byte ok = (byte)cBaseLocalLogic_SetState(&b->logic, state, target);
-	cAIChar *ai = b->parent->vftable->GetAI(b->parent);
+	cAIChar *ai = Entity_GetAI(b->parent);
 
 	if (ok) {
 		WChar(b->parent)->wl.arrow.canUse = !b->busy && !g_pWorld->alarm.on && b->state != 3 && b->state != 2;
@@ -237,23 +235,23 @@ static byte cNurseLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *tar
 	switch (b->state) {
 	case 0:
 		if (ok) {
-			ai->vftable->SetState(&ai->base.base, 6, b->origin, (double)b->actionRadius, (double)g_NurseRelaxSpeed, 1);
+			AIChar_SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_NurseRelaxSpeed, 1);
 		}
 		return 1;
 	case 1:
 		if (ok) {
-			ai->vftable->SetState(&ai->base.base, 6, b->origin, (double)b->actionRadius, (double)g_NurseAlertSpeed, 0);
+			AIChar_SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_NurseAlertSpeed, 0);
 		}
 		return 1;
 	case 2:
 		if (ok) {
-			ai->vftable->SetState(&ai->base.base, 5, target, 1.0);
+			AIChar_SetState(ai, 5, target, 1.0);
 		}
 		self->time = 0.0f;
 		return 1;
 	case 3:
 		if (ok) {
-			ai->vftable->SetState(&ai->base.base, 2, b->target.target, 1.0);
+			AIChar_SetState(ai, 2, b->target.target, 1.0);
 			self->time = 0.0f;
 		}
 		return 1;

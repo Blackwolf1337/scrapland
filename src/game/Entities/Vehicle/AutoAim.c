@@ -102,15 +102,15 @@ vec3_t *cAutoAim_GetAimPos(cAutoAim *self, vec3_t *out, cEntity *owner) {
 	cEntity *t;
 
 	if ((self->status == AUTOAIM_SELECT || self->status == AUTOAIM_KEEP) && (t = self->target.target) &&
-		t->vftable->IsType(t, TYEN_OBJECT)) {
-		Obj_Vtbl(t)->GetViewPos(t, out);
+		Entity_IsType(t, TYEN_OBJECT)) {
+		Obj_GetViewPos(t, out);
 		return out;
 	}
-	Obj_Vtbl(owner)->GetCamera(owner, &cp, &ca);
+	Obj_GetCamera(owner, &cp, &ca);
 	float dt = Timer_GetTime(&g_pWorld->timer) - self->time;
 	float f = dt / self->interval;
-	if (self->status == AUTOAIM_MAGNET && (t = self->target.target) && t->vftable->IsType(t, TYEN_OBJECT)) {
-		Obj_Vtbl(t)->GetViewPos(t, &tp);
+	if (self->status == AUTOAIM_MAGNET && (t = self->target.target) && Entity_IsType(t, TYEN_OBJECT)) {
+		Obj_GetViewPos(t, &tp);
 		float dy = tp.y - cp.y;
 		float dx = tp.x - cp.x;
 		float dz = tp.z - cp.z;
@@ -152,7 +152,7 @@ void cAutoAim_Update(cAutoAim *self, cEntity *owner, float dt) {
 	vec3_t cp, ca, pos, d, tmp;
 	float dot, found;
 
-	if (!self->on || WithLife_Vtbl(owner)->IsEMIed(owner)) {
+	if (!self->on || WithLife_IsEMIed(owner)) {
 		self->prevAx = self->ax;
 		self->prevAy = self->ay;
 		self->interval = dt;
@@ -190,7 +190,7 @@ void cAutoAim_Update(cAutoAim *self, cEntity *owner, float dt) {
 	}
 	dot = -1.0f;
 	cEntity *t = Entity_FindInView(owner, self->distLimit, &dot, &found, 1, self->cosAng);
-	if (!t && !owner->vftable->GetAI(owner) && !g_pApp->flags) {
+	if (!t && !Entity_GetAI(owner) && !g_pApp->flags) {
 		t = Entity_FindInView(owner, self->distLimit, &dot, &found, 2, self->cosAng);
 	}
 	if (dot > self->cosAng) {
@@ -202,8 +202,8 @@ void cAutoAim_Update(cAutoAim *self, cEntity *owner, float dt) {
 	if (!t) {
 		AA_Unlink(self);
 	} else {
-		Obj_Vtbl(owner)->GetCamera(owner, &cp, &ca);
-		const vec3_t *tp = t->vftable->GetPos(t, &pos);
+		Obj_GetCamera(owner, &cp, &ca);
+		const vec3_t *tp = Entity_GetPos(t, &pos);
 		d.z = tp->z - cp.z;
 		d.x = tp->x - cp.x;
 		d.y = tp->y - cp.y;

@@ -34,7 +34,7 @@ extern cGVarFunction GVar_OnSleep;
 #define WChar_Victim(e) ((cEntity *)WChar(e)->victim.target)		/* the character the banker robs */
 
 static inline void *ChType_ActCtrl(cEntity *e) {
-	return WithLife_Vtbl(e)->GetActCtrl(e);
+	return WithLife_GetActCtrl(e);
 }
 
 /* the action class of the controller */

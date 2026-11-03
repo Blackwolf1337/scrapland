@@ -43,6 +43,31 @@ typedef struct cInfItemVtbl {
 	cItemDesc *(*NextAmmo)(cInfItem *self, int kind, void **iter);	/* 0x18 */
 } cInfItemVtbl;
 
+/* calls through the slots of cInfItemVtbl */
+static inline void InfItem_AddAmmo(void *self, int kind, cItemDesc *item) {
+	VT(cInfItemVtbl, self)->AddAmmo(self, kind, item);
+}
+
+static inline void InfItem_AddLife(void *self, cItemDesc *item) {
+	VT(cInfItemVtbl, self)->AddLife(self, item);
+}
+
+static inline cItemDesc *InfItem_FirstAmmo(void *self, int kind, void **iter) {
+	return VT(cInfItemVtbl, self)->FirstAmmo(self, kind, iter);
+}
+
+static inline cItemDesc *InfItem_FirstLife(void *self, void **iter) {
+	return VT(cInfItemVtbl, self)->FirstLife(self, iter);
+}
+
+static inline cItemDesc *InfItem_NextAmmo(void *self, int kind, void **iter) {
+	return VT(cInfItemVtbl, self)->NextAmmo(self, kind, iter);
+}
+
+static inline cItemDesc *InfItem_NextLife(void *self, void **iter) {
+	return VT(cInfItemVtbl, self)->NextLife(self, iter);
+}
+
 typedef struct cCTFEnemies {
 	cCTFEnemiesData *d;
 } cCTFEnemies;

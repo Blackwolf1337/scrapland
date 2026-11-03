@@ -357,7 +357,7 @@ static void cRadarScorer_DrawIcon(cRadarScorer *self, const vec3_t *pos, int ico
 #define RADAR_MAP_UV_ANG1 3.926991f
 
 static inline byte Radar_IsEMIed(cEntity *e) {
-	return ((const cWithLifeEntityVtbl *)e->vftable)->IsEMIed(e);
+	return WithLife_IsEMIed(e);
 }
 
 /* the map image of a floor at the center of the radar with the alpha, turned by the texture coordinates */
@@ -377,13 +377,13 @@ static void cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntity *c
 	float verts[4][2], uv[4][2];
 	float cu, cv;
 
-	byte car = target->vftable->IsType(target, "Car");
+	byte car = Entity_IsType(target, "Car");
 	float scale = self->map2dScale;
 	g_RadarScale = scale;
 	if (car) {
 		g_RadarScale = self->map2dScaleFactor * ((cVehicleEntity *)target)->smoothSpeed + scale;
 	}
-	Obj_Vtbl(target)->GetViewPos(target, &c);
+	Obj_GetViewPos(target, &c);
 	if (self->menuMap) {
 		g_RadarAngle = 0.0f;
 	} else {
@@ -471,16 +471,15 @@ static void Radar_Icon(cRadarScorer *self, cEntity *e, int icon, float ang, int 
 	uint32_t color, uint32_t outColor, byte always) {
 	vec3_t p;
 
-	cRadarScorer_DrawIcon(self, Obj_Vtbl(e)->GetViewPos(e, &p), icon, ang, outIcon, flags, color, outColor, always);
+	cRadarScorer_DrawIcon(self, Obj_GetViewPos(e, &p), icon, ang, outIcon, flags, color, outColor, always);
 }
 
 /* the class name of the action controller of e starts with cls (n letters; 0: the whole name) */
 static byte Radar_ActIs(cEntity *e, const char *cls, size_t n) {
-	const cWithLifeEntityVtbl *vt = (const cWithLifeEntityVtbl *)e->vftable;
-	if (!vt->GetActCtrl(e)) {
+	if (!WithLife_GetActCtrl(e)) {
 		return 0;
 	}
-	const char *name = vt->GetActCtrl(e)->cls->name;
+	const char *name = WithLife_GetActCtrl(e)->cls->name;
 	return n ? !crt_strncmp(name, cls, n) : !strcmp(name, cls);
 }
 
@@ -499,8 +498,8 @@ static void Radar_DrawCones(cRadarScorer *self, cEntity *target) {
 		}
 		float c = (float)cos((double)(ar->coneFov * 0.5f));
 		float range = ar->coneDist / c;
-		float ang = g_RadarAngle - Obj_Vtbl(e)->GetSndAng(e, &a)->y + RADAR_PI;
-		cRadarScorer_DrawCone(self, Obj_Vtbl(e)->GetViewPos(e, &p), ang, ar->coneFov, range, mode);
+		float ang = g_RadarAngle - Obj_GetSndAng(e, &a)->y + RADAR_PI;
+		cRadarScorer_DrawCone(self, Obj_GetViewPos(e, &p), ang, ar->coneFov, range, mode);
 	}
 }
 
@@ -511,9 +510,9 @@ static void Radar_DrawEntity(cRadarScorer *self, cEntity *target, cEntity *e, by
 	vec3_t a, p;
 	float ang = g_RadarAngle;
 
-	if (isCar && !strcmp(e->vftable->GetClassName(e), "Obj")) {
+	if (isCar && !strcmp(Entity_GetClassName(e), "Obj")) {
 		if (!crt_strncmp(e->name, "DM_AreaToPark_", 14)) {
-			cRadarScorer_DrawIcon(self, e->vftable->GetPos(e, &p), 15, ang, 15, 0x11, 0xffffffff, 0xffffffff, 0);
+			cRadarScorer_DrawIcon(self, Entity_GetPos(e, &p), 15, ang, 15, 0x11, 0xffffffff, 0xffffffff, 0);
 		}
 		return;
 	}
@@ -546,7 +545,7 @@ static void Radar_DrawEntity(cRadarScorer *self, cEntity *target, cEntity *e, by
 		return;
 	}
 	if (Radar_ActIs(e, "Conversor", 0)) {
-		Radar_Icon(self, e, 18, Obj_Vtbl(e)->GetViewAng(e, &a)->y, 18, 0x11, 0xffffffff, 0xffffffff, 0);
+		Radar_Icon(self, e, 18, Obj_GetViewAng(e, &a)->y, 18, 0x11, 0xffffffff, 0xffffffff, 0);
 		return;
 	}
 	if (self->menuMap) {
@@ -558,17 +557,17 @@ static void Radar_DrawEntity(cRadarScorer *self, cEntity *target, cEntity *e, by
 			return;
 		}
 		if (Entity_IsType(e, TYEN_WALKCHAR) || Entity_IsType(e, TYEN_CAR)) {
-			Radar_Icon(self, e, 5, Obj_Vtbl(e)->GetViewAng(e, &a)->y, 4, 5, 0xffffffff, 0xffffffff, 0);
+			Radar_Icon(self, e, 5, Obj_GetViewAng(e, &a)->y, 4, 5, 0xffffffff, 0xffffffff, 0);
 		} else {
-			Radar_Icon(self, e, 4, Obj_Vtbl(e)->GetViewAng(e, &a)->y, 4, 5, 0xffffffff, 0xffffffff, 0);
+			Radar_Icon(self, e, 4, Obj_GetViewAng(e, &a)->y, 4, 5, 0xffffffff, 0xffffffff, 0);
 		}
 		return;
 	}
 	if (team == WLife(target)->arrow.tgType && team != RADAR_TEAM_NONE) {
-		Radar_Icon(self, e, 5, Obj_Vtbl(e)->GetViewAng(e, &a)->y, 4, 5, friendColor, friendColor, 0);
+		Radar_Icon(self, e, 5, Obj_GetViewAng(e, &a)->y, 4, 5, friendColor, friendColor, 0);
 		return;
 	}
-	Radar_Icon(self, e, 5, Obj_Vtbl(e)->GetViewAng(e, &a)->y, 4, 5, enemyColor, enemyColor, 0);
+	Radar_Icon(self, e, 5, Obj_GetViewAng(e, &a)->y, 4, 5, enemyColor, enemyColor, 0);
 	g_NumEnemiesInRadar++;
 }
 
@@ -577,7 +576,7 @@ static void Radar_DrawEntity(cRadarScorer *self, cEntity *target, cEntity *e, by
 static float Radar_FloorWay(cRadarScorer *self, cEntity *target, byte up, vec3_t *p) {
 	vec3_t t;
 
-	const vec3_t *tp = target->vftable->GetPos(target, &t);
+	const vec3_t *tp = Entity_GetPos(target, &t);
 	if (up) {
 		const MapLevel *l = (&g_pWorld->floor.levels[self->floor]);
 		int k = MapLevel_NearestUp(l, tp);
@@ -599,7 +598,7 @@ static void Radar_DrawMission(cRadarScorer *self, cEntity *target, cEntity *e, c
 	vec3_t p, a;
 	cObjEntity *o = (cObjEntity *)e;
 
-	Obj_Vtbl(e)->GetViewPos(e, &p);
+	Obj_GetViewPos(e, &p);
 	float ang = g_RadarAngle;
 	int outIcon = 8, icon = 6;
 	int kind = o->radarShow;
@@ -618,8 +617,8 @@ static void Radar_DrawMission(cRadarScorer *self, cEntity *target, cEntity *e, c
 			outIcon = 22;
 			icon = 9;
 		} else if (!crt_strncmp(e->name, "DM_OutLink_", 11)) {
-			p = *Obj_Vtbl(e)->GetViewPos(e, &a);
-			ang = Obj_Vtbl(e)->GetViewAng(e, &a)->y;
+			p = *Obj_GetViewPos(e, &a);
+			ang = Obj_GetViewAng(e, &a)->y;
 			outIcon = 22;
 			icon = 9;
 		} else {
@@ -661,7 +660,7 @@ static void cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEntity 
 	vec3_t t, a;
 
 	byte isCar = Entity_IsType(target, TYEN_CAR);
-	cRadarScorer_UpdateFloor(self, Obj_Vtbl(target)->GetViewPos(target, &t)->y);
+	cRadarScorer_UpdateFloor(self, Obj_GetViewPos(target, &t)->y);
 	float h = self->halfH + self->halfH;
 	float w = self->halfW + self->halfW;
 	Render_ClearRect(self->base.x, self->base.y, w, h, 0, 0);
@@ -714,8 +713,8 @@ static void cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEntity 
 			if (e == target || !e->active || !Entity_IsType(e, "Obj") || Obj(e)->radarShow != 1) {
 				continue;
 			}
-			const vec3_t *tp = target->vftable->GetPos(target, &t);
-			const vec3_t *ep = e->vftable->GetPos(e, &a);
+			const vec3_t *tp = Entity_GetPos(target, &t);
+			const vec3_t *ep = Entity_GetPos(e, &a);
 			float d = Floor_Dist(&g_pWorld->floor, *ep, *tp);
 			if (best > d) {
 				nearest = e;
@@ -730,15 +729,15 @@ static void cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEntity 
 	}
 	/* the target itself in the middle, pulsing in the menu map */
 	if (!self->menuMap) {
-		float y = Obj_Vtbl(target)->GetViewAng(target, &a)->y;
-		cRadarScorer_DrawIcon(self, Obj_Vtbl(target)->GetViewPos(target, &t), 0, y, 0, 8, 0xffffffff, 0x80ff0000, 1);
+		float y = Obj_GetViewAng(target, &a)->y;
+		cRadarScorer_DrawIcon(self, Obj_GetViewPos(target, &t), 0, y, 0, 8, 0xffffffff, 0x80ff0000, 1);
 		return;
 	}
 	double s = sin((double)(Scorer_Get(self->base.player)->time * 8.0f));
 	uint32_t v = (uint32_t)(int)((float)((s + 1.0) * 0.5) * 255.0f);
 	uint32_t c = (v << 8 | v) << 8 | 0xff0000ff;
-	float y = Obj_Vtbl(target)->GetViewAng(target, &a)->y;
-	cRadarScorer_DrawIcon(self, Obj_Vtbl(target)->GetViewPos(target, &t), 5, y, 4, 8, c, c, 1);
+	float y = Obj_GetViewAng(target, &a)->y;
+	cRadarScorer_DrawIcon(self, Obj_GetViewPos(target, &t), 5, y, 4, 8, c, c, 1);
 }
 
 /* y is on the floor shown before */
@@ -889,11 +888,11 @@ static void cRadarScorer_Draw(cScorerItem *base, int player) {
 	if (fade >= 1.0f) {
 		self->floorFade = 1.0f;
 	}
-	if (!cam || !cam->active || !cam->vftable->IsType(cam, "FCam")) {
+	if (!cam || !cam->active || !Entity_IsType(cam, "FCam")) {
 		return;
 	}
 	cEntity *target = cCamEntity_GetTarget(cam);
-	if (!target || !target->vftable->IsType(target, TYEN_WITH_LIFE)) {
+	if (!target || !Entity_IsType(target, TYEN_WITH_LIFE)) {
 		return;
 	}
 	if (!self->menuMap) {
@@ -904,7 +903,7 @@ static void cRadarScorer_Draw(cScorerItem *base, int player) {
 		cRadarScorer_DrawRadar(self, target, cam);
 		return;
 	}
-	Obj_Vtbl(target)->GetViewPos(target, &c);
+	Obj_GetViewPos(target, &c);
 	self->halfW = 200.0f;
 	self->halfW2 = 200.0f;
 	self->halfH = 100.0f;

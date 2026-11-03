@@ -55,7 +55,7 @@ int Net_AddResource(const char *name) {
 				void *buf = cStaticBuffer_Get(g_NetStaticBuffer, 0x80);
 				cFileMem_SetBuffer((&g_NetMsg), buf, 0x60, 0, 0);
 				cFileMem_Open(&g_NetMsg.base, "", 6);
-				g_NetMsg.base.vftable->Write(&g_NetMsg.base, &msg, 1);
+				VFile_Write(&g_NetMsg, &msg, 1);
 				NetData_WriteResources(&g_NetMsg.base, (uint16_t)i, 1);
 				NetServer_SendAll(buf, (uint16_t)cFileMem_Size(&g_NetMsg.base));
 				cFileMem_Close(&g_NetMsg.base);
@@ -153,8 +153,8 @@ void NetData_ReadResources(cAbstractFile *f) {
 	byte count = 0;
 	char name[0x20];
 
-	f->vftable->Read(f, &first, 2);
-	f->vftable->Read(f, &count, 1);
+	VFile_Read(f, &first, 2);
+	VFile_Read(f, &count, 1);
 	for (int v = first; v < count + first; v++) {
 		if (g_NetResources[v]) {
 			cPy_Function_AddParamI(g_ClientDelRes, v);
@@ -178,12 +178,12 @@ void NetData_ReadUsrDescriptors(cAbstractFile *f) {
 	uint16_t count = 0, id = 0;
 	char name[0x80];
 
-	f->vftable->Read(f, &count, 2);
+	VFile_Read(f, &count, 2);
 	for (int k = 0; k < count; k++) {
-		f->vftable->Read(f, &id, 2);
+		VFile_Read(f, &id, 2);
 		Str_PrintfQuiet(name, sizeof(name), "net%d", id);
 		cEntity *e = World_FindEntity(name);
-		if (!e || !e->vftable->IsType(e, TYEN_CAR)) {
+		if (!e || !Entity_IsType(e, TYEN_CAR)) {
 			Con_Bluef("Quite Strange: Entity %s was created in Netdata.cpp:ReadUsrDescriptor()\n", name);
 			continue;
 		}
@@ -192,7 +192,7 @@ void NetData_ReadUsrDescriptors(cAbstractFile *f) {
 		cPy_Function_AddParamS(g_ClientSetConfig, Veh(e)->typeName);
 		cPy_Function_AddParamI(g_ClientSetConfig, Veh(e)->maxLife);
 		cPy_Function_AddParamS(g_ClientSetConfig, WLife(e)->usrName ? WLife(e)->usrName : "");
-		cPy_Function_AddParamS(g_ClientSetConfig, Veh_Vtbl(Veh(e))->GetPilot(&(Veh(e))->wl.obj.base, 0));
+		cPy_Function_AddParamS(g_ClientSetConfig, Veh_GetPilot(Veh(e), 0));
 		for (uint32_t m = 0; m < 4; m++) {
 			cPy_Function_AddParamS(g_ClientSetConfig, cVehicleMotors_GetMotorName(NetEnt_Motors(e), m, NULL));
 		}
@@ -211,34 +211,34 @@ static void NetData_ReadUsrDescriptor(cAbstractFile *f, cEntity *e) {
 	cString_Set(&WLife(e)->usrName, s);
 	cAbstractFile_ReadString8(f, s, sizeof(s));
 	if (cActClassList_Get(g_pActClassList, s)) {
-		WithLife_Vtbl(e)->SetActCtrl(e, s);
+		WithLife_SetActCtrl(e, s);
 		/* every action of the class */
-		cActCtrl *ctrl = WithLife_Vtbl(e)->GetActCtrl(e);
+		cActCtrl *ctrl = WithLife_GetActCtrl(e);
 		for (cAction *a = ctrl->cls->first; a; a = a->next) {
-			cActCtrl_PlayAction(WithLife_Vtbl(e)->GetActCtrl(e), a, 0, 1, 1.0f);
+			cActCtrl_PlayAction(WithLife_GetActCtrl(e), a, 0, 1, 1.0f);
 		}
 	} else {
-		e->vftable->SetModel(e, s, 1.0f, 1.0f, 1.0f, 1);
+		Entity_SetModel(e, s, 1.0f, 1.0f, 1.0f, 1);
 	}
-	f->vftable->Read(f, &maxLife, 2);
+	VFile_Read(f, &maxLife, 2);
 	Veh(e)->maxLife = maxLife;
 	for (uint32_t m = 0; m < 4; m++) {
 		cAbstractFile_ReadString8(f, s, sizeof(s));
 		cVehicleMotors_SetMotor(NetEnt_Motors(e), m, s, 1.0f, 1.0f, 1.0f);
 	}
 	cAbstractFile_ReadString8(f, s, sizeof(s));
-	Veh_Vtbl(Veh(e))->SetPilot(&(Veh(e))->wl.obj.base, 0, s, 1.0f, 1.0f, 1.0f);
+	Veh_SetPilot(Veh(e), 0, s, 1.0f, 1.0f, 1.0f);
 	cAbstractFile_ReadString8(f, s, sizeof(s));
 	cWeaponManager_SetWeapList(NetEnt_Weapons(e), s);
-	f->vftable->Read(f, &team, 4);
+	VFile_Read(f, &team, 4);
 	WLife(e)->arrow.tgType = team;
 }
 
 void NetData_WriteResources(cAbstractFile *f, uint16_t first, byte count) {
 	uint32_t v = first;
 
-	f->vftable->Write(f, &v, 2);
-	f->vftable->Write(f, &count, 1);
+	VFile_Write(f, &v, 2);
+	VFile_Write(f, &count, 1);
 	for (int i = first; i < count + first; i++) {
 		cAbstractFile_WriteString(f, g_NetResources[i] ? g_NetResources[i] : "");
 	}
@@ -257,7 +257,7 @@ byte Net_SendCtrlString(const char *text) {
 	void *buf = cStaticBuffer_Get(g_NetStaticBuffer, 24000);
 	cFileMem_SetBuffer((&g_NetMsg), buf, 24000, 0, 0);
 	cFileMem_Open(&g_NetMsg.base, "", 6);
-	g_NetMsg.base.vftable->Write(&g_NetMsg.base, &msg, 1);
+	VFile_Write(&g_NetMsg, &msg, 1);
 	cAbstractFile_WriteString8(&g_NetMsg.base, g_ClientRemotePassword);
 	cAbstractFile_WriteString8(&g_NetMsg.base, text);
 	cNetClient *c = Net_GetClient();
@@ -282,7 +282,7 @@ static byte Net_SendString(const char *text, int slot, byte chat) {
 	switch (Transport_GetMode()) {
 	case NETMODE_SERVER:
 		msg = chat ? NETMSG_CHAT : NETMSG_USR_STRING;
-		g_NetMsg.base.vftable->Write(&g_NetMsg.base, &msg, 1);
+		VFile_Write(&g_NetMsg, &msg, 1);
 		cAbstractFile_WriteString8(&g_NetMsg.base, s);
 		if (slot == -1) {
 			NetServer_SendAll(buf, (uint16_t)cFileMem_Size(&g_NetMsg.base));
@@ -297,7 +297,7 @@ static byte Net_SendString(const char *text, int slot, byte chat) {
 		break;
 	case NETMODE_CLIENT:
 		msg = chat ? NETMSG_CHAT : NETMSG_USR_STRING;
-		g_NetMsg.base.vftable->Write(&g_NetMsg.base, &msg, 1);
+		VFile_Write(&g_NetMsg, &msg, 1);
 		cAbstractFile_WriteString8(&g_NetMsg.base, s);
 		/* a client without connection still answers 1 */
 		c = Net_GetClient();
@@ -328,12 +328,12 @@ void NetData_WriteUsr(cAbstractFile *f, uint16_t slot) {
 	char name[0x80];
 	uint32_t v = 1;
 
-	f->vftable->Write(f, &v, 2);
+	VFile_Write(f, &v, 2);
 	v = slot;
-	f->vftable->Write(f, &v, 2);
+	VFile_Write(f, &v, 2);
 	Str_PrintfQuiet(name, sizeof(name), "net%d", slot);
 	cEntity *e = World_FindEntity(name);
-	CHECK((e != NULL) && e->vftable->IsType(e, TYEN_CAR));
+	CHECK((e != NULL) && Entity_IsType(e, TYEN_CAR));
 	NetData_WriteUsrDescriptor(f, e);
 }
 
@@ -343,35 +343,35 @@ static void NetData_WriteUsrDescriptor(cAbstractFile *f, cEntity *e) {
 	cAbstractFile_WriteString8(f, WLife(e)->usrName ? WLife(e)->usrName : "");
 	cAbstractFile_WriteString8(f, Veh(e)->typeName);
 	v = (uint16_t)Veh(e)->maxLife;
-	f->vftable->Write(f, &v, 2);
+	VFile_Write(f, &v, 2);
 	for (uint32_t m = 0; m < 4; m++) {
 		cAbstractFile_WriteString8(f, cVehicleMotors_GetMotorName(NetEnt_Motors(e), m, NULL));
 	}
-	cAbstractFile_WriteString8(f, Veh_Vtbl(Veh(e))->GetPilot(&(Veh(e))->wl.obj.base, 0));
+	cAbstractFile_WriteString8(f, Veh_GetPilot(Veh(e), 0));
 	cAbstractFile_WriteString8(f, cWeaponManager_GetWeapList(NetEnt_Weapons(e)));
 	v = (uint32_t)WLife(e)->arrow.tgType;
-	f->vftable->Write(f, &v, 4);
+	VFile_Write(f, &v, 4);
 }
 
 cEntity *NetData_WriteUsrDescriptors(cAbstractFile *f, cEntity *e) {
 	uint32_t count = 0, v = 0;
 
-	int start = f->vftable->Tell(f);
-	f->vftable->Write(f, &v, 2);
+	int start = VFile_Tell(f);
+	VFile_Write(f, &v, 2);
 	while (e && (int)(uint16_t)count < g_NetMaxPlayersInitSend) {
-		if (Net_IsNetName(e->name) && e->vftable->IsType(e, TYEN_CAR)) {
+		if (Net_IsNetName(e->name) && Entity_IsType(e, TYEN_CAR)) {
 			v = (uint16_t)crt_atoi(e->name + 3);
-			f->vftable->Write(f, &v, 2);
+			VFile_Write(f, &v, 2);
 			NetData_WriteUsrDescriptor(f, e);
 			count++;
 		}
 		e = cEntity_Next(e);
 	}
-	int end = f->vftable->Tell(f);
-	f->vftable->Seek(f, start);
+	int end = VFile_Tell(f);
+	VFile_Seek(f, start);
 	v = (uint16_t)count;
-	f->vftable->Write(f, &v, 2);
-	f->vftable->Seek(f, end);
+	VFile_Write(f, &v, 2);
+	VFile_Seek(f, end);
 	return e;
 }
 

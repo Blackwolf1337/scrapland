@@ -89,11 +89,11 @@ byte cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity *e, float m
 	byte flag);
 /* the action of layer 0 of a character and its name, as the AIs read them (one GetActCtrl each) */
 static inline cAction *AIChar_Action0(cEntity *e) {
-	return ((cActCtrl *)WithLife_Vtbl(e)->GetActCtrl(e))->layers[0].action;
+	return ((cActCtrl *)WithLife_GetActCtrl(e))->layers[0].action;
 }
 
 static inline int AIChar_ActionIs(cEntity *e, const char *name) {
-	return !strcmp(cActCtrl_GetActionName(WithLife_Vtbl(e)->GetActCtrl(e), 0), name);
+	return !strcmp(cActCtrl_GetActionName(WithLife_GetActCtrl(e), 0), name);
 }
 
 /* the distance from the character to its target (the positions in this order) as the subclasses sum it: on the floor
@@ -101,8 +101,8 @@ static inline int AIChar_ActionIs(cEntity *e, const char *name) {
 static inline float AIChar_TargetDistFlat(cAIChar *c) {
 	vec3_t a, b;
 	cEntity *t = c->base.target.target;
-	const vec3_t *op = c->ent->vftable->GetPos(c->ent, &a);
-	const vec3_t *tp = t->vftable->GetPos(t, &b);
+	const vec3_t *op = Entity_GetPos(c->ent, &a);
+	const vec3_t *tp = Entity_GetPos(t, &b);
 	float dx = tp->x - op->x;
 	float dz = tp->z - op->z;
 
@@ -112,8 +112,8 @@ static inline float AIChar_TargetDistFlat(cAIChar *c) {
 static inline float AIChar_TargetDist(cAIChar *c) {
 	vec3_t a, b;
 	cEntity *t = c->base.target.target;
-	const vec3_t *op = c->ent->vftable->GetPos(c->ent, &a);
-	const vec3_t *tp = t->vftable->GetPos(t, &b);
+	const vec3_t *op = Entity_GetPos(c->ent, &a);
+	const vec3_t *tp = Entity_GetPos(t, &b);
 	float dy = tp->y - op->y;
 	float dx = tp->x - op->x;
 	float dz = tp->z - op->z;
@@ -125,8 +125,8 @@ static inline float AIChar_TargetDist(cAIChar *c) {
 static inline void AIChar_DebugState(cAIChar *c, const char *fmt, int state) {
 	char name[0x100];
 
-	c->vftable->StateName(&c->base.base, state, name);
-	c->vftable->base.base.Debugf(&c->base.base, fmt, name);
+	AIChar_StateName(c, state, name);
+	AI_Debugf(c, fmt, name);
 }
 
 /* ---- AI/AIChar.cpp (src/game/AI/IChar.c); the constructor is declared in walkcharentity.h, GetControl in

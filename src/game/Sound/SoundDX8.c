@@ -93,14 +93,14 @@ static void CSoundXBox_Init(CSoundSys *base) {
 	if (g_SoundInit) {
 		self->swapPan = g_SoundSwapChannels != 0;
 		CSoundSys_InitFmod(&self->sys);
-		self->sys.vftable->Update(&self->sys);
+		SoundSys_Update(self);
 	}
 }
 
 static void CSoundXBox_Close(CSoundSys *base) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	CSoundSys_Close(&self->sys);
-	self->sys.vftable->DeleteAllSounds(&self->sys);
+	SoundSys_DeleteAllSounds(self);
 }
 
 static float g_SndFreqScale = 1.0f;
@@ -117,7 +117,7 @@ static void CSoundXBox_Update(CSoundSys *base) {
 	int v = (int)((float)Snd_Volume(g_SoundMainVolume) / 0x1.333334p-1f);
 	if (self->volume != v) {
 		self->volume = v;
-		self->sys.vftable->StopAllSounds(&self->sys);
+		SoundSys_StopAllSounds(self);
 	}
 }
 
@@ -130,7 +130,7 @@ static void CSoundXBox_Load(CSoundXBox *self, const char *name, int unused) {
 	uint32_t mem0, mem1, memMax;
 
 	(void)unused;
-	self->sys.vftable->GetSoundName(&self->sys, name, sndname, sizeof(sndname));
+	SoundSys_GetSoundName(self, name, sndname, sizeof(sndname));
 	cSoundDesc_Init(&v.desc);
 	if (CSoundXBox_Find(self, sndname)) {
 		return;
@@ -211,7 +211,7 @@ static void CSoundXBox_DeleteAllSounds(CSoundSys *base) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	HashTable *t = &self->sounds;
 
-	self->sys.vftable->StopAllSounds(&self->sys);
+	SoundSys_StopAllSounds(self);
 	CSoundSys_CallVf1c(&self->sys);
 	for (;;) {
 		int i = 0;

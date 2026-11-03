@@ -65,8 +65,8 @@ static void cEnemies_Attack(cEnemies *self, cEntity *usr) {
 
 	for (; n; n = Logic_ListNext(n)) {
 		cEntity *e = Logic_AsCar(n->data);
-		CHECK(e->vftable->IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
-		cAIVehicle *ai = e->vftable->GetAI(e);
+		CHECK(Entity_IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
+		cAIVehicle *ai = Entity_GetAI(e);
 		CHECK(ai && "enemyAI");
 		WLife(e)->arrow.tgType = 0;
 		byte ignore = self->ignoreFriends;
@@ -86,8 +86,8 @@ static void cEnemies_Attack(cEnemies *self, cEntity *usr) {
 				Enemies_AttackFriend(ai, friends);
 			}
 		} else {
-			if (usr->vftable->IsType(usr, TYEN_CAR)) {
-				Nto1Node *att = ai->vftable->GetTarget(&ai->base.base);
+			if (Entity_IsType(usr, TYEN_CAR)) {
+				Nto1Node *att = AIMove_GetTarget(ai);
 				if (st == 0 || att->target != usr) {
 					cAIVehicle_SetState(ai, AIV_STATE_ATTACK, usr);
 				}
@@ -102,8 +102,8 @@ static void cEnemies_Attack(cEnemies *self, cEntity *usr) {
 		}
 keep:;
 		cEntity *t = Logic_AttackTarget(ai);
-		if (cAIVehicle_GetState(ai) != AIV_STATE_CHASE && t && !t->vftable->GetAI(t) && usr &&
-			usr->vftable->IsType(usr, TYEN_WALKCHAR)) {
+		if (cAIVehicle_GetState(ai) != AIV_STATE_CHASE && t && !Entity_GetAI(t) && usr &&
+			Entity_IsType(usr, TYEN_WALKCHAR)) {
 			Enemies_Chase(ai, usr);
 		}
 	}
@@ -122,10 +122,10 @@ static void cEnemies_Think(cEnemies *self) {
 		cEnemies_Attack(self, usr);
 		return;
 	}
-	if (!usr || !usr->vftable->IsType(usr, TYEN_CAR)) {
+	if (!usr || !Entity_IsType(usr, TYEN_CAR)) {
 		return;
 	}
-	if (usr->vftable->IsType(usr, TYEN_CAR)) {
+	if (Entity_IsType(usr, TYEN_CAR)) {
 		cEnemies_Attack(self, usr);
 		self->usr = usr;
 		self->attacking = 1;
@@ -163,8 +163,8 @@ static byte cEnemiesLocalLogic_VarI(cEnemiesLocalLogic *self, const char *name, 
 static void cEnemies_Relax(cEnemies *self) {
 	for (Nto1Node *n = Logic_ListFirst(self->list); n; n = Logic_ListNext(n)) {
 		cEntity *e = Logic_AsCar(n->data);
-		CHECK(e->vftable->IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
-		cAIVehicle *ai = e->vftable->GetAI(e);
+		CHECK(Entity_IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
+		cAIVehicle *ai = Entity_GetAI(e);
 		CHECK(ai && "ai");
 		cAIVehicle_SetState(ai, 3, NULL, 5.0, 2.0);
 	}
@@ -184,7 +184,7 @@ void cEnemies_Update(cEnemies *self, float dt) {
 
 /* the logic of a ship of the list (cEntityListData.func) */
 static cLocalLogic *Enemies_MakeLogic(cEntity *e) {
-	CHECK(e && e->vftable->IsType(e, TYEN_CAR) && e->vftable->IsType(e, TYEN_CAR));
+	CHECK(e && Entity_IsType(e, TYEN_CAR) && Entity_IsType(e, TYEN_CAR));
 	cLocalLogic *l = operator_new(sizeof(*l));
 	if (l) {
 		l->parent = e;

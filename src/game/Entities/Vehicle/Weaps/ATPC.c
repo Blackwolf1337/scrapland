@@ -104,7 +104,7 @@ void ATPC_PlaySound(const char *name, const vec3_t *pos, float attIni, float att
 	desc.param3 = 0.0f;
 	cSoundDesc_SetPos(&desc, pos);
 	desc.volume += Snd_Volume(vol);
-	g_pSound->vftable->PlaySound(g_pSound, name, &desc, NULL);
+	SoundSys_PlaySound(g_pSound, name, &desc, NULL);
 }
 
 /* Weaps/ATPC.cpp: the shot of the ATPC (a charge per mounted slot), its HUD item and the debris cloud */
@@ -118,13 +118,13 @@ static void ATPC_Create(cAbstractFile *params) {
 	matrix_t mat;
 
 	cAbstractFile_ReadString(params, g_ATPCShooter, 0x80);
-	params->vftable->Read(params, &hit.x, 4);
-	params->vftable->Read(params, &hit.y, 4);
-	params->vftable->Read(params, &hit.z, 4);
+	VFile_Read(params, &hit.x, 4);
+	VFile_Read(params, &hit.y, 4);
+	VFile_Read(params, &hit.z, 4);
 	cAbstractFile_ReadString(params, g_ATPCVictim, 0x80);
 	cEntity *v = Weap_GetVehicle(g_ATPCShooter);
 	cWeaponManager *wm = &Veh(v)->weapons;
-	const vec3_t *pa = v->vftable->GetPos(v, &a);
+	const vec3_t *pa = Entity_GetPos(v, &a);
 	float dy = hit.y - pa->y;
 	float dx = hit.x - pa->x;
 	float dz = hit.z - pa->z;
@@ -138,7 +138,7 @@ static void ATPC_Create(cAbstractFile *params) {
 				continue;
 			}
 			int node = wm->nodes[g_ATPCIDAmmo][i];
-			const matrix_t *m = CGameModel_NodeMatrix(Obj_Vtbl(v)->GetModel(v), &mat, node, 0, NULL, 0);
+			const matrix_t *m = CGameModel_NodeMatrix(Obj_GetModel(v), &mat, node, 0, NULL, 0);
 			p.x = m->m[12];
 			p.y = m->m[13];
 			p.z = m->m[14];
@@ -151,7 +151,7 @@ static void ATPC_Create(cAbstractFile *params) {
 			}
 			first = 0;
 		}
-		const vec3_t *pb = v->vftable->GetPos(v, &a);
+		const vec3_t *pb = Entity_GetPos(v, &a);
 		dy = hit.y - pb->y;
 		dx = hit.x - pb->x;
 		dz = hit.z - pb->z;
@@ -159,7 +159,7 @@ static void ATPC_Create(cAbstractFile *params) {
 		in.x = 0.0f;
 		in.y = 0.0f;
 		in.z = d2 * g_ATPCConvDist / d;
-		const vec3_t *r = Vec3_Rotate(&out, &in, Obj_Vtbl(v)->GetAng(v, &rot));
+		const vec3_t *r = Vec3_Rotate(&out, &in, Obj_GetAng(v, &rot));
 		origin.x = avg.x - r->x;
 		origin.y = avg.y - r->y;
 		origin.z = avg.z - r->z;
@@ -185,7 +185,7 @@ static void ATPC_Create(cAbstractFile *params) {
 			CHECK(w);
 			CHECK(Entity_IsType(w, TYEN_WITH_LIFE));
 			float rad = WLife(w)->prim.radius;
-			const vec3_t *pc = Obj_Vtbl(v)->GetViewPos(v, &c);
+			const vec3_t *pc = Obj_GetViewPos(v, &c);
 			float cy = pc->y - hit.y;
 			float cx = pc->x - hit.x;
 			float cz = pc->z - hit.z;
@@ -250,7 +250,7 @@ static void ATPC_Create(cAbstractFile *params) {
 	if (!u || u == v || !Entity_IsType(u, TYEN_WITH_LIFE) || !Entity_FollowCam(u)) {
 		return;
 	}
-	float dist = Dist_PointSegment(&origin, &hit, u->vftable->GetPos(u, &c), &near);
+	float dist = Dist_PointSegment(&origin, &hit, Entity_GetPos(u, &c), &near);
 	int up = cWeaponManager_GetUpgrade(wm, g_ATPCIDWeap);
 	float radius = g_ATPCCapsuleSoundRadius;
 	if (up == 10) {
@@ -281,7 +281,7 @@ static void ATPC_FX(cAbstractFile *params) {
 	int player;
 
 	cAbstractFile_ReadString(params, name, 0x80);
-	params->vftable->Read(params, &player, 4);
+	VFile_Read(params, &player, 4);
 	cAbstractFile_ReadString(params, itemName, 0x80);
 	cEntity *v = Weap_GetVehicle(name);
 	cCannonScorer *item = (cCannonScorer *)cScorer_FindItem(Scorer_Get(player), itemName);
@@ -363,37 +363,37 @@ static void ATPC_Fire(cAbstractFile *params) {
 	ang[2] = 0.0f;
 	target = NULL;
 	dist = g_ATPCRange;
-	v->vftable->GetTargetAngle(v, ang, g_ATPCRange, &target);
-	v->vftable->AimWeapon(v, ang[0], ang[1], &dist, &hit, &target, 8);
+	Entity_GetTargetAngle(v, ang, g_ATPCRange, &target);
+	Entity_AimWeapon(v, ang[0], ang[1], &dist, &hit, &target, 8);
 	if (!(g_ATPCConvDist > dist)) {
 		conv = g_ATPCConvDist / dist;
 	}
 	if (target) {
-		hit = *target->vftable->GetPos(target, &t);
+		hit = *Entity_GetPos(target, &t);
 		if (target && Entity_IsType(target, TYEN_VEHICLE)) {
 			cEntity *tg = target;
 			cVehicleAttack_ShotAt(&WLife(v)->attack, tg->name, 1);
-			const vec3_t *pa = v->vftable->GetPos(v, &a);
-			const vec3_t *pb = tg->vftable->GetPos(tg, &b);
+			const vec3_t *pa = Entity_GetPos(v, &a);
+			const vec3_t *pb = Entity_GetPos(tg, &b);
 			float dx = (pb->x - pa->x) * conv;
 			float dy = (pb->y - pa->y) * conv;
 			float dz = (pb->z - pa->z) * conv;
-			const vec3_t *pc = v->vftable->GetPos(v, &c);
+			const vec3_t *pc = Entity_GetPos(v, &c);
 			from.x = dx + pc->x;
 			from.y = pc->y + dy;
 			from.z = pc->z + dz;
-			cWorld_LineCall(g_pWorld, 8, &from, tg->vftable->GetPos(tg, &t), g_ATPCExplosionRadius,
+			cWorld_LineCall(g_pWorld, 8, &from, Entity_GetPos(tg, &t), g_ATPCExplosionRadius,
 				"!ATPCXplosionCall");
 			goto upgrade;
 		}
 	}
 	cVehicleAttack_ShotAtPoint(&WLife(v)->attack, &hit, 1);
 	{
-		const vec3_t *pa = v->vftable->GetPos(v, &t);
+		const vec3_t *pa = Entity_GetPos(v, &t);
 		float dx = (hit.x - pa->x) * conv;
 		float dy = (hit.y - pa->y) * conv;
 		float dz = (hit.z - pa->z) * conv;
-		const vec3_t *pc = v->vftable->GetPos(v, &c);
+		const vec3_t *pc = Entity_GetPos(v, &c);
 		from.x = pc->x + dx;
 		from.y = pc->y + dy;
 		from.z = pc->z + dz;
@@ -447,10 +447,10 @@ static void ATPC_XplosionCall(cAbstractFile *params) {
 	float dist;
 
 	cAbstractFile_ReadString(params, g_ATPCVictim, 0x80);
-	params->vftable->Read(params, &center.x, 4);
-	params->vftable->Read(params, &center.y, 4);
-	params->vftable->Read(params, &center.z, 4);
-	params->vftable->Read(params, &dist, 4);
+	VFile_Read(params, &center.x, 4);
+	VFile_Read(params, &center.y, 4);
+	VFile_Read(params, &center.z, 4);
+	VFile_Read(params, &dist, 4);
 	cEntity *victim = World_FindEntity(g_ATPCVictim);
 	cEntity *shooter = World_FindEntity(g_ATPCShooter);
 	if (!victim || !Entity_IsType(victim, TYEN_WITH_LIFE) || (g_pApp->flags & APPF_CLIENT)) {
@@ -459,7 +459,7 @@ static void ATPC_XplosionCall(cAbstractFile *params) {
 	int oldLife = WLife(victim)->life;
 	int dmg = 0;
 	byte ext = shooter && cWeaponManager_GetUpgrade(&Veh(shooter)->weapons, g_ATPCIDWeap) == 10;
-	const vec3_t *pp = victim->vftable->GetPos(victim, &p);
+	const vec3_t *pp = Entity_GetPos(victim, &p);
 	float inv = 1.0f / dist;
 	float dx = (pp->x - center.x) * inv;
 	float dy = (pp->y - center.y) * inv;
@@ -493,7 +493,7 @@ static void ATPC_XplosionCall(cAbstractFile *params) {
 		f = f * ((float)(g_ATPCMainDamage / g_ATPCExtraDamage) + 1.0f);
 	}
 	dmg += (int)((float)g_ATPCExtraDamage * f * g_ATPCNumSlots);
-	if (shooter && shooter->vftable->GetAI(shooter) && World_IsEasySingle()) {
+	if (shooter && Entity_GetAI(shooter) && World_IsEasySingle()) {
 		dmg = dmg / 2;
 		if (dmg <= 0) {
 			dmg = 1;
@@ -510,11 +510,11 @@ static void ATPC_XplosionCall(cAbstractFile *params) {
 		dx = dx * f * k;
 		dy = dy * f * k;
 		dz = dz * f * k;
-		const vec3_t *vel = Obj_Vtbl(victim)->GetVel(victim, &r);
+		const vec3_t *vel = Obj_GetVel(victim, &r);
 		n.x = dx + vel->x;
 		n.y = vel->y + dy;
 		n.z = vel->z + dz;
-		Obj_Vtbl(victim)->SetVel(victim, &n);
+		Obj_SetVel(victim, &n);
 	}
 	if (Entity_IsType(victim, TYEN_VEHICLE) && Veh(victim)->netCtrl) {
 		Veh(victim)->netCtrl->hit = 2;
@@ -550,8 +550,8 @@ static void Cloud_Fire(cAbstractFile *params) {
 		return;
 	}
 	Net_GetObjName(cloudName);
-	v->vftable->GetPos(v, &pos);
-	Obj_Vtbl(v)->GetAng(v, &ang);
+	Entity_GetPos(v, &pos);
+	Obj_GetAng(v, &ang);
 	cPy_Function_AddParamS(g_CreateCloudFunc, cloudName);
 	cPy_Function_AddParamF(g_CreateCloudFunc, pos.x);
 	cPy_Function_AddParamF(g_CreateCloudFunc, pos.y);
@@ -583,7 +583,7 @@ static void Cloud_OnHit(cAbstractFile *params) {
 	cAbstractFile_ReadString(params, cloud, 0x80);
 	cAbstractFile_ReadString(params, other, 0x80);
 	cAbstractFile_ReadString(params, name, 0x80);
-	params->vftable->Read(params, &strong, 4);
+	VFile_Read(params, &strong, 4);
 	cEntity *e = World_FindEntity(name);
 	if (!e) {
 		return;

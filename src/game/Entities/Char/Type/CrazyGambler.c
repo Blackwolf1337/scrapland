@@ -16,7 +16,7 @@ static void ChType_FXCrazyGamblerSetHeadModel(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, event, 0x80);
 	cAbstractFile_ReadString(params, head, 0x80);
-	params->vftable->Read(params, &unused, 4);
+	VFile_Read(params, &unused, 4);
 	cEntity *e = World_FindEntity("MeetGamblerCrazyGambler");
 	CHECK(e);
 	CHECK(Entity_IsType(e, TYEN_WITH_LIFE));
@@ -25,7 +25,7 @@ static void ChType_FXCrazyGamblerSetHeadModel(cAbstractFile *params) {
 	cEntity *h = World_FindEntity(head);
 	CHECK(h);
 	CHECK(Entity_IsType(h, TYEN_WITH_LIFE));
-	CHECK(CGameModel_IsLoaded(Obj_Vtbl(h)->GetModel(h)));
+	CHECK(CGameModel_IsLoaded(Obj_GetModel(h)));
 	if (!strcmp(head, "MeetGamblerCrazyHead")) {
 		node = "_R_Gambler_Cabeza-Pelos";
 	} else if (!strcmp(head, "MeetGamblerCrazyGambler")) {
@@ -33,7 +33,7 @@ static void ChType_FXCrazyGamblerSetHeadModel(cAbstractFile *params) {
 	} else {
 		return;
 	}
-	cEmbeddedFXCrazyGambler_SetHead(fx, Obj_Vtbl(h)->GetModel(h), node);
+	cEmbeddedFXCrazyGambler_SetHead(fx, Obj_GetModel(h), node);
 }
 
 static cPy_NativeFunc NativeFunc_FXCrazyGamblerSetHeadModel;

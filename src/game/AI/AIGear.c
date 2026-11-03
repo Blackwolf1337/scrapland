@@ -52,7 +52,7 @@ static void cAIGear_UpdateAction(cAI *elem) {
 	cAIGear *self = (cAIGear *)elem;
 	cAIChar *c = &self->base;
 
-	if (c->vftable->CanRepos(&c->base.base, c->state) || !AICC_Vtbl(c->control)->IsBlocked(c->control)) {
+	if (AIChar_CanRepos(c, c->state) || !AICC_IsBlocked(c->control)) {
 		return;
 	}
 	const char *name = Nto1Node_TargetName(&WChar(c->ent)->collide);
@@ -60,9 +60,9 @@ static void cAIGear_UpdateAction(cAI *elem) {
 		return;
 	}
 	cEntity *o = World_FindEntity(name);
-	if (o && o->vftable->GetAI(o)) {
-		cAIChar *ai = o->vftable->GetAI(o);
-		if (ai->vftable->base.IsPaused(&ai->base.base)) {
+	if (o && Entity_GetAI(o)) {
+		cAIChar *ai = Entity_GetAI(o);
+		if (AIMove_IsPaused(ai)) {
 			c->ctrl->act = 1;
 		}
 	}
@@ -82,10 +82,10 @@ static void cAIGear_CheckActDist(cAI *elem) {
 		cEntity *tgt = c->base.target.target;
 		cAICharControl *ctl = c->control;
 		cEntity *own = c->ent;
-		float r = Obj_Vtbl(own)->GetRadius(own);
-		const vec3_t *tp = tgt->vftable->GetPos(tgt, &b);
-		const vec3_t *op = own->vftable->GetPos(own, &a);
-		if (!AICC_Vtbl(ctl)->TestPath(ctl, op, tp, r)) {
+		float r = Obj_GetRadius(own);
+		const vec3_t *tp = Entity_GetPos(tgt, &b);
+		const vec3_t *op = Entity_GetPos(own, &a);
+		if (!AICC_TestPath(ctl, op, tp, r)) {
 			self->blocked = 1;
 			c->ctrl->act = 0;
 			return;
@@ -94,13 +94,13 @@ static void cAIGear_CheckActDist(cAI *elem) {
 		c->standTime = 0.0f;
 	}
 	cEntity *tgt = c->base.target.target;
-	const vec3_t *op = c->ent->vftable->GetPos(c->ent, &a);
-	const vec3_t *tp = tgt->vftable->GetPos(tgt, &b);
+	const vec3_t *op = Entity_GetPos(c->ent, &a);
+	const vec3_t *tp = Entity_GetPos(tgt, &b);
 	d.y = tp->y - op->y;
 	d.x = tp->x - op->x;
 	d.z = tp->z - op->z;
 	float dist = (float)__builtin_sqrt((double)(d.x * d.x + 0.0f + d.z * d.z));
-	if (!c->vftable->GetDirect2(&c->base.base) || !(dist > c->actMin) || !(c->actMax > dist)) {
+	if (!AIChar_GetDirect2(c) || !(dist > c->actMin) || !(c->actMax > dist)) {
 		c->standTime = 0.0f;
 		c->ctrl->act = 0;
 		return;
@@ -111,7 +111,7 @@ static void cAIGear_CheckActDist(cAI *elem) {
 	}
 	/* the half angle of the target at its distance, the angle of the view (down z) to it */
 	cEntity *t = c->base.target.target;
-	float tr = Obj_Vtbl(t)->GetRadius(t);
+	float tr = Obj_GetRadius(t);
 	double half = atan2((double)tr, (double)dist);
 	vec3_t fwd = { 0.0f, 0.0f, -1.0f };
 	vec3_t view = WChar(c->ent)->view;
@@ -148,14 +148,14 @@ static void cAIGear_SetShoot(cAI *elem) {
 	cAIGear *self = (cAIGear *)elem;
 	cEntity *t = self->base.base.target.target;
 
-	if (t->vftable->GetAI(t)) {
+	if (Entity_GetAI(t)) {
 		self->shootFactor = g_ShootGearAIDef;
 		self->shootAng = g_OffsetAngShootGearAIDef;
 	} else {
 		self->shootFactor = g_ShootGearAI;
 		self->shootAng = g_OffsetAngShootGearAI;
 	}
-	self->base.vftable->SetDists(&self->base.base.base);
+	AIChar_SetDists(self);
 }
 
 byte cAIGear_IsBlocked(cAIGear *self) {

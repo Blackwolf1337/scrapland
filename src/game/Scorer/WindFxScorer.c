@@ -117,7 +117,7 @@ static void cWindFxScorer_Draw(cScorerItem *base, int player) {
 	float now = Scorer_Get(player)->time;
 	float dt = now - Scorer_Get(player)->lastTime;
 	speed = speed / WINDFX_MAX_SPEED;
-	((const cObjEntityVtbl *)ship->vftable)->GetViewPos(ship, &pos);
+	Obj_GetViewPos(ship, &pos);
 	float pan = 0.0f;
 	to[0] = to[1] = to[2] = to[3] = 0.0f;
 	if (pos.y > g_AtmosphereLimit) {

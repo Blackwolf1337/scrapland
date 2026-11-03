@@ -59,7 +59,7 @@ static void ShipRegen_UpdateShip(cShipRegen *self, float dt) {
 		return;
 	}
 	cEntity *e = World_FindEntity(s->name);
-	if (!e || !e->vftable->IsType(e, TYEN_CAR)) {
+	if (!e || !Entity_IsType(e, TYEN_CAR)) {
 		return;
 	}
 	cVehicleEntity *v = Veh(e);
@@ -101,14 +101,14 @@ static void ShipRegen_UpdateShip(cShipRegen *self, float dt) {
 	cScorerItem *item = cScorer_FindItem(Scorer_Get(0), g_RegenerationItem);
 	if (item) {
 		double val = (double)(v->wl.life - g_LifeToLaunchCallback) / (double)(v->maxLife - g_LifeToLaunchCallback);
-		item->vftable->Var(item, "Value", 1, NULL, &val, NULL);
+		ScorerItem_Var(item, "Value", 1, NULL, &val, NULL);
 	}
 }
 
 void ShipRegen_Set(void *shipRegen, cEntity *ship, float speed, float endSpeed) {
 	cShipRegen *self = shipRegen;
 
-	if (!ship || !ship->vftable->IsType(ship, TYEN_WITH_LIFE) || WLife(ship)->life <= 0) {
+	if (!ship || !Entity_IsType(ship, TYEN_WITH_LIFE) || WLife(ship)->life <= 0) {
 		return;
 	}
 	if (!self->ship) {
@@ -135,10 +135,10 @@ void ShipRegen_Update(cShipRegen *self, float dt) {
 		ShipRegen_UpdateShip(self, dt);
 	}
 	cEntity *usr = cWorld_GetUsrEntity(g_pWorld, 0);
-	if (!usr || !usr->vftable->IsType(usr, TYEN_WITH_LIFE) || WLife(usr)->life <= 0) {
+	if (!usr || !Entity_IsType(usr, TYEN_WITH_LIFE) || WLife(usr)->life <= 0) {
 		return;
 	}
-	byte onFoot = usr->vftable->IsType(usr, TYEN_WALKCHAR);
+	byte onFoot = Entity_IsType(usr, TYEN_WALKCHAR);
 	float t = self->time - dt;
 	self->time = t;
 	if (!(0.0f >= t)) {
@@ -154,7 +154,7 @@ void ShipRegen_Update(cShipRegen *self, float dt) {
 		if (World_IsEasySingle()) {
 			self->time = self->time * 0.5f;
 		}
-		int max = usr->vftable->IsType(usr, TYEN_CAR) ? Veh(usr)->minLife : g_StdMaxLife;
+		int max = Entity_IsType(usr, TYEN_CAR) ? Veh(usr)->minLife : g_StdMaxLife;
 		if (!(max > WLife(usr)->life)) {
 			self->noLoss = 0;
 		}

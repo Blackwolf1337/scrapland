@@ -29,13 +29,13 @@ static PyObject *SLogic_SetCharState(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	cEntity *target = World_FindEntity(targetName);
-	void *actCtrl = WithLife_Vtbl(e)->GetActCtrl(e);
+	void *actCtrl = WithLife_GetActCtrl(e);
 	CHECK(actCtrl);
 	cLocalLogic *logic = Logic_GetLocalLogic(e);
 	if (!logic) {
 		return NULL;
 	}
-	Logic_Vtbl(logic)->SetState(logic, state, target);
+	Logic_SetState(logic, state, target);
 	return Py_ReturnNone();
 }
 
@@ -108,7 +108,7 @@ static PyObject *SLogic_GetNearestShip(PyObject *self, PyObject *args) {
 				continue;
 			}
 			vec3_t tmp;
-			const vec3_t *p = e->vftable->GetPos(e, &tmp);
+			const vec3_t *p = Entity_GetPos(e, &tmp);
 			float dx = p->x - pos.x, dy = p->y - pos.y, dz = p->z - pos.z;
 			float d = dx * dx + dy * dy + dz * dz;
 			if (best > d) {
@@ -179,7 +179,7 @@ static PyObject *SLogic_SetDominationZones(PyObject *self, PyObject *args) {
 		char *name = PyString_AsString(elem);
 		CHECK(name && "String invalido");
 		cEntity *e = World_FindEntity(name);
-		CHECK(e && e->vftable->IsType(e, TYEN_WITH_LIFE) && "La entidad no es un 'WithLifeEntity'");
+		CHECK(e && Entity_IsType(e, TYEN_WITH_LIFE) && "La entidad no es un 'WithLifeEntity'");
 		Domination_AddZone(e);
 	}
 	return Py_ReturnNone();

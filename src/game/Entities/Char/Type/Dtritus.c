@@ -39,7 +39,7 @@ static void ChType_DtritusActionPress(cAbstractFile *params) {
 		return;
 	}
 	cEntity *v = World_FindEntity(name);
-	if (!v || !v->vftable->IsType(v, TYEN_WALKCHAR) || WChar(v)->falling || ChType_ActPriority(ChType_ActCtrl(v)) ||
+	if (!v || !Entity_IsType(v, TYEN_WALKCHAR) || WChar(v)->falling || ChType_ActPriority(ChType_ActCtrl(v)) ||
 		!(1.0f - WChar(v)->energyUsed >= 0.9f)) {
 		return;
 	}
@@ -67,7 +67,7 @@ static void ChType_DtritusKill(cAbstractFile *params) {
 		return;
 	}
 	cEntity *e = World_FindEntity(name);
-	if (!e || g_DtritusEnt == e || !e->vftable->IsType(e, TYEN_WALKCHAR) || WChar(e)->wl.god) {
+	if (!e || g_DtritusEnt == e || !Entity_IsType(e, TYEN_WALKCHAR) || WChar(e)->wl.god) {
 		return;
 	}
 	SaveVar_Inc("Stats.Dtritus", 1);
@@ -82,18 +82,18 @@ static void ChType_DtritusKill(cAbstractFile *params) {
 	cTimer_SetSpeedChecked(&g_pWorld->timer, g_DTritusHitTimeSpeed);
 	cTimer_SetSpeedTo(&g_pWorld->timer, 1.0f);
 	cTimer_SetBlend(&g_pWorld->timer, g_DTritusHitTimeFader);
-	const vec3_t *pe = e->vftable->GetPos(e, &t1);
-	const vec3_t *pm = g_DtritusEnt->vftable->GetPos(g_DtritusEnt, &t2);
-	const vec3_t *pe2 = e->vftable->GetPos(e, &t3);
-	const vec3_t *pm2 = g_DtritusEnt->vftable->GetPos(g_DtritusEnt, &t4);
+	const vec3_t *pe = Entity_GetPos(e, &t1);
+	const vec3_t *pm = Entity_GetPos(g_DtritusEnt, &t2);
+	const vec3_t *pe2 = Entity_GetPos(e, &t3);
+	const vec3_t *pm2 = Entity_GetPos(g_DtritusEnt, &t4);
 	double a = atan2((double)(pe->x - pm->x), (double)(pe2->z - pm2->z));
-	float n = NormAng(((float)a - Obj_Vtbl(g_DtritusEnt)->GetAng(g_DtritusEnt, &t1)->y) - M_PI_F);
+	float n = NormAng(((float)a - Obj_GetAng(g_DtritusEnt, &t1)->y) - M_PI_F);
 	double turn = (n > 0.0f ? M_PI_D : -M_PI_D) * 0.25;
-	float y = Obj_Vtbl(g_DtritusEnt)->GetAng(g_DtritusEnt, &t1)->y + (float)turn;
+	float y = Obj_GetAng(g_DtritusEnt, &t1)->y + (float)turn;
 	ang.x = 0.0f;
 	ang.y = y;
 	ang.z = 0.0f;
-	WChar_Vtbl(g_DtritusEnt)->SetViewAng(g_DtritusEnt, &ang);
+	WChar_SetViewAng(g_DtritusEnt, &ang);
 	WChar(g_DtritusEnt)->displAng = -(float)turn;
 	const char *act = FxElem_Rand(1.0, 0.0) > 0.5f ? "ActionOK1" : "ActionOK";
 	cActCtrl_SetDefLoop(ChType_ActCtrl(g_DtritusEnt), act, 0);
@@ -113,7 +113,7 @@ static void ChType_DtritusKill(cAbstractFile *params) {
 		el->started = 1;
 	}
 	cObjElementFXKill_Start(el, e);
-	const vec3_t *ma = Obj_Vtbl(g_DtritusEnt)->GetAng(g_DtritusEnt, &t1);
+	const vec3_t *ma = Obj_GetAng(g_DtritusEnt, &t1);
 	cObjElementFXKill_SetAngles(el, ma->x + 0.0f, ma->y + M_PI_F, ma->z + 0.0f);
 }
 
@@ -129,10 +129,10 @@ static void ChType_DtritusEndEvent(cAbstractFile *params) {
 	v.x = 0.0f;
 	v.y = 0.0f;
 	v.z = 0.0f;
-	Obj_Vtbl(g_DtritusEnt)->SetVel(g_DtritusEnt, &v);
+	Obj_SetVel(g_DtritusEnt, &v);
 	cTimer_SetSpeedChecked(&g_pWorld->timer, 1.0f);
 	if (WChar(g_DtritusEnt)->viewLock) {
-		WChar_Vtbl(g_DtritusEnt)->SetViewAng(g_DtritusEnt, Obj_Vtbl(g_DtritusEnt)->GetAng(g_DtritusEnt, &v));
+		WChar_SetViewAng(g_DtritusEnt, Obj_GetAng(g_DtritusEnt, &v));
 		WChar(g_DtritusEnt)->displAng = 0.0f;
 	}
 	cWalkCharControl_Reset(&WChar(g_DtritusEnt)->control, 0);
@@ -159,7 +159,7 @@ static void ChType_DtritusHitEvent(cAbstractFile *params) {
 	g_DtritusEnt = World_FindEntity(name);
 	CHECK(g_DtritusEnt);
 	CHECK(Entity_IsType(g_DtritusEnt, TYEN_WALKCHAR));
-	const vec3_t *vel = Obj_Vtbl(g_DtritusEnt)->GetVel(g_DtritusEnt, &tmp);
+	const vec3_t *vel = Obj_GetVel(g_DtritusEnt, &tmp);
 	float len = (float)__builtin_sqrt((double)(vel->x * vel->x + vel->y * vel->y + vel->z * vel->z));
 	if (len == 0.0f) {
 		n = *vel;
@@ -172,7 +172,7 @@ static void ChType_DtritusHitEvent(cAbstractFile *params) {
 	float ox = n.x * 50.0f;
 	float oy = n.y * 50.0f;
 	float oz = n.z * 50.0f;
-	const vec3_t *p = g_DtritusEnt->vftable->GetPos(g_DtritusEnt, &tmp);
+	const vec3_t *p = Entity_GetPos(g_DtritusEnt, &tmp);
 	c.x = p->x + ox;
 	c.y = p->y + oy;
 	c.z = p->z + oz;

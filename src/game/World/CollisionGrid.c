@@ -489,11 +489,11 @@ cEntity *cEntityList_Nearest(void *list, const vec3_t *pos, cEntity *exclude, fl
 		if (exclude && exclude == e) {
 			continue;
 		}
-		const vec3_t *p = e->vftable->GetPos(e, &tmp);
+		const vec3_t *p = Entity_GetPos(e, &tmp);
 		float dx = p->x - pos->x;
 		float dy = p->y - pos->y;
 		float dz = p->z - pos->z;
-		p = e->vftable->GetPos(e, &tmp2);
+		p = Entity_GetPos(e, &tmp2);
 		float dl = level - (float)Floor_Get(&g_pWorld->floor, p->y);
 		float d = (float)__builtin_fabs((double)dl) * 400000000.0f + (dy * dy + dx * dx + dz * dz);
 		if (bestD > d) {
@@ -517,7 +517,7 @@ int cEntityList_Var(void *list, const char *name, int set, char **s, double *d, 
 				cEntity *e = World_FindEntity(name + 4);
 				if (e) {
 					vec3_t tmp;
-					cEntity *near = cEntityList_Nearest(self, e->vftable->GetPos(e, &tmp), e, NULL);
+					cEntity *near = cEntityList_Nearest(self, Entity_GetPos(e, &tmp), e, NULL);
 					if (near) {
 						*s = near->name;
 						return 1;

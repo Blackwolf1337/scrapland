@@ -1437,7 +1437,7 @@ static void Bsp_TakeTriangles(CScene *scn, byte allow) {
 				}
 			}
 		}
-		mesh->vftable->Delete(&mesh->base, 1);
+		Object3D_Delete(mesh, 1);
 		CNode3D_FreeObj3D(n);
 		if (!(n->Refs - (n->prev != NULL) - (n->next != NULL))) {
 			n->flags |= 0x20008;

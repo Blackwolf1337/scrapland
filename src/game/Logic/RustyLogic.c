@@ -80,8 +80,8 @@ static void Rusty_StartWork(cEntity *p, cEntity *junk, float t) {
 	vec3_t tmp;
 	cObjMove *m = &Obj(p)->move;
 
-	m->moveAng = *Obj_Vtbl(junk)->GetAng(junk, &tmp);
-	m->movePos = *p->vftable->GetPos(p, &tmp);
+	m->moveAng = *Obj_GetAng(junk, &tmp);
+	m->movePos = *Entity_GetPos(p, &tmp);
 	cObjMove_SetTime(m, t);
 	m->fade = OBJMOVE_SMOOTH;
 	cActCtrl_Play(ChType_ActCtrl(p), "Action", 1, 1.0f);
@@ -93,13 +93,13 @@ static void Rusty_GoToJunk(cRustyLocalLogic *self, cAIChar *ai, double speed) {
 	vec3_t ang, fwd, dir;
 	cEntity *junk = self->junk;
 
-	Obj_Vtbl(junk)->GetAng(junk, &ang);
+	Obj_GetAng(junk, &ang);
 	fwd.x = 0.0f;
 	fwd.y = 0.0f;
 	fwd.z = -1.0f;
 	Vec3_Rotate(&dir, &fwd, &ang);
-	const vec3_t *pos = self->junk->vftable->GetPos(self->junk, &fwd);
-	ai->vftable->SetState(&ai->base.base, 4, *pos, dir, 100.0, speed);
+	const vec3_t *pos = Entity_GetPos(self->junk, &fwd);
+	AIChar_SetState(ai, 4, *pos, dir, 100.0, speed);
 }
 
 /* vf17 */
@@ -113,25 +113,25 @@ static void cRustyLocalLogic_Update(cLocalLogic *elem, float dt) {
 
 	if (st == 0 || st == 6) {
 		cRustyLocalLogic_NextJunk(self);
-		b->vftable->SetState(&self->base.base.logic, 7, NULL);
+		Logic_SetState(self, 7, NULL);
 	}
 	if (st == 7) {
-		cAIChar *ai = p->vftable->GetAI(p);
-		if (ai->vftable->GetState(&ai->base.base) || !ai->vftable->base.GetArrived(&ai->base.base)) {
+		cAIChar *ai = Entity_GetAI(p);
+		if (AIChar_GetState(ai) || !AIMove_GetArrived(ai)) {
 			return;
 		}
-		if (strcmp(p->vftable->GetClassName(p), TYEN_WALKCHAR)) {
+		if (strcmp(Entity_GetClassName(p), TYEN_WALKCHAR)) {
 			return;
 		}
 		vec3_t jp;
 		/* the original uses the buffer, not the returned pointer */
-		self->junk->vftable->GetPos(self->junk, &jp);
-		jp.y = p->vftable->GetPos(p, &t2)->y;
+		Entity_GetPos(self->junk, &jp);
+		jp.y = Entity_GetPos(p, &t2)->y;
 		if (cWorld_TestSphereEntities(g_pWorld, p, 0x10, &jp, WLife(p)->prim.radius, NULL, 1, 0)) {
 			return;
 		}
 		Rusty_StartWork(p, self->junk, 0.25f);
-		b->vftable->SetState(&self->base.base.logic, 8, NULL);
+		Logic_SetState(self, 8, NULL);
 		return;
 	}
 	if (st == 8) {
@@ -154,27 +154,27 @@ static void cRustyLocalLogic_Update(cLocalLogic *elem, float dt) {
 		cActCtrl_Play(ChType_ActCtrl(p), "Walk", 1, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(p), "Walk", 1);
 		cRustyLocalLogic_NextJunk(self);
-		b->vftable->SetState(&self->base.base.logic, 7, NULL);
+		Logic_SetState(self, 7, NULL);
 		return;
 	}
 	if (st != 9) {
 		cGenCharLocalLogic_Update(&self->base.base.logic, dt);
 		return;
 	}
-	p->vftable->GetAI(p);
+	Entity_GetAI(p);
 	if (strcmp(cActCtrl_GetActionName(ChType_ActCtrl(p), 0), "Run")) {
-		Rusty_GoToJunk(self, b->parent->vftable->GetAI(b->parent), 1.0);
+		Rusty_GoToJunk(self, Entity_GetAI(b->parent), 1.0);
 		return;
 	}
 	cEntity *plat = World_FindEntity("DM_Door_EditShip_00");
 	CHECK(plat && "La plataforma no existe");
-	const vec3_t *pp = plat->vftable->GetPos(plat, &t1);
-	const vec3_t *mp = p->vftable->GetPos(p, &t2);
+	const vec3_t *pp = Entity_GetPos(plat, &t1);
+	const vec3_t *mp = Entity_GetPos(p, &t2);
 	float dx = mp->x - pp->x;
 	float dy = mp->y - pp->y;
 	float dz = mp->z - pp->z;
 	if (dy * dy + dx * dx + dz * dz > (float)(g_PlatformRadiusSqr + 90000)) {
-		b->vftable->SetState(&self->base.base.logic, 7, NULL);
+		Logic_SetState(self, 7, NULL);
 	}
 }
 
@@ -207,7 +207,7 @@ static byte cRustyLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *tar
 	if (state == 7) {
 		if ((byte)cBaseLocalLogic_SetState(&self->base.base.logic, 7, target)) {
 			cEntity *p = self->base.base.parent;
-			Rusty_GoToJunk(self, p->vftable->GetAI(p), (double)g_GenCharRelaxSpeed);
+			Rusty_GoToJunk(self, Entity_GetAI(p), (double)g_GenCharRelaxSpeed);
 		}
 		return 1;
 	}

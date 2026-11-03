@@ -40,7 +40,7 @@ void cAIBank_CheckAttack(cAI *elem) {
 	byte go;
 	vec3_t a, b;
 
-	if (AICC_Vtbl(ctl)->GetWalkDir(ctl) == 0 && AICC_Vtbl(ctl)->GetOrbitSide(ctl) == 0 && !c->ctrl->act) {
+	if (AICC_GetWalkDir(ctl) == 0 && AICC_GetOrbitSide(ctl) == 0 && !c->ctrl->act) {
 		go = 1;
 	} else if (c->ctrl->act) {
 		go = 1;
@@ -48,15 +48,15 @@ void cAIBank_CheckAttack(cAI *elem) {
 		go = self->money > WChar(c->ent)->money;
 	}
 	cEntity *tgt = c->base.target.target;
-	const vec3_t *op = c->ent->vftable->GetPos(c->ent, &a);
-	const vec3_t *tp = tgt->vftable->GetPos(tgt, &b);
+	const vec3_t *op = Entity_GetPos(c->ent, &a);
+	const vec3_t *tp = Entity_GetPos(tgt, &b);
 	float dx = tp->x - op->x;
 	float dz = tp->z - op->z;
 	float dist = (float)__builtin_sqrt((double)(dx * dx + 0.0f + dz * dz));
-	if (go && AICC_Vtbl(c->control)->IsDirect2(c->control)) {
+	if (go && AICC_IsDirect2(c->control)) {
 		tgt = c->base.target.target;
-		tp = tgt->vftable->GetPos(tgt, &b);
-		op = c->ent->vftable->GetPos(c->ent, &a);
+		tp = Entity_GetPos(tgt, &b);
+		op = Entity_GetPos(c->ent, &a);
 		if ((double)g_MaxHeightChaseCharAI > __builtin_fabs((double)(tp->y - op->y)) &&
 			AIChar_Action0(c->ent)->priority <= 0x65 && dist > c->actMin && c->actMax > dist) {
 			c->ctrl->act = 1;
@@ -93,8 +93,8 @@ byte cAIBank_SetState(cAI *elem, int state, ...) {
 		self->money = WChar(c->ent)->money;
 		state = 7;
 	}
-	if (!c->vftable->IsGroupState(&c->base.base, state) || g_CharGroup->vftable->CanChange(&g_CharGroup->base)) {
-		c->vftable->BeginChange(&c->base.base, state);
+	if (!AIChar_IsGroupState(c, state) || AIGroup_CanChange(g_CharGroup)) {
+		AIChar_BeginChange(c, state);
 	}
 	va_start(ap, state);
 	byte r = cAIChar_ChangeState(&c->base.base, state, ap);
@@ -108,14 +108,14 @@ byte cAIBank_SetStateIntern(cAI *elem, int state, ...) {
 	va_list ap;
 
 	AIChar_DebugState(c, "Demanda interna de CAMBIO de ESTADO -> %s", state);
-	if (c->vftable->IsGroupState(&c->base.base, state)) {
-		g_CharGroup->vftable->AllowChange(&g_CharGroup->base);
+	if (AIChar_IsGroupState(c, state)) {
+		AIGroup_AllowChange(g_CharGroup);
 	}
 	if (state == 2) {
 		self->money = WChar(c->ent)->money;
 		state = 7;
 	}
-	c->vftable->BeginChange(&c->base.base, state);
+	AIChar_BeginChange(c, state);
 	va_start(ap, state);
 	byte r = cAIChar_ChangeState(&c->base.base, state, ap);
 	va_end(ap);

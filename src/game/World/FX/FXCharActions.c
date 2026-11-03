@@ -114,7 +114,7 @@ static inline void *FXA_Delete(void *self, uint32_t flags, uint32_t size) {
 
 /* the model of the entity, CHECKed */
 static CGameModel *FXA_Model(cEntity *e) {
-	CGameModel *m = Obj_Vtbl(e)->GetModel(e);
+	CGameModel *m = Obj_GetModel(e);
 
 	CHECK(CGameModel_IsLoaded(m));
 	return m;
@@ -691,13 +691,13 @@ static byte FXCharActions_AliveAction(cObjElementFX *base, cDebris *d, cDebrisSy
 	cObjElementFXBertoAttack *el = self;
 	cEntity *e = el->ent;
 
-	if (e && WithLife_Vtbl(e)->GetActCtrl(e)) {
+	if (e && WithLife_GetActCtrl(e)) {
 		e = el->ent;
-		if (cActCtrl_IsActive(WithLife_Vtbl(e)->GetActCtrl(e), "Action")) {
+		if (cActCtrl_IsActive(WithLife_GetActCtrl(e), "Action")) {
 			d->life = 1.0f;
 		} else {
 			e = el->ent;
-			if (cActCtrl_IsActive(WithLife_Vtbl(e)->GetActCtrl(e), "ActionInit")) {
+			if (cActCtrl_IsActive(WithLife_GetActCtrl(e), "ActionInit")) {
 				d->life = 1.0f;
 			}
 		}
@@ -719,7 +719,7 @@ static byte cObjElementFXFunctionarySpecialAction_Alive(cObjElementFX *base, cDe
 
 	if (!cDebris_Update(d, sys)) {
 		if (self->ent) {
-			m = Obj_Vtbl(self->ent)->GetModel(self->ent);
+			m = Obj_GetModel(self->ent);
 			if (CGameModel_IsLoaded(m)) {
 				FXA_EffectOff(m);
 			}
@@ -731,7 +731,7 @@ static byte cObjElementFXFunctionarySpecialAction_Alive(cObjElementFX *base, cDe
 	}
 	if (self->ent && cTimer_GetSpeed(&Obj(self->ent)->timer) == 1.0f
 		&& cTimer_GetSpeedTo(&Obj(self->ent)->timer) == 1.0f && 0.4f >= d->life) {
-		m = Obj_Vtbl(self->ent)->GetModel(self->ent);
+		m = Obj_GetModel(self->ent);
 		if (!CGameModel_IsLoaded(m)) {
 			return 0;
 		}
@@ -1241,13 +1241,13 @@ void cObjElementFXBishopSellLife_SetAttacker(cObjElementFXBishopSellLife *self, 
 void cObjElementFXMessengerTakeDataPack_SetItem(cObjElementFXMessengerTakeDataPack *self, cEntity *e) {
 	self->item = e;
 	CHECK(e);
-	CHECK(self->item->vftable->IsType(self->item, "Obj"));
+	CHECK(Entity_IsType(self->item, "Obj"));
 }
 
 void cObjElementFXMessengerTakeDataPack_SetOwner(cObjElementFXMessengerTakeDataPack *self, cEntity *e) {
 	self->owner = e;
 	CHECK(e);
-	CHECK(self->owner->vftable->IsType(self->owner, TYEN_WALKCHAR));
+	CHECK(Entity_IsType(self->owner, TYEN_WALKCHAR));
 }
 
 void cObjElementFXMercenaryDrink_SetC0(cObjElementFXMercenaryDrink *self, float a, float b, float c) {
@@ -1290,7 +1290,7 @@ void cObjElementFXGearMissile_Run(void *self, cDebris *d) {
 	cObjElementFX *fx = self;
 
 	for (int i = 0; i < 8; i++) {
-		fx->vftable->Update(fx, d, 0.0f);
+		FXObj_Update(fx, d, 0.0f);
 	}
 }
 
@@ -1312,7 +1312,7 @@ static cGVar GVar_GearMissileThunderSoundVol;
 
 /* the slot 0x80 of the entity vtable: the angles into out */
 static inline vec3_t *GM_EntityRot(cEntity *e, vec3_t *out) {
-	return Obj_Vtbl(e)->GetAng(e, out);
+	return Obj_GetAng(e, out);
 }
 
 static uint32_t GM_Color(int a, uint32_t rgb) {
@@ -1471,15 +1471,15 @@ static void GM_NewBolt(cObjElementFXGearMissile *self, int i, const vec3_t *pos,
 	if (cWorld_TestSphereEntities(g_pWorld, self->entity, FXGEAR_ENTITIES, pos, R, &found, 1, 0)) {
 		kind = 2;
 		d = FX_RandomDir(&tmp);
-		float r = Obj_Vtbl(found)->GetRadius(found);
+		float r = Obj_GetRadius(found);
 		float ox = r * d->x * 0.25f;
 		float oy = r * d->y * 0.25f;
 		float oz = r * d->z * 0.25f;
-		const vec3_t *c = Obj_Vtbl(found)->GetViewPos(found, &tmp);
+		const vec3_t *c = Obj_GetViewPos(found, &tmp);
 		hit.x = c->x + ox;
 		hit.y = c->y + oy;
 		hit.z = c->z + oz;
-		if (found->vftable->IsType(found, "WithLife")) {
+		if (Entity_IsType(found, "WithLife")) {
 			if (WLife(found)->life <= 0) {
 				kind = 0;
 			} else if (0.4f > self->time && self->entity &&
@@ -1558,7 +1558,7 @@ static void GM_NewBolt(cObjElementFXGearMissile *self, int i, const vec3_t *pos,
 	const char *name = (r & 1) ? g_GearMissileThunder1Sound : g_GearMissileThunder2Sound;
 	int vol = Snd_Volume(g_GearMissileThunderSoundVol);
 	CSoundSys *snd = g_pSound;
-	snd->vftable->PlayAt(snd, name, &hit, vol);
+	SoundSys_PlayAt(snd, name, &hit, vol);
 }
 
 static uint32_t GM_PuffRamp[9] = { 0xff565656, 0xf6f6ff, 0x8282e6, 0x5e5eab, 0x44444c, 0xf0f38, 0x80070728, 0xff020219, 0xff000000 };
@@ -1754,7 +1754,7 @@ static void cObjElementFXGearMissile_Update(cObjElementFX *base, cDebris *debris
 	cEntity *e = self->entity;
 	if (e && (Entity_Removed(e) || !e->active)) {
 		if (!e->active) {
-			e->vftable->GetPos(e, &a);
+			Entity_GetPos(e, &a);
 			GM_EntityRot(self->entity, &b);
 			CGameModel_SetPos(model, &a);
 			CGameModel_SetRot(model, &b);
@@ -1775,7 +1775,7 @@ static void cObjElementFXGearMissile_Update(cObjElementFX *base, cDebris *debris
 	CGameModel_GetRot(model, &rot);
 	e = self->entity;
 	if (e && e->active) {
-		pos = *Obj_Vtbl(e)->GetViewPos(e, &tmp);
+		pos = *Obj_GetViewPos(e, &tmp);
 		CGameModel_SetPos(model, &pos);
 		CGameModel_SetRot(model, &rot);
 		CGameModel_SetSortZ(model, -71.0f, 0.0f);
@@ -1850,8 +1850,8 @@ static void cObjElementFXGearMissile_Update(cObjElementFX *base, cDebris *debris
 void cObjElementFXBankMasterSuction_RandomPoints(cObjElementFXBankMasterSuction *self) {
 	vec3_t a, b;
 
-	self->ent->vftable->GetPos(self->ent, &a);
-	self->target->vftable->GetPos(self->target, &b);
+	Entity_GetPos(self->ent, &a);
+	Entity_GetPos(self->target, &b);
 	for (int i = 0; i < FXBMSUCTION_POINTS; i++) {
 		self->phase[i] = (float)(FXA_Rnd() * (double)0.9f - (double)0.9f);
 		FXA_RandomDirScaled(&self->dir[i], FXA_Rand(0.75, 0.25));
@@ -1862,8 +1862,8 @@ void cObjElementFXBankMasterSuction_RandomPoints(cObjElementFXBankMasterSuction 
 void cObjElementFXBertoFlash_RandomPoints(cObjElementFXBertoFlash *self) {
 	for (int i = 0; i < FXBERTOFLASH_POINTS; i++) {
 		FXA_RandomDirScaled(&self->dir[i], FXA_Rand(4.0, 10.0));
-		float lo = Obj_Vtbl(self->target)->GetRadius(self->target) * 0.65f;
-		float hi = Obj_Vtbl(self->target)->GetRadius(self->target) * 0.85f;
+		float lo = Obj_GetRadius(self->target) * 0.65f;
+		float hi = Obj_GetRadius(self->target) * 0.85f;
 		FXA_RandomDirScaled(&self->dir2[i], (float)(FXA_Rnd() * (double)(hi - lo) + (double)lo));
 	}
 }
@@ -1890,7 +1890,7 @@ void cObjElementFXKill_Start(cObjElementFXKill *self, cEntity *e) {
 	CGameModel *m = FXA_Model(e);
 	CGameModel_GetPos(m, &center);
 	CGameModel_GetRot(m, &rot);
-	float scale = Obj_Vtbl(self->ent)->GetRadius(self->ent) / 90.0f;
+	float scale = Obj_GetRadius(self->ent) / 90.0f;
 	CGameModel_Vertices(m, pts, NULL, NULL, FXKILL_POINTS, -1, self->vertex, 0xffffffffu, NULL);
 	FXA_InvRotSC(&rot, &c, &s);
 	for (int i = 0; i < FXKILL_POINTS; i++) {
@@ -1939,8 +1939,8 @@ void cObjElementFXFunctionarySpecialAction_Start(void *self, cEntity *e) {
 
 	s->ent = e;
 	CHECK(s->ent);
-	CHECK(s->ent->vftable->IsType(s->ent, TYEN_WALKCHAR));
-	CGameModel *m = Obj_Vtbl(s->ent)->GetModel(s->ent);
+	CHECK(Entity_IsType(s->ent, TYEN_WALKCHAR));
+	CGameModel *m = Obj_GetModel(s->ent);
 	CHECK(CGameModel_IsLoaded(m));
 	if (!g_FXFunctionaryInit) {
 		g_FXFunctionaryInit = 1;
@@ -2341,7 +2341,7 @@ static void cObjElementFXPoliceGearConversion_Update(cObjElementFX *base, cDebri
 	float delta = cTimer_GetDelta(&g_pWorld->timer);
 	self->time = delta + self->time;
 	self->t2 = delta + self->t2;
-	if (self->ent && !cActCtrl_IsActive(WithLife_Vtbl(self->ent)->GetActCtrl(self->ent), "Fusion")) {
+	if (self->ent && !cActCtrl_IsActive(WithLife_GetActCtrl(self->ent), "Fusion")) {
 		FXGear_HideArmors(self);
 	}
 	/* the armors fade in over their times of the fusion */
@@ -2414,7 +2414,7 @@ static void cObjElementFXPoliceGearConversion_Update(cObjElementFX *base, cDebri
 		}
 		/* new bubbles on a ring around the waist */
 		while (self->count < FXGEAR_BUBBLES) {
-			float r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
+			float r = Obj_GetRadius(self->ent);
 			float hh = WChar(self->ent)->floorDist;
 			float a1 = FXA_Rand(6.2831854820251465, -3.1415927410125732);
 			ang.x = FXA_Rand(6.2831854820251465, -3.1415927410125732);
@@ -2424,7 +2424,7 @@ static void cObjElementFXPoliceGearConversion_Update(cObjElementFX *base, cDebri
 			Vec3_Rotate(&o, &v, &ang);
 			float x = root.x + o.x * r;
 			float z = root.z + o.z * r;
-			const vec3_t *c = Obj_Vtbl(self->ent)->GetViewPos(self->ent, &tmp);
+			const vec3_t *c = Obj_GetViewPos(self->ent, &tmp);
 			int k = self->count;
 			self->bubblePos[k].y = c->y - hh;
 			self->bubblePos[k].x = x;
@@ -2492,7 +2492,7 @@ static void cObjElementFXPoliceGearConversion_Update(cObjElementFX *base, cDebri
 		self->smokeT = st;
 		if (st > 0.03f) {
 			self->smokeT = 0.0f;
-			const vec3_t *c = Obj_Vtbl(self->ent)->GetViewPos(self->ent, &tmp);
+			const vec3_t *c = Obj_GetViewPos(self->ent, &tmp);
 			float bx = c->x + 0.0f, by = c->y + 180.0f, bz = c->z + 0.0f;
 			for (int n = 0; n < 6; n++) {
 				FX_RandomDir(&dir);
@@ -2597,18 +2597,18 @@ static void cObjElementFXPoliceGearConversion_Update(cObjElementFX *base, cDebri
 void cObjElementFXMessengerTakeDataPack_Start(cObjElementFXMessengerTakeDataPack *self) {
 	vec3_t ang, t1, t2, o1, o2, p0, d;
 
-	CHECK(CGameModel_IsLoaded(Obj_Vtbl(self->owner)->GetModel(self->owner)));
-	CHECK(CGameModel_IsLoaded(Obj_Vtbl(self->item)->GetModel(self->item)));
+	CHECK(CGameModel_IsLoaded(Obj_GetModel(self->owner)));
+	CHECK(CGameModel_IsLoaded(Obj_GetModel(self->item)));
 	for (int i = 0; i < FXDATAPACK_TRAILS; i++) {
 		ang = (vec3_t){ 0.0f, (float)i * 26.0f - 50.0f, 0.0f };
-		const vec3_t *a = Vec3_Rotate(&o1, &ang, Obj_Vtbl(self->owner)->GetViewAng(self->owner, &t1));
-		const vec3_t *c = Obj_Vtbl(self->owner)->GetViewPos(self->owner, &t2);
+		const vec3_t *a = Vec3_Rotate(&o1, &ang, Obj_GetViewAng(self->owner, &t1));
+		const vec3_t *c = Obj_GetViewPos(self->owner, &t2);
 		p0.x = c->x + a->x;
 		p0.y = c->y + a->y;
 		p0.z = c->z + a->z;
 		ang = (vec3_t){ 0.0f, (float)i * 33.0f - 50.0f, 0.0f };
-		const vec3_t *b = Vec3_Rotate(&o2, &ang, Obj_Vtbl(self->item)->GetViewAng(self->item, &t1));
-		c = Obj_Vtbl(self->item)->GetViewPos(self->item, &t2);
+		const vec3_t *b = Vec3_Rotate(&o2, &ang, Obj_GetViewAng(self->item, &t1));
+		c = Obj_GetViewPos(self->item, &t2);
 		d.x = (b->x + c->x) - p0.x;
 		d.y = (c->y + b->y) - p0.y;
 		d.z = (c->z + b->z) - p0.z;
@@ -2701,8 +2701,8 @@ void cObjElementFXPoliceGearConversion_Start(cObjElementFXPoliceGearConversion *
 	CHECK(self->nodeRoot > -1);
 	for (i = 0; i < FXGEAR_ARMORS; i++) {
 		CGameModel *a = &self->armor[i];
-		CGameModel_SetPos(a, CGameModel_GetPos(Obj_Vtbl(self->ent)->GetModel(self->ent), &t));
-		CGameModel_SetRot(a, CGameModel_GetRot(Obj_Vtbl(self->ent)->GetModel(self->ent), &t));
+		CGameModel_SetPos(a, CGameModel_GetPos(Obj_GetModel(self->ent), &t));
+		CGameModel_SetRot(a, CGameModel_GetRot(Obj_GetModel(self->ent), &t));
 		CGameModel_SetSortZ(a, (float)(FXGEAR_ARMORS - i) / 10.0f - 76.0f, 0.0f);
 		CGameModel_Enable(a);
 		CGameModel_SetAnimSpeed(a, self->anim[i], 0.0f);
@@ -2716,7 +2716,7 @@ void cObjElementFXPoliceGearConversion_Start(cObjElementFXPoliceGearConversion *
 		return;
 	}
 	float h = WChar(self->ent)->floorDist;
-	const vec3_t *c = Obj_Vtbl(self->ent)->GetViewPos(self->ent, &t);
+	const vec3_t *c = Obj_GetViewPos(self->ent, &t);
 	base.x = (c->x - 0.0f) + 0.0f;
 	base.y = (c->y - h) + 15.0f;
 	base.z = (c->z - 0.0f) + 0.0f;
@@ -2937,7 +2937,7 @@ static void cObjElementFXBankMasterAttack_Update(cObjElementFX *elem, cDebris *d
 	self->time = delta + self->time;
 	self->emitTime = delta + self->emitTime;
 	float layer = 0.0f;
-	void *ctrl = WithLife_Vtbl(self->ent)->GetActCtrl(self->ent);
+	void *ctrl = WithLife_GetActCtrl(self->ent);
 	byte action = 0;
 	if (ctrl) {
 		action = cActCtrl_IsActive(ctrl, "Action");
@@ -3067,16 +3067,16 @@ static void cObjElementFXPoliceSteal_Update(cObjElementFX *base, cDebris *d, flo
 	if (0.65f > d->life) {
 		return;
 	}
-	CGameModel_SetPos(Debris_Model(d), Obj_Vtbl(self->ent)->GetViewPos(self->ent, &tmp));
-	CGameModel_SetRot(Debris_Model(d), Obj_Vtbl(self->ent)->GetViewAng(self->ent, &tmp));
+	CGameModel_SetPos(Debris_Model(d), Obj_GetViewPos(self->ent, &tmp));
+	CGameModel_SetRot(Debris_Model(d), Obj_GetViewAng(self->ent, &tmp));
 	float t = self->emitTime + FXA_Delta();
 	self->emitTime = t;
 	if (0.04f > t) {
 		return;
 	}
 	self->emitTime = 0.0f;
-	Obj_Vtbl(self->target)->GetViewPos(self->target, &b);
-	Obj_Vtbl(self->ent)->GetViewPos(self->ent, &a);
+	Obj_GetViewPos(self->target, &b);
+	Obj_GetViewPos(self->ent, &a);
 	float az = FXA_Rand((double)6.28318548f, 0.0);
 	float ay = FXA_Rand((double)6.28318548f, 0.0);
 	v = (vec3_t){ 1.0f, 1.0f, 1.0f };
@@ -3088,15 +3088,15 @@ static void cObjElementFXPoliceSteal_Update(cObjElementFX *base, cDebris *d, flo
 	CGameParticles *sp = &self->particles;
 	CGameParticles_SetSparksOn(sp, 0);
 	sp->birthRate = 0;
-	float hi = Obj_Vtbl(self->target)->GetRadius(self->target) * 0.5f;
-	float lo = Obj_Vtbl(self->target)->GetRadius(self->target) * 0.25f;
+	float hi = Obj_GetRadius(self->target) * 0.5f;
+	float lo = Obj_GetRadius(self->target) * 0.25f;
 	float r = Rand_FloatRange(lo, hi);
 	sp->initPosMin.x = b.x + dir.x * r;
 	sp->initPosMin.y = b.y + dir.y * r;
 	sp->initPosMin.z = b.z + dir.z * r;
 	sp->initPosMax = sp->initPosMin;
-	hi = Obj_Vtbl(self->ent)->GetRadius(self->ent) * 0.5f;
-	lo = Obj_Vtbl(self->ent)->GetRadius(self->ent) * 0.25f;
+	hi = Obj_GetRadius(self->ent) * 0.5f;
+	lo = Obj_GetRadius(self->ent) * 0.25f;
 	r = Rand_FloatRange(lo, hi);
 	float inv = 1.0f / life;
 	sp->initVelMin.x = ((a.x + dir.x * r) - sp->initPosMin.x) * inv;
@@ -3162,7 +3162,7 @@ static void cObjElementFXSebastianFlash_Update(cObjElementFX *elem, cDebris *d, 
 	CGameParticles *sp = &self->particles;
 	sp->birthRate = 0;
 	CGameParticles_Apply(sp);
-	const vec3_t *c = Obj_Vtbl(self->ent)->GetViewPos(self->ent, &tmp);
+	const vec3_t *c = Obj_GetViewPos(self->ent, &tmp);
 	base.x = c->x + 0.0f;
 	base.y = c->y + 18.0f;
 	base.z = c->z + 0.0f;
@@ -3247,7 +3247,7 @@ static void cObjElementFXBertoFlash_Update(cObjElementFX *elem, cDebris *d, floa
 	CGameParticles *sp = &self->particles;
 	sp->birthRate = 0;
 	CGameParticles_Apply(sp);
-	const vec3_t *c = Obj_Vtbl(self->ent)->GetViewPos(self->ent, &tmp);
+	const vec3_t *c = Obj_GetViewPos(self->ent, &tmp);
 	base.x = c->x - 0.0f;
 	base.y = c->y - 15.0f;
 	base.z = c->z - 0.0f;
@@ -3265,7 +3265,7 @@ static void cObjElementFXBertoFlash_Update(cObjElementFX *elem, cDebris *d, floa
 		e.x = r2 * D.x;
 		e.y = r2 * D.y;
 		e.z = r2 * D.z;
-		const vec3_t *c2 = Obj_Vtbl(self->target)->GetViewPos(self->target, &tmp2);
+		const vec3_t *c2 = Obj_GetViewPos(self->target, &tmp2);
 		p2.x = (self->dir2[i].x + c2->x) + e.x;
 		p2.y = (c2->y + self->dir2[i].y) + e.y;
 		p2.z = (c2->z + self->dir2[i].z) + e.z;
@@ -3305,9 +3305,8 @@ static int FXA_StealSound(int last, CGameModel *m, const vec3_t *at) {
 	default:
 		return s;
 	}
-	const CSoundSysVtbl *vt = g_pSound->vftable;
 	int vol = Snd_Volume(g_BankerStealSoundVol);
-	vt->PlayAt(g_pSound, name, m ? CGameModel_GetPos(m, &pos) : at, vol);
+	SoundSys_PlayAt(g_pSound, name, m ? CGameModel_GetPos(m, &pos) : at, vol);
 	return s;
 }
 
@@ -3329,12 +3328,12 @@ static void cObjElementFXBankerSteal_Update(cObjElementFX *base, cDebris *d, flo
 	if (0.65f > d->life) {
 		return;
 	}
-	CGameModel *m = Obj_Vtbl(self->ent)->GetModel(self->ent);
+	CGameModel *m = Obj_GetModel(self->ent);
 	if (!CGameModel_IsLoaded(m)) {
 		return;
 	}
 	CHECK(CGameModel_IsLoaded(m));
-	CGameModel *mt = Obj_Vtbl(self->target)->GetModel(self->target);
+	CGameModel *mt = Obj_GetModel(self->target);
 	if (!CGameModel_IsLoaded(mt)) {
 		return;
 	}
@@ -3380,8 +3379,8 @@ static void cObjElementFXBankerSteal_Update(cObjElementFX *base, cDebris *d, flo
 	CGameParticles *sp = &self->particles;
 	CGameParticles_SetSparksOn(sp, 0);
 	sp->birthRate = 0;
-	float hi = Obj_Vtbl(self->target)->GetRadius(self->target) * 0.5f;
-	float lo = Obj_Vtbl(self->target)->GetRadius(self->target) * 0.25f;
+	float hi = Obj_GetRadius(self->target) * 0.5f;
+	float lo = Obj_GetRadius(self->target) * 0.25f;
 	float rr = Rand_FloatRange(lo, hi);
 	sp->initPosMin.x = tp.x + dir.x * rr;
 	sp->initPosMin.z = tp.z + dir.z * rr;
@@ -3437,8 +3436,8 @@ static void cObjElementFXBankMasterSuction_Update(cObjElementFX *base, cDebris *
 	float delta = FXA_Delta();
 	self->time = self->time + delta;
 	self->emitTime = self->emitTime + delta;
-	float radius = Obj_Vtbl(self->target)->GetRadius(self->target) * 0.5f;
-	Obj_Vtbl(self->target)->GetViewPos(self->target, &t);
+	float radius = Obj_GetRadius(self->target) * 0.5f;
+	Obj_GetViewPos(self->target, &t);
 	off.x = g_BankMasterBatonPosX;
 	off.y = g_BankMasterBatonPosY;
 	off.z = g_BankMasterBatonPosZ;
@@ -3521,7 +3520,7 @@ static void cObjElementFXFunctionarySpecialAction_Update(cObjElementFX *base, cD
 	if (!self->ent || !self->ent->active) {
 		return;
 	}
-	CGameModel *m = Obj_Vtbl(self->ent)->GetModel(self->ent);
+	CGameModel *m = Obj_GetModel(self->ent);
 	if (!CGameModel_IsLoaded(m)) {
 		self->ent = NULL;
 		return;
@@ -3541,12 +3540,12 @@ static void cObjElementFXFunctionarySpecialAction_Update(cObjElementFX *base, cD
 	CGameModel_SetPos(Debris_Model(d), &pos);
 	CGameModel_SetRot(Debris_Model(d), &rot);
 	CGameModel_SetSortZ(Debris_Model(d), -74.0f, 0.0f);
-	Obj_Vtbl(self->ent)->GetRadius(self->ent);
+	Obj_GetRadius(self->ent);
 	float speed = cTimer_GetSpeed(&Obj(self->ent)->timer);
 	cTimer_GetSpeedTo(&Obj(self->ent)->timer);
 	byte run = 0;
-	if (WithLife_Vtbl(self->ent)->GetActCtrl(self->ent)) {
-		if (cActCtrl_IsActive(WithLife_Vtbl(self->ent)->GetActCtrl(self->ent), "Run") && speed > 1.0f) {
+	if (WithLife_GetActCtrl(self->ent)) {
+		if (cActCtrl_IsActive(WithLife_GetActCtrl(self->ent), "Run") && speed > 1.0f) {
 			run = 1;
 		}
 	}
@@ -3780,14 +3779,14 @@ static void cObjElementFXMessengerTakeDataPack_Update(cObjElementFX *base, cDebr
 		int base = 2 + 6 * i;
 
 		ang = (vec3_t){ 0.0f, (float)i * 26.0f - 50.0f, 0.0f };
-		const vec3_t *r = Vec3_Rotate(&o1, &ang, Obj_Vtbl(self->owner)->GetViewAng(self->owner, &t1));
-		const vec3_t *c = Obj_Vtbl(self->owner)->GetViewPos(self->owner, &t2);
+		const vec3_t *r = Vec3_Rotate(&o1, &ang, Obj_GetViewAng(self->owner, &t1));
+		const vec3_t *c = Obj_GetViewPos(self->owner, &t2);
 		p[0].x = c->x + r->x;
 		p[0].y = c->y + r->y;
 		p[0].z = c->z + r->z;
 		ang = (vec3_t){ 0.0f, (float)i * 37.0f - 50.0f, 0.0f };
-		r = Vec3_Rotate(&o2, &ang, Obj_Vtbl(self->item)->GetViewAng(self->item, &t1));
-		c = Obj_Vtbl(self->item)->GetViewPos(self->item, &t2);
+		r = Vec3_Rotate(&o2, &ang, Obj_GetViewAng(self->item, &t1));
+		c = Obj_GetViewPos(self->item, &t2);
 		p[2].x = r->x + c->x;
 		p[2].y = c->y + r->y;
 		p[2].z = c->z + r->z;
@@ -4190,7 +4189,7 @@ static void cObjElementFXBishopSellLife_Update(cObjElementFX *base, cDebris *d, 
 	if (0.02f > t) {
 		return;
 	}
-	CGameModel *ma = Obj_Vtbl(self->attacked)->GetModel(self->attacked);
+	CGameModel *ma = Obj_GetModel(self->attacked);
 	if (!ma || !CGameModel_IsLoaded(ma)) {
 		return;
 	}
@@ -4198,7 +4197,7 @@ static void cObjElementFXBishopSellLife_Update(cObjElementFX *base, cDebris *d, 
 	CGameParticles *glow = &self->glow;
 	CGameParticles *code = &self->dataCodec;
 	if (self->attacker) {
-		CGameModel *mb = Obj_Vtbl(self->attacker)->GetModel(self->attacker);
+		CGameModel *mb = Obj_GetModel(self->attacker);
 		if (!mb || !CGameModel_IsLoaded(mb)) {
 			return;
 		}
@@ -4298,20 +4297,20 @@ static void cObjElementFXBishopSellLife_Update(cObjElementFX *base, cDebris *d, 
 	if (FX_InRange(self->time, lo, hi, &f)) {
 		cWorld *w = g_pWorld;
 		cam = w->camPos[w->curCam];
-		const vec3_t *c = Obj_Vtbl(self->attacked)->GetViewPos(self->attacked, &tmp);
+		const vec3_t *c = Obj_GetViewPos(self->attacked, &tmp);
 		v.x = cam.x - c->x;
 		v.y = cam.y - c->y;
 		v.z = cam.z - c->z;
 		Vec3_NormalizeTo(&n, &v);
-		float radius = Obj_Vtbl(self->attacked)->GetRadius(self->attacked);
+		float radius = Obj_GetRadius(self->attacked);
 		off.x = n.x * radius * 0.3f;
 		off.y = n.y * radius * 0.3f;
 		off.z = n.z * radius * 0.3f;
 		CGameModel_Vertices(ma, pts, NULL, NULL, 256, -1, NULL, 0xffffffffu, NULL);
 		float k = self->attacker ? 1.8f : 1.2f;
-		float r2 = Obj_Vtbl(self->attacked)->GetRadius(self->attacked) * k;
+		float r2 = Obj_GetRadius(self->attacked) * k;
 		float h = (1.0f - f * 2.0f) * r2;
-		float s = Obj_Vtbl(self->attacked)->GetRadius(self->attacked) / 70.0f;
+		float s = Obj_GetRadius(self->attacked) / 70.0f;
 		CGameModel_GetPos(ma, &pos);
 		float thr = s * 8.0f;
 		int count = 0;

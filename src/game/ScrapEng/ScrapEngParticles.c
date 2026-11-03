@@ -121,7 +121,7 @@ void CGameParticles_Apply(CGameParticles *self) {
 /* p made inactive, an active one at the end of its life */
 static void CGameParticles_KillParticle(CGameParticles *self, CParticle *p) {
 	CParticleSystem_SetActive(self->ParticleSystem, p, 0);
-	if (PARTICLE_TYPE(p) == PARTICLE_ACTIVE) {
+	if (Particle_Type(p) == PARTICLE_ACTIVE) {
 		CParticleActive *a = (CParticleActive *)p;
 		a->manual = 0;
 		a->t = 1.0f;
@@ -173,7 +173,7 @@ void CGameParticles_SetParticle(CGameParticles *self, int i, float x, float y, f
 	p->color = color;
 	p->size = size;
 	p->rot = rot;
-	if (PARTICLE_TYPE(p) == PARTICLE_ACTIVE) {
+	if (Particle_Type(p) == PARTICLE_ACTIVE) {
 		CParticleActive *a = (CParticleActive *)p;
 		a->manual = 1;
 		a->t = 0.0f;
@@ -202,7 +202,7 @@ byte CGameParticles_GetParticle(CGameParticles *self, int i, vec3_t *pos, vec3_t
 	if (size) {
 		*size = p->size;
 	}
-	if (PARTICLE_TYPE(p) == PARTICLE_ACTIVE) {
+	if (Particle_Type(p) == PARTICLE_ACTIVE) {
 		CParticleActive *a = (CParticleActive *)p;
 		if (t) {
 			*t = a->t;

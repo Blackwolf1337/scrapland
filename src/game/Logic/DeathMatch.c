@@ -25,7 +25,7 @@ static cEntity *cDeathMatch_PickTarget(cDeathMatch *self, cEntity *exclude) {
 	int num = Logic_Count(((EntityDNode *)n)->numElems);
 	int r = crt_rand() % (num + 1);
 
-	if (r == num && usr && usr->vftable->IsType(usr, TYEN_CAR)) {
+	if (r == num && usr && Entity_IsType(usr, TYEN_CAR)) {
 		return Logic_AsCar(usr);
 	}
 	for (int i = 0; i != r; i++) {
@@ -46,13 +46,13 @@ static void cDeathMatch_Think(cDeathMatch *self) {
 
 	for (Nto1Node *n = Logic_ListFirst(self->list); n; n = Logic_ListNext(n)) {
 		cEntity *e = n->data;
-		CHECK(e->vftable->IsType(e, TYEN_CAR));
-		cAIVehicle *ai = e->vftable->GetAI(e);
+		CHECK(Entity_IsType(e, TYEN_CAR));
+		cAIVehicle *ai = Entity_GetAI(e);
 		CHECK(ai);
 		int st = cAIVehicle_GetState(ai);
 		if (st != 0 && st != 3) {
 			cEntity *t = Logic_AttackTarget(ai);
-			if (!t || t->vftable->GetAI(t) || !usr || !usr->vftable->IsType(usr, TYEN_WALKCHAR)) {
+			if (!t || Entity_GetAI(t) || !usr || !Entity_IsType(usr, TYEN_WALKCHAR)) {
 				continue;
 			}
 		}
@@ -78,16 +78,16 @@ static void DeathMatch_OnDamage(cAbstractFile *params) {
 		return;
 	}
 	cEntity *v = World_FindEntity(name);
-	if (!v || !v->vftable->IsType(v, TYEN_CAR)) {
+	if (!v || !Entity_IsType(v, TYEN_CAR)) {
 		return;
 	}
-	CHECK(v->vftable->IsType(v, TYEN_CAR));
+	CHECK(Entity_IsType(v, TYEN_CAR));
 	cEntity *a = Logic_FindCar(attacker);
 	if (!a) {
 		return;
 	}
-	CHECK(a->vftable->IsType(a, TYEN_CAR));
-	cAIVehicle *ai = v->vftable->GetAI(v);
+	CHECK(Entity_IsType(a, TYEN_CAR));
+	cAIVehicle *ai = Entity_GetAI(v);
 	CHECK(ai);
 	cVehicleEntity *veh = (cVehicleEntity *)v;
 	if (veh->wl.life < veh->maxLife / 2) {

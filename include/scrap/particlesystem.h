@@ -40,6 +40,15 @@ typedef struct CParticleVtbl {
 	void(*Update)(CParticle *self, struct CParticleSystem *sp, float dt, void *multiSpr);	/* 0x8 */
 } CParticleVtbl;
 
+/* calls through the slots of CParticleVtbl */
+static inline void Particle_Update(void *self, struct CParticleSystem *sp, float dt, void *multiSpr) {
+	VT(CParticleVtbl, self)->Update(self, sp, dt, multiSpr);
+}
+
+static inline int Particle_Type(void *self) {
+	return VT(CParticleVtbl, self)->Type(self);
+}
+
 struct CParticle {
 	const CParticleVtbl *vftable;	/* 0x00 */
 	byte active;			/* 0x04 */
@@ -53,7 +62,6 @@ struct CParticle {
 	float uv1[2];			/* 0x2c */
 };
 
-#define PARTICLE_TYPE(p) ((p)->vftable->Type(p))
 /* CParticle is the abstract CParticulaBase (vftable rva 0x3ddc3c, all pure); the static particle adds no members */
 typedef CParticle CParticleBase;
 typedef CParticle CParticleStatic;

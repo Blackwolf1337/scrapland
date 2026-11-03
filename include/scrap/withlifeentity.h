@@ -64,19 +64,48 @@ typedef struct cWithLifeEntityVtbl {
 	byte(*IsEMIed)(cEntity *self);						/* 0xdc vf55 */
 } cWithLifeEntityVtbl;
 
+/* calls through the slots of cWithLifeEntityVtbl */
+static inline void WithLife_CheckLife(void *self) {
+	VT(cWithLifeEntityVtbl, self)->CheckLife(self);
+}
+
+static inline cActCtrl *WithLife_GetActCtrl(void *self) {
+	return VT(cWithLifeEntityVtbl, self)->GetActCtrl(self);
+}
+
+static inline cAction *WithLife_GetAction(void *self, const char *name) {
+	return VT(cWithLifeEntityVtbl, self)->GetAction(self, name);
+}
+
+static inline byte WithLife_IsEMIed(void *self) {
+	return VT(cWithLifeEntityVtbl, self)->IsEMIed(self);
+}
+
+static inline void WithLife_OnDamage(void *self, int damage) {
+	VT(cWithLifeEntityVtbl, self)->OnDamage(self, damage);
+}
+
+static inline void WithLife_OnDeath(void *self) {
+	VT(cWithLifeEntityVtbl, self)->OnDeath(self);
+}
+
+static inline void WithLife_SetActCtrl(void *self, const char *cls) {
+	VT(cWithLifeEntityVtbl, self)->SetActCtrl(self, cls);
+}
+
+static inline void WithLife_SetMass(void *self, float mass) {
+	VT(cWithLifeEntityVtbl, self)->SetMass(self, mass);
+}
+
+static inline void WithLife_UnlinkListen(void *self) {
+	VT(cWithLifeEntityVtbl, self)->UnlinkListen(self);
+}
+
 static inline cWithLifeEntity *WLife(const void *e) {
 	return (cWithLifeEntity *)e;
 }
 
-static inline const cWithLifeEntityVtbl *WithLife_Vtbl(const cEntity *e) {
-	return (const cWithLifeEntityVtbl *)e->vftable;
-}
-
 /* the variable slots of cActCtrl::vftable */
-
-static inline const cActCtrlVarVtbl *ActCtrl_Vtbl(const cActCtrl *c) {
-	return (const cActCtrlVarVtbl *)c->vftable;
-}
 
 void cWithLifeEntity_SetPos(cEntity *self, const vec3_t *pos);
 /* vf25: the PretransformChan of the action class */

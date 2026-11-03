@@ -57,7 +57,7 @@ void cSlotController_Restart(cSlotController *self) {
 byte cSlotController_Fire(cSlotController *self, float *out) {
 	if (self->time <= 0.0f) {
 		*out = self->interval;
-		self->vftable->Next(self);
+		SlotCtl_Next(self);
 		return 1;
 	}
 	return 0;
@@ -68,7 +68,7 @@ byte cSlotController_FireReset(cSlotController *self, float *out) {
 	if (self->time <= 0.0f) {
 		*out = self->interval;
 		self->time = 0.0f;
-		self->vftable->Next(self);
+		SlotCtl_Next(self);
 		return 1;
 	}
 	return 0;

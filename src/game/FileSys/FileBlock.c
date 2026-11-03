@@ -70,7 +70,7 @@ static void cFileBlock_CreateFile(cFileBlock *self, uint32_t mode, byte flags) {
 
 static void cFileBlock_DeleteFile(cFileBlock *self) {
 	if (self->f) {
-		self->f->vftable->Destroy(self->f, 1);
+		VFile_Destroy(self->f, 1);
 		self->f = NULL;
 	}
 }
@@ -79,11 +79,11 @@ int cFileBlock_Open(cFileBlock *self, const char *filename, uint32_t mode, uint3
 	CHECK(!self->block);
 	CHECK(filename);
 	cFileBlock_CreateFile(self, mode, (byte)flags);
-	if ((flags & FILEBLOCK_MUST_EXIST) && !self->f->vftable->Exists(self->f, filename)) {
+	if ((flags & FILEBLOCK_MUST_EXIST) && !VFile_Exists(self->f, filename)) {
 		cFileBlock_DeleteFile(self);
 		return 0;
 	}
-	CHECK(self->f->vftable->Open(self->f, filename, mode));
+	CHECK(VFile_Open(self->f, filename, mode));
 	return 1;
 }
 
@@ -92,7 +92,7 @@ int cFileBlock_Close(cFileBlock *self) {
 	if (!self->f) {
 		return 1;
 	}
-	int res = self->f->vftable->Close(self->f);
+	int res = VFile_Close(self->f);
 	cFileBlock_DeleteFile(self);
 	return res;
 }
@@ -116,7 +116,7 @@ static void cFileBlock_PopBlock(cFileBlock *self, const char *id) {
 int cFileBlock_Read(cFileBlock *self, void *mem, int size) {
 	CHECK(self->f);
 	CHECK(mem);
-	if (size && self->f->vftable->Read(self->f, mem, size) != size) {
+	if (size && VFile_Read(self->f, mem, size) != size) {
 		return cFileBlock_Error(self, "");
 	}
 	return 1;
@@ -125,7 +125,7 @@ int cFileBlock_Read(cFileBlock *self, void *mem, int size) {
 int cFileBlock_Write(cFileBlock *self, const void *mem, int size) {
 	CHECK(self->f);
 	CHECK(mem);
-	if (size && self->f->vftable->Write(self->f, mem, size) != size) {
+	if (size && VFile_Write(self->f, mem, size) != size) {
 		return cFileBlock_Error(self, "");
 	}
 	return 1;
@@ -161,7 +161,7 @@ int cFileBlock_OpenBlockWrite(cFileBlock *self, const char *id) {
 	if (!cFileBlock_Write(self, &dw, sizeof(dw))) {
 		return cFileBlock_Error(self, "");
 	}
-	int pos = self->f->vftable->Tell(self->f);
+	int pos = VFile_Tell(self->f);
 	if (pos != -1) {
 		int zero = 0;
 		if (cFileBlock_Write(self, &zero, sizeof(zero))) {
@@ -179,11 +179,11 @@ int cFileBlock_OpenBlockWrite(cFileBlock *self, const char *id) {
 int cFileBlock_CloseBlockWrite(cFileBlock *self, const char *id) {
 	CHECK(self->f);
 	CHECK(self->block);
-	int end = self->f->vftable->Tell(self->f);
-	if (end != -1 && self->f->vftable->Seek(self->f, self->block->pos) != -1) {
+	int end = VFile_Tell(self->f);
+	if (end != -1 && VFile_Seek(self->f, self->block->pos) != -1) {
 		int size = end - self->block->pos - 4;
 		if (cFileBlock_Write(self, &size, sizeof(size)) &&
-			self->f->vftable->Seek(self->f, self->block->pos) != -1) {
+			VFile_Seek(self->f, self->block->pos) != -1) {
 			cFileBlock_PopBlock(self, id);
 			return 1;
 		}

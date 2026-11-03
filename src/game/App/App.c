@@ -255,7 +255,7 @@ void CApp_Shutdown(CApp *self) {
 	if (Net_IsClient()) {
 		Net_CloseClientMsg("");
 	}
-	self->vftable->DoneGame(self);
+	App_DoneGame(self);
 	Sound_ResetVolumes();
 	Sound_Done();
 	Engine_Close();
@@ -268,7 +268,7 @@ void CApp_Shutdown(CApp *self) {
 	Con_Print(0, "Debug subsystem closed.\n", 0);
 	if (*g_ReRunAtExitParams && **g_ReRunAtExitParams) {
 		App_GetPath(path, 0x80);
-		self->vftable->RunApp(self, path, *g_ReRunAtExitParams, 0);
+		App_RunApp(self, path, *g_ReRunAtExitParams, 0);
 	}
 }
 
@@ -321,9 +321,9 @@ static byte CApp_InitEnd(CApp *self) {
 	}
 	Sound_Init();
 	Sound_ResetVolumes();
-	self->vftable->InitGame(self, *g_iMap);
+	App_InitGame(self, *g_iMap);
 	Loading_Fade();
-	double t1 = self->vftable->GetTime(self);
+	double t1 = App_GetTime(self);
 	Con_Printf("Level loaded in %.2f seconds\n", t1 - app_initT0);
 	return 1;
 }
@@ -334,10 +334,10 @@ byte CApp_Init(CApp *self) {
 	vec3_t one;
 
 	DebugLog_Init();
-	self->vftable->InitDebug(self);
+	App_InitDebug(self);
 	Config_Load("Scrap.cfg");
 	cString_Set(g_ReRunAtExitParams, "");
-	self->vftable->ResetParams(self);
+	App_ResetParams(self);
 	CApp_ParseCmdLine(self);
 	Con_Print(0, "Debug subsystem initialized.\n", 0);
 	if (self->build) {
@@ -363,10 +363,10 @@ byte CApp_Init(CApp *self) {
 		}
 		cString_dtor(&lang);
 	}
-	app_initT0 = self->vftable->GetTime(self);
+	app_initT0 = App_GetTime(self);
 	Lang_Set(NULL, 1);
 	self->flags = (self->dedicated ? APPF_DEDICATED : 0) | (self->flags & ~APPF_DEDICATED);
-	self->vftable->ShowConsole(self, (byte)Engine_IsFullScreen() == 0);
+	App_ShowConsole(self, (byte)Engine_IsFullScreen() == 0);
 	InputMaps_Init();
 	Input_OpenDevices();
 	Con_Print(0, "Input devices initialized.\n", 0);
@@ -463,7 +463,7 @@ static void CApp_LoadLevelEnd(CApp *self, const char *level, double t0, byte rel
 		Engine_SetCallback(APP_CB_WORLDFRAME, 1);
 		g_ForceReload = 0;
 	}
-	self->vftable->InitGame(self, level);
+	App_InitGame(self, level);
 	if (Net_ClientReady()) {
 		Con_Print(0, "'Ready to build' message send to server\n", 0);
 	}
@@ -472,7 +472,7 @@ static void CApp_LoadLevelEnd(CApp *self, const char *level, double t0, byte rel
 		self->onLevelLoaded = NULL;
 	}
 	Engine_LevelLoaded();
-	double t1 = self->vftable->GetTime(self);
+	double t1 = App_GetTime(self);
 	Con_Printf("Level loaded in %.2f seconds\n", t1 - t0);
 	if (g_XLoadOn) {
 		Loading_Stop();
@@ -482,20 +482,20 @@ static void CApp_LoadLevelEnd(CApp *self, const char *level, double t0, byte rel
 
 /* vf07: closes the level and loads level (only the logic again for the same level without ForceReload) */
 void CApp_LoadLevelNow(CApp *self, const char *level) {
-	double t0 = self->vftable->GetTime(self);
+	double t0 = App_GetTime(self);
 	Con_Printf("Loading level at '%s'...\n", level);
 	Engine_SetCallback(NULL, 4);
-	self->vftable->DoneGame(self);
+	App_DoneGame(self);
 	Sound_ResetVolumes();
-	g_pSound->vftable->StopAllSounds(g_pSound);
-	g_pSound->vftable->ResetListeners(g_pSound);
+	SoundSys_StopAllSounds(g_pSound);
+	SoundSys_ResetListeners(g_pSound);
 	if (!cString_ICmpStr(&self->levelPath, level) && !g_ForceReload) {
 		Loading_Begin();
 		CApp_LoadLevelEnd(self, level, t0, 0);
 		return;
 	}
-	g_pSound->vftable->StopMusic(g_pSound);
-	g_pSound->vftable->DeleteAllSounds(g_pSound);
+	SoundSys_StopMusic(g_pSound);
+	SoundSys_DeleteAllSounds(g_pSound);
 	Engine_LevelEnd();
 	/* differs from the original on purpose (no blocking waits): while the start video of Engine_LevelEnd plays from
 	 * the message loop, the rest of the load (and of the frame) waits for CApp_FrameResume */
@@ -630,7 +630,7 @@ static void CApp_FrameNet(void) {
 
 /* the frame after the level load */
 static byte CApp_FrameRun(CApp *self) {
-	double t = self->vftable->GetTime(self);
+	double t = App_GetTime(self);
 	uint32_t flags = self->flags;
 	self->time = t;
 	if (!flags && !self->active) {
@@ -650,20 +650,20 @@ static byte CApp_FrameRun(CApp *self) {
 		Input_Update(dt);
 	}
 	if (g_DrawNextFrame) {
-		self->vftable->Render(self);
+		App_Render(self);
 	}
 	g_DrawNextFrame = 1;
 	cPy_Function_Execute(g_AfterDrawCallback, 1);
 	if (dt > 0.1f) {
 		dt -= 0.1f;
-		self->vftable->Update(self, 0.1f);
+		App_Update(self, 0.1f);
 		Input_ResetStates();
 		while (dt > 0.1f) {
 			dt -= 0.1f;
-			self->vftable->Update(self, 0.1f);
+			App_Update(self, 0.1f);
 		}
 	}
-	self->vftable->Update(self, dt);
+	App_Update(self, dt);
 	if (Net_IsServer() && (self->flags & APPF_SERVER)) {
 		if (!(self->flags & APPF_DEDICATED)) {
 			while (Net_ServerFrame()) {
@@ -686,7 +686,7 @@ static byte CApp_FrameRun(CApp *self) {
 /* vf05: one frame; 0 when the time did not go on (or the app waits in the background) */
 byte CApp_Frame(CApp *self) {
 	if (self->loadPending) {
-		self->vftable->LoadLevelNow(self, self->newLevelPath);
+		App_LoadLevelNow(self, self->newLevelPath);
 		/* the rest of the frame after the start video, from CApp_FrameResume */
 		if (app_load.wait) {
 			return 0;
@@ -782,7 +782,7 @@ byte CApp_ParseParam(CApp *self, const char *param, const char *ext) {
 	if (!crt_stricmp("dedicated", param)) {
 		Net_InitServer(*g_iMap, App_MaxPlayers(), g_DefaultServerPort, 1);
 		self->dedicated = 1;
-		self->vftable->InitDedicated(self);
+		App_InitDedicated(self);
 		return 1;
 	}
 	if (crt_stricmp("server", param)) {
@@ -828,7 +828,7 @@ static void CApp_ParseCmdLine(CApp *self) {
 				param[np] = 0;
 				ext[ne] = 0;
 				if (param[0]) {
-					self->vftable->ParseParam(self, param, ext);
+					App_ParseParam(self, param, ext);
 				}
 				ne = 0;
 				param[0] = 0;
@@ -888,7 +888,7 @@ static void CApp_ParseCmdLine(CApp *self) {
 	}
 	ext[ne] = 0;
 	if (param[0]) {
-		self->vftable->ParseParam(self, param, ext);
+		App_ParseParam(self, param, ext);
 	}
 }
 
@@ -902,9 +902,9 @@ static byte Loading_Draw(void) {
 	int f = g_XLoadFrames;
 	g_XLoadFrames = f + 1;
 	if (f <= 1) {
-		g_XLoadStart = (float)g_pApp->vftable->GetTime(g_pApp);
+		g_XLoadStart = (float)App_GetTime(g_pApp);
 	}
-	float now = (float)g_pApp->vftable->GetTime(g_pApp);
+	float now = (float)App_GetTime(g_pApp);
 	float t = now - g_XLoadStart;
 	if (t - g_XLoadLastStep > 0.125f) {
 		g_XLoadIconFrame++;

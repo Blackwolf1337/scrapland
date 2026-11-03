@@ -44,7 +44,7 @@ static void CBspQ3_dtor(CBspQ3 *self) {
 		self->pMesh = NULL;
 	}
 	if (self->MeshD3D) {
-		self->MeshD3D->vftable->Delete(&self->MeshD3D->base, 1);
+		Object3D_Delete(self->MeshD3D, 1);
 		self->MeshD3D = NULL;
 	}
 	if (self->name) {
@@ -75,7 +75,7 @@ static void BspQ3Mesh_dtor(BspQ3Mesh *self) {
 }
 
 static void CBspQ3_ReleaseD3D(CBspQ3 *self) {
-	self->MeshD3D->vftable->ReleaseD3D(&self->MeshD3D->base, g_pd3dDevice);
+	Object3D_ReleaseD3D(self->MeshD3D, g_pd3dDevice);
 	if (self->pMesh) {
 		Rd_Release(self->pMesh);
 		self->pMesh = NULL;
@@ -94,7 +94,7 @@ static void CBspQ3_ReleaseD3D(CBspQ3 *self) {
 }
 
 static void CBspQ3_InitD3D(CBspQ3 *self) {
-	self->MeshD3D->vftable->InitD3D(&self->MeshD3D->base, g_pd3dDevice);
+	Object3D_InitD3D(self->MeshD3D, g_pd3dDevice);
 	for (int i = 0; i < self->MeshList->n; i++) {
 		BspQ3Mesh *m = self->MeshList->m[i];
 		CHECK(Render_CreateVB(&m->pVertVB, &m->vert, 0) == 0);

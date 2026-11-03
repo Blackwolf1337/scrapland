@@ -54,7 +54,7 @@ static void ChType_BertoFlashHit(cAbstractFile *params) {
 		return;
 	}
 	cEntity *e = World_FindEntity(name);
-	if (!e || g_BertoEnt == e || !e->vftable->IsType(e, TYEN_WALKCHAR) || WChar(e)->wl.god) {
+	if (!e || g_BertoEnt == e || !Entity_IsType(e, TYEN_WALKCHAR) || WChar(e)->wl.god) {
 		return;
 	}
 	cObjElementFXBertoFlash *el = FX_DropNew(g_FXBertoFlashFile, 0.8f);
@@ -67,10 +67,9 @@ static void ChType_BertoFlashHit(cAbstractFile *params) {
 		cObjElementFXBertoFlash_RandomPoints(el);
 	}
 	const char *sound = g_BertoFlashSound;
-	CSoundSys *snd = g_pSound;
 	int vol = Snd_Volume(g_BertoFlashSoundVol);
-	const vec3_t *pos = e->vftable->GetPos(e, &tmp);
-	snd->vftable->PlayAt(g_pSound, sound, pos, vol);
+	const vec3_t *pos = Entity_GetPos(e, &tmp);
+	SoundSys_PlayAt(g_pSound, sound, pos, vol);
 }
 
 /* params: Berto, an event, a float. The flash around him, ChType_BertoFlashHit for each flashed character. */
@@ -87,7 +86,7 @@ static void ChType_BertoHitEvent(cAbstractFile *params) {
 	}
 	cPy_Function_SetNative(g_OnFlash, (nativefunc_t)ChType_BertoFlashHit);
 	float radius = g_BertoFlashDist;
-	const vec3_t *pos = g_BertoEnt->vftable->GetPos(g_BertoEnt, &tmp);
+	const vec3_t *pos = Entity_GetPos(g_BertoEnt, &tmp);
 	Logic_Flash(pos, radius, 1);
 	cPy_Function_Clear(g_OnFlash);
 }

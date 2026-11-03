@@ -27,23 +27,23 @@ static void ChType_ListeningMayor(cAbstractFile *params) {
 	g_MayorEnt = World_FindEntity(name);
 	CHECK(g_MayorEnt);
 	CHECK(Entity_IsType(g_MayorEnt, TYEN_WALKCHAR));
-	void *acm = WithLife_Vtbl(g_MayorEnt)->GetAction(g_MayorEnt, "MayorListen");
+	void *acm = WithLife_GetAction(g_MayorEnt, "MayorListen");
 	cLocalLogic *ll = Logic_GetLocalLogic(g_MayorEnt);
 	CHECK(ll && acm);
 	if (!ChLogic_Idle(ll) && !ChLogic_AlwaysLock(ll)) {
-		Logic_Vtbl(ll)->SetIdle(ll, 1);
+		Logic_SetIdle(ll, 1);
 	} else {
 		cEntity *mayor = WChar_Listen(g_MayorEnt);
 		if (mayor && Entity_IsType(mayor, TYEN_WALKCHAR)) {
-			const vec3_t *mp = g_MayorEnt->vftable->GetPos(g_MayorEnt, &t1);
-			const vec3_t *tp = mayor->vftable->GetPos(mayor, &t2);
+			const vec3_t *mp = Entity_GetPos(g_MayorEnt, &t1);
+			const vec3_t *tp = Entity_GetPos(mayor, &t2);
 			float dy = tp->y - mp->y;
 			float dx = tp->x - mp->x;
 			float dz = tp->z - mp->z;
 			if (!(dy * dy + dx * dx + dz * dz > g_MayorBlabliblaRadius * g_MayorBlabliblaRadius) &&
 				!crt_strncmp(cActCtrl_GetActionName(ChType_ActCtrl(mayor), 0), "Action", 6)) {
-				const vec3_t *to = g_MayorEnt->vftable->GetPos(g_MayorEnt, &t1);
-				const vec3_t *from = mayor->vftable->GetPos(mayor, &t2);
+				const vec3_t *to = Entity_GetPos(g_MayorEnt, &t1);
+				const vec3_t *from = Entity_GetPos(mayor, &t2);
 				if (!Engine_TestLine(from, to, NULL, NULL)) {
 					return;
 				}
@@ -53,7 +53,7 @@ static void ChType_ListeningMayor(cAbstractFile *params) {
 	Nto1Node *n = &WChar(g_MayorEnt)->listen;
 	CHECK(n->data);
 	Nto1Node_Unlink(n);
-	Logic_Vtbl(ll)->SetIdle(ll, 0);
+	Logic_SetIdle(ll, 0);
 	cActCtrl_Play(ChType_ActCtrl(g_MayorEnt), "Relax", 1, 1.0f);
 }
 
@@ -69,7 +69,7 @@ static void ChType_MayorEndAction(cAbstractFile *params) {
 	CHECK(g_MayorEnt);
 	CHECK(Entity_IsType(g_MayorEnt, TYEN_WALKCHAR));
 	cPy_Function_SetNative(&g_ChTypeSphereFunc, (nativefunc_t)ChType_MayorSphereHit);
-	cWorld_SphereCallF(g_pWorld, 0x10, g_MayorEnt->vftable->GetPos(g_MayorEnt, &tmp), g_MayorBlabliblaRadius,
+	cWorld_SphereCallF(g_pWorld, 0x10, Entity_GetPos(g_MayorEnt, &tmp), g_MayorBlabliblaRadius,
 		&g_ChTypeSphereFunc, 0);
 	if (!WChar(g_MayorEnt)->control.act) {
 		cActCtrl_Play(ChType_ActCtrl(g_MayorEnt), "ActionEnd", 1, 1.0f);
@@ -92,9 +92,9 @@ static void ChType_MayorSphereHit(cAbstractFile *params) {
 	if (!e) {
 		return;
 	}
-	void *acm = WithLife_Vtbl(e)->GetAction(e, "MayorListen");
+	void *acm = WithLife_GetAction(e, "MayorListen");
 	cLocalLogic *ll = Logic_GetLocalLogic(e);
-	if (!ll || !acm || !Logic_Vtbl(ll)->Listens(ll, g_MayorEnt)) {
+	if (!ll || !acm || !Logic_Listens(ll, g_MayorEnt)) {
 		return;
 	}
 	byte usr = cWalkCharEntity_GetOwnerSlot(g_MayorEnt) != -1;
@@ -109,7 +109,7 @@ static void ChType_MayorSphereHit(cAbstractFile *params) {
 		if (usr || (!Obj(e)->radarShow && g_MayorListenPercent > FxElem_Rand(100.0, 0.0))) {
 			cActCtrl_PlayAction(ChType_ActCtrl(e), acm, 0, 1, 1.0f);
 			if (ChType_Action0(ChType_ActCtrl(e)) == acm) {
-				Logic_Vtbl(ll)->SetIdle(ll, 1);
+				Logic_SetIdle(ll, 1);
 				cEntity_AddLink(g_MayorEnt, &WChar(e)->listen);
 				cLocalLogic *ml = Logic_GetLocalLogic(g_MayorEnt);
 				if (ml) {

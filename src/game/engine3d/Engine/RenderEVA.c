@@ -385,7 +385,7 @@ static void Particle_Quad(CParticle *p, const matrix_t *bill, const matrix_t *vi
 	float rot = p->rot;
 	vec3_t pos = p->pos;
 
-	if (PARTICLE_TYPE(p) == PARTICLE_ACTIVE && ((CParticleActive *)p)->sparks) {
+	if (Particle_Type(p) == PARTICLE_ACTIVE && ((CParticleActive *)p)->sparks) {
 		/* a spark: stretched along its motion on the screen, turned to it */
 		CParticleActive *a = (CParticleActive *)p;
 		vec3_t d0, d1, v;
@@ -457,8 +457,8 @@ static void Particle_Quad(CParticle *p, const matrix_t *bill, const matrix_t *vi
 
 /* a particle is drawn when static, or active and born */
 static byte Particle_Drawn(CParticle *p) {
-	return PARTICLE_TYPE(p) == PARTICLE_STATIC ||
-		(PARTICLE_TYPE(p) == PARTICLE_ACTIVE && 0.0f >= ((CParticleActive *)p)->delay);
+	return Particle_Type(p) == PARTICLE_STATIC ||
+		(Particle_Type(p) == PARTICLE_ACTIVE && 0.0f >= ((CParticleActive *)p)->delay);
 }
 
 /* the alpha of a particle: faded out near the eye (in fade, d2 the square of the distance), times the alpha of

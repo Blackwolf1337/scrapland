@@ -93,7 +93,7 @@ static int FXC_Node(CGameModel *m, const char *name) {
 
 /* the model of the entity, CHECKed */
 static CGameModel *FXC_Model(cEntity *e) {
-	CGameModel *m = Obj_Vtbl(e)->GetModel(e);
+	CGameModel *m = Obj_GetModel(e);
 
 	CHECK(CGameModel_IsLoaded(m));
 	return m;
@@ -115,9 +115,9 @@ static inline vec3_t FXC_CamPos(void) {
 
 static void cObjElementFXMoneyTransfer_SetEntities(cObjElementFXMoneyTransfer *self, cEntity *from, cEntity *to) {
 	self->from = from;
-	CHECK(from->vftable->IsType(from, TYEN_WITH_LIFE));
+	CHECK(Entity_IsType(from, TYEN_WITH_LIFE));
 	self->to = to;
-	CHECK(to->vftable->IsType(to, TYEN_WITH_LIFE));
+	CHECK(Entity_IsType(to, TYEN_WITH_LIFE));
 }
 
 static void cObjElementFXCharacterDeath_SetEntity(cObjElementFXCharacterDeath *self, cEntity *e) {
@@ -418,7 +418,7 @@ byte cObjElementFXCharacterConversion_Alive(cObjElementFX *base, cDebris *d, cDe
 		return 1;
 	}
 	if (self->attacker) {
-		CGameModel *m = Obj_Vtbl(self->attacker)->GetModel(self->attacker);
+		CGameModel *m = Obj_GetModel(self->attacker);
 		if (m && CGameModel_IsLoaded(m)) {
 			CHECK(CGameModel_IsLoaded(m));
 			FXC_EffectOff(m);
@@ -434,7 +434,7 @@ byte cObjElementFXCharacterConversor_Alive(cObjElementFX *base, cDebris *d, cDeb
 		return 1;
 	}
 	if (self->character) {
-		CGameModel *m = Obj_Vtbl(self->character)->GetModel(self->character);
+		CGameModel *m = Obj_GetModel(self->character);
 		if (m && CGameModel_IsLoaded(m)) {
 			CHECK(CGameModel_IsLoaded(m));
 			if (self->phase == 1) {
@@ -469,7 +469,7 @@ byte cObjElementFXMaintenanceWork_Alive(cObjElementFX *base, cDebris *d, cDebris
 	}
 	if (self->sound) {
 		CSoundSys *snd = g_pSound;
-		snd->vftable->StopSound(snd, self->sound);
+		SoundSys_StopSound(snd, self->sound);
 		self->sound = 0;
 	}
 	return 0;
@@ -503,10 +503,10 @@ void cObjElementFXMoneyTransfer_Update(cObjElementFX *base, cDebris *d, float dt
 	if (0.65f > d->life) {
 		return;
 	}
-	Obj_Vtbl(self->from)->GetViewPos(self->from, &a);
-	Obj_Vtbl(self->to)->GetViewPos(self->to, &b);
-	float rFrom = Obj_Vtbl(self->from)->GetRadius(self->from);
-	float rTo = Obj_Vtbl(self->to)->GetRadius(self->to);
+	Obj_GetViewPos(self->from, &a);
+	Obj_GetViewPos(self->to, &b);
+	float rFrom = Obj_GetRadius(self->from);
+	float rTo = Obj_GetRadius(self->to);
 	mid.x = (b.x - a.x) * 0.5f + a.x;
 	mid.y = (b.y - a.y) * 0.5f + a.y;
 	mid.z = (b.z - a.z) * 0.5f + a.z;
@@ -613,12 +613,12 @@ void cObjElementFXCharacterConversion_Update(cObjElementFX *base, cDebris *d, fl
 	float delta = FXC_Delta();
 	self->time = self->time + delta;
 	self->emitT = self->emitT + delta;
-	CGameModel *ma = Obj_Vtbl(self->attacker)->GetModel(self->attacker);
+	CGameModel *ma = Obj_GetModel(self->attacker);
 	if (!ma || !CGameModel_IsLoaded(ma)) {
 		return;
 	}
 	CHECK(CGameModel_IsLoaded(ma));
-	CGameModel *mb = Obj_Vtbl(self->attacked)->GetModel(self->attacked);
+	CGameModel *mb = Obj_GetModel(self->attacked);
 	if (!mb || !CGameModel_IsLoaded(mb)) {
 		return;
 	}
@@ -631,8 +631,8 @@ void cObjElementFXCharacterConversion_Update(cObjElementFX *base, cDebris *d, fl
 	uint32_t bits;
 	memcpy(&bits, &f, sizeof(bits));
 	CGameModel_SetEffectParam(ma, 0, bits);
-	float ra = Obj_Vtbl(self->attacker)->GetRadius(self->attacker);
-	float rb = Obj_Vtbl(self->attacked)->GetRadius(self->attacked);
+	float ra = Obj_GetRadius(self->attacker);
+	float rb = Obj_GetRadius(self->attacked);
 	if (FX_InRange(self->time, 0.0f, 0.2f, &fr)) {
 		/* the trails from the attacker to the attacked */
 		const vec3_t *b = CGameModel_GetPos(mb, &pb);
@@ -656,10 +656,10 @@ void cObjElementFXCharacterConversion_Update(cObjElementFX *base, cDebris *d, fl
 			self->phase[i] = (self->scale[i] * self->emitT) / distK + self->phase[i];
 			const vec3_t *dir = &self->dir[i];
 			float ox = ra * dir->x * 0.5f, oy = dir->y * ra * 0.5f, oz = ra * dir->z * 0.5f;
-			const vec3_t *c = Obj_Vtbl(self->attacker)->GetViewPos(self->attacker, &tmp);
+			const vec3_t *c = Obj_GetViewPos(self->attacker, &tmp);
 			vec3_t A = { ox + c->x, c->y + oy, c->z + oz };
 			float bx = rb * dir->x * 0.5f, by = dir->y * rb * 0.5f, bz = rb * dir->z * 0.5f;
-			const vec3_t *pB = self->attacked->vftable->GetPos(self->attacked, &tmp2);
+			const vec3_t *pB = Entity_GetPos(self->attacked, &tmp2);
 			D.x = (bx + pB->x) - A.x;
 			D.y = (pB->y + by) - A.y;
 			D.z = (pB->z + bz) - A.z;
@@ -803,11 +803,11 @@ void cObjElementFXMaintenanceWork_Update(cObjElementFX *base, cDebris *d, float 
 	self->emitTime = self->emitTime + delta;
 	/* the work ends with the edit door of the ship changing or the robot not working */
 	cEntity *door = World_FindEntity("DM_Door_EditShip_00");
-	if (!door || (self->life > 0.0f && cActCtrl_IsActive(WithLife_Vtbl(door)->GetActCtrl(door), "Change"))) {
+	if (!door || (self->life > 0.0f && cActCtrl_IsActive(WithLife_GetActCtrl(door), "Change"))) {
 		self->life = delta;
 	}
 	cEntity *robot = self->maintenance;
-	if (!cActCtrl_IsActive(WithLife_Vtbl(robot)->GetActCtrl(robot), "Work") && self->life > 0.1f) {
+	if (!cActCtrl_IsActive(WithLife_GetActCtrl(robot), "Work") && self->life > 0.1f) {
 		self->life = 0.1f - delta;
 	}
 	float life = self->life - delta;
@@ -818,7 +818,7 @@ void cObjElementFXMaintenanceWork_Update(cObjElementFX *base, cDebris *d, float 
 		CGameParticles_KillRange(&self->particles, 0, 6);
 		if (self->sound) {
 			CSoundSys *snd = g_pSound;
-			snd->vftable->StopSound(snd, self->sound);
+			SoundSys_StopSound(snd, self->sound);
 			self->sound = 0;
 		}
 		return;
@@ -826,13 +826,13 @@ void cObjElementFXMaintenanceWork_Update(cObjElementFX *base, cDebris *d, float 
 	int alpha = 255 - (int)(Float_MinSS(1.0f, life / 0.1f) * 255.0f);
 	CGameTrail_SetTransp(&self->trails[0], (byte)alpha);
 	CGameTrail_SetTransp(&self->trails[1], (byte)alpha);
-	CGameModel *mm = Obj_Vtbl(self->maintenance)->GetModel(self->maintenance);
+	CGameModel *mm = Obj_GetModel(self->maintenance);
 	CHECK(CGameModel_IsLoaded(mm));
-	CGameModel *ms = Obj_Vtbl(self->ship)->GetModel(self->ship);
+	CGameModel *ms = Obj_GetModel(self->ship);
 	CHECK(CGameModel_IsLoaded(ms));
 	CGameModel_Vertices(mm, &laserPos, NULL, NULL, 1, 0, NULL, (uint32_t)self->nodeLaser, NULL);
 	vec3_t laser = laserPos;
-	Obj_Vtbl(self->ship)->GetViewPos(self->ship, &c);
+	Obj_GetViewPos(self->ship, &c);
 	CGameModel_Vertices(ms, &c, NULL, NULL, 1, self->vertex, NULL, 0xffffffffu, NULL);
 	/* the beam */
 	CGameTrail_Reset(&self->trails[0]);
@@ -1068,8 +1068,8 @@ void cObjElementFXCharacterTeleport_Update(cObjElementFX *base, cDebris *d, floa
 	float delta = FXC_Delta();
 	self->t = self->t + delta;
 	self->emitT = self->emitT + delta;
-	Obj_Vtbl(self->teleport)->GetViewPos(self->teleport, &c);
-	float r = Obj_Vtbl(self->character)->GetRadius(self->character);
+	Obj_GetViewPos(self->teleport, &c);
+	float r = Obj_GetRadius(self->character);
 	/* f: the character comes in (mode 1) or goes out (mode 2); g: the effect of its model over the duration */
 	float q = 0.0f;
 	if (self->mode == 1) {
@@ -1081,7 +1081,7 @@ void cObjElementFXCharacterTeleport_Update(cObjElementFX *base, cDebris *d, floa
 	float f = 0.0f > q ? 0.0f : Float_MinSS(1.0f, q);
 	float g = (self->t * 1.2f - 0.2f) / self->duration;
 	g = 0.0f > g ? 0.0f : Float_MinSS(1.0f, g);
-	CGameModel *m = Obj_Vtbl(self->character)->GetModel(self->character);
+	CGameModel *m = Obj_GetModel(self->character);
 	CHECK(CGameModel_IsLoaded(m));
 	CGameModel_SetSortZ(m, -63.9f, 0.0f);
 	CGameModel_SetEffect(m, 2);
@@ -1342,7 +1342,7 @@ void cObjElementFXCharacterDeath_Update(cObjElementFX *base, cDebris *d, float d
 	if (self->ent) {
 		cTimer_SetSpeedChecked(&Obj(self->ent)->timer, FXC_Smooth(k));
 	}
-	CGameModel *m = Obj_Vtbl(self->ent)->GetModel(self->ent);
+	CGameModel *m = Obj_GetModel(self->ent);
 	CHECK(CGameModel_IsLoaded(m));
 	CGameModel_GetPos(m, &p);
 	CGameModel_SetPos(Debris_Model(d), &p);
@@ -1364,7 +1364,7 @@ void cObjElementFXCharacterDeath_Update(cObjElementFX *base, cDebris *d, float d
 	byte vis = CGameModel_IsVisible(Debris_Model(d));
 	vec3_t cam = FXC_CamPos();
 	vec3_t n = FX_Unit((vec3_t){ cam.x - p.x, cam.y - p.y, cam.z - p.z });
-	float r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
+	float r = Obj_GetRadius(self->ent);
 	float ox = n.x * r * 0.6f, oy = n.y * r * 0.6f, oz = n.z * r * 0.6f;
 
 	/* the trails up from the vertices */
@@ -1650,7 +1650,7 @@ void cObjElementFXCharacterConversor_Update(cObjElementFX *base, cDebris *d, flo
 	cEntity *ch = self->character;
 	if (ch && (Entity_Removed(ch) || !ch->active)) {
 		/* the character went: its model back to normal */
-		CGameModel *m = Obj_Vtbl(ch)->GetModel(ch);
+		CGameModel *m = Obj_GetModel(ch);
 		if (!m || !CGameModel_IsLoaded(m)) {
 			self->character = NULL;
 			return;
@@ -1688,7 +1688,7 @@ void cObjElementFXCharacterConversor_Update(cObjElementFX *base, cDebris *d, flo
 		q = t > b ? (self->timeOut - (t - b)) / self->timeOut : 1.0f;
 	}
 	float f = 0.0f > q ? 0.0f : Float_MinSS(1.0f, q);
-	float r = Obj_Vtbl(self->character)->GetRadius(self->character);
+	float r = Obj_GetRadius(self->character);
 	t = self->time;
 	float h = ((t - self->timeIn) + (t - self->timeIn)) / ((self->duration - self->timeIn) - self->timeOut) - 1.0f;
 	h = -1.0f > h ? -1.0f : Float_MinSS(1.0f, h);
@@ -1702,7 +1702,7 @@ void cObjElementFXCharacterConversor_Update(cObjElementFX *base, cDebris *d, flo
 		g = ((self->duration - self->timeOut) - t) / (self->duration - self->timeOut * 5.0f);
 	}
 	g = 0.0f > g ? 0.0f : Float_MinSS(1.0f, g);
-	CGameModel *m = Obj_Vtbl(self->character)->GetModel(self->character);
+	CGameModel *m = Obj_GetModel(self->character);
 	CHECK(CGameModel_IsLoaded(m));
 	if (m) {
 		if (!CGameModel_IsEnabled(m)) {
@@ -1716,7 +1716,7 @@ void cObjElementFXCharacterConversor_Update(cObjElementFX *base, cDebris *d, flo
 	CGameParticles *sp = &self->particles;
 	if (self->conversor) {
 		/* the end of the animation of the conversor ends the effect */
-		CGameModel *cm = Obj_Vtbl(self->conversor)->GetModel(self->conversor);
+		CGameModel *cm = Obj_GetModel(self->conversor);
 		CHECK(CGameModel_IsLoaded(cm));
 		if (CGameModel_IsVisible(cm)) {
 			CGameModel_Enable(Debris_Model(d));
@@ -1735,12 +1735,12 @@ void cObjElementFXCharacterConversor_Update(cObjElementFX *base, cDebris *d, flo
 			return;
 		}
 	}
-	Obj_Vtbl(self->character)->GetViewPos(self->character, &c);
+	Obj_GetViewPos(self->character, &c);
 	if (self->conversor) {
-		CGameModel *mc = Obj_Vtbl(self->conversor)->GetModel(self->conversor);
+		CGameModel *mc = Obj_GetModel(self->conversor);
 		CHECK(CGameModel_IsLoaded(mc));
 		CGameModel_GetRot(mc, &rot);
-		Obj_Vtbl(self->conversor)->GetViewPos(self->conversor, &cc);
+		Obj_GetViewPos(self->conversor, &cc);
 		const vec3_t ang = { 0.0f, rot.y, 0.0f };
 		/* the column of the conversor */
 		float f1 = f - 1.0f;
@@ -2001,7 +2001,7 @@ void cObjElementFXSputnik_Update(cObjElementFX *base, cDebris *d, float dt) {
 	if (self->duration > 0.0f && t > self->duration) {
 		return;
 	}
-	m = Obj_Vtbl(self->ent)->GetModel(self->ent);
+	m = Obj_GetModel(self->ent);
 	if (!CGameModel_IsLoaded(m)) {
 		return;
 	}
@@ -2126,18 +2126,18 @@ static uint32_t cObjElementFXCharacterConversion_EmitRamp[9] = { 0x40bebeff, 0x1
 static void cObjElementFXCharacterConversion_Emit(cObjElementFXCharacterConversion *self) {
 	vec3_t verts[FXC_EMIT_VERTS], pa, pb;
 
-	CGameModel *ma = Obj_Vtbl(self->attacker)->GetModel(self->attacker);
+	CGameModel *ma = Obj_GetModel(self->attacker);
 	if (!ma || !CGameModel_IsLoaded(ma)) {
 		return;
 	}
 	CHECK(CGameModel_IsLoaded(ma));
-	CGameModel *mb = Obj_Vtbl(self->attacked)->GetModel(self->attacked);
+	CGameModel *mb = Obj_GetModel(self->attacked);
 	if (!mb || !CGameModel_IsLoaded(mb)) {
 		return;
 	}
 	CHECK(CGameModel_IsLoaded(mb));
-	float ra = Obj_Vtbl(self->attacker)->GetRadius(self->attacker);
-	float rb = Obj_Vtbl(self->attacked)->GetRadius(self->attacked);
+	float ra = Obj_GetRadius(self->attacker);
+	float rb = Obj_GetRadius(self->attacked);
 	CGameModel_Vertices(ma, verts, NULL, NULL, FXC_EMIT_VERTS, -1, NULL, 0xffffffffu, NULL);
 	CGameParticles *sp = &self->particles;
 	CGameParticles *sp2 = &self->particles2;
@@ -2220,10 +2220,10 @@ void cObjElementFXMaintenanceWork_Start(cObjElementFXMaintenanceWork *self, cDeb
 	cSoundDesc desc;
 
 	self->life = d->life;
-	CGameModel *m = Obj_Vtbl(self->maintenance)->GetModel(self->maintenance);
+	CGameModel *m = Obj_GetModel(self->maintenance);
 	CHECK(CGameModel_IsLoaded(m));
 	CGameModel_Vertices(m, &laser, NULL, NULL, 1, 0, NULL, (uint32_t)self->nodeLaser, NULL);
-	m = Obj_Vtbl(self->ship)->GetModel(self->ship);
+	m = Obj_GetModel(self->ship);
 	CHECK(CGameModel_IsLoaded(m));
 	CGameModel_ClosestVertex(m, laser.x, laser.y, laser.z, &pos, &self->vertex, 0xffffffffu);
 	self->sound = 0;
@@ -2235,7 +2235,7 @@ void cObjElementFXMaintenanceWork_Start(cObjElementFXMaintenanceWork *self, cDeb
 	desc.volume += Snd_Volume(g_MaintenanceWorkSoundVol);
 	desc.loop = 1;
 	CSoundSys *snd = g_pSound;
-	snd->vftable->PlaySound(snd, g_MaintenanceWorkSound, &desc, &self->sound);
+	SoundSys_PlaySound(snd, g_MaintenanceWorkSound, &desc, &self->sound);
 }
 
 void FX_MoneyTransfer(cEntity *from, cEntity *to, float time) {
@@ -2267,32 +2267,32 @@ void FX_CharacterConversion(cEntity *attacker, cEntity *attacked, float time) {
 		cObjElementFXCharacterConversion_SetAttacked(el, attacked);
 		cObjElementFXCharacterConversion_Emit(el);
 	}
-	const vec3_t *a = Obj_Vtbl(attacker)->GetViewPos(attacker, &t1);
-	const vec3_t *b = Obj_Vtbl(attacked)->GetViewPos(attacked, &t2);
+	const vec3_t *a = Obj_GetViewPos(attacker, &t1);
+	const vec3_t *b = Obj_GetViewPos(attacked, &t2);
 	float dx = (b->x - a->x) * 0.5f;
 	float dy = (b->y - a->y) * 0.5f;
 	float dz = (b->z - a->z) * 0.5f;
-	a = Obj_Vtbl(attacker)->GetViewPos(attacker, &t3);
+	a = Obj_GetViewPos(attacker, &t3);
 	pos.x = a->x + dx;
 	pos.y = a->y + dy;
 	pos.z = a->z + dz;
 	const char *name = g_CharacterConversionSound;
 	CSoundSys *snd = g_pSound;
 	int vol = Snd_Volume(g_CharacterConversionSoundVol);
-	snd->vftable->PlayAt(snd, name, &pos, vol);
+	SoundSys_PlayAt(snd, name, &pos, vol);
 }
 
 void FX_CharacterConversor(cEntity *character, cEntity *conversor, int phase, float a, float b) {
 	vec3_t tmp;
 
 	CHECK(conversor);
-	const vec3_t *p = conversor->vftable->GetPos(conversor, &tmp);
+	const vec3_t *p = Entity_GetPos(conversor, &tmp);
 	if (!FX_IsVisible(p->x, p->y, p->z, 500.0f, 0.0f, NULL, 1)) {
 		return;
 	}
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXCharacterConversorFile);
 	cDebris *d = cDebrisSys_NewElement(sys);
-	CGameModel_SetPos(Debris_Model(d), conversor->vftable->GetPos(conversor, &tmp));
+	CGameModel_SetPos(Debris_Model(d), Entity_GetPos(conversor, &tmp));
 	d->life = a;
 	cDebrisSys_Drop(sys, d);
 	cObjElementFXCharacterConversor *el = Debris_Element(d);
@@ -2326,13 +2326,13 @@ void FX_Character(cEntity *e, const char *name) {
 	vec3_t tmp;
 
 	if (!strcmp(name, "CharacterDeath")) {
-		CGameModel *m = Obj_Vtbl(e)->GetModel(e);
+		CGameModel *m = Obj_GetModel(e);
 		if (!CGameModel_IsLoaded(m)) {
 			return;
 		}
 		if (!CGameModel_IsVisible(m)) {
 			vec3_t cp = FXC_CamPos();
-			const vec3_t *p = e->vftable->GetPos(e, &tmp);
+			const vec3_t *p = Entity_GetPos(e, &tmp);
 			float dx = cp.x - p->x, dy = cp.y - p->y, dz = cp.z - p->z;
 			float dist = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 			if (!(g_FXCharacterDeathMinDist > dist)) {
@@ -2355,11 +2355,11 @@ void FX_Character(cEntity *e, const char *name) {
 		const char *snd = g_CharacterDeathSound;
 		CSoundSys *s = g_pSound;
 		int vol = Snd_Volume(g_CharacterDeathSoundVol);
-		s->vftable->PlayAt(s, snd, Obj_Vtbl(e)->GetViewPos(e, &tmp), vol);
+		SoundSys_PlayAt(s, snd, Obj_GetViewPos(e, &tmp), vol);
 		return;
 	}
 	if (!crt_strncmp(name, "CharacterSputnik", 16)) {
-		if (!CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e))) {
+		if (!CGameModel_IsLoaded(Obj_GetModel(e))) {
 			return;
 		}
 		int k = 0;
@@ -2384,7 +2384,7 @@ void FX_Character(cEntity *e, const char *name) {
 		return;
 	}
 	if (!strcmp(name, "FunctionarySpecialAction")) {
-		if (!CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e))) {
+		if (!CGameModel_IsLoaded(Obj_GetModel(e))) {
 			return;
 		}
 		cObjElementFXFunctionarySpecialAction *el = FX_DropNew(g_FXFunctionarySpecialActionFile,
@@ -2404,7 +2404,7 @@ void FX_Character(cEntity *e, const char *name) {
 static cEntity *FXC_ReadParams(cAbstractFile *f, char *name, char *name2, void *v) {
 	cAbstractFile_ReadString(f, name, 0x80);
 	cAbstractFile_ReadString(f, name2, 0x80);
-	f->vftable->Read(f, v, 4);
+	VFile_Read(f, v, 4);
 	cEntity *ch = World_FindEntity(name);
 	CHECK(ch);
 	return ch;
@@ -2446,17 +2446,17 @@ static void FX_CharacterBlaBliBla(cAbstractFile *params) {
 	}
 	/* a word bubble above the head, turned with the character */
 	rot.x = 0.0f;
-	rot.y = Obj_Vtbl(ch)->GetViewAng(ch, &tmp)->y;
+	rot.y = Obj_GetViewAng(ch, &tmp)->y;
 	rot.z = 0.0f;
 	float r1 = FXC_Rand(0.10000002384185791, 0.44999998807907104);
 	float r2 = FXC_Rand(0.06000000238418579, 0.3400000035762787);
 	float r3 = (float)(FXC_Rnd() * 0.20000000298023224 - 0.10000000149011612);
-	in.x = Obj_Vtbl(ch)->GetRadius(ch) * r3;
-	in.y = Obj_Vtbl(ch)->GetRadius(ch) * r2;
-	in.z = -(Obj_Vtbl(ch)->GetRadius(ch) * r1);
+	in.x = Obj_GetRadius(ch) * r3;
+	in.y = Obj_GetRadius(ch) * r2;
+	in.z = -(Obj_GetRadius(ch) * r1);
 	Vec3_Rotate(&p, &in, &rot);
 	sp->birthRate = 0;
-	const vec3_t *c = Obj_Vtbl(ch)->GetViewPos(ch, &tmp);
+	const vec3_t *c = Obj_GetViewPos(ch, &tmp);
 	sp->initPosMin.x = c->x + p.x;
 	sp->initPosMin.y = c->y + p.y;
 	sp->initPosMin.z = c->z + p.z;
@@ -2522,17 +2522,17 @@ static void FX_CharacterDazed(cAbstractFile *params) {
 	/* stars above the head */
 	int n = crt_rand() % 2 + 1;
 	rot.x = 0.0f;
-	rot.y = Obj_Vtbl(ch)->GetViewAng(ch, &tmp)->y;
+	rot.y = Obj_GetViewAng(ch, &tmp)->y;
 	rot.z = 0.0f;
-	float a = Obj_Vtbl(ch)->GetRadius(ch) * 0.25f;
-	float b = Obj_Vtbl(ch)->GetRadius(ch) * -0.5f;
+	float a = Obj_GetRadius(ch) * 0.25f;
+	float b = Obj_GetRadius(ch) * -0.5f;
 	in.x = 0.0f;
 	in.y = a;
 	in.z = b;
 	Vec3_Rotate(&off, &in, &rot);
 	for (int k = 0; k < n; k++) {
 		sp->birthRate = 0;
-		const vec3_t *c = Obj_Vtbl(ch)->GetViewPos(ch, &tmp);
+		const vec3_t *c = Obj_GetViewPos(ch, &tmp);
 		sp->initPosMin.x = c->x + off.x;
 		sp->initPosMin.y = c->y + off.y;
 		sp->initPosMin.z = c->z + off.z;
@@ -2577,14 +2577,14 @@ static void FX_CharacterTeleport(cAbstractFile *params) {
 	CHECK(Entity_IsType(tp, TYEN_WITH_LIFE));
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXCharacterTeleportFile);
 	cDebris *d = cDebrisSys_GetIdle(sys);
-	CGameModel_SetPos(Debris_Model(d), tp->vftable->GetPos(tp, &tmp));
+	CGameModel_SetPos(Debris_Model(d), Entity_GetPos(tp, &tmp));
 	d->life = 1.1f;
 	if (!cDebrisSys_IsIdle(sys, d)) {
 		cDebrisSys_Drop(sys, d);
 	} else if (Debris_Element(d)) {
 		/* the element of a reused debris starts over (vf04) */
 		cObjElementFX *el = Debris_Element(d);
-		el->vftable->Reset(el, d);
+		FXObj_Reset(el, d);
 	}
 	cObjElementFXCharacterTeleport *el = Debris_Element(d);
 	if (el) {
@@ -2613,7 +2613,7 @@ static void FX_CharacterTeleport(cAbstractFile *params) {
 	}
 	CSoundSys *s = g_pSound;
 	int vol = Snd_Volume(g_CharacterTeleportSoundVol);
-	s->vftable->PlayAt(s, snd, ch->vftable->GetPos(ch, &tmp), vol);
+	SoundSys_PlayAt(s, snd, Entity_GetPos(ch, &tmp), vol);
 }
 
 static cGVar GVar_CharacterTeleportSoundVol;

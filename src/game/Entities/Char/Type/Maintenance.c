@@ -18,7 +18,7 @@ static void ChType_FXMaintenanceWork(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, name, 0x80);
 	cAbstractFile_ReadString(params, shipName, 0x80);
-	params->vftable->Read(params, &time, 4);
+	VFile_Read(params, &time, 4);
 	cEntity *v = World_FindEntity(name);
 	CHECK(v);
 	CHECK(Entity_IsType(v, TYEN_WALKCHAR));
@@ -27,7 +27,7 @@ static void ChType_FXMaintenanceWork(cAbstractFile *params) {
 	CHECK(Entity_IsType(ship, TYEN_VEHICLE));
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXMaintenanceWorkFile);
 	cDebris *d = cDebrisSys_NewElement(sys);
-	CGameModel_SetPos(Debris_Model(d), v->vftable->GetPos(v, &tmp));
+	CGameModel_SetPos(Debris_Model(d), Entity_GetPos(v, &tmp));
 	d->life = time;
 	cDebrisSys_Drop(sys, d);
 	cObjElementFXMaintenanceWork *el = Debris_Element(d);

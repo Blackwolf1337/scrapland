@@ -50,19 +50,19 @@ static void cAIMessenger_CheckActDist(cAI *elem) {
 	vec3_t a, b, d;
 
 	cEntity *tgt = c->base.target.target;
-	const vec3_t *op = c->ent->vftable->GetPos(c->ent, &a);
-	const vec3_t *tp = tgt->vftable->GetPos(tgt, &b);
+	const vec3_t *op = Entity_GetPos(c->ent, &a);
+	const vec3_t *tp = Entity_GetPos(tgt, &b);
 	d.x = tp->x - op->x;
 	d.y = tp->y - op->y;
 	d.z = tp->z - op->z;
 	float dist = (float)__builtin_sqrt((double)(d.x * d.x + 0.0f + d.z * d.z));
-	if (!AIChar_Action0(c->ent)->useFlyDisp || !c->vftable->GetDirect2(&c->base.base) || AIChar_Action0(c->ent)->priority > 0x65 ||
+	if (!AIChar_Action0(c->ent)->useFlyDisp || !AIChar_GetDirect2(c) || AIChar_Action0(c->ent)->priority > 0x65 ||
 		!(dist > c->actMin) || !(c->actMax > dist)) {
 		goto done;
 	}
 	/* the half angle of the target at its distance, the angle of the view (down z) to it */
 	cEntity *t = c->base.target.target;
-	float tr = Obj_Vtbl(t)->GetRadius(t);
+	float tr = Obj_GetRadius(t);
 	double half = atan2((double)tr, (double)dist);
 	vec3_t fwd = { 0.0f, 0.0f, -1.0f };
 	vec3_t view = WChar(c->ent)->view;
@@ -106,7 +106,7 @@ static void cAIMessenger_SetShoot(cAI *elem) {
 	self->shootAng = g_OffsetAngShootMessengerAI;
 	self->shootTime = g_TimeShootMessengerAI;
 	self->shootDist = g_DistMaxShootMessengerAI;
-	self->base.vftable->SetDists(&self->base.base.base);
+	AIChar_SetDists(self);
 }
 
 /* the vtable of cAIMessenger */

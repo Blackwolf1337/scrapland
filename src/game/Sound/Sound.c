@@ -30,15 +30,15 @@ void Sound_Init(void) {
 	CHECK(!g_pSound);
 	CSoundSys *s = (CSoundSys *)CSoundXBox_New();
 	g_pSound = s;
-	s->vftable->Init(s);
+	SoundSys_Init(s);
 	Con_Printf("Sound system initialized\n");
 }
 
 void Sound_Done(void) {
 	CHECK(g_pSound);
-	g_pSound->vftable->Close(g_pSound);
+	SoundSys_Close(g_pSound);
 	if (g_pSound) {
-		g_pSound->vftable->Destroy(g_pSound, 1);
+		SoundSys_Destroy(g_pSound, 1);
 		g_pSound = NULL;
 	}
 	Con_Printf("Sound system closed\n");
@@ -71,7 +71,7 @@ void cSoundDesc_SetPos(cSoundDesc *desc, const vec3_t *pos) {
 
 	CHECK(g_pSound);
 	vel.x = vel.y = vel.z = 0.0f;
-	g_pSound->vftable->Compute3D(g_pSound, desc, pos, &vel, 0);
+	SoundSys_Compute3D(g_pSound, desc, pos, &vel, 0);
 }
 
 /* cSound */
@@ -96,7 +96,7 @@ const char *cSound_GetName(cSound *self) {
 void cSound_Stop(cSound *self) {
 	CHECK(g_pSound);
 	if (self->handle) {
-		g_pSound->vftable->StopSound(g_pSound, self->handle);
+		SoundSys_StopSound(g_pSound, self->handle);
 		self->handle = 0;
 	}
 }
@@ -110,16 +110,16 @@ void cSound_SetSound(cSound *self, const char *name, uint32_t flags) {
 		return;
 	}
 	if (flags & 1) {
-		g_pSound->vftable->GetSoundName(g_pSound, name, self->name, SOUND_NAME_MAX_LEN);
-		g_pSound->vftable->LoadSound2(g_pSound, name);
+		SoundSys_GetSoundName(g_pSound, name, self->name, SOUND_NAME_MAX_LEN);
+		SoundSys_LoadSound2(g_pSound, name);
 	} else if (flags & 2) {
-		g_pSound->vftable->GetSoundName(g_pSound, name, self->name, SOUND_NAME_MAX_LEN);
-		g_pSound->vftable->LoadSound(g_pSound, name);
+		SoundSys_GetSoundName(g_pSound, name, self->name, SOUND_NAME_MAX_LEN);
+		SoundSys_LoadSound(g_pSound, name);
 	} else {
 		CHECK(strlen(name) < SOUND_NAME_MAX_LEN);
 		Str_Copy(self->name, name, SOUND_NAME_MAX_LEN);
 	}
-	g_pSound->vftable->GetDesc(g_pSound, self->name, &self->desc);
+	SoundSys_GetDesc(g_pSound, self->name, &self->desc);
 	self->desc.volume = 0;
 	self->desc.pan = 0;
 	self->desc.freq = 1.0f;
@@ -133,12 +133,12 @@ void cSound_SetPitch(cSound *self, float semitones) {
 
 byte cSound_Play(cSound *self) {
 	cSound_Stop(self);
-	return (byte)g_pSound->vftable->PlaySound(g_pSound, self->name, &self->desc, &self->handle);
+	return (byte)SoundSys_PlaySound(g_pSound, self->name, &self->desc, &self->handle);
 }
 
 void cSound_SetPosVel(cSound *self, const vec3_t *pos, const vec3_t *vel) {
 	CHECK(g_pSound);
-	g_pSound->vftable->Compute3D(g_pSound, &self->desc, pos, vel, 1);
+	SoundSys_Compute3D(g_pSound, &self->desc, pos, vel, 1);
 }
 
 byte cSound_Update(cSound *self) {
@@ -146,14 +146,14 @@ byte cSound_Update(cSound *self) {
 	if (self->desc.loop) {
 		if (self->desc.volume > (int)(g_SoundAutoplayVolume * 100.0f)) {
 			if (self->desc.volume >= 300 - (int)(g_SoundAutoplayVolume * -100.0f) && !self->handle) {
-				g_pSound->vftable->PlaySound(g_pSound, self->name, &self->desc, &self->handle);
+				SoundSys_PlaySound(g_pSound, self->name, &self->desc, &self->handle);
 			}
 		} else if (self->handle) {
 			cSound_Stop(self);
 		}
 	}
 	if (self->handle) {
-		if (g_pSound->vftable->UpdateSound(g_pSound, self->name, &self->desc, self->handle)) {
+		if (SoundSys_UpdateSound(g_pSound, self->name, &self->desc, self->handle)) {
 			return 1;
 		}
 		cSound_Stop(self);
@@ -203,7 +203,7 @@ static void CSoundSys_Nop2(CSoundSys *self, int a, int b) {
 
 /* vtable slot 0x70 called directly, a tail jump in the original */
 void CSoundSys_CallVf1c(CSoundSys *self) {
-	self->vftable->vf1c(self);
+	SoundSys_vf1c(self);
 }
 
 void CSoundSys_InitFmod(CSoundSys *self) {
@@ -212,7 +212,7 @@ void CSoundSys_InitFmod(CSoundSys *self) {
 }
 
 void CSoundSys_Close(CSoundSys *self) {
-	self->vftable->vf1c(self);
+	SoundSys_vf1c(self);
 	Fmod_Close();
 }
 
@@ -354,9 +354,9 @@ void CSoundSys_SetVolume(CSoundSys *self, const char *name, int volume) {
 	cSoundDesc d;
 
 	cSoundDesc_Init(&d);
-	if (self->vftable->GetDesc(self, name, &d)) {
+	if (SoundSys_GetDesc(self, name, &d)) {
 		d.volume = volume;
-		self->vftable->SetDesc(self, name, &d);
+		SoundSys_SetDesc(self, name, &d);
 	}
 }
 
@@ -364,9 +364,9 @@ void CSoundSys_SetPan(CSoundSys *self, const char *name, int pan) {
 	cSoundDesc d;
 
 	cSoundDesc_Init(&d);
-	if (self->vftable->GetDesc(self, name, &d)) {
+	if (SoundSys_GetDesc(self, name, &d)) {
 		d.pan = pan;
-		self->vftable->SetDesc(self, name, &d);
+		SoundSys_SetDesc(self, name, &d);
 	}
 }
 
@@ -374,9 +374,9 @@ void CSoundSys_SetFreq(CSoundSys *self, const char *name, float freq) {
 	cSoundDesc d;
 
 	cSoundDesc_Init(&d);
-	if (self->vftable->GetDesc(self, name, &d)) {
+	if (SoundSys_GetDesc(self, name, &d)) {
 		d.freq = freq;
-		self->vftable->SetDesc(self, name, &d);
+		SoundSys_SetDesc(self, name, &d);
 	}
 }
 
@@ -384,9 +384,9 @@ void CSoundSys_SetLoop(CSoundSys *self, const char *name, byte loop) {
 	cSoundDesc d;
 
 	cSoundDesc_Init(&d);
-	if (self->vftable->GetDesc(self, name, &d)) {
+	if (SoundSys_GetDesc(self, name, &d)) {
 		d.loop = loop;
-		self->vftable->SetDesc(self, name, &d);
+		SoundSys_SetDesc(self, name, &d);
 	}
 }
 
@@ -394,9 +394,9 @@ void CSoundSys_SetPrio(CSoundSys *self, const char *name, byte prio) {
 	cSoundDesc d;
 
 	cSoundDesc_Init(&d);
-	if (self->vftable->GetDesc(self, name, &d)) {
+	if (SoundSys_GetDesc(self, name, &d)) {
 		d.prio = prio;
-		self->vftable->SetDesc(self, name, &d);
+		SoundSys_SetDesc(self, name, &d);
 	}
 }
 

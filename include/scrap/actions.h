@@ -32,6 +32,27 @@ typedef struct cActCtrlVarVtbl {
 	byte(*VarV)(cActCtrl *self, const char *name, double *x, double *y, double *z, int set); /* 0x10 */
 } cActCtrlVarVtbl;
 
+/* calls through the slots of cActCtrlVarVtbl */
+static inline void *ActCtrl_Delete(void *self, byte flags) {
+	return VT(cActCtrlVarVtbl, self)->Delete(self, flags);
+}
+
+static inline byte ActCtrl_VarF(void *self, const char *name, double *d, int set) {
+	return VT(cActCtrlVarVtbl, self)->VarF(self, name, d, set);
+}
+
+static inline byte ActCtrl_VarI(void *self, const char *name, int *i, int set) {
+	return VT(cActCtrlVarVtbl, self)->VarI(self, name, i, set);
+}
+
+static inline byte ActCtrl_VarS(void *self, const char *name, char **s, int set) {
+	return VT(cActCtrlVarVtbl, self)->VarS(self, name, s, set);
+}
+
+static inline byte ActCtrl_VarV(void *self, const char *name, double *x, double *y, double *z, int set) {
+	return VT(cActCtrlVarVtbl, self)->VarV(self, name, x, y, z, set);
+}
+
 #define ACT_LAYERS 4			/* the layers of a controller, the channels of the model */
 #define ACT_NODEMODS 3			/* the turned nodes of a class ("NodeN_...") */
 #define ACT_NODEMOD_ANGS 7		/* the angle pairs of a node, by the NodeModifier of the action */
@@ -61,6 +82,11 @@ typedef struct cActClassCam {
 typedef struct cActClassVtbl {
 	struct cActClass *(*Delete)(struct cActClass *self, byte flags);	/* 0x00 */
 } cActClassVtbl;
+
+/* calls through the slots of cActClassVtbl */
+static inline struct cActClass *ActClass_Delete(void *self, byte flags) {
+	return VT(cActClassVtbl, self)->Delete(self, flags);
+}
 
 /* an action class (0x20c bytes, made by cActClassList_Create) */
 struct cActClass {
@@ -117,6 +143,11 @@ typedef struct cActClassListVtbl {
 	struct cActClassList *(*Delete)(struct cActClassList *self, byte flags);	/* 0x00 */
 } cActClassListVtbl;
 
+/* calls through the slots of cActClassListVtbl */
+static inline struct cActClassList *ActClassList_Delete(void *self, byte flags) {
+	return VT(cActClassListVtbl, self)->Delete(self, flags);
+}
+
 struct cActClassList {
 	const cActClassListVtbl *vftable;		/* 0x00 */
 	HashTable classes;		/* 0x04 457 slots */
@@ -136,6 +167,11 @@ struct cActEvent {
 typedef struct cActionVtbl {
 	struct cAction *(*Delete)(struct cAction *self, byte flags);	/* 0x00 */
 } cActionVtbl;
+
+/* calls through the slots of cActionVtbl */
+static inline struct cAction *Action_Delete(void *self, byte flags) {
+	return VT(cActionVtbl, self)->Delete(self, flags);
+}
 
 struct cAction {
 	const cActionVtbl *vftable;		/* 0x00 */

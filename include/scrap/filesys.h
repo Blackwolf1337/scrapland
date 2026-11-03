@@ -28,6 +28,43 @@ typedef struct cAbstractFileVtbl {
 	cAbstractFile *(*Destroy)(cAbstractFile *self, int flags);	/* 0x20 flags 1 frees */
 } cAbstractFileVtbl;
 
+/* calls through the slots of cAbstractFileVtbl */
+static inline int VFile_Close(void *self) {
+	return VT(cAbstractFileVtbl, self)->Close(self);
+}
+
+static inline cAbstractFile *VFile_Destroy(void *self, int flags) {
+	return VT(cAbstractFileVtbl, self)->Destroy(self, flags);
+}
+
+static inline int VFile_Exists(void *self, const char *name) {
+	return VT(cAbstractFileVtbl, self)->Exists(self, name);
+}
+
+static inline int VFile_Open(void *self, const char *name, uint32_t mode) {
+	return VT(cAbstractFileVtbl, self)->Open(self, name, mode);
+}
+
+static inline int VFile_Read(void *self, void *dst, int size) {
+	return VT(cAbstractFileVtbl, self)->Read(self, dst, size);
+}
+
+static inline int VFile_Seek(void *self, int pos) {
+	return VT(cAbstractFileVtbl, self)->Seek(self, pos);
+}
+
+static inline int VFile_Size(void *self) {
+	return VT(cAbstractFileVtbl, self)->Size(self);
+}
+
+static inline int VFile_Tell(void *self) {
+	return VT(cAbstractFileVtbl, self)->Tell(self);
+}
+
+static inline int VFile_Write(void *self, const void *src, int size) {
+	return VT(cAbstractFileVtbl, self)->Write(self, src, size);
+}
+
 struct cAbstractFile {
 	const cAbstractFileVtbl *vftable;	/* 0x00 */
 	char *name;			/* 0x04 Mem_Alloc copy while open */

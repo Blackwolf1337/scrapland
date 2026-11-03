@@ -44,12 +44,12 @@ static void ChType_FXPoliceBossBrup(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, name, 0x80);
 	cAbstractFile_ReadString(params, event, 0x80);
-	params->vftable->Read(params, &scale, 4);
+	VFile_Read(params, &scale, 4);
 	cEntity *v = World_FindEntity(name);
 	CHECK(v);
 	CHECK(Entity_IsType(v, TYEN_WITH_LIFE));
-	Obj_Vtbl(v)->GetViewPos(v, &pos);
-	Obj_Vtbl(v)->GetViewAng(v, &ang);
+	Obj_GetViewPos(v, &pos);
+	Obj_GetViewAng(v, &ang);
 	for (int i = 0; i < PB_SYSTEMS; i++) {
 		Str_Printf(file, 0xff, "%s%c.M3D", g_PoliceBossBrupBaseFile, i + 'A');
 		cDebrisSys *s = cWorld_GetDebrisSys(g_pWorld, file);
@@ -151,10 +151,9 @@ static void ChType_PoliceBossBrupBounce(cDebris *d, const byte *hit) {
 	}
 	if (!(0.0f >= g_PoliceBossBrupBounceSoundVol)) {
 		int r = crt_rand();
-		CSoundSys *snd = g_pSound;
 		const char *s = (r & 1) ? g_PoliceBossBrupBounce1Sound : g_PoliceBossBrupBounce2Sound;
 		int vol = Snd_Volume(g_PoliceBossBrupBounceSoundVol);
-		snd->vftable->PlayAt(g_pSound, s, &d->drop[0], vol);
+		SoundSys_PlayAt(g_pSound, s, &d->drop[0], vol);
 	}
 }
 
@@ -188,7 +187,7 @@ static void ChType_PoliceBossBrup(cAbstractFile *params) {
 	CHECK(g_PoliceBossEnt);
 	CHECK(Entity_IsType(g_PoliceBossEnt, TYEN_WALKCHAR));
 	cPy_Function_SetNative(&g_ChTypeSphereFunc, (nativefunc_t)ChType_PoliceBossSphereHit);
-	cWorld_SphereCallF(g_pWorld, 0x10, g_PoliceBossEnt->vftable->GetPos(g_PoliceBossEnt, &tmp),
+	cWorld_SphereCallF(g_pWorld, 0x10, Entity_GetPos(g_PoliceBossEnt, &tmp),
 		g_PoliceBossActionRadius, &g_ChTypeSphereFunc, 0);
 }
 

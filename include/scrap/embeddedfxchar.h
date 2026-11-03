@@ -30,6 +30,31 @@ typedef struct cEmbeddedFXVtbl {
 	void(*Stop)(cEmbeddedFX *self, byte keep);			/* 0x14 */
 } cEmbeddedFXVtbl;
 
+/* calls through the slots of cEmbeddedFXVtbl */
+static inline cEmbeddedFX *EFX_Delete(void *self, byte flags) {
+	return VT(cEmbeddedFXVtbl, self)->Delete(self, flags);
+}
+
+static inline void EFX_Release(void *self) {
+	VT(cEmbeddedFXVtbl, self)->Release(self);
+}
+
+static inline byte EFX_Reset(void *self) {
+	return VT(cEmbeddedFXVtbl, self)->Reset(self);
+}
+
+static inline void EFX_Stop(void *self, byte keep) {
+	VT(cEmbeddedFXVtbl, self)->Stop(self, keep);
+}
+
+static inline void EFX_Tick(void *self) {
+	VT(cEmbeddedFXVtbl, self)->Tick(self);
+}
+
+static inline void EFX_Update(void *self, float dt) {
+	VT(cEmbeddedFXVtbl, self)->Update(self, dt);
+}
+
 struct cEmbeddedFX {
 	const cEmbeddedFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x04 the character */

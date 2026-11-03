@@ -177,15 +177,48 @@ typedef struct cVehicleEntityVtbl {
 	void(*Crash)(cEntity *self, const vec3_t *acc, float force);	/* 0x104 vf65 */
 } cVehicleEntityVtbl;
 
-static inline const cVehicleEntityVtbl *Veh_Vtbl(cVehicleEntity *v) {
-	return (const cVehicleEntityVtbl *)v->wl.obj.base.vftable;
+/* calls through the slots of cVehicleEntityVtbl */
+static inline void Veh_Crash(void *self, const vec3_t *acc, float force) {
+	VT(cVehicleEntityVtbl, self)->Crash(self, acc, force);
+}
+
+static inline void Veh_EnableAI(void *self, byte enable, void *p1, void *p2, void *p3) {
+	VT(cVehicleEntityVtbl, self)->EnableAI(self, enable, p1, p2, p3);
+}
+
+static inline byte Veh_GetLaunchTaunts(void *self) {
+	return VT(cVehicleEntityVtbl, self)->GetLaunchTaunts(self);
+}
+
+static inline const char *Veh_GetPilot(void *self, int slot) {
+	return VT(cVehicleEntityVtbl, self)->GetPilot(self, slot);
+}
+
+static inline byte Veh_GetPilotPos(void *self, int slot, vec3_t *pos, vec3_t *ang) {
+	return VT(cVehicleEntityVtbl, self)->GetPilotPos(self, slot, pos, ang);
+}
+
+static inline byte Veh_SetPilot(void *self, int slot, const char *name, float sx, float sy, float sz) {
+	return VT(cVehicleEntityVtbl, self)->SetPilot(self, slot, name, sx, sy, sz);
+}
+
+static inline byte Veh_SetPilotAnim(void *self, int slot, int anim) {
+	return VT(cVehicleEntityVtbl, self)->SetPilotAnim(self, slot, anim);
+}
+
+static inline void Veh_UpdateHistory(void *self) {
+	VT(cVehicleEntityVtbl, self)->UpdateHistory(self);
+}
+
+static inline void Veh_UpdatePilot(void *self, int slot, float dt) {
+	VT(cVehicleEntityVtbl, self)->UpdatePilot(self, slot, dt);
+}
+
+static inline void Veh_UpdateSounds(void *self, float dt) {
+	VT(cVehicleEntityVtbl, self)->UpdateSounds(self, dt);
 }
 
 /* the motors (rva 0x10d270.., not decompiled yet): their variables through the vtable at 0x720 */
-
-static inline const cVehicleMotorsVtbl *Veh_MotorsVtbl(cVehicleEntity *v) {
-	return (const cVehicleMotorsVtbl *)v->motors.vftable;
-}
 
 /* the engine variables */
 extern cGVar GVar_AtmosphereLimit;

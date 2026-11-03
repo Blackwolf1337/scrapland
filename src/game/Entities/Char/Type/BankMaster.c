@@ -59,7 +59,7 @@ static void ChType_ActionPress(cAbstractFile *params) {
 		return;
 	}
 	cEntity *v = World_FindEntity(name);
-	if (v && v->vftable->IsType(v, TYEN_WALKCHAR) && !WChar(v)->falling && !ChType_ActPriority(ChType_ActCtrl(v))) {
+	if (v && Entity_IsType(v, TYEN_WALKCHAR) && !WChar(v)->falling && !ChType_ActPriority(ChType_ActCtrl(v))) {
 		cActCtrl_SetDefLoop(ChType_ActCtrl(v), "Action", 0);
 		cActCtrl_Play(ChType_ActCtrl(v), "ActionInit", 0, 1.0f);
 	}
@@ -99,17 +99,17 @@ static void ChType_BankMasterSuction(cAbstractFile *params) {
 		return;
 	}
 	victim = World_FindEntity(name);
-	if (!victim || g_BankMasterEnt == victim || !victim->vftable->IsType(victim, TYEN_WALKCHAR) ||
+	if (!victim || g_BankMasterEnt == victim || !Entity_IsType(victim, TYEN_WALKCHAR) ||
 		WChar(victim)->wl.god || WChar(victim)->wl.life <= 0) {
 		return;
 	}
-	const vec3_t *p = g_BankMasterEnt->vftable->GetPos(g_BankMasterEnt, &t1);
-	const vec3_t *q = victim->vftable->GetPos(victim, &t2);
+	const vec3_t *p = Entity_GetPos(g_BankMasterEnt, &t1);
+	const vec3_t *q = Entity_GetPos(victim, &t2);
 	d.x = q->x - p->x;
 	d.y = q->y - p->y;
 	d.z = q->z - p->z;
 	float ax = WChar(g_BankMasterEnt)->view.x + 0.0f;
-	float ay = Obj_Vtbl(g_BankMasterEnt)->GetAng(g_BankMasterEnt, &t3)->y + M_PI_F;
+	float ay = Obj_GetAng(g_BankMasterEnt, &t3)->y + M_PI_F;
 	const vec3_t *r = Vec3_GetRotAng(&t4, &d);
 	diff.y = ay - r->y;
 	diff.z = 0.0f - r->z;
@@ -133,7 +133,7 @@ static void ChType_BankMasterSuction(cAbstractFile *params) {
 	}
 	cLocalLogic *l = Logic_GetLocalLogic(victim);
 	if (l) {
-		Logic_Vtbl(l)->OnAttack(l, g_BankMasterEnt, 100.0f);
+		Logic_OnAttack(l, g_BankMasterEnt, 100.0f);
 	}
 }
 
@@ -152,7 +152,7 @@ static void ChType_BankMasterHitEvent(cAbstractFile *params) {
 	cWalkCharEntity_SetEnergy(g_BankMasterEnt, (1.0f - WChar(g_BankMasterEnt)->energyUsed) - g_BankMasterAmmoCost);
 	cPy_Function_SetNative(&g_ChTypeSphereFunc, (nativefunc_t)ChType_BankMasterSuction);
 	float radius = g_BankMasterVacumDist;
-	const vec3_t *pos = g_BankMasterEnt->vftable->GetPos(g_BankMasterEnt, &tmp);
+	const vec3_t *pos = Entity_GetPos(g_BankMasterEnt, &tmp);
 	cWorld_SphereCallF(g_pWorld, 0x10, pos, radius, &g_ChTypeSphereFunc, 0);
 }
 

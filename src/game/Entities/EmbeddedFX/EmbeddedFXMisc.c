@@ -766,7 +766,7 @@ static void cEmbeddedFXMeetingPoint_SetCountDown(cEmbeddedFXMeetingPoint *self, 
 vec3_t *cEmbeddedFXBike_EnginePos(cEmbeddedFXBike *self, vec3_t *out) {
 	matrix_t m;
 
-	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	CGameModel *model = Obj_GetModel(self->base.ent);
 	CHECK(CGameModel_IsLoaded(model));
 	CHECK(self->nodeEngine[0] > -1);
 	CGameModel_NodeMatrix(model, &m, self->nodeEngine[0], 0, NULL, 0);
@@ -782,8 +782,8 @@ vec3_t *cEmbeddedFXBike_EnginePos(cEmbeddedFXBike *self, vec3_t *out) {
 static CGameModel *EFXM_Owner(cEmbeddedFX *self, cEntity *e) {
 	self->ent = e;
 	CHECK(e);
-	CHECK(self->ent->vftable->IsType(self->ent, TYEN_OBJECT));
-	CGameModel *model = Obj_Vtbl(self->ent)->GetModel(self->ent);
+	CHECK(Entity_IsType(self->ent, TYEN_OBJECT));
+	CGameModel *model = Obj_GetModel(self->ent);
 	CHECK(CGameModel_IsLoaded(model));
 	return model;
 }
@@ -986,12 +986,12 @@ typedef void *(*EFXM_Ctor)(void *self);
 /* the old effect released and deleted, the new one made and reset */
 static cEmbeddedFX *EFXM_New(cEmbeddedFX *cur, uint32_t size, EFXM_Ctor ctor) {
 	if (cur) {
-		cur->vftable->Release(cur);
-		cur->vftable->Delete(cur, 1);
+		EFX_Release(cur);
+		EFX_Delete(cur, 1);
 	}
 	void *p = operator_new(size);
 	cur = p ? ctor(p) : NULL;
-	cur->vftable->Reset(cur);
+	EFX_Reset(cur);
 	return cur;
 }
 
@@ -1148,7 +1148,7 @@ static cEmbeddedFX *EFXM_ObjFX(const char *name) {
 	cEntity *v = World_FindEntity(name);
 
 	CHECK(v);
-	CHECK(v->vftable->IsType(v, TYEN_OBJECT));
+	CHECK(Entity_IsType(v, TYEN_OBJECT));
 	return Obj(v)->fx;
 }
 
@@ -1166,7 +1166,7 @@ static void EmbeddedFXMisc_BossShieldMsg(cAbstractFile *f) {
 	int v = 0;
 
 	cAbstractFile_ReadString(f, name, sizeof(name));
-	f->vftable->Read(f, &v, 4);
+	VFile_Read(f, &v, 4);
 	cEmbeddedFXBossShield *fx = (cEmbeddedFXBossShield *)EFXM_ObjFX(name);
 	CHECK(fx);
 	fx->mode = v;
@@ -1179,8 +1179,8 @@ static void EmbeddedFXMisc_MeetingPointMsg(cAbstractFile *f) {
 	int count = 0;
 
 	cAbstractFile_ReadString(f, name, sizeof(name));
-	f->vftable->Read(f, &a, 4);
-	f->vftable->Read(f, &count, 4);
+	VFile_Read(f, &a, 4);
+	VFile_Read(f, &count, 4);
 	cEmbeddedFXMeetingPoint *fx = (cEmbeddedFXMeetingPoint *)EFXM_ObjFX(name);
 	CHECK(fx);
 	cEmbeddedFXMeetingPoint_SetCountDown(fx, a, (float)count * 220.0f);
@@ -1202,7 +1202,7 @@ static cGVar GVar_DataPackLaserSize;
  * trail too if given).
  */
 static CGameModel *EFXM_Shown(cEmbeddedFX *self, byte *visible, CGameTrail *trail) {
-	CGameModel *model = Obj_Vtbl(self->ent)->GetModel(self->ent);
+	CGameModel *model = Obj_GetModel(self->ent);
 
 	if (!CGameModel_IsLoaded(model)) {
 		return NULL;
@@ -1224,7 +1224,7 @@ static CGameModel *EFXM_Shown(cEmbeddedFX *self, byte *visible, CGameTrail *trai
 
 /* the model if it is loaded and visible (*visible set); else NULL, the trail cleared when it was visible */
 static CGameModel *EFXM_ShownTrail(cEmbeddedFX *self, byte *visible, CGameTrail *trail) {
-	CGameModel *model = Obj_Vtbl(self->ent)->GetModel(self->ent);
+	CGameModel *model = Obj_GetModel(self->ent);
 
 	if (!CGameModel_IsLoaded(model)) {
 		return NULL;
@@ -1445,7 +1445,7 @@ static void cEmbeddedFXDTritusDesktop_Update(cEmbeddedFX *elem, float dt) {
 	self->t = dt + self->t;
 	cEntity *e = self->base.ent;
 	byte on = 0;
-	if (e && e->vftable->IsType(e, TYEN_WITH_LIFE) && WLife(self->base.ent)->arrow.canMission) {
+	if (e && Entity_IsType(e, TYEN_WITH_LIFE) && WLife(self->base.ent)->arrow.canMission) {
 		on = (byte)((int)(self->t * 3.0f) & 1);
 	}
 	CGameParticles_SetVisible(&self->glow, on);
@@ -1746,7 +1746,7 @@ static void cEmbeddedFXMatrix_Update(cEmbeddedFX *elem, float dt) {
 	vec3_t rot, d, ang, t1, t2, pp;
 	int anim;
 
-	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	CGameModel *model = Obj_GetModel(self->base.ent);
 	if (!CGameModel_IsLoaded(model)) {
 		return;
 	}
@@ -2024,7 +2024,7 @@ static void cEmbeddedFXBossShield_Update(cEmbeddedFX *elem, float dt) {
 	vec3_t pos, rot, o, o2, P = { 0.0f, 0.0f, 0.0f };
 	uint32_t c = 0;
 
-	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	CGameModel *model = Obj_GetModel(self->base.ent);
 	CHECK(CGameModel_IsLoaded(model));
 	if (self->mode < 1 || self->mode > 2) {
 		if (CGameModel_IsEnabled(model)) {
@@ -2124,7 +2124,7 @@ static void cEmbeddedFXBossShield_Update(cEmbeddedFX *elem, float dt) {
 		}
 	}
 	cEntity *boss = World_FindEntity("Boss");
-	if (boss && boss->vftable->IsType(boss, TYEN_CAR)) {
+	if (boss && Entity_IsType(boss, TYEN_CAR)) {
 		cScorer *scorer = Scorer_Get(0);
 		cScorerItem *item = scorer ? cScorer_FindItem(scorer, "RegenerationBar") : NULL;
 		if (item) {
@@ -2132,7 +2132,7 @@ static void cEmbeddedFXBossShield_Update(cEmbeddedFX *elem, float dt) {
 			double v;
 			memcpy(&v, &P, sizeof(v));
 			self->regen = 0.0f;
-			item->vftable->Var(item, "Value", 0, NULL, &v, NULL);
+			ScorerItem_Var(item, "Value", 0, NULL, &v, NULL);
 			self->regen = (float)v;
 		}
 	}
@@ -2191,7 +2191,7 @@ static void cEmbeddedFXBattery_Update(cEmbeddedFX *elem, float dt) {
 	matrix_t m;
 	vec3_t rot, d, ang, tmp, ta, tb, up;
 
-	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	CGameModel *model = Obj_GetModel(self->base.ent);
 	if (!CGameModel_IsLoaded(model)) {
 		return;
 	}
@@ -2403,7 +2403,7 @@ static uint32_t g_RampBike[36] = {
  */
 static void cEmbeddedFXBike_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXBike *self = (cEmbeddedFXBike *)elem;
-	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	CGameModel *model = Obj_GetModel(self->base.ent);
 	matrix_t m;
 	vec3_t ang, dir, buf;
 

@@ -41,7 +41,7 @@ static vec3_t *cBettyLocalLogic_GetWorkAng(cLocalLogic *elem, vec3_t *out) {
 
 	CHECK(cFunctionaryLocalLogic_GetDesktop(&self->base));
 	cEntity *d = cFunctionaryLocalLogic_GetDesktop(&self->base);
-	const vec3_t *a = Obj_Vtbl(d)->GetAng(d, &tmp);
+	const vec3_t *a = Obj_GetAng(d, &tmp);
 	out->x = a->x + 0.0f;
 	out->y = a->y + 1.57079637f;
 	out->z = a->z + 0.0f;

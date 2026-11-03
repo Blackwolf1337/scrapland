@@ -107,11 +107,11 @@ static void cFile2_SkipTo(cFile2 *self, int pos, const char *name) {
 
 	if (d > sizeof(skip)) {
 		Con_Verbosef("PackFile seek: %s: %d\n", name, d);
-		self->file.base.vftable->Seek(&self->file.base, pos);
+		VFile_Seek(self, pos);
 		return;
 	}
 	if (d) {
-		self->file.base.vftable->Read(&self->file.base, skip, d);
+		VFile_Read(self, skip, d);
 	}
 }
 
@@ -335,7 +335,7 @@ int cFilePack_Read(cAbstractFile *elem, void *dst, int size) {
 	if (!self->start) {
 		return cFile_Read(&self->file.base, dst, size);
 	}
-	int pos = self->file.base.vftable->Tell(&self->file.base);
+	int pos = VFile_Tell(self);
 	CHECK(pos >= 0 && pos + size <= self->size);
 	cFile2 *pf = &g_PackFiles[self->pack];
 	int n = cFile_Read(&pf->file.base, dst, size);
@@ -484,23 +484,23 @@ byte Pack_Open(const char *name, const char *dir, size_t bufSize) {
 	}
 	int magic, version;
 	uint32_t count;
-	pf->file.base.vftable->Read(&pf->file.base, &magic, 4);
-	pf->file.base.vftable->Read(&pf->file.base, &version, 4);
+	VFile_Read(pf, &magic, 4);
+	VFile_Read(pf, &version, 4);
 	if (magic != PACK_MAGIC) {
 		Con_FatalErrorf("Wrong format in file \"%s\"", path);
 	}
 	if (version != PACK_VERSION) {
 		Con_FatalErrorf("Wrong version in file \"%s\"", path);
 	}
-	pf->file.base.vftable->Read(&pf->file.base, &count, 4);
+	VFile_Read(pf, &count, 4);
 	g_PackNumEntries += count;
 	Con_Printf("Pack: %s\n", path);
 	for (uint32_t i = 0; i < count; i++) {
 		cAbstractFile *f = &g_PackFiles[g_NumPackFiles].file.base;
 		int size, offset;
 		cAbstractFile_ReadString(f, fname, sizeof(fname));
-		f->vftable->Read(f, &size, 4);
-		f->vftable->Read(f, &offset, 4);
+		VFile_Read(f, &size, 4);
+		VFile_Read(f, &offset, 4);
 		cPackLocation loc = { offset, size, (byte)g_NumPackFiles, { 0 } };
 		/* the index takes the name as it is in the pack; a later pack replaces the location */
 		CHECK(!g_PackIndex.locked);
@@ -601,7 +601,7 @@ int Pack_Extract(const char *dir) {
 		if (!f.start) {
 			cFile_Read(&f.file.base, buf, size);
 		} else {
-			int pos = f.file.base.vftable->Tell(&f.file.base);
+			int pos = VFile_Tell(&f);
 			CHECK(pos >= 0 && pos + size <= f.size);
 			cFile2 *pf = &g_PackFiles[f.pack];
 			pf->curPos += cFile_Read(&pf->file.base, buf, size);
@@ -702,9 +702,9 @@ static cPackEntry *Pack_WriteEntries(cAbstractFile *out) {
 	for (uint32_t i = 0; i < g_PackNumEntries; i++) {
 		cAbstractFile_WriteString(out, pf->name);
 		v = pf->size;
-		out->vftable->Write(out, &v, 4);
+		VFile_Write(out, &v, 4);
 		v = pf->offset;
-		out->vftable->Write(out, &v, 4);
+		VFile_Write(out, &v, 4);
 		pf = PackEntries_Next(list);
 	}
 	return pf;
@@ -775,11 +775,11 @@ void Pack_Build(const char *dir, const char *outName, int mode) {
 	cFile in = { { CFILE_VFTABLE, NULL, 0 }, NULL };
 	Con_Printf("Saving '%s'", path);
 	v = PACK_MAGIC;
-	out->file.base.vftable->Write(&out->file.base, &v, 4);
+	VFile_Write(out, &v, 4);
 	v = PACK_VERSION;
-	out->file.base.vftable->Write(&out->file.base, &v, 4);
+	VFile_Write(out, &v, 4);
 	v = g_PackNumEntries;
-	out->file.base.vftable->Write(&out->file.base, &v, 4);
+	VFile_Write(out, &v, 4);
 	/* the entries twice: first for the room, after the data with the offsets */
 	if (Pack_WriteEntries(&out->file.base)) {
 		CHECK(0);
@@ -808,7 +808,7 @@ void Pack_Build(const char *dir, const char *outName, int mode) {
 	out->curPos = cFile_Seek(&out->file.base, 8);
 	CHECK(out->curPos != -1);
 	v = g_PackNumEntries;
-	out->file.base.vftable->Write(&out->file.base, &v, 4);
+	VFile_Write(out, &v, 4);
 	Pack_WriteEntries(&out->file.base);
 	Con_Print(0, " Ok!\n", 0);
 	PackEntries_Clear(list);

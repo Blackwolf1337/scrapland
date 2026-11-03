@@ -75,6 +75,47 @@ typedef struct CD3DApplicationVtbl {
 	void(*Pause)(CD3DApplication *self, int pause);	/* 0x34 */
 } CD3DApplicationVtbl;
 
+/* calls through the slots of CD3DApplicationVtbl */
+static inline int D3DApp_AdjustWindowForChange(void *self) {
+	return VT(CD3DApplicationVtbl, self)->AdjustWindowForChange(self);
+}
+
+static inline int D3DApp_Create(void *self, void *hInstance) {
+	return VT(CD3DApplicationVtbl, self)->Create(self, hInstance);
+}
+
+static inline int D3DApp_DeleteDeviceObjects(void *self) {
+	return VT(CD3DApplicationVtbl, self)->DeleteDeviceObjects(self);
+}
+
+static inline int D3DApp_FinalCleanup(void *self) {
+	return VT(CD3DApplicationVtbl, self)->FinalCleanup(self);
+}
+
+static inline int D3DApp_FrameMove(void *self) {
+	return VT(CD3DApplicationVtbl, self)->FrameMove(self);
+}
+
+static inline int D3DApp_InitDeviceObjects(void *self) {
+	return VT(CD3DApplicationVtbl, self)->InitDeviceObjects(self);
+}
+
+static inline int D3DApp_InvalidateDeviceObjects(void *self) {
+	return VT(CD3DApplicationVtbl, self)->InvalidateDeviceObjects(self);
+}
+
+static inline int D3DApp_OneTimeSceneInit(void *self) {
+	return VT(CD3DApplicationVtbl, self)->OneTimeSceneInit(self);
+}
+
+static inline int D3DApp_Render(void *self) {
+	return VT(CD3DApplicationVtbl, self)->Render(self);
+}
+
+static inline int D3DApp_RestoreDeviceObjects(void *self) {
+	return VT(CD3DApplicationVtbl, self)->RestoreDeviceObjects(self);
+}
+
 /* CD3DApplication of d3dapp.cpp, 0x2a5dc bytes: the DX8 SDK members with the device id and the mode of the game */
 struct CD3DApplication {
 	const CD3DApplicationVtbl *vftable;	/* 0x00000 */

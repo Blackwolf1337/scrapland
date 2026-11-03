@@ -219,7 +219,7 @@ static PyObject *Scrap_DebugInput(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "s", &text)) {
 		return NULL;
 	}
-	return Py_BuildValue("s", g_pApp->vftable->DebugInput(g_pApp, text));
+	return Py_BuildValue("s", App_DebugInput(g_pApp, text));
 }
 
 /* DeleteProfile(name) : not on PC */
@@ -309,7 +309,7 @@ static PyObject *Scrap_Exit(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	g_pApp->vftable->Exit(g_pApp);
+	App_Exit(g_pApp);
 	return Py_ReturnNone();
 }
 
@@ -1225,7 +1225,7 @@ static PyObject *Scrap_RunApp(PyObject *self, PyObject *args) {
 		App_GetPath(path, sizeof(path));
 		exe = path;
 	}
-	g_pApp->vftable->RunApp(g_pApp, exe, cmdLine, 0);
+	App_RunApp(g_pApp, exe, cmdLine, 0);
 	return Py_ReturnNone();
 }
 
@@ -1567,7 +1567,7 @@ static PyObject *Scrap_AddItem(PyObject *self, PyObject *args) {
 			return NULL;
 		}
 		cString_Set(&item.name, name);
-		g_pWorld->logic.items.vftable->AddLife(&g_pWorld->logic.items, &item);
+		InfItem_AddLife(&g_pWorld->logic.items, &item);
 		cString_dtor(&item.name);
 	}
 	else if (!strcmp(type, "Ammo")) {
@@ -1587,7 +1587,7 @@ static PyObject *Scrap_AddItem(PyObject *self, PyObject *args) {
 		else if (!strcmp(kindName, "Ener")) {
 			kind = 2;
 		}
-		g_pWorld->logic.items.vftable->AddAmmo(&g_pWorld->logic.items, kind, &item);
+		InfItem_AddAmmo(&g_pWorld->logic.items, kind, &item);
 		cString_dtor(&item.name);
 	}
 	return Py_ReturnNone();

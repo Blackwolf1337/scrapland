@@ -122,6 +122,87 @@ typedef struct CAppVtbl {
 	byte(*IsDedicatedWin)(CApp *self);				/* 0x50 vf20 */
 } CAppVtbl;
 
+/* calls through the slots of CAppVtbl */
+static inline const char *App_DebugInput(void *self, const char *text) {
+	return VT(CAppVtbl, self)->DebugInput(self, text);
+}
+
+static inline CApp *App_Delete(void *self, byte flags) {
+	return VT(CAppVtbl, self)->Delete(self, flags);
+}
+
+static inline void App_DoneGame(void *self) {
+	VT(CAppVtbl, self)->DoneGame(self);
+}
+
+static inline void App_Exit(void *self) {
+	VT(CAppVtbl, self)->Exit(self);
+}
+
+static inline byte App_Frame(void *self) {
+	return VT(CAppVtbl, self)->Frame(self);
+}
+
+static inline double App_GetGameTime(void *self) {
+	return VT(CAppVtbl, self)->GetGameTime(self);
+}
+
+static inline double App_GetTime(void *self) {
+	return VT(CAppVtbl, self)->GetTime(self);
+}
+
+static inline byte App_Init(void *self) {
+	return VT(CAppVtbl, self)->Init(self);
+}
+
+static inline void App_InitDebug(void *self) {
+	VT(CAppVtbl, self)->InitDebug(self);
+}
+
+static inline void App_InitDedicated(void *self) {
+	VT(CAppVtbl, self)->InitDedicated(self);
+}
+
+static inline void App_InitGame(void *self, const char *level) {
+	VT(CAppVtbl, self)->InitGame(self, level);
+}
+
+static inline byte App_IsDedicatedWin(void *self) {
+	return VT(CAppVtbl, self)->IsDedicatedWin(self);
+}
+
+static inline void App_LoadLevelNow(void *self, const char *level) {
+	VT(CAppVtbl, self)->LoadLevelNow(self, level);
+}
+
+static inline byte App_ParseParam(void *self, const char *param, const char *ext) {
+	return VT(CAppVtbl, self)->ParseParam(self, param, ext);
+}
+
+static inline void App_Render(void *self) {
+	VT(CAppVtbl, self)->Render(self);
+}
+
+static inline void App_ResetParams(void *self) {
+	VT(CAppVtbl, self)->ResetParams(self);
+}
+
+static inline byte App_RunApp(void *self, const char *exe, const char *cmdLine, int arg) {
+	return VT(CAppVtbl, self)->RunApp(self, exe, cmdLine, arg);
+}
+
+static inline void App_ShowConsole(void *self, byte show) {
+	VT(CAppVtbl, self)->ShowConsole(self, show);
+}
+
+static inline void App_Shutdown(void *self) {
+	VT(CAppVtbl, self)->Shutdown(self);
+}
+
+static inline void App_Update(void *self, float dt) {
+	VT(CAppVtbl, self)->Update(self, dt);
+}
+
 /* WNDCLASSA */
 typedef struct exe_wndclass {
 	uint32_t style;			/* 0x00 */

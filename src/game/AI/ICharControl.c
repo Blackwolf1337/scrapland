@@ -90,7 +90,7 @@ cAICharControl *cAICharControl_ctor(void *mem, cEntity *ent, cAIChar *ai, int *a
 	self->v1c4.x = self->v1c4.y = self->v1c4.z = 0.0f;
 	self->lastTargetPos.x = self->lastTargetPos.y = self->lastTargetPos.z = 0.0f;
 	self->ctrl = &WChar(ent)->control;
-	self->radius = Obj_Vtbl(ent)->GetRadius(ent);
+	self->radius = Obj_GetRadius(ent);
 	self->soft = *arg;
 	self->direct = 0;
 	self->waitStart = 0;
@@ -202,11 +202,11 @@ byte cAICharControl_CheckTarget(cAICharControl *self) {
 		cEntity *t = AICC_TargetEnt(self);
 		if (!t || !t->active) {
 			const char *name = self->ent->name;
-			int in = AICC_OwnerVtbl(self->ai)->GetInternState(&self->ai->base.base);
-			int st = AICC_OwnerVtbl(self->ai)->GetState(&self->ai->base.base);
+			int in = AIChar_GetInternState(self->ai);
+			int st = AIChar_GetState(self->ai);
 			Con_Bluef("OBJECTIVE_DIED - cAICharControl::CheckIntensive - Entidad: %s - State: %d - StateIntern: %d\n",
 				name, st, in);
-			AICC_OwnerVtbl(self->ai)->base.Event(&self->ai->base.base, 3);
+			AIMove_Event(self->ai, 3);
 			return 0;
 		}
 	}
@@ -214,14 +214,13 @@ byte cAICharControl_CheckTarget(cAICharControl *self) {
 }
 
 byte cAICharControl_CheckPathEnd(cAICharControl *self) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	vec3_t buf;
 
-	if (self->pathRes && vt->AtPathEnd(self) && vt->GoalAhead(self)) {
-		float r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
-		if (!vt->TestPath(self, AICC_Pos(self, &buf), &self->dest, r)) {
+	if (self->pathRes && AICC_AtPathEnd(self) && AICC_GoalAhead(self)) {
+		float r = Obj_GetRadius(self->ent);
+		if (!AICC_TestPath(self, AICC_Pos(self, &buf), &self->dest, r)) {
 			self->stuck = 1;
-			vt->DirectPath(self, &self->dest);
+			AICC_DirectPath(self, &self->dest);
 			self->pathRes = 2;
 			return 0;
 		}
@@ -232,17 +231,16 @@ byte cAICharControl_CheckPathEnd(cAICharControl *self) {
 /* the goal on to the furthest point of the path the body reaches (the point of the path walked to, else up to
  * three more); 0 when none is free */
 static int AICC_SkipPoints(cAICharControl *self) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	vec3_t buf;
 	float r = self->radius;
 	const vec3_t *p, *prev;
 
-	if (vt->TestPath(self, AICC_Pos(self, &buf), &self->goal, r)) {
+	if (AICC_TestPath(self, AICC_Pos(self, &buf), &self->goal, r)) {
 		return 1;
 	}
 	self->goalLost = 1;
-	r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
-	if (vt->TestPath(self, AICC_Pos(self, &buf), self->pathPoint, r)) {
+	r = Obj_GetRadius(self->ent);
+	if (AICC_TestPath(self, AICC_Pos(self, &buf), self->pathPoint, r)) {
 		p = self->pathPoint;
 		goto found;
 	}
@@ -254,8 +252,8 @@ static int AICC_SkipPoints(cAICharControl *self) {
 	p = &node->v;
 	prev = p;
 	for (int k = 0; k < 2; k++) {
-		r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
-		if (vt->TestPath(self, AICC_Pos(self, &buf), p, r)) {
+		r = Obj_GetRadius(self->ent);
+		if (AICC_TestPath(self, AICC_Pos(self, &buf), p, r)) {
 			self->prevPoint = (vec3_t *)prev;
 			self->pathPoint = (vec3_t *)p;
 			goto found;
@@ -283,7 +281,7 @@ byte cAICharControl_UpdatePath(cAICharControl *self) {
 	if (AICC_SkipPoints(self)) {
 		return 1;
 	}
-	return AICC_Vtbl(self)->FindPath(self, &self->dest);
+	return AICC_FindPath(self, &self->dest);
 }
 
 byte cAICharControl_UpdateRoutePath(cAICharControl *self) {
@@ -297,13 +295,13 @@ byte cAICharControl_UpdateRoutePath(cAICharControl *self) {
 		return 1;
 	}
 	self->routeA = 0;
-	Obj_Vtbl(self->ent)->GetAng(self->ent, &ang);
+	Obj_GetAng(self->ent, &ang);
 	self->routePoint = *Vec3_Rotate(&out, &fwd, &ang);
-	return AICC_Vtbl(self)->FindRoute(self);
+	return AICC_FindRoute(self);
 }
 
 byte cAICharControl_UpdateFollowB(cAICharControl *self) {
-	return AICC_Vtbl(self)->UpdateFollow(self) != 0;
+	return AICC_UpdateFollow(self) != 0;
 }
 
 static cEntity *g_AICCNear[20];
@@ -350,7 +348,7 @@ void cAICharControl_AwayCheck(cAICharControl *self) {
 	d.z = p->z - s->z;
 	double a = Vec3_Angle(&d, &fwd);
 	if ((double)g_OffsetAngOrientCharAI > a) {
-		AICC_OwnerVtbl(self->ai)->base.Event(&self->ai->base.base, 6);
+		AIMove_Event(self->ai, 6);
 	}
 }
 
@@ -360,7 +358,7 @@ void cAICharControl_DirCheck(cAICharControl *self) {
 	AICC_ViewDir(&fwd, self->ent);
 	double a = Vec3_Angle(&self->dir, &fwd);
 	if ((double)g_OffsetAngOrientCharAI > a) {
-		AICC_OwnerVtbl(self->ai)->base.Event(&self->ai->base.base, 6);
+		AIMove_Event(self->ai, 6);
 	}
 }
 
@@ -384,13 +382,13 @@ byte cAICharControl_CanMove(cAICharControl *self) {
 				return 1;
 			}
 			const vec3_t *b = &prev->v;
-			float r = (float)((Obj_Vtbl(self->ent)->GetRadius(self->ent)) + 25.0f);
-			float d = AICC_Vtbl(self)->DistSq(self, &self->goal, AICC_Pos(self, &buf));
+			float r = (float)((Obj_GetRadius(self->ent)) + 25.0f);
+			float d = AICC_DistSq(self, &self->goal, AICC_Pos(self, &buf));
 			if (r * r > d && Engine_TestLine(a, b, &hit, NULL)) {
-				r = (float)((Obj_Vtbl(self->ent)->GetRadius(self->ent)) + 25.0f);
-				d = AICC_Vtbl(self)->DistSq(self, &hit, AICC_Pos(self, &buf));
+				r = (float)((Obj_GetRadius(self->ent)) + 25.0f);
+				d = AICC_DistSq(self, &hit, AICC_Pos(self, &buf));
 				if (r * r > d) {
-					AICC_Vtbl(self)->Stop(self);
+					AICC_Stop(self);
 					self->stopped = 1;
 					return 0;
 				}
@@ -403,41 +401,40 @@ byte cAICharControl_CanMove(cAICharControl *self) {
 /* ---- the frame ---- */
 
 byte cAICharControl_Update(cAICharControl *self, float dt) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 
 	self->dt = dt;
 	if (self->hold) {
 		return 1;
 	}
-	if (!AICC_OwnerVtbl(self->ai)->GetChanged2(&self->ai->base.base)) {
-		if (!AICC_OwnerVtbl(self->ai)->React(&self->ai->base.base) || !vt->CheckTarget(self)) {
+	if (!AIChar_GetChanged2(self->ai)) {
+		if (!AIChar_React(self->ai) || !AICC_CheckTarget(self)) {
 			return 0;
 		}
 	}
-	if (!vt->CanMove(self)) {
+	if (!AICC_CanMove(self)) {
 		return 1;
 	}
 	switch (self->mode) {
 	case AICC_GO_TO:
-		vt->UpdateGoTo(self, dt);
+		AICC_UpdateGoTo(self, dt);
 		break;
 	case AICC_GO_TO_DIRECT:
-		vt->UpdateGoToDirect(self, dt);
+		AICC_UpdateGoToDirect(self, dt);
 		break;
 	case AICC_FOLLOW:
-		vt->UpdateFollowMode(self, dt);
+		AICC_UpdateFollowMode(self, dt);
 		break;
 	case AICC_FOLLOW_PATH:
-		vt->UpdateFollowPath(self, dt);
+		AICC_UpdateFollowPath(self, dt);
 		break;
 	case AICC_DIR:
-		vt->UpdateDir(self, dt);
+		AICC_UpdateDir(self, dt);
 		break;
 	case AICC_AWAY:
-		vt->UpdateAway(self, dt);
+		AICC_UpdateAway(self, dt);
 		break;
 	case AICC_ROUTE:
-		vt->UpdateRoute(self, dt);
+		AICC_UpdateRoute(self, dt);
 		break;
 	}
 	return 1;
@@ -506,11 +503,11 @@ byte cAICharControl_CheckRoute(cAICharControl *self) {
 
 	if (cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &f)) {
 		do {
-			if (!AICC_Vtbl(self)->UpdateRoutePath(self)) {
+			if (!AICC_UpdateRoutePath(self)) {
 				return 0;
 			}
 			if (!AICC_GoalIsDest(self)) {
-				AICC_Vtbl(self)->NextGoal(self);
+				AICC_NextGoal(self);
 			}
 			AICC_SetCheckSeg(self);
 		} while (cSlotController_FireReset(slot, &f));
@@ -532,14 +529,13 @@ void cAICharControl_DirTurn(cAICharControl *self) {
 
 /* the step of CheckGoTo and CheckFollow on the path; 0 when no path is left */
 static int AICC_CheckStep(cAICharControl *self) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 
-	if (vt->CheckPathEnd(self)) {
-		if (!vt->UpdatePath(self)) {
+	if (AICC_CheckPathEnd(self)) {
+		if (!AICC_UpdatePath(self)) {
 			return 0;
 		}
 		if (!AICC_GoalIsDest(self)) {
-			vt->NextGoalPath(self);
+			AICC_NextGoalPath(self);
 		}
 		AICC_SetCheckSeg(self);
 	}
@@ -568,7 +564,7 @@ static byte AICC_CheckPath(cAICharControl *self, int toTarget) {
 				cEntity *t = AICC_TargetEnt(self);
 				to = AICC_EntPos(t, &buf);
 			}
-			if (!AICC_Vtbl(self)->FindPath(self, to)) {
+			if (!AICC_FindPath(self, to)) {
 				return 0;
 			}
 			if (!AICC_CheckStep(self)) {
@@ -596,7 +592,7 @@ static inline Nto1Node *AICC_CharHead(cEntity *e) {
 
 /* the name of the action class of a character */
 static inline const char *AICC_ClassName(cEntity *e) {
-	cActCtrl *ac = WithLife_Vtbl(e)->GetActCtrl(e);
+	cActCtrl *ac = WithLife_GetActCtrl(e);
 	return ac->cls->name;
 }
 
@@ -611,7 +607,6 @@ static void AICC_LinkAvoid(cAICharControl *self, cEntity *e) {
 }
 
 void cAICharControl_UpdateAvoid(cAICharControl *self) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	vec3_t toE, toGoal;
 
 	self->avoidDir.x = 0.0f;
@@ -622,7 +617,7 @@ void cAICharControl_UpdateAvoid(cAICharControl *self) {
 		self->side = 0;
 		self->blocked = 0;
 	}
-	if ((self->side || self->blocked) && e && vt->Near(self, e)) {
+	if ((self->side || self->blocked) && e && AICC_Near(self, e)) {
 		self->side = 0;
 		self->blocked = 0;
 		self->avoidChar = 0;
@@ -648,8 +643,8 @@ void cAICharControl_UpdateAvoid(cAICharControl *self) {
 	if (!self->link.target) {
 		return;
 	}
-	float keep = vt->KeepDist(self, self->link.target);
-	if (vt->InWay(self, self->dest, self->link.target)) {
+	float keep = AICC_KeepDist(self, self->link.target);
+	if (AICC_InWay(self, self->dest, self->link.target)) {
 		if (self->mode != AICC_FOLLOW && self->mode != AICC_FOLLOW_PATH) {
 			self->blocked = 1;
 			self->blockedByChar = 1;
@@ -657,8 +652,8 @@ void cAICharControl_UpdateAvoid(cAICharControl *self) {
 		}
 		return;
 	}
-	void *eai = ((cEntity *)self->link.target)->vftable->GetAI(self->link.target);
-	if (!vt->Facing(self, self->link.target, &toE, &toGoal)) {
+	void *eai = Entity_GetAI(self->link.target);
+	if (!AICC_Facing(self, self->link.target, &toE, &toGoal)) {
 		self->blocked = 0;
 		self->side = 0;
 		return;
@@ -668,7 +663,7 @@ void cAICharControl_UpdateAvoid(cAICharControl *self) {
 	}
 	if (eai) {
 		cAICharControl *other = cAIChar_GetControl(eai);
-		if (AICC_Vtbl(other)->Busy(other)) {
+		if (AICC_Busy(other)) {
 			goto blocked;
 		}
 	}
@@ -678,15 +673,15 @@ void cAICharControl_UpdateAvoid(cAICharControl *self) {
 	self->side = (toGoal.x * toE.z - toE.x * toGoal.z > 0.0f) ? 1 : 2;
 	DListVec3_Clear(&self->debugStrafe);
 	DListVec3_Clear(&self->debugStrafeInner);
-	float sd = vt->StrafeDist(self, self->link.target);
-	if (vt->TryStrafe(self, self->side, self->link.target, 1, keep, self->avoidChar, sd, 1)) {
+	float sd = AICC_StrafeDist(self, self->link.target);
+	if (AICC_TryStrafe(self, self->side, self->link.target, 1, keep, self->avoidChar, sd, 1)) {
 		return;
 	}
 	self->side = self->side == 1 ? 2 : 1;
 	self->avoidDir.x = -toE.x;
 	self->avoidDir.y = -toE.y;
 	self->avoidDir.z = -toE.z;
-	if (vt->TryStrafe(self, self->side, self->link.target, 1, keep, self->avoidChar, sd, 0)) {
+	if (AICC_TryStrafe(self, self->side, self->link.target, 1, keep, self->avoidChar, sd, 0)) {
 		return;
 	}
 	self->avoidDir.x = 0.0f;
@@ -703,7 +698,7 @@ blocked:
 }
 
 void cAICharControl_Strafe2(cAICharControl *self) {
-	AICC_Vtbl(self)->Strafe(self);
+	AICC_Strafe(self);
 }
 
 void cAICharControl_StrafeWalk(cAICharControl *self) {
@@ -733,7 +728,7 @@ byte cAICharControl_FindAvoid(cAICharControl *self) {
 	for (int i = 0; i < g_AICCNumNear; i++) {
 		cEntity *e = g_AICCNear[i];
 		byte f = 0;
-		if (AICC_Vtbl(self)->Avoid(self, e, &f)) {
+		if (AICC_Avoid(self, e, &f)) {
 			AICC_LinkAvoid(self, e);
 			self->avoidChar = 1;
 			return 1;
@@ -757,7 +752,6 @@ byte cAICharControl_FindAvoid(cAICharControl *self) {
 }
 
 void cAICharControl_Strafe(cAICharControl *self) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	cSlotController *slot = &self->slotStrafe;
 	float dt = self->dt;
 	float f;
@@ -778,14 +772,14 @@ void cAICharControl_Strafe(cAICharControl *self) {
 				}
 				goto clear;
 			}
-			self->avoidFound = vt->FindAvoid(self);
+			self->avoidFound = AICC_FindAvoid(self);
 			if (!self->avoidFound) {
-				vt->UpdateAvoid(self);
+				AICC_UpdateAvoid(self);
 			}
 			if (self->blocked) {
 				self->collStopTime = 0.0f;
 				if (self->blockedByChar && self->collEventTime > g_TimeBetweenEventCollCharAI &&
-						AICC_OwnerVtbl(self->ai)->base.Event(&self->ai->base.base, 10)) {
+						AIMove_Event(self->ai, 10)) {
 					self->collEventTime = 0.0f;
 				clear:
 					self->blocked = 0;
@@ -807,7 +801,7 @@ void cAICharControl_Strafe(cAICharControl *self) {
 				break;
 			}
 		}
-		if (AICC_OwnerVtbl(self->ai)->base.CanJump(&self->ai->base.base) && self->blocked && !self->side && !vt->SideBlocked(self, 3)) {
+		if (AIMove_CanJump(self->ai) && self->blocked && !self->side && !AICC_SideBlocked(self, 3)) {
 			self->ctrl->jump = self->speed;
 		} else {
 			self->ctrl->jump = 0.0f;
@@ -816,7 +810,7 @@ void cAICharControl_Strafe(cAICharControl *self) {
 }
 
 void cAICharControl_Walk2(cAICharControl *self) {
-	AICC_Vtbl(self)->WalkFwd(self);
+	AICC_WalkFwd(self);
 }
 
 /* walkDir between 0 (stand) and 2 (back away) by the distance to the target and the way back */
@@ -832,9 +826,9 @@ static void AICC_AwayWalkDir(cAICharControl *self, float dist) {
 		do {
 			if (self->nearDist > dist) {
 				cEntity *t = AICC_TargetEnt(self);
-				float r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
+				float r = Obj_GetRadius(self->ent);
 				const vec3_t *tp = AICC_EntPos(t, &b2);
-				if (AICC_Vtbl(self)->TestSides(self, AICC_Pos(self, &b1), tp, r)) {
+				if (AICC_TestSides(self, AICC_Pos(self, &b1), tp, r)) {
 					self->walkDir = 2;
 				}
 			}
@@ -849,9 +843,9 @@ static void AICC_AwayWalkDir(cAICharControl *self, float dist) {
 		}
 		do {
 			cEntity *t = AICC_TargetEnt(self);
-			float r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
+			float r = Obj_GetRadius(self->ent);
 			const vec3_t *tp = AICC_EntPos(t, &b2);
-			if (!AICC_Vtbl(self)->TestSides(self, AICC_Pos(self, &b1), tp, r)) {
+			if (!AICC_TestSides(self, AICC_Pos(self, &b1), tp, r)) {
 				self->walkDir = 0;
 			}
 		} while (cSlotController_FireReset(slot, &f));
@@ -869,7 +863,7 @@ void cAICharControl_AwayWalk(cAICharControl *self) {
 	}
 	cEntity *t = AICC_TargetEnt(self);
 	const vec3_t *s = AICC_Pos(self, &b1);
-	float dist = AICC_Vtbl(self)->Dist(self, AICC_EntPos(t, &b2), s);
+	float dist = AICC_Dist(self, AICC_EntPos(t, &b2), s);
 	AICC_AwayWalkDir(self, dist);
 	if (self->walkDir == 0) {
 		self->ctrl->walk = 0.0f;
@@ -879,7 +873,7 @@ void cAICharControl_AwayWalk(cAICharControl *self) {
 	if (cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &f)) {
 		do {
 			self->seen = 0;
-			if (!AICC_Vtbl(self)->CharsNear(self)) {
+			if (!AICC_CharsNear(self)) {
 				continue;
 			}
 			if (g_AICCNumNear <= 1 && g_AICCNear[0] == ChType_Usr0()) {
@@ -887,7 +881,7 @@ void cAICharControl_AwayWalk(cAICharControl *self) {
 			}
 			for (int i = 0; i < g_AICCNumNear; i++) {
 				cEntity *usr = ChType_Usr0();
-				if (g_AICCNear[i] != usr && AICC_Vtbl(self)->InFront(self, g_AICCNear[i], 0.785398185f)) {
+				if (g_AICCNear[i] != usr && AICC_InFront(self, g_AICCNear[i], 0.785398185f)) {
 					self->seen = 1;
 					break;
 				}
@@ -930,11 +924,10 @@ static inline vec3_t AICC_FlatNorm(float x, float z) {
 
 /* the name of the action of layer 0 of the character */
 static inline const char *AICC_ActionName(cEntity *e) {
-	return cActCtrl_GetActionName(WithLife_Vtbl(e)->GetActCtrl(e), 0);
+	return cActCtrl_GetActionName(WithLife_GetActCtrl(e), 0);
 }
 
 byte cAICharControl_CheckWait(cAICharControl *self) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	vec3_t d, u, tmp, b1, b2;
 	float f;
 
@@ -992,10 +985,10 @@ byte cAICharControl_CheckWait(cAICharControl *self) {
 		if (self->waitTime > 0.0f && cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &f)) {
 			do {
 				cEntity *t = AICC_TargetEnt(self);
-				float r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
+				float r = Obj_GetRadius(self->ent);
 				const vec3_t *tp = AICC_EntPos(t, &b1);
-				if (vt->TestPath(self, AICC_Pos(self, &b2), tp, r) || vt->CharsNear(self) ||
-						vt->SideBlocked(self, self->strafeDir)) {
+				if (AICC_TestPath(self, AICC_Pos(self, &b2), tp, r) || AICC_CharsNear(self) ||
+						AICC_SideBlocked(self, self->strafeDir)) {
 					goto lost;
 				}
 			} while (cSlotController_FireReset(slot, &f));
@@ -1021,18 +1014,17 @@ done:
 }
 
 void cAICharControl_Orbit(cAICharControl *self) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	vec3_t d, w, out, b1, b2;
 	vec3_t fwd = {0.0f, 0.0f, -1.0f};
 	float f, v;
 
-	vt->Strafe2(self);
+	AICC_Strafe2(self);
 	if (self->side || self->blocked) {
 		return;
 	}
 	cEntity *t = AICC_TargetEnt(self);
 	const vec3_t *tp = AICC_EntPos(t, &b1);
-	float dist = vt->Dist(self, AICC_Pos(self, &b2), tp);
+	float dist = AICC_Dist(self, AICC_Pos(self, &b2), tp);
 	if (self->orbitSide) {
 		if (!self->direct || dist > self->farDist + self->farDist) {
 			self->orbitSide = 0;
@@ -1060,7 +1052,7 @@ void cAICharControl_Orbit(cAICharControl *self) {
 		self->orbitStart = 1;
 	}
 	if (self->walkDir == 0 && self->orbitSide == 0 && self->orbitStart) {
-		vt->StartOrbit(self, dist - 4.0f);
+		AICC_StartOrbit(self, dist - 4.0f);
 		self->orbitStart = 0;
 		self->orbitDir = WChar(AICC_TargetEnt(self))->view;
 		const vec3_t *tv = Vec3_Rotate(&out, &fwd, &self->orbitDir);
@@ -1072,7 +1064,7 @@ void cAICharControl_Orbit(cAICharControl *self) {
 	cSlotController *slot = &self->slotOrbit;
 	if (cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &f)) {
 		do {
-			if (vt->SideBlocked(self, self->orbitSide)) {
+			if (AICC_SideBlocked(self, self->orbitSide)) {
 				self->orbitSide = 0;
 			}
 		} while (cSlotController_FireReset(slot, &f));
@@ -1088,10 +1080,10 @@ void cAICharControl_Orbit(cAICharControl *self) {
 					self->turnGain = 25.0f;
 					self->turnStep = 2.0f;
 				} else {
-					vt->SetTurnSpeed(self, self->speed);
+					AICC_SetTurnSpeed(self, self->speed);
 				}
 			} else if (self->walkDir == 1 || self->walkDir == 2) {
-				vt->SetTurnSpeed(self, self->speed);
+				AICC_SetTurnSpeed(self, self->speed);
 			}
 		}
 	}
@@ -1134,7 +1126,7 @@ byte cAICharControl_StartOrbit(cAICharControl *self, float dist) {
 	rot.z = 0.0f;
 	Vec3_Rotate(&p, &wv, &rot);
 	tp = AICC_EntPos(AICC_TargetEnt(self), &b1);
-	if (!AICC_Vtbl(self)->StrafeBack(self, tp, &r, &p, dist, left, 1)) {
+	if (!AICC_StrafeBack(self, tp, &r, &p, dist, left, 1)) {
 		left ^= 1;
 		rot.x = 0.0f;
 		rot.y = -sgn * g_AngAttackBackCharAI;
@@ -1143,7 +1135,7 @@ byte cAICharControl_StartOrbit(cAICharControl *self, float dist) {
 		float a = (float)Vec3_Angle(&r, &wv);
 		byte flag = 3.14159274f > (float)(6.28318548f - a - g_AngAttackBackCharAI);
 		tp = AICC_EntPos(AICC_TargetEnt(self), &b1);
-		if (!AICC_Vtbl(self)->StrafeBack(self, tp, &r, &p, dist, left, flag)) {
+		if (!AICC_StrafeBack(self, tp, &r, &p, dist, left, flag)) {
 			left ^= 1;
 		}
 	}
@@ -1169,7 +1161,7 @@ static void AICC_DrawPath(cAICharControl *self) {
 	if (!(self->goal.x == -FLT_MAX && self->goal.y == -FLT_MAX && self->goal.z == -FLT_MAX)) {
 		DebugUtils_DrawLine(&pos, &self->goal, 0xffff);
 	}
-	Obj_Vtbl(self->ent)->GetVel(self->ent, &vel);
+	Obj_GetVel(self->ent, &vel);
 	float s = vel.x * vel.x + vel.y * vel.y + vel.z * vel.z;
 	if (s > 1000.0f) {
 		float len = (float)__builtin_sqrt((double)s);
@@ -1222,7 +1214,7 @@ static void AICC_DrawShirk(cAICharControl *self) {
 		self->debugStrafe.iter = node;
 		for (int i = 0; node; i++) {
 			uint32_t color = i == 0 ? 0xffffff : 0xff;
-			float r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
+			float r = Obj_GetRadius(self->ent);
 			DebugUtils_DrawSphere(&node->v, r, color, 20, 20);
 			node = self->debugStrafe.iter->prev;
 			self->debugStrafe.iter = node;
@@ -1255,7 +1247,7 @@ void cAICharControl_Draw(cAICharControl *self) {
 	if (cString_EqStr(&g_ShowCharAI, self->ent->name)) {
 		CFont *font = g_FontTerminal8;
 		CFont_PrintfColor(font, 10.0f, 10.0f, 0xffffff, "ENTIDAD: %s", self->ent->name);
-		const vec3_t *v = Obj_Vtbl(self->ent)->GetVel(self->ent, &buf);
+		const vec3_t *v = Obj_GetVel(self->ent, &buf);
 		float len = (float)__builtin_sqrt((double)(v->x * v->x + v->y * v->y + v->z * v->z));
 		CFont_PrintfColor(g_FontTerminal8, 10.0f, 30.0f, 0xffff00, "Velocity (Km/h): %.2f", (double)(len * 0.036f));
 		CFont_PrintfColor(g_FontTerminal8, 10.0f, 50.0f, 0xffff00, "Control Turn Horizontal: %.2f",
@@ -1352,7 +1344,6 @@ static inline int AICC_Close50(const vec3_t *a, const vec3_t *b) {
  * the character stays above MinAngleSearchPointCharAI and the step above 50; once (every time a new point was taken
  * without countAlways) the middle is reachable the search ends */
 static void AICC_Bisect(cAICharControl *self, const vec3_t *p, int countAlways) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	vec3_t a, b, lo, hi, b1, b2;
 
 	vec3_t g0 = self->goal;
@@ -1385,8 +1376,8 @@ static void AICC_Bisect(cAICharControl *self, const vec3_t *p, int countAlways) 
 			self->goal = lo;
 			return;
 		}
-		float r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
-		if (vt->TestPath(self, AICC_Pos(self, &b1), &self->goal, r)) {
+		float r = Obj_GetRadius(self->ent);
+		if (AICC_TestPath(self, AICC_Pos(self, &b1), &self->goal, r)) {
 			lo = self->goal;
 			if (countAlways || !self->newPath) {
 				k++;
@@ -1423,14 +1414,14 @@ void cAICharControl_NextGoal(cAICharControl *self) {
 		self->goal = self->dest;
 		return;
 	}
-	float r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
-	if (AICC_Vtbl(self)->TestPath(self, AICC_Pos(self, &b1), p, r)) {
+	float r = Obj_GetRadius(self->ent);
+	if (AICC_TestPath(self, AICC_Pos(self, &b1), p, r)) {
 		self->pathPoint = p;
 		self->goal = *p;
 		cNWVecNode *at = self->path.iter;
 		vec3_t *n = AICC_IterNext(self);
 		if (n) {
-			AICC_Vtbl(self)->StepGoal(self, n);
+			AICC_StepGoal(self, n);
 		}
 		self->path.iter = at;
 		return;
@@ -1446,10 +1437,10 @@ void cAICharControl_NextGoalPath(cAICharControl *self) {
 	cNWVecNode *saved = self->path.iter;
 	vec3_t *p = AICC_IterNext(self);
 	while (p) {
-		float r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
-		if (!AICC_Vtbl(self)->TestPath(self, AICC_Pos(self, &buf), p, r)) {
+		float r = Obj_GetRadius(self->ent);
+		if (!AICC_TestPath(self, AICC_Pos(self, &buf), p, r)) {
 			if (moved) {
-				AICC_Vtbl(self)->StepGoal(self, p);
+				AICC_StepGoal(self, p);
 			}
 			AICC_Bisect(self, p, 1);
 			self->path.iter = saved;
@@ -1506,8 +1497,8 @@ byte cAICharControl_GoalOnLine(cAICharControl *self, const vec3_t *a, const vec3
 		pt.x = a->x + sx * fi;
 		pt.y = sy * fi + a->y;
 		pt.z = a->z + sz * fi;
-		float r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
-		if (AICC_Vtbl(self)->TestPath(self, AICC_Pos(self, &buf), &pt, r)) {
+		float r = Obj_GetRadius(self->ent);
+		if (AICC_TestPath(self, AICC_Pos(self, &buf), &pt, r)) {
 			self->goal = pt;
 			return 1;
 		}
@@ -1590,37 +1581,36 @@ byte cAICharControl_IsDirect(cAICharControl *self) {
 /* the follow of a frame (FOLLOW: update the follow, FOLLOW_PATH: the one of slot 0x178); straight to the target
  * it orbits (FOLLOW_PATH) or strafes, else it walks along the path */
 static byte AICC_FollowFrame(cAICharControl *self, float dt, int path) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 
 	if (self->path.count <= 0) {
 		return 1;
 	}
-	if (!(path ? vt->UpdateFollowB(self) : vt->UpdateFollow(self))) {
+	if (!(path ? AICC_UpdateFollowB(self) : AICC_UpdateFollow(self))) {
 		return 0;
 	}
-	if (vt->Wait(self, dt)) {
+	if (AICC_Wait(self, dt)) {
 		return 1;
 	}
 	if (!self->direct) {
-		if (!vt->CheckFollow(self)) {
+		if (!AICC_CheckFollow(self)) {
 			return 0;
 		}
 	} else {
-		vt->ClearAvoid(self);
+		AICC_ClearAvoid(self);
 	}
 	if (self->direct) {
 		if (path) {
-			vt->Orbit(self);
+			AICC_Orbit(self);
 		} else {
-			vt->Strafe2(self);
+			AICC_Strafe2(self);
 		}
-		vt->TurnFollow(self);
-		vt->Walk(self);
+		AICC_TurnFollow(self);
+		AICC_Walk(self);
 		return 1;
 	}
-	vt->Strafe(self);
-	vt->Turn(self);
-	vt->Walk2(self);
+	AICC_Strafe(self);
+	AICC_Turn(self);
+	AICC_Walk2(self);
 	return 1;
 }
 
@@ -1633,18 +1623,17 @@ byte cAICharControl_UpdateFollowMode(cAICharControl *self, float dt) {
 }
 
 byte cAICharControl_UpdateAway(cAICharControl *self, float dt) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	vec3_t buf;
 
 	(void)dt;
 	self->goal = *AICC_EntPos(AICC_TargetEnt(self), &buf);
 	self->dest = self->goal;
-	vt->AwayCheck(self);
-	if (!AICC_OwnerVtbl(self->ai)->base.base.GetChanged(&self->ai->base.base)) {
-		vt->TurnFollow(self);
+	AICC_AwayCheck(self);
+	if (!AI_GetChanged(self->ai)) {
+		AICC_TurnFollow(self);
 		self->ctrl->strafe = 0.0f;
 		self->ctrl->jump = 0.0f;
-		vt->AwayWalk(self);
+		AICC_AwayWalk(self);
 	}
 	return 1;
 }
@@ -1652,17 +1641,16 @@ byte cAICharControl_UpdateAway(cAICharControl *self, float dt) {
 /* GO_TO, GO_TO_DIRECT and ROUTE: the arrival, the check of the path (none for GO_TO_DIRECT), the strafe, the turn
  * and the walk */
 static byte AICC_PathFrame(cAICharControl *self, byte(*check)(cAICharControl *self)) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 
 	if (self->path.count > 0) {
-		vt->CheckArrived(self);
-		if (!AICC_OwnerVtbl(self->ai)->base.base.GetChanged(&self->ai->base.base)) {
+		AICC_CheckArrived(self);
+		if (!AI_GetChanged(self->ai)) {
 			if (check && !check(self)) {
 				return 0;
 			}
-			vt->Strafe(self);
-			vt->Turn(self);
-			vt->WalkFwd(self);
+			AICC_Strafe(self);
+			AICC_Turn(self);
+			AICC_WalkFwd(self);
 		}
 	}
 	return 1;
@@ -1674,15 +1662,14 @@ byte cAICharControl_UpdateRoute(cAICharControl *self, float dt) {
 }
 
 byte cAICharControl_UpdateDir(cAICharControl *self, float dt) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 
 	(void)dt;
-	vt->DirCheck(self);
-	if (!AICC_OwnerVtbl(self->ai)->base.base.GetChanged(&self->ai->base.base)) {
-		vt->DirTurn(self);
+	AICC_DirCheck(self);
+	if (!AI_GetChanged(self->ai)) {
+		AICC_DirTurn(self);
 		self->ctrl->strafe = 0.0f;
 		self->ctrl->jump = 0.0f;
-		vt->WalkFwd(self);
+		AICC_WalkFwd(self);
 	}
 	return 1;
 }
@@ -1698,14 +1685,13 @@ byte cAICharControl_UpdateGoToDirect(cAICharControl *self, float dt) {
 }
 
 byte cAICharControl_Wait(cAICharControl *self, float dt) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 
-	byte r = vt->CheckWait(self);
+	byte r = AICC_CheckWait(self);
 	if (!r) {
 		return r;
 	}
-	vt->StrafeWalk(self);
-	vt->TurnFollow(self);
+	AICC_StrafeWalk(self);
+	AICC_TurnFollow(self);
 	self->ctrl->walk = 0.0f;
 	self->waitTime = self->waitTime + dt;
 	return 1;
@@ -1737,7 +1723,6 @@ void cAICharControl_ClearAvoid(cAICharControl *self) {
 }
 
 byte cAICharControl_Avoid(cAICharControl *self, cEntity *e, byte *found) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	vec3_t toE, toGoal;
 	byte res = 0;
 	int side;
@@ -1746,8 +1731,8 @@ byte cAICharControl_Avoid(cAICharControl *self, cEntity *e, byte *found) {
 	self->avoidDir.y = 0.0f;
 	self->avoidDir.z = 0.0f;
 	*found = 0;
-	float keep = vt->KeepDist(self, e);
-	if (vt->InWay(self, self->dest, e)) {
+	float keep = AICC_KeepDist(self, e);
+	if (AICC_InWay(self, self->dest, e)) {
 		if (self->mode != AICC_FOLLOW && self->mode != AICC_FOLLOW_PATH) {
 			self->side = 0;
 			self->blocked = 1;
@@ -1756,8 +1741,8 @@ byte cAICharControl_Avoid(cAICharControl *self, cEntity *e, byte *found) {
 		}
 		return res;
 	}
-	void *eai = e->vftable->GetAI(e);
-	if (!vt->Facing(self, e, &toE, &toGoal)) {
+	void *eai = Entity_GetAI(e);
+	if (!AICC_Facing(self, e, &toE, &toGoal)) {
 		return res;
 	}
 	*found = 1;
@@ -1766,7 +1751,7 @@ byte cAICharControl_Avoid(cAICharControl *self, cEntity *e, byte *found) {
 	}
 	if (eai) {
 		cAICharControl *other = cAIChar_GetControl(eai);
-		if (AICC_Vtbl(other)->Busy(other)) {
+		if (AICC_Busy(other)) {
 			goto blocked;
 		}
 	}
@@ -1781,10 +1766,10 @@ byte cAICharControl_Avoid(cAICharControl *self, cEntity *e, byte *found) {
 		/* NaN: the original keeps the register with e */
 		side = (int)(uintptr_t)e;
 	}
-	float sd = vt->StrafeDist(self, e);
-	if (!vt->TryStrafe(self, side, e, 1, keep, 1, sd, 1)) {
+	float sd = AICC_StrafeDist(self, e);
+	if (!AICC_TryStrafe(self, side, e, 1, keep, 1, sd, 1)) {
 		side = side == 1 ? 2 : 1;
-		if (!vt->TryStrafe(self, side, e, 1, keep, 1, sd, 0)) {
+		if (!AICC_TryStrafe(self, side, e, 1, keep, 1, sd, 0)) {
 			return res;
 		}
 		self->avoidDir.x = -toE.x;
@@ -1807,11 +1792,11 @@ static byte AICC_FollowStart(cAICharControl *self, Nto1Node *target) {
 
 	self->target = target;
 	self->targetEnt = target->target;
-	float r = Obj_Vtbl(target->target)->GetRadius(target->target);
+	float r = Obj_GetRadius(target->target);
 	self->arriveDist = r;
 	self->arriveR = Float_MinSS(self->radius, r);
 	cEntity *te = AICC_TargetEnt(self);
-	byte ok = AICC_Vtbl(self)->FindPath(self, Obj_Vtbl(te)->base.GetPos(te, &t));
+	byte ok = AICC_FindPath(self, Entity_GetPos(te, &t));
 	if (!ok) {
 		return ok;
 	}
@@ -1828,7 +1813,7 @@ byte cAICharControl_FollowPath(cAICharControl *self, Nto1Node *target, float nea
 	CHECK(target->target != NULL);
 	self->nearDist = near;
 	self->farDist = far;
-	AICC_Vtbl(self)->SetSpeed(self, speed);
+	AICC_SetSpeed(self, speed);
 	if (self->mode == self->prevMode && self->targetEnt == target->target) {
 		return 1;
 	}
@@ -1841,7 +1826,7 @@ byte cAICharControl_Follow(cAICharControl *self, Nto1Node *target, float near, f
 	CHECK(target->target != NULL);
 	self->nearDist = near;
 	self->farDist = far;
-	AICC_Vtbl(self)->SetSpeed(self, speed);
+	AICC_SetSpeed(self, speed);
 	if (self->mode == self->prevMode && self->targetEnt == target->target) {
 		return 1;
 	}
@@ -1849,7 +1834,6 @@ byte cAICharControl_Follow(cAICharControl *self, Nto1Node *target, float near, f
 }
 
 byte cAICharControl_SetMove(cAICharControl *self, int mode, ...) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	va_list ap;
 	byte r = 1;
 
@@ -1876,45 +1860,45 @@ byte cAICharControl_SetMove(cAICharControl *self, int mode, ...) {
 	self->lifeMark = WChar(self->ent)->wl.life;
 	switch (self->mode) {
 	case AICC_STOP:
-		vt->Stop2(self);
+		AICC_Stop2(self);
 		break;
 	case AICC_GO_TO: {
 		vec3_t p = va_arg(ap, vec3_t);
 		double dist = va_arg(ap, double);
 		double speed = va_arg(ap, double);
-		r = vt->GoTo(self, &p, (float)dist, (float)speed);
+		r = AICC_GoTo(self, &p, (float)dist, (float)speed);
 		break;
 	}
 	case AICC_GO_TO_DIRECT: {
 		vec3_t p = va_arg(ap, vec3_t);
 		double dist = va_arg(ap, double);
 		double speed = va_arg(ap, double);
-		r = vt->GoToDirect(self, &p, (float)dist, (float)speed);
+		r = AICC_GoToDirect(self, &p, (float)dist, (float)speed);
 		break;
 	}
 	case AICC_FOLLOW:
 	case AICC_FOLLOW_PATH: {
-		Nto1Node *t = AICC_OwnerVtbl(self->ai)->base.GetTarget(&self->ai->base.base);
+		Nto1Node *t = AIMove_GetTarget(self->ai);
 		double near = va_arg(ap, double);
 		double far = va_arg(ap, double);
 		double speed = va_arg(ap, double);
 		self->flying = (byte)va_arg(ap, int);
 		if (self->mode == AICC_FOLLOW) {
-			r = vt->Follow(self, t, (float)near, (float)far, (float)speed);
+			r = AICC_Follow(self, t, (float)near, (float)far, (float)speed);
 		} else {
-			r = vt->FollowPath(self, t, (float)near, (float)far, (float)speed);
+			r = AICC_FollowPath(self, t, (float)near, (float)far, (float)speed);
 		}
 		break;
 	}
 	case AICC_DIR: {
 		vec3_t p = va_arg(ap, vec3_t);
-		vt->SetDir(self, &p);
+		AICC_SetDir(self, &p);
 		break;
 	}
 	case AICC_AWAY: {
 		self->direct = 1;
-		Nto1Node *t = AICC_OwnerVtbl(self->ai)->base.GetTarget(&self->ai->base.base);
-		vt->Away(self, t, (byte)va_arg(ap, int));
+		Nto1Node *t = AIMove_GetTarget(self->ai);
+		AICC_Away(self, t, (byte)va_arg(ap, int));
 		break;
 	}
 	case AICC_ROUTE: {
@@ -1923,7 +1907,7 @@ byte cAICharControl_SetMove(cAICharControl *self, int mode, ...) {
 		double speed = va_arg(ap, double);
 		int a = va_arg(ap, int);
 		int b = va_arg(ap, int);
-		r = vt->Route(self, &p, (float)dist, (float)speed, (byte)a, (byte)b);
+		r = AICC_Route(self, &p, (float)dist, (float)speed, (byte)a, (byte)b);
 		break;
 	}
 	}
@@ -1934,7 +1918,7 @@ byte cAICharControl_SetMove(cAICharControl *self, int mode, ...) {
 void cAICharControl_Away(cAICharControl *self, Nto1Node *target, byte flag) {
 	CHECK(target != NULL);
 	CHECK(target->target != NULL);
-	AICC_Vtbl(self)->SetSpeed(self, 0.0f);
+	AICC_SetSpeed(self, 0.0f);
 	self->target = target;
 	self->awayFlag = flag;
 	float near = WChar(target->target)->wl.prim.radius * 1.5f + WChar(self->ent)->wl.prim.radius;
@@ -1946,23 +1930,23 @@ void cAICharControl_Away(cAICharControl *self, Nto1Node *target, byte flag) {
 byte cAICharControl_Route(cAICharControl *self, const vec3_t *p, float dist, float speed, byte a, byte b) {
 	self->arriveDist = dist;
 	self->arriveR = Float_MinSS(self->radius, dist);
-	AICC_Vtbl(self)->SetSpeed(self, speed);
+	AICC_SetSpeed(self, speed);
 	self->routeA = a;
 	self->routeB = b;
 	self->routePoint = *p;
-	return AICC_Vtbl(self)->FindRoute(self);
+	return AICC_FindRoute(self);
 }
 
 void cAICharControl_SetDir(cAICharControl *self, const vec3_t *dir) {
 	vec3_t n, t, pos;
 
 	self->dir = *dir;
-	AICC_Vtbl(self)->SetSpeed(self, 0.0f);
+	AICC_SetSpeed(self, 0.0f);
 	Vec3_NormalizeTo(&n, dir);
 	t.x = n.x * 10000.0f;
 	t.y = n.y * 10000.0f;
 	t.z = n.z * 10000.0f;
-	const vec3_t *p = Obj_Vtbl(self->ent)->base.GetPos(self->ent, &pos);
+	const vec3_t *p = Entity_GetPos(self->ent, &pos);
 	self->goal.x = p->x + t.x;
 	self->goal.y = p->y + t.y;
 	self->goal.z = p->z + t.z;
@@ -1976,7 +1960,7 @@ void cAICharControl_Nop(cAICharControl *self) {
 static int AICC_GoToSame(cAICharControl *self, const vec3_t *p, float dist, float speed) {
 	self->arriveDist = dist;
 	self->arriveR = Float_MinSS(self->radius, dist);
-	AICC_Vtbl(self)->SetSpeed(self, speed);
+	AICC_SetSpeed(self, speed);
 	return self->mode == self->prevMode && self->dest.x == p->x && self->dest.y == p->y && self->dest.z == p->z;
 }
 
@@ -1984,9 +1968,9 @@ byte cAICharControl_GoTo(cAICharControl *self, const vec3_t *p, float dist, floa
 	if (AICC_GoToSame(self, p, dist, speed)) {
 		return 1;
 	}
-	byte r = AICC_Vtbl(self)->FindPath(self, p);
+	byte r = AICC_FindPath(self, p);
 	if (r && self->pathRes == 2) {
-		AICC_OwnerVtbl(self->ai)->base.Event(&self->ai->base.base, 1);
+		AIMove_Event(self->ai, 1);
 	}
 	return r;
 }
@@ -1995,12 +1979,12 @@ byte cAICharControl_GoToDirect(cAICharControl *self, const vec3_t *p, float dist
 	if (AICC_GoToSame(self, p, dist, speed)) {
 		return 1;
 	}
-	return AICC_Vtbl(self)->DirectPath(self, p);
+	return AICC_DirectPath(self, p);
 }
 
 void cAICharControl_SetSpeed(cAICharControl *self, float speed) {
 	self->speed = speed;
-	AICC_Vtbl(self)->SetTurnSpeed(self, speed);
+	AICC_SetTurnSpeed(self, speed);
 }
 
 void cAICharControl_SetTurnSpeed(cAICharControl *self, float speed) {
@@ -2021,11 +2005,11 @@ void cAICharControl_SetTurnSpeed(cAICharControl *self, float speed) {
 }
 
 void cAICharControl_Stop2(cAICharControl *self) {
-	AICC_Vtbl(self)->Reset(self);
+	AICC_Reset(self);
 }
 
 void cAICharControl_Reset(cAICharControl *self) {
-	AICC_Vtbl(self)->Stop(self);
+	AICC_Stop(self);
 	self->dest.x = -FLT_MAX;
 	self->dest.y = -FLT_MAX;
 	self->dest.z = -FLT_MAX;
@@ -2045,7 +2029,7 @@ byte cAICharControl_GetAvoidFound(cAICharControl *self) {
 void cAICharControl_SetHold(cAICharControl *self, byte on) {
 	self->hold = on;
 	if (on) {
-		AICC_Vtbl(self)->Stop(self);
+		AICC_Stop(self);
 	}
 }
 

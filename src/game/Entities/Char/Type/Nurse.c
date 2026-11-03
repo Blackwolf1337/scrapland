@@ -80,7 +80,7 @@ static void Nurse_HammerFX(cEntity *v) {
 
 	CHECK(v);
 	CHECK(Entity_IsType(v, TYEN_WALKCHAR));
-	CGameModel *model = Obj_Vtbl(v)->GetModel(v);
+	CGameModel *model = Obj_GetModel(v);
 	if (!model || !CGameModel_IsLoaded(model) || !ChType_ActCtrl(v)) {
 		return;
 	}
@@ -283,7 +283,7 @@ static void ChType_NurseHit(void) {
 	}
 	cPy_Function_SetNative(&g_ChTypeSphereFunc, (nativefunc_t)ChType_NurseSphereHit);
 	cActCtrl_SetDefLoop(ChType_ActCtrl(v), "Relax", 1);
-	float ay = Obj_Vtbl(v)->GetAng(v, &t1)->y;
+	float ay = Obj_GetAng(v, &t1)->y;
 	rot.x = 0.0f;
 	rot.y = ay;
 	rot.z = 0.0f;
@@ -291,17 +291,17 @@ static void ChType_NurseHit(void) {
 	off.y = 0.0f;
 	off.z = -g_NurseDispDist;
 	const vec3_t *rp = Vec3_Rotate(&t2, &off, &rot);
-	const vec3_t *p = v->vftable->GetPos(v, &t3);
+	const vec3_t *p = Entity_GetPos(v, &t3);
 	g_NurseTarget = NULL;
 	hit.x = rp->x + p->x;
 	hit.y = p->y + rp->y;
 	hit.z = p->z + rp->z;
-	if (!v->vftable->GetAI(v)) {
+	if (!Entity_GetAI(v)) {
 		cWorld_SphereCallF(g_pWorld, 0x10, &hit, g_NurseDispRad, &g_ChTypeSphereFunc, 0);
 	} else {
-		cAIChar *ai = v->vftable->GetAI(v);
-		if (ai->vftable->base.GetTarget(&ai->base.base)) {
-			g_NurseTarget = ai->vftable->base.GetTargetEnt(&ai->base.base);
+		cAIChar *ai = Entity_GetAI(v);
+		if (AIMove_GetTarget(ai)) {
+			g_NurseTarget = AIMove_GetTargetEnt(ai);
 			if (!g_NurseTarget) {
 				goto fail;
 			}
@@ -310,7 +310,7 @@ static void ChType_NurseHit(void) {
 					goto fail;
 				}
 				if (!crt_strncmp(cActCtrl_GetActionName(ChType_ActCtrl(g_NurseTarget), 0), "Dazed", 5)) {
-					const vec3_t *tp = g_NurseTarget->vftable->GetPos(g_NurseTarget, &t1);
+					const vec3_t *tp = Entity_GetPos(g_NurseTarget, &t1);
 					float dy = hit.y - tp->y;
 					float dx = hit.x - tp->x;
 					float dz = hit.z - tp->z;
@@ -329,8 +329,8 @@ found:
 		goto fail;
 	}
 	byte usr = cWorld_GetUsrEntity(g_pWorld, 0) == v;
-	const vec3_t *tp = g_NurseTarget->vftable->GetPos(g_NurseTarget, &t1);
-	const vec3_t *vp = v->vftable->GetPos(v, &t2);
+	const vec3_t *tp = Entity_GetPos(g_NurseTarget, &t1);
+	const vec3_t *vp = Entity_GetPos(v, &t2);
 	d.x = vp->x - tp->x;
 	d.y = vp->y - tp->y;
 	d.z = vp->z - tp->z;
@@ -341,7 +341,7 @@ found:
 	const char *cls = ChType_ActClass(ChType_ActCtrl(g_NurseTarget))->name;
 	const char *act = cActCtrl_GetActionName(ChType_ActCtrl(g_NurseTarget), 0);
 	if (usr && crt_strncmp(act, "Dazed", 5)) {
-		AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, v->vftable->GetPos(v, &t3));
+		AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, Entity_GetPos(v, &t3));
 		if (!strcmp(cls, "Gear") || !strcmp(cls, "Sentinel") || !strcmp(cls, "Police") || !strcmp(cls, "Desktop")) {
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		} else {
@@ -349,7 +349,7 @@ found:
 		}
 		cLocalLogic *l = Logic_GetLocalLogic(g_NurseTarget);
 		if (l) {
-			Logic_Vtbl(l)->OnHammer(l, v);
+			Logic_OnHammer(l, v);
 		}
 	}
 	if (!strcmp(cls, "GateKeeper")) {
@@ -367,7 +367,7 @@ found:
 		cActCtrl_Play(ChType_ActCtrl(v), "ActionBlock", 0, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(g_NurseTarget), "Relax", 1);
 		cActCtrl_Play(ChType_ActCtrl(g_NurseTarget), "BlockHit", 1, 1.0f);
-		cWalkCharEntity_SetViewFrom(g_NurseTarget, v->vftable->GetPos(v, &t3));
+		cWalkCharEntity_SetViewFrom(g_NurseTarget, Entity_GetPos(v, &t3));
 		if (WChar(v)->wl.obj.cam) {
 			cPad_Rumble(&g_Pads[0], 0.75f, 0.5f, 0.25f);
 		}
@@ -454,7 +454,7 @@ static void ChType_NurseInitHammerLoop(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, g_NurseName, 0x80);
 	cAbstractFile_ReadString(params, event, 0x80);
-	params->vftable->Read(params, &unused, 4);
+	VFile_Read(params, &unused, 4);
 	cEntity *v = ChType_CheckChar(g_NurseName);
 	cActCtrl_Play(ChType_ActCtrl(v), "ActionLoop", 0, 1.0f);
 	if (!WChar(v)->control.act) {
@@ -469,7 +469,7 @@ static void ChType_NurseTryHammerAgain(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, g_NurseName, 0x80);
 	cAbstractFile_ReadString(params, event, 0x80);
-	params->vftable->Read(params, &unused, 4);
+	VFile_Read(params, &unused, 4);
 	cEntity *v = ChType_CheckChar(g_NurseName);
 	if (WChar(v)->control.act) {
 		cActCtrl_Play(ChType_ActCtrl(v), "ActionInit", 1, 1.0f);

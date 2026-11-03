@@ -96,7 +96,7 @@ static int Taunts_PoliceKind(cEntity *ship) {
 			crt_Init_thread_footer((&s_TauntTimeGuard));
 		}
 	}
-	const char *race = CGameModel_Name(Obj_Vtbl(ship)->GetModel(ship));
+	const char *race = CGameModel_Name(Obj_GetModel(ship));
 	if (!(0.0f >= g_RemainTalkTime) || !strncmp(s_TauntLastRace, race, 3)) {
 		return -1;
 	}
@@ -129,7 +129,7 @@ static int Taunts_PoliceKind(cEntity *ship) {
 
 /* kind 8 plays only every second time, and only for ships with LaunchTaunts the other kinds */
 static byte Taunts_Allowed(cEntity *ship, int kind) {
-	if (!Veh_Vtbl(Veh(ship))->GetLaunchTaunts(&(Veh(ship))->wl.obj.base)) {
+	if (!Veh_GetLaunchTaunts(Veh(ship))) {
 		if (kind != 8) {
 			return 0;
 		}
@@ -143,7 +143,7 @@ void Taunts_Ship(cEntity *ship, int kind) {
 	if (!ship || !Taunts_Allowed(ship, kind)) {
 		return;
 	}
-	const char *pilot = Veh_Vtbl(Veh(ship))->GetPilot(&(Veh(ship))->wl.obj.base, 0);
+	const char *pilot = Veh_GetPilot(Veh(ship), 0);
 	if (pilot && strcmp(pilot, "")) {
 		Taunts_Play(ship->name, pilot + 2, kind);
 	}
@@ -152,7 +152,7 @@ void Taunts_Ship(cEntity *ship, int kind) {
 void Taunts_Play(const char *ship, const char *race, int kind) {
 	cEntity *e = World_FindEntity(ship);
 
-	if (e && e->vftable->IsType(e, TYEN_CAR)) {
+	if (e && Entity_IsType(e, TYEN_CAR)) {
 		if (!Taunts_Allowed(e, kind)) {
 			return;
 		}
@@ -187,15 +187,15 @@ static void Taunts_Attacker(cEntity *usr, cEntity *ship) {
 	if (!usr || !ship) {
 		return;
 	}
-	cAIVehicle *ai = ship->vftable->GetAI(ship);
+	cAIVehicle *ai = Entity_GetAI(ship);
 	if (!ai) {
 		return;
 	}
 	cEntity *t = Logic_AttackTarget(ai);
-	if (!t || !t->vftable->IsType(t, TYEN_CAR) || usr != t) {
+	if (!t || !Entity_IsType(t, TYEN_CAR) || usr != t) {
 		return;
 	}
-	byte police = !strcmp(Veh_Vtbl(Veh(ship))->GetPilot(&(Veh(ship))->wl.obj.base, 0) + 2, "Police");
+	byte police = !strcmp(Veh_GetPilot(Veh(ship), 0) + 2, "Police");
 	int st = cAIVehicle_GetInternState(ai);
 	if (st == 5 || st == 4) {
 		Taunts_Ship(ship, police ? 9 : 5);
@@ -222,12 +222,12 @@ void Taunts_Think(float dt) {
 	cEntity *target = NULL;
 
 	(void)dt;
-	if (usr && !usr->vftable->IsType(usr, TYEN_CAR)) {
+	if (usr && !Entity_IsType(usr, TYEN_CAR)) {
 		usr = NULL;
 	}
 	const char *boss = SaveVar_Get("RobotsControlledByBoss");
 	if (boss && strcmp(boss, "1") && usr) {
-		if (!usr->vftable->IsType(usr, TYEN_CAR)) {
+		if (!Entity_IsType(usr, TYEN_CAR)) {
 			usr = NULL;
 		} else {
 			target = Logic_FindCar(Veh(usr)->target);
@@ -297,8 +297,8 @@ byte Taunts_Warnings(float dt) {
 		if (!cab || Obj(cab)->radarShow != 1) {
 			continue;
 		}
-		const vec3_t *up = usr->vftable->GetPos(usr, &t1);
-		const vec3_t *cp = cab->vftable->GetPos(cab, &t2);
+		const vec3_t *up = Entity_GetPos(usr, &t1);
+		const vec3_t *cp = Entity_GetPos(cab, &t2);
 		float dx = cp->x - up->x;
 		float dy = cp->y - up->y;
 		float dz = cp->z - up->z;

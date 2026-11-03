@@ -85,7 +85,7 @@ void Elements_dtor(void *elements) {
 
 		*list = e->next;
 		if (e) {
-			e->vftable->Delete(e, 1);
+			MapElem_Delete(e, 1);
 		}
 	}
 }
@@ -156,7 +156,7 @@ void Elements_Create(void *elements) {
 			e = mem ? cMapElement_ctor(mem, name, &pos, &rot) : NULL;
 		}
 		CHECK(e);
-		e->vftable->Init(e);
+		MapElem_Init(e);
 		e->next = *list;
 		*list = e;
 	} while (DummySearch_NextEuler(buf, sizeof(buf), &pos, &rot));
@@ -197,7 +197,7 @@ void Elements_Update(void *elements, float dt) {
 	cMapElement *e;
 
 	for (e = *(cMapElement **)elements; e; e = e->next) {
-		e->vftable->Update(e, dt);
+		MapElem_Update(e, dt);
 	}
 }
 
@@ -210,11 +210,11 @@ static void Elements_Load(cAbstractFile *f) {
 	cMapElement *e;
 
 	cAbstractFile_ReadString(f, name, sizeof(name));
-	f->vftable->Read(f, &pos.x, 4);
-	f->vftable->Read(f, &pos.y, 4);
-	f->vftable->Read(f, &pos.z, 4);
-	f->vftable->Read(f, &maxDist, 4);
-	f->vftable->Read(f, &on, 4);
+	VFile_Read(f, &pos.x, 4);
+	VFile_Read(f, &pos.y, 4);
+	VFile_Read(f, &pos.z, 4);
+	VFile_Read(f, &maxDist, 4);
+	VFile_Read(f, &on, 4);
 	e = Elements_Find(&g_pWorld->elements, name, pos, maxDist);
 	if (!e) {
 		return;

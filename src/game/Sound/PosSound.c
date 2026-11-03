@@ -320,29 +320,29 @@ static void Sound_UpdateMusic(float dt) {
 				}
 			}
 			float vol = (cur != 0) == changed ? g_OutActionMusicVolume : g_OutRelaxMusicVolume;
-			g_pSound->vftable->SetMusicVolume(g_pSound, vol * f);
+			SoundSys_SetMusicVolume(g_pSound, vol * f);
 			return;
 		}
 		if (want != cur) {
-			g_pSound->vftable->StopMusic(g_pSound);
+			SoundSys_StopMusic(g_pSound);
 			g_MusicWait = 0.0f;
 			return;
 		}
 		const char *fmt;
 		int n;
 		if (cur) {
-			g_pSound->vftable->StopMusic(g_pSound);
-			g_pSound->vftable->SetMusicVolume(g_pSound, g_OutActionMusicVolume);
+			SoundSys_StopMusic(g_pSound);
+			SoundSys_SetMusicVolume(g_pSound, g_OutActionMusicVolume);
 			n = SaveVar_Inc("OutMusicAction", 1) % g_iOutActionMusic + 1;
 			fmt = g_OutActionMusic;
 		} else {
-			g_pSound->vftable->StopMusic(g_pSound);
-			g_pSound->vftable->SetMusicVolume(g_pSound, g_OutRelaxMusicVolume);
+			SoundSys_StopMusic(g_pSound);
+			SoundSys_SetMusicVolume(g_pSound, g_OutRelaxMusicVolume);
 			n = SaveVar_Inc("OutMusicRelax", 1) % g_iOutRelaxMusic + 1;
 			fmt = g_OutRelaxMusic;
 		}
 		Str_PrintfQuiet(name, sizeof(name), fmt, n);
-		g_pSound->vftable->SetMusic(g_pSound, name);
+		SoundSys_SetMusic(g_pSound, name);
 		return;
 	}
 	float wait = g_MusicWait;
@@ -363,7 +363,7 @@ static void Sound_UpdateMusic(float dt) {
 /* the talk voice */
 
 static void Sound_StopTalk(void) {
-	g_pSound->vftable->StopVoice(g_pSound, TALK_VOICE);
+	SoundSys_StopVoice(g_pSound, TALK_VOICE);
 	g_MaxPoliceWarnDist = g_MaxPoliceWarnDistDef;
 	g_WarnVoiceVolume = g_WarnVoiceVolumeDef;
 }
@@ -376,7 +376,7 @@ void Sound_TalkDone(const char *name) {
 	char cur[0x80];
 
 	cur[0] = 0;
-	g_pSound->vftable->GetVoiceString(g_pSound, TALK_VOICE, cur, sizeof(cur));
+	SoundSys_GetVoiceString(g_pSound, TALK_VOICE, cur, sizeof(cur));
 	if (strcmp(name, cur)) {
 		return;
 	}
@@ -396,7 +396,7 @@ static void Sound_UpdateVoice(int voice) {
 	vec3_t tmp1, tmp2, d, rot;
 	float remain, vol;
 
-	g_pSound->vftable->GetVoiceString(g_pSound, voice, name, sizeof(name));
+	SoundSys_GetVoiceString(g_pSound, voice, name, sizeof(name));
 	if (!name[0]) {
 		return;
 	}
@@ -405,23 +405,21 @@ static void Sound_UpdateVoice(int voice) {
 		CHECK(Entity_IsType(user, TYEN_WITH_LIFE));
 	}
 	user = g_pWorld->owners[0];
-	if (!user || !user->vftable->IsType(user, TYEN_WALKCHAR)) {
+	if (!user || !Entity_IsType(user, TYEN_WALKCHAR)) {
 		return;
 	}
 	cEntity *sp = World_FindEntity(name);
-	if (!sp || !sp->vftable->IsType(sp, TYEN_WALKCHAR) || !((cWithLifeEntity *)sp)->life) {
+	if (!sp || !Entity_IsType(sp, TYEN_WALKCHAR) || !((cWithLifeEntity *)sp)->life) {
 		if (voice == TALK_VOICE && g_TalkDelay > 0.0f) {
 			return;
 		}
-		g_pSound->vftable->StopVoice(g_pSound, voice);
+		SoundSys_StopVoice(g_pSound, voice);
 		return;
 	}
 	vol = 1.0f;
-	const cObjEntityVtbl *uv = (const cObjEntityVtbl *)user->vftable;
-	const cObjEntityVtbl *sv = (const cObjEntityVtbl *)sp->vftable;
 	if (voice != TALK_VOICE) {
-		const vec3_t *pu = uv->GetViewPos(user, &tmp1);
-		const vec3_t *ps = sv->GetViewPos(sp, &tmp2);
+		const vec3_t *pu = Obj_GetViewPos(user, &tmp1);
+		const vec3_t *ps = Obj_GetViewPos(sp, &tmp2);
 		float dx = ps->x - pu->x;
 		float dy = ps->y - pu->y;
 		float dz = ps->z - pu->z;
@@ -438,8 +436,8 @@ static void Sound_UpdateVoice(int voice) {
 		if (g_TalkDelay > 0.0f) {
 			return;
 		}
-		const vec3_t *pu = uv->GetViewPos(user, &tmp1);
-		const vec3_t *ps = sv->GetViewPos(sp, &tmp2);
+		const vec3_t *pu = Obj_GetViewPos(user, &tmp1);
+		const vec3_t *ps = Obj_GetViewPos(sp, &tmp2);
 		d.x = ps->x - pu->x;
 		d.y = ps->y - pu->y;
 		d.z = ps->z - pu->z;
@@ -452,9 +450,9 @@ static void Sound_UpdateVoice(int voice) {
 			}
 		}
 		vol = g_WarnVoiceVolume * k;
-		g_pSound->vftable->VoiceRemain(g_pSound, TALK_VOICE, &remain);
+		SoundSys_VoiceRemain(g_pSound, TALK_VOICE, &remain);
 		if (VOICE_END >= remain || vol == 0.0f) {
-			g_pSound->vftable->StopVoice(g_pSound, TALK_VOICE);
+			SoundSys_StopVoice(g_pSound, TALK_VOICE);
 			return;
 		}
 		rot = ((cWalkCharEntity *)user)->view;
@@ -462,9 +460,9 @@ static void Sound_UpdateVoice(int voice) {
 		float xz[2] = { r.x, r.z };
 		float n[2];
 		Vec2_Normalize(n, xz);
-		g_pSound->vftable->SetVoiceParam(g_pSound, TALK_VOICE, n[0] * VOICE_PAN);
+		SoundSys_SetVoiceParam(g_pSound, TALK_VOICE, n[0] * VOICE_PAN);
 	}
-	g_pSound->vftable->SetVoiceVolume(g_pSound, voice, (1.0f - g_MinVoiceVolumeChat) * vol + g_MinVoiceVolumeChat);
+	SoundSys_SetVoiceVolume(g_pSound, voice, (1.0f - g_MinVoiceVolumeChat) * vol + g_MinVoiceVolumeChat);
 }
 
 static uint32_t g_VoiceCount;
@@ -487,24 +485,24 @@ byte Sound_PlayVoice(const char *name, const char *event, const char *arg, int f
 	if (!abort && !anm && !g_pWorld->alarm.on) {
 		return 0;
 	}
-	g_pSound->vftable->GetVoiceString(g_pSound, TALK_VOICE, buf, sizeof(buf));
+	SoundSys_GetVoiceString(g_pSound, TALK_VOICE, buf, sizeof(buf));
 	if (buf[0]) {
 		return 0;
 	}
 	cEntity *user = cWorld_GetUsrEntity(g_pWorld, 0);
-	if (!user || !user->vftable->IsType(user, TYEN_WALKCHAR)) {
+	if (!user || !Entity_IsType(user, TYEN_WALKCHAR)) {
 		return 0;
 	}
 	cEntity *sp = World_FindEntity(name);
-	if (!sp || (!anm && sp == cWorld_GetUsrEntity(g_pWorld, 0)) || !sp->vftable->IsType(sp, TYEN_WALKCHAR)) {
+	if (!sp || (!anm && sp == cWorld_GetUsrEntity(g_pWorld, 0)) || !Entity_IsType(sp, TYEN_WALKCHAR)) {
 		return 0;
 	}
 	float r = (float)((double)(crt_rand() & 0x7fff) * 0x1.0002000400080p-15 * 4.0 - 3.0);
 	if (0.0f > r && !strcmp(event, "Acuse")) {
 		return 0;
 	}
-	const vec3_t *pu = ((const cObjEntityVtbl *)user->vftable)->GetViewPos(user, &t1);
-	const vec3_t *ps = ((const cObjEntityVtbl *)sp->vftable)->GetViewPos(sp, &t2);
+	const vec3_t *pu = Obj_GetViewPos(user, &t1);
+	const vec3_t *ps = Obj_GetViewPos(sp, &t2);
 	float dx = ps->x - pu->x;
 	float dy = ps->y - pu->y;
 	float dz = ps->z - pu->z;
@@ -539,8 +537,8 @@ byte Sound_PlayVoice(const char *name, const char *event, const char *arg, int f
 			crt_sprintf(file, "%sGenerics_%s_Warning_%d.mp3", g_VoicePath, type, n % 3 + 1);
 		}
 	}
-	g_pSound->vftable->OpenVoice(g_pSound, file, TALK_VOICE, (byte)force || !arg ? 1 : 0);
-	g_pSound->vftable->SetVoiceString(g_pSound, TALK_VOICE, sp->name);
+	SoundSys_OpenVoice(g_pSound, file, TALK_VOICE, (byte)force || !arg ? 1 : 0);
+	SoundSys_SetVoiceString(g_pSound, TALK_VOICE, sp->name);
 	g_TalkDelay = g_VoicePlayDelay;
 	g_TalkStop = 0;
 	return 1;
@@ -565,14 +563,14 @@ void Sound_Update(float dt) {
 	}
 	if (g_TalkDelay > 0.0f) {
 		g_TalkDelay = g_TalkDelay - dt;
-		g_pSound->vftable->GetVoiceString(g_pSound, TALK_VOICE, cur, sizeof(cur));
+		SoundSys_GetVoiceString(g_pSound, TALK_VOICE, cur, sizeof(cur));
 		if (!cur[0]) {
 			g_TalkStop = 1;
 		} else if (g_TalkDelay <= 0.0f) {
 			if (g_TalkStop) {
 				Sound_StopTalk();
 			} else {
-				g_pSound->vftable->PlayVoice(g_pSound, TALK_VOICE);
+				SoundSys_PlayVoice(g_pSound, TALK_VOICE);
 			}
 		}
 	}

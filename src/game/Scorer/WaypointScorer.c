@@ -98,7 +98,7 @@ static float Waypoint_SplitY(int player, float y) {
 
 /* the four corners of the rectangle around a waypoint in sight, each a turned copy of the corner frame */
 static void Waypoint_DrawRect(cWaypointScorer *self, cEntity *e, const float *scr, float depth) {
-	float d = (float)((((const cObjEntityVtbl *)e->vftable)->GetRadius(e)) * (g_SplitScreenGame ? WAYPOINT_RECT_SIZE * 0.5f : WAYPOINT_RECT_SIZE) * depth);
+	float d = (float)((Obj_GetRadius(e)) * (g_SplitScreenGame ? WAYPOINT_RECT_SIZE * 0.5f : WAYPOINT_RECT_SIZE) * depth);
 	if (WAYPOINT_RECT_MIN > d) {
 		d = WAYPOINT_RECT_MIN;
 	}
@@ -110,11 +110,11 @@ static void Waypoint_DrawDot(cWaypointScorer *self, cEntity *e, cEntity *cam, co
 	vec3_t c, t;
 
 	c = g_pWorld->camPos[g_pWorld->curCam];
-	((const cCamControlVtbl *)cam->vftable)->GetCamPos(cam, &c.x, &c.y, &c.z);
+	CamCtl_GetCamPos(cam, &c.x, &c.y, &c.z);
 	float tt = self->testTime - Scorer_Get(self->base.player)->frameTime;
 	self->testTime = tt;
 	if (!(0.0f < tt)) {
-		self->visible = Engine_TestLine(((const cObjEntityVtbl *)e->vftable)->GetViewPos(e, &t), &c, NULL, NULL);
+		self->visible = Engine_TestLine(Obj_GetViewPos(e, &t), &c, NULL, NULL);
 		self->testTime = WAYPOINT_TEST_TIME;
 	}
 	if (!self->visible) {
@@ -169,8 +169,8 @@ static void cWaypointScorer_DrawTarget(cWaypointScorer *self, cEntity *e, byte c
 	if (!cam || !Entity_IsType(cam, "FCam")) {
 		return;
 	}
-	((const cObjEntityVtbl *)e->vftable)->GetViewPos(e, &p);
-	((const cCamControlVtbl *)cam->vftable)->GetCamPos(cam, &cx, &cy, &cz);
+	Obj_GetViewPos(e, &p);
+	CamCtl_GetCamPos(cam, &cx, &cy, &cz);
 	byte vis = Engine_WorldToScreen(&p, scr, &depth);
 	scr[1] = Waypoint_SplitY(self->base.player, scr[1]);
 	switch (Waypoint_Kind(e)) {
@@ -205,7 +205,7 @@ static void cWaypointScorer_Draw(cScorerItem *base, int player) {
 
 	if (Waypoint_User()) {
 		cEntity *u = Waypoint_User();
-		p = u->vftable->GetPos(u, &tmp);
+		p = Entity_GetPos(u, &tmp);
 	} else {
 		tmp = zero;
 		p = &tmp;
@@ -232,7 +232,7 @@ static void cWaypointScorer_Draw(cScorerItem *base, int player) {
 	bestDist = 99999997952.0f;
 	for (e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
 		if (Entity_IsType(e, TYEN_OBJECT) && Waypoint_Kind(e)) {
-			const vec3_t *v = e->vftable->GetPos(e, &tmp);
+			const vec3_t *v = Entity_GetPos(e, &tmp);
 			float dy = v->y - from.y;
 			float dx = v->x - from.x;
 			float dz = v->z - from.z;

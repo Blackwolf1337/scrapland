@@ -58,7 +58,7 @@ static PyObject *SAI_IniAI(PyObject *self, PyObject *args) {
 		CHECK(g_NodesTraffic);
 		traffic = g_NodesTraffic;
 	}
-	traffic->vftable->Init(traffic);
+	Traffic_Init(traffic);
 	g_AStar = NEW_OBJ(CAStar, CAStar_ctor, g_NodesWorld);
 	CHECK(g_AStar);
 	if (!g_IsMapOutDoor) {
@@ -128,7 +128,7 @@ static PyObject *SAI_AnalyzeTraffic(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	CNodesTraffic *traffic = g_IsMapOutDoor ? g_NodesTraffic : g_NodesTrafficInDoor;
-	traffic->vftable->Analyze(traffic);
+	Traffic_Analyze(traffic);
 	g_TrafficState = 3;
 	return Py_ReturnNone();
 }
@@ -196,7 +196,7 @@ static int CheckAIEntity(cEntity *e, const char *type) {
 	if (!Entity_IsType(e, type)) {
 		return SSERR_ENTITY_TYPE;
 	}
-	if (e->active && !e->vftable->GetAI(e)) {
+	if (e->active && !Entity_GetAI(e)) {
 		return SSERR_NO_AI;
 	}
 	return 0;
@@ -224,7 +224,7 @@ static void *StateAI(const char *name, int (*check)(cEntity *), int *err) {
 	if (*err) {
 		return NULL;
 	}
-	void *ai = e->vftable->GetAI(e);
+	void *ai = Entity_GetAI(e);
 	AI_Debugf(ai, "CAMBIO de ESTADO desde PYTHON");
 	return ai;
 }
@@ -412,7 +412,7 @@ static PyObject *SetStateChar0(PyObject *self, PyObject *args) {
 	if (PyArg_ParseTuple(args, "is", &st, &name)) {
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
-			return StateResult(ai->vftable->SetState(&ai->base.base, st), name, "STATIC_CHAR");
+			return StateResult(AIChar_SetState(ai, st), name, "STATIC_CHAR");
 		}
 	}
 	return SetState_Error(name, "STATIC_CHAR", err, NULL);
@@ -428,7 +428,7 @@ static PyObject *SetStateChar1(PyObject *self, PyObject *args) {
 	if (PyArg_ParseTuple(args, "isf|i", &st, &name, &f, &flag)) {
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
-			return StateResult(ai->vftable->SetState(&ai->base.base, st, (double)f, flag == 1), name, "IN_ROUTE_CHAR");
+			return StateResult(AIChar_SetState(ai, st, (double)f, flag == 1), name, "IN_ROUTE_CHAR");
 		}
 	}
 	return SetState_Error(name, "IN_ROUTE_CHAR", err, NULL);
@@ -448,7 +448,7 @@ static PyObject *CharStateTargetF(PyObject *args, const char *state) {
 		}
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
-			return StateResult(ai->vftable->SetState(&ai->base.base, st, t, (double)f), name, state);
+			return StateResult(AIChar_SetState(ai, st, t, (double)f), name, state);
 		}
 	}
 	return SetState_Error(name, state, err, NULL);
@@ -467,7 +467,7 @@ static PyObject *CharStateTargetI(PyObject *args, const char *state) {
 		}
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
-			return StateResult(ai->vftable->SetState(&ai->base.base, st, t, flag == 1), name, state);
+			return StateResult(AIChar_SetState(ai, st, t, flag == 1), name, state);
 		}
 	}
 	return SetState_Error(name, state, err, NULL);
@@ -496,7 +496,7 @@ static PyObject *SetStateChar4(PyObject *self, PyObject *args) {
 	if (PyArg_ParseTuple(args, "isffffffff", &st, &name, &a.x, &a.y, &a.z, &b.x, &b.y, &b.z, &f1, &f2)) {
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
-			return StateResult(ai->vftable->SetState(&ai->base.base, st, a, b, (double)f1, (double)f2), name, "GO_TO_CHAR");
+			return StateResult(AIChar_SetState(ai, st, a, b, (double)f1, (double)f2), name, "GO_TO_CHAR");
 		}
 	}
 	return SetState_Error(name, "GO_TO_CHAR", err, NULL);
@@ -519,7 +519,7 @@ static PyObject *SetStateChar6(PyObject *self, PyObject *args) {
 	if (PyArg_ParseTuple(args, "isfffff|i", &st, &name, &pos.x, &pos.y, &pos.z, &f1, &f2, &flag)) {
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
-			return StateResult(ai->vftable->SetState(&ai->base.base, st, pos, (double)f1, (double)f2, flag == 1), name,
+			return StateResult(AIChar_SetState(ai, st, pos, (double)f1, (double)f2, flag == 1), name,
 				"PATROL_ZONE_CHAR");
 		}
 	}
@@ -580,7 +580,7 @@ static PyObject *SAI_GetStateVehicle(PyObject *self, PyObject *args) {
 	(void)self;
 	if (PyArg_ParseTuple(args, "s", &name)) {
 		cEntity *e = World_FindEntity(name);
-		cAIVehicle *ai = e ? e->vftable->GetAI(e) : NULL;
+		cAIVehicle *ai = e ? Entity_GetAI(e) : NULL;
 		if (ai) {
 			return Py_BuildValue("i", cAIVehicle_GetState(ai));
 		}
@@ -595,9 +595,9 @@ static PyObject *SAI_GetStateChar(PyObject *self, PyObject *args) {
 	(void)self;
 	if (PyArg_ParseTuple(args, "s", &name)) {
 		cEntity *e = World_FindEntity(name);
-		cAIChar *ai = e ? e->vftable->GetAI(e) : NULL;
+		cAIChar *ai = e ? Entity_GetAI(e) : NULL;
 		if (ai) {
-			return Py_BuildValue("i", ai->vftable->GetState(&ai->base.base));
+			return Py_BuildValue("i", AIChar_GetState(ai));
 		}
 	}
 	return Py_ReturnNone();
@@ -630,7 +630,7 @@ static PyObject *SAI_EnableAIVehicle(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	byte on = enable != 0;
-	cAIVehicle *ai = e->vftable->GetAI(e);
+	cAIVehicle *ai = Entity_GetAI(e);
 	if (on && ai) {
 		cAIVehicle_Setup(ai, &p1, &p2, &p3);
 		*cAIVehicle_GetParams1(ai) = p1;
@@ -638,7 +638,7 @@ static PyObject *SAI_EnableAIVehicle(PyObject *self, PyObject *args) {
 		*cAIVehicle_GetParams3(ai) = p3;
 	}
 	else {
-		Veh_Vtbl(Veh(e))->EnableAI(e, on, &p1, &p2, &p3);
+		Veh_EnableAI(e, on, &p1, &p2, &p3);
 	}
 	return Py_BuildValue("i", 1);
 }
@@ -656,7 +656,7 @@ static PyObject *SAI_EnableAIChar(PyObject *self, PyObject *args) {
 	if (!e || cWalkCharEntity_GetOwnerSlot(e) >= 0 || strcmp(name, e->name)) {
 		return NULL;
 	}
-	WChar_Vtbl(e)->EnableAI(e, enable != 0, &arg);
+	WChar_EnableAI(e, enable != 0, &arg);
 	return Py_ReturnNone();
 }
 
@@ -697,7 +697,7 @@ static PyObject *SAI_GetNearestItemLife(PyObject *self, PyObject *args) {
 		return Py_ReturnNone();
 	}
 	cEntity *e = World_FindEntity(name);
-	cAIVehicle *ai = e ? e->vftable->GetAI(e) : NULL;
+	cAIVehicle *ai = e ? Entity_GetAI(e) : NULL;
 	cEntity *item = ai ? cAIVehicle_GetNearestItemLife(ai) : NULL;
 	if (item) {
 		return Py_BuildValue("s", item->name);
@@ -709,12 +709,12 @@ static PyObject *SAI_GetNearestItemLife(PyObject *self, PyObject *args) {
 static PyObject *SAI_GetRandomVisibilityPoint(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	int n = g_NodesWorld->sup.vftable->NumVisPoints(g_NodesWorld);
+	int n = NodesWorld_NumVisPoints(g_NodesWorld);
 	if (n <= 0) {
 		return Py_ReturnNone();
 	}
 	vec3_t p;
-	memcpy(&p, g_NodesWorld->sup.vftable->GetVisPoint(g_NodesWorld, crt_rand() % n), sizeof(p));
+	memcpy(&p, NodesWorld_GetVisPoint(g_NodesWorld, crt_rand() % n), sizeof(p));
 	return Py_BuildValue("(fff)", (double)p.x, (double)p.y, (double)p.z);
 }
 
@@ -744,7 +744,7 @@ static PyObject *SAI_GetReposCharPos(PyObject *self, PyObject *args) {
 static PyObject *SAI_InitVehicleRace(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	g_VehicleGroup->base.vftable->Clear(&g_VehicleGroup->base);
+	AIGroup_Clear(g_VehicleGroup);
 	return Py_ReturnNone();
 }
 
@@ -756,7 +756,7 @@ static PyObject *SAI_AddVehicleRace(PyObject *self, PyObject *args) {
 	if (PyArg_ParseTuple(args, "s", &name)) {
 		cEntity *e = FindAIEntity(name, TYEN_CAR);
 		if (e) {
-			g_VehicleGroup->base.vftable->Add(&g_VehicleGroup->base, e);
+			AIGroup_Add(g_VehicleGroup, e);
 		}
 	}
 	return Py_ReturnNone();
@@ -770,7 +770,7 @@ static PyObject *SAI_SetRotStaticObj(PyObject *self, PyObject *args) {
 	(void)self;
 	if (PyArg_ParseTuple(args, "sff", &name, &a, &b)) {
 		cEntity *e = FindAIEntity(name, TYEN_CAR);
-		cAIVehicle *ai = e ? e->vftable->GetAI(e) : NULL;
+		cAIVehicle *ai = e ? Entity_GetAI(e) : NULL;
 		if (ai) {
 			cAIVehicle_SetRotStatic(ai, a, b);
 		}
@@ -786,7 +786,7 @@ static PyObject *SAI_SetInertia(PyObject *self, PyObject *args) {
 	(void)self;
 	if (PyArg_ParseTuple(args, "si", &name, &on)) {
 		cEntity *e = FindAIEntity(name, TYEN_CAR);
-		cAIVehicle *ai = e ? e->vftable->GetAI(e) : NULL;
+		cAIVehicle *ai = e ? Entity_GetAI(e) : NULL;
 		if (ai) {
 			cAIVehicle_SetInertia(ai, on == 1);
 		}

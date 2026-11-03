@@ -50,6 +50,15 @@ typedef struct cLocalLogicVtbl {
 	byte(*VarV)(cLocalLogic *self, const char *name, double *x, double *y, double *z, byte set); /* 0x18 */
 } cLocalLogicVtbl;
 
+/* calls through the slots of cLocalLogicVtbl */
+static inline const char *LocalLogic_GetName(void *self) {
+	return VT(cLocalLogicVtbl, self)->GetName(self);
+}
+
+static inline byte LocalLogic_Vf02(void *self) {
+	return VT(cLocalLogicVtbl, self)->Vf02(self);
+}
+
 /* the slots of cBaseLocalLogic, the logic of a character */
 typedef struct cBaseLocalLogicVtbl {
 	cLocalLogicVtbl base;
@@ -73,8 +82,77 @@ typedef struct cBaseLocalLogicVtbl {
 	void(*RestartState)(cLocalLogic *self);						/* 0x60 the return value of some is not used */
 } cBaseLocalLogicVtbl;
 
-static inline const cBaseLocalLogicVtbl *Logic_Vtbl(const void *l) {
-	return *(const cBaseLocalLogicVtbl *const *)l;
+/* calls through the slots of cBaseLocalLogicVtbl */
+static inline byte Logic_GivesMoney(void *self, cEntity *police) {
+	return VT(cBaseLocalLogicVtbl, self)->GivesMoney(self, police);
+}
+
+static inline byte Logic_Listens(void *self, cEntity *talker) {
+	return VT(cBaseLocalLogicVtbl, self)->Listens(self, talker);
+}
+
+static inline void Logic_OnAlarm(void *self, cEntity *e) {
+	VT(cBaseLocalLogicVtbl, self)->OnAlarm(self, e);
+}
+
+static inline void Logic_OnAttack(void *self, cEntity *attacker, float value) {
+	VT(cBaseLocalLogicVtbl, self)->OnAttack(self, attacker, value);
+}
+
+static inline void Logic_OnHammer(void *self, cEntity *nurse) {
+	VT(cBaseLocalLogicVtbl, self)->OnHammer(self, nurse);
+}
+
+static inline void Logic_OnHit(void *self, cEntity *attacker) {
+	VT(cBaseLocalLogicVtbl, self)->OnHit(self, attacker);
+}
+
+static inline void Logic_OnSeen(void *self, cEntity *e) {
+	VT(cBaseLocalLogicVtbl, self)->OnSeen(self, e);
+}
+
+static inline void Logic_OnShot(void *self, cEntity *attacker) {
+	VT(cBaseLocalLogicVtbl, self)->OnShot(self, attacker);
+}
+
+static inline void Logic_Refresh(void *self) {
+	VT(cBaseLocalLogicVtbl, self)->Refresh(self);
+}
+
+static inline void Logic_RestartState(void *self) {
+	VT(cBaseLocalLogicVtbl, self)->RestartState(self);
+}
+
+static inline void Logic_SetActionRadius(void *self, float radius) {
+	VT(cBaseLocalLogicVtbl, self)->SetActionRadius(self, radius);
+}
+
+static inline void Logic_SetIdle(void *self, byte idle) {
+	VT(cBaseLocalLogicVtbl, self)->SetIdle(self, idle);
+}
+
+static inline void Logic_SetOrigin(void *self, float x, float y, float z) {
+	VT(cBaseLocalLogicVtbl, self)->SetOrigin(self, x, y, z);
+}
+
+static inline void Logic_SetOriginAng(void *self, float x, float y, float z) {
+	VT(cBaseLocalLogicVtbl, self)->SetOriginAng(self, x, y, z);
+}
+
+static inline void Logic_SetOriginFrom(void *self, cEntity *e) {
+	VT(cBaseLocalLogicVtbl, self)->SetOriginFrom(self, e);
+}
+
+static inline byte Logic_SetState(void *self, int state, cEntity *target) {
+	return VT(cBaseLocalLogicVtbl, self)->SetState(self, state, target);
+}
+
+static inline void Logic_Update(void *self, float dt) {
+	VT(cBaseLocalLogicVtbl, self)->Update(self, dt);
+}
+
+static inline byte Logic_UpdateBusy(void *self) {
+	return VT(cBaseLocalLogicVtbl, self)->UpdateBusy(self);
 }
 
 /* the slots of the logics of the generic characters (cGenCharLocalLogic and its children) */
@@ -93,8 +171,49 @@ typedef struct cGenCharLocalLogicVtbl {
 	void(*UpdateGetIt)(cLocalLogic *self, struct cAIChar *ai, float dt);	/* 0x8c vf35 state 10 */
 } cGenCharLocalLogicVtbl;
 
-static inline const cGenCharLocalLogicVtbl *GenChar_Vtbl(const void *l) {
-	return *(const cGenCharLocalLogicVtbl *const *)l;
+/* calls through the slots of cGenCharLocalLogicVtbl */
+static inline void GenChar_Vf33(void *self, byte restart) {
+	VT(cGenCharLocalLogicVtbl, self)->Vf33(self, restart);
+}
+
+static inline void GenChar_UpdateGetIt(void *self, struct cAIChar *ai, float dt) {
+	VT(cGenCharLocalLogicVtbl, self)->UpdateGetIt(self, ai, dt);
+}
+
+static inline void GenChar_ToRelax(void *self, struct cAIChar *ai) {
+	VT(cGenCharLocalLogicVtbl, self)->ToRelax(self, ai);
+}
+
+static inline void GenChar_ToAlert(void *self, struct cAIChar *ai) {
+	VT(cGenCharLocalLogicVtbl, self)->ToAlert(self, ai);
+}
+
+static inline byte GenChar_TargetDone(void *self) {
+	return VT(cGenCharLocalLogicVtbl, self)->TargetDone(self);
+}
+
+static inline void GenChar_GoTo(void *self, struct cAIChar *ai, cEntity *e) {
+	VT(cGenCharLocalLogicVtbl, self)->GoTo(self, ai, e);
+}
+
+static inline cEntity *GenChar_FindTarget(void *self) {
+	return VT(cGenCharLocalLogicVtbl, self)->FindTarget(self);
+}
+
+static inline byte GenChar_CanAttack(void *self, cEntity *e) {
+	return VT(cGenCharLocalLogicVtbl, self)->CanAttack(self, e);
+}
+
+static inline void GenChar_Accuse(void *self, cEntity *e) {
+	VT(cGenCharLocalLogicVtbl, self)->Accuse(self, e);
+}
+
+static inline void GenChar_UpdateView(void *self) {
+	VT(cGenCharLocalLogicVtbl, self)->UpdateView(self);
+}
+
+static inline void GenChar_Work(void *self, float dt) {
+	VT(cGenCharLocalLogicVtbl, self)->Work(self, dt);
 }
 
 /* the functionaries and the desk characters (cFunctionaryLocalLogic, Berto, Betty, Humphrey) */
@@ -108,8 +227,29 @@ typedef struct cFunctionaryLocalLogicVtbl {
 	void(*ReleaseDesktop)(cLocalLogic *self);					/* 0xa4 vf41 */
 } cFunctionaryLocalLogicVtbl;
 
-static inline const cFunctionaryLocalLogicVtbl *Functionary_Vtbl(const void *l) {
-	return *(const cFunctionaryLocalLogicVtbl *const *)l;
+/* calls through the slots of cFunctionaryLocalLogicVtbl */
+static inline void Functionary_StopWork(void *self, byte restart) {
+	VT(cFunctionaryLocalLogicVtbl, self)->StopWork(self, restart);
+}
+
+static inline void Functionary_ReleaseDesktop(void *self) {
+	VT(cFunctionaryLocalLogicVtbl, self)->ReleaseDesktop(self);
+}
+
+static inline vec3_t *Functionary_GetWorkAng(void *self, vec3_t *out) {
+	return VT(cFunctionaryLocalLogicVtbl, self)->GetWorkAng(self, out);
+}
+
+static inline byte Functionary_FastEscape(void *self) {
+	return VT(cFunctionaryLocalLogicVtbl, self)->FastEscape(self);
+}
+
+static inline byte Functionary_CanTalk(void *self) {
+	return VT(cFunctionaryLocalLogicVtbl, self)->CanTalk(self);
+}
+
+static inline void Functionary_AssignDesktop(void *self, float maxDist) {
+	VT(cFunctionaryLocalLogicVtbl, self)->AssignDesktop(self, maxDist);
 }
 
 /* Berto: three more slots, all empty */
@@ -127,8 +267,13 @@ typedef struct cSentinelLocalLogicVtbl {
 	void(*Think)(cLocalLogic *self, float dt, byte other);		/* 0x68 */
 } cSentinelLocalLogicVtbl;
 
-static inline const cSentinelLocalLogicVtbl *Sentinel_Vtbl(const void *l) {
-	return *(const cSentinelLocalLogicVtbl *const *)l;
+/* calls through the slots of cSentinelLocalLogicVtbl */
+static inline byte Sentinel_Seen(void *self) {
+	return VT(cSentinelLocalLogicVtbl, self)->Seen(self);
+}
+
+static inline void Sentinel_Think(void *self, float dt, byte other) {
+	VT(cSentinelLocalLogicVtbl, self)->Think(self, dt, other);
 }
 
 /* Logic/LocalLogic.h, 8 bytes: the logic of the CTFEnemies ships is this only */
@@ -254,7 +399,7 @@ typedef cLocalLogic cScrapyardLocalLogic;
 
 /* the type name of the action class of a character */
 static inline const char *Logic_TypeName(cEntity *e) {
-	cActCtrl *ctrl = WithLife_Vtbl(e)->GetActCtrl(e);
+	cActCtrl *ctrl = WithLife_GetActCtrl(e);
 	return ctrl->cls->name;
 }
 
@@ -410,7 +555,7 @@ void cGenCharLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount);
 
 /* ---- the multiplayer modes (of cLogicControl) ---- */
 static inline cEntity *Logic_AttackTarget(cAIVehicle *ai) {
-	return (cEntity *)ai->vftable->GetTarget(&ai->base.base)->target;
+	return (cEntity *)AIMove_GetTarget(ai)->target;
 }
 
 /* the vehicle AI state constants the modes use */
@@ -478,6 +623,23 @@ typedef struct cDominationLogicVtbl {
 	cEntityListData *(*GetList)(cDominationLogic *self);		/* 0x0c the list of the side */
 	int(*GetTeam)(cDominationLogic *self);				/* 0x10 0 enemies, 1 friends */
 } cDominationLogicVtbl;
+
+/* calls through the slots of cDominationLogicVtbl */
+static inline cEntityListData *Domination_GetList(void *self) {
+	return VT(cDominationLogicVtbl, self)->GetList(self);
+}
+
+static inline int Domination_GetTeam(void *self) {
+	return VT(cDominationLogicVtbl, self)->GetTeam(self);
+}
+
+static inline void Domination_Init(void *self) {
+	VT(cDominationLogicVtbl, self)->Init(self);
+}
+
+static inline void Domination_Update(void *self, float dt) {
+	VT(cDominationLogicVtbl, self)->Update(self, dt);
+}
 
 /* the data of a side: the enemies (0x10 bytes) keep the zone of their leader, the friends (0xc) only the timer */
 typedef struct cDominationSide {
@@ -704,6 +866,11 @@ typedef struct cLittlePoliceLocalLogicVtbl {
 	cGenCharLocalLogicVtbl base;
 	void(*UpdateLook)(cLocalLogic *self);			/* 0x90 vf36 */
 } cLittlePoliceLocalLogicVtbl;
+
+/* calls through the slots of cLittlePoliceLocalLogicVtbl */
+static inline void LittlePolice_UpdateLook(void *self) {
+	VT(cLittlePoliceLocalLogicVtbl, self)->UpdateLook(self);
+}
 
 typedef struct cLittlePoliceLocalLogic {
 	cGenCharLocalLogic base;	/* 0x00 specialTime: the time of the chase in state 4 */

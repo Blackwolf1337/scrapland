@@ -90,18 +90,18 @@ byte cAI_GetChanged(cAI *self) {
 
 byte cAI_IsVisible(cAI *self) {
 	byte vis = 1;
-	int sector = CGameModel_GetSector(Obj_Vtbl(self->entity)->GetModel(self->entity));
+	int sector = CGameModel_GetSector(Obj_GetModel(self->entity));
 
 	if (sector < 0) {
 		return vis;
 	}
 	cEntity *cam = World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
 	vec3_t camPos, pos;
-	CamCtl_Vtbl(cam)->GetCamPos(cam, &camPos.x, &camPos.y, &camPos.z);
+	CamCtl_GetCamPos(cam, &camPos.x, &camPos.y, &camPos.z);
 	int camSector = Video_GetStatus();
 	int atCam = Sector_At(&camPos);
 	if (camSector >= 0 && atCam >= 0 && sector != camSector && sector != atCam) {
-		int s = Collision_Sector(sector, self->entity->vftable->GetPos(self->entity, &pos), &camPos, 1);
+		int s = Collision_Sector(sector, Entity_GetPos(self->entity, &pos), &camPos, 1);
 		if (s != camSector && s != atCam) {
 			vis = 0;
 		}
@@ -163,8 +163,8 @@ void cAI_GetEventName(cAI *self, int ev, char *out) {
 void cAI_OnEvent(cAI *self, int ev) {
 	char name[0x100];
 
-	self->vftable->GetEventName(self, ev, name);
-	self->vftable->Debugf(self, "EVENTO interno -> %s", name);
+	AI_GetEventName(self, ev, name);
+	AI_Debugf(self, "EVENTO interno -> %s", name);
 }
 
 /* the slot EventChase of a class that does only return 0 */

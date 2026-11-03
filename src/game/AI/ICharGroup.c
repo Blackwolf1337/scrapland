@@ -313,7 +313,7 @@ byte cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity *e, float m
 	cEntity *hit;
 	int zi;
 
-	const char *name = ((cActCtrl *)WithLife_Vtbl(e)->GetActCtrl(e))->cls->name;
+	const char *name = ((cActCtrl *)WithLife_GetActCtrl(e))->cls->name;
 	cWorld *w = g_pWorld;
 	vec3_t cam = w->camPos[w->curCam];
 	cEntity *camEnt = World_FindEntity(cWorld_GetCamName(w, 0));

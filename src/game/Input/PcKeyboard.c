@@ -93,7 +93,7 @@ static byte cPcKeyboard_SetEntry(cPcKeyboard *self, int entry, int set, int play
 	if (entry == 0x01 || entry == 0x29 || entry == 0x3b) {
 		return 0;
 	}
-	if (self->vftable->IsReserved(self, entry) && check) {
+	if (InputDev_IsReserved(self, entry) && check) {
 		return 0;
 	}
 	return cAbstractIDevice_SetEntry(self, entry, set, player, action, 0);

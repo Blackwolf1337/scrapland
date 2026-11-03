@@ -1009,7 +1009,7 @@ static void CMap_Release(CMap *self) {
 		self->AnimMat = NULL;
 	}
 	if (self->FXTexture) {
-		self->FXTexture->vftable->Delete(self->FXTexture, 1);
+		FXTexture_Delete(self->FXTexture, 1);
 		self->FXTexture = NULL;
 	}
 }
@@ -1040,7 +1040,7 @@ void CMatList_DeleteAll(CMatList *self) {
 		CMaterial *next = self->first->next;
 		self->first->Refs--;
 		if (self->first) {
-			self->first->vftable->Delete(self->first, 1);
+			Material_Delete(self->first, 1);
 		}
 		n++;
 		self->first = next;
@@ -1139,7 +1139,7 @@ void CMatList_Delete(CMatList *self, CMaterial *mat) {
 	CHECK(!Mat_IsShareable(mat));
 	CMaterial *m = CMatList_Extract(self, mat, 0);
 	CHECK(m);
-	mat->vftable->Delete(mat, 1);
+	Material_Delete(mat, 1);
 	g_TexDeleteUnused = 0;
 }
 
@@ -1270,7 +1270,7 @@ void CMaterial_dtor(CMaterial *self) {
 		Mat_DeleteMap(&self->map[i]);
 	}
 	if (self->sub) {
-		self->sub->vftable->Delete(self->sub, 1);
+		MatList_Delete(self->sub, 1);
 		self->sub = NULL;
 	}
 	CMatId_dtor(&self->id);

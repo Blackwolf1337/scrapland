@@ -34,7 +34,7 @@ static cEntity *Item_Usr0(void) {
 	cWorld *w = g_pWorld;
 	cEntity *pl = w->owners[0];
 
-	if (pl && !pl->vftable->IsType(pl, TYEN_WITH_LIFE)) {
+	if (pl && !Entity_IsType(pl, TYEN_WITH_LIFE)) {
 		CheckFailed("UsrEntities[i]->IsType(\"WithLife\")", "World.h", __TIMESTAMP__, __LINE__);
 	}
 	return w->owners[0];
@@ -42,7 +42,7 @@ static cEntity *Item_Usr0(void) {
 
 /* the reset to the origin with OnReset */
 static void Item_Reset(cItemEntity *self) {
-	self->base.vftable->SetPos(&self->base, &self->origin);
+	Entity_SetPos(self, &self->origin);
 	cPy_Function_AddParamS(&self->onReset, self->base.name);
 	cPy_Function_Execute(&self->onReset, 0);
 }
@@ -50,8 +50,8 @@ static void Item_Reset(cItemEntity *self) {
 /* the fade effects only when the sphere of the item is in view */
 static byte Item_FxVisible(cItemEntity *self) {
 	vec3_t tmp;
-	const vec3_t *p = self->base.vftable->GetPos(&self->base, &tmp);
-	float r = Obj_Vtbl(&self->base)->GetRadius(&self->base);
+	const vec3_t *p = Entity_GetPos(self, &tmp);
+	float r = Obj_GetRadius(self);
 
 	return FX_IsVisible(p->x, p->y, p->z, r + r, g_ItemFxDist, NULL, 0);
 }
@@ -114,7 +114,7 @@ static void cItemEntity_Touch(cEntity *elem, cEntity *other, const vec3_t *point
 	if (self->onlyUser && (!pl || pl != other)) {
 		return;
 	}
-	if (self->typeMask != 0xffff && (!other->vftable->IsType(other, TYEN_WITH_LIFE) ||
+	if (self->typeMask != 0xffff && (!Entity_IsType(other, TYEN_WITH_LIFE) ||
 		!(self->typeMask & (1u << (WLife(other)->arrow.tgType & 31))))) {
 		return;
 	}
@@ -243,7 +243,7 @@ static byte cItemEntity_IsType(cEntity *elem, const char *type) {
 static void cItemEntity_NetRead(cEntity *base, void *msg, int unused) {
 	cItemEntity *self = (cItemEntity *)base;
 	(void)unused;
-	self->obj.net->vftable->Read(self->obj.net, msg);
+	NetCtl_Read(self->obj.net, msg);
 	if (self->obj.net->flags & 1) {
 		cItemEntity_SetRespawn(self, 0.0f);
 	} else {
@@ -255,7 +255,7 @@ static void cItemEntity_NetWrite(cEntity *base, float dist2, void *msg, int full
 	cItemEntity *self = (cItemEntity *)base;
 	(void)dist2;
 	byte all = (0.0f >= (float)self->syncTicks) | (byte)full;
-	self->obj.net->vftable->Write(self->obj.net, (0.0f >= self->respawn) + 2, Item_Ent(self), msg, all);
+	NetCtl_Write(self->obj.net, (0.0f >= self->respawn) + 2, Item_Ent(self), msg, all);
 	if (self->syncTicks > 0) {
 		self->syncTicks--;
 	}
@@ -395,9 +395,8 @@ void cItemEntity_SetRespawn(cItemEntity *self, float t) {
 				}
 			}
 			if (self->takeSoundVol > 0.0f && self->takeSound[0]) {
-				const CSoundSysVtbl *vt = g_pSound->vftable;
 				int vol = Snd_Volume(self->takeSoundVol);
-				vt->PlayAt(g_pSound, self->takeSound, self->base.vftable->GetPos(&self->base, &tmp), vol);
+				SoundSys_PlayAt(g_pSound, self->takeSound, Entity_GetPos(self, &tmp), vol);
 			}
 		}
 		self->respawn = t;
@@ -472,7 +471,7 @@ static void cItemEntity_Update(cEntity *elem) {
 	if (self->autoFace) {
 		cWorld *w = g_pWorld;
 		vec3_t cam = w->camPos[w->curCam];
-		const vec3_t *p = self->base.vftable->GetPos(&self->base, &tmp);
+		const vec3_t *p = Entity_GetPos(self, &tmp);
 		double dx = (double)(p->x - cam.x);
 		double dz = (double)(p->z - cam.z);
 		ang.x = 0.0f;
@@ -503,7 +502,7 @@ static byte cItemEntity_TestSphere(cEntity *elem, cEntity *other, const vec3_t *
 	vec3_t tmp, dir, point;
 
 	(void)arg;
-	const vec3_t *p = self->base.vftable->GetPos(&self->base, &tmp);
+	const vec3_t *p = Entity_GetPos(self, &tmp);
 	float r = radius + self->radius;
 	float dy = center->y - p->y;
 	float dx = center->x - p->x;
@@ -512,7 +511,7 @@ static byte cItemEntity_TestSphere(cEntity *elem, cEntity *other, const vec3_t *
 		return 0;
 	}
 	if (!g_pWorld->testing && other) {
-		p = self->base.vftable->GetPos(&self->base, &tmp);
+		p = Entity_GetPos(self, &tmp);
 		dx = center->x - p->x;
 		dy = center->y - p->y;
 		dz = center->z - p->z;
@@ -530,12 +529,12 @@ static byte cItemEntity_TestSphere(cEntity *elem, cEntity *other, const vec3_t *
 		float ox = dir.x * self->radius;
 		float oy = dir.y * self->radius;
 		float oz = dir.z * self->radius;
-		p = self->base.vftable->GetPos(&self->base, &tmp);
+		p = Entity_GetPos(self, &tmp);
 		point.x = p->x + ox;
 		point.y = p->y + oy;
 		point.z = p->z + oz;
 		/* slot 11 of the other entity: touched by the item */
-		other->vftable->Touch(other, Item_Ent(self), &point, &dir);
+		Entity_Touch(other, Item_Ent(self), &point, &dir);
 	}
 	return 1;
 }
@@ -587,7 +586,7 @@ static byte cItemEntity_NetNeedsSend(cEntity *base, float dist2) {
 	}
 	if (g_ItemSyncDist * g_ItemSyncDist > dist2) {
 		/* near ones now and then: the count and ten ticks a second of game time */
-		double t = ((g_pApp->vftable->GetGameTime(g_pApp)) * 10.0);
+		double t = ((App_GetGameTime(g_pApp)) * 10.0);
 		uint32_t n = g_ItemSyncCount++;
 		if ((int)((double)n + t) & 1) {
 			return 1;
@@ -622,9 +621,9 @@ static byte cItemEntity_VarV(cEntity *elem, const char *name, double *x, double 
 			v.x = (float)*x;
 			v.y = (float)*y;
 			v.z = (float)*z;
-			Obj_Vtbl(&self->base)->SetVel(&self->base, &v);
+			Obj_SetVel(self, &v);
 		} else {
-			Obj_Vtbl(&self->base)->GetVel(&self->base, &v);
+			Obj_GetVel(self, &v);
 			*x = v.x;
 			*y = v.y;
 			*z = v.z;

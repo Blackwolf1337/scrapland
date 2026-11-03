@@ -33,7 +33,7 @@ static void cAIMayor_CheckActDist(cAI *base) {
 	cAIMayor *self = (cAIMayor *)base;
 	float dist = AIChar_TargetDistFlat(self);
 
-	self->ctrl->act = self->vftable->GetDirect2(&self->base.base) && AIChar_Action0(self->ent)->priority <= 0x65 &&
+	self->ctrl->act = AIChar_GetDirect2(self) && AIChar_Action0(self->ent)->priority <= 0x65 &&
 		dist > self->actMin && self->actMax > dist;
 }
 

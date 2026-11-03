@@ -28,6 +28,23 @@ typedef struct cEmbeddedFXVehicleVtbl {
 	void(*SetActive)(cEmbeddedFXVehicleSub *self, byte on);	/* 0x14 */
 } cEmbeddedFXVehicleVtbl;
 
+/* calls through the slots of cEmbeddedFXVehicleVtbl */
+static inline cEmbeddedFXVehicleSub *EFXVeh_Delete(void *self, byte flags) {
+	return VT(cEmbeddedFXVehicleVtbl, self)->Delete(self, flags);
+}
+
+static inline void EFXVeh_Done(void *self) {
+	VT(cEmbeddedFXVehicleVtbl, self)->Done(self);
+}
+
+static inline byte EFXVeh_Init(void *self) {
+	return VT(cEmbeddedFXVehicleVtbl, self)->Init(self);
+}
+
+static inline void EFXVeh_Update(void *self) {
+	VT(cEmbeddedFXVehicleVtbl, self)->Update(self);
+}
+
 /* the common head of the three classes: the vtable */
 struct cEmbeddedFXVehicleSub {
 	const cEmbeddedFXVehicleVtbl *vftable;

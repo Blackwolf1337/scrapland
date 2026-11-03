@@ -69,7 +69,7 @@ void cStrMoney_Update(void *obj, float dt);
 void *Logic_ctor(void *logic);
 void Logic_dtor(void *logic);
 void Logic_Reset(void *logic);
-void Logic_Update(void *logic, float dt);
+void LogicControl_Update(void *logic, float dt);
 void cScheduledFuncStack_dtor(void *stack);
 
 cDebrisSys *cDebrisSys_ctor(void *mem);

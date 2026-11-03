@@ -125,11 +125,11 @@ static void Devastator_Create(cAbstractFile *params) {
 	int shot;
 
 	cAbstractFile_ReadString(params, g_DevShooter, 0x80);
-	params->vftable->Read(params, &g_DevCenter.x, 4);
-	params->vftable->Read(params, &g_DevCenter.y, 4);
-	params->vftable->Read(params, &g_DevCenter.z, 4);
+	VFile_Read(params, &g_DevCenter.x, 4);
+	VFile_Read(params, &g_DevCenter.y, 4);
+	VFile_Read(params, &g_DevCenter.z, 4);
 	cAbstractFile_ReadString(params, g_DevVictim, 0x80);
-	params->vftable->Read(params, &shot, 4);
+	VFile_Read(params, &shot, 4);
 	cEntity *v = Weap_GetVehicle(g_DevShooter);
 	cFollowCamEntity *playerCam = Entity_FollowCam(v);
 	cWeaponManager *wm = &Veh(v)->weapons;
@@ -150,7 +150,7 @@ static void Devastator_Create(cAbstractFile *params) {
 			continue;
 		}
 		int node = wm->nodes[g_DevastatorIDAmmo][i];
-		const matrix_t *m = CGameModel_NodeMatrix(Obj_Vtbl(v)->GetModel(v), &mat, node, 0, NULL, 0);
+		const matrix_t *m = CGameModel_NodeMatrix(Obj_GetModel(v), &mat, node, 0, NULL, 0);
 		p.x = m->m[12];
 		p.y = m->m[13];
 		p.z = m->m[14];
@@ -158,15 +158,15 @@ static void Devastator_Create(cAbstractFile *params) {
 			cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_DevastatorBulletFile);
 			cDebris *bullet = cDebrisSys_NewElement(sys);
 			bullet->drop[0] = p;
-			bullet->drop[1] = *Obj_Vtbl(v)->GetViewAng(v, &rot);
+			bullet->drop[1] = *Obj_GetViewAng(v, &rot);
 			float rz = Dev_Rand(14.0, -7.0);
 			float ry = Dev_Rand(2000.0, 0.0);
 			float rx = Dev_Rand(200.0, -100.0);
-			const vec3_t *pc = Obj_Vtbl(v)->GetViewPos(v, &rot);
+			const vec3_t *pc = Obj_GetViewPos(v, &rot);
 			float dx = (bullet->drop[0].x - pc->x) * 10.0f;
 			float dy = (bullet->drop[0].y - pc->y) * 10.0f;
 			float dz = (bullet->drop[0].z - pc->z) * 10.0f;
-			const vec3_t *vel = Obj_Vtbl(v)->GetVel(v, &c);
+			const vec3_t *vel = Obj_GetVel(v, &c);
 			bullet->drop[2].x = dx + vel->x * 0.5f + rx;
 			bullet->drop[2].z = dz + vel->z * 0.5f + rz;
 			bullet->drop[2].y = dy + vel->y * 0.5f + ry;
@@ -199,7 +199,7 @@ static void Devastator_Create(cAbstractFile *params) {
 			CHECK(w);
 			CHECK(Entity_IsType(w, TYEN_WITH_LIFE));
 			float rad = WLife(w)->prim.radius;
-			const vec3_t *pc = Obj_Vtbl(v)->GetViewPos(v, &c);
+			const vec3_t *pc = Obj_GetViewPos(v, &c);
 			float cy = pc->y - C->y;
 			float cx = pc->x - C->x;
 			float cz = pc->z - C->z;
@@ -250,12 +250,12 @@ static void Devastator_Create(cAbstractFile *params) {
 		CGameParticles *pt = &fx->particles;
 		/* the floor normal at the hit, else the up of the shooter */
 		in = (vec3_t){ 0.0f, 0.0f, 25.0f };
-		const vec3_t *ro = Vec3_Rotate(&r, &in, Obj_Vtbl(v)->GetViewAng(v, &rot));
+		const vec3_t *ro = Vec3_Rotate(&r, &in, Obj_GetViewAng(v, &rot));
 		a.x = C->x + ro->x;
 		a.z = ro->z + C->z;
 		a.y = ro->y + C->y;
 		in = (vec3_t){ 0.0f, 0.0f, -25.0f };
-		ro = Vec3_Rotate(&r, &in, Obj_Vtbl(v)->GetViewAng(v, &rot));
+		ro = Vec3_Rotate(&r, &in, Obj_GetViewAng(v, &rot));
 		b.z = ro->z + C->z;
 		b.x = ro->x + C->x;
 		b.y = ro->y + C->y;
@@ -263,7 +263,7 @@ static void Devastator_Create(cAbstractFile *params) {
 			n = tri.plane.n;
 		} else {
 			in = (vec3_t){ 0.0f, 0.0f, 1.0f };
-			n = *Vec3_Rotate(&r, &in, Obj_Vtbl(v)->GetViewAng(v, &rot));
+			n = *Vec3_Rotate(&r, &in, Obj_GetViewAng(v, &rot));
 		}
 		int up = cWeaponManager_GetUpgrade(wm, g_DevastatorIDWeap);
 		float t = 1.0f - camDist / g_FXDevastatorDistance;
@@ -348,7 +348,7 @@ static void Devastator_Create(cAbstractFile *params) {
 				sfx->on = 1;
 			}
 			sfx->duration = 0.075f;
-			sfx->base.vftable->Reset(&sfx->base, dshot);
+			FXObj_Reset(sfx, dshot);
 			CGameTrail_GetMaxTrails(trail);
 			float sy = p.y - origin.y;
 			float sx = p.x - origin.x;
@@ -442,7 +442,7 @@ static void Devastator_FX(cAbstractFile *params) {
 	int player;
 
 	cAbstractFile_ReadString(params, name, 0x80);
-	params->vftable->Read(params, &player, 4);
+	VFile_Read(params, &player, 4);
 	cAbstractFile_ReadString(params, itemName, 0x80);
 	cEntity *v = Weap_GetVehicle(name);
 	cCannonScorer *item = (cCannonScorer *)cScorer_FindItem(Scorer_Get(player), itemName);
@@ -515,8 +515,8 @@ static void Devastator_Fire(cAbstractFile *params) {
 	target = Vehicle_AimTarget(v);
 	if (target) {
 		/* the shot ends near the target of the aim help */
-		const vec3_t *pa = v->vftable->GetPos(v, &a);
-		const vec3_t *pb = target->vftable->GetPos(target, &b);
+		const vec3_t *pa = Entity_GetPos(v, &a);
+		const vec3_t *pb = Entity_GetPos(target, &b);
 		float dx = pb->x - pa->x;
 		float dy = pb->y - pa->y;
 		float dz = pb->z - pa->z;
@@ -526,8 +526,8 @@ static void Devastator_Fire(cAbstractFile *params) {
 			dist = (float)(Weap_Rand01() * (double)r + 0.0) + d;
 		}
 	}
-	v->vftable->GetTargetAngle(v, ang, dist, &target);
-	v->vftable->AimWeapon(v, ang[0], ang[1], &dist, &hit, &target, 8);
+	Entity_GetTargetAngle(v, ang, dist, &target);
+	Entity_AimWeapon(v, ang[0], ang[1], &dist, &hit, &target, 8);
 	if (target) {
 		if (Entity_IsType(target, TYEN_WITH_LIFE) && !WLife(target)->god) {
 			WLife(target)->life--;
@@ -599,7 +599,7 @@ static void Devastator_XplosionCall(cAbstractFile *params) {
 		return;
 	}
 	int oldLife = WLife(victim)->life;
-	const vec3_t *pp = victim->vftable->GetPos(victim, &p);
+	const vec3_t *pp = Entity_GetPos(victim, &p);
 	float dy = pp->y - g_DevCenter.y;
 	float dx = pp->x - g_DevCenter.x;
 	float dz = pp->z - g_DevCenter.z;
@@ -629,7 +629,7 @@ static void Devastator_XplosionCall(cAbstractFile *params) {
 	int dmg = (int)(g_DevastatorExtraDamage * f + g_DevastatorMinDamage);
 	if (World_IsEasySingle()) {
 		cEntity *shooter = World_FindEntity(g_DevShooter);
-		if (shooter && shooter->vftable->GetAI(shooter)) {
+		if (shooter && Entity_GetAI(shooter)) {
 			dmg = dmg / 2;
 			if (dmg <= 0) {
 				dmg = 1;
@@ -650,11 +650,11 @@ static void Devastator_XplosionCall(cAbstractFile *params) {
 		x = x * k;
 		y = y * k;
 		z = z * k;
-		const vec3_t *vel = Obj_Vtbl(victim)->GetVel(victim, &r);
+		const vec3_t *vel = Obj_GetVel(victim, &r);
 		n.x = x + vel->x;
 		n.y = vel->y + y;
 		n.z = vel->z + z;
-		Obj_Vtbl(victim)->SetVel(victim, &n);
+		Obj_SetVel(victim, &n);
 	}
 	if (Entity_IsType(victim, TYEN_VEHICLE) && Veh(victim)->netCtrl) {
 		Veh(victim)->netCtrl->hit = 2;
@@ -674,7 +674,7 @@ static void EMI_Fire(cAbstractFile *params) {
 	cWeaponManager *wm = &Veh(v)->weapons;
 	float fammo = cTargetLock_GetAmmo(wm, g_EMIIDAmmo);
 	int ammo = (int)fammo;
-	if (WithLife_Vtbl(v)->IsEMIed(v) || ammo < 1) {
+	if (WithLife_IsEMIed(v) || ammo < 1) {
 		return;
 	}
 	Veh(v)->weapons.cmStamp = -g_EMIRechargeTime;
@@ -691,8 +691,8 @@ static void EMI_Fire(cAbstractFile *params) {
 		return;
 	}
 	Net_GetObjName(emiName);
-	v->vftable->GetPos(v, &pos);
-	Obj_Vtbl(v)->GetAng(v, &ang);
+	Entity_GetPos(v, &pos);
+	Obj_GetAng(v, &ang);
 	cPy_Function_AddParamS(g_CreateEMIFunc, emiName);
 	cPy_Function_AddParamF(g_CreateEMIFunc, pos.x);
 	cPy_Function_AddParamF(g_CreateEMIFunc, pos.y);
@@ -731,8 +731,8 @@ static void EMI_OnHit(cAbstractFile *params) {
 	if (!emi || !e) {
 		return;
 	}
-	const vec3_t *pa = e->vftable->GetPos(e, &a);
-	const vec3_t *pb = emi->vftable->GetPos(emi, &b);
+	const vec3_t *pa = Entity_GetPos(e, &a);
+	const vec3_t *pb = Entity_GetPos(emi, &b);
 	float dx = pb->x - pa->x;
 	float dy = pb->y - pa->y;
 	float dz = pb->z - pa->z;

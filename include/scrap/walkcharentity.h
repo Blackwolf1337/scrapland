@@ -99,8 +99,57 @@ typedef struct cWalkCharVtbl {
 	void(*SetYModelDisp)(cEntity *self, float y);			/* 0x110 vf68 */
 } cWalkCharVtbl;
 
-static inline const cWalkCharVtbl *WChar_Vtbl(const cEntity *e) {
-	return (const cWalkCharVtbl *)e->vftable;
+/* calls through the slots of cWalkCharVtbl */
+static inline void WChar_Accel(void *self, float dt) {
+	VT(cWalkCharVtbl, self)->Accel(self, dt);
+}
+
+static inline void WChar_ActionTick(void *self, float dt) {
+	VT(cWalkCharVtbl, self)->ActionTick(self, dt);
+}
+
+static inline void WChar_EnableAI(void *self, byte on, int *arg) {
+	VT(cWalkCharVtbl, self)->EnableAI(self, on, arg);
+}
+
+static inline void WChar_Fall(void *self, float dt) {
+	VT(cWalkCharVtbl, self)->Fall(self, dt);
+}
+
+static inline void WChar_Fly(void *self, float dt) {
+	VT(cWalkCharVtbl, self)->Fly(self, dt);
+}
+
+static inline void WChar_FlySound(void *self, float dt) {
+	VT(cWalkCharVtbl, self)->FlySound(self, dt);
+}
+
+static inline void WChar_Idle(void *self, float dt) {
+	VT(cWalkCharVtbl, self)->Idle(self, dt);
+}
+
+static inline void WChar_SetViewAng(void *self, const vec3_t *ang) {
+	VT(cWalkCharVtbl, self)->SetViewAng(self, ang);
+}
+
+static inline void WChar_SetYModelDisp(void *self, float y) {
+	VT(cWalkCharVtbl, self)->SetYModelDisp(self, y);
+}
+
+static inline void WChar_Turn(void *self, float dt) {
+	VT(cWalkCharVtbl, self)->Turn(self, dt);
+}
+
+static inline void WChar_UpdateSelect(void *self, float dt) {
+	VT(cWalkCharVtbl, self)->UpdateSelect(self, dt);
+}
+
+static inline void WChar_WalkAnim(void *self, float dt) {
+	VT(cWalkCharVtbl, self)->WalkAnim(self, dt);
+}
+
+static inline void WChar_WalkSound(void *self, float dt) {
+	VT(cWalkCharVtbl, self)->WalkSound(self, dt);
 }
 
 extern cGVar GVar_CharProcessReduction;

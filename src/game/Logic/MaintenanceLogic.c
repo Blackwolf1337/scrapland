@@ -17,7 +17,6 @@
 static const cGenCharLocalLogicVtbl cMaintenanceLocalLogic_vftable;
 static cGVar GVar_MaintenanceTimeToNextPos;
 static cGVar GVar_MaintenanceSphereRadiusFactor;
-#define MAINT_VT(self) ((self)->base.base.vftable)
 #define MAINT_BASE(self) (&(self)->base.base)
 
 static cEntity *g_MaintenanceShip;
@@ -27,22 +26,22 @@ void *cMaintenanceLocalLogic_ctor(void *mem, cEntity *parent) {
 	cMaintenanceLocalLogic *self = mem;
 
 	cGenCharLocalLogic_ctor(&self->base, parent, 1);
-	MAINT_VT(self) = CMAINTENANCELOCALLOGIC_VFTABLE;
+	self->base.base.vftable = CMAINTENANCELOCALLOGIC_VFTABLE;
 	self->timer = g_MaintenanceTimeToNextPos;
 	self->point = -1;
 	g_MaintenanceShip = NULL;
 	g_MaintenanceFirstShip = NULL;
 	if ((byte)cBaseLocalLogic_SetState(&(MAINT_BASE(self))->logic, 7, NULL)) {
 		cEntity *p = MAINT_BASE(self)->parent;
-		cAIChar *ai = p->vftable->GetAI(p);
-		ai->vftable->SetState(&ai->base.base, 1, (double)g_GenCharRelaxSpeed, 0);
+		cAIChar *ai = Entity_GetAI(p);
+		AIChar_SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
 	}
 	return self;
 }
 
 static cLocalLogic *cMaintenanceLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 	cMaintenanceLocalLogic *self = (cMaintenanceLocalLogic *)elem;
-	MAINT_VT(self) = CMAINTENANCELOCALLOGIC_VFTABLE;
+	self->base.base.vftable = CMAINTENANCELOCALLOGIC_VFTABLE;
 	g_MaintenanceShip = NULL;
 	g_MaintenanceFirstShip = NULL;
 	cGenCharLocalLogic_dtor(&self->base);
@@ -74,8 +73,8 @@ static void cMaintenanceLocalLogic_SetPlatform(cMaintenanceLocalLogic *self, flo
 	pt[7] = (vec3_t){ xm, ym, zm };
 	cEntity *platform = World_FindEntity("DM_Door_EditShip_00");
 	CHECK(platform && "La plataforma no existe");
-	float py = platform->vftable->GetPos(platform, &t)->y;
-	float h = (float)((Obj_Vtbl(p)->GetRadius(p)) + py + 100.0f);
+	float py = Entity_GetPos(platform, &t)->y;
+	float h = (float)((Obj_GetRadius(p)) + py + 100.0f);
 	for (int i = 4; i < 8; i++) {
 		if (h > pt[i].y) {
 			pt[i].y = h;
@@ -87,13 +86,13 @@ static void cMaintenanceLocalLogic_SetPlatform(cMaintenanceLocalLogic *self, flo
 static cEntity *Maintenance_FindShip(void) {
 	cEntity *e = cWorld_GetFirstEntity(g_pWorld);
 
-	while (e && !(e->active && e->vftable->IsType(e, TYEN_CAR))) {
+	while (e && !(e->active && Entity_IsType(e, TYEN_CAR))) {
 		e = cEntity_Next(e);
 	}
 	if (!e) {
 		return NULL;
 	}
-	if (!e->vftable->IsType(e, TYEN_CAR)) {
+	if (!Entity_IsType(e, TYEN_CAR)) {
 		e = NULL;
 	}
 	if (CGameModel_GetEffect(&Obj(e)->model, NULL)) {
@@ -110,7 +109,7 @@ static void cMaintenanceLocalLogic_Update(cLocalLogic *elem, float dt) {
 	vec3_t t;
 	cBaseLocalLogic *b = MAINT_BASE(self);
 	cEntity *p = b->parent;
-	cAIChar *ai = p->vftable->GetAI(p);
+	cAIChar *ai = Entity_GetAI(p);
 
 	if (b->state == 7) {
 		if (!World_FindEntity("EditCamera")) {
@@ -122,10 +121,10 @@ static void cMaintenanceLocalLogic_Update(cLocalLogic *elem, float dt) {
 		if (!s) {
 			return;
 		}
-		const vec3_t *sp = s->vftable->GetPos(s, &t);
-		float r = Obj_Vtbl(g_MaintenanceShip)->GetRadius(g_MaintenanceShip);
+		const vec3_t *sp = Entity_GetPos(s, &t);
+		float r = Obj_GetRadius(g_MaintenanceShip);
 		cMaintenanceLocalLogic_SetPlatform(self, sp->x, sp->y, sp->z, r);
-		MAINT_VT(self)->SetState(&self->base.base.logic, 8, NULL);
+		Logic_SetState(self, 8, NULL);
 		return;
 	}
 	if (b->state != 8) {
@@ -135,7 +134,7 @@ static void cMaintenanceLocalLogic_Update(cLocalLogic *elem, float dt) {
 	g_MaintenanceShip = Maintenance_FindShip();
 	if (!g_MaintenanceShip || !World_FindEntity("EditCamera") || g_MaintenanceFirstShip != g_MaintenanceShip) {
 		self->point = -1;
-		MAINT_VT(self)->SetState(&self->base.base.logic, 7, NULL);
+		Logic_SetState(self, 7, NULL);
 		return;
 	}
 	void *ctrl = ChType_ActCtrl(p);
@@ -148,7 +147,7 @@ static void cMaintenanceLocalLogic_Update(cLocalLogic *elem, float dt) {
 		cActCtrl_SetDefLoop(ctrl, "Walk", 1);
 		return;
 	}
-	if (strncmp(cActCtrl_GetActionName(ctrl, 0), "Work", 4) && ai->vftable->GetState(&ai->base.base) == 0) {
+	if (strncmp(cActCtrl_GetActionName(ctrl, 0), "Work", 4) && AIChar_GetState(ai) == 0) {
 		cActCtrl_Play(ctrl, "WorkInit", 1, 1.0f);
 		cActCtrl_SetDefLoop(ctrl, "Work", 1);
 	}
@@ -160,12 +159,12 @@ static void cMaintenanceLocalLogic_Update(cLocalLogic *elem, float dt) {
 static void cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self) {
 	vec3_t t, sp;
 	cEntity *p = MAINT_BASE(self)->parent;
-	cAIChar *ai = p->vftable->GetAI(p);
+	cAIChar *ai = Entity_GetAI(p);
 
 	if (self->point == -1) {
 		float best = 3.4028235e38f;
 		for (int i = 0; i < 7; i++) {
-			const vec3_t *pp = p->vftable->GetPos(p, &t);
+			const vec3_t *pp = Entity_GetPos(p, &t);
 			const vec3_t *c = &self->points[i];
 			float dy = c->y - pp->y, dx = c->x - pp->x, dz = c->z - pp->z;
 			float d = dy * dy + dx * dx + dz * dz;
@@ -188,13 +187,13 @@ static void cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self) {
 			self->point = cur + (cur < 4 ? 4 : -4);
 		}
 	}
-	g_MaintenanceShip->vftable->GetPos(g_MaintenanceShip, &sp);
+	Entity_GetPos(g_MaintenanceShip, &sp);
 	const vec3_t *c = &self->points[self->point];
 	vec3_t dir;
 	dir.z = sp.z - c->z;
 	dir.x = sp.x - c->x;
 	dir.y = sp.y - c->y;
-	ai->vftable->SetState(&ai->base.base, 4, *c, dir, 100.0, 0.5);
+	AIChar_SetState(ai, 4, *c, dir, 100.0, 0.5);
 	c = &self->points[self->point];
 	sp.y = c->y;
 	float sr = WLife(g_MaintenanceShip)->prim.radius;
@@ -225,8 +224,8 @@ static byte cMaintenanceLocalLogic_SetState(cLocalLogic *elem, int state, cEntit
 
 	if (state == 7) {
 		if ((byte)cBaseLocalLogic_SetState(&b->logic, 7, target)) {
-			cAIChar *ai = b->parent->vftable->GetAI(b->parent);
-			ai->vftable->SetState(&ai->base.base, 1, (double)g_GenCharRelaxSpeed, 0);
+			cAIChar *ai = Entity_GetAI(b->parent);
+			AIChar_SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
 		}
 		return 1;
 	}

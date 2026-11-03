@@ -199,7 +199,7 @@ static inline void FXObj_TrailsDtor(CGameTrail *t, uint32_t n) {
 	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, (void *)CGameTrail_dtor);
 }
 
-static inline void *FXObj_Delete(void *self, uint32_t flags, uint32_t size) {
+static inline void *FXObj_Free(void *self, uint32_t flags, uint32_t size) {
 	if (flags & 1) {
 		operator_delete_sized(self, size);
 	}

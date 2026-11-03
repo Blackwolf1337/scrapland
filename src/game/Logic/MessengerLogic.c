@@ -59,7 +59,7 @@ static cEntity *cMessengers_FindDesk(cMessengers *self) {
 	int found = 0;
 
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
-		if (!e->active || !e->vftable->IsType(e, TYEN_WITH_LIFE) || Obj(e)->radarShow || !ChType_ActCtrl(e) ||
+		if (!e->active || !Entity_IsType(e, TYEN_WITH_LIFE) || Obj(e)->radarShow || !ChType_ActCtrl(e) ||
 			strcmp(Logic_TypeName(e), type)) {
 			continue;
 		}
@@ -80,7 +80,7 @@ static cEntity *cMessengers_FindDesk(cMessengers *self) {
 
 /* the GenChar character of the type "Messenger" (WalkChar) */
 static int Msg_IsMessenger(cEntity *e) {
-	return e->vftable->IsType(e, TYEN_WALKCHAR) && !strcmp(Logic_TypeName(e), "Messenger");
+	return Entity_IsType(e, TYEN_WALKCHAR) && !strcmp(Logic_TypeName(e), "Messenger");
 }
 
 /* messenger m with the pack at the desk: near it the drop starts (DropDataInit, then the DropData loop); at the node
@@ -93,13 +93,13 @@ static byte Messenger_Deliver(cEntity *m, cEntity *desk, cEntity *pack) {
 	if (!desk || !pack || !m) {
 		return 0;
 	}
-	CGameModel *model = Obj_Vtbl(desk)->GetModel(desk);
+	CGameModel *model = Obj_GetModel(desk);
 	byte dropping = cActCtrl_IsActive(ChType_ActCtrl(m), "DropData");
 	const matrix_t *mm = CGameModel_NodeMatrix(model, &mat, CGameModel_FindRenderNode(model, "DC_DataPack"), 0, NULL, 0);
 	float px = mm->m[12];
 	float py = mm->m[13];
 	float pz = mm->m[14];
-	const vec3_t *mp = m->vftable->GetPos(m, &tmp);
+	const vec3_t *mp = Entity_GetPos(m, &tmp);
 	float dx = mp->x - px;
 	float dy = mp->y - py;
 	float dz = mp->z - pz;
@@ -135,7 +135,7 @@ static byte Messenger_Deliver(cEntity *m, cEntity *desk, cEntity *pack) {
 			cEmbeddedFXDataPack_SetOn((cEmbeddedFXDataPack *)Obj(pack)->fx, 0);
 		}
 	}
-	pack->vftable->SetPos(pack, CGameModel_GetPos(Obj_Vtbl(pack)->GetModel(pack), &tmp));
+	Entity_SetPos(pack, CGameModel_GetPos(Obj_GetModel(pack), &tmp));
 	cObjEntity *po = (cObjEntity *)pack;
 	cModMove_Link(&po->mod, str_Empty, str_Empty);
 	po->mod.offMul = 0.0f;
@@ -162,7 +162,7 @@ void cMessengers_Think(void *obj) {
 	byte opened;
 
 	cEntity *pack = World_FindEntity(g_MessengerDataPack);
-	if (pack && !pack->vftable->IsType(pack, "item")) {
+	if (pack && !Entity_IsType(pack, "item")) {
 		pack = NULL;
 	}
 	cEntity *user = ChType_Usr0();
@@ -177,7 +177,7 @@ void cMessengers_Think(void *obj) {
 			desk = NULL;
 		} else {
 			msg = NULL;
-			if (!carrier->vftable->IsType(carrier, TYEN_WITH_LIFE) || !ChType_ActCtrl(carrier)) {
+			if (!Entity_IsType(carrier, TYEN_WITH_LIFE) || !ChType_ActCtrl(carrier)) {
 				desk = NULL;
 			}
 		}
@@ -198,14 +198,14 @@ void cMessengers_Think(void *obj) {
 				self->desk = NULL;
 				self->target = NULL;
 				self->timer = 5.0f;
-				CGameModel_GetPos(Obj_Vtbl(pack)->GetModel(pack), &old);
-				int node = CGameModel_FindRenderNode(Obj_Vtbl(desk)->GetModel(desk), "DC_DataPack");
-				const matrix_t *mm = CGameModel_NodeMatrix(Obj_Vtbl(desk)->GetModel(desk), &mat, node, 0, NULL, 0);
+				CGameModel_GetPos(Obj_GetModel(pack), &old);
+				int node = CGameModel_FindRenderNode(Obj_GetModel(desk), "DC_DataPack");
+				const matrix_t *mm = CGameModel_NodeMatrix(Obj_GetModel(desk), &mat, node, 0, NULL, 0);
 				p.x = mm->m[12];
 				p.y = mm->m[13];
 				p.z = mm->m[14];
-				pack->vftable->SetPos(pack, &p);
-				CGameModel_SetPos(Obj_Vtbl(pack)->GetModel(pack), &old);
+				Entity_SetPos(pack, &p);
+				CGameModel_SetPos(Obj_GetModel(pack), &old);
 				g_MessengerTubeState = g_MessengerTubeState == 0;
 				if (Obj(pack)->fx) {
 					cEmbeddedFXDataPack_SetOn((cEmbeddedFXDataPack *)Obj(pack)->fx,
@@ -271,9 +271,9 @@ void cMessengers_Think(void *obj) {
 				cEntity *t = cMessengers_FindDesk(self);
 				self->target = t;
 				if (t) {
-					l->vftable->SetState(&l->logic, GENCHAR_GET_IT, t);
+					Logic_SetState(l, GENCHAR_GET_IT, t);
 				} else {
-					l->vftable->RestartState(&l->logic);
+					Logic_RestartState(l);
 				}
 			} else if (l->state == GENCHAR_ATTACK) {
 				self->target = NULL;
@@ -291,7 +291,7 @@ void cMessengers_Think(void *obj) {
 update:
 	for (Nto1Node *n = Logic_ListFirst(self->list); n; n = Logic_ListNext(n)) {
 		cLocalLogic *l = Logic_GetLocalLogic(n->data);
-		Logic_Vtbl(l)->Update(l, MSG_THINK_STEP);
+		Logic_Update(l, MSG_THINK_STEP);
 	}
 }
 
@@ -320,10 +320,10 @@ static void cMessengers_SetStateAll(cMessengers *self, int state, cEntity *e) {
 		}
 		if (state == -1) {
 			if (!l->idle && !l->alwaysLock) {
-				l->vftable->RestartState(&l->logic);
+				Logic_RestartState(l);
 			}
 		} else {
-			l->vftable->SetState(&l->logic, state, e);
+			Logic_SetState(l, state, e);
 		}
 	}
 }
@@ -350,7 +350,7 @@ static cLocalLogic *cMessengerLocalLogic_Delete(cLocalLogic *base, byte flags) {
 static void cMessengerLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
 	cMessengerLocalLogic *self = (cMessengerLocalLogic *)base;
 	(void)self;
-	ai->vftable->SetState(&ai->base.base, 1, 1.0, 0);
+	AIChar_SetState(ai, 1, 1.0, 0);
 }
 
 /* vf17: team 3, 0 while it attacks a player */
@@ -360,7 +360,7 @@ static void cMessengerLocalLogic_Update(cLocalLogic *elem, float dt) {
 	WLife(self->base.parent)->arrow.tgType = 3;
 	if (self->base.state == GENCHAR_ATTACK) {
 		cEntity *t = self->base.target.target;
-		if (t && t->vftable->IsType(t, TYEN_WALKCHAR) && cWalkCharEntity_GetOwnerSlot(t) != -1) {
+		if (t && Entity_IsType(t, TYEN_WALKCHAR) && cWalkCharEntity_GetOwnerSlot(t) != -1) {
 			WLife(self->base.parent)->arrow.tgType = 0;
 		}
 	}
@@ -373,19 +373,19 @@ static void cMessengerLocalLogic_GoTo(cLocalLogic *elem, cAIChar *ai, cEntity *e
 	vec3_t t1, t2, d, dir;
 	matrix_t m;
 
-	if (!e->vftable->IsType(e, TYEN_WITH_LIFE) || !Obj_Vtbl(e)->GetModel(e)) {
+	if (!Entity_IsType(e, TYEN_WITH_LIFE) || !Obj_GetModel(e)) {
 		cGenCharLocalLogic_GoTo(&self->base.logic, ai, e);
 		return;
 	}
-	int node = CGameModel_FindRenderNode(Obj_Vtbl(e)->GetModel(e), "DC_DataPack");
+	int node = CGameModel_FindRenderNode(Obj_GetModel(e), "DC_DataPack");
 	if (node == -1) {
 		cGenCharLocalLogic_GoTo(&self->base.logic, ai, e);
 		return;
 	}
 	float speed = World_IsEasySingle() ? 0.25f : g_MessengerGotoSpeed;
 	cEntity *p = self->base.parent;
-	const vec3_t *pp = p->vftable->GetPos(p, &t1);
-	const vec3_t *ep = e->vftable->GetPos(e, &t2);
+	const vec3_t *pp = Entity_GetPos(p, &t1);
+	const vec3_t *ep = Entity_GetPos(e, &t2);
 	d.y = ep->y - pp->y;
 	d.x = ep->x - pp->x;
 	d.z = ep->z - pp->z;
@@ -398,9 +398,9 @@ static void cMessengerLocalLogic_GoTo(cLocalLogic *elem, cAIChar *ai, cEntity *e
 		dir.y = d.y * inv;
 		dir.z = d.z * inv;
 	}
-	const matrix_t *mm = CGameModel_NodeMatrix(Obj_Vtbl(e)->GetModel(e), &m, node, 0, NULL, 0);
+	const matrix_t *mm = CGameModel_NodeMatrix(Obj_GetModel(e), &m, node, 0, NULL, 0);
 	vec3_t np = { mm->m[12], mm->m[13], mm->m[14] };
-	ai->vftable->SetState(&ai->base.base, 4, np, dir, 70.0, (double)speed);
+	AIChar_SetState(ai, 4, np, dir, 70.0, (double)speed);
 }
 
 /* the vtable of cMessengerLocalLogic */

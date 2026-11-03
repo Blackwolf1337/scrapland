@@ -124,7 +124,7 @@ static byte cGridElements_Add(cGridElements *self, const vec3_t *p, const void *
 	const InfoTrafficNode *info = data;
 	CHECK(!((p->x > self->max.x) || (p->x < self->min.x) || (p->y > self->max.y) || (p->y < self->min.y) ||
 		(p->z > self->max.z) || (p->z < self->min.z)));
-	int i = self->vftable->CellIndex(self, p);
+	int i = GridElems_CellIndex(self, p);
 	if (!self->cells[i]) {
 		cTrafficCell *cell = operator_new(sizeof(*cell));
 		if (cell) {
@@ -142,7 +142,7 @@ byte cGridElements_GetCellAt(cGridElements *self, const vec3_t *p, void *cell) {
 		CHECK(!"!((point.x > PMax.x) || (point.x < PMin.x) || (point.y > PMax.y) || (point.y < PMin.y) || "
 			"(point.z > PMax.z) || (point.z < PMin.z))");
 	}
-	*out = self->cells[self->vftable->CellIndex(self, p)];
+	*out = self->cells[GridElems_CellIndex(self, p)];
 	return 1;
 }
 
@@ -275,9 +275,9 @@ static void Traffic_SearchDir(vec3_t *out, const vec3_t *pos) {
 }
 
 /* the box of the visibility graph (vtable slot 1 of CNodesWorld) */
-static void NodesWorld_GetBox(vec3_t *min, vec3_t *max) {
+static void Traffic_WorldBox(vec3_t *min, vec3_t *max) {
 	CNodesWorld *w = g_NodesWorld;
-	w->sup.vftable->GetBox(w, min, max);
+	NodesWorld_GetBox(w, min, max);
 }
 
 CNodesTraffic *CNodesTraffic_ctor(void *mem) {
@@ -333,7 +333,7 @@ void CNodesTraffic_dtor(CNodesTraffic *self) {
 		Mem_Free(self->mediumLight);
 	}
 	if (self->grid) {
-		self->grid->vftable->Delete(self->grid, 1);
+		GridElems_Delete(self->grid, 1);
 		self->grid = NULL;
 	}
 	TrafficErrors_Clear(&self->errors);
@@ -386,7 +386,7 @@ float CNodesTraffic_GetRadius(CNodesTraffic *self, int track) {
 }
 
 static void CNodesTraffic_Init(CNodesTraffic *self) {
-	self->vftable->Load(self, 1);
+	Traffic_Load(self, 1);
 }
 
 /* the track lists by type of Load: freed, made again with the indices */
@@ -594,7 +594,7 @@ void CNodesTraffic_Load(CNodesTraffic *self, byte fill) {
 	self->mediumLight = Traffic_SetList(self->mediumLight, lists[4], self->numMediumLight,
 		"ERROR AI: IniNodesTraffic - Insuficiente memoria ListTrafficTrackMediumLight.\n",
 		"cNodesTraffic_IniNodesTraffic_new_ListTrafficTrackMediumLight_Fail", __LINE__);
-	self->vftable->BuildGrid(self);
+	Traffic_BuildGrid(self);
 }
 
 byte CNodesTraffic_RandomNode(CNodesTraffic *self, vec3_t *out, int type, const vec3_t *pos, float distMin,
@@ -603,7 +603,7 @@ byte CNodesTraffic_RandomNode(CNodesTraffic *self, vec3_t *out, int type, const 
 	int count;
 
 	(void)unused;
-	self->vftable->FindNodes(self, pos, type, list, 500, &count, 0.0f, distMin, distMax, 0, 0);
+	Traffic_FindNodes(self, pos, type, list, 500, &count, 0.0f, distMin, distMax, 0, 0);
 	if (!count) {
 		return 0;
 	}
@@ -637,17 +637,17 @@ byte CNodesTraffic_GetDirs(CNodesTraffic *self, vec3_t *prev, vec3_t *next, int 
 	vec3_t p, q;
 	int t, n;
 
-	if (!self->vftable->GetNode(self, &p, track, node)) {
+	if (!Traffic_GetNode(self, &p, track, node)) {
 		return 0;
 	}
-	if (!self->vftable->NextAway(self, &q, track, node, &t, &n)) {
+	if (!Traffic_NextAway(self, &q, track, node, &t, &n)) {
 		next->x = 0.0f;
 		next->y = 0.0f;
 		next->z = 0.0f;
 	} else {
 		Traffic_Normalize(next, q.x - p.x, q.y - p.y, q.z - p.z);
 	}
-	if (!self->vftable->PrevAway(self, &q, track, node, &t, &n)) {
+	if (!Traffic_PrevAway(self, &q, track, node, &t, &n)) {
 		prev->x = 0.0f;
 		prev->y = 0.0f;
 		prev->z = 0.0f;
@@ -670,7 +670,7 @@ byte CNodesTraffic_NextAway(CNodesTraffic *self, vec3_t *out, int track, int nod
 	if (node == self->tracks[track].numNodes - 1 && !self->tracks[track].loop) {
 		return 0;
 	}
-	self->vftable->GetNode(self, &p, track, node);
+	Traffic_GetNode(self, &p, track, node);
 	*out = p;
 	*outTrack = track;
 	*outNode = node;
@@ -693,7 +693,7 @@ byte CNodesTraffic_PrevAway(CNodesTraffic *self, vec3_t *out, int track, int nod
 	if (node == 0 && !self->tracks[track].loop) {
 		return 0;
 	}
-	self->vftable->GetNode(self, &p, track, node);
+	Traffic_GetNode(self, &p, track, node);
 	*out = p;
 	*outTrack = track;
 	*outNode = node;
@@ -734,7 +734,7 @@ cTrafficTrackInfo *CNodesTraffic_GetInfo(CNodesTraffic *self, cTrafficTrackInfo 
 void CNodesTraffic_Draw(CNodesTraffic *self) {
 	if (g_TrafficState) {
 		for (int i = 0; i < self->numTracks; i++) {
-			self->vftable->DrawTrack(self, i);
+			Traffic_DrawTrack(self, i);
 		}
 		if (g_TrafficState == 3) {
 			cTrafficErrorNode *e = self->errors.head;
@@ -749,11 +749,11 @@ void CNodesTraffic_Draw(CNodesTraffic *self) {
 			}
 		}
 		if (g_TrafficState == 4 && self->grid) {
-			self->grid->vftable->Draw(self->grid, 0xffffff);
+			GridElems_Draw(self->grid, 0xffffff);
 		}
 	}
 	if (g_ShowNumTrafficAI) {
-		self->vftable->DrawTrack(self, g_ShowNumTrafficAI);
+		Traffic_DrawTrack(self, g_ShowNumTrafficAI);
 	}
 }
 
@@ -818,7 +818,7 @@ void CNodesTraffic_DrawTrack(CNodesTraffic *self, int track) {
 }
 
 static void CNodesTraffic_BuildGrid(CNodesTraffic *self) {
-	NodesWorld_GetBox(&self->min, &self->max);
+	Traffic_WorldBox(&self->min, &self->max);
 	if (g_IsMapOutDoor) {
 		char name[0x14];
 		vec3_t pos;
@@ -836,7 +836,7 @@ static void CNodesTraffic_BuildGrid(CNodesTraffic *self) {
 	double ny = ceil((double)((self->max.y - self->min.y) / self->cellSize));
 	double nz = ceil((double)((self->max.z - self->min.z) / self->cellSize));
 	if (self->grid) {
-		self->grid->vftable->Delete(self->grid, 1);
+		GridElems_Delete(self->grid, 1);
 	}
 	cGridElements *grid = operator_new(sizeof(cGridElements));
 	if (grid) {
@@ -849,7 +849,7 @@ static void CNodesTraffic_BuildGrid(CNodesTraffic *self) {
 	for (int t = 0; t < self->numTracks; t++) {
 		for (int n = 0; n < self->tracks[t].numNodes; n++) {
 			InfoTrafficNode info = { t, n };
-			self->grid->vftable->Add(self->grid, &self->tracks[t].nodes[n], &info);
+			GridElems_Add(self->grid, &self->tracks[t].nodes[n], &info);
 		}
 	}
 }
@@ -862,21 +862,21 @@ void CNodesTraffic_FindNodes(CNodesTraffic *self, const vec3_t *pos, int type, I
 
 	CHECK(distMin <= distMax);
 	*count = 0;
-	self->grid->vftable->CellCoords(self->grid, pos, &c[0], &c[1], &c[2]);
-	self->grid->vftable->GetCellSize(self->grid, &cs);
+	GridElems_CellCoords(self->grid, pos, &c[0], &c[1], &c[2]);
+	GridElems_GetCellSize(self->grid, &cs);
 	Traffic_SearchDir(&dir, pos);
 	/* the point distMin along the diagonal still in the cell of pos: the nodes of the cell first */
 	if (c[0] == (int)(((pos->x + dir.x * distMin) - self->min.x) / cs.x) &&
 		c[1] == (int)(((pos->y + dir.y * distMin) - self->min.y) / cs.y) &&
 		c[2] == (int)(((pos->z + dir.z * distMin) - self->min.z) / cs.z)) {
-		if (!self->grid->vftable->GetCellAt(self->grid, pos, &cell)) {
+		if (!GridElems_GetCellAt(self->grid, pos, &cell)) {
 			return;
 		}
-		self->vftable->CollectCell(self, pos, type, cell, list, max, count, radius, distMin, distMax, vis,
+		Traffic_CollectCell(self, pos, type, cell, list, max, count, radius, distMin, distMax, vis,
 			soft == 0);
 	}
 	if (*count < max) {
-		self->vftable->SearchRings(self, pos, type, list, max, count, radius, distMin, distMax, soft, vis);
+		Traffic_SearchRings(self, pos, type, list, max, count, radius, distMin, distMax, soft, vis);
 	}
 }
 
@@ -922,8 +922,8 @@ static int Rings_Cell(CNodesTraffic *self, const int *x, const int *y, const int
 	float e) {
 	cTrafficCell *cell;
 
-	self->grid->vftable->GetCell(self->grid, x, y, z, &cell);
-	self->vftable->CollectCell(self, pos, type, cell, list, max, count, radius, distMin, distMax, vis, soft == 0);
+	GridElems_GetCell(self->grid, x, y, z, &cell);
+	Traffic_CollectCell(self, pos, type, cell, list, max, count, radius, distMin, distMax, vis, soft == 0);
 	return *count >= max || (*count > 0 && soft && e >= distMax);
 }
 
@@ -946,9 +946,9 @@ void CNodesTraffic_SearchRings(CNodesTraffic *self, const vec3_t *pos, int type,
 
 	g_TrafficSearchDist = g_DistGetPVisTrafficAI;
 	CHECK(distMin <= distMax);
-	self->grid->vftable->CellCoords(self->grid, pos, &c[0], &c[1], &c[2]);
-	self->grid->vftable->GetDivs(self->grid, &n[0], &n[1], &n[2]);
-	self->grid->vftable->GetCellSize(self->grid, &cs);
+	GridElems_CellCoords(self->grid, pos, &c[0], &c[1], &c[2]);
+	GridElems_GetDivs(self->grid, &n[0], &n[1], &n[2]);
+	GridElems_GetCellSize(self->grid, &cs);
 	Traffic_SearchDir(&dir, pos);
 	/* the start box: from the cell of pos to the cell of the point distMin along the diagonal */
 	int dx = (int)(((pos->x + dir.x * distMin) - self->min.x) / cs.x) - c[0];
@@ -1069,16 +1069,16 @@ void CNodesTraffic_SearchRings(CNodesTraffic *self, const vec3_t *pos, int type,
 /* a node 100 away after or before the node, the side by rand(); 1 if it is the node after */
 static byte Traffic_AwayNode(CNodesTraffic *self, vec3_t *p, int track, int node, int *t, int *n) {
 	if (crt_rand() % 2 == 0) {
-		if (self->vftable->NextAway(self, p, track, node, t, n)) {
+		if (Traffic_NextAway(self, p, track, node, t, n)) {
 			return 1;
 		}
-		self->vftable->PrevAway(self, p, track, node, t, n);
+		Traffic_PrevAway(self, p, track, node, t, n);
 		return 0;
 	}
-	if (self->vftable->PrevAway(self, p, track, node, t, n)) {
+	if (Traffic_PrevAway(self, p, track, node, t, n)) {
 		return 0;
 	}
-	self->vftable->NextAway(self, p, track, node, t, n);
+	Traffic_NextAway(self, p, track, node, t, n);
 	return 1;
 }
 
@@ -1182,7 +1182,7 @@ void CNodesTraffic_Analyze(CNodesTraffic *self) {
 	byte bad = 0;
 	int numBad = 0;
 
-	self->vftable->Load(self, 0);
+	Traffic_Load(self, 0);
 	size_t n = strnlen(g_pApp->levelPath, sizeof(path) - 0x18);
 	memcpy(path, g_pApp->levelPath, n);
 	memcpy(path + n, "/AI/AnalisisTraffic.txt", sizeof("/AI/AnalisisTraffic.txt"));
@@ -1194,7 +1194,7 @@ void CNodesTraffic_Analyze(CNodesTraffic *self) {
 	cTrafficErrorList *errors = &self->errors;
 	TrafficErrors_Clear(errors);
 	NT_Write(f, "SEGMENTOS TRAFICO COLISIONANDO CON ESCENARIO\n\n");
-	g_NodesWorld->sup.vftable->GetBox(g_NodesWorld, &bmin, &bmax);
+	NodesWorld_GetBox(g_NodesWorld, &bmin, &bmax);
 	for (int i = 0; i < self->numTracks; i++) {
 		cTrafficTrack *tr = &self->tracks[i];
 		for (int j = 0; j < tr->numNodes - 1; j++) {
@@ -1250,7 +1250,7 @@ void CNodesTraffic_Analyze(CNodesTraffic *self) {
 		Con_Bluef("ERROR: Fichero AnalisisTraffic no cerrado.\n");
 		CHECK(!"CNodesWorld_AnalizeTraffic_File_AnalisisTraffic_Not_Closed");
 	}
-	self->vftable->Load(self, 1);
+	Traffic_Load(self, 1);
 }
 
 /* the slot BuildGrid of a class that does nothing there */

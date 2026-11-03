@@ -39,6 +39,27 @@ typedef struct cNetControllerVtbl {
 	void(*Apply)(cNetController *self, cEntity *e, float dt, byte move);	/* 0x10 */
 } cNetControllerVtbl;
 
+/* calls through the slots of cNetControllerVtbl */
+static inline void NetCtl_Apply(void *self, cEntity *e, float dt, byte move) {
+	VT(cNetControllerVtbl, self)->Apply(self, e, dt, move);
+}
+
+static inline byte NetCtl_Changed(void *self, byte flags, cEntity *e) {
+	return VT(cNetControllerVtbl, self)->Changed(self, flags, e);
+}
+
+static inline void NetCtl_Read(void *self, void *msg) {
+	VT(cNetControllerVtbl, self)->Read(self, msg);
+}
+
+static inline void NetCtl_Reset(void *self) {
+	VT(cNetControllerVtbl, self)->Reset(self);
+}
+
+static inline void NetCtl_Write(void *self, int kind, cEntity *e, void *msg, int full) {
+	VT(cNetControllerVtbl, self)->Write(self, kind, e, msg, full);
+}
+
 struct cNetController {
 	const cNetControllerVtbl *vftable;	/* 0x00 */
 	float age;			/* 0x04 0.5 when a state came, then counted down by Apply */
@@ -116,12 +137,97 @@ typedef struct cObjEntityVtbl {
 	void(*Render)(cEntity *self);						/* 0xb8 */
 } cObjEntityVtbl;
 
-static inline cObjEntity *Obj(const void *e) {
-	return (cObjEntity *)e;
+/* calls through the slots of cObjEntityVtbl */
+static inline vec3_t *Obj_GetAng(void *self, vec3_t *out) {
+	return VT(cObjEntityVtbl, self)->GetAng(self, out);
 }
 
-static inline const cObjEntityVtbl *Obj_Vtbl(const cEntity *e) {
-	return (const cObjEntityVtbl *)e->vftable;
+static inline void Obj_GetCamera(void *self, vec3_t *pos, vec3_t *ang) {
+	VT(cObjEntityVtbl, self)->GetCamera(self, pos, ang);
+}
+
+static inline CGameModel *Obj_GetModel(void *self) {
+	return VT(cObjEntityVtbl, self)->GetModel(self);
+}
+
+static inline int Obj_GetNodeSlot(void *self) {
+	return VT(cObjEntityVtbl, self)->GetNodeSlot(self);
+}
+
+static inline float Obj_GetRadius(void *self) {
+	return VT(cObjEntityVtbl, self)->GetRadius(self);
+}
+
+static inline vec3_t *Obj_GetRenderAng(void *self, vec3_t *out) {
+	return VT(cObjEntityVtbl, self)->GetRenderAng(self, out);
+}
+
+static inline vec3_t *Obj_GetRenderPos(void *self, vec3_t *out) {
+	return VT(cObjEntityVtbl, self)->GetRenderPos(self, out);
+}
+
+static inline vec3_t *Obj_GetSndAng(void *self, vec3_t *out) {
+	return VT(cObjEntityVtbl, self)->GetSndAng(self, out);
+}
+
+static inline vec3_t *Obj_GetSndPos(void *self, vec3_t *out) {
+	return VT(cObjEntityVtbl, self)->GetSndPos(self, out);
+}
+
+static inline vec3_t *Obj_GetVel(void *self, vec3_t *out) {
+	return VT(cObjEntityVtbl, self)->GetVel(self, out);
+}
+
+static inline vec3_t *Obj_GetViewAng(void *self, vec3_t *out) {
+	return VT(cObjEntityVtbl, self)->GetViewAng(self, out);
+}
+
+static inline vec3_t *Obj_GetViewPos(void *self, vec3_t *out) {
+	return VT(cObjEntityVtbl, self)->GetViewPos(self, out);
+}
+
+static inline byte Obj_NetNeedsSend(void *self, float dist2) {
+	return VT(cObjEntityVtbl, self)->NetNeedsSend(self, dist2);
+}
+
+static inline void Obj_NetRead(void *self, void *msg, int isNew) {
+	VT(cObjEntityVtbl, self)->NetRead(self, msg, isNew);
+}
+
+static inline void Obj_NetWrite(void *self, float dist2, void *msg, int full) {
+	VT(cObjEntityVtbl, self)->NetWrite(self, dist2, msg, full);
+}
+
+static inline void Obj_Render(void *self) {
+	VT(cObjEntityVtbl, self)->Render(self);
+}
+
+static inline void Obj_SetAng(void *self, const vec3_t *ang) {
+	VT(cObjEntityVtbl, self)->SetAng(self, ang);
+}
+
+static inline void Obj_SetEffect(void *self, uint32_t fx) {
+	VT(cObjEntityVtbl, self)->SetEffect(self, fx);
+}
+
+static inline void Obj_SetEffectParam(void *self, int i, float v) {
+	VT(cObjEntityVtbl, self)->SetEffectParam(self, i, v);
+}
+
+static inline void Obj_SetVel(void *self, const vec3_t *vel) {
+	VT(cObjEntityVtbl, self)->SetVel(self, vel);
+}
+
+static inline void Obj_Tick(void *self, float dt) {
+	VT(cObjEntityVtbl, self)->Tick(self, dt);
+}
+
+static inline void Obj_UpdateModel(void *self) {
+	VT(cObjEntityVtbl, self)->UpdateModel(self);
+}
+
+static inline cObjEntity *Obj(const void *e) {
+	return (cObjEntity *)e;
 }
 
 /* 1 while a missile updates: cObjEntity_Update then moves the render state on by the velocity of one slot */

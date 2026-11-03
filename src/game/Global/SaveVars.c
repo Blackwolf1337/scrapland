@@ -179,9 +179,9 @@ int SaveVar_Inc(const char *name, int n) {
 		if (item) {
 			int on = 1;
 			double blink = 15.0, solid = 5.0;
-			item->vftable->Var(item, "Status2", 1, NULL, NULL, &on);
-			item->vftable->Var(item, "BlinkTime", 1, NULL, &blink, NULL);
-			item->vftable->Var(item, "SolidTime", 1, NULL, &solid, NULL);
+			ScorerItem_Var(item, "Status2", 1, NULL, NULL, &on);
+			ScorerItem_Var(item, "BlinkTime", 1, NULL, &blink, NULL);
+			ScorerItem_Var(item, "SolidTime", 1, NULL, &solid, NULL);
 			item->visible = 1;
 		}
 	}
@@ -284,7 +284,7 @@ static int SaveGame_ReadVars(cAbstractFile *f) {
 	}
 	cAbstractFile_ReadString(f, name, sizeof(name));
 	cString_Set(g_SaveDesc, name);
-	f->vftable->Read(f, &count, 4);
+	VFile_Read(f, &count, 4);
 	Con_Debugf("Loading %d values:\n", count);
 	for (int i = 0; i < count; i++) {
 		cAbstractFile_ReadString(f, name, sizeof(name));
@@ -312,7 +312,7 @@ static byte SaveGame_WriteVars(cAbstractFile *f, const char *desc) {
 		cAbstractFile_WriteString(f, desc);
 	}
 	int count = g_SaveVarCount;
-	f->vftable->Write(f, &count, 4);
+	VFile_Write(f, &count, 4);
 	Con_Debugf("Saving %d values:\n", g_SaveVarCount);
 	for (; v; v = v->next) {
 		cAbstractFile_WriteString(f, v->name);

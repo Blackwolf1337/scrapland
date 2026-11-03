@@ -22,6 +22,19 @@ typedef struct cMapElementVtbl {
 	void(*Update)(cMapElement *self, float dt);		/* 0x8 vf02 every frame */
 } cMapElementVtbl;
 
+/* calls through the slots of cMapElementVtbl */
+static inline cMapElement *MapElem_Delete(void *self, byte flags) {
+	return VT(cMapElementVtbl, self)->Delete(self, flags);
+}
+
+static inline byte MapElem_Init(void *self) {
+	return VT(cMapElementVtbl, self)->Init(self);
+}
+
+static inline void MapElem_Update(void *self, float dt) {
+	VT(cMapElementVtbl, self)->Update(self, dt);
+}
+
 /* World/MapElement: an element of the level with its model (0x2c bytes) */
 struct cMapElement {
 	const cMapElementVtbl *vftable;	/* 0x00 */
@@ -35,7 +48,7 @@ struct cMapElement {
 
 /* a new element initialized and put first into the list of the world */
 static inline void MapElement_Add(cMapElement *e) {
-	e->vftable->Init(e);
+	MapElem_Init(e);
 	e->next = World_Elements(g_pWorld);
 	World_Elements(g_pWorld) = e;
 }

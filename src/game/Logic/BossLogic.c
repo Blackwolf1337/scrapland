@@ -23,6 +23,11 @@ typedef struct cLogicBossAIVtbl {
 	byte(*Arrived)(void *self);	/* 0x4c */
 } cLogicBossAIVtbl;
 
+/* calls through the slots of cLogicBossAIVtbl */
+static inline byte BossAI_Arrived(void *self) {
+	return VT(cLogicBossAIVtbl, self)->Arrived(self);
+}
+
 cBossLocalLogic *cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity *parent) {
 	char name[0x80];
 	byte flag;
@@ -56,7 +61,7 @@ static void cBossLocalLogic_Vf33(cLocalLogic *elem, byte on) {
 	if (p && Obj(p)->move.active) {
 		cObjMove_SetTime(&Obj(p)->move, 0.0f);
 	}
-	self->base.base.vftable->SetState(&self->base.base.logic, 0, NULL);
+	Logic_SetState(self, 0, NULL);
 }
 
 static byte g_BossWasIdle;
@@ -69,7 +74,7 @@ static void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
 	if (st == 0 || st == 6) {
 		self->time = dt + self->time;
 		if (self->time >= g_BossWalkingTime) {
-			self->base.base.vftable->SetState(&self->base.base.logic, 7, NULL);
+			Logic_SetState(self, 7, NULL);
 		}
 		return;
 	}
@@ -78,8 +83,8 @@ static void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
 		if (!p) {
 			return;
 		}
-		void *ai = p->vftable->GetAI(p);
-		if (!ai || ((cAIChar *)ai)->vftable->GetState(ai) != 0 || !(*(const cLogicBossAIVtbl **)ai)->Arrived(ai)) {
+		void *ai = Entity_GetAI(p);
+		if (!ai || AIChar_GetState(ai) != 0 || !BossAI_Arrived(ai)) {
 			return;
 		}
 		cObjMove *m = &Obj(p)->move;
@@ -93,7 +98,7 @@ static void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
 		m->movePos = self->workPos;
 		cObjMove_SetTime(m, 0.5f);
 		m->fade = 3;
-		self->base.base.vftable->SetState(&self->base.base.logic, 8, NULL);
+		Logic_SetState(self, 8, NULL);
 		return;
 	}
 	if (st != 8) {
@@ -114,7 +119,7 @@ static void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
 		void *ctrl = ChType_ActCtrl(p);
 		cActCtrl_Play(ctrl, "WorkEnd", 1, 1.0f);
 		cActCtrl_SetDefLoop(ctrl, "Walk", 1);
-		self->base.base.vftable->SetState(&self->base.base.logic, 0, NULL);
+		Logic_SetState(self, 0, NULL);
 	}
 }
 
@@ -126,11 +131,11 @@ static byte cBossLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 	if (state == 7) {
 		if (cBaseLocalLogic_SetState(&self->base.base.logic, 7, target)) {
 			cEntity *p = self->base.base.parent;
-			cAIChar *ai = p->vftable->GetAI(p);
+			cAIChar *ai = Entity_GetAI(p);
 			vec3_t rot = { 0.0f, self->workAng[1], 0.0f };
 			vec3_t dir = { 0.0f, 0.0f, -1.0f };
 			Vec3_Rotate(&out, &dir, &rot);
-			ai->vftable->SetState(&ai->base.base, 4, self->workPos, out, 100.0, (double)g_GenCharRelaxSpeed);
+			AIChar_SetState(ai, 4, self->workPos, out, 100.0, (double)g_GenCharRelaxSpeed);
 		}
 		return 1;
 	}

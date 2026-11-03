@@ -197,8 +197,8 @@ void cWalkCharControl_Update(cWalkCharControl *self, cEntity *wle, float dt) {
 		}
 	} else if (self->target.target) {
 		cEntity *t = self->target.target;
-		const vec3_t *tp = t->vftable->GetPos(t, &t1);
-		const vec3_t *wp = wle->vftable->GetPos(wle, &t2);
+		const vec3_t *tp = Entity_GetPos(t, &t1);
+		const vec3_t *wp = Entity_GetPos(wle, &t2);
 		d.x = wp->x - tp->x;
 		d.y = wp->y - tp->y;
 		d.z = wp->z - tp->z;
@@ -214,14 +214,14 @@ void cWalkCharControl_Update(cWalkCharControl *self, cEntity *wle, float dt) {
 			float c = self->centerTime - dt;
 			self->centerTime = c;
 			if (!(0.0f < c)) {
-				cAction *relax = WithLife_Vtbl(wle)->GetAction(wle, "Relax");
+				cAction *relax = WithLife_GetAction(wle, "Relax");
 				if (!relax || relax->rotSpeed != 0.0f) {
 					self->centerTime = g_WalkCameraCenter;
 				} else {
 					a = WChar(wle)->view;
 					self->vRot = -a.x;
 					a = WChar(wle)->view;
-					self->hRot = NormAng(Obj_Vtbl(wle)->GetAng(wle, &t1)->y - a.y);
+					self->hRot = NormAng(Obj_GetAng(wle, &t1)->y - a.y);
 				}
 			}
 		} else {

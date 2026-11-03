@@ -85,7 +85,7 @@ void cVehicleMotorsEffects_Init(cVehicleMotorsEffects *self) {
 		CGameModel *model;
 		if (self->motors) {
 			cEntity *e = cVehicleMotors_GetOwner(self->motors);
-			model = Obj_Vtbl(e)->GetModel(e);
+			model = Obj_GetModel(e);
 		} else if (self->motor && self->motor->node[i] != -1) {
 			model = &self->motor->model[i];
 		} else {
@@ -152,7 +152,7 @@ void cVehicleMotorsEffects_Init(cVehicleMotorsEffects *self) {
 			if (!self->motor) {
 				continue;
 			}
-			CGameModel *vm = Obj_Vtbl(self->owner)->GetModel(self->owner);
+			CGameModel *vm = Obj_GetModel(self->owner);
 			int mn = self->motor->node[i];
 			if (mn == -1) {
 				continue;
@@ -428,11 +428,11 @@ void cVehicleMotorsEffects_Smoke(cVehicleMotorsEffects *self, float dt, CGamePar
 		return;
 	}
 	self->smokeTime = 0.0f;
-	vec3_t *pv = Obj_Vtbl(self->owner)->GetVel(self->owner, &v);
+	vec3_t *pv = Obj_GetVel(self->owner, &v);
 	float vx = pv->x * 0.8f;
 	float vy = pv->y * 0.8f;
 	float vz = pv->z * 0.8f;
-	CGameModel *model = Obj_Vtbl(self->owner)->GetModel(self->owner);
+	CGameModel *model = Obj_GetModel(self->owner);
 	CHECK(CGameModel_IsLoaded(model));
 	CGameModel_GetRot(model, &rot);
 	up.x = 0.0f;

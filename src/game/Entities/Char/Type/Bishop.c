@@ -80,7 +80,7 @@ static void ChType_BishopAttack(cAbstractFile *params) {
 	float amax = (g_BishopAngleVariation * M_PI_F) / 180.0f;
 	float amin = -amax;
 	float r = FxElem_Rand((double)(amax - amin), (double)amin);
-	const vec3_t *a = Obj_Vtbl(v)->GetAng(v, &t1);
+	const vec3_t *a = Obj_GetAng(v, &t1);
 	rot.x = a->x + 0.0f;
 	rot.y = a->y + r;
 	rot.z = a->z + 0.0f;
@@ -88,11 +88,11 @@ static void ChType_BishopAttack(cAbstractFile *params) {
 	imp.y = 0.0f;
 	imp.z = 1000.0f;
 	const vec3_t *p = Vec3_Rotate(&t2, &imp, &rot);
-	const vec3_t *vel = Obj_Vtbl(v)->GetVel(v, &t3);
+	const vec3_t *vel = Obj_GetVel(v, &t3);
 	nv.x = p->x + vel->x;
 	nv.y = vel->y + p->y;
 	nv.z = vel->z + p->z;
-	Obj_Vtbl(v)->SetVel(v, &nv);
+	Obj_SetVel(v, &nv);
 	if (!cWalkCharEntity_GetOwnerSlot(v)) {
 		const char *tn = g_GearTargetName;
 		if (tn && *tn) {
@@ -104,12 +104,12 @@ static void ChType_BishopAttack(cAbstractFile *params) {
 	aim.y = 0.0f;
 	aim.z = 0.0f;
 	if (!WChar(v)->viewLock) {
-		aim.x = Obj_Vtbl(v)->GetAng(v, &t1)->x;
-		aim.y = Obj_Vtbl(v)->GetAng(v, &t1)->y;
+		aim.x = Obj_GetAng(v, &t1)->x;
+		aim.y = Obj_GetAng(v, &t1)->y;
 		target = NULL;
-	} else if (target && target->vftable->IsType(target, TYEN_WITH_LIFE)) {
-		const vec3_t *tp = target->vftable->GetPos(target, &t1);
-		const vec3_t *vp = v->vftable->GetPos(v, &t2);
+	} else if (target && Entity_IsType(target, TYEN_WITH_LIFE)) {
+		const vec3_t *tp = Entity_GetPos(target, &t1);
+		const vec3_t *vp = Entity_GetPos(v, &t2);
 		d.y = vp->y - tp->y;
 		d.z = vp->z - tp->z;
 		d.x = vp->x - tp->x;
@@ -117,15 +117,15 @@ static void ChType_BishopAttack(cAbstractFile *params) {
 		aim.x = hit.x;
 		aim.y = hit.y;
 	} else {
-		v->vftable->GetTargetAngle(v, &aim.x, dist, &target);
+		Entity_GetTargetAngle(v, &aim.x, dist, &target);
 	}
-	v->vftable->AimWeapon(v, aim.x, aim.y, &dist, &hit, &target, 0x11);
-	if (target && target->vftable->IsType(target, TYEN_WITH_LIFE)) {
+	Entity_AimWeapon(v, aim.x, aim.y, &dist, &hit, &target, 0x11);
+	if (target && Entity_IsType(target, TYEN_WITH_LIFE)) {
 		if (WChar(target)->wl.obj.cam) {
 			cPad_Rumble(&g_Pads[0], 1.0f, 0.0f, 0.5f);
 		}
 		int damage = g_BishopWeaponDamage;
-		if (v->vftable->GetAI(v) && World_IsEasySingle()) {
+		if (Entity_GetAI(v) && World_IsEasySingle()) {
 			damage = damage / 2;
 		}
 		if (!WChar(target)->wl.god) {
@@ -150,7 +150,7 @@ static void ChType_BishopAttack(cAbstractFile *params) {
 		}
 		cLocalLogic *l = Logic_GetLocalLogic(target);
 		if (l) {
-			Logic_Vtbl(l)->OnShot(l, v);
+			Logic_OnShot(l, v);
 		}
 	} else {
 		target = NULL;
@@ -162,8 +162,8 @@ static void ChType_BishopAttack(cAbstractFile *params) {
 	if (!el->started) {
 		el->started = 1;
 	}
-	CGameModel_GetPos(Obj_Vtbl(v)->GetModel(v), &mp);
-	CGameModel_GetRot(Obj_Vtbl(v)->GetModel(v), &mr);
+	CGameModel_GetPos(Obj_GetModel(v), &mp);
+	CGameModel_GetRot(Obj_GetModel(v), &mr);
 	/* the end of the ray off the point it hits by a random radius in a random direction */
 	float off = g_BishopAttackRandOff;
 	float rr = FxElem_Rand((double)off, 0.0);
@@ -187,7 +187,7 @@ static void ChType_BishopAttack(cAbstractFile *params) {
 	from.z = s->z + mp.z;
 	to = hit;
 	if (target) {
-		to = *Obj_Vtbl(target)->GetViewPos(target, &t1);
+		to = *Obj_GetViewPos(target, &t1);
 	}
 	FXMisc_SetEntity(el, v);
 	float k1 = FxElem_Rand(0.20000004768371582, 0.8999999761581421);
@@ -200,13 +200,11 @@ static void ChType_BishopAttack(cAbstractFile *params) {
 	from2.y = rvy * k2 + from.y;
 	cObjElementFXBishopAttack_SetLine(el, from2.x, from2.y, from2.z, to2.x, to2.y, to2.z);
 	const char *snd1 = g_BishopShootSound;
-	CSoundSys *snd = g_pSound;
 	int vol = Snd_Volume(g_BishopShootSoundVol);
-	snd->vftable->PlayAt(g_pSound, snd1, &from, vol);
+	SoundSys_PlayAt(g_pSound, snd1, &from, vol);
 	const char *snd2 = g_BishopHitSound;
-	snd = g_pSound;
 	vol = Snd_Volume(g_BishopHitSoundVol);
-	snd->vftable->PlayAt(g_pSound, snd2, &to, vol);
+	SoundSys_PlayAt(g_pSound, snd2, &to, vol);
 	if (WChar(v)->wl.obj.cam) {
 		cPad_Rumble(&g_Pads[0], 0.5f, 0.5f, 0.25f);
 	}

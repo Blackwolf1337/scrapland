@@ -34,16 +34,16 @@ static void AICtrl_SentinelDeath(cAbstractFile *params);
 
 /* the AI of the character may act */
 static inline byte AICtrl_AIActive(cAIChar *ai) {
-	return ai->vftable->GetRepos(&ai->base.base);
+	return AIChar_GetRepos(ai);
 }
 
 /* the sentinel logic: the accuse (no other sentinel accuses) and the think */
 static inline byte AICtrl_SentinelAccuses(cBaseLocalLogic *l) {
-	return Sentinel_Vtbl(l)->Seen(&l->logic);
+	return Sentinel_Seen(l);
 }
 
 static inline void AICtrl_SentinelUpdate(cBaseLocalLogic *l, float dt, byte other) {
-	Sentinel_Vtbl(l)->Think(&l->logic, dt, other);
+	Sentinel_Think(l, dt, other);
 }
 
 /* prefix and the rest of a name, like "Gear" and the number of "Police01" (the original copies unbounded) */
@@ -60,7 +60,7 @@ static void AICtrl_Rename(char *buf, const char *prefix, const char *rest) {
 }
 
 static inline cEntity *AICtrl_Model(cEntity *e) {
-	return (cEntity *)Obj_Vtbl(e)->GetModel(e);
+	return (cEntity *)Obj_GetModel(e);
 }
 
 void *AICtrl_ctor(void *ctrl) {
@@ -122,8 +122,8 @@ static void AICtrl_Belligerant(void *ctrl) {
 		if (g1 && g2) {
 			cLocalLogic *l1 = g1->lLogic, *l2 = g2->lLogic;
 			if (l1 && l2) {
-				Logic_Vtbl(l1)->SetState(l1, 2, g2);
-				Logic_Vtbl(l2)->SetState(l2, 2, g1);
+				Logic_SetState(l1, 2, g2);
+				Logic_SetState(l2, 2, g1);
 				return;
 			}
 		}
@@ -149,8 +149,8 @@ static void AICtrl_Belligerant(void *ctrl) {
 		}
 	}
 	if (first && second) {
-		fl->vftable->SetState(&fl->logic, 2, second);
-		sl->vftable->SetState(&sl->logic, 2, first);
+		Logic_SetState(fl, 2, second);
+		Logic_SetState(sl, 2, first);
 	}
 }
 
@@ -161,12 +161,12 @@ static byte AICtrl_CanFuse(void *ctrl, cEntity *e) {
 	cEntity *hit;
 
 	(void)ctrl;
-	if (!e || !e->vftable->IsType(e, TYEN_WALKCHAR) || WChar(e)->wl.life <= 0 || strcmp(Logic_TypeName(e),
+	if (!e || !Entity_IsType(e, TYEN_WALKCHAR) || WChar(e)->wl.life <= 0 || strcmp(Logic_TypeName(e),
 		"Police")) {
 		return 0;
 	}
 	cBaseLocalLogic *l = (cBaseLocalLogic *)Logic_GetLocalLogic(e);
-	if (!l || !AICtrl_AIActive(e->vftable->GetAI(e)) || l->busy) {
+	if (!l || !AICtrl_AIActive(Entity_GetAI(e)) || l->busy) {
 		return 0;
 	}
 	int st = l->state;
@@ -177,7 +177,7 @@ static byte AICtrl_CanFuse(void *ctrl, cEntity *e) {
 	if (World_FindEntity(name)) {
 		return 0;
 	}
-	const vec3_t *p = e->vftable->GetPos(e, &t);
+	const vec3_t *p = Entity_GetPos(e, &t);
 	c.x = p->x + 0.0f;
 	c.y = p->y + 145.0f;
 	c.z = p->z + 0.0f;
@@ -192,7 +192,7 @@ static byte AICtrl_CanBePolice(void *ctrl, cEntity *e) {
 	char name[0x80];
 
 	(void)ctrl;
-	if (!e || !e->vftable->IsType(e, TYEN_WALKCHAR) || WChar(e)->wl.life <= 0 || strcmp(Logic_TypeName(e),
+	if (!e || !Entity_IsType(e, TYEN_WALKCHAR) || WChar(e)->wl.life <= 0 || strcmp(Logic_TypeName(e),
 		"Gear")) {
 		return 0;
 	}
@@ -210,9 +210,9 @@ byte AICtrl_GearToPolice(void *ctrl, cEntity *gear) {
 	}
 	AICtrl_Rename(name, "Police", gear->name + 4);
 	cPy_Function_AddParamS(g_CreatePolice, name);
-	cPy_Function_AddParamF(g_CreatePolice, gear->vftable->GetPos(gear, &t)->x);
-	cPy_Function_AddParamF(g_CreatePolice, gear->vftable->GetPos(gear, &t)->y);
-	cPy_Function_AddParamF(g_CreatePolice, gear->vftable->GetPos(gear, &t)->z);
+	cPy_Function_AddParamF(g_CreatePolice, Entity_GetPos(gear, &t)->x);
+	cPy_Function_AddParamF(g_CreatePolice, Entity_GetPos(gear, &t)->y);
+	cPy_Function_AddParamF(g_CreatePolice, Entity_GetPos(gear, &t)->z);
 	cPy_Function_Execute(g_CreatePolice, 0);
 	(void)World_FindEntity(name);
 	cEntity_Del(gear);
@@ -242,7 +242,7 @@ static void AICtrl_Think(void *ctrl) {
 		}
 	} else {
 		if ((float)(Weap_Rand01() * 4.5 - 3.5) > 0.0f) {
-			cEntity *g = cEntityList_Nearest(self->gears, self->usr->vftable->GetPos(self->usr, &t), NULL, NULL);
+			cEntity *g = cEntityList_Nearest(self->gears, Entity_GetPos(self->usr, &t), NULL, NULL);
 			if (g) {
 				Sound_PlayVoice(g->name, "Chase", NULL, 1);
 			}
@@ -250,9 +250,9 @@ static void AICtrl_Think(void *ctrl) {
 		self->chased = 0;
 	}
 	if (self->chased) {
-		cEntity *g = cEntityList_Nearest(self->gears, self->usr->vftable->GetPos(self->usr, &t), NULL, NULL);
+		cEntity *g = cEntityList_Nearest(self->gears, Entity_GetPos(self->usr, &t), NULL, NULL);
 		if (!g) {
-			g = cEntityList_Nearest(g_pWorld->logic.genChars.police, self->usr->vftable->GetPos(self->usr, &t), NULL,
+			g = cEntityList_Nearest(g_pWorld->logic.genChars.police, Entity_GetPos(self->usr, &t), NULL,
 				NULL);
 		}
 		if (g && Sound_PlayVoice(g->name, "Abort", NULL, 1)) {
@@ -278,8 +278,8 @@ static byte AICtrl_Fuse(void *ctrl, cEntity *police, cEntity **out) {
 		return 0;
 	}
 	cActCtrl_Play(ChType_ActCtrl(police), "Fusion", 1, 1.0f);
-	o->move.movePos = *police->vftable->GetPos(police, &t);
-	o->move.moveAng = *Obj_Vtbl(police)->GetAng(police, &t);
+	o->move.movePos = *Entity_GetPos(police, &t);
+	o->move.moveAng = *Obj_GetAng(police, &t);
 	cObjMove_SetTime(&o->move, 0.01f);
 	cEntity_CollisionOff(police);
 	cPrimitive_SetSize(&WChar(police)->wl.prim, 0.0f);
@@ -287,16 +287,16 @@ static byte AICtrl_Fuse(void *ctrl, cEntity *police, cEntity **out) {
 	WChar(police)->wl.god = 1;
 	AICtrl_Rename(name, "Gear", police->name + 6);
 	cPy_Function_AddParamS(g_CreateGear, name);
-	cPy_Function_AddParamF(g_CreateGear, police->vftable->GetPos(police, &t)->x);
-	cPy_Function_AddParamF(g_CreateGear, police->vftable->GetPos(police, &t)->y);
-	cPy_Function_AddParamF(g_CreateGear, police->vftable->GetPos(police, &t)->z);
+	cPy_Function_AddParamF(g_CreateGear, Entity_GetPos(police, &t)->x);
+	cPy_Function_AddParamF(g_CreateGear, Entity_GetPos(police, &t)->y);
+	cPy_Function_AddParamF(g_CreateGear, Entity_GetPos(police, &t)->z);
 	cPy_Function_Execute(g_CreateGear, 0);
 	cEntity *gear = World_FindEntity(name);
 	CHECK(gear);
-	CHECK(gear->vftable->IsType(gear, TYEN_WALKCHAR));
-	Obj_Vtbl(gear)->SetEffect(gear, 3);
-	Obj_Vtbl(gear)->SetEffectParam(gear, 0, 1.0f);
-	Obj_Vtbl(gear)->SetAng(gear, Obj_Vtbl(police)->GetAng(police, &t));
+	CHECK(Entity_IsType(gear, TYEN_WALKCHAR));
+	Obj_SetEffect(gear, 3);
+	Obj_SetEffectParam(gear, 0, 1.0f);
+	Obj_SetAng(gear, Obj_GetAng(police, &t));
 	cActCtrl_Play(ChType_ActCtrl(gear), "PostFusion", 1, 1.0f);
 	cTimer_SetSpeedChecked(&Obj(gear)->timer, 0.001f);
 	WChar(gear)->wl.god = 1;
@@ -314,16 +314,16 @@ void AICtrl_GearAttack(void *ctrl, cEntity *target, int seen) {
 	float d1, d2, d;
 
 	if (self->attacking < 2 && AICtrl_Model(target) && CGameModel_IsVisible((CGameModel *)AICtrl_Model(target))) {
-		cEntity *gear = cEntityList_Nearest(self->gears, target->vftable->GetPos(target, &t1), target, &d1);
+		cEntity *gear = cEntityList_Nearest(self->gears, Entity_GetPos(target, &t1), target, &d1);
 		byte free = 0;
 		if (gear) {
-			const vec3_t *tp = target->vftable->GetPos(target, &t2);
-			if (!Engine_TestLine(gear->vftable->GetPos(gear, &t3), tp, NULL, NULL)) {
+			const vec3_t *tp = Entity_GetPos(target, &t2);
+			if (!Engine_TestLine(Entity_GetPos(gear, &t3), tp, NULL, NULL)) {
 				free = 1;
 				goto call;
 			}
 		}
-		cEntity *police = cEntityList_Nearest(g_pWorld->logic.genChars.police, target->vftable->GetPos(target, &t3),
+		cEntity *police = cEntityList_Nearest(g_pWorld->logic.genChars.police, Entity_GetPos(target, &t3),
 			target, &d2);
 		if (d1 > d2) {
 			if (police) {
@@ -338,11 +338,11 @@ call:
 	}
 bishops:
 	if (g_BishopAttackOnAlarm && target && target == cWorld_GetUsrEntity(g_pWorld, 0)) {
-		cEntity *b = cEntityList_Nearest(g_pWorld->logic.genChars.bishops, target->vftable->GetPos(target, &t1),
+		cEntity *b = cEntityList_Nearest(g_pWorld->logic.genChars.bishops, Entity_GetPos(target, &t1),
 			target, &d);
 		cBaseLocalLogic *l;
 		if (b && (l = (cBaseLocalLogic *)Logic_GetLocalLogic(b)) && l->state != 4 && 3000.0f > d) {
-			l->vftable->SetState(&l->logic, 4, target);
+			Logic_SetState(l, 4, target);
 		}
 	}
 }
@@ -354,7 +354,7 @@ static void AICtrl_UpdateGears(void *ctrl) {
 
 	for (n = Logic_ListFirst(self->gears); n; n = Logic_ListNext(n)) {
 		cLocalLogic *l = Logic_GetLocalLogic(n->data);
-		Logic_Vtbl(l)->Update(l, 0.5f);
+		Logic_Update(l, 0.5f);
 	}
 	self->attacking = 0;
 	for (n = Logic_ListFirst(self->gears); n; n = Logic_ListNext(n)) {
@@ -382,18 +382,18 @@ static void AICtrl_Police2GearEnd(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, name, sizeof(name));
 	cAbstractFile_ReadString(params, event, sizeof(event));
-	params->vftable->Read(params, &f, 4);
+	VFile_Read(params, &f, 4);
 	cEntity *poli = World_FindEntity(name);
 	if (!poli) {
 		Con_Bluef("ERROR!:Police2GearEnd('%s','%s',%f):\n\tEntity Not found!\n", name, event, (double)f);
 		return;
 	}
-	CHECK(poli->vftable->IsType(poli, TYEN_WALKCHAR));
+	CHECK(Entity_IsType(poli, TYEN_WALKCHAR));
 	AICtrl_Rename(gname, "Gear", poli->name + 6);
 	cEntity *gear = World_FindEntity(gname);
 	CHECK(gear);
-	Obj_Vtbl(gear)->SetEffect(gear, 0);
-	Obj_Vtbl(gear)->SetEffectParam(gear, 0, 0.0f);
+	Obj_SetEffect(gear, 0);
+	Obj_SetEffectParam(gear, 0, 0.0f);
 	cTimer_SetSpeedChecked(&Obj(gear)->timer, 1.0f);
 	WChar(gear)->wl.god = 0;
 	cEntity_Del(poli);
@@ -483,18 +483,18 @@ byte AICtrl_SendAccuser(void *ctrl, byte check) {
 		return 0;
 	}
 	cEntity *usr = ChType_Usr0();
-	if (!usr || !usr->vftable->IsType(usr, TYEN_WALKCHAR)) {
+	if (!usr || !Entity_IsType(usr, TYEN_WALKCHAR)) {
 		return 0;
 	}
 	cBaseLocalLogic *l = (cBaseLocalLogic *)Logic_GetLocalLogic(
-		cEntityList_Nearest(self->sentinels, usr->vftable->GetPos(usr, &t), NULL, NULL));
+		cEntityList_Nearest(self->sentinels, Entity_GetPos(usr, &t), NULL, NULL));
 	if (!l) {
 		return 0;
 	}
 	if (check) {
 		cEntity *s = l->parent;
-		const vec3_t *up = usr->vftable->GetPos(usr, &t2);
-		if (Engine_TestLine(s->vftable->GetPos(s, &t3), up, NULL, NULL)) {
+		const vec3_t *up = Entity_GetPos(usr, &t2);
+		if (Engine_TestLine(Entity_GetPos(s, &t3), up, NULL, NULL)) {
 			return 0;
 		}
 	}
@@ -502,7 +502,7 @@ byte AICtrl_SendAccuser(void *ctrl, byte check) {
 		return 0;
 	}
 	Con_Debugf("Sending %s to acuse the main character.\n", l->parent->name);
-	l->vftable->SetState(&l->logic, 2, usr);
+	Logic_SetState(l, 2, usr);
 	return 1;
 }
 
@@ -513,26 +513,26 @@ void AICtrl_SendSentinelToNPC(void *ctrl, cEntity *e) {
 	if (!cEntityList_GetFirst((cEntityList *)self->sentinels) || self->alerted || g_pWorld->alarm.on) {
 		return;
 	}
-	if (e->vftable->IsType(e, TYEN_WALKCHAR) &&
+	if (Entity_IsType(e, TYEN_WALKCHAR) &&
 		(!strcmp(Logic_TypeName(e), "Gear") || !strcmp(Logic_TypeName(e), "Sentinel"))) {
 		return;
 	}
 	if (!Logic_GetLocalLogic(e)) {
 		return;
 	}
-	float d = cWorld_GetMinCamDistSq(g_pWorld, e->vftable->GetPos(e, &t));
+	float d = cWorld_GetMinCamDistSq(g_pWorld, Entity_GetPos(e, &t));
 	if (!(g_SentinelAbortyNPCAttDist * g_SentinelAbortyNPCAttDist > d)) {
 		return;
 	}
 	cBaseLocalLogic *s = (cBaseLocalLogic *)Logic_GetLocalLogic(
-		cEntityList_Nearest(self->sentinels, e->vftable->GetPos(e, &t), e, NULL));
+		cEntityList_Nearest(self->sentinels, Entity_GetPos(e, &t), e, NULL));
 	if (s->state == 6) {
 		return;
 	}
 	cEntity *sp = s->parent;
-	const vec3_t *ep = e->vftable->GetPos(e, &t2);
-	if (!Engine_TestLine(sp->vftable->GetPos(sp, &t3), ep, NULL, NULL)) {
-		s->vftable->SetState(&s->logic, 6, e);
+	const vec3_t *ep = Entity_GetPos(e, &t2);
+	if (!Engine_TestLine(Entity_GetPos(sp, &t3), ep, NULL, NULL)) {
+		Logic_SetState(s, 6, e);
 	}
 }
 
@@ -577,7 +577,7 @@ void AICtrl_GearsChase(void *ctrl, cEntity *e) {
 		}
 		cEntity *t = l->target.target;
 		if (t == ChType_Usr0()) {
-			l->vftable->SetState(&l->logic, l->state, e);
+			Logic_SetState(l, l->state, e);
 			found = 1;
 		}
 	}
@@ -607,7 +607,7 @@ static void AICtrl_SentinelDeath(cAbstractFile *params) {
 	cAbstractFile_ReadString(params, name, sizeof(name));
 	cEntity *v = ChType_CheckChar(name);
 	cEntity_SetList(v, NULL);
-	const vec3_t *p = v->vftable->GetPos(v, &t);
+	const vec3_t *p = Entity_GetPos(v, &t);
 	g_pWorld->logic.aiCtrl.watchTime = 0.0f;
 	AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, p);
 }

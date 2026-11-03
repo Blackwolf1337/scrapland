@@ -73,7 +73,7 @@ cUserNetManager *cUserNetManager_ctor(cUserNetManager *self, cNetClient *client,
 
 void cNetClient_dtor(cNetClient *self) {
 	if (self->user) {
-		self->user->vftable->Delete(self->user, 1);
+		NetMan_Delete(self->user, 1);
 	}
 	while (self->head) {
 		NetClient_PopHead(self);
@@ -247,7 +247,7 @@ int cNetClient_Receive(cNetClient *self, uint32_t time, const byte *pkt, int len
 	}
 	memcpy(data, pkt + 3 + n, *dataSize);
 	if (self->user) {
-		self->user->vftable->OnReceive(self->user, data, *dataSize, ctl, *ctlSize);
+		NetMan_OnReceive(self->user, data, *dataSize, ctl, *ctlSize);
 	}
 	return 1;
 }

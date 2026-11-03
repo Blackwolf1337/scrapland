@@ -91,10 +91,10 @@ void cModMove_Link(cModMove *self, const char *name, const char *node) {
 	if (!it || !(link = it->value)) {
 		CHECK(!"Link");
 	}
-	if (!link->vftable->IsType(link, TYEN_OBJECT)) {
+	if (!Entity_IsType(link, TYEN_OBJECT)) {
 		CHECK(!"Link->IsType(TYEN_OBJECT)");
 	}
-	CGameModel *mod = Obj_Vtbl(link)->GetModel(link);
+	CGameModel *mod = Obj_GetModel(link);
 	CHECK(mod);
 	CHECK(CGameModel_IsLoaded(mod));
 	self->nodeIndex = CGameModel_FindRenderNode(mod, node);
@@ -122,9 +122,9 @@ void cModMove_Update(cModMove *self, float dt) {
 		self->offMul = 0.0f;
 		return;
 	}
-	if (CGameModel_IsLoaded(Obj_Vtbl(link)->GetModel(link))) {
-		uint32_t slot = (uint32_t)Obj_Vtbl(link)->GetNodeSlot(link);
-		CGameModel_NodeMatrix(Obj_Vtbl(link)->GetModel(link), &mat, (uint32_t)self->nodeIndex, 1, NULL, slot);
+	if (CGameModel_IsLoaded(Obj_GetModel(link))) {
+		uint32_t slot = (uint32_t)Obj_GetNodeSlot(link);
+		CGameModel_NodeMatrix(Obj_GetModel(link), &mat, (uint32_t)self->nodeIndex, 1, NULL, slot);
 		to.z = self->offPos.z + mat.m[14];
 		to.x = self->offPos.x + mat.m[12];
 		to.y = self->offPos.y + mat.m[13];
@@ -161,7 +161,7 @@ void cModMove_Update(cModMove *self, float dt) {
 		p->renderAng.z = p->ang.z + n->z * m;
 		p->renderAng.y = p->ang.y + n->y * m;
 	}
-	if (self->parent->vftable->IsType(self->parent, TYEN_WALKCHAR)) {
+	if (Entity_IsType(self->parent, TYEN_WALKCHAR)) {
 		(*(void(**)(cEntity *, const vec3_t *))((const byte *)self->parent->vftable +
 			MODMOVE_WALKCHAR_SETANG))(self->parent, &p->renderAng);
 	}

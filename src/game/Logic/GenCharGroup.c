@@ -47,7 +47,7 @@ byte cGenCharGroup_TakeAttack(cGenCharGroup *self) {
 static void GenCharGroup_UpdateList(cEntityListData *list) {
 	for (Nto1Node *n = Logic_ListFirst(list); n; n = Logic_ListNext(n)) {
 		cLocalLogic *l = Logic_GetLocalLogic(n->data);
-		Logic_Vtbl(l)->Update(l, 0.13f);
+		Logic_Update(l, 0.13f);
 	}
 }
 
@@ -129,7 +129,7 @@ static const struct {
 /* the logic of a character of the lists (cEntityListData.func) */
 void *GenCharGroup_MakeLogic(cEntity *e) {
 	CHECK(e && "e");
-	CHECK(e->vftable->IsType(e, TYEN_WALKCHAR) && "e->IsType(TYEN_WALKCHAR)");
+	CHECK(Entity_IsType(e, TYEN_WALKCHAR) && "e->IsType(TYEN_WALKCHAR)");
 	const char *type = ChType_ActClass(ChType_ActCtrl(e))->name;
 	for (size_t i = 0; i < sizeof(g_GenCharTypes) / sizeof(g_GenCharTypes[0]); i++) {
 		size_t n = g_GenCharTypes[i].prefix;

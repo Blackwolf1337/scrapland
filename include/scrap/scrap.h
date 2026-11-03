@@ -56,7 +56,15 @@ typedef struct cFuncGvar {
 	cGvar gvar;			/* 0x04 g_GVars points here */
 } cFuncGvar;
 #define GVar_ListObj(v) ((void *)((byte *)(v) - offsetof(cFuncGvar, gvar)))
-#define GVar_ListVtbl(v) (*(const cGVarListVtbl **)GVar_ListObj(v))
+
+/* calls through the slots of cGVarListVtbl */
+static inline void GVarList_Save(void *self, void *f) {
+	VT(cGVarListVtbl, self)->Save(self, f);
+}
+
+static inline void GVarList_Load(void *self, void *f) {
+	VT(cGVarListVtbl, self)->Load(self, f);
+}
 
 /* the object of a GVAR_SCRIPT_FUNCTION variable (INIT_GVAR_FUNCTION of scrap/staticinit.h): its function in place of value
  * and def */

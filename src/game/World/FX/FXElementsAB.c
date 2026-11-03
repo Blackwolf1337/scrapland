@@ -482,9 +482,9 @@ static void Limit_Car(cFXElementsABFakeLimit *self, cEntity *e, float dt) {
 	vec3_t tmp, dirA, dirB, dirc, angTmp;
 	const vec3_t *dir;
 
-	CGameModel *carModel = Obj_Vtbl(e)->GetModel(e);
+	CGameModel *carModel = Obj_GetModel(e);
 	CHECK(carModel && CGameModel_IsLoaded(carModel));
-	const vec3_t *c = Obj_Vtbl(e)->GetViewPos(e, &tmp);
+	const vec3_t *c = Obj_GetViewPos(e, &tmp);
 	float dy = c->y - self->centre.y;
 	float dx = c->x - self->centre.x;
 	float dz = c->z - self->centre.z;
@@ -521,11 +521,11 @@ static void Limit_Car(cFXElementsABFakeLimit *self, cEntity *e, float dt) {
 	uint32_t fx = CGameModel_GetEffect(&Obj(e)->model, NULL);
 	if (nearF > 0.0f) {
 		if (fx == 0 || fx == 6) {
-			Obj_Vtbl(e)->SetEffect(e, 6);
-			Obj_Vtbl(e)->SetEffectParam(e, 0, nearF * nearF * (2.0f - nearF));
+			Obj_SetEffect(e, 6);
+			Obj_SetEffectParam(e, 0, nearF * nearF * (2.0f - nearF));
 		}
 	} else if (fx == 6) {
-		Obj_Vtbl(e)->SetEffect(e, 0);
+		Obj_SetEffect(e, 0);
 	}
 	if (nearF > 0.0f) {
 		CGameParticles_SetAlpha(&self->nearParts,
@@ -558,10 +558,10 @@ static void cFXElementsABFakeLimit_Update(cMapElement *elem, float dt) {
 	cWorld *w = g_pWorld;
 	cEntity *e = w->owners[0];
 	if (e) {
-		CHECK(e->vftable->IsType(e, TYEN_WITH_LIFE));
+		CHECK(Entity_IsType(e, TYEN_WITH_LIFE));
 	}
 	e = w->owners[0];
-	if (e && e->vftable->IsType(e, TYEN_CAR) && Car_Data(e)) {
+	if (e && Entity_IsType(e, TYEN_CAR) && Car_Data(e)) {
 		Limit_Car(self, e, dt);
 		return;
 	}

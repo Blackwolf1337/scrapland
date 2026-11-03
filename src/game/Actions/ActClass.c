@@ -197,7 +197,7 @@ static void cActClass_dtor(cActClass *self) {
 			CheckFailed("data!=NULL", __FILE__, __TIMESTAMP__, __LINE__);
 			continue;
 		}
-		data->vftable->Delete(data, 1);
+		Action_Delete(data, 1);
 	}
 	if (self->modelFile) {
 		Mem_Free(self->modelFile);
@@ -256,8 +256,8 @@ static void cActClass_AddSoundRes(cActClass *self, const char *file) {
 	char name[0x80];
 	cString str;
 
-	g_pSound->vftable->LoadSound(g_pSound, file);
-	g_pSound->vftable->GetSoundName(g_pSound, file, name, sizeof(name));
+	SoundSys_LoadSound(g_pSound, file);
+	SoundSys_GetSoundName(g_pSound, file, name, sizeof(name));
 	cString_ctorStr(&str, name);
 	self->sounds.iter = NULL;
 	cStringNode *node = cStringList_NewNode(&self->sounds);
@@ -273,7 +273,7 @@ static void cActClass_FreeResources(cActClass *self) {
 	cPy_Function_Execute(&self->onFreeResources, 0);
 	while ((l->iter = l->head) != NULL) {
 		l->iter = l->head;
-		g_pSound->vftable->DeleteSound(g_pSound, l->iter->str);
+		SoundSys_DeleteSound(g_pSound, l->iter->str);
 		cStringList_RemoveHead(l);
 	}
 	CGameModel_Release(&self->model, 1);
@@ -394,7 +394,7 @@ static int cActClassCam_Var(cActClassCam *self, const char *name, int set, char 
 
 /* the class of the action controller of e */
 static cActClass *Ent_ActClass(cEntity *e) {
-	return ((cActCtrl *)WithLife_Vtbl(e)->GetActCtrl(e))->cls;
+	return ((cActCtrl *)WithLife_GetActCtrl(e))->cls;
 }
 
 void cActClassCam_Update(void *cam, cEntity *followCam, cEntity *e) {

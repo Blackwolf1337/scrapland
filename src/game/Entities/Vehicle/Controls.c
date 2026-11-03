@@ -170,7 +170,7 @@ static cEntity *Ctl_TakeArgs(cAbstractFile *f, char *item, char *name) {
 	cAbstractFile_ReadString(f, item, 0x80);
 	cAbstractFile_ReadString(f, name, 0x80);
 	cEntity *v = World_FindEntity(name);
-	if (!v || !v->vftable->IsType(v, TYEN_CAR)) {
+	if (!v || !Entity_IsType(v, TYEN_CAR)) {
 		return NULL;
 	}
 	return v;
@@ -249,7 +249,7 @@ static inline byte Tgt_Blocked(cVehicleTargets *t) {
 	if (g_VehicleCenterPadLock != 0.0f && cVehicleEntity_GetOwnerSlot(t->owner) != -1) {
 		return 0;
 	}
-	return WithLife_Vtbl(t->owner)->IsEMIed(t->owner) ? 1 : 0;
+	return WithLife_IsEMIed(t->owner) ? 1 : 0;
 }
 
 /* the unbounded copies of the original; every name of the list came through Str_Copy */
@@ -299,7 +299,7 @@ static void cVehicleO648_Rebuild(void *o) {
 		const char *name = Nto1Node_TargetName(&ow->attack.hitBy);
 		if (*name) {
 			cEntity *e = World_FindEntity(name);
-			if (e && e != t->owner && e->vftable->IsType(e, TYEN_WITH_LIFE) &&
+			if (e && e != t->owner && Entity_IsType(e, TYEN_WITH_LIFE) &&
 				Team_IsEnemy(WLife(e)->arrow.tgType, WLife(t->owner)->arrow.tgType)) {
 				cVehicleTargetList *l = t->list;
 				int n = l->count;
@@ -312,7 +312,7 @@ static void cVehicleO648_Rebuild(void *o) {
 	}
 	/* the enemies by distance, an insertion into the sorted list */
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
-		if (!e->active || !e->vftable->IsType(e, TYEN_WITH_LIFE)) {
+		if (!e->active || !Entity_IsType(e, TYEN_WITH_LIFE)) {
 			continue;
 		}
 		cEntity *own = t->owner;
@@ -320,8 +320,8 @@ static void cVehicleO648_Rebuild(void *o) {
 			!strcmp(e->name, t->target)) {
 			continue;
 		}
-		const vec3_t *op = t->owner->vftable->GetPos(t->owner, &a);
-		const vec3_t *ep = e->vftable->GetPos(e, &b);
+		const vec3_t *op = Entity_GetPos(t->owner, &a);
+		const vec3_t *ep = Entity_GetPos(e, &b);
 		float dx = ep->x - op->x;
 		float dy = ep->y - op->y;
 		float dz = ep->z - op->z;
@@ -444,7 +444,7 @@ void cVehicleO648_Update(void *o, float dt) {
 	}
 	/* the target is dropped when it is gone, inactive or of team 3 */
 	cEntity *e = World_FindEntity(t->target);
-	if (!e || e == t->owner || !e->active || !e->vftable->IsType(e, TYEN_WITH_LIFE) ||
+	if (!e || e == t->owner || !e->active || !Entity_IsType(e, TYEN_WITH_LIFE) ||
 		WLife(e)->arrow.tgType == 3) {
 		t->target[0] = 0;
 	}
@@ -567,8 +567,8 @@ static inline float Ctl_Rumble01(float v) {
 static void Ctl_FollowTarget(cVehicleControls *c, cEntity *v, cEntity *t, byte attack, float vr, float dt) {
 	vec3_t a, b, d, rot;
 
-	const vec3_t *tp = t->vftable->GetPos(t, &a);
-	const vec3_t *vp = v->vftable->GetPos(v, &b);
+	const vec3_t *tp = Entity_GetPos(t, &a);
+	const vec3_t *vp = Entity_GetPos(v, &b);
 	c->attackTime = dt + c->attackTime;
 	d.x = vp->x - tp->x;
 	d.y = vp->y - tp->y;
@@ -587,7 +587,7 @@ static void Ctl_FollowTarget(cVehicleControls *c, cEntity *v, cEntity *t, byte a
 			}
 		}
 	}
-	const vec3_t *ang = Obj_Vtbl(v)->GetAng(v, &b);
+	const vec3_t *ang = Obj_GetAng(v, &b);
 	const vec3_t *r = Vec3_GetRotAng(&rot, &d);
 	float dy = r->y - ang->y;
 	float dx = NormAng(r->x - ang->x);
@@ -665,7 +665,7 @@ static void Ctl_Axes(cVehicleControls *c, cEntity *v, cActionSet *set, int slot,
 			t = World_FindEntity(n);
 		}
 		if (t) {
-			attack = !t->vftable->IsType(t, TYEN_CAR);
+			attack = !Entity_IsType(t, TYEN_CAR);
 		}
 	}
 	if (t && c->follow) {
@@ -686,7 +686,7 @@ static void Ctl_Axes(cVehicleControls *c, cEntity *v, cActionSet *set, int slot,
 		nb = __builtin_fabsf(c->acc) * dt * g_VehicleCenterPadLock + pb;
 	}
 	c->padBounce = nb;
-	const vec3_t *ang = Obj_Vtbl(v)->GetAng(v, &a);
+	const vec3_t *ang = Obj_GetAng(v, &a);
 	c->vRot = (vr - ang->x) * c->padBounce;
 }
 

@@ -74,7 +74,7 @@ static void cNetVController_Reset(cNetController *elem) {
 #define NETV_LIFE(self) ((cWithLifeEntity *)(self)->vehicle)
 
 static inline void NetV_Read(cAbstractFile *msg, void *dst, int n) {
-	msg->vftable->Read(msg, dst, n);
+	VFile_Read(msg, dst, n);
 }
 
 /* vf01: a server reads the controls of the client (weapon, camera height, target); a client the ammo levels, the
@@ -139,7 +139,7 @@ static void cNetVController_Read(cNetController *elem, void *m) {
 	} else {
 		NETV_LIFE(self)->fireRemain = 0.0f;
 	}
-	self->vehicle->vftable->SetActive(self->vehicle, (self->keys & NETV_KEY_ACTIVE) != 0);
+	Entity_SetActive(self->vehicle, (self->keys & NETV_KEY_ACTIVE) != 0);
 	if (self->keys & NETV_KEY_CLOUD) {
 		cVehicleEntity_SetCloud(self->vehicle, NETV_CLOUD_TIME, (self->keys & NETV_KEY_CLOUD_ON) != 0);
 	} else {
@@ -149,7 +149,7 @@ static void cNetVController_Read(cNetController *elem, void *m) {
 	uint16_t life;
 	NetV_Read(msg, &life, 2);
 	if (NETV_VEH(self)->wl.life > 0 && life == 0) {
-		self->vehicle->vftable->SetActive(self->vehicle, 1);
+		Entity_SetActive(self->vehicle, 1);
 	}
 	NETV_VEH(self)->wl.life = life;
 	byte w;
@@ -213,7 +213,7 @@ base:
 	cNetController_Read(&self->base, msg);
 	if (shot) {
 		if (shotSet) {
-			self->vehicle->vftable->GetPos(self->vehicle, &q);
+			Entity_GetPos(self->vehicle, &q);
 			q.x = (float)sx * NETV_POINT_STEP + q.x;
 			q.y = (float)sy * NETV_POINT_STEP + q.y;
 			q.z = (float)sz * NETV_POINT_STEP + q.z;
@@ -223,7 +223,7 @@ base:
 		}
 	}
 	if (lockPoint) {
-		self->vehicle->vftable->GetPos(self->vehicle, &q);
+		Entity_GetPos(self->vehicle, &q);
 		q.x = (float)lx * NETV_POINT_STEP + q.x;
 		q.y = (float)ly * NETV_POINT_STEP + q.y;
 		q.z = (float)lz * NETV_POINT_STEP + q.z;
@@ -255,7 +255,7 @@ base:
 #define NETV_CAM_TARGET_RADIUS 25000.0f
 
 static inline void NetV_Write(cAbstractFile *msg, const void *src, int n) {
-	msg->vftable->Write(msg, src, n);
+	VFile_Write(msg, src, n);
 }
 
 /* the id of a "net<n>" name */
@@ -271,11 +271,11 @@ static void NetV_WriteOffset(cNetVController *self, cAbstractFile *msg, const ve
 	vec3_t pos;
 	uint32_t s;
 
-	s = (uint16_t)(int)((p->x - self->vehicle->vftable->GetPos(self->vehicle, &pos)->x) / NETV_POINT_STEP);
+	s = (uint16_t)(int)((p->x - Entity_GetPos(self->vehicle, &pos)->x) / NETV_POINT_STEP);
 	NetV_Write(msg, &s, 2);
-	s = (uint16_t)(int)((p->y - self->vehicle->vftable->GetPos(self->vehicle, &pos)->y) / NETV_POINT_STEP);
+	s = (uint16_t)(int)((p->y - Entity_GetPos(self->vehicle, &pos)->y) / NETV_POINT_STEP);
 	NetV_Write(msg, &s, 2);
-	s = (uint16_t)(int)((p->z - self->vehicle->vftable->GetPos(self->vehicle, &pos)->z) / NETV_POINT_STEP);
+	s = (uint16_t)(int)((p->z - Entity_GetPos(self->vehicle, &pos)->z) / NETV_POINT_STEP);
 	NetV_Write(msg, &s, 2);
 }
 
@@ -339,7 +339,7 @@ static void cNetVController_Write(cNetController *elem, int flags, cEntity *e, v
 			self->keys |= NETV_KEY_CLOUD_ON;
 		}
 	}
-	if (((const cWithLifeEntityVtbl *)v->wl.obj.base.vftable)->IsEMIed(&v->wl.obj.base)) {
+	if (WithLife_IsEMIed(v)) {
 		self->keys |= NETV_KEY_EMI;
 	}
 	u = self->keys;
@@ -358,7 +358,7 @@ static void cNetVController_Write(cNetController *elem, int flags, cEntity *e, v
 		if (!self->vehicle->active) {
 			/* the original calls IsType on a NULL camera when the camera has no name */
 			cEntity *cam = World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
-			if (cam->vftable->IsType(cam, "FCam")) {
+			if (Entity_IsType(cam, "FCam")) {
 				cEntity *t;
 				if (cCamEntity_GetTarget(cam)) {
 					t = cCamEntity_GetTarget(cam);

@@ -15,7 +15,7 @@ void ChType_ReadParams(cAbstractFile *f, char *name, char *event) {
 
 	cAbstractFile_ReadString(f, name, 0x80);
 	cAbstractFile_ReadString(f, event, 0x80);
-	f->vftable->Read(f, &unused, 4);
+	VFile_Read(f, &unused, 4);
 }
 
 cEntity *ChType_CheckChar(const char *name) {
@@ -89,7 +89,7 @@ static void ChType_BankerAttack(cAbstractFile *params) {
 		} else if (f > 75.0f) {
 			f = 100.0f;
 		}
-		Logic_Vtbl(l)->OnAttack(l, v, f);
+		Logic_OnAttack(l, v, f);
 	}
 	if (v && victim) {
 		cObjElementFXBankerSteal *el = FX_DropNew(g_FXBankerStealFile, 1.35f);
@@ -106,7 +106,7 @@ static void ChType_BankerAttack(cAbstractFile *params) {
 cEntity *ChType_BankerVictim(cEntity *v) {
 	cEntity *e = WChar_Victim(v);
 
-	if (!e || !e->vftable->IsType(e, TYEN_WALKCHAR)) {
+	if (!e || !Entity_IsType(e, TYEN_WALKCHAR)) {
 		return NULL;
 	}
 	if (WChar(e)->money <= 0 && e != cWorld_GetUsrEntity(g_pWorld, 0)) {
@@ -121,7 +121,7 @@ cEntity *ChType_BankerVictim(cEntity *v) {
 /* thief may rob v (unused first argument): v is a character with money */
 static byte ChType_CanRob(cEntity *thief, cEntity *v) {
 	(void)thief;
-	if (!v || !v->vftable->IsType(v, TYEN_WALKCHAR)) {
+	if (!v || !Entity_IsType(v, TYEN_WALKCHAR)) {
 		return 0;
 	}
 	if (WChar(v)->money <= 0 && v != cWorld_GetUsrEntity(g_pWorld, 0)) {

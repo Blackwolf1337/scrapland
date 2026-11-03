@@ -163,6 +163,135 @@ typedef struct CNodesWorldVtbl {
 	byte(*SaveInfPath)(CNodesWorld *self, const char *path);	/* 0x9c */
 } CNodesWorldVtbl;
 
+/* calls through the slots of CNodesWorldVtbl */
+static inline void NodesWorld_AddVis(void *self, const vec3_t *point, int index) {
+	VT(CNodesWorldVtbl, self)->AddVis(self, point, index);
+}
+
+static inline int NodesWorld_BoxCells(void *self, const cNWBox *box) {
+	return VT(CNodesWorldVtbl, self)->BoxCells(self, box);
+}
+
+static inline int NodesWorld_BufferIndex(void *self, const vec3_t *pos) {
+	return VT(CNodesWorldVtbl, self)->BufferIndex(self, pos);
+}
+
+static inline vec3_t *NodesWorld_BufferPos(void *self, vec3_t *out, int index) {
+	return VT(CNodesWorldVtbl, self)->BufferPos(self, out, index);
+}
+
+static inline void NodesWorld_BuildGrid(void *self) {
+	VT(CNodesWorldVtbl, self)->BuildGrid(self);
+}
+
+static inline void NodesWorld_ClearLists(void *self) {
+	VT(CNodesWorldVtbl, self)->ClearLists(self);
+}
+
+static inline byte NodesWorld_Create(void *self) {
+	return VT(CNodesWorldVtbl, self)->Create(self);
+}
+
+static inline int NodesWorld_FileOf(void *self, const struct cNWNode *node) {
+	return VT(CNodesWorldVtbl, self)->FileOf(self, node);
+}
+
+static inline byte NodesWorld_FindSorted(void *self, cNWIntList *list, const void *key, cNWIntNode **at) {
+	return VT(CNodesWorldVtbl, self)->FindSorted(self, list, key, at);
+}
+
+static inline void NodesWorld_FreeGraph(void *self) {
+	VT(CNodesWorldVtbl, self)->FreeGraph(self);
+}
+
+static inline void NodesWorld_FreeTemp(void *self) {
+	VT(CNodesWorldVtbl, self)->FreeTemp(self);
+}
+
+static inline void NodesWorld_GetBox(void *self, vec3_t *min, vec3_t *max) {
+	VT(CNodesWorldVtbl, self)->GetBox(self, min, max);
+}
+
+static inline void NodesWorld_GetInfoNodes(void *self) {
+	VT(CNodesWorldVtbl, self)->GetInfoNodes(self);
+}
+
+static inline const vec3_t *NodesWorld_GetVisPoint(void *self, int i) {
+	return VT(CNodesWorldVtbl, self)->GetVisPoint(self, i);
+}
+
+static inline int NodesWorld_Hash(void *self, int a, int b) {
+	return VT(CNodesWorldVtbl, self)->Hash(self, a, b);
+}
+
+static inline byte NodesWorld_InGrid(void *self, const vec3_t *pos) {
+	return VT(CNodesWorldVtbl, self)->InGrid(self, pos);
+}
+
+static inline byte NodesWorld_InList(void *self, struct cNWNode *const *list, int n, const struct cNWNode *node) {
+	return VT(CNodesWorldVtbl, self)->InList(self, list, n, node);
+}
+
+static inline void NodesWorld_InsertPair(void *self, void *list, const void *pair) {
+	VT(CNodesWorldVtbl, self)->InsertPair(self, list, pair);
+}
+
+static inline byte NodesWorld_IsCreated(void *self) {
+	return VT(CNodesWorldVtbl, self)->IsCreated(self);
+}
+
+static inline void NodesWorld_LinkBack(void *self) {
+	VT(CNodesWorldVtbl, self)->LinkBack(self);
+}
+
+static inline void NodesWorld_LinkPoint(void *self, const vec3_t *point) {
+	VT(CNodesWorldVtbl, self)->LinkPoint(self, point);
+}
+
+static inline void NodesWorld_LinkPoints(void *self) {
+	VT(CNodesWorldVtbl, self)->LinkPoints(self);
+}
+
+static inline byte NodesWorld_Linked(void *self, const vec3_t *a, const vec3_t *b) {
+	return VT(CNodesWorldVtbl, self)->Linked(self, a, b);
+}
+
+static inline byte NodesWorld_LoadGraph(void *self) {
+	return VT(CNodesWorldVtbl, self)->LoadGraph(self);
+}
+
+static inline int NodesWorld_NumVisPoints(void *self) {
+	return VT(CNodesWorldVtbl, self)->NumVisPoints(self);
+}
+
+static inline void NodesWorld_OtherLinks(void *self, const struct cNWNode *node, const vec3_t *pos, struct cNWNode **list, int max, int *count) {
+	VT(CNodesWorldVtbl, self)->OtherLinks(self, node, pos, list, max, count);
+}
+
+static inline byte NodesWorld_PointLinked(void *self, const vec3_t *point, const vec3_t *other) {
+	return VT(CNodesWorldVtbl, self)->PointLinked(self, point, other);
+}
+
+static inline void NodesWorld_ReleaseVis(void *self, int index) {
+	VT(CNodesWorldVtbl, self)->ReleaseVis(self, index);
+}
+
+static inline byte NodesWorld_SavePath(void *self) {
+	return VT(CNodesWorldVtbl, self)->SavePath(self);
+}
+
+static inline vec3_t *NodesWorld_SnapPos(void *self, vec3_t *out, const vec3_t *pos) {
+	return VT(CNodesWorldVtbl, self)->SnapPos(self, out, pos);
+}
+
+static inline byte NodesWorld_Unreachable(void *self, const vec3_t *from, const vec3_t *to, int index) {
+	return VT(CNodesWorldVtbl, self)->Unreachable(self, from, to, index);
+}
+
+static inline byte NodesWorld_VisHas(void *self, const vec3_t *point, int index) {
+	return VT(CNodesWorldVtbl, self)->VisHas(self, point, index);
+}
+
 /* the base class (AI/NodesWorldSup.cpp, abstract): the first 0x360 bytes of CNodesWorld and CNodesWorld2D. The code
  * of both works on the CNodesWorld layout, which repeats these members */
 typedef struct CNodesWorldSup {

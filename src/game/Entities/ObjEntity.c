@@ -123,9 +123,9 @@ static void cObjEntity_ReleaseFX(cEntity *self) {
 	cObjEntity *o = Obj(self);
 
 	if (o->fx) {
-		o->fx->vftable->Release(o->fx);
+		EFX_Release(o->fx);
 		if (o->fx) {
-			o->fx->vftable->Delete(o->fx, 1);
+			EFX_Delete(o->fx, 1);
 			o->fx = NULL;
 		}
 	}
@@ -167,7 +167,7 @@ void cObjEntity_UpdateModel(cEntity *self) {
 		CGameModel_SetPos(&o->model, &o->renderPos);
 	}
 	if (o->fx) {
-		o->fx->vftable->Tick(o->fx);
+		EFX_Tick(o->fx);
 	}
 }
 
@@ -205,7 +205,7 @@ byte cObjEntity_VarF(cEntity *self, const char *name, double *d, int set) {
 	if (!*name) {
 		return 0;
 	}
-	if (cModMove_VarF(&o->mod, name, d, set) || Snd_Vtbl(&o->snd)->VarF(&o->snd, name, d, set)) {
+	if (cModMove_VarF(&o->mod, name, d, set) || SndIf_VarF(&o->snd, name, d, set)) {
 		return 1;
 	}
 	if ((byte)set && !strcmp(name, "MoveTime")) {
@@ -238,7 +238,7 @@ byte cObjEntity_VarF(cEntity *self, const char *name, double *d, int set) {
 	}
 	if (!strcmp(name, "RenderEffectParam0")) {
 		if ((byte)set) {
-			Obj_Vtbl(self)->SetEffectParam(self, 0, (float)*d);
+			Obj_SetEffectParam(self, 0, (float)*d);
 		} else {
 			/* the original reads into the stack slot of set */
 			uint32_t v = (uint32_t)set;
@@ -273,7 +273,7 @@ vec3_t *cObjEntity_GetRenderPos(cEntity *self, vec3_t *out) {
 }
 
 vec3_t *cObjEntity_GetSndAng(cEntity *self, vec3_t *out) {
-	Obj_Vtbl(self)->GetRenderAng(self, out);
+	Obj_GetRenderAng(self, out);
 	return out;
 }
 
@@ -292,7 +292,7 @@ int cObjEntity_GetNodeSlot(cEntity *self) {
 }
 
 vec3_t *cObjEntity_GetSndPos(cEntity *self, vec3_t *out) {
-	Obj_Vtbl(self)->GetViewPos(self, out);
+	Obj_GetViewPos(self, out);
 	return out;
 }
 
@@ -308,7 +308,7 @@ static byte cObjEntity_GetCollision(cEntity *self) {
 void cObjEntity_GetTargetAngle(cEntity *self, float *ang, float dist, cEntity **target) {
 	vec3_t pos, cang, dir, r1, r2, end, hit, d;
 
-	Obj_Vtbl(self)->GetCamera(self, &pos, &cang);
+	Obj_GetCamera(self, &pos, &cang);
 	dir.x = 0.0f;
 	dir.y = 0.0f;
 	dir.z = dist;
@@ -348,15 +348,15 @@ void cObjEntity_GetCamera(cEntity *self, vec3_t *pos, vec3_t *ang) {
 		off.y = o->camOff.y + s;
 		off.z = o->camOff.z + 0.0f;
 		const vec3_t *p = Vec3_Rotate(&r, &off, &rot);
-		const vec3_t *v = Obj_Vtbl(self)->GetViewPos(self, &tmp);
+		const vec3_t *v = Obj_GetViewPos(self, &tmp);
 		pos->x = v->x + p->x;
 		pos->y = v->y + p->y;
 		pos->z = v->z + p->z;
 		ang->z = 0.0f;
 		return;
 	}
-	*pos = *Obj_Vtbl(self)->GetViewPos(self, &tmp);
-	const vec3_t *a = Obj_Vtbl(self)->GetAng(self, &tmp);
+	*pos = *Obj_GetViewPos(self, &tmp);
+	const vec3_t *a = Obj_GetAng(self, &tmp);
 	ang->x = -a->x;
 	ang->y = a->y + M_PI_F;
 	ang->z = 0.0f;
@@ -386,13 +386,13 @@ void cObjEntity_UpdateOff(cEntity *self) {
 		return;
 	}
 	if (self->ai) {
-		AI_Vtbl(self->ai)->UpdateOff(self->ai, dt);
+		AI_UpdateOff(self->ai, dt);
 	}
 	/* the original passes dt as the unused argument */
 	cSndInterface_StopAll(&o->snd, (int)Float_Bits(dt));
 	cEntity_UpdateOff(self);
 	if (o->cam) {
-		CamCtl_Vtbl(o->cam)->UpdateOff(o->cam, dt);
+		CamCtl_UpdateOff(o->cam, dt);
 	}
 }
 
@@ -402,7 +402,7 @@ byte cObjEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	if (!*name) {
 		return 0;
 	}
-	if (cModMove_VarI(&o->mod, name, i, set) || Snd_Vtbl(&o->snd)->VarI(&o->snd, name, i, set)) {
+	if (cModMove_VarI(&o->mod, name, i, set) || SndIf_VarI(&o->snd, name, i, set)) {
 		return 1;
 	}
 	if (!strcmp(name, "RadarShow")) {
@@ -447,7 +447,7 @@ byte cObjEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	}
 	if (!strcmp(name, "RenderEffect")) {
 		if ((byte)set) {
-			Obj_Vtbl(self)->SetEffect(self, (uint32_t)*i);
+			Obj_SetEffect(self, (uint32_t)*i);
 		} else {
 			*i = (int)CGameModel_GetEffect(&o->model, NULL);
 		}
@@ -467,7 +467,7 @@ void cObjEntity_Tick(cEntity *self, float dt) {
 	cObjMove_Tick(&Obj(self)->move, self, dt);
 	cObjEntity_RadarTick(self, dt);
 	if (self->ai) {
-		AI_Vtbl(self->ai)->Update(self->ai, dt);
+		AI_Update(self->ai, dt);
 	}
 }
 
@@ -487,13 +487,13 @@ void cObjEntity_SetActive(cEntity *self, byte on) {
 		if (self->active) {
 			CGameModel_Enable(&o->model);
 			cModMove_Update(&o->mod, 0.0f);
-			Obj_Vtbl(self)->UpdateModel(self);
+			Obj_UpdateModel(self);
 		} else {
 			CGameModel_Disable(&o->model);
 		}
 	}
 	if (o->fx) {
-		o->fx->vftable->Stop(o->fx, on);
+		EFX_Stop(o->fx, on);
 	}
 }
 
@@ -505,7 +505,7 @@ void cObjEntity_SetAng(cEntity *self, const vec3_t *ang) {
 	o->ang.z = ang->z;
 	o->slotAng = o->ang;
 	o->renderAng = o->ang;
-	Obj_Vtbl(self)->UpdateModel(self);
+	Obj_UpdateModel(self);
 	if (o->cam) {
 		cCamEntity_SetAng(o->cam, o->ang);
 	}
@@ -556,7 +556,7 @@ void cObjEntity_SetModel(cEntity *self, const char *file, float sx, float sy, fl
 	if (!self->active) {
 		CGameModel_Disable(&o->model);
 	}
-	if (self->vftable->IsType(self, "item")) {
+	if (Entity_IsType(self, "item")) {
 		EmbeddedFXMisc_Create(self, CGameModel_Name(&o->model), &o->fx);
 	}
 }
@@ -575,7 +575,7 @@ void cObjEntity_SetPos(cEntity *self, const vec3_t *pos) {
 	cEntity_SetPos(self, pos);
 	o->slotPos = self->pos;
 	o->renderPos = self->pos;
-	Obj_Vtbl(self)->UpdateModel(self);
+	Obj_UpdateModel(self);
 }
 
 void cObjEntity_SetEffect(cEntity *self, uint32_t fx) {
@@ -588,7 +588,7 @@ void cObjEntity_SetEffectParam(cEntity *self, int i, float v) {
 
 void cObjEntity_Switch(cEntity *self, byte on) {
 	if (CGameModel_IsLoaded(&Obj(self)->model)) {
-		CGameModel_EnableCollision(Obj_Vtbl(self)->GetModel(self), on, 1);
+		CGameModel_EnableCollision(Obj_GetModel(self), on, 1);
 		return;
 	}
 	Con_Warnf("SetStaticMapCollision(%d) Entity '%s' has no model\n", on != 0, self->name);
@@ -655,9 +655,9 @@ void cObjEntity_Update(cEntity *self) {
 		o->renderAng = o->ang;
 	}
 	cModMove_Update(&o->mod, dt);
-	Obj_Vtbl(self)->UpdateModel(self);
+	Obj_UpdateModel(self);
 	if (o->cam) {
-		CamCtl_Vtbl(o->cam)->Lerp(o->cam, f);
+		CamCtl_Lerp(o->cam, f);
 	}
 	if ((byte)cSlotController_Tick(o->slot, dt)) {
 		float iv;
@@ -676,16 +676,16 @@ void cObjEntity_Update(cEntity *self) {
 				o->slotAng = o->ang;
 			}
 			if (o->net) {
-				o->net->vftable->Reset(o->net);
+				NetCtl_Reset(o->net);
 			}
 			if ((byte)cPy_Function_IsValid(&o->onObjSlot)) {
 				cPy_Function_AddParamS(&o->onObjSlot, self->name);
 				cPy_Function_AddParamF(&o->onObjSlot, iv);
 				cPy_Function_Execute(&o->onObjSlot, 0);
 			}
-			Obj_Vtbl(self)->Tick(self, iv);
+			Obj_Tick(self, iv);
 			if (o->cam) {
-				CamCtl_Vtbl(o->cam)->Slot(o->cam, iv);
+				CamCtl_Slot(o->cam, iv);
 			}
 		}
 		float cx = self->pos.x, cy = self->pos.y, cz = self->pos.z;
@@ -705,7 +705,7 @@ void cObjEntity_Update(cEntity *self) {
 		}
 	}
 	if (o->fx) {
-		o->fx->vftable->Update(o->fx, dt);
+		EFX_Update(o->fx, dt);
 	}
 	cEntity_Update(self);
 }
@@ -747,7 +747,7 @@ byte cObjEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 		}
 		return 1;
 	}
-	if (Snd_Vtbl(&o->snd)->VarS(&o->snd, name, s, set)) {
+	if (SndIf_VarS(&o->snd, name, s, set)) {
 		return 1;
 	}
 	return cEntity_VarS(self, name, s, set);
@@ -782,7 +782,7 @@ byte cObjEntity_VarV(cEntity *self, const char *name, double *x, double *y, doub
 		if (!crt_strncmp("NodePos_", name, 8)) {
 			int i = CGameModel_FindRenderNode(&o->model, name + 8);
 			if (i) {
-				uint32_t slot = (uint32_t)Obj_Vtbl(self)->GetNodeSlot(self);
+				uint32_t slot = (uint32_t)Obj_GetNodeSlot(self);
 				Obj_NodePos(CGameModel_NodeMatrix(&o->model, &mat, (uint32_t)i, 1, NULL, slot), x, y, z);
 				return 1;
 			}
@@ -813,7 +813,7 @@ byte cObjEntity_VarV(cEntity *self, const char *name, double *x, double *y, doub
 		return 1;
 	}
 	if (!(byte)set && !strcmp(name, "SndPos")) {
-		Obj_Vtbl(self)->GetSndPos(self, &v);
+		Obj_GetSndPos(self, &v);
 		*x = v.x;
 		*y = v.y;
 		*z = v.z;
@@ -836,9 +836,9 @@ byte cObjEntity_VarV(cEntity *self, const char *name, double *x, double *y, doub
 			v.x = Deg2Rad(*x);
 			v.y = Deg2Rad(*y);
 			v.z = Deg2Rad(*z);
-			Obj_Vtbl(self)->SetAng(self, &v);
+			Obj_SetAng(self, &v);
 		} else {
-			Obj_Vtbl(self)->GetAng(self, &v);
+			Obj_GetAng(self, &v);
 			*x = Rad2Deg(v.x);
 			*y = Rad2Deg(v.y);
 			*z = Rad2Deg(v.z);
@@ -859,7 +859,7 @@ byte cObjEntity_VarV(cEntity *self, const char *name, double *x, double *y, doub
 		CGameModel_SetPivot(&o->model, &v, 1, 0);
 		return 1;
 	}
-	if (Snd_Vtbl(&o->snd)->VarV(&o->snd, name, x, y, z, set)) {
+	if (SndIf_VarV(&o->snd, name, x, y, z, set)) {
 		return 1;
 	}
 	return cEntity_VarV(self, name, x, y, z, set);
@@ -1072,14 +1072,14 @@ void cNetController_Apply(cNetController *self, cEntity *e, float dt, byte move)
 static inline int16_t Net_ReadShort(cAbstractFile *msg) {
 	int16_t v;
 
-	msg->vftable->Read(msg, &v, 2);
+	VFile_Read(msg, &v, 2);
 	return v;
 }
 
 static inline int8_t Net_ReadByte(cAbstractFile *msg) {
 	int8_t v;
 
-	msg->vftable->Read(msg, &v, 1);
+	VFile_Read(msg, &v, 1);
 	return v;
 }
 
@@ -1101,17 +1101,17 @@ static inline float Net_ReadRot(cAbstractFile *msg, byte full) {
 static inline void Net_WriteShort(cAbstractFile *msg, int v) {
 	uint32_t t = (uint16_t)v;
 
-	msg->vftable->Write(msg, &t, 2);
+	VFile_Write(msg, &t, 2);
 }
 
 static inline void Net_WriteByte(cAbstractFile *msg, int v) {
 	byte b = (byte)v;
 
-	msg->vftable->Write(msg, &b, 1);
+	VFile_Write(msg, &b, 1);
 }
 
 static inline void Net_WriteFloat(cAbstractFile *msg, float f) {
-	msg->vftable->Write(msg, &f, 4);
+	VFile_Write(msg, &f, 4);
 }
 
 /* a packed angle: the x87 product of the normalized angle (in the precision of the game) truncated */
@@ -1152,7 +1152,7 @@ void cNetController_Write(cNetController *self, int flags, cEntity *e, void *m, 
 		self->flags = flags;
 		f = flags;
 	} else {
-		f = self->vftable->Changed(self, flags, e);
+		f = NetCtl_Changed(self, flags, e);
 	}
 	Net_WriteByte(msg, f);
 	byte full = f & NETC_FULL;
@@ -1212,12 +1212,12 @@ void cNetController_Read(cNetController *self, void *m) {
 	cAbstractFile *msg = m;
 	vec3_t clamped;
 
-	msg->vftable->Read(msg, &self->flags, 1);
+	VFile_Read(msg, &self->flags, 1);
 	if (self->flags & NETC_POS) {
 		if (self->flags & NETC_FULL) {
-			msg->vftable->Read(msg, &self->pos.x, 4);
-			msg->vftable->Read(msg, &self->pos.y, 4);
-			msg->vftable->Read(msg, &self->pos.z, 4);
+			VFile_Read(msg, &self->pos.x, 4);
+			VFile_Read(msg, &self->pos.y, 4);
+			VFile_Read(msg, &self->pos.z, 4);
 		} else {
 			self->pos.x = (float)Net_ReadShort(msg);
 			self->pos.y = (float)Net_ReadShort(msg);
@@ -1241,9 +1241,9 @@ void cNetController_Read(cNetController *self, void *m) {
 	}
 	if (self->flags & NETC_VEL) {
 		if (self->flags & NETC_FULL) {
-			msg->vftable->Read(msg, &self->vel.x, 4);
-			msg->vftable->Read(msg, &self->vel.y, 4);
-			msg->vftable->Read(msg, &self->vel.z, 4);
+			VFile_Read(msg, &self->vel.x, 4);
+			VFile_Read(msg, &self->vel.y, 4);
+			VFile_Read(msg, &self->vel.z, 4);
 		} else {
 			self->vel.x = (float)Net_ReadShort(msg);
 			self->vel.y = (float)Net_ReadShort(msg);

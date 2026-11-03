@@ -251,7 +251,7 @@ static PyObject *SScorer_Set(PyObject *self, PyObject *args) {
 	(void)self;
 	if (PyArg_ParseTuple(args, "isss", &player, &name, &var, &s)) {
 		if ((sc = Scorer_Get(player)) && (item = cScorer_FindItem(sc, name))) {
-			return Py_BuildValue("i", item->vftable->Var(item, var, 1, &s, NULL, NULL));
+			return Py_BuildValue("i", ScorerItem_Var(item, var, 1, &s, NULL, NULL));
 		}
 		return Py_ReturnNone();
 	}
@@ -262,7 +262,7 @@ static PyObject *SScorer_Set(PyObject *self, PyObject *args) {
 	sc = Scorer_Get(player);
 	i = (int)d;
 	if (sc && (item = cScorer_FindItem(sc, name))) {
-		return Py_BuildValue("i", item->vftable->Var(item, var, 1, NULL, &d, &i));
+		return Py_BuildValue("i", ScorerItem_Var(item, var, 1, NULL, &d, &i));
 	}
 	return Py_ReturnNone();
 }
@@ -280,7 +280,7 @@ static PyObject *SScorer_Get(PyObject *self, PyObject *args) {
 	cScorer *sc = Scorer_Get(player);
 	cScorerItem *item = sc ? cScorer_FindItem(sc, name) : NULL;
 	if (item) {
-		switch (item->vftable->Var(item, var, 0, &s, &d, &i)) {
+		switch (ScorerItem_Var(item, var, 0, &s, &d, &i)) {
 		case 1:
 			return Py_BuildValue("s", s);
 		case 2:

@@ -277,6 +277,11 @@ typedef struct cCannonScorerVtbl {
 	void(*DrawLock)(struct cCannonScorer *self, int player, const float *pos);	/* 0x10 */
 } cCannonScorerVtbl;
 
+/* calls through the slots of cCannonScorerVtbl */
+static inline void CannonScorer_DrawLock(void *self, int player, const float *pos) {
+	VT(cCannonScorerVtbl, self)->DrawLock(self, player, pos);
+}
+
 typedef struct cCannonScorer {
 	cScorerItem base;		/* 0x00 */
 	byte shown;			/* 0xac the aim was drawn in the last frame (the no ammo sound when it goes) */
@@ -428,6 +433,15 @@ typedef struct cHeadScorerVtbl {
 	byte(*SetModel)(cScorerItem *self, const char *name);			/* 0x14 */
 } cHeadScorerVtbl;
 
+/* calls through the slots of cHeadScorerVtbl */
+static inline byte HeadScorer_SetModel(void *self, const char *name) {
+	return VT(cHeadScorerVtbl, self)->SetModel(self, name);
+}
+
+static inline void HeadScorer_SetAnim(void *self, int anim) {
+	VT(cHeadScorerVtbl, self)->SetAnim(self, anim);
+}
+
 typedef struct cHeadScorer {
 	cScorerItem base;		/* 0x00 */
 	float time;			/* 0xac the sway, random start */
@@ -436,12 +450,6 @@ typedef struct cHeadScorer {
 	CGameCamera *cam;		/* 0xb8 */
 	float vw, vh;			/* 0xbc the view size */
 } cHeadScorer;
-
-/* the head slots of the vtables of cHeadScorer and cMonitorScorer */
-#define HeadScorer_SetAnim(self, a) \
-	((const cHeadScorerVtbl *)(self)->base.vftable)->SetAnim(&(self)->base, (a))
-#define HeadScorer_SetModel(self, name) \
-	((const cHeadScorerVtbl *)(self)->base.vftable)->SetModel(&(self)->base, (name))
 
 cHeadScorer *cHeadScorer_ctor(cHeadScorer *self);
 
@@ -665,7 +673,7 @@ static inline int ScorerVar_Bool(byte *v, byte set, int *i) {
 /* the sound of an engine variable at its volume */
 static inline void Scorer_PlaySound(const char *snd, float vol) {
 	CSoundSys *s = g_pSound;
-	s->vftable->Play(s, snd, Snd_Volume(vol), 0);
+	SoundSys_Play(s, snd, Snd_Volume(vol), 0);
 }
 
 void cScorer_SetParam(cScorer *scorer, const char *name, const char *value);

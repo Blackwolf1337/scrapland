@@ -103,16 +103,33 @@ typedef struct cCamControlVtbl {
 	void(*UpdateOff)(cEntity *self, float dt);				/* 0x70 vf28 */
 } cCamControlVtbl;
 
+/* calls through the slots of cCamControlVtbl */
+static inline void CamCtl_GetCamPos(void *self, float *x, float *y, float *z) {
+	VT(cCamControlVtbl, self)->GetCamPos(self, x, y, z);
+}
+
+static inline void CamCtl_Lerp(void *self, float f) {
+	VT(cCamControlVtbl, self)->Lerp(self, f);
+}
+
+static inline byte CamCtl_SetTarget(void *self, const char *name) {
+	return VT(cCamControlVtbl, self)->SetTarget(self, name);
+}
+
+static inline void CamCtl_Slot(void *self, float dt) {
+	VT(cCamControlVtbl, self)->Slot(self, dt);
+}
+
+static inline void CamCtl_UpdateOff(void *self, float dt) {
+	VT(cCamControlVtbl, self)->UpdateOff(self, dt);
+}
+
 /* the follow camera adds two */
 typedef struct cFollowCamVtbl {
 	cCamControlVtbl base;
 	void(*GetAng2)(cEntity *self, float *ang);				/* 0x74 vf29 */
 	void(*SetAng2)(cEntity *self, const float *ang);			/* 0x78 vf30 */
 } cFollowCamVtbl;
-
-static inline const cCamControlVtbl *CamCtl_Vtbl(cEntity *e) {
-	return (const cCamControlVtbl *)e->vftable;
-}
 
 extern cGVar GVar_WalkCameraCenter;
 #define g_WalkCameraCenter (GVar_WalkCameraCenter.value.f)	/* WalkCameraCenter */

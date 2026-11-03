@@ -127,7 +127,7 @@ static float g_MainMenuNeonWait[21];
 
 /* the time of the item and, once, the random animation state */
 static void cScraplandMainMenuScorer_Init(cScraplandMainMenuScorer *self) {
-	self->time = (float)g_pApp->vftable->GetGameTime(g_pApp);
+	self->time = (float)App_GetGameTime(g_pApp);
 	if (g_MainMenuAnimInit) {
 		return;
 	}
@@ -204,7 +204,7 @@ static float g_SubMenuRingTime;
 static float g_SubMenuRingWait;
 
 static void cScraplandSubMenuScorer_Init(cScraplandSubMenuScorer *self) {
-	self->time = (float)g_pApp->vftable->GetGameTime(g_pApp);
+	self->time = (float)App_GetGameTime(g_pApp);
 	if (g_SubMenuAnimInit) {
 		return;
 	}
@@ -389,7 +389,7 @@ static void cScraplandSubMenuScorer_Draw(cScorerItem *base, int player) {
 	float pos[4][2];
 
 	(void)player;
-	float t = (float)g_pApp->vftable->GetGameTime(g_pApp);
+	float t = (float)App_GetGameTime(g_pApp);
 	self->now = t;
 	float dt = t - self->time;
 	self->time = t;
@@ -656,7 +656,7 @@ static void cScraplandMainMenuScorer_Draw(cScorerItem *base, int player) {
 	static const char remastered[] = "Remastered";
 	float pos[2], dim[2];
 
-	float t = (float)g_pApp->vftable->GetGameTime(g_pApp);
+	float t = (float)App_GetGameTime(g_pApp);
 	self->now = t;
 	float d = t - self->time;
 	self->time = t;

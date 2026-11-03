@@ -124,7 +124,7 @@ static byte cDebris_SetFX(int type, cDebris *d) {
 		return 0;
 	}
 	if (d->fx) {
-		d->fx->vftable->Delete(d->fx, 1);
+		FXObj_Delete(d->fx, 1);
 		d->fx = NULL;
 	}
 	for (i = 0; i < sizeof(debrisFX) / sizeof(debrisFX[0]); i++) {
@@ -136,7 +136,7 @@ static byte cDebris_SetFX(int type, cDebris *d) {
 		}
 	}
 	if (type && d->fx) {
-		d->fx->vftable->Start(d->fx, d);
+		FXObj_Start(d->fx, d);
 		return 1;
 	}
 	return 0;
@@ -176,7 +176,7 @@ void cDebrisSys_dtor(cDebrisSys *sys) {
 
 static void Debris_Free(cDebris *d) {
 	if (d->fx) {
-		d->fx->vftable->Delete(d->fx, 1);
+		FXObj_Delete(d->fx, 1);
 	}
 	CGameModel_Reset(Debris_Mod(d));
 	operator_delete_sized(d, sizeof(*d));
@@ -199,7 +199,7 @@ static void Debris_Move(cDebris *d, float dt) {
 /* the model moved by the part dt of the next step (the effect does it with one) */
 void cDebris_Step(cDebris *d, float dt) {
 	if (d->fx) {
-		d->fx->vftable->Update(d->fx, d, dt);
+		FXObj_Update(d->fx, d, dt);
 		return;
 	}
 	Debris_Move(d, dt);
@@ -446,7 +446,7 @@ void cDebrisSys_ShowInfo(cDebrisSys *sys, int x, int y, float *line) {
 /* the step of the debris: by its effect or the own move */
 static byte cDebris_IsAlive(cDebris *d, cDebrisSys *sys) {
 	if (d->fx) {
-		return d->fx->vftable->IsAlive(d->fx, d, sys);
+		return FXObj_IsAlive(d->fx, d, sys);
 	}
 	return cDebris_Update(d, sys);
 }
@@ -462,7 +462,7 @@ void cDebrisSys_Release(cDebrisSys *sys, cDebris *d) {
 	sys->idle = d;
 	CGameModel_Disable(Debris_Mod(d));
 	if (d->fx) {
-		d->fx->vftable->Reset(d->fx, d);
+		FXObj_Reset(d->fx, d);
 	}
 }
 

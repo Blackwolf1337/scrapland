@@ -60,7 +60,7 @@ void Domination_SetZoneState(int zone, int state) {
 /* the zone the ship of ai is on its way to; one its side does not go for any more is taken away (the AI to 0) */
 static cEntity *cDominationLogic_GetZone(cDominationLogic *self, cAIVehicle *ai) {
 	const char *key = ((cEntity *)cAIVehicle_GetVehicle(ai))->name;
-	int going = self->vftable->GetTeam(self) != 1 ? 4 : 3;
+	int going = Domination_GetTeam(self) != 1 ? 4 : 3;
 	cNameItem *it = NameTable_Find(&self->assigned, key, HashTable_Slot(&self->assigned, key));
 
 	if (!it) {
@@ -92,23 +92,23 @@ static cEntity *cDominationLogic_FindEnemy(cDominationLogic *self, const vec3_t 
 	float best = 3.4028234663852886e+38f;
 	cEntity *found = NULL;
 
-	cDominationLogic *side = self->vftable->GetTeam(self) == 1 ? &g_pWorld->logic.dominEnemies.base
+	cDominationLogic *side = Domination_GetTeam(self) == 1 ? &g_pWorld->logic.dominEnemies.base
 		: &g_pWorld->logic.dominFriends.base;
-	cEntityListData *list = side->vftable->GetList(side);
+	cEntityListData *list = Domination_GetList(side);
 	for (Nto1Node *n = Logic_ListFirst(list); n; n = Logic_ListNext(n)) {
 		cEntity *v = n->data;
-		if (v && !v->vftable->IsType(v, TYEN_CAR)) {
+		if (v && !Entity_IsType(v, TYEN_CAR)) {
 			v = NULL;
 		}
 		CHECK(v && "v = AsVehicle (node->GetNode())");
-		float d = Domin_Dist2(v->vftable->GetPos(v, &tmp), pos);
+		float d = Domin_Dist2(Entity_GetPos(v, &tmp), pos);
 		if (best > d && max2 > d) {
 			best = d;
 			found = v;
 		}
 	}
 	if (other) {
-		float d = Domin_Dist2(other->vftable->GetPos(other, &tmp), pos);
+		float d = Domin_Dist2(Entity_GetPos(other, &tmp), pos);
 		if (best > d && max2 > d) {
 			found = other;
 		}
@@ -125,15 +125,15 @@ static void Domin_Chase(cAIVehicle *ai, cEntity *zone) {
 void cDominationLogic_UpdateShip(cDominationLogic *self, cEntity *v, cEntity *target, cEntity *baton) {
 	vec3_t t1, t2, t3;
 
-	cAIVehicle *ai = v->vftable->GetAI(v);
+	cAIVehicle *ai = Entity_GetAI(v);
 	CHECK(ai);
 	int st = cAIVehicle_GetState(ai);
-	int team = self->vftable->GetTeam(self);
+	int team = Domination_GetTeam(self);
 	cEntity *zone = cDominationLogic_GetZone(self, ai);
 	if (zone) {
-		const vec3_t *zp = zone->vftable->GetPos(zone, &t1);
+		const vec3_t *zp = Entity_GetPos(zone, &t1);
 		float minR = g_DominMinRangeDist;
-		if (Domin_Dist2(v->vftable->GetPos(v, &t2), zp) > minR * minR) {
+		if (Domin_Dist2(Entity_GetPos(v, &t2), zp) > minR * minR) {
 			if (st != AIV_STATE_CHASE) {
 				Domin_Chase(ai, zone);
 			}
@@ -141,9 +141,9 @@ void cDominationLogic_UpdateShip(cDominationLogic *self, cEntity *v, cEntity *ta
 		}
 		cEntity *enemy;
 		if (st == AIV_STATE_CHASE || st == 0) {
-			enemy = cDominationLogic_FindEnemy(self, v->vftable->GetPos(v, &t2), baton, g_DominMaxRangeDist);
+			enemy = cDominationLogic_FindEnemy(self, Entity_GetPos(v, &t2), baton, g_DominMaxRangeDist);
 		} else {
-			enemy = Logic_AsCar(ai->vftable->GetTargetEnt(&ai->base.base));
+			enemy = Logic_AsCar(AIMove_GetTargetEnt(ai));
 		}
 		if (!enemy) {
 			if (st != AIV_STATE_CHASE) {
@@ -151,8 +151,8 @@ void cDominationLogic_UpdateShip(cDominationLogic *self, cEntity *v, cEntity *ta
 			}
 			return;
 		}
-		zp = zone->vftable->GetPos(zone, &t1);
-		float d = Domin_Dist2(enemy->vftable->GetPos(enemy, &t3), zp);
+		zp = Entity_GetPos(zone, &t1);
+		float d = Domin_Dist2(Entity_GetPos(enemy, &t3), zp);
 		float maxR = g_DominMaxRangeDist;
 		minR = g_DominMinRangeDist;
 		if (d > maxR * maxR) {
@@ -160,8 +160,8 @@ void cDominationLogic_UpdateShip(cDominationLogic *self, cEntity *v, cEntity *ta
 				Domin_Chase(ai, zone);
 			}
 		} else if (d > minR * minR) {
-			const vec3_t *ep = enemy->vftable->GetPos(enemy, &t3);
-			if (Engine_TestLine(v->vftable->GetPos(v, &t1), ep, NULL, NULL)) {
+			const vec3_t *ep = Entity_GetPos(enemy, &t3);
+			if (Engine_TestLine(Entity_GetPos(v, &t1), ep, NULL, NULL)) {
 				if (st != AIV_STATE_CHASE) {
 					Domin_Chase(ai, zone);
 				}
@@ -201,7 +201,7 @@ void cDominationLogic_UpdateShip(cDominationLogic *self, cEntity *v, cEntity *ta
 		}
 		if (i == MAX_DOMIN_ZONES) {
 			if (chasing) {
-				cEntity *e = cDominationLogic_FindEnemy(self, v->vftable->GetPos(v, &t3), NULL,
+				cEntity *e = cDominationLogic_FindEnemy(self, Entity_GetPos(v, &t3), NULL,
 					g_DominWithinRangeDist);
 				if (e) {
 					cAIVehicle_SetState(ai, AIV_STATE_ATTACK, e);
@@ -301,7 +301,7 @@ int cDominationLogic_NearestZone(cDominationLogic *self, const vec3_t *pos) {
 			continue;
 		}
 		cEntity *z = g_DominZones[i].zone;
-		float d = Domin_Dist2(z->vftable->GetPos(z, &tmp), pos);
+		float d = Domin_Dist2(Entity_GetPos(z, &tmp), pos);
 		if (s == 0) {
 			if (bestFree > d) {
 				free = i;

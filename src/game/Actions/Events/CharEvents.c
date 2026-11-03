@@ -19,8 +19,8 @@ static void Event_Read(cAbstractFile *params, char *name, char *str) {
 
 /* the character of the event with its CHECKs */
 static void *Event_Ctrl(cEntity *ent) {
-	CHECK(ent->vftable->IsType(ent, TYEN_WITH_LIFE));
-	return WithLife_Vtbl(ent)->GetActCtrl(ent);
+	CHECK(Entity_IsType(ent, TYEN_WITH_LIFE));
+	return WithLife_GetActCtrl(ent);
 }
 
 /* Actions/Events/CharEvents.cpp and SoundEvents.cpp (src/game/Actions/Events/): the C functions ("!name") the
@@ -30,23 +30,23 @@ static void Event_AnmChangeRandomAnm(cAbstractFile *params) {
 	float t;
 
 	Event_Read(params, name, str);
-	params->vftable->Read(params, &t, sizeof(t));
+	VFile_Read(params, &t, sizeof(t));
 	cEntity *ent = World_FindEntity(name);
 	CHECK(ent);
-	CHECK(ent->vftable->IsType(ent, TYEN_WITH_LIFE));
+	CHECK(Entity_IsType(ent, TYEN_WITH_LIFE));
 	char *strRandomizer = strchr(str, ':');
 	CHECK(strRandomizer);
 	*strRandomizer = 0;
 	float mx = (float)crt_atof(strRandomizer + 1);
 	/* from 1 for the characters of the AI, else from 0 */
 	float mn = 1.0f;
-	if (!(mx >= 1.0f) || !ent->vftable->IsType(ent, TYEN_WALKCHAR) || cWalkCharEntity_GetOwnerSlot(ent) != -1) {
+	if (!(mx >= 1.0f) || !Entity_IsType(ent, TYEN_WALKCHAR) || cWalkCharEntity_GetOwnerSlot(ent) != -1) {
 		mn = 0.0f;
 	}
 	int r = crt_rand() & 0x7fff;
 	int n = (int)((float)((double)r * RAND_SCALE * (double)(mx - mn) + (double)mn) - 0.001f);
 	Str_PrintfQuiet(anim, sizeof(anim), "%s%d", str, n);
-	cActCtrl_Play(WithLife_Vtbl(ent)->GetActCtrl(ent), anim, 0, 1.0f);
+	cActCtrl_Play(WithLife_GetActCtrl(ent), anim, 0, 1.0f);
 }
 
 static void Event_AnmCommand(cAbstractFile *params) {
@@ -82,7 +82,7 @@ static void Event_AnmSetDisplAng(cAbstractFile *params) {
 	Event_Read(params, name, str);
 	cEntity *ent = World_FindEntity(name);
 	CHECK(ent);
-	CHECK(ent->vftable->IsType(ent, TYEN_WALKCHAR));
+	CHECK(Entity_IsType(ent, TYEN_WALKCHAR));
 	WChar(ent)->displAng = (float)crt_atof(str);
 }
 
@@ -92,9 +92,9 @@ static void Event_AnmStopChan(cAbstractFile *params) {
 	Event_Read(params, name, str);
 	cEntity *ent = World_FindEntity(name);
 	CHECK(ent);
-	CHECK(ent->vftable->IsType(ent, TYEN_WITH_LIFE));
+	CHECK(Entity_IsType(ent, TYEN_WITH_LIFE));
 	int i = crt_atoi(str);
-	cActCtrl_StopChan(WithLife_Vtbl(ent)->GetActCtrl(ent), i);
+	cActCtrl_StopChan(WithLife_GetActCtrl(ent), i);
 }
 
 static cPy_NativeFunc NativeFunc_AnmChangeRandomAnm;

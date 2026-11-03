@@ -84,7 +84,7 @@ static cEmbeddedFX *EFXHead_New(CGameModel *head, const char *glow) {
 	void *p = operator_new(sizeof(cEmbeddedFXHeadCrazyGambler));
 	cEmbeddedFXHeadCrazyGambler *fx = p ? cEmbeddedFXHeadCrazyGambler_ctor(p) : NULL;
 
-	fx->vftable->Reset((cEmbeddedFX *)fx);
+	EFX_Reset(fx);
 	cEmbeddedFXHeadCrazyGambler_Init(fx, head, glow);
 	return (cEmbeddedFX *)fx;
 }

@@ -92,7 +92,7 @@ static byte cPy_Function_NativeParams(cPy_Function *self) {
 	cFileMem *f = ParamFile_Get();
 	self->params = f;
 	f->buffer[0] = 0;
-	f->base.vftable->Open(&f->base, "", 7);
+	VFile_Open(f, "", 7);
 	return 1;
 }
 
@@ -117,7 +117,7 @@ static void cPy_Function_ReleaseParams(cPy_Function *self) {
 			return;
 		}
 		cFileMem *f = self->params;
-		f->base.vftable->Close(&f->base);
+		VFile_Close(f);
 		ParamFile_Free(f);
 	}
 	self->params = NULL;
@@ -253,7 +253,7 @@ void cPy_Function_AddParamI(cPy_Function *self, int v) {
 	if (self->flags & PYF_NATIVE) {
 		cPy_Function_NativeParams(self);
 		cAbstractFile *f = self->params;
-		f->vftable->Write(f, &v, sizeof(v));
+		VFile_Write(f, &v, sizeof(v));
 	} else if (self->flags & PYF_PYTHON) {
 		cPy_Function_PyParams(self);
 		PyObject *o = PyInt_FromLong(v);
@@ -266,7 +266,7 @@ void cPy_Function_AddParamF(cPy_Function *self, float v) {
 	if (self->flags & PYF_NATIVE) {
 		cPy_Function_NativeParams(self);
 		cAbstractFile *f = self->params;
-		f->vftable->Write(f, &v, sizeof(v));
+		VFile_Write(f, &v, sizeof(v));
 	} else if (self->flags & PYF_PYTHON) {
 		cPy_Function_PyParams(self);
 		PyObject *o = PyFloat_FromDouble(v);
@@ -329,7 +329,7 @@ int cPy_Function_Execute(cPy_Function *self, byte clear) {
 	} else if (self->flags & PYF_NATIVE) {
 		cPy_Function_NativeParams(self);
 		cAbstractFile *f = self->params;
-		f->vftable->Seek(f, 0);
+		VFile_Seek(f, 0);
 		nativefunc_t func = (nativefunc_t)self->func;
 		if (clear) {
 			cPy_Function_Clear(self);
@@ -353,7 +353,7 @@ void cPy_Function_ClearAll(void) {
 	}
 	for (cFileMem *f = g_FreeParamFiles; f; f = g_FreeParamFiles) {
 		g_FreeParamFiles = *(cFileMem **)f->buffer;
-		f->base.vftable->Destroy(&f->base, 1);
+		VFile_Destroy(f, 1);
 		freed++;
 	}
 	Con_Printf("%d Functions %d cleared\n", n, freed);

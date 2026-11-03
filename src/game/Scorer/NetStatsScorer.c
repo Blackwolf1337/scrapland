@@ -120,7 +120,7 @@ static void cNetStatsScorer_Draw(cScorerItem *base, int player) {
 			self->sent[g_NetStatSentSlot] = (float)g_NetStatSent * 0.25f;
 			slot = g_NetStatSentSlot;
 			self->start[slot] = self->end[slot];
-			float t = (float)g_pApp->vftable->GetGameTime(g_pApp);
+			float t = (float)App_GetGameTime(g_pApp);
 			self->end[g_NetStatSentSlot] = t;
 		}
 		g_NetStatSent = 0;

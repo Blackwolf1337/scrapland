@@ -26,6 +26,11 @@ typedef struct cAIVehicleControlVtbl {
 	struct cAIVehicleControl *(*Delete)(struct cAIVehicleControl *self, byte flags);	/* 0x00 */
 } cAIVehicleControlVtbl;
 
+/* calls through the slots of cAIVehicleControlVtbl */
+static inline struct cAIVehicleControl *AIVC_Delete(void *self, byte flags) {
+	return VT(cAIVehicleControlVtbl, self)->Delete(self, flags);
+}
+
 typedef struct cAIVehicleControl {
 	const cAIVehicleControlVtbl *vftable;	/* 0x000 */
 	byte boost;			/* 0x004 the boost of the vehicle on */
@@ -123,6 +128,11 @@ typedef struct cAIVSWeap {
 typedef struct cAIVehicleShootVtbl {
 	struct cAIVehicleShoot *(*Delete)(struct cAIVehicleShoot *self, byte flags);	/* 0x00 */
 } cAIVehicleShootVtbl;
+
+/* calls through the slots of cAIVehicleShootVtbl */
+static inline struct cAIVehicleShoot *AIVShoot_Delete(void *self, byte flags) {
+	return VT(cAIVehicleShootVtbl, self)->Delete(self, flags);
+}
 
 typedef struct cAIVehicleShoot {
 	const cAIVehicleShootVtbl *vftable;	/* 0x000 */

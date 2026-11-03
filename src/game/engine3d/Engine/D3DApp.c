@@ -219,22 +219,22 @@ int CD3DApp_ResetDevice(CD3DApplication *self) {
 }
 
 int CD3DApp_Reset(CD3DApplication *self) {
-	int r = self->vftable->InvalidateDeviceObjects(self);
+	int r = D3DApp_InvalidateDeviceObjects(self);
 	if (r < 0) {
 		return r;
 	}
-	self->vftable->DeleteDeviceObjects(self);
+	D3DApp_DeleteDeviceObjects(self);
 	r = D3DApp_DevReset(self);
 	if (r < 0) {
 		E3D_LogBlue((&g_FileLog), "ERROR: ResetDevice(): %08X", r);	/* "ERROR: ResetDevice(): %08X" */
 	}
 	CD3DApp_UpdateBackBufferDesc(self);
 	Splash_Reset();
-	r = self->vftable->InitDeviceObjects(self);
+	r = D3DApp_InitDeviceObjects(self);
 	if (r < 0) {
 		return r;
 	}
-	r = self->vftable->RestoreDeviceObjects(self);
+	r = D3DApp_RestoreDeviceObjects(self);
 	if (r < 0) {
 		return r;
 	}
@@ -262,8 +262,8 @@ int CD3DApp_Cleanup(CD3DApplication *self) {
 	self->active = 0;
 	self->ready = 0;
 	if (self->device) {
-		self->vftable->InvalidateDeviceObjects(self);
-		self->vftable->DeleteDeviceObjects(self);
+		D3DApp_InvalidateDeviceObjects(self);
+		D3DApp_DeleteDeviceObjects(self);
 		if (Rd_Release(self->device)) {
 			E3D_LogBlue((&g_FileLog), "A D3D object has a non-zero reference count.");
 		}
@@ -271,7 +271,7 @@ int CD3DApp_Cleanup(CD3DApplication *self) {
 		self->device = NULL;
 		self->d3d = NULL;
 	}
-	return self->vftable->FinalCleanup(self);
+	return D3DApp_FinalCleanup(self);
 }
 
 static D3DDeviceInfo *D3DApp_CurDevice(CD3DApplication *self) {
@@ -282,8 +282,8 @@ static D3DDeviceInfo *D3DApp_CurDevice(CD3DApplication *self) {
 /* the device released and the environment made again; 0 and the result of the error shown on failures */
 static int CD3DApp_Initialize3DEnvironment(CD3DApplication *self);
 static byte D3DApp_Recreate(CD3DApplication *self, int *err) {
-	self->vftable->InvalidateDeviceObjects(self);
-	self->vftable->DeleteDeviceObjects(self);
+	D3DApp_InvalidateDeviceObjects(self);
+	D3DApp_DeleteDeviceObjects(self);
 	if (Rd_Release(self->device)) {
 		*err = CD3DApp_DisplayErrorMsg(0x8200000a);	/* D3DAPPERR_NONZEROREFCOUNT */
 		return 0;
@@ -340,7 +340,7 @@ int CD3DApp_ToggleFullscreen(CD3DApplication *self) {
 	self->ready = 0;
 	self->windowed = !self->windowed;
 	dev->bWindowed = self->windowed;
-	self->vftable->AdjustWindowForChange(self);
+	D3DApp_AdjustWindowForChange(self);
 	pp->Windowed = dev->bWindowed;
 	pp->MultiSampleType = dev->MultiSampleType;
 	pp->AutoDepthStencilFormat = mode->DepthStencilFormat;
@@ -417,7 +417,7 @@ int CD3DApp_Create(CD3DApplication *self, void *inst) {
 	Plat_ClientSize(&cw, &ch);
 	self->windowBounds = (exe_rect) { wr[0], wr[1], wr[2], wr[3] };
 	self->windowClient = (exe_rect) { 0, 0, cw, ch };
-	hr = self->vftable->OneTimeSceneInit(self);
+	hr = D3DApp_OneTimeSceneInit(self);
 	if (hr >= 0) {
 		hr = CD3DApp_Initialize3DEnvironment(self);
 		if (hr >= 0) {
@@ -680,7 +680,7 @@ static int CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 	D3DPresentParams *pp = &self->presentParams;
 	int hr;
 
-	self->vftable->AdjustWindowForChange(self);
+	D3DApp_AdjustWindowForChange(self);
 	memset(pp, 0, sizeof(*pp));
 	pp->Windowed = dev->bWindowed;
 	pp->BackBufferCount = 1;
@@ -725,16 +725,16 @@ static int CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 		D3DApp_Cat(stats, sizeof(self->deviceStats), ": ");
 		D3DApp_Cat(stats, sizeof(self->deviceStats), ad->id.Description);
 		CD3DApp_UpdateBackBufferDesc(self);
-		hr = self->vftable->InitDeviceObjects(self);
+		hr = D3DApp_InitDeviceObjects(self);
 		if (hr >= 0) {
-			hr = self->vftable->RestoreDeviceObjects(self);
+			hr = D3DApp_RestoreDeviceObjects(self);
 			if (hr >= 0) {
 				self->active = 1;
 				return 0;
 			}
 		}
-		self->vftable->InvalidateDeviceObjects(self);
-		self->vftable->DeleteDeviceObjects(self);
+		D3DApp_InvalidateDeviceObjects(self);
+		D3DApp_DeleteDeviceObjects(self);
 		if (self->device) {
 			Rd_Release(self->device);
 			self->device = NULL;
@@ -838,14 +838,14 @@ int CD3DApp_Render(CD3DApplication *self) {
 	if (self->frameMoving || self->singleStep) {
 		self->time = appTime;
 		self->elapsedTime = elapsed;
-		hr = self->vftable->FrameMove(self);
+		hr = D3DApp_FrameMove(self);
 		if (hr < 0) {
 			return hr;
 		}
 		self->singleStep = 0;
 	}
 	if (!(g_pApp->flags & APPF_DEDICATED)) {
-		hr = self->vftable->Render(self);
+		hr = D3DApp_Render(self);
 		if (hr < 0) {
 			return hr;
 		}

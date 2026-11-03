@@ -203,9 +203,9 @@ static void Lang_Load(const char *lang, cAbstractFile *f) {
 	size_t n = strlen(lang) + 1;
 	g_IdLang = Mem_Alloc(n);
 	memcpy(g_IdLang, lang, n);
-	int size = f->vftable->Size(f);
+	int size = VFile_Size(f);
 	g_LangBuffer = Mem_Alloc(size + 1);
-	f->vftable->Read(f, g_LangBuffer, size);
+	VFile_Read(f, g_LangBuffer, size);
 	g_LangBuffer[size] = 0;
 	char *id = g_LangBuffer;
 	for (char *tab = strchr(id, '\t'); tab; tab = strchr(id, '\t')) {

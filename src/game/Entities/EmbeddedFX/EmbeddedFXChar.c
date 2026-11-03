@@ -57,7 +57,7 @@ static inline void EFX_TrailsDtor(CGameTrail *trails, uint32_t n) {
 	crt_eh_vector_dtor(trails, sizeof(CGameTrail), n, (void *)CGameTrail_dtor);
 }
 
-static inline cEmbeddedFX *EFX_Delete(cEmbeddedFX *self, byte flags, uint32_t size) {
+static inline cEmbeddedFX *EFX_Free(cEmbeddedFX *self, byte flags, uint32_t size) {
 	if (flags & 1) {
 		operator_delete_sized(self, size);
 	}
@@ -67,7 +67,7 @@ static inline cEmbeddedFX *EFX_Delete(cEmbeddedFX *self, byte flags, uint32_t si
 /* the model of the entity, CHECKed */
 static CGameModel *EFX_Model(cEmbeddedFX *self, cEntity *e) {
 	self->ent = e;
-	CGameModel *model = Obj_Vtbl(e)->GetModel(e);
+	CGameModel *model = Obj_GetModel(e);
 	CHECK(CGameModel_IsLoaded(model));
 	return model;
 }
@@ -267,7 +267,7 @@ void cEmbeddedFX_dtor(cEmbeddedFX *self) {
 /* vf00 of the base class; it frees 4 bytes, the size of the vtable pointer alone */
 static cEmbeddedFX *cEmbeddedFX_Delete(cEmbeddedFX *self, byte flags) {
 	cEmbeddedFX_dtor(self);
-	return EFX_Delete(self, flags, 4);
+	return EFX_Free(self, flags, 4);
 }
 
 static void cEmbeddedFXBankDirector_dtor(cEmbeddedFXBankDirector *self) {
@@ -351,61 +351,61 @@ static void cEmbeddedFXSentinel_dtor(cEmbeddedFXSentinel *self) {
 static cEmbeddedFX *cEmbeddedFXBankDirector_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXBankDirector *self = (cEmbeddedFXBankDirector *)elem;
 	cEmbeddedFXBankDirector_dtor(self);
-	return EFX_Delete(&self->base, flags, sizeof(*self));
+	return EFX_Free(&self->base, flags, sizeof(*self));
 }
 
 static cEmbeddedFX *cEmbeddedFXBankMaster_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXBankMaster *self = (cEmbeddedFXBankMaster *)elem;
 	cEmbeddedFXBankMaster_dtor(self);
-	return EFX_Delete(&self->base, flags, sizeof(*self));
+	return EFX_Free(&self->base, flags, sizeof(*self));
 }
 
 static cEmbeddedFX *cEmbeddedFXCrazyGambler_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXCrazyGambler *self = (cEmbeddedFXCrazyGambler *)elem;
 	cEmbeddedFXCrazyGambler_dtor(self);
-	return EFX_Delete(&self->base, flags, sizeof(*self));
+	return EFX_Free(&self->base, flags, sizeof(*self));
 }
 
 static cEmbeddedFX *cEmbeddedFXGear_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXGear *self = (cEmbeddedFXGear *)elem;
 	cEmbeddedFXGear_dtor(self);
-	return EFX_Delete(&self->base, flags, sizeof(*self));
+	return EFX_Free(&self->base, flags, sizeof(*self));
 }
 
 static cEmbeddedFX *cEmbeddedFXMaintenance_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXMaintenance *self = (cEmbeddedFXMaintenance *)elem;
 	cEmbeddedFXMaintenance_dtor(self);
-	return EFX_Delete(&self->base, flags, sizeof(*self));
+	return EFX_Free(&self->base, flags, sizeof(*self));
 }
 
 static cEmbeddedFX *cEmbeddedFXMercenary_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXMercenary *self = (cEmbeddedFXMercenary *)elem;
 	cEmbeddedFXMercenary_dtor(self);
-	return EFX_Delete(&self->base, flags, sizeof(*self));
+	return EFX_Free(&self->base, flags, sizeof(*self));
 }
 
 static cEmbeddedFX *cEmbeddedFXMessenger_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXMessenger *self = (cEmbeddedFXMessenger *)elem;
 	cEmbeddedFXMessenger_dtor(self);
-	return EFX_Delete(&self->base, flags, sizeof(*self));
+	return EFX_Free(&self->base, flags, sizeof(*self));
 }
 
 static cEmbeddedFX *cEmbeddedFXPolice_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXPolice *self = (cEmbeddedFXPolice *)elem;
 	cEmbeddedFXPolice_dtor(self);
-	return EFX_Delete(&self->base, flags, sizeof(*self));
+	return EFX_Free(&self->base, flags, sizeof(*self));
 }
 
 static cEmbeddedFX *cEmbeddedFXRusty_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXRusty *self = (cEmbeddedFXRusty *)elem;
 	cEmbeddedFXRusty_dtor(self);
-	return EFX_Delete(&self->base, flags, sizeof(*self));
+	return EFX_Free(&self->base, flags, sizeof(*self));
 }
 
 static cEmbeddedFX *cEmbeddedFXSentinel_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXSentinel *self = (cEmbeddedFXSentinel *)elem;
 	cEmbeddedFXSentinel_dtor(self);
-	return EFX_Delete(&self->base, flags, sizeof(*self));
+	return EFX_Free(&self->base, flags, sizeof(*self));
 }
 
 /* ---- vf02: Release ---- */
@@ -722,7 +722,7 @@ void cEmbeddedFXCrazyGambler_SetHead(cEmbeddedFXCrazyGambler *self, CGameModel *
 	self->nodeHead = CGameModel_FindRenderNode(model, node);
 	CHECK(self->nodeHead > -1);
 	cEmbeddedFXCrazyGambler_Clear(self);
-	self->base.vftable->Update(&self->base, 0.5f);
+	EFX_Update(self, 0.5f);
 }
 
 static void cEmbeddedFXCrazyGambler_Init(cEmbeddedFXCrazyGambler *self, cEntity *e) {
@@ -850,7 +850,7 @@ static void cEmbeddedFXSentinel_Init(cEmbeddedFXSentinel *self, cEntity *e) {
 	CGameParticles_Release(&self->status);
 	self->dummyLaser = -1;
 	CGameParticles_Release(&self->laser);
-	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	CGameModel *model = Obj_GetModel(self->base.ent);
 	CHECK(CGameModel_IsLoaded(model));
 	self->dummyLaser = CGameModel_FindRenderNode(model, "DF_LaserScaner");
 	CHECK(self->dummyLaser > -1);
@@ -905,12 +905,12 @@ void EmbeddedFXChar_Create(cEntity *withLife, const char *model, cEmbeddedFX **f
 			continue;
 		}
 		if (cur) {
-			cur->vftable->Release(cur);
-			cur->vftable->Delete(cur, 1);
+			EFX_Release(cur);
+			EFX_Delete(cur, 1);
 		}
 		void *p = operator_new(efx_kinds[i].size);
 		cur = p ? efx_kinds[i].ctor(p) : NULL;
-		cur->vftable->Reset(cur);
+		EFX_Reset(cur);
 		efx_kinds[i].init(cur, withLife);
 		break;
 	}
@@ -922,10 +922,10 @@ static void EmbeddedFXChar_SetAlarm(const char *name, byte on) {
 	cEntity *v = World_FindEntity(name);
 
 	CHECK(v);
-	CHECK(v->vftable->IsType(v, TYEN_WITH_LIFE));
-	CHECK(CGameModel_IsLoaded(Obj_Vtbl(v)->GetModel(v)));
-	if (!strstr(CGameModel_Name(Obj_Vtbl(v)->GetModel(v)), "Police")
-		&& !strstr(CGameModel_Name(Obj_Vtbl(v)->GetModel(v)), "Gear")) {
+	CHECK(Entity_IsType(v, TYEN_WITH_LIFE));
+	CHECK(CGameModel_IsLoaded(Obj_GetModel(v)));
+	if (!strstr(CGameModel_Name(Obj_GetModel(v)), "Police")
+		&& !strstr(CGameModel_Name(Obj_GetModel(v)), "Gear")) {
 		return;
 	}
 	cEmbeddedFXAlarm_SetOn(&((cEmbeddedFXPolice *)Obj(v)->fx)->alarm, on);
@@ -939,7 +939,7 @@ static void EFX_ReadAlarm(cAbstractFile *f, byte on) {
 
 	cAbstractFile_ReadString(f, name, sizeof(name));
 	cAbstractFile_ReadString(f, other, sizeof(other));
-	f->vftable->Read(f, &unused, 4);
+	VFile_Read(f, &unused, 4);
 	EmbeddedFXChar_SetAlarm(name, on);
 }
 
@@ -992,7 +992,7 @@ static float EFX_FaceCamera(CGameModel *model) {
 
 static void cEmbeddedFXBankDirector_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXBankDirector *self = (cEmbeddedFXBankDirector *)elem;
-	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	CGameModel *model = Obj_GetModel(self->base.ent);
 	CGameParticles *p = &self->glow;
 
 	(void)dt;
@@ -1020,7 +1020,7 @@ static void cEmbeddedFXBankDirector_Update(cEmbeddedFX *elem, float dt) {
 
 static void cEmbeddedFXBankMaster_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXBankMaster *self = (cEmbeddedFXBankMaster *)elem;
-	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	CGameModel *model = Obj_GetModel(self->base.ent);
 	CGameParticles *p = &self->glow;
 
 	(void)dt;
@@ -1243,12 +1243,12 @@ static void cEmbeddedFXSentinel_Update(cEmbeddedFX *elem, float dt) {
 	}
 	self->state = WLife(e)->arrow.coneStatus;
 	/* a player sentinel in its "Action..." actions: danger with a target, else alert */
-	if (e->vftable->IsType(e, TYEN_WALKCHAR) && cWalkCharEntity_GetOwnerSlot(e) != -1
-		&& !crt_strncmp(cActCtrl_GetActionName(WithLife_Vtbl(e)->GetActCtrl(e), 0), "Action", 6)) {
+	if (Entity_IsType(e, TYEN_WALKCHAR) && cWalkCharEntity_GetOwnerSlot(e) != -1
+		&& !crt_strncmp(cActCtrl_GetActionName(WithLife_GetActCtrl(e), 0), "Action", 6)) {
 		self->state = (ChType_SentinelTarget(e) != NULL) + 2;
-	} else if (self->state == 0 && e->vftable->GetAI(e)) {
-		cAIChar *ai = e->vftable->GetAI(e);
-		if (ai->vftable->GetState(&ai->base.base) == 2) {
+	} else if (self->state == 0 && Entity_GetAI(e)) {
+		cAIChar *ai = Entity_GetAI(e);
+		if (AIChar_GetState(ai) == 2) {
 			self->state = 3;
 		}
 	}
@@ -1280,7 +1280,7 @@ static void cEmbeddedFXSentinel_Update(cEmbeddedFX *elem, float dt) {
 			CGameParticles_Kill(&self->laser, 0);
 		}
 	}
-	CGameModel *model = Obj_Vtbl(e)->GetModel(e);
+	CGameModel *model = Obj_GetModel(e);
 	CHECK(CGameModel_IsLoaded(model));
 	vec3_t cam = g_pWorld->camPos[g_pWorld->curCam];
 	vec3_t tmp;
@@ -1322,14 +1322,14 @@ static void cEmbeddedFXSentinel_Update(cEmbeddedFX *elem, float dt) {
 		self->phase[2].z = 0.0f;
 		self->phase[3].z = 1.5707964f;
 	}
-	model = Obj_Vtbl(e)->GetModel(e);
+	model = Obj_GetModel(e);
 	CHECK(CGameModel_IsLoaded(model));
 	matrix_t mbuf;
 	const matrix_t *m = CGameModel_NodeMatrix(model, &mbuf, self->dummyLaser, 1, NULL, 0);
 	vec3_t org = { m->m[12], m->m[13], m->m[14] };
 	vec3_t viewAng, ang;
-	Obj_Vtbl(e)->GetViewAng(e, &viewAng);
-	Obj_Vtbl(e)->GetSndAng(e, &ang);
+	Obj_GetViewAng(e, &viewAng);
+	Obj_GetSndAng(e, &ang);
 	uint32_t colBeam = base | 0x78000000;
 	uint32_t colEnd = base | 0x96000000;
 	for (int i = 0; i < (self->state == 2 ? 1 : FXSENTINEL_LASERS); i++) {
@@ -1416,7 +1416,7 @@ static vec3_t EFX_GamblerPoint(const vec3_t *vp, const vec3_t *pos, const vec3_t
 static void cEmbeddedFXCrazyGambler_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXCrazyGambler *self = (cEmbeddedFXCrazyGambler *)elem;
 	cEntity *e = self->base.ent;
-	CGameModel *model = Obj_Vtbl(e)->GetModel(e);
+	CGameModel *model = Obj_GetModel(e);
 	vec3_t pos, rot, last = { 0.0f, 0.0f, 0.0f };
 	vec3_t ctrl[GAMETRAIL_MAX_BEZIER], coefs[GAMETRAIL_MAX_BEZIER];
 	vec3_t verts[0x20];
@@ -1434,9 +1434,9 @@ static void cEmbeddedFXCrazyGambler_Update(cEmbeddedFX *elem, float dt) {
 		return;
 	}
 	self->visible = vis;
-	byte hand = cActCtrl_IsActive(WithLife_Vtbl(e)->GetActCtrl(e), "Relax1");
+	byte hand = cActCtrl_IsActive(WithLife_GetActCtrl(e), "Relax1");
 	if (hand) {
-		const cActLayer *l = cActCtrl_GetLayer(WithLife_Vtbl(e)->GetActCtrl(e), 0);
+		const cActLayer *l = cActCtrl_GetLayer(WithLife_GetActCtrl(e), 0);
 		if (1.5f > l->time || l->time > 5.0f) {
 			hand = 0;
 		}
@@ -1595,15 +1595,15 @@ static byte EFX_MessengerShown(cEmbeddedFXMessenger *self, CGameModel *model, by
 	}
 	cWorld *w = g_pWorld;
 	vec3_t cam = w->camPos[w->curCam];
-	const vec3_t *p = Obj_Vtbl(e)->GetViewPos(e, &buf);
+	const vec3_t *p = Obj_GetViewPos(e, &buf);
 	float dx = p->x - cam.x;
 	float dy = p->y - cam.y;
 	float dz = p->z - cam.z;
 	if (dy * dy + dx * dx + dz * dz > g_MessengerLightingDist * g_MessengerLightingDist) {
 		return 0;
 	}
-	if (WithLife_Vtbl(e)->GetActCtrl(e)
-		&& !strcmp(cActCtrl_GetActionName(WithLife_Vtbl(e)->GetActCtrl(e), 0), "Relax")) {
+	if (WithLife_GetActCtrl(e)
+		&& !strcmp(cActCtrl_GetActionName(WithLife_GetActCtrl(e), 0), "Relax")) {
 		return 0;
 	}
 	return 1;
@@ -1665,7 +1665,7 @@ static void EFX_MessengerBolt(cEmbeddedFXMessenger *self, CGameModel *model, int
 static void cEmbeddedFXMessenger_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXMessenger *self = (cEmbeddedFXMessenger *)elem;
 	cEntity *e = self->base.ent;
-	CGameModel *model = Obj_Vtbl(e)->GetModel(e);
+	CGameModel *model = Obj_GetModel(e);
 	vec3_t pts[3], coefs[GAMETRAIL_MAX_BEZIER];
 
 	byte vis = 0;
@@ -1842,11 +1842,11 @@ static void EFX_MercSmoke(cEmbeddedFXMercenary *self, CGameModel *model) {
 		el->on = 1;
 		CGameModel_SetSortZ(Debris_Mod(d), -0.03f, 0.0f);
 	}
-	if (!e || !WithLife_Vtbl(e)->GetActCtrl(e)) {
+	if (!e || !WithLife_GetActCtrl(e)) {
 		return;
 	}
 	for (uint32_t i = 0; i < sizeof(efx_mercQuiet) / sizeof(efx_mercQuiet[0]); i++) {
-		if (cActCtrl_IsActive(WithLife_Vtbl(e)->GetActCtrl(e), efx_mercQuiet[i])) {
+		if (cActCtrl_IsActive(WithLife_GetActCtrl(e), efx_mercQuiet[i])) {
 			return;
 		}
 	}
@@ -1903,7 +1903,7 @@ static void cEmbeddedFXMercenary_Update(cEmbeddedFX *elem, float dt) {
 		{ 0.0f, 3.5f, 0.0f, 1.0, 25.0, 0x347aff58, 5 },
 	};
 	cEntity *e = self->base.ent;
-	CGameModel *model = Obj_Vtbl(e)->GetModel(e);
+	CGameModel *model = Obj_GetModel(e);
 
 	if (!CGameModel_IsLoaded(model)) {
 		return;
@@ -2044,8 +2044,8 @@ static void EFX_RustySparks(cEmbeddedFXRusty *self) {
 	cEntity *e = self->base.ent;
 	const char *name = g_FXRustySparksSound;
 	int volume = Snd_Volume(g_FXRustySparksSoundVol);
-	const vec3_t *pos = Obj_Vtbl(e)->GetViewPos(e, &buf);
-	g_pSound->vftable->PlayAt(g_pSound, name, pos, volume);
+	const vec3_t *pos = Obj_GetViewPos(e, &buf);
+	SoundSys_PlayAt(g_pSound, name, pos, volume);
 }
 
 /* a control point of a bolt moved out from the center by m along its way and by a random offset of k */
@@ -2070,7 +2070,7 @@ static void EFX_RustyBend(vec3_t *out, const vec3_t *v, const vec3_t *pos, doubl
 static void cEmbeddedFXRusty_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXRusty *self = (cEmbeddedFXRusty *)elem;
 	cEntity *e = self->base.ent;
-	CGameModel *model = Obj_Vtbl(e)->GetModel(e);
+	CGameModel *model = Obj_GetModel(e);
 	vec3_t pos, pts[5], coefs[GAMETRAIL_MAX_BEZIER];
 
 	if (!CGameModel_IsLoaded(model)) {

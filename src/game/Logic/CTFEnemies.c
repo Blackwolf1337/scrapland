@@ -24,7 +24,7 @@ static cLocalLogic *CTFEnemies_MakeLogic(cEntity *e);
 static void CTFEnemies_OnDamage(cAbstractFile *params);
 
 cEntity *Logic_AsCar(cEntity *e) {
-	if (e && !e->vftable->IsType(e, TYEN_CAR)) {
+	if (e && !Entity_IsType(e, TYEN_CAR)) {
 		return NULL;
 	}
 	return e;
@@ -74,7 +74,7 @@ static void cCTFEnemiesData_GoToFlag(cCTFEnemiesData *self, const char *name, cA
 	}
 	cEntity *flag = World_FindEntity(name);
 	if (flag) {
-		vec3_t pos = *flag->vftable->GetPos(flag, &tmp);
+		vec3_t pos = *Entity_GetPos(flag, &tmp);
 		cAIVehicle_SetState(ai, AIV_STATE_FLAG, pos, (double)((cItemEntity *)flag)->radius, 0);
 	}
 }
@@ -91,7 +91,7 @@ static cEntity *cCTFEnemiesData_PickTarget(cCTFEnemiesData *self, cEntity *e, by
 		num++;
 	}
 	int r = crt_rand() % num;
-	if (pick && r == num - 1 && usr && usr->vftable->IsType(usr, TYEN_CAR)) {
+	if (pick && r == num - 1 && usr && Entity_IsType(usr, TYEN_CAR)) {
 		self->numAttack++;
 		return Logic_AsCar(usr);
 	}
@@ -131,8 +131,8 @@ static void cCTFEnemiesData_Think(cCTFEnemiesData *self) {
 	self->numAttack = 0;
 	do {
 		cEntity *e = Logic_AsCar(n->data);
-		CHECK(e->vftable->IsType(e, TYEN_CAR));
-		cAIVehicle *ai = e->vftable->GetAI(e);
+		CHECK(Entity_IsType(e, TYEN_CAR));
+		cAIVehicle *ai = Entity_GetAI(e);
 		CHECK(ai);
 		int st = cAIVehicle_GetState(ai);
 		cEntity *t = Logic_AsCar(Logic_AttackTarget(ai));
@@ -236,20 +236,20 @@ static void CTFEnemies_OnDamage(cAbstractFile *params) {
 		return;
 	}
 	cEntity *v = World_FindEntity(name);
-	if (!v || !v->vftable->IsType(v, TYEN_CAR)) {
+	if (!v || !Entity_IsType(v, TYEN_CAR)) {
 		return;
 	}
-	CHECK(v->vftable->IsType(v, TYEN_CAR));
+	CHECK(Entity_IsType(v, TYEN_CAR));
 	cVehicleEntity *veh = (cVehicleEntity *)v;
 	if (veh->wl.life >= (int)((float)veh->maxLife * 0.75f) || !attacker[0]) {
 		return;
 	}
 	cEntity *a = World_FindEntity(attacker);
-	if (!a || !a->vftable->IsType(a, TYEN_CAR)) {
+	if (!a || !Entity_IsType(a, TYEN_CAR)) {
 		return;
 	}
-	CHECK(a->vftable->IsType(a, TYEN_CAR));
-	cAIVehicle *ai = v->vftable->GetAI(v);
+	CHECK(Entity_IsType(a, TYEN_CAR));
+	cAIVehicle *ai = Entity_GetAI(v);
 	CHECK(ai);
 	cCTFEnemies *ctf = (&g_pWorld->logic.ctfEnemies);
 	cEntity *leader = Logic_AsCar(World_FindEntity(ctf->d->leader));
@@ -280,7 +280,7 @@ void cCTFEnemies_Update(cCTFEnemies *self, float dt) {
 
 /* the logic of a ship of the list (cEntityListData.func) */
 static cLocalLogic *CTFEnemies_MakeLogic(cEntity *e) {
-	CHECK(e && e->vftable->IsType(e, TYEN_CAR) && e->vftable->IsType(e, TYEN_CAR));
+	CHECK(e && Entity_IsType(e, TYEN_CAR) && Entity_IsType(e, TYEN_CAR));
 	cLocalLogic *l = operator_new(sizeof(*l));
 	if (l) {
 		l->parent = e;

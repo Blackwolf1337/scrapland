@@ -40,11 +40,11 @@ static cGVar GVar_FXHookFadeTime;
 
 /* cEntity slot 0x78: the angles of the entity into out */
 static inline vec3_t *Entity_GetRot(cEntity *e, vec3_t *out) {
-	return Obj_Vtbl(e)->GetViewAng(e, out);
+	return Obj_GetViewAng(e, out);
 }
 
 static inline CGameModel *Entity_Model(cEntity *e) {
-	return Obj_Vtbl(e)->GetModel(e);
+	return Obj_GetModel(e);
 }
 
 /* rand() in [0, 1] times range, plus add (all in double) */
@@ -100,7 +100,7 @@ void cObjElementFXHook_StartTarget(cObjElementFXHook *self, cEntity *emitter, cE
 	self->points[1].z = self->points[0].z + r.z;
 	end = NULL;
 	if (self->target && self->target->active && Entity_IsType(self->target, TYEN_WITH_LIFE)) {
-		end = Obj_Vtbl(self->target)->GetViewPos(self->target, &r);
+		end = Obj_GetViewPos(self->target, &r);
 	} else if (self->active && cTargetLock_GetPoint(&Veh(self->emitter)->weapons)) {
 		end = cTargetLock_GetPoint(&Veh(self->emitter)->weapons);
 	}
@@ -206,7 +206,7 @@ static void cObjElementFXHook_Update(cObjElementFX *base, cDebris *debris, float
 	self->sparkTime = self->sparkTime + delta;
 	e = self->emitter;
 	if (e && e->active) {
-		CGameModel_SetPos(Debris_Model(debris), Obj_Vtbl(e)->GetViewPos(e, &tmp));
+		CGameModel_SetPos(Debris_Model(debris), Obj_GetViewPos(e, &tmp));
 		CGameModel_SetSortZ(Debris_Model(debris), -5.0f, 1.0f);
 	}
 	e = self->emitter;
@@ -223,7 +223,7 @@ static void cObjElementFXHook_Update(cObjElementFX *base, cDebris *debris, float
 			return;
 		}
 		if (!CGameModel_IsVisible(model)) {
-			const vec3_t *c = Obj_Vtbl(self->emitter)->GetViewPos(self->emitter, &rot);
+			const vec3_t *c = Obj_GetViewPos(self->emitter, &rot);
 			const vec3_t *cam = cWorld_GetCamPos(g_pWorld, &tmp);
 			float dy = cam->y - c->y, dx = cam->x - c->x, dz = cam->z - c->z;
 			if (!(g_HookRange * g_HookRange > dy * dy + dx * dx + dz * dz)) {
@@ -238,7 +238,7 @@ static void cObjElementFXHook_Update(cObjElementFX *base, cDebris *debris, float
 		self->points[0].y = m->m[13];
 		self->points[0].z = m->m[14];
 		int n = CGameTrail_GetMaxTrails(&self->trail[0]) - 1;
-		const vec3_t *v = Vec3_Rotate(&r, &off, Obj_Vtbl(self->emitter)->GetViewAng(self->emitter, &rot));
+		const vec3_t *v = Vec3_Rotate(&r, &off, Obj_GetViewAng(self->emitter, &rot));
 		float inv = 1.0f / (float)n;
 		float sx = inv * v->x, sy = v->y * inv, sz = v->z * inv;
 		CGameTrail_Reset(&self->trail[0]);
@@ -262,14 +262,14 @@ static void cObjElementFXHook_Update(cObjElementFX *base, cDebris *debris, float
 		self->points[0].x = m->m[12];
 		self->points[0].y = m->m[13];
 		self->points[0].z = m->m[14];
-		const vec3_t *v = Vec3_Rotate(&r, &off, Obj_Vtbl(self->emitter)->GetViewAng(self->emitter, &rot));
+		const vec3_t *v = Vec3_Rotate(&r, &off, Obj_GetViewAng(self->emitter, &rot));
 		self->points[1].x = v->x + self->points[0].x;
 		self->points[1].y = self->points[0].y + v->y;
 		self->points[1].z = self->points[0].z + v->z;
 		const vec3_t *end = NULL;
 		e = self->target;
 		if (e && e->active && Entity_IsType(e, TYEN_WITH_LIFE)) {
-			end = Obj_Vtbl(self->target)->GetViewPos(self->target, &tmp);
+			end = Obj_GetViewPos(self->target, &tmp);
 		} else if (self->active && cTargetLock_GetPoint(&Veh(self->emitter)->weapons)) {
 			end = cTargetLock_GetPoint(&Veh(self->emitter)->weapons);
 		}
@@ -305,7 +305,7 @@ static void cObjElementFXHook_Update(cObjElementFX *base, cDebris *debris, float
 	}
 	if (!CGameModel_IsVisible(model)) {
 		vec3_t cam = g_pWorld->camPos[g_pWorld->curCam];
-		const vec3_t *c = Obj_Vtbl(self->emitter)->GetViewPos(self->emitter, &tmp);
+		const vec3_t *c = Obj_GetViewPos(self->emitter, &tmp);
 		float dy = cam.y - c->y, dx = cam.x - c->x, dz = cam.z - c->z;
 		if (!(g_HookRange * g_HookRange > dy * dy + dx * dx + dz * dz)) {
 			goto off;
@@ -619,16 +619,16 @@ static void EMI_Bolt(cObjElementFXEMI *self, int i, const vec3_t *pos, float dt,
 	cEntity *tgt = self->links[i].target;
 	if (tgt) {
 		const vec3_t *d = FX_RandomDir(&tmp);
-		float r = Obj_Vtbl(tgt)->GetRadius(tgt);
+		float r = Obj_GetRadius(tgt);
 		float ox = r * d->x * 0.16666667f;
 		float oy = r * d->y * 0.16666667f;
 		float oz = r * d->z * 0.16666667f;
-		const vec3_t *c = Obj_Vtbl(tgt)->GetViewPos(tgt, &tmp);
+		const vec3_t *c = Obj_GetViewPos(tgt, &tmp);
 		vec3_t *e = &self->pts[i][self->numPoints - 1];
 		e->x = ox + c->x;
 		e->y = c->y + oy;
 		e->z = c->z + oz;
-		const vec3_t *tp = tgt->vftable->GetPos(tgt, &tmp);
+		const vec3_t *tp = Entity_GetPos(tgt, &tmp);
 		float dy = tp->y - pos->y;
 		float dx = tp->x - pos->x;
 		float dz = tp->z - pos->z;
@@ -782,17 +782,17 @@ static void EMI_NewBolt(cObjElementFXEMI *self, int i, const vec3_t *pos, float 
 	if (sphere) {
 		kind = 2;
 		d = FX_RandomDir(&tmp);
-		float r = Obj_Vtbl(found)->GetRadius(found);
+		float r = Obj_GetRadius(found);
 		float ox = d->x * r * 0.16666667f;
 		float oy = d->y * r * 0.16666667f;
 		float oz = d->z * r * 0.16666667f;
-		const vec3_t *c = Obj_Vtbl(found)->GetViewPos(found, &tmp);
+		const vec3_t *c = Obj_GetViewPos(found, &tmp);
 		hit.x = c->x + ox;
 		hit.y = c->y + oy;
 		hit.z = c->z + oz;
 		cVehicleEntity *v = (cVehicleEntity *)found;
-		if (found->vftable->IsType(found, "WithLife") &&
-			(WLife(found)->life <= 0 || (found->vftable->IsType(found, "Car") && 0.0f >= v->emi))) {
+		if (Entity_IsType(found, "WithLife") &&
+			(WLife(found)->life <= 0 || (Entity_IsType(found, "Car") && 0.0f >= v->emi))) {
 			found = NULL;
 			kind = 0;
 		} else if (found && (Entity_Removed(found) || !found->active)) {
@@ -842,7 +842,7 @@ static void EMI_NewBolt(cObjElementFXEMI *self, int i, const vec3_t *pos, float 
 	sd.volume += Snd_Volume(g_EMIThunderSoundVol);
 	int r = crt_rand();
 	CSoundSys *snd = g_pSound;
-	snd->vftable->PlaySound(snd, (r & 1) ? g_EMIThunder1Sound : g_EMIThunder2Sound, &sd, NULL);
+	SoundSys_PlaySound(snd, (r & 1) ? g_EMIThunder1Sound : g_EMIThunder2Sound, &sd, NULL);
 }
 
 /* the glows at the center: a particle by the radius, puffs by the life left */
@@ -907,7 +907,7 @@ static void cObjElementFXEMI_Update(cObjElementFX *base, cDebris *debris, float 
 	CGameModel_GetRot(model, &rot);
 	e = self->entity;
 	if (e && e->active) {
-		pos = *Obj_Vtbl(e)->GetViewPos(e, &tmp);
+		pos = *Obj_GetViewPos(e, &tmp);
 		CGameModel_SetPos(model, &pos);
 		CGameModel_SetRot(model, &rot);
 	}
@@ -1267,8 +1267,8 @@ static void cObjElementFXDebrisCloud_Update(cObjElementFX *base, cDebris *debris
 	self->emitT = self->emitT + delta;
 	e = self->entity;
 	if (e && e->active) {
-		Obj_Vtbl(e)->GetViewPos(e, &pos);
-		Obj_Vtbl(self->entity)->GetViewAng(self->entity, &rot);
+		Obj_GetViewPos(e, &pos);
+		Obj_GetViewAng(self->entity, &rot);
 		CGameModel_SetPos(model, &pos);
 		CGameModel_SetRot(model, &rot);
 	}
@@ -1359,7 +1359,7 @@ void cObjElementFXDebrisCloud_SetEntity(cObjElementFXDebrisCloud *self, cEntity 
 
 void cObjElementFXDebrisCloud_Warm(cObjElementFXDebrisCloud *self, cDebris *debris) {
 	for (int i = 0; i < 4; i++) {
-		self->base.vftable->Update(&self->base, debris, 0.0f);
+		FXObj_Update(self, debris, 0.0f);
 	}
 }
 

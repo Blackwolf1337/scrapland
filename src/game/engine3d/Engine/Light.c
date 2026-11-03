@@ -88,7 +88,7 @@ static void Light_Release(CNode3D **slot) {
 		CNode3D *old = *slot;
 		old->Refs--;
 		if (!old->Refs && old) {
-			old->vftable->Delete(&old->ref, 1);
+			ObjRef_Delete(old, 1);
 		}
 		*slot = NULL;
 	}
@@ -355,7 +355,7 @@ static void CLight_Reset(IObject3D *elem, void *arg) {
 	(void)arg;
 	CLight_FillD3D(self, &self->d3d);
 	CLight_UpdateD3D(self, 0);
-	self->vftable->Update(&self->base, NULL);
+	Object3D_Update(self, NULL);
 }
 
 static cGVar GVar_R_ShowLights;

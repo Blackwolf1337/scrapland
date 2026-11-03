@@ -83,8 +83,49 @@ typedef struct cMissileEntityVtbl {
 	void(*Explode)(cEntity *self, const vec3_t *at);		/* 0x108 */
 } cMissileEntityVtbl;
 
-static inline const cMissileEntityVtbl *Missile_Vtbl(cMissileEntity *e) {
-	return (const cMissileEntityVtbl *)e->wl.obj.base.vftable;
+/* calls through the slots of cMissileEntityVtbl */
+static inline void Missile_AddToSwarm(void *self, int n) {
+	VT(cMissileEntityVtbl, self)->AddToSwarm(self, n);
+}
+
+static inline void Missile_Explode(void *self, const vec3_t *at) {
+	VT(cMissileEntityVtbl, self)->Explode(self, at);
+}
+
+static inline void Missile_Fall(void *self, float dt) {
+	VT(cMissileEntityVtbl, self)->Fall(self, dt);
+}
+
+static inline byte Missile_Hit(void *self, int n, float unused) {
+	return VT(cMissileEntityVtbl, self)->Hit(self, n, unused);
+}
+
+static inline void Missile_LifeTick(void *self) {
+	VT(cMissileEntityVtbl, self)->LifeTick(self);
+}
+
+static inline void Missile_RotStep(void *self, float dt) {
+	VT(cMissileEntityVtbl, self)->RotStep(self, dt);
+}
+
+static inline void Missile_ScaleSwarmSound(void *self, float unused) {
+	VT(cMissileEntityVtbl, self)->ScaleSwarmSound(self, unused);
+}
+
+static inline void Missile_SetSwarm(void *self, int n) {
+	VT(cMissileEntityVtbl, self)->SetSwarm(self, n);
+}
+
+static inline void Missile_Swarm(void *self, float dt) {
+	VT(cMissileEntityVtbl, self)->Swarm(self, dt);
+}
+
+static inline void Missile_UpdateVel(void *self) {
+	VT(cMissileEntityVtbl, self)->UpdateVel(self);
+}
+
+static inline void Missile_Wobble(void *self, float k) {
+	VT(cMissileEntityVtbl, self)->Wobble(self, k);
 }
 
 /* the base class (src/game/Entities/WithLifeEntity.c) */

@@ -82,7 +82,7 @@ void cWithLifeEntity_dtor(cEntity *self) {
 
 	self->vftable = CWITHLIFEENTITY_VFTABLE;
 	if (w->actCtrl) {
-		ActCtrl_Vtbl(w->actCtrl)->Delete(w->actCtrl, 1);
+		ActCtrl_Delete(w->actCtrl, 1);
 	}
 	cString_dtor(&w->headModel);
 	cSndInterface_dtor(&w->lifeSounds);
@@ -161,7 +161,7 @@ byte cWithLifeEntity_VarF(cEntity *self, const char *name, double *d, int set) {
 	if (cArrowIndicator_VarF(&w->arrow, name, d, set)) {
 		return 1;
 	}
-	if (w->actCtrl && ActCtrl_Vtbl(w->actCtrl)->VarF(w->actCtrl, name, d, set)) {
+	if (w->actCtrl && ActCtrl_VarF(w->actCtrl, name, d, set)) {
 		return 1;
 	}
 	if (cPrimitive_VarF(&w->prim, name, d, set)) {
@@ -169,7 +169,7 @@ byte cWithLifeEntity_VarF(cEntity *self, const char *name, double *d, int set) {
 	}
 	if (!strcmp(name, "Mass")) {
 		if ((byte)set) {
-			WithLife_Vtbl(self)->SetMass(self, (float)*d);
+			WithLife_SetMass(self, (float)*d);
 		} else {
 			*d = w->mass;
 		}
@@ -199,15 +199,15 @@ byte cWithLifeEntity_VarF(cEntity *self, const char *name, double *d, int set) {
 		}
 		return 1;
 	}
-	if (Snd_Vtbl(&w->hitSounds)->VarF(&w->hitSounds, name, d, set) ||
-		Snd_Vtbl(&w->lifeSounds)->VarF(&w->lifeSounds, name, d, set)) {
+	if (SndIf_VarF(&w->hitSounds, name, d, set) ||
+		SndIf_VarF(&w->lifeSounds, name, d, set)) {
 		return 1;
 	}
 	return cObjEntity_VarF(self, name, d, set);
 }
 
 cAction *cWithLifeEntity_GetAction(cEntity *self, const char *name) {
-	cActCtrl *c = WithLife_Vtbl(self)->GetActCtrl(self);
+	cActCtrl *c = WithLife_GetActCtrl(self);
 	if (c && c->cls) {
 		return cActClass_GetAction(c->cls, name);
 	}
@@ -229,7 +229,7 @@ vec3_t *cWithLifeEntity_GetSndPos(cEntity *self, vec3_t *out) {
 		cActClass *cls = c->cls;
 		if (cls->soundDisp.x != 0.0f || cls->soundDisp.y != 0.0f || cls->soundDisp.z != 0.0f) {
 			vec3_t ang, rot, pos;
-			const vec3_t *r = Vec3_Rotate(&rot, &cls->soundDisp, Obj_Vtbl(self)->GetViewAng(self, &ang));
+			const vec3_t *r = Vec3_Rotate(&rot, &cls->soundDisp, Obj_GetViewAng(self, &ang));
 			const vec3_t *p = cObjEntity_GetSndPos(self, &pos);
 			out->x = p->x + r->x;
 			out->y = p->y + r->y;
@@ -264,7 +264,7 @@ void cWithLifeEntity_UpdateOff(cEntity *self) {
 	w->fireDelay = 0.0f;
 	w->fireAtt = -1.0f;
 	cWithLifeEntity_Burn(self, dt);
-	WithLife_Vtbl(self)->CheckLife(self);
+	WithLife_CheckLife(self);
 	cObjEntity_UpdateOff(self);
 }
 
@@ -277,7 +277,7 @@ byte cWithLifeEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	if (cArrowIndicator_VarI(&w->arrow, name, i, set)) {
 		return 1;
 	}
-	if (w->actCtrl && ActCtrl_Vtbl(w->actCtrl)->VarI(w->actCtrl, name, i, set)) {
+	if (w->actCtrl && ActCtrl_VarI(w->actCtrl, name, i, set)) {
 		return 1;
 	}
 	if (!crt_strncmp("Hit_", name, 4) && cVehicleAttack_VarI(&w->attack, name + 4, i, set)) {
@@ -315,8 +315,8 @@ byte cWithLifeEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 		}
 		return 1;
 	}
-	if (Snd_Vtbl(&w->hitSounds)->VarI(&w->hitSounds, name, i, set) ||
-		Snd_Vtbl(&w->lifeSounds)->VarI(&w->lifeSounds, name, i, set)) {
+	if (SndIf_VarI(&w->hitSounds, name, i, set) ||
+		SndIf_VarI(&w->lifeSounds, name, i, set)) {
 		return 1;
 	}
 	return cObjEntity_VarI(self, name, i, set);
@@ -339,10 +339,10 @@ void cWithLifeEntity_CheckLife(cEntity *self) {
 			cPy_Function_AddParamI(g_OnGeneralDamage, w->prevLife - w->life);
 			cPy_Function_Execute(g_OnGeneralDamage, 0);
 		}
-		WithLife_Vtbl(self)->OnDamage(self, w->prevLife - w->life);
+		WithLife_OnDamage(self, w->prevLife - w->life);
 		if (w->life <= 0) {
 			w->life = 0;
-			WithLife_Vtbl(self)->OnDeath(self);
+			WithLife_OnDeath(self);
 		}
 	}
 	w->prevLife = w->life;
@@ -385,7 +385,7 @@ static void cWithLifeEntity_FadeSounds(cEntity *self, float dt) {
 }
 
 void cWithLifeEntity_Tick(cEntity *self, float dt) {
-	WithLife_Vtbl(self)->CheckLife(self);
+	WithLife_CheckLife(self);
 	cWithLifeEntity_Burn(self, dt);
 	cWithLifeEntity_FadeSounds(self, dt);
 	Grid_Add(&g_pWorld->grid, self);
@@ -446,7 +446,7 @@ void cWithLifeEntity_SetActCtrl(cEntity *self, const char *cls) {
 	byte created = 0;
 
 	if (w->actCtrl) {
-		ActCtrl_Vtbl(w->actCtrl)->Delete(w->actCtrl, 1);
+		ActCtrl_Delete(w->actCtrl, 1);
 		w->actCtrl = NULL;
 	}
 	if (!cls || !*cls) {
@@ -532,7 +532,7 @@ byte cWithLifeEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 	if (!*name) {
 		return 0;
 	}
-	if (w->actCtrl && ActCtrl_Vtbl(w->actCtrl)->VarS(w->actCtrl, name, s, set)) {
+	if (w->actCtrl && ActCtrl_VarS(w->actCtrl, name, s, set)) {
 		return 1;
 	}
 	if (cArrowIndicator_VarS(&w->arrow, name, s, set)) {
@@ -555,7 +555,7 @@ byte cWithLifeEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 	}
 	if (!strcmp(name, "ActCtrl")) {
 		if ((byte)set) {
-			WithLife_Vtbl(self)->SetActCtrl(self, *s);
+			WithLife_SetActCtrl(self, *s);
 		} else {
 			*s = w->actCtrl ? w->actCtrl->cls->name : str_Empty;
 		}
@@ -588,8 +588,8 @@ byte cWithLifeEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 			return 1;
 		}
 	}
-	if (Snd_Vtbl(&w->hitSounds)->VarS(&w->hitSounds, name, s, set) ||
-		Snd_Vtbl(&w->lifeSounds)->VarS(&w->lifeSounds, name, s, set)) {
+	if (SndIf_VarS(&w->hitSounds, name, s, set) ||
+		SndIf_VarS(&w->lifeSounds, name, s, set)) {
 		return 1;
 	}
 	return cObjEntity_VarS(self, name, s, set);
@@ -601,7 +601,7 @@ byte cWithLifeEntity_VarV(cEntity *self, const char *name, double *x, double *y,
 	if (!*name) {
 		return 0;
 	}
-	if (w->actCtrl && ActCtrl_Vtbl(w->actCtrl)->VarV(w->actCtrl, name, x, y, z, set)) {
+	if (w->actCtrl && ActCtrl_VarV(w->actCtrl, name, x, y, z, set)) {
 		return 1;
 	}
 	if (!crt_strncmp("Hit_", name, 4) && cVehicleAttack_VarV(&w->attack, name + 4, x, y, z, set)) {
@@ -613,7 +613,7 @@ byte cWithLifeEntity_VarV(cEntity *self, const char *name, double *x, double *y,
 			v.x = (float)*x;
 			v.y = (float)*y;
 			v.z = (float)*z;
-			Obj_Vtbl(self)->SetVel(self, &v);
+			Obj_SetVel(self, &v);
 		} else {
 			*x = w->obj.vel.x;
 			*y = w->obj.vel.y;
@@ -621,8 +621,8 @@ byte cWithLifeEntity_VarV(cEntity *self, const char *name, double *x, double *y,
 		}
 		return 1;
 	}
-	if (Snd_Vtbl(&w->hitSounds)->VarV(&w->hitSounds, name, x, y, z, set) ||
-		Snd_Vtbl(&w->lifeSounds)->VarV(&w->lifeSounds, name, x, y, z, set)) {
+	if (SndIf_VarV(&w->hitSounds, name, x, y, z, set) ||
+		SndIf_VarV(&w->lifeSounds, name, x, y, z, set)) {
 		return 1;
 	}
 	return cObjEntity_VarV(self, name, x, y, z, set);

@@ -31,7 +31,7 @@ cGateKeepers *cGateKeepers_ctor(cGateKeepers *self) {
 static void cGateKeepers_Think(cGateKeepers *self) {
 	for (Nto1Node *n = Logic_ListFirst(self->list); n; n = Logic_ListNext(n)) {
 		cLocalLogic *l = Logic_GetLocalLogic(n->data);
-		Logic_Vtbl(l)->Update(l, 1.41421354f);
+		Logic_Update(l, 1.41421354f);
 	}
 }
 
@@ -124,7 +124,7 @@ static void cGateKeeperLocalLogic_Update(cLocalLogic *elem, float dt) {
 			return;
 		}
 		if (!g_pWorld->alarm.on) {
-			b->vftable->SetState(&self->base.logic, 0, NULL);
+			Logic_SetState(self, 0, NULL);
 		}
 		return;
 	}
@@ -135,7 +135,7 @@ static void cGateKeeperLocalLogic_Update(cLocalLogic *elem, float dt) {
 		cEntity *u = cWorld_GetUsrEntity(g_pWorld, 0);
 		if (u) {
 			u = cWorld_GetUsrEntity(g_pWorld, 0);
-			if (Logic_InView(p, u->vftable->GetPos(u, &tmp), g_GateKeeperStdFar, g_GateKeeperStdFovY,
+			if (Logic_InView(p, Entity_GetPos(u, &tmp), g_GateKeeperStdFar, g_GateKeeperStdFovY,
 				g_GateKeeperStdFovX, 1)) {
 				if (cActCtrl_IsActive(ChType_ActCtrl(p), "Relax")) {
 					cActCtrl_PlayNew(ChType_ActCtrl(p), "FaceToTalk", 0, 1.0f);
@@ -150,12 +150,12 @@ static void cGateKeeperLocalLogic_Update(cLocalLogic *elem, float dt) {
 			Nto1Node_Unlink(n);
 			cActCtrl_PlayNew(ChType_ActCtrl(p), "Relax0", 1, 1.0f);
 		} else {
-			WChar_Vtbl(p)->SetViewAng(p, Obj_Vtbl(p)->GetAng(p, &tmp));
+			WChar_SetViewAng(p, Obj_GetAng(p, &tmp));
 		}
 	}
 alarm:
 	if (g_pWorld->alarm.on) {
-		b->vftable->SetState(&self->base.logic, 1, NULL);
+		Logic_SetState(self, 1, NULL);
 	}
 }
 
@@ -165,7 +165,7 @@ static void cGateKeeperLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float
 	(void)e;
 	(void)amount;
 	if (!self->base.idle && !self->base.alwaysLock) {
-		self->base.vftable->SetState(&self->base.logic, 1, NULL);
+		Logic_SetState(self, 1, NULL);
 	}
 }
 
@@ -173,7 +173,7 @@ static void cGateKeeperLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float
 static void cGateKeeperLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	(void)attacker;
-	self->base.vftable->SetState(&self->base.logic, 1, NULL);
+	Logic_SetState(self, 1, NULL);
 }
 
 /* vf14: hidden at once when the action Hide runs */
@@ -182,7 +182,7 @@ static void cGateKeeperLocalLogic_Vf14(cLocalLogic *elem, cEntity *e) {
 	cEntity *p = self->base.parent;
 
 	(void)e;
-	self->base.vftable->SetState(&self->base.logic, 1, NULL);
+	Logic_SetState(self, 1, NULL);
 	if (cActCtrl_IsActive(ChType_ActCtrl(p), "Hide")) {
 		cActCtrl_Play(ChType_ActCtrl(p), "Hidden", 1, 1.0f);
 	}
@@ -192,14 +192,14 @@ static void cGateKeeperLocalLogic_Vf11(cLocalLogic *elem, cEntity *e) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	(void)e;
 	if (!self->base.idle && !self->base.alwaysLock) {
-		self->base.vftable->SetState(&self->base.logic, 1, NULL);
+		Logic_SetState(self, 1, NULL);
 	}
 }
 
 /* vf24: hidden while the alarm is on */
 static void cGateKeeperLocalLogic_RestartState(cLocalLogic *elem) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
-	self->base.vftable->SetState(&self->base.logic, g_pWorld->alarm.on != 0, NULL);
+	Logic_SetState(self, g_pWorld->alarm.on != 0, NULL);
 }
 
 /* vf19: state 1 needs the action Hide */
@@ -209,7 +209,7 @@ static byte cGateKeeperLocalLogic_SetState(cLocalLogic *elem, int state, cEntity
 	cEntity *p = self->base.parent;
 
 	if (state == 1) {
-		act = WithLife_Vtbl(p)->GetAction(p, "Hide");
+		act = WithLife_GetAction(p, "Hide");
 		if (!act) {
 			return 0;
 		}

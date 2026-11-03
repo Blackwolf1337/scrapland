@@ -42,24 +42,22 @@ static cGVar GVar_GearScortSpeed;
 
 int Vec3_Differ(const float *a, const float *b);
 
-#define Gear_Vtbl(self) ((self)->base.vftable)
-
 /* the AI of the character still has its target */
 static inline byte Gear_AIHasTarget(void *ai) {
 	cAIChar *a = ai;
 
-	return a->vftable->GetDirect(&a->base.base);
+	return AIChar_GetDirect(a);
 }
 
 static inline cAIChar *Gear_AI(cGearLocalLogic *self) {
 	cEntity *p = self->base.parent;
 
-	return p->vftable->GetAI(p);
+	return Entity_GetAI(p);
 }
 
 cGearLocalLogic *cGearLocalLogic_ctor(cGearLocalLogic *self, cEntity *parent) {
 	cBaseLocalLogic_ctor(&self->base, parent);
-	Gear_Vtbl(self) = CGEARLOCALLOGIC_VFTABLE;
+	self->base.vftable = CGEARLOCALLOGIC_VFTABLE;
 	self->lostTime = 0.0f;
 	self->called = 0;
 	self->defaultState = 0;
@@ -71,7 +69,7 @@ cGearLocalLogic *cGearLocalLogic_ctor(cGearLocalLogic *self, cEntity *parent) {
 }
 
 static void cGearLocalLogic_dtor(cGearLocalLogic *self) {
-	Gear_Vtbl(self) = CGEARLOCALLOGIC_VFTABLE;
+	self->base.vftable = CGEARLOCALLOGIC_VFTABLE;
 	cString_dtor(&self->defaultTarget);
 	cBaseLocalLogic_dtor(&self->base);
 }
@@ -125,7 +123,7 @@ static byte cGearLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, by
 static void Gear_ToDefault(cGearLocalLogic *self) {
 	cEntity *t = World_FindEntity(self->defaultTarget);
 
-	Gear_Vtbl(self)->SetState(&self->base.logic, self->defaultState, t);
+	Logic_SetState(self, self->defaultState, t);
 }
 
 /* the view of the AI and the actions of the state */
@@ -214,7 +212,7 @@ static void cGearLocalLogic_Update(cLocalLogic *elem, float dt) {
 		return;
 	}
 	byte same = g_pWorld->alarm.sameChar;
-	byte seen = Logic_InView(p, usr->vftable->GetPos(usr, &tp), g_GearStdFar, g_GearStdFovY, g_GearStdFovX, 1);
+	byte seen = Logic_InView(p, Entity_GetPos(usr, &tp), g_GearStdFar, g_GearStdFovY, g_GearStdFovX, 1);
 	byte locked = b->idle || b->alwaysLock;
 	switch (st) {
 	case 0:
@@ -236,22 +234,22 @@ attack:
 		if (!seen) {
 			goto anim;
 		}
-		Gear_Vtbl(self)->SetState(&self->base.logic, 2, usr);
+		Logic_SetState(self, 2, usr);
 		goto check;
 	case 3: {
-		b->parent->vftable->GetPos(b->parent, &tp);
+		Entity_GetPos(b->parent, &tp);
 		vec3_t o = b->origin;
 		if (!locked && alarm && same && seen) {
-			Gear_Vtbl(self)->SetState(&self->base.logic, 2, usr);
+			Logic_SetState(self, 2, usr);
 			goto check;
 		}
 		if ((byte)Vec3_Differ(&tp.x, &o.x) && !locked) {
 			cAIChar *ai = Gear_AI(self);
-			if (ai->vftable->GetState(&ai->base.base) != 4) {
+			if (AIChar_GetState(ai) != 4) {
 				float dy = tp.y - o.y, dx = tp.x - o.x, dz = tp.z - o.z;
 				if (dy * dy + dx * dx + dz * dz > 1000000.0f) {
 					ai = Gear_AI(self);
-					ai->vftable->SetState(&ai->base.base, 4, b->origin, b->originAng, 100.0, (double)g_GearRelaxSpeed);
+					AIChar_SetState(ai, 4, b->origin, b->originAng, 100.0, (double)g_GearRelaxSpeed);
 				}
 			}
 		}
@@ -263,7 +261,7 @@ attack:
 			if (!alarm) {
 				goto deflt;
 			}
-			Gear_Vtbl(self)->SetState(&self->base.logic, 0, NULL);
+			Logic_SetState(self, 0, NULL);
 			goto check;
 		}
 		if (!alarm && t == cWorld_GetUsrEntity(g_pWorld, 0)) {
@@ -272,9 +270,9 @@ attack:
 		if (Gear_AIHasTarget(Gear_AI(self))) {
 			self->lostTime = 0.0f;
 			if (!self->called) {
-				Gear_Vtbl(self)->SetState(&self->base.logic, 2, usr);
+				Logic_SetState(self, 2, usr);
 			} else if (b->target.target) {
-				Gear_Vtbl(self)->SetState(&self->base.logic, 2, b->target.target);
+				Logic_SetState(self, 2, b->target.target);
 			}
 			goto check;
 		}
@@ -284,7 +282,7 @@ attack:
 			if (!alarm) {
 				goto deflt;
 			}
-			Gear_Vtbl(self)->SetState(&self->base.logic, 0, NULL);
+			Logic_SetState(self, 0, NULL);
 		}
 		goto check;
 	}
@@ -298,12 +296,12 @@ attack:
 			if (!alarm) {
 				goto deflt;
 			}
-			const vec3_t *gp = b->parent->vftable->GetPos(b->parent, &tp);
-			if (Engine_TestLine(usr->vftable->GetPos(usr, &op), gp, NULL, NULL)) {
+			const vec3_t *gp = Entity_GetPos(b->parent, &tp);
+			if (Engine_TestLine(Entity_GetPos(usr, &op), gp, NULL, NULL)) {
 				goto check;
 			}
 			Alarm_SetOn(&g_pWorld->alarm, 1);
-			Gear_Vtbl(self)->SetState(&self->base.logic, 2, usr);
+			Logic_SetState(self, 2, usr);
 			goto check;
 		}
 		if (!Gear_AIHasTarget(ai)) {
@@ -317,7 +315,7 @@ attack:
 				if (!alarm) {
 					goto deflt;
 				}
-				Gear_Vtbl(self)->SetState(&self->base.logic, 0, NULL);
+				Logic_SetState(self, 0, NULL);
 			}
 			goto check;
 		}
@@ -335,7 +333,7 @@ deflt:
 check:
 	if (seen && st != 2 && g_pWorld->alarm.notGuaranteed) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
-		Gear_Vtbl(self)->SetState(&self->base.logic, 2, usr);
+		Logic_SetState(self, 2, usr);
 	}
 anim:
 	cGearLocalLogic_UpdateAnim(self, p, dt);
@@ -348,7 +346,7 @@ static void cGearLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amoun
 		if (e == cWorld_GetUsrEntity(g_pWorld, 0)) {
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		}
-		Gear_Vtbl(self)->SetState(&self->base.logic, 2, e);
+		Logic_SetState(self, 2, e);
 	}
 }
 
@@ -370,7 +368,7 @@ static void cGearLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 		return;
 	}
 	if (self->base.state != 2 || self->base.target.target != cWorld_GetUsrEntity(g_pWorld, 0)) {
-		Gear_Vtbl(self)->SetState(&self->base.logic, 2, attacker);
+		Logic_SetState(self, 2, attacker);
 	}
 }
 
@@ -378,7 +376,7 @@ static void cGearLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 static void cGearLocalLogic_Vf14(cLocalLogic *base, cEntity *e) {
 	cGearLocalLogic *self = (cGearLocalLogic *)base;
 	if (Gear_React(self, e)) {
-		Gear_Vtbl(self)->SetState(&self->base.logic, 2, e);
+		Logic_SetState(self, 2, e);
 	}
 }
 
@@ -386,7 +384,7 @@ static void cGearLocalLogic_Vf14(cLocalLogic *base, cEntity *e) {
 static byte cGearLocalLogic_Vf15(cLocalLogic *base, cEntity *e) {
 	cGearLocalLogic *self = (cGearLocalLogic *)base;
 	if (Gear_React(self, e)) {
-		Gear_Vtbl(self)->SetState(&self->base.logic, 2, e);
+		Logic_SetState(self, 2, e);
 	}
 	return 0;
 }
@@ -407,7 +405,7 @@ byte cGearLocalLogic_Call(cGearLocalLogic *self, cEntity *e) {
 	if (self->base.state == 2 && e == self->base.target.target && Gear_AIHasTarget(Gear_AI(self))) {
 		return 0;
 	}
-	return Gear_Vtbl(self)->SetState(&self->base.logic, 1, e);
+	return Logic_SetState(self, 1, e);
 }
 
 /* vf24 */
@@ -427,18 +425,18 @@ static byte cGearLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 	switch (b->state) {
 	case 0:
 		if (ok) {
-			ai->vftable->SetState(&ai->base.base, 6, b->origin, (double)b->actionRadius, (double)g_GearRelaxSpeed);
+			AIChar_SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_GearRelaxSpeed);
 		}
 		break;
 	case 1:
 		if (ok) {
-			ai->vftable->SetState(&ai->base.base, 2, target, (double)(target == usr ? g_GearChaseSpeed : 1.0f));
+			AIChar_SetState(ai, 2, target, (double)(target == usr ? g_GearChaseSpeed : 1.0f));
 		}
 		self->lostTime = 0.0f;
 		break;
 	case 2:
 		if (ok) {
-			ai->vftable->SetState(&ai->base.base, 2, target, (double)(target == usr ? g_GearAttackSpeed : 1.0f));
+			AIChar_SetState(ai, 2, target, (double)(target == usr ? g_GearAttackSpeed : 1.0f));
 			if (target != cWorld_GetUsrEntity(g_pWorld, 0)) {
 				self->lostTime = g_GearLostTargetTime - g_GearAttackNPCTime;
 			}
@@ -446,15 +444,15 @@ static byte cGearLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 		break;
 	case 3:
 		if (ok) {
-			ai->vftable->SetState(&ai->base.base, 4, b->origin, b->originAng, 100.0, (double)g_GearRelaxSpeed);
+			AIChar_SetState(ai, 4, b->origin, b->originAng, 100.0, (double)g_GearRelaxSpeed);
 		}
 		break;
 	case 4:
 		if (ok) {
 			if (target) {
-				ai->vftable->SetState(&ai->base.base, 3, target, (double)g_GearScortSpeed);
+				AIChar_SetState(ai, 3, target, (double)g_GearScortSpeed);
 			} else {
-				Gear_Vtbl(self)->SetState(&self->base.logic, 0, NULL);
+				Logic_SetState(self, 0, NULL);
 			}
 		}
 		break;

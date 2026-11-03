@@ -45,11 +45,11 @@ static cEntity *cPoliceBossLocalLogic_FindTarget(cLocalLogic *elem) {
 	}
 	cEntity *p = self->base.parent;
 	self->searchTime = g_PoliceBossMinSpecialActionTime * 0.5f;
-	if (!CGameModel_IsVisible(Obj_Vtbl(p)->GetModel(p))) {
+	if (!CGameModel_IsVisible(Obj_GetModel(p))) {
 		return NULL;
 	}
-	cEntity *e = cEntityList_Nearest(g_pWorld->logic.genChars.police, p->vftable->GetPos(p, &tmp), p, NULL);
-	if (!e || !e->vftable->IsType(e, TYEN_WALKCHAR)) {
+	cEntity *e = cEntityList_Nearest(g_pWorld->logic.genChars.police, Entity_GetPos(p, &tmp), p, NULL);
+	if (!e || !Entity_IsType(e, TYEN_WALKCHAR)) {
 		return NULL;
 	}
 	float lo = g_PoliceBossMinSpecialActionTime;
@@ -63,13 +63,13 @@ static cEntity *cPoliceBossLocalLogic_FindTarget(cLocalLogic *elem) {
 static void cPoliceBossLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
 	cPoliceBossLocalLogic *self = (cPoliceBossLocalLogic *)base;
 	(void)self;
-	ai->vftable->SetState(&ai->base.base, 1, (double)g_GenCharAlertSpeed, 0);
+	AIChar_SetState(ai, 1, (double)g_GenCharAlertSpeed, 0);
 }
 
 static void cPoliceBossLocalLogic_ToRelax(cLocalLogic *base, cAIChar *ai) {
 	cPoliceBossLocalLogic *self = (cPoliceBossLocalLogic *)base;
 	(void)self;
-	ai->vftable->SetState(&ai->base.base, 1, (double)g_GenCharRelaxSpeed, 0);
+	AIChar_SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
 }
 
 /* vf17 */

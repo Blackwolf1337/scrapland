@@ -31,7 +31,7 @@ cEntity *Logic_RichUsrInView(cGenCharLocalLogic *self, cEntity *usr) {
 	vec3_t tmp;
 
 	cEntity *p = self->base.parent;
-	if (Logic_InView(p, usr->vftable->GetPos(usr, &tmp), g_GenCharStdFar, g_GenCharStdFovY, g_GenCharStdFovX, 1) &&
+	if (Logic_InView(p, Entity_GetPos(usr, &tmp), g_GenCharStdFar, g_GenCharStdFovY, g_GenCharStdFovX, 1) &&
 		g_pWorld->money > 0) {
 		return usr;
 	}
@@ -58,7 +58,7 @@ byte cBankDirectorLocalLogic_LoseTarget(cLocalLogic *elem) {
 	vec3_t tmp;
 
 	cEntity *t = self->base.target.target;
-	if (!t || !t->vftable->IsType(t, TYEN_WALKCHAR)) {
+	if (!t || !Entity_IsType(t, TYEN_WALKCHAR)) {
 		return 1;
 	}
 	int money = t == cWorld_GetUsrEntity(g_pWorld, 0) ? g_pWorld->money : WChar(t)->money;
@@ -66,7 +66,7 @@ byte cBankDirectorLocalLogic_LoseTarget(cLocalLogic *elem) {
 	if (money <= 25 || self->specialTime > g_GenCharSpecialActionTime) {
 		return 1;
 	}
-	if (Logic_InView(p, t->vftable->GetPos(t, &tmp), g_GenCharStdFar, g_GenCharStdFovY, g_GenCharStdFovX, 1)) {
+	if (Logic_InView(p, Entity_GetPos(t, &tmp), g_GenCharStdFar, g_GenCharStdFovY, g_GenCharStdFovX, 1)) {
 		return 0;
 	}
 	return 1;

@@ -136,15 +136,15 @@ void cVehicleAttack_ShotAt(cVehicleAttack *self, const char *name, int n) {
 	if (!it || !(e = it->value)) {
 		return;
 	}
-	if (!e->vftable->IsType(e, TYEN_WITH_LIFE)) {
-		cVehicleAttack_ShotAtPoint(self, e->vftable->GetPos(e, &pos), n);
+	if (!Entity_IsType(e, TYEN_WITH_LIFE)) {
+		cVehicleAttack_ShotAtPoint(self, Entity_GetPos(e, &pos), n);
 		return;
 	}
 	cEntity_AddLink(e, &self->target);
 	cVehicleAttack_HitBy(&WLife(e)->attack, self->owner->name);
 	self->count += n;
 	self->netCount += n;
-	self->point = *e->vftable->GetPos(e, &pos);
+	self->point = *Entity_GetPos(e, &pos);
 	VAtt_Start(self);
 }
 
@@ -162,7 +162,7 @@ void cVehicleAttack_ShotAtPoint(cVehicleAttack *self, const vec3_t *p, int n) {
 void cVehicleAttack_Update(cVehicleAttack *self) {
 	cEntity *owner = self->owner;
 
-	if (self->count <= 0 || !owner->vftable->IsType(owner, TYEN_VEHICLE) || !Veh(self->owner)->isInit) {
+	if (self->count <= 0 || !Entity_IsType(owner, TYEN_VEHICLE) || !Veh(self->owner)->isInit) {
 		return;
 	}
 	cPy_Function *f = &TABLE_AT(g_pWorld->weapons, Veh(self->owner)->weapons.curWeap)->onHit;

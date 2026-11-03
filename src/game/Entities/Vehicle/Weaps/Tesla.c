@@ -41,7 +41,7 @@ static void Tesla_CreateNative(cAbstractFile *f) {
 	byte shooting = wm->teslaFiring;
 	cWeaponManager_SetTeslaFiring(wm, 1);
 	int n = 0;
-	if (Obj_Vtbl(v)->GetModel(v)) {
+	if (Obj_GetModel(v)) {
 		n = cWeaponManager_NumSlots(wm, g_TeslaIDWeap, 1);
 		if (n > 0 && !shooting) {
 			cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_TeslaShootFile);
@@ -81,7 +81,7 @@ static void Tesla_HudNative(cAbstractFile *f) {
 	int player;
 
 	cAbstractFile_ReadString(f, name, 0x80);
-	f->vftable->Read(f, &player, 4);
+	VFile_Read(f, &player, 4);
 	cAbstractFile_ReadString(f, itemName, 0x80);
 	cEntity *v = Weap_Vehicle(name);
 	cCannonScorer *item = (cCannonScorer *)cScorer_FindItem(Scorer_Get(player), itemName);
@@ -133,8 +133,8 @@ static void Tesla_FireNative(cAbstractFile *f) {
 		if (!shot || *cHitInfo_GetName(Veh_HitInfo(v))) {
 			return;
 		}
-		v->vftable->GetTargetAngle(v, &ang.x, dist, &target);
-		v->vftable->AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 0);
+		Entity_GetTargetAngle(v, &ang.x, dist, &target);
+		Entity_AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 0);
 		cVehicleAttack_ShotAtPoint(Veh_HitInfo(v), &out, 0);
 		return;
 	}
@@ -143,8 +143,8 @@ static void Tesla_FireNative(cAbstractFile *f) {
 	if (!n) {
 		return;
 	}
-	v->vftable->GetTargetAngle(v, &ang.x, dist, &target);
-	v->vftable->AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 8);
+	Entity_GetTargetAngle(v, &ang.x, dist, &target);
+	Entity_AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 8);
 	byte isCar = target && Entity_IsType(target, TYEN_VEHICLE);
 	byte isLife = target && Entity_IsType(target, TYEN_WITH_LIFE);
 	if (isCar) {
@@ -188,7 +188,7 @@ static void Tesla_Push(cEntity *v, cEntity *e, int n) {
 		return;
 	}
 	if (level == TESLA_UPG_TRACK && Entity_IsType(e, TYEN_VEHICLE)) {
-		const vec3_t *dir = Vec3_NormalizeTo(&nd, Obj_Vtbl(e)->GetVel(e, &tmp));
+		const vec3_t *dir = Vec3_NormalizeTo(&nd, Obj_GetVel(e, &tmp));
 		float x = -dir->x;
 		float y = -dir->y;
 		float z = -dir->z;

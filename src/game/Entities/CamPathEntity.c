@@ -84,7 +84,7 @@ static byte cCamPathEntity_VarF(cEntity *self, const char *name, double *d, int 
 	if (!strcmp(name, "Time")) {
 		if ((byte)set) {
 			p->time = (float)*d;
-			self->vftable->Update(self);
+			Entity_Update(self);
 		} else {
 			*d = p->time;
 		}
@@ -243,7 +243,7 @@ static void cCamPathPoint_Refresh(cCamPathPoint *self) {
 		return;
 	}
 	cEntity *e = World_FindEntity(self->cam);
-	if (e && e->vftable->IsType(e, TYEN_CAM)) {
+	if (e && Entity_IsType(e, TYEN_CAM)) {
 		const CGameCamera *c = &((cCamControl *)e)->cam;
 		self->zFar = c->zFar;
 		self->zNear = c->zNear;

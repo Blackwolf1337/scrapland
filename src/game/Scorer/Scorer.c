@@ -366,7 +366,7 @@ static void cScorer_Free(cScorer *scorer) {
 		cScorerItem *it = scorer->items;
 		cScorerItem *next = it->next;
 		if (it) {
-			it->vftable->Delete(it, 1);
+			ScorerItem_Delete(it, 1);
 		}
 		scorer->items = next;
 	}
@@ -374,10 +374,10 @@ static void cScorer_Free(cScorer *scorer) {
 		cScorerModel *next = scorer->models->next;
 		cEmbeddedFX *fx = scorer->models->extra;
 		if (fx) {
-			fx->vftable->Release(fx);
+			EFX_Release(fx);
 			fx = scorer->models->extra;
 			if (fx) {
-				fx->vftable->Delete(fx, 1);
+				EFX_Delete(fx, 1);
 				scorer->models->extra = NULL;
 			}
 		}
@@ -408,7 +408,7 @@ cScorerItem *cScorer_FindItem(cScorer *scorer, const char *name) {
 /* SetParam(name, value) of every item */
 void cScorer_SetParam(cScorer *scorer, const char *name, const char *value) {
 	for (cScorerItem *it = scorer->items; it; it = it->next) {
-		it->vftable->SetParam(it, name, value);
+		ScorerItem_SetParam(it, name, value);
 	}
 }
 
@@ -428,7 +428,7 @@ static void cScorer_RemoveDeleted(cScorer *scorer, int player) {
 				scorer->found = NULL;
 			}
 			if (it) {
-				it->vftable->Delete(it, 1);
+				ScorerItem_Delete(it, 1);
 			}
 		} else {
 			link = &it->next;
@@ -746,7 +746,7 @@ void Scorer_Done(void) {
 	}
 	if (sc) {
 		if (((uint32_t *)sc)[-1]) {
-			sc->vftable->Delete(sc, 3);
+			Scorer_Delete(sc, 3);
 		} else {
 			operator_delete_array((uint32_t *)sc - 1);
 		}
@@ -799,19 +799,19 @@ void Scorer_GetCamVarStr(int player, char *buf, const char *name, int size) {
 	double dv;
 	char *sv;
 
-	if (!*camName || !(e = World_FindEntity(camName)) || !e->vftable->IsType(e, FCAM_CLASSNAME)
-		|| !(e = cCamEntity_GetTarget(e)) || !e->vftable->IsType(e, TYEN_WITH_LIFE)) {
+	if (!*camName || !(e = World_FindEntity(camName)) || !Entity_IsType(e, FCAM_CLASSNAME)
+		|| !(e = cCamEntity_GetTarget(e)) || !Entity_IsType(e, TYEN_WITH_LIFE)) {
 		return;
 	}
-	if (e->vftable->VarI(e, name, &iv, 0)) {
+	if (Entity_VarI(e, name, &iv, 0)) {
 		Str_PrintfQuiet(buf, size, "%d", iv);
 		return;
 	}
-	if (e->vftable->VarF(e, name, &dv, 0)) {
+	if (Entity_VarF(e, name, &dv, 0)) {
 		Str_PrintfQuiet(buf, size, "%.0f", dv);
 		return;
 	}
-	if (e->vftable->VarS(e, name, &sv, 0)) {
+	if (Entity_VarS(e, name, &sv, 0)) {
 		Str_Copy(buf, sv, size);
 	}
 }
@@ -1190,12 +1190,12 @@ static void cScorer_UpdateCursor(cScorer *scorer, int player) {
 		int alpha = Scorer_Abs((int)(byte)(int)(scorer->time * 512.0f) - 0x80) + 0x7f;
 		double scale;
 		cur = scorer->cursor;
-		cur->vftable->Var(cur, "Alpha", 1, NULL, NULL, &alpha);
+		ScorerItem_Var(cur, "Alpha", 1, NULL, NULL, &alpha);
 		scale = Menu_Action(MENU_ACCEPT)->value[player] > 0.5f ? 1.25 : 1.0;
 		cur = scorer->cursor;
-		cur->vftable->Var(cur, "ScaleX", 1, NULL, &scale, NULL);
+		ScorerItem_Var(cur, "ScaleX", 1, NULL, &scale, NULL);
 		cur = scorer->cursor;
-		cur->vftable->Var(cur, "ScaleY", 1, NULL, &scale, NULL);
+		ScorerItem_Var(cur, "ScaleY", 1, NULL, &scale, NULL);
 	}
 }
 
@@ -1204,7 +1204,7 @@ CApp *g_pApp;
 /* the frame of a scorer: time, screen effects, cursor, the items and the focus marker */
 static void cScorer_Draw(cScorer *scorer, int player) {
 	scorer->lastTime = scorer->time;
-	float t = (float)g_pApp->vftable->GetGameTime(g_pApp);
+	float t = (float)App_GetGameTime(g_pApp);
 	scorer->time = t;
 	scorer->frameTime = t - scorer->lastTime;
 	ScorerFade_Draw(&scorer->fade, player, scorer->frameTime);
@@ -1227,7 +1227,7 @@ static void cScorer_Draw(cScorer *scorer, int player) {
 				cPy_Function_AddParamI(&it->onRender, player);
 				cPy_Function_AddParamS(&it->onRender, it->name);
 				cPy_Function_Execute(&it->onRender, 0);
-				it->vftable->Draw(it, player);
+				ScorerItem_Draw(it, player);
 			}
 		}
 	}
@@ -1409,7 +1409,7 @@ byte Scorer_Render(void) {
 			if (*camName) {
 				cEntity *e = World_FindEntity(camName);
 				if (e) {
-					CHECK(e->vftable->IsType(e, CAM_CLASSNAME));
+					CHECK(Entity_IsType(e, CAM_CLASSNAME));
 					Camera_SetCurrent(&((cCamControl *)e)->cam);
 				}
 			}
@@ -1431,8 +1431,8 @@ byte Scorer_Render(void) {
 		Eng_ResetViewRect();
 		Camera_SetCurrent(saved);
 	}
-	g_pSound->vftable->Update(g_pSound);
-	g_pSound->vftable->DebugDraw(g_pSound, 10, 120);
+	SoundSys_Update(g_pSound);
+	SoundSys_DebugDraw(g_pSound, 10, 120);
 	cWorld_ShowDebrisInfo(g_pWorld, 10, 120);
 	if (g_NewsPanel) {
 		cNewsPanel_Update(g_NewsPanel);
@@ -1525,7 +1525,7 @@ void Scorer_SetConsole(int on) {
 		g_ConsoleWhite = img ? CPsaImage_ctor(img, "2D/white.tga", 0x24) : NULL;
 		g_ConsoleCheckInput = g_pWorld->checkInput;
 		g_pWorld->checkInput = 0;
-		double t = g_pApp->vftable->GetGameTime(g_pApp);
+		double t = App_GetGameTime(g_pApp);
 		g_ConsoleClosing = 0;
 		memcpy((&g_ConsoleSavedKeyboard), &g_VirtualKeyboard, CONSOLE_KEYBOARD_SIZE);
 		g_ConsoleTime = (float)t;
@@ -1623,7 +1623,7 @@ static byte Scorer_DrawConsole(void) {
 	}
 	Console_Complete();
 	if (g_ConsoleClosing) {
-		double t = g_pApp->vftable->GetGameTime(g_pApp);
+		double t = App_GetGameTime(g_pApp);
 		h = (float)(t - (double)g_ConsoleTime) * CONSOLE_SPEED;
 		if (h > CONSOLE_HEIGHT) {
 			Scorer_SetConsole(0);
@@ -1631,7 +1631,7 @@ static byte Scorer_DrawConsole(void) {
 		}
 	} else {
 		double t0 = (double)g_ConsoleTime;
-		double t = g_pApp->vftable->GetGameTime(g_pApp);
+		double t = App_GetGameTime(g_pApp);
 		h = Float_MaxSS(0.0f, (float)(t0 - t) * CONSOLE_SPEED + CONSOLE_HEIGHT);
 		if (cInputAction_Pressed(Console_Action(2, CONSOLE_ACT_UP), 0)) {
 			Console_HistoryUp();
@@ -1662,14 +1662,14 @@ static byte Scorer_DrawConsole(void) {
 		CFont_PrintfColor(g_FontTerminal8, CONSOLE_MARGIN - sx * 5.0f,
 			(float)(i - 11) * h / 5.0f + CONSOLE_MARGIN + (float)y, Console_LineColor(l->color), "%s", l->text);
 	}
-	int ms = (int)((g_pApp->vftable->GetGameTime(g_pApp)) * 1024.0);
+	int ms = (int)((App_GetGameTime(g_pApp)) * 1024.0);
 	int blink = ms % CONSOLE_BLINK - 255;
 	CFont_PrintfXY(g_FontTerminal8, off + CONSOLE_MARGIN, CONSOLE_INPUT_Y, (blink < 0 ? -blink : blink) > 128 ? "%s"
 		: "%s_", g_PlayerInput[0].text);
 	g_PlayerInput[0].active = 0;
 	if (!g_ConsoleClosing && cInputAction_Released(Console_Action(2, CONSOLE_ACT_KEY), 0) && h == 0.0f) {
 		g_ConsoleClosing = 1;
-		g_ConsoleTime = (float)g_pApp->vftable->GetGameTime(g_pApp);
+		g_ConsoleTime = (float)App_GetGameTime(g_pApp);
 	}
 	return g_ConsoleOn;
 }
@@ -1690,7 +1690,7 @@ enum {
 #define DBG_ARROW_Y 5.0f
 
 static cActClass *Dbg_ActClass(cEntity *e) {
-	return ((cActCtrl *)((const cWithLifeEntityVtbl *)e->vftable)->GetActCtrl(e))->cls;
+	return ((cActCtrl *)WithLife_GetActCtrl(e))->cls;
 }
 
 /* a flat arrow over the feet of a walking character turned like the angles ang */
@@ -1699,7 +1699,7 @@ static void Dbg_DrawArrow(cEntity *e, float angY, float y, float len, float w, u
 	vec3_t p, t, a, b, c;
 
 	Matrix_RotY(&m, angY);
-	const vec3_t *pos = e->vftable->GetPos(e, &t);
+	const vec3_t *pos = Entity_GetPos(e, &t);
 	p.x = pos->x + 0.0f;
 	p.y = pos->y + y;
 	p.z = pos->z + 0.0f;
@@ -1718,44 +1718,43 @@ static void Dbg_DrawArrow(cEntity *e, float angY, float y, float len, float w, u
 
 /* the boxes of the body and of the step of a walking character, its view and render arrows, its walk radius */
 static void Dbg_DrawWalkChar(cEntity *e) {
-	const cObjEntityVtbl *vt = (const cObjEntityVtbl *)e->vftable;
 	vec3_t mn, mx, t;
 	const vec3_t *p;
 
 	float r = Dbg_ActClass(e)->sRadius;
 	float fall = Dbg_ActClass(e)->minFallDist;
-	p = e->vftable->GetPos(e, &t);
+	p = Entity_GetPos(e, &t);
 	mx.x = r + p->x;
 	mx.y = p->y + 0.0f;
 	mx.z = p->z + r;
 	float nr = -r;
 	float ny = -WChar(e)->floorDist;
-	p = e->vftable->GetPos(e, &t);
+	p = Entity_GetPos(e, &t);
 	mn.x = nr + p->x;
 	mn.y = p->y + ny;
 	mn.z = p->z + nr;
 	DebugUtils_DrawBox(&mn, &mx, 0xffff00);
 	float lo = -WChar(e)->floorDist - fall;
-	p = e->vftable->GetPos(e, &t);
+	p = Entity_GetPos(e, &t);
 	mx.x = p->x + r;
 	mx.y = p->y + lo;
 	mx.z = p->z + r;
 	ny = -WChar(e)->floorDist;
-	p = e->vftable->GetPos(e, &t);
+	p = Entity_GetPos(e, &t);
 	mn.x = nr + p->x;
 	mn.y = p->y + ny;
 	mn.z = p->z + nr;
 	DebugUtils_DrawBox(&mn, &mx, 0xff0000);
-	float ang = vt->GetViewAng(e, &t)->y;
+	float ang = Obj_GetViewAng(e, &t)->y;
 	if (!Dbg_ActClass(e)->canFly) {
 		Dbg_DrawArrow(e, ang, DBG_ARROW_Y - WChar(e)->floorDist, 100.0f, 50.0f, 0xff);
 	} else {
 		Dbg_DrawArrow(e, ang, DBG_ARROW_Y - WLife(e)->prim.radius, 100.0f, 50.0f, 0xff);
 	}
-	ang = vt->GetRenderAng(e, &t)->y;
+	ang = Obj_GetRenderAng(e, &t)->y;
 	Dbg_DrawArrow(e, ang, DBG_ARROW_Y - WChar(e)->floorDist, 50.0f, 25.0f, 0xff00);
 	float wr = Dbg_ActClass(e)->wRadius;
-	DebugUtils_DrawSphere(e->vftable->GetPos(e, &t), wr, 0xc0c0c0, DBG_SPHERE_DIV, 0);
+	DebugUtils_DrawSphere(Entity_GetPos(e, &t), wr, 0xc0c0c0, DBG_SPHERE_DIV, 0);
 }
 
 /* the spheres of the active entities by type, the walking characters in detail, then their own debug drawing */
@@ -1766,29 +1765,28 @@ static void Dbg_DrawEntities(void) {
 		if (!e->active) {
 			continue;
 		}
-		const cObjEntityVtbl *vt = (const cObjEntityVtbl *)e->vftable;
-		if (e->vftable->IsType(e, "WithLife")) {
-			DebugUtils_DrawSphere(e->vftable->GetPos(e, &t), WLife(e)->prim.radius, 0xff, DBG_SPHERE_DIV,
+		if (Entity_IsType(e, "WithLife")) {
+			DebugUtils_DrawSphere(Entity_GetPos(e, &t), WLife(e)->prim.radius, 0xff, DBG_SPHERE_DIV,
 				0);
 		}
-		if (e->vftable->IsType(e, "Car")) {
-			float r = vt->GetRadius(e);
-			DebugUtils_DrawSphere(e->vftable->GetPos(e, &t), r, 0xc0c0c0, DBG_SPHERE_DIV, 0);
-			vt->GetCamera(e, &a, &b);
-			DebugUtils_DrawLine(&a, vt->GetViewPos(e, &t), 0xffff00);
+		if (Entity_IsType(e, "Car")) {
+			float r = Obj_GetRadius(e);
+			DebugUtils_DrawSphere(Entity_GetPos(e, &t), r, 0xc0c0c0, DBG_SPHERE_DIV, 0);
+			Obj_GetCamera(e, &a, &b);
+			DebugUtils_DrawLine(&a, Obj_GetViewPos(e, &t), 0xffff00);
 		}
-		if (e->vftable->IsType(e, "Missile")) {
-			DebugUtils_DrawSphere(e->vftable->GetPos(e, &t), Missile(e)->radius, 0xffff00, DBG_SPHERE_DIV,
+		if (Entity_IsType(e, "Missile")) {
+			DebugUtils_DrawSphere(Entity_GetPos(e, &t), Missile(e)->radius, 0xffff00, DBG_SPHERE_DIV,
 				0);
 		}
-		if (e->vftable->IsType(e, "item")) {
-			DebugUtils_DrawSphere(e->vftable->GetPos(e, &t), DBG_ITEM_RADIUS(e), 0xff00, DBG_SPHERE_DIV, 0);
+		if (Entity_IsType(e, "item")) {
+			DebugUtils_DrawSphere(Entity_GetPos(e, &t), DBG_ITEM_RADIUS(e), 0xff00, DBG_SPHERE_DIV, 0);
 		}
-		if (e->vftable->IsType(e, "FCam")) {
+		if (Entity_IsType(e, "FCam")) {
 			vec3_t c = *DBG_FCAM_POS(e);
 			DebugUtils_DrawSphere(&c, DBG_FCAM_DIST(e) * DBG_FCAM_SCALE, 0xffff, DBG_SPHERE_DIV, 0);
 		}
-		if (e->vftable->IsType(e, "WalkChar")) {
+		if (Entity_IsType(e, "WalkChar")) {
 			Dbg_DrawWalkChar(e);
 		}
 		DBG_VF(e, 0x50)(e);
@@ -1832,10 +1830,10 @@ static void Scorer_DrawDebug(void) {
 		CNodesWorld2D_Draw(g_NodesWorld2D);
 	}
 	if (g_NodesTraffic) {
-		g_NodesTraffic->vftable->Draw(g_NodesTraffic);
+		Traffic_Draw(g_NodesTraffic);
 	}
 	if (g_NodesTrafficInDoor) {
-		g_NodesTrafficInDoor->vftable->Draw(g_NodesTrafficInDoor);
+		Traffic_Draw(g_NodesTrafficInDoor);
 	}
 	if (g_VehicleGroup) {
 		cAIVehicleGroup_Draw(g_VehicleGroup);
@@ -1848,9 +1846,9 @@ static void Scorer_DrawDebug(void) {
 	}
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
 		if (e->active) {
-			void *ai = e->vftable->GetAI(e);
+			void *ai = Entity_GetAI(e);
 			if (ai) {
-				AI_Vtbl(ai)->Draw(ai);
+				AI_Draw(ai);
 			}
 		}
 	}

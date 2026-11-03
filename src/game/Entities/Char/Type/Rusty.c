@@ -54,12 +54,12 @@ static void ChType_FXRustyHit(cAbstractFile *params) {
 	cEntity *v = World_FindEntity(name);
 	CHECK(v);
 	CHECK(Entity_IsType(v, TYEN_WALKCHAR));
-	Obj_Vtbl(v)->GetAng(v, &ang);
+	Obj_GetAng(v, &ang);
 	off.x = g_RustyHitPosX;
 	off.y = g_RustyHitPosY;
 	off.z = g_RustyHitPosZ;
 	const vec3_t *r = Vec3_Rotate(&t, &off, &ang);
-	const vec3_t *vp = v->vftable->GetPos(v, &t2);
+	const vec3_t *vp = Entity_GetPos(v, &t2);
 	pos.x = r->x + vp->x;
 	pos.y = vp->y + r->y;
 	pos.z = vp->z + r->z;

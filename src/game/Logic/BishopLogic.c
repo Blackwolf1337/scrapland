@@ -16,6 +16,11 @@ typedef struct cLogicBishopAIVtbl {
 	byte(*Vf94)(void *self);	/* 0x94 */
 } cLogicBishopAIVtbl;
 
+/* calls through the slots of cLogicBishopAIVtbl */
+static inline byte BishopAI_Vf94(void *self) {
+	return VT(cLogicBishopAIVtbl, self)->Vf94(self);
+}
+
 cBishopLocalLogic *cBishopLocalLogic_ctor(cBishopLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
 	self->base.vftable = CBISHOPLOCALLOGIC_VFTABLE;
@@ -38,12 +43,12 @@ static byte cBishopLocalLogic_LoseTarget(cLocalLogic *elem) {
 	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
 	cEntity *t = self->base.target.target;
 
-	if (!t || !t->vftable->IsType(t, TYEN_WALKCHAR)) {
+	if (!t || !Entity_IsType(t, TYEN_WALKCHAR)) {
 		return 1;
 	}
 	cEntity *p = self->base.parent;
-	void *ai = p->vftable->GetAI(p);
-	if (!(*(const cLogicBishopAIVtbl **)ai)->Vf94(ai)) {
+	void *ai = Entity_GetAI(p);
+	if (!BishopAI_Vf94(ai)) {
 		return 1;
 	}
 	cBaseLocalLogic *l = (cBaseLocalLogic *)Logic_GetLocalLogic(t);
@@ -100,10 +105,10 @@ static cEntity *cBishopLocalLogic_FindTarget(cLocalLogic *elem) {
 static void cBishopLocalLogic_OnAlarm(cLocalLogic *elem, cEntity *target) {
 	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
 	if (g_BishopAttackOnAlarm) {
-		self->base.vftable->SetState(&self->base.logic, self->alarmState, target);
+		Logic_SetState(self, self->alarmState, target);
 		return;
 	}
-	self->base.vftable->SetState(&self->base.logic, 2, target);
+	Logic_SetState(self, 2, target);
 }
 
 /* the vtable of cBishopLocalLogic */

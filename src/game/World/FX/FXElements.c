@@ -421,7 +421,7 @@ static void cFXElementsFireDrop_Update(cMapElement *elem, float dt) {
 			desc.param3 = 0.0f;
 			cSoundDesc_SetPos(&desc, CGameModel_GetPos(model, &tmp));
 			desc.volume += Snd_Volume(g_FireDropSoundVol);
-			g_pSound->vftable->PlaySound(g_pSound, g_FireDropSound, &desc, NULL);
+			SoundSys_PlaySound(g_pSound, g_FireDropSound, &desc, NULL);
 			return;
 		}
 	}

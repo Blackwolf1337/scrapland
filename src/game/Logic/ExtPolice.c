@@ -50,25 +50,25 @@ cEntity *ExtPolice_CallCop(cEntity *e) {
 	if (!list) {
 		return NULL;
 	}
-	e->vftable->GetPos(e, &p);
+	Entity_GetPos(e, &p);
 	float bestD = 3.4028234663852886e+38f;
 	float maxD = g_TrafficFightingMaxDist * g_TrafficFightingMaxDist;
 	for (Nto1Node *n = Logic_ListFirst(list); n; n = Logic_ListNext(n)) {
 		cEntity *c = n->data;
-		CHECK(c->vftable->IsType(c, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
-		const vec3_t *cp = c->vftable->GetPos(c, &t1);
+		CHECK(Entity_IsType(c, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
+		const vec3_t *cp = Entity_GetPos(c, &t1);
 		float dy = p.y - cp->y, dx = p.x - cp->x, dz = p.z - cp->z;
 		float d = dy * dy + dx * dx + dz * dz;
-		if (maxD > d && bestD > d && Engine_TestLine(c->vftable->GetPos(c, &t2), &p, NULL, NULL)) {
+		if (maxD > d && bestD > d && Engine_TestLine(Entity_GetPos(c, &t2), &p, NULL, NULL)) {
 			bestD = d;
 			best = c;
 		}
 	}
 	if (best) {
 		if (!best->active) {
-			best->vftable->SetActive(best, 1);
+			Entity_SetActive(best, 1);
 		}
-		cAIVehicle *ai = best->vftable->GetAI(best);
+		cAIVehicle *ai = Entity_GetAI(best);
 		PoliceAI_RandomParams(ai);
 		cAIVehicle_SetState(ai, AIV_STATE_ATTACK, e);
 	}
@@ -79,11 +79,11 @@ cEntity *ExtPolice_CallCop(cEntity *e) {
 static void ExtPolice_CopDamage(const char *name, const char *attacker, byte died) {
 	cEntity *cop = World_FindEntity(name);
 
-	if (!cop || !cop->vftable->IsType(cop, TYEN_CAR)) {
+	if (!cop || !Entity_IsType(cop, TYEN_CAR)) {
 		Con_Warnf("WARNING : CopDamage() '%s' invalid\n", name);
 		return;
 	}
-	cAIVehicle *ai = cop->vftable->GetAI(cop);
+	cAIVehicle *ai = Entity_GetAI(cop);
 	if (!ai) {
 		Con_Warnf("WARNING : CopDamage() '%s' AI invalid\n", name);
 		return;
@@ -104,7 +104,7 @@ static void ExtPolice_CopDamage(const char *name, const char *attacker, byte die
 			return;
 		}
 		if (!cop->active) {
-			cop->vftable->SetActive(cop, 1);
+			Entity_SetActive(cop, 1);
 		}
 		cAIVehicle_SetState(ai, AIV_STATE_ATTACK, a);
 		return;
@@ -112,7 +112,7 @@ static void ExtPolice_CopDamage(const char *name, const char *attacker, byte die
 	if (!cEntity_GetListName(a) || strcmp(cEntity_GetListName(a), "Friends")) {
 		return;
 	}
-	if (cAIVehicle_GetState(ai) == AIV_STATE_ATTACK && ai->vftable->GetTargetEnt(&ai->base.base) == cWorld_GetUsrEntity(g_pWorld,
+	if (cAIVehicle_GetState(ai) == AIV_STATE_ATTACK && AIMove_GetTargetEnt(ai) == cWorld_GetUsrEntity(g_pWorld,
 		0)) {
 		cAIVehicle_SetState(ai, AIV_STATE_ATTACK, a);
 	}
@@ -120,7 +120,7 @@ static void ExtPolice_CopDamage(const char *name, const char *attacker, byte die
 
 /* the cars after the player: attack in its car, else chase */
 static void ExtPolice_Hunt(cAIVehicle *ai, cEntity *usr) {
-	if (usr->vftable->IsType(usr, TYEN_CAR)) {
+	if (Entity_IsType(usr, TYEN_CAR)) {
 		cAIVehicle_SetState(ai, AIV_STATE_ATTACK, usr);
 		return;
 	}
@@ -158,19 +158,19 @@ static void cExtPolice_Think(cExtPolice *self) {
 	self->retarget = self->retarget - 0.5f;
 	while (n) {
 		cEntity *e = n->data;
-		CHECK(e->vftable->IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
-		cAIVehicle *ai = e->vftable->GetAI(e);
+		CHECK(Entity_IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
+		cAIVehicle *ai = Entity_GetAI(e);
 		CHECK(ai && "ai");
 		n = Logic_ListNext(n);
 		if (g_ExtPoliceChasing && !alarm) {
-			float d = cWorld_GetMinCamDistSq(g_pWorld, e->vftable->GetPos(e, &tmp));
+			float d = cWorld_GetMinCamDistSq(g_pWorld, Entity_GetPos(e, &tmp));
 			if (d > g_MaxDistReposAI * g_MaxDistReposAI * 9.0f * 0.0625f &&
-				!CGameModel_IsVisible(Obj_Vtbl(e)->GetModel(e))) {
+				!CGameModel_IsVisible(Obj_GetModel(e))) {
 				cEntity_Del(e);
 				continue;
 			}
 		} else if (alarm) {
-			if (cAIVehicle_ControlFlag(ai) && ai->vftable->GetTargetEnt(&ai->base.base) == usr) {
+			if (cAIVehicle_ControlFlag(ai) && AIMove_GetTargetEnt(ai) == usr) {
 				Alarm_Set(&g_pWorld->alarm, 1.0f);
 				self->raised = 1;
 			}
@@ -215,14 +215,14 @@ static void cExtPolice_Think(cExtPolice *self) {
 			} else if (0.0f >= self->retarget) {
 				int st = cAIVehicle_GetState(ai);
 				if ((st != AIV_STATE_ATTACK && cAIVehicle_GetState(ai) != AIV_STATE_CHASE) ||
-					ai->vftable->GetTargetEnt(&ai->base.base) != usr) {
+					AIMove_GetTargetEnt(ai) != usr) {
 					ExtPolice_Hunt(ai, usr);
 				}
 			}
 			continue;
 		}
 		if (!e->active) {
-			e->vftable->SetActive(e, 1);
+			Entity_SetActive(e, 1);
 		}
 		ExtPolice_Hunt(ai, usr);
 	}
@@ -255,11 +255,11 @@ byte ExtPolice_IsChased(cEntity *e) {
 	}
 	for (Nto1Node *n = Logic_ListFirst(list); n; n = Logic_ListNext(n)) {
 		cEntity *c = n->data;
-		if (!c || !c->vftable->IsType(c, TYEN_CAR)) {
+		if (!c || !Entity_IsType(c, TYEN_CAR)) {
 			continue;
 		}
-		cAIVehicle *ai = c->vftable->GetAI(c);
-		if (ai && ai->vftable->GetTargetEnt(&ai->base.base) == e) {
+		cAIVehicle *ai = Entity_GetAI(c);
+		if (ai && AIMove_GetTargetEnt(ai) == e) {
 			return 1;
 		}
 	}

@@ -71,11 +71,11 @@ void CRenderNode_dtor(CRenderNode *self) {
 		self->look = NULL;
 	}
 	if (self->obj3D2) {
-		self->obj3D2->vftable->Delete(self->obj3D2, 1);
+		NodeFX_Delete(self->obj3D2, 1);
 		self->obj3D2 = NULL;
 	}
 	if (self->obj3D) {
-		self->obj3D->vftable->Delete(self->obj3D, 1);
+		Object3D_Delete(self->obj3D, 1);
 		self->obj3D = NULL;
 	}
 	CHECK(self->node->Refs > 1);
@@ -94,7 +94,7 @@ int CRenderNode_ApplyFX(CRenderNode *self, matrix_t *m) {
 		return 0;
 	}
 	if (self->obj3D2) {
-		return self->obj3D2->vftable->Apply(self->obj3D2, m, self->node, self);
+		return NodeFX_Apply(self->obj3D2, m, self->node, self);
 	}
 	return -1;
 }

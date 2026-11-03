@@ -99,6 +99,135 @@ typedef struct CSoundSysVtbl {
 	int(*VoiceUnused)(CSoundSys *self, int voice);			/* 0xa0 CHECK(0) */
 } CSoundSysVtbl;
 
+/* calls through the slots of CSoundSysVtbl */
+static inline void SoundSys_Close(void *self) {
+	VT(CSoundSysVtbl, self)->Close(self);
+}
+
+static inline void SoundSys_Compute3D(void *self, cSoundDesc *d, const vec3_t *pos, const vec3_t *vel, byte doppler) {
+	VT(CSoundSysVtbl, self)->Compute3D(self, d, pos, vel, doppler);
+}
+
+static inline void SoundSys_DebugDraw(void *self, int x, int y) {
+	VT(CSoundSysVtbl, self)->DebugDraw(self, x, y);
+}
+
+static inline void SoundSys_DeleteAllSounds(void *self) {
+	VT(CSoundSysVtbl, self)->DeleteAllSounds(self);
+}
+
+static inline void SoundSys_DeleteSound(void *self, const char *name) {
+	VT(CSoundSysVtbl, self)->DeleteSound(self, name);
+}
+
+static inline CSoundSys *SoundSys_Destroy(void *self, byte flags) {
+	return VT(CSoundSysVtbl, self)->Destroy(self, flags);
+}
+
+static inline byte SoundSys_GetDesc(void *self, const char *name, cSoundDesc *out) {
+	return VT(CSoundSysVtbl, self)->GetDesc(self, name, out);
+}
+
+static inline void SoundSys_GetSoundName(void *self, const char *file, char *out, int size) {
+	VT(CSoundSysVtbl, self)->GetSoundName(self, file, out, size);
+}
+
+static inline int SoundSys_GetVoiceString(void *self, int voice, char *buf, int size) {
+	return VT(CSoundSysVtbl, self)->GetVoiceString(self, voice, buf, size);
+}
+
+static inline void SoundSys_Init(void *self) {
+	VT(CSoundSysVtbl, self)->Init(self);
+}
+
+static inline void SoundSys_LoadSound(void *self, const char *name) {
+	VT(CSoundSysVtbl, self)->LoadSound(self, name);
+}
+
+static inline void SoundSys_LoadSound2(void *self, const char *name) {
+	VT(CSoundSysVtbl, self)->LoadSound2(self, name);
+}
+
+static inline int SoundSys_OpenVoice(void *self, const char *name, int voice, int arg) {
+	return VT(CSoundSysVtbl, self)->OpenVoice(self, name, voice, arg);
+}
+
+static inline int SoundSys_Play(void *self, const char *name, int volume, int pan) {
+	return VT(CSoundSysVtbl, self)->Play(self, name, volume, pan);
+}
+
+static inline int SoundSys_PlayAt(void *self, const char *name, const vec3_t *pos, int volume) {
+	return VT(CSoundSysVtbl, self)->PlayAt(self, name, pos, volume);
+}
+
+static inline int SoundSys_PlaySound(void *self, const char *name, const cSoundDesc *d, int *handle) {
+	return VT(CSoundSysVtbl, self)->PlaySound(self, name, d, handle);
+}
+
+static inline int SoundSys_PlayVoice(void *self, int voice) {
+	return VT(CSoundSysVtbl, self)->PlayVoice(self, voice);
+}
+
+static inline void SoundSys_ResetListeners(void *self) {
+	VT(CSoundSysVtbl, self)->ResetListeners(self);
+}
+
+static inline byte SoundSys_SetDesc(void *self, const char *name, const cSoundDesc *d) {
+	return VT(CSoundSysVtbl, self)->SetDesc(self, name, d);
+}
+
+static inline void SoundSys_SetMusic(void *self, const char *name) {
+	VT(CSoundSysVtbl, self)->SetMusic(self, name);
+}
+
+static inline void SoundSys_SetMusicVolume(void *self, float volume) {
+	VT(CSoundSysVtbl, self)->SetMusicVolume(self, volume);
+}
+
+static inline int SoundSys_SetVoiceParam(void *self, int voice, float v) {
+	return VT(CSoundSysVtbl, self)->SetVoiceParam(self, voice, v);
+}
+
+static inline int SoundSys_SetVoiceString(void *self, int voice, const char *text) {
+	return VT(CSoundSysVtbl, self)->SetVoiceString(self, voice, text);
+}
+
+static inline int SoundSys_SetVoiceVolume(void *self, int voice, float volume) {
+	return VT(CSoundSysVtbl, self)->SetVoiceVolume(self, voice, volume);
+}
+
+static inline void SoundSys_StopAllSounds(void *self) {
+	VT(CSoundSysVtbl, self)->StopAllSounds(self);
+}
+
+static inline void SoundSys_StopMusic(void *self) {
+	VT(CSoundSysVtbl, self)->StopMusic(self);
+}
+
+static inline int SoundSys_StopSound(void *self, int handle) {
+	return VT(CSoundSysVtbl, self)->StopSound(self, handle);
+}
+
+static inline int SoundSys_StopVoice(void *self, int voice) {
+	return VT(CSoundSysVtbl, self)->StopVoice(self, voice);
+}
+
+static inline void SoundSys_Update(void *self) {
+	VT(CSoundSysVtbl, self)->Update(self);
+}
+
+static inline byte SoundSys_UpdateSound(void *self, const char *name, const cSoundDesc *d, int handle) {
+	return VT(CSoundSysVtbl, self)->UpdateSound(self, name, d, handle);
+}
+
+static inline byte SoundSys_VoiceRemain(void *self, int voice, float *remain) {
+	return VT(CSoundSysVtbl, self)->VoiceRemain(self, voice, remain);
+}
+
+static inline void SoundSys_vf1c(void *self) {
+	VT(CSoundSysVtbl, self)->vf1c(self);
+}
+
 struct CSoundSys {
 	const CSoundSysVtbl *vftable;			/* 0x00 */
 	cSoundListener listeners[SOUND_MAX_LISTENERS];	/* 0x04 */
@@ -258,6 +387,23 @@ typedef struct cSndInterfaceVtbl {
 	byte(*VarV)(cSndInterface *self, const char *name, double *x, double *y, double *z, int set);	/* 0x10 */
 } cSndInterfaceVtbl;
 
+/* calls through the slots of cSndInterfaceVtbl */
+static inline byte SndIf_VarF(void *self, const char *name, double *d, int set) {
+	return VT(cSndInterfaceVtbl, self)->VarF(self, name, d, set);
+}
+
+static inline byte SndIf_VarI(void *self, const char *name, int *i, int set) {
+	return VT(cSndInterfaceVtbl, self)->VarI(self, name, i, set);
+}
+
+static inline byte SndIf_VarS(void *self, const char *name, char **s, int set) {
+	return VT(cSndInterfaceVtbl, self)->VarS(self, name, s, set);
+}
+
+static inline byte SndIf_VarV(void *self, const char *name, double *x, double *y, double *z, int set) {
+	return VT(cSndInterfaceVtbl, self)->VarV(self, name, x, y, z, set);
+}
+
 struct cSndInterface {
 	const cSndInterfaceVtbl *vftable;	/* 0x00 */
 	int nsnd;			/* 0x04 */
@@ -279,11 +425,6 @@ void cSndInterface_SetId(cSndInterface *self, const char *id);
 /* 0 stops it, else it starts when it does not play */
 void cSndItem_SetVolume(cSndItem *self, cEntity *e, float volume);
 byte cSndItem_Play(cSndItem *self, cEntity *e);
-
-/* the variable methods of the sounds (cSndInterface::vftable from slot 1) */
-static inline const cSndInterfaceVtbl *Snd_Vtbl(cSndInterface *snd) {
-	return snd->vftable;
-}
 
 void Sound_UpdatePaused(void);
 

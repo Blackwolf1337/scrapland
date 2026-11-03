@@ -588,7 +588,7 @@ void cWeaponManager_Update(cWeaponManager *self, float dt) {
 	cVehicleControls *ctl = &Veh(owner)->controls;
 	const char *name;
 
-	if (!CGameModel_IsLoaded(Obj_Vtbl(owner)->GetModel(owner))) {
+	if (!CGameModel_IsLoaded(Obj_GetModel(owner))) {
 		return;
 	}
 	byte net = Net_IsNetEntity(self->owner);
@@ -760,7 +760,7 @@ byte cWeaponManager_VarS(cWeaponManager *self, const char *name, char **v, byte 
 	}
 	cWeaponManager_SetWeapList(self, *v);
 	if (self->owner) {
-		void *ai = self->owner->vftable->GetAI(self->owner);
+		void *ai = Entity_GetAI(self->owner);
 		if (ai) {
 			cAIVehicle_WeapListChanged(ai);
 		}
@@ -786,7 +786,7 @@ byte cWeaponManager_VarV(cWeaponManager *self, const char *name, double *x, doub
 		return 0;
 	}
 	matrix_t m;
-	CGameModel *model = Obj_Vtbl(self->owner)->GetModel(self->owner);
+	CGameModel *model = Obj_GetModel(self->owner);
 	const matrix_t *r = CGameModel_NodeMatrix(model, &m, node, 0, NULL, 0);
 	float fx = r->m[12];
 	float fy = r->m[13];

@@ -79,13 +79,6 @@ static cEntity *AI_GetTarget(void *ai) {
 	return (*(AIGetTarget_t **)ai)[18](ai);
 }
 
-/* the update of an AI group (the vehicles or the characters) */
-static void AIGroup_Update(void *group, float dt) {
-	cAIEntityGroup *g = group;
-
-	g->vftable->Update(g, dt);
-}
-
 static int World_IsIgnoredInline(cWorld *self, cEntity *e) {
 	for (int i = 0; i < 4; i++) {
 		if (!self->ignore[i]) {
@@ -120,15 +113,15 @@ cEntity *Entity_FindInView(cEntity *self, float range, float *outDot, float *out
 	float range2 = range * range;
 	vec3_t pos, ang, tmp;
 
-	Obj_Vtbl(self)->GetCamera(self, &pos, &ang);
+	Obj_GetCamera(self, &pos, &ang);
 	ang.x = ang.x + PI_F;
-	byte hasAI = self->vftable->GetAI(self) != NULL;
-	cEntity *e = hasAI ? AI_GetTarget(self->vftable->GetAI(self)) : cWorld_GetFirstEntity(g_pWorld);
+	byte hasAI = Entity_GetAI(self) != NULL;
+	cEntity *e = hasAI ? AI_GetTarget(Entity_GetAI(self)) : cWorld_GetFirstEntity(g_pWorld);
 	if (!e) {
 		return NULL;
 	}
 	for (;;) {
-		if (e->active && e != self && e->vftable->IsType(e, TYEN_CAR)) {
+		if (e->active && e != self && Entity_IsType(e, TYEN_CAR)) {
 			int take;
 			if (hasAI || mode == 2) {
 				take = 1;
@@ -139,7 +132,7 @@ cEntity *Entity_FindInView(cEntity *self, float range, float *outDot, float *out
 				take = mode == 0 && WLife(e)->arrow.tgType != 3;
 			}
 			if (take) {
-				vec3_t tp = *e->vftable->GetPos(e, &tmp);
+				vec3_t tp = *Entity_GetPos(e, &tmp);
 				float dx = tp.x - pos.x;
 				float dy = tp.y - pos.y;
 				float dz = tp.z - pos.z;
@@ -585,11 +578,11 @@ static byte cWorld_LineCallF(cWorld *self, uint32_t mask, const vec3_t *from, co
 		if (!(Entity_Mask(e) & mask)) {
 			continue;
 		}
-		float d2 = Dist2_PointSegment(from, to, e->vftable->GetPos(e, &pos), &closest);
-		if (!e->vftable->TestSphere(e, NULL, &closest, radius, 0)) {
+		float d2 = Dist2_PointSegment(from, to, Entity_GetPos(e, &pos), &closest);
+		if (!Entity_TestSphere(e, NULL, &closest, radius, 0)) {
 			continue;
 		}
-		if (Engine_TestLine(&closest, e->vftable->GetPos(e, &pos2), NULL, NULL)) {
+		if (Engine_TestLine(&closest, Entity_GetPos(e, &pos2), NULL, NULL)) {
 			continue;
 		}
 		cPy_Function_AddParamS(func, e->name);
@@ -721,8 +714,8 @@ void cWorld_Clear(cWorld *self) {
 	Scheduler_Clear(&self->scheduler);
 	for (n = self->entityList.next; n->data && n; n = n->next) {
 		cEntity *e = n->data;
-		if (e->vftable->IsType(e, "Cam")) {
-			CamCtl_Vtbl(e)->SetTarget(e, NULL);
+		if (Entity_IsType(e, "Cam")) {
+			CamCtl_SetTarget(e, NULL);
 		}
 	}
 	Camera_SetCurrent(NULL);
@@ -737,7 +730,7 @@ void cWorld_Clear(cWorld *self) {
 		}
 		cEntity *e = n->data;
 		if (e) {
-			e->vftable->Delete(e, 1);
+			Entity_Delete(e, 1);
 		}
 	}
 	while (self->debrisList) {
@@ -914,8 +907,8 @@ void *cWorld_GetObjData(cWorld *self, const char *name) {
 	(void)self;
 	if (*name) {
 		cEntity *e = World_Lookup(g_pWorld, name);
-		if (e && e->vftable->IsType(e, "Obj")) {
-			return Obj_Vtbl(e)->GetModel(e);
+		if (e && Entity_IsType(e, "Obj")) {
+			return Obj_GetModel(e);
 		}
 	}
 	return NULL;
@@ -967,7 +960,7 @@ byte cWorld_TestLineEntities(cWorld *world, cEntity *exclude, uint32_t mask, con
 		if (e == exclude || !(Entity_Mask(e) & mask) || World_IsIgnoredInline(world, e)) {
 			continue;
 		}
-		if (e->vftable->TestLine(e, from, hit)) {
+		if (Entity_TestLine(e, from, hit)) {
 			if (target) {
 				*target = e;
 			}
@@ -1005,14 +998,14 @@ int cWorld_SetCam(cWorld *world, int i, const char *name) {
 		if (it) {
 			cam = it->value;
 		}
-		if (!cam || !cam->vftable->IsType(cam, "Cam")) {
+		if (!cam || !Entity_IsType(cam, "Cam")) {
 			return 2;
 		}
 	}
 	char *key = world->camName[i];
 	if (*key) {
 		cEntity *old = World_Lookup(world, key);
-		if (old && old->vftable->IsType(old, "Cam")) {
+		if (old && Entity_IsType(old, "Cam")) {
 			CamEntity_Slot(old) = -1;
 		}
 	}
@@ -1041,15 +1034,15 @@ static void cWorld_UpdateListeners(cWorld *self, float dt) {
 			continue;
 		}
 		cEntity *cam = World_Lookup(self, key);
-		if (!cam || !cam->vftable->IsType(cam, "Cam")) {
+		if (!cam || !Entity_IsType(cam, "Cam")) {
 			continue;
 		}
-		if (cam->vftable->IsType(cam, "FCam") && cCamEntity_GetTarget(cam) && !((cCamControl *)cam)->link[0]) {
+		if (Entity_IsType(cam, "FCam") && cCamEntity_GetTarget(cam) && !((cCamControl *)cam)->link[0]) {
 			cEntity *t = cCamEntity_GetTarget(cam);
 			const CSoundSysVtbl *svt = g_pSound->vftable;
 			vec3_t vel, pos;
-			vec3_t *pv = Obj_Vtbl(t)->GetVel(t, &vel);
-			vec3_t *pp = Obj_Vtbl(t)->GetViewPos(t, &pos);
+			vec3_t *pv = Obj_GetVel(t, &vel);
+			vec3_t *pp = Obj_GetViewPos(t, &pos);
 			Snd_SetListener(svt)(g_pSound, i, pp, CamEntity_Orient(cam), pv);
 		} else {
 			float inv = 1.0f / dt;
@@ -1085,7 +1078,7 @@ void cWorld_Update(cWorld *self, float dt) {
 		if (*key) {
 			cEntity *cam = World_Lookup(self, key);
 			if (cam) {
-				CHECK(cam->vftable->IsType(cam, "Cam"));
+				CHECK(Entity_IsType(cam, "Cam"));
 				Camera_SetCurrent((CGameCamera *)CamEntity_Cam(cam));
 			}
 		}
@@ -1096,9 +1089,9 @@ void cWorld_Update(cWorld *self, float dt) {
 		for (n = self->entityList.next; n->data && n; n = n->next) {
 			cEntity *e = n->data;
 			if (e->active) {
-				e->vftable->Update(e);
+				Entity_Update(e);
 			} else {
-				e->vftable->UpdateOff(e);
+				Entity_UpdateOff(e);
 			}
 		}
 		for (cDebrisSys *d = self->debrisList; d; d = d->next) {
@@ -1112,7 +1105,7 @@ void cWorld_Update(cWorld *self, float dt) {
 			}
 			cEntity *e = n->data;
 			PtrTable_Delete(&self->entities, e->name);
-			e->vftable->Delete(e, 1);
+			Entity_Delete(e, 1);
 		}
 		for (int i = 0; i < 4; i++) {
 			self->owners[i] = NULL;
@@ -1120,12 +1113,12 @@ void cWorld_Update(cWorld *self, float dt) {
 		for (n = self->entityList.next; n->data && n; n = n->next) {
 			cEntity *e = n->data;
 			uint32_t slot;
-			if (!e->active || !e->vftable->IsType(e, TYEN_WITH_LIFE)) {
+			if (!e->active || !Entity_IsType(e, TYEN_WITH_LIFE)) {
 				continue;
 			}
-			if (e->vftable->IsType(e, TYEN_CAR)) {
+			if (Entity_IsType(e, TYEN_CAR)) {
 				slot = cVehicleEntity_GetOwnerSlot(e);
-			} else if (e->vftable->IsType(e, TYEN_WALKCHAR)) {
+			} else if (Entity_IsType(e, TYEN_WALKCHAR)) {
 				slot = cWalkCharEntity_GetOwnerSlot(e);
 			} else {
 				continue;
@@ -1144,7 +1137,7 @@ void cWorld_Update(cWorld *self, float dt) {
 		if (g_CharGroup) {
 			AIGroup_Update(g_CharGroup, cTimer_GetDelta(timer));
 		}
-		Logic_Update(&self->logic, cTimer_GetDelta(timer));
+		LogicControl_Update(&self->logic, cTimer_GetDelta(timer));
 		Elements_Update(&self->elements, cTimer_GetDelta(timer));
 	} else {
 		Sound_UpdatePaused();
@@ -1164,10 +1157,10 @@ byte cWorld_SphereCallF(cWorld *self, uint32_t mask, const vec3_t *center, float
 	CHECK(Grid_IsOk(&self->grid));
 	World_SphereBox(center, radius, &lo, &hi);
 	for (cEntity *e = Grid_FirstInBox(&self->grid, &lo, &hi); e; e = Grid_NextInBox(&self->grid)) {
-		if (!(Entity_Mask(e) & mask) || !e->vftable->TestSphere(e, NULL, center, radius, 0)) {
+		if (!(Entity_Mask(e) & mask) || !Entity_TestSphere(e, NULL, center, radius, 0)) {
 			continue;
 		}
-		if (!(byte)noWall && Engine_TestLine(center, e->vftable->GetPos(e, &pos), NULL, NULL)) {
+		if (!(byte)noWall && Engine_TestLine(center, Entity_GetPos(e, &pos), NULL, NULL)) {
 			continue;
 		}
 		cPy_Function_AddParamS(func, e->name);
@@ -1204,7 +1197,7 @@ byte cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, uint32_t mask, c
 		if (!(Entity_Mask(e) & mask) || e == exclude || World_IsIgnoredInline(world, e)) {
 			continue;
 		}
-		if (e->vftable->TestSphere(e, exclude, center, radius, prev)) {
+		if (Entity_TestSphere(e, exclude, center, radius, prev)) {
 			if (target) {
 				*target = e;
 			}

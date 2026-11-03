@@ -16,7 +16,7 @@ static const cActCtrlVarVtbl cActCtrl_vftable;
 static cGVar GVar_LogActEvents;
 
 static CGameModel *Ctrl_Model(cActCtrl *self) {
-	return Obj_Vtbl(self->owner)->GetModel(self->owner);
+	return Obj_GetModel(self->owner);
 }
 
 static cTimer *Ctrl_Timer(cActCtrl *self) {
@@ -61,8 +61,8 @@ cActCtrl *cActCtrl_ctor(cActCtrl *self, cEntity *owner, cActClass *cls) {
 	self->rootSum.z = 0.0f;
 	self->rootTime = 0.0f;
 	self->walkSpeed = 0.5f;
-	if (owner->vftable->IsType(owner, TYEN_WALKCHAR)) {
-		WChar_Vtbl(owner)->SetYModelDisp(owner, self->cls->yModelDisp);
+	if (Entity_IsType(owner, TYEN_WALKCHAR)) {
+		WChar_SetYModelDisp(owner, self->cls->yModelDisp);
 		WChar(owner)->relaxTime = self->cls->minTimeToExtraRelax;
 	}
 	self->cls->users++;
@@ -73,7 +73,7 @@ cActCtrl *cActCtrl_ctor(cActCtrl *self, cEntity *owner, cActClass *cls) {
 static void cActCtrl_dtor(cActCtrl *self) {
 	self->vftable = CACTCTRL_VFTABLE;
 	self->cls->users--;
-	self->owner->vftable->SetModel(self->owner, NULL, 1.0f, 1.0f, 1.0f, 1);
+	Entity_SetModel(self->owner, NULL, 1.0f, 1.0f, 1.0f, 1);
 	if (self->heads) {
 		operator_delete_array(self->heads);
 	}
@@ -93,7 +93,7 @@ void cActCtrl_AnimCmd(cActCtrl *self, const char *cmd) {
 
 /* the model of the class on the owner with the animations of the actions */
 static void cActCtrl_InitModel(cActCtrl *self) {
-	self->owner->vftable->SetModel(self->owner, self->cls->modelFile, 1.0f, 1.0f, 1.0f, 0);
+	Entity_SetModel(self->owner, self->cls->modelFile, 1.0f, 1.0f, 1.0f, 0);
 	CGameModel *m = Ctrl_Model(self);
 	for (cAction *a = self->cls->first; a; a = a->next) {
 		int idx = CGameModel_FindAnim(m, a->anmName);
@@ -102,8 +102,8 @@ static void cActCtrl_InitModel(cActCtrl *self) {
 		}
 		CHECK(idx == a->anim);
 	}
-	if (self->owner->vftable->IsType(self->owner, TYEN_WITH_LIFE)) {
-		self->owner->vftable->SetEmbeddedFX(self->owner, CGameModel_Name(m));
+	if (Entity_IsType(self->owner, TYEN_WITH_LIFE)) {
+		Entity_SetEmbeddedFX(self->owner, CGameModel_Name(m));
 	}
 }
 
@@ -392,7 +392,7 @@ static float Ship_Wrap(cActLayer *l, cAction *a, float t) {
 static float Ship_AngZ(cVehicleEntity *v) {
 	vec3_t ang;
 
-	return Obj_Vtbl(Veh_Ent(v))->GetViewAng(Veh_Ent(v), &ang)->z;
+	return Obj_GetViewAng(Veh_Ent(v), &ang)->z;
 }
 
 /* the update of DinaShip classes: the parts of the ship (Motor, Rudder, Flaps, ...) by its state */

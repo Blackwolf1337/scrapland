@@ -162,13 +162,12 @@ static int cTalkScorer_Var(cScorerItem *base, const char *name, int set, char **
 /* the use text (vf05) and the talk (vf04) up from the item position */
 static void cTalkScorer_Draw(cScorerItem *base, int player) {
 	cTalkScorer *self = (cTalkScorer *)base;
-	const cTalkScorerVtbl *vt = (const cTalkScorerVtbl *)self->base.vftable;
 	float pos[2];
 
 	pos[0] = self->base.x;
 	pos[1] = self->base.y;
-	vt->DrawUse(self, player, pos);
-	vt->DrawTalk(self, player, pos);
+	TalkScorer_DrawUse(self, player, pos);
+	TalkScorer_DrawTalk(self, player, pos);
 }
 
 static cPy_Function g_TalkCallback;

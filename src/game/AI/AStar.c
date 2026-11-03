@@ -75,7 +75,7 @@ static byte cBinaryHeap_Push(cBinaryHeap *self, void *const *item) {
 	self->count++;
 	self->elems[self->count] = *item;
 	BinHeap_Moved(self, self->count);
-	self->vftable->SiftUp(self, self->count);
+	Heap_SiftUp(self, self->count);
 	return 1;
 }
 
@@ -96,7 +96,7 @@ static byte cBinaryHeap_Pop(cBinaryHeap *self) {
 		BinHeap_Moved(self, 1);
 	}
 	self->count--;
-	self->vftable->SiftDown(self, 1);
+	Heap_SiftDown(self, 1);
 	return 1;
 }
 
@@ -125,7 +125,7 @@ static byte cBinaryHeap_Set(cBinaryHeap *self, void *const *item, int i) {
 	}
 	self->elems[i] = *item;
 	BinHeap_Moved(self, i);
-	self->vftable->Fix(self, i);
+	Heap_Fix(self, i);
 	return 1;
 }
 
@@ -135,8 +135,8 @@ static int cBinaryHeap_Count(cBinaryHeap *self) {
 }
 
 static void cBinaryHeap_Fix(cBinaryHeap *self, int i) {
-	if (!self->vftable->SiftUp(self, i)) {
-		self->vftable->SiftDown(self, i);
+	if (!Heap_SiftUp(self, i)) {
+		Heap_SiftDown(self, i);
 	}
 }
 
@@ -334,10 +334,10 @@ static void CAStarSup_Draw(CAStarSup *self, uint32_t color) {
 		}
 	}
 	if (g_AStarDrawMode == 2 || g_AStarDrawMode == 3) {
-		int n = open->vftable->Count(open);
+		int n = Heap_Count(open);
 		for (int i = 1; i <= n; i++) {
 			void **e;
-			open->vftable->Get(open, &e, i);
+			Heap_Get(open, &e, i);
 			const vec3_t *p = ((ElemAStar *)*e)->node;
 			if (p) {
 				DebugUtils_DrawSphere(p, 50.0f, 0xff00ff, 2, 2);
@@ -355,7 +355,6 @@ static HashTable *CAStarSup_GetTable(CAStarSup *self) {
 /* the A* from start to goal over the points of visibility; path: goal first, the start last. ok 0 when the lists are
  * full or the start has no points, found 0 when the goal has no point or the graph has no way */
 static byte CAStarSup_Search(CAStarSup *self, cNWVecList *path, int stupid, byte *ok, byte *found, int *state) {
-	const CAStarVtbl *vt = self->vftable;
 	cBinaryHeap *open;
 	const vec3_t *goalPt;
 	int n, file;
@@ -364,43 +363,43 @@ static byte CAStarSup_Search(CAStarSup *self, cNWVecList *path, int stupid, byte
 	*found = 1;
 	*state = 0;
 	DListVec3_Clear(path);
-	vt->Reset(self);
+	AStar_Reset(self);
 	if ((self->start.x == self->goal.x && self->start.y == self->goal.y && self->start.z == self->goal.z)
-		|| vt->TestPath(self, &self->goal, &self->start)) {
+		|| AStar_TestPath(self, &self->goal, &self->start)) {
 		DListVec3_Add(path, &self->goal);
 		DListVec3_Add(path, &self->start);
 		return 1;
 	}
 	n = 0;
-	vt->PointsVis(self, &self->goal, &goalPt, 1, &n);
+	AStar_PointsVis(self, &self->goal, &goalPt, 1, &n);
 	if (n == 0) {
 		goto lost;
 	}
-	file = vt->FileOf(self, goalPt);
+	file = AStar_FileOf(self, goalPt);
 	vec3_t startCopy = self->start;
 	ElemAStar first;
 	first.node = NULL;
 	first.parent = NULL;
 	first.g = 0.0f;
-	first.f = vt->Heuristic(self, &self->start);
+	first.f = AStar_Heuristic(self, &self->start);
 	first.info = NULL;
-	if (!vt->AddElem(self, &first)) {
+	if (!AStar_AddElem(self, &first)) {
 		goto fail;
 	}
 	ElemAStar *top = &self->list[self->numList - 1];
 	open = self->open;
-	if (!open->vftable->Push(open, (void *const *)&top)) {
+	if (!Heap_Push(open, (void *const *)&top)) {
 		goto fail;
 	}
 	self->numList--;
-	while (self->open->vftable->Count(self->open) > 0) {
+	while (Heap_Count(self->open) > 0) {
 		const vec3_t *buf[50];
 		vec3_t curPos, parentPos;
 		void **tp;
 		int count, taken;
 
 		open = self->open;
-		open->vftable->Top(open, &tp);
+		Heap_Top(open, &tp);
 		ElemAStar *cur = *tp;
 		curPos = cur->node ? *cur->node : self->start;
 		if (cur->parent) {
@@ -410,11 +409,11 @@ static byte CAStarSup_Search(CAStarSup *self, cNWVecList *path, int stupid, byte
 			parentPos.y = -3.40282347e+38f;
 			parentPos.z = -3.40282347e+38f;
 		}
-		open->vftable->Pop(open);
-		if (vt->TestPath(self, &self->goal, &curPos)) {
+		Heap_Pop(open);
+		if (AStar_TestPath(self, &self->goal, &curPos)) {
 			if (cur->node) {
-				vt->CloseAdd(self, &cur);
-				vt->BuildPath(self, path, cur);
+				AStar_CloseAdd(self, &cur);
+				AStar_BuildPath(self, path, cur);
 			}
 			DListVec3_Add(path, &self->start);
 			if ((byte)Vec3_Differ(&self->start.x, &startCopy.x)) {
@@ -424,14 +423,14 @@ static byte CAStarSup_Search(CAStarSup *self, cNWVecList *path, int stupid, byte
 		}
 		count = 0;
 		if (!cur->node) {
-			vt->PointsVisFile(self, &self->start, buf, 50, &count, state, file);
+			AStar_PointsVisFile(self, &self->start, buf, 50, &count, state, file);
 			if (count == 0) {
 				goto fail;
 			}
 		} else {
-			vt->OtherLinks(self, cur->node, &parentPos, buf, 50, &count);
+			AStar_OtherLinks(self, cur->node, &parentPos, buf, 50, &count);
 		}
-		vt->CloseAdd(self, &cur);
+		AStar_CloseAdd(self, &cur);
 		taken = 0;
 		for (int i = 0; i < count; i++) {
 			ElemAStar *el;
@@ -446,11 +445,11 @@ static byte CAStarSup_Search(CAStarSup *self, cNWVecList *path, int stupid, byte
 			}
 			const vec3_t *nb = buf[i];
 			taken++;
-			float g = vt->Dist(self, &curPos, nb) + cur->g;
+			float g = AStar_Dist(self, &curPos, nb) + cur->g;
 			isOpen = 0;
 			isClosed = 0;
 			el = NULL;
-			if (vt->GetElem(self, nb, &el, &info)) {
+			if (AStar_GetElem(self, nb, &el, &info)) {
 				if (info->value.state == 1) {
 					isOpen = 1;
 					if (g >= el->g) {
@@ -467,19 +466,19 @@ static byte CAStarSup_Search(CAStarSup *self, cNWVecList *path, int stupid, byte
 			if (curPos.x == self->start.x && curPos.y == self->start.y && curPos.z == self->start.z) {
 				parent = NULL;
 			}
-			float h = vt->Heuristic(self, nb);
+			float h = AStar_Heuristic(self, nb);
 			el->parent = parent;
 			el->f = h + g;
 			el->g = g;
 			open = self->open;
 			if (isOpen) {
-				open->vftable->Fix(open, info->value.index);
+				Heap_Fix(open, info->value.index);
 			} else {
 				if (isClosed) {
-					vt->CloseRemove(self, info->value.index);
+					AStar_CloseRemove(self, info->value.index);
 				}
 				open = self->open;
-				if (!open->vftable->Push(open, (void *const *)&el)) {
+				if (!Heap_Push(open, (void *const *)&el)) {
 					goto fail;
 				}
 			}
@@ -523,14 +522,14 @@ static float CAStarSup_Dist(CAStarSup *self, const vec3_t *a, const vec3_t *b) {
 
 static byte CAStarSup_GetElem(CAStarSup *self, const vec3_t *node, ElemAStar **out, cAStarItem **info) {
 	*out = NULL;
-	byte r = self->vftable->TableGet(self, node, info);
+	byte r = AStar_TableGet(self, node, info);
 	if (!r) {
 		return r;
 	}
 	cAStarItem *it = *info;
 	if (it->value.state == 1) {
 		void **e;
-		self->open->vftable->Get(self->open, &e, it->value.index);
+		Heap_Get(self->open, &e, it->value.index);
 		*out = *e;
 		return 1;
 	}
@@ -598,11 +597,11 @@ static void CAStarSup_Reset(CAStarSup *self) {
 		}
 	}
 	open = self->open;
-	int n = open->vftable->Count(open);
+	int n = Heap_Count(open);
 	for (int i = 1; i <= n; i++) {
 		void **e;
 		open = self->open;
-		open->vftable->Get(open, &e, i);
+		Heap_Get(open, &e, i);
 		cAStarInfo *info = ((ElemAStar *)*e)->info;
 		if (info) {
 			info->state = 2;
@@ -610,7 +609,7 @@ static void CAStarSup_Reset(CAStarSup *self) {
 	}
 	self->numClosed = 0;
 	open = self->open;
-	open->vftable->Clear(open);
+	Heap_Clear(open);
 }
 
 /* ---- CAStar and CAStar2D ---- */
@@ -623,7 +622,7 @@ static inline CAStar *AStar_Common(CAStar2D *self) {
 static void CAStar_InitList(CAStar *self);
 static void AStar_Alloc(CAStar *self) {
 	CNodesWorld *nw = AS_NODES(self);
-	int n = nw->sup.vftable->NumVisPoints(nw);
+	int n = NodesWorld_NumVisPoints(nw);
 
 	self->base.capList = n + 1;
 	self->base.list = Mem_Alloc((n + 1) * sizeof(ElemAStar));
@@ -633,14 +632,14 @@ static void AStar_Alloc(CAStar *self) {
 	cBinaryHeap *h = operator_new(sizeof(cBinaryHeap));
 	if (h) {
 		nw = AS_NODES(self);
-		h = cBinaryHeap_ctor(h, nw->sup.vftable->NumVisPoints(nw), AStar_ElemLess, AStar_ElemEq, AStar_ElemSetIndex);
+		h = cBinaryHeap_ctor(h, NodesWorld_NumVisPoints(nw), AStar_ElemLess, AStar_ElemEq, AStar_ElemSetIndex);
 	}
 	self->base.open = h;
 	if (!h) {
 		Con_FatalErrorf("ERROR AI: AStar - Error al crear lista Open.\n");
 	}
 	nw = AS_NODES(self);
-	n = nw->sup.vftable->NumVisPoints(nw);
+	n = NodesWorld_NumVisPoints(nw);
 	self->base.capClosed = n + 1;
 	self->base.closed = Mem_Alloc((n + 1) * sizeof(*self->base.closed));
 	if (!self->base.closed) {
@@ -685,7 +684,7 @@ static void AStar_Free(CAStarSup *self, const CAStarVtbl *vftable) {
 	self->vftable = vftable;
 	Mem_Free(list);
 	if (self->open) {
-		self->open->vftable->Delete(self->open, 1);
+		Heap_Delete(self->open, 1);
 	}
 	Mem_Free(self->closed);
 	CAStarSup_dtor(self);
@@ -716,22 +715,22 @@ static void CAStar_InitList(CAStar *self) {
 	AStarTable_Clear(self->base.table);
 	self->base.numList = 0;
 	nw = AS_NODES(self);
-	for (int i = 0; i < nw->sup.vftable->NumVisPoints(nw); i++) {
+	for (int i = 0; i < NodesWorld_NumVisPoints(nw); i++) {
 		ElemAStar e;
 		cAStarInfo info;
 		cAStarItem *it;
 
-		e.node = nw->sup.vftable->GetVisPoint(nw, i);
+		e.node = NodesWorld_GetVisPoint(nw, i);
 		e.parent = NULL;
 		e.f = -1.0f;
 		e.g = -1.0f;
 		e.info = NULL;
-		self->base.vftable->AddElem(&self->base, &e);
+		AStar_AddElem(self, &e);
 		info.index = -1;
 		info.state = 2;
 		info.elem = self->base.numList - 1;
 		AStarTable_AddNew(self->base.table, (intptr_t)e.node, &info);
-		self->base.vftable->TableGet(&self->base, e.node, &it);
+		AStar_TableGet(self, e.node, &it);
 		self->base.list[self->base.numList - 1].info = &it->value;
 		nw = AS_NODES(self);
 	}
@@ -779,14 +778,14 @@ static int CAStar_FileOf(CAStarSup *base, const vec3_t *node) {
 	CAStar *self = (CAStar *)base;
 	CNodesWorld *nw = AS_NODES(self);
 
-	return nw->sup.vftable->FileOf(nw, (const cNWNode *)node);
+	return NodesWorld_FileOf(nw, (const cNWNode *)node);
 }
 
 static void CAStar_OtherLinks(CAStarSup *base, const vec3_t *node, const vec3_t *pos, const vec3_t **list, int max, int *count) {
 	CAStar *self = (CAStar *)base;
 	CNodesWorld *nw = AS_NODES(self);
 
-	nw->sup.vftable->OtherLinks(nw, (const cNWNode *)node, pos, (cNWNode **)list, max, count);
+	NodesWorld_OtherLinks(nw, (const cNWNode *)node, pos, (cNWNode **)list, max, count);
 }
 
 /* the points of visibility of the graph with the radius (and the heights) of the search */
@@ -815,7 +814,7 @@ static void CAStar2D_PointsVis(CAStarSup *base, const vec3_t *pos, const vec3_t 
 
 /* the first point of the search in the graph file: the points of visibility, the one the segment sees, else the
  * nearest one of the floor (2D: the distance on the floor plane) */
-static void AStar_PointsVisFile(CAStar *self, byte flat, const vec3_t *pos, const vec3_t **list, int max, int *count,
+static void AStar_PointsVisFileFlat(CAStar *self, byte flat, const vec3_t *pos, const vec3_t **list, int max, int *count,
 	int *state, int file) {
 	const vec3_t *buf[20];
 	const vec3_t *best;
@@ -876,12 +875,12 @@ static void AStar_PointsVisFile(CAStar *self, byte flat, const vec3_t *pos, cons
 
 static void CAStar_PointsVisFile(CAStarSup *base, const vec3_t *pos, const vec3_t **list, int max, int *count, int *state, int file) {
 	CAStar *self = (CAStar *)base;
-	AStar_PointsVisFile(self, 0, pos, list, max, count, state, file);
+	AStar_PointsVisFileFlat(self, 0, pos, list, max, count, state, file);
 }
 
 static void CAStar2D_PointsVisFile(CAStarSup *base, const vec3_t *pos, const vec3_t **list, int max, int *count, int *state, int file) {
 	CAStar2D *self = (CAStar2D *)base;
-	AStar_PointsVisFile(AStar_Common(self), 1, pos, list, max, count, state, file);
+	AStar_PointsVisFileFlat(AStar_Common(self), 1, pos, list, max, count, state, file);
 }
 
 byte CAStar_FindPath(void *astar, cNWVecList *path, const vec3_t *to, const vec3_t *from, float radius,
@@ -890,11 +889,11 @@ byte CAStar_FindPath(void *astar, cNWVecList *path, const vec3_t *to, const vec3
 	CNodesWorld *nw = AS_NODES(self);
 
 	(void)dist;
-	CHECK(nw->sup.vftable->IsCreated(nw));
+	CHECK(NodesWorld_IsCreated(nw));
 	self->base.radius = radius;
 	self->base.start = *to;
 	self->base.goal = *from;
-	return self->base.vftable->Search(&self->base, path, stupid, goalOk, startOk, state);
+	return AStar_Search(self, path, stupid, goalOk, startOk, state);
 }
 
 byte CAStar2D_FindPath(void *astar, cNWVecList *path, const vec3_t *dest, const vec3_t *pos, float r,
@@ -903,13 +902,13 @@ byte CAStar2D_FindPath(void *astar, cNWVecList *path, const vec3_t *dest, const 
 	CNodesWorld *nw = AS_NODES(self);
 
 	(void)dist;
-	CHECK(nw->sup.vftable->IsCreated(nw));
+	CHECK(NodesWorld_IsCreated(nw));
 	self->base.radius = r;
 	self->h1 = h1;
 	self->h2 = h2;
 	self->base.start = *dest;
 	self->base.goal = *pos;
-	return self->base.vftable->Search(&self->base, path, soft, reach, noPath, res);
+	return AStar_Search(self, path, soft, reach, noPath, res);
 }
 
 void CAStar_GetPointsVis(void *astar, const vec3_t *pos, const vec3_t **list, int max, int *count, float r) {

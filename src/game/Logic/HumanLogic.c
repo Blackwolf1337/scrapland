@@ -25,13 +25,13 @@ static void HumanLogic_Escape(cAbstractFile *params) {
 	if (!usr || usr == e || !g_HumanEnt || g_HumanEnt == e) {
 		return;
 	}
-	cAIChar *ai = e->vftable->GetAI(e);
+	cAIChar *ai = Entity_GetAI(e);
 	CHECK(ai);
 	const char *type = Logic_TypeName(e);
 	if (!strcmp(type, "Gear") || !strcmp(type, "Sentinel") || !strcmp(type, "Police")) {
 		return;
 	}
-	ai->vftable->SetState(&ai->base.base, 5, g_HumanEnt, (double)g_GenCharEscapeSpeed);
+	AIChar_SetState(ai, 5, g_HumanEnt, (double)g_GenCharEscapeSpeed);
 }
 
 void *cHumanLocalLogic_ctor(void *mem, cEntity *parent) {

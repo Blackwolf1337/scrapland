@@ -46,6 +46,47 @@ typedef struct cGridElementsVtbl {
 	int(*CellIndex)(cGridElements *self, const vec3_t *p);			/* 0x28 */
 } cGridElementsVtbl;
 
+/* calls through the slots of cGridElementsVtbl */
+static inline byte GridElems_Add(void *self, const vec3_t *p, const void *data) {
+	return VT(cGridElementsVtbl, self)->Add(self, p, data);
+}
+
+static inline byte GridElems_CellCoords(void *self, const vec3_t *p, int *x, int *y, int *z) {
+	return VT(cGridElementsVtbl, self)->CellCoords(self, p, x, y, z);
+}
+
+static inline int GridElems_CellIndex(void *self, const vec3_t *p) {
+	return VT(cGridElementsVtbl, self)->CellIndex(self, p);
+}
+
+static inline cGridElements *GridElems_Delete(void *self, byte flags) {
+	return VT(cGridElementsVtbl, self)->Delete(self, flags);
+}
+
+static inline byte GridElems_Draw(void *self, uint32_t color) {
+	return VT(cGridElementsVtbl, self)->Draw(self, color);
+}
+
+static inline byte GridElems_GetCell(void *self, const int *x, const int *y, const int *z, void *out) {
+	return VT(cGridElementsVtbl, self)->GetCell(self, x, y, z, out);
+}
+
+static inline byte GridElems_GetCellAt(void *self, const vec3_t *p, void *out) {
+	return VT(cGridElementsVtbl, self)->GetCellAt(self, p, out);
+}
+
+static inline vec3_t *GridElems_GetCellSize(void *self, vec3_t *out) {
+	return VT(cGridElementsVtbl, self)->GetCellSize(self, out);
+}
+
+static inline void GridElems_GetDivs(void *self, int *nx, int *ny, int *nz) {
+	VT(cGridElementsVtbl, self)->GetDivs(self, nx, ny, nz);
+}
+
+static inline byte GridElems_IsInside(void *self, const vec3_t *p) {
+	return VT(cGridElementsVtbl, self)->IsInside(self, p);
+}
+
 struct cGridElements {
 	const cGridElementsVtbl *vftable;	/* 0x00 */
 	cTrafficCell **cells;		/* 0x04 nx * ny * nz, NULL for an empty cell (Mem_Alloc) */
@@ -155,6 +196,87 @@ typedef struct CNodesTrafficVtbl {
 		float distMin, float distMax, int unused, const vec3_t *dir, float maxAngle, vec3_t *out, int *outTrack,
 		int *outNode);								/* 0x5c */
 } CNodesTrafficVtbl;
+
+/* calls through the slots of CNodesTrafficVtbl */
+static inline void Traffic_AddVehicle(void *self, int track) {
+	VT(CNodesTrafficVtbl, self)->AddVehicle(self, track);
+}
+
+static inline void Traffic_Analyze(void *self) {
+	VT(CNodesTrafficVtbl, self)->Analyze(self);
+}
+
+static inline void Traffic_BuildGrid(void *self) {
+	VT(CNodesTrafficVtbl, self)->BuildGrid(self);
+}
+
+static inline void Traffic_CollectCell(void *self, const vec3_t *pos, int type, cTrafficCell *cell, InfoTrafficNode *list, int max, int *count, float radius, float distMin, float distMax, byte vis, byte useMax) {
+	VT(CNodesTrafficVtbl, self)->CollectCell(self, pos, type, cell, list, max, count, radius, distMin, distMax, vis, useMax);
+}
+
+static inline void Traffic_Draw(void *self) {
+	VT(CNodesTrafficVtbl, self)->Draw(self);
+}
+
+static inline void Traffic_DrawTrack(void *self, int track) {
+	VT(CNodesTrafficVtbl, self)->DrawTrack(self, track);
+}
+
+static inline void Traffic_FindNodes(void *self, const vec3_t *pos, int type, InfoTrafficNode *list, int max, int *count, float radius, float distMin, float distMax, byte soft, byte vis) {
+	VT(CNodesTrafficVtbl, self)->FindNodes(self, pos, type, list, max, count, radius, distMin, distMax, soft, vis);
+}
+
+static inline byte Traffic_GetDirs(void *self, vec3_t *prev, vec3_t *next, int track, int node) {
+	return VT(CNodesTrafficVtbl, self)->GetDirs(self, prev, next, track, node);
+}
+
+static inline cTrafficTrackInfo *Traffic_GetInfo(void *self, cTrafficTrackInfo *out, int track) {
+	return VT(CNodesTrafficVtbl, self)->GetInfo(self, out, track);
+}
+
+static inline byte Traffic_GetNode(void *self, vec3_t *out, int track, int node) {
+	return VT(CNodesTrafficVtbl, self)->GetNode(self, out, track, node);
+}
+
+static inline float Traffic_GetRadius(void *self, int track) {
+	return VT(CNodesTrafficVtbl, self)->GetRadius(self, track);
+}
+
+static inline void Traffic_Init(void *self) {
+	VT(CNodesTrafficVtbl, self)->Init(self);
+}
+
+static inline void Traffic_Load(void *self, byte fill) {
+	VT(CNodesTrafficVtbl, self)->Load(self, fill);
+}
+
+static inline byte Traffic_NextAway(void *self, vec3_t *out, int track, int node, int *outTrack, int *outNode) {
+	return VT(CNodesTrafficVtbl, self)->NextAway(self, out, track, node, outTrack, outNode);
+}
+
+static inline int Traffic_NumByType(void *self, int type) {
+	return VT(CNodesTrafficVtbl, self)->NumByType(self, type);
+}
+
+static inline byte Traffic_PrevAway(void *self, vec3_t *out, int track, int node, int *outTrack, int *outNode) {
+	return VT(CNodesTrafficVtbl, self)->PrevAway(self, out, track, node, outTrack, outNode);
+}
+
+static inline byte Traffic_RandomNode(void *self, vec3_t *out, int type, const vec3_t *pos, float distMin, float distMax, int unused, const vec3_t *dir, float maxAngle, int *outTrack, int *outNode) {
+	return VT(CNodesTrafficVtbl, self)->RandomNode(self, out, type, pos, distMin, distMax, unused, dir, maxAngle, outTrack, outNode);
+}
+
+static inline void Traffic_RandomPointNear(void *self, int track, int node, float maxDist, vec3_t *out, int *outTrack, int *outNode) {
+	VT(CNodesTrafficVtbl, self)->RandomPointNear(self, track, node, maxDist, out, outTrack, outNode);
+}
+
+static inline void Traffic_RemoveVehicle(void *self, int track) {
+	VT(CNodesTrafficVtbl, self)->RemoveVehicle(self, track);
+}
+
+static inline void Traffic_SearchRings(void *self, const vec3_t *pos, int type, InfoTrafficNode *list, int max, int *count, float radius, float distMin, float distMax, byte soft, byte vis) {
+	VT(CNodesTrafficVtbl, self)->SearchRings(self, pos, type, list, max, count, radius, distMin, distMax, soft, vis);
+}
 
 typedef DLIST(cTrafficErrorNode) cTrafficErrorList;
 

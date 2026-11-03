@@ -72,7 +72,7 @@ void Mouse_Acquire(byte on) {
 }
 
 static byte cPcMouse_SetEntry(cAbstractIDevice *self, int entry, int set, int player, int action, byte check) {
-	if (self->vftable->IsReserved(self, entry) && check) {
+	if (InputDev_IsReserved(self, entry) && check) {
 		return 0;
 	}
 	return cAbstractIDevice_SetEntry(self, entry, set, player, action, 0);

@@ -182,11 +182,11 @@ static int Parking_Think(cParking *self) {
 	if (!usr) {
 		return 1;
 	}
-	if (usr->vftable->IsType(usr, TYEN_CAR)) {
+	if (Entity_IsType(usr, TYEN_CAR)) {
 		d = g_ParkingVehicleCheckDistance;
 		inShip = 1;
 	} else {
-		if (!usr->vftable->IsType(usr, TYEN_WALKCHAR)) {
+		if (!Entity_IsType(usr, TYEN_WALKCHAR)) {
 			return 1;
 		}
 		d = g_ParkingCharCheckDistance;
@@ -197,17 +197,17 @@ static int Parking_Think(cParking *self) {
 	}
 	if (inShip) {
 		cParkingZone *z = Parking_Next(&self->items);
-		if (z && Parking_Dist2(z, usr->vftable->GetPos(usr, &tmp)) > d2) {
+		if (z && Parking_Dist2(z, Entity_GetPos(usr, &tmp)) > d2) {
 			Parking_Look(z);
-			if (!g_ParkingShip && g_ParkingOther && g_ParkingOther->vftable->IsType(g_ParkingOther, TYEN_ITEM)) {
+			if (!g_ParkingShip && g_ParkingOther && Entity_IsType(g_ParkingOther, TYEN_ITEM)) {
 				Parking_Call(g_OnParkedOut, g_ParkingOther, z);
 			}
 		}
 	}
 	cParkingZone *z = Parking_Next(&self->ships);
-	if (z && Parking_Dist2(z, usr->vftable->GetPos(usr, &tmp)) > d2) {
+	if (z && Parking_Dist2(z, Entity_GetPos(usr, &tmp)) > d2) {
 		Parking_Look(z);
-		if (!g_ParkingOther && g_ParkingShip && g_ParkingShip->vftable->IsType(g_ParkingShip, TYEN_CAR)) {
+		if (!g_ParkingOther && g_ParkingShip && Entity_IsType(g_ParkingShip, TYEN_CAR)) {
 			Parking_Call(g_OnParkingOccupied, g_ParkingShip, z);
 		}
 	}
@@ -251,9 +251,9 @@ const char *Parking_Find(void *parking, int flag, const vec3_t *pos, vec3_t *out
 	const char *name = NULL;
 	if (best) {
 		Parking_Look(best);
-		if (g_ParkingShip && g_ParkingShip->vftable->IsType(g_ParkingShip, TYEN_CAR)) {
+		if (g_ParkingShip && Entity_IsType(g_ParkingShip, TYEN_CAR)) {
 			name = g_ParkingShip->name;
-		} else if (g_ParkingOther && g_ParkingOther->vftable->IsType(g_ParkingOther, TYEN_ITEM)) {
+		} else if (g_ParkingOther && Entity_IsType(g_ParkingOther, TYEN_ITEM)) {
 			name = g_ParkingOther->name;
 		}
 	}
@@ -282,7 +282,7 @@ static void Parking_Native(cAbstractFile *params) {
 	if (!e) {
 		return;
 	}
-	if (e->vftable->IsType(e, TYEN_CAR)) {
+	if (Entity_IsType(e, TYEN_CAR)) {
 		g_ParkingShip = e;
 		return;
 	}

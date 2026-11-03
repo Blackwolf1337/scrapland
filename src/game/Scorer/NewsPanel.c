@@ -166,14 +166,14 @@ static const double g_NewsRandOfs = 3.1415927410125732;
 static void cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e) {
 	vec3_t tmp;
 
-	if (!e || !e->vftable->IsType(e, TYEN_WITH_LIFE) || !Obj_Vtbl(e)->GetModel(e)) {
+	if (!e || !Entity_IsType(e, TYEN_WITH_LIFE) || !Obj_GetModel(e)) {
 		return;
 	}
 	g_NewsPanelAspect = 1.33333004f;
 	CGameCamera *cur = Camera_GetCurrent();
 	CGameCamera_Copy(self->cam, cur);
 	CGameCamera_SetLookAt(self->cam, 1);
-	const vec3_t *p = CGameModel_GetPos(Obj_Vtbl(e)->GetModel(e), &tmp);
+	const vec3_t *p = CGameModel_GetPos(Obj_GetModel(e), &tmp);
 	CGameCamera *cam = self->cam;
 	cam->target = *p;
 	float dy = self->camPos.y - cam->target.y;
@@ -197,7 +197,7 @@ static void cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e) {
 	cam->fov = NEWS_FOV;
 	self->cam->aspectScreen = g_NewsPanelAspect;
 	Camera_SetCurrent(self->cam);
-	Obj_Vtbl(e)->Render(e);
+	Obj_Render(e);
 	Camera_SetCurrent(cur);
 }
 
@@ -246,8 +246,8 @@ static void cNewsPanel_DrawNews(cNewsPanel *self, float dt) {
 		} else {
 			g_NewsPanelAspect = 1.33333337f;
 			cEntity *e = World_FindEntity(*g_NewsHead);
-			if (e && e->vftable->IsType(e, TYEN_WITH_LIFE) && Obj_Vtbl(e)->GetModel(e)) {
-				self->model = Obj_Vtbl(e)->GetModel(e);
+			if (e && Entity_IsType(e, TYEN_WITH_LIFE) && Obj_GetModel(e)) {
+				self->model = Obj_GetModel(e);
 			}
 		}
 	}

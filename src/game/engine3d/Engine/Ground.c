@@ -108,7 +108,7 @@ static void Table_DeleteObjs(void *p) {
 	ObjRef *first = p;
 
 	if (((int *)p)[-1]) {
-		first->vftable->Delete(first, 3);
+		ObjRef_Delete(first, 3);
 	} else {
 		operator_delete_array((int *)p - 1);
 	}
@@ -1603,10 +1603,10 @@ static void CGround_BuildSectorMesh(CGround *self, CCollideMesh *mesh, int mode,
 		CTriMesh_AddD3D(m, d3d, 1);
 		CGround_AddMesh(self, mesh, m, NULL, NULL);
 		if (d3d) {
-			d3d->vftable->Delete(&d3d->base, 1);
+			Object3D_Delete(d3d, 1);
 		}
 	}
-	m->vftable->Delete(&m->base, 1);
+	Object3D_Delete(m, 1);
 }
 
 /* the grid and the meshes of all sectors from the floor nodes; empty cells get CollideMesh1 */

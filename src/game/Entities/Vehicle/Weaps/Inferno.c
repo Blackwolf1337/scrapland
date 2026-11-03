@@ -98,7 +98,7 @@ cEntity *Inferno_NetCreate(const char *name, vec3_t pos, vec3_t dir) {
 	CHECK(Entity_IsType(m, TYEN_MISSILE));
 	cMissileEntity_SetHiddenSwarm((cMissileEntity *)m, 0);
 	cMissileEntity_SetHideMain((cMissileEntity *)m, 1);
-	Obj_Vtbl(m)->SetAng(m, &dir);
+	Obj_SetAng(m, &dir);
 	cMissileEntity_SetSwarmSpeed((cMissileEntity *)m, g_InfernoBeesSpeed);
 	cMissileEntity_SetLifeTime((cMissileEntity *)m, g_InfernoLifeTime);
 	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)Inferno_HitNative);
@@ -115,7 +115,7 @@ void Weap_UpdateHud(cAbstractFile *f, char (*targets)[0x80], float *times, int l
 	int player;
 
 	cAbstractFile_ReadString(f, name, 0x80);
-	f->vftable->Read(f, &player, 4);
+	VFile_Read(f, &player, 4);
 	cAbstractFile_ReadString(f, itemName, 0x80);
 	cEntity *v = Weap_Vehicle(name);
 	cCannonScorer *item = (cCannonScorer *)cScorer_FindItem(Scorer_Get(player), itemName);
@@ -191,9 +191,9 @@ static void Inferno_FireNative(cAbstractFile *f) {
 	if (!(ammo >= (float)g_InfernoAmmoCost)) {
 		return;
 	}
-	v->vftable->GetPos(v, &pos);
-	Obj_Vtbl(v)->GetAng(v, &ang);
-	Obj_Vtbl(v)->GetVel(v, &vel);
+	Entity_GetPos(v, &pos);
+	Obj_GetAng(v, &ang);
+	Obj_GetVel(v, &vel);
 	Net_GetObjName(obj);
 	cEntity *m = Inferno_NetCreate(obj, pos, ang);
 	if (!m) {
@@ -214,7 +214,7 @@ static void Inferno_FireNative(cAbstractFile *f) {
 	Inferno_NetSetUp(m->name);
 	int n = (int)ammo / g_InfernoAmmoCost;
 	if (Missile(m)->swarmCount > n) {
-		Missile_Vtbl(Missile(m))->SetSwarm(&(Missile(m))->wl.obj.base, n);
+		Missile_SetSwarm(Missile(m), n);
 	}
 	cPrimitive_SetSize(Mis_Size(m), Missile(m)->topRadius * 0.6f);
 	if (!WLife(m)->god) {
@@ -241,7 +241,7 @@ static cEntity *Inferno_Hit(const char *name) {
 	vec3_t pos, op, tmp, rnd, nrm;
 
 	cEntity *m = Weap_Missile(name);
-	m->vftable->GetPos(m, &pos);
+	Entity_GetPos(m, &pos);
 	float range = (float)Missile(m)->swarmCount * g_InfernoRangeBay + g_InfernoRangeMin;
 	uint32_t type = (uint32_t)Missile(m)->level;
 	Con_Print(0x606060, type < 3 ? inferno_types[type] : "Misil Inferno Desconocido\n", 0);
@@ -264,9 +264,9 @@ static cEntity *Inferno_Hit(const char *name) {
 	do {
 		cEntity *o = Weap_Owner(g_pWorld, i);
 		if (o && Obj(o)->cam) {
-			byte hit = Engine_TestLine(&pos, o->vftable->GetPos(o, &tmp), NULL, NULL);
+			byte hit = Engine_TestLine(&pos, Entity_GetPos(o, &tmp), NULL, NULL);
 			if (Obj(o)->cam && !hit) {
-				const vec3_t *p = o->vftable->GetPos(o, &op);
+				const vec3_t *p = Entity_GetPos(o, &op);
 				float dy = p->y - pos.y;
 				float dx = p->x - pos.x;
 				float dz = p->z - pos.z;
@@ -322,7 +322,7 @@ static cEntity *Inferno_Hit(const char *name) {
 	desc.param2 = g_InfernoHitSoundAttEndRadius * range;
 	cSoundDesc_SetPos(&desc, &pos);
 	desc.volume += Snd_Volume(g_InfernoHitSoundVol);
-	g_pSound->vftable->PlaySound(g_pSound, g_InfernoHitSound, &desc, NULL);
+	SoundSys_PlaySound(g_pSound, g_InfernoHitSound, &desc, NULL);
 	return m;
 }
 
@@ -333,14 +333,14 @@ static void Inferno_OnDamageNative(cAbstractFile *f) {
 
 	cAbstractFile_ReadString(f, name, 0x80);
 	cAbstractFile_ReadString(f, other, 0x80);
-	f->vftable->Read(f, &damage, 4);
+	VFile_Read(f, &damage, 4);
 	cEntity *m = Weap_Missile(name);
 	int bees;
 	if (Ent_Active(m) && (bees = Missile(m)->swarmCount) > 0) {
 		int armor = g_InfernoArmor;
 		if (damage >= armor) {
 			int n = damage / armor;
-			Missile_Vtbl(Missile(m))->Hit(&(Missile(m))->wl.obj.base, n > bees ? bees : n, 0);
+			Missile_Hit(Missile(m), n > bees ? bees : n, 0);
 		}
 	}
 }
@@ -353,9 +353,9 @@ static void Inferno_OnDeathNative(cAbstractFile *f) {
 	cAbstractFile_ReadString(f, other, 0x80);
 	cEntity *m = Weap_Missile(name);
 	if (Ent_Active(m)) {
-		m->vftable->SetActive(m, 0);
+		Entity_SetActive(m, 0);
 		Inferno_Explode(name);
-		Missile_Vtbl(Missile(m))->SetSwarm(&(Missile(m))->wl.obj.base, 0);
+		Missile_SetSwarm(Missile(m), 0);
 	}
 }
 
@@ -369,7 +369,7 @@ static void Inferno_SlowNative(cAbstractFile *f) {
 	int unused;
 
 	cAbstractFile_ReadString(f, name, 0x80);
-	f->vftable->Read(f, &unused, 4);
+	VFile_Read(f, &unused, 4);
 	cEntity *m = Weap_Missile(name);
 	float speed = Missile(m)->speed;
 	float norm = g_InfernoNormSpeed;
@@ -412,7 +412,7 @@ static void Inferno_Explode(const char *name) {
 	if (!m) {
 		return;
 	}
-	const vec3_t *p = m->vftable->GetPos(m, &tmp);
+	const vec3_t *p = Entity_GetPos(m, &tmp);
 	g_InfernoPos.x = p->x;
 	g_InfernoPos.y = p->y;
 	g_InfernoPos.z = p->z;
@@ -449,8 +449,8 @@ void Inferno_NetSetUp(const char *name) {
 	matrix_t mtx;
 
 	cEntity *m = Weap_Missile(name);
-	m->vftable->GetPos(m, &tmp);
-	m->vftable->SetModel(m, g_InfernoMissileFile, 1.0f, 1.0f, 1.0f, 0);
+	Entity_GetPos(m, &tmp);
+	Entity_SetModel(m, g_InfernoMissileFile, 1.0f, 1.0f, 1.0f, 0);
 	cMissileEntity_SetRadius((cMissileEntity *)m, 100.0f);
 	cMissileEntity_SetTopRadius((cMissileEntity *)m, 400.0f);
 	cMissileEntity_SetRadiusGrow((cMissileEntity *)m, 200.0f);
@@ -469,7 +469,7 @@ void Inferno_NetSetUp(const char *name) {
 				continue;
 			}
 			Weap_DropAtNode(v, Veh(v)->weapons.nodes[g_InfernoIDAmmo][i], &mtx, &ang, &vel);
-			Missile_Vtbl(Missile(m))->AddToSwarm(&(Missile(m))->wl.obj.base, 1);
+			Missile_AddToSwarm(Missile(m), 1);
 			if (i == 0 && Missile(m)->swarm && Debris_Element(Missile(m)->swarm)) {
 				cObjElementFXInfernoMissile_SetFlare(Debris_Element(Missile(m)->swarm), 1);
 			}
@@ -488,8 +488,8 @@ void Inferno_NetSetUp(const char *name) {
 			}
 		}
 	}
-	Missile_Vtbl(Missile(m))->SetSwarm(&(Missile(m))->wl.obj.base, cMissileEntity_GetSwarmCount((cMissileEntity *)m));
-	WithLife_Vtbl(m)->SetMass(m, 6000.0f);
+	Missile_SetSwarm(Missile(m), cMissileEntity_GetSwarmCount((cMissileEntity *)m));
+	WithLife_SetMass(m, 6000.0f);
 	Missile(m)->fallOut = 1;
 	Weap_EngineSound(m, g_InfernoEngineSound, g_InfernoEngineSoundVol, g_InfernoEngineSoundAttIni,
 		g_InfernoEngineSoundAttEnd, g_InfernoEngineSoundDoppler);
@@ -516,7 +516,7 @@ static void Inferno_SphereHit(cAbstractFile *f) {
 		return;
 	}
 	int life = WLife(e)->life;
-	const vec3_t *p = e->vftable->GetPos(e, &tmp);
+	const vec3_t *p = Entity_GetPos(e, &tmp);
 	float dy = p->y - g_InfernoPos.y;
 	float dx = p->x - g_InfernoPos.x;
 	float dz = p->z - g_InfernoPos.z;
@@ -569,11 +569,11 @@ static void Inferno_SphereHit(cAbstractFile *f) {
 		px *= force;
 		py *= force;
 		pz *= force;
-		const vec3_t *ov = Obj_Vtbl(e)->GetVel(e, &tmp);
+		const vec3_t *ov = Obj_GetVel(e, &tmp);
 		vel.x = px + ov->x;
 		vel.y = ov->y + py;
 		vel.z = ov->z + pz;
-		Obj_Vtbl(e)->SetVel(e, &vel);
+		Obj_SetVel(e, &vel);
 	}
 	if (isCar && Veh(e)->netCtrl) {
 		Veh(e)->netCtrl->hit = 2;

@@ -239,7 +239,7 @@ static void cCircuitScorer_Draw(cScorerItem *base, int player) {
 	(void)player;
 	CPsaImage_Draw(self->circuit, self->base.x, self->base.y);
 	self->lastTime = self->curTime;
-	float now = (float)g_pApp->vftable->GetGameTime(g_pApp);
+	float now = (float)App_GetGameTime(g_pApp);
 	self->curTime = now;
 	if (self->lastTime == 0.0f) {
 		self->lastTime = now;

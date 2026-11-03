@@ -93,7 +93,7 @@ cAbstractIDevice *cAbstractIDevice_ctor(cAbstractIDevice *self) {
 cFuncGvarDevices *cFuncGvarDevices_ctor(cFuncGvarDevices *self, cAbstractIDevice *dev) {
 	cGVar *v = (cGVar *)&self->base.gvar;
 
-	cGVar_ctor(v, dev->vftable->GetName(dev), 3, "User Control definition");
+	cGVar_ctor(v, InputDev_GetName(dev), 3, "User Control definition");
 	self->device = dev;
 	v->base.type = GVAR_FUNCTION;
 	self->base.vftable = CFUNCGVARDEVICES_VFTABLE;
@@ -151,12 +151,12 @@ int Input_AssignEntry(const char *a, const char *b, int c, const char *d, const 
 		return r == 1 ? 4 : 5;
 	}
 	for (cInputDevNode *n = Devices_First(); n; n = Devices_Next()) {
-		if (strcmp(n->dev->vftable->GetName(n->dev), a)) {
+		if (strcmp(InputDev_GetName(n->dev), a)) {
 			continue;
 		}
 		for (int i = 0; i < n->dev->nEntries; i++) {
-			if (!strcmp(n->dev->vftable->GetEntryName(n->dev, i), b)) {
-				n->dev->vftable->SetEntry(n->dev, i, set, c, act, 0);
+			if (!strcmp(InputDev_GetEntryName(n->dev, i), b)) {
+				InputDev_SetEntry(n->dev, i, set, c, act, 0);
 				return 0;
 			}
 		}
@@ -214,8 +214,8 @@ static int Input_ClearBinding(uint32_t player, int set, int action, byte check) 
 		for (int i = 0; i < n->dev->nEntries; i++) {
 			cDevEntry *e = Dev_Entry(n->dev, i, set);
 			if ((uint32_t)e->sets[set].player == player && e->sets[set].action == action &&
-				(!n->dev->vftable->IsReserved(n->dev, i) || !check)) {
-				n->dev->vftable->SetEntry(n->dev, i, set, -1, -1, 0);
+				(!InputDev_IsReserved(n->dev, i) || !check)) {
+				InputDev_SetEntry(n->dev, i, set, -1, -1, 0);
 			}
 		}
 	}
@@ -256,13 +256,13 @@ static const char *Input_FindBinding(uint32_t player, int set, int action, const
 		for (int i = 0; i < n->dev->nEntries; i++) {
 			cDevEntry *e = Dev_Entry(n->dev, i, set);
 			if ((uint32_t)e->sets[set].player != player || e->sets[set].action != action ||
-				(n->dev->vftable->IsReserved(n->dev, i) && check)) {
+				(InputDev_IsReserved(n->dev, i) && check)) {
 				continue;
 			}
-			if (!strcmp(n->dev->vftable->GetName(n->dev), device)) {
-				return n->dev->vftable->GetEntryLabel(n->dev, i);
+			if (!strcmp(InputDev_GetName(n->dev), device)) {
+				return InputDev_GetEntryLabel(n->dev, i);
 			}
-			r = n->dev->vftable->GetEntryLabel(n->dev, i);
+			r = InputDev_GetEntryLabel(n->dev, i);
 		}
 	}
 	return r;
@@ -287,13 +287,13 @@ static int Input_ListBindings(uint32_t player, int set, int action, char *buf, i
 		for (int i = 0; i < n->dev->nEntries; i++) {
 			cDevEntry *e = Dev_Entry(n->dev, i, set);
 			if ((uint32_t)e->sets[set].player != player || e->sets[set].action != action ||
-				(n->dev->vftable->IsReserved(n->dev, i) && check)) {
+				(InputDev_IsReserved(n->dev, i) && check)) {
 				continue;
 			}
 			int len = (int)strlen(buf);
 			cAbstractIDevice *d = n->dev;
-			const char *label = d->vftable->GetEntryLabel(d, i);
-			const char *name = d->vftable->GetName(d);
+			const char *label = InputDev_GetEntryLabel(d, i);
+			const char *name = InputDev_GetName(d);
 			Str_Printf(buf + len, size - len - 1, "%s:%s, ", name, label);
 		}
 	}
@@ -327,11 +327,11 @@ int Input_GetEntry(const char *a, const char *b, const char *c, int *index, char
 		return 3;
 	}
 	for (cInputDevNode *n = Devices_First(); n; n = Devices_Next()) {
-		if (strcmp(n->dev->vftable->GetName(n->dev), a)) {
+		if (strcmp(InputDev_GetName(n->dev), a)) {
 			continue;
 		}
 		for (int i = 0; i < n->dev->nEntries; i++) {
-			if (strcmp(n->dev->vftable->GetEntryName(n->dev, i), b)) {
+			if (strcmp(InputDev_GetEntryName(n->dev, i), b)) {
 				continue;
 			}
 			cDevEntry *e = Dev_Entry(n->dev, i, set);
@@ -435,14 +435,14 @@ static void cFuncGvarDevices_Load(struct cFuncGvar *elem, void *f) {
 		}
 		int e;
 		for (e = 0; e < self->device->nEntries; e++) {
-			if (!crt_stricmp(value, self->device->vftable->GetEntryName(self->device, e))) {
+			if (!crt_stricmp(value, InputDev_GetEntryName(self->device, e))) {
 				break;
 			}
 		}
 		if (e == self->device->nEntries) {
 			continue;
 		}
-		self->device->vftable->SetEntry(self->device, e, set, player, a, 0);
+		InputDev_SetEntry(self->device, e, set, player, a, 0);
 	}
 }
 
@@ -465,7 +465,7 @@ static void Input_OnDefined(void) {
 
 void Input_UpdateDevices(float dt) {
 	for (cInputDevNode *n = Devices_First(); n; n = Devices_Next()) {
-		n->dev->vftable->Update(n->dev, dt);
+		InputDev_Update(n->dev, dt);
 	}
 }
 
@@ -478,8 +478,8 @@ void Input_ResetInactivity(void) {
 void Input_ResetToDefault(void) {
 	for (cInputDevNode *n = Devices_First(); n; n = Devices_Next()) {
 		cAbstractIDevice_ClearEntries(n->dev);
-		n->dev->vftable->SetDefaults(n->dev);
-		n->dev->vftable->SetGameDefaults(n->dev);
+		InputDev_SetDefaults(n->dev);
+		InputDev_SetGameDefaults(n->dev);
 	}
 }
 
@@ -498,7 +498,7 @@ static void cFuncGvarDevices_Save(struct cFuncGvar *elem, void *f) {
 			const char *aname = TABLE_AT(TABLE_AT(g_ActionSets, set)->actions, action)->name;
 			int r = Str_Printf(buf, sizeof(buf), "%s.%s.%d", TABLE_AT(g_ActionSets, set)->name, aname, player);
 			CHECK(r < 254);
-			crt_fprintf(f, "\t\t%-40s = %s\n", buf, self->device->vftable->GetEntryName(self->device, i));
+			crt_fprintf(f, "\t\t%-40s = %s\n", buf, InputDev_GetEntryName(self->device, i));
 		}
 	}
 	crt_fprintf(f, "%s = <end>\n\n\n", self->base.gvar.name);
@@ -530,7 +530,7 @@ void cAbstractIDevice_SetValue(cAbstractIDevice *self, int entry, float value) {
 		if (!(0.5f >= e->prev) || !(e->value >= 0.5f)) {
 			return;
 		}
-		if (self->vftable->SetEntry(self, entry, g_ToDefineSet, g_ToDefinePlayer, g_ToDefineAction, 1)) {
+		if (InputDev_SetEntry(self, entry, g_ToDefineSet, g_ToDefinePlayer, g_ToDefineAction, 1)) {
 			void (*f)(void) = g_OnDefined;
 			g_ToDefineSet = -1;
 			g_ToDefineAction = -1;

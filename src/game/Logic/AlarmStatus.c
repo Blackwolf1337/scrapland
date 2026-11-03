@@ -109,14 +109,14 @@ void Alarm_SetOn(cAlarm *self, byte on) {
 		return;
 	}
 	cEntity *usr = cWorld_GetUsrEntity(g_pWorld, 0);
-	if (!usr || !usr->vftable->IsType(usr, TYEN_WITH_LIFE)) {
+	if (!usr || !Entity_IsType(usr, TYEN_WITH_LIFE)) {
 		return;
 	}
 	AICtrl_GearAttack(&g_pWorld->logic.aiCtrl, usr, 1);
 	if (AICtrl_SendAccuser(&g_pWorld->logic.aiCtrl, 1)) {
 		return;
 	}
-	AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, usr->vftable->GetPos(usr, &tmp));
+	AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, Entity_GetPos(usr, &tmp));
 }
 
 /* 1 grow, 0 stop, -1 fall (slower in the mission map of an outdoor map and in an easy single game) */
@@ -196,10 +196,10 @@ void Alarm_Update(cAlarm *self, float dt) {
 	if (!usr) {
 		return;
 	}
-	if (usr->vftable->IsType(usr, TYEN_WALKCHAR)) {
+	if (Entity_IsType(usr, TYEN_WALKCHAR)) {
 		Str_Copy(self->chars, ChType_ActClass(ChType_ActCtrl(usr))->name, 0x200);
-	} else if (usr->vftable->IsType(usr, TYEN_CAR)) {
-		const char *pilot = Veh_Vtbl((cVehicleEntity *)usr)->GetPilot(&((cVehicleEntity *)usr)->wl.obj.base, 0);
+	} else if (Entity_IsType(usr, TYEN_CAR)) {
+		const char *pilot = Veh_GetPilot(usr, 0);
 		if (*pilot) {
 			Str_Copy(self->chars, pilot + 2, 0x200);
 		}

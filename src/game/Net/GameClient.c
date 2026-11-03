@@ -97,7 +97,7 @@ byte Net_ClientFrame(void) {
 	if (!cNetClient_TimeToSend(g_NetClient, t)) {
 		cUserNetManager *u = g_NetClient->user;
 		if (u) {
-			u->vftable->Send(u, Net_TimeMs());
+			NetMan_Send(u, Net_TimeMs());
 		}
 	}
 	return got;

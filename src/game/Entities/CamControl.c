@@ -122,8 +122,8 @@ byte cCamControl_SetTarget(cEntity *self, const char *name) {
 
 	if (name && *name) {
 		cEntity *e = World_FindEntity(name);
-		if (e && e->vftable->IsType(e, TYEN_OBJECT) && Obj_Vtbl(e)->GetModel(e)) {
-			CGameCamera_SetNodeModel(&c->cam, Obj_Vtbl(e)->GetModel(e), -1);
+		if (e && Entity_IsType(e, TYEN_OBJECT) && Obj_GetModel(e)) {
+			CGameCamera_SetNodeModel(&c->cam, Obj_GetModel(e), -1);
 			Str_Copy(c->link, name, 0x80);
 			return 1;
 		}
@@ -153,7 +153,7 @@ void cCamControl_SetViewPos(cEntity *self, int i, float x, float y, float z) {
 byte cCamControl_VarS(cEntity *self, const char *name, char **s, int set) {
 	if (!strcmp(name, "EntityLink")) {
 		if ((byte)set) {
-			CamCtl_Vtbl(self)->SetTarget(self, *s);
+			CamCtl_SetTarget(self, *s);
 		} else {
 			*s = Cam(self)->link;
 		}

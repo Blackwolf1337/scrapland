@@ -41,8 +41,6 @@ static const CParticleVtbl CParticleActive_vftable;
 static const IObject3DVtbl CObjBase3D_vftable;
 #define PARTICLESYSTEM_DEFAULT_COLOR 0xffffff
 
-#define PARTICLE_UPDATE(p, sp, dt, ms) ((p)->vftable->Update((p), (sp), (dt), (ms)))
-
 /* a random value between a and b, the way the exe computes it */
 static float ParticleSystem_RandLerp(float a, float b) {
 	int r = crt_rand();
@@ -310,7 +308,7 @@ static CParticle *CParticleSystem_GetFree(CParticleSystem *self, byte force) {
 		}
 		/* a static particle has no t: the float after it is read, as in the exe */
 		float t = ((CParticleActive *)p)->t;
-		if (force && (PARTICLE_TYPE(p) == PARTICLE_STATIC || best <= t)) {
+		if (force && (Particle_Type(p) == PARTICLE_STATIC || best <= t)) {
 			best = t;
 			oldest = p;
 		}
@@ -532,11 +530,11 @@ static void CParticleSystem_GenParticle(CParticleSystem *self, CParticle *p) {
 			sprite = (byte)(crt_rand() % (int)((uint32_t)pa->spriteIni - lo + 1)) + lo;
 		}
 	}
-	if (PARTICLE_TYPE(p) == PARTICLE_STATIC && self->MultiSpr) {
+	if (Particle_Type(p) == PARTICLE_STATIC && self->MultiSpr) {
 		CHECK((int)sprite < ((CMultiSprite *)self->MultiSpr)->n);
 		CMultiSprite_GetUV(self->MultiSpr, sprite, p->uv0, p->uv1);
 	}
-	if (PARTICLE_TYPE(p) != PARTICLE_ACTIVE) {
+	if (Particle_Type(p) != PARTICLE_ACTIVE) {
 		return;
 	}
 	CParticleActive *a = (CParticleActive *)p;
@@ -590,7 +588,7 @@ static void CParticleSystem_GenParticle(CParticleSystem *self, CParticle *p) {
 
 /* the vectors of p turned by m and its position moved by m, as the flags say */
 static void CParticleSystem_PlaceParticle(CParticleSystem *self, CParticle *p, const matrix_t *m) {
-	if (PARTICLE_TYPE(p) == PARTICLE_ACTIVE && !(self->params.flags & PARTICLESYSTEM_LOCAL)) {
+	if (Particle_Type(p) == PARTICLE_ACTIVE && !(self->params.flags & PARTICLESYSTEM_LOCAL)) {
 		CParticleActive *a = (CParticleActive *)p;
 		Vec3_TransformDir0(&p->pos, &p->pos, m);
 		Vec3_TransformDir0(&a->vel, &a->vel, m);
@@ -611,7 +609,7 @@ void CParticleSystem_Emit(CParticleSystem *self, int n, byte force, float dt, co
 		}
 		CParticleSystem_GenParticle(self, p);
 		CParticleSystem_PlaceParticle(self, p, m);
-		PARTICLE_UPDATE(p, self, 0.0f, self->MultiSpr);
+		Particle_Update(p, self, 0.0f, self->MultiSpr);
 		i++;
 		((CParticleActive *)p)->delay = (float)i * dt;
 	}
@@ -962,8 +960,8 @@ static void CParticleSystem_Update(IObject3D *base, CRenderNode *r) {
 	if (self->numActive) {
 		for (int i = 0; i < self->params.nParticles; i++) {
 			CParticle *p = self->Particles[i];
-			if (p->active && PARTICLE_TYPE(p) == PARTICLE_ACTIVE && !((CParticleActive *)p)->manual) {
-				PARTICLE_UPDATE(p, self, dt, self->MultiSpr);
+			if (p->active && Particle_Type(p) == PARTICLE_ACTIVE && !((CParticleActive *)p)->manual) {
+				Particle_Update(p, self, dt, self->MultiSpr);
 			}
 		}
 	}
@@ -981,7 +979,7 @@ static void CParticleSystem_Update(IObject3D *base, CRenderNode *r) {
 		}
 		CParticleSystem_GenParticle(self, p);
 		CParticleSystem_PlaceParticle(self, p, m);
-		PARTICLE_UPDATE(p, self, ParticleSystem_Seconds(self->lastTime - self->birthTime), self->MultiSpr);
+		Particle_Update(p, self, ParticleSystem_Seconds(self->lastTime - self->birthTime), self->MultiSpr);
 	}
 	self->lastPos = (vec3_t){ m->m[12], m->m[13], m->m[14] };
 }

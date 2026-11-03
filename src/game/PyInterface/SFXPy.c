@@ -107,7 +107,7 @@ static PyObject *SFX_EmbeddedSet(PyObject *self, PyObject *args) {
 	}
 	cEntity *vEntity = World_FindEntity(entityName);
 	CHECK(vEntity);
-	vEntity->vftable->SetEmbeddedFX(vEntity, fxType);
+	Entity_SetEmbeddedFX(vEntity, fxType);
 	return Py_ReturnNone();
 }
 

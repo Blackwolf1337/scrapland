@@ -50,6 +50,87 @@ typedef struct cEntityVtbl {
 	void *(*GetAI)(cEntity *self);				/* 0x58 vf22 */
 } cEntityVtbl;
 
+/* calls through the slots of cEntityVtbl */
+static inline void Entity_AimWeapon(void *self, float ax, float ay, float *dist, vec3_t *out, cEntity **target, int flags) {
+	VT(cEntityVtbl, self)->AimWeapon(self, ax, ay, dist, out, target, flags);
+}
+
+static inline cEntity *Entity_Delete(void *self, uint32_t flags) {
+	return VT(cEntityVtbl, self)->Delete(self, flags);
+}
+
+static inline void *Entity_GetAI(void *self) {
+	return VT(cEntityVtbl, self)->GetAI(self);
+}
+
+static inline const char *Entity_GetClassName(void *self) {
+	return VT(cEntityVtbl, self)->GetClassName(self);
+}
+
+static inline vec3_t *Entity_GetPos(void *self, vec3_t *out) {
+	return VT(cEntityVtbl, self)->GetPos(self, out);
+}
+
+static inline void Entity_GetTargetAngle(void *self, float *ang, float dist, cEntity **target) {
+	VT(cEntityVtbl, self)->GetTargetAngle(self, ang, dist, target);
+}
+
+static inline byte Entity_IsType(void *self, const char *type) {
+	return VT(cEntityVtbl, self)->IsType(self, type);
+}
+
+static inline void Entity_SetActive(void *self, byte on) {
+	VT(cEntityVtbl, self)->SetActive(self, on);
+}
+
+static inline void Entity_SetEmbeddedFX(void *self, const char *fxType) {
+	VT(cEntityVtbl, self)->SetEmbeddedFX(self, fxType);
+}
+
+static inline void Entity_SetModel(void *self, const char *file, float sx, float sy, float sz, int flag) {
+	VT(cEntityVtbl, self)->SetModel(self, file, sx, sy, sz, flag);
+}
+
+static inline void Entity_SetPos(void *self, const vec3_t *pos) {
+	VT(cEntityVtbl, self)->SetPos(self, pos);
+}
+
+static inline byte Entity_TestLine(void *self, const vec3_t *from, vec3_t *hit) {
+	return VT(cEntityVtbl, self)->TestLine(self, from, hit);
+}
+
+static inline byte Entity_TestSphere(void *self, cEntity *exclude, const vec3_t *center, float radius, const vec3_t *prev) {
+	return VT(cEntityVtbl, self)->TestSphere(self, exclude, center, radius, prev);
+}
+
+static inline void Entity_Touch(void *self, cEntity *e, const vec3_t *point, const vec3_t *normal) {
+	VT(cEntityVtbl, self)->Touch(self, e, point, normal);
+}
+
+static inline void Entity_Update(void *self) {
+	VT(cEntityVtbl, self)->Update(self);
+}
+
+static inline void Entity_UpdateOff(void *self) {
+	VT(cEntityVtbl, self)->UpdateOff(self);
+}
+
+static inline byte Entity_VarF(void *self, const char *name, double *d, int set) {
+	return VT(cEntityVtbl, self)->VarF(self, name, d, set);
+}
+
+static inline byte Entity_VarI(void *self, const char *name, int *i, int set) {
+	return VT(cEntityVtbl, self)->VarI(self, name, i, set);
+}
+
+static inline byte Entity_VarS(void *self, const char *name, char **s, int set) {
+	return VT(cEntityVtbl, self)->VarS(self, name, s, set);
+}
+
+static inline byte Entity_VarV(void *self, const char *name, double *x, double *y, double *z, int set) {
+	return VT(cEntityVtbl, self)->VarV(self, name, x, y, z, set);
+}
+
 /* Nto1Links.h with a shared count: the head (data NULL) owns the int, every linked node points to it */
 typedef struct EntityDNode {
 	Nto1Node node;			/* 0x00 */
@@ -154,10 +235,6 @@ void cEntity_TouchNop(cEntity *self, cEntity *e, const vec3_t *point, const vec3
 
 /* the network game: an entity named "net..." of a client is the copy of a server one */
 byte Net_IsNetEntity(cEntity *e);
-
-static inline int Entity_IsType(cEntity *e, const char *type) {
-	return e->vftable->IsType(e, type) != 0;
-}
 
 /* the entity with that name or NULL; inlined everywhere in the original */
 static inline cEntity *World_FindEntity(const char *name) {

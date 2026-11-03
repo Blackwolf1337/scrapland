@@ -8,7 +8,6 @@
 
 #define CHUMPHREYLOCALLOGIC_VFTABLE (&cHumphreyLocalLogic_vftable.base.base)
 static const cFunctionaryLocalLogicVtbl cHumphreyLocalLogic_vftable;
-#define Humphrey_Vtbl(self) Functionary_Vtbl(self)
 
 cHumphreyLocalLogic *cHumphreyLocalLogic_ctor(cHumphreyLocalLogic *self, cEntity *parent) {
 	cFunctionaryLocalLogic_ctor(&self->base, parent);
@@ -55,7 +54,7 @@ static void cHumphreyLocalLogic_ReleaseDesktop(cLocalLogic *elem) {
 static void cHumphreyLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cHumphreyLocalLogic *self = (cHumphreyLocalLogic *)elem;
 	if (self->isDefault && !cFunctionaryLocalLogic_GetDesktop(&self->base)) {
-		Humphrey_Vtbl(self)->AssignDesktop(&self->base.base.base.logic, 0.0f);
+		Functionary_AssignDesktop(self, 0.0f);
 		self->isDefault = 0;
 	}
 	cFunctionaryLocalLogic_Update(&self->base.base.base.logic, dt);
@@ -66,7 +65,7 @@ static vec3_t *cHumphreyLocalLogic_GetWorkAng(cLocalLogic *elem, vec3_t *out) {
 	cHumphreyLocalLogic *self = (cHumphreyLocalLogic *)elem;
 	CHECK(cFunctionaryLocalLogic_GetDesktop(&self->base));
 	cEntity *d = cFunctionaryLocalLogic_GetDesktop(&self->base);
-	Obj_Vtbl(d)->GetAng(d, out);
+	Obj_GetAng(d, out);
 	return out;
 }
 

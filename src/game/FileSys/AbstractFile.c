@@ -48,10 +48,10 @@ int cAbstractFile_Close(cAbstractFile *self) {
 /* a string with a length byte into buf of size bytes */
 int cAbstractFile_ReadString8(cAbstractFile *self, char *buf, byte size) {
 	byte len = 0;
-	int res = self->vftable->Read(self, &len, sizeof(len));
+	int res = VFile_Read(self, &len, sizeof(len));
 	CHECK(res == sizeof(len));
 	CHECK(size > len);
-	int n = self->vftable->Read(self, buf, len);
+	int n = VFile_Read(self, buf, len);
 	buf[len] = 0;
 	return res + n;
 }
@@ -59,10 +59,10 @@ int cAbstractFile_ReadString8(cAbstractFile *self, char *buf, byte size) {
 /* a string with an int length into buf of size bytes */
 int cAbstractFile_ReadString(cAbstractFile *self, char *buf, int size) {
 	int len = 0;
-	int res = self->vftable->Read(self, &len, sizeof(len));
+	int res = VFile_Read(self, &len, sizeof(len));
 	CHECK(res == sizeof(len));
 	CHECK(size > len);
-	int n = self->vftable->Read(self, buf, len);
+	int n = VFile_Read(self, buf, len);
 	buf[len] = 0;
 	return res + n;
 }
@@ -72,14 +72,14 @@ int cAbstractFile_WriteString8(cAbstractFile *self, const char *s) {
 	int len = (int)strlen(s);
 	CHECK(len < 256);
 	byte b = (byte)len;
-	int res = self->vftable->Write(self, &b, 1);
-	return self->vftable->Write(self, s, b) + res;
+	int res = VFile_Write(self, &b, 1);
+	return VFile_Write(self, s, b) + res;
 }
 
 int cAbstractFile_WriteString(cAbstractFile *self, const char *s) {
 	int len = (int)strlen(s);
-	int res = self->vftable->Write(self, &len, sizeof(len));
-	return self->vftable->Write(self, s, len) + res;
+	int res = VFile_Write(self, &len, sizeof(len));
+	return VFile_Write(self, s, len) + res;
 }
 
 /* the slot Exists of a class that does only return 1 */

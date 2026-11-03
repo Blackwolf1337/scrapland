@@ -23,6 +23,19 @@ typedef struct INodeFXVtbl {
 	int(*Apply)(INodeFX *self, matrix_t *m, CNode3D *node, CRenderNode *r);	/* 0x8 */
 } INodeFXVtbl;
 
+/* calls through the slots of INodeFXVtbl */
+static inline byte NodeFX_Type(void *self) {
+	return VT(INodeFXVtbl, self)->Type(self);
+}
+
+static inline int NodeFX_Apply(void *self, matrix_t *m, CNode3D *node, CRenderNode *r) {
+	return VT(INodeFXVtbl, self)->Apply(self, m, node, r);
+}
+
+static inline INodeFX *NodeFX_Delete(void *self, byte flags) {
+	return VT(INodeFXVtbl, self)->Delete(self, flags);
+}
+
 struct INodeFX {
 	const INodeFXVtbl *vftable;	/* 0x0 */
 };

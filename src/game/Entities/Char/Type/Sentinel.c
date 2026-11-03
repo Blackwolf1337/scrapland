@@ -40,7 +40,7 @@ cEntity *ChType_SentinelTarget(cEntity *e) {
 		return NULL;
 	}
 	cEntity *t = WChar_Victim(e);
-	if (!t || !t->vftable->IsType(t, TYEN_WALKCHAR)) {
+	if (!t || !Entity_IsType(t, TYEN_WALKCHAR)) {
 		return NULL;
 	}
 	return t;
@@ -68,7 +68,7 @@ static void ChType_SentinelPoint(cAbstractFile *params) {
 		return;
 	}
 	cEntity *t = WChar_Victim(v);
-	if (!t || !t->vftable->IsType(t, TYEN_WALKCHAR) || !strcmp(ChType_ClassName(t), "GateKeeper") ||
+	if (!t || !Entity_IsType(t, TYEN_WALKCHAR) || !strcmp(ChType_ClassName(t), "GateKeeper") ||
 		!strcmp(ChType_ClassName(t), "Sebastian")) {
 		return;
 	}
@@ -83,7 +83,7 @@ static void ChType_SentinelPoint(cAbstractFile *params) {
 			if (ChType_SentinelCanCall()) {
 				AICtrl_GearsChase(&g_pWorld->logic.aiCtrl, t);
 			}
-			AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, v->vftable->GetPos(v, &tmp));
+			AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, Entity_GetPos(v, &tmp));
 		}
 		if (!WChar(v)->control.target.target) {
 			cWalkCharControl_SetTarget(&WChar(v)->control, t);
@@ -91,7 +91,7 @@ static void ChType_SentinelPoint(cAbstractFile *params) {
 	}
 	cLocalLogic *l = Logic_GetLocalLogic(t);
 	if (l) {
-		Logic_Vtbl(l)->OnSeen(l, v);
+		Logic_OnSeen(l, v);
 	}
 }
 

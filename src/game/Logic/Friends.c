@@ -24,7 +24,7 @@ static void Friends_Follow(cAIVehicle *ai, cEntity *usr) {
 
 /* t is an active enemy car of v */
 static byte Friends_IsEnemyCar(cEntity *v, cEntity *t) {
-	return t->active && t->vftable->IsType(t, TYEN_CAR) && Team_IsEnemy(WLife(t)->arrow.tgType,
+	return t->active && Entity_IsType(t, TYEN_CAR) && Team_IsEnemy(WLife(t)->arrow.tgType,
 		WLife(v)->arrow.tgType);
 }
 
@@ -40,8 +40,8 @@ static void cFriends_Attack(cFriends *self, cEntity *usr) {
 	for (; n; n = Logic_ListNext(n)) {
 		cEntity *v = n->data;
 		CHECK(v && "friendVehicle");
-		CHECK(v->vftable->IsType(v, TYEN_CAR) && "friendVehicle->IsType(TYEN_VEHICLE)");
-		cAIVehicle *ai = v->vftable->GetAI(v);
+		CHECK(Entity_IsType(v, TYEN_CAR) && "friendVehicle->IsType(TYEN_VEHICLE)");
+		cAIVehicle *ai = Entity_GetAI(v);
 		CHECK(ai && "friendAI");
 		int st = cAIVehicle_GetState(ai);
 		WLife(v)->arrow.tgType = 2;
@@ -54,7 +54,7 @@ static void cFriends_Attack(cFriends *self, cEntity *usr) {
 			continue;
 		}
 		if (st == AIV_STATE_ATTACK) {
-			cEntity *t = ai->vftable->GetTargetEnt(&ai->base.base);
+			cEntity *t = AIMove_GetTargetEnt(ai);
 			if (!t || !Friends_IsEnemyCar(v, t)) {
 				cAIVehicle_SetState(ai, 0);
 			}
@@ -78,8 +78,8 @@ static void cFriends_Attack(cFriends *self, cEntity *usr) {
 				cur = cWorld_GetFirstEntity(g_pWorld);
 			} else {
 				byte found = 0;
-				if (Friends_IsEnemyCar(v, cur) && cur->vftable->GetAI(cur) &&
-					cAIVehicle_GetState(cur->vftable->GetAI(cur)) == AIV_STATE_ATTACK) {
+				if (Friends_IsEnemyCar(v, cur) && Entity_GetAI(cur) &&
+					cAIVehicle_GetState(Entity_GetAI(cur)) == AIV_STATE_ATTACK) {
 					found = 1;
 					cAIVehicle_SetState(ai, AIV_STATE_ATTACK, cur);
 				}
@@ -105,7 +105,7 @@ static void cFriends_Think(cFriends *self) {
 	cEntity *usr = NULL;
 	if (Input_GetActionSet() != 2) {
 		usr = cWorld_GetUsrEntity(g_pWorld, 0);
-		if (usr && !usr->vftable->IsType(usr, TYEN_CAR)) {
+		if (usr && !Entity_IsType(usr, TYEN_CAR)) {
 			usr = NULL;
 		}
 	}

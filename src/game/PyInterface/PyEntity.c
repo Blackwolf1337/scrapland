@@ -35,7 +35,7 @@ static PyObject *cPyEntity_SetModel(PyObject *self, PyObject *args) {
 		return Py_BuildValue("i", 0);
 	}
 	float s = (float)scale;
-	e->vftable->SetModel(e, file, s, s, s, 1);
+	Entity_SetModel(e, file, s, s, s, 1);
 	return Py_BuildValue("i", 1);
 }
 
@@ -50,7 +50,7 @@ static PyObject *cPyEntity_SetFX(PyObject *self, PyObject *args) {
 	if (!e) {
 		return Py_BuildValue("i", 0);
 	}
-	e->vftable->SetEmbeddedFX(e, type);
+	Entity_SetEmbeddedFX(e, type);
 	return Py_BuildValue("i", 1);
 }
 
@@ -70,7 +70,7 @@ static PyObject *cPyEntity_GetTgAng(PyObject *self, PyObject *args) {
 	}
 	float ang[3] = { Deg2RadF(ax), Deg2RadF(ay), 0.0f };
 	cEntity *target = (cEntity *)self;
-	e->vftable->GetTargetAngle(e, ang, (float)dist, &target);
+	Entity_GetTargetAngle(e, ang, (float)dist, &target);
 	return Py_BuildValue("dds", Rad2Deg(ang[0]), Rad2Deg(ang[1]), target ? target->name : "");
 }
 
@@ -88,7 +88,7 @@ static PyObject *cPyEntity_DrawWeap(PyObject *self, PyObject *args) {
 	float dist = (float)d;
 	vec3_t aim;
 	cEntity *target = NULL; /* uninitialized in the original */
-	e->vftable->AimWeapon(e, Deg2RadF(ax), Deg2RadF(ay), &dist, &aim, &target, 8);
+	Entity_AimWeapon(e, Deg2RadF(ax), Deg2RadF(ay), &dist, &aim, &target, 8);
 	return Py_BuildValue("(ddd)ds", (double)aim.x, (double)aim.y, (double)aim.z, (double)dist,
 		target ? target->name : "");
 }
@@ -198,16 +198,16 @@ static PyObject *PyEntity_GetAttr(PyObject *self, char *name) {
 		Con_Errorf("'%s'->%s : Entity invalid.\n", ref->name, name);
 		return NULL;
 	}
-	if (e->vftable->VarI(e, name, &i, 0)) {
+	if (Entity_VarI(e, name, &i, 0)) {
 		return Py_BuildValue("i", i);
 	}
-	if (e->vftable->VarF(e, name, &d, 0)) {
+	if (Entity_VarF(e, name, &d, 0)) {
 		return Py_BuildValue("d", d);
 	}
-	if (e->vftable->VarV(e, name, &x, &y, &z, 0)) {
+	if (Entity_VarV(e, name, &x, &y, &z, 0)) {
 		return Py_BuildValue("ddd", x, y, z);
 	}
-	if (e->vftable->VarS(e, name, &s, 0)) {
+	if (Entity_VarS(e, name, &s, 0)) {
 		if (s) {
 			return Py_BuildValue("s", s);
 		}
@@ -239,7 +239,7 @@ static int PyEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
 	}
 	if (PyArg_Parse(v, "i", &i)) {
 		parsed = 1;
-		if (e->vftable->VarI(e, name, &i, 1)) {
+		if (Entity_VarI(e, name, &i, 1)) {
 			return 0;
 		}
 	} else {
@@ -247,7 +247,7 @@ static int PyEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
 	}
 	if (PyArg_Parse(v, "d", &d)) {
 		parsed = 1;
-		if (e->vftable->VarF(e, name, &d, 1)) {
+		if (Entity_VarF(e, name, &d, 1)) {
 			return 0;
 		}
 	} else {
@@ -255,14 +255,14 @@ static int PyEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
 	}
 	if (PyArg_ParseTuple(v, "ddd", &x, &y, &z)) {
 		parsed = 1;
-		if (e->vftable->VarV(e, name, &x, &y, &z, 1)) {
+		if (Entity_VarV(e, name, &x, &y, &z, 1)) {
 			return 0;
 		}
 	} else {
 		PyErr_Clear();
 	}
 	if (PyArg_Parse(v, "s", &s)) {
-		if (e->vftable->VarS(e, name, &s, 1)) {
+		if (Entity_VarS(e, name, &s, 1)) {
 			return 0;
 		}
 	} else {

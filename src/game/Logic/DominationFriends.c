@@ -60,7 +60,7 @@ static void cDominationFriendsSide_Think(cDominationFriendsSide *self) {
 		cEntity *e = n->data;
 		if (!e) {
 			CHECK(e && "e = node->GetNode()");
-		} else if (!e->vftable->IsType(e, TYEN_CAR)) {
+		} else if (!Entity_IsType(e, TYEN_CAR)) {
 			e = NULL;
 		}
 		cDominationLogic_UpdateShip(self->owner, e, usr, leader);

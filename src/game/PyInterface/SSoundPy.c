@@ -14,7 +14,7 @@ static PyObject *SSound_SetVoiceVolume(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "id", &voice, &volume)) {
 		return NULL;
 	}
-	g_pSound->vftable->SetVoiceVolume(g_pSound, voice, (float)volume);
+	SoundSys_SetVoiceVolume(g_pSound, voice, (float)volume);
 	return Py_ReturnNone();
 }
 
@@ -27,7 +27,7 @@ static PyObject *SSound_SetVoiceString(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "is", &voice, &text)) {
 		return NULL;
 	}
-	g_pSound->vftable->SetVoiceString(g_pSound, voice, text);
+	SoundSys_SetVoiceString(g_pSound, voice, text);
 	return Py_ReturnNone();
 }
 
@@ -37,7 +37,7 @@ static PyObject *SSound_DeleteAllSounds(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	g_pSound->vftable->DeleteAllSounds(g_pSound);
+	SoundSys_DeleteAllSounds(g_pSound);
 	return Py_ReturnNone();
 }
 
@@ -49,7 +49,7 @@ static PyObject *SSound_LoadSound(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "s", &name)) {
 		return NULL;
 	}
-	g_pSound->vftable->LoadSound(g_pSound, name);
+	SoundSys_LoadSound(g_pSound, name);
 	return Py_ReturnNone();
 }
 
@@ -73,7 +73,7 @@ static PyObject *SSound_PlaySound(PyObject *self, PyObject *args) {
 	pos.z = (float)z;
 	cSoundDesc_SetPos(&desc, &pos);
 	desc.volume += Snd_Volume((float)volume);
-	g_pSound->vftable->PlaySound(g_pSound, name, &desc, 0);
+	SoundSys_PlaySound(g_pSound, name, &desc, 0);
 	return Py_ReturnNone();
 }
 
@@ -87,7 +87,7 @@ static PyObject *SSound_Play(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	int ipan = (int)(pan * 10000.0);
-	g_pSound->vftable->Play(g_pSound, name, Snd_Volume((float)volume), ipan);
+	SoundSys_Play(g_pSound, name, Snd_Volume((float)volume), ipan);
 	return Py_ReturnNone();
 }
 
@@ -97,7 +97,7 @@ static PyObject *SSound_StopAllSounds(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	g_pSound->vftable->StopAllSounds(g_pSound);
+	SoundSys_StopAllSounds(g_pSound);
 	return Py_ReturnNone();
 }
 
@@ -183,8 +183,8 @@ static PyObject *SSound_SetMusic(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "s|d", &name, &volume)) {
 		return NULL;
 	}
-	g_pSound->vftable->SetMusicVolume(g_pSound, (float)volume);
-	g_pSound->vftable->SetMusic(g_pSound, name);
+	SoundSys_SetMusicVolume(g_pSound, (float)volume);
+	SoundSys_SetMusic(g_pSound, name);
 	return Py_ReturnNone();
 }
 
@@ -196,7 +196,7 @@ static PyObject *SSound_SetMusicVolume(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "d", &volume)) {
 		return NULL;
 	}
-	g_pSound->vftable->SetMusicVolume(g_pSound, (float)volume);
+	SoundSys_SetMusicVolume(g_pSound, (float)volume);
 	return Py_ReturnNone();
 }
 
@@ -209,7 +209,7 @@ static PyObject *SSound_OpenVoice(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "si|i", &name, &voice, &arg)) {
 		return NULL;
 	}
-	g_pSound->vftable->OpenVoice(g_pSound, name, voice, arg);
+	SoundSys_OpenVoice(g_pSound, name, voice, arg);
 	return Py_ReturnNone();
 }
 
@@ -222,8 +222,8 @@ static PyObject *SSound_PlayVoice(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "i|s", &voice, &text)) {
 		return NULL;
 	}
-	g_pSound->vftable->PlayVoice(g_pSound, voice);
-	g_pSound->vftable->SetVoiceString(g_pSound, voice, text);
+	SoundSys_PlayVoice(g_pSound, voice);
+	SoundSys_SetVoiceString(g_pSound, voice, text);
 	return Py_ReturnNone();
 }
 
@@ -235,7 +235,7 @@ static PyObject *SSound_StopVoice(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "i", &voice)) {
 		return NULL;
 	}
-	g_pSound->vftable->StopVoice(g_pSound, voice);
+	SoundSys_StopVoice(g_pSound, voice);
 	return Py_ReturnNone();
 }
 
@@ -249,7 +249,7 @@ static PyObject *SSound_VoiceRemain(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "id", &voice, &result)) {
 		return NULL;
 	}
-	if (g_pSound->vftable->VoiceRemain(g_pSound, voice, &remain)) {
+	if (SoundSys_VoiceRemain(g_pSound, voice, &remain)) {
 		result = (double)remain;
 	}
 	return Py_BuildValue("d", result);

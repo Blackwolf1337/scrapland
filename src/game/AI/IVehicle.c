@@ -170,10 +170,10 @@ void *cAIVehicle_ctor(void *mem, cEntity *v, void *p1, void *p2, void *p3) {
 static void cAIVehicle_dtor(cAIVehicle *self) {
 	self->vftable = CAIVEHICLE_VFTABLE;
 	if (self->control) {
-		self->control->vftable->Delete(self->control, 1);
+		AIVC_Delete(self->control, 1);
 	}
 	if (self->shoot) {
-		self->shoot->vftable->Delete(self->shoot, 1);
+		AIVShoot_Delete(self->shoot, 1);
 	}
 	cAIVehicle_Debugf(&self->base.base, "Entidad DESTRUIDA");
 	cString_dtor(&self->itemAmmoK[2].name);
@@ -321,7 +321,7 @@ static void cAIVehicle_UpdateGraph(cAIVehicle *self) {
 	do {
 		cWorld *w = g_pWorld;
 		vec3_t cam = w->camPos[w->curCam];
-		if (!g_NodesWorld->sup.vftable->InGrid(g_NodesWorld, &cam)) {
+		if (!NodesWorld_InGrid(g_NodesWorld, &cam)) {
 			return;
 		}
 		switch (self->state) {
@@ -356,7 +356,7 @@ static byte cAIVehicle_NeedRepos(cAIVehicle *self) {
 	cWorld *w = g_pWorld;
 	vec3_t cam = w->camPos[w->curCam];
 	cEntity *c = World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
-	const vec3_t *v = self->vehicle->vftable->GetPos(self->vehicle, &a);
+	const vec3_t *v = Entity_GetPos(self->vehicle, &a);
 
 	d.y = v->y - cam.y;
 	d.x = v->x - cam.x;
@@ -374,7 +374,7 @@ static byte cAIVehicle_NeedRepos(cAIVehicle *self) {
 		}
 	}
 	else if (!(dist > self->maxDistReposNotVis)) {
-		if (!(dist > self->minDistReposNotVis) || self->vftable->base.IsVisible(&self->base.base)) {
+		if (!(dist > self->minDistReposNotVis) || AI_IsVisible(self)) {
 			return 0;
 		}
 	}
@@ -398,7 +398,7 @@ static void cAIVehicle_UpdateRoute(cAIVehicle *self) {
 		}
 	}
 	if (!cAIVehicle_Repos(self) && self->internState != AIVI_STOPPED) {
-		self->vehicle->vftable->SetActive(self->vehicle, 0);
+		Entity_SetActive(self->vehicle, 0);
 		cAIVehicle_SetInternState(self, AIVI_STOPPED);
 	}
 }
@@ -454,7 +454,7 @@ cAIVehicleGroup *g_VehicleGroup;
 static byte cAIVehicle_RestoreState(cAIVehicle *self, const cAIVehicleSaved *s);
 static void cAIVehicle_Update(cAI *elem, float dt) {
 	cAIVehicle *self = (cAIVehicle *)elem;
-	if (self->pending.state != AIV_STATE_NONE && g_VehicleGroup->base.vftable->CanChange(&g_VehicleGroup->base)) {
+	if (self->pending.state != AIV_STATE_NONE && AIGroup_CanChange(g_VehicleGroup)) {
 		cAIVehicle_RestoreState(self, &self->pending);
 	}
 	if (self->state == AIV_FREEZE) {
@@ -573,7 +573,7 @@ long double cAIVehicle_GetPathWidth(void *ai) {
 	if ((self->state == AIV_TRAFFIC || self->state == AIV_TRAFFIC_INDOOR) && self->internState != AIVI_STOPPED &&
 			self->track >= 0) {
 		CNodesTraffic *t = AIV_Outdoor();
-		return t->vftable->GetRadius(t, self->track);
+		return Traffic_GetRadius(t, self->track);
 	}
 	return 0.0L;
 }
@@ -717,7 +717,7 @@ static const vec3_t s_Nose = { 0.0f, 0.0f, -1.0f };
 static void AIV_NoseDir(cAIVehicle *self, vec3_t *dir) {
 	vec3_t rot;
 
-	Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot);
+	Obj_GetAng(self->vehicle, &rot);
 	Vec3_Rotate(dir, &s_Nose, &rot);
 }
 
@@ -738,8 +738,8 @@ static byte AIV_HookAngle(cAIVehicle *self, const vec3_t *d, float d2, float r) 
 /* e within HookRange, not touching and at most 45 degrees off the nose; CanHook also in sight */
 static byte cAIVehicle_InHookRange(cAIVehicle *self, cEntity *e) {
 	vec3_t a, b, d;
-	const vec3_t *v = self->vehicle->vftable->GetPos(self->vehicle, &a);
-	const vec3_t *p = e->vftable->GetPos(e, &b);
+	const vec3_t *v = Entity_GetPos(self->vehicle, &a);
+	const vec3_t *p = Entity_GetPos(e, &b);
 
 	d.x = p->x - v->x;
 	d.y = p->y - v->y;
@@ -754,14 +754,14 @@ static byte cAIVehicle_CanHook(cAIVehicle *self, cEntity *e) {
 		return 0;
 	}
 	cEntity *v = self->vehicle;
-	const vec3_t *to = e->vftable->GetPos(e, &a);
-	const vec3_t *from = v->vftable->GetPos(v, &b);
+	const vec3_t *to = Entity_GetPos(e, &a);
+	const vec3_t *from = Entity_GetPos(v, &b);
 	return Engine_TestLine(from, to, NULL, NULL) == 0;
 }
 
 static byte cAIVehicle_InHookRangePos(cAIVehicle *self, const vec3_t *p) {
 	vec3_t a, d;
-	const vec3_t *v = self->vehicle->vftable->GetPos(self->vehicle, &a);
+	const vec3_t *v = Entity_GetPos(self->vehicle, &a);
 
 	d.x = p->x - v->x;
 	d.y = p->y - v->y;
@@ -866,11 +866,11 @@ static byte cAIVehicle_EventChase(cAIVehicle *self, int ev) {
 		return 0;
 	}
 	if (self->internState != AIVI_FINISHING_LINE_LIFE) {
-		self->vftable->base.OnEvent(&self->base.base, 2);
+		AI_OnEvent(self, 2);
 		cAIVehicle_SetInternState(self, AIVI_CHASE_NOT_SHOOTING, (double)self->chaseMin, (double)self->chaseMax);
 		return 1;
 	}
-	self->vftable->base.OnEvent(&self->base.base, 2);
+	AI_OnEvent(self, 2);
 	cAIVehicle_ItemsChase(self);
 	return 1;
 }
@@ -881,7 +881,7 @@ static byte cAIVehicle_EventDefault(cAIVehicle *self, int ev) {
 	switch (ev) {
 	case 0: {
 		vec3_t a;
-		self->vftable->base.OnEvent(&self->base.base, 0);
+		AI_OnEvent(self, 0);
 		cAIVehicle_SaveState(self, &self->saved);
 		int s = self->state;
 		int st = AIV_LOST_PATH;
@@ -898,11 +898,11 @@ static byte cAIVehicle_EventDefault(cAIVehicle *self, int ev) {
 		return 1;
 	}
 	case 1:
-		self->vftable->base.OnEvent(&self->base.base, 1);
+		AI_OnEvent(self, 1);
 		cAIVehicle_SetStateIntern(self, AIV_FREEZE_OBJ_NOT_ACCESS);
 		return 1;
 	case 3:
-		self->vftable->base.OnEvent(&self->base.base, 3);
+		AI_OnEvent(self, 3);
 		cAIVehicle_SetStateIntern(self, AIV_FREEZE);
 		if (cPy_Function_IsValid(g_OnObjectiveNullAI)) {
 			cPy_Function_AddParamS(g_OnObjectiveNullAI, self->vehicle->name);
@@ -919,15 +919,15 @@ static byte cAIVehicle_EventFighting(cAIVehicle *self, int ev) {
 	}
 	switch (self->internState) {
 	case AIVI_FINISHING_LINE_LIFE:
-		self->vftable->base.OnEvent(&self->base.base, 2);
+		AI_OnEvent(self, 2);
 		cAIVehicle_ItemsFighting(self);
 		return 1;
 	case AIVI_FINISHING_LINE_AMMO:
-		self->vftable->base.OnEvent(&self->base.base, 2);
+		AI_OnEvent(self, 2);
 		cAIVehicle_FightingAfterItem(self);
 		return 1;
 	}
-	self->vftable->base.OnEvent(&self->base.base, 2);
+	AI_OnEvent(self, 2);
 	cAIVehicle_SetInternState(self, AIVI_CHASE_SHOOTING, (double)self->chaseMin, (double)self->chaseMax);
 	return 1;
 }
@@ -937,8 +937,8 @@ static void AIV_AwayFromTarget(cAIVehicle *self) {
 	vec3_t a, b;
 
 	cEntity *t = AIV_Target(self);
-	const vec3_t *tp = t->vftable->GetPos(t, &a);
-	const vec3_t *vp = self->vehicle->vftable->GetPos(self->vehicle, &b);
+	const vec3_t *tp = Entity_GetPos(t, &a);
+	const vec3_t *vp = Entity_GetPos(self->vehicle, &b);
 	vec3_t d;
 	d.z = vp->z - tp->z;
 	d.x = vp->x - tp->x;
@@ -948,14 +948,14 @@ static void AIV_AwayFromTarget(cAIVehicle *self) {
 }
 
 static void AIV_FollowAway(cAIVehicle *self, int ev) {
-	self->vftable->base.OnEvent(&self->base.base, ev);
+	AI_OnEvent(self, ev);
 	AIV_AwayFromTarget(self);
 }
 
 static byte cAIVehicle_EventGetAway(cAIVehicle *self, int ev) {
 	if (self->internState == AIVI_FINISHING_LINE_LIFE) {
 		if (ev == 2) {
-			self->vftable->base.OnEvent(&self->base.base, 2);
+			AI_OnEvent(self, 2);
 			cAIVehicle_ItemsGetAway(self);
 			return 1;
 		}
@@ -970,7 +970,7 @@ static byte cAIVehicle_EventGetAway(cAIVehicle *self, int ev) {
 static byte cAIVehicle_EventGetAwayStop(cAIVehicle *self, int ev) {
 	if (self->internState == AIVI_FINISHING_LINE_LIFE) {
 		if (ev == 2) {
-			self->vftable->base.OnEvent(&self->base.base, 2);
+			AI_OnEvent(self, 2);
 			cAIVehicle_ItemsGetAwayStop(self);
 			return 1;
 		}
@@ -997,7 +997,7 @@ static byte cAIVehicle_EventGoTo(cAIVehicle *self, int ev) {
 		taken = self->onArrive(self);
 	}
 	if (!taken && !self->stopAtGoal) {
-		self->vftable->base.OnEvent(&self->base.base, 2);
+		AI_OnEvent(self, 2);
 		cAIVehicle_SetStateIntern(self, AIV_FREEZE);
 	}
 	return 1;
@@ -1006,14 +1006,14 @@ static byte cAIVehicle_EventGoTo(cAIVehicle *self, int ev) {
 static byte cAIVehicle_EventInRoute(cAIVehicle *self, int ev) {
 	if (self->internState == AIVI_FINISHING_LINE_LIFE) {
 		if (ev == 2) {
-			self->vftable->base.OnEvent(&self->base.base, 2);
+			AI_OnEvent(self, 2);
 			cAIVehicle_ItemsInRoute(self);
 			return 1;
 		}
 	}
 	else if (self->internState == AIVI_FOLLOW_THE_PATH && (ev == 2 || ev == 4)) {
 		vec3_t dir;
-		self->vftable->base.OnEvent(&self->base.base, ev);
+		AI_OnEvent(self, ev);
 		AIV_NoseDir(self, &dir);
 		cAIVehicle_SetInternState(self, AIVI_FOLLOW_THE_PATH, dir, (double)g_RadiusObjectiveInRoute, 0, 1,
 			self->base.repos, (double)self->rotA, (double)self->rotB);
@@ -1026,7 +1026,7 @@ static byte cAIVehicle_EventLostPath(cAIVehicle *self, int ev) {
 	if (ev != 7) {
 		return 0;
 	}
-	self->vftable->base.OnEvent(&self->base.base, 7);
+	AI_OnEvent(self, 7);
 	cAIVehicle_SetStateIntern(self, AIV_FREEZE_LOST);
 	return 1;
 }
@@ -1037,7 +1037,7 @@ static vec3_t *cAIVehicle_TrackPoint(cAIVehicle *self, vec3_t *out, const vec3_t
 static void AIV_NextNode(cAIVehicle *self, vec3_t *p, int track, int node, float radius) {
 	vec3_t a;
 
-	self->vftable->base.OnEvent(&self->base.base, 2);
+	AI_OnEvent(self, 2);
 	*p = *cAIVehicle_TrackPoint(self, &a, p, track, node);
 	self->track = track;
 	self->node = node;
@@ -1057,15 +1057,15 @@ static byte cAIVehicle_EventTraffic(cAIVehicle *self, int ev) {
 		return 0;
 	}
 	CNodesTraffic *t = AIV_Outdoor();
-	if (t->vftable->NextAway(t, &p, self->track, self->node, &track, &node)) {
+	if (Traffic_NextAway(t, &p, self->track, self->node, &track, &node)) {
 		AIV_NextNode(self, &p, track, node, g_RadiusObjectiveTraffic);
 		return 1;
 	}
-	self->vftable->base.OnEvent(&self->base.base, 2);
+	AI_OnEvent(self, 2);
 	t = AIV_Outdoor();
-	t->vftable->RemoveVehicle(t, self->track);
+	Traffic_RemoveVehicle(t, self->track);
 	cAIVehicle_SetInternState(self, AIVI_STOPPED);
-	self->vehicle->vftable->SetActive(self->vehicle, 0);
+	Entity_SetActive(self->vehicle, 0);
 	return 1;
 }
 
@@ -1077,24 +1077,24 @@ static byte cAIVehicle_EventTrafficInDoor(cAIVehicle *self, int ev) {
 		return 0;
 	}
 	CNodesTraffic *t = AIV_Indoor();
-	if (t->vftable->NextAway(t, &p, self->track, self->node, &track, &node)) {
+	if (Traffic_NextAway(t, &p, self->track, self->node, &track, &node)) {
 		AIV_NextNode(self, &p, track, node, g_RadiusObjectiveTrafficInDoor);
 		return 1;
 	}
 	/* the end of the track: off once the vehicle is near the last point of the control (seen from above) */
 	cAIVehicleControl_GetGoal(self->control, &p);
 	p.y = 0.0f;
-	self->vehicle->vftable->GetPos(self->vehicle, &a);
+	Entity_GetPos(self->vehicle, &a);
 	a.y = 0.0f;
 	float dx = p.x - a.x;
 	float dy = p.y - 0.0f;
 	float dz = p.z - a.z;
 	if (!(dy * dy + dx * dx + dz * dz > AIV_ARRIVED_DIST2)) {
-		self->vftable->base.OnEvent(&self->base.base, 2);
+		AI_OnEvent(self, 2);
 		t = AIV_Indoor();
-		t->vftable->RemoveVehicle(t, self->track);
+		Traffic_RemoveVehicle(t, self->track);
 		cAIVehicle_SetInternState(self, AIVI_STOPPED);
-		self->vehicle->vftable->SetActive(self->vehicle, 0);
+		Entity_SetActive(self->vehicle, 0);
 	}
 	return 1;
 }
@@ -1118,7 +1118,7 @@ static void AIV_StartTrack(cAIVehicle *self, byte indoor, const vec3_t *np) {
 	if (type == 1 || type == 0 || type == 2 ||
 			((type == 4 || type == 3) && AIV_VehTraffic(self->vehicle)->type != 0)) {
 		CNodesTraffic *t = indoor ? AIV_Indoor() : AIV_Outdoor();
-		t->vftable->GetInfo(t, &info, self->track);
+		Traffic_GetInfo(t, &info, self->track);
 		AIV_VehTraffic(self->vehicle)->speed = info.speed;
 		speed = info.speed;
 	}
@@ -1126,11 +1126,11 @@ static void AIV_StartTrack(cAIVehicle *self, byte indoor, const vec3_t *np) {
 		speed = g_VelTrafficLightRotAI;
 	}
 	AIV_SetRotSpeed(self, speed);
-	const vec3_t *p = self->vehicle->vftable->GetPos(self->vehicle, &a);
+	const vec3_t *p = Entity_GetPos(self->vehicle, &a);
 	AIV_VehTraffic(self->vehicle)->begin = *p;
 	AIV_VehTraffic(self->vehicle)->end = *np;
 	CNodesTraffic *t = indoor ? AIV_Indoor() : AIV_Outdoor();
-	t->vftable->AddVehicle(t, self->track);
+	Traffic_AddVehicle(t, self->track);
 	cAIVehicle_SetInternState(self, AIVI_FINISHING_LINE_DIRECT, *np,
 		(double)(indoor ? g_RadiusObjectiveTrafficInDoor : g_RadiusObjectiveTraffic), 0, (double)self->rotA,
 		(double)self->rotB);
@@ -1152,21 +1152,21 @@ byte cAIVehicle_PlaceOnTrack(cAIVehicle *ai, int type, const vec3_t *pos, int tr
 	cAIVehicleControl_ClearDest(self->control);
 	self->track = track;
 	self->node = node;
-	self->vehicle->vftable->SetActive(self->vehicle, 0);
-	self->vehicle->vftable->SetActive(self->vehicle, 1);
-	self->vehicle->vftable->SetPos(self->vehicle, pos);
+	Entity_SetActive(self->vehicle, 0);
+	Entity_SetActive(self->vehicle, 1);
+	Entity_SetPos(self->vehicle, pos);
 	CNodesTraffic *t = AIV_Indoor();
-	t->vftable->GetNode(t, &np, self->track, self->node);
+	Traffic_GetNode(t, &np, self->track, self->node);
 	d.x = pos->x - np.x;
 	d.y = pos->y - np.y;
 	d.z = pos->z - np.z;
 	Vec3_GetRotAng(&ang, &d);
-	Obj_Vtbl(self->vehicle)->SetAng(self->vehicle, &ang);
+	Obj_SetAng(self->vehicle, &ang);
 	cAIVehicleControl_Stop(self->control);
 	tmp.x = 0.0f;
 	tmp.y = 0.0f;
 	tmp.z = 0.0f;
-	Obj_Vtbl(self->vehicle)->SetVel(self->vehicle, &tmp);
+	Obj_SetVel(self->vehicle, &tmp);
 	np = *cAIVehicle_TrackPointRandom(self, &tmp, &np, self->track, self->node);
 	AIV_StartTrack(self, 1, &np);
 	self->base.base.seen = 2;
@@ -1256,7 +1256,7 @@ static byte cAIVehicle_TestHookPoint(cAIVehicle *self, vec3_t *p) {
 	vec3_t rot, f, d, c, n, e, h, u, o, tmp;
 	static const vec3_t back = { 0.0f, 0.0f, -1.0f };
 
-	Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot);
+	Obj_GetAng(self->vehicle, &rot);
 	vec3_t z = back;
 	Vec3_Rotate(&f, &z, &rot);
 	AIV_Unit(&d, &f);
@@ -1292,12 +1292,12 @@ static byte cAIVehicle_TestHookPoint(cAIVehicle *self, vec3_t *p) {
 	o.x = u.x * g_HookRange;
 	o.z = u.z * g_HookRange;
 	o.y = u.y * g_HookRange;
-	const vec3_t *pos = self->vehicle->vftable->GetPos(self->vehicle, &tmp);
+	const vec3_t *pos = Entity_GetPos(self->vehicle, &tmp);
 	vec3_t to;
 	to.y = pos->y + o.y;
 	to.z = pos->z + o.z;
 	to.x = pos->x + o.x;
-	pos = self->vehicle->vftable->GetPos(self->vehicle, &tmp);
+	pos = Entity_GetPos(self->vehicle, &tmp);
 	return Engine_TestLine(pos, &to, p, NULL) != 0;
 }
 
@@ -1321,7 +1321,7 @@ static vec3_t *cAIVehicle_TrackPoint(cAIVehicle *self, vec3_t *out, const vec3_t
 			return out;
 		}
 		vec3_t a, b, d, n;
-		t->vftable->GetDirs(t, &a, &b, track, node);
+		Traffic_GetDirs(t, &a, &b, track, node);
 		d.x = a.x - b.x;
 		d.y = a.y - b.y;
 		d.z = a.z - b.z;
@@ -1349,8 +1349,8 @@ static vec3_t *cAIVehicle_TrackPoint(cAIVehicle *self, vec3_t *out, const vec3_t
 }
 
 static float AIV_TrackRoom(cAIVehicle *self, CNodesTraffic *t, int track) {
-	float rt = t->vftable->GetRadius(t, track);
-	return rt - Obj_Vtbl(self->vehicle)->GetRadius(self->vehicle);
+	float rt = Traffic_GetRadius(t, track);
+	return rt - Obj_GetRadius(self->vehicle);
 }
 
 /* rand() in -w..w as the original computes it */
@@ -1404,7 +1404,7 @@ static vec3_t *cAIVehicle_TrackPointRandom(cAIVehicle *self, vec3_t *out, const 
 		return out;
 	}
 	vec3_t a, b, c, n, m, u, q;
-	t->vftable->GetDirs(t, &a, &b, track, node);
+	Traffic_GetDirs(t, &a, &b, track, node);
 	if (AIV_TrackSmall3(&b)) {
 		AIV_TrackSide(&c, &a);
 	} else {
@@ -1435,7 +1435,7 @@ static vec3_t *cAIVehicle_TrackPointRandom(cAIVehicle *self, vec3_t *out, const 
 	self->trackOfs.x = n.x * w;
 	self->trackOfs.y = n.y * w;
 	self->trackOfs.z = n.z * w;
-	t->vftable->GetNode(t, &q, track, node);
+	Traffic_GetNode(t, &q, track, node);
 	self->trackPos.x = q.x + self->trackOfs.x;
 	self->trackPos.y = self->trackOfs.y + q.y;
 	self->trackPos.z = self->trackOfs.z + q.z;
@@ -1470,14 +1470,14 @@ static cCamControl *AIV_ReposCam(vec3_t *camPos, vec3_t *dir) {
 static int AIV_ReposSlowShip(cCamControl *cam) {
 	vec3_t tmp;
 
-	if (!cam->base.vftable->IsType(&cam->base, FCAM_CLASSNAME)) {
+	if (!Entity_IsType(cam, FCAM_CLASSNAME)) {
 		return 0;
 	}
 	cEntity *ship = cCamEntity_GetTarget(&cam->base);
 	if (!ship) {
 		return 0;
 	}
-	const vec3_t *v = Obj_Vtbl(ship)->GetVel(ship, &tmp);
+	const vec3_t *v = Obj_GetVel(ship, &tmp);
 	float speed = (float)__builtin_sqrt((double)(v->x * v->x + v->y * v->y + v->z * v->z));
 	return g_VelReposBackAI > speed;
 }
@@ -1491,9 +1491,9 @@ static void AIV_ReposStart(cAIVehicle *self, byte behind) {
 
 /* the vehicle shown again at p with a fade in */
 static void AIV_ReposShow(cAIVehicle *self, const vec3_t *p) {
-	self->vehicle->vftable->SetActive(self->vehicle, 0);
-	self->vehicle->vftable->SetActive(self->vehicle, 1);
-	self->vehicle->vftable->SetPos(self->vehicle, p);
+	Entity_SetActive(self->vehicle, 0);
+	Entity_SetActive(self->vehicle, 1);
+	Entity_SetPos(self->vehicle, p);
 	cVehicleEntity_StartFade(Veh(self->vehicle));
 }
 
@@ -1502,10 +1502,10 @@ static void AIV_ReposStop(cAIVehicle *self, const vec3_t *d) {
 	vec3_t ang;
 
 	Vec3_GetRotAng(&ang, d);
-	Obj_Vtbl(self->vehicle)->SetAng(self->vehicle, &ang);
+	Obj_SetAng(self->vehicle, &ang);
 	cAIVehicleControl_Stop(self->control);
 	vec3_t zero = { 0.0f, 0.0f, 0.0f };
-	Obj_Vtbl(self->vehicle)->SetVel(self->vehicle, &zero);
+	Obj_SetVel(self->vehicle, &zero);
 }
 
 /* a traffic node near the camera of the view: in the cone of view (dir) between minVis and maxVis, else behind it
@@ -1529,7 +1529,7 @@ static byte cAIVehicle_ReposTraffic(cAIVehicle *self, vec3_t *out, float minVis,
 	CNodesTraffic *t = AIV_Outdoor();
 	float cone = cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV;
 	if (vis) {
-		r = t->vftable->RandomNode(t, &p, self->trackType, &camPos, minVis, maxVis, AIV_FloatArg(around), &dir, cone,
+		r = Traffic_RandomNode(t, &p, self->trackType, &camPos, minVis, maxVis, AIV_FloatArg(around), &dir, cone,
 			&track, &node);
 		if (!r) {
 			if (self->reposBehind) {
@@ -1539,7 +1539,7 @@ static byte cAIVehicle_ReposTraffic(cAIVehicle *self, vec3_t *out, float minVis,
 			back.y = -dir.y;
 			back.z = -dir.z;
 			t = AIV_Outdoor();
-			r = t->vftable->RandomNode(t, &p, self->trackType, &camPos, minNotVis, maxNotVis, AIV_FloatArg(around),
+			r = Traffic_RandomNode(t, &p, self->trackType, &camPos, minNotVis, maxNotVis, AIV_FloatArg(around),
 				&back, M_PI_F - cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV, &track, &node);
 			if (!r) {
 				return r;
@@ -1550,13 +1550,13 @@ static byte cAIVehicle_ReposTraffic(cAIVehicle *self, vec3_t *out, float minVis,
 		back.x = -dir.x;
 		back.y = -dir.y;
 		back.z = -dir.z;
-		r = t->vftable->RandomNode(t, &p, self->trackType, &camPos, minNotVis, maxNotVis, AIV_FloatArg(around), &back,
+		r = Traffic_RandomNode(t, &p, self->trackType, &camPos, minNotVis, maxNotVis, AIV_FloatArg(around), &back,
 			M_PI_F - cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV, &track, &node);
 		if (r) {
 			behind = 1;
 		} else {
 			t = AIV_Outdoor();
-			r = t->vftable->RandomNode(t, &p, self->trackType, &camPos, minVis, maxVis, AIV_FloatArg(around), &dir,
+			r = Traffic_RandomNode(t, &p, self->trackType, &camPos, minVis, maxVis, AIV_FloatArg(around), &dir,
 				cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV, &track, &node);
 			if (!r) {
 				return r;
@@ -1573,7 +1573,7 @@ static byte cAIVehicle_ReposTraffic(cAIVehicle *self, vec3_t *out, float minVis,
 	self->node = node;
 	AIV_ReposShow(self, &p);
 	t = AIV_Outdoor();
-	t->vftable->GetNode(t, out, self->track, self->node);
+	Traffic_GetNode(t, out, self->track, self->node);
 	vec3_t d;
 	d.x = p.x - out->x;
 	d.y = p.y - out->y;
@@ -1655,7 +1655,7 @@ static void cAIVehicle_PickTrackType(cAIVehicle *self) {
 	int cls = AIV_VehTraffic(self->vehicle)->type;
 
 	if (cls == 2) {
-		if (t->vftable->NumByType(t, 0) > 0) {
+		if (Traffic_NumByType(t, 0) > 0) {
 			list[0] = 0;
 			n = cls - 1;
 		}
@@ -1663,22 +1663,22 @@ static void cAIVehicle_PickTrackType(cAIVehicle *self) {
 	else if (cls != 0) {
 		goto medium;
 	}
-	if (t->vftable->NumByType(t, 3) > 0) {
+	if (Traffic_NumByType(t, 3) > 0) {
 		list[n++] = 3;
 	}
 medium:
 	if (cls == 1) {
-		if (t->vftable->NumByType(t, 2) > 0) {
+		if (Traffic_NumByType(t, 2) > 0) {
 			list[n++] = 2;
 		}
 	}
 	else if (cls != 0) {
 		goto done;
 	}
-	if (t->vftable->NumByType(t, 4) > 0) {
+	if (Traffic_NumByType(t, 4) > 0) {
 		list[n++] = 4;
 	}
-	if (cls == 0 && t->vftable->NumByType(t, 1) > 0) {
+	if (cls == 0 && Traffic_NumByType(t, 1) > 0) {
 		list[n++] = 1;
 	}
 done:
@@ -1707,7 +1707,7 @@ byte cAIVehicle_SetState(cAIVehicle *ai, int state, ...) {
 	va_list ap;
 
 	cAIVehicle_StateName(state, name);
-	ai->vftable->base.Debugf(&ai->base.base, "Demanda externa de CAMBIO de ESTADO -> %s", name);
+	AI_Debugf(ai, "Demanda externa de CAMBIO de ESTADO -> %s", name);
 	va_start(ap, state);
 	byte r = cAIVehicle_ChangeState(ai, state, ap);
 	va_end(ap);
@@ -1720,9 +1720,9 @@ static byte cAIVehicle_SetStateIntern(cAIVehicle *self, int state, ...) {
 	va_list ap;
 
 	cAIVehicle_StateName(state, name);
-	self->vftable->base.Debugf(&self->base.base, "Demanda interna de CAMBIO de ESTADO -> %s", name);
+	AI_Debugf(self, "Demanda interna de CAMBIO de ESTADO -> %s", name);
 	if (!AIV_FreeState(state)) {
-		g_VehicleGroup->base.vftable->AllowChange(&g_VehicleGroup->base);
+		AIGroup_AllowChange(g_VehicleGroup);
 	}
 	va_start(ap, state);
 	byte r = cAIVehicle_ChangeState(self, state, ap);
@@ -1755,7 +1755,7 @@ static void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...) {
 	byte sc = 1;
 
 	cAIVehicle_InternStateName(state, name);
-	self->vftable->base.Debugf(&self->base.base, "CAMBIO de ESTADO INTERNO -> %s", name);
+	AI_Debugf(self, "CAMBIO de ESTADO INTERNO -> %s", name);
 	int old = self->internState;
 	int d = 0;
 	self->base.base.changed = 1;
@@ -1974,7 +1974,7 @@ static byte cAIVehicle_ChangeStateMore(cAIVehicle *self, int state, byte allowed
 	switch (state) {
 	case AIV_FIGHTING_HOOK:
 		e = va_arg(ap, cEntity *);
-		if (!self->vftable->CanTarget(&self->base.base, e)) {
+		if (!AIMove_CanTarget(self, e)) {
 			return 0;
 		}
 		AIV_PendingTarget(self, e);
@@ -1992,7 +1992,7 @@ static byte cAIVehicle_ChangeStateMore(cAIVehicle *self, int state, byte allowed
 		return 1;
 	case AIV_GET_AWAY:
 		e = va_arg(ap, cEntity *);
-		if (!self->vftable->CanTarget(&self->base.base, e)) {
+		if (!AIMove_CanTarget(self, e)) {
 			return 0;
 		}
 		AIV_PendingTarget(self, e);
@@ -2006,7 +2006,7 @@ static byte cAIVehicle_ChangeStateMore(cAIVehicle *self, int state, byte allowed
 		return 1;
 	case AIV_LOST_PATH:
 	case AIV_LOST_PATH_CHASE: {
-		const vec3_t *p = self->vehicle->vftable->GetPos(self->vehicle, &b);
+		const vec3_t *p = Entity_GetPos(self->vehicle, &b);
 		CNodesWorld_NearestPointVis(g_NodesWorld, p, &a);
 		cAIVehicle_SetInternState(self, AIVI_FINISHING_LINE_DIRECT, a, AIV_LOST_SPEED, 0, 20.0, 20.0);
 		cAIVehicleControl_SetDirect(self->control, 1);
@@ -2031,7 +2031,7 @@ static byte cAIVehicle_ChangeState(cAIVehicle *self, int state, va_list ap) {
 		goto change;
 	}
 	if (!AIV_FreeState(state)) {
-		allowed = g_VehicleGroup->base.vftable->CanChange(&g_VehicleGroup->base);
+		allowed = AIGroup_CanChange(g_VehicleGroup);
 	}
 	if (state == AIV_LOST_PATH_CHASE || !AIV_VehTraffic(self->vehicle)->off) {
 		if (allowed) {
@@ -2053,7 +2053,7 @@ change:
 	self->base.base.stateTime = 0.0f;
 	self->base.base.changing = 1;
 	self->base.base.changed = 1;
-	self->vehicle->vftable->SetActive(self->vehicle, 1);
+	Entity_SetActive(self->vehicle, 1);
 	self->lifeMark = Veh(self->vehicle)->wl.life;
 	cAIVehicleControl_SetDirect(self->control, 0);
 	self->prevState = self->state;
@@ -2067,12 +2067,12 @@ common: {
 	if (s != AIV_TRAFFIC && s != AIV_TRAFFIC_INDOOR && s != AIV_FREEZE && s != AIV_FREEZE_LOST &&
 			s != AIV_FREEZE_OBJ_NOT_ACCESS && s != AIV_FREEZE_CHANGE_STATE && s != AIV_FIGHTING_FREEZE) {
 		cEntity *v = self->vehicle;
-		if (!(Obj_Vtbl(v)->GetRadius(v) < g_RadiusShipGraph)) {
+		if (!(Obj_GetRadius(v) < g_RadiusShipGraph)) {
 			const char *vname = self->vehicle->name;
 			Con_Bluef("RADIO VEHICULO INVALIDO: %s %f\n", vname,
-				(double)Obj_Vtbl(self->vehicle)->GetRadius(self->vehicle));
+				(double)Obj_GetRadius(self->vehicle));
 		}
-		CHECK(Obj_Vtbl(self->vehicle)->GetRadius(self->vehicle) < g_RadiusShipGraph);
+		CHECK(Obj_GetRadius(self->vehicle) < g_RadiusShipGraph);
 	}
 	}
 	if (AIV_Target(self)) {
@@ -2122,7 +2122,7 @@ common: {
 	case AIV_CHASE:
 	case AIV_GET_AWAY_STOP:
 		e = va_arg(ap, cEntity *);
-		if (!self->vftable->CanTarget(&self->base.base, e)) {
+		if (!AIMove_CanTarget(self, e)) {
 			ok = 0;
 			break;
 		}
@@ -2197,7 +2197,7 @@ common: {
 		self->base.repos = 1;
 		cAIVehicle_PickTrackType(self);
 		AIV_VehTraffic(self->vehicle)->active = 0;
-		self->vehicle->vftable->SetActive(self->vehicle, 0);
+		Entity_SetActive(self->vehicle, 0);
 		self->base.trafficPlaced = 0;
 		if (self->trackType == 5) {
 			ok = 0;
@@ -2208,7 +2208,7 @@ common: {
 		if (!cAIVehicle_ReposTraffic(self, &p, 0.0f, self->maxDistRepos, 0.0f, self->maxDistReposNotVis,
 				g_MaxDistAroundReposAI)) {
 			self->reposBehind = 0;
-			self->vehicle->vftable->SetActive(self->vehicle, 0);
+			Entity_SetActive(self->vehicle, 0);
 			cAIVehicle_SetInternState(self, AIVI_STOPPED);
 			break;
 		}
@@ -2220,7 +2220,7 @@ common: {
 	case AIV_TRAFFIC_INDOOR:
 		cAIVehicle_PickTrackType(self);
 		AIV_VehTraffic(self->vehicle)->active = 0;
-		self->vehicle->vftable->SetActive(self->vehicle, 0);
+		Entity_SetActive(self->vehicle, 0);
 		if (self->trackType == 5) {
 			ok = 0;
 			break;
@@ -2238,14 +2238,14 @@ common: {
 			goto bad;
 		}
 		if (!AIV_FreeState(state)) {
-			g_VehicleGroup->base.vftable->ResetChange(&g_VehicleGroup->base);
+			AIGroup_ResetChange(g_VehicleGroup);
 		}
 		cAIVehicle_StateName(state, name);
 		if (!AIV_Target(self)) {
-			self->vftable->base.Debugf(&self->base.base, "CAMBIO DE ESTADO REALIZADO -> %s", name);
+			AI_Debugf(self, "CAMBIO DE ESTADO REALIZADO -> %s", name);
 		}
 		else {
-			self->vftable->base.Debugf(&self->base.base, "CAMBIO DE ESTADO REALIZADO -> %s - OBJETIVO: %s", name,
+			AI_Debugf(self, "CAMBIO DE ESTADO REALIZADO -> %s - OBJETIVO: %s", name,
 				AIV_Target(self)->name);
 		}
 		return ok;
@@ -2261,7 +2261,7 @@ wait:
 	ok = 1;
 waiting:
 	if (!AIV_VehTraffic(self->vehicle)->off) {
-		self->vftable->base.Debugf(&self->base.base, "En ESPERA CAMBIO de ESTADO -> FREEZE_CHANGE_STATE");
+		AI_Debugf(self, "En ESPERA CAMBIO de ESTADO -> FREEZE_CHANGE_STATE");
 		cAIVehicle_SetStateIntern(self, AIV_FREEZE_CHANGE_STATE);
 	}
 	return ok;
@@ -2327,13 +2327,13 @@ static cEntity *AIV_NearestItem(cAIVehicle *self, int kind, float *dist, cItemDe
 	cInfItem *items = &g_pWorld->logic.items;
 
 	*dist = FLT_MAX;
-	it = kind < 0 ? items->vftable->FirstLife(items, &iter) : items->vftable->FirstAmmo(items, kind, &iter);
+	it = kind < 0 ? InfItem_FirstLife(items, &iter) : InfItem_FirstAmmo(items, kind, &iter);
 	while (it) {
 		cEntity *e = World_FindEntity(it->name);
 		if (e != exclude && 0.0f >= ((cItemEntity *)e)->respawn) {
 			vec3_t a, b;
-			const vec3_t *p = e->vftable->GetPos(e, &a);
-			const vec3_t *v = self->vehicle->vftable->GetPos(self->vehicle, &b);
+			const vec3_t *p = Entity_GetPos(e, &a);
+			const vec3_t *v = Entity_GetPos(self->vehicle, &b);
 			float dx = v->x - p->x;
 			float dy = v->y - p->y;
 			float dz = v->z - p->z;
@@ -2346,7 +2346,7 @@ static cEntity *AIV_NearestItem(cAIVehicle *self, int kind, float *dist, cItemDe
 			}
 		}
 		items = &g_pWorld->logic.items;
-		it = kind < 0 ? items->vftable->NextLife(items, &iter) : items->vftable->NextAmmo(items, kind, &iter);
+		it = kind < 0 ? InfItem_NextLife(items, &iter) : InfItem_NextAmmo(items, kind, &iter);
 	}
 	return best;
 }
@@ -2455,8 +2455,8 @@ static cGVar GVar_MaxDistChaseElevatorAI;
 static byte AIV_TargetInBox(cAIVehicle *self, float dist) {
 	vec3_t a, b;
 	cEntity *t = AIV_Target(self);
-	const vec3_t *tp = t->vftable->GetPos(t, &a);
-	const vec3_t *vp = self->vehicle->vftable->GetPos(self->vehicle, &b);
+	const vec3_t *tp = Entity_GetPos(t, &a);
+	const vec3_t *vp = Entity_GetPos(self->vehicle, &b);
 
 	return (double)dist > __builtin_fabs((double)(vp->x - tp->x)) &&
 		(double)dist > __builtin_fabs((double)(vp->y - tp->y)) &&
@@ -2467,8 +2467,8 @@ static byte AIV_TargetInBox(cAIVehicle *self, float dist) {
 static byte AIV_TargetBlocked(cAIVehicle *self) {
 	vec3_t a, b;
 	cEntity *t = AIV_Target(self);
-	const vec3_t *tp = t->vftable->GetPos(t, &a);
-	const vec3_t *vp = self->vehicle->vftable->GetPos(self->vehicle, &b);
+	const vec3_t *tp = Entity_GetPos(t, &a);
+	const vec3_t *vp = Entity_GetPos(self->vehicle, &b);
 
 	return Engine_TestLine(vp, tp, NULL, NULL);
 }
@@ -2477,9 +2477,9 @@ static byte AIV_TargetBlocked(cAIVehicle *self) {
 static byte AIV_PlaceFree(cAIVehicle *self) {
 	vec3_t a, b;
 	cEntity *v = self->vehicle;
-	float r = Obj_Vtbl(v)->GetRadius(v);
-	const vec3_t *pa = v->vftable->GetPos(v, &a);
-	const vec3_t *pb = v->vftable->GetPos(v, &b);
+	float r = Obj_GetRadius(v);
+	const vec3_t *pa = Entity_GetPos(v, &a);
+	const vec3_t *pb = Entity_GetPos(v, &b);
 
 	return !Engine_TestSphere(pb, pa, r, NULL, NULL);
 }
@@ -2487,7 +2487,7 @@ static byte AIV_PlaceFree(cAIVehicle *self) {
 /* the vehicle closer than 15000 to dest */
 static byte AIV_NearDest(cAIVehicle *self) {
 	vec3_t a;
-	const vec3_t *v = self->vehicle->vftable->GetPos(self->vehicle, &a);
+	const vec3_t *v = Entity_GetPos(self->vehicle, &a);
 	float dy = v->y - self->base.dest.y;
 	float dx = v->x - self->base.dest.x;
 	float dz = v->z - self->base.dest.z;
@@ -2521,7 +2521,7 @@ static cEntity *AIV_FindLifeItem(cAIVehicle *self) {
 /* to the item e with FINISHING_LINE_LIFE or FINISHING_LINE_AMMO */
 static void AIV_GoToItem(cAIVehicle *self, int intern, cEntity *e) {
 	vec3_t a;
-	const vec3_t *p = e->vftable->GetPos(e, &a);
+	const vec3_t *p = Entity_GetPos(e, &a);
 
 	cAIVehicle_SetInternState(self, intern, *p, (double)((cItemEntity *)e)->radius);
 }
@@ -2578,7 +2578,7 @@ static void cAIVehicle_ReactFighting(cAIVehicle *self) {
 	vec3_t a;
 	float dist = g_MaxDistElevatorAI;
 	cEntity *t = AIV_Target(self);
-	const vec3_t *p = t->vftable->GetPos(t, &a);
+	const vec3_t *p = Entity_GetPos(t, &a);
 	byte near = cAIVehicleGroup_ElevatorNear(g_VehicleGroup, p, dist);
 	float cm = self->chaseMin;
 
@@ -2593,7 +2593,7 @@ static void cAIVehicle_ReactFighting(cAIVehicle *self) {
 	}
 	if (cAIVehicleShoot_HasHook(self->shoot) && self->params.percHook > 0) {
 		t = AIV_Target(self);
-		if (!WithLife_Vtbl(t)->IsEMIed(t) && cAIVehicleControl_GetFlag(self->control) &&
+		if (!WithLife_IsEMIed(t) && cAIVehicleControl_GetFlag(self->control) &&
 				cAIVehicle_InHookRange(self, AIV_Target(self)) && crt_rand() % 101 <= self->params.percHook) {
 			cAIVehicle_SetStateIntern(self, AIV_FIGHTING_HOOK, AIV_Target(self));
 		}
@@ -2605,7 +2605,7 @@ static void cAIVehicle_ReactFighting(cAIVehicle *self) {
 static void cAIVehicle_ReactHook(cAIVehicle *self) {
 	cEntity *t = AIV_Target(self);
 
-	if (!WithLife_Vtbl(t)->IsEMIed(t) && cAIVehicleControl_GetFlag(self->control) &&
+	if (!WithLife_IsEMIed(t) && cAIVehicleControl_GetFlag(self->control) &&
 			cAIVehicle_InHookRange(self, AIV_Target(self))) {
 		if (self->params.percHookGetAway > 0 && self->hookMode != 0) {
 			if (!(self->targetTime > 1.0f)) {
@@ -2724,8 +2724,8 @@ static void cAIVehicle_ThinkLostPath(cAIVehicle *self) {
 	do {
 		vec3_t a;
 		cEntity *v = self->vehicle;
-		float r = Obj_Vtbl(v)->GetRadius(v);
-		const vec3_t *p = v->vftable->GetPos(v, &a);
+		float r = Obj_GetRadius(v);
+		const vec3_t *p = Entity_GetPos(v, &a);
 		if (CNodesWorld_HasPointVis(g_NodesWorld, p, r) && AIV_PlaceFree(self)) {
 			cVehicleTraffic_SetOff(AIV_VehTraffic(self->vehicle), 0);
 			cAIVehicle_RestoreStateIntern(self, &self->saved);
@@ -2747,7 +2747,7 @@ static byte cAIVehicle_TryHook(cAIVehicle *self, int a, int b) {
 			goto done;
 		}
 		const vec3_t *g = cAIVehicleControl_GetGoal(self->control, &goal);
-		const vec3_t *p = self->vehicle->vftable->GetPos(self->vehicle, &v);
+		const vec3_t *p = Entity_GetPos(self->vehicle, &v);
 		float dy = p->y - g->y;
 		float dx = p->x - g->x;
 		float dz = p->z - g->z;
@@ -2759,7 +2759,7 @@ static byte cAIVehicle_TryHook(cAIVehicle *self, int a, int b) {
 	}
 	else {
 		const vec3_t *g = cAIVehicleControl_GetGoal(self->control, &goal);
-		const vec3_t *p = self->vehicle->vftable->GetPos(self->vehicle, &v);
+		const vec3_t *p = Entity_GetPos(self->vehicle, &v);
 		w = &Veh(self->vehicle)->weapons;
 		float dy = p->y - g->y;
 		float dx = p->x - g->x;
@@ -2934,10 +2934,10 @@ static void cAIVehicle_ThinkRace(cAIVehicle *self) {
 			if (race == 0 || (race != 10 && crt_rand() % ((10 - race) * 2) != 0)) {
 				continue;
 			}
-			int n = g_VehicleGroup->base.vftable->Num(&g_VehicleGroup->base);
+			int n = AIGroup_Num(g_VehicleGroup);
 			for (int i = 0; i < n; i++) {
-				cEntity *e = g_VehicleGroup->base.vftable->Get(&g_VehicleGroup->base, i);
-				if (e == self->vehicle || !self->vftable->CanTarget(&self->base.base, e) || !cAIVehicle_CanHook(self, e)) {
+				cEntity *e = AIGroup_Get(g_VehicleGroup, i);
+				if (e == self->vehicle || !AIMove_CanTarget(self, e) || !cAIVehicle_CanHook(self, e)) {
 					continue;
 				}
 				if (AIV_Target(self) != e) {
@@ -3201,16 +3201,16 @@ static void cAIVehicle_GraphTraffic(cAIVehicle *self) {
 	}
 	cCamControl *cam = (cCamControl *)World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
 	vec3_t camPos = g_pWorld->camPos[g_pWorld->curCam];
-	const vec3_t *pos = self->vehicle->vftable->GetPos(self->vehicle, &tmp);
+	const vec3_t *pos = Entity_GetPos(self->vehicle, &tmp);
 	d.x = pos->x - camPos.x;
 	d.y = pos->y - camPos.y;
 	d.z = pos->z - camPos.z;
 	float dist = (float)__builtin_sqrt((double)(d.y * d.y + d.x * d.x + d.z * d.z));
 	int slow = 0;
-	if (cam->base.vftable->IsType(&cam->base, FCAM_CLASSNAME)) {
+	if (Entity_IsType(cam, FCAM_CLASSNAME)) {
 		cEntity *ship = cCamEntity_GetTarget(&cam->base);
 		if (ship) {
-			const vec3_t *v = Obj_Vtbl(ship)->GetVel(ship, &tmp);
+			const vec3_t *v = Obj_GetVel(ship, &tmp);
 			slow = g_VelReposStopAI > (float)__builtin_sqrt((double)(v->x * v->x + v->y * v->y + v->z * v->z));
 		}
 	}
@@ -3228,7 +3228,7 @@ static void cAIVehicle_GraphTraffic(cAIVehicle *self) {
 	double ang = Vec3_Angle(&d, &dir);
 	if (ang > (double)(cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV) && !self->base.trafficPlaced) {
 		if (!(dist > self->maxDistReposNotVis)) {
-			if (!(dist > self->minDistReposNotVis) || self->vftable->base.IsVisible(&self->base.base)) {
+			if (!(dist > self->minDistReposNotVis) || AI_IsVisible(self)) {
 				return;
 			}
 		}
@@ -3240,11 +3240,11 @@ static void cAIVehicle_GraphTraffic(cAIVehicle *self) {
 	}
 	CNodesTraffic *t = AIV_Outdoor();
 	self->reposBehind = 0;
-	t->vftable->RemoveVehicle(t, self->track);
+	Traffic_RemoveVehicle(t, self->track);
 	if (!cAIVehicleGroup_ReposReady(g_VehicleGroup) || !cAIVehicle_ReposTraffic(self, &p, self->minDistRepos,
 			self->maxDistRepos, self->minDistReposNotVis, self->maxDistReposNotVis, g_MaxDistAroundReposAI)) {
 		self->reposBehind = 0;
-		self->vehicle->vftable->SetActive(self->vehicle, 0);
+		Entity_SetActive(self->vehicle, 0);
 		cAIVehicle_SetInternState(self, AIVI_STOPPED);
 		return;
 	}
@@ -3271,24 +3271,24 @@ static void cAIVehicle_GraphTrafficInDoor(cAIVehicle *self) {
 	}
 	switch (self->base.base.seen) {
 	case 0:
-		if (self->vftable->base.IsVisible(&self->base.base)) {
+		if (AI_IsVisible(self)) {
 			self->base.base.seen = 1;
 			return;
 		}
 		if (self->base.base.waitTime > 1.0f) {
 			CNodesTraffic *t = AIV_Indoor();
-			t->vftable->RemoveVehicle(t, self->track);
+			Traffic_RemoveVehicle(t, self->track);
 			cAIVehicle_SetInternState(self, AIVI_STOPPED);
-			self->vehicle->vftable->SetActive(self->vehicle, 0);
+			Entity_SetActive(self->vehicle, 0);
 		}
 		return;
 	case 1:
-		if (!self->vftable->base.IsVisible(&self->base.base)) {
+		if (!AI_IsVisible(self)) {
 			self->base.base.seen = 0;
 		}
 		return;
 	case 2:
-		if (self->vftable->base.IsVisible(&self->base.base)) {
+		if (AI_IsVisible(self)) {
 			self->base.base.seen = 1;
 			return;
 		}

@@ -77,11 +77,11 @@ int Vec3_Differ(const float *a, const float *b);
 static const vec3_t aivc_fwd = { 0.0f, 0.0f, -1.0f };
 
 static inline float VC_Radius(cAIVehicleControl *self) {
-	return Obj_Vtbl(self->vehicle)->GetRadius(self->vehicle);
+	return Obj_GetRadius(self->vehicle);
 }
 
 static inline const vec3_t *VC_Pos(cAIVehicleControl *self, vec3_t *buf) {
-	return self->vehicle->vftable->GetPos(self->vehicle, buf);
+	return Entity_GetPos(self->vehicle, buf);
 }
 
 static inline cEntity *VC_Target(cAIVehicleControl *self) {
@@ -90,7 +90,7 @@ static inline cEntity *VC_Target(cAIVehicleControl *self) {
 
 static inline const vec3_t *VC_TargetPos(cAIVehicleControl *self, vec3_t *buf) {
 	cEntity *t = VC_Target(self);
-	return t->vftable->GetPos(t, buf);
+	return Entity_GetPos(t, buf);
 }
 
 static inline cAutoAim *VC_AutoAim(cAIVehicleControl *self) {
@@ -406,7 +406,7 @@ static byte cAIVehicleControl_CheckTarget(cAIVehicleControl *self) {
 			int st = cAIVehicle_GetState(self->ai);
 			Con_Bluef("OBJECTIVE_DIED - cAIVehicleControl::CheckIntensive - Entidad: %s - State: %d - StateIntern: "
 				"%d\n", name, st, in);
-			self->ai->vftable->Event(&self->ai->base.base, 3);
+			AIMove_Event(self->ai, 3);
 			return 0;
 		}
 	}
@@ -534,7 +534,7 @@ found:
 	}
 rebuild:
 	self->pathDirect = 0;
-	self->dir = *Vec3_Rotate(&out, &aivc_fwd, Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot));
+	self->dir = *Vec3_Rotate(&out, &aivc_fwd, Obj_GetAng(self->vehicle, &rot));
 	return cAIVehicleControl_RebuildPath(self);
 }
 
@@ -669,11 +669,11 @@ static void cAIVehicleControl_CheckArrive(cAIVehicleControl *self) {
 	} else {
 		goto other;
 	}
-	if (self->ai->vftable->Event(&self->ai->base.base, ev)) {
+	if (AIMove_Event(self->ai, ev)) {
 		return;
 	}
 other:
-	self->ai->vftable->Event(&self->ai->base.base, 5);
+	AIMove_Event(self->ai, 5);
 }
 
 /* ---- the update ---- */
@@ -730,9 +730,9 @@ static void cAIVehicleControl_TurnToTarget(cAIVehicleControl *self) {
 	d.y = p->y - tp->y;
 	d.z = p->z - tp->z;
 	Vec3_GetRotAng(&want, &d);
-	Vec3_NormAng(&cur, Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &r));
+	Vec3_NormAng(&cur, Obj_GetAng(self->vehicle, &r));
 	if (self->direct) {
-		Obj_Vtbl(self->vehicle)->SetAng(self->vehicle, &want);
+		Obj_SetAng(self->vehicle, &want);
 		return;
 	}
 	float ax = NormAng(cur.x - want.x);
@@ -753,9 +753,9 @@ static void cAIVehicleControl_TurnToPoint(cAIVehicleControl *self) {
 	d.y = p->y - self->point.y;
 	d.z = p->z - self->point.z;
 	Vec3_GetRotAng(&want, &d);
-	Vec3_NormAng(&cur, Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &r));
+	Vec3_NormAng(&cur, Obj_GetAng(self->vehicle, &r));
 	if (self->direct) {
-		Obj_Vtbl(self->vehicle)->SetAng(self->vehicle, &want);
+		Obj_SetAng(self->vehicle, &want);
 		return;
 	}
 	float ax = NormAng(cur.x - want.x);
@@ -881,7 +881,7 @@ static void cAIVehicleControl_StrafeToPoint(cAIVehicleControl *self) {
 	d.x = self->point.x - p->x;
 	d.y = self->point.y - p->y;
 	d.z = self->point.z - p->z;
-	Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot);
+	Obj_GetAng(self->vehicle, &rot);
 	rot.x = -rot.x;
 	rot.y = rot.y + M_PI_F;
 	Vec3_RotateInv(&loc, &d, &rot);
@@ -894,7 +894,7 @@ static void cAIVehicleControl_StrafeToPoint(cAIVehicleControl *self) {
 static byte VC_AheadBlocked(cAIVehicleControl *self) {
 	vec3_t v, n, end, b, c;
 
-	Obj_Vtbl(self->vehicle)->GetVel(self->vehicle, &v);
+	Obj_GetVel(self->vehicle, &v);
 	NW_Normalize(&n, v.x, v.y, v.z);
 	float ox = n.x * AIVC_STRAFE_AHEAD, oy = n.y * AIVC_STRAFE_AHEAD, oz = n.z * AIVC_STRAFE_AHEAD;
 	float r = VC_Radius(self);
@@ -1069,12 +1069,12 @@ static void VC_VelAlongNose(cAIVehicleControl *self, const vec3_t *fwd, float sp
 	v.x = u->x * speed;
 	v.y = u->y * speed;
 	v.z = u->z * speed;
-	Obj_Vtbl(self->vehicle)->SetVel(self->vehicle, &v);
+	Obj_SetVel(self->vehicle, &v);
 }
 
 static inline float VC_Speed(cAIVehicleControl *self) {
 	vec3_t v;
-	const vec3_t *p = Obj_Vtbl(self->vehicle)->GetVel(self->vehicle, &v);
+	const vec3_t *p = Obj_GetVel(self->vehicle, &v);
 
 	return VC_Len(p->x, p->y, p->z);
 }
@@ -1083,7 +1083,7 @@ static inline float VC_Speed(cAIVehicleControl *self) {
 static float VC_NoseAngle(cAIVehicleControl *self, vec3_t *fwd) {
 	vec3_t rot, b, d;
 
-	Vec3_Rotate(fwd, &aivc_fwd, Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot));
+	Vec3_Rotate(fwd, &aivc_fwd, Obj_GetAng(self->vehicle, &rot));
 	const vec3_t *p = VC_Pos(self, &b);
 	d.x = self->point.x - p->x;
 	d.y = self->point.y - p->y;
@@ -1154,7 +1154,7 @@ static void cAIVehicleControl_AccelChase(cAIVehicleControl *self) {
 	self->braking = 0;
 	cEntity *tg = VC_Target(self);
 	const vec3_t *p = VC_Pos(self, &a);
-	const vec3_t *tp = tg->vftable->GetPos(tg, &b);
+	const vec3_t *tp = Entity_GetPos(tg, &b);
 	float dist = VC_Dist(p, tp);
 	float mx = self->chaseMax, mn = self->chaseMin;
 	float mid = (mx + mn) * 0.5f;
@@ -1170,7 +1170,7 @@ static void cAIVehicleControl_AccelChase(cAIVehicleControl *self) {
 		self->tooFar = 0;
 	}
 	vec3_t rot, d;
-	Vec3_Rotate(&fwd, &aivc_fwd, Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot));
+	Vec3_Rotate(&fwd, &aivc_fwd, Obj_GetAng(self->vehicle, &rot));
 	p = VC_Pos(self, &a);
 	d.x = self->point.x - p->x;
 	d.y = self->point.y - p->y;
@@ -1179,7 +1179,7 @@ static void cAIVehicleControl_AccelChase(cAIVehicleControl *self) {
 	if (Veh(self->vehicle)->boost == 0.0f && (double)(M_PI_F / 16.0f) > ang && dist > g_DistBoostAI) {
 		vec3_t v;
 		tg = VC_Target(self);
-		const vec3_t *tv = Obj_Vtbl(tg)->GetVel(tg, &v);
+		const vec3_t *tv = Obj_GetVel(tg, &v);
 		float ts = VC_Len(tv->x, tv->y, tv->z);
 		float rel = VC_Speed(self) - ts;
 		if (!(rel > AIVC_REL_SPEED) || dist / rel > g_TimeMaxReachBoostAI) {
@@ -1270,7 +1270,7 @@ static byte cAIVehicleControl_SetPath(cAIVehicleControl *self, const vec3_t *p) 
 	byte startOk, goalOk;
 
 	CHECK(g_NodesWorld != NULL && g_AStar != NULL);
-	CHECK(g_NodesWorld->sup.vftable->IsCreated(g_NodesWorld));
+	CHECK(NodesWorld_IsCreated(g_NodesWorld));
 	self->dest = *p;
 	VC_Pos(self, &buf);
 	if (!CAStar_FindPath(g_AStar, &self->path, &self->dest, &buf, self->radius, self->dist,
@@ -1292,11 +1292,11 @@ static byte cAIVehicleControl_SetPath(cAIVehicleControl *self, const vec3_t *p) 
 	return 1;
 fail:
 	if (!goalOk) {
-		self->ai->vftable->Event(&self->ai->base.base, 1);
+		AIMove_Event(self->ai, 1);
 		return 0;
 	}
 	if (!startOk) {
-		self->ai->vftable->Event(&self->ai->base.base, 0);
+		AIMove_Event(self->ai, 0);
 	}
 	return 0;
 }
@@ -1320,11 +1320,11 @@ static byte cAIVehicleControl_RebuildPath(cAIVehicleControl *self) {
 	vec3_t buf;
 
 	CHECK(g_NodesWorld != NULL);
-	CHECK(g_NodesWorld->sup.vftable->IsCreated(g_NodesWorld));
+	CHECK(NodesWorld_IsCreated(g_NodesWorld));
 	VC_Pos(self, &buf);
 	if (!CNodesWorld_BuildPath(g_NodesWorld, &self->path, g_DepthPathRouteOutDoorAI, &self->dir, &buf,
 		self->pathDirect, &self->pathNode, self->radius, self->pathFlat)) {
-		self->ai->vftable->Event(&self->ai->base.base, 0);
+		AIMove_Event(self->ai, 0);
 		return 0;
 	}
 	cNWVecNode *h = self->path.head;
@@ -1350,7 +1350,7 @@ void cAIVehicleControl_Draw(cAIVehicleControl *self) {
 		DebugUtils_DrawLine(&self->endCap[0][0], &self->endCap[0][1], 0xff0000);
 		DebugUtils_DrawLine(&self->endCap[1][0], &self->endCap[1][1], 0xff0000);
 		VC_Pos(self, &pos);
-		Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot);
+		Obj_GetAng(self->vehicle, &rot);
 		Vec3_Rotate(&fwd, &aivc_fwd, &rot);
 		NW_Normalize(&n, fwd.x, fwd.y, fwd.z);
 		tip.x = pos.x + n.x * AIVC_DRAW_LEN;
@@ -1360,7 +1360,7 @@ void cAIVehicleControl_Draw(cAIVehicleControl *self) {
 		if (self->point.x != -FLT_MAX || self->point.y != -FLT_MAX || self->point.z != -FLT_MAX) {
 			DebugUtils_DrawLine(&pos, &self->point, 0xffff);
 		}
-		Obj_Vtbl(self->vehicle)->GetVel(self->vehicle, &v);
+		Obj_GetVel(self->vehicle, &v);
 		if (v.y * v.y + v.x * v.x + v.z * v.z > AIVC_DRAW_VEL2) {
 			NW_Normalize(&n, v.x, v.y, v.z);
 			tip.x = n.x * AIVC_DRAW_LEN + pos.x;
@@ -1614,7 +1614,7 @@ static byte cAIVehicleControl_UpdatePoint(cAIVehicleControl *self, float dt) {
 	(void)dt;
 	if (self->path.count > 0) {
 		cAIVehicleControl_CheckArrive(self);
-		if (!self->ai->vftable->base.GetChanged(&self->ai->base.base)) {
+		if (!AI_GetChanged(self->ai)) {
 			if (!cAIVehicleControl_PathStep(self)) {
 				return 0;
 			}
@@ -1633,7 +1633,7 @@ static byte cAIVehicleControl_UpdateDirect(cAIVehicleControl *self, float dt) {
 	(void)dt;
 	if (self->path.count > 0) {
 		cAIVehicleControl_CheckArrive(self);
-		if (!self->ai->vftable->base.GetChanged(&self->ai->base.base)) {
+		if (!AI_GetChanged(self->ai)) {
 			cAIVehicleControl_TurnToPoint(self);
 			cAIVehicleControl_StrafeToPoint(self);
 			cAIVehicleControl_AccelPath(self);
@@ -1646,7 +1646,7 @@ static byte cAIVehicleControl_UpdatePath(cAIVehicleControl *self, float dt) {
 	(void)dt;
 	if (self->path.count > 0) {
 		cAIVehicleControl_CheckArrive(self);
-		if (!self->ai->vftable->base.GetChanged(&self->ai->base.base)) {
+		if (!AI_GetChanged(self->ai)) {
 			if (!cAIVehicleControl_PathStepDir(self)) {
 				return 0;
 			}
@@ -1687,7 +1687,7 @@ static byte cAIVehicleControl_SetChase(cAIVehicleControl *self, Nto1Node *node, 
 	}
 	self->target = node;
 	cEntity *t = node->target;
-	float r = Obj_Vtbl(t)->GetRadius(t);
+	float r = Obj_GetRadius(t);
 	self->dist = r;
 	self->distMin = Float_MinSS(self->radius, r);
 	if (!cAIVehicleControl_SetPath(self, VC_TargetPos(self, &buf))) {
@@ -1753,7 +1753,7 @@ byte cAIVehicleControl_SetMove(cAIVehicleControl *self, int mode, ...) {
 		break;
 	}
 	case AIVC_CHASE: {
-		Nto1Node *node = self->ai->vftable->GetTarget(&self->ai->base.base);
+		Nto1Node *node = AIMove_GetTarget(self->ai);
 		double mn = va_arg(ap, double);
 		double mx = va_arg(ap, double);
 		int boost = va_arg(ap, int);
@@ -1763,7 +1763,7 @@ byte cAIVehicleControl_SetMove(cAIVehicleControl *self, int mode, ...) {
 		break;
 	}
 	case AIVC_ORIENT:
-		r = cAIVehicleControl_SetOrient(self, self->ai->vftable->GetTarget(&self->ai->base.base));
+		r = cAIVehicleControl_SetOrient(self, AIMove_GetTarget(self->ai));
 		break;
 	case AIVC_PATH: {
 		vec3_t dir = va_arg(ap, vec3_t);

@@ -45,8 +45,8 @@ static void Betty_HitPos(cEntity *v, vec3_t *out) {
 	off.x = g_BettyHitPosX;
 	off.y = g_BettyHitPosY;
 	off.z = g_BettyHitPosZ;
-	const vec3_t *r = Vec3_Rotate(&t1, &off, Obj_Vtbl(v)->GetAng(v, &t2));
-	const vec3_t *p = v->vftable->GetPos(v, &t3);
+	const vec3_t *r = Vec3_Rotate(&t1, &off, Obj_GetAng(v, &t2));
+	const vec3_t *p = Entity_GetPos(v, &t3);
 	out->x = p->x + r->x;
 	out->y = p->y + r->y;
 	out->z = p->z + r->z;
@@ -62,7 +62,7 @@ static void ChType_BettyActionPress(cAbstractFile *params) {
 		return;
 	}
 	cEntity *v = World_FindEntity(name);
-	if (!v || !v->vftable->IsType(v, TYEN_WALKCHAR) || WChar(v)->falling || ChType_ActPriority(ChType_ActCtrl(v)) ||
+	if (!v || !Entity_IsType(v, TYEN_WALKCHAR) || WChar(v)->falling || ChType_ActPriority(ChType_ActCtrl(v)) ||
 		!(1.0f - WChar(v)->energyUsed >= 0.9f)) {
 		return;
 	}
@@ -72,11 +72,11 @@ static void ChType_BettyActionPress(cAbstractFile *params) {
 	cFollowCamEntity *cam = Betty_Cam(v);
 	WChar(v)->displAng = 0.0f;
 	if (cam) {
-		float y = Obj_Vtbl(v)->GetAng(v, &tmp)->y;
+		float y = Obj_GetAng(v, &tmp)->y;
 		ang.x = 0.0f;
 		ang.y = y;
 		ang.z = 0.0f;
-		WChar_Vtbl(v)->SetViewAng(v, &ang);
+		WChar_SetViewAng(v, &ang);
 		cam->vSpeed = g_BettyVSpeed;
 		cam->hSpeed = g_BettyHSpeed;
 	}
@@ -92,7 +92,7 @@ static void ChType_BettyCameraSet(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, name, 0x80);
 	cAbstractFile_ReadString(params, arg, 0x80);
-	params->vftable->Read(params, &unused, 4);
+	VFile_Read(params, &unused, 4);
 	char *pitch = strchr(arg, ',');
 	*pitch++ = 0;
 	g_BettyEnt = World_FindEntity(name);
@@ -110,7 +110,7 @@ static void ChType_BettyCameraSet(cAbstractFile *params) {
 	ang.x = Cam_Deg2Rad(crt_atof(pitch));
 	ang.y = y;
 	ang.z = 0.0f;
-	WChar_Vtbl(g_BettyEnt)->SetViewAng(g_BettyEnt, &ang);
+	WChar_SetViewAng(g_BettyEnt, &ang);
 }
 
 /* out the angles that turn the z axis into dir (cdecl, rva 0xc3780) */
@@ -133,12 +133,12 @@ static void ChType_BettyKill(cAbstractFile *params) {
 		return;
 	}
 	cEntity *e = World_FindEntity(name);
-	if (!e || g_BettyEnt == e || !e->vftable->IsType(e, TYEN_WALKCHAR) || WChar(e)->wl.god ||
+	if (!e || g_BettyEnt == e || !Entity_IsType(e, TYEN_WALKCHAR) || WChar(e)->wl.god ||
 		WChar(e)->wl.life <= 0) {
 		return;
 	}
-	const vec3_t *p = g_BettyEnt->vftable->GetPos(g_BettyEnt, &t1);
-	const vec3_t *q = e->vftable->GetPos(e, &t2);
+	const vec3_t *p = Entity_GetPos(g_BettyEnt, &t1);
+	const vec3_t *q = Entity_GetPos(e, &t2);
 	float dy = (float)__builtin_fabs((double)(q->y - p->y));
 	if (!(g_BettyHitTopLimit > dy)) {
 		return;
@@ -161,7 +161,7 @@ static void ChType_BettyKill(cAbstractFile *params) {
 	}
 	cObjElementFXKill_Start(el, e);
 	Betty_HitPos(g_BettyEnt, &hp);
-	const vec3_t *ep = e->vftable->GetPos(e, &t3);
+	const vec3_t *ep = Entity_GetPos(e, &t3);
 	dir.y = ep->y - hp.y;
 	dir.z = ep->z - hp.z;
 	dir.x = ep->x - hp.x;
@@ -177,16 +177,16 @@ static void ChType_BettyEndEvent(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, name, 0x80);
 	cAbstractFile_ReadString(params, arg, 0x80);
-	params->vftable->Read(params, &unused, 4);
+	VFile_Read(params, &unused, 4);
 	g_BettyEnt = World_FindEntity(name);
 	CHECK(g_BettyEnt);
 	CHECK(Entity_IsType(g_BettyEnt, TYEN_WALKCHAR));
 	v.x = 0.0f;
 	v.y = 0.0f;
 	v.z = 0.0f;
-	Obj_Vtbl(g_BettyEnt)->SetVel(g_BettyEnt, &v);
+	Obj_SetVel(g_BettyEnt, &v);
 	cWalkCharControl_Reset(&WChar(g_BettyEnt)->control, 0);
-	WChar_Vtbl(g_BettyEnt)->SetViewAng(g_BettyEnt, Obj_Vtbl(g_BettyEnt)->GetAng(g_BettyEnt, &v));
+	WChar_SetViewAng(g_BettyEnt, Obj_GetAng(g_BettyEnt, &v));
 	cFollowCamEntity *cam = Betty_Cam(g_BettyEnt);
 	WChar(g_BettyEnt)->displAng = 0.0f;
 	if (cam) {
@@ -210,7 +210,7 @@ static void ChType_BettyHitEvent(cAbstractFile *params) {
 	float k = (float)(1.0L - (long double)charge * 0.0625L);
 	float radius = (1.0f - k * k * (2.0f - k)) * g_BettyHitRadius;
 	cPy_Function_SetNative(&g_ChTypeSphereFunc, (nativefunc_t)ChType_BettyKill);
-	const vec3_t *pos = g_BettyEnt->vftable->GetPos(g_BettyEnt, &tmp);
+	const vec3_t *pos = Entity_GetPos(g_BettyEnt, &tmp);
 	cWorld_SphereCallF(g_pWorld, 0x10, pos, radius, &g_ChTypeSphereFunc, 0);
 	if (WChar(g_BettyEnt)->wl.obj.cam) {
 		cPad_Rumble(&g_Pads[0], k, 0.3f, 0.35f);

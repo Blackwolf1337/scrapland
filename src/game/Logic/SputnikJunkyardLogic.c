@@ -19,13 +19,11 @@ static cGVar GVar_SputnikJunyardTimeToPissPlayer;
 /* the angles of the camera entity */
 #define Sputnik_CamAng(cam) ((const vec3_t *)&((cCamControl *)(cam))->cam.rot)
 
-#define SPUTNIK_VT(self) ((self)->base.vftable)
-
 static void Sputnik_Walk(cGenCharLocalLogic *self) {
 	cEntity *p = self->base.parent;
-	cAIChar *ai = p->vftable->GetAI(p);
+	cAIChar *ai = Entity_GetAI(p);
 
-	ai->vftable->SetState(&ai->base.base, 1, (double)g_GenCharRelaxSpeed, 0);
+	AIChar_SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
 }
 
 static float g_SputnikTime;
@@ -33,7 +31,7 @@ static float g_SputnikTime;
 cSputnikJunkyardLocalLogic *cSputnikJunkyardLocalLogic_ctor(cSputnikJunkyardLocalLogic *self,
 	cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 1);
-	SPUTNIK_VT(self) = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
+	self->base.vftable = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
 	g_SputnikTime = 0.0f;
 	if ((byte)cBaseLocalLogic_SetState(&self->base.logic, 7, NULL)) {
 		Sputnik_Walk(self);
@@ -46,7 +44,7 @@ static cEntity *g_SputnikPisser;
 /* SputnikJunkyardLogic.cpp: a cGenCharLocalLogic, states 7 the walk, 8 the laugh in front of the camera */
 static cLocalLogic *cSputnikJunkyardLocalLogic_Delete(cLocalLogic *base, byte flags) {
 	cSputnikJunkyardLocalLogic *self = (cSputnikJunkyardLocalLogic *)base;
-	SPUTNIK_VT(self) = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
+	self->base.vftable = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
 	g_SputnikPisser = NULL;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -63,7 +61,7 @@ static void Sputnik_LaughDone(cAbstractFile *params) {
 	cLocalLogic *l = Logic_GetLocalLogic(World_FindEntity(name));
 	g_SputnikPisser = NULL;
 	g_SputnikTime = 0.0f;
-	Logic_Vtbl(l)->SetState(l, 7, NULL);
+	Logic_SetState(l, 7, NULL);
 }
 
 /* vf17 */
@@ -71,7 +69,7 @@ static void cSputnikJunkyardLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cSputnikJunkyardLocalLogic *self = (cSputnikJunkyardLocalLogic *)elem;
 	cEntity *p = self->base.parent;
 
-	p->vftable->GetAI(p);
+	Entity_GetAI(p);
 	if (self->base.state == 7) {
 		if (!World_FindEntity("EditCamera")) {
 			g_SputnikTime = 0.0f;
@@ -83,7 +81,7 @@ static void cSputnikJunkyardLocalLogic_Update(cLocalLogic *elem, float dt) {
 		g_SputnikTime = g_SputnikTime + dt;
 		if (g_SputnikTime >= g_SputnikJunyardTimeToPissPlayer) {
 			g_SputnikPisser = p;
-			SPUTNIK_VT(self)->SetState(&self->base.logic, 8, NULL);
+			Logic_SetState(self, 8, NULL);
 		}
 		return;
 	}
@@ -91,9 +89,9 @@ static void cSputnikJunkyardLocalLogic_Update(cLocalLogic *elem, float dt) {
 		cGenCharLocalLogic_Update(&self->base.logic, dt);
 		return;
 	}
-	cAIChar *ai = p->vftable->GetAI(p);
+	cAIChar *ai = Entity_GetAI(p);
 	void *ctrl = ChType_ActCtrl(p);
-	int st = ai->vftable->GetState(&ai->base.base);
+	int st = AIChar_GetState(ai);
 	if (st) {
 		return;
 	}
@@ -119,7 +117,7 @@ static byte cSputnikJunkyardLocalLogic_SetState(cLocalLogic *elem, int state, cE
 		return 1;
 	}
 	cEntity *p = self->base.parent;
-	cAIChar *ai = p->vftable->GetAI(p);
+	cAIChar *ai = Entity_GetAI(p);
 	cEntity *cam = World_FindEntity("EditCamera");
 	if (!cam) {
 		return 1;
@@ -135,7 +133,7 @@ static byte cSputnikJunkyardLocalLogic_SetState(cLocalLogic *elem, int state, cE
 	dir.x = -d.x;
 	dir.y = -d.y;
 	dir.z = -d.z;
-	ai->vftable->SetState(&ai->base.base, 4, pos, dir, 100.0, 0.25);
+	AIChar_SetState(ai, 4, pos, dir, 100.0, 0.25);
 	return 1;
 }
 

@@ -222,12 +222,12 @@ static cEntity *SpecialAction_User(void) {
 	cWorld *w = g_pWorld;
 	cEntity *e = w->owners[0];
 
-	CHECK(!e || e->vftable->IsType(e, TYEN_WITH_LIFE));
+	CHECK(!e || Entity_IsType(e, TYEN_WITH_LIFE));
 	return w->owners[0];
 }
 
 static byte SpecialAction_IsActive(cEntity *e, const char *action) {
-	return cActCtrl_IsActive(WithLife_Vtbl(e)->GetActCtrl(e), action);
+	return cActCtrl_IsActive(WithLife_GetActCtrl(e), action);
 }
 
 static int g_SpecialActionState = 1;
@@ -604,8 +604,7 @@ static void GearAim_SphereFunc(cAbstractFile *params) {
 	if (!user || user == e) {
 		return;
 	}
-	const cObjEntityVtbl *ev = (const cObjEntityVtbl *)e->vftable;
-	ev->GetViewPos(e, &p);
+	Obj_GetViewPos(e, &p);
 	if (g_WalkCameraCenter > 0.0f && g_GearAimMode > 0) {
 		if (g_GearAimMode > 2) {
 			if (g_GearAimMode != 3) {
@@ -626,7 +625,7 @@ static void GearAim_SphereFunc(cAbstractFile *params) {
 				kind = 2;
 			}
 		}
-		if (kind && !Engine_TestLine(user->vftable->GetPos(user, (vec3_t *)lt), &p, NULL, NULL)) {
+		if (kind && !Engine_TestLine(Entity_GetPos(user, (vec3_t *)lt), &p, NULL, NULL)) {
 			goto score;
 		}
 	}
@@ -651,14 +650,14 @@ score:;
 		break;
 	}
 	if (kind >= 1 && kind <= 5) {
-		const vec3_t *u = user->vftable->GetPos(user, &tmp);
+		const vec3_t *u = Entity_GetPos(user, &tmp);
 		float d2 = (u->y - p.y) * (u->y - p.y) + (u->x - p.x) * (u->x - p.x) + (u->z - p.z) * (u->z - p.z);
 		sc = d2;
 		if (d2 > 1.0f) {
 			sc = c / d2;
 			if (kind == 3) {
 				cEntity *pack = World_FindEntity(g_MessengerDataPack);
-				if (pack && pack->vftable->IsType(pack, "item") && Obj(pack)->mod.link.target == e) {
+				if (pack && Entity_IsType(pack, "item") && Obj(pack)->mod.link.target == e) {
 					sc = sc * 3.0f;
 				}
 			}
@@ -711,7 +710,7 @@ static void cSpecialActionScorer_DrawGearAim(cSpecialActionScorer *self, int pla
 	g_GearAimTarget = NULL;
 	g_GearAimBest = 3.40282347e+38f;
 	cPy_Function_SetNative(&g_ChTypeSphereFunc, (nativefunc_t)GearAim_SphereFunc);
-	cWorld_SphereCallF(g_pWorld, 0x10, user->vftable->GetPos(user, &tmp), g_GearTargetSphereRadius,
+	cWorld_SphereCallF(g_pWorld, 0x10, Entity_GetPos(user, &tmp), g_GearTargetSphereRadius,
 		&g_ChTypeSphereFunc, 1);
 	if (!w->control.lock || !w->control.target.target) {
 		cWalkCharControl_SetTarget(&w->control, g_GearAimTarget);
@@ -720,9 +719,9 @@ static void cSpecialActionScorer_DrawGearAim(cSpecialActionScorer *self, int pla
 		cEntity *t = w->control.target.target;
 		if (!t) {
 			cWalkCharControl_SetTarget(&w->control, g_GearAimTarget);
-		} else if (t->vftable->IsType(t, TYEN_WALKCHAR)) {
+		} else if (Entity_IsType(t, TYEN_WALKCHAR)) {
 			g_GearAimTarget = w->control.target.target;
-			Engine_WorldToScreen(((const cObjEntityVtbl *)g_GearAimTarget->vftable)->GetViewPos(g_GearAimTarget, &tmp),
+			Engine_WorldToScreen(Obj_GetViewPos(g_GearAimTarget, &tmp),
 				g_GearAimPos, NULL);
 			g_GearAimOff[0] = g_GearAimPos[0] - g_GearAimCenter[0];
 			g_GearAimOff[1] = g_GearAimPos[1] - g_GearAimCenter[1];

@@ -461,7 +461,7 @@ static void cFXElementsMentalControllerDamageFX_Update(cMapElement *elem, float 
 		if (crt_rand() & 1) {
 			CSoundSys *snd = g_pSound;
 			const char *name = g_DamageFXSound;
-			snd->vftable->PlayAt(snd, name, fpos, Snd_Volume(g_DamageFXSoundVol));
+			SoundSys_PlayAt(snd, name, fpos, Snd_Volume(g_DamageFXSoundVol));
 		}
 	}
 	self->flashTime = 0.0f;
@@ -911,7 +911,7 @@ seen:
 /* ---- the elements of the level ---- */
 
 static void PressElement_Add(cMapElement *e) {
-	e->vftable->Init(e);
+	MapElem_Init(e);
 	e->next = World_Elements(g_pWorld);
 	World_Elements(g_pWorld) = e;
 }

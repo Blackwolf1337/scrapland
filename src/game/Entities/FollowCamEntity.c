@@ -111,7 +111,7 @@ static void cFollowCamEntity_Slot(cEntity *self, float dt) {
 	if (!fc->target) {
 		return;
 	}
-	const vec3_t *a = Obj_Vtbl(fc->target)->GetRenderAng(fc->target, &tmp);
+	const vec3_t *a = Obj_GetRenderAng(fc->target, &tmp);
 	float ax = a->x;
 	float ty = a->y;
 	if (fc->addTurnSpeed != 0.0f) {
@@ -160,8 +160,8 @@ static void cFollowCamEntity_Lerp(cEntity *self, float f) {
 	}
 	fc->slowFrames = n;
 	float step = fc->retSpeed * dt;
-	byte walk = fc->target->vftable->IsType(fc->target, TYEN_WALKCHAR);
-	fc->center = *Obj_Vtbl(fc->target)->GetRenderPos(fc->target, &tmp);
+	byte walk = Entity_IsType(fc->target, TYEN_WALKCHAR);
+	fc->center = *Obj_GetRenderPos(fc->target, &tmp);
 	float u = 1.0f - f;
 	float ax = fc->curAng[0] * u + fc->prevAng[0] * f;
 	float ay = fc->curAng[1] * u + fc->prevAng[1] * f;
@@ -298,8 +298,8 @@ void cCamEntity_SetAng(cEntity *cam, vec3_t ang) {
 	fc->curAng[1] = ang.y;
 	fc->ang[0] = ang.x;
 	fc->ang[1] = ang.y;
-	CamCtl_Vtbl(cam)->Slot(cam, 0.05f);
-	CamCtl_Vtbl(cam)->Lerp(cam, 1.0f);
+	CamCtl_Slot(cam, 0.05f);
+	CamCtl_Lerp(cam, 1.0f);
 }
 
 /* the camera moved by the input actions of its view slot (sets 1 and 3) */
@@ -433,11 +433,11 @@ static void cFollowCamEntity_ResetAngles(cEntity *self) {
 	if (!fc->target) {
 		return;
 	}
-	float x = Obj_Vtbl(fc->target)->GetRenderAng(fc->target, &tmp)->x;
+	float x = Obj_GetRenderAng(fc->target, &tmp)->x;
 	fc->ang[0] = x;
 	fc->curAng[0] = x;
 	fc->prevAng[0] = x;
-	float y = fc->addTurn + Obj_Vtbl(fc->target)->GetRenderAng(fc->target, &tmp)->y;
+	float y = fc->addTurn + Obj_GetRenderAng(fc->target, &tmp)->y;
 	fc->ang[1] = y;
 	fc->curAng[1] = y;
 	fc->prevAng[1] = y;
@@ -449,7 +449,7 @@ static void cFollowCamEntity_SetFreeCam(cEntity *self, byte on) {
 
 	if (!on && fc->mainTarget[0]) {
 		cEntity *e = World_FindEntity(fc->mainTarget);
-		if (e && e->vftable->IsType(e, TYEN_OBJECT)) {
+		if (e && Entity_IsType(e, TYEN_OBJECT)) {
 			cCamEntity_SetTarget(self, e);
 			fc->freeCam = 0;
 			return;
@@ -487,10 +487,10 @@ void cCamEntity_SetTarget(cEntity *cam, cEntity *target) {
 	}
 	fc->target = target;
 	if (target) {
-		const vec3_t *p = target->vftable->GetPos(target, &tmp);
+		const vec3_t *p = Entity_GetPos(target, &tmp);
 		cCamControl_SetViewPos(cam, 0, p->x, p->y, p->z);
 		FCam_Obj(fc->target)->cam = cam;
-		FCam_SetClip(fc, fc->target->vftable->IsType(fc->target, TYEN_CAR) != 0);
+		FCam_SetClip(fc, Entity_IsType(fc->target, TYEN_CAR) != 0);
 		cFollowCamEntity_ResetAngles(cam);
 	} else {
 		FCam_SetClip(fc, Input_GetActionSet() == 1);
@@ -521,10 +521,10 @@ static void cFollowCamEntity_Update(cEntity *self) {
 		cEntity *e = fc->target ? cEntity_Next(fc->target) : cWorld_GetFirstEntity(g_pWorld);
 		while (e) {
 			if (e->active) {
-				if (e->vftable->IsType(e, TYEN_CAR) && (Net_IsNetEntity(e) || e->vftable->GetAI(e))) {
+				if (Entity_IsType(e, TYEN_CAR) && (Net_IsNetEntity(e) || Entity_GetAI(e))) {
 					break;
 				}
-				if (e->active && e->vftable->IsType(e, TYEN_WALKCHAR)) {
+				if (e->active && Entity_IsType(e, TYEN_WALKCHAR)) {
 					break;
 				}
 			}
@@ -562,7 +562,7 @@ static byte cFollowCamEntity_VarS(cEntity *self, const char *name, char **s, int
 	if (!strcmp(name, "Target")) {
 		if ((byte)set) {
 			cEntity *e = World_FindEntity(*s);
-			cCamEntity_SetTarget(self, e && e->vftable->IsType(e, TYEN_OBJECT) ? e : NULL);
+			cCamEntity_SetTarget(self, e && Entity_IsType(e, TYEN_OBJECT) ? e : NULL);
 		} else {
 			*s = fc->target ? fc->target->name : str_Empty;
 		}

@@ -424,21 +424,19 @@ void *NodeFX_New(const char *type, CNode3D *node) {
 	return NULL;
 }
 
-#define NODEFX_TYPE(fx) ((fx)->vftable->Type(fx))
-
 void *NodeFX_Clone(INodeFX *fx) {
 	void *p;
 
 	CHECK(fx);
-	if (NODEFX_TYPE(fx) == NODEFX_WHEEL) {
+	if (NodeFX_Type(fx) == NODEFX_WHEEL) {
 		p = operator_new(sizeof(CNodeFX_Wheel));
 		return p ? CNodeFX_Wheel_ctorCopy(p, (CNodeFX_Wheel *)fx) : NULL;
 	}
-	if (NODEFX_TYPE(fx) == NODEFX_SPRING) {
+	if (NodeFX_Type(fx) == NODEFX_SPRING) {
 		p = operator_new(sizeof(CNodeFX_Spring));
 		return p ? CNodeFX_Spring_ctorCopy(p, (CNodeFX_Spring *)fx) : NULL;
 	}
-	E3D_LogBlue((&g_FileLog), "Unknown Node Effect: %d", NODEFX_TYPE(fx));
+	E3D_LogBlue((&g_FileLog), "Unknown Node Effect: %d", NodeFX_Type(fx));
 	return NULL;
 }
 

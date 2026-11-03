@@ -46,6 +46,47 @@ typedef struct cBinaryHeapVtbl {
 	byte(*SiftDown)(cBinaryHeap *self, int i);
 } cBinaryHeapVtbl;
 
+/* calls through the slots of cBinaryHeapVtbl */
+static inline void Heap_Clear(void *self) {
+	VT(cBinaryHeapVtbl, self)->Clear(self);
+}
+
+static inline int Heap_Count(void *self) {
+	return VT(cBinaryHeapVtbl, self)->Count(self);
+}
+
+static inline cBinaryHeap *Heap_Delete(void *self, byte flags) {
+	return VT(cBinaryHeapVtbl, self)->Delete(self, flags);
+}
+
+static inline void Heap_Fix(void *self, int i) {
+	VT(cBinaryHeapVtbl, self)->Fix(self, i);
+}
+
+static inline byte Heap_Get(void *self, void ***out, int i) {
+	return VT(cBinaryHeapVtbl, self)->Get(self, out, i);
+}
+
+static inline byte Heap_Pop(void *self) {
+	return VT(cBinaryHeapVtbl, self)->Pop(self);
+}
+
+static inline byte Heap_Push(void *self, void *const *item) {
+	return VT(cBinaryHeapVtbl, self)->Push(self, item);
+}
+
+static inline byte Heap_SiftDown(void *self, int i) {
+	return VT(cBinaryHeapVtbl, self)->SiftDown(self, i);
+}
+
+static inline byte Heap_SiftUp(void *self, int i) {
+	return VT(cBinaryHeapVtbl, self)->SiftUp(self, i);
+}
+
+static inline byte Heap_Top(void *self, void ***out) {
+	return VT(cBinaryHeapVtbl, self)->Top(self, out);
+}
+
 struct cBinaryHeap {
 	const cBinaryHeapVtbl *vftable;	/* 0x00 */
 	void **elems;			/* 0x04 elems[1..count] */
@@ -97,6 +138,67 @@ typedef struct CAStarVtbl {
 	/* the states of the closed and open nodes to 2, the lists emptied */
 	void(*Reset)(CAStarSup *self);							/* 0x48 */
 } CAStarVtbl;
+
+/* calls through the slots of CAStarVtbl */
+static inline byte AStar_AddElem(void *self, const ElemAStar *e) {
+	return VT(CAStarVtbl, self)->AddElem(self, e);
+}
+
+static inline void AStar_BuildPath(void *self, cNWVecList *path, const ElemAStar *elem) {
+	VT(CAStarVtbl, self)->BuildPath(self, path, elem);
+}
+
+static inline byte AStar_CloseAdd(void *self, ElemAStar *const *e) {
+	return VT(CAStarVtbl, self)->CloseAdd(self, e);
+}
+
+static inline byte AStar_CloseRemove(void *self, int i) {
+	return VT(CAStarVtbl, self)->CloseRemove(self, i);
+}
+
+static inline float AStar_Dist(void *self, const vec3_t *a, const vec3_t *b) {
+	return VT(CAStarVtbl, self)->Dist(self, a, b);
+}
+
+static inline int AStar_FileOf(void *self, const vec3_t *node) {
+	return VT(CAStarVtbl, self)->FileOf(self, node);
+}
+
+static inline byte AStar_GetElem(void *self, const vec3_t *node, ElemAStar **out, cAStarItem **info) {
+	return VT(CAStarVtbl, self)->GetElem(self, node, out, info);
+}
+
+static inline float AStar_Heuristic(void *self, const vec3_t *p) {
+	return VT(CAStarVtbl, self)->Heuristic(self, p);
+}
+
+static inline void AStar_OtherLinks(void *self, const vec3_t *node, const vec3_t *pos, const vec3_t **list, int max, int *count) {
+	VT(CAStarVtbl, self)->OtherLinks(self, node, pos, list, max, count);
+}
+
+static inline void AStar_PointsVis(void *self, const vec3_t *pos, const vec3_t **list, int max, int *count) {
+	VT(CAStarVtbl, self)->PointsVis(self, pos, list, max, count);
+}
+
+static inline void AStar_PointsVisFile(void *self, const vec3_t *pos, const vec3_t **list, int max, int *count, int *state, int file) {
+	VT(CAStarVtbl, self)->PointsVisFile(self, pos, list, max, count, state, file);
+}
+
+static inline void AStar_Reset(void *self) {
+	VT(CAStarVtbl, self)->Reset(self);
+}
+
+static inline byte AStar_Search(void *self, cNWVecList *path, int stupid, byte *ok, byte *found, int *state) {
+	return VT(CAStarVtbl, self)->Search(self, path, stupid, ok, found, state);
+}
+
+static inline byte AStar_TableGet(void *self, const vec3_t *node, cAStarItem **out) {
+	return VT(CAStarVtbl, self)->TableGet(self, node, out);
+}
+
+static inline byte AStar_TestPath(void *self, const vec3_t *a, const vec3_t *b) {
+	return VT(CAStarVtbl, self)->TestPath(self, a, b);
+}
 
 struct CAStarSup {
 	const CAStarVtbl *vftable;	/* 0x00 */

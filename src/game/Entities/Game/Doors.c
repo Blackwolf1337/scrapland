@@ -24,13 +24,13 @@ static inline const char *ActCtrl_ClassName(void *ctrl) {
 }
 
 static inline byte Door_IsActive(cEntity *door, const char *action) {
-	return cActCtrl_IsActive(WithLife_Vtbl(door)->GetActCtrl(door), action);
+	return cActCtrl_IsActive(WithLife_GetActCtrl(door), action);
 }
 
 /* the action, then its end state as the default loop */
 static void Door_Play(cEntity *door, const char *action, const char *loop) {
-	cActCtrl_Play(WithLife_Vtbl(door)->GetActCtrl(door), action, 0, 1.0f);
-	cActCtrl_SetDefLoop(WithLife_Vtbl(door)->GetActCtrl(door), loop, 0);
+	cActCtrl_Play(WithLife_GetActCtrl(door), action, 0, 1.0f);
+	cActCtrl_SetDefLoop(WithLife_GetActCtrl(door), loop, 0);
 }
 
 /* World.h: the entity of local player 0 */
@@ -38,7 +38,7 @@ static cEntity *World_Usr0(void) {
 	cWorld *w = g_pWorld;
 	cEntity *pl = w->owners[0];
 
-	if (pl && !pl->vftable->IsType(pl, TYEN_WITH_LIFE)) {
+	if (pl && !Entity_IsType(pl, TYEN_WITH_LIFE)) {
 		CheckFailed("UsrEntities[i]->IsType(\"WithLife\")", "World.h", __TIMESTAMP__, __LINE__);
 	}
 	return w->owners[0];
@@ -53,25 +53,25 @@ static void Doors_AcceleratorOnEnter(cAbstractFile *params) {
 	cAbstractFile_ReadString(params, objName, 0x80);
 	cAbstractFile_ReadString(params, carName, 0x80);
 	cEntity *car = World_FindEntity(carName);
-	if (!car->vftable->IsType(car, TYEN_CAR)) {
+	if (!Entity_IsType(car, TYEN_CAR)) {
 		return;
 	}
 	if (0.5 > __builtin_fabs((double)Veh(car)->controls.acc) && 0.5 > __builtin_fabs((double)Veh(car)->controls.str)) {
 		return;
 	}
 	cEntity *obj = World_FindEntity(objName);
-	if (!obj->vftable->IsType(obj, TYEN_OBJECT) || Veh(car)->traffic.active) {
+	if (!Entity_IsType(obj, TYEN_OBJECT) || Veh(car)->traffic.active) {
 		return;
 	}
 	float speed = 28000.0f;
-	if (World_IsEasySingle() && car->vftable->GetAI(car)) {
+	if (World_IsEasySingle() && Entity_GetAI(car)) {
 		speed = 22400.0f;
 	}
 	push.x = 0.0f;
 	push.y = 0.0f;
 	push.z = speed;
-	Vec3_Rotate(&dir, &push, Obj_Vtbl(obj)->GetAng(obj, &tmp));
-	const vec3_t *vel = Obj_Vtbl(car)->GetVel(car, &tmp);
+	Vec3_Rotate(&dir, &push, Obj_GetAng(obj, &tmp));
+	const vec3_t *vel = Obj_GetVel(car, &tmp);
 	/* along the direction of the object, or against it when the car comes from the other side */
 	if (vel->y * dir.y + dir.x * vel->x + vel->z * dir.z > 0.0f) {
 		v = &dir;
@@ -81,7 +81,7 @@ static void Doors_AcceleratorOnEnter(cAbstractFile *params) {
 		push.z = -dir.z;
 		v = &push;
 	}
-	Obj_Vtbl(car)->SetVel(car, v);
+	Obj_SetVel(car, v);
 	cVehicleEntity_SetNetFlag(car, 1);
 	cVehicleEntity_UpdateSpeed(car);
 	if (cVehicleEntity_GetOwnerSlot(car) != -1) {
@@ -114,7 +114,7 @@ static void Doors_Slot(cAbstractFile *params, uint32_t flags) {
 	vec3_t tmp;
 
 	cAbstractFile_ReadString(params, name, 0x80);
-	params->vftable->Read(params, &unused, 4);
+	VFile_Read(params, &unused, 4);
 	if (g_IsMapOutDoor && !World_Usr0()) {
 		return;
 	}
@@ -124,13 +124,13 @@ static void Doors_Slot(cAbstractFile *params, uint32_t flags) {
 	g_DoorFront = 0;
 	g_DoorUsrBack = 0;
 	g_DoorUsrFront = 0;
-	const vec3_t *p = door->vftable->GetPos(door, &tmp);
+	const vec3_t *p = Entity_GetPos(door, &tmp);
 	g_DoorPos.x = p->x;
 	g_DoorPos.y = p->y;
 	g_DoorPos.z = p->z;
-	g_DoorAngY = Obj_Vtbl(door)->GetAng(door, &tmp)->y;
-	float radius = ActCtrl_Radius(WithLife_Vtbl(door)->GetActCtrl(door));
-	cWorld_SphereCallF(g_pWorld, 0x11, door->vftable->GetPos(door, &tmp), radius, g_DoorSphereFunc, 1);
+	g_DoorAngY = Obj_GetAng(door, &tmp)->y;
+	float radius = ActCtrl_Radius(WithLife_GetActCtrl(door));
+	cWorld_SphereCallF(g_pWorld, 0x11, Entity_GetPos(door, &tmp), radius, g_DoorSphereFunc, 1);
 	if (((flags & DOOR_FRONT) && g_DoorFront) || ((flags & DOOR_USR) && (g_DoorUsrFront || g_DoorUsrBack)) ||
 		((flags & DOOR_BACK) && g_DoorBack)) {
 		if (!Door_IsActive(door, "Open") && !Door_IsActive(door, "Opened") && !Door_IsActive(door, "Close")) {
@@ -160,10 +160,10 @@ static void Doors_ChangeDoorState(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, name, 0x80);
 	cAbstractFile_ReadString(params, state, 0x80);
-	params->vftable->Read(params, &arg, 4);
+	VFile_Read(params, &arg, 4);
 	cEntity *ent = World_FindEntity(name);
 	CHECK(ent);
-	CHECK(ent->vftable->IsType(ent, TYEN_OBJECT));
+	CHECK(Entity_IsType(ent, TYEN_OBJECT));
 	if (!crt_stricmp(state, "off")) {
 		cObjEntity_Switch(ent, 0);
 		return;
@@ -197,13 +197,13 @@ static void Doors_SphereEntity(cAbstractFile *params) {
 		return;
 	}
 	cEntity *usr = World_Usr0();
-	if (!e->vftable->IsType(e, TYEN_WALKCHAR) ||
-		!strcmp("GateKeeper", ActCtrl_ClassName(WithLife_Vtbl(e)->GetActCtrl(e)))) {
-		if (usr != e && (!e->vftable->IsType(e, TYEN_CAR) || !e->vftable->GetAI(e))) {
+	if (!Entity_IsType(e, TYEN_WALKCHAR) ||
+		!strcmp("GateKeeper", ActCtrl_ClassName(WithLife_GetActCtrl(e)))) {
+		if (usr != e && (!Entity_IsType(e, TYEN_CAR) || !Entity_GetAI(e))) {
 			return;
 		}
 	}
-	const vec3_t *p = e->vftable->GetPos(e, &tmp);
+	const vec3_t *p = Entity_GetPos(e, &tmp);
 	double dx = (double)(p->x - g_DoorPos.x);
 	double dz = (double)(p->z - g_DoorPos.z);
 	float side = (float)(atan2(dx, dz) - 1.5707963267948966);
@@ -228,15 +228,15 @@ static void Doors_Usr0AutoDoorSlot(cAbstractFile *params) {
 	vec3_t t1, t2;
 
 	cAbstractFile_ReadString(params, name, 0x80);
-	params->vftable->Read(params, &unused, 4);
+	VFile_Read(params, &unused, 4);
 	cEntity *usr = World_Usr0();
 	if (!usr) {
 		return;
 	}
 	cEntity *door = World_FindEntity(name);
-	float r = ActCtrl_Radius(WithLife_Vtbl(door)->GetActCtrl(door)) + WLife(usr)->prim.radius;
-	const vec3_t *pu = usr->vftable->GetPos(usr, &t1);
-	const vec3_t *pd = door->vftable->GetPos(door, &t2);
+	float r = ActCtrl_Radius(WithLife_GetActCtrl(door)) + WLife(usr)->prim.radius;
+	const vec3_t *pu = Entity_GetPos(usr, &t1);
+	const vec3_t *pd = Entity_GetPos(door, &t2);
 	float dy = pd->y - pu->y;
 	float dx = pd->x - pu->x;
 	float dz = pd->z - pu->z;

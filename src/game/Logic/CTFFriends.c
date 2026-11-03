@@ -73,7 +73,7 @@ static void cCTFFriendsData_Think(cCTFFriendsData *self) {
 	cEntity *usr = ChType_Usr0();
 	if (usr) {
 		/* the result is not used */
-		usr->vftable->IsType(usr, TYEN_CAR);
+		Entity_IsType(usr, TYEN_CAR);
 	}
 	cEntity *leader = Logic_FindCar(cCTFEnemies_GetLeader((&g_pWorld->logic.ctfEnemies)));
 	double maxAttack = ceil((double)((float)Logic_Count(self->list->numElems) *
@@ -81,8 +81,8 @@ static void cCTFFriendsData_Think(cCTFFriendsData *self) {
 	self->numAttack = 0;
 	do {
 		cEntity *e = Logic_AsCar(n->data);
-		CHECK(e->vftable->IsType(e, TYEN_CAR));
-		cAIVehicle *ai = e->vftable->GetAI(e);
+		CHECK(Entity_IsType(e, TYEN_CAR));
+		cAIVehicle *ai = Entity_GetAI(e);
 		CHECK(ai);
 		int st = cAIVehicle_GetState(ai);
 		if (st == AIV_STATE_ATTACK) {
@@ -121,24 +121,24 @@ static void CTFFriends_OnDamage(cAbstractFile *params) {
 		return;
 	}
 	cEntity *a = World_FindEntity(attacker);
-	if (!a || !a->vftable->IsType(a, TYEN_CAR)) {
+	if (!a || !Entity_IsType(a, TYEN_CAR)) {
 		return;
 	}
-	CHECK(a->vftable->IsType(a, TYEN_CAR));
+	CHECK(Entity_IsType(a, TYEN_CAR));
 	cEntity *usr = ChType_Usr0();
-	if (usr && usr->vftable->IsType(usr, TYEN_CAR) && usr == a) {
+	if (usr && Entity_IsType(usr, TYEN_CAR) && usr == a) {
 		return;
 	}
 	cEntity *v = Logic_FindCar(name);
 	if (!v) {
 		return;
 	}
-	CHECK(v->vftable->IsType(v, TYEN_CAR));
+	CHECK(Entity_IsType(v, TYEN_CAR));
 	cVehicleEntity *veh = (cVehicleEntity *)v;
 	if (veh->wl.life >= (int)((float)veh->maxLife * 0.75f)) {
 		return;
 	}
-	cAIVehicle *ai = v->vftable->GetAI(v);
+	cAIVehicle *ai = Entity_GetAI(v);
 	CHECK(ai);
 	cAIVehicle_SetState(ai, AIV_STATE_ATTACK, a);
 }

@@ -116,7 +116,7 @@ static void Logic_UpdateTaunts(cLogicControl *self, float dt) {
 		}
 	}
 	cEntity *usr = ChType_Usr0();
-	if (usr && usr->vftable->IsType(usr, TYEN_CAR) && Veh(usr)->controls.viewTarget) {
+	if (usr && Entity_IsType(usr, TYEN_CAR) && Veh(usr)->controls.viewTarget) {
 		float now = Timer_GetTime(&g_pWorld->timer);
 		if (self->talkEnd > now) {
 			g_RemainTalkTime = 0.0f;
@@ -130,7 +130,7 @@ static byte Logic_SetOriginCallback(cEntity *e) {
 	cLocalLogic *l = Logic_GetLocalLogic(e);
 
 	if (l) {
-		Logic_Vtbl(l)->SetOriginFrom(l, e);
+		Logic_SetOriginFrom(l, e);
 	}
 	return 0;
 }
@@ -148,14 +148,14 @@ void Logic_Reset(void *logic) {
 	cDeathMatch_Init(&self->deathMatch);
 	cCTFFriends_Init(&self->ctfFriends);
 	cCTFEnemies_Init(&self->ctfEnemies);
-	self->dominEnemies.base.vftable->Init(&self->dominEnemies.base);
-	self->dominFriends.base.vftable->Init(&self->dominFriends.base);
+	Domination_Init(&self->dominEnemies);
+	Domination_Init(&self->dominFriends);
 	cNurses_Init(&self->nurses);
 	cGenCharGroup_Init(&self->genChars);
 	cGateKeepers_Init(&self->gateKeepers);
 }
 
-void Logic_Update(void *logic, float dt) {
+void LogicControl_Update(void *logic, float dt) {
 	cLogicControl *self = logic;
 	int level = -1;
 
@@ -169,8 +169,8 @@ void Logic_Update(void *logic, float dt) {
 	cDeathMatch_Update(&self->deathMatch, dt);
 	cCTFFriends_Update(&self->ctfFriends, dt);
 	cCTFEnemies_Update(&self->ctfEnemies, dt);
-	self->dominEnemies.base.vftable->Update(&self->dominEnemies.base, dt);
-	self->dominFriends.base.vftable->Update(&self->dominFriends.base, dt);
+	Domination_Update(&self->dominEnemies, dt);
+	Domination_Update(&self->dominFriends, dt);
 	AICtrl_Update(&self->aiCtrl, dt);
 	cNurses_Update(&self->nurses, dt);
 	cEnemiesTraffic_Update(&self->enemiesTraffic, dt);
@@ -198,12 +198,12 @@ void Taunts_UpdateEndTime(void *taunts) {
 /* a character on the floor below it (floorDist above the hit), 0 and an error without a floor */
 byte Logic_CharOnFloor(cEntity *e) {
 	vec3_t t1, t2, to, hit;
-	const vec3_t *p = e->vftable->GetPos(e, &t1);
+	const vec3_t *p = Entity_GetPos(e, &t1);
 
 	to.z = p->z + 0.0f;
 	to.y = p->y - 10000.0f;
 	to.x = p->x + 0.0f;
-	byte ok = Engine_TestLine(e->vftable->GetPos(e, &t2), &to, &hit, NULL);
+	byte ok = Engine_TestLine(Entity_GetPos(e, &t2), &to, &hit, NULL);
 	if (!ok) {
 		Con_Bluef("B R U T A L    E R R O R : %s was created in an invalid position.\n", e->name);
 		return 0;
@@ -211,49 +211,49 @@ byte Logic_CharOnFloor(cEntity *e) {
 	to.x = hit.x + 0.0f;
 	to.y = hit.y + WChar(e)->floorDist;
 	to.z = hit.z + 0.0f;
-	e->vftable->SetPos(e, &to);
+	Entity_SetPos(e, &to);
 	return ok;
 }
 
 /* a parked ship on the floor below it (its radius above the hit) with only its y angle */
 static byte Logic_CarOnFloor(cEntity *e) {
 	vec3_t t1, t2, to, hit;
-	const vec3_t *p = e->vftable->GetPos(e, &t1);
+	const vec3_t *p = Entity_GetPos(e, &t1);
 
 	to.z = p->z + 0.0f;
 	to.y = p->y - 10000.0f;
 	to.x = p->x + 0.0f;
-	byte ok = Engine_TestLine(e->vftable->GetPos(e, &t2), &to, &hit, NULL);
+	byte ok = Engine_TestLine(Entity_GetPos(e, &t2), &to, &hit, NULL);
 	if (!ok) {
 		Con_Bluef("B R U T A L    E R R O R : Parked Ship %s was created in an invalid position.\n", e->name);
 		return 0;
 	}
 	float r = WLife(e)->prim.radius;
 	float y;
-	if (Obj_Vtbl(e)->GetRadius(e) > r) {
-		y = Obj_Vtbl(e)->GetRadius(e);
+	if (Obj_GetRadius(e) > r) {
+		y = Obj_GetRadius(e);
 	} else {
 		y = WLife(e)->prim.radius;
 	}
 	to.y = y + hit.y;
 	to.x = hit.x + 0.0f;
 	to.z = hit.z + 0.0f;
-	e->vftable->SetPos(e, &to);
-	const vec3_t *a = Obj_Vtbl(e)->GetAng(e, &t2);
+	Entity_SetPos(e, &to);
+	const vec3_t *a = Obj_GetAng(e, &t2);
 	to.y = a->y;
 	to.x = 0.0f;
 	to.z = 0.0f;
-	Obj_Vtbl(e)->SetAng(e, &to);
+	Obj_SetAng(e, &to);
 	return ok;
 }
 
 byte Logic_SetOnFloor(cEntity *e) {
 	if (e) {
-		if (e->vftable->IsType(e, TYEN_WALKCHAR)) {
+		if (Entity_IsType(e, TYEN_WALKCHAR)) {
 			Logic_CharOnFloor(e);
 			return 0;
 		}
-		if (e->vftable->IsType(e, TYEN_CAR)) {
+		if (Entity_IsType(e, TYEN_CAR)) {
 			Logic_CarOnFloor(e);
 		}
 	}

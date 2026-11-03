@@ -202,7 +202,7 @@ byte Net_ModifyUsrData(int arg) {
 		Con_Warnf("WARNING : ServerModifyUsrData(%d) : Client does not exists.\n", arg);
 		return 0;
 	}
-	c->user->vftable->SetLocalData(c->user);
+	NetMan_SetLocalData(c->user);
 	return 1;
 }
 

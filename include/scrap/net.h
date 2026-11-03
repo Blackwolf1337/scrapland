@@ -66,10 +66,32 @@ typedef struct cUserNetManagerVtbl {
 	void(*SetLocalData)(cUserNetManager *self);					/* 0x0c */
 } cUserNetManagerVtbl;
 
+/* calls through the slots of cUserNetManagerVtbl */
+static inline cUserNetManager *NetMan_Delete(void *self, byte flags) {
+	return VT(cUserNetManagerVtbl, self)->Delete(self, flags);
+}
+
+static inline void NetMan_OnReceive(void *self, void *data, int size, void *ctl, int ctlSize) {
+	VT(cUserNetManagerVtbl, self)->OnReceive(self, data, size, ctl, ctlSize);
+}
+
+static inline void NetMan_Send(void *self, uint32_t time) {
+	VT(cUserNetManagerVtbl, self)->Send(self, time);
+}
+
+static inline void NetMan_SetLocalData(void *self) {
+	VT(cUserNetManagerVtbl, self)->SetLocalData(self);
+}
+
 typedef struct cServerNetManagerVtbl {
 	cUserNetManagerVtbl base;
 	void(*SendHello)(cUserNetManager *self, byte type);				/* 0x10 */
 } cServerNetManagerVtbl;
+
+/* calls through the slots of cServerNetManagerVtbl */
+static inline void ServerNet_SendHello(void *self, byte type) {
+	VT(cServerNetManagerVtbl, self)->SendHello(self, type);
+}
 
 /* the base of the user managers (msgman.cpp, 0xc bytes), made by g_NetUserFactory for each cNetClient */
 struct cUserNetManager {
@@ -144,7 +166,7 @@ typedef cUserNetManager *(*netuserfactory_t)(cNetClient *client, int slot);
 
 /* the time of the net code: CApp GetTime in milliseconds (x87 multiply, __dtoui3) */
 static inline uint32_t Net_TimeMs(void) {
-	return Float_ToU32(((g_pApp->vftable->GetTime(g_pApp)) * 1000.0));
+	return Float_ToU32(((App_GetTime(g_pApp)) * 1000.0));
 }
 
 /* exe functions of other modules */

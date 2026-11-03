@@ -317,11 +317,11 @@ void InputMaps_Done(void) {
 static void cPad_Update(cPad *pad) {
 	double next = (double)(pad->time + 0.05f);
 
-	if (!(g_pApp->vftable->GetGameTime(g_pApp) > next)) {
+	if (!(App_GetGameTime(g_pApp) > next)) {
 		return;
 	}
-	float d = (float)g_pApp->vftable->GetGameTime(g_pApp) - pad->time;
-	pad->time = (float)g_pApp->vftable->GetGameTime(g_pApp);
+	float d = (float)App_GetGameTime(g_pApp) - pad->time;
+	pad->time = (float)App_GetGameTime(g_pApp);
 	float rem = pad->duration - d;
 	pad->duration = rem;
 	if (0.0f >= rem || g_CurActionSet == 0 || (g_SplitScreenGame && g_CurActionSet == 2)) {

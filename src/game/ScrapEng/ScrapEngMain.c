@@ -406,11 +406,11 @@ void Engine_Init(void) {
 	g_MapTextSavingOn = g_ComputeMapTextSaving == 1;
 	CD3DApplication *m = g_Engine;
 	if (!APP_DEDICATED(g_pApp)) {
-		if (m->vftable->Create(m, hInst) < 0) {
+		if (D3DApp_Create(m, hInst) < 0) {
 			Err_Printf(1, "Engine3D initialization error");
 		}
 	} else {
-		m->vftable->OneTimeSceneInit(m);
+		D3DApp_OneTimeSceneInit(m);
 	}
 	/* differs from the original on purpose (no blocking waits): a video plays on from the message loop, the steps after
 	 * it run from Engine_VideoResume */
@@ -434,10 +434,10 @@ int Engine_IsFullScreen(void) {
 
 void Engine_LevelEnd(void) {
 	CHECK(g_Engine);
-	if (g_Engine->vftable->DeleteDeviceObjects(g_Engine) < 0) {
+	if (D3DApp_DeleteDeviceObjects(g_Engine) < 0) {
 		Err_Printf(1, "ERROR: LevelEndEngine3D()");
 	}
-	if (g_Engine->vftable->FinalCleanup(g_Engine) < 0) {
+	if (D3DApp_FinalCleanup(g_Engine) < 0) {
 		Err_Printf(1, "ERROR: LevelEndEngine3D()");
 	}
 	Splash_Show("2D/Loading/00Black.dds", 0, 0, 0);
@@ -484,12 +484,12 @@ void Engine_LevelInit(void) {
 	Loading_Step(0);
 	void *dev = g_Engine->device;
 	g_Engine->device = NULL;
-	if (g_Engine->vftable->OneTimeSceneInit(g_Engine) < 0) {
+	if (D3DApp_OneTimeSceneInit(g_Engine) < 0) {
 		Err_Printf(1, "ERROR: LevelInitEngine3D()");
 	}
 	g_Engine->device = dev;
 	if (!APP_DEDICATED(g_pApp)) {
-		if (g_Engine->vftable->InitDeviceObjects(g_Engine) < 0) {
+		if (D3DApp_InitDeviceObjects(g_Engine) < 0) {
 			Err_Printf(1, "ERROR: LevelInitEngine3D()");
 		}
 	}

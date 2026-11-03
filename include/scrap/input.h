@@ -140,6 +140,39 @@ typedef struct cAbstractIDeviceVtbl {
 	byte(*SetEntry)(cAbstractIDevice *self, int entry, int set, int player, int action, byte check);	/* 0x20 */
 } cAbstractIDeviceVtbl;
 
+/* calls through the slots of cAbstractIDeviceVtbl */
+static inline const char *InputDev_GetEntryLabel(void *self, int entry) {
+	return VT(cAbstractIDeviceVtbl, self)->GetEntryLabel(self, entry);
+}
+
+static inline const char *InputDev_GetEntryName(void *self, int entry) {
+	return VT(cAbstractIDeviceVtbl, self)->GetEntryName(self, entry);
+}
+
+static inline const char *InputDev_GetName(void *self) {
+	return VT(cAbstractIDeviceVtbl, self)->GetName(self);
+}
+
+static inline byte InputDev_IsReserved(void *self, int entry) {
+	return VT(cAbstractIDeviceVtbl, self)->IsReserved(self, entry);
+}
+
+static inline void InputDev_SetDefaults(void *self) {
+	VT(cAbstractIDeviceVtbl, self)->SetDefaults(self);
+}
+
+static inline byte InputDev_SetEntry(void *self, int entry, int set, int player, int action, byte check) {
+	return VT(cAbstractIDeviceVtbl, self)->SetEntry(self, entry, set, player, action, check);
+}
+
+static inline void InputDev_SetGameDefaults(void *self) {
+	VT(cAbstractIDeviceVtbl, self)->SetGameDefaults(self);
+}
+
+static inline void InputDev_Update(void *self, float dt) {
+	VT(cAbstractIDeviceVtbl, self)->Update(self, dt);
+}
+
 /* the engine variable of a device: its bindings as lines of Scrap.cfg */
 typedef struct cFuncGvarDevices {
 	cFuncGvar base;			/* 0x00 the variable is named after the device */

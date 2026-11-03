@@ -37,8 +37,8 @@ cBaseLocalLogic *cBaseLocalLogic_ctor(cBaseLocalLogic *self, cEntity *parent) {
 	self->target.data = NULL;
 	self->target.next = &self->target;
 	self->target.prev = &self->target;
-	self->origin = *parent->vftable->GetPos(parent, &tmp);
-	CHECK(!strcmp(parent->vftable->GetClassName(parent), TYEN_WALKCHAR));
+	self->origin = *Entity_GetPos(parent, &tmp);
+	CHECK(!strcmp(Entity_GetClassName(parent), TYEN_WALKCHAR));
 	ang = WChar(parent)->view;
 	vec3_t dir = { 0.0f, 0.0f, -1.0f };
 	self->originAng = *Vec3_Rotate(&out, &dir, &ang);
@@ -94,7 +94,7 @@ static byte Logic_ViewTest(cEntity *viewer, const vec3_t *pos, const vec3_t *vp,
 		return 0;
 	}
 	const vec3_t *a = Vec3_GetRotAng(&rot, &d);
-	const vec3_t *s = Obj_Vtbl(viewer)->GetSndAng(viewer, &sa);
+	const vec3_t *s = Obj_GetSndAng(viewer, &sa);
 	diff.y = s->y - a->y;
 	diff.x = s->x - a->x;
 	diff.z = s->z - a->z;
@@ -106,7 +106,7 @@ static byte Logic_ViewTest(cEntity *viewer, const vec3_t *pos, const vec3_t *vp,
 		return 0;
 	}
 	if (testLine) {
-		return !Engine_TestLine(lineFrom, viewer->vftable->GetPos(viewer, &tmp), NULL, NULL);
+		return !Engine_TestLine(lineFrom, Entity_GetPos(viewer, &tmp), NULL, NULL);
 	}
 	return 1;
 }
@@ -114,7 +114,7 @@ static byte Logic_ViewTest(cEntity *viewer, const vec3_t *pos, const vec3_t *vp,
 byte Logic_InView(cEntity *viewer, const vec3_t *pos, float dist, float fovY, float fovX, byte testLine) {
 	vec3_t tmp;
 
-	return Logic_ViewTest(viewer, pos, viewer->vftable->GetPos(viewer, &tmp), dist, fovY, fovX, testLine, pos);
+	return Logic_ViewTest(viewer, pos, Entity_GetPos(viewer, &tmp), dist, fovY, fovX, testLine, pos);
 }
 
 cEntity *Logic_FindInView(cEntity *viewer, cEntityListData *list, float dist, float fovY, float fovX, byte testLine,
@@ -123,11 +123,11 @@ cEntity *Logic_FindInView(cEntity *viewer, cEntityListData *list, float dist, fl
 
 	for (Nto1Node *n = Logic_ListFirst(list); n; n = Logic_ListNext(n)) {
 		cEntity *c = n->data;
-		if (viewer == c || !c->vftable->IsType(c, TYEN_WALKCHAR)) {
+		if (viewer == c || !Entity_IsType(c, TYEN_WALKCHAR)) {
 			continue;
 		}
-		const vec3_t *from = c->vftable->GetPos(c, &t1);
-		const vec3_t *vp = viewer->vftable->GetPos(viewer, &t2);
+		const vec3_t *from = Entity_GetPos(c, &t1);
+		const vec3_t *vp = Entity_GetPos(viewer, &t2);
 		if (!Logic_ViewTest(viewer, from, vp, dist, fovY, fovX, testLine, from)) {
 			continue;
 		}
@@ -169,18 +169,18 @@ static void Logic_ShowChar(Nto1Node *node, const char **names) {
 
 	cEntity *e = node->data;
 	cBaseLocalLogic *l = e->lLogic;
-	e->vftable->GetPos(e, &p);
+	Entity_GetPos(e, &p);
 	int st = l->state;
-	cAIChar *ai = e->vftable->GetAI(e);
-	ai->vftable->GetStateName(&ai->base.base, state);
-	ai->vftable->GetInternStateName(&ai->base.base, sub);
+	cAIChar *ai = Entity_GetAI(e);
+	AIChar_GetStateName(ai, state);
+	AIChar_GetInternStateName(ai, sub);
 	cEntity *t = l->target.target;
 	if (t) {
-		DebugUtils_DrawLine(&p, t->vftable->GetPos(t, &tmp), 0xff0000);
+		DebugUtils_DrawLine(&p, Entity_GetPos(t, &tmp), 0xff0000);
 	} else {
-		ai = e->vftable->GetAI(e);
-		if (ai && ai->vftable->GetState(&ai->base.base) == 4) {
-			ai->vftable->SaveTo(&ai->base.base, &goal);
+		ai = Entity_GetAI(e);
+		if (ai && AIChar_GetState(ai) == 4) {
+			AIChar_SaveTo(ai, &goal);
 			DebugUtils_DrawLine(&p, &goal.dest, 0xff0000);
 		}
 	}
@@ -207,7 +207,7 @@ static void Logic_ShowChar(Nto1Node *node, const char **names) {
 static void Logic_ShowChars(Nto1Node *node, const char **names, byte visible) {
 	for (; node; node = Logic_ListNext(node)) {
 		cEntity *e = node->data;
-		if (!visible || CGameModel_IsVisible(Obj_Vtbl(e)->GetModel(e))) {
+		if (!visible || CGameModel_IsVisible(Obj_GetModel(e))) {
 			Logic_ShowChar(node, names);
 		}
 	}
@@ -221,14 +221,14 @@ static void Logic_ShowShip(cEntity *e) {
 	if (!e) {
 		return;
 	}
-	e->vftable->GetPos(e, &p);
-	cAIVehicle *ai = e->vftable->GetAI(e);
+	Entity_GetPos(e, &p);
+	cAIVehicle *ai = Entity_GetAI(e);
 	cAIVehicle_GetStateName(ai, state);
 	cAIVehicle_GetInternStateName(ai, sub);
 	int st = cAIVehicle_GetState(ai);
-	if ((st == AIV_STATE_ATTACK || st == AIV_STATE_CHASE) && ai->vftable->GetTargetEnt(&ai->base.base)) {
-		cEntity *t = ai->vftable->GetTargetEnt(&ai->base.base);
-		DebugUtils_DrawLine(&p, t->vftable->GetPos(t, &lp), 0xff0000);
+	if ((st == AIV_STATE_ATTACK || st == AIV_STATE_CHASE) && AIMove_GetTargetEnt(ai)) {
+		cEntity *t = AIMove_GetTargetEnt(ai);
+		DebugUtils_DrawLine(&p, Entity_GetPos(t, &lp), 0xff0000);
 	}
 	g_FontTerminal8->color = 0xffffff;
 	lp.x = p.x + 0.0f;
@@ -245,10 +245,10 @@ static void Logic_ShowShip(cEntity *e) {
 /* every ship of the world with an AI and a visible model */
 void Logic_ShowShips(void) {
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
-		if (!e->vftable->IsType(e, TYEN_CAR) || !e->vftable->IsType(e, TYEN_CAR) || !e->vftable->GetAI(e)) {
+		if (!Entity_IsType(e, TYEN_CAR) || !Entity_IsType(e, TYEN_CAR) || !Entity_GetAI(e)) {
 			continue;
 		}
-		CGameModel *m = Obj_Vtbl(e)->GetModel(e);
+		CGameModel *m = Obj_GetModel(e);
 		if (m && CGameModel_IsVisible(m)) {
 			Logic_ShowShip(e);
 		}
@@ -261,7 +261,7 @@ static void Logic_ShowShipList(const char *name, byte visible) {
 
 	for (Nto1Node *n = Logic_ListFirst(list); n; n = Logic_ListNext(n)) {
 		cEntity *e = n->data;
-		if (visible && !CGameModel_IsVisible(Obj_Vtbl(e)->GetModel(e))) {
+		if (visible && !CGameModel_IsVisible(Obj_GetModel(e))) {
 			continue;
 		}
 		Logic_ShowShip(Logic_AsCar(e));
@@ -341,7 +341,7 @@ byte cBaseLocalLogic_VarF(cLocalLogic *base, const char *name, double *d, byte s
 		return 0;
 	}
 	if (set) {
-		self->vftable->SetActionRadius(&self->logic, (float)*d);
+		Logic_SetActionRadius(self, (float)*d);
 		return 1;
 	}
 	*d = (double)self->actionRadius;
@@ -359,11 +359,11 @@ byte cLocalLogic_VarVNone(cLocalLogic *self, const char *name, double *x, double
 }
 
 cLocalLogic *Logic_GetLocalLogic(cEntity *e) {
-	if (!e || !e->vftable->IsType(e, TYEN_WALKCHAR)) {
+	if (!e || !Entity_IsType(e, TYEN_WALKCHAR)) {
 		return NULL;
 	}
 	cLocalLogic *l = e->lLogic;
-	if (l && !strcmp(l->vftable->GetName(l), "BaseLogic")) {
+	if (l && !strcmp(LocalLogic_GetName(l), "BaseLogic")) {
 		return l;
 	}
 	return NULL;
@@ -385,13 +385,13 @@ void cBaseLocalLogic_Refresh(cLocalLogic *base) {
 	cBaseLocalLogic *self = (cBaseLocalLogic *)base;
 	cEntity *p = self->parent;
 
-	if (self->idle || self->alwaysLock || self->busy || !p->vftable->IsType(p, TYEN_WALKCHAR)) {
+	if (self->idle || self->alwaysLock || self->busy || !Entity_IsType(p, TYEN_WALKCHAR)) {
 		return;
 	}
-	cAIChar *ai = p->vftable->GetAI(p);
-	if (ai->vftable->GetState(&ai->base.base) == 6) {
+	cAIChar *ai = Entity_GetAI(p);
+	if (AIChar_GetState(ai) == 6) {
 		self->idle = 1;
-		self->vftable->SetState(&self->logic, self->state, self->target.target);
+		Logic_SetState(self, self->state, self->target.target);
 	}
 }
 
@@ -411,7 +411,7 @@ byte cBaseLocalLogic_VarI(cLocalLogic *base, const char *name, int *i, byte set)
 	}
 	if (!strcmp(name, "Idle")) {
 		if (set) {
-			self->vftable->SetIdle(&self->logic, *i != 0);
+			Logic_SetIdle(self, *i != 0);
 			return 1;
 		}
 		*i = self->idle || self->alwaysLock;
@@ -434,8 +434,8 @@ void cBaseLocalLogic_Update(cLocalLogic *base, float dt) {
 	byte busy = self->busy;
 	cEntity *p = self->parent;
 
-	if (self->vftable->UpdateBusy(&self->logic) != busy) {
-		self->vftable->SetIdle(&self->logic, self->busy);
+	if (Logic_UpdateBusy(self) != busy) {
+		Logic_SetIdle(self, self->busy);
 	}
 	if ((self->idle || self->alwaysLock) && !self->busy && cActCtrl_IsActive(ChType_ActCtrl(p), "Relax")) {
 		float ax = WChar(p)->view.x;
@@ -454,7 +454,7 @@ void cBaseLocalLogic_Update(cLocalLogic *base, float dt) {
 			if (t && t != cWorld_GetUsrEntity(g_pWorld, 0) &&
 				strcmp(ChType_ActClass(ChType_ActCtrl(t))->name, g_NotCleanableByGear)) {
 				cEntity *victim = t;
-				if (t->vftable->IsType(t, TYEN_WALKCHAR) &&
+				if (Entity_IsType(t, TYEN_WALKCHAR) &&
 					(!strcmp(ChType_ActClass(ChType_ActCtrl(t))->name, "Gear") ||
 					Obj(t)->radarShow)) {
 					victim = p;
@@ -481,7 +481,7 @@ void cBaseLocalLogic_Update(cLocalLogic *base, float dt) {
 
 void cBaseLocalLogic_OnShot(cLocalLogic *base, cEntity *attacker) {
 	cBaseLocalLogic *self = (cBaseLocalLogic *)base;
-	self->vftable->OnHit(&self->logic, attacker);
+	Logic_OnHit(self, attacker);
 }
 
 /* the origin and its angles from the position and the angles of e */
@@ -489,10 +489,10 @@ void cBaseLocalLogic_SetOriginFrom(cLocalLogic *base, cEntity *e) {
 	cBaseLocalLogic *self = (cBaseLocalLogic *)base;
 	vec3_t tmp;
 
-	const vec3_t *p = e->vftable->GetPos(e, &tmp);
-	self->vftable->SetOrigin(&self->logic, p->x, p->y, p->z);
-	p = Obj_Vtbl(e)->GetAng(e, &tmp);
-	self->vftable->SetOriginAng(&self->logic, p->x, p->y, p->z);
+	const vec3_t *p = Entity_GetPos(e, &tmp);
+	Logic_SetOrigin(self, p->x, p->y, p->z);
+	p = Obj_GetAng(e, &tmp);
+	Logic_SetOriginAng(self, p->x, p->y, p->z);
 }
 
 /* a random true or false (arg unused) */
@@ -508,27 +508,27 @@ void cBaseLocalLogic_SetActionRadius(cLocalLogic *base, float radius) {
 	cBaseLocalLogic *self = (cBaseLocalLogic *)base;
 	if (self->actionRadius != radius) {
 		self->actionRadius = radius;
-		self->vftable->Refresh(&self->logic);
+		Logic_Refresh(self);
 	}
 }
 
 void cBaseLocalLogic_RestartState(cLocalLogic *base) {
 	cBaseLocalLogic *self = (cBaseLocalLogic *)base;
-	self->vftable->SetState(&self->logic, self->state, self->target.target);
+	Logic_SetState(self, self->state, self->target.target);
 }
 
 /* not idle: the state again; idle: the AI of the character in state 0 */
 void cBaseLocalLogic_SetIdle(cLocalLogic *base, byte idle) {
 	cBaseLocalLogic *self = (cBaseLocalLogic *)base;
 	if (!idle && !self->busy && !self->alwaysLock) {
-		self->vftable->SetState(&self->logic, self->state, self->target.target);
+		Logic_SetState(self, self->state, self->target.target);
 		return;
 	}
 	CHECK(self->parent);
-	CHECK(self->parent->vftable->IsType(self->parent, TYEN_WALKCHAR));
-	if (self->parent->vftable->GetAI(self->parent)) {
-		cAIChar *ai = self->parent->vftable->GetAI(self->parent);
-		ai->vftable->SetState(&ai->base.base, 0);
+	CHECK(Entity_IsType(self->parent, TYEN_WALKCHAR));
+	if (Entity_GetAI(self->parent)) {
+		cAIChar *ai = Entity_GetAI(self->parent);
+		AIChar_SetState(ai, 0);
 	}
 	self->idle = 1;
 }
@@ -539,7 +539,7 @@ void cBaseLocalLogic_SetOrigin(cLocalLogic *base, float x, float y, float z) {
 		self->origin.x = x;
 		self->origin.y = y;
 		self->origin.z = z;
-		self->vftable->Refresh(&self->logic);
+		Logic_Refresh(self);
 	}
 }
 
@@ -549,7 +549,7 @@ void cBaseLocalLogic_SetOriginAng(cLocalLogic *base, float x, float y, float z) 
 		self->originAng.x = x;
 		self->originAng.y = y;
 		self->originAng.z = z;
-		self->vftable->Refresh(&self->logic);
+		Logic_Refresh(self);
 	}
 }
 
@@ -576,7 +576,7 @@ byte cBaseLocalLogic_VarS(cLocalLogic *base, const char *name, char **s, byte se
 		return 0;
 	}
 	if (set) {
-		self->vftable->SetState(&self->logic, self->state, World_FindEntity(*s));
+		Logic_SetState(self, self->state, World_FindEntity(*s));
 		return 1;
 	}
 	cEntity *t = self->target.target;
@@ -588,7 +588,7 @@ byte cBaseLocalLogic_VarV(cLocalLogic *base, const char *name, double *x, double
 	cBaseLocalLogic *self = (cBaseLocalLogic *)base;
 	if (!strcmp(name, "Origin")) {
 		if (set) {
-			self->vftable->SetOrigin(&self->logic, (float)*x, (float)*y, (float)*z);
+			Logic_SetOrigin(self, (float)*x, (float)*y, (float)*z);
 			return 1;
 		}
 		*x = (double)self->origin.x;
@@ -598,7 +598,7 @@ byte cBaseLocalLogic_VarV(cLocalLogic *base, const char *name, double *x, double
 	}
 	if (!strcmp(name, "OriginAng")) {
 		if (set) {
-			self->vftable->SetOriginAng(&self->logic, (float)*x, (float)*y, (float)*z);
+			Logic_SetOriginAng(self, (float)*x, (float)*y, (float)*z);
 			return 1;
 		}
 		*x = (double)self->originAng.x;

@@ -23,6 +23,11 @@ typedef struct IFXTextureVtbl {
 	void *(*GetTexture)(IFXTexture *self);			/* 0x8 */
 } IFXTextureVtbl;
 
+/* calls through the slots of IFXTextureVtbl */
+static inline IFXTexture *FXTexture_Delete(void *self, byte flags) {
+	return VT(IFXTextureVtbl, self)->Delete(self, flags);
+}
+
 struct IFXTexture {
 	const IFXTextureVtbl *vftable;	/* 0x0 */
 };

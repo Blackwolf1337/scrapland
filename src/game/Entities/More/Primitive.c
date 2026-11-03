@@ -46,7 +46,7 @@ static byte cPrimitive_SegHit(cPrimitive *self, const vec3_t *a, vec3_t *p) {
 		return 0;
 	}
 	hit = *p;
-	const vec3_t *c = self->owner->vftable->GetPos(self->owner, &pos);
+	const vec3_t *c = Entity_GetPos(self->owner, &pos);
 	if (!Collision_SegSphere(a, p, c->x, c->y, c->z, self->radius, &hit)) {
 		return 0;
 	}
@@ -85,7 +85,7 @@ static byte cPrimitive_SphereHit(cPrimitive *self, cEntity *other, const vec3_t 
 	if (!self->on) {
 		return 0;
 	}
-	const vec3_t *p = self->owner->vftable->GetPos(self->owner, &pos);
+	const vec3_t *p = Entity_GetPos(self->owner, &pos);
 	if (prev) {
 		d2 = Dist2_PointSegment(c, prev, p, NULL);
 	} else {
@@ -99,7 +99,7 @@ static byte cPrimitive_SphereHit(cPrimitive *self, cEntity *other, const vec3_t 
 		return 0;
 	}
 	if (!g_pWorld->testing && other) {
-		p = self->owner->vftable->GetPos(self->owner, &pos);
+		p = Entity_GetPos(self->owner, &pos);
 		float dx = c->x - p->x;
 		float dy = c->y - p->y;
 		float dz = c->z - p->z;
@@ -118,11 +118,11 @@ static byte cPrimitive_SphereHit(cPrimitive *self, cEntity *other, const vec3_t 
 		float ox = n.x * rad;
 		float oy = n.y * rad;
 		float oz = n.z * rad;
-		p = self->owner->vftable->GetPos(self->owner, &pos);
+		p = Entity_GetPos(self->owner, &pos);
 		q.x = p->x + ox;
 		q.y = p->y + oy;
 		q.z = p->z + oz;
-		other->vftable->Touch(other, self->owner, &q, &n);
+		Entity_Touch(other, self->owner, &q, &n);
 	}
 	return 1;
 }

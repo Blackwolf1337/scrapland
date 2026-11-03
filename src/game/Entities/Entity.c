@@ -274,7 +274,7 @@ byte cEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	}
 	if (!strcmp(name, "Active")) {
 		if ((byte)set) {
-			self->vftable->SetActive(self, *i != 0);
+			Entity_SetActive(self, *i != 0);
 		} else {
 			*i = self->active != 0;
 		}
@@ -286,7 +286,7 @@ byte cEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 			return 1;
 		}
 		if (!strcmp(name, "isAI")) {
-			*i = self->vftable->GetAI(self) != NULL;
+			*i = Entity_GetAI(self) != NULL;
 			return 1;
 		}
 	}
@@ -351,7 +351,7 @@ void cEntity_SetActive(cEntity *self, byte on) {
 
 void cEntity_SetEmbeddedFX(cEntity *self, const char *fxType) {
 	(void)fxType;
-	Con_Warnf("WARNING %s::SetFX() not implemented!\n", self->vftable->GetClassName(self));
+	Con_Warnf("WARNING %s::SetFX() not implemented!\n", Entity_GetClassName(self));
 }
 
 void cEntity_SetModel(cEntity *self, const char *file, float sx, float sy, float sz, int flag) {
@@ -360,7 +360,7 @@ void cEntity_SetModel(cEntity *self, const char *file, float sx, float sy, float
 	(void)sy;
 	(void)sz;
 	(void)flag;
-	Con_Warnf("WARNING %s::SetModel() not implemented!\n", self->vftable->GetClassName(self));
+	Con_Warnf("WARNING %s::SetModel() not implemented!\n", Entity_GetClassName(self));
 }
 
 void cEntity_SetPos(cEntity *self, const vec3_t *pos) {
@@ -409,7 +409,7 @@ byte cEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 		return 1;
 	}
 	if (!strcmp(name, "Type") && !(byte)set) {
-		*s = (char *)self->vftable->GetClassName(self);
+		*s = (char *)Entity_GetClassName(self);
 		return 1;
 	}
 	return 0;
@@ -439,9 +439,9 @@ byte cEntity_VarV(cEntity *self, const char *name, double *x, double *y, double 
 			v.x = (float)*x;
 			v.y = (float)*y;
 			v.z = (float)*z;
-			self->vftable->SetPos(self, &v);
+			Entity_SetPos(self, &v);
 		} else {
-			self->vftable->GetPos(self, &v);
+			Entity_GetPos(self, &v);
 			*x = v.x;
 			*y = v.y;
 			*z = v.z;

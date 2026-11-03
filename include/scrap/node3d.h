@@ -52,6 +52,35 @@ typedef struct IObject3DVtbl {
 	byte(*Read)(IObject3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);		/* 0x18 */
 } IObject3DVtbl;
 
+/* calls through the slots of IObject3DVtbl */
+static inline IObject3D *Object3D_Delete(void *self, byte flags) {
+	return VT(IObject3DVtbl, self)->Delete(self, flags);
+}
+
+static inline void Object3D_InitD3D(void *self, void *dev) {
+	VT(IObject3DVtbl, self)->InitD3D(self, dev);
+}
+
+static inline byte Object3D_Read(void *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	return VT(IObject3DVtbl, self)->Read(self, f, ctx);
+}
+
+static inline void Object3D_ReleaseD3D(void *self, void *dev) {
+	VT(IObject3DVtbl, self)->ReleaseD3D(self, dev);
+}
+
+static inline void Object3D_Render(void *self, void *dev, CRenderNode *r) {
+	VT(IObject3DVtbl, self)->Render(self, dev, r);
+}
+
+static inline void Object3D_Update(void *self, CRenderNode *r) {
+	VT(IObject3DVtbl, self)->Update(self, r);
+}
+
+static inline byte Object3D_Write(void *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	return VT(IObject3DVtbl, self)->Write(self, f, ctx);
+}
+
 struct IObject3D {
 	const IObject3DVtbl *vftable;	/* 0x0 */
 	uint32_t class;			/* 0x4 */
@@ -64,6 +93,11 @@ typedef struct ObjRef ObjRef;
 typedef struct ObjRefVtbl {
 	ObjRef *(*Delete)(ObjRef *self, byte flags);	/* 0x0 */
 } ObjRefVtbl;
+
+/* calls through the slots of ObjRefVtbl */
+static inline ObjRef *ObjRef_Delete(void *self, byte flags) {
+	return VT(ObjRefVtbl, self)->Delete(self, flags);
+}
 
 typedef struct ObjRef {
 	const ObjRefVtbl *vftable;	/* 0x0 */
@@ -79,7 +113,7 @@ static inline void ObjRef_Release(void *slot) {
 		(*dst)->Refs--;
 		ObjRef *o = *dst;
 		if (!o->Refs && o) {
-			o->vftable->Delete(o, 1);
+			ObjRef_Delete(o, 1);
 		}
 		*dst = NULL;
 	}
@@ -92,7 +126,7 @@ static inline void ObjRef_Drop(void *slot) {
 		(*dst)->Refs--;
 		ObjRef *o = *dst;
 		if (!o->Refs && o) {
-			o->vftable->Delete(o, 1);
+			ObjRef_Delete(o, 1);
 		}
 		*dst = NULL;
 	}

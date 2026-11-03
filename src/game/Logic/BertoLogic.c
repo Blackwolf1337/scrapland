@@ -58,7 +58,7 @@ void cBertoLocalLogic_ReleaseDesktop(cLocalLogic *elem) {
 void cBertoLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cBertoLocalLogic *self = (cBertoLocalLogic *)elem;
 	if (self->isDefault && !cFunctionaryLocalLogic_GetDesktop(&self->base)) {
-		Functionary_Vtbl(self)->AssignDesktop(&self->base.base.base.logic, 0);
+		Functionary_AssignDesktop(self, 0);
 		self->isDefault = 0;
 	}
 	cFunctionaryLocalLogic_Update(&self->base.base.base.logic, dt);
@@ -71,7 +71,7 @@ static vec3_t *cBertoLocalLogic_GetWorkAng(cLocalLogic *elem, vec3_t *out) {
 
 	CHECK(cFunctionaryLocalLogic_GetDesktop(&self->base));
 	cEntity *d = cFunctionaryLocalLogic_GetDesktop(&self->base);
-	const vec3_t *a = Obj_Vtbl(d)->GetAng(d, &tmp);
+	const vec3_t *a = Obj_GetAng(d, &tmp);
 	out->x = a->x - 0.0f;
 	out->y = a->y - 1.57079637f;
 	out->z = a->z - 0.0f;

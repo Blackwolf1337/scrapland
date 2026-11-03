@@ -52,7 +52,7 @@ static inline cEntity *VE_Ent(cVehicleEntity *v) {
 }
 
 static inline CGameModel *VE_Model(cVehicleEntity *v) {
-	return Obj_Vtbl(Veh_Ent(v))->GetModel(Veh_Ent(v));
+	return Obj_GetModel(Veh_Ent(v));
 }
 
 /* the element of a new debris of the effect file with the life, made when the debris has none; noRadius: the
@@ -69,7 +69,7 @@ static void *VE_Drop(const char *file, float life, byte noRadius, uint32_t size,
 		void *mem = operator_new(size);
 		cObjElementFX *el = mem ? ctor(mem) : NULL;
 		d->fx = el;
-		el->vftable->Start(el, d);
+		FXObj_Start(el, d);
 	}
 	return Debris_Element(d);
 }
@@ -239,7 +239,7 @@ static void cVehicleTrails_Update(cVehicleTrails *self, float dt) {
 		}
 	}
 	Float_Approach(&self->fade, f, dt);
-	Obj_Vtbl(Veh_Ent(self->owner))->GetViewPos(Veh_Ent(self->owner), &c);
+	Obj_GetViewPos(Veh_Ent(self->owner), &c);
 	float seg = g_FXVehicleSpeedTrailDist;
 	Float_Approach(&self->segment, Float_MaxSS(seg * 0.25f, seg - __builtin_fabsf(v.x * 0.5f)), dt * 1500.0f);
 	float dx = c.x - self->last.x, dy = c.y - self->last.y, dz = c.z - self->last.z;
@@ -351,7 +351,7 @@ void cVehicleEffects_SetActive(cVehicleEffects *self, byte on) {
 /* the CHECKs of the owner setters */
 static void VE_CheckOwner(cEntity *e) {
 	CHECK(e);
-	CHECK(e->vftable->IsType(e, TYEN_VEHICLE));
+	CHECK(Entity_IsType(e, TYEN_VEHICLE));
 }
 
 void cVehicleEffects_SetOwner(cVehicleEffects *self, cEntity *e) {
@@ -529,9 +529,9 @@ void cVehicleEffects_UpdateState(cVehicleEffects *self, float dt) {
 	float ax = o->smoothAng.x, ay = o->smoothAng.y;
 	v.x = 0.0f;
 	v.y = 0.0f;
-	v.z = -Obj_Vtbl(Veh_Ent(o))->GetRadius(Veh_Ent(o));
+	v.z = -Obj_GetRadius(Veh_Ent(o));
 	vec3_t *r = Vec3_RotateXY(&out, &v, ax, ay);
-	vec3_t *c = Obj_Vtbl(Veh_Ent(self->owner))->GetViewPos(Veh_Ent(self->owner), &center);
+	vec3_t *c = Obj_GetViewPos(Veh_Ent(self->owner), &center);
 	from.x = c->x + r->x;
 	from.y = c->y + r->y;
 	from.z = c->z + r->z;
@@ -752,7 +752,7 @@ static uint32_t g_WindSmokeRamps[18] = {
 static void cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float y, float z) {
 	vec3_t vel, cam, tmp, n, unit, side, ang, dir;
 
-	Obj_Vtbl(VE_Ent(self->owner))->GetVel(VE_Ent(self->owner), &vel);
+	Obj_GetVel(VE_Ent(self->owner), &vel);
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_WindFxSmokeFile);
 	cDebris *d = cDebrisSys_GetIdle(sys);
 	cam = g_pWorld->camPos[g_pWorld->curCam];
@@ -768,7 +768,7 @@ static void cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float y, f
 	}
 	CGameParticles *p = &el->particles;
 	p->birthRate = 0;
-	const vec3_t *c = Obj_Vtbl(Veh_Ent(self->owner))->GetViewPos(Veh_Ent(self->owner), &tmp);
+	const vec3_t *c = Obj_GetViewPos(Veh_Ent(self->owner), &tmp);
 	float dy = y - c->y;
 	float dx = x - c->x;
 	float dz = z - c->z;
@@ -777,7 +777,7 @@ static void cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float y, f
 	if (q > md * md) {
 		return;
 	}
-	float radius = Obj_Vtbl(Veh_Ent(self->owner))->GetRadius(Veh_Ent(self->owner));
+	float radius = Obj_GetRadius(Veh_Ent(self->owner));
 	float len = (float)__builtin_sqrt((double)q);
 	if (len == 0.0f) {
 		n.x = dx;
@@ -797,7 +797,7 @@ static void cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float y, f
 	float bx = x - back * n.x;
 	float by = y - back * n.y;
 	float bz = z - back * n.z;
-	Vec3_Rotate(&side, &unit, Obj_Vtbl(Veh_Ent(self->owner))->GetViewAng(Veh_Ent(self->owner), &ang));
+	Vec3_Rotate(&side, &unit, Obj_GetViewAng(Veh_Ent(self->owner), &ang));
 	float scale = radius / g_WindFXSmokeSizeDiv;
 	float posLo = radius * 0x1.333334p-3f;
 	float posRange = radius * 0x1.333334p+0f - posLo;

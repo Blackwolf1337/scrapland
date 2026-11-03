@@ -92,10 +92,10 @@ static void cAIBishop_CheckAttack(cAI *elem) {
 		cEntity *tgt = c->base.target.target;
 		cAICharControl *ctl = c->control;
 		cEntity *own = c->ent;
-		float r = Obj_Vtbl(own)->GetRadius(own);
-		const vec3_t *tp = tgt->vftable->GetPos(tgt, &b);
-		const vec3_t *op = own->vftable->GetPos(own, &a);
-		if (!AICC_Vtbl(ctl)->TestPath(ctl, op, tp, r)) {
+		float r = Obj_GetRadius(own);
+		const vec3_t *tp = Entity_GetPos(tgt, &b);
+		const vec3_t *op = Entity_GetPos(own, &a);
+		if (!AICC_TestPath(ctl, op, tp, r)) {
 			self->blocked = 1;
 			c->ctrl->act = 0;
 			return;
@@ -104,13 +104,13 @@ static void cAIBishop_CheckAttack(cAI *elem) {
 		c->standTime = 0.0f;
 	}
 	cEntity *tgt = c->base.target.target;
-	const vec3_t *op = c->ent->vftable->GetPos(c->ent, &a);
-	const vec3_t *tp = tgt->vftable->GetPos(tgt, &b);
+	const vec3_t *op = Entity_GetPos(c->ent, &a);
+	const vec3_t *tp = Entity_GetPos(tgt, &b);
 	d.y = tp->y - op->y;
 	d.x = tp->x - op->x;
 	d.z = tp->z - op->z;
 	float dist = (float)__builtin_sqrt((double)(d.x * d.x + 0.0f + d.z * d.z));
-	if (!c->vftable->GetDirect2(&c->base.base) || AIChar_Action0(c->ent)->priority > 0x65 || !(dist > c->actMin) ||
+	if (!AIChar_GetDirect2(c) || AIChar_Action0(c->ent)->priority > 0x65 || !(dist > c->actMin) ||
 		!(c->actMax > dist)) {
 		c->standTime = 0.0f;
 		c->ctrl->act = 0;
@@ -118,7 +118,7 @@ static void cAIBishop_CheckAttack(cAI *elem) {
 	}
 	/* the half angle of the target at its distance, the angle of the view (down z) to it */
 	cEntity *t = c->base.target.target;
-	float tr = Obj_Vtbl(t)->GetRadius(t);
+	float tr = Obj_GetRadius(t);
 	double half = atan2((double)tr, (double)dist);
 	vec3_t fwd = { 0.0f, 0.0f, -1.0f };
 	vec3_t view = WChar(c->ent)->view;
@@ -162,7 +162,7 @@ static void cAIBishop_SetShoot(cAI *elem) {
 	cAIBishop *self = (cAIBishop *)elem;
 	cEntity *t = self->base.base.target.target;
 
-	if (t->vftable->GetAI(t)) {
+	if (Entity_GetAI(t)) {
 		self->shootFactor = g_ShootBishopAIDef;
 		self->shootAng = g_OffsetAngShootBishopAIDef;
 		self->shootTime = g_TimeShootBishopAIDef;
@@ -173,7 +173,7 @@ static void cAIBishop_SetShoot(cAI *elem) {
 		self->shootTime = g_TimeShootBishopAI;
 		self->shootDist = g_DistMaxShootBishopAI;
 	}
-	self->base.vftable->SetDists(&self->base.base.base);
+	AIChar_SetDists(self);
 }
 
 /* the vtable of cAIBishop */

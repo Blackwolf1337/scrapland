@@ -85,7 +85,7 @@ static void CScene_dtor(CScene *self) {
 	Scene_DeleteIni(&self->ini);
 	Scene_DeleteIni(&self->userProp);
 	if (self->CollideMesh) {
-		self->CollideMesh->vftable->Delete(self->CollideMesh, 1);
+		Object3D_Delete(self->CollideMesh, 1);
 		self->CollideMesh = NULL;
 	}
 	E3D_DebugPrintf("\n< Escena::~Escena(): '%s' (%08Xh)", self->name, self);
@@ -157,7 +157,7 @@ void CScene_Msg(CScene *self, int msg, int a, int b, int c, int d) {
 void CScene_ReleaseD3D(CScene *self, void *dev) {
 	for (CNode3D *n = self->Node3D; n; n = n->next) {
 		if (n->obj3D) {
-			n->obj3D->vftable->ReleaseD3D(n->obj3D, dev);
+			Object3D_ReleaseD3D(n->obj3D, dev);
 		}
 	}
 }
@@ -165,7 +165,7 @@ void CScene_ReleaseD3D(CScene *self, void *dev) {
 void CScene_InitD3D(CScene *self, void *dev) {
 	for (CNode3D *n = self->Node3D; n; n = n->next) {
 		if (n->obj3D) {
-			n->obj3D->vftable->InitD3D(n->obj3D, dev);
+			Object3D_InitD3D(n->obj3D, dev);
 		}
 	}
 }
@@ -269,7 +269,7 @@ void CScene_Read(CScene *self, CFileIO *f, byte bAnim) {
 					CNode3D_SetObj3D(node, obj);
 				}
 				if (node->obj3D) {
-					CHECK(node->obj3D->vftable->Read(node->obj3D, f, &ctx));
+					CHECK(Object3D_Read(node->obj3D, f, &ctx));
 				}
 			}
 		} while (--count);
@@ -330,7 +330,7 @@ void CScene_Write(CScene *self, CFileIO *f, byte bAnim) {
 		CFileIO_WriteInt(f, n->obj3D != NULL);
 		if (n->obj3D) {
 			CFileIO_WriteInt(f, (int)CNode3D_Class(n));
-			CHECK(n->obj3D->vftable->Write(n->obj3D, f, &ctx));
+			CHECK(Object3D_Write(n->obj3D, f, &ctx));
 		}
 	}
 	CFileIO_WriteInt(f, self->AnimM3D != NULL);
@@ -460,7 +460,7 @@ void CScene_DeleteNodes(CScene *self) {
 	while (self->Node3D) {
 		CNode3D *n = self->Node3D;
 		CScene_RemoveNode(self, n);
-		n->vftable->Delete(&n->ref, 1);
+		ObjRef_Delete(n, 1);
 	}
 }
 
@@ -619,7 +619,7 @@ void CScene_DeleteEmpty(CScene *self, uint32_t class, byte bRefs, byte flagged) 
 							n->parent->name, n->flags);
 						deleted = 1;
 						CScene_RemoveNode(self, n);
-						n->vftable->Delete(&n->ref, 1);
+						ObjRef_Delete(n, 1);
 					} else {
 						E3D_LogInfo((&g_FileLog), "DEL_NODE: Node NOT deleted [Bone]: %s [parent: %s] [f:%08X]",
 							n->name, n->parent->name, n->flags);

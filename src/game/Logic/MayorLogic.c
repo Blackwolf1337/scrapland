@@ -60,7 +60,7 @@ static cEntity *cMayorLocalLogic_FindTarget(cLocalLogic *elem) {
 	cPy_Function_SetNative(&g_ChTypeSphereFunc, (nativefunc_t)Mayor_SphereFunc);
 	float radius = g_MayorBlabliblaRadius;
 	cEntity *m = g_MayorSearchEnt;
-	cWorld_SphereCallF(g_pWorld, 0x10, m->vftable->GetPos(m, &t), radius, &g_ChTypeSphereFunc, 1);
+	cWorld_SphereCallF(g_pWorld, 0x10, Entity_GetPos(m, &t), radius, &g_ChTypeSphereFunc, 1);
 	return g_MayorTarget;
 }
 
@@ -68,13 +68,13 @@ static cEntity *cMayorLocalLogic_FindTarget(cLocalLogic *elem) {
 static void cMayorLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
 	cMayorLocalLogic *self = (cMayorLocalLogic *)base;
 	(void)self;
-	ai->vftable->SetState(&ai->base.base, 1, (double)g_GenCharAlertSpeed, 0);
+	AIChar_SetState(ai, 1, (double)g_GenCharAlertSpeed, 0);
 }
 
 static void cMayorLocalLogic_ToRelax(cLocalLogic *base, cAIChar *ai) {
 	cMayorLocalLogic *self = (cMayorLocalLogic *)base;
 	(void)self;
-	ai->vftable->SetState(&ai->base.base, 1, (double)g_GenCharRelaxSpeed, 0);
+	AIChar_SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
 }
 
 /* vf17: during the special action the AI listens to the listener once */
@@ -84,10 +84,10 @@ static void cMayorLocalLogic_Update(cLocalLogic *elem, float dt) {
 		self->base.specialTime = dt + self->base.specialTime;
 		if (self->listener[0]) {
 			cEntity *p = self->base.base.parent;
-			cAIChar *ai = p->vftable->GetAI(p);
+			cAIChar *ai = Entity_GetAI(p);
 			cEntity *e = World_FindEntity(self->listener);
 			if (e) {
-				ai->vftable->SetState(&ai->base.base, 9, e, 0);
+				AIChar_SetState(ai, 9, e, 0);
 			}
 			self->listener[0] = 0;
 		}
@@ -110,13 +110,13 @@ static void Mayor_SphereFunc(cAbstractFile *params) {
 	if (!usr || usr == e || g_MayorSearchEnt == e) {
 		return;
 	}
-	e->vftable->GetPos(e, &pos);
-	if (!WithLife_Vtbl(e)->GetAction(e, "Dazed") ||
+	Entity_GetPos(e, &pos);
+	if (!WithLife_GetAction(e, "Dazed") ||
 		!Logic_InView(g_MayorSearchEnt, &pos, g_GenCharStdFar, g_GenCharStdFovY, g_GenCharStdFovX, 1)) {
 		return;
 	}
 	cEntity *m = g_MayorSearchEnt;
-	const vec3_t *mp = m->vftable->GetPos(m, &t);
+	const vec3_t *mp = Entity_GetPos(m, &t);
 	float dy = pos.y - mp->y, dx = pos.x - mp->x, dz = pos.z - mp->z;
 	float d = dy * dy + dx * dx + dz * dz;
 	if (g_MayorTargetDist > d) {

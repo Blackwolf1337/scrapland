@@ -54,6 +54,11 @@ typedef struct CModelVtbl {
 	struct CModel *(*Delete)(struct CModel *self, byte flags);	/* 0x00 */
 } CModelVtbl;
 
+/* calls through the slots of CModelVtbl */
+static inline struct CModel *Model_Delete(void *self, byte flags) {
+	return VT(CModelVtbl, self)->Delete(self, flags);
+}
+
 typedef struct CModel {
 	const CModelVtbl *vftable;			/* 0x000 [0] the deleting destructor */
 	char *name;			/* 0x004 Cad */
@@ -121,7 +126,7 @@ static inline void Scene_Unref(CScene **slot) {
 	(*slot)->Refs--;
 	CScene *e = *slot;
 	if (!e->Refs && e) {
-		e->vftable->Delete(&e->ref, 1);
+		ObjRef_Delete(e, 1);
 	}
 	*slot = NULL;
 }

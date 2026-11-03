@@ -119,7 +119,7 @@ static void cEnemiesTraffic_RemoveFarthest(cEnemiesTraffic *self) {
 	for (Nto1Node *n = Logic_ListFirst(self->traffic); n;) {
 		cEntity *e = n->data;
 		n = Logic_ListNext(n);
-		float d = cWorld_GetMinCamDistSq(g_pWorld, e->vftable->GetPos(e, &tmp));
+		float d = cWorld_GetMinCamDistSq(g_pWorld, Entity_GetPos(e, &tmp));
 		if (d > best) {
 			far = e;
 			best = d;
@@ -128,7 +128,7 @@ static void cEnemiesTraffic_RemoveFarthest(cEnemiesTraffic *self) {
 	if (!far) {
 		return;
 	}
-	if (CGameModel_IsVisible(Obj_Vtbl(far)->GetModel(far))) {
+	if (CGameModel_IsVisible(Obj_GetModel(far))) {
 		float r = g_TrafficRemovalDist;
 		if (!(best >= r * r)) {
 			return;
@@ -150,12 +150,12 @@ static cEntity *Traffic_FindOther(cEntity *e) {
 	int tries = 0;
 	for (Nto1Node *n = Logic_ListFirst(list); n; n = Logic_ListNext(n)) {
 		found = Logic_AsCar(n->data);
-		CHECK(found->vftable->IsType(found, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
+		CHECK(Entity_IsType(found, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
 		if (found == e) {
 			continue;
 		}
-		const vec3_t *to = e->vftable->GetPos(e, &t1);
-		if (!Engine_TestLine(found->vftable->GetPos(found, &t2), to, NULL, NULL)) {
+		const vec3_t *to = Entity_GetPos(e, &t1);
+		if (!Engine_TestLine(Entity_GetPos(found, &t2), to, NULL, NULL)) {
 			return found;
 		}
 		if (++tries == 4) {
@@ -166,7 +166,7 @@ static cEntity *Traffic_FindOther(cEntity *e) {
 }
 
 static cAIVehicle *Traffic_AI(cEntity *e) {
-	cAIVehicle *ai = e->vftable->GetAI(e);
+	cAIVehicle *ai = Entity_GetAI(e);
 
 	CHECK(ai && "ai");
 	return ai;
@@ -179,7 +179,7 @@ static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEnti
 	vec3_t tmp;
 	cEntity *e = n->data;
 
-	CHECK(e->vftable->IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
+	CHECK(Entity_IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
 	cAIVehicle *ai = Traffic_AI(e);
 	int st = cAIVehicle_GetState(ai);
 	if (AIV_OnEnd(ai) != (void *)Traffic_OnAIEnd) {
@@ -225,7 +225,7 @@ static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEnti
 	if (st != 2 || !usr) {
 		return Logic_ListNext(n);
 	}
-	if (ai->vftable->GetTargetEnt(&ai->base.base) == usr) {
+	if (AIMove_GetTargetEnt(ai) == usr) {
 		Nto1Node *next = Logic_ListNext(n);
 		PoliceAI_RestoreParams(ai);
 		cEntity_SetList(e, "EnemiesTraffic");
@@ -233,17 +233,17 @@ static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEnti
 		return next;
 	}
 	CGameModel *tm = NULL;
-	cEntity *t = ai->vftable->GetTargetEnt(&ai->base.base);
+	cEntity *t = AIMove_GetTargetEnt(ai);
 	if (t) {
-		if (!t->vftable->IsType(t, TYEN_CAR)) {
+		if (!Entity_IsType(t, TYEN_CAR)) {
 			return Logic_ListNext(n);
 		}
-		tm = Obj_Vtbl(t)->GetModel(t);
+		tm = Obj_GetModel(t);
 	}
 	float r = g_TrafficFightingMaxDist;
 	float r2 = r * r;
-	if (!tm || CGameModel_IsVisible(tm) || CGameModel_IsVisible(Obj_Vtbl(e)->GetModel(e)) ||
-		!(Traffic_Dist2(e->vftable->GetPos(e, &tmp), up->x, up->y, up->z) > r2) ||
+	if (!tm || CGameModel_IsVisible(tm) || CGameModel_IsVisible(Obj_GetModel(e)) ||
+		!(Traffic_Dist2(Entity_GetPos(e, &tmp), up->x, up->y, up->z) > r2) ||
 		!(Traffic_Dist2(CGameModel_GetPos(tm, &tmp), up->x, up->y, up->z) > r2)) {
 		return Logic_ListNext(n);
 	}
@@ -251,11 +251,11 @@ static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEnti
 	PoliceAI_RestoreParams(ai);
 	Traffic_Patrol(ai);
 	cEntity_SetList(e, "Traffic");
-	cEntity *o = ai->vftable->GetTargetEnt(&ai->base.base);
-	if (!o || !o->vftable->IsType(o, TYEN_CAR)) {
+	cEntity *o = AIMove_GetTargetEnt(ai);
+	if (!o || !Entity_IsType(o, TYEN_CAR)) {
 		return next;
 	}
-	cAIVehicle *oai = o->vftable->GetAI(o);
+	cAIVehicle *oai = Entity_GetAI(o);
 	if (!oai || !cEntity_GetListName(o) || strcmp(cEntity_GetListName(o), "FightingTraffic")) {
 		return next;
 	}
@@ -285,7 +285,7 @@ static void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 	byte f2Other = 0;
 	vec3_t up;
 	if (usr) {
-		const vec3_t *p = usr->vftable->GetPos(usr, &tmp);
+		const vec3_t *p = Entity_GetPos(usr, &tmp);
 		up.y = p->y;
 		up.x = p->x;
 		up.z = p->z;
@@ -305,16 +305,16 @@ static void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 			int tries = 0;
 			for (Nto1Node *n = Logic_ListFirst(self->traffic); n; n = Logic_ListNext(n)) {
 				cEntity *e = n->data;
-				CHECK(e->vftable->IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
+				CHECK(Entity_IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
 				cAIVehicle *ai = Traffic_AI(e);
 				if (!cAIVehicle_GetState(ai)) {
 					Traffic_Patrol(ai);
 				}
-				if (!CGameModel_IsVisible(Obj_Vtbl(e)->GetModel(e))) {
+				if (!CGameModel_IsVisible(Obj_GetModel(e))) {
 					continue;
 				}
 				cp = g_pWorld->camPos[g_pWorld->curCam];
-				if (Engine_TestLine(e->vftable->GetPos(e, &tmp), &cp, NULL, NULL)) {
+				if (Engine_TestLine(Entity_GetPos(e, &tmp), &cp, NULL, NULL)) {
 					if (++tries == 4) {
 						break;
 					}
@@ -348,10 +348,10 @@ static void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 	}
 	if (self->bossRobots) {
 		cEntity *e = cEntityList_GetFirst((cEntityList *)self->traffic);
-		while (e && e->vftable->IsType(e, TYEN_CAR)) {
+		while (e && Entity_IsType(e, TYEN_CAR)) {
 			cEntity_SetList(e, "EnemiesTraffic");
 			WLife(e)->arrow.tgType = 0;
-			CHECK(e->vftable->IsType(e, TYEN_CAR) && "e->IsType(TYEN_VEHICLE)");
+			CHECK(Entity_IsType(e, TYEN_CAR) && "e->IsType(TYEN_VEHICLE)");
 			cAIVehicle *ai = Traffic_AI(e);
 			if (usr) {
 				cAIVehicle_SetState(ai, 2, usr);
@@ -366,7 +366,7 @@ static void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 	}
 	for (Nto1Node *n = Logic_ListFirst(self->chasing); n;) {
 		cEntity *e = Logic_AsCar(n->data);
-		CHECK(e->vftable->IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
+		CHECK(Entity_IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
 		WLife(e)->arrow.tgType = 0;
 		cAIVehicle *ai = Traffic_AI(e);
 		n = Logic_ListNext(n);
@@ -378,7 +378,7 @@ static void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 	cAIVehicle *lastAi = NULL;
 	for (Nto1Node *n = Logic_ListFirst(self->enemies); n;) {
 		last = n->data;
-		CHECK(last->vftable->IsType(last, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
+		CHECK(Entity_IsType(last, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
 		lastAi = Traffic_AI(last);
 		n = Logic_ListNext(n);
 		if (AIV_OnEnd(lastAi) != (void *)Traffic_OnAIEnd) {
@@ -445,7 +445,7 @@ static byte Traffic_OnAIEnd(cAIVehicle *ai) {
 	if (!v || !list || strcmp(list, "FightingTraffic")) {
 		return 0;
 	}
-	Traffic_Patrol(v->vftable->GetAI(v));
+	Traffic_Patrol(Entity_GetAI(v));
 	cEntity_SetList(v, "Traffic");
 	NameTable_Delete(&g_pWorld->logic.enemiesTraffic.idle, v->name);
 	return 1;
@@ -458,9 +458,9 @@ static void Traffic_DamageNative(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, name, sizeof(name));
 	cAbstractFile_ReadString(params, attacker, sizeof(attacker));
-	params->vftable->Read(params, &damage, 4);
+	VFile_Read(params, &damage, 4);
 	cEntity *e = World_FindEntity(name);
-	CHECK(e->vftable->IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
+	CHECK(Entity_IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
 	cAIVehicle *ai = Traffic_AI(e);
 	cEntity *a = World_FindEntity(attacker);
 	if (!a || a != ChType_Usr0()) {
@@ -489,7 +489,7 @@ static void Traffic_DeathNative(cAbstractFile *params) {
 	cAbstractFile_ReadString(params, name, sizeof(name));
 	cAbstractFile_ReadString(params, killer, sizeof(killer));
 	cEntity *e = World_FindEntity(name);
-	CHECK(e->vftable->IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
+	CHECK(Entity_IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
 	cEntity *k = World_FindEntity(killer);
 	if (!k || k != ChType_Usr0()) {
 		return;

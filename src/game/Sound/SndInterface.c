@@ -37,8 +37,8 @@ static cSndItem *cSndItem_ctorName(cSndItem *self, const char *name, uint32_t fl
 void cSndItem_UpdateAt(cSndItem *self, cEntity *e) {
 	vec3_t vel, pos;
 
-	const vec3_t *pv = Obj_Vtbl(e)->GetVel(e, &vel);
-	const vec3_t *pp = Obj_Vtbl(e)->GetSndPos(e, &pos);
+	const vec3_t *pv = Obj_GetVel(e, &vel);
+	const vec3_t *pp = Obj_GetSndPos(e, &pos);
 	cSound_SetPosVel(&self->sound, pp, pv);
 	self->sound.desc.volume += Snd_Volume(self->volume);
 	cSound_SetPitch(&self->sound, self->pitch);

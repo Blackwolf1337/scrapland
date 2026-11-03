@@ -282,8 +282,8 @@ static void cVehicleEntity_Touch(cEntity *elem, cEntity *e, const vec3_t *point,
 	float dvx = self->wl.obj.vel.x - o->wl.obj.vel.x;
 	float dvy = self->wl.obj.vel.y - o->wl.obj.vel.y;
 	float dvz = self->wl.obj.vel.z - o->wl.obj.vel.z;
-	vec3_t *po = e->vftable->GetPos(e, &tmp1);
-	vec3_t *ps = self->wl.obj.base.vftable->GetPos(Veh_Ent(self), &tmp2);
+	vec3_t *po = Entity_GetPos(e, &tmp1);
+	vec3_t *ps = Entity_GetPos(Veh_Ent(self), &tmp2);
 	float py = ps->y - po->y, px = ps->x - po->x, pz = ps->z - po->z;
 	float dist = (float)__builtin_sqrt((double)(py * py + px * px + pz * pz));
 	float dot = py * dvy + px * dvx + pz * dvz;
@@ -292,8 +292,8 @@ static void cVehicleEntity_Touch(cEntity *elem, cEntity *e, const vec3_t *point,
 		float nx, ny, nz;
 		Con_Debugf("LOW LEVEL WARNING : Problematic Collision between %s %s\n", e->name, self->wl.obj.base.name);
 		if (!(0.0f >= dist)) {
-			vec3_t *s = self->wl.obj.base.vftable->GetPos(Veh_Ent(self), &tmp2);
-			vec3_t *p = e->vftable->GetPos(e, &out);
+			vec3_t *s = Entity_GetPos(Veh_Ent(self), &tmp2);
+			vec3_t *p = Entity_GetPos(e, &out);
 			float inv = 1.0f / dist;
 			nz = (p->z - s->z) * inv;
 			nx = (p->x - s->x) * inv;
@@ -316,7 +316,7 @@ static void cVehicleEntity_Touch(cEntity *elem, cEntity *e, const vec3_t *point,
 		out = o->wl.obj.vel;
 		Vec3_Bounce(normal, self->wl.mass, o->wl.mass, &self->wl.obj.vel, &out);
 	}
-	Obj_Vtbl(Veh_Ent(o))->SetVel(Veh_Ent(o), &out);
+	Obj_SetVel(Veh_Ent(o), &out);
 	if (Net_IsNetEntity(Veh_Ent(self))) {
 		if (o->netCtrl) {
 			o->netCtrl->bumpSends = 3;
@@ -449,7 +449,7 @@ static void cVehicleEntity_UpdateHistory(cEntity *base) {
 	float jerkLen = (float)__builtin_sqrt((double)(jerk.y * jerk.y + jerk.x * jerk.x + jerk.z * jerk.z));
 	float since = (float)((Timer_GetTime(&self->wl.obj.timer)) - self->hitTime);
 	if (g_VehicleCrashMinTime > since && self->histAccLen > g_VehicleCrashAccLo) {
-		Veh_Vtbl(self)->Crash(&self->wl.obj.base, &jerk, jerkLen);
+		Veh_Crash(self, &jerk, jerkLen);
 		self->histAcc.x = 0.0f;
 		accLen = 0.0f;
 		self->histAcc.y = 0.0f;
@@ -626,11 +626,11 @@ static void cVehicleEntity_ClientMove(cVehicleEntity *self, float dt) {
 	cNetVController *net = Veh_Net(self);
 
 	if (net->base.age == 0.5f) {
-		net->base.vftable->Apply(&net->base, Veh_Ent(self), dt, 1);
+		NetCtl_Apply(net, Veh_Ent(self), dt, 1);
 		return;
 	}
 	vec3_t from = self->wl.obj.base.pos;
-	net->base.vftable->Apply(&net->base, Veh_Ent(self), dt, 1);
+	NetCtl_Apply(net, Veh_Ent(self), dt, 1);
 	if (!(Veh_Net(self)->base.flags & 0x40)) {
 		self->wl.obj.rotVel.z = 0.0f;
 	}
@@ -651,7 +651,7 @@ static void cVehicleEntity_ServerMove(cVehicleEntity *self, float dt) {
 			if (nc->hit) {
 				Veh_Net(self)->base.flags &= 0xef;
 			}
-			Veh_Net(self)->base.vftable->Apply(&Veh_Net(self)->base, Veh_Ent(self), dt, 1);
+			NetCtl_Apply(Veh_Net(self), Veh_Ent(self), dt, 1);
 			cAutoAim_Update(&self->autoAim, Veh_Ent(self), dt);
 		} else {
 			Veh_Net(self)->base.age = Veh_Net(self)->base.age - dt;
@@ -736,7 +736,7 @@ static void cVehicleEntity_Tick(cEntity *elem, float dt) {
 	}
 	self->wl.fireAtt = self->smoothSpeed / 16800.0f;
 	cWithLifeEntity_Tick(Veh_Ent(self), dt);
-	Veh_Vtbl(self)->UpdateHistory(&self->wl.obj.base);
+	Veh_UpdateHistory(self);
 }
 
 static void cVehicleEntity_Update(cEntity *base) {
@@ -751,7 +751,7 @@ static void cVehicleEntity_Update(cEntity *base) {
 		cVehicleControls_Tick(&self->controls, Veh_Ent(self), dt);
 	}
 	cWithLifeEntity_Update(Veh_Ent(self));
-	Veh_Vtbl(self)->UpdateSounds(&self->wl.obj.base, dt);
+	Veh_UpdateSounds(self, dt);
 	cVehicleEntity_Smooth(self, dt);
 }
 
@@ -856,7 +856,7 @@ static void cVehicleEntity_UpdateSounds(cEntity *elem, float dt) {
 		}
 		Vehicle_SndCrossFade(b, a);
 		Vehicle_SndCrossFade(d, c);
-		if (self->wl.obj.base.vftable->GetAI(Veh_Ent(self)) || Net_IsNetEntity(Veh_Ent(self))) {
+		if (Entity_GetAI(Veh_Ent(self)) || Net_IsNetEntity(Veh_Ent(self))) {
 			b->volume = b->volume * g_NPCSndMotorVolFactor;
 			d->volume = d->volume * g_NPCSndMotorVolFactor;
 			a->volume = a->volume * g_NPCSndMotorVolFactor;
@@ -887,7 +887,7 @@ static void cVehicleEntity_NetDelete(cVehicleEntity *self) {
 static void cVehicleEntity_NetRead(cEntity *elem, void *msg, int unused) {
 	cVehicleEntity *self = (cVehicleEntity *)elem;
 	(void)unused;
-	Veh_Net(self)->base.vftable->Read(&Veh_Net(self)->base, msg);
+	NetCtl_Read(Veh_Net(self), msg);
 }
 
 static void cVehicleEntity_NetWrite(cEntity *elem, float dist2, void *msg, int full) {
@@ -907,7 +907,7 @@ static void cVehicleEntity_NetWrite(cEntity *elem, float dist2, void *msg, int f
 	memcpy(&bits, &dist2, sizeof(bits));
 	bits = (bits & ~0xffu) | kind;
 	cNetVController *net = self->netCtrl ? self->netCtrl : Veh_Net(self);
-	net->base.vftable->Write(&net->base, (int)bits, Veh_Ent(self), msg, full);
+	NetCtl_Write(net, (int)bits, Veh_Ent(self), msg, full);
 }
 
 static void cVehicleEntity_SetUsrControl(cVehicleEntity *self, int slot) {
@@ -1153,7 +1153,7 @@ void cVehicleEntity_UpdatePilotPos(cVehicleEntity *self, byte on) {
 	pos.y = m.m[13];
 	pos.z = m.m[14];
 	CGameModel_SetPos(pm, &pos);
-	Veh_Vtbl(self)->UpdatePilot(&self->wl.obj.base, 0, dt);
+	Veh_UpdatePilot(self, 0, dt);
 }
 
 /* ---- the model ---- */
@@ -1207,7 +1207,7 @@ static void cVehicleEntity_SetModel(cEntity *base, const char *file, float sx, f
 	cWeaponManager_ClearAmmo(&self->weapons);
 	cVehicleEffects_Init(&self->effects);
 	cVehicleMotors_InitEffects(&self->motors);
-	Veh_Ent(self)->vftable->SetEmbeddedFX(Veh_Ent(self), "EmbeddedFX");
+	Entity_SetEmbeddedFX(Veh_Ent(self), "EmbeddedFX");
 }
 
 static void cVehicleEntity_SetEmbeddedFX(cEntity *base, const char *fxType) {
@@ -1215,9 +1215,9 @@ static void cVehicleEntity_SetEmbeddedFX(cEntity *base, const char *fxType) {
 	if (!strcmp(fxType, "EmbeddedFX")) {
 		cEmbeddedFXVehicle *fx = Veh_FX(self);
 		if (fx) {
-			fx->vftable->Done(&fx->sub);
+			EFXVeh_Done(fx);
 			if (Veh_FX(self)) {
-				Veh_FX(self)->vftable->Delete(&(Veh_FX(self))->sub, 1);
+				EFXVeh_Delete(Veh_FX(self), 1);
 				self->wl.obj.fx = NULL;
 			}
 		}
@@ -1225,7 +1225,7 @@ static void cVehicleEntity_SetEmbeddedFX(cEntity *base, const char *fxType) {
 		fx = mem ? cEmbeddedFXVehicle_ctor(mem) : NULL;
 		self->wl.obj.fx = (struct cEmbeddedFX *)fx;
 		cEmbeddedFXVehicle_SetTraffic(fx, self->typeName[0] == 'T');
-		Veh_FX(self)->vftable->Init(&(Veh_FX(self))->sub);
+		EFXVeh_Init(Veh_FX(self));
 		cEmbeddedFXVehicle_SetOwner(Veh_FX(self), Veh_Ent(self));
 	}
 	cVehicleEffects_Start(&self->effects, fxType);
@@ -1288,18 +1288,18 @@ static void cVehicleEntity_RenderNow(cEntity *base) {
 	cVehicleEntity *self = (cVehicleEntity *)base;
 	vec3_t tmp;
 
-	if (!Obj_Vtbl(Veh_Ent(self))->GetModel(Veh_Ent(self)) || !CGameModel_IsLoaded(Obj_Vtbl(Veh_Ent(self))->GetModel(Veh_Ent(self)))) {
+	if (!Obj_GetModel(Veh_Ent(self)) || !CGameModel_IsLoaded(Obj_GetModel(Veh_Ent(self)))) {
 		return;
 	}
 	vec3_t pos = self->wl.obj.renderPos;
 	vec3_t rot = self->wl.obj.renderAng;
-	self->wl.obj.renderPos = *CGameModel_GetPos(Obj_Vtbl(Veh_Ent(self))->GetModel(Veh_Ent(self)), &tmp);
-	self->wl.obj.renderAng = *CGameModel_GetRot(Obj_Vtbl(Veh_Ent(self))->GetModel(Veh_Ent(self)), &tmp);
+	self->wl.obj.renderPos = *CGameModel_GetPos(Obj_GetModel(Veh_Ent(self)), &tmp);
+	self->wl.obj.renderAng = *CGameModel_GetRot(Obj_GetModel(Veh_Ent(self)), &tmp);
 	self->rendering = 1;
-	Obj_Vtbl(Veh_Ent(self))->UpdateModel(Veh_Ent(self));
+	Obj_UpdateModel(Veh_Ent(self));
 	uint32_t fx = CGameModel_GetEffect(&self->wl.obj.model, NULL);
 	if (fx == 3) {
-		Obj_Vtbl(Veh_Ent(self))->SetEffect(Veh_Ent(self), 0);
+		Obj_SetEffect(Veh_Ent(self), 0);
 	}
 	cWithLifeEntity_RenderNow(Veh_Ent(self));
 	if (self->pilotNode != -1) {
@@ -1307,14 +1307,14 @@ static void cVehicleEntity_RenderNow(cEntity *base) {
 	}
 	cVehicleMotors_Render(&self->motors);
 	if (fx == 3) {
-		Obj_Vtbl(Veh_Ent(self))->SetEffect(Veh_Ent(self), 3);
+		Obj_SetEffect(Veh_Ent(self), 3);
 	}
 	if (Veh_FX(self)) {
 		cEmbeddedFXVehicle_Render(Veh_FX(self));
 	}
 	self->wl.obj.renderPos = pos;
 	self->wl.obj.renderAng = rot;
-	Obj_Vtbl(Veh_Ent(self))->UpdateModel(Veh_Ent(self));
+	Obj_UpdateModel(Veh_Ent(self));
 	self->rendering = 0;
 }
 
@@ -1412,7 +1412,7 @@ static byte cVehicleEntity_VarF(cEntity *base, const char *name, double *d, int 
 		return cVehicleTraffic_VarF(&self->traffic, name + 5, d, set);
 	}
 	if (cWeaponManager_VarF(&self->weapons, name, d, (byte)set) ||
-		Veh_MotorsVtbl(self)->VarF(&self->motors, name, d, set)) {
+		Motors_VarF(&self->motors, name, d, set)) {
 		return 1;
 	}
 	if (!strcmp(name, "FxBoostEngineTime")) {
@@ -1512,11 +1512,11 @@ static byte cVehicleEntity_VarI(cEntity *base, const char *name, int *i, int set
 		return cVehicleTraffic_VarI(&self->traffic, name + 5, i, set);
 	}
 	if (cWeaponManager_VarI(&self->weapons, name, i, (byte)set) ||
-		Veh_MotorsVtbl(self)->VarI(&self->motors, name, i, set)) {
+		Motors_VarI(&self->motors, name, i, set)) {
 		return 1;
 	}
 	if ((byte)set && len == 5 && name[4] == '0' && !strncmp(name, "AnmP", 4)) {
-		Veh_Vtbl(self)->SetPilotAnim(&self->wl.obj.base, 0, *i);
+		Veh_SetPilotAnim(self, 0, *i);
 		return 1;
 	}
 	if (!strcmp(name, "FixedModel")) {
@@ -1598,7 +1598,7 @@ static byte cVehicleEntity_VarS(cEntity *base, const char *name, char **s, int s
 		return cVehicleTraffic_VarS(&self->traffic, name + 5, s, set);
 	}
 	if (cWeaponManager_VarS(&self->weapons, name, s, (byte)set) ||
-		Veh_MotorsVtbl(self)->VarS(&self->motors, name, s, set)) {
+		Motors_VarS(&self->motors, name, s, set)) {
 		return 1;
 	}
 	if (!(byte)set && !strcmp(name, "Model")) {
@@ -1607,10 +1607,10 @@ static byte cVehicleEntity_VarS(cEntity *base, const char *name, char **s, int s
 	}
 	if (len == 5 && name[4] == '0' && !strncmp(name, "MPil", 4)) {
 		if ((byte)set) {
-			Veh_Vtbl(self)->SetPilot(&self->wl.obj.base, 0, *s, 1.0f, 1.0f, 1.0f);
+			Veh_SetPilot(self, 0, *s, 1.0f, 1.0f, 1.0f);
 			return 1;
 		}
-		*s = (char *)Veh_Vtbl(self)->GetPilot(&self->wl.obj.base, 0);
+		*s = (char *)Veh_GetPilot(self, 0);
 		return *s != NULL;
 	}
 	if (!strcmp(name, "Target")) {
@@ -1639,12 +1639,12 @@ static byte cVehicleEntity_VarV(cEntity *base, const char *name, double *x, doub
 		return cVehicleTraffic_VarV(&self->traffic, name + 5, x, y, z, set);
 	}
 	if (cWeaponManager_VarV(&self->weapons, name, x, y, z, (byte)set) ||
-		Veh_MotorsVtbl(self)->VarV(&self->motors, name, x, y, z, set)) {
+		Motors_VarV(&self->motors, name, x, y, z, set)) {
 		return 1;
 	}
 	if (!(byte)set && len == 5 && name[4] <= '3' && name[4] >= '0') {
 		if (!strncmp(name, "PPil", 4)) {
-			byte r = Veh_Vtbl(self)->GetPilotPos(&self->wl.obj.base, name[4] - '0', &pos, &ang);
+			byte r = Veh_GetPilotPos(self, name[4] - '0', &pos, &ang);
 			if (r) {
 				*x = pos.x;
 				*y = pos.y;
@@ -1653,7 +1653,7 @@ static byte cVehicleEntity_VarV(cEntity *base, const char *name, double *x, doub
 			return r;
 		}
 		if (!strncmp(name, "APil", 4)) {
-			byte r = Veh_Vtbl(self)->GetPilotPos(&self->wl.obj.base, name[4] - '0', &pos, &ang);
+			byte r = Veh_GetPilotPos(self, name[4] - '0', &pos, &ang);
 			if (r) {
 				*x = (double)ang.x * VEH_DEG_PER_RAD_NUM / VEH_DEG_PER_RAD_DEN;
 				*y = (double)ang.y * VEH_DEG_PER_RAD_NUM / VEH_DEG_PER_RAD_DEN;
@@ -1966,7 +1966,7 @@ static void Veh_UpdatePilotModel(cVehicleEntity *self, const vec3_t *pos, float 
 	byte target = 0;
 	if (!near) {
 		cEntity *u = cWorld_GetUsrEntity(g_pWorld, 0);
-		if (u && u->vftable->IsType(u, TYEN_CAR) && Veh(u)->target[0]) {
+		if (u && Entity_IsType(u, TYEN_CAR) && Veh(u)->target[0]) {
 			/* the first two bytes as a short, then the rest */
 			uint16_t a, b;
 			memcpy(&a, self->wl.obj.base.name, 2);
@@ -1994,7 +1994,7 @@ static void Veh_UpdatePilotModel(cVehicleEntity *self, const vec3_t *pos, float 
 	ppos.y = mtx.m[13];
 	ppos.z = mtx.m[14];
 	CGameModel_SetPos(&self->pilot, &ppos);
-	Veh_Vtbl(self)->UpdatePilot(&self->wl.obj.base, 0, dt);
+	Veh_UpdatePilot(self, 0, dt);
 }
 
 /* vf24: the model of the slot (the wobble above the atmosphere, the floating, the tilt), the player camera, the
@@ -2038,7 +2038,7 @@ static void cVehicleEntity_UpdateModel(cEntity *elem) {
 		}
 	}
 	if (Veh_FX(self) && !self->rendering) {
-		Veh_FX(self)->vftable->Update(&(Veh_FX(self))->sub);
+		EFXVeh_Update(Veh_FX(self));
 	}
 }
 

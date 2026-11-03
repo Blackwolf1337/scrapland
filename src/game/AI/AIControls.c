@@ -83,10 +83,10 @@ static byte ACtl_BackFree(cAICharControl *self) {
 	vec3_t b1, b2;
 	cEntity *e = AICC_TargetEnt(self);
 	cEntity *me = self->ent;
-	float r = Obj_Vtbl(me)->GetRadius(me);
+	float r = Obj_GetRadius(me);
 	const vec3_t *tp = AICC_EntPos(e, &b1);
 
-	return AICC_Vtbl(self)->TestSides(self, AICC_EntPos(me, &b2), tp, r);
+	return AICC_TestSides(self, AICC_EntPos(me, &b2), tp, r);
 }
 
 static int ACtl_TargetActing(cAICharControl *self) {
@@ -98,7 +98,7 @@ static int ACtl_TargetActing(cAICharControl *self) {
 static const char *ACtl_TargetClass(cAICharControl *self) {
 	cEntity *t = AICC_TargetEnt(self);
 
-	return ((cActCtrl *)WithLife_Vtbl(t)->GetActCtrl(t))->cls->name;
+	return ((cActCtrl *)WithLife_GetActCtrl(t))->cls->name;
 }
 
 /* the angle between the way from the target to the character (d) and the forward of the view of the target on the
@@ -227,18 +227,17 @@ static cAIControlBankMaster *cAIControlBankMaster_Delete(cAIControlBankMaster *s
 
 /* the Orbit of the control, but not while the action button is down or its ActionEnd plays */
 static void cAIControlBankMaster_Orbit(cAIControlBankMaster *self) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	vec3_t d, w, out, b1, b2;
 	vec3_t fwd = {0.0f, 0.0f, -1.0f};
 	float f, v;
 
-	vt->Strafe2(self);
+	AICC_Strafe2(self);
 	if (self->side || self->blocked) {
 		return;
 	}
 	cEntity *t = AICC_TargetEnt(self);
 	const vec3_t *tp = AICC_EntPos(t, &b1);
-	float dist = vt->Dist(self, AICC_Pos(self, &b2), tp);
+	float dist = AICC_Dist(self, AICC_Pos(self, &b2), tp);
 	if (self->orbitSide) {
 		if (!self->direct || dist > self->farDist + self->farDist || self->ctrl->act ||
 			AIChar_ActionIs(self->ent, "ActionEnd")) {
@@ -267,7 +266,7 @@ static void cAIControlBankMaster_Orbit(cAIControlBankMaster *self) {
 		self->orbitStart = 1;
 	}
 	if (self->walkDir == 0 && self->orbitSide == 0 && self->orbitStart) {
-		vt->StartOrbit(self, dist - 4.0f);
+		AICC_StartOrbit(self, dist - 4.0f);
 		self->orbitStart = 0;
 		self->orbitDir = WChar(AICC_TargetEnt(self))->view;
 		const vec3_t *tv = Vec3_Rotate(&out, &fwd, &self->orbitDir);
@@ -279,7 +278,7 @@ static void cAIControlBankMaster_Orbit(cAIControlBankMaster *self) {
 	cSlotController *slot = &self->slotOrbit;
 	if (cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &f)) {
 		do {
-			if (vt->SideBlocked(self, self->orbitSide)) {
+			if (AICC_SideBlocked(self, self->orbitSide)) {
 				self->orbitSide = 0;
 			}
 		} while (cSlotController_FireReset(slot, &f));
@@ -295,10 +294,10 @@ static void cAIControlBankMaster_Orbit(cAIControlBankMaster *self) {
 					self->turnGain = 25.0f;
 					self->turnStep = 2.0f;
 				} else {
-					vt->SetTurnSpeed(self, self->speed);
+					AICC_SetTurnSpeed(self, self->speed);
 				}
 			} else if (self->walkDir == 1 || self->walkDir == 2) {
-				vt->SetTurnSpeed(self, self->speed);
+				AICC_SetTurnSpeed(self, self->speed);
 			}
 		}
 	}
@@ -315,7 +314,7 @@ static void ACtl_ShootStrafe(cAIControlShoot *self, int gear) {
 
 	self->time = c->dt + self->time;
 	cEntity *t = AICC_TargetEnt(c);
-	if (!WithLife_Vtbl(t)->GetActCtrl(t)) {
+	if (!WithLife_GetActCtrl(t)) {
 		self->time = self->strafeTime;
 		self->side = 0;
 		goto move;
@@ -356,7 +355,7 @@ slot:
 		cSlotController *s = &self->slotSide;
 		if (cSlotController_Tick(s, c->dt) && cSlotController_FireReset(s, &f)) {
 			do {
-				if (AICC_Vtbl(c)->SideBlocked(c, self->side)) {
+				if (AICC_SideBlocked(c, self->side)) {
 					self->other = 1;
 					self->time = self->strafeTime * 0.1f + self->time;
 				} else {
@@ -379,7 +378,7 @@ move:
 
 /* Strafe2: the strafe around the characters in the way first, then the one of the class */
 static int ACtl_FreeToStrafe(cAICharControl *c) {
-	AICC_Vtbl(c)->Strafe(c);
+	AICC_Strafe(c);
 	return c->side == 0 && !c->blocked && !c->avoidFound && !c->link.target;
 }
 
@@ -439,7 +438,7 @@ static void cAIControlBishop_SetParams(cAICharControl *elem) {
 		return;
 	}
 	cEntity *t = self->base.target->target;
-	if (t->vftable->GetAI(t)) {
+	if (Entity_GetAI(t)) {
 		self->strafeTime = g_TimeStrafeUnderAttackBishopAIDef;
 		self->strafeAng = g_AngleStrafeUnderAttackBishopAIDef;
 		return;
@@ -530,7 +529,7 @@ static void cAIControlGear_SetParams(cAICharControl *elem) {
 		return;
 	}
 	cEntity *t = self->base.target->target;
-	if (t->vftable->GetAI(t)) {
+	if (Entity_GetAI(t)) {
 		self->strafeTime = g_TimeStrafeUnderAttackGearAIDef;
 		self->strafeAng = g_AngleStrafeUnderAttackGearAIDef;
 		return;
@@ -574,17 +573,16 @@ static cAIControlMessenger *cAIControlMessenger_Delete(cAIControlMessenger *self
 }
 
 static byte cAIControlMessenger_UpdateFollowMode(cAIControlMessenger *self, float dt) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 
 	(void)dt;
 	if (self->path.count <= 0) {
 		return 1;
 	}
-	if (!vt->UpdateFollow(self)) {
+	if (!AICC_UpdateFollow(self)) {
 		return 0;
 	}
 	if (!self->direct) {
-		if (!vt->CheckFollow(self)) {
+		if (!AICC_CheckFollow(self)) {
 			return 0;
 		}
 	} else {
@@ -596,14 +594,14 @@ static byte cAIControlMessenger_UpdateFollowMode(cAIControlMessenger *self, floa
 		self->avoidB.z = -FLT_MAX;
 	}
 	if (self->direct) {
-		vt->Strafe2(self);
-		vt->TurnFollow(self);
-		vt->Walk(self);
+		AICC_Strafe2(self);
+		AICC_TurnFollow(self);
+		AICC_Walk(self);
 		return 1;
 	}
-	vt->Strafe(self);
-	vt->Turn(self);
-	vt->Walk2(self);
+	AICC_Strafe(self);
+	AICC_Turn(self);
+	AICC_Walk2(self);
 	return 1;
 }
 
@@ -689,7 +687,7 @@ static void cAIControlSentinel_Strafe(cAIControlShoot *self) {
 
 	self->time = c->dt + self->time;
 	cEntity *t = AICC_TargetEnt(c);
-	if (!WithLife_Vtbl(t)->GetActCtrl(t)) {
+	if (!WithLife_GetActCtrl(t)) {
 		goto reset;
 	}
 	const char *cls = ACtl_TargetClass(c);
@@ -730,7 +728,7 @@ hit:
 		cSlotController *s = &self->slotSide;
 		if (cSlotController_Tick(s, c->dt) && cSlotController_FireReset(s, &f)) {
 			do {
-				if (AICC_Vtbl(c)->SideBlocked(c, self->side)) {
+				if (AICC_SideBlocked(c, self->side)) {
 					self->other = 1;
 					self->side = (self->side != 2) + 1;
 				} else {

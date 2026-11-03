@@ -141,7 +141,7 @@ byte Net_InitServer(const char *name, int a, int b, int c) {
 	g_NetServerCtl = Mem_Alloc(24000);
 	MsgMan_SetUserFactory((netuserfactory_t)Net_NewClientManager);
 	Net_Init();
-	if (g_pApp->vftable->IsDedicatedWin(g_pApp)) {
+	if (App_IsDedicatedWin(g_pApp)) {
 		Transport_SetMaster(g_MasterServerAddress, (uint16_t)g_MasterServerPort);
 	}
 	g_NetHeartbeat = 0.0f;
@@ -184,8 +184,8 @@ void Net_ServerFrameHead(void) {
 	CHECK(g_NetServerPort != 0);
 	if (Transport_GetMaxClients() > Net_GetSendRate() && g_NetBrowserCode && *g_NetBrowserCode) {
 		double next = (double)(g_HeartbeatTime + g_NetHeartbeat);
-		if (g_pApp->vftable->GetTime(g_pApp) > next) {
-			g_NetHeartbeat = (float)g_pApp->vftable->GetTime(g_pApp);
+		if (App_GetTime(g_pApp) > next) {
+			g_NetHeartbeat = (float)App_GetTime(g_pApp);
 			Str_PrintfQuiet(s, sizeof(s), "HB=%d,%d:%d|%s", NET_GAME_ID, NET_GAME_VERSION, g_NetServerPort,
 				g_NetBrowserCode);
 			Net_SendMasterString(s);
@@ -215,7 +215,7 @@ byte Net_ServerFrameTail(void) {
 		}
 		cUserNetManager *u = c->user;
 		if (u) {
-			u->vftable->Send(u, Net_TimeMs());
+			NetMan_Send(u, Net_TimeMs());
 		}
 		slot = NetServer_NextToSend(Net_TimeMs());
 	}

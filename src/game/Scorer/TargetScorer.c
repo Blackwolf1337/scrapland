@@ -67,7 +67,6 @@ static void Target_DrawMark(cTargetScorer *self, cEntity *ship, cEntity *e) {
 	float scr[2], depth;
 	vec3_t tmp, pos;
 	cWithLifeEntity *sw = (cWithLifeEntity *)ship, *ew = (cWithLifeEntity *)e;
-	const cObjEntityVtbl *vt = (const cObjEntityVtbl *)e->vftable;
 
 	float old = self->view;
 	if ((byte)cVehicleEntity_CanFire(Veh(e))) {
@@ -79,9 +78,9 @@ static void Target_DrawMark(cTargetScorer *self, cEntity *ship, cEntity *e) {
 	} else {
 		self->view = 0.0f;
 	}
-	pos = *vt->GetViewPos(e, &tmp);
+	pos = *Obj_GetViewPos(e, &tmp);
 	if (0.0f >= self->testTime) {
-		const vec3_t *from = ship->vftable->GetPos(ship, &tmp);
+		const vec3_t *from = Entity_GetPos(ship, &tmp);
 		ew->arrow.visible = !Engine_TestLine(from, &pos, NULL, NULL);
 	}
 	byte vis = ew->arrow.visible;
@@ -120,7 +119,7 @@ static void Target_DrawMark(cTargetScorer *self, cEntity *ship, cEntity *e) {
 	img->scaleX = 1.0f;
 	img->scaleY = 1.0f;
 	if (on) {
-		float d = (float)((vt->GetRadius(e)) * TS_RECT_SIZE * depth);
+		float d = (float)((Obj_GetRadius(e)) * TS_RECT_SIZE * depth);
 		if (TS_RECT_MIN > d) {
 			d = TS_RECT_MIN;
 		}
@@ -147,7 +146,7 @@ static void Target_DrawAttacker(cTargetScorer *self, cEntity *ship) {
 	if (!e || !Entity_IsType(e, TYEN_CAR)) {
 		return;
 	}
-	pos = *((const cObjEntityVtbl *)e->vftable)->GetViewPos(e, &tmp);
+	pos = *Obj_GetViewPos(e, &tmp);
 	if (Engine_WorldToScreen(&pos, scr, &depth)) {
 		return;
 	}
@@ -277,7 +276,7 @@ static void cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship) {
 	self->img->pivotX = (uv1[0] - uv0[0]) * 0.5f;
 	for (; e; e = cEntity_Next(e)) {
 		cWithLifeEntity *w = (cWithLifeEntity *)e;
-		if (e == ship || !e->active || !e->vftable->IsType(e, "WithLife") || w->arrow.canMission) {
+		if (e == ship || !e->active || !Entity_IsType(e, "WithLife") || w->arrow.canMission) {
 			continue;
 		}
 		byte enemy = Team_IsEnemy(sw->arrow.tgType, w->arrow.tgType);
@@ -285,8 +284,7 @@ static void cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship) {
 		if (!enemy && !isFriend) {
 			continue;
 		}
-		const cObjEntityVtbl *vt = (const cObjEntityVtbl *)e->vftable;
-		byte on = Engine_WorldToScreen(vt->GetViewPos(e, &tmp), scr, &depth);
+		byte on = Engine_WorldToScreen(Obj_GetViewPos(e, &tmp), scr, &depth);
 		Target_SplitY(self, scr);
 		if (!on) {
 			continue;
@@ -294,15 +292,15 @@ static void cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship) {
 		cam = g_pWorld->camPos[g_pWorld->curCam];
 		cEntity *fc = w->obj.cam;
 		if (fc) {
-			CamCtl_Vtbl(fc)->GetCamPos(fc, &cam.x, &cam.y, &cam.z);
+			CamCtl_GetCamPos(fc, &cam.x, &cam.y, &cam.z);
 		}
 		if (0.0f >= self->testTime) {
-			w->arrow.visible = !Engine_TestLine(vt->GetViewPos(e, &tmp), &cam, NULL, NULL);
+			w->arrow.visible = !Engine_TestLine(Obj_GetViewPos(e, &tmp), &cam, NULL, NULL);
 		}
 		if (!w->arrow.visible) {
 			continue;
 		}
-		float h = (float)((vt->GetRadius(e)) * TS_MARK_HEIGHT * depth);
+		float h = (float)((Obj_GetRadius(e)) * TS_MARK_HEIGHT * depth);
 		self->img->color = enemy ? enemyColor : friendColor;
 		self->img->x = scr[0];
 		self->img->y = scr[1] - h;

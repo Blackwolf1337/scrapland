@@ -105,7 +105,7 @@ void CTriMesh_Clear(CTriMesh *self) {
 	self->pTVert = Mesh_Free(self->pTVert);
 	self->pTri = Mesh_Free(self->pTri);
 	if (self->d3d) {
-		self->d3d->vftable->Delete(&self->d3d->base, 1);
+		Object3D_Delete(self->d3d, 1);
 		self->d3d = NULL;
 	}
 	self->pSkin = Mesh_Free(self->pSkin);
@@ -488,7 +488,7 @@ static void CTriMesh_Draw(IObject3D *elem, void *dev, CRenderNode *unused) {
 	/* the meshes draw through their D3D mesh, this path is not meant to run */
 	CHECK(0);
 	if (self->d3d && g_MeshD3DOn) {
-		self->d3d->vftable->Render(&self->d3d->base, dev, NULL);
+		Object3D_Render(self->d3d, dev, NULL);
 		return;
 	}
 	if (!self->pTri || !self->pVert) {

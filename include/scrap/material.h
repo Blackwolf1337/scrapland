@@ -119,6 +119,11 @@ typedef struct CMaterialVtbl {
 	struct CMaterial *(*Delete)(struct CMaterial *self, byte flags);	/* 0x00 */
 } CMaterialVtbl;
 
+/* calls through the slots of CMaterialVtbl */
+static inline struct CMaterial *Material_Delete(void *self, byte flags) {
+	return VT(CMaterialVtbl, self)->Delete(self, flags);
+}
+
 typedef struct CMaterial {
 	const CMaterialVtbl *vftable;			/* 0x00 [0] the deleting destructor */
 	char *Name;			/* 0x04 */
@@ -135,6 +140,11 @@ typedef struct CMaterial {
 typedef struct CMatListVtbl {
 	struct CMatList *(*Delete)(struct CMatList *self, byte flags);	/* 0x00 */
 } CMatListVtbl;
+
+/* calls through the slots of CMatListVtbl */
+static inline struct CMatList *MatList_Delete(void *self, byte flags) {
+	return VT(CMatListVtbl, self)->Delete(self, flags);
+}
 extern const CMatListVtbl CMatList_vftable;
 #define CMATLIST_VFTABLE (&CMatList_vftable)
 

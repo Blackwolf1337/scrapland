@@ -80,6 +80,23 @@ typedef struct cVehicleMotorsVtbl {
 	byte(*VarV)(struct cVehicleMotors *self, const char *name, double *x, double *y, double *z, int set); /* 0x0c */
 } cVehicleMotorsVtbl;
 
+/* calls through the slots of cVehicleMotorsVtbl */
+static inline byte Motors_VarF(void *self, const char *name, double *d, int set) {
+	return VT(cVehicleMotorsVtbl, self)->VarF(self, name, d, set);
+}
+
+static inline byte Motors_VarI(void *self, const char *name, int *i, int set) {
+	return VT(cVehicleMotorsVtbl, self)->VarI(self, name, i, set);
+}
+
+static inline byte Motors_VarS(void *self, const char *name, char **s, int set) {
+	return VT(cVehicleMotorsVtbl, self)->VarS(self, name, s, set);
+}
+
+static inline byte Motors_VarV(void *self, const char *name, double *x, double *y, double *z, int set) {
+	return VT(cVehicleMotorsVtbl, self)->VarV(self, name, x, y, z, set);
+}
+
 struct cVehicleMotors {
 	const cVehicleMotorsVtbl *vftable;	/* 0x00 */
 	cEntity *owner;			/* 0x04 */

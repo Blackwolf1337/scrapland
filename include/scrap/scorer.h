@@ -22,6 +22,23 @@ typedef struct cScorerItemVtbl {
 	cScorerItem *(*Delete)(cScorerItem *self, byte flags);			/* 0xc */
 } cScorerItemVtbl;
 
+/* calls through the slots of cScorerItemVtbl */
+static inline cScorerItem *ScorerItem_Delete(void *self, byte flags) {
+	return VT(cScorerItemVtbl, self)->Delete(self, flags);
+}
+
+static inline void ScorerItem_Draw(void *self, int player) {
+	VT(cScorerItemVtbl, self)->Draw(self, player);
+}
+
+static inline void ScorerItem_SetParam(void *self, const char *name, const char *value) {
+	VT(cScorerItemVtbl, self)->SetParam(self, name, value);
+}
+
+static inline int ScorerItem_Var(void *self, const char *name, int set, char **s, double *d, int *i) {
+	return VT(cScorerItemVtbl, self)->Var(self, name, set, s, d, i);
+}
+
 /* the items of a scorer (Scorer.cpp, vftable rva 0x3c3ba0), 0xac bytes */
 struct cScorerItem {
 	const cScorerItemVtbl *vftable;	/* 0x00 */
@@ -73,6 +90,11 @@ typedef struct ScorerFade {
 typedef struct cScorerVtbl {
 	struct cScorer *(*Delete)(struct cScorer *self, byte flags);	/* 0x00 */
 } cScorerVtbl;
+
+/* calls through the slots of cScorerVtbl */
+static inline struct cScorer *Scorer_Delete(void *self, byte flags) {
+	return VT(cScorerVtbl, self)->Delete(self, flags);
+}
 
 typedef struct cScorer {
 	const cScorerVtbl *vftable;			/* 0x00 rva 0x3c3bb4, only the deleting destructor */

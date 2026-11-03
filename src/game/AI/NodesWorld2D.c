@@ -678,13 +678,13 @@ static void CNodesWorld2D_GetPairs(CNodesWorld2D *self, cNWPairList *list) {
 			const vec3_t *q = &qn->pos;
 			float dx = p->x - q->x, dy = p->y - q->y, dz = p->z - q->z;
 			float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
-			if (w->sup.pairRange + w->sup.pairRange > d && !w->sup.vftable->Linked(w, p, q)) {
+			if (w->sup.pairRange + w->sup.pairRange > d && !NodesWorld_Linked(w, p, q)) {
 				cNWPair pair;
 				float ex = p->x - q->x, ez = p->z - q->z;
 				pair.a = p;
 				pair.b = q;
 				pair.dist = ez * ez + ex * ex;
-				w->sup.vftable->InsertPair(w, list, &pair);
+				NodesWorld_InsertPair(w, list, &pair);
 			}
 			qn = w->sup.points.iter = w->sup.points.iter->next;
 		}
@@ -760,7 +760,7 @@ static void CNodesWorld2D_AddExtraPoints(CNodesWorld2D *self) {
 static float CNodesWorld2D_NearestVisDist(CNodesWorld2D *self, const vec3_t *pos) {
 	CNodesWorld *w = NW2D_SUP(self);
 	float best = 3.4028234663852886e+38f;
-	int i = w->sup.vftable->BufferIndex(w, pos);
+	int i = NodesWorld_BufferIndex(w, pos);
 	cNWVis *vis = w->sup.buffer[i].vis;
 
 	if (!vis) {
@@ -843,7 +843,7 @@ static int NW2DRings_Cell(const nw2dRings *s, const int *x, const int *y, const 
 	CNodesWorld *w = NW2D_SUP(s->self);
 	cNWIntList *cell;
 
-	w->sup.grid->vftable->GetCell(w->sup.grid, x, y, z, &cell);
+	GridElems_GetCell(w->sup.grid, x, y, z, &cell);
 	CNodesWorld2D_CollectCell(s->self, s->pos, cell, s->list, s->max, s->count, s->r, s->h1, s->h2, s->distMin,
 		s->distMax, s->mode, s->soft == 0);
 	return *s->count >= s->max || (*s->count > 0 && s->soft && e >= s->distMax);
@@ -871,9 +871,9 @@ static void CNodesWorld2D_SearchRings(CNodesWorld2D *self, const vec3_t *pos, co
 	byte stopXhi = 0, stopXlo = 0, stopYhi = 0, stopYlo = 0, stopZhi = 0, stopZlo = 0;
 
 	CHECK(distMin <= distMax);
-	w->sup.grid->vftable->CellCoords(w->sup.grid, pos, &c[0], &c[1], &c[2]);
-	w->sup.grid->vftable->GetDivs(w->sup.grid, &n[0], &n[1], &n[2]);
-	w->sup.grid->vftable->GetCellSize(w->sup.grid, &cs);
+	GridElems_CellCoords(w->sup.grid, pos, &c[0], &c[1], &c[2]);
+	GridElems_GetDivs(w->sup.grid, &n[0], &n[1], &n[2]);
+	GridElems_GetCellSize(w->sup.grid, &cs);
 	NW_Normalize(&dir, (pos->x + 1.0f) - pos->x, (pos->y + 1.0f) - pos->y, (pos->z + 1.0f) - pos->z);
 	/* the start box: from the cell of pos to the cell of the point distMin along the diagonal */
 	if (distMin > 0.0f) {
@@ -1007,10 +1007,10 @@ void CNodesWorld2D_GetPointsVis(CNodesWorld2D *self, const vec3_t *pos, const ve
 
 	CHECK(distMin <= distMax);
 	*count = 0;
-	const vec3_t *cs = w->sup.grid->vftable->GetCellSize(w->sup.grid, &tmp);
+	const vec3_t *cs = GridElems_GetCellSize(w->sup.grid, &tmp);
 	if (cs->x * cs->x + cs->y * cs->y + cs->z * cs->z >= distMin * distMin) {
 		cNWIntList *cell;
-		w->sup.grid->vftable->GetCellAt(w->sup.grid, pos, &cell);
+		GridElems_GetCellAt(w->sup.grid, pos, &cell);
 		CNodesWorld2D_CollectCell(self, pos, cell, list, max, count, r, h1, h2, distMin, distMax, mode, soft == 0);
 	}
 	if (*count < max) {
@@ -1127,7 +1127,7 @@ byte CNodesWorld2D_BuildPath(CNodesWorld2D *self, cNWVecList *path, int depth, c
 			break;
 		}
 		for (int j = 0; j < numLinks; j++) {
-			if (w->sup.vftable->InList(w, list, n, cur->links[j])) {
+			if (NodesWorld_InList(w, list, n, cur->links[j])) {
 				continue;
 			}
 			inList = 0;
@@ -1211,12 +1211,12 @@ void CNodesWorld2D_Load(CNodesWorld2D *self, int arg, const char *name, const ve
 		memcpy(w->sup.name, name, n);
 		w->sup.name[n] = 0;
 	}
-	w->sup.vftable->FreeGraph(w);
+	NodesWorld_FreeGraph(w);
 	if (arg < 0) {
 		if (arg != -1) {
 			goto end;
 		}
-		if (!w->sup.vftable->Create(w)) {
+		if (!NodesWorld_Create(w)) {
 			Con_Warnf("NODES 2D AI LEVEL NOT LOADED.\n\n");
 			w->sup.nodeSize.x = 155.0f;
 			w->sup.nodeSize.y = 155.0f;
@@ -1224,7 +1224,7 @@ void CNodesWorld2D_Load(CNodesWorld2D *self, int arg, const char *name, const ve
 			NW2D_SetNodeSize(w);
 			goto end;
 		}
-		w->sup.vftable->BuildGrid(w);
+		NodesWorld_BuildGrid(w);
 		Con_Printf("NODES 2D AI LEVEL LOADED.\n\n");
 		Con_Bluef("%s", str_Empty);
 		goto end;
@@ -1281,14 +1281,14 @@ void CNodesWorld2D_Load(CNodesWorld2D *self, int arg, const char *name, const ve
 	Con_Bluef("%s", str_Empty);
 	if (made) {
 		CNodesWorld2D_SaveInfPath(self);
-		w->sup.vftable->FreeTemp(w);
+		NodesWorld_FreeTemp(w);
 	}
-	if (!w->sup.vftable->Create(w)) {
+	if (!NodesWorld_Create(w)) {
 		Con_Bluef("NODES 2D AI LEVEL NOT LOADED.\n\n");
 		goto end;
 	}
 	if (arg == 0) {
-		w->sup.vftable->BuildGrid(w);
+		NodesWorld_BuildGrid(w);
 	}
 	w->sup.created = 1;
 	Con_Printf("NODES 2D AI LEVEL LOADED.\n");
@@ -1337,7 +1337,7 @@ static void NW2D_FloodStep(CNodesWorld *w, cNWVecList *queue, const vec3_t *c, c
 	CNodesWorld2D *self = (CNodesWorld2D *)w;
 
 	if (NW2D_GroundsSee(self, c, n) && CNodesWorld2D_TestWalk(self, c, n, 0.0f)) {
-		w->sup.buffer[w->sup.vftable->BufferIndex(w, n)].state = 0;
+		w->sup.buffer[NodesWorld_BufferIndex(w, n)].state = 0;
 		DListVec3_Add(queue, n);
 	}
 }
@@ -1442,7 +1442,7 @@ void CNodesWorld2D_Draw(CNodesWorld2D *self) {
 		NWSup_DrawFound(w, &w->sup.foundNodes[1], 25.0f, 0xff);
 		NWSup_DrawExtra(w, 25.0f, 0xffff00);
 		if (g_NW2DDrawMode == 8 && w->sup.grid) {
-			w->sup.grid->vftable->Draw(w->sup.grid, 0xff00);
+			GridElems_Draw(w->sup.grid, 0xff00);
 		}
 		break;
 	case 2:

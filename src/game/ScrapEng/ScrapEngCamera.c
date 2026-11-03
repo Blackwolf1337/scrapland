@@ -49,7 +49,7 @@ void CGameCamera_dtor(CGameCamera *self) {
 	}
 	CAM_CHECK(self);
 	if (self->Camera) {
-		self->Camera->vftable->Delete(&self->Camera->base, 1);
+		Object3D_Delete(self->Camera, 1);
 		self->Camera = NULL;
 	}
 }

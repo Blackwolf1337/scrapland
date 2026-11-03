@@ -183,8 +183,8 @@ static byte AICC3D_Corridor(cAICharControl *self, const vec3_t *a, const vec3_t 
 	if (Engine_TestLine(a, b, NULL, NULL)) {
 		return 0;
 	}
-	float r = Obj_Vtbl(me)->GetRadius(me);
-	float t = (float)((Obj_Vtbl(me)->GetRadius(me)) * g_FactorDistTestColCharAI);
+	float r = Obj_GetRadius(me);
+	float t = (float)((Obj_GetRadius(me)) * g_FactorDistTestColCharAI);
 	float len = Float_MinSS(AICC3D_Way(a, b, &n), t);
 	if (!AICC3D_Lines(a, &n, r, len, end ? b : NULL, segs)) {
 		return 0;
@@ -197,7 +197,7 @@ static byte AICC3D_Corridor(cAICharControl *self, const vec3_t *a, const vec3_t 
 
 byte cAICharControl3D_TestPath(cAICharControl3D *self, const vec3_t *a, const vec3_t *b, float r) {
 	if (b->x == self->dest.x && b->y == self->dest.y && b->z == self->dest.z) {
-		return AICC_Vtbl(self)->TestPathEnd(self, a, b, r);
+		return AICC_TestPathEnd(self, a, b, r);
 	}
 	return AICC3D_Corridor(self, a, b, 0);
 }
@@ -213,8 +213,8 @@ byte cAICharControl3D_TestSides(cAICharControl3D *self, const vec3_t *a, const v
 	vec3_t A0 = *a, Q0, n, m, ml;
 
 	(void)r;
-	float rad = Obj_Vtbl(me)->GetRadius(me);
-	float len = (float)((Obj_Vtbl(me)->GetRadius(me)) + 5.0f);
+	float rad = Obj_GetRadius(me);
+	float len = (float)((Obj_GetRadius(me)) + 5.0f);
 	AICC3D_Way(a, b, &n);
 	m.x = -n.x;
 	m.y = -n.y;
@@ -243,8 +243,8 @@ byte cAICharControl3D_TestStep(cAICharControl3D *self, const vec3_t *a, const ve
 	vec3_t n;
 
 	(void)r;
-	float rad = Obj_Vtbl(me)->GetRadius(me);
-	float t = (float)((Obj_Vtbl(me)->GetRadius(me)) + 5.0f);
+	float rad = Obj_GetRadius(me);
+	float t = (float)((Obj_GetRadius(me)) + 5.0f);
 	float len = Float_MinSS(AICC3D_Way(a, b, &n), t);
 	return AICC3D_Lines(a, &n, rad, len, NULL, segs) != 0;
 }
@@ -261,12 +261,12 @@ byte cAICharControl3D_SideBlocked(cAICharControl3D *self, int side) {
 		d.y = -1.0f;
 		d.z = 0.0f;
 	} else {
-		d = *AICC_Vtbl(self)->SideDir(self, &buf, side);
+		d = *AICC_SideDir(self, &buf, side);
 		if (d.x == 0.0f && d.y == 0.0f && d.z == 0.0f) {
 			return 0;
 		}
 	}
-	float r = (float)((Obj_Vtbl(self->ent)->GetRadius(self->ent)) * 1.5f);
+	float r = (float)((Obj_GetRadius(self->ent)) * 1.5f);
 	d.x = d.x * r;
 	d.y = d.y * r;
 	d.z = d.z * r;
@@ -274,12 +274,11 @@ byte cAICharControl3D_SideBlocked(cAICharControl3D *self, int side) {
 	p.y = s->y + d.y;
 	p.z = s->z + d.z;
 	p.x = s->x + d.x;
-	float rr = Obj_Vtbl(self->ent)->GetRadius(self->ent);
-	return AICC_Vtbl(self)->TestPath(self, AICC_Pos(self, &buf), &p, rr) == 0;
+	float rr = Obj_GetRadius(self->ent);
+	return AICC_TestPath(self, AICC_Pos(self, &buf), &p, rr) == 0;
 }
 
 byte cAICharControl3D_UpdateFollow(cAICharControl3D *self) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	cEntity *te = AICC_TargetEnt(self);
 	vec3_t T, buf;
 	float f;
@@ -295,7 +294,7 @@ byte cAICharControl3D_UpdateFollow(cAICharControl3D *self) {
 			self->stuck = 0;
 			if (d > self->farDist) {
 				float r = self->radius;
-				if (!vt->TestPathEnd(self, AICC_Pos(self, &buf), &T, r)) {
+				if (!AICC_TestPathEnd(self, AICC_Pos(self, &buf), &T, r)) {
 					goto lost;
 				}
 			} else {
@@ -303,15 +302,15 @@ byte cAICharControl3D_UpdateFollow(cAICharControl3D *self) {
 					goto lost;
 				}
 				float r = self->radius;
-				if (!vt->TestPathEnd(self, AICC_Pos(self, &buf), &T, r)) {
+				if (!AICC_TestPathEnd(self, AICC_Pos(self, &buf), &T, r)) {
 					self->stuck = 1;
 				}
 			}
-			vt->DirectPath(self, &T);
+			AICC_DirectPath(self, &T);
 			continue;
 		lost:
 			self->direct = 0;
-			if (!vt->FindPath(self, &T)) {
+			if (!AICC_FindPath(self, &T)) {
 				return 0;
 			}
 			cSlotController_Restart(&self->slotNear);
@@ -328,7 +327,7 @@ byte cAICharControl3D_UpdateFollow(cAICharControl3D *self) {
 			if ((double)k > __builtin_fabs((double)(p->x - self->dest.x)) &&
 					(double)k > __builtin_fabs((double)(p->y - self->dest.y)) &&
 					(double)k > __builtin_fabs((double)(p->z - self->dest.z))) {
-				if (!vt->FindPath(self, &T)) {
+				if (!AICC_FindPath(self, &T)) {
 					return 0;
 				}
 				cSlotController_Restart(&self->slotPath);
@@ -341,21 +340,21 @@ byte cAICharControl3D_UpdateFollow(cAICharControl3D *self) {
 			float d = AICC3D_DistTo(self, &T);
 			if (d > self->farDist) {
 				float r = self->radius;
-				if (!vt->TestPathEnd(self, AICC_Pos(self, &buf), &T, r)) {
+				if (!AICC_TestPathEnd(self, AICC_Pos(self, &buf), &T, r)) {
 					continue;
 				}
 			} else if (Engine_TestLine(AICC_Pos(self, &buf), &T, NULL, NULL)) {
 				continue;
 			}
 			self->direct = 1;
-			vt->DirectPath(self, &T);
+			AICC_DirectPath(self, &T);
 			cSlotController_Restart(&self->slotDirect);
 		} while (cSlotController_FireReset(&self->slotSee, &f));
 	}
 	if (cSlotController_Tick(&self->slotRepath, self->dt) &&
 			cSlotController_FireReset(&self->slotRepath, &f)) {
 		do {
-			if (!vt->FindPath(self, &T)) {
+			if (!AICC_FindPath(self, &T)) {
 				return 0;
 			}
 			cSlotController_Restart(&self->slotPath);
@@ -383,12 +382,12 @@ void cAICharControl3D_CheckArrived(cAICharControl3D *self) {
 		goto none;
 	}
 	ai = self->ai;
-	if (AICC_OwnerVtbl(ai)->base.Event(&ai->base.base, ev)) {
+	if (AIMove_Event(ai, ev)) {
 		return;
 	}
 none:
 	ai = self->ai;
-	AICC_OwnerVtbl(ai)->base.Event(&ai->base.base, 5);
+	AIMove_Event(ai, 5);
 }
 
 void cAICharControl3D_Turn(cAICharControl3D *self) {
@@ -474,7 +473,7 @@ byte cAICharControl3D_FindPath(cAICharControl3D *self, const vec3_t *p) {
 	byte noPath, reach;
 
 	CHECK((g_NodesWorld != NULL) && (g_AStar != NULL));
-	CHECK(g_NodesWorld->sup.vftable->IsCreated(g_NodesWorld));
+	CHECK(NodesWorld_IsCreated(g_NodesWorld));
 	self->dest = *p;
 	AICC_Pos(self, &pos);
 	byte ok = CAStar_FindPath(g_AStar, &self->path, &self->dest, &pos, self->radius, self->arriveDist, self->soft,
@@ -487,11 +486,11 @@ byte cAICharControl3D_FindPath(cAICharControl3D *self, const vec3_t *p) {
 		}
 		if (!ok) {
 			if (!reach) {
-				AICC_OwnerVtbl(self->ai)->base.Event(&self->ai->base.base, 1);
+				AIMove_Event(self->ai, 1);
 				return 0;
 			}
 			if (!noPath) {
-				AICC_OwnerVtbl(self->ai)->base.Event(&self->ai->base.base, 0);
+				AIMove_Event(self->ai, 0);
 			}
 			return 0;
 		}
@@ -517,11 +516,11 @@ byte cAICharControl3D_FindRoute(cAICharControl3D *self) {
 	vec3_t pos;
 
 	CHECK(g_NodesWorld != NULL);
-	CHECK(g_NodesWorld->sup.vftable->IsCreated(g_NodesWorld));
+	CHECK(NodesWorld_IsCreated(g_NodesWorld));
 	AICC_Pos(self, &pos);
 	if (!CNodesWorld_BuildPath(g_NodesWorld, &self->path, g_DepthPathRouteInDoorAI, &self->routePoint, &pos,
 			self->routeA, &self->routeNode, self->radius, self->routeB)) {
-		AICC_OwnerVtbl(self->ai)->base.Event(&self->ai->base.base, 0);
+		AIMove_Event(self->ai, 0);
 		return 0;
 	}
 	self->path.iter = self->path.head;
@@ -537,7 +536,7 @@ byte cAICharControl3D_FindRoute(cAICharControl3D *self) {
 	self->pathPoint = pt;
 	self->goal = *pt;
 	self->newPath = 0;
-	AICC_Vtbl(self)->NextGoal(self);
+	AICC_NextGoal(self);
 	return 1;
 }
 
@@ -560,9 +559,9 @@ float cAICharControl3D_KeepDist(cAICharControl3D *self, cEntity *hitEnt) {
 	CHECK(hitEnt != NULL);
 	float er = WChar(hitEnt)->wl.prim.radius;
 	float shirk = g_DistShirkCharAI;
-	float t = (float)(((Obj_Vtbl(self->ent)->GetRadius(self->ent)) + er) * shirk);
+	float t = (float)(((Obj_GetRadius(self->ent)) + er) * shirk);
 	er = WChar(hitEnt)->wl.prim.radius;
-	float c = (float)((Obj_Vtbl(self->ent)->GetRadius(self->ent)) + er + t);
+	float c = (float)((Obj_GetRadius(self->ent)) + er + t);
 	float d = WChar(self->ent)->wl.prim.radius + WChar(hitEnt)->wl.prim.radius + t;
 	float k = Float_MaxSS(c, d);
 	const vec3_t *s = AICC_Pos(self, &b1);
@@ -619,7 +618,7 @@ byte cAICharControl3D_OnFloor(cAICharControl3D *self, const vec3_t *p) {
 	const vec3_t *list;
 	int count = 0;
 
-	float r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
+	float r = Obj_GetRadius(self->ent);
 	CAStar_GetPointsVis(g_AStar, p, &list, 1, &count, r);
 	return count != 0;
 }
@@ -632,7 +631,7 @@ byte cAICharControl3D_Near(cAICharControl3D *self, cEntity *e) {
 	const vec3_t *p = AICC_EntPos(l, &b1);
 	const vec3_t *s = AICC_Pos(self, &b2);
 	float d = AICC3D_Len(s->x - p->x, s->y - p->y, s->z - p->z);
-	float k = (float)((AICC_Vtbl(self)->KeepDist(self, e)) + 1.0f);
+	float k = (float)((AICC_KeepDist(self, e)) + 1.0f);
 	return d > k;
 }
 
@@ -642,7 +641,7 @@ byte cAICharControl3D_InWay(cAICharControl3D *self, vec3_t dest, cEntity *hitEnt
 	CHECK(hitEnt != NULL);
 	const vec3_t *p = AICC_EntPos(hitEnt, &buf);
 	float d = AICC3D_Len(dest.x - p->x, dest.y - p->y, dest.z - p->z);
-	float k = AICC_Vtbl(self)->KeepDist(self, hitEnt);
+	float k = AICC_KeepDist(self, hitEnt);
 	return k >= d;
 }
 
@@ -685,7 +684,6 @@ void cAICharControl3D_StepGoal(cAICharControl3D *self, vec3_t *p) {
 
 byte cAICharControl3D_TryStrafe(cAICharControl3D *self, int side, cEntity *hitEnt, byte back, float keep,
 	byte fwd, float sd, byte e2) {
-	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	vec3_t b1, b2, A, B, C, D, E, N, G;
 
 	CHECK(hitEnt != NULL);
@@ -722,13 +720,13 @@ byte cAICharControl3D_TryStrafe(cAICharControl3D *self, int side, cEntity *hitEn
 	byte left = side == 2;
 	byte res = 1;
 	if (fwd) {
-		byte r = vt->StrafeFwd(self, &E, &A, &D, sd, left, e2);
+		byte r = AICC_StrafeFwd(self, &E, &A, &D, sd, left, e2);
 		if (!r) {
 			return r;
 		}
 	}
 	if (back) {
-		res = vt->StrafeBack(self, &E, &A, &D, keep, left, e2) ? res : 0;
+		res = AICC_StrafeBack(self, &E, &A, &D, keep, left, e2) ? res : 0;
 	}
 	return res;
 }
@@ -785,16 +783,16 @@ static byte AICC3D_ArcPoint(vec3_t *out, const vec3_t *pos, const vec3_t *a, con
 static byte AICC3D_ArcCorner(cAICharControl *self, const vec3_t *s, const vec3_t *a, const vec3_t *b, byte left) {
 	cEntity *me = self->ent;
 
-	float r2 = Obj_Vtbl(me)->GetRadius(me);
-	float r = Obj_Vtbl(me)->GetRadius(me);
+	float r2 = Obj_GetRadius(me);
+	float r = Obj_GetRadius(me);
 	return CNodesWorld_TestCorner(g_NodesWorld, s, a, b, r, r2, left, &self->debugPath);
 }
 
 static byte AICC3D_ArcPath(cAICharControl *self, const vec3_t *a, const vec3_t *b) {
 	cEntity *me = self->ent;
 
-	float r2 = Obj_Vtbl(me)->GetRadius(me);
-	float r = Obj_Vtbl(me)->GetRadius(me);
+	float r2 = Obj_GetRadius(me);
+	float r = Obj_GetRadius(me);
 	return CNodesWorld_TestPath(g_NodesWorld, a, b, r, r2, &self->debugPath, 0);
 }
 
@@ -815,7 +813,7 @@ byte cAICharControl3D_StrafeBack(cAICharControl3D *self, const vec3_t *pos, cons
 	if (!flag) {
 		ang = 6.2831855f - ang;
 	}
-	float step = (float)atan2(Obj_Vtbl(me)->GetRadius(me), dist);
+	float step = (float)atan2(Obj_GetRadius(me), dist);
 	prev.x = a.x * dist + pos->x;
 	prev.y = a.y * dist + pos->y;
 	prev.z = a.z * dist + pos->z;
@@ -823,8 +821,8 @@ byte cAICharControl3D_StrafeBack(cAICharControl3D *self, const vec3_t *pos, cons
 		DListVec3_Add(&self->debugStrafe, AICC_Pos(self, &buf));
 		DListVec3_Add(&self->debugStrafe, &prev);
 	}
-	float r2 = Obj_Vtbl(me)->GetRadius(me);
-	float r = Obj_Vtbl(me)->GetRadius(me);
+	float r2 = Obj_GetRadius(me);
+	float r = Obj_GetRadius(me);
 	if (!CNodesWorld_TestPath(g_NodesWorld, AICC_Pos(self, &buf), &prev, r, r2, &self->debugPath, 0)) {
 		return 0;
 	}
@@ -882,7 +880,7 @@ byte cAICharControl3D_StrafeFwd(cAICharControl3D *self, const vec3_t *pos, const
 	if (!flag) {
 		ang = 6.2831855f - ang;
 	}
-	float step = (float)atan2(Obj_Vtbl(me)->GetRadius(me), dist) * 0.5f;
+	float step = (float)atan2(Obj_GetRadius(me), dist) * 0.5f;
 	cur.x = a.x * dist + pos->x;
 	cur.y = a.y * dist + pos->y;
 	cur.z = a.z * dist + pos->z;

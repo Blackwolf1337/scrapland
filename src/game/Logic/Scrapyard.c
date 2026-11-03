@@ -142,16 +142,16 @@ static void cShipGroupData_Think(cShipGroupData *self) {
 		trig = g_MadHuntersTriggeredShipName;
 	}
 	cEntity *target = World_FindEntity(trig);
-	if (!target || !target->vftable->IsType(target, TYEN_CAR)) {
-		if (!usr || !usr->vftable->IsType(usr, TYEN_CAR)) {
+	if (!target || !Entity_IsType(target, TYEN_CAR)) {
+		if (!usr || !Entity_IsType(usr, TYEN_CAR)) {
 			return;
 		}
 		target = usr;
 	}
 	do {
 		cEntity *ship = Logic_AsCar(n->data);
-		CHECK(ship->vftable->IsType(ship, TYEN_CAR) && "attackerShip->IsType(TYEN_VEHICLE)");
-		cAIVehicle *ai = ship->vftable->GetAI(ship);
+		CHECK(Entity_IsType(ship, TYEN_CAR) && "attackerShip->IsType(TYEN_VEHICLE)");
+		cAIVehicle *ai = Entity_GetAI(ship);
 		CHECK(ai && "ai = attackerShip->GetAI()");
 		int st = cAIVehicle_GetState(ai);
 		if (st != 1) {
@@ -164,7 +164,7 @@ static void cShipGroupData_Think(cShipGroupData *self) {
 			}
 			vec3_t lair;
 			memcpy(&lair, &it->value, sizeof(lair));
-			const vec3_t *sp = ship->vftable->GetPos(ship, &tmp);
+			const vec3_t *sp = Entity_GetPos(ship, &tmp);
 			float dx = lair.x - sp->x;
 			float dy = lair.y - sp->y;
 			float dz = lair.z - sp->z;
@@ -172,7 +172,7 @@ static void cShipGroupData_Think(cShipGroupData *self) {
 			if (d > maxDist) {
 				cAIVehicle_SetState(ai, 1, lair, 3000.0, 1, 1.0, 20.0, 20.0, 1);
 				AIV_OnEnd(ai) = (void *)ShipGroup_OnAIEnd;
-			} else if (st != 2 && (st != 7 || (usr && usr->vftable->IsType(usr, TYEN_CAR)))) {
+			} else if (st != 2 && (st != 7 || (usr && Entity_IsType(usr, TYEN_CAR)))) {
 				if (count < maxAttack) {
 					count++;
 					cAIVehicle_SetState(ai, 2, target);
@@ -187,8 +187,8 @@ static void cShipGroupData_Think(cShipGroupData *self) {
 			}
 		}
 		cEntity *t = Logic_AttackTarget(ai);
-		if (cAIVehicle_GetState(ai) != AIV_STATE_CHASE && t && !t->vftable->GetAI(t) && usr &&
-			usr->vftable->IsType(usr, TYEN_WALKCHAR)) {
+		if (cAIVehicle_GetState(ai) != AIV_STATE_CHASE && t && !Entity_GetAI(t) && usr &&
+			Entity_IsType(usr, TYEN_WALKCHAR)) {
 			cAIVehicle_SetState(ai, AIV_STATE_CHASE, usr, (double)g_AIChaseDefault1, (double)g_AIChaseDefault2);
 		}
 		n = Logic_ListNext(n);
@@ -229,7 +229,7 @@ static void ShipGroup_SphereNative(cAbstractFile *params) {
 		return;
 	}
 	cEntity *usr = cWorld_GetUsrEntity(g_pWorld, 0);
-	if (!e->vftable->GetAI(e) && e != usr) {
+	if (!Entity_GetAI(e) && e != usr) {
 		return;
 	}
 	const char *list = cEntity_GetListName(e);
@@ -303,7 +303,7 @@ static byte cScrapyardLocalLogic_VarV(cScrapyardLocalLogic *self, const char *na
 
 /* the maker of the logics of the lists (cEntityListData.func) */
 static cLocalLogic *ShipGroup_MakeLogic(cEntity *e) {
-	if (!e || !e->vftable->IsType(e, TYEN_CAR) || !e->vftable->IsType(e, TYEN_CAR)) {
+	if (!e || !Entity_IsType(e, TYEN_CAR) || !Entity_IsType(e, TYEN_CAR)) {
 		CHECK(!"e && e->IsType(TYEN_VEHICLE)");
 	}
 	cLocalLogic *l = operator_new(sizeof(*l));

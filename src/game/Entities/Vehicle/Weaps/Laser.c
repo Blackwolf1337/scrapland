@@ -70,8 +70,8 @@ static void Hook_Aim(cEntity *v) {
 	ang.z = 0.0f;
 	target = NULL;
 	dist = g_HookRange;
-	v->vftable->GetTargetAngle(v, &ang.x, g_HookRange, &target);
-	v->vftable->AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 8);
+	Entity_GetTargetAngle(v, &ang.x, g_HookRange, &target);
+	Entity_AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 8);
 	if (dist + 100.0f > g_HookRange) {
 		if (!(g_pApp->flags & APPF_CLIENT)) {
 			cWeaponManager_LockPoint(&Veh(v)->weapons, NULL);
@@ -125,33 +125,33 @@ static void Hook_OffNative(cAbstractFile *f) {
 /* the speed of the entity, at least 16800 */
 static float Hook_MaxSpeed(cEntity *e) {
 	vec3_t tmp;
-	const vec3_t *v = Obj_Vtbl(e)->GetVel(e, &tmp);
+	const vec3_t *v = Obj_GetVel(e, &tmp);
 	return Float_MaxSS(16800.0f, (float)__builtin_sqrt((double)(v->x * v->x + v->y * v->y + v->z * v->z)));
 }
 
 static float Hook_Speed(cEntity *e) {
 	vec3_t tmp;
-	const vec3_t *v = Obj_Vtbl(e)->GetVel(e, &tmp);
+	const vec3_t *v = Obj_GetVel(e, &tmp);
 	return (float)__builtin_sqrt((double)(v->x * v->x + v->y * v->y + v->z * v->z));
 }
 
 /* the velocity plus (x, y, z) */
 static void Hook_AddVel(cEntity *e, float x, float y, float z) {
 	vec3_t tmp, vel;
-	const vec3_t *v = Obj_Vtbl(e)->GetVel(e, &tmp);
+	const vec3_t *v = Obj_GetVel(e, &tmp);
 	vel.y = v->y + y;
 	vel.z = v->z + z;
 	vel.x = v->x + x;
-	Obj_Vtbl(e)->SetVel(e, &vel);
+	Obj_SetVel(e, &vel);
 }
 
 static void Hook_ScaleVel(cEntity *e, float k) {
 	vec3_t tmp, vel;
-	const vec3_t *v = Obj_Vtbl(e)->GetVel(e, &tmp);
+	const vec3_t *v = Obj_GetVel(e, &tmp);
 	vel.y = v->y * k;
 	vel.z = v->z * k;
 	vel.x = k * v->x;
-	Obj_Vtbl(e)->SetVel(e, &vel);
+	Obj_SetVel(e, &vel);
 }
 
 /*
@@ -253,16 +253,16 @@ static void Hook_UpdateNative(cAbstractFile *f) {
 		}
 		if (Entity_IsType(target, TYEN_VEHICLE)) {
 			Veh(target)->emi = World_IsEasySingle() &&
-				!target->vftable->GetAI(target) ? 0.25f : g_HookEMITime;
+				!Entity_GetAI(target) ? 0.25f : g_HookEMITime;
 		}
 		if (!Entity_IsType(target, TYEN_WITH_LIFE) || !Ent_Active(target)) {
 			Hook_Unlock(v);
 			return;
 		}
-		p = Obj_Vtbl(target)->GetViewPos(target, &tmp);
+		p = Obj_GetViewPos(target, &tmp);
 	}
 	hp = *p;
-	const vec3_t *c = Obj_Vtbl(v)->GetViewPos(v, &tmp);
+	const vec3_t *c = Obj_GetViewPos(v, &tmp);
 	float dy = hp.y - c->y;
 	float dx = hp.x - c->x;
 	float dz = hp.z - c->z;
@@ -321,7 +321,7 @@ static void Hook_StartNative(cAbstractFile *f) {
 	int start;
 
 	cAbstractFile_ReadString(f, name, 0x80);
-	f->vftable->Read(f, &start, 4);
+	VFile_Read(f, &start, 4);
 	cEntity *v = Weap_FindVehicle(name);
 	if (!v) {
 		return;
@@ -390,7 +390,7 @@ static void Laser_CreateNative(cAbstractFile *f) {
 		if (!cTargetLock_HasSlot(&Veh(v)->weapons, g_LaserIDWeap, i)) {
 			continue;
 		}
-		const matrix_t *m = CGameModel_NodeMatrix(Obj_Vtbl(v)->GetModel(v), &mtx,
+		const matrix_t *m = CGameModel_NodeMatrix(Obj_GetModel(v), &mtx,
 			Veh(v)->weapons.nodes[g_LaserIDAmmo][i], 0, NULL, 0);
 		s.x = m->m[12];
 		s.y = m->m[13];
@@ -441,7 +441,7 @@ static void Laser_CreateNative(cAbstractFile *f) {
 			CHECK(w);
 			CHECK(Entity_IsType(w, TYEN_WITH_LIFE));
 			float rad = WLife(w)->prim.radius;
-			const vec3_t *c = Obj_Vtbl(v)->GetViewPos(v, &tmp);
+			const vec3_t *c = Obj_GetViewPos(v, &tmp);
 			Weap_Norm(&n, c->x - hit.x, c->y - hit.y, c->z - hit.z);
 			float rr = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 0.30000001192092896 +
 				0.10000000149011612);
@@ -480,7 +480,7 @@ static void Laser_CreateNative(cAbstractFile *f) {
 					}
 				}
 			}
-			Obj_Vtbl(v)->GetViewAng(v, &ang);
+			Obj_GetViewAng(v, &ang);
 			Matrix_Identity(&mtx);
 			Matrix_Rotate(&mtx, &ang);
 			Matrix_Translate(&mtx, &hit);
@@ -560,10 +560,9 @@ static void Laser_CreateNative(cAbstractFile *f) {
 		}
 		Laser_Push(v, t, shots);
 	} else {
-		CSoundSys *ss = g_pSound;
 		const char *ric = g_LaserRicSound;
 		int vol = Snd_Volume(g_LaserRicSoundVol);
-		ss->vftable->PlayAt(g_pSound, ric, &hit, vol);
+		SoundSys_PlayAt(g_pSound, ric, &hit, vol);
 	}
 	if (g_LaserAmmoCost >= cTargetLock_GetAmmo(&Veh(v)->weapons, g_LaserIDAmmo)) {
 		Weap_PlaySound(v, SND_LASER_LOW);
@@ -576,7 +575,7 @@ static void Laser_HudNative(cAbstractFile *f) {
 	int player;
 
 	cAbstractFile_ReadString(f, name, 0x80);
-	f->vftable->Read(f, &player, 4);
+	VFile_Read(f, &player, 4);
 	cAbstractFile_ReadString(f, itemName, 0x80);
 	cEntity *v = Weap_Vehicle(name);
 	cCannonScorer *item = (cCannonScorer *)cScorer_FindItem(Scorer_Get(player), itemName);
@@ -637,8 +636,8 @@ static void Laser_FireNative(cAbstractFile *f) {
 	ang.z = 0.0f;
 	target = NULL;
 	dist = g_LaserRange;
-	v->vftable->GetTargetAngle(v, &ang.x, g_LaserRange, &target);
-	v->vftable->AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 8);
+	Entity_GetTargetAngle(v, &ang.x, g_LaserRange, &target);
+	Entity_AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 8);
 	byte isCar = target && Entity_IsType(target, TYEN_VEHICLE);
 	byte isLife = target && Entity_IsType(target, TYEN_WITH_LIFE);
 	if (isCar) {
@@ -736,8 +735,8 @@ static void Sonic_FireNative(cAbstractFile *f) {
 		return;
 	}
 	Net_GetObjName(obj);
-	v->vftable->GetPos(v, &pos);
-	Obj_Vtbl(v)->GetAng(v, &ang);
+	Entity_GetPos(v, &pos);
+	Obj_GetAng(v, &ang);
 	cPy_Function_AddParamS(g_CreateSonicFunc, obj);
 	cPy_Function_AddParamF(g_CreateSonicFunc, pos.x);
 	cPy_Function_AddParamF(g_CreateSonicFunc, pos.y);
@@ -776,9 +775,9 @@ static vec3_t g_SonicHitPos;
 static void Sonic_ExplodeNative(cAbstractFile *f) {
 	vec3_t *p = &g_SonicHitPos;
 
-	f->vftable->Read(f, &p->x, 4);
-	f->vftable->Read(f, &p->y, 4);
-	f->vftable->Read(f, &p->z, 4);
+	VFile_Read(f, &p->x, 4);
+	VFile_Read(f, &p->y, 4);
+	VFile_Read(f, &p->z, 4);
 	if (!FX_IsVisible(p->x, p->y, p->z, g_FXSonicRadius * 2.0f + 500.0f, 0.0f, NULL, 1)) {
 		return;
 	}

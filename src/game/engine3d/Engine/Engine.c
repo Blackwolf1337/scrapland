@@ -289,7 +289,7 @@ static int CEngineApp_ResetDevice(CEngineApp *self) {
 	/* differs from the original on purpose (no sleeps): no Sleep(250) before the reset */
 	int hr;
 	if (!g_ResetDevOnly) {
-		hr = self->base.vftable->DeleteDeviceObjects(&self->base);
+		hr = D3DApp_DeleteDeviceObjects(self);
 		if (hr < 0) {
 			return hr;
 		}
@@ -306,14 +306,14 @@ static int CEngineApp_ResetDevice(CEngineApp *self) {
 		}
 		CHECK(g_World);
 		Engine_GetScene(self);
-		hr = self->base.vftable->InitDeviceObjects(&self->base);
+		hr = D3DApp_InitDeviceObjects(self);
 		return hr < 0 ? hr : 0;
 	}
-	hr = self->base.vftable->DeleteDeviceObjects(&self->base);
+	hr = D3DApp_DeleteDeviceObjects(self);
 	if (hr < 0) {
 		return hr;
 	}
-	hr = self->base.vftable->FinalCleanup(&self->base);
+	hr = D3DApp_FinalCleanup(self);
 	if (hr < 0) {
 		return hr;
 	}
@@ -323,12 +323,12 @@ static int CEngineApp_ResetDevice(CEngineApp *self) {
 	Keyboard_Clear();
 	void *dev = self->base.device;
 	self->base.device = NULL;
-	hr = self->base.vftable->OneTimeSceneInit(&self->base);
+	hr = D3DApp_OneTimeSceneInit(self);
 	if (hr < 0) {
 		return hr;
 	}
 	self->base.device = dev;
-	hr = self->base.vftable->InitDeviceObjects(&self->base);
+	hr = D3DApp_InitDeviceObjects(self);
 	return hr < 0 ? hr : 0;
 }
 
@@ -591,7 +591,7 @@ static void Engine_ReleaseScene(CEngineApp *self) {
 		self->scene->Refs--;
 		e = self->scene;
 		if (!e->Refs && e) {
-			e->vftable->Delete(&e->ref, 1);
+			ObjRef_Delete(e, 1);
 		}
 		self->scene = NULL;
 	}

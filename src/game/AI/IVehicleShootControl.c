@@ -77,8 +77,8 @@ static inline float AIVS_Ammo(cAIVehicleShoot *self, int kind) {
 static float AIVS_TargetDist(cAIVehicleShoot *self) {
 	vec3_t a, b;
 	cEntity *t = AIVS_Target(self);
-	const vec3_t *p = self->vehicle->vftable->GetPos(self->vehicle, &a);
-	const vec3_t *q = t->vftable->GetPos(t, &b);
+	const vec3_t *p = Entity_GetPos(self->vehicle, &a);
+	const vec3_t *q = Entity_GetPos(t, &b);
 	float dx = q->x - p->x, dy = q->y - p->y, dz = q->z - p->z;
 
 	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
@@ -88,8 +88,8 @@ static float AIVS_TargetDist(cAIVehicleShoot *self) {
 static void AIVS_TargetDir(cAIVehicleShoot *self, vec3_t *d) {
 	vec3_t a, b;
 	cEntity *t = AIVS_Target(self);
-	const vec3_t *p = self->vehicle->vftable->GetPos(self->vehicle, &a);
-	const vec3_t *q = t->vftable->GetPos(t, &b);
+	const vec3_t *p = Entity_GetPos(self->vehicle, &a);
+	const vec3_t *q = Entity_GetPos(t, &b);
 
 	d->x = q->x - p->x;
 	d->y = q->y - p->y;
@@ -117,7 +117,7 @@ static byte AIVS_TargetDied(cAIVehicleShoot *self, const char *fmt) {
 	int st = cAIVehicle_GetState(self->ai);
 
 	Con_Bluef(fmt, name, st, in);
-	self->ai->vftable->Event(&self->ai->base.base, 3);
+	AIMove_Event(self->ai, 3);
 	return 0;
 }
 
@@ -278,7 +278,7 @@ static void cAIVehicleShoot_PullFire(cAIVehicleShoot *self) {
 
 		AIVS_TargetDir(self, &d);
 		cEntity *t = AIVS_Target(self);
-		Vec3_Rotate(&fwd, &aivs_fwd, Obj_Vtbl(t)->GetAng(t, &rot));
+		Vec3_Rotate(&fwd, &aivs_fwd, Obj_GetAng(t, &rot));
 		if (self->params.cadence == 0) {
 			r = 0;
 		} else {
@@ -326,14 +326,14 @@ static void cAIVehicleShoot_Fire(cAIVehicleShoot *self) {
 			vec3_t rot, fwd, d;
 			cEntity *tg = AIVS_Target(self);
 			vec3_t a, b;
-			const vec3_t *p = self->vehicle->vftable->GetPos(self->vehicle, &a);
-			const vec3_t *q = tg->vftable->GetPos(tg, &b);
+			const vec3_t *p = Entity_GetPos(self->vehicle, &a);
+			const vec3_t *q = Entity_GetPos(tg, &b);
 			float dx = q->x - p->x, dy = q->y - p->y, dz = q->z - p->z;
 			cEntity *tr = AIVS_Target(self);
-			float r = Obj_Vtbl(tr)->GetRadius(tr);
+			float r = Obj_GetRadius(tr);
 			float dist = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 			double cone = atan2((double)r, (double)dist);
-			Vec3_Rotate(&fwd, &aivs_fwd, Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot));
+			Vec3_Rotate(&fwd, &aivs_fwd, Obj_GetAng(self->vehicle, &rot));
 			AIVS_TargetDir(self, &d);
 			double ang = Vec3_Angle(&fwd, &d);
 			if ((double)g_OffsetAngShootAI + cone > ang) {
@@ -375,9 +375,9 @@ static void cAIVehicleShoot_FireCM(cAIVehicleShoot *self) {
 			vec3_t d, rot, fwd;
 			AIVS_TargetDir(self, &d);
 			cEntity *tr = AIVS_Target(self);
-			float r = Obj_Vtbl(tr)->GetRadius(tr);
+			float r = Obj_GetRadius(tr);
 			double cone = atan2((double)r, (double)dist);
-			Vec3_Rotate(&fwd, &aivs_back, Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot));
+			Vec3_Rotate(&fwd, &aivs_back, Obj_GetAng(self->vehicle, &rot));
 			double ang = Vec3_Angle(&fwd, &d);
 			if (!((double)g_OffsetAngShootAI + cone > ang)) {
 				goto far;
@@ -430,8 +430,8 @@ static void cAIVehicleShoot_FireHook(cAIVehicleShoot *self) {
 		if (self->hook) {
 			vec3_t a, b;
 			cEntity *tg = AIVS_Target(self);
-			const vec3_t *p = self->vehicle->vftable->GetPos(self->vehicle, &a);
-			const vec3_t *q = tg->vftable->GetPos(tg, &b);
+			const vec3_t *p = Entity_GetPos(self->vehicle, &a);
+			const vec3_t *q = Entity_GetPos(tg, &b);
 			float dx = q->x - p->x, dy = q->y - p->y, dz = q->z - p->z;
 			if (!(g_HookRange * g_HookRange > dy * dy + dx * dx + dz * dz)) {
 				goto off;
@@ -796,12 +796,12 @@ static byte cAIVehicleShoot_InRange(cAIVehicleShoot *self, int w) {
 byte cAIVehicleShoot_SetMode(cAIVehicleShoot *self, int a, int b, byte c) {
 	byte r = 1;
 
-	if (!self->ai->vftable->GetTarget(&self->ai->base.base)->target && c) {
+	if (!AIMove_GetTarget(self->ai)->target && c) {
 		a = 0;
 		b = 0;
 		r = 0;
 	}
-	self->target = self->ai->vftable->GetTarget(&self->ai->base.base);
+	self->target = AIMove_GetTarget(self->ai);
 	self->hook = c;
 	self->mode = a;
 	self->modeCM = b;

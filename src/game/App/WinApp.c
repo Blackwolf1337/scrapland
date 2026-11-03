@@ -261,7 +261,7 @@ void ConsoleWin_Add(const char *text, uint32_t color) {
 /* the folder of the configuration (Plat_ConfigDir), "" with the dedicated window; differs from the original on
  * purpose (no store features): no subfolder of the GOG id */
 void App_GetConfigDir(char *buf, int size) {
-	if (g_pApp->vftable->IsDedicatedWin(g_pApp)) {
+	if (App_IsDedicatedWin(g_pApp)) {
 		*buf = 0;
 		return;
 	}
@@ -324,7 +324,7 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 
 	CWinApp *app = operator_new(sizeof(CWinApp));
 	g_pApp = app ? &CWinApp_ctor(app, hInst, hPrev, cmdLine, nCmdShow)->base : NULL;
-	if (!g_pApp->vftable->Init(g_pApp)) {
+	if (!App_Init(g_pApp)) {
 		return 0;
 	}
 	for (;;) {
@@ -356,12 +356,12 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 		/* differs from the original on purpose (no sleeps): no frame while the frame limiter holds it back, the
 		 * original slept in CEngineApp_Render */
 		if (!g_Engine || Engine_FrameDue(g_Engine)) {
-			g_pApp->vftable->Frame(g_pApp);
+			App_Frame(g_pApp);
 		}
 	}
-	g_pApp->vftable->Shutdown(g_pApp);
+	App_Shutdown(g_pApp);
 	if (g_pApp) {
-		g_pApp->vftable->Delete(g_pApp, 1);
+		App_Delete(g_pApp, 1);
 	}
 	g_pApp = NULL;
 	return 0;

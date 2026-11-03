@@ -24,7 +24,7 @@ extern cGVar GVar_MaxPoliceWarnDist;
 static void Event_Read(cAbstractFile *params, char *name, char *str, float *t) {
 	cAbstractFile_ReadString(params, name, EVENT_STR);
 	cAbstractFile_ReadString(params, str, EVENT_STR);
-	params->vftable->Read(params, t, sizeof(*t));
+	VFile_Read(params, t, sizeof(*t));
 }
 
 /* the part after the next ':' (cut there), NULL without one */
@@ -48,7 +48,7 @@ static void Event_AnmSound2DEvent(cAbstractFile *params) {
 		Con_Bluef("ERROR!:AnmSound2DEvent('%s','%s',%f):\n\tEntity Not found!\n", name, snd, (double)t);
 		return;
 	}
-	CHECK(ent->vftable->IsType(ent, TYEN_WITH_LIFE));
+	CHECK(Entity_IsType(ent, TYEN_WITH_LIFE));
 	char *volu = strchr(snd, ':');
 	CHECK(volu);
 	*volu++ = 0;
@@ -71,7 +71,7 @@ static void Event_AnmSound2DEvent(cAbstractFile *params) {
 	s.desc.pan = pan;
 	s.desc.freq = 1.0f;
 	cSound_SetPitch(&s, pitch);
-	g_pSound->vftable->PlaySound(g_pSound, snd, &s.desc, NULL);
+	SoundSys_PlaySound(g_pSound, snd, &s.desc, NULL);
 }
 
 static void Event_AnmSoundEvent(cAbstractFile *params) {
@@ -86,19 +86,19 @@ static void Event_AnmSoundEvent(cAbstractFile *params) {
 		Con_Bluef("ERROR!:AnmSoundEvent('%s','%s',%f):\n\tEntity Not found!\n", name, snd, (double)t);
 		return;
 	}
-	CHECK(ent->vftable->IsType(ent, TYEN_WITH_LIFE));
+	CHECK(Entity_IsType(ent, TYEN_WITH_LIFE));
 	char *volu = strchr(snd, ':');
 	CHECK(volu);
 	*volu++ = 0;
 	char *pitch = Event_Next(volu);
 	cSoundDesc_Init(&s.desc);
 	s.desc.loop = 0;
-	cSoundDesc_SetPos(&s.desc, Obj_Vtbl(ent)->GetSndPos(ent, &pos));
+	cSoundDesc_SetPos(&s.desc, Obj_GetSndPos(ent, &pos));
 	s.desc.volume += Snd_Volume((float)crt_atof(volu));
 	if (pitch) {
 		cSound_SetPitch(&s, (float)crt_atof(pitch));
 	}
-	g_pSound->vftable->PlaySound(g_pSound, snd, &s.desc, NULL);
+	SoundSys_PlaySound(g_pSound, snd, &s.desc, NULL);
 }
 
 static void Event_AnmSoundLoopEvent(cAbstractFile *params) {
@@ -111,7 +111,7 @@ static void Event_AnmSoundLoopEvent(cAbstractFile *params) {
 		Con_Bluef("ERROR!:AnmSoundLoopEvent('%s','%s',%f):\n\tEntity Not found!\n", name, snd, (double)t);
 		return;
 	}
-	CHECK(ent->vftable->IsType(ent, TYEN_WITH_LIFE));
+	CHECK(Entity_IsType(ent, TYEN_WITH_LIFE));
 	char *volu = strchr(snd, ':');
 	CHECK(volu);
 	*volu++ = 0;

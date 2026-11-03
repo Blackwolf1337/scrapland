@@ -35,10 +35,10 @@ cAIMove *cAIMove_ctor(cAIMove *self, cEntity *e) {
 	self->target.data = self;
 	self->flying = 0;
 	cEntity *o = self->base.entity;
-	if (o->vftable->IsType(o, "WalkChar")) {
-		fly = ((cActCtrl *)WithLife_Vtbl(o)->GetActCtrl(o))->cls->canFly;
+	if (Entity_IsType(o, "WalkChar")) {
+		fly = ((cActCtrl *)WithLife_GetActCtrl(o))->cls->canFly;
 	} else {
-		fly = o->vftable->IsType(o, "Car");
+		fly = Entity_IsType(o, "Car");
 	}
 	if (fly) {
 		self->flying = 1;
@@ -89,15 +89,15 @@ void cAIMove_CheckStopped(cAI *elem, float dt) {
 	cAIMove *self = (cAIMove *)elem;
 	vec3_t buf;
 
-	if (self->vftable->IsMoving(&self->base)) {
-		const vec3_t *v = Obj_Vtbl(self->base.entity)->GetVel(self->base.entity, &buf);
+	if (AIMove_IsMoving(self)) {
+		const vec3_t *v = Obj_GetVel(self->base.entity, &buf);
 		if (v->x * v->x + v->y * v->y + v->z * v->z == 0.0f) {
 			float t = dt + self->stopTime;
 			self->stopTime = t;
 			if (t > AIMOVE_STOP_TIME) {
 				self->stopTime = 0.0f;
 				self->stopped = 1;
-				self->vftable->Event(&self->base, AIMOVE_EV_STOPPED);
+				AIMove_Event(self, AIMOVE_EV_STOPPED);
 				return;
 			}
 			self->stopped = 0;
@@ -115,7 +115,7 @@ void cAIMove_Draw(cAI *elem) {
 void cAIMove_Update(cAI *elem, float dt) {
 	cAIMove *self = (cAIMove *)elem;
 	cAI_Update(&self->base, dt);
-	self->vftable->CheckStopped(&self->base, dt);
+	AIMove_CheckStopped(self, dt);
 }
 
 void cAIMove_UpdateOff(cAI *elem, float dt) {
@@ -229,12 +229,12 @@ vec3_t *cAIMove_RandomPoint(cAI *elem, vec3_t *out, const vec3_t *p, float r) {
 			q.y = p->y + oy;
 			q.z = p->z + 0.0f;
 			cEntity *o = self->base.entity;
-			cActCtrl *ac = WithLife_Vtbl(o)->GetActCtrl(o);
+			cActCtrl *ac = WithLife_GetActCtrl(o);
 			o = self->base.entity;
 			float h = WChar(o)->floorDist;
 			float h2 = ac->cls->sRadius;
-			float r1 = Obj_Vtbl(o)->GetRadius(o);
-			float r2 = Obj_Vtbl(o)->GetRadius(o);
+			float r1 = Obj_GetRadius(o);
+			float r2 = Obj_GetRadius(o);
 			ok = CNodesWorld2D_TestPath(g_NodesWorld2D, p, &q, r2, r1, h, h2, NULL);
 		} else {
 			float ox = AIMove_Rand(span, lo);
@@ -244,7 +244,7 @@ vec3_t *cAIMove_RandomPoint(cAI *elem, vec3_t *out, const vec3_t *p, float r) {
 			q.y = p->y + oy;
 			q.z = p->z + oz;
 			cEntity *o = self->base.entity;
-			ok = !Engine_TestSphere(p, &q, Obj_Vtbl(o)->GetRadius(o), NULL, NULL);
+			ok = !Engine_TestSphere(p, &q, Obj_GetRadius(o), NULL, NULL);
 		}
 		if (ok) {
 			*out = q;

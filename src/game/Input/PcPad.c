@@ -263,7 +263,7 @@ static const char *cPcPad_GetName(cAbstractIDevice *base) {
 
 static const char *cPcPad_GetEntryName(cAbstractIDevice *elem, int entry) {
 	cPcPad *self = (cPcPad *)elem;
-	return self->base.vftable->GetEntryLabel(&self->base, entry);
+	return InputDev_GetEntryLabel(self, entry);
 }
 
 static char g_PadLabelBuf[32];

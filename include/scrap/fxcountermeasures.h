@@ -25,6 +25,27 @@ typedef struct cObjElementFXVtbl {
 	void(*Reset)(cObjElementFX *self, cDebris *debris);			/* 0x10 vf04 */
 } cObjElementFXVtbl;
 
+/* calls through the slots of cObjElementFXVtbl */
+static inline cObjElementFX *FXObj_Delete(void *self, byte flags) {
+	return VT(cObjElementFXVtbl, self)->Delete(self, flags);
+}
+
+static inline byte FXObj_IsAlive(void *self, cDebris *debris, cDebrisSys *sys) {
+	return VT(cObjElementFXVtbl, self)->IsAlive(self, debris, sys);
+}
+
+static inline void FXObj_Reset(void *self, cDebris *debris) {
+	VT(cObjElementFXVtbl, self)->Reset(self, debris);
+}
+
+static inline void FXObj_Start(void *self, cDebris *debris) {
+	VT(cObjElementFXVtbl, self)->Start(self, debris);
+}
+
+static inline void FXObj_Update(void *self, cDebris *debris, float dt) {
+	VT(cObjElementFXVtbl, self)->Update(self, debris, dt);
+}
+
 struct cObjElementFX {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
 };

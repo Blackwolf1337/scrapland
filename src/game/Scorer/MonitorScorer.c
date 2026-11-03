@@ -367,8 +367,8 @@ static void Monitor_DrawHead(cMonitorScorer *self, float frameTime) {
 	}
 	CGameCamera_Copy(self->cam, cur);
 	CGameCamera_SetLookAt(self->cam, 1);
-	float sx = (float)sin(g_pApp->vftable->GetGameTime(g_pApp)) * MONITOR_HEAD_SWAY;
-	double t2 = ((g_pApp->vftable->GetGameTime(g_pApp)) * 0.5);
+	float sx = (float)sin(App_GetGameTime(g_pApp)) * MONITOR_HEAD_SWAY;
+	double t2 = ((App_GetGameTime(g_pApp)) * 0.5);
 	float cy = (float)cos(t2) * MONITOR_HEAD_SWAY;
 	cScorerModel *m = self->model;
 	float hy = m->height + MONITOR_HEAD_SWAY + cy;
@@ -390,7 +390,7 @@ static void Monitor_DrawHead(cMonitorScorer *self, float frameTime) {
 	CGameModel_RenderNow(&self->model->model, 2);
 	cEmbeddedFX *extra = self->model->extra;
 	if (extra) {
-		extra->vftable->Tick(extra);
+		EFX_Tick(extra);
 	}
 	CGameModel_Disable(&self->model->model);
 	Camera_SetCurrent(cur);
@@ -451,8 +451,7 @@ static uint32_t Monitor_DrawLooked(cMonitorScorer *self, cEntity *target, cEntit
 	CGameCamera_Copy(self->cam, cur);
 	CGameCamera_SetLookAt(self->cam, 1);
 	self->cam->aspectScreen = MONITOR_VIEW_ASPECT;
-	const cObjEntityVtbl *vt = Obj_Vtbl(e);
-	const vec3_t *p = vt->GetViewPos(e, &t);
+	const vec3_t *p = Obj_GetViewPos(e, &t);
 	float dx = p->x - cur->pos.x, dy = p->y - cur->pos.y, dz = p->z - cur->pos.z;
 	float dist;
 	if (!isWalk) {
@@ -460,7 +459,7 @@ static uint32_t Monitor_DrawLooked(cMonitorScorer *self, cEntity *target, cEntit
 		float f = (float)exp((double)(l * -1.5f / MONITOR_VIEW_FAR));
 		dist = (1.0f - f) * MONITOR_VIEW_FAR;
 	} else if (Entity_IsType(e, TYEN_WITH_LIFE)) {
-		CGameModel *gm = vt->GetModel(e);
+		CGameModel *gm = Obj_GetModel(e);
 		if (eIsCar && gm && CGameModel_IsLoaded(gm)) {
 			dist = (float)((CGameModel_Radius(gm)) * 7.5f);
 		} else {
@@ -469,23 +468,23 @@ static uint32_t Monitor_DrawLooked(cMonitorScorer *self, cEntity *target, cEntit
 	} else {
 		dist = 600.0f;
 	}
-	p = vt->GetViewPos(e, &t);
+	p = Obj_GetViewPos(e, &t);
 	d.x = p->x - cur->pos.x;
 	d.y = p->y - cur->pos.y;
 	d.z = p->z - cur->pos.z;
 	vec3_t n;
 	const vec3_t *u = Vec3_NormalizeTo(&n, &d);
 	float ox = u->x * dist, oy = u->y * dist, oz = u->z * dist;
-	p = vt->GetViewPos(e, &t);
+	p = Obj_GetViewPos(e, &t);
 	CGameCamera *cam = self->cam;
 	cam->pos.x = p->x - ox;
 	cam->pos.y = p->y - oy;
 	cam->pos.z = p->z - oz;
 	self->cam->fov = MONITOR_VIEW_FOV;
-	p = vt->GetViewPos(e, &t);
+	p = Obj_GetViewPos(e, &t);
 	self->cam->target = *p;
 	Camera_SetCurrent(self->cam);
-	vt->Render(e);
+	Obj_Render(e);
 	Camera_SetCurrent(cur);
 	if (e != self->lastTarget) {
 		self->lastTarget = e;
@@ -580,7 +579,7 @@ static void Monitor_DrawText(cMonitorScorer *self, cEntity *e, float frameTime, 
 			self->img350->scaleX = dim[0];
 			self->img350->scaleY = dim[1];
 			CPsaImage_Draw(self->img350, pos[0], pos[1]);
-			double b = ((g_pApp->vftable->GetGameTime(g_pApp)) * 8.0);
+			double b = ((App_GetGameTime(g_pApp)) * 8.0);
 			if (!((int)b & 1)) {
 				CFont_PrintfAlignColor(self->smallFont, self->base.x + MONITOR_SIGNAL_X,
 					self->base.y + MONITOR_SIGNAL_Y, 4, 0xff0000, "NO SIGNAL");
@@ -596,7 +595,7 @@ static void Monitor_DrawText(cMonitorScorer *self, cEntity *e, float frameTime, 
 	s->color = (uint32_t)(int)(float)((double)r * RAND_SCALE * 192.0 + 0.0) << 24 | 0xffffff;
 	s->scaleX = 123.5f / (uv1[0] - uv0[0]);
 	s->scaleY = MONITOR_STATIC_H / (uv1[1] - uv0[1]);
-	double g = ((g_pApp->vftable->GetGameTime(g_pApp)) * 20.0);
+	double g = ((App_GetGameTime(g_pApp)) * 20.0);
 	int k = (int)g % 120;
 	CPsaImage_DrawFrame(self->staticImg, self->staticIndex, self->base.x,
 		self->base.y + ((float)k - MONITOR_STATIC_H));
@@ -659,7 +658,7 @@ static void Monitor_DrawObjective(cMonitorScorer *self, cEntity *e, float time, 
 	}
 	if (on) {
 		Monitor_RepeatPhotoMessage();
-		Engine_WorldToScreen(Obj_Vtbl(e)->GetViewPos(e, &t), self->objPos, NULL);
+		Engine_WorldToScreen(Obj_GetViewPos(e, &t), self->objPos, NULL);
 	} else {
 		self->objPos[0] = self->base.x + MONITOR_SIGNAL_X;
 		self->objPos[1] = self->base.y + MONITOR_SIGNAL_Y;
@@ -729,7 +728,7 @@ static void cMonitorScorer_DrawMonitor(cMonitorScorer *self, int player, cEntity
 			self->textTime = tt - (frameTime + frameTime);
 		}
 	}
-	if (isCar && ((const cWithLifeEntityVtbl *)target->vftable)->IsEMIed(target)) {
+	if (isCar && WithLife_IsEMIed(target)) {
 		/* the EMI: noise and no text */
 		self->noise = 0.9f;
 		self->textTime = 1.0f;
@@ -796,11 +795,11 @@ static void cMonitorScorer_Draw(cScorerItem *base, int player) {
 		return;
 	}
 	cEntity *cam = World_FindEntity(camName);
-	if (!cam || !cam->vftable->IsType(cam, "FCam")) {
+	if (!cam || !Entity_IsType(cam, "FCam")) {
 		return;
 	}
 	cEntity *target = cCamEntity_GetTarget(cam);
-	if (target && target->vftable->IsType(target, TYEN_WITH_LIFE)) {
+	if (target && Entity_IsType(target, TYEN_WITH_LIFE)) {
 		cMonitorScorer_DrawMonitor(self, player, target);
 	}
 }

@@ -18,6 +18,12 @@ typedef uint8_t byte;
 #define __stdcall
 #endif
 
+/*
+ * The vtable of an object. Every class keeps the pointer to its vtable as its first member, so a pointer to the
+ * object is a pointer to that pointer. The Class_Method(obj, ...) functions next to each vtable type call through it.
+ */
+#define VT(type, obj) (*(const type *const *)(obj))
+
 void Com_Printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
 #endif

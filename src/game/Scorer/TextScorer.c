@@ -129,7 +129,7 @@ static void TextEdit_Start(cAbstractFile *params) {
 	float dim[2];
 	int player, max;
 
-	params->vftable->Read(params, &player, 4);
+	VFile_Read(params, &player, 4);
 	cAbstractFile_ReadString(params, name, 0x7f);
 	item = (cTextScorer *)cScorer_FindItem(Scorer_Get(player), name);
 	cVirtualKeyboard_Set(&g_VirtualKeyboard, item->isNumeric ? "Numbers" : "Console");
@@ -343,7 +343,7 @@ static void cTextScorer_Draw(cScorerItem *base, int player) {
 	cScorer *sc;
 
 	if (self->editing) {
-		((const cTextScorerVtbl *)t->base.vftable)->DrawKeyboard(self, player);
+		TextScorer_DrawKeyboard(self, player);
 		return;
 	}
 	Text_Get(self, player, buf, sizeof(buf));
@@ -427,7 +427,7 @@ static void cTextTypingScorer_Draw(cScorerItem *base, int player) {
 		!strcmp(g_TypingSoundName, "keyboard%d")) {
 		char snd[16];
 		Bprintf(snd, sizeof(snd), g_TypingSoundName, (crt_rand() & 1) + 1);
-		g_pSound->vftable->Play(g_pSound, snd, Snd_Volume(g_TypingSoundVol), 0);
+		SoundSys_Play(g_pSound, snd, Snd_Volume(g_TypingSoundVol), 0);
 	}
 	pos = self->pos;
 	if (((int)(self->typingTime * 4.0f) & 1) &&

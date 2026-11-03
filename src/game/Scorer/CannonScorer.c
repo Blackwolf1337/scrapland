@@ -144,7 +144,7 @@ static void cCannonScorer_DrawShipAim(cCannonScorer *self, int player, cEntity *
 	}
 	if (self->shown && !shown) {
 		const char *snd = g_CannonNoAmmoSound;
-		g_pSound->vftable->Play(g_pSound, snd, Snd_Volume(g_CannonNoAmmoSoundVol), 0);
+		SoundSys_Play(g_pSound, snd, Snd_Volume(g_CannonNoAmmoSoundVol), 0);
 	}
 	self->shown = shown;
 }
@@ -174,7 +174,7 @@ static void cCannonScorer_DrawCenter(cCannonScorer *self, int player, cEntity *s
 	img->x = 320.0f;
 	img->y = y;
 	CPsaImage_DrawPoly(self->img, corners, uv, 0, 4, 6);
-	((const cCannonScorerVtbl *)self->base.vftable)->DrawLock(self, player, &self->img->x);
+	CannonScorer_DrawLock(self, player, &self->img->x);
 	if (WLife(ship)->life * 100 / Veh(ship)->maxLife < g_WarningLifeLevel) {
 		cScorer *sc = Scorer_Get(player);
 		int v = Scorer_Abs((int)(sc->time * 1024.0f) % 511 - 255);
@@ -219,17 +219,17 @@ static void cCannonScorer_Draw(cScorerItem *base, int player) {
 	if (*camName) {
 		cEntity *cam = World_FindEntity(camName);
 		if (cam) {
-			if (!cam->vftable->IsType(cam, "FCam")) {
+			if (!Entity_IsType(cam, "FCam")) {
 				return;
 			}
 			ship = cCamEntity_GetTarget(cam);
-			if (!ship || !ship->vftable->IsType(ship, TYEN_CAR)) {
+			if (!ship || !Entity_IsType(ship, TYEN_CAR)) {
 				return;
 			}
 		}
 	}
 	cCannonScorer_DrawCenter(self, player, ship);
-	if (!WithLife_Vtbl(ship)->IsEMIed(ship)) {
+	if (!WithLife_IsEMIed(ship)) {
 		cPy_Function *f = &TABLE_AT(g_pWorld->weapons, Veh(ship)->weapons.curWeap)->setFx;
 		cPy_Function_AddParamS(f, ship->name);
 		cPy_Function_AddParamI(f, player);
@@ -247,9 +247,9 @@ static void cCannonScorer_DrawLock(cCannonScorer *self, int player, const float 
 	int v;
 
 	(void)self;
-	CHECK(!e || e->vftable->IsType(e, TYEN_WITH_LIFE));
+	CHECK(!e || Entity_IsType(e, TYEN_WITH_LIFE));
 	e = g_pWorld->owners[player];
-	if (!e || !e->vftable->IsType(e, TYEN_CAR) || !Veh(e)->controls.follow) {
+	if (!e || !Entity_IsType(e, TYEN_CAR) || !Veh(e)->controls.follow) {
 		return;
 	}
 	float t = Veh(e)->controls.attackTime;

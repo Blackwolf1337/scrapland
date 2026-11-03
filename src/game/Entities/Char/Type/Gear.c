@@ -57,26 +57,24 @@ static void Gear_Sound(cEntity *v, byte usr, char *const *name, const float *vol
 
 	if (usr) {
 		const char *s = *name;
-		CSoundSys *snd = g_pSound;
 		int volume = Snd_Volume(*vol);
-		const vec3_t *p = v->vftable->GetPos(v, &tmp);
-		snd->vftable->PlayAt(g_pSound, s, p, volume);
+		const vec3_t *p = Entity_GetPos(v, &tmp);
+		SoundSys_PlayAt(g_pSound, s, p, volume);
 		return;
 	}
 	cWorld *w = g_pWorld;
 	vec3_t c = w->camPos[w->curCam];
-	const vec3_t *p = v->vftable->GetPos(v, &tmp);
+	const vec3_t *p = Entity_GetPos(v, &tmp);
 	float hx = (c.x - p->x) * 0.5f;
 	float hy = (c.y - p->y) * 0.5f;
 	float hz = (c.z - p->z) * 0.5f;
-	p = v->vftable->GetPos(v, &tmp);
+	p = Entity_GetPos(v, &tmp);
 	const char *s = *name;
 	pos.x = hx + p->x;
 	pos.y = p->y + hy;
 	pos.z = p->z + hz;
-	CSoundSys *snd = g_pSound;
 	int volume = Snd_Volume(*vol);
-	snd->vftable->PlayAt(g_pSound, s, &pos, volume);
+	SoundSys_PlayAt(g_pSound, s, &pos, volume);
 }
 
 /* the gear natives: the name of the shooting gear (also the one the ball does not hurt), the missile, its point */
@@ -96,7 +94,7 @@ static void ChType_GearHitChar(const char *name, byte noLogic) {
 	if (!e) {
 		return;
 	}
-	byte withLife = e->vftable->IsType(e, TYEN_WITH_LIFE);
+	byte withLife = Entity_IsType(e, TYEN_WITH_LIFE);
 	if (g_GearTarget[0] && (gear = World_FindEntity(g_GearTarget)) != NULL) {
 		CHECK(Entity_IsType(gear, TYEN_WALKCHAR));
 		usr = gear == cWorld_GetUsrEntity(g_pWorld, 0);
@@ -108,12 +106,12 @@ static void ChType_GearHitChar(const char *name, byte noLogic) {
 		return;
 	}
 	if (gear) {
-		if (gear->vftable->GetAI(gear) && World_IsEasySingle()) {
+		if (Entity_GetAI(gear) && World_IsEasySingle()) {
 			damage = damage / 2;
 		}
 		cLocalLogic *l = Logic_GetLocalLogic(e);
 		if (l && !noLogic) {
-			Logic_Vtbl(l)->OnHit(l, gear);
+			Logic_OnHit(l, gear);
 		}
 		if (usr && gear == cWorld_GetUsrEntity(g_pWorld, 0)) {
 			if (WChar(e)->wl.life <= damage) {
@@ -197,15 +195,14 @@ static void ChType_GearHit(cAbstractFile *params) {
 	g_GearSw = World_FindEntity(g_GearSwName);
 	CHECK(g_GearSw);
 	CHECK(Entity_IsType(g_GearSw, TYEN_MISSILE));
-	g_GearXplodePos = *g_GearSw->vftable->GetPos(g_GearSw, &tmp);
+	g_GearXplodePos = *Entity_GetPos(g_GearSw, &tmp);
 	ChType_GearHitChar(name, 1);
 	cPy_Function_SetNative(&g_ChTypeSphereFunc, (nativefunc_t)ChType_GearSphereHit);
 	cWorld_SphereCallF(g_pWorld, 0x11, &g_GearXplodePos, g_GearXplodeRadius, &g_ChTypeSphereFunc, 1);
-	CSoundSys *snd = g_pSound;
 	const char *s = g_GearHitSound;
 	int volume = Snd_Volume(g_GearHitSoundVol);
-	const vec3_t *p = g_GearSw->vftable->GetPos(g_GearSw, &tmp);
-	snd->vftable->PlayAt(g_pSound, s, p, volume);
+	const vec3_t *p = Entity_GetPos(g_GearSw, &tmp);
+	SoundSys_PlayAt(g_pSound, s, p, volume);
 }
 
 /* params: the gear, an event, a float: the load sound */
@@ -237,7 +234,7 @@ static void ChType_GearShoot(cAbstractFile *params) {
 	off.y = g_GearShootPosY;
 	off.z = g_GearShootPosZ;
 	const vec3_t *r = Vec3_Rotate(&t1, &off, &rot);
-	const vec3_t *p = v->vftable->GetPos(v, &t2);
+	const vec3_t *p = Entity_GetPos(v, &t2);
 	start.x = r->x + p->x;
 	start.y = p->y + r->y;
 	start.z = p->z + r->z;
@@ -250,14 +247,14 @@ static void ChType_GearShoot(cAbstractFile *params) {
 	ang.x = 0.0f;
 	ang.y = 0.0f;
 	ang.z = 0.0f;
-	v->vftable->GetTargetAngle(v, &ang.x, dist, &target);
-	v->vftable->AimWeapon(v, ang.x, ang.y, &dist, &aim, &target, 0x11);
+	Entity_GetTargetAngle(v, &ang.x, dist, &target);
+	Entity_AimWeapon(v, ang.x, ang.y, &dist, &aim, &target, 0x11);
 	if (target) {
-		target->vftable->IsType(target, TYEN_WITH_LIFE);
+		Entity_IsType(target, TYEN_WITH_LIFE);
 	}
 	if (ChType_Usr0() == v) {
 		usr = 1;
-		AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, v->vftable->GetPos(v, &t2));
+		AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, Entity_GetPos(v, &t2));
 		Alarm_Set(&g_pWorld->alarm, g_pWorld->alarm.value + g_GearShootFailAlarm);
 	} else {
 		usr = 0;
@@ -269,7 +266,7 @@ static void ChType_GearShoot(cAbstractFile *params) {
 	if (e) {
 		cMissileEntity *m = Gear_Missile(e);
 		cMissileEntity_SetHiddenSwarm(m, 1);
-		Obj_Vtbl(e)->SetAng(e, &ang);
+		Obj_SetAng(e, &ang);
 		cMissileEntity_SetLifeTime(m, 5.0f);
 		cMissileEntity_SetSwarmSpeed(m, 20000.0f);
 		if (!WChar(e)->wl.god) {
@@ -289,17 +286,17 @@ static void ChType_GearShoot(cAbstractFile *params) {
 		if (!WChar(v)->viewLock) {
 			vec3_t va = WChar(v)->view;
 			ma.x = va.x;
-			ma.y = Obj_Vtbl(v)->GetAng(v, &t2)->y;
+			ma.y = Obj_GetAng(v, &t2)->y;
 			ma.z = 0.0f;
-			Obj_Vtbl(e)->SetAng(e, &ma);
+			Obj_SetAng(e, &ma);
 			cMissileEntity_SetSpeed(m, g_GearMissileSpeed);
 		} else if (usr) {
 			cMissileEntity_SetTarget(m, g_GearTargetName);
 		} else if (target) {
 			cMissileEntity_SetTarget(m, target->name);
 		}
-		Missile_Vtbl(Missile(e))->AddToSwarm(&(Missile(e))->wl.obj.base, 0);
-		e->vftable->SetEmbeddedFX(e, "GearMissile");
+		Missile_AddToSwarm(Missile(e), 0);
+		Entity_SetEmbeddedFX(e, "GearMissile");
 		cSndInterface *snd = &WChar(e)->wl.obj.snd;
 		cSndInterface_Resize(snd, 1);
 		cSndInterface_SetSound(snd, 0, g_GearMissileSound);
@@ -397,11 +394,11 @@ static void ChType_GearShootLoad(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, name, 0x80);
 	cAbstractFile_ReadString(params, event, 0x80);
-	params->vftable->Read(params, &delay, 4);
+	VFile_Read(params, &delay, 4);
 	cEntity *v = World_FindEntity(name);
 	CHECK(v);
 	CHECK(Entity_IsType(v, TYEN_WALKCHAR));
-	CGameModel *model = Obj_Vtbl(v)->GetModel(v);
+	CGameModel *model = Obj_GetModel(v);
 	if (!CGameModel_IsLoaded(model)) {
 		return;
 	}
@@ -561,7 +558,7 @@ int Logic_Flash(const vec3_t *pos, float radius, int max) {
 int ChType_FlashChar(cEntity *e) {
 	int r = 0;
 
-	void *flashed = WithLife_Vtbl(e)->GetAction(e, "Flashed");
+	void *flashed = WithLife_GetAction(e, "Flashed");
 	if (!flashed) {
 		return 0;
 	}
@@ -592,19 +589,19 @@ static void ChType_FlashHit(cAbstractFile *params) {
 		return;
 	}
 	cEntity *e = World_FindEntity(name);
-	if (!e || !e->vftable->IsType(e, TYEN_WALKCHAR) || cWalkCharEntity_GetOwnerSlot(e) != -1) {
+	if (!e || !Entity_IsType(e, TYEN_WALKCHAR) || cWalkCharEntity_GetOwnerSlot(e) != -1) {
 		return;
 	}
-	void *flashed = WithLife_Vtbl(e)->GetAction(e, "Flashed");
+	void *flashed = WithLife_GetAction(e, "Flashed");
 	if (!flashed) {
 		return;
 	}
-	const vec3_t *p = e->vftable->GetPos(e, &t1);
+	const vec3_t *p = Entity_GetPos(e, &t1);
 	d.y = g_FlashPos.y - p->y;
 	d.z = g_FlashPos.z - p->z;
 	d.x = g_FlashPos.x - p->x;
 	Vec3_GetRotAng(&r, &d);
-	float n = NormAng(Obj_Vtbl(e)->GetAng(e, &t1)->y - r.y);
+	float n = NormAng(Obj_GetAng(e, &t1)->y - r.y);
 	if (FLASH_ANGLE > __builtin_fabs((double)n)) {
 		return;
 	}

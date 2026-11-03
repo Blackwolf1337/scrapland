@@ -109,7 +109,7 @@ static void cHangarShipScorer_Draw(cScorerItem *base, int player) {
 	Render_ClearRect(it->x, it->y, it->w, it->h, 1, 0);
 	Eng_SetViewRect(it->x, it->y, it->w, it->h);
 	cEntity *ship = World_FindEntity(self->targetName);
-	if (ship && !ship->vftable->IsType(ship, TYEN_CAR)) {
+	if (ship && !Entity_IsType(ship, TYEN_CAR)) {
 		ship = NULL;
 	}
 	CGameCamera *cur = Camera_GetCurrent();
@@ -119,17 +119,17 @@ static void cHangarShipScorer_Draw(cScorerItem *base, int player) {
 		self->cam->aspectScreen = it->w / it->h;
 		float dz = self->camDist * -1.0f;
 		float dxy = self->camDist * 0.0f;
-		const vec3_t *c = Obj_Vtbl(ship)->GetViewPos(ship, &tmp);
+		const vec3_t *c = Obj_GetViewPos(ship, &tmp);
 		float cy = c->y;
 		CGameCamera *cam = self->cam;
 		cam->pos.z = c->z + dz;
 		cam->pos.x = c->x + dxy;
 		cam->pos.y = cy + dxy;
 		self->cam->fov = (float)((double)self->camFov * 3.141592653589793 / 180.0);
-		c = Obj_Vtbl(ship)->GetViewPos(ship, &tmp);
+		c = Obj_GetViewPos(ship, &tmp);
 		self->cam->target = *c;
 		Camera_SetCurrent(self->cam);
-		Obj_Vtbl(ship)->GetAng(ship, &ang);
+		Obj_GetAng(ship, &ang);
 		uint32_t fx = CGameModel_GetEffect(&Veh(ship)->wl.obj.model, NULL);
 		byte reset = self->reset;
 		self->reset = 0;
@@ -139,22 +139,22 @@ static void cHangarShipScorer_Draw(cScorerItem *base, int player) {
 			if (r >= 6.2831855f) {
 				self->rot.y = r - 6.2831855f;
 			}
-			Obj_Vtbl(ship)->SetAng(ship, &self->rot);
+			Obj_SetAng(ship, &self->rot);
 		} else {
 			self->rot.x = 0.0f;
 			self->rot.y = 0.0f;
 			self->rot.z = 0.0f;
-			Obj_Vtbl(ship)->SetAng(ship, &self->rot);
+			Obj_SetAng(ship, &self->rot);
 		}
 		if (self->grid) {
 			self->grid->color = self->gridColor;
 			CPsaImage_DrawFrame(self->grid, self->gridIndex, it->x, it->y);
 		}
-		Obj_Vtbl(ship)->SetEffect(ship, 4);
+		Obj_SetEffect(ship, 4);
 		cVehicleEntity_UpdatePilotPos(Veh(ship), 1);
-		Obj_Vtbl(ship)->Render(ship);
-		Obj_Vtbl(ship)->SetAng(ship, &ang);
-		Obj_Vtbl(ship)->SetEffect(ship, fx);
+		Obj_Render(ship);
+		Obj_SetAng(ship, &ang);
+		Obj_SetEffect(ship, fx);
 		Camera_SetCurrent(cur);
 	}
 	Eng_ResetViewRect();

@@ -53,14 +53,12 @@ static cGVar GVar_SentinelRelaxSpeed;
 extern cGVar GVar_SentinelStdFovX;
 #define g_SentinelStdFovX (GVar_SentinelStdFovX.value.f)
 
-#define SENT_VT(self) ((self)->base.vftable)
-
 static byte cSentinelLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target);
 void *cSentinelLocalLogic_ctor(void *mem, cEntity *parent) {
 	cSentinelLocalLogic *self = mem;
 
 	cBaseLocalLogic_ctor(&self->base, parent);
-	SENT_VT(self) = CSENTINELLOCALLOGIC_VFTABLE;
+	self->base.vftable = CSENTINELLOCALLOGIC_VFTABLE;
 	cSentinelLocalLogic_SetState(&self->base.logic, 0, NULL);
 	self->seen = 0;
 	return self;
@@ -68,7 +66,7 @@ void *cSentinelLocalLogic_ctor(void *mem, cEntity *parent) {
 
 static cLocalLogic *cSentinelLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
-	SENT_VT(self) = CSENTINELLOCALLOGIC_VFTABLE;
+	self->base.vftable = CSENTINELLOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -99,15 +97,15 @@ void cSentinelLocalLogic_Watch(void *sentinel, const vec3_t *pos) {
 	if (st != 1 && st != 0 && st != 5) {
 		return;
 	}
-	cAIChar *ai = b->parent->vftable->GetAI(b->parent);
+	cAIChar *ai = Entity_GetAI(b->parent);
 	cBaseLocalLogic_SetState(&b->logic, 5, NULL);
-	if (ai->vftable->GetState(&ai->base.base) != 4) {
-		const vec3_t *pp = b->parent->vftable->GetPos(b->parent, &tmp);
+	if (AIChar_GetState(ai) != 4) {
+		const vec3_t *pp = Entity_GetPos(b->parent, &tmp);
 		vec3_t dir;
 		dir.z = pos->z - pp->z;
 		dir.x = pos->x - pp->x;
 		dir.y = 0.0f;
-		ai->vftable->SetState(&ai->base.base, 4, *pos, dir, (double)(WLife(b->parent)->prim.radius + g_SentinelGotoRadius),
+		AIChar_SetState(ai, 4, *pos, dir, (double)(WLife(b->parent)->prim.radius + g_SentinelGotoRadius),
 			(double)g_SentinelGotoSpeed);
 	}
 	self->time = g_SentinelGotoTime;
@@ -133,32 +131,32 @@ static void cSentinelLocalLogic_Think(cLocalLogic *elem, float dt, byte quiet) {
 	if (0.0f >= self->time || !b->target.target || quiet) {
 		int st = b->state;
 		if (st != 1 && st != 0 && st != 5 && !b->idle && !b->alwaysLock) {
-			SENT_VT(self)->SetState(&self->base.logic, g_pWorld->alarm.on ? 1 : 0, NULL);
+			Logic_SetState(self, g_pWorld->alarm.on ? 1 : 0, NULL);
 		}
 	}
 	int st = b->state;
 	if (st == 1 || st == 0 || st == 5) {
 		self->time = self->time - dt;
 	} else {
-		cAIChar *ai = p->vftable->GetAI(p);
-		if (!ai->vftable->GetDirect(&ai->base.base)) {
+		cAIChar *ai = Entity_GetAI(p);
+		if (!AIChar_GetDirect(ai)) {
 			self->time = self->time - dt;
 		}
 	}
-	if (!quiet && usr && Logic_InView(p, usr->vftable->GetPos(usr, &tmp), g_SentinelStdFar, g_SentinelStdFovY,
+	if (!quiet && usr && Logic_InView(p, Entity_GetPos(usr, &tmp), g_SentinelStdFar, g_SentinelStdFovY,
 			g_SentinelStdFovX, 1)) {
 		cAlarm *a = &g_pWorld->alarm;
 		self->seen = 1;
 		if (a->notGuaranteed) {
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
-			SENT_VT(self)->SetState(&self->base.logic, 2, usr);
+			Logic_SetState(self, 2, usr);
 		} else if (a->sameChar) {
-			SENT_VT(self)->SetState(&self->base.logic, 2, usr);
+			Logic_SetState(self, 2, usr);
 		} else if (a->notDefChar) {
 			if (g_pWorld->alarm.on) {
-				SENT_VT(self)->SetState(&self->base.logic, 4, usr);
+				Logic_SetState(self, 4, usr);
 			} else if (b->state != 6) {
-				SENT_VT(self)->SetState(&self->base.logic, 3, usr);
+				Logic_SetState(self, 3, usr);
 			}
 		}
 	}
@@ -174,13 +172,13 @@ static void cSentinelLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float a
 	}
 	if (e == ChType_Usr0()) {
 		if (amount > 0.0f && g_SentinelBankerDetect + amount >= (float)(Weap_Rand01() * 100.0 + 0.0)) {
-			SENT_VT(self)->SetState(&self->base.logic, 2, e);
+			Logic_SetState(self, 2, e);
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		}
 		return;
 	}
 	if (g_SentinelBankerNPCDetect + amount >= (float)(Weap_Rand01() * 100.0 + 0.0)) {
-		SENT_VT(self)->SetState(&self->base.logic, 6, e);
+		Logic_SetState(self, 6, e);
 	}
 }
 
@@ -192,10 +190,10 @@ static void cSentinelLocalLogic_OnAttack(cLocalLogic *elem, cEntity *e) {
 	}
 	if (e == ChType_Usr0()) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
-		SENT_VT(self)->SetState(&self->base.logic, 2, e);
+		Logic_SetState(self, 2, e);
 		return;
 	}
-	SENT_VT(self)->SetState(&self->base.logic, 6, e);
+	Logic_SetState(self, 6, e);
 }
 
 /* vf10 and vf11: the player is accused with the alarm */
@@ -206,7 +204,7 @@ static void cSentinelLocalLogic_OnUsr(cLocalLogic *elem, cEntity *e) {
 	}
 	if (e == ChType_Usr0()) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
-		SENT_VT(self)->SetState(&self->base.logic, 2, e);
+		Logic_SetState(self, 2, e);
 	}
 }
 
@@ -217,7 +215,7 @@ static byte cSentinelLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *e) {
 		if (e == ChType_Usr0()) {
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		}
-		SENT_VT(self)->SetState(&self->base.logic, 2, e);
+		Logic_SetState(self, 2, e);
 	}
 	return 0;
 }
@@ -239,7 +237,7 @@ static void Sentinel_Relax(cEntity *s) {
 /* the view and the look of the character p (the parent) by the state; dt is not used */
 static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *p, float dt) {
 	cBaseLocalLogic *b = &self->base;
-	cAIChar *ai = b->parent->vftable->GetAI(b->parent);
+	cAIChar *ai = Entity_GetAI(b->parent);
 	cEntity *s = b->parent;
 	cAlarm *a = &g_pWorld->alarm;
 	vec3_t tmp;
@@ -275,7 +273,7 @@ static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *
 			break;
 		}
 		if (a->sameChar) {
-			SENT_VT(self)->SetState(&self->base.logic, 2, t);
+			Logic_SetState(self, 2, t);
 			return;
 		}
 		if (!self->seen) {
@@ -290,12 +288,12 @@ static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *
 	case 5:
 		WChar(p)->wl.arrow.canUse = 0;
 		WLife(p)->arrow.coneStatus = a->sameChar ? 2 : 1;
-		if (ai->vftable->GetState(&ai->base.base)) {
+		if (AIChar_GetState(ai)) {
 			self->time = g_SentinelGotoTime;
 			return;
 		}
 		if (0.0f < self->time) {
-			ai->vftable->SetState(&ai->base.base, 0);
+			AIChar_SetState(ai, 0);
 			cActCtrl_PlayNew(ChType_ActCtrl(s), "Relax0", 0, 1.0f);
 			WChar(s)->control.hRot = 0.5f;
 			return;
@@ -303,15 +301,15 @@ static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *
 		WChar(s)->control.hRot = 0.0f;
 		break;
 	case 6:
-		if (!g_pWorld->alarm.on && b->target.target && ai->vftable->GetState(&ai->base.base)) {
-			if (!CGameModel_IsVisible(Obj_Vtbl(p)->GetModel(p))) {
-				float d = cWorld_GetMinCamDistSq(g_pWorld, p->vftable->GetPos(p, &tmp));
+		if (!g_pWorld->alarm.on && b->target.target && AIChar_GetState(ai)) {
+			if (!CGameModel_IsVisible(Obj_GetModel(p))) {
+				float d = cWorld_GetMinCamDistSq(g_pWorld, Entity_GetPos(p, &tmp));
 				float r = g_SentinelAbortyNPCAttDist;
 				if (d > r * r) {
 					break;
 				}
 			}
-			if (ai->vftable->GetDirect(&ai->base.base)) {
+			if (AIChar_GetDirect(ai)) {
 				self->time = g_SentinelAcuseTime;
 			}
 			WChar(p)->wl.arrow.canUse = 0;
@@ -319,7 +317,7 @@ static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *
 			AICtrl_GearAttack(&g_pWorld->logic.aiCtrl, b->target.target, 0);
 			cLocalLogic *l = Logic_GetLocalLogic(b->target.target);
 			if (l) {
-				Logic_Vtbl(l)->OnSeen(l, p);
+				Logic_OnSeen(l, p);
 			}
 			return;
 		}
@@ -334,7 +332,7 @@ static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *
 /* vf24 */
 static void cSentinelLocalLogic_RestartState(cLocalLogic *base) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)base;
-	SENT_VT(self)->SetState(&self->base.logic, 0, NULL);
+	Logic_SetState(self, 0, NULL);
 }
 
 void cSentinelLocalLogic_Return(void *sentinel) {
@@ -344,10 +342,10 @@ void cSentinelLocalLogic_Return(void *sentinel) {
 		return;
 	}
 	if (g_pWorld->alarm.on) {
-		SENT_VT(self)->SetState(&self->base.logic, 1, NULL);
+		Logic_SetState(self, 1, NULL);
 		return;
 	}
-	SENT_VT(self)->SetState(&self->base.logic, 0, NULL);
+	Logic_SetState(self, 0, NULL);
 }
 
 /* vf19: the AI of the state; the result of the base */
@@ -355,37 +353,37 @@ static byte cSentinelLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
 	vec3_t tmp;
-	cAIChar *ai = b->parent->vftable->GetAI(b->parent);
+	cAIChar *ai = Entity_GetAI(b->parent);
 	byte ok = (byte)cBaseLocalLogic_SetState(&b->logic, state, target);
 
 	switch (b->state) {
 	case 0:
 		if (ok) {
-			ai->vftable->SetState(&ai->base.base, 6, b->origin, (double)b->actionRadius, (double)g_SentinelRelaxSpeed, 1);
+			AIChar_SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_SentinelRelaxSpeed, 1);
 		}
 		self->time = 0.0f;
 		return ok;
 	case 1:
 		if (ok) {
-			ai->vftable->SetState(&ai->base.base, 6, b->origin, (double)b->actionRadius, (double)g_SentinelSearchSpeed, 1);
+			AIChar_SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_SentinelSearchSpeed, 1);
 		}
 		self->time = 0.0f;
 		return ok;
 	case 2:
 		if (ok && target) {
-			ai->vftable->SetState(&ai->base.base, 2, target, (double)g_SentinelAcuseSpeed);
+			AIChar_SetState(ai, 2, target, (double)g_SentinelAcuseSpeed);
 		}
 		self->time = g_SentinelAcuseTime;
 		return ok;
 	case 3:
 		if (ok && target) {
-			ai->vftable->SetState(&ai->base.base, 3, target, (double)g_SentinelInspectSpeed);
+			AIChar_SetState(ai, 3, target, (double)g_SentinelInspectSpeed);
 		}
 		self->time = g_SentinelInspectTime;
 		return ok;
 	case 4:
 		if (ok && target) {
-			ai->vftable->SetState(&ai->base.base, 3, target, (double)g_SentinelSuspectSpeed);
+			AIChar_SetState(ai, 3, target, (double)g_SentinelSuspectSpeed);
 		}
 		self->time = g_SentinelSuspectTime;
 		return ok;
@@ -397,11 +395,11 @@ static byte cSentinelLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *
 			cSentinelLocalLogic_Return(self);
 			return ok;
 		}
-		cSentinelLocalLogic_Watch(self, target->vftable->GetPos(target, &tmp));
+		cSentinelLocalLogic_Watch(self, Entity_GetPos(target, &tmp));
 		return ok;
 	case 6:
 		if (ok && target) {
-			ai->vftable->SetState(&ai->base.base, 2, target, (double)g_SentinelAcuseSpeed);
+			AIChar_SetState(ai, 2, target, (double)g_SentinelAcuseSpeed);
 			self->time = g_SentinelAcuseTime;
 		}
 		return ok;

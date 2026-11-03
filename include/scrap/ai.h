@@ -39,6 +39,39 @@ typedef struct cAIEntityGroupVtbl {
 	void(*Update)(cAIEntityGroup *self, float dt);		/* 0x20 the time on */
 } cAIEntityGroupVtbl;
 
+/* calls through the slots of cAIEntityGroupVtbl */
+static inline byte AIGroup_Add(void *self, cEntity *e) {
+	return VT(cAIEntityGroupVtbl, self)->Add(self, e);
+}
+
+static inline void AIGroup_AllowChange(void *self) {
+	VT(cAIEntityGroupVtbl, self)->AllowChange(self);
+}
+
+static inline byte AIGroup_CanChange(void *self) {
+	return VT(cAIEntityGroupVtbl, self)->CanChange(self);
+}
+
+static inline void AIGroup_Clear(void *self) {
+	VT(cAIEntityGroupVtbl, self)->Clear(self);
+}
+
+static inline void AIGroup_Update(void *self, float dt) {
+	VT(cAIEntityGroupVtbl, self)->Update(self, dt);
+}
+
+static inline cEntity *AIGroup_Get(void *self, int i) {
+	return VT(cAIEntityGroupVtbl, self)->Get(self, i);
+}
+
+static inline int AIGroup_Num(void *self) {
+	return VT(cAIEntityGroupVtbl, self)->Num(self);
+}
+
+static inline void AIGroup_ResetChange(void *self) {
+	VT(cAIEntityGroupVtbl, self)->ResetChange(self);
+}
+
 struct cAIEntityGroup {
 	const cAIEntityGroupVtbl *vftable;	/* 0x00 */
 	cEntity *ents[CAIENTITYGROUP_MAX];	/* 0x04 */
@@ -84,6 +117,37 @@ typedef struct cAIBaseVtbl {
 	void(*OnEvent)(cAI *self, int ev);						/* 0x34 */
 } cAIBaseVtbl;
 
+/* calls through the slots of cAIBaseVtbl */
+#define AI_Debugf(self, ...) (VT(cAIBaseVtbl, self)->Debugf((void *)(self), __VA_ARGS__))
+
+static inline void AI_Draw(void *self) {
+	VT(cAIBaseVtbl, self)->Draw(self);
+}
+
+static inline byte AI_GetChanged(void *self) {
+	return VT(cAIBaseVtbl, self)->GetChanged(self);
+}
+
+static inline void AI_GetEventName(void *self, int ev, char *out) {
+	VT(cAIBaseVtbl, self)->GetEventName(self, ev, out);
+}
+
+static inline byte AI_IsVisible(void *self) {
+	return VT(cAIBaseVtbl, self)->IsVisible(self);
+}
+
+static inline void AI_OnEvent(void *self, int ev) {
+	VT(cAIBaseVtbl, self)->OnEvent(self, ev);
+}
+
+static inline void AI_Update(void *self, float dt) {
+	VT(cAIBaseVtbl, self)->Update(self, dt);
+}
+
+static inline void AI_UpdateOff(void *self, float dt) {
+	VT(cAIBaseVtbl, self)->UpdateOff(self, dt);
+}
+
 /* the events of the AI (GetEventName) */
 enum {
 	AIEV_LOST_AGENT, AIEV_OBJECTIVE_NOT_FOUND, AIEV_OBJECTIVE_REACHED, AIEV_OBJECTIVE_DIED, AIEV_OBJECTIVE_NEAR,
@@ -106,15 +170,6 @@ struct cAI {
 	float waitTime;			/* 0x30 counts while seen is 0 */
 	int seen;			/* 0x34 0 out of view, 1 seen, 2 not seen yet */
 };
-
-/* the AI of an entity (cEntity::ai, GetAI) */
-static inline const cAIBaseVtbl *AI_Vtbl(void *ai) {
-	return ((cAI *)ai)->vftable;
-}
-
-static inline void AI_Debugf(void *ai, const char *text) {
-	AI_Vtbl(ai)->Debugf(ai, text);
-}
 
 cAI *cAI_ctor(cAI *self, cEntity *e);
 cAI *cAI_ctorDefault(cAI *self);
@@ -168,6 +223,43 @@ typedef struct cAIMoveVtbl {
 	byte(*IsMoving)(cAI *self);						/* 0x5c */
 	byte(*CanTarget)(cAI *self, cEntity *e);					/* 0x60 */
 } cAIMoveVtbl;
+
+/* calls through the slots of cAIMoveVtbl */
+static inline byte AIMove_CanJump(void *self) {
+	return VT(cAIMoveVtbl, self)->CanJump(self);
+}
+
+static inline byte AIMove_CanTarget(void *self, cEntity *e) {
+	return VT(cAIMoveVtbl, self)->CanTarget(self, e);
+}
+
+static inline void AIMove_CheckStopped(void *self, float dt) {
+	VT(cAIMoveVtbl, self)->CheckStopped(self, dt);
+}
+
+static inline byte AIMove_Event(void *self, int ev) {
+	return VT(cAIMoveVtbl, self)->Event(self, ev);
+}
+
+static inline byte AIMove_GetArrived(void *self) {
+	return VT(cAIMoveVtbl, self)->GetArrived(self);
+}
+
+static inline Nto1Node *AIMove_GetTarget(void *self) {
+	return VT(cAIMoveVtbl, self)->GetTarget(self);
+}
+
+static inline cEntity *AIMove_GetTargetEnt(void *self) {
+	return VT(cAIMoveVtbl, self)->GetTargetEnt(self);
+}
+
+static inline byte AIMove_IsMoving(void *self) {
+	return VT(cAIMoveVtbl, self)->IsMoving(self);
+}
+
+static inline byte AIMove_IsPaused(void *self) {
+	return VT(cAIMoveVtbl, self)->IsPaused(self);
+}
 
 struct cAIMove {
 	union {
@@ -325,6 +417,248 @@ typedef struct cAICharVtbl {
 	void(*CheckTalk)(cAI *self);							/* 0x184 */
 	byte(*Facing)(cAI *self, cEntity *a, cEntity *b);				/* 0x188 */
 } cAICharVtbl;
+
+/* calls through the slots of cAICharVtbl */
+static inline void AIChar_AfterRepos(void *self) {
+	VT(cAICharVtbl, self)->AfterRepos(self);
+}
+
+static inline void AIChar_BeginChange(void *self, int state) {
+	VT(cAICharVtbl, self)->BeginChange(self, state);
+}
+
+static inline byte AIChar_CanRepos(void *self, int state) {
+	return VT(cAICharVtbl, self)->CanRepos(self, state);
+}
+
+static inline byte AIChar_CanTalk(void *self) {
+	return VT(cAICharVtbl, self)->CanTalk(self);
+}
+
+static inline byte AIChar_ChangeState(void *self, int state, va_list ap) {
+	return VT(cAICharVtbl, self)->ChangeState(self, state, ap);
+}
+
+static inline byte AIChar_ChangeStateMore(void *self, int state, int allowed, va_list ap) {
+	return VT(cAICharVtbl, self)->ChangeStateMore(self, state, allowed, ap);
+}
+
+static inline void AIChar_CheckActDist(void *self) {
+	VT(cAICharVtbl, self)->CheckActDist(self);
+}
+
+static inline byte AIChar_CheckAction(void *self) {
+	return VT(cAICharVtbl, self)->CheckAction(self);
+}
+
+static inline void AIChar_CheckPause(void *self) {
+	VT(cAICharVtbl, self)->CheckPause(self);
+}
+
+static inline void AIChar_CheckRepos(void *self) {
+	VT(cAICharVtbl, self)->CheckRepos(self);
+}
+
+static inline void AIChar_CheckTalk(void *self) {
+	VT(cAICharVtbl, self)->CheckTalk(self);
+}
+
+static inline byte AIChar_EventDefault(void *self, int ev) {
+	return VT(cAICharVtbl, self)->EventDefault(self, ev);
+}
+
+static inline byte AIChar_GetChanged2(void *self) {
+	return VT(cAICharVtbl, self)->GetChanged2(self);
+}
+
+static inline cEntity *AIChar_GetCollide(void *self) {
+	return VT(cAICharVtbl, self)->GetCollide(self);
+}
+
+static inline byte AIChar_GetDirect(void *self) {
+	return VT(cAICharVtbl, self)->GetDirect(self);
+}
+
+static inline byte AIChar_GetDirect2(void *self) {
+	return VT(cAICharVtbl, self)->GetDirect2(self);
+}
+
+static inline int AIChar_GetInternState(void *self) {
+	return VT(cAICharVtbl, self)->GetInternState(self);
+}
+
+static inline void AIChar_GetInternStateName(void *self, char *buf) {
+	VT(cAICharVtbl, self)->GetInternStateName(self, buf);
+}
+
+static inline byte AIChar_GetRepos(void *self) {
+	return VT(cAICharVtbl, self)->GetRepos(self);
+}
+
+static inline int AIChar_GetState(void *self) {
+	return VT(cAICharVtbl, self)->GetState(self);
+}
+
+static inline void AIChar_GetStateName(void *self, char *buf) {
+	VT(cAICharVtbl, self)->GetStateName(self, buf);
+}
+
+static inline void AIChar_InternStateName(void *self, int state, char *buf) {
+	VT(cAICharVtbl, self)->InternStateName(self, state, buf);
+}
+
+static inline byte AIChar_IsGroupState(void *self, int state) {
+	return VT(cAICharVtbl, self)->IsGroupState(self, state);
+}
+
+static inline byte AIChar_IsTalking(void *self) {
+	return VT(cAICharVtbl, self)->IsTalking(self);
+}
+
+static inline byte AIChar_React(void *self) {
+	return VT(cAICharVtbl, self)->React(self);
+}
+
+static inline void AIChar_ReactInRoute(void *self) {
+	VT(cAICharVtbl, self)->ReactInRoute(self);
+}
+
+static inline void AIChar_ReactLostPath(void *self) {
+	VT(cAICharVtbl, self)->ReactLostPath(self);
+}
+
+static inline void AIChar_ReactLostPathChase(void *self) {
+	VT(cAICharVtbl, self)->ReactLostPathChase(self);
+}
+
+static inline void AIChar_ReactPatrol(void *self) {
+	VT(cAICharVtbl, self)->ReactPatrol(self);
+}
+
+static inline byte AIChar_Repos(void *self, float minDist, float maxDist, byte flag) {
+	return VT(cAICharVtbl, self)->Repos(self, minDist, maxDist, flag);
+}
+
+static inline void AIChar_RestoreSaved(void *self, const cAICharSaved *s) {
+	VT(cAICharVtbl, self)->RestoreSaved(self, s);
+}
+
+static inline byte AIChar_RestoreState(void *self, const cAICharSaved *s) {
+	return VT(cAICharVtbl, self)->RestoreState(self, s);
+}
+
+static inline byte AIChar_RestoreStateIntern(void *self, const cAICharSaved *s) {
+	return VT(cAICharVtbl, self)->RestoreStateIntern(self, s);
+}
+
+static inline void AIChar_Resume(void *self) {
+	VT(cAICharVtbl, self)->Resume(self);
+}
+
+static inline void AIChar_SaveState(void *self, cAICharSaved *s) {
+	VT(cAICharVtbl, self)->SaveState(self, s);
+}
+
+static inline cAICharSaved *AIChar_SaveTo(void *self, cAICharSaved *s) {
+	return VT(cAICharVtbl, self)->SaveTo(self, s);
+}
+
+static inline void AIChar_SetAction(void *self, int action) {
+	VT(cAICharVtbl, self)->SetAction(self, action);
+}
+
+static inline void AIChar_SetDists(void *self) {
+	VT(cAICharVtbl, self)->SetDists(self);
+}
+
+static inline void AIChar_SetDists2(void *self) {
+	VT(cAICharVtbl, self)->SetDists2(self);
+}
+
+#define AIChar_SetInternState(self, ...) (VT(cAICharVtbl, self)->SetInternState((void *)(self), __VA_ARGS__))
+
+static inline void AIChar_SetInternStateV(void *self, int state, va_list ap) {
+	VT(cAICharVtbl, self)->SetInternStateV(self, state, ap);
+}
+
+static inline void AIChar_SetPauseCheck(void *self, byte on) {
+	VT(cAICharVtbl, self)->SetPauseCheck(self, on);
+}
+
+static inline void AIChar_SetPaused(void *self, byte on) {
+	VT(cAICharVtbl, self)->SetPaused(self, on);
+}
+
+static inline byte AIChar_SetRepos(void *self, byte on, byte now) {
+	return VT(cAICharVtbl, self)->SetRepos(self, on, now);
+}
+
+#define AIChar_SetState(self, ...) (VT(cAICharVtbl, self)->SetState((void *)(self), __VA_ARGS__))
+
+#define AIChar_SetStateIntern(self, ...) (VT(cAICharVtbl, self)->SetStateIntern((void *)(self), __VA_ARGS__))
+static inline void AIChar_StateName(void *self, int state, char *buf) {
+	VT(cAICharVtbl, self)->StateName(self, state, buf);
+}
+
+static inline void AIChar_Think(void *self) {
+	VT(cAICharVtbl, self)->Think(self);
+}
+
+static inline void AIChar_ThinkChase(void *self) {
+	VT(cAICharVtbl, self)->ThinkChase(self);
+}
+
+static inline void AIChar_ThinkChaseBack(void *self) {
+	VT(cAICharVtbl, self)->ThinkChaseBack(self);
+}
+
+static inline void AIChar_ThinkChaseNoAction(void *self) {
+	VT(cAICharVtbl, self)->ThinkChaseNoAction(self);
+}
+
+static inline void AIChar_ThinkGetAway(void *self) {
+	VT(cAICharVtbl, self)->ThinkGetAway(self);
+}
+
+static inline void AIChar_ThinkGoTo(void *self) {
+	VT(cAICharVtbl, self)->ThinkGoTo(self);
+}
+
+static inline void AIChar_ThinkInRoute(void *self) {
+	VT(cAICharVtbl, self)->ThinkInRoute(self);
+}
+
+static inline void AIChar_ThinkLostPath(void *self) {
+	VT(cAICharVtbl, self)->ThinkLostPath(self);
+}
+
+static inline void AIChar_ThinkLostPathChase(void *self) {
+	VT(cAICharVtbl, self)->ThinkLostPathChase(self);
+}
+
+static inline void AIChar_ThinkPatrol(void *self) {
+	VT(cAICharVtbl, self)->ThinkPatrol(self);
+}
+
+static inline void AIChar_UpdateAction(void *self) {
+	VT(cAICharVtbl, self)->UpdateAction(self);
+}
+
+static inline void AIChar_UpdateAction0(void *self) {
+	VT(cAICharVtbl, self)->UpdateAction0(self);
+}
+
+static inline void AIChar_UpdateAction1(void *self) {
+	VT(cAICharVtbl, self)->UpdateAction1(self);
+}
+
+static inline void AIChar_UpdateMove(void *self, float dt) {
+	VT(cAICharVtbl, self)->UpdateMove(self, dt);
+}
+
+static inline void AIChar_UpdateThink(void *self) {
+	VT(cAICharVtbl, self)->UpdateThink(self);
+}
 
 /* 0x380 bytes */
 struct cAIChar {

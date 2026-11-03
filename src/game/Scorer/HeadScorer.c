@@ -114,7 +114,7 @@ static void cHeadScorer_Draw(cScorerItem *base, int player) {
 		CGameModel_RenderNow(&self->model->model, 2);
 		cEmbeddedFX *extra = self->model->extra;
 		if (extra) {
-			extra->vftable->Tick(extra);
+			EFX_Tick(extra);
 		}
 		CGameModel_Disable(&self->model->model);
 		Camera_SetCurrent(cur);

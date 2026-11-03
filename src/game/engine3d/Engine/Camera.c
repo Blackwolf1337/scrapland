@@ -22,7 +22,7 @@ static void Camera_Link(CNode3D **slot, CNode3D *n) {
 		CNode3D *old = *slot;
 		old->Refs--;
 		if (!old->Refs && old) {
-			old->vftable->Delete(&old->ref, 1);
+			ObjRef_Delete(old, 1);
 		}
 		*slot = NULL;
 	}

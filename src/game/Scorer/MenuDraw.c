@@ -160,22 +160,22 @@ void Menu_DrawBar(void *image, float x, float y, float frac, int mode, float f, 
 
 /* the parameters of the native functions: the player, the item name (size bytes) */
 static cScorer *Menu_ReadParams(cAbstractFile *params, int *player, char *name, int size) {
-	params->vftable->Read(params, player, 4);
+	VFile_Read(params, player, 4);
 	cAbstractFile_ReadString(params, name, size);
 	return Scorer_Get(*player);
 }
 
 static int MenuItem_SetInt(cScorerItem *item, const char *var, int *v) {
-	return item->vftable->Var(item, var, 1, NULL, NULL, v);
+	return ScorerItem_Var(item, var, 1, NULL, NULL, v);
 }
 
 static int MenuItem_SetFloat(cScorerItem *item, const char *var, double *v) {
-	return item->vftable->Var(item, var, 1, NULL, v, NULL);
+	return ScorerItem_Var(item, var, 1, NULL, v, NULL);
 }
 
 static int MenuItem_GetAlpha(cScorerItem *item) {
 	int a = 0;
-	item->vftable->Var(item, "Alpha", 0, NULL, NULL, &a);
+	ScorerItem_Var(item, "Alpha", 0, NULL, NULL, &a);
 	return a;
 }
 
@@ -372,7 +372,7 @@ static void Scorer_BoostScorer(cAbstractFile *params) {
 	cVehicleEntity *v = (cVehicleEntity *)ship;
 	if (v->boost == 0.0f) {
 		if (v->cloudOn) {
-			double t = ((g_pApp->vftable->GetGameTime(g_pApp)) * 4.0);
+			double t = ((App_GetGameTime(g_pApp)) * 4.0);
 			status = (int)t & 1 ? 0x40 : 0x80;
 		} else {
 			status = 0xff;

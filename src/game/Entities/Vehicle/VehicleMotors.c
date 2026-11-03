@@ -49,7 +49,7 @@ static inline int VM_NumNodes(const cVehicleMotor *m) {
 }
 
 static inline CGameModel *VM_OwnerModel(cVehicleMotors *self) {
-	return Obj_Vtbl(self->owner)->GetModel(self->owner);
+	return Obj_GetModel(self->owner);
 }
 
 /* the position and the angles of render node i of the ship model */
@@ -127,8 +127,8 @@ static void VM_UpdateEffects(cVehicleMotors *self, cVehicleMotorsEffects *eff, V
 		return;
 	}
 	vec3_t vel = Veh(self->owner)->localVel;
-	vec3_t *pa = Obj_Vtbl(self->owner)->GetViewAng(self->owner, &a);
-	vec3_t *pc = Obj_Vtbl(self->owner)->GetViewPos(self->owner, &c);
+	vec3_t *pa = Obj_GetViewAng(self->owner, &a);
+	vec3_t *pc = Obj_GetViewPos(self->owner, &c);
 	uint32_t color = cArrowIndicator_GetColor((cArrowIndicator *)VM_Team(self->owner));
 	cVehicleMotorsEffects_Trails(eff, u->dt, *pc, *pa, vel, u->thrust * u->alpha, u->k4c8, color);
 }
@@ -546,14 +546,14 @@ static int cVehicleMotor_Load(cVehicleMotor *self, cEntity *owner, byte motor, c
 	Str_Printf(path, sizeof(path), g_EnginePathFmt, file, file);
 	for (i = 0; i < VM_SIDES; i++) {
 		VM_SlotName(name, motor, i);
-		self->node[i] = CGameModel_FindRenderNode(Obj_Vtbl(owner)->GetModel(owner), name);
+		self->node[i] = CGameModel_FindRenderNode(Obj_GetModel(owner), name);
 		if (self->node[i] == -1) {
 			break;
 		}
 		CGameModel_LoadScaled(&self->model[i], path, scale);
 		CGameModel_SetPivotNode(&self->model[i], "DC_Ship_Link");
-		CGameModel_SetPos(&self->model[i], owner->vftable->GetPos(owner, &v));
-		CGameModel_SetRot(&self->model[i], Obj_Vtbl(owner)->GetAng(owner, &v));
+		CGameModel_SetPos(&self->model[i], Entity_GetPos(owner, &v));
+		CGameModel_SetRot(&self->model[i], Obj_GetAng(owner, &v));
 		if (!owner->active) {
 			CGameModel_Disable(&self->model[i]);
 		}
@@ -853,7 +853,7 @@ void cVehicleMotorsEffects_Stop(cVehicleMotorsEffects *self) {
 				if (!fx->on) {
 					fx->on = 1;
 				}
-				fx->base.vftable->Reset(&fx->base, d);
+				FXObj_Reset(fx, d);
 				CGameTrail_Copy(&fx->trail, self->trail[i]);
 				int t = CGameTrail_GetTransp(self->trail[i]);
 				fx->duration = 0.75f;
@@ -886,7 +886,7 @@ static void cVehicleMotorsEffects_HideTrails(cVehicleMotorsEffects *self) {
 CGameModel *cVehicleMotorsEffects_GetModel(cVehicleMotorsEffects *self, int side) {
 	if (self->motors) {
 		cEntity *e = cVehicleMotors_GetOwner(self->motors);
-		return Obj_Vtbl(e)->GetModel(e);
+		return Obj_GetModel(e);
 	}
 	if (self->motor && self->motor->node[side] != -1) {
 		return &self->motor->model[side];

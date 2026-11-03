@@ -32,11 +32,11 @@ static void cDominationSide_Think(cDominationSide *self) {
 	cEntity *leader = cDominationEnemiesLogic_GetLeader(NULL);
 	for (Nto1Node *n = Logic_ListFirst(self->list); n; n = Logic_ListNext(n)) {
 		cEntity *v = n->data;
-		if (v && !v->vftable->IsType(v, TYEN_CAR)) {
+		if (v && !Entity_IsType(v, TYEN_CAR)) {
 			v = NULL;
 		}
 		CHECK(v && "v = AsVehicle (node->GetNode())");
-		cAIVehicle *ai = v->vftable->GetAI(v);
+		cAIVehicle *ai = Entity_GetAI(v);
 		CHECK(ai && "ai = v->GetAI()");
 		int st = cAIVehicle_GetState(ai);
 		if (leader != v) {
@@ -58,12 +58,12 @@ static void cDominationSide_Think(cDominationSide *self) {
 		} else if (baton == 1) {
 			if (st == 0 || st == 3 || (st == 1 && self->zone >= 0 && (g_DominZones[self->zone].state == 2 ||
 				g_DominZones[self->zone].state == 4))) {
-				int z = cDominationLogic_NearestZone((cDominationLogic *)self, leader->vftable->GetPos(leader,
+				int z = cDominationLogic_NearestZone((cDominationLogic *)self, Entity_GetPos(leader,
 					&tmp));
 				self->zone = z;
 				if (z >= 0) {
 					cEntity *ze = g_DominZones[z].zone;
-					DominE_GoTo(ai, *ze->vftable->GetPos(ze, &tmp), 3000.0);
+					DominE_GoTo(ai, *Entity_GetPos(ze, &tmp), 3000.0);
 				}
 			}
 		}

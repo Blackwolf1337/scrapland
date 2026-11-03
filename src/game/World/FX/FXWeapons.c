@@ -266,43 +266,43 @@ static void cObjElementFXTesla_dtor(void *self) {
 static cObjElementFX *cObjElementFXATPC_Delete(cObjElementFX *base, byte flags) {
 	void *self = (void *)base;
 	cObjElementFXATPC_dtor(self);
-	return FXObj_Delete(self, flags, sizeof(cObjElementFXATPC));
+	return FXObj_Free(self, flags, sizeof(cObjElementFXATPC));
 }
 
 static cObjElementFX *cObjElementFXDevastatorShoot_Delete(cObjElementFX *base, byte flags) {
 	void *self = (void *)base;
 	cObjElementFXDevastatorShoot_dtor(self);
-	return FXObj_Delete(self, flags, sizeof(cObjElementFXDevastatorShoot));
+	return FXObj_Free(self, flags, sizeof(cObjElementFXDevastatorShoot));
 }
 
 static cObjElementFX *cObjElementFXInfernoExplosion_Delete(cObjElementFX *base, byte flags) {
 	void *self = (void *)base;
 	cObjElementFXInfernoExplosion_dtor(self);
-	return FXObj_Delete(self, flags, sizeof(cObjElementFXInfernoExplosion));
+	return FXObj_Free(self, flags, sizeof(cObjElementFXInfernoExplosion));
 }
 
 static cObjElementFX *cObjElementFXInfernoMissile_Delete(cObjElementFX *base, byte flags) {
 	void *self = (void *)base;
 	cObjElementFXInfernoMissile_dtor(self);
-	return FXObj_Delete(self, flags, sizeof(cObjElementFXInfernoMissile));
+	return FXObj_Free(self, flags, sizeof(cObjElementFXInfernoMissile));
 }
 
 static cObjElementFX *cObjElementFXLaser_Delete(cObjElementFX *base, byte flags) {
 	void *self = (void *)base;
 	cObjElementFXLaser_dtor(self);
-	return FXObj_Delete(self, flags, sizeof(cObjElementFXLaser));
+	return FXObj_Free(self, flags, sizeof(cObjElementFXLaser));
 }
 
 static cObjElementFX *cObjElementFXSwarmMissile_Delete(cObjElementFX *base, byte flags) {
 	void *self = (void *)base;
 	cObjElementFXSwarmMissile_dtor(self);
-	return FXObj_Delete(self, flags, sizeof(cObjElementFXSwarmMissile));
+	return FXObj_Free(self, flags, sizeof(cObjElementFXSwarmMissile));
 }
 
 static cObjElementFX *cObjElementFXTesla_Delete(cObjElementFX *base, byte flags) {
 	void *self = (void *)base;
 	cObjElementFXTesla_dtor(self);
-	return FXObj_Delete(self, flags, sizeof(cObjElementFXTesla));
+	return FXObj_Free(self, flags, sizeof(cObjElementFXTesla));
 }
 
 static cGVar GVar_ATPCShootSize;
@@ -600,7 +600,7 @@ void cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, const char *ta
 	self->to = hit;
 	self->from = origin;
 	CHECK(self->shooter);
-	CGameModel *model = Obj_Vtbl(self->shooter)->GetModel(self->shooter);
+	CGameModel *model = Obj_GetModel(self->shooter);
 	CHECK(CGameModel_IsLoaded(model));
 	self->numSlots = 0;
 	for (int i = 0; i < FXATPC_SLOTS; i++) {
@@ -726,7 +726,7 @@ void cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, const char *ta
 
 	/* the sparks from the hit towards the shooter */
 	vec3_t ctr, back;
-	const vec3_t *cp = Obj_Vtbl(self->shooter)->GetViewPos(self->shooter, &ctr);
+	const vec3_t *cp = Obj_GetViewPos(self->shooter, &ctr);
 	FX_Normalize(&back, cp->x - self->to.x, cp->y - self->to.y, cp->z - self->to.z);
 	CGameParticles_SetSparksOn(p, 1);
 	for (int i = 0; i < 32; i++) {
@@ -1546,7 +1546,7 @@ static void cObjElementFXTesla_Update(cObjElementFX *base, cDebris *debris, floa
 	if (!self->emitter) {
 		return;
 	}
-	CGameModel *em = Obj_Vtbl(self->emitter)->GetModel(self->emitter);
+	CGameModel *em = Obj_GetModel(self->emitter);
 	CGameModel *dm = Debris_Model(debris);
 	vec3_t tmp, tmp2;
 	CHECK(CGameModel_IsLoaded(em));
@@ -1593,9 +1593,9 @@ static void cObjElementFXTesla_Update(cObjElementFX *base, cDebris *debris, floa
 	/* the end of the ray: before the target, else the aim of the emitter */
 	vec3_t *tp = &self->tpos;
 	if (self->target) {
-		*tp = *Obj_Vtbl(self->target)->GetViewPos(self->target, &tmp);
+		*tp = *Obj_GetViewPos(self->target, &tmp);
 		float r = WLife(self->target)->prim.radius;
-		const vec3_t *ec = Obj_Vtbl(self->emitter)->GetViewPos(self->emitter, &tmp);
+		const vec3_t *ec = Obj_GetViewPos(self->emitter, &tmp);
 		vec3_t n;
 		FX_Normalize(&n, ec->x - tp->x, ec->y - tp->y, ec->z - tp->z);
 		FXW_TeslaBack(tp, &n, r);
@@ -1607,11 +1607,11 @@ static void cObjElementFXTesla_Update(cObjElementFX *base, cDebris *debris, floa
 		ang.y = Veh(e)->autoAim.ay;
 		ang.z = 0.0f;
 		float range = g_TeslaRange;
-		e->vftable->GetTargetAngle(e, &ang.x, range, &hit);
-		if (hit && hit->vftable->IsType(hit, TYEN_CAR)) {
-			*tp = *Obj_Vtbl(hit)->GetViewPos(hit, &tmp);
+		Entity_GetTargetAngle(e, &ang.x, range, &hit);
+		if (hit && Entity_IsType(hit, TYEN_CAR)) {
+			*tp = *Obj_GetViewPos(hit, &tmp);
 			float r = WLife(hit)->prim.radius;
-			const vec3_t *ec = Obj_Vtbl(self->emitter)->GetViewPos(self->emitter, &tmp);
+			const vec3_t *ec = Obj_GetViewPos(self->emitter, &tmp);
 			vec3_t dv, n;
 			dv.x = ec->x - tp->x;
 			dv.y = ec->y - tp->y;
@@ -1623,7 +1623,7 @@ static void cObjElementFXTesla_Update(cObjElementFX *base, cDebris *debris, floa
 			tp->z = tp->z + s * (n.z * r);
 		} else {
 			e = self->emitter;
-			e->vftable->AimWeapon(e, ang.x, ang.y, &range, tp, &hit, 8);
+			Entity_AimWeapon(e, ang.x, ang.y, &range, tp, &hit, 8);
 		}
 		float s = FXW_Rand(25.0, 0.0);
 		vec3_t rd;
@@ -1654,7 +1654,7 @@ static void cObjElementFXTesla_Update(cObjElementFX *base, cDebris *debris, floa
 		node.y = m->m[13];
 		node.z = m->m[14];
 		P[1] = node;
-		const vec3_t *r = Vec3_Rotate(&o, &v, Obj_Vtbl(self->emitter)->GetViewAng(self->emitter, &tmp2));
+		const vec3_t *r = Vec3_Rotate(&o, &v, Obj_GetViewAng(self->emitter, &tmp2));
 		int n = self->numPts;
 		P[2].z = r->z + node.z;
 		P[2].x = node.x + r->x;
@@ -1959,7 +1959,7 @@ void cObjElementFXTesla_SetEmitter(cObjElementFXTesla *self, cEntity *e) {
 	self->shooting = 1;
 	self->first = 1;
 	CHECK(e);
-	CHECK(CGameModel_IsLoaded(Obj_Vtbl(self->emitter)->GetModel(self->emitter)));
+	CHECK(CGameModel_IsLoaded(Obj_GetModel(self->emitter)));
 	self->numSlots = 0;
 	for (int i = 0; i < FXTESLA_SLOTS; i++) {
 		if (cTargetLock_HasSlot(&Veh(self->emitter)->weapons, g_TeslaIDWeap, i)) {

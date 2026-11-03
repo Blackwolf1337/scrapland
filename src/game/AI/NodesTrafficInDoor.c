@@ -199,7 +199,7 @@ static void CNodesTrafficInDoor_Respawn(CNodesTrafficInDoor *self, cAIVehicle **
 		int node = crt_rand() % self->base.tracks[track].numNodes;
 		vec3_t p;
 		int oT, oN;
-		self->base.vftable->RandomPointNear(&self->base, track, node, g_MaxDistAroundReposAI, &p, &oT, &oN);
+		Traffic_RandomPointNear(self, track, node, g_MaxDistAroundReposAI, &p, &oT, &oN);
 		cAIVehicle_PlaceOnTrack(ai[v], type, &p, oT, oN);
 	}
 }
@@ -377,7 +377,7 @@ static void CNodesTrafficInDoor_InitSectors(CNodesTrafficInDoor *self) {
 
 static void CNodesTrafficInDoor_Init(CNodesTraffic *elem) {
 	CNodesTrafficInDoor *self = (CNodesTrafficInDoor *)elem;
-	self->base.vftable->Load(&self->base, 1);
+	Traffic_Load(self, 1);
 	if (self->base.numTracks > 0) {
 		CNodesTrafficInDoor_InitSectors(self);
 	}
@@ -552,7 +552,7 @@ static byte CNodesTrafficInDoor_PickPoint(CNodesTrafficInDoor *self, int *outTyp
 		}
 		if (!t->loop && room) {
 			int node = CNodesTrafficInDoor_HiddenNode(self, track);
-			self->base.vftable->RandomPointNear(&self->base, track, node, g_MaxDistAroundReposAI, out, outTrack,
+			Traffic_RandomPointNear(self, track, node, g_MaxDistAroundReposAI, out, outTrack,
 				outNode);
 			if (CNodesWorld_PointSeen(g_NodesWorld, out)) {
 				*out = self->base.tracks[track].nodes[node];

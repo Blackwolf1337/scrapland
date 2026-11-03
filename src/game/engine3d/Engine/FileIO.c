@@ -60,11 +60,11 @@ void *FileIO_ReadAll(const char *name, void **buf, uint32_t *size) {
 		Con_FatalErrorf("File not found%s: %s", PackLog_Closed() ? " in packfile" : "", name);
 		CHECK(f);
 	}
-	int len = f->vftable->Size(f);
+	int len = VFile_Size(f);
 	CHECK(len > 0);
 	void *data = operator_new_array(len);
-	CHECK(f->vftable->Read(f, data, len) == len);
-	int closed = f->vftable->Close(f);
+	CHECK(VFile_Read(f, data, len) == len);
+	int closed = VFile_Close(f);
 	FileIO_Delete(f);
 	CHECK(closed);
 	if (buf) {
@@ -88,7 +88,7 @@ static int CFileIO_Close(CFileIO *self) {
 		CFileIO_PopBlock(self, (const char *)self->block);
 	}
 	if (self->f) {
-		int closed = self->f->vftable->Close(self->f);
+		int closed = VFile_Close(self->f);
 		FileIO_Delete(self->f);
 		if (!closed && !self->error) {
 			self->error = 1;
@@ -104,7 +104,7 @@ int CFileIO_Write(CFileIO *self, const void *buf, int n) {
 		return -1;
 	}
 	if (n) {
-		CHECK(self->f->vftable->Write(self->f, buf, n) == n);
+		CHECK(VFile_Write(self->f, buf, n) == n);
 	}
 	return 0;
 }
@@ -115,12 +115,12 @@ int CFileIO_WriteString(CFileIO *self, const char *s) {
 	if (self->error) {
 		return -1;
 	}
-	CHECK(self->f->vftable->Write(self->f, &len, 4) == 4);
+	CHECK(VFile_Write(self->f, &len, 4) == 4);
 	if (self->error) {
 		return -1;
 	}
 	if (len) {
-		CHECK(self->f->vftable->Write(self->f, s, len) == len);
+		CHECK(VFile_Write(self->f, s, len) == len);
 	}
 	return 0;
 }
@@ -132,17 +132,17 @@ int CFileIO_EndBlockWrite(CFileIO *self, const char *id) {
 		return -1;
 	}
 	CHECK(self->block);
-	int pos = self->f->vftable->Tell(self->f);
+	int pos = VFile_Tell(self->f);
 	if (pos == -1) {
 		return CFileIO_SetError(self, NULL);
 	}
 	CHECK(!PackLog_Closed());
-	if (self->f->vftable->Seek(self->f, self->block->pos) >= 0) {
+	if (VFile_Seek(self->f, self->block->pos) >= 0) {
 		if (CFileIO_WriteInt(self, pos - self->block->pos - 4) != 0) {
 			return -1;
 		}
 		CHECK(!PackLog_Closed());
-		if (self->f->vftable->Seek(self->f, pos) >= 0) {
+		if (VFile_Seek(self->f, pos) >= 0) {
 			CFileIO_PopBlock(self, id);
 			return 0;
 		}
@@ -154,7 +154,7 @@ int CFileIO_WriteInt(CFileIO *self, int32_t v) {
 	if (self->error) {
 		return -1;
 	}
-	CHECK(self->f->vftable->Write(self->f, &v, 4) == 4);
+	CHECK(VFile_Write(self->f, &v, 4) == 4);
 	return 0;
 }
 
@@ -168,8 +168,8 @@ int CFileIO_BeginBlockWrite(CFileIO *self, const char *id) {
 	if (self->error) {
 		return -1;
 	}
-	CHECK(self->f->vftable->Write(self->f, &v, 4) == 4);
-	int pos = self->f->vftable->Tell(self->f);
+	CHECK(VFile_Write(self->f, &v, 4) == 4);
+	int pos = VFile_Tell(self->f);
 	if (pos == -1) {
 		CFileIO_SetError(self, NULL);
 		return -1;
@@ -183,7 +183,7 @@ int CFileIO_BeginBlockWrite(CFileIO *self, const char *id) {
 
 int FileIO_Close(void *f) {
 	cAbstractFile *file = f;
-	int closed = file->vftable->Close(file);
+	int closed = VFile_Close(file);
 	FileIO_Delete(file);
 	return closed ? 0 : -1;
 }
@@ -192,7 +192,7 @@ int FileIO_Getc(void *f) {
 	cAbstractFile *file = f;
 	char ch;
 
-	CHECK(file->vftable->Read(file, &ch, 1) == 1);
+	CHECK(VFile_Read(file, &ch, 1) == 1);
 	return (byte)ch;
 }
 
@@ -200,7 +200,7 @@ char *FileIO_Gets(char *buf, int size, void *f) {
 	cAbstractFile *file = f;
 
 	CHECK(buf && size > 0);
-	int left = file->vftable->Size(file) - file->vftable->Tell(file);
+	int left = VFile_Size(file) - VFile_Tell(file);
 	int n = size - 1 <= left ? size - 1 : left;
 	if (left < 1) {
 		return NULL;
@@ -211,7 +211,7 @@ char *FileIO_Gets(char *buf, int size, void *f) {
 		if (n < 1) {
 			break;
 		}
-		CHECK(file->vftable->Read(file, &ch, 1) == 1);
+		CHECK(VFile_Read(file, &ch, 1) == 1);
 		n--;
 		*p++ = ch;
 	} while (ch != '\n');
@@ -222,13 +222,13 @@ char *FileIO_Gets(char *buf, int size, void *f) {
 int FileIO_Read(void *buf, int size, int count, void *f) {
 	cAbstractFile *file = f;
 
-	CHECK(file->vftable->Read(file, buf, size * count) == size * count);
+	CHECK(VFile_Read(file, buf, size * count) == size * count);
 	return count;
 }
 
 int FileIO_Tell(void *f) {
 	cAbstractFile *file = f;
-	return file->vftable->Tell(file);
+	return VFile_Tell(file);
 }
 
 static int File_Check(const char *name, int mode, byte pack);
@@ -285,7 +285,7 @@ void *FileIO_Open(const char *name, const char *mode) {
 		fmode = FILE_MODE_READ;
 	}
 	cFilePack *f = cFilePack_ctor(operator_new(sizeof(cFilePack)));
-	f->file.base.vftable->Open(&f->file.base, name, fmode);
+	VFile_Open(f, name, fmode);
 	return f;
 }
 
@@ -297,7 +297,7 @@ byte CFileIO_ReadBool(CFileIO *self) {
 	int v = -1;
 
 	if (!self->error) {
-		CHECK(self->f->vftable->Read(self->f, &v, 4) == 4);
+		CHECK(VFile_Read(self->f, &v, 4) == 4);
 	} else {
 		CHECK(!"leer( &dato, sizeof(dato) ) == 0");
 	}
@@ -308,7 +308,7 @@ int CFileIO_ReadInt(CFileIO *self) {
 	int v = -1;
 
 	if (!self->error) {
-		CHECK(self->f->vftable->Read(self->f, &v, 4) == 4);
+		CHECK(VFile_Read(self->f, &v, 4) == 4);
 	} else {
 		CHECK(!"leer( &dato, sizeof(dato) ) == 0");
 	}
@@ -320,7 +320,7 @@ int CFileIO_Read(CFileIO *self, void *buf, int n) {
 		return -1;
 	}
 	if (n) {
-		CHECK(self->f->vftable->Read(self->f, buf, n) == n);
+		CHECK(VFile_Read(self->f, buf, n) == n);
 	}
 	return 0;
 }
@@ -332,7 +332,7 @@ int CFileIO_ReadStringNull(CFileIO *self, char *buf, uint32_t size, byte *isNull
 	if (self->error) {
 		return -1;
 	}
-	CHECK(self->f->vftable->Read(self->f, &len, 4) == 4);
+	CHECK(VFile_Read(self->f, &len, 4) == 4);
 	if (!len) {
 		*buf = '\0';
 		return 0;
@@ -342,7 +342,7 @@ int CFileIO_ReadStringNull(CFileIO *self, char *buf, uint32_t size, byte *isNull
 	if (self->error) {
 		return -1;
 	}
-	CHECK(self->f->vftable->Read(self->f, buf, len) == (int)len);
+	CHECK(VFile_Read(self->f, buf, len) == (int)len);
 	return 0;
 }
 
@@ -361,7 +361,7 @@ int CFileIO_Read4(CFileIO *self, void *out) {
 	if (self->error) {
 		return -1;
 	}
-	CHECK(self->f->vftable->Read(self->f, out, 4) == 4);
+	CHECK(VFile_Read(self->f, out, 4) == 4);
 	return 0;
 }
 

@@ -71,7 +71,7 @@ static PyObject *PyMenuEntity_GetAttr(PyObject *self, char *name) {
 	if (!item) {
 		return NULL;
 	}
-	switch (item->vftable->Var(item, name, 0, &s, &d, &i)) {
+	switch (ScorerItem_Var(item, name, 0, &s, &d, &i)) {
 	case 1:
 		return Py_BuildValue("s", s);
 	case 2:
@@ -101,7 +101,7 @@ static int PyMenuEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
 	}
 	if (PyArg_Parse(v, "i", &i)) {
 		parsed = 1;
-		if (item->vftable->Var(item, name, 1, &s, &d, &i) == 3) {
+		if (ScorerItem_Var(item, name, 1, &s, &d, &i) == 3) {
 			return 0;
 		}
 	} else {
@@ -109,14 +109,14 @@ static int PyMenuEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
 	}
 	if (PyArg_Parse(v, "d", &d)) {
 		parsed = 1;
-		if (item->vftable->Var(item, name, 1, &s, &d, &i) == 2) {
+		if (ScorerItem_Var(item, name, 1, &s, &d, &i) == 2) {
 			return 0;
 		}
 	} else {
 		PyErr_Clear();
 	}
 	if (PyArg_Parse(v, "s", &s)) {
-		if (item->vftable->Var(item, name, 1, &s, &d, &i) == 1) {
+		if (ScorerItem_Var(item, name, 1, &s, &d, &i) == 1) {
 			return 0;
 		}
 	} else {

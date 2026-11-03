@@ -162,9 +162,9 @@ static void Sirens_Delete(cEmbeddedFXVehicle *self) {
 
 static void Other_Delete(cEmbeddedFXVehicle *self) {
 	if (self->other) {
-		self->other->vftable->Done(self->other);
+		EFXVeh_Done(self->other);
 		if (self->other) {
-			self->other->vftable->Delete(self->other, 1);
+			EFXVeh_Delete(self->other, 1);
 			self->other = NULL;
 		}
 	}
@@ -194,11 +194,11 @@ static void cEmbeddedFXVehicle_Configure(cEmbeddedFXVehicleSub *base, float unus
 	if (!g_SplitScreenGame) {
 		/* World.h: the entity of player 0 */
 		pl = g_pWorld->owners[0];
-		if (pl && !pl->vftable->IsType(pl, TYEN_WITH_LIFE)) {
+		if (pl && !Entity_IsType(pl, TYEN_WITH_LIFE)) {
 			CheckFailed("UsrEntities[i]->IsType(\"WithLife\")", "World.h", __TIMESTAMP__, __LINE__);
 		}
 		pl = g_pWorld->owners[0];
-		if (pl && pl->vftable->IsType(pl, TYEN_CAR) && Veh(pl)->target[0]) {
+		if (pl && Entity_IsType(pl, TYEN_CAR) && Veh(pl)->target[0]) {
 			self->followed = Str_EqualW(self->owner->name, Veh(pl)->target);
 		}
 	}
@@ -206,7 +206,7 @@ static void cEmbeddedFXVehicle_Configure(cEmbeddedFXVehicleSub *base, float unus
 		self->traffic = 0;
 		return;
 	}
-	ai = self->owner->vftable->GetAI(self->owner);
+	ai = Entity_GetAI(self->owner);
 	if (!ai) {
 		self->traffic = Veh(self->owner)->traffic.active;
 		return;
@@ -225,7 +225,7 @@ static void cEmbeddedFXVehicle_Update(cEmbeddedFXVehicleSub *base) {
 	float dt;
 
 	CHECK(self->owner);
-	model = Obj_Vtbl(self->owner)->GetModel(self->owner);
+	model = Obj_GetModel(self->owner);
 	CHECK(CGameModel_IsLoaded(model));
 	if (CGameModel_IsEnabled(model) && CGameModel_IsVisible(model) && self->owner->active) {
 		if (!self->visible || !CGameModel_IsEnabled(&self->model)) {
@@ -269,8 +269,8 @@ static void cEmbeddedFXVehicle_Update(cEmbeddedFXVehicleSub *base) {
 	} else {
 		float nearDist = g_MinDistReposAI;
 		float farDist = g_MaxDistReposAI;
-		if (self->aiRange && self->owner->vftable->GetAI(self->owner)) {
-			cAIVehicle_GetFadeDists(self->owner->vftable->GetAI(self->owner), &nearDist, &farDist);
+		if (self->aiRange && Entity_GetAI(self->owner)) {
+			cAIVehicle_GetFadeDists(Entity_GetAI(self->owner), &nearDist, &farDist);
 		}
 		if (!self->aiRange || !(self->camDist >= nearDist)) {
 			Float_Approach(&self->alpha, 1.0f, dt);
@@ -282,20 +282,20 @@ static void cEmbeddedFXVehicle_Update(cEmbeddedFXVehicleSub *base) {
 		uint32_t fx = CGameModel_GetEffect(&Veh(self->owner)->wl.obj.model, NULL);
 		if (self->alpha >= 1.0f) {
 			if (fx == VEHICLE_FX_FADE) {
-				Obj_Vtbl(self->owner)->SetEffect(self->owner, 0);
+				Obj_SetEffect(self->owner, 0);
 			}
 		} else if (fx == 0 || fx == VEHICLE_FX_FADE) {
 			if (fx == 0) {
-				Obj_Vtbl(self->owner)->SetEffect(self->owner, VEHICLE_FX_FADE);
+				Obj_SetEffect(self->owner, VEHICLE_FX_FADE);
 			}
-			Obj_Vtbl(self->owner)->SetEffectParam(self->owner, 0, 1.0f - self->alpha);
+			Obj_SetEffectParam(self->owner, 0, 1.0f - self->alpha);
 		}
 	}
 	if (self->sirens) {
 		cFXVehicleSirens_Update(self->sirens);
 	}
 	if (self->other) {
-		self->other->vftable->Update(self->other);
+		EFXVeh_Update(self->other);
 	}
 }
 
@@ -316,8 +316,8 @@ static void cEmbeddedFXVehicle_Hide(cEmbeddedFXVehicle *self) {
 	self->time = 0.0f;
 	self->fading = 0;
 	if (CGameModel_GetEffect(&Veh(self->owner)->wl.obj.model, NULL) == VEHICLE_FX_FADE) {
-		Obj_Vtbl(self->owner)->SetEffect(self->owner, 0);
-		Obj_Vtbl(self->owner)->SetEffectParam(self->owner, 0, 0.0f);
+		Obj_SetEffect(self->owner, 0);
+		Obj_SetEffectParam(self->owner, 0, 0.0f);
 	}
 }
 
@@ -355,9 +355,9 @@ void cEmbeddedFXVehicle_SetOwner(cEmbeddedFXVehicle *self, cEntity *owner) {
 
 	self->attached = NULL;
 	self->owner = owner;
-	model = Obj_Vtbl(owner)->GetModel(owner);
+	model = Obj_GetModel(owner);
 	CHECK(CGameModel_IsLoaded(model));
-	CGameModel_SetSortZ(&self->model, -Obj_Vtbl(self->owner)->GetRadius(self->owner), 1.0f);
+	CGameModel_SetSortZ(&self->model, -Obj_GetRadius(self->owner), 1.0f);
 	int root = CGameModel_FindRenderNode(model, "DC_Root");
 	CHECK(root != -1);
 	self->rootPos = (vec3_t){0.0f, 0.0f, 0.0f};
@@ -393,7 +393,7 @@ void cEmbeddedFXVehicle_SetOwner(cEmbeddedFXVehicle *self, cEntity *owner) {
 		v->type = VOTE_BISHOP;
 	}
 	if (self->other) {
-		self->other->vftable->Init(self->other);
+		EFXVeh_Init(self->other);
 	}
 }
 
@@ -405,8 +405,8 @@ void cEmbeddedFXVehicle_StartFade(cEmbeddedFXVehicle *self) {
 	self->fading = 1;
 	self->alpha = 0.0f;
 	self->time = 0.0f;
-	Obj_Vtbl(self->owner)->SetEffect(self->owner, VEHICLE_FX_FADE);
-	Obj_Vtbl(self->owner)->SetEffectParam(self->owner, 0, 1.0f);
+	Obj_SetEffect(self->owner, VEHICLE_FX_FADE);
+	Obj_SetEffectParam(self->owner, 0, 1.0f);
 }
 
 static int g_SirenRefs;
@@ -439,7 +439,7 @@ static byte cFXVehicleSirens_Init(cFXVehicleSirens *self) {
 		CHECK(g_SirenParticles.ParticleSystem);
 	}
 	CHECK(self->owner->owner);
-	CGameModel *vm = Obj_Vtbl(self->owner->owner)->GetModel(self->owner->owner);
+	CGameModel *vm = Obj_GetModel(self->owner->owner);
 	for (int i = 0; i < 2; i++) {
 		Str_PrintfQuiet(name, 0xff, "DF_SpeedTrail_%02d", i + 1);
 		int node = CGameModel_FindRenderNode(vm, name);
@@ -597,7 +597,7 @@ static void Probe_InitLight(CGameParticles *p, int n, int redMod, int redBase, i
 
 static byte cEmbeddedFXVehicleProbe_Init(cEmbeddedFXVehicleSub *base) {
 	cEmbeddedFXVehicleProbe *self = (cEmbeddedFXVehicleProbe *)base;
-	CGameModel *model = Obj_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
+	CGameModel *model = Obj_GetModel(self->fx->owner);
 
 	if (!model || !CGameModel_IsLoaded(model)) {
 		CheckFailed("model && model->HasModel()", __FILE__, __TIMESTAMP__, __LINE__);
@@ -642,7 +642,7 @@ static uint32_t cEmbeddedFXVehicleProbe_UpdateRamps[18] = {
 
 static void cEmbeddedFXVehicleProbe_Update(cEmbeddedFXVehicleSub *base) {
 	cEmbeddedFXVehicleProbe *self = (cEmbeddedFXVehicleProbe *)base;
-	CGameModel *model = Obj_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
+	CGameModel *model = Obj_GetModel(self->fx->owner);
 	vec3_t tmp, mrot, mpos, mrot2;
 	float frac, s, t;
 
@@ -792,7 +792,7 @@ static cEmbeddedFXVehicleSub *cEmbeddedFXVehicleVote_Delete(cEmbeddedFXVehicleSu
 
 static byte cEmbeddedFXVehicleVote_Init(cEmbeddedFXVehicleSub *base) {
 	cEmbeddedFXVehicleVote *self = (cEmbeddedFXVehicleVote *)base;
-	CGameModel *model = Obj_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
+	CGameModel *model = Obj_GetModel(self->fx->owner);
 
 	if (!model || !CGameModel_IsLoaded(model)) {
 		CheckFailed("model && model->HasModel()", __FILE__, __TIMESTAMP__, __LINE__);
@@ -826,7 +826,7 @@ static void cEmbeddedFXVehicleVote_Done(cEmbeddedFXVehicleSub *base) {
 static void cEmbeddedFXVehicleVote_ClearTrails(cEmbeddedFXVehicleVote *self);
 static void cEmbeddedFXVehicleVote_Update(cEmbeddedFXVehicleSub *base) {
 	cEmbeddedFXVehicleVote *self = (cEmbeddedFXVehicleVote *)base;
-	CGameModel *model = Obj_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
+	CGameModel *model = Obj_GetModel(self->fx->owner);
 	vec3_t pos, rot, tmp, tmp2;
 	uint32_t color;
 

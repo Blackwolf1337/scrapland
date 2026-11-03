@@ -142,9 +142,9 @@ static inline void Weap_PlaySound(cEntity *e, int i) {
 }
 
 static inline void Weap_ReadVec(cAbstractFile *f, vec3_t *v) {
-	f->vftable->Read(f, &v->x, 4);
-	f->vftable->Read(f, &v->y, 4);
-	f->vftable->Read(f, &v->z, 4);
+	VFile_Read(f, &v->x, 4);
+	VFile_Read(f, &v->y, 4);
+	VFile_Read(f, &v->z, 4);
 }
 
 /* ship name: the aim mode of the ship */
@@ -159,12 +159,12 @@ static inline cEntity *Weap_SetAimMode(cAbstractFile *f, int mode) {
 
 /* the debris drop (position, angles, velocity) at a weapon node of the ship */
 static inline void Weap_DropAtNode(cEntity *v, uint32_t node, matrix_t *mtx, vec3_t *ang, vec3_t *vel) {
-	const matrix_t *mm = CGameModel_NodeMatrix(Obj_Vtbl(v)->GetModel(v), mtx, node, 0, NULL, 0);
+	const matrix_t *mm = CGameModel_NodeMatrix(Obj_GetModel(v), mtx, node, 0, NULL, 0);
 	float x = mm->m[12];
 	float y = mm->m[13];
 	float z = mm->m[14];
-	Obj_Vtbl(v)->GetViewAng(v, ang);
-	Obj_Vtbl(v)->GetVel(v, vel);
+	Obj_GetViewAng(v, ang);
+	Obj_GetVel(v, vel);
 	g_DebrisDrop[0].x = x;
 	g_DebrisDrop[0].y = y;
 	g_DebrisDrop[0].z = z;
@@ -213,8 +213,8 @@ static inline void Weap_PushAway(cEntity *v, cEntity *e, int n, float force) {
 	vec3_t a, b, d, nd, ov, vel;
 
 	float mass = WLife(e)->mass;
-	const vec3_t *pv = v->vftable->GetPos(v, &a);
-	const vec3_t *pe = e->vftable->GetPos(e, &b);
+	const vec3_t *pv = Entity_GetPos(v, &a);
+	const vec3_t *pe = Entity_GetPos(e, &b);
 	d.x = pe->x - pv->x;
 	d.y = pe->y - pv->y;
 	d.z = pe->z - pv->z;
@@ -223,11 +223,11 @@ static inline void Weap_PushAway(cEntity *v, cEntity *e, int n, float force) {
 	float px = dir->x * k;
 	float py = dir->y * k;
 	float pz = dir->z * k;
-	const vec3_t *cur = Obj_Vtbl(e)->GetVel(e, &ov);
+	const vec3_t *cur = Obj_GetVel(e, &ov);
 	vel.y = cur->y + py;
 	vel.z = cur->z + pz;
 	vel.x = cur->x + px;
-	Obj_Vtbl(e)->SetVel(e, &vel);
+	Obj_SetVel(e, &vel);
 }
 
 /* the HUD item of a weapon that does not fire turns back to the angle 0 by d */

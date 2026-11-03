@@ -47,11 +47,11 @@ static inline byte ScorerHud_CamTarget(int player, const char *type, cEntity **t
 
 	*target = NULL;
 	if (cam) {
-		if (!cam->vftable->IsType(cam, "FCam")) {
+		if (!Entity_IsType(cam, "FCam")) {
 			return 0;
 		}
 		*target = cCamEntity_GetTarget(cam);
-		if (!*target || !(*target)->vftable->IsType(*target, type)) {
+		if (!*target || !Entity_IsType(*target, type)) {
 			return 0;
 		}
 	}
@@ -257,6 +257,15 @@ typedef struct cTalkScorerVtbl {
 	void(*DrawUse)(struct cTalkScorer *self, int player, float *pos);		/* 0x14 */
 } cTalkScorerVtbl;
 
+/* calls through the slots of cTalkScorerVtbl */
+static inline void TalkScorer_DrawTalk(void *self, int player, float *pos) {
+	VT(cTalkScorerVtbl, self)->DrawTalk(self, player, pos);
+}
+
+static inline void TalkScorer_DrawUse(void *self, int player, float *pos) {
+	VT(cTalkScorerVtbl, self)->DrawUse(self, player, pos);
+}
+
 typedef struct cTalkScorer {
 	cScorerItem base;		/* 0x0000 */
 	CPsaImage *sprite;		/* 0x00ac Sprite */
@@ -308,6 +317,11 @@ typedef struct cTextScorerVtbl {
 	cScorerItemVtbl base;
 	void(*DrawKeyboard)(struct cTextScorer *self, int player);			/* 0x10 the virtual keyboard */
 } cTextScorerVtbl;
+
+/* calls through the slots of cTextScorerVtbl */
+static inline void TextScorer_DrawKeyboard(void *self, int player) {
+	VT(cTextScorerVtbl, self)->DrawKeyboard(self, player);
+}
 
 typedef struct cTextScorer {
 	cAbstractTextScorer base;	/* 0x00 */
