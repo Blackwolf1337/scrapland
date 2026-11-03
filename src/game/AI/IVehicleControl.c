@@ -251,12 +251,9 @@ static void cAIVehicleControl_dtor(cAIVehicleControl *self) {
 	l->numFree = 0;
 }
 
-cAIVehicleControl *cAIVehicleControl_Delete(cAIVehicleControl *self, byte flags) {
+void cAIVehicleControl_Free(cAIVehicleControl *self) {
 	cAIVehicleControl_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAIVEHICLECONTROL_SIZE);
-	}
-	return self;
+	operator_delete_sized(self, CAIVEHICLECONTROL_SIZE);
 }
 
 void cAIVehicleControl_ApplyParams(cAIVehicleControl *self) {

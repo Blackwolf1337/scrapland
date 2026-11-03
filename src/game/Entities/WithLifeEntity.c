@@ -82,7 +82,7 @@ void cWithLifeEntity_dtor(cEntity *self) {
 
 	self->vftable = CWITHLIFEENTITY_VFTABLE;
 	if (w->actCtrl) {
-		cActCtrl_Delete(w->actCtrl, 1);
+		cActCtrl_Free(w->actCtrl);
 	}
 	cString_dtor(&w->headModel);
 	cSndInterface_dtor(&w->lifeSounds);
@@ -443,7 +443,7 @@ void cWithLifeEntity_SetActCtrl(cEntity *self, const char *cls) {
 	byte created = 0;
 
 	if (w->actCtrl) {
-		cActCtrl_Delete(w->actCtrl, 1);
+		cActCtrl_Free(w->actCtrl);
 		w->actCtrl = NULL;
 	}
 	if (!cls || !*cls) {

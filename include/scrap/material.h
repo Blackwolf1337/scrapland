@@ -240,7 +240,7 @@ void Tex_AddExtension(const char *ext);
 void Tex_AddPath(const char *path);
 void Tex_ClearExtensions(void);
 void Tex_ClearPaths(void);
-CMaterial *CMaterial_Delete(CMaterial *self, byte flags);
-CMatList *CMatList_DeleteObj(CMatList *self, byte flags);
+void CMaterial_Free(CMaterial *self);
+void CMatList_Free(CMatList *self);
 
 #endif

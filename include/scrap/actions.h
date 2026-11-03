@@ -237,10 +237,10 @@ extern cActClassList *g_pActClassList;
 extern cActClass *g_pAuxActClass;	/* SAct's current class */
 extern cAction *g_pAuxAction;	/* SAct's current action */
 
-void *cActCtrl_Delete(cActCtrl *self, byte flags);
+void cActCtrl_Free(cActCtrl *self);
 byte cActCtrl_VarI(cActCtrl *self, const char *name, int *i, int set);
 byte cActCtrl_VarS(cActCtrl *self, const char *name, char **s, int set);
-cActClass *cActClass_Delete(cActClass *self, byte flags);
-cAction *cAction_Delete(cAction *self, byte flags);
+void cActClass_Free(cActClass *self);
+void cAction_Free(cAction *self);
 
 #endif

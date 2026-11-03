@@ -225,6 +225,6 @@ void RenderCtx_Init(NodeAnimCtx *self, CModel *m, const vec3_t *scale);
 void RenderCtx_SetChannel(NodeAnimChannel *self, CAnimSlot *slot);
 /* the play state of an animation group */
 CScene *Scene_Load(const char *name, int arg, const char *name2);
-CModel *CModel_Delete(CModel *self, byte flags);
+void CModel_Free(CModel *self);
 
 #endif

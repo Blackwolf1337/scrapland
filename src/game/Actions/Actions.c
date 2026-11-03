@@ -76,12 +76,9 @@ static void cAction_dtor(cAction *self) {
 	cString_dtor(&self->name);
 }
 
-cAction *cAction_Delete(cAction *self, byte flags) {
+void cAction_Free(cAction *self) {
 	cAction_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete_sized(self, sizeof(*self));
 }
 
 /* a new event at time (after the ones before it), as the lastEvent */

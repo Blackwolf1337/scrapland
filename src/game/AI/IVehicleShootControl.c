@@ -161,11 +161,8 @@ cAIVehicleShoot *cAIVehicleShoot_ctor(void *mem, cEntity *v, cAIVehicle *ai, voi
 }
 
 /* ---- AI/AIVehicleShootControl.cpp (src/game/AI/IVehicleShootControl.c); the rest in aivehicle.h ---- */
-cAIVehicleShoot *cAIVehicleShoot_Delete(cAIVehicleShoot *self, byte flags) {
-	if (flags & 1) {
-		operator_delete_sized(self, CAIVEHICLESHOOT_SIZE);
-	}
-	return self;
+void cAIVehicleShoot_Free(cAIVehicleShoot *self) {
+	operator_delete_sized(self, CAIVEHICLESHOOT_SIZE);
 }
 
 /* ---- the checks of the target ---- */

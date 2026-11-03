@@ -193,7 +193,7 @@ static void cActClass_dtor(cActClass *self) {
 			CheckFailed("data!=NULL", __FILE__, __TIMESTAMP__, __LINE__);
 			continue;
 		}
-		cAction_Delete(data, 1);
+		cAction_Free(data);
 	}
 	if (self->modelFile) {
 		Mem_Free(self->modelFile);
@@ -211,12 +211,9 @@ static void cActClass_dtor(cActClass *self) {
 	cString_dtor(&self->name);
 }
 
-cActClass *cActClass_Delete(cActClass *self, byte flags) {
+void cActClass_Free(cActClass *self) {
 	cActClass_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete_sized(self, sizeof(*self));
 }
 
 cAction *cActClass_CreateAction(cActClass *self, const char *name) {

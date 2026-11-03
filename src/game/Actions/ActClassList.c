@@ -32,19 +32,16 @@ static void cActClassList_dtor(cActClassList *self) {
 		CHECK(deleted);
 		CHECK(cls != NULL);
 		if (cls) {
-			cActClass_Delete(cls, 1);
+			cActClass_Free(cls);
 		}
 	}
 done:
 	PtrTable_Clear(t);
 }
 
-static cActClassList *cActClassList_Delete(cActClassList *self, byte flags) {
+static void cActClassList_Free(cActClassList *self) {
 	cActClassList_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete_sized(self, sizeof(*self));
 }
 
 cActClass *cActClassList_Create(cActClassList *list, const char *name) {
@@ -80,7 +77,7 @@ byte cActClassList_Del(cActClassList *list, const char *name) {
 		cActClass *cls = it->value;
 		if (cls->users == 0) {
 			PtrTable_Delete(t, name);
-			cActClass_Delete(cls, 1);
+			cActClass_Free(cls);
 			return 1;
 		}
 	}
@@ -94,7 +91,7 @@ void ActClassList_Done(void) {
 		Con_Warnf("WARNING at DoneActClassList(): ActClassList can\xb4t be deleted because doesn\xb4t exists.\n");
 		return;
 	}
-	cActClassList_Delete(list, 1);
+	cActClassList_Free(list);
 	g_pActClassList = NULL;
 	g_pAuxActClass = NULL;
 	g_pAuxAction = NULL;

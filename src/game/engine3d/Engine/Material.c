@@ -146,12 +146,9 @@ static int Vec2_Differ(const float *a, const float *b) {
 	return !(a[0] == b[0] && a[1] == b[1]);
 }
 
-CMaterial *CMaterial_Delete(CMaterial *self, byte flags) {
+void CMaterial_Free(CMaterial *self) {
 	CMaterial_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CMaterial));
-	}
-	return self;
+	operator_delete_sized(self, sizeof(CMaterial));
 }
 
 CMatList g_MatList;
@@ -1036,7 +1033,7 @@ void CMatList_DeleteAll(CMatList *self) {
 		CMaterial *next = self->first->next;
 		self->first->Refs--;
 		if (self->first) {
-			CMaterial_Delete(self->first, 1);
+			CMaterial_Free(self->first);
 		}
 		n++;
 		self->first = next;
@@ -1135,7 +1132,7 @@ void CMatList_Delete(CMatList *self, CMaterial *mat) {
 	CHECK(!Mat_IsShareable(mat));
 	CMaterial *m = CMatList_Extract(self, mat, 0);
 	CHECK(m);
-	CMaterial_Delete(mat, 1);
+	CMaterial_Free(mat);
 	g_TexDeleteUnused = 0;
 }
 
@@ -1143,12 +1140,9 @@ void CMatList_Delete(CMatList *self, CMaterial *mat) {
 
 /* the constructors and destructors of material.h */
 static void CMatList_dtor(CMatList *self);
-CMatList *CMatList_DeleteObj(CMatList *self, byte flags) {
+void CMatList_Free(CMatList *self) {
 	CMatList_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete_sized(self, sizeof(*self));
 }
 
 static CMap *CMap_ctor(CMap *self) {
@@ -1263,7 +1257,7 @@ void CMaterial_dtor(CMaterial *self) {
 		Mat_DeleteMap(&self->map[i]);
 	}
 	if (self->sub) {
-		CMatList_DeleteObj(self->sub, 1);
+		CMatList_Free(self->sub);
 		self->sub = NULL;
 	}
 	CMatId_dtor(&self->id);

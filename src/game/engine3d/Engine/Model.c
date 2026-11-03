@@ -171,12 +171,9 @@ static void CModel_dtor(CModel *self) {
 	}
 }
 
-CModel *CModel_Delete(CModel *self, byte flags) {
+void CModel_Free(CModel *self) {
 	CModel_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete_sized(self, sizeof(*self));
 }
 
 void CModel_Disable(CModel *self) {

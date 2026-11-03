@@ -170,10 +170,10 @@ void *cAIVehicle_ctor(void *mem, cEntity *v, void *p1, void *p2, void *p3) {
 static void cAIVehicle_dtor(cAIVehicle *self) {
 	self->vftable = CAIVEHICLE_VFTABLE;
 	if (self->control) {
-		cAIVehicleControl_Delete(self->control, 1);
+		cAIVehicleControl_Free(self->control);
 	}
 	if (self->shoot) {
-		cAIVehicleShoot_Delete(self->shoot, 1);
+		cAIVehicleShoot_Free(self->shoot);
 	}
 	cAIVehicle_Debugf(&self->base.base, "Entidad DESTRUIDA");
 	cString_dtor(&self->itemAmmoK[2].name);

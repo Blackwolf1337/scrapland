@@ -75,12 +75,9 @@ static void cActCtrl_dtor(cActCtrl *self) {
 	}
 }
 
-void *cActCtrl_Delete(cActCtrl *self, byte flags) {
+void cActCtrl_Free(cActCtrl *self) {
 	cActCtrl_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete_sized(self, sizeof(*self));
 }
 
 void cActCtrl_AnimCmd(cActCtrl *self, const char *cmd) {

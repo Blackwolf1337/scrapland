@@ -154,7 +154,7 @@ void cAIVehicleGroup_Draw(cAIVehicleGroup *self);
 void cAIVehicleGroup_ResetRepos(cAIVehicleGroup *self);
 /* the base class cAIEntityGroup: ai.h */
 
-cAIVehicleControl *cAIVehicleControl_Delete(cAIVehicleControl *self, byte flags);
-cAIVehicleShoot *cAIVehicleShoot_Delete(cAIVehicleShoot *self, byte flags);
+void cAIVehicleControl_Free(cAIVehicleControl *self);
+void cAIVehicleShoot_Free(cAIVehicleShoot *self);
 
 #endif

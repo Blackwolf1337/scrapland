@@ -46,12 +46,9 @@ static void cBinaryHeap_dtor(cBinaryHeap *self) {
 	Mem_Free(self->elems);
 }
 
-static cBinaryHeap *cBinaryHeap_Delete(cBinaryHeap *self, byte flags) {
+static void cBinaryHeap_Free(cBinaryHeap *self) {
 	cBinaryHeap_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete_sized(self, sizeof(*self));
 }
 
 static void cBinaryHeap_Clear(cBinaryHeap *self) {
@@ -663,7 +660,7 @@ static void AStar_Free(CAStarSup *self, const CAStarVtbl *vftable) {
 	self->vftable = vftable;
 	Mem_Free(list);
 	if (self->open) {
-		cBinaryHeap_Delete(self->open, 1);
+		cBinaryHeap_Free(self->open);
 	}
 	Mem_Free(self->closed);
 	CAStarSup_dtor(self);

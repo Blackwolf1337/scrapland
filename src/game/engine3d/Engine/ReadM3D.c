@@ -1201,7 +1201,7 @@ static void Scene_UsedMats(CScene *scn) {
 	if (g_M3DLMat) {
 		E3D_LogWhite((&g_FileLog), "Scene materials: %d included, %d deleted", included, CMatList_Count(g_M3DLMat, 1));
 		if (g_M3DLMat) {
-			CMatList_DeleteObj(g_M3DLMat, 1);
+			CMatList_Free(g_M3DLMat);
 			g_M3DLMat = NULL;
 		}
 	}
@@ -1949,7 +1949,7 @@ static CMaterial *M3D_MatColorMesh(const vec3_t *c) {
 		mat->params.diffuse[2]);
 	CMaterial *found = CMatList_Find((&g_MatList), mat);
 	if (found) {
-		CMaterial_Delete(mat, 1);
+		CMaterial_Free(mat);
 		return found;
 	}
 	CMatList_Add((&g_MatList), mat);
@@ -3130,7 +3130,7 @@ CScene *Scene_Load(const char *name, int arg, const char *name2) {
 	}
 	if (!bStatic) {
 		if (g_M3DLMat) {
-			CMatList_DeleteObj(g_M3DLMat, 1);
+			CMatList_Free(g_M3DLMat);
 			g_M3DLMat = NULL;
 		}
 		g_M3DNumMat = 0;
