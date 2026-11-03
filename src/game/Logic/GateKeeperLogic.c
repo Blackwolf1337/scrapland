@@ -9,6 +9,11 @@
 #include "scrap/objentity.h"
 #include "scrap/staticinit.h"
 
+/* the states of the gatekeeper */
+enum {
+	GATEKEEPER_SHOWN, GATEKEEPER_HIDDEN
+};
+
 #define CGATEKEEPERLOCALLOGIC_VFTABLE (&cGateKeeperLocalLogic_vftable)
 #define g_GateKeeperStdFar (GVar_GateKeeperStdFar.value.f)
 #define g_GateKeeperStdFovY (GVar_GateKeeperStdFovY.value.f)
@@ -68,7 +73,7 @@ static cGateKeeperLocalLogic *cGateKeeperLocalLogic_ctor(cGateKeeperLocalLogic *
 	cBaseLocalLogic_ctor(&self->base, parent);
 	self->base.vftable = CGATEKEEPERLOCALLOGIC_VFTABLE;
 	self->hiddenTime = 0.0f;
-	cGateKeeperLocalLogic_SetState(&self->base.logic, 0, NULL);
+	cGateKeeperLocalLogic_SetState(&self->base.logic, GATEKEEPER_SHOWN, NULL);
 	return self;
 }
 
@@ -90,7 +95,7 @@ static cLocalLogic *cGateKeeperLocalLogic_Delete(cLocalLogic *base, byte flags) 
 static void cGateKeeperLocalLogic_UpdateView(cGateKeeperLocalLogic *self) {
 	cEntity *p = self->base.parent;
 
-	WChar(p)->wl.arrow.canUse = !self->base.busy && !g_pWorld->alarm.on && self->base.state != 1;
+	WChar(p)->wl.arrow.canUse = !self->base.busy && !g_pWorld->alarm.on && self->base.state != GATEKEEPER_HIDDEN;
 }
 
 /* vf16 of the gatekeepers and the gears: they never run from the police */
@@ -118,17 +123,17 @@ static void cGateKeeperLocalLogic_Update(cLocalLogic *elem, float dt) {
 	if (b->busy) {
 		return;
 	}
-	if (b->state == 1) {
+	if (b->state == GATEKEEPER_HIDDEN) {
 		if (self->hiddenTime >= 0.0f) {
 			self->hiddenTime = self->hiddenTime - dt;
 			return;
 		}
 		if (!g_pWorld->alarm.on) {
-			Logic_SetState(self, 0, NULL);
+			Logic_SetState(self, GATEKEEPER_SHOWN, NULL);
 		}
 		return;
 	}
-	if (b->state != 0) {
+	if (b->state != GATEKEEPER_SHOWN) {
 		return;
 	}
 	if (!b->idle && !b->alwaysLock) {
@@ -155,7 +160,7 @@ static void cGateKeeperLocalLogic_Update(cLocalLogic *elem, float dt) {
 	}
 alarm:
 	if (g_pWorld->alarm.on) {
-		Logic_SetState(self, 1, NULL);
+		Logic_SetState(self, GATEKEEPER_HIDDEN, NULL);
 	}
 }
 
@@ -165,7 +170,7 @@ static void cGateKeeperLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float
 	(void)e;
 	(void)amount;
 	if (!self->base.idle && !self->base.alwaysLock) {
-		Logic_SetState(self, 1, NULL);
+		Logic_SetState(self, GATEKEEPER_HIDDEN, NULL);
 	}
 }
 
@@ -173,7 +178,7 @@ static void cGateKeeperLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float
 static void cGateKeeperLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	(void)attacker;
-	Logic_SetState(self, 1, NULL);
+	Logic_SetState(self, GATEKEEPER_HIDDEN, NULL);
 }
 
 /* vf14: hidden at once when the action Hide runs */
@@ -182,7 +187,7 @@ static void cGateKeeperLocalLogic_Vf14(cLocalLogic *elem, cEntity *e) {
 	cEntity *p = self->base.parent;
 
 	(void)e;
-	Logic_SetState(self, 1, NULL);
+	Logic_SetState(self, GATEKEEPER_HIDDEN, NULL);
 	if (cActCtrl_IsActive(ChType_ActCtrl(p), "Hide")) {
 		cActCtrl_Play(ChType_ActCtrl(p), "Hidden", 1, 1.0f);
 	}
@@ -192,7 +197,7 @@ static void cGateKeeperLocalLogic_Vf11(cLocalLogic *elem, cEntity *e) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	(void)e;
 	if (!self->base.idle && !self->base.alwaysLock) {
-		Logic_SetState(self, 1, NULL);
+		Logic_SetState(self, GATEKEEPER_HIDDEN, NULL);
 	}
 }
 
@@ -208,7 +213,7 @@ static byte cGateKeeperLocalLogic_SetState(cLocalLogic *elem, int state, cEntity
 	void *act = NULL;
 	cEntity *p = self->base.parent;
 
-	if (state == 1) {
+	if (state == GATEKEEPER_HIDDEN) {
 		act = WithLife_GetAction(p, "Hide");
 		if (!act) {
 			return 0;
@@ -218,13 +223,13 @@ static byte cGateKeeperLocalLogic_SetState(cLocalLogic *elem, int state, cEntity
 	if (ok) {
 		cGateKeeperLocalLogic_UpdateView(self);
 	}
-	if (self->base.state == 0) {
+	if (self->base.state == GATEKEEPER_SHOWN) {
 		if (ok && !strcmp(cActCtrl_GetDefLoopName(ChType_ActCtrl(p)), "Hidden")) {
 			cActCtrl_Play(ChType_ActCtrl(p), "Unhide", 1, 1.0f);
 			cActCtrl_SetDefLoop(ChType_ActCtrl(p), "Relax", 1);
 		}
 		self->hiddenTime = 0.0f;
-	} else if (self->base.state == 1) {
+	} else if (self->base.state == GATEKEEPER_HIDDEN) {
 		if (ok && strcmp(cActCtrl_GetDefLoopName(ChType_ActCtrl(p)), "Hidden")) {
 			cActCtrl_PlayAction(ChType_ActCtrl(p), act, 1, 1, 1.0f);
 			cActCtrl_SetDefLoop(ChType_ActCtrl(p), "Hidden", 1);

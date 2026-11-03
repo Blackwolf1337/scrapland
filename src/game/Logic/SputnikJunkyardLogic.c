@@ -12,6 +12,11 @@
 #include "scrap/logic.h"
 #include "scrap/staticinit.h"
 
+/* the states Sputnik adds to the GENCHAR_ ones */
+enum {
+	SPUTNIK_WALK = 7, SPUTNIK_TO_CAMERA = 8
+};
+
 static const cGenCharLocalLogicVtbl cSputnikJunkyardLocalLogic_vftable;
 #define CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE (&cSputnikJunkyardLocalLogic_vftable.base)
 static cGVar GVar_SputnikJunyardTimeToPissPlayer;
@@ -33,7 +38,7 @@ cSputnikJunkyardLocalLogic *cSputnikJunkyardLocalLogic_ctor(cSputnikJunkyardLoca
 	cGenCharLocalLogic_ctor(self, parent, 1);
 	self->base.vftable = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
 	g_SputnikTime = 0.0f;
-	if ((byte)cBaseLocalLogic_SetState(&self->base.logic, 7, NULL)) {
+	if ((byte)cBaseLocalLogic_SetState(&self->base.logic, SPUTNIK_WALK, NULL)) {
 		Sputnik_Walk(self);
 	}
 	return self;
@@ -61,7 +66,7 @@ static void Sputnik_LaughDone(cAbstractFile *params) {
 	cLocalLogic *l = Logic_GetLocalLogic(World_FindEntity(name));
 	g_SputnikPisser = NULL;
 	g_SputnikTime = 0.0f;
-	Logic_SetState(l, 7, NULL);
+	Logic_SetState(l, SPUTNIK_WALK, NULL);
 }
 
 /* vf17 */
@@ -70,7 +75,7 @@ static void cSputnikJunkyardLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cEntity *p = self->base.parent;
 
 	Entity_GetAI(p);
-	if (self->base.state == 7) {
+	if (self->base.state == SPUTNIK_WALK) {
 		if (!World_FindEntity("EditCamera")) {
 			g_SputnikTime = 0.0f;
 			return;
@@ -81,11 +86,11 @@ static void cSputnikJunkyardLocalLogic_Update(cLocalLogic *elem, float dt) {
 		g_SputnikTime = g_SputnikTime + dt;
 		if (g_SputnikTime >= g_SputnikJunyardTimeToPissPlayer) {
 			g_SputnikPisser = p;
-			Logic_SetState(self, 8, NULL);
+			Logic_SetState(self, SPUTNIK_TO_CAMERA, NULL);
 		}
 		return;
 	}
-	if (self->base.state != 8) {
+	if (self->base.state != SPUTNIK_TO_CAMERA) {
 		cGenCharLocalLogic_Update(&self->base.logic, dt);
 		return;
 	}
@@ -104,16 +109,16 @@ static void cSputnikJunkyardLocalLogic_Update(cLocalLogic *elem, float dt) {
 /* vf19: 7 the walk, 8 to the point 200 in front of the camera, facing it; always 1 */
 static byte cSputnikJunkyardLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cSputnikJunkyardLocalLogic *self = (cSputnikJunkyardLocalLogic *)elem;
-	if (state == 7) {
-		if ((byte)cBaseLocalLogic_SetState(&self->base.logic, 7, target)) {
+	if (state == SPUTNIK_WALK) {
+		if ((byte)cBaseLocalLogic_SetState(&self->base.logic, SPUTNIK_WALK, target)) {
 			Sputnik_Walk(self);
 		}
 		return 1;
 	}
-	if (state != 8) {
+	if (state != SPUTNIK_TO_CAMERA) {
 		return cGenCharLocalLogic_SetState(&self->base.logic, state, target);
 	}
-	if (!(byte)cBaseLocalLogic_SetState(&self->base.logic, 8, target)) {
+	if (!(byte)cBaseLocalLogic_SetState(&self->base.logic, SPUTNIK_TO_CAMERA, target)) {
 		return 1;
 	}
 	cEntity *p = self->base.parent;

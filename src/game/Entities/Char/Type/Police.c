@@ -250,7 +250,7 @@ static void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 			if (!strcmp(cActCtrl_GetActionName(ChType_ActCtrl(me), 0), "Fusion")) {
 				return;
 			}
-			Logic_SetState(ll, 7, victim);
+			Logic_SetState(ll, LPOLICE_DISCOVER, victim);
 		}
 	}
 	Nto1Node *n = &WChar(me)->listen;

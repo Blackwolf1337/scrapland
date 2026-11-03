@@ -108,7 +108,7 @@ static void cBishopLocalLogic_OnAlarm(cLocalLogic *elem, cEntity *target) {
 		Logic_SetState(self, self->alarmState, target);
 		return;
 	}
-	Logic_SetState(self, 2, target);
+	Logic_SetState(self, GENCHAR_ACCUSE, target);
 }
 
 /* the vtable of cBishopLocalLogic */

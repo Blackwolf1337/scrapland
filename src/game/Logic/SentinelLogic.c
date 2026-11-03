@@ -59,7 +59,7 @@ void *cSentinelLocalLogic_ctor(void *mem, cEntity *parent) {
 
 	cBaseLocalLogic_ctor(&self->base, parent);
 	self->base.vftable = CSENTINELLOCALLOGIC_VFTABLE;
-	cSentinelLocalLogic_SetState(&self->base.logic, 0, NULL);
+	cSentinelLocalLogic_SetState(&self->base.logic, SENTINEL_RELAX, NULL);
 	self->seen = 0;
 	return self;
 }
@@ -94,11 +94,11 @@ void cSentinelLocalLogic_Watch(void *sentinel, const vec3_t *pos) {
 	vec3_t tmp;
 	int st = b->state;
 
-	if (st != 1 && st != 0 && st != 5) {
+	if (st != SENTINEL_SEARCH && st != SENTINEL_RELAX && st != SENTINEL_WATCH) {
 		return;
 	}
 	cAIChar *ai = Entity_GetAI(b->parent);
-	cBaseLocalLogic_SetState(&b->logic, 5, NULL);
+	cBaseLocalLogic_SetState(&b->logic, SENTINEL_WATCH, NULL);
 	if (AIChar_GetState(ai) != AIC_GO_TO) {
 		const vec3_t *pp = Entity_GetPos(b->parent, &tmp);
 		vec3_t dir;
@@ -130,12 +130,12 @@ static void cSentinelLocalLogic_Think(cLocalLogic *elem, float dt, byte quiet) {
 	}
 	if (0.0f >= self->time || !b->target.target || quiet) {
 		int st = b->state;
-		if (st != 1 && st != 0 && st != 5 && !b->idle && !b->alwaysLock) {
+		if (st != SENTINEL_SEARCH && st != SENTINEL_RELAX && st != SENTINEL_WATCH && !b->idle && !b->alwaysLock) {
 			Logic_SetState(self, g_pWorld->alarm.on ? 1 : 0, NULL);
 		}
 	}
 	int st = b->state;
-	if (st == 1 || st == 0 || st == 5) {
+	if (st == SENTINEL_SEARCH || st == SENTINEL_RELAX || st == SENTINEL_WATCH) {
 		self->time = self->time - dt;
 	} else {
 		cAIChar *ai = Entity_GetAI(p);
@@ -149,14 +149,14 @@ static void cSentinelLocalLogic_Think(cLocalLogic *elem, float dt, byte quiet) {
 		self->seen = 1;
 		if (a->notGuaranteed) {
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
-			Logic_SetState(self, 2, usr);
+			Logic_SetState(self, SENTINEL_ACCUSE, usr);
 		} else if (a->sameChar) {
-			Logic_SetState(self, 2, usr);
+			Logic_SetState(self, SENTINEL_ACCUSE, usr);
 		} else if (a->notDefChar) {
 			if (g_pWorld->alarm.on) {
-				Logic_SetState(self, 4, usr);
-			} else if (b->state != 6) {
-				Logic_SetState(self, 3, usr);
+				Logic_SetState(self, SENTINEL_SUSPECT, usr);
+			} else if (b->state != SENTINEL_ACCUSE_NPC) {
+				Logic_SetState(self, SENTINEL_INSPECT, usr);
 			}
 		}
 	}
@@ -172,13 +172,13 @@ static void cSentinelLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float a
 	}
 	if (e == ChType_Usr0()) {
 		if (amount > 0.0f && g_SentinelBankerDetect + amount >= (float)(Weap_Rand01() * 100.0 + 0.0)) {
-			Logic_SetState(self, 2, e);
+			Logic_SetState(self, SENTINEL_ACCUSE, e);
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		}
 		return;
 	}
 	if (g_SentinelBankerNPCDetect + amount >= (float)(Weap_Rand01() * 100.0 + 0.0)) {
-		Logic_SetState(self, 6, e);
+		Logic_SetState(self, SENTINEL_ACCUSE_NPC, e);
 	}
 }
 
@@ -190,10 +190,10 @@ static void cSentinelLocalLogic_OnAttack(cLocalLogic *elem, cEntity *e) {
 	}
 	if (e == ChType_Usr0()) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
-		Logic_SetState(self, 2, e);
+		Logic_SetState(self, SENTINEL_ACCUSE, e);
 		return;
 	}
-	Logic_SetState(self, 6, e);
+	Logic_SetState(self, SENTINEL_ACCUSE_NPC, e);
 }
 
 /* vf10 and vf11: the player is accused with the alarm */
@@ -204,7 +204,7 @@ static void cSentinelLocalLogic_OnUsr(cLocalLogic *elem, cEntity *e) {
 	}
 	if (e == ChType_Usr0()) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
-		Logic_SetState(self, 2, e);
+		Logic_SetState(self, SENTINEL_ACCUSE, e);
 	}
 }
 
@@ -215,7 +215,7 @@ static byte cSentinelLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *e) {
 		if (e == ChType_Usr0()) {
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		}
-		Logic_SetState(self, 2, e);
+		Logic_SetState(self, SENTINEL_ACCUSE, e);
 	}
 	return 0;
 }
@@ -247,11 +247,11 @@ static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *
 	WLife(p)->arrow.coneDist = g_SentinelStdFar;
 	WChar(p)->wl.arrow.canUse = !g_pWorld->alarm.on && !a->notDefChar;
 	switch (b->state) {
-	case 0:
-	case 1:
+	case SENTINEL_RELAX:
+	case SENTINEL_SEARCH:
 		WLife(p)->arrow.coneStatus = a->sameChar ? 2 : 1;
 		return;
-	case 2:
+	case SENTINEL_ACCUSE:
 		if (!b->target.target || !g_pWorld->alarm.on) {
 			cSentinelLocalLogic_Return(self);
 		}
@@ -266,14 +266,14 @@ static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *
 			AICtrl_GearAttack(&g_pWorld->logic.aiCtrl, cWorld_GetUsrEntity(g_pWorld, 0), 0);
 		}
 		return;
-	case 3:
-	case 4: {
+	case SENTINEL_INSPECT:
+	case SENTINEL_SUSPECT: {
 		cEntity *t = b->target.target;
 		if (!t) {
 			break;
 		}
 		if (a->sameChar) {
-			Logic_SetState(self, 2, t);
+			Logic_SetState(self, SENTINEL_ACCUSE, t);
 			return;
 		}
 		if (!self->seen) {
@@ -285,7 +285,7 @@ static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *
 		WLife(p)->arrow.coneStatus = 2;
 		return;
 	}
-	case 5:
+	case SENTINEL_WATCH:
 		WChar(p)->wl.arrow.canUse = 0;
 		WLife(p)->arrow.coneStatus = a->sameChar ? 2 : 1;
 		if (AIChar_GetState(ai)) {
@@ -300,7 +300,7 @@ static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *
 		}
 		WChar(s)->control.hRot = 0.0f;
 		break;
-	case 6:
+	case SENTINEL_ACCUSE_NPC:
 		if (!g_pWorld->alarm.on && b->target.target && AIChar_GetState(ai)) {
 			if (!CGameModel_IsVisible(Obj_GetModel(p))) {
 				float d = cWorld_GetMinCamDistSq(g_pWorld, Entity_GetPos(p, &tmp));
@@ -332,7 +332,7 @@ static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *
 /* vf24 */
 static void cSentinelLocalLogic_RestartState(cLocalLogic *base) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)base;
-	Logic_SetState(self, 0, NULL);
+	Logic_SetState(self, SENTINEL_RELAX, NULL);
 }
 
 void cSentinelLocalLogic_Return(void *sentinel) {
@@ -342,10 +342,10 @@ void cSentinelLocalLogic_Return(void *sentinel) {
 		return;
 	}
 	if (g_pWorld->alarm.on) {
-		Logic_SetState(self, 1, NULL);
+		Logic_SetState(self, SENTINEL_SEARCH, NULL);
 		return;
 	}
-	Logic_SetState(self, 0, NULL);
+	Logic_SetState(self, SENTINEL_RELAX, NULL);
 }
 
 /* vf19: the AI of the state; the result of the base */
@@ -357,37 +357,37 @@ static byte cSentinelLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *
 	byte ok = (byte)cBaseLocalLogic_SetState(&b->logic, state, target);
 
 	switch (b->state) {
-	case 0:
+	case SENTINEL_RELAX:
 		if (ok) {
 			AIChar_SetState(ai, AIC_PATROL_ZONE, b->origin, (double)b->actionRadius, (double)g_SentinelRelaxSpeed, 1);
 		}
 		self->time = 0.0f;
 		return ok;
-	case 1:
+	case SENTINEL_SEARCH:
 		if (ok) {
 			AIChar_SetState(ai, AIC_PATROL_ZONE, b->origin, (double)b->actionRadius, (double)g_SentinelSearchSpeed, 1);
 		}
 		self->time = 0.0f;
 		return ok;
-	case 2:
+	case SENTINEL_ACCUSE:
 		if (ok && target) {
 			AIChar_SetState(ai, AIC_CHASE_WITH_ACTION, target, (double)g_SentinelAcuseSpeed);
 		}
 		self->time = g_SentinelAcuseTime;
 		return ok;
-	case 3:
+	case SENTINEL_INSPECT:
 		if (ok && target) {
 			AIChar_SetState(ai, AIC_CHASE_WITHOUT_ACTION, target, (double)g_SentinelInspectSpeed);
 		}
 		self->time = g_SentinelInspectTime;
 		return ok;
-	case 4:
+	case SENTINEL_SUSPECT:
 		if (ok && target) {
 			AIChar_SetState(ai, AIC_CHASE_WITHOUT_ACTION, target, (double)g_SentinelSuspectSpeed);
 		}
 		self->time = g_SentinelSuspectTime;
 		return ok;
-	case 5:
+	case SENTINEL_WATCH:
 		if (!ok) {
 			return ok;
 		}
@@ -397,7 +397,7 @@ static byte cSentinelLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *
 		}
 		cSentinelLocalLogic_Watch(self, Entity_GetPos(target, &tmp));
 		return ok;
-	case 6:
+	case SENTINEL_ACCUSE_NPC:
 		if (ok && target) {
 			AIChar_SetState(ai, AIC_CHASE_WITH_ACTION, target, (double)g_SentinelAcuseSpeed);
 			self->time = g_SentinelAcuseTime;

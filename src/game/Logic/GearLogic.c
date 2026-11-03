@@ -101,7 +101,7 @@ static void cGearLocalLogic_Vf16(cLocalLogic *base, cEntity *arg) {
 }
 
 static void cGearLocalLogic_SetDefaultState(cGearLocalLogic *self, int v) {
-	CHECK((v == GEAR_STAY_IN_PLACE) || (v == GEAR_RELAX) || (v == GEAR_SCORT));
+	CHECK((v == GEAR_STAY_IN_PLACE) || (v == GEAR_RELAX) || (v == GEAR_ESCORT));
 	self->defaultState = v;
 }
 
@@ -136,7 +136,7 @@ static void cGearLocalLogic_UpdateAnim(cGearLocalLogic *self, cEntity *p, float 
 	WLife(p)->arrow.coneDist = g_GearStdFar;
 	if (g_pWorld->alarm.on) {
 		cEntity *t = b->target.target;
-		if (t && b->state == 2 && t == cWorld_GetUsrEntity(g_pWorld, 0)) {
+		if (t && b->state == GEAR_ATTACK && t == cWorld_GetUsrEntity(g_pWorld, 0)) {
 			WLife(p)->arrow.coneStatus = 3;
 		} else {
 			WLife(p)->arrow.coneStatus = 2;
@@ -145,24 +145,24 @@ static void cGearLocalLogic_UpdateAnim(cGearLocalLogic *self, cEntity *p, float 
 		WLife(p)->arrow.coneStatus = g_pWorld->alarm.notGuaranteed != 0;
 	}
 	switch (b->state) {
-	case 0:
+	case GEAR_RELAX:
 		self->called = 0;
 		WChar(p)->wl.arrow.canUse = alarm == 0;
 		if (!b->idle && !b->alwaysLock && !cActCtrl_IsActive(ChType_ActCtrl(p), "Patrol")) {
 			cActCtrl_PlayNew(ChType_ActCtrl(p), "Patrol0", 0, 1.0f);
 		}
 		break;
-	case 1:
-	case 2:
+	case GEAR_CHASE:
+	case GEAR_ATTACK:
 		WChar(p)->wl.arrow.canUse = 0;
 		cGearLocalLogic_Relax(self);
 		break;
-	case 3:
+	case GEAR_STAY_IN_PLACE:
 		self->called = 0;
 		WChar(p)->wl.arrow.canUse = alarm == 0;
 		cGearLocalLogic_Relax(self);
 		break;
-	case 4:
+	case GEAR_ESCORT:
 		self->called = 0;
 		WChar(p)->wl.arrow.canUse = alarm == 0;
 		if (!b->idle && !b->alwaysLock && !cActCtrl_IsActive(ChType_ActCtrl(p), "Patrol")) {
@@ -189,7 +189,7 @@ static void cGearLocalLogic_Update(cLocalLogic *elem, float dt) {
 		self->sirenTime = self->sirenTime - dt;
 	}
 	int st = b->state;
-	if (st == 1 || st == 2 || (alarm && 0.0f >= self->sirenTime)) {
+	if (st == GEAR_CHASE || st == GEAR_ATTACK || (alarm && 0.0f >= self->sirenTime)) {
 		if (!*cActCtrl_GetActionName(ChType_ActCtrl(p), 1) ||
 			(strcmp(cActCtrl_GetActionName(ChType_ActCtrl(p), 1), "SirenInit") &&
 			strcmp(cActCtrl_GetActionName(ChType_ActCtrl(p), 1), "Siren"))) {
@@ -215,7 +215,7 @@ static void cGearLocalLogic_Update(cLocalLogic *elem, float dt) {
 	byte seen = Logic_InView(p, Entity_GetPos(usr, &tp), g_GearStdFar, g_GearStdFovY, g_GearStdFovX, 1);
 	byte locked = b->idle || b->alwaysLock;
 	switch (st) {
-	case 0:
+	case GEAR_RELAX:
 		if (locked) {
 			goto check;
 		}
@@ -223,7 +223,7 @@ static void cGearLocalLogic_Update(cLocalLogic *elem, float dt) {
 			goto deflt;
 		}
 		goto attack;
-	case 4:
+	case GEAR_ESCORT:
 		if (locked || !alarm) {
 			goto check;
 		}
@@ -234,13 +234,13 @@ attack:
 		if (!seen) {
 			goto anim;
 		}
-		Logic_SetState(self, 2, usr);
+		Logic_SetState(self, GEAR_ATTACK, usr);
 		goto check;
-	case 3: {
+	case GEAR_STAY_IN_PLACE: {
 		Entity_GetPos(b->parent, &tp);
 		vec3_t o = b->origin;
 		if (!locked && alarm && same && seen) {
-			Logic_SetState(self, 2, usr);
+			Logic_SetState(self, GEAR_ATTACK, usr);
 			goto check;
 		}
 		if ((byte)Vec3_Differ(&tp.x, &o.x) && !locked) {
@@ -255,13 +255,13 @@ attack:
 		}
 		goto check;
 	}
-	case 1: {
+	case GEAR_CHASE: {
 		cEntity *t = b->target.target;
 		if (!t) {
 			if (!alarm) {
 				goto deflt;
 			}
-			Logic_SetState(self, 0, NULL);
+			Logic_SetState(self, GEAR_RELAX, NULL);
 			goto check;
 		}
 		if (!alarm && t == cWorld_GetUsrEntity(g_pWorld, 0)) {
@@ -270,9 +270,9 @@ attack:
 		if (Gear_AIHasTarget(Gear_AI(self))) {
 			self->lostTime = 0.0f;
 			if (!self->called) {
-				Logic_SetState(self, 2, usr);
+				Logic_SetState(self, GEAR_ATTACK, usr);
 			} else if (b->target.target) {
-				Logic_SetState(self, 2, b->target.target);
+				Logic_SetState(self, GEAR_ATTACK, b->target.target);
 			}
 			goto check;
 		}
@@ -282,11 +282,11 @@ attack:
 			if (!alarm) {
 				goto deflt;
 			}
-			Logic_SetState(self, 0, NULL);
+			Logic_SetState(self, GEAR_RELAX, NULL);
 		}
 		goto check;
 	}
-	case 2: {
+	case GEAR_ATTACK: {
 		if (same && seen && b->target.target == cWorld_GetUsrEntity(g_pWorld, 0)) {
 			AICtrl_RaiseLevel(&g_pWorld->logic.aiCtrl, 0);
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
@@ -301,7 +301,7 @@ attack:
 				goto check;
 			}
 			Alarm_SetOn(&g_pWorld->alarm, 1);
-			Logic_SetState(self, 2, usr);
+			Logic_SetState(self, GEAR_ATTACK, usr);
 			goto check;
 		}
 		if (!Gear_AIHasTarget(ai)) {
@@ -315,7 +315,7 @@ attack:
 				if (!alarm) {
 					goto deflt;
 				}
-				Logic_SetState(self, 0, NULL);
+				Logic_SetState(self, GEAR_RELAX, NULL);
 			}
 			goto check;
 		}
@@ -331,9 +331,9 @@ attack:
 deflt:
 	Gear_ToDefault(self);
 check:
-	if (seen && st != 2 && g_pWorld->alarm.notGuaranteed) {
+	if (seen && st != GEAR_ATTACK && g_pWorld->alarm.notGuaranteed) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
-		Logic_SetState(self, 2, usr);
+		Logic_SetState(self, GEAR_ATTACK, usr);
 	}
 anim:
 	cGearLocalLogic_UpdateAnim(self, p, dt);
@@ -346,7 +346,7 @@ static void cGearLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amoun
 		if (e == cWorld_GetUsrEntity(g_pWorld, 0)) {
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		}
-		Logic_SetState(self, 2, e);
+		Logic_SetState(self, GEAR_ATTACK, e);
 	}
 }
 
@@ -367,8 +367,8 @@ static void cGearLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 	if (!Gear_React(self, attacker)) {
 		return;
 	}
-	if (self->base.state != 2 || self->base.target.target != cWorld_GetUsrEntity(g_pWorld, 0)) {
-		Logic_SetState(self, 2, attacker);
+	if (self->base.state != GEAR_ATTACK || self->base.target.target != cWorld_GetUsrEntity(g_pWorld, 0)) {
+		Logic_SetState(self, GEAR_ATTACK, attacker);
 	}
 }
 
@@ -376,7 +376,7 @@ static void cGearLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 static void cGearLocalLogic_Vf14(cLocalLogic *base, cEntity *e) {
 	cGearLocalLogic *self = (cGearLocalLogic *)base;
 	if (Gear_React(self, e)) {
-		Logic_SetState(self, 2, e);
+		Logic_SetState(self, GEAR_ATTACK, e);
 	}
 }
 
@@ -384,7 +384,7 @@ static void cGearLocalLogic_Vf14(cLocalLogic *base, cEntity *e) {
 static byte cGearLocalLogic_Vf15(cLocalLogic *base, cEntity *e) {
 	cGearLocalLogic *self = (cGearLocalLogic *)base;
 	if (Gear_React(self, e)) {
-		Logic_SetState(self, 2, e);
+		Logic_SetState(self, GEAR_ATTACK, e);
 	}
 	return 0;
 }
@@ -402,10 +402,10 @@ static void cGearLocalLogic_ToPolice(cLocalLogic *base, cEntity *e) {
 /* the AI control sends the gear after e; 0 if it attacks e already and its AI has it */
 byte cGearLocalLogic_Call(cGearLocalLogic *self, cEntity *e) {
 	self->called = 1;
-	if (self->base.state == 2 && e == self->base.target.target && Gear_AIHasTarget(Gear_AI(self))) {
+	if (self->base.state == GEAR_ATTACK && e == self->base.target.target && Gear_AIHasTarget(Gear_AI(self))) {
 		return 0;
 	}
-	return Logic_SetState(self, 1, e);
+	return Logic_SetState(self, GEAR_CHASE, e);
 }
 
 /* vf24 */
@@ -423,18 +423,18 @@ static byte cGearLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 	cEntity *usr = ChType_Usr0();
 
 	switch (b->state) {
-	case 0:
+	case GEAR_RELAX:
 		if (ok) {
 			AIChar_SetState(ai, AIC_PATROL_ZONE, b->origin, (double)b->actionRadius, (double)g_GearRelaxSpeed);
 		}
 		break;
-	case 1:
+	case GEAR_CHASE:
 		if (ok) {
 			AIChar_SetState(ai, AIC_CHASE_WITH_ACTION, target, (double)(target == usr ? g_GearChaseSpeed : 1.0f));
 		}
 		self->lostTime = 0.0f;
 		break;
-	case 2:
+	case GEAR_ATTACK:
 		if (ok) {
 			AIChar_SetState(ai, AIC_CHASE_WITH_ACTION, target, (double)(target == usr ? g_GearAttackSpeed : 1.0f));
 			if (target != cWorld_GetUsrEntity(g_pWorld, 0)) {
@@ -442,17 +442,17 @@ static byte cGearLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 			}
 		}
 		break;
-	case 3:
+	case GEAR_STAY_IN_PLACE:
 		if (ok) {
 			AIChar_SetState(ai, AIC_GO_TO, b->origin, b->originAng, 100.0, (double)g_GearRelaxSpeed);
 		}
 		break;
-	case 4:
+	case GEAR_ESCORT:
 		if (ok) {
 			if (target) {
 				AIChar_SetState(ai, AIC_CHASE_WITHOUT_ACTION, target, (double)g_GearScortSpeed);
 			} else {
-				Logic_SetState(self, 0, NULL);
+				Logic_SetState(self, GEAR_RELAX, NULL);
 			}
 		}
 		break;

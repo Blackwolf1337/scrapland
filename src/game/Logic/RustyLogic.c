@@ -15,6 +15,11 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
+/* the states Rusty adds to the GENCHAR_ ones */
+enum {
+	RUSTY_GO_TO_JUNK = 7, RUSTY_WORK = 8, RUSTY_PISSED = 9
+};
+
 static const cGenCharLocalLogicVtbl cRustyLocalLogic_vftable;
 #define CRUSTYLOCALLOGIC_VFTABLE (&cRustyLocalLogic_vftable.base)
 static cGVar GVar_JunkPointsListName;
@@ -111,11 +116,11 @@ static void cRustyLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cEntity *p = b->parent;
 	vec3_t t1, t2;
 
-	if (st == 0 || st == 6) {
+	if (st == GENCHAR_RELAX || st == GENCHAR_STAY) {
 		cRustyLocalLogic_NextJunk(self);
-		Logic_SetState(self, 7, NULL);
+		Logic_SetState(self, RUSTY_GO_TO_JUNK, NULL);
 	}
-	if (st == 7) {
+	if (st == RUSTY_GO_TO_JUNK) {
 		cAIChar *ai = Entity_GetAI(p);
 		if (AIChar_GetState(ai) || !AIMove_GetArrived(ai)) {
 			return;
@@ -131,10 +136,10 @@ static void cRustyLocalLogic_Update(cLocalLogic *elem, float dt) {
 			return;
 		}
 		Rusty_StartWork(p, self->junk, 0.25f);
-		Logic_SetState(self, 8, NULL);
+		Logic_SetState(self, RUSTY_WORK, NULL);
 		return;
 	}
-	if (st == 8) {
+	if (st == RUSTY_WORK) {
 		if (b->idle || b->alwaysLock) {
 			if (!Obj(p)->move.active) {
 				return;
@@ -154,10 +159,10 @@ static void cRustyLocalLogic_Update(cLocalLogic *elem, float dt) {
 		cActCtrl_Play(ChType_ActCtrl(p), "Walk", 1, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(p), "Walk", 1);
 		cRustyLocalLogic_NextJunk(self);
-		Logic_SetState(self, 7, NULL);
+		Logic_SetState(self, RUSTY_GO_TO_JUNK, NULL);
 		return;
 	}
-	if (st != 9) {
+	if (st != RUSTY_PISSED) {
 		cGenCharLocalLogic_Update(&self->base.base.logic, dt);
 		return;
 	}
@@ -174,7 +179,7 @@ static void cRustyLocalLogic_Update(cLocalLogic *elem, float dt) {
 	float dy = mp->y - pp->y;
 	float dz = mp->z - pp->z;
 	if (dy * dy + dx * dx + dz * dz > (float)(g_PlatformRadiusSqr + 90000)) {
-		Logic_SetState(self, 7, NULL);
+		Logic_SetState(self, RUSTY_GO_TO_JUNK, NULL);
 	}
 }
 
@@ -204,14 +209,14 @@ static void cRustyLocalLogic_NextJunk(cRustyLocalLogic *self) {
 /* vf19: 7 the walk to the junk point, 9 pissed; the others of the GenChar logic */
 static byte cRustyLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cRustyLocalLogic *self = (cRustyLocalLogic *)elem;
-	if (state == 7) {
-		if ((byte)cBaseLocalLogic_SetState(&self->base.base.logic, 7, target)) {
+	if (state == RUSTY_GO_TO_JUNK) {
+		if ((byte)cBaseLocalLogic_SetState(&self->base.base.logic, RUSTY_GO_TO_JUNK, target)) {
 			cEntity *p = self->base.base.parent;
 			Rusty_GoToJunk(self, Entity_GetAI(p), (double)g_GenCharRelaxSpeed);
 		}
 		return 1;
 	}
-	if (state != 9) {
+	if (state != RUSTY_PISSED) {
 		return cGenCharLocalLogic_SetState(&self->base.base.logic, state, target);
 	}
 	cEntity *p = self->base.base.parent;

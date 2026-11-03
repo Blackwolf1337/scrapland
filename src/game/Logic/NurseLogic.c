@@ -11,6 +11,11 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
+/* the states of the nurse */
+enum {
+	NURSE_RELAX, NURSE_ALERT, NURSE_FLEE, NURSE_ATTACK
+};
+
 #define CNURSELOCALLOGIC_VFTABLE (&cNurseLocalLogic_vftable)
 #define g_NurseBankerDetect (GVar_NurseBankerDetect.value.f)
 #define g_NursePoliceRefuse (GVar_NursePoliceRefuse.value.f)
@@ -56,18 +61,18 @@ static void cNurses_Think(cNurses *self) {
 		}
 		cEntity *nurse = cEntityList_Nearest(self->list, Entity_GetPos(e, &t), NULL, NULL);
 		cBaseLocalLogic *l = nurse->lLogic;
-		if (l->state == 3) {
+		if (l->state == NURSE_ATTACK) {
 			continue;
 		}
 		if ((l->idle || l->alwaysLock) && strncmp(cActCtrl_GetActionName(ChType_ActCtrl(nurse), 0), "Relax", 5)) {
 			cEntity *other = cEntityList_Nearest(self->list, Entity_GetPos(e, &t2), nurse, NULL);
 			if (other) {
 				cBaseLocalLogic *lo = other->lLogic;
-				Logic_SetState(lo, 3, e);
+				Logic_SetState(lo, NURSE_ATTACK, e);
 				continue;
 			}
 		}
-		Logic_SetState(l, 3, e);
+		Logic_SetState(l, NURSE_ATTACK, e);
 	}
 }
 
@@ -96,7 +101,7 @@ static void *cNurseLocalLogic_ctor(void *mem, cEntity *parent) {
 	cBaseLocalLogic_ctor(&self->base, parent);
 	self->base.vftable = CNURSELOCALLOGIC_VFTABLE;
 	self->time = 0.0f;
-	cNurseLocalLogic_SetState(&self->base.logic, 0, NULL);
+	cNurseLocalLogic_SetState(&self->base.logic, NURSE_RELAX, NULL);
 	return self;
 }
 
@@ -113,9 +118,9 @@ static cLocalLogic *cNurseLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 /* back to the relax, the alert with the alarm */
 static byte cNurseLocalLogic_Relax(cNurseLocalLogic *self) {
 	if (g_pWorld->alarm.on) {
-		return Logic_SetState(self, 1, NULL);
+		return Logic_SetState(self, NURSE_ALERT, NULL);
 	}
-	return Logic_SetState(self, 0, NULL);
+	return Logic_SetState(self, NURSE_RELAX, NULL);
 }
 
 /* vf17 */
@@ -125,22 +130,22 @@ static void cNurseLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cEntity *p = b->parent;
 
 	cBaseLocalLogic_Update(&b->logic, dt);
-	WChar(b->parent)->wl.arrow.canUse = !b->busy && !g_pWorld->alarm.on && b->state != 3 && b->state != 2;
+	WChar(b->parent)->wl.arrow.canUse = !b->busy && !g_pWorld->alarm.on && b->state != NURSE_ATTACK && b->state != NURSE_FLEE;
 	if (b->busy) {
 		return;
 	}
 	switch (b->state) {
-	case 0:
+	case NURSE_RELAX:
 		if (g_pWorld->alarm.on) {
-			Logic_SetState(self, 1, NULL);
+			Logic_SetState(self, NURSE_ALERT, NULL);
 		}
 		return;
-	case 1:
+	case NURSE_ALERT:
 		if (!g_pWorld->alarm.on) {
-			Logic_SetState(self, 0, NULL);
+			Logic_SetState(self, NURSE_RELAX, NULL);
 		}
 		return;
-	case 2:
+	case NURSE_FLEE:
 		if (b->idle || b->alwaysLock) {
 			self->time = g_NurseEscapeTime;
 			return;
@@ -150,7 +155,7 @@ static void cNurseLocalLogic_Update(cLocalLogic *elem, float dt) {
 			cNurseLocalLogic_Relax(self);
 		}
 		return;
-	case 3: {
+	case NURSE_ATTACK: {
 		cEntity *t = b->target.target;
 		if (!t) {
 			cNurseLocalLogic_Relax(self);
@@ -176,8 +181,8 @@ static void cNurseLocalLogic_Update(cLocalLogic *elem, float dt) {
 /* vf12: a robbery seen (NurseBankerDetect plus the amount): the escape */
 static void cNurseLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
-	if (amount > 0.0f && self->base.state != 3 && Logic_Chance(&self->base, e, g_NurseBankerDetect + amount)) {
-		Logic_SetState(self, 2, e);
+	if (amount > 0.0f && self->base.state != NURSE_ATTACK && Logic_Chance(&self->base, e, g_NurseBankerDetect + amount)) {
+		Logic_SetState(self, NURSE_FLEE, e);
 	}
 }
 
@@ -188,16 +193,16 @@ static inline byte Nurse_Rand101(void) {
 /* vf10: the escape from the attacker */
 static void cNurseLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
-	if (!self->base.busy && Nurse_Rand101() && self->base.state != 3) {
-		Logic_SetState(self, 2, attacker);
+	if (!self->base.busy && Nurse_Rand101() && self->base.state != NURSE_ATTACK) {
+		Logic_SetState(self, NURSE_FLEE, attacker);
 	}
 }
 
 /* vf11: the escape from the player */
 static void cNurseLocalLogic_OnSeen(cLocalLogic *elem, cEntity *e) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
-	if (!self->base.busy && Nurse_Rand101() && e == ChType_Usr0() && self->base.state != 3) {
-		Logic_SetState(self, 2, e);
+	if (!self->base.busy && Nurse_Rand101() && e == ChType_Usr0() && self->base.state != NURSE_ATTACK) {
+		Logic_SetState(self, NURSE_FLEE, e);
 	}
 }
 
@@ -209,14 +214,14 @@ static byte cNurseLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *police) {
 	if (!self->base.busy && refuse > (float)(Weap_Rand01() * 100.0 + 0.0)) {
 		return 1;
 	}
-	Logic_SetState(self, 2, police);
+	Logic_SetState(self, NURSE_FLEE, police);
 	return 0;
 }
 
 /* vf24 */
 static void cNurseLocalLogic_RestartState(cLocalLogic *base) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)base;
-	Logic_SetState(self, 0, NULL);
+	Logic_SetState(self, NURSE_RELAX, NULL);
 }
 
 /* ---- part 2 ---- */
@@ -230,26 +235,26 @@ static byte cNurseLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *tar
 	cAIChar *ai = Entity_GetAI(b->parent);
 
 	if (ok) {
-		WChar(b->parent)->wl.arrow.canUse = !b->busy && !g_pWorld->alarm.on && b->state != 3 && b->state != 2;
+		WChar(b->parent)->wl.arrow.canUse = !b->busy && !g_pWorld->alarm.on && b->state != NURSE_ATTACK && b->state != NURSE_FLEE;
 	}
 	switch (b->state) {
-	case 0:
+	case NURSE_RELAX:
 		if (ok) {
 			AIChar_SetState(ai, AIC_PATROL_ZONE, b->origin, (double)b->actionRadius, (double)g_NurseRelaxSpeed, 1);
 		}
 		return 1;
-	case 1:
+	case NURSE_ALERT:
 		if (ok) {
 			AIChar_SetState(ai, AIC_PATROL_ZONE, b->origin, (double)b->actionRadius, (double)g_NurseAlertSpeed, 0);
 		}
 		return 1;
-	case 2:
+	case NURSE_FLEE:
 		if (ok) {
 			AIChar_SetState(ai, AIC_GET_AWAY, target, 1.0);
 		}
 		self->time = 0.0f;
 		return 1;
-	case 3:
+	case NURSE_ATTACK:
 		if (ok) {
 			AIChar_SetState(ai, AIC_CHASE_WITH_ACTION, b->target.target, 1.0);
 			self->time = 0.0f;

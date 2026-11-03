@@ -15,6 +15,11 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
+/* the states the functionary adds to the GENCHAR_ ones */
+enum {
+	FUNC_GO_TO_WORK = 7, FUNC_WORK = 8
+};
+
 #define CFUNCTIONARYLOCALLOGIC_VFTABLE (&cFunctionaryLocalLogic_vftable.base.base)
 static const cFunctionaryLocalLogicVtbl cFunctionaryLocalLogic_vftable;
 
@@ -124,7 +129,7 @@ void cFunctionaryLocalLogic_UpdateView(cLocalLogic *elem) {
 		Entity_IsType(usr, TYEN_WALKCHAR);
 	}
 	int st = self->base.base.state;
-	if (!self->base.base.busy && !g_pWorld->alarm.on && st != 4 && st != 5 && st != 10) {
+	if (!self->base.base.busy && !g_pWorld->alarm.on && st != GENCHAR_ATTACK && st != GENCHAR_CHASE && st != GENCHAR_GET_IT) {
 		WChar(p)->wl.arrow.canUse = 1;
 		WLife(p)->arrow.tgType = 3;
 		return;
@@ -167,7 +172,7 @@ byte cFunctionaryLocalLogic_Vf02(cLocalLogic *elem) {
 	cEntity *usr = ChType_Usr0();
 	if (strcmp(ChType_ActClass(ChType_ActCtrl(usr))->name, "Functionary") &&
 		!Functionary_CanTalk(self)) {
-		Logic_SetState(self, 3, usr);
+		Logic_SetState(self, GENCHAR_GETAWAY, usr);
 		return 0;
 	}
 	return 1;
@@ -176,7 +181,7 @@ byte cFunctionaryLocalLogic_Vf02(cLocalLogic *elem) {
 /* vf33: back to the start while working with time left */
 void cFunctionaryLocalLogic_Vf33(cLocalLogic *elem, byte restart) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
-	if (self->base.base.state != 8) {
+	if (self->base.base.state != FUNC_WORK) {
 		return;
 	}
 	if (self->working ? self->workTime > 0.0f : self->playTime > 0.0f) {
@@ -252,7 +257,7 @@ static void Func_SitDown(cFunctionaryLocalLogic *self, cEntity *p) {
 		}
 	}
 	Func_SetWorkTime(self);
-	Logic_SetState(self, 8, NULL);
+	Logic_SetState(self, FUNC_WORK, NULL);
 }
 
 /* vf32: the wait before the walk to the desktop, the arrival at it, the work and the relax there */
@@ -270,15 +275,15 @@ void cFunctionaryLocalLogic_Work(cLocalLogic *elem, float dt) {
 		return;
 	}
 	int st = self->base.base.state;
-	if ((st == 0 || st == 6) && self->sitTime > 0.0f) {
+	if ((st == GENCHAR_RELAX || st == GENCHAR_STAY) && self->sitTime > 0.0f) {
 		float t = self->sitTime - dt;
 		self->sitTime = t;
 		if (0.0f >= t) {
-			Logic_SetState(self, 7, NULL);
+			Logic_SetState(self, FUNC_GO_TO_WORK, NULL);
 		}
 		return;
 	}
-	if (st == 8) {
+	if (st == FUNC_WORK) {
 		if (!(self->working ? self->workTime > 0.0f : self->playTime > 0.0f) || self->keepWorking) {
 			return;
 		}
@@ -316,7 +321,7 @@ void cFunctionaryLocalLogic_Work(cLocalLogic *elem, float dt) {
 		Functionary_StopWork(self, 1);
 		return;
 	}
-	if (st != 7) {
+	if (st != FUNC_GO_TO_WORK) {
 		return;
 	}
 	if (AIChar_GetState(ai) != AIC_STATIC ||
@@ -397,7 +402,7 @@ void cFunctionaryLocalLogic_StopWork(cLocalLogic *base, byte restart) {
 		self->sitTime = Rand_FloatRange(g_FunctionaryMinTimeToSitDown, g_FunctionaryMaxTimeToSitDown);
 	}
 	if (restart) {
-		Logic_SetState(self, 0, NULL);
+		Logic_SetState(self, GENCHAR_RELAX, NULL);
 	}
 }
 
@@ -552,7 +557,7 @@ void cFunctionaryLocalLogic_Update(cLocalLogic *elem, float dt) {
 			const vec3_t *pp = Entity_GetPos(p, &t2);
 			float dy = pp->y - up->y, dx = pp->x - up->x, dz = pp->z - up->z;
 			if (self->escapeRadiusSqr >= dy * dy + dx * dx + dz * dz) {
-				Logic_SetState(self, 3, usr);
+				Logic_SetState(self, GENCHAR_GETAWAY, usr);
 			}
 		}
 		GenChar_UpdateView(self);
@@ -574,7 +579,7 @@ static void cFunctionaryLocalLogic_SetOriginFrom(cLocalLogic *base, cEntity *e) 
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	Functionary_ReleaseDesktop(self);
 	Functionary_AssignDesktop(self, g_FunctionaryAssignWorkDistance);
-	Logic_SetState(self, 0, NULL);
+	Logic_SetState(self, GENCHAR_RELAX, NULL);
 	self->sitTime = 0.1f;
 	cEntity *d = cFunctionaryLocalLogic_GetDesktop(self);
 	if (d) {
@@ -588,7 +593,7 @@ static void cFunctionaryLocalLogic_SetOriginFrom(cLocalLogic *base, cEntity *e) 
 void cFunctionaryLocalLogic_SetIdle(cLocalLogic *elem, byte idle) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	if (!idle && !self->base.base.busy) {
-		if (self->base.base.state == 8) {
+		if (self->base.base.state == FUNC_WORK) {
 			self->base.base.state = 7;
 		}
 		Logic_SetState(self, self->base.base.state, self->base.base.target.target);
@@ -627,23 +632,23 @@ byte cFunctionaryLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base.base;
 
-	if (state == 0) {
+	if (state == GENCHAR_RELAX) {
 		if (self->stopInRelax) {
-			return cGenCharLocalLogic_SetState(&self->base.base.logic, 0, target);
+			return cGenCharLocalLogic_SetState(&self->base.base.logic, GENCHAR_RELAX, target);
 		}
-		byte ok = (byte)cBaseLocalLogic_SetState(&b->logic, 0, target);
+		byte ok = (byte)cBaseLocalLogic_SetState(&b->logic, GENCHAR_RELAX, target);
 		cAIChar *ai = Entity_GetAI(b->parent);
 		if (ok) {
 			GenChar_UpdateView(self);
 		}
-		if (b->state == 0 && ok) {
+		if (b->state == GENCHAR_RELAX && ok) {
 			AIChar_SetState(ai, AIC_PATROL_ZONE, b->origin, (double)b->actionRadius, (double)g_GenCharRelaxSpeed, 0);
 		}
 		return 1;
 	}
-	if (state == 3) {
-		self->prevState = b->state == 2 || b->state == 8 ? 0 : b->state;
-		if ((byte)cBaseLocalLogic_SetState(&b->logic, 3, target)) {
+	if (state == GENCHAR_GETAWAY) {
+		self->prevState = b->state == GENCHAR_ACCUSE || b->state == FUNC_WORK ? 0 : b->state;
+		if ((byte)cBaseLocalLogic_SetState(&b->logic, GENCHAR_GETAWAY, target)) {
 			cEntity *p = b->parent;
 			cAIChar *ai = Entity_GetAI(p);
 			AIChar_SetState(ai, AIC_GET_AWAY, target, (double)g_GenCharAlertSpeed);
@@ -661,14 +666,14 @@ byte cFunctionaryLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 		}
 		return 1;
 	}
-	if (state == 7) {
-		if ((byte)cBaseLocalLogic_SetState(&b->logic, 7, target)) {
+	if (state == FUNC_GO_TO_WORK) {
+		if ((byte)cBaseLocalLogic_SetState(&b->logic, FUNC_GO_TO_WORK, target)) {
 			GenChar_UpdateView(self);
 			Func_GoToWork(self, Entity_GetAI(b->parent));
 		}
 		return 1;
 	}
-	if (state != 8) {
+	if (state != FUNC_WORK) {
 		cEntity *p = b->parent;
 		if (p && Obj(p)->move.active) {
 			cObjMove_SetTime(&Obj(p)->move, 0.0f);
@@ -728,12 +733,12 @@ static byte cFunctionaryLocalLogic_CanTalk(cLocalLogic *elem) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	int st = self->base.base.state;
 
-	if (st == 8) {
+	if (st == FUNC_WORK) {
 		float prob = self->working ? self->probWorking : self->probPlaying;
 		float r = (float)(Weap_Rand01() + 0.0);
 		return prob >= r;
 	}
-	if (st != 0 && st != 6 && st != 7) {
+	if (st != GENCHAR_RELAX && st != GENCHAR_STAY && st != FUNC_GO_TO_WORK) {
 		return 0;
 	}
 	float r = (float)(Weap_Rand01() + 0.0);

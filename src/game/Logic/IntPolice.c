@@ -122,8 +122,8 @@ static void AICtrl_Belligerant(void *ctrl) {
 		if (g1 && g2) {
 			cLocalLogic *l1 = g1->lLogic, *l2 = g2->lLogic;
 			if (l1 && l2) {
-				Logic_SetState(l1, 2, g2);
-				Logic_SetState(l2, 2, g1);
+				Logic_SetState(l1, GENCHAR_ACCUSE, g2);
+				Logic_SetState(l2, GENCHAR_ACCUSE, g1);
 				return;
 			}
 		}
@@ -149,8 +149,8 @@ static void AICtrl_Belligerant(void *ctrl) {
 		}
 	}
 	if (first && second) {
-		Logic_SetState(fl, 2, second);
-		Logic_SetState(sl, 2, first);
+		Logic_SetState(fl, GENCHAR_ACCUSE, second);
+		Logic_SetState(sl, GENCHAR_ACCUSE, first);
 	}
 }
 
@@ -341,8 +341,8 @@ bishops:
 		cEntity *b = cEntityList_Nearest(g_pWorld->logic.genChars.bishops, Entity_GetPos(target, &t1),
 			target, &d);
 		cBaseLocalLogic *l;
-		if (b && (l = (cBaseLocalLogic *)Logic_GetLocalLogic(b)) && l->state != 4 && 3000.0f > d) {
-			Logic_SetState(l, 4, target);
+		if (b && (l = (cBaseLocalLogic *)Logic_GetLocalLogic(b)) && l->state != GENCHAR_ATTACK && 3000.0f > d) {
+			Logic_SetState(l, GENCHAR_ATTACK, target);
 		}
 	}
 }
@@ -498,11 +498,11 @@ byte AICtrl_SendAccuser(void *ctrl, byte check) {
 			return 0;
 		}
 	}
-	if (l->state == 2 || self->accusing) {
+	if (l->state == GENCHAR_ACCUSE || self->accusing) {
 		return 0;
 	}
 	Con_Debugf("Sending %s to acuse the main character.\n", l->parent->name);
-	Logic_SetState(l, 2, usr);
+	Logic_SetState(l, GENCHAR_ACCUSE, usr);
 	return 1;
 }
 
@@ -532,7 +532,7 @@ void AICtrl_SendSentinelToNPC(void *ctrl, cEntity *e) {
 	cEntity *sp = s->parent;
 	const vec3_t *ep = Entity_GetPos(e, &t2);
 	if (!Engine_TestLine(Entity_GetPos(sp, &t3), ep, NULL, NULL)) {
-		Logic_SetState(s, 6, e);
+		Logic_SetState(s, SENTINEL_ACCUSE_NPC, e);
 	}
 }
 

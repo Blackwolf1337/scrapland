@@ -702,11 +702,14 @@ typedef struct cGateKeeperLocalLogic {
 	float hiddenTime;		/* 0x48 GateKeeperHiddenTime when it hides */
 } cGateKeeperLocalLogic;
 
-/* GearLogic.cpp: the gears (0x5c bytes); states 0 relax (patrol), 1 chase (called), 2 attack, 3 stay in place,
- * 4 escort */
-#define GEAR_RELAX 0
-#define GEAR_STAY_IN_PLACE 3
-#define GEAR_SCORT 4
+/* GearLogic.cpp: the gears (0x5c bytes) */
+enum {
+	GEAR_RELAX,		/* patrols around its origin */
+	GEAR_CHASE,		/* called */
+	GEAR_ATTACK,
+	GEAR_STAY_IN_PLACE,	/* goes back to its origin */
+	GEAR_ESCORT
+};
 
 typedef struct cGearLocalLogic {
 	cBaseLocalLogic base;		/* 0x00 */
@@ -788,6 +791,18 @@ cBossLocalLogic *cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity *parent);
 #define GENCHAR_CHASE 5
 #define GENCHAR_STAY 6
 #define GENCHAR_GET_IT 10		/* walk to the target */
+
+/* the states the little police adds to the GENCHAR_ ones */
+enum {
+	LPOLICE_DISCOVER = 7,	/* turns to the target and accuses it */
+	LPOLICE_CHASE = 8	/* runs after the target */
+};
+
+/* the states of the sentinel */
+enum {
+	SENTINEL_RELAX, SENTINEL_SEARCH, SENTINEL_ACCUSE, SENTINEL_INSPECT, SENTINEL_SUSPECT, SENTINEL_WATCH,
+	SENTINEL_ACCUSE_NPC	/* runs to a character that robbed a banker */
+};
 
 extern cGVar GVar_GenCharMaxSpecialActionTime;
 #define g_GenCharMaxSpecialActionTime (GVar_GenCharMaxSpecialActionTime.value.f)

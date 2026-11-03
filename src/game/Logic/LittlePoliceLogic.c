@@ -66,7 +66,7 @@ static void cLittlePoliceLocalLogic_UpdateView(cLocalLogic *base) {
 	cEntity *p = LP_BASE(self)->parent;
 
 	WChar(p)->wl.arrow.canUse = !LP_BASE(self)->busy && !g_pWorld->alarm.on && (self->bribe ||
-		LP_BASE(self)->state != 4);
+		LP_BASE(self)->state != GENCHAR_ATTACK);
 	WLife(p)->arrow.tgType = g_pWorld->alarm.on ? 0 : 2;
 }
 
@@ -78,7 +78,7 @@ static void cLittlePoliceLocalLogic_UpdateBribe(cLittlePoliceLocalLogic *self) {
 	cEntity *p = b->parent;
 	byte usrAttack = 0;
 
-	if (!b->busy && b->state == 4) {
+	if (!b->busy && b->state == GENCHAR_ATTACK) {
 		cEntity *t = b->target.target;
 		if (t == ChType_Usr0()) {
 			usrAttack = 1;
@@ -92,7 +92,7 @@ static void cLittlePoliceLocalLogic_UpdateBribe(cLittlePoliceLocalLogic *self) {
 			if (lt && (((lt->idle || lt->alwaysLock) && WChar_Listen(te) != p) ||
 				!WChar(te)->wl.arrow.canUse)) {
 				self->base.searchTime = g_GenCharMaxSpecialActionTime;
-				Logic_SetState(self, 0, NULL);
+				Logic_SetState(self, GENCHAR_RELAX, NULL);
 				return;
 			}
 		}
@@ -260,7 +260,7 @@ static byte cLittlePoliceLocalLogic_VarI(cLocalLogic *elem, const char *name, in
 static void LP_Siren(cLittlePoliceLocalLogic *self, int st, byte alarm, cEntity *p) {
 	void *ctrl;
 
-	if (st == 7 || st == 8 || (alarm && 0.0f >= self->sirenTime)) {
+	if (st == LPOLICE_DISCOVER || st == LPOLICE_CHASE || (alarm && 0.0f >= self->sirenTime)) {
 		if (!*cActCtrl_GetActionName(ChType_ActCtrl(p), 1) ||
 			(strcmp(cActCtrl_GetActionName(ChType_ActCtrl(p), 1), "SirenInit") &&
 			strcmp(cActCtrl_GetActionName(ChType_ActCtrl(p), 1), "Siren"))) {
@@ -290,7 +290,7 @@ static void cLittlePoliceLocalLogic_Update(cLocalLogic *elem, float dt) {
 	}
 	cEntity *p = b->parent;
 	LP_Siren(self, st, alarm, p);
-	if (st == 1) {
+	if (st == GENCHAR_ALERT) {
 		if (cActCtrl_IsActive(ChType_ActCtrl(p), "Relax")) {
 			cActCtrl_PlayNew(ChType_ActCtrl(p), "AlertCheck", 0, 1.0f);
 		} else if (cActCtrl_IsActive(ChType_ActCtrl(p), "AlertCheck")) {
@@ -300,7 +300,7 @@ static void cLittlePoliceLocalLogic_Update(cLocalLogic *elem, float dt) {
 			a.z = v.z + 0.0f;
 			WChar_SetViewAng(p, &a);
 		}
-	} else if (st == 2 || st == 7 || st == 8) {
+	} else if (st == GENCHAR_ACCUSE || st == LPOLICE_DISCOVER || st == LPOLICE_CHASE) {
 		cBaseLocalLogic_Update(&b->logic, dt);
 		GenChar_UpdateView(self);
 		cEntity *usr = ChType_Usr0();
@@ -310,10 +310,10 @@ static void cLittlePoliceLocalLogic_Update(cLocalLogic *elem, float dt) {
 		byte accuse = g_pWorld->alarm.sameChar && b->target.target;
 		cAIChar *ai = Entity_GetAI(b->parent);
 		switch (b->state) {
-		case 2: {
+		case GENCHAR_ACCUSE: {
 			if (AIChar_GetState(ai) != AIC_CHASE_WITHOUT_ACTION) {
 				if (!accuse) {
-					Logic_SetState(self, 1, NULL);
+					Logic_SetState(self, GENCHAR_ALERT, NULL);
 					return;
 				}
 				if (!Logic_InView(p, Entity_GetPos(usr, &t1), g_LittlePoliceMaxDistFar, g_GenCharStdFovY,
@@ -353,11 +353,11 @@ static void cLittlePoliceLocalLogic_Update(cLocalLogic *elem, float dt) {
 			}
 			return;
 alert:
-			Logic_SetState(self, 1, NULL);
+			Logic_SetState(self, GENCHAR_ALERT, NULL);
 			self->lostTime = 0.0f;
 			return;
 		}
-		case 7: {
+		case LPOLICE_DISCOVER: {
 			cEntity *te = b->target.target;
 			cLocalLogic *lt;
 			if (!te || !(lt = Logic_GetLocalLogic(te))) {
@@ -383,11 +383,11 @@ alert:
 				Logic_OnAlarm(lt, p);
 				return;
 			}
-			Logic_SetState(self, 8, te);
+			Logic_SetState(self, LPOLICE_CHASE, te);
 			Logic_OnAlarm(lt, p);
 			return;
 		}
-		case 8: {
+		case LPOLICE_CHASE: {
 			cEntity *te = b->target.target;
 			cLocalLogic *lt;
 			if (!te || !(lt = Logic_GetLocalLogic(te))) {
@@ -412,14 +412,14 @@ alert:
 				return;
 			}
 			if (Logic_InView(p, Entity_GetPos(te, &t1), g_GenCharStdFar, g_GenCharStdFovY, g_GenCharStdFovX, 1)) {
-				Logic_SetState(self, 7, te);
+				Logic_SetState(self, LPOLICE_DISCOVER, te);
 			}
-			Logic_SetState(lt, 3, p);
+			Logic_SetState(lt, GENCHAR_GETAWAY, p);
 			return;
 		}
 		}
 		return;
-	} else if (st == 4) {
+	} else if (st == GENCHAR_ATTACK) {
 		self->base.specialTime = self->base.specialTime + dt;
 	}
 	cGenCharLocalLogic_Update(&self->base.base.logic, dt);
@@ -442,7 +442,7 @@ static void cLittlePoliceLocalLogic_OnSeen(cLocalLogic *base, cEntity *e) {
 	}
 	if (e == ChType_Usr0()) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
-		Logic_SetState(self, 2, e);
+		Logic_SetState(self, GENCHAR_ACCUSE, e);
 	}
 }
 
@@ -469,7 +469,7 @@ static void cLittlePoliceLocalLogic_UpdateLook(cLocalLogic *base) {
 	WLife(p)->arrow.coneDist = g_LittlePoliceMaxDistFar;
 	if (g_pWorld->alarm.on) {
 		cEntity *te = b->target.target;
-		if (te && b->state == 2 && te == cWorld_GetUsrEntity(g_pWorld, 0)) {
+		if (te && b->state == GENCHAR_ACCUSE && te == cWorld_GetUsrEntity(g_pWorld, 0)) {
 			WLife(p)->arrow.coneStatus = 3;
 		} else {
 			WLife(p)->arrow.coneStatus = 2;
@@ -484,7 +484,7 @@ static void cLittlePoliceLocalLogic_UpdateLook(cLocalLogic *base) {
 	if (usr && Logic_InView(p, Entity_GetPos(usr, &t), g_LittlePoliceMaxDistFar, g_GenCharStdFovY,
 		g_GenCharStdFovX, 1)) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
-		Logic_SetState(self, 2, usr);
+		Logic_SetState(self, GENCHAR_ACCUSE, usr);
 	}
 }
 
@@ -514,13 +514,13 @@ static void cLittlePoliceLocalLogic_UpdateGetIt(cLocalLogic *base, cAIChar *ai, 
 				return;
 			}
 			if (g_EnergyBarActive != 1 || g_SpecialActionActive != 2) {
-				Logic_SetState(self, 0, usr);
+				Logic_SetState(self, GENCHAR_RELAX, usr);
 				return;
 			}
 			if (!(500.0f > d) || !ChType_ActCtrl(usr) || !strcmp(Logic_TypeName(usr), "Police")) {
 				return;
 			}
-			Logic_SetState(self, 4, usr);
+			Logic_SetState(self, GENCHAR_ATTACK, usr);
 			return;
 		}
 		float lt = self->lostTime - dt;
@@ -564,7 +564,7 @@ static void cLittlePoliceLocalLogic_SetIdle(cLocalLogic *elem, byte idle) {
 	cBaseLocalLogic *b = LP_BASE(self);
 	byte cur = b->idle || b->alwaysLock;
 
-	if (idle != cur && b->state != 4) {
+	if (idle != cur && b->state != GENCHAR_ATTACK) {
 		self->base.searchTime = g_GenCharMaxSpecialActionTime;
 	}
 	cBaseLocalLogic_SetIdle(&b->logic, idle);
@@ -575,16 +575,16 @@ static byte cLittlePoliceLocalLogic_SetState(cLocalLogic *elem, int state, cEnti
 	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)elem;
 	cBaseLocalLogic *b = LP_BASE(self);
 
-	if (state == 8) {
-		if ((byte)cBaseLocalLogic_SetState(&b->logic, 8, target)) {
+	if (state == LPOLICE_CHASE) {
+		if ((byte)cBaseLocalLogic_SetState(&b->logic, LPOLICE_CHASE, target)) {
 			GenChar_UpdateView(self);
 			cAIChar *ai = Entity_GetAI(b->parent);
 			AIChar_SetState(ai, AIC_CHASE_WITHOUT_ACTION, target, (double)g_GenCharAlertSpeed);
 		}
 		return 1;
 	}
-	if (state == 7) {
-		if ((byte)cBaseLocalLogic_SetState(&b->logic, 7, target)) {
+	if (state == LPOLICE_DISCOVER) {
+		if ((byte)cBaseLocalLogic_SetState(&b->logic, LPOLICE_DISCOVER, target)) {
 			GenChar_UpdateView(self);
 			cAIChar *ai = Entity_GetAI(b->parent);
 			AIChar_SetState(ai, AIC_ORIENT_DYNAMIC_OBJECTIVE, target, 1);

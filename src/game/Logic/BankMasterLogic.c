@@ -58,7 +58,7 @@ static void cBankMasterLocalLogic_OnAttack(cLocalLogic *elem, cEntity *attacker,
 	cBankMasterLocalLogic *self = (cBankMasterLocalLogic *)elem;
 	(void)value;
 	if (Logic_Chance(&self->base, attacker, 100.0f)) {
-		Logic_SetState(self, 4, attacker);
+		Logic_SetState(self, GENCHAR_ATTACK, attacker);
 	}
 }
 

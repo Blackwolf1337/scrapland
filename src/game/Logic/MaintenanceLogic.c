@@ -11,6 +11,11 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/staticinit.h"
 
+/* the states the maintenance robot adds to the GENCHAR_ ones */
+enum {
+	MAINT_ROUTE = 7, MAINT_NEXT_POINT = 8
+};
+
 #define CMAINTENANCELOCALLOGIC_VFTABLE (&cMaintenanceLocalLogic_vftable.base)
 #define g_MaintenanceTimeToNextPos (GVar_MaintenanceTimeToNextPos.value.f)
 #define g_MaintenanceSphereRadiusFactor (GVar_MaintenanceSphereRadiusFactor.value.f)
@@ -31,7 +36,7 @@ void *cMaintenanceLocalLogic_ctor(void *mem, cEntity *parent) {
 	self->point = -1;
 	g_MaintenanceShip = NULL;
 	g_MaintenanceFirstShip = NULL;
-	if ((byte)cBaseLocalLogic_SetState(&(MAINT_BASE(self))->logic, 7, NULL)) {
+	if ((byte)cBaseLocalLogic_SetState(&(MAINT_BASE(self))->logic, MAINT_ROUTE, NULL)) {
 		cEntity *p = MAINT_BASE(self)->parent;
 		cAIChar *ai = Entity_GetAI(p);
 		AIChar_SetState(ai, AIC_IN_ROUTE, (double)g_GenCharRelaxSpeed, 0);
@@ -111,7 +116,7 @@ static void cMaintenanceLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cEntity *p = b->parent;
 	cAIChar *ai = Entity_GetAI(p);
 
-	if (b->state == 7) {
+	if (b->state == MAINT_ROUTE) {
 		if (!World_FindEntity("EditCamera")) {
 			return;
 		}
@@ -124,17 +129,17 @@ static void cMaintenanceLocalLogic_Update(cLocalLogic *elem, float dt) {
 		const vec3_t *sp = Entity_GetPos(s, &t);
 		float r = Obj_GetRadius(g_MaintenanceShip);
 		cMaintenanceLocalLogic_SetPlatform(self, sp->x, sp->y, sp->z, r);
-		Logic_SetState(self, 8, NULL);
+		Logic_SetState(self, MAINT_NEXT_POINT, NULL);
 		return;
 	}
-	if (b->state != 8) {
+	if (b->state != MAINT_NEXT_POINT) {
 		cGenCharLocalLogic_Update(&self->base.base.logic, dt);
 		return;
 	}
 	g_MaintenanceShip = Maintenance_FindShip();
 	if (!g_MaintenanceShip || !World_FindEntity("EditCamera") || g_MaintenanceFirstShip != g_MaintenanceShip) {
 		self->point = -1;
-		Logic_SetState(self, 7, NULL);
+		Logic_SetState(self, MAINT_ROUTE, NULL);
 		return;
 	}
 	void *ctrl = ChType_ActCtrl(p);
@@ -222,17 +227,17 @@ static byte cMaintenanceLocalLogic_SetState(cLocalLogic *elem, int state, cEntit
 	cMaintenanceLocalLogic *self = (cMaintenanceLocalLogic *)elem;
 	cBaseLocalLogic *b = MAINT_BASE(self);
 
-	if (state == 7) {
-		if ((byte)cBaseLocalLogic_SetState(&b->logic, 7, target)) {
+	if (state == MAINT_ROUTE) {
+		if ((byte)cBaseLocalLogic_SetState(&b->logic, MAINT_ROUTE, target)) {
 			cAIChar *ai = Entity_GetAI(b->parent);
 			AIChar_SetState(ai, AIC_IN_ROUTE, (double)g_GenCharRelaxSpeed, 0);
 		}
 		return 1;
 	}
-	if (state != 8) {
+	if (state != MAINT_NEXT_POINT) {
 		return cGenCharLocalLogic_SetState(&self->base.base.logic, state, target);
 	}
-	cBaseLocalLogic_SetState(&b->logic, 8, target);
+	cBaseLocalLogic_SetState(&b->logic, MAINT_NEXT_POINT, target);
 	void *ctrl = ChType_ActCtrl(b->parent);
 	cMaintenanceLocalLogic_NextPoint(self);
 	cActCtrl_Play(ctrl, "WorkEnd", 1, 1.0f);

@@ -8,6 +8,11 @@
 #include "scrap/objentity.h"
 #include "scrap/staticinit.h"
 
+/* the states the boss adds to the GENCHAR_ ones */
+enum {
+	BOSS_GO_TO_WORK = 7, BOSS_WORK = 8
+};
+
 #define CBOSSLOCALLOGIC_VFTABLE (&cBossLocalLogic_vftable.base)
 #define g_BossWalkingTime (GVar_BossWalkingTime.value.f)
 #define g_BossWorkPlace (GVar_BossWorkPlace.value.s)
@@ -54,14 +59,14 @@ static cLocalLogic *cBossLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 /* vf33 (0x84): at work, the end of the work */
 static void cBossLocalLogic_Vf33(cLocalLogic *elem, byte on) {
 	cBossLocalLogic *self = (cBossLocalLogic *)elem;
-	if (self->base.base.state != 8 || !on) {
+	if (self->base.base.state != BOSS_WORK || !on) {
 		return;
 	}
 	cEntity *p = self->base.base.parent;
 	if (p && Obj(p)->move.active) {
 		cObjMove_SetTime(&Obj(p)->move, 0.0f);
 	}
-	Logic_SetState(self, 0, NULL);
+	Logic_SetState(self, GENCHAR_RELAX, NULL);
 }
 
 static byte g_BossWasIdle;
@@ -71,14 +76,14 @@ static void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cBossLocalLogic *self = (cBossLocalLogic *)elem;
 	cGenCharLocalLogic_Update(&self->base.base.logic, dt);
 	int st = self->base.base.state;
-	if (st == 0 || st == 6) {
+	if (st == GENCHAR_RELAX || st == GENCHAR_STAY) {
 		self->time = dt + self->time;
 		if (self->time >= g_BossWalkingTime) {
-			Logic_SetState(self, 7, NULL);
+			Logic_SetState(self, BOSS_GO_TO_WORK, NULL);
 		}
 		return;
 	}
-	if (st == 7) {
+	if (st == BOSS_GO_TO_WORK) {
 		cEntity *p = self->base.base.parent;
 		if (!p) {
 			return;
@@ -98,10 +103,10 @@ static void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
 		m->movePos = self->workPos;
 		cObjMove_SetTime(m, 0.5f);
 		m->fade = 3;
-		Logic_SetState(self, 8, NULL);
+		Logic_SetState(self, BOSS_WORK, NULL);
 		return;
 	}
-	if (st != 8) {
+	if (st != BOSS_WORK) {
 		return;
 	}
 	cEntity *p = self->base.base.parent;
@@ -119,7 +124,7 @@ static void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
 		void *ctrl = ChType_ActCtrl(p);
 		cActCtrl_Play(ctrl, "WorkEnd", 1, 1.0f);
 		cActCtrl_SetDefLoop(ctrl, "Walk", 1);
-		Logic_SetState(self, 0, NULL);
+		Logic_SetState(self, GENCHAR_RELAX, NULL);
 	}
 }
 
@@ -128,8 +133,8 @@ static byte cBossLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 	cBossLocalLogic *self = (cBossLocalLogic *)elem;
 	vec3_t out;
 
-	if (state == 7) {
-		if (cBaseLocalLogic_SetState(&self->base.base.logic, 7, target)) {
+	if (state == BOSS_GO_TO_WORK) {
+		if (cBaseLocalLogic_SetState(&self->base.base.logic, BOSS_GO_TO_WORK, target)) {
 			cEntity *p = self->base.base.parent;
 			cAIChar *ai = Entity_GetAI(p);
 			vec3_t rot = { 0.0f, self->workAng[1], 0.0f };
@@ -139,8 +144,8 @@ static byte cBossLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 		}
 		return 1;
 	}
-	if (state == 8) {
-		if (cBaseLocalLogic_SetState(&self->base.base.logic, 8, target)) {
+	if (state == BOSS_WORK) {
+		if (cBaseLocalLogic_SetState(&self->base.base.logic, BOSS_WORK, target)) {
 			self->time = 0.0f;
 			void *ctrl = ChType_ActCtrl(self->base.base.parent);
 			cActCtrl_Play(ctrl, "WorkInit", 1, 1.0f);
