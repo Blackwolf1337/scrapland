@@ -170,18 +170,18 @@ static void cShipGroupData_Think(cShipGroupData *self) {
 			float dz = lair.z - sp->z;
 			float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 			if (d > maxDist) {
-				cAIVehicle_SetState(ai, 1, lair, 3000.0, 1, 1.0, 20.0, 20.0, 1);
+				cAIVehicle_SetState(ai, AIV_GO_TO, lair, 3000.0, 1, 1.0, 20.0, 20.0, 1);
 				AIV_OnEnd(ai) = (void *)ShipGroup_OnAIEnd;
 			} else if (st != 2 && (st != 7 || (usr && Entity_IsType(usr, TYEN_CAR)))) {
 				if (count < maxAttack) {
 					count++;
-					cAIVehicle_SetState(ai, 2, target);
+					cAIVehicle_SetState(ai, AIV_FIGHTING, target);
 				} else {
 					cWorld_SphereCallF(g_pWorld, 1, &lair, maxDist, &self->onSphere, 1);
 					if (g_ShipGroupFound > 0) {
-						cAIVehicle_SetState(ai, 2, g_ShipGroupShips[crt_rand() % g_ShipGroupFound]);
+						cAIVehicle_SetState(ai, AIV_FIGHTING, g_ShipGroupShips[crt_rand() % g_ShipGroupFound]);
 					} else {
-						cAIVehicle_SetState(ai, 2, target);
+						cAIVehicle_SetState(ai, AIV_FIGHTING, target);
 					}
 				}
 			}

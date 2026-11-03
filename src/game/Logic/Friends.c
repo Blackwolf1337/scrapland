@@ -15,7 +15,7 @@ cFriends *cFriends_ctor(cFriends *self) {
 }
 
 static void Friends_Patrol(cAIVehicle *ai) {
-	cAIVehicle_SetState(ai, 3, 1, 5.0, 2.0);
+	cAIVehicle_SetState(ai, AIV_IN_ROUTE, 1, 5.0, 2.0);
 }
 
 static void Friends_Follow(cAIVehicle *ai, cEntity *usr) {
@@ -56,7 +56,7 @@ static void cFriends_Attack(cFriends *self, cEntity *usr) {
 		if (st == AIV_STATE_ATTACK) {
 			cEntity *t = AIMove_GetTargetEnt(ai);
 			if (!t || !Friends_IsEnemyCar(v, t)) {
-				cAIVehicle_SetState(ai, 0);
+				cAIVehicle_SetState(ai, AIV_FREEZE);
 			}
 			continue;
 		}

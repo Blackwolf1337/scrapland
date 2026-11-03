@@ -206,7 +206,7 @@ byte cAICharControl_CheckTarget(cAICharControl *self) {
 			int st = AIChar_GetState(self->ai);
 			Con_Bluef("OBJECTIVE_DIED - cAICharControl::CheckIntensive - Entidad: %s - State: %d - StateIntern: %d\n",
 				name, st, in);
-			AIMove_Event(self->ai, 3);
+			AIMove_Event(self->ai, AIEV_OBJECTIVE_DIED);
 			return 0;
 		}
 	}
@@ -348,7 +348,7 @@ void cAICharControl_AwayCheck(cAICharControl *self) {
 	d.z = p->z - s->z;
 	double a = Vec3_Angle(&d, &fwd);
 	if ((double)g_OffsetAngOrientCharAI > a) {
-		AIMove_Event(self->ai, 6);
+		AIMove_Event(self->ai, AIEV_ORIENT_REACHED);
 	}
 }
 
@@ -358,7 +358,7 @@ void cAICharControl_DirCheck(cAICharControl *self) {
 	AICC_ViewDir(&fwd, self->ent);
 	double a = Vec3_Angle(&self->dir, &fwd);
 	if ((double)g_OffsetAngOrientCharAI > a) {
-		AIMove_Event(self->ai, 6);
+		AIMove_Event(self->ai, AIEV_ORIENT_REACHED);
 	}
 }
 
@@ -779,7 +779,7 @@ void cAICharControl_Strafe(cAICharControl *self) {
 			if (self->blocked) {
 				self->collStopTime = 0.0f;
 				if (self->blockedByChar && self->collEventTime > g_TimeBetweenEventCollCharAI &&
-						AIMove_Event(self->ai, 10)) {
+						AIMove_Event(self->ai, AIEV_COLLISION_AGENTS)) {
 					self->collEventTime = 0.0f;
 				clear:
 					self->blocked = 0;
@@ -1970,7 +1970,7 @@ byte cAICharControl_GoTo(cAICharControl *self, const vec3_t *p, float dist, floa
 	}
 	byte r = AICC_FindPath(self, p);
 	if (r && self->pathRes == 2) {
-		AIMove_Event(self->ai, 1);
+		AIMove_Event(self->ai, AIEV_OBJECTIVE_NOT_FOUND);
 	}
 	return r;
 }

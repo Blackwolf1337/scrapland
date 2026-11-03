@@ -63,13 +63,13 @@ static cEntity *cPoliceBossLocalLogic_FindTarget(cLocalLogic *elem) {
 static void cPoliceBossLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
 	cPoliceBossLocalLogic *self = (cPoliceBossLocalLogic *)base;
 	(void)self;
-	AIChar_SetState(ai, 1, (double)g_GenCharAlertSpeed, 0);
+	AIChar_SetState(ai, AIC_IN_ROUTE, (double)g_GenCharAlertSpeed, 0);
 }
 
 static void cPoliceBossLocalLogic_ToRelax(cLocalLogic *base, cAIChar *ai) {
 	cPoliceBossLocalLogic *self = (cPoliceBossLocalLogic *)base;
 	(void)self;
-	AIChar_SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
+	AIChar_SetState(ai, AIC_IN_ROUTE, (double)g_GenCharRelaxSpeed, 0);
 }
 
 /* vf17 */

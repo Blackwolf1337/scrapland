@@ -34,7 +34,7 @@ void *cMaintenanceLocalLogic_ctor(void *mem, cEntity *parent) {
 	if ((byte)cBaseLocalLogic_SetState(&(MAINT_BASE(self))->logic, 7, NULL)) {
 		cEntity *p = MAINT_BASE(self)->parent;
 		cAIChar *ai = Entity_GetAI(p);
-		AIChar_SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
+		AIChar_SetState(ai, AIC_IN_ROUTE, (double)g_GenCharRelaxSpeed, 0);
 	}
 	return self;
 }
@@ -147,7 +147,7 @@ static void cMaintenanceLocalLogic_Update(cLocalLogic *elem, float dt) {
 		cActCtrl_SetDefLoop(ctrl, "Walk", 1);
 		return;
 	}
-	if (strncmp(cActCtrl_GetActionName(ctrl, 0), "Work", 4) && AIChar_GetState(ai) == 0) {
+	if (strncmp(cActCtrl_GetActionName(ctrl, 0), "Work", 4) && AIChar_GetState(ai) == AIC_STATIC) {
 		cActCtrl_Play(ctrl, "WorkInit", 1, 1.0f);
 		cActCtrl_SetDefLoop(ctrl, "Work", 1);
 	}
@@ -193,7 +193,7 @@ static void cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self) {
 	dir.z = sp.z - c->z;
 	dir.x = sp.x - c->x;
 	dir.y = sp.y - c->y;
-	AIChar_SetState(ai, 4, *c, dir, 100.0, 0.5);
+	AIChar_SetState(ai, AIC_GO_TO, *c, dir, 100.0, 0.5);
 	c = &self->points[self->point];
 	sp.y = c->y;
 	float sr = WLife(g_MaintenanceShip)->prim.radius;
@@ -225,7 +225,7 @@ static byte cMaintenanceLocalLogic_SetState(cLocalLogic *elem, int state, cEntit
 	if (state == 7) {
 		if ((byte)cBaseLocalLogic_SetState(&b->logic, 7, target)) {
 			cAIChar *ai = Entity_GetAI(b->parent);
-			AIChar_SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
+			AIChar_SetState(ai, AIC_IN_ROUTE, (double)g_GenCharRelaxSpeed, 0);
 		}
 		return 1;
 	}

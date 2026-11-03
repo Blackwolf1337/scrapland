@@ -19,7 +19,7 @@ static void DominationEnemies_OnDeath(cAbstractFile *params);
 
 /* the arguments of the AI state GO_TO the leader gets (the constants of the original) */
 static void DominE_GoTo(cAIVehicle *ai, vec3_t pos, double dist) {
-	cAIVehicle_SetState(ai, 1, pos, dist, 1, 1.0, 20.0, 20.0, 0);
+	cAIVehicle_SetState(ai, AIV_GO_TO, pos, dist, 1, 1.0, 20.0, 20.0, 0);
 }
 
 static void cDominationSide_Think(cDominationSide *self) {

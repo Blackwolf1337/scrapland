@@ -862,15 +862,15 @@ static byte cAIVehicle_Event(cAI *base, int ev) {
 }
 
 static byte cAIVehicle_EventChase(cAIVehicle *self, int ev) {
-	if (ev != 2) {
+	if (ev != AIEV_OBJECTIVE_REACHED) {
 		return 0;
 	}
 	if (self->internState != AIVI_FINISHING_LINE_LIFE) {
-		AI_OnEvent(self, 2);
+		AI_OnEvent(self, AIEV_OBJECTIVE_REACHED);
 		cAIVehicle_SetInternState(self, AIVI_CHASE_NOT_SHOOTING, (double)self->chaseMin, (double)self->chaseMax);
 		return 1;
 	}
-	AI_OnEvent(self, 2);
+	AI_OnEvent(self, AIEV_OBJECTIVE_REACHED);
 	cAIVehicle_ItemsChase(self);
 	return 1;
 }
@@ -879,9 +879,9 @@ static byte cAIVehicle_EventChase(cAIVehicle *self, int ev) {
 static void cAIVehicle_SaveState(cAIVehicle *self, cAIVehicleSaved *s);
 static byte cAIVehicle_EventDefault(cAIVehicle *self, int ev) {
 	switch (ev) {
-	case 0: {
+	case AIEV_LOST_AGENT: {
 		vec3_t a;
-		AI_OnEvent(self, 0);
+		AI_OnEvent(self, AIEV_LOST_AGENT);
 		cAIVehicle_SaveState(self, &self->saved);
 		int s = self->state;
 		int st = AIV_LOST_PATH;
@@ -897,12 +897,12 @@ static byte cAIVehicle_EventDefault(cAIVehicle *self, int ev) {
 		}
 		return 1;
 	}
-	case 1:
-		AI_OnEvent(self, 1);
+	case AIEV_OBJECTIVE_NOT_FOUND:
+		AI_OnEvent(self, AIEV_OBJECTIVE_NOT_FOUND);
 		cAIVehicle_SetStateIntern(self, AIV_FREEZE_OBJ_NOT_ACCESS);
 		return 1;
-	case 3:
-		AI_OnEvent(self, 3);
+	case AIEV_OBJECTIVE_DIED:
+		AI_OnEvent(self, AIEV_OBJECTIVE_DIED);
 		cAIVehicle_SetStateIntern(self, AIV_FREEZE);
 		if (cPy_Function_IsValid(g_OnObjectiveNullAI)) {
 			cPy_Function_AddParamS(g_OnObjectiveNullAI, self->vehicle->name);
@@ -914,20 +914,20 @@ static byte cAIVehicle_EventDefault(cAIVehicle *self, int ev) {
 }
 
 static byte cAIVehicle_EventFighting(cAIVehicle *self, int ev) {
-	if (ev != 2) {
+	if (ev != AIEV_OBJECTIVE_REACHED) {
 		return 0;
 	}
 	switch (self->internState) {
 	case AIVI_FINISHING_LINE_LIFE:
-		AI_OnEvent(self, 2);
+		AI_OnEvent(self, AIEV_OBJECTIVE_REACHED);
 		cAIVehicle_ItemsFighting(self);
 		return 1;
 	case AIVI_FINISHING_LINE_AMMO:
-		AI_OnEvent(self, 2);
+		AI_OnEvent(self, AIEV_OBJECTIVE_REACHED);
 		cAIVehicle_FightingAfterItem(self);
 		return 1;
 	}
-	AI_OnEvent(self, 2);
+	AI_OnEvent(self, AIEV_OBJECTIVE_REACHED);
 	cAIVehicle_SetInternState(self, AIVI_CHASE_SHOOTING, (double)self->chaseMin, (double)self->chaseMax);
 	return 1;
 }
@@ -954,13 +954,13 @@ static void AIV_FollowAway(cAIVehicle *self, int ev) {
 
 static byte cAIVehicle_EventGetAway(cAIVehicle *self, int ev) {
 	if (self->internState == AIVI_FINISHING_LINE_LIFE) {
-		if (ev == 2) {
-			AI_OnEvent(self, 2);
+		if (ev == AIEV_OBJECTIVE_REACHED) {
+			AI_OnEvent(self, AIEV_OBJECTIVE_REACHED);
 			cAIVehicle_ItemsGetAway(self);
 			return 1;
 		}
 	}
-	else if (self->internState == AIVI_FOLLOW_THE_PATH_WITH_SHOOT_CM && (ev == 2 || ev == 4)) {
+	else if (self->internState == AIVI_FOLLOW_THE_PATH_WITH_SHOOT_CM && (ev == AIEV_OBJECTIVE_REACHED || ev == AIEV_OBJECTIVE_NEAR)) {
 		AIV_FollowAway(self, ev);
 		return 1;
 	}
@@ -969,13 +969,13 @@ static byte cAIVehicle_EventGetAway(cAIVehicle *self, int ev) {
 
 static byte cAIVehicle_EventGetAwayStop(cAIVehicle *self, int ev) {
 	if (self->internState == AIVI_FINISHING_LINE_LIFE) {
-		if (ev == 2) {
-			AI_OnEvent(self, 2);
+		if (ev == AIEV_OBJECTIVE_REACHED) {
+			AI_OnEvent(self, AIEV_OBJECTIVE_REACHED);
 			cAIVehicle_ItemsGetAwayStop(self);
 			return 1;
 		}
 	}
-	else if (self->internState == AIVI_FOLLOW_THE_PATH_WITH_SHOOT_CM && (ev == 2 || ev == 4)) {
+	else if (self->internState == AIVI_FOLLOW_THE_PATH_WITH_SHOOT_CM && (ev == AIEV_OBJECTIVE_REACHED || ev == AIEV_OBJECTIVE_NEAR)) {
 		AIV_FollowAway(self, ev);
 		return 1;
 	}
@@ -984,7 +984,7 @@ static byte cAIVehicle_EventGetAwayStop(cAIVehicle *self, int ev) {
 
 /* GO_TO arrived: OnItemTakenAI and the callback of the AI; FREEZE when neither took it and the route goes on */
 static byte cAIVehicle_EventGoTo(cAIVehicle *self, int ev) {
-	if (ev != 2) {
+	if (ev != AIEV_OBJECTIVE_REACHED) {
 		return 0;
 	}
 	byte taken = 0;
@@ -997,7 +997,7 @@ static byte cAIVehicle_EventGoTo(cAIVehicle *self, int ev) {
 		taken = self->onArrive(self);
 	}
 	if (!taken && !self->stopAtGoal) {
-		AI_OnEvent(self, 2);
+		AI_OnEvent(self, AIEV_OBJECTIVE_REACHED);
 		cAIVehicle_SetStateIntern(self, AIV_FREEZE);
 	}
 	return 1;
@@ -1005,13 +1005,13 @@ static byte cAIVehicle_EventGoTo(cAIVehicle *self, int ev) {
 
 static byte cAIVehicle_EventInRoute(cAIVehicle *self, int ev) {
 	if (self->internState == AIVI_FINISHING_LINE_LIFE) {
-		if (ev == 2) {
-			AI_OnEvent(self, 2);
+		if (ev == AIEV_OBJECTIVE_REACHED) {
+			AI_OnEvent(self, AIEV_OBJECTIVE_REACHED);
 			cAIVehicle_ItemsInRoute(self);
 			return 1;
 		}
 	}
-	else if (self->internState == AIVI_FOLLOW_THE_PATH && (ev == 2 || ev == 4)) {
+	else if (self->internState == AIVI_FOLLOW_THE_PATH && (ev == AIEV_OBJECTIVE_REACHED || ev == AIEV_OBJECTIVE_NEAR)) {
 		vec3_t dir;
 		AI_OnEvent(self, ev);
 		AIV_NoseDir(self, &dir);
@@ -1023,10 +1023,10 @@ static byte cAIVehicle_EventInRoute(cAIVehicle *self, int ev) {
 }
 
 static byte cAIVehicle_EventLostPath(cAIVehicle *self, int ev) {
-	if (ev != 7) {
+	if (ev != AIEV_DONT_GO) {
 		return 0;
 	}
-	AI_OnEvent(self, 7);
+	AI_OnEvent(self, AIEV_DONT_GO);
 	cAIVehicle_SetStateIntern(self, AIV_FREEZE_LOST);
 	return 1;
 }
@@ -1037,7 +1037,7 @@ static vec3_t *cAIVehicle_TrackPoint(cAIVehicle *self, vec3_t *out, const vec3_t
 static void AIV_NextNode(cAIVehicle *self, vec3_t *p, int track, int node, float radius) {
 	vec3_t a;
 
-	AI_OnEvent(self, 2);
+	AI_OnEvent(self, AIEV_OBJECTIVE_REACHED);
 	*p = *cAIVehicle_TrackPoint(self, &a, p, track, node);
 	self->track = track;
 	self->node = node;
@@ -1053,7 +1053,7 @@ static byte cAIVehicle_EventTraffic(cAIVehicle *self, int ev) {
 	vec3_t p;
 	int track, node;
 
-	if (ev != 2) {
+	if (ev != AIEV_OBJECTIVE_REACHED) {
 		return 0;
 	}
 	CNodesTraffic *t = AIV_Outdoor();
@@ -1061,7 +1061,7 @@ static byte cAIVehicle_EventTraffic(cAIVehicle *self, int ev) {
 		AIV_NextNode(self, &p, track, node, g_RadiusObjectiveTraffic);
 		return 1;
 	}
-	AI_OnEvent(self, 2);
+	AI_OnEvent(self, AIEV_OBJECTIVE_REACHED);
 	t = AIV_Outdoor();
 	Traffic_RemoveVehicle(t, self->track);
 	cAIVehicle_SetInternState(self, AIVI_STOPPED);
@@ -1073,7 +1073,7 @@ static byte cAIVehicle_EventTrafficInDoor(cAIVehicle *self, int ev) {
 	vec3_t p, a;
 	int track, node;
 
-	if (ev != 2) {
+	if (ev != AIEV_OBJECTIVE_REACHED) {
 		return 0;
 	}
 	CNodesTraffic *t = AIV_Indoor();
@@ -1090,7 +1090,7 @@ static byte cAIVehicle_EventTrafficInDoor(cAIVehicle *self, int ev) {
 	float dy = p.y - 0.0f;
 	float dz = p.z - a.z;
 	if (!(dy * dy + dx * dx + dz * dz > AIV_ARRIVED_DIST2)) {
-		AI_OnEvent(self, 2);
+		AI_OnEvent(self, AIEV_OBJECTIVE_REACHED);
 		t = AIV_Indoor();
 		Traffic_RemoveVehicle(t, self->track);
 		cAIVehicle_SetInternState(self, AIVI_STOPPED);
@@ -1793,7 +1793,7 @@ static void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...) {
 	case AIVI_STOPPED:
 		self->base.moveMode = 0;
 		self->reposBehind = 0;
-		ok = cAIVehicleControl_SetMove(self->control, 0);
+		ok = cAIVehicleControl_SetMove(self->control, AIVC_STOP);
 		break;
 	case AIVI_FINISHING_LINE: {
 		self->base.dest = va_arg(ap, vec3_t);
@@ -1807,7 +1807,7 @@ static void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...) {
 		self->base.moveMode = 1;
 		self->base.dist = (float)dist;
 		self->accel = accel;
-		ok = cAIVehicleControl_SetMove(self->control, 1, self->base.dest, (double)self->base.dist, self->boost,
+		ok = cAIVehicleControl_SetMove(self->control, AIVC_POINT, self->base.dest, (double)self->base.dist, self->boost,
 			(double)self->accel, (double)a, (double)b, self->stopAtGoal, 0);
 		if (!ok) {
 			goto done;
@@ -1828,7 +1828,7 @@ static void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...) {
 		self->base.dist = (float)va_arg(ap, double);
 		self->boost = (byte)va_arg(ap, int);
 		self->base.moveMode = 1;
-		ok = cAIVehicleControl_SetMove(self->control, 1, self->base.dest, (double)self->base.dist, self->boost, d1, d3,
+		ok = cAIVehicleControl_SetMove(self->control, AIVC_POINT, self->base.dest, (double)self->base.dist, self->boost, d1, d3,
 			d3, 0, 0);
 		sb = 1;
 		break;
@@ -1841,7 +1841,7 @@ static void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...) {
 		self->boost = (byte)boost;
 		self->base.moveMode = 2;
 		self->base.dist = (float)dist;
-		ok = cAIVehicleControl_SetMove(self->control, 2, self->base.dest, (double)self->base.dist, self->boost, d1,
+		ok = cAIVehicleControl_SetMove(self->control, AIVC_DIRECT, self->base.dest, (double)self->base.dist, self->boost, d1,
 			(double)a, (double)b);
 		break;
 	}
@@ -1852,7 +1852,7 @@ static void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...) {
 		self->base.dest = va_arg(ap, vec3_t);
 		self->base.moveMode = 1;
 		self->base.dist = (float)va_arg(ap, double);
-		ok = cAIVehicleControl_SetMove(self->control, 1, self->base.dest, (double)self->base.dist, boost, d1, d20, d20,
+		ok = cAIVehicleControl_SetMove(self->control, AIVC_POINT, self->base.dest, (double)self->base.dist, boost, d1, d20, d20,
 			0, self->params.strafeEvasion == 1);
 		if (!ok) {
 			goto done;
@@ -1866,7 +1866,7 @@ static void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...) {
 		self->base.moveMode = 3;
 		self->chaseMin = (float)va_arg(ap, double);
 		self->chaseMax = (float)va_arg(ap, double);
-		ok = cAIVehicleControl_SetMove(self->control, 3, (double)self->chaseMin, (double)self->chaseMax, 1, d20,
+		ok = cAIVehicleControl_SetMove(self->control, AIVC_CHASE, (double)self->chaseMin, (double)self->chaseMax, 1, d20,
 			d20);
 		if (!ok) {
 			goto done;
@@ -1885,7 +1885,7 @@ static void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...) {
 		self->base.moveMode = 3;
 		self->chaseMin = (float)va_arg(ap, double);
 		self->rotB = (float)va_arg(ap, double);
-		ok = cAIVehicleControl_SetMove(self->control, 3, (double)self->chaseMin, (double)self->chaseMax, 1, d20,
+		ok = cAIVehicleControl_SetMove(self->control, AIVC_CHASE, (double)self->chaseMin, (double)self->chaseMax, 1, d20,
 			d20);
 		break;
 	case AIVI_FOLLOW_THE_PATH: {
@@ -1900,7 +1900,7 @@ static void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...) {
 		self->boost = (byte)boost;
 		self->base.moveMode = 7;
 		self->base.dist = (float)dist;
-		ok = cAIVehicleControl_SetMove(self->control, 7, self->base.dir, (double)self->base.dist, self->boost, d05,
+		ok = cAIVehicleControl_SetMove(self->control, AIVC_PATH, self->base.dir, (double)self->base.dist, self->boost, d05,
 			self->base.base.changing == 0, self->base.pathB, (double)a, (double)b, 0);
 		break;
 	}
@@ -1913,14 +1913,14 @@ static void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...) {
 		self->boost = (byte)boost;
 		self->base.moveMode = 7;
 		self->base.dist = (float)dist;
-		ok = cAIVehicleControl_SetMove(self->control, 7, self->base.dir, (double)self->base.dist, self->boost, d1,
+		ok = cAIVehicleControl_SetMove(self->control, AIVC_PATH, self->base.dir, (double)self->base.dist, self->boost, d1,
 			self->base.base.changing == 0, self->base.pathB, d3, d3, self->params.strafeEvasion == 1);
 		sb = 1;
 		break;
 	}
 	case AIVI_ORIENT_SHOOTING:
 		self->base.moveMode = 6;
-		ok = cAIVehicleControl_SetMove(self->control, 6);
+		ok = cAIVehicleControl_SetMove(self->control, AIVC_ORIENT);
 		sa = 1;
 		break;
 	default:

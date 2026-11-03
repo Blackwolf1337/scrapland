@@ -99,13 +99,13 @@ void cSentinelLocalLogic_Watch(void *sentinel, const vec3_t *pos) {
 	}
 	cAIChar *ai = Entity_GetAI(b->parent);
 	cBaseLocalLogic_SetState(&b->logic, 5, NULL);
-	if (AIChar_GetState(ai) != 4) {
+	if (AIChar_GetState(ai) != AIC_GO_TO) {
 		const vec3_t *pp = Entity_GetPos(b->parent, &tmp);
 		vec3_t dir;
 		dir.z = pos->z - pp->z;
 		dir.x = pos->x - pp->x;
 		dir.y = 0.0f;
-		AIChar_SetState(ai, 4, *pos, dir, (double)(WLife(b->parent)->prim.radius + g_SentinelGotoRadius),
+		AIChar_SetState(ai, AIC_GO_TO, *pos, dir, (double)(WLife(b->parent)->prim.radius + g_SentinelGotoRadius),
 			(double)g_SentinelGotoSpeed);
 	}
 	self->time = g_SentinelGotoTime;
@@ -293,7 +293,7 @@ static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *
 			return;
 		}
 		if (0.0f < self->time) {
-			AIChar_SetState(ai, 0);
+			AIChar_SetState(ai, AIC_STATIC);
 			cActCtrl_PlayNew(ChType_ActCtrl(s), "Relax0", 0, 1.0f);
 			WChar(s)->control.hRot = 0.5f;
 			return;
@@ -359,31 +359,31 @@ static byte cSentinelLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *
 	switch (b->state) {
 	case 0:
 		if (ok) {
-			AIChar_SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_SentinelRelaxSpeed, 1);
+			AIChar_SetState(ai, AIC_PATROL_ZONE, b->origin, (double)b->actionRadius, (double)g_SentinelRelaxSpeed, 1);
 		}
 		self->time = 0.0f;
 		return ok;
 	case 1:
 		if (ok) {
-			AIChar_SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_SentinelSearchSpeed, 1);
+			AIChar_SetState(ai, AIC_PATROL_ZONE, b->origin, (double)b->actionRadius, (double)g_SentinelSearchSpeed, 1);
 		}
 		self->time = 0.0f;
 		return ok;
 	case 2:
 		if (ok && target) {
-			AIChar_SetState(ai, 2, target, (double)g_SentinelAcuseSpeed);
+			AIChar_SetState(ai, AIC_CHASE_WITH_ACTION, target, (double)g_SentinelAcuseSpeed);
 		}
 		self->time = g_SentinelAcuseTime;
 		return ok;
 	case 3:
 		if (ok && target) {
-			AIChar_SetState(ai, 3, target, (double)g_SentinelInspectSpeed);
+			AIChar_SetState(ai, AIC_CHASE_WITHOUT_ACTION, target, (double)g_SentinelInspectSpeed);
 		}
 		self->time = g_SentinelInspectTime;
 		return ok;
 	case 4:
 		if (ok && target) {
-			AIChar_SetState(ai, 3, target, (double)g_SentinelSuspectSpeed);
+			AIChar_SetState(ai, AIC_CHASE_WITHOUT_ACTION, target, (double)g_SentinelSuspectSpeed);
 		}
 		self->time = g_SentinelSuspectTime;
 		return ok;
@@ -399,7 +399,7 @@ static byte cSentinelLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *
 		return ok;
 	case 6:
 		if (ok && target) {
-			AIChar_SetState(ai, 2, target, (double)g_SentinelAcuseSpeed);
+			AIChar_SetState(ai, AIC_CHASE_WITH_ACTION, target, (double)g_SentinelAcuseSpeed);
 			self->time = g_SentinelAcuseTime;
 		}
 		return ok;

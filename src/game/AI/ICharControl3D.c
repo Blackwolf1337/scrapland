@@ -387,7 +387,7 @@ void cAICharControl3D_CheckArrived(cAICharControl3D *self) {
 	}
 none:
 	ai = self->ai;
-	AIMove_Event(ai, 5);
+	AIMove_Event(ai, AIEV_OBJECTIVE_VIS);
 }
 
 void cAICharControl3D_Turn(cAICharControl3D *self) {
@@ -486,11 +486,11 @@ byte cAICharControl3D_FindPath(cAICharControl3D *self, const vec3_t *p) {
 		}
 		if (!ok) {
 			if (!reach) {
-				AIMove_Event(self->ai, 1);
+				AIMove_Event(self->ai, AIEV_OBJECTIVE_NOT_FOUND);
 				return 0;
 			}
 			if (!noPath) {
-				AIMove_Event(self->ai, 0);
+				AIMove_Event(self->ai, AIEV_LOST_AGENT);
 			}
 			return 0;
 		}
@@ -520,7 +520,7 @@ byte cAICharControl3D_FindRoute(cAICharControl3D *self) {
 	AICC_Pos(self, &pos);
 	if (!CNodesWorld_BuildPath(g_NodesWorld, &self->path, g_DepthPathRouteInDoorAI, &self->routePoint, &pos,
 			self->routeA, &self->routeNode, self->radius, self->routeB)) {
-		AIMove_Event(self->ai, 0);
+		AIMove_Event(self->ai, AIEV_LOST_AGENT);
 		return 0;
 	}
 	self->path.iter = self->path.head;

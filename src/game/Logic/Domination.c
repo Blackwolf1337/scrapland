@@ -73,7 +73,7 @@ static cEntity *cDominationLogic_GetZone(cDominationLogic *self, cAIVehicle *ai)
 		}
 	}
 	NameTable_Delete(&self->assigned, key);
-	cAIVehicle_SetState(ai, 0);
+	cAIVehicle_SetState(ai, AIV_FREEZE);
 	return NULL;
 }
 
@@ -166,7 +166,7 @@ void cDominationLogic_UpdateShip(cDominationLogic *self, cEntity *v, cEntity *ta
 					Domin_Chase(ai, zone);
 				}
 			} else if (st != 8) {
-				cAIVehicle_SetState(ai, 8, enemy);
+				cAIVehicle_SetState(ai, AIV_FIGHTING_FREEZE, enemy);
 			}
 		} else if (st != AIV_STATE_ATTACK) {
 			cAIVehicle_SetState(ai, AIV_STATE_ATTACK, enemy);
@@ -227,7 +227,7 @@ void cDominationLogic_UpdateShip(cDominationLogic *self, cEntity *v, cEntity *ta
 		cAIVehicle_SetState(ai, AIV_STATE_CHASE, target, (double)g_AIChaseDefault1, (double)g_AIChaseDefault2);
 		return;
 	}
-	cAIVehicle_SetState(ai, 3, NULL, 5.0, 2.0);
+	cAIVehicle_SetState(ai, AIV_IN_ROUTE, NULL, 5.0, 2.0);
 }
 
 /* the base part of the constructors of the sides (inlined in the original) */

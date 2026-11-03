@@ -105,7 +105,7 @@ static cEntity *cCTFEnemiesData_PickTarget(cCTFEnemiesData *self, cEntity *e, by
 
 /* the state 3 of a ship without a target (the constant arguments of the original) */
 static void CTF_Patrol(cAIVehicle *ai) {
-	cAIVehicle_SetState(ai, 3, NULL, 5.0, 2.0);
+	cAIVehicle_SetState(ai, AIV_IN_ROUTE, NULL, 5.0, 2.0);
 }
 
 static char g_CTFFlagName[128];

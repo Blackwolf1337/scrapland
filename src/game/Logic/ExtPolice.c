@@ -100,7 +100,7 @@ static void ExtPolice_CopDamage(const char *name, const char *attacker, byte die
 		return;
 	}
 	if (!g_pWorld->alarm.on) {
-		if (cAIVehicle_GetState(ai) != 0) {
+		if (cAIVehicle_GetState(ai) != AIV_FREEZE) {
 			return;
 		}
 		if (!cop->active) {
@@ -128,7 +128,7 @@ static void ExtPolice_Hunt(cAIVehicle *ai, cEntity *usr) {
 }
 
 static void ExtPolice_Relax(cEntity *e, cAIVehicle *ai) {
-	cAIVehicle_SetState(ai, 3, WLife(e)->arrow.canMission == 0, 5.0, 2.0);
+	cAIVehicle_SetState(ai, AIV_IN_ROUTE, WLife(e)->arrow.canMission == 0, 5.0, 2.0);
 }
 
 /* the police taunt when the alarm was on */
@@ -208,7 +208,7 @@ static void cExtPolice_Think(cExtPolice *self) {
 			}
 		} else {
 			if (!alarm) {
-				if (cAIVehicle_GetState(ai) == 0) {
+				if (cAIVehicle_GetState(ai) == AIV_FREEZE) {
 					PoliceAI_RestoreParams(ai);
 					ExtPolice_Relax(e, ai);
 				}

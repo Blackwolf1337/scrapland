@@ -99,7 +99,7 @@ static void Rusty_GoToJunk(cRustyLocalLogic *self, cAIChar *ai, double speed) {
 	fwd.z = -1.0f;
 	Vec3_Rotate(&dir, &fwd, &ang);
 	const vec3_t *pos = Entity_GetPos(self->junk, &fwd);
-	AIChar_SetState(ai, 4, *pos, dir, 100.0, speed);
+	AIChar_SetState(ai, AIC_GO_TO, *pos, dir, 100.0, speed);
 }
 
 /* vf17 */

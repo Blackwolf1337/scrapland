@@ -797,7 +797,7 @@ byte cAIChar_React(cAI *elem) {
 	case AIC_ORIENT_DYNAMIC_OBJECTIVE_WITH_ACTION:
 		t = AIC_Target(self);
 		if (!t || !t->active) {
-			AIMove_Event(self, 3);
+			AIMove_Event(self, AIEV_OBJECTIVE_DIED);
 		}
 		break;
 	case AIC_PATROL_ZONE:
@@ -811,7 +811,7 @@ byte cAIChar_React(cAI *elem) {
 		if (t && t->active) {
 			AIChar_ReactLostPathChase(self);
 		} else {
-			AIMove_Event(self, 3);
+			AIMove_Event(self, AIEV_OBJECTIVE_DIED);
 		}
 		break;
 	}
@@ -827,7 +827,7 @@ byte cAIChar_CheckAction(cAI *base) {
 		if (!t || !t->active) {
 			Con_Bluef("OBJECTIVE_DIED - cAIChar::CheckIntensiveAction - Entidad: %s - State: %d - StateIntern: %d\n",
 				self->ent->name, self->state, self->internState);
-			AIMove_Event(self, 3);
+			AIMove_Event(self, AIEV_OBJECTIVE_DIED);
 			return 0;
 		}
 	}
@@ -1233,29 +1233,29 @@ byte cAIChar_Event(cAI *base, int ev) {
 byte cAIChar_EventDefault(cAI *base, int ev) {
 	cAIChar *self = (cAIChar *)base;
 	switch (ev) {
-	case 0:
+	case AIEV_LOST_AGENT:
 		if (self->state != AIC_LOST_PATH && self->state != AIC_LOST_PATH_CHASE) {
 			AIChar_SaveState(self, &self->resume);
 			if (self->state == AIC_CHASE_WITH_ACTION || self->state == AIC_CHASE_WITHOUT_ACTION ||
 				self->state == AIC_CHASE_WITH_ACTION_BACK) {
-				AI_OnEvent(self, 0);
+				AI_OnEvent(self, AIEV_LOST_AGENT);
 				AIChar_SetStateIntern(self, AIC_LOST_PATH_CHASE);
 			} else if (!AIChar_SetStateIntern(self, AIC_LOST_PATH)) {
-				AI_OnEvent(self, 0);
+				AI_OnEvent(self, AIEV_LOST_AGENT);
 				AIChar_SetStateIntern(self, AIC_STATIC_LOST);
 			}
 		}
 		return 1;
-	case 1:
-		AI_OnEvent(self, 1);
+	case AIEV_OBJECTIVE_NOT_FOUND:
+		AI_OnEvent(self, AIEV_OBJECTIVE_NOT_FOUND);
 		AIChar_SetStateIntern(self, AIC_STATIC_OBJ_NOT_ACCESS);
 		return 1;
-	case 3:
-		AI_OnEvent(self, 3);
+	case AIEV_OBJECTIVE_DIED:
+		AI_OnEvent(self, AIEV_OBJECTIVE_DIED);
 		AIChar_SetStateIntern(self, AIC_STATIC);
 		return 1;
-	case 7:
-		AI_OnEvent(self, 7);
+	case AIEV_DONT_GO:
+		AI_OnEvent(self, AIEV_DONT_GO);
 		AIChar_SaveState(self, &self->resume);
 		AIChar_SetStateIntern(self, AIC_STATIC);
 		return 1;
@@ -1283,16 +1283,16 @@ byte cAIChar_EventInRoute(cAI *elem, int ev) {
 	vec3_t d;
 
 	switch (ev) {
-	case 2:
-	case 4:
+	case AIEV_OBJECTIVE_REACHED:
+	case AIEV_OBJECTIVE_NEAR:
 		AI_OnEvent(self, ev);
 		d = AIC_ViewDir(self->ent);
 		AIChar_SetInternState(self, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute,
 			(double)self->base.speed, 1, 1);
 		return 1;
-	case 6:
+	case AIEV_ORIENT_REACHED:
 		return AIC_EventTurn(self, ev);
-	case 10:
+	case AIEV_COLLISION_AGENTS:
 		AI_OnEvent(self, ev);
 		d = AIC_ViewDir(self->ent);
 		d.x = -d.x;
@@ -1312,8 +1312,8 @@ byte cAIChar_EventPatrol(cAI *elem, int ev) {
 	float dist;
 
 	switch (ev) {
-	case 2:
-	case 4:
+	case AIEV_OBJECTIVE_REACHED:
+	case AIEV_OBJECTIVE_NEAR:
 		if (self->internState == AICI_FINISHING_LINE) {
 			AI_OnEvent(self, ev);
 			d.x = AIC_RandSigned();
@@ -1328,9 +1328,9 @@ byte cAIChar_EventPatrol(cAI *elem, int ev) {
 				(double)self->base.speed, 1, 1);
 		}
 		return 1;
-	case 6:
+	case AIEV_ORIENT_REACHED:
 		return AIC_EventTurn(self, ev);
-	case 10:
+	case AIEV_COLLISION_AGENTS:
 		nd = AIC_ViewDir(self->ent);
 		nd.x = -nd.x;
 		nd.y = -nd.y;
@@ -1353,14 +1353,14 @@ byte cAIChar_EventPatrol(cAI *elem, int ev) {
 
 byte cAIChar_EventGoTo(cAI *elem, int ev) {
 	cAIChar *self = (cAIChar *)elem;
-	if (ev == 2) {
+	if (ev == AIEV_OBJECTIVE_REACHED) {
 		if (self->internState == AICI_FINISHING_LINE) {
-			AI_OnEvent(self, 2);
+			AI_OnEvent(self, AIEV_OBJECTIVE_REACHED);
 			AIChar_SetInternState(self, AICI_STOPPED_ORIENT_STATIC, self->base.dir);
 			return 1;
 		}
-	} else if (ev == 6 && self->internState == AICI_STOPPED_ORIENT_STATIC) {
-		AI_OnEvent(self, 6);
+	} else if (ev == AIEV_ORIENT_REACHED && self->internState == AICI_STOPPED_ORIENT_STATIC) {
+		AI_OnEvent(self, AIEV_ORIENT_REACHED);
 		self->base.arrived = 1;
 		AIChar_SetStateIntern(self, AIC_STATIC);
 		return 1;
@@ -1374,9 +1374,9 @@ byte cAIChar_EventGetAway(cAI *elem, int ev) {
 	const vec3_t *tp, *p;
 
 	switch (ev) {
-	case 2:
-	case 4:
-	case 5:
+	case AIEV_OBJECTIVE_REACHED:
+	case AIEV_OBJECTIVE_NEAR:
+	case AIEV_OBJECTIVE_VIS:
 		AI_OnEvent(self, ev);
 		tp = AIC_Pos(AIC_Target(self), &a);
 		p = AIC_Pos(self->ent, &b);
@@ -1386,7 +1386,7 @@ byte cAIChar_EventGetAway(cAI *elem, int ev) {
 		AIChar_SetInternState(self, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute,
 			(double)self->base.speed, 1, 0);
 		return 1;
-	case 10:
+	case AIEV_COLLISION_AGENTS:
 		AI_OnEvent(self, ev);
 		d = AIC_ViewDir(self->ent);
 		d.x = -d.x;
@@ -1401,13 +1401,13 @@ byte cAIChar_EventGetAway(cAI *elem, int ev) {
 
 byte cAIChar_EventChaseBack(cAI *base, int ev) {
 	cAIChar *self = (cAIChar *)base;
-	if (ev == 8) {
-		AI_OnEvent(self, 8);
+	if (ev == AIEV_PROBLEM_MOVE) {
+		AI_OnEvent(self, AIEV_PROBLEM_MOVE);
 		self->back = 1;
 		return 1;
 	}
-	if (ev == 9) {
-		AI_OnEvent(self, 9);
+	if (ev == AIEV_NO_PROBLEM) {
+		AI_OnEvent(self, AIEV_NO_PROBLEM);
 		self->back = 0;
 		return 1;
 	}
@@ -1419,13 +1419,13 @@ byte cAIChar_EventLostPath(cAI *elem, int ev) {
 	vec3_t buf;
 	const vec3_t *g;
 
-	if (ev == 7) {
-		AI_OnEvent(self, 7);
+	if (ev == AIEV_DONT_GO) {
+		AI_OnEvent(self, AIEV_DONT_GO);
 		AIChar_SaveState(self, &self->resume);
 		AIChar_SetStateIntern(self, AIC_STATIC_LOST);
 		return 1;
 	}
-	if (ev != 2) {
+	if (ev != AIEV_OBJECTIVE_REACHED) {
 		return 0;
 	}
 	AICC_GetDest(self->control, &buf);
@@ -1436,7 +1436,7 @@ byte cAIChar_EventLostPath(cAI *elem, int ev) {
 	if (self->lostPoint.x == -FLT_MAX && self->lostPoint.y == -FLT_MAX && self->lostPoint.z == -FLT_MAX) {
 		return 1;
 	}
-	AI_OnEvent(self, 2);
+	AI_OnEvent(self, AIEV_OBJECTIVE_REACHED);
 	AIChar_SetInternState(self, AICI_FINISHING_LINE_DIRECT, self->lostPoint, 50.0, (double)self->base.speed);
 	return 1;
 }

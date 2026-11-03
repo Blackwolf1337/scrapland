@@ -245,11 +245,11 @@ attack:
 		}
 		if ((byte)Vec3_Differ(&tp.x, &o.x) && !locked) {
 			cAIChar *ai = Gear_AI(self);
-			if (AIChar_GetState(ai) != 4) {
+			if (AIChar_GetState(ai) != AIC_GO_TO) {
 				float dy = tp.y - o.y, dx = tp.x - o.x, dz = tp.z - o.z;
 				if (dy * dy + dx * dx + dz * dz > 1000000.0f) {
 					ai = Gear_AI(self);
-					AIChar_SetState(ai, 4, b->origin, b->originAng, 100.0, (double)g_GearRelaxSpeed);
+					AIChar_SetState(ai, AIC_GO_TO, b->origin, b->originAng, 100.0, (double)g_GearRelaxSpeed);
 				}
 			}
 		}
@@ -425,18 +425,18 @@ static byte cGearLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 	switch (b->state) {
 	case 0:
 		if (ok) {
-			AIChar_SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_GearRelaxSpeed);
+			AIChar_SetState(ai, AIC_PATROL_ZONE, b->origin, (double)b->actionRadius, (double)g_GearRelaxSpeed);
 		}
 		break;
 	case 1:
 		if (ok) {
-			AIChar_SetState(ai, 2, target, (double)(target == usr ? g_GearChaseSpeed : 1.0f));
+			AIChar_SetState(ai, AIC_CHASE_WITH_ACTION, target, (double)(target == usr ? g_GearChaseSpeed : 1.0f));
 		}
 		self->lostTime = 0.0f;
 		break;
 	case 2:
 		if (ok) {
-			AIChar_SetState(ai, 2, target, (double)(target == usr ? g_GearAttackSpeed : 1.0f));
+			AIChar_SetState(ai, AIC_CHASE_WITH_ACTION, target, (double)(target == usr ? g_GearAttackSpeed : 1.0f));
 			if (target != cWorld_GetUsrEntity(g_pWorld, 0)) {
 				self->lostTime = g_GearLostTargetTime - g_GearAttackNPCTime;
 			}
@@ -444,13 +444,13 @@ static byte cGearLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 		break;
 	case 3:
 		if (ok) {
-			AIChar_SetState(ai, 4, b->origin, b->originAng, 100.0, (double)g_GearRelaxSpeed);
+			AIChar_SetState(ai, AIC_GO_TO, b->origin, b->originAng, 100.0, (double)g_GearRelaxSpeed);
 		}
 		break;
 	case 4:
 		if (ok) {
 			if (target) {
-				AIChar_SetState(ai, 3, target, (double)g_GearScortSpeed);
+				AIChar_SetState(ai, AIC_CHASE_WITHOUT_ACTION, target, (double)g_GearScortSpeed);
 			} else {
 				Logic_SetState(self, 0, NULL);
 			}

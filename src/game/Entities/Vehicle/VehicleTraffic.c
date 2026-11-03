@@ -40,7 +40,7 @@ byte cVehicleTraffic_CollideEntities(cVehicleTraffic *self) {
 		return 1;
 	}
 	void *ai = Entity_GetAI(self->parent);
-	if (ai && cAIVehicle_GetState(ai) != 4 && cAIVehicle_GetState(ai) != 9) {
+	if (ai && cAIVehicle_GetState(ai) != AIV_TRAFFIC && cAIVehicle_GetState(ai) != AIV_TRAFFIC_INDOOR) {
 		return 1;
 	}
 	return g_UseTrafficCollisionSkip == 0;
@@ -91,7 +91,7 @@ byte cVehicleTraffic_Move(cVehicleTraffic *self, const vec3_t *from, const vec3_
 	if (self->active) {
 		void *ai = Entity_GetAI(self->parent);
 		float r = radius;
-		if (ai && cAIVehicle_GetState(ai) == 4) {
+		if (ai && cAIVehicle_GetState(ai) == AIV_TRAFFIC) {
 			r = (float)((cAIVehicle_GetPathWidth(ai)) + radius);
 		}
 		if (r == radius) {

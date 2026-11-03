@@ -1248,7 +1248,7 @@ static void cEmbeddedFXSentinel_Update(cEmbeddedFX *elem, float dt) {
 		self->state = (ChType_SentinelTarget(e) != NULL) + 2;
 	} else if (self->state == 0 && Entity_GetAI(e)) {
 		cAIChar *ai = Entity_GetAI(e);
-		if (AIChar_GetState(ai) == 2) {
+		if (AIChar_GetState(ai) == AIC_CHASE_WITH_ACTION) {
 			self->state = 3;
 		}
 	}

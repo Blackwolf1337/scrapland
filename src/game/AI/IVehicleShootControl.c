@@ -117,7 +117,7 @@ static byte AIVS_TargetDied(cAIVehicleShoot *self, const char *fmt) {
 	int st = cAIVehicle_GetState(self->ai);
 
 	Con_Bluef(fmt, name, st, in);
-	AIMove_Event(self->ai, 3);
+	AIMove_Event(self->ai, AIEV_OBJECTIVE_DIED);
 	return 0;
 }
 

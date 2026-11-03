@@ -172,7 +172,7 @@ static void CNodesTrafficInDoor_Respawn(CNodesTrafficInDoor *self, cAIVehicle **
 			seen = seenC;
 			n = *numSeenC;
 		}
-		if (cAIVehicle_GetState(ai[v]) != 9 || cAIVehicle_GetInternState(ai[v])) {
+		if (cAIVehicle_GetState(ai[v]) != AIV_TRAFFIC_INDOOR || cAIVehicle_GetInternState(ai[v])) {
 			continue;
 		}
 		const cTrafficSector *s = &sectors[seen[crt_rand() % n]];

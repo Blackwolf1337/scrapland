@@ -23,7 +23,7 @@ static void Sputnik_Walk(cGenCharLocalLogic *self) {
 	cEntity *p = self->base.parent;
 	cAIChar *ai = Entity_GetAI(p);
 
-	AIChar_SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
+	AIChar_SetState(ai, AIC_IN_ROUTE, (double)g_GenCharRelaxSpeed, 0);
 }
 
 static float g_SputnikTime;
@@ -133,7 +133,7 @@ static byte cSputnikJunkyardLocalLogic_SetState(cLocalLogic *elem, int state, cE
 	dir.x = -d.x;
 	dir.y = -d.y;
 	dir.z = -d.z;
-	AIChar_SetState(ai, 4, pos, dir, 100.0, 0.25);
+	AIChar_SetState(ai, AIC_GO_TO, pos, dir, 100.0, 0.25);
 	return 1;
 }
 

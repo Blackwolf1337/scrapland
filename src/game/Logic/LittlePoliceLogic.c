@@ -235,7 +235,7 @@ static void cLittlePoliceLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
 	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)base;
 	cBaseLocalLogic *b = LP_BASE(self);
 
-	AIChar_SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_GenCharAlertSpeed, 1);
+	AIChar_SetState(ai, AIC_PATROL_ZONE, b->origin, (double)b->actionRadius, (double)g_GenCharAlertSpeed, 1);
 }
 
 /* vf03 */
@@ -311,14 +311,14 @@ static void cLittlePoliceLocalLogic_Update(cLocalLogic *elem, float dt) {
 		cAIChar *ai = Entity_GetAI(b->parent);
 		switch (b->state) {
 		case 2: {
-			if (AIChar_GetState(ai) != 3) {
+			if (AIChar_GetState(ai) != AIC_CHASE_WITHOUT_ACTION) {
 				if (!accuse) {
 					Logic_SetState(self, 1, NULL);
 					return;
 				}
 				if (!Logic_InView(p, Entity_GetPos(usr, &t1), g_LittlePoliceMaxDistFar, g_GenCharStdFovY,
 					g_GenCharStdFovX, 1)) {
-					AIChar_SetState(ai, 3, b->target.target, 1.0);
+					AIChar_SetState(ai, AIC_CHASE_WITHOUT_ACTION, b->target.target, 1.0);
 					return;
 				}
 				cGenCharLocalLogic_Discover(&self->base);
@@ -344,7 +344,7 @@ static void cLittlePoliceLocalLogic_Update(cLocalLogic *elem, float dt) {
 				if (!accuse) {
 					goto alert;
 				}
-				AIChar_SetState(ai, 8, b->target.target, 1);
+				AIChar_SetState(ai, AIC_ORIENT_DYNAMIC_OBJECTIVE, b->target.target, 1);
 				self->lostTime = 0.0f;
 				return;
 			}
@@ -505,11 +505,11 @@ static void cLittlePoliceLocalLogic_UpdateGetIt(cLocalLogic *base, cAIChar *ai, 
 		const vec3_t *pp = Entity_GetPos(p, &t2);
 		float d = (float)__builtin_sqrt((double)LP_DistSq(pp, up));
 		if (!(d > 2000.0f)) {
-			if (AIChar_GetState(ai) == 0) {
-				AIChar_SetState(ai, 8, usr, 1);
+			if (AIChar_GetState(ai) == AIC_STATIC) {
+				AIChar_SetState(ai, AIC_ORIENT_DYNAMIC_OBJECTIVE, usr, 1);
 				return;
 			}
-			if (AIChar_GetState(ai) != 8) {
+			if (AIChar_GetState(ai) != AIC_ORIENT_DYNAMIC_OBJECTIVE) {
 				self->lostTime = 5.0f;
 				return;
 			}
@@ -554,8 +554,8 @@ static void cLittlePoliceLocalLogic_GoTo(cLocalLogic *base, cAIChar *ai, cEntity
 		dir.z = d.z * inv;
 	}
 	const vec3_t *tp = Entity_GetPos(e, &t3);
-	AIChar_SetState(ai, 4, *tp, dir, (double)g_MainMissionStopDist, 1.0);
-	g_LittlePoliceArrived = AIChar_GetState(ai) == 4;
+	AIChar_SetState(ai, AIC_GO_TO, *tp, dir, (double)g_MainMissionStopDist, 1.0);
+	g_LittlePoliceArrived = AIChar_GetState(ai) == AIC_GO_TO;
 }
 
 /* vf20: a change of the idle restarts the search time (not in state 4) */
@@ -579,7 +579,7 @@ static byte cLittlePoliceLocalLogic_SetState(cLocalLogic *elem, int state, cEnti
 		if ((byte)cBaseLocalLogic_SetState(&b->logic, 8, target)) {
 			GenChar_UpdateView(self);
 			cAIChar *ai = Entity_GetAI(b->parent);
-			AIChar_SetState(ai, 3, target, (double)g_GenCharAlertSpeed);
+			AIChar_SetState(ai, AIC_CHASE_WITHOUT_ACTION, target, (double)g_GenCharAlertSpeed);
 		}
 		return 1;
 	}
@@ -587,7 +587,7 @@ static byte cLittlePoliceLocalLogic_SetState(cLocalLogic *elem, int state, cEnti
 		if ((byte)cBaseLocalLogic_SetState(&b->logic, 7, target)) {
 			GenChar_UpdateView(self);
 			cAIChar *ai = Entity_GetAI(b->parent);
-			AIChar_SetState(ai, 8, target, 1);
+			AIChar_SetState(ai, AIC_ORIENT_DYNAMIC_OBJECTIVE, target, 1);
 			cGenCharLocalLogic_Discover(&self->base);
 		}
 		return 1;

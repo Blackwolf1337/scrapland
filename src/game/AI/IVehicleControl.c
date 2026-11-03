@@ -406,7 +406,7 @@ static byte cAIVehicleControl_CheckTarget(cAIVehicleControl *self) {
 			int st = cAIVehicle_GetState(self->ai);
 			Con_Bluef("OBJECTIVE_DIED - cAIVehicleControl::CheckIntensive - Entidad: %s - State: %d - StateIntern: "
 				"%d\n", name, st, in);
-			AIMove_Event(self->ai, 3);
+			AIMove_Event(self->ai, AIEV_OBJECTIVE_DIED);
 			return 0;
 		}
 	}
@@ -673,7 +673,7 @@ static void cAIVehicleControl_CheckArrive(cAIVehicleControl *self) {
 		return;
 	}
 other:
-	AIMove_Event(self->ai, 5);
+	AIMove_Event(self->ai, AIEV_OBJECTIVE_VIS);
 }
 
 /* ---- the update ---- */
@@ -1292,11 +1292,11 @@ static byte cAIVehicleControl_SetPath(cAIVehicleControl *self, const vec3_t *p) 
 	return 1;
 fail:
 	if (!goalOk) {
-		AIMove_Event(self->ai, 1);
+		AIMove_Event(self->ai, AIEV_OBJECTIVE_NOT_FOUND);
 		return 0;
 	}
 	if (!startOk) {
-		AIMove_Event(self->ai, 0);
+		AIMove_Event(self->ai, AIEV_LOST_AGENT);
 	}
 	return 0;
 }
@@ -1324,7 +1324,7 @@ static byte cAIVehicleControl_RebuildPath(cAIVehicleControl *self) {
 	VC_Pos(self, &buf);
 	if (!CNodesWorld_BuildPath(g_NodesWorld, &self->path, g_DepthPathRouteOutDoorAI, &self->dir, &buf,
 		self->pathDirect, &self->pathNode, self->radius, self->pathFlat)) {
-		AIMove_Event(self->ai, 0);
+		AIMove_Event(self->ai, AIEV_LOST_AGENT);
 		return 0;
 	}
 	cNWVecNode *h = self->path.head;

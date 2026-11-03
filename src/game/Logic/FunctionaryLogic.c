@@ -319,7 +319,7 @@ void cFunctionaryLocalLogic_Work(cLocalLogic *elem, float dt) {
 	if (st != 7) {
 		return;
 	}
-	if (AIChar_GetState(ai) != 0 ||
+	if (AIChar_GetState(ai) != AIC_STATIC ||
 		!AIMove_GetArrived(ai) ||
 		strcmp(Entity_GetClassName(p), TYEN_WALKCHAR)) {
 		return;
@@ -619,7 +619,7 @@ static void Func_GoToWork(cFunctionaryLocalLogic *self, cAIChar *ai) {
 	}
 	vec3_t fwd = { 0.0f, 0.0f, -1.0f };
 	Vec3_Rotate(&dir, &fwd, &ang);
-	AIChar_SetState(ai, 4, pos, dir, 50.0, (double)self->goToWorkSpeed);
+	AIChar_SetState(ai, AIC_GO_TO, pos, dir, 50.0, (double)self->goToWorkSpeed);
 }
 
 /* vf19 */
@@ -637,7 +637,7 @@ byte cFunctionaryLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 			GenChar_UpdateView(self);
 		}
 		if (b->state == 0 && ok) {
-			AIChar_SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_GenCharRelaxSpeed, 0);
+			AIChar_SetState(ai, AIC_PATROL_ZONE, b->origin, (double)b->actionRadius, (double)g_GenCharRelaxSpeed, 0);
 		}
 		return 1;
 	}
@@ -646,7 +646,7 @@ byte cFunctionaryLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 		if ((byte)cBaseLocalLogic_SetState(&b->logic, 3, target)) {
 			cEntity *p = b->parent;
 			cAIChar *ai = Entity_GetAI(p);
-			AIChar_SetState(ai, 5, target, (double)g_GenCharAlertSpeed);
+			AIChar_SetState(ai, AIC_GET_AWAY, target, (double)g_GenCharAlertSpeed);
 			byte was = self->special;
 			self->fast = 1;
 			self->special = 1;

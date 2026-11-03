@@ -31,7 +31,7 @@ static void HumanLogic_Escape(cAbstractFile *params) {
 	if (!strcmp(type, "Gear") || !strcmp(type, "Sentinel") || !strcmp(type, "Police")) {
 		return;
 	}
-	AIChar_SetState(ai, 5, g_HumanEnt, (double)g_GenCharEscapeSpeed);
+	AIChar_SetState(ai, AIC_GET_AWAY, g_HumanEnt, (double)g_GenCharEscapeSpeed);
 }
 
 void *cHumanLocalLogic_ctor(void *mem, cEntity *parent) {

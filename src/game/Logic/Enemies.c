@@ -166,7 +166,7 @@ static void cEnemies_Relax(cEnemies *self) {
 		CHECK(Entity_IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
 		cAIVehicle *ai = Entity_GetAI(e);
 		CHECK(ai && "ai");
-		cAIVehicle_SetState(ai, 3, NULL, 5.0, 2.0);
+		cAIVehicle_SetState(ai, AIV_IN_ROUTE, NULL, 5.0, 2.0);
 	}
 }
 

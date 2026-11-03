@@ -179,7 +179,7 @@ static void Logic_ShowChar(Nto1Node *node, const char **names) {
 		DebugUtils_DrawLine(&p, Entity_GetPos(t, &tmp), 0xff0000);
 	} else {
 		ai = Entity_GetAI(e);
-		if (ai && AIChar_GetState(ai) == 4) {
+		if (ai && AIChar_GetState(ai) == AIC_GO_TO) {
 			AIChar_SaveTo(ai, &goal);
 			DebugUtils_DrawLine(&p, &goal.dest, 0xff0000);
 		}
@@ -389,7 +389,7 @@ void cBaseLocalLogic_Refresh(cLocalLogic *base) {
 		return;
 	}
 	cAIChar *ai = Entity_GetAI(p);
-	if (AIChar_GetState(ai) == 6) {
+	if (AIChar_GetState(ai) == AIC_PATROL_ZONE) {
 		self->idle = 1;
 		Logic_SetState(self, self->state, self->target.target);
 	}
@@ -528,7 +528,7 @@ void cBaseLocalLogic_SetIdle(cLocalLogic *base, byte idle) {
 	CHECK(Entity_IsType(self->parent, TYEN_WALKCHAR));
 	if (Entity_GetAI(self->parent)) {
 		cAIChar *ai = Entity_GetAI(self->parent);
-		AIChar_SetState(ai, 0);
+		AIChar_SetState(ai, AIC_STATIC);
 	}
 	self->idle = 1;
 }

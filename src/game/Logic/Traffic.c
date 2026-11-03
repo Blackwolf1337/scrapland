@@ -58,7 +58,7 @@ static cGVar GVar_iTrafficNumber;
 
 /* the AI back to the traffic: the patrol (state 3) with its defaults */
 static void Traffic_Patrol(cAIVehicle *ai) {
-	cAIVehicle_SetState(ai, 3, 1, 5.0, 2.0);
+	cAIVehicle_SetState(ai, AIV_IN_ROUTE, 1, 5.0, 2.0);
 }
 
 static inline float Traffic_Dist2(const vec3_t *a, float x, float y, float z) {
@@ -192,7 +192,7 @@ static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEnti
 		} else if (!alarm) {
 			cEntity *cop = ExtPolice_CallCop(e);
 			if (cop) {
-				cAIVehicle_SetState(ai, 2, cop);
+				cAIVehicle_SetState(ai, AIV_FIGHTING, cop);
 				return Logic_ListNext(n);
 			}
 			Nto1Node *next = Logic_ListNext(n);
@@ -335,12 +335,12 @@ static void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 		cEntity_SetList(f1, "FightingTraffic");
 		cAIVehicle *ai = Traffic_AI(f1);
 		PoliceAI_RandomParams(ai);
-		cAIVehicle_SetState(ai, 2, f2);
+		cAIVehicle_SetState(ai, AIV_FIGHTING, f2);
 		if (!f2Other) {
 			cEntity_SetList(f2, "FightingTraffic");
 			ai = Traffic_AI(f2);
 			PoliceAI_RandomParams(ai);
-			cAIVehicle_SetState(ai, 2, f1);
+			cAIVehicle_SetState(ai, AIV_FIGHTING, f1);
 		}
 	}
 	for (Nto1Node *n = Logic_ListFirst(self->fighting); n;) {
@@ -354,7 +354,7 @@ static void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 			CHECK(Entity_IsType(e, TYEN_CAR) && "e->IsType(TYEN_VEHICLE)");
 			cAIVehicle *ai = Traffic_AI(e);
 			if (usr) {
-				cAIVehicle_SetState(ai, 2, usr);
+				cAIVehicle_SetState(ai, AIV_FIGHTING, usr);
 			}
 			e = cEntityList_GetFirst((cEntityList *)self->traffic);
 		}
@@ -385,7 +385,7 @@ static void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 			AIV_OnEnd(lastAi) = (void *)Traffic_OnAIEnd;
 		}
 		if (usr && usr != self->usr) {
-			cAIVehicle_SetState(lastAi, 2, usr);
+			cAIVehicle_SetState(lastAi, AIV_FIGHTING, usr);
 		}
 	}
 	int nEnemies2 = Logic_Count(self->enemies->numElems);
@@ -472,7 +472,7 @@ static void Traffic_DamageNative(cAbstractFile *params) {
 	if (WLife(e)->arrow.tgType) {
 		PoliceAI_RestoreParams(ai);
 		WLife(e)->arrow.tgType = 0;
-		cAIVehicle_SetState(ai, 2, a);
+		cAIVehicle_SetState(ai, AIV_FIGHTING, a);
 	}
 	byte wasEnemy = cEntity_GetListName(e) && !strcmp(cEntity_GetListName(e), "EnemiesTraffic");
 	cEntity_SetList(e, "EnemiesTraffic");

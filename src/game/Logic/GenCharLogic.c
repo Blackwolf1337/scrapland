@@ -115,14 +115,14 @@ void cGenCharLocalLogic_ToAlert(cLocalLogic *elem, cAIChar *ai) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
 
-	AIChar_SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_GenCharAlertSpeed, 0);
+	AIChar_SetState(ai, AIC_PATROL_ZONE, b->origin, (double)b->actionRadius, (double)g_GenCharAlertSpeed, 0);
 }
 
 void cGenCharLocalLogic_ToRelax(cLocalLogic *elem, cAIChar *ai) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
 
-	AIChar_SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_GenCharRelaxSpeed, 1);
+	AIChar_SetState(ai, AIC_PATROL_ZONE, b->origin, (double)b->actionRadius, (double)g_GenCharRelaxSpeed, 1);
 }
 
 /* ---- part 3 ---- */
@@ -299,7 +299,7 @@ states:
 		cGenCharLocalLogic_ResetSpecial(self);
 		return;
 	case GENCHAR_STAY:
-		if (AIChar_GetState(ai) != 4 && !cAIChar_TestFlags(self)) {
+		if (AIChar_GetState(ai) != AIC_GO_TO && !cAIChar_TestFlags(self)) {
 			vec3_t o = b->origin;
 			const vec3_t *pp = Entity_GetPos(b->parent, &t);
 			float dy = pp->y - o.y, dx = pp->x - o.x, dz = pp->z - o.z;
@@ -361,7 +361,7 @@ byte cGenCharLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *police) {
 void cGenCharLocalLogic_UpdateGetIt(cLocalLogic *base, cAIChar *ai, float dt) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)base;
 	(void)dt;
-	if (AIChar_GetState(ai) != 4) {
+	if (AIChar_GetState(ai) != AIC_GO_TO) {
 		Logic_RestartState(self);
 	}
 }
@@ -428,7 +428,7 @@ void cGenCharLocalLogic_GoTo(cLocalLogic *elem, cAIChar *ai, cEntity *e) {
 
 	GenChar_Dir(&dir, pp, ep);
 	const vec3_t *tp = Entity_GetPos(e, &t3);
-	AIChar_SetState(ai, 4, *tp, dir, 70.0, 1.0);
+	AIChar_SetState(ai, AIC_GO_TO, *tp, dir, 70.0, 1.0);
 }
 
 /* vf19: the AI state of the logic state; always 1 */
@@ -461,7 +461,7 @@ byte cGenCharLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) 
 	case GENCHAR_ACCUSE:
 		if (ok && g_pWorld->alarm.sameChar) {
 			self->time = g_GenCharAcuseTime;
-			AIChar_SetState(ai, 8, target, 1);
+			AIChar_SetState(ai, AIC_ORIENT_DYNAMIC_OBJECTIVE, target, 1);
 			if (WithLife_GetAction(p, "Discover")) {
 				cGenCharLocalLogic_Discover(self);
 				cGenCharGroup_RaiseLevel((&g_pWorld->logic.genChars), 0);
@@ -470,7 +470,7 @@ byte cGenCharLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) 
 		break;
 	case GENCHAR_GETAWAY:
 		if (ok) {
-			AIChar_SetState(ai, 5, target, (double)g_GenCharEscapeSpeed);
+			AIChar_SetState(ai, AIC_GET_AWAY, target, (double)g_GenCharEscapeSpeed);
 		}
 		self->time = 0.0f;
 		break;
@@ -478,25 +478,25 @@ byte cGenCharLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) 
 		if (ok) {
 			if (!strcmp(Logic_TypeName(p), "Mayor")) {
 				cAIChar *a2 = Entity_GetAI(b->parent);
-				AIChar_SetState(a2, 2, target, (double)g_GenCharAttackSpeed);
+				AIChar_SetState(a2, AIC_CHASE_WITH_ACTION, target, (double)g_GenCharAttackSpeed);
 			} else {
 				float speed = target == cWorld_GetUsrEntity(g_pWorld, 0) ? g_GenCharAttackSpeed : 1.0f;
-				AIChar_SetState(ai, 2, target, (double)speed);
+				AIChar_SetState(ai, AIC_CHASE_WITH_ACTION, target, (double)speed);
 			}
 		}
 		break;
 	case GENCHAR_CHASE:
 		if (ok) {
 			if (0.0f > g_GenCharSpecialChaseSpeed) {
-				AIChar_SetState(ai, 3, target, (double)g_GenCharAlertSpeed);
+				AIChar_SetState(ai, AIC_CHASE_WITHOUT_ACTION, target, (double)g_GenCharAlertSpeed);
 			} else {
-				AIChar_SetState(ai, 3, target, (double)g_GenCharSpecialChaseSpeed);
+				AIChar_SetState(ai, AIC_CHASE_WITHOUT_ACTION, target, (double)g_GenCharSpecialChaseSpeed);
 			}
 		}
 		break;
 	case GENCHAR_STAY:
 		if (ok) {
-			AIChar_SetState(ai, 4, b->origin, b->originAng, 70.0, 1.0);
+			AIChar_SetState(ai, AIC_GO_TO, b->origin, b->originAng, 70.0, 1.0);
 		}
 		break;
 	case GENCHAR_GET_IT:
