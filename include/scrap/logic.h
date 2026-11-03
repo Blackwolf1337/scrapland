@@ -708,7 +708,6 @@ int cGenCharGroup_GetLevel(cGenCharGroup *self);
 void cGenCharGroup_RaiseLevel(cGenCharGroup *self, int level);
 byte cGenCharGroup_TakeAttack(cGenCharGroup *self);
 /* the maker of the logics of the GenChar lists (cEntityListData.func, rva 0x14b860) */
-#define GENCHARGROUP_MAKELOGIC 0x14b860
 
 /* the Init and Update of the mode objects of part 2 */
 void cExtPolice_Init(cExtPolice *self);

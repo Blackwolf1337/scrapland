@@ -17,8 +17,6 @@
 #include "scrap/withlifeentity.h"
 #include "scrap/staticinit.h"
 
-#define CGAMETRAIL_CTOR 0x21ddb0
-#define CGAMETRAIL_DTOR 0x21de40
 
 static const cEmbeddedFXVtbl cEmbeddedFX_vftable;
 #define VT_EMBEDDEDFX (&cEmbeddedFX_vftable)

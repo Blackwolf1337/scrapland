@@ -208,8 +208,6 @@ cBarScorer *cBarScorer_ctor(cBarScorer *self);
 
 /* ---- ButtonScorer.cpp ---- */
 
-#define CSTRING_DTOR 0x133990
-#define CSTRING_CTOR 0x133980
 
 typedef TABLE(char *) cStrTable;	/* Global/Table.h of cString */
 typedef TABLE(byte) cByteTable;

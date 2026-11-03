@@ -29,10 +29,6 @@ static cGVar GVar_MapCollisionBalance;
 
 static const IObject3DVtbl CGround_vftable;
 #define CGROUND_VFTABLE (&CGround_vftable)
-#define CCOLLIDEMESH_CTOR 0x2586b0
-#define CCOLLIDEMESH_DTOR 0x20eb70
-#define CCOLLIDEQUAD_DTOR 0x258ce0
-#define CNODO3D_DTOR 0x23d070
 #define GROUND_FLT_MAX 3.4028234663852886e+38f
 
 /* the statistics of the queries, cleared with the query number */

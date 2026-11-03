@@ -3,8 +3,6 @@
  */
 #include "scrap/animvert.h"
 
-#define ANIMVERT_CTOR 0x2d33f0
-#define ANIMVERT_DTOR 0x2d3440
 /* the compressed offsets are -127..127 steps */
 #define ANIMVERT_STEPS 127.0f
 /* frames closer than this to the first one are the same */

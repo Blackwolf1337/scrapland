@@ -205,7 +205,6 @@ static cGVar GVar_GearTargetSphereRadius;
 #define g_GearTargetSphereRadius (GVar_GearTargetSphereRadius.value.f)
 extern cGVar GVar_GearStdFar;
 #define g_GearStdFar (GVar_GearStdFar.value.f)
-#define GEARAIM_SPHEREFUNC 0x17a380
 #define GEARAIM_LOCK_TIME 0.3f
 #define GEARAIM_SCREEN_X 320.0f
 #define GEARAIM_SCREEN_Y 240.0f

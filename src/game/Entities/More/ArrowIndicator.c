@@ -27,8 +27,6 @@ static cGVar GVar_ArrowActiveHorizontal;
 #define ARROW_POOL_MAX 5			/* more free models are deleted */
 #define ARROW_FADE_SPEED 4.0f
 #define ARROW_GLOW_TIME 0.66f
-#define CSTRING_CTOR 0x133980
-#define CSTRING_DTOR 0x133990
 
 /* called after a new use or view function */
 static inline void Arrow_FuncsChanged(cEntity *parent) {

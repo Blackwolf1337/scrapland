@@ -393,10 +393,6 @@ static void FXV_FireSprites(CGameParticles *p) {
 	}
 }
 
-#define FXV_RAMP_FIRED 0x431130		/* [2] */
-#define FXV_RAMP_FIREDSMOKE 0x4310e8	/* [2] */
-#define FXV_RAMP_SMOKE 0x43119c		/* [2] */
-#define FXV_RAMP_SMOKE2 0x431178
 
 static uint32_t cObjElementFXFiredDebris_UpdateRamps[18] = {
 	0xff565656, 0xe2fff696, 0xc4e68211, 0xc4ab5e0d, 0xc49c3a08, 0xc46a2617, 0xe640190e, 0xff000000, 0xff000000,
@@ -730,8 +726,6 @@ static cGVar GVar_FXFiredEntitySmokeStep;
 /* ---- FiredEntity ---- */
 
 #define g_FXFiredEntitySmokeStep (GVar_FXFiredEntitySmokeStep.value.f)
-#define FXV_RAMP_FIREDENT_SMOKE 0x4315e8	/* [2] */
-#define FXV_RAMP_FIREDENT_FIRE 0x431630		/* [5] */
 
 /* (0, 0, z) turned by rot */
 static vec3_t *FXV_TurnZ(vec3_t *out, float z, const vec3_t *rot) {
@@ -1232,9 +1226,6 @@ static void cObjElementFXVehicleEMI_Update(cObjElementFX *base, cDebris *debris,
 
 /* ---- Fire ---- */
 
-#define FXV_RAMP_FIRE 0x431530		/* [3] */
-#define FXV_RAMP_FIRE2 0x431554		/* [2] */
-#define FXV_RAMP_FIRESMOKE 0x43159c	/* [2] */
 
 /* (Rand_FloatRange(-0.35, 0.35) * s + s) * r, r drawn first */
 static inline float FXV_FireSize(float s, float r) {
@@ -1494,11 +1485,6 @@ static cGVar GVar_FXVehicleDamageSmokeStep;
 /* ---- Damage ---- */
 
 #define g_FXVehicleDamageSmokeStep (GVar_FXVehicleDamageSmokeStep.value.f)	/* FXVehicleDamageSmokeStep */
-#define FXV_RAMP_TRAIL 0x4311e8		/* [2] */
-#define FXV_RAMP_DEBRIS 0x431254
-#define FXV_RAMP_FLAME 0x431278		/* [3] */
-#define FXV_RAMP_FLAME2 0x43129c	/* [2] */
-#define FXV_RAMP_DSMOKE 0x4312e8	/* [5] */
 #define FXV_DAMAGE_VERTS 12		/* of the ship, then 6 of a motor */
 #define FXV_PI2 6.2831854820251465
 
@@ -2044,12 +2030,6 @@ static cGVar GVar_ShipExplosionMaxDist;
 /* ---- FX_ShipExplosion ---- */
 
 #define g_ShipExplosionMaxDist (GVar_ShipExplosionMaxDist.value.f)	/* ShipExplosionMaxDist */
-#define FXV_RAMP_XFLAME 0x4313a0	/* [2] */
-#define FXV_RAMP_XSPARK 0x4313e8
-#define FXV_RAMP_XSMOKE 0x43140c
-#define FXV_RAMP_XFIRE 0x431454		/* [3] */
-#define FXV_RAMP_XPUFF 0x431478		/* [2] */
-#define FXV_RAMP_XBALL 0x4314c0		/* [3] */
 #define FXV_PI_2 1.5707964f
 
 /* the speeds of the next particles: no own speed, no acceleration, the speed of the ship added */

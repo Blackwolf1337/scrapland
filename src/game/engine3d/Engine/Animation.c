@@ -18,8 +18,6 @@ static cGVar GVar_OptimizeAnims;
 static cGVar GVar_OptAnimRotErr;
 static cGVar GVar_OptAnimPosErr;
 static cGVar GVar_OptAnimFovErr;
-#define ANIMNODE_CTOR 0x2ab6a0
-#define ANIMNODE_DTOR 0x2ab8f0
 /* the flags a file may have */
 #define CM3_SUPPORTED (ANIM_POS | ANIM_ROT | ANIM_FOV | ANIM_COLOR | ANIM_INTENS | ANIM_VISIBLE | ANIM_EVA)
 #define OPT_SUPPORTED 0x7

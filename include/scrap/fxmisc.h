@@ -60,9 +60,6 @@ extern cGVar GVar_FXSmokeDebrisFile;
 #define g_FXSmokeDebrisFile (GVar_FXSmokeDebrisFile.value.s)
 
 /* the color ramps (9 colors) of the particles */
-#define FX_RAMP_BLINK 0x430b44
-#define FX_RAMP_FADE 0x430ad8		/* [3] */
-#define FX_RAMP_TAKE 0x430b68		/* [3] */
 
 #define FXSPARKS_MAXSPARKS 32
 #define FXITEMTAKE_LINES 4

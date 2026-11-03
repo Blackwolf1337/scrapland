@@ -28,8 +28,6 @@
 #define CVEHICLEENTITY_VFTABLE (&cVehicleEntity_vftable.base.base)
 static const cWithLifeEntityVtbl cVehicleEntity_vftable;
 #define VEH_CLASSNAME "Car"
-#define CGAMEMODEL_CTOR 0x105e60	/* CGameModel_ctor(self, NULL) */
-#define CGAMEMODEL_DTOR 0x20ec10
 #define CAIVEHICLE_SIZE sizeof(cAIVehicle)
 #define CEMBEDDEDFXVEHICLE_SIZE 0x1b0
 

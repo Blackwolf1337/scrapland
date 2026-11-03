@@ -187,8 +187,6 @@ typedef struct cObjElementFXTesla {
 } cObjElementFXTesla;
 
 /* the helpers of the constructors and destructors of the effects (also FXVehicle.c) */
-#define CGAMETRAIL_CTOR 0x21ddb0
-#define CGAMETRAIL_DTOR 0x21de40
 
 /* the start of every constructor: the base class leaves 0, then the vtable of the class */
 static inline void FXObj_TrailsCtor(CGameTrail *t, uint32_t n) {

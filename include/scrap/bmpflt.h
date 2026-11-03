@@ -24,8 +24,6 @@ typedef struct TXF_header {
 } TXF_header;
 
 /* the header of each class */
-#define TXF_CAB 0x4e734c
-#define TXF2_CAB 0x4e736c
 
 /* TXF_Save: an existing file is only replaced with this flag */
 #define TXF_OVERWRITE 1

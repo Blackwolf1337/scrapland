@@ -219,7 +219,6 @@ void ModelFX_InitD3D(void);
 /* other modules (src/imports.inc) */
 float World_TimeScale(void);
 void CRenderNode_dtor(CRenderNode *self);
-#define CNODOR_DTOR 0x23f450
 void CRenderNode_SetNode(CRenderNode *self, CNode3D *node);
 /* rva 0x23fac0, the matrix identity, the channels cleared; the model and its render nodes at 0xa0 and 0xa4 */
 void RenderCtx_Init(NodeAnimCtx *self, CModel *m, const vec3_t *scale);

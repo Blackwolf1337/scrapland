@@ -335,7 +335,6 @@ typedef struct cTextTypingScorer {
 	byte pad_f1[3];
 } cTextTypingScorer;
 
-#define TEXTEDIT_NATIVE_FUNC 0x184120			/* the OnAccept that starts the edit */
 
 cTextScorer *cTextScorer_ctor(cTextScorer *self);
 cTextTypingScorer *cTextTypingScorer_ctor(cTextTypingScorer *self);

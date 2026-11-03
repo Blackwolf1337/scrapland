@@ -894,7 +894,6 @@ CGameModel *cVehicleMotorsEffects_GetModel(cVehicleMotorsEffects *self, int side
 
 /* ---- the constructors and destructors (rva 0x10bb90..0x10bdc0, after VehicleEntity.cpp) ---- */
 
-#define CGAMEMODEL_DTOR 0x20ec10		/* CGameModel_Reset */
 
 /* VehicleEntity.cpp */
 static cVehicleMotor *cVehicleMotor_ctor(cVehicleMotor *self) {

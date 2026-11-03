@@ -28,9 +28,6 @@ static cGVarFunction GVar_OnParkedOut;
 static cGVarFunction GVar_OnParkingOccupied;
 #define g_OnParkingOccupied (((cPy_Function *)&GVar_OnParkingOccupied.func))
 /* what the sphere native found: a ship, else the last other entity */
-#define PARKING_NATIVE 0x155ed0
-#define PARKING_FARTHER 0x155e90
-#define PARKING_NEARER 0x155eb0
 #define TYEN_ITEM "item"
 
 typedef byte (*ParkingCmp)(float d, float best);

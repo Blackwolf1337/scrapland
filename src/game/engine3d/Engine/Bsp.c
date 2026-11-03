@@ -336,7 +336,6 @@ void BspZone_dtor(BspZone *self) {
 	}
 }
 
-#define BSPZONE_DTOR 0x2824b0
 
 static void Table_FreeB4(CTable *t) {
 	if (t->p) {

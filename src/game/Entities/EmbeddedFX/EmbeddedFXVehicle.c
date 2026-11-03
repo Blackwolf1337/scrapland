@@ -35,18 +35,9 @@ static cGVar GVar_FXVehicleProbeLight_SizeMax;
 static cGVar GVar_FXVehicleProbeLight_DistGrow;
 static cGVar GVar_FXVehicleEmbeddedFile;
 static cGVar GVar_FXTrafficEmbeddedFile;
-#define CGAMEPARTICLES_CTOR 0x21d1b0
-#define CGAMEPARTICLES_DTOR 0x21d1c0
-#define CGAMETRAIL_CTOR 0x21ddb0
-#define CGAMETRAIL_DTOR 0x21de40
 #define VEHICLE_FX_FADE 3		/* the model effect of the faded vehicle */
 
 /* the color ramps of the particles (9 colors) */
-#define RAMP_SIREN_A1 0x428574
-#define RAMP_SIREN_A2 0x428550
-#define RAMP_SIREN_B1 0x4285bc
-#define RAMP_SIREN_B2 0x428598
-#define RAMP_PROBE_TRANS 0x4285e0
 
 /* vtable slot 0xf4 of the vehicle: the name of the pilot slot i ("" without one) */
 typedef const char *(*vehicleName_t)(cEntity *self, int i);

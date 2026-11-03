@@ -21,10 +21,6 @@
 
 static const cLocalLogicVtbl cScrapyardLocalLogic_vftable;
 #define CSCRAPYARDLOCALLOGIC_VFTABLE (&cScrapyardLocalLogic_vftable)
-#define SHIPGROUP_SPHERE_NATIVE 0x157f10
-#define SHIPGROUP_DEATH_NATIVE 0x158020
-#define SHIPGROUP_MAKELOGIC 0x158400
-#define SHIPGROUP_ONAIEND 0x157e60
 #define SHIPGROUP_MAX_FOUND 10
 
 static cGVar GVar_MaxMosquitosDist;

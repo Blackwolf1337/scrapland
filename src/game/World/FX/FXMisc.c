@@ -26,8 +26,6 @@ static cGVar GVar_FXItemFadeFile;
 static cGVar GVar_FXItemBlinkFile;
 
 /* the trail array members: CGameTrail by new[] style construction (rva) */
-#define CGAMETRAIL_CTOR 0x21ddb0
-#define CGAMETRAIL_DTOR 0x21de40
 
 static const vec3_t fx_corners[8] = {
 	{ -1.0f, -1.0f, -1.0f }, { -1.0f, 1.0f, -1.0f }, { 1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, -1.0f },

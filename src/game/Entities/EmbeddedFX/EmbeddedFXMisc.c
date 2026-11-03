@@ -48,10 +48,6 @@ static const cEmbeddedFXVtbl cEmbeddedFXBossShield_vftable;
 static const cEmbeddedFXVtbl cEmbeddedFXBike_vftable;
 static const cEmbeddedFXVtbl cEmbeddedFXBattery_vftable;
 static const cEmbeddedFXVtbl cEmbeddedFXAmplifier_vftable;
-#define CGAMEPARTICLES_CTOR 0x21d1b0
-#define CGAMEPARTICLES_DTOR 0x21d1c0
-#define CGAMETRAIL_CTOR 0x21ddb0
-#define CGAMETRAIL_DTOR 0x21de40
 
 cGVar GVar_MessengerTubeState;
 
@@ -2144,8 +2140,6 @@ static void cEmbeddedFXBossShield_Update(cEmbeddedFX *elem, float dt) {
 }
 
 /* the color ramps of the battery sparks (9 colors) */
-#define RAMP_BATTERY_FLASH 0x428450
-#define RAMP_BATTERY_SPARKS 0x428474	/* [2] */
 
 static inline void EFXM_ParticleColor(CGameParticles *p, int n, const vec3_t *pos, float size, int a, int sprite) {
 	CGameParticles_SetParticle(p, n, pos->x, pos->y, pos->z, size, ((uint32_t)a << 24) | 0x64d2ff, sprite, 0.0f);

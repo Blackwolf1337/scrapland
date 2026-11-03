@@ -21,7 +21,6 @@ static cGVar GVar_TimeBetweeenTaunts;
 /* defined further down or in another file without a header */
 static byte Logic_SetOriginCallback(cEntity *e);
 
-#define LOGIC_SETORIGINFUNC 0x151ce0
 cGVar GVar_NotCleanableByGear;
 
 #define g_NotCleanableByGearDef (((cString *)&GVar_NotCleanableByGear.def))

@@ -80,11 +80,7 @@ static cGVar GVar_BankMasterBatonPosY;
 static cGVar GVar_BankMasterBatonPosX;
 
 /* the trail array members: CGameTrail by new[] style construction (rva) */
-#define CGAMETRAIL_CTOR 0x21ddb0
-#define CGAMETRAIL_DTOR 0x21de40
 /* CGameModel as array member: its default constructor (CGameModel_ctor with NULL, rva 0x105e60) and CGameModel_Reset */
-#define CGAMEMODEL_CTOR0 0x105e60
-#define CGAMEMODEL_RESET 0x20ec10
 
 /* rand() & 0x7fff as 0..1 (double) */
 static inline double FXA_Rnd(void) {
@@ -1303,10 +1299,6 @@ static cGVar GVar_GearMissileThunder2Sound;
 #define g_GearMissileThunder2Sound (GVar_GearMissileThunder2Sound.value.s)
 static cGVar GVar_GearMissileThunderSoundVol;
 #define g_GearMissileThunderSoundVol (GVar_GearMissileThunderSoundVol.value.f)
-#define FXGEAR_RAMP_BALL 0x4306b0
-#define FXGEAR_RAMPS 0x4306d4		/* 3 color ramps of 9 colors */
-#define FXGEAR_RAMP_PUFF 0x4306f8
-#define FXGEAR_RAMP_SPARK 0x430788
 #define FXGEAR_ENTITIES 0x11		/* the entity lists the bolts hit */
 #define FX_2PI 6.2831854820251465
 
@@ -1967,8 +1959,6 @@ void cObjElementFXFunctionarySpecialAction_Start(void *self, cEntity *e) {
 }
 
 /* the ramps of the particles (9 colors each) */
-#define FXA_RAMP_BETTY 0x4307d0
-#define FXA_RAMP_GEAR 0x4305d8		/* [3] */
 
 /* p moved by a random direction (FX_RandomDir) times r */
 static void FXA_Jitter(vec3_t *p, float r) {
@@ -2271,7 +2261,6 @@ static void cObjElementFXBettyAttack_Update(cObjElementFX *base, cDebris *d, flo
 	}
 	self->lastTime = self->time;
 }
-#define FXA_RAMP_GEARPIECE 0x430644
 
 /* the armors still shown hidden */
 static void FXGear_HideArmors(cObjElementFXPoliceGearConversion *self) {
@@ -3046,7 +3035,6 @@ static void cObjElementFXDTritusAttack_Update(cObjElementFX *base, cDebris *d, f
 	FXBeams_Draw(&b, self->time, delta, &pos, &rot);
 }
 
-#define FXA_RAMP_POLICESTEAL 0x4307ac
 
 static uint32_t cObjElementFXBankerSteal_UpdateRamp[9] = { 0xff000000, 0x80808080, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0x80808080, 0xff000000, 0xff000000 };
 
@@ -3846,7 +3834,6 @@ static void cObjElementFXMessengerTakeDataPack_Update(cObjElementFX *base, cDebr
 	}
 }
 
-#define FXA_RAMP_MERCURY 0x430668		/* [2] */
 
 static uint32_t FXMercenary_DropRamps[18] = {
 	0x30a0ff8c, 0x40a0ff8c, 0x4ba0ff8c, 0x5ca0ff8c, 0x80a0ff8c, 0xa4a0ff8c, 0xc4408037, 0xff000000, 0xff000000,
@@ -4125,8 +4112,6 @@ static void cObjElementFXBishopAttack_Update(cObjElementFX *base, cDebris *d, fl
 	}
 }
 
-#define FXA_RAMP_SELLLIFE 0x430818		/* [3] */
-#define FXA_RAMP_SELLLIFE2 0x43083c		/* [2] */
 
 static uint32_t FXA_SELLLIFE_RAMPS[27] = {
 	0x405aff5a, 0x4b4bff4b, 0x603ce63c, 0x7023ab23, 0x80264b26, 0xa40d380d, 0xc0051e05, 0xff000000, 0xff000000,

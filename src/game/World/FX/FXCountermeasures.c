@@ -524,7 +524,6 @@ static cGVar GVar_EMIThunderSoundAttEnd;
 #define g_EMIThunderSoundAttEnd (GVar_EMIThunderSoundAttEnd.value.f)
 static cGVar GVar_EMIThunderSoundVol;
 #define g_EMIThunderSoundVol (GVar_EMIThunderSoundVol.value.f)
-#define FXEMI_RAMPS 0x430888		/* 3 color ramps of 9 colors: 0..1 for most, 1..2 for the last glow */
 #define FXEMI_ENTITIES 0x13		/* the entity lists the bolts hit */
 
 static uint32_t EMI_EmitTable[28] = {
@@ -1187,7 +1186,6 @@ static void cObjElementFXDebrisCloud_Reset(cObjElementFX *base, cDebris *debris)
 	cObjElementFXDebrisCloud_Shuffle(self);
 }
 
-#define FXDEBRISCLOUD_RAMPS 0x4308f8		/* 3 color ramps of 9 colors */
 #define FX_PI_4 0.785398185f
 #define FX_2PI 6.28318548f
 
@@ -1365,9 +1363,6 @@ void cObjElementFXDebrisCloud_Warm(cObjElementFXDebrisCloud *self, cDebris *debr
 
 /* ---- the constructors and destructors ---- */
 
-#define FXCM_TRAIL_CTOR 0x21ddb0
-#define FXCM_TRAIL_DTOR 0x21de40
-#define FXCM_NODE_CTOR 0x1c9610
 #define FXCM_NODE_DTOR 0x0d1190		/* the same code as Nto1Node_dtor */
 
 /* the constructors and destructors (rva 0x1c9610..0x1c99c4, after World/FX/FXCharActions.cpp); the node of the

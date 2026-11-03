@@ -57,7 +57,6 @@ static const IInputVtbl CNullInput_vftable;
 /* the values m3d.ini gave (Engine_LoadVarsIni) */
 
 /* the console command handler of the engine (E3D_Command) */
-#define ENGINE_CMDPROC 0x22eda0
 /* the clock of the engine */
 #define g_FrameDelta g_FrameMs
 extern float g_RealFrameSecs;

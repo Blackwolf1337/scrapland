@@ -73,10 +73,6 @@ extern cGVar GVar_Viewer;
 #define APP_DEDICATED(app) (((app)->flags >> 2) & 1)
 
 /* the engine callbacks as the exe passes them */
-#define RVA_ENGINE_ONETIMEINIT 0x215e70
-#define RVA_ENGINE_FRAMEMOVE 0x2171e0
-#define RVA_ENGINE_FINALCLEANUP 0x215ad0
-#define RVA_MODELDLG_PROC 0x22dcf0
 #define RVA_CON_VERBOSEF 0xbc240
 
 #define VK_RETURN 0x0d

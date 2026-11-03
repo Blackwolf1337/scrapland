@@ -613,21 +613,6 @@ void cVehicleMotorsEffects_Trails(cVehicleMotorsEffects *self, float dt, vec3_t 
 #define VME_PI_4 0.7853982f
 
 /* the function statics of the original: the guards and the emit positions they make once */
-#define VME_GUARD_10 0x448510
-#define VME_POS_10 0x4484e0	/* [4] */
-#define VME_GUARD_12 0x448560
-#define VME_POS_12 0x448518	/* [6] */
-#define VME_GUARD_13 0x44857c
-#define VME_POS_13 0x448564	/* [2] */
-#define VME_GUARD_14 0x4485b0
-#define VME_POS_14 0x448580	/* [4] */
-#define VME_POS_15 0x4485b8	/* [8], made on every call */
-#define VME_GUARD_27 0x448648
-#define VME_POS_27 0x448618	/* [4] */
-#define VME_GUARD_50 0x4486b0
-#define VME_POS_50 0x448650	/* [8] */
-#define VME_GUARD_60 0x4486d8
-#define VME_POS_60 0x4486b4	/* [3] */
 
 /* what every type reads */
 typedef struct VMExhaust {

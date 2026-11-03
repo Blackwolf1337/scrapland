@@ -1440,7 +1440,6 @@ byte Scorer_Render(void) {
 
 #define CONSOLE_HISTORY 16
 #define CONSOLE_KEYBOARD_SIZE 0x10c
-#define CONSOLE_ONINPUT 0x1741b0			/* Console_OnInput as the exe stores it */
 
 static byte g_ConsoleOn;
 static char *g_ConsoleHistory[16];

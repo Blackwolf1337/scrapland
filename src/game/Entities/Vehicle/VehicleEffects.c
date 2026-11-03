@@ -42,10 +42,6 @@ static cGVar GVar_FXVehicleSpeedTrailDist;
 static cGVar GVar_FXVehicleFireFile;
 static cGVar GVar_FXVehicleEMIFile;
 static cGVar GVar_FXVehicleDamageFile;
-#define CGAMEPARTICLES_CTOR 0x21d1b0
-#define CGAMEPARTICLES_DTOR 0x21d1c0
-#define CGAMETRAIL_CTOR 0x21ddb0
-#define CGAMETRAIL_DTOR 0x21de40
 
 static inline cEntity *VE_Ent(cVehicleEntity *v) {
 	return &v->wl.obj.base;

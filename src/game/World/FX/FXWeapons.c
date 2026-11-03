@@ -310,9 +310,6 @@ static cGVar GVar_ATPCShootSize;
 /* ---- cObjElementFXATPC ---- */
 
 #define g_ATPCShootSize (GVar_ATPCShootSize.value.f)
-#define FXATPC_RAMP_CORE 0x4317a0	/* [-16..0], by the time */
-#define FXATPC_RAMP_GLOW 0x431758	/* [2] */
-#define FXATPC_RAMP_RING 0x43177c
 
 static inline uint32_t FXW_Gray(int a) {
 	uint32_t u = (uint32_t)a;
@@ -1518,7 +1515,6 @@ static cGVar GVar_FXTeslaStepTime;
 #define g_FXTeslaStepTime (GVar_FXTeslaStepTime.value.f)
 static cGVar GVar_FXTeslaRandRadius;
 #define g_FXTeslaRandRadius (GVar_FXTeslaRandRadius.value.f)
-#define FXTESLA_RAMP_SPARK 0x431930		/* [2] */
 
 /* the end moved back from the target towards the emitter by 0.2..0.5 of r along n */
 static void FXW_TeslaBack(vec3_t *tpos, const vec3_t *n, float r) {
@@ -1978,12 +1974,6 @@ static cGVar GVar_SwarmBeeExplosionFile;
 #define g_SwarmBeeExplosionFile (GVar_SwarmBeeExplosionFile.value.s)
 static cGVar GVar_SwarmExplosionFile;
 #define g_SwarmExplosionFile (GVar_SwarmExplosionFile.value.s)
-#define FXSWARM_RAMP_BEE 0x431978
-#define FXSWARM_RAMP_FLASH 0x431a2c		/* [2] */
-#define FXSWARM_RAMP_SMOKE 0x4319c0		/* [3] */
-#define FXSWARM_RAMP_SPARK 0x431a50		/* [2] */
-#define FXSWARM_RAMP_HIT 0x431810		/* [2] */
-#define FXSWARM_RAMP_HITSPARK 0x431858		/* [2] */
 
 /* the particles of the element (a cObjElementFXParticleSystem) of a debris, switched on; NULL without element */
 static CGameParticles *FXW_ParticleSystem(cDebris *debris) {

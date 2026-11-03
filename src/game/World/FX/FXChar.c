@@ -59,7 +59,6 @@ static cGVar GVar_CharacterConversionSoundVol;
 static cGVar GVar_CharacterConversionSound;
 
 /* the color ramps (9 colors) of the particles */
-#define FXC_RAMP_MONEY 0x430240
 
 /* rand() & 0x7fff as 0..1 (double) */
 static inline double FXC_Rnd(void) {
@@ -929,8 +928,6 @@ void cObjElementFXMaintenanceWork_Update(cObjElementFX *base, cDebris *d, float 
 	CGameParticles_SetSparksOn(sp, 0);
 }
 
-#define FXC_RAMP_TELEPORT 0x430340	/* 3 color ramps of 9 colors */
-#define FXC_RAMP_TELEPORT_GLOW 0x430388
 
 static inline uint32_t *FXC_Ramp(uint32_t *ramps, int i) {
 	return ramps + i * 9;
@@ -1259,7 +1256,6 @@ void cObjElementFXCharacterTeleport_Update(cObjElementFX *base, cDebris *d, floa
 	}
 	self->emitT = 0.0f;
 }
-#define FXC_RAMP_DEATH 0x430288		/* 4 color ramps of 9 colors */
 #define FXDEATH_VERTS 0x60
 
 static inline float FXC_Smooth(float k) {
@@ -1574,7 +1570,6 @@ void cObjElementFXCharacterDeath_Update(cObjElementFX *base, cDebris *d, float d
 	}
 	CGameParticles_SetSparksOn(sp, 0);
 }
-#define FXC_RAMP_CONVERSOR 0x4304b0	/* 3 color ramps of 9 colors */
 #define FXCONVERSOR_VERTS 0x60
 
 /* lo when v is smaller, at most 255 */

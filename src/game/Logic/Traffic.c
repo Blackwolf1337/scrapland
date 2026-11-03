@@ -28,9 +28,6 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
-#define TRAFFIC_DAMAGE_NATIVE 0x15af10
-#define TRAFFIC_DEATH_NATIVE 0x15b160
-#define TRAFFIC_ONAIEND 0x15ae60
 static cGVar GVar_MaxTrafficEnemy;
 #define g_MaxTrafficEnemy (GVar_MaxTrafficEnemy.value.i)
 static cGVarFunction GVar_OnNeedMoreTraffic;

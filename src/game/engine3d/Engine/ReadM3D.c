@@ -47,12 +47,6 @@ static cGVar GVar_CM3_DeleteM3D;
 static cGVar GVar_CM3_CheckTime;
 
 /* the constructors and destructors of the reader data, passed to the new[] and delete[] loops of the CRT */
-#define M3DTABLE_CTOR 0x2bba90
-#define M3DTABLE_DTOR 0x2bbd20		/* Table_Free */
-#define STRING_CTOR 0x2bbab0
-#define STRING_DTOR 0x233be0		/* the string freed (Material.cpp) */
-#define M3DSKINVERT_DTOR 0x2bc160
-#define M3DNODE_DTOR 0x2bbf10
 
 static void M3D_StringFree(char **s) {
 	if (*s) {
@@ -2429,7 +2423,6 @@ static void M3D_ReadMaterial(CMatList *list, int iMat, int iSubmat) {
 
 /* the reader of the M3D files */
 
-#define M3DNODE_CTOR 0x2bbb90
 #define M3D_HDR 0x20			/* the header "[M3D,BIN,ETIQ:si]" */
 #define M3D_NAME 0x100
 /* the node flags the reader sets (NODO_*) */

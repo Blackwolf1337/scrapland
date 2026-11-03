@@ -97,8 +97,6 @@
 #include "scrap/nodesworldsup.h"
 #include "scrap/nto1links.h"
 #include "scrap/objentity.h"
-#include "scrap/origcrt.h"
-#include "scrap/origpython.h"
 #include "scrap/particlesystem.h"
 #include "scrap/portal.h"
 #include "scrap/primitive.h"

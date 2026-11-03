@@ -32,7 +32,6 @@ static cGVar GVar_NurseAlertSpeed;
 /* defined further down or in another file without a header */
 static void *Nurses_MakeLogic(cEntity *e);
 
-#define NURSES_MAKELOGIC 0x154440
 void *cNurses_ctor(cNurses *self) {
 	self->timer = 0.0f;
 	return self;

@@ -21,7 +21,6 @@
 #include "scrap/misc.h"
 #include "scrap/staticinit.h"
 
-#define CLOD_DTOR 0x252d80
 #define LIGHT_OMNI_NAME "omni"
 #define LIGHT_SPOT_NAME "foco"
 #define LIGHT_DIR_NAME "direc"

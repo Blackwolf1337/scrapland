@@ -14,7 +14,6 @@ static const cGenCharLocalLogicVtbl cMayorLocalLogic_vftable;
 static void Mayor_SphereFunc(cAbstractFile *params);
 
 #define MAYOR_VT(self) ((self)->base.base.vftable)
-#define MAYOR_SPHEREFUNC 0x152e60
 
 void *cMayorLocalLogic_ctor(void *mem, cEntity *parent) {
 	cMayorLocalLogic *self = mem;

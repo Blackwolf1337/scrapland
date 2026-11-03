@@ -23,7 +23,6 @@ extern cGVar GVar_TopLimit;
 
 /* the destructor of a cell (Nto1Links.h, rva) for the new[] of the cells */
 #define NTO1NODE_DTOR 0x0eeb90
-#define GRIDCELL_CTOR 0x1a6700
 
 #define Grid_IsOk(grid) (((const cCollisionGrid *)(grid))->cells != NULL)
 
@@ -54,7 +53,6 @@ byte DummySearch_NextEuler(char *buf, int size, vec3_t *pos, vec3_t *ang);
 /* the entity lists of g_pWorld->lists (cEntityList of entity.h) */
 typedef cEntityList cEntityListData;
 
-#define CENTITYLIST_FUNC 0x1a7f10
 
 /* the entity of the list nearest to pos (the floor levels apart count 20000 each), not exclude; the distance into
  * dist */

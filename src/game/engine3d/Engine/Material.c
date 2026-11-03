@@ -16,8 +16,6 @@
 #include "scrap/platform.h"
 #include "scrap/staticinit.h"
 
-#define TEXTSTATIC_CTOR 0x233990
-#define TEXTSTATIC_DTOR 0x233c70
 
 int Vec3_Differ(const float *a, const float *b);
 

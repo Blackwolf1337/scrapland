@@ -14,13 +14,7 @@
 
 #define g_LogRumble (GVar_LogRumble.value.i)		/* LogRumble */
 static cGVar GVar_LogRumble;
-#define INPUTACTION_CTOR 0x139240
-#define INPUTACTION_DTOR 0x139430
-#define ACTIONSET_CTOR 0x1392b0
-#define ACTIONSET_DTOR 0x139480
 
-#define CPYFUNCTION_CTOR 0x192170
-#define CPYFUNCTION_DTOR 0x192200
 
 /* the static constructor of g_ActionSets: the four sets and the names of their actions */
 static void ActionSetTable_Init(cActionSetTable *t, int num);

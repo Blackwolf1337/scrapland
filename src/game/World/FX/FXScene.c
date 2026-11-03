@@ -34,8 +34,6 @@ static cGVar GVar_FXSceneBeatPickusFile;
 
 /* the color ramps (9 colors) of the particles */
 #define FXS_RAMP(ramps, i) ((ramps) + (i) * 9)
-#define FXS_RAMP_HUMANCD 0x430c48	/* [2] */
-#define FXS_RAMP_YAKUZZI 0x430dd8	/* [2] */
 
 static inline float FXS_Delta(void) {
 	return cTimer_GetDelta(&g_pWorld->timer);
@@ -699,8 +697,6 @@ void cObjElementFXSceneYakuzzi_Update(cObjElementFX *base, cDebris *d, float dt)
 	self->tPrev = self->t;
 }
 
-#define FXS_RAMP_BISHOPS_GLOW 0x430c90
-#define FXS_RAMP_BISHOPS_CODEC 0x430cb4	/* [2] */
 #define FXBISHOPS_VERTS 0x100
 
 /* a glow and a data codec particle at vertex v of the detritus, the codec one up at y0 */
@@ -1073,11 +1069,6 @@ void cObjElementFXSceneDecontamination_Update(cObjElementFX *base, cDebris *d, f
 
 /* ---- BeatPickus: the beating of Pickus, dust, smoke, sparks and the hits ---- */
 
-#define FXS_RAMP_BEAT_SMOKE 0x430e20	/* [2] */
-#define FXS_RAMP_BEAT_DUST 0x430e68	/* [2] */
-#define FXS_RAMP_BEAT_SPARKS 0x430eb0	/* [2] */
-#define FXS_RAMP_BEAT_HIT 0x430ef8
-#define FXS_RAMP_BEAT_HITSPARKS 0x430f1c	/* [2] */
 
 /* the offsets of the puffs of the hits (rva 0x3cd720, 0x3cd730, 0x3cd710 in that order) */
 static const vec3_t fxs_beatPuffs[4] = {
@@ -1496,10 +1487,6 @@ void cObjElementFXSceneBeatPickus_Update(cObjElementFX *base, cDebris *d, float 
 
 /* ---- BillArrives_A: Bill arrives in the capsule ---- */
 
-#define FXS_RAMP_BILL_SMOKE 0x430d00	/* [2] */
-#define FXS_RAMP_BILL_CAPSULE 0x430d48	/* [2] */
-#define FXS_RAMP_BILL_JETA 0x430d90	/* [2] */
-#define FXS_RAMP_BILL_JETB 0x430db4
 #define FXBILL_JETS 3
 /* the jets of the capsule: the particles of its embedded effect (3 from + 0x8) */
 #define FXS_CapsuleJet(efx, k) (&((cEmbeddedFXCapsule *)(efx))->motors[k])
@@ -1923,7 +1910,6 @@ void cObjElementFXSceneBillArrives_A_Update(cObjElementFX *base, cDebris *d, flo
 /* ---- EnterMatrix: the rays of the matrix ---- */
 
 /* the paths of the rays of the second part (8, rva 0x430f68): two segments a path, A to C and B to D */
-#define FXS_MATRIX_PATHS 0x430f68
 #define FXMATRIX_RAYCOLOR 0xc3e1640
 #define FXMATRIX_RAYCOLOR_END 0x2c3e1640
 

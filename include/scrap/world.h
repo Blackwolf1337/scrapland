@@ -45,10 +45,6 @@ struct cAmmoInfo {
 };
 
 /* the destructors of the table items (rva), for Delete_Objects */
-#define CAMMOINFO_DTOR 0x19fa40
-#define CWEAPINFO_DTOR 0x19fa70
-#define CAMMOINFO_CTOR 0x206360
-#define CWEAPINFO_CTOR 0x2063f0
 
 #define CWORLD_SIZE sizeof(cWorld)
 

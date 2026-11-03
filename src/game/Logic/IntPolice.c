@@ -28,9 +28,6 @@ static void *AICtrl_MakeGearLogic(cEntity *e);
 static void *AICtrl_MakeSentinelLogic(cEntity *e);
 static void AICtrl_SentinelDeath(cAbstractFile *params);
 
-#define AICTRL_MAKEGEAR 0x14fc80
-#define AICTRL_MAKESENTINEL 0x14fcf0
-#define AICTRL_SENTINELDEATH 0x14fd60
 
 /* the AI of the character may act */
 static inline byte AICtrl_AIActive(cAIChar *ai) {
