@@ -8,10 +8,10 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
-#define CCANNONSCORER_VFTABLE (&cCannonScorer_vftable.base)
+#define CCANNONSCORER_VFTABLE (&cCannonScorer_vftable)
 #define g_CannonNoAmmoSound (GVar_CannonScorerNoAmmoSound.value.s)	/* CannonScorerNoAmmoSound */
 #define g_CannonNoAmmoSoundVol (GVar_CannonScorerNoAmmoSoundVol.value.f)	/* CannonScorerNoAmmoSoundVol */
-static const cCannonScorerVtbl cCannonScorer_vftable;
+static const cScorerItemVtbl cCannonScorer_vftable;
 static cGVar GVar_CannonScorerNoAmmoSoundVol;
 static cGVar GVar_CannonScorerNoAmmoSound;
 
@@ -149,6 +149,8 @@ static void cCannonScorer_DrawShipAim(cCannonScorer *self, int player, cEntity *
 	self->shown = shown;
 }
 
+static void cCannonScorer_DrawLock(cCannonScorer *self, int player, const float *pos);
+
 /* the center sprite, the lock text and DANGER under the warning life */
 static void cCannonScorer_DrawCenter(cCannonScorer *self, int player, cEntity *ship) {
 	static const float corners[8] = {-0.25f, -0.25f, 0.25f, -0.25f, 0.25f, 0.25f, -0.25f, 0.25f};
@@ -174,7 +176,7 @@ static void cCannonScorer_DrawCenter(cCannonScorer *self, int player, cEntity *s
 	img->x = 320.0f;
 	img->y = y;
 	CPsaImage_DrawPoly(self->img, corners, uv, 0, 4, 6);
-	CannonScorer_DrawLock(self, player, &self->img->x);
+	cCannonScorer_DrawLock(self, player, &self->img->x);
 	if (WLife(ship)->life * 100 / Veh(ship)->maxLife < g_WarningLifeLevel) {
 		cScorer *sc = Scorer_Get(player);
 		int v = Scorer_Abs((int)(sc->time * 1024.0f) % 511 - 255);
@@ -269,12 +271,11 @@ static void cCannonScorer_DrawLock(cCannonScorer *self, int player, const float 
 }
 
 /* the vtable of cCannonScorer */
-static const cCannonScorerVtbl cCannonScorer_vftable = {
-	.base.Draw = cCannonScorer_Draw,
-	.base.SetParam = cScorerItem_SetParam,
-	.base.Var = cCannonScorer_Var,
-	.base.Delete = cCannonScorer_Delete,
-	.DrawLock = cCannonScorer_DrawLock,
+static const cScorerItemVtbl cCannonScorer_vftable = {
+	.Draw = cCannonScorer_Draw,
+	.SetParam = cScorerItem_SetParam,
+	.Var = cCannonScorer_Var,
+	.Delete = cCannonScorer_Delete,
 };
 
 static cGVar GVar_CannonScorerNoAmmoSound;

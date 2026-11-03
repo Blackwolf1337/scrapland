@@ -252,30 +252,6 @@ static inline void Functionary_AssignDesktop(void *self, float maxDist) {
 	VT(cFunctionaryLocalLogicVtbl, self)->AssignDesktop(self, maxDist);
 }
 
-/* Berto: three more slots, all empty */
-typedef struct cBertoLocalLogicVtbl {
-	cFunctionaryLocalLogicVtbl base;
-	void(*Unused42)(cLocalLogic *self, int arg);				/* 0xa8 nothing, never called */
-	void(*Unused43)(cLocalLogic *self, int arg);				/* 0xac nothing, never called */
-	void(*Unused44)(cLocalLogic *self, int arg);				/* 0xb0 nothing, never called */
-} cBertoLocalLogicVtbl;
-
-/* the sentinels: the accuse when seen (no other sentinel accuses) and the think */
-typedef struct cSentinelLocalLogicVtbl {
-	cBaseLocalLogicVtbl base;
-	byte(*Seen)(cLocalLogic *self);					/* 0x64 */
-	void(*Think)(cLocalLogic *self, float dt, byte other);		/* 0x68 */
-} cSentinelLocalLogicVtbl;
-
-/* calls through the slots of cSentinelLocalLogicVtbl */
-static inline byte Sentinel_Seen(void *self) {
-	return VT(cSentinelLocalLogicVtbl, self)->Seen(self);
-}
-
-static inline void Sentinel_Think(void *self, float dt, byte other) {
-	VT(cSentinelLocalLogicVtbl, self)->Think(self, dt, other);
-}
-
 /* Logic/LocalLogic.h, 8 bytes: the logic of the CTFEnemies ships is this only */
 struct cLocalLogic {
 	const cLocalLogicVtbl *vftable;	/* 0x00 */
@@ -494,9 +470,6 @@ byte cLocalLogic_VarIFalse(cLocalLogic *self, const char *name, int *i, byte set
 byte cLocalLogic_VarSFalse(cLocalLogic *self, const char *name, char **s, byte set);
 byte cLocalLogic_AcceptsArrowTrue(cLocalLogic *self);
 void cLocalLogic_BreakWorkNop(cLocalLogic *self, byte restart);
-void cLocalLogic_Unused42Nop(cLocalLogic *self, int arg);
-void cLocalLogic_Unused43Nop(cLocalLogic *self, int arg);
-void cLocalLogic_Unused44Nop(cLocalLogic *self, int arg);
 void cLocalLogic_WorkNop(cLocalLogic *self, float dt);
 const char *cLocalLogic_GetName(cLocalLogic *self);
 byte cBaseLocalLogic_SetState(cLocalLogic *base, int state, cEntity *target);
@@ -876,17 +849,6 @@ cGearLocalLogic *cGearLocalLogic_ctor(cGearLocalLogic *self, cEntity *parent);
 byte cGearLocalLogic_Call(cGearLocalLogic *self, cEntity *e);
 
 /* LittlePoliceLogic.cpp, 0x78 bytes: the police of the indoor maps (the type "Police") */
-/* the vtable of the little police: the GenChar slots and one of its own */
-typedef struct cLittlePoliceLocalLogicVtbl {
-	cGenCharLocalLogicVtbl base;
-	void(*UpdateLook)(cLocalLogic *self);			/* 0x90 vf36 */
-} cLittlePoliceLocalLogicVtbl;
-
-/* calls through the slots of cLittlePoliceLocalLogicVtbl */
-static inline void LittlePolice_UpdateLook(void *self) {
-	VT(cLittlePoliceLocalLogicVtbl, self)->UpdateLook(self);
-}
-
 typedef struct cLittlePoliceLocalLogic {
 	cGenCharLocalLogic base;	/* 0x00 specialTime: the time of the chase in state 4 */
 	float sirenTime;		/* 0x68 with the alarm: the next siren */
@@ -1022,5 +984,7 @@ typedef struct cRustyLocalLogic {
 void Taunts_Think(float dt);
 /* the phone cab warning with the alarm; 1 when the player is near one */
 byte Taunts_Warnings(float dt);
+byte cSentinelLocalLogic_Seen(cSentinelLocalLogic *self);
+void cSentinelLocalLogic_Think(cSentinelLocalLogic *self, float dt, byte quiet);
 
 #endif

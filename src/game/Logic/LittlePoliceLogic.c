@@ -12,13 +12,13 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
-#define CLITTLEPOLICELOCALLOGIC_VFTABLE (&cLittlePoliceLocalLogic_vftable.base.base)
+#define CLITTLEPOLICELOCALLOGIC_VFTABLE (&cLittlePoliceLocalLogic_vftable.base)
 #define g_LittlePoliceStopAcusingMaxDistFromUser (GVar_LittlePoliceStopAcusingMaxDistFromUser.value.f)
 #define g_LittlePoliceMaxDistFar (GVar_LittlePoliceMaxDistFar.value.f)
 #define g_LittlePoliceAsksForMoney (GVar_LittlePoliceAsksForMoney.value.i)
 #define g_LittlePoliceChasingTime (GVar_LittlePoliceChasingTime.value.f)
 #define g_MainMissionStopDist (GVar_MainMissionStopDist.value.f)
-static const cLittlePoliceLocalLogicVtbl cLittlePoliceLocalLogic_vftable;
+static const cGenCharLocalLogicVtbl cLittlePoliceLocalLogic_vftable;
 static cGVar GVar_MainMissionStopDist;
 static cGVar GVar_LittlePoliceStopAcusingMaxDistFromUser;
 static cGVar GVar_LittlePoliceMaxDistFar;
@@ -275,13 +275,15 @@ static void LP_Siren(cLittlePoliceLocalLogic *self, int st, byte alarm, cEntity 
 	}
 }
 
+static void cLittlePoliceLocalLogic_UpdateLook(cLittlePoliceLocalLogic *self);
+
 /* vf17 */
 static void cLittlePoliceLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)elem;
 	cBaseLocalLogic *b = LP_BASE(self);
 	vec3_t t1, t2;
 
-	LittlePolice_UpdateLook(self);
+	cLittlePoliceLocalLogic_UpdateLook(self);
 	cLittlePoliceLocalLogic_UpdateBribe(self);
 	int st = b->state;
 	byte alarm = g_pWorld->alarm.on;
@@ -454,8 +456,7 @@ static byte cLittlePoliceLocalLogic_GivesMoney(cLocalLogic *base, cEntity *e) {
 }
 
 /* vf36: the view of the AI; not guaranteed it sees the player in its far view: the alarm and the accuse */
-static void cLittlePoliceLocalLogic_UpdateLook(cLocalLogic *base) {
-	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)base;
+static void cLittlePoliceLocalLogic_UpdateLook(cLittlePoliceLocalLogic *self) {
 	vec3_t t;
 	cBaseLocalLogic *b = LP_BASE(self);
 	cEntity *p = b->parent;
@@ -596,44 +597,43 @@ static byte cLittlePoliceLocalLogic_SetState(cLocalLogic *elem, int state, cEnti
 }
 
 /* the vtable of cLittlePoliceLocalLogic */
-static const cLittlePoliceLocalLogicVtbl cLittlePoliceLocalLogic_vftable = {
-	.base.base.base.Delete = cLittlePoliceLocalLogic_Delete,
-	.base.base.base.GetName = cBaseLocalLogic_GetName,
-	.base.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
-	.base.base.base.VarI = cLittlePoliceLocalLogic_VarI,
-	.base.base.base.VarF = cBaseLocalLogic_VarF,
-	.base.base.base.VarS = cGenCharLocalLogic_VarS,
-	.base.base.base.VarV = cBaseLocalLogic_VarV,
-	.base.base.UpdateBusy = cLittlePoliceLocalLogic_UpdateBusy,
-	.base.base.Refresh = cBaseLocalLogic_Refresh,
-	.base.base.Listens = cLocalLogic_ListensTrue,
-	.base.base.OnHit = cLittlePoliceLocalLogic_OnHit,
-	.base.base.OnSeen = cLittlePoliceLocalLogic_OnSeen,
-	.base.base.OnAttack = cGenCharLocalLogic_OnRobbery,
-	.base.base.OnShot = cBaseLocalLogic_OnShot,
-	.base.base.OnHammer = cLocalLogic_OnHammerNop,
-	.base.base.GivesMoney = cLittlePoliceLocalLogic_GivesMoney,
-	.base.base.OnAlarm = cGenCharLocalLogic_OnAlarm,
-	.base.base.Update = cLittlePoliceLocalLogic_Update,
-	.base.base.SetOriginFrom = cBaseLocalLogic_SetOriginFrom,
-	.base.base.SetState = cLittlePoliceLocalLogic_SetState,
-	.base.base.SetIdle = cLittlePoliceLocalLogic_SetIdle,
-	.base.base.SetActionRadius = cBaseLocalLogic_SetActionRadius,
-	.base.base.SetOrigin = cBaseLocalLogic_SetOrigin,
-	.base.base.SetOriginAng = cBaseLocalLogic_SetOriginAng,
-	.base.base.RestartState = cGenCharLocalLogic_RestartState,
-	.base.CanAttack = cGenCharLocalLogic_CanAttack,
-	.base.UpdateView = cLittlePoliceLocalLogic_UpdateView,
-	.base.ToRelax = cGenCharLocalLogic_ToRelax,
-	.base.ToAlert = cLittlePoliceLocalLogic_ToAlert,
-	.base.Accuse = Logic_SetState2,
-	.base.FindTarget = cLittlePoliceLocalLogic_FindTarget,
-	.base.TargetDone = cLittlePoliceLocalLogic_TargetDone,
-	.base.Work = cLocalLogic_WorkNop,
-	.base.BreakWork = cLocalLogic_BreakWorkNop,
-	.base.GoTo = cLittlePoliceLocalLogic_GoTo,
-	.base.UpdateGetIt = cLittlePoliceLocalLogic_UpdateGetIt,
-	.UpdateLook = cLittlePoliceLocalLogic_UpdateLook,
+static const cGenCharLocalLogicVtbl cLittlePoliceLocalLogic_vftable = {
+	.base.base.Delete = cLittlePoliceLocalLogic_Delete,
+	.base.base.GetName = cBaseLocalLogic_GetName,
+	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
+	.base.base.VarI = cLittlePoliceLocalLogic_VarI,
+	.base.base.VarF = cBaseLocalLogic_VarF,
+	.base.base.VarS = cGenCharLocalLogic_VarS,
+	.base.base.VarV = cBaseLocalLogic_VarV,
+	.base.UpdateBusy = cLittlePoliceLocalLogic_UpdateBusy,
+	.base.Refresh = cBaseLocalLogic_Refresh,
+	.base.Listens = cLocalLogic_ListensTrue,
+	.base.OnHit = cLittlePoliceLocalLogic_OnHit,
+	.base.OnSeen = cLittlePoliceLocalLogic_OnSeen,
+	.base.OnAttack = cGenCharLocalLogic_OnRobbery,
+	.base.OnShot = cBaseLocalLogic_OnShot,
+	.base.OnHammer = cLocalLogic_OnHammerNop,
+	.base.GivesMoney = cLittlePoliceLocalLogic_GivesMoney,
+	.base.OnAlarm = cGenCharLocalLogic_OnAlarm,
+	.base.Update = cLittlePoliceLocalLogic_Update,
+	.base.SetOriginFrom = cBaseLocalLogic_SetOriginFrom,
+	.base.SetState = cLittlePoliceLocalLogic_SetState,
+	.base.SetIdle = cLittlePoliceLocalLogic_SetIdle,
+	.base.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.base.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.base.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.base.RestartState = cGenCharLocalLogic_RestartState,
+	.CanAttack = cGenCharLocalLogic_CanAttack,
+	.UpdateView = cLittlePoliceLocalLogic_UpdateView,
+	.ToRelax = cGenCharLocalLogic_ToRelax,
+	.ToAlert = cLittlePoliceLocalLogic_ToAlert,
+	.Accuse = Logic_SetState2,
+	.FindTarget = cLittlePoliceLocalLogic_FindTarget,
+	.TargetDone = cLittlePoliceLocalLogic_TargetDone,
+	.Work = cLocalLogic_WorkNop,
+	.BreakWork = cLocalLogic_BreakWorkNop,
+	.GoTo = cLittlePoliceLocalLogic_GoTo,
+	.UpdateGetIt = cLittlePoliceLocalLogic_UpdateGetIt,
 };
 
 cGVar GVar_GenCharStdFovX;

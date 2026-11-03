@@ -743,24 +743,6 @@ void cLocalLogic_BreakWorkNop(cLocalLogic *self, byte restart) {
 	(void)restart;
 }
 
-/* the slot Unused42 of a class that does nothing there */
-void cLocalLogic_Unused42Nop(cLocalLogic *self, int arg) {
-	(void)self;
-	(void)arg;
-}
-
-/* the slot Unused43 of a class that does nothing there */
-void cLocalLogic_Unused43Nop(cLocalLogic *self, int arg) {
-	(void)self;
-	(void)arg;
-}
-
-/* the slot Unused44 of a class that does nothing there */
-void cLocalLogic_Unused44Nop(cLocalLogic *self, int arg) {
-	(void)self;
-	(void)arg;
-}
-
 /* the slot Work of a class that does nothing there */
 void cLocalLogic_WorkNop(cLocalLogic *self, float dt) {
 	(void)self;

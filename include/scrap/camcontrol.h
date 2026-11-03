@@ -124,13 +124,6 @@ static inline void CamCtl_UpdateOff(void *self, float dt) {
 	VT(cCamControlVtbl, self)->UpdateOff(self, dt);
 }
 
-/* the follow camera adds two */
-typedef struct cFollowCamVtbl {
-	cCamControlVtbl base;
-	void(*GetAng2)(cEntity *self, float *ang);				/* 0x74 vf29 */
-	void(*SetAng2)(cEntity *self, const float *ang);			/* 0x78 vf30 */
-} cFollowCamVtbl;
-
 extern cGVar GVar_WalkCameraCenter;
 #define g_WalkCameraCenter (GVar_WalkCameraCenter.value.f)	/* WalkCameraCenter */
 extern cGVar GVar_VehicleCamDist;

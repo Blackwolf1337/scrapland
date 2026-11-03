@@ -83,16 +83,6 @@ static inline void NetMan_SetLocalData(void *self) {
 	VT(cUserNetManagerVtbl, self)->SetLocalData(self);
 }
 
-typedef struct cServerNetManagerVtbl {
-	cUserNetManagerVtbl base;
-	void(*SendHello)(cUserNetManager *self, byte type);				/* 0x10 */
-} cServerNetManagerVtbl;
-
-/* calls through the slots of cServerNetManagerVtbl */
-static inline void ServerNet_SendHello(void *self, byte type) {
-	VT(cServerNetManagerVtbl, self)->SendHello(self, type);
-}
-
 /* the base of the user managers (msgman.cpp, 0xc bytes), made by g_NetUserFactory for each cNetClient */
 struct cUserNetManager {
 	const cUserNetManagerVtbl *vftable;	/* 0x0 */

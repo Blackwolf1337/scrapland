@@ -271,17 +271,6 @@ cButtonScorer *cButtonScorer_ctor(cButtonScorer *self);
 /* the crosshair of the ship of the camera: the center sprite, the aim of the weapon at the aim point of the auto aim,
  * the lock text and the life warning (0xec bytes) */
 struct cCannonScorer;
-typedef struct cCannonScorerVtbl {
-	cScorerItemVtbl base;
-	/* the lock text at pos */
-	void(*DrawLock)(struct cCannonScorer *self, int player, const float *pos);	/* 0x10 */
-} cCannonScorerVtbl;
-
-/* calls through the slots of cCannonScorerVtbl */
-static inline void CannonScorer_DrawLock(void *self, int player, const float *pos) {
-	VT(cCannonScorerVtbl, self)->DrawLock(self, player, pos);
-}
-
 typedef struct cCannonScorer {
 	cScorerItem base;		/* 0x00 */
 	byte shown;			/* 0xac the aim was drawn in the last frame (the no ammo sound when it goes) */

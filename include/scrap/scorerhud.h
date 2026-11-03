@@ -251,21 +251,6 @@ cTabScorer *cTabScorer_ctor(cTabScorer *self);
 /* the text of a talk (Scorer_SetSpeechText) above the character and the text of the use of the character in
  * front (0x1a80 bytes) */
 struct cTalkScorer;
-typedef struct cTalkScorerVtbl {
-	cScorerItemVtbl base;
-	void(*DrawTalk)(struct cTalkScorer *self, int player, float *pos);		/* 0x10 */
-	void(*DrawUse)(struct cTalkScorer *self, int player, float *pos);		/* 0x14 */
-} cTalkScorerVtbl;
-
-/* calls through the slots of cTalkScorerVtbl */
-static inline void TalkScorer_DrawTalk(void *self, int player, float *pos) {
-	VT(cTalkScorerVtbl, self)->DrawTalk(self, player, pos);
-}
-
-static inline void TalkScorer_DrawUse(void *self, int player, float *pos) {
-	VT(cTalkScorerVtbl, self)->DrawUse(self, player, pos);
-}
-
 typedef struct cTalkScorer {
 	cScorerItem base;		/* 0x0000 */
 	CPsaImage *sprite;		/* 0x00ac Sprite */

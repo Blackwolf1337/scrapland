@@ -11,7 +11,7 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/staticinit.h"
 
-#define CFOLLOWCAMENTITY_VFTABLE (&cFollowCamEntity_vftable.base.base)
+#define CFOLLOWCAMENTITY_VFTABLE (&cFollowCamEntity_vftable.base)
 #define g_FreeCameraCollide (GVar_FreeCameraCollide.value.i)	/* FreeCameraCollide */
 #define g_FullCameraTest (GVar_FullCameraTest.value.i)	/* FullCameraTest */
 #define g_VehicleCamNear (GVar_VehicleCamNear.value.f)
@@ -20,7 +20,7 @@
 #define g_WalkCamFar (GVar_WalkCamFar.value.f)
 #define g_OutWalkCamNear (GVar_OutWalkCamNear.value.f)
 #define g_OutWalkCamFar (GVar_OutWalkCamFar.value.f)
-static const cFollowCamVtbl cFollowCamEntity_vftable;
+static const cCamControlVtbl cFollowCamEntity_vftable;
 static cGVar GVar_WalkCamNear;
 static cGVar GVar_WalkCamFar;
 static cGVar GVar_VehicleCamNear;
@@ -359,11 +359,6 @@ cEntity *cCamEntity_GetTarget(cEntity *cam) {
 	return FCam(cam)->target;
 }
 
-static void cFollowCamEntity_GetAng2(cEntity *self, float *ang) {
-	ang[0] = FCam(self)->ang[0];
-	ang[1] = FCam(self)->ang[1];
-}
-
 static const char *cFollowCamEntity_GetClassName(cEntity *self) {
 	(void)self;
 	return FCAM_CLASSNAME;
@@ -500,11 +495,6 @@ void cCamEntity_SetTarget(cEntity *cam, cEntity *target) {
 	cPy_Function_Execute(&fc->onSwitch, 0);
 }
 
-static void cFollowCamEntity_SetAng2(cEntity *self, const float *ang) {
-	FCam(self)->ang[0] = ang[0];
-	FCam(self)->ang[1] = ang[1];
-}
-
 /* the free camera: the button of the view picks the next active vehicle of an AI or of the network, or the next
  * active character, as the target; without one it flies */
 static void cFollowCamEntity_Update(cEntity *self) {
@@ -579,38 +569,36 @@ static byte cFollowCamEntity_VarV(cEntity *self, const char *name, double *x, do
 }
 
 /* the vtable of cFollowCamEntity */
-static const cFollowCamVtbl cFollowCamEntity_vftable = {
-	.base.base.Update = cFollowCamEntity_Update,
-	.base.base.Render = cEntity_Render,
-	.base.base.UpdateOff = cEntity_UpdateOff,
-	.base.base.Delete = cFollowCamEntity_Delete,
-	.base.base.GetClassName = cFollowCamEntity_GetClassName,
-	.base.base.IsType = cFollowCamEntity_IsType,
-	.base.base.GetPos = cEntity_GetPos,
-	.base.base.SetPos = cEntity_SetPos,
-	.base.base.SetActive = cEntity_SetActive,
-	.base.base.TestLine = cEntity_TestLine,
-	.base.base.TestSphere = cEntity_TestSphereFalse,
-	.base.base.Touch = cEntity_TouchNop,
-	.base.base.SetModel = cEntity_SetModel,
-	.base.base.GetTargetAngle = cEntity_GetTargetAngle,
-	.base.base.AimWeapon = cEntity_AimWeapon,
-	.base.base.SetEmbeddedFX = cEntity_SetEmbeddedFX,
-	.base.base.VarI = cFollowCamEntity_VarI,
-	.base.base.VarF = cFollowCamEntity_VarF,
-	.base.base.VarS = cFollowCamEntity_VarS,
-	.base.base.VarV = cFollowCamEntity_VarV,
-	.base.base.Unused20 = cEntity_Unused20,
-	.base.base.Unused21 = cEntity_Unused21,
-	.base.base.GetAI = cEntity_GetAI,
-	.base.GetCamPos = cCamControl_GetCamPos,
-	.base.SetCamPos = cCamControl_SetCamPos,
-	.base.Lerp = cFollowCamEntity_Lerp,
-	.base.Slot = cFollowCamEntity_Slot,
-	.base.SetTarget = cFollowCamEntity_SetTargetName,
-	.base.UpdateOff = cFollowCamEntity_UpdateOff,
-	.GetAng2 = cFollowCamEntity_GetAng2,
-	.SetAng2 = cFollowCamEntity_SetAng2,
+static const cCamControlVtbl cFollowCamEntity_vftable = {
+	.base.Update = cFollowCamEntity_Update,
+	.base.Render = cEntity_Render,
+	.base.UpdateOff = cEntity_UpdateOff,
+	.base.Delete = cFollowCamEntity_Delete,
+	.base.GetClassName = cFollowCamEntity_GetClassName,
+	.base.IsType = cFollowCamEntity_IsType,
+	.base.GetPos = cEntity_GetPos,
+	.base.SetPos = cEntity_SetPos,
+	.base.SetActive = cEntity_SetActive,
+	.base.TestLine = cEntity_TestLine,
+	.base.TestSphere = cEntity_TestSphereFalse,
+	.base.Touch = cEntity_TouchNop,
+	.base.SetModel = cEntity_SetModel,
+	.base.GetTargetAngle = cEntity_GetTargetAngle,
+	.base.AimWeapon = cEntity_AimWeapon,
+	.base.SetEmbeddedFX = cEntity_SetEmbeddedFX,
+	.base.VarI = cFollowCamEntity_VarI,
+	.base.VarF = cFollowCamEntity_VarF,
+	.base.VarS = cFollowCamEntity_VarS,
+	.base.VarV = cFollowCamEntity_VarV,
+	.base.Unused20 = cEntity_Unused20,
+	.base.Unused21 = cEntity_Unused21,
+	.base.GetAI = cEntity_GetAI,
+	.GetCamPos = cCamControl_GetCamPos,
+	.SetCamPos = cCamControl_SetCamPos,
+	.Lerp = cFollowCamEntity_Lerp,
+	.Slot = cFollowCamEntity_Slot,
+	.SetTarget = cFollowCamEntity_SetTargetName,
+	.UpdateOff = cFollowCamEntity_UpdateOff,
 };
 
 static cGVar GVar_FullCameraTest;

@@ -11,7 +11,7 @@
 #include "scrap/objentity.h"
 #include "scrap/staticinit.h"
 
-#define g_ServerNetManagerVftable (&cServerNetManager_vftable.base)
+#define g_ServerNetManagerVftable (&cServerNetManager_vftable)
 #define g_LogNetData (GVar_LogNetData.value.i)		/* LogNetData */
 #define g_ClientPassword (GVar_ClientPassword.value.s)
 #define g_ClientAfterCreateFlags (GVar_ClientAfterCreate.head.flags)
@@ -27,7 +27,7 @@
 #define g_WeaponBayList (GVar_WeaponBayList.value.s)
 #define g_PlayerTeamID (GVar_PlayerTeamID.value.i)
 #define g_PlayerName (((cString *)&GVar_PlayerName.value))
-static const cServerNetManagerVtbl cServerNetManager_vftable;
+static const cUserNetManagerVtbl cServerNetManager_vftable;
 static cGVar GVar_WeaponBayList;
 static cGVar GVar_PlayerTeamID;
 static cGVar GVar_PlayerName;
@@ -42,12 +42,12 @@ static cGVar GVar_LogNetData;
 static cGVar GVar_ClientPassword;
 static cGVarFunction GVar_ClientAfterCreate;
 
-static void cServerNetManager_SendHello(cUserNetManager *elem, byte type);
+static void cServerNetManager_SendHello(cServerNetManager *self, byte type);
 cServerNetManager *cServerNetManager_ctor(cServerNetManager *self, cNetClient *client, int slot) {
 	cUserNetManager_ctor(&self->base, client, slot);
 	self->base.vftable = g_ServerNetManagerVftable;
 	Con_Print(0, "Try to server\n", 0);
-	cServerNetManager_SendHello(&self->base, NETMSG_DELETE);
+	cServerNetManager_SendHello(self, NETMSG_DELETE);
 	self->name[0] = 0;
 	return self;
 }
@@ -200,7 +200,7 @@ static void cServerNetManager_OnReceive(cUserNetManager *elem, void *data, int s
 	}
 	case NETMSG_PING:
 		cFileMem_Close(&g_NetMsg.base);
-		ServerNet_SendHello(self, 0);
+		cServerNetManager_SendHello(self, 0);
 		Net_ClientReset();
 		return;
 	default:
@@ -216,8 +216,7 @@ int Net_GetClientPing(uint32_t slot) {
 	return (int)pow(2.0, (double)g_NetClientPings[slot] / 24.0);
 }
 
-static void cServerNetManager_SendHello(cUserNetManager *elem, byte type) {
-	cServerNetManager *self = (cServerNetManager *)elem;
+static void cServerNetManager_SendHello(cServerNetManager *self, byte type) {
 	uint32_t v;
 
 	void *buf = cStaticBuffer_Get(g_NetStaticBuffer, 8000);
@@ -270,12 +269,11 @@ void cUserNetManager_Nop(cUserNetManager *self) {
 }
 
 /* the vtable of cServerNetManager */
-static const cServerNetManagerVtbl cServerNetManager_vftable = {
-	.base.Delete = cServerNetManager_Delete,
-	.base.OnReceive = cServerNetManager_OnReceive,
-	.base.Send = cServerNetManager_Send,
-	.base.SetLocalData = cUserNetManager_Nop,
-	.SendHello = cServerNetManager_SendHello,
+static const cUserNetManagerVtbl cServerNetManager_vftable = {
+	.Delete = cServerNetManager_Delete,
+	.OnReceive = cServerNetManager_OnReceive,
+	.Send = cServerNetManager_Send,
+	.SetLocalData = cUserNetManager_Nop,
 };
 
 static cGVar GVar_LogNetData;

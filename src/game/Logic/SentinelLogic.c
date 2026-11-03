@@ -18,8 +18,8 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
-static const cSentinelLocalLogicVtbl cSentinelLocalLogic_vftable;
-#define CSENTINELLOCALLOGIC_VFTABLE (&cSentinelLocalLogic_vftable.base)
+static const cBaseLocalLogicVtbl cSentinelLocalLogic_vftable;
+#define CSENTINELLOCALLOGIC_VFTABLE (&cSentinelLocalLogic_vftable)
 static cGVar GVar_SentinelInspectTime;
 #define g_SentinelInspectTime (GVar_SentinelInspectTime.value.f)
 static cGVar GVar_SentinelSuspectTime;
@@ -83,8 +83,7 @@ static void cSentinelLocalLogic_OnAlarm(cLocalLogic *base, cEntity *e) {
 }
 
 /* vf25: the player was in view at the last think */
-static byte cSentinelLocalLogic_Seen(cLocalLogic *base) {
-	cSentinelLocalLogic *self = (cSentinelLocalLogic *)base;
+byte cSentinelLocalLogic_Seen(cSentinelLocalLogic *self) {
 	return self->seen;
 }
 
@@ -113,8 +112,7 @@ void cSentinelLocalLogic_Watch(void *sentinel, const vec3_t *pos) {
 
 /* vf26: the view of the player (unless quiet) and the state */
 static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *p, float dt);
-static void cSentinelLocalLogic_Think(cLocalLogic *elem, float dt, byte quiet) {
-	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
+void cSentinelLocalLogic_Think(cSentinelLocalLogic *self, float dt, byte quiet) {
 	cBaseLocalLogic *b = &self->base;
 	cEntity *p = b->parent;
 	vec3_t tmp;
@@ -408,34 +406,32 @@ static byte cSentinelLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *
 }
 
 /* the vtable of cSentinelLocalLogic */
-static const cSentinelLocalLogicVtbl cSentinelLocalLogic_vftable = {
-	.base.base.Delete = cSentinelLocalLogic_Delete,
-	.base.base.GetName = cBaseLocalLogic_GetName,
-	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
-	.base.base.VarI = cBaseLocalLogic_VarI,
-	.base.base.VarF = cBaseLocalLogic_VarF,
-	.base.base.VarS = cBaseLocalLogic_VarS,
-	.base.base.VarV = cBaseLocalLogic_VarV,
-	.base.UpdateBusy = cBaseLocalLogic_UpdateBusy,
-	.base.Refresh = cBaseLocalLogic_Refresh,
-	.base.Listens = cLocalLogic_ListensTrue,
-	.base.OnHit = cSentinelLocalLogic_OnUsr,
-	.base.OnSeen = cSentinelLocalLogic_OnUsr,
-	.base.OnAttack = cSentinelLocalLogic_OnRobbery,
-	.base.OnShot = cSentinelLocalLogic_OnAttack,
-	.base.OnHammer = cLocalLogic_OnHammerNop,
-	.base.GivesMoney = cSentinelLocalLogic_GivesMoney,
-	.base.OnAlarm = cSentinelLocalLogic_OnAlarm,
-	.base.Update = cBaseLocalLogic_Update,
-	.base.SetOriginFrom = cBaseLocalLogic_SetOriginFrom,
-	.base.SetState = cSentinelLocalLogic_SetState,
-	.base.SetIdle = cBaseLocalLogic_SetIdle,
-	.base.SetActionRadius = cBaseLocalLogic_SetActionRadius,
-	.base.SetOrigin = cBaseLocalLogic_SetOrigin,
-	.base.SetOriginAng = cBaseLocalLogic_SetOriginAng,
-	.base.RestartState = cSentinelLocalLogic_RestartState,
-	.Seen = cSentinelLocalLogic_Seen,
-	.Think = cSentinelLocalLogic_Think,
+static const cBaseLocalLogicVtbl cSentinelLocalLogic_vftable = {
+	.base.Delete = cSentinelLocalLogic_Delete,
+	.base.GetName = cBaseLocalLogic_GetName,
+	.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
+	.base.VarI = cBaseLocalLogic_VarI,
+	.base.VarF = cBaseLocalLogic_VarF,
+	.base.VarS = cBaseLocalLogic_VarS,
+	.base.VarV = cBaseLocalLogic_VarV,
+	.UpdateBusy = cBaseLocalLogic_UpdateBusy,
+	.Refresh = cBaseLocalLogic_Refresh,
+	.Listens = cLocalLogic_ListensTrue,
+	.OnHit = cSentinelLocalLogic_OnUsr,
+	.OnSeen = cSentinelLocalLogic_OnUsr,
+	.OnAttack = cSentinelLocalLogic_OnRobbery,
+	.OnShot = cSentinelLocalLogic_OnAttack,
+	.OnHammer = cLocalLogic_OnHammerNop,
+	.GivesMoney = cSentinelLocalLogic_GivesMoney,
+	.OnAlarm = cSentinelLocalLogic_OnAlarm,
+	.Update = cBaseLocalLogic_Update,
+	.SetOriginFrom = cBaseLocalLogic_SetOriginFrom,
+	.SetState = cSentinelLocalLogic_SetState,
+	.SetIdle = cBaseLocalLogic_SetIdle,
+	.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.RestartState = cSentinelLocalLogic_RestartState,
 };
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

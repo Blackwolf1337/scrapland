@@ -12,11 +12,11 @@
 #include "scrap/scrapmain.h"
 #include "scrap/staticinit.h"
 
-#define CTALKSCORER_VFTABLE (&cTalkScorer_vftable.base)
+#define CTALKSCORER_VFTABLE (&cTalkScorer_vftable)
 #define g_TalkWidth (GVar_MaxTalkLineSizePix.value.f)		/* the width of the lines */
 #define g_TalkUseTime (GVar_TimeToAbortChatText.value.f)	/* the hold time of the use that skips a talk */
 #define g_TalkTime (GVar_FullTalkTime.value.f)		/* the time of the whole talk */
-static const cTalkScorerVtbl cTalkScorer_vftable;
+static const cScorerItemVtbl cTalkScorer_vftable;
 static cGVar GVar_TimeToAbortChatText;
 static cGVar GVar_MaxTalkLineSizePix;
 static cGVar GVar_FullTalkTime;
@@ -159,6 +159,10 @@ static int cTalkScorer_Var(cScorerItem *base, const char *name, int set, char **
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
+static void cTalkScorer_DrawUse(cTalkScorer *self, int player, float *pos);
+
+static void cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos);
+
 /* the use text (vf05) and the talk (vf04) up from the item position */
 static void cTalkScorer_Draw(cScorerItem *base, int player) {
 	cTalkScorer *self = (cTalkScorer *)base;
@@ -166,8 +170,8 @@ static void cTalkScorer_Draw(cScorerItem *base, int player) {
 
 	pos[0] = self->base.x;
 	pos[1] = self->base.y;
-	TalkScorer_DrawUse(self, player, pos);
-	TalkScorer_DrawTalk(self, player, pos);
+	cTalkScorer_DrawUse(self, player, pos);
+	cTalkScorer_DrawTalk(self, player, pos);
 }
 
 static cPy_Function g_TalkCallback;
@@ -333,13 +337,11 @@ int Talk_IsShown(void) {
 }
 
 /* the vtable of cTalkScorer */
-static const cTalkScorerVtbl cTalkScorer_vftable = {
-	.base.Draw = cTalkScorer_Draw,
-	.base.SetParam = cScorerItem_SetParam,
-	.base.Var = cTalkScorer_Var,
-	.base.Delete = cTalkScorer_Delete,
-	.DrawTalk = cTalkScorer_DrawTalk,
-	.DrawUse = cTalkScorer_DrawUse,
+static const cScorerItemVtbl cTalkScorer_vftable = {
+	.Draw = cTalkScorer_Draw,
+	.SetParam = cScorerItem_SetParam,
+	.Var = cTalkScorer_Var,
+	.Delete = cTalkScorer_Delete,
 };
 
 static cGVar GVar_MaxTalkLineSizePix;

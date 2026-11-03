@@ -39,11 +39,11 @@ static inline byte AICtrl_AIActive(cAIChar *ai) {
 
 /* the sentinel logic: the accuse (no other sentinel accuses) and the think */
 static inline byte AICtrl_SentinelAccuses(cBaseLocalLogic *l) {
-	return Sentinel_Seen(l);
+	return cSentinelLocalLogic_Seen((cSentinelLocalLogic *)l);
 }
 
 static inline void AICtrl_SentinelUpdate(cBaseLocalLogic *l, float dt, byte other) {
-	Sentinel_Think(l, dt, other);
+	cSentinelLocalLogic_Think((cSentinelLocalLogic *)l, dt, other);
 }
 
 /* prefix and the rest of a name, like "Gear" and the number of "Police01" (the original copies unbounded) */
