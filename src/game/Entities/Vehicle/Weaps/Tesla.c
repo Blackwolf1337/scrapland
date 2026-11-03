@@ -22,7 +22,6 @@ static cGVar GVar_TeslaMaxAngRangePad;
 static cGVar GVar_TeslaMaxAngRange;
 static cGVar GVar_TeslaHitForce;
 static cGVar GVar_TeslaAmmoCost;
-
 #define TESLA_UPG_TRACK 5		/* the upgrade that pushes a ship against its flight */
 #define TESLA_UPG_WIDE 6		/* the upgrade that keeps the HUD item a quarter open */
 #define TESLA_CONE 0x1.80406ep-1f	/* the cone of the aim help */

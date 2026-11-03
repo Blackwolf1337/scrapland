@@ -15,13 +15,10 @@
 #include "scrap/staticinit.h"
 
 static cGVar GVar_R_SortModels;
-
 #define g_SortModels (GVar_R_SortModels.value.i)	/* R_SortModels */
 static cGVar GVar_R_SortShow;
-
 #define g_SortShow (GVar_R_SortShow.value.i)	/* R_SortShow */
 static cGVar GVar_R_SortInvert;
-
 #define g_SortInvert (GVar_R_SortInvert.value.i)	/* R_SortInvert */
 
 #define SORT_TEXT_X 200.0f

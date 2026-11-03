@@ -186,7 +186,6 @@ static int Menu_FadeStep(cScorer *sc) {
 }
 
 static cGVar GVar_FadeOutFinalTime;
-
 #define g_FadeOutFinalTime (GVar_FadeOutFinalTime.value.f)	/* the time of ScorerSpriteFadeOutFinal */
 
 static float g_MetroRing;

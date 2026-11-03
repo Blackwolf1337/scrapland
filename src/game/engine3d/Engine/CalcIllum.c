@@ -17,7 +17,6 @@
 #include "scrap/staticinit.h"
 
 static cGVar GVar_R_ShowPreIllumVtx;
-
 #define g_ShowPreIllumVtx (GVar_R_ShowPreIllumVtx.value.i)	/* R_ShowPreIllumVtx: 1 no light colors, 2 no emissive ones */
 
 /* a vertex of VERT_LTEX1N */

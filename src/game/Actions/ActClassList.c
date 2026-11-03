@@ -7,7 +7,6 @@
 
 #define CACTCLASSLIST_VFTABLE (&cActClassList_vftable)
 static const cActClassListVtbl cActClassList_vftable;
-
 #define ACTCLASSLIST_SLOTS 457
 
 /* Actions/ActClassList.cpp (src/game/Actions/ActClassList.c) */

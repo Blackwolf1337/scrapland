@@ -30,7 +30,6 @@ static cGVar GVar_PoliceBossBrupBounce2Sound;
 static cGVar GVar_PoliceBossBrupBounce1Sound;
 static cGVar GVar_PoliceBossBrupBaseFile;
 static cGVar GVar_PoliceBossActionRadius;
-
 #define PB_SYSTEMS 5		/* the debris systems <PoliceBossBrupBaseFile>A.M3D .. E.M3D */
 #define PB_Started(el) (((FXElemHead *)(el))->started)
 

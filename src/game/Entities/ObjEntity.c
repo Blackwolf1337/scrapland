@@ -23,7 +23,6 @@
 static const cObjEntityVtbl cObjEntity_vftable;
 static const cNetControllerVtbl cNetController_vftable;
 static cGVar GVar_MssnRadarBlinkTime;
-
 #define OBJ_CLASSNAME "Obj"
 #define OBJ_ONENDMOVE_DESC "<ObjMove.OnEnd> function"
 #define OBJ_ONOBJSLOT_DESC "<OnObjSlot> function"
@@ -37,10 +36,8 @@ static cGVar GVar_ErrorMin;
 /* the smoothing of the position of a network client: no smoothing nearer than min or farther than max */
 #define g_NetSmoothMin (GVar_ErrorMin.value.f)
 static cGVar GVar_ErrorMax;
-
 #define g_NetSmoothMax (GVar_ErrorMax.value.f)
 static cGVar GVar_ErrorFix;
-
 #define g_NetSmoothFactor (GVar_ErrorFix.value.f)
 /* the origin of the packed positions of the network messages (32 units a step) */
 extern vec3_t g_NetOrigin;

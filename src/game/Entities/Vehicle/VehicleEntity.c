@@ -27,7 +27,6 @@
 
 #define CVEHICLEENTITY_VFTABLE (&cVehicleEntity_vftable.base.base.base)
 static const cVehicleEntityVtbl cVehicleEntity_vftable;
-
 #define VEH_CLASSNAME "Car"
 #define CGAMEMODEL_CTOR 0x105e60	/* CGameModel_ctor(self, NULL) */
 #define CGAMEMODEL_DTOR 0x20ec10
@@ -48,49 +47,35 @@ static cGVar GVar_ShipPathFmt;
 /* the engine variables */
 #define g_ShipPathFmt (GVar_ShipPathFmt.value.s)
 static cGVar GVar_VeCharsPathFmt;
-
 #define g_VeCharsPathFmt (GVar_VeCharsPathFmt.value.s)
 static cGVar GVar_AmorPieceWeight;
-
 #define g_AmorPieceWeight (GVar_AmorPieceWeight.value.f)
 static cGVar GVar_MotorDownFactor;
-
 #define g_MotorDownFactor (GVar_MotorDownFactor.value.f)
 static cGVar GVar_VehicleCrashMinTime;
-
 #define g_VehicleCrashMinTime (GVar_VehicleCrashMinTime.value.f)
 static cGVar GVar_VehicleCrashAccLo;
-
 #define g_VehicleCrashAccLo (GVar_VehicleCrashAccLo.value.f)
 static cGVar GVar_VehicleCrashAccMed;
-
 #define g_VehicleCrashAccMed (GVar_VehicleCrashAccMed.value.f)
 static cGVar GVar_VehicleCrashAccHi;
-
 #define g_VehicleCrashAccHi (GVar_VehicleCrashAccHi.value.f)
 static cGVar GVar_VehicleCrashAccHev;
-
 #define g_VehicleCrashAccHev (GVar_VehicleCrashAccHev.value.f)
 static cGVar GVar_FxSpeedVariation;
-
 #define g_FxSpeedVariation (GVar_FxSpeedVariation.value.f)
 static cGVar GVar_FxAngVariation;
-
 #define g_FxAngVariation (GVar_FxAngVariation.value.f)
 static cGVar GVar_FxVelVariation;
-
 #define g_FxVelVariation (GVar_FxVelVariation.value.f)
 static cGVar GVar_FxAccVariation;
-
 #define g_FxAccVariation (GVar_FxAccVariation.value.f)
 static cGVar GVar_FxBoostTimeDuration;
-
 #define g_FxBoostTimeDuration (GVar_FxBoostTimeDuration.value.f)
 cGVar GVar_VehicleEditingMode;
 
 #define g_VehicleEditingMode (GVar_VehicleEditingMode.value.i)
 static cGVar GVar_NPCSndMotorVolFactor;
-
 #define g_NPCSndMotorVolFactor (GVar_NPCSndMotorVolFactor.value.f)
 
 /* the camera data of a player ship (vehicle + 0xf0) */
@@ -1687,19 +1672,14 @@ static cGVar GVar_FreeSpaceMagnetCenterX;
 /* the magnet that pulls the ships back to the center in the free space */
 #define g_FreeSpaceMagnetCenterX (GVar_FreeSpaceMagnetCenterX.value.f)
 static cGVar GVar_FreeSpaceMagnetCenterY;
-
 #define g_FreeSpaceMagnetCenterY (GVar_FreeSpaceMagnetCenterY.value.f)
 static cGVar GVar_FreeSpaceMagnetCenterZ;
-
 #define g_FreeSpaceMagnetCenterZ (GVar_FreeSpaceMagnetCenterZ.value.f)
 static cGVar GVar_FreeSpaceMagnetLoRadius;
-
 #define g_FreeSpaceMagnetLoRadius (GVar_FreeSpaceMagnetLoRadius.value.f)
 static cGVar GVar_FreeSpaceMagnetHiRadius;
-
 #define g_FreeSpaceMagnetHiRadius (GVar_FreeSpaceMagnetHiRadius.value.f)
 static cGVar GVar_FreeSpaceMagnetAccel;
-
 #define g_FreeSpaceMagnetAccel (GVar_FreeSpaceMagnetAccel.value.f)
 
 #define VEH_PI_F 0x1.921fb6p+1f
@@ -1916,16 +1896,12 @@ static cGVar GVar_HiRacerFov;
 
 #define g_HiRacerFov (GVar_HiRacerFov.value.f)		/* degrees at top speed */
 static cGVar GVar_LoRacerFov;
-
 #define g_LoRacerFov (GVar_LoRacerFov.value.f)
 static cGVar GVar_MotorTrustRotationX;
-
 #define g_MotorTrustRotationX (GVar_MotorTrustRotationX.value.f)
 static cGVar GVar_MotorTrustRotationY;
-
 #define g_MotorTrustRotationY (GVar_MotorTrustRotationY.value.f)
 static cGVar GVar_PilotViewDist;
-
 #define g_PilotViewDist (GVar_PilotViewDist.value.f)	/* the pilot is drawn nearer to the camera */
 
 #define VEH_CAM_PITCH -0x1.0c1524p-2f			/* -15 degrees */

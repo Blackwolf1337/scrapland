@@ -32,7 +32,6 @@ static cGVar GVar_LaserHookSparksFile;
 static cGVar GVar_FXHookTensor;
 static cGVar GVar_FXHookSize;
 static cGVar GVar_FXHookFadeTime;
-
 #define FX_PI 3.1415927f
 #define FX_PI_3 1.0471976f
 
@@ -510,28 +509,20 @@ void cObjElementFXEMI_SetEntity(cObjElementFXEMI *self, cEntity *e) {
 }
 
 static cGVar GVar_FXEMIFollowTime;
-
 #define g_FXEMIFollowTime (GVar_FXEMIFollowTime.value.f)
 static cGVar GVar_FXEMIRandRadius;
-
 #define g_FXEMIRandRadius (GVar_FXEMIRandRadius.value.f)
 static cGVar GVar_FXEMIStepTime;
-
 #define g_FXEMIStepTime (GVar_FXEMIStepTime.value.f)
 static cGVar GVar_EMIThunder1Sound;
-
 #define g_EMIThunder1Sound (GVar_EMIThunder1Sound.value.s)
 static cGVar GVar_EMIThunder2Sound;
-
 #define g_EMIThunder2Sound (GVar_EMIThunder2Sound.value.s)
 static cGVar GVar_EMIThunderSoundAttIni;
-
 #define g_EMIThunderSoundAttIni (GVar_EMIThunderSoundAttIni.value.f)
 static cGVar GVar_EMIThunderSoundAttEnd;
-
 #define g_EMIThunderSoundAttEnd (GVar_EMIThunderSoundAttEnd.value.f)
 static cGVar GVar_EMIThunderSoundVol;
-
 #define g_EMIThunderSoundVol (GVar_EMIThunderSoundVol.value.f)
 #define FXEMI_RAMPS 0x430888		/* 3 color ramps of 9 colors: 0..1 for most, 1..2 for the last glow */
 #define FXEMI_ENTITIES 0x13		/* the entity lists the bolts hit */

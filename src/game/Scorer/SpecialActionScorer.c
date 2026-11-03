@@ -199,11 +199,9 @@ static void cSpecialActionScorer_Draw(cScorerItem *base, int player) {
 /* the state of the gear aim: the target and its score, its screen position, the aim cross that moves from the
  * center to it (offset, lock time) and the blink of the cross while the energy is low */
 static cGVar GVar_GearTargetCrossBlinkTime;
-
 #define g_GearTargetCrossBlinkTime (GVar_GearTargetCrossBlinkTime.def.f)
 #define g_GearAimBlink (GVar_GearTargetCrossBlinkTime.value.f)
 static cGVar GVar_GearTargetSphereRadius;
-
 #define g_GearTargetSphereRadius (GVar_GearTargetSphereRadius.value.f)
 extern cGVar GVar_GearStdFar;
 #define g_GearStdFar (GVar_GearStdFar.value.f)

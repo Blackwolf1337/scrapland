@@ -35,7 +35,6 @@ static cGVar GVar_FXVehicleProbeLight_SizeMax;
 static cGVar GVar_FXVehicleProbeLight_DistGrow;
 static cGVar GVar_FXVehicleEmbeddedFile;
 static cGVar GVar_FXTrafficEmbeddedFile;
-
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMEPARTICLES_DTOR 0x21d1c0
 #define CGAMETRAIL_CTOR 0x21ddb0

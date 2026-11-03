@@ -52,25 +52,18 @@ static cGVar GVar_WindFxScorerFadeFactor;
 /* the engine variables of the wind (WindFxScorer*) */
 #define g_WindFxFadeFactor (GVar_WindFxScorerFadeFactor.value.f)
 static cGVar GVar_WindFxScorerFwAngle;
-
 #define g_WindFxFwAngle (GVar_WindFxScorerFwAngle.value.f)	/* degrees, the side tests turned by it */
 static cGVar GVar_WindFxScorerHorizontal;
-
 #define g_WindFxHorizontal (GVar_WindFxScorerHorizontal.value.f)	/* the length of the side tests at full speed */
 static cGVar GVar_WindFxScorerVertical;
-
 #define g_WindFxVertical (GVar_WindFxScorerVertical.value.f)
 static cGVar GVar_WindFxScorerShow;
-
 #define g_WindFxShow (GVar_WindFxScorerShow.value.i)
 static cGVar GVar_WindFxScorerSoundVol;
-
 #define g_WindFxSoundVol (GVar_WindFxScorerSoundVol.value.f)
 static cGVar GVar_WindFxScorerSpeedPitch;
-
 #define g_WindFxSpeedPitch (GVar_WindFxScorerSpeedPitch.value.f)
 static cGVar GVar_WindFxScorerSpeedVol;
-
 #define g_WindFxSpeedVol (GVar_WindFxScorerSpeedVol.value.f)
 
 #define WINDFX_MAX_SPEED 28000.0f	/* the speed of the ship to 0..1 */

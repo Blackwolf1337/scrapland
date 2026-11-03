@@ -43,7 +43,6 @@ static cGVar GVar_NewsPanelActive;
 static cGVar GVar_NewsLogoBmp;
 static cGVar GVar_NewsHead;
 static cGVar GVar_BackNewsBmp;
-
 #define NEWS_FOV 0.87266463f				/* 50 degrees */
 extern const double g_HeadRandRange;
 #define g_NewsRandRange g_HeadRandRange	/* 2 pi as a float */

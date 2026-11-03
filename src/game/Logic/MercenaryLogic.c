@@ -6,7 +6,6 @@
 
 #define CMERCENARYLOCALLOGIC_VFTABLE (&cMercenaryLocalLogic_vftable.base)
 static const cGenCharLocalLogicVtbl cMercenaryLocalLogic_vftable;
-
 #define CMERC_VT(self) ((self)->base.vftable)
 
 cMercenaryLocalLogic *cMercenaryLocalLogic_ctor(cMercenaryLocalLogic *self, cEntity *parent) {

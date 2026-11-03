@@ -39,7 +39,6 @@ static const IObject3DVtbl CParticleSystem_vftable;
 static const CParticleVtbl CParticleStatic_vftable;
 static const CParticleVtbl CParticleActive_vftable;
 static const IObject3DVtbl CObjBase3D_vftable;
-
 #define PARTICLESYSTEM_DEFAULT_COLOR 0xffffff
 
 #define PARTICLE_UPDATE(p, sp, dt, ms) ((p)->vftable->Update((p), (sp), (dt), (ms)))

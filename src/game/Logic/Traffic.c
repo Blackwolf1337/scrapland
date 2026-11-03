@@ -32,37 +32,26 @@
 #define TRAFFIC_DEATH_NATIVE 0x15b160
 #define TRAFFIC_ONAIEND 0x15ae60
 static cGVar GVar_MaxTrafficEnemy;
-
 #define g_MaxTrafficEnemy (GVar_MaxTrafficEnemy.value.i)
 static cGVarFunction GVar_OnNeedMoreTraffic;
-
 #define g_OnNeedMoreTraffic (((cPy_Function *)&GVar_OnNeedMoreTraffic.func))
 static cGVar GVar_MaxFightingTrafficSize;
-
 #define g_MaxFightingTrafficSize (GVar_MaxFightingTrafficSize.value.f)
 static cGVarFunction GVar_OnPlayerHelpedPolice;
-
 #define g_OnPlayerHelpedPolice (((cPy_Function *)&GVar_OnPlayerHelpedPolice.func))
 static cGVar GVar_ProbTrafficFighting;
-
 #define g_ProbTrafficFighting (GVar_ProbTrafficFighting.value.f)
 static cGVar GVar_TrafficRemovalDist;
-
 #define g_TrafficRemovalDist (GVar_TrafficRemovalDist.value.f)
 static cGVar GVar_TrafficDamageTolerance;
-
 #define g_TrafficDamageTolerance (GVar_TrafficDamageTolerance.value.i)
 static cGVar GVar_MaxTrafficEnemyTime;
-
 #define g_MaxTrafficEnemyTime (GVar_MaxTrafficEnemyTime.value.f)
 static cGVar GVar_MinTrafficEnemyTime;
-
 #define g_MinTrafficEnemyTime (GVar_MinTrafficEnemyTime.value.f)
 static cGVarFunction GVar_OnNeedMoreChasingTraffic;
-
 #define g_OnNeedMoreChasingTraffic (((cPy_Function *)&GVar_OnNeedMoreChasingTraffic.func))
 static cGVar GVar_iTrafficNumber;
-
 #define g_iTrafficNumber (GVar_iTrafficNumber.value.i)
 /* the callback of the AI when the move ends (rva 0x15c of the AI) */
 #define AIV_OnEnd(ai) (((cAIVehicle *)(ai))->onArrive)

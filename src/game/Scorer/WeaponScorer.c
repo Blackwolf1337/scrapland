@@ -187,10 +187,8 @@ static int cWeaponScorer_Var(cScorerItem *base, const char *name, int set, char 
 }
 
 static cGVar GVar_WeaponChangeFadeTime;
-
 #define g_WeaponChangeFadeTime (GVar_WeaponChangeFadeTime.value.f)	/* WeaponChangeFadeTime */
 static cGVar GVar_WeaponChangeShowTime;
-
 #define g_WeaponChangeShowTime (GVar_WeaponChangeShowTime.value.f)	/* WeaponChangeShowTime: the slots after a change */
 /* the slot row of the weapons, shared by all items: per weapon 0 none, 1 with ammo, 2 without; its place in the row */
 

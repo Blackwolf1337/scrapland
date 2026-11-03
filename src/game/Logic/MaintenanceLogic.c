@@ -17,7 +17,6 @@
 static const cGenCharLocalLogicVtbl cMaintenanceLocalLogic_vftable;
 static cGVar GVar_MaintenanceTimeToNextPos;
 static cGVar GVar_MaintenanceSphereRadiusFactor;
-
 #define MAINT_VT(self) ((self)->base.base.vftable)
 #define MAINT_BASE(self) (&(self)->base.base)
 

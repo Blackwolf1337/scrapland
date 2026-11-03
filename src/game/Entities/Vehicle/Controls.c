@@ -21,7 +21,6 @@
 
 #define g_TgtRegenerationTime (GVar_TgtRegenerationTime.value.f)
 static cGVar GVar_TgtRegenerationTime;
-
 #define CONTROLS_MIN_FADE 0.01f
 
 cVehicleControls *Controls_ctor(cVehicleControls *self) {
@@ -152,25 +151,18 @@ static cGVar GVar_ItemEnerAdds;
 /* the engine variables of the items: the ammo or life they add and the time until they come back */
 #define g_ItemEnerAdds (GVar_ItemEnerAdds.value.i)
 static cGVar GVar_ItemEnerRespawnTime;
-
 #define g_ItemEnerRespawnTime (GVar_ItemEnerRespawnTime.value.f)
 static cGVar GVar_ItemLifeAdds;
-
 #define g_ItemLifeAdds (GVar_ItemLifeAdds.value.i)
 static cGVar GVar_ItemLifeRespawnTime;
-
 #define g_ItemLifeRespawnTime (GVar_ItemLifeRespawnTime.value.f)
 static cGVar GVar_ItemMissAdds;
-
 #define g_ItemMissAdds (GVar_ItemMissAdds.value.i)
 static cGVar GVar_ItemMissRespawnTime;
-
 #define g_ItemMissRespawnTime (GVar_ItemMissRespawnTime.value.f)
 static cGVar GVar_ItemPartAdds;
-
 #define g_ItemPartAdds (GVar_ItemPartAdds.value.i)
 static cGVar GVar_ItemPartRespawnTime;
-
 #define g_ItemPartRespawnTime (GVar_ItemPartRespawnTime.value.f)
 
 /* the arguments: the item and the ship that took it; the ship or NULL when it is no "Car" */
@@ -507,19 +499,14 @@ static cGVar GVar_VehicleBlockSwitchAdvance;
 
 #define g_VehicleBlockSwitchAdvance (GVar_VehicleBlockSwitchAdvance.value.i)
 static cGVar GVar_VehicleCenterPadBounce;
-
 #define g_VehicleCenterPadBounce (GVar_VehicleCenterPadBounce.value.f)
 static cGVar GVar_VehicleAttackModeMinDist;
-
 #define g_VehicleAttackModeMinDist (GVar_VehicleAttackModeMinDist.value.f)
 static cGVar GVar_VehicleAttackModeMaxDist;
-
 #define g_VehicleAttackModeMaxDist (GVar_VehicleAttackModeMaxDist.value.f)
 static cGVar GVar_TimeWSwitchNo;
-
 #define g_TimeWSwitchNo (GVar_TimeWSwitchNo.value.f)
 static cGVar GVar_XtrTimeWSwitchNo;
-
 #define g_XtrTimeWSwitchNo (GVar_XtrTimeWSwitchNo.value.f)
 cGVar GVar_AttackerMarkTime;
 

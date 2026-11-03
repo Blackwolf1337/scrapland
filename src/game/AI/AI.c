@@ -14,7 +14,6 @@
 
 #define CAI_VFTABLE (&cAI_vftable)
 static const cAIBaseVtbl cAI_vftable;
-
 #define AI_SLOT_TIME 0.5f
 #define cAI_Fail_Entity_NULL 0		/* the CHECK of the original that always fails */
 

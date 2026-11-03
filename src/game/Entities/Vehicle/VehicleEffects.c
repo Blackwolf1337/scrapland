@@ -42,7 +42,6 @@ static cGVar GVar_FXVehicleSpeedTrailDist;
 static cGVar GVar_FXVehicleFireFile;
 static cGVar GVar_FXVehicleEMIFile;
 static cGVar GVar_FXVehicleDamageFile;
-
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMEPARTICLES_DTOR 0x21d1c0
 #define CGAMETRAIL_CTOR 0x21ddb0
@@ -868,16 +867,12 @@ static uint32_t VS_RAMP_FIRE[18] = {
 #define VS_RAMP_FIRE2 ((&VS_RAMP_FIRE[9]))
 
 static cGVar GVar_FXVulcanFireScale;
-
 #define g_FXVulcanFireScale (GVar_FXVulcanFireScale.value.f)
 static cGVar GVar_FXVulcanFireTime;
-
 #define g_FXVulcanFireTime (GVar_FXVulcanFireTime.value.f)
 static cGVar GVar_FXDevastatorFireScale;
-
 #define g_FXDevastatorFireScale (GVar_FXDevastatorFireScale.value.f)
 static cGVar GVar_FXDevastatorFireTime;
-
 #define g_FXDevastatorFireTime (GVar_FXDevastatorFireTime.value.f)
 
 #define VS_PI_2 0x1.921fb6p+0f

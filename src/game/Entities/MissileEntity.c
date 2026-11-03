@@ -18,7 +18,6 @@
 
 #define CMISSILEENTITY_VFTABLE (&cMissileEntity_vftable.base.base.base)
 static const cMissileEntityVtbl cMissileEntity_vftable;
-
 #define MISSILE_CLASSNAME "Missile"
 
 #define MISSILE_PI_2 0x1.921fb6p+0f				/* pi / 2 as float (0x3fc90fdb) */
@@ -30,13 +29,10 @@ static cGVar GVar_FXDumbMotorFile;
 /* the debris systems of the fire effects (SetEmbeddedFX) */
 #define g_MissileFXDumbMotor (GVar_FXDumbMotorFile.value.s)
 static cGVar GVar_FXGearMissileFile;
-
 #define g_MissileFXGearMissile (GVar_FXGearMissileFile.value.s)
 static cGVar GVar_CloudFile;
-
 #define g_MissileFXCloud (GVar_CloudFile.value.s)
 static cGVar GVar_EMIFile;
-
 #define g_MissileFXEMI (GVar_EMIFile.value.s)
 
 #define MISSILE_ENTLIST 8			/* the entity lists the missiles hit */

@@ -23,14 +23,12 @@ typedef struct cSaveGameInfo {
 #define SAVE_SLOTS 7
 
 static cGVar GVar_LastSaveGameName;
-
 #define g_SaveDesc (((cString *)&GVar_LastSaveGameName.value))	/* the description of the save loaded last */
 static cGVarFunction GVar_OnCrazyDealTarget;
 
 /* called when the number of finished crazy deals changes: one deal, and all three (with g_SuperDealAvaliable) */
 #define g_OnCrazyDeal (((cPy_Function *)&GVar_OnCrazyDealTarget.func))
 static cGVarFunction GVar_OnCrazyDealFinished;
-
 #define g_OnAllCrazyDeals (((cPy_Function *)&GVar_OnCrazyDealFinished.func))
 
 static cSaveVar *g_SaveVars;

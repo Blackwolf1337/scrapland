@@ -14,19 +14,14 @@
 
 #define GAMMA_RAMP 256
 static cGVar GVar_VideoGammaRGB;
-
 #define g_VideoGammaRGB (GVar_VideoGammaRGB.value.f)
 static cGVar GVar_VideoScaleRGB;
-
 #define g_VideoScaleRGB (GVar_VideoScaleRGB.value.f)
 static cGVar GVar_VideoScaleRed;
-
 #define g_VideoScaleRed (GVar_VideoScaleRed.value.f)
 static cGVar GVar_VideoScaleGreen;
-
 #define g_VideoScaleGreen (GVar_VideoScaleGreen.value.f)
 static cGVar GVar_VideoScaleBlue;
-
 #define g_VideoScaleBlue (GVar_VideoScaleBlue.value.f)
 /* the values of the ramp set last */
 

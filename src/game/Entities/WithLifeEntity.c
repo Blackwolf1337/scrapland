@@ -22,7 +22,6 @@
 
 #define CWITHLIFEENTITY_VFTABLE (&cWithLifeEntity_vftable.base.base)
 static const cWithLifeEntityVtbl cWithLifeEntity_vftable;
-
 #define WL_CLASSNAME "WithLife"
 #define WL_NOCTRL_WARN "WARNING: '%s' action controler doesn´t exist.\n"	/* "WARNING: '%s' action controler doesn't exist.\n" */
 #define WL_MIN_DT 1e-6f

@@ -22,13 +22,10 @@ static cGVar GVar_R_VideoLockMode;
 /* the engine variables: RenderLock (the mode), RenderLockFrames (1..3) and RenderLockNoise */
 #define g_RenderLock (GVar_R_VideoLockMode.value.i)
 static cGVar GVar_R_VideoLockBuf;
-
 #define g_RenderLockFrames (GVar_R_VideoLockBuf.value.i)
 static cGVar GVar_R_VideoLockShow;
-
 #define g_RenderLockNoise (GVar_R_VideoLockShow.value.i)
 static void *g_TextLock[7];
-
 #define g_TextMem (g_TextLock[3])		/* system memory */
 #define g_TextBack (g_TextLock[4])		/* in the format of the back buffer */
 #define g_TextLockIdx (*(int *)&g_TextLock[5])

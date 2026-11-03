@@ -8,7 +8,6 @@
 
 #define CHUMPHREYLOCALLOGIC_VFTABLE (&cHumphreyLocalLogic_vftable.base.base)
 static const cFunctionaryLocalLogicVtbl cHumphreyLocalLogic_vftable;
-
 #define Humphrey_Vtbl(self) Functionary_Vtbl(self)
 
 cHumphreyLocalLogic *cHumphreyLocalLogic_ctor(cHumphreyLocalLogic *self, cEntity *parent) {

@@ -22,7 +22,6 @@
 
 #define g_MusicVoices (cMusicVoice_MusicVoices)
 static cMusicVoice cMusicVoice_MusicVoices[8];
-
 #define MUSIC_SHOW_DEBUG 2			/* S_Show */
 
 static cGVar GVar_MusicMainVolume;
@@ -30,18 +29,14 @@ static cGVar GVar_MusicMainVolume;
 /* engine variables */
 #define g_MusicMainVolume (GVar_MusicMainVolume.value.f)
 static cGVar GVar_VoiceMainVolume;
-
 #define g_VoiceMainVolume (GVar_VoiceMainVolume.value.f)
 extern cGVar GVar_S_Show;
 #define g_S_Show (GVar_S_Show.value.i)
 static cGVar GVar_S_StreamBufferSize;
-
 #define g_S_StreamBufferSize (GVar_S_StreamBufferSize.value.i)	/* ms */
 static cGVar GVar_S_VoiceoverFadein;
-
 #define g_S_VoiceoverFadein (GVar_S_VoiceoverFadein.value.f)
 static cGVar GVar_S_VoiceoverFadeout;
-
 #define g_S_VoiceoverFadeout (GVar_S_VoiceoverFadeout.value.f)
 extern cGVar GVar_S_VoiceoverVolume;
 #define g_S_VoiceoverVolume (GVar_S_VoiceoverVolume.value.f)

@@ -39,7 +39,6 @@ static cGVar GVar_R_ParticlesDraw;
 static cGVar GVar_R_ParticlesAlphaDist;
 static cGVar GVar_R_MinSparkDist;
 static cGVar GVar_R_MaxSparkSize;
-
 #define D3DFVF_TEX1 0x112		/* XYZ | NORMAL | TEX1 */
 #define D3DFVF_PART 0x1c2		/* XYZ | DIFFUSE | SPECULAR | TEX1 */
 #define NODE_NO_CASTSHADOWS (1u << 5)

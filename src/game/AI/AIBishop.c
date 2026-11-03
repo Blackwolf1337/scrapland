@@ -24,7 +24,6 @@ static cGVar GVar_TimeShootBishopAI;
 static cGVar GVar_ShootBishopAI;
 static cGVar GVar_OffsetAngShootBishopAI;
 static cGVar GVar_DistMaxShootBishopAI;
-
 #define CAIBISHOP_SIZE sizeof(cAIBishop)
 #define BISHOP_BLOCK_TIME 7.5f		/* the way to the target is tested again after it */
 

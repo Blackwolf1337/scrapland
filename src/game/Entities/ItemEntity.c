@@ -19,7 +19,6 @@
 static const cObjEntityVtbl cItemEntity_vftable;
 static cGVar GVar_NetItemDistAct;
 static cGVar GVar_FXItemFadeMaxDist;
-
 #define ITEM_CLASSNAME "item"
 
 /* the entity callback of the sphere test: other touched self at point */

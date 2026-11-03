@@ -24,7 +24,6 @@ static cGVar GVar_FXArrowIndicatorFlash_DistGrow;
 static cGVar GVar_ArrowViewRadius;
 static cGVar GVar_ArrowUseFile;
 static cGVar GVar_ArrowActiveHorizontal;
-
 #define ARROW_POOL_MAX 5			/* more free models are deleted */
 #define ARROW_FADE_SPEED 4.0f
 #define ARROW_GLOW_TIME 0.66f

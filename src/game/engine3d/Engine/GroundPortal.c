@@ -30,7 +30,6 @@ static cGVar GVar_R_PortalNorm;
 static cGVar GVar_R_PortalExt;
 static cGVar GVar_R_PortalEnd;
 static cGVar GVar_R_PortalDist;
-
 #define PORTAL_ASPECT 1.33f			/* the screen height of a sphere */
 #define PORTAL_EPS 8.0e-6f			/* the step out of a portal, times the distance to the origin */
 #define MAX_ZONES 0x80
@@ -47,7 +46,6 @@ static cGVar GVar_R_PortalClip;
 /* the projection and the viewport narrowed to the rectangle of each seen sector */
 #define g_PortalClip (GVar_R_PortalClip.value.i)
 static cGVar GVar_R_PortalBand;
-
 #define g_PortalBand (GVar_R_PortalBand.value.i)	/* pixels added around it */
 
 static CZone *CZone_ctor(CZone *self) {

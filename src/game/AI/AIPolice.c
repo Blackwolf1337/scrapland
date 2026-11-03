@@ -8,7 +8,6 @@
 
 #define CAIPOLICE_VFTABLE (&cAIPolice_vftable)
 static const cAICharVtbl cAIPolice_vftable;
-
 #define CAIPOLICE_SIZE sizeof(cAIPolice)
 
 void *cAIPolice_ctor(void *mem, cEntity *e, int *arg) {

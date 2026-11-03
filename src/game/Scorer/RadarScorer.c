@@ -454,7 +454,6 @@ static cGVar GVar_RadarShowAll;
 
 #define g_RadarShowAll (GVar_RadarShowAll.value.i)		/* RadarShowAll: the neutral vehicles and characters too */
 static cGVar GVar_IsSecondMission;
-
 #define g_IsSecondMission (GVar_IsSecondMission.value.i)	/* IsSecondMission */
 
 #define RADAR_PI 3.14159274f

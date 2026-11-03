@@ -235,13 +235,10 @@ static cGVar GVar_R_LimitFPS;
 /* the frame limiter: [video] limitaFPS of m3d.ini and the console variable R_LimitFPS, the larger counts */
 #define g_RLimitFps (GVar_R_LimitFPS.value.f)
 static cGVar GVar_R_ForceFPS;
-
 #define g_RForceFps (GVar_R_ForceFPS.value.f)		/* R_ForceFPS: frames of a fixed length (Timer_FixedStep) */
 static cGVar GVar_AutoScreenShot;
-
 #define g_AutoShot (GVar_AutoScreenShot.value.i)		/* the console variable AutoScreenShot */
 static cGVar GVar_R_StencilRefClear;
-
 #define g_StencilClear (GVar_R_StencilRefClear.value.u)
 /* the callbacks of the game the reset puts in place */
 #define D3DRS_SHADEMODE 9

@@ -24,7 +24,6 @@ static cGVar GVar_SoundMainVolume;
 static cGVar GVar_S_SkipUpdates;
 static cGVar GVar_S_SkipPlay;
 static const CSoundSysVtbl CSoundXBox_vftable;
-
 #define SOUND_TABLE_SLOTS 0x1c9
 #define SOUND_VOL_MIN (-6400)	/* at or below nothing plays */
 

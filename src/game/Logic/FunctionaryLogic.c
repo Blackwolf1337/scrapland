@@ -19,34 +19,24 @@
 static const cFunctionaryLocalLogicVtbl cFunctionaryLocalLogic_vftable;
 
 static cGVar GVar_DesktopsFunctionaryListName;
-
 #define g_DesktopsListName (GVar_DesktopsFunctionaryListName.value.s)	/* DesktopsFunctionaryListName */
 static cGVar GVar_FunctionaryAssignWorkDistance;
-
 #define g_FunctionaryAssignWorkDistance (GVar_FunctionaryAssignWorkDistance.value.f)
 static cGVarFunction GVar_OnFunctionaryStartsWorking;
-
 #define g_OnFunctionaryStartsWorking (((cPy_Function *)&GVar_OnFunctionaryStartsWorking.func))
 static cGVar GVar_FunctionarySpecialActionStatesTransitionTime;
-
 #define g_FunctionarySpecialActionStatesTransitionTime (GVar_FunctionarySpecialActionStatesTransitionTime.value.f)
 static cGVar GVar_FunctionaryMinTimeToSitDown;
-
 #define g_FunctionaryMinTimeToSitDown (GVar_FunctionaryMinTimeToSitDown.value.f)
 static cGVar GVar_FunctionaryMaxTimeToSitDown;
-
 #define g_FunctionaryMaxTimeToSitDown (GVar_FunctionaryMaxTimeToSitDown.value.f)
 static cGVar GVar_FunctionaryMintimeToStopWorking;
-
 #define g_FunctionaryMinTimeToStopWorking (GVar_FunctionaryMintimeToStopWorking.value.f)
 static cGVar GVar_FunctionaryMaxtimeToStopWorking;
-
 #define g_FunctionaryMaxTimeToStopWorking (GVar_FunctionaryMaxtimeToStopWorking.value.f)
 static cGVar GVar_FunctionaryEffectFastSound;
-
 #define g_FunctionaryEffectFastSound (GVar_FunctionaryEffectFastSound.value.s)
 static cGVar GVar_FunctionaryEffectFastSoundVol;
-
 #define g_FunctionaryEffectFastSoundVol (GVar_FunctionaryEffectFastSoundVol.value.f)
 cGVar GVar_CharProcessReduction;
 

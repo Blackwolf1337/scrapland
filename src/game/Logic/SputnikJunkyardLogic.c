@@ -15,7 +15,6 @@
 static const cGenCharLocalLogicVtbl cSputnikJunkyardLocalLogic_vftable;
 #define CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE (&cSputnikJunkyardLocalLogic_vftable.base)
 static cGVar GVar_SputnikJunyardTimeToPissPlayer;
-
 #define g_SputnikJunyardTimeToPissPlayer (GVar_SputnikJunyardTimeToPissPlayer.value.f)
 /* the angles of the camera entity */
 #define Sputnik_CamAng(cam) ((const vec3_t *)&((cCamControl *)(cam))->cam.rot)

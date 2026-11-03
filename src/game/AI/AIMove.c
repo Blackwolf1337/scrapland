@@ -16,7 +16,6 @@
 
 #define CAIMOVE_VFTABLE (&cAIMove_vftable)
 static const cAIMoveVtbl cAIMove_vftable;
-
 #define AIMOVE_STOP_TIME 10.0f
 #define AIMOVE_EV_STOPPED 7
 

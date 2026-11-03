@@ -52,19 +52,14 @@ static cGVar GVar_SharpenMore;
 /* engine variables */
 #define g_SharpenMore (GVar_SharpenMore.value.i)
 static cGVar GVar_MipmapFade;
-
 #define g_MipmapFade (GVar_MipmapFade.value.i)
 static cGVar GVar_MipmapColor;
-
 #define g_MipmapColor (GVar_MipmapColor.value.i)
 static cGVar GVar_CachedTex;
-
 #define g_CachedTex (GVar_CachedTex.value.i)
 static cGVar GVar_BumpMipmap;
-
 #define g_BumpMipmap (GVar_BumpMipmap.value.i)
 static cGVar GVar_DUDVMipmap;
-
 #define g_DUDVMipmap (GVar_DUDVMipmap.value.i)
 cGVar GVar_R_PShaders;
 
@@ -74,16 +69,12 @@ extern cGVar GVar_LoadTextures;
 extern cGVar GVar_TexturePool;
 #define g_TexturePool (GVar_TexturePool.value.i)
 static cGVar GVar_BuildDDS;
-
 #define g_BuildDDS (GVar_BuildDDS.value.i)
 static cGVar GVar_TextureLOD;
-
 #define g_TextureLOD (GVar_TextureLOD.value.i)
 static cGVar GVar_BumpDDS;
-
 #define g_BumpDDS (GVar_BumpDDS.value.i)
 static cGVar GVar_SaveDXT5;
-
 #define g_SaveDXT5 (GVar_SaveDXT5.value.i)
 
 /* kernel32 of the exe: the names compare in the user's locale */

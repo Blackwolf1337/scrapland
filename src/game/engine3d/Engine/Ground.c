@@ -2068,13 +2068,10 @@ static void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
 }
 
 static cGVar GVar_ShowMapQuads;
-
 #define g_ShowMapQuads (GVar_ShowMapQuads.value.i)		/* ShowMapQuads: the boxes of the quads, 2..6 by kind */
 static cGVar GVar_ShowMapQDist;
-
 #define g_ShowMapQDist (GVar_ShowMapQDist.value.f)	/* ShowMapQDist: only the quads this near the camera, 0 all */
 static cGVar GVar_AnalyzeQuads;
-
 #define g_AnalyzeQuads (GVar_AnalyzeQuads.value.i)		/* AnalizeQuads: 1 the quads checked once */
 /* the material of the debug view, a static of CGround_DrawDebug */
 

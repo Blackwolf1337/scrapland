@@ -20,7 +20,6 @@ static cGVar GVar_TimeShootMessengerAI;
 static cGVar GVar_ShootMessengerAI;
 static cGVar GVar_OffsetAngShootMessengerAI;
 static cGVar GVar_DistMaxShootMessengerAI;
-
 #define CAIMESSENGER_SIZE sizeof(cAIMessenger)
 
 void *cAIMessenger_ctor(void *mem, cEntity *e, int *arg) {

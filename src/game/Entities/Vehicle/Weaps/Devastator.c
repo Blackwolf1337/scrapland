@@ -62,7 +62,6 @@ static cGVar GVar_DevastatorBoomSoundAttEnd;
 static cGVar GVar_DevastatorBoomSound;
 static cGVar GVar_DevastatorAmmoCost;
 static cGVarFunction GVar_CreateEMIFunc;
-
 #define DEV_PI 3.14159274f
 
 /* the shot sounds 0xd..0xf of the vehicle loop with the recharge time of one slot */

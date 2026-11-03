@@ -23,7 +23,6 @@ static const cAbstractIDeviceVtbl cPcMouse_vftable;
 static cGVar GVar_MouseSensitivityV;
 static cGVar GVar_MouseSensitivityH;
 static cGVar GVar_InvertMouse;
-
 #define MOUSE_NAME "Mouse"
 
 static const char *const mouse_names[6] = { "Right", "Left", "Down", "Up", "WheelUp", "WheelDown" };

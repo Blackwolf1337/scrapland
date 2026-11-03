@@ -11,7 +11,6 @@
 #define CFXELEMENTSORBITBUOYCONTROLLER_VFTABLE (&cFXElementsOrbitBuoyController_vftable)
 static const cMapElementVtbl cFXElementsOrbitBuoy_vftable;
 static const cMapElementVtbl cFXElementsOrbitBuoyController_vftable;
-
 #define ORBIT_NAME_SKIP 11	/* "DM_Element_" before the name of the element in the dummy */
 
 /* no buoys yet, the fades of a column 1/8 apart */

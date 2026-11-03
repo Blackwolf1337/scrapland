@@ -19,7 +19,6 @@
 
 #define CAICHARGROUP_VFTABLE (&cAICharGroup_vftable)
 static const cAIEntityGroupVtbl cAICharGroup_vftable;
-
 #define AICG_PI2 1.5707963267948966	/* pi / 2 */
 #define AICG_POINT_CTOR 0x080770
 #define AICG_POINT_DTOR 0x080850

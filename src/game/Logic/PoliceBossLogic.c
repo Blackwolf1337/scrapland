@@ -14,10 +14,8 @@
 static const cGenCharLocalLogicVtbl cPoliceBossLocalLogic_vftable;
 #define CPOLICEBOSSLOCALLOGIC_VFTABLE (&cPoliceBossLocalLogic_vftable.base)
 static cGVar GVar_PoliceBossMinSpecialActionTime;
-
 #define g_PoliceBossMinSpecialActionTime (GVar_PoliceBossMinSpecialActionTime.value.f)
 static cGVar GVar_PoliceBossMaxSpecialActionTime;
-
 #define g_PoliceBossMaxSpecialActionTime (GVar_PoliceBossMaxSpecialActionTime.value.f)
 
 cPoliceBossLocalLogic *cPoliceBossLocalLogic_ctor(cPoliceBossLocalLogic *self, cEntity *parent) {

@@ -13,7 +13,6 @@
 
 #define g_VehicleAttackReset (GVar_WeapHitClientResetTime.value.f)	/* the time the shots on a target are kept */
 static cGVar GVar_WeapHitClientResetTime;
-
 #define VATT_MAX_NETCOUNT 15
 
 cVehicleAttack *cVehicleAttack_ctor(cVehicleAttack *self) {

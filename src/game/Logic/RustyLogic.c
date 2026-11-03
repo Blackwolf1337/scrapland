@@ -18,13 +18,10 @@
 static const cGenCharLocalLogicVtbl cRustyLocalLogic_vftable;
 #define CRUSTYLOCALLOGIC_VFTABLE (&cRustyLocalLogic_vftable.base)
 static cGVar GVar_JunkPointsListName;
-
 #define g_JunkPointsListName (GVar_JunkPointsListName.value.s)	/* cString "JunkPointsListName" */
 static cGVar GVar_NumWorkingLoops;
-
 #define g_NumWorkingLoops (GVar_NumWorkingLoops.value.i)
 static cGVar GVar_PlatformRadiusSqr;
-
 #define g_PlatformRadiusSqr (GVar_PlatformRadiusSqr.value.i)
 
 static cEntityListData *g_JunkPointsList;

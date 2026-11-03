@@ -19,7 +19,6 @@
 #define RENDERNODE_ROT_NULL 0
 
 static cGVar GVar_R_RenderNode_Count;
-
 #define g_RenderNodeCount (GVar_R_RenderNode_Count.value.i)
 
 void *CParticleSystem_Cast(IObject3D *obj) {

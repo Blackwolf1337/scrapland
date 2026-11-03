@@ -15,7 +15,6 @@
 
 #define g_BuildMST (GVar_BuildMST.value.i)	/* BuildMST: load the .mst files */
 static cGVar GVar_BuildMST;
-
 #define MAX_SPRITES 256
 
 CMultiSprite *CMultiSprite_ctor(CMultiSprite *self) {

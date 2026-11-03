@@ -8,7 +8,6 @@
 
 #define CAIMAYOR_VFTABLE (&cAIMayor_vftable)
 static const cAICharVtbl cAIMayor_vftable;
-
 #define CAIMAYOR_SIZE sizeof(cAIMayor)
 
 void *cAIMayor_ctor(void *mem, cEntity *e, int *arg) {

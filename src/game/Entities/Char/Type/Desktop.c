@@ -21,7 +21,6 @@ static cGVar GVar_FXDesktopFallEndDist;
 static cGVar GVar_DesktopJumpSpeed;
 static cGVar GVar_DesktopJumpSlideTime;
 static cGVar GVar_DesktopJumpPrice;
-
 #define DESKTOP_TWO_PI 6.2831854820251465	/* rva 0x3a5d00, (double)6.2831855f */
 
 /* params: the desktop. A fast landing seen from near enough: four puffs around the point it lands on and a ring of

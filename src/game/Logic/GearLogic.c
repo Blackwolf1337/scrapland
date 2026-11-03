@@ -20,34 +20,24 @@ cGVar GVar_GearStdFar;
 
 #define g_GearStdFar (GVar_GearStdFar.value.f)
 static cGVar GVar_GearStdFovY;
-
 #define g_GearStdFovY (GVar_GearStdFovY.value.f)
 static cGVar GVar_GearStdFovX;
-
 #define g_GearStdFovX (GVar_GearStdFovX.value.f)
 static cGVar GVar_GearLostTargetTime;
-
 #define g_GearLostTargetTime (GVar_GearLostTargetTime.value.f)
 static cGVar GVar_GearRelaxSpeed;
-
 #define g_GearRelaxSpeed (GVar_GearRelaxSpeed.value.f)
 static cGVar GVar_GearRobberyDetection;
-
 #define g_GearRobberyDetection (GVar_GearRobberyDetection.value.f)
 static cGVar GVar_Gear2PoliceAlways;
-
 #define g_Gear2PoliceAlways (GVar_Gear2PoliceAlways.value.i)
 static cGVar GVar_GearChaseSpeed;
-
 #define g_GearChaseSpeed (GVar_GearChaseSpeed.value.f)
 static cGVar GVar_GearAttackSpeed;
-
 #define g_GearAttackSpeed (GVar_GearAttackSpeed.value.f)
 static cGVar GVar_GearAttackNPCTime;
-
 #define g_GearAttackNPCTime (GVar_GearAttackNPCTime.value.f)
 static cGVar GVar_GearScortSpeed;
-
 #define g_GearScortSpeed (GVar_GearScortSpeed.value.f)
 
 int Vec3_Differ(const float *a, const float *b);

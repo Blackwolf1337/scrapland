@@ -20,7 +20,6 @@ static const cMapElementVtbl cFXElementsMentalController_vftable;
 static const cMapElementVtbl cFXElementsMentalControllerMainFX_vftable;
 static const cMapElementVtbl cFXElementsMentalControllerDamageFX_vftable;
 static cGVar GVar_FXElementsMentalControllerMaxDist;
-
 #define PRESS_NAME_SKIP 11			/* "DM_Element_" before the name of the element in the dummy */
 #define CGAMETRAIL_CTOR 0x21ddb0
 #define CGAMETRAIL_DTOR 0x21de40
@@ -262,13 +261,10 @@ static byte cFXElementsMentalControllerDamageFX_Init(cMapElement *elem) {
 }
 
 static cGVar GVar_FXElementsMentalControllerDamageFXMaxDist;
-
 #define g_DamageFXMaxDist (GVar_FXElementsMentalControllerDamageFXMaxDist.value.f)		/* FXElementsMentalControllerDamageFXMaxDist */
 static cGVar GVar_FXElementsMentalControllerDamageSound;
-
 #define g_DamageFXSound (GVar_FXElementsMentalControllerDamageSound.value.s)	/* FXElementsMentalControllerDamageSound */
 static cGVar GVar_FXElementsMentalControllerDamageSoundVol;
-
 #define g_DamageFXSoundVol (GVar_FXElementsMentalControllerDamageSoundVol.value.f)		/* FXElementsMentalControllerDamageSoundVol */
 #define DAMAGEFX_SMOKE_RAMPS 0x4309f8				/* 3 color ramps of 9 colors */
 #define DAMAGEFX_FLASH_RAMPS 0x430a68

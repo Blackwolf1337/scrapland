@@ -33,7 +33,6 @@ static cGVar GVar_SkyInit;
 static cGVar GVar_ShowWorldDummies;
 static cGVar GVar_RenderWorld;
 static cGVar GVar_RenderSky;
-
 #define DEG2RAD_F 0.0174532924f
 
 /* the start of the own camera: 240 behind the origin, 50 up, looking at it */

@@ -35,10 +35,8 @@ static cGVar GVar_MessengerDataPackMissionArrow;
 void *GenCharGroup_MakeLogic(cEntity *e);
 
 static cGVar GVar_MessengerPrepareDistance;
-
 #define g_MessengerPrepareDistance (GVar_MessengerPrepareDistance.value.f)	/* MessengerPrepareDistance */
 static cGVar GVar_MessengerObjectiveDistance;
-
 #define g_MessengerObjectiveDistance (GVar_MessengerObjectiveDistance.value.f)	/* MessengerObjetiveDistance */
 #define MSG_THINK_STEP 0.13f				/* rva 0x3b60e0, the interval of the think */
 

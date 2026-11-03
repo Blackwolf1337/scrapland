@@ -16,7 +16,6 @@
 
 #define CENTITY_VFTABLE (&cEntity_vftable)
 static const cEntityVtbl cEntity_vftable;
-
 #define ENTITY_CLASSNAME "Entity"
 
 /* the variable methods of the AI (from vtable slot 7) and of the local logic (from slot 3) */

@@ -11,7 +11,6 @@
 
 #define CHEADSCORER_VFTABLE (&cHeadScorer_vftable.base)
 static const cHeadScorerVtbl cHeadScorer_vftable;
-
 #define HEAD_FOV 0.87266463f				/* 50 degrees */
 
 static const double g_HeadRandOfs;

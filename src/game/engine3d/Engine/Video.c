@@ -39,7 +39,6 @@
 #define VIDEO_RING (1u << 20)		/* bytes of decoded sound ahead of the mixer, about 6 s of 44.1 kHz stereo */
 
 static cGVar GVar_PlayVideoFX;
-
 #define g_VideoMirror (GVar_PlayVideoFX.value.u)	/* 1: up-down, 2: left-right */
 
 static int g_VideoPadHeld;

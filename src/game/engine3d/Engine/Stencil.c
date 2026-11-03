@@ -38,7 +38,6 @@ static cGVar GVar_R_StencilRefWorld;
 static cGVar GVar_R_StencilRefModels;
 static cGVar GVar_R_StencilMult;
 static cGVar GVar_R_ShowStencil;
-
 #define LIGHT_DIRECTIONAL 0x138a
 
 /* the D3DRS_* states of the pass */
@@ -88,13 +87,10 @@ static void Stencil_DebugLine(const vec3_t *a, const vec3_t *b, uint32_t color) 
 #define STENCIL_MAX_SEGS 0x2000
 #define STENCIL_MAX_TRIS 0x3000
 static cGVar GVar_R_StencilLDir;
-
 #define g_StencilLDir (GVar_R_StencilLDir.value.f)	/* R_StencilLDir: the distance of a directional light */
 static cGVar GVar_R_StencilFisq;
-
 #define g_StencilFisq (GVar_R_StencilFisq.value.i)	/* R_StencilFisq: RSqrt_Estimate instead of sqrt */
 static cGVar GVar_R_StencilDraw;
-
 #define g_StencilDraw (GVar_R_StencilDraw.value.i)	/* R_StencilDraw */
 
 /* the far end of the volume edge from p (in the space of the mesh): R_StencilLDir along the light of a directional
@@ -559,7 +555,6 @@ static cGVar GVar_R_StencilBBox;
 /* the capture of the volumes of one mesh list */
 #define g_StencilBBox (GVar_R_StencilBBox.value.i)	/* R_StencilBBox: the segment to the light tested */
 static cGVar GVar_R_StencilViewDisp;
-
 #define g_StencilViewDisp (GVar_R_StencilViewDisp.value.f)	/* R_StencilViewDisp: the volumes moved along the view */
 #define LIGHT_SPOT 0x1389
 

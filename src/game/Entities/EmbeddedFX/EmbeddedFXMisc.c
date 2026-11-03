@@ -48,7 +48,6 @@ static const cEmbeddedFXVtbl cEmbeddedFXBossShield_vftable;
 static const cEmbeddedFXVtbl cEmbeddedFXBike_vftable;
 static const cEmbeddedFXVtbl cEmbeddedFXBattery_vftable;
 static const cEmbeddedFXVtbl cEmbeddedFXAmplifier_vftable;
-
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMEPARTICLES_DTOR 0x21d1c0
 #define CGAMETRAIL_CTOR 0x21ddb0
@@ -1194,10 +1193,8 @@ static cGVar GVar_DataPackInterTime;
 /* the DataPack engine variables */
 #define g_DataPackInterTime (GVar_DataPackInterTime.value.f)
 static cGVar GVar_DataPackLaserLong;
-
 #define g_DataPackLaserLong (GVar_DataPackLaserLong.value.f)
 static cGVar GVar_DataPackLaserSize;
-
 #define g_DataPackLaserSize (GVar_DataPackLaserSize.value.f)
 
 /*
@@ -1974,10 +1971,8 @@ static cGVar GVar_FXBossShieldAspect;
 /* the BossShield engine variables */
 #define g_FXBossShieldAspect (GVar_FXBossShieldAspect.value.f)
 static cGVar GVar_FXBossShieldRadius;
-
 #define g_FXBossShieldRadius (GVar_FXBossShieldRadius.value.f)
 static cGVar GVar_FXBossShieldScale;
-
 #define g_FXBossShieldScale (GVar_FXBossShieldScale.value.f)
 
 /* a random point on the shield */

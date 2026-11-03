@@ -30,7 +30,6 @@ static cGVar GVar_FXABFakeLimitRadius;
 static cGVar GVar_FXABFakeLimitQuakeTime;
 static cGVar GVar_FXABFakeLimitQuakeFactor;
 static cGVar GVar_FXABFakeLimitDistLighting;
-
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMEPARTICLES_RELEASE 0x21d1c0
 #define CGAMETRAIL_CTOR 0x21ddb0

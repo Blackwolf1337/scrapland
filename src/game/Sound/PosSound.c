@@ -31,7 +31,6 @@ cGVar GVar_WarnVoiceVolume;
 #define g_WarnVoiceVolume (GVar_WarnVoiceVolume.value.f)
 #define g_WarnVoiceVolumeDef (GVar_WarnVoiceVolume.def.f)
 static cGVar GVar_isActionIndoor;
-
 #define g_isActionIndoor (GVar_isActionIndoor.value.i)
 #define g_isActionIndoorDef (GVar_isActionIndoor.def.i)
 cGVar GVar_MaxPoliceWarnDist;
@@ -39,36 +38,26 @@ cGVar GVar_MaxPoliceWarnDist;
 #define g_MaxPoliceWarnDist (GVar_MaxPoliceWarnDist.value.f)
 #define g_MaxPoliceWarnDistDef (GVar_MaxPoliceWarnDist.def.f)
 static cGVar GVar_useDynamicMusic;
-
 #define g_useDynamicMusic (GVar_useDynamicMusic.value.i)
 #define g_useDynamicMusicDef (GVar_useDynamicMusic.def.i)
 static cGVar GVar_ForceNoActionMusic;
-
 #define g_ForceNoActionMusic (GVar_ForceNoActionMusic.value.i)
 #define g_ForceNoActionMusicDef (GVar_ForceNoActionMusic.def.i)
 static cGVar GVar_ActionMusicTimeFade;
-
 #define g_ActionMusicTimeFade (GVar_ActionMusicTimeFade.value.f)
 static cGVar GVar_OutActionMusicVolume;
-
 #define g_OutActionMusicVolume (GVar_OutActionMusicVolume.value.f)
 static cGVar GVar_OutRelaxMusicVolume;
-
 #define g_OutRelaxMusicVolume (GVar_OutRelaxMusicVolume.value.f)
 static cGVar GVar_iOutActionMusic;
-
 #define g_iOutActionMusic (GVar_iOutActionMusic.value.i)
 static cGVar GVar_iOutRelaxMusic;
-
 #define g_iOutRelaxMusic (GVar_iOutRelaxMusic.value.i)
 static cGVar GVar_OutActionMusic;
-
 #define g_OutActionMusic (GVar_OutActionMusic.value.s)	/* format with the number */
 static cGVar GVar_OutRelaxMusic;
-
 #define g_OutRelaxMusic (GVar_OutRelaxMusic.value.s)
 static cGVar GVar_MusicTimeChange;
-
 #define g_MusicTimeChange (GVar_MusicTimeChange.value.f)
 cGVar GVar_NumEnemiesInRadar;
 
@@ -83,19 +72,15 @@ cGVar GVar_S_VoiceoverVolume;
 #define TALK_VOICE 2
 
 static cGVar GVar_MinVoiceVolumeChat;
-
 #define g_MinVoiceVolumeChat (GVar_MinVoiceVolumeChat.value.f)	/* MinVoiceVolumeChat */
 #define VOICE_END 0.001f		/* rva 0x3a3d58: the talk ends with less left */
 #define VOICE_PAN -0.5f
 #define VOICE_MIN_SPEED 0.8f		/* rva 0x3b0844: no voices in slow motion */
 static cGVar GVar_VoicePlayDelay;
-
 #define g_VoicePlayDelay (GVar_VoicePlayDelay.value.f)	/* VoicePlayDelay */
 static cGVar GVar_StreamPath;
-
 #define g_StreamPath (GVar_StreamPath.value.s)	/* StreamPath "Sounds/Stream/" */
 static cGVar GVar_VoicePath;
-
 #define g_VoicePath (GVar_VoicePath.value.s)	/* VoicePath "Sounds/Voices/" */
 
 static void Sound_UpdateVoice(int voice);

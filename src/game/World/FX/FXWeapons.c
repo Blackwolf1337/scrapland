@@ -56,7 +56,6 @@ static cGVar GVar_FXInfernoRayAccMin;
 static cGVar GVar_FXInfernoRayAccMax;
 static cGVar GVar_FXInfernoExplosionFadeTime;
 static cGVar GVar_FXInfernoCoreSize;
-
 #define FX_PI 3.1415927f				/* 0x40490fdb */
 
 /* rand() in [0, 1] times range, plus add (all in double) */
@@ -1516,10 +1515,8 @@ cGVar GVar_TeslaRange;
 
 #define g_TeslaRange (GVar_TeslaRange.value.f)
 static cGVar GVar_FXTeslaStepTime;
-
 #define g_FXTeslaStepTime (GVar_FXTeslaStepTime.value.f)
 static cGVar GVar_FXTeslaRandRadius;
-
 #define g_FXTeslaRandRadius (GVar_FXTeslaRandRadius.value.f)
 #define FXTESLA_RAMP_SPARK 0x431930		/* [2] */
 
@@ -1980,7 +1977,6 @@ static cGVar GVar_SwarmBeeExplosionFile;
 
 #define g_SwarmBeeExplosionFile (GVar_SwarmBeeExplosionFile.value.s)
 static cGVar GVar_SwarmExplosionFile;
-
 #define g_SwarmExplosionFile (GVar_SwarmExplosionFile.value.s)
 #define FXSWARM_RAMP_BEE 0x431978
 #define FXSWARM_RAMP_FLASH 0x431a2c		/* [2] */

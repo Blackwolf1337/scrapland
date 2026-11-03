@@ -10,7 +10,6 @@
 #define CSCRAPLANDSUBMENUSCORER_VFTABLE (&cScraplandSubMenuScorer_vftable)
 static const cScorerItemVtbl cScraplandSubMenuScorer_vftable;
 static const cScorerItemVtbl cScraplandMainMenuScorer_vftable;
-
 #define SCRAPLAND_WHITE "2D/white.tga"
 /* a random time: rand() / 32767 * range + add, as a float */
 static float ScraplandScorer_Rand(double range, double add) {

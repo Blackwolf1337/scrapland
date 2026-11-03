@@ -29,7 +29,6 @@
 
 #define g_InactiveBackgroundApp (GVar_InactiveBackgroundApp.value.i)	/* the frames go on without the focus */
 static cGVar GVar_InactiveBackgroundApp;
-
 #define PLAT_PADS 4
 #define PLAT_NOTCONNECTED 0x48f		/* ERROR_DEVICE_NOT_CONNECTED of XInputGetState */
 

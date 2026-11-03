@@ -20,7 +20,6 @@
 static const cAICharVtbl cAIGear_vftable;
 static cGVar GVar_ShootGearAI;
 static cGVar GVar_OffsetAngShootGearAI;
-
 #define CAIGEAR_SIZE sizeof(cAIGear)
 #define GEAR_BLOCK_TIME 7.5f		/* the way to the target is tested again after it */
 

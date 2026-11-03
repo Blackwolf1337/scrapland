@@ -14,7 +14,6 @@ cGVar GVar_Viewer;
 
 #define g_IsViewer (GVar_Viewer.value.i)		/* model viewer build: Viewer.py instead of Init.py */
 static cGVar GVar_PythonExecute;
-
 #define g_PythonExecute (GVar_PythonExecute.value.s)	/* engine variable PythonExecute */
 cStaticBuffer cStaticBuffer_PyStaticBuffer[2];
 

@@ -33,7 +33,6 @@ static cGVar GVar_MessengerAttackPosX;
 static cGVar GVar_MessengerAmmoCost;
 static cGVar GVar_FXMessengerTakeDataPackFile;
 static cGVar GVar_FXMessengerAttackFile;
-
 #define ITEM_TYPE "item"
 
 /* params: the messenger. The shot: the energy, the aim (ahead, at the GearTargetName of the player or the

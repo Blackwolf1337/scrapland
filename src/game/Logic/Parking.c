@@ -18,19 +18,14 @@
 #include "scrap/staticinit.h"
 
 static cGVar GVar_ParkingCheckRadius;
-
 #define g_ParkingCheckRadius (GVar_ParkingCheckRadius.value.f)
 static cGVar GVar_ParkingCharCheckDistance;
-
 #define g_ParkingCharCheckDistance (GVar_ParkingCharCheckDistance.value.f)
 static cGVar GVar_ParkingVehicleCheckDistance;
-
 #define g_ParkingVehicleCheckDistance (GVar_ParkingVehicleCheckDistance.value.f)
 static cGVarFunction GVar_OnParkedOut;
-
 #define g_OnParkedOut (((cPy_Function *)&GVar_OnParkedOut.func))
 static cGVarFunction GVar_OnParkingOccupied;
-
 #define g_OnParkingOccupied (((cPy_Function *)&GVar_OnParkingOccupied.func))
 /* what the sphere native found: a ship, else the last other entity */
 #define PARKING_NATIVE 0x155ed0

@@ -1203,7 +1203,6 @@ static void cEmbeddedFXMaintenance_Update(cEmbeddedFX *base, float dt) {
 }
 
 static cGVar GVar_SentinelLaserScanerDist;
-
 #define g_SentinelLaserScanerDist (GVar_SentinelLaserScanerDist.value.f)	/* "SentinelLaserScanerDist" */
 cGVar GVar_SentinelStdFar;
 
@@ -1579,7 +1578,6 @@ static void cEmbeddedFXCrazyGambler_Update(cEmbeddedFX *elem, float dt) {
 }
 
 static cGVar GVar_MessengerLightingDist;
-
 #define g_MessengerLightingDist (GVar_MessengerLightingDist.value.f)	/* "MessengerLightingDist" */
 
 /* the flag of vertex v of ray r (v may be -1: the byte before the ray) */
@@ -1741,7 +1739,6 @@ static void cEmbeddedFXMessenger_Update(cEmbeddedFX *elem, float dt) {
 }
 
 static cGVar GVar_FXMercenaryDrinkSmokeFile;
-
 #define g_FXMercenaryDrinkSmokeFile (GVar_FXMercenaryDrinkSmokeFile.value.s)	/* "FXMercenaryDrinkSmokeFile" */
 /* the color ramps of the bubbles and of the smoke, two of 9 colors each */
 
@@ -1939,10 +1936,8 @@ static void cEmbeddedFXMercenary_Update(cEmbeddedFX *elem, float dt) {
 }
 
 static cGVar GVar_FXRustySparksSound;
-
 #define g_FXRustySparksSound (GVar_FXRustySparksSound.value.s)	/* "FXRustyChispasSound" */
 static cGVar GVar_FXRustySparksSoundVol;
-
 #define g_FXRustySparksSoundVol (GVar_FXRustySparksSoundVol.value.f)	/* "FXRustyChispasSoundVol" */
 /* the color ramps of the sparks of the pigtail (9 colors each) */
 

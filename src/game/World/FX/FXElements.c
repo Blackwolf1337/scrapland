@@ -30,7 +30,6 @@ static cGVar GVar_FXElementsFireDropSoundAttEnd;
 static cGVar GVar_FXElementsFireDropSound;
 static cGVar GVar_FXElementsFireDropRateAtt;
 static cGVar GVar_FXElementsFireDropMaxDist;
-
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMETRAIL_CTOR 0x21ddb0
 #define CGAMETRAIL_DTOR 0x21de40

@@ -14,7 +14,6 @@
 
 #define g_LogRumble (GVar_LogRumble.value.i)		/* LogRumble */
 static cGVar GVar_LogRumble;
-
 #define INPUTACTION_CTOR 0x139240
 #define INPUTACTION_DTOR 0x139430
 #define ACTIONSET_CTOR 0x1392b0

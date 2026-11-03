@@ -14,7 +14,6 @@
 static const cAICharVtbl cAINurse_vftable;
 static cGVar GVar_OffsetMoveNurseAI;
 static cGVar GVar_DistActionNurseAI;
-
 #define CAINURSE_SIZE sizeof(cAINurse)
 
 void *cAINurse_ctor(void *mem, cEntity *e, int *arg) {

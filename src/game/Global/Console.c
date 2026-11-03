@@ -17,7 +17,6 @@ cGVar GVar_LogFile;
 
 #define g_LogName (GVar_LogFile.value.s)
 static cGVar GVar_AlwaysFlushLog;
-
 #define g_LogFlush (GVar_AlwaysFlushLog.value.i)		/* flush the logs after every text */
 
 #define CON_COLOR_BLUE 0xff

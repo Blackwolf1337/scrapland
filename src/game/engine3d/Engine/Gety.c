@@ -8,7 +8,6 @@
 
 #define g_RayVertSectors (g_FastGetYSectorVar.value.i)
 static cGVar g_FastGetYSectorVar;
-
 #define GETY_FLT_MAX 3.4028234663852886e+38f
 
 static CCollideQuad *Gety_Cell(CGround *self, float x, float z) {

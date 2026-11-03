@@ -16,7 +16,6 @@
 static cGVar GVar_R_FogDensity;
 static cGVar GVar_R_FogColor;
 static cGVar GVar_R_FogAbsDist;
-
 #define D3DRS_FOGCOLOR 34
 #define D3DRS_FOGTABLEMODE 35
 #define D3DRS_FOGSTART 36

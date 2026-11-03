@@ -16,7 +16,6 @@
 #define g_ShowSprites (GVar_R_SpriteSector.value.i)	/* 1: visibility, 2: drawn, 3: with the name */
 static cGVar GVar_R_SpriteSector;
 static const IObject3DVtbl CGraphic3D_vftable;
-
 #define D3DFVF_SPRITE 0x1c2		/* XYZ | DIFFUSE | SPECULAR | TEX1 */
 
 /* the members both constructors clear */

@@ -10,7 +10,6 @@
 
 #define CAIDESKTOP_VFTABLE (&cAIDesktop_vftable)
 static const cAICharVtbl cAIDesktop_vftable;
-
 #define CAIDESKTOP_SIZE sizeof(cAIDesktop)
 
 void *cAIDesktop_ctor(void *mem, cEntity *e, int *arg) {

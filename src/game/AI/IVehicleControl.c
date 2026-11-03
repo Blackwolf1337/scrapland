@@ -35,40 +35,28 @@ cGVar GVar_ShowPathAI;
 extern cGVar GVar_DepthPathRouteOutDoorAI;
 #define g_DepthPathRouteOutDoorAI (GVar_DepthPathRouteOutDoorAI.value.i)
 static cGVar GVar_ShowVehAI;
-
 #define g_ShowVehAI (&GVar_ShowVehAI.value.s)
 static cGVar GVar_LimVelTurnObjectiveAI;
-
 #define g_LimVelTurnObjectiveAI (GVar_LimVelTurnObjectiveAI.value.f)
 static cGVar GVar_DistBoostAI;
-
 #define g_DistBoostAI (GVar_DistBoostAI.value.f)
 static cGVar GVar_DepthSearchPosGoAI;
-
 #define g_DepthSearchPosGoAI (GVar_DepthSearchPosGoAI.value.i)
 static cGVar GVar_TimeReactTurnAI;
-
 #define g_TimeReactTurnAI (GVar_TimeReactTurnAI.value.f)
 static cGVar GVar_DistBrakeObjAI;
-
 #define g_DistBrakeObjAI (GVar_DistBrakeObjAI.value.f)
 static cGVar GVar_MinAngleSearchPointAI;
-
 #define g_MinAngleSearchPointAI (GVar_MinAngleSearchPointAI.value.f)
 static cGVar GVar_TimeMaxReachBoostAI;
-
 #define g_TimeMaxReachBoostAI (GVar_TimeMaxReachBoostAI.value.f)
 static cGVar GVar_VelTurnAI;
-
 #define g_VelTurnAI (GVar_VelTurnAI.value.f)
 static cGVar GVar_DecVelBrakeAI;
-
 #define g_DecVelBrakeAI (GVar_DecVelBrakeAI.value.f)
 static cGVar GVar_ShowStopShipAI;
-
 #define g_ShowStopShipAI (GVar_ShowStopShipAI.value.i)
 static cGVar GVar_MinTimeReposAI;
-
 #define g_MinTimeReposAI (GVar_MinTimeReposAI.value.f)
 
 #define AIVC_MAX_FREE 50		/* the free nodes the path keeps */

@@ -47,7 +47,6 @@ static cGVar GVar_HookEMITime;
 static cGVar GVar_HookAccel;
 static cGVar GVar_FXSonicXpldeFile;
 static cGVarFunction GVar_CreateSonicFunc;
-
 #define SND_HOOK 0x18		/* the sounds of the ship (cSndInterface at +0x144) */
 #define SND_HOOK_START 0x17
 #define SND_LASER_LOW 0x16

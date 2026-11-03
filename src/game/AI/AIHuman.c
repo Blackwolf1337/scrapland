@@ -8,7 +8,6 @@
 
 #define CAIHUMAN_VFTABLE (&cAIHuman_vftable)
 static const cAICharVtbl cAIHuman_vftable;
-
 #define CAIHUMAN_SIZE sizeof(cAIHuman)
 
 void *cAIHuman_ctor(void *mem, cEntity *e, int *arg) {

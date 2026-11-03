@@ -18,7 +18,6 @@
 
 #define g_LogLevel (GVar_EngineDebugLevel.value.i)	/* 10: the console mask goes back to 0x91 */
 static cGVar GVar_EngineDebugLevel;
-
 #define LOG_LINE 0x400
 #define LOG_NAME "engine.log"
 #define CRT_LC_TIME 5

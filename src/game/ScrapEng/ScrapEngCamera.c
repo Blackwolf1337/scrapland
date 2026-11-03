@@ -15,7 +15,6 @@
 #define g_ShowSceneCamera (GVar_ShowSceneCamera.value.i)		/* ShowSceneCamera */
 static cGVar GVar_ShowSceneCamera;
 static cGVar GVar_CameraDefViewAspect;
-
 #define CAM_CHECK(self) \
 	do { \
 		if (!(self)->Camera) { \

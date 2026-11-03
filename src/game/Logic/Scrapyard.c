@@ -28,34 +28,24 @@ static const cLocalLogicVtbl cScrapyardLocalLogic_vftable;
 #define SHIPGROUP_MAX_FOUND 10
 
 static cGVar GVar_MaxMosquitosDist;
-
 #define g_MaxMosquitosDist (GVar_MaxMosquitosDist.value.f)
 static cGVar GVar_MaxMosquitos;
-
 #define g_MaxMosquitos (GVar_MaxMosquitos.value.i)
 static cGVar GVar_MinPercMosquitosAttackingIntruder;
-
 #define g_MinPercMosquitosAttackingIntruder (GVar_MinPercMosquitosAttackingIntruder.value.f)
 static cGVar GVar_MosquitosTriggeredShipName;
-
 #define g_MosquitosTriggeredShipName (GVar_MosquitosTriggeredShipName.value.s)
 static cGVar GVar_MaxMadHuntersDist;
-
 #define g_MaxMadHuntersDist (GVar_MaxMadHuntersDist.value.f)
 static cGVar GVar_MaxMadHunters;
-
 #define g_MaxMadHunters (GVar_MaxMadHunters.value.i)
 static cGVar GVar_MinPercMadHuntersAttackingIntruder;
-
 #define g_MinPercMadHuntersAttackingIntruder (GVar_MinPercMadHuntersAttackingIntruder.value.f)
 static cGVar GVar_MadHuntersTriggeredShipName;
-
 #define g_MadHuntersTriggeredShipName (GVar_MadHuntersTriggeredShipName.value.s)
 static cGVar GVar_OnMosquitoDeathMoney;
-
 #define g_OnMosquitoDeathMoney (GVar_OnMosquitoDeathMoney.value.i)
 static cGVar GVar_OnMadHunterDeathMoney;
-
 #define g_OnMadHunterDeathMoney (GVar_OnMadHunterDeathMoney.value.i)
 /* the ships the sphere native found around a lair */
 /* the callback of the AI when the move ends (rva 0x15c of the AI) */

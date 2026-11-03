@@ -8,7 +8,6 @@
 
 #define CAISENTINEL_VFTABLE (&cAISentinel_vftable)
 static const cAICharVtbl cAISentinel_vftable;
-
 #define CAISENTINEL_SIZE sizeof(cAISentinel)
 
 void *cAISentinel_ctor(void *mem, cEntity *e, int *arg) {

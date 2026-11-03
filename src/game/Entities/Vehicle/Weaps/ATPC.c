@@ -69,7 +69,6 @@ static cGVar GVar_ATPCCapsuleExtendedSoundAttIni;
 static cGVar GVar_ATPCCapsuleExtendedSoundAttEnd;
 static cGVar GVar_ATPCCapsuleExtendedSound;
 static cGVar GVar_ATPCAmmoCost;
-
 #define ATPC_PI 3.14159274f
 
 /* the recharge of the next shot (the upgrade 9 is faster) and the start sound of the upgrade */

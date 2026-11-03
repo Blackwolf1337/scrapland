@@ -29,7 +29,6 @@
 #define g_CoefMLODMenuElement (GVar_R_CoefMLODMenuElement.value.f)
 static cGVar GVar_R_GetModelVertex;
 static cGVar GVar_R_ForcePreRenderTransform;
-
 #define GM_CHECK(self) \
 	do { \
 		if (!(self)->Model) { \

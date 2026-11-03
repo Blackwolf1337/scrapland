@@ -201,34 +201,25 @@ cGVar GVar_StdMaxLife;
 /* the life engine variables */
 #define g_StdMaxLife (GVar_StdMaxLife.value.i)			/* the max life of what is no ship */
 static cGVar GVar_DangerLifeLevel;
-
 #define g_DangerLifeLevel (GVar_DangerLifeLevel.value.i)		/* percent: the life blinks red below it */
 cGVar GVar_WarningLifeLevel;
 
 #define g_WarningLifeLevel (GVar_WarningLifeLevel.value.i)		/* percent: the low life sound fades in below it */
 static cGVar GVar_DangerLifeSoundVol;
-
 #define g_DangerLifeSoundVol (GVar_DangerLifeSoundVol.value.f)
 static cGVar GVar_RegenerationSoundVol;
-
 #define g_RegenerationSoundVol (GVar_RegenerationSoundVol.value.f)
 static cGVar GVar_RegenerationSoundPitchMax;
-
 #define g_RegenerationSoundPitchMax (GVar_RegenerationSoundPitchMax.value.f)
 static cGVar GVar_RegenerationSoundPitchMin;
-
 #define g_RegenerationSoundPitchMin (GVar_RegenerationSoundPitchMin.value.f)
 static cGVar GVar_InitRegenerationSound;
-
 #define g_InitRegenerationSound (GVar_InitRegenerationSound.value.s)
 static cGVar GVar_InitRegenerationSoundVol;
-
 #define g_InitRegenerationSoundVol (GVar_InitRegenerationSoundVol.value.f)
 static cGVar GVar_EndRegenerationSound;
-
 #define g_EndRegenerationSound (GVar_EndRegenerationSound.value.s)
 static cGVar GVar_EndRegenerationSoundVol;
-
 #define g_EndRegenerationSoundVol (GVar_EndRegenerationSoundVol.value.f)
 
 #define STATUS_SEGMENTS 7		/* the boost segments over the life icon */

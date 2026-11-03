@@ -23,7 +23,6 @@
 
 #define CMODEL_VFTABLE (&CModel_vftable)
 static const CModelVtbl CModel_vftable;
-
 #define CLOD_DTOR 0x252d80
 #define LIGHT_OMNI_NAME "omni"
 #define LIGHT_SPOT_NAME "foco"
@@ -33,10 +32,8 @@ static const CModelVtbl CModel_vftable;
 #define STENCIL_DIST 4000.0f
 
 static cGVar GVar_R_SkipAnimInterp;
-
 #define g_AnimPause (GVar_R_SkipAnimInterp.value.i)	/* the animations stand still */
 static cGVar GVar_R_AnimInterpMult;
-
 #define g_AnimSpeed (GVar_R_AnimInterpMult.value.f)	/* the speed of all animations */
 #define g_FrameTime g_FrameMs	/* the time of the frame */
 
@@ -719,46 +716,32 @@ cGVar GVar_R_UseMLOD;
 /* the render variables of the models */
 #define g_UseMLOD (GVar_R_UseMLOD.value.i)		/* R_UseMLOD */
 static cGVar GVar_R_DistMLOD1;
-
 #define g_DistMLOD1 (GVar_R_DistMLOD1.value.f)		/* R_DistMLOD1, the distance of LOD i is i times it */
 static cGVar GVar_R_DrawMLODMask;
-
 #define g_DrawMLODMask (GVar_R_DrawMLODMask.value.u)	/* R_DrawMLODMask: the LODs drawn as the main model */
 static cGVar GVar_R_DrawMLODMin;
-
 #define g_DrawMLODMin (GVar_R_DrawMLODMin.value.i)		/* R_DrawMLODMin */
 static cGVar GVar_R_DrawMLODPart;
-
 #define g_DrawMLODPart (GVar_R_DrawMLODPart.value.i)		/* R_DrawMLODPart: the particles of the main model with a LOD */
 static cGVar GVar_R_ModelFastIsVis;
-
 #define g_ModelFastIsVis (GVar_R_ModelFastIsVis.value.i)	/* R_ModelFastIsVis */
 static cGVar GVar_R_ModelPortalVis;
-
 #define g_ModelPortalVis (GVar_R_ModelPortalVis.value.i)	/* R_ModelPortalVis */
 static cGVar GVar_R_SphereVisMult;
-
 #define g_SphereVisMult (GVar_R_SphereVisMult.value.f)	/* R_SphereVisMult */
 static cGVar GVar_R_DistMStencil;
-
 #define g_DistMStencil (GVar_R_DistMStencil.value.f)	/* R_DistMStencil */
 static cGVar GVar_R_SkipUpdateVis;
-
 #define g_SkipUpdateVis (GVar_R_SkipUpdateVis.value.i)	/* R_SkipUpdateVis */
 static cGVar GVar_R_ShowModelSector;
-
 #define g_ShowModelSector (GVar_R_ShowModelSector.value.i)	/* R_ShowModelSector */
 static cGVar GVar_R_LightLimit;
-
 #define g_LightLimit (GVar_R_LightLimit.value.i)		/* R_LightLimit, -1: no lights chosen */
 static cGVar GVar_R_ShowModelLights;
-
 #define g_ShowModelLights (GVar_R_ShowModelLights.value.i)	/* R_ShowModelLights */
 static cGVar GVar_R_ShowModelBox;
-
 #define g_ShowModelBox (GVar_R_ShowModelBox.value.i)		/* R_ShowModelBox */
 static cGVar GVar_R_ShowModelPos;
-
 #define g_ShowModelPos (GVar_R_ShowModelPos.value.i)		/* R_ShowModelPos */
 
 /* the passes that draw only the models seen in the last frame */

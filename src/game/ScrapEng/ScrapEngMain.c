@@ -737,19 +737,14 @@ static cGVar GVar_ViewerClipNear;
 /* the free camera of the viewer (Gvars) */
 #define g_ViewerClipNear (GVar_ViewerClipNear.value.f)
 static cGVar GVar_ViewerClipFar;
-
 #define g_ViewerClipFar (GVar_ViewerClipFar.value.f)
 static cGVar GVar_ViewerFOV;
-
 #define g_ViewerFOV (GVar_ViewerFOV.value.f)	/* degrees, 0: the camera keeps its own */
 static cGVar GVar_ViewerCameraTgt;
-
 #define g_ViewerCameraTgt (GVar_ViewerCameraTgt.value.i)	/* orbits around the target */
 static cGVar GVar_ViewerCameraVel;
-
 #define g_ViewerCameraVel (GVar_ViewerCameraVel.value.f)
 static cGVar GVar_ViewerCameraInv;
-
 #define g_ViewerCameraInv (GVar_ViewerCameraInv.value.i)	/* the pitch not inverted */
 #define VIEWER_MIN_DIST 20.0f
 /* the actions of the debug set */
@@ -1226,7 +1221,6 @@ int g_FlareAttenDist;
 
 #define g_FlaresAttenDist g_FlareAttenDist
 static float g_FlareAttenDistIni = 200.0f;
-
 #define g_FlaresAttenIni g_FlareAttenDistIni
 float g_FlareAttenDistEnd = 3000.0f;
 

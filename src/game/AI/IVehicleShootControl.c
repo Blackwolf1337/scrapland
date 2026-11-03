@@ -27,25 +27,18 @@ static cGVar GVar_ShowVehWeapAI;
 /* the engine variables */
 #define g_ShowVehWeapAI (&GVar_ShowVehWeapAI.value.s)
 static cGVar GVar_TimeShootAI;
-
 #define g_TimeShootAI (GVar_TimeShootAI.value.f)
 static cGVar GVar_TimeShootCMAI;
-
 #define g_TimeShootCMAI (GVar_TimeShootCMAI.value.f)
 static cGVar GVar_TimeChangeWeapAI;
-
 #define g_TimeChangeWeapAI (GVar_TimeChangeWeapAI.value.f)
 static cGVar GVar_TimeChangeWeapCMAI;
-
 #define g_TimeChangeWeapCMAI (GVar_TimeChangeWeapCMAI.value.f)
 static cGVar GVar_ShortDistShootAI;
-
 #define g_ShortDistShootAI (GVar_ShortDistShootAI.value.f)
 static cGVar GVar_OffsetAngShootAI;
-
 #define g_OffsetAngShootAI (GVar_OffsetAngShootAI.value.f)
 static cGVar GVar_MinDistCMAI;
-
 #define g_MinDistCMAI (GVar_MinDistCMAI.value.f)
 cGVar GVar_VulcanIDWeap;
 
@@ -60,7 +53,6 @@ cGVar GVar_TeslaDistLimit;
 
 #define g_TeslaDistLimit (GVar_TeslaDistLimit.value.f)
 static cGVar GVar_SwarmDistLimit;
-
 #define g_SwarmDistLimit (GVar_SwarmDistLimit.value.f)
 
 #define AIVS_AMMO_HOOK 3		/* the ammo kind of the hook */

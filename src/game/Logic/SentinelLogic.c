@@ -21,47 +21,34 @@
 static const cSentinelLocalLogicVtbl cSentinelLocalLogic_vftable;
 #define CSENTINELLOCALLOGIC_VFTABLE (&cSentinelLocalLogic_vftable.base)
 static cGVar GVar_SentinelInspectTime;
-
 #define g_SentinelInspectTime (GVar_SentinelInspectTime.value.f)
 static cGVar GVar_SentinelSuspectTime;
-
 #define g_SentinelSuspectTime (GVar_SentinelSuspectTime.value.f)
 static cGVar GVar_SentinelBankerNPCDetect;
-
 #define g_SentinelBankerNPCDetect (GVar_SentinelBankerNPCDetect.value.f)
 static cGVar GVar_SentinelGotoSpeed;
-
 #define g_SentinelGotoSpeed (GVar_SentinelGotoSpeed.value.f)
 static cGVar GVar_SentinelAcuseTime;
-
 #define g_SentinelAcuseTime (GVar_SentinelAcuseTime.value.f)
 static cGVar GVar_SentinelGotoTime;
-
 #define g_SentinelGotoTime (GVar_SentinelGotoTime.value.f)
 static cGVar GVar_SentinelAcuseSpeed;
-
 #define g_SentinelAcuseSpeed (GVar_SentinelAcuseSpeed.value.f)
 static cGVar GVar_SentinelSearchSpeed;
-
 #define g_SentinelSearchSpeed (GVar_SentinelSearchSpeed.value.f)
 static cGVar GVar_SentinelSuspectSpeed;
-
 #define g_SentinelSuspectSpeed (GVar_SentinelSuspectSpeed.value.f)
 static cGVar GVar_SentinelGotoRadius;
-
 #define g_SentinelGotoRadius (GVar_SentinelGotoRadius.value.f)
 extern cGVar GVar_SentinelStdFar;
 #define g_SentinelStdFar (GVar_SentinelStdFar.value.f)
 extern cGVar GVar_SentinelStdFovY;
 #define g_SentinelStdFovY (GVar_SentinelStdFovY.value.f)
 static cGVar GVar_SentinelInspectSpeed;
-
 #define g_SentinelInspectSpeed (GVar_SentinelInspectSpeed.value.f)
 static cGVar GVar_SentinelBankerDetect;
-
 #define g_SentinelBankerDetect (GVar_SentinelBankerDetect.value.f)
 static cGVar GVar_SentinelRelaxSpeed;
-
 #define g_SentinelRelaxSpeed (GVar_SentinelRelaxSpeed.value.f)
 extern cGVar GVar_SentinelStdFovX;
 #define g_SentinelStdFovX (GVar_SentinelStdFovX.value.f)

@@ -15,7 +15,6 @@
 #define g_LastMasterCommandFlags (GVar_LastMasterCommandSent.base.flags)
 #define g_LastMasterCommand (((cString *)&GVar_LastMasterCommandSent.value))	/* LastMasterCommandSent */
 static cGVar GVar_LastMasterCommandSent;
-
 #define NET_AF_INET 2
 #define NET_PKT_MAX 0x800
 

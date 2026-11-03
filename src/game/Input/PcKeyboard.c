@@ -16,7 +16,6 @@
 
 #define CPCKEYBOARD_VFTABLE (&cPcKeyboard_vftable)
 static const cAbstractIDeviceVtbl cPcKeyboard_vftable;
-
 #define KB_NAME "Kb"
 
 /* the DIK_ names of the config file (the jump table of the original) */

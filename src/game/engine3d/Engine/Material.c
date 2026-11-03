@@ -18,7 +18,6 @@
 
 #define CMATERIAL_VFTABLE (&CMaterial_vftable)
 static const CMaterialVtbl CMaterial_vftable;
-
 #define TEXTSTATIC_CTOR 0x233990
 #define TEXTSTATIC_DTOR 0x233c70
 
@@ -33,13 +32,10 @@ cGVar GVar_LoadTextures;
 
 #define g_LoadTextures (GVar_LoadTextures.value.i)
 static cGVar GVar_DDS_CheckMark;
-
 #define g_DDSCheckMark (GVar_DDS_CheckMark.value.i)
 static cGVar GVar_MatEmissive;
-
 #define g_MatEmissive (GVar_MatEmissive.value.f)
 static cGVar GVar_DDS_UseTextures;
-
 #define g_DDSUseTextures (GVar_DDS_UseTextures.value.i)
 extern int g_ShadowsStencil;
 #define g_LightmapsHigh g_ShadowsStencil

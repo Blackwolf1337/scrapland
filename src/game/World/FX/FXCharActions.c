@@ -1300,10 +1300,8 @@ static cGVar GVar_GearMissileThunder1Sound;
 
 #define g_GearMissileThunder1Sound (GVar_GearMissileThunder1Sound.value.s)
 static cGVar GVar_GearMissileThunder2Sound;
-
 #define g_GearMissileThunder2Sound (GVar_GearMissileThunder2Sound.value.s)
 static cGVar GVar_GearMissileThunderSoundVol;
-
 #define g_GearMissileThunderSoundVol (GVar_GearMissileThunderSoundVol.value.f)
 #define FXGEAR_RAMP_BALL 0x4306b0
 #define FXGEAR_RAMPS 0x4306d4		/* 3 color ramps of 9 colors */

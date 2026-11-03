@@ -13,7 +13,6 @@
 
 #define g_TrailsOn (GVar_R_Trails.value.i)
 static cGVar GVar_R_Trails;
-
 #define TRAILS_FVF 0x1c2
 #define TRAILS_PI4 0.78539819f		/* 0x3f490fdb */
 

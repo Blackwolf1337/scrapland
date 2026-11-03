@@ -16,25 +16,18 @@
 #include "scrap/staticinit.h"
 
 static cGVar GVar_RegenerationStartTime;
-
 #define g_RegenerationStartTime (GVar_RegenerationStartTime.value.f)
 static cGVar GVar_RegenerationTimeRate;
-
 #define g_RegenerationTimeRate (GVar_RegenerationTimeRate.value.f)
 static cGVar GVar_RegenerationCharStartTime;
-
 #define g_RegenerationCharStartTime (GVar_RegenerationCharStartTime.value.f)
 static cGVar GVar_RegenerationCharTimeRate;
-
 #define g_RegenerationCharTimeRate (GVar_RegenerationCharTimeRate.value.f)
 static cGVar GVar_RegenerationItem;
-
 #define g_RegenerationItem (GVar_RegenerationItem.value.s)
 static cGVar GVar_LifeToLaunchCallback;
-
 #define g_LifeToLaunchCallback (GVar_LifeToLaunchCallback.value.i)
 static cGVarFunction GVar_LifeReachedCallback;
-
 #define g_LifeReachedCallback (((cPy_Function *)&GVar_LifeReachedCallback.func))
 
 cShipRegen *ShipRegen_ctor(cShipRegen *self) {

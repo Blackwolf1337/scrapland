@@ -57,7 +57,6 @@ static cGVar GVar_GridScaleX;
 static cGVar GVar_GameSkill;
 static cGVarFunction GVar_EscapeEvent;
 static cGVarFunction GVar_ChatEvent;
-
 #define PI_F 3.14159265f
 #define FLT_MAX_F 3.40282347e+38f
 

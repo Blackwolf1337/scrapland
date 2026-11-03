@@ -18,7 +18,6 @@ static cGVar GVar_OptimizeAnims;
 static cGVar GVar_OptAnimRotErr;
 static cGVar GVar_OptAnimPosErr;
 static cGVar GVar_OptAnimFovErr;
-
 #define ANIMNODE_CTOR 0x2ab6a0
 #define ANIMNODE_DTOR 0x2ab8f0
 /* the flags a file may have */

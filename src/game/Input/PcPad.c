@@ -44,7 +44,6 @@ static cGVar GVar_PCPadForeground;
 static cGVar GVar_PCPadDeadZone;
 static cGVar GVar_PCPadConnected;
 static cGVar GVar_MainPcPad;
-
 #define PAD_ERROR "ERROR"
 
 static const char *const pad_labels[0x34] = {

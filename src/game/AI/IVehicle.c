@@ -35,15 +35,12 @@ static cGVar GVar_MinDistReposNotVisAI;
 static cGVar GVar_MaxDistReposNotVisAI;
 
 static cGVar GVar_RADIUS_OBJECTIVE_TRAFFIC;
-
 #define g_RadiusObjectiveTraffic (GVar_RADIUS_OBJECTIVE_TRAFFIC.value.f)		/* RADIUS_OBJECTIVE_TRAFFIC */
 static cGVar GVar_RADIUS_OBJECTIVE_TRAFFIC_INDOOR;
-
 #define g_RadiusObjectiveTrafficInDoor (GVar_RADIUS_OBJECTIVE_TRAFFIC_INDOOR.value.f)	/* RADIUS_OBJECTIVE_TRAFFIC_INDOOR */
 extern cGVar GVar_RADIUS_OBJECTIVE_IN_ROUTE;
 #define g_RadiusObjectiveInRoute (GVar_RADIUS_OBJECTIVE_IN_ROUTE.value.f)		/* RADIUS_OBJECTIVE_IN_ROUTE */
 static cGVar GVar_VelTrafficLightRotAI;
-
 #define g_VelTrafficLightRotAI (GVar_VelTrafficLightRotAI.value.f)
 cGVar GVar_MaxDistAroundReposAI;
 
@@ -1447,7 +1444,6 @@ static vec3_t *cAIVehicle_TrackPointRandom(cAIVehicle *self, vec3_t *out, const 
 }
 
 static cGVar GVar_VelReposBackAI;
-
 #define g_VelReposBackAI (GVar_VelReposBackAI.value.f)	/* VelReposBackAI */
 #define AIV_REPOS_HALF 0.5f
 #define AIV_REPOS_FOV 1.5f
@@ -2445,16 +2441,12 @@ static cGVar GVar_DistNotGetAwayAI;
 
 #define g_DistNotGetAwayAI (GVar_DistNotGetAwayAI.value.f)
 static cGVar GVar_DistGetAwayBoostAI;
-
 #define g_DistGetAwayBoostAI (GVar_DistGetAwayBoostAI.value.f)
 static cGVar GVar_MaxDistElevatorAI;
-
 #define g_MaxDistElevatorAI (GVar_MaxDistElevatorAI.value.f)
 static cGVar GVar_MinDistChaseElevatorAI;
-
 #define g_MinDistChaseElevatorAI (GVar_MinDistChaseElevatorAI.value.f)
 static cGVar GVar_MaxDistChaseElevatorAI;
-
 #define g_MaxDistChaseElevatorAI (GVar_MaxDistChaseElevatorAI.value.f)
 #define AIV_LOST_TIME 15.0f
 #define AIV_ITEM_NEAR 10000.0f
@@ -3171,13 +3163,10 @@ static void cAIVehicle_FightingAfterItem(cAIVehicle *self) {
 }
 
 static cGVar GVar_VelReposStopAI;
-
 #define g_VelReposStopAI (GVar_VelReposStopAI.value.f)	/* VelReposStopAI */
 static cGVar GVar_MaxDistReposStopAI;
-
 #define g_MaxDistReposStopAI (GVar_MaxDistReposStopAI.value.f)	/* MaxDistReposStopAI */
 static cGVar GVar_MinDistReposStopAI;
-
 #define g_MinDistReposStopAI (GVar_MinDistReposStopAI.value.f)	/* MinDistReposStopAI */
 
 /* the repositioning on a traffic track in view, once the vehicle is placed, again when it got too far from the camera

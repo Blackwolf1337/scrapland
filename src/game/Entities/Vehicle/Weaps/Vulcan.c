@@ -43,7 +43,6 @@ static cGVar GVar_VulcanDamage;
 static cGVar GVar_VulcanBulletFile;
 static cGVar GVar_VulcanAmmoCost;
 static cGVar GVar_FXVulcanHitDistance;
-
 #define VULCAN_UPG_FAST 1
 #define VULCAN_UPG_WIDE 2
 #define VULCAN_SND_SHOT 5		/* the shot sounds 5..7 of the ship */

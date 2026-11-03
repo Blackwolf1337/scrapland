@@ -12,7 +12,6 @@
 #define ERR_CUSTOM -2	/* Err_Printf: no text of its own (g_ErrCustom) */
 
 static char str_UnknownError2[] = "Unknown error";
-
 #define g_ErrUnknown str_UnknownError2	/* "Unknown error" */
 
 /* a line in pixels over the frame (the original drew it with GDI on the window), color 0xRRGGBB */
