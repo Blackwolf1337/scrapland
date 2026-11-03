@@ -12,13 +12,13 @@
 #include "scrap/staticinit.h"
 
 #define g_EnergyRechargeTime (GVar_EnergyRechargeTime.value.f)	/* "EnergyRechargeTime" */
-#define CWALKCHARENTITY_VFTABLE (&cWalkCharEntity_vftable.base.base.base)
+#define CWALKCHARENTITY_VFTABLE (&cWalkCharEntity_vftable.base.base)
 #define g_CharUsrPushSpeed (GVar_CharUsrPushSpeed.value.f)		/* the push of an AI the player runs into */
 #define g_TimeToAbortSelectChar (GVar_TimeToAbortSelectChar.value.f)
 #define g_AbortSelectDistance (GVar_AbortSelectDistance.value.f)
 #define g_SndLoopCharNPCMul (GVar_SndLoopCharNPCMul.value.f)
 #define g_CharGrav (GVar_CharGrav.value.f)
-static const cWalkCharVtbl cWalkCharEntity_vftable;
+static const cWithLifeEntityVtbl cWalkCharEntity_vftable;
 static cGVar GVar_TimeToAbortSelectChar;
 static cGVar GVar_SndLoopCharNPCMul;
 static cGVar GVar_EnergyRechargeTime;
@@ -414,6 +414,16 @@ static void WCE_PushHit(cEntity *hit, const vec3_t *dir) {
 	cWalkCharEntity_SetPush(hit, &p);
 }
 
+static void cWalkCharEntity_Turn(cWalkCharEntity *w, float dt);
+
+static void cWalkCharEntity_Idle(cEntity *self, float dt);
+
+static void cWalkCharEntity_Fly(cEntity *self, float dt);
+
+static void cWalkCharEntity_Fall(cEntity *self, float dt);
+
+static void cWalkCharEntity_WalkAnim(cEntity *self, float dt);
+
 /* the walk of a slot: the view, the actions, the velocity, the slides along the map and the other entities */
 static void cWalkCharEntity_Walk(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
@@ -425,16 +435,16 @@ static void cWalkCharEntity_Walk(cEntity *self, float dt) {
 		return;
 	}
 	byte fly = WCE_Class(w)->canFly;
-	WChar_Turn(self, dt);
+	cWalkCharEntity_Turn(WChar(self), dt);
 	old = *pos;
 	WCE_ApplyPush(w, dt);
-	WChar_Idle(self, dt);
+	cWalkCharEntity_Idle(self, dt);
 	if (fly) {
-		WChar_Fly(self, dt);
+		cWalkCharEntity_Fly(self, dt);
 	} else {
-		WChar_Fall(self, dt);
+		cWalkCharEntity_Fall(self, dt);
 	}
-	WChar_WalkAnim(self, dt);
+	cWalkCharEntity_WalkAnim(self, dt);
 	float dx = old.x - pos->x;
 	float dy = old.y - pos->y;
 	float dz = old.z - pos->z;
@@ -522,15 +532,13 @@ speed:;
 		v->y = 0.0f;
 		v->z = 0.0f;
 	}
-	WChar_ActionTick(self, dt);
+	cWalkCharEntity_ActionTick(self, dt);
 	cWalkCharControl_Latch(&w->control, self, dt);
 	w->pushOn = 0;
 }
 
 /* vf58: the view turned by the control (clamped up and down) */
-static void cWalkCharEntity_Turn(cEntity *self, float dt) {
-	cWalkCharEntity *w = WChar(self);
-
+static void cWalkCharEntity_Turn(cWalkCharEntity *w, float dt) {
 	if (!w->wl.actCtrl) {
 		return;
 	}
@@ -625,7 +633,7 @@ static const struct {
 };
 
 /* vf56: the AI of the class made (on, unless there is one) or deleted */
-static void cWalkCharEntity_EnableAI(cEntity *self, byte on, int *arg) {
+void cWalkCharEntity_EnableAI(cEntity *self, byte on, int *arg) {
 	cWalkCharEntity *w = WChar(self);
 
 	if (!w->wl.actCtrl) {
@@ -661,6 +669,8 @@ static inline byte WCE_VarFloat(float *f, double *d, byte set) {
 }
 
 static void cWalkCharEntity_SetEnergyUsed(cEntity *self, float used);
+void cWalkCharEntity_SetYModelDisp(cWalkCharEntity *w, float y);
+
 static byte cWalkCharEntity_VarF(cEntity *self, const char *name, double *d, int set) {
 	cWalkCharEntity *w = WChar(self);
 	byte s = (byte)set;
@@ -727,7 +737,7 @@ static byte cWalkCharEntity_VarF(cEntity *self, const char *name, double *d, int
 	}
 	if (!strcmp(name, "YModelDisp")) {
 		if (s) {
-			WChar_SetYModelDisp(self, (float)*d);
+			cWalkCharEntity_SetYModelDisp(WChar(self), (float)*d);
 		} else {
 			*d = w->yModelDisp;
 		}
@@ -735,6 +745,10 @@ static byte cWalkCharEntity_VarF(cEntity *self, const char *name, double *d, int
 	}
 	return cWithLifeEntity_VarF(self, name, d, set);
 }
+
+static void cWalkCharEntity_Accel(cWalkCharEntity *w, float dt);
+
+static void cWalkCharEntity_WalkSound(cWalkCharEntity *w, float dt);
 
 /* vf60: the gravity, the steps and the floor */
 static void cWalkCharEntity_Fall(cEntity *self, float dt) {
@@ -767,7 +781,7 @@ static void cWalkCharEntity_Fall(cEntity *self, float dt) {
 		}
 		w->wl.obj.vel.y = d / dt;
 		if (WCE_Action0(w)->slideAsFly) {
-			WChar_Accel(self, dt);
+			cWalkCharEntity_Accel(WChar(self), dt);
 		} else {
 			w->wl.obj.vel.x = 0.0f;
 			w->wl.obj.vel.z = 0.0f;
@@ -789,8 +803,10 @@ static void cWalkCharEntity_Fall(cEntity *self, float dt) {
 	pos->x = pos->x + w->wl.obj.vel.x * dt;
 	pos->y = pos->y + w->wl.obj.vel.y * dt;
 	pos->z = pos->z + w->wl.obj.vel.z * dt;
-	WChar_WalkSound(self, dt);
+	cWalkCharEntity_WalkSound(WChar(self), dt);
 }
+
+static void cWalkCharEntity_FlySound(cWalkCharEntity *w, float dt);
 
 /* vf64: the flight of a class that can fly */
 static void cWalkCharEntity_Fly(cEntity *self, float dt) {
@@ -846,7 +862,7 @@ end:
 	pos->y = v->y * dt + pos->y;
 	pos->z = v->z * dt + pos->z;
 	pos->x = pos->x + v->x * dt;
-	WChar_FlySound(self, dt);
+	cWalkCharEntity_FlySound(WChar(self), dt);
 }
 
 cActCtrl *cWithLifeEntity_GetActCtrl(cEntity *self) {
@@ -1035,6 +1051,8 @@ byte cWithLifeEntity_TestLine(cEntity *self, const vec3_t *from, vec3_t *hit) {
 	return cPrimitive_TestSegment(&WChar(self)->wl.prim, from, hit);
 }
 
+static void cWalkCharEntity_UpdateSelect(cEntity *self, float dt);
+
 byte cWithLifeEntity_TestSphere(cEntity *self, cEntity *exclude, const vec3_t *center, float radius,
 	const vec3_t *prev) {
 	return cPrimitive_TestSphere(&WChar(self)->wl.prim, exclude, center, radius, prev);
@@ -1053,9 +1071,9 @@ static void cWalkCharEntity_Tick(cEntity *self, float dt) {
 		w->slotView.z = w->view.z + w->viewVel.z * iv;
 	}
 	if (!w->wl.obj.move.active) {
-		WChar_UpdateSelect(self, dt);
+		cWalkCharEntity_UpdateSelect(self, dt);
 		if (w->disableControl) {
-			WChar_Idle(self, dt);
+			cWalkCharEntity_Idle(self, dt);
 		} else {
 			cWalkCharEntity_Walk(self, dt);
 		}
@@ -1063,8 +1081,8 @@ static void cWalkCharEntity_Tick(cEntity *self, float dt) {
 		if (w->wl.obj.move.viewAng) {
 			goto tick;
 		}
-		WChar_UpdateSelect(self, dt);
-		WChar_Idle(self, dt);
+		cWalkCharEntity_UpdateSelect(self, dt);
+		cWalkCharEntity_Idle(self, dt);
 	}
 	Grid_Add(&g_pWorld->grid, self);
 tick:
@@ -1086,6 +1104,8 @@ static inline void WCE_RelaxTime(cWalkCharEntity *w, float lo, float hi) {
 
 	w->relaxTime = (float)((double)(r & 0x7fff) * 3.051850947599719e-05 * (double)(hi - lo) + (double)lo);
 }
+
+void cWalkCharEntity_SetViewAng(cWalkCharEntity *w, const vec3_t *ang);
 
 /* vf59: the body turned to the view, the relax and turn actions, the view to the listener */
 static void cWalkCharEntity_Idle(cEntity *self, float dt) {
@@ -1115,7 +1135,7 @@ static void cWalkCharEntity_Idle(cEntity *self, float dt) {
 		ang.x = 0.0f;
 		ang.y = Obj_GetAng(self, &t1)->y;
 		ang.z = 0.0f;
-		WChar_SetViewAng(self, &ang);
+		cWalkCharEntity_SetViewAng(WChar(self), &ang);
 		if (w->wl.obj.cam) {
 			((cFollowCamEntity *)w->wl.obj.cam)->vSpeed = 1.10000002f;
 			((cFollowCamEntity *)w->wl.obj.cam)->hSpeed = 1.10000002f;
@@ -1274,7 +1294,7 @@ static void cWalkCharEntity_SetActive(cEntity *self, byte on) {
 }
 
 static void cWalkCharEntity_SetAng(cEntity *self, const vec3_t *ang) {
-	WChar_SetViewAng(self, ang);
+	cWalkCharEntity_SetViewAng(WChar(self), ang);
 	cObjEntity_SetAng(self, ang);
 }
 
@@ -1357,7 +1377,7 @@ static void cWalkCharEntity_SetModel(cEntity *self, const char *file, float sx, 
 	CGameModel_NodePos(m, &floor, CGameModel_FindRenderNode(m, "DC_Floor"), 0);
 	w->camNode = CGameModel_FindRenderNode(m, "DC_Camera");
 	w->floorDist = root.y - floor.y;
-	WChar_SetYModelDisp(self, w->yModelDisp);
+	cWalkCharEntity_SetYModelDisp(WChar(self), w->yModelDisp);
 }
 
 /* an AI slows its slots down unless it is seen or near a camera */
@@ -1422,9 +1442,7 @@ static void cWalkCharEntity_SetVel(cEntity *self, const vec3_t *vel) {
 	}
 }
 
-static void cWalkCharEntity_SetViewAng(cEntity *self, const vec3_t *ang) {
-	cWalkCharEntity *w = WChar(self);
-
+void cWalkCharEntity_SetViewAng(cWalkCharEntity *w, const vec3_t *ang) {
 	w->slotView = *ang;
 	w->view = w->slotView;
 	w->renderView = w->view;
@@ -1442,11 +1460,10 @@ void cWalkCharEntity_SetViewFrom(cEntity *self, const vec3_t *pos) {
 	d.y = p->y - pos->y;
 	d.z = p->z - pos->z;
 	Vec3_GetRotAng(&ang, &d);
-	WChar_SetViewAng(self, &ang);
+	cWalkCharEntity_SetViewAng(WChar(self), &ang);
 }
 
-static void cWalkCharEntity_SetYModelDisp(cEntity *self, float y) {
-	cWalkCharEntity *w = WChar(self);
+void cWalkCharEntity_SetYModelDisp(cWalkCharEntity *w, float y) {
 	float d = w->yModelDisp - y;
 
 	w->wl.obj.camOff.y = w->wl.obj.camOff.y - d;
@@ -1455,8 +1472,7 @@ static void cWalkCharEntity_SetYModelDisp(cEntity *self, float y) {
 }
 
 /* vf61: the walk acceleration of the control, the friction and the speed limit */
-static void cWalkCharEntity_Accel(cEntity *self, float dt) {
-	cWalkCharEntity *w = WChar(self);
+static void cWalkCharEntity_Accel(cWalkCharEntity *w, float dt) {
 	vec3_t *v = &w->wl.obj.vel;
 	vec3_t in, tmp;
 
@@ -1529,8 +1545,7 @@ static inline float WCE_SndMix(const float *v, float inv, float k) {
 }
 
 /* vf65 and vf66: the pitch and volume of the loop sound 0 by the speed */
-static void cWalkCharEntity_FlySound(cEntity *self, float dt) {
-	cWalkCharEntity *w = WChar(self);
+static void cWalkCharEntity_FlySound(cWalkCharEntity *w, float dt) {
 	cSndItem *s = PtrArray_Get(&w->wl.obj.snd, 0);
 	vec3_t *v = &w->wl.obj.vel;
 
@@ -1549,8 +1564,7 @@ static void cWalkCharEntity_FlySound(cEntity *self, float dt) {
 	s->volume = WCE_SndMix(s->vols, inv, c);
 }
 
-static void cWalkCharEntity_WalkSound(cEntity *self, float dt) {
-	cWalkCharEntity *w = WChar(self);
+static void cWalkCharEntity_WalkSound(cWalkCharEntity *w, float dt) {
 	cSndItem *s = PtrArray_Get(&w->wl.obj.snd, 0);
 
 	if (!s || s->ints[0] != 1) {
@@ -1622,7 +1636,7 @@ static byte cWalkCharEntity_VarV(cEntity *self, const char *name, double *x, dou
 		d.y = p->y - py;
 		d.z = p->z - pz;
 		Vec3_GetRotAng(&ang, &d);
-		WChar_SetViewAng(self, &ang);
+		cWalkCharEntity_SetViewAng(WChar(self), &ang);
 		return 1;
 	}
 	if (!strcmp(name, "ViewAng")) {
@@ -1635,7 +1649,7 @@ static byte cWalkCharEntity_VarV(cEntity *self, const char *name, double *x, dou
 		ang.x = (float)((*x * M_PI_D) / DEG_PER_PI);
 		ang.y = (float)((*y * M_PI_D) / DEG_PER_PI);
 		ang.z = (float)((*z * M_PI_D) / DEG_PER_PI);
-		WChar_SetViewAng(self, &ang);
+		cWalkCharEntity_SetViewAng(WChar(self), &ang);
 		return 1;
 	}
 	return cWithLifeEntity_VarV(self, name, x, y, z, set);
@@ -1888,76 +1902,63 @@ static byte cWalkCharEntity_IsStrafeAnim(cEntity *self) {
 }
 
 /* the vtable of cWalkCharEntity */
-static const cWalkCharVtbl cWalkCharEntity_vftable = {
-	.base.base.base.Update = cWalkCharEntity_Update,
-	.base.base.base.Render = cEntity_Render,
-	.base.base.base.UpdateOff = cWithLifeEntity_UpdateOff,
-	.base.base.base.Delete = cWalkCharEntity_Delete,
-	.base.base.base.GetClassName = cWalkCharEntity_GetClassName,
-	.base.base.base.IsType = cWalkCharEntity_IsType,
-	.base.base.base.GetPos = cObjEntity_GetPos,
-	.base.base.base.SetPos = cWithLifeEntity_SetPos,
-	.base.base.base.SetActive = cWalkCharEntity_SetActive,
-	.base.base.base.TestLine = cWithLifeEntity_TestLine,
-	.base.base.base.TestSphere = cWithLifeEntity_TestSphere,
-	.base.base.base.Touch = cWalkCharEntity_Touch,
-	.base.base.base.SetModel = cWalkCharEntity_SetModel,
-	.base.base.base.GetTargetAngle = cObjEntity_GetTargetAngle,
-	.base.base.base.AimWeapon = cEntity_AimWeapon,
-	.base.base.base.SetEmbeddedFX = cWalkCharEntity_SetEmbeddedFX,
-	.base.base.base.VarI = cWalkCharEntity_VarI,
-	.base.base.base.VarF = cWalkCharEntity_VarF,
-	.base.base.base.VarS = cWalkCharEntity_VarS,
-	.base.base.base.VarV = cWalkCharEntity_VarV,
-	.base.base.base.Unused20 = cEntity_Unused20,
-	.base.base.base.Unused21 = cEntity_Unused21,
-	.base.base.base.GetAI = cEntity_GetAI,
-	.base.base.Tick = cWalkCharEntity_Tick,
-	.base.base.UpdateModel = cWalkCharEntity_UpdateModel,
-	.base.base.GetNodeSlot = cWithLifeEntity_GetNodeSlot,
-	.base.base.GetRenderPos = cObjEntity_GetRenderPos,
-	.base.base.GetRenderAng = cWalkCharEntity_GetRenderAng,
-	.base.base.GetSndAng = cWalkCharEntity_GetSndAng,
-	.base.base.GetViewPos = cObjEntity_GetRenderPos,
-	.base.base.GetViewAng = cObjEntity_GetRenderAng,
-	.base.base.GetSndPos = cWithLifeEntity_GetSndPos,
-	.base.base.GetAng = cObjEntity_GetAng,
-	.base.base.SetAng = cWalkCharEntity_SetAng,
-	.base.base.GetVel = cObjEntity_GetVel,
-	.base.base.SetVel = cWalkCharEntity_SetVel,
-	.base.base.GetRotVel = cObjEntity_GetRotVel,
-	.base.base.SetRotVel = cObjEntity_SetRotVel,
-	.base.base.GetModel = cObjEntity_GetModel,
-	.base.base.GetCamera = cWalkCharEntity_GetCamera,
-	.base.base.GetRadius = cWalkCharEntity_GetRadius,
-	.base.base.NetWrite = cEntity_NetWriteNop,
-	.base.base.NetNeedsSend = cEntity_NetNeedsSendTrue,
-	.base.base.NetRead = cEntity_NetReadNop,
-	.base.base.SetEffect = cObjEntity_SetEffect,
-	.base.base.SetEffectParam = cObjEntity_SetEffectParam,
-	.base.base.Render = cWithLifeEntity_RenderNow,
-	.base.CheckLife = cWithLifeEntity_CheckLife,
-	.base.UnlinkListen = cWalkCharEntity_UnlinkListen,
-	.base.OnDeath = cWithLifeEntity_OnDeath,
-	.base.OnDamage = cWithLifeEntity_OnDamage,
-	.base.SetMass = cWithLifeEntity_SetMass,
-	.base.GetAction = cWithLifeEntity_GetAction,
-	.base.GetActCtrl = cWithLifeEntity_GetActCtrl,
-	.base.SetActCtrl = cWithLifeEntity_SetActCtrl,
-	.base.IsEMIed = cWithLifeEntity_IsEMIed,
-	.EnableAI = cWalkCharEntity_EnableAI,
-	.UpdateSelect = cWalkCharEntity_UpdateSelect,
-	.Turn = cWalkCharEntity_Turn,
-	.Idle = cWalkCharEntity_Idle,
-	.Fall = cWalkCharEntity_Fall,
-	.Accel = cWalkCharEntity_Accel,
-	.WalkAnim = cWalkCharEntity_WalkAnim,
-	.ActionTick = cWalkCharEntity_ActionTick,
-	.Fly = cWalkCharEntity_Fly,
-	.FlySound = cWalkCharEntity_FlySound,
-	.WalkSound = cWalkCharEntity_WalkSound,
-	.SetViewAng = cWalkCharEntity_SetViewAng,
-	.SetYModelDisp = cWalkCharEntity_SetYModelDisp,
+static const cWithLifeEntityVtbl cWalkCharEntity_vftable = {
+	.base.base.Update = cWalkCharEntity_Update,
+	.base.base.Render = cEntity_Render,
+	.base.base.UpdateOff = cWithLifeEntity_UpdateOff,
+	.base.base.Delete = cWalkCharEntity_Delete,
+	.base.base.GetClassName = cWalkCharEntity_GetClassName,
+	.base.base.IsType = cWalkCharEntity_IsType,
+	.base.base.GetPos = cObjEntity_GetPos,
+	.base.base.SetPos = cWithLifeEntity_SetPos,
+	.base.base.SetActive = cWalkCharEntity_SetActive,
+	.base.base.TestLine = cWithLifeEntity_TestLine,
+	.base.base.TestSphere = cWithLifeEntity_TestSphere,
+	.base.base.Touch = cWalkCharEntity_Touch,
+	.base.base.SetModel = cWalkCharEntity_SetModel,
+	.base.base.GetTargetAngle = cObjEntity_GetTargetAngle,
+	.base.base.AimWeapon = cEntity_AimWeapon,
+	.base.base.SetEmbeddedFX = cWalkCharEntity_SetEmbeddedFX,
+	.base.base.VarI = cWalkCharEntity_VarI,
+	.base.base.VarF = cWalkCharEntity_VarF,
+	.base.base.VarS = cWalkCharEntity_VarS,
+	.base.base.VarV = cWalkCharEntity_VarV,
+	.base.base.Unused20 = cEntity_Unused20,
+	.base.base.Unused21 = cEntity_Unused21,
+	.base.base.GetAI = cEntity_GetAI,
+	.base.Tick = cWalkCharEntity_Tick,
+	.base.UpdateModel = cWalkCharEntity_UpdateModel,
+	.base.GetNodeSlot = cWithLifeEntity_GetNodeSlot,
+	.base.GetRenderPos = cObjEntity_GetRenderPos,
+	.base.GetRenderAng = cWalkCharEntity_GetRenderAng,
+	.base.GetSndAng = cWalkCharEntity_GetSndAng,
+	.base.GetViewPos = cObjEntity_GetRenderPos,
+	.base.GetViewAng = cObjEntity_GetRenderAng,
+	.base.GetSndPos = cWithLifeEntity_GetSndPos,
+	.base.GetAng = cObjEntity_GetAng,
+	.base.SetAng = cWalkCharEntity_SetAng,
+	.base.GetVel = cObjEntity_GetVel,
+	.base.SetVel = cWalkCharEntity_SetVel,
+	.base.GetRotVel = cObjEntity_GetRotVel,
+	.base.SetRotVel = cObjEntity_SetRotVel,
+	.base.GetModel = cObjEntity_GetModel,
+	.base.GetCamera = cWalkCharEntity_GetCamera,
+	.base.GetRadius = cWalkCharEntity_GetRadius,
+	.base.NetWrite = cEntity_NetWriteNop,
+	.base.NetNeedsSend = cEntity_NetNeedsSendTrue,
+	.base.NetRead = cEntity_NetReadNop,
+	.base.SetEffect = cObjEntity_SetEffect,
+	.base.SetEffectParam = cObjEntity_SetEffectParam,
+	.base.Render = cWithLifeEntity_RenderNow,
+	.CheckLife = cWithLifeEntity_CheckLife,
+	.UnlinkListen = cWalkCharEntity_UnlinkListen,
+	.OnDeath = cWithLifeEntity_OnDeath,
+	.OnDamage = cWithLifeEntity_OnDamage,
+	.SetMass = cWithLifeEntity_SetMass,
+	.GetAction = cWithLifeEntity_GetAction,
+	.GetActCtrl = cWithLifeEntity_GetActCtrl,
+	.SetActCtrl = cWithLifeEntity_SetActCtrl,
+	.IsEMIed = cWithLifeEntity_IsEMIed,
 };
 
 static cGVar GVar_EnergyRechargeTime;

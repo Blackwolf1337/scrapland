@@ -656,7 +656,7 @@ static PyObject *SAI_EnableAIChar(PyObject *self, PyObject *args) {
 	if (!e || cWalkCharEntity_GetOwnerSlot(e) >= 0 || strcmp(name, e->name)) {
 		return NULL;
 	}
-	WChar_EnableAI(e, enable != 0, &arg);
+	cWalkCharEntity_EnableAI(e, enable != 0, &arg);
 	return Py_ReturnNone();
 }
 

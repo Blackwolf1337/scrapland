@@ -155,7 +155,7 @@ static void cGateKeeperLocalLogic_Update(cLocalLogic *elem, float dt) {
 			Nto1Node_Unlink(n);
 			cActCtrl_PlayNew(ChType_ActCtrl(p), "Relax0", 1, 1.0f);
 		} else {
-			WChar_SetViewAng(p, Obj_GetAng(p, &tmp));
+			cWalkCharEntity_SetViewAng(WChar(p), Obj_GetAng(p, &tmp));
 		}
 	}
 alarm:

@@ -298,7 +298,7 @@ static void cLittlePoliceLocalLogic_Update(cLocalLogic *elem, float dt) {
 			a.x = v.x + 0.0f;
 			a.y = v.y + dt;
 			a.z = v.z + 0.0f;
-			WChar_SetViewAng(p, &a);
+			cWalkCharEntity_SetViewAng(WChar(p), &a);
 		}
 	} else if (st == GENCHAR_ACCUSE || st == LPOLICE_DISCOVER || st == LPOLICE_CHASE) {
 		cBaseLocalLogic_Update(&b->logic, dt);

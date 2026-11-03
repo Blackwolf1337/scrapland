@@ -93,7 +93,7 @@ static void ChType_DtritusKill(cAbstractFile *params) {
 	ang.x = 0.0f;
 	ang.y = y;
 	ang.z = 0.0f;
-	WChar_SetViewAng(g_DtritusEnt, &ang);
+	cWalkCharEntity_SetViewAng(WChar(g_DtritusEnt), &ang);
 	WChar(g_DtritusEnt)->displAng = -(float)turn;
 	const char *act = FxElem_Rand(1.0, 0.0) > 0.5f ? "ActionOK1" : "ActionOK";
 	cActCtrl_SetDefLoop(ChType_ActCtrl(g_DtritusEnt), act, 0);
@@ -132,7 +132,7 @@ static void ChType_DtritusEndEvent(cAbstractFile *params) {
 	Obj_SetVel(g_DtritusEnt, &v);
 	cTimer_SetSpeedChecked(&g_pWorld->timer, 1.0f);
 	if (WChar(g_DtritusEnt)->viewLock) {
-		WChar_SetViewAng(g_DtritusEnt, Obj_GetAng(g_DtritusEnt, &v));
+		cWalkCharEntity_SetViewAng(WChar(g_DtritusEnt), Obj_GetAng(g_DtritusEnt, &v));
 		WChar(g_DtritusEnt)->displAng = 0.0f;
 	}
 	cWalkCharControl_Reset(&WChar(g_DtritusEnt)->control, 0);

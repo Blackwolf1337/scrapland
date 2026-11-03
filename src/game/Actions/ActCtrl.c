@@ -59,7 +59,7 @@ cActCtrl *cActCtrl_ctor(cActCtrl *self, cEntity *owner, cActClass *cls) {
 	self->rootTime = 0.0f;
 	self->walkSpeed = 0.5f;
 	if (Entity_IsType(owner, TYEN_WALKCHAR)) {
-		WChar_SetYModelDisp(owner, self->cls->yModelDisp);
+		cWalkCharEntity_SetYModelDisp(WChar(owner), self->cls->yModelDisp);
 		WChar(owner)->relaxTime = self->cls->minTimeToExtraRelax;
 	}
 	self->cls->users++;

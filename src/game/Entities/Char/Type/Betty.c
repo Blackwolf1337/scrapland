@@ -76,7 +76,7 @@ static void ChType_BettyActionPress(cAbstractFile *params) {
 		ang.x = 0.0f;
 		ang.y = y;
 		ang.z = 0.0f;
-		WChar_SetViewAng(v, &ang);
+		cWalkCharEntity_SetViewAng(WChar(v), &ang);
 		cam->vSpeed = g_BettyVSpeed;
 		cam->hSpeed = g_BettyHSpeed;
 	}
@@ -110,7 +110,7 @@ static void ChType_BettyCameraSet(cAbstractFile *params) {
 	ang.x = Cam_Deg2Rad(crt_atof(pitch));
 	ang.y = y;
 	ang.z = 0.0f;
-	WChar_SetViewAng(g_BettyEnt, &ang);
+	cWalkCharEntity_SetViewAng(WChar(g_BettyEnt), &ang);
 }
 
 /* out the angles that turn the z axis into dir (cdecl, rva 0xc3780) */
@@ -186,7 +186,7 @@ static void ChType_BettyEndEvent(cAbstractFile *params) {
 	v.z = 0.0f;
 	Obj_SetVel(g_BettyEnt, &v);
 	cWalkCharControl_Reset(&WChar(g_BettyEnt)->control, 0);
-	WChar_SetViewAng(g_BettyEnt, Obj_GetAng(g_BettyEnt, &v));
+	cWalkCharEntity_SetViewAng(WChar(g_BettyEnt), Obj_GetAng(g_BettyEnt, &v));
 	cFollowCamEntity *cam = Betty_Cam(g_BettyEnt);
 	WChar(g_BettyEnt)->displAng = 0.0f;
 	if (cam) {

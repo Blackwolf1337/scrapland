@@ -81,77 +81,6 @@ static inline cActCtrl *WChar_Ctrl(const void *e) {
 	return WChar(e)->wl.actCtrl;
 }
 
-/* the slots of the character vtable after the ones of cWithLifeEntity */
-typedef struct cWalkCharVtbl {
-	cWithLifeEntityVtbl base;
-	void(*EnableAI)(cEntity *self, byte on, int *arg);			/* 0xe0 vf56 */
-	void(*UpdateSelect)(cEntity *self, float dt);			/* 0xe4 vf57 */
-	void(*Turn)(cEntity *self, float dt);				/* 0xe8 vf58 */
-	void(*Idle)(cEntity *self, float dt);				/* 0xec vf59 */
-	void(*Fall)(cEntity *self, float dt);				/* 0xf0 vf60 */
-	void(*Accel)(cEntity *self, float dt);				/* 0xf4 vf61 */
-	void(*WalkAnim)(cEntity *self, float dt);				/* 0xf8 vf62 */
-	void(*ActionTick)(cEntity *self, float dt);				/* 0xfc vf63 */
-	void(*Fly)(cEntity *self, float dt);					/* 0x100 vf64 */
-	void(*FlySound)(cEntity *self, float dt);				/* 0x104 vf65 */
-	void(*WalkSound)(cEntity *self, float dt);				/* 0x108 vf66 */
-	void(*SetViewAng)(cEntity *self, const vec3_t *ang);			/* 0x10c vf67 */
-	void(*SetYModelDisp)(cEntity *self, float y);			/* 0x110 vf68 */
-} cWalkCharVtbl;
-
-/* calls through the slots of cWalkCharVtbl */
-static inline void WChar_Accel(void *self, float dt) {
-	VT(cWalkCharVtbl, self)->Accel(self, dt);
-}
-
-static inline void WChar_ActionTick(void *self, float dt) {
-	VT(cWalkCharVtbl, self)->ActionTick(self, dt);
-}
-
-static inline void WChar_EnableAI(void *self, byte on, int *arg) {
-	VT(cWalkCharVtbl, self)->EnableAI(self, on, arg);
-}
-
-static inline void WChar_Fall(void *self, float dt) {
-	VT(cWalkCharVtbl, self)->Fall(self, dt);
-}
-
-static inline void WChar_Fly(void *self, float dt) {
-	VT(cWalkCharVtbl, self)->Fly(self, dt);
-}
-
-static inline void WChar_FlySound(void *self, float dt) {
-	VT(cWalkCharVtbl, self)->FlySound(self, dt);
-}
-
-static inline void WChar_Idle(void *self, float dt) {
-	VT(cWalkCharVtbl, self)->Idle(self, dt);
-}
-
-static inline void WChar_SetViewAng(void *self, const vec3_t *ang) {
-	VT(cWalkCharVtbl, self)->SetViewAng(self, ang);
-}
-
-static inline void WChar_SetYModelDisp(void *self, float y) {
-	VT(cWalkCharVtbl, self)->SetYModelDisp(self, y);
-}
-
-static inline void WChar_Turn(void *self, float dt) {
-	VT(cWalkCharVtbl, self)->Turn(self, dt);
-}
-
-static inline void WChar_UpdateSelect(void *self, float dt) {
-	VT(cWalkCharVtbl, self)->UpdateSelect(self, dt);
-}
-
-static inline void WChar_WalkAnim(void *self, float dt) {
-	VT(cWalkCharVtbl, self)->WalkAnim(self, dt);
-}
-
-static inline void WChar_WalkSound(void *self, float dt) {
-	VT(cWalkCharVtbl, self)->WalkSound(self, dt);
-}
-
 extern cGVar GVar_CharProcessReduction;
 #define g_CharProcessReduction (GVar_CharProcessReduction.value.f)	/* nearer to a camera the AI slots are faster */
 extern cGVar GVar_ArrowDeactivationRadius;
@@ -199,5 +128,8 @@ void cWalkCharEntity_SetFalling(cEntity *self, byte on);
 void cWithLifeEntity_SetMass(cEntity *self, float mass);
 /* the view of a character set to the direction from pos to it */
 void cWalkCharEntity_SetViewFrom(cEntity *self, const vec3_t *pos);
+void cWalkCharEntity_SetYModelDisp(cWalkCharEntity *w, float y);
+void cWalkCharEntity_SetViewAng(cWalkCharEntity *w, const vec3_t *ang);
+void cWalkCharEntity_EnableAI(cEntity *self, byte on, int *arg);
 
 #endif
