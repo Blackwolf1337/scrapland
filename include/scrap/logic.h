@@ -51,6 +51,26 @@ typedef struct cLocalLogicVtbl {
 } cLocalLogicVtbl;
 
 /* calls through the slots of cLocalLogicVtbl */
+static inline cLocalLogic *LocalLogic_Delete(void *self, byte flags) {
+	return VT(cLocalLogicVtbl, self)->Delete(self, flags);
+}
+
+static inline byte LocalLogic_VarV(void *self, const char *name, double *x, double *y, double *z, byte set) {
+	return VT(cLocalLogicVtbl, self)->VarV(self, name, x, y, z, set);
+}
+
+static inline byte LocalLogic_VarS(void *self, const char *name, char **s, byte set) {
+	return VT(cLocalLogicVtbl, self)->VarS(self, name, s, set);
+}
+
+static inline byte LocalLogic_VarF(void *self, const char *name, double *d, byte set) {
+	return VT(cLocalLogicVtbl, self)->VarF(self, name, d, set);
+}
+
+static inline byte LocalLogic_VarI(void *self, const char *name, int *i, byte set) {
+	return VT(cLocalLogicVtbl, self)->VarI(self, name, i, set);
+}
+
 static inline const char *LocalLogic_GetName(void *self) {
 	return VT(cLocalLogicVtbl, self)->GetName(self);
 }

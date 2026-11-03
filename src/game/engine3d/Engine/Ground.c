@@ -36,7 +36,6 @@ static const IObject3DVtbl CGround_vftable;
 
 /* the accessor of table.h */
 
-typedef void(*objCall_t)(void *self, void *arg);
 
 static void *Ground_Obj(const CGround *self, uint32_t i) {
 	TABLE_CHECK(self->nodes, i, self->nNodes);
@@ -290,21 +289,19 @@ static IObject3D *CGround_Delete(IObject3D *base, byte flags) {
 	return base;
 }
 
-static void Ground_NodesCall(CGround *self, void *arg, int slot) {
+/* the device objects of the objects of the nodes */
+static void CGround_InitD3D(IObject3D *base, void *dev) {
+	CGround *self = (CGround *)base;
 	for (int i = 0; i < self->nNodes; i++) {
-		void *obj = Ground_Obj(self, i);
-		((objCall_t)(*(void ***)obj)[slot])(obj, arg);
+		Object3D_InitD3D(Ground_Obj(self, i), dev);
 	}
 }
 
-static void CGround_NodesVf3(IObject3D *base, void *arg) {
+static void CGround_ReleaseD3D(IObject3D *base, void *dev) {
 	CGround *self = (CGround *)base;
-	Ground_NodesCall(self, arg, 3);
-}
-
-static void CGround_NodesVf4(IObject3D *base, void *arg) {
-	CGround *self = (CGround *)base;
-	Ground_NodesCall(self, arg, 4);
+	for (int i = 0; i < self->nNodes; i++) {
+		Object3D_ReleaseD3D(Ground_Obj(self, i), dev);
+	}
 }
 
 /* the triangles of the collision meshes */
@@ -2276,8 +2273,8 @@ static const IObject3DVtbl CGround_vftable = {
 	.Delete = CGround_Delete,
 	.Update = IObject3D_UpdateNop,
 	.Render = CGround_Draw,
-	.InitD3D = CGround_NodesVf3,
-	.ReleaseD3D = CGround_NodesVf4,
+	.InitD3D = CGround_InitD3D,
+	.ReleaseD3D = CGround_ReleaseD3D,
 	.Write = CGround_Write,
 	.Read = CGround_Read,
 };

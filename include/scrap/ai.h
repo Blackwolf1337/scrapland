@@ -118,6 +118,26 @@ typedef struct cAIBaseVtbl {
 } cAIBaseVtbl;
 
 /* calls through the slots of cAIBaseVtbl */
+static inline cAI *AI_Delete(void *self, byte flags) {
+	return VT(cAIBaseVtbl, self)->Delete(self, flags);
+}
+
+static inline byte AI_VarV(void *self, const char *name, double *x, double *y, double *z, byte set) {
+	return VT(cAIBaseVtbl, self)->VarV(self, name, x, y, z, set);
+}
+
+static inline byte AI_VarS(void *self, const char *name, char **s, byte set) {
+	return VT(cAIBaseVtbl, self)->VarS(self, name, s, set);
+}
+
+static inline byte AI_VarF(void *self, const char *name, double *d, byte set) {
+	return VT(cAIBaseVtbl, self)->VarF(self, name, d, set);
+}
+
+static inline byte AI_VarI(void *self, const char *name, int *i, byte set) {
+	return VT(cAIBaseVtbl, self)->VarI(self, name, i, set);
+}
+
 #define AI_Debugf(self, ...) (VT(cAIBaseVtbl, self)->Debugf((void *)(self), __VA_ARGS__))
 
 static inline void AI_Draw(void *self) {

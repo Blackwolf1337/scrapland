@@ -435,7 +435,7 @@ static int CEngineApp_Render(CD3DApplication *elem) {
 /* DeleteDeviceObjects: the device objects of the input, the textures, materials, shadows, trails and the world */
 static int CEngineApp_DeleteDeviceObjects(CD3DApplication *base) {
 	CEngineApp *self = (CEngineApp *)base;
-	((void(*)(void *))(*(void ***)g_Input)[2])(g_Input);
+	Input3D_Release(g_Input);
 	Table_Free(&self->table);
 	Texture_ReleaseAllD3D();
 	CMatList_Release((&g_MatList));
@@ -481,7 +481,7 @@ static int CEngineApp_FinalCleanup(CD3DApplication *base) {
 	Tex_ClearPaths();
 	Tex_ClearExtensions();
 	if (g_Input) {
-		((void *(*)(void *, int))(*(void ***)g_Input)[0])(g_Input, 1);
+		Input3D_Delete(g_Input, 1);
 		g_Input = NULL;
 	}
 	return 0;
@@ -896,18 +896,11 @@ static int CEngineApp_InitDeviceObjects(CD3DApplication *elem) {
 		Bprintf(title, sizeof(title), "Scrapland (%d)%s", ENGINE_BUILD, "");
 	}
 	Plat_SetTitle(title);
-	{
-		typedef int(* create_t)(void *, void *, void *, int);
-		void **vt = *(void ***)g_Input;
-		int excl = g_MouseExcl != 0;
-
-		hr = ((create_t)vt[1])(g_Input, self->base.hWnd,
-			NULL, excl);
-	}
+	hr = Input3D_Init(g_Input, self->base.hWnd, NULL, g_MouseExcl != 0);
 	if (hr < 0) {
 		return hr;
 	}
-	((void(*)(void *, int))(*(void ***)g_Input)[5])(g_Input, 1);
+	Input3D_AcquireMouse(g_Input, 1);
 	return 0;
 }
 

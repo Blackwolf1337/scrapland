@@ -6,11 +6,13 @@
  */
 #include <string.h>
 
+#include "scrap/ai.h"
 #include "scrap/collisiongrid.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/cstring.h"
 #include "scrap/hashtable.h"
+#include "scrap/logic.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/world.h"
 
@@ -18,26 +20,6 @@
 static const cEntityVtbl cEntity_vftable;
 #define ENTITY_CLASSNAME "Entity"
 
-/* the variable methods of the AI (from vtable slot 7) and of the local logic (from slot 3) */
-typedef struct cEntVars {
-	byte(*VarI)(void *self, const char *name, int *i, int set);
-	byte(*VarF)(void *self, const char *name, double *d, int set);
-	byte(*VarS)(void *self, const char *name, char **s, int set);
-	byte(*VarV)(void *self, const char *name, double *x, double *y, double *z, int set);
-} cEntVars;
-
-static inline const cEntVars *AI_Vars(void *ai) {
-	return (const cEntVars *)(*(void ***)ai + 7);
-}
-
-static inline const cEntVars *LLogic_Vars(void *logic) {
-	return (const cEntVars *)(*(void ***)logic + 3);
-}
-
-/* the deleting destructor in slot 0 */
-static inline void Obj_Delete(void *obj) {
-	(*(void(**)(void *, int)) * (void **)obj)(obj, 1);
-}
 
 /* the entity of a ring node, NULL at the head */
 static inline cEntity *Node_Entity(const Nto1Node *n) {
@@ -116,10 +98,10 @@ void EntityDList_dtor(void *list) {
 void cEntity_dtor(cEntity *self) {
 	self->vftable = CENTITY_VFTABLE;
 	if (self->lLogic) {
-		Obj_Delete(self->lLogic);
+		LocalLogic_Delete(self->lLogic, 1);
 	}
 	if (self->ai) {
-		Obj_Delete(self->ai);
+		AI_Delete(self->ai, 1);
 	}
 	Nto1Node_Done(&self->links);
 	EntityDList_dtor(&self->listNode);
@@ -206,11 +188,11 @@ void cEntity_AimWeapon(cEntity *self, float ax, float ay, float *dist, vec3_t *o
 }
 
 byte cEntity_VarF(cEntity *self, const char *name, double *d, int set) {
-	if (!crt_strncmp("AI_", name, 3) && self->ai && AI_Vars(self->ai)->VarF(self->ai, name + 3, d, set)) {
+	if (!crt_strncmp("AI_", name, 3) && self->ai && AI_VarF(self->ai, name + 3, d, set)) {
 		return 1;
 	}
 	if (self->lLogic && !crt_strnicmp(name, "LLogic", 6) &&
-		LLogic_Vars(self->lLogic)->VarF(self->lLogic, name + 6, d, set)) {
+		LocalLogic_VarF(self->lLogic, name + 6, d, set)) {
 		return 1;
 	}
 	return 0;
@@ -255,11 +237,11 @@ byte cEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	if (!*name) {
 		return 0;
 	}
-	if (!crt_strncmp("AI_", name, 3) && self->ai && AI_Vars(self->ai)->VarI(self->ai, name + 3, i, set)) {
+	if (!crt_strncmp("AI_", name, 3) && self->ai && AI_VarI(self->ai, name + 3, i, set)) {
 		return 1;
 	}
 	if (self->lLogic && !crt_strnicmp(name, "LLogic", 6) &&
-		LLogic_Vars(self->lLogic)->VarI(self->lLogic, name + 6, i, set)) {
+		LocalLogic_VarI(self->lLogic, name + 6, i, set)) {
 		return 1;
 	}
 	if (!strcmp(name, "ActiveCMask")) {
@@ -315,7 +297,7 @@ byte cEntity_SetList(cEntity *self, const char *list) {
 		return 0;
 	}
 	if (self->lLogic) {
-		Obj_Delete(self->lLogic);
+		LocalLogic_Delete(self->lLogic, 1);
 		self->lLogic = NULL;
 	}
 	/* the factory of the local logic: cdecl with the entity, the default returns NULL */
@@ -377,9 +359,9 @@ byte cEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 	if (!*name) {
 		return 0;
 	}
-	if ((!crt_strncmp("AI_", name, 3) && self->ai && AI_Vars(self->ai)->VarS(self->ai, name + 3, s, set)) ||
+	if ((!crt_strncmp("AI_", name, 3) && self->ai && AI_VarS(self->ai, name + 3, s, set)) ||
 		(self->lLogic && !crt_strnicmp(name, "LLogic", 6) &&
-			LLogic_Vars(self->lLogic)->VarS(self->lLogic, name + 6, s, set))) {
+			LocalLogic_VarS(self->lLogic, name + 6, s, set))) {
 		return 1;
 	}
 	if (!(byte)set) {
@@ -427,11 +409,11 @@ byte cEntity_VarV(cEntity *self, const char *name, double *x, double *y, double 
 	if (!*name) {
 		return 0;
 	}
-	if (!crt_strncmp("AI_", name, 3) && self->ai && AI_Vars(self->ai)->VarV(self->ai, name + 3, x, y, z, set)) {
+	if (!crt_strncmp("AI_", name, 3) && self->ai && AI_VarV(self->ai, name + 3, x, y, z, set)) {
 		return 1;
 	}
 	if (self->lLogic && !crt_strnicmp(name, "LLogic", 6) &&
-		LLogic_Vars(self->lLogic)->VarV(self->lLogic, name + 6, x, y, z, set)) {
+		LocalLogic_VarV(self->lLogic, name + 6, x, y, z, set)) {
 		return 1;
 	}
 	if (!strcmp(name, "Pos")) {

@@ -40,7 +40,6 @@ static cGVar GVar_FXTrafficEmbeddedFile;
 /* the color ramps of the particles (9 colors) */
 
 /* vtable slot 0xf4 of the vehicle: the name of the pilot slot i ("" without one) */
-typedef const char *(*vehicleName_t)(cEntity *self, int i);
 
 static float EFX_Rand(double scale, double add) {
 	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * scale + add);
@@ -474,7 +473,7 @@ static void Sirens_Flash(cFXVehicleSirens *self, const vec3_t *pos, byte alarm, 
 }
 
 static int Sirens_IsPolice(cEntity *v) {
-	return Str_EqualW(((vehicleName_t)(*(void ***)v)[0xf4 / 4])(v, 0), "P_Police");
+	return Str_EqualW(cVehicleEntity_GetPilot(Veh(v), 0), "P_Police");
 }
 
 static uint32_t DataRamp[9] = { 0xff0000ff, 0x200000ff, 0x300000ff, 0x400000ff, 0x5c0000ff, 0x800000ff, 0xc40000ff, 0xff0000ff, 0xff0000ff };

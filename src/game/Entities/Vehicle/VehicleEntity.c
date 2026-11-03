@@ -951,7 +951,7 @@ void cVehicleEntity_EnableAI(cVehicleEntity *self, byte enable, void *p1, void *
 
 /* ---- the pilot ---- */
 
-const char *cVehicleEntity_GetPilot(cVehicleEntity *self, int slot) {
+const char * cVehicleEntity_GetPilot(cVehicleEntity *self, int slot) {
 	if (slot == 0 && *Veh_PilotNode(self, slot) != -1) {
 		return Veh_PilotName(self, 0);
 	}

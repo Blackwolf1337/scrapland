@@ -19,7 +19,7 @@ fail=0
 for L in "${levels[@]}"; do
 	log=$game/levels-$L.log
 	SCRAP_BUILD=$build SCRAP_GAME_DIR=$game HEADLESS_TIMEOUT=${LEVELS_TIME:-120} NATIVE_LOG=$log \
-		ASAN_OPTIONS=detect_leaks=0:quarantine_size_mb=2048 "$root/tools/test/native.sh" -imap:Levels/"$L" > /dev/null 2>&1
+		ASAN_OPTIONS=detect_leaks=0:quarantine_size_mb=2048${ASAN_EXTRA:+:$ASAN_EXTRA} "$root/tools/test/native.sh" -imap:Levels/"$L" > /dev/null 2>&1
 	rc=$?
 	asan=$(grep -A40 "ERROR: AddressSanitizer" "$log" | grep -E "ERROR|#[0-9]+ 0x[0-9a-f]+ in [A-Za-z]" |
 		grep -v "libasan\|libc.so" | head -4 | sed 's/.* in //' | tr '\n' ';' | cut -c1-200)

@@ -15,6 +15,7 @@
 #include "scrap/model.h"
 #include "scrap/material.h"
 #include "scrap/fog.h"
+#include "scrap/fxtexture.h"
 #include "scrap/node3d.h"
 #include "scrap/texture.h"
 #include "scrap/utild3d.h"
@@ -2085,8 +2086,6 @@ void Render_SetLightmapMat(CMaterial *mat, int mode) {
 	}
 }
 
-typedef void(*fxTexUpdate_t)(void *fx, CMap *map);
-typedef void *(*fxTexGet_t)(void *fx);
 
 /* the texture of each stage and the frame it was set in */
 static void *g_StageTex[8];
@@ -2102,10 +2101,8 @@ int Render_SetMap(uint32_t stage, CMap *map) {
 			map->cur = f < (uint32_t)map->frames ? &map->TextAni[f] : &map->staticTex;
 		}
 		if (map->FXTexture) {
-			void *fx = map->FXTexture;
-			((fxTexUpdate_t)(*(void ***)fx)[1])(fx, map);
-			fx = map->FXTexture;
-			tex = ((fxTexGet_t)(*(void ***)fx)[2])(fx);
+			FXTexture_Update(map->FXTexture, map);
+			tex = FXTexture_GetTexture(map->FXTexture);
 		}
 		if (map->filter != g_StageMip[stage]) {
 			g_StageMip[stage] = map->filter;

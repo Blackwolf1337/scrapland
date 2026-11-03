@@ -34,6 +34,23 @@ typedef struct IInputVtbl {
 	void(*WndProc)(IInput *self, void *hwnd, uint32_t msg, uint32_t wparam, uint32_t lparam);	/* 0x1c */
 } IInputVtbl;
 
+/* calls through the slots of IInputVtbl */
+static inline int Input3D_AcquireMouse(void *self, byte on) {
+	return VT(IInputVtbl, self)->AcquireMouse(self, on);
+}
+
+static inline int Input3D_Release(void *self) {
+	return VT(IInputVtbl, self)->Release(self);
+}
+
+static inline int Input3D_Init(void *self, void *hwnd, void *hinst, byte exclusive) {
+	return VT(IInputVtbl, self)->Init(self, hwnd, hinst, exclusive);
+}
+
+static inline IInput *Input3D_Delete(void *self, byte flags) {
+	return VT(IInputVtbl, self)->Delete(self, flags);
+}
+
 struct IInput {
 	const IInputVtbl *vftable;	/* 0x000 */
 	int32_t mouse[3];		/* 0x004 dx, dy, dz */
