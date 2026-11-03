@@ -371,7 +371,7 @@ static byte CAStarSup_Search(CAStarSup *self, cNWVecList *path, int stupid, byte
 	while (cBinaryHeap_Count(self->open) > 0) {
 		const vec3_t *buf[50];
 		vec3_t curPos, parentPos;
-		void **tp;
+		void **tp = NULL;
 		int count, taken;
 
 		open = self->open;
