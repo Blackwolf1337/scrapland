@@ -66,68 +66,6 @@ static inline cEntity *Missile_Ent(cMissileEntity *e) {
 	return &e->wl.obj.base;
 }
 
-/* cMissileEntity::vftable: the slots of the missile after the ones of cWithLifeEntity */
-typedef struct cMissileEntityVtbl {
-	cWithLifeEntityVtbl base;
-	void(*Wobble)(cEntity *self, float k);			/* 0xe0 Dumb */
-	void(*RotStep)(cEntity *self, float dt);			/* 0xe4 Cloud */
-	void(*Fall)(cEntity *self, float dt);			/* 0xe8 */
-	void(*Swarm)(cEntity *self, float dt);			/* 0xec vf59 */
-	void(*ScaleSwarmSound)(cEntity *self, float unused);		/* 0xf0 */
-	void(*LifeTick)(cEntity *self);				/* 0xf4 */
-	void(*UpdateVel)(cEntity *self);				/* 0xf8 */
-	/* n bees less; with none left the missile hits. The second argument is not used, Tick passes its dt */
-	byte(*Hit)(cEntity *self, int n, float unused);		/* 0xfc */
-	void(*AddToSwarm)(cEntity *self, int n);			/* 0x100 */
-	void(*SetSwarm)(cEntity *self, int n);			/* 0x104 */
-	void(*Explode)(cEntity *self, const vec3_t *at);		/* 0x108 */
-} cMissileEntityVtbl;
-
-/* calls through the slots of cMissileEntityVtbl */
-static inline void Missile_AddToSwarm(void *self, int n) {
-	VT(cMissileEntityVtbl, self)->AddToSwarm(self, n);
-}
-
-static inline void Missile_Explode(void *self, const vec3_t *at) {
-	VT(cMissileEntityVtbl, self)->Explode(self, at);
-}
-
-static inline void Missile_Fall(void *self, float dt) {
-	VT(cMissileEntityVtbl, self)->Fall(self, dt);
-}
-
-static inline byte Missile_Hit(void *self, int n, float unused) {
-	return VT(cMissileEntityVtbl, self)->Hit(self, n, unused);
-}
-
-static inline void Missile_LifeTick(void *self) {
-	VT(cMissileEntityVtbl, self)->LifeTick(self);
-}
-
-static inline void Missile_RotStep(void *self, float dt) {
-	VT(cMissileEntityVtbl, self)->RotStep(self, dt);
-}
-
-static inline void Missile_ScaleSwarmSound(void *self, float unused) {
-	VT(cMissileEntityVtbl, self)->ScaleSwarmSound(self, unused);
-}
-
-static inline void Missile_SetSwarm(void *self, int n) {
-	VT(cMissileEntityVtbl, self)->SetSwarm(self, n);
-}
-
-static inline void Missile_Swarm(void *self, float dt) {
-	VT(cMissileEntityVtbl, self)->Swarm(self, dt);
-}
-
-static inline void Missile_UpdateVel(void *self) {
-	VT(cMissileEntityVtbl, self)->UpdateVel(self);
-}
-
-static inline void Missile_Wobble(void *self, float k) {
-	VT(cMissileEntityVtbl, self)->Wobble(self, k);
-}
-
 /* the base class (src/game/Entities/WithLifeEntity.c) */
 void cWithLifeEntity_dtor(cEntity *self);
 byte cWithLifeEntity_VarF(cEntity *self, const char *name, double *d, int set);
@@ -162,5 +100,8 @@ void cMissileEntity_SetSwarmSpeed(cMissileEntity *self, float speed);
 void cMissileEntity_SetTarget(cMissileEntity *self, const char *name);
 void cMissileEntity_SetTopRadius(cMissileEntity *self, float r);
 void cMissileEntity_SetTurnSpeed(cMissileEntity *self, float speed);
+void cMissileEntity_AddToSwarm(cMissileEntity *self, int n);
+void cMissileEntity_SetSwarm(cMissileEntity *self, int n);
+byte cMissileEntity_Hit(cMissileEntity *self, int n, float unused);
 
 #endif

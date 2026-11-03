@@ -295,7 +295,7 @@ static void ChType_GearShoot(cAbstractFile *params) {
 		} else if (target) {
 			cMissileEntity_SetTarget(m, target->name);
 		}
-		Missile_AddToSwarm(Missile(e), 0);
+		cMissileEntity_AddToSwarm(Missile(e), 0);
 		Entity_SetEmbeddedFX(e, "GearMissile");
 		cSndInterface *snd = &WChar(e)->wl.obj.snd;
 		cSndInterface_Resize(snd, 1);

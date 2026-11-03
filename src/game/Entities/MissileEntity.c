@@ -16,8 +16,8 @@
 #include "scrap/withlifeentity.h"
 #include "scrap/staticinit.h"
 
-#define CMISSILEENTITY_VFTABLE (&cMissileEntity_vftable.base.base.base)
-static const cMissileEntityVtbl cMissileEntity_vftable;
+#define CMISSILEENTITY_VFTABLE (&cMissileEntity_vftable.base.base)
+static const cWithLifeEntityVtbl cMissileEntity_vftable;
 #define MISSILE_CLASSNAME "Missile"
 
 #define MISSILE_PI_2 0x1.921fb6p+0f				/* pi / 2 as float (0x3fc90fdb) */
@@ -105,13 +105,13 @@ cEntity *cMissileEntity_ctor(void *mem, const char *name, float x, float y, floa
 	return &self->wl.obj.base;
 }
 
-static byte cMissileEntity_Hit(cEntity *elem, int n, float unused);
+byte cMissileEntity_Hit(cMissileEntity *self, int n, float unused);
 static void cMissileEntity_dtor(cMissileEntity *self) {
 	int n = self->swarmCount;
 
 	self->wl.obj.base.vftable = CMISSILEENTITY_VFTABLE;
 	if (n > 0 || self->wl.obj.base.active) {
-		cMissileEntity_Hit(&self->wl.obj.base, n + 1, 0);
+		cMissileEntity_Hit(self, n + 1, 0);
 	}
 	cPy_Function_dtor(&self->onHit);
 	cPy_Function_dtor(&self->onBeeDeath);
@@ -127,12 +127,13 @@ static cEntity *cMissileEntity_Delete(cEntity *base, uint32_t flags) {
 	return base;
 }
 
-static void cMissileEntity_RotStep(cEntity *base, float dt) {
-	cMissileEntity *self = (cMissileEntity *)base;
+static void cMissileEntity_UpdateVel(cMissileEntity *self);
+
+static void cMissileEntity_RotStep(cMissileEntity *self, float dt) {
 	self->wl.obj.ang.y = self->wl.obj.rotVel.y * dt + self->wl.obj.ang.y;
 	self->wl.obj.ang.z = self->wl.obj.rotVel.z * dt + self->wl.obj.ang.z;
 	self->wl.obj.ang.x = self->wl.obj.ang.x + self->wl.obj.rotVel.x * dt;
-	Missile_UpdateVel(self);
+	cMissileEntity_UpdateVel(self);
 }
 
 /* the WithLife entities the missiles touched, by name (4 of 0x80) */
@@ -168,8 +169,7 @@ static void cMissileEntity_Touch(cEntity *base, cEntity *other, const vec3_t *po
 }
 
 static void cMissileEntity_SetHitType(cMissileEntity *self, int type);
-static void cMissileEntity_LifeTick(cEntity *elem) {
-	cMissileEntity *self = (cMissileEntity *)elem;
+static void cMissileEntity_LifeTick(cMissileEntity *self) {
 	float t = (float)(self->lifeTime - (cTimer_GetDelta(&self->wl.obj.timer)));
 
 	self->lifeTime = t;
@@ -179,14 +179,13 @@ static void cMissileEntity_LifeTick(cEntity *elem) {
 		}
 		self->target[0] = 0;
 		if (self->wl.obj.base.active) {
-			Missile_Hit(self, self->swarmCount + 1, 0);
+			cMissileEntity_Hit(self, self->swarmCount + 1, 0);
 		}
 		cEntity_Del(Missile_Ent(self));
 	}
 }
 
-static void cMissileEntity_Wobble(cEntity *base, float k) {
-	cMissileEntity *self = (cMissileEntity *)base;
+static void cMissileEntity_Wobble(cMissileEntity *self, float k) {
 	k = k * 0x1.921fb6p-2f;	/* pi / 8 */
 	float neg = -k;
 	double range = (double)(k - Float_Keep(neg));
@@ -210,11 +209,10 @@ static void cMissileEntity_Wobble(cEntity *base, float k) {
 	self->wl.obj.ang.x = self->wl.obj.ang.x + self->wl.obj.rotVel.x;
 	self->wl.obj.ang.y = self->wl.obj.rotVel.y + self->wl.obj.ang.y;
 	self->wl.obj.ang.z = self->wl.obj.rotVel.z + self->wl.obj.ang.z;
-	Missile_UpdateVel(self);
+	cMissileEntity_UpdateVel(self);
 }
 
-static void cMissileEntity_Fall(cEntity *base, float dt) {
-	cMissileEntity *self = (cMissileEntity *)base;
+static void cMissileEntity_Fall(cMissileEntity *self, float dt) {
 	if (self->wl.obj.ang.x > -MISSILE_PI_2) {
 		self->wl.obj.ang.x = self->wl.obj.ang.x - dt;
 	}
@@ -284,7 +282,7 @@ static byte cMissileEntity_VarF(cEntity *base, const char *name, double *d, int 
 	if (!strcmp(name, "Speed")) {
 		if ((byte)set) {
 			self->speed = (float)*d;
-			Missile_UpdateVel(self);
+			cMissileEntity_UpdateVel(self);
 		} else {
 			*d = self->speed;
 		}
@@ -309,7 +307,7 @@ static const char *cMissileEntity_GetClassName(cEntity *base) {
 static void cMissileEntity_UpdateOff(cEntity *base) {
 	cMissileEntity *self = (cMissileEntity *)base;
 	cObjEntity_UpdateTimer(Missile_Ent(self));
-	Missile_LifeTick(self);
+	cMissileEntity_LifeTick(self);
 	cWithLifeEntity_UpdateOff(Missile_Ent(self));
 }
 
@@ -321,6 +319,10 @@ static inline void Missile_VarFlag(byte *flag, int *i, int set) {
 		*i = *flag != 0;
 	}
 }
+
+void cMissileEntity_AddToSwarm(cMissileEntity *self, int n);
+
+void cMissileEntity_SetSwarm(cMissileEntity *self, int n);
 
 static byte cMissileEntity_VarI(cEntity *base, const char *name, int *i, int set) {
 	cMissileEntity *self = (cMissileEntity *)base;
@@ -337,12 +339,12 @@ static byte cMissileEntity_VarI(cEntity *base, const char *name, int *i, int set
 		return 1;
 	}
 	if ((byte)set && !strcmp(name, "AddToSwarm")) {
-		Missile_AddToSwarm(self, *i);
+		cMissileEntity_AddToSwarm(self, *i);
 		return 1;
 	}
 	if (!strcmp(name, "nSwarm")) {
 		if ((byte)set) {
-			Missile_SetSwarm(self, *i);
+			cMissileEntity_SetSwarm(self, *i);
 		} else {
 			*i = self->swarmCount;
 		}
@@ -379,9 +381,10 @@ static byte cMissileEntity_IsType(cEntity *base, const char *type) {
 	return cWithLifeEntity_IsType(Missile_Ent(self), type);
 }
 
+static void cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at);
+
 /* n bees die (hidden swarm: only counted), or the missile explodes when there are not that many; 1 if it did */
-static byte cMissileEntity_Hit(cEntity *elem, int n, float unused) {
-	cMissileEntity *self = (cMissileEntity *)elem;
+byte cMissileEntity_Hit(cMissileEntity *self, int n, float unused) {
 	vec3_t tmp;
 
 	(void)unused;
@@ -435,7 +438,7 @@ static byte cMissileEntity_Hit(cEntity *elem, int n, float unused) {
 			at = Entity_GetPos(t, &tmp);
 		}
 	}
-	Missile_Explode(self, at);
+	cMissileEntity_Explode(self, at);
 	Entity_SetActive(Missile_Ent(self), 0);
 	return 1;
 }
@@ -537,7 +540,7 @@ void cMissileEntity_SetRadiusGrow(cMissileEntity *self, float r) {
 
 void cMissileEntity_SetSpeed(cMissileEntity *self, float speed) {
 	self->speed = speed;
-	Missile_UpdateVel(self);
+	cMissileEntity_UpdateVel(self);
 }
 
 void cMissileEntity_SetSwDthTime(cMissileEntity *self, float t) {
@@ -545,12 +548,11 @@ void cMissileEntity_SetSwDthTime(cMissileEntity *self, float t) {
 }
 
 /* more bees are added, fewer go back to the debris system */
-static void cMissileEntity_SetSwarm(cEntity *base, int n) {
-	cMissileEntity *self = (cMissileEntity *)base;
+void cMissileEntity_SetSwarm(cMissileEntity *self, int n) {
 	int c = self->swarmCount;
 
 	if (n > c) {
-		Missile_AddToSwarm(self, n - c);
+		cMissileEntity_AddToSwarm(self, n - c);
 		return;
 	}
 	if (self->hiddenSwarm) {
@@ -595,8 +597,7 @@ void cMissileEntity_SetTurnSpeed(cMissileEntity *self, float speed) {
 }
 
 /* the velocity from the angles and the speed */
-static void cMissileEntity_UpdateVel(cEntity *base) {
-	cMissileEntity *self = (cMissileEntity *)base;
+static void cMissileEntity_UpdateVel(cMissileEntity *self) {
 	float sy, cy, sx, cx;
 
 	Float_SinCos(self->wl.obj.ang.y, &sy, &cy);
@@ -618,8 +619,10 @@ static void cMissileEntity_SetVel(cEntity *base, const vec3_t *vel) {
 	ang = *r;
 	self->speed = (float)__builtin_sqrt((double)(vel->x * vel->x + vel->y * vel->y + vel->z * vel->z));
 	Obj_SetAng(Missile_Ent(self), &ang);
-	Missile_UpdateVel(self);
+	cMissileEntity_UpdateVel(self);
 }
+
+static void cMissileEntity_Swarm(cMissileEntity *self, float dt);
 
 static void cMissileEntity_Update(cEntity *base) {
 	cMissileEntity *self = (cMissileEntity *)base;
@@ -632,16 +635,15 @@ static void cMissileEntity_Update(cEntity *base) {
 		for (cDebris *d = self->swarm; d; d = Debris_Next(d)) {
 			cDebris_Step(d, dt);
 		}
-		Missile_Swarm(self, dt);
-		Missile_LifeTick(self);
+		cMissileEntity_Swarm(self, dt);
+		cMissileEntity_LifeTick(self);
 		/* only here: a frame without time leaves it set */
 		g_MissileUpdating = saved;
 	}
 }
 
 /* the volume of the first sound by the number of bees (the most seen is kept in its ints[0]) */
-static void cMissileEntity_ScaleSwarmSound(cEntity *base, float unused) {
-	cMissileEntity *self = (cMissileEntity *)base;
+static void cMissileEntity_ScaleSwarmSound(cMissileEntity *self, float unused) {
 	(void)unused;
 	cSndItem *snd = PtrArray_Get(&self->wl.obj.snd, 0);
 	if (!snd) {
@@ -879,7 +881,7 @@ static void Missile_NetTick(cMissileEntity *self, float dt) {
 		net->age = net->age - dt;
 		if (self->netSwarmCount < self->swarmCount && self->wl.obj.base.active) {
 			self->wl.obj.base.pos = net->pos;
-			Missile_Hit(self, self->swarmCount - self->netSwarmCount, dt);
+			cMissileEntity_Hit(self, self->swarmCount - self->netSwarmCount, dt);
 			return;
 		}
 		self->wl.obj.base.pos.x = self->wl.obj.vel.x * dt + self->wl.obj.base.pos.x;
@@ -931,7 +933,7 @@ static void Missile_FollowTarget(cMissileEntity *self, float dt) {
 	self->wl.obj.ang.x = self->wl.obj.ang.x + cx;
 	self->wl.obj.ang.y = self->wl.obj.ang.y + cy;
 	self->wl.obj.ang.z = self->wl.obj.ang.z + 0.0f;
-	Missile_UpdateVel(self);
+	cMissileEntity_UpdateVel(self);
 }
 
 /* InOut: OnHit (out) for the entities the missile left, OnHit (in) for the new ones in the free slots */
@@ -996,7 +998,7 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 
 	float n = (float)self->swarmCount * self->swDthTime;
 	if (n > self->lifeTime && self->swarmCount > (self->hideMain != 0)) {
-		Missile_Hit(self, 1, dt);
+		cMissileEntity_Hit(self, 1, dt);
 	}
 	if (self->fallOut && Entity_GetPos(Missile_Ent(self), &tmp)->y > g_AtmosphereLimit) {
 		self->fallOut = 0;
@@ -1004,13 +1006,13 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 	}
 	switch (self->type) {
 	case 1:
-		Missile_Wobble(self, dt);
+		cMissileEntity_Wobble(self, dt);
 		break;
 	case 2:
-		Missile_RotStep(self, dt);
+		cMissileEntity_RotStep(self, dt);
 		break;
 	case 3:
-		Missile_Fall(self, dt);
+		cMissileEntity_Fall(self, dt);
 		break;
 	}
 	old = *pos;
@@ -1033,7 +1035,7 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 		}
 		if (!hitWorld) {
 			int k = self->beesHit ? self->swarmCount + 1 : 1;
-			if (Missile_Hit(self, k, dt)) {
+			if (cMissileEntity_Hit(self, k, dt)) {
 				return 1;
 			}
 		}
@@ -1045,7 +1047,7 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 		if (cWorld_TestSphereEntities(g_pWorld, Missile_Ent(self), MISSILE_ENTLIST, &old, self->radius,
 			&found, 1, pos)) {
 			Str_Copy(self->target, found->name, 0x80);
-			if (Missile_Hit(self, self->swarmCount + 1, dt)) {
+			if (cMissileEntity_Hit(self, self->swarmCount + 1, dt)) {
 				return 1;
 			}
 		}
@@ -1066,7 +1068,7 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 			cMissileEntity_SetHitType(self, MISSILE_HIT_NONE);
 		}
 		self->target[0] = 0;
-		if (Missile_Hit(self, self->swarmCount + 1, dt)) {
+		if (cMissileEntity_Hit(self, self->swarmCount + 1, dt)) {
 			return 1;
 		}
 	}
@@ -1087,7 +1089,7 @@ static void cMissileEntity_Tick(cEntity *base, float dt) {
 		self->radius = self->topRadius;
 		self->radiusGrow = 0.0f;
 	}
-	Missile_ScaleSwarmSound(self, dt);
+	cMissileEntity_ScaleSwarmSound(self, dt);
 	cWithLifeEntity_Tick(Missile_Ent(self), dt);
 }
 
@@ -1185,8 +1187,7 @@ static void Missile_BeePush(cMissileEntity *self, cDebris *d, float dt, float sp
 }
 
 /* vf59: the bees fly around the missile within the radius */
-static void cMissileEntity_Swarm(cEntity *base, float dt) {
-	cMissileEntity *self = (cMissileEntity *)base;
+static void cMissileEntity_Swarm(cMissileEntity *self, float dt) {
 	vec3_t tmp, view, a, n;
 	float r2 = self->radius * self->radius;
 	float sp = self->swarmSpeed + self->speed;
@@ -1254,8 +1255,7 @@ static void cMissileEntity_Swarm(cEntity *base, float dt) {
 vec3_t g_DebrisDrop[4];
 
 /* vf64: n new bees */
-static void cMissileEntity_AddToSwarm(cEntity *base, int n) {
-	cMissileEntity *self = (cMissileEntity *)base;
+void cMissileEntity_AddToSwarm(cMissileEntity *self, int n) {
 	if (!self->hiddenSwarm) {
 		cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, self->swarmSys);
 		float ax = NormAng(self->wl.obj.ang.x);
@@ -1306,8 +1306,7 @@ static void cMissileEntity_AddToSwarm(cEntity *base, int n) {
 }
 
 /* vf66: the bees fly to at (beesGather) or die where they are */
-static void cMissileEntity_Explode(cEntity *elem, const vec3_t *at) {
-	cMissileEntity *self = (cMissileEntity *)elem;
+static void cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at) {
 	vec3_t neg, rot;
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, self->swarmSys);
 
@@ -1375,74 +1374,63 @@ static void cMissileEntity_Explode(cEntity *elem, const vec3_t *at) {
 }
 
 /* the vtable of cMissileEntity */
-static const cMissileEntityVtbl cMissileEntity_vftable = {
-	.base.base.base.Update = cMissileEntity_Update,
-	.base.base.base.Render = cEntity_Render,
-	.base.base.base.UpdateOff = cMissileEntity_UpdateOff,
-	.base.base.base.Delete = cMissileEntity_Delete,
-	.base.base.base.GetClassName = cMissileEntity_GetClassName,
-	.base.base.base.IsType = cMissileEntity_IsType,
-	.base.base.base.GetPos = cObjEntity_GetPos,
-	.base.base.base.SetPos = cWithLifeEntity_SetPos,
-	.base.base.base.SetActive = cMissileEntity_SetActive,
-	.base.base.base.TestLine = cWithLifeEntity_TestLine,
-	.base.base.base.TestSphere = cWithLifeEntity_TestSphere,
-	.base.base.base.Touch = cMissileEntity_Touch,
-	.base.base.base.SetModel = cMissileEntity_SetModel,
-	.base.base.base.GetTargetAngle = cObjEntity_GetTargetAngle,
-	.base.base.base.AimWeapon = cEntity_AimWeapon,
-	.base.base.base.SetEmbeddedFX = cMissileEntity_SetEmbeddedFX,
-	.base.base.base.VarI = cMissileEntity_VarI,
-	.base.base.base.VarF = cMissileEntity_VarF,
-	.base.base.base.VarS = cMissileEntity_VarS,
-	.base.base.base.VarV = cMissileEntity_VarV,
-	.base.base.base.Unused20 = cEntity_Unused20,
-	.base.base.base.Unused21 = cEntity_Unused21,
-	.base.base.base.GetAI = cEntity_GetAI,
-	.base.base.Tick = cMissileEntity_Tick,
-	.base.base.UpdateModel = cObjEntity_UpdateModel,
-	.base.base.GetNodeSlot = cWithLifeEntity_GetNodeSlot,
-	.base.base.GetRenderPos = cObjEntity_GetRenderPos,
-	.base.base.GetRenderAng = cObjEntity_GetRenderAng,
-	.base.base.GetSndAng = cObjEntity_GetSndAng,
-	.base.base.GetViewPos = cObjEntity_GetRenderPos,
-	.base.base.GetViewAng = cObjEntity_GetRenderAng,
-	.base.base.GetSndPos = cWithLifeEntity_GetSndPos,
-	.base.base.GetAng = cObjEntity_GetAng,
-	.base.base.SetAng = cMissileEntity_SetAng,
-	.base.base.GetVel = cObjEntity_GetVel,
-	.base.base.SetVel = cMissileEntity_SetVel,
-	.base.base.GetRotVel = cObjEntity_GetRotVel,
-	.base.base.SetRotVel = cObjEntity_SetRotVel,
-	.base.base.GetModel = cObjEntity_GetModel,
-	.base.base.GetCamera = cObjEntity_GetCamera,
-	.base.base.GetRadius = cWithLifeEntity_GetRadius,
-	.base.base.NetWrite = cMissileEntity_NetWrite,
-	.base.base.NetNeedsSend = cEntity_NetNeedsSendTrue,
-	.base.base.NetRead = cMissileEntity_NetRead,
-	.base.base.SetEffect = cObjEntity_SetEffect,
-	.base.base.SetEffectParam = cObjEntity_SetEffectParam,
-	.base.base.Render = cWithLifeEntity_RenderNow,
-	.base.CheckLife = cWithLifeEntity_CheckLife,
-	.base.UnlinkListen = cWithLifeEntity_Vf48,
-	.base.OnDeath = cMissileEntity_OnDeath,
-	.base.OnDamage = cWithLifeEntity_OnDamage,
-	.base.SetMass = cWithLifeEntity_SetMass,
-	.base.GetAction = cWithLifeEntity_GetAction,
-	.base.GetActCtrl = cWithLifeEntity_GetActCtrl,
-	.base.SetActCtrl = cWithLifeEntity_SetActCtrl,
-	.base.IsEMIed = cWithLifeEntity_IsEMIed,
-	.Wobble = cMissileEntity_Wobble,
-	.RotStep = cMissileEntity_RotStep,
-	.Fall = cMissileEntity_Fall,
-	.Swarm = cMissileEntity_Swarm,
-	.ScaleSwarmSound = cMissileEntity_ScaleSwarmSound,
-	.LifeTick = cMissileEntity_LifeTick,
-	.UpdateVel = cMissileEntity_UpdateVel,
-	.Hit = cMissileEntity_Hit,
-	.AddToSwarm = cMissileEntity_AddToSwarm,
-	.SetSwarm = cMissileEntity_SetSwarm,
-	.Explode = cMissileEntity_Explode,
+static const cWithLifeEntityVtbl cMissileEntity_vftable = {
+	.base.base.Update = cMissileEntity_Update,
+	.base.base.Render = cEntity_Render,
+	.base.base.UpdateOff = cMissileEntity_UpdateOff,
+	.base.base.Delete = cMissileEntity_Delete,
+	.base.base.GetClassName = cMissileEntity_GetClassName,
+	.base.base.IsType = cMissileEntity_IsType,
+	.base.base.GetPos = cObjEntity_GetPos,
+	.base.base.SetPos = cWithLifeEntity_SetPos,
+	.base.base.SetActive = cMissileEntity_SetActive,
+	.base.base.TestLine = cWithLifeEntity_TestLine,
+	.base.base.TestSphere = cWithLifeEntity_TestSphere,
+	.base.base.Touch = cMissileEntity_Touch,
+	.base.base.SetModel = cMissileEntity_SetModel,
+	.base.base.GetTargetAngle = cObjEntity_GetTargetAngle,
+	.base.base.AimWeapon = cEntity_AimWeapon,
+	.base.base.SetEmbeddedFX = cMissileEntity_SetEmbeddedFX,
+	.base.base.VarI = cMissileEntity_VarI,
+	.base.base.VarF = cMissileEntity_VarF,
+	.base.base.VarS = cMissileEntity_VarS,
+	.base.base.VarV = cMissileEntity_VarV,
+	.base.base.Unused20 = cEntity_Unused20,
+	.base.base.Unused21 = cEntity_Unused21,
+	.base.base.GetAI = cEntity_GetAI,
+	.base.Tick = cMissileEntity_Tick,
+	.base.UpdateModel = cObjEntity_UpdateModel,
+	.base.GetNodeSlot = cWithLifeEntity_GetNodeSlot,
+	.base.GetRenderPos = cObjEntity_GetRenderPos,
+	.base.GetRenderAng = cObjEntity_GetRenderAng,
+	.base.GetSndAng = cObjEntity_GetSndAng,
+	.base.GetViewPos = cObjEntity_GetRenderPos,
+	.base.GetViewAng = cObjEntity_GetRenderAng,
+	.base.GetSndPos = cWithLifeEntity_GetSndPos,
+	.base.GetAng = cObjEntity_GetAng,
+	.base.SetAng = cMissileEntity_SetAng,
+	.base.GetVel = cObjEntity_GetVel,
+	.base.SetVel = cMissileEntity_SetVel,
+	.base.GetRotVel = cObjEntity_GetRotVel,
+	.base.SetRotVel = cObjEntity_SetRotVel,
+	.base.GetModel = cObjEntity_GetModel,
+	.base.GetCamera = cObjEntity_GetCamera,
+	.base.GetRadius = cWithLifeEntity_GetRadius,
+	.base.NetWrite = cMissileEntity_NetWrite,
+	.base.NetNeedsSend = cEntity_NetNeedsSendTrue,
+	.base.NetRead = cMissileEntity_NetRead,
+	.base.SetEffect = cObjEntity_SetEffect,
+	.base.SetEffectParam = cObjEntity_SetEffectParam,
+	.base.Render = cWithLifeEntity_RenderNow,
+	.CheckLife = cWithLifeEntity_CheckLife,
+	.UnlinkListen = cWithLifeEntity_Vf48,
+	.OnDeath = cMissileEntity_OnDeath,
+	.OnDamage = cWithLifeEntity_OnDamage,
+	.SetMass = cWithLifeEntity_SetMass,
+	.GetAction = cWithLifeEntity_GetAction,
+	.GetActCtrl = cWithLifeEntity_GetActCtrl,
+	.SetActCtrl = cWithLifeEntity_SetActCtrl,
+	.IsEMIed = cWithLifeEntity_IsEMIed,
 };
 
 cGVar GVar_Gravity;

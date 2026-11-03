@@ -229,7 +229,7 @@ static void Swarm_FireNative(cAbstractFile *f) {
 	Swarm_NetSetUp(m->name);
 	int n = (int)ammo;
 	if (Missile(m)->swarmCount > n) {
-		Missile_SetSwarm(Missile(m), n);
+		cMissileEntity_SetSwarm(Missile(m), n);
 	}
 	cPrimitive_SetSize(Mis_Size(m), Missile(m)->topRadius * 0.5f);
 	if (!WLife(m)->god) {
@@ -303,9 +303,9 @@ static void Swarm_OnDamageNative(cAbstractFile *f) {
 			int n = damage / armor;
 			if (n > bees) {
 				cMissileEntity_SetTarget((cMissileEntity *)m, "");
-				Missile_Hit(Missile(m), Missile(m)->swarmCount, 0);
+				cMissileEntity_Hit(Missile(m), Missile(m)->swarmCount, 0);
 			} else {
-				Missile_Hit(Missile(m), n, 0);
+				cMissileEntity_Hit(Missile(m), n, 0);
 			}
 		}
 	}
@@ -321,7 +321,7 @@ static void Swarm_OnDeathNative(cAbstractFile *f) {
 	if (Ent_Active(m)) {
 		Entity_SetActive(m, 0);
 		Swarm_Hit(name, "", "");
-		Missile_SetSwarm(Missile(m), 0);
+		cMissileEntity_SetSwarm(Missile(m), 0);
 	}
 }
 
@@ -482,7 +482,7 @@ void Swarm_NetSetUp(const char *name) {
 				continue;
 			}
 			Weap_DropAtNode(v, Veh(v)->weapons.nodes[g_SwarmIDAmmo][i], &mtx, &ang, &vel);
-			Missile_AddToSwarm(Missile(m), *g_SwarmSlotData[i]);
+			cMissileEntity_AddToSwarm(Missile(m), *g_SwarmSlotData[i]);
 		}
 		int level = cWeaponManager_GetUpgrade(wm, g_SwarmIDWeap);
 		if (level) {
@@ -504,7 +504,7 @@ void Swarm_NetSetUp(const char *name) {
 			}
 		}
 	}
-	Missile_SetSwarm(Missile(m), cMissileEntity_GetSwarmCount((cMissileEntity *)m));
+	cMissileEntity_SetSwarm(Missile(m), cMissileEntity_GetSwarmCount((cMissileEntity *)m));
 	int n = Missile(m)->swarmCount;
 	if (n > 0) {
 		cMissileEntity_SetSwDthTime((cMissileEntity *)m, g_SwarmDeathTime / (float)n);
