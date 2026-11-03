@@ -17,8 +17,6 @@
 #define g_AStarDrawMode (GVar_ShowAStarAI.value.i)	/* 1 closed, 2 open, 3 both */
 static cGVar GVar_ShowAStarAI;
 
-static const cBinaryHeapVtbl cBinaryHeap_ElemAStar_vftable;
-#define CBINARYHEAP_VFTABLE (&cBinaryHeap_ElemAStar_vftable)
 static const CAStarVtbl CAStarSup_vftable;
 #define CASTARSUP_VFTABLE (&CAStarSup_vftable)
 static const CAStarVtbl CAStar_vftable;
@@ -28,7 +26,6 @@ static const CAStarVtbl CAStar2D_vftable;
 
 static cBinaryHeap *cBinaryHeap_ctor(cBinaryHeap *self, int capacity, binHeapLess_t less, binHeapEq_t equals,
 	binHeapIndex_t setIndex) {
-	self->vftable = CBINARYHEAP_VFTABLE;
 	self->count = 0;
 	self->capacity = 0;
 	if (!less || !equals) {
@@ -46,7 +43,6 @@ static cBinaryHeap *cBinaryHeap_ctor(cBinaryHeap *self, int capacity, binHeapLes
 }
 
 static void cBinaryHeap_dtor(cBinaryHeap *self) {
-	self->vftable = CBINARYHEAP_VFTABLE;
 	Mem_Free(self->elems);
 }
 
@@ -68,6 +64,7 @@ static void BinHeap_Moved(cBinaryHeap *self, int i) {
 	}
 }
 
+static byte cBinaryHeap_SiftUp(cBinaryHeap *self, int i);
 static byte cBinaryHeap_Push(cBinaryHeap *self, void *const *item) {
 	if (self->capacity <= self->count) {
 		return 0;
@@ -75,7 +72,7 @@ static byte cBinaryHeap_Push(cBinaryHeap *self, void *const *item) {
 	self->count++;
 	self->elems[self->count] = *item;
 	BinHeap_Moved(self, self->count);
-	Heap_SiftUp(self, self->count);
+	cBinaryHeap_SiftUp(self, self->count);
 	return 1;
 }
 
@@ -87,6 +84,7 @@ static byte cBinaryHeap_Top(cBinaryHeap *self, void ***out) {
 	return 1;
 }
 
+static byte cBinaryHeap_SiftDown(cBinaryHeap *self, int i);
 static byte cBinaryHeap_Pop(cBinaryHeap *self) {
 	if (self->count < 1) {
 		return 0;
@@ -96,7 +94,7 @@ static byte cBinaryHeap_Pop(cBinaryHeap *self) {
 		BinHeap_Moved(self, 1);
 	}
 	self->count--;
-	Heap_SiftDown(self, 1);
+	cBinaryHeap_SiftDown(self, 1);
 	return 1;
 }
 
@@ -108,26 +106,7 @@ static byte cBinaryHeap_Get(cBinaryHeap *self, void ***out, int i) {
 	return 1;
 }
 
-static byte cBinaryHeap_Find(cBinaryHeap *self, const void *item, int *index, void ***out) {
-	for (int i = 1; i <= self->count; i++) {
-		if (self->equals(&self->elems[i], item)) {
-			*out = &self->elems[i];
-			*index = i;
-			return 1;
-		}
-	}
-	return 0;
-}
-
-static byte cBinaryHeap_Set(cBinaryHeap *self, void *const *item, int i) {
-	if (i <= 0 || i > self->count) {
-		return 0;
-	}
-	self->elems[i] = *item;
-	BinHeap_Moved(self, i);
-	Heap_Fix(self, i);
-	return 1;
-}
+static void cBinaryHeap_Fix(cBinaryHeap *self, int i);
 
 /* 4 bytes in the exe, too short for the hook jump: only for the C callers */
 static int cBinaryHeap_Count(cBinaryHeap *self) {
@@ -135,8 +114,8 @@ static int cBinaryHeap_Count(cBinaryHeap *self) {
 }
 
 static void cBinaryHeap_Fix(cBinaryHeap *self, int i) {
-	if (!Heap_SiftUp(self, i)) {
-		Heap_SiftDown(self, i);
+	if (!cBinaryHeap_SiftUp(self, i)) {
+		cBinaryHeap_SiftDown(self, i);
 	}
 }
 
@@ -334,10 +313,10 @@ static void CAStarSup_Draw(CAStarSup *self, uint32_t color) {
 		}
 	}
 	if (g_AStarDrawMode == 2 || g_AStarDrawMode == 3) {
-		int n = Heap_Count(open);
+		int n = cBinaryHeap_Count(open);
 		for (int i = 1; i <= n; i++) {
-			void **e;
-			Heap_Get(open, &e, i);
+			void **e = NULL;
+			cBinaryHeap_Get(open, &e, i);
 			const vec3_t *p = ((ElemAStar *)*e)->node;
 			if (p) {
 				DebugUtils_DrawSphere(p, 50.0f, 0xff00ff, 2, 2);
@@ -388,18 +367,18 @@ static byte CAStarSup_Search(CAStarSup *self, cNWVecList *path, int stupid, byte
 	}
 	ElemAStar *top = &self->list[self->numList - 1];
 	open = self->open;
-	if (!Heap_Push(open, (void *const *)&top)) {
+	if (!cBinaryHeap_Push(open, (void *const *)&top)) {
 		goto fail;
 	}
 	self->numList--;
-	while (Heap_Count(self->open) > 0) {
+	while (cBinaryHeap_Count(self->open) > 0) {
 		const vec3_t *buf[50];
 		vec3_t curPos, parentPos;
 		void **tp;
 		int count, taken;
 
 		open = self->open;
-		Heap_Top(open, &tp);
+		cBinaryHeap_Top(open, &tp);
 		ElemAStar *cur = *tp;
 		curPos = cur->node ? *cur->node : self->start;
 		if (cur->parent) {
@@ -409,7 +388,7 @@ static byte CAStarSup_Search(CAStarSup *self, cNWVecList *path, int stupid, byte
 			parentPos.y = -3.40282347e+38f;
 			parentPos.z = -3.40282347e+38f;
 		}
-		Heap_Pop(open);
+		cBinaryHeap_Pop(open);
 		if (AStar_TestPath(self, &self->goal, &curPos)) {
 			if (cur->node) {
 				AStar_CloseAdd(self, &cur);
@@ -472,13 +451,13 @@ static byte CAStarSup_Search(CAStarSup *self, cNWVecList *path, int stupid, byte
 			el->g = g;
 			open = self->open;
 			if (isOpen) {
-				Heap_Fix(open, info->value.index);
+				cBinaryHeap_Fix(open, info->value.index);
 			} else {
 				if (isClosed) {
 					AStar_CloseRemove(self, info->value.index);
 				}
 				open = self->open;
-				if (!Heap_Push(open, (void *const *)&el)) {
+				if (!cBinaryHeap_Push(open, (void *const *)&el)) {
 					goto fail;
 				}
 			}
@@ -528,8 +507,8 @@ static byte CAStarSup_GetElem(CAStarSup *self, const vec3_t *node, ElemAStar **o
 	}
 	cAStarItem *it = *info;
 	if (it->value.state == 1) {
-		void **e;
-		Heap_Get(self->open, &e, it->value.index);
+		void **e = NULL;
+		cBinaryHeap_Get(self->open, &e, it->value.index);
 		*out = *e;
 		return 1;
 	}
@@ -597,11 +576,11 @@ static void CAStarSup_Reset(CAStarSup *self) {
 		}
 	}
 	open = self->open;
-	int n = Heap_Count(open);
+	int n = cBinaryHeap_Count(open);
 	for (int i = 1; i <= n; i++) {
-		void **e;
+		void **e = NULL;
 		open = self->open;
-		Heap_Get(open, &e, i);
+		cBinaryHeap_Get(open, &e, i);
 		cAStarInfo *info = ((ElemAStar *)*e)->info;
 		if (info) {
 			info->state = 2;
@@ -609,7 +588,7 @@ static void CAStarSup_Reset(CAStarSup *self) {
 	}
 	self->numClosed = 0;
 	open = self->open;
-	Heap_Clear(open);
+	cBinaryHeap_Clear(open);
 }
 
 /* ---- CAStar and CAStar2D ---- */
@@ -684,7 +663,7 @@ static void AStar_Free(CAStarSup *self, const CAStarVtbl *vftable) {
 	self->vftable = vftable;
 	Mem_Free(list);
 	if (self->open) {
-		Heap_Delete(self->open, 1);
+		cBinaryHeap_Delete(self->open, 1);
 	}
 	Mem_Free(self->closed);
 	CAStarSup_dtor(self);
@@ -994,20 +973,6 @@ static const CAStarVtbl CAStarSup_vftable = {
 };
 
 /* the vtable of cBinaryHeap_ElemAStar */
-static const cBinaryHeapVtbl cBinaryHeap_ElemAStar_vftable = {
-	.Delete = cBinaryHeap_Delete,
-	.Clear = cBinaryHeap_Clear,
-	.Push = cBinaryHeap_Push,
-	.Top = cBinaryHeap_Top,
-	.Pop = cBinaryHeap_Pop,
-	.Get = cBinaryHeap_Get,
-	.Find = cBinaryHeap_Find,
-	.Set = cBinaryHeap_Set,
-	.Count = cBinaryHeap_Count,
-	.Fix = cBinaryHeap_Fix,
-	.SiftUp = cBinaryHeap_SiftUp,
-	.SiftDown = cBinaryHeap_SiftDown,
-};
 
 static cGVar GVar_ShowAStarAI;
 

@@ -44,27 +44,12 @@ byte Cfg_ParseLine(char *line, char **value);
 
 struct cFuncGvar;
 
-typedef struct cGVarListVtbl {
-	void(*Save)(struct cFuncGvar *self, void *f);	/* 0x0 */
-	void(*Load)(struct cFuncGvar *self, void *f);	/* 0x4 */
-} cGVarListVtbl;
-
 /* cFuncGvar, 0x14 bytes: the abstract base of the GVAR_FUNCTION variables (cFuncGvar::vftable rva 0x3bc2c8, Save and
  * Load pure) */
 typedef struct cFuncGvar {
-	const cGVarListVtbl *vftable;	/* 0x00 */
 	cGvar gvar;			/* 0x04 g_GVars points here */
 } cFuncGvar;
 #define GVar_ListObj(v) ((void *)((byte *)(v) - offsetof(cFuncGvar, gvar)))
-
-/* calls through the slots of cGVarListVtbl */
-static inline void GVarList_Save(void *self, void *f) {
-	VT(cGVarListVtbl, self)->Save(self, f);
-}
-
-static inline void GVarList_Load(void *self, void *f) {
-	VT(cGVarListVtbl, self)->Load(self, f);
-}
 
 /* the object of a GVAR_SCRIPT_FUNCTION variable (INIT_GVAR_FUNCTION of scrap/staticinit.h): its function in place of value
  * and def */
@@ -200,5 +185,8 @@ typedef struct cSaveVar {
 	char *value;			/* 0x4 cString */
 	struct cSaveVar *next;		/* 0x8 g_SaveVars */
 } cSaveVar;
+
+void cFuncGvarDevices_Load(struct cFuncGvar *elem, void *f);
+void cFuncGvarDevices_Save(struct cFuncGvar *elem, void *f);
 
 #endif

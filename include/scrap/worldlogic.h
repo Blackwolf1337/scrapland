@@ -32,42 +32,6 @@ typedef struct cItemDesc {
 
 /* the item list of the world (InfItem.cpp, g_pWorld->logic.items) */
 typedef struct cInfItem cInfItem;
-typedef struct cInfItemVtbl {
-	cInfItem *(*Delete)(cInfItem *self, byte flags);		/* 0x00 */
-	void(*AddLife)(cInfItem *self, cItemDesc *item);			/* 0x04 */
-	/* the walk over the life items: iter is the cursor (one pointer), NULL after the last */
-	cItemDesc *(*FirstLife)(cInfItem *self, void **iter);		/* 0x08 */
-	cItemDesc *(*NextLife)(cInfItem *self, void **iter);		/* 0x0c */
-	void(*AddAmmo)(cInfItem *self, int kind, cItemDesc *item);		/* 0x10 */
-	cItemDesc *(*FirstAmmo)(cInfItem *self, int kind, void **iter);	/* 0x14 */
-	cItemDesc *(*NextAmmo)(cInfItem *self, int kind, void **iter);	/* 0x18 */
-} cInfItemVtbl;
-
-/* calls through the slots of cInfItemVtbl */
-static inline void InfItem_AddAmmo(void *self, int kind, cItemDesc *item) {
-	VT(cInfItemVtbl, self)->AddAmmo(self, kind, item);
-}
-
-static inline void InfItem_AddLife(void *self, cItemDesc *item) {
-	VT(cInfItemVtbl, self)->AddLife(self, item);
-}
-
-static inline cItemDesc *InfItem_FirstAmmo(void *self, int kind, void **iter) {
-	return VT(cInfItemVtbl, self)->FirstAmmo(self, kind, iter);
-}
-
-static inline cItemDesc *InfItem_FirstLife(void *self, void **iter) {
-	return VT(cInfItemVtbl, self)->FirstLife(self, iter);
-}
-
-static inline cItemDesc *InfItem_NextAmmo(void *self, int kind, void **iter) {
-	return VT(cInfItemVtbl, self)->NextAmmo(self, kind, iter);
-}
-
-static inline cItemDesc *InfItem_NextLife(void *self, void **iter) {
-	return VT(cInfItemVtbl, self)->NextLife(self, iter);
-}
-
 typedef struct cCTFEnemies {
 	cCTFEnemiesData *d;
 } cCTFEnemies;
@@ -148,7 +112,6 @@ typedef struct cGenCharGroup {
 typedef DLIST(cInfItemNode) cInfItemList;
 
 typedef struct cInfItem {
-	const cInfItemVtbl *vftable;	/* 0x00 */
 	cInfItemList life;		/* 0x04 */
 	cInfItemList ammo0;		/* 0x1c kind 0 */
 	cInfItemList ammo2;		/* 0x34 kind 2 */
@@ -220,12 +183,7 @@ typedef struct cNurses {
 	cEntityListData *list;		/* 0x4 "Nurse" */
 } cNurses;
 
-typedef struct cLogicControlVtbl {
-	struct cLogicControl *(*Delete)(struct cLogicControl *self, byte flags);	/* 0x00 */
-} cLogicControlVtbl;
-
 typedef struct cLogicControl {
-	const cLogicControlVtbl *vftable;			/* 0x000 */
 	byte warned;			/* 0x004 the last warning think played one */
 	byte pad_5[3];
 	float warnTime;			/* 0x008 */
@@ -251,5 +209,12 @@ typedef struct cLogicControl {
 	cGenCharGroup genChars;		/* 0x1a4 */
 	cGateKeepers gateKeepers;	/* 0x1c0 */
 } cLogicControl;
+
+cItemDesc *cInfItem_FirstLife(cInfItem *self, void **iter);
+cItemDesc *cInfItem_FirstAmmo(cInfItem *self, int kind, void **iter);
+cItemDesc *cInfItem_NextLife(cInfItem *self, void **iter);
+cItemDesc *cInfItem_NextAmmo(cInfItem *self, int kind, void **iter);
+void cInfItem_AddLife(cInfItem *self, cItemDesc *item);
+void cInfItem_AddAmmo(cInfItem *self, int kind, cItemDesc *item);
 
 #endif

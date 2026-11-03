@@ -42,13 +42,7 @@ typedef struct cAmmoInfo cAmmoInfo;
 		items_ + i_; \
 	})
 
-/* the world: created by cWorld's constructor, owns the game state of the running level */
-typedef struct cWorldVtbl {
-	struct cWorld *(*Delete)(struct cWorld *self, byte flags);	/* 0x00 */
-} cWorldVtbl;
-
 typedef struct cWorld {
-	const cWorldVtbl *vftable;			/* 0x0000 cWorld::vftable */
 	HashTable entities;		/* 0x0004 every entity by name (cEntity *) */
 	Nto1Node entityList;		/* 0x0010 head of the entities (their node at +8), target the world */
 	Nto1Node deadList;		/* 0x0020 entities to delete after the frame */

@@ -7,8 +7,6 @@
 #include "scrap/mathlib.h"
 #include "scrap/slotcontroller.h"
 
-static const cSlotControllerVtbl cSlotController_vftable;
-#define CSLOTCONTROLLER_VFTABLE (&cSlotController_vftable)
 
 /* rand() of the exe as a double in [0, 1] times range */
 static double RandRange(double range) {
@@ -23,7 +21,6 @@ static void cSlotController_Start(cSlotController *self, float interval) {
 }
 
 cSlotController *cSlotController_ctor(cSlotController *self, float interval) {
-	self->vftable = CSLOTCONTROLLER_VFTABLE;
 	self->minDiff = interval;
 	self->interval = interval;
 	cSlotController_Start(self, interval);
@@ -57,7 +54,7 @@ void cSlotController_Restart(cSlotController *self) {
 byte cSlotController_Fire(cSlotController *self, float *out) {
 	if (self->time <= 0.0f) {
 		*out = self->interval;
-		SlotCtl_Next(self);
+		cSlotController_Next(self);
 		return 1;
 	}
 	return 0;
@@ -68,14 +65,11 @@ byte cSlotController_FireReset(cSlotController *self, float *out) {
 	if (self->time <= 0.0f) {
 		*out = self->interval;
 		self->time = 0.0f;
-		SlotCtl_Next(self);
+		cSlotController_Next(self);
 		return 1;
 	}
 	return 0;
 }
 
 /* the vtable of cSlotController */
-static const cSlotControllerVtbl cSlotController_vftable = {
-	.Next = cSlotController_Next,
-};
 

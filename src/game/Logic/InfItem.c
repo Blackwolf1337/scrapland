@@ -9,11 +9,8 @@
 #include "scrap/cstring.h"
 #include "scrap/logic.h"
 
-#define CINFITEM_VFTABLE (&cInfItem_vftable)
-static const cInfItemVtbl cInfItem_vftable;
 
 cInfItem *cInfItem_ctor(cInfItem *self) {
-	self->vftable = CINFITEM_VFTABLE;
 	memset(&self->life, 0, sizeof(*self) - 4);
 	return self;
 }
@@ -85,7 +82,6 @@ static void InfItemList_Add(cInfItemList *list, cItemDesc *item) {
 }
 
 void cInfItem_dtor(cInfItem *self) {
-	self->vftable = CINFITEM_VFTABLE;
 	InfItemList_Clear(&self->ammo1);
 	InfItemList_FreePool(&self->ammo1);
 	InfItemList_Clear(&self->ammo2);
@@ -94,14 +90,6 @@ void cInfItem_dtor(cInfItem *self) {
 	InfItemList_FreePool(&self->ammo0);
 	InfItemList_Clear(&self->life);
 	InfItemList_FreePool(&self->life);
-}
-
-static cInfItem *cInfItem_Delete(cInfItem *self, byte flags) {
-	cInfItem_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
 }
 
 /* the list of an ammo kind; any other kind is taken as the list itself, like the original */
@@ -132,7 +120,7 @@ static cItemDesc *InfItemList_Next(cInfItemList *list, void **iter) {
 }
 
 /* vf01 */
-static void cInfItem_AddLife(cInfItem *self, cItemDesc *item) {
+void cInfItem_AddLife(cInfItem *self, cItemDesc *item) {
 	cInfItemNode *save = self->life.iter;
 
 	InfItemList_Add(&self->life, item);
@@ -140,17 +128,17 @@ static void cInfItem_AddLife(cInfItem *self, cItemDesc *item) {
 }
 
 /* vf02 */
-static cItemDesc *cInfItem_FirstLife(cInfItem *self, void **iter) {
+cItemDesc *cInfItem_FirstLife(cInfItem *self, void **iter) {
 	return InfItemList_First(&self->life, iter);
 }
 
 /* vf03 */
-static cItemDesc *cInfItem_NextLife(cInfItem *self, void **iter) {
+cItemDesc *cInfItem_NextLife(cInfItem *self, void **iter) {
 	return InfItemList_Next(&self->life, iter);
 }
 
 /* vf04 */
-static void cInfItem_AddAmmo(cInfItem *self, int kind, cItemDesc *item) {
+void cInfItem_AddAmmo(cInfItem *self, int kind, cItemDesc *item) {
 	cInfItemList *l;
 
 	switch (kind) {
@@ -175,22 +163,13 @@ static void cInfItem_AddAmmo(cInfItem *self, int kind, cItemDesc *item) {
 }
 
 /* vf05 */
-static cItemDesc *cInfItem_FirstAmmo(cInfItem *self, int kind, void **iter) {
+cItemDesc *cInfItem_FirstAmmo(cInfItem *self, int kind, void **iter) {
 	return InfItemList_First(InfItem_AmmoList(self, kind), iter);
 }
 
 /* vf06 */
-static cItemDesc *cInfItem_NextAmmo(cInfItem *self, int kind, void **iter) {
+cItemDesc *cInfItem_NextAmmo(cInfItem *self, int kind, void **iter) {
 	return InfItemList_Next(InfItem_AmmoList(self, kind), iter);
 }
 
 /* the vtable of cInfItem */
-static const cInfItemVtbl cInfItem_vftable = {
-	.Delete = cInfItem_Delete,
-	.AddLife = cInfItem_AddLife,
-	.FirstLife = cInfItem_FirstLife,
-	.NextLife = cInfItem_NextLife,
-	.AddAmmo = cInfItem_AddAmmo,
-	.FirstAmmo = cInfItem_FirstAmmo,
-	.NextAmmo = cInfItem_NextAmmo,
-};

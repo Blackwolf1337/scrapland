@@ -16,8 +16,6 @@
 #include "scrap/platform.h"
 #include "scrap/staticinit.h"
 
-#define CMATERIAL_VFTABLE (&CMaterial_vftable)
-static const CMaterialVtbl CMaterial_vftable;
 #define TEXTSTATIC_CTOR 0x233990
 #define TEXTSTATIC_DTOR 0x233c70
 
@@ -150,7 +148,7 @@ static int Vec2_Differ(const float *a, const float *b) {
 	return !(a[0] == b[0] && a[1] == b[1]);
 }
 
-static CMaterial *CMaterial_Delete(CMaterial *self, byte flags) {
+CMaterial *CMaterial_Delete(CMaterial *self, byte flags) {
 	CMaterial_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CMaterial));
@@ -158,7 +156,7 @@ static CMaterial *CMaterial_Delete(CMaterial *self, byte flags) {
 	return self;
 }
 
-CMatList g_MatList = { .vftable = &CMatList_vftable };
+CMatList g_MatList;
 
 byte CMap_BuildMultiSprite(CMap *self) {
 	if (!self->MultiSprite) {
@@ -1040,7 +1038,7 @@ void CMatList_DeleteAll(CMatList *self) {
 		CMaterial *next = self->first->next;
 		self->first->Refs--;
 		if (self->first) {
-			Material_Delete(self->first, 1);
+			CMaterial_Delete(self->first, 1);
 		}
 		n++;
 		self->first = next;
@@ -1139,7 +1137,7 @@ void CMatList_Delete(CMatList *self, CMaterial *mat) {
 	CHECK(!Mat_IsShareable(mat));
 	CMaterial *m = CMatList_Extract(self, mat, 0);
 	CHECK(m);
-	Material_Delete(mat, 1);
+	CMaterial_Delete(mat, 1);
 	g_TexDeleteUnused = 0;
 }
 
@@ -1147,7 +1145,7 @@ void CMatList_Delete(CMatList *self, CMaterial *mat) {
 
 /* the constructors and destructors of material.h */
 static void CMatList_dtor(CMatList *self);
-static CMatList *CMatList_DeleteObj(CMatList *self, byte flags) {
+CMatList *CMatList_DeleteObj(CMatList *self, byte flags) {
 	CMatList_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -1195,7 +1193,6 @@ CMaterial *CMaterial_ctor(CMaterial *self) {
 
 	self->Name = NULL;
 	self->Refs = 0;
-	self->vftable = CMATERIAL_VFTABLE;
 	CMatId_ctor(&self->id);
 	p->ambient[0] = p->ambient[1] = p->ambient[2] = 0xff;
 	p->ambient[3] = 0;
@@ -1230,7 +1227,6 @@ CMaterial *CMaterial_ctor(CMaterial *self) {
 
 /* a CBmp of the stack freed (the pixels with the sized delete of one pixel) */
 static void CMatList_dtor(CMatList *self) {
-	self->vftable = CMATLIST_VFTABLE;
 	CMatList_DeleteAll(self);
 	if (self->Name) {
 		String_Set(&self->Name, NULL);
@@ -1259,7 +1255,6 @@ static void CMap_dtor(CMap *self) {
 void CMaterial_dtor(CMaterial *self) {
 	int i;
 
-	self->vftable = CMATERIAL_VFTABLE;
 	if (self->prev) {
 		self->prev->next = self->next;
 	}
@@ -1270,7 +1265,7 @@ void CMaterial_dtor(CMaterial *self) {
 		Mat_DeleteMap(&self->map[i]);
 	}
 	if (self->sub) {
-		MatList_Delete(self->sub, 1);
+		CMatList_DeleteObj(self->sub, 1);
 		self->sub = NULL;
 	}
 	CMatId_dtor(&self->id);
@@ -1359,14 +1354,8 @@ byte CMap_CopyBmp(CMap *self, int dx, int dy, const CImage *bmp, int sx, int sy,
 }
 
 /* the vtable of CMatList */
-const CMatListVtbl CMatList_vftable = {
-	.Delete = CMatList_DeleteObj,
-};
 
 /* the vtable of CMaterial */
-static const CMaterialVtbl CMaterial_vftable = {
-	.Delete = CMaterial_Delete,
-};
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_ATEXIT(Init_MatList, Material_FiniMatList)

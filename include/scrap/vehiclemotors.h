@@ -72,33 +72,7 @@ struct cVehicleMotor {
 	cVehicleMotorsEffects effects;	/* 0x74 */
 };
 
-/* the motors of a ship (0xc8 bytes at +0x720 of the vehicle, constructor rva 0x10bc20) */
-typedef struct cVehicleMotorsVtbl {
-	byte(*VarI)(struct cVehicleMotors *self, const char *name, int *i, int set);			/* 0x00 */
-	byte(*VarF)(struct cVehicleMotors *self, const char *name, double *d, int set);		/* 0x04 */
-	byte(*VarS)(struct cVehicleMotors *self, const char *name, char **s, int set);		/* 0x08 */
-	byte(*VarV)(struct cVehicleMotors *self, const char *name, double *x, double *y, double *z, int set); /* 0x0c */
-} cVehicleMotorsVtbl;
-
-/* calls through the slots of cVehicleMotorsVtbl */
-static inline byte Motors_VarF(void *self, const char *name, double *d, int set) {
-	return VT(cVehicleMotorsVtbl, self)->VarF(self, name, d, set);
-}
-
-static inline byte Motors_VarI(void *self, const char *name, int *i, int set) {
-	return VT(cVehicleMotorsVtbl, self)->VarI(self, name, i, set);
-}
-
-static inline byte Motors_VarS(void *self, const char *name, char **s, int set) {
-	return VT(cVehicleMotorsVtbl, self)->VarS(self, name, s, set);
-}
-
-static inline byte Motors_VarV(void *self, const char *name, double *x, double *y, double *z, int set) {
-	return VT(cVehicleMotorsVtbl, self)->VarV(self, name, x, y, z, set);
-}
-
 struct cVehicleMotors {
-	const cVehicleMotorsVtbl *vftable;	/* 0x00 */
 	cEntity *owner;			/* 0x04 */
 	cVehicleMotor *motor[VM_MOTORS];	/* 0x08 */
 	byte stopped;			/* 0x18 the ship stands still, the effects are not updated */
@@ -168,5 +142,10 @@ void cVehicleMotorsEffects_Smoke(cVehicleMotorsEffects *self, float dt, CGamePar
 /* the trails of the exhausts: pos and rot of the ship, vel its local velocity */
 void cVehicleMotorsEffects_Trails(cVehicleMotorsEffects *self, float dt, vec3_t pos, vec3_t rot,
 	vec3_t vel, float thrust, float k, uint32_t color);
+
+byte cVehicleMotors_VarF(struct cVehicleMotors *base, const char *name, double *v, int set);
+byte cVehicleMotors_VarI(struct cVehicleMotors *base, const char *name, int *v, int set);
+byte cVehicleMotors_VarS(struct cVehicleMotors *base, const char *name, char **v, int set);
+byte cVehicleMotors_VarV(struct cVehicleMotors *base, const char *name, double *x, double *y, double *z, int set);
 
 #endif

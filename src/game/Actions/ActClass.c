@@ -13,8 +13,6 @@
 #include "scrap/sound.h"
 #include "scrap/walkcharentity.h"
 
-#define CACTCLASS_VFTABLE (&cActClass_vftable)
-static const cActClassVtbl cActClass_vftable;
 
 /* ---- DList<cString> ---- */
 
@@ -99,7 +97,6 @@ static cActNodeMod *cActNodeMod_ctor(cActNodeMod *self) {
 }
 
 cActClass *cActClass_ctor(cActClass *self, const char *name) {
-	self->vftable = CACTCLASS_VFTABLE;
 	cString_ctor(&self->name);
 	self->actions.numSlots = ACTCLASS_SLOTS;
 	self->actions.slots = New_Array(ACTCLASS_SLOTS, sizeof(HashNode *));
@@ -168,7 +165,6 @@ cActClass *cActClass_ctor(cActClass *self, const char *name) {
 
 static void cActClass_FreeResources(cActClass *self);
 static void cActClass_dtor(cActClass *self) {
-	self->vftable = CACTCLASS_VFTABLE;
 	if (self->users) {
 		Con_Bluef("ERROR : The class %s is going to be deleted but the reference counter is %d\n", self->name,
 			self->users);
@@ -197,7 +193,7 @@ static void cActClass_dtor(cActClass *self) {
 			CheckFailed("data!=NULL", __FILE__, __TIMESTAMP__, __LINE__);
 			continue;
 		}
-		Action_Delete(data, 1);
+		cAction_Delete(data, 1);
 	}
 	if (self->modelFile) {
 		Mem_Free(self->modelFile);
@@ -215,7 +211,7 @@ static void cActClass_dtor(cActClass *self) {
 	cString_dtor(&self->name);
 }
 
-static cActClass *cActClass_Delete(cActClass *self, byte flags) {
+cActClass *cActClass_Delete(cActClass *self, byte flags) {
 	cActClass_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -638,6 +634,3 @@ int cActClass_Var(cActClass *cls, const char *name, int set, char **s, double *d
 }
 
 /* the vtable of cActClass */
-static const cActClassVtbl cActClass_vftable = {
-	.Delete = cActClass_Delete,
-};

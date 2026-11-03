@@ -50,17 +50,7 @@ typedef struct CLod {
 /* called before (after 0) and after (1) the model is drawn */
 typedef void (*modelCallback_t)(struct CModel *m, int after, void *arg, void *arg2);
 
-typedef struct CModelVtbl {
-	struct CModel *(*Delete)(struct CModel *self, byte flags);	/* 0x00 */
-} CModelVtbl;
-
-/* calls through the slots of CModelVtbl */
-static inline struct CModel *Model_Delete(void *self, byte flags) {
-	return VT(CModelVtbl, self)->Delete(self, flags);
-}
-
 typedef struct CModel {
-	const CModelVtbl *vftable;			/* 0x000 [0] the deleting destructor */
 	char *name;			/* 0x004 Cad */
 	vec3_t pos;			/* 0x008 */
 	vec3_t rot;			/* 0x014 */
@@ -236,5 +226,6 @@ void RenderCtx_Init(NodeAnimCtx *self, CModel *m, const vec3_t *scale);
 void RenderCtx_SetChannel(NodeAnimChannel *self, CAnimSlot *slot);
 /* the play state of an animation group */
 CScene *Scene_Load(const char *name, int arg, const char *name2);
+CModel *CModel_Delete(CModel *self, byte flags);
 
 #endif

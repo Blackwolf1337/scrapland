@@ -92,7 +92,7 @@ static void CModelList_dtor(CModelList *self) {
 		Model_UpdateRender(m);
 	}
 	if (self->model) {
-		Model_Delete(self->model, 1);
+		CModel_Delete(self->model, 1);
 		self->model = NULL;
 	}
 	if (self->name2) {
@@ -230,7 +230,7 @@ void Model_Destroy(CModel **pm, byte force) {
 		}
 	}
 	if (*pm) {
-		Model_Delete(*pm, 1);
+		CModel_Delete(*pm, 1);
 		*pm = NULL;
 	}
 }

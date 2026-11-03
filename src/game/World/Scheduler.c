@@ -151,21 +151,9 @@ void Scheduler_Run(cScheduledFuncStack *self, float now) {
 void cScheduledFuncStack_dtor(void *stack) {
 	cScheduledFuncStack *self = stack;
 
-	self->vftable = CSCHEDULEDFUNCSTACK_VFTABLE;
 	Scheduler_Clear(self);
 	SchedList_Clear(&self->list);
 	DList_FreePool(&self->list, sizeof(cSchedNode));
 }
 
-static cScheduledFuncStack *cScheduledFuncStack_Delete(cScheduledFuncStack *self, byte flags) {
-	cScheduledFuncStack_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
-}
-
 /* the vtable of cScheduledFuncStack */
-const cScheduledFuncStackVtbl cScheduledFuncStack_vftable = {
-	.Delete = cScheduledFuncStack_Delete,
-};

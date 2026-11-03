@@ -1412,7 +1412,7 @@ static byte cVehicleEntity_VarF(cEntity *base, const char *name, double *d, int 
 		return cVehicleTraffic_VarF(&self->traffic, name + 5, d, set);
 	}
 	if (cWeaponManager_VarF(&self->weapons, name, d, (byte)set) ||
-		Motors_VarF(&self->motors, name, d, set)) {
+		cVehicleMotors_VarF(&self->motors, name, d, set)) {
 		return 1;
 	}
 	if (!strcmp(name, "FxBoostEngineTime")) {
@@ -1512,7 +1512,7 @@ static byte cVehicleEntity_VarI(cEntity *base, const char *name, int *i, int set
 		return cVehicleTraffic_VarI(&self->traffic, name + 5, i, set);
 	}
 	if (cWeaponManager_VarI(&self->weapons, name, i, (byte)set) ||
-		Motors_VarI(&self->motors, name, i, set)) {
+		cVehicleMotors_VarI(&self->motors, name, i, set)) {
 		return 1;
 	}
 	if ((byte)set && len == 5 && name[4] == '0' && !strncmp(name, "AnmP", 4)) {
@@ -1598,7 +1598,7 @@ static byte cVehicleEntity_VarS(cEntity *base, const char *name, char **s, int s
 		return cVehicleTraffic_VarS(&self->traffic, name + 5, s, set);
 	}
 	if (cWeaponManager_VarS(&self->weapons, name, s, (byte)set) ||
-		Motors_VarS(&self->motors, name, s, set)) {
+		cVehicleMotors_VarS(&self->motors, name, s, set)) {
 		return 1;
 	}
 	if (!(byte)set && !strcmp(name, "Model")) {
@@ -1639,7 +1639,7 @@ static byte cVehicleEntity_VarV(cEntity *base, const char *name, double *x, doub
 		return cVehicleTraffic_VarV(&self->traffic, name + 5, x, y, z, set);
 	}
 	if (cWeaponManager_VarV(&self->weapons, name, x, y, z, (byte)set) ||
-		Motors_VarV(&self->motors, name, x, y, z, set)) {
+		cVehicleMotors_VarV(&self->motors, name, x, y, z, set)) {
 		return 1;
 	}
 	if (!(byte)set && len == 5 && name[4] <= '3' && name[4] >= '0') {

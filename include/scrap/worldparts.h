@@ -17,12 +17,7 @@ typedef struct cSchedNode {
 
 typedef DLIST(cSchedNode) cSchedList;
 
-typedef struct cScheduledFuncStackVtbl {
-	struct cScheduledFuncStack *(*Delete)(struct cScheduledFuncStack *self, byte flags);	/* 0x00 */
-} cScheduledFuncStackVtbl;
-
 typedef struct cScheduledFuncStack {
-	const cScheduledFuncStackVtbl *vftable;			/* 0x00 */
 	cSchedList list;		/* 0x04 */
 } cScheduledFuncStack;
 

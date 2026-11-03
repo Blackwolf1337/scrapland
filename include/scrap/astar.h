@@ -31,64 +31,7 @@ typedef byte (*binHeapEq_t)(void *const *a, const void *b);
 typedef void (*binHeapIndex_t)(void **elem, int index);
 
 typedef struct cBinaryHeap cBinaryHeap;
-typedef struct cBinaryHeapVtbl {
-	cBinaryHeap *(*Delete)(cBinaryHeap *self, byte flags);
-	void(*Clear)(cBinaryHeap *self);
-	byte(*Push)(cBinaryHeap *self, void *const *item);
-	byte(*Top)(cBinaryHeap *self, void ***out);
-	byte(*Pop)(cBinaryHeap *self);
-	byte(*Get)(cBinaryHeap *self, void ***out, int i);
-	byte(*Find)(cBinaryHeap *self, const void *item, int *index, void ***out);
-	byte(*Set)(cBinaryHeap *self, void *const *item, int i);
-	int(*Count)(cBinaryHeap *self);
-	void(*Fix)(cBinaryHeap *self, int i);
-	byte(*SiftUp)(cBinaryHeap *self, int i);
-	byte(*SiftDown)(cBinaryHeap *self, int i);
-} cBinaryHeapVtbl;
-
-/* calls through the slots of cBinaryHeapVtbl */
-static inline void Heap_Clear(void *self) {
-	VT(cBinaryHeapVtbl, self)->Clear(self);
-}
-
-static inline int Heap_Count(void *self) {
-	return VT(cBinaryHeapVtbl, self)->Count(self);
-}
-
-static inline cBinaryHeap *Heap_Delete(void *self, byte flags) {
-	return VT(cBinaryHeapVtbl, self)->Delete(self, flags);
-}
-
-static inline void Heap_Fix(void *self, int i) {
-	VT(cBinaryHeapVtbl, self)->Fix(self, i);
-}
-
-static inline byte Heap_Get(void *self, void ***out, int i) {
-	return VT(cBinaryHeapVtbl, self)->Get(self, out, i);
-}
-
-static inline byte Heap_Pop(void *self) {
-	return VT(cBinaryHeapVtbl, self)->Pop(self);
-}
-
-static inline byte Heap_Push(void *self, void *const *item) {
-	return VT(cBinaryHeapVtbl, self)->Push(self, item);
-}
-
-static inline byte Heap_SiftDown(void *self, int i) {
-	return VT(cBinaryHeapVtbl, self)->SiftDown(self, i);
-}
-
-static inline byte Heap_SiftUp(void *self, int i) {
-	return VT(cBinaryHeapVtbl, self)->SiftUp(self, i);
-}
-
-static inline byte Heap_Top(void *self, void ***out) {
-	return VT(cBinaryHeapVtbl, self)->Top(self, out);
-}
-
 struct cBinaryHeap {
-	const cBinaryHeapVtbl *vftable;	/* 0x00 */
 	void **elems;			/* 0x04 elems[1..count] */
 	int count;			/* 0x08 */
 	int capacity;			/* 0x0c */

@@ -5,13 +5,10 @@
 #include "scrap/console.h"
 #include "scrap/hashtable.h"
 
-#define CACTCLASSLIST_VFTABLE (&cActClassList_vftable)
-static const cActClassListVtbl cActClassList_vftable;
 #define ACTCLASSLIST_SLOTS 457
 
 /* Actions/ActClassList.cpp (src/game/Actions/ActClassList.c) */
 static cActClassList *cActClassList_ctor(cActClassList *self) {
-	self->vftable = CACTCLASSLIST_VFTABLE;
 	HashTable_ctor(&self->classes, ACTCLASSLIST_SLOTS, 1);
 	return self;
 }
@@ -19,7 +16,6 @@ static cActClassList *cActClassList_ctor(cActClassList *self) {
 static void cActClassList_dtor(cActClassList *self) {
 	HashTable *t = &self->classes;
 
-	self->vftable = CACTCLASSLIST_VFTABLE;
 	for (;;) {
 		int k = 0;
 		if ((int)t->numSlots < 1) {
@@ -36,7 +32,7 @@ static void cActClassList_dtor(cActClassList *self) {
 		CHECK(deleted);
 		CHECK(cls != NULL);
 		if (cls) {
-			ActClass_Delete(cls, 1);
+			cActClass_Delete(cls, 1);
 		}
 	}
 done:
@@ -84,7 +80,7 @@ byte cActClassList_Del(cActClassList *list, const char *name) {
 		cActClass *cls = it->value;
 		if (cls->users == 0) {
 			PtrTable_Delete(t, name);
-			ActClass_Delete(cls, 1);
+			cActClass_Delete(cls, 1);
 			return 1;
 		}
 	}
@@ -98,7 +94,7 @@ void ActClassList_Done(void) {
 		Con_Warnf("WARNING at DoneActClassList(): ActClassList can\xb4t be deleted because doesn\xb4t exists.\n");
 		return;
 	}
-	ActClassList_Delete(list, 1);
+	cActClassList_Delete(list, 1);
 	g_pActClassList = NULL;
 	g_pAuxActClass = NULL;
 	g_pAuxAction = NULL;
@@ -116,6 +112,3 @@ void ActClassList_Init(void) {
 }
 
 /* the vtable of cActClassList */
-static const cActClassListVtbl cActClassList_vftable = {
-	.Delete = cActClassList_Delete,
-};

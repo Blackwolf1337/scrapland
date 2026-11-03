@@ -13,10 +13,8 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/staticinit.h"
 
-#define CLOGICCONTROL_VFTABLE (&cLogicControl_vftable)
 #define g_TimeBetweeenTaunts (GVar_TimeBetweeenTaunts.value.f)
 #define g_TimeBetweeenWarnings (GVar_TimeBetweeenWarnings.value.f)
-static const cLogicControlVtbl cLogicControl_vftable;
 static cGVar GVar_TimeBetweeenWarnings;
 static cGVar GVar_TimeBetweeenTaunts;
 
@@ -31,7 +29,6 @@ cGVar GVar_NotCleanableByGear;
 void *Logic_ctor(void *logic) {
 	cLogicControl *self = logic;
 
-	self->vftable = CLOGICCONTROL_VFTABLE;
 	self->warned = 0;
 	self->warnTime = 0.0f;
 	self->timer = 0.0f;
@@ -63,7 +60,6 @@ void *Logic_ctor(void *logic) {
 void Logic_dtor(void *logic) {
 	cLogicControl *self = logic;
 
-	self->vftable = CLOGICCONTROL_VFTABLE;
 	Logic_NopDtor(&self->gateKeepers);
 	cGenCharGroup_dtor(&self->genChars);
 	Logic_NopDtor(&self->nurses);
@@ -82,14 +78,6 @@ void Logic_dtor(void *logic) {
 	ShipRegen_dtor(&self->shipRegen);
 	cInfItem_dtor(&self->items);
 	Parking_dtor(&self->parking);
-}
-
-static cLogicControl *Logic_Delete(cLogicControl *self, byte flags) {
-	Logic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
 }
 
 /* every 0.5 s: the taunts (outdoor maps, TimeBetweeenTaunts), the warnings (the first at once, then after
@@ -261,9 +249,6 @@ byte Logic_SetOnFloor(cEntity *e) {
 }
 
 /* the vtable of cLogicControl */
-static const cLogicControlVtbl cLogicControl_vftable = {
-	.Delete = Logic_Delete,
-};
 
 static cGVar GVar_TimeBetweeenTaunts;
 static cGVar GVar_TimeBetweeenWarnings;

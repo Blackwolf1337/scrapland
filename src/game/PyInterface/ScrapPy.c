@@ -1567,7 +1567,7 @@ static PyObject *Scrap_AddItem(PyObject *self, PyObject *args) {
 			return NULL;
 		}
 		cString_Set(&item.name, name);
-		InfItem_AddLife(&g_pWorld->logic.items, &item);
+		cInfItem_AddLife(&g_pWorld->logic.items, &item);
 		cString_dtor(&item.name);
 	}
 	else if (!strcmp(type, "Ammo")) {
@@ -1587,7 +1587,7 @@ static PyObject *Scrap_AddItem(PyObject *self, PyObject *args) {
 		else if (!strcmp(kindName, "Ener")) {
 			kind = 2;
 		}
-		InfItem_AddAmmo(&g_pWorld->logic.items, kind, &item);
+		cInfItem_AddAmmo(&g_pWorld->logic.items, kind, &item);
 		cString_dtor(&item.name);
 	}
 	return Py_ReturnNone();

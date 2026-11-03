@@ -24,7 +24,6 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
-#define CWORLD_VFTABLE (&cWorld_vftable)
 #define g_MaxRadObj (GVar_Max_Rad_Obj.value.f)		/* Max_Rad_Obj, the margin of the grid queries */
 #define g_GridScaleX (GVar_GridScaleX.value.f)
 #define g_GridScaleY (GVar_GridScaleY.value.f)
@@ -41,7 +40,6 @@
 #define g_QChatEvent4 (((cPy_Function *)&GVar_QChatEvent4.func))
 #define g_QChatEvent5 (((cPy_Function *)&GVar_QChatEvent5.func))
 #define g_QChatEvent6 (((cPy_Function *)&GVar_QChatEvent6.func))
-static const cWorldVtbl cWorld_vftable;
 static cGVarFunction GVar_QChatEvent6;
 static cGVarFunction GVar_QChatEvent5;
 static cGVarFunction GVar_QChatEvent4;
@@ -449,12 +447,10 @@ cWorld *cWorld_ctor(cWorld *self) {
 	box_t box;
 	vec3_t cell;
 
-	self->vftable = CWORLD_VFTABLE;
 	HashTable_ctor(&self->entities, 0x1c9, 1);
 	Nto1Node_Init(&self->entityList);
 	Nto1Node_Init(&self->deadList);
 	memset(&sched->list, 0, sizeof(sched->list));
-	sched->vftable = CSCHEDULEDFUNCSTACK_VFTABLE;
 	HashTable_ctor(&self->debris, 0x1c9, 1);
 	HashTable_ctor(&self->lists, 0x1f, 1);
 	cTimer_ctor(&self->timer);
@@ -507,51 +503,6 @@ cWorld *cWorld_ctor(cWorld *self) {
 	cPy_Function_Clear(g_QChatEvent4);
 	cPy_Function_Clear(g_QChatEvent5);
 	cPy_Function_Clear(g_QChatEvent6);
-	return self;
-}
-
-static void AmmoTable_Free(void *table) {
-	cAmmoTable *t = table;
-
-	if (t->items) {
-		Delete_Objects(t->items, sizeof(cAmmoInfo), (void *)cAmmoInfo_dtor);
-		t->items = NULL;
-		t->count = 0;
-	}
-}
-
-static void WeapTable_Free(void *table) {
-	cWeapTable *t = table;
-
-	if (t->items) {
-		Delete_Objects(t->items, sizeof(cWeapInfo), (void *)cWeapInfo_dtor);
-		t->items = NULL;
-		t->count = 0;
-	}
-}
-
-static void cWorld_dtor(cWorld *self) {
-	self->vftable = CWORLD_VFTABLE;
-	cWorld_Clear(self);
-	Logic_dtor(&self->logic);
-	Grid_dtor(&self->grid);
-	AmmoTable_Free(&self->ammo);
-	WeapTable_Free(&self->weapons);
-	Elements_dtor(&self->elements);
-	Floor_dtor(&self->floor);
-	PtrTable_Clear(&self->lists);
-	PtrTable_Clear(&self->debris);
-	cScheduledFuncStack_dtor(&self->scheduler);
-	Nto1Node_Done(&self->deadList);
-	Nto1Node_Done(&self->entityList);
-	PtrTable_Clear(&self->entities);
-}
-
-static cWorld *cWorld_Destroy(cWorld *self, byte flags) {
-	cWorld_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CWORLD_SIZE);
-	}
 	return self;
 }
 
@@ -1209,9 +1160,6 @@ byte cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, uint32_t mask, c
 }
 
 /* the vtable of cWorld */
-static const cWorldVtbl cWorld_vftable = {
-	.Delete = cWorld_Destroy,
-};
 
 cGVar GVar_R_SplitScreenUpdate;
 static cGVar GVar_PriorityWeapon;

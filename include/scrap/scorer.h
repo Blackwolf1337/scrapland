@@ -87,17 +87,7 @@ typedef struct ScorerFade {
 	float life;			/* 0x24 */
 } ScorerFade;
 
-typedef struct cScorerVtbl {
-	struct cScorer *(*Delete)(struct cScorer *self, byte flags);	/* 0x00 */
-} cScorerVtbl;
-
-/* calls through the slots of cScorerVtbl */
-static inline struct cScorer *Scorer_Delete(void *self, byte flags) {
-	return VT(cScorerVtbl, self)->Delete(self, flags);
-}
-
 typedef struct cScorer {
-	const cScorerVtbl *vftable;			/* 0x00 rva 0x3c3bb4, only the deleting destructor */
 	cScorerItem *found;		/* 0x04 the last item of FindItem */
 	byte cleared;			/* 0x08 Clear ran in this frame: only items marked DelMe are drawn */
 	byte pad_09[3];

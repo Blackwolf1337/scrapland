@@ -18,9 +18,6 @@ typedef struct cScheduledFunc {
 	byte pad_8d[3];
 } cScheduledFunc;
 
-extern const cScheduledFuncStackVtbl cScheduledFuncStack_vftable;
-#define CSCHEDULEDFUNCSTACK_VFTABLE (&cScheduledFuncStack_vftable)
-
 void Scheduler_Add(cScheduledFuncStack *self, float time, PyObject *func, PyObject *params, const char *name);
 /* the one named name, unless it is running */
 void Scheduler_Delete(cScheduledFuncStack *self, const char *name);

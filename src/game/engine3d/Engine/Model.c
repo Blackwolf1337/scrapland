@@ -21,8 +21,6 @@
 #include "scrap/misc.h"
 #include "scrap/staticinit.h"
 
-#define CMODEL_VFTABLE (&CModel_vftable)
-static const CModelVtbl CModel_vftable;
 #define CLOD_DTOR 0x252d80
 #define LIGHT_OMNI_NAME "omni"
 #define LIGHT_SPOT_NAME "foco"
@@ -102,7 +100,6 @@ static void Lods_Delete(CTable *t) {
 }
 
 CModel *CModel_ctor(CModel *self) {
-	self->vftable = CMODEL_VFTABLE;
 	self->name = NULL;
 	self->slots.p = NULL;
 	self->slots.n = 0;
@@ -163,7 +160,6 @@ void CLod_dtor(CLod *self) {
 }
 
 static void CModel_dtor(CModel *self) {
-	self->vftable = CMODEL_VFTABLE;
 	for (uint32_t i = 0; (int)i < self->lods.n; i++) {
 		Model_Destroy(&Model_Lod(self, i)->model, 0);
 	}
@@ -176,7 +172,7 @@ static void CModel_dtor(CModel *self) {
 	}
 }
 
-static CModel *CModel_Delete(CModel *self, byte flags) {
+CModel *CModel_Delete(CModel *self, byte flags) {
 	CModel_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -1084,9 +1080,6 @@ void CModel_Render(CModel *self) {
 }
 
 /* the vtable of CModel */
-static const CModelVtbl CModel_vftable = {
-	.Delete = CModel_Delete,
-};
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_R_ShowModelBox, &GVar_R_ShowModelBox, "R_ShowModelBox", 0, "Show model bounding box (0/1/2/3)\n", 0)

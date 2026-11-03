@@ -24,35 +24,6 @@ typedef struct cActCtrl cActCtrl;
 /* type of a variable as returned by the Var functions */
 enum { ACTVAR_NONE = 0, ACTVAR_STRING = 1, ACTVAR_DOUBLE = 2, ACTVAR_INT = 3 };
 
-typedef struct cActCtrlVarVtbl {
-	void *(*Delete)(cActCtrl *self, byte flags);				/* 0x00 */
-	byte(*VarI)(cActCtrl *self, const char *name, int *i, int set);		/* 0x04 */
-	byte(*VarF)(cActCtrl *self, const char *name, double *d, int set);		/* 0x08 */
-	byte(*VarS)(cActCtrl *self, const char *name, char **s, int set);		/* 0x0c */
-	byte(*VarV)(cActCtrl *self, const char *name, double *x, double *y, double *z, int set); /* 0x10 */
-} cActCtrlVarVtbl;
-
-/* calls through the slots of cActCtrlVarVtbl */
-static inline void *ActCtrl_Delete(void *self, byte flags) {
-	return VT(cActCtrlVarVtbl, self)->Delete(self, flags);
-}
-
-static inline byte ActCtrl_VarF(void *self, const char *name, double *d, int set) {
-	return VT(cActCtrlVarVtbl, self)->VarF(self, name, d, set);
-}
-
-static inline byte ActCtrl_VarI(void *self, const char *name, int *i, int set) {
-	return VT(cActCtrlVarVtbl, self)->VarI(self, name, i, set);
-}
-
-static inline byte ActCtrl_VarS(void *self, const char *name, char **s, int set) {
-	return VT(cActCtrlVarVtbl, self)->VarS(self, name, s, set);
-}
-
-static inline byte ActCtrl_VarV(void *self, const char *name, double *x, double *y, double *z, int set) {
-	return VT(cActCtrlVarVtbl, self)->VarV(self, name, x, y, z, set);
-}
-
 #define ACT_LAYERS 4			/* the layers of a controller, the channels of the model */
 #define ACT_NODEMODS 3			/* the turned nodes of a class ("NodeN_...") */
 #define ACT_NODEMOD_ANGS 7		/* the angle pairs of a node, by the NodeModifier of the action */
@@ -79,18 +50,8 @@ typedef struct cActClassCam {
 	float fov;			/* 0x24 "FOV" without the zoom */
 } cActClassCam;
 
-typedef struct cActClassVtbl {
-	struct cActClass *(*Delete)(struct cActClass *self, byte flags);	/* 0x00 */
-} cActClassVtbl;
-
-/* calls through the slots of cActClassVtbl */
-static inline struct cActClass *ActClass_Delete(void *self, byte flags) {
-	return VT(cActClassVtbl, self)->Delete(self, flags);
-}
-
 /* an action class (0x20c bytes, made by cActClassList_Create) */
 struct cActClass {
-	const cActClassVtbl *vftable;		/* 0x000 */
 	char *name;			/* 0x004 cString */
 	HashTable actions;		/* 0x008 the actions by name, 457 slots */
 	cAction *first;			/* 0x014 the actions in a list (cAction.next) */
@@ -138,18 +99,7 @@ struct cActClass {
 	byte pad_209[3];
 };
 
-/* the classes by name (0x10 bytes, g_pActClassList) */
-typedef struct cActClassListVtbl {
-	struct cActClassList *(*Delete)(struct cActClassList *self, byte flags);	/* 0x00 */
-} cActClassListVtbl;
-
-/* calls through the slots of cActClassListVtbl */
-static inline struct cActClassList *ActClassList_Delete(void *self, byte flags) {
-	return VT(cActClassListVtbl, self)->Delete(self, flags);
-}
-
 struct cActClassList {
-	const cActClassListVtbl *vftable;		/* 0x00 */
 	HashTable classes;		/* 0x04 457 slots */
 };
 
@@ -163,18 +113,7 @@ struct cActEvent {
 	byte pad_21[3];
 };
 
-/* an action (cActionMove, 0x6c bytes) */
-typedef struct cActionVtbl {
-	struct cAction *(*Delete)(struct cAction *self, byte flags);	/* 0x00 */
-} cActionVtbl;
-
-/* calls through the slots of cActionVtbl */
-static inline struct cAction *Action_Delete(void *self, byte flags) {
-	return VT(cActionVtbl, self)->Delete(self, flags);
-}
-
 struct cAction {
-	const cActionVtbl *vftable;		/* 0x00 */
 	int anim;			/* 0x04 the animation of the class model, -1 none */
 	char *name;			/* 0x08 cString */
 	char *anmFile;			/* 0x0c "AnmFilePath", Mem_Alloc copy */
@@ -228,7 +167,6 @@ typedef struct cActHead {
 
 /* the action controller of an entity (0x7c bytes) */
 struct cActCtrl {
-	const cActCtrlVarVtbl *vftable;		/* 0x00 */
 	cEntity *owner;			/* 0x04 */
 	cActClass *cls;			/* 0x08 */
 	cAction *defLoop;		/* 0x0c layer 0 goes back to it */
@@ -298,5 +236,11 @@ int cAction_Var(cAction *act, const char *name, int set, char **s, double *d, in
 extern cActClassList *g_pActClassList;
 extern cActClass *g_pAuxActClass;	/* SAct's current class */
 extern cAction *g_pAuxAction;	/* SAct's current action */
+
+void *cActCtrl_Delete(cActCtrl *self, byte flags);
+byte cActCtrl_VarI(cActCtrl *self, const char *name, int *i, int set);
+byte cActCtrl_VarS(cActCtrl *self, const char *name, char **s, int set);
+cActClass *cActClass_Delete(cActClass *self, byte flags);
+cAction *cAction_Delete(cAction *self, byte flags);
 
 #endif

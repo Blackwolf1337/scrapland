@@ -170,10 +170,10 @@ void *cAIVehicle_ctor(void *mem, cEntity *v, void *p1, void *p2, void *p3) {
 static void cAIVehicle_dtor(cAIVehicle *self) {
 	self->vftable = CAIVEHICLE_VFTABLE;
 	if (self->control) {
-		AIVC_Delete(self->control, 1);
+		cAIVehicleControl_Delete(self->control, 1);
 	}
 	if (self->shoot) {
-		AIVShoot_Delete(self->shoot, 1);
+		cAIVehicleShoot_Delete(self->shoot, 1);
 	}
 	cAIVehicle_Debugf(&self->base.base, "Entidad DESTRUIDA");
 	cString_dtor(&self->itemAmmoK[2].name);
@@ -2327,7 +2327,7 @@ static cEntity *AIV_NearestItem(cAIVehicle *self, int kind, float *dist, cItemDe
 	cInfItem *items = &g_pWorld->logic.items;
 
 	*dist = FLT_MAX;
-	it = kind < 0 ? InfItem_FirstLife(items, &iter) : InfItem_FirstAmmo(items, kind, &iter);
+	it = kind < 0 ? cInfItem_FirstLife(items, &iter) : cInfItem_FirstAmmo(items, kind, &iter);
 	while (it) {
 		cEntity *e = World_FindEntity(it->name);
 		if (e != exclude && 0.0f >= ((cItemEntity *)e)->respawn) {
@@ -2346,7 +2346,7 @@ static cEntity *AIV_NearestItem(cAIVehicle *self, int kind, float *dist, cItemDe
 			}
 		}
 		items = &g_pWorld->logic.items;
-		it = kind < 0 ? InfItem_NextLife(items, &iter) : InfItem_NextAmmo(items, kind, &iter);
+		it = kind < 0 ? cInfItem_NextLife(items, &iter) : cInfItem_NextAmmo(items, kind, &iter);
 	}
 	return best;
 }

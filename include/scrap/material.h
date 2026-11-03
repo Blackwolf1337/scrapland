@@ -115,17 +115,7 @@ typedef struct CObjRef {
 
 typedef struct CMatList CMatList;
 
-typedef struct CMaterialVtbl {
-	struct CMaterial *(*Delete)(struct CMaterial *self, byte flags);	/* 0x00 */
-} CMaterialVtbl;
-
-/* calls through the slots of CMaterialVtbl */
-static inline struct CMaterial *Material_Delete(void *self, byte flags) {
-	return VT(CMaterialVtbl, self)->Delete(self, flags);
-}
-
 typedef struct CMaterial {
-	const CMaterialVtbl *vftable;			/* 0x00 [0] the deleting destructor */
 	char *Name;			/* 0x04 */
 	int Refs;			/* 0x08 the lists holding it */
 	CMatList *sub;			/* 0x0c */
@@ -137,19 +127,8 @@ typedef struct CMaterial {
 	CMap *map[MAP_TOTAL];	/* 0x9c */
 } CMaterial;
 
-typedef struct CMatListVtbl {
-	struct CMatList *(*Delete)(struct CMatList *self, byte flags);	/* 0x00 */
-} CMatListVtbl;
-
-/* calls through the slots of CMatListVtbl */
-static inline struct CMatList *MatList_Delete(void *self, byte flags) {
-	return VT(CMatListVtbl, self)->Delete(self, flags);
-}
-extern const CMatListVtbl CMatList_vftable;
-#define CMATLIST_VFTABLE (&CMatList_vftable)
 
 struct CMatList {
-	const CMatListVtbl *vftable;			/* 0x0 */
 	char *Name;			/* 0x4 */
 	CMaterial *first;			/* 0x8 */
 	CMaterial *last;			/* 0xc */
@@ -261,5 +240,7 @@ void Tex_AddExtension(const char *ext);
 void Tex_AddPath(const char *path);
 void Tex_ClearExtensions(void);
 void Tex_ClearPaths(void);
+CMaterial *CMaterial_Delete(CMaterial *self, byte flags);
+CMatList *CMatList_DeleteObj(CMatList *self, byte flags);
 
 #endif

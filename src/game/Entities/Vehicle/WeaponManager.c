@@ -12,10 +12,7 @@
 
 #include <string.h>
 
-#define CWEAPONMANAGER_VFTABLE (&cWeaponManager_vftable)
 #define g_HookPlugFunc (((cPy_Function *)&GVar_HookPlugFunc.func))
-#define CWEAPONMANAGER_VFTABLE (&cWeaponManager_vftable)
-static const cTargetLockVtbl cWeaponManager_vftable;
 static cGVarFunction GVar_HookPlugFunc;
 
 cWorld *g_pWorld;
@@ -820,7 +817,6 @@ static int cWeaponManager_WeaponNeed(cWeaponManager *self) {
 /* the functions before rva 0x11a0f0 */
 
 cWeaponManager *cWeaponManager_ctor(cWeaponManager *self) {
-	self->vftable = CWEAPONMANAGER_VFTABLE;
 	self->lock.target = NULL;
 	self->lock.data = NULL;
 	self->lock.next = &self->lock;
@@ -834,19 +830,10 @@ cWeaponManager *cWeaponManager_ctor(cWeaponManager *self) {
 }
 
 void cWeaponManager_dtor(cWeaponManager *self) {
-	self->vftable = CWEAPONMANAGER_VFTABLE;
 	Mem_Free(self->weaps);
 	Mem_Free(self->ammo);
 	Mem_Free(self->nodes);
 	Nto1Node_Done(&self->lock);
-}
-
-static cWeaponManager *cWeaponManager_Delete(cWeaponManager *self, byte flags) {
-	cWeaponManager_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cWeaponManager));
-	}
-	return self;
 }
 
 void cTargetLock_SetHookDelay(cTargetLock *self, float t) {
@@ -874,9 +861,6 @@ void cWeaponManager_ClearWeaps(cWeaponManager *self) {
 }
 
 /* the vtable of cWeaponManager */
-static const cTargetLockVtbl cWeaponManager_vftable = {
-	.Delete = cWeaponManager_Delete,
-};
 
 cGVar GVar_LaserIDWeap;
 static cGVarFunction GVar_HookPlugFunc;

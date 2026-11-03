@@ -230,7 +230,7 @@ void Config_Load(const char *name) {
 			break;
 		}
 		case GVAR_FUNCTION:
-			GVarList_Load(GVar_ListObj(v), f);
+			cFuncGvarDevices_Load(GVar_ListObj(v), f);
 			break;
 		default:
 			CHECK(0);
@@ -269,7 +269,7 @@ void Config_Save(void) {
 			break;
 		case GVAR_FUNCTION:
 			crt_fprintf(f, "\n\n%-30s = <begin> # %s\n", v->base.name, v->base.description);
-			GVarList_Save(GVar_ListObj(v), f);
+			cFuncGvarDevices_Save(GVar_ListObj(v), f);
 			break;
 		default:
 			CHECK(0);

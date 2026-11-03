@@ -9,17 +9,7 @@
 
 typedef struct cSlotController cSlotController;
 
-typedef struct cSlotControllerVtbl {
-	void(*Next)(cSlotController *self);	/* 0x0 the next interval */
-} cSlotControllerVtbl;
-
-/* calls through the slots of cSlotControllerVtbl */
-static inline void SlotCtl_Next(void *self) {
-	VT(cSlotControllerVtbl, self)->Next(self);
-}
-
 struct cSlotController {
-	const cSlotControllerVtbl *vftable;	/* 0x00 */
 	float time;				/* 0x04 left until the slot */
 	float interval;				/* 0x08 the interval running */
 	float minDiff;				/* 0x0c the fixed interval, the minimum of cRndSlotController */

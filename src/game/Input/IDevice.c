@@ -16,12 +16,10 @@
 #include "scrap/staticinit.h"
 
 #define CABSTRACTIDEVICE_VFTABLE (&cAbstractIDevice_vftable)
-#define CFUNCGVARDEVICES_VFTABLE (&cFuncGvarDevices_vftable)
 #define g_InactivityTime (GVar_CheckInactivityTime.value.f)	/* CheckInactivityTime */
 #define g_InactivityTimeDef (GVar_CheckInactivityTime.def.f)
 #define g_InactivityFunc (((cPy_Function *)&GVar_CheckInactivityFunc.func))
 #define g_PauseInactivity (GVar_PauseInactivityTime.value.i)	/* PauseInactivityTime */
-static const cGVarListVtbl cFuncGvarDevices_vftable;
 static const cAbstractIDeviceVtbl cAbstractIDevice_vftable;
 static cGVar GVar_PauseInactivityTime;
 static cGVar GVar_CheckInactivityTime;
@@ -96,7 +94,6 @@ cFuncGvarDevices *cFuncGvarDevices_ctor(cFuncGvarDevices *self, cAbstractIDevice
 	cGVar_ctor(v, InputDev_GetName(dev), 3, "User Control definition");
 	self->device = dev;
 	v->base.type = GVAR_FUNCTION;
-	self->base.vftable = CFUNCGVARDEVICES_VFTABLE;
 	return self;
 }
 
@@ -386,7 +383,7 @@ static void Input_SetToDefine(int player, int action, uint32_t set) {
 }
 
 /* the lines "set.action.player = entry" of the device up to "name = <end>" */
-static void cFuncGvarDevices_Load(struct cFuncGvar *elem, void *f) {
+void cFuncGvarDevices_Load(struct cFuncGvar *elem, void *f) {
 	cFuncGvarDevices *self = (cFuncGvarDevices *)elem;
 	char line[0x200];
 	char *value;
@@ -483,7 +480,7 @@ void Input_ResetToDefault(void) {
 	}
 }
 
-static void cFuncGvarDevices_Save(struct cFuncGvar *elem, void *f) {
+void cFuncGvarDevices_Save(struct cFuncGvar *elem, void *f) {
 	cFuncGvarDevices *self = (cFuncGvarDevices *)elem;
 	char buf[0x100];
 
@@ -646,10 +643,6 @@ static const cAbstractIDeviceVtbl cAbstractIDevice_vftable = {
 };
 
 /* the vtable of cFuncGvarDevices */
-static const cGVarListVtbl cFuncGvarDevices_vftable = {
-	.Save = cFuncGvarDevices_Save,
-	.Load = cFuncGvarDevices_Load,
-};
 
 static cGVar GVar_CheckInactivityTime;
 static cGVarFunction GVar_CheckInactivityFunc;

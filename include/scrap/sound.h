@@ -378,34 +378,7 @@ typedef struct cSndItem {
 typedef struct cEntity cEntity;
 typedef struct cSndInterface cSndInterface;
 
-/* the deleting destructor and the variables of the sounds */
-typedef struct cSndInterfaceVtbl {
-	cSndInterface *(*Delete)(cSndInterface *self, byte flags);					/* 0x00 */
-	byte(*VarI)(cSndInterface *self, const char *name, int *i, int set);				/* 0x04 */
-	byte(*VarF)(cSndInterface *self, const char *name, double *d, int set);			/* 0x08 */
-	byte(*VarS)(cSndInterface *self, const char *name, char **s, int set);			/* 0x0c */
-	byte(*VarV)(cSndInterface *self, const char *name, double *x, double *y, double *z, int set);	/* 0x10 */
-} cSndInterfaceVtbl;
-
-/* calls through the slots of cSndInterfaceVtbl */
-static inline byte SndIf_VarF(void *self, const char *name, double *d, int set) {
-	return VT(cSndInterfaceVtbl, self)->VarF(self, name, d, set);
-}
-
-static inline byte SndIf_VarI(void *self, const char *name, int *i, int set) {
-	return VT(cSndInterfaceVtbl, self)->VarI(self, name, i, set);
-}
-
-static inline byte SndIf_VarS(void *self, const char *name, char **s, int set) {
-	return VT(cSndInterfaceVtbl, self)->VarS(self, name, s, set);
-}
-
-static inline byte SndIf_VarV(void *self, const char *name, double *x, double *y, double *z, int set) {
-	return VT(cSndInterfaceVtbl, self)->VarV(self, name, x, y, z, set);
-}
-
 struct cSndInterface {
-	const cSndInterfaceVtbl *vftable;	/* 0x00 */
 	int nsnd;			/* 0x04 */
 	cSndItem **snds;		/* 0x08 Mem_Alloc */
 	struct cSndInterface *next;	/* 0x0c g_SndInterfaces */
@@ -449,5 +422,9 @@ typedef struct cWavInfo {
 } cWavInfo;
 
 typedef struct cAbstractFile cAbstractFile;
+
+byte cSndInterface_FloatVar(cSndInterface *self, const char *name, double *v, int set);
+byte cSndInterface_IntVar(cSndInterface *self, const char *name, int *v, int set);
+byte cSndInterface_StrVar(cSndInterface *self, const char *name, char **v, int set);
 
 #endif

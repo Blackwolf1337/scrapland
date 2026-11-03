@@ -8,8 +8,6 @@
 #include "scrap/sound.h"
 #include "scrap/world.h"
 
-#define CSNDINTERFACE_VFTABLE (&cSndInterface_vftable)
-static const cSndInterfaceVtbl cSndInterface_vftable;
 
 /* a field of a sound by the character of an "xxx%c" variable, which the original does not check */
 #define SndItem_Field(it, type, c, base) ((type *)((byte *)(it) + (c) * 4 - (base)))
@@ -103,7 +101,6 @@ static void cSndInterface_Free(cSndInterface *self) {
 static cSndInterface *g_SndInterfaces;
 
 cSndInterface *cSndInterface_ctor(cSndInterface *self, int n) {
-	self->vftable = CSNDINTERFACE_VFTABLE;
 	if (g_SndInterfaces) {
 		g_SndInterfaces->link = &self->next;
 	}
@@ -116,7 +113,6 @@ cSndInterface *cSndInterface_ctor(cSndInterface *self, int n) {
 }
 
 void cSndInterface_dtor(cSndInterface *self) {
-	self->vftable = CSNDINTERFACE_VFTABLE;
 	if (self->next) {
 		self->next->link = self->link;
 	}
@@ -124,14 +120,6 @@ void cSndInterface_dtor(cSndInterface *self) {
 		*self->link = self->next;
 	}
 	cSndInterface_Free(self);
-}
-
-static cSndInterface *cSndInterface_Destroy(cSndInterface *self, byte flags) {
-	cSndInterface_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cSndInterface));
-	}
-	return self;
 }
 
 void cSndInterface_Resize(cSndInterface *self, int n) {
@@ -215,7 +203,7 @@ static byte cSndInterface_ParseName(cSndInterface *self, const char *name, int *
 }
 
 /* "<id>_n" the count, "loop", "int0".."int4" */
-static byte cSndInterface_IntVar(cSndInterface *self, const char *name, int *v, int set) {
+byte cSndInterface_IntVar(cSndInterface *self, const char *name, int *v, int set) {
 	char count[6];
 	const char *rest;
 	int idx;
@@ -268,7 +256,7 @@ static byte SndItem_Float(float *f, double *v, byte set) {
 }
 
 /* "ini", "end", "dopp", "vol", "time", "pitch" and "vol0".."vol4", "pitch0".."pitch4", "time0".."time4" */
-static byte cSndInterface_FloatVar(cSndInterface *self, const char *name, double *v, int set) {
+byte cSndInterface_FloatVar(cSndInterface *self, const char *name, double *v, int set) {
 	const char *rest;
 	int idx;
 
@@ -319,7 +307,7 @@ static byte cSndInterface_FloatVar(cSndInterface *self, const char *name, double
 }
 
 /* "name": the sound name */
-static byte cSndInterface_StrVar(cSndInterface *self, const char *name, char **v, int set) {
+byte cSndInterface_StrVar(cSndInterface *self, const char *name, char **v, int set) {
 	const char *rest;
 	int idx;
 
@@ -350,7 +338,7 @@ void Sound_UpdatePaused(void) {
 }
 
 /* the slot VarV of a class that does only return 0 */
-static byte cSndInterface_VarVFalse(cSndInterface *self, const char *name, double *x, double *y, double *z, int set) {
+byte cSndInterface_VarVFalse(cSndInterface *self, const char *name, double *x, double *y, double *z, int set) {
 	(void)self;
 	(void)name;
 	(void)x;
@@ -361,10 +349,3 @@ static byte cSndInterface_VarVFalse(cSndInterface *self, const char *name, doubl
 }
 
 /* the vtable of cSndInterface */
-static const cSndInterfaceVtbl cSndInterface_vftable = {
-	.Delete = cSndInterface_Destroy,
-	.VarI = cSndInterface_IntVar,
-	.VarF = cSndInterface_FloatVar,
-	.VarS = cSndInterface_StrVar,
-	.VarV = cSndInterface_VarVFalse,
-};

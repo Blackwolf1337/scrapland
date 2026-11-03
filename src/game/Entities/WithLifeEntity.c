@@ -82,7 +82,7 @@ void cWithLifeEntity_dtor(cEntity *self) {
 
 	self->vftable = CWITHLIFEENTITY_VFTABLE;
 	if (w->actCtrl) {
-		ActCtrl_Delete(w->actCtrl, 1);
+		cActCtrl_Delete(w->actCtrl, 1);
 	}
 	cString_dtor(&w->headModel);
 	cSndInterface_dtor(&w->lifeSounds);
@@ -161,9 +161,6 @@ byte cWithLifeEntity_VarF(cEntity *self, const char *name, double *d, int set) {
 	if (cArrowIndicator_VarF(&w->arrow, name, d, set)) {
 		return 1;
 	}
-	if (w->actCtrl && ActCtrl_VarF(w->actCtrl, name, d, set)) {
-		return 1;
-	}
 	if (cPrimitive_VarF(&w->prim, name, d, set)) {
 		return 1;
 	}
@@ -199,8 +196,8 @@ byte cWithLifeEntity_VarF(cEntity *self, const char *name, double *d, int set) {
 		}
 		return 1;
 	}
-	if (SndIf_VarF(&w->hitSounds, name, d, set) ||
-		SndIf_VarF(&w->lifeSounds, name, d, set)) {
+	if (cSndInterface_FloatVar(&w->hitSounds, name, d, set) ||
+		cSndInterface_FloatVar(&w->lifeSounds, name, d, set)) {
 		return 1;
 	}
 	return cObjEntity_VarF(self, name, d, set);
@@ -277,7 +274,7 @@ byte cWithLifeEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	if (cArrowIndicator_VarI(&w->arrow, name, i, set)) {
 		return 1;
 	}
-	if (w->actCtrl && ActCtrl_VarI(w->actCtrl, name, i, set)) {
+	if (w->actCtrl && cActCtrl_VarI(w->actCtrl, name, i, set)) {
 		return 1;
 	}
 	if (!crt_strncmp("Hit_", name, 4) && cVehicleAttack_VarI(&w->attack, name + 4, i, set)) {
@@ -315,8 +312,8 @@ byte cWithLifeEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 		}
 		return 1;
 	}
-	if (SndIf_VarI(&w->hitSounds, name, i, set) ||
-		SndIf_VarI(&w->lifeSounds, name, i, set)) {
+	if (cSndInterface_IntVar(&w->hitSounds, name, i, set) ||
+		cSndInterface_IntVar(&w->lifeSounds, name, i, set)) {
 		return 1;
 	}
 	return cObjEntity_VarI(self, name, i, set);
@@ -446,7 +443,7 @@ void cWithLifeEntity_SetActCtrl(cEntity *self, const char *cls) {
 	byte created = 0;
 
 	if (w->actCtrl) {
-		ActCtrl_Delete(w->actCtrl, 1);
+		cActCtrl_Delete(w->actCtrl, 1);
 		w->actCtrl = NULL;
 	}
 	if (!cls || !*cls) {
@@ -532,7 +529,7 @@ byte cWithLifeEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 	if (!*name) {
 		return 0;
 	}
-	if (w->actCtrl && ActCtrl_VarS(w->actCtrl, name, s, set)) {
+	if (w->actCtrl && cActCtrl_VarS(w->actCtrl, name, s, set)) {
 		return 1;
 	}
 	if (cArrowIndicator_VarS(&w->arrow, name, s, set)) {
@@ -588,8 +585,8 @@ byte cWithLifeEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 			return 1;
 		}
 	}
-	if (SndIf_VarS(&w->hitSounds, name, s, set) ||
-		SndIf_VarS(&w->lifeSounds, name, s, set)) {
+	if (cSndInterface_StrVar(&w->hitSounds, name, s, set) ||
+		cSndInterface_StrVar(&w->lifeSounds, name, s, set)) {
 		return 1;
 	}
 	return cObjEntity_VarS(self, name, s, set);
@@ -600,9 +597,6 @@ byte cWithLifeEntity_VarV(cEntity *self, const char *name, double *x, double *y,
 
 	if (!*name) {
 		return 0;
-	}
-	if (w->actCtrl && ActCtrl_VarV(w->actCtrl, name, x, y, z, set)) {
-		return 1;
 	}
 	if (!crt_strncmp("Hit_", name, 4) && cVehicleAttack_VarV(&w->attack, name + 4, x, y, z, set)) {
 		return 1;
@@ -619,10 +613,6 @@ byte cWithLifeEntity_VarV(cEntity *self, const char *name, double *x, double *y,
 			*y = w->obj.vel.y;
 			*z = w->obj.vel.z;
 		}
-		return 1;
-	}
-	if (SndIf_VarV(&w->hitSounds, name, x, y, z, set) ||
-		SndIf_VarV(&w->lifeSounds, name, x, y, z, set)) {
 		return 1;
 	}
 	return cObjEntity_VarV(self, name, x, y, z, set);

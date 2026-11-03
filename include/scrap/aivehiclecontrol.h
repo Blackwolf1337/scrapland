@@ -22,17 +22,7 @@ enum {
 	AIVC_STOP = 0, AIVC_POINT = 1, AIVC_DIRECT = 2, AIVC_CHASE = 3, AIVC_ORIENT = 6, AIVC_PATH = 7
 };
 
-typedef struct cAIVehicleControlVtbl {
-	struct cAIVehicleControl *(*Delete)(struct cAIVehicleControl *self, byte flags);	/* 0x00 */
-} cAIVehicleControlVtbl;
-
-/* calls through the slots of cAIVehicleControlVtbl */
-static inline struct cAIVehicleControl *AIVC_Delete(void *self, byte flags) {
-	return VT(cAIVehicleControlVtbl, self)->Delete(self, flags);
-}
-
 typedef struct cAIVehicleControl {
-	const cAIVehicleControlVtbl *vftable;	/* 0x000 */
 	byte boost;			/* 0x004 the boost of the vehicle on */
 	byte pad_5[3];
 	cSlotController slotStrafe;	/* 0x008 0.2 s */
@@ -125,17 +115,7 @@ typedef struct cAIVSWeap {
 	byte pad_16[2];
 } cAIVSWeap;
 
-typedef struct cAIVehicleShootVtbl {
-	struct cAIVehicleShoot *(*Delete)(struct cAIVehicleShoot *self, byte flags);	/* 0x00 */
-} cAIVehicleShootVtbl;
-
-/* calls through the slots of cAIVehicleShootVtbl */
-static inline struct cAIVehicleShoot *AIVShoot_Delete(void *self, byte flags) {
-	return VT(cAIVehicleShootVtbl, self)->Delete(self, flags);
-}
-
 typedef struct cAIVehicleShoot {
-	const cAIVehicleShootVtbl *vftable;	/* 0x000 */
 	int cadenceMul;			/* 0x004 1 */
 	int cadenceMulCM;		/* 0x008 2 */
 	cAIVehicle *ai;			/* 0x00c */
@@ -173,5 +153,8 @@ byte cAIVehicleGroup_ReposReady(cAIVehicleGroup *self);
 void cAIVehicleGroup_Draw(cAIVehicleGroup *self);
 void cAIVehicleGroup_ResetRepos(cAIVehicleGroup *self);
 /* the base class cAIEntityGroup: ai.h */
+
+cAIVehicleControl *cAIVehicleControl_Delete(cAIVehicleControl *self, byte flags);
+cAIVehicleShoot *cAIVehicleShoot_Delete(cAIVehicleShoot *self, byte flags);
 
 #endif

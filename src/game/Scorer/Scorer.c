@@ -94,8 +94,6 @@ static cGVar GVar_CameraCloudBlue;
 static cGVar GVar_CameraCloudAlpha;
 static cGVar GVar_CShow;
 
-static const cScorerVtbl cScorer_vftable;
-#define CSCORER_VFTABLE (&cScorer_vftable)
 static const cScorerItemVtbl cScorerItem_vftable;
 #define CSCORERITEM_VFTABLE (&cScorerItem_vftable)
 #define SCORER_NO_ACCEPT -10.0f			/* cScorer.acceptTime off */
@@ -137,7 +135,6 @@ static void *ScorerFx_ctor(void *self) {
 char str_Empty[] = "";
 
 static cScorer *cScorer_ctor(cScorer *self) {
-	self->vftable = CSCORER_VFTABLE;
 	cString_ctor(&self->hint);
 	cString_ctor(&self->specialHint);
 	cString_ctor(&self->current);
@@ -225,7 +222,6 @@ cScorerItem *cScorerItem_ctor(cScorerItem *self) {
 
 static void cScorer_Free(cScorer *scorer);
 static void cScorer_dtor(cScorer *self) {
-	self->vftable = CSCORER_VFTABLE;
 	cScorer_Free(self);
 	cPy_Function_dtor(&self->mpFunc);
 	cPy_Function_dtor(&self->onSpecialHint);
@@ -746,7 +742,7 @@ void Scorer_Done(void) {
 	}
 	if (sc) {
 		if (((uint32_t *)sc)[-1]) {
-			Scorer_Delete(sc, 3);
+			cScorer_Delete(sc, 3);
 		} else {
 			operator_delete_array((uint32_t *)sc - 1);
 		}
@@ -1863,9 +1859,6 @@ static const cScorerItemVtbl cScorerItem_vftable = {
 };
 
 /* the vtable of cScorer */
-static const cScorerVtbl cScorer_vftable = {
-	.Delete = cScorer_Delete,
-};
 
 cGVar GVar_FileNameMap2D;
 static cGVar GVar_CinemaBlackBandHeight;

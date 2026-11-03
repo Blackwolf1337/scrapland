@@ -12,7 +12,6 @@
 #include "scrap/weaps2.h"
 #include "scrap/staticinit.h"
 
-#define CVEHICLEMOTORS_VFTABLE (&cVehicleMotors_vftable)
 #define g_EnginePathFmt (GVar_EnginePathFmt.value.s)		/* EnginePathFmt */
 #define g_FXVehicleDeathTrailFile (GVar_FXVehicleDeathTrailFile.value.s)
 #define g_FXMotorSmokeFile (GVar_FXMotorSmokeFile.value.s)
@@ -20,7 +19,6 @@
 #define g_FXEngineTrailHideTime (GVar_FXEngineTrailHideTime.value.f)
 #define g_FXMotorHaze (GVar_FXMotorHaze.value.i)
 #define g_FXMotorHazeFile (GVar_FXMotorHazeFile.value.s)
-static const cVehicleMotorsVtbl cVehicleMotors_vftable;
 static cGVar GVar_FXVehicleDeathTrailFile;
 static cGVar GVar_FXMotorSmokeFile;
 static cGVar GVar_FXMotorHazeOffset;
@@ -333,7 +331,7 @@ void cVehicleMotors_InitEffects(cVehicleMotors *self) {
 }
 
 /* ShipMotorScale and ShipMotorOffset, compared without the terminator like the original */
-static byte cVehicleMotors_VarF(struct cVehicleMotors *base, const char *name, double *v, int set) {
+byte cVehicleMotors_VarF(struct cVehicleMotors *base, const char *name, double *v, int set) {
 	cVehicleMotors *self = (cVehicleMotors *)base;
 	if (!memcmp(name, "ShipMotorScale", 14)) {
 		if (set) {
@@ -412,7 +410,7 @@ cEntity *cVehicleMotors_GetOwner(cVehicleMotors *self) {
 }
 
 /* get: NEng0..3 (the node count), nEng0..3 (the slot count); set: EngFxClass0..3, FxClass, ShipMotorColorR/G/B */
-static byte cVehicleMotors_VarI(struct cVehicleMotors *base, const char *name, int *v, int set) {
+byte cVehicleMotors_VarI(struct cVehicleMotors *base, const char *name, int *v, int set) {
 	cVehicleMotors *self = (cVehicleMotors *)base;
 	size_t len = strlen(name);
 	uint32_t c;
@@ -689,7 +687,7 @@ void cVehicleMotors_SetEffectParam(cVehicleMotors *self, int i, float v) {
 }
 
 /* MEng0..3: the file of the motor (set: loaded at scale 1); set only: EngAnmM0..3, EngAnmF0..3 */
-static byte cVehicleMotors_VarS(struct cVehicleMotors *base, const char *name, char **v, int set) {
+byte cVehicleMotors_VarS(struct cVehicleMotors *base, const char *name, char **v, int set) {
 	cVehicleMotors *self = (cVehicleMotors *)base;
 	size_t len = strlen(name);
 
@@ -719,7 +717,7 @@ static inline int VM_Side(char c) {
 }
 
 /* get only: PEng0A (position), AEng0A (angles in degrees) of the exhausts, PEngSlot0A of the slots */
-static byte cVehicleMotors_VarV(struct cVehicleMotors *base, const char *name, double *x, double *y, double *z, int set) {
+byte cVehicleMotors_VarV(struct cVehicleMotors *base, const char *name, double *x, double *y, double *z, int set) {
 	cVehicleMotors *self = (cVehicleMotors *)base;
 	size_t len = strlen(name);
 	vec3_t pos, ang;
@@ -917,7 +915,6 @@ static cVehicleMotor *cVehicleMotor_ctor(cVehicleMotor *self) {
 void *cVehicleMotors_ctor(void *motors) {
 	cVehicleMotors *self = motors;
 
-	self->vftable = CVEHICLEMOTORS_VFTABLE;
 	cVehicleMotorsEffects_ctor(&self->effects);
 	self->owner = NULL;
 	self->stopped = 0;
@@ -939,7 +936,6 @@ static void cVehicleMotor_dtor(cVehicleMotor *self) {
 void cVehicleMotors_dtor(void *motors) {
 	cVehicleMotors *self = motors;
 
-	self->vftable = CVEHICLEMOTORS_VFTABLE;
 	cVehicleMotorsEffects_Clear(&self->effects);
 	/* the pointers are kept */
 	for (int i = 0; i < VM_MOTORS; i++) {
@@ -953,12 +949,6 @@ void cVehicleMotors_dtor(void *motors) {
 }
 
 /* the vtable of cVehicleMotors */
-static const cVehicleMotorsVtbl cVehicleMotors_vftable = {
-	.VarI = cVehicleMotors_VarI,
-	.VarF = cVehicleMotors_VarF,
-	.VarS = cVehicleMotors_VarS,
-	.VarV = cVehicleMotors_VarV,
-};
 
 /* the engine variables */
 static cGVar GVar_EnginePathFmt;

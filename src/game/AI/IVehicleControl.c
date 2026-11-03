@@ -24,9 +24,7 @@
 #include "scrap/staticinit.h"
 
 #define CAIVEHICLEGROUP_VFTABLE (&cAIVehicleGroup_vftable)
-#define CAIVEHICLECONTROL_VFTABLE (&cAIVehicleControl_vftable)
 static const cAIEntityGroupVtbl cAIVehicleGroup_vftable;
-static const cAIVehicleControlVtbl cAIVehicleControl_vftable;
 
 cGVar GVar_ShowPathAI;
 
@@ -159,7 +157,6 @@ static inline void VC_Release(cAIVehicleControl *self) {
 cAIVehicleControl *cAIVehicleControl_ctor(void *mem, cEntity *v, cAIVehicle *ai, void *params) {
 	cAIVehicleControl *self = mem;
 
-	self->vftable = CAIVEHICLECONTROL_VFTABLE;
 	cSlotController_ctor(&self->slotStrafe, 0.2f);
 	cSlotController_ctor(&self->slotArrive, 0.2f);
 	cSlotController_ctor(&self->slotPath, 0.2f);
@@ -245,7 +242,6 @@ cAIVehicleControl *cAIVehicleControl_ctor(void *mem, cEntity *v, cAIVehicle *ai,
 static void cAIVehicleControl_dtor(cAIVehicleControl *self) {
 	cNWVecList *l = &self->path;
 
-	self->vftable = CAIVEHICLECONTROL_VFTABLE;
 	DListVec3_Clear(l);
 	while (l->freeNodes) {
 		cNWVecNode *n = l->freeNodes;
@@ -255,7 +251,7 @@ static void cAIVehicleControl_dtor(cAIVehicleControl *self) {
 	l->numFree = 0;
 }
 
-static cAIVehicleControl *cAIVehicleControl_Delete(cAIVehicleControl *self, byte flags) {
+cAIVehicleControl *cAIVehicleControl_Delete(cAIVehicleControl *self, byte flags) {
 	cAIVehicleControl_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIVEHICLECONTROL_SIZE);
@@ -2001,9 +1997,6 @@ static const cAIEntityGroupVtbl cAIVehicleGroup_vftable = {
 };
 
 /* the vtable of cAIVehicleControl */
-static const cAIVehicleControlVtbl cAIVehicleControl_vftable = {
-	.Delete = cAIVehicleControl_Delete,
-};
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_ShowPathAI, &GVar_ShowPathAI, "ShowPathAI", 4, "0 = No Show, 1 = Show\n", 0)

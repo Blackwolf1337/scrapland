@@ -10,13 +10,10 @@
 #include "scrap/cstring.h"
 #include "scrap/staticinit.h"
 
-#define CACTIONMOVE_VFTABLE (&cActionMove_vftable)
 #define g_DefInterpTime (GVar_DefInterpTime.value.f)	/* DefInterpTime of new actions */
-static const cActionVtbl cActionMove_vftable;
 static cGVar GVar_DefInterpTime;
 
 cAction *cAction_ctor(cAction *self, cActClass *parent, const char *name) {
-	self->vftable = CACTIONMOVE_VFTABLE;
 	cString_ctor(&self->name);
 	CHECK(parent);
 	CHECK(name);
@@ -63,7 +60,6 @@ static cActEvent *cActEvent_ctor(cActEvent *self, float time, cActEvent *next) {
 }
 
 static void cAction_dtor(cAction *self) {
-	self->vftable = CACTIONMOVE_VFTABLE;
 	if (self->anmFile) {
 		Mem_Free(self->anmFile);
 	}
@@ -80,7 +76,7 @@ static void cAction_dtor(cAction *self) {
 	cString_dtor(&self->name);
 }
 
-static cAction *cAction_Delete(cAction *self, byte flags) {
+cAction *cAction_Delete(cAction *self, byte flags) {
 	cAction_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -355,9 +351,6 @@ ints:
 }
 
 /* the vtable of cActionMove */
-static const cActionVtbl cActionMove_vftable = {
-	.Delete = cAction_Delete,
-};
 
 static cGVar GVar_DefInterpTime;
 

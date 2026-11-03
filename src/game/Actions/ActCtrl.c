@@ -10,9 +10,7 @@
 #include "scrap/walkcharentity.h"
 #include "scrap/staticinit.h"
 
-#define CACTCTRL_VFTABLE (&cActCtrl_vftable)
 #define g_LogActEvents (GVar_LogActEvents.value.i)		/* LogActEvents: the events into the console */
-static const cActCtrlVarVtbl cActCtrl_vftable;
 static cGVar GVar_LogActEvents;
 
 static CGameModel *Ctrl_Model(cActCtrl *self) {
@@ -34,7 +32,6 @@ static float Layer_End(const cActLayer *l) {
 
 static void cActCtrl_InitModel(cActCtrl *self);
 cActCtrl *cActCtrl_ctor(cActCtrl *self, cEntity *owner, cActClass *cls) {
-	self->vftable = CACTCTRL_VFTABLE;
 	for (int k = 0; k < ACT_LAYERS; k++) {
 		self->layers[k].time = 0.0f;
 		self->layers[k].on = 0;
@@ -71,7 +68,6 @@ cActCtrl *cActCtrl_ctor(cActCtrl *self, cEntity *owner, cActClass *cls) {
 }
 
 static void cActCtrl_dtor(cActCtrl *self) {
-	self->vftable = CACTCTRL_VFTABLE;
 	self->cls->users--;
 	Entity_SetModel(self->owner, NULL, 1.0f, 1.0f, 1.0f, 1);
 	if (self->heads) {
@@ -79,7 +75,7 @@ static void cActCtrl_dtor(cActCtrl *self) {
 	}
 }
 
-static void *cActCtrl_Delete(cActCtrl *self, byte flags) {
+void *cActCtrl_Delete(cActCtrl *self, byte flags) {
 	cActCtrl_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -199,7 +195,7 @@ static void cActCtrl_FireEvents(cActCtrl *self, int chan, float t, byte silent) 
 	}
 }
 
-static byte cActCtrl_VarI(cActCtrl *self, const char *name, int *i, int set) {
+byte cActCtrl_VarI(cActCtrl *self, const char *name, int *i, int set) {
 	if (set && strcmp(name, "StopSecondary") == 0) {
 		cActCtrl_StopChan(self, *i);
 		return 1;
@@ -478,7 +474,7 @@ void cActCtrl_StopChan(cActCtrl *self, int i) {
 	l->event = NULL;
 }
 
-static byte cActCtrl_VarS(cActCtrl *self, const char *name, char **s, int set) {
+byte cActCtrl_VarS(cActCtrl *self, const char *name, char **s, int set) {
 	cAction *a;
 
 	if (set) {
@@ -545,7 +541,7 @@ byte cActCtrl_IsActive(void *ctrl, const char *action) {
 }
 
 /* the slot VarF of a class that does only return 0 */
-static byte cActCtrl_VarFFalse(cActCtrl *self, const char *name, double *d, int set) {
+byte cActCtrl_VarFFalse(cActCtrl *self, const char *name, double *d, int set) {
 	(void)self;
 	(void)name;
 	(void)d;
@@ -554,7 +550,7 @@ static byte cActCtrl_VarFFalse(cActCtrl *self, const char *name, double *d, int 
 }
 
 /* the slot VarV of a class that does only return 0 */
-static byte cActCtrl_VarVFalse(cActCtrl *self, const char *name, double *x, double *y, double *z, int set) {
+byte cActCtrl_VarVFalse(cActCtrl *self, const char *name, double *x, double *y, double *z, int set) {
 	(void)self;
 	(void)name;
 	(void)x;
@@ -565,13 +561,6 @@ static byte cActCtrl_VarVFalse(cActCtrl *self, const char *name, double *x, doub
 }
 
 /* the vtable of cActCtrl */
-static const cActCtrlVarVtbl cActCtrl_vftable = {
-	.Delete = cActCtrl_Delete,
-	.VarI = cActCtrl_VarI,
-	.VarF = cActCtrl_VarFFalse,
-	.VarS = cActCtrl_VarS,
-	.VarV = cActCtrl_VarVFalse,
-};
 
 static cGVar GVar_LogActEvents;
 

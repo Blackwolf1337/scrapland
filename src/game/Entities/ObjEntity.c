@@ -205,7 +205,7 @@ byte cObjEntity_VarF(cEntity *self, const char *name, double *d, int set) {
 	if (!*name) {
 		return 0;
 	}
-	if (cModMove_VarF(&o->mod, name, d, set) || SndIf_VarF(&o->snd, name, d, set)) {
+	if (cModMove_VarF(&o->mod, name, d, set) || cSndInterface_FloatVar(&o->snd, name, d, set)) {
 		return 1;
 	}
 	if ((byte)set && !strcmp(name, "MoveTime")) {
@@ -402,7 +402,7 @@ byte cObjEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	if (!*name) {
 		return 0;
 	}
-	if (cModMove_VarI(&o->mod, name, i, set) || SndIf_VarI(&o->snd, name, i, set)) {
+	if (cModMove_VarI(&o->mod, name, i, set) || cSndInterface_IntVar(&o->snd, name, i, set)) {
 		return 1;
 	}
 	if (!strcmp(name, "RadarShow")) {
@@ -747,7 +747,7 @@ byte cObjEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 		}
 		return 1;
 	}
-	if (SndIf_VarS(&o->snd, name, s, set)) {
+	if (cSndInterface_StrVar(&o->snd, name, s, set)) {
 		return 1;
 	}
 	return cEntity_VarS(self, name, s, set);
@@ -857,9 +857,6 @@ byte cObjEntity_VarV(cEntity *self, const char *name, double *x, double *y, doub
 		v.y = (float)*y;
 		v.z = (float)*z;
 		CGameModel_SetPivot(&o->model, &v, 1, 0);
-		return 1;
-	}
-	if (SndIf_VarV(&o->snd, name, x, y, z, set)) {
 		return 1;
 	}
 	return cEntity_VarV(self, name, x, y, z, set);

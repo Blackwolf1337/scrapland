@@ -19,8 +19,6 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
-#define CAIVEHICLESHOOT_VFTABLE (&cAIVehicleShootControl_vftable)
-static const cAIVehicleShootVtbl cAIVehicleShootControl_vftable;
 
 static cGVar GVar_ShowVehWeapAI;
 
@@ -132,7 +130,6 @@ static void cAIVehicleShoot_InitWeapons(cAIVehicleShoot *self);
 cAIVehicleShoot *cAIVehicleShoot_ctor(void *mem, cEntity *v, cAIVehicle *ai, void *params) {
 	cAIVehicleShoot *self = mem;
 
-	self->vftable = CAIVEHICLESHOOT_VFTABLE;
 	cSlotController_ctor(&self->slotFire, 0.2f);
 	cSlotController_ctor(&self->slotFireCM, 0.2f);
 	cSlotController_ctor(&self->slotWeap, 0.5f);
@@ -164,8 +161,7 @@ cAIVehicleShoot *cAIVehicleShoot_ctor(void *mem, cEntity *v, cAIVehicle *ai, voi
 }
 
 /* ---- AI/AIVehicleShootControl.cpp (src/game/AI/IVehicleShootControl.c); the rest in aivehicle.h ---- */
-static cAIVehicleShoot *cAIVehicleShoot_Delete(cAIVehicleShoot *self, byte flags) {
-	self->vftable = CAIVEHICLESHOOT_VFTABLE;
+cAIVehicleShoot *cAIVehicleShoot_Delete(cAIVehicleShoot *self, byte flags) {
 	if (flags & 1) {
 		operator_delete_sized(self, CAIVEHICLESHOOT_SIZE);
 	}
@@ -913,9 +909,6 @@ void cAIVehicleShoot_WeapListChanged(cAIVehicleShoot *self) {
 }
 
 /* the vtable of cAIVehicleShootControl */
-static const cAIVehicleShootVtbl cAIVehicleShootControl_vftable = {
-	.Delete = cAIVehicleShoot_Delete,
-};
 
 cGVar GVar_NotShootAI;
 cGVar GVar_InfernoIDWeap;
