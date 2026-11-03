@@ -435,7 +435,7 @@ static void cWalkCharEntity_Walk(cEntity *self, float dt) {
 		return;
 	}
 	byte fly = WCE_Class(w)->canFly;
-	cWalkCharEntity_Turn(WChar(self), dt);
+	cWalkCharEntity_Turn(w, dt);
 	old = *pos;
 	WCE_ApplyPush(w, dt);
 	cWalkCharEntity_Idle(self, dt);
@@ -669,7 +669,6 @@ static inline byte WCE_VarFloat(float *f, double *d, byte set) {
 }
 
 static void cWalkCharEntity_SetEnergyUsed(cEntity *self, float used);
-void cWalkCharEntity_SetYModelDisp(cWalkCharEntity *w, float y);
 
 static byte cWalkCharEntity_VarF(cEntity *self, const char *name, double *d, int set) {
 	cWalkCharEntity *w = WChar(self);
@@ -737,7 +736,7 @@ static byte cWalkCharEntity_VarF(cEntity *self, const char *name, double *d, int
 	}
 	if (!strcmp(name, "YModelDisp")) {
 		if (s) {
-			cWalkCharEntity_SetYModelDisp(WChar(self), (float)*d);
+			cWalkCharEntity_SetYModelDisp(w, (float)*d);
 		} else {
 			*d = w->yModelDisp;
 		}
@@ -781,7 +780,7 @@ static void cWalkCharEntity_Fall(cEntity *self, float dt) {
 		}
 		w->wl.obj.vel.y = d / dt;
 		if (WCE_Action0(w)->slideAsFly) {
-			cWalkCharEntity_Accel(WChar(self), dt);
+			cWalkCharEntity_Accel(w, dt);
 		} else {
 			w->wl.obj.vel.x = 0.0f;
 			w->wl.obj.vel.z = 0.0f;
@@ -803,7 +802,7 @@ static void cWalkCharEntity_Fall(cEntity *self, float dt) {
 	pos->x = pos->x + w->wl.obj.vel.x * dt;
 	pos->y = pos->y + w->wl.obj.vel.y * dt;
 	pos->z = pos->z + w->wl.obj.vel.z * dt;
-	cWalkCharEntity_WalkSound(WChar(self), dt);
+	cWalkCharEntity_WalkSound(w, dt);
 }
 
 static void cWalkCharEntity_FlySound(cWalkCharEntity *w, float dt);
@@ -862,7 +861,7 @@ end:
 	pos->y = v->y * dt + pos->y;
 	pos->z = v->z * dt + pos->z;
 	pos->x = pos->x + v->x * dt;
-	cWalkCharEntity_FlySound(WChar(self), dt);
+	cWalkCharEntity_FlySound(w, dt);
 }
 
 cActCtrl *cWithLifeEntity_GetActCtrl(cEntity *self) {
@@ -1105,8 +1104,6 @@ static inline void WCE_RelaxTime(cWalkCharEntity *w, float lo, float hi) {
 	w->relaxTime = (float)((double)(r & 0x7fff) * 3.051850947599719e-05 * (double)(hi - lo) + (double)lo);
 }
 
-void cWalkCharEntity_SetViewAng(cWalkCharEntity *w, const vec3_t *ang);
-
 /* vf59: the body turned to the view, the relax and turn actions, the view to the listener */
 static void cWalkCharEntity_Idle(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
@@ -1135,7 +1132,7 @@ static void cWalkCharEntity_Idle(cEntity *self, float dt) {
 		ang.x = 0.0f;
 		ang.y = Obj_GetAng(self, &t1)->y;
 		ang.z = 0.0f;
-		cWalkCharEntity_SetViewAng(WChar(self), &ang);
+		cWalkCharEntity_SetViewAng(w, &ang);
 		if (w->wl.obj.cam) {
 			((cFollowCamEntity *)w->wl.obj.cam)->vSpeed = 1.10000002f;
 			((cFollowCamEntity *)w->wl.obj.cam)->hSpeed = 1.10000002f;
@@ -1377,7 +1374,7 @@ static void cWalkCharEntity_SetModel(cEntity *self, const char *file, float sx, 
 	CGameModel_NodePos(m, &floor, CGameModel_FindRenderNode(m, "DC_Floor"), 0);
 	w->camNode = CGameModel_FindRenderNode(m, "DC_Camera");
 	w->floorDist = root.y - floor.y;
-	cWalkCharEntity_SetYModelDisp(WChar(self), w->yModelDisp);
+	cWalkCharEntity_SetYModelDisp(w, w->yModelDisp);
 }
 
 /* an AI slows its slots down unless it is seen or near a camera */
@@ -1636,7 +1633,7 @@ static byte cWalkCharEntity_VarV(cEntity *self, const char *name, double *x, dou
 		d.y = p->y - py;
 		d.z = p->z - pz;
 		Vec3_GetRotAng(&ang, &d);
-		cWalkCharEntity_SetViewAng(WChar(self), &ang);
+		cWalkCharEntity_SetViewAng(w, &ang);
 		return 1;
 	}
 	if (!strcmp(name, "ViewAng")) {
@@ -1649,7 +1646,7 @@ static byte cWalkCharEntity_VarV(cEntity *self, const char *name, double *x, dou
 		ang.x = (float)((*x * M_PI_D) / DEG_PER_PI);
 		ang.y = (float)((*y * M_PI_D) / DEG_PER_PI);
 		ang.z = (float)((*z * M_PI_D) / DEG_PER_PI);
-		cWalkCharEntity_SetViewAng(WChar(self), &ang);
+		cWalkCharEntity_SetViewAng(w, &ang);
 		return 1;
 	}
 	return cWithLifeEntity_VarV(self, name, x, y, z, set);

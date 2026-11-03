@@ -105,7 +105,6 @@ cEntity *cMissileEntity_ctor(void *mem, const char *name, float x, float y, floa
 	return &self->wl.obj.base;
 }
 
-byte cMissileEntity_Hit(cMissileEntity *self, int n, float unused);
 static void cMissileEntity_dtor(cMissileEntity *self) {
 	int n = self->swarmCount;
 
@@ -319,10 +318,6 @@ static inline void Missile_VarFlag(byte *flag, int *i, int set) {
 		*i = *flag != 0;
 	}
 }
-
-void cMissileEntity_AddToSwarm(cMissileEntity *self, int n);
-
-void cMissileEntity_SetSwarm(cMissileEntity *self, int n);
 
 static byte cMissileEntity_VarI(cEntity *base, const char *name, int *i, int set) {
 	cMissileEntity *self = (cMissileEntity *)base;
