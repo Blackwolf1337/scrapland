@@ -282,7 +282,7 @@ static void cEmbeddedFXVehicle_Update(cEmbeddedFXVehicleSub *base) {
 		uint32_t fx = CGameModel_GetEffect(&Veh(self->owner)->wl.obj.model, NULL);
 		if (self->alpha >= 1.0f) {
 			if (fx == VEHICLE_FX_FADE) {
-				Obj_SetEffect(self->owner, 0);
+				Obj_SetEffect(self->owner, MODEL_EFFECT_NONE);
 			}
 		} else if (fx == 0 || fx == VEHICLE_FX_FADE) {
 			if (fx == 0) {
@@ -316,7 +316,7 @@ static void cEmbeddedFXVehicle_Hide(cEmbeddedFXVehicle *self) {
 	self->time = 0.0f;
 	self->fading = 0;
 	if (CGameModel_GetEffect(&Veh(self->owner)->wl.obj.model, NULL) == VEHICLE_FX_FADE) {
-		Obj_SetEffect(self->owner, 0);
+		Obj_SetEffect(self->owner, MODEL_EFFECT_NONE);
 		Obj_SetEffectParam(self->owner, 0, 0.0f);
 	}
 }
@@ -543,7 +543,7 @@ static cEmbeddedFXVehicleProbe *cEmbeddedFXVehicleProbe_ctor(cEmbeddedFXVehicleP
 	CHECK(fx);
 	self->lightTime = 0.0f;
 	CGameTrail_SetMaxTrails(&self->trail, 0x14);
-	CGameTrail_SetType(&self->trail, 3);
+	CGameTrail_SetType(&self->trail, TRAIL_QUADS);
 	CGameTrail_SetTexture(&self->trail, 0xf);
 	self->transTime = 0.0f;
 	self->ringTime = 0.0f;
@@ -808,7 +808,7 @@ static byte cEmbeddedFXVehicleVote_Init(cEmbeddedFXVehicleSub *base) {
 	CHECK(self->rootNode > -1);
 	for (int i = 0; i < 2; i++) {
 		CGameTrail_SetMaxTrails(&self->trails[i], 0x1f);
-		CGameTrail_SetType(&self->trails[i], 3);
+		CGameTrail_SetType(&self->trails[i], TRAIL_QUADS);
 		CGameTrail_SetPremul(&self->trails[i], 1);
 	}
 	return 1;

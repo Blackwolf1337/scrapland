@@ -708,7 +708,7 @@ static byte FXCharActions_AliveAction(cObjElementFX *base, cDebris *d, cDebrisSy
 /* the effect of the model of the character off */
 static void FXA_EffectOff(CGameModel *m) {
 	CHECK(CGameModel_IsLoaded(m));
-	CGameModel_SetEffect(m, 0);
+	CGameModel_SetEffect(m, MODEL_EFFECT_NONE);
 	CGameModel_SetEffectParam(m, 0, 0);
 }
 
@@ -759,10 +759,10 @@ static void cObjElementFXBankMasterAttack_Attach(cObjElementFX *base, cDebris *d
 	FXA_AttachDummy01(&self->particles, d);
 	CHECK(self->particles.ParticleSystem);
 	CGameTrail_SetMaxTrails(&self->trail, 20);
-	CGameTrail_SetType(&self->trail, 1);
+	CGameTrail_SetType(&self->trail, TRAIL_FAN);
 	CGameTrail_SetTexture(&self->trail, 0);
 	CGameTrail_SetMaxTrails(&self->trail2, 16);
-	CGameTrail_SetType(&self->trail2, 0);
+	CGameTrail_SetType(&self->trail2, TRAIL_RIBBON);
 	CGameTrail_SetTexture(&self->trail2, 0);
 	self->t = 0.0f;
 }
@@ -809,7 +809,7 @@ static void cObjElementFXBettyAttack_Attach(cObjElementFX *base, cDebris *d) {
 	FXA_Trails(self->trails, 2, 31, 0, 3);
 	FXA_Trails(self->trails2, FXBETTYATTACK_TRAILS, 31, 10, 3);
 	CGameTrail_SetMaxTrails(&self->trail, 31);
-	CGameTrail_SetType(&self->trail, 1);
+	CGameTrail_SetType(&self->trail, TRAIL_FAN);
 	CHECK(self->particles.ParticleSystem);
 	self->ring = 0.0f;
 	CGameLensFlare_SetType(&self->flare, 2);
@@ -825,7 +825,7 @@ static void cObjElementFXKill_Attach(cObjElementFX *base, cDebris *d) {
 /* a trail of the Bishop attack: segments, type 3, texture, no fade, premultiplied */
 static void FXBishop_Trail(CGameTrail *t, byte segments, int texture, const float *uv) {
 	CGameTrail_SetMaxTrails(t, segments);
-	CGameTrail_SetType(t, 3);
+	CGameTrail_SetType(t, TRAIL_QUADS);
 	CGameTrail_SetTexture(t, texture);
 	if (uv) {
 		CGameTrail_SetUVScale(t, uv[0], uv[1]);
@@ -2350,7 +2350,7 @@ static void cObjElementFXPoliceGearConversion_Update(cObjElementFX *base, cDebri
 		FX_InRange(self->time, from[i], to[i], &a);
 		CGameModel *am = &self->armor[i];
 		CGameModel_AnimDelta(am, (uint32_t)self->anim[i], self->time, NULL);
-		CGameModel_SetEffect(am, 3);
+		CGameModel_SetEffect(am, MODEL_EFFECT_FADE);
 		float f = 1.0f - (a * a) * (2.0f - a);
 		memcpy(&bits, &f, sizeof(bits));
 		CGameModel_SetEffectParam(am, 0, bits);
@@ -2709,7 +2709,7 @@ void cObjElementFXPoliceGearConversion_Start(cObjElementFXPoliceGearConversion *
 		CGameModel_SetAnimLoop(a, self->anim[i], 0);
 		CGameModel_SetAnimFactor(a, self->anim[i], 1.0f);
 		CGameModel_SetAnim(a, self->anim[i], 0, 0);
-		CGameModel_SetEffect(a, 3);
+		CGameModel_SetEffect(a, MODEL_EFFECT_FADE);
 		CGameModel_SetEffectParam(a, 0, 0x3f800000);
 	}
 	if (!CGameModel_IsVisible(m)) {
@@ -3560,10 +3560,10 @@ static void cObjElementFXFunctionarySpecialAction_Update(cObjElementFX *base, cD
 	}
 	Float_Approach(&self->alpha, target, delta * 4.0f);
 	if (0.0f >= self->alpha) {
-		CGameModel_SetEffect(m, 0);
+		CGameModel_SetEffect(m, MODEL_EFFECT_NONE);
 		CGameModel_SetEffectParam(m, 0, 0);
 	} else {
-		CGameModel_SetEffect(m, 2);
+		CGameModel_SetEffect(m, MODEL_EFFECT_FADE_LIT);
 		CGameModel_SetEffectParam(m, 0, FXA_Bits(self->alpha * 0.5f));
 	}
 	CGameModel_Vertices(m, pts, NULL, NULL, FXFUNCTIONARY_TRAILS, -1, NULL, 0xffffffffu, g_FXFunctionaryVertex);

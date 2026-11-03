@@ -150,7 +150,7 @@ static void cHangarShipScorer_Draw(cScorerItem *base, int player) {
 			self->grid->color = self->gridColor;
 			CPsaImage_DrawFrame(self->grid, self->gridIndex, it->x, it->y);
 		}
-		Obj_SetEffect(ship, 4);
+		Obj_SetEffect(ship, MODEL_EFFECT_WIRE);
 		cVehicleEntity_UpdatePilotPos(Veh(ship), 1);
 		Obj_Render(ship);
 		Obj_SetAng(ship, &ang);

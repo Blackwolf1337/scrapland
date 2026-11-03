@@ -657,7 +657,7 @@ static void cObjElementFXVehicleSpawn_Update(cObjElementFX *base, cDebris *debri
 	}
 	float s = (3.0f - (c + c)) * (c * c);
 	int a = (int)((3.0f - (s + s)) * (s * s) * 255.0f);
-	Obj_SetEffect(self->entity, 2);
+	Obj_SetEffect(self->entity, MODEL_EFFECT_FADE_LIT);
 	Obj_SetEffectParam(self->entity, 0, 1.0f - c);
 	for (int i = 0; i < FXVSPAWN_TRAILS; i++) {
 		CGameTrail_Reset(&self->trails[i]);
@@ -996,7 +996,7 @@ static void cObjElementFXVehicleEMI_Update(cObjElementFX *base, cDebris *debris,
 	cObjElementFXVehicleEMI *self = (cObjElementFXVehicleEMI *)base;
 	cEntity *e = self->entity;
 	if (e && (Entity_Removed(e) || !e->active)) {
-		Obj_SetEffect(e, 0);
+		Obj_SetEffect(e, MODEL_EFFECT_NONE);
 		self->entity = NULL;
 	}
 	e = self->entity;
@@ -1016,7 +1016,7 @@ static void cObjElementFXVehicleEMI_Update(cObjElementFX *base, cDebris *debris,
 	float d = cTimer_GetDelta(&g_pWorld->timer);
 	self->time = self->time + d;
 	self->stepTime = self->stepTime + d;
-	Obj_SetEffect(self->entity, 6);
+	Obj_SetEffect(self->entity, MODEL_EFFECT_ELECTRIC);
 	float v = self->time;
 	if (v > 0.5f) {
 		v = debris->life - dt;
@@ -1258,7 +1258,7 @@ static void cObjElementFXVehicleFire_Update(cObjElementFX *base, cDebris *debris
 	cObjElementFXVehicleFire *self = (cObjElementFXVehicleFire *)base;
 	cEntity *e = self->entity;
 	if (e && (Entity_Removed(e) || !e->active)) {
-		Obj_SetEffect(e, 0);
+		Obj_SetEffect(e, MODEL_EFFECT_NONE);
 		self->entity = NULL;
 	}
 	float d = cTimer_GetDelta(&g_pWorld->timer);
@@ -1279,7 +1279,7 @@ static void cObjElementFXVehicleFire_Update(cObjElementFX *base, cDebris *debris
 	CGameModel_SetPos(dm, &pos);
 	CGameModel_SetRot(dm, &rot);
 	CGameModel_SetSortZ(dm, -49.0f, 0.0f);
-	Obj_SetEffect(self->entity, 7);
+	Obj_SetEffect(self->entity, MODEL_EFFECT_FIRE);
 	float v = self->time;
 	if (v > 0.2f) {
 		v = debris->life - dt;
@@ -2547,7 +2547,7 @@ static void cObjElementFXVehicleSputnik_Update(cObjElementFX *base, cDebris *deb
 	(void)dt;
 	cEntity *e = self->entity;
 	if (e && (Entity_Removed(e) || !e->active)) {
-		Obj_SetEffect(e, 0);
+		Obj_SetEffect(e, MODEL_EFFECT_NONE);
 		Obj_SetEffectParam(self->entity, 0, 0.0f);
 		self->entity = NULL;
 	}
@@ -2595,7 +2595,7 @@ static void cObjElementFXVehicleSputnik_Update(cObjElementFX *base, cDebris *deb
 	float c2 = Float_MaxSS(0.0f, x);
 	CHECK(phase > 0);
 	if (c >= 0.0f && 1.0f >= c) {
-		Obj_SetEffect(self->entity, 8);
+		Obj_SetEffect(self->entity, MODEL_EFFECT_NOISE);
 		if (self->phase == 1) {
 			Obj_SetEffectParam(self->entity, 0, 1.0f - c);
 		} else {
@@ -2608,7 +2608,7 @@ static void cObjElementFXVehicleSputnik_Update(cObjElementFX *base, cDebris *deb
 		} else {
 			v = 1.0f - (v + v);
 		}
-		Obj_SetEffect(self->entity, 6);
+		Obj_SetEffect(self->entity, MODEL_EFFECT_ELECTRIC);
 		Obj_SetEffectParam(self->entity, 0, v * 0.5f);
 	} else if (self->phase == 2 && c2 > 1.0f) {
 		Entity_SetActive(self->entity, 0);
@@ -2960,7 +2960,7 @@ static byte cObjElementFXVehicleEMI_IsAlive(cObjElementFX *base, cDebris *debris
 	}
 	cEntity *e = self->entity;
 	if (e && e->active) {
-		Obj_SetEffect(e, 0);
+		Obj_SetEffect(e, MODEL_EFFECT_NONE);
 	}
 	return 0;
 }
@@ -2983,7 +2983,7 @@ static byte cObjElementFXVehicleFire_IsAlive(cObjElementFX *base, cDebris *debri
 		}
 	}
 	if (e->active) {
-		Obj_SetEffect(e, 0);
+		Obj_SetEffect(e, MODEL_EFFECT_NONE);
 	}
 	return 0;
 }
@@ -2997,7 +2997,7 @@ static byte cObjElementFXVehicleSputnik_IsAlive(cObjElementFX *base, cDebris *de
 	if (cDebris_Update(debris, sys) && !changed) {
 		return 1;
 	}
-	Obj_SetEffect(self->entity, 0);
+	Obj_SetEffect(self->entity, MODEL_EFFECT_NONE);
 	Obj_SetEffectParam(self->entity, 0, 0.0f);
 	return 0;
 }
@@ -3133,7 +3133,7 @@ static void cObjElementFXVehicleSpawn_Start(cObjElementFX *base, cDebris *debris
 		CGameTrail *t = &self->trails[i];
 		CGameTrail_SetMaxTrails(t, 0x1f);
 		CGameTrail_SetTexture(t, 0);
-		CGameTrail_SetType(t, 3);
+		CGameTrail_SetType(t, TRAIL_QUADS);
 	}
 	self->numRays = 0;
 }
@@ -3148,7 +3148,7 @@ static void cObjElementFXVehicleSputnik_Start(cObjElementFX *base, cDebris *debr
 		CGameTrail *t = &self->trails[i];
 		CGameTrail_SetTexture(t, i < 2 ? 0 : 0xb);
 		CGameTrail_SetMaxTrails(t, 0x1f);
-		CGameTrail_SetType(t, 3);
+		CGameTrail_SetType(t, TRAIL_QUADS);
 		CGameTrail_SetUVScale(t, 4.0f, 1.0f);
 	}
 }

@@ -1299,7 +1299,7 @@ static void cVehicleEntity_RenderNow(cEntity *base) {
 	Obj_UpdateModel(Veh_Ent(self));
 	uint32_t fx = CGameModel_GetEffect(&self->wl.obj.model, NULL);
 	if (fx == 3) {
-		Obj_SetEffect(Veh_Ent(self), 0);
+		Obj_SetEffect(Veh_Ent(self), MODEL_EFFECT_NONE);
 	}
 	cWithLifeEntity_RenderNow(Veh_Ent(self));
 	if (self->pilotNode != -1) {
@@ -1307,7 +1307,7 @@ static void cVehicleEntity_RenderNow(cEntity *base) {
 	}
 	cVehicleMotors_Render(&self->motors);
 	if (fx == 3) {
-		Obj_SetEffect(Veh_Ent(self), 3);
+		Obj_SetEffect(Veh_Ent(self), MODEL_EFFECT_FADE);
 	}
 	if (Veh_FX(self)) {
 		cEmbeddedFXVehicle_Render(Veh_FX(self));

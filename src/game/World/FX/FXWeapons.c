@@ -778,21 +778,21 @@ static void cObjElementFXATPC_Start(cObjElementFX *base, cDebris *debris) {
 	CHECK(CGameModel_IsLoaded(model));
 	CGameParticles_Attach(&self->particles, model, FXW_Node(model, "Dummy01"));
 	CGameTrail_SetMaxTrails(&self->core, 5);
-	CGameTrail_SetType(&self->core, 3);
+	CGameTrail_SetType(&self->core, TRAIL_QUADS);
 	CGameTrail_SetTexture(&self->core, 0);
 	CGameTrail_SetMaxTrails(&self->line, 0x10);
-	CGameTrail_SetType(&self->line, 0);
+	CGameTrail_SetType(&self->line, TRAIL_RIBBON);
 	CGameTrail_SetTexture(&self->line, 1);
 	self->endRingPoints = 8;
 	CGameTrail_SetMaxTrails(&self->endRing, 0x11);
-	CGameTrail_SetType(&self->endRing, 3);
+	CGameTrail_SetType(&self->endRing, TRAIL_QUADS);
 	CGameTrail_SetTexture(&self->endRing, 6);
 	self->ringPoints = 0xc;
 	CGameTrail_SetMaxTrails(&self->rings, 0x19);
-	CGameTrail_SetType(&self->rings, 3);
+	CGameTrail_SetType(&self->rings, TRAIL_QUADS);
 	CGameTrail_SetTexture(&self->rings, 7);
 	CGameTrail_SetMaxTrails(&self->ringsDuDv, (byte)(self->ringPoints * 2 + 1));
-	CGameTrail_SetType(&self->ringsDuDv, 3);
+	CGameTrail_SetType(&self->ringsDuDv, TRAIL_QUADS);
 	CGameTrail_SetTexture(&self->ringsDuDv, 0x10);
 }
 
@@ -974,7 +974,7 @@ static void cObjElementFXInfernoExplosion_Start(cObjElementFX *base, cDebris *de
 	for (int i = 0; i < FXINFERNO_TRAILS; i++) {
 		CGameTrail_SetMaxTrails(&self->trails[i], 0x1f);
 		CGameTrail_SetTexture(&self->trails[i], 0);
-		CGameTrail_SetType(&self->trails[i], 3);
+		CGameTrail_SetType(&self->trails[i], TRAIL_QUADS);
 	}
 	self->numRays = 0;
 }
@@ -1220,7 +1220,7 @@ static void cObjElementFXInfernoMissile_Start(cObjElementFX *base, cDebris *debr
 	CGameTrail_SetColor(t, 0x3cfafafa);
 	CGameTrail_SetWidth(t, 65.0f);
 	CGameTrail_SetScale(t, 1.0f, 8.0f);
-	CGameTrail_SetType(t, 2);
+	CGameTrail_SetType(t, TRAIL_CROSS);
 	CGameTrail_SetPremul(t, 1);
 	self->minDist = 700.0f;
 	self->fadeTime = 0.75f;
@@ -1351,7 +1351,7 @@ static void cObjElementFXLaser_Start(cObjElementFX *base, cDebris *debris) {
 	CHECK(self->particles.ParticleSystem);
 	CGameTrail_SetMaxTrails(&self->trail, 3);
 	CGameTrail_SetTexture(&self->trail, 0);
-	CGameTrail_SetType(&self->trail, 2);
+	CGameTrail_SetType(&self->trail, TRAIL_CROSS);
 	self->time = 0.0f;
 	self->drawn = 0;
 }

@@ -204,9 +204,23 @@ void MeshEffect_Render(void);
 CModel *Create_ModelLOD(const char *name, const char *name2, const vec3_t *scale, CModel *main, uint32_t flags);
 CModel *Create_Model2(const char *name, const char *name2, uint32_t flags);
 
-/* Engine/ModelFX.cpp (src/game/engine3d/Engine/ModelFX.c): the render effects of a model, renderEffect the effect (1..8,
- * MODEL_EFFECT_LAST), the float in effectParam its parameter. Drawn in the passes 0, 3 and 13 as several draws of the scene
- * with g_MatFX1 or g_MatForced; 6..8 need the pixel shaders. */
+/* CModel.renderEffect (SetEffect of the entities and the scripts) */
+enum {
+	MODEL_EFFECT_NONE,
+	MODEL_EFFECT_STATIC,
+	MODEL_EFFECT_FADE_LIT,
+	MODEL_EFFECT_FADE,
+	MODEL_EFFECT_WIRE,
+	MODEL_EFFECT_GLOW,
+	MODEL_EFFECT_ELECTRIC,
+	MODEL_EFFECT_FIRE,
+	MODEL_EFFECT_NOISE,
+	MODEL_EFFECT_LAST = MODEL_EFFECT_NOISE
+};
+
+/* Engine/ModelFX.cpp (src/game/engine3d/Engine/ModelFX.c): the render effects of a model, renderEffect the effect, the
+ * float in effectParam its parameter. Drawn in the passes 0, 3 and 13 as several draws of the scene with g_MatFX1 or
+ * g_MatForced; ELECTRIC, FIRE and NOISE need the pixel shaders. */
 struct CGraphic2D;
 void ModelFX_Render(CModel *self, NodeAnimCtx *ctx);
 /* the overlays and the shader materials */

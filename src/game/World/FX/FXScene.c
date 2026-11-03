@@ -306,7 +306,7 @@ void cObjElementFXSceneBishops_Attach(cObjElementFX *base, cDebris *d) {
 	for (int i = 0; i < FXBISHOPS_TRAILS; i++) {
 		CGameTrail_SetMaxTrails(&self->trails[i], 0x1f);
 		CGameTrail_SetTexture(&self->trails[i], 0xb);
-		CGameTrail_SetType(&self->trails[i], 3);
+		CGameTrail_SetType(&self->trails[i], TRAIL_QUADS);
 	}
 	self->glowT = 0.0f;
 	self->master.x = 0.0f;

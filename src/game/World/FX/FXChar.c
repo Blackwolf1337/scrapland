@@ -101,7 +101,7 @@ static CGameModel *FXC_Model(cEntity *e) {
 
 /* the effect of the model off and its sort bias back */
 static void FXC_EffectOff(CGameModel *m) {
-	CGameModel_SetEffect(m, 0);
+	CGameModel_SetEffect(m, MODEL_EFFECT_NONE);
 	CGameModel_SetSortZ(m, 0.0f, 1.0f);
 }
 
@@ -158,10 +158,10 @@ static void cObjElementFXCharacterConversor_SetCharacter(cObjElementFXCharacterC
 	}
 	CGameModel *m = FXC_Model(e);
 	if (self->phase == 1) {
-		CGameModel_SetEffect(m, 0);
+		CGameModel_SetEffect(m, MODEL_EFFECT_NONE);
 		CGameModel_Enable(m);
 	} else if (self->phase == 2) {
-		CGameModel_SetEffect(m, 2);
+		CGameModel_SetEffect(m, MODEL_EFFECT_FADE_LIT);
 		CGameModel_SetEffectParam(m, 0, 0);
 		CGameModel_Enable(m);
 	}
@@ -249,7 +249,7 @@ void cObjElementFXCharacterConversion_Attach(cObjElementFX *base, cDebris *d) {
 	CHECK(self->particles2.ParticleSystem);
 	for (int k = 0; k < FXCONVERSION_TRAILS; k++) {
 		CGameTrail_SetMaxTrails(&self->trails[k], 15);
-		CGameTrail_SetType(&self->trails[k], 3);
+		CGameTrail_SetType(&self->trails[k], TRAIL_QUADS);
 	}
 	FXConversion_RandomPoints(self);
 }
@@ -310,7 +310,7 @@ static void FXDeath_ResetTrails(cObjElementFXCharacterDeath *self, byte attach) 
 		CGameTrail *t = &self->trails[k];
 		if (attach) {
 			CGameTrail_SetMaxTrails(t, 31);
-			CGameTrail_SetType(t, 3);
+			CGameTrail_SetType(t, TRAIL_QUADS);
 			CGameTrail_SetTexture(t, 12);
 		} else {
 			CGameTrail_Clear(t);
@@ -626,7 +626,7 @@ void cObjElementFXCharacterConversion_Update(cObjElementFX *base, cDebris *d, fl
 	/* the attacker fades into the effect */
 	FX_InRange(self->time, 0.01f, 0.05f, &fr);
 	CGameModel_SetSortZ(ma, -62.9f, 0.0f);
-	CGameModel_SetEffect(ma, 2);
+	CGameModel_SetEffect(ma, MODEL_EFFECT_FADE_LIT);
 	float f = fr * fr * (2.0f - fr);
 	uint32_t bits;
 	memcpy(&bits, &f, sizeof(bits));
@@ -1084,7 +1084,7 @@ void cObjElementFXCharacterTeleport_Update(cObjElementFX *base, cDebris *d, floa
 	CGameModel *m = Obj_GetModel(self->character);
 	CHECK(CGameModel_IsLoaded(m));
 	CGameModel_SetSortZ(m, -63.9f, 0.0f);
-	CGameModel_SetEffect(m, 2);
+	CGameModel_SetEffect(m, MODEL_EFFECT_FADE_LIT);
 	float e = self->mode == 2 ? 1.0f - g : g;
 	memcpy(&bits, &e, sizeof(bits));
 	CGameModel_SetEffectParam(m, 0, bits);
@@ -1350,7 +1350,7 @@ void cObjElementFXCharacterDeath_Update(cObjElementFX *base, cDebris *d, float d
 	/* the model fades out from 0.75 s on, the effect shows while the character does */
 	if (FX_InRange(self->time, 0.75f, 1.0f, &a)) {
 		CGameModel_SetSortZ(m, -60.9f, 0.0f);
-		CGameModel_SetEffect(m, 2);
+		CGameModel_SetEffect(m, MODEL_EFFECT_FADE_LIT);
 		float e = (a * a) * (2.0f - a);
 		memcpy(&bits, &e, sizeof(bits));
 		CGameModel_SetEffectParam(m, 0, bits);
@@ -1657,11 +1657,11 @@ void cObjElementFXCharacterConversor_Update(cObjElementFX *base, cDebris *d, flo
 		}
 		CHECK(CGameModel_IsLoaded(m));
 		if (self->phase == 1) {
-			CGameModel_SetEffect(m, 0);
+			CGameModel_SetEffect(m, MODEL_EFFECT_NONE);
 			CGameModel_SetSortZ(m, 0.0f, 1.0f);
 			CGameModel_Disable(m);
 		} else if (self->phase == 2) {
-			CGameModel_SetEffect(m, 0);
+			CGameModel_SetEffect(m, MODEL_EFFECT_NONE);
 			CGameModel_SetSortZ(m, 0.0f, 1.0f);
 			CGameModel_Enable(m);
 		}
@@ -1709,7 +1709,7 @@ void cObjElementFXCharacterConversor_Update(cObjElementFX *base, cDebris *d, flo
 			CGameModel_Enable(m);
 		}
 		CGameModel_SetSortZ(m, -61.9f, 0.0f);
-		CGameModel_SetEffect(m, 2);
+		CGameModel_SetEffect(m, MODEL_EFFECT_FADE_LIT);
 		memcpy(&bits, &g, sizeof(bits));
 		CGameModel_SetEffectParam(m, 0, bits);
 	}

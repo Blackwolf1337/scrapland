@@ -294,7 +294,7 @@ static byte AICtrl_Fuse(void *ctrl, cEntity *police, cEntity **out) {
 	cEntity *gear = World_FindEntity(name);
 	CHECK(gear);
 	CHECK(Entity_IsType(gear, TYEN_WALKCHAR));
-	Obj_SetEffect(gear, 3);
+	Obj_SetEffect(gear, MODEL_EFFECT_FADE);
 	Obj_SetEffectParam(gear, 0, 1.0f);
 	Obj_SetAng(gear, Obj_GetAng(police, &t));
 	cActCtrl_Play(ChType_ActCtrl(gear), "PostFusion", 1, 1.0f);
@@ -392,7 +392,7 @@ static void AICtrl_Police2GearEnd(cAbstractFile *params) {
 	AICtrl_Rename(gname, "Gear", poli->name + 6);
 	cEntity *gear = World_FindEntity(gname);
 	CHECK(gear);
-	Obj_SetEffect(gear, 0);
+	Obj_SetEffect(gear, MODEL_EFFECT_NONE);
 	Obj_SetEffectParam(gear, 0, 0.0f);
 	cTimer_SetSpeedChecked(&Obj(gear)->timer, 1.0f);
 	WChar(gear)->wl.god = 0;

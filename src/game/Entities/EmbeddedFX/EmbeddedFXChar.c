@@ -638,7 +638,7 @@ static byte cEmbeddedFXSentinel_Reset(cEmbeddedFX *base) {
 	self->numLasers = FXSENTINEL_LASERS;
 	for (int i = 0; i < self->numLasers; i++) {
 		EFX_LaserTrail(&self->beams[i], 3, 14.0f, 0);
-		CGameTrail_SetType(&self->edgesA[i], 1);
+		CGameTrail_SetType(&self->edgesA[i], TRAIL_FAN);
 		EFX_LaserTrail(&self->edgesA[i], 11, 8.0f, 1);
 		EFX_LaserTrail(&self->edgesB[i], 11, 8.0f, 1);
 	}

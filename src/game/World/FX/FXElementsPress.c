@@ -478,7 +478,7 @@ far:
 /* the trail of a tube: 31 points along up, texture tex */
 static void MainFX_TubeTrail(CGameTrail *t, const vec3_t *up, byte mode, int tex) {
 	CGameTrail_SetMaxTrails(t, 0x1f);
-	CGameTrail_SetType(t, 3);
+	CGameTrail_SetType(t, TRAIL_QUADS);
 	CGameTrail_SetOrient(t, *up, mode);
 	CGameTrail_SetTexture(t, tex);
 }

@@ -594,12 +594,12 @@ static void cWalkCharEntity_UpdateHitFlash(cEntity *self, float dt) {
 	} else {
 		a = 1.0f;
 	}
-	Obj_SetEffect(self, 6);
+	Obj_SetEffect(self, MODEL_EFFECT_ELECTRIC);
 	Obj_SetEffectParam(self, 0, a);
 	float t = w->hitFlash - dt;
 	w->hitFlash = t;
 	if (!(0.0f < t)) {
-		Obj_SetEffect(self, 0);
+		Obj_SetEffect(self, MODEL_EFFECT_NONE);
 	}
 }
 

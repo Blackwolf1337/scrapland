@@ -521,11 +521,11 @@ static void Limit_Car(cFXElementsABFakeLimit *self, cEntity *e, float dt) {
 	uint32_t fx = CGameModel_GetEffect(&Obj(e)->model, NULL);
 	if (nearF > 0.0f) {
 		if (fx == 0 || fx == 6) {
-			Obj_SetEffect(e, 6);
+			Obj_SetEffect(e, MODEL_EFFECT_ELECTRIC);
 			Obj_SetEffectParam(e, 0, nearF * nearF * (2.0f - nearF));
 		}
 	} else if (fx == 6) {
-		Obj_SetEffect(e, 0);
+		Obj_SetEffect(e, MODEL_EFFECT_NONE);
 	}
 	if (nearF > 0.0f) {
 		CGameParticles_SetAlpha(&self->nearParts,

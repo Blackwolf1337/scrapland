@@ -289,14 +289,14 @@ static void ModelFX_Noise(CModel *m, NodeAnimCtx *ctx) {
 }
 
 void ModelFX_Render(CModel *self, NodeAnimCtx *ctx) {
-	if (!g_PSOn && self->renderEffect >= 6 && self->renderEffect <= 8) {
+	if (!g_PSOn && self->renderEffect >= MODEL_EFFECT_ELECTRIC && self->renderEffect <= MODEL_EFFECT_NOISE) {
 		/* the shader effects need the pixel shaders */
 		Scene_Draw(self, ctx);
 		return;
 	}
 	int pass = g_RenderPass;
 	if (pass != 0 && pass != 3 && pass != 0xd) {
-		if (self->renderEffect == 6 || self->renderEffect == 7) {
+		if (self->renderEffect == MODEL_EFFECT_ELECTRIC || self->renderEffect == MODEL_EFFECT_FIRE) {
 			Scene_Draw(self, ctx);
 		}
 		return;
@@ -310,28 +310,28 @@ void ModelFX_Render(CModel *self, NodeAnimCtx *ctx) {
 	g_RenderClassMask = 0xa70000e0;
 	g_RenderPass = 0;
 	switch (self->renderEffect) {
-	case 1:
+	case MODEL_EFFECT_STATIC:
 		ModelFX_Static(self, ctx);
 		break;
-	case 2:
+	case MODEL_EFFECT_FADE_LIT:
 		ModelFX_FadeLit(self, ctx);
 		break;
-	case 3:
+	case MODEL_EFFECT_FADE:
 		ModelFX_Fade(self, ctx);
 		break;
-	case 4:
+	case MODEL_EFFECT_WIRE:
 		ModelFX_Wire(self, ctx);
 		break;
-	case 5:
+	case MODEL_EFFECT_GLOW:
 		ModelFX_Glow(self, ctx);
 		break;
-	case 6:
+	case MODEL_EFFECT_ELECTRIC:
 		ModelFX_Electric(self, ctx);
 		break;
-	case 7:
+	case MODEL_EFFECT_FIRE:
 		ModelFX_Fire(self, ctx);
 		break;
-	case 8:
+	case MODEL_EFFECT_NOISE:
 		ModelFX_Noise(self, ctx);
 		break;
 	default:

@@ -138,7 +138,7 @@ void cVehicleMotorsEffects_Init(cVehicleMotorsEffects *self) {
 			self->trail[i] = t;
 			CGameTrail_SetMaxTrails(t, 0x1e);
 			CGameTrail_SetTexture(self->trail[i], 1);
-			CGameTrail_SetType(self->trail[i], 2);
+			CGameTrail_SetType(self->trail[i], TRAIL_CROSS);
 			CGameTrail_SetFade(self->trail[i], 1);
 			CGameTrail_SetSmooth(self->trail[i], 0);
 			CGameTrail_SetColor(self->trail[i], 0xffffffff);

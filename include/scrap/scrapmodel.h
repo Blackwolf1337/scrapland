@@ -22,7 +22,6 @@ typedef struct CGameModel {
 	int frame;			/* 0x18 g_FrameCount of the last transform of the render nodes */
 } CGameModel;
 
-#define MODEL_EFFECT_LAST 8
 #define MAX_RENDERFX_PARAM 1
 #define MAX_VALID 256
 #define MAT_SINVERTICES 0x4000		/* the meshes of the material give no vertices to the effects */

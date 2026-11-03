@@ -62,10 +62,10 @@ static inline int FX_Gone(cEntity *e) {
 /* the model effect of the item fades: 1 off and disabled, 2 off and enabled */
 static void FX_EndFade(CGameModel *m, int mode) {
 	if (mode == 1) {
-		CGameModel_SetEffect(m, 0);
+		CGameModel_SetEffect(m, MODEL_EFFECT_NONE);
 		CGameModel_Disable(m);
 	} else if (mode == 2) {
-		CGameModel_SetEffect(m, 0);
+		CGameModel_SetEffect(m, MODEL_EFFECT_NONE);
 		CGameModel_Enable(m);
 	}
 }
@@ -378,7 +378,7 @@ static void cObjElementFXItemFade_Update(cObjElementFX *base, cDebris *d, float 
 			if (!CGameModel_IsEnabled(m)) {
 				CGameModel_Enable(m);
 			}
-			CGameModel_SetEffect(m, 2);
+			CGameModel_SetEffect(m, MODEL_EFFECT_FADE_LIT);
 			CGameModel_SetEffectParam(m, 0, FX_Bits(f));
 		} else {
 			FX_EndFade(m, self->mode);
@@ -409,7 +409,7 @@ static void cObjElementFXModelFade_Update(cObjElementFX *base, cDebris *d, float
 	} else {
 		f = 1.0f;
 	}
-	CGameModel_SetEffect(Debris_Model(d), 2);
+	CGameModel_SetEffect(Debris_Model(d), MODEL_EFFECT_FADE_LIT);
 	CGameModel_SetEffectParam(Debris_Model(d), 0, FX_Bits(1.0f - f));
 	cDebris_Move(d, dt);
 }
@@ -421,7 +421,7 @@ static void cObjElementFXModelNoise_Update(cObjElementFX *base, cDebris *d, floa
 	(void)d;
 	(void)dt;
 	if (e && FX_Gone(e)) {
-		Obj_SetEffect(e, 0);
+		Obj_SetEffect(e, MODEL_EFFECT_NONE);
 		self->ent = NULL;
 	}
 	if (!self->ent || !self->ent->active) {
@@ -430,7 +430,7 @@ static void cObjElementFXModelNoise_Update(cObjElementFX *base, cDebris *d, floa
 	float t = self->t + cTimer_GetDelta(&g_pWorld->timer);
 	self->t = t;
 	float f = self->duration > t ? t / self->duration : 1.0f;
-	Obj_SetEffect(self->ent, 8);
+	Obj_SetEffect(self->ent, MODEL_EFFECT_NOISE);
 	Obj_SetEffectParam(self->ent, 0, 0.45f - f * 0.45f);
 }
 
@@ -486,7 +486,7 @@ static byte cObjElementFXModelFade_Alive(cObjElementFX *base, cDebris *d, cDebri
 	cObjElementFXModelFade *self = (cObjElementFXModelFade *)base;
 	(void)self;
 	if (!cDebris_Update(d, sys)) {
-		CGameModel_SetEffect(Debris_Model(d), 0);
+		CGameModel_SetEffect(Debris_Model(d), MODEL_EFFECT_NONE);
 		return 0;
 	}
 	return 1;
@@ -496,7 +496,7 @@ static byte cObjElementFXModelNoise_Alive(cObjElementFX *base, cDebris *d, cDebr
 	cObjElementFXModelNoise *self = (cObjElementFXModelNoise *)base;
 	if (!cDebris_Update(d, sys)) {
 		if (self->ent) {
-			Obj_SetEffect(self->ent, 0);
+			Obj_SetEffect(self->ent, MODEL_EFFECT_NONE);
 		}
 		return 0;
 	}
@@ -694,10 +694,10 @@ static void cObjElementFXItemFade_Start(cObjElementFXItemFade *self, cEntity *e)
 	CGameModel *m = Obj_GetModel(e);
 	CHECK(CGameModel_IsLoaded(m));
 	if (self->mode == 1) {
-		CGameModel_SetEffect(m, 0);
+		CGameModel_SetEffect(m, MODEL_EFFECT_NONE);
 		CGameModel_Enable(m);
 	} else if (self->mode == 2) {
-		CGameModel_SetEffect(m, 2);
+		CGameModel_SetEffect(m, MODEL_EFFECT_FADE_LIT);
 		CGameModel_SetEffectParam(m, 0, 0);
 		CGameModel_Enable(m);
 	}
