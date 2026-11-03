@@ -23,6 +23,9 @@ cAction *cAction_ctor(cAction *self, cActClass *parent, const char *name) {
 	cString_Set(&self->name, name);
 	self->parent = parent;
 	self->anmFile = NULL;
+	/* not set by the original: "AnmName" and the "Event..." variables of a new action read whatever the heap held */
+	self->anmName = NULL;
+	self->lastEvent = NULL;
 	self->next = NULL;
 	self->isLoop = 0;
 	self->rotSpeed = 0.0f;

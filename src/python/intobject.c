@@ -2,7 +2,8 @@
  * Objects/intobject.c with an integer division that is right for INT_MIN: i_divmod of the source computes -(-x / y),
  * whose negation wraps for INT_MIN with gcc (-fwrapv), so pow(-2, 31, 2147483647) and friends came out wrong. One
  * division of x by y and the floor correction give the exact result (what MSVC made of the source). The number
- * methods of int take it at start; INT_MIN / -1 still traps in idiv.
+ * methods of int take it at start; INT_MIN / -1 still traps in idiv. The repr of the source writes into 20 bytes,
+ * one short for the smallest 64-bit long.
  */
 #include "Objects/intobject.c"
 
@@ -104,7 +105,15 @@ static PyObject *Int_Pow(PyIntObject *v, PyIntObject *w, PyIntObject *z) {
 	return PyInt_FromLong(ix);
 }
 
+static PyObject *Int_Repr(PyIntObject *v) {
+	char buf[32];
+
+	snprintf(buf, sizeof(buf), "%ld", v->ob_ival);
+	return PyString_FromString(buf);
+}
+
 __attribute__((constructor)) static void Int_UseExeDivision(void) {
+	PyInt_Type.tp_repr = (reprfunc)Int_Repr;
 	int_as_number.nb_divide = (binaryfunc)Int_Div;
 	int_as_number.nb_remainder = (binaryfunc)Int_Mod;
 	int_as_number.nb_divmod = (binaryfunc)Int_DivModTuple;
