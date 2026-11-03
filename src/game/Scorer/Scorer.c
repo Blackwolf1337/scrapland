@@ -992,7 +992,7 @@ static void ScorerFx_Draw(void *fx, int player, float dt) {
  * character set */
 static void cScorer_UpdateMP(cScorer *scorer, float dt) {
 	(void)dt;
-	if (Input_GetActionSet() != 1) {
+	if (Input_GetActionSet() != ACTSET_RACER) {
 		return;
 	}
 	if (cInputAction_Pressed(TABLE_AT(TABLE_AT(g_ActionSets, 1)->actions, 23), scorer->player)) {
@@ -1596,9 +1596,9 @@ static byte Scorer_DrawConsole(void) {
 	float h;
 
 	if (!g_ConsoleOn) {
-		if ((Input_GetActionSet() == 0 && cInputAction_Released(Console_Action(0, CONSOLE_ACT_KEY), 0))
-			|| (Input_GetActionSet() == 3 && cInputAction_Released(Console_Action(3, CONSOLE_ACT_KEY), 0))
-			|| (Input_GetActionSet() == 1 && cInputAction_Released(Console_Action(1, CONSOLE_ACT_KEY), 0))) {
+		if ((Input_GetActionSet() == ACTSET_MENU && cInputAction_Released(Console_Action(ACTSET_MENU, CONSOLE_ACT_KEY), 0))
+			|| (Input_GetActionSet() == ACTSET_WALK && cInputAction_Released(Console_Action(ACTSET_WALK, CONSOLE_ACT_KEY), 0))
+			|| (Input_GetActionSet() == ACTSET_RACER && cInputAction_Released(Console_Action(ACTSET_RACER, CONSOLE_ACT_KEY), 0))) {
 			if (Plat_KeyDown(CONSOLE_VK_CONTROL)) {
 				Scorer_SetConsole(1);
 			}
@@ -1629,10 +1629,10 @@ static byte Scorer_DrawConsole(void) {
 		double t0 = (double)g_ConsoleTime;
 		double t = App_GetGameTime(g_pApp);
 		h = Float_MaxSS(0.0f, (float)(t0 - t) * CONSOLE_SPEED + CONSOLE_HEIGHT);
-		if (cInputAction_Pressed(Console_Action(2, CONSOLE_ACT_UP), 0)) {
+		if (cInputAction_Pressed(Console_Action(ACTSET_INACTIVE, CONSOLE_ACT_UP), 0)) {
 			Console_HistoryUp();
 		}
-		if (cInputAction_Pressed(Console_Action(2, CONSOLE_ACT_DOWN), 0)) {
+		if (cInputAction_Pressed(Console_Action(ACTSET_INACTIVE, CONSOLE_ACT_DOWN), 0)) {
 			Console_HistoryDown();
 		}
 	}
@@ -1663,7 +1663,7 @@ static byte Scorer_DrawConsole(void) {
 	CFont_PrintfXY(g_FontTerminal8, off + CONSOLE_MARGIN, CONSOLE_INPUT_Y, (blink < 0 ? -blink : blink) > 128 ? "%s"
 		: "%s_", g_PlayerInput[0].text);
 	g_PlayerInput[0].active = 0;
-	if (!g_ConsoleClosing && cInputAction_Released(Console_Action(2, CONSOLE_ACT_KEY), 0) && h == 0.0f) {
+	if (!g_ConsoleClosing && cInputAction_Released(Console_Action(ACTSET_INACTIVE, CONSOLE_ACT_KEY), 0) && h == 0.0f) {
 		g_ConsoleClosing = 1;
 		g_ConsoleTime = (float)App_GetGameTime(g_pApp);
 	}

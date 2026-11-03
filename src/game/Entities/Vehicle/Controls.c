@@ -776,7 +776,7 @@ static void Ctl_PadRumble(cVehicleControls *c, cEntity *v, int slot) {
 
 void cVehicleControls_Tick(cVehicleControls *c, cEntity *v, float dt) {
 	int slot = cVehicleEntity_GetOwnerSlot(v);
-	cActionSet *set = TABLE_AT(g_ActionSets, 1);
+	cActionSet *set = TABLE_AT(g_ActionSets, ACTSET_RACER);
 
 	Ctl_Axes(c, v, set, slot, dt);
 	c->fire = Ctl_Value(set, CTL_FIRE, slot) > 0.5f;
@@ -808,7 +808,7 @@ void cVehicleControls_Tick(cVehicleControls *c, cEntity *v, float dt) {
 	if (Ctl_Pressed(set, CTL_FIRE, slot)) {
 		c->netFire = !c->netFire;
 	}
-	if (slot != -1 && Input_GetActionSet() == 1 && Veh(v)->wl.obj.cam) {
+	if (slot != -1 && Input_GetActionSet() == ACTSET_RACER && Veh(v)->wl.obj.cam) {
 		Ctl_PadRumble(c, v, slot);
 	}
 	float ra = c->rumbleA - c->rumbleARate * dt;

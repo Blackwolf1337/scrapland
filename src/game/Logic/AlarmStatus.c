@@ -31,7 +31,7 @@ static int Alarm_Open(const cAlarm *self) {
 	if (self->locked) {
 		return 0;
 	}
-	return Input_GetActionSet() == 1 || Input_GetActionSet() == 3;
+	return Input_GetActionSet() == ACTSET_RACER || Input_GetActionSet() == ACTSET_WALK;
 }
 
 /* the strcpy of the original between the 0x200 buffers (both are written by Str_Copy) */
@@ -63,7 +63,7 @@ byte Alarm_IsLocked(cAlarm *self) {
 	if (self->locked) {
 		return 1;
 	}
-	if (Input_GetActionSet() != 1 && Input_GetActionSet() != 3) {
+	if (Input_GetActionSet() != ACTSET_RACER && Input_GetActionSet() != ACTSET_WALK) {
 		return 1;
 	}
 	return 0;

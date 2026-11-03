@@ -103,7 +103,7 @@ static void cFriends_Think(cFriends *self) {
 		return;
 	}
 	cEntity *usr = NULL;
-	if (Input_GetActionSet() != 2) {
+	if (Input_GetActionSet() != ACTSET_INACTIVE) {
 		usr = cWorld_GetUsrEntity(g_pWorld, 0);
 		if (usr && !Entity_IsType(usr, TYEN_CAR)) {
 			usr = NULL;

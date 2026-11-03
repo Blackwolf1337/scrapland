@@ -724,12 +724,12 @@ void Engine_Render(void) {
 }
 
 static byte DebugAction(uint32_t i) {
-	return cInputAction_Pressed(TABLE_AT(TABLE_AT(g_ActionSets, 1)->actions, i), 0);
+	return cInputAction_Pressed(TABLE_AT(TABLE_AT(g_ActionSets, ACTSET_RACER)->actions, i), 0);
 }
 
 /* the value of an action of the debug set for player 0 */
 static float DebugValue(uint32_t i) {
-	return TABLE_AT(TABLE_AT(g_ActionSets, 1)->actions, i)->value[0];
+	return TABLE_AT(TABLE_AT(g_ActionSets, ACTSET_RACER)->actions, i)->value[0];
 }
 
 static cGVar GVar_ViewerClipNear;

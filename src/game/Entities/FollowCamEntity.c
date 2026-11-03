@@ -46,6 +46,15 @@ static inline float FCam_Act(int set, int i, int slot) {
 	return TABLE_AT(TABLE_AT(g_ActionSets, set)->actions, i)->value[slot];
 }
 
+/* an action of the vehicle set (RACER_) and of the character set (WALK_) */
+static inline float FCam_Racer(int i, int slot) {
+	return FCam_Act(ACTSET_RACER, i, slot);
+}
+
+static inline float FCam_Walk(int i, int slot) {
+	return FCam_Act(ACTSET_WALK, i, slot);
+}
+
 cEntity *cFollowCamEntity_ctor(void *mem, const char *name, float x, float y, float z) {
 	cFollowCamEntity *fc = mem;
 
@@ -311,17 +320,17 @@ static void cFollowCamEntity_FreeMove(cEntity *self) {
 		return;
 	}
 	float dt = cTimer_GetDelta(&g_pWorld->timer);
-	byte strafe = FCam_Act(1, 18, c->slot) > 0.5f || FCam_Act(3, 15, c->slot) > 0.5f;
-	byte fast = FCam_Act(1, 9, c->slot) > 0.5f || FCam_Act(3, 17, c->slot) > 0.5f;
-	byte slow = FCam_Act(1, 17, c->slot) > 0.5f || FCam_Act(3, 19, c->slot) > 0.5f;
-	float v = (FCam_Act(1, 3, c->slot) - FCam_Act(1, 2, c->slot)) * dt;
+	byte strafe = FCam_Racer(RACER_BLOCK_STRAFE, c->slot) > 0.5f || FCam_Walk(WALK_BLOCK_STRAFE, c->slot) > 0.5f;
+	byte fast = FCam_Racer(RACER_BOOST, c->slot) > 0.5f || FCam_Walk(WALK_USE, c->slot) > 0.5f;
+	byte slow = FCam_Racer(RACER_CM, c->slot) > 0.5f || FCam_Walk(WALK_ACTION, c->slot) > 0.5f;
+	float v = (FCam_Racer(RACER_DOWN, c->slot) - FCam_Racer(RACER_UP, c->slot)) * dt;
 	c->cam.rot.x = v + v + c->cam.rot.x;
-	v = (FCam_Act(3, 3, c->slot) - FCam_Act(3, 2, c->slot)) * dt;
+	v = (FCam_Walk(WALK_TURN_DOWN, c->slot) - FCam_Walk(WALK_TURN_UP, c->slot)) * dt;
 	c->cam.rot.x = v + v + c->cam.rot.x;
 	if (!strafe) {
-		v = (FCam_Act(1, 5, c->slot) - FCam_Act(1, 4, c->slot)) * dt;
+		v = (FCam_Racer(RACER_RIGHT, c->slot) - FCam_Racer(RACER_LEFT, c->slot)) * dt;
 		c->cam.rot.y = v + v + c->cam.rot.y;
-		v = (FCam_Act(3, 5, c->slot) - FCam_Act(3, 4, c->slot)) * dt;
+		v = (FCam_Walk(WALK_TURN_RIGHT, c->slot) - FCam_Walk(WALK_TURN_LEFT, c->slot)) * dt;
 		c->cam.rot.y = v + v + c->cam.rot.y;
 	}
 	if (c->cam.rot.x > FCAM_HALF_PI) {
@@ -331,14 +340,15 @@ static void cFollowCamEntity_FreeMove(cEntity *self) {
 		c->cam.rot.x = -FCAM_HALF_PI;
 	}
 	move.y = 0.0f;
-	move.z = (FCam_Act(3, 6, c->slot) - FCam_Act(3, 7, c->slot)) + (FCam_Act(1, 6, c->slot) - FCam_Act(1, 7, c->slot));
-	move.x = (FCam_Act(3, 9, c->slot) - FCam_Act(3, 8, c->slot)) +
-		(FCam_Act(1, 11, c->slot) - FCam_Act(1, 10, c->slot));
+	move.z = (FCam_Walk(WALK_FORWARD, c->slot) - FCam_Walk(WALK_BACKWARD, c->slot)) +
+		(FCam_Racer(RACER_FORWARD, c->slot) - FCam_Racer(RACER_BACKWARD, c->slot));
+	move.x = (FCam_Walk(WALK_STRAFE_RIGHT, c->slot) - FCam_Walk(WALK_STRAFE_LEFT, c->slot)) +
+		(FCam_Racer(RACER_STRAFE_RIGHT, c->slot) - FCam_Racer(RACER_STRAFE_LEFT, c->slot));
 	if (strafe) {
-		move.x = (FCam_Act(3, 5, c->slot) - FCam_Act(3, 4, c->slot)) +
-			(FCam_Act(1, 5, c->slot) - FCam_Act(1, 4, c->slot));
+		move.x = (FCam_Walk(WALK_TURN_RIGHT, c->slot) - FCam_Walk(WALK_TURN_LEFT, c->slot)) +
+			(FCam_Racer(RACER_RIGHT, c->slot) - FCam_Racer(RACER_LEFT, c->slot));
 	}
-	float setSpeed = Input_GetActionSet() == 1 ? 1.0f : 0.25f;
+	float setSpeed = Input_GetActionSet() == ACTSET_RACER ? 1.0f : 0.25f;
 	float speed = slow ? 2100.0f : (fast ? 16800.0f : 8400.0f);
 	const vec3_t *m = Vec3_Rotate(&r, &move, &c->cam.rot);
 	to.x = m->x * dt * speed * setSpeed + c->cam.pos.x;
@@ -488,7 +498,7 @@ void cCamEntity_SetTarget(cEntity *cam, cEntity *target) {
 		FCam_SetClip(fc, Entity_IsType(fc->target, TYEN_CAR) != 0);
 		cFollowCamEntity_ResetAngles(cam);
 	} else {
-		FCam_SetClip(fc, Input_GetActionSet() == 1);
+		FCam_SetClip(fc, Input_GetActionSet() == ACTSET_RACER);
 	}
 	cPy_Function_AddParamS(&fc->onSwitch, cam->name);
 	cPy_Function_AddParamI(&fc->onSwitch, fc->base.slot);
@@ -505,9 +515,8 @@ static void cFollowCamEntity_Update(cEntity *self) {
 		return;
 	}
 	slot = fc->base.slot;
-	if (slot >= 0 && (cInputAction_Pressed(TABLE_AT(TABLE_AT(g_ActionSets, 1)->actions, 16), fc->base.slot) ||
-		(fc->base.slot >= 0 &&
-			cInputAction_Pressed(TABLE_AT(TABLE_AT(g_ActionSets, 3)->actions, 18), fc->base.slot)))) {
+	if (slot >= 0 && (Input_ActionPressed(ACTSET_RACER, RACER_FIRE, fc->base.slot) ||
+		(fc->base.slot >= 0 && Input_ActionPressed(ACTSET_WALK, WALK_POSSESSION, fc->base.slot)))) {
 		cEntity *e = fc->target ? cEntity_Next(fc->target) : cWorld_GetFirstEntity(g_pWorld);
 		while (e) {
 			if (e->active) {

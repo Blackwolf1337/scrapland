@@ -363,7 +363,7 @@ static void Scorer_BoostScorer(cAbstractFile *params) {
 	int player, status;
 
 	sc = Menu_ReadParams(params, &player, name, sizeof(name));
-	if (!sc || !(item = cScorer_FindItem(sc, name)) || Input_GetActionSet() != 1) {
+	if (!sc || !(item = cScorer_FindItem(sc, name)) || Input_GetActionSet() != ACTSET_RACER) {
 		return;
 	}
 	if (!ScorerHud_CamShip(player, &ship)) {

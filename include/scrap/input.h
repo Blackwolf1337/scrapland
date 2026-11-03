@@ -17,7 +17,41 @@
 #include "scrap/scrap.h"
 
 #define MAX_LOCAL_PLAYERS 4
-#define NUM_SETS 4			/* action sets: menu, character, debug, vehicle */
+/* the action sets of g_ActionSets (ActionSets_ctor): the names of Controls.cfg */
+enum { ACTSET_MENU, ACTSET_RACER, ACTSET_INACTIVE, ACTSET_WALK, NUM_SETS };
+
+/* the actions of the set Menu */
+enum {
+	MENU_CANCEL, MENU_OPEN_CONSOLE, MENU_CURSOR_UP, MENU_CURSOR_DOWN, MENU_CURSOR_LEFT, MENU_CURSOR_RIGHT,
+	MENU_ITEM_UP, MENU_ITEM_DOWN, MENU_ITEM_LEFT, MENU_ITEM_RIGHT, MENU_ACCEPT, MENU_PG_UP, MENU_PG_DOWN,
+	MENU_DELETE, NUM_MENU_ACTIONS
+};
+
+/* the actions of the set Racer (the vehicles) */
+enum {
+	RACER_MAIN_MENU, RACER_OPEN_CONSOLE, RACER_UP, RACER_DOWN, RACER_LEFT, RACER_RIGHT, RACER_FORWARD,
+	RACER_BACKWARD, RACER_THRUST_UP, RACER_BOOST, RACER_STRAFE_LEFT, RACER_STRAFE_RIGHT, RACER_STRAFE_UP,
+	RACER_STRAFE_DOWN, RACER_NEXT_WEAPON, RACER_PREV_WEAPON, RACER_FIRE, RACER_CM, RACER_BLOCK_STRAFE,
+	RACER_TARGET_NEXT, RACER_TARGET_PREV, RACER_TARGET_RETICLE, RACER_CENTER_VIEW, RACER_SCORER, RACER_LASER,
+	RACER_VULCAN, RACER_DEVASTATOR, RACER_TESLA, RACER_ATPC, RACER_SWARM, RACER_INFERNO, RACER_SWITCH_VIEW,
+	RACER_CHAT, RACER_QMSG1, RACER_QMSG2, RACER_QMSG3, RACER_QMSG4, RACER_QMSG5, RACER_QMSG6, RACER_MISSION_INFO,
+	NUM_RACER_ACTIONS
+};
+
+/* the actions of the set Inactive */
+enum {
+	INACTIVE_ABORT, INACTIVE_OPEN_CONSOLE, INACTIVE_NEXT_CONSOLE, INACTIVE_PREV_CONSOLE, INACTIVE_NEXT_SHIP,
+	INACTIVE_PREV_SHIP, INACTIVE_SELECT_SHIP, INACTIVE_EXIT_SHIP, INACTIVE_NO, NUM_INACTIVE_ACTIONS
+};
+
+/* the actions of the set Walk (the characters) */
+enum {
+	WALK_MAIN_MENU, WALK_OPEN_CONSOLE, WALK_TURN_UP, WALK_TURN_DOWN, WALK_TURN_LEFT, WALK_TURN_RIGHT,
+	WALK_FORWARD, WALK_BACKWARD, WALK_STRAFE_LEFT, WALK_STRAFE_RIGHT, WALK_STRAFE_UP, WALK_STRAFE_DOWN,
+	WALK_STRAFE_TURN_LEFT, WALK_STRAFE_TURN_RIGHT, WALK_BLOCK_STRAFE_TURN, WALK_BLOCK_STRAFE,
+	WALK_SWITCH_RUN_WALK, WALK_USE, WALK_POSSESSION, WALK_ACTION, WALK_CAMERA_CENTER, WALK_NEXT_ACTION,
+	WALK_PREV_ACTION, WALK_MISSION_INFO, NUM_WALK_ACTIONS
+};
 
 /* an input action of an action set; value[player] is its current state (SScorer.GetMenuAccept) */
 typedef struct cInputAction {
@@ -100,6 +134,11 @@ void cPad_Rumble(cPad *pad, float a, float b, float c);
 
 /* rva 0x13a1b0: whether the action is pressed for the player */
 byte cInputAction_Pressed(cInputAction *a, int player);
+
+/* action of the set set (ACTSET_) pressed by the player in this frame */
+static inline byte Input_ActionPressed(int set, int action, int player) {
+	return cInputAction_Pressed(TABLE_AT(TABLE_AT(g_ActionSets, set)->actions, action), player);
+}
 
 void cPlayerInput_MoveCursor(cPlayerInput *in, float dx, float dy);
 byte cPlayerInput_SetCursorChar(cPlayerInput *in, char c);

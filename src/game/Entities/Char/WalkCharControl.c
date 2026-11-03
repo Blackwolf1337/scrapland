@@ -13,7 +13,7 @@ static cGVar GVar_PadTurnSpeed;
 static cGVar GVar_AlwaysRun;
 
 /* the input actions of the character set the control reads */
-#define WCC_SET 3
+#define WCC_SET ACTSET_WALK
 enum {
 	WCC_UP = 2,		/* VRot + */
 	WCC_DOWN = 3,

@@ -377,7 +377,7 @@ static void cPcPad_Update(cAbstractIDevice *elem, float dt) {
 		return;
 	}
 	const double lim = (double)0.2f;
-	if ((Input_GetActionSet() != 3 && (__builtin_fabs((double)lx) > lim || __builtin_fabs((double)ly) > lim)) ||
+	if ((Input_GetActionSet() != ACTSET_WALK && (__builtin_fabs((double)lx) > lim || __builtin_fabs((double)ly) > lim)) ||
 		__builtin_fabs((double)rx) > lim || __builtin_fabs((double)ry) > lim || self->state.buttons ||
 		self->state.leftTrigger || self->state.rightTrigger) {
 		g_IsUsingMouse = 0;

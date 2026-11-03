@@ -176,7 +176,7 @@ void cEnemies_Update(cEnemies *self, float dt) {
 	self->timer = t;
 	if (!(0.5f >= t)) {
 		self->timer = 0.0f;
-		if (Input_GetActionSet() != 2) {
+		if (Input_GetActionSet() != ACTSET_INACTIVE) {
 			cEnemies_Think(self);
 		}
 	}

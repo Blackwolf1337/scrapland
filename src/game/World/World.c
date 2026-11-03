@@ -559,18 +559,13 @@ byte cWorld_LineCall(cWorld *self, uint32_t mask, const vec3_t *from, const vec3
 }
 
 /* action of an action set pressed in this frame, with the index checks of Table<T>::operator[] */
-static byte Input_ActionPressed(uint32_t set, uint32_t action, int player) {
-	cActionSet *s = TABLE_AT(g_ActionSets, set);
-
-	return cInputAction_Pressed(TABLE_AT(s->actions, action), player);
-}
 
 /* the script events of the menu and chat keys of each player */
 static void World_InputEvents(void) {
 	for (int v = 0; v < 4; v++) {
 		if (v == 0) {
-			if ((Input_GetActionSet() == 1 && Input_ActionPressed(1, 0x27, 0)) ||
-				(Input_GetActionSet() == 3 && Input_ActionPressed(3, 0x17, 0))) {
+			if ((Input_GetActionSet() == ACTSET_RACER && Input_ActionPressed(ACTSET_RACER, RACER_MISSION_INFO, 0)) ||
+				(Input_GetActionSet() == ACTSET_WALK && Input_ActionPressed(ACTSET_WALK, WALK_MISSION_INFO, 0))) {
 				if (Talk_IsShown()) {
 					g_RemainTalkTime = 0.0f;
 				} else {
@@ -579,22 +574,22 @@ static void World_InputEvents(void) {
 				}
 			}
 		}
-		if ((byte)Talk_IsShown() && ((Input_GetActionSet() == 1 && Input_ActionPressed(1, 0, v)) ||
-			(Input_GetActionSet() == 3 && Input_ActionPressed(3, 0, v)))) {
+		if ((byte)Talk_IsShown() && ((Input_GetActionSet() == ACTSET_RACER && Input_ActionPressed(ACTSET_RACER, RACER_MAIN_MENU, v)) ||
+			(Input_GetActionSet() == ACTSET_WALK && Input_ActionPressed(ACTSET_WALK, WALK_MAIN_MENU, v)))) {
 			g_RemainTalkTime = 0.0f;
 		} else if (v == 0) {
-			if ((Input_GetActionSet() == 1 && Input_ActionPressed(1, 0, 0)) ||
-				(Input_GetActionSet() == 3 && Input_ActionPressed(3, 0, 0)) ||
-				(Input_GetActionSet() == 2 && Input_ActionPressed(2, 0, 0))) {
+			if ((Input_GetActionSet() == ACTSET_RACER && Input_ActionPressed(ACTSET_RACER, RACER_MAIN_MENU, 0)) ||
+				(Input_GetActionSet() == ACTSET_WALK && Input_ActionPressed(ACTSET_WALK, WALK_MAIN_MENU, 0)) ||
+				(Input_GetActionSet() == ACTSET_INACTIVE && Input_ActionPressed(ACTSET_INACTIVE, INACTIVE_ABORT, 0))) {
 				cPy_Function_AddParamI(g_EscapeEvent, 0);
 				cPy_Function_Execute(g_EscapeEvent, 0);
 			}
 		}
-		if (Input_GetActionSet() == 1) {
+		if (Input_GetActionSet() == ACTSET_RACER) {
 			cPy_Function *events[7] = { g_ChatEvent, g_QChatEvent1, g_QChatEvent2, g_QChatEvent3, g_QChatEvent4,
 				g_QChatEvent5, g_QChatEvent6 };
 			for (int k = 0; k < 7; k++) {
-				if (Input_ActionPressed(1, 0x20 + k, v)) {
+				if (Input_ActionPressed(ACTSET_RACER, RACER_CHAT + k, v)) {
 					cPy_Function_AddParamI(events[k], v);
 					cPy_Function_Execute(events[k], 0);
 					break;
