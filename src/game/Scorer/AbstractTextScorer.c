@@ -337,6 +337,7 @@ static int cHintScorer_Var(cScorerItem *base, const char *name, int set, char **
 
 /* the 20 lines at the position of the phase: fade 0 the scorer, 1 the render target */
 static void cCreditsScorer_DrawLines(cCreditsScorer *self, byte fade, uint32_t color) {
+	cScorerItem *it = &self->base.base;
 	byte columns = self->lines[8][0];
 	float sx, sy;
 
@@ -356,8 +357,8 @@ static void cCreditsScorer_DrawLines(cCreditsScorer *self, byte fade, uint32_t c
 		font->align = 0;
 		yoff = (float)(i * 25);
 		Font_TextSize(font, rect, dim, 0.0f, 0.0f, "%s", line);
-		sx = self->base.base.x;
-		sy = self->base.base.y;
+		sx = it->x;
+		sy = it->y;
 		if (fade) {
 			x = sx;
 			y = sy;
@@ -484,10 +485,10 @@ static void cHintScorer_Draw(cScorerItem *base, int player) {
 	CFont *font = self->base.font;
 	float rect[2], dim[2];
 	int n = Str_WrapText(g_HintText, g_HintLines, (float)sc->hintWidth, 2, self->base.fontName);
-	Font_TextSize(font, rect, dim, self->base.base.x, self->base.base.y, "%s", g_HintText);
+	Font_TextSize(font, rect, dim, base->x, base->y, "%s", g_HintText);
 	float lineH = 0.0f, maxW = 0.0f;
 	for (int k = 0; k < n; k++) {
-		Font_TextSize(font, rect, dim, self->base.base.x, self->base.base.y, "%s", g_HintLines[k]);
+		Font_TextSize(font, rect, dim, base->x, base->y, "%s", g_HintLines[k]);
 		lineH = Float_MaxSS(dim[1], lineH);
 		maxW = Float_MaxSS(dim[0], maxW);
 	}
@@ -495,11 +496,11 @@ static void cHintScorer_Draw(cScorerItem *base, int player) {
 	if (self->tabIndex > 0) {
 		float w = maxW + 16.0f;
 		float h = (float)n * lineH + 8.0f;
-		Menu_DrawFrame(self->tab, self->tabIndex, self->base.base.x - w * 0.5f,
-			(self->base.base.y - (float)row * lineH) - 16.0f, w, h);
+		Menu_DrawFrame(self->tab, self->tabIndex, base->x - w * 0.5f,
+			(base->y - (float)row * lineH) - 16.0f, w, h);
 	}
 	for (int k = 0; k < n; k++, row--) {
-		CFont_PrintfAlignColorShadow(self->base.font, self->base.base.x, self->base.base.y - (float)row * lineH,
+		CFont_PrintfAlignColorShadow(self->base.font, base->x, base->y - (float)row * lineH,
 			TEXTSCORER_CENTER, self->base.color, "%s", g_HintLines[k]);
 	}
 }
@@ -553,8 +554,8 @@ static void cMsgScorer_Draw(cScorerItem *base, int player) {
 	}
 	for (int k = 0; k < g_MsgNumLines; k++) {
 		float lh = self->lineHeight;
-		CFont_PrintfAlignColorShadow(self->base.font, self->base.base.x,
-			(float)k * lh + (lh * 0.5f + self->base.base.y), self->base.align, self->base.color, "%s", g_MsgLines[k]);
+		CFont_PrintfAlignColorShadow(self->base.font, base->x,
+			(float)k * lh + (lh * 0.5f + base->y), self->base.align, self->base.color, "%s", g_MsgLines[k]);
 	}
 }
 

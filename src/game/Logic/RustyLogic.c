@@ -204,9 +204,10 @@ static void cRustyLocalLogic_NextJunk(cRustyLocalLogic *self) {
 /* 7 the walk to the junk point, 9 pissed; the others of the GenChar logic */
 static byte cRustyLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cRustyLocalLogic *self = (cRustyLocalLogic *)elem;
+	cBaseLocalLogic *b = &self->base.base;
 	if (state == RUSTY_GO_TO_JUNK) {
 		if ((byte)cBaseLocalLogic_SetState(&self->base.base.logic, RUSTY_GO_TO_JUNK, target)) {
-			cEntity *p = self->base.base.parent;
+			cEntity *p = b->parent;
 			Rusty_GoToJunk(self, Entity_GetAI(p), (double)g_GenCharRelaxSpeed);
 		}
 		return 1;
@@ -214,7 +215,7 @@ static byte cRustyLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *tar
 	if (state != RUSTY_PISSED) {
 		return cGenCharLocalLogic_SetState(&self->base.base.logic, state, target);
 	}
-	cEntity *p = self->base.base.parent;
+	cEntity *p = b->parent;
 	cActCtrl_Play(ChType_ActCtrl(p), "Pissed", 1, 1.0f);
 	cActCtrl_SetDefLoop(ChType_ActCtrl(p), "Relax", 1);
 	return 1;

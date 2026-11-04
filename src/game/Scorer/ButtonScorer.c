@@ -128,6 +128,7 @@ static void cButtonScorer_Free(cScorerItem *base) {
 
 /* the text with a line break before every word past MaxLineSize + 75 pixels appended to *out; the lines */
 static int cButtonScorer_WrapLines(cButtonScorer *self, char **out, const char *text) {
+	cScorerItem *it2 = &self->base.base;
 	char buf[0x500];
 	float rect[2], dim[2];
 	const char *start = text, *cur = text, *sp;
@@ -146,7 +147,7 @@ static int cButtonScorer_WrapLines(cButtonScorer *self, char **out, const char *
 		}
 		strncpy(buf, start, n);
 		buf[n] = 0;
-		Font_TextSize(self->font, rect, dim, self->base.base.x, self->base.base.y, "%s", buf);
+		Font_TextSize(self->font, rect, dim, it2->x, it2->y, "%s", buf);
 		done = 0;
 		if (!*sp) {
 			/* the last word: a line of everything, or of the words before it if it does not fit */
@@ -195,6 +196,7 @@ static void Button_SetLine(cButtonScorer *self, uint32_t i, const char *src, siz
 
 /* the lines of the text (and of the name:value pairs) and the widest one; the lines measured */
 static int cButtonScorer_SetText(cButtonScorer *self, const char *text) {
+	cScorerItem *it = &self->base.base;
 	size_t len = strlen(text);
 	CHECK(len < 1024 * 5);
 	char *buf = operator_new_array(0x1400);
@@ -243,16 +245,16 @@ static int cButtonScorer_SetText(cButtonScorer *self, const char *text) {
 		const char *colon;
 		if (self->isNameValuePair && (colon = strchr(line, ':'))) {
 			Button_SetLine(self, k, line, (size_t)(colon - line) + 1, 0);
-			Font_TextSize(self->font, rect, dim, self->base.base.x, self->base.base.y, "%s",
+			Font_TextSize(self->font, rect, dim, it->x, it->y, "%s",
 				*TABLE_AT(self->lines, k));
 			k++;
 			Button_SetLine(self, k, colon + 1, (size_t)(nl - colon) - 1, 1);
-			Font_TextSize(self->font, rect, dim2, self->base.base.x, self->base.base.y, "%s",
+			Font_TextSize(self->font, rect, dim2, it->x, it->y, "%s",
 				*TABLE_AT(self->lines, k));
 			w = dim2[0] + dim[0];
 		} else {
 			Button_SetLine(self, k, line, (size_t)(nl - line), 0);
-			Font_TextSize(self->font, rect, dim, self->base.base.x, self->base.base.y, "%s",
+			Font_TextSize(self->font, rect, dim, it->x, it->y, "%s",
 				*TABLE_AT(self->lines, k));
 			w = dim[0];
 		}

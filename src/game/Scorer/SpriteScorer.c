@@ -273,8 +273,8 @@ static void cGradientScorer_Draw(cScorerItem *base, int player) {
 	}
 	self->base.img->color = 0xffffffff;
 	img = self->base.img;
-	img->x = self->base.base.x;
-	img->y = self->base.base.y;
+	img->x = base->x;
+	img->y = base->y;
 	CPsaImage_DrawPoly(img, pos, uv, self->colors, 4, 6);
 }
 

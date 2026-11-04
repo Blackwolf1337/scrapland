@@ -171,7 +171,7 @@ static void Press_NodePlace(CGameModel *model, int node, vec3_t *pos, vec3_t *ro
 
 static byte cFXElementsMentalControllerDamageFX_Init(cMapElement *elem) {
 	cFXElementsMentalControllerDamageFX *self = (cFXElementsMentalControllerDamageFX *)elem;
-	CGameModel *model = &self->base.base.Mod;
+	CGameModel *model = &elem->Mod;
 	char buf[0x100];
 	vec3_t tmp, def;
 	int node;
@@ -289,7 +289,7 @@ static uint32_t cFXElementsMentalControllerDamageFX_UpdateTable[28] = {
  * out */
 static void cFXElementsMentalControllerDamageFX_Update(cMapElement *elem, float dt) {
 	cFXElementsMentalControllerDamageFX *self = (cFXElementsMentalControllerDamageFX *)elem;
-	CGameModel *model = &self->base.base.Mod;
+	CGameModel *model = &elem->Mod;
 	vec3_t tmp, vel, acc, ang, dir, out;
 
 	cMapElement_Update(&self->base.base, dt);

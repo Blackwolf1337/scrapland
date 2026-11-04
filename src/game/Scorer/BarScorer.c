@@ -88,8 +88,8 @@ static int cBarScorer_Var(cScorerItem *base, const char *name, int set, char **s
 				self->mainIndex = *i;
 				CPsaImage_GetFrameUV(self->base.img, self->mainIndex, self->mainUV0, self->mainUV1);
 				CPsaImage_GetFrameSize(self->base.img, self->mainIndex, &w, &h);
-				self->base.base.w = (float)w;
-				self->base.base.h = (float)h;
+				base->w = (float)w;
+				base->h = (float)h;
 			} else {
 				*i = self->mainIndex;
 			}

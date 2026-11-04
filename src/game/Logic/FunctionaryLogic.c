@@ -118,6 +118,7 @@ static void cFunctionaryLocalLogic_Free(cLocalLogic *base) {
 /* the view flag of the character and its team */
 void cFunctionaryLocalLogic_UpdateView(cLocalLogic *elem) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
+	cBaseLocalLogic *b = &self->base.base;
 	cEntity *p = Func_Parent(self);
 
 	ChType_ActCtrl(p);
@@ -125,8 +126,8 @@ void cFunctionaryLocalLogic_UpdateView(cLocalLogic *elem) {
 	if (usr) {
 		Entity_IsType(usr, TYEN_WALKCHAR);
 	}
-	int st = self->base.base.state;
-	if (!self->base.base.busy && !g_pWorld->alarm.on && st != GENCHAR_ATTACK && st != GENCHAR_CHASE && st != GENCHAR_GET_IT) {
+	int st = b->state;
+	if (!b->busy && !g_pWorld->alarm.on && st != GENCHAR_ATTACK && st != GENCHAR_CHASE && st != GENCHAR_GET_IT) {
 		WChar(p)->wl.arrow.canUse = 1;
 		WLife(p)->arrow.tgType = 3;
 		return;
@@ -161,7 +162,8 @@ static void cFunctionaryLocalLogic_AssignDesktop(cLocalLogic *base, float maxDis
 static void cFunctionaryLocalLogic_NormalSpeed(cFunctionaryLocalLogic *self, cEntity *e);
 byte cFunctionaryLocalLogic_AcceptsArrow(cLocalLogic *elem) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
-	if (Functionary_FastEscape(self) && (self->base.base.idle || self->base.base.alwaysLock ||
+	cBaseLocalLogic *b = &self->base.base;
+	if (Functionary_FastEscape(self) && (b->idle || b->alwaysLock ||
 		self->escapeInRadius)) {
 		cFunctionaryLocalLogic_NormalSpeed(self, Func_Parent(self));
 		return 1;
@@ -488,6 +490,7 @@ static void cFunctionaryLocalLogic_SlowEffect(cFunctionaryLocalLogic *self, cEnt
 
 void cFunctionaryLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
+	cBaseLocalLogic *b = &self->base.base;
 	vec3_t t1, t2;
 
 	if (self->forceSpecial) {
@@ -509,7 +512,7 @@ void cFunctionaryLocalLogic_Update(cLocalLogic *elem, float dt) {
 		float st = self->specialTime + dt;
 		self->specialTime = st;
 		byte idle = 1;
-		if (!self->base.base.idle && !self->base.base.alwaysLock) {
+		if (!b->idle && !b->alwaysLock) {
 			idle = 0;
 			if (!(st >= g_FunctionarySpecialActionTime)) {
 				if (Functionary_FastEscape(self) &&
@@ -544,7 +547,7 @@ void cFunctionaryLocalLogic_Update(cLocalLogic *elem, float dt) {
 	if (self->escapeInRadius) {
 		cBaseLocalLogic_Update(&self->base.base.logic, dt);
 		cEntity *usr = cWorld_GetUsrEntity(g_pWorld, 0);
-		if (!self->base.base.idle && !self->base.base.alwaysLock && usr) {
+		if (!b->idle && !b->alwaysLock && usr) {
 			const vec3_t *up = Entity_GetPos(usr, &t1);
 			cEntity *p = Func_Parent(self);
 			const vec3_t *pp = Entity_GetPos(p, &t2);
@@ -585,11 +588,12 @@ static void cFunctionaryLocalLogic_SetOriginFrom(cLocalLogic *base, cEntity *e) 
 /* not idle from the work state goes on with the walk to the desktop */
 void cFunctionaryLocalLogic_SetIdle(cLocalLogic *elem, byte idle) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
-	if (!idle && !self->base.base.busy) {
-		if (self->base.base.state == FUNC_WORK) {
-			self->base.base.state = 7;
+	cBaseLocalLogic *b = &self->base.base;
+	if (!idle && !b->busy) {
+		if (b->state == FUNC_WORK) {
+			b->state = 7;
 		}
-		Logic_SetState(self, self->base.base.state, self->base.base.target.target);
+		Logic_SetState(self, b->state, b->target.target);
 		return;
 	}
 	cBaseLocalLogic_SetIdle(&self->base.base.logic, idle);

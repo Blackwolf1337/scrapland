@@ -185,10 +185,10 @@ static int cTextScorer_Var(cScorerItem *base, const char *name, int set, char **
 				crt_report_rangecheckfailure();
 			}
 			buf[n] = 0;
-			Font_TextSize(self->base.font, NULL, &self->base.base.w, self->base.base.x, self->base.base.y, "%s",
+			Font_TextSize(self->base.font, NULL, &base->w, base->x, base->y, "%s",
 				buf);
-			self->base.base.w = self->base.base.w + 2.0f;
-			self->base.base.h = self->base.base.h + 2.0f;
+			base->w = base->w + 2.0f;
+			base->h = base->h + 2.0f;
 			return 3;
 		}
 	}

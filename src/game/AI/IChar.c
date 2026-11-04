@@ -221,8 +221,7 @@ int Vec3_Differ(const float *a, const float *b) {
 }
 
 byte cAIChar_GetChanged(cAI *elem) {
-	cAIChar *self = (cAIChar *)elem;
-	return self->base.base.changed;
+	return elem->changed;
 }
 
 byte cAIChar_IsPaused(cAI *elem) {
@@ -494,7 +493,7 @@ void cAIChar_Update(cAI *elem, float dt) {
 	if (self->pending.state != AIC_STATE_NONE && AIGroup_CanChange(g_CharGroup)) {
 		AIChar_RestoreState(self, &self->pending);
 	}
-	self->base.base.dt = dt;
+	elem->dt = dt;
 	self->routeTime = self->routeTime + dt;
 	AIChar_CheckRepos(self);
 	if (self->state == AIC_STATIC) {
@@ -506,15 +505,15 @@ void cAIChar_Update(cAI *elem, float dt) {
 	}
 	cAIMove_Update(&self->base.base, dt);
 	AIChar_React(self);
-	if (self->base.base.changed) {
+	if (elem->changed) {
 		return;
 	}
 	AIChar_UpdateThink(self);
-	if (self->base.base.changed) {
+	if (elem->changed) {
 		return;
 	}
 	AICC_Update(self->control, dt);
-	if (self->base.base.changed) {
+	if (elem->changed) {
 		return;
 	}
 	AIChar_UpdateMove(self, dt);
@@ -527,7 +526,7 @@ void cAIChar_UpdateMove(cAI *elem, float dt) {
 		self->ctrl->act = 0;
 		return;
 	}
-	if (!self->base.base.changed && (!AIChar_React(self) || !AIChar_CheckAction(self))) {
+	if (!elem->changed && (!AIChar_React(self) || !AIChar_CheckAction(self))) {
 		return;
 	}
 	if (self->action == 0) {
@@ -540,10 +539,10 @@ void cAIChar_UpdateMove(cAI *elem, float dt) {
 
 void cAIChar_UpdateThink(cAI *elem) {
 	cAIChar *self = (cAIChar *)elem;
-	cSlotController *s = &self->base.base.slotThink;
+	cSlotController *s = &elem->slotThink;
 	float t;
 
-	if (!cSlotController_Tick(s, self->base.base.dt)) {
+	if (!cSlotController_Tick(s, elem->dt)) {
 		return;
 	}
 	while (cSlotController_FireReset(s, &t)) {
@@ -558,14 +557,14 @@ void cAIChar_UpdateAction1(cAI *elem) {
 	float tm;
 
 	if (t->control.walk == 0.0f && t->control.strafe == 0.0f) {
-		self->standTime = self->base.base.dt + self->standTime;
+		self->standTime = elem->dt + self->standTime;
 	} else {
 		self->standTime = 0.0f;
 	}
 	if (self->ctrl->act) {
-		self->actTime = self->base.base.dt + self->actTime;
+		self->actTime = elem->dt + self->actTime;
 	}
-	if (!cSlotController_Tick(s, self->base.base.dt)) {
+	if (!cSlotController_Tick(s, elem->dt)) {
 		return;
 	}
 	while (cSlotController_FireReset(s, &tm)) {
@@ -646,7 +645,7 @@ void cAIChar_CheckPause(cAI *elem) {
 	cSlotController *s = &self->slotPause;
 	float t;
 
-	if (!self->pauseCheck || !cSlotController_Tick(s, self->base.base.dt)) {
+	if (!self->pauseCheck || !cSlotController_Tick(s, elem->dt)) {
 		return;
 	}
 	while (cSlotController_FireReset(s, &t)) {
@@ -659,7 +658,7 @@ void cAIChar_CheckRepos(cAI *elem) {
 	cSlotController *s = &self->slotRepos;
 	float t;
 
-	if (!self->base.repos || !cSlotController_Tick(s, self->base.base.dt)) {
+	if (!self->base.repos || !cSlotController_Tick(s, elem->dt)) {
 		return;
 	}
 	while (cSlotController_FireReset(s, &t)) {
@@ -812,7 +811,7 @@ byte cAIChar_React(cAI *elem) {
 		}
 		break;
 	}
-	return !self->base.base.changed;
+	return !elem->changed;
 }
 
 byte cAIChar_CheckAction(cAI *base) {
@@ -858,7 +857,7 @@ void cAIChar_ReactLostPath(cAI *elem) {
 	cSlotController *s = &self->slotLost;
 	float t;
 
-	if (!cSlotController_Tick(s, self->base.base.dt)) {
+	if (!cSlotController_Tick(s, elem->dt)) {
 		return;
 	}
 	while (cSlotController_FireReset(s, &t)) {
@@ -919,7 +918,7 @@ void cAIChar_Think(cAI *base) {
 
 void cAIChar_ThinkLostPath(cAI *elem) {
 	cAIChar *self = (cAIChar *)elem;
-	if (self->base.base.stateTime > AIC_LOST_TIME) {
+	if (elem->stateTime > AIC_LOST_TIME) {
 		AIChar_SetStateIntern(self, AIC_STATIC_LOST);
 	}
 }
@@ -949,10 +948,11 @@ static void AIC_EndPause(cAIChar *self) {
 
 /* FOLLOW_THE_PATH of a state that pauses: now and then PAUSED_CONTROL (the state kept); 1 then */
 static int AIC_MaybePause(cAIChar *self) {
-	if (!self->pauses || !(self->base.base.stateTime > g_MinTimeStopTempCharAI) || crt_rand() % 20 != 0) {
+	cAI *ai = &self->base.base;
+	if (!self->pauses || !(ai->stateTime > g_MinTimeStopTempCharAI) || crt_rand() % 20 != 0) {
 		return 0;
 	}
-	self->base.base.stateTime = 0.0f;
+	ai->stateTime = 0.0f;
 	AIChar_SaveState(self, &self->resume);
 	AIChar_SetInternState(self, AICI_PAUSED_CONTROL);
 	return 1;
@@ -1027,7 +1027,7 @@ void cAIChar_ThinkInRoute(cAI *elem) {
 	case AICI_PAUSED_CONTROL:
 		if (self->pauses) {
 			WChar(self->ent)->relaxTime = 0.0f;
-			if (!(self->base.base.stateTime > g_MinTimeStoppedCharAI) || crt_rand() % 10 != 0) {
+			if (!(elem->stateTime > g_MinTimeStoppedCharAI) || crt_rand() % 10 != 0) {
 				return;
 			}
 		}
@@ -1056,7 +1056,7 @@ void cAIChar_ThinkPatrol(cAI *elem) {
 			if (AIC_ActionIs(self->ent, 1, 5)) {
 				return;
 			}
-			if (++self->base.base.relaxCount < 3) {
+			if (++elem->relaxCount < 3) {
 				AIC_Play(self->ent, s_TalkActs[crt_rand() % 2 == 0 ? 4 : 5]);
 				return;
 			}
@@ -1074,7 +1074,7 @@ void cAIChar_ThinkPatrol(cAI *elem) {
 			float dz = self->base.center.z - p->z;
 
 			if ((float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) > self->base.radius) {
-				self->base.base.stateTime = 0.0f;
+				elem->stateTime = 0.0f;
 				AIChar_SetInternState(self, AICI_RELAX);
 			}
 		}
@@ -1085,9 +1085,9 @@ void cAIChar_ThinkPatrol(cAI *elem) {
 			if (AIC_ActionIs(self->ent, 1, 3)) {
 				return;
 			}
-			if (self->base.base.relaxCount == 0) {
+			if (elem->relaxCount == 0) {
 				AIC_Play(self->ent, s_TalkActs[4]);
-				self->base.base.relaxCount++;
+				elem->relaxCount++;
 				return;
 			}
 			if (AIC_ActionIs(self->ent, 4, 1)) {
@@ -1460,9 +1460,9 @@ void cAIChar_SaveState(cAI *elem, cAICharSaved *s) {
 	s->radius = self->base.radius;
 	s->pauses = self->pauses;
 	s->action = self->action;
-	s->stateTime = self->base.base.stateTime;
-	s->changing = self->base.base.changing;
-	s->changed = self->base.base.changed;
+	s->stateTime = elem->stateTime;
+	s->changing = elem->changing;
+	s->changed = elem->changed;
 	s->back = self->back;
 	s->orient = self->orient;
 }
@@ -1471,7 +1471,7 @@ void cAIChar_RestoreSaved(cAI *elem, const cAICharSaved *s) {
 	cAIChar *self = (cAIChar *)elem;
 	cEntity *e;
 
-	self->base.base.changed = 1;
+	elem->changed = 1;
 	self->base.dir = s->dir;
 	self->base.dest = s->dest;
 	self->base.dist = s->dist;
@@ -1483,9 +1483,9 @@ void cAIChar_RestoreSaved(cAI *elem, const cAICharSaved *s) {
 	self->base.radius = s->radius;
 	self->pauses = s->pauses;
 	self->action = s->action;
-	self->base.base.stateTime = s->stateTime;
-	self->base.base.changing = s->changing;
-	self->base.base.changed = s->changed;
+	elem->stateTime = s->stateTime;
+	elem->changing = s->changing;
+	elem->changed = s->changed;
 	self->back = s->back;
 	self->orient = s->orient;
 	e = World_FindEntity(s->target);
@@ -1545,9 +1545,9 @@ byte cAIChar_RestoreStateIntern(cAI *base, const cAICharSaved *s) {
 void cAIChar_BeginChange(cAI *elem, int state) {
 	cAIChar *self = (cAIChar *)elem;
 	AIChar_SaveState(self, &self->last);
-	self->base.base.stateTime = 0.0f;
-	self->base.base.changing = 1;
-	self->base.base.changed = 1;
+	elem->stateTime = 0.0f;
+	elem->changing = 1;
+	elem->changed = 1;
 	self->back = 0;
 	self->state = state;
 	self->talking = 0;
@@ -1758,7 +1758,7 @@ byte cAIChar_ChangeState(cAI *elem, int state, va_list ap) {
 		break;
 	}
 	if (allowed) {
-		self->base.base.changing = 0;
+		elem->changing = 0;
 		if (!ok) {
 			goto fail;
 		}
@@ -1835,8 +1835,8 @@ void cAIChar_SetInternStateV(cAI *elem, int state, va_list ap) {
 
 	AIChar_InternStateName(self, state, buf);
 	AI_Debugf(self, "CAMBIO de ESTADO INTERNO -> %s", buf);
-	self->base.base.changed = 1;
-	self->base.base.relaxCount = 0;
+	elem->changed = 1;
+	elem->relaxCount = 0;
 	self->internState = state;
 	c = self->control;
 	switch (state) {

@@ -44,10 +44,11 @@ static void cBossLocalLogic_Free(cLocalLogic *elem) {
 /* (0x84): at work, the end of the work */
 static void cBossLocalLogic_BreakWork(cLocalLogic *elem, byte on) {
 	cBossLocalLogic *self = (cBossLocalLogic *)elem;
-	if (self->base.base.state != BOSS_WORK || !on) {
+	cBaseLocalLogic *b = &self->base.base;
+	if (b->state != BOSS_WORK || !on) {
 		return;
 	}
-	cEntity *p = self->base.base.parent;
+	cEntity *p = b->parent;
 	if (p && Obj(p)->move.active) {
 		cObjMove_SetTime(&Obj(p)->move, 0.0f);
 	}
@@ -58,8 +59,9 @@ static byte g_BossWasIdle;
 
 static void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cBossLocalLogic *self = (cBossLocalLogic *)elem;
+	cBaseLocalLogic *b = &self->base.base;
 	cGenCharLocalLogic_Update(&self->base.base.logic, dt);
-	int st = self->base.base.state;
+	int st = b->state;
 	if (st == GENCHAR_RELAX || st == GENCHAR_STAY) {
 		self->time = dt + self->time;
 		if (self->time >= g_BossWalkingTime) {
@@ -68,7 +70,7 @@ static void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
 		return;
 	}
 	if (st == BOSS_GO_TO_WORK) {
-		cEntity *p = self->base.base.parent;
+		cEntity *p = b->parent;
 		if (!p) {
 			return;
 		}
@@ -93,8 +95,8 @@ static void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
 	if (st != BOSS_WORK) {
 		return;
 	}
-	cEntity *p = self->base.base.parent;
-	if (!self->base.base.idle && !self->base.base.alwaysLock) {
+	cEntity *p = b->parent;
+	if (!b->idle && !b->alwaysLock) {
 		if (g_BossWasIdle) {
 			cObjMove_SetTime(&Obj(p)->move, 0.5f);
 			g_BossWasIdle = 0;
@@ -115,11 +117,12 @@ static void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
 /* 7 the way to the work place (AI state 4 with the place and the direction of its angle), 8 the work */
 static byte cBossLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cBossLocalLogic *self = (cBossLocalLogic *)elem;
+	cBaseLocalLogic *b = &self->base.base;
 	vec3_t out;
 
 	if (state == BOSS_GO_TO_WORK) {
 		if (cBaseLocalLogic_SetState(&self->base.base.logic, BOSS_GO_TO_WORK, target)) {
-			cEntity *p = self->base.base.parent;
+			cEntity *p = b->parent;
 			cAIChar *ai = Entity_GetAI(p);
 			vec3_t rot = { 0.0f, self->workAng[1], 0.0f };
 			vec3_t dir = { 0.0f, 0.0f, -1.0f };
@@ -131,13 +134,13 @@ static byte cBossLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 	if (state == BOSS_WORK) {
 		if (cBaseLocalLogic_SetState(&self->base.base.logic, BOSS_WORK, target)) {
 			self->time = 0.0f;
-			void *ctrl = ChType_ActCtrl(self->base.base.parent);
+			void *ctrl = ChType_ActCtrl(b->parent);
 			cActCtrl_Play(ctrl, "WorkInit", 1, 1.0f);
 			cActCtrl_SetDefLoop(ctrl, "Work", 1);
 		}
 		return 1;
 	}
-	cEntity *p = self->base.base.parent;
+	cEntity *p = b->parent;
 	if (p && Obj(p)->move.active) {
 		cObjMove_SetTime(&Obj(p)->move, 0.0f);
 	}

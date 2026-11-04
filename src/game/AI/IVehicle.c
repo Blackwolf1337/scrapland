@@ -233,7 +233,8 @@ static void cAIVehicle_ThinkGoTo(cAIVehicle *self);
 static void cAIVehicle_ThinkLostPath(cAIVehicle *self);
 static void cAIVehicle_ThinkRace(cAIVehicle *self);
 byte cAIVehicle_Think(cAIVehicle *self) {
-	float t = self->base.base.dt + self->damageTime;
+	cAI *ai = &self->base.base;
+	float t = ai->dt + self->damageTime;
 
 	self->damageTime = t;
 	if (t >= g_TimeDamageAI) {
@@ -262,7 +263,7 @@ byte cAIVehicle_Think(cAIVehicle *self) {
 		break;
 	case AIV_FIGHTING_HOOK:
 		if (cAIVehicle_CheckTarget(self)) {
-			self->targetTime = self->targetTime + self->base.base.dt;
+			self->targetTime = self->targetTime + ai->dt;
 		}
 		break;
 	case AIV_GET_AWAY:
@@ -273,7 +274,7 @@ byte cAIVehicle_Think(cAIVehicle *self) {
 		cAIVehicle_ThinkLostPath(self);
 		break;
 	}
-	return self->base.base.changed == 0;
+	return ai->changed == 0;
 }
 
 /* the items the state goes for */
@@ -403,17 +404,18 @@ static void cAIVehicle_UpdateRoute(cAIVehicle *self) {
 /* the think slot: reaction, items and for FIGHTING the way back from an item */
 static void cAIVehicle_FightingAfterItem(cAIVehicle *self);
 static void cAIVehicle_UpdateThink(cAIVehicle *self) {
-	cSlotController *slot = &self->base.base.slotThink;
+	cAI *ai = &self->base.base;
+	cSlotController *slot = &ai->slotThink;
 	float t;
 
-	if (!cSlotController_Tick(slot, self->base.base.dt) || !cSlotController_FireReset(slot, &t)) {
+	if (!cSlotController_Tick(slot, ai->dt) || !cSlotController_FireReset(slot, &t)) {
 		return;
 	}
 	do {
 		cAIVehicle_React(self);
-		if (!self->base.base.changed) {
+		if (!ai->changed) {
 			cAIVehicle_CheckItems(self);
-			if (!self->base.base.changed && self->state == AIV_FIGHTING) {
+			if (!ai->changed && self->state == AIV_FIGHTING) {
 				cAIVehicle_FightingAfterItem(self);
 			}
 		}
@@ -459,23 +461,23 @@ static void cAIVehicle_Update(cAI *elem, float dt) {
 	}
 	cAIMove_Update(&self->base.base, dt);
 	cAIVehicle_UpdateGraph(self);
-	if (self->base.base.changed) {
+	if (elem->changed) {
 		return;
 	}
 	cAIVehicle_Think(self);
-	if (self->base.base.changed) {
+	if (elem->changed) {
 		return;
 	}
 	cAIVehicle_UpdateThink(self);
-	if (self->base.base.changed) {
+	if (elem->changed) {
 		return;
 	}
 	cAIVehicleControl_Update(self->control, dt);
-	if (self->base.base.changed) {
+	if (elem->changed) {
 		return;
 	}
 	cAIVehicleShoot_Update(self->shoot, dt);
-	if (self->base.base.changed) {
+	if (elem->changed) {
 		return;
 	}
 	cAIVehicleShoot_Update2(self->shoot, dt);
@@ -1744,6 +1746,7 @@ static void AIV_CountStopped(int *n, int d) {
  * FOLLOW_THE_PATH: vec3_t dir, dist, boost, flat, repos, a, b; FOLLOW_THE_PATH_WITH_SHOOT_CM: vec3_t dir, dist,
  * boost, flat */
 static void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...) {
+	cAI *ai = &self->base.base;
 	static const double d1 = 1.0, d05 = 0.5, d3 = 3.0, d20 = 20.0;
 	char name[256];
 	va_list ap;
@@ -1755,7 +1758,7 @@ static void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...) {
 	AI_Debugf(self, "CAMBIO de ESTADO INTERNO -> %s", name);
 	int old = self->internState;
 	int d = 0;
-	self->base.base.changed = 1;
+	ai->changed = 1;
 	self->internState = state;
 	if (state == AIVI_STOPPED) {
 		if (old != AIVI_STOPPED) {
@@ -1898,7 +1901,7 @@ static void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...) {
 		self->base.moveMode = 7;
 		self->base.dist = (float)dist;
 		ok = cAIVehicleControl_SetMove(self->control, AIVC_PATH, self->base.dir, (double)self->base.dist, self->boost, d05,
-			self->base.base.changing == 0, self->base.pathB, (double)a, (double)b, 0);
+			ai->changing == 0, self->base.pathB, (double)a, (double)b, 0);
 		break;
 	}
 	case AIVI_FOLLOW_THE_PATH_WITH_SHOOT_CM: {
@@ -1911,7 +1914,7 @@ static void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...) {
 		self->base.moveMode = 7;
 		self->base.dist = (float)dist;
 		ok = cAIVehicleControl_SetMove(self->control, AIVC_PATH, self->base.dir, (double)self->base.dist, self->boost, d1,
-			self->base.base.changing == 0, self->base.pathB, d3, d3, self->params.strafeEvasion == 1);
+			ai->changing == 0, self->base.pathB, d3, d3, self->params.strafeEvasion == 1);
 		sb = 1;
 		break;
 	}
@@ -2019,6 +2022,7 @@ static byte cAIVehicle_ChangeStateMore(cAIVehicle *self, int state, byte allowed
  * a vehicle whose traffic lane is off) waits as pending, the move in FREEZE_CHANGE_STATE meanwhile; 0 for arguments
  * that do not fit (the AI then in FREEZE) */
 static byte cAIVehicle_ChangeState(cAIVehicle *self, int state, va_list ap) {
+	cAI *ai = &self->base.base;
 	char name[256];
 	byte allowed = 1;
 	byte ok = 1;
@@ -2047,9 +2051,9 @@ change:
 	if (state == AIV_TRAFFIC && !g_IsMapOutDoor) {
 		state = AIV_TRAFFIC_INDOOR;
 	}
-	self->base.base.stateTime = 0.0f;
-	self->base.base.changing = 1;
-	self->base.base.changed = 1;
+	ai->stateTime = 0.0f;
+	ai->changing = 1;
+	ai->changed = 1;
 	Entity_SetActive(self->vehicle, 1);
 	self->lifeMark = Veh(self->vehicle)->wl.life;
 	cAIVehicleControl_SetDirect(self->control, 0);
@@ -2230,7 +2234,7 @@ common: {
 		break;
 	}
 	if (allowed) {
-		self->base.base.changing = 0;
+		ai->changing = 0;
 		if (!ok) {
 			goto bad;
 		}
@@ -2892,17 +2896,18 @@ static void cAIVehicle_ThinkGoTo(cAIVehicle *self) {
  * hook range; without a target the hook on the way and at random (CONTROL_HOOK_RACE) a chase of a vehicle of the
  * group it can hook */
 static void cAIVehicle_ThinkRace(cAIVehicle *self) {
+	cAI *ai = &self->base.base;
 	cSlotController *slot = &self->slotItems;
 	int a, kind;
 	byte flag;
 	float t;
 
-	self->targetTime = self->base.base.dt + self->targetTime;
+	self->targetTime = ai->dt + self->targetTime;
 	cAIVehicleShoot_GetInfo(self->shoot, &a, &kind, &flag);
 	if (kind == 2 && flag && (!AIV_Target(self) || !AIV_Target(self)->active)) {
 		goto race;
 	}
-	if (!cSlotController_Tick(slot, self->base.base.dt) || !cSlotController_FireReset(slot, &t)) {
+	if (!cSlotController_Tick(slot, ai->dt) || !cSlotController_FireReset(slot, &t)) {
 		return;
 	}
 	do {
@@ -3252,6 +3257,7 @@ static void cAIVehicle_GraphTraffic(cAIVehicle *self) {
 /* TRAFFIC_INDOOR: a stopped vehicle onto a track of a sector in view; on the track (i34: 0 not seen, 1 seen, 2 just
  * placed) off the track once it was out of view for a second */
 static void cAIVehicle_GraphTrafficInDoor(cAIVehicle *self) {
+	cAI *ai = &self->base.base;
 	int in = self->internState;
 
 	if (in == AIVI_STOPPED) {
@@ -3266,13 +3272,13 @@ static void cAIVehicle_GraphTrafficInDoor(cAIVehicle *self) {
 	if (in != AIVI_FINISHING_LINE_DIRECT) {
 		return;
 	}
-	switch (self->base.base.seen) {
+	switch (ai->seen) {
 	case 0:
 		if (AI_IsVisible(self)) {
-			self->base.base.seen = 1;
+			ai->seen = 1;
 			return;
 		}
-		if (self->base.base.waitTime > 1.0f) {
+		if (ai->waitTime > 1.0f) {
 			CNodesTraffic *t = AIV_Indoor();
 			Traffic_RemoveVehicle(t, self->track);
 			cAIVehicle_SetInternState(self, AIVI_STOPPED);
@@ -3281,17 +3287,17 @@ static void cAIVehicle_GraphTrafficInDoor(cAIVehicle *self) {
 		return;
 	case 1:
 		if (!AI_IsVisible(self)) {
-			self->base.base.seen = 0;
+			ai->seen = 0;
 		}
 		return;
 	case 2:
 		if (AI_IsVisible(self)) {
-			self->base.base.seen = 1;
+			ai->seen = 1;
 			return;
 		}
 		if (!CNodesTrafficInDoor_SectorHasTrack((CNodesTrafficInDoor *)g_NodesTrafficInDoor, self->track,
 				self->trackType)) {
-			self->base.base.seen = 0;
+			ai->seen = 0;
 		}
 		return;
 	}
