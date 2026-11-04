@@ -105,13 +105,13 @@ void cObjElementFXHook_StartTarget(cObjElementFXHook *self, cEntity *emitter, cE
 		end = cTargetLock_GetPoint(&Veh(self->emitter)->weapons);
 	}
 	if (end) {
-		self->points[self->numPoints] = *end;
+		self->points[self->numPoints + 1] = *end;
 	}
 	int n = self->numPoints;
 	float inv = 1.0f / (float)(n + 1);
-	float dx = (self->points[n].x - self->points[0].x) * inv;
-	float dy = (self->points[n].y - self->points[0].y) * inv;
-	float dz = (self->points[n].z - self->points[0].z) * inv;
+	float dx = (self->points[n + 1].x - self->points[0].x) * inv;
+	float dy = (self->points[n + 1].y - self->points[0].y) * inv;
+	float dz = (self->points[n + 1].z - self->points[0].z) * inv;
 	if (n >= 2) {
 		for (int i = 2; i <= self->numPoints; i++) {
 			float f = (float)i;
@@ -274,13 +274,13 @@ static void cObjElementFXHook_Update(cObjElementFX *base, cDebris *debris, float
 			end = cTargetLock_GetPoint(&Veh(self->emitter)->weapons);
 		}
 		if (end) {
-			self->points[self->numPoints] = *end;
+			self->points[self->numPoints + 1] = *end;
 		}
 		int n = self->numPoints;
 		float inv = 1.0f / (float)(n + 1);
-		float dz = (self->points[n].z - self->points[0].z) * inv;
-		float dx = (self->points[n].x - self->points[0].x) * inv;
-		float dy = (self->points[n].y - self->points[0].y) * inv;
+		float dz = (self->points[n + 1].z - self->points[0].z) * inv;
+		float dx = (self->points[n + 1].x - self->points[0].x) * inv;
+		float dy = (self->points[n + 1].y - self->points[0].y) * inv;
 		if (n >= 2) {
 			for (int i = 2; i <= self->numPoints; i++) {
 				float f = (float)i;
@@ -346,8 +346,8 @@ static void cObjElementFXHook_Update(cObjElementFX *base, cDebris *debris, float
 
 	/* the end: sparks for a player without target, glows back along the last piece */
 	int np = self->numPoints;
-	vec3_t end = self->points[np];
-	vec3_t nd = FXHook_Dir(&self->points[np - 1], &self->points[np]);
+	vec3_t end = self->points[np + 1];
+	vec3_t nd = FXHook_Dir(&self->points[np], &self->points[np + 1]);
 	e = self->emitter;
 	if (e && e->active && Entity_PlayerCam(e) && !self->target && 0.0f >= self->fade && self->sparkTime > 0.04f) {
 		FXHook_Sparks(self, &end, nd);

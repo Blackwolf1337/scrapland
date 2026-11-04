@@ -74,8 +74,8 @@ typedef struct cObjElementFXHook {
 	byte pad_11[3];
 	float fade;			/* the release fade time */
 	CGameTrail trail[2];
-	vec3_t points[FXHOOK_POINTS];	/* from the weapon node to points[numPoints] */
-	int numPoints;			/* index of the last point */
+	vec3_t points[FXHOOK_POINTS];	/* the weapon node, 500 ahead of it, the pulled points, the end */
+	int numPoints;			/* index of the last pulled point, the end is points[numPoints + 1] */
 	CGameParticles particles;
 	float flash;
 	byte withTarget;		/* started by FXHook_StartTarget */
