@@ -41,10 +41,6 @@ typedef struct VkdPsCode {
 static const char *const vkd_psAlias[][2] = { { "fire", "electric" } };
 
 static VkShaderModule vkd_psModule[VKD_NUM_PS];
-/* the handles of CreatePixelShader: each call one of its own, holding the index of its GLSL port */
-#define VKD_MAX_PS_HANDLES 128
-static uint32_t vkd_psHandle[VKD_MAX_PS_HANDLES];
-static uint32_t vkd_numPsHandles;
 
 /* the uniform block of shaders/ff.glsl, std140 */
 typedef struct VkdFF {
@@ -896,7 +892,7 @@ static int Vkd_Prepare(VkoDev *d, uint32_t fvf, uint32_t stride, uint32_t cls, V
 		.blend = (rs[27] ? 1 : 0) | (rs[19] & 31) << 1 | (rs[20] & 31) << 6 | (rs[171] & 7) << 11,
 		.writeMask = rs[168] & 15,
 		.fill = rs[8] == 1 ? 1 : rs[8] == 2 ? 2 : 3,
-		.ps = d->ps && d->ps <= vkd_numPsHandles ? vkd_psHandle[d->ps - 1] + 1 : 0,
+		.ps = d->ps <= VKD_NUM_PS ? d->ps : 0,
 		.depth = d->zs ? (uint32_t)d->zs->img->format : VK_FORMAT_UNDEFINED,
 	};
 	VkPipeline p = Vkd_Pipeline(&key);
@@ -1043,10 +1039,11 @@ uint32_t Vkd_CreatePixelShader(const char *name) {
 			snprintf(base, sizeof(base), "%s", vkd_psAlias[i][1]);
 		}
 	}
+	/* the handle is the index of the GLSL port + 1, so DeletePixelShader has nothing to free and a device reset
+	 * (every level load) cannot run out of handles */
 	for (size_t i = 0; i < VKD_NUM_PS; i++) {
-		if (!strcmp(base, vkd_psCode[i].name) && vkd_numPsHandles < VKD_MAX_PS_HANDLES) {
-			vkd_psHandle[vkd_numPsHandles++] = (uint32_t)i;
-			return vkd_numPsHandles;
+		if (!strcmp(base, vkd_psCode[i].name)) {
+			return (uint32_t)i + 1;
 		}
 	}
 	Com_Printf("vulkan: no GLSL port of the pixel shader %s\n", name);
