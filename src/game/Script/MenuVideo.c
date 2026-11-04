@@ -45,36 +45,12 @@ static const char *const video_filters[] = { "Point", "Bilinear", "Trilinear", "
 	"Anisotropic x8" };
 #define VIDEO_NUM_FILTERS ((int)(sizeof(video_filters) / sizeof(video_filters[0])))
 
-/* ---- the engine variables ---- */
-
-static double Video_Get(const char *name) {
-	cGVar *v = GVar_Find(name);
-	if (!v) {
-		Con_Errorf("ERROR: '%s' global variable not defined\n", name);
-		return 0.0;
-	}
-	return v->base.type == GVAR_FLOAT ? (double)v->value.f : v->base.type == GVAR_INT ? v->value.i : 0.0;
-}
-
-static void Video_Set(const char *name, double d) {
-	cGVar *v = GVar_Find(name);
-	if (!v) {
-		Con_Errorf("ERROR: '%s' global variable not defined\n", name);
-	} else if (v->base.flags & 1) {
-		Con_Errorf("ERROR: '%s' write only\n", name);
-	} else if (v->base.type == GVAR_INT) {
-		v->value.i = (int)d;
-	} else if (v->base.type == GVAR_FLOAT) {
-		v->value.f = (float)d;
-	}
-}
-
 /* d, and NeedEngineReset when it differs from the variable */
 static void Video_SetReset(const char *name, double d, byte *reset) {
-	if (Video_Get(name) != d) {
+	if (GVar_GetNum(name, 0) != d) {
 		*reset = 1;
 	}
-	Video_Set(name, d);
+	GVar_SetNum(name, d);
 }
 
 /* ---- the lists ---- */
@@ -83,7 +59,7 @@ static void Video_Fill(void) {
 	char buf[256];
 
 	video.current = Video_GetCurrentMode();
-	video.desktop = Video_Get("VideoDesktop") == 1.0;
+	video.desktop = GVar_GetNum("VideoDesktop", 0) == 1.0;
 	video.selected = video.desktop ? VIDEO_DESKTOP : video.current;
 	video.numModes = Video_GetModes(-1, NULL);
 	if (video.numModes > VIDEO_MAX_MODES) {
@@ -168,7 +144,7 @@ static int Video_DisplayIndex(int id) {
 			return i;
 		}
 	}
-	int i = (int)Video_Get("FullScreen");
+	int i = (int)GVar_GetNum("FullScreen", 0);
 	return i < 0 || i > 2 ? 1 : i;
 }
 
@@ -225,50 +201,50 @@ static void Video_ApplyTextureFilter(int id) {
 		{ 0, 0, 0 }, { 1, 0, 0 }, { 1, 1, 0 }, { 2, 1, 2 }, { 2, 1, 4 }, { 2, 1, 8 },
 	};
 	const double *v = values[Video_FilterIndex(id)];
-	Video_Set("R_TexFilter", v[0]);
-	Video_Set("R_MipFilter", v[1]);
-	Video_Set("R_Anisotropy", v[2]);
+	GVar_SetNum("R_TexFilter", v[0]);
+	GVar_SetNum("R_MipFilter", v[1]);
+	GVar_SetNum("R_Anisotropy", v[2]);
 }
 
 static void Video_ApplyLock(int id) {
-	Video_Set("R_VideoLockMode", Video_Yes(id, "Lock") ? 1 : 2);
-	Video_Set("R_VideoLockBuf", 1);
+	GVar_SetNum("R_VideoLockMode", Video_Yes(id, "Lock") ? 1 : 2);
+	GVar_SetNum("R_VideoLockBuf", 1);
 }
 
 static void Video_ApplyFog(int id) {
-	Video_Set("R_FogEnable", Video_Yes(id, "Fog") ? 1 : 0);
+	GVar_SetNum("R_FogEnable", Video_Yes(id, "Fog") ? 1 : 0);
 }
 
 static void Video_ApplyGamma(int id) {
-	Video_Set("VideoGammaRGB", Video_ValueToGamma((float)Script_GetNum(id, "Gamma", "Value")));
+	GVar_SetNum("VideoGammaRGB", Video_ValueToGamma((float)Script_GetNum(id, "Gamma", "Value")));
 }
 
 /* the values of the engine into the items (UpdateVideoOptions) */
 static void Video_Values(int id) {
-	Script_SetNum(id, "Gamma", "Value", Video_GammaToValue((float)Video_Get("VideoGammaRGB")));
+	Script_SetNum(id, "Gamma", "Value", Video_GammaToValue((float)GVar_GetNum("VideoGammaRGB", 0)));
 	int filter = 2;
-	switch ((int)Video_Get("R_TexFilter")) {
+	switch ((int)GVar_GetNum("R_TexFilter", 0)) {
 	case 0:
 		filter = 0;
 		break;
 	case 1:
-		filter = Video_Get("R_MipFilter") == 0 ? 1 : 2;
+		filter = GVar_GetNum("R_MipFilter", 0) == 0 ? 1 : 2;
 		break;
 	case 2: {
-		int a = (int)Video_Get("R_Anisotropy");
+		int a = (int)GVar_GetNum("R_Anisotropy", 0);
 		filter = a == 4 ? 4 : a == 8 ? 5 : 3;
 		break;
 	}
 	}
 	Script_SetStr(id, "TextureFilter", "Text", video_filters[filter]);
-	int lod = (int)Video_Get("TextureLOD");
+	int lod = (int)GVar_GetNum("TextureLOD", 0);
 	if (lod == 0 || lod == -1) {
 		Script_SetStr(id, "TextureDetail", "Text", video.detail[0]);
 	} else if (lod == 1 || lod == 2) {
 		Script_SetStr(id, "TextureDetail", "Text", video.detail[lod]);
 	}
 	Video_ShowMode(id);
-	if (Video_Get("R_StencilShadows") == -1) {
+	if (GVar_GetNum("R_StencilShadows", 0) == -1) {
 		static const char *const items[] = { "TitleShadowsDetail", "ShadowsDetail" };
 		Script_SetStr(id, "ShadowsDetail", "Text", video.shadows[3]);
 		for (int i = 0; i < 2; i++) {
@@ -277,53 +253,47 @@ static void Video_Values(int id) {
 			Script_SetNum(id, items[i], "Green", Script_GetNum(id, items[i], "Green") * 0.75);
 			Script_SetNum(id, items[i], "Blue", Script_GetNum(id, items[i], "Blue") * 0.75);
 		}
-	} else if (Video_Get("R_StencilShadows") == 1) {
-		int s = Video_Get("R_StencilSelf") == 1 ? 0 : Video_Get("R_StencilMult") >= 1.0 ? 1 : 2;
+	} else if (GVar_GetNum("R_StencilShadows", 0) == 1) {
+		int s = GVar_GetNum("R_StencilSelf", 0) == 1 ? 0 : GVar_GetNum("R_StencilMult", 0) >= 1.0 ? 1 : 2;
 		Script_SetStr(id, "ShadowsDetail", "Text", video.shadows[s]);
 	} else {
 		Script_SetStr(id, "ShadowsDetail", "Text", video.shadows[3]);
 	}
-	byte scene = Video_Get("R_SceneRTarget") == 1;
-	Video_SetYes(id, "VSync", Video_Get("VSync") == 1);
-	Video_SetYes(id, "Lock", Video_Get("R_VideoLockMode") == 1);
-	Video_SetYes(id, "Fog", Video_Get("R_FogEnable") == 1);
-	Video_SetYes(id, "Bloom", scene && Video_Get("R_SceneBloomRTarget") == 1);
-	Video_SetYes(id, "MotionBlur", scene && Video_Get("R_SceneMotionBlurRTarget") == 1);
-	Video_SetYes(id, "DuDv", scene && Video_Get("R_SceneDuDvRTarget") == 1);
+	byte scene = GVar_GetNum("R_SceneRTarget", 0) == 1;
+	Video_SetYes(id, "VSync", GVar_GetNum("VSync", 0) == 1);
+	Video_SetYes(id, "Lock", GVar_GetNum("R_VideoLockMode", 0) == 1);
+	Video_SetYes(id, "Fog", GVar_GetNum("R_FogEnable", 0) == 1);
+	Video_SetYes(id, "Bloom", scene && GVar_GetNum("R_SceneBloomRTarget", 0) == 1);
+	Video_SetYes(id, "MotionBlur", scene && GVar_GetNum("R_SceneMotionBlurRTarget", 0) == 1);
+	Video_SetYes(id, "DuDv", scene && GVar_GetNum("R_SceneDuDvRTarget", 0) == 1);
 }
 
 /* ---- the steps of video.menu ---- */
 
-static void Step_Prepare(int id) {
+static void Step_Prepare(int id, PyObject *args) {
+	(void)args;
 	(void)id;
 	Video_Fill();
 }
 
-/* the title and Back of the option menus, the column at 250 */
-static void Step_Title(int id) {
-	PyObject *args = Py_BuildValue("(is((ss)(ss))s)", id, Script_Lang("Menu_Options_Video"), "", "",
-		Script_Lang("Menu_Back"), "PCMenu.VideoMenuBack", "PCMenu.VideoMenuBack");
-	PyObject *kw = Py_BuildValue("{s:i,s:i}", "XStart", 250, "YStart", Script_GetInt("Menu", "OptionMenuYStart", 150));
-	Script_CallKw("Menu", "VerticalMenu", args, kw);
-}
-
-static void Step_Values(int id) {
-	video.lastTexFilter = Video_Get("R_TexFilter");
-	video.lastMipFilter = Video_Get("R_MipFilter");
-	video.lastGamma = Video_Get("VideoGammaRGB");
-	video.lastFog = Video_Get("R_FogEnable");
-	video.lastLockMode = Video_Get("R_VideoLockMode");
-	video.lastLockBuf = Video_Get("R_VideoLockBuf");
+static void Step_Values(int id, PyObject *args) {
+	(void)args;
+	video.lastTexFilter = GVar_GetNum("R_TexFilter", 0);
+	video.lastMipFilter = GVar_GetNum("R_MipFilter", 0);
+	video.lastGamma = GVar_GetNum("VideoGammaRGB", 0);
+	video.lastFog = GVar_GetNum("R_FogEnable", 0);
+	video.lastLockMode = GVar_GetNum("R_VideoLockMode", 0);
+	video.lastLockBuf = GVar_GetNum("R_VideoLockBuf", 0);
 	Video_Values(id);
 }
 
-static void Step_Display(int id) {
+static void Step_Display(int id, PyObject *args) {
+	(void)args;
 	Script_SetStr(id, "Display", "Text", video.display[Video_DisplayIndex(id)]);
 }
 
 static const scriptStep_t video_steps[] = {
 	{ "prepare", Step_Prepare },
-	{ "title", Step_Title },
 	{ "values", Step_Values },
 	{ "display", Step_Display },
 	{ NULL, NULL },
@@ -342,7 +312,7 @@ static PyObject *PCMenu_VideoMenu(PyObject *self, PyObject *args) {
 	(void)self;
 	VIDEO_ARGS(args);
 	(void)control;
-	Script_RunMenu(id, "menus/video.menu", video_menu, video_steps);
+	Script_RunMenu(id, "menus/video.menu", NULL, video_menu, video_steps, NULL);
 	return Py_ReturnNone();
 }
 
@@ -502,12 +472,12 @@ static PyObject *PCMenu_ChangeDisplay(PyObject *self, PyObject *args) {
 static PyObject *PCMenu_VideoMenuBack(PyObject *self, PyObject *args) {
 	(void)self;
 	VIDEO_ARGS(args);
-	Video_Set("R_TexFilter", video.lastTexFilter);
-	Video_Set("R_MipFilter", video.lastMipFilter);
-	Video_Set("VideoGammaRGB", video.lastGamma);
-	Video_Set("R_FogEnable", video.lastFog);
-	Video_Set("R_VideoLockMode", video.lastLockMode);
-	Video_Set("R_VideoLockBuf", video.lastLockBuf);
+	GVar_SetNum("R_TexFilter", video.lastTexFilter);
+	GVar_SetNum("R_MipFilter", video.lastMipFilter);
+	GVar_SetNum("VideoGammaRGB", video.lastGamma);
+	GVar_SetNum("R_FogEnable", video.lastFog);
+	GVar_SetNum("R_VideoLockMode", video.lastLockMode);
+	GVar_SetNum("R_VideoLockBuf", video.lastLockBuf);
 	Script_Call("Menu", "OptionsMenu", "(is)", id, control);
 	return Py_ReturnNone();
 }
@@ -556,16 +526,16 @@ static PyObject *PCMenu_ApplyChanges(PyObject *self, PyObject *args) {
 
 	/* ScrapC: the display mode first, the engine reset applies it */
 	int display = Video_DisplayIndex(id);
-	if (display != (int)Video_Get("FullScreen")) {
+	if (display != (int)GVar_GetNum("FullScreen", 0)) {
 		reset = 1;
 	}
-	Video_Set("FullScreen", display);
+	GVar_SetNum("FullScreen", display);
 	byte desktop = video.selected == VIDEO_DESKTOP;
 	int mode = desktop ? Video_DesktopMode() : video.selected;
 	if (desktop != video.desktop) {
 		reset = 1;
 	}
-	Video_Set("VideoDesktop", desktop);
+	GVar_SetNum("VideoDesktop", desktop);
 
 	Video_ApplyGamma(id);
 	Video_ApplyTextureFilter(id);
@@ -573,8 +543,8 @@ static PyObject *PCMenu_ApplyChanges(PyObject *self, PyObject *args) {
 	int shadows = Video_Index(id, "ShadowsDetail", video.shadows, 4);
 	if (shadows < 3) {
 		Video_SetReset("R_StencilShadows", 1, &reset);
-		Video_Set("R_StencilSelf", shadows == 0);
-		Video_Set("R_StencilMult", shadows == 2 ? 0.8 : 1.0);
+		GVar_SetNum("R_StencilSelf", shadows == 0);
+		GVar_SetNum("R_StencilMult", shadows == 2 ? 0.8 : 1.0);
 	} else {
 		Video_SetReset("R_StencilShadows", 0, &reset);
 	}

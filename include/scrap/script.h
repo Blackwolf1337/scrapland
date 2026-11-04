@@ -21,17 +21,19 @@ typedef struct scriptModule_s {
 /* a module of the packs is loaded: its C functions go into it */
 void Script_ModuleLoaded(const char *name, PyObject *module);
 
-/* a step of a .menu file that C does ("run <name>") */
+/* a step of a .menu file that C does ("run <name> [arg ...]"), args the tuple of the arguments */
 typedef struct scriptStep_s {
 	const char *name;
-	void (*fn)(int id);
+	void (*fn)(int id, PyObject *args);
 } scriptStep_t;
 
 /*
- * runs the .menu file name (scrapc/<name> of the packs, else builtin) for the scorer of player id; steps are the
- * C steps it may run (NULL ends the table). 0 when it could not be read.
+ * runs the .menu file name (scrapc/<name> of the packs, else builtin) for the scorer of player id: the lines before
+ * the first section and those of section (NULL for a file without sections). steps are the C steps it may run (NULL
+ * ends the table), vars a dict of the $names it may use (or NULL). 0 when it could not be read.
  */
-byte Script_RunMenu(int id, const char *name, const char *builtin, const scriptStep_t *steps);
+byte Script_RunMenu(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
+	PyObject *vars);
 
 /* the scorer items of player id */
 void Script_Add(int id, const char *item, const char *type);
@@ -41,6 +43,8 @@ void Script_SetNum(int id, const char *item, const char *var, double d);
 const char *Script_GetStr(int id, const char *item, const char *var);
 double Script_GetNum(int id, const char *item, const char *var);
 void Script_SetDefault(int id, const char *item);
+/* SScorer.SetCursor: the item drawn as the cursor ("" for none) */
+void Script_SetCursor(int id, const char *item);
 
 /* a text of the language ("" when it is not there) */
 const char *Script_Lang(const char *key);
@@ -51,11 +55,17 @@ byte Script_Call(const char *module, const char *func, const char *fmt, ...);
 byte Script_CallKw(const char *module, const char *func, PyObject *args, PyObject *kw);
 /* an integer variable of a script module (def when it is not there) */
 int Script_GetInt(const char *module, const char *var, int def);
+/* a string variable of a script module into out ("" when it is not there or not a string) */
+const char *Script_GetString(const char *module, const char *var, char *out, int size);
+/* sets an integer variable of a script module */
+void Script_SetInt(const char *module, const char *var, int value);
 
 /* the arguments of a menu callback: the player and the item (empty when the callback got none) */
 byte Script_Args(PyObject *args, int *id, const char **control);
 
 /* the C video options of PCMenu (src/game/Script/MenuVideo.c) */
 extern PyMethodDef g_MenuVideoMethods[];
+/* the C options and controls menus of PCMenu (src/game/Script/MenuControls.c) */
+extern PyMethodDef g_MenuControlsMethods[];
 
 #endif

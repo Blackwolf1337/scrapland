@@ -507,6 +507,16 @@ void Input_SelectActionSet(int index) {
 	Input_Update(0.1f);
 }
 
+byte Input_SelectActionSetNamed(const char *name) {
+	for (int i = 0; i < NUM_SETS; i++) {
+		if (ActionSet_IsNamed(TABLE_AT(g_ActionSets, i), name)) {
+			Input_SelectActionSet(i);
+			return 1;
+		}
+	}
+	return 0;
+}
+
 static void cInputAction_Latch(cInputAction *a) {
 	for (int p = 0; p < MAX_LOCAL_PLAYERS; p++) {
 		if (!a->latch) {

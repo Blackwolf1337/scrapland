@@ -1082,60 +1082,19 @@ static PyObject *Scrap_Def(PyObject *self, PyObject *args) {
 static PyObject *Scrap_Set(PyObject *self, PyObject *args) {
 	char *name, *s;
 	double d;
-	cGVar *v;
+	int r;
 
 	(void)self;
 	if (PyArg_ParseTuple(args, "ss", &name, &s)) {
-		if (!(v = GVar_Find(name))) {
-			goto notdefined;
-		}
-		if (v->base.type == GVAR_STRING) {
-			if (v->base.flags & 1) {
-				goto readonly;
-			}
-			cString_Set(&v->value.s, s);
-			return Py_BuildValue("i", 1);
-		}
-		if (v->base.type != GVAR_SCRIPT_FUNCTION) {
-			Con_Errorf("ERROR: '%s' global variable must be string\n", name);
+		r = GVar_SetStr(name, s);
+	} else {
+		PyErr_Clear();
+		if (!PyArg_ParseTuple(args, "sd", &name, &d)) {
 			return NULL;
 		}
-		if (v->base.flags & 1) {
-			goto readonly;
-		}
-		cPy_Function_SetFunc(GVar_Function(v), s);
-		return Py_BuildValue("i", 1);
+		r = GVar_SetNum(name, d);
 	}
-	PyErr_Clear();
-	if (!PyArg_ParseTuple(args, "sd", &name, &d)) {
-		return NULL;
-	}
-	if (!(v = GVar_Find(name))) {
-		goto notdefined;
-	}
-	if (v->base.type == GVAR_INT) {
-		if (v->base.flags & 1) {
-			goto readonly;
-		}
-		v->value.i = (int)d;
-		return Py_BuildValue("i", 1);
-	}
-	if (v->base.type != GVAR_FLOAT) {
-		Con_Errorf("ERROR: '%s' global variable must be integer or float\n", name);
-		return NULL;
-	}
-	if (v->base.flags & 1) {
-		goto readonly;
-	}
-	v->value.f = (float)d;
-	return Py_BuildValue("i", 1);
-
-readonly:
-	Con_Errorf("ERROR: '%s' write only\n", name);
-	return Py_BuildValue("i", 0);
-notdefined:
-	Con_Errorf("ERROR: '%s' global variable not defined\n", name);
-	return NULL;
+	return r < 0 ? NULL : Py_BuildValue("i", r);
 }
 
 /* Rand(a, b) : random number between a and b (CRT rand); a result equal to a bound becomes the middle */

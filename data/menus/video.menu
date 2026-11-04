@@ -26,7 +26,11 @@ style buttonend
 
 run prepare
 call Menu.StartNewMenu $id
-run title
+# the title and Back of the option menus, the column at 250
+list title
+	""		""
+	"{Menu_Back}"	PCMenu.VideoMenuBack
+call Menu.VerticalMenu $id "{Menu_Options_Video}" [title] PCMenu.VideoMenuBack XStart=250 YStart=%Menu.OptionMenuYStart
 
 # video mode
 item TitleVideoMode Text font

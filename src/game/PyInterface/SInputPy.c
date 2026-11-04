@@ -15,13 +15,7 @@ static PyObject *SInput_SetActionSet(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "s", &name)) {
 		return NULL;
 	}
-	for (int i = 0; i < 4; i++) {
-		if (ActionSet_IsNamed(TABLE_AT(g_ActionSets, i), name)) {
-			Input_SelectActionSet(i);
-			return Py_BuildValue("i", 1);
-		}
-	}
-	return Py_BuildValue("i", 0);
+	return Py_BuildValue("i", Input_SelectActionSetNamed(name));
 }
 
 /* GetActionSet() : name of the current action set */

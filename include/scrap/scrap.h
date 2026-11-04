@@ -29,6 +29,12 @@ const char *cWorld_GetCamName(cWorld *world, int i);
 cEntity *cWorld_GetFirstEntity(cWorld *world);
 
 cGVar *GVar_Find(const char *name);
+/* the number of an int or float variable (def: its default), 0 for other types; 0 and a message for an unknown name */
+double GVar_GetNum(const char *name, byte def);
+/* as Scrap.Set: 1 set, 0 read only, -1 unknown name or wrong type (each with its message) */
+int GVar_SetNum(const char *name, double d);
+/* a string or script function variable */
+int GVar_SetStr(const char *name, const char *s);
 /* the base constructor (src/game/Global/Gvars.c): in front of g_GVars, the derived class sets the type */
 cGVar *cGVar_ctor(cGVar *self, const char *name, byte flags, const char *description);
 /* an int variable with its default, as the static initializers make it */
