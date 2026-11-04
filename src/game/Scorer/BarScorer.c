@@ -41,7 +41,6 @@ cBarScorer *cBarScorer_ctor(cBarScorer *self) {
 }
 
 static void cBarScorer_dtor(cBarScorer *self) {
-	self->base.base.vftable = CBARSCORER_VFTABLE;
 	cSpriteScorer_dtor(&self->base);
 }
 

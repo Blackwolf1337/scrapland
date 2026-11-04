@@ -27,7 +27,6 @@ cPoliceBossLocalLogic *cPoliceBossLocalLogic_ctor(cPoliceBossLocalLogic *self, c
 /* PoliceBossLogic.cpp: a cGenCharLocalLogic */
 static void cPoliceBossLocalLogic_Free(cLocalLogic *elem) {
 	cPoliceBossLocalLogic *self = (cPoliceBossLocalLogic *)elem;
-	self->base.vftable = CPOLICEBOSSLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	operator_delete(self);
 }

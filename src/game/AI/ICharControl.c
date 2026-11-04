@@ -162,7 +162,6 @@ static void DListSeg_Free(cNWSegList *list) {
 }
 
 void cAICharControl_dtor(cAICharControl *self) {
-	self->vftable = CAICHARCONTROL_VFTABLE;
 	DListSeg_Free(&self->debugPath);
 	NWVecList_Free(&self->debugStrafeInner);
 	NWVecList_Free(&self->debugStrafe);

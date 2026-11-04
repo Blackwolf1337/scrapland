@@ -69,7 +69,6 @@ cGearLocalLogic *cGearLocalLogic_ctor(cGearLocalLogic *self, cEntity *parent) {
 }
 
 static void cGearLocalLogic_dtor(cGearLocalLogic *self) {
-	self->base.vftable = CGEARLOCALLOGIC_VFTABLE;
 	cString_dtor(&self->defaultTarget);
 	cBaseLocalLogic_dtor(&self->base);
 }

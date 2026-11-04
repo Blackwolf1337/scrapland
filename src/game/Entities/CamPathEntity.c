@@ -48,7 +48,6 @@ cEntity *cCamPathEntity_ctor(void *mem, const char *name, float x, float y, floa
 
 /* ---- CamPathEntity.c ---- */
 static void cCamPathEntity_dtor(cEntity *self) {
-	self->vftable = CCAMPATHENTITY_VFTABLE;
 	cPy_Function_dtor(&Path(self)->onEnd);
 	cCamControl_dtor(self);
 }

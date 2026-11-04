@@ -421,7 +421,6 @@ void *cObjElementFXSebastianFlash_ctor(void *self) {
 static void cObjElementFXBankMasterAttack_dtor(void *self) {
 	cObjElementFXBankMasterAttack *s = self;
 
-	FXObj_SetVtbl(s, VT_FXBANKMASTERATTACK);
 	CGameTrail_dtor(&s->trail2);
 	CGameTrail_dtor(&s->trail);
 	CGameParticles_Release(&s->particles);
@@ -431,7 +430,6 @@ static void cObjElementFXBankMasterAttack_dtor(void *self) {
 static void cObjElementFXBankMasterSuction_dtor(void *self) {
 	cObjElementFXBankMasterSuction *s = self;
 
-	FXObj_SetVtbl(s, VT_FXBANKMASTERSUCTION);
 	CGameTrail_dtor(&s->trail);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
@@ -485,7 +483,6 @@ static void cObjElementFXBettyKill_dtor(cObjElementFXBettyKill *self) {
 static void cObjElementFXBishopAttack_dtor(void *self) {
 	cObjElementFXBishopAttack *s = self;
 
-	FXObj_SetVtbl(s, VT_FXBISHOPATTACK);
 	for (int i = FXBISHOPATTACK_TRAILS - 1; i >= 0; i--) {
 		CGameTrail_dtor(&s->trails[i]);
 	}
@@ -496,7 +493,6 @@ static void cObjElementFXBishopAttack_dtor(void *self) {
 static void cObjElementFXBishopSellLife_dtor(void *self) {
 	cObjElementFXBishopSellLife *s = self;
 
-	FXObj_SetVtbl(s, VT_FXBISHOPSELLLIFE);
 	CGameParticles_Release(&s->dataCodec);
 	CGameParticles_Release(&s->glow);
 	cObjElement_dtor(s);
@@ -517,7 +513,6 @@ static void cObjElementFXFunctionarySpecialAction_dtor(void *self) {
 static void cObjElementFXGearMissile_dtor(void *self) {
 	cObjElementFXGearMissile *s = self;
 
-	FXObj_SetVtbl(s, VT_FXGEARMISSILE);
 	FXA_TrailsDtor(s->trails, FXGEARMISSILE_TRAILS);
 	CGameTrail_dtor(&s->trail);
 	CGameParticles_Release(&s->sparks);

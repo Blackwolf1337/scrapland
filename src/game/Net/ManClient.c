@@ -53,7 +53,6 @@ cServerNetManager *cServerNetManager_ctor(cServerNetManager *self, cNetClient *c
 }
 
 static void cServerNetManager_dtor(cServerNetManager *self) {
-	self->base.vftable = g_ServerNetManagerVftable;
 	Con_Print(0, "disconected!\n", 0);
 	cUserNetManager_dtor(&self->base);
 }

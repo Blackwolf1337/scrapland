@@ -98,7 +98,6 @@ cMsgScorer *cMsgScorer_ctor(cMsgScorer *self) {
 
 /* also the destructor of cMsgScorer */
 void cAbstractTextScorer_dtor(cAbstractTextScorer *self) {
-	self->base.vftable = CABSTRACTTEXTSCORER_VFTABLE;
 	cString_dtor(&self->text);
 	cString_dtor(&self->fontName);
 	cScorerItem_dtor(&self->base);
@@ -109,9 +108,8 @@ static void cCreditsScorer_dtor(cCreditsScorer *self) {
 	cAbstractTextScorer_dtor(&self->base);
 }
 
-static void TabText_dtor(cHintScorer *self, const cScorerItemVtbl *vftable) {
+static void TabText_dtor(cHintScorer *self) {
 	CPsaImage *img = self->tab;
-	self->base.base.vftable = vftable;
 	if (img) {
 		CPsaImage_dtor(img);
 		operator_delete(img);
@@ -120,11 +118,11 @@ static void TabText_dtor(cHintScorer *self, const cScorerItemVtbl *vftable) {
 }
 
 static void cHintScorer_dtor(cHintScorer *self) {
-	TabText_dtor(self, CHINTSCORER_VFTABLE);
+	TabText_dtor(self);
 }
 
 static void cLabelScorer_dtor(cLabelScorer *self) {
-	TabText_dtor(self, CLABELSCORER_VFTABLE);
+	TabText_dtor(self);
 }
 
 static void cAbstractTextScorer_Free(cScorerItem *base) {

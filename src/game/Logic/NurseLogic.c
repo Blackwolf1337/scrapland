@@ -106,7 +106,6 @@ static void *cNurseLocalLogic_ctor(void *mem, cEntity *parent) {
 
 static void cNurseLocalLogic_Free(cLocalLogic *elem) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
-	self->base.vftable = CNURSELOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
 	operator_delete(self);
 }

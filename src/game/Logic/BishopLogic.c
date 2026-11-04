@@ -19,7 +19,6 @@ cBishopLocalLogic *cBishopLocalLogic_ctor(cBishopLocalLogic *self, cEntity *pare
 
 static void cBishopLocalLogic_Free(cLocalLogic *elem) {
 	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
-	self->base.vftable = CBISHOPLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	operator_delete(self);
 }

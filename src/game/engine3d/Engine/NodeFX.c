@@ -13,7 +13,6 @@
 
 #define CNODEFX_SPRING_VFTABLE (&CNodeFX_Spring_vftable)
 #define CNODEFX_WHEEL_VFTABLE (&CNodeFX_Wheel_vftable)
-#define INODEFX_VFTABLE (&INodeFX_vftable)
 #define g_NodeFXSpringDamp1 (GVar_NodeFXSpringDamp1.value.f)	/* NodeFXSpringDamp1 */
 #define g_NodeFXSpringDamp2 (GVar_NodeFXSpringDamp2.value.f)	/* NodeFXSpringDamp2 */
 #define g_NodeFXSpringDebug (GVar_NodeFXSpringDebug.value.i)	/* NodeFXSpringDebug: the variables instead of the members */
@@ -26,7 +25,6 @@
 #define g_NodeFXWheelRadius (GVar_NodeFXWheelRadius.value.f)	/* NodeFXWheelRadius */
 #define g_NodeFXWheelShow (GVar_NodeFXWheelShow.value.i)	/* NodeFXWheelShow */
 #define g_NodeFXWheelSlide (GVar_NodeFXWheelSlide.value.f)	/* NodeFXWheelSlide */
-static const INodeFXVtbl INodeFX_vftable;
 static cGVar GVar_NodeFXWheelSlide;
 static cGVar GVar_NodeFXWheelShow;
 static cGVar GVar_NodeFXWheelRadius;
@@ -46,16 +44,6 @@ static const INodeFXVtbl CNodeFX_Spring_vftable;
 static float Vec3_Dist(const vec3_t *a, const vec3_t *b) {
 	float dx = a->x - b->x, dy = a->y - b->y, dz = a->z - b->z;
 	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
-}
-
-static void INodeFX_Free(INodeFX *self) {
-	self->vftable = INODEFX_VFTABLE;
-	operator_delete(self);
-}
-
-static byte INodeFX_Type(INodeFX *self) {
-	(void)self;
-	return NODEFX_NONE;
 }
 
 uint32_t g_TimeMs;
@@ -114,7 +102,6 @@ static CNodeFX_Wheel *CNodeFX_Wheel_ctorCopy(CNodeFX_Wheel *self, const CNodeFX_
 /* not to be used: CHECK(0) */
 static void CNodeFX_Wheel_Free(INodeFX *base) {
 	CNodeFX_Wheel *self = (CNodeFX_Wheel *)base;
-	self->vftable = INODEFX_VFTABLE;
 	operator_delete(self);
 }
 
@@ -263,7 +250,6 @@ static CNodeFX_Spring *CNodeFX_Spring_ctorCopy(CNodeFX_Spring *self, const CNode
 
 static void CNodeFX_Spring_Free(INodeFX *base) {
 	CNodeFX_Spring *self = (CNodeFX_Spring *)base;
-	self->vftable = INODEFX_VFTABLE;
 	operator_delete(self);
 }
 
@@ -430,13 +416,6 @@ void *NodeFX_Clone(INodeFX *fx) {
 	E3D_LogBlue((&g_FileLog), "Unknown Node Effect: %d", NodeFX_Type(fx));
 	return NULL;
 }
-
-/* the vtable of INodeFX */
-static const INodeFXVtbl INodeFX_vftable = {
-	.Free = INodeFX_Free,
-	.Type = INodeFX_Type,
-	.Apply = (void *)crt_purecall,
-};
 
 /* the vtable of CNodeFX_Wheel */
 static const INodeFXVtbl CNodeFX_Wheel_vftable = {

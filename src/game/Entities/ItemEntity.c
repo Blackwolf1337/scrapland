@@ -89,7 +89,6 @@ cEntity *cItemEntity_ctor(void *mem, const char *name, float x, float y, float z
 }
 
 static void cItemEntity_dtor(cItemEntity *self) {
-	self->base.vftable = CITEMENTITY_VFTABLE;
 	cPy_Function_dtor(&self->onReset);
 	cPy_Function_dtor(&self->onTake);
 	Nto1Node_Done(&self->taker);

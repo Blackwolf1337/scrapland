@@ -201,7 +201,6 @@ void *cObjElementFXTesla_ctor(void *self) {
 
 static void cObjElementFXATPC_dtor(void *self) {
 	cObjElementFXATPC *s = self;
-	FXObj_SetVtbl(s, COBJELEMENTFXATPC_VFTABLE);
 	CGameTrail_dtor(&s->ringsDuDv);
 	CGameTrail_dtor(&s->endRing);
 	CGameTrail_dtor(&s->rings);
@@ -214,14 +213,12 @@ static void cObjElementFXATPC_dtor(void *self) {
 
 static void cObjElementFXDevastatorShoot_dtor(void *self) {
 	cObjElementFXDevastatorShoot *s = self;
-	FXObj_SetVtbl(s, COBJELEMENTFXDEVASTATORSHOOT_VFTABLE);
 	CGameTrail_dtor(&s->trail);
 	cObjElement_dtor(s);
 }
 
 static void cObjElementFXInfernoExplosion_dtor(void *self) {
 	cObjElementFXInfernoExplosion *s = self;
-	FXObj_SetVtbl(s, COBJELEMENTFXINFERNOEXPLOSION_VFTABLE);
 	FXObj_TrailsDtor(s->trails, FXINFERNO_TRAILS);
 	CGameParticles_Release(&s->cores);
 	CGameParticles_Release(&s->particles);
@@ -239,7 +236,6 @@ static void cObjElementFXInfernoMissile_dtor(void *self) {
 
 static void cObjElementFXLaser_dtor(void *self) {
 	cObjElementFXLaser *s = self;
-	FXObj_SetVtbl(s, COBJELEMENTFXLASER_VFTABLE);
 	CGameParticles_Release(&s->particles);
 	CGameTrail_dtor(&s->trail);
 	cObjElement_dtor(s);
@@ -247,7 +243,6 @@ static void cObjElementFXLaser_dtor(void *self) {
 
 static void cObjElementFXSwarmMissile_dtor(void *self) {
 	cObjElementFXSwarmMissile *s = self;
-	FXObj_SetVtbl(s, COBJELEMENTFXSWARMMISSILE_VFTABLE);
 	CGameParticles_Release(&s->particles);
 	CGameTrail_dtor(&s->trail);
 	cObjElement_dtor(s);
@@ -255,7 +250,6 @@ static void cObjElementFXSwarmMissile_dtor(void *self) {
 
 static void cObjElementFXTesla_dtor(void *self) {
 	cObjElementFXTesla *s = self;
-	FXObj_SetVtbl(s, COBJELEMENTFXTESLA_VFTABLE);
 	FXObj_TrailsDtor(s->trails, FXTESLA_SLOTS * FXTESLA_TRAILS);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);

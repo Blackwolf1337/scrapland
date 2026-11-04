@@ -22,7 +22,6 @@ void *cAIHuman_ctor(void *mem, cEntity *e, int *arg) {
 /* AIHuman.c */
 static void cAIHuman_Free(cAI *base) {
 	cAIHuman *self = (cAIHuman *)base;
-	self->vftable = CAIHUMAN_VFTABLE;
 	cAIChar_dtor(self);
 	operator_delete(self);
 }

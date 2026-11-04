@@ -140,7 +140,7 @@ CD3DApplication *CD3DApp_ctor(CD3DApplication *self) {
 }
 
 void CD3DApp_dtor(CD3DApplication *self) {
-	self->vftable = CD3DAPPLICATION_VFTABLE;
+	(void)self;
 	g_Engine = NULL;
 }
 

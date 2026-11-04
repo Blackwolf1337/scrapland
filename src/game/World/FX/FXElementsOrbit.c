@@ -30,14 +30,12 @@ static cFXElementsOrbitBuoyController *cFXElementsOrbitBuoyController_ctor(cFXEl
 
 /* the light is released twice, by the class and by the member destructor */
 static void cFXElementsOrbitBuoy_dtor(cFXElementsOrbitBuoy *self) {
-	self->base.vftable = CFXELEMENTSORBITBUOY_VFTABLE;
 	CGameParticles_Release(&self->light);
 	CGameParticles_Release(&self->light);
 	cMapElement_dtor(&self->base);
 }
 
 static void cFXElementsOrbitBuoyController_dtor(cFXElementsOrbitBuoyController *self) {
-	self->base.vftable = CFXELEMENTSORBITBUOYCONTROLLER_VFTABLE;
 	cMapElement_dtor(&self->base);
 }
 

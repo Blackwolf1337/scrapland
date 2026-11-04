@@ -55,7 +55,6 @@ cGenCharLocalLogic *cGenCharLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *p
 }
 
 void cGenCharLocalLogic_dtor(cGenCharLocalLogic *self) {
-	self->base.vftable = CGENCHARLOCALLOGIC_VFTABLE;
 	cString_dtor(&self->defaultTarget);
 	cBaseLocalLogic_dtor(&self->base);
 }

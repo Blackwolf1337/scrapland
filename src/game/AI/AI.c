@@ -50,7 +50,6 @@ void cAI_dtor(cAI *self) {
 }
 
 static void cAI_Free(cAI *self) {
-	self->vftable = CAI_VFTABLE;
 	operator_delete(self);
 }
 

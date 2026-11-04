@@ -16,7 +16,6 @@
 #include "scrap/staticinit.h"
 
 #define CSISTPART_VFTABLE (&CParticleSystem_vftable)
-#define COBJBASE3D_VFTABLE (&CObjBase3D_vftable)
 #define CPARTICLEACTIVE_VFTABLE (&CParticleActive_vftable)
 #define CPARTICLESTATIC_VFTABLE (&CParticleStatic_vftable)
 #define g_ParticleSystemOn (GVar_R_Particles.value.i)
@@ -38,7 +37,6 @@ static cGVar GVar_R_ParticleFlags;
 static const IObject3DVtbl CParticleSystem_vftable;
 static const CParticleVtbl CParticleStatic_vftable;
 static const CParticleVtbl CParticleActive_vftable;
-static const IObject3DVtbl CObjBase3D_vftable;
 #define PARTICLESYSTEM_DEFAULT_COLOR 0xffffff
 
 /* a random value between a and b, the way the exe computes it */
@@ -170,7 +168,6 @@ static CParticleSystem *CParticleSystem_ctorParams(CParticleSystem *self, CNode3
 }
 
 void CObjBase3D_dtor(CObjBase3D *self) {
-	self->base.vftable = COBJBASE3D_VFTABLE;
 	CObjBase3D_SetNode(self, NULL);
 	self->base.vftable = IOBJECT3D_VFTABLE;
 }
@@ -216,12 +213,6 @@ static ParticleSystemParams *ParticleSystemParams_Assign(ParticleSystemParams *s
 	self->bounce = src->bounce;
 	self->zBias = src->zBias;
 	return self;
-}
-
-static void CObjBase3D_Free(IObject3D *base) {
-	CObjBase3D *self = (CObjBase3D *)base;
-	CObjBase3D_dtor(self);
-	operator_delete(self);
 }
 
 static void CParticleSystem_Free(IObject3D *base) {
@@ -993,17 +984,6 @@ const IObject3DVtbl IObject3D_vftable = {
 	.Render = (void *)crt_purecall,
 	.InitD3D = (void *)crt_purecall,
 	.ReleaseD3D = (void *)crt_purecall,
-	.Write = IObject3D_WriteFalse,
-	.Read = IObject3D_ReadFalse,
-};
-
-/* the vtable of CObjBase3D */
-static const IObject3DVtbl CObjBase3D_vftable = {
-	.Free = CObjBase3D_Free,
-	.Update = IObject3D_UpdateNop,
-	.Render = IObject3D_RenderNop,
-	.InitD3D = IObject3D_InitD3DNop,
-	.ReleaseD3D = IObject3D_ReleaseD3DNop,
 	.Write = IObject3D_WriteFalse,
 	.Read = IObject3D_ReadFalse,
 };

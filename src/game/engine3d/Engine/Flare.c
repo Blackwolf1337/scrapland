@@ -46,7 +46,6 @@ static void CFlare_FreeGraphic(CFlare *self) {
 }
 
 static void CFlare_dtor(CFlare *self) {
-	self->vftable = CFLARE_VFTABLE;
 	CFlare_FreeGraphic(self);
 	CObjBase3D_dtor((CObjBase3D *)self);
 }

@@ -134,7 +134,6 @@ static void NWGrid_Clear(cGridElements_InfPointVisPtr *self) {
 }
 
 static void NWGrid_Free(cGridElements_InfPointVisPtr *self) {
-	self->vftable = NWGRID_VFTABLE;
 	NWGrid_Clear(self);
 	operator_delete(self);
 }
@@ -179,7 +178,6 @@ static void NWSup_FreeVecList(cNWVecList *list, void(*clear)(cNWVecList *list)) 
 }
 
 void CNodesWorldSup_dtor(CNodesWorld *self) {
-	self->sup.vftable = CNODESWORLDSUP_VFTABLE;
 	NWSup_FreeVecList(&self->sup.errOneWay, DListVec3_Clear);
 	NWSup_FreeVecList(&self->sup.errUnlinked, DListVec3_Clear);
 	NWSup_FreeVecList(&self->sup.errCollide, DListVec3_Clear);

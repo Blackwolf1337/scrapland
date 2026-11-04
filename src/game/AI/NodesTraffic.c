@@ -111,7 +111,6 @@ static void cGridElements_Clear(cGridElements *self) {
 }
 
 static void cGridElements_Free(cGridElements *self) {
-	self->vftable = CGRIDELEMENTS_VFTABLE;
 	cGridElements_Clear(self);
 	operator_delete(self);
 }

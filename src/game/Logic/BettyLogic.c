@@ -19,7 +19,6 @@ cBettyLocalLogic *cBettyLocalLogic_ctor(cBettyLocalLogic *self, cEntity *parent)
 
 static void cBettyLocalLogic_Free(cLocalLogic *elem) {
 	cBettyLocalLogic *self = (cBettyLocalLogic *)elem;
-	self->base.base.base.vftable = CBETTYLOCALLOGIC_VFTABLE;
 	cFunctionaryLocalLogic_dtor(&self->base);
 	operator_delete(self);
 }

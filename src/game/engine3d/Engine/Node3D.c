@@ -137,7 +137,6 @@ CNode3D *CNode3D_ctor(CNode3D *self) {
 }
 
 void CNode3D_dtor(CNode3D *self) {
-	self->vftable = CNODO3D_VFTABLE;
 	g_Node3DCount--;
 	CHECK(!self->prev && !self->next);
 	CNode3D_Release(self);

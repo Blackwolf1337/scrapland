@@ -907,7 +907,6 @@ static int CEngineApp_InitDeviceObjects(CD3DApplication *elem) {
 /* ---- CEntradaNula: every method of the input does nothing ---- */
 
 static void CNullInput_Free(CNullInput *self) {
-	self->vftable = CNULLINPUT_VFTABLE;
 	IInput_dtor(self);
 	operator_delete(self);
 }

@@ -22,7 +22,7 @@ IInput *IInput_ctor(IInput *self) {
 }
 
 void IInput_dtor(IInput *self) {
-	self->vftable = IINPUT_VFTABLE;
+	(void)self;
 	g_InputInit = 0;
 }
 

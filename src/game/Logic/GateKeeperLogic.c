@@ -78,7 +78,6 @@ static cGateKeeperLocalLogic *cGateKeeperLocalLogic_ctor(cGateKeeperLocalLogic *
 }
 
 static void cGateKeeperLocalLogic_dtor(cGateKeeperLocalLogic *self) {
-	self->base.vftable = CGATEKEEPERLOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
 }
 

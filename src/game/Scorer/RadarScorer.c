@@ -93,7 +93,6 @@ cRadarScorer *cRadarScorer_ctor(cRadarScorer *self) {
 
 static void cRadarScorer_dtor(cRadarScorer *self) {
 	CPsaImage *img = self->radar;
-	self->base.vftable = CRADARSCORER_VFTABLE;
 	Radar_FreeImage(img);
 	Radar_FreeImage(self->mask);
 	Radar_FreeImage(self->icons);

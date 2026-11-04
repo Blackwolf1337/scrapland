@@ -147,7 +147,6 @@ cAICharControl *cAIControlBankDirector_ctor(void *mem, cEntity *e, cAIChar *ai, 
 }
 
 static void cAIControlBankDirector_Free(cAIControlBankDirector *self) {
-	self->vftable = CAICONTROLBANKDIRECTOR_VFTABLE;
 	cAICharControl2D_dtor(self);
 	operator_delete(self);
 }
@@ -214,7 +213,6 @@ cAICharControl *cAIControlBankMaster_ctor(void *mem, cEntity *e, cAIChar *ai, in
 }
 
 static void cAIControlBankMaster_Free(cAIControlBankMaster *self) {
-	self->vftable = CAICONTROLBANKMASTER_VFTABLE;
 	cAICharControl2D_dtor(self);
 	operator_delete(self);
 }
@@ -394,7 +392,6 @@ cAICharControl *cAIControlBishop_ctor(void *mem, cEntity *e, cAIChar *ai, int *a
 }
 
 static void cAIControlBishop_Free(cAICharControl *self) {
-	self->vftable = CAICONTROLBISHOP_VFTABLE;
 	cAICharControl2D_dtor(self);
 	operator_delete(self);
 }
@@ -447,7 +444,6 @@ cAICharControl *cAIControlGear_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg
 }
 
 static void cAIControlGear_Free(cAICharControl *self) {
-	self->vftable = CAICONTROLGEAR_VFTABLE;
 	cAICharControl2D_dtor(self);
 	operator_delete(self);
 }
@@ -553,7 +549,6 @@ cAICharControl *cAIControlMessenger_ctor(void *mem, cEntity *e, cAIChar *ai, int
 }
 
 static void cAIControlMessenger_Free(cAIControlMessenger *self) {
-	self->vftable = CAICONTROLMESSENGER_VFTABLE;
 	cAICharControl3D_dtor(self);
 	operator_delete(self);
 }
@@ -614,7 +609,6 @@ cAICharControl *cAIControlNurse_ctor(void *mem, cEntity *e, cAIChar *ai, int *ar
 }
 
 static void cAIControlNurse_Free(cAIControlNurse *self) {
-	self->vftable = CAICONTROLNURSE_VFTABLE;
 	cAICharControl3D_dtor(self);
 	operator_delete(self);
 }
@@ -647,7 +641,6 @@ cAICharControl *cAIControlSentinel_ctor(void *mem, cEntity *e, cAIChar *ai, int 
 }
 
 static void cAIControlSentinel_Free(cAICharControl *self) {
-	self->vftable = CAICONTROLSENTINEL_VFTABLE;
 	cAICharControl3D_dtor(self);
 	operator_delete(self);
 }

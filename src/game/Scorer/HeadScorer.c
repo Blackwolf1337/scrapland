@@ -31,7 +31,6 @@ cHeadScorer *cHeadScorer_ctor(cHeadScorer *self) {
 
 static void cHeadScorer_dtor(cHeadScorer *self) {
 	CGameCamera *cam = self->cam;
-	self->base.vftable = CHEADSCORER_VFTABLE;
 	if (cam) {
 		CGameCamera_dtor(cam);
 		operator_delete(cam);

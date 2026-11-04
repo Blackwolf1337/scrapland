@@ -22,7 +22,6 @@ cFileMem *cFileMem_ctor(cFileMem *self, void *buffer, int maxSize, byte ownsBuff
 }
 
 void cFileMem_dtor(cFileMem *self) {
-	self->base.vftable = CFILEMEM_VFTABLE;
 	if (self->ownsBuffer && self->buffer) {
 		Mem_Free(self->buffer);
 	}

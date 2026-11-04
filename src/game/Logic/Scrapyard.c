@@ -80,7 +80,6 @@ void cShipGroup_dtor(cShipGroup *self) {
 }
 
 static void cScrapyardLocalLogic_Free(cScrapyardLocalLogic *self) {
-	self->vftable = CSCRAPYARDLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 	operator_delete(self);
 }

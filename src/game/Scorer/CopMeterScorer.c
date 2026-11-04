@@ -48,7 +48,6 @@ cCopMeterScorer *cCopMeterScorer_ctor(cCopMeterScorer *self) {
 
 static void cCopMeterScorer_dtor(cCopMeterScorer *self) {
 	CPsaImage *img = self->img;
-	self->base.vftable = CCOPMETERSCORER_VFTABLE;
 	CopMeter_FreeImage(img);
 	CopMeter_FreeImage(self->flash);
 	cScorerItem_dtor(&self->base);

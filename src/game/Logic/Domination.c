@@ -258,7 +258,6 @@ cDominationEnemiesLogic *cDominationEnemiesLogic_ctor(cDominationEnemiesLogic *s
 }
 
 void cDominationEnemiesLogic_dtor(cDominationEnemiesLogic *self) {
-	self->base.vftable = CDOMINATIONENEMIESLOGIC_VFTABLE;
 	if (self->side) {
 		operator_delete(self->side);
 	}
@@ -266,7 +265,6 @@ void cDominationEnemiesLogic_dtor(cDominationEnemiesLogic *self) {
 }
 
 void cDominationLogic_dtor(cDominationLogic *self) {
-	self->vftable = CDOMINATIONLOGIC_VFTABLE;
 	g_DominNumZones = 0;
 	NameTable_Clear(&self->assigned);
 }

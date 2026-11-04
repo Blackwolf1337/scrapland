@@ -37,7 +37,6 @@ cBossLocalLogic *cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity *parent) {
 
 static void cBossLocalLogic_Free(cLocalLogic *elem) {
 	cBossLocalLogic *self = (cBossLocalLogic *)elem;
-	self->base.base.vftable = CBOSSLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(&self->base);
 	operator_delete(self);
 }

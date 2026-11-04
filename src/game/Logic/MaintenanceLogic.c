@@ -46,7 +46,6 @@ void *cMaintenanceLocalLogic_ctor(void *mem, cEntity *parent) {
 
 static void cMaintenanceLocalLogic_Free(cLocalLogic *elem) {
 	cMaintenanceLocalLogic *self = (cMaintenanceLocalLogic *)elem;
-	self->base.base.vftable = CMAINTENANCELOCALLOGIC_VFTABLE;
 	g_MaintenanceShip = NULL;
 	g_MaintenanceFirstShip = NULL;
 	cGenCharLocalLogic_dtor(&self->base);

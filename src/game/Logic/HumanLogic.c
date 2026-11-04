@@ -46,7 +46,6 @@ void *cHumanLocalLogic_ctor(void *mem, cEntity *parent) {
 }
 
 static void cHumanLocalLogic_dtor(cHumanLocalLogic *self) {
-	self->base.vftable = CHUMANLOCALLOGIC_VFTABLE;
 	cPy_Function_dtor(&self->func);
 	cBaseLocalLogic_dtor(&self->base);
 }

@@ -45,7 +45,6 @@ void *cRustyLocalLogic_ctor(void *mem, cEntity *parent) {
 
 static void cRustyLocalLogic_Free(cLocalLogic *elem) {
 	cRustyLocalLogic *self = (cRustyLocalLogic *)elem;
-	self->base.base.vftable = CRUSTYLOCALLOGIC_VFTABLE;
 	g_JunkPointsList = NULL;
 	cGenCharLocalLogic_dtor(&self->base);
 	operator_delete(self);

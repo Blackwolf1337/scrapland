@@ -6,22 +6,11 @@
 
 #include "scrap/filesys.h"
 
-#define CABSTRACTFILE_VFTABLE (&cAbstractFile_vftable)
-static const cAbstractFileVtbl cAbstractFile_vftable;
 
 void cAbstractFile_dtor(cAbstractFile *self) {
-	self->vftable = CABSTRACTFILE_VFTABLE;
 	if (self->name) {
 		Mem_Free(self->name);
 	}
-}
-
-static cAbstractFile *cAbstractFile_Destroy(cAbstractFile *self, int flags) {
-	cAbstractFile_dtor(self);
-	if (flags & 1) {
-		operator_delete(self);
-	}
-	return self;
 }
 
 /* keeps a copy of the name; the derived classes open the file */
@@ -89,15 +78,3 @@ int cAbstractFile_ExistsTrue(cAbstractFile *self, const char *name) {
 	return 1;
 }
 
-/* the vtable of cAbstractFile */
-static const cAbstractFileVtbl cAbstractFile_vftable = {
-	.Open = cAbstractFile_Open,
-	.Exists = (void *)crt_purecall,
-	.Close = cAbstractFile_Close,
-	.Read = (void *)crt_purecall,
-	.Write = (void *)crt_purecall,
-	.Seek = (void *)crt_purecall,
-	.Tell = (void *)crt_purecall,
-	.Size = (void *)crt_purecall,
-	.Destroy = cAbstractFile_Destroy,
-};

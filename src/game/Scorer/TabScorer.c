@@ -40,7 +40,6 @@ cTabScorer *cTabScorer_ctor(cTabScorer *self) {
 
 static void cTabScorer_dtor(cTabScorer *self) {
 	CPsaImage *img = self->img;
-	self->base.vftable = CTABSCORER_VFTABLE;
 	if (img) {
 		ScorerImg_Free(img);
 		self->img = NULL;

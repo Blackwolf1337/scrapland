@@ -60,12 +60,10 @@ static cFXElementsMentalControllerMainFX *cFXElementsMentalControllerMainFX_ctor
 }
 
 static void cFXElementsMentalController_dtor(cFXElementsMentalController *self) {
-	self->base.vftable = CFXELEMENTSMENTALCONTROLLER_VFTABLE;
 	cMapElement_dtor(&self->base);
 }
 
 static void cFXElementsMentalControllerDamageFX_dtor(cFXElementsMentalControllerDamageFX *self) {
-	self->base.base.vftable = CFXELEMENTSMENTALCONTROLLERDAMAGEFX_VFTABLE;
 	CGameParticles_Release(&self->smoke);
 	CGameParticles_Release(&self->flash);
 	CGameParticles_Release(&self->flash);

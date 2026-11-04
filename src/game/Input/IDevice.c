@@ -99,7 +99,6 @@ cFuncGvarDevices *cFuncGvarDevices_ctor(cFuncGvarDevices *self, cAbstractIDevice
 
 /* the variable stays in g_GVars, as in the original */
 void cAbstractIDevice_dtor(cAbstractIDevice *self) {
-	self->vftable = CABSTRACTIDEVICE_VFTABLE;
 	if (self->entries) {
 		Mem_Free(self->entries);
 	}

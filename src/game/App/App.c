@@ -111,7 +111,6 @@ CApp *CApp_ctor(CApp *self, const char *cmdLine) {
 }
 
 void CApp_dtor(CApp *self) {
-	self->vftable = g_CAppVftable;
 	Net_Done();
 	Mem_Free(self->cmdLine);
 	Python_Shutdown();

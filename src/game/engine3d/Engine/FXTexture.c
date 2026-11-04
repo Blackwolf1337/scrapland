@@ -42,7 +42,6 @@ static void IFXTexture_dtor(IFXTexture *self) {
 }
 
 static void IFXTexture_Free(IFXTexture *self) {
-	self->vftable = IFXTEXTURE_VFTABLE;
 	operator_delete(self);
 }
 
@@ -99,7 +98,6 @@ static CFXTexLava *CFXTexLava_ctor(CFXTexLava *self, const char *file) {
 }
 
 static void CFXTexLava_dtor(CFXTexLava *self) {
-	self->base.vftable = CFXTEXLAVA_VFTABLE;
 	FXTex_FreeBmp(&self->bmp);
 	FXTex_FreeBmp(&self->orig);
 	IFXTexture_dtor(&self->base);
@@ -172,7 +170,6 @@ static CFXTexScroll *CFXTexScroll_ctor(CFXTexScroll *self, const char *file) {
 }
 
 static void CFXTexScroll_dtor(CFXTexScroll *self) {
-	self->base.vftable = CFXTEXSCROLL_VFTABLE;
 	FXTex_FreeBmp(&self->bmp);
 	FXTex_FreeBmp(&self->orig);
 	IFXTexture_dtor(&self->base);

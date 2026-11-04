@@ -19,7 +19,6 @@ cBertoLocalLogic *cBertoLocalLogic_ctor(cBertoLocalLogic *self, cEntity *parent)
 
 static void cBertoLocalLogic_Free(cLocalLogic *elem) {
 	cBertoLocalLogic *self = (cBertoLocalLogic *)elem;
-	self->base.base.base.vftable = CBERTOLOCALLOGIC_VFTABLE;
 	cFunctionaryLocalLogic_dtor(&self->base);
 	operator_delete(self);
 }

@@ -64,7 +64,6 @@ CCamera *CCamera_ctorCopy(CCamera *self, const CCamera *other) {
 }
 
 void CCamera_dtor(CCamera *self) {
-	self->vftable = CCAMERA_VFTABLE;
 	Camera_Link(&self->node, NULL);
 	Camera_Link(&self->nodeTarget, NULL);
 	self->vftable = IOBJECT3D_VFTABLE;

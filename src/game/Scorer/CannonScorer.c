@@ -37,7 +37,6 @@ cCannonScorer *cCannonScorer_ctor(cCannonScorer *self) {
 
 static void cCannonScorer_dtor(cCannonScorer *self) {
 	CPsaImage *img = self->img;
-	self->base.vftable = CCANNONSCORER_VFTABLE;
 	if (img) {
 		CPsaImage_dtor(img);
 		operator_delete(img);

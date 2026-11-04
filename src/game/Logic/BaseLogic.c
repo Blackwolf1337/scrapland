@@ -55,7 +55,6 @@ cBaseLocalLogic *cBaseLocalLogic_ctor(cBaseLocalLogic *self, cEntity *parent) {
 }
 
 void cBaseLocalLogic_dtor(cBaseLocalLogic *self) {
-	self->vftable = CBASELOCALLOGIC_VFTABLE;
 	Nto1Node_Done(&self->target);
 	self->logic.vftable = CLOCALLOGIC_VFTABLE;
 }
@@ -71,7 +70,6 @@ static void cBaseLocalLogic_Free(cLocalLogic *base) {
 }
 
 static void cLocalLogic_Free(cLocalLogic *self) {
-	self->vftable = CLOCALLOGIC_VFTABLE;
 	operator_delete(self);
 }
 

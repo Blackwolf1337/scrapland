@@ -95,7 +95,6 @@ cEmbeddedFXVehicle *cEmbeddedFXVehicle_ctor(cEmbeddedFXVehicle *self) {
 }
 
 static void cEmbeddedFXVehicle_dtor(cEmbeddedFXVehicle *self) {
-	self->vftable = CEMBEDDEDFXVEHICLE_VFTABLE;
 	CHECK(!self->sirens);
 	CHECK(!self->other);
 	CGameParticles_Release(&self->follow2);

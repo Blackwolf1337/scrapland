@@ -21,7 +21,6 @@ void *cAIBankMaster_ctor(void *mem, cEntity *e, int *arg) {
 
 static void cAIBankMaster_Free(cAI *elem) {
 	cAIBankMaster *self = (cAIBankMaster *)elem;
-	self->base.vftable = CAIBANKMASTER_VFTABLE;
 	cAIChar_dtor(&self->base);
 	operator_delete(self);
 }

@@ -18,7 +18,6 @@ cHumphreyLocalLogic *cHumphreyLocalLogic_ctor(cHumphreyLocalLogic *self, cEntity
 
 static void cHumphreyLocalLogic_Free(cLocalLogic *elem) {
 	cHumphreyLocalLogic *self = (cHumphreyLocalLogic *)elem;
-	self->base.base.base.vftable = CHUMPHREYLOCALLOGIC_VFTABLE;
 	cFunctionaryLocalLogic_dtor(&self->base);
 	operator_delete(self);
 }

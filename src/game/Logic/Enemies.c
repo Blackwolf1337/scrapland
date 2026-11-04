@@ -35,7 +35,6 @@ void Logic_NativeNop(cAbstractFile *params) {
 }
 
 static void cEnemiesLocalLogic_Free(cEnemiesLocalLogic *self) {
-	self->vftable = CENEMIESLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 	operator_delete(self);
 }

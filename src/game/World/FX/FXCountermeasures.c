@@ -1437,7 +1437,6 @@ void *cObjElementFXSonicExplosion_ctor(void *self) {
 static void cObjElementFXDebrisCloud_dtor(void *self) {
 	cObjElementFXDebrisCloud *s = self;
 
-	FXObj_SetVtbl(s, COBJELEMENTFXDEBRISCLOUD_VFTABLE);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }
@@ -1455,7 +1454,6 @@ static void cObjElementFXEMI_dtor(void *self) {
 static void cObjElementFXHook_dtor(void *self) {
 	cObjElementFXHook *s = self;
 
-	FXObj_SetVtbl(s, COBJELEMENTFXHOOK_VFTABLE);
 	CGameParticles_Release(&s->particles);
 	CGameTrail_dtor(&s->trail[1]);
 	CGameTrail_dtor(&s->trail[0]);
@@ -1465,7 +1463,6 @@ static void cObjElementFXHook_dtor(void *self) {
 static void cObjElementFXSonicExplosion_dtor(void *self) {
 	cObjElementFXSonicExplosion *s = self;
 
-	FXObj_SetVtbl(s, COBJELEMENTFXSONICEXPLOSION_VFTABLE);
 	CGameParticles_Release(&s->rings);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);

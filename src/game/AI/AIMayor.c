@@ -21,7 +21,6 @@ void *cAIMayor_ctor(void *mem, cEntity *e, int *arg) {
 /* AIMayor.c */
 static void cAIMayor_Free(cAI *base) {
 	cAIMayor *self = (cAIMayor *)base;
-	self->vftable = CAIMAYOR_VFTABLE;
 	cAIChar_dtor(self);
 	operator_delete(self);
 }

@@ -108,7 +108,6 @@ cAICharGroup *cAICharGroup_ctor(void *mem) {
 }
 
 static void cAICharGroup_dtor(cAICharGroup *self) {
-	self->vftable = CAICHARGROUP_VFTABLE;
 	for (int i = 0; i < self->numZones; i++) {
 		cAICGPoint *p = self->zones[i].points;
 		if (p) {

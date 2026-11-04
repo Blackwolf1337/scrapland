@@ -49,7 +49,6 @@ static cEntity *g_SputnikPisser;
 /* SputnikJunkyardLogic.cpp: a cGenCharLocalLogic, states 7 the walk, 8 the laugh in front of the camera */
 static void cSputnikJunkyardLocalLogic_Free(cLocalLogic *base) {
 	cSputnikJunkyardLocalLogic *self = (cSputnikJunkyardLocalLogic *)base;
-	self->base.vftable = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
 	g_SputnikPisser = NULL;
 	cGenCharLocalLogic_dtor(self);
 	operator_delete(self);

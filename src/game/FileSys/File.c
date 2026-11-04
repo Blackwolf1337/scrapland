@@ -8,7 +8,6 @@
 enum { CRT_SEEK_SET = 0, CRT_SEEK_END = 2 };
 
 void cFile_dtor(cFile *self) {
-	self->base.vftable = CFILE_VFTABLE;
 	if (self->f) {
 		crt_fclose(self->f);
 	}

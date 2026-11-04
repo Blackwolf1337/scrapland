@@ -43,7 +43,6 @@ static CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char
 }
 
 static void CWinApp_dtor(CWinApp *self) {
-	self->base.vftable = g_CWinAppVftable;
 	CApp_dtor(&self->base);
 }
 

@@ -195,7 +195,6 @@ CLight *CLight_ctor(CLight *self) {
 }
 
 static void CLight_dtor(CLight *self) {
-	self->vftable = CLUZ_VFTABLE;
 	Light_Release(&self->node);
 	self->node = NULL;
 	Light_Release(&self->nodeTarget);
@@ -218,7 +217,6 @@ static void CLight_Free(IObject3D *base) {
 }
 
 void IObject3D_Free(IObject3D *self) {
-	self->vftable = IOBJECT3D_VFTABLE;
 	operator_delete(self);
 }
 

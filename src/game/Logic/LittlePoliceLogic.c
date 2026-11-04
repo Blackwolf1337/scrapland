@@ -52,7 +52,6 @@ void *cLittlePoliceLocalLogic_ctor(void *mem, cEntity *parent) {
 
 static void cLittlePoliceLocalLogic_Free(cLocalLogic *elem) {
 	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)elem;
-	self->base.base.vftable = CLITTLEPOLICELOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(&self->base);
 	operator_delete(self);
 }

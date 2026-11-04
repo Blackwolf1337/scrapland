@@ -30,7 +30,6 @@ cNetStatsScorer *cNetStatsScorer_ctor(cNetStatsScorer *self) {
 
 static void cNetStatsScorer_dtor(cNetStatsScorer *self) {
 	CPsaImage *img = self->img;
-	self->base.vftable = CNETSTATSSCORER_VFTABLE;
 	if (img) {
 		CPsaImage_dtor(img);
 		operator_delete(img);

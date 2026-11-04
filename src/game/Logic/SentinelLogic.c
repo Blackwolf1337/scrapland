@@ -66,7 +66,6 @@ void *cSentinelLocalLogic_ctor(void *mem, cEntity *parent) {
 
 static void cSentinelLocalLogic_Free(cLocalLogic *elem) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
-	self->base.vftable = CSENTINELLOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
 	operator_delete(self);
 }

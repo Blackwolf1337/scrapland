@@ -32,7 +32,6 @@ cDominationFriendsLogic *cDominationFriendsLogic_ctor(cDominationFriendsLogic *s
 }
 
 void cDominationFriendsLogic_dtor(cDominationFriendsLogic *self) {
-	self->base.vftable = CDOMINATIONFRIENDSLOGIC_VFTABLE;
 	if (self->side) {
 		operator_delete(self->side);
 	}

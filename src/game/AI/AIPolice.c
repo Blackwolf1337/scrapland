@@ -21,7 +21,6 @@ void *cAIPolice_ctor(void *mem, cEntity *e, int *arg) {
 /* AIPolice.c */
 static void cAIPolice_Free(cAI *base) {
 	cAIPolice *self = (cAIPolice *)base;
-	self->vftable = CAIPOLICE_VFTABLE;
 	cAIChar_dtor(self);
 	operator_delete(self);
 }

@@ -56,7 +56,6 @@ static void Circuit_FreeImage(CPsaImage **img) {
 }
 
 static void cCircuitScorer_dtor(cCircuitScorer *self) {
-	self->base.vftable = CCIRCUITSCORER_VFTABLE;
 	Circuit_FreeImage(&self->circuit);
 	Circuit_FreeImage(&self->flare);
 	cString_dtor(&self->file);

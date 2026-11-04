@@ -23,7 +23,6 @@ void *cAISentinel_ctor(void *mem, cEntity *e, int *arg) {
 /* AISentinel.c */
 static void cAISentinel_Free(cAI *base) {
 	cAISentinel *self = (cAISentinel *)base;
-	self->vftable = CAISENTINEL_VFTABLE;
 	cAIChar_dtor(self);
 	operator_delete(self);
 }

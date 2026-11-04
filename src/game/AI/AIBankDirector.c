@@ -25,7 +25,6 @@ void *cAIBankDirector_ctor(void *mem, cEntity *e, int *arg) {
 /* AIBankDirector.c, AIBankMaster.c */
 static void cAIBankDirector_Free(cAI *elem) {
 	cAIBankDirector *self = (cAIBankDirector *)elem;
-	self->base.vftable = CAIBANKDIRECTOR_VFTABLE;
 	cAIChar_dtor(&self->base);
 	operator_delete(self);
 }

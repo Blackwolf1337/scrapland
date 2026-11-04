@@ -262,27 +262,23 @@ static void cEmbeddedFX_Free(cEmbeddedFX *self) {
 }
 
 static void cEmbeddedFXBankDirector_dtor(cEmbeddedFXBankDirector *self) {
-	EFX_SetVtbl(self, VT_BANKDIRECTOR);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);
 }
 
 static void cEmbeddedFXBankMaster_dtor(cEmbeddedFXBankMaster *self) {
-	EFX_SetVtbl(self, VT_BANKMASTER);
 	CGameParticles_Release(&self->baton);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);
 }
 
 static void cEmbeddedFXCrazyGambler_dtor(cEmbeddedFXCrazyGambler *self) {
-	EFX_SetVtbl(self, VT_CRAZYGAMBLER);
 	EFX_TrailsDtor(self->trails, FXGAMBLER_ARCS);
 	CGameParticles_Release(&self->particles);
 	cEmbeddedFX_dtor(&self->base);
 }
 
 static void cEmbeddedFXGear_dtor(cEmbeddedFXGear *self) {
-	EFX_SetVtbl(self, VT_GEAR);
 	CGameTrail_dtor(&self->trail);
 	CGameParticles_Release(&self->shoot);
 	CGameParticles_Release(&self->alarm.particles);
@@ -290,13 +286,11 @@ static void cEmbeddedFXGear_dtor(cEmbeddedFXGear *self) {
 }
 
 static void cEmbeddedFXMaintenance_dtor(cEmbeddedFXMaintenance *self) {
-	EFX_SetVtbl(self, VT_MAINTENANCE);
 	CGameParticles_Release(&self->light);
 	cEmbeddedFX_dtor(&self->base);
 }
 
 static void cEmbeddedFXMercenary_dtor(cEmbeddedFXMercenary *self) {
-	EFX_SetVtbl(self, VT_MERCENARY);
 	CGameParticles_Release(&self->pipe);
 	CGameParticles_Release(&self->bubbles);
 	CGameParticles_Release(&self->glow);
@@ -304,20 +298,17 @@ static void cEmbeddedFXMercenary_dtor(cEmbeddedFXMercenary *self) {
 }
 
 static void cEmbeddedFXMessenger_dtor(cEmbeddedFXMessenger *self) {
-	EFX_SetVtbl(self, VT_MESSENGER);
 	EFX_TrailsDtor(self->trails, FXEMBMESSENGER_TRAILS);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);
 }
 
 static void cEmbeddedFXPolice_dtor(cEmbeddedFXPolice *self) {
-	EFX_SetVtbl(self, VT_POLICE);
 	CGameParticles_Release(&self->alarm.particles);
 	cEmbeddedFX_dtor(&self->base);
 }
 
 static void cEmbeddedFXRusty_dtor(cEmbeddedFXRusty *self) {
-	EFX_SetVtbl(self, VT_RUSTY);
 	EFX_TrailsDtor(self->trails, FXRUSTY_TRAILS);
 	CGameParticles_Release(&self->glowLighting);
 	CGameParticles_Release(&self->sparks);
@@ -327,7 +318,6 @@ static void cEmbeddedFXRusty_dtor(cEmbeddedFXRusty *self) {
 }
 
 static void cEmbeddedFXSentinel_dtor(cEmbeddedFXSentinel *self) {
-	EFX_SetVtbl(self, VT_SENTINEL);
 	CGameParticles_Release(&self->alarm.particles);
 	EFX_TrailsDtor(self->edgesB, FXSENTINEL_LASERS);
 	EFX_TrailsDtor(self->edgesA, FXSENTINEL_LASERS);

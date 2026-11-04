@@ -96,7 +96,6 @@ cEntity *cFollowCamEntity_ctor(void *mem, const char *name, float x, float y, fl
 static void cFollowCamEntity_dtor(cEntity *self) {
 	cFollowCamEntity *fc = FCam(self);
 
-	self->vftable = CFOLLOWCAMENTITY_VFTABLE;
 	cPy_Function_Clear(&fc->onSwitch);
 	cCamEntity_SetTarget(self, NULL);
 	cPy_Function_dtor(&fc->onSwitch);

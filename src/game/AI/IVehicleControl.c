@@ -1908,7 +1908,6 @@ cAIVehicleGroup *cAIVehicleGroup_ctor(void *mem) {
 
 /* ---- cAIVehicleGroup (the same source; cAIVehicleGroup_ctor in ai.h) ---- */
 static void cAIVehicleGroup_dtor(cAIVehicleGroup *self) {
-	self->base.vftable = CAIVEHICLEGROUP_VFTABLE;
 	cAIEntityGroup_dtor(self);
 }
 

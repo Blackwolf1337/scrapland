@@ -36,12 +36,10 @@ cAICharControl *cAICharControl3D_ctor(void *mem, cEntity *ent, cAIChar *ai, int 
 }
 
 void cAICharControl3D_dtor(cAICharControl3D *self) {
-	self->vftable = CAICHARCONTROL3D_VFTABLE;
 	cAICharControl_dtor(self);
 }
 
 static void cAICharControl3D_Free(cAICharControl3D *self) {
-	self->vftable = CAICHARCONTROL3D_VFTABLE;
 	cAICharControl_dtor(self);
 	operator_delete(self);
 }

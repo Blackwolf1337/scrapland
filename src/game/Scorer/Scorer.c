@@ -235,7 +235,6 @@ static void cScorer_dtor(cScorer *self) {
 }
 
 void cScorerItem_dtor(cScorerItem *self) {
-	self->vftable = CSCORERITEM_VFTABLE;
 	cPy_Function_dtor(&self->onGainFocus);
 	cPy_Function_dtor(&self->onLooseFocus);
 	cPy_Function_dtor(&self->onRender);

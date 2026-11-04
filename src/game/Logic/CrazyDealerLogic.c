@@ -15,7 +15,6 @@ cCrazyDealerLocalLogic *cCrazyDealerLocalLogic_ctor(cCrazyDealerLocalLogic *self
 
 static void cCrazyDealerLocalLogic_Free(cLocalLogic *elem) {
 	cCrazyDealerLocalLogic *self = (cCrazyDealerLocalLogic *)elem;
-	self->base.vftable = CCRAZYDEALERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	operator_delete(self);
 }

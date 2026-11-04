@@ -31,7 +31,6 @@ cTimerScorer *cTimerScorer_ctor(cTimerScorer *self) {
 }
 
 static void cTimerScorer_dtor(cTimerScorer *self) {
-	self->base.base.vftable = CTIMERSCORER_VFTABLE;
 	cPy_Function_dtor(&self->onTimeWarning);
 	cPy_Function_dtor(&self->onTimeExpired);
 	cAbstractTextScorer_dtor(&self->base);

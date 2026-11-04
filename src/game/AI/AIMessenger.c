@@ -35,7 +35,6 @@ void *cAIMessenger_ctor(void *mem, cEntity *e, int *arg) {
 /* AIMessenger.c */
 static void cAIMessenger_Free(cAI *base) {
 	cAIChar *self = (cAIChar *)base;
-	self->vftable = CAIMESSENGER_VFTABLE;
 	cAIChar_dtor(self);
 	operator_delete(self);
 }

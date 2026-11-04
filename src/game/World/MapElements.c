@@ -46,7 +46,6 @@ cMapElement *cMapElement_ctor(cMapElement *self, const char *name, const vec3_t 
 }
 
 void cMapElement_dtor(cMapElement *self) {
-	self->vftable = CMAPELEMENT_VFTABLE;
 	cString_dtor(&self->name);
 	CGameModel_Reset(&self->Mod);
 }

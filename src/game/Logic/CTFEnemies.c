@@ -56,7 +56,6 @@ void cCTFEnemies_dtor(cCTFEnemies *self) {
 }
 
 static void cCTFEnemiesLocalLogic_Free(cCTFEnemiesLocalLogic *self) {
-	self->vftable = CCTFENEMIESLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 	operator_delete(self);
 }

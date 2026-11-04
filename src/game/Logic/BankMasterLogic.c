@@ -16,7 +16,6 @@ cBankMasterLocalLogic *cBankMasterLocalLogic_ctor(cBankMasterLocalLogic *self, c
 
 static void cBankMasterLocalLogic_Free(cLocalLogic *elem) {
 	cBankMasterLocalLogic *self = (cBankMasterLocalLogic *)elem;
-	self->base.vftable = CBANKMASTERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	operator_delete(self);
 }

@@ -31,7 +31,6 @@ void *cAINurse_ctor(void *mem, cEntity *e, int *arg) {
 /* AINurse.c */
 static void cAINurse_Free(cAI *base) {
 	cAIChar *self = (cAIChar *)base;
-	self->vftable = CAINURSE_VFTABLE;
 	cAIChar_dtor(self);
 	operator_delete(self);
 }

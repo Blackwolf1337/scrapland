@@ -71,7 +71,6 @@ cAIMove *cAIMove_ctor(cAIMove *self, cEntity *e) {
 }
 
 void cAIMove_dtor(cAIMove *self) {
-	self->vftable = CAIMOVE_VFTABLE;
 	Nto1Node_Done(&self->target);
 	cAI_dtor(&self->base);
 }

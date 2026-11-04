@@ -282,7 +282,6 @@ static CAStarSup *CAStarSup_ctor(CAStarSup *self) {
 static void CAStarSup_dtor(CAStarSup *self) {
 	HashTable *t = self->table;
 
-	self->vftable = CASTARSUP_VFTABLE;
 	if (t) {
 		AStarTable_dtor(t);
 		operator_delete(t);

@@ -15,7 +15,6 @@ cDesktopLocalLogic *cDesktopLocalLogic_ctor(cDesktopLocalLogic *self, cEntity *p
 
 static void cDesktopLocalLogic_Free(cLocalLogic *elem) {
 	cDesktopLocalLogic *self = (cDesktopLocalLogic *)elem;
-	self->base.vftable = CDESKTOPLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	operator_delete(self);
 }

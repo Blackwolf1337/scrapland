@@ -65,12 +65,10 @@ cAICharControl *cAICharControl2D_ctor(void *mem, cEntity *ent, cAIChar *ai, int 
 }
 
 void cAICharControl2D_dtor(cAICharControl2D *self) {
-	self->vftable = CAICHARCONTROL2D_VFTABLE;
 	cAICharControl_dtor(self);
 }
 
 static void cAICharControl2D_Free(cAICharControl2D *self) {
-	self->vftable = CAICHARCONTROL2D_VFTABLE;
 	cAICharControl_dtor(self);
 	operator_delete(self);
 }

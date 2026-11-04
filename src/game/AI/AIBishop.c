@@ -42,7 +42,6 @@ void *cAIBishop_ctor(void *mem, cEntity *e, int *arg) {
 /* AIBishop.c */
 static void cAIBishop_Free(cAI *base) {
 	cAIChar *self = (cAIChar *)base;
-	self->vftable = CAIBISHOP_VFTABLE;
 	cAIChar_dtor(self);
 	operator_delete(self);
 }

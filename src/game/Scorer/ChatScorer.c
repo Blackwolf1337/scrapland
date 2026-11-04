@@ -30,7 +30,6 @@ cChatScorer *cChatScorer_ctor(cChatScorer *self) {
 
 static void cChatScorer_dtor(cChatScorer *self) {
 	CPsaImage *img = self->img;
-	self->base.vftable = CCHATSCORER_VFTABLE;
 	if (img) {
 		CPsaImage_dtor(img);
 		operator_delete(img);

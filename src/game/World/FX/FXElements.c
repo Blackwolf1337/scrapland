@@ -69,7 +69,6 @@ cFXElementsLighting *cFXElementsLighting_ctor(cFXElementsLighting *self, const c
 
 /* the particle members are released twice, by the class and by the member destructor */
 static void cFXElementsFireDrop_dtor(cFXElementsFireDrop *self) {
-	self->base.vftable = CFXELEMENTSFIREDROP_VFTABLE;
 	CGameParticles_Release(&self->drops);
 	CGameParticles_Release(&self->drops);
 	cMapElement_dtor(&self->base);

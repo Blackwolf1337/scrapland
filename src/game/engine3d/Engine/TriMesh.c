@@ -119,7 +119,6 @@ void CTriMesh_Clear(CTriMesh *self) {
 }
 
 void CTriMesh_dtor(CTriMesh *self) {
-	self->vftable = CTRIMESH_VFTABLE;
 	CTriMesh_Clear(self);
 	self->vftable = IOBJECT3D_VFTABLE;
 }

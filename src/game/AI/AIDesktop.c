@@ -22,7 +22,6 @@ void *cAIDesktop_ctor(void *mem, cEntity *e, int *arg) {
 
 static void cAIDesktop_Free(cAI *base) {
 	cAIDesktop *self = (cAIDesktop *)base;
-	self->vftable = CAIDESKTOP_VFTABLE;
 	cAIChar_dtor(self);
 	operator_delete(self);
 }

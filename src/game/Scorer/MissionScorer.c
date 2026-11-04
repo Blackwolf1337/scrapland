@@ -39,7 +39,6 @@ cMissionScorer *cMissionScorer_ctor(cMissionScorer *self) {
 
 static void cMissionScorer_dtor(cMissionScorer *self) {
 	CPsaImage *img = self->tab;
-	self->base.base.vftable = CMISSIONSCORER_VFTABLE;
 	if (img) {
 		CPsaImage_dtor(img);
 		operator_delete(img);

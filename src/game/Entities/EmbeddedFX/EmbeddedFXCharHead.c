@@ -23,7 +23,6 @@ static cEmbeddedFXHeadCrazyGambler *cEmbeddedFXHeadCrazyGambler_ctor(cEmbeddedFX
 }
 
 static void cEmbeddedFXHeadCrazyGambler_dtor(cEmbeddedFXHeadCrazyGambler *self) {
-	self->vftable = VT_HEADCRAZYGAMBLER;
 	CGameParticles_Release(&self->particles);
 	cEmbeddedFX_dtor((cEmbeddedFX *)self);
 }

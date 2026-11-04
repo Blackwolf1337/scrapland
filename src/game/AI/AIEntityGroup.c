@@ -26,7 +26,6 @@ void cAIEntityGroup_dtor(void *self) {
 }
 
 static void cAIEntityGroup_Free(cAIEntityGroup *self) {
-	self->vftable = CAIENTITYGROUP_VFTABLE;
 	operator_delete(self);
 }
 

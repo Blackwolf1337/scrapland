@@ -81,7 +81,6 @@ void cNetClient_dtor(cNetClient *self) {
 }
 
 void cUserNetManager_dtor(cUserNetManager *self) {
-	self->vftable = g_UserNetManagerVftable;
 	self->client->user = NULL;
 }
 

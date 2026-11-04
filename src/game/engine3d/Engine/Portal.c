@@ -29,7 +29,6 @@ CPortal *CPortal_ctor(CPortal *self) {
 }
 
 static void CPortal_dtor(CPortal *self) {
-	self->vftable = CPORTAL_VFTABLE;
 	for (int i = 0; i < 2; i++) {
 		ObjRef_Drop(&self->zones[i]);
 		self->zones[i] = NULL;

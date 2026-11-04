@@ -39,7 +39,6 @@ void *cAIGear_ctor(void *mem, cEntity *e, int *arg) {
 /* AIGear.c */
 static void cAIGear_Free(cAI *base) {
 	cAIChar *self = (cAIChar *)base;
-	self->vftable = CAIGEAR_VFTABLE;
 	cAIChar_dtor(self);
 	operator_delete(self);
 }

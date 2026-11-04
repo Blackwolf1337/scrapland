@@ -73,7 +73,6 @@ static void ScraplandScorer_Drop(CPsaImage **slot) {
 }
 
 static void cScraplandMainMenuScorer_dtor(cScraplandMainMenuScorer *self) {
-	self->base.vftable = CSCRAPLANDMAINMENUSCORER_VFTABLE;
 	ScraplandScorer_Drop(&self->logo);
 	ScraplandScorer_Drop(&self->glow);
 	ScraplandScorer_Drop(&self->neon);
@@ -82,7 +81,6 @@ static void cScraplandMainMenuScorer_dtor(cScraplandMainMenuScorer *self) {
 }
 
 static void cScraplandSubMenuScorer_dtor(cScraplandSubMenuScorer *self) {
-	self->base.vftable = CSCRAPLANDSUBMENUSCORER_VFTABLE;
 	ScraplandScorer_Drop(&self->logo);
 	ScraplandScorer_Drop(&self->glow);
 	ScraplandScorer_Drop(&self->lighting);
