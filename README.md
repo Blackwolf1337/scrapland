@@ -8,7 +8,7 @@
 
 ## What is this?
 
-ScrapC is a fan project that rebuilds Scrapland Remastered 1.6.1 (the GOG build) in C. It is not the original source code. It was written from scratch to behave like the original game.
+ScrapC is a fan project that rebuilds Scrapland Remastered 1.6.1 (the GOG build) in C. It was made by studying how the original game works, function by function, and writing new code that does the same. It contains none of the original code, and it behaves like the original game.
 
 It is not affiliated with MercurySteam or the publishers.
 
