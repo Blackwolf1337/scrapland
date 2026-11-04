@@ -31,11 +31,13 @@ REF_EXE = os.path.join(ROOT, 'build-ref-noexact', 'ScrapC.exe')
 SLOTS = os.path.join(ROOT, 'build-mcp')
 RUNTIME = os.environ.get('XDG_RUNTIME_DIR') or '/run/user/%d' % os.getuid()
 INSTRUCTIONS = (
-    'Runs ScrapC.exe of the Scrapland checkout without a window (gamescope headless, Wine, muted, on the AMD 610M). '
-    'launch starts a named game (exe c = the build, ref = the frozen reference; map= loads a level), wait kind=ready '
-    'waits until the menu or the level runs, python runs code in the game (Scrap and the other script modules), screenshot and compare show '
-    'the window, log reads log.html or scrapdecomp.log, trace and vkcheck need launch with trace= or validation=true. '
-    'quit ends a game. Build first (cmake --build build); launch copies build/ScrapC.exe into the slot.')
+    'Runs ScrapC of the Scrapland checkout without a window (gamescope headless, muted, on the AMD 610M). '
+    'launch starts a named game (exe native64 = build-linux64/ScrapC by default, native64asan, c64 = the Windows '
+    'build under Wine, ref = the frozen reference; map= loads a level), wait kind=ready waits until the menu or the '
+    'level runs. python runs code in the game (Scrap and the other script modules). menu_dump lists the items of the '
+    'open menu, open_menu, click, key and mouse drive it. screenshot and compare show the window, log reads log.html '
+    'or scrapdecomp.log, trace and vkcheck need launch with trace= or validation=true. quit ends a game. Build '
+    'first; launch copies the build into the slot.')
 
 
 def text(s):
@@ -144,7 +146,7 @@ class Game:
         if exe != 'ref' and exe not in WIN_BUILDS and exe not in NATIVE_BUILDS:
             raise RuntimeError("exe is one of: ref, %s" % ', '.join(list(WIN_BUILDS) + list(NATIVE_BUILDS)))
         self.prepare(exe)
-        self.opts = dict(a)
+        self.opts = dict(a, exe=exe)
         env = dict(os.environ)
         env.update({'SCRAP_GAME_DIR': self.game, 'SCRAP_PREFIX': self.prefix,
                     'HEADLESS_TIMEOUT': str(int(a.get('timeout', 3600))), 'WINE_LOG': self.wine_log,
