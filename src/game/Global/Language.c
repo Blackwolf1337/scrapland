@@ -247,6 +247,46 @@ static void Lang_Load(const char *lang, cAbstractFile *f) {
 }
 
 /*
+ * Texts ScrapC adds to the menus (the display mode of the video options), in the encoding of each language file:
+ * Latin-1 bytes, Windows-1250 for Czech, and \x01 with four hex digits for a character of the unicode font
+ */
+static const char *const lang_extraKeys[] = { "Menu_Video_Display", "Menu_Video_Windowed", "Menu_Video_Borderless",
+	"Menu_Video_Fullscreen" };
+static const struct {
+	const char *lang;
+	const char *text[sizeof(lang_extraKeys) / sizeof(lang_extraKeys[0])];
+} lang_extra[] = {
+	{ "English", { "Display", "Windowed", "Borderless", "Fullscreen" } },
+	{ "Spanish", { "Pantalla", "En ventana", "Sin bordes", "Completa" } },
+	{ "French", { "Affichage", "Fen\xea" "tr\xe9", "Sans bordure", "Plein \xe9" "cran" } },
+	{ "German", { "Anzeige", "Fenster", "Rahmenlos", "Vollbild" } },
+	{ "Italian", { "Schermo", "In finestra", "Senza bordi", "Schermo intero" } },
+	{ "Czech", { "Zobrazen\xed", "V okn\xec", "Bez r\xe1" "mu", "Cel\xe1" " obrazovka" } },
+	{ "Hungarian", { "Megjelen\xed" "t\xe9" "s", "Ablakos", "Keret n\xe9" "lk\xfc" "l", "Teljes k\xe9" "perny\x01" "0151" } },
+	{ "Polish", { "Wy\x01" "015Bwietlanie", "W oknie", "Bez ramki", "Pe\x01" "0142ny ekran" } },
+	{ "Russian", { "\x01" "042D\x01" "043A\x01" "0440\x01" "0430\x01" "043D", "\x01" "041E\x01" "043A\x01" "043E\x01" "043D\x01" "043D\x01" "044B\x01" "0439", "\x01" "0411\x01" "0435\x01" "0437 \x01" "0440\x01" "0430\x01" "043C\x01" "043A\x01" "0438", "\x01" "041F\x01" "043E\x01" "043B\x01" "043D\x01" "044B\x01" "0439" } },
+	{ "Japanese", { "\x01" "8868\x01" "793A", "\x01" "30A6\x01" "30A3\x01" "30F3\x01" "30C9\x01" "30A6", "\x01" "30DC\x01" "30FC\x01" "30C0\x01" "30FC\x01" "30EC\x01" "30B9", "\x01" "30D5\x01" "30EB\x01" "30B9\x01" "30AF\x01" "30EA\x01" "30FC\x01" "30F3" } },
+};
+
+/* the extra texts of the language loaded (English for any other), unless its file has them */
+static void Lang_AddExtra(const char *lang) {
+	size_t l = 0;
+	for (size_t i = 0; i < sizeof(lang_extra) / sizeof(lang_extra[0]); i++) {
+		if (!crt_stricmp(lang, lang_extra[i].lang)) {
+			l = i;
+		}
+	}
+	for (size_t k = 0; k < sizeof(lang_extraKeys) / sizeof(lang_extraKeys[0]); k++) {
+		const char *key = lang_extraKeys[k];
+		uint32_t slot = HashTable_Slot((&g_LangTable), key);
+		if (!LangTable_Find((&g_LangTable), key, slot)) {
+			cLangText value = { (char *)lang_extra[l].text[k], NULL };
+			LangTable_Insert((&g_LangTable), key, slot, &value);
+		}
+	}
+}
+
+/*
  * loads Language/<lang>.txt (lang NULL: the one asked for before), falling back to the default language and to
  * Strings.txt; 0 if that language is already loaded and force is 0
  */
@@ -277,6 +317,7 @@ byte Lang_Set(const char *lang, byte force) {
 	}
 	cFile_Open(&f.base, path, FILE_MODE_READ);
 	Lang_Load(name, &f.base);
+	Lang_AddExtra(name);
 	cFile_Close(&f.base);
 	cFile_dtor(&f);
 	return 1;

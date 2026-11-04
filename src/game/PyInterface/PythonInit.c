@@ -55,6 +55,9 @@ void Python_Init(void) {
 		Str_Printf(cmd, sizeof(cmd), "Init.Init('%s')", g_pApp->levelPath);
 	}
 	PyRun_ScrapString(cmd);
+	if (!g_IsViewer) {
+		PyMenu_AddDisplayOption();
+	}
 	PyRun_ScrapString(g_PythonExecute);
 	/* the marshal buffer of Pack_PreloadLibrary is not needed after the start */
 	cStaticBuffer *buf = g_PyStaticBuffer;
