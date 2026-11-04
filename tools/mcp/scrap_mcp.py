@@ -10,7 +10,10 @@ game side is tools/mcp/mcpgame.py, started with -PythonExecute. The server speak
 stdio (JSON-RPC 2.0, one message a line) and needs only the Python standard library; Pillow does crops, zoom and
 comparisons.
 """
+import ast
 import base64
+import ctypes
+import ctypes.util
 import io
 import json
 import os
@@ -21,7 +24,7 @@ import subprocess
 import sys
 import time
 
-VERSION = '0.1.0'
+VERSION = '0.2.0'
 PROTOCOLS = ('2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05')
 ROOT = os.environ.get('SCRAP_MCP_ROOT') or os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 REF_EXE = os.path.join(ROOT, 'build-ref-noexact', 'ScrapC.exe')
@@ -55,6 +58,7 @@ def sockets(since=0.0):
 # the Windows builds by their exe name (the DLLs of FFmpeg and SDL3 from the same folder)
 WIN_BUILDS = {'c64': 'build-win64'}
 NATIVE_BUILDS = {'native64': 'build-linux64', 'native64asan': 'build-linux64-asan'}
+DEFAULT_NATIVE_BUILDS = dict(NATIVE_BUILDS)
 
 
 class Game:
@@ -440,7 +444,228 @@ TOOLS = [
          'name': NAME, 'full': {'type': 'boolean', 'description': 'all lines, not only the summary and the first 80'}})},
     {'name': 'vkcheck', 'description': 'The Vulkan validation errors of a game launched with validation=true, without '
      'those of gamescope and Wine (tools/test/vk-foreign-vuids.txt).', 'inputSchema': schema({'name': NAME})},
+    {'name': 'menu_dump', 'description': 'The scorer items of a player (menus and HUD) in draw order: name, text, '
+     'position, size, color and alpha, hidden, OnAccept and the cursor links; > marks the cursor item.',
+     'inputSchema': schema({'name': NAME, 'player': {'type': 'integer', 'description': 'default 0'},
+                            'filter': {'type': 'string', 'description': 'only items whose name or text matches (regex)'},
+                            'screenshot': {'type': 'boolean'}})},
+    {'name': 'open_menu', 'description': 'Open a menu by its script function (module.function, called with the player '
+     'and an empty control), e.g. PCMenu.VideoMenu, PCMenu.OptionsMenu, Menu.MainMenu.', 'inputSchema': schema({
+         'name': NAME, 'menu': {'type': 'string'}, 'player': {'type': 'integer', 'description': 'default 0'},
+         'screenshot': {'type': 'boolean'}}, ['menu'])},
+    {'name': 'click', 'description': 'Activate a scorer item by name: runs its OnAccept with the player and the item '
+     'name, as the accept key does.', 'inputSchema': schema({
+         'name': NAME, 'item': {'type': 'string'}, 'player': {'type': 'integer', 'description': 'default 0'},
+         'screenshot': {'type': 'boolean'}}, ['item'])},
+    {'name': 'key', 'description': 'Real key presses through the X display of the game (XTEST): a list of keys or '
+     'combos like "down", "enter", "esc", "ctrl+a", "f1", one character.', 'inputSchema': schema({
+         'name': NAME, 'keys': {'type': 'array', 'items': {'type': 'string'}},
+         'hold': {'type': 'number', 'description': 'seconds each key is held, default 0.08'},
+         'gap': {'type': 'number', 'description': 'seconds between keys, default 0.15'},
+         'screenshot': {'type': 'boolean'}}, ['keys'])},
+    {'name': 'mouse', 'description': 'Real mouse input through the X display of the game (XTEST): relative motion in '
+     'pixels, then an optional button press.', 'inputSchema': schema({
+         'name': NAME, 'dx': {'type': 'integer'}, 'dy': {'type': 'integer'},
+         'button': {'type': 'integer', 'description': '1 left, 2 middle, 3 right'},
+         'hold': {'type': 'number', 'description': 'seconds the button is held, default 0.08'},
+         'screenshot': {'type': 'boolean'}})},
+    {'name': 'configure', 'description': 'Point native64 or native64asan at another build folder for this server '
+     'process only (e.g. a worktree), or back to the default; applies to the next launch.', 'inputSchema': schema({
+         'exe': {'type': 'string', 'enum': ['native64', 'native64asan']},
+         'build': {'type': 'string', 'description': 'build folder, absolute or relative to the repo; empty: default'}},
+         ['exe'])},
 ]
+
+
+# ---- menus: the scorer items of a player (SScorer.Items of ScrapC), item actions, menus by name
+
+MENU_VARS = ('Text', 'X', 'Y', 'W', 'H', 'Visible', 'Alpha', 'Red', 'Green', 'Blue', 'OnAccept', 'Up', 'Down', 'Left',
+             'Right')
+
+
+def py_str(s):
+    """A Python 1.5.2 string literal of s (repr of ASCII text is the same in both)."""
+    return repr(str(s))
+
+
+def menu_items(g, player):
+    code = ('import SScorer\n'
+            'r = []\n'
+            'items = SScorer.Items(%d)\n'
+            'if items is None:\n\titems = []\n'
+            'for n in items:\n'
+            '\trow = [n]\n'
+            '\tfor v in %r:\n'
+            '\t\trow.append(SScorer.Get(%d, n, v))\n'
+            '\tr.append(row)\n'
+            'result = (SScorer.GetActual(%d), r)\n') % (player, MENU_VARS, player, player)
+    out = g.python(code, timeout=15)
+    if out.startswith('error'):
+        raise RuntimeError(out)
+    return ast.literal_eval(out)
+
+
+def fmt_num(v):
+    return '-' if v is None else ('%g' % v if isinstance(v, float) else str(v))
+
+
+def menu_dump(g, player, rx):
+    current, rows = menu_items(g, player)
+    lines = ['%d items of player %d in draw order (first drawn first), cursor on %s' % (len(rows), player, current)]
+    for r in rows:
+        v = dict(zip(('Name',) + MENU_VARS, r))
+        if rx and not (rx.search(v['Name'] or '') or rx.search(str(v['Text'] or ''))):
+            continue
+        parts = ['%s%s' % ('> ' if v['Name'] == current else '', v['Name'])]
+        if v['Text'] is not None:
+            parts.append('text %r' % v['Text'])
+        parts.append('at %s,%s size %sx%s' % tuple(fmt_num(v[k]) for k in ('X', 'Y', 'W', 'H')))
+        if v['Red'] is not None:
+            parts.append('rgba %s,%s,%s,%s' % tuple(fmt_num(v[k]) for k in ('Red', 'Green', 'Blue', 'Alpha')))
+        if v['Visible'] == 0:
+            parts.append('hidden')
+        if v['OnAccept']:
+            parts.append('accept %s' % v['OnAccept'])
+        links = ['%s %s' % (k.lower(), v[k]) for k in ('Up', 'Down', 'Left', 'Right') if v[k]]
+        if links:
+            parts.append('links ' + ', '.join(links))
+        lines.append('  ' + '; '.join(parts))
+    return '\n'.join(lines)
+
+
+def menu_click(g, player, item):
+    code = ('import SScorer\n'
+            'f = SScorer.Get(%d, %s, "OnAccept")\n'
+            'if SScorer.Accept(%d, %s):\n\tresult = "called " + f\n'
+            'else:\n\tresult = "the item has no OnAccept"\n') % (player, py_str(item), player, py_str(item))
+    return g.python(code, timeout=15)
+
+
+def menu_open(g, player, menu):
+    if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)+', menu):
+        raise RuntimeError('menu is module.function, e.g. PCMenu.VideoMenu')
+    module = menu.rsplit('.', 1)[0]
+    return g.python('import %s\n%s(%d, "")\nresult = "opened %s"' % (module, menu, player, menu), timeout=15)
+
+
+# ---- real input (XTEST) into the X display of the game's gamescope
+
+XKEYS = {'enter': 'Return', 'return': 'Return', 'esc': 'Escape', 'escape': 'Escape', 'tab': 'Tab',
+         'backspace': 'BackSpace', 'delete': 'Delete', 'space': 'space', 'up': 'Up', 'down': 'Down', 'left': 'Left',
+         'right': 'Right', 'home': 'Home', 'end': 'End', 'pageup': 'Prior', 'pagedown': 'Next', 'ctrl': 'Control_L',
+         'shift': 'Shift_L', 'alt': 'Alt_L'}
+XLIB = None
+
+
+def xlib():
+    """libX11 and libXtst through ctypes (gamescope needs both, so they are there where it is)."""
+    global XLIB
+    if XLIB is None:
+        try:
+            x11 = ctypes.CDLL(ctypes.util.find_library('X11') or 'libX11.so.6')
+            xtst = ctypes.CDLL(ctypes.util.find_library('Xtst') or 'libXtst.so.6')
+        except OSError as e:
+            raise RuntimeError('input needs libX11 and libXtst: %s' % e)
+        vp, ul, ci, cu = ctypes.c_void_p, ctypes.c_ulong, ctypes.c_int, ctypes.c_uint
+        for fn, res, args in (('XOpenDisplay', vp, [ctypes.c_char_p]), ('XCloseDisplay', ci, [vp]),
+                              ('XSync', ci, [vp, ci]), ('XStringToKeysym', ul, [ctypes.c_char_p]),
+                              ('XKeysymToKeycode', ctypes.c_ubyte, [vp, ul])):
+            getattr(x11, fn).restype, getattr(x11, fn).argtypes = res, args
+        for fn, args in (('XTestFakeRelativeMotionEvent', [vp, ci, ci, ul]), ('XTestFakeButtonEvent', [vp, cu, ci, ul]),
+                         ('XTestFakeKeyEvent', [vp, cu, ci, ul])):
+            getattr(xtst, fn).restype, getattr(xtst, fn).argtypes = ci, args
+        # (Xlib's own error handler ends the whole process: this one only notes it)
+        handler = ctypes.CFUNCTYPE(ci, vp, vp)(lambda d, e: 0)
+        x11.XSetErrorHandler.restype, x11.XSetErrorHandler.argtypes = vp, [vp]
+        x11.XSetErrorHandler(ctypes.cast(handler, vp))
+        XLIB = (x11, xtst, handler)
+    return XLIB
+
+
+def game_display(g):
+    """DISPLAY of the game process itself (gamescope's own X server), never the desktop's: the process must be the
+    game binary (native) or a Wine process running ScrapC/ScrapRef.exe, with the SCRAP_GAME_DIR of this game."""
+    if not g.running():
+        raise RuntimeError('game %s does not run' % g.name)
+    desktop = {os.environ.get('DISPLAY'), os.environ.get('SCRAP_MCP_DESKTOP_DISPLAY')} - {None, ''}
+    native = os.path.realpath(os.path.join(g.game, 'Bin', 'ScrapC'))
+    for pid in os.listdir('/proc'):
+        if not pid.isdigit():
+            continue
+        try:
+            exe = os.path.realpath('/proc/%s/exe' % pid)
+            with open('/proc/%s/cmdline' % pid, 'rb') as f:
+                cmd = f.read().decode('utf-8', 'replace').split('\0')
+            with open('/proc/%s/environ' % pid, 'rb') as f:
+                env = dict(x.decode('utf-8', 'replace').partition('=')[::2] for x in f.read().split(b'\0') if b'=' in x)
+        except OSError:
+            continue
+        is_game = exe == native or (os.path.basename(exe).startswith('wine') and
+                                    any(os.path.basename(c.replace('\\', '/')) in ('ScrapC.exe', 'ScrapRef.exe') for c in cmd))
+        if not is_game or env.get('SCRAP_GAME_DIR') != g.game or not env.get('DISPLAY'):
+            continue
+        if env['DISPLAY'] in desktop:
+            raise RuntimeError('the game process has the desktop display %s; refusing to send input' % env['DISPLAY'])
+        if env.get('XAUTHORITY'):
+            os.environ['XAUTHORITY'] = env['XAUTHORITY']
+        return env['DISPLAY']
+    raise RuntimeError('found no game process of %s with its own DISPLAY' % g.name)
+
+
+class XInput:
+    def __init__(self, g):
+        self.x11, self.xtst, _ = xlib()
+        self.display = game_display(g)
+        self.dpy = self.x11.XOpenDisplay(self.display.encode())
+        if not self.dpy:
+            raise RuntimeError('could not open the X display %s of the game' % self.display)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.x11.XCloseDisplay(self.dpy)
+
+    def sync(self, pause):
+        self.x11.XSync(self.dpy, 0)
+        time.sleep(pause)
+
+    def keycode(self, name):
+        if len(name) == 1:
+            sym = ord(name)
+        else:
+            n = XKEYS.get(name.lower()) or (name.upper() if re.fullmatch(r'(?i)f\d{1,2}', name) else name)
+            sym = self.x11.XStringToKeysym(n.encode())
+        code = self.x11.XKeysymToKeycode(self.dpy, sym) if sym else 0
+        if not code:
+            raise RuntimeError('unknown key %r; use one character, f1-f12, an X keysym name or one of %s'
+                               % (name, ', '.join(sorted(XKEYS))))
+        return code
+
+    def key(self, combo, hold):
+        parts = combo.split('+') if combo != '+' else ['+']
+        codes = [self.keycode(p) for p in parts]
+        for c in codes:
+            self.xtst.XTestFakeKeyEvent(self.dpy, c, 1, 0)
+            self.sync(0.02)
+        self.sync(hold)
+        for c in reversed(codes):
+            self.xtst.XTestFakeKeyEvent(self.dpy, c, 0, 0)
+            self.sync(0.02)
+
+    def move(self, dx, dy, step=40):
+        """Relative motion in steps (SDL's relative mode recenters the pointer after every event)."""
+        while dx or dy:
+            sx, sy = max(-step, min(step, dx)), max(-step, min(step, dy))
+            self.xtst.XTestFakeRelativeMotionEvent(self.dpy, sx, sy, 0)
+            self.sync(0.012)
+            dx, dy = dx - sx, dy - sy
+
+    def button(self, number, hold):
+        self.xtst.XTestFakeButtonEvent(self.dpy, number, 1, 0)
+        self.sync(hold)
+        self.xtst.XTestFakeButtonEvent(self.dpy, number, 0, 0)
+        self.sync(0.03)
 
 
 def after_shot(g, a, msg):
@@ -542,6 +767,41 @@ def call(name, a):
             return [text('no validation errors of ours (%d of gamescope and Wine left out)' % total)]
         return [text('\n'.join('%d x %s\n    %s' % (n, v, first[:300]) for v, (n, first) in
                                sorted(ours.items(), key=lambda kv: -kv[1][0])))]
+    if name == 'menu_dump':
+        g = game_of(a)
+        rx = re.compile(a['filter']) if a.get('filter') else None
+        return after_shot(g, a, menu_dump(g, int(a.get('player', 0)), rx))
+    if name == 'open_menu':
+        g = game_of(a)
+        return after_shot(g, a, menu_open(g, int(a.get('player', 0)), a['menu']))
+    if name == 'click':
+        g = game_of(a)
+        return after_shot(g, a, menu_click(g, int(a.get('player', 0)), a['item']))
+    if name == 'key':
+        g = game_of(a)
+        with XInput(g) as xi:
+            for k in a['keys']:
+                xi.key(k, float(a.get('hold', 0.08)))
+                time.sleep(float(a.get('gap', 0.15)))
+            msg = 'pressed %s (X display %s)' % (', '.join(a['keys']), xi.display)
+        return after_shot(g, a, msg)
+    if name == 'mouse':
+        g = game_of(a)
+        with XInput(g) as xi:
+            xi.move(int(a.get('dx', 0)), int(a.get('dy', 0)))
+            if a.get('button'):
+                xi.button(int(a['button']), float(a.get('hold', 0.08)))
+            msg = 'moved %d,%d%s (X display %s)' % (int(a.get('dx', 0)), int(a.get('dy', 0)),
+                                                    ', button %d' % a['button'] if a.get('button') else '', xi.display)
+        return after_shot(g, a, msg)
+    if name == 'configure':
+        exe = a['exe']
+        build = a.get('build') or DEFAULT_NATIVE_BUILDS[exe]
+        path = os.path.join(ROOT, build)
+        if not os.path.isfile(os.path.join(path, 'ScrapC')):
+            raise RuntimeError('%s has no ScrapC (build it first)' % path)
+        NATIVE_BUILDS[exe] = build
+        return [text('%s now uses %s (next launch)' % (exe, path))]
     raise RuntimeError('unknown tool %s' % name)
 
 
