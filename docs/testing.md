@@ -21,6 +21,10 @@ Runs every playable level (29, Nano has no map in the packs) in the ASan build (
 
 `tools/test/native.sh` runs the Linux build headless (`SCRAP_BUILD=build-linux64`, the default).
 
+## Ported scripts
+
+A ported script module is compared with the original by running the same build with `SCRAP_PACK_SCRIPTS=1`, see [scripts.md](scripts.md).
+
 ## Retired difftest
 
 The old difftest (i686 build against a frozen reference build, with the test module SDTest) is retired. The tag `difftest-final` keeps the last state with it. The reference builds are not used by a test any more. The scrap MCP server can still start the reference exe for visual comparisons (`exe=ref`).

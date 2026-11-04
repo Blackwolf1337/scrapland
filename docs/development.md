@@ -47,3 +47,7 @@ Code calls a slot through a named function, `Class_Slot(obj, ...)`, for example 
 - A Vulkan-only renderer replacing Direct3D 8 (done 2026-11-02). Videos play through FFmpeg and the 30 pixel shaders and the fixed function are GLSL. See [vulkan.md](vulkan.md).
 - Readable calls and names (done, merged into main on 2026-11-03 and 2026-11-04). Every call through a vtable slot is a `Class_Slot(obj, ...)` function, 30 vtable types with a single implementation are gone (direct calls), unnamed slots got names, and state and action numbers became enums.
 - The i686 builds and the difftest are retired. The tag `difftest-final` keeps the last state with them.
+
+## Scripts
+
+The menus, HUD, characters and missions still run from the Python scripts of the packs, and are moved to C module by module. See [scripts.md](scripts.md).
