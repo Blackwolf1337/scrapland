@@ -3,6 +3,7 @@
  * A function is either a Python function (PYF_PYTHON, parameters in a Python list) or a C function of the
  * registry (PYF_NATIVE, parameters written into a cFileMem). The parameter files are reused through a free list.
  */
+#include <stdio.h>
 #include <string.h>
 
 #include "scrap/console.h"
@@ -247,6 +248,26 @@ byte cPy_Function_SetFunc(cPy_Function *self, const char *name) {
 
 int cPy_Function_IsValid(cPy_Function *self) {
 	return (self->flags & (PYF_PYTHON | PYF_NATIVE)) != 0;
+}
+
+const char *cPy_Function_Name(cPy_Function *self) {
+	static char name[256];
+
+	name[0] = 0;
+	if (self->flags & PYF_NATIVE) {
+		snprintf(name, sizeof(name), "!native");
+	} else if ((self->flags & PYF_PYTHON) && self->func) {
+		PyObject *f = self->func;
+		PyObject *fn = PyObject_GetAttrString(f, "__name__");
+		PyObject *mod = PyFunction_Check(f) ? PyDict_GetItemString(PyFunction_GetGlobals(f), "__name__") : NULL;
+		if (fn && PyString_Check(fn)) {
+			snprintf(name, sizeof(name), "%s%s%s", mod && PyString_Check(mod) ? PyString_AsString(mod) : "",
+				mod && PyString_Check(mod) ? "." : "", PyString_AsString(fn));
+		}
+		Py_XDECREF(fn);
+		PyErr_Clear();
+	}
+	return name;
 }
 
 void cPy_Function_AddParamI(cPy_Function *self, int v) {

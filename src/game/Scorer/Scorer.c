@@ -537,10 +537,15 @@ int cScorerItem_Var(cScorerItem *self, const char *name, int set, char **s, doub
 			}
 		}
 	}
-	if (set && s) {
+	if (s) {
 		for (int k = 0; k < 5; k++) {
 			if (!crt_stricmp(name, funcNames[k])) {
-				cPy_Function_SetFunc(funcs[k], *s);
+				if (set) {
+					cPy_Function_SetFunc(funcs[k], *s);
+				} else {
+					/* differs from the original (set only): the name for tools that inspect a menu */
+					*s = (char *)cPy_Function_Name(funcs[k]);
+				}
 				return 1;
 			}
 		}

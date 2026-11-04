@@ -392,17 +392,23 @@ static int cButtonScorer_Var(cScorerItem *base, const char *name, int set, char 
 			it->h = (float)((self->height + 2) * 10);
 			return 1;
 		}
-		/* the lines joined by spaces; the original returns the buffer of the destroyed string */
-		cString all;
-		cString_ctor(&all);
-		cString_Assign(&all, StrTable_At(&self->lines, 0));
+		/* differs from the original: the lines joined by spaces stay in a static string until the next call (the
+		 * original returned the buffer of a destroyed string, and read line 0 of a button without text) */
+		static cString all;
+		static byte made;
+		if (!made) {
+			cString_ctor(&all);
+			made = 1;
+		}
+		cString_Set(&all, str_Empty);
 		int n = self->lines.count;
-		for (int k = 1; k < n; k++) {
-			cString_AppendStr(&all, " ");
+		for (int k = 0; k < n; k++) {
+			if (k) {
+				cString_AppendStr(&all, " ");
+			}
 			cString_AppendStr(&all, *StrTable_At(&self->lines, k));
 		}
 		*s = all;
-		cString_dtor(&all);
 		return 1;
 	}
 	if (i) {

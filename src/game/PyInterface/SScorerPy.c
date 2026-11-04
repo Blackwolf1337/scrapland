@@ -292,6 +292,51 @@ static PyObject *SScorer_Get(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
+/* differs from the original (ScrapC only): Items(player) : the names of the items of the scorer in draw order, for
+ * tools that inspect a menu (tools/mcp); None without a scorer */
+static PyObject *SScorer_Items(PyObject *self, PyObject *args) {
+	int player;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "i", &player)) {
+		return NULL;
+	}
+	cScorer *sc = Scorer_Get(player);
+	if (!sc) {
+		return Py_ReturnNone();
+	}
+	PyObject *list = PyList_New(0);
+	for (cScorerItem *it = sc->items; it && list; it = it->next) {
+		if (!it->delMe) {
+			PyObject *name = PyString_FromString(it->name ? it->name : "");
+			PyList_Append(list, name);
+			Py_XDECREF(name);
+		}
+	}
+	return list;
+}
+
+/* differs from the original (ScrapC only): Accept(player, item) : runs the OnAccept of the item with the player and
+ * the item name, as the accept key of the menu does; 1 if it has one */
+static PyObject *SScorer_Accept(PyObject *self, PyObject *args) {
+	int player;
+	char *name;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "is", &player, &name)) {
+		return NULL;
+	}
+	cScorer *sc = Scorer_Get(player);
+	cScorerItem *it = sc ? cScorer_FindItem(sc, name) : NULL;
+	if (!it || !cPy_Function_IsValid(&it->onAccept)) {
+		return Py_BuildValue("i", 0);
+	}
+	cPy_Function_AddParamI(&it->onAccept, player);
+	cPy_Function_AddParamS(&it->onAccept, name);
+	cPy_Function_Execute(&it->onAccept, 0);
+	return Py_BuildValue("i", 1);
+}
+
 /* GetItem(player, item) : the Python object of the item, None if not found */
 static PyObject *SScorer_GetItem(PyObject *self, PyObject *args) {
 	int player;
@@ -600,7 +645,7 @@ static const char str_PyMethod_SScorer_SetOnSpecialHint[];
 static const char str_PyMethod_SScorer_SetSpeechCallback[];
 static const char str_PyMethod_SScorer_SetSpeechText[];
 static const char str_PyMethod_SScorer_Show[];
-static PyMethodDef SScorer_methods[34] = {
+static PyMethodDef SScorer_methods[36] = {
 	{
 		.ml_name = (void *)str_PyMethod_SScorer_Add,
 		.ml_meth = (void *)SScorer_Add,
@@ -798,6 +843,18 @@ static PyMethodDef SScorer_methods[34] = {
 		.ml_meth = (void *)SScorer_New,
 		.ml_flags = 1,
 		.ml_doc = (void *)str_PyDoc_SScorer_New,
+	},
+	{
+		.ml_name = "Items",
+		.ml_meth = (void *)SScorer_Items,
+		.ml_flags = 1,
+		.ml_doc = "Items(playernumber) : the item names in draw order (ScrapC)",
+	},
+	{
+		.ml_name = "Accept",
+		.ml_meth = (void *)SScorer_Accept,
+		.ml_flags = 1,
+		.ml_doc = "Accept(playernumber,ItemName) : runs the OnAccept of the item (ScrapC)",
 	},
 };
 

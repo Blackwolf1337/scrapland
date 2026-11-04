@@ -44,6 +44,9 @@ void cPy_Function_dtor(cPy_Function *self);
 /* 1 if set; also 1 for an empty name (the function is cleared then) and while Python is not running */
 byte cPy_Function_SetFunc(cPy_Function *self, const char *name);
 int cPy_Function_IsValid(cPy_Function *self);
+/* ScrapC: "module.function" of a Python function, "!native" for a C function, "" without one (a static buffer until
+ * the next call) */
+const char *cPy_Function_Name(cPy_Function *self);
 /* binds the C function func (NULL: only cleared); always 1 */
 byte cPy_Function_SetNative(cPy_Function *self, nativefunc_t func);
 void cPy_Function_AddParamI(cPy_Function *self, int v);
