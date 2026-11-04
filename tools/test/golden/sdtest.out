@@ -1314,7 +1314,7 @@ Scrap.GetLangEntries(Mission_Decontamination_Hint1, 1) = ['Mission_Decontaminati
 Scrap.GetLangEntries(Mission_Decontamination_Hint1, 2) = ['Mission_Decontamination_Hi']
 Scrap.GetLangEntries(Mission_Decontamination_Hint1, 3) = ['Mission_Decontamination_Hi']
 Scrap.GetLangStr(Mission_Decontamination_Hint1) = 'Start Decontamination'
-Scrap.Des(FullScreen) = '0 = Windowed mode, 1 = Fullscreen mode'
+Scrap.Des(FullScreen) = '0 = Windowed, 1 = Fullscreen, 2 = Borderless (desktop size)'
 Scrap.Des(VideoWidth) = 'Screen width'
 Scrap.Des(SDNoVar) = exception SystemError: NULL result without error in call_object
 Scrap.CreateSaveVar(SDVar, abc) = 1
