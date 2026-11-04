@@ -158,6 +158,11 @@ double GVar_GetNum(const char *name, byte def) {
 	return 0.0;
 }
 
+const char *GVar_GetStr(const char *name) {
+	cGVar *v = GVar_Named(name);
+	return v && v->base.type == GVAR_STRING && v->value.s ? v->value.s : "";
+}
+
 int GVar_SetNum(const char *name, double d) {
 	cGVar *v = GVar_Named(name);
 	if (!v) {

@@ -184,8 +184,7 @@ static PyObject *SScorer_GetMenuAccept(PyObject *self, PyObject *args) {
 	if (!Scorer_Get(player)) {
 		return Py_ReturnNone();
 	}
-	cInputAction *accept = TABLE_AT(TABLE_AT(g_ActionSets, 0)->actions, 10);
-	return Py_BuildValue("i", accept->value[player] > 0.5f);
+	return Py_BuildValue("i", Input_MenuAccept(player));
 }
 
 /* SetMarkerSprite(player, sprite) : "" for none */

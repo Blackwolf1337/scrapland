@@ -35,6 +35,9 @@ typedef struct scriptStep_s {
 byte Script_RunMenu(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
 	PyObject *vars);
 
+/* the last item of the .menu file that runs ("" when none runs), for its steps */
+const char *Script_CurrentItem(void);
+
 /* the scorer items of player id */
 void Script_Add(int id, const char *item, const char *type);
 void Script_SetStr(int id, const char *item, const char *var, const char *s);
@@ -67,5 +70,7 @@ byte Script_Args(PyObject *args, int *id, const char **control);
 extern PyMethodDef g_MenuVideoMethods[];
 /* the C options and controls menus of PCMenu (src/game/Script/MenuControls.c) */
 extern PyMethodDef g_MenuControlsMethods[];
+/* the C multiplayer menus of PCMenu (src/game/Script/MenuNet.c) */
+extern PyMethodDef g_MenuNetMethods[];
 
 #endif

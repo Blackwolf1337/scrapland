@@ -117,6 +117,8 @@ static inline byte ActionSet_IsNamed(cActionSet *set, const char *name) {
 void Input_SelectActionSet(int index);
 /* the action set of that name (Menu, Racer, Walk, Inactive); 0 when there is none */
 byte Input_SelectActionSetNamed(const char *name);
+/* the accept action of the menu set is held by the player (SScorer.GetMenuAccept) */
+byte Input_MenuAccept(int player);
 uint32_t Input_GetActionSet(void);
 int Input_AssignEntry(const char *a, const char *b, int c, const char *d, const char *e);
 int Input_GetEntry(const char *a, const char *b, const char *c, int *index, char **name);

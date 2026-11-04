@@ -19,8 +19,9 @@
  *	if <cond>, elif <cond>, else, end	the lines between only when cond holds: a value (true when not 0 or
  *					empty) or <value> == <value>, <value> != <value>
  * A value is a number, a word or a "quoted text"; {Key} in a text is the language text Key. Unquoted: @Item.Var the
- * number of a variable of another item, %Module.var a variable of a script module, $id the player, $section the
- * section, $name a value the menu function gives, [name] a list (a tuple of lists, one per entry line), None.
+ * number of a variable of another item, %Module.var a variable of a script module (both may end in +N or -N), $id
+ * the player, $section the section, $name a value the menu function gives, [name] a list (a tuple of lists, one per
+ * entry line; a line with only a value that is a list or tuple is that entry), None.
  */
 #include <stdarg.h>
 #include <stdlib.h>
@@ -43,6 +44,7 @@
 static const scriptModule_t script_modules[] = {
 	{ "PCMenu", g_MenuVideoMethods },
 	{ "PCMenu", g_MenuControlsMethods },
+	{ "PCMenu", g_MenuNetMethods },
 };
 
 void Script_ModuleLoaded(const char *name, PyObject *module) {
@@ -391,16 +393,29 @@ static PyObject *Menu_Value(scriptMenu_t *m, const char *t, byte quoted) {
 		a[strlen(a) - 1] = 0;
 		return Menu_List(m, a);
 	}
-	if (t[0] == '%' && (b = Menu_Split(t + 1, a, sizeof(a)))) {
-		PyObject *v = Script_Func(a, b);
+	if ((t[0] == '%' || t[0] == '@') && (b = Menu_Split(t + 1, a, sizeof(a)))) {
+		/* an offset may follow: @Item1.Y+35 */
+		char var[0x80];
+		double add = 0.0;
+		const char *op = strpbrk(b, "+-");
+		Str_Copy(var, b, op && op - b < (int)sizeof(var) ? (int)(op - b) + 1 : (int)sizeof(var));
+		if (op && !Menu_Number(op, &add)) {
+			Con_Warnf("%s:%d: bad offset in %s\n", m->name, m->line, t);
+		}
+		if (t[0] == '@') {
+			return Menu_Number2Py(Script_GetNum(m->id, a, var) + add);
+		}
+		PyObject *v = Script_Func(a, var);
 		if (!v) {
 			PyErr_Clear();
 			Con_Warnf("%s:%d: no %s\n", m->name, m->line, t + 1);
+		} else if (op && (PyInt_Check(v) || PyFloat_Check(v))) {
+			byte isInt = PyInt_Check(v) && add == (long)add;
+			double d = (PyInt_Check(v) ? (double)PyInt_AsLong(v) : PyFloat_AsDouble(v)) + add;
+			Py_DECREF(v);
+			v = isInt ? PyInt_FromLong((long)d) : PyFloat_FromDouble(d);
 		}
 		return v;
-	}
-	if (t[0] == '@' && (b = Menu_Split(t + 1, a, sizeof(a)))) {
-		return Menu_Number2Py(Script_GetNum(m->id, a, b));
 	}
 	if (Menu_Number(t, &d)) {
 		return strchr(t, '.') ? PyFloat_FromDouble(d) : PyInt_FromLong((long)d);
@@ -446,6 +461,15 @@ static PyObject *Menu_List(scriptMenu_t *m, const char *name) {
 			p = Menu_Tokens(p, buf, sizeof(buf), &l);
 			if (!l.n) {
 				continue;
+			}
+			if (l.n == 1 && !l.quoted[0]) {
+				/* a single value that is a list or tuple is the entry itself */
+				PyObject *v = Menu_Value(m, l.tok[0], 0);
+				if (v && (PyList_Check(v) || PyTuple_Check(v))) {
+					PyTuple_SetItem(r, n++, v);
+					continue;
+				}
+				Py_XDECREF(v);
 			}
 			PyObject *e = PyList_New(l.n);
 			for (int j = 0; e && j < l.n; j++) {
@@ -631,6 +655,13 @@ static byte Menu_Branch(scriptMenu_t *m, scriptLine_t *l) {
 
 static void Menu_Run(scriptMenu_t *m, byte header, const char *section);
 
+/* the menu that runs (the innermost), for the steps */
+static scriptMenu_t *menu_running;
+
+const char *Script_CurrentItem(void) {
+	return menu_running ? menu_running->item : "";
+}
+
 static void Menu_Line(scriptMenu_t *m, scriptLine_t *l, const char *next) {
 	const char *cmd = l->tok[0];
 	char a[0x80], b[0x80];
@@ -751,9 +782,12 @@ byte Script_RunMenu(int id, const char *name, const char *section, const char *b
 		return 0;
 	}
 	scriptMenu_t m = { .id = id, .steps = steps, .vars = vars, .text = text, .section = section, .name = name };
+	scriptMenu_t *outer = menu_running;
+	menu_running = &m;
 	level++;
 	Menu_Run(&m, 1, section);
 	level--;
+	menu_running = outer;
 	if (m.depth) {
 		Con_Warnf("%s: if without end\n", name);
 	}
