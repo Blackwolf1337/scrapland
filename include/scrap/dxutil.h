@@ -154,6 +154,7 @@ struct CD3DApplication {
 	int showCursorWhenFullscreen;
 	int vsync;
 	int fullscreen;
+	int borderless;			/* windowed over the whole desktop (FullScreen 2) */
 	int width;
 	int height;
 	int bpp;
@@ -184,6 +185,9 @@ void CD3DApp_dtor(CD3DApplication *self);
 int CD3DApp_AdjustWindowForChange(CD3DApplication *self);
 void CD3DApp_Pause(CD3DApplication *self, int pause);
 int CD3DApp_ToggleFullscreen(CD3DApplication *self);
+/* the display mode (PLAT_* of platform.h) for the next reset: the window and the present parameters; fullscreen when
+ * the device cannot render in a window */
+void CD3DApp_SetWindowMode(CD3DApplication *self, int mode);
 /* the window messages of the framework */
 /* CD3DApp_Cleanup, CD3DApp_ResetDevice and CD3DApp_Reset: scrapmain.h */
 

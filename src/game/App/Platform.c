@@ -34,7 +34,8 @@ static cGVar GVar_InactiveBackgroundApp;
 
 static struct {
 	SDL_Window *window;
-	byte fullscreen;
+	byte modeSet;
+	int mode, reqW, reqH;		/* of the last Plat_SetWindowMode */
 	uint64_t start;
 	int clientW, clientH;		/* of the last resize handled */
 	float mouseX, mouseY, wheel;	/* the motion not read yet */
@@ -168,13 +169,39 @@ void Plat_WindowRect(int *r) {
 	r[3] = y + h;
 }
 
-void Plat_SetFullscreen(byte on) {
-	if (plat.window && plat.fullscreen != on) {
-		SDL_SetWindowFullscreenMode(plat.window, NULL);		/* the desktop mode: no mode switch */
-		SDL_SetWindowFullscreen(plat.window, on);
-		SDL_SyncWindow(plat.window);
-		plat.fullscreen = on;
+void Plat_SetWindowMode(int mode, int w, int h) {
+	if (!plat.window || (plat.modeSet && mode == plat.mode && (mode == PLAT_BORDERLESS || (w == plat.reqW &&
+		h == plat.reqH)))) {
+		return;
 	}
+	SDL_DisplayID display = SDL_GetDisplayForWindow(plat.window);
+	if (mode == PLAT_WINDOWED) {
+		SDL_SetWindowFullscreen(plat.window, false);
+		SDL_SyncWindow(plat.window);
+		SDL_SetWindowSize(plat.window, w, h);
+		SDL_SetWindowPosition(plat.window, (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
+			(int)SDL_WINDOWPOS_CENTERED_DISPLAY(display));
+	} else {
+		SDL_DisplayMode m;
+		const SDL_DisplayMode *use = NULL;		/* NULL: the desktop, no mode switch */
+		if (mode == PLAT_FULLSCREEN && SDL_GetClosestFullscreenDisplayMode(display, w, h, 0.0f, false, &m)) {
+			use = &m;
+		}
+		/* a hidden window goes fullscreen only when it is shown: the size of the desktop already, so the first
+		 * back buffer has it */
+		const SDL_DisplayMode *desk = SDL_GetDesktopDisplayMode(display);
+		if (mode == PLAT_BORDERLESS && desk) {
+			SDL_SetWindowSize(plat.window, desk->w, desk->h);
+		}
+		SDL_SetWindowFullscreenMode(plat.window, use);
+		SDL_SetWindowFullscreen(plat.window, true);
+	}
+	SDL_SyncWindow(plat.window);
+	plat.modeSet = 1;
+	plat.mode = mode;
+	plat.reqW = w;
+	plat.reqH = h;
+	Plat_ClientSize(&plat.clientW, &plat.clientH);
 }
 
 int Plat_DisplayModes(int *wh, int max) {

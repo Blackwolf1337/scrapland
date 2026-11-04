@@ -395,7 +395,8 @@ void Engine_Init(void) {
 	E3D_LogDebug((&g_FileLog), "TimerQPFreq: %d", (int)freq);
 	Engine3D_Create(hInst, hWnd, (void *)Engine_OneTimeInit, (void *)Engine_FrameMove,
 		(void *)Engine_FinalCleanup, 0);
-	g_Engine->fullscreen = g_FullScreen && !APP_DEDICATED(g_pApp);
+	g_Engine->fullscreen = g_FullScreen == PLAT_FULLSCREEN && !APP_DEDICATED(g_pApp);
+	g_Engine->borderless = g_FullScreen == PLAT_BORDERLESS && !APP_DEDICATED(g_pApp);
 	g_Engine->width = g_VideoWidth;
 	g_Engine->height = g_VideoHeight;
 	g_Engine->bpp = g_VideoBPP;
@@ -422,7 +423,7 @@ int Engine_IsFullScreen(void) {
 	if (m) {
 		return (int)(((uintptr_t)m & ~(uintptr_t)0xff) | (m->windowed == 0));
 	}
-	if (g_FullScreen && !APP_DEDICATED(g_pApp)) {
+	if (g_FullScreen == PLAT_FULLSCREEN && !APP_DEDICATED(g_pApp)) {
 		return 1;
 	}
 	return 0;
@@ -911,11 +912,11 @@ static void Engine_ResetAll(void) {
 	Splash_Show("2D/Loading/00Reset.dds", 1, 500, 0);
 	CD3DApplication *m = g_Engine;
 	m->vsync = g_VSync;
-	if (m->windowed) {
-		m->presentParams.FullScreen_PresentationInterval = 0;
-	} else {
-		m->presentParams.FullScreen_PresentationInterval = m->vsync ? 0 : D3DPRESENT_INTERVAL_IMMEDIATE;
-	}
+	/* differs from the original: the display mode and the window size of FullScreen, VideoWidth and VideoHeight
+	 * apply here too (the video options of the menu end in this reset) */
+	m->width = g_VideoWidth;
+	m->height = g_VideoHeight;
+	CD3DApp_SetWindowMode(m, APP_DEDICATED(g_pApp) ? PLAT_WINDOWED : g_FullScreen);
 	if (CD3DApp_Reset(g_Engine) < 0) {
 		E3D_LogBlue((&g_FileLog), "ERROR: ResetEngine3D_All()");
 	}
@@ -1351,7 +1352,7 @@ INIT_GVAR_FLOAT(Init_GVar_CollisionEpsilon, &GVar_CollisionEpsilon, "CollisionEp
 INIT_GVAR_INT(Init_GVar_VideoBPP, &GVar_VideoBPP, "VideoBPP", 6, "Bits per pixel\n", 32)
 INIT_GVAR_INT(Init_GVar_VideoHeight, &GVar_VideoHeight, "VideoHeight", 6, "Screen height", 1080)
 INIT_GVAR_INT(Init_GVar_VideoWidth, &GVar_VideoWidth, "VideoWidth", 6, "Screen width", 1920)
-INIT_GVAR_INT(Init_GVar_FullScreen, &GVar_FullScreen, "FullScreen", 6, "0 = Windowed mode, 1 = Fullscreen mode", 1)
+INIT_GVAR_INT(Init_GVar_FullScreen, &GVar_FullScreen, "FullScreen", 6, "0 = Windowed, 1 = Fullscreen, 2 = Borderless (desktop size)", 1)
 FINI_GVAR_STRING(Fini_GVar_PlayVideo, &GVar_PlayVideo)
 INIT_GVAR_STRING(Init_GVar_PlayVideo, Fini_GVar_PlayVideo, &GVar_PlayVideo, "PlayVideo", 4, "Video played at init.", "")
 INIT_GVAR_INT(Init_GVar_ShowSplashScreen, &GVar_ShowSplashScreen, "ShowSplashScreen", 0, "Show loading screen (0/1)", 1)

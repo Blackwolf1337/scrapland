@@ -18,8 +18,14 @@ void *Plat_NativeWindow(void);
 /* the client area in pixels, the window rectangle on the desktop (left, top, right, bottom) */
 void Plat_ClientSize(int *w, int *h);
 void Plat_WindowRect(int *r);
-/* the window over the whole screen (borderless, the present scales the back buffer) or back */
-void Plat_SetFullscreen(byte on);
+/* the display modes of Plat_SetWindowMode and of the FullScreen engine variable */
+#define PLAT_WINDOWED 0
+#define PLAT_FULLSCREEN 1
+#define PLAT_BORDERLESS 2
+/* PLAT_WINDOWED a resizable window of w x h (resized only when w, h or the mode change, so a size the user dragged
+ * stays), PLAT_FULLSCREEN fullscreen in the display mode closest to w x h, PLAT_BORDERLESS fullscreen on the desktop
+ * without a mode switch */
+void Plat_SetWindowMode(int mode, int w, int h);
 void Plat_SetTitle(const char *title);
 void Plat_ShowCursor(byte on);
 /* the sizes of the fullscreen modes of the main display as w, h pairs (largest first, each once, the desktop when

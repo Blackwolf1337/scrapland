@@ -144,10 +144,23 @@ void CD3DApp_dtor(CD3DApplication *self) {
 	g_Engine = NULL;
 }
 
-/* the window style (and in fullscreen the size of the mode) after a change */
-/* the window over the screen for fullscreen (the present scales the back buffer to it), the cursor only in a window */
+static D3DDeviceInfo *D3DApp_CurDevice(CD3DApplication *self);
+
+/* the window for the mode of the engine: fullscreen in the size of the current mode, borderless over the desktop,
+ * windowed in the size asked for (width, height); then its rectangles, the cursor only in a window */
 int CD3DApp_AdjustWindowForChange(CD3DApplication *self) {
-	Plat_SetFullscreen(!self->windowed);
+	if (!self->windowed) {
+		D3DDeviceInfo *dev = D3DApp_CurDevice(self);
+		D3DModeInfo *mode = &dev->modes[dev->dwCurrentMode];
+		Plat_SetWindowMode(PLAT_FULLSCREEN, (int)mode->Width, (int)mode->Height);
+	} else {
+		Plat_SetWindowMode(self->borderless ? PLAT_BORDERLESS : PLAT_WINDOWED, self->width, self->height);
+	}
+	int wr[4], cw, ch;
+	Plat_WindowRect(wr);
+	Plat_ClientSize(&cw, &ch);
+	self->windowBounds = (exe_rect) { wr[0], wr[1], wr[2], wr[3] };
+	self->windowClient = (exe_rect) { 0, 0, cw, ch };
 	Plat_ShowCursor(self->windowed || self->showCursorWhenFullscreen);
 	return 0;
 }
@@ -328,17 +341,13 @@ static int CD3DApp_ForceWindowed(CD3DApplication *self) {
 	return 0;
 }
 
-int CD3DApp_ToggleFullscreen(CD3DApplication *self) {
+/* the window and the present parameters for self->windowed and the borderless flag, for the next reset */
+static void D3DApp_SetPresentMode(CD3DApplication *self) {
 	D3DAdapterInfo *ad = &self->adapters[self->adapter];
 	D3DDeviceInfo *dev = &ad->devices[ad->dwCurrentDevice];
 	D3DModeInfo *mode = &dev->modes[dev->dwCurrentMode];
 	D3DPresentParams *pp = &self->presentParams;
 
-	if (!self->windowed && !dev->bCanDoWindowed) {
-		return CD3DApp_ForceWindowed(self);
-	}
-	self->ready = 0;
-	self->windowed = !self->windowed;
 	dev->bWindowed = self->windowed;
 	D3DApp_AdjustWindowForChange(self);
 	pp->Windowed = dev->bWindowed;
@@ -357,6 +366,23 @@ int CD3DApp_ToggleFullscreen(CD3DApplication *self) {
 		pp->BackBufferFormat = mode->Format;
 		pp->FullScreen_PresentationInterval = self->vsync ? 0 : D3DPRESENT_INTERVAL_IMMEDIATE;
 	}
+}
+
+void CD3DApp_SetWindowMode(CD3DApplication *self, int mode) {
+	self->borderless = mode == PLAT_BORDERLESS;
+	self->windowed = mode != PLAT_FULLSCREEN && D3DApp_CurDevice(self)->bCanDoWindowed;
+	D3DApp_SetPresentMode(self);
+}
+
+int CD3DApp_ToggleFullscreen(CD3DApplication *self) {
+	D3DDeviceInfo *dev = D3DApp_CurDevice(self);
+
+	if (!self->windowed && !dev->bCanDoWindowed) {
+		return CD3DApp_ForceWindowed(self);
+	}
+	self->ready = 0;
+	self->windowed = !self->windowed;
+	D3DApp_SetPresentMode(self);
 	if (CD3DApp_Reset(self) < 0) {
 		return CD3DApp_DisplayErrorMsg(0x8200000c);	/* D3DAPPERR_RESIZEFAILED */
 	}
@@ -680,26 +706,11 @@ static int CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 	D3DPresentParams *pp = &self->presentParams;
 	int hr;
 
-	D3DApp_AdjustWindowForChange(self);
 	memset(pp, 0, sizeof(*pp));
-	pp->Windowed = dev->bWindowed;
 	pp->BackBufferCount = 1;
-	pp->MultiSampleType = dev->MultiSampleType;
 	pp->EnableAutoDepthStencil = self->useDepthBuffer;
 	pp->SwapEffect = D3DSWAPEFFECT_DISCARD;
-	pp->AutoDepthStencilFormat = mode->DepthStencilFormat;
-	pp->hDeviceWindow = self->hWnd;
-	if (self->windowed) {
-		pp->BackBufferWidth = (uint32_t)(self->windowClient.right - self->windowClient.left);
-		pp->BackBufferHeight = (uint32_t)(self->windowClient.bottom - self->windowClient.top);
-		pp->BackBufferFormat = ad->desktopMode.Format;
-		pp->FullScreen_PresentationInterval = 0;
-	} else {
-		pp->BackBufferWidth = mode->Width;
-		pp->BackBufferHeight = mode->Height;
-		pp->BackBufferFormat = mode->Format;
-		pp->FullScreen_PresentationInterval = self->vsync ? 0 : D3DPRESENT_INTERVAL_IMMEDIATE;
-	}
+	D3DApp_SetPresentMode(self);
 	void *d3d = self->d3d;
 	/* differs from the original on purpose: the x87 keeps its double precision (the libm runs on the x87; without
 	 * FPU_PRESERVE Direct3D sets it to 24 bits and sin, cos ... lose most of their digits) */
