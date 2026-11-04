@@ -151,8 +151,6 @@ void Object3D_Preload(const char *name, const vec3_t *scale);
 cEntity *cWorld_CreateEntity(cWorld *world, const char *className, float x, float y, float z,
 	const char *name);
 /* printf into a string object */
-/* the Display entry of the video options (src/game/PyInterface/PyMenuDisplay.c), after Init of the scripts */
-void PyMenu_AddDisplayOption(void);
 /* imports the compiled module file of the open pack as name (src/game/PyInterface/PythonInit.c) */
 void Pack_PreloadLibrary(const char *name, const char *file);
 void Anm_Preload(const char *a, const char *b);

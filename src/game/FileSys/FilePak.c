@@ -414,6 +414,20 @@ byte Pack_GetFileInfo(const char *name, char *packName, int *offset, int *size) 
 	return 1;
 }
 
+/* the file name of the packs (up to max bytes) into dst; its size, -1 when it is not there or longer */
+int Pack_ReadFile(const char *name, void *dst, int max) {
+	if (g_LstFile) {
+		return -1;
+	}
+	cPackLocation *loc = PackIndex_Find(name);
+	if (!loc || loc->size > max) {
+		return -1;
+	}
+	cFile2 *f = &g_PackFiles[loc->pack];
+	cFile2_SkipTo(f, loc->offset, name);
+	return VFile_Read(f, dst, loc->size) == loc->size ? loc->size : -1;
+}
+
 /*
  * mounts name.packed and adds its files to the index (later packs win); 1 if it did. Without the pack and without other packs
  * a file list is recorded instead: dir/filelist.2Bpack (name\filelist.2Bpack without dir), appended when the pack

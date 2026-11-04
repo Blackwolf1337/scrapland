@@ -39,6 +39,7 @@
 #define g_RenderLightmap (GVar_RenderLightmap.value.i)
 #define g_GvCollisionEpsilon (GVar_CollisionEpsilon.value.f)	/* CollisionEpsilon */
 #define g_FullScreen (GVar_FullScreen.value.i)
+#define g_VideoDesktop (GVar_VideoDesktop.value.i)
 #define g_ComputeMapTextSaving (GVar_ComputeMapTextSaving.value.i)
 #define g_ViewerCameraAnim (GVar_ViewerCameraAnim.value.i)
 #define g_ShowMapCollision (GVar_ShowMapCollision.value.i)
@@ -61,6 +62,7 @@ static cGVar GVar_RenderLightmap;
 static cGVar GVar_PlayVideo;
 static cGVar GVar_ModelAmbient;
 static cGVar GVar_FullScreen;
+static cGVar GVar_VideoDesktop;
 static cGVar GVar_ComputeMapTextSaving;
 static cGVar GVar_CollisionEpsilon;
 
@@ -395,6 +397,9 @@ void Engine_Init(void) {
 	E3D_LogDebug((&g_FileLog), "TimerQPFreq: %d", (int)freq);
 	Engine3D_Create(hInst, hWnd, (void *)Engine_OneTimeInit, (void *)Engine_FrameMove,
 		(void *)Engine_FinalCleanup, 0);
+	if (g_VideoDesktop) {
+		Plat_DesktopSize(&g_VideoWidth, &g_VideoHeight);
+	}
 	g_Engine->fullscreen = g_FullScreen == PLAT_FULLSCREEN && !APP_DEDICATED(g_pApp);
 	g_Engine->borderless = g_FullScreen == PLAT_BORDERLESS && !APP_DEDICATED(g_pApp);
 	g_Engine->width = g_VideoWidth;
@@ -914,6 +919,9 @@ static void Engine_ResetAll(void) {
 	m->vsync = g_VSync;
 	/* differs from the original: the display mode and the window size of FullScreen, VideoWidth and VideoHeight
 	 * apply here too (the video options of the menu end in this reset) */
+	if (g_VideoDesktop) {
+		Plat_DesktopSize(&g_VideoWidth, &g_VideoHeight);
+	}
 	m->width = g_VideoWidth;
 	m->height = g_VideoHeight;
 	CD3DApp_SetWindowMode(m, APP_DEDICATED(g_pApp) ? PLAT_WINDOWED : g_FullScreen);
@@ -1329,6 +1337,7 @@ static cGVar GVar_CollisionEpsilon;
 static cGVar GVar_ViewerCameraAnim;
 static cGVar GVar_ShowMapCollision;
 static cGVar GVar_FullScreen;
+static cGVar GVar_VideoDesktop;
 cGVar GVar_VSync;
 cGVar GVar_isDemo;
 
@@ -1353,6 +1362,7 @@ INIT_GVAR_INT(Init_GVar_VideoBPP, &GVar_VideoBPP, "VideoBPP", 6, "Bits per pixel
 INIT_GVAR_INT(Init_GVar_VideoHeight, &GVar_VideoHeight, "VideoHeight", 6, "Screen height", 1080)
 INIT_GVAR_INT(Init_GVar_VideoWidth, &GVar_VideoWidth, "VideoWidth", 6, "Screen width", 1920)
 INIT_GVAR_INT(Init_GVar_FullScreen, &GVar_FullScreen, "FullScreen", 6, "0 = Windowed, 1 = Fullscreen, 2 = Borderless (desktop size)", 1)
+INIT_GVAR_INT(Init_GVar_VideoDesktop, &GVar_VideoDesktop, "VideoDesktop", 6, "1 = VideoWidth and VideoHeight follow the desktop", 0)
 FINI_GVAR_STRING(Fini_GVar_PlayVideo, &GVar_PlayVideo)
 INIT_GVAR_STRING(Init_GVar_PlayVideo, Fini_GVar_PlayVideo, &GVar_PlayVideo, "PlayVideo", 4, "Video played at init.", "")
 INIT_GVAR_INT(Init_GVar_ShowSplashScreen, &GVar_ShowSplashScreen, "ShowSplashScreen", 0, "Show loading screen (0/1)", 1)

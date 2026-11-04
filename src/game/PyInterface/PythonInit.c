@@ -6,6 +6,7 @@
 #include "scrap/pyfunction.h"
 #include "scrap/pymempool.h"
 #include "scrap/scrap.h"
+#include "scrap/script.h"
 #include "scrap/staticinit.h"
 
 #include <marshal.h>
@@ -55,9 +56,6 @@ void Python_Init(void) {
 		Str_Printf(cmd, sizeof(cmd), "Init.Init('%s')", g_pApp->levelPath);
 	}
 	PyRun_ScrapString(cmd);
-	if (!g_IsViewer) {
-		PyMenu_AddDisplayOption();
-	}
 	PyRun_ScrapString(g_PythonExecute);
 	/* the marshal buffer of Pack_PreloadLibrary is not needed after the start */
 	cStaticBuffer *buf = g_PyStaticBuffer;
@@ -106,6 +104,7 @@ void Pack_PreloadLibrary(const char *name, const char *file) {
 			PyObject *m = PyImport_ExecCodeModuleEx((char *)name, co, path);
 			Py_DECREF(co);
 			CHECK(m != NULL);
+			Script_ModuleLoaded(name, m);
 			Py_DECREF(m);
 		}
 	} else {
@@ -115,6 +114,7 @@ void Pack_PreloadLibrary(const char *name, const char *file) {
 		PyObject *m = PyImport_ImportModule((char *)name);
 		g_PyPackImport = 1;
 		if (m) {
+			Script_ModuleLoaded(name, m);
 			Py_DECREF(m);
 		} else {
 			PyObject *err = PySys_GetObject("stderr");
