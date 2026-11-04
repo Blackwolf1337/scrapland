@@ -18,10 +18,13 @@
  *	do <name>			the lines of another section, here
  *	if <cond>, elif <cond>, else, end	the lines between only when cond holds: a value (true when not 0 or
  *					empty) or <value> == <value>, <value> != <value>
+ *	let <name> <value> [value ...]	$name: the sum of the values (or the one value that is no number)
+ *	measure <name> <font> <text>	$name: the width of the text in the font
  * A value is a number, a word or a "quoted text"; {Key} in a text is the language text Key. Unquoted: @Item.Var the
- * number of a variable of another item, %Module.var a variable of a script module (both may end in +N or -N), $id
- * the player, $section the section, $name a value the menu function gives, [name] a list (a tuple of lists, one per
- * entry line; a line with only a value that is a list or tuple is that entry), None.
+ * number of a variable of another item, %Module.var a variable of a script module, $id the player, $section the
+ * section, $name a value the menu function gives or let and measure made (these three may end in +N or -N),
+ * [name] a list (a tuple of lists, one per entry line; a line with only a value that is a list or tuple is that
+ * entry), None.
  */
 #include <stdarg.h>
 #include <stdlib.h>
@@ -32,6 +35,7 @@
 #include "scrap/filepak.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
+#include "scrap/scrapfont.h"
 #include "scrap/script.h"
 
 #define SCRIPT_MAX_FILE 0x10000
@@ -256,6 +260,7 @@ typedef struct {
 	int id;
 	const scriptStep_t *steps;
 	PyObject *vars;			/* the $names of the menu function, a dict or NULL */
+	PyObject *ownVars;		/* the dict of let and measure when the function gave none */
 	const char *text;		/* the whole file */
 	const char *section;
 	char item[0x80];		/* the last item */
@@ -376,10 +381,18 @@ static PyObject *Menu_Value(scriptMenu_t *m, const char *t, byte quoted) {
 		return PyString_FromString((char *)(m->section ? m->section : ""));
 	}
 	if (t[0] == '$') {
-		PyObject *v = m->vars ? PyDict_GetItemString(m->vars, (char *)t + 1) : NULL;
+		/* an offset may follow: $x+10 */
+		char name[0x40];
+		double add = 0.0;
+		const char *op = strpbrk(t + 1, "+-");
+		Str_Copy(name, t + 1, op && op - t < (int)sizeof(name) ? (int)(op - t) : (int)sizeof(name));
+		PyObject *v = m->vars ? PyDict_GetItemString(m->vars, name) : NULL;
 		if (!v) {
 			Con_Warnf("%s:%d: no value %s\n", m->name, m->line, t);
 			return NULL;
+		}
+		if (op && Menu_Number(op, &add) && (PyInt_Check(v) || PyFloat_Check(v))) {
+			return Menu_Number2Py((PyInt_Check(v) ? (double)PyInt_AsLong(v) : PyFloat_AsDouble(v)) + add);
 		}
 		Py_INCREF(v);
 		return v;
@@ -607,7 +620,58 @@ static byte Menu_Cond(scriptMenu_t *m, scriptLine_t *l) {
 }
 
 static const char *const menu_commands[] = { "style", "item", "use", "set", "lr", "ud", "default", "list", "call", "run",
-	"menu", "do", "if", "elif", "else", "end" };
+	"menu", "do", "if", "elif", "else", "end", "let", "measure" };
+
+/* a $name of the menu: into its own dict when the menu function gave none */
+static void Menu_SetVar(scriptMenu_t *m, const char *name, PyObject *v) {
+	if (!m->vars) {
+		m->vars = m->ownVars = PyDict_New();
+	}
+	if (m->vars && v) {
+		PyDict_SetItemString(m->vars, (char *)name, v);
+	}
+	Py_XDECREF(v);
+}
+
+/* let <name> <value> [value ...]: the sum of the values, or the value when there is one that is no number */
+static void Menu_Let(scriptMenu_t *m, scriptLine_t *l) {
+	double sum = 0.0;
+	byte isInt = 1;
+	if (l->n == 3) {
+		PyObject *v = Menu_Value(m, l->tok[2], l->quoted[2]);
+		if (v && !PyInt_Check(v) && !PyFloat_Check(v)) {
+			Menu_SetVar(m, l->tok[1], v);
+			return;
+		}
+		Py_XDECREF(v);
+	}
+	for (int i = 2; i < l->n; i++) {
+		PyObject *v = Menu_Value(m, l->tok[i], l->quoted[i]);
+		if (v && PyInt_Check(v)) {
+			sum += PyInt_AsLong(v);
+		} else if (v && PyFloat_Check(v)) {
+			sum += PyFloat_AsDouble(v);
+			isInt = 0;
+		} else {
+			Con_Warnf("%s:%d: let adds numbers\n", m->name, m->line);
+		}
+		Py_XDECREF(v);
+	}
+	Menu_SetVar(m, l->tok[1], isInt && sum == (long)sum ? PyInt_FromLong((long)sum) : PyFloat_FromDouble(sum));
+}
+
+/* measure <name> <font> <text>: the width of the text in the font (SScorer.GetTextArea) */
+static void Menu_Measure(scriptMenu_t *m, scriptLine_t *l) {
+	char font[0x40], text[SCRIPT_MAX_TEXT];
+	float pos[2], size[2] = { 0.0f, 0.0f };
+	CFont *f = Font_Get(Menu_Word(m, l->tok[2], l->quoted[2], font, sizeof(font)));
+	if (!f) {
+		Con_Warnf("%s:%d: no font %s\n", m->name, m->line, font);
+	} else {
+		Font_TextSize(f, pos, size, 0.0f, 0.0f, "%s", Menu_Word(m, l->tok[3], l->quoted[3], text, sizeof(text)));
+	}
+	Menu_SetVar(m, l->tok[1], PyFloat_FromDouble(size[0]));
+}
 
 static byte Menu_IsCommand(scriptLine_t *l) {
 	if (l->quoted[0]) {
@@ -708,6 +772,10 @@ static void Menu_Line(scriptMenu_t *m, scriptLine_t *l, const char *next) {
 		Menu_DoCall(m, l);
 	} else if (!strcmp(cmd, "run") && l->n >= 2) {
 		Menu_DoRun(m, l);
+	} else if (!strcmp(cmd, "let") && l->n >= 3) {
+		Menu_Let(m, l);
+	} else if (!strcmp(cmd, "measure") && l->n == 4) {
+		Menu_Measure(m, l);
 	} else if (!strcmp(cmd, "do") && l->n == 2) {
 		if (m->nested >= SCRIPT_MAX_DEPTH) {
 			Con_Warnf("%s:%d: do nested too deep\n", m->name, m->line);
@@ -791,5 +859,6 @@ byte Script_RunMenu(int id, const char *name, const char *section, const char *b
 	if (m.depth) {
 		Con_Warnf("%s: if without end\n", name);
 	}
+	Py_XDECREF(m.ownVars);
 	return 1;
 }

@@ -1,7 +1,7 @@
 /*
  * The multiplayer menus of PCMenu in C (issue #2, step 3): MultiPlayerMenu, the join page with the server browser,
- * the address and password pages, the connection to a server and the part the create and join pages share. The
- * layout is data/menus/net.menu, one section per page.
+ * the address and password pages, the connection to a server, the create page with the advanced options and the
+ * part the create and join pages share. The layout is data/menus/net.menu, one section per page.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +14,7 @@
 #include "scrap/net.h"
 #include "scrap/scheduler.h"
 #include "scrap/scorer.h"
+#include "scrap/scrapfont.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/timer.h"
@@ -27,6 +28,10 @@ static const char net_menu[] = {
 #define NET_MAX_SERVERS 512
 #define NET_SLIDER_Y 136
 #define NET_SLIDER_H 208
+#define NET_MAP_SLOTS 9			/* the lines of the map list */
+#define NET_MAX_MAPS 64
+#define NET_MAP_SLIDER_Y 214
+#define NET_MAP_SLIDER_H 124
 
 /* the flags of a server in the browser */
 #define SIBF_DEDICATED 1
@@ -53,9 +58,17 @@ static struct {
 	char sort[0x10];		/* the column the list is sorted by */
 	int sortOrder;			/* 1: reversed */
 	char motd[0x200];		/* the message of the day of the master server */
+	int mapIndex;			/* the first map shown on the create page */
 } net = { .domain = "Internet", .sort = "Ping" };
 
+/* the maps of a game, as the script kept them: the text of a Python list in an engine variable */
+typedef struct {
+	char names[NET_MAX_MAPS][0x40];
+	int num;
+} netMapList_t;
+
 static void Net_RunMenu(int id, const char *section, PyObject *vars);
+static PyObject *Net_Vars(const char *tab);
 static void Net_JoinMenu(int id);
 
 static void Net_Menu(const char *func, int id) {
@@ -366,11 +379,314 @@ static void Step_Browse(int id, PyObject *args) {
 	Net_SortBy(id, column);
 }
 
+
+/* ---- the create page ---- */
+
+/* "['Bank', 'FZ']" into list (the repr of a list of map names) */
+static void Net_ParseMaps(const char *text, netMapList_t *list) {
+	list->num = 0;
+	for (const char *p = text; *p;) {
+		if (*p != '\'' && *p != '"') {
+			p++;
+			continue;
+		}
+		char quote = *p++;
+		const char *end = strchr(p, quote);
+		if (!end) {
+			break;
+		}
+		if (list->num < NET_MAX_MAPS) {
+			int len = (int)(end - p) + 1;
+			Str_Copy(list->names[list->num++], p, len < (int)sizeof(list->names[0]) ? len : (int)sizeof(list->names[0]));
+		}
+		p = end + 1;
+	}
+}
+
+static void Net_GetServerMaps(netMapList_t *list) {
+	Net_ParseMaps(GVar_GetStr("ServerMapList"), list);
+}
+
+static void Net_SetServerMaps(const netMapList_t *list) {
+	char text[NET_MAX_MAPS * 0x44 + 4];
+	int n = Str_Printf(text, sizeof(text), "[");
+	for (int i = 0; i < list->num; i++) {
+		n += Str_Printf(text + n, sizeof(text) - n, "%s'%s'", i ? ", " : "", list->names[i]);
+	}
+	Str_Printf(text + n, sizeof(text) - n, "]");
+	GVar_SetStr("ServerMapList", text);
+}
+
+/* a list or other variable of the Net script (a new reference, NULL when it is not there) */
+static PyObject *Net_Script(const char *var) {
+	PyObject *m = PyImport_ImportModule("Net");
+	PyObject *v = m ? PyObject_GetAttrString(m, (char *)var) : NULL;
+	if (!v) {
+		PyErr_Clear();
+	}
+	Py_XDECREF(m);
+	return v;
+}
+
+/* the maps of the current mode, Net.ModesMap[ServerType] */
+static void Net_ModeMaps(netMapList_t *list) {
+	PyObject *modes = Net_Script("ModesMap");
+	PyObject *maps = modes ? PyDict_GetItemString(modes, (char *)GVar_GetStr("ServerType")) : NULL;
+	list->num = 0;
+	for (int i = 0; maps && i < PySequence_Length(maps) && list->num < NET_MAX_MAPS; i++) {
+		PyObject *e = PySequence_GetItem(maps, i);
+		if (e && PyString_Check(e)) {
+			Str_Copy(list->names[list->num++], PyString_AsString(e), sizeof(list->names[0]));
+		}
+		Py_XDECREF(e);
+	}
+	PyErr_Clear();
+	Py_XDECREF(modes);
+}
+
+static byte Net_HasMap(const netMapList_t *list, const char *name) {
+	for (int i = 0; i < list->num; i++) {
+		if (!strcmp(list->names[i], name)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static void Net_UpdateMapSlider(int id) {
+	netMapList_t maps;
+	Net_ModeMaps(&maps);
+	if (maps.num <= NET_MAP_SLOTS) {
+		Script_SetNum(id, "MapSlider", "Y", NET_MAP_SLIDER_Y);
+		Script_SetNum(id, "MapSlider", "ScaleY", NET_MAP_SLIDER_H);
+		return;
+	}
+	double step = NET_MAP_SLIDER_H / (double)(maps.num - NET_MAP_SLOTS + 1);
+	double size = step;
+	if (size < 10) {
+		size = 10;
+		step = (NET_MAP_SLIDER_H - (size - step)) / (double)(maps.num - NET_MAP_SLOTS + 1);
+	}
+	Script_SetNum(id, "MapSlider", "Y", NET_MAP_SLIDER_Y + net.mapIndex * step);
+	Script_SetNum(id, "MapSlider", "ScaleY", size);
+}
+
+/* the maps of the mode from mapIndex on; the chosen ones are lit */
+static void Net_UpdateMapList(int id) {
+	netMapList_t maps, chosen;
+	char item[0x20], link[0x20], key[0x80], text[0x100];
+	int slot = 0;
+
+	Net_GetServerMaps(&chosen);
+	for (int i = 0; i < NET_MAP_SLOTS; i++) {
+		Str_Printf(item, sizeof(item), "MapSlot%d", i + 1);
+		Script_SetStr(id, item, "Hint", "");
+		Script_SetStr(id, item, "Text", "");
+		Script_SetStr(id, item, "OnAccept", "");
+		Script_SetStr(id, item, "OnGainFocus", "");
+		Script_SetStr(id, item, "OnLooseFocus", "");
+		Str_Printf(item, sizeof(item), "MapSlotBack%d", i + 1);
+		Script_SetNum(id, item, "Visible", 0);
+	}
+	Net_ModeMaps(&maps);
+	for (int i = net.mapIndex; i < maps.num && i - net.mapIndex < NET_MAP_SLOTS; i++) {
+		const char *t = maps.names[i];
+		Str_Printf(key, sizeof(key), "Station_%s", t);
+		Str_Printf(item, sizeof(item), "MapSlot%d", slot + 1);
+		Script_SetStr(id, item, "Hint", t);
+		Script_SetStr(id, item, "OnAccept", "PCMenu.MapChoose");
+		Script_SetStr(id, item, "OnGainFocus", "PCMenu.MapPreviewOn");
+		Script_SetStr(id, item, "OnLooseFocus", "PCMenu.MapPreviewOff");
+		byte selected = Net_HasMap(&chosen, t);
+		Str_Printf(text, sizeof(text), "%c %s", selected ? 2 : 3, Script_Lang(key));
+		Script_SetStr(id, item, "Text", text);
+		if (selected) {
+			Script_SetNum(id, item, "Red", 255);
+			Script_SetNum(id, item, "Green", 241);
+			Script_SetNum(id, item, "Blue", 174);
+			Str_Printf(link, sizeof(link), "MapSlotBack%d", slot + 1);
+			Script_SetNum(id, link, "Visible", 1);
+		} else {
+			Script_SetNum(id, item, "Red", 183);
+			Script_SetNum(id, item, "Green", 220);
+			Script_SetNum(id, item, "Blue", 255);
+		}
+		Str_Printf(link, sizeof(link), "MapSlot%d", slot + 2);
+		Script_SetStr(id, item, "Down", link);
+		slot++;
+		Str_Printf(link, sizeof(link), "MapSlot%d", slot);
+		Script_Call("Menu", "LinkLR", "(iss)", id, link, slot <= NET_MAP_SLOTS / 2 ? "MapUp" : "MapDown");
+	}
+	Script_Call("Menu", "LinkLR", "(iss)", id, "MapSlot1", "MapUp");
+	Str_Printf(link, sizeof(link), "MapSlot%d", slot);
+	Script_Call("Menu", "LinkLR", "(iss)", id, link, "MapDown");
+	Script_Call("Menu", "LinkUD", "(iss)", id, link, "CreateButton");
+	Net_UpdateMapSlider(id);
+}
+
+/* the name of the mode, the title of its limit and the place of the limit, the maps */
+static void Net_UpdateServerType(int id) {
+	char key[0x80], title[0x100];
+	const char *type = GVar_GetStr("ServerType");
+	float pos[2], size[2] = { 0.0f, 0.0f };
+
+	Str_Printf(key, sizeof(key), "Net_Type_%s", type);
+	const char *text = Script_Lang(key);
+	Script_SetStr(id, "ServerType", "Text", *text ? text : type);
+	Str_Printf(key, sizeof(key), "Menu_MultiPlayer_%s_Limit", type);
+	text = Script_Lang(key);
+	Str_Printf(title, sizeof(title), "%s:", *text ? text : "Limit");
+	Font_TextSize(Font_Get("Horatio"), pos, size, 0.0f, 0.0f, "%s", title);
+	Script_SetStr(id, "FragLimitTitle", "Text", title);
+	Script_SetNum(id, "FragLimit", "X", Script_GetNum(id, "FragLimitTitle", "X") + size[0] + 10);
+	Script_Call("Net", "PurgeServerMapList", "()");
+	Net_UpdateMapList(id);
+}
+
+/* the modes of Net.Modes: the index of ServerType (-1 when it is none of them) and the number of modes */
+static int Net_ModeIndex(int *count) {
+	PyObject *modes = Net_Script("Modes");
+	const char *type = GVar_GetStr("ServerType");
+	int found = -1;
+	*count = modes ? PySequence_Length(modes) : 0;
+	for (int i = 0; i < *count; i++) {
+		PyObject *e = PySequence_GetItem(modes, i);
+		if (e && PyString_Check(e) && !strcmp(PyString_AsString(e), type)) {
+			found = i;
+		}
+		Py_XDECREF(e);
+	}
+	PyErr_Clear();
+	Py_XDECREF(modes);
+	return found;
+}
+
+static void Net_SetMode(int index) {
+	PyObject *modes = Net_Script("Modes");
+	PyObject *e = modes ? PySequence_GetItem(modes, index) : NULL;
+	if (e && PyString_Check(e)) {
+		GVar_SetStr("ServerType", PyString_AsString(e));
+	}
+	PyErr_Clear();
+	Py_XDECREF(e);
+	Py_XDECREF(modes);
+}
+
+static void Net_CreateMenu(int id) {
+	int count;
+	char players[0x10], frags[0x10];
+	net.mapIndex = 0;
+	Net_DoneBrowser();
+	if (Net_ModeIndex(&count) < 0 && count > 0) {
+		Net_SetMode(0);
+	}
+	const char *advanced = Script_Lang("Menu_Multiplayer_Advanced");
+	Str_Printf(players, sizeof(players), "%d", (int)GVar_GetNum("DefaultMaxPlayersOnServer", 0) + 1);
+	Str_Printf(frags, sizeof(frags), "%d", (int)GVar_GetNum("FragLimit", 0));
+	PyObject *vars = Net_Vars("Create");
+	PyObject *more = Py_BuildValue("{s:s,s:s,s:s,s:s}", "servername", GVar_GetStr("ServerName"), "players", players,
+		"fraglimit", frags, "advanced", *advanced ? advanced : "Advanced");
+	PyObject *k, *v;
+	int pos = 0;
+	while (vars && more && PyDict_Next(more, &pos, &k, &v)) {
+		PyDict_SetItem(vars, k, v);
+	}
+	Py_XDECREF(more);
+	Net_RunMenu(id, "Create", vars);
+	Py_XDECREF(vars);
+}
+
+/* a text of the language, or the English one when the language has none */
+static const char *Net_Text(const char *key, const char *english) {
+	const char *s = Script_Lang(key);
+	return *s ? s : english;
+}
+
+static void Net_DataRateText(char *out, int size) {
+	const char *rate = Net_Text("Menu_Multiplayer_Advanced_DataRate", "Connection type");
+	int limit = (int)GVar_GetNum("ServerDataRateLimit", 0);
+	if (limit > 40960) {
+		Str_Printf(out, size, "%s : LAN", rate);
+	} else {
+		Str_Printf(out, size, "%s : %d kbps", rate, limit / 80);
+	}
+}
+
+static void Step_MapSlots(int id, PyObject *args) {
+	(void)args;
+	for (int i = 0; i < NET_MAP_SLOTS; i++) {
+		char item[0x20], link[0x20];
+		Str_Printf(item, sizeof(item), "MapSlotBack%d", i + 1);
+		Script_Add(id, item, "Sprite");
+		Script_SetNum(id, item, "Unit", 1);
+		Script_SetNum(id, item, "X", 80);
+		Script_SetNum(id, item, "Y", 199 + i * 17);
+		Script_SetNum(id, item, "ScaleX", 230);
+		Script_SetNum(id, item, "ScaleY", 16);
+		Script_SetNum(id, item, "Red", 255);
+		Script_SetNum(id, item, "Green", 255);
+		Script_SetNum(id, item, "Blue", 222);
+		Script_SetNum(id, item, "Alpha", 32);
+		Script_SetNum(id, item, "Visible", 0);
+		Str_Printf(item, sizeof(item), "MapSlot%d", i + 1);
+		Script_Add(id, item, "Text");
+		Script_SetStr(id, item, "Font", "HoratioSmall");
+		Script_SetStr(id, item, "Text", "XXXXX");
+		Script_SetNum(id, item, "X", 80);
+		Script_SetNum(id, item, "Y", 197 + i * 17);
+		Script_SetNum(id, item, "Red", 183);
+		Script_SetNum(id, item, "Green", 220);
+		Script_SetNum(id, item, "Blue", 255);
+		Script_SetNum(id, item, "W", 230);
+		Script_SetNum(id, item, "H", 22);
+		Str_Printf(link, sizeof(link), "MapSlot%d", i);
+		Script_SetStr(id, item, "Up", link);
+		Str_Printf(link, sizeof(link), "MapSlot%d", i + 2);
+		Script_SetStr(id, item, "Down", link);
+		Script_SetStr(id, item, "Right", "MapUp");
+	}
+}
+
+/* mappreviews x y: a hidden picture of each map of Net.NetMaps */
+static void Step_MapPreviews(int id, PyObject *args) {
+	int x, y;
+	if (!PyArg_ParseTuple(args, "ii", &x, &y)) {
+		PyErr_Print();
+		return;
+	}
+	PyObject *maps = Net_Script("NetMaps");
+	for (int i = 0; maps && i < PySequence_Length(maps); i++) {
+		PyObject *e = PySequence_GetItem(maps, i);
+		if (e && PyString_Check(e)) {
+			char item[0x80], file[0x100];
+			Str_Printf(item, sizeof(item), "MapPreviewSlot_%s", PyString_AsString(e));
+			Str_Printf(file, sizeof(file), "Levels/%s/2D/MapPreview.alpha.tga", PyString_AsString(e));
+			Script_Add(id, item, "Sprite");
+			Script_SetNum(id, item, "X", x);
+			Script_SetNum(id, item, "Y", y);
+			Script_SetStr(id, item, "File", file);
+			Script_SetNum(id, item, "Visible", 0);
+			Script_SetNum(id, item, "Alpha", 0);
+		}
+		Py_XDECREF(e);
+	}
+	PyErr_Clear();
+	Py_XDECREF(maps);
+}
+
+static void Step_ServerType(int id, PyObject *args) {
+	(void)args;
+	Net_UpdateServerType(id);
+}
+
 static const scriptStep_t net_steps[] = {
 	{ "ingame", Step_InGame },
 	{ "tabwidth", Step_TabWidth },
 	{ "columntext", Step_ColumnText },
 	{ "browse", Step_Browse },
+	{ "mapslots", Step_MapSlots },
+	{ "mappreviews", Step_MapPreviews },
+	{ "servertype", Step_ServerType },
 	{ NULL, NULL },
 };
 
@@ -878,6 +1194,437 @@ static PyObject *PCMenu_BrowseFormatServerLine(PyObject *self, PyObject *args) {
 	return PyString_FromString(line);
 }
 
+static PyObject *PCMenu_NetCreateGameMenu(PyObject *self, PyObject *args) {
+	(void)self;
+	NET_ARGS(args);
+	(void)control;
+	Net_CreateMenu(id);
+	return Py_ReturnNone();
+}
+
+/* MenuInitServer: starts a server on the first chosen map (all maps of the mode when none is chosen) */
+static PyObject *PCMenu_MenuInitServer(PyObject *self, PyObject *args) {
+	char level[0x100];
+	netMapList_t maps;
+	(void)self;
+	NET_ARGS(args);
+	(void)control;
+	Net_GetServerMaps(&maps);
+	if (maps.num <= 0) {
+		Net_ModeMaps(&maps);
+		Net_SetServerMaps(&maps);
+		Net_UpdateMapList(id);
+	}
+	if (maps.num <= 0) {
+		PyErr_SetString(PyExc_IndexError, "MenuInitServer: no maps");
+		return NULL;
+	}
+	Str_Printf(level, sizeof(level), "Levels/%s", maps.names[0]);
+	Net_InitServer(level, (int)GVar_GetNum("DefaultMaxPlayersOnServer", 0), 0, 0);
+	return Py_ReturnNone();
+}
+
+static PyObject *PCMenu_AdvancedServer(PyObject *self, PyObject *args) {
+	char pass[0x100], force[0x100], rate[0x100];
+	(void)self;
+	NET_ARGS(args);
+	(void)control;
+	Net_Menu("StartNewMenu", id);
+	byte usePass = GVar_GetNum("UseServerPassword", 0) != 0;
+	const char *password = Net_Text("Menu_Multiplayer_Advanced_Password", "Password");
+	Str_Printf(pass, sizeof(pass), usePass ? "\x02 %s:" : "\x03 %s", password);
+	Str_Printf(force, sizeof(force), "%c %s", GVar_GetNum("ForceServerVehicle", 0) ? 2 : 3,
+		Net_Text("Menu_Multiplayer_Advanced_Force", "Force server vehicle"));
+	Net_DataRateText(rate, sizeof(rate));
+	PyObject *vars = Py_BuildValue("{s:s,s:s,s:s,s:s,s:s,s:i}", "title",
+		Net_Text("Menu_Multiplayer_Advanced_Options", "Advanced Options"), "pass", pass, "password",
+		GVar_GetStr("ServerPassword"), "force", force, "datarate", rate, "usepass", usePass);
+	Net_RunMenu(id, "Advanced", vars);
+	Py_XDECREF(vars);
+	return Py_ReturnNone();
+}
+
+static PyObject *PCMenu_BackToCreateServer(PyObject *self, PyObject *args) {
+	(void)self;
+	NET_ARGS(args);
+	(void)control;
+	GVar_SetStr("ServerPassword", Script_GetStr(id, "Item2", "Text"));
+	Net_CreateMenu(id);
+	return Py_ReturnNone();
+}
+
+static PyObject *PCMenu_SwitchForceVehicle(PyObject *self, PyObject *args) {
+	char text[0x100];
+	(void)self;
+	NET_ARGS(args);
+	(void)control;
+	byte on = GVar_GetNum("ForceServerVehicle", 0) == 0;
+	Str_Printf(text, sizeof(text), "%c %s", on ? 2 : 3, Net_Text("Menu_Multiplayer_Advanced_Force", "Force server vehicle"));
+	Script_SetStr(id, "Item3", "Text", text);
+	GVar_SetNum("ForceServerVehicle", on);
+	return Py_ReturnNone();
+}
+
+static PyObject *PCMenu_SwitchUsePass(PyObject *self, PyObject *args) {
+	char text[0x100];
+	(void)self;
+	NET_ARGS(args);
+	(void)control;
+	const char *password = Net_Text("Menu_Multiplayer_Advanced_Password", "Password");
+	if (GVar_GetNum("UseServerPassword", 0)) {
+		GVar_SetNum("UseServerPassword", 0);
+		Str_Printf(text, sizeof(text), "\x03 %s", password);
+		Script_SetStr(id, "Item1", "Text", text);
+		Script_SetNum(id, "Item2", "Visible", 0);
+		Script_SetStr(id, "Item1", "Right", "");
+		Script_SetStr(id, "Item1", "Left", "");
+	} else {
+		GVar_SetNum("UseServerPassword", 1);
+		Str_Printf(text, sizeof(text), "\x02 %s:", password);
+		Script_SetStr(id, "Item1", "Text", text);
+		Script_Call("Menu", "LinkLR", "(iss)", id, "Item1", "Item2");
+		Script_Call("Menu", "LinkLR", "(iss)", id, "Item2", "Item1");
+		Script_SetNum(id, "Item2", "Visible", 1);
+	}
+	return Py_ReturnNone();
+}
+
+/* RunDedicatedServer: not in a menu of the game; the game ends and starts again as a dedicated server */
+static PyObject *PCMenu_RunDedicatedServer(PyObject *self, PyObject *args) {
+	char params[0x100];
+	netMapList_t maps;
+	(void)self;
+	NET_ARGS(args);
+	(void)control;
+	Net_GetServerMaps(&maps);
+	if (maps.num <= 0) {
+		Net_ModeMaps(&maps);
+		Net_SetServerMaps(&maps);
+	}
+	GVar_SetStr("ServerPassword", Script_GetStr(id, "Item2", "Text"));
+	Script_Call("Scrap", "SaveConfig", "()");
+	Str_Printf(params, sizeof(params), "-console -dedicated -imap:\"Levels/%s\"", maps.num ? maps.names[0] : "");
+	GVar_SetStr("ReRunAtExitParams", params);
+	Script_Call("Scrap", "Exit", "()");
+	return Py_ReturnNone();
+}
+
+static PyObject *PCMenu_SetDataRate(PyObject *self, PyObject *args) {
+	static const int rates[] = { 2560, 5120, 10240, 15360, 20480, 30720, 40960, 409600000 };
+	char text[0x100];
+	(void)self;
+	NET_ARGS(args);
+	(void)control;
+	int limit = (int)GVar_GetNum("ServerDataRateLimit", 0);
+	int next = rates[0];
+	for (int i = 0; i < 7; i++) {
+		if (limit == rates[i]) {
+			next = rates[i + 1];
+		}
+	}
+	GVar_SetNum("ServerDataRateLimit", next);
+	Net_DataRateText(text, sizeof(text));
+	Script_SetStr(id, "Item4", "Text", text);
+	return Py_ReturnNone();
+}
+
+static PyObject *PCMenu_GetDataRateText(PyObject *self, PyObject *args) {
+	char text[0x100];
+	(void)self;
+	(void)args;
+	Net_DataRateText(text, sizeof(text));
+	return PyString_FromString(text);
+}
+
+/* the previous and next mode of Net.Modes, round */
+static PyObject *Net_StepMode(PyObject *args, int dir) {
+	int count;
+	NET_ARGS(args);
+	(void)control;
+	int i = Net_ModeIndex(&count);
+	if (count > 0) {
+		Net_SetMode(i < 0 ? 0 : (i + dir + count) % count);
+	}
+	net.mapIndex = 0;
+	Net_UpdateServerType(id);
+	return Py_ReturnNone();
+}
+
+static PyObject *PCMenu_ServerTypePrev(PyObject *self, PyObject *args) {
+	(void)self;
+	return Net_StepMode(args, -1);
+}
+
+static PyObject *PCMenu_ServerTypeNext(PyObject *self, PyObject *args) {
+	(void)self;
+	return Net_StepMode(args, 1);
+}
+
+static PyObject *PCMenu_UpdateServerType(PyObject *self, PyObject *args) {
+	int id;
+	(void)self;
+	if (!PyArg_ParseTuple(args, "i", &id)) {
+		return NULL;
+	}
+	Net_UpdateServerType(id);
+	return Py_ReturnNone();
+}
+
+/* the help text of the mode in a box, its name above */
+static PyObject *PCMenu_ServerTypeInfo(PyObject *self, PyObject *args) {
+	char key[0x80], nameKey[0x80];
+	(void)self;
+	NET_ARGS(args);
+	(void)control;
+	const char *type = GVar_GetStr("ServerType");
+	Str_Printf(nameKey, sizeof(nameKey), "Net_Type_%s", type);
+	Str_Printf(key, sizeof(key), "Net_Help_%s", type);
+	const char *name = Script_Lang(nameKey);
+	const char *help = Script_Lang(key);
+	if (!*help) {
+		name = type;
+		help = "Unofficial modification!";
+	}
+	Script_Call("Menu", "ShowTextBox", "(isss)", id, help, "PCMenu.NetCreateGameMenu", "PCMenu.NetCreateGameMenu");
+	double y = Script_GetNum(id, "MissionDesc", "Y");
+	Script_SetNum(id, "MissionDesc", "Y", y + 45);
+	cScorer *sc = Scorer_Get(id);
+	if (sc) {
+		cScorer_AddItem(sc, "ServerTypeInfo", "Text", 1);
+	}
+	Script_SetStr(id, "ServerTypeInfo", "Font", "ScrapMedium");
+	Script_SetStr(id, "ServerTypeInfo", "Text", name);
+	Script_SetNum(id, "ServerTypeInfo", "X", 320);
+	Script_SetNum(id, "ServerTypeInfo", "Y", y + 22);
+	Script_SetStr(id, "ServerTypeInfo", "Align", "Center");
+	Script_SetNum(id, "ServerTypeInfo", "Visible", 1);
+	Script_SetStr(id, "ServerTypeInfo", "Effect", "Outline");
+	Script_SetNum(id, "ServerTypeInfo", "Red", 160);
+	Script_SetNum(id, "ServerTypeInfo", "Green", 180);
+	Script_SetNum(id, "ServerTypeInfo", "Blue", 255);
+	return Py_ReturnNone();
+}
+
+/* the map arrows; the names are the script's (MapUp scrolls down) */
+static PyObject *PCMenu_MapUp(PyObject *self, PyObject *args) {
+	netMapList_t maps;
+	(void)self;
+	NET_ARGS(args);
+	(void)control;
+	Net_ModeMaps(&maps);
+	if (maps.num > net.mapIndex + NET_MAP_SLOTS) {
+		net.mapIndex++;
+		Net_UpdateMapList(id);
+	}
+	return Py_ReturnNone();
+}
+
+static PyObject *PCMenu_MapDown(PyObject *self, PyObject *args) {
+	(void)self;
+	NET_ARGS(args);
+	(void)control;
+	if (net.mapIndex > 0) {
+		net.mapIndex--;
+		Net_UpdateMapList(id);
+	}
+	return Py_ReturnNone();
+}
+
+/* OnGainFocus/OnLooseFocus (id, a, b) of an item: its OnRender on or off */
+static PyObject *Net_Render(PyObject *args, const char *item, const char *func) {
+	int id;
+	char *a, *b;
+	if (!PyArg_ParseTuple(args, "iss", &id, &a, &b)) {
+		return NULL;
+	}
+	/* the map slider names its item, the edit fields get it as the first argument */
+	Script_SetStr(id, item ? item : a, "OnRender", func);
+	return Py_ReturnNone();
+}
+
+static PyObject *PCMenu_MapSliderGainFocus(PyObject *self, PyObject *args) {
+	(void)self;
+	return Net_Render(args, "MapSliderArea", "PCMenu.MapSliderOnRender");
+}
+
+static PyObject *PCMenu_MapSliderLooseFocus(PyObject *self, PyObject *args) {
+	(void)self;
+	return Net_Render(args, "MapSliderArea", "");
+}
+
+static PyObject *PCMenu_MapSliderOnRender(PyObject *self, PyObject *args) {
+	netMapList_t maps;
+	(void)self;
+	NET_ARGS(args);
+	(void)control;
+	Net_ModeMaps(&maps);
+	if (!Input_MenuAccept(id) || maps.num <= NET_MAP_SLOTS) {
+		return Py_ReturnNone();
+	}
+	double y = Script_GetNum(id, "Cursor", "Y") - NET_MAP_SLIDER_Y - 5;
+	if (y < 0) {
+		y = 0;
+	}
+	if (y > NET_MAP_SLIDER_H - 10) {
+		y = NET_MAP_SLIDER_H - 10;
+	}
+	int old = net.mapIndex;
+	net.mapIndex = (int)((double)(maps.num - NET_MAP_SLOTS + 1) * (y / (NET_MAP_SLIDER_H - 10)));
+	if (net.mapIndex >= maps.num - NET_MAP_SLOTS) {
+		net.mapIndex = maps.num - NET_MAP_SLOTS;
+	}
+	if (old != net.mapIndex) {
+		Net_UpdateMapList(id);
+	}
+	return Py_ReturnNone();
+}
+
+static PyObject *PCMenu_UpdateMapSlider(PyObject *self, PyObject *args) {
+	int id;
+	(void)self;
+	if (!PyArg_ParseTuple(args, "i", &id)) {
+		return NULL;
+	}
+	Net_UpdateMapSlider(id);
+	return Py_ReturnNone();
+}
+
+static PyObject *PCMenu_UpdateMapList(PyObject *self, PyObject *args) {
+	int id;
+	(void)self;
+	if (!PyArg_ParseTuple(args, "i", &id)) {
+		return NULL;
+	}
+	Net_UpdateMapList(id);
+	return Py_ReturnNone();
+}
+
+/* MapChoose(id, "MapSlotN"): the map of the line in or out of the maps of the server */
+static PyObject *PCMenu_MapChoose(PyObject *self, PyObject *args) {
+	netMapList_t maps, out = { .num = 0 };
+	char name[0x40];
+	(void)self;
+	NET_ARGS(args);
+	Str_Copy(name, Script_GetStr(id, control, "Hint"), sizeof(name));
+	Net_GetServerMaps(&maps);
+	byte selected = 0;
+	for (int i = 0; i < maps.num; i++) {
+		if (!strcmp(maps.names[i], name)) {
+			selected = 1;
+		} else {
+			Str_Copy(out.names[out.num++], maps.names[i], sizeof(out.names[0]));
+		}
+	}
+	if (!selected && out.num < NET_MAX_MAPS) {
+		Str_Copy(out.names[out.num++], name, sizeof(out.names[0]));
+	}
+	Net_SetServerMaps(&out);
+	Net_UpdateMapList(id);
+	return Py_ReturnNone();
+}
+
+static void Net_Fade(int id, const char *map, const char *how) {
+	char item[0x80];
+	Str_Printf(item, sizeof(item), "MapPreviewSlot_%s", map);
+	Script_SetNum(id, item, "Visible", 1);
+	Script_SetStr(id, item, "OnRender", how);
+}
+
+/* MapPreviewOn(id, control, prev): the picture of the map fades in, the one of the previous line out */
+static PyObject *PCMenu_MapPreviewOn(PyObject *self, PyObject *args) {
+	int id;
+	char *control, *prev, last[0x40], map[0x40];
+	(void)self;
+	if (!PyArg_ParseTuple(args, "iss", &id, &control, &prev)) {
+		return NULL;
+	}
+	Str_Copy(last, Script_GetStr(id, prev, "Hint"), sizeof(last));
+	Str_Copy(map, Script_GetStr(id, control, "Hint"), sizeof(map));
+	if (last[0]) {
+		Net_Fade(id, last, "!ScorerSpriteFadeOut");
+	}
+	Net_Fade(id, map, "!ScorerSpriteFadeIn");
+	return Py_ReturnNone();
+}
+
+static PyObject *PCMenu_MapPreviewOff(PyObject *self, PyObject *args) {
+	int id;
+	char *control, *prev, map[0x40];
+	(void)self;
+	if (!PyArg_ParseTuple(args, "iss", &id, &control, &prev)) {
+		return NULL;
+	}
+	Str_Copy(map, Script_GetStr(id, control, "Hint"), sizeof(map));
+	if (map[0]) {
+		Net_Fade(id, map, "!ScorerSpriteFadeOut");
+	}
+	return Py_ReturnNone();
+}
+
+static PyObject *PCMenu_ServerNameGainFocus(PyObject *self, PyObject *args) {
+	(void)self;
+	return Net_Render(args, NULL, "PCMenu.ServerNameOnRender");
+}
+
+static PyObject *PCMenu_ServerNameLooseFocus(PyObject *self, PyObject *args) {
+	(void)self;
+	return Net_Render(args, NULL, "");
+}
+
+static PyObject *PCMenu_PlayersNumberGainFocus(PyObject *self, PyObject *args) {
+	(void)self;
+	return Net_Render(args, NULL, "PCMenu.PlayersNumberOnRender");
+}
+
+static PyObject *PCMenu_PlayersNumberLooseFocus(PyObject *self, PyObject *args) {
+	(void)self;
+	return Net_Render(args, NULL, "");
+}
+
+static PyObject *PCMenu_FragLimitGainFocus(PyObject *self, PyObject *args) {
+	(void)self;
+	return Net_Render(args, NULL, "PCMenu.FragLimitOnRender");
+}
+
+static PyObject *PCMenu_FragLimitLooseFocus(PyObject *self, PyObject *args) {
+	(void)self;
+	return Net_Render(args, NULL, "");
+}
+
+/* while an edit field has the focus its text goes to the engine variable each frame */
+static PyObject *PCMenu_ServerNameOnRender(PyObject *self, PyObject *args) {
+	(void)self;
+	NET_ARGS(args);
+	GVar_SetStr("ServerName", Script_GetStr(id, control, "Text"));
+	return Py_ReturnNone();
+}
+
+/* the number in the field kept in min..max ("" counts as min) */
+static int Net_Clamp(int id, const char *control, int min, int max) {
+	char text[0x20];
+	int v = atoi(Script_GetStr(id, control, "Text"));
+	if (!Script_GetStr(id, control, "Text")[0] || v < min || v > max) {
+		v = v > max ? max : min;
+		Str_Printf(text, sizeof(text), "%d", v);
+		Script_SetStr(id, control, "Text", text);
+	}
+	return v;
+}
+
+static PyObject *PCMenu_PlayersNumberOnRender(PyObject *self, PyObject *args) {
+	(void)self;
+	NET_ARGS(args);
+	GVar_SetNum("DefaultMaxPlayersOnServer", Net_Clamp(id, control, 2, 16) - 1);
+	return Py_ReturnNone();
+}
+
+static PyObject *PCMenu_FragLimitOnRender(PyObject *self, PyObject *args) {
+	(void)self;
+	NET_ARGS(args);
+	GVar_SetNum("FragLimit", Net_Clamp(id, control, 1, 99));
+	return Py_ReturnNone();
+}
+
 PyMethodDef g_MenuNetMethods[] = {
 	{ "MultiPlayerMenu", PCMenu_MultiPlayerMenu, 1, NULL },
 	{ "MenuRestartServer", PCMenu_MenuRestartServer, 1, NULL },
@@ -917,5 +1664,37 @@ PyMethodDef g_MenuNetMethods[] = {
 	{ "UpdateBrowseSlider", PCMenu_UpdateBrowseSlider, 1, NULL },
 	{ "UpdateBrowseMenu", PCMenu_UpdateBrowseMenu, 1, NULL },
 	{ "BrowseFormatServerLine", PCMenu_BrowseFormatServerLine, 1, NULL },
+	{ "NetCreateGameMenu", PCMenu_NetCreateGameMenu, 1, NULL },
+	{ "MenuInitServer", PCMenu_MenuInitServer, 1, NULL },
+	{ "AdvancedServer", PCMenu_AdvancedServer, 1, NULL },
+	{ "BackToCreateServer", PCMenu_BackToCreateServer, 1, NULL },
+	{ "SwitchForceVehicle", PCMenu_SwitchForceVehicle, 1, NULL },
+	{ "SwitchUsePass", PCMenu_SwitchUsePass, 1, NULL },
+	{ "RunDedicatedServer", PCMenu_RunDedicatedServer, 1, NULL },
+	{ "SetDataRate", PCMenu_SetDataRate, 1, NULL },
+	{ "GetDataRateText", PCMenu_GetDataRateText, 1, NULL },
+	{ "ServerTypePrev", PCMenu_ServerTypePrev, 1, NULL },
+	{ "ServerTypeNext", PCMenu_ServerTypeNext, 1, NULL },
+	{ "UpdateServerType", PCMenu_UpdateServerType, 1, NULL },
+	{ "ServerTypeInfo", PCMenu_ServerTypeInfo, 1, NULL },
+	{ "MapUp", PCMenu_MapUp, 1, NULL },
+	{ "MapDown", PCMenu_MapDown, 1, NULL },
+	{ "MapSliderGainFocus", PCMenu_MapSliderGainFocus, 1, NULL },
+	{ "MapSliderLooseFocus", PCMenu_MapSliderLooseFocus, 1, NULL },
+	{ "MapSliderOnRender", PCMenu_MapSliderOnRender, 1, NULL },
+	{ "UpdateMapSlider", PCMenu_UpdateMapSlider, 1, NULL },
+	{ "UpdateMapList", PCMenu_UpdateMapList, 1, NULL },
+	{ "MapChoose", PCMenu_MapChoose, 1, NULL },
+	{ "MapPreviewOn", PCMenu_MapPreviewOn, 1, NULL },
+	{ "MapPreviewOff", PCMenu_MapPreviewOff, 1, NULL },
+	{ "ServerNameGainFocus", PCMenu_ServerNameGainFocus, 1, NULL },
+	{ "ServerNameLooseFocus", PCMenu_ServerNameLooseFocus, 1, NULL },
+	{ "ServerNameOnRender", PCMenu_ServerNameOnRender, 1, NULL },
+	{ "PlayersNumberGainFocus", PCMenu_PlayersNumberGainFocus, 1, NULL },
+	{ "PlayersNumberLooseFocus", PCMenu_PlayersNumberLooseFocus, 1, NULL },
+	{ "PlayersNumberOnRender", PCMenu_PlayersNumberOnRender, 1, NULL },
+	{ "FragLimitGainFocus", PCMenu_FragLimitGainFocus, 1, NULL },
+	{ "FragLimitLooseFocus", PCMenu_FragLimitLooseFocus, 1, NULL },
+	{ "FragLimitOnRender", PCMenu_FragLimitOnRender, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
