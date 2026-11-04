@@ -249,29 +249,9 @@ void cScorerItem_dtor(cScorerItem *self) {
 	cString_dtor(&self->name);
 }
 
-/* the vector deleting destructor: flags 2 the array of new[] (its count before it), 1 frees */
-static cScorer *cScorer_Delete(cScorer *self, byte flags) {
-	if (flags & 2) {
-		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(cScorer), *mem, (void *)cScorer_dtor);
-		if (flags & 1) {
-			operator_delete_array(mem);
-		}
-		return (cScorer *)mem;
-	}
-	cScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cScorer));
-	}
-	return self;
-}
-
-static cScorerItem *cScorerItem_Delete(cScorerItem *self, byte flags) {
+static void cScorerItem_Free(cScorerItem *self) {
 	cScorerItem_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cScorerItem));
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* ---- the models ---- */
@@ -362,7 +342,7 @@ static void cScorer_Free(cScorer *scorer) {
 		cScorerItem *it = scorer->items;
 		cScorerItem *next = it->next;
 		if (it) {
-			ScorerItem_Delete(it, 1);
+			ScorerItem_Free(it);
 		}
 		scorer->items = next;
 	}
@@ -373,14 +353,14 @@ static void cScorer_Free(cScorer *scorer) {
 			EFX_Release(fx);
 			fx = scorer->models->extra;
 			if (fx) {
-				EFX_Delete(fx, 1);
+				EFX_Free(fx);
 				scorer->models->extra = NULL;
 			}
 		}
 		cScorerModel *m = scorer->models;
 		if (m) {
 			CGameModel_Reset(&m->model);
-			operator_delete_sized(m, sizeof(cScorerModel));
+			operator_delete(m);
 		}
 		scorer->models = next;
 	}
@@ -424,7 +404,7 @@ static void cScorer_RemoveDeleted(cScorer *scorer, int player) {
 				scorer->found = NULL;
 			}
 			if (it) {
-				ScorerItem_Delete(it, 1);
+				ScorerItem_Free(it);
 			}
 		} else {
 			link = &it->next;
@@ -729,7 +709,7 @@ void Scorer_Init(void) {
 static void Scorer_FreeImage(CPsaImage *img) {
 	if (img) {
 		CPsaImage_dtor(img);
-		operator_delete_sized(img, sizeof(CPsaImage));
+		operator_delete(img);
 	}
 }
 
@@ -741,11 +721,10 @@ void Scorer_Done(void) {
 		sc = g_Scorers;
 	}
 	if (sc) {
-		if (((uint32_t *)sc)[-1]) {
-			cScorer_Delete(sc, 3);
-		} else {
-			operator_delete_array((uint32_t *)sc - 1);
-		}
+		/* an array of new[], its count before it */
+		uint32_t *mem = (uint32_t *)sc - 1;
+		crt_eh_vector_dtor(sc, sizeof(cScorer), *mem, (void *)cScorer_dtor);
+		operator_delete_array(mem);
 	}
 	g_Scorers = NULL;
 	Scorer_SetConsole(0);
@@ -757,7 +736,7 @@ void Scorer_Done(void) {
 	cNewsPanel *np = g_NewsPanel;
 	if (np) {
 		cNewsPanel_dtor(np);
-		operator_delete_sized(np, sizeof(cNewsPanel));
+		operator_delete(np);
 	}
 	g_NewsPanel = NULL;
 }
@@ -1852,7 +1831,7 @@ static const cScorerItemVtbl cScorerItem_vftable = {
 	.Draw = (void *)crt_purecall,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cScorerItem_Var,
-	.Delete = cScorerItem_Delete,
+	.Free = cScorerItem_Free,
 };
 
 /* the vtable of cScorer */

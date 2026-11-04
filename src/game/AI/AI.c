@@ -49,12 +49,9 @@ void cAI_dtor(cAI *self) {
 	self->vftable = CAI_VFTABLE;
 }
 
-static cAI *cAI_Delete(cAI *self, byte flags) {
+static void cAI_Free(cAI *self) {
 	self->vftable = CAI_VFTABLE;
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete(self);
 }
 
 void cAI_Update(cAI *self, float dt) {
@@ -220,7 +217,7 @@ void cAI_UpdateActionNop(cAI *self) {
 
 /* the vtable of cAI */
 static const cAIBaseVtbl cAI_vftable = {
-	.Delete = cAI_Delete,
+	.Free = cAI_Free,
 	.Update = cAI_Update,
 	.UpdateOff = cAI_UpdateOff,
 	.Draw = cAI_Draw,

@@ -53,12 +53,9 @@ static void cCamPathEntity_dtor(cEntity *self) {
 	cCamControl_dtor(self);
 }
 
-static cEntity *cCamPathEntity_Delete(cEntity *self, uint32_t flags) {
+static void cCamPathEntity_Free(cEntity *self) {
 	cCamPathEntity_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CCAMPATHENTITY_SIZE);
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* the index NN of name = prefix + two digits, -1 for none or over 32 */
@@ -352,7 +349,7 @@ static const cCamControlVtbl cCamPathEntity_vftable = {
 	.base.Update = cCamPathEntity_Update,
 	.base.Render = cEntity_Render,
 	.base.UpdateOff = cEntity_UpdateOff,
-	.base.Delete = cCamPathEntity_Delete,
+	.base.Free = cCamPathEntity_Free,
 	.base.GetClassName = cCamPathEntity_GetClassName,
 	.base.IsType = cCamPathEntity_IsType,
 	.base.GetPos = cEntity_GetPos,

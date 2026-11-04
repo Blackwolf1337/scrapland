@@ -29,22 +29,22 @@ static void SchedList_Insert(cSchedList *list, cScheduledFunc *const *f) {
 }
 
 static void SchedList_Clear(cSchedList *list) {
-	DList_Clear(list, sizeof(cSchedNode));
+	DList_Clear(list);
 }
 
 static void SchedList_RemoveIter(cSchedList *list) {
-	DList_RemoveIter(list, sizeof(cSchedNode));
+	DList_RemoveIter(list);
 }
 
 static void SchedList_RemoveHead(cSchedList *list) {
-	DList_RemoveHead(list, sizeof(cSchedNode));
+	DList_RemoveHead(list);
 }
 
 static void cScheduledFunc_Free(cScheduledFunc *f) {
 	if (f) {
 		Py_XDECREF(f->func);
 		Py_XDECREF(f->params);
-		operator_delete_sized(f, sizeof(*f));
+		operator_delete(f);
 	}
 }
 
@@ -153,7 +153,7 @@ void cScheduledFuncStack_dtor(void *stack) {
 
 	Scheduler_Clear(self);
 	SchedList_Clear(&self->list);
-	DList_FreePool(&self->list, sizeof(cSchedNode));
+	DList_FreePool(&self->list);
 }
 
 /* the vtable of cScheduledFuncStack */

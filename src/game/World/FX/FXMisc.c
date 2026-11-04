@@ -1103,18 +1103,10 @@ static inline void FX_TrailsDtor(CGameTrail *t, uint32_t n) {
 	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, (void *)CGameTrail_dtor);
 }
 
-/* the start of every constructor: the base class leaves 0, then the vtable of the class */
-static inline void *FX_Delete(void *self, uint32_t flags, uint32_t size) {
-	if (flags & 1) {
-		operator_delete_sized(self, size);
-	}
-	return self;
-}
-
-cObjElementFX *cObjElementAbstract_Delete(cObjElementFX *base, byte flags) {
+void cObjElementAbstract_Free(cObjElementFX *base) {
 	cObjElementAbstract *self = (cObjElementAbstract *)base;
 	cObjElement_dtor(self);
-	return FX_Delete(self, flags, sizeof(*self));
+	operator_delete(self);
 }
 
 /* World/FX character effects */
@@ -1297,46 +1289,46 @@ static void cObjElementFXSputnik_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-static cObjElementFX *cObjElementFXCharacterConversion_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXCharacterConversion_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXCharacterConversion_dtor(self);
-	return FX_Delete(self, flags, 0x89c);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXCharacterConversor_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXCharacterConversor_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXCharacterConversor_dtor(self);
-	return FX_Delete(self, flags, 0x298);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXCharacterDeath_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXCharacterDeath_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXCharacterDeath_dtor(self);
-	return FX_Delete(self, flags, 0xf68);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXCharacterTeleport_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXCharacterTeleport_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXCharacterTeleport_dtor(self);
-	return FX_Delete(self, flags, 0xd8);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXMaintenanceWork_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXMaintenanceWork_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXMaintenanceWork_dtor(self);
-	return FX_Delete(self, flags, 0xe0);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXMoneyTransfer_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXMoneyTransfer_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXMoneyTransfer_dtor(self);
-	return FX_Delete(self, flags, 0xcc);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXSputnik_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXSputnik_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXSputnik_dtor(self);
-	return FX_Delete(self, flags, 0xe0);
+	operator_delete(self);
 }
 
 /* the FX scenes */
@@ -1553,52 +1545,52 @@ static void cObjElementFXSceneYakuzzi_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-static cObjElementFX *cObjElementFXSceneBeatPickus_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXSceneBeatPickus_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXSceneBeatPickus_dtor(self);
-	return FX_Delete(self, flags, 0x240);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXSceneBillArrives_A_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXSceneBillArrives_A_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXSceneBillArrives_A_dtor(self);
-	return FX_Delete(self, flags, 0xec);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXSceneBishops_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXSceneBishops_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXSceneBishops_dtor(self);
-	return FX_Delete(self, flags, 0x1b8);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXSceneDecontamination_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXSceneDecontamination_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXSceneDecontamination_dtor(self);
-	return FX_Delete(self, flags, 0x11ec);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXSceneEnterMatrix_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXSceneEnterMatrix_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXSceneEnterMatrix_dtor(self);
-	return FX_Delete(self, flags, 0x798);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXSceneHumanCD_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXSceneHumanCD_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXSceneHumanCD_dtor(self);
-	return FX_Delete(self, flags, 0x184);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXSceneTheEndB_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXSceneTheEndB_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXSceneTheEndB_dtor(self);
-	return FX_Delete(self, flags, 0xcc);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXSceneYakuzzi_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXSceneYakuzzi_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXSceneYakuzzi_dtor(self);
-	return FX_Delete(self, flags, 0xd4);
+	operator_delete(self);
 }
 
 /* the elements of this file */
@@ -1791,58 +1783,58 @@ static void cObjElementFXModelNoise_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-static cObjElementFX *cObjElementFXFadeOutTrail_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXFadeOutTrail_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXFadeOutTrail_dtor(self);
-	return FX_Delete(self, flags, 0x14);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXItemFade_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXItemFade_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXItemFade_dtor(self);
-	return FX_Delete(self, flags, 0xcc);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXItemTake_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXItemTake_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXItemTake_dtor(self);
-	return FX_Delete(self, flags, 0x648);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXModelFade_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXModelFade_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXModelFade_dtor(self);
-	return FX_Delete(self, flags, 0x14);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXModelNoise_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXModelNoise_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXModelNoise_dtor(self);
-	return FX_Delete(self, flags, 0x14);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXParticleSystem_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXParticleSystem_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXParticleSystem_dtor(self);
-	return FX_Delete(self, flags, 0xb8);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXParticleSystemDuDv_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXParticleSystemDuDv_Free(cObjElementFX *base) {
 	cObjElementFXParticleSystemDuDv *self = (cObjElementFXParticleSystemDuDv *)base;
 	cObjElementFXParticleSystemDuDv_dtor(self);
-	return FX_Delete(self, flags, 0xb8);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXSparks_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXSparks_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXSparks_dtor(self);
-	return FX_Delete(self, flags, 0xc70);
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXTrail_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXTrail_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXTrail_dtor(self);
-	return FX_Delete(self, flags, 0x1c);
+	operator_delete(self);
 }
 
 /* the alpha of the trail goes up with t over the duration while it is not running */
@@ -1872,7 +1864,7 @@ static void cObjElementFXFadeOutTrail_Update(cObjElementFX *base, cDebris *d, fl
 
 /* the vtable of cObjElementFXMoneyTransfer */
 static const cObjElementFXVtbl cObjElementFXMoneyTransfer_vftable = {
-	.Delete = cObjElementFXMoneyTransfer_Delete,
+	.Free = cObjElementFXMoneyTransfer_Free,
 	.Update = cObjElementFXMoneyTransfer_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXMoneyTransfer_Attach,
@@ -1881,7 +1873,7 @@ static const cObjElementFXVtbl cObjElementFXMoneyTransfer_vftable = {
 
 /* the vtable of cObjElementFXCharacterTeleport */
 static const cObjElementFXVtbl cObjElementFXCharacterTeleport_vftable = {
-	.Delete = cObjElementFXCharacterTeleport_Delete,
+	.Free = cObjElementFXCharacterTeleport_Free,
 	.Update = cObjElementFXCharacterTeleport_Update,
 	.IsAlive = cObjElementFXCharacterTeleport_Alive,
 	.Start = cObjElementFXCharacterTeleport_Attach,
@@ -1890,7 +1882,7 @@ static const cObjElementFXVtbl cObjElementFXCharacterTeleport_vftable = {
 
 /* the vtable of cObjElementFXCharacterConversor */
 static const cObjElementFXVtbl cObjElementFXCharacterConversor_vftable = {
-	.Delete = cObjElementFXCharacterConversor_Delete,
+	.Free = cObjElementFXCharacterConversor_Free,
 	.Update = cObjElementFXCharacterConversor_Update,
 	.IsAlive = cObjElementFXCharacterConversor_Alive,
 	.Start = cObjElementFXCharacterConversor_Attach,
@@ -1899,7 +1891,7 @@ static const cObjElementFXVtbl cObjElementFXCharacterConversor_vftable = {
 
 /* the vtable of cObjElementFXCharacterDeath */
 static const cObjElementFXVtbl cObjElementFXCharacterDeath_vftable = {
-	.Delete = cObjElementFXCharacterDeath_Delete,
+	.Free = cObjElementFXCharacterDeath_Free,
 	.Update = cObjElementFXCharacterDeath_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXCharacterDeath_Attach,
@@ -1908,7 +1900,7 @@ static const cObjElementFXVtbl cObjElementFXCharacterDeath_vftable = {
 
 /* the vtable of cObjElementFXSputnik */
 static const cObjElementFXVtbl cObjElementFXSputnik_vftable = {
-	.Delete = cObjElementFXSputnik_Delete,
+	.Free = cObjElementFXSputnik_Free,
 	.Update = cObjElementFXSputnik_Update,
 	.IsAlive = cObjElementFXSputnik_Alive,
 	.Start = cObjElementFXSputnik_Attach,
@@ -1917,7 +1909,7 @@ static const cObjElementFXVtbl cObjElementFXSputnik_vftable = {
 
 /* the vtable of cObjElementFXCharacterConversion */
 static const cObjElementFXVtbl cObjElementFXCharacterConversion_vftable = {
-	.Delete = cObjElementFXCharacterConversion_Delete,
+	.Free = cObjElementFXCharacterConversion_Free,
 	.Update = cObjElementFXCharacterConversion_Update,
 	.IsAlive = cObjElementFXCharacterConversion_Alive,
 	.Start = cObjElementFXCharacterConversion_Attach,
@@ -1926,7 +1918,7 @@ static const cObjElementFXVtbl cObjElementFXCharacterConversion_vftable = {
 
 /* the vtable of cObjElementFXMaintenanceWork */
 static const cObjElementFXVtbl cObjElementFXMaintenanceWork_vftable = {
-	.Delete = cObjElementFXMaintenanceWork_Delete,
+	.Free = cObjElementFXMaintenanceWork_Free,
 	.Update = cObjElementFXMaintenanceWork_Update,
 	.IsAlive = cObjElementFXMaintenanceWork_Alive,
 	.Start = cObjElementFXMaintenanceWork_Attach,
@@ -1935,7 +1927,7 @@ static const cObjElementFXVtbl cObjElementFXMaintenanceWork_vftable = {
 
 /* the vtable of cObjElementFXParticleSystem */
 static const cObjElementFXVtbl cObjElementFXParticleSystem_vftable = {
-	.Delete = cObjElementFXParticleSystem_Delete,
+	.Free = cObjElementFXParticleSystem_Free,
 	.Update = cObjElementFXParticleSystem_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXParticleSystem_Attach,
@@ -1944,7 +1936,7 @@ static const cObjElementFXVtbl cObjElementFXParticleSystem_vftable = {
 
 /* the vtable of cObjElementFXTrail */
 static const cObjElementFXVtbl cObjElementFXTrail_vftable = {
-	.Delete = cObjElementFXTrail_Delete,
+	.Free = cObjElementFXTrail_Free,
 	.Update = cObjElementFXTrail_Update,
 	.IsAlive = cObjElementFXTrail_Alive,
 	.Start = FXMisc_Nop,
@@ -1953,7 +1945,7 @@ static const cObjElementFXVtbl cObjElementFXTrail_vftable = {
 
 /* the vtable of cObjElementFXFadeOutTrail */
 static const cObjElementFXVtbl cObjElementFXFadeOutTrail_vftable = {
-	.Delete = cObjElementFXFadeOutTrail_Delete,
+	.Free = cObjElementFXFadeOutTrail_Free,
 	.Update = cObjElementFXFadeOutTrail_Update,
 	.IsAlive = cObjElementFXFadeOutTrail_Alive,
 	.Start = FXMisc_Nop,
@@ -1962,7 +1954,7 @@ static const cObjElementFXVtbl cObjElementFXFadeOutTrail_vftable = {
 
 /* the vtable of cObjElementFXItemTake */
 static const cObjElementFXVtbl cObjElementFXItemTake_vftable = {
-	.Delete = cObjElementFXItemTake_Delete,
+	.Free = cObjElementFXItemTake_Free,
 	.Update = cObjElementFXItemTake_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXItemTake_Attach,
@@ -1971,7 +1963,7 @@ static const cObjElementFXVtbl cObjElementFXItemTake_vftable = {
 
 /* the vtable of cObjElementFXItemFade */
 static const cObjElementFXVtbl cObjElementFXItemFade_vftable = {
-	.Delete = cObjElementFXItemFade_Delete,
+	.Free = cObjElementFXItemFade_Free,
 	.Update = cObjElementFXItemFade_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXItemFade_Attach,
@@ -1980,7 +1972,7 @@ static const cObjElementFXVtbl cObjElementFXItemFade_vftable = {
 
 /* the vtable of cObjElementFXSparks */
 static const cObjElementFXVtbl cObjElementFXSparks_vftable = {
-	.Delete = cObjElementFXSparks_Delete,
+	.Free = cObjElementFXSparks_Free,
 	.Update = cObjElementFXSparks_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXSparks_Attach,
@@ -1989,7 +1981,7 @@ static const cObjElementFXVtbl cObjElementFXSparks_vftable = {
 
 /* the vtable of cObjElementFXModelFade */
 static const cObjElementFXVtbl cObjElementFXModelFade_vftable = {
-	.Delete = cObjElementFXModelFade_Delete,
+	.Free = cObjElementFXModelFade_Free,
 	.Update = cObjElementFXModelFade_Update,
 	.IsAlive = cObjElementFXModelFade_Alive,
 	.Start = FXMisc_Clear4,
@@ -1998,7 +1990,7 @@ static const cObjElementFXVtbl cObjElementFXModelFade_vftable = {
 
 /* the vtable of cObjElementFXModelNoise */
 static const cObjElementFXVtbl cObjElementFXModelNoise_vftable = {
-	.Delete = cObjElementFXModelNoise_Delete,
+	.Free = cObjElementFXModelNoise_Free,
 	.Update = cObjElementFXModelNoise_Update,
 	.IsAlive = cObjElementFXModelNoise_Alive,
 	.Start = FXMisc_Clear8,
@@ -2007,7 +1999,7 @@ static const cObjElementFXVtbl cObjElementFXModelNoise_vftable = {
 
 /* the vtable of cObjElementFXParticleSystemDuDv */
 static const cObjElementFXVtbl cObjElementFXParticleSystemDuDv_vftable = {
-	.Delete = cObjElementFXParticleSystemDuDv_Delete,
+	.Free = cObjElementFXParticleSystemDuDv_Free,
 	.Update = cObjElementFXParticleSystem_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXParticleSystemDuDv_Attach,
@@ -2016,7 +2008,7 @@ static const cObjElementFXVtbl cObjElementFXParticleSystemDuDv_vftable = {
 
 /* the vtable of cObjElementFXSceneDecontamination */
 static const cObjElementFXVtbl cObjElementFXSceneDecontamination_vftable = {
-	.Delete = cObjElementFXSceneDecontamination_Delete,
+	.Free = cObjElementFXSceneDecontamination_Free,
 	.Update = cObjElementFXSceneDecontamination_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXSceneDecontamination_Attach,
@@ -2025,7 +2017,7 @@ static const cObjElementFXVtbl cObjElementFXSceneDecontamination_vftable = {
 
 /* the vtable of cObjElementFXSceneBishops */
 static const cObjElementFXVtbl cObjElementFXSceneBishops_vftable = {
-	.Delete = cObjElementFXSceneBishops_Delete,
+	.Free = cObjElementFXSceneBishops_Free,
 	.Update = cObjElementFXSceneBishops_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXSceneBishops_Attach,
@@ -2034,7 +2026,7 @@ static const cObjElementFXVtbl cObjElementFXSceneBishops_vftable = {
 
 /* the vtable of cObjElementFXSceneBillArrives_A */
 static const cObjElementFXVtbl cObjElementFXSceneBillArrives_A_vftable = {
-	.Delete = cObjElementFXSceneBillArrives_A_Delete,
+	.Free = cObjElementFXSceneBillArrives_A_Free,
 	.Update = cObjElementFXSceneBillArrives_A_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXSceneBillArrives_A_Attach,
@@ -2043,7 +2035,7 @@ static const cObjElementFXVtbl cObjElementFXSceneBillArrives_A_vftable = {
 
 /* the vtable of cObjElementFXSceneYakuzzi */
 static const cObjElementFXVtbl cObjElementFXSceneYakuzzi_vftable = {
-	.Delete = cObjElementFXSceneYakuzzi_Delete,
+	.Free = cObjElementFXSceneYakuzzi_Free,
 	.Update = cObjElementFXSceneYakuzzi_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXSceneYakuzzi_Attach,
@@ -2052,7 +2044,7 @@ static const cObjElementFXVtbl cObjElementFXSceneYakuzzi_vftable = {
 
 /* the vtable of cObjElementFXSceneBeatPickus */
 static const cObjElementFXVtbl cObjElementFXSceneBeatPickus_vftable = {
-	.Delete = cObjElementFXSceneBeatPickus_Delete,
+	.Free = cObjElementFXSceneBeatPickus_Free,
 	.Update = cObjElementFXSceneBeatPickus_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXSceneBeatPickus_Attach,
@@ -2061,7 +2053,7 @@ static const cObjElementFXVtbl cObjElementFXSceneBeatPickus_vftable = {
 
 /* the vtable of cObjElementFXSceneHumanCD */
 static const cObjElementFXVtbl cObjElementFXSceneHumanCD_vftable = {
-	.Delete = cObjElementFXSceneHumanCD_Delete,
+	.Free = cObjElementFXSceneHumanCD_Free,
 	.Update = cObjElementFXSceneHumanCD_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXSceneHumanCD_Attach,
@@ -2070,7 +2062,7 @@ static const cObjElementFXVtbl cObjElementFXSceneHumanCD_vftable = {
 
 /* the vtable of cObjElementFXSceneEnterMatrix */
 static const cObjElementFXVtbl cObjElementFXSceneEnterMatrix_vftable = {
-	.Delete = cObjElementFXSceneEnterMatrix_Delete,
+	.Free = cObjElementFXSceneEnterMatrix_Free,
 	.Update = cObjElementFXSceneEnterMatrix_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXSceneEnterMatrix_Attach,
@@ -2079,7 +2071,7 @@ static const cObjElementFXVtbl cObjElementFXSceneEnterMatrix_vftable = {
 
 /* the vtable of cObjElementFXSceneTheEndB */
 static const cObjElementFXVtbl cObjElementFXSceneTheEndB_vftable = {
-	.Delete = cObjElementFXSceneTheEndB_Delete,
+	.Free = cObjElementFXSceneTheEndB_Free,
 	.Update = cObjElementFXSceneTheEndB_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXSceneTheEndB_Attach,

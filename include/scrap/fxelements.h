@@ -17,14 +17,14 @@ typedef struct cMapElement cMapElement;
 
 /* cMapElement::vftable and the ones of the elements */
 typedef struct cMapElementVtbl {
-	cMapElement *(*Delete)(cMapElement *self, byte flags);	/* 0x0 */
+	void (*Free)(cMapElement *self);	/* 0x0 */
 	byte(*Init)(cMapElement *self);			/* 0x4 vf01 after the creation, 1 */
 	void(*Update)(cMapElement *self, float dt);		/* 0x8 vf02 every frame */
 } cMapElementVtbl;
 
 /* calls through the slots of cMapElementVtbl */
-static inline cMapElement *MapElem_Delete(void *self, byte flags) {
-	return VT(cMapElementVtbl, self)->Delete(self, flags);
+static inline void MapElem_Free(void *self) {
+	VT(cMapElementVtbl, self)->Free(self);
 }
 
 static inline byte MapElem_Init(void *self) {

@@ -41,17 +41,17 @@ static void cAICGPoint_dtor(cAICGPoint *self) {
 /* ---- the lists of the dummies ---- */
 
 static void cAICGPosList_Clear(cAICGPosList *list) {
-	DList_Clear(list, sizeof(cAICGPosNode));
+	DList_Clear(list);
 }
 
 static void cAICGZoneData_dtor(cAICGZoneData *zone) {
 	cAICGPosList_Clear(&zone->points);
-	DList_FreePool(&zone->points, sizeof(cAICGPosNode));
+	DList_FreePool(&zone->points);
 }
 
 static void ZoneNode_Free(cAICGZoneNode *node) {
 	cAICGZoneData_dtor(&node->zone);
-	operator_delete_sized(node, sizeof(cAICGZoneNode));
+	operator_delete(node);
 }
 
 /* to the free list while it has room, else deleted with its points */
@@ -122,13 +122,10 @@ static void cAICharGroup_dtor(cAICharGroup *self) {
 	cAIEntityGroup_dtor(&self->base);
 }
 
-static cAIEntityGroup *cAICharGroup_Delete(cAIEntityGroup *base, byte flags) {
+static void cAICharGroup_Free(cAIEntityGroup *base) {
 	cAICharGroup *self = (cAICharGroup *)base;
 	cAICharGroup_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAICHARGROUP_SIZE);
-	}
-	return base;
+	operator_delete(self);
 }
 
 static void AICG_NoMemory(void) {
@@ -405,7 +402,7 @@ byte cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity *e, float m
 
 /* the vtable of cAICharGroup */
 static const cAIEntityGroupVtbl cAICharGroup_vftable = {
-	.Delete = cAICharGroup_Delete,
+	.Free = cAICharGroup_Free,
 	.Clear = cAIEntityGroup_Clear,
 	.Add = cAIEntityGroup_Add,
 	.Get = cAIEntityGroup_Get,

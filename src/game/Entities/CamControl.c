@@ -40,12 +40,9 @@ void cCamControl_dtor(cEntity *self) {
 	cEntity_dtor(self);
 }
 
-static cEntity *cCamControl_Delete(cEntity *self, uint32_t flags) {
+static void cCamControl_Free(cEntity *self) {
 	cCamControl_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CCAMCONTROL_SIZE);
-	}
-	return self;
+	operator_delete(self);
 }
 
 void cCamControl_NopF(cEntity *self, float f) {
@@ -212,7 +209,7 @@ static const cCamControlVtbl cCamControl_vftable = {
 	.base.Update = cEntity_Update,
 	.base.Render = cEntity_Render,
 	.base.UpdateOff = cEntity_UpdateOff,
-	.base.Delete = cCamControl_Delete,
+	.base.Free = cCamControl_Free,
 	.base.GetClassName = cCamControl_GetClassName,
 	.base.IsType = cCamControl_IsType,
 	.base.GetPos = cEntity_GetPos,

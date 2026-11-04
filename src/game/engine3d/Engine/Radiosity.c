@@ -77,7 +77,7 @@ static void BspLink_dtor(BspLink *self) {
 	if (self->next) {
 		BspLink *e = self->next;
 		BspLink_dtor(e);
-		operator_delete_sized(e, sizeof(BspLink));
+		operator_delete(e);
 		self->next = NULL;
 	}
 	self->region = NULL;
@@ -88,7 +88,7 @@ void CRadiosity_dtor(CRadiosity *self) {
 	if (self->table) {
 		CHashTable *t = self->table;
 		CHashTable_dtor(t);
-		operator_delete_sized(t, sizeof(CHashTable));
+		operator_delete(t);
 		self->table = NULL;
 	}
 	if (self->list) {
@@ -100,7 +100,7 @@ void CRadiosity_dtor(CRadiosity *self) {
 		if (l->name) {
 			String_Set(&l->name, NULL);
 		}
-		operator_delete_sized(l, sizeof(RadAreaLight));
+		operator_delete(l);
 		self->list = NULL;
 	}
 	CIniFile_dtor(&self->ini);
@@ -110,14 +110,14 @@ void BspRegion_dtor(BspRegion *self) {
 	if (self->links) {
 		BspLink *e = self->links;
 		BspLink_dtor(e);
-		operator_delete_sized(e, sizeof(BspLink));
+		operator_delete(e);
 		self->links = NULL;
 	}
 	for (int i = 0; i < 4; i++) {
 		if (self->child[i]) {
 			BspRegion *h = self->child[i];
 			BspRegion_dtor(h);
-			operator_delete_sized(h, sizeof(BspRegion));
+			operator_delete(h);
 			self->child[i] = NULL;
 		}
 	}
@@ -133,7 +133,7 @@ static RadAreaLight *RadAreaLight_Delete(RadAreaLight *self, byte flags) {
 		String_Set(&self->name, NULL);
 	}
 	if (flags & 1) {
-		operator_delete_sized(self, sizeof(RadAreaLight));
+		operator_delete(self);
 	}
 	return self;
 }

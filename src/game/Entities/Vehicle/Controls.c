@@ -272,7 +272,7 @@ void *cVehicleO648_ctor(void *o) {
 
 void cVehicleO648_dtor(void *o) {
 	if (Tgt(o)->list) {
-		operator_delete_sized(Tgt(o)->list, sizeof(cVehicleTargetList));
+		operator_delete(Tgt(o)->list);
 	}
 }
 
@@ -355,7 +355,7 @@ void cVehicleO648_SetSlot(void *o, int slot) {
 
 	if (slot == -1) {
 		if (t->list) {
-			operator_delete_sized(t->list, sizeof(cVehicleTargetList));
+			operator_delete(t->list);
 			t->list = NULL;
 		}
 		return;

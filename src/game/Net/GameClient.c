@@ -28,7 +28,7 @@ byte Net_CloseClient(void) {
 	cNetClient *c = g_NetClient;
 	if (c) {
 		cNetClient_dtor(c);
-		operator_delete_sized(c, sizeof(*c));
+		operator_delete(c);
 	}
 	g_NetClient = NULL;
 	Mem_Free(g_NetClientData);

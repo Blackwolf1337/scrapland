@@ -22,7 +22,7 @@ static cGVar GVar_ForceServerVehicle;
 
 static void NetServer_Free(cNetClient *c) {
 	cNetClient_dtor(c);
-	operator_delete_sized(c, sizeof(*c));
+	operator_delete(c);
 }
 
 /* the server side client table */

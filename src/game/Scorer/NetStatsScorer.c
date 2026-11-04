@@ -33,18 +33,15 @@ static void cNetStatsScorer_dtor(cNetStatsScorer *self) {
 	self->base.vftable = CNETSTATSSCORER_VFTABLE;
 	if (img) {
 		CPsaImage_dtor(img);
-		operator_delete_sized(img, sizeof(CPsaImage));
+		operator_delete(img);
 	}
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cNetStatsScorer_Delete(cScorerItem *base, byte flags) {
+static void cNetStatsScorer_Free(cScorerItem *base) {
 	cNetStatsScorer *self = (cNetStatsScorer *)base;
 	cNetStatsScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cNetStatsScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* only the base variables */
@@ -139,7 +136,7 @@ static const cScorerItemVtbl cNetStatsScorer_vftable = {
 	.Draw = cNetStatsScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cNetStatsScorer_Var,
-	.Delete = cNetStatsScorer_Delete,
+	.Free = cNetStatsScorer_Free,
 };
 
 static cGVar GVar_ShowNetStatus;

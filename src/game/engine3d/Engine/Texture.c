@@ -130,9 +130,9 @@ static CBmp *CBmp_ctor(CBmp *self, int width, int height) {
 }
 
 static CBmp *CBmp_Delete(CBmp *self, byte flags) {
-	Img_Free(self, BMP_PIXEL);
+	Img_Free(self);
 	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CBmp));
+		operator_delete(self);
 	}
 	return self;
 }
@@ -205,7 +205,7 @@ static void CTexture_dtor(CTexture *self) {
 
 static void Texture_Free(CTexture *t) {
 	CTexture_dtor(t);
-	operator_delete_sized(t, sizeof(CTexture));
+	operator_delete(t);
 }
 
 /* the least recently used raw file texture when more than g_CachedTex have a device texture */
@@ -279,7 +279,7 @@ static int CTexture_UploadLevel(CTexture *self, CBmp *src, int level) {
 		fade.img = New_Array((uint32_t)fade.width * fade.height, BMP_PIXEL);
 		CBmp_Fill(&fade, 0x64c8ff);
 		CBmp_Blend(p, 0, 0, &fade, 0, 0, fade.width, fade.height, 10, 0x100);
-		Img_Free(&fade, BMP_PIXEL);
+		Img_Free(&fade);
 	}
 	if (g_MipmapColor && level > 0) {
 		/* green, blue, red for the levels 1, 2, 3.. */
@@ -566,7 +566,7 @@ static int CTexture_LoadFile(CTexture *self, byte load) {
 	}
 	if (!load) {
 		/* an empty CBmp: CTexture_CreateD3D loads it */
-		Img_Free(b, BMP_PIXEL);
+		Img_Free(b);
 		return 0;
 	}
 	if (CBmp_Load(b, name, 0)) {
@@ -587,7 +587,7 @@ static int CTexture_LoadFile(CTexture *self, byte load) {
 		} else {
 			E3D_LogBlue((&g_FileLog), "WARN: Opacity map not found: '%s'", self->Opac);
 		}
-		Img_Free(&o, BMP_PIXEL);
+		Img_Free(&o);
 	}
 	if (self->dudv) {
 		Bmp_ToDudv(self->bitmap);
@@ -649,7 +649,7 @@ static int CTexture_CreateD3D(CTexture *self, void *dev) {
 			CTexture_SaveDDS(self, self->bitmap, 0, 0);
 		}
 		if (!g_TexKeepBitmaps) {
-			Img_Free(self->bitmap, BMP_PIXEL);
+			Img_Free(self->bitmap);
 		}
 		if (hr < 0) {
 			E3D_LogBlue((&g_FileLog), "ERROR: creando la textura (CBMP): '%s'", Path_FileName(self->Name));
@@ -766,9 +766,9 @@ static int CTexture_SaveDDS(CTexture *self, CBmp *orig, int level, byte keepExt)
 		lx = lx > 1 ? lx >> 1 : 1;
 		ly = ly > 1 ? ly >> 1 : 1;
 		level++;
-		Img_Free(&b, BMP_PIXEL);
+		Img_Free(&b);
 	}
-	Img_Free(&b, BMP_PIXEL);
+	Img_Free(&b);
 	if (self->mipmap) {
 		ok = dx + 1 == orig->width * 2;
 	} else {
@@ -892,7 +892,7 @@ static void Bmp_ToDudv(CBmp *bmp) {
 		}
 	}
 	CBmp_Resample(bmp, &tmp, 0xf);
-	Img_Free(&tmp, BMP_PIXEL);
+	Img_Free(&tmp);
 }
 
 /* bmp into a locked A8R8G8B8 IDirect3DSurface8 of the same size */
@@ -983,7 +983,7 @@ static void Texture_FiniTexList(void) {
 
 	if (t) {
 		CTexture_dtor(t);
-		operator_delete_sized(t, sizeof(CTexture));
+		operator_delete(t);
 	}
 }
 

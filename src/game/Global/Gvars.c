@@ -118,7 +118,7 @@ void GVars_Done(void) {
 		t = g_GVarTable;
 	}
 	PtrTable_Clear(t);
-	operator_delete_sized(t, sizeof(*t));
+	operator_delete(t);
 	g_GVarTable = NULL;
 }
 

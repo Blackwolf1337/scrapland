@@ -37,13 +37,10 @@ static void cWaypointScorer_dtor(cWaypointScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cWaypointScorer_Delete(cScorerItem *base, byte flags) {
+static void cWaypointScorer_Free(cScorerItem *base) {
 	cWaypointScorer *self = (cWaypointScorer *)base;
 	cWaypointScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cWaypointScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static int cWaypointScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
@@ -253,5 +250,5 @@ static const cScorerItemVtbl cWaypointScorer_vftable = {
 	.Draw = cWaypointScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cWaypointScorer_Var,
-	.Delete = cWaypointScorer_Delete,
+	.Free = cWaypointScorer_Free,
 };

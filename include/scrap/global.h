@@ -41,7 +41,7 @@ extern cMemStats *g_MemStatsContext;
 
 /* the engine's operator new and sized delete (rva 0x1334d0, 0x313634; the plain delete is 0x1334e0), with its memory statistics */
 void *operator_new(uint32_t size);
-void operator_delete_sized(void *p, uint32_t size);
+void operator_delete(void *p);
 void *operator_new_array(uint32_t size);
 void operator_delete(void *p);
 void operator_delete_array(void *p);

@@ -40,13 +40,10 @@ void cAICharControl3D_dtor(cAICharControl3D *self) {
 	cAICharControl_dtor(self);
 }
 
-static cAICharControl3D *cAICharControl3D_Delete(cAICharControl3D *self, byte flags) {
+static void cAICharControl3D_Free(cAICharControl3D *self) {
 	self->vftable = CAICHARCONTROL3D_VFTABLE;
 	cAICharControl_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAICHARCONTROL_SIZE);
-	}
-	return self;
+	operator_delete(self);
 }
 
 void cAICharControl3D_Draw(cAICharControl3D *self) {
@@ -917,7 +914,7 @@ byte cAICharControl3D_StrafeFwd(cAICharControl3D *self, const vec3_t *pos, const
 
 /* the vtable of cAICharControl3D */
 static const cAICharControl3DVtbl cAICharControl3D_vftable = {
-	.base.Delete = cAICharControl3D_Delete,
+	.base.Free = cAICharControl3D_Free,
 	.base.Draw = cAICharControl3D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,
 	.base.Busy = cAICharControl_Busy,

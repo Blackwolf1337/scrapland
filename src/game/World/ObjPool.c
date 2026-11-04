@@ -124,7 +124,7 @@ static byte cDebris_SetFX(int type, cDebris *d) {
 		return 0;
 	}
 	if (d->fx) {
-		FXObj_Delete(d->fx, 1);
+		FXObj_Free(d->fx);
 		d->fx = NULL;
 	}
 	for (i = 0; i < sizeof(debrisFX) / sizeof(debrisFX[0]); i++) {
@@ -176,10 +176,10 @@ void cDebrisSys_dtor(cDebrisSys *sys) {
 
 static void Debris_Free(cDebris *d) {
 	if (d->fx) {
-		FXObj_Delete(d->fx, 1);
+		FXObj_Free(d->fx);
 	}
 	CGameModel_Reset(Debris_Mod(d));
-	operator_delete_sized(d, sizeof(*d));
+	operator_delete(d);
 }
 
 /* the move of a step of dt without an effect */
@@ -499,7 +499,7 @@ void cDebrisSys_Update(cDebrisSys *sys, float dt) {
 
 /* the vtable of cObjElementAbstract */
 static const cObjElementFXVtbl cObjElementAbstract_vftable = {
-	.Delete = cObjElementAbstract_Delete,
+	.Free = cObjElementAbstract_Free,
 	.Update = (void *)crt_purecall,
 	.IsAlive = (void *)crt_purecall,
 	.Start = (void *)crt_purecall,

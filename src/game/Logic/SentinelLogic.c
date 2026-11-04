@@ -64,14 +64,11 @@ void *cSentinelLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-static cLocalLogic *cSentinelLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static void cSentinelLocalLogic_Free(cLocalLogic *elem) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
 	self->base.vftable = CSENTINELLOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 /* vf16: a sentinel never runs from the alarm */
@@ -407,7 +404,7 @@ static byte cSentinelLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *
 
 /* the vtable of cSentinelLocalLogic */
 static const cBaseLocalLogicVtbl cSentinelLocalLogic_vftable = {
-	.base.Delete = cSentinelLocalLogic_Delete,
+	.base.Free = cSentinelLocalLogic_Free,
 	.base.GetName = cBaseLocalLogic_GetName,
 	.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.VarI = cBaseLocalLogic_VarI,

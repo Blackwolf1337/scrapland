@@ -86,7 +86,7 @@ static void Dummy_Free(WorldDummy *d) {
 	if (d->ini) {
 		CIniFile *ini = d->ini;
 		CIniFile_dtor(ini);
-		operator_delete_sized(ini, sizeof(CIniFile));
+		operator_delete(ini);
 		d->ini = NULL;
 	}
 	if (d->name) {
@@ -146,7 +146,7 @@ static void WorldDummy_FreeList(WorldDummy **list) {
 		*list = d->next;
 		d->next = NULL;
 		Dummy_Free(d);
-		operator_delete_sized(d, sizeof(WorldDummy));
+		operator_delete(d);
 	}
 }
 
@@ -236,7 +236,7 @@ static int World_LoadDUM(const char *path, WorldDummy **list) {
 	CFileIO_Error(f, "DUM");
 	CHECK(!f->error);
 	CFileIO_dtor(f);
-	operator_delete_sized(f, sizeof(CFileIO));
+	operator_delete(f);
 	return 0;
 }
 
@@ -262,7 +262,7 @@ static int World_SaveDUM(const char *path, const WorldDummy *list) {
 	CFileIO_EndBlockWrite(f, "DUM");
 	CHECK(!f->error);
 	CFileIO_dtor(f);
-	operator_delete_sized(f, sizeof(CFileIO));
+	operator_delete(f);
 	return 0;
 }
 
@@ -529,7 +529,7 @@ static void World_TakeDummies(CWorld *self) {
 				void *p = operator_new(sizeof(WorldDummy));
 				CWorld_AddDummy(self, p ? WorldDummy_ctorNode(p, n) : NULL);
 				CScene_RemoveNode(self->GroundScale, n);
-				ObjRef_Delete(n, 1);
+				ObjRef_Free(n);
 			} else {
 				Con_FatalErrorf("Only non-ref dummies can be named DM_*\n\nNode: %s\n", n->name);
 			}

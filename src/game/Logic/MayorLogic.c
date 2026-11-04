@@ -24,14 +24,11 @@ void *cMayorLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-static cLocalLogic *cMayorLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static void cMayorLocalLogic_Free(cLocalLogic *elem) {
 	cMayorLocalLogic *self = (cMayorLocalLogic *)elem;
 	MAYOR_VT(self) = CMAYORLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(&self->base);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 /* vf31: the special action is over after GenCharSpecialActionTime */
@@ -136,7 +133,7 @@ void cMayorLocalLogic_SetListener(cLocalLogic *l, cEntity *e) {
 
 /* the vtable of cMayorLocalLogic */
 static const cGenCharLocalLogicVtbl cMayorLocalLogic_vftable = {
-	.base.base.Delete = cMayorLocalLogic_Delete,
+	.base.base.Free = cMayorLocalLogic_Free,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,

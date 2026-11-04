@@ -48,13 +48,10 @@ static void cTabScorer_dtor(cTabScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cTabScorer_Delete(cScorerItem *base, byte flags) {
+static void cTabScorer_Free(cScorerItem *base) {
 	cTabScorer *self = (cTabScorer *)base;
 	cTabScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cTabScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static void cTabScorer_SetFile(cTabScorer *self, uint32_t flags, const char *name) {
@@ -389,5 +386,5 @@ static const cScorerItemVtbl cTabScorer_vftable = {
 	.Draw = cTabScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cTabScorer_Var,
-	.Delete = cTabScorer_Delete,
+	.Free = cTabScorer_Free,
 };

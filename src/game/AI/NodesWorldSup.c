@@ -27,7 +27,7 @@ static void NWPointList_FreePool(cNWPointList *list) {
 		cNWPointNode *p = list->freeNodes;
 		list->freeNodes = p->next;
 		NWIntList_Free(&p->links);
-		operator_delete_sized(p, sizeof(*p));
+		operator_delete(p);
 	}
 	list->numFree = 0;
 }
@@ -58,7 +58,7 @@ static void NWVisList_Release(cNWVisList *list, cNWVisNode *node) {
 	}
 	if (node) {
 		NWIntList_Free(&node->vis.points);
-		operator_delete_sized(node, sizeof(*node));
+		operator_delete(node);
 	}
 }
 
@@ -129,17 +129,14 @@ static cGridElements_InfPointVisPtr *NWGrid_ctor(cGridElements_InfPointVisPtr *s
 	return cGridElements_Init(self, NWGRID_VFTABLE, max, min, nx, ny, nz);
 }
 
-static void NWGrid_Free(cGridElements_InfPointVisPtr *self) {
-	cGridElements_FreeCells(self, (void(*)(void *))NWIntList_Clear, sizeof(cNWIntNode));
+static void NWGrid_Clear(cGridElements_InfPointVisPtr *self) {
+	cGridElements_FreeCells(self, (void(*)(void *))NWIntList_Clear);
 }
 
-static cGridElements_InfPointVisPtr *NWGrid_Delete(cGridElements_InfPointVisPtr *self, byte flags) {
+static void NWGrid_Free(cGridElements_InfPointVisPtr *self) {
 	self->vftable = NWGRID_VFTABLE;
-	NWGrid_Free(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	NWGrid_Clear(self);
+	operator_delete(self);
 }
 
 static byte NWGrid_Add(cGridElements_InfPointVisPtr *self, const vec3_t *p, const void *data) {
@@ -178,7 +175,7 @@ CNodesWorld *CNodesWorldSup_ctor(CNodesWorld *self) {
 /* a list of 0x14 nodes emptied and its free nodes deleted */
 static void NWSup_FreeVecList(cNWVecList *list, void(*clear)(cNWVecList *list)) {
 	clear(list);
-	DList_FreePool(list, sizeof(cNWVecNode));
+	DList_FreePool(list);
 }
 
 void CNodesWorldSup_dtor(CNodesWorld *self) {
@@ -198,12 +195,9 @@ void CNodesWorldSup_dtor(CNodesWorld *self) {
 }
 
 /* CNodesWorldSup_ctor, _dtor, _FreeGraph and _LoadGraph: nodesworld.h */
-static CNodesWorld *CNodesWorldSup_Delete(CNodesWorld *self, byte flags) {
+static void CNodesWorldSup_Free(CNodesWorld *self) {
 	CNodesWorldSup_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, 0x360);
-	}
-	return self;
+	operator_delete(self);
 }
 
 void CNodesWorldSup_GetBox(CNodesWorld *self, vec3_t *min, vec3_t *max) {
@@ -1084,7 +1078,7 @@ void CNodesWorldSup_FreeGraph(CNodesWorld *self) {
 		self->sup.sets = NULL;
 	}
 	if (self->sup.grid) {
-		GridElems_Delete(self->sup.grid, 1);
+		GridElems_Free(self->sup.grid);
 		self->sup.grid = NULL;
 	}
 	NodesWorld_ClearLists(self);
@@ -1431,7 +1425,7 @@ byte NWSup_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, c
 	ok = 1;
 end:
 	DListVec3_Clear(&queue);
-	DList_FreePool(&queue, sizeof(cNWVecNode));
+	DList_FreePool(&queue);
 	return ok;
 }
 
@@ -1476,7 +1470,7 @@ void NWSup_CreateRegion(CNodesWorld *self, const vec3_t *start, nwRegionReach_t 
 		r.id = self->sup.points.count - 1;
 		NW2DRegionList_Add(&((CNodesWorld2D *)self)->regions, &r);
 		DListVec3_Clear(&r.points);
-		DList_FreePool(&r.points, sizeof(cNWVecNode));
+		DList_FreePool(&r.points);
 	}
 	cNWPointNode *pn = self->sup.points.iter = self->sup.points.head;
 	cNWPointNode *P = pn;
@@ -1533,9 +1527,9 @@ void NWSup_CreateRegion(CNodesWorld *self, const vec3_t *start, nwRegionReach_t 
 	}
 	cells.iter = it;
 	NWIntList_Clear(&cells);
-	DList_FreePool(&cells, sizeof(cNWIntNode));
+	DList_FreePool(&cells);
 	DListVec3_Clear(&queue);
-	DList_FreePool(&queue, sizeof(cNWVecNode));
+	DList_FreePool(&queue);
 }
 
 /* ---- the points of visibility between the regions ---- */
@@ -1588,7 +1582,7 @@ void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops) {
 		}
 		if (!found) {
 			first = 1;
-			DList_RemoveHead(&pairs, sizeof(cNWPairNode));
+			DList_RemoveHead(&pairs);
 			Con_Printf("Num. Total Pairs PVis Remain: %d of %d\n", pairs.count, total);
 			if (!ops->is2D) {
 				Con_Printf("Mem. used: %d bytes\n", g_MemStats.bytes);
@@ -1633,8 +1627,8 @@ void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops) {
 		NWIntList_Free(&tmp.links);
 	}
 	Con_Printf("Num. Points Visibility Inter-Region No Linked: %d\n", made);
-	DList_Clear(&pairs, sizeof(cNWPairNode));
-	DList_FreePool(&pairs, sizeof(cNWPairNode));
+	DList_Clear(&pairs);
+	DList_FreePool(&pairs);
 }
 
 /* ---- the generation of the graph ---- */
@@ -1818,7 +1812,7 @@ void NWSup_DrawExtra(CNodesWorld *self, float r, uint32_t color) {
 
 /* the vtable of CNodesWorldSup */
 static const CNodesWorldVtbl CNodesWorldSup_vftable = {
-	.Delete = CNodesWorldSup_Delete,
+	.Free = CNodesWorldSup_Free,
 	.GetBox = CNodesWorldSup_GetBox,
 	.LoadFiles = CNodesWorldSup_LoadGraph,
 	.LoadGraph = (void *)crt_purecall,
@@ -1862,7 +1856,7 @@ static const CNodesWorldVtbl CNodesWorldSup_vftable = {
 
 /* the vtable of cGridElements_InfPointVis */
 static const cGridElementsVtbl cGridElements_InfPointVis_vftable = {
-	.Delete = NWGrid_Delete,
+	.Free = NWGrid_Free,
 	.Add = NWGrid_Add,
 	.GetCellAt = cGridElements_GetCellAt,
 	.GetCell = cGridElements_GetCell,
@@ -1871,6 +1865,6 @@ static const cGridElementsVtbl cGridElements_InfPointVis_vftable = {
 	.GetDivs = cGridElements_GetDivs,
 	.GetCellSize = cGridElements_GetCellSize,
 	.IsInside = cGridElements_IsInside,
-	.Free = NWGrid_Free,
+	.Clear = NWGrid_Clear,
 	.CellIndex = cGridElements_CellIndex,
 };

@@ -88,7 +88,7 @@ static void Light_Release(CNode3D **slot) {
 		CNode3D *old = *slot;
 		old->Refs--;
 		if (!old->Refs && old) {
-			ObjRef_Delete(old, 1);
+			ObjRef_Free(old);
 		}
 		*slot = NULL;
 	}
@@ -211,21 +211,15 @@ static void CLight_dtor(CLight *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-static IObject3D *CLight_Delete(IObject3D *base, byte flags) {
+static void CLight_Free(IObject3D *base) {
 	CLight *self = (CLight *)base;
 	CLight_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
-IObject3D *IObject3D_Delete(IObject3D *self, byte flags) {
+void IObject3D_Free(IObject3D *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete(self);
 }
 
 static const float LIGHT_RANGE_INF = 1.8446e+19f;
@@ -797,7 +791,7 @@ byte IObject3D_WriteFalse(IObject3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 
 /* the vtable of CLight */
 static const IObject3DVtbl CLight_vftable = {
-	.Delete = CLight_Delete,
+	.Free = CLight_Free,
 	.Update = CLight_Update,
 	.Render = CLight_Render,
 	.InitD3D = CLight_Reset,

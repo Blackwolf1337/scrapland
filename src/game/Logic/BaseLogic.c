@@ -64,21 +64,15 @@ void cLocalLogic_dtor(cLocalLogic *self) {
 	self->vftable = CLOCALLOGIC_VFTABLE;
 }
 
-static cLocalLogic *cBaseLocalLogic_Delete(cLocalLogic *base, byte flags) {
+static void cBaseLocalLogic_Free(cLocalLogic *base) {
 	cBaseLocalLogic *self = (cBaseLocalLogic *)base;
 	cBaseLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
-static cLocalLogic *cLocalLogic_Delete(cLocalLogic *self, byte flags) {
+static void cLocalLogic_Free(cLocalLogic *self) {
 	self->vftable = CLOCALLOGIC_VFTABLE;
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* the view test of the original: distance, the angles of the way from pos to the viewer against its sound angles
@@ -751,7 +745,7 @@ void cLocalLogic_WorkNop(cLocalLogic *self, float dt) {
 
 /* the vtable of cLocalLogic */
 static const cLocalLogicVtbl cLocalLogic_vftable = {
-	.Delete = cLocalLogic_Delete,
+	.Free = cLocalLogic_Free,
 	.GetName = cLocalLogic_GetName,
 	.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.VarI = cLocalLogic_VarIFalse,
@@ -762,7 +756,7 @@ static const cLocalLogicVtbl cLocalLogic_vftable = {
 
 /* the vtable of cBaseLocalLogic */
 static const cBaseLocalLogicVtbl cBaseLocalLogic_vftable = {
-	.base.Delete = cBaseLocalLogic_Delete,
+	.base.Free = cBaseLocalLogic_Free,
 	.base.GetName = cBaseLocalLogic_GetName,
 	.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.VarI = cBaseLocalLogic_VarI,

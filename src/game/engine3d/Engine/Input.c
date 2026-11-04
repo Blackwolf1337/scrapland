@@ -26,12 +26,9 @@ void IInput_dtor(IInput *self) {
 	g_InputInit = 0;
 }
 
-static IInput *IInput_Delete(IInput *self, byte flags) {
+static void IInput_Free(IInput *self) {
 	IInput_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(IInput));
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* the slot AcquireKeys of a class that does only return 0 */
@@ -87,7 +84,7 @@ void IInput_WndProcNop(IInput *self, void *hwnd, uint32_t msg, uint32_t wparam, 
 
 /* the vtable of IInput */
 static const IInputVtbl IInput_vftable = {
-	.Delete = IInput_Delete,
+	.Free = IInput_Free,
 	.Init = (void *)crt_purecall,
 	.Release = (void *)crt_purecall,
 	.ReadMouse = (void *)crt_purecall,

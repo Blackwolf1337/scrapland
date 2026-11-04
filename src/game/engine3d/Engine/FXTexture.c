@@ -41,12 +41,9 @@ static void IFXTexture_dtor(IFXTexture *self) {
 	self->vftable = IFXTEXTURE_VFTABLE;
 }
 
-static IFXTexture *IFXTexture_Delete(IFXTexture *self, byte flags) {
+static void IFXTexture_Free(IFXTexture *self) {
 	self->vftable = IFXTEXTURE_VFTABLE;
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete(self);
 }
 
 static void *IFXTexture_GetTexture(IFXTexture *self) {
@@ -72,8 +69,8 @@ static void FXTex_LoadBmps(CBmp **bmp, CBmp **orig, const char *file) {
 
 static void FXTex_FreeBmp(CBmp **bmp) {
 	if (*bmp) {
-		Img_Free(*bmp, 4);
-		operator_delete_sized(*bmp, sizeof(CBmp));
+		Img_Free(*bmp);
+		operator_delete(*bmp);
 		*bmp = NULL;
 	}
 }
@@ -108,13 +105,10 @@ static void CFXTexLava_dtor(CFXTexLava *self) {
 	IFXTexture_dtor(&self->base);
 }
 
-static IFXTexture *CFXTexLava_Delete(IFXTexture *base, byte flags) {
+static void CFXTexLava_Free(IFXTexture *base) {
 	CFXTexLava *self = (CFXTexLava *)base;
 	CFXTexLava_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the time for the next step reached: then the time of now kept */
@@ -184,13 +178,10 @@ static void CFXTexScroll_dtor(CFXTexScroll *self) {
 	IFXTexture_dtor(&self->base);
 }
 
-static IFXTexture *CFXTexScroll_Delete(IFXTexture *base, byte flags) {
+static void CFXTexScroll_Free(IFXTexture *base) {
 	CFXTexScroll *self = (CFXTexScroll *)base;
 	CFXTexScroll_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static int CFXTexScroll_Update(IFXTexture *base, CMap *map) {
@@ -218,13 +209,10 @@ static CFXNewsPanel *CFXNewsPanel_ctor(CFXNewsPanel *self) {
 	return self;
 }
 
-static IFXTexture *CFXNewsPanel_Delete(IFXTexture *elem, byte flags) {
+static void CFXNewsPanel_Free(IFXTexture *elem) {
 	CFXNewsPanel *self = (CFXNewsPanel *)elem;
 	IFXTexture_dtor(&self->base);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 static int CFXNewsPanel_Update(IFXTexture *base, CMap *map) {
@@ -276,28 +264,28 @@ byte FXTexture_Kind(const char *name) {
 
 /* the vtable of IFXTexture */
 static const IFXTextureVtbl IFXTexture_vftable = {
-	.Delete = IFXTexture_Delete,
+	.Free = IFXTexture_Free,
 	.Update = (void *)crt_purecall,
 	.GetTexture = IFXTexture_GetTexture,
 };
 
 /* the vtable of CFXTexLava */
 static const IFXTextureVtbl CFXTexLava_vftable = {
-	.Delete = CFXTexLava_Delete,
+	.Free = CFXTexLava_Free,
 	.Update = CFXTexLava_Update,
 	.GetTexture = IFXTexture_GetTexture,
 };
 
 /* the vtable of CFXTexScroll */
 static const IFXTextureVtbl CFXTexScroll_vftable = {
-	.Delete = CFXTexScroll_Delete,
+	.Free = CFXTexScroll_Free,
 	.Update = CFXTexScroll_Update,
 	.GetTexture = IFXTexture_GetTexture,
 };
 
 /* the vtable of CFXNewsPanel */
 static const IFXTextureVtbl CFXNewsPanel_vftable = {
-	.Delete = CFXNewsPanel_Delete,
+	.Free = CFXNewsPanel_Free,
 	.Update = CFXNewsPanel_Update,
 	.GetTexture = CFXNewsPanel_GetTexture,
 };

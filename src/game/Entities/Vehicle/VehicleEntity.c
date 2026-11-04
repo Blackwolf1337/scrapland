@@ -160,7 +160,7 @@ cEntity *cVehicleEntity_ctor(void *mem, const char *name, float x, float y, floa
 	cWeaponManager_Init(&self->weapons, Veh_Ent(self));
 	self->netCtrl = NULL;
 	if (Veh_Net(self)) {
-		operator_delete_sized(self->wl.obj.net, 0x5c);
+		operator_delete(self->wl.obj.net);
 		void *n = operator_new(sizeof(cNetVController));
 		self->wl.obj.net = n ? (cNetController *)cNetVController_ctor(n, Veh_Ent(self)) : NULL;
 	}
@@ -236,11 +236,11 @@ static void cAutoAim_dtor(void *self) {
 static void cVehicleEntity_dtor(cVehicleEntity *self) {
 	self->wl.obj.base.vftable = CVEHICLEENTITY_VFTABLE;
 	if (self->netCtrl) {
-		operator_delete_sized(self->netCtrl, 0x5c);
+		operator_delete(self->netCtrl);
 		self->netCtrl = NULL;
 	}
 	if (self->wl.obj.base.ai) {
-		AI_Delete(self->wl.obj.base.ai, 1);
+		AI_Free(self->wl.obj.base.ai);
 	}
 	self->wl.obj.base.ai = NULL;
 	cVehicleEffects_dtor(&self->effects);
@@ -252,13 +252,10 @@ static void cVehicleEntity_dtor(cVehicleEntity *self) {
 	cWithLifeEntity_dtor(&self->wl.obj.base);
 }
 
-static cEntity *cVehicleEntity_Delete(cEntity *base, uint32_t flags) {
+static void cVehicleEntity_Free(cEntity *base) {
 	cVehicleEntity *self = (cVehicleEntity *)base;
 	cVehicleEntity_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* ---- the collision ---- */
@@ -877,7 +874,7 @@ void cVehicleEntity_NetCreate(cVehicleEntity *self) {
 
 static void cVehicleEntity_NetDelete(cVehicleEntity *self) {
 	if (self->netCtrl) {
-		operator_delete_sized(self->netCtrl, 0x5c);
+		operator_delete(self->netCtrl);
 		self->netCtrl = NULL;
 	}
 }
@@ -938,7 +935,7 @@ static void cVehicleEntity_SetUsrControl(cVehicleEntity *self, int slot) {
 void cVehicleEntity_EnableAI(cVehicleEntity *self, byte enable, void *p1, void *p2, void *p3) {
 	if (!enable) {
 		if (self->wl.obj.base.ai) {
-			AI_Delete(self->wl.obj.base.ai, 1);
+			AI_Free(self->wl.obj.base.ai);
 		}
 		self->wl.obj.base.ai = NULL;
 		return;
@@ -1209,7 +1206,7 @@ static void cVehicleEntity_SetEmbeddedFX(cEntity *base, const char *fxType) {
 		if (fx) {
 			EFXVeh_Done(fx);
 			if (Veh_FX(self)) {
-				EFXVeh_Delete(Veh_FX(self), 1);
+				EFXVeh_Free(Veh_FX(self));
 				self->wl.obj.fx = NULL;
 			}
 		}
@@ -2039,7 +2036,7 @@ static const cWithLifeEntityVtbl cVehicleEntity_vftable = {
 	.base.base.Update = cVehicleEntity_Update,
 	.base.base.Render = cEntity_Render,
 	.base.base.UpdateOff = cVehicleEntity_UpdateOff,
-	.base.base.Delete = cVehicleEntity_Delete,
+	.base.base.Free = cVehicleEntity_Free,
 	.base.base.GetClassName = cVehicleEntity_GetClassName,
 	.base.base.IsType = cVehicleEntity_IsType,
 	.base.base.GetPos = cObjEntity_GetPos,

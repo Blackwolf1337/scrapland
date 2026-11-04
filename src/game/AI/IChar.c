@@ -198,19 +198,16 @@ void *cAIChar_ctor(void *mem, cEntity *e, int *arg) {
 void cAIChar_dtor(cAIChar *self) {
 	self->vftable = CAICHAR_VFTABLE;
 	if (self->control) {
-		AICC_Delete(self->control, 1);
+		AICC_Free(self->control);
 	}
 	cAIChar_Debugf(&self->base.base, "Entidad DESTRUIDA");
 	cAIMove_dtor(&self->base);
 }
 
-static cAI *cAIChar_Delete(cAI *base, byte flags) {
+static void cAIChar_Free(cAI *base) {
 	cAIChar *self = (cAIChar *)base;
 	cAIChar_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAICHAR_SIZE);
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* ---- Global/Nto1Links.h and a vector compare, out of line in this part of the exe ---- */
@@ -1958,7 +1955,7 @@ byte cAIChar_IsMoving(cAI *base) {
 
 /* the vtable of cAIChar */
 static const cAICharVtbl cAIChar_vftable = {
-	.base.base.Delete = cAIChar_Delete,
+	.base.base.Free = cAIChar_Free,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
 	.base.base.Draw = cAIChar_Draw,

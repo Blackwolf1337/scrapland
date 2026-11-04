@@ -60,13 +60,10 @@ void cGenCharLocalLogic_dtor(cGenCharLocalLogic *self) {
 	cBaseLocalLogic_dtor(&self->base);
 }
 
-static cLocalLogic *cGenCharLocalLogic_Delete(cLocalLogic *base, byte flags) {
+static void cGenCharLocalLogic_Free(cLocalLogic *base) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)base;
 	cGenCharLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* vf26: no view flag for a player of the own suspect type, else relaxed and no alarm; team 3 */
@@ -547,7 +544,7 @@ byte cGenCharLocalLogic_CanAttack(cLocalLogic *base, cEntity *e) {
 
 /* the vtable of cGenCharLocalLogic */
 static const cGenCharLocalLogicVtbl cGenCharLocalLogic_vftable = {
-	.base.base.Delete = cGenCharLocalLogic_Delete,
+	.base.base.Free = cGenCharLocalLogic_Free,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,

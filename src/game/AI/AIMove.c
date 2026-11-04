@@ -76,13 +76,10 @@ void cAIMove_dtor(cAIMove *self) {
 	cAI_dtor(&self->base);
 }
 
-static cAI *cAIMove_Delete(cAI *base, byte flags) {
+static void cAIMove_Free(cAI *base) {
 	cAIMove *self = (cAIMove *)base;
 	cAIMove_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAIMOVE_SIZE);
-	}
-	return base;
+	operator_delete(self);
 }
 
 void cAIMove_CheckStopped(cAI *elem, float dt) {
@@ -256,7 +253,7 @@ vec3_t *cAIMove_RandomPoint(cAI *elem, vec3_t *out, const vec3_t *p, float r) {
 
 /* the vtable of cAIMove */
 static const cAIMoveVtbl cAIMove_vftable = {
-	.base.Delete = cAIMove_Delete,
+	.base.Free = cAIMove_Free,
 	.base.Update = cAIMove_Update,
 	.base.UpdateOff = cAIMove_UpdateOff,
 	.base.Draw = cAIMove_Draw,

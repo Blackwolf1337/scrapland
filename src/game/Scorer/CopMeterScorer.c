@@ -20,7 +20,7 @@ static CPsaImage *CopMeter_NewImage(const char *name, int flagsOnly) {
 static void CopMeter_FreeImage(CPsaImage *img) {
 	if (img) {
 		CPsaImage_dtor(img);
-		operator_delete_sized(img, sizeof(CPsaImage));
+		operator_delete(img);
 	}
 }
 
@@ -54,13 +54,10 @@ static void cCopMeterScorer_dtor(cCopMeterScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cCopMeterScorer_Delete(cScorerItem *base, byte flags) {
+static void cCopMeterScorer_Free(cScorerItem *base) {
 	cCopMeterScorer *self = (cCopMeterScorer *)base;
 	cCopMeterScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cCopMeterScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* a value 0..100 of the scripts as 0..1 */
@@ -234,5 +231,5 @@ static const cScorerItemVtbl cCopMeterScorer_vftable = {
 	.Draw = cCopMeterScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cCopMeterScorer_Var,
-	.Delete = cCopMeterScorer_Delete,
+	.Free = cCopMeterScorer_Free,
 };

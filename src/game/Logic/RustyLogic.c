@@ -43,15 +43,12 @@ void *cRustyLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-static cLocalLogic *cRustyLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static void cRustyLocalLogic_Free(cLocalLogic *elem) {
 	cRustyLocalLogic *self = (cRustyLocalLogic *)elem;
 	self->base.base.vftable = CRUSTYLOCALLOGIC_VFTABLE;
 	g_JunkPointsList = NULL;
 	cGenCharLocalLogic_dtor(&self->base);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 static int g_RustyLoops;
@@ -227,7 +224,7 @@ static byte cRustyLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *tar
 
 /* the vtable of cRustyLocalLogic */
 static const cGenCharLocalLogicVtbl cRustyLocalLogic_vftable = {
-	.base.base.Delete = cRustyLocalLogic_Delete,
+	.base.base.Free = cRustyLocalLogic_Free,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cRustyLocalLogic_VarI,

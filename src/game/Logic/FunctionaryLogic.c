@@ -109,13 +109,10 @@ void cFunctionaryLocalLogic_dtor(cFunctionaryLocalLogic *self) {
 	cGenCharLocalLogic_dtor(&self->base);
 }
 
-static cLocalLogic *cFunctionaryLocalLogic_Delete(cLocalLogic *base, byte flags) {
+static void cFunctionaryLocalLogic_Free(cLocalLogic *base) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	cFunctionaryLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, 0xb8);
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* vf26: the view flag of the character and its team */
@@ -756,7 +753,7 @@ static vec3_t *cFunctionaryLocalLogic_GetWorkAng(cLocalLogic *base, vec3_t *out)
 
 /* the vtable of cFunctionaryLocalLogic */
 static const cFunctionaryLocalLogicVtbl cFunctionaryLocalLogic_vftable = {
-	.base.base.base.Delete = cFunctionaryLocalLogic_Delete,
+	.base.base.base.Free = cFunctionaryLocalLogic_Free,
 	.base.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.base.AcceptsArrow = cFunctionaryLocalLogic_AcceptsArrow,
 	.base.base.base.VarI = cFunctionaryLocalLogic_VarI,

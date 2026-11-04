@@ -103,12 +103,6 @@ void __stdcall crt_eh_vector_dtor(void *p, uint32_t size, uint32_t count, void *
 	}
 }
 
-/* operator delete(void *, size_t) of the runtime: the engine's operator delete */
-void operator_delete_sized(void *p, uint32_t size) {
-	(void)size;
-	operator_delete(p);
-}
-
 /* ---- the start ---- */
 
 /* what the CRT initializers of the __xi table set that the game sees (the matherr hook exists on Windows only) */

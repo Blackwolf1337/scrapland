@@ -29,14 +29,11 @@ void *cAINurse_ctor(void *mem, cEntity *e, int *arg) {
 }
 
 /* AINurse.c */
-static cAI *cAINurse_Delete(cAI *base, byte flags) {
+static void cAINurse_Free(cAI *base) {
 	cAIChar *self = (cAIChar *)base;
 	self->vftable = CAINURSE_VFTABLE;
 	cAIChar_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAINURSE_SIZE);
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the action at a dazed target */
@@ -111,7 +108,7 @@ static byte cAINurse_SetStateIntern(cAI *elem, int state, ...) {
 
 /* the vtable of cAINurse */
 static const cAICharVtbl cAINurse_vftable = {
-	.base.base.Delete = cAINurse_Delete,
+	.base.base.Free = cAINurse_Free,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
 	.base.base.Draw = cAIChar_Draw,

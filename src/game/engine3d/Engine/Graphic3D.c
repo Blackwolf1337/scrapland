@@ -50,13 +50,10 @@ static void CGraphic3D_dtor(CGraphic3D *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-static IObject3D *CGraphic3D_Delete(IObject3D *base, byte flags) {
+static void CGraphic3D_Free(IObject3D *base) {
 	CGraphic3D *self = (CGraphic3D *)base;
 	CGraphic3D_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CGraphic3D));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static byte CGraphic3D_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
@@ -181,7 +178,7 @@ void CGraphic3D_CreateMat(CGraphic3D *self, const char *tex, const char *opac, i
 
 /* the vtable of CGraphic3D */
 static const IObject3DVtbl CGraphic3D_vftable = {
-	.Delete = CGraphic3D_Delete,
+	.Free = CGraphic3D_Free,
 	.Update = IObject3D_UpdateNop,
 	.Render = CGraphic3D_Render,
 	.InitD3D = IObject3D_InitD3DNop,

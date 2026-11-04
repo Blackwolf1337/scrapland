@@ -37,7 +37,7 @@ static CPsaImage *Monitor_NewImage(const char *name, int blend, uint32_t flags, 
 static void Monitor_FreeImage(CPsaImage *img) {
 	if (img) {
 		CPsaImage_dtor(img);
-		operator_delete_sized(img, sizeof(CPsaImage));
+		operator_delete(img);
 	}
 }
 
@@ -93,20 +93,17 @@ static void cMonitorScorer_dtor(cMonitorScorer *self) {
 	Monitor_FreeImage(self->weapon);
 	if (self->cam) {
 		CGameCamera_dtor(self->cam);
-		operator_delete_sized(self->cam, sizeof(CGameCamera));
+		operator_delete(self->cam);
 	}
 	Monitor_FreeImage(self->noiseImg);
 	Monitor_FreeImage(self->img350);
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cMonitorScorer_Delete(cScorerItem *base, byte flags) {
+static void cMonitorScorer_Free(cScorerItem *base) {
 	cMonitorScorer *self = (cMonitorScorer *)base;
 	cMonitorScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cMonitorScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* vf01: TargetView=1 */
@@ -869,7 +866,7 @@ static const cHeadScorerVtbl cMonitorScorer_vftable = {
 	.base.Draw = cMonitorScorer_Draw,
 	.base.SetParam = cMonitorScorer_SetParam,
 	.base.Var = cMonitorScorer_Var,
-	.base.Delete = cMonitorScorer_Delete,
+	.base.Free = cMonitorScorer_Free,
 	.SetAnim = cMonitorScorer_SetAnim,
 	.SetModel = cMonitorScorer_SetModel,
 };

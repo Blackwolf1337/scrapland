@@ -28,7 +28,7 @@ typedef struct CNodesTraffic CNodesTraffic;	/* include/scrap/nodestraffic.h */
 typedef struct cAIEntityGroup cAIEntityGroup;
 
 typedef struct cAIEntityGroupVtbl {
-	cAIEntityGroup *(*Delete)(cAIEntityGroup *self, byte flags);	/* 0x00 */
+	void (*Free)(cAIEntityGroup *self);	/* 0x00 */
 	void(*Clear)(cAIEntityGroup *self);				/* 0x04 no entities */
 	byte(*Add)(cAIEntityGroup *self, cEntity *e);			/* 0x08 0 when full */
 	cEntity *(*Get)(cAIEntityGroup *self, int i);			/* 0x0c */
@@ -40,8 +40,8 @@ typedef struct cAIEntityGroupVtbl {
 } cAIEntityGroupVtbl;
 
 /* calls through the slots of cAIEntityGroupVtbl */
-static inline cAIEntityGroup *AIGroup_Delete(void *self, byte flags) {
-	return VT(cAIEntityGroupVtbl, self)->Delete(self, flags);
+static inline void AIGroup_Free(void *self) {
+	VT(cAIEntityGroupVtbl, self)->Free(self);
 }
 
 static inline byte AIGroup_Add(void *self, cEntity *e) {
@@ -105,7 +105,7 @@ typedef struct cAI cAI;
 
 /* the slots of cAI::vftable (Debugf is pure there) */
 typedef struct cAIBaseVtbl {
-	cAI *(*Delete)(cAI *self, byte flags);					/* 0x00 */
+	void (*Free)(cAI *self);					/* 0x00 */
 	void(*Update)(cAI *self, float dt);						/* 0x04 */
 	void(*UpdateOff)(cAI *self, float dt);					/* 0x08 */
 	void(*Draw)(cAI *self);							/* 0x0c */
@@ -122,8 +122,8 @@ typedef struct cAIBaseVtbl {
 } cAIBaseVtbl;
 
 /* calls through the slots of cAIBaseVtbl */
-static inline cAI *AI_Delete(void *self, byte flags) {
-	return VT(cAIBaseVtbl, self)->Delete(self, flags);
+static inline void AI_Free(void *self) {
+	VT(cAIBaseVtbl, self)->Free(self);
 }
 
 static inline byte AI_VarV(void *self, const char *name, double *x, double *y, double *z, byte set) {

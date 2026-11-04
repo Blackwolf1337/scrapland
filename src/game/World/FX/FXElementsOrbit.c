@@ -41,22 +41,16 @@ static void cFXElementsOrbitBuoyController_dtor(cFXElementsOrbitBuoyController *
 	cMapElement_dtor(&self->base);
 }
 
-static cMapElement *cFXElementsOrbitBuoy_Delete(cMapElement *base, byte flags) {
+static void cFXElementsOrbitBuoy_Free(cMapElement *base) {
 	cFXElementsOrbitBuoy *self = (cFXElementsOrbitBuoy *)base;
 	cFXElementsOrbitBuoy_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
-static cMapElement *cFXElementsOrbitBuoyController_Delete(cMapElement *base, byte flags) {
+static void cFXElementsOrbitBuoyController_Free(cMapElement *base) {
 	cFXElementsOrbitBuoyController *self = (cFXElementsOrbitBuoyController *)base;
 	cFXElementsOrbitBuoyController_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* ---- the elements ---- */
@@ -202,14 +196,14 @@ void FXElementsOrbit_Create(void) {
 
 /* the vtable of cFXElementsOrbitBuoy */
 static const cMapElementVtbl cFXElementsOrbitBuoy_vftable = {
-	.Delete = cFXElementsOrbitBuoy_Delete,
+	.Free = cFXElementsOrbitBuoy_Free,
 	.Init = cFXElementsOrbitBuoy_Init,
 	.Update = cFXElementsOrbitBuoy_Update,
 };
 
 /* the vtable of cFXElementsOrbitBuoyController */
 static const cMapElementVtbl cFXElementsOrbitBuoyController_vftable = {
-	.Delete = cFXElementsOrbitBuoyController_Delete,
+	.Free = cFXElementsOrbitBuoyController_Free,
 	.Init = cFXElementsOrbitBuoyController_Init,
 	.Update = cFXElementsOrbitBuoyController_Update,
 };

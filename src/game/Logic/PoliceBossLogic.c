@@ -25,14 +25,11 @@ cPoliceBossLocalLogic *cPoliceBossLocalLogic_ctor(cPoliceBossLocalLogic *self, c
 }
 
 /* PoliceBossLogic.cpp: a cGenCharLocalLogic */
-static cLocalLogic *cPoliceBossLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static void cPoliceBossLocalLogic_Free(cLocalLogic *elem) {
 	cPoliceBossLocalLogic *self = (cPoliceBossLocalLogic *)elem;
 	self->base.vftable = CPOLICEBOSSLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 /* vf30: no target; when the search time is over the special action of the boss, near a character it can see */
@@ -80,7 +77,7 @@ static void cPoliceBossLocalLogic_Update(cLocalLogic *base, float dt) {
 
 /* the vtable of cPoliceBossLocalLogic */
 static const cGenCharLocalLogicVtbl cPoliceBossLocalLogic_vftable = {
-	.base.base.Delete = cPoliceBossLocalLogic_Delete,
+	.base.base.Free = cPoliceBossLocalLogic_Free,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,

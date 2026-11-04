@@ -79,22 +79,16 @@ static void cTextScorer_dtor(cTextScorer *self) {
 	cAbstractTextScorer_dtor(&self->base);
 }
 
-static cScorerItem *cTextScorer_Delete(cScorerItem *base, byte flags) {
+static void cTextScorer_Free(cScorerItem *base) {
 	cTextScorer *self = (cTextScorer *)base;
 	cTextScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cTextScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
-static cScorerItem *cTextTypingScorer_Delete(cScorerItem *base, byte flags) {
+static void cTextTypingScorer_Free(cScorerItem *base) {
 	cTextTypingScorer *self = (cTextTypingScorer *)base;
 	cTextScorer_dtor(&self->base);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cTextTypingScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the text edit of each player */
@@ -452,7 +446,7 @@ static const cTextScorerVtbl cTextScorer_vftable = {
 	.base.Draw = cTextScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cTextScorer_Var,
-	.base.Delete = cTextScorer_Delete,
+	.base.Free = cTextScorer_Free,
 	.DrawKeyboard = cTextScorer_DrawKeyboard,
 };
 
@@ -461,7 +455,7 @@ static const cTextScorerVtbl cTextTypingScorer_vftable = {
 	.base.Draw = cTextTypingScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cTextTypingScorer_Var,
-	.base.Delete = cTextTypingScorer_Delete,
+	.base.Free = cTextTypingScorer_Free,
 	.DrawKeyboard = cTextScorer_DrawKeyboard,
 };
 

@@ -19,7 +19,7 @@ cAbstractFile *cFile_Destroy(cAbstractFile *base, int flags) {
 	cFile *self = (cFile *)base;
 	cFile_dtor(self);
 	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
+		operator_delete(self);
 	}
 	return base;
 }

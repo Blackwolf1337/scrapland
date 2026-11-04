@@ -20,14 +20,11 @@ void *cAIHuman_ctor(void *mem, cEntity *e, int *arg) {
 }
 
 /* AIHuman.c */
-static cAI *cAIHuman_Delete(cAI *base, byte flags) {
+static void cAIHuman_Free(cAI *base) {
 	cAIHuman *self = (cAIHuman *)base;
 	self->vftable = CAIHUMAN_VFTABLE;
 	cAIChar_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAIHUMAN_SIZE);
-	}
-	return base;
+	operator_delete(self);
 }
 
 static void cAIHuman_SetDists(cAI *base) {
@@ -42,7 +39,7 @@ static void cAIHuman_SetDists(cAI *base) {
 
 /* the vtable of cAIHuman */
 static const cAICharVtbl cAIHuman_vftable = {
-	.base.base.Delete = cAIHuman_Delete,
+	.base.base.Free = cAIHuman_Free,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
 	.base.base.Draw = cAIChar_Draw,

@@ -33,7 +33,7 @@ cCTFFriends *cCTFFriends_ctor(cCTFFriends *self) {
 
 void cCTFFriends_dtor(cCTFFriends *self) {
 	if (self->d) {
-		operator_delete_sized(self->d, sizeof(*self->d));
+		operator_delete(self->d);
 	}
 }
 

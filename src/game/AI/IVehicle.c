@@ -184,13 +184,10 @@ static void cAIVehicle_dtor(cAIVehicle *self) {
 	cAIMove_dtor(&self->base);
 }
 
-static cAI *cAIVehicle_Delete(cAI *base, byte flags) {
+static void cAIVehicle_Free(cAI *base) {
 	cAIVehicle *self = (cAIVehicle *)base;
 	cAIVehicle_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAIVEHICLE_SIZE);
-	}
-	return base;
+	operator_delete(self);
 }
 
 void cAIVehicle_ApplyParams(cAIVehicle *self) {
@@ -3306,7 +3303,7 @@ void cAIVehicle_WeapListChanged(void *ai) {
 
 /* the vtable of cAIVehicle */
 static const cAIMoveVtbl cAIVehicle_vftable = {
-	.base.Delete = cAIVehicle_Delete,
+	.base.Free = cAIVehicle_Free,
 	.base.Update = cAIVehicle_Update,
 	.base.UpdateOff = cAIVehicle_UpdateOff,
 	.base.Draw = cAIVehicle_Draw,

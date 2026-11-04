@@ -793,7 +793,7 @@ static void VM_FreeParticles(CGameParticles **slot) {
 	}
 	if (*slot) {
 		CGameParticles_Release(*slot);
-		operator_delete_sized(*slot, sizeof(CGameParticles));
+		operator_delete(*slot);
 		*slot = NULL;
 	}
 }
@@ -817,7 +817,7 @@ static void cVehicleMotorsEffects_Clear(cVehicleMotorsEffects *self) {
 			CGameTrail_Clear(self->trail[i]);
 			if (self->trail[i]) {
 				CGameTrail_dtor(self->trail[i]);
-				operator_delete_sized(self->trail[i], sizeof(CGameTrail));
+				operator_delete(self->trail[i]);
 				self->trail[i] = NULL;
 			}
 		}
@@ -941,7 +941,7 @@ void cVehicleMotors_dtor(void *motors) {
 		cVehicleMotor *m = self->motor[i];
 		if (m) {
 			cVehicleMotor_dtor(m);
-			operator_delete_sized(m, sizeof(cVehicleMotor));
+			operator_delete(m);
 		}
 	}
 	cVehicleMotorsEffects_dtor(&self->effects);

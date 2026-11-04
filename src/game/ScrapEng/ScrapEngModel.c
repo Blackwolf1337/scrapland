@@ -1033,7 +1033,7 @@ static void CGameModel_FreeCollision(CGameModel *self) {
 		CGround_RemoveMesh(World_Ground(), self->CollideMesh, self->CollisionMeshID, self->CollisionIni);
 		if (self->CollideMesh) {
 			CCollideMesh_dtor(self->CollideMesh);
-			operator_delete_sized(self->CollideMesh, sizeof(CCollideMesh));
+			operator_delete(self->CollideMesh);
 			self->CollideMesh = NULL;
 		}
 	}

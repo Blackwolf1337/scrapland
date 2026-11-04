@@ -56,7 +56,7 @@ void HashItem_Free(void *p) {
 	if (g_HashItemRefs < 1) {
 		if (pool) {
 			cMemPool_dtor(pool);
-			operator_delete_sized(pool, sizeof(*pool));
+			operator_delete(pool);
 		}
 		g_HashItemPool = NULL;
 	}

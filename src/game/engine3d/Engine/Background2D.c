@@ -59,7 +59,7 @@ void Background2D_Render(void) {
 void Background2D_Release(void) {
 	if (g_BackgroundGraphic) {
 		CGraphic2D_dtor(g_BackgroundGraphic);
-		operator_delete_sized(g_BackgroundGraphic, sizeof(CGraphic2D));
+		operator_delete(g_BackgroundGraphic);
 		g_BackgroundGraphic = NULL;
 	}
 }

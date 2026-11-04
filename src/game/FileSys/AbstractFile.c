@@ -19,7 +19,7 @@ void cAbstractFile_dtor(cAbstractFile *self) {
 static cAbstractFile *cAbstractFile_Destroy(cAbstractFile *self, int flags) {
 	cAbstractFile_dtor(self);
 	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
+		operator_delete(self);
 	}
 	return self;
 }

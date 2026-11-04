@@ -122,7 +122,7 @@ static void CFont3_CreateAlpha(CFont3 *self, CBmp *bmp, char *tmp, byte last, fl
 	alpha.width = 0;
 	alpha.height = 0;
 	if (alpha.img) {
-		operator_delete_sized(alpha.img, 4);
+		operator_delete(alpha.img);
 	}
 }
 
@@ -212,7 +212,7 @@ CFont3 *CFont3_ctor(CFont3 *self, const char *tex, const char *opac, byte first,
 	} else {
 		Con_Bluef("CFuente3: SaveMultiSpriteTable: Could not write to file: '%s'\n", mst);
 	}
-	Img_Free(&bmp, 4);
+	Img_Free(&bmp);
 	CMultiSprite_dtor(&ms);
 	return self;
 }
@@ -220,7 +220,7 @@ CFont3 *CFont3_ctor(CFont3 *self, const char *tex, const char *opac, byte first,
 void CFont3_dtor(CFont3 *self) {
 	if (self->graphic) {
 		CGraphic2D_dtor(self->graphic);
-		operator_delete_sized(self->graphic, sizeof(CGraphic2D));
+		operator_delete(self->graphic);
 		self->graphic = NULL;
 	}
 	Table_Free(&self->glyphs);
@@ -684,7 +684,7 @@ static int Bmp_RowBorder(const CBmp *b, int y, uint32_t border) {
 
 static void CFont3_Delete(CFont3 *f) {
 	CFont3_dtor(f);
-	operator_delete_sized(f, sizeof(CFont3));
+	operator_delete(f);
 }
 
 void Fonts_Free(void) {
@@ -742,12 +742,12 @@ void CUnifont_Load(CUnifont *self) {
 void CUnifont_Free(CUnifont *self) {
 	if (self->sprites) {
 		CMultiSprite_dtor(self->sprites);
-		operator_delete_sized(self->sprites, sizeof(CMultiSprite));
+		operator_delete(self->sprites);
 		self->sprites = NULL;
 	}
 	if (self->graphic) {
 		CGraphic2D_dtor(self->graphic);
-		operator_delete_sized(self->graphic, sizeof(CGraphic2D));
+		operator_delete(self->graphic);
 		self->graphic = NULL;
 	}
 	if (self->map) {

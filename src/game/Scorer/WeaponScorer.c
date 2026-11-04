@@ -50,13 +50,10 @@ static void cWeaponScorer_dtor(cWeaponScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cWeaponScorer_Delete(cScorerItem *base, byte flags) {
+static void cWeaponScorer_Free(cScorerItem *base) {
 	cWeaponScorer *self = (cWeaponScorer *)base;
 	cWeaponScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cWeaponScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 #define WV(name, kind, field) {name, kind, offsetof(cWeaponScorer, field)}
@@ -450,7 +447,7 @@ static const cScorerItemVtbl cWeaponScorer_vftable = {
 	.Draw = cWeaponScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cWeaponScorer_Var,
-	.Delete = cWeaponScorer_Delete,
+	.Free = cWeaponScorer_Free,
 };
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -77,7 +77,7 @@ static void cActCtrl_dtor(cActCtrl *self) {
 
 void cActCtrl_Free(cActCtrl *self) {
 	cActCtrl_dtor(self);
-	operator_delete_sized(self, sizeof(*self));
+	operator_delete(self);
 }
 
 void cActCtrl_AnimCmd(cActCtrl *self, const char *cmd) {

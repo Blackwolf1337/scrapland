@@ -246,14 +246,14 @@ static void cAIVehicleControl_dtor(cAIVehicleControl *self) {
 	while (l->freeNodes) {
 		cNWVecNode *n = l->freeNodes;
 		l->freeNodes = n->next;
-		operator_delete_sized(n, sizeof(cNWVecNode));
+		operator_delete(n);
 	}
 	l->numFree = 0;
 }
 
 void cAIVehicleControl_Free(cAIVehicleControl *self) {
 	cAIVehicleControl_dtor(self);
-	operator_delete_sized(self, CAIVEHICLECONTROL_SIZE);
+	operator_delete(self);
 }
 
 void cAIVehicleControl_ApplyParams(cAIVehicleControl *self) {
@@ -1912,13 +1912,10 @@ static void cAIVehicleGroup_dtor(cAIVehicleGroup *self) {
 	cAIEntityGroup_dtor(self);
 }
 
-static cAIEntityGroup *cAIVehicleGroup_Delete(cAIEntityGroup *base, byte flags) {
+static void cAIVehicleGroup_Free(cAIEntityGroup *base) {
 	cAIVehicleGroup *self = (cAIVehicleGroup *)base;
 	cAIVehicleGroup_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAIVEHICLEGROUP_SIZE);
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the time since ResetRepos reached MinTimeReposAI */
@@ -1982,7 +1979,7 @@ void cAIVehicleGroup_ResetRepos(cAIVehicleGroup *self) {
 
 /* the vtable of cAIVehicleGroup */
 static const cAIEntityGroupVtbl cAIVehicleGroup_vftable = {
-	.Delete = cAIVehicleGroup_Delete,
+	.Free = cAIVehicleGroup_Free,
 	.Clear = cAIEntityGroup_Clear,
 	.Add = cAIEntityGroup_Add,
 	.Get = cAIEntityGroup_Get,

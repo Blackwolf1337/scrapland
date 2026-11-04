@@ -251,7 +251,7 @@ void Sound_ResetVolumes(void) {
 		CHECK(PtrTable_Delete(t, it->key));
 		if (ps) {
 			cSoundPS_dtor(ps);
-			operator_delete_sized(ps, sizeof(cSoundPS));
+			operator_delete(ps);
 		}
 	}
 }

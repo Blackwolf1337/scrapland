@@ -33,14 +33,11 @@ void *cAIMessenger_ctor(void *mem, cEntity *e, int *arg) {
 }
 
 /* AIMessenger.c */
-static cAI *cAIMessenger_Delete(cAI *base, byte flags) {
+static void cAIMessenger_Free(cAI *base) {
 	cAIChar *self = (cAIChar *)base;
 	self->vftable = CAIMESSENGER_VFTABLE;
 	cAIChar_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAIMESSENGER_SIZE);
-	}
-	return base;
+	operator_delete(self);
 }
 
 static void cAIMessenger_CheckActDist(cAI *elem) {
@@ -111,7 +108,7 @@ static void cAIMessenger_SetShoot(cAI *elem) {
 
 /* the vtable of cAIMessenger */
 static const cAICharVtbl cAIMessenger_vftable = {
-	.base.base.Delete = cAIMessenger_Delete,
+	.base.base.Free = cAIMessenger_Free,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
 	.base.base.Draw = cAIChar_Draw,

@@ -228,7 +228,7 @@ void Sectors_FreeAll(void) {
 		CZone *z = g_Zones[i];
 		if (z) {
 			CZone_dtor(z);
-			operator_delete_sized(z, sizeof(CZone));
+			operator_delete(z);
 			g_Zones[i] = NULL;
 		}
 	}

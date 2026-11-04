@@ -43,13 +43,10 @@ static void cSliderScorer_dtor(cSliderScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cSliderScorer_Delete(cScorerItem *base, byte flags) {
+static void cSliderScorer_Free(cScorerItem *base) {
 	cSliderScorer *self = (cSliderScorer *)base;
 	cSliderScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cSliderScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static void cSliderScorer_SetFile(cSliderScorer *self, uint32_t flags, const char *file) {
@@ -209,5 +206,5 @@ static const cScorerItemVtbl cSliderScorer_vftable = {
 	.Draw = cSliderScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cSliderScorer_Var,
-	.Delete = cSliderScorer_Delete,
+	.Free = cSliderScorer_Free,
 };

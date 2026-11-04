@@ -74,13 +74,10 @@ static void cGearLocalLogic_dtor(cGearLocalLogic *self) {
 	cBaseLocalLogic_dtor(&self->base);
 }
 
-static cLocalLogic *cGearLocalLogic_Delete(cLocalLogic *base, byte flags) {
+static void cGearLocalLogic_Free(cLocalLogic *base) {
 	cGearLocalLogic *self = (cGearLocalLogic *)base;
 	cGearLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the patrol walk ends in Relax */
@@ -476,7 +473,7 @@ static byte cGearLocalLogic_VarS(cLocalLogic *elem, const char *name, char **s, 
 
 /* the vtable of cGearLocalLogic */
 static const cBaseLocalLogicVtbl cGearLocalLogic_vftable = {
-	.base.Delete = cGearLocalLogic_Delete,
+	.base.Free = cGearLocalLogic_Free,
 	.base.GetName = cBaseLocalLogic_GetName,
 	.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.VarI = cGearLocalLogic_VarI,

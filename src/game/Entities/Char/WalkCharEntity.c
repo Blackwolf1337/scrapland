@@ -110,7 +110,7 @@ static void cWalkCharEntity_dtor(cEntity *self) {
 	if (w->wl.actCtrl) {
 		void *ai = self->ai;
 		if (ai) {
-			AI_Delete(ai, 1);
+			AI_Free(ai);
 		}
 		self->ai = NULL;
 	}
@@ -125,12 +125,9 @@ static void cWalkCharEntity_dtor(cEntity *self) {
 	cWithLifeEntity_dtor(self);
 }
 
-static cEntity *cWalkCharEntity_Delete(cEntity *self, uint32_t flags) {
+static void cWalkCharEntity_Free(cEntity *self) {
 	cWalkCharEntity_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CWALKCHARENTITY_SIZE);
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* vf63: the press and release callbacks of the class, the talk with the victim or listener, the energy over dt */
@@ -641,7 +638,7 @@ void cWalkCharEntity_EnableAI(cEntity *self, byte on, int *arg) {
 	if (!on) {
 		if (self->ai) {
 			/* the deleting destructor of the AI */
-			AI_Delete(self->ai, 1);
+			AI_Free(self->ai);
 		}
 		self->ai = NULL;
 		return;
@@ -1902,7 +1899,7 @@ static const cWithLifeEntityVtbl cWalkCharEntity_vftable = {
 	.base.base.Update = cWalkCharEntity_Update,
 	.base.base.Render = cEntity_Render,
 	.base.base.UpdateOff = cWithLifeEntity_UpdateOff,
-	.base.base.Delete = cWalkCharEntity_Delete,
+	.base.base.Free = cWalkCharEntity_Free,
 	.base.base.GetClassName = cWalkCharEntity_GetClassName,
 	.base.base.IsType = cWalkCharEntity_IsType,
 	.base.base.GetPos = cObjEntity_GetPos,

@@ -33,7 +33,7 @@ static CPsaImage *Radar_White(uint32_t flags) {
 static void Radar_FreeImage(CPsaImage *img) {
 	if (img) {
 		CPsaImage_dtor(img);
-		operator_delete_sized(img, sizeof(CPsaImage));
+		operator_delete(img);
 	}
 }
 
@@ -113,13 +113,10 @@ cActionSet *ActionSetTable_At(void *table, uint32_t i) {
 	return TABLE_AT(*(TABLE(cActionSet) *)table, i);
 }
 
-static cScorerItem *cRadarScorer_Delete(cScorerItem *base, byte flags) {
+static void cRadarScorer_Free(cScorerItem *base) {
 	cRadarScorer *self = (cRadarScorer *)base;
 	cRadarScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cRadarScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the floor of height y; the fade starts when it changed */
@@ -940,7 +937,7 @@ static const cScorerItemVtbl cRadarScorer_vftable = {
 	.Draw = cRadarScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cRadarScorer_Var,
-	.Delete = cRadarScorer_Delete,
+	.Free = cRadarScorer_Free,
 };
 
 cGVar GVar_SuperDealAvaliable;

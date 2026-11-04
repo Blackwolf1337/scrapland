@@ -518,10 +518,10 @@ static void BspTri_DirectLight(BspTri *list, CScene *scn, CGround *ground, float
 		}
 	}
 	if (!g_CalcLmap2) {
-		Img_Free(&list->light2, 0xc);
+		Img_Free(&list->light2);
 	}
 	if (!g_ShadowMapIllumGlobal) {
-		Img_Free(&list->rad2, 0xc);
+		Img_Free(&list->rad2);
 	}
 }
 
@@ -644,13 +644,13 @@ static int CBsp_SaveEMI(CBsp *self) {
 		CFileIO_EndBlockWrite(f, "EMI");
 		if (!f->error) {
 			CFileIO_dtor(f);
-			operator_delete_sized(f, sizeof(CFileIO));
+			operator_delete(f);
 			return 0;
 		}
 	}
 	Err_Report(f->err, 0, "\n'%s'", path);
 	CFileIO_dtor(f);
-	operator_delete_sized(f, sizeof(CFileIO));
+	operator_delete(f);
 	return -1;
 }
 
@@ -948,8 +948,8 @@ static void CBsp_RadGlobal(CBsp *self) {
 	for (int i = 0; i < self->num_lists; i++) {
 		BspTri *tri = self->lists[i];
 		CBmpFlt2_Blend(&tri->light, 0, 0, &tri->rad, 0, 0, tri->light.width, tri->light.height, 0x100, 0x100);
-		Img_Free(&tri->rad, 0xc);
-		Img_Free(&tri->rad2, 0xc);
+		Img_Free(&tri->rad);
+		Img_Free(&tri->rad2);
 	}
 }
 
@@ -1067,7 +1067,7 @@ static void CBsp_RadAreas(CBsp *self) {
 			if (list->radlight_ok) {
 				Con_Warnf("  area light with lglow [%s]\n", list->Mat->Name);
 			}
-			Img_Free(&avg, 0x10);
+			Img_Free(&avg);
 		}
 		nArea += list->radlight_ok != 0;
 		nGlow += list->glowOn != 0;
@@ -1437,7 +1437,7 @@ static void Bsp_TakeTriangles(CScene *scn, byte allow) {
 				}
 			}
 		}
-		Object3D_Delete(mesh, 1);
+		Object3D_Free(mesh);
 		CNode3D_FreeObj3D(n);
 		if (!(n->Refs - (n->prev != NULL) - (n->next != NULL))) {
 			n->flags |= 0x20008;
@@ -1487,7 +1487,7 @@ void CBsp_Calculate(CBsp *self) {
 	if (g_BspTriTmp) {
 		BspTri *t = g_BspTriTmp;
 		BspTri_dtor(t);
-		operator_delete_sized(t, sizeof(BspTri));
+		operator_delete(t);
 		g_BspTriTmp = NULL;
 	}
 	Bsp_TakeTriangles(scn, allow);
@@ -1536,10 +1536,10 @@ void CBsp_Calculate(CBsp *self) {
 		BspTri_CalcGlow(list);
 		BspTri_UvLmap(list, x0, y0);
 		BspTri_ColorVert(list, mc, amb, ground, diag);
-		Img_Free(&cob, 4);
+		Img_Free(&cob);
 		if (list->flags & BSPTRI_NOLMAP) {
-			Img_Free(&list->mask, 4);
-			Img_Free(&list->mask2, 4);
+			Img_Free(&list->mask);
+			Img_Free(&list->mask2);
 			CHECK(self->num_nolmap < BSP_MAX_NOLMAP);
 			self->nolmap[self->num_nolmap++] = list;
 		} else {

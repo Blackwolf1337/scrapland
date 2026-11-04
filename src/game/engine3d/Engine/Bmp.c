@@ -31,17 +31,17 @@ void *Img_Pixel(const CImage *b, uint32_t x, uint32_t y, int bytes) {
 	return (byte *)b->img + (b->width * y + x) * bytes;
 }
 
-void Img_Free(CImage *b, int bytes) {
+void Img_Free(CImage *b) {
 	b->width = 0;
 	b->height = 0;
 	if (b->img) {
-		operator_delete_sized(b->img, bytes);
+		operator_delete(b->img);
 		b->img = NULL;
 	}
 }
 
 void Img_Create(CImage *b, int width, int height, int bytes) {
-	Img_Free(b, bytes);
+	Img_Free(b);
 	b->width = width;
 	b->height = height;
 	b->img = New_Array(width * height, bytes);
@@ -253,7 +253,7 @@ static void Bmp_Filter3x3(CBmp *self, const int k[9], int round, int shift) {
 		}
 	}
 	if (tmp.img) {
-		operator_delete_sized(tmp.img, BMP_PIXEL);
+		operator_delete(tmp.img);
 	}
 }
 
@@ -384,7 +384,7 @@ static int BMP_Save(const char *name, const CBmp *orig, uint32_t flags) {
 			goto fail;
 		}
 	}
-	operator_delete_sized(buf, 1);
+	operator_delete(buf);
 	crt_fclose(f);
 	return 0;
 fail:
@@ -656,7 +656,7 @@ static int TGA_Load(const char *name, CBmp *dest, uint32_t flags) {
 
 int CBmp_Load(CBmp *self, const char *name, uint32_t flags) {
 	CHECK(name);
-	Img_Free(self, BMP_PIXEL);
+	Img_Free(self);
 	if (Img_IsExt(name, ".tex")) {
 		return TEX_Load(name, self, flags);
 	}

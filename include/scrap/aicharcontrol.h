@@ -41,7 +41,7 @@ typedef struct cAICharControl cAICharControl;
 /* the slots of cAICharControl::vftable (100); the 2D control adds three, the 3D control one. The handlers of the
  * modes (UpdateGoTo ..) take the time of the frame */
 typedef struct cAICharControlVtbl {
-	cAICharControl *(*Delete)(cAICharControl *self, byte flags);			/* 0x00 */
+	void (*Free)(cAICharControl *self);			/* 0x00 */
 	void(*Draw)(cAICharControl *self);						/* 0x04 */
 	int(*GetWalkDir)(cAICharControl *self);					/* 0x08 */
 	int(*Busy)(cAICharControl *self);						/* 0x0c the strafe side */
@@ -232,8 +232,8 @@ static inline void AICC_ClearAvoid(void *self) {
 	VT(cAICharControlVtbl, self)->ClearAvoid(self);
 }
 
-static inline cAICharControl *AICC_Delete(void *self, byte flags) {
-	return VT(cAICharControlVtbl, self)->Delete(self, flags);
+static inline void AICC_Free(void *self) {
+	VT(cAICharControlVtbl, self)->Free(self);
 }
 
 static inline void AICC_DirCheck(void *self) {
@@ -975,7 +975,7 @@ typedef cAICharControl *(*cAICharControlCtor_t)(void *mem, cEntity *e, cAIChar *
 /* the constructors of the cAIChar subclasses: the move control of cAIChar deleted, one of the class in its place */
 static inline void cAIChar_NewControl(cAIChar *self, uint32_t size, cAICharControlCtor_t ctor, cEntity *e, int *arg) {
 	if (self->control) {
-		AICC_Delete(self->control, 1);
+		AICC_Free(self->control);
 	}
 	void *mem = operator_new(size);
 	cAICharControl *ControlMove = mem ? ctor(mem, e, self, arg) : NULL;

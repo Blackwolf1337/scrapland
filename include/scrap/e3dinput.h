@@ -24,7 +24,7 @@ typedef struct IInput IInput;
 
 /* the slots of IInput; only the null input is made (the platform layer reads the devices) */
 typedef struct IInputVtbl {
-	IInput *(*Delete)(IInput *self, byte flags);						/* 0x00 */
+	void (*Free)(IInput *self);						/* 0x00 */
 	int(*Init)(IInput *self, void *hwnd, void *hinst, byte exclusive);			/* 0x04 */
 	int(*Release)(IInput *self);								/* 0x08 */
 	int(*ReadMouse)(IInput *self, int *out);						/* 0x0c dx, dy, dz and the buttons */
@@ -47,8 +47,8 @@ static inline int Input3D_Init(void *self, void *hwnd, void *hinst, byte exclusi
 	return VT(IInputVtbl, self)->Init(self, hwnd, hinst, exclusive);
 }
 
-static inline IInput *Input3D_Delete(void *self, byte flags) {
-	return VT(IInputVtbl, self)->Delete(self, flags);
+static inline void Input3D_Free(void *self) {
+	VT(IInputVtbl, self)->Free(self);
 }
 
 struct IInput {

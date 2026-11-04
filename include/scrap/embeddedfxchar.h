@@ -22,7 +22,7 @@
 typedef struct cEmbeddedFX cEmbeddedFX;
 
 typedef struct cEmbeddedFXVtbl {
-	cEmbeddedFX *(*Delete)(cEmbeddedFX *self, byte flags);	/* 0x00 */
+	void (*Free)(cEmbeddedFX *self);	/* 0x00 */
 	byte(*Reset)(cEmbeddedFX *self);				/* 0x04 */
 	void(*Release)(cEmbeddedFX *self);				/* 0x08 */
 	void(*Update)(cEmbeddedFX *self, float dt);			/* 0x0c */
@@ -31,8 +31,8 @@ typedef struct cEmbeddedFXVtbl {
 } cEmbeddedFXVtbl;
 
 /* calls through the slots of cEmbeddedFXVtbl */
-static inline cEmbeddedFX *EFX_Delete(void *self, byte flags) {
-	return VT(cEmbeddedFXVtbl, self)->Delete(self, flags);
+static inline void EFX_Free(void *self) {
+	VT(cEmbeddedFXVtbl, self)->Free(self);
 }
 
 static inline void EFX_Release(void *self) {

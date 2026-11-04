@@ -28,7 +28,7 @@ void BspLights_dtor(void *self) {
 	if (l->root) {
 		Bsp2Node *root = l->root;
 		Bsp2Node_dtor(root);
-		operator_delete_sized(root, sizeof(Bsp2Node));
+		operator_delete(root);
 		l->root = NULL;
 	}
 }
@@ -37,13 +37,13 @@ static void Bsp2Node_dtor(Bsp2Node *self) {
 	if (self->front) {
 		Bsp2Node *n = self->front;
 		Bsp2Node_dtor(n);
-		operator_delete_sized(n, sizeof(Bsp2Node));
+		operator_delete(n);
 		self->front = NULL;
 	}
 	if (self->back) {
 		Bsp2Node *n = self->back;
 		Bsp2Node_dtor(n);
-		operator_delete_sized(n, sizeof(Bsp2Node));
+		operator_delete(n);
 		self->back = NULL;
 	}
 	Table_Free(&self->tris);

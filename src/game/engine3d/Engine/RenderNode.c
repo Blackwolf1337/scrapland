@@ -67,15 +67,15 @@ CRenderNode *CRenderNode_ctor(CRenderNode *self) {
 void CRenderNode_dtor(CRenderNode *self) {
 	g_RenderNodeCount--;
 	if (self->look) {
-		operator_delete_sized(self->look, sizeof(NodeLook));
+		operator_delete(self->look);
 		self->look = NULL;
 	}
 	if (self->obj3D2) {
-		NodeFX_Delete(self->obj3D2, 1);
+		NodeFX_Free(self->obj3D2);
 		self->obj3D2 = NULL;
 	}
 	if (self->obj3D) {
-		Object3D_Delete(self->obj3D, 1);
+		Object3D_Free(self->obj3D);
 		self->obj3D = NULL;
 	}
 	CHECK(self->node->Refs > 1);

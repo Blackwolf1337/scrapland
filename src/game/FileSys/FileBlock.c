@@ -109,7 +109,7 @@ static void cFileBlock_PopBlock(cFileBlock *self, const char *id) {
 	CHECK(self->block);
 	CHECK(self->block->id == ID_to_DWORD(id));
 	cFileBlockNode *prev = self->block->prev;
-	operator_delete_sized(self->block, sizeof(cFileBlockNode));
+	operator_delete(self->block);
 	self->block = prev;
 }
 

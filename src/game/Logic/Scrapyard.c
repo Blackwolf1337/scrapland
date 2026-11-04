@@ -75,17 +75,14 @@ void cShipGroup_dtor(cShipGroup *self) {
 	if (d) {
 		WorldStrTable_Clear(&d->lairs);
 		cPy_Function_dtor(&d->onSphere);
-		operator_delete_sized(d, sizeof(*d));
+		operator_delete(d);
 	}
 }
 
-static cScrapyardLocalLogic *cScrapyardLocalLogic_Delete(cScrapyardLocalLogic *self, byte flags) {
+static void cScrapyardLocalLogic_Free(cScrapyardLocalLogic *self) {
 	self->vftable = CSCRAPYARDLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* the lair of the ship of that name, added or changed (the inlined Add without the warning) */
@@ -313,7 +310,7 @@ static cLocalLogic *ShipGroup_MakeLogic(cEntity *e) {
 
 /* the vtable of cScrapyardLocalLogic */
 static const cLocalLogicVtbl cScrapyardLocalLogic_vftable = {
-	.Delete = cScrapyardLocalLogic_Delete,
+	.Free = cScrapyardLocalLogic_Free,
 	.GetName = cLocalLogic_GetName,
 	.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.VarI = cLocalLogic_VarIFalse,

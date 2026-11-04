@@ -197,13 +197,6 @@ static inline void FXObj_TrailsDtor(CGameTrail *t, uint32_t n) {
 	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, (void *)CGameTrail_dtor);
 }
 
-static inline void *FXObj_Free(void *self, uint32_t flags, uint32_t size) {
-	if (flags & 1) {
-		operator_delete_sized(self, size);
-	}
-	return self;
-}
-
 /* (x, y, z) normalized into out, the length summed y first (the vector itself for the length 0) */
 static inline void FX_Normalize(vec3_t *out, float x, float y, float z) {
 	float len = (float)__builtin_sqrt((double)(y * y + x * x + z * z));

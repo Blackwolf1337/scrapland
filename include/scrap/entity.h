@@ -22,7 +22,7 @@ typedef struct cEntityVtbl {
 	void(*Update)(cEntity *self);				/* 0x00 vf00 */
 	void(*Render)(cEntity *self, void *arg);			/* 0x04 vf01 */
 	void(*UpdateOff)(cEntity *self);				/* 0x08 vf02 */
-	cEntity *(*Delete)(cEntity *self, uint32_t flags);		/* 0x0c vf03 deleting destructor */
+	void (*Free)(cEntity *self);		/* 0x0c vf03 deleting destructor */
 	const char *(*GetClassName)(cEntity *self);		/* 0x10 vf04 "Entity", "Car", ... */
 	byte(*IsType)(cEntity *self, const char *type);		/* 0x14 vf05 */
 	vec3_t *(*GetPos)(cEntity *self, vec3_t *out);		/* 0x18 vf06, returns out */
@@ -59,8 +59,8 @@ static inline void Entity_AimWeapon(void *self, float ax, float ay, float *dist,
 	VT(cEntityVtbl, self)->AimWeapon(self, ax, ay, dist, out, target, flags);
 }
 
-static inline cEntity *Entity_Delete(void *self, uint32_t flags) {
-	return VT(cEntityVtbl, self)->Delete(self, flags);
+static inline void Entity_Free(void *self) {
+	VT(cEntityVtbl, self)->Free(self);
 }
 
 static inline void *Entity_GetAI(void *self) {

@@ -1471,38 +1471,30 @@ static void cObjElementFXSonicExplosion_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-/* the deleting destructors (vtable slot 0, rva 0x1c99d0..0x1c9b3e) */
-static inline cObjElementFX *FXCM_Delete(void *self, byte flags, uint32_t size) {
-	if (flags & 1) {
-		operator_delete_sized(self, size);
-	}
-	return self;
-}
-
 /* the deleting destructors */
-static cObjElementFX *cObjElementFXDebrisCloud_Delete(cObjElementFX *self, byte flags) {
+static void cObjElementFXDebrisCloud_Free(cObjElementFX *self) {
 	cObjElementFXDebrisCloud_dtor(self);
-	return FXCM_Delete(self, flags, sizeof(cObjElementFXDebrisCloud));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXEMI_Delete(cObjElementFX *self, byte flags) {
+static void cObjElementFXEMI_Free(cObjElementFX *self) {
 	cObjElementFXEMI_dtor(self);
-	return FXCM_Delete(self, flags, sizeof(cObjElementFXEMI));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXHook_Delete(cObjElementFX *self, byte flags) {
+static void cObjElementFXHook_Free(cObjElementFX *self) {
 	cObjElementFXHook_dtor(self);
-	return FXCM_Delete(self, flags, sizeof(cObjElementFXHook));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXSonicExplosion_Delete(cObjElementFX *self, byte flags) {
+static void cObjElementFXSonicExplosion_Free(cObjElementFX *self) {
 	cObjElementFXSonicExplosion_dtor(self);
-	return FXCM_Delete(self, flags, sizeof(cObjElementFXSonicExplosion));
+	operator_delete(self);
 }
 
 /* the vtable of cObjElementFXHook */
 static const cObjElementFXVtbl cObjElementFXHook_vftable = {
-	.Delete = cObjElementFXHook_Delete,
+	.Free = cObjElementFXHook_Free,
 	.Update = cObjElementFXHook_Update,
 	.IsAlive = cObjElementFXHook_IsAlive,
 	.Start = cObjElementFXHook_Start,
@@ -1511,7 +1503,7 @@ static const cObjElementFXVtbl cObjElementFXHook_vftable = {
 
 /* the vtable of cObjElementFXEMI */
 static const cObjElementFXVtbl cObjElementFXEMI_vftable = {
-	.Delete = cObjElementFXEMI_Delete,
+	.Free = cObjElementFXEMI_Free,
 	.Update = cObjElementFXEMI_Update,
 	.IsAlive = cObjElementFXEMI_IsAlive,
 	.Start = cObjElementFXEMI_Start,
@@ -1520,7 +1512,7 @@ static const cObjElementFXVtbl cObjElementFXEMI_vftable = {
 
 /* the vtable of cObjElementFXSonicExplosion */
 static const cObjElementFXVtbl cObjElementFXSonicExplosion_vftable = {
-	.Delete = cObjElementFXSonicExplosion_Delete,
+	.Free = cObjElementFXSonicExplosion_Free,
 	.Update = cObjElementFXSonicExplosion_Update,
 	.IsAlive = cObjElementFXSonicExplosion_IsAlive,
 	.Start = cObjElementFXSonicExplosion_Start,
@@ -1529,7 +1521,7 @@ static const cObjElementFXVtbl cObjElementFXSonicExplosion_vftable = {
 
 /* the vtable of cObjElementFXDebrisCloud */
 static const cObjElementFXVtbl cObjElementFXDebrisCloud_vftable = {
-	.Delete = cObjElementFXDebrisCloud_Delete,
+	.Free = cObjElementFXDebrisCloud_Free,
 	.Update = cObjElementFXDebrisCloud_Update,
 	.IsAlive = cObjElementFXDebrisCloud_IsAlive,
 	.Start = cObjElementFXDebrisCloud_Start,

@@ -59,7 +59,7 @@ typedef struct cNetClient cNetClient;
 typedef struct cUserNetManager cUserNetManager;
 
 typedef struct cUserNetManagerVtbl {
-	cUserNetManager *(*Delete)(cUserNetManager *self, byte flags);			/* 0x00 */
+	void (*Free)(cUserNetManager *self);			/* 0x00 */
 	/* the unreliable part and the reliable message of a packet */
 	void(*OnReceive)(cUserNetManager *self, void *data, int size, void *ctl, int ctlSize);	/* 0x04 */
 	void(*Send)(cUserNetManager *self, uint32_t time);				/* 0x08 */
@@ -67,8 +67,8 @@ typedef struct cUserNetManagerVtbl {
 } cUserNetManagerVtbl;
 
 /* calls through the slots of cUserNetManagerVtbl */
-static inline cUserNetManager *NetMan_Delete(void *self, byte flags) {
-	return VT(cUserNetManagerVtbl, self)->Delete(self, flags);
+static inline void NetMan_Free(void *self) {
+	VT(cUserNetManagerVtbl, self)->Free(self);
 }
 
 static inline void NetMan_OnReceive(void *self, void *data, int size, void *ctl, int ctlSize) {

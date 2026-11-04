@@ -103,12 +103,9 @@ static void cFollowCamEntity_dtor(cEntity *self) {
 	cCamControl_dtor(self);
 }
 
-static cEntity *cFollowCamEntity_Delete(cEntity *self, uint32_t flags) {
+static void cFollowCamEntity_Free(cEntity *self) {
 	cFollowCamEntity_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CFOLLOWCAMENTITY_SIZE);
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* the angles turn towards the ones of the target, slower for a far camera; at once for a near one or in slow
@@ -582,7 +579,7 @@ static const cCamControlVtbl cFollowCamEntity_vftable = {
 	.base.Update = cFollowCamEntity_Update,
 	.base.Render = cEntity_Render,
 	.base.UpdateOff = cEntity_UpdateOff,
-	.base.Delete = cFollowCamEntity_Delete,
+	.base.Free = cFollowCamEntity_Free,
 	.base.GetClassName = cFollowCamEntity_GetClassName,
 	.base.IsType = cFollowCamEntity_IsType,
 	.base.GetPos = cEntity_GetPos,

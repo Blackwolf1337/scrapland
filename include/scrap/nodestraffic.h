@@ -31,7 +31,7 @@ typedef DLIST(cTrafficCellNode) cTrafficCell;
 
 typedef struct cGridElements cGridElements;
 typedef struct cGridElementsVtbl {
-	cGridElements *(*Delete)(cGridElements *self, byte flags);			/* 0x00 */
+	void (*Free)(cGridElements *self);			/* 0x00 */
 	/* the element: an InfoTrafficNode, a pointer to the pos of a point of visibility in the grid of CNodesWorldSup */
 	byte(*Add)(cGridElements *self, const vec3_t *p, const void *data);		/* 0x04 */
 	/* out: the cell pointer (cTrafficCell *, cNWIntList * in the grid of CNodesWorldSup) */
@@ -42,7 +42,7 @@ typedef struct cGridElementsVtbl {
 	void(*GetDivs)(cGridElements *self, int *nx, int *ny, int *nz);		/* 0x18 */
 	vec3_t *(*GetCellSize)(cGridElements *self, vec3_t *out);			/* 0x1c */
 	byte(*IsInside)(cGridElements *self, const vec3_t *p);			/* 0x20 */
-	void(*Free)(cGridElements *self);						/* 0x24 */
+	void(*Clear)(cGridElements *self);						/* 0x24 the cells freed */
 	int(*CellIndex)(cGridElements *self, const vec3_t *p);			/* 0x28 */
 } cGridElementsVtbl;
 
@@ -59,8 +59,8 @@ static inline int GridElems_CellIndex(void *self, const vec3_t *p) {
 	return VT(cGridElementsVtbl, self)->CellIndex(self, p);
 }
 
-static inline cGridElements *GridElems_Delete(void *self, byte flags) {
-	return VT(cGridElementsVtbl, self)->Delete(self, flags);
+static inline void GridElems_Free(void *self) {
+	VT(cGridElementsVtbl, self)->Free(self);
 }
 
 static inline byte GridElems_Draw(void *self, uint32_t color) {
@@ -102,7 +102,7 @@ typedef cGridElements cGridElements_InfoTrafficNode;
 cGridElements *cGridElements_Init(cGridElements *self, const cGridElementsVtbl *vftable, const vec3_t *max, const vec3_t *min, int nx,
 	int ny, int nz);
 /* the cells emptied with clear and freed with their free nodes of nodeSize bytes, then the cell array */
-void cGridElements_FreeCells(cGridElements *self, void(*clear)(void *cell), uint32_t nodeSize);
+void cGridElements_FreeCells(cGridElements *self, void(*clear)(void *cell));
 byte cGridElements_GetCellAt(cGridElements *self, const vec3_t *p, void *out);
 byte cGridElements_GetCell(cGridElements *self, const int *x, const int *y, const int *z, void *out);
 /* the lines of the cells; 0 without cells */
@@ -161,7 +161,7 @@ typedef struct cTrafficErrorNode {
 
 typedef struct CNodesTraffic CNodesTraffic;
 typedef struct CNodesTrafficVtbl {
-	CNodesTraffic *(*Delete)(CNodesTraffic *self, byte flags);		/* 0x00 */
+	void (*Free)(CNodesTraffic *self);		/* 0x00 */
 	void(*AddVehicle)(CNodesTraffic *self, int track);			/* 0x04 */
 	void(*RemoveVehicle)(CNodesTraffic *self, int track);		/* 0x08 */
 	int(*NumTracks)(CNodesTraffic *self);				/* 0x0c */
@@ -198,8 +198,8 @@ typedef struct CNodesTrafficVtbl {
 } CNodesTrafficVtbl;
 
 /* calls through the slots of CNodesTrafficVtbl */
-static inline CNodesTraffic *Traffic_Delete(void *self, byte flags) {
-	return VT(CNodesTrafficVtbl, self)->Delete(self, flags);
+static inline void Traffic_Free(void *self) {
+	VT(CNodesTrafficVtbl, self)->Free(self);
 }
 
 static inline void Traffic_AddVehicle(void *self, int track) {

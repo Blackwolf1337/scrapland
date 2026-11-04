@@ -19,7 +19,7 @@ void CAnimEvent_dtor(CAnimEvent *self) {
 	CAnimEvent *p = self->next;
 	if (p) {
 		CAnimEvent_dtor(p);
-		operator_delete_sized(p, sizeof(CAnimEvent));
+		operator_delete(p);
 		self->next = NULL;
 	}
 }

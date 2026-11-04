@@ -43,11 +43,11 @@ static void TrafficCell_Add(cTrafficCell *cell, const InfoTrafficNode *info) {
 }
 
 static void TrafficCell_Clear(cTrafficCell *cell) {
-	DList_Clear(cell, sizeof(cTrafficCellNode));
+	DList_Clear(cell);
 }
 
 static void TrafficErrors_Clear(void *list) {
-	DList_Clear(list, sizeof(cTrafficErrorNode));
+	DList_Clear(list);
 }
 
 /* ---- Global/GridElements.h ---- */
@@ -87,7 +87,7 @@ static cGridElements *cGridElements_ctor(cGridElements *self, const vec3_t *max,
 	return cGridElements_Init(self, CGRIDELEMENTS_VFTABLE, max, min, nx, ny, nz);
 }
 
-void cGridElements_FreeCells(cGridElements *self, void(*clear)(void *cell), uint32_t nodeSize) {
+void cGridElements_FreeCells(cGridElements *self, void(*clear)(void *cell)) {
 	for (int i = 0; i < self->numCells; i++) {
 		if (!self->cells[i]) {
 			continue;
@@ -97,8 +97,8 @@ void cGridElements_FreeCells(cGridElements *self, void(*clear)(void *cell), uint
 		if (cell) {
 			/* the destructor of the cell */
 			clear(cell);
-			DList_FreePool(cell, nodeSize);
-			operator_delete_sized(cell, sizeof(*cell));
+			DList_FreePool(cell);
+			operator_delete(cell);
 		}
 		self->cells[i] = NULL;
 	}
@@ -106,17 +106,14 @@ void cGridElements_FreeCells(cGridElements *self, void(*clear)(void *cell), uint
 }
 
 /* the cells freed with their nodes, then the cell array */
-static void cGridElements_Free(cGridElements *self) {
-	cGridElements_FreeCells(self, (void(*)(void *))TrafficCell_Clear, sizeof(cTrafficCellNode));
+static void cGridElements_Clear(cGridElements *self) {
+	cGridElements_FreeCells(self, (void(*)(void *))TrafficCell_Clear);
 }
 
-static cGridElements *cGridElements_Delete(cGridElements *self, byte flags) {
+static void cGridElements_Free(cGridElements *self) {
 	self->vftable = CGRIDELEMENTS_VFTABLE;
-	cGridElements_Free(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	cGridElements_Clear(self);
+	operator_delete(self);
 }
 
 /* the node into the cell of p (a CHECK out of the box); 1 */
@@ -333,19 +330,16 @@ void CNodesTraffic_dtor(CNodesTraffic *self) {
 		Mem_Free(self->mediumLight);
 	}
 	if (self->grid) {
-		GridElems_Delete(self->grid, 1);
+		GridElems_Free(self->grid);
 		self->grid = NULL;
 	}
 	TrafficErrors_Clear(&self->errors);
-	DList_FreePool(&self->errors, sizeof(cTrafficErrorNode));
+	DList_FreePool(&self->errors);
 }
 
-static CNodesTraffic *CNodesTraffic_Delete(CNodesTraffic *self, byte flags) {
+static void CNodesTraffic_Free(CNodesTraffic *self) {
 	CNodesTraffic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete(self);
 }
 
 void CNodesTraffic_AddVehicle(CNodesTraffic *self, int track) {
@@ -836,7 +830,7 @@ static void CNodesTraffic_BuildGrid(CNodesTraffic *self) {
 	double ny = ceil((double)((self->max.y - self->min.y) / self->cellSize));
 	double nz = ceil((double)((self->max.z - self->min.z) / self->cellSize));
 	if (self->grid) {
-		GridElems_Delete(self->grid, 1);
+		GridElems_Free(self->grid);
 	}
 	cGridElements *grid = operator_new(sizeof(cGridElements));
 	if (grid) {
@@ -1260,7 +1254,7 @@ void CNodesTraffic_BuildGridNop(CNodesTraffic *self) {
 
 /* the vtable of CNodesTraffic */
 static const CNodesTrafficVtbl CNodesTraffic_vftable = {
-	.Delete = CNodesTraffic_Delete,
+	.Free = CNodesTraffic_Free,
 	.AddVehicle = CNodesTraffic_AddVehicle,
 	.RemoveVehicle = CNodesTraffic_RemoveVehicle,
 	.NumTracks = CNodesTraffic_NumTracks,
@@ -1288,7 +1282,7 @@ static const CNodesTrafficVtbl CNodesTraffic_vftable = {
 
 /* the vtable of cGridElements_InfoTrafficNode */
 static const cGridElementsVtbl cGridElements_InfoTrafficNode_vftable = {
-	.Delete = cGridElements_Delete,
+	.Free = cGridElements_Free,
 	.Add = cGridElements_Add,
 	.GetCellAt = cGridElements_GetCellAt,
 	.GetCell = cGridElements_GetCell,
@@ -1297,7 +1291,7 @@ static const cGridElementsVtbl cGridElements_InfoTrafficNode_vftable = {
 	.GetDivs = cGridElements_GetDivs,
 	.GetCellSize = cGridElements_GetCellSize,
 	.IsInside = cGridElements_IsInside,
-	.Free = cGridElements_Free,
+	.Clear = cGridElements_Clear,
 	.CellIndex = cGridElements_CellIndex,
 };
 

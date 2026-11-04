@@ -20,14 +20,11 @@ void *cAIDesktop_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-static cAI *cAIDesktop_Delete(cAI *base, byte flags) {
+static void cAIDesktop_Free(cAI *base) {
 	cAIDesktop *self = (cAIDesktop *)base;
 	self->vftable = CAIDESKTOP_VFTABLE;
 	cAIChar_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAIDESKTOP_SIZE);
-	}
-	return base;
+	operator_delete(self);
 }
 
 static void cAIDesktop_UpdateAction0(cAI *base) {
@@ -53,7 +50,7 @@ static void cAIDesktop_UpdateAction0(cAI *base) {
 
 /* the vtable of cAIDesktop */
 static const cAICharVtbl cAIDesktop_vftable = {
-	.base.base.Delete = cAIDesktop_Delete,
+	.base.base.Free = cAIDesktop_Free,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
 	.base.base.Draw = cAIChar_Draw,

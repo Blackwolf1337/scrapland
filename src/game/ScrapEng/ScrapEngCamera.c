@@ -49,7 +49,7 @@ void CGameCamera_dtor(CGameCamera *self) {
 	}
 	CAM_CHECK(self);
 	if (self->Camera) {
-		Object3D_Delete(self->Camera, 1);
+		Object3D_Free(self->Camera);
 		self->Camera = NULL;
 	}
 }

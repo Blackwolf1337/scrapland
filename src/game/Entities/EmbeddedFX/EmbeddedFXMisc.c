@@ -76,13 +76,6 @@ static inline void EFXM_TrailsDtor(CGameTrail *t, uint32_t n) {
 	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, (void *)CGameTrail_dtor);
 }
 
-static inline cEmbeddedFX *EFXM_Delete(cEmbeddedFX *self, byte flags, uint32_t size) {
-	if (flags & 1) {
-		operator_delete_sized(self, size);
-	}
-	return self;
-}
-
 /* ---- constructors ---- */
 
 static cEmbeddedFXAmplifier *cEmbeddedFXAmplifier_ctor(cEmbeddedFXAmplifier *self) {
@@ -342,100 +335,100 @@ static void cEmbeddedFXTreasure_dtor(cEmbeddedFXTreasure *self) {
 
 /* ---- vf00: deleting destructors ---- */
 
-static cEmbeddedFX *cEmbeddedFXAmplifier_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXAmplifier_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXAmplifier *self = (cEmbeddedFXAmplifier *)elem;
 	cEmbeddedFXAmplifier_dtor(self);
-	return EFXM_Delete(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXBattery_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXBattery_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXBattery *self = (cEmbeddedFXBattery *)elem;
 	cEmbeddedFXBattery_dtor(self);
-	return EFXM_Delete(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXBossShield_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXBossShield_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXBossShield *self = (cEmbeddedFXBossShield *)elem;
 	cEmbeddedFXBossShield_dtor(self);
-	return EFXM_Delete(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXCapsule_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXCapsule_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXCapsule *self = (cEmbeddedFXCapsule *)elem;
 	cEmbeddedFXCapsule_dtor(self);
-	return EFXM_Delete(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXCoin_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXCoin_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXCoin *self = (cEmbeddedFXCoin *)elem;
 	cEmbeddedFXCoin_dtor(self);
-	return EFXM_Delete(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXConversor_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXConversor_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXConversor *self = (cEmbeddedFXConversor *)elem;
 	cEmbeddedFXConversor_dtor(self);
-	return EFXM_Delete(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXDTritusDesktop_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXDTritusDesktop_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXDTritusDesktop *self = (cEmbeddedFXDTritusDesktop *)elem;
 	cEmbeddedFXDTritusDesktop_dtor(self);
-	return EFXM_Delete(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXDataCube_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXDataCube_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXDataCube *self = (cEmbeddedFXDataCube *)elem;
 	cEmbeddedFXDataCube_dtor(self);
-	return EFXM_Delete(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXDataPack_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXDataPack_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXDataPack *self = (cEmbeddedFXDataPack *)elem;
 	cEmbeddedFXDataPack_dtor(self);
-	return EFXM_Delete(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXExtraLife_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXExtraLife_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXExtraLife *self = (cEmbeddedFXExtraLife *)elem;
 	cEmbeddedFXExtraLife_dtor(self);
-	return EFXM_Delete(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXFlag_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXFlag_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXFlag *self = (cEmbeddedFXFlag *)elem;
 	cEmbeddedFXFlag_dtor(self);
-	return EFXM_Delete(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXItem_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXItem_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXItem *self = (cEmbeddedFXItem *)elem;
 	cEmbeddedFXItem_dtor(self);
-	return EFXM_Delete(&self->coin.base, flags, sizeof(*self));
+	operator_delete(&self->coin.base);
 }
 
-static cEmbeddedFX *cEmbeddedFXMatrix_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXMatrix_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXMatrix *self = (cEmbeddedFXMatrix *)elem;
 	cEmbeddedFXMatrix_dtor(self);
-	return EFXM_Delete(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXMeetingPoint_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXMeetingPoint_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXMeetingPoint *self = (cEmbeddedFXMeetingPoint *)elem;
 	cEmbeddedFXMeetingPoint_dtor(self);
-	return EFXM_Delete(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXBike_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXBike_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXBike *self = (cEmbeddedFXBike *)elem;
 	cEmbeddedFXBike_dtor(self);
-	return EFXM_Delete(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXTreasure_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXTreasure_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXTreasure *self = (cEmbeddedFXTreasure *)elem;
 	cEmbeddedFXTreasure_dtor(self);
-	return EFXM_Delete(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
 /* ---- vf01: Reset ---- */
@@ -983,7 +976,7 @@ typedef void *(*EFXM_Ctor)(void *self);
 static cEmbeddedFX *EFXM_New(cEmbeddedFX *cur, uint32_t size, EFXM_Ctor ctor) {
 	if (cur) {
 		EFX_Release(cur);
-		EFX_Delete(cur, 1);
+		EFX_Free(cur);
 	}
 	void *p = operator_new(size);
 	cur = p ? ctor(p) : NULL;
@@ -2529,7 +2522,7 @@ static void cEmbeddedFXBike_Update(cEmbeddedFX *elem, float dt) {
 
 /* the vtable of cEmbeddedFXDataPack */
 static const cEmbeddedFXVtbl cEmbeddedFXDataPack_vftable = {
-	.Delete = cEmbeddedFXDataPack_Delete,
+	.Free = cEmbeddedFXDataPack_Free,
 	.Reset = cEmbeddedFXDataPack_Reset,
 	.Release = cEmbeddedFXDataPack_Release,
 	.Update = cEmbeddedFXDataPack_Update,
@@ -2539,7 +2532,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXDataPack_vftable = {
 
 /* the vtable of cEmbeddedFXDataCube */
 static const cEmbeddedFXVtbl cEmbeddedFXDataCube_vftable = {
-	.Delete = cEmbeddedFXDataCube_Delete,
+	.Free = cEmbeddedFXDataCube_Free,
 	.Reset = cEmbeddedFX_ResetTrue,
 	.Release = cEmbeddedFXDataCube_Release,
 	.Update = cEmbeddedFX_UpdateNop,
@@ -2549,7 +2542,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXDataCube_vftable = {
 
 /* the vtable of cEmbeddedFXCapsule */
 static const cEmbeddedFXVtbl cEmbeddedFXCapsule_vftable = {
-	.Delete = cEmbeddedFXCapsule_Delete,
+	.Free = cEmbeddedFXCapsule_Free,
 	.Reset = cEmbeddedFX_ResetTrue,
 	.Release = cEmbeddedFXCapsule_Release,
 	.Update = cEmbeddedFX_UpdateNop,
@@ -2559,7 +2552,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXCapsule_vftable = {
 
 /* the vtable of cEmbeddedFXMatrix */
 static const cEmbeddedFXVtbl cEmbeddedFXMatrix_vftable = {
-	.Delete = cEmbeddedFXMatrix_Delete,
+	.Free = cEmbeddedFXMatrix_Free,
 	.Reset = cEmbeddedFXMatrix_Reset,
 	.Release = cEmbeddedFXMatrix_Release,
 	.Update = cEmbeddedFXMatrix_Update,
@@ -2569,7 +2562,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXMatrix_vftable = {
 
 /* the vtable of cEmbeddedFXAmplifier */
 static const cEmbeddedFXVtbl cEmbeddedFXAmplifier_vftable = {
-	.Delete = cEmbeddedFXAmplifier_Delete,
+	.Free = cEmbeddedFXAmplifier_Free,
 	.Reset = cEmbeddedFXAmplifier_Reset,
 	.Release = cEmbeddedFXCoin_Release,
 	.Update = cEmbeddedFXAmplifier_Update,
@@ -2579,7 +2572,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXAmplifier_vftable = {
 
 /* the vtable of cEmbeddedFXMeetingPoint */
 static const cEmbeddedFXVtbl cEmbeddedFXMeetingPoint_vftable = {
-	.Delete = cEmbeddedFXMeetingPoint_Delete,
+	.Free = cEmbeddedFXMeetingPoint_Free,
 	.Reset = cEmbeddedFX_ResetTrue,
 	.Release = cEmbeddedFXCoin_Release,
 	.Update = cEmbeddedFXMeetingPoint_Update,
@@ -2589,7 +2582,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXMeetingPoint_vftable = {
 
 /* the vtable of cEmbeddedFXExtraLife */
 static const cEmbeddedFXVtbl cEmbeddedFXExtraLife_vftable = {
-	.Delete = cEmbeddedFXExtraLife_Delete,
+	.Free = cEmbeddedFXExtraLife_Free,
 	.Reset = cEmbeddedFXExtraLife_Reset,
 	.Release = cEmbeddedFXExtraLife_Release,
 	.Update = cEmbeddedFXExtraLife_Update,
@@ -2599,7 +2592,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXExtraLife_vftable = {
 
 /* the vtable of cEmbeddedFXBattery */
 static const cEmbeddedFXVtbl cEmbeddedFXBattery_vftable = {
-	.Delete = cEmbeddedFXBattery_Delete,
+	.Free = cEmbeddedFXBattery_Free,
 	.Reset = cEmbeddedFXBattery_Reset,
 	.Release = cEmbeddedFXBattery_Release,
 	.Update = cEmbeddedFXBattery_Update,
@@ -2609,7 +2602,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXBattery_vftable = {
 
 /* the vtable of cEmbeddedFXTreasure */
 static const cEmbeddedFXVtbl cEmbeddedFXTreasure_vftable = {
-	.Delete = cEmbeddedFXTreasure_Delete,
+	.Free = cEmbeddedFXTreasure_Free,
 	.Reset = cEmbeddedFXTreasure_Reset,
 	.Release = cEmbeddedFXTreasure_Release,
 	.Update = cEmbeddedFXTreasure_Update,
@@ -2619,7 +2612,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXTreasure_vftable = {
 
 /* the vtable of cEmbeddedFXFlag */
 static const cEmbeddedFXVtbl cEmbeddedFXFlag_vftable = {
-	.Delete = cEmbeddedFXFlag_Delete,
+	.Free = cEmbeddedFXFlag_Free,
 	.Reset = cEmbeddedFX_ResetTrue,
 	.Release = cEmbeddedFXCoin_Release,
 	.Update = cEmbeddedFXFlag_Update,
@@ -2629,7 +2622,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXFlag_vftable = {
 
 /* the vtable of cEmbeddedFXDTritusDesktop */
 static const cEmbeddedFXVtbl cEmbeddedFXDTritusDesktop_vftable = {
-	.Delete = cEmbeddedFXDTritusDesktop_Delete,
+	.Free = cEmbeddedFXDTritusDesktop_Free,
 	.Reset = cEmbeddedFXDTritusDesktop_Reset,
 	.Release = cEmbeddedFXDTritusDesktop_Release,
 	.Update = cEmbeddedFXDTritusDesktop_Update,
@@ -2639,7 +2632,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXDTritusDesktop_vftable = {
 
 /* the vtable of cEmbeddedFXBike */
 static const cEmbeddedFXVtbl cEmbeddedFXBike_vftable = {
-	.Delete = cEmbeddedFXBike_Delete,
+	.Free = cEmbeddedFXBike_Free,
 	.Reset = cEmbeddedFXBike_Reset,
 	.Release = cEmbeddedFXBike_Release,
 	.Update = cEmbeddedFXBike_Update,
@@ -2649,7 +2642,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXBike_vftable = {
 
 /* the vtable of cEmbeddedFXBossShield */
 static const cEmbeddedFXVtbl cEmbeddedFXBossShield_vftable = {
-	.Delete = cEmbeddedFXBossShield_Delete,
+	.Free = cEmbeddedFXBossShield_Free,
 	.Reset = cEmbeddedFXBossShield_Reset,
 	.Release = cEmbeddedFXBossShield_Release,
 	.Update = cEmbeddedFXBossShield_Update,
@@ -2659,7 +2652,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXBossShield_vftable = {
 
 /* the vtable of cEmbeddedFXConversor */
 static const cEmbeddedFXVtbl cEmbeddedFXConversor_vftable = {
-	.Delete = cEmbeddedFXConversor_Delete,
+	.Free = cEmbeddedFXConversor_Free,
 	.Reset = cEmbeddedFXConversor_Reset,
 	.Release = cEmbeddedFXCoin_Release,
 	.Update = cEmbeddedFXConversor_Update,
@@ -2669,7 +2662,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXConversor_vftable = {
 
 /* the vtable of cEmbeddedFXCoin */
 static const cEmbeddedFXVtbl cEmbeddedFXCoin_vftable = {
-	.Delete = cEmbeddedFXCoin_Delete,
+	.Free = cEmbeddedFXCoin_Free,
 	.Reset = cEmbeddedFXCoin_Reset,
 	.Release = cEmbeddedFXCoin_Release,
 	.Update = cEmbeddedFXCoin_Update,
@@ -2679,7 +2672,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXCoin_vftable = {
 
 /* the vtable of cEmbeddedFXItem */
 static const cEmbeddedFXVtbl cEmbeddedFXItem_vftable = {
-	.Delete = cEmbeddedFXItem_Delete,
+	.Free = cEmbeddedFXItem_Free,
 	.Reset = cEmbeddedFXItem_Reset,
 	.Release = cEmbeddedFXCoin_Release,
 	.Update = cEmbeddedFXItem_Update,

@@ -41,7 +41,7 @@ done:
 
 static void cActClassList_Free(cActClassList *self) {
 	cActClassList_dtor(self);
-	operator_delete_sized(self, sizeof(*self));
+	operator_delete(self);
 }
 
 cActClass *cActClassList_Create(cActClassList *list, const char *name) {

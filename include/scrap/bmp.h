@@ -18,7 +18,7 @@ typedef CImage CBmp;
 /* the pixel at x, y with CHECKs */
 void *Img_Pixel(const CImage *b, uint32_t x, uint32_t y, int bytes);
 /* the originals free the pixels with the sized delete of one pixel */
-void Img_Free(CImage *b, int bytes);
+void Img_Free(CImage *b);
 /* new pixels, not cleared */
 void Img_Create(CImage *b, int width, int height, int bytes);
 /* the last 4 characters of name are ext, ignoring case (all of a shorter name) */

@@ -17,14 +17,11 @@ cBishopLocalLogic *cBishopLocalLogic_ctor(cBishopLocalLogic *self, cEntity *pare
 	return self;
 }
 
-static cLocalLogic *cBishopLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static void cBishopLocalLogic_Free(cLocalLogic *elem) {
 	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
 	self->base.vftable = CBISHOPLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 /* vf31: 0 to keep a character target that is idle when the AI asks */
@@ -102,7 +99,7 @@ static void cBishopLocalLogic_OnAlarm(cLocalLogic *elem, cEntity *target) {
 
 /* the vtable of cBishopLocalLogic */
 static const cGenCharLocalLogicVtbl cBishopLocalLogic_vftable = {
-	.base.base.Delete = cBishopLocalLogic_Delete,
+	.base.base.Free = cBishopLocalLogic_Free,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,

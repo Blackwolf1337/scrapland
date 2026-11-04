@@ -48,7 +48,7 @@ static void cBinaryHeap_dtor(cBinaryHeap *self) {
 
 static void cBinaryHeap_Free(cBinaryHeap *self) {
 	cBinaryHeap_dtor(self);
-	operator_delete_sized(self, sizeof(*self));
+	operator_delete(self);
 }
 
 static void cBinaryHeap_Clear(cBinaryHeap *self) {
@@ -285,16 +285,13 @@ static void CAStarSup_dtor(CAStarSup *self) {
 	self->vftable = CASTARSUP_VFTABLE;
 	if (t) {
 		AStarTable_dtor(t);
-		operator_delete_sized(t, 0xc);
+		operator_delete(t);
 	}
 }
 
-static CAStarSup *CAStarSup_Delete(CAStarSup *self, byte flags) {
+static void CAStarSup_Free(CAStarSup *self) {
 	CAStarSup_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, 0x44);
-	}
-	return self;
+	operator_delete(self);
 }
 
 static void CAStarSup_Draw(CAStarSup *self, uint32_t color) {
@@ -654,7 +651,7 @@ void *CAStar2D_ctor(void *mem, CNodesWorld2D *nodes) {
 	return self;
 }
 
-static void AStar_Free(CAStarSup *self, const CAStarVtbl *vftable) {
+static void AStar_FreeLists(CAStarSup *self, const CAStarVtbl *vftable) {
 	void *list = self->list;
 
 	self->vftable = vftable;
@@ -666,22 +663,16 @@ static void AStar_Free(CAStarSup *self, const CAStarVtbl *vftable) {
 	CAStarSup_dtor(self);
 }
 
-static CAStarSup *CAStar_Delete(CAStarSup *elem, byte flags) {
+static void CAStar_Free(CAStarSup *elem) {
 	CAStar *self = (CAStar *)elem;
-	AStar_Free(&self->base, CASTAR_VFTABLE);
-	if (flags & 1) {
-		operator_delete_sized(self, 0x48);
-	}
-	return elem;
+	AStar_FreeLists(&self->base, CASTAR_VFTABLE);
+	operator_delete(self);
 }
 
-static CAStarSup *CAStar2D_Delete(CAStarSup *elem, byte flags) {
+static void CAStar2D_Free(CAStarSup *elem) {
 	CAStar2D *self = (CAStar2D *)elem;
-	AStar_Free(&self->base, CASTAR2D_VFTABLE);
-	if (flags & 1) {
-		operator_delete_sized(self, 0x50);
-	}
-	return elem;
+	AStar_FreeLists(&self->base, CASTAR2D_VFTABLE);
+	operator_delete(self);
 }
 
 /* the element and the table item of every point of visibility (both classes) */
@@ -902,7 +893,7 @@ void CAStar2D_GetPointsVis(void *astar, const vec3_t *pos, const vec3_t **list, 
 
 /* the vtable of CAStar */
 static const CAStarVtbl CAStar_vftable = {
-	.Delete = CAStar_Delete,
+	.Free = CAStar_Free,
 	.Draw = CAStarSup_Draw,
 	.GetTable = CAStarSup_GetTable,
 	.TestPath = CAStar_TestPath,
@@ -925,7 +916,7 @@ static const CAStarVtbl CAStar_vftable = {
 
 /* the vtable of CAStar2D */
 static const CAStarVtbl CAStar2D_vftable = {
-	.Delete = CAStar2D_Delete,
+	.Free = CAStar2D_Free,
 	.Draw = CAStarSup_Draw,
 	.GetTable = CAStarSup_GetTable,
 	.TestPath = CAStar2D_TestPath,
@@ -948,7 +939,7 @@ static const CAStarVtbl CAStar2D_vftable = {
 
 /* the vtable of CAStarSup */
 static const CAStarVtbl CAStarSup_vftable = {
-	.Delete = CAStarSup_Delete,
+	.Free = CAStarSup_Free,
 	.Draw = CAStarSup_Draw,
 	.GetTable = CAStarSup_GetTable,
 	.TestPath = (void *)crt_purecall,

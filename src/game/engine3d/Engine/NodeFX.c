@@ -48,12 +48,9 @@ static float Vec3_Dist(const vec3_t *a, const vec3_t *b) {
 	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 }
 
-static INodeFX *INodeFX_Delete(INodeFX *self, byte flags) {
+static void INodeFX_Free(INodeFX *self) {
 	self->vftable = INODEFX_VFTABLE;
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(INodeFX));
-	}
-	return self;
+	operator_delete(self);
 }
 
 static byte INodeFX_Type(INodeFX *self) {
@@ -115,13 +112,10 @@ static CNodeFX_Wheel *CNodeFX_Wheel_ctorCopy(CNodeFX_Wheel *self, const CNodeFX_
 }
 
 /* not to be used: CHECK(0) */
-static INodeFX *CNodeFX_Wheel_Delete(INodeFX *base, byte flags) {
+static void CNodeFX_Wheel_Free(INodeFX *base) {
 	CNodeFX_Wheel *self = (CNodeFX_Wheel *)base;
 	self->vftable = INODEFX_VFTABLE;
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CNodeFX_Wheel));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static byte CNodeFX_Wheel_Type(INodeFX *base) {
@@ -267,13 +261,10 @@ static CNodeFX_Spring *CNodeFX_Spring_ctorCopy(CNodeFX_Spring *self, const CNode
 	return self;
 }
 
-static INodeFX *CNodeFX_Spring_Delete(INodeFX *base, byte flags) {
+static void CNodeFX_Spring_Free(INodeFX *base) {
 	CNodeFX_Spring *self = (CNodeFX_Spring *)base;
 	self->vftable = INODEFX_VFTABLE;
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CNodeFX_Spring));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static byte CNodeFX_Spring_Type(INodeFX *base) {
@@ -442,21 +433,21 @@ void *NodeFX_Clone(INodeFX *fx) {
 
 /* the vtable of INodeFX */
 static const INodeFXVtbl INodeFX_vftable = {
-	.Delete = INodeFX_Delete,
+	.Free = INodeFX_Free,
 	.Type = INodeFX_Type,
 	.Apply = (void *)crt_purecall,
 };
 
 /* the vtable of CNodeFX_Wheel */
 static const INodeFXVtbl CNodeFX_Wheel_vftable = {
-	.Delete = CNodeFX_Wheel_Delete,
+	.Free = CNodeFX_Wheel_Free,
 	.Type = CNodeFX_Wheel_Type,
 	.Apply = CNodeFX_Wheel_Apply,
 };
 
 /* the vtable of CNodeFX_Spring */
 static const INodeFXVtbl CNodeFX_Spring_vftable = {
-	.Delete = CNodeFX_Spring_Delete,
+	.Free = CNodeFX_Spring_Free,
 	.Type = CNodeFX_Spring_Type,
 	.Apply = CNodeFX_Spring_Apply,
 };

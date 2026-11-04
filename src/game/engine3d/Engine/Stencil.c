@@ -349,15 +349,15 @@ void E3D_SetShadowLight(CLight *l, int unused) {
 void Stencil_Free(void) {
 	g_ShadowLight = NULL;
 	if (g_StencilBlock) {
-		operator_delete_sized(g_StencilBlock, sizeof(StencilBlock));
+		operator_delete(g_StencilBlock);
 		g_StencilBlock = NULL;
 	}
 	if (g_StencilSegments) {
-		operator_delete_sized(g_StencilSegments, 0xc);
+		operator_delete(g_StencilSegments);
 		g_StencilSegments = NULL;
 	}
 	if (g_StencilTriInv) {
-		operator_delete_sized(g_StencilTriInv, 0xc);
+		operator_delete(g_StencilTriInv);
 		g_StencilTriInv = NULL;
 	}
 	if (g_StencilVB3) {
@@ -424,7 +424,7 @@ void Stencil_Init(void) {
 	}
 	Render_CreateIB(&g_StencilIB, idx, 0x4000, 0);
 	if (idx) {
-		operator_delete_sized(idx, 2);
+		operator_delete(idx);
 	}
 	void *dev = g_pd3dDevice;
 	Rd_DevCreateVertexBuffer(dev, 0x60000, 0x208, 2, 0, &g_StencilVB);

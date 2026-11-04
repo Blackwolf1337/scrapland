@@ -22,7 +22,7 @@ static void Camera_Link(CNode3D **slot, CNode3D *n) {
 		CNode3D *old = *slot;
 		old->Refs--;
 		if (!old->Refs && old) {
-			ObjRef_Delete(old, 1);
+			ObjRef_Free(old);
 		}
 		*slot = NULL;
 	}
@@ -70,13 +70,10 @@ void CCamera_dtor(CCamera *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-static IObject3D *CCamera_Delete(IObject3D *base, byte flags) {
+static void CCamera_Free(IObject3D *base) {
 	CCamera *self = (CCamera *)base;
 	CCamera_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 void CCamera_SetNode(CCamera *self, CNode3D *node) {
@@ -256,7 +253,7 @@ static void CCamera_Update(IObject3D *base, CRenderNode *r) {
 
 /* the vtable of CCamera */
 static const IObject3DVtbl CCamera_vftable = {
-	.Delete = CCamera_Delete,
+	.Free = CCamera_Free,
 	.Update = CCamera_Update,
 	.Render = IObject3D_RenderNop,
 	.InitD3D = IObject3D_InitD3DNop,

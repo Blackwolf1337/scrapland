@@ -33,7 +33,7 @@ static cAbstractFile *cFileMem_Destroy(cAbstractFile *base, int flags) {
 	cFileMem *self = (cFileMem *)base;
 	cFileMem_dtor(self);
 	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
+		operator_delete(self);
 	}
 	return base;
 }

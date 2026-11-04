@@ -31,7 +31,7 @@ byte Font_Build(const char *name, int size) {
 	CFont_Build(f, name, size);
 	if (f) {
 		CFont_dtor(f);
-		operator_delete_sized(f, sizeof(CFont));
+		operator_delete(f);
 	}
 	return 1;
 }
@@ -42,7 +42,7 @@ void Fonts_Unload(void) {
 		CFont **slot = Font_Slot(i);
 		if (*slot) {
 			CFont_dtor(*slot);
-			operator_delete_sized(*slot, sizeof(CFont));
+			operator_delete(*slot);
 			*slot = NULL;
 		}
 	}

@@ -96,7 +96,7 @@ typedef struct CAppVtbl {
 	void(*DoneGame)(CApp *self);					/* 0x00 vf00 */
 	void(*InitGame)(CApp *self, const char *level);			/* 0x04 vf01 */
 	void(*InitDebug)(CApp *self);					/* 0x08 vf02 */
-	CApp *(*Delete)(CApp *self, byte flags);			/* 0x0c vf03 */
+	void (*Free)(CApp *self);			/* 0x0c vf03 */
 	byte(*Init)(CApp *self);						/* 0x10 vf04 */
 	byte(*Frame)(CApp *self);						/* 0x14 vf05 */
 	void(*Shutdown)(CApp *self);					/* 0x18 vf06 */
@@ -121,8 +121,8 @@ static inline const char *App_DebugInput(void *self, const char *text) {
 	return VT(CAppVtbl, self)->DebugInput(self, text);
 }
 
-static inline CApp *App_Delete(void *self, byte flags) {
-	return VT(CAppVtbl, self)->Delete(self, flags);
+static inline void App_Free(void *self) {
+	VT(CAppVtbl, self)->Free(self);
 }
 
 static inline void App_DoneGame(void *self) {

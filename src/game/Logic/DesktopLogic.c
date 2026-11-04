@@ -13,19 +13,16 @@ cDesktopLocalLogic *cDesktopLocalLogic_ctor(cDesktopLocalLogic *self, cEntity *p
 	return self;
 }
 
-static cLocalLogic *cDesktopLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static void cDesktopLocalLogic_Free(cLocalLogic *elem) {
 	cDesktopLocalLogic *self = (cDesktopLocalLogic *)elem;
 	self->base.vftable = CDESKTOPLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 /* the vtable of cDesktopLocalLogic */
 static const cGenCharLocalLogicVtbl cDesktopLocalLogic_vftable = {
-	.base.base.Delete = cDesktopLocalLogic_Delete,
+	.base.base.Free = cDesktopLocalLogic_Free,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,

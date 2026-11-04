@@ -74,13 +74,10 @@ static void cClientNetManager_dtor(cClientNetManager *self) {
 	cUserNetManager_dtor(&self->base);
 }
 
-static cUserNetManager *cClientNetManager_Delete(cUserNetManager *base, byte flags) {
+static void cClientNetManager_Free(cUserNetManager *base) {
 	cClientNetManager *self = (cClientNetManager *)base;
 	cClientNetManager_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the hello of the client: id, version, password and the ship config */
@@ -443,7 +440,7 @@ static void cClientNetManager_SetLocalData(cUserNetManager *elem) {
 
 /* the vtable of cClientNetManager */
 static const cUserNetManagerVtbl cClientNetManager_vftable = {
-	.Delete = cClientNetManager_Delete,
+	.Free = cClientNetManager_Free,
 	.OnReceive = cClientNetManager_OnReceive,
 	.Send = cClientNetManager_Send,
 	.SetLocalData = cClientNetManager_SetLocalData,

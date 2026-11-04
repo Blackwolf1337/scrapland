@@ -158,7 +158,7 @@ cAICharControl *cAICharControl_ctor(void *mem, cEntity *ent, cAIChar *ai, int *a
 /* the debug segment list and its free nodes */
 static void DListSeg_Free(cNWSegList *list) {
 	DListSeg_Clear(list);
-	DList_FreePool(list, sizeof(cNWSegNode));
+	DList_FreePool(list);
 }
 
 void cAICharControl_dtor(cAICharControl *self) {
@@ -174,12 +174,9 @@ byte Vec3_Equal(const vec3_t *a, const vec3_t *b) {
 	return a->x == b->x && a->y == b->y && a->z == b->z;
 }
 
-static cAICharControl *cAICharControl_Delete(cAICharControl *self, byte flags) {
+static void cAICharControl_Free(cAICharControl *self) {
 	cAICharControl_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAICHARCONTROL_SIZE);
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* the same code as NWVecList_Add and NWVecList_Clear */
@@ -192,7 +189,7 @@ void DListVec3_Clear(cNWVecList *list) {
 }
 
 void DListSeg_Clear(cNWSegList *list) {
-	DList_Clear(list, sizeof(cNWSegNode));
+	DList_Clear(list);
 }
 
 /* ---- the checks of a frame ---- */
@@ -2035,7 +2032,7 @@ void cAICharControl_SetHold(cAICharControl *self, byte on) {
 
 /* the vtable of cAICharControl */
 static const cAICharControlVtbl cAICharControl_vftable = {
-	.Delete = cAICharControl_Delete,
+	.Free = cAICharControl_Free,
 	.Draw = cAICharControl_Draw,
 	.GetWalkDir = cAICharControl_GetWalkDir,
 	.Busy = cAICharControl_Busy,

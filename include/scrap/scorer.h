@@ -19,12 +19,12 @@ typedef struct cScorerItemVtbl {
 	void(*SetParam)(cScorerItem *self, const char *name, const char *value);	/* 0x4 */
 	/* like cActClass_Var: set != 0 writes *s or *d / *i; returns 1 string, 2 double, 3 int, 0 */
 	int(*Var)(cScorerItem *self, const char *name, int set, char **s, double *d, int *i);	/* 0x8 */
-	cScorerItem *(*Delete)(cScorerItem *self, byte flags);			/* 0xc */
+	void (*Free)(cScorerItem *self);			/* 0xc */
 } cScorerItemVtbl;
 
 /* calls through the slots of cScorerItemVtbl */
-static inline cScorerItem *ScorerItem_Delete(void *self, byte flags) {
-	return VT(cScorerItemVtbl, self)->Delete(self, flags);
+static inline void ScorerItem_Free(void *self) {
+	VT(cScorerItemVtbl, self)->Free(self);
 }
 
 static inline void ScorerItem_Draw(void *self, int player) {

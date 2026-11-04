@@ -19,14 +19,11 @@ void *cAIPolice_ctor(void *mem, cEntity *e, int *arg) {
 }
 
 /* AIPolice.c */
-static cAI *cAIPolice_Delete(cAI *base, byte flags) {
+static void cAIPolice_Free(cAI *base) {
 	cAIPolice *self = (cAIPolice *)base;
 	self->vftable = CAIPOLICE_VFTABLE;
 	cAIChar_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAIPOLICE_SIZE);
-	}
-	return base;
+	operator_delete(self);
 }
 
 static void cAIPolice_CheckActDist(cAI *base) {
@@ -60,7 +57,7 @@ static void cAIPolice_SetDists(cAI *elem) {
 
 /* the vtable of cAIPolice */
 static const cAICharVtbl cAIPolice_vftable = {
-	.base.base.Delete = cAIPolice_Delete,
+	.base.base.Free = cAIPolice_Free,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
 	.base.base.Draw = cAIChar_Draw,

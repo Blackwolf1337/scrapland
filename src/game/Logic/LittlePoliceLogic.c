@@ -50,14 +50,11 @@ void *cLittlePoliceLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-static cLocalLogic *cLittlePoliceLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static void cLittlePoliceLocalLogic_Free(cLocalLogic *elem) {
 	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)elem;
 	self->base.base.vftable = CLITTLEPOLICELOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(&self->base);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 /* vf26: the view flag without the alarm (in state 4 only with the bribe), team 2 (0 with the alarm) */
@@ -598,7 +595,7 @@ static byte cLittlePoliceLocalLogic_SetState(cLocalLogic *elem, int state, cEnti
 
 /* the vtable of cLittlePoliceLocalLogic */
 static const cGenCharLocalLogicVtbl cLittlePoliceLocalLogic_vftable = {
-	.base.base.Delete = cLittlePoliceLocalLogic_Delete,
+	.base.base.Free = cLittlePoliceLocalLogic_Free,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cLittlePoliceLocalLogic_VarI,

@@ -43,7 +43,7 @@ typedef struct MeshD3D_FileCtx MeshD3D_FileCtx;
 
 /* the slots of the 3D objects (objeto3d.h) */
 typedef struct IObject3DVtbl {
-	IObject3D *(*Delete)(IObject3D *self, byte flags);				/* 0x00 */
+	void (*Free)(IObject3D *self);				/* 0x00 */
 	void(*Update)(IObject3D *self, CRenderNode *r);				/* 0x04 */
 	void(*Render)(IObject3D *self, void *dev, CRenderNode *r);			/* 0x08 */
 	void(*InitD3D)(IObject3D *self, void *dev);					/* 0x0c */
@@ -53,8 +53,8 @@ typedef struct IObject3DVtbl {
 } IObject3DVtbl;
 
 /* calls through the slots of IObject3DVtbl */
-static inline IObject3D *Object3D_Delete(void *self, byte flags) {
-	return VT(IObject3DVtbl, self)->Delete(self, flags);
+static inline void Object3D_Free(void *self) {
+	VT(IObject3DVtbl, self)->Free(self);
 }
 
 static inline void Object3D_InitD3D(void *self, void *dev) {
@@ -91,12 +91,12 @@ extern const IObject3DVtbl IObject3D_vftable;
 /* a counted reference (objref.h): the head of CNode3D and CScene, the deleting destructor first */
 typedef struct ObjRef ObjRef;
 typedef struct ObjRefVtbl {
-	ObjRef *(*Delete)(ObjRef *self, byte flags);	/* 0x0 */
+	void (*Free)(ObjRef *self);	/* 0x0 */
 } ObjRefVtbl;
 
 /* calls through the slots of ObjRefVtbl */
-static inline ObjRef *ObjRef_Delete(void *self, byte flags) {
-	return VT(ObjRefVtbl, self)->Delete(self, flags);
+static inline void ObjRef_Free(void *self) {
+	VT(ObjRefVtbl, self)->Free(self);
 }
 
 typedef struct ObjRef {
@@ -113,7 +113,7 @@ static inline void ObjRef_Release(void *slot) {
 		(*dst)->Refs--;
 		ObjRef *o = *dst;
 		if (!o->Refs && o) {
-			ObjRef_Delete(o, 1);
+			ObjRef_Free(o);
 		}
 		*dst = NULL;
 	}
@@ -126,7 +126,7 @@ static inline void ObjRef_Drop(void *slot) {
 		(*dst)->Refs--;
 		ObjRef *o = *dst;
 		if (!o->Refs && o) {
-			ObjRef_Delete(o, 1);
+			ObjRef_Free(o);
 		}
 		*dst = NULL;
 	}
@@ -285,7 +285,7 @@ void CNode3D_SetParent(CNode3D *self, CNode3D *n);
 void CNode3D_SetParentName(CNode3D *self, const char *name);
 void CNode3D_SetNext(CNode3D *self, CNode3D *n);
 /* the owned objects and the parent released */
-void CNode3D_Free(CNode3D *self);
+void CNode3D_Release(CNode3D *self);
 /* the track of the node in animation 0 or 1 of channel ch; NULL without */
 void *CNode3D_Track(CNode3D *self, uint32_t ch);
 /* the color of the node's animated light (color times *mult) from channel 0; 0 without one */

@@ -69,14 +69,14 @@ cNewsPanel *cNewsPanel_ctor(cNewsPanel *self) {
 static void News_FreeImage(CPsaImage *img) {
 	if (img) {
 		CPsaImage_dtor(img);
-		operator_delete_sized(img, sizeof(CPsaImage));
+		operator_delete(img);
 	}
 }
 
 void cNewsPanel_dtor(cNewsPanel *self) {
 	if (self->cam) {
 		CGameCamera_dtor(self->cam);
-		operator_delete_sized(self->cam, sizeof(CGameCamera));
+		operator_delete(self->cam);
 	}
 	News_FreeImage(self->logoImg);
 	News_FreeImage(self->backImg);

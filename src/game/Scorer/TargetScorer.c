@@ -202,13 +202,10 @@ static void cTargetScorer_dtor(cTargetScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cTargetScorer_Delete(cScorerItem *base, byte flags) {
+static void cTargetScorer_Free(cScorerItem *base) {
 	cTargetScorer *self = (cTargetScorer *)base;
 	cTargetScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cTargetScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static int cTargetScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
@@ -329,7 +326,7 @@ static const cScorerItemVtbl cTargetScorer_vftable = {
 	.Draw = cTargetScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cTargetScorer_Var,
-	.Delete = cTargetScorer_Delete,
+	.Free = cTargetScorer_Free,
 };
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

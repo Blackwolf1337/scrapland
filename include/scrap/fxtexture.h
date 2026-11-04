@@ -18,7 +18,7 @@ enum { FXTEX_LAVA = 1, FXTEX_SCROLL = 2, FXTEX_NEWSPANEL = 3 };
 typedef struct IFXTexture IFXTexture;
 
 typedef struct IFXTextureVtbl {
-	IFXTexture *(*Delete)(IFXTexture *self, byte flags);	/* 0x0 */
+	void (*Free)(IFXTexture *self);	/* 0x0 */
 	int(*Update)(IFXTexture *self, CMap *map);		/* 0x4 */
 	void *(*GetTexture)(IFXTexture *self);			/* 0x8 */
 } IFXTextureVtbl;
@@ -32,8 +32,8 @@ static inline int FXTexture_Update(void *self, CMap *map) {
 	return VT(IFXTextureVtbl, self)->Update(self, map);
 }
 
-static inline IFXTexture *FXTexture_Delete(void *self, byte flags) {
-	return VT(IFXTextureVtbl, self)->Delete(self, flags);
+static inline void FXTexture_Free(void *self) {
+	VT(IFXTextureVtbl, self)->Free(self);
 }
 
 struct IFXTexture {

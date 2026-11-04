@@ -92,31 +92,22 @@ static void cFXElementsLighting_dtor(cFXElementsLighting *self) {
 	cMapElement_dtor(&self->base);
 }
 
-static cMapElement *cFXElementsFireDrop_Delete(cMapElement *base, byte flags) {
+static void cFXElementsFireDrop_Free(cMapElement *base) {
 	cFXElementsFireDrop *self = (cFXElementsFireDrop *)base;
 	cFXElementsFireDrop_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
-static cMapElement *cFXElementsLensFlare_Delete(cMapElement *base, byte flags) {
+static void cFXElementsLensFlare_Free(cMapElement *base) {
 	cFXElementsLensFlare *self = (cFXElementsLensFlare *)base;
 	cFXElementsLensFlare_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
-static cMapElement *cFXElementsLighting_Delete(cMapElement *base, byte flags) {
+static void cFXElementsLighting_Free(cMapElement *base) {
 	cFXElementsLighting *self = (cFXElementsLighting *)base;
 	cFXElementsLighting_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* ---- cFXElementsFireDrop ---- */
@@ -791,21 +782,21 @@ static void cFXElementsLighting_Update(cMapElement *elem, float dt) {
 
 /* the vtable of cFXElementsLighting */
 static const cMapElementVtbl cFXElementsLighting_vftable = {
-	.Delete = cFXElementsLighting_Delete,
+	.Free = cFXElementsLighting_Free,
 	.Init = cFXElementsLighting_Init,
 	.Update = cFXElementsLighting_Update,
 };
 
 /* the vtable of cFXElementsFireDrop */
 static const cMapElementVtbl cFXElementsFireDrop_vftable = {
-	.Delete = cFXElementsFireDrop_Delete,
+	.Free = cFXElementsFireDrop_Free,
 	.Init = cFXElementsFireDrop_Init,
 	.Update = cFXElementsFireDrop_Update,
 };
 
 /* the vtable of cFXElementsLensFlare */
 static const cMapElementVtbl cFXElementsLensFlare_vftable = {
-	.Delete = cFXElementsLensFlare_Delete,
+	.Free = cFXElementsLensFlare_Free,
 	.Init = cMapElement_InitTrue,
 	.Update = cMapElement_UpdateNop,
 };

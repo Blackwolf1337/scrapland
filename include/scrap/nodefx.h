@@ -17,7 +17,7 @@ enum { NODEFX_NONE = 0, NODEFX_WHEEL = 1, NODEFX_SPRING = 2 };
 typedef struct INodeFX INodeFX;
 
 typedef struct INodeFXVtbl {
-	INodeFX *(*Delete)(INodeFX *self, byte flags);				/* 0x0 */
+	void (*Free)(INodeFX *self);				/* 0x0 */
 	byte(*Type)(INodeFX *self);							/* 0x4 NODEFX_ */
 	/* m changed by the effect; 0 */
 	int(*Apply)(INodeFX *self, matrix_t *m, CNode3D *node, CRenderNode *r);	/* 0x8 */
@@ -32,8 +32,8 @@ static inline int NodeFX_Apply(void *self, matrix_t *m, CNode3D *node, CRenderNo
 	return VT(INodeFXVtbl, self)->Apply(self, m, node, r);
 }
 
-static inline INodeFX *NodeFX_Delete(void *self, byte flags) {
-	return VT(INodeFXVtbl, self)->Delete(self, flags);
+static inline void NodeFX_Free(void *self) {
+	VT(INodeFXVtbl, self)->Free(self);
 }
 
 struct INodeFX {

@@ -16,14 +16,11 @@ cHumphreyLocalLogic *cHumphreyLocalLogic_ctor(cHumphreyLocalLogic *self, cEntity
 	return self;
 }
 
-static cLocalLogic *cHumphreyLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static void cHumphreyLocalLogic_Free(cLocalLogic *elem) {
 	cHumphreyLocalLogic *self = (cHumphreyLocalLogic *)elem;
 	self->base.base.base.vftable = CHUMPHREYLOCALLOGIC_VFTABLE;
 	cFunctionaryLocalLogic_dtor(&self->base);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 /* vf40 */
@@ -71,7 +68,7 @@ static vec3_t *cHumphreyLocalLogic_GetWorkAng(cLocalLogic *elem, vec3_t *out) {
 
 /* the vtable of cHumphreyLocalLogic */
 static const cFunctionaryLocalLogicVtbl cHumphreyLocalLogic_vftable = {
-	.base.base.base.Delete = cHumphreyLocalLogic_Delete,
+	.base.base.base.Free = cHumphreyLocalLogic_Free,
 	.base.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.base.AcceptsArrow = cFunctionaryLocalLogic_AcceptsArrow,
 	.base.base.base.VarI = cFunctionaryLocalLogic_VarI,

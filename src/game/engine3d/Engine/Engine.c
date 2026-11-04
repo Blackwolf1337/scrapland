@@ -106,7 +106,7 @@ static CEngineApp *CEngineApp_ctor(CEngineApp *self) {
 static void Engine_Free(CEngineApp *m) {
 	Table_Free(&m->table);
 	CD3DApp_dtor(&m->base);
-	operator_delete_sized(m, sizeof(CEngineApp));
+	operator_delete(m);
 }
 
 static void *g_EngineInit;
@@ -463,7 +463,7 @@ static int CEngineApp_FinalCleanup(CD3DApplication *base) {
 	ov = self->overlay;
 	if (ov) {
 		CGraphic2DList_DeleteAll(ov);
-		operator_delete_sized(ov, 8);
+		operator_delete(ov);
 		self->overlay = NULL;
 	}
 	if (self->obj2a5f4) {
@@ -481,7 +481,7 @@ static int CEngineApp_FinalCleanup(CD3DApplication *base) {
 	Tex_ClearPaths();
 	Tex_ClearExtensions();
 	if (g_Input) {
-		Input3D_Delete(g_Input, 1);
+		Input3D_Free(g_Input);
 		g_Input = NULL;
 	}
 	return 0;
@@ -590,7 +590,7 @@ static void Engine_ReleaseScene(CEngineApp *self) {
 		self->scene->Refs--;
 		e = self->scene;
 		if (!e->Refs && e) {
-			ObjRef_Delete(e, 1);
+			ObjRef_Free(e);
 		}
 		self->scene = NULL;
 	}
@@ -906,13 +906,10 @@ static int CEngineApp_InitDeviceObjects(CD3DApplication *elem) {
 
 /* ---- CEntradaNula: every method of the input does nothing ---- */
 
-static CNullInput *CNullInput_Delete(CNullInput *self, byte flags) {
+static void CNullInput_Free(CNullInput *self) {
 	self->vftable = CNULLINPUT_VFTABLE;
 	IInput_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* the vtable of CEngineApp */
@@ -935,7 +932,7 @@ static const CD3DApplicationVtbl CEngineApp_vftable = {
 
 /* the vtable of CNullInput */
 static const IInputVtbl CNullInput_vftable = {
-	.Delete = CNullInput_Delete,
+	.Free = CNullInput_Free,
 	.Init = IInput_InitFalse,
 	.Release = IInput_ReleaseFalse,
 	.ReadMouse = IInput_ReadMouseFalse,

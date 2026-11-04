@@ -45,13 +45,10 @@ static void cBarScorer_dtor(cBarScorer *self) {
 	cSpriteScorer_dtor(&self->base);
 }
 
-static cScorerItem *cBarScorer_Delete(cScorerItem *base, byte flags) {
+static void cBarScorer_Free(cScorerItem *base) {
 	cBarScorer *self = (cBarScorer *)base;
 	cBarScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cBarScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* MaxValue, Value, AutoUpdateStopValue, AutoUpdateSpeedFactor, MainBarIndex, BlackBarIndex, IsAutoUpdatable,
@@ -190,7 +187,7 @@ static const cSpriteScorerVtbl cBarScorer_vftable = {
 	.base.Draw = cBarScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cBarScorer_Var,
-	.base.Delete = cBarScorer_Delete,
+	.base.Free = cBarScorer_Free,
 	.SetMultiSprite = cSpriteScorer_SetMultiSprite,
 };
 

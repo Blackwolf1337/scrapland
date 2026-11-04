@@ -108,7 +108,7 @@ void SaveVars_Delete(const char *prefix) {
 			g_SaveVarCount--;
 			cString_dtor(&v->value);
 			cString_dtor(&v->name);
-			operator_delete_sized(v, sizeof(*v));
+			operator_delete(v);
 		} else {
 			link = &(*link)->next;
 		}

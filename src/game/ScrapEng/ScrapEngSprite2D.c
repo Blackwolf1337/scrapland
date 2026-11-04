@@ -75,7 +75,7 @@ void CPsaImage_dtor(CPsaImage *self) {
 	g = self->sprite;
 	if (g) {
 		CGraphic2D_dtor(g);
-		operator_delete_sized(g, sizeof(*g));
+		operator_delete(g);
 		self->sprite = NULL;
 	}
 }

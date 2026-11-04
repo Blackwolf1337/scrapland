@@ -90,22 +90,16 @@ static void cFXElementsABFakeMeteors_dtor(cFXElementsABFakeMeteors *self) {
 	cMapElement_dtor(&self->base);
 }
 
-static cMapElement *cFXElementsABFakeLimit_Delete(cMapElement *base, byte flags) {
+static void cFXElementsABFakeLimit_Free(cMapElement *base) {
 	cFXElementsABFakeLimit *self = (cFXElementsABFakeLimit *)base;
 	cFXElementsABFakeLimit_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
-static cMapElement *cFXElementsABFakeMeteors_Delete(cMapElement *base, byte flags) {
+static void cFXElementsABFakeMeteors_Free(cMapElement *base) {
 	cFXElementsABFakeMeteors *self = (cFXElementsABFakeMeteors *)base;
 	cFXElementsABFakeMeteors_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the particles of the render nodes Dummy01 and Dummy02 of the model; the shared start of the two Inits */
@@ -616,14 +610,14 @@ void FXElementsAB_Create(void) {
 
 /* the vtable of cFXElementsABFakeMeteors */
 static const cMapElementVtbl cFXElementsABFakeMeteors_vftable = {
-	.Delete = cFXElementsABFakeMeteors_Delete,
+	.Free = cFXElementsABFakeMeteors_Free,
 	.Init = cFXElementsABFakeMeteors_Init,
 	.Update = cFXElementsABFakeMeteors_Update,
 };
 
 /* the vtable of cFXElementsABFakeLimit */
 static const cMapElementVtbl cFXElementsABFakeLimit_vftable = {
-	.Delete = cFXElementsABFakeLimit_Delete,
+	.Free = cFXElementsABFakeLimit_Free,
 	.Init = cFXElementsABFakeLimit_Init,
 	.Update = cFXElementsABFakeLimit_Update,
 };

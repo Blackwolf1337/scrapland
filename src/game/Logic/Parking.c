@@ -65,7 +65,7 @@ static void Parking_Release(cParkingList *list, cParkingNode *n) {
 		return;
 	}
 	cString_dtor(&n->zone.name);
-	operator_delete_sized(n, sizeof(*n));
+	operator_delete(n);
 }
 
 static void Parking_ClearList(cParkingList *list) {
@@ -91,7 +91,7 @@ static void Parking_FreePool(cParkingList *list) {
 	while (p) {
 		list->freeNodes = p->next;
 		cString_dtor(&p->zone.name);
-		operator_delete_sized(p, sizeof(*p));
+		operator_delete(p);
 		p = list->freeNodes;
 	}
 	list->numFree = 0;

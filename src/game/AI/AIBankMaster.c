@@ -19,14 +19,11 @@ void *cAIBankMaster_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-static cAI *cAIBankMaster_Delete(cAI *elem, byte flags) {
+static void cAIBankMaster_Free(cAI *elem) {
 	cAIBankMaster *self = (cAIBankMaster *)elem;
 	self->base.vftable = CAIBANKMASTER_VFTABLE;
 	cAIChar_dtor(&self->base);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cAIBankMaster));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 static void cAIBankMaster_SetRanges(cAI *elem) {
@@ -50,7 +47,7 @@ static void cAIBankMaster_SetRanges(cAI *elem) {
 
 /* the vtable of cAIBankMaster */
 static const cAICharVtbl cAIBankMaster_vftable = {
-	.base.base.Delete = cAIBankMaster_Delete,
+	.base.base.Free = cAIBankMaster_Free,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
 	.base.base.Draw = cAIChar_Draw,

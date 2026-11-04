@@ -121,8 +121,8 @@ static byte CMultiSprite_BuildTable(CMultiSprite *self, const char *name) {
 	memcpy(self->p, info, (uint32_t)self->n * sizeof(MSprite));
 	ok = 1;
 done:
-	Img_Free(&pal, 4);
-	Img_Free(&bmp, 4);
+	Img_Free(&pal);
+	Img_Free(&bmp);
 	return ok;
 }
 

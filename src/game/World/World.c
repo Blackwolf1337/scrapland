@@ -669,7 +669,7 @@ void cWorld_Clear(cWorld *self) {
 		}
 		cEntity *e = n->data;
 		if (e) {
-			Entity_Delete(e, 1);
+			Entity_Free(e);
 		}
 	}
 	while (self->debrisList) {
@@ -677,7 +677,7 @@ void cWorld_Clear(cWorld *self) {
 		self->debrisList = d->next;
 		if (d) {
 			cDebrisSys_dtor(d);
-			operator_delete_sized(d, sizeof(*d));
+			operator_delete(d);
 		}
 	}
 	cWorld_DeleteLists(self);
@@ -719,7 +719,7 @@ void cWorld_Free(cWorld *self) {
 	Nto1Node_Done(&self->deadList);
 	Nto1Node_Done(&self->entityList);
 	PtrTable_Clear(&self->entities);
-	operator_delete_sized(self, CWORLD_SIZE);
+	operator_delete(self);
 }
 
 static void cWorld_DeleteLists(cWorld *self) {
@@ -746,7 +746,7 @@ static void cWorld_DeleteLists(cWorld *self) {
 			cPy_Function_dtor(&list->onDamage);
 			cPy_Function_dtor(&list->onDeath);
 			cString_dtor((cString *)&list->name);
-			operator_delete_sized(list, sizeof(*list));
+			operator_delete(list);
 		}
 	}
 }
@@ -778,7 +778,7 @@ byte cWorld_DeleteDebrisSys(cWorld *world, const char *name) {
 	cDebrisSys_FreeActive(sys);
 	cDebrisSys_FreeIdle(sys);
 	cDebrisSys_dtor(sys);
-	operator_delete_sized(sys, sizeof(*sys));
+	operator_delete(sys);
 	CGameModel_Release(&model, 1);
 	CGameModel_Reset(&model);
 	return 1;
@@ -1082,7 +1082,7 @@ void cWorld_Update(cWorld *self, float dt) {
 			}
 			cEntity *e = n->data;
 			PtrTable_Delete(&self->entities, e->name);
-			Entity_Delete(e, 1);
+			Entity_Free(e);
 		}
 		for (int i = 0; i < 4; i++) {
 			self->owners[i] = NULL;

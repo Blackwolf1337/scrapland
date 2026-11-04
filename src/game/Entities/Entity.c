@@ -87,7 +87,7 @@ void EntityDList_dtor(void *list) {
 
 	if (!self->node.data) {
 		CHECK(self->numElems);
-		operator_delete_sized(self->numElems, 4);
+		operator_delete(self->numElems);
 	} else if (self->numElems) {
 		(*self->numElems)--;
 		self->numElems = NULL;
@@ -98,10 +98,10 @@ void EntityDList_dtor(void *list) {
 void cEntity_dtor(cEntity *self) {
 	self->vftable = CENTITY_VFTABLE;
 	if (self->lLogic) {
-		LocalLogic_Delete(self->lLogic, 1);
+		LocalLogic_Free(self->lLogic);
 	}
 	if (self->ai) {
-		AI_Delete(self->ai, 1);
+		AI_Free(self->ai);
 	}
 	Nto1Node_Done(&self->links);
 	EntityDList_dtor(&self->listNode);
@@ -111,12 +111,9 @@ void cEntity_dtor(cEntity *self) {
 	cString_dtor((cString *)&self->name);
 }
 
-static cEntity *cEntity_Delete(cEntity *self, uint32_t flags) {
+static void cEntity_Free(cEntity *self) {
 	cEntity_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cEntity));
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* node joins the ring of head and counts in its numElems */
@@ -297,7 +294,7 @@ byte cEntity_SetList(cEntity *self, const char *list) {
 		return 0;
 	}
 	if (self->lLogic) {
-		LocalLogic_Delete(self->lLogic, 1);
+		LocalLogic_Free(self->lLogic);
 		self->lLogic = NULL;
 	}
 	/* the factory of the local logic: cdecl with the entity, the default returns NULL */
@@ -456,7 +453,7 @@ static const cEntityVtbl cEntity_vftable = {
 	.Update = cEntity_Update,
 	.Render = cEntity_Render,
 	.UpdateOff = cEntity_UpdateOff,
-	.Delete = cEntity_Delete,
+	.Free = cEntity_Free,
 	.GetClassName = cEntity_GetClassName,
 	.IsType = cEntity_IsType,
 	.GetPos = cEntity_GetPos,

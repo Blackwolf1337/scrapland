@@ -74,13 +74,10 @@ static void cStatusScorer_dtor(cStatusScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cStatusScorer_Delete(cScorerItem *base, byte flags) {
+static void cStatusScorer_Free(cScorerItem *base) {
 	cStatusScorer *self = (cStatusScorer *)base;
 	cStatusScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cStatusScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 #define SV(name, kind, field) {name, kind, offsetof(cStatusScorer, field)}
@@ -501,7 +498,7 @@ static const cScorerItemVtbl cStatusScorer_vftable = {
 	.Draw = cStatusScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cStatusScorer_Var,
-	.Delete = cStatusScorer_Delete,
+	.Free = cStatusScorer_Free,
 };
 
 static cGVar GVar_DangerLifeSound;

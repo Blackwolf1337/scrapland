@@ -23,14 +23,11 @@ void *cAIBankDirector_ctor(void *mem, cEntity *e, int *arg) {
 }
 
 /* AIBankDirector.c, AIBankMaster.c */
-static cAI *cAIBankDirector_Delete(cAI *elem, byte flags) {
+static void cAIBankDirector_Free(cAI *elem) {
 	cAIBankDirector *self = (cAIBankDirector *)elem;
 	self->base.vftable = CAIBANKDIRECTOR_VFTABLE;
 	cAIChar_dtor(&self->base);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cAIBankDirector));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 void cAIBank_CheckAttack(cAI *elem) {
@@ -124,7 +121,7 @@ byte cAIBank_SetStateIntern(cAI *elem, int state, ...) {
 
 /* the vtable of cAIBankDirector */
 static const cAICharVtbl cAIBankDirector_vftable = {
-	.base.base.Delete = cAIBankDirector_Delete,
+	.base.base.Free = cAIBankDirector_Free,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
 	.base.base.Draw = cAIChar_Draw,

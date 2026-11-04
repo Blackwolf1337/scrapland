@@ -34,13 +34,10 @@ void Logic_NativeNop(cAbstractFile *params) {
 	(void)params;
 }
 
-static cEnemiesLocalLogic *cEnemiesLocalLogic_Delete(cEnemiesLocalLogic *self, byte flags) {
+static void cEnemiesLocalLogic_Free(cEnemiesLocalLogic *self) {
 	self->vftable = CENEMIESLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete(self);
 }
 
 static void Enemies_Chase(cAIVehicle *ai, cEntity *t) {
@@ -196,7 +193,7 @@ static cLocalLogic *Enemies_MakeLogic(cEntity *e) {
 
 /* the vtable of cEnemiesLocalLogic */
 static const cLocalLogicVtbl cEnemiesLocalLogic_vftable = {
-	.Delete = cEnemiesLocalLogic_Delete,
+	.Free = cEnemiesLocalLogic_Free,
 	.GetName = cLocalLogic_GetName,
 	.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.VarI = cEnemiesLocalLogic_VarI,

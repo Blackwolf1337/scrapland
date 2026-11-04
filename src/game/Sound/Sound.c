@@ -182,7 +182,7 @@ void CSoundSys_dtor(CSoundSys *self) {
 static CSoundSys *CSoundSys_Destroy(CSoundSys *self, byte flags) {
 	self->vftable = CSOUNDSYS_VFTABLE;
 	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CSoundSys));
+		operator_delete(self);
 	}
 	return self;
 }

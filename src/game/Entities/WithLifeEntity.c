@@ -106,12 +106,9 @@ static void cVehicleAttack_dtor(cVehicleAttack *self) {
 }
 
 /* the deleting destructor (1000 bytes) */
-static cEntity *cWithLifeEntity_Delete(cEntity *self, uint32_t flags) {
+static void cWithLifeEntity_Free(cEntity *self) {
 	cWithLifeEntity_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CWITHLIFEENTITY_SIZE);
-	}
-	return self;
+	operator_delete(self);
 }
 
 void cWithLifeEntity_SetSndTime(cEntity *self, float t, int i) {
@@ -632,7 +629,7 @@ static const cWithLifeEntityVtbl cWithLifeEntity_vftable = {
 	.base.base.Update = cWithLifeEntity_Update,
 	.base.base.Render = cEntity_Render,
 	.base.base.UpdateOff = cWithLifeEntity_UpdateOff,
-	.base.base.Delete = cWithLifeEntity_Delete,
+	.base.base.Free = cWithLifeEntity_Free,
 	.base.base.GetClassName = cWithLifeEntity_GetClassName,
 	.base.base.IsType = cWithLifeEntity_IsType,
 	.base.base.GetPos = cObjEntity_GetPos,

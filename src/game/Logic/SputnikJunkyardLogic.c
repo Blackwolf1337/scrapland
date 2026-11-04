@@ -47,15 +47,12 @@ cSputnikJunkyardLocalLogic *cSputnikJunkyardLocalLogic_ctor(cSputnikJunkyardLoca
 static cEntity *g_SputnikPisser;
 
 /* SputnikJunkyardLogic.cpp: a cGenCharLocalLogic, states 7 the walk, 8 the laugh in front of the camera */
-static cLocalLogic *cSputnikJunkyardLocalLogic_Delete(cLocalLogic *base, byte flags) {
+static void cSputnikJunkyardLocalLogic_Free(cLocalLogic *base) {
 	cSputnikJunkyardLocalLogic *self = (cSputnikJunkyardLocalLogic *)base;
 	self->base.vftable = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
 	g_SputnikPisser = NULL;
 	cGenCharLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the native at the end of the laugh of the character of that name: back to the walk */
@@ -144,7 +141,7 @@ static byte cSputnikJunkyardLocalLogic_SetState(cLocalLogic *elem, int state, cE
 
 /* the vtable of cSputnikJunkyardLocalLogic */
 static const cGenCharLocalLogicVtbl cSputnikJunkyardLocalLogic_vftable = {
-	.base.base.Delete = cSputnikJunkyardLocalLogic_Delete,
+	.base.base.Free = cSputnikJunkyardLocalLogic_Free,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,

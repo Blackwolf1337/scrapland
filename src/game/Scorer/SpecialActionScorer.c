@@ -55,13 +55,10 @@ static void cSpecialActionScorer_dtor(cSpecialActionScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cSpecialActionScorer_Delete(cScorerItem *base, byte flags) {
+static void cSpecialActionScorer_Free(cScorerItem *base) {
 	cSpecialActionScorer *self = (cSpecialActionScorer *)base;
 	cSpecialActionScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cSpecialActionScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* an int variable of the table, by name */
@@ -805,7 +802,7 @@ static const cScorerItemVtbl cSpecialActionScorer_vftable = {
 	.Draw = cSpecialActionScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cSpecialActionScorer_Var,
-	.Delete = cSpecialActionScorer_Delete,
+	.Free = cSpecialActionScorer_Free,
 };
 
 cGVar GVar_GearTargetName;

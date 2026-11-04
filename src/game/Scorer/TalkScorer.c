@@ -81,13 +81,10 @@ static void cTalkScorer_dtor(cTalkScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cTalkScorer_Delete(cScorerItem *base, byte flags) {
+static void cTalkScorer_Free(cScorerItem *base) {
 	cTalkScorer *self = (cTalkScorer *)base;
 	cTalkScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cTalkScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the character of the player in front of its character (the use target), NULL if none */
@@ -341,7 +338,7 @@ static const cScorerItemVtbl cTalkScorer_vftable = {
 	.Draw = cTalkScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cTalkScorer_Var,
-	.Delete = cTalkScorer_Delete,
+	.Free = cTalkScorer_Free,
 };
 
 static cGVar GVar_MaxTalkLineSizePix;

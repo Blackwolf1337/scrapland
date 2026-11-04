@@ -23,7 +23,7 @@ void CGameLensFlare_dtor(void *self) {
 
 	if (lf) {
 		CLensFlare_dtor(lf);
-		operator_delete_sized(lf, sizeof(*lf));
+		operator_delete(lf);
 	}
 }
 

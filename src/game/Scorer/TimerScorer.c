@@ -37,13 +37,10 @@ static void cTimerScorer_dtor(cTimerScorer *self) {
 	cAbstractTextScorer_dtor(&self->base);
 }
 
-static cScorerItem *cTimerScorer_Delete(cScorerItem *base, byte flags) {
+static void cTimerScorer_Free(cScorerItem *base) {
 	cTimerScorer *self = (cTimerScorer *)base;
 	cTimerScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cTimerScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* set only: OnTimeExpired, OnTimeWarning, TimerType; then the text variables */
@@ -134,7 +131,7 @@ static const cScorerItemVtbl cTimerScorer_vftable = {
 	.Draw = cTimerScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cTimerScorer_Var,
-	.Delete = cTimerScorer_Delete,
+	.Free = cTimerScorer_Free,
 };
 
 static cGVar GVar_TimeToFinishCurrentMission;

@@ -34,8 +34,8 @@ static float *BmpFlt_Pixel(const CBmpFlt *b, uint32_t x, uint32_t y, int ch) {
 	return Img_Pixel(b, x, y, ch * sizeof(float));
 }
 
-static void BmpFlt_Free(CBmpFlt *b, int ch) {
-	Img_Free(b, ch * sizeof(float));
+static void BmpFlt_Free(CBmpFlt *b) {
+	Img_Free(b);
 }
 
 static void BmpFlt_Create(CBmpFlt *b, int width, int height, int ch) {
@@ -118,7 +118,7 @@ log:
 
 static int BmpFlt_Load(const txfKind_t *k, CBmpFlt *b, const char *name, void *extra, int nbytes) {
 	CHECK(name);
-	BmpFlt_Free(b, k->ch);
+	BmpFlt_Free(b);
 	if (!Img_IsExt(name, ".txf")) {
 		return -1;
 	}

@@ -230,21 +230,21 @@ static byte Engine_FinalCleanup(void) {
 	CPsaImage *w = g_Watermark;
 	if (w) {
 		CPsaImage_dtor(w);
-		operator_delete_sized(w, 0x44);
+		operator_delete(w);
 		g_Watermark = NULL;
 	}
 	Camera_SetCurrent(NULL);
 	CGameCamera *cam = g_ViewerCamera;
 	if (cam) {
 		CGameCamera_dtor(cam);
-		operator_delete_sized(cam, 0x3c);
+		operator_delete(cam);
 		g_ViewerCamera = NULL;
 	}
 	Fonts_Unload();
 	CWorld *m = g_World;
 	if (m) {
 		CWorld_dtor(m);
-		operator_delete_sized(m, sizeof(CWorld));
+		operator_delete(m);
 		g_World = NULL;
 	}
 	WorldInfo_Reset();

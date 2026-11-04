@@ -33,18 +33,15 @@ static void cChatScorer_dtor(cChatScorer *self) {
 	self->base.vftable = CCHATSCORER_VFTABLE;
 	if (img) {
 		CPsaImage_dtor(img);
-		operator_delete_sized(img, sizeof(CPsaImage));
+		operator_delete(img);
 	}
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cChatScorer_Delete(cScorerItem *base, byte flags) {
+static void cChatScorer_Free(cScorerItem *base) {
 	cChatScorer *self = (cChatScorer *)base;
 	cChatScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cChatScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static cChatMsg g_ChatMsgs[16];
@@ -104,7 +101,7 @@ static const cScorerItemVtbl cChatScorer_vftable = {
 	.Draw = cChatScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cChatScorer_Var,
-	.Delete = cChatScorer_Delete,
+	.Free = cChatScorer_Free,
 };
 
 static cGVar GVar_ChatMsgPersistence;

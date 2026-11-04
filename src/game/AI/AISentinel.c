@@ -21,14 +21,11 @@ void *cAISentinel_ctor(void *mem, cEntity *e, int *arg) {
 }
 
 /* AISentinel.c */
-static cAI *cAISentinel_Delete(cAI *base, byte flags) {
+static void cAISentinel_Free(cAI *base) {
 	cAISentinel *self = (cAISentinel *)base;
 	self->vftable = CAISENTINEL_VFTABLE;
 	cAIChar_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAISENTINEL_SIZE);
-	}
-	return base;
+	operator_delete(self);
 }
 
 static void cAISentinel_CheckActDist(cAI *base) {
@@ -62,7 +59,7 @@ static void cAISentinel_SetDists(cAI *elem) {
 
 /* the vtable of cAISentinel */
 static const cAICharVtbl cAISentinel_vftable = {
-	.base.base.Delete = cAISentinel_Delete,
+	.base.base.Free = cAISentinel_Free,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
 	.base.base.Draw = cAIChar_Draw,

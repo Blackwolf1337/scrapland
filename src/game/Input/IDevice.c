@@ -104,16 +104,13 @@ void cAbstractIDevice_dtor(cAbstractIDevice *self) {
 		Mem_Free(self->entries);
 	}
 	if (self->gvar) {
-		operator_delete_sized(self->gvar, sizeof(cFuncGvarDevices));
+		operator_delete(self->gvar);
 	}
 }
 
-static cAbstractIDevice *cAbstractIDevice_Delete(cAbstractIDevice *self, byte flags) {
+static void cAbstractIDevice_Free(cAbstractIDevice *self) {
 	cAbstractIDevice_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cAbstractIDevice));
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* the player, action and set waiting for the next key (SInput.ListenToDefine), -1 for none */
@@ -199,7 +196,7 @@ static void Input_CheckInactivity(float dt) {
 }
 
 static void InputDevices_Clear(cInputDevList *list) {
-	DList_Clear(list, DEV_NODE_SIZE);
+	DList_Clear(list);
 }
 
 /* the binding of player to action in set off every entry of every device; check spares the reserved entries */
@@ -631,7 +628,7 @@ void cAbstractIDevice_SetGameDefaultsNop(cAbstractIDevice *self) {
 
 /* the vtable of cAbstractIDevice */
 static const cAbstractIDeviceVtbl cAbstractIDevice_vftable = {
-	.Delete = cAbstractIDevice_Delete,
+	.Free = cAbstractIDevice_Free,
 	.SetDefaults = (void *)crt_purecall,
 	.SetGameDefaults = (void *)crt_purecall,
 	.GetName = (void *)crt_purecall,

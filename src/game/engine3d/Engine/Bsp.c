@@ -58,12 +58,12 @@ static inline float Uint_ToFloat(uint32_t u) {
 }
 
 static void CBmp_Assign(CBmp *self, const CBmp *orig) {
-	Img_Free(self, 4);
+	Img_Free(self);
 	CBmp_Resample(self, orig, 0xf);
 }
 
 void CBmpFlt2_Assign(CBmpFlt2 *self, const CBmpFlt2 *orig) {
-	Img_Free(self, 0xc);
+	Img_Free(self);
 	CBmpFlt2_Resample(self, orig, 0xf);
 }
 
@@ -207,11 +207,11 @@ void BspTri_dtor(BspTri *self) {
 	if (self->next) {
 		BspTri *next = self->next;
 		BspTri_dtor(next);
-		operator_delete_sized(next, sizeof(BspTri));
+		operator_delete(next);
 		self->next = NULL;
 	}
 	if (self->pTri) {
-		operator_delete_sized(self->pTri, 6);
+		operator_delete(self->pTri);
 		self->pTri = NULL;
 	}
 	CHECK(!self->pVertVB);
@@ -219,7 +219,7 @@ void BspTri_dtor(BspTri *self) {
 	if (self->region) {
 		BspRegion *r = self->region;
 		BspRegion_dtor(r);
-		operator_delete_sized(r, sizeof(BspRegion));
+		operator_delete(r);
 		self->region = NULL;
 	}
 	CVertList_Free(&self->lv3);
@@ -231,26 +231,26 @@ void BspTri_dtor(BspTri *self) {
 	if (self->names) {
 		BspName *nb = self->names;
 		BspName_dtor(nb);
-		operator_delete_sized(nb, sizeof(BspName));
+		operator_delete(nb);
 		self->names = NULL;
 	}
 	if (self->name) {
 		String_Set(&self->name, NULL);
 	}
-	Img_Free(&self->mask2, 4);
-	Img_Free(&self->mask, 4);
-	Img_Free(&self->rad2, 0xc);
-	Img_Free(&self->rad, 0xc);
-	Img_Free(&self->lightA, 0x10);
-	Img_Free(&self->light2, 0xc);
-	Img_Free(&self->light, 0xc);
+	Img_Free(&self->mask2);
+	Img_Free(&self->mask);
+	Img_Free(&self->rad2);
+	Img_Free(&self->rad);
+	Img_Free(&self->lightA);
+	Img_Free(&self->light2);
+	Img_Free(&self->light);
 }
 
 static void BspName_dtor(BspName *self) {
 	if (self->next) {
 		BspName *next = self->next;
 		BspName_dtor(next);
-		operator_delete_sized(next, sizeof(BspName));
+		operator_delete(next);
 		self->next = NULL;
 	}
 	if (self->name) {
@@ -263,11 +263,11 @@ static void BspNode_dtor(BspNode *self) {
 	if (self->next) {
 		BspNode *next = self->next;
 		BspNode_dtor(next);
-		operator_delete_sized(next, sizeof(BspNode));
+		operator_delete(next);
 		self->next = NULL;
 	}
 	if (self->pTri) {
-		operator_delete_sized(self->pTri, 6);
+		operator_delete(self->pTri);
 		self->pTri = NULL;
 	}
 	CHECK(!self->pVertVB);
@@ -279,17 +279,17 @@ static void BspLMap_dtor(BspLMap *self) {
 	if (self->next) {
 		BspLMap *next = self->next;
 		BspLMap_dtor(next);
-		operator_delete_sized(next, sizeof(BspLMap));
+		operator_delete(next);
 		self->next = NULL;
 	}
 	if (self->lmap2) {
 		BspLMap *l2 = self->lmap2;
 		BspLMap_dtor(l2);
-		operator_delete_sized(l2, sizeof(BspLMap));
+		operator_delete(l2);
 		self->lmap2 = NULL;
 	}
-	Img_Free(&self->info, 4);
-	Img_Free(&self->bmp, 4);
+	Img_Free(&self->info);
+	Img_Free(&self->bmp);
 }
 
 static int g_LmapInfo;
@@ -366,13 +366,13 @@ static void CBsp_dtor(CBsp *self) {
 	if (self->lights) {
 		void *lights = self->lights;
 		BspLights_dtor(lights);
-		operator_delete_sized(lights, 4);
+		operator_delete(lights);
 		self->lights = NULL;
 	}
 	if (self->nodes) {
 		BspNode *nodes = self->nodes;
 		BspNode_dtor(nodes);
-		operator_delete_sized(nodes, sizeof(BspNode));
+		operator_delete(nodes);
 		self->nodes = NULL;
 	}
 	Model_Destroy(&self->model, 0);
@@ -380,7 +380,7 @@ static void CBsp_dtor(CBsp *self) {
 		BspTri *tri = self->lists[i];
 		if (tri) {
 			BspTri_dtor(tri);
-			operator_delete_sized(tri, sizeof(BspTri));
+			operator_delete(tri);
 			self->lists[i] = NULL;
 		}
 	}
@@ -388,13 +388,13 @@ static void CBsp_dtor(CBsp *self) {
 	BspTri *tmp = g_BspTriTmp;
 	if (tmp) {
 		BspTri_dtor(tmp);
-		operator_delete_sized(tmp, sizeof(BspTri));
+		operator_delete(tmp);
 		g_BspTriTmp = NULL;
 	}
 	BspLMap *lm = g_BspLMaps;
 	if (lm) {
 		BspLMap_dtor(lm);
-		operator_delete_sized(lm, sizeof(BspLMap));
+		operator_delete(lm);
 		g_BspLMaps = NULL;
 	}
 	Table_FreeB4(&self->zones);
@@ -964,7 +964,7 @@ void Bsp_Free(void) {
 	CBsp *bsp = g_Bsp;
 	if (bsp) {
 		CBsp_dtor(bsp);
-		operator_delete_sized(bsp, sizeof(CBsp));
+		operator_delete(bsp);
 		g_Bsp = NULL;
 	}
 }
@@ -1418,11 +1418,11 @@ static byte BspLMap_Insert(BspTri *list, BspLMap *lm, int w, int h) {
 		tmp.img = New_Array((uint32_t)(w * h), 4);
 		CBmp_Fill(&tmp, color);
 		CBmp_Copy(&lm->info, x, y, &tmp, 0, 0, w, h, 0xf);
-		Img_Free(&tmp, 4);
+		Img_Free(&tmp);
 	}
 	list->LMap = lm;
-	Img_Free(&list->light, 0xc);
-	Img_Free(&list->light2, 0xc);
+	Img_Free(&list->light);
+	Img_Free(&list->light2);
 	float fx = (float)x, fy = (float)y;
 	for (BspTri *t = list; t; t = t->next) {
 		for (int i = 0; i < 3; i++) {
@@ -1444,7 +1444,7 @@ void CBsp_GroupMaps(CBsp *self) {
 	BspLMap *old = g_BspLMaps;
 	if (old) {
 		BspLMap_dtor(old);
-		operator_delete_sized(old, sizeof(BspLMap));
+		operator_delete(old);
 		g_BspLMaps = NULL;
 	}
 	g_BspLMaps = BspLMap_New();
@@ -1462,8 +1462,8 @@ void CBsp_GroupMaps(CBsp *self) {
 		E3D_DebugPrintf("agrupar mapas:  %d / %d   mem: %d Kb  \r", i + 1, self->num_lists, g_MemStats.bytes / 1024);
 		if (list->flags & BSPTRI_NOLMAP) {
 			CHECK(list->LMap == NULL);
-			Img_Free(&list->light, 0xc);
-			Img_Free(&list->light2, 0xc);
+			Img_Free(&list->light);
+			Img_Free(&list->light2);
 			continue;
 		}
 		BspTri_Rotate(list);
@@ -1500,10 +1500,10 @@ void CBsp_GroupMaps(CBsp *self) {
 			BspLMap_Save(NULL, &lm->info, scn->name, k, ".LMAP1.INFO.tga");
 			BspLMap_Save(NULL, &l2->info, scn->name, k, ".LMAP2.INFO.tga");
 		}
-		Img_Free(&lm->bmp, 4);
-		Img_Free(&l2->bmp, 4);
-		Img_Free(&lm->info, 4);
-		Img_Free(&l2->info, 4);
+		Img_Free(&lm->bmp);
+		Img_Free(&l2->bmp);
+		Img_Free(&lm->info);
+		Img_Free(&l2->info);
 		BspLMap_CreateMat(lm, name1, 1);
 		BspLMap_CreateMat(l2, name2, 2);
 	}
@@ -1556,7 +1556,7 @@ void CBsp_RemoveLights(CBsp *self) {
 		tri = self->lists[i];
 		if (tri) {
 			BspTri_dtor(tri);
-			operator_delete_sized(tri, sizeof(BspTri));
+			operator_delete(tri);
 			self->lists[i] = NULL;
 		}
 		self->lists[i] = self->lists[self->num_lists - 1];
@@ -1647,7 +1647,7 @@ static void BspTri_Rotate(BspTri *list) {
 		CBmpFlt2_Assign(&t, &list->light2);
 		CBmpFlt2_Rotate(&list->light2, &t);
 	}
-	Img_Free(&m, 4);
+	Img_Free(&m);
 	CBmp_Resample(&m, &list->mask, 0xf);
 	CBmp_Rotate(&list->mask, &m);
 	if (list->mask2.img) {
@@ -1662,8 +1662,8 @@ static void BspTri_Rotate(BspTri *list) {
 			tri->uvl[i][1] = fw / (float)g_ShadowMapTexX - u;
 		}
 	}
-	Img_Free(&t, 0xc);
-	Img_Free(&m, 4);
+	Img_Free(&t);
+	Img_Free(&m);
 }
 
 /* the qsort orders of the lists: for drawing (shader, material, page, sector) and for the sectors */
@@ -2272,7 +2272,7 @@ void CBsp_AdjustGamma(CBsp *self) {
 		CBmpFlt2_Scale(&list->light, g_ShadowMapBrightness);
 		CBmpFlt2_Gamma(&list->light, g_ShadowMapGamma, 1.0f);
 		if (g_LightmapDebugTex) {
-			Img_Free(&list->light2, 0xc);
+			Img_Free(&list->light2);
 			CBmpFlt2_Resample(&list->light2, &list->light, 0xf);
 			for (int k = 0; k < list->light2.height * list->light2.width; k++) {
 				float c[3] = { 0.0f, 0.0f, 0.0f };
@@ -2432,7 +2432,7 @@ void BspTri_CalcGlow(BspTri *list) {
 			}
 		}
 	}
-	Img_Free(&tex, 4);
+	Img_Free(&tex);
 }
 
 /* the share of samples rays from the sphere of radius r at p (moved along n) to the sphere of the light at light
@@ -2521,7 +2521,7 @@ static int CBsp_ReadEMI(CBsp *self) {
 	CFileIO *f = mem ? CFileIO_ctor(mem, path, "rb") : NULL;
 	if (f->error) {
 		CFileIO_dtor(f);
-		operator_delete_sized(f, sizeof(CFileIO));
+		operator_delete(f);
 		return -1;
 	}
 	Path_Part(dir, path, 3);
@@ -2561,7 +2561,7 @@ static int CBsp_ReadEMI(CBsp *self) {
 	BspLMap *old = g_BspLMaps;
 	if (old) {
 		BspLMap_dtor(old);
-		operator_delete_sized(old, sizeof(BspLMap));
+		operator_delete(old);
 		g_BspLMaps = NULL;
 	}
 	/* without light maps every page is the grey texture */
@@ -2628,7 +2628,7 @@ static int CBsp_ReadEMI(CBsp *self) {
 	CFileIO_Error(f, "EMI");
 	CHECK(!f->error);
 	CFileIO_dtor(f);
-	operator_delete_sized(f, sizeof(CFileIO));
+	operator_delete(f);
 	CHashTable_dtor(&tabLMap);
 	CHashTable_dtor(&tabMat);
 	return 0;

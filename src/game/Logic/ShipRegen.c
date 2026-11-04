@@ -41,7 +41,7 @@ cShipRegen *ShipRegen_ctor(cShipRegen *self) {
 
 void ShipRegen_dtor(cShipRegen *self) {
 	if (self->ship) {
-		operator_delete_sized(self->ship, sizeof(*self->ship));
+		operator_delete(self->ship);
 	}
 }
 

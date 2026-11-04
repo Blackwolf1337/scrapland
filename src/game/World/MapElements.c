@@ -51,12 +51,9 @@ void cMapElement_dtor(cMapElement *self) {
 	CGameModel_Reset(&self->Mod);
 }
 
-static cMapElement *cMapElement_Delete(cMapElement *self, byte flags) {
+static void cMapElement_Free(cMapElement *self) {
 	cMapElement_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete(self);
 }
 
 byte cMapElement_Init(cMapElement *self) {
@@ -85,7 +82,7 @@ void Elements_dtor(void *elements) {
 
 		*list = e->next;
 		if (e) {
-			MapElem_Delete(e, 1);
+			MapElem_Free(e);
 		}
 	}
 }
@@ -241,7 +238,7 @@ void cMapElement_UpdateNop(cMapElement *self, float dt) {
 
 /* the vtable of cMapElement */
 static const cMapElementVtbl cMapElement_vftable = {
-	.Delete = cMapElement_Delete,
+	.Free = cMapElement_Free,
 	.Init = cMapElement_Init,
 	.Update = cMapElement_Update,
 };

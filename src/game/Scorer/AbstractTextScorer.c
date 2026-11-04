@@ -114,7 +114,7 @@ static void TabText_dtor(cHintScorer *self, const cScorerItemVtbl *vftable) {
 	self->base.base.vftable = vftable;
 	if (img) {
 		CPsaImage_dtor(img);
-		operator_delete_sized(img, sizeof(CPsaImage));
+		operator_delete(img);
 	}
 	cAbstractTextScorer_dtor(&self->base);
 }
@@ -127,49 +127,34 @@ static void cLabelScorer_dtor(cLabelScorer *self) {
 	TabText_dtor(self, CLABELSCORER_VFTABLE);
 }
 
-static cScorerItem *cAbstractTextScorer_Delete(cScorerItem *base, byte flags) {
+static void cAbstractTextScorer_Free(cScorerItem *base) {
 	cAbstractTextScorer *self = (cAbstractTextScorer *)base;
 	cAbstractTextScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cAbstractTextScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
-static cScorerItem *cCreditsScorer_Delete(cScorerItem *base, byte flags) {
+static void cCreditsScorer_Free(cScorerItem *base) {
 	cCreditsScorer *self = (cCreditsScorer *)base;
 	cCreditsScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cCreditsScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
-static cScorerItem *cHintScorer_Delete(cScorerItem *base, byte flags) {
+static void cHintScorer_Free(cScorerItem *base) {
 	cHintScorer *self = (cHintScorer *)base;
 	cHintScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cHintScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
-static cScorerItem *cLabelScorer_Delete(cScorerItem *base, byte flags) {
+static void cLabelScorer_Free(cScorerItem *base) {
 	cLabelScorer *self = (cLabelScorer *)base;
 	cLabelScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cLabelScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
-static cScorerItem *cMsgScorer_Delete(cScorerItem *base, byte flags) {
+static void cMsgScorer_Free(cScorerItem *base) {
 	cMsgScorer *self = (cMsgScorer *)base;
 	cAbstractTextScorer_dtor(&self->base);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cMsgScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* vf01 of cScorerItem, kept in this file: no parameters */
@@ -323,7 +308,7 @@ static int cHintScorer_Var(cScorerItem *base, const char *name, int set, char **
 	if (s && !crt_stricmp(name, "TabSprite") && set) {
 		if (self->tab) {
 			CPsaImage_dtor(self->tab);
-			operator_delete_sized(self->tab, sizeof(CPsaImage));
+			operator_delete(self->tab);
 		}
 		CPsaImage *img = operator_new(sizeof(CPsaImage));
 		img = img ? CPsaImage_ctorFlags(img, *s, 0, self->tabBlend, 0x10060) : NULL;
@@ -598,7 +583,7 @@ static const cScorerItemVtbl cAbstractTextScorer_vftable = {
 	.Draw = (void *)crt_purecall,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cAbstractTextScorer_Var,
-	.Delete = cAbstractTextScorer_Delete,
+	.Free = cAbstractTextScorer_Free,
 };
 
 /* the vtable of cMsgScorer */
@@ -606,7 +591,7 @@ static const cScorerItemVtbl cMsgScorer_vftable = {
 	.Draw = cMsgScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cAbstractTextScorer_Var,
-	.Delete = cMsgScorer_Delete,
+	.Free = cMsgScorer_Free,
 };
 
 /* the vtable of cLabelScorer */
@@ -614,7 +599,7 @@ static const cScorerItemVtbl cLabelScorer_vftable = {
 	.Draw = cLabelScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cHintScorer_Var,
-	.Delete = cLabelScorer_Delete,
+	.Free = cLabelScorer_Free,
 };
 
 /* the vtable of cHintScorer */
@@ -622,7 +607,7 @@ static const cScorerItemVtbl cHintScorer_vftable = {
 	.Draw = cHintScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cHintScorer_Var,
-	.Delete = cHintScorer_Delete,
+	.Free = cHintScorer_Free,
 };
 
 /* the vtable of cCreditsScorer */
@@ -630,7 +615,7 @@ static const cScorerItemVtbl cCreditsScorer_vftable = {
 	.Draw = cCreditsScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cCreditsScorer_Var,
-	.Delete = cCreditsScorer_Delete,
+	.Free = cCreditsScorer_Free,
 };
 
 static cGVar GVar_MissionScorerName;

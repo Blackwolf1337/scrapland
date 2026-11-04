@@ -101,7 +101,7 @@ static void Node_Unref(CNode3D **slot) {
 
 static void Obj3D_Delete(IObject3D **slot) {
 	if (*slot) {
-		Object3D_Delete(*slot, 1);
+		Object3D_Free(*slot);
 		*slot = NULL;
 	}
 }
@@ -140,7 +140,7 @@ void CNode3D_dtor(CNode3D *self) {
 	self->vftable = CNODO3D_VFTABLE;
 	g_Node3DCount--;
 	CHECK(!self->prev && !self->next);
-	CNode3D_Free(self);
+	CNode3D_Release(self);
 	CHECK(!self->Refs);
 	if (self->name) {
 		String_Set(&self->name, NULL);
@@ -666,7 +666,7 @@ void CNode3D_SetNext(CNode3D *self, CNode3D *n) {
 	Node_Link(&self->next, n);
 }
 
-void CNode3D_Free(CNode3D *self) {
+void CNode3D_Release(CNode3D *self) {
 	CIniFile *ini;
 
 	self->Refs++;
@@ -676,7 +676,7 @@ void CNode3D_Free(CNode3D *self) {
 	ini = self->ini;
 	if (ini) {
 		CIniFile_dtor(ini);
-		operator_delete_sized(ini, sizeof(*ini));
+		operator_delete(ini);
 		self->ini = NULL;
 	}
 	self->Refs--;
@@ -833,7 +833,7 @@ static quat_t *CRotation_GetQuat(CRotation *self, quat_t *out) {
 
 /* the vtable of CNode3D */
 static const ObjRefVtbl CNode3D_vftable = {
-	.Delete = CNode3D_VecDelete,
+	.Free = CNode3D_Free,
 };
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -52,7 +52,7 @@ void DList_LinkLast(void *list, void *node) {
 }
 
 /* to the free list while it has room, else deleted */
-static void DList_Release(void *list, void *node, uint32_t size) {
+static void DList_Release(void *list, void *node) {
 	cDList *l = list;
 	cDListNode *n = node;
 
@@ -61,11 +61,11 @@ static void DList_Release(void *list, void *node, uint32_t size) {
 		l->numFree++;
 		l->freeNodes = n;
 	} else {
-		operator_delete_sized(n, size);
+		operator_delete(n);
 	}
 }
 
-void DList_RemoveHead(void *list, uint32_t size) {
+void DList_RemoveHead(void *list) {
 	cDList *l = list;
 	cDListNode *p = l->head;
 
@@ -80,11 +80,11 @@ void DList_RemoveHead(void *list, uint32_t size) {
 		p->prev->next = p->next;
 		p->next->prev = p->prev;
 	}
-	DList_Release(l, p, size);
+	DList_Release(l, p);
 	l->count--;
 }
 
-void DList_RemoveIter(void *list, uint32_t size) {
+void DList_RemoveIter(void *list) {
 	cDList *l = list;
 	cDListNode *cur = l->iter;
 
@@ -92,14 +92,14 @@ void DList_RemoveIter(void *list, uint32_t size) {
 		return;
 	}
 	if (l->head == cur) {
-		DList_RemoveHead(l, size);
+		DList_RemoveHead(l);
 		l->iter = l->head;
 		return;
 	}
 	cDListNode *next = cur->next;
 	cur->prev->next = next;
 	cur->next->prev = cur->prev;
-	DList_Release(l, cur, size);
+	DList_Release(l, cur);
 	if (next == l->head) {
 		next = NULL;
 	}
@@ -107,19 +107,19 @@ void DList_RemoveIter(void *list, uint32_t size) {
 	l->iter = next;
 }
 
-void DList_Clear(void *list, uint32_t size) {
+void DList_Clear(void *list) {
 	while (((cDList *)list)->head) {
-		DList_RemoveHead(list, size);
+		DList_RemoveHead(list);
 	}
 }
 
-void DList_FreePool(void *list, uint32_t size) {
+void DList_FreePool(void *list) {
 	cDList *l = list;
 
 	while (l->freeNodes) {
 		cDListNode *n = l->freeNodes;
 		l->freeNodes = n->next;
-		operator_delete_sized(n, size);
+		operator_delete(n);
 	}
 	l->numFree = 0;
 }

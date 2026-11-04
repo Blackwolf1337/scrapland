@@ -17,14 +17,11 @@ cBertoLocalLogic *cBertoLocalLogic_ctor(cBertoLocalLogic *self, cEntity *parent)
 	return self;
 }
 
-static cLocalLogic *cBertoLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static void cBertoLocalLogic_Free(cLocalLogic *elem) {
 	cBertoLocalLogic *self = (cBertoLocalLogic *)elem;
 	self->base.base.base.vftable = CBERTOLOCALLOGIC_VFTABLE;
 	cFunctionaryLocalLogic_dtor(&self->base);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 /* the desktop of the name linked, when the functionary has none (also of Betty) */
@@ -80,7 +77,7 @@ static vec3_t *cBertoLocalLogic_GetWorkAng(cLocalLogic *elem, vec3_t *out) {
 
 /* the vtable of cBertoLocalLogic */
 static const cFunctionaryLocalLogicVtbl cBertoLocalLogic_vftable = {
-	.base.base.base.Delete = cBertoLocalLogic_Delete,
+	.base.base.base.Free = cBertoLocalLogic_Free,
 	.base.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.base.AcceptsArrow = cFunctionaryLocalLogic_AcceptsArrow,
 	.base.base.base.VarI = cFunctionaryLocalLogic_VarI,

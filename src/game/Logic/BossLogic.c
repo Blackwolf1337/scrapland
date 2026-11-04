@@ -35,14 +35,11 @@ cBossLocalLogic *cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity *parent) {
 	return self;
 }
 
-static cLocalLogic *cBossLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static void cBossLocalLogic_Free(cLocalLogic *elem) {
 	cBossLocalLogic *self = (cBossLocalLogic *)elem;
 	self->base.base.vftable = CBOSSLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(&self->base);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 /* vf33 (0x84): at work, the end of the work */
@@ -151,7 +148,7 @@ static byte cBossLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 
 /* the vtable of cBossLocalLogic */
 static const cGenCharLocalLogicVtbl cBossLocalLogic_vftable = {
-	.base.base.Delete = cBossLocalLogic_Delete,
+	.base.base.Free = cBossLocalLogic_Free,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,

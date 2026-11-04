@@ -69,13 +69,10 @@ void cAICharControl2D_dtor(cAICharControl2D *self) {
 	cAICharControl_dtor(self);
 }
 
-static cAICharControl2D *cAICharControl2D_Delete(cAICharControl2D *self, byte flags) {
+static void cAICharControl2D_Free(cAICharControl2D *self) {
 	self->vftable = CAICHARCONTROL2D_VFTABLE;
 	cAICharControl_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAICHARCONTROL_SIZE);
-	}
-	return self;
+	operator_delete(self);
 }
 
 void cAICharControl2D_Draw(cAICharControl2D *self) {
@@ -1122,7 +1119,7 @@ byte cAICharControl2D_TryStrafe(cAICharControl2D *self, int side, cEntity *hitEn
 
 /* the vtable of cAICharControl2D */
 static const cAICharControl2DVtbl cAICharControl2D_vftable = {
-	.base.Delete = cAICharControl2D_Delete,
+	.base.Free = cAICharControl2D_Free,
 	.base.Draw = cAICharControl2D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,
 	.base.Busy = cAICharControl_Busy,

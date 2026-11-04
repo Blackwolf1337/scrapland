@@ -91,7 +91,7 @@ static int g_ArrowPoolCount;
 static void Arrow_ToPool(cArrowModel *m) {
 	if (g_ArrowPoolCount > ARROW_POOL_MAX) {
 		CGameModel_Reset(&m->model);
-		operator_delete_sized(m, sizeof(cArrowModel));
+		operator_delete(m);
 		return;
 	}
 	m->next = g_ArrowPool;
@@ -215,7 +215,7 @@ void GameModelList_Free(void) {
 		do {
 			cArrowModel *next = m->next;
 			CGameModel_Reset(&m->model);
-			operator_delete_sized(m, sizeof(cArrowModel));
+			operator_delete(m);
 			g_ArrowPoolCount--;
 			m = next;
 			g_ArrowPool = m;
@@ -410,14 +410,14 @@ static void cArrowIndicator_ReleaseMission(cArrowIndicator *self) {
 		cArrowGlow *g = self->glow;
 		if (g) {
 			CGameParticles_Release(&g->base);
-			operator_delete_sized(g, sizeof(cArrowGlow));
+			operator_delete(g);
 		}
 		self->glow = NULL;
 	}
 	CGameModel *m = self->mission;
 	if (m) {
 		CGameModel_Reset(m);
-		operator_delete_sized(m, sizeof(CGameModel));
+		operator_delete(m);
 	}
 	self->mission = NULL;
 }

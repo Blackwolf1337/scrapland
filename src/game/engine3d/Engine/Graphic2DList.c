@@ -12,7 +12,7 @@ CGraphic2DList *CGraphic2DList_ctor(CGraphic2DList *self) {
 static void Graphic2D_Delete(CGraphic2D *graphic) {
 	if (graphic) {
 		CGraphic2D_dtor(graphic);
-		operator_delete_sized(graphic, sizeof(CGraphic2D));
+		operator_delete(graphic);
 	}
 }
 
@@ -52,5 +52,5 @@ static void CGraphic2DList_Remove(CGraphic2DList *self, CGraphic2D *graphic) {
 	}
 	node->next = NULL;
 	node->graphic = NULL;
-	operator_delete_sized(node, sizeof(*node));
+	operator_delete(node);
 }

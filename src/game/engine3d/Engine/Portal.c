@@ -37,13 +37,10 @@ static void CPortal_dtor(CPortal *self) {
 	CObjBase3D_dtor((CObjBase3D *)self);
 }
 
-static IObject3D *CPortal_Delete(IObject3D *base, byte flags) {
+static void CPortal_Free(IObject3D *base) {
 	CPortal *self = (CPortal *)base;
 	CPortal_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CPortal));
-	}
-	return base;
+	operator_delete(self);
 }
 
 void CPortal_LinkZones(CPortal *self) {
@@ -328,7 +325,7 @@ byte CPortal_ClipRect(CPortal *self, box_t *rect) {
 
 /* the vtable of CPortal */
 static const IObject3DVtbl CPortal_vftable = {
-	.Delete = CPortal_Delete,
+	.Free = CPortal_Free,
 	.Update = IObject3D_UpdateNop,
 	.Render = CPortal_Render,
 	.InitD3D = IObject3D_InitD3DNop,

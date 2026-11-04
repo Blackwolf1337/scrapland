@@ -41,7 +41,7 @@ static void InfItemList_Release(cInfItemList *list, cInfItemNode *n) {
 		return;
 	}
 	cString_dtor(&n->item.name);
-	operator_delete_sized(n, sizeof(*n));
+	operator_delete(n);
 }
 
 static void InfItemList_Clear(cInfItemList *list) {
@@ -67,7 +67,7 @@ static void InfItemList_FreePool(cInfItemList *list) {
 	while ((p = list->freeNodes) != NULL) {
 		list->freeNodes = p->next;
 		cString_dtor(&p->item.name);
-		operator_delete_sized(p, sizeof(*p));
+		operator_delete(p);
 	}
 	list->numFree = 0;
 }

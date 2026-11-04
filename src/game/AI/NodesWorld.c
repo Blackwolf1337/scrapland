@@ -29,25 +29,25 @@ static const CNodesWorldVtbl CNodesWorld_vftable;
 /* ---- Global/DList.h ---- */
 
 void NWIntList_Clear(cNWIntList *list) {
-	DList_Clear(list, sizeof(cNWIntNode));
+	DList_Clear(list);
 }
 
 void NWVecList_Clear(cNWVecList *list) {
-	DList_Clear(list, sizeof(cNWVecNode));
+	DList_Clear(list);
 }
 
 static void NWTriList_Clear(cNWTriList *list) {
-	DList_Clear(list, sizeof(cNWTriNode));
+	DList_Clear(list);
 }
 
 void NWIntList_Free(cNWIntList *list) {
 	NWIntList_Clear(list);
-	DList_FreePool(list, sizeof(cNWIntNode));
+	DList_FreePool(list);
 }
 
 void NWVecList_Free(cNWVecList *list) {
 	NWVecList_Clear(list);
-	DList_FreePool(list, sizeof(cNWVecNode));
+	DList_FreePool(list);
 }
 
 void NWIntList_Add(cNWIntList *list, void *const *data) {
@@ -127,11 +127,11 @@ static void NWSegList_Append(cNWSegList *list, const vec3_t *seg) {
 }
 
 void NWIntList_RemoveHead(cNWIntList *list) {
-	DList_RemoveHead(list, sizeof(cNWIntNode));
+	DList_RemoveHead(list);
 }
 
 void NWVecList_RemoveHead(cNWVecList *list) {
-	DList_RemoveHead(list, sizeof(cNWVecNode));
+	DList_RemoveHead(list);
 }
 
 /* to the free list while it has room, else the links and the node deleted */
@@ -144,7 +144,7 @@ static void NWPointList_Release(cNWPointList *list, cNWPointNode *node) {
 	}
 	if (node) {
 		NWIntList_Free(&node->links);
-		operator_delete_sized(node, sizeof(*node));
+		operator_delete(node);
 	}
 }
 
@@ -211,16 +211,13 @@ static void CNodesWorld_dtor(CNodesWorld *self) {
 	self->sup.vftable = CNODESWORLD_VFTABLE;
 	CNodesWorldSup_FreeGraph(self);
 	NWTriList_Clear(&self->tris);
-	DList_FreePool(&self->tris, sizeof(cNWTriNode));
+	DList_FreePool(&self->tris);
 	CNodesWorldSup_dtor(self);
 }
 
-static CNodesWorld *CNodesWorld_Delete(CNodesWorld *self, byte flags) {
+static void CNodesWorld_Free(CNodesWorld *self) {
 	CNodesWorld_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete(self);
 }
 
 void NW_LevelPath(char *path, const CNodesWorld *self, const char *file) {
@@ -1746,7 +1743,7 @@ static byte CNodesWorld_AnalyzeMap(CNodesWorld *self, const vec3_t *init, const 
 
 /* the vtable of CNodesWorld */
 static const CNodesWorldVtbl CNodesWorld_vftable = {
-	.Delete = CNodesWorld_Delete,
+	.Free = CNodesWorld_Free,
 	.GetBox = CNodesWorldSup_GetBox,
 	.LoadFiles = CNodesWorldSup_LoadGraph,
 	.LoadGraph = CNodesWorld_LoadGraph,

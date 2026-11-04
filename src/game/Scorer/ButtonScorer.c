@@ -104,7 +104,7 @@ cButtonScorer *cButtonScorer_ctor(cButtonScorer *self) {
 static void Button_FreeImage(CPsaImage **img) {
 	if (*img) {
 		CPsaImage_dtor(*img);
-		operator_delete_sized(*img, sizeof(CPsaImage));
+		operator_delete(*img);
 		*img = NULL;
 	}
 }
@@ -118,13 +118,10 @@ static void cButtonScorer_dtor(cButtonScorer *self) {
 	cSpriteScorer_dtor(&self->base);
 }
 
-static cScorerItem *cButtonScorer_Delete(cScorerItem *base, byte flags) {
+static void cButtonScorer_Free(cScorerItem *base) {
 	cButtonScorer *self = (cButtonScorer *)base;
 	cButtonScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cButtonScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* ---- the text ---- */
@@ -177,7 +174,7 @@ static int cButtonScorer_WrapLines(cButtonScorer *self, char **out, const char *
 static void cButtonScorer_SetFile(cButtonScorer *self, uint32_t flags, const char *name) {
 	if (self->focusImg) {
 		CPsaImage_dtor(self->focusImg);
-		operator_delete_sized(self->focusImg, sizeof(CPsaImage));
+		operator_delete(self->focusImg);
 	}
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	img = img ? CPsaImage_ctorFlags(img, name, 0, self->highLightBlend,
@@ -266,7 +263,7 @@ static int cButtonScorer_SetText(cButtonScorer *self, const char *text) {
 		result++;
 		line = nl + 1;
 	}
-	operator_delete_sized(buf, 1);
+	operator_delete(buf);
 	return result;
 }
 
@@ -759,6 +756,6 @@ static const cSpriteScorerVtbl cButtonScorer_vftable = {
 	.base.Draw = cButtonScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cButtonScorer_Var,
-	.base.Delete = cButtonScorer_Delete,
+	.base.Free = cButtonScorer_Free,
 	.SetMultiSprite = cSpriteScorer_SetMultiSprite,
 };

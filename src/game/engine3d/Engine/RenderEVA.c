@@ -130,7 +130,7 @@ static int RenderEVA_CreateParticles(void) {
 static int RenderEVA_FreeParticles(void) {
 	if (g_PartTri) {
 		/* a scalar delete of the array in the original */
-		operator_delete_sized(g_PartTri, sizeof(uint16_t));
+		operator_delete(g_PartTri);
 		g_PartTri = NULL;
 	}
 	Buf_Release(&g_PartVB);

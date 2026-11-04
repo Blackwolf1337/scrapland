@@ -31,7 +31,7 @@ CFont *CFont_ctor(CFont *self, const char *name, void *unused) {
 void CFont_dtor(CFont *self) {
 	if (self->Font) {
 		CFont3_dtor(self->Font);
-		operator_delete_sized(self->Font, sizeof(CFont3));
+		operator_delete(self->Font);
 		self->Font = NULL;
 	}
 }
@@ -43,7 +43,7 @@ byte CFont_Build(CFont *self, const char *name, int size) {
 		f = CFont3_ctor(f, name, NULL, 0, 0xff, (float)size, 1, 0, 1.0f);
 		if (f) {
 			CFont3_dtor(f);
-			operator_delete_sized(f, sizeof(CFont3));
+			operator_delete(f);
 		}
 	}
 	return 1;

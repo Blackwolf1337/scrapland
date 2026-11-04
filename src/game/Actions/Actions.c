@@ -71,14 +71,14 @@ static void cAction_dtor(cAction *self) {
 		self->events = ev->next;
 		cPy_Function_dtor(&ev->func);
 		cString_dtor(&ev->name);
-		operator_delete_sized(ev, sizeof(*ev));
+		operator_delete(ev);
 	}
 	cString_dtor(&self->name);
 }
 
 void cAction_Free(cAction *self) {
 	cAction_dtor(self);
-	operator_delete_sized(self, sizeof(*self));
+	operator_delete(self);
 }
 
 /* a new event at time (after the ones before it), as the lastEvent */

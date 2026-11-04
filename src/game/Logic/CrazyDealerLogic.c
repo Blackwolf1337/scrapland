@@ -13,14 +13,11 @@ cCrazyDealerLocalLogic *cCrazyDealerLocalLogic_ctor(cCrazyDealerLocalLogic *self
 	return self;
 }
 
-static cLocalLogic *cCrazyDealerLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static void cCrazyDealerLocalLogic_Free(cLocalLogic *elem) {
 	cCrazyDealerLocalLogic *self = (cCrazyDealerLocalLogic *)elem;
 	self->base.vftable = CCRAZYDEALERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 /* vf17 */
@@ -31,7 +28,7 @@ static void cCrazyDealerLocalLogic_Update(cLocalLogic *base, float dt) {
 
 /* the vtable of cCrazyDealerLocalLogic */
 static const cGenCharLocalLogicVtbl cCrazyDealerLocalLogic_vftable = {
-	.base.base.Delete = cCrazyDealerLocalLogic_Delete,
+	.base.base.Free = cCrazyDealerLocalLogic_Free,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,

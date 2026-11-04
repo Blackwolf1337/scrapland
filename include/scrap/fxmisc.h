@@ -26,7 +26,7 @@
 /* Debris.cpp (rva 0x204940..) */
 /* the destructor of the base class: the vtable of cObjElementAbstract */
 void cObjElement_dtor(void *self);
-cObjElementFX *cObjElementAbstract_Delete(cObjElementFX *base, byte flags);
+void cObjElementAbstract_Free(cObjElementFX *base);
 /* the debris moved by its velocities over dt */
 void cDebris_Move(cDebris *self, float dt);
 /* the first idle debris of the system, else a new one */

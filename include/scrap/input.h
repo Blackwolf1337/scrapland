@@ -168,7 +168,7 @@ typedef struct cDevEntry {
 
 typedef struct cAbstractIDevice cAbstractIDevice;
 typedef struct cAbstractIDeviceVtbl {
-	cAbstractIDevice *(*Delete)(cAbstractIDevice *self, byte flags);	/* 0x00 */
+	void (*Free)(cAbstractIDevice *self);	/* 0x00 */
 	void(*SetDefaults)(cAbstractIDevice *self);				/* 0x04 menu and debug sets */
 	void(*SetGameDefaults)(cAbstractIDevice *self);			/* 0x08 character and vehicle */
 	const char *(*GetName)(cAbstractIDevice *self);			/* 0x0c */

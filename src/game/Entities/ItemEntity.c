@@ -96,13 +96,10 @@ static void cItemEntity_dtor(cItemEntity *self) {
 	cObjEntity_dtor(&self->base);
 }
 
-static cEntity *cItemEntity_Delete(cEntity *base, uint32_t flags) {
+static void cItemEntity_Free(cEntity *base) {
 	cItemEntity *self = (cItemEntity *)base;
 	cItemEntity_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CITEMENTITY_SIZE);
-	}
-	return base;
+	operator_delete(self);
 }
 
 static void cItemEntity_Touch(cEntity *elem, cEntity *other, const vec3_t *point, const vec3_t *dir) {
@@ -638,7 +635,7 @@ static const cObjEntityVtbl cItemEntity_vftable = {
 	.base.Update = cItemEntity_Update,
 	.base.Render = cEntity_Render,
 	.base.UpdateOff = cObjEntity_UpdateOff,
-	.base.Delete = cItemEntity_Delete,
+	.base.Free = cItemEntity_Free,
 	.base.GetClassName = cItemEntity_GetClassName,
 	.base.IsType = cItemEntity_IsType,
 	.base.GetPos = cObjEntity_GetPos,

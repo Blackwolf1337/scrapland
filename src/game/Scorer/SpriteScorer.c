@@ -67,13 +67,10 @@ void cSpriteScorer_dtor(cSpriteScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cSpriteScorer_Delete(cScorerItem *base, byte flags) {
+static void cSpriteScorer_Free(cScorerItem *base) {
 	cSpriteScorer *self = (cSpriteScorer *)base;
 	cSpriteScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cSpriteScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the image of the file with flags (the 0x40000 flag when Discardable) */
@@ -234,13 +231,10 @@ cGradientScorer *cGradientScorer_ctor(cGradientScorer *self) {
 	return self;
 }
 
-static cScorerItem *cGradientScorer_Delete(cScorerItem *base, byte flags) {
+static void cGradientScorer_Free(cScorerItem *base) {
 	cGradientScorer *self = (cGradientScorer *)base;
 	cSpriteScorer_dtor(&self->base);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cGradientScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* ColorSelected, Red, Green, Blue, Alpha of the selected corner, then the sprite variables */
@@ -290,7 +284,7 @@ static const cSpriteScorerVtbl cSpriteScorer_vftable = {
 	.base.Draw = cSpriteScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cSpriteScorer_Var,
-	.base.Delete = cSpriteScorer_Delete,
+	.base.Free = cSpriteScorer_Free,
 	.SetMultiSprite = cSpriteScorer_SetMultiSprite,
 };
 
@@ -299,6 +293,6 @@ static const cSpriteScorerVtbl cGradientScorer_vftable = {
 	.base.Draw = cGradientScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cGradientScorer_Var,
-	.base.Delete = cGradientScorer_Delete,
+	.base.Free = cGradientScorer_Free,
 	.SetMultiSprite = cSpriteScorer_SetMultiSprite,
 };

@@ -53,7 +53,7 @@ typedef struct cAStarItem {
 
 typedef struct CAStarSup CAStarSup;
 typedef struct CAStarVtbl {
-	CAStarSup *(*Delete)(CAStarSup *self, byte flags);					/* 0x00 */
+	void (*Free)(CAStarSup *self);					/* 0x00 */
 	/* the spheres of the closed and open nodes (g_AStarDrawMode) and of the ends; color not used */
 	void(*Draw)(CAStarSup *self, uint32_t color);					/* 0x04 */
 	HashTable *(*GetTable)(CAStarSup *self);					/* 0x08 */
@@ -83,8 +83,8 @@ typedef struct CAStarVtbl {
 } CAStarVtbl;
 
 /* calls through the slots of CAStarVtbl */
-static inline CAStarSup *AStar_Delete(void *self, byte flags) {
-	return VT(CAStarVtbl, self)->Delete(self, flags);
+static inline void AStar_Free(void *self) {
+	VT(CAStarVtbl, self)->Free(self);
 }
 
 static inline byte AStar_AddElem(void *self, const ElemAStar *e) {

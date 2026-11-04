@@ -129,10 +129,10 @@ byte Surface_SaveShot(void *surf) {
 		crt_fclose(f);
 	}
 	if (row) {
-		operator_delete_sized(row, 1);
+		operator_delete(row);
 	}
 	if (rgb) {
-		operator_delete_sized(rgb, 1);
+		operator_delete(rgb);
 	}
 	return 1;
 }

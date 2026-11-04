@@ -17,7 +17,7 @@ void CGameTrail_dtor(CGameTrail *self) {
 	CTrail *t = self->trailsys;
 	if (t) {
 		CTrail_dtor(t);
-		operator_delete_sized(t, sizeof(CTrail));
+		operator_delete(t);
 	}
 }
 

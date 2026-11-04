@@ -14,14 +14,11 @@ cBankMasterLocalLogic *cBankMasterLocalLogic_ctor(cBankMasterLocalLogic *self, c
 	return self;
 }
 
-static cLocalLogic *cBankMasterLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static void cBankMasterLocalLogic_Free(cLocalLogic *elem) {
 	cBankMasterLocalLogic *self = (cBankMasterLocalLogic *)elem;
 	self->base.vftable = CBANKMASTERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 byte Logic_Chance(cBaseLocalLogic *l, cEntity *attacker, float chance) {
@@ -64,7 +61,7 @@ static void cBankMasterLocalLogic_OnAttack(cLocalLogic *elem, cEntity *attacker,
 
 /* the vtable of cBankMasterLocalLogic */
 static const cGenCharLocalLogicVtbl cBankMasterLocalLogic_vftable = {
-	.base.base.Delete = cBankMasterLocalLogic_Delete,
+	.base.base.Free = cBankMasterLocalLogic_Free,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,

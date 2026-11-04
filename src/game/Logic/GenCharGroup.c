@@ -32,7 +32,7 @@ void cGenCharGroup_dtor(cGenCharGroup *self) {
 
 	if (m) {
 		cMessengers_dtor(m);
-		operator_delete_sized(m, 0x14);
+		operator_delete(m);
 	}
 }
 

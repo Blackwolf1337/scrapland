@@ -104,13 +104,10 @@ static void cEmbeddedFXVehicle_dtor(cEmbeddedFXVehicle *self) {
 	cEmbeddedFX_dtor((cEmbeddedFX *)self);
 }
 
-static cEmbeddedFXVehicleSub *cEmbeddedFXVehicle_Delete(cEmbeddedFXVehicleSub *base, byte flags) {
+static void cEmbeddedFXVehicle_Free(cEmbeddedFXVehicleSub *base) {
 	cEmbeddedFXVehicle *self = (cEmbeddedFXVehicle *)base;
 	cEmbeddedFXVehicle_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static byte cEmbeddedFXVehicle_Init(cEmbeddedFXVehicleSub *base) {
@@ -145,7 +142,7 @@ static void cFXVehicleSirens_dtor(cFXVehicleSirens *self);
 static void Sirens_Delete(cEmbeddedFXVehicle *self) {
 	cFXVehicleSirens_dtor(self->sirens);
 	if (self->sirens) {
-		operator_delete_sized(self->sirens, sizeof(cFXVehicleSirens));
+		operator_delete(self->sirens);
 		self->sirens = NULL;
 	}
 }
@@ -154,7 +151,7 @@ static void Other_Delete(cEmbeddedFXVehicle *self) {
 	if (self->other) {
 		EFXVeh_Done(self->other);
 		if (self->other) {
-			EFXVeh_Delete(self->other, 1);
+			EFXVeh_Free(self->other);
 			self->other = NULL;
 		}
 	}
@@ -553,13 +550,10 @@ static void cEmbeddedFXVehicleProbe_dtor(cEmbeddedFXVehicleProbe *self) {
 	cEmbeddedFX_dtor((cEmbeddedFX *)self);
 }
 
-static cEmbeddedFXVehicleSub *cEmbeddedFXVehicleProbe_Delete(cEmbeddedFXVehicleSub *base, byte flags) {
+static void cEmbeddedFXVehicleProbe_Free(cEmbeddedFXVehicleSub *base) {
 	cEmbeddedFXVehicleProbe *self = (cEmbeddedFXVehicleProbe *)base;
 	cEmbeddedFXVehicleProbe_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the particles of the model, CHECKed */
@@ -771,13 +765,10 @@ static void cEmbeddedFXVehicleVote_dtor(cEmbeddedFXVehicleVote *self) {
 	cEmbeddedFX_dtor((cEmbeddedFX *)self);
 }
 
-static cEmbeddedFXVehicleSub *cEmbeddedFXVehicleVote_Delete(cEmbeddedFXVehicleSub *base, byte flags) {
+static void cEmbeddedFXVehicleVote_Free(cEmbeddedFXVehicleSub *base) {
 	cEmbeddedFXVehicleVote *self = (cEmbeddedFXVehicleVote *)base;
 	cEmbeddedFXVehicleVote_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static byte cEmbeddedFXVehicleVote_Init(cEmbeddedFXVehicleSub *base) {
@@ -975,7 +966,7 @@ static void cEmbeddedFXVehicleSub_ConfigureNop(cEmbeddedFXVehicleSub *self, floa
 
 /* the vtable of cEmbeddedFXVehicle */
 static const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicle_vftable = {
-	.Delete = cEmbeddedFXVehicle_Delete,
+	.Free = cEmbeddedFXVehicle_Free,
 	.Init = cEmbeddedFXVehicle_Init,
 	.Done = cEmbeddedFXVehicle_Done,
 	.Configure = cEmbeddedFXVehicle_Configure,
@@ -985,7 +976,7 @@ static const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicle_vftable = {
 
 /* the vtable of cEmbeddedFXVehicleProbe */
 static const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicleProbe_vftable = {
-	.Delete = cEmbeddedFXVehicleProbe_Delete,
+	.Free = cEmbeddedFXVehicleProbe_Free,
 	.Init = cEmbeddedFXVehicleProbe_Init,
 	.Done = cEmbeddedFXVehicleSub_DoneNop,
 	.Configure = cEmbeddedFXVehicleSub_ConfigureNop,
@@ -995,7 +986,7 @@ static const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicleProbe_vftable = {
 
 /* the vtable of cEmbeddedFXVehicleVote */
 static const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicleVote_vftable = {
-	.Delete = cEmbeddedFXVehicleVote_Delete,
+	.Free = cEmbeddedFXVehicleVote_Free,
 	.Init = cEmbeddedFXVehicleVote_Init,
 	.Done = cEmbeddedFXVehicleVote_Done,
 	.Configure = cEmbeddedFXVehicleSub_ConfigureNop,

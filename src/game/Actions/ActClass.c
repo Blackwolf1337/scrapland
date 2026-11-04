@@ -24,7 +24,7 @@ static void StrNode_Release(cStringList *list, cStringNode *node) {
 		list->freeNodes = node;
 	} else {
 		cString_dtor(&node->str);
-		operator_delete_sized(node, sizeof(*node));
+		operator_delete(node);
 	}
 }
 
@@ -75,7 +75,7 @@ void cStringList_FreePool(cStringList *list) {
 	while ((p = list->freeNodes) != NULL) {
 		list->freeNodes = p->next;
 		cString_dtor(&p->str);
-		operator_delete_sized(p, sizeof(*p));
+		operator_delete(p);
 	}
 	list->numFree = 0;
 }
@@ -213,7 +213,7 @@ static void cActClass_dtor(cActClass *self) {
 
 void cActClass_Free(cActClass *self) {
 	cActClass_dtor(self);
-	operator_delete_sized(self, sizeof(*self));
+	operator_delete(self);
 }
 
 cAction *cActClass_CreateAction(cActClass *self, const char *name) {

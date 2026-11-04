@@ -52,7 +52,7 @@ static CSoundSys *CSoundXBox_Destroy(CSoundSys *base, byte flags) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	CSoundXBox_dtor(self);
 	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CSoundXBox));
+		operator_delete(self);
 	}
 	return base;
 }
@@ -159,7 +159,7 @@ static void CSoundXBox_Load(CSoundXBox *self, const char *name, int unused) {
 	Snd_MemoryStats(&mem1, &memMax);
 	Con_Verbosef("SOUND MEMORY: %d (%+d) %s, %d Hz\n", (int)(mem1 >> 10), (int)(mem1 - mem0) / 1024, path, v.freq);
 	if (data) {
-		operator_delete_sized(data, 0);
+		operator_delete(data);
 	}
 	cFilePack_dtor(&f);
 	CHECK(!self->sounds.locked);

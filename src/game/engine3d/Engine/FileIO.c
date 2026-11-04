@@ -24,7 +24,7 @@ static const char *File_LogKind(byte pack) {
 /* cFilePack_Destroy without the vtable: close was already called */
 static void FileIO_Delete(cAbstractFile *f) {
 	cFilePack_dtor((cFilePack *)f);
-	operator_delete_sized(f, sizeof(cFilePack));
+	operator_delete(f);
 }
 
 CFileIO *CFileIO_ctor(CFileIO *self, const char *name, const char *mode) {
@@ -49,7 +49,7 @@ void CFileIO_dtor(CFileIO *self) {
 
 void Ptr_Delete(void **p) {
 	if (*p) {
-		operator_delete_sized(*p, 0);
+		operator_delete(*p);
 		*p = NULL;
 	}
 }
@@ -402,7 +402,7 @@ static void CFileIO_PopBlock(CFileIO *self, const char *id) {
 	CHECK(self->block);
 	CHECK(self->block->id == IdToDword(id));
 	cBlockFile *prev = self->block->prev;
-	operator_delete_sized(self->block, sizeof(cBlockFile));
+	operator_delete(self->block);
 	self->block = prev;
 }
 

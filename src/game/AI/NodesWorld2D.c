@@ -31,7 +31,7 @@ int crt_chmod(const char *path, int mode);
 /* the destructor of a region: its points emptied and their free nodes deleted (on the region) */
 static void NW2DRegion_dtor(cNW2DRegion *r) {
 	DListVec3_Clear(&r->points);
-	DList_FreePool(&r->points, sizeof(cNWVecNode));
+	DList_FreePool(&r->points);
 }
 
 void NW2DRegionList_Add(cNW2DRegionList *list, const cNW2DRegion *r) {
@@ -60,7 +60,7 @@ static void NW2DRegionList_Release(cNW2DRegionList *list, cNW2DRegionNode *node)
 	}
 	if (node) {
 		NW2DRegion_dtor(&node->r);
-		operator_delete_sized(node, sizeof(*node));
+		operator_delete(node);
 	}
 }
 
@@ -86,7 +86,7 @@ static void NW2DRegionList_FreePool(cNW2DRegionList *list) {
 		cNW2DRegionNode *p = list->freeNodes;
 		list->freeNodes = p->next;
 		NW2DRegion_dtor(&p->r);
-		operator_delete_sized(p, sizeof(*p));
+		operator_delete(p);
 	}
 	list->numFree = 0;
 }
@@ -119,13 +119,10 @@ static void CNodesWorld2D_dtor(CNodesWorld2D *self) {
 	CNodesWorldSup_dtor(w);
 }
 
-static CNodesWorld *CNodesWorld2D_Delete(CNodesWorld *base, byte flags) {
+static void CNodesWorld2D_Free(CNodesWorld *base) {
 	CNodesWorld2D *self = (CNodesWorld2D *)base;
 	CNodesWorld2D_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* <name>/AI/Path2DAI of the base class */
@@ -1493,7 +1490,7 @@ void CNodesWorld2D_Draw(CNodesWorld2D *self) {
 
 /* the vtable of CNodesWorld2D */
 static const CNodesWorldVtbl CNodesWorld2D_vftable = {
-	.Delete = CNodesWorld2D_Delete,
+	.Free = CNodesWorld2D_Free,
 	.GetBox = CNodesWorldSup_GetBox,
 	.LoadFiles = CNodesWorldSup_LoadGraph,
 	.LoadGraph = CNodesWorld2D_LoadGraph,

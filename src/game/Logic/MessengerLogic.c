@@ -336,14 +336,11 @@ cMessengerLocalLogic *cMessengerLocalLogic_ctor(cMessengerLocalLogic *self, cEnt
 	return self;
 }
 
-static cLocalLogic *cMessengerLocalLogic_Delete(cLocalLogic *base, byte flags) {
+static void cMessengerLocalLogic_Free(cLocalLogic *base) {
 	cMessengerLocalLogic *self = (cMessengerLocalLogic *)base;
 	MSG_VT(self) = CMESSENGERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* vf28 and vf27: the same walk in alert and relaxed */
@@ -405,7 +402,7 @@ static void cMessengerLocalLogic_GoTo(cLocalLogic *elem, cAIChar *ai, cEntity *e
 
 /* the vtable of cMessengerLocalLogic */
 static const cGenCharLocalLogicVtbl cMessengerLocalLogic_vftable = {
-	.base.base.Delete = cMessengerLocalLogic_Delete,
+	.base.base.Free = cMessengerLocalLogic_Free,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,

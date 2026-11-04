@@ -19,14 +19,11 @@ void *cAIMayor_ctor(void *mem, cEntity *e, int *arg) {
 }
 
 /* AIMayor.c */
-static cAI *cAIMayor_Delete(cAI *base, byte flags) {
+static void cAIMayor_Free(cAI *base) {
 	cAIMayor *self = (cAIMayor *)base;
 	self->vftable = CAIMAYOR_VFTABLE;
 	cAIChar_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAIMAYOR_SIZE);
-	}
-	return base;
+	operator_delete(self);
 }
 
 static void cAIMayor_CheckActDist(cAI *base) {
@@ -52,7 +49,7 @@ static void cAIMayor_SetDists(cAI *base) {
 
 /* the vtable of cAIMayor */
 static const cAICharVtbl cAIMayor_vftable = {
-	.base.base.Delete = cAIMayor_Delete,
+	.base.base.Free = cAIMayor_Free,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
 	.base.base.Draw = cAIChar_Draw,

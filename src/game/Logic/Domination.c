@@ -260,7 +260,7 @@ cDominationEnemiesLogic *cDominationEnemiesLogic_ctor(cDominationEnemiesLogic *s
 void cDominationEnemiesLogic_dtor(cDominationEnemiesLogic *self) {
 	self->base.vftable = CDOMINATIONENEMIESLOGIC_VFTABLE;
 	if (self->side) {
-		operator_delete_sized(self->side, sizeof(*self->side));
+		operator_delete(self->side);
 	}
 	cDominationLogic_dtor(&self->base);
 }
@@ -271,21 +271,15 @@ void cDominationLogic_dtor(cDominationLogic *self) {
 	NameTable_Clear(&self->assigned);
 }
 
-static cDominationLogic *cDominationEnemiesLogic_Delete(cDominationLogic *base, byte flags) {
+static void cDominationEnemiesLogic_Free(cDominationLogic *base) {
 	cDominationEnemiesLogic *self = (cDominationEnemiesLogic *)base;
 	cDominationEnemiesLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
-static cDominationLogic *cDominationLogic_Delete(cDominationLogic *self, byte flags) {
+static void cDominationLogic_Free(cDominationLogic *self) {
 	cDominationLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, 0x10);
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* the zone nearest to pos that is free (state 0), or held by a side (1) when that one is nearer; -1 for none */
@@ -329,7 +323,7 @@ int cDominationLogic_GetTeamTrue(cDominationLogic *self) {
 
 /* the vtable of cDominationLogic */
 static const cDominationLogicVtbl cDominationLogic_vftable = {
-	.Delete = cDominationLogic_Delete,
+	.Free = cDominationLogic_Free,
 	.Init = (void *)crt_purecall,
 	.Update = (void *)crt_purecall,
 	.GetList = (void *)crt_purecall,
@@ -338,7 +332,7 @@ static const cDominationLogicVtbl cDominationLogic_vftable = {
 
 /* the vtable of cDominationEnemiesLogic */
 static const cDominationLogicVtbl cDominationEnemiesLogic_vftable = {
-	.Delete = cDominationEnemiesLogic_Delete,
+	.Free = cDominationEnemiesLogic_Free,
 	.Init = cDominationEnemiesLogic_Init,
 	.Update = cDominationEnemiesLogic_Update,
 	.GetList = cDominationEnemiesLogic_GetList,

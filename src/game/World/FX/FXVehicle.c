@@ -278,64 +278,64 @@ static void cObjElementFXVehicleSputnik_dtor(void *self) {
 
 /* ---- deleting destructors (vf00) ---- */
 
-static cObjElementFX *cObjElementFXFiredDebris_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXFiredDebris_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXFiredDebris_dtor(self);
-	return FXObj_Free(self, flags, sizeof(cObjElementFXFiredDebris));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXFiredEntity_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXFiredEntity_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXFiredEntity_dtor(self);
-	return FXObj_Free(self, flags, sizeof(cObjElementFXFiredEntity));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXSmokeDebris_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXSmokeDebris_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXSmokeDebris_dtor(self);
-	return FXObj_Free(self, flags, sizeof(cObjElementFXSmokeDebris));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXVehicleAccelerator_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXVehicleAccelerator_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXVehicleAccelerator_dtor(self);
-	return FXObj_Free(self, flags, sizeof(cObjElementFXVehicleAccelerator));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXVehicleDamage_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXVehicleDamage_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXVehicleDamage_dtor(self);
-	return FXObj_Free(self, flags, sizeof(cObjElementFXVehicleDamage));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXVehicleDeathTrail_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXVehicleDeathTrail_Free(cObjElementFX *base) {
 	cObjElementFXVehicleDeathTrail *self = (cObjElementFXVehicleDeathTrail *)base;
 	cObjElementFXVehicleDeathTrail_dtor(self);
-	return FXObj_Free(self, flags, sizeof(*self));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXVehicleEMI_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXVehicleEMI_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXVehicleEMI_dtor(self);
-	return FXObj_Free(self, flags, sizeof(cObjElementFXVehicleEMI));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXVehicleFire_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXVehicleFire_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXVehicleFire_dtor(self);
-	return FXObj_Free(self, flags, sizeof(cObjElementFXVehicleFire));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXVehicleSpawn_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXVehicleSpawn_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXVehicleSpawn_dtor(self);
-	return FXObj_Free(self, flags, sizeof(cObjElementFXVehicleSpawn));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXVehicleSputnik_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXVehicleSputnik_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXVehicleSputnik_dtor(self);
-	return FXObj_Free(self, flags, sizeof(cObjElementFXVehicleSputnik));
+	operator_delete(self);
 }
 
 /* ---- Update (vf01) ---- */
@@ -3322,7 +3322,7 @@ void FXVehicle_RenderAttached(void *element) {
 
 /* the vtable of cObjElementFXVehicleDamage */
 static const cObjElementFXVtbl cObjElementFXVehicleDamage_vftable = {
-	.Delete = cObjElementFXVehicleDamage_Delete,
+	.Free = cObjElementFXVehicleDamage_Free,
 	.Update = cObjElementFXVehicleDamage_Update,
 	.IsAlive = cObjElementFXVehicleDamage_IsAlive,
 	.Start = cObjElementFXVehicleDamage_Start,
@@ -3331,7 +3331,7 @@ static const cObjElementFXVtbl cObjElementFXVehicleDamage_vftable = {
 
 /* the vtable of cObjElementFXVehicleFire */
 static const cObjElementFXVtbl cObjElementFXVehicleFire_vftable = {
-	.Delete = cObjElementFXVehicleFire_Delete,
+	.Free = cObjElementFXVehicleFire_Free,
 	.Update = cObjElementFXVehicleFire_Update,
 	.IsAlive = cObjElementFXVehicleFire_IsAlive,
 	.Start = cObjElementFXVehicleFire_Start,
@@ -3340,7 +3340,7 @@ static const cObjElementFXVtbl cObjElementFXVehicleFire_vftable = {
 
 /* the vtable of cObjElementFXFiredEntity */
 static const cObjElementFXVtbl cObjElementFXFiredEntity_vftable = {
-	.Delete = cObjElementFXFiredEntity_Delete,
+	.Free = cObjElementFXFiredEntity_Free,
 	.Update = cObjElementFXFiredEntity_Update,
 	.IsAlive = cObjElementFXFiredEntity_IsAlive,
 	.Start = cObjElementFXFiredEntity_Start,
@@ -3349,7 +3349,7 @@ static const cObjElementFXVtbl cObjElementFXFiredEntity_vftable = {
 
 /* the vtable of cObjElementFXVehicleEMI */
 static const cObjElementFXVtbl cObjElementFXVehicleEMI_vftable = {
-	.Delete = cObjElementFXVehicleEMI_Delete,
+	.Free = cObjElementFXVehicleEMI_Free,
 	.Update = cObjElementFXVehicleEMI_Update,
 	.IsAlive = cObjElementFXVehicleEMI_IsAlive,
 	.Start = cObjElementFXVehicleEMI_Start,
@@ -3358,7 +3358,7 @@ static const cObjElementFXVtbl cObjElementFXVehicleEMI_vftable = {
 
 /* the vtable of cObjElementFXFiredDebris */
 static const cObjElementFXVtbl cObjElementFXFiredDebris_vftable = {
-	.Delete = cObjElementFXFiredDebris_Delete,
+	.Free = cObjElementFXFiredDebris_Free,
 	.Update = cObjElementFXFiredDebris_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXFiredDebris_Start,
@@ -3367,7 +3367,7 @@ static const cObjElementFXVtbl cObjElementFXFiredDebris_vftable = {
 
 /* the vtable of cObjElementFXSmokeDebris */
 static const cObjElementFXVtbl cObjElementFXSmokeDebris_vftable = {
-	.Delete = cObjElementFXSmokeDebris_Delete,
+	.Free = cObjElementFXSmokeDebris_Free,
 	.Update = cObjElementFXSmokeDebris_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXSmokeDebris_Start,
@@ -3376,7 +3376,7 @@ static const cObjElementFXVtbl cObjElementFXSmokeDebris_vftable = {
 
 /* the vtable of cObjElementFXVehicleDeathTrail */
 static const cObjElementFXVtbl cObjElementFXVehicleDeathTrail_vftable = {
-	.Delete = cObjElementFXVehicleDeathTrail_Delete,
+	.Free = cObjElementFXVehicleDeathTrail_Free,
 	.Update = cObjElementFXDevastatorShoot_Update,
 	.IsAlive = cObjElementFXDevastatorShoot_IsAlive,
 	.Start = cObjElementFXVehicleDeathTrail_Start,
@@ -3385,7 +3385,7 @@ static const cObjElementFXVtbl cObjElementFXVehicleDeathTrail_vftable = {
 
 /* the vtable of cObjElementFXVehicleSputnik */
 static const cObjElementFXVtbl cObjElementFXVehicleSputnik_vftable = {
-	.Delete = cObjElementFXVehicleSputnik_Delete,
+	.Free = cObjElementFXVehicleSputnik_Free,
 	.Update = cObjElementFXVehicleSputnik_Update,
 	.IsAlive = cObjElementFXVehicleSputnik_IsAlive,
 	.Start = cObjElementFXVehicleSputnik_Start,
@@ -3394,7 +3394,7 @@ static const cObjElementFXVtbl cObjElementFXVehicleSputnik_vftable = {
 
 /* the vtable of cObjElementFXVehicleSpawn */
 static const cObjElementFXVtbl cObjElementFXVehicleSpawn_vftable = {
-	.Delete = cObjElementFXVehicleSpawn_Delete,
+	.Free = cObjElementFXVehicleSpawn_Free,
 	.Update = cObjElementFXVehicleSpawn_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXVehicleSpawn_Start,
@@ -3403,7 +3403,7 @@ static const cObjElementFXVtbl cObjElementFXVehicleSpawn_vftable = {
 
 /* the vtable of cObjElementFXVehicleAccelerator */
 static const cObjElementFXVtbl cObjElementFXVehicleAccelerator_vftable = {
-	.Delete = cObjElementFXVehicleAccelerator_Delete,
+	.Free = cObjElementFXVehicleAccelerator_Free,
 	.Update = cObjElementFXVehicleAccelerator_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXVehicleAccelerator_Start,

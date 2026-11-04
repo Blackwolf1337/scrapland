@@ -50,7 +50,7 @@ cCircuitScorer *cCircuitScorer_ctor(cCircuitScorer *self) {
 static void Circuit_FreeImage(CPsaImage **img) {
 	if (*img) {
 		CPsaImage_dtor(*img);
-		operator_delete_sized(*img, sizeof(CPsaImage));
+		operator_delete(*img);
 		*img = NULL;
 	}
 }
@@ -63,13 +63,10 @@ static void cCircuitScorer_dtor(cCircuitScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cCircuitScorer_Delete(cScorerItem *base, byte flags) {
+static void cCircuitScorer_Free(cScorerItem *base) {
 	cCircuitScorer *self = (cCircuitScorer *)base;
 	cCircuitScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cCircuitScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the paths of the board in pixels of the picture: the count and the points */
@@ -132,7 +129,7 @@ static void CircuitScorer_InitPaths(void) {
 static CPsaImage *Circuit_NewImage(CPsaImage *old, const char *name, int blend, uint32_t flags) {
 	if (old) {
 		CPsaImage_dtor(old);
-		operator_delete_sized(old, sizeof(CPsaImage));
+		operator_delete(old);
 	}
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	img = img ? CPsaImage_ctorFlags(img, name, 0, blend, flags) : NULL;
@@ -148,7 +145,7 @@ static void cCircuitScorer_SetCircuitFile(cCircuitScorer *self, uint32_t flags, 
 static void cCircuitScorer_SetFlareFile(cCircuitScorer *self, uint32_t flags, const char *name) {
 	if (self->flare) {
 		CPsaImage_dtor(self->flare);
-		operator_delete_sized(self->flare, sizeof(CPsaImage));
+		operator_delete(self->flare);
 	}
 	if (!strcmp(name, "2D/white.tga")) {
 		flags &= 0xffbf;
@@ -305,7 +302,7 @@ static const cScorerItemVtbl cCircuitScorer_vftable = {
 	.Draw = cCircuitScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cCircuitScorer_Var,
-	.Delete = cCircuitScorer_Delete,
+	.Free = cCircuitScorer_Free,
 };
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

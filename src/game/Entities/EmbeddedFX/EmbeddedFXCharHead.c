@@ -28,13 +28,10 @@ static void cEmbeddedFXHeadCrazyGambler_dtor(cEmbeddedFXHeadCrazyGambler *self) 
 	cEmbeddedFX_dtor((cEmbeddedFX *)self);
 }
 
-static cEmbeddedFX *cEmbeddedFXHeadCrazyGambler_Delete(cEmbeddedFX *base, byte flags) {
+static void cEmbeddedFXHeadCrazyGambler_Free(cEmbeddedFX *base) {
 	cEmbeddedFXHeadCrazyGambler *self = (cEmbeddedFXHeadCrazyGambler *)base;
 	cEmbeddedFXHeadCrazyGambler_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* every 0.02 s two glows on 12 vertices of the hair node */
@@ -103,7 +100,7 @@ cEmbeddedFX *EmbeddedFXCharHead_Create(CGameModel *head) {
 
 /* the vtable of cEmbeddedFXHeadCrazyGambler */
 static const cEmbeddedFXVtbl cEmbeddedFXHeadCrazyGambler_vftable = {
-	.Delete = cEmbeddedFXHeadCrazyGambler_Delete,
+	.Free = cEmbeddedFXHeadCrazyGambler_Free,
 	.Reset = cEmbeddedFX_ResetTrue,
 	.Release = cEmbeddedFXHeadCrazyGambler_Release,
 	.Update = cEmbeddedFX_UpdateNop,

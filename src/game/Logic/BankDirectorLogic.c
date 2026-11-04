@@ -17,14 +17,11 @@ cBankDirectorLocalLogic *cBankDirectorLocalLogic_ctor(cBankDirectorLocalLogic *s
 	return self;
 }
 
-static cLocalLogic *cBankDirectorLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static void cBankDirectorLocalLogic_Free(cLocalLogic *elem) {
 	cBankDirectorLocalLogic *self = (cBankDirectorLocalLogic *)elem;
 	self->base.vftable = CBANKDIRECTORLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 cEntity *Logic_RichUsrInView(cGenCharLocalLogic *self, cEntity *usr) {
@@ -110,7 +107,7 @@ void cBankDirectorLocalLogic_Update(cLocalLogic *base, float dt) {
 
 /* the vtable of cBankDirectorLocalLogic */
 static const cGenCharLocalLogicVtbl cBankDirectorLocalLogic_vftable = {
-	.base.base.Delete = cBankDirectorLocalLogic_Delete,
+	.base.base.Free = cBankDirectorLocalLogic_Free,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,

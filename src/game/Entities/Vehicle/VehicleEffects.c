@@ -300,7 +300,7 @@ void cVehicleEffects_Init(cVehicleEffects *self) {
 		cVehicleTrails *t = self->trails;
 		if (t) {
 			crt_eh_vector_dtor(t->trails, sizeof(CGameTrail), VEFF_TRAILS, (void *)CGameTrail_dtor);
-			operator_delete_sized(t, sizeof(*t));
+			operator_delete(t);
 			self->trails = NULL;
 		}
 	} else {
@@ -333,7 +333,7 @@ void cVehicleEffects_Init(cVehicleEffects *self) {
 	cVehicleTubes *t = self->tubes;
 	if (t) {
 		crt_eh_vector_dtor(t->particles, sizeof(CGameParticles), VEFF_TUBES, (void *)CGameParticles_Release);
-		operator_delete_sized(t, sizeof(*t));
+		operator_delete(t);
 		self->tubes = NULL;
 	}
 }
@@ -565,13 +565,13 @@ void cVehicleEffects_dtor(cVehicleEffects *self) {
 	cVehicleTrails *t = self->trails;
 	if (t) {
 		crt_eh_vector_dtor(t->trails, sizeof(CGameTrail), VEFF_TRAILS, (void *)CGameTrail_dtor);
-		operator_delete_sized(t, sizeof(*t));
+		operator_delete(t);
 		self->trails = NULL;
 	}
 	cVehicleTubes *u = self->tubes;
 	if (u) {
 		crt_eh_vector_dtor(u->particles, sizeof(CGameParticles), VEFF_TUBES, (void *)CGameParticles_Release);
-		operator_delete_sized(u, sizeof(*u));
+		operator_delete(u);
 		self->tubes = NULL;
 	}
 }

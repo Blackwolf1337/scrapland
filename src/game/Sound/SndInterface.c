@@ -92,7 +92,7 @@ static void cSndInterface_Free(cSndInterface *self) {
 		cSndItem *it = self->snds[i];
 		if (it) {
 			cSound_Stop(&it->sound);
-			operator_delete_sized(it, sizeof(cSndItem));
+			operator_delete(it);
 		}
 	}
 	Mem_Free(self->snds);
@@ -161,7 +161,7 @@ void cSndInterface_SetSound(cSndInterface *self, int i, const char *name) {
 	cSndItem *it = self->snds[i];
 	if (it) {
 		cSound_Stop(&it->sound);
-		operator_delete_sized(it, sizeof(cSndItem));
+		operator_delete(it);
 	}
 	if (name && *name) {
 		it = operator_new(sizeof(cSndItem));

@@ -73,7 +73,7 @@ cUserNetManager *cUserNetManager_ctor(cUserNetManager *self, cNetClient *client,
 
 void cNetClient_dtor(cNetClient *self) {
 	if (self->user) {
-		NetMan_Delete(self->user, 1);
+		NetMan_Free(self->user);
 	}
 	while (self->head) {
 		NetClient_PopHead(self);
@@ -85,12 +85,9 @@ void cUserNetManager_dtor(cUserNetManager *self) {
 	self->client->user = NULL;
 }
 
-static cUserNetManager *cUserNetManager_Delete(cUserNetManager *self, byte flags) {
+static void cUserNetManager_Free(cUserNetManager *self) {
 	cUserNetManager_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete(self);
 }
 
 static cNetMsgNode *cNetClient_NewMsg(cNetClient *self, const void *data, uint16_t size) {
@@ -262,7 +259,7 @@ void MsgMan_SetSendDelay(uint32_t ms) {
 
 /* the vtable of cUserNetManager */
 static const cUserNetManagerVtbl cUserNetManager_vftable = {
-	.Delete = cUserNetManager_Delete,
+	.Free = cUserNetManager_Free,
 	.OnReceive = (void *)crt_purecall,
 	.Send = (void *)crt_purecall,
 	.SetLocalData = cUserNetManager_Nop,

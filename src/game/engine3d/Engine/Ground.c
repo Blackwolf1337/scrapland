@@ -98,15 +98,12 @@ static void Table_WriteC(CFileIO *f, CTable *t) {
 	Table_Write(f, t, 0xc);
 }
 
-/* the floor nodes: an array of CNode3D after its count */
+/* the floor nodes: an array of CNode3D of new[], its count before it */
 static void Table_DeleteObjs(void *p) {
-	ObjRef *first = p;
+	uint32_t *mem = (uint32_t *)p - 1;
 
-	if (((int *)p)[-1]) {
-		ObjRef_Delete(first, 3);
-	} else {
-		operator_delete_array((int *)p - 1);
-	}
+	crt_eh_vector_dtor(p, sizeof(CNode3D), *mem, (void *)CNode3D_dtor);
+	operator_delete_array(mem);
 }
 
 /* elements with a vector deleting destructor (vftable[0]) or plain new[]; the table empty after */
@@ -156,7 +153,7 @@ void CCollideQuad_dtor(CCollideQuad *self) {
 	CCollideQuad *next = self->next;
 	if (next) {
 		CCollideQuad_dtor(next);
-		operator_delete_sized(next, sizeof(*next));
+		operator_delete(next);
 		self->next = NULL;
 	}
 	if (self->Mesh) {
@@ -167,22 +164,11 @@ void CCollideQuad_dtor(CCollideQuad *self) {
 	Table_Free((CTable *)&self->nTri);
 }
 
-/* the vector deleting destructor of the floor nodes (CNode3D, 0xfc bytes) */
-ObjRef *CNode3D_VecDelete(ObjRef *base, byte flags) {
+/* the deleting destructor of the floor nodes (CNode3D) */
+void CNode3D_Free(ObjRef *base) {
 	void *self = (void *)base;
-	if (flags & 2) {
-		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(CNode3D), *mem, (void *)CNode3D_dtor);
-		if (flags & 1) {
-			operator_delete_array(mem);
-		}
-		return (ObjRef *)mem;
-	}
 	CNode3D_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CNode3D));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static CHeights *CHeights_ctor(CHeights *self) {
@@ -219,7 +205,7 @@ static void CHeights_dtor(CHeights *self) {
 	if (self->outSector) {
 		CCollideQuad *q = self->outSector;
 		CCollideQuad_dtor(q);
-		operator_delete_sized(q, sizeof(*q));
+		operator_delete(q);
 		self->outSector = NULL;
 	}
 	CHECK(self->CollideMesh1.Refs == 0);
@@ -280,13 +266,10 @@ static void CGround_dtor(CGround *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-static IObject3D *CGround_Delete(IObject3D *base, byte flags) {
+static void CGround_Free(IObject3D *base) {
 	CGround *self = (CGround *)base;
 	CGround_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the device objects of the objects of the nodes */
@@ -470,7 +453,7 @@ static CFileIO *Ground_Open(const char *name, const char *mode) {
 
 static void Ground_Close(CFileIO *f) {
 	CFileIO_dtor(f);
-	operator_delete_sized(f, sizeof(*f));
+	operator_delete(f);
 }
 
 /* the .amc file of the scene name: 0 loaded, 1 older than the scene, -1 failed */
@@ -1514,7 +1497,7 @@ void CGround_RemoveMesh(CGround *self, CCollideMesh *mesh, int a2, int a3) {
 				q->next = next->next;
 				next->next = NULL;
 				CCollideQuad_dtor(next);
-				operator_delete_sized(next, sizeof(*next));
+				operator_delete(next);
 			}
 			q = q->next;
 		}
@@ -1596,10 +1579,10 @@ static void CGround_BuildSectorMesh(CGround *self, CCollideMesh *mesh, int mode,
 		CTriMesh_AddD3D(m, d3d, 1);
 		CGround_AddMesh(self, mesh, m, NULL, NULL);
 		if (d3d) {
-			Object3D_Delete(d3d, 1);
+			Object3D_Free(d3d);
 		}
 	}
-	Object3D_Delete(m, 1);
+	Object3D_Free(m);
 }
 
 /* the grid and the meshes of all sectors from the floor nodes; empty cells get CollideMesh1 */
@@ -2270,7 +2253,7 @@ static void CGround_DrawDebug(CGround *self) {
 
 /* the vtable of CGround */
 static const IObject3DVtbl CGround_vftable = {
-	.Delete = CGround_Delete,
+	.Free = CGround_Free,
 	.Update = IObject3D_UpdateNop,
 	.Render = CGround_Draw,
 	.InitD3D = CGround_InitD3D,

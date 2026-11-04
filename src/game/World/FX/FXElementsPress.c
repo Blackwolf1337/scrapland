@@ -84,31 +84,22 @@ static void cFXElementsMentalControllerMainFX_dtor(cFXElementsMentalControllerMa
 	cMapElement_dtor(&self->base);
 }
 
-static cMapElement *cFXElementsMentalController_Delete(cMapElement *base, byte flags) {
+static void cFXElementsMentalController_Free(cMapElement *base) {
 	cFXElementsMentalController *self = (cFXElementsMentalController *)base;
 	cFXElementsMentalController_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
-static cMapElement *cFXElementsMentalControllerDamageFX_Delete(cMapElement *base, byte flags) {
+static void cFXElementsMentalControllerDamageFX_Free(cMapElement *base) {
 	cFXElementsMentalControllerDamageFX *self = (cFXElementsMentalControllerDamageFX *)base;
 	cFXElementsMentalControllerDamageFX_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
-static cMapElement *cFXElementsMentalControllerMainFX_Delete(cMapElement *base, byte flags) {
+static void cFXElementsMentalControllerMainFX_Free(cMapElement *base) {
 	cFXElementsMentalControllerMainFX *self = (cFXElementsMentalControllerMainFX *)base;
 	cFXElementsMentalControllerMainFX_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* every trail cleared, every particle out */
@@ -1009,21 +1000,21 @@ void FXElementsPress_Create(void) {
 
 /* the vtable of cFXElementsMentalController */
 static const cMapElementVtbl cFXElementsMentalController_vftable = {
-	.Delete = cFXElementsMentalController_Delete,
+	.Free = cFXElementsMentalController_Free,
 	.Init = cFXElementsMentalController_Init,
 	.Update = cFXElementsMentalController_Update,
 };
 
 /* the vtable of cFXElementsMentalControllerDamageFX */
 static const cMapElementVtbl cFXElementsMentalControllerDamageFX_vftable = {
-	.Delete = cFXElementsMentalControllerDamageFX_Delete,
+	.Free = cFXElementsMentalControllerDamageFX_Free,
 	.Init = cFXElementsMentalControllerDamageFX_Init,
 	.Update = cFXElementsMentalControllerDamageFX_Update,
 };
 
 /* the vtable of cFXElementsMentalControllerMainFX */
 static const cMapElementVtbl cFXElementsMentalControllerMainFX_vftable = {
-	.Delete = cFXElementsMentalControllerMainFX_Delete,
+	.Free = cFXElementsMentalControllerMainFX_Free,
 	.Init = cFXElementsMentalControllerMainFX_Init,
 	.Update = cFXElementsMentalControllerMainFX_Update,
 };

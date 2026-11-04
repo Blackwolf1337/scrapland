@@ -34,23 +34,20 @@ static void cHangarShipScorer_dtor(cHangarShipScorer *self) {
 	self->base.base.vftable = CHANGARSHIPSCORER_VFTABLE;
 	if (cam) {
 		CGameCamera_dtor(cam);
-		operator_delete_sized(cam, sizeof(CGameCamera));
+		operator_delete(cam);
 	}
 	if (self->grid) {
 		CPsaImage_dtor(self->grid);
-		operator_delete_sized(self->grid, sizeof(CPsaImage));
+		operator_delete(self->grid);
 	}
 	cString_dtor(&self->targetName);
 	cSpriteScorer_dtor(&self->base);
 }
 
-static cScorerItem *cHangarShipScorer_Delete(cScorerItem *base, byte flags) {
+static void cHangarShipScorer_Free(cScorerItem *base) {
 	cHangarShipScorer *self = (cHangarShipScorer *)base;
 	cHangarShipScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cHangarShipScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* GridSpriteIndex, GridColorRed/Green/Blue/Alpha, TargetName, CamDist, CamFov */
@@ -68,7 +65,7 @@ static int cHangarShipScorer_Var(cScorerItem *base, const char *name, int set, c
 			self->gridIndex = *i;
 			if (old) {
 				CPsaImage_dtor(old);
-				operator_delete_sized(old, sizeof(CPsaImage));
+				operator_delete(old);
 			}
 			CPsaImage *img = operator_new(sizeof(CPsaImage));
 			self->grid = img ? CPsaImage_ctor(img, self->base.file, 0x60) : NULL;
@@ -165,6 +162,6 @@ static const cSpriteScorerVtbl cHangarShipScorer_vftable = {
 	.base.Draw = cHangarShipScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cHangarShipScorer_Var,
-	.base.Delete = cHangarShipScorer_Delete,
+	.base.Free = cHangarShipScorer_Free,
 	.SetMultiSprite = cSpriteScorer_SetMultiSprite,
 };

@@ -51,18 +51,15 @@ static void cHumanLocalLogic_dtor(cHumanLocalLogic *self) {
 	cBaseLocalLogic_dtor(&self->base);
 }
 
-static cLocalLogic *cHumanLocalLogic_Delete(cLocalLogic *base, byte flags) {
+static void cHumanLocalLogic_Free(cLocalLogic *base) {
 	cHumanLocalLogic *self = (cHumanLocalLogic *)base;
 	cHumanLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the vtable of cHumanLocalLogic */
 static const cBaseLocalLogicVtbl cHumanLocalLogic_vftable = {
-	.base.Delete = cHumanLocalLogic_Delete,
+	.base.Free = cHumanLocalLogic_Free,
 	.base.GetName = cBaseLocalLogic_GetName,
 	.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.VarI = cBaseLocalLogic_VarI,

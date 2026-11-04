@@ -14,19 +14,16 @@ cMercenaryLocalLogic *cMercenaryLocalLogic_ctor(cMercenaryLocalLogic *self, cEnt
 	return self;
 }
 
-static cLocalLogic *cMercenaryLocalLogic_Delete(cLocalLogic *base, byte flags) {
+static void cMercenaryLocalLogic_Free(cLocalLogic *base) {
 	cMercenaryLocalLogic *self = (cMercenaryLocalLogic *)base;
 	CMERC_VT(self) = CMERCENARYLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the vtable of cMercenaryLocalLogic */
 static const cGenCharLocalLogicVtbl cMercenaryLocalLogic_vftable = {
-	.base.base.Delete = cMercenaryLocalLogic_Delete,
+	.base.base.Free = cMercenaryLocalLogic_Free,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,

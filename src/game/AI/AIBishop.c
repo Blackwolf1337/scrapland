@@ -40,14 +40,11 @@ void *cAIBishop_ctor(void *mem, cEntity *e, int *arg) {
 }
 
 /* AIBishop.c */
-static cAI *cAIBishop_Delete(cAI *base, byte flags) {
+static void cAIBishop_Free(cAI *base) {
 	cAIChar *self = (cAIChar *)base;
 	self->vftable = CAIBISHOP_VFTABLE;
 	cAIChar_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAIBISHOP_SIZE);
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* v normalized into out (a copy for the zero vector) */
@@ -178,7 +175,7 @@ static void cAIBishop_SetShoot(cAI *elem) {
 
 /* the vtable of cAIBishop */
 static const cAICharVtbl cAIBishop_vftable = {
-	.base.base.Delete = cAIBishop_Delete,
+	.base.base.Free = cAIBishop_Free,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
 	.base.base.Draw = cAIChar_Draw,

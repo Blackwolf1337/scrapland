@@ -97,13 +97,10 @@ void PcPad_InitPads(void) {
 	crt_atexit(PcPad_FiniPads);
 }
 
-static cAbstractIDevice *cPcPad_Delete(cAbstractIDevice *elem, byte flags) {
+static void cPcPad_Free(cAbstractIDevice *elem) {
 	cPcPad *self = (cPcPad *)elem;
 	cAbstractIDevice_dtor(&self->base);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cPcPad));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 /* the stick inside the dead zone is 0; outside, the length from the dead zone to 1 scaled to 0..1 */
@@ -410,7 +407,7 @@ static uint32_t Pad_Poll(int index) {
 
 /* the vtable of cPcPad */
 static const cAbstractIDeviceVtbl cPcPad_vftable = {
-	.Delete = cPcPad_Delete,
+	.Free = cPcPad_Free,
 	.SetDefaults = cPcPad_SetDefaults,
 	.SetGameDefaults = cAbstractIDevice_SetGameDefaultsNop,
 	.GetName = cPcPad_GetName,

@@ -35,7 +35,7 @@ static void SceneList_Free(CSceneList *le) {
 	if (le->name) {
 		String_Set(&le->name, NULL);
 	}
-	operator_delete_sized(le, sizeof(*le));
+	operator_delete(le);
 }
 
 /* Engine/util_escena.cpp (src/game/engine3d/Engine/UtilScene.c) */
@@ -224,7 +224,7 @@ void Model_Destroy(CModel **pm, byte force) {
 		}
 		if (found) {
 			CModelList_dtor(found);
-			operator_delete_sized(found, sizeof(*found));
+			operator_delete(found);
 			*pm = NULL;
 			return;
 		}
@@ -274,7 +274,7 @@ void UtilScene_FreeAll(void) {
 		CModelList *next = lm->next;
 
 		CModelList_dtor(lm);
-		operator_delete_sized(lm, sizeof(*lm));
+		operator_delete(lm);
 		lm = next;
 	}
 	g_ModelList = NULL;

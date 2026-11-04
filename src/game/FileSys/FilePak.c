@@ -62,7 +62,7 @@ static cAbstractFile *cFile2_Destroy(cAbstractFile *elem, int flags) {
 	self->file.base.vftable = CFILE2_VFTABLE;
 	cFile_dtor(&self->file);
 	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
+		operator_delete(self);
 	}
 	return elem;
 }
@@ -155,7 +155,7 @@ static void PackEntries_Add(cPackEntryList *list, const cPackEntry *e) {
 }
 
 static void PackEntries_Clear(cPackEntryList *list) {
-	DList_Clear(list, sizeof(cPackEntryNode));
+	DList_Clear(list);
 }
 
 static void PackNames_Add(cStringList *list, const cString *str) {
@@ -257,7 +257,7 @@ static cAbstractFile *cFilePack_Destroy(cAbstractFile *elem, int flags) {
 	self->file.base.vftable = CFILEPACK_VFTABLE;
 	cFile_dtor(&self->file);
 	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
+		operator_delete(self);
 	}
 	return elem;
 }

@@ -144,7 +144,7 @@ static void AnimNode_DeleteEVA(CAnimNode *self) {
 
 	if (eva) {
 		CEVA_Free(eva);
-		operator_delete_sized(eva, sizeof(*eva));
+		operator_delete(eva);
 		self->EVA = NULL;
 	}
 }
@@ -236,7 +236,7 @@ void CAnimation_Init(CAnimation *self, int numObjects, int nframes, int first) {
 	}
 	g_ActAnimBlock = NULL;
 	if (self->AnimBlock.MemBlock) {
-		operator_delete_sized(self->AnimBlock.MemBlock, 1);
+		operator_delete(self->AnimBlock.MemBlock);
 		self->AnimBlock.MemBlock = NULL;
 	}
 	self->AnimBlock.UsedBlock = 0;

@@ -125,7 +125,7 @@ static void cObjEntity_ReleaseFX(cEntity *self) {
 	if (o->fx) {
 		EFX_Release(o->fx);
 		if (o->fx) {
-			EFX_Delete(o->fx, 1);
+			EFX_Free(o->fx);
 			o->fx = NULL;
 		}
 	}
@@ -138,9 +138,9 @@ void cObjEntity_dtor(cEntity *self) {
 	if (o->cam) {
 		cCamEntity_SetTarget(o->cam, NULL);
 	}
-	operator_delete_sized(o->slot, CSLOTCONTROLLER_SIZE);
+	operator_delete(o->slot);
 	if (o->net) {
-		operator_delete_sized(o->net, sizeof(cNetController));
+		operator_delete(o->net);
 	}
 	cObjEntity_ReleaseFX(self);
 	cModMove_dtor(&o->mod);
@@ -151,12 +151,9 @@ void cObjEntity_dtor(cEntity *self) {
 	cEntity_dtor(self);
 }
 
-static cEntity *cObjEntity_Delete(cEntity *self, uint32_t flags) {
+static void cObjEntity_Free(cEntity *self) {
 	cObjEntity_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, COBJENTITY_SIZE);
-	}
-	return self;
+	operator_delete(self);
 }
 
 void cObjEntity_UpdateModel(cEntity *self) {
@@ -1304,7 +1301,7 @@ static const cObjEntityVtbl cObjEntity_vftable = {
 	.base.Update = cObjEntity_Update,
 	.base.Render = cEntity_Render,
 	.base.UpdateOff = cObjEntity_UpdateOff,
-	.base.Delete = cObjEntity_Delete,
+	.base.Free = cObjEntity_Free,
 	.base.GetClassName = cObjEntity_GetClassName,
 	.base.IsType = cObjEntity_IsType,
 	.base.GetPos = cObjEntity_GetPos,

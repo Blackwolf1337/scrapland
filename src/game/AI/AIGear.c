@@ -37,14 +37,11 @@ void *cAIGear_ctor(void *mem, cEntity *e, int *arg) {
 }
 
 /* AIGear.c */
-static cAI *cAIGear_Delete(cAI *base, byte flags) {
+static void cAIGear_Free(cAI *base) {
 	cAIChar *self = (cAIChar *)base;
 	self->vftable = CAIGEAR_VFTABLE;
 	cAIChar_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAIGEAR_SIZE);
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* vf65: blocked by a paused AI it ran into (not the gate keeper, Sebastian): the action button */
@@ -164,7 +161,7 @@ byte cAIGear_IsBlocked(cAIGear *self) {
 
 /* the vtable of cAIGear */
 static const cAICharVtbl cAIGear_vftable = {
-	.base.base.Delete = cAIGear_Delete,
+	.base.base.Free = cAIGear_Free,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
 	.base.base.Draw = cAIChar_Draw,

@@ -101,13 +101,6 @@ static inline void FXA_TrailsDtor(CGameTrail *t, uint32_t n) {
 	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, (void *)CGameTrail_dtor);
 }
 
-static inline void *FXA_Delete(void *self, uint32_t flags, uint32_t size) {
-	if (flags & 1) {
-		operator_delete_sized(self, size);
-	}
-	return self;
-}
-
 /* the model of the entity, CHECKed */
 static CGameModel *FXA_Model(cEntity *e) {
 	CGameModel *m = Obj_GetModel(e);
@@ -565,118 +558,118 @@ static void cObjElementFXSebastianFlash_dtor(void *self) {
 
 /* ---- deleting destructors (vf00) ---- */
 
-static cObjElementFX *cObjElementFXBankMasterAttack_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXBankMasterAttack_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXBankMasterAttack_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXBankMasterAttack));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXBankMasterSuction_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXBankMasterSuction_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXBankMasterSuction_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXBankMasterSuction));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXBankerSteal_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXBankerSteal_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXBankerSteal_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXBankerSteal));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXBertoAttack_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXBertoAttack_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXBertoAttack_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXBertoAttack));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXBertoFlash_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXBertoFlash_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXBertoFlash_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXBertoFlash));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXBettyAttack_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXBettyAttack_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXBettyAttack_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXBettyAttack));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXBettyKill_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXBettyKill_Free(cObjElementFX *base) {
 	cObjElementFXBettyKill *self = (cObjElementFXBettyKill *)base;
 	cObjElementFXBettyKill_dtor(self);
-	return FXA_Delete(self, flags, sizeof(*self));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXBishopAttack_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXBishopAttack_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXBishopAttack_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXBishopAttack));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXBishopSellLife_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXBishopSellLife_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXBishopSellLife_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXBishopSellLife));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXDTritusAttack_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXDTritusAttack_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXDTritusAttack_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXDTritusAttack));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXDTritusKill_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXDTritusKill_Free(cObjElementFX *base) {
 	cObjElementFXDTritusKill *self = (cObjElementFXDTritusKill *)base;
 	cObjElementFXDTritusKill_dtor(self);
-	return FXA_Delete(self, flags, sizeof(*self));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXFunctionarySpecialAction_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXFunctionarySpecialAction_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXFunctionarySpecialAction_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXFunctionarySpecialAction));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXGearMissile_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXGearMissile_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXGearMissile_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXGearMissile));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXMercenaryDrink_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXMercenaryDrink_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXMercenaryDrink_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXMercenaryDrink));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXMessengerAttack_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXMessengerAttack_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXMessengerAttack_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXMessengerAttack));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXMessengerTakeDataPack_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXMessengerTakeDataPack_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXMessengerTakeDataPack_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXMessengerTakeDataPack));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXPoliceGearConversion_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXPoliceGearConversion_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXPoliceGearConversion_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXPoliceGearConversion));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXPoliceSteal_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXPoliceSteal_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXPoliceSteal_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXPoliceSteal));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXSebastianFlash_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXSebastianFlash_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXSebastianFlash_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXSebastianFlash));
+	operator_delete(self);
 }
 
 /* ---- Alive (vf02) ---- */
@@ -4363,7 +4356,7 @@ static void cObjElementFXBishopSellLife_Update(cObjElementFX *base, cDebris *d, 
 
 /* the vtable of cObjElementFXGearMissile */
 static const cObjElementFXVtbl cObjElementFXGearMissile_vftable = {
-	.Delete = cObjElementFXGearMissile_Delete,
+	.Free = cObjElementFXGearMissile_Free,
 	.Update = cObjElementFXGearMissile_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXGearMissile_Attach,
@@ -4372,7 +4365,7 @@ static const cObjElementFXVtbl cObjElementFXGearMissile_vftable = {
 
 /* the vtable of cObjElementFXBankerSteal */
 static const cObjElementFXVtbl cObjElementFXBankerSteal_vftable = {
-	.Delete = cObjElementFXBankerSteal_Delete,
+	.Free = cObjElementFXBankerSteal_Free,
 	.Update = cObjElementFXBankerSteal_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = FXCharActions_AttachC,
@@ -4381,7 +4374,7 @@ static const cObjElementFXVtbl cObjElementFXBankerSteal_vftable = {
 
 /* the vtable of cObjElementFXPoliceSteal */
 static const cObjElementFXVtbl cObjElementFXPoliceSteal_vftable = {
-	.Delete = cObjElementFXPoliceSteal_Delete,
+	.Free = cObjElementFXPoliceSteal_Free,
 	.Update = cObjElementFXPoliceSteal_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = FXCharActions_AttachC,
@@ -4390,7 +4383,7 @@ static const cObjElementFXVtbl cObjElementFXPoliceSteal_vftable = {
 
 /* the vtable of cObjElementFXFunctionarySpecialAction */
 static const cObjElementFXVtbl cObjElementFXFunctionarySpecialAction_vftable = {
-	.Delete = cObjElementFXFunctionarySpecialAction_Delete,
+	.Free = cObjElementFXFunctionarySpecialAction_Free,
 	.Update = cObjElementFXFunctionarySpecialAction_Update,
 	.IsAlive = cObjElementFXFunctionarySpecialAction_Alive,
 	.Start = cObjElementFXFunctionarySpecialAction_Attach,
@@ -4399,7 +4392,7 @@ static const cObjElementFXVtbl cObjElementFXFunctionarySpecialAction_vftable = {
 
 /* the vtable of cObjElementFXPoliceGearConversion */
 static const cObjElementFXVtbl cObjElementFXPoliceGearConversion_vftable = {
-	.Delete = cObjElementFXPoliceGearConversion_Delete,
+	.Free = cObjElementFXPoliceGearConversion_Free,
 	.Update = cObjElementFXPoliceGearConversion_Update,
 	.IsAlive = cObjElementFXPoliceGearConversion_Alive,
 	.Start = cObjElementFXPoliceGearConversion_Attach,
@@ -4408,7 +4401,7 @@ static const cObjElementFXVtbl cObjElementFXPoliceGearConversion_vftable = {
 
 /* the vtable of cObjElementFXDTritusAttack */
 static const cObjElementFXVtbl cObjElementFXDTritusAttack_vftable = {
-	.Delete = cObjElementFXDTritusAttack_Delete,
+	.Free = cObjElementFXDTritusAttack_Free,
 	.Update = cObjElementFXDTritusAttack_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXDTritusAttack_Attach,
@@ -4417,7 +4410,7 @@ static const cObjElementFXVtbl cObjElementFXDTritusAttack_vftable = {
 
 /* the vtable of cObjElementFXDTritusKill */
 static const cObjElementFXVtbl cObjElementFXDTritusKill_vftable = {
-	.Delete = cObjElementFXDTritusKill_Delete,
+	.Free = cObjElementFXDTritusKill_Free,
 	.Update = cObjElementFXDTritusKill_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXKill_Attach,
@@ -4426,7 +4419,7 @@ static const cObjElementFXVtbl cObjElementFXDTritusKill_vftable = {
 
 /* the vtable of cObjElementFXBishopSellLife */
 static const cObjElementFXVtbl cObjElementFXBishopSellLife_vftable = {
-	.Delete = cObjElementFXBishopSellLife_Delete,
+	.Free = cObjElementFXBishopSellLife_Free,
 	.Update = cObjElementFXBishopSellLife_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXBishopSellLife_Attach,
@@ -4435,7 +4428,7 @@ static const cObjElementFXVtbl cObjElementFXBishopSellLife_vftable = {
 
 /* the vtable of cObjElementFXBishopAttack */
 static const cObjElementFXVtbl cObjElementFXBishopAttack_vftable = {
-	.Delete = cObjElementFXBishopAttack_Delete,
+	.Free = cObjElementFXBishopAttack_Free,
 	.Update = cObjElementFXBishopAttack_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXBishopAttack_Attach,
@@ -4444,7 +4437,7 @@ static const cObjElementFXVtbl cObjElementFXBishopAttack_vftable = {
 
 /* the vtable of cObjElementFXBertoAttack */
 static const cObjElementFXVtbl cObjElementFXBertoAttack_vftable = {
-	.Delete = cObjElementFXBertoAttack_Delete,
+	.Free = cObjElementFXBertoAttack_Free,
 	.Update = cObjElementFXBertoAttack_Update,
 	.IsAlive = FXCharActions_AliveAction,
 	.Start = FXCharActions_Attach8,
@@ -4453,7 +4446,7 @@ static const cObjElementFXVtbl cObjElementFXBertoAttack_vftable = {
 
 /* the vtable of cObjElementFXBertoFlash */
 static const cObjElementFXVtbl cObjElementFXBertoFlash_vftable = {
-	.Delete = cObjElementFXBertoFlash_Delete,
+	.Free = cObjElementFXBertoFlash_Free,
 	.Update = cObjElementFXBertoFlash_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXBertoFlash_Attach,
@@ -4462,7 +4455,7 @@ static const cObjElementFXVtbl cObjElementFXBertoFlash_vftable = {
 
 /* the vtable of cObjElementFXMessengerAttack */
 static const cObjElementFXVtbl cObjElementFXMessengerAttack_vftable = {
-	.Delete = cObjElementFXMessengerAttack_Delete,
+	.Free = cObjElementFXMessengerAttack_Free,
 	.Update = cObjElementFXMessengerAttack_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXMessengerAttack_Attach,
@@ -4471,7 +4464,7 @@ static const cObjElementFXVtbl cObjElementFXMessengerAttack_vftable = {
 
 /* the vtable of cObjElementFXMessengerTakeDataPack */
 static const cObjElementFXVtbl cObjElementFXMessengerTakeDataPack_vftable = {
-	.Delete = cObjElementFXMessengerTakeDataPack_Delete,
+	.Free = cObjElementFXMessengerTakeDataPack_Free,
 	.Update = cObjElementFXMessengerTakeDataPack_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXMessengerTakeDataPack_Attach,
@@ -4480,7 +4473,7 @@ static const cObjElementFXVtbl cObjElementFXMessengerTakeDataPack_vftable = {
 
 /* the vtable of cObjElementFXSebastianFlash */
 static const cObjElementFXVtbl cObjElementFXSebastianFlash_vftable = {
-	.Delete = cObjElementFXSebastianFlash_Delete,
+	.Free = cObjElementFXSebastianFlash_Free,
 	.Update = cObjElementFXSebastianFlash_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXSebastianFlash_Attach,
@@ -4489,7 +4482,7 @@ static const cObjElementFXVtbl cObjElementFXSebastianFlash_vftable = {
 
 /* the vtable of cObjElementFXBettyAttack */
 static const cObjElementFXVtbl cObjElementFXBettyAttack_vftable = {
-	.Delete = cObjElementFXBettyAttack_Delete,
+	.Free = cObjElementFXBettyAttack_Free,
 	.Update = cObjElementFXBettyAttack_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXBettyAttack_Attach,
@@ -4498,7 +4491,7 @@ static const cObjElementFXVtbl cObjElementFXBettyAttack_vftable = {
 
 /* the vtable of cObjElementFXBettyKill */
 static const cObjElementFXVtbl cObjElementFXBettyKill_vftable = {
-	.Delete = cObjElementFXBettyKill_Delete,
+	.Free = cObjElementFXBettyKill_Free,
 	.Update = cObjElementFXBettyKill_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXKill_Attach,
@@ -4507,7 +4500,7 @@ static const cObjElementFXVtbl cObjElementFXBettyKill_vftable = {
 
 /* the vtable of cObjElementFXBankMasterAttack */
 static const cObjElementFXVtbl cObjElementFXBankMasterAttack_vftable = {
-	.Delete = cObjElementFXBankMasterAttack_Delete,
+	.Free = cObjElementFXBankMasterAttack_Free,
 	.Update = cObjElementFXBankMasterAttack_Update,
 	.IsAlive = FXCharActions_AliveAction,
 	.Start = cObjElementFXBankMasterAttack_Attach,
@@ -4516,7 +4509,7 @@ static const cObjElementFXVtbl cObjElementFXBankMasterAttack_vftable = {
 
 /* the vtable of cObjElementFXBankMasterSuction */
 static const cObjElementFXVtbl cObjElementFXBankMasterSuction_vftable = {
-	.Delete = cObjElementFXBankMasterSuction_Delete,
+	.Free = cObjElementFXBankMasterSuction_Free,
 	.Update = cObjElementFXBankMasterSuction_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXBankMasterSuction_Attach,
@@ -4525,7 +4518,7 @@ static const cObjElementFXVtbl cObjElementFXBankMasterSuction_vftable = {
 
 /* the vtable of cObjElementFXMercenaryDrink */
 static const cObjElementFXVtbl cObjElementFXMercenaryDrink_vftable = {
-	.Delete = cObjElementFXMercenaryDrink_Delete,
+	.Free = cObjElementFXMercenaryDrink_Free,
 	.Update = cObjElementFXMercenaryDrink_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = FXCharActions_Attach8,

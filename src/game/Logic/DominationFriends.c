@@ -34,18 +34,15 @@ cDominationFriendsLogic *cDominationFriendsLogic_ctor(cDominationFriendsLogic *s
 void cDominationFriendsLogic_dtor(cDominationFriendsLogic *self) {
 	self->base.vftable = CDOMINATIONFRIENDSLOGIC_VFTABLE;
 	if (self->side) {
-		operator_delete_sized(self->side, sizeof(*self->side));
+		operator_delete(self->side);
 	}
 	cDominationLogic_dtor(&self->base);
 }
 
-static cDominationLogic *cDominationFriendsLogic_Delete(cDominationLogic *base, byte flags) {
+static void cDominationFriendsLogic_Free(cDominationLogic *base) {
 	cDominationFriendsLogic *self = (cDominationFriendsLogic *)base;
 	cDominationFriendsLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static void cDominationFriendsSide_Think(cDominationFriendsSide *self) {
@@ -109,7 +106,7 @@ static void cDominationFriendsLogic_Update(cDominationLogic *base, float dt) {
 
 /* the vtable of cDominationFriendsLogic */
 static const cDominationLogicVtbl cDominationFriendsLogic_vftable = {
-	.Delete = cDominationFriendsLogic_Delete,
+	.Free = cDominationFriendsLogic_Free,
 	.Init = cDominationFriendsLogic_Init,
 	.Update = cDominationFriendsLogic_Update,
 	.GetList = cDominationFriendsLogic_GetList,

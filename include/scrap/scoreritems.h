@@ -673,7 +673,7 @@ byte Scorer_Render(void);
 static inline CPsaImage *ScorerImg_Replace(CPsaImage *old, const char *name, int blend, uint32_t flags) {
 	if (old) {
 		CPsaImage_dtor(old);
-		operator_delete_sized(old, sizeof(CPsaImage));
+		operator_delete(old);
 	}
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	img = img ? CPsaImage_ctorFlags(img, name, 0, blend, (int)flags) : NULL;
@@ -685,7 +685,7 @@ static inline CPsaImage *ScorerImg_Replace(CPsaImage *old, const char *name, int
 static inline CPsaImage *ScorerImg_ReplaceSimple(CPsaImage *old, const char *name, uint32_t flags) {
 	if (old) {
 		CPsaImage_dtor(old);
-		operator_delete_sized(old, sizeof(CPsaImage));
+		operator_delete(old);
 	}
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	img = img ? CPsaImage_ctor(img, name, (int)flags) : NULL;
@@ -696,7 +696,7 @@ static inline CPsaImage *ScorerImg_ReplaceSimple(CPsaImage *old, const char *nam
 static inline void ScorerImg_Free(CPsaImage *img) {
 	if (img) {
 		CPsaImage_dtor(img);
-		operator_delete_sized(img, sizeof(CPsaImage));
+		operator_delete(img);
 	}
 }
 

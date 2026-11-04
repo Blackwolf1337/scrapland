@@ -134,7 +134,7 @@ static void CMeshD3D_dtor(CMeshD3D *self) {
 	}
 	CMeshD3D_SetNode(self, NULL);
 	if (self->next) {
-		Object3D_Delete(self->next, 1);
+		Object3D_Free(self->next);
 		self->next = NULL;
 	}
 	MeshD3D_DeleteArray((void **)&self->pTri);
@@ -149,13 +149,10 @@ static void CMeshD3D_dtor(CMeshD3D *self) {
 }
 
 /* the deleting destructor */
-static IObject3D *CMeshD3D_Delete(IObject3D *base, byte flags) {
+static void CMeshD3D_Free(IObject3D *base) {
 	CMeshD3D *self = (CMeshD3D *)base;
 	CMeshD3D_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static MeshD3DObj g_D3DObj[512];
@@ -546,7 +543,7 @@ static void CMeshD3D_Build(CMeshD3D *self, CTriMesh *mesh, uint32_t flags) {
 	for (int k = 0; k < nTmp; k++) {
 		tmp[k].group = remap[tmp[k].group];
 	}
-	operator_delete_sized(remap, sizeof(int));
+	operator_delete(remap);
 
 	/* one object a group, the corners of each triangle as new vertices */
 	for (int k = 0; k < (int)dyn->used; k++) {
@@ -705,7 +702,7 @@ static void CMeshD3D_SetNode(CMeshD3D *self, CNode3D *node) {
 			m->node->Refs--;
 			CNode3D *old = m->node;
 			if (old->Refs == 0 && old) {
-				ObjRef_Delete(old, 1);
+				ObjRef_Free(old);
 			}
 			m->node = NULL;
 		}
@@ -802,7 +799,7 @@ static int MeshD3DObj_Weld(MeshD3DObj *obj) {
 
 /* the vtable of CMeshD3D */
 static const IObject3DVtbl CMeshD3D_vftable = {
-	.Delete = CMeshD3D_Delete,
+	.Free = CMeshD3D_Free,
 	.Update = CMeshD3D_SetRender,
 	.Render = CMeshD3D_Draw,
 	.InitD3D = CMeshD3D_Restore,

@@ -157,7 +157,7 @@
 #define FINI_DLIST(fn, obj, clear, size) \
 	static void fn(void) { \
 		clear((obj)); \
-		DList_FreePool((obj), size); \
+		DList_FreePool((obj)); \
 	}
 #define FINI_TABLE(fn, obj) \
 	static void fn(void) { \

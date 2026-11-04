@@ -176,7 +176,7 @@ static inline int CCollideTri_Mark(CCollideTri *tri) {
 }
 
 /* the vector deleting destructor of CNode3D (0xfc bytes) as the floor nodes use it */
-ObjRef *CNode3D_VecDelete(ObjRef *base, byte flags);
+void CNode3D_Free(ObjRef *base);
 
 CCollideQuad *CCollideQuad_ctor(CCollideQuad *self);
 /* the next quads freed, the mesh released */

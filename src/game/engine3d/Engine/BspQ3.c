@@ -30,13 +30,13 @@ static void BspQ3Meshes_Free(BspQ3Meshes *self);
 static void CBspQ3_dtor(CBspQ3 *self) {
 	self->head = NULL;
 	if (self->lump) {
-		operator_delete_sized(self->lump, 0);
+		operator_delete(self->lump);
 		self->lump = NULL;
 	}
 	BspQ3Meshes *lm = self->MeshList;
 	if (lm) {
 		BspQ3Meshes_Free(lm);
-		operator_delete_sized(lm, sizeof(*lm));
+		operator_delete(lm);
 		self->MeshList = NULL;
 	}
 	if (self->pMesh) {
@@ -44,7 +44,7 @@ static void CBspQ3_dtor(CBspQ3 *self) {
 		self->pMesh = NULL;
 	}
 	if (self->MeshD3D) {
-		Object3D_Delete(self->MeshD3D, 1);
+		Object3D_Free(self->MeshD3D);
 		self->MeshD3D = NULL;
 	}
 	if (self->name) {
@@ -58,7 +58,7 @@ static void BspQ3Meshes_Free(BspQ3Meshes *self) {
 		BspQ3Mesh *m = self->m[i];
 		if (m) {
 			BspQ3Mesh_dtor(m);
-			operator_delete_sized(m, sizeof(*m));
+			operator_delete(m);
 			self->m[i] = NULL;
 		}
 	}
@@ -68,7 +68,7 @@ static void BspQ3Mesh_dtor(BspQ3Mesh *self) {
 	CHECK(!self->pVertVB);
 	CHECK(!self->pVertIB);
 	if (self->pTri) {
-		operator_delete_sized(self->pTri, 6);
+		operator_delete(self->pTri);
 		self->pTri = NULL;
 	}
 	CVertList_Free(&self->vert);
@@ -169,7 +169,7 @@ void BspQ3_Free(void) {
 	CBspQ3 *b = g_BspQ3;
 	if (b) {
 		CBspQ3_dtor(b);
-		operator_delete_sized(b, sizeof(*b));
+		operator_delete(b);
 		g_BspQ3 = NULL;
 	}
 }

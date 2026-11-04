@@ -42,19 +42,16 @@ static void cMissionScorer_dtor(cMissionScorer *self) {
 	self->base.base.vftable = CMISSIONSCORER_VFTABLE;
 	if (img) {
 		CPsaImage_dtor(img);
-		operator_delete_sized(img, sizeof(CPsaImage));
+		operator_delete(img);
 	}
 	cString_dtor(&self->forceMap);
 	cSpriteScorer_dtor(&self->base);
 }
 
-static cScorerItem *cMissionScorer_Delete(cScorerItem *base, byte flags) {
+static void cMissionScorer_Free(cScorerItem *base) {
 	cMissionScorer *self = (cMissionScorer *)base;
 	cMissionScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cMissionScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static const char *g_MissionMapName;
@@ -183,7 +180,7 @@ static int cMissionScorer_Var(cScorerItem *base, const char *name, int set, char
 	if (s && !crt_stricmp(name, "TabSprite") && set) {
 		if (self->tab) {
 			CPsaImage_dtor(self->tab);
-			operator_delete_sized(self->tab, sizeof(CPsaImage));
+			operator_delete(self->tab);
 		}
 		CPsaImage *img = operator_new(sizeof(CPsaImage));
 		img = img ? CPsaImage_ctorFlags(img, *s, 0, self->tabBlend, 0x10060) : NULL;
@@ -310,7 +307,7 @@ static const cSpriteScorerVtbl cMissionScorer_vftable = {
 	.base.Draw = cMissionScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cMissionScorer_Var,
-	.base.Delete = cMissionScorer_Delete,
+	.base.Free = cMissionScorer_Free,
 	.SetMultiSprite = cSpriteScorer_SetMultiSprite,
 };
 

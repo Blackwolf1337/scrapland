@@ -20,7 +20,7 @@
 typedef struct cEmbeddedFXVehicleSub cEmbeddedFXVehicleSub;
 
 typedef struct cEmbeddedFXVehicleVtbl {
-	cEmbeddedFXVehicleSub *(*Delete)(cEmbeddedFXVehicleSub *self, byte flags);	/* 0x00 */
+	void (*Free)(cEmbeddedFXVehicleSub *self);	/* 0x00 */
 	byte(*Init)(cEmbeddedFXVehicleSub *self);			/* 0x04 */
 	void(*Done)(cEmbeddedFXVehicleSub *self);			/* 0x08 */
 	void(*Configure)(cEmbeddedFXVehicleSub *self, float unused);	/* 0x0c cEmbeddedFX Update, called with the frame time */
@@ -29,8 +29,8 @@ typedef struct cEmbeddedFXVehicleVtbl {
 } cEmbeddedFXVehicleVtbl;
 
 /* calls through the slots of cEmbeddedFXVehicleVtbl */
-static inline cEmbeddedFXVehicleSub *EFXVeh_Delete(void *self, byte flags) {
-	return VT(cEmbeddedFXVehicleVtbl, self)->Delete(self, flags);
+static inline void EFXVeh_Free(void *self) {
+	VT(cEmbeddedFXVehicleVtbl, self)->Free(self);
 }
 
 static inline void EFXVeh_Done(void *self) {

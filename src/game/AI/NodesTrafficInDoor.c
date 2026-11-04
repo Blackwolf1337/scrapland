@@ -81,13 +81,10 @@ static void CNodesTrafficInDoor_dtor(CNodesTrafficInDoor *self) {
 	CNodesTraffic_dtor(&self->base);
 }
 
-static CNodesTraffic *CNodesTrafficInDoor_Delete(CNodesTraffic *base, byte flags) {
+static void CNodesTrafficInDoor_Free(CNodesTraffic *base) {
 	CNodesTrafficInDoor *self = (CNodesTrafficInDoor *)base;
 	CNodesTrafficInDoor_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the engine callback 2 of the indoor levels: UpdateVehicles of g_NodesTrafficInDoor; 1 */
@@ -566,7 +563,7 @@ static byte CNodesTrafficInDoor_PickPoint(CNodesTrafficInDoor *self, int *outTyp
 
 /* the vtable of CNodesTrafficInDoor */
 static const CNodesTrafficVtbl CNodesTrafficInDoor_vftable = {
-	.Delete = CNodesTrafficInDoor_Delete,
+	.Free = CNodesTrafficInDoor_Free,
 	.AddVehicle = CNodesTraffic_AddVehicle,
 	.RemoveVehicle = CNodesTraffic_RemoveVehicle,
 	.NumTracks = CNodesTraffic_NumTracks,

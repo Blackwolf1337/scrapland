@@ -34,19 +34,16 @@ static void cHeadScorer_dtor(cHeadScorer *self) {
 	self->base.vftable = CHEADSCORER_VFTABLE;
 	if (cam) {
 		CGameCamera_dtor(cam);
-		operator_delete_sized(cam, sizeof(CGameCamera));
+		operator_delete(cam);
 		self->cam = NULL;
 	}
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cHeadScorer_Delete(cScorerItem *base, byte flags) {
+static void cHeadScorer_Free(cScorerItem *base) {
 	cHeadScorer *self = (cHeadScorer *)base;
 	cHeadScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cHeadScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* HeadModel (set), HeadAnimIndex, VW, VH */
@@ -165,7 +162,7 @@ static const cHeadScorerVtbl cHeadScorer_vftable = {
 	.base.Draw = cHeadScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cHeadScorer_Var,
-	.base.Delete = cHeadScorer_Delete,
+	.base.Free = cHeadScorer_Free,
 	.SetAnim = cHeadScorer_SetAnim,
 	.SetModel = cHeadScorer_SetModel,
 };

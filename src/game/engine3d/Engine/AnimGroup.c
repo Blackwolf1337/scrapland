@@ -26,7 +26,7 @@ static void AnimEvents_Free(CAnimEvent **list) {
 	CAnimEvent *ev = *list;
 	if (ev) {
 		CAnimEvent_dtor(ev);
-		operator_delete_sized(ev, sizeof(*ev));
+		operator_delete(ev);
 		*list = NULL;
 	}
 }
@@ -36,7 +36,7 @@ static void CAnimGroup_dtor(CAnimGroup *self) {
 	ObjRef_Release(&self->Anim);
 	if (self->morph) {
 		/* new[] of MAX_MORPHDATA, deleted with the size of one */
-		operator_delete_sized(self->morph, sizeof(MorphData));
+		operator_delete(self->morph);
 		self->morph = NULL;
 	}
 	CAnimCtrl_dtor(&self->ctrl);
@@ -56,7 +56,7 @@ void CAnimGroups_Clear(CAnimGroups *self) {
 		CAnimGroup *g = self->g[i];
 		if (g) {
 			CAnimGroup_dtor(g);
-			operator_delete_sized(g, sizeof(*g));
+			operator_delete(g);
 			self->g[i] = NULL;
 		}
 	}

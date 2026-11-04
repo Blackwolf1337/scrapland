@@ -106,7 +106,7 @@ cMemPool *cMemPool_ctor(cMemPool *self, const char *name, const uint32_t *values
 void cMemPool_dtor(cMemPool *self) {
 	for (uint32_t i = 0; i < MEMPOOL_CLASSES; i++) {
 		if (self->blocks[i]) {
-			operator_delete_sized(self->blocks[i], sizeof(cMemBlocks));
+			operator_delete(self->blocks[i]);
 		}
 	}
 	Mem_Free(self->blocks);
@@ -209,7 +209,7 @@ void PyPool_Delete(void) {
 	cMemPool *pool = g_PyPool;
 	if (pool) {
 		cMemPool_dtor(pool);
-		operator_delete_sized(pool, sizeof(*pool));
+		operator_delete(pool);
 		g_PyPool = NULL;
 	}
 }

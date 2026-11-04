@@ -51,7 +51,7 @@ CTrail *CTrail_ctor(CTrail *self) {
 
 void CTrail_dtor(CTrail *self) {
 	if (self->m_pTrails) {
-		operator_delete_sized(self->m_pTrails, sizeof(TrailPoint));
+		operator_delete(self->m_pTrails);
 		self->m_pTrails = NULL;
 	}
 	CTrail_Clear(self);

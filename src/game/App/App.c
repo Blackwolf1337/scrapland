@@ -123,12 +123,9 @@ void CApp_dtor(CApp *self) {
 }
 
 /* vf03 */
-static CApp *CApp_Delete(CApp *self, byte flags) {
+static void CApp_Free(CApp *self) {
 	CApp_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, 0x48);
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* vf02, vf08, vf09: empty */
@@ -157,42 +154,42 @@ void CApp_DoneGame(CApp *self) {
 	Python_Close();
 	Con_Print(0, "Python script subsystem closed.\n", 0);
 	if (g_NodesWorld) {
-		NodesWorld_Delete(g_NodesWorld, 1);
+		NodesWorld_Free(g_NodesWorld);
 		g_NodesWorld = NULL;
 	}
 	Con_Print(0, "NodesWorld closed.\n", 0);
 	if (g_NodesWorld2D) {
-		NodesWorld_Delete(g_NodesWorld2D, 1);
+		NodesWorld_Free(g_NodesWorld2D);
 		g_NodesWorld2D = NULL;
 	}
 	Con_Print(0, "NodesWorld2D closed.\n", 0);
 	if (g_NodesTraffic) {
-		Traffic_Delete(g_NodesTraffic, 1);
+		Traffic_Free(g_NodesTraffic);
 		g_NodesTraffic = NULL;
 	}
 	Con_Print(0, "NodesTraffic closed.\n", 0);
 	if (g_NodesTrafficInDoor) {
-		Traffic_Delete(g_NodesTrafficInDoor, 1);
+		Traffic_Free(g_NodesTrafficInDoor);
 		g_NodesTrafficInDoor = NULL;
 	}
 	Con_Print(0, "NodesTrafficInDoor closed.\n", 0);
 	if (g_AStar) {
-		AStar_Delete(g_AStar, 1);
+		AStar_Free(g_AStar);
 		g_AStar = NULL;
 	}
 	Con_Print(0, "AStar closed.\n", 0);
 	if (g_AStar2D) {
-		AStar_Delete(g_AStar2D, 1);
+		AStar_Free(g_AStar2D);
 		g_AStar2D = NULL;
 	}
 	Con_Print(0, "AStar2D closed.\n", 0);
 	if (g_VehicleGroup) {
-		AIGroup_Delete(g_VehicleGroup, 1);
+		AIGroup_Free(g_VehicleGroup);
 		g_VehicleGroup = NULL;
 	}
 	Con_Print(0, "VehicleGroup closed.\n", 0);
 	if (g_CharGroup) {
-		AIGroup_Delete(g_CharGroup, 1);
+		AIGroup_Free(g_CharGroup);
 		g_CharGroup = NULL;
 	}
 	Con_Print(0, "CharGroup closed.\n", 0);
@@ -301,7 +298,7 @@ static void Loading_Stop(void) {
 	void *img = g_XLoadIcon;
 	if (img) {
 		CPsaImage_dtor(img);
-		operator_delete_sized(img, PSAIMAGE_SIZE);
+		operator_delete(img);
 	}
 	g_XLoadIcon = NULL;
 	g_XLoadOn = 0;
@@ -1023,7 +1020,7 @@ static const CAppVtbl CApp_vftable = {
 	.DoneGame = CApp_DoneGame,
 	.InitGame = CApp_InitGame,
 	.InitDebug = CApp_Nop,
-	.Delete = CApp_Delete,
+	.Free = CApp_Free,
 	.Init = CApp_Init,
 	.Frame = CApp_Frame,
 	.Shutdown = CApp_Shutdown,

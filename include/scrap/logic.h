@@ -41,7 +41,7 @@ typedef struct cLocalLogic cLocalLogic;
 /* the slots of cLocalLogic, the logic of a game mode and the base of the character logics; the variable slots take
  * the name of a script variable. All slots of the logic vtables take the logic as cLocalLogic. */
 typedef struct cLocalLogicVtbl {
-	cLocalLogic *(*Delete)(cLocalLogic *self, byte flags);			/* 0x00 */
+	void (*Free)(cLocalLogic *self);			/* 0x00 */
 	const char *(*GetName)(cLocalLogic *self);				/* 0x04 "BaseLogic" */
 	byte(*AcceptsArrow)(cLocalLogic *self);						/* 0x08 the arrow (talk) of the player may run */
 	byte(*VarI)(cLocalLogic *self, const char *name, int *i, byte set);	/* 0x0c */
@@ -51,8 +51,8 @@ typedef struct cLocalLogicVtbl {
 } cLocalLogicVtbl;
 
 /* calls through the slots of cLocalLogicVtbl */
-static inline cLocalLogic *LocalLogic_Delete(void *self, byte flags) {
-	return VT(cLocalLogicVtbl, self)->Delete(self, flags);
+static inline void LocalLogic_Free(void *self) {
+	VT(cLocalLogicVtbl, self)->Free(self);
 }
 
 static inline byte LocalLogic_VarV(void *self, const char *name, double *x, double *y, double *z, byte set) {
@@ -610,7 +610,7 @@ extern vec3_t g_DominBatonPos;
 extern int g_DominBatonState;
 
 typedef struct cDominationLogicVtbl {
-	cDominationLogic *(*Delete)(cDominationLogic *self, byte flags);	/* 0x00 */
+	void (*Free)(cDominationLogic *self);	/* 0x00 */
 	void(*Init)(cDominationLogic *self);				/* 0x04 makes the list */
 	void(*Update)(cDominationLogic *self, float dt);			/* 0x08 */
 	cEntityListData *(*GetList)(cDominationLogic *self);		/* 0x0c the list of the side */

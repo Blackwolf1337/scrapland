@@ -112,7 +112,7 @@ typedef struct cNWCell {
 } cNWCell;
 
 typedef struct CNodesWorldVtbl {
-	CNodesWorld *(*Delete)(CNodesWorld *self, byte flags);	/* 0x00 */
+	void (*Free)(CNodesWorld *self);	/* 0x00 */
 	void(*GetBox)(CNodesWorld *self, vec3_t *min, vec3_t *max);	/* 0x04 */
 	byte(*LoadFiles)(CNodesWorld *self, const char *path);	/* 0x08 CNodesWorldSup_LoadGraph */
 	byte(*LoadGraph)(CNodesWorld *self);			/* 0x0c CNodesWorld_LoadGraph */
@@ -164,8 +164,8 @@ typedef struct CNodesWorldVtbl {
 } CNodesWorldVtbl;
 
 /* calls through the slots of CNodesWorldVtbl */
-static inline CNodesWorld *NodesWorld_Delete(void *self, byte flags) {
-	return VT(CNodesWorldVtbl, self)->Delete(self, flags);
+static inline void NodesWorld_Free(void *self) {
+	VT(CNodesWorldVtbl, self)->Free(self);
 }
 
 static inline void NodesWorld_AddVis(void *self, const vec3_t *point, int index) {

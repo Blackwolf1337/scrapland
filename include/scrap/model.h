@@ -116,7 +116,7 @@ static inline void Scene_Unref(CScene **slot) {
 	(*slot)->Refs--;
 	CScene *e = *slot;
 	if (!e->Refs && e) {
-		ObjRef_Delete(e, 1);
+		ObjRef_Free(e);
 	}
 	*slot = NULL;
 }

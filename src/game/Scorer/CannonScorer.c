@@ -40,18 +40,15 @@ static void cCannonScorer_dtor(cCannonScorer *self) {
 	self->base.vftable = CCANNONSCORER_VFTABLE;
 	if (img) {
 		CPsaImage_dtor(img);
-		operator_delete_sized(img, sizeof(CPsaImage));
+		operator_delete(img);
 	}
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cCannonScorer_Delete(cScorerItem *base, byte flags) {
+static void cCannonScorer_Free(cScorerItem *base) {
 	cCannonScorer *self = (cCannonScorer *)base;
 	cCannonScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cCannonScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the texture rectangle of a frame as the corners of a quad */
@@ -191,7 +188,7 @@ static int cCannonScorer_Var(cScorerItem *base, const char *name, int set, char 
 	if (s && !crt_stricmp(name, "Sprite") && set) {
 		if (self->img) {
 			CPsaImage_dtor(self->img);
-			operator_delete_sized(self->img, sizeof(CPsaImage));
+			operator_delete(self->img);
 		}
 		CPsaImage *img = operator_new(sizeof(CPsaImage));
 		img = img ? CPsaImage_ctor(img, *s, 0x10064) : NULL;
@@ -275,7 +272,7 @@ static const cScorerItemVtbl cCannonScorer_vftable = {
 	.Draw = cCannonScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cCannonScorer_Var,
-	.Delete = cCannonScorer_Delete,
+	.Free = cCannonScorer_Free,
 };
 
 static cGVar GVar_CannonScorerNoAmmoSound;

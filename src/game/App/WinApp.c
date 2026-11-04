@@ -48,13 +48,10 @@ static void CWinApp_dtor(CWinApp *self) {
 }
 
 /* vf03 */
-static CApp *CWinApp_Delete(CApp *base, byte flags) {
+static void CWinApp_Free(CApp *base) {
 	CWinApp *self = (CWinApp *)base;
 	CWinApp_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CWinApp));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* vf17: the console window is gone */
@@ -361,7 +358,7 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 	}
 	App_Shutdown(g_pApp);
 	if (g_pApp) {
-		App_Delete(g_pApp, 1);
+		App_Free(g_pApp);
 	}
 	g_pApp = NULL;
 	return 0;
@@ -372,7 +369,7 @@ static const CAppVtbl CWinApp_vftable = {
 	.DoneGame = CApp_DoneGame,
 	.InitGame = CApp_InitGame,
 	.InitDebug = CApp_Nop,
-	.Delete = CWinApp_Delete,
+	.Free = CWinApp_Free,
 	.Init = CWinApp_Init,
 	.Frame = CWinApp_Frame,
 	.Shutdown = CWinApp_Shutdown,

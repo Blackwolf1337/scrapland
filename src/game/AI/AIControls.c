@@ -146,13 +146,10 @@ cAICharControl *cAIControlBankDirector_ctor(void *mem, cEntity *e, cAIChar *ai, 
 	return self;
 }
 
-static cAIControlBankDirector *cAIControlBankDirector_Delete(cAIControlBankDirector *self, byte flags) {
+static void cAIControlBankDirector_Free(cAIControlBankDirector *self) {
 	self->vftable = CAICONTROLBANKDIRECTOR_VFTABLE;
 	cAICharControl2D_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAICHARCONTROL_SIZE);
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* the Walk of the bank director and the master: forward beyond farDist, back within nearDist when the way back is
@@ -216,13 +213,10 @@ cAICharControl *cAIControlBankMaster_ctor(void *mem, cEntity *e, cAIChar *ai, in
 	return self;
 }
 
-static cAIControlBankMaster *cAIControlBankMaster_Delete(cAIControlBankMaster *self, byte flags) {
+static void cAIControlBankMaster_Free(cAIControlBankMaster *self) {
 	self->vftable = CAICONTROLBANKMASTER_VFTABLE;
 	cAICharControl2D_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAICHARCONTROL_SIZE);
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* the Orbit of the control, but not while the action button is down or its ActionEnd plays */
@@ -399,13 +393,10 @@ cAICharControl *cAIControlBishop_ctor(void *mem, cEntity *e, cAIChar *ai, int *a
 	return ACtl_ShootInit(mem, CAICONTROLBISHOP_VFTABLE);
 }
 
-static cAICharControl *cAIControlBishop_Delete(cAICharControl *self, byte flags) {
+static void cAIControlBishop_Free(cAICharControl *self) {
 	self->vftable = CAICONTROLBISHOP_VFTABLE;
 	cAICharControl2D_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAICONTROLSHOOT_SIZE);
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* CheckWait, but not while the target plays its ActionEnd */
@@ -455,13 +446,10 @@ cAICharControl *cAIControlGear_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg
 	return ACtl_ShootInit(mem, CAICONTROLGEAR_VFTABLE);
 }
 
-static cAICharControl *cAIControlGear_Delete(cAICharControl *self, byte flags) {
+static void cAIControlGear_Free(cAICharControl *self) {
 	self->vftable = CAICONTROLGEAR_VFTABLE;
 	cAICharControl2D_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAICONTROLSHOOT_SIZE);
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* CheckWait, but not while the target plays its ActionInit or ActionEnd */
@@ -564,13 +552,10 @@ cAICharControl *cAIControlMessenger_ctor(void *mem, cEntity *e, cAIChar *ai, int
 	return self;
 }
 
-static cAIControlMessenger *cAIControlMessenger_Delete(cAIControlMessenger *self, byte flags) {
+static void cAIControlMessenger_Free(cAIControlMessenger *self) {
 	self->vftable = CAICONTROLMESSENGER_VFTABLE;
 	cAICharControl3D_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAICHARCONTROL_SIZE);
-	}
-	return self;
+	operator_delete(self);
 }
 
 static byte cAIControlMessenger_UpdateFollowMode(cAIControlMessenger *self, float dt) {
@@ -628,13 +613,10 @@ cAICharControl *cAIControlNurse_ctor(void *mem, cEntity *e, cAIChar *ai, int *ar
 	return self;
 }
 
-static cAIControlNurse *cAIControlNurse_Delete(cAIControlNurse *self, byte flags) {
+static void cAIControlNurse_Free(cAIControlNurse *self) {
 	self->vftable = CAICONTROLNURSE_VFTABLE;
 	cAICharControl3D_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAICHARCONTROL_SIZE);
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* forward beyond farDist only (3D) */
@@ -664,13 +646,10 @@ cAICharControl *cAIControlSentinel_ctor(void *mem, cEntity *e, cAIChar *ai, int 
 	return ACtl_ShootInit(mem, CAICONTROLSENTINEL_VFTABLE);
 }
 
-static cAICharControl *cAIControlSentinel_Delete(cAICharControl *self, byte flags) {
+static void cAIControlSentinel_Free(cAICharControl *self) {
 	self->vftable = CAICONTROLSENTINEL_VFTABLE;
 	cAICharControl3D_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CAICONTROLSENTINEL_SIZE);
-	}
-	return self;
+	operator_delete(self);
 }
 
 static void cAIControlSentinel_Strafe(cAIControlShoot *self);
@@ -761,7 +740,7 @@ static void cAIControlSentinel_Walk(cAICharControl *elem) {
 
 /* the vtable of cAIControlBankDirector */
 static const cAICharControl2DVtbl cAIControlBankDirector_vftable = {
-	.base.Delete = cAIControlBankDirector_Delete,
+	.base.Free = cAIControlBankDirector_Free,
 	.base.Draw = cAICharControl2D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,
 	.base.Busy = cAICharControl_Busy,
@@ -868,7 +847,7 @@ static const cAICharControl2DVtbl cAIControlBankDirector_vftable = {
 
 /* the vtable of cAIControlBankMaster */
 static const cAICharControl2DVtbl cAIControlBankMaster_vftable = {
-	.base.Delete = cAIControlBankMaster_Delete,
+	.base.Free = cAIControlBankMaster_Free,
 	.base.Draw = cAICharControl2D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,
 	.base.Busy = cAICharControl_Busy,
@@ -975,7 +954,7 @@ static const cAICharControl2DVtbl cAIControlBankMaster_vftable = {
 
 /* the vtable of cAIControlBishop */
 static const cAICharControl2DVtbl cAIControlBishop_vftable = {
-	.base.Delete = cAIControlBishop_Delete,
+	.base.Free = cAIControlBishop_Free,
 	.base.Draw = cAICharControl2D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,
 	.base.Busy = cAICharControl_Busy,
@@ -1082,7 +1061,7 @@ static const cAICharControl2DVtbl cAIControlBishop_vftable = {
 
 /* the vtable of cAIControlGear */
 static const cAICharControl2DVtbl cAIControlGear_vftable = {
-	.base.Delete = cAIControlGear_Delete,
+	.base.Free = cAIControlGear_Free,
 	.base.Draw = cAICharControl2D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,
 	.base.Busy = cAICharControl_Busy,
@@ -1189,7 +1168,7 @@ static const cAICharControl2DVtbl cAIControlGear_vftable = {
 
 /* the vtable of cAIControlMessenger */
 static const cAICharControl3DVtbl cAIControlMessenger_vftable = {
-	.base.Delete = cAIControlMessenger_Delete,
+	.base.Free = cAIControlMessenger_Free,
 	.base.Draw = cAICharControl3D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,
 	.base.Busy = cAICharControl_Busy,
@@ -1294,7 +1273,7 @@ static const cAICharControl3DVtbl cAIControlMessenger_vftable = {
 
 /* the vtable of cAIControlNurse */
 static const cAICharControl3DVtbl cAIControlNurse_vftable = {
-	.base.Delete = cAIControlNurse_Delete,
+	.base.Free = cAIControlNurse_Free,
 	.base.Draw = cAICharControl3D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,
 	.base.Busy = cAICharControl_Busy,
@@ -1399,7 +1378,7 @@ static const cAICharControl3DVtbl cAIControlNurse_vftable = {
 
 /* the vtable of cAIControlSentinel */
 static const cAICharControl3DVtbl cAIControlSentinel_vftable = {
-	.base.Delete = cAIControlSentinel_Delete,
+	.base.Free = cAIControlSentinel_Free,
 	.base.Draw = cAICharControl3D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,
 	.base.Busy = cAICharControl_Busy,

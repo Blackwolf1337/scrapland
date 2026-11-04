@@ -105,14 +105,14 @@ void CMeshD3D_CalcSegments(CMeshD3D *self, byte all) {
 	}
 	CHECK(numSeg > 0);
 	if (segv3) {
-		operator_delete_sized(segv3, sizeof(uint16_t));
+		operator_delete(segv3);
 	}
 	MeshSeg *out = New_Array((uint32_t)numSeg + 1, sizeof(MeshSeg));
 	memcpy(out, segs, (uint32_t)numSeg * sizeof(MeshSeg));
 	out[numSeg].tri[0] = out[numSeg].tri[1] = 0xffff;
 	out[numSeg].v[0] = out[numSeg].v[1] = 0;
 	if (segs) {
-		operator_delete_sized(segs, sizeof(MeshSeg));
+		operator_delete(segs);
 	}
 	self->segs = out;
 	self->numSegs = (uint32_t)numSeg + 1;

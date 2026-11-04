@@ -55,7 +55,7 @@ CScene *CScene_ctor(CScene *self) {
 static void Scene_DeleteIni(CIniFile **ini) {
 	if (*ini) {
 		CIniFile_dtor(*ini);
-		operator_delete_sized(*ini, 4);
+		operator_delete(*ini);
 		*ini = NULL;
 	}
 }
@@ -79,13 +79,13 @@ static void CScene_dtor(CScene *self) {
 	if (self->AnimM3D) {
 		CAnimation *a = self->AnimM3D;
 		CAnimation_dtor(a);
-		operator_delete_sized(a, sizeof(CAnimation));
+		operator_delete(a);
 		self->AnimM3D = NULL;
 	}
 	Scene_DeleteIni(&self->ini);
 	Scene_DeleteIni(&self->userProp);
 	if (self->CollideMesh) {
-		Object3D_Delete(self->CollideMesh, 1);
+		Object3D_Free(self->CollideMesh);
 		self->CollideMesh = NULL;
 	}
 	E3D_DebugPrintf("\n< Escena::~Escena(): '%s' (%08Xh)", self->name, self);
@@ -106,13 +106,10 @@ void CScene_Shared(CScene *self) {
 	(void)self;
 }
 
-static ObjRef *CScene_Delete(ObjRef *base, byte flags) {
+static void CScene_Free(ObjRef *base) {
 	CScene *self = (CScene *)base;
 	CScene_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CScene));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static void CScene_CalcWeights(CScene *self);
@@ -455,12 +452,12 @@ void CScene_CompactMats(CScene *self) {
 
 void CScene_DeleteNodes(CScene *self) {
 	for (CNode3D *n = self->Node3D; n; n = n->next) {
-		CNode3D_Free(n);
+		CNode3D_Release(n);
 	}
 	while (self->Node3D) {
 		CNode3D *n = self->Node3D;
 		CScene_RemoveNode(self, n);
-		ObjRef_Delete(n, 1);
+		ObjRef_Free(n);
 	}
 }
 
@@ -619,7 +616,7 @@ void CScene_DeleteEmpty(CScene *self, uint32_t class, byte bRefs, byte flagged) 
 							n->parent->name, n->flags);
 						deleted = 1;
 						CScene_RemoveNode(self, n);
-						ObjRef_Delete(n, 1);
+						ObjRef_Free(n);
 					} else {
 						E3D_LogInfo((&g_FileLog), "DEL_NODE: Node NOT deleted [Bone]: %s [parent: %s] [f:%08X]",
 							n->name, n->parent->name, n->flags);
@@ -755,5 +752,5 @@ void CScene_PrecalcIllum(CScene *self, byte noLights, byte visible) {
 
 /* the vtable of CScene */
 static const ObjRefVtbl CScene_vftable = {
-	.Delete = CScene_Delete,
+	.Free = CScene_Free,
 };

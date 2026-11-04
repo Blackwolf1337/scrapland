@@ -17,7 +17,7 @@ typedef struct cObjElementFX cObjElementFX;
 
 /* cObjElementAbstract::vftable and the ones of the effects */
 typedef struct cObjElementFXVtbl {
-	cObjElementFX *(*Delete)(cObjElementFX *self, byte flags);			/* 0x00 */
+	void (*Free)(cObjElementFX *self);			/* 0x00 */
 	void(*Update)(cObjElementFX *self, cDebris *debris, float dt);		/* 0x04 vf01 */
 	/* 0: the debris goes back to the pool */
 	byte(*IsAlive)(cObjElementFX *self, cDebris *debris, cDebrisSys *sys);	/* 0x08 vf02 */
@@ -26,8 +26,8 @@ typedef struct cObjElementFXVtbl {
 } cObjElementFXVtbl;
 
 /* calls through the slots of cObjElementFXVtbl */
-static inline cObjElementFX *FXObj_Delete(void *self, byte flags) {
-	return VT(cObjElementFXVtbl, self)->Delete(self, flags);
+static inline void FXObj_Free(void *self) {
+	VT(cObjElementFXVtbl, self)->Free(self);
 }
 
 static inline byte FXObj_IsAlive(void *self, cDebris *debris, cDebrisSys *sys) {

@@ -183,7 +183,7 @@ static void CParticleSystem_dtor(CParticleSystem *self) {
 	self->vftable = CSISTPART_VFTABLE;
 	for (int i = 0; i < self->params.nParticles; i++) {
 		if (self->Particles[i]) {
-			operator_delete_sized(self->Particles[i], sizeof(CParticle));
+			operator_delete(self->Particles[i]);
 		}
 	}
 	if (self->Particles) {
@@ -192,12 +192,12 @@ static void CParticleSystem_dtor(CParticleSystem *self) {
 	}
 	CHECK(self->type);
 	if (self->type) {
-		operator_delete_sized(self->type, 1);
+		operator_delete(self->type);
 		self->type = NULL;
 	}
 	g_ParticleSystemCount -= self->params.nParticles;
 	if (self->posList) {
-		operator_delete_sized(self->posList, sizeof(vec3_t));
+		operator_delete(self->posList);
 		self->posList = NULL;
 	}
 	ParticleSystemParams_dtor(&self->params);
@@ -218,22 +218,16 @@ static ParticleSystemParams *ParticleSystemParams_Assign(ParticleSystemParams *s
 	return self;
 }
 
-static IObject3D *CObjBase3D_Delete(IObject3D *base, byte flags) {
+static void CObjBase3D_Free(IObject3D *base) {
 	CObjBase3D *self = (CObjBase3D *)base;
 	CObjBase3D_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
-static IObject3D *CParticleSystem_Delete(IObject3D *base, byte flags) {
+static void CParticleSystem_Free(IObject3D *base) {
 	CParticleSystem *self = (CParticleSystem *)base;
 	CParticleSystem_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CParticleSystem));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static CIniFile g_ParticleSystemIni;
@@ -994,7 +988,7 @@ static void CParticle_UpdateNop(CParticle *self, struct CParticleSystem *sp, flo
 
 /* the vtable of IObject3D */
 const IObject3DVtbl IObject3D_vftable = {
-	.Delete = IObject3D_Delete,
+	.Free = IObject3D_Free,
 	.Update = (void *)crt_purecall,
 	.Render = (void *)crt_purecall,
 	.InitD3D = (void *)crt_purecall,
@@ -1005,7 +999,7 @@ const IObject3DVtbl IObject3D_vftable = {
 
 /* the vtable of CObjBase3D */
 static const IObject3DVtbl CObjBase3D_vftable = {
-	.Delete = CObjBase3D_Delete,
+	.Free = CObjBase3D_Free,
 	.Update = IObject3D_UpdateNop,
 	.Render = IObject3D_RenderNop,
 	.InitD3D = IObject3D_InitD3DNop,
@@ -1016,7 +1010,7 @@ static const IObject3DVtbl CObjBase3D_vftable = {
 
 /* the vtable of CParticleSystem */
 static const IObject3DVtbl CParticleSystem_vftable = {
-	.Delete = CParticleSystem_Delete,
+	.Free = CParticleSystem_Free,
 	.Update = CParticleSystem_Update,
 	.Render = CParticleSystem_Render,
 	.InitD3D = IObject3D_InitD3DNop,

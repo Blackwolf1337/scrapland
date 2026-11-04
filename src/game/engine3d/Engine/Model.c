@@ -173,7 +173,7 @@ static void CModel_dtor(CModel *self) {
 
 void CModel_Free(CModel *self) {
 	CModel_dtor(self);
-	operator_delete_sized(self, sizeof(*self));
+	operator_delete(self);
 }
 
 void CModel_Disable(CModel *self) {
@@ -520,7 +520,7 @@ void CModel_SetScene(CModel *self, CScene *scn) {
 			tab->p = NULL;
 			tab->n = 0;
 		}
-		operator_delete_sized(tab, sizeof(*tab));
+		operator_delete(tab);
 		self->renderNodes = NULL;
 	}
 	if (scn) {

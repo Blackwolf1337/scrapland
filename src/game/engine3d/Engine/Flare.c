@@ -40,7 +40,7 @@ CFlare *CFlare_ctor(CFlare *self) {
 static void CFlare_FreeGraphic(CFlare *self) {
 	if (self->graphic) {
 		CGraphic2D_dtor(self->graphic);
-		operator_delete_sized(self->graphic, sizeof(CGraphic2D));
+		operator_delete(self->graphic);
 		self->graphic = NULL;
 	}
 }
@@ -51,13 +51,10 @@ static void CFlare_dtor(CFlare *self) {
 	CObjBase3D_dtor((CObjBase3D *)self);
 }
 
-static IObject3D *CFlare_Delete(IObject3D *base, byte flags) {
+static void CFlare_Free(IObject3D *base) {
 	CFlare *self = (CFlare *)base;
 	CFlare_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CFlare));
-	}
-	return base;
+	operator_delete(self);
 }
 
 void CFlare_Draw(CFlare *self) {
@@ -165,7 +162,7 @@ void CFlare_SetTexture(CFlare *self, const char *tex, const char *opac, int src,
 
 /* the vtable of CFlare */
 static const IObject3DVtbl CFlare_vftable = {
-	.Delete = CFlare_Delete,
+	.Free = CFlare_Free,
 	.Update = IObject3D_UpdateNop,
 	.Render = CFlare_Render,
 	.InitD3D = IObject3D_InitD3DNop,

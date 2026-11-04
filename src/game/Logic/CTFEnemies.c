@@ -51,17 +51,14 @@ void cCTFEnemies_dtor(cCTFEnemies *self) {
 
 	if (d) {
 		cString_dtor(&d->leader);
-		operator_delete_sized(d, sizeof(*d));
+		operator_delete(d);
 	}
 }
 
-static cCTFEnemiesLocalLogic *cCTFEnemiesLocalLogic_Delete(cCTFEnemiesLocalLogic *self, byte flags) {
+static void cCTFEnemiesLocalLogic_Free(cCTFEnemiesLocalLogic *self) {
 	self->vftable = CCTFENEMIESLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* the ships after the flag: the AI state 6 to the flag of that name */
@@ -292,7 +289,7 @@ static cLocalLogic *CTFEnemies_MakeLogic(cEntity *e) {
 
 /* the vtable of cCTFEnemiesLocalLogic */
 static const cLocalLogicVtbl cCTFEnemiesLocalLogic_vftable = {
-	.Delete = cCTFEnemiesLocalLogic_Delete,
+	.Free = cCTFEnemiesLocalLogic_Free,
 	.GetName = cLocalLogic_GetName,
 	.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.VarI = cCTFEnemiesLocalLogic_VarI,

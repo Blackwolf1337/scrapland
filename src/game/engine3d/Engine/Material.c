@@ -53,7 +53,7 @@ static void Mat_DeleteMap(CMap **slot) {
 
 	if (m) {
 		CMap_dtor(m);
-		operator_delete_sized(m, sizeof(CMap));
+		operator_delete(m);
 		*slot = NULL;
 	}
 }
@@ -148,7 +148,7 @@ static int Vec2_Differ(const float *a, const float *b) {
 
 void CMaterial_Free(CMaterial *self) {
 	CMaterial_dtor(self);
-	operator_delete_sized(self, sizeof(CMaterial));
+	operator_delete(self);
 }
 
 CMatList g_MatList;
@@ -288,7 +288,7 @@ void AnimMat_Free(CAnimMat **slot) {
 	if (*slot) {
 		CAnimMat *a = *slot;
 		CAnimMat_dtor(a);
-		operator_delete_sized(a, sizeof(CAnimMat));
+		operator_delete(a);
 		*slot = NULL;
 	}
 }
@@ -998,11 +998,11 @@ static void CMap_Release(CMap *self) {
 	}
 	if (self->AnimMat) {
 		CAnimMat_dtor(self->AnimMat);
-		operator_delete_sized(self->AnimMat, sizeof(CAnimMat));
+		operator_delete(self->AnimMat);
 		self->AnimMat = NULL;
 	}
 	if (self->FXTexture) {
-		FXTexture_Delete(self->FXTexture, 1);
+		FXTexture_Free(self->FXTexture);
 		self->FXTexture = NULL;
 	}
 }
@@ -1064,13 +1064,13 @@ void CMaterial_MapToColor(CMaterial *self) {
 		avg.width = 0;
 		avg.height = 0;
 		if (avg.img) {
-			operator_delete_sized(avg.img, 4);
+			operator_delete(avg.img);
 			avg.img = NULL;
 		}
 		img.width = 0;
 		img.height = 0;
 		if (img.img) {
-			operator_delete_sized(img.img, 4);
+			operator_delete(img.img);
 		}
 	}
 	Mat_DeleteMap(&self->map[0]);
@@ -1142,7 +1142,7 @@ void CMatList_Delete(CMatList *self, CMaterial *mat) {
 static void CMatList_dtor(CMatList *self);
 void CMatList_Free(CMatList *self) {
 	CMatList_dtor(self);
-	operator_delete_sized(self, sizeof(*self));
+	operator_delete(self);
 }
 
 static CMap *CMap_ctor(CMap *self) {

@@ -80,12 +80,9 @@ static cPcKeyboard *cPcKeyboard_ctor(cPcKeyboard *self) {
 	return self;
 }
 
-static cPcKeyboard *cPcKeyboard_Delete(cPcKeyboard *self, byte flags) {
+static void cPcKeyboard_Free(cPcKeyboard *self) {
 	cAbstractIDevice_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
+	operator_delete(self);
 }
 
 /* ESCAPE, GRAVE and F1 keep their bindings; check spares the reserved keys too */
@@ -183,7 +180,7 @@ static byte cPcKeyboard_IsReserved(cPcKeyboard *self, int entry) {
 
 /* the vtable of cPcKeyboard */
 static const cAbstractIDeviceVtbl cPcKeyboard_vftable = {
-	.Delete = cPcKeyboard_Delete,
+	.Free = cPcKeyboard_Free,
 	.SetDefaults = cPcKeyboard_SetDefaults,
 	.SetGameDefaults = cPcKeyboard_SetGameDefaults,
 	.GetName = cPcKeyboard_GetName,

@@ -134,7 +134,7 @@ static void PyEntity_Dealloc(PyObject *self) {
 	cEntityRef *ref = ((cPyEntity *)self)->ref;
 	if (ref) {
 		Nto1Node_Done(&ref->link);
-		operator_delete_sized(ref, sizeof(*ref));
+		operator_delete(ref);
 	}
 	PyPool_Free(self);
 }

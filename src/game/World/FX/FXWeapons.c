@@ -263,46 +263,46 @@ static void cObjElementFXTesla_dtor(void *self) {
 
 /* ---- deleting destructors (vf00) ---- */
 
-static cObjElementFX *cObjElementFXATPC_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXATPC_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXATPC_dtor(self);
-	return FXObj_Free(self, flags, sizeof(cObjElementFXATPC));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXDevastatorShoot_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXDevastatorShoot_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXDevastatorShoot_dtor(self);
-	return FXObj_Free(self, flags, sizeof(cObjElementFXDevastatorShoot));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXInfernoExplosion_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXInfernoExplosion_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXInfernoExplosion_dtor(self);
-	return FXObj_Free(self, flags, sizeof(cObjElementFXInfernoExplosion));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXInfernoMissile_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXInfernoMissile_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXInfernoMissile_dtor(self);
-	return FXObj_Free(self, flags, sizeof(cObjElementFXInfernoMissile));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXLaser_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXLaser_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXLaser_dtor(self);
-	return FXObj_Free(self, flags, sizeof(cObjElementFXLaser));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXSwarmMissile_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXSwarmMissile_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXSwarmMissile_dtor(self);
-	return FXObj_Free(self, flags, sizeof(cObjElementFXSwarmMissile));
+	operator_delete(self);
 }
 
-static cObjElementFX *cObjElementFXTesla_Delete(cObjElementFX *base, byte flags) {
+static void cObjElementFXTesla_Free(cObjElementFX *base) {
 	void *self = (void *)base;
 	cObjElementFXTesla_dtor(self);
-	return FXObj_Free(self, flags, sizeof(cObjElementFXTesla));
+	operator_delete(self);
 }
 
 static cGVar GVar_ATPCShootSize;
@@ -2376,7 +2376,7 @@ void FXSwarm_Hit(float x, float y, float z, float vx, float vy, float vz, float 
 
 /* the vtable of cObjElementFXSwarmMissile */
 static const cObjElementFXVtbl cObjElementFXSwarmMissile_vftable = {
-	.Delete = cObjElementFXSwarmMissile_Delete,
+	.Free = cObjElementFXSwarmMissile_Free,
 	.Update = cObjElementFXSwarmMissile_Update,
 	.IsAlive = cObjElementFXSwarmMissile_IsAlive,
 	.Start = cObjElementFXSwarmMissile_Start,
@@ -2385,7 +2385,7 @@ static const cObjElementFXVtbl cObjElementFXSwarmMissile_vftable = {
 
 /* the vtable of cObjElementFXLaser */
 static const cObjElementFXVtbl cObjElementFXLaser_vftable = {
-	.Delete = cObjElementFXLaser_Delete,
+	.Free = cObjElementFXLaser_Free,
 	.Update = cObjElementFXLaser_Update,
 	.IsAlive = cObjElementFXLaser_IsAlive,
 	.Start = cObjElementFXLaser_Start,
@@ -2394,7 +2394,7 @@ static const cObjElementFXVtbl cObjElementFXLaser_vftable = {
 
 /* the vtable of cObjElementFXDevastatorShoot */
 static const cObjElementFXVtbl cObjElementFXDevastatorShoot_vftable = {
-	.Delete = cObjElementFXDevastatorShoot_Delete,
+	.Free = cObjElementFXDevastatorShoot_Free,
 	.Update = cObjElementFXDevastatorShoot_Update,
 	.IsAlive = cObjElementFXDevastatorShoot_IsAlive,
 	.Start = cObjElementFXDevastatorShoot_Start,
@@ -2403,7 +2403,7 @@ static const cObjElementFXVtbl cObjElementFXDevastatorShoot_vftable = {
 
 /* the vtable of cObjElementFXTesla */
 static const cObjElementFXVtbl cObjElementFXTesla_vftable = {
-	.Delete = cObjElementFXTesla_Delete,
+	.Free = cObjElementFXTesla_Free,
 	.Update = cObjElementFXTesla_Update,
 	.IsAlive = cObjElementFXTesla_IsAlive,
 	.Start = cObjElementFXTesla_Start,
@@ -2412,7 +2412,7 @@ static const cObjElementFXVtbl cObjElementFXTesla_vftable = {
 
 /* the vtable of cObjElementFXATPC */
 static const cObjElementFXVtbl cObjElementFXATPC_vftable = {
-	.Delete = cObjElementFXATPC_Delete,
+	.Free = cObjElementFXATPC_Free,
 	.Update = cObjElementFXATPC_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXATPC_Start,
@@ -2421,7 +2421,7 @@ static const cObjElementFXVtbl cObjElementFXATPC_vftable = {
 
 /* the vtable of cObjElementFXInfernoMissile */
 static const cObjElementFXVtbl cObjElementFXInfernoMissile_vftable = {
-	.Delete = cObjElementFXInfernoMissile_Delete,
+	.Free = cObjElementFXInfernoMissile_Free,
 	.Update = cObjElementFXInfernoMissile_Update,
 	.IsAlive = cObjElementFXInfernoMissile_IsAlive,
 	.Start = cObjElementFXInfernoMissile_Start,
@@ -2430,7 +2430,7 @@ static const cObjElementFXVtbl cObjElementFXInfernoMissile_vftable = {
 
 /* the vtable of cObjElementFXInfernoExplosion */
 static const cObjElementFXVtbl cObjElementFXInfernoExplosion_vftable = {
-	.Delete = cObjElementFXInfernoExplosion_Delete,
+	.Free = cObjElementFXInfernoExplosion_Free,
 	.Update = cObjElementFXInfernoExplosion_Update,
 	.IsAlive = FXMisc_Alive,
 	.Start = cObjElementFXInfernoExplosion_Start,

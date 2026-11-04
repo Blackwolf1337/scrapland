@@ -58,13 +58,10 @@ static cPcMouse *cPcMouse_ctor(cPcMouse *self) {
 	return self;
 }
 
-static cAbstractIDevice *cPcMouse_Delete(cAbstractIDevice *elem, byte flags) {
+static void cPcMouse_Free(cAbstractIDevice *elem) {
 	cPcMouse *self = (cPcMouse *)elem;
 	cAbstractIDevice_dtor(&self->base);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cPcMouse));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 void Mouse_Acquire(byte on) {
@@ -215,7 +212,7 @@ static byte cPcMouse_IsReserved(cAbstractIDevice *self, int entry) {
 
 /* the vtable of cPcMouse */
 static const cAbstractIDeviceVtbl cPcMouse_vftable = {
-	.Delete = cPcMouse_Delete,
+	.Free = cPcMouse_Free,
 	.SetDefaults = cPcMouse_SetDefaults,
 	.SetGameDefaults = cPcMouse_SetGameDefaults,
 	.GetName = cPcMouse_GetName,

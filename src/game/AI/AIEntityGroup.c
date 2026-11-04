@@ -25,12 +25,9 @@ void cAIEntityGroup_dtor(void *self) {
 	((cAIEntityGroup *)self)->vftable = CAIENTITYGROUP_VFTABLE;
 }
 
-static cAIEntityGroup *cAIEntityGroup_Delete(cAIEntityGroup *self, byte flags) {
+static void cAIEntityGroup_Free(cAIEntityGroup *self) {
 	self->vftable = CAIENTITYGROUP_VFTABLE;
-	if (flags & 1) {
-		operator_delete_sized(self, CAIENTITYGROUP_SIZE);
-	}
-	return self;
+	operator_delete(self);
 }
 
 void cAIEntityGroup_Clear(cAIEntityGroup *self) {
@@ -74,7 +71,7 @@ void cAIEntityGroup_Update(cAIEntityGroup *self, float dt) {
 
 /* the vtable of cAIEntityGroup */
 static const cAIEntityGroupVtbl cAIEntityGroup_vftable = {
-	.Delete = cAIEntityGroup_Delete,
+	.Free = cAIEntityGroup_Free,
 	.Clear = cAIEntityGroup_Clear,
 	.Add = cAIEntityGroup_Add,
 	.Get = cAIEntityGroup_Get,

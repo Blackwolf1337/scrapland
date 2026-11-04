@@ -104,7 +104,7 @@ typedef struct CLight {
 } CLight;
 
 CLight *CLight_ctor(CLight *self);
-IObject3D *IObject3D_Delete(IObject3D *self, byte flags);
+void IObject3D_Free(IObject3D *self);
 void IObject3D_InitD3DNop(IObject3D *self, void *dev);
 byte IObject3D_ReadFalse(IObject3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
 void IObject3D_ReleaseD3DNop(IObject3D *self, void *dev);

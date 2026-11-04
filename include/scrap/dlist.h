@@ -30,11 +30,11 @@ void *DList_NewNode(void *list, uint32_t size);
 void DList_LinkFirst(void *list, void *node);
 /* the node in front of head, head kept: at the end of the ring */
 void DList_LinkLast(void *list, void *node);
-void DList_RemoveHead(void *list, uint32_t size);
+void DList_RemoveHead(void *list);
 /* the node of the iterator; the iterator goes on to the next one (NULL at the end) */
-void DList_RemoveIter(void *list, uint32_t size);
-void DList_Clear(void *list, uint32_t size);
+void DList_RemoveIter(void *list);
+void DList_Clear(void *list);
 /* the free list deleted */
-void DList_FreePool(void *list, uint32_t size);
+void DList_FreePool(void *list);
 
 #endif

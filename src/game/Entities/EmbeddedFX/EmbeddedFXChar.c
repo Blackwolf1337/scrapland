@@ -55,13 +55,6 @@ static inline void EFX_TrailsDtor(CGameTrail *trails, uint32_t n) {
 	crt_eh_vector_dtor(trails, sizeof(CGameTrail), n, (void *)CGameTrail_dtor);
 }
 
-static inline cEmbeddedFX *EFX_Free(cEmbeddedFX *self, byte flags, uint32_t size) {
-	if (flags & 1) {
-		operator_delete_sized(self, size);
-	}
-	return self;
-}
-
 /* the model of the entity, CHECKed */
 static CGameModel *EFX_Model(cEmbeddedFX *self, cEntity *e) {
 	self->ent = e;
@@ -263,9 +256,9 @@ void cEmbeddedFX_dtor(cEmbeddedFX *self) {
 }
 
 /* vf00 of the base class; it frees 4 bytes, the size of the vtable pointer alone */
-static cEmbeddedFX *cEmbeddedFX_Delete(cEmbeddedFX *self, byte flags) {
+static void cEmbeddedFX_Free(cEmbeddedFX *self) {
 	cEmbeddedFX_dtor(self);
-	return EFX_Free(self, flags, 4);
+	operator_delete(self);
 }
 
 static void cEmbeddedFXBankDirector_dtor(cEmbeddedFXBankDirector *self) {
@@ -346,64 +339,64 @@ static void cEmbeddedFXSentinel_dtor(cEmbeddedFXSentinel *self) {
 
 /* ---- vf00: deleting destructors ---- */
 
-static cEmbeddedFX *cEmbeddedFXBankDirector_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXBankDirector_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXBankDirector *self = (cEmbeddedFXBankDirector *)elem;
 	cEmbeddedFXBankDirector_dtor(self);
-	return EFX_Free(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXBankMaster_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXBankMaster_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXBankMaster *self = (cEmbeddedFXBankMaster *)elem;
 	cEmbeddedFXBankMaster_dtor(self);
-	return EFX_Free(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXCrazyGambler_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXCrazyGambler_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXCrazyGambler *self = (cEmbeddedFXCrazyGambler *)elem;
 	cEmbeddedFXCrazyGambler_dtor(self);
-	return EFX_Free(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXGear_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXGear_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXGear *self = (cEmbeddedFXGear *)elem;
 	cEmbeddedFXGear_dtor(self);
-	return EFX_Free(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXMaintenance_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXMaintenance_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXMaintenance *self = (cEmbeddedFXMaintenance *)elem;
 	cEmbeddedFXMaintenance_dtor(self);
-	return EFX_Free(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXMercenary_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXMercenary_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXMercenary *self = (cEmbeddedFXMercenary *)elem;
 	cEmbeddedFXMercenary_dtor(self);
-	return EFX_Free(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXMessenger_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXMessenger_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXMessenger *self = (cEmbeddedFXMessenger *)elem;
 	cEmbeddedFXMessenger_dtor(self);
-	return EFX_Free(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXPolice_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXPolice_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXPolice *self = (cEmbeddedFXPolice *)elem;
 	cEmbeddedFXPolice_dtor(self);
-	return EFX_Free(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXRusty_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXRusty_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXRusty *self = (cEmbeddedFXRusty *)elem;
 	cEmbeddedFXRusty_dtor(self);
-	return EFX_Free(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
-static cEmbeddedFX *cEmbeddedFXSentinel_Delete(cEmbeddedFX *elem, byte flags) {
+static void cEmbeddedFXSentinel_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXSentinel *self = (cEmbeddedFXSentinel *)elem;
 	cEmbeddedFXSentinel_dtor(self);
-	return EFX_Free(&self->base, flags, sizeof(*self));
+	operator_delete(&self->base);
 }
 
 /* ---- vf02: Release ---- */
@@ -904,7 +897,7 @@ void EmbeddedFXChar_Create(cEntity *withLife, const char *model, cEmbeddedFX **f
 		}
 		if (cur) {
 			EFX_Release(cur);
-			EFX_Delete(cur, 1);
+			EFX_Free(cur);
 		}
 		void *p = operator_new(efx_kinds[i].size);
 		cur = p ? efx_kinds[i].ctor(p) : NULL;
@@ -2175,7 +2168,7 @@ void cEmbeddedFX_UpdateNop(cEmbeddedFX *self, float dt) {
 
 /* the vtable of cEmbeddedFX */
 static const cEmbeddedFXVtbl cEmbeddedFX_vftable = {
-	.Delete = cEmbeddedFX_Delete,
+	.Free = cEmbeddedFX_Free,
 	.Reset = (void *)crt_purecall,
 	.Release = (void *)crt_purecall,
 	.Update = (void *)crt_purecall,
@@ -2185,7 +2178,7 @@ static const cEmbeddedFXVtbl cEmbeddedFX_vftable = {
 
 /* the vtable of cEmbeddedFXSentinel */
 static const cEmbeddedFXVtbl cEmbeddedFXSentinel_vftable = {
-	.Delete = cEmbeddedFXSentinel_Delete,
+	.Free = cEmbeddedFXSentinel_Free,
 	.Reset = cEmbeddedFXSentinel_Reset,
 	.Release = cEmbeddedFXSentinel_Release,
 	.Update = cEmbeddedFXSentinel_Update,
@@ -2195,7 +2188,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXSentinel_vftable = {
 
 /* the vtable of cEmbeddedFXGear */
 static const cEmbeddedFXVtbl cEmbeddedFXGear_vftable = {
-	.Delete = cEmbeddedFXGear_Delete,
+	.Free = cEmbeddedFXGear_Free,
 	.Reset = cEmbeddedFXPolice_Reset,
 	.Release = cEmbeddedFXGear_Release,
 	.Update = cEmbeddedFXPolice_Update,
@@ -2205,7 +2198,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXGear_vftable = {
 
 /* the vtable of cEmbeddedFXPolice */
 static const cEmbeddedFXVtbl cEmbeddedFXPolice_vftable = {
-	.Delete = cEmbeddedFXPolice_Delete,
+	.Free = cEmbeddedFXPolice_Free,
 	.Reset = cEmbeddedFXPolice_Reset,
 	.Release = cEmbeddedFXPolice_Release,
 	.Update = cEmbeddedFXPolice_Update,
@@ -2215,7 +2208,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXPolice_vftable = {
 
 /* the vtable of cEmbeddedFXBankDirector */
 static const cEmbeddedFXVtbl cEmbeddedFXBankDirector_vftable = {
-	.Delete = cEmbeddedFXBankDirector_Delete,
+	.Free = cEmbeddedFXBankDirector_Free,
 	.Reset = cEmbeddedFX_ResetTrue,
 	.Release = cEmbeddedFXBankDirector_Release,
 	.Update = cEmbeddedFXBankDirector_Update,
@@ -2225,7 +2218,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXBankDirector_vftable = {
 
 /* the vtable of cEmbeddedFXBankMaster */
 static const cEmbeddedFXVtbl cEmbeddedFXBankMaster_vftable = {
-	.Delete = cEmbeddedFXBankMaster_Delete,
+	.Free = cEmbeddedFXBankMaster_Free,
 	.Reset = cEmbeddedFX_ResetTrue,
 	.Release = cEmbeddedFXBankMaster_Release,
 	.Update = cEmbeddedFXBankMaster_Update,
@@ -2235,7 +2228,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXBankMaster_vftable = {
 
 /* the vtable of cEmbeddedFXCrazyGambler */
 static const cEmbeddedFXVtbl cEmbeddedFXCrazyGambler_vftable = {
-	.Delete = cEmbeddedFXCrazyGambler_Delete,
+	.Free = cEmbeddedFXCrazyGambler_Free,
 	.Reset = cEmbeddedFXCrazyGambler_Reset,
 	.Release = cEmbeddedFXCrazyGambler_Release,
 	.Update = cEmbeddedFXCrazyGambler_Update,
@@ -2245,7 +2238,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXCrazyGambler_vftable = {
 
 /* the vtable of cEmbeddedFXRusty */
 static const cEmbeddedFXVtbl cEmbeddedFXRusty_vftable = {
-	.Delete = cEmbeddedFXRusty_Delete,
+	.Free = cEmbeddedFXRusty_Free,
 	.Reset = cEmbeddedFXRusty_Reset,
 	.Release = cEmbeddedFXRusty_Release,
 	.Update = cEmbeddedFXRusty_Update,
@@ -2255,7 +2248,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXRusty_vftable = {
 
 /* the vtable of cEmbeddedFXMessenger */
 static const cEmbeddedFXVtbl cEmbeddedFXMessenger_vftable = {
-	.Delete = cEmbeddedFXMessenger_Delete,
+	.Free = cEmbeddedFXMessenger_Free,
 	.Reset = cEmbeddedFXMessenger_Reset,
 	.Release = cEmbeddedFXMessenger_Release,
 	.Update = cEmbeddedFXMessenger_Update,
@@ -2265,7 +2258,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXMessenger_vftable = {
 
 /* the vtable of cEmbeddedFXMaintenance */
 static const cEmbeddedFXVtbl cEmbeddedFXMaintenance_vftable = {
-	.Delete = cEmbeddedFXMaintenance_Delete,
+	.Free = cEmbeddedFXMaintenance_Free,
 	.Reset = cEmbeddedFX_ResetTrue,
 	.Release = cEmbeddedFXMaintenance_Release,
 	.Update = cEmbeddedFXMaintenance_Update,
@@ -2275,7 +2268,7 @@ static const cEmbeddedFXVtbl cEmbeddedFXMaintenance_vftable = {
 
 /* the vtable of cEmbeddedFXMercenary */
 static const cEmbeddedFXVtbl cEmbeddedFXMercenary_vftable = {
-	.Delete = cEmbeddedFXMercenary_Delete,
+	.Free = cEmbeddedFXMercenary_Free,
 	.Reset = cEmbeddedFXMercenary_Reset,
 	.Release = cEmbeddedFXMercenary_Release,
 	.Update = cEmbeddedFXMercenary_Update,

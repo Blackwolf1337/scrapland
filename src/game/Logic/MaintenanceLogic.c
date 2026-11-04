@@ -44,16 +44,13 @@ void *cMaintenanceLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-static cLocalLogic *cMaintenanceLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static void cMaintenanceLocalLogic_Free(cLocalLogic *elem) {
 	cMaintenanceLocalLogic *self = (cMaintenanceLocalLogic *)elem;
 	self->base.base.vftable = CMAINTENANCELOCALLOGIC_VFTABLE;
 	g_MaintenanceShip = NULL;
 	g_MaintenanceFirstShip = NULL;
 	cGenCharLocalLogic_dtor(&self->base);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 /* the corners of the box of half size radius * MaintenanceSphereRadiusFactor around (x, y, z); the lower ones
@@ -259,7 +256,7 @@ static byte cMaintenanceLocalLogic_VarV(cLocalLogic *base, const char *name, dou
 
 /* the vtable of cMaintenanceLocalLogic */
 static const cGenCharLocalLogicVtbl cMaintenanceLocalLogic_vftable = {
-	.base.base.Delete = cMaintenanceLocalLogic_Delete,
+	.base.base.Free = cMaintenanceLocalLogic_Free,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.base.VarI = cGenCharLocalLogic_VarI,

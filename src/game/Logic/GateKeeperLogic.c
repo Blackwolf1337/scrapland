@@ -82,13 +82,10 @@ static void cGateKeeperLocalLogic_dtor(cGateKeeperLocalLogic *self) {
 	cBaseLocalLogic_dtor(&self->base);
 }
 
-static cLocalLogic *cGateKeeperLocalLogic_Delete(cLocalLogic *base, byte flags) {
+static void cGateKeeperLocalLogic_Free(cLocalLogic *base) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)base;
 	cGateKeeperLocalLogic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the view flag of the character: relaxed and no alarm */
@@ -241,7 +238,7 @@ static byte cGateKeeperLocalLogic_SetState(cLocalLogic *elem, int state, cEntity
 
 /* the vtable of cGateKeeperLocalLogic */
 static const cBaseLocalLogicVtbl cGateKeeperLocalLogic_vftable = {
-	.base.Delete = cGateKeeperLocalLogic_Delete,
+	.base.Free = cGateKeeperLocalLogic_Free,
 	.base.GetName = cBaseLocalLogic_GetName,
 	.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.VarI = cBaseLocalLogic_VarI,

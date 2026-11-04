@@ -104,14 +104,11 @@ static void *cNurseLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-static cLocalLogic *cNurseLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static void cNurseLocalLogic_Free(cLocalLogic *elem) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	self->base.vftable = CNURSELOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return elem;
+	operator_delete(self);
 }
 
 /* back to the relax, the alert with the alarm */
@@ -265,7 +262,7 @@ static byte cNurseLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *tar
 
 /* the vtable of cNurseLocalLogic */
 static const cBaseLocalLogicVtbl cNurseLocalLogic_vftable = {
-	.base.Delete = cNurseLocalLogic_Delete,
+	.base.Free = cNurseLocalLogic_Free,
 	.base.GetName = cBaseLocalLogic_GetName,
 	.base.AcceptsArrow = cLocalLogic_AcceptsArrowTrue,
 	.base.VarI = cBaseLocalLogic_VarI,

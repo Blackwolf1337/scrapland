@@ -58,13 +58,10 @@ static void cServerNetManager_dtor(cServerNetManager *self) {
 	cUserNetManager_dtor(&self->base);
 }
 
-static cUserNetManager *cServerNetManager_Delete(cUserNetManager *base, byte flags) {
+static void cServerNetManager_Free(cUserNetManager *base) {
 	cServerNetManager *self = (cServerNetManager *)base;
 	cServerNetManager_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static byte g_NetClientPings[256];
@@ -270,7 +267,7 @@ void cUserNetManager_Nop(cUserNetManager *self) {
 
 /* the vtable of cServerNetManager */
 static const cUserNetManagerVtbl cServerNetManager_vftable = {
-	.Delete = cServerNetManager_Delete,
+	.Free = cServerNetManager_Free,
 	.OnReceive = cServerNetManager_OnReceive,
 	.Send = cServerNetManager_Send,
 	.SetLocalData = cUserNetManager_Nop,

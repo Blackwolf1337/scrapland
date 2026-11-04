@@ -328,7 +328,7 @@ static CFileIO *M3D_CacheOpen(const char *path, const char *name, const char *id
 	f = f ? CFileIO_ctor(f, path, "rb") : NULL;
 	if (f->error) {
 		CFileIO_dtor(f);
-		operator_delete_sized(f, sizeof(CFileIO));
+		operator_delete(f);
 		return NULL;
 	}
 	E3D_LogDebug((&g_FileLog), id[0] == 'C' ? "CM3: %s" : "SM3: %s", path);
@@ -344,7 +344,7 @@ static CFileIO *M3D_CacheOpen(const char *path, const char *name, const char *id
 		if (File_Exists(name)) {
 			CFileIO_Finish(f);
 			CFileIO_dtor(f);
-			operator_delete_sized(f, sizeof(CFileIO));
+			operator_delete(f);
 			return NULL;
 		}
 		Con_Warnf("WARN: Could not rebuild: %s\n", path);
@@ -364,7 +364,7 @@ static CScene *M3D_CacheRead(CFileIO *f, const char *sceneName, const char *id, 
 	CFileIO_Error(f, id);
 	CHECK(!f->error);
 	CFileIO_dtor(f);
-	operator_delete_sized(f, sizeof(CFileIO));
+	operator_delete(f);
 	return scn;
 }
 
@@ -424,7 +424,7 @@ static void M3D_CacheWrite(const char *path, CScene *scn, const char *id, const 
 		CFileIO_EndBlockWrite(f, id);
 		if (!f->error) {
 			CFileIO_dtor(f);
-			operator_delete_sized(f, sizeof(CFileIO));
+			operator_delete(f);
 			if (bAnim && g_CM3DeleteM3D) {
 				Con_Verbosef("INFO: Delete M3D: %s\n", name);
 				if (crt_remove(name)) {
@@ -436,7 +436,7 @@ static void M3D_CacheWrite(const char *path, CScene *scn, const char *id, const 
 	}
 	Err_Report(f->err, 0, "\n'%s'", path);
 	CFileIO_dtor(f);
-	operator_delete_sized(f, sizeof(CFileIO));
+	operator_delete(f);
 }
 
 /* the .CM3 of the animation scene esc of name and the .SM3 of the model scene esc (with SM3_UseScenes); a
@@ -568,7 +568,7 @@ static void Scene_Particles(CScene *scn) {
 			E3D_LogDebug((&g_FileLog), "INI: %s: %s", scn->name, "model_particles.ini");
 		} else if (scn->userProp) {
 			CIniFile_dtor(scn->userProp);
-			operator_delete_sized(scn->userProp, sizeof(CIniFile));
+			operator_delete(scn->userProp);
 			scn->userProp = NULL;
 		}
 	}
@@ -2741,7 +2741,7 @@ static void M3D_ReadObject(CScene *scn, int k, byte bStatic, byte bAnim, byte ca
 			CIniFile *ini = node->ini;
 
 			CIniFile_dtor(ini);
-			operator_delete_sized(ini, sizeof(CIniFile));
+			operator_delete(ini);
 			node->ini = NULL;
 		}
 	}
@@ -2992,7 +2992,7 @@ CScene *Scene_Load(const char *name, int arg, const char *name2) {
 		CIniFile *ini = g_M3DFileINI;
 
 		CIniFile_dtor(ini);
-		operator_delete_sized(ini, sizeof(CIniFile));
+		operator_delete(ini);
 		g_M3DFileINI = NULL;
 	}
 	g_M3DUseOpacity = 1;
@@ -3179,7 +3179,7 @@ CScene *Scene_Load(const char *name, int arg, const char *name2) {
 		M3DTable *t = g_M3DSceneTables;
 
 		M3DTable6_dtor(t);
-		operator_delete_sized(t, 6 * sizeof(M3DTable));
+		operator_delete(t);
 		g_M3DSceneTables = NULL;
 	}
 	E3D_LogWhite((&g_FileLog), "cleaning nodes (pass %s):", "3");

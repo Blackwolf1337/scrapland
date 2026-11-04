@@ -93,22 +93,16 @@ static void cScraplandSubMenuScorer_dtor(cScraplandSubMenuScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cScraplandMainMenuScorer_Delete(cScorerItem *base, byte flags) {
+static void cScraplandMainMenuScorer_Free(cScorerItem *base) {
 	cScraplandMainMenuScorer *self = (cScraplandMainMenuScorer *)base;
 	cScraplandMainMenuScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cScraplandMainMenuScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
-static cScorerItem *cScraplandSubMenuScorer_Delete(cScorerItem *base, byte flags) {
+static void cScraplandSubMenuScorer_Free(cScorerItem *base) {
 	cScraplandSubMenuScorer *self = (cScraplandSubMenuScorer *)base;
 	cScraplandSubMenuScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cScraplandSubMenuScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 /* the global animation state, set up once by the first constructor (random times) */
@@ -710,7 +704,7 @@ static const cScorerItemVtbl cScraplandMainMenuScorer_vftable = {
 	.Draw = cScraplandMainMenuScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cScraplandMainMenuScorer_Var,
-	.Delete = cScraplandMainMenuScorer_Delete,
+	.Free = cScraplandMainMenuScorer_Free,
 };
 
 /* the vtable of cScraplandSubMenuScorer */
@@ -718,5 +712,5 @@ static const cScorerItemVtbl cScraplandSubMenuScorer_vftable = {
 	.Draw = cScraplandSubMenuScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cScraplandSubMenuScorer_Var,
-	.Delete = cScraplandSubMenuScorer_Delete,
+	.Free = cScraplandSubMenuScorer_Free,
 };

@@ -27,7 +27,7 @@ void CHashTable_dtor(CHashTable *self) {
 			CHashTableNode *n = self->slots[i];
 			self->slots[i] = n->next;
 			Mem_Free(n->key);
-			operator_delete_sized(n, sizeof(*n));
+			operator_delete(n);
 		}
 	}
 	operator_delete_array(self->slots);

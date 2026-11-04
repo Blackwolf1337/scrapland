@@ -117,13 +117,10 @@ static void cMissileEntity_dtor(cMissileEntity *self) {
 	cWithLifeEntity_dtor(Missile_Ent(self));
 }
 
-static cEntity *cMissileEntity_Delete(cEntity *base, uint32_t flags) {
+static void cMissileEntity_Free(cEntity *base) {
 	cMissileEntity *self = (cMissileEntity *)base;
 	cMissileEntity_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, CMISSILEENTITY_SIZE);
-	}
-	return base;
+	operator_delete(self);
 }
 
 static void cMissileEntity_UpdateVel(cMissileEntity *self);
@@ -1373,7 +1370,7 @@ static const cWithLifeEntityVtbl cMissileEntity_vftable = {
 	.base.base.Update = cMissileEntity_Update,
 	.base.base.Render = cEntity_Render,
 	.base.base.UpdateOff = cMissileEntity_UpdateOff,
-	.base.base.Delete = cMissileEntity_Delete,
+	.base.base.Free = cMissileEntity_Free,
 	.base.base.GetClassName = cMissileEntity_GetClassName,
 	.base.base.IsType = cMissileEntity_IsType,
 	.base.base.GetPos = cObjEntity_GetPos,

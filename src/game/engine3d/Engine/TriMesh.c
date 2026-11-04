@@ -105,7 +105,7 @@ void CTriMesh_Clear(CTriMesh *self) {
 	self->pTVert = Mesh_Free(self->pTVert);
 	self->pTri = Mesh_Free(self->pTri);
 	if (self->d3d) {
-		Object3D_Delete(self->d3d, 1);
+		Object3D_Free(self->d3d);
 		self->d3d = NULL;
 	}
 	self->pSkin = Mesh_Free(self->pSkin);
@@ -124,13 +124,10 @@ void CTriMesh_dtor(CTriMesh *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-static IObject3D *CTriMesh_Delete(IObject3D *base, byte flags) {
+static void CTriMesh_Free(IObject3D *base) {
 	CTriMesh *self = (CTriMesh *)base;
 	CTriMesh_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return base;
+	operator_delete(self);
 }
 
 void CTriMesh_SetNumVert(CTriMesh *self, int n, byte realloc) {
@@ -616,7 +613,7 @@ uv_t *CVertList_GetUV(CVertList *self, uv_t *out, uint32_t i) {
 
 /* the vtable of CTriMesh */
 static const IObject3DVtbl CTriMesh_vftable = {
-	.Delete = CTriMesh_Delete,
+	.Free = CTriMesh_Free,
 	.Update = IObject3D_UpdateNop,
 	.Render = CTriMesh_Draw,
 	.InitD3D = IObject3D_InitD3DNop,

@@ -38,13 +38,10 @@ static void cWindFxScorer_dtor(cWindFxScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-static cScorerItem *cWindFxScorer_Delete(cScorerItem *base, byte flags) {
+static void cWindFxScorer_Free(cScorerItem *base) {
 	cWindFxScorer *self = (cWindFxScorer *)base;
 	cWindFxScorer_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cWindFxScorer));
-	}
-	return base;
+	operator_delete(self);
 }
 
 static cGVar GVar_WindFxScorerFadeFactor;
@@ -170,7 +167,7 @@ static const cScorerItemVtbl cWindFxScorer_vftable = {
 	.Draw = cWindFxScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cScorerItem_Var,
-	.Delete = cWindFxScorer_Delete,
+	.Free = cWindFxScorer_Free,
 };
 
 static cGVar GVar_WindFxScorerSound;
