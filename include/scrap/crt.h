@@ -13,12 +13,12 @@
 
 /* _finddata32_t of the exe's CRT */
 typedef struct crt_finddata32 {
-	uint32_t attrib;		/* 0x00 */
-	int32_t timeCreate;		/* 0x04 */
-	int32_t timeAccess;		/* 0x08 */
-	int32_t timeWrite;		/* 0x0c */
-	uint32_t size;			/* 0x10 */
-	char name[260];			/* 0x14 */
+	uint32_t attrib;
+	int32_t timeCreate;
+	int32_t timeAccess;
+	int32_t timeWrite;
+	uint32_t size;
+	char name[260];
 } crt_finddata32;
 
 enum { CRT_A_HIDDEN = 0x2, CRT_A_SYSTEM = 0x4, CRT_A_SUBDIR = 0x10 };

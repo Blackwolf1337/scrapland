@@ -203,7 +203,7 @@ void CNodesWorldSup_GetBox(CNodesWorld *self, vec3_t *min, vec3_t *max) {
 	*max = self->sup.max;
 }
 
-/* the path of graph file i: <path>.pth, <path>1.pth ..., cut at the 0x100 bytes of the original buffer */
+/* the path of graph file i: <path>.pth, <path>1.pth ..., cut at the of the original buffer */
 static void NWSup_FilePath(char *buf, const char *path, int i) {
 	char num[8];
 	size_t n = strnlen(path, 0xff);

@@ -35,7 +35,7 @@ static const CNodesTrafficVtbl CNodesTraffic_vftable;
 
 /* ---- Global/DList.h ---- */
 
-/* the DList.h instances: the cell (nodes of 0x10 bytes) and the error points of CNodesTraffic (0x18) */
+/* the DList.h instances: the cell (nodes of) and the error points of CNodesTraffic (0x18) */
 static void TrafficCell_Add(cTrafficCell *cell, const InfoTrafficNode *info) {
 	cTrafficCellNode *node = DList_NewNode(cell, sizeof(*node));
 	node->info = *info;

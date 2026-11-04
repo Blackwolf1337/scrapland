@@ -10,16 +10,16 @@
 typedef struct cSlotController cSlotController;
 
 struct cSlotController {
-	float time;				/* 0x04 left until the slot */
-	float interval;				/* 0x08 the interval running */
-	float minDiff;				/* 0x0c the fixed interval, the minimum of cRndSlotController */
+	float time;				/* left until the slot */
+	float interval;				/* the interval running */
+	float minDiff;				/* the fixed interval, the minimum of cRndSlotController */
 };
-/* new allocates 0x10 bytes for a cSlotController, 0x14 for a cRndSlotController */
+/* new allocates for a cSlotController, 0x14 for a cRndSlotController */
 #define CSLOTCONTROLLER_SIZE sizeof(cSlotController)
 
 typedef struct cRndSlotController {
-	cSlotController base;			/* 0x00 */
-	float maxDiff;				/* 0x10 */
+	cSlotController base;
+	float maxDiff;
 } cRndSlotController;
 
 cSlotController *cSlotController_ctor(cSlotController *self, float interval);

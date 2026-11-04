@@ -1,5 +1,5 @@
 /*
- * The Python type cPyEntity (type object rva 0x428e18): a script handle of an entity. The handle owns a link
+ * The Python type cPyEntity (type object): a script handle of an entity. The handle owns a link
  * (Global/Nto1Links.h) in the ring of the entity, its target becomes NULL when the entity is gone. The link keeps
  * the name the handle was made with.
  */
@@ -10,13 +10,13 @@
 #include "scrap/python.h"
 
 typedef struct cEntityRef {
-	Nto1Node link;			/* 0x0 target the cEntity, data the cEntityRef */
-	char name[0x80];		/* 0x10 */
+	Nto1Node link;			/* target the cEntity, data the cEntityRef */
+	char name[0x80];
 } cEntityRef;
 
 typedef struct cPyEntity {
 	PyObject_HEAD
-	cEntityRef *ref;		/* 0x8 */
+	cEntityRef *ref;
 } cPyEntity;
 
 static inline cEntity *PyEntity_Get(PyObject *self) {

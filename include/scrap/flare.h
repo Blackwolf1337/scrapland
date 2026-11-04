@@ -24,22 +24,22 @@ typedef struct CFlare {
 	union {
 		IObject3D base;
 		struct {
-			const IObject3DVtbl *vftable;	/* 0x00 */
-			uint32_t class;			/* 0x04 CLASS_OBJ3D_FLARE */
+			const IObject3DVtbl *vftable;
+			uint32_t class;			/* CLASS_OBJ3D_FLARE */
 		};
 	};
-	CNode3D *node;			/* 0x08 counted */
-	vec3_t pos;			/* 0x0c for aten_dist */
-	float scale[2];		/* 0x18 tam_def */
-	uint32_t color;			/* 0x20 of the sprite, the alpha from transp */
-	byte visible;			/* 0x24 this frame */
-	byte visTrace;			/* 0x25 the floor did not hide it at the last trace */
+	CNode3D *node;			/* counted */
+	vec3_t pos;			/* for aten_dist */
+	float scale[2];		/* tam_def */
+	uint32_t color;			/* of the sprite, the alpha from transp */
+	byte visible;			/* this frame */
+	byte visTrace;			/* the floor did not hide it at the last trace */
 	byte pad_26[2];
-	float intens;			/* 0x28 1 */
-	uint32_t lastTime;		/* 0x2c g_TimeMsF of the last render */
-	uint32_t nextTrace;		/* 0x30 */
-	CGraphic2D *graphic;		/* 0x34 owned */
-	float transp;			/* 0x38 1, the fade 0..1 */
+	float intens;			/* 1 */
+	uint32_t lastTime;		/* g_TimeMsF of the last render */
+	uint32_t nextTrace;
+	CGraphic2D *graphic;		/* owned */
+	float transp;			/* 1, the fade 0..1 */
 } CFlare;
 
 CFlare *CFlare_ctor(CFlare *self);

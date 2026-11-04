@@ -32,47 +32,47 @@ enum {
 };
 
 typedef struct TrailPoint {
-	vec3_t pos;			/* 0x00 */
-	uint32_t color;			/* 0x0c the alpha byte is 255 - alpha */
-	float width;			/* 0x10 */
+	vec3_t pos;
+	uint32_t color;			/* the alpha byte is 255 - alpha */
+	float width;
 } TrailPoint;
 
 /* FVF 0x1c2: XYZ, DIFFUSE, SPECULAR, TEX1 */
 typedef struct TrailVertex {
-	vec3_t pos;			/* 0x00 */
-	uint32_t color;			/* 0x0c */
-	uint32_t specular;		/* 0x10 always 0 */
-	float u, v;			/* 0x14 */
+	vec3_t pos;
+	uint32_t color;
+	uint32_t specular;		/* always 0 */
+	float u, v;
 } TrailVertex;
 
 typedef struct CTrail {
-	byte render;			/* 0x00 in gTrailsRender (Trails_UpdateRender) */
+	byte render;			/* in gTrailsRender (Trails_UpdateRender) */
 	byte pad_1[3];
-	int RenderIndex;		/* 0x04 the slot in gTrailsRender[texture], -1 */
-	int texture;			/* 0x08 the material, < MAX_TRAILS_TEXTURES */
-	byte fade;			/* 0x0c alpha from 0 at the tail to 255 at the head */
-	byte smooth;			/* 0x0d the newest piece of a ribbon in two halves */
-	byte premul;			/* 0x0e color multiplied by the alpha */
-	byte transp;			/* 0x0f 255 is invisible */
-	uint32_t color;			/* 0x10 of AddPos */
-	float width;			/* 0x14 of AddPos and AddPosColor */
-	float scaleHead;		/* 0x18 */
-	float scaleTail;		/* 0x1c */
-	byte m_wMaxTrails;		/* 0x20 */
-	byte numTrails;			/* 0x21 at most m_wMaxTrails - 1 */
-	byte head;			/* 0x22 the next point to write */
-	byte segments;			/* 0x23 the points drawn, <= m_wMaxTrails */
-	byte last;			/* 0x24 the point written last */
-	byte type;			/* 0x25 TRAIL_* */
+	int RenderIndex;		/* the slot in gTrailsRender[texture], -1 */
+	int texture;			/* the material, < MAX_TRAILS_TEXTURES */
+	byte fade;			/* alpha from 0 at the tail to 255 at the head */
+	byte smooth;			/* the newest piece of a ribbon in two halves */
+	byte premul;			/* color multiplied by the alpha */
+	byte transp;			/* 255 is invisible */
+	uint32_t color;			/* of AddPos */
+	float width;			/* of AddPos and AddPosColor */
+	float scaleHead;
+	float scaleTail;
+	byte m_wMaxTrails;
+	byte numTrails;			/* at most m_wMaxTrails - 1 */
+	byte head;			/* the next point to write */
+	byte segments;			/* the points drawn, <= m_wMaxTrails */
+	byte last;			/* the point written last */
+	byte type;			/* TRAIL_* */
 	byte pad_26[2];
-	TrailPoint *m_pTrails;		/* 0x28 new[] of m_wMaxTrails */
-	float u0, v0;			/* 0x2c */
-	float du, dv;			/* 0x34 */
-	byte orient;			/* 0x3c TRAIL_ORIENT_* */
+	TrailPoint *m_pTrails;		/* new[] of m_wMaxTrails */
+	float u0, v0;
+	float du, dv;
+	byte orient;			/* TRAIL_ORIENT_* */
 	byte pad_3d[3];
-	vec3_t orientVec;		/* 0x40 */
-	float uLen;			/* 0x4c the points for du */
-	float unused_50;			/* 0x50 */
+	vec3_t orientVec;
+	float uLen;			/* the points for du */
+	float unused_50;
 } CTrail;
 
 CTrail *CTrail_ctor(CTrail *self);

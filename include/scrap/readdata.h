@@ -11,12 +11,12 @@
 #define READ_LINE 0x400
 
 typedef struct cReadStack {
-	char name[MAX_FILEPATH];		/* 0x000 dir and name */
-	void *file;			/* 0x104 FileIO_Open */
-	char line[READ_LINE];		/* 0x108 */
-	char *string;			/* 0x508 g_ReadString of the file below */
-	int err;			/* 0x50c errno before the push */
-	struct cReadStack *prev;		/* 0x510 */
+	char name[MAX_FILEPATH];		/* dir and name */
+	void *file;			/* FileIO_Open */
+	char line[READ_LINE];
+	char *string;			/* g_ReadString of the file below */
+	int err;			/* errno before the push */
+	struct cReadStack *prev;
 } cReadStack;
 
 extern char *g_ReadString;

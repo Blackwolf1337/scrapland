@@ -12,10 +12,10 @@
 
 /* a vertex of VERT_TEX1_B1 */
 typedef struct VertTex1B1 {
-	vec3_t pos;			/* 0x00 */
-	float weight;			/* 0x0c */
-	vec3_t n;			/* 0x10 */
-	uv_t uv;			/* 0x1c */
+	vec3_t pos;
+	float weight;
+	vec3_t n;
+	uv_t uv;
 } VertTex1B1;
 
 #define WEIGHTS_FLT_MAX 3.40282347e+38f

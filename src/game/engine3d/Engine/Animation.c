@@ -22,7 +22,7 @@ static cGVar GVar_OptAnimFovErr;
 #define CM3_SUPPORTED (ANIM_POS | ANIM_ROT | ANIM_FOV | ANIM_COLOR | ANIM_INTENS | ANIM_VISIBLE | ANIM_EVA)
 #define OPT_SUPPORTED 0x7
 #define STM_SUPPORTED 0x7
-#define ANIM_COLOR_SCALE 0.003921568859368563f	/* 1/255, rva 0x3d3ce4 */
+#define ANIM_COLOR_SCALE 0.003921568859368563f	/* 1/255 */
 #define ANIM_PACK_SCALE -2.0f
 /* the ratio of two quaternion components that counts as equal */
 #define ANIM_RATIO_MIN 0x1.fffff8p-1		/* 1 - 2^-22 */

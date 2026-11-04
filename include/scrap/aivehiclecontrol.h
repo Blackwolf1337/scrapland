@@ -23,80 +23,80 @@ enum {
 };
 
 typedef struct cAIVehicleControl {
-	byte boost;			/* 0x004 the boost of the vehicle on */
+	byte boost;			/* the boost of the vehicle on */
 	byte pad_5[3];
-	cSlotController slotStrafe;	/* 0x008 0.2 s */
-	cSlotController slotArrive;	/* 0x018 0.2 s */
-	cAIVehicle *ai;			/* 0x028 */
-	cEntity *vehicle;		/* 0x02c */
-	cVehicleControls *ctl;		/* 0x030 the controls of the vehicle (+0x414) */
-	float radius;			/* 0x034 of the vehicle */
-	float dist;			/* 0x038 the distance that counts as arrived */
-	float distMin;			/* 0x03c dist, at most the radius */
-	float dt;			/* 0x040 */
-	float angX;			/* 0x044 the angle left to the point (pitch) */
-	float angY;			/* 0x048 (yaw) */
-	cAIVehicleParams2 params;	/* 0x04c */
-	cAIVehicleParams2 paramsInit;	/* 0x064 */
-	vec3_t dest;			/* 0x07c the goal of the path */
-	int mode;			/* 0x088 AIVC_ */
-	int prevMode;			/* 0x08c */
-	float turnX;			/* 0x090 the turn given to the controls, smoothed */
-	float turnY;			/* 0x094 */
-	vec3_t targetPos;		/* 0x098 -FLT_MAX each after ClearDest */
-	float rotA;			/* 0x0a4 the turn factor */
-	float rotB;			/* 0x0a8 the most the turn changes in a step */
-	int lifeMark;			/* 0x0ac the life of the vehicle + 1 */
-	byte direct;			/* 0x0b0 the angles set directly (LOST_PATH) */
-	byte inertia;			/* 0x0b1 */
+	cSlotController slotStrafe;	/* 0.2 s */
+	cSlotController slotArrive;	/* 0.2 s */
+	cAIVehicle *ai;
+	cEntity *vehicle;
+	cVehicleControls *ctl;		/* the controls of the vehicle (+0x414) */
+	float radius;			/* of the vehicle */
+	float dist;			/* the distance that counts as arrived */
+	float distMin;			/* dist, at most the radius */
+	float dt;
+	float angX;			/* the angle left to the point (pitch) */
+	float angY;			/* (yaw) */
+	cAIVehicleParams2 params;
+	cAIVehicleParams2 paramsInit;
+	vec3_t dest;			/* the goal of the path */
+	int mode;			/* AIVC_ */
+	int prevMode;
+	float turnX;			/* the turn given to the controls, smoothed */
+	float turnY;
+	vec3_t targetPos;		/* -FLT_MAX each after ClearDest */
+	float rotA;			/* the turn factor */
+	float rotB;			/* the most the turn changes in a step */
+	int lifeMark;			/* the life of the vehicle + 1 */
+	byte direct;			/* the angles set directly (LOST_PATH) */
+	byte inertia;
 	byte pad_b2[2];
-	cSlotController slotPath;	/* 0x0b4 0.2 s */
-	vec3_t point;			/* 0x0c4 the point steered to */
-	cNWVecList path;		/* 0x0d0 */
-	vec3_t *node;			/* 0x0e8 the path node steered to */
-	vec3_t *prevNode;		/* 0x0ec */
-	float turnXWant;		/* 0x0f0 */
-	float turnYWant;		/* 0x0f4 */
-	byte braking;			/* 0x0f8 */
+	cSlotController slotPath;	/* 0.2 s */
+	vec3_t point;			/* the point steered to */
+	cNWVecList path;
+	vec3_t *node;			/* the path node steered to */
+	vec3_t *prevNode;
+	float turnXWant;
+	float turnYWant;
+	byte braking;
 	byte pad_f9[3];
-	float accel;			/* 0x0fc */
-	byte seen;			/* 0x100 point is a later node of the path that is seen */
+	float accel;
+	byte seen;			/* point is a later node of the path that is seen */
 	byte pad_101[3];
-	float brake;			/* 0x104 */
-	byte stopAtGoal;		/* 0x108 */
+	float brake;
+	byte stopAtGoal;
 	byte pad_109[3];
-	cSlotController slotChase;	/* 0x10c 0.2 s while the target is seen */
-	cSlotController slotChaseSee;	/* 0x11c 1/3 s */
-	cSlotController slotChasePath;	/* 0x12c 5 s */
-	cSlotController slotChaseNear;	/* 0x13c 0.2 s */
-	cSlotController slotRepath;	/* 0x14c 3 s while lost */
-	Nto1Node *target;		/* 0x15c the target node of the AI (its target at +8) */
-	float chaseMax;			/* 0x160 */
-	float chaseMin;			/* 0x164 */
-	vec3_t v168;			/* 0x168 */
-	byte inSight;			/* 0x174 the target is seen (chase) */
+	cSlotController slotChase;	/* 0.2 s while the target is seen */
+	cSlotController slotChaseSee;	/* 1/3 s */
+	cSlotController slotChasePath;	/* 5 s */
+	cSlotController slotChaseNear;	/* 0.2 s */
+	cSlotController slotRepath;	/* 3 s while lost */
+	Nto1Node *target;		/* the target node of the AI (its target at +8) */
+	float chaseMax;
+	float chaseMin;
+	vec3_t v168;
+	byte inSight;			/* the target is seen (chase) */
 	byte pad_175[3];
-	float strafeTime;		/* 0x178 */
-	float strafeNext;		/* 0x17c */
-	float strafeX;			/* 0x180 */
-	float strafeY;			/* 0x184 */
-	byte tooNear;			/* 0x188 */
-	byte tooFar;			/* 0x189 */
+	float strafeTime;
+	float strafeNext;
+	float strafeX;
+	float strafeY;
+	byte tooNear;
+	byte tooFar;
 	byte pad_18a[2];
-	int pathState;			/* 0x18c */
-	byte lost;			/* 0x190 the path is blocked, a new one is searched */
-	byte unused_191;			/* 0x191 */
-	byte strafeOn;			/* 0x192 */
-	byte strafing;			/* 0x193 */
-	float strafeElapsed;		/* 0x194 */
-	float strafeWait;		/* 0x198 */
-	byte pathDirect;		/* 0x19c the direct argument of CNodesWorld_BuildPath */
-	byte pathFlat;			/* 0x19d its flat argument */
+	int pathState;
+	byte lost;			/* the path is blocked, a new one is searched */
+	byte unused_191;
+	byte strafeOn;
+	byte strafing;
+	float strafeElapsed;
+	float strafeWait;
+	byte pathDirect;		/* the direct argument of CNodesWorld_BuildPath */
+	byte pathFlat;			/* its flat argument */
 	byte pad_19e[2];
-	vec3_t dir;			/* 0x1a0 the direction of the path (mode 7) */
-	cNWNode *pathNode;		/* 0x1ac */
-	vec3_t corridor[9][2];		/* 0x1b0 the segments of the last free TestCorridor */
-	vec3_t endCap[2][2];		/* 0x288 the segments of the last free TestEnd */
+	vec3_t dir;			/* the direction of the path (mode 7) */
+	cNWNode *pathNode;
+	vec3_t corridor[9][2];		/* the segments of the last free TestCorridor */
+	vec3_t endCap[2][2];		/* the segments of the last free TestEnd */
 } cAIVehicleControl;
 
 /* the weapons of the shoot control: LASER (the hook), VULCAN, DEVASTATOR, ATPC, TESLA, SWARM, INFERNO */
@@ -105,45 +105,45 @@ enum {
 };
 
 typedef struct cAIVSWeap {
-	int kind;			/* 0x00 0, 1, 2 the upgraded vulcan */
-	int unused_04;			/* 0x04 */
-	int unused_08;			/* 0x08 */
-	int weapon;			/* 0x0c the weapon id, -1 none */
-	int upgrade;			/* 0x10 */
-	byte unused_14;			/* 0x14 */
-	byte avail;			/* 0x15 the vehicle has slots for it */
+	int kind;			/* 0, 1, 2 the upgraded vulcan */
+	int unused_04;
+	int unused_08;
+	int weapon;			/* the weapon id, -1 none */
+	int upgrade;
+	byte unused_14;
+	byte avail;			/* the vehicle has slots for it */
 	byte pad_16[2];
 } cAIVSWeap;
 
 typedef struct cAIVehicleShoot {
-	int cadenceMul;			/* 0x004 1 */
-	int cadenceMulCM;		/* 0x008 2 */
-	cAIVehicle *ai;			/* 0x00c */
-	cSlotController slotFire;	/* 0x010 0.2 s */
-	cSlotController slotFireCM;	/* 0x020 0.2 s */
-	cSlotController slotWeap;	/* 0x030 0.5 s */
-	float dt;			/* 0x040 */
-	cEntity *vehicle;		/* 0x044 */
-	cVehicleControls *ctl;		/* 0x048 */
-	cAIVSWeap weaps[AIVS_NUM];	/* 0x04c */
-	cAIVSWeap weap;			/* 0x0f4 the weapon in use */
-	cAIVSWeap cm;			/* 0x10c the countermeasure in use */
-	int mode;			/* 0x124 0 off, 1 fire */
-	int modeCM;			/* 0x128 0 off, 1 countermeasures, 2 the hook */
-	cAIVehicleParams3 params;	/* 0x12c */
-	cAIVehicleParams3 paramsInit;	/* 0x148 */
-	float fireTime;			/* 0x164 */
-	float fireTimeCM;		/* 0x168 */
-	float weapTime;			/* 0x16c */
-	float weapTimeCM;		/* 0x170 */
-	Nto1Node *target;		/* 0x174 the target node of the AI */
-	byte hook;			/* 0x178 */
+	int cadenceMul;			/* 1 */
+	int cadenceMulCM;		/* 2 */
+	cAIVehicle *ai;
+	cSlotController slotFire;	/* 0.2 s */
+	cSlotController slotFireCM;	/* 0.2 s */
+	cSlotController slotWeap;	/* 0.5 s */
+	float dt;
+	cEntity *vehicle;
+	cVehicleControls *ctl;
+	cAIVSWeap weaps[AIVS_NUM];
+	cAIVSWeap weap;			/* the weapon in use */
+	cAIVSWeap cm;			/* the countermeasure in use */
+	int mode;			/* 0 off, 1 fire */
+	int modeCM;			/* 0 off, 1 countermeasures, 2 the hook */
+	cAIVehicleParams3 params;
+	cAIVehicleParams3 paramsInit;
+	float fireTime;
+	float fireTimeCM;
+	float weapTime;
+	float weapTimeCM;
+	Nto1Node *target;		/* the target node of the AI */
+	byte hook;
 	byte pad_179[3];
-	int lifeMark;			/* 0x17c */
-	byte damaged;			/* 0x180 the vehicle lost life since the last fire step */
+	int lifeMark;
+	byte damaged;			/* the vehicle lost life since the last fire step */
 	byte pad_181[3];
 } cAIVehicleShoot;
-/* the class name in the exe (0x184 bytes, the constructor of cAIVehicle) */
+/* the class name in the exe (the constructor of cAIVehicle) */
 typedef cAIVehicleShoot cAIVehicleShootControl;
 
 /* the dodge of StrafeDodge runs */

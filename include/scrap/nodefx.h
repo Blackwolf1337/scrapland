@@ -17,10 +17,10 @@ enum { NODEFX_NONE = 0, NODEFX_WHEEL = 1, NODEFX_SPRING = 2 };
 typedef struct INodeFX INodeFX;
 
 typedef struct INodeFXVtbl {
-	void (*Free)(INodeFX *self);				/* 0x0 */
-	byte(*Type)(INodeFX *self);							/* 0x4 NODEFX_ */
+	void (*Free)(INodeFX *self);
+	byte(*Type)(INodeFX *self);							/* NODEFX_ */
 	/* m changed by the effect; 0 */
-	int(*Apply)(INodeFX *self, matrix_t *m, CNode3D *node, CRenderNode *r);	/* 0x8 */
+	int(*Apply)(INodeFX *self, matrix_t *m, CNode3D *node, CRenderNode *r);
 } INodeFXVtbl;
 
 /* calls through the slots of INodeFXVtbl */
@@ -37,38 +37,38 @@ static inline void NodeFX_Free(void *self) {
 }
 
 struct INodeFX {
-	const INodeFXVtbl *vftable;	/* 0x0 */
+	const INodeFXVtbl *vftable;
 };
 
 typedef struct CNodeFX_Wheel {
 	union {
 		INodeFX base;
-		const INodeFXVtbl *vftable;	/* 0x00 */
+		const INodeFXVtbl *vftable;
 	};
-	float radius;			/* 0x04 0: no turn from the movement */
-	vec3_t rot;			/* 0x08 the axes turned by the distance moved */
-	vec3_t trans;			/* 0x14 the part of the movement along each axis that rolls, the rest slides */
-	vec3_t roll;			/* 0x20 radians per second */
-	vec3_t noiseVel;		/* 0x2c */
-	vec3_t noiseAmt;		/* 0x38 */
-	vec3_t ang;			/* 0x44 the angles given to look r1 */
-	uint32_t noiseBase;		/* 0x50 ms, random */
+	float radius;			/* 0: no turn from the movement */
+	vec3_t rot;			/* the axes turned by the distance moved */
+	vec3_t trans;			/* the part of the movement along each axis that rolls, the rest slides */
+	vec3_t roll;			/* radians per second */
+	vec3_t noiseVel;
+	vec3_t noiseAmt;
+	vec3_t ang;			/* the angles given to look r1 */
+	uint32_t noiseBase;		/* ms, random */
 } CNodeFX_Wheel;
 
 typedef struct CNodeFX_Spring {
 	union {
 		INodeFX base;
-		const INodeFXVtbl *vftable;	/* 0x00 */
+		const INodeFXVtbl *vftable;
 	};
-	vec3_t prev;			/* 0x04 the position of the last step */
-	vec3_t next;			/* 0x10 the position of the next one */
-	uint32_t prevMSec;		/* 0x1c */
-	uint32_t nextMSec;		/* 0x20 */
-	vec3_t vel;			/* 0x24 */
-	float damping;			/* 0x30 */
-	float spring;			/* 0x34 */
-	float torsion;			/* 0x38 */
-	float damp2;			/* 0x3c */
+	vec3_t prev;			/* the position of the last step */
+	vec3_t next;			/* the position of the next one */
+	uint32_t prevMSec;
+	uint32_t nextMSec;
+	vec3_t vel;
+	float damping;
+	float spring;
+	float torsion;
+	float damp2;
 } CNodeFX_Spring;
 
 /* the seconds of the frame */
@@ -80,7 +80,7 @@ void *NodeFX_New(const char *type, CNode3D *node);
 void *NodeFX_Clone(INodeFX *fx);
 
 /* other modules (src/imports.inc) */
-float Ang_Wrap(float a);	/* rva 0x238b80: one turn off when above 2 pi or below -2 pi */
+float Ang_Wrap(float a);	/* one turn off when above 2 pi or below -2 pi */
 matrix_t *Matrix_Transpose(matrix_t *out, const matrix_t *m);
 
 #endif

@@ -12,9 +12,9 @@
 #define BATCH_MAX 0x200
 
 typedef struct BatchMesh {
-	CMeshD3D *mesh;		/* 0x0 */
-	uint32_t tex;			/* 0x4 the device texture of map 0, halved, 0 without */
-	float z;			/* 0x8 the box center in view space */
+	CMeshD3D *mesh;
+	uint32_t tex;			/* the device texture of map 0, halved, 0 without */
+	float z;			/* the box center in view space */
 } BatchMesh;
 
 /* the meshes of the list mesh (up to the first without vertices); dev is only passed on */

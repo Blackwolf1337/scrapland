@@ -137,7 +137,7 @@ static void cRadarScorer_UpdateFloor(cRadarScorer *self, float y) {
 static float g_RadarScale;
 /* the view of the radar: the turn and center of the map, its scale */
 static float g_RadarAngle;
-/* a floor of the world (0x18c bytes from world + 0x2f4, their count at 0x2f0): its lowest height first */
+/* a floor of the world (from world + 0x2f4, their count at 0x2f0): its lowest height first */
 static float g_RadarCenterX;
 static float g_RadarCenterZ;
 

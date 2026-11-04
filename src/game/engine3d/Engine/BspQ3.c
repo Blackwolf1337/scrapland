@@ -102,7 +102,7 @@ static void CBspQ3_InitD3D(CBspQ3 *self) {
 	}
 }
 
-/* D3DXATTRIBUTERANGE of pMesh, 0x14 bytes each */
+/* D3DXATTRIBUTERANGE of pMesh each */
 static uint32_t g_BspQ3Attrib[640];
 
 static void CBspQ3_Render(CBspQ3 *self) {
@@ -150,7 +150,7 @@ static void CBspQ3_Render(CBspQ3 *self) {
 	g_RenderVerts += Rd_XMeshGetNumVertices(self->pMesh);
 }
 
-/* a triangle of the corners (0x28 bytes each) into the mesh of face; the first one allocates the counted ones */
+/* a triangle of the corners (each) into the mesh of face; the first one allocates the counted ones */
 static CBspQ3 *g_BspQ3;
 
 void BspQ3_ReleaseD3D(void) {

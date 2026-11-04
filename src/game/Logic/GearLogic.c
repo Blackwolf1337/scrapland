@@ -88,7 +88,6 @@ static void cGearLocalLogic_Relax(cGearLocalLogic *self) {
 	}
 }
 
-/* vf16 */
 static void cGearLocalLogic_Vf16(cLocalLogic *base, cEntity *arg) {
 	cGearLocalLogic *self = (cGearLocalLogic *)base;
 	(void)self;
@@ -101,7 +100,6 @@ static void cGearLocalLogic_SetDefaultState(cGearLocalLogic *self, int v) {
 	self->defaultState = v;
 }
 
-/* vf03 */
 static byte cGearLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, byte set) {
 	cGearLocalLogic *self = (cGearLocalLogic *)elem;
 	if (strcmp(name, "DefaultState")) {
@@ -173,7 +171,6 @@ static void cGearLocalLogic_UpdateAnim(cGearLocalLogic *self, cEntity *p, float 
 	}
 }
 
-/* vf17 */
 static void cGearLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cGearLocalLogic *self = (cGearLocalLogic *)elem;
 	vec3_t tp, op;
@@ -335,7 +332,7 @@ anim:
 	cGearLocalLogic_UpdateAnim(self, p, dt);
 }
 
-/* vf12: a robbery seen, with the chance GearRobberyDetection plus the amount */
+/* a robbery seen, with the chance GearRobberyDetection plus the amount */
 static void cGearLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
 	cGearLocalLogic *self = (cGearLocalLogic *)elem;
 	if (amount > 0.0f && Logic_Chance(&self->base, e, g_GearRobberyDetection + amount)) {
@@ -357,7 +354,7 @@ static byte Gear_React(cGearLocalLogic *self, cEntity *e) {
 	return 1;
 }
 
-/* vf10: the attacker, unless the gear already attacks the player */
+/* the attacker, unless the gear already attacks the player */
 static void cGearLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 	cGearLocalLogic *self = (cGearLocalLogic *)elem;
 	if (!Gear_React(self, attacker)) {
@@ -368,7 +365,7 @@ static void cGearLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 	}
 }
 
-/* vf14 and vf11 */
+/* and */
 static void cGearLocalLogic_Vf14(cLocalLogic *base, cEntity *e) {
 	cGearLocalLogic *self = (cGearLocalLogic *)base;
 	if (Gear_React(self, e)) {
@@ -376,7 +373,7 @@ static void cGearLocalLogic_Vf14(cLocalLogic *base, cEntity *e) {
 	}
 }
 
-/* vf15: the same, returns 0 */
+/* the same, returns 0 */
 static byte cGearLocalLogic_Vf15(cLocalLogic *base, cEntity *e) {
 	cGearLocalLogic *self = (cGearLocalLogic *)base;
 	if (Gear_React(self, e)) {
@@ -385,7 +382,7 @@ static byte cGearLocalLogic_Vf15(cLocalLogic *base, cEntity *e) {
 	return 0;
 }
 
-/* vf18: the gear becomes a police, during an alarm only with Gear2PoliceAlways */
+/* the gear becomes a police, during an alarm only with Gear2PoliceAlways */
 static void cGearLocalLogic_ToPolice(cLocalLogic *base, cEntity *e) {
 	cGearLocalLogic *self = (cGearLocalLogic *)base;
 	(void)self;
@@ -404,13 +401,12 @@ byte cGearLocalLogic_Call(cGearLocalLogic *self, cEntity *e) {
 	return Logic_SetState(self, GEAR_CHASE, e);
 }
 
-/* vf24 */
 static void cGearLocalLogic_RestartState(cLocalLogic *base) {
 	cGearLocalLogic *self = (cGearLocalLogic *)base;
 	Gear_ToDefault(self);
 }
 
-/* vf19: the AI state of the logic state with the gear speeds */
+/* the AI state of the logic state with the gear speeds */
 static byte cGearLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cGearLocalLogic *self = (cGearLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
@@ -456,7 +452,6 @@ static byte cGearLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 	return ok;
 }
 
-/* vf05 */
 static byte cGearLocalLogic_VarS(cLocalLogic *elem, const char *name, char **s, byte set) {
 	cGearLocalLogic *self = (cGearLocalLogic *)elem;
 	if (strcmp(name, "DefaultTarget")) {

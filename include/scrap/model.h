@@ -31,11 +31,11 @@ enum {
 
 /* an animation slot: the animation and the one it blends out of (a NodeAnimPair for the render context) */
 typedef struct CAnimSlot {
-	CAnimGroup *anim;		/* 0x0 */
-	CAnimGroup *prev;		/* 0x4 */
-	float blend;			/* 0x8 the weight of prev, from 1 down to 0 */
-	byte subset;			/* 0xc morph target */
-	byte prevSubset;		/* 0xd */
+	CAnimGroup *anim;
+	CAnimGroup *prev;
+	float blend;			/* the weight of prev, from 1 down to 0 */
+	byte subset;			/* morph target */
+	byte prevSubset;
 	byte pad_e[2];
 } CAnimSlot;
 
@@ -43,72 +43,72 @@ struct CModel;
 
 /* a level of detail: the model of the level (Modelo.h) */
 typedef struct CLod {
-	struct CModel *model;		/* 0x0 */
-	int unused_04;				/* 0x4 */
+	struct CModel *model;
+	int unused_04;
 } CLod;
 
 /* called before (after 0) and after (1) the model is drawn */
 typedef void (*modelCallback_t)(struct CModel *m, int after, void *arg, void *arg2);
 
 typedef struct CModel {
-	char *name;			/* 0x004 Cad */
-	vec3_t pos;			/* 0x008 */
-	vec3_t rot;			/* 0x014 */
-	vec3_t scale;			/* 0x020 */
-	vec3_t animOfs;			/* 0x02c root offset of the animations, set for each draw */
-	vec3_t pivot;			/* 0x038 */
-	vec3_t rot2;			/* 0x044 */
-	vec3_t scaleBase;		/* 0x050 the scale the scene was made with */
-	matrix_t local;			/* 0x05c applied after the transform */
-	byte showBox;			/* 0x09c */
-	byte animate;			/* 0x09d the animations play (and move the model) */
-	byte dynLight;			/* 0x09e lit by the lights of the level (not StaticLighting) */
-	byte alwaysVisible;		/* 0x09f */
-	byte hasMesh;			/* 0x0a0 */
-	byte hasShadow;			/* 0x0a1 */
+	char *name;			/* Cad */
+	vec3_t pos;
+	vec3_t rot;
+	vec3_t scale;
+	vec3_t animOfs;			/* root offset of the animations, set for each draw */
+	vec3_t pivot;
+	vec3_t rot2;
+	vec3_t scaleBase;		/* the scale the scene was made with */
+	matrix_t local;			/* applied after the transform */
+	byte showBox;
+	byte animate;			/* the animations play (and move the model) */
+	byte dynLight;			/* lit by the lights of the level (not StaticLighting) */
+	byte alwaysVisible;
+	byte hasMesh;
+	byte hasShadow;
 	byte pad_a2[2];
-	CTable slots;			/* 0x0a4 CAnimSlot[MAX_ANIM_CHANNEL] */
-	CTable *renderNodes;			/* 0x0ac TabNodoR: CRenderNode[] */
-	matrix_t mRender;		/* 0x0b0 the world matrix of the last draw */
-	modelCallback_t callback;	/* 0x0f0 */
-	void *cbArg;			/* 0x0f4 */
-	void *cbArg2;			/* 0x0f8 */
-	struct CModelList *list;	/* 0x0fc its entry in the model list */
-	CTable lods;			/* 0x100 CLod[] */
-	float lodDist;			/* 0x108 */
-	int renderEffect;		/* 0x10c MODEL_EFFECT_*, ModelFX_Render */
-	int effectParam;		/* 0x110 the float parameter of the effect (0..1) as bits */
-	float sortZBias;		/* 0x114 */
-	float sortZMult;		/* 0x118 */
-	float stencilDist;		/* 0x11c */
-	byte enable;			/* 0x120 in gModelosRender */
-	byte visible;			/* 0x121 seen in the last frame */
+	CTable slots;			/* CAnimSlot[MAX_ANIM_CHANNEL] */
+	CTable *renderNodes;			/* TabNodoR: CRenderNode[] */
+	matrix_t mRender;		/* the world matrix of the last draw */
+	modelCallback_t callback;
+	void *cbArg;
+	void *cbArg2;
+	struct CModelList *list;	/* its entry in the model list */
+	CTable lods;			/* CLod[] */
+	float lodDist;
+	int renderEffect;		/* MODEL_EFFECT_*, ModelFX_Render */
+	int effectParam;		/* the float parameter of the effect (0..1) as bits */
+	float sortZBias;
+	float sortZMult;
+	float stencilDist;
+	byte enable;			/* in gModelosRender */
+	byte visible;			/* seen in the last frame */
 	byte pad_122[2];
-	CScene *scene;		/* 0x124 */
-	struct CModel *mainLOD;	/* 0x128 the model this one is a LOD of */
-	CAnimGroups anims;		/* 0x12c */
-	SectorVis sector;		/* 0x1dc the sector lookup of the position */
+	CScene *scene;
+	struct CModel *mainLOD;	/* the model this one is a LOD of */
+	CAnimGroups anims;
+	SectorVis sector;		/* the sector lookup of the position */
 } CModel;
 
 /* util_escena.cpp: an entry of the scene list */
 typedef struct CSceneList {
-	CScene *scene;		/* 0x00 a reference */
-	char *name;			/* 0x04 Cad */
-	char *name2;			/* 0x08 Cad */
-	vec3_t scale;			/* 0x0c */
-	uint32_t flags;			/* 0x18 ESCENA_* */
-	struct CSceneList *next;	/* 0x1c */
+	CScene *scene;		/* a reference */
+	char *name;			/* Cad */
+	char *name2;			/* Cad */
+	vec3_t scale;
+	uint32_t flags;			/* ESCENA_* */
+	struct CSceneList *next;
 } CSceneList;
 
 /* an entry of the model list; the models to render point to their entry from gModelosRender */
 typedef struct CModelList {
-	CModel *model;		/* 0x00 owned */
-	char *name;			/* 0x04 Cad */
-	char *name2;			/* 0x08 Cad */
-	uint32_t flags;			/* 0x0c ESCENA_* */
-	struct CModelList *next;	/* 0x10 */
-	int renderIndex;		/* 0x14 in gModelosRender, -1 none */
-	float sortKey;			/* 0x18 */
+	CModel *model;		/* owned */
+	char *name;			/* Cad */
+	char *name2;			/* Cad */
+	uint32_t flags;			/* ESCENA_* */
+	struct CModelList *next;
+	int renderIndex;		/* in gModelosRender, -1 none */
+	float sortKey;
 } CModelList;
 
 /* a reference to a scene dropped, the scene deleted with the last one */
@@ -220,7 +220,7 @@ void ModelFX_InitD3D(void);
 float World_TimeScale(void);
 void CRenderNode_dtor(CRenderNode *self);
 void CRenderNode_SetNode(CRenderNode *self, CNode3D *node);
-/* rva 0x23fac0, the matrix identity, the channels cleared; the model and its render nodes at 0xa0 and 0xa4 */
+/* the matrix identity, the channels cleared; the model and its render nodes at 0xa0 and 0xa4 */
 void RenderCtx_Init(NodeAnimCtx *self, CModel *m, const vec3_t *scale);
 void RenderCtx_SetChannel(NodeAnimChannel *self, CAnimSlot *slot);
 /* the play state of an animation group */

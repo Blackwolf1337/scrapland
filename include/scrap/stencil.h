@@ -19,19 +19,19 @@
 
 /* a group of volumes of one light */
 typedef struct StencilBlock {
-	CLight *Light;			/* 0x00 */
-	vec3_t lightPos;		/* 0x04 g_ShadowLightPos */
-	float range;			/* 0x10 g_ShadowRange */
-	float cosCone;			/* 0x14 g_ShadowCos */
-	byte directional;		/* 0x18 */
-	byte spot;			/* 0x19 */
+	CLight *Light;
+	vec3_t lightPos;		/* g_ShadowLightPos */
+	float range;			/* g_ShadowRange */
+	float cosCone;			/* g_ShadowCos */
+	byte directional;
+	byte spot;
 	byte pad_1a[2];
-	vec3_t lightPosObj;		/* 0x1c in the space of the mesh */
-	vec3_t lightDirObj;		/* 0x28 */
-	matrix_t world;			/* 0x34 moved by R_StencilViewDisp along the view */
-	int useg;			/* 0x74 the segments end here */
-	int unused_78;			/* 0x78 */
-	int utri;			/* 0x7c the cap triangles end here */
+	vec3_t lightPosObj;		/* in the space of the mesh */
+	vec3_t lightDirObj;
+	matrix_t world;			/* moved by R_StencilViewDisp along the view */
+	int useg;			/* the segments end here */
+	int unused_78;
+	int utri;			/* the cap triangles end here */
 } StencilBlock;
 
 extern float g_StencilMultFrame;

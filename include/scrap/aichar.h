@@ -24,46 +24,46 @@
 
 #define CAICHARGROUP_SIZE sizeof(cAICharGroup)
 
-/* a point of a zone (0x1c bytes, new[] of the exe with the count before it) */
+/* a point of a zone (new[] of the exe with the count before it) */
 typedef struct cAICGPoint {
-	Nto1Node link;			/* 0x00 data the point itself, target the character that took it */
-	vec3_t pos;			/* 0x10 */
+	Nto1Node link;			/* data the point itself, target the character that took it */
+	vec3_t pos;
 } cAICGPoint;
 
 typedef struct cAICGZone {
-	char name[0x80];		/* 0x00 */
-	cAICGPoint *points;		/* 0x80 */
-	int numPoints;			/* 0x84 */
+	char name[0x80];
+	cAICGPoint *points;
+	int numPoints;
 } cAICGZone;
 
 /* the lists of the dummies while the zones are made (Global/DList.h instances) */
 typedef struct cAICGPosNode {
-	struct cAICGPosNode *next;	/* 0x00 */
-	struct cAICGPosNode *prev;	/* 0x04 */
-	vec3_t pos;			/* 0x08 */
+	struct cAICGPosNode *next;
+	struct cAICGPosNode *prev;
+	vec3_t pos;
 } cAICGPosNode;
 typedef DLIST(cAICGPosNode) cAICGPosList;
 
 typedef struct cAICGZoneData {
-	char name[0x80];		/* 0x00 */
-	cAICGPosList points;		/* 0x80 */
+	char name[0x80];
+	cAICGPosList points;
 } cAICGZoneData;
 
 typedef struct cAICGZoneNode {
-	struct cAICGZoneNode *next;	/* 0x00 */
-	struct cAICGZoneNode *prev;	/* 0x04 */
-	cAICGZoneData zone;		/* 0x08 */
+	struct cAICGZoneNode *next;
+	struct cAICGZoneNode *prev;
+	cAICGZoneData zone;
 } cAICGZoneNode;
 typedef DLIST(cAICGZoneNode) cAICGZoneList;
 
 /* the slots of cAIEntityGroup with the group as self */
 struct cAICharGroup {
 	union {
-		cAIEntityGroup base;			/* 0x00 */
+		cAIEntityGroup base;
 		const cAIEntityGroupVtbl *vftable;
 	};
-	cAICGZone *zones;		/* 0x60 Mem_Alloc */
-	int numZones;			/* 0x64 */
+	cAICGZone *zones;		/* Mem_Alloc */
+	int numZones;
 };
 
 /* a point for the repositioning of e out of view between minDist and maxDist from the camera into out; with flag 0 a
@@ -105,7 +105,7 @@ static inline float AIChar_TargetDist(cAIChar *c) {
 	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 }
 
-/* the debug text of a demand of a change of state (the name of the state, 0x100 bytes) */
+/* the debug text of a demand of a change of state (the name of the state) */
 static inline void AIChar_DebugState(cAIChar *c, const char *fmt, int state) {
 	char name[0x100];
 

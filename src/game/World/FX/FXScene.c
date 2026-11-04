@@ -1070,7 +1070,7 @@ void cObjElementFXSceneDecontamination_Update(cObjElementFX *base, cDebris *d, f
 /* ---- BeatPickus: the beating of Pickus, dust, smoke, sparks and the hits ---- */
 
 
-/* the offsets of the puffs of the hits (rva 0x3cd720, 0x3cd730, 0x3cd710 in that order) */
+/* the offsets of the puffs of the hits (0x3cd730, 0x3cd710 in that order) */
 static const vec3_t fxs_beatPuffs[4] = {
 	{ 8.0f, 5.0f, -15.0f }, { -25.0f, 2.0f, -30.0f }, { -45.0f, -35.0f, 45.0f }, { 30.0f, 14.0f, 45.0f },
 };
@@ -1909,7 +1909,7 @@ void cObjElementFXSceneBillArrives_A_Update(cObjElementFX *base, cDebris *d, flo
 
 /* ---- EnterMatrix: the rays of the matrix ---- */
 
-/* the paths of the rays of the second part (8, rva 0x430f68): two segments a path, A to C and B to D */
+/* the paths of the rays of the second part (8): two segments a path, A to C and B to D */
 #define FXMATRIX_RAYCOLOR 0xc3e1640
 #define FXMATRIX_RAYCOLOR_END 0x2c3e1640
 

@@ -10,7 +10,7 @@
 #define GAMETRAIL_MAX_BEZIER 16	/* the control points the stack arrays of the Bezier functions hold */
 
 typedef struct CGameTrail {
-	CTrail *trailsys;		/* 0x0 owned */
+	CTrail *trailsys;		/* owned */
 } CGameTrail;
 
 CGameTrail *CGameTrail_ctor(CGameTrail *self);

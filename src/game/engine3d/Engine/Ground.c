@@ -98,18 +98,10 @@ static void Table_WriteC(CFileIO *f, CTable *t) {
 	Table_Write(f, t, 0xc);
 }
 
-/* the floor nodes: an array of CNode3D of new[], its count before it */
-static void Table_DeleteObjs(void *p) {
-	uint32_t *mem = (uint32_t *)p - 1;
-
-	crt_eh_vector_dtor(p, sizeof(CNode3D), *mem, (void *)CNode3D_dtor);
-	operator_delete_array(mem);
-}
-
-/* elements with a vector deleting destructor (vftable[0]) or plain new[]; the table empty after */
+/* the floor nodes (an array of CNode3D of new[]) freed, the table empty after */
 static void Table_FreeObjs(CTable *t) {
 	if (t->p) {
-		Table_DeleteObjs(t->p);
+		Delete_Objects(t->p, sizeof(CNode3D), (void *)CNode3D_dtor);
 		t->p = NULL;
 		t->n = 0;
 	}
@@ -164,7 +156,7 @@ void CCollideQuad_dtor(CCollideQuad *self) {
 	Table_Free((CTable *)&self->nTri);
 }
 
-/* the deleting destructor of the floor nodes (CNode3D) */
+/* the Free of a floor node (CNode3D) */
 void CNode3D_Free(ObjRef *base) {
 	void *self = (void *)base;
 	CNode3D_dtor(self);

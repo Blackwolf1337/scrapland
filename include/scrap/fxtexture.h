@@ -18,9 +18,9 @@ enum { FXTEX_LAVA = 1, FXTEX_SCROLL = 2, FXTEX_NEWSPANEL = 3 };
 typedef struct IFXTexture IFXTexture;
 
 typedef struct IFXTextureVtbl {
-	void (*Free)(IFXTexture *self);	/* 0x0 */
-	int(*Update)(IFXTexture *self, CMap *map);		/* 0x4 */
-	void *(*GetTexture)(IFXTexture *self);			/* 0x8 */
+	void (*Free)(IFXTexture *self);
+	int(*Update)(IFXTexture *self, CMap *map);
+	void *(*GetTexture)(IFXTexture *self);
 } IFXTextureVtbl;
 
 /* calls through the slots of IFXTextureVtbl */
@@ -37,28 +37,28 @@ static inline void FXTexture_Free(void *self) {
 }
 
 struct IFXTexture {
-	const IFXTextureVtbl *vftable;	/* 0x0 */
+	const IFXTextureVtbl *vftable;
 };
 
 typedef struct CFXTexLava {
 	IFXTexture base;
-	CBmp *bmp;			/* 0x04 the file, changed in place and copied into the map */
-	CBmp *orig;			/* 0x08 a copy of it */
-	uint32_t lastTime;		/* 0x0c */
+	CBmp *bmp;			/* the file, changed in place and copied into the map */
+	CBmp *orig;			/* a copy of it */
+	uint32_t lastTime;
 } CFXTexLava;
 
 typedef struct CFXTexScroll {
 	IFXTexture base;
-	CBmp *bmp;			/* 0x04 */
-	CBmp *orig;			/* 0x08 */
-	uint32_t lastTime;		/* 0x0c */
-	int offset;			/* 0x10 the pixels scrolled */
-	int unused_14;			/* 0x14 */
+	CBmp *bmp;
+	CBmp *orig;
+	uint32_t lastTime;
+	int offset;			/* the pixels scrolled */
+	int unused_14;
 } CFXTexScroll;
 
 typedef struct CFXNewsPanel {
 	IFXTexture base;
-	int time;			/* 0x4 of the last update */
+	int time;			/* of the last update */
 } CFXNewsPanel;
 
 /* the effect of kind for the file of map, NULL for an unknown kind */

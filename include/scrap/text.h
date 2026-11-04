@@ -8,10 +8,10 @@
 #include "scrap/mathlib.h"
 
 typedef struct TextMsg {
-	uint32_t start;		/* 0x000 timeGetTime when it was first shown, 0 before */
-	uint32_t duration;		/* 0x004 ms */
-	char text[0x100];		/* 0x008 */
-	struct TextMsg *next;		/* 0x108 */
+	uint32_t start;		/* timeGetTime when it was first shown, 0 before */
+	uint32_t duration;		/* ms */
+	char text[0x100];
+	struct TextMsg *next;
 } TextMsg;
 
 /* the texts of Text_Draw, then the first message for its time and the next ones under it */
@@ -25,7 +25,7 @@ void Text_Printf(int x, int y, const char *fmt, ...);
 void Text_Message(uint32_t ms, const char *fmt, ...);
 
 /* other modules (src/imports.inc) */
-/* rva 0x2170d0 (ScrapEngMain.cpp): text in font fnt (1 or 2), align 3 centered */
+/* (ScrapEngMain.cpp): text in font fnt (1 or 2), align 3 centered */
 void Eng_Printf(int fnt, float x, float y, int align, uint32_t color, const char *fmt, ...);
 
 #endif

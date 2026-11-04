@@ -25,45 +25,45 @@ typedef struct cVehicleEntity cVehicleEntity;
 #define VEFF_TUBES_MERC 1
 #define VEFF_TUBES_NONE 2
 
-/* the speed trails at the nodes DF_SpeedTrail_01..04 (0x60 bytes) */
+/* the speed trails at the nodes DF_SpeedTrail_01..04 */
 typedef struct cVehicleTrails {
-	cVehicleEntity *owner;		/* 0x00 m_Owner */
-	int count;			/* 0x04 the nodes found */
-	float fade;			/* 0x08 approaches the horizontal speed factor */
-	CGameTrail trails[VEFF_TRAILS];	/* 0x0c */
-	int nodes[VEFF_TRAILS];		/* 0x1c -1 for none */
-	float dist;			/* 0x2c from the last point */
-	vec3_t last;			/* 0x30 the center at the last point */
-	float time;			/* 0x48 since the last shrink */
-	uint32_t color;			/* 0x4c */
-	float segment;			/* 0x50 approaches the segment length */
-	vec3_t root;			/* 0x54 the node DC_Root */
+	cVehicleEntity *owner;		/* m_Owner */
+	int count;			/* the nodes found */
+	float fade;			/* approaches the horizontal speed factor */
+	CGameTrail trails[VEFF_TRAILS];
+	int nodes[VEFF_TRAILS];		/* -1 for none */
+	float dist;			/* from the last point */
+	vec3_t last;			/* the center at the last point */
+	float time;			/* since the last shrink */
+	uint32_t color;
+	float segment;			/* approaches the segment length */
+	vec3_t root;			/* the node DC_Root */
 } cVehicleTrails;
 
-/* the escape tubes of the SLifeBoat at the nodes DF_EscapeTube_01, 02 (0x17c bytes) */
+/* the escape tubes of the SLifeBoat at the nodes DF_EscapeTube_01, 02 */
 typedef struct cVehicleTubes {
-	cVehicleEntity *owner;		/* 0x00 m_Owner */
-	int count;			/* 0x04 the nodes found */
-	int unused_08;			/* 0x08 */
-	int kind;			/* 0x0c VEFF_TUBES_ */
-	float time;			/* 0x10 since the last emission */
-	int nodes[VEFF_TUBES];		/* 0x14 -1 for none */
-	CGameParticles particles[VEFF_TUBES];	/* 0x1c */
+	cVehicleEntity *owner;		/* m_Owner */
+	int count;			/* the nodes found */
+	int unused_08;
+	int kind;			/* VEFF_TUBES_ */
+	float time;			/* since the last emission */
+	int nodes[VEFF_TUBES];		/* -1 for none */
+	CGameParticles particles[VEFF_TUBES];
 } cVehicleTubes;
 
 typedef struct cVehicleEffects {
-	cVehicleEntity *owner;		/* 0x00 m_Owner */
-	byte damageOn;			/* 0x04 */
+	cVehicleEntity *owner;		/* m_Owner */
+	byte damageOn;
 	byte pad_05[3];
-	float damageTime;		/* 0x08 since the life went low */
-	byte emiOn;			/* 0x0c */
+	float damageTime;		/* since the life went low */
+	byte emiOn;
 	byte pad_0d[3];
-	float emiTime;			/* 0x10 */
-	byte fireOn;			/* 0x14 */
+	float emiTime;
+	byte fireOn;
 	byte pad_15[3];
-	float fireTime;			/* 0x18 */
-	cVehicleTrails *trails;		/* 0x1c NULL for none */
-	cVehicleTubes *tubes;		/* 0x20 NULL for none */
+	float fireTime;
+	cVehicleTrails *trails;		/* NULL for none */
+	cVehicleTubes *tubes;		/* NULL for none */
 } cVehicleEffects;
 
 /* the parts before the range of the file in the exe */

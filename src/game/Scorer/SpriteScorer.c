@@ -55,7 +55,7 @@ cSpriteScorer *cSpriteScorer_ctor(cSpriteScorer *self) {
 	return self;
 }
 
-/* also the destructor of cGradientScorer (rva 0x17b2d0, the same code) */
+/* also the destructor of cGradientScorer (the same code) */
 void cSpriteScorer_dtor(cSpriteScorer *self) {
 	CPsaImage *img = self->img;
 	if (img) {

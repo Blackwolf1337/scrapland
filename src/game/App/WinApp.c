@@ -46,20 +46,19 @@ static void CWinApp_dtor(CWinApp *self) {
 	CApp_dtor(&self->base);
 }
 
-/* vf03 */
 static void CWinApp_Free(CApp *base) {
 	CWinApp *self = (CWinApp *)base;
 	CWinApp_dtor(self);
 	operator_delete(self);
 }
 
-/* vf17: the console window is gone */
+/* the console window is gone */
 static void CWinApp_ConsoleAdd(CApp *base, const char *text, uint32_t color) {
 	CWinApp *self = (CWinApp *)base;
 	(void)self, (void)text, (void)color;
 }
 
-/* vf16: the console window is gone */
+/* the console window is gone */
 static void CWinApp_ShowConsole(CApp *base, byte show) {
 	CWinApp *self = (CWinApp *)base;
 	(void)self, (void)show;
@@ -86,14 +85,14 @@ static byte CWinApp_CreateMainWindow(CWinApp *self) {
 	return 1;
 }
 
-/* vf18: the original asked in a modal dialog of the console window, which is gone: no text (None for Python) */
+/* the original asked in a modal dialog of the console window, which is gone: no text (None for Python) */
 static const char *CWinApp_DebugInput(CApp *base, const char *prompt) {
 	CWinApp *self = (CWinApp *)base;
 	(void)self, (void)prompt;
 	return NULL;
 }
 
-/* vf08: no textures and no sound for -dedicated */
+/* no textures and no sound for -dedicated */
 static void CWinApp_InitDedicated(CApp *base) {
 	CWinApp *self = (CWinApp *)base;
 	(void)self;
@@ -101,7 +100,6 @@ static void CWinApp_InitDedicated(CApp *base) {
 	g_SoundInit = 0;
 }
 
-/* vf06 */
 static void CWinApp_Shutdown(CApp *elem) {
 	CWinApp *self = (CWinApp *)elem;
 	CApp_Shutdown(&self->base);
@@ -109,14 +107,12 @@ static void CWinApp_Shutdown(CApp *elem) {
 	App_SetExceptionFilter(0);
 }
 
-/* vf09 */
 static void CWinApp_Exit(CApp *base) {
 	CWinApp *self = (CWinApp *)base;
 	(void)self;
 	Plat_Quit();
 }
 
-/* vf13 */
 static void CWinApp_ResetParams(CApp *elem) {
 	CWinApp *self = (CWinApp *)elem;
 	self->console = 0;
@@ -160,7 +156,7 @@ static int64_t g_TimeQPFreq;
 static int64_t g_TimeQPStart;
 static uint32_t g_TimeMsStart;
 
-/* vf14: seconds since the first call, by the performance counter if there is one, else by timeGetTime */
+/* seconds since the first call, by the performance counter if there is one, else by timeGetTime */
 static double CWinApp_GetTime(CApp *base) {
 	CWinApp *self = (CWinApp *)base;
 	(void)self;
@@ -209,7 +205,7 @@ static void CWinApp_InitStep(CWinApp *self) {
 	}
 }
 
-/* vf04: the window, the language, then CApp_Init, which may leave its videos to the message loop
+/* the window, the language, then CApp_Init, which may leave its videos to the message loop
  * (CWinApp_InitStep) */
 static byte CWinApp_Init(CApp *elem) {
 	CWinApp *self = (CWinApp *)elem;
@@ -239,7 +235,7 @@ static byte CWinApp_Init(CApp *elem) {
 	return 1;
 }
 
-/* vf05: CApp_Frame (the original ran the GOG and Steam callbacks first) */
+/* CApp_Frame (the original ran the GOG and Steam callbacks first) */
 static byte CWinApp_Frame(CApp *elem) {
 	CWinApp *self = (CWinApp *)elem;
 	/* differs from the original on purpose (no sleeps): no Sleep(250) while the app is in the background; CApp_Frame
@@ -264,7 +260,7 @@ void App_GetConfigDir(char *buf, int size) {
 	Plat_ConfigDir(buf, size);
 }
 
-/* vf12: -console, -inifile:name, else CApp_ParseParam */
+/* -console, -inifile:name, else CApp_ParseParam */
 static byte CWinApp_ParseParam(CApp *elem, const char *param, const char *ext) {
 	CWinApp *self = (CWinApp *)elem;
 	if (!crt_stricmp("console", param)) {
@@ -278,7 +274,7 @@ static byte CWinApp_ParseParam(CApp *elem, const char *param, const char *ext) {
 	return CApp_ParseParam(&self->base, param, ext);
 }
 
-/* vf19: starts exe (from the game directory) with the command line, without waiting */
+/* starts exe (from the game directory) with the command line, without waiting */
 static byte CWinApp_RunApp(CApp *base, const char *exe, const char *cmdLine, int arg) {
 	CWinApp *self = (CWinApp *)base;
 	char path[0x104], cmd[0x208], args[0x208];
@@ -298,7 +294,6 @@ static byte CWinApp_RunApp(CApp *base, const char *exe, const char *cmdLine, int
 	return 1;
 }
 
-/* vf20 */
 static byte CWinApp_IsDedicatedWin(CApp *base) {
 	CWinApp *self = (CWinApp *)base;
 	return self->dedicatedWin;

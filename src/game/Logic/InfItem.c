@@ -119,7 +119,6 @@ static cItemDesc *InfItemList_Next(cInfItemList *list, void **iter) {
 	return n != list->head ? &n->item : NULL;
 }
 
-/* vf01 */
 void cInfItem_AddLife(cInfItem *self, cItemDesc *item) {
 	cInfItemNode *save = self->life.iter;
 
@@ -127,17 +126,14 @@ void cInfItem_AddLife(cInfItem *self, cItemDesc *item) {
 	self->life.iter = save;
 }
 
-/* vf02 */
 cItemDesc *cInfItem_FirstLife(cInfItem *self, void **iter) {
 	return InfItemList_First(&self->life, iter);
 }
 
-/* vf03 */
 cItemDesc *cInfItem_NextLife(cInfItem *self, void **iter) {
 	return InfItemList_Next(&self->life, iter);
 }
 
-/* vf04 */
 void cInfItem_AddAmmo(cInfItem *self, int kind, cItemDesc *item) {
 	cInfItemList *l;
 
@@ -162,12 +158,10 @@ void cInfItem_AddAmmo(cInfItem *self, int kind, cItemDesc *item) {
 	l->iter = save;
 }
 
-/* vf05 */
 cItemDesc *cInfItem_FirstAmmo(cInfItem *self, int kind, void **iter) {
 	return InfItemList_First(InfItem_AmmoList(self, kind), iter);
 }
 
-/* vf06 */
 cItemDesc *cInfItem_NextAmmo(cInfItem *self, int kind, void **iter) {
 	return InfItemList_Next(InfItem_AmmoList(self, kind), iter);
 }

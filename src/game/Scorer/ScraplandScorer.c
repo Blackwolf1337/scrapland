@@ -372,7 +372,7 @@ static void SubMenu_Draw(CPsaImage *img, float scale, uint32_t color, byte setCo
 static int g_SubMenuRingDir;
 static int g_SubMenuRingFrame;
 
-/* vf00: the logo, the ring mask, its reflection turning back and forth, the ring border and the flickering glow;
+/* the logo, the ring mask, its reflection turning back and forth, the ring border and the flickering glow
  * after a random wait a ring of lightning frames runs in or out */
 static void cScraplandSubMenuScorer_Draw(cScorerItem *base, int player) {
 	cScraplandSubMenuScorer *self = (cScraplandSubMenuScorer *)base;
@@ -641,7 +641,7 @@ static void MainMenu_Sparks(cScraplandMainMenuScorer *self, float dt) {
 
 CFont *g_FontScrapMedium;
 
-/* vf00: the logo and its glow, the flickering neon tubes, the letters with their lighting, the sparks and the
+/* the logo and its glow, the flickering neon tubes, the letters with their lighting, the sparks and the
  * pulsing "Remastered" */
 static void cScraplandMainMenuScorer_Draw(cScorerItem *base, int player) {
 	cScraplandMainMenuScorer *self = (cScraplandMainMenuScorer *)base;

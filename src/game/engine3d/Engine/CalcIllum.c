@@ -21,10 +21,10 @@ static cGVar GVar_R_ShowPreIllumVtx;
 
 /* a vertex of VERT_LTEX1N */
 typedef struct VertLTex1N {
-	vec3_t pos;			/* 0x00 */
-	vec3_t n;			/* 0x0c */
-	uint32_t color;			/* 0x18 */
-	uv_t uv;			/* 0x1c */
+	vec3_t pos;
+	vec3_t n;
+	uint32_t color;
+	uv_t uv;
 } VertLTex1N;
 
 /* the colors of CMaterial_CalcColors */

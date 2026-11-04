@@ -202,11 +202,11 @@ static void BspTri_Mask(BspTri *list, CBmp *cob) {
 
 /* a vertex of the lists while they are made */
 typedef struct BspVert {
-	vec3_t pos;			/* 0x00 */
-	vec3_t n;			/* 0x0c in steps of 1/1000 */
-	uint32_t color;			/* 0x18 */
-	float uv[2];			/* 0x1c */
-	float uvl[2];			/* 0x24 */
+	vec3_t pos;
+	vec3_t n;			/* in steps of 1/1000 */
+	uint32_t color;
+	float uv[2];
+	float uvl[2];
 } BspVert;
 
 static inline float Bsp_Quantize(float v) {

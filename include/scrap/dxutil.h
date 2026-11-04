@@ -23,34 +23,34 @@ typedef struct D3DGuid {
 
 /* the adapters of CD3DApplication with their devices and modes */
 typedef struct D3DModeInfo {
-	uint32_t Width;			/* 0x00 */
-	uint32_t Height;		/* 0x04 */
-	uint32_t Format;		/* 0x08 D3DFORMAT */
-	uint32_t dwBehavior;		/* 0x0c */
-	uint32_t DepthStencilFormat;	/* 0x10 */
+	uint32_t Width;
+	uint32_t Height;
+	uint32_t Format;		/* D3DFORMAT */
+	uint32_t dwBehavior;
+	uint32_t DepthStencilFormat;
 } D3DModeInfo;
 
 #define MAX_D3DMODES 150
 #define MAX_D3DDEVICES 5
 
 typedef struct D3DDeviceInfo {
-	uint32_t DeviceType;		/* 0x00 1 HAL, 2 REF */
-	D3DCaps8 d3dCaps;		/* 0x04 */
-	const char *strDesc;		/* 0xd8 "HAL", "REF" (strings of the exe) */
-	int bCanDoWindowed;		/* 0xdc */
-	int dwNumModes;			/* 0xe0 */
-	D3DModeInfo modes[MAX_D3DMODES];	/* 0xe4 */
-	int dwCurrentMode;		/* 0xc9c */
-	int bWindowed;			/* 0xca0 */
-	uint32_t MultiSampleType;	/* 0xca4 */
+	uint32_t DeviceType;		/* 1 HAL, 2 REF */
+	D3DCaps8 d3dCaps;
+	const char *strDesc;		/* "HAL", "REF" (strings of the exe) */
+	int bCanDoWindowed;
+	int dwNumModes;
+	D3DModeInfo modes[MAX_D3DMODES];
+	int dwCurrentMode;
+	int bWindowed;
+	uint32_t MultiSampleType;
 } D3DDeviceInfo;
 
 typedef struct D3DAdapterInfo {
-	D3DAdapterId id;			/* 0x0000 */
-	D3DDisplayMode desktopMode;		/* 0x042c d3ddmDesktop */
-	uint32_t dwNumDevices;			/* 0x043c */
-	D3DDeviceInfo devices[MAX_D3DDEVICES];	/* 0x0440 */
-	int dwCurrentDevice;			/* 0x4388 */
+	D3DAdapterId id;
+	D3DDisplayMode desktopMode;		/* d3ddmDesktop */
+	uint32_t dwNumDevices;
+	D3DDeviceInfo devices[MAX_D3DDEVICES];
+	int dwCurrentDevice;
 } D3DAdapterInfo;
 
 #define MAX_D3DADAPTERS 10
@@ -59,20 +59,20 @@ typedef struct CD3DApplication CD3DApplication;
 
 /* the virtual methods of CD3DApplication (the HRESULT unless noted) */
 typedef struct CD3DApplicationVtbl {
-	int(*AdjustWindowForChange)(CD3DApplication *self);	/* 0x00 */
-	int(*ConfirmDevice)(CD3DApplication *self, D3DCaps8 *caps, uint32_t behavior, uint32_t fmt);	/* 0x04 */
-	int(*OneTimeSceneInit)(CD3DApplication *self);	/* 0x08 */
-	int(*InitDeviceObjects)(CD3DApplication *self);	/* 0x0c */
-	int(*RestoreDeviceObjects)(CD3DApplication *self);	/* 0x10 */
-	int(*FrameMove)(CD3DApplication *self);		/* 0x14 */
-	int(*Render)(CD3DApplication *self);			/* 0x18 */
-	int(*InvalidateDeviceObjects)(CD3DApplication *self);	/* 0x1c */
-	int(*DeleteDeviceObjects)(CD3DApplication *self);	/* 0x20 */
-	int(*FinalCleanup)(CD3DApplication *self);		/* 0x24 */
-	int(*Create)(CD3DApplication *self, void *hInstance);	/* 0x28 */
-	int(*Run)(CD3DApplication *self);			/* 0x2c the wParam of WM_QUIT */
-	void *msgProc;				/* 0x30 the window procedure, gone (src/game/App/Platform.c) */
-	void(*Pause)(CD3DApplication *self, int pause);	/* 0x34 */
+	int(*AdjustWindowForChange)(CD3DApplication *self);
+	int(*ConfirmDevice)(CD3DApplication *self, D3DCaps8 *caps, uint32_t behavior, uint32_t fmt);
+	int(*OneTimeSceneInit)(CD3DApplication *self);
+	int(*InitDeviceObjects)(CD3DApplication *self);
+	int(*RestoreDeviceObjects)(CD3DApplication *self);
+	int(*FrameMove)(CD3DApplication *self);
+	int(*Render)(CD3DApplication *self);
+	int(*InvalidateDeviceObjects)(CD3DApplication *self);
+	int(*DeleteDeviceObjects)(CD3DApplication *self);
+	int(*FinalCleanup)(CD3DApplication *self);
+	int(*Create)(CD3DApplication *self, void *hInstance);
+	int(*Run)(CD3DApplication *self);			/* the wParam of WM_QUIT */
+	void *msgProc;				/* the window procedure, gone (src/game/App/Platform.c) */
+	void(*Pause)(CD3DApplication *self, int pause);
 } CD3DApplicationVtbl;
 
 /* calls through the slots of CD3DApplicationVtbl */
@@ -116,47 +116,47 @@ static inline int D3DApp_RestoreDeviceObjects(void *self) {
 	return VT(CD3DApplicationVtbl, self)->RestoreDeviceObjects(self);
 }
 
-/* CD3DApplication of d3dapp.cpp, 0x2a5dc bytes: the DX8 SDK members with the device id and the mode of the game */
+/* CD3DApplication of d3dapp.cpp: the DX8 SDK members with the device id and the mode of the game */
 struct CD3DApplication {
-	const CD3DApplicationVtbl *vftable;	/* 0x00000 */
-	D3DAdapterInfo adapters[MAX_D3DADAPTERS];	/* 0x00004 */
-	uint32_t numAdapters;			/* 0x2a37c */
-	uint32_t adapter;			/* 0x2a380 */
-	int windowed;				/* 0x2a384 */
-	int active;				/* 0x2a388 */
-	int ready;				/* 0x2a38c */
-	int frameMoving;			/* 0x2a390 */
-	int singleStep;				/* 0x2a394 */
-	D3DPresentParams presentParams;		/* 0x2a398 */
-	void *hWnd;				/* 0x2a3cc */
-	void *hWndFocus;			/* 0x2a3d0 */
-	void *d3d;				/* 0x2a3d4 IDirect3D8 */
-	void *device;				/* 0x2a3d8 IDirect3DDevice8, NULL before it is made */
-	D3DCaps8 caps;				/* 0x2a3dc */
-	d3dSurfaceDesc_t backBufferDesc;	/* 0x2a4b0 */
-	d3dSurfaceDesc_t depthBufferDesc;	/* 0x2a4d0 */
-	uint32_t createFlags;			/* 0x2a4f0 the behavior of CreateDevice */
-	uint32_t windowStyle;			/* 0x2a4f4 */
-	exe_rect windowBounds;			/* 0x2a4f8 */
-	exe_rect windowClient;			/* 0x2a508 */
-	float time;				/* 0x2a518 s */
-	float elapsedTime;			/* 0x2a51c */
-	float fps;				/* 0x2a520 */
-	char deviceStats[90];			/* 0x2a524 the device name */
-	char frameStats[42];			/* 0x2a57e */
-	int devId;				/* 0x2a5a8 a new one with each back buffer description */
-	const char *windowTitle;		/* 0x2a5ac */
-	int useDepthBuffer;			/* 0x2a5b0 */
-	uint32_t minDepthBits;			/* 0x2a5b4 */
-	uint32_t minStencilBits;		/* 0x2a5b8 */
-	uint32_t creationWidth;			/* 0x2a5bc */
-	uint32_t creationHeight;		/* 0x2a5c0 */
-	int showCursorWhenFullscreen;		/* 0x2a5c4 */
-	int vsync;				/* 0x2a5c8 */
-	int fullscreen;				/* 0x2a5cc */
-	int width;				/* 0x2a5d0 */
-	int height;				/* 0x2a5d4 */
-	int bpp;				/* 0x2a5d8 */
+	const CD3DApplicationVtbl *vftable;
+	D3DAdapterInfo adapters[MAX_D3DADAPTERS];
+	uint32_t numAdapters;
+	uint32_t adapter;
+	int windowed;
+	int active;
+	int ready;
+	int frameMoving;
+	int singleStep;
+	D3DPresentParams presentParams;
+	void *hWnd;
+	void *hWndFocus;
+	void *d3d;				/* IDirect3D8 */
+	void *device;				/* IDirect3DDevice8, NULL before it is made */
+	D3DCaps8 caps;
+	d3dSurfaceDesc_t backBufferDesc;
+	d3dSurfaceDesc_t depthBufferDesc;
+	uint32_t createFlags;			/* the behavior of CreateDevice */
+	uint32_t windowStyle;
+	exe_rect windowBounds;
+	exe_rect windowClient;
+	float time;				/* s */
+	float elapsedTime;
+	float fps;
+	char deviceStats[90];			/* the device name */
+	char frameStats[42];
+	int devId;				/* a new one with each back buffer description */
+	const char *windowTitle;
+	int useDepthBuffer;
+	uint32_t minDepthBits;
+	uint32_t minStencilBits;
+	uint32_t creationWidth;
+	uint32_t creationHeight;
+	int showCursorWhenFullscreen;
+	int vsync;
+	int fullscreen;
+	int width;
+	int height;
+	int bpp;
 };
 
 /* g_pD3DApp of d3dapp.cpp: the application of the engine3d (a CMotorApp, g_Engine3D of Engine.c) */

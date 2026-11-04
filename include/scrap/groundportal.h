@@ -13,27 +13,27 @@
 #define MAX_PORTALS 32
 
 typedef struct CZone {
-	int id;				/* 0x000 its index in g_Zones */
-	int locked;			/* 0x004 set while the culling is in it */
-	int Frame3D;			/* 0x008 g_FrameCount of the last frame it was seen */
-	box_t rect;			/* 0x00c the screen rectangle it is seen through */
-	CNode3D *node;			/* 0x024 the node of the sector, counted */
-	CNode3D *nodes[2];		/* 0x028 counted */
-	int numNodes;			/* 0x030 */
-	CNode3D *portals[MAX_PORTALS];	/* 0x034 the portal nodes, counted (their object is the portal) */
-	struct CZone *zones[MAX_PORTALS];	/* 0x0b4 the sector behind each portal */
-	int numPortals;		/* 0x134 */
-	byte exterior;			/* 0x138 */
-	byte sky;			/* 0x139 "(+sky_sector)": counted into the rectangle of all seen sectors */
-	byte outside;		/* 0x13a "(+out_sector)" */
+	int id;				/* its index in g_Zones */
+	int locked;			/* set while the culling is in it */
+	int Frame3D;			/* g_FrameCount of the last frame it was seen */
+	box_t rect;			/* the screen rectangle it is seen through */
+	CNode3D *node;			/* the node of the sector, counted */
+	CNode3D *nodes[2];		/* counted */
+	int numNodes;
+	CNode3D *portals[MAX_PORTALS];	/* the portal nodes, counted (their object is the portal) */
+	struct CZone *zones[MAX_PORTALS];	/* the sector behind each portal */
+	int numPortals;
+	byte exterior;
+	byte sky;			/* "(+sky_sector)": counted into the rectangle of all seen sectors */
+	byte outside;		/* "(+out_sector)" */
 	byte pad_13b;
 } CZone;
 
 /* the cached sector of a position (the vis member of objects that ask for their visibility) */
 typedef struct SectorVis {
-	uint32_t flags;			/* 0x0 SECTORVIS_* */
-	int sector;			/* 0x4 -1 none, -2 not looked up */
-	vec3_t pos;			/* 0x8 */
+	uint32_t flags;			/* SECTORVIS_* */
+	int sector;			/* -1 none, -2 not looked up */
+	vec3_t pos;
 } SectorVis;
 #define SECTORVIS_VALID 1
 #define SECTORVIS_CACHED 2		/* pos was the same as the last time */
@@ -44,9 +44,9 @@ extern cGVar GVar_R_UsePortals;
 /* the sectors seen this frame (zones a pintar) and their screen rectangles */
 #define MAX_PAINT_ZONES 0x80
 typedef struct PaintZone {
-	int zone;			/* 0x00 */
-	box_t rect;			/* 0x04 */
-	int times;			/* 0x1c how many portals it was seen through */
+	int zone;
+	box_t rect;
+	int times;			/* how many portals it was seen through */
 } PaintZone;
 extern PaintZone g_PaintZones[128];
 extern int g_NumPaintZones;
@@ -99,14 +99,14 @@ void Sectors_FreeAll(void);
 #define GETY_INFO_NOCOL 0x100		/* also the triangles without collisions */
 #define GETY_INFO_SECTOR 0x200		/* not the meshes added at run time */
 typedef struct GroundRay {
-	uint32_t flags;			/* 0x00 GETY_INFO_ */
-	float minY;			/* 0x04 */
-	float y;			/* 0x08 the height it starts at */
-	float minB;			/* 0x0c */
-	float maxB;			/* 0x10 */
-	float hitY;			/* 0x14 out */
-	struct CCollideTri *tri;	/* 0x18 out, NULL for the top of a sector */
-	int sector;			/* 0x1c out, -1 none */
+	uint32_t flags;			/* GETY_INFO_ */
+	float minY;
+	float y;			/* the height it starts at */
+	float minB;
+	float maxB;
+	float hitY;			/* out */
+	struct CCollideTri *tri;	/* out, NULL for the top of a sector */
+	int sector;			/* out, -1 none */
 } GroundRay;
 /* GETY_INFO_MAXY|GETY_INFO_SECTOR only; with g_RayVertSectors the top of the sector the ray starts in */
 byte CGround_RayVert(void *ground, float x, float z, GroundRay *res);

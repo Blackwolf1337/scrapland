@@ -114,7 +114,7 @@ cActClass *cActClass_ctor(cActClass *self, const char *name) {
 	self->cam.fov = 1.5707964f;
 	self->cam.minFov = 1.5707964f;
 	self->cam.maxFov = 2.0943952f;
-	/* (float)fabs(the double at rva 0x3a36f0), the range of the two above */
+	/* (float)fabs(the double), the range of the two above */
 	self->cam.fovRange = 0.52359879f;
 	self->cam.fovTime = 0.5f;
 	self->cam.fovLeft = 0.0f;

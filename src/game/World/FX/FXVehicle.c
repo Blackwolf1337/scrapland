@@ -266,7 +266,7 @@ static void cObjElementFXVehicleSputnik_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-/* ---- deleting destructors (vf00) ---- */
+/* ---- the Free functions ---- */
 
 static void cObjElementFXFiredDebris_Free(cObjElementFX *base) {
 	void *self = (void *)base;
@@ -328,7 +328,7 @@ static void cObjElementFXVehicleSputnik_Free(cObjElementFX *base) {
 	operator_delete(self);
 }
 
-/* ---- Update (vf01) ---- */
+/* ---- Update ---- */
 
 /* rand() in [0, 1] times range plus add, all in double */
 static inline float FXV_Rand(double range, double add) {
@@ -2864,7 +2864,7 @@ static void cObjElementFXVehicleAccelerator_Update(cObjElementFX *base, cDebris 
 	}
 }
 
-/* ---- IsAlive (vf02) ---- */
+/* ---- IsAlive ---- */
 
 /* IsAlive; the ones of FiredDebris, SmokeDebris, Accelerator and Spawn are FXMisc_Alive, the DeathTrail is the
  * code of cObjElementFXDevastatorShoot (Update, IsAlive, Reset) */
@@ -2972,7 +2972,7 @@ static byte cObjElementFXVehicleSputnik_IsAlive(cObjElementFX *base, cDebris *de
 	return 0;
 }
 
-/* ---- Start (vf03) ---- */
+/* ---- Start ---- */
 
 static void cObjElementFXFiredDebris_Start(cObjElementFX *base, cDebris *debris) {
 	cObjElementFXFiredDebris *self = (cObjElementFXFiredDebris *)base;
@@ -3123,7 +3123,7 @@ static void cObjElementFXVehicleSputnik_Start(cObjElementFX *base, cDebris *debr
 	}
 }
 
-/* ---- Reset (vf04) ---- */
+/* ---- Reset ---- */
 
 static void cObjElementFXFiredDebris_Reset(cObjElementFX *base, cDebris *debris) {
 	cObjElementFXFiredDebris *self = (cObjElementFXFiredDebris *)base;

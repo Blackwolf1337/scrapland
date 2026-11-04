@@ -321,7 +321,7 @@ static void cEmbeddedFXTreasure_dtor(cEmbeddedFXTreasure *self) {
 	cEmbeddedFX_dtor(&self->base);
 }
 
-/* ---- vf00: deleting destructors ---- */
+/* ---- the Free functions ---- */
 
 static void cEmbeddedFXAmplifier_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXAmplifier *self = (cEmbeddedFXAmplifier *)elem;
@@ -419,7 +419,7 @@ static void cEmbeddedFXTreasure_Free(cEmbeddedFX *elem) {
 	operator_delete(&self->base);
 }
 
-/* ---- vf01: Reset ---- */
+/* ----: Reset ---- */
 
 static void EFXM_TrailStyle(CGameTrail *t, byte segments, byte type, int texture) {
 	CGameTrail_SetMaxTrails(t, segments);
@@ -541,7 +541,7 @@ static byte cEmbeddedFXTreasure_Reset(cEmbeddedFX *base) {
 	return 1;
 }
 
-/* ---- vf02: Release ---- */
+/* ----: Release ---- */
 
 /* Amplifier, Coin, Conversor, Flag, Item, MeetingPoint: the dummy at 0x0c, the particles at 0x10 */
 static void cEmbeddedFXCoin_Release(cEmbeddedFX *base) {
@@ -638,7 +638,7 @@ static void cEmbeddedFXTreasure_Release(cEmbeddedFX *base) {
 	self->life = 0.0f;
 }
 
-/* ---- the trails cleared (vf05 with keep 0) ---- */
+/* ---- the trails cleared (with keep 0) ---- */
 
 static void cEmbeddedFXBattery_Clear(cEmbeddedFXBattery *self) {
 	for (int i = 0; i < FXBATTERY_TRAILS; i++) {
@@ -646,7 +646,7 @@ static void cEmbeddedFXBattery_Clear(cEmbeddedFXBattery *self) {
 	}
 }
 
-/* ---- vf05: Stop ---- */
+/* ----: Stop ---- */
 
 static void cEmbeddedFXAmplifier_Stop(cEmbeddedFX *base, byte keep) {
 	cEmbeddedFXAmplifier *self = (cEmbeddedFXAmplifier *)base;
@@ -1163,7 +1163,7 @@ static void EmbeddedFXMisc_MeetingPointMsg(cAbstractFile *f) {
 	cEmbeddedFXMeetingPoint_SetCountDown(fx, a, (float)count * 220.0f);
 }
 
-/* ---- vf03: Update ---- */
+/* ----: Update ---- */
 
 static cGVar GVar_DataPackInterTime;
 
@@ -2330,7 +2330,7 @@ static void cEmbeddedFXBattery_Update(cEmbeddedFX *elem, float dt) {
 	}
 }
 
-/* ---- vf03: the Update of the Moto ---- */
+/* ----: the Update of the Moto ---- */
 
 /* the color ramps of the flames and the smoke of the engines (9 colors each) */
 

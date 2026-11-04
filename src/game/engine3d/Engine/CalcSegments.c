@@ -11,14 +11,14 @@
 
 /* an edge: the triangles on both sides (0xffff for none) and its original vertices */
 typedef struct MeshSeg {
-	uint16_t tri[2];		/* 0x0 */
-	uint16_t v[2];			/* 0x4 */
+	uint16_t tri[2];
+	uint16_t v[2];
 } MeshSeg;
 
 /* the plane of a triangle */
 typedef struct TriMeshSeg {
-	float d;			/* 0x0 */
-	vec3_t n;			/* 0x4 */
+	float d;
+	vec3_t n;
 } TriMeshSeg;
 
 /* the triangle accessor of MeshD3D.h */

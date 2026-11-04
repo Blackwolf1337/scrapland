@@ -130,7 +130,7 @@ static void cWalkCharEntity_Free(cEntity *self) {
 	operator_delete(self);
 }
 
-/* vf63: the press and release callbacks of the class, the talk with the victim or listener, the energy over dt */
+/* the press and release callbacks of the class, the talk with the victim or listener, the energy over dt */
 static void cWalkCharEntity_ActionTick(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
 	cActCtrl *ctrl = w->wl.actCtrl;
@@ -215,7 +215,7 @@ energy:
 	}
 }
 
-/* vf24 (UpdateModel): the model at the render position and angles, the head turned to the view (blended by the view
+/* (UpdateModel): the model at the render position and angles, the head turned to the view (blended by the view
  * lock) */
 static void cWalkCharEntity_UpdateModel(cEntity *self) {
 	vec3_t n, d, pos;
@@ -311,13 +311,13 @@ static void cWalkCharEntity_UnlinkCollide(cEntity *self) {
 #define WCE_RELAXALARM "RelaxAlarm"
 
 #define WCE_MIN_DT 9.99999997e-07f
-#define WCE_MIN_MOVE2 0.00249999994f		/* rva 0x3b0834: a smaller walk step is undone */
+#define WCE_MIN_MOVE2 0.00249999994f		/* a smaller walk step is undone */
 #define WCE_MIN_INPUT2 0.0400000028f
-#define WCE_MAX_SPEED 14000.0f			/* rva 0x3b0880: faster is an error of the walk */
-#define WCE_KMH 28.0f				/* rva 0x3b0878, 0x3b0870 (double) */
+#define WCE_MAX_SPEED 14000.0f			/* faster is an error of the walk */
+#define WCE_KMH 28.0f				/* 0x3b0870 (double) */
 #define WCE_PITCH_FLY 1.57079637f
 #define WCE_PITCH_WALK 1.04719758f
-#define WCE_MAX_FALL 10000.0f			/* rva 0x3a5ac0, 0x3b0898 */
+#define WCE_MAX_FALL 10000.0f			/* 0x3b0898 */
 
 /* the WithLife entity hit test of the walk */
 #define WCE_HIT_LISTS 0x11u
@@ -378,7 +378,7 @@ void Nto1Node_UnlinkChecked(Nto1Node *node) {
 	Nto1Node_Unlink(node);
 }
 
-/* vf11: e (with life) pushes the character out of its collision sphere, in x and z unless it falls or flies */
+/* e (with life) pushes the character out of its collision sphere, in x and z unless it falls or flies */
 static void cWalkCharEntity_Touch(cEntity *self, cEntity *e, const vec3_t *point, const vec3_t *normal) {
 	cWalkCharEntity *w = WChar(self);
 	vec3_t p, epos;
@@ -533,7 +533,7 @@ speed:;
 	w->pushOn = 0;
 }
 
-/* vf58: the view turned by the control (clamped up and down) */
+/* the view turned by the control (clamped up and down) */
 static void cWalkCharEntity_Turn(cWalkCharEntity *w, float dt) {
 	if (!w->wl.actCtrl) {
 		return;
@@ -628,7 +628,7 @@ static const struct {
 	{NULL, sizeof(cAIChar), cAIChar_ctor}
 };
 
-/* vf56: the AI of the class made (on, unless there is one) or deleted */
+/* the AI of the class made (on, unless there is one) or deleted */
 void cWalkCharEntity_EnableAI(cEntity *self, byte on, int *arg) {
 	cWalkCharEntity *w = WChar(self);
 
@@ -637,7 +637,6 @@ void cWalkCharEntity_EnableAI(cEntity *self, byte on, int *arg) {
 	}
 	if (!on) {
 		if (self->ai) {
-			/* the deleting destructor of the AI */
 			AI_Free(self->ai);
 		}
 		self->ai = NULL;
@@ -745,7 +744,7 @@ static void cWalkCharEntity_Accel(cWalkCharEntity *w, float dt);
 
 static void cWalkCharEntity_WalkSound(cWalkCharEntity *w, float dt);
 
-/* vf60: the gravity, the steps and the floor */
+/* the gravity, the steps and the floor */
 static void cWalkCharEntity_Fall(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
 	vec3_t *pos = &self->pos;
@@ -803,7 +802,7 @@ static void cWalkCharEntity_Fall(cEntity *self, float dt) {
 
 static void cWalkCharEntity_FlySound(cWalkCharEntity *w, float dt);
 
-/* vf64: the flight of a class that can fly */
+/* the flight of a class that can fly */
 static void cWalkCharEntity_Fly(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
 	vec3_t *pos = &self->pos;
@@ -1053,7 +1052,6 @@ byte cWithLifeEntity_TestSphere(cEntity *self, cEntity *exclude, const vec3_t *c
 	return cPrimitive_TestSphere(&WChar(self)->wl.prim, exclude, center, radius, prev);
 }
 
-/* vf23 */
 static void cWalkCharEntity_Tick(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
 
@@ -1085,7 +1083,7 @@ tick:
 	w->abortOpt = w->wl.arrow.iOpt;
 }
 
-/* vf48: the listener unlinked */
+/* the listener unlinked */
 static void cWalkCharEntity_UnlinkListen(cEntity *self) {
 	cWalkCharEntity *w = WChar(self);
 
@@ -1100,7 +1098,7 @@ static inline void WCE_RelaxTime(cWalkCharEntity *w, float lo, float hi) {
 	w->relaxTime = (float)((double)(r & 0x7fff) * 3.051850947599719e-05 * (double)(hi - lo) + (double)lo);
 }
 
-/* vf59: the body turned to the view, the relax and turn actions, the view to the listener */
+/* the body turned to the view, the relax and turn actions, the view to the listener */
 static void cWalkCharEntity_Idle(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
 	vec3_t ang, t1;
@@ -1217,7 +1215,7 @@ look:;
 	}
 }
 
-/* vf57: the selection of the player and the callbacks of a lost one */
+/* the selection of the player and the callbacks of a lost one */
 static void cWalkCharEntity_UpdateSelect(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
 
@@ -1354,7 +1352,7 @@ void cWithLifeEntity_SetMass(cEntity *self, float mass) {
 	WChar(self)->wl.mass = mass;
 }
 
-/* vf12: also the floor distance and the camera node of the model */
+/* also the floor distance and the camera node of the model */
 static void cWalkCharEntity_SetModel(cEntity *self, const char *file, float sx, float sy, float sz, int flag) {
 	cWalkCharEntity *w = WChar(self);
 	vec3_t root, floor;
@@ -1464,7 +1462,7 @@ void cWalkCharEntity_SetYModelDisp(cWalkCharEntity *w, float y) {
 	w->floorDist = d + w->floorDist;
 }
 
-/* vf61: the walk acceleration of the control, the friction and the speed limit */
+/* the walk acceleration of the control, the friction and the speed limit */
 static void cWalkCharEntity_Accel(cWalkCharEntity *w, float dt) {
 	vec3_t *v = &w->wl.obj.vel;
 	vec3_t in, tmp;
@@ -1537,7 +1535,7 @@ static inline float WCE_SndMix(const float *v, float inv, float k) {
 	return v[0] * inv + v[1] * k;
 }
 
-/* vf65 and vf66: the pitch and volume of the loop sound 0 by the speed */
+/* and: the pitch and volume of the loop sound 0 by the speed */
 static void cWalkCharEntity_FlySound(cWalkCharEntity *w, float dt) {
 	cSndItem *s = PtrArray_Get(&w->wl.obj.snd, 0);
 	vec3_t *v = &w->wl.obj.vel;
@@ -1660,7 +1658,7 @@ static byte WCE_StrafeOrMove(cEntity *self) {
 	return cWalkCharEntity_IsStrafeAnim(self) || cWalkCharEntity_IsMoveAnim(self);
 }
 
-/* vf62: the walk, run, strafe and back actions by the control and the velocity they give */
+/* the walk, run, strafe and back actions by the control and the velocity they give */
 static byte cWalkCharEntity_IsBackOrMoveAnim(cEntity *self);
 static void cWalkCharEntity_WalkAnim(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);

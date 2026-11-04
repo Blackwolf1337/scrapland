@@ -31,117 +31,117 @@ extern cGVar GVar_FunctionarySpecialActionTime;
 /* the elements */
 
 typedef struct cObjElementFXCharacterConversion {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *attacker;		/* 0x004 */
-	cEntity *attacked;		/* 0x008 */
-	CGameParticles particles;	/* 0x00c on Dummy01 */
-	CGameParticles particles2;	/* 0x0bc on Dummy02 */
-	float time;			/* 0x16c since the start */
-	float emitT;			/* 0x170 since the last sparks */
+	const cObjElementFXVtbl *vftable;
+	cEntity *attacker;
+	cEntity *attacked;
+	CGameParticles particles;	/* on Dummy01 */
+	CGameParticles particles2;	/* on Dummy02 */
+	float time;			/* since the start */
+	float emitT;			/* since the last sparks */
 	byte pad_174[4];
-	float unused_178;			/* 0x178 */
-	CGameTrail trails[FXCONVERSION_TRAILS];	/* 0x17c */
-	vec3_t dir[FXCONVERSION_POINTS];	/* 0x190 random directions of length 0.3..1 */
-	float phase[FXCONVERSION_POINTS];	/* 0x514 0..1 */
-	float speed[FXCONVERSION_POINTS];	/* 0x640 12..24 */
-	float scale[FXCONVERSION_POINTS];	/* 0x76c 0.7..1.5 */
-	byte started;			/* 0x898 */
+	float unused_178;
+	CGameTrail trails[FXCONVERSION_TRAILS];
+	vec3_t dir[FXCONVERSION_POINTS];	/* random directions of length 0.3..1 */
+	float phase[FXCONVERSION_POINTS];	/* 0..1 */
+	float speed[FXCONVERSION_POINTS];	/* 12..24 */
+	float scale[FXCONVERSION_POINTS];	/* 0.7..1.5 */
+	byte started;
 } cObjElementFXCharacterConversion;
 
 typedef struct cObjElementFXCharacterConversor {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *conversor;		/* 0x004 */
-	cEntity *character;		/* 0x008 */
-	CGameParticles particles;	/* 0x00c on Dummy01 */
-	int phase;			/* 0x0bc 1 in (the character disabled at the end), 2 out */
-	float duration;			/* 0x0c0 */
-	float timeIn;			/* 0x0c4 the fade of phase 1 */
-	float timeOut;			/* 0x0c8 the fade of phase 2 */
-	float time;			/* 0x0cc since the start */
-	float emitT;			/* 0x0d0 since the last particles */
+	const cObjElementFXVtbl *vftable;
+	cEntity *conversor;
+	cEntity *character;
+	CGameParticles particles;	/* on Dummy01 */
+	int phase;			/* 1 in (the character disabled at the end), 2 out */
+	float duration;
+	float timeIn;			/* the fade of phase 1 */
+	float timeOut;			/* the fade of phase 2 */
+	float time;			/* since the start */
+	float emitT;			/* since the last particles */
 	byte pad_d4[4];
-	int nodeWall[3];		/* 0x0d8 DF_Pared_01..03 of the conversor */
-	int nodeExit[3];		/* 0x0e4 DF_Salida_01..03 */
-	int nodeLight[4];		/* 0x0f0 DF_Light_01..04 */
-	int numTrails;			/* 0x100 */
-	float trailT[FXCONVERSOR_TRAILS];	/* 0x104 the life of the lightning, a new one at 0 */
-	CGameTrail trails[FXCONVERSOR_TRAILS];	/* 0x110 */
-	vec3_t pts[FXCONVERSOR_TRAILS][FXCONVERSOR_POINTS];	/* 0x11c the control points of the lightnings */
-	float width[FXCONVERSOR_TRAILS];	/* 0x284 */
-	int numPoints;			/* 0x290 the control points used, 5 */
-	byte started;			/* 0x294 */
+	int nodeWall[3];		/* DF_Pared_01..03 of the conversor */
+	int nodeExit[3];		/* DF_Salida_01..03 */
+	int nodeLight[4];		/* DF_Light_01..04 */
+	int numTrails;
+	float trailT[FXCONVERSOR_TRAILS];	/* the life of the lightning, a new one at 0 */
+	CGameTrail trails[FXCONVERSOR_TRAILS];
+	vec3_t pts[FXCONVERSOR_TRAILS][FXCONVERSOR_POINTS];	/* the control points of the lightnings */
+	float width[FXCONVERSOR_TRAILS];
+	int numPoints;			/* the control points used, 5 */
+	byte started;
 } cObjElementFXCharacterConversor;
 
 typedef struct cObjElementFXCharacterDeath {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x004 */
-	CGameParticles particles;	/* 0x008 on Dummy01 */
-	CGameParticles particles2;	/* 0x0b8 on Dummy02 */
-	CGameParticles particles3;	/* 0x168 on Dummy03 */
-	float time;			/* 0x218 since the start */
-	float emitT;			/* 0x21c since the last particles */
-	float lastTime;			/* 0x220 time of the last Update */
-	CGameTrail trails[FXDEATH_TRAILS];	/* 0x224 15 points each */
-	vec3_t pos[FXDEATH_POINTS];	/* 0x244 the points of the trails, on vertices of the model */
-	float phase[FXDEATH_POINTS];	/* 0x7e4 0..1 up along the trail, 5 at the start (a new point) */
-	float width[FXDEATH_POINTS];	/* 0x9c4 */
-	float speed[FXDEATH_POINTS];	/* 0xba4 of the phase */
-	uint32_t color[FXDEATH_POINTS];	/* 0xd84 */
-	byte started;			/* 0xf64 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	CGameParticles particles;	/* on Dummy01 */
+	CGameParticles particles2;	/* on Dummy02 */
+	CGameParticles particles3;	/* on Dummy03 */
+	float time;			/* since the start */
+	float emitT;			/* since the last particles */
+	float lastTime;			/* time of the last Update */
+	CGameTrail trails[FXDEATH_TRAILS];	/* 15 points each */
+	vec3_t pos[FXDEATH_POINTS];	/* the points of the trails, on vertices of the model */
+	float phase[FXDEATH_POINTS];	/* 0..1 up along the trail, 5 at the start (a new point) */
+	float width[FXDEATH_POINTS];
+	float speed[FXDEATH_POINTS];	/* of the phase */
+	uint32_t color[FXDEATH_POINTS];
+	byte started;
 } cObjElementFXCharacterDeath;
 
 typedef struct cObjElementFXCharacterTeleport {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *teleport;		/* 0x04 */
-	cEntity *character;		/* 0x08 */
-	CGameParticles particles;	/* 0x0c on Dummy01 */
-	int mode;			/* 0xbc 1 up, 2 down */
-	float duration;			/* 0xc0 */
-	float timeIn;			/* 0xc4 the fade of the character at the start (mode 1) */
-	float timeOut;			/* 0xc8 the fade at the end (mode 2) */
-	float t;			/* 0xcc since the start */
-	float emitT;			/* 0xd0 since the last particles */
-	byte started;			/* 0xd4 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *teleport;
+	cEntity *character;
+	CGameParticles particles;	/* on Dummy01 */
+	int mode;			/* 1 up, 2 down */
+	float duration;
+	float timeIn;			/* the fade of the character at the start (mode 1) */
+	float timeOut;			/* the fade at the end (mode 2) */
+	float t;			/* since the start */
+	float emitT;			/* since the last particles */
+	byte started;
 } cObjElementFXCharacterTeleport;
 
 typedef struct cObjElementFXMaintenanceWork {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *maintenance;		/* 0x04 the robot */
-	cEntity *ship;			/* 0x08 */
-	CGameParticles particles;	/* 0x0c on Dummy01 */
-	float emitTime;		/* 0xbc the particles are emitted every 0.04 s of it */
-	float time;			/* 0xc0 since the start */
-	float life;			/* 0xc4 the life of the debris at the start */
-	CGameTrail trails[2];		/* 0xc8 */
-	int vertex;			/* 0xd0 the vertex of the ship nearest to the laser */
-	int nodeLaser;			/* 0xd4 DF_Laser of the robot */
-	int sound;			/* 0xd8 the handle of the work sound */
-	byte started;			/* 0xdc */
+	const cObjElementFXVtbl *vftable;
+	cEntity *maintenance;		/* the robot */
+	cEntity *ship;
+	CGameParticles particles;	/* on Dummy01 */
+	float emitTime;		/* the particles are emitted every 0.04 s of it */
+	float time;			/* since the start */
+	float life;			/* the life of the debris at the start */
+	CGameTrail trails[2];
+	int vertex;			/* the vertex of the ship nearest to the laser */
+	int nodeLaser;			/* DF_Laser of the robot */
+	int sound;			/* the handle of the work sound */
+	byte started;
 } cObjElementFXMaintenanceWork;
 
 typedef struct cObjElementFXMoneyTransfer {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *from;			/* 0x04 */
-	cEntity *to;			/* 0x08 */
-	CGameParticles particles;	/* 0x0c on Dummy01 */
-	float emitT;			/* 0xbc the time since the last coin */
-	float unused_c0;			/* 0xc0 */
-	int unused_c4;			/* 0xc4 */
-	byte started;			/* 0xc8 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *from;
+	cEntity *to;
+	CGameParticles particles;	/* on Dummy01 */
+	float emitT;			/* the time since the last coin */
+	float unused_c0;
+	int unused_c4;
+	byte started;
 } cObjElementFXMoneyTransfer;
 
 typedef struct cObjElementFXSputnik {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x04 */
-	CGameParticles particles;	/* 0x08 on Dummy01 */
-	float emitT;			/* 0xb8 the time since the last emission */
-	float t;			/* 0xbc */
-	float duration;			/* 0xc0 0: no end */
-	int node;			/* 0xc4 "Bip Spootnick MASTER" of the model */
-	float minMove;			/* 0xc8 */
-	vec3_t last;			/* 0xcc the last position of the node */
-	float moveT;			/* 0xd8 */
-	byte started;			/* 0xdc */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	CGameParticles particles;	/* on Dummy01 */
+	float emitT;			/* the time since the last emission */
+	float t;
+	float duration;			/* 0: no end */
+	int node;			/* "Bip Spootnick MASTER" of the model */
+	float minMove;
+	vec3_t last;			/* the last position of the node */
+	float moveT;
+	byte started;
 } cObjElementFXSputnik;
 
 /* World/FX/FXCharActions.cpp: the start of the Functionary special action on the element of e */

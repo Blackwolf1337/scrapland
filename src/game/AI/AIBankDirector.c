@@ -62,7 +62,6 @@ void cAIBank_CheckAttack(cAI *elem) {
 	c->ctrl->act = 0;
 }
 
-/* vf56 */
 static void cAIBankDirector_SetRanges(cAI *elem) {
 	cAIBankDirector *self = (cAIBankDirector *)elem;
 	cAIChar *c = &self->base;

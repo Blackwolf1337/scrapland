@@ -17,23 +17,23 @@
 #define AUTOAIM_MAGNET 4
 
 typedef struct cAutoAim {
-	float dist;			/* 0x00 to the target, 10 without one */
-	float cosAng;			/* 0x04 */
-	float ang;			/* 0x08 "AngLimit" */
-	float ax;			/* 0x0c "X" */
-	float ay;			/* 0x10 "Y" */
-	Nto1Node target;		/* 0x14 "Target", data the aim */
-	float speed;			/* 0x24 "Speed" */
-	float distLimit;		/* 0x28 "DistLimit" */
-	float hiAng;			/* 0x2c */
-	float loAng;			/* 0x30 */
-	float deltaAng;			/* 0x34 */
-	float prevAx;			/* 0x38 the angles of the last slot */
-	float prevAy;			/* 0x3c */
-	float interval;			/* 0x40 of the slot */
-	float time;			/* 0x44 the world time of the slot */
-	int status;			/* 0x48 AUTOAIM_ */
-	byte on;			/* 0x4c */
+	float dist;			/* to the target, 10 without one */
+	float cosAng;
+	float ang;			/* "AngLimit" */
+	float ax;			/* "X" */
+	float ay;			/* "Y" */
+	Nto1Node target;		/* "Target", data the aim */
+	float speed;			/* "Speed" */
+	float distLimit;		/* "DistLimit" */
+	float hiAng;
+	float loAng;
+	float deltaAng;
+	float prevAx;			/* the angles of the last slot */
+	float prevAy;
+	float interval;			/* of the slot */
+	float time;			/* the world time of the slot */
+	int status;			/* AUTOAIM_ */
+	byte on;
 	byte pad_4d[3];
 } cAutoAim;
 

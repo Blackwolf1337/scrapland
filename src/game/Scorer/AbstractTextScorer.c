@@ -155,7 +155,7 @@ static void cMsgScorer_Free(cScorerItem *base) {
 	operator_delete(self);
 }
 
-/* vf01 of cScorerItem, kept in this file: no parameters */
+/* of cScorerItem, kept in this file: no parameters */
 void cScorerItem_SetParam(cScorerItem *self, const char *name, const char *value) {
 	(void)self;
 	(void)name;

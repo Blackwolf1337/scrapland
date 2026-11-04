@@ -1,5 +1,5 @@
 /*
- * Python module SInput (method table SInput_methods, rva 0x42d790): action sets, key definitions, text input
+ * Python module SInput (method table SInput_methods): action sets, key definitions, text input
  * and pads of the local players. Original source: PyInterface/SInputPy.cpp. Player numbers are checked unsigned
  * (0..3); out of range they give 1 or 0 depending on the function, as the original.
  */

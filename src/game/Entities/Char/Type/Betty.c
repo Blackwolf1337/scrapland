@@ -113,7 +113,7 @@ static void ChType_BettyCameraSet(cAbstractFile *params) {
 	cWalkCharEntity_SetViewAng(WChar(g_BettyEnt), &ang);
 }
 
-/* out the angles that turn the z axis into dir (cdecl, rva 0xc3780) */
+/* out the angles that turn the z axis into dir (cdecl) */
 static void ChType_DirAngles(const vec3_t *dir, vec3_t *out) {
 	vec3_t tmp;
 

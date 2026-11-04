@@ -23,7 +23,7 @@ void NWIntList_AddKeepIter(cNWIntList *list, const void *v);
 
 /* ---- Global/GridElements.h with the node pointers of the points (cells of cNWIntList) ---- */
 
-/* the layout of cGridElements, the cells are cNWIntList (0x3c bytes, CNodesWorldSup_BuildGrid) */
+/* the layout of cGridElements, the cells are cNWIntList (CNodesWorldSup_BuildGrid) */
 typedef cGridElements cGridElements_InfPointVisPtr;
 
 /* ---- CNodesWorldSup (on the CNodesWorld layout; vtable slots in CNodesWorldVtbl) ---- */

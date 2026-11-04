@@ -19,12 +19,12 @@
 
 /* ScrapEngLensFlares.cpp: the holder of a lens flare (one pointer); the setters write the flare object */
 void CGameLensFlare_SetOn(void *self, byte on);
-void CGameLensFlare_SetIntensity(void *self, float v);		/* rva 0x232f80, +0x14 */
-void CGameLensFlare_SetTraceInterval(void *self, float v);			/* rva 0x232fa0, +0x30 */
-void CGameLensFlare_SetPos(void *self, vec3_t pos);		/* rva 0x232fc0, +0x08 */
-void CGameLensFlare_SetScale(void *self, float v);			/* rva 0x232ff0, +0x18 */
-void CGameLensFlare_SetType(void *self, int v);			/* rva 0x233010, +0x1c */
-void CGameLensFlare_SetRelative(void *self, byte v);			/* rva 0x233020, +0x2c */
+void CGameLensFlare_SetIntensity(void *self, float v);		/* +0x14 */
+void CGameLensFlare_SetTraceInterval(void *self, float v);			/* +0x30 */
+void CGameLensFlare_SetPos(void *self, vec3_t pos);		/* +0x08 */
+void CGameLensFlare_SetScale(void *self, float v);			/* +0x18 */
+void CGameLensFlare_SetType(void *self, int v);			/* +0x1c */
+void CGameLensFlare_SetRelative(void *self, byte v);			/* +0x2c */
 
 /* the lens flare object of the engine glue: CLensFlare of lensflare.h */
 
@@ -41,148 +41,148 @@ extern cGVar GVar_TeslaIDAmmo;
 extern cGVar GVar_FXInfernoExplosionTime;
 #define g_FXInfernoExplosionTime (GVar_FXInfernoExplosionTime.value.f)
 
-/* the ATPC shot: the beam from the shooter to the hit, its rings and glow (0x1e8 bytes, constructor rva 0x1f9690) */
+/* the ATPC shot: the beam from the shooter to the hit, its rings and glow (constructor) */
 #define FXATPC_SLOTS 4
 typedef struct cObjElementFXATPC {
 	cObjElementFX base;
-	cEntity *shooter;		/* 0x004 */
-	vec3_t from;			/* 0x008 the origin of the shot */
-	vec3_t to;			/* 0x014 the hit */
-	CGameParticles particles;	/* 0x020 on Dummy01 */
-	CGameParticles particles2;	/* 0x0d0 */
-	float time;			/* 0x180 since the shot */
-	int numSlots;			/* 0x188 the mounted slots of the shooter */
-	byte slotOn[FXATPC_SLOTS];	/* 0x18c */
-	vec3_t slotPos[FXATPC_SLOTS];	/* 0x190 the weapon nodes of the slots */
-	float width;			/* 0x1c0 by the slots and ATPCShootSize */
-	CGameTrail core;		/* 0x1c4 */
-	CGameTrail line;		/* 0x1c8 */
-	int ringPoints;			/* 0x1cc 12, the points of each ring */
-	CGameTrail rings;		/* 0x1d0 */
-	int endRingPoints;			/* 0x1d4 8 */
-	CGameTrail endRing;		/* 0x1d8 */
-	float angle;			/* 0x1dc of the rings */
-	CGameTrail ringsDuDv;		/* 0x1e0 2 * ringPoints + 1 points, the dudv pass */
-	byte on;			/* 0x1e4 */
+	cEntity *shooter;
+	vec3_t from;			/* the origin of the shot */
+	vec3_t to;			/* the hit */
+	CGameParticles particles;	/* on Dummy01 */
+	CGameParticles particles2;
+	float time;			/* since the shot */
+	int numSlots;			/* the mounted slots of the shooter */
+	byte slotOn[FXATPC_SLOTS];
+	vec3_t slotPos[FXATPC_SLOTS];	/* the weapon nodes of the slots */
+	float width;			/* by the slots and ATPCShootSize */
+	CGameTrail core;
+	CGameTrail line;
+	int ringPoints;			/* 12, the points of each ring */
+	CGameTrail rings;
+	int endRingPoints;			/* 8 */
+	CGameTrail endRing;
+	float angle;			/* of the rings */
+	CGameTrail ringsDuDv;		/* 2 * ringPoints + 1 points, the dudv pass */
+	byte on;
 	byte pad_1e5[3];
 } cObjElementFXATPC;
 
-/* the Devastator shot: a trail that fades in (0x14 bytes, constructor rva 0x1f9770) */
+/* the Devastator shot: a trail that fades in (constructor) */
 typedef struct cObjElementFXDevastatorShoot {
 	cObjElementFX base;
-	CGameTrail trail;		/* 0x04 */
-	float duration;			/* 0x08 */
-	float time;			/* 0x0c */
-	byte first;			/* 0x10 set by Reset, the first Update keeps the trail transparent */
-	byte on;			/* 0x11 */
+	CGameTrail trail;
+	float duration;
+	float time;
+	byte first;			/* set by Reset, the first Update keeps the trail transparent */
+	byte on;
 	byte pad_12[2];
 } cObjElementFXDevastatorShoot;
 
 /* the Inferno explosion: rays out of the center drawn as trails and the core particles (0x24c8 bytes, constructor
- * rva 0x1f97e0) */
+ * ) */
 typedef struct cObjElementFXInfernoExplosion {
 	cObjElementFX base;
-	CGameParticles particles;	/* 0x0004 on Dummy01 */
-	CGameParticles cores;		/* 0x00b4 on Dummy02(+dudv_pass), 2 particles */
-	float time;			/* 0x0164 */
-	float stepTime;			/* 0x0168 since the last step (steps of 0.01 at least) */
-	vec3_t pos;			/* 0x016c */
-	float range;			/* 0x0178 the length of the rays tested against the floor */
-	int bees;			/* 0x017c the bays of the Inferno, a bigger explosion */
-	byte flag;			/* 0x0180 */
+	CGameParticles particles;	/* on Dummy01 */
+	CGameParticles cores;		/* on Dummy02(+dudv_pass), 2 particles */
+	float time;
+	float stepTime;			/* since the last step (steps of 0.01 at least) */
+	vec3_t pos;
+	float range;			/* the length of the rays tested against the floor */
+	int bees;			/* the bays of the Inferno, a bigger explosion */
+	byte flag;
 	byte pad_181[3];
-	vec3_t rayBase[FXINFERNO_RAYS];	/* 0x0184 */
-	vec3_t rayDir[FXINFERNO_RAYS];	/* 0x0c04 */
-	float rayLen[FXINFERNO_RAYS];	/* 0x1684 */
-	float raySpeed[FXINFERNO_RAYS];	/* 0x1a04 */
-	float rayAcc[FXINFERNO_RAYS];	/* 0x1d84 */
-	float rayMax[FXINFERNO_RAYS];	/* 0x2104 */
-	CGameTrail trails[FXINFERNO_TRAILS];	/* 0x2484 */
-	int numRays;			/* 0x24c0 */
-	byte on;			/* 0x24c4 */
+	vec3_t rayBase[FXINFERNO_RAYS];
+	vec3_t rayDir[FXINFERNO_RAYS];
+	float rayLen[FXINFERNO_RAYS];
+	float raySpeed[FXINFERNO_RAYS];
+	float rayAcc[FXINFERNO_RAYS];
+	float rayMax[FXINFERNO_RAYS];
+	CGameTrail trails[FXINFERNO_TRAILS];
+	int numRays;
+	byte on;
 	byte pad_24c5[3];
 } cObjElementFXInfernoExplosion;
 
-/* the Inferno missile: its smoke trail, particles and a lens flare (0xe4 bytes, constructor rva 0x1f9880) */
+/* the Inferno missile: its smoke trail, particles and a lens flare (constructor) */
 typedef struct cObjElementFXInfernoMissile {
 	cObjElementFX base;
-	CGameTrail trail;		/* 0x04 */
-	CGameParticles particles;	/* 0x08 on Dummy01 */
-	vec3_t last;			/* 0xb8 the last trail point */
-	float minDist;			/* 0xc4 between two trail points */
-	float fadeTime;			/* 0xc8 */
-	float time;			/* 0xcc */
-	float fadeStart;		/* 0xd0 -1 while flying */
-	float lastShrink;		/* 0xd4 */
-	byte flareOn;			/* 0xd8 */
+	CGameTrail trail;
+	CGameParticles particles;	/* on Dummy01 */
+	vec3_t last;			/* the last trail point */
+	float minDist;			/* between two trail points */
+	float fadeTime;
+	float time;
+	float fadeStart;		/* -1 while flying */
+	float lastShrink;
+	byte flareOn;
 	byte pad_d9[3];
-	void *flare;			/* 0xdc CGameLensFlare */
-	byte on;			/* 0xe0 */
+	void *flare;			/* CGameLensFlare */
+	byte on;
 	byte pad_e1[3];
 } cObjElementFXInfernoMissile;
 
-/* the laser shot: a beam from start to end that moves along (0x124 bytes, constructor rva 0x1f9900) */
+/* the laser shot: a beam from start to end that moves along (constructor) */
 typedef struct cObjElementFXLaser {
 	cObjElementFX base;
-	CGameTrail trail;		/* 0x004 */
-	CGameParticles particles;	/* 0x008 on Dummy01 */
-	float time;			/* 0x0c4 */
-	vec3_t start;			/* 0x0c8 */
-	vec3_t end;			/* 0x0d4 */
-	float duration;			/* 0x0e0 */
-	vec3_t delta;			/* 0x0e4 end - start */
-	float len;			/* 0x0f0 */
-	vec3_t dir;			/* 0x0f4 */
-	vec3_t pos;			/* 0x100 the head */
-	float dist;			/* 0x10c of the head from start (from end in Laser_Start) */
-	float rest;			/* 0x110 of the head from end */
-	vec3_t vel;			/* 0x114 */
-	byte drawn;			/* 0x120 */
-	byte on;			/* 0x121 */
+	CGameTrail trail;
+	CGameParticles particles;	/* on Dummy01 */
+	float time;
+	vec3_t start;
+	vec3_t end;
+	float duration;
+	vec3_t delta;			/* end - start */
+	float len;
+	vec3_t dir;
+	vec3_t pos;			/* the head */
+	float dist;			/* of the head from start (from end in Laser_Start) */
+	float rest;			/* of the head from end */
+	vec3_t vel;
+	byte drawn;
+	byte on;
 	byte pad_122[2];
 } cObjElementFXLaser;
 
-/* the Swarm missile: its trail and the motor particles (0xe0 bytes, constructor rva 0x1f9970) */
+/* the Swarm missile: its trail and the motor particles (constructor) */
 typedef struct cObjElementFXSwarmMissile {
 	cObjElementFX base;
-	int node;			/* 0x04 DF_MissileMotor, -1 for none */
-	CGameTrail trail;		/* 0x08 */
-	CGameParticles particles;	/* 0x0c */
-	vec3_t last;			/* 0xbc */
-	float minDist2;			/* 0xc8 squared */
-	float fadeTime;			/* 0xcc */
-	float time;			/* 0xd0 */
-	float fadeStart;		/* 0xd4 -1 while flying */
-	float lastShrink;		/* 0xd8 */
-	byte on;			/* 0xdc */
+	int node;			/* DF_MissileMotor, -1 for none */
+	CGameTrail trail;
+	CGameParticles particles;
+	vec3_t last;
+	float minDist2;			/* squared */
+	float fadeTime;
+	float time;
+	float fadeStart;		/* -1 while flying */
+	float lastShrink;
+	byte on;
 	byte pad_dd[3];
 } cObjElementFXSwarmMissile;
 
 /* the Tesla ray from the weapon slots of the emitter to the target: per slot a Bezier curve through numPts points
- * that wander by random offsets (0x768 bytes, constructor rva 0x1f99e0) */
+ * that wander by random offsets (constructor) */
 #define FXTESLA_PTS 10
 typedef struct cObjElementFXTesla {
 	cObjElementFX base;
-	cEntity *emitter;		/* 0x004 */
-	char name[0x80];		/* 0x008 the target of the hit info of the emitter */
-	cEntity *target;		/* 0x088 */
-	vec3_t tpos;			/* 0x08c the end of the ray */
-	int numSlots;			/* 0x098 */
-	byte slotOn[FXTESLA_SLOTS];	/* 0x09c */
-	CGameParticles particles;	/* 0x0a0 on Dummy01 */
-	int numPts;			/* 0x150 10 */
-	vec3_t offs[FXTESLA_SLOTS][2 * FXTESLA_PTS];	/* 0x154 the offsets of the points, then the ones before */
-	vec3_t pts[FXTESLA_SLOTS][FXTESLA_PTS];	/* 0x514 the control points */
-	CGameTrail trails[FXTESLA_SLOTS * FXTESLA_TRAILS];	/* 0x6f4 */
-	float uvOfs[FXTESLA_SLOTS];	/* 0x734 */
-	float time;			/* 0x744 */
-	float fadeStart;		/* 0x748 -1 while shooting */
-	byte shooting;			/* 0x74c */
-	byte first;			/* 0x74d the next Update takes the offsets as they are */
+	cEntity *emitter;
+	char name[0x80];		/* the target of the hit info of the emitter */
+	cEntity *target;
+	vec3_t tpos;			/* the end of the ray */
+	int numSlots;
+	byte slotOn[FXTESLA_SLOTS];
+	CGameParticles particles;	/* on Dummy01 */
+	int numPts;			/* 10 */
+	vec3_t offs[FXTESLA_SLOTS][2 * FXTESLA_PTS];	/* the offsets of the points, then the ones before */
+	vec3_t pts[FXTESLA_SLOTS][FXTESLA_PTS];	/* the control points */
+	CGameTrail trails[FXTESLA_SLOTS * FXTESLA_TRAILS];
+	float uvOfs[FXTESLA_SLOTS];
+	float time;
+	float fadeStart;		/* -1 while shooting */
+	byte shooting;
+	byte first;			/* the next Update takes the offsets as they are */
 	byte pad_74e[2];
-	float stepTime[FXTESLA_SLOTS];	/* 0x750 since the offsets changed */
-	float followTime;		/* 0x760 */
-	byte on;			/* 0x764 */
+	float stepTime[FXTESLA_SLOTS];	/* since the offsets changed */
+	float followTime;
+	byte on;
 	byte pad_765[3];
 } cObjElementFXTesla;
 
@@ -212,7 +212,7 @@ static inline void FX_Normalize(vec3_t *out, float x, float y, float z) {
 	out->z = z * inv;
 }
 
-/* the constructors (rva 0x1f9690..), destructors and deleting destructors (vf00) */
+/* the constructors (..), destructors and the Free slots */
 void *cObjElementFXATPC_ctor(void *self);
 void *cObjElementFXDevastatorShoot_ctor(void *self);
 void *cObjElementFXInfernoExplosion_ctor(void *self);

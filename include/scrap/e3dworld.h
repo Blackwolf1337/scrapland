@@ -16,28 +16,28 @@
 #include "scrap/ground.h"
 
 typedef struct WorldDummy {
-	struct WorldDummy *next;	/* 0x00 */
-	char *name;			/* 0x04 Cad, DM_* */
-	vec3_t pos;			/* 0x08 */
-	vec3_t rot;			/* 0x14 radians */
-	CIniFile *ini;			/* 0x20 the user properties of the node, owned */
+	struct WorldDummy *next;
+	char *name;			/* Cad, DM_* */
+	vec3_t pos;
+	vec3_t rot;			/* radians */
+	CIniFile *ini;			/* the user properties of the node, owned */
 } WorldDummy;
 
 typedef struct CWorld {
-	CFog fog;			/* 0x00 */
-	float skyPos;			/* 0x24 how much the sky follows the camera (times SkyPosScale), 1 */
-	float skyRot;			/* 0x28 radians, added to SkyRotation */
-	CCamera camera;			/* 0x2c the camera of the world without another one */
-	CCamera *cam;			/* 0xa4 */
-	CModel *Ground;			/* 0xa8 the floor model */
-	CScene *GroundScale;		/* 0xac its scene */
-	CGround *ObjGround;		/* 0xb0 the floor object of the scene */
-	CModel *Sky;			/* 0xb4 the sky model */
-	CScene *SkyScale;		/* 0xb8 its scene */
-	CModel *tube;			/* 0xbc drawn after the sky with the far plane SkyTubeTest */
-	byte ini_D3D;			/* 0xc0 */
+	CFog fog;
+	float skyPos;			/* how much the sky follows the camera (times SkyPosScale), 1 */
+	float skyRot;			/* radians, added to SkyRotation */
+	CCamera camera;			/* the camera of the world without another one */
+	CCamera *cam;
+	CModel *Ground;			/* the floor model */
+	CScene *GroundScale;		/* its scene */
+	CGround *ObjGround;		/* the floor object of the scene */
+	CModel *Sky;			/* the sky model */
+	CScene *SkyScale;		/* its scene */
+	CModel *tube;			/* drawn after the sky with the far plane SkyTubeTest */
+	byte ini_D3D;
 	byte pad_c1[3];
-	WorldDummy *dummies;		/* 0xc4 */
+	WorldDummy *dummies;
 } CWorld;
 
 extern CWorld *g_World;

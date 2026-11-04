@@ -1,5 +1,5 @@
 /*
- * Python module SNet (method table SNet_methods, rva 0x42e610): network server, client, browser and master
+ * Python module SNet (method table SNet_methods): network server, client, browser and master
  * server. The original source file is not known (no CHECK in it). Functions that need a running server give
  * None (or NULL without exception: ModifyUsrData) when there is none, as the original.
  */

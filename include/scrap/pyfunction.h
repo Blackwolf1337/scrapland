@@ -16,22 +16,22 @@
 typedef void (*nativefunc_t)(cAbstractFile *params);
 
 typedef struct cPy_Function {
-	struct cPy_Function *next;	/* 0x00 */
-	struct cPy_Function *prev;	/* 0x04 */
+	struct cPy_Function *next;
+	struct cPy_Function *prev;
 	/* PyObject * (borrowed from the module dictionary) or nativefunc_t */
-	void *func;			/* 0x08 */
+	void *func;
 	/* PyObject * list or cFileMem * */
-	void *params;			/* 0x0c */
-	byte flags;			/* 0x10 PYF_ */
+	void *params;
+	byte flags;			/* PYF_ */
 	byte pad_11[3];
 } cPy_Function;
 
 /* an entry of the registry of C functions, a binary tree by name (static objects of the engine) */
 typedef struct cPy_NativeFunc {
-	const char *name;		/* 0x0 */
-	nativefunc_t func;		/* 0x4 */
-	struct cPy_NativeFunc *greater;	/* 0x8 names after this one (strcmp) */
-	struct cPy_NativeFunc *less;	/* 0xc */
+	const char *name;
+	nativefunc_t func;
+	struct cPy_NativeFunc *greater;	/* names after this one (strcmp) */
+	struct cPy_NativeFunc *less;
 } cPy_NativeFunc;
 
 /* a static entry, inserted into g_NativeFuncs */

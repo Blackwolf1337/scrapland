@@ -115,7 +115,7 @@ static void cFunctionaryLocalLogic_Free(cLocalLogic *base) {
 	operator_delete(self);
 }
 
-/* vf26: the view flag of the character and its team */
+/* the view flag of the character and its team */
 void cFunctionaryLocalLogic_UpdateView(cLocalLogic *elem) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	cEntity *p = Func_Parent(self);
@@ -135,7 +135,7 @@ void cFunctionaryLocalLogic_UpdateView(cLocalLogic *elem) {
 	WLife(p)->arrow.tgType = 3;
 }
 
-/* vf40: the nearest desktop (within maxDist when above 0) taken out of the desktop list and linked */
+/* the nearest desktop (within maxDist when above 0) taken out of the desktop list and linked */
 static void cFunctionaryLocalLogic_AssignDesktop(cLocalLogic *base, float maxDist) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	vec3_t tmp;
@@ -156,7 +156,7 @@ static void cFunctionaryLocalLogic_AssignDesktop(cLocalLogic *base, float maxDis
 	}
 }
 
-/* vf02: an escaping functionary runs at normal speed; another type of player than "Functionary" makes it
+/* an escaping functionary runs at normal speed; another type of player than "Functionary" makes it
  * suspicious (state 3) unless it wants to talk */
 static void cFunctionaryLocalLogic_NormalSpeed(cFunctionaryLocalLogic *self, cEntity *e);
 byte cFunctionaryLocalLogic_AcceptsArrow(cLocalLogic *elem) {
@@ -175,7 +175,7 @@ byte cFunctionaryLocalLogic_AcceptsArrow(cLocalLogic *elem) {
 	return 1;
 }
 
-/* vf33: back to the start while working with time left */
+/* back to the start while working with time left */
 void cFunctionaryLocalLogic_BreakWork(cLocalLogic *elem, byte restart) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	if (self->base.base.state != FUNC_WORK) {
@@ -204,7 +204,7 @@ void cFunctionaryLocalLogic_FreeDesktop(cFunctionaryLocalLogic *self) {
 	}
 }
 
-/* vf41: the desktop back into the desktop list and unlinked */
+/* the desktop back into the desktop list and unlinked */
 static void cFunctionaryLocalLogic_ReleaseDesktop(cLocalLogic *base) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	if (!cFunctionaryLocalLogic_GetDesktop(self)) {
@@ -257,7 +257,7 @@ static void Func_SitDown(cFunctionaryLocalLogic *self, cEntity *p) {
 	Logic_SetState(self, FUNC_WORK, NULL);
 }
 
-/* vf32: the wait before the walk to the desktop, the arrival at it, the work and the relax there */
+/* the wait before the walk to the desktop, the arrival at it, the work and the relax there */
 static void Functionary_WorkRelax(cEntity *e);
 void cFunctionaryLocalLogic_Work(cLocalLogic *elem, float dt) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
@@ -329,7 +329,6 @@ void cFunctionaryLocalLogic_Work(cLocalLogic *elem, float dt) {
 	Func_SitDown(self, p);
 }
 
-/* vf39 */
 static byte cFunctionaryLocalLogic_FastEscape(cLocalLogic *base) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	return self->fastEscape;
@@ -358,7 +357,6 @@ static byte Func_VarFloat(float *f, double *d, byte set) {
 	return 1;
 }
 
-/* vf04 */
 byte cFunctionaryLocalLogic_VarF(cLocalLogic *elem, const char *name, double *d, byte set) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	if (!strcmp(name, "ProbTalkWhenWorking")) {
@@ -388,7 +386,7 @@ byte cFunctionaryLocalLogic_VarF(cLocalLogic *elem, const char *name, double *d,
 	return cBaseLocalLogic_VarF(&self->base.base.logic, name, d, set);
 }
 
-/* vf37: the work stops, a new wait before the walk to the desktop (none with a forced desktop) */
+/* the work stops, a new wait before the walk to the desktop (none with a forced desktop) */
 void cFunctionaryLocalLogic_StopWork(cLocalLogic *base, byte restart) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	if (self->working && cFunctionaryLocalLogic_GetDesktop(self)) {
@@ -413,7 +411,6 @@ static byte Func_VarFlag(byte *b, int *i, byte set) {
 	return 1;
 }
 
-/* vf03 */
 static void cFunctionaryLocalLogic_SetKeepWorking(cFunctionaryLocalLogic *self, byte on);
 byte cFunctionaryLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, byte set) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
@@ -489,7 +486,6 @@ static void cFunctionaryLocalLogic_SlowEffect(cFunctionaryLocalLogic *self, cEnt
 	cTimer_SetBlend(Func_Timer(e), 0.45f);
 }
 
-/* vf17 */
 void cFunctionaryLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	vec3_t t1, t2;
@@ -563,7 +559,7 @@ void cFunctionaryLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cGenCharLocalLogic_Update(&self->base.base.logic, dt);
 }
 
-/* vf12: not when IgnoreBankerAttack */
+/* not when IgnoreBankerAttack */
 void cFunctionaryLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	if (!self->ignoreBanker) {
@@ -571,7 +567,7 @@ void cFunctionaryLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amoun
 	}
 }
 
-/* vf18: the nearest desktop within FunctionaryAssignWorkDistance instead of the origin */
+/* the nearest desktop within FunctionaryAssignWorkDistance instead of the origin */
 static void cFunctionaryLocalLogic_SetOriginFrom(cLocalLogic *base, cEntity *e) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	Functionary_ReleaseDesktop(self);
@@ -586,7 +582,7 @@ static void cFunctionaryLocalLogic_SetOriginFrom(cLocalLogic *base, cEntity *e) 
 	Con_Debugf("The functionary %s unemployed \n", e->name);
 }
 
-/* vf20: not idle from the work state goes on with the walk to the desktop */
+/* not idle from the work state goes on with the walk to the desktop */
 void cFunctionaryLocalLogic_SetIdle(cLocalLogic *elem, byte idle) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	if (!idle && !self->base.base.busy) {
@@ -624,7 +620,6 @@ static void Func_GoToWork(cFunctionaryLocalLogic *self, cAIChar *ai) {
 	AIChar_SetState(ai, AIC_GO_TO, pos, dir, 50.0, (double)self->goToWorkSpeed);
 }
 
-/* vf19 */
 byte cFunctionaryLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base.base;
@@ -694,7 +689,6 @@ static void cFunctionaryLocalLogic_SetKeepWorking(cFunctionaryLocalLogic *self, 
 	Functionary_ReleaseDesktop(self);
 }
 
-/* vf05 */
 byte cFunctionaryLocalLogic_VarS(cLocalLogic *elem, const char *name, char **s, byte set) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	if (strcmp(name, "ForcedDesktopAssigned")) {
@@ -725,7 +719,7 @@ static void cFunctionaryLocalLogic_NormalSpeed(cFunctionaryLocalLogic *self, cEn
 	cTimer_SetBlend(Func_Timer(e), 0.0f);
 }
 
-/* vf36: the chance to talk of the state */
+/* the chance to talk of the state */
 static byte cFunctionaryLocalLogic_CanTalk(cLocalLogic *elem) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	int st = self->base.base.state;
@@ -742,7 +736,7 @@ static byte cFunctionaryLocalLogic_CanTalk(cLocalLogic *elem) {
 	return self->probWalking >= r;
 }
 
-/* vf38: the angles of the desktop */
+/* the angles of the desktop */
 static vec3_t *cFunctionaryLocalLogic_GetWorkAng(cLocalLogic *base, vec3_t *out) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	CHECK(cFunctionaryLocalLogic_GetDesktop(self) && "desktopAssigned()");

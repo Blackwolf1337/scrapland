@@ -19,84 +19,84 @@
 #define SOUND_MAX_LISTENERS 2
 #define SOUND_VOL_OFF (-100000)
 
-/* the parameters of a sound (0x1c bytes) */
+/* the parameters of a sound */
 typedef struct cSoundDesc {
-	int volume;			/* 0x00 */
-	int pan;			/* 0x04 */
-	float freq;			/* 0x08 frequency factor */
-	byte loop;			/* 0x0c */
-	byte prio;			/* 0x0d 0x80 */
+	int volume;
+	int pan;
+	float freq;			/* frequency factor */
+	byte loop;
+	byte prio;			/* 0x80 */
 	byte pad_0e[2];
-	float param3;			/* 0x10 doppler factor (PlaySound p3, default 1) */
-	float param1;			/* 0x14 distance where the attenuation starts, 0: the global rolloff (p1) */
-	float param2;			/* 0x18 distance of silence, 0: no limit (p2) */
+	float param3;			/* doppler factor (PlaySound p3, default 1) */
+	float param1;			/* distance where the attenuation starts, 0: the global rolloff (p1) */
+	float param2;			/* distance of silence, 0: no limit (p2) */
 } cSoundDesc;
 
 /* a sound by name with its parameters and the channel it plays on */
 typedef struct cSound {
-	cSoundDesc desc;		/* 0x00 */
-	char name[SOUND_NAME_MAX_LEN];	/* 0x1c */
-	int handle;			/* 0x3c mixer channel, 0 none */
+	cSoundDesc desc;
+	char name[SOUND_NAME_MAX_LEN];
+	int handle;			/* mixer channel, 0 none */
 } cSound;
 
 /* a view: position, angles (radians) and velocity, with sin and cos of the negated angles */
 typedef struct cSoundListener {
-	vec3_t pos;			/* 0x00 */
-	vec3_t ang;			/* 0x0c */
-	vec3_t vel;			/* 0x18 */
-	vec3_t sin;			/* 0x24 */
-	vec3_t cos;			/* 0x30 */
+	vec3_t pos;
+	vec3_t ang;
+	vec3_t vel;
+	vec3_t sin;
+	vec3_t cos;
 } cSoundListener;
 
 typedef struct CSoundSys CSoundSys;
 
-/* the interface (CSoundSys at rva 0x3c9f3c, slots 0x10..0x40 pure, CSoundXBox at 0x3ca718) */
+/* the interface (CSoundSys slots 0x10..0x40 pure, CSoundXBox at 0x3ca718) */
 typedef struct CSoundSysVtbl {
-	CSoundSys *(*Destroy)(CSoundSys *self, byte flags);			/* 0x00 */
-	void(*Init)(CSoundSys *self);						/* 0x04 */
-	void(*Close)(CSoundSys *self);					/* 0x08 */
-	void(*Update)(CSoundSys *self);					/* 0x0c */
-	void(*LoadSound2)(CSoundSys *self, const char *name);		/* 0x10 CHECK(0) */
-	void(*LoadSound)(CSoundSys *self, const char *name);		/* 0x14 */
-	void(*DeleteSound)(CSoundSys *self, const char *name);		/* 0x18 */
-	void(*StopAllSounds)(CSoundSys *self);				/* 0x1c */
-	void(*DeleteAllSounds)(CSoundSys *self);				/* 0x20 */
-	byte(*GetDesc)(CSoundSys *self, const char *name, cSoundDesc *out);	/* 0x24 */
-	byte(*SetDesc)(CSoundSys *self, const char *name, const cSoundDesc *d);	/* 0x28 CHECK(0) */
-	int(*PlaySound)(CSoundSys *self, const char *name, const cSoundDesc *d, int *handle);	/* 0x2c */
-	int(*PlayName)(CSoundSys *self, const char *name);			/* 0x30 */
-	int(*Play)(CSoundSys *self, const char *name, int volume, int pan);	/* 0x34 */
-	int(*PlayAt)(CSoundSys *self, const char *name, const vec3_t *pos, int volume);	/* 0x38 */
-	byte(*UpdateSound)(CSoundSys *self, const char *name, const cSoundDesc *d, int handle);	/* 0x3c */
-	int(*StopSound)(CSoundSys *self, int handle);			/* 0x40 */
-	void(*SetVolume)(CSoundSys *self, const char *name, int volume);	/* 0x44 */
-	void(*SetPan)(CSoundSys *self, const char *name, int pan);		/* 0x48 */
-	void(*SetFreq)(CSoundSys *self, const char *name, float freq);	/* 0x4c */
-	void(*SetLoop)(CSoundSys *self, const char *name, byte loop);	/* 0x50 */
-	void(*SetPrio)(CSoundSys *self, const char *name, byte prio);	/* 0x54 */
-	void(*ResetListeners)(CSoundSys *self);				/* 0x58 */
+	CSoundSys *(*Destroy)(CSoundSys *self, byte flags);
+	void(*Init)(CSoundSys *self);
+	void(*Close)(CSoundSys *self);
+	void(*Update)(CSoundSys *self);
+	void(*LoadSound2)(CSoundSys *self, const char *name);		/* CHECK(0) */
+	void(*LoadSound)(CSoundSys *self, const char *name);
+	void(*DeleteSound)(CSoundSys *self, const char *name);
+	void(*StopAllSounds)(CSoundSys *self);
+	void(*DeleteAllSounds)(CSoundSys *self);
+	byte(*GetDesc)(CSoundSys *self, const char *name, cSoundDesc *out);
+	byte(*SetDesc)(CSoundSys *self, const char *name, const cSoundDesc *d);	/* CHECK(0) */
+	int(*PlaySound)(CSoundSys *self, const char *name, const cSoundDesc *d, int *handle);
+	int(*PlayName)(CSoundSys *self, const char *name);
+	int(*Play)(CSoundSys *self, const char *name, int volume, int pan);
+	int(*PlayAt)(CSoundSys *self, const char *name, const vec3_t *pos, int volume);
+	byte(*UpdateSound)(CSoundSys *self, const char *name, const cSoundDesc *d, int handle);
+	int(*StopSound)(CSoundSys *self, int handle);
+	void(*SetVolume)(CSoundSys *self, const char *name, int volume);
+	void(*SetPan)(CSoundSys *self, const char *name, int pan);
+	void(*SetFreq)(CSoundSys *self, const char *name, float freq);
+	void(*SetLoop)(CSoundSys *self, const char *name, byte loop);
+	void(*SetPrio)(CSoundSys *self, const char *name, byte prio);
+	void(*ResetListeners)(CSoundSys *self);
 	void(*SetListener)(CSoundSys *self, int id, const vec3_t *pos, const vec3_t *ang,
-		const vec3_t *vel);							/* 0x5c */
+		const vec3_t *vel);
 	/* volume, pan and (doppler set) frequency of a sound at pos moving with vel for the nearest listener */
 	void(*Compute3D)(CSoundSys *self, cSoundDesc *d, const vec3_t *pos, const vec3_t *vel,
-		byte doppler);								/* 0x60 */
-	void(*SetMusic)(CSoundSys *self, const char *name);			/* 0x64 */
-	void(*Unused1a)(CSoundSys *self);					/* 0x68 nothing, never called */
-	void(*StopMusic)(CSoundSys *self);					/* 0x6c */
-	void(*CloseHook)(CSoundSys *self);					/* 0x70 nothing in every class, called by Close */
-	void(*SetMusicVolume)(CSoundSys *self, float volume);		/* 0x74 */
+		byte doppler);
+	void(*SetMusic)(CSoundSys *self, const char *name);
+	void(*Unused1a)(CSoundSys *self);					/* nothing, never called */
+	void(*StopMusic)(CSoundSys *self);
+	void(*CloseHook)(CSoundSys *self);					/* nothing in every class, called by Close */
+	void(*SetMusicVolume)(CSoundSys *self, float volume);
 	/* the sound name of a file name: without directory and extension */
-	void(*GetSoundName)(CSoundSys *self, const char *file, char *out, int size);	/* 0x78 */
-	void(*DebugDraw)(CSoundSys *self, int x, int y);			/* 0x7c */
-	int(*OpenVoice)(CSoundSys *self, const char *name, int voice, int arg);	/* 0x80 */
-	int(*PlayVoice)(CSoundSys *self, int voice);				/* 0x84 */
-	int(*StopVoice)(CSoundSys *self, int voice);				/* 0x88 */
-	byte(*VoiceRemain)(CSoundSys *self, int voice, float *remain);	/* 0x8c */
-	int(*SetVoiceVolume)(CSoundSys *self, int voice, float volume);	/* 0x90 */
-	int(*SetVoiceParam)(CSoundSys *self, int voice, float v);		/* 0x94 */
-	int(*SetVoiceString)(CSoundSys *self, int voice, const char *text);	/* 0x98 */
-	int(*GetVoiceString)(CSoundSys *self, int voice, char *buf, int size);	/* 0x9c */
-	int(*VoiceUnused)(CSoundSys *self, int voice);			/* 0xa0 CHECK(0) */
+	void(*GetSoundName)(CSoundSys *self, const char *file, char *out, int size);
+	void(*DebugDraw)(CSoundSys *self, int x, int y);
+	int(*OpenVoice)(CSoundSys *self, const char *name, int voice, int arg);
+	int(*PlayVoice)(CSoundSys *self, int voice);
+	int(*StopVoice)(CSoundSys *self, int voice);
+	byte(*VoiceRemain)(CSoundSys *self, int voice, float *remain);
+	int(*SetVoiceVolume)(CSoundSys *self, int voice, float volume);
+	int(*SetVoiceParam)(CSoundSys *self, int voice, float v);
+	int(*SetVoiceString)(CSoundSys *self, int voice, const char *text);
+	int(*GetVoiceString)(CSoundSys *self, int voice, char *buf, int size);
+	int(*VoiceUnused)(CSoundSys *self, int voice);			/* CHECK(0) */
 } CSoundSysVtbl;
 
 /* calls through the slots of CSoundSysVtbl */
@@ -229,31 +229,31 @@ static inline void SoundSys_CloseHook(void *self) {
 }
 
 struct CSoundSys {
-	const CSoundSysVtbl *vftable;			/* 0x00 */
-	cSoundListener listeners[SOUND_MAX_LISTENERS];	/* 0x04 */
-	int lastListener;				/* 0x7c the highest set, -1 none */
+	const CSoundSysVtbl *vftable;
+	cSoundListener listeners[SOUND_MAX_LISTENERS];
+	int lastListener;				/* the highest set, -1 none */
 };
 
 /* the mixer backend (include/scrap/snd.h; FMOD 3 in the original): the samples by name */
 typedef struct CSoundXBox {
-	CSoundSys sys;				/* 0x00 */
-	HashTable sounds;			/* 0x80 457 slots, not case sensitive */
-	int volume;				/* 0x8c added to every volume: SoundMainVolume */
-	byte swapPan;				/* 0x90 SoundSwapChannels */
+	CSoundSys sys;
+	HashTable sounds;			/* 457 slots, not case sensitive */
+	int volume;				/* added to every volume: SoundMainVolume */
+	byte swapPan;				/* SoundSwapChannels */
 	byte pad_91[3];
 } CSoundXBox;
 
 /* a value of the sample table: the sample, its parameters and its default frequency */
 typedef struct cSoundTableValue {
-	void *sample;				/* 0x00 SndSample */
-	cSoundDesc desc;			/* 0x04 */
-	int freq;				/* 0x20 */
+	void *sample;				/* SndSample */
+	cSoundDesc desc;
+	int freq;
 } cSoundTableValue;
 
 typedef struct cSoundStrItem {
-	cSoundTableValue value;			/* 0x00 */
-	char *key;				/* 0x24 cString */
-	struct cSoundStrItem *next;		/* 0x28 */
+	cSoundTableValue value;
+	char *key;				/* cString */
+	struct cSoundStrItem *next;
 } cSoundStrItem;
 
 extern CSoundSys *g_pSound;
@@ -326,17 +326,17 @@ void Sound_Nop(void);
  * the dynamic music of the levels (relax and action music) and the voice of the talks.
  */
 typedef struct cSoundPS {
-	struct cSoundPS *next;		/* 0x00 g_SndPSList */
-	cSound sound;			/* 0x04 */
-	float volume;			/* 0x44 "Volume" 0..1 */
-	float pitch;			/* 0x48 "Pitch" semitones */
-	vec3_t pos;			/* 0x4c "X" "Y" "Z" */
-	byte loop;			/* 0x58 "Loop", else played again after a random interval */
+	struct cSoundPS *next;		/* g_SndPSList */
+	cSound sound;
+	float volume;			/* "Volume" 0..1 */
+	float pitch;			/* "Pitch" semitones */
+	vec3_t pos;			/* "X" "Y" "Z" */
+	byte loop;			/* "Loop", else played again after a random interval */
 	byte pad_59[3];
-	float timer;			/* 0x5c until the next play */
-	float maxInterval;		/* 0x60 "MaxInterval" */
-	float minInterval;		/* 0x64 "MinInterval" */
-	char *name;			/* 0x68 cString, the key in (&g_SndPSTable) */
+	float timer;			/* until the next play */
+	float maxInterval;		/* "MaxInterval" */
+	float minInterval;		/* "MinInterval" */
+	char *name;			/* cString, the key in (&g_SndPSTable) */
 } cSoundPS;
 
 /* the property set of that name or NULL */
@@ -363,15 +363,15 @@ void Sound_TalkDone(const char *name);
  * dopp and vol0..4, pitch0..4, time0..4, int0..4 (the digit is not checked).
  */
 typedef struct cSndItem {
-	cSound sound;			/* 0x00 */
-	float volume;			/* 0x40 "vol", 0 stops it */
-	float pitch;			/* 0x44 "pitch" */
-	float time;			/* 0x48 "time", the play time */
-	float vols[5];			/* 0x4c */
-	float pitches[5];		/* 0x60 */
-	float times[5];			/* 0x74 */
-	int ints[5];			/* 0x88 */
-	byte playing;			/* 0x9c */
+	cSound sound;
+	float volume;			/* "vol", 0 stops it */
+	float pitch;			/* "pitch" */
+	float time;			/* "time", the play time */
+	float vols[5];
+	float pitches[5];
+	float times[5];
+	int ints[5];
+	byte playing;
 	byte pad_9d[3];
 } cSndItem;
 
@@ -379,12 +379,12 @@ typedef struct cEntity cEntity;
 typedef struct cSndInterface cSndInterface;
 
 struct cSndInterface {
-	int nsnd;			/* 0x04 */
-	cSndItem **snds;		/* 0x08 Mem_Alloc */
-	struct cSndInterface *next;	/* 0x0c g_SndInterfaces */
-	struct cSndInterface **link;	/* 0x10 the next field that points here */
-	char id[4];			/* 0x14 three characters and 0 */
-	cEntity *owner;			/* 0x18 */
+	int nsnd;
+	cSndItem **snds;		/* Mem_Alloc */
+	struct cSndInterface *next;	/* g_SndInterfaces */
+	struct cSndInterface **link;	/* the next field that points here */
+	char id[4];			/* three characters and 0 */
+	cEntity *owner;
 };
 
 /* Sound/SndInterface.cpp (src/game/Sound/SndInterface.c) */
@@ -415,10 +415,10 @@ void SoundStrTable_Clear(HashTable *self);
 
 /* Sound/Wav.cpp (src/game/Sound/Wav.c): the format of a .wav file */
 typedef struct cWavInfo {
-	int rate;				/* 0x00 samples per second */
-	int channels;				/* 0x04 1 or 2 */
-	int bits16;				/* 0x08 1: 16 bit, 0: 8 bit */
-	int samples;				/* 0x0c */
+	int rate;				/* samples per second */
+	int channels;				/* 1 or 2 */
+	int bits16;				/* 1: 16 bit, 0: 8 bit */
+	int samples;
 } cWavInfo;
 
 typedef struct cAbstractFile cAbstractFile;

@@ -19,35 +19,35 @@ typedef struct cEntity cEntity;
 
 /* the first slots of cEntity::vftable; Ghidra names the rest cEntity::vfNN */
 typedef struct cEntityVtbl {
-	void(*Update)(cEntity *self);				/* 0x00 vf00 */
-	void(*Render)(cEntity *self, void *arg);			/* 0x04 vf01 */
-	void(*UpdateOff)(cEntity *self);				/* 0x08 vf02 */
-	void (*Free)(cEntity *self);		/* 0x0c vf03 deleting destructor */
-	const char *(*GetClassName)(cEntity *self);		/* 0x10 vf04 "Entity", "Car", ... */
-	byte(*IsType)(cEntity *self, const char *type);		/* 0x14 vf05 */
-	vec3_t *(*GetPos)(cEntity *self, vec3_t *out);		/* 0x18 vf06, returns out */
-	void(*SetPos)(cEntity *self, const vec3_t *pos);		/* 0x1c vf07 */
-	void(*SetActive)(cEntity *self, byte on);			/* 0x20 vf08 active */
+	void(*Update)(cEntity *self);
+	void(*Render)(cEntity *self, void *arg);
+	void(*UpdateOff)(cEntity *self);
+	void (*Free)(cEntity *self);		/* destroys and frees */
+	const char *(*GetClassName)(cEntity *self);		/* "Entity", "Car", ... */
+	byte(*IsType)(cEntity *self, const char *type);
+	vec3_t *(*GetPos)(cEntity *self, vec3_t *out);		/* returns out */
+	void(*SetPos)(cEntity *self, const vec3_t *pos);
+	void(*SetActive)(cEntity *self, byte on);			/* active */
 	/* the tests of the collision sphere (no hit in cEntity) and the touch of another entity */
-	byte(*TestLine)(cEntity *self, const vec3_t *from, vec3_t *hit);		/* 0x24 vf09 */
+	byte(*TestLine)(cEntity *self, const vec3_t *from, vec3_t *hit);
 	byte(*TestSphere)(cEntity *self, cEntity *exclude, const vec3_t *center, float radius,
-		const vec3_t *prev);							/* 0x28 vf10 */
-	void(*Touch)(cEntity *self, cEntity *e, const vec3_t *point, const vec3_t *normal);	/* 0x2c vf11 */
-	void(*SetModel)(cEntity *self, const char *file, float sx, float sy, float sz, int flag); /* 0x30 */
+		const vec3_t *prev);
+	void(*Touch)(cEntity *self, cEntity *e, const vec3_t *point, const vec3_t *normal);
+	void(*SetModel)(cEntity *self, const char *file, float sx, float sy, float sz, int flag);
 	/* angle to the target in ang (in: x, y; out: x, y), target found in *target */
-	void(*GetTargetAngle)(cEntity *self, float *ang, float dist, cEntity **target);	/* 0x34 vf13 */
+	void(*GetTargetAngle)(cEntity *self, float *ang, float dist, cEntity **target);
 	/* aim of the weapon: *dist in/out, out = aim point, *target the entity hit; last argument 8 from SDK */
 	void(*AimWeapon)(cEntity *self, float ax, float ay, float *dist, vec3_t *out, cEntity **target,
-		int flags);							/* 0x38 vf14 */
-	void(*SetEmbeddedFX)(cEntity *self, const char *fxType);	/* 0x3c vf15 */
+		int flags);
+	void(*SetEmbeddedFX)(cEntity *self, const char *fxType);
 	/* script variables of the entity by name (cPyEntity attributes): set 0 reads into the pointers, 1 writes */
-	byte(*VarI)(cEntity *self, const char *name, int *i, int set);			/* 0x40 vf16 */
-	byte(*VarF)(cEntity *self, const char *name, double *d, int set);			/* 0x44 vf17 */
-	byte(*VarS)(cEntity *self, const char *name, char **s, int set);			/* 0x48 vf18 */
-	byte(*VarV)(cEntity *self, const char *name, double *x, double *y, double *z, int set); /* 0x4c */
-	void(*Unused20)(cEntity *self);				/* 0x50 vf20, nothing and never called */
-	int(*Unused21)(cEntity *self, int a);			/* 0x54 vf21, 0 and never called */
-	void *(*GetAI)(cEntity *self);				/* 0x58 vf22 */
+	byte(*VarI)(cEntity *self, const char *name, int *i, int set);
+	byte(*VarF)(cEntity *self, const char *name, double *d, int set);
+	byte(*VarS)(cEntity *self, const char *name, char **s, int set);
+	byte(*VarV)(cEntity *self, const char *name, double *x, double *y, double *z, int set);
+	void(*Unused20)(cEntity *self);				/* nothing and never called */
+	int(*Unused21)(cEntity *self, int a);			/* 0 and never called */
+	void *(*GetAI)(cEntity *self);
 } cEntityVtbl;
 
 /* calls through the slots of cEntityVtbl */
@@ -137,26 +137,26 @@ static inline byte Entity_VarV(void *self, const char *name, double *x, double *
 
 /* Nto1Links.h with a shared count: the head (data NULL) owns the int, every linked node points to it */
 typedef struct EntityDNode {
-	Nto1Node node;			/* 0x00 */
-	int *numElems;			/* 0x10 */
+	Nto1Node node;
+	int *numElems;
 } EntityDNode;
 
-/* Entities/Entity.cpp (src/game/Entities/Entity.c), 0x7c bytes */
+/* Entities/Entity.cpp (src/game/Entities/Entity.c) */
 struct cEntity {
-	const cEntityVtbl *vftable;	/* 0x00 */
-	char *name;			/* 0x04 string object, unique in g_pWorld->entities */
-	Nto1Node worldNode;		/* 0x08 in g_pWorld->entityList, data the entity */
-	Nto1Node deadNode;		/* 0x18 in g_pWorld->deadList once deleted (cEntity_Del) */
-	vec3_t pos;			/* 0x28 */
-	Nto1Node gridNode;		/* 0x34 cell of the collision grid, data the entity */
-	uint32_t savedMask;		/* 0x44 the mask while the collision is off (ActiveCMask 0) */
-	uint32_t mask;			/* 0x48 the entity lists it is in, a bit each */
-	byte active;			/* 0x4c "Active"; checked by the SAI functions before they touch the AI */
+	const cEntityVtbl *vftable;
+	char *name;			/* string object, unique in g_pWorld->entities */
+	Nto1Node worldNode;		/* in g_pWorld->entityList, data the entity */
+	Nto1Node deadNode;		/* in g_pWorld->deadList once deleted (cEntity_Del) */
+	vec3_t pos;
+	Nto1Node gridNode;		/* cell of the collision grid, data the entity */
+	uint32_t savedMask;		/* the mask while the collision is off (ActiveCMask 0) */
+	uint32_t mask;			/* the entity lists it is in, a bit each */
+	byte active;			/* "Active"; checked by the SAI functions before they touch the AI */
 	byte pad_4d[3];
-	EntityDNode listNode;		/* 0x50 in the ring of its cEntityListData ("EntityList"), target the list */
-	Nto1Node links;			/* 0x64 head of the script handles (cPyEntity), target the entity */
-	void *lLogic;			/* 0x74 local logic made by the list ("LLogic" variables) */
-	void *ai;			/* 0x78 the AI (GetAI, "AI_" variables) */
+	EntityDNode listNode;		/* in the ring of its cEntityListData ("EntityList"), target the list */
+	Nto1Node links;			/* head of the script handles (cPyEntity), target the entity */
+	void *lLogic;			/* local logic made by the list ("LLogic" variables) */
+	void *ai;			/* the AI (GetAI, "AI_" variables) */
 };
 
 /* a vehicle ("Car"): include/scrap/vehicleentity.h */
@@ -164,28 +164,28 @@ typedef struct cVehicleEntity cVehicleEntity;
 
 /* Global/DList.h: node of the entity lists of the world; the list ends at a node without data */
 typedef struct DListNode {
-	struct DListNode *next;		/* 0x0 */
-	struct DListNode *prev;		/* 0x4 */
-	void *target;			/* 0x8 */
-	cEntity *data;			/* 0xc */
+	struct DListNode *next;
+	struct DListNode *prev;
+	void *target;
+	cEntity *data;
 } DListNode;
 
 /* an entity list of g_pWorld->lists (CollisionGrid.c makes them) */
 typedef struct cEntityList {
-	char *name;			/* 0x00 string object */
-	cPy_Function onDeath;		/* 0x04 */
-	cPy_Function onDamage;		/* 0x18 */
-	int (*func)(void);		/* 0x2c returns 0 */
+	char *name;			/* string object */
+	cPy_Function onDeath;
+	cPy_Function onDamage;
+	int (*func)(void);		/* returns 0 */
 	union {
-		Nto1Node ring;		/* 0x30 head of the entities (data), target the list */
-		DListNode *head;	/* 0x30 ring.next, the first node */
+		Nto1Node ring;		/* head of the entities (data), target the list */
+		DListNode *head;	/* ring.next, the first node */
 	};
-	int *numElems;			/* 0x40 */
+	int *numElems;
 } cEntityList;
 
-/* list of the world by name ("Traffic", "Enemies", ...), rva 0x209240 */
+/* list of the world by name ("Traffic", "Enemies", ...) */
 cEntityList *cWorld_GetList(cWorld *world, const char *name);
-/* first entity of the list or NULL, rva 0x1a7bc0 */
+/* first entity of the list or NULL */
 cEntity *cEntityList_GetFirst(cEntityList *list);
 
 /* links node to the entity; it leaves any ring it was in first */
@@ -227,7 +227,7 @@ byte cEntity_VarF(cEntity *self, const char *name, double *d, int set);
 byte cEntity_VarS(cEntity *self, const char *name, char **s, int set);
 byte cEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set);
 void *cEntity_GetAI(cEntity *self);
-/* the inline virtual functions of Entity.h: vf09 and vf10 (no hit), vf11, vf20 (nothing) and vf21 (0) */
+/* the inline virtual functions of Entity.h: and (no hit) (nothing) and (0) */
 byte cEntity_TestLine(cEntity *self, const vec3_t *from, vec3_t *hit);
 void cEntity_Unused20(cEntity *self);
 int cEntity_Unused21(cEntity *self, int a);

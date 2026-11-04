@@ -17,12 +17,12 @@ typedef struct cObjElementFX cObjElementFX;
 
 /* cObjElementAbstract::vftable and the ones of the effects */
 typedef struct cObjElementFXVtbl {
-	void (*Free)(cObjElementFX *self);			/* 0x00 */
-	void(*Update)(cObjElementFX *self, cDebris *debris, float dt);		/* 0x04 vf01 */
+	void (*Free)(cObjElementFX *self);
+	void(*Update)(cObjElementFX *self, cDebris *debris, float dt);
 	/* 0: the debris goes back to the pool */
-	byte(*IsAlive)(cObjElementFX *self, cDebris *debris, cDebrisSys *sys);	/* 0x08 vf02 */
-	void(*Start)(cObjElementFX *self, cDebris *debris);			/* 0x0c vf03 */
-	void(*Reset)(cObjElementFX *self, cDebris *debris);			/* 0x10 vf04 */
+	byte(*IsAlive)(cObjElementFX *self, cDebris *debris, cDebrisSys *sys);
+	void(*Start)(cObjElementFX *self, cDebris *debris);
+	void(*Reset)(cObjElementFX *self, cDebris *debris);
 } cObjElementFXVtbl;
 
 /* calls through the slots of cObjElementFXVtbl */
@@ -47,7 +47,7 @@ static inline void FXObj_Update(void *self, cDebris *debris, float dt) {
 }
 
 struct cObjElementFX {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
+	const cObjElementFXVtbl *vftable;
 };
 /* the base class of the effects, 4 bytes (cObjElement_dtor sets its vtable) */
 typedef cObjElementFX cObjElementAbstract;
@@ -64,79 +64,79 @@ static inline void FXObj_SetVtbl(void *self, const cObjElementFXVtbl *vt) {
 #define FXSONIC_RINGS 8
 #define FXDEBRISCLOUD_RANDS 0x48
 
-/* the laser hook between the ship and its target (0x15c bytes, destructor rva 0x1c9ab0) */
+/* the laser hook between the ship and its target */
 typedef struct cObjElementFXHook {
 	cObjElementFX base;
-	cEntity *emitter;		/* 0x004 the ship that shoots */
-	cEntity *target;		/* 0x008 the entity hooked, NULL for a point */
-	int slot;			/* 0x00c the weapon node of the emitter (Entity_WeapNodes) */
-	byte active;			/* 0x010 */
+	cEntity *emitter;		/* the ship that shoots */
+	cEntity *target;		/* the entity hooked, NULL for a point */
+	int slot;			/* the weapon node of the emitter (Entity_WeapNodes) */
+	byte active;
 	byte pad_11[3];
-	float fade;			/* 0x014 the release fade time */
-	CGameTrail trail[2];		/* 0x018 */
-	vec3_t points[FXHOOK_POINTS];	/* 0x020 from the weapon node to points[numPoints] */
-	int numPoints;			/* 0x098 index of the last point */
-	CGameParticles particles;	/* 0x09c */
-	float flash;			/* 0x14c */
-	byte withTarget;		/* 0x150 started by FXHook_StartTarget */
+	float fade;			/* the release fade time */
+	CGameTrail trail[2];
+	vec3_t points[FXHOOK_POINTS];	/* from the weapon node to points[numPoints] */
+	int numPoints;			/* index of the last point */
+	CGameParticles particles;
+	float flash;
+	byte withTarget;		/* started by FXHook_StartTarget */
 	byte pad_151[3];
-	float sparkTime;		/* 0x154 since the last sparks debris */
-	byte on;			/* 0x158 */
+	float sparkTime;		/* since the last sparks debris */
+	byte on;
 	byte pad_159[3];
 } cObjElementFXHook;
 
-/* the electromagnetic impulse (0xd20 bytes, destructor rva 0x1c9a10): up to 8 lightning bolts from the missile to
+/* the electromagnetic impulse: up to 8 lightning bolts from the missile to
  * the world or to entities near it, each a trail along the Bezier curve of its control points that follow its points,
  * and glows at the center */
 typedef struct cObjElementFXEMI {
 	cObjElementFX base;
-	cEntity *entity;		/* 0x004 the EMI missile */
-	int node;			/* 0x008 Dummy01, -1 for none */
-	CGameParticles particles;	/* 0x00c 0 the center, 2 i + 1 and 2 i + 2 the end of bolt i */
-	float hideTime;			/* 0x0bc */
-	float c0;			/* 0x0c0 0.6 */
-	float time;			/* 0x0c4 since the start */
-	float trailTime[FXEMI_TRAILS];	/* 0x0d4 the time left of bolt i, -1 for a trail not running */
-	CGameTrail trails[FXEMI_TRAILS]; /* 0x0f4 */
-	vec3_t ctrl[FXEMI_TRAILS][FXEMI_CTRL];	/* 0x114 the control points of the curve */
-	vec3_t pts[FXEMI_TRAILS][FXEMI_PTS];	/* 0x4d4 the points, from FXEMI_CTRL the ones of the last step */
-	float stepTime[FXEMI_TRAILS];	/* 0xc54 since the last new points (FXEMIStepTime) */
-	float boltScale[FXEMI_TRAILS];	/* 0xc74 the width and the segment length of the trail */
-	Nto1Node links[FXEMI_TRAILS];	/* 0xc94 target the entity the bolt hit */
-	int numPoints;			/* 0xd14 6 */
-	float glowTime;			/* 0xd18 since the last glow */
-	byte on;			/* 0xd1c set by the countermeasure that drops it */
+	cEntity *entity;		/* the EMI missile */
+	int node;			/* Dummy01, -1 for none */
+	CGameParticles particles;	/* 0 the center, 2 i + 1 and 2 i + 2 the end of bolt i */
+	float hideTime;
+	float c0;			/* 0.6 */
+	float time;			/* since the start */
+	float trailTime[FXEMI_TRAILS];	/* the time left of bolt i, -1 for a trail not running */
+	CGameTrail trails[FXEMI_TRAILS];
+	vec3_t ctrl[FXEMI_TRAILS][FXEMI_CTRL];	/* the control points of the curve */
+	vec3_t pts[FXEMI_TRAILS][FXEMI_PTS];	/* the points, from FXEMI_CTRL the ones of the last step */
+	float stepTime[FXEMI_TRAILS];	/* since the last new points (FXEMIStepTime) */
+	float boltScale[FXEMI_TRAILS];	/* the width and the segment length of the trail */
+	Nto1Node links[FXEMI_TRAILS];	/* target the entity the bolt hit */
+	int numPoints;			/* 6 */
+	float glowTime;			/* since the last glow */
+	byte on;			/* set by the countermeasure that drops it */
 	byte pad_d1d[3];
 } cObjElementFXEMI;
 
-/* the sonic mine explosion: rings that grow and fade (0x220 bytes, destructor rva 0x1c9b00) */
+/* the sonic mine explosion: rings that grow and fade */
 typedef struct cObjElementFXSonicExplosion {
 	cObjElementFX base;
-	CGameParticles particles;	/* 0x004 the emitted ones */
-	CGameParticles rings;		/* 0x0b4 one particle per ring */
-	float time;			/* 0x164 */
-	float time2;			/* 0x168 */
-	vec3_t pos;			/* 0x16c */
-	float scale;			/* 0x178 */
-	float ringVel[FXSONIC_RINGS];	/* 0x17c */
-	float ringAcc[FXSONIC_RINGS];	/* 0x19c */
-	float ringSize[FXSONIC_RINGS];	/* 0x1bc */
-	float unused_1dc[FXSONIC_RINGS];	/* 0x1dc */
-	float ringFade[FXSONIC_RINGS];	/* 0x1fc 1: gone */
-	byte on;			/* 0x21c set by the mine that drops it */
+	CGameParticles particles;	/* the emitted ones */
+	CGameParticles rings;		/* one particle per ring */
+	float time;
+	float time2;
+	vec3_t pos;
+	float scale;
+	float ringVel[FXSONIC_RINGS];
+	float ringAcc[FXSONIC_RINGS];
+	float ringSize[FXSONIC_RINGS];
+	float unused_1dc[FXSONIC_RINGS];
+	float ringFade[FXSONIC_RINGS];	/* 1: gone */
+	byte on;			/* set by the mine that drops it */
 	byte pad_21d[3];
 } cObjElementFXSonicExplosion;
 
-/* the debris cloud countermeasure (0x1f4 bytes, destructor rva 0x1c99d0) */
+/* the debris cloud countermeasure */
 typedef struct cObjElementFXDebrisCloud {
 	cObjElementFX base;
-	cEntity *entity;		/* 0x004 */
-	int node;			/* 0x008 Dummy01, -1 for none */
-	CGameParticles particles;	/* 0x00c */
-	float emitT;			/* 0x0bc the time since the last puffs */
-	float time;			/* 0x0c0 since the start */
-	float rands[FXDEBRISCLOUD_RANDS]; /* 0x0d0 random numbers in [0, 2]: the phases of the cloud particles */
-	byte on;			/* 0x1f0 set by the countermeasure that drops it */
+	cEntity *entity;
+	int node;			/* Dummy01, -1 for none */
+	CGameParticles particles;
+	float emitT;			/* the time since the last puffs */
+	float time;			/* since the start */
+	float rands[FXDEBRISCLOUD_RANDS]; /* random numbers in [0, 2]: the phases of the cloud particles */
+	byte on;			/* set by the countermeasure that drops it */
 	byte pad_1f1[3];
 } cObjElementFXDebrisCloud;
 
@@ -146,38 +146,38 @@ typedef struct cObjElementFXDebrisCloud {
 
 /* a weapon of the world in a cTargetLock: the mounted slots (bit per slot), the upgrade and its ammo */
 typedef struct cWeaponSlot {
-	uint32_t slots;			/* 0x0 */
-	int upgrade;			/* 0x4 */
-	float uammo;			/* 0x8 the ammo of the upgrade, 0..200 */
+	uint32_t slots;
+	int upgrade;
+	float uammo;			/* the ammo of the upgrade, 0..200 */
 } cWeaponSlot;
 
 /* the render nodes of one ammo kind, per slot (a pointer to it, see tri16_t in meshd3d.h) */
 typedef int ammoNodes_t[4];
 
 /* the weapons of a ship and its lock on an entity or a point: the cWeaponManager of the RTTI (0x48 bytes,
- * vftable rva 0x3b664c), src/game/Entities/Vehicle/WeaponManager.c */
+ * vftable), src/game/Entities/Vehicle/WeaponManager.c */
 typedef struct cTargetLock {
-	cEntity *owner;			/* 0x04 the vehicle */
-	int prevWeap;			/* 0x08 */
-	int curWeap;			/* 0x0c */
-	float fireStamp;		/* 0x10 the weapon fires again from 0 on */
-	float cmStamp;			/* 0x14 the same for the ammo (countermeasures) */
-	cWeaponSlot *weaps;		/* 0x18 per weapon of the world */
-	ammoNodes_t *nodes;		/* 0x1c render node per ammo kind and slot, -1 none */
-	float *ammo;			/* 0x20 per ammo kind */
-	int weapSnd;			/* 0x24 the sound of the owner the weapon plays, -1 none */
-	Nto1Node lock;			/* 0x28 target the locked entity */
-	vec3_t point;			/* 0x38 the locked point without entity */
-	byte on;			/* 0x44 */
-	byte wasOn;			/* 0x45 on of the last Update */
-	byte teslaFiring;	/* 0x46 a Tesla ray of a net shot is on (Tesla_CreateNative), cleared when it ends */
+	cEntity *owner;			/* the vehicle */
+	int prevWeap;
+	int curWeap;
+	float fireStamp;		/* the weapon fires again from 0 on */
+	float cmStamp;			/* the same for the ammo (countermeasures) */
+	cWeaponSlot *weaps;		/* per weapon of the world */
+	ammoNodes_t *nodes;		/* render node per ammo kind and slot, -1 none */
+	float *ammo;			/* per ammo kind */
+	int weapSnd;			/* the sound of the owner the weapon plays, -1 none */
+	Nto1Node lock;			/* target the locked entity */
+	vec3_t point;			/* the locked point without entity */
+	byte on;
+	byte wasOn;			/* on of the last Update */
+	byte teslaFiring;	/* a Tesla ray of a net shot is on (Tesla_CreateNative), cleared when it ends */
 	byte pad_47;
 } cTargetLock;
 
-/* rva 0x11a740, 0x11a720: the point of a lock without entity, the name of the locked entity (NULL when off) */
+/* 0x11a720: the point of a lock without entity, the name of the locked entity (NULL when off) */
 vec3_t *cTargetLock_GetPoint(cTargetLock *self);
 char *cTargetLock_GetEntity(cTargetLock *self);
-/* rva 0x1a26e0: item i of an array of pointers (count at +4, items at +8), NULL out of range */
+/* item i of an array of pointers (count at +4, items at +8), NULL out of range */
 void *PtrArray_Get(void *self, int i);
 
 extern cGVar GVar_HookRange;

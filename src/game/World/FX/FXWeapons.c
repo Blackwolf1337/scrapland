@@ -56,7 +56,7 @@ static cGVar GVar_FXInfernoRayAccMin;
 static cGVar GVar_FXInfernoRayAccMax;
 static cGVar GVar_FXInfernoExplosionFadeTime;
 static cGVar GVar_FXInfernoCoreSize;
-#define FX_PI 3.1415927f				/* 0x40490fdb */
+#define FX_PI 3.1415927f
 
 /* rand() in [0, 1] times range, plus add (all in double) */
 static inline float FXW_Rand(double range, double add) {
@@ -255,7 +255,7 @@ static void cObjElementFXTesla_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-/* ---- deleting destructors (vf00) ---- */
+/* ---- the Free functions ---- */
 
 static void cObjElementFXATPC_Free(cObjElementFX *base) {
 	void *self = (void *)base;

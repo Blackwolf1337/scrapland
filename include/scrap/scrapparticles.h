@@ -10,35 +10,35 @@
 #include "scrap/particlesystem.h"
 
 typedef struct CGameParticles {
-	uint32_t colorIni;		/* 0x00 */
-	uint32_t colorEnd;		/* 0x04 */
-	float sizeIni;			/* 0x08 */
-	float sizeEnd;			/* 0x0c */
-	float sizeVar;			/* 0x10 */
-	float sizeLife;			/* 0x14 */
-	int birthRate;			/* 0x18 */
-	float lifeTime;			/* 0x1c */
-	vec3_t initPos;			/* 0x20 */
-	vec3_t initPosMin;		/* 0x2c */
-	vec3_t initPosMax;		/* 0x38 */
-	vec3_t initVel;			/* 0x44 */
-	vec3_t initVelMin;		/* 0x50 */
-	vec3_t initVelMax;		/* 0x5c */
-	vec3_t initAcc;			/* 0x68 */
-	vec3_t initAccMin;		/* 0x74 */
-	vec3_t initAccMax;		/* 0x80 */
-	float rotIni;			/* 0x8c */
-	float rotEnd;			/* 0x90 */
-	float rotVar;			/* 0x94 */
-	byte spriteIni;			/* 0x98 */
-	byte spriteEnd;			/* 0x99 */
+	uint32_t colorIni;
+	uint32_t colorEnd;
+	float sizeIni;
+	float sizeEnd;
+	float sizeVar;
+	float sizeLife;
+	int birthRate;
+	float lifeTime;
+	vec3_t initPos;
+	vec3_t initPosMin;
+	vec3_t initPosMax;
+	vec3_t initVel;
+	vec3_t initVelMin;
+	vec3_t initVelMax;
+	vec3_t initAcc;
+	vec3_t initAccMin;
+	vec3_t initAccMax;
+	float rotIni;
+	float rotEnd;
+	float rotVar;
+	byte spriteIni;
+	byte spriteEnd;
 	byte pad_9a[2];
-	float sparkVelScale;		/* 0x9c */
-	float sparkMaxSize;		/* 0xa0 */
-	byte bounce;			/* 0xa4 */
+	float sparkVelScale;
+	float sparkMaxSize;
+	byte bounce;
 	byte pad_a5[3];
-	CRenderNode *Node;			/* 0xa8 a reference (CGameModel_RenderNodeRef) */
-	CParticleSystem *ParticleSystem;		/* 0xac the object of Node */
+	CRenderNode *Node;			/* a reference (CGameModel_RenderNodeRef) */
+	CParticleSystem *ParticleSystem;		/* the object of Node */
 } CGameParticles;
 
 CGameParticles *CGameParticles_ctor(CGameParticles *self);
@@ -74,6 +74,6 @@ void CGameParticles_EmitM(CGameParticles *self, int n, byte force, const matrix_
 void CGameParticles_EmitDt(CGameParticles *self, int n, byte force, float dt);
 void CGameParticles_Emit(CGameParticles *self, int n, byte force, float dt, const matrix_t *m);
 
-/* rva 0x216ad0 (ScrapEngMain.cpp): returns m, the matrix of the game as the matrix of the engine */
+/* (ScrapEngMain.cpp): returns m, the matrix of the game as the matrix of the engine */
 
 #endif

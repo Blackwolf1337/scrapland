@@ -1,4 +1,4 @@
-/* Objects/listobject.c and its part of Py_FiniObjects (src/python/pythonrun.c), rva 0x2dcec0 in the exe */
+/* Objects/listobject.c and its part of Py_FiniObjects (src/python/pythonrun.c) in the exe */
 #include "Objects/listobject.c"
 #include "pyengine.h"
 

@@ -1,5 +1,5 @@
 /*
- * Python module SAI (method table SAI_methods, rva 0x42a488): AI setup and control of vehicles and characters.
+ * Python module SAI (method table SAI_methods): AI setup and control of vehicles and characters.
  * Original source: PyInterface/SAIPy.cpp, with the state handlers behind SetStateVehicle/SetStateChar (static
  * functions there).
  */
@@ -796,7 +796,7 @@ static PyObject *SAI_SetInertia(PyObject *self, PyObject *args) {
 
 void *g_AppPyOne;
 
-/* GetOD() : returns the object at rva 0x46797c without a new reference (a folded stub in the original) */
+/* GetOD() : returns the object without a new reference (a folded stub in the original) */
 static PyObject *SAI_GetOD(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;

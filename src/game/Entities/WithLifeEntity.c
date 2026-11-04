@@ -25,7 +25,7 @@ static const cWithLifeEntityVtbl cWithLifeEntity_vftable;
 #define WL_CLASSNAME "WithLife"
 #define WL_NOCTRL_WARN "WARNING: '%s' action controler doesn´t exist.\n"	/* "WARNING: '%s' action controler doesn't exist.\n" */
 #define WL_MIN_DT 1e-6f
-#define WL_FADE_MIN 0.001f					/* rva 0x3a3d58: no fade for a shorter time */
+#define WL_FADE_MIN 0.001f					/* no fade for a shorter time */
 #define WL_SND_FIRE 4						/* the fire sound of lifeSounds */
 
 /* the float argument the original passes where cSndInterface_StopAll takes an unused int */
@@ -105,7 +105,7 @@ static void cVehicleAttack_dtor(cVehicleAttack *self) {
 	Nto1Node_Done(&self->target);
 }
 
-/* the deleting destructor (1000 bytes) */
+/* the Free slot */
 static void cWithLifeEntity_Free(cEntity *self) {
 	cWithLifeEntity_dtor(self);
 	operator_delete(self);

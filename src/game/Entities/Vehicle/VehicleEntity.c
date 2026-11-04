@@ -31,7 +31,7 @@ static const cWithLifeEntityVtbl cVehicleEntity_vftable;
 #define CAIVEHICLE_SIZE sizeof(cAIVehicle)
 #define CEMBEDDEDFXVEHICLE_SIZE 0x1b0
 
-#define VEH_DEG_PER_RAD_NUM 180.0				/* the doubles at rva 0x3a3718, 0x3a3700 */
+#define VEH_DEG_PER_RAD_NUM 180.0				/* the doubles 0x3a3700 */
 #define VEH_DEG_PER_RAD_DEN 3.141592653589793
 
 CGameModel *CGameModel_ctorDefault(CGameModel *self) {
@@ -1881,7 +1881,7 @@ static void cVehicleEntity_Step(cVehicleEntity *self, float dt) {
 
 static cGVar GVar_HiRacerFov;
 
-/* ---- the model and the camera of a slot (vf24, rva 0x105ea0) ---- */
+/* ---- the model and the camera of a slot ---- */
 
 #define g_HiRacerFov (GVar_HiRacerFov.value.f)		/* degrees at top speed */
 static cGVar GVar_LoRacerFov;
@@ -1986,7 +1986,7 @@ static void Veh_UpdatePilotModel(cVehicleEntity *self, const vec3_t *pos, float 
 	cVehicleEntity_UpdatePilot(self, 0, dt);
 }
 
-/* vf24: the model of the slot (the wobble above the atmosphere, the floating, the tilt), the player camera, the
+/* the model of the slot (the wobble above the atmosphere, the floating, the tilt), the player camera, the
  * pilot, the motors and the effects */
 static void cVehicleEntity_UpdateModel(cEntity *elem) {
 	cVehicleEntity *self = (cVehicleEntity *)elem;

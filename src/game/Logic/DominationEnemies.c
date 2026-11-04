@@ -70,7 +70,6 @@ static void cDominationSide_Think(cDominationSide *self) {
 	}
 }
 
-/* vf03 */
 cEntityListData *cDominationEnemiesLogic_GetList(cDominationLogic *base) {
 	cDominationEnemiesLogic *self = (cDominationEnemiesLogic *)base;
 	return self->side->list;
@@ -82,7 +81,6 @@ cEntity *cDominationEnemiesLogic_GetLeader(cDominationEnemiesLogic *self) {
 	return Logic_AsCar(World_FindEntity(g_DominLeaderName));
 }
 
-/* vf01 */
 void cDominationEnemiesLogic_Init(cDominationLogic *base) {
 	cDominationEnemiesLogic *self = (cDominationEnemiesLogic *)base;
 	cDominationSide *s = self->side;
@@ -139,7 +137,6 @@ static cEntity *cDominationEnemiesLogic_ReleaseZone(cDominationLogic *self, cons
 	return Domination_ReleaseZone(self, name, 4, 2);
 }
 
-/* vf02 */
 void cDominationEnemiesLogic_Update(cDominationLogic *base, float dt) {
 	cDominationEnemiesLogic *self = (cDominationEnemiesLogic *)base;
 	cDominationSide *s = self->side;

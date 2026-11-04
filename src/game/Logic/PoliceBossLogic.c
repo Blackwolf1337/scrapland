@@ -31,7 +31,7 @@ static void cPoliceBossLocalLogic_Free(cLocalLogic *elem) {
 	operator_delete(self);
 }
 
-/* vf30: no target; when the search time is over the special action of the boss, near a character it can see */
+/* no target; when the search time is over the special action of the boss, near a character it can see */
 static cEntity *cPoliceBossLocalLogic_FindTarget(cLocalLogic *elem) {
 	cPoliceBossLocalLogic *self = (cPoliceBossLocalLogic *)elem;
 	vec3_t tmp;
@@ -55,7 +55,7 @@ static cEntity *cPoliceBossLocalLogic_FindTarget(cLocalLogic *elem) {
 	return NULL;
 }
 
-/* vf28 and vf27: the AI walks in alert or relaxed */
+/* and: the AI walks in alert or relaxed */
 static void cPoliceBossLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
 	cPoliceBossLocalLogic *self = (cPoliceBossLocalLogic *)base;
 	(void)self;
@@ -68,7 +68,6 @@ static void cPoliceBossLocalLogic_ToRelax(cLocalLogic *base, cAIChar *ai) {
 	AIChar_SetState(ai, AIC_IN_ROUTE, (double)g_GenCharRelaxSpeed, 0);
 }
 
-/* vf17 */
 static void cPoliceBossLocalLogic_Update(cLocalLogic *base, float dt) {
 	cPoliceBossLocalLogic *self = (cPoliceBossLocalLogic *)base;
 	cGenCharLocalLogic_Update(&self->base.logic, dt);

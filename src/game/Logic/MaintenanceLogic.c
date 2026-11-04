@@ -104,7 +104,7 @@ static cEntity *Maintenance_FindShip(void) {
 
 static void cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self);
 
-/* vf17: 7 waits for the editor and a ship, 8 works at the corners while it is the same ship */
+/* 7 waits for the editor and a ship, 8 works at the corners while it is the same ship */
 static void cMaintenanceLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cMaintenanceLocalLogic *self = (cMaintenanceLocalLogic *)elem;
 	vec3_t t;
@@ -218,7 +218,7 @@ static void cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self) {
 	self->reposition.z = v.z * rr + sp.z;
 }
 
-/* vf19: 7 walks relaxed, 8 begins the work at the next corner */
+/* 7 walks relaxed, 8 begins the work at the next corner */
 static byte cMaintenanceLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cMaintenanceLocalLogic *self = (cMaintenanceLocalLogic *)elem;
 	cBaseLocalLogic *b = MAINT_BASE(self);
@@ -241,7 +241,7 @@ static byte cMaintenanceLocalLogic_SetState(cLocalLogic *elem, int state, cEntit
 	return 1;
 }
 
-/* vf06: "RepositionPoint" (read only, y positive) */
+/* "RepositionPoint" (read only, y positive) */
 static byte cMaintenanceLocalLogic_VarV(cLocalLogic *base, const char *name, double *x, double *y, double *z, byte set) {
 	cMaintenanceLocalLogic *self = (cMaintenanceLocalLogic *)base;
 	if (!set && !strcmp(name, "RepositionPoint")) {

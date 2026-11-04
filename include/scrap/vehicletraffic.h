@@ -11,15 +11,15 @@
 #include "scrap/scrapcollision.h"
 
 typedef struct cVehicleTraffic {
-	cEntity *parent;		/* 0x00 the ship */
-	vec3_t begin;			/* 0x04 */
-	vec3_t end;			/* 0x10 */
-	byte active;			/* 0x1c */
-	byte outside;			/* 0x1d the last move left the capsule (or the lane is off) */
+	cEntity *parent;		/* the ship */
+	vec3_t begin;
+	vec3_t end;
+	byte active;
+	byte outside;			/* the last move left the capsule (or the lane is off) */
 	byte pad_1e[2];
-	float speed;			/* 0x20 the longest move */
-	int type;			/* 0x24 0 Light, 1 Medium, 2 Heavy */
-	byte off;			/* 0x28 moves go through without slide */
+	float speed;			/* the longest move */
+	int type;			/* 0 Light, 1 Medium, 2 Heavy */
+	byte off;			/* moves go through without slide */
 	byte pad_29[3];
 } cVehicleTraffic;
 

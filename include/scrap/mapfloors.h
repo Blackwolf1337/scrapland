@@ -11,19 +11,19 @@
 #define MAX_2D_MAPS 16
 #define MAX_2D_LINKS 8
 typedef struct MapLevel {
-	float y;			/* 0x000 the height where the floor starts, the first one -FLT_MAX */
-	int nUp;			/* 0x004 */
-	vec3_t up[MAX_2D_LINKS];	/* 0x008 the ways to the next floor up, y + 1 */
-	float upAng[MAX_2D_LINKS];	/* 0x068 the angle y of the dummy */
-	int nDown;			/* 0x088 */
-	vec3_t down[MAX_2D_LINKS];	/* 0x08c y - 1 */
-	float downAng[MAX_2D_LINKS];	/* 0x0ec */
-	char name[0x80];		/* 0x10c behind DM_2DMapSwitch */
+	float y;			/* the height where the floor starts, the first one -FLT_MAX */
+	int nUp;
+	vec3_t up[MAX_2D_LINKS];	/* the ways to the next floor up, y + 1 */
+	float upAng[MAX_2D_LINKS];	/* the angle y of the dummy */
+	int nDown;
+	vec3_t down[MAX_2D_LINKS];	/* y - 1 */
+	float downAng[MAX_2D_LINKS];
+	char name[0x80];		/* behind DM_2DMapSwitch */
 } MapLevel;
 
 typedef struct MapFloors {
-	int count;			/* 0x000 */
-	MapLevel levels[MAX_2D_MAPS];	/* 0x004 sorted by y */
+	int count;
+	MapLevel levels[MAX_2D_MAPS];	/* sorted by y */
 } MapFloors;
 
 MapFloors *Floor_ctor(MapFloors *self);

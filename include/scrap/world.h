@@ -18,30 +18,30 @@ extern cGVarFunction GVar_OnSleep;
 
 /* a weapon of g_pWorld->weapons (SWeap.InitWeap) */
 struct cWeapInfo {
-	char *name;			/* 0x00 string object */
-	cPy_Function onPress;		/* 0x04 */
-	cPy_Function onRelease;		/* 0x18 */
-	cPy_Function onFire;		/* 0x2c */
-	cPy_Function onHit;		/* 0x40 */
-	cPy_Function onStart;		/* 0x54 */
-	cPy_Function onEnd;		/* 0x68 */
-	cPy_Function setFx;		/* 0x7c */
-	int next;			/* 0x90 iNext, the weapon order of FillWeapPriority */
-	int prev;			/* 0x94 iPrev */
-	int ammo;			/* 0x98 iAmmo */
-	byte upgrade[16];		/* 0x9c "UpgrdNN" reads byte 0x9b + NN */
-	float minAmmo;			/* 0xac */
+	char *name;			/* string object */
+	cPy_Function onPress;
+	cPy_Function onRelease;
+	cPy_Function onFire;
+	cPy_Function onHit;
+	cPy_Function onStart;
+	cPy_Function onEnd;
+	cPy_Function setFx;
+	int next;			/* iNext, the weapon order of FillWeapPriority */
+	int prev;			/* iPrev */
+	int ammo;			/* iAmmo */
+	byte upgrade[16];		/* "UpgrdNN" reads byte 0x9b + NN */
+	float minAmmo;
 };
 
 /* an ammo type of g_pWorld->ammo (SWeap.InitAmmo) */
 struct cAmmoInfo {
-	char *name;			/* 0x00 string object */
-	float max;			/* 0x04 */
-	float charger;			/* 0x08 */
-	cPy_Function onPress;		/* 0x0c */
-	cPy_Function onRelease;		/* 0x20 */
-	cPy_Function onFire;		/* 0x34 */
-	cPy_Function onHit;		/* 0x48 */
+	char *name;			/* string object */
+	float max;
+	float charger;
+	cPy_Function onPress;
+	cPy_Function onRelease;
+	cPy_Function onFire;
+	cPy_Function onHit;
 };
 
 /* the destructors of the table items (rva), for Delete_Objects */
@@ -98,12 +98,12 @@ cEntity *cCamEntity_GetTarget(cEntity *cam);
 void cCamEntity_SetTarget(cEntity *cam, cEntity *target);
 void cCamEntity_SetAng(cEntity *cam, vec3_t ang);
 
-/* an entity list of g_pWorld->lists (0x44 bytes: name, two functions, the entities at 0x30) */
+/* an entity list of g_pWorld->lists (: name, two functions, the entities at 0x30) */
 void *cEntityList_ctor(void *mem, const char *name);
 void EntityDList_dtor(void *list);
 
 /* the engine3d side: the camera of the view (NULL for none) and the box of the level */
-/* frees the model list at rva 0x4479a8 */
+/* frees the model list */
 void GameModelList_Free(void);
 /* the action went over 0.5 for the player in this frame */
 /* RemainTalkTime > 0: a talk text is shown */

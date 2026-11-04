@@ -70,7 +70,7 @@ static void cSentinelLocalLogic_Free(cLocalLogic *elem) {
 	operator_delete(self);
 }
 
-/* vf16: a sentinel never runs from the alarm */
+/* a sentinel never runs from the alarm */
 static void cSentinelLocalLogic_OnAlarm(cLocalLogic *base, cEntity *e) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)base;
 	(void)self;
@@ -78,7 +78,7 @@ static void cSentinelLocalLogic_OnAlarm(cLocalLogic *base, cEntity *e) {
 	Con_Print(0x8f008f, "El centinela intenta huir de un poli pequeño. Esto no debe pasar", 0);
 }
 
-/* vf25: the player was in view at the last think */
+/* the player was in view at the last think */
 byte cSentinelLocalLogic_Seen(cSentinelLocalLogic *self) {
 	return self->seen;
 }
@@ -106,7 +106,7 @@ void cSentinelLocalLogic_Watch(void *sentinel, const vec3_t *pos) {
 	self->time = g_SentinelGotoTime;
 }
 
-/* vf26: the view of the player (unless quiet) and the state */
+/* the view of the player (unless quiet) and the state */
 static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *p, float dt);
 void cSentinelLocalLogic_Think(cSentinelLocalLogic *self, float dt, byte quiet) {
 	cBaseLocalLogic *b = &self->base;
@@ -157,7 +157,7 @@ void cSentinelLocalLogic_Think(cSentinelLocalLogic *self, float dt, byte quiet) 
 	cSentinelLocalLogic_UpdateState(self, p, dt);
 }
 
-/* vf12: a robbery seen: the player is accused at SentinelBankerDetect percent (plus the amount), a character goes
+/* a robbery seen: the player is accused at SentinelBankerDetect percent (plus the amount), a character goes
  * to state 6 at SentinelBankerNPCDetect */
 static void cSentinelLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
@@ -176,7 +176,7 @@ static void cSentinelLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float a
 	}
 }
 
-/* vf13: the player is accused with the alarm, another character goes to state 6 */
+/* the player is accused with the alarm, another character goes to state 6 */
 static void cSentinelLocalLogic_OnAttack(cLocalLogic *elem, cEntity *e) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
 	if (self->base.busy) {
@@ -190,7 +190,7 @@ static void cSentinelLocalLogic_OnAttack(cLocalLogic *elem, cEntity *e) {
 	Logic_SetState(self, SENTINEL_ACCUSE_NPC, e);
 }
 
-/* vf10 and vf11: the player is accused with the alarm */
+/* and: the player is accused with the alarm */
 static void cSentinelLocalLogic_OnUsr(cLocalLogic *elem, cEntity *e) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
 	if (self->base.busy) {
@@ -202,7 +202,7 @@ static void cSentinelLocalLogic_OnUsr(cLocalLogic *elem, cEntity *e) {
 	}
 }
 
-/* vf15: the police asks for money: accused (the alarm for the player); always 0 */
+/* the police asks for money: accused (the alarm for the player); always 0 */
 static byte cSentinelLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *e) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
 	if (!self->base.busy) {
@@ -323,7 +323,6 @@ static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *
 	cSentinelLocalLogic_Return(self);
 }
 
-/* vf24 */
 static void cSentinelLocalLogic_RestartState(cLocalLogic *base) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)base;
 	Logic_SetState(self, SENTINEL_RELAX, NULL);
@@ -342,7 +341,7 @@ void cSentinelLocalLogic_Return(void *sentinel) {
 	Logic_SetState(self, SENTINEL_RELAX, NULL);
 }
 
-/* vf19: the AI of the state; the result of the base */
+/* the AI of the state; the result of the base */
 static byte cSentinelLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;

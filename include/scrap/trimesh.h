@@ -16,33 +16,33 @@
 
 /* one triangle: indices into pVert and pTVert, the normal at each corner */
 typedef struct CMeshTri {
-	int v[3];			/* 0x00 */
-	int tv[3];			/* 0x0c */
-	vec3_t n[3];			/* 0x18 */
-	void *mat;			/* 0x3c material (Engine/render.cpp) */
-	uint32_t flags;			/* 0x40 */
+	int v[3];
+	int tv[3];
+	vec3_t n[3];
+	void *mat;			/* material (Engine/render.cpp) */
+	uint32_t flags;
 } CMeshTri;
 
 typedef struct CTriMesh {
 	union {
 		IObject3D base;
 		struct {
-			const IObject3DVtbl *vftable;	/* 0x00 */
-			uint32_t class;			/* 0x04 CLASS_OBJ3D_TRIMESH */
+			const IObject3DVtbl *vftable;
+			uint32_t class;			/* CLASS_OBJ3D_TRIMESH */
 		};
 	};
-	int nVert;			/* 0x08 */
-	int nTVert;			/* 0x0c */
-	int nTri;			/* 0x10 */
-	int maxVert;			/* 0x14 allocated */
-	int maxTVert;			/* 0x18 */
-	int maxTri;			/* 0x1c */
-	vec3_t *pVert;			/* 0x20 */
-	uv_t *pTVert;			/* 0x24 */
-	CMeshTri *pTri;		/* 0x28 */
-	byte *pSkin;			/* 0x2c 16 bytes a vertex */
-	CMeshD3D *d3d;			/* 0x30 deleted with the mesh */
-	box_t box;			/* 0x34 of the vertices, CTriMesh_CalcBox */
+	int nVert;
+	int nTVert;
+	int nTri;
+	int maxVert;			/* allocated */
+	int maxTVert;
+	int maxTri;
+	vec3_t *pVert;
+	uv_t *pTVert;
+	CMeshTri *pTri;
+	byte *pSkin;			/* 16 bytes a vertex */
+	CMeshD3D *d3d;			/* deleted with the mesh */
+	box_t box;			/* of the vertices, CTriMesh_CalcBox */
 } CTriMesh;
 
 /* ListaVert.h, instanced in MallaTri.cpp: the normal and the texture coordinates of vertex i; a format without them

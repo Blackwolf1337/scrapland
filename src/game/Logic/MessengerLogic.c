@@ -38,7 +38,7 @@ static cGVar GVar_MessengerPrepareDistance;
 #define g_MessengerPrepareDistance (GVar_MessengerPrepareDistance.value.f)	/* MessengerPrepareDistance */
 static cGVar GVar_MessengerObjectiveDistance;
 #define g_MessengerObjectiveDistance (GVar_MessengerObjectiveDistance.value.f)	/* MessengerObjetiveDistance */
-#define MSG_THINK_STEP 0.13f				/* rva 0x3b60e0, the interval of the think */
+#define MSG_THINK_STEP 0.13f				/* the interval of the think */
 
 #define MSG_VT(self) ((self)->base.vftable)
 
@@ -343,14 +343,14 @@ static void cMessengerLocalLogic_Free(cLocalLogic *base) {
 	operator_delete(self);
 }
 
-/* vf28 and vf27: the same walk in alert and relaxed */
+/* and: the same walk in alert and relaxed */
 static void cMessengerLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
 	cMessengerLocalLogic *self = (cMessengerLocalLogic *)base;
 	(void)self;
 	AIChar_SetState(ai, AIC_IN_ROUTE, 1.0, 0);
 }
 
-/* vf17: team 3, 0 while it attacks a player */
+/* team 3, 0 while it attacks a player */
 static void cMessengerLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cMessengerLocalLogic *self = (cMessengerLocalLogic *)elem;
 	cGenCharLocalLogic_Update(&self->base.logic, dt);
@@ -363,7 +363,7 @@ static void cMessengerLocalLogic_Update(cLocalLogic *elem, float dt) {
 	}
 }
 
-/* vf34: to the node DC_DataPack of e when it has one (MessengerGotoSpeed, 0.25 in the easy single game), else the
+/* to the node DC_DataPack of e when it has one (MessengerGotoSpeed, 0.25 in the easy single game), else the
  * walk of the GenChars */
 static void cMessengerLocalLogic_GoTo(cLocalLogic *elem, cAIChar *ai, cEntity *e) {
 	cMessengerLocalLogic *self = (cMessengerLocalLogic *)elem;

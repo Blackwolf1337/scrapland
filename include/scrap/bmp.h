@@ -9,9 +9,9 @@
 #include "scrap/game.h"
 
 typedef struct CImage {
-	int width;			/* 0x0 */
-	int height;			/* 0x4 */
-	void *img;			/* 0x8 rows of pixels */
+	int width;
+	int height;
+	void *img;			/* rows of pixels */
 } CImage;
 typedef CImage CBmp;
 
@@ -59,45 +59,45 @@ int CBmp_Save(CBmp *self, const char *name, uint32_t flags);
 /* packed by #pragma pack, which Ghidra's C parser knows too (docs/ghidra.md) */
 #pragma pack(push, 1)
 typedef struct {
-	uint16_t type;			/* 0x0 "BM" */
-	uint32_t size;			/* 0x2 */
-	uint32_t reserved;		/* 0x6 */
-	uint32_t offBits;		/* 0xa */
+	uint16_t type;			/* "BM" */
+	uint32_t size;
+	uint32_t reserved;
+	uint32_t offBits;
 } bmpFileCab_t;
 #pragma pack(pop)
 
 typedef struct {
-	uint32_t size;			/* 0x00 */
-	int32_t width;			/* 0x04 */
-	int32_t height;			/* 0x08 bottom up */
-	uint16_t planes;		/* 0x0c */
-	uint16_t bits;			/* 0x0e */
-	uint32_t compression;		/* 0x10 */
-	uint32_t sizeImage;		/* 0x14 */
-	int32_t xPels;			/* 0x18 */
-	int32_t yPels;			/* 0x1c */
-	uint32_t clrUsed;		/* 0x20 */
-	uint32_t clrImportant;		/* 0x24 */
+	uint32_t size;
+	int32_t width;
+	int32_t height;			/* bottom up */
+	uint16_t planes;
+	uint16_t bits;
+	uint32_t compression;
+	uint32_t sizeImage;
+	int32_t xPels;
+	int32_t yPels;
+	uint32_t clrUsed;
+	uint32_t clrImportant;
 } bmpInfoCab_t;
 
 typedef struct {
-	uint32_t magic;			/* 0x00 "TEX\x1a" */
-	int32_t version;		/* 0x04 1 */
-	int32_t width;			/* 0x08 */
-	int32_t height;			/* 0x0c */
-	uint32_t pad[4];		/* 0x10 */
+	uint32_t magic;			/* "TEX\x1a" */
+	int32_t version;		/* 1 */
+	int32_t width;
+	int32_t height;
+	uint32_t pad[4];
 } texCab_t;
 
 #pragma pack(push, 1)
 typedef struct {
-	byte idLength;			/* 0x00 */
-	byte cmapType;			/* 0x01 */
-	byte type;			/* 0x02 2 true color, 10 RLE */
-	byte cmap[5];			/* 0x03 */
-	uint16_t x, y;			/* 0x08 */
-	uint16_t width, height;		/* 0x0c */
-	byte bits;			/* 0x10 */
-	byte desc;			/* 0x11 0x20 top down */
+	byte idLength;
+	byte cmapType;
+	byte type;			/* 2 true color, 10 RLE */
+	byte cmap[5];
+	uint16_t x, y;
+	uint16_t width, height;
+	byte bits;
+	byte desc;			/* 0x20 top down */
 } tgaCab_t;
 #pragma pack(pop)
 

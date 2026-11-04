@@ -328,7 +328,7 @@ vec3_t *FX_RandomDir(vec3_t *out) {
 	return out;
 }
 
-/* the elements: Update (vf01), Alive (vf02), Attach (vf03), Reset (vf04) and the starts */
+/* the elements: Update Alive Attach Reset and the starts */
 
 /* the Alive of the elements that only step the debris */
 byte FXMisc_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys) {
@@ -1090,8 +1090,8 @@ void cObjElementFXSparks_Emit(cObjElementFXSparks *self, int n, float px, float 
 }
 
 /*
- * The constructors and destructors of the FX elements of the character effects (rva 0x1a7f20..0x1a88c0, after
- * World/CollisionGrid.cpp) and of the FX scenes (rva 0x1de230..). Only their members are known: particle systems,
+ * The constructors and destructors of the FX elements of the character effects (after
+ * World/CollisionGrid.cpp) and of the FX scenes (..). Only their members are known: particle systems
  * arrays of trails and lens flares, the fields they clear.
  */
 

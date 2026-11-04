@@ -25,7 +25,7 @@ int cString_Cmp(const cString *self, const cString *other);
 int cString_CmpStr(const cString *self, const char *other);
 int cString_ICmp(const cString *self, const cString *other);
 int cString_ICmpStr(const cString *self, const char *other);
-/* strlen, 0 for no string (the copy compiled into Net/, rva 0x1907a0) */
+/* strlen, 0 for no string (the copy compiled into Net/) */
 int cString_Length(const cString *self);
 
 #endif

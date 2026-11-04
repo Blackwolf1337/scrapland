@@ -20,23 +20,23 @@ typedef struct FntGlyph {
 } FntGlyph;
 
 typedef struct CFont3 {
-	float x, y;			/* 0x00 the end of the last string */
-	float width;			/* 0x08 the advance of a monospaced font */
-	float wave;			/* 0x0c 1, the scale of FNT_WAVE */
-	uint32_t color;			/* 0x10 Font_SetColor */
-	uint32_t flags;			/* 0x14 Font_SetFlags, FNT_SHADOW */
-	int unused_18;			/* 0x18 */
-	byte round;			/* 0x1c positions rounded to pixels */
-	byte mono;			/* 0x1d monospaced */
+	float x, y;			/* the end of the last string */
+	float width;			/* the advance of a monospaced font */
+	float wave;			/* 1, the scale of FNT_WAVE */
+	uint32_t color;			/* Font_SetColor */
+	uint32_t flags;			/* Font_SetFlags, FNT_SHADOW */
+	int unused_18;
+	byte round;			/* positions rounded to pixels */
+	byte mono;			/* monospaced */
 	byte pad_1e[2];
-	float uniScale[2];		/* 0x20 of the unicode characters, not set by the constructor */
-	float uniOffset[2];		/* 0x28 */
-	CGraphic2D *graphic;		/* 0x30 owned */
-	CTable glyphs;			/* 0x34 FntGlyph of first..last */
-	byte first, last;			/* 0x3c */
+	float uniScale[2];		/* of the unicode characters, not set by the constructor */
+	float uniOffset[2];
+	CGraphic2D *graphic;		/* owned */
+	CTable glyphs;			/* FntGlyph of first..last */
+	byte first, last;
 	byte pad_3e[2];
-	int bmpWidth;			/* 0x40 the size of the texture */
-	int bmpHeight;			/* 0x44 */
+	int bmpWidth;			/* the size of the texture */
+	int bmpHeight;
 } CFont3;
 
 /* CFont3.flags */
@@ -56,28 +56,28 @@ enum {
 #define FNT_OUTLINE 0x40000		/* with an outline (CFont3_PrintOutline) */
 
 typedef struct CFontGrid {
-	CGraphic2D graphic;			/* 0x00 */
-	byte first, last;			/* 0x44 */
+	CGraphic2D graphic;
+	byte first, last;
 	byte pad_46[2];
-	int cellWidth;			/* 0x48 pixels of a 256 wide texture */
-	int cellHeight;			/* 0x4c */
-	int unused_50;			/* 0x50 */
-	int unused_54;			/* 0x54 */
-	float space;			/* 0x58 the advance */
+	int cellWidth;			/* pixels of a 256 wide texture */
+	int cellHeight;
+	int unused_50;
+	int unused_54;
+	float space;			/* the advance */
 } CFontGrid;
 
 typedef struct CDigits {
-	CGraphic2D digit[10];		/* 0x000 bmp/digitos/digito0001.tga .. 0010 */
-	int unused_2a8;			/* 0x2a8 */
-	int unused_2ac;			/* 0x2ac */
-	float unused_2b0;			/* 0x2b0 24 */
+	CGraphic2D digit[10];		/* bmp/digitos/digito0001.tga .. 0010 */
+	int unused_2a8;
+	int unused_2ac;
+	float unused_2b0;			/* 24 */
 } CDigits;
 
 typedef struct CUnifont {
-	uint16_t first, last;		/* 0x0 the unicode range of map */
-	uint16_t *map;			/* 0x4 Mem_Alloc, the sprite of each character */
-	CGraphic2D *graphic;		/* 0x8 */
-	CMultiSprite *sprites;		/* 0xc */
+	uint16_t first, last;		/* the unicode range of map */
+	uint16_t *map;			/* Mem_Alloc, the sprite of each character */
+	CGraphic2D *graphic;
+	CMultiSprite *sprites;
 } CUnifont;
 
 extern CUnifont g_Unifont;

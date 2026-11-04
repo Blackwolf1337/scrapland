@@ -106,7 +106,7 @@ static void CTF_Patrol(cAIVehicle *ai) {
 
 static char g_CTFFlagName[128];
 
-/* the flag name copied for the leader (the strcpy of the original, the buffer has 0x80 bytes) */
+/* the flag name copied for the leader (the strcpy of the original, the buffer has) */
 static void CTF_SetFlagName(const char *flag) {
 	size_t n = strnlen(flag, 0x7f);
 

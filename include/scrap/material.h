@@ -34,104 +34,104 @@ enum {
 
 /* a texture of the texture manager: the reference (hint) and its device texture */
 typedef struct CTextStatic {
-	void *tex;			/* 0x0 Texture_GetD3D */
-	void *Hint;			/* 0x4 CTexture, referenced */
+	void *tex;			/* Texture_GetD3D */
+	void *Hint;			/* CTexture, referenced */
 } CTextStatic;
 
 typedef struct CMap {
-	char *Name;			/* 0x00 as in the model */
-	char *path;			/* 0x04 the file found (CMap_ResolvePath) */
-	byte filter;			/* 0x08 0 for "Filter: no" */
-	byte lightmap;			/* 0x09 lightmap level, 0 for none */
-	byte ba;			/* 0x0a */
-	byte env2;			/* 0x0b "(env2)" in the name of the reflection map */
-	byte tile;			/* 0x0c "TileU" (bit 0), "TileV" (bit 1) */
-	byte mirror;			/* 0x0d "EspejoU" (bit 0), "EspejoV" (bit 1) */
-	byte fx;			/* 0x0e kind of FXTexture, 0 for none */
+	char *Name;			/* as in the model */
+	char *path;			/* the file found (CMap_ResolvePath) */
+	byte filter;			/* 0 for "Filter: no" */
+	byte lightmap;			/* lightmap level, 0 for none */
+	byte ba;
+	byte env2;			/* "(env2)" in the name of the reflection map */
+	byte tile;			/* "TileU" (bit 0), "TileV" (bit 1) */
+	byte mirror;			/* "EspejoU" (bit 0), "EspejoV" (bit 1) */
+	byte fx;			/* kind of FXTexture, 0 for none */
 	byte pad_f;
-	float uvOffset[2];		/* 0x10 "DesplazU", "DesplazV" */
-	float uvScale[2];		/* 0x18 "EscalaU", "EscalaV" */
-	float uvRot[3];			/* 0x20 the "Angulo" in z */
-	float amount;			/* 0x2c of the map in the material */
-	CTextStatic *cur;			/* 0x30 est or a frame of TextAni */
-	CTextStatic staticTex;			/* 0x34 */
-	byte animated;			/* 0x3c pathAni is set */
+	float uvOffset[2];		/* "DesplazU", "DesplazV" */
+	float uvScale[2];		/* "EscalaU", "EscalaV" */
+	float uvRot[3];			/* the "Angulo" in z */
+	float amount;			/* of the map in the material */
+	CTextStatic *cur;			/* est or a frame of TextAni */
+	CTextStatic staticTex;
+	byte animated;			/* pathAni is set */
 	byte pad_3d[3];
-	int frames;			/* 0x40 */
-	char *pathAni;			/* 0x44 printf format of the frame files */
-	CTextStatic *TextAni;		/* 0x48 new[] of frames */
-	void *AnimMat;			/* 0x4c 0x2c bytes */
-	struct IFXTexture *FXTexture;	/* 0x50 */
-	byte hasAlpha;			/* 0x54 */
-	byte compressed;		/* 0x55 the texture is compressed */
+	int frames;
+	char *pathAni;			/* printf format of the frame files */
+	CTextStatic *TextAni;		/* new[] of frames */
+	void *AnimMat;
+	struct IFXTexture *FXTexture;
+	byte hasAlpha;
+	byte compressed;		/* the texture is compressed */
 	byte pad_56[2];
-	int state;			/* 0x58 MAP_MISSING: the file was not found */
-	void *MultiSprite;		/* 0x5c */
+	int state;			/* MAP_MISSING: the file was not found */
+	void *MultiSprite;
 } CMap;
 
 #define MAP_MISSING 2
 
 /* the colors are bytes R G B A; diffuse, ambient, specular and emissive of colors[] are D3DMATERIAL9 order */
 typedef struct CMatParams {
-	byte ambient[4];		/* 0x10 */
-	byte diffuse[4];		/* 0x14 [3] the alpha */
-	byte specular[4];		/* 0x18 */
-	byte emissive[4];		/* 0x1c */
-	float power;			/* 0x20 */
-	float specLevel;		/* 0x24 */
-	byte color[4];			/* 0x28 */
-	int matClass;			/* 0x2c 0 "Standard", 1 "Multi/Sub-Object" */
-	int srcBlend;			/* 0x30 5 */
-	int dstBlend;			/* 0x34 6 */
-	byte twoSided;			/* 0x38 "TwoSided" */
-	byte lighting;			/* 0x39 D3DRS_LIGHTING with the material colors */
-	byte transp;			/* 0x3a */
-	byte reflection;		/* 0x3b a reflection map is set */
-	uint16_t attrib;			/* 0x3c MAT_* */
-	byte fog;			/* 0x3e D3DRS_FOGENABLE when the fog is on */
-	byte zWrite;			/* 0x3f D3DRS_ZWRITEENABLE */
-	int zFunc;			/* 0x40 D3DRS_ZFUNC: 4 less or equal, 8 always */
+	byte ambient[4];
+	byte diffuse[4];		/* the alpha */
+	byte specular[4];
+	byte emissive[4];
+	float power;
+	float specLevel;
+	byte color[4];
+	int matClass;			/* 0 "Standard", 1 "Multi/Sub-Object" */
+	int srcBlend;			/* 5 */
+	int dstBlend;			/* 6 */
+	byte twoSided;			/* "TwoSided" */
+	byte lighting;			/* D3DRS_LIGHTING with the material colors */
+	byte transp;
+	byte reflection;		/* a reflection map is set */
+	uint16_t attrib;			/* MAT_* */
+	byte fog;			/* D3DRS_FOGENABLE when the fog is on */
+	byte zWrite;			/* D3DRS_ZWRITEENABLE */
+	int zFunc;			/* D3DRS_ZFUNC: 4 less or equal, 8 always */
 } CMatParams;
 
 /* the shader mode of a material for the renderer (Engine/RenderShader.cpp) */
 typedef struct CMatId {
-	int id;				/* 0x0 the shader mode, -1 until registered */
-	byte alphaTest;			/* 0x4 the low byte of the flags of the mode */
-	byte blend;			/* 0x5 the next byte */
-	byte alpha;			/* 0x6 the diffuse map has an alpha (and the mask flag, see CMatId_Register) */
+	int id;				/* the shader mode, -1 until registered */
+	byte alphaTest;			/* the low byte of the flags of the mode */
+	byte blend;			/* the next byte */
+	byte alpha;			/* the diffuse map has an alpha (and the mask flag, see CMatId_Register) */
 	byte pad_7;
-	int gen;			/* 0x8 the shader mode mask it was registered with */
+	int gen;			/* the shader mode mask it was registered with */
 } CMatId;
 
 /* the bases without a vtable of the named and counted objects of objref.h: CScene, CNode3D and CMaterial have the
  * name at 0x4 and the count at 0x8, CMatList only the name */
 typedef struct CObjName {
-	char *name;			/* 0x0 */
+	char *name;
 } CObjName;
 
 typedef struct CObjRef {
-	int Refs;			/* 0x0 */
+	int Refs;
 } CObjRef;
 
 typedef struct CMatList CMatList;
 
 typedef struct CMaterial {
-	char *Name;			/* 0x04 */
-	int Refs;			/* 0x08 the lists holding it */
-	CMatList *sub;			/* 0x0c */
-	CMatParams params;		/* 0x10 */
-	struct CMaterial *next;		/* 0x44 */
-	struct CMaterial *prev;		/* 0x48 */
-	float colors[17];		/* 0x4c diffuse, ambient, specular, emissive, power */
-	CMatId id;			/* 0x90 */
-	CMap *map[MAP_TOTAL];	/* 0x9c */
+	char *Name;
+	int Refs;			/* the lists holding it */
+	CMatList *sub;
+	CMatParams params;
+	struct CMaterial *next;
+	struct CMaterial *prev;
+	float colors[17];		/* diffuse, ambient, specular, emissive, power */
+	CMatId id;
+	CMap *map[MAP_TOTAL];
 } CMaterial;
 
 
 struct CMatList {
-	char *Name;			/* 0x4 */
-	CMaterial *first;			/* 0x8 */
-	CMaterial *last;			/* 0xc */
+	char *Name;
+	CMaterial *first;
+	CMaterial *last;
 };
 
 /* the materials of the engine */
@@ -139,43 +139,43 @@ extern CMatList g_MatList;
 
 /* the string freed if set (the destructor of the string members) */
 void String_dtor(char **self);
-CMatId *CMatId_ctor(CMatId *self);		/* rva 0x2a79e0, id -1 */
+CMatId *CMatId_ctor(CMatId *self);		/* id -1 */
 void CMatId_dtor(CMatId *self);
 CMaterial *CMaterial_ctor(CMaterial *self);
-/* rva 0x237020: the D3D colors (CMaterial_CalcColors) times k unless k is 1, the alpha of colors from diffuse[3] */
+/* the D3D colors (CMaterial_CalcColors) times k unless k is 1, the alpha of colors from diffuse[3] */
 void CMaterial_ScaleColors(CMaterial *self, float k);
 void CMaterial_dtor(CMaterial *self);
 /* free the old string, a Mem_Alloc copy of s (NULL stays NULL) */
-/* the animation of an animated texture (Engine/ControlAnimMat.cpp, rva 0x257f10..0x258284), 0x2c bytes */
+/* the animation of an animated texture (Engine/ControlAnimMat.cpp) */
 typedef struct CAnimMat {
-	float fps;			/* 0x0 */
-	int frames;			/* 0x4 */
-	int cycle;			/* 0x8 the frame it loops back to, -1: stops at the end */
-	float dt;			/* 0xc the seconds of the last step (at most 0.1) */
-	int frame;			/* 0x10 */
-	float framef;			/* 0x14 */
-	int mode;			/* 0x18 ANIMMAT_REPR .. ANIMMAT_END */
-	float fadeRate;			/* 0x1c FUND_PAUSA: the slow down per second */
-	float fadeK;			/* 0x20 FUND_PAUSA: the speed factor, down to 0.2 */
-	uint32_t lastTime;		/* 0x24 g_TimeMs of the last step */
-	int lastFrame;			/* 0x28 g_FrameCount of the last step */
+	float fps;
+	int frames;
+	int cycle;			/* the frame it loops back to, -1: stops at the end */
+	float dt;			/* the seconds of the last step (at most 0.1) */
+	int frame;
+	float framef;
+	int mode;			/* ANIMMAT_REPR .. ANIMMAT_END */
+	float fadeRate;			/* FUND_PAUSA: the slow down per second */
+	float fadeK;			/* FUND_PAUSA: the speed factor, down to 0.2 */
+	uint32_t lastTime;		/* g_TimeMs of the last step */
+	int lastFrame;			/* g_FrameCount of the last step */
 } CAnimMat;
 #define ANIMMAT_REPR 0			/* playing */
 #define ANIMMAT_PAUSE 1
 #define ANIMMAT_FADE_PAUSE 2		/* slowing down */
 #define ANIMMAT_END 3
 CAnimMat *CAnimMat_ctor(CAnimMat *self);
-/* rva 0x257f10, a copy of fps, frames and cycle of src */
+/* a copy of fps, frames and cycle of src */
 CAnimMat *CAnimMat_ctorCopy(CAnimMat *self, const CAnimMat *src);
 void CAnimMat_dtor(CAnimMat *self);
 /* from frame 0 at the time of now */
 void CAnimMat_Start(CAnimMat *self);
-/* rva 0x258060: the frame of now (updated once each frame) */
+/* the frame of now (updated once each frame) */
 int CAnimMat_GetFrame(CAnimMat *self);
 void String_Set(char **self, const char *s);
-/* rva 0x2a1970: *self a String_Dup of the printf of fmt, NULL (freed) for fmt NULL */
+/* *self a String_Dup of the printf of fmt, NULL (freed) for fmt NULL */
 void String_Printf(char **self, const char *fmt, ...);
-/* rva 0x2a18a0 and 0x2a1920: the string as a CFileIO string (empty is NULL) */
+/* and 0x2a1920: the string as a CFileIO string (empty is NULL) */
 void String_Read(char **self, CFileIO *f);
 void String_Write(char **self, CFileIO *f);
 

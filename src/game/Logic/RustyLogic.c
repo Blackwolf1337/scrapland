@@ -65,7 +65,7 @@ static void Rusty_LoopDone(cAbstractFile *params) {
 	}
 }
 
-/* vf03 and vf05 */
+/* and */
 static byte cRustyLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, byte set) {
 	cRustyLocalLogic *self = (cRustyLocalLogic *)elem;
 	return cBaseLocalLogic_VarI(&self->base.base.logic, name, i, set);
@@ -103,7 +103,6 @@ static void Rusty_GoToJunk(cRustyLocalLogic *self, cAIChar *ai, double speed) {
 	AIChar_SetState(ai, AIC_GO_TO, *pos, dir, 100.0, speed);
 }
 
-/* vf17 */
 static void cRustyLocalLogic_NextJunk(cRustyLocalLogic *self);
 static void cRustyLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cRustyLocalLogic *self = (cRustyLocalLogic *)elem;
@@ -202,7 +201,7 @@ static void cRustyLocalLogic_NextJunk(cRustyLocalLogic *self) {
 	CHECK(self->junk && "currentJunkPoint && \"No se ha seleccionado ningún punto de chatarra\"");
 }
 
-/* vf19: 7 the walk to the junk point, 9 pissed; the others of the GenChar logic */
+/* 7 the walk to the junk point, 9 pissed; the others of the GenChar logic */
 static byte cRustyLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cRustyLocalLogic *self = (cRustyLocalLogic *)elem;
 	if (state == RUSTY_GO_TO_JUNK) {

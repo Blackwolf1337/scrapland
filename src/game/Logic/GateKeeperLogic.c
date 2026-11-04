@@ -94,7 +94,7 @@ static void cGateKeeperLocalLogic_UpdateView(cGateKeeperLocalLogic *self) {
 	WChar(p)->wl.arrow.canUse = !self->base.busy && !g_pWorld->alarm.on && self->base.state != GATEKEEPER_HIDDEN;
 }
 
-/* vf16 of the gatekeepers and the gears: they never run from the police */
+/* of the gatekeepers and the gears: they never run from the police */
 static void cGateKeeperLocalLogic_Vf16(cLocalLogic *base, cEntity *arg) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)base;
 	(void)self;
@@ -102,7 +102,6 @@ static void cGateKeeperLocalLogic_Vf16(cLocalLogic *base, cEntity *arg) {
 	Con_Print(0x8f008f, "Ojito de pared intenta huir de un poli pequeño. Esto no debe pasar nunca", 0);
 }
 
-/* vf17 */
 static void cGateKeeperLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	vec3_t tmp;
@@ -160,7 +159,7 @@ alarm:
 	}
 }
 
-/* vf12 (a robbery seen) and vf11: hide unless idle */
+/* (a robbery seen) and: hide unless idle */
 static void cGateKeeperLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	(void)e;
@@ -170,14 +169,13 @@ static void cGateKeeperLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float
 	}
 }
 
-/* vf10 */
 static void cGateKeeperLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	(void)attacker;
 	Logic_SetState(self, GATEKEEPER_HIDDEN, NULL);
 }
 
-/* vf14: hidden at once when the action Hide runs */
+/* hidden at once when the action Hide runs */
 static void cGateKeeperLocalLogic_Vf14(cLocalLogic *elem, cEntity *e) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	cEntity *p = self->base.parent;
@@ -197,13 +195,13 @@ static void cGateKeeperLocalLogic_Vf11(cLocalLogic *elem, cEntity *e) {
 	}
 }
 
-/* vf24: hidden while the alarm is on */
+/* hidden while the alarm is on */
 static void cGateKeeperLocalLogic_RestartState(cLocalLogic *elem) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	Logic_SetState(self, g_pWorld->alarm.on != 0, NULL);
 }
 
-/* vf19: state 1 needs the action Hide */
+/* state 1 needs the action Hide */
 static byte cGateKeeperLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	void *act = NULL;

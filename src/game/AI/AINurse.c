@@ -67,7 +67,7 @@ static void cAINurse_SetDists(cAI *elem) {
 	c->actMax = c->chaseFar;
 }
 
-/* vf27 and vf50: the state from outside and from inside, the start of state 2 marked */
+/* and: the state from outside and from inside, the start of state 2 marked */
 static byte cAINurse_SetState(cAI *elem, int state, ...) {
 	cAINurse *self = (cAINurse *)elem;
 	cAIChar *c = &self->base;

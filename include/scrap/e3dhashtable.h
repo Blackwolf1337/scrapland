@@ -9,15 +9,15 @@
 #include "scrap/game.h"
 
 typedef struct CHashTableNode {
-	struct CHashTableNode *next;	/* 0x0 */
-	char *key;			/* 0x4 */
-	void *value;			/* 0x8 */
+	struct CHashTableNode *next;
+	char *key;
+	void *value;
 } CHashTableNode;
 
 typedef struct CHashTable {
-	int num;			/* 0x0 slots */
-	CHashTableNode **slots;		/* 0x4 */
-	int lock;			/* 0x8 lists out */
+	int num;			/* slots */
+	CHashTableNode **slots;
+	int lock;			/* lists out */
 } CHashTable;
 
 CHashTable *CHashTable_ctor(CHashTable *self, int num);

@@ -94,19 +94,19 @@ typedef int(__stdcall *d3dSetIndices_t)(void *dev, void *ib, uint32_t baseVertex
 
 /* Direct3D 8: D3DSURFACE_DESC and D3DLOCKED_RECT */
 typedef struct {
-	int Format;			/* 0x00 */
-	int Type;			/* 0x04 */
-	uint32_t Usage;			/* 0x08 */
-	int Pool;			/* 0x0c */
-	uint32_t Size;			/* 0x10 */
-	int MultiSampleType;		/* 0x14 */
-	uint32_t Width;			/* 0x18 */
-	uint32_t Height;		/* 0x1c */
+	int Format;
+	int Type;
+	uint32_t Usage;
+	int Pool;
+	uint32_t Size;
+	int MultiSampleType;
+	uint32_t Width;
+	uint32_t Height;
 } d3dSurfaceDesc_t;
 
 typedef struct {
-	int Pitch;			/* 0x0 */
-	void *pBits;			/* 0x4 */
+	int Pitch;
+	void *pBits;
 } d3dLockedRect_t;
 
 /* IDirect3DTexture8 */
@@ -229,84 +229,84 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 
 /* D3DCAPS8 */
 typedef struct D3DCaps8 {
-	uint32_t DeviceType;			/* 0x00 */
-	uint32_t AdapterOrdinal;		/* 0x04 */
-	uint32_t Caps;				/* 0x08 */
-	uint32_t Caps2;				/* 0x0c */
-	uint32_t Caps3;				/* 0x10 */
-	uint32_t PresentationIntervals;		/* 0x14 */
-	uint32_t CursorCaps;			/* 0x18 */
-	uint32_t DevCaps;			/* 0x1c */
-	uint32_t PrimitiveMiscCaps;		/* 0x20 */
-	uint32_t RasterCaps;			/* 0x24 */
-	uint32_t ZCmpCaps;			/* 0x28 */
-	uint32_t SrcBlendCaps;			/* 0x2c */
-	uint32_t DestBlendCaps;			/* 0x30 */
-	uint32_t AlphaCmpCaps;			/* 0x34 */
-	uint32_t ShadeCaps;			/* 0x38 */
-	uint32_t TextureCaps;			/* 0x3c */
-	uint32_t TextureFilterCaps;		/* 0x40 */
-	uint32_t CubeTextureFilterCaps;		/* 0x44 */
-	uint32_t VolumeTextureFilterCaps;	/* 0x48 */
-	uint32_t TextureAddressCaps;		/* 0x4c */
-	uint32_t VolumeTextureAddressCaps;	/* 0x50 */
-	uint32_t LineCaps;			/* 0x54 */
-	uint32_t MaxTextureWidth;		/* 0x58 */
-	uint32_t MaxTextureHeight;		/* 0x5c */
-	uint32_t MaxVolumeExtent;		/* 0x60 */
-	uint32_t MaxTextureRepeat;		/* 0x64 */
-	uint32_t MaxTextureAspectRatio;		/* 0x68 */
-	uint32_t MaxAnisotropy;			/* 0x6c */
-	float MaxVertexW;			/* 0x70 */
-	float GuardBandLeft;			/* 0x74 */
-	float GuardBandTop;			/* 0x78 */
-	float GuardBandRight;			/* 0x7c */
-	float GuardBandBottom;			/* 0x80 */
-	float ExtentsAdjust;			/* 0x84 */
-	uint32_t StencilCaps;			/* 0x88 */
-	uint32_t FVFCaps;			/* 0x8c */
-	uint32_t TextureOpCaps;			/* 0x90 */
-	uint32_t MaxTextureBlendStages;		/* 0x94 */
-	uint32_t MaxSimultaneousTextures;	/* 0x98 */
-	uint32_t VertexProcessingCaps;		/* 0x9c */
-	uint32_t MaxActiveLights;		/* 0xa0 */
-	uint32_t MaxUserClipPlanes;		/* 0xa4 */
-	uint32_t MaxVertexBlendMatrices;	/* 0xa8 */
-	uint32_t MaxVertexBlendMatrixIndex;	/* 0xac */
-	float MaxPointSize;			/* 0xb0 */
-	uint32_t MaxPrimitiveCount;		/* 0xb4 */
-	uint32_t MaxVertexIndex;		/* 0xb8 */
-	uint32_t MaxStreams;			/* 0xbc */
-	uint32_t MaxStreamStride;		/* 0xc0 */
-	uint32_t VertexShaderVersion;		/* 0xc4 */
-	uint32_t MaxVertexShaderConst;		/* 0xc8 */
-	uint32_t PixelShaderVersion;		/* 0xcc */
-	float MaxPixelShaderValue;		/* 0xd0 */
+	uint32_t DeviceType;
+	uint32_t AdapterOrdinal;
+	uint32_t Caps;
+	uint32_t Caps2;
+	uint32_t Caps3;
+	uint32_t PresentationIntervals;
+	uint32_t CursorCaps;
+	uint32_t DevCaps;
+	uint32_t PrimitiveMiscCaps;
+	uint32_t RasterCaps;
+	uint32_t ZCmpCaps;
+	uint32_t SrcBlendCaps;
+	uint32_t DestBlendCaps;
+	uint32_t AlphaCmpCaps;
+	uint32_t ShadeCaps;
+	uint32_t TextureCaps;
+	uint32_t TextureFilterCaps;
+	uint32_t CubeTextureFilterCaps;
+	uint32_t VolumeTextureFilterCaps;
+	uint32_t TextureAddressCaps;
+	uint32_t VolumeTextureAddressCaps;
+	uint32_t LineCaps;
+	uint32_t MaxTextureWidth;
+	uint32_t MaxTextureHeight;
+	uint32_t MaxVolumeExtent;
+	uint32_t MaxTextureRepeat;
+	uint32_t MaxTextureAspectRatio;
+	uint32_t MaxAnisotropy;
+	float MaxVertexW;
+	float GuardBandLeft;
+	float GuardBandTop;
+	float GuardBandRight;
+	float GuardBandBottom;
+	float ExtentsAdjust;
+	uint32_t StencilCaps;
+	uint32_t FVFCaps;
+	uint32_t TextureOpCaps;
+	uint32_t MaxTextureBlendStages;
+	uint32_t MaxSimultaneousTextures;
+	uint32_t VertexProcessingCaps;
+	uint32_t MaxActiveLights;
+	uint32_t MaxUserClipPlanes;
+	uint32_t MaxVertexBlendMatrices;
+	uint32_t MaxVertexBlendMatrixIndex;
+	float MaxPointSize;
+	uint32_t MaxPrimitiveCount;
+	uint32_t MaxVertexIndex;
+	uint32_t MaxStreams;
+	uint32_t MaxStreamStride;
+	uint32_t VertexShaderVersion;
+	uint32_t MaxVertexShaderConst;
+	uint32_t PixelShaderVersion;
+	float MaxPixelShaderValue;
 } D3DCaps8;
 
 /* D3DDISPLAYMODE */
 typedef struct D3DDisplayMode {
-	uint32_t Width;			/* 0x0 */
-	uint32_t Height;		/* 0x4 */
-	uint32_t RefreshRate;		/* 0x8 */
-	uint32_t Format;		/* 0xc */
+	uint32_t Width;
+	uint32_t Height;
+	uint32_t RefreshRate;
+	uint32_t Format;
 } D3DDisplayMode;
 
 /* D3DPRESENT_PARAMETERS */
 typedef struct D3DPresentParams {
-	uint32_t BackBufferWidth;		/* 0x00 */
-	uint32_t BackBufferHeight;		/* 0x04 */
-	uint32_t BackBufferFormat;		/* 0x08 */
-	uint32_t BackBufferCount;		/* 0x0c */
-	uint32_t MultiSampleType;		/* 0x10 */
-	uint32_t SwapEffect;			/* 0x14 */
-	void *hDeviceWindow;			/* 0x18 */
-	int Windowed;				/* 0x1c */
-	int EnableAutoDepthStencil;		/* 0x20 */
-	uint32_t AutoDepthStencilFormat;	/* 0x24 */
-	uint32_t Flags;				/* 0x28 */
-	uint32_t FullScreen_RefreshRateInHz;	/* 0x2c */
-	uint32_t FullScreen_PresentationInterval;	/* 0x30 */
+	uint32_t BackBufferWidth;
+	uint32_t BackBufferHeight;
+	uint32_t BackBufferFormat;
+	uint32_t BackBufferCount;
+	uint32_t MultiSampleType;
+	uint32_t SwapEffect;
+	void *hDeviceWindow;
+	int Windowed;
+	int EnableAutoDepthStencil;
+	uint32_t AutoDepthStencilFormat;
+	uint32_t Flags;
+	uint32_t FullScreen_RefreshRateInHz;
+	uint32_t FullScreen_PresentationInterval;
 } D3DPresentParams;
 #define D3DSWAPEFFECT_DISCARD 1
 #define D3DSWAPEFFECT_COPY_VSYNC 4
@@ -320,15 +320,15 @@ typedef struct D3DPresentParams {
 
 /* D3DADAPTER_IDENTIFIER8 */
 typedef struct D3DAdapterId {
-	char Driver[0x200];		/* 0x000 */
-	char Description[0x200];	/* 0x200 */
-	uint16_t DriverVersion[4];	/* 0x400 build, sub version, version, product */
-	uint32_t VendorId;		/* 0x408 */
-	uint32_t DeviceId;		/* 0x40c */
-	uint32_t SubSysId;		/* 0x410 */
-	uint32_t Revision;		/* 0x414 */
-	byte DeviceIdentifier[16];	/* 0x418 */
-	uint32_t WHQLLevel;		/* 0x428 */
+	char Driver[0x200];
+	char Description[0x200];
+	uint16_t DriverVersion[4];	/* build, sub version, version, product */
+	uint32_t VendorId;
+	uint32_t DeviceId;
+	uint32_t SubSysId;
+	uint32_t Revision;
+	byte DeviceIdentifier[16];
+	uint32_t WHQLLevel;
 } D3DAdapterId;
 
 /* the D3DX math of the exe (stdcall; src/lib/d3dx8/D3dxMath.c, hooks on its dispatcher stubs) */

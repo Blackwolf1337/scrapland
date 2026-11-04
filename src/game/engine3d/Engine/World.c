@@ -651,9 +651,9 @@ CNode3D *CWorld_FindNodeWild(CWorld *self, const char *pat) {
 
 /* the debug points */
 typedef struct DebugPoint {
-	vec3_t pos;			/* 0x00 */
-	uint32_t color;			/* 0x0c */
-	float type;			/* 0x10 see Debug_Point */
+	vec3_t pos;
+	uint32_t color;
+	float type;			/* see Debug_Point */
 } DebugPoint;
 
 static CTable g_Points;

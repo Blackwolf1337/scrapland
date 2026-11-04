@@ -16,14 +16,14 @@
 
 /* a node of a track: what the grid cells hold */
 typedef struct InfoTrafficNode {
-	int track;			/* 0x0 */
-	int node;			/* 0x4 */
+	int track;
+	int node;
 } InfoTrafficNode;
 
 typedef struct cTrafficCellNode {
-	struct cTrafficCellNode *next;	/* 0x0 */
-	struct cTrafficCellNode *prev;	/* 0x4 */
-	InfoTrafficNode info;		/* 0x8 */
+	struct cTrafficCellNode *next;
+	struct cTrafficCellNode *prev;
+	InfoTrafficNode info;
 } cTrafficCellNode;
 
 /* the nodes of a cell (Global/DList.h) */
@@ -31,19 +31,19 @@ typedef DLIST(cTrafficCellNode) cTrafficCell;
 
 typedef struct cGridElements cGridElements;
 typedef struct cGridElementsVtbl {
-	void (*Free)(cGridElements *self);			/* 0x00 */
+	void (*Free)(cGridElements *self);
 	/* the element: an InfoTrafficNode, a pointer to the pos of a point of visibility in the grid of CNodesWorldSup */
-	byte(*Add)(cGridElements *self, const vec3_t *p, const void *data);		/* 0x04 */
+	byte(*Add)(cGridElements *self, const vec3_t *p, const void *data);
 	/* out: the cell pointer (cTrafficCell *, cNWIntList * in the grid of CNodesWorldSup) */
-	byte(*GetCellAt)(cGridElements *self, const vec3_t *p, void *out);	/* 0x08 */
+	byte(*GetCellAt)(cGridElements *self, const vec3_t *p, void *out);
 	byte(*GetCell)(cGridElements *self, const int *x, const int *y, const int *z, void *out);
-	byte(*Draw)(cGridElements *self, uint32_t color);				/* 0x10 */
-	byte(*CellCoords)(cGridElements *self, const vec3_t *p, int *x, int *y, int *z);	/* 0x14 */
-	void(*GetDivs)(cGridElements *self, int *nx, int *ny, int *nz);		/* 0x18 */
-	vec3_t *(*GetCellSize)(cGridElements *self, vec3_t *out);			/* 0x1c */
-	byte(*IsInside)(cGridElements *self, const vec3_t *p);			/* 0x20 */
-	void(*Clear)(cGridElements *self);						/* 0x24 the cells freed */
-	int(*CellIndex)(cGridElements *self, const vec3_t *p);			/* 0x28 */
+	byte(*Draw)(cGridElements *self, uint32_t color);
+	byte(*CellCoords)(cGridElements *self, const vec3_t *p, int *x, int *y, int *z);
+	void(*GetDivs)(cGridElements *self, int *nx, int *ny, int *nz);
+	vec3_t *(*GetCellSize)(cGridElements *self, vec3_t *out);
+	byte(*IsInside)(cGridElements *self, const vec3_t *p);
+	void(*Clear)(cGridElements *self);						/* the cells freed */
+	int(*CellIndex)(cGridElements *self, const vec3_t *p);
 } cGridElementsVtbl;
 
 /* calls through the slots of cGridElementsVtbl */
@@ -88,13 +88,13 @@ static inline byte GridElems_IsInside(void *self, const vec3_t *p) {
 }
 
 struct cGridElements {
-	const cGridElementsVtbl *vftable;	/* 0x00 */
-	cTrafficCell **cells;		/* 0x04 nx * ny * nz, NULL for an empty cell (Mem_Alloc) */
-	int numCells;			/* 0x08 */
-	vec3_t max;			/* 0x0c */
-	vec3_t min;			/* 0x18 */
-	int nx, ny, nz;			/* 0x24 */
-	vec3_t cell;			/* 0x30 the size of a cell */
+	const cGridElementsVtbl *vftable;
+	cTrafficCell **cells;		/* nx * ny * nz, NULL for an empty cell (Mem_Alloc) */
+	int numCells;
+	vec3_t max;
+	vec3_t min;
+	int nx, ny, nz;
+	vec3_t cell;			/* the size of a cell */
 };
 typedef cGridElements cGridElements_InfoTrafficNode;
 
@@ -128,73 +128,73 @@ enum {
 enum { TRAFFIC_DENSITY_HIGH, TRAFFIC_DENSITY_NORMAL, TRAFFIC_DENSITY_LOW };
 
 typedef struct cTrafficTrack {
-	vec3_t *nodes;			/* 0x00 Mem_Alloc */
-	int numNodes;			/* 0x04 */
-	int type;			/* 0x08 TRAFFIC_* */
-	byte loop;			/* 0x0c the last node goes on to the first */
+	vec3_t *nodes;			/* Mem_Alloc */
+	int numNodes;
+	int type;			/* TRAFFIC_* */
+	byte loop;			/* the last node goes on to the first */
 	byte pad_d[3];
-	float speed;			/* 0x10 vel of the info times 27.78 */
-	float radius;			/* 0x14 */
-	int id;				/* 0x18 the number of DM_Track<id>_<n> */
-	int numVehicles;		/* 0x1c the vehicles on the track (AddVehicle, RemoveVehicle) */
-	int density;			/* 0x20 TRAFFIC_DENSITY_* */
+	float speed;			/* vel of the info times 27.78 */
+	float radius;
+	int id;				/* the number of DM_Track<id>_<n> */
+	int numVehicles;		/* the vehicles on the track (AddVehicle, RemoveVehicle) */
+	int density;			/* TRAFFIC_DENSITY_* */
 } cTrafficTrack;
 
 /* what GetInfo returns of a track */
 typedef struct cTrafficTrackInfo {
-	int numNodes;			/* 0x00 */
-	int type;			/* 0x04 */
-	byte loop;			/* 0x08 */
+	int numNodes;
+	int type;
+	byte loop;
 	byte pad_9[3];
-	float speed;			/* 0x0c */
-	float radius;			/* 0x10 */
-	int id;				/* 0x14 */
+	float speed;
+	float radius;
+	int id;
 } cTrafficTrackInfo;
 
 /* a point where a track hits the level (AnalizeTraffic) */
 typedef struct cTrafficErrorNode {
-	struct cTrafficErrorNode *next;	/* 0x00 */
-	struct cTrafficErrorNode *prev;	/* 0x04 */
-	vec3_t pos;			/* 0x08 */
-	float radius;			/* 0x14 */
+	struct cTrafficErrorNode *next;
+	struct cTrafficErrorNode *prev;
+	vec3_t pos;
+	float radius;
 } cTrafficErrorNode;
 
 typedef struct CNodesTraffic CNodesTraffic;
 typedef struct CNodesTrafficVtbl {
-	void (*Free)(CNodesTraffic *self);		/* 0x00 */
-	void(*AddVehicle)(CNodesTraffic *self, int track);			/* 0x04 */
-	void(*RemoveVehicle)(CNodesTraffic *self, int track);		/* 0x08 */
-	int(*NumTracks)(CNodesTraffic *self);				/* 0x0c */
-	int(*NumByType)(CNodesTraffic *self, int type);			/* 0x10 */
-	int(*NumNodes)(CNodesTraffic *self, int track);			/* 0x14 */
-	float(*GetRadius)(CNodesTraffic *self, int track);			/* 0x18 */
-	void(*Init)(CNodesTraffic *self);					/* 0x1c */
-	void(*Load)(CNodesTraffic *self, byte fill);				/* 0x20 */
+	void (*Free)(CNodesTraffic *self);
+	void(*AddVehicle)(CNodesTraffic *self, int track);
+	void(*RemoveVehicle)(CNodesTraffic *self, int track);
+	int(*NumTracks)(CNodesTraffic *self);
+	int(*NumByType)(CNodesTraffic *self, int type);
+	int(*NumNodes)(CNodesTraffic *self, int track);
+	float(*GetRadius)(CNodesTraffic *self, int track);
+	void(*Init)(CNodesTraffic *self);
+	void(*Load)(CNodesTraffic *self, byte fill);
 	byte(*RandomNode)(CNodesTraffic *self, vec3_t *out, int type, const vec3_t *pos, float distMin,
-		float distMax, int unused, const vec3_t *dir, float maxAngle, int *outTrack, int *outNode);	/* 0x24 */
-	byte(*GetDirs)(CNodesTraffic *self, vec3_t *prev, vec3_t *next, int track, int node);	/* 0x28 */
+		float distMax, int unused, const vec3_t *dir, float maxAngle, int *outTrack, int *outNode);
+	byte(*GetDirs)(CNodesTraffic *self, vec3_t *prev, vec3_t *next, int track, int node);
 	byte(*NextAway)(CNodesTraffic *self, vec3_t *out, int track, int node, int *outTrack,
-		int *outNode);								/* 0x2c */
+		int *outNode);
 	byte(*PrevAway)(CNodesTraffic *self, vec3_t *out, int track, int node, int *outTrack,
-		int *outNode);								/* 0x30 */
-	byte(*GetNode)(CNodesTraffic *self, vec3_t *out, int track, int node);	/* 0x34 */
-	cTrafficTrackInfo *(*GetInfo)(CNodesTraffic *self, cTrafficTrackInfo *out, int track);	/* 0x38 */
-	void(*Draw)(CNodesTraffic *self);					/* 0x3c */
-	void(*Analyze)(CNodesTraffic *self);					/* 0x40 */
-	void(*DrawTrack)(CNodesTraffic *self, int track);			/* 0x44 */
-	void(*BuildGrid)(CNodesTraffic *self);				/* 0x48 */
+		int *outNode);
+	byte(*GetNode)(CNodesTraffic *self, vec3_t *out, int track, int node);
+	cTrafficTrackInfo *(*GetInfo)(CNodesTraffic *self, cTrafficTrackInfo *out, int track);
+	void(*Draw)(CNodesTraffic *self);
+	void(*Analyze)(CNodesTraffic *self);
+	void(*DrawTrack)(CNodesTraffic *self, int track);
+	void(*BuildGrid)(CNodesTraffic *self);
 	void(*FindNodes)(CNodesTraffic *self, const vec3_t *pos, int type, InfoTrafficNode *list, int max,
-		int *count, float radius, float distMin, float distMax, byte soft, byte vis);	/* 0x4c */
+		int *count, float radius, float distMin, float distMax, byte soft, byte vis);
 	void(*CollectCell)(CNodesTraffic *self, const vec3_t *pos, int type, cTrafficCell *cell,
 		InfoTrafficNode *list, int max, int *count, float radius, float distMin, float distMax, byte vis,
-		byte useMax);								/* 0x50 */
+		byte useMax);
 	void(*SearchRings)(CNodesTraffic *self, const vec3_t *pos, int type, InfoTrafficNode *list,
-		int max, int *count, float radius, float distMin, float distMax, byte soft, byte vis);	/* 0x54 */
+		int max, int *count, float radius, float distMin, float distMax, byte soft, byte vis);
 	void(*RandomPointNear)(CNodesTraffic *self, int track, int node, float maxDist, vec3_t *out,
-		int *outTrack, int *outNode);						/* 0x58 */
+		int *outTrack, int *outNode);
 	void(*RandomPointAhead)(CNodesTraffic *self, int track, int node, const vec3_t *pos,
 		float distMin, float distMax, int unused, const vec3_t *dir, float maxAngle, vec3_t *out, int *outTrack,
-		int *outNode);								/* 0x5c */
+		int *outNode);
 } CNodesTrafficVtbl;
 
 /* calls through the slots of CNodesTrafficVtbl */
@@ -285,25 +285,25 @@ static inline void Traffic_SearchRings(void *self, const vec3_t *pos, int type, 
 typedef DLIST(cTrafficErrorNode) cTrafficErrorList;
 
 struct CNodesTraffic {
-	const CNodesTrafficVtbl *vftable;	/* 0x00 */
-	float cellSize;			/* 0x04 of the grid: 25000 outdoors, 12500 indoors */
-	cGridElements *grid;		/* 0x08 NULL indoors */
-	cTrafficTrack *tracks;		/* 0x0c Mem_Alloc */
-	int *heavy;			/* 0x10 the tracks by type (Mem_Alloc) */
-	int *medium;			/* 0x14 */
-	int *light;			/* 0x18 */
-	int *heavyLight;		/* 0x1c */
-	int *mediumLight;		/* 0x20 */
-	int numTracks;			/* 0x24 */
-	int numHeavy;			/* 0x28 */
-	int numMedium;			/* 0x2c */
-	int numLight;			/* 0x30 */
-	int numHeavyLight;		/* 0x34 */
-	int numMediumLight;		/* 0x38 */
-	int numNodes;			/* 0x3c of all tracks */
-	vec3_t max;			/* 0x40 the box of the grid: of the visibility graph, outdoors up to DM_MapTop */
-	vec3_t min;			/* 0x4c */
-	cTrafficErrorList errors;	/* 0x58 */
+	const CNodesTrafficVtbl *vftable;
+	float cellSize;			/* of the grid: 25000 outdoors, 12500 indoors */
+	cGridElements *grid;		/* NULL indoors */
+	cTrafficTrack *tracks;		/* Mem_Alloc */
+	int *heavy;			/* the tracks by type (Mem_Alloc) */
+	int *medium;
+	int *light;
+	int *heavyLight;
+	int *mediumLight;
+	int numTracks;
+	int numHeavy;
+	int numMedium;
+	int numLight;
+	int numHeavyLight;
+	int numMediumLight;
+	int numNodes;			/* of all tracks */
+	vec3_t max;			/* the box of the grid: of the visibility graph, outdoors up to DM_MapTop */
+	vec3_t min;
+	cTrafficErrorList errors;
 };
 
 extern cGVar GVar_MaxNumTrackLowDensityAI;
@@ -371,45 +371,45 @@ void CNodesTraffic_RandomPointAhead(CNodesTraffic *self, int track, int node, co
 
 /* the nodes of the tracks of one type in one sector */
 typedef struct cTrafficSector {
-	int sector;			/* 0x00 */
-	InfoTrafficNode *nodes;		/* 0x04 Mem_Alloc */
-	int numNodes;			/* 0x08 */
-	int *tracks;			/* 0x0c the tracks of the nodes, each once (Mem_Alloc) */
-	int numTracks;			/* 0x10 */
-	byte visible;			/* 0x14 Sector_Visible at the last update */
+	int sector;
+	InfoTrafficNode *nodes;		/* Mem_Alloc */
+	int numNodes;
+	int *tracks;			/* the tracks of the nodes, each once (Mem_Alloc) */
+	int numTracks;
+	byte visible;			/* Sector_Visible at the last update */
 	byte pad_15[3];
 } cTrafficSector;
 
 typedef struct cTrafficSectorList {
-	cTrafficSector *list;		/* 0x0 */
-	int num;			/* 0x4 */
+	cTrafficSector *list;
+	int num;
 } cTrafficSectorList;
 
 /* the sectors of a type that came into view at the last update and their nodes */
 typedef struct cTrafficSeen {
-	int index[20];			/* 0x00 into the sector list */
-	int num;			/* 0x50 */
-	int numNodes;			/* 0x54 */
+	int index[20];			/* into the sector list */
+	int num;
+	int numNodes;
 } cTrafficSeen;
 
 typedef struct CNodesTrafficInDoor {
-	CNodesTraffic base;		/* 0x000 */
-	cTrafficSectorList heavy;	/* 0x070 the sectors by the type of the tracks */
-	cTrafficSectorList medium;	/* 0x078 */
-	cTrafficSectorList light;	/* 0x080 */
-	cTrafficSectorList heavyLight;	/* 0x088 */
-	cTrafficSectorList mediumLight;	/* 0x090 */
-	cAIVehicle *heavyAI[100];	/* 0x098 the traffic vehicles by the class of the vehicle (2) */
-	int numHeavyAI;			/* 0x228 */
-	cAIVehicle *mediumAI[250];	/* 0x22c (1) */
-	int numMediumAI;		/* 0x614 */
-	cAIVehicle *lightAI[500];	/* 0x618 (0) */
-	int numLightAI;			/* 0xde8 */
-	cTrafficSeen seenHeavy;		/* 0xdec */
-	cTrafficSeen seenMedium;	/* 0xe44 */
-	cTrafficSeen seenLight;		/* 0xe9c */
-	cTrafficSeen seenHeavyLight;	/* 0xef4 */
-	cTrafficSeen seenMediumLight;	/* 0xf4c */
+	CNodesTraffic base;
+	cTrafficSectorList heavy;	/* the sectors by the type of the tracks */
+	cTrafficSectorList medium;
+	cTrafficSectorList light;
+	cTrafficSectorList heavyLight;
+	cTrafficSectorList mediumLight;
+	cAIVehicle *heavyAI[100];	/* the traffic vehicles by the class of the vehicle (2) */
+	int numHeavyAI;
+	cAIVehicle *mediumAI[250];	/* (1) */
+	int numMediumAI;
+	cAIVehicle *lightAI[500];	/* (0) */
+	int numLightAI;
+	cTrafficSeen seenHeavy;
+	cTrafficSeen seenMedium;
+	cTrafficSeen seenLight;
+	cTrafficSeen seenHeavyLight;
+	cTrafficSeen seenMediumLight;
 } CNodesTrafficInDoor;
 
 #define TRAFFICINDOOR_FRAME 0x0a0c20

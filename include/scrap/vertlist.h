@@ -24,12 +24,12 @@ enum {
 	VERT_TLTEX1 = 8,		/* 0x20: transformed pos and rhw, diffuse, specular, tex */
 	VERT_LTEX2 = 10,		/* 0x20: pos, diffuse, 2 tex */
 	VERT_POS_XBOX = 11,		/* 4: the position packed like a normal, divided by esc */
-	VERT_TEX1_XBOX = 12,		/* 0x18 */
-	VERT_TEX1C_XBOX = 13,		/* 0x1c */
-	VERT_LTEX1_XBOX = 14,		/* 0x12 */
-	VERT_LTEX1N_XBOX = 15,		/* 0x16 */
-	VERT_LTEX2_XBOX = 16,		/* 0x16 */
-	VERT_LTEX2N_XBOX = 17,		/* 0x1a */
+	VERT_TEX1_XBOX = 12,
+	VERT_TEX1C_XBOX = 13,
+	VERT_LTEX1_XBOX = 14,
+	VERT_LTEX1N_XBOX = 15,
+	VERT_LTEX2_XBOX = 16,
+	VERT_LTEX2N_XBOX = 17,
 	VERT_TOTAL = 18
 };
 
@@ -47,11 +47,11 @@ enum {
 };
 
 typedef struct CVertList {
-	byte *pVert;			/* 0x0 Mem_Realloc */
-	int nVert;			/* 0x4 */
-	int totVert;			/* 0x8 allocated */
-	int frmt;			/* 0xc VERT_* */
-	float scale;			/* 0x10 divides the positions of VERT_POS_XBOX */
+	byte *pVert;			/* Mem_Realloc */
+	int nVert;
+	int totVert;			/* allocated */
+	int frmt;			/* VERT_* */
+	float scale;			/* divides the positions of VERT_POS_XBOX */
 } CVertList;
 
 #define g_VCacheCount g_VCacheAge[16]
@@ -102,7 +102,7 @@ byte *CVertList_LTex2(CVertList *self, uint32_t i);
 void CVertList_SetTex1(CVertList *self, uint32_t i, const void *v);
 void CVertList_SetTex2(CVertList *self, uint32_t i, const void *v);
 void CVertList_SetTex1B1(CVertList *self, uint32_t i, const void *v);
-/* the position of vertex i (rva 0x212570, in TriMesh.c) */
+/* the position of vertex i (in TriMesh.c) */
 vec3_t *CVertList_GetPos(CVertList *self, vec3_t *out, uint32_t i);
 
 /* the diffuse colors: c & and | or */

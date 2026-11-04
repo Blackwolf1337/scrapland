@@ -237,7 +237,7 @@ static void cCannonScorer_Draw(cScorerItem *base, int player) {
 	}
 }
 
-/* vf04: "Searching..." or "Target Lock" above pos for the lock of the ship of the player */
+/* "Searching..." or "Target Lock" above pos for the lock of the ship of the player */
 static void cCannonScorer_DrawLock(cCannonScorer *self, int player, const float *pos) {
 	cEntity *e = g_pWorld->owners[player];
 	const char *text;

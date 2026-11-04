@@ -22,48 +22,48 @@ extern cGVar GVar_ArrowTargetFile;
 
 /* the glow of a mission arrow: particles with a timer, a color ramp and a scale from the model name */
 typedef struct cArrowGlow {
-	CGameParticles base;		/* 0x00 */
-	float timer;			/* 0xb0 an emit every 0.66 s */
-	int ramp;			/* 0xb4 1 for "/SM" models */
-	float scale;			/* 0xb8 1 for "/B" models, else 0.1 */
+	CGameParticles base;
+	float timer;			/* an emit every 0.66 s */
+	int ramp;			/* 1 for "/SM" models */
+	float scale;			/* 1 for "/B" models, else 0.1 */
 } cArrowGlow;
 
 /* a model of the pool: the next free one after the CGameModel */
 typedef struct cArrowModel {
-	CGameModel model;		/* 0x00 */
-	struct cArrowModel *next;	/* 0x1c */
+	CGameModel model;
+	struct cArrowModel *next;
 } cArrowModel;
 
 typedef struct cArrowIndicator {
-	cEntity *parent;		/* 0x00 */
-	cArrowModel *arrow;		/* 0x04 from the pool */
-	CGameModel *mission;		/* 0x08 */
-	cArrowGlow *glow;		/* 0x0c */
-	byte missionOn;			/* 0x10 the mission model is the "on" one */
+	cEntity *parent;
+	cArrowModel *arrow;		/* from the pool */
+	CGameModel *mission;
+	cArrowGlow *glow;
+	byte missionOn;			/* the mission model is the "on" one */
 	byte pad_11[3];
-	float alpha;			/* 0x14 fades in and out at 4 per second */
-	byte shown;			/* 0x18 near enough (or a mission arrow) */
+	float alpha;			/* fades in and out at 4 per second */
+	byte shown;			/* near enough (or a mission arrow) */
 	byte pad_19[3];
-	int nOpt;			/* 0x1c "ArrnOpt" */
-	int iOpt;			/* 0x20 "ArriOpt" */
-	cString opts[ARROW_MAX_OPTS];	/* 0x24 "ArrOptN" */
-	cPy_Function onUse;		/* 0x44 "UseFunc" */
-	cPy_Function onView;		/* 0x58 "ViewFunc" */
-	byte selected;			/* 0x6c the selection of the player */
-	byte canUse;			/* 0x6d "ArrowCanUse" */
-	byte canView;			/* 0x6e "ArrowCanView" */
-	byte canMission;		/* 0x6f "ArrowCanMission" */
-	byte alwaysUse;			/* 0x70 "AlwaysUse" */
-	byte visible;		/* 0x71 the line from the player to it is free, retested every testTime of the target scorer */
+	int nOpt;			/* "ArrnOpt" */
+	int iOpt;			/* "ArriOpt" */
+	cString opts[ARROW_MAX_OPTS];	/* "ArrOptN" */
+	cPy_Function onUse;		/* "UseFunc" */
+	cPy_Function onView;		/* "ViewFunc" */
+	byte selected;			/* the selection of the player */
+	byte canUse;			/* "ArrowCanUse" */
+	byte canView;			/* "ArrowCanView" */
+	byte canMission;		/* "ArrowCanMission" */
+	byte alwaysUse;			/* "AlwaysUse" */
+	byte visible;		/* the line from the player to it is free, retested every testTime of the target scorer */
 	byte pad_72[2];
-	int tgType;			/* 0x74 "TgType": red, blue, green, none, killer */
-	int coneStatus;			/* 0x78 "ConeStatus": off, relax, alert, danger */
-	float coneFov;			/* 0x7c "ConeFOV", radians */
-	float coneDist;			/* 0x80 "ConeDist" */
-	byte canPhoto;			/* 0x84 "CanPhoto" */
-	byte useAngSel;			/* 0x85 "UseAngSel" */
-	byte useAbsAngSel;		/* 0x86 "UseAbsAngSel" */
-	byte useMapCheck;		/* 0x87 "UseMapCheck" */
+	int tgType;			/* "TgType": red, blue, green, none, killer */
+	int coneStatus;			/* "ConeStatus": off, relax, alert, danger */
+	float coneFov;			/* "ConeFOV", radians */
+	float coneDist;			/* "ConeDist" */
+	byte canPhoto;			/* "CanPhoto" */
+	byte useAngSel;			/* "UseAngSel" */
+	byte useAbsAngSel;		/* "UseAbsAngSel" */
+	byte useMapCheck;		/* "UseMapCheck" */
 } cArrowIndicator;
 
 /* the arrow and the collision sphere of an entity with life */

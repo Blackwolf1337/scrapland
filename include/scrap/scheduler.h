@@ -10,11 +10,11 @@
 #include "scrap/python.h"
 
 typedef struct cScheduledFunc {
-	PyObject *func;			/* 0x00 */
-	PyObject *params;		/* 0x04 */
-	float time;			/* 0x08 */
-	char name[0x80];		/* 0x0c */
-	byte active;			/* 0x8c 0 while it runs, so Scrap.RemoveScheduledFunc leaves it */
+	PyObject *func;
+	PyObject *params;
+	float time;
+	char name[0x80];
+	byte active;			/* 0 while it runs, so Scrap.RemoveScheduledFunc leaves it */
 	byte pad_8d[3];
 } cScheduledFunc;
 

@@ -10,8 +10,8 @@
 
 /* a log file, opened on the first line */
 typedef struct cLog {
-	void *f;			/* 0x0 FILE of the exe */
-	byte failed;			/* 0x4 the open failed, not tried again */
+	void *f;			/* FILE of the exe */
+	byte failed;			/* the open failed, not tried again */
 } cLog;
 
 /* level bits: each has its printer on the console; the masks say what goes to the console and to the file */

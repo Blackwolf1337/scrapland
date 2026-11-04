@@ -15,19 +15,19 @@ typedef struct CPortal {
 	union {
 		IObject3D base;
 		struct {
-			const IObject3DVtbl *vftable;	/* 0x00 */
-			uint32_t class;			/* 0x04 CLASS_OBJ3D_PORTAL */
+			const IObject3DVtbl *vftable;
+			uint32_t class;			/* CLASS_OBJ3D_PORTAL */
 		};
 	};
-	CNode3D *node;			/* 0x08 CObjBase3D_SetNode */
-	float width;			/* 0x0c */
-	float height;			/* 0x10 */
-	CNode3D *zones[2];		/* 0x14 the sector nodes, counted */
-	int idZone[2];			/* 0x1c */
-	byte calculated;			/* 0x24 the cache below is valid */
+	CNode3D *node;			/* CObjBase3D_SetNode */
+	float width;
+	float height;
+	CNode3D *zones[2];		/* the sector nodes, counted */
+	int idZone[2];
+	byte calculated;			/* the cache below is valid */
 	byte pad_25[3];
-	vec3_t cache_vert[4];		/* 0x28 */
-	plane_t cache_plane;		/* 0x58 */
+	vec3_t cache_vert[4];
+	plane_t cache_plane;
 } CPortal;
 
 CPortal *CPortal_ctor(CPortal *self);

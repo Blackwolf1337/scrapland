@@ -33,14 +33,13 @@ void Logic_LinkDesktop(cFunctionaryLocalLogic *self, const char *name) {
 	}
 }
 
-/* vf40 */
 static void cBertoLocalLogic_AssignDesktop(cLocalLogic *elem, float maxDist) {
 	cBertoLocalLogic *self = (cBertoLocalLogic *)elem;
 	(void)maxDist;
 	Logic_LinkDesktop(&self->base, "BertoDesktop");
 }
 
-/* vf41 (also of Betty) */
+/* (also of Betty) */
 void cBertoLocalLogic_ReleaseDesktop(cLocalLogic *elem) {
 	cBertoLocalLogic *self = (cBertoLocalLogic *)elem;
 	if (cFunctionaryLocalLogic_GetDesktop(&self->base)) {
@@ -50,7 +49,7 @@ void cBertoLocalLogic_ReleaseDesktop(cLocalLogic *elem) {
 	}
 }
 
-/* vf17 (also of Betty): the default character takes its desktop */
+/* (also of Betty): the default character takes its desktop */
 void cBertoLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cBertoLocalLogic *self = (cBertoLocalLogic *)elem;
 	if (self->isDefault && !cFunctionaryLocalLogic_GetDesktop(&self->base)) {
@@ -60,7 +59,7 @@ void cBertoLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cFunctionaryLocalLogic_Update(&self->base.base.base.logic, dt);
 }
 
-/* vf38 (the callers use the returned out): the angles at the desktop, turned by a quarter */
+/* (the callers use the returned out): the angles at the desktop, turned by a quarter */
 static vec3_t *cBertoLocalLogic_GetWorkAng(cLocalLogic *elem, vec3_t *out) {
 	cBertoLocalLogic *self = (cBertoLocalLogic *)elem;
 	vec3_t tmp;

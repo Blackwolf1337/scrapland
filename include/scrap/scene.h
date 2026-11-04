@@ -29,7 +29,7 @@ void CScene_Msg(CScene *self, int msg, int a, int b, int c, int d);
 /* ReleaseD3D and InitD3D of the objects of all nodes */
 void CScene_ReleaseD3D(CScene *self, void *dev);
 void CScene_InitD3D(CScene *self, void *dev);
-/* rva 0x24ecb0, empty */
+/* empty */
 void CScene_Shared(CScene *self);
 /* the "SCN" block; bAnim: the animation must be there (read) or is all there is (write) */
 void CScene_Read(CScene *self, CFileIO *f, byte bAnim);
@@ -66,11 +66,11 @@ void CScene_SetMarks(CScene *self, int v);
 void CScene_PrecalcIllum(CScene *self, byte noLights, byte visible);
 
 /* other modules (src/imports.inc) */
-/* rva 0x239880, the box of box through m */
+/* the box of box through m */
 box_t *Box_Transform(box_t *out, const box_t *box, const matrix_t *m);
 /* NodeFX_New (the FX object of a NODE_FX node): nodefx.h */
 /* CAnimation_ctor, CAnimation_dtor: animation.h */
-/* CalcWeights.c, CalcIllum.c and rva 0x261630: per mesh, with the scene lights of esc */
+/* CalcWeights.c, CalcIllum.c and: per mesh, with the scene lights of esc */
 struct CMeshD3D;
 byte CMeshD3D_CalcWeights(struct CMeshD3D *mesh, CNode3D *node);
 void CMeshD3D_CalcIllum(struct CMeshD3D *mesh, CNode3D *node, CScene *scn);

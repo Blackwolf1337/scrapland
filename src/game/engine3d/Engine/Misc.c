@@ -59,7 +59,7 @@ static void cLog_dtor(cLog *self) {
 	}
 }
 
-/* the atexit destructor of (&g_FileLog) (rva 0x38ece0, the destructor inlined) */
+/* the atexit destructor of (&g_FileLog) (the destructor inlined) */
 static void Misc_FiniFileLog(void) {
 	cLog_dtor((&g_FileLog));
 }

@@ -26,43 +26,43 @@
 #define OPT_INBLOCK 0x8000
 
 typedef struct CAnimNode {
-	uint16_t first_frame;		/* 0x00 */
-	uint16_t num_frames;		/* 0x02 */
-	uint16_t OptFlags;		/* 0x04 */
-	uint16_t StmFlags;		/* 0x06 */
-	vec3_t *Pos;			/* 0x08 */
-	quat_t *Rot;			/* 0x0c */
-	float *FOV;			/* 0x10 */
-	byte *Color;			/* 0x14 */
-	float *Intens;			/* 0x18 */
-	byte *Visible;			/* 0x1c */
-	CEVA *EVA;			/* 0x20 */
+	uint16_t first_frame;
+	uint16_t num_frames;
+	uint16_t OptFlags;
+	uint16_t StmFlags;
+	vec3_t *Pos;
+	quat_t *Rot;
+	float *FOV;
+	byte *Color;
+	float *Intens;
+	byte *Visible;
+	CEVA *EVA;
 } CAnimNode;
 
 typedef struct CAnimBlock {
-	byte *MemBlock;			/* 0x0 */
-	int SizeBlock;			/* 0x4 */
-	int UsedBlock;			/* 0x8 */
+	byte *MemBlock;
+	int SizeBlock;
+	int UsedBlock;
 } CAnimBlock;
 
 typedef struct CAnimation {
-	char *name;			/* 0x00 String_Set */
-	int Refs;			/* 0x04 objref.h, 0 at the destructor */
-	float fps;			/* 0x08 */
-	int first_frame;		/* 0x0c */
-	int num_frames;			/* 0x10 */
-	byte flag;			/* 0x14 all nodes are ANIM_VERT (morph), read by AnimGroup.c */
+	char *name;			/* String_Set */
+	int Refs;			/* objref.h, 0 at the destructor */
+	float fps;
+	int first_frame;
+	int num_frames;
+	byte flag;			/* all nodes are ANIM_VERT (morph), read by AnimGroup.c */
 	byte pad_15[3];
-	CTable table;			/* 0x18 n bytes: node number + 1 of each object */
-	CAnimNode *AnimNode;		/* 0x20 new[] of num_objects */
-	int num_objects;		/* 0x24 */
-	CAnimBlock AnimBlock;		/* 0x28 */
+	CTable table;			/* n bytes: node number + 1 of each object */
+	CAnimNode *AnimNode;		/* new[] of num_objects */
+	int num_objects;
+	CAnimBlock AnimBlock;
 } CAnimation;
 
 /* a stream while it is built */
 typedef struct CAnimStream {
-	byte *p;			/* 0x0 Mem_Realloc */
-	int len;			/* 0x4 */
+	byte *p;			/* Mem_Realloc */
+	int len;
 } CAnimStream;
 
 /* the name of the node an animation is loaded for, in the log lines */

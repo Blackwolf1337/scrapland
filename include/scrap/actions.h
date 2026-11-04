@@ -32,152 +32,152 @@ enum { ACTVAR_NONE = 0, ACTVAR_STRING = 1, ACTVAR_DOUBLE = 2, ACTVAR_INT = 3 };
 
 /* the turn of a node of the model with the head: the node and its angle pairs (x, y) */
 typedef struct cActNodeMod {
-	int node;			/* 0x00 render node of the model, ACT_NODE_ */
-	float ang[ACT_NODEMOD_ANGS][2];	/* 0x04 "NodeN_Mx", "NodeN_My" */
+	int node;			/* render node of the model, ACT_NODE_ */
+	float ang[ACT_NODEMOD_ANGS][2];	/* "NodeN_Mx", "NodeN_My" */
 } cActNodeMod;
 
 /* the camera of a class (radians): the distance and angles and the FOV that zooms between MinFOV and MaxFOV */
 typedef struct cActClassCam {
-	float minFov;			/* 0x00 "MinFOV" */
-	float maxFov;			/* 0x04 "MaxFOV" */
-	float fovRange;			/* 0x08 |maxFov - minFov| */
-	float fovTime;			/* 0x0c "FOVInterpTime" of the zoom */
-	float fovLeft;			/* 0x10 the zoom time left, back to the minimum */
-	float fovStart;			/* 0x14 the zoom time when it went back */
-	float camDist;			/* 0x18 "CamDist" */
-	float camAng;			/* 0x1c "CamAng" */
-	float camRot;			/* 0x20 "CamRot" */
-	float fov;			/* 0x24 "FOV" without the zoom */
+	float minFov;			/* "MinFOV" */
+	float maxFov;			/* "MaxFOV" */
+	float fovRange;			/* |maxFov - minFov| */
+	float fovTime;			/* "FOVInterpTime" of the zoom */
+	float fovLeft;			/* the zoom time left, back to the minimum */
+	float fovStart;			/* the zoom time when it went back */
+	float camDist;			/* "CamDist" */
+	float camAng;			/* "CamAng" */
+	float camRot;			/* "CamRot" */
+	float fov;			/* "FOV" without the zoom */
 } cActClassCam;
 
-/* an action class (0x20c bytes, made by cActClassList_Create) */
+/* an action class (made by cActClassList_Create) */
 struct cActClass {
-	char *name;			/* 0x004 cString */
-	HashTable actions;		/* 0x008 the actions by name, 457 slots */
-	cAction *first;			/* 0x014 the actions in a list (cAction.next) */
-	cAction *last;			/* 0x018 the last action of the list */
-	char *modelFile;		/* 0x01c "ModelFilePath", Mem_Alloc copy */
-	cAction *defAction;		/* 0x020 "DefAction" */
-	CGameModel model;		/* 0x024 */
-	cStringList sounds;		/* 0x040 the sound names of "AddSoundRes" */
-	int users;			/* 0x058 the controllers on the class; Del refuses while it has any */
-	cActNodeMod nodes[ACT_NODEMODS];	/* 0x05c the end is the first node -1 */
-	cActClassCam cam;		/* 0x110 */
-	float turnAngLimit;		/* 0x138 "TurnAngLimit": the Turn action plays for a bigger turn of the view */
-	vec3_t soundDisp;		/* 0x13c "SoundDispX".."Z" */
-	int pretransformChan;		/* 0x148 "PretransformChan" */
-	float minTimeWalking;		/* 0x14c "MinTimeWalking": the walk is kept that long after the stop */
-	float maxTimeToExtraRelax;	/* 0x150 the time between two relax actions */
-	float minTimeToExtraRelax;	/* 0x154 */
-	float minFallDist;		/* 0x158 "MinFallDist" */
-	char *fallSound;		/* 0x15c "FallSound" cString */
-	float fallSoundVol;		/* 0x160 "FallSoundVol" */
-	float wRadius;			/* 0x164 "WRadius" */
-	float vRadius;			/* 0x168 "VRadius" */
-	float sRadius;			/* 0x16c "SRadius": of the sphere of the floor test */
-	float flyAccel;			/* 0x170 "FlyAccel" */
-	float flyFric;			/* 0x174 "FlyFric" */
-	float flySpeed;			/* 0x178 "FlySpeed" */
-	float flyFallAccel;		/* 0x17c "FlyFallAccel" */
-	float yModelDisp;		/* 0x180 "YModelDisp" */
-	byte canBePossessed;		/* 0x184 */
-	byte discardable;		/* 0x185 */
-	byte canFly;			/* 0x186 */
-	byte canJump;			/* 0x187 the fall may go up */
-	byte strafeChar;		/* 0x188 the actions set the view angles (the view lock of the walk) */
-	byte fireAsSelect;		/* 0x189 */
-	byte skipInitOnChange;		/* 0x18a no init action between the walk actions */
-	byte relaxAlarm;		/* 0x18b the alarm versions of Relax, Turn and Run */
-	float initEndWalkInterpFactor;	/* 0x18c the speed of the walk end action */
-	cPy_Function actionPress;	/* 0x190 */
-	cPy_Function actionRelease;	/* 0x1a4 */
-	cPy_Function photoPress;	/* 0x1b8 */
-	cPy_Function possessionPress;	/* 0x1cc */
-	cPy_Function onCreate;		/* 0x1e0 */
-	cPy_Function onFreeResources;	/* 0x1f4 */
-	byte dynShip;			/* 0x208 "DinaShip": the controller moves the parts of a ship */
+	char *name;			/* cString */
+	HashTable actions;		/* the actions by name, 457 slots */
+	cAction *first;			/* the actions in a list (cAction.next) */
+	cAction *last;			/* the last action of the list */
+	char *modelFile;		/* "ModelFilePath", Mem_Alloc copy */
+	cAction *defAction;		/* "DefAction" */
+	CGameModel model;
+	cStringList sounds;		/* the sound names of "AddSoundRes" */
+	int users;			/* the controllers on the class; Del refuses while it has any */
+	cActNodeMod nodes[ACT_NODEMODS];	/* the end is the first node -1 */
+	cActClassCam cam;
+	float turnAngLimit;		/* "TurnAngLimit": the Turn action plays for a bigger turn of the view */
+	vec3_t soundDisp;		/* "SoundDispX".."Z" */
+	int pretransformChan;		/* "PretransformChan" */
+	float minTimeWalking;		/* "MinTimeWalking": the walk is kept that long after the stop */
+	float maxTimeToExtraRelax;	/* the time between two relax actions */
+	float minTimeToExtraRelax;
+	float minFallDist;		/* "MinFallDist" */
+	char *fallSound;		/* "FallSound" cString */
+	float fallSoundVol;		/* "FallSoundVol" */
+	float wRadius;			/* "WRadius" */
+	float vRadius;			/* "VRadius" */
+	float sRadius;			/* "SRadius": of the sphere of the floor test */
+	float flyAccel;			/* "FlyAccel" */
+	float flyFric;			/* "FlyFric" */
+	float flySpeed;			/* "FlySpeed" */
+	float flyFallAccel;		/* "FlyFallAccel" */
+	float yModelDisp;		/* "YModelDisp" */
+	byte canBePossessed;
+	byte discardable;
+	byte canFly;
+	byte canJump;			/* the fall may go up */
+	byte strafeChar;		/* the actions set the view angles (the view lock of the walk) */
+	byte fireAsSelect;
+	byte skipInitOnChange;		/* no init action between the walk actions */
+	byte relaxAlarm;		/* the alarm versions of Relax, Turn and Run */
+	float initEndWalkInterpFactor;	/* the speed of the walk end action */
+	cPy_Function actionPress;
+	cPy_Function actionRelease;
+	cPy_Function photoPress;
+	cPy_Function possessionPress;
+	cPy_Function onCreate;
+	cPy_Function onFreeResources;
+	byte dynShip;			/* "DinaShip": the controller moves the parts of a ship */
 	byte pad_209[3];
 };
 
 struct cActClassList {
-	HashTable classes;		/* 0x04 457 slots */
+	HashTable classes;		/* 457 slots */
 };
 
 /* an event of an action: Func is called with the entity name, the event name and the time */
 struct cActEvent {
-	float time;			/* 0x00 */
-	char *name;			/* 0x04 cString, "Noname" */
-	cPy_Function func;		/* 0x08 "Func" */
-	cActEvent *next;		/* 0x1c by time */
-	byte discardable;		/* 0x20 skipped when a new action jumps over it */
+	float time;
+	char *name;			/* cString, "Noname" */
+	cPy_Function func;		/* "Func" */
+	cActEvent *next;		/* by time */
+	byte discardable;		/* skipped when a new action jumps over it */
 	byte pad_21[3];
 };
 
 struct cAction {
-	int anim;			/* 0x04 the animation of the class model, -1 none */
-	char *name;			/* 0x08 cString */
-	char *anmFile;			/* 0x0c "AnmFilePath", Mem_Alloc copy */
-	char *anmName;			/* 0x10 its name part ("AnmName") */
-	cActClass *parent;		/* 0x14 */
-	cAction *next;			/* 0x18 in the list of the class */
-	float anmTotalTime;		/* 0x1c "AnmTotalTime" */
-	float anmFps;			/* 0x20 "AnmFPS" */
-	cActEvent *events;		/* 0x24 by time */
-	cActEvent *lastEvent;		/* 0x28 of "AddEventAtTime", the "Event..." variables */
-	int nodeModifier;		/* 0x2c "NodeModifier", the angle pair of the node turns */
-	float angleModifierSpeed;	/* 0x30 */
-	byte isLoop;			/* 0x34 */
+	int anim;			/* the animation of the class model, -1 none */
+	char *name;			/* cString */
+	char *anmFile;			/* "AnmFilePath", Mem_Alloc copy */
+	char *anmName;			/* its name part ("AnmName") */
+	cActClass *parent;
+	cAction *next;			/* in the list of the class */
+	float anmTotalTime;		/* "AnmTotalTime" */
+	float anmFps;			/* "AnmFPS" */
+	cActEvent *events;		/* by time */
+	cActEvent *lastEvent;		/* of "AddEventAtTime", the "Event..." variables */
+	int nodeModifier;		/* "NodeModifier", the angle pair of the node turns */
+	float angleModifierSpeed;
+	byte isLoop;
 	byte pad_35[3];
-	float rotSpeed;			/* 0x38 "RotSpeed": of the body to the view */
-	float angRotLimit;		/* 0x3c "AngRotLimit": between the body and the view (the view lock) */
-	float maxSpeed;			/* 0x40 the animation speed at the walk speed 1 */
-	float minSpeed;			/* 0x44 at 0 */
-	byte useDisp;			/* 0x48 the walk takes the motion of the root node */
-	byte useFlyDisp;		/* 0x49 the control moves it */
-	byte useFlyFall;		/* 0x4a flies without the control */
+	float rotSpeed;			/* "RotSpeed": of the body to the view */
+	float angRotLimit;		/* "AngRotLimit": between the body and the view (the view lock) */
+	float maxSpeed;			/* the animation speed at the walk speed 1 */
+	float minSpeed;			/* at 0 */
+	byte useDisp;			/* the walk takes the motion of the root node */
+	byte useFlyDisp;		/* the control moves it */
+	byte useFlyFall;		/* flies without the control */
 	byte pad_4b;
-	int slideAsFly;			/* 0x4c 0 the root motion moves it (and the strafe actions play), 1..4 the acceleration */
-	float autoFaceSpeed;		/* 0x50 the turn of the view to the listener per second */
-	float autoFaceOffsetH;		/* 0x54 */
-	float autoFaceOffsetV;		/* 0x58 */
-	float interpTime;		/* 0x5c "InterpTime" of the blend into it */
-	byte anmConeView;		/* 0x60 the head angle from the camera node */
+	int slideAsFly;			/* 0 the root motion moves it (and the strafe actions play), 1..4 the acceleration */
+	float autoFaceSpeed;		/* the turn of the view to the listener per second */
+	float autoFaceOffsetH;
+	float autoFaceOffsetV;
+	float interpTime;		/* "InterpTime" of the blend into it */
+	byte anmConeView;		/* the head angle from the camera node */
 	byte pad_61[3];
-	int priority;			/* 0x64 "PriorityLevel" */
-	int chanel;			/* 0x68 "Chanel": its layer */
+	int priority;			/* "PriorityLevel" */
+	int chanel;			/* "Chanel": its layer */
 };
 /* the class name in the exe */
 typedef cAction cActionMove;
 
 /* a layer of a controller: the time in its action and its next event */
 typedef struct cActLayer {
-	float time;			/* 0x00 */
-	cAction *action;		/* 0x04 */
-	cActEvent *event;		/* 0x08 */
-	byte on;			/* 0x0c */
+	float time;
+	cAction *action;
+	cActEvent *event;
+	byte on;
 	byte pad_d[3];
 } cActLayer;
 
 /* the blend of the angles of a turned node from the last NodeModifier to the new one */
 typedef struct cActHead {
-	float from[2];			/* 0x00 */
-	float to[2];			/* 0x08 */
-	float cur[2];			/* 0x10 */
+	float from[2];
+	float to[2];
+	float cur[2];
 } cActHead;
 
-/* the action controller of an entity (0x7c bytes) */
+/* the action controller of an entity */
 struct cActCtrl {
-	cEntity *owner;			/* 0x04 */
-	cActClass *cls;			/* 0x08 */
-	cAction *defLoop;		/* 0x0c layer 0 goes back to it */
-	cActLayer layers[ACT_LAYERS];	/* 0x10 */
-	int headMod;			/* 0x50 the NodeModifier the node turns blend to, -1 at the start */
-	float headBlend;		/* 0x54 0..1 */
-	cActHead *heads;		/* 0x58 new[] of ACT_NODEMODS, made on the first turn */
-	vec3_t rootSum;			/* 0x5c the root motion of layer 0 since the start */
-	float rootTime;			/* 0x68 */
-	vec3_t rootMove;		/* 0x6c rootSum per second */
-	float walkSpeed;		/* 0x78 0..1 between the MinSpeed and MaxSpeed of the actions */
+	cEntity *owner;
+	cActClass *cls;
+	cAction *defLoop;		/* layer 0 goes back to it */
+	cActLayer layers[ACT_LAYERS];
+	int headMod;			/* the NodeModifier the node turns blend to, -1 at the start */
+	float headBlend;		/* 0..1 */
+	cActHead *heads;		/* new[] of ACT_NODEMODS, made on the first turn */
+	vec3_t rootSum;			/* the root motion of layer 0 since the start */
+	float rootTime;
+	vec3_t rootMove;		/* rootSum per second */
+	float walkSpeed;		/* 0..1 between the MinSpeed and MaxSpeed of the actions */
 };
 
 /* Actions/ActClass.cpp (src/game/Actions/ActClass.c) */

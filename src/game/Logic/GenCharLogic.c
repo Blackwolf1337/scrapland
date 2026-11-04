@@ -2,7 +2,7 @@
  * Logic/GenCharLogic.cpp of the game: cGenCharLocalLogic (include/scrap/logic.h), the logic of the generic
  * characters. A character relaxes, stays or chases (its default state); one of the suspect types that sees the
  * player of its own type, or of any type with the alarm on, accuses it (state 2: the sentinels watch, the gears
- * attack); a hit makes it get away (3) or attack (4, the special attack of the type against the target vf30 finds,
+ * attack); a hit makes it get away (3) or attack (4, the special attack of the type against the target finds
  * only some character types). The constructor and the small slots are part 2 of the logic, the rest from rva
  * 0x14c4f0 part 3.
  */
@@ -65,7 +65,7 @@ static void cGenCharLocalLogic_Free(cLocalLogic *base) {
 	operator_delete(self);
 }
 
-/* vf26: no view flag for a player of the own suspect type, else relaxed and no alarm; team 3 */
+/* no view flag for a player of the own suspect type, else relaxed and no alarm; team 3 */
 static byte Logic_IsSuspectType(const char *type);
 void cGenCharLocalLogic_UpdateView(cLocalLogic *elem) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
@@ -100,13 +100,13 @@ static byte cGenCharLocalLogic_CanDiscover(cGenCharLocalLogic *self, cEntity *e)
 	return cString_CmpStr(g_UsrDefChar, g_pWorld->alarm.chars) != 0;
 }
 
-/* vf16: the state of the alarm against e */
+/* the state of the alarm against e */
 void cGenCharLocalLogic_OnAlarm(cLocalLogic *elem, cEntity *e) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	Logic_SetState(self, self->alarmState, e);
 }
 
-/* vf28 and vf27: the AI walks the zone around the origin, in alert or relaxed */
+/* and: the AI walks the zone around the origin, in alert or relaxed */
 void cGenCharLocalLogic_ToAlert(cLocalLogic *elem, cAIChar *ai) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
@@ -128,7 +128,6 @@ static inline void GenChar_SetDefaultState(cGenCharLocalLogic *self, int ds) {
 	self->defaultState = ds;
 }
 
-/* vf03 */
 byte cGenCharLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, byte set) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	if (strcmp(name, "DefaultState")) {
@@ -164,7 +163,6 @@ static inline int GenChar_AISubState(cAIChar *ai) {
 	return AIChar_GetInternState(ai);
 }
 
-/* vf17 */
 static void cGenCharLocalLogic_ResetSpecial(cGenCharLocalLogic *self);
 void cGenCharLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
@@ -311,7 +309,7 @@ states:
 	}
 }
 
-/* vf12: a robbery seen, with the chance GenCharRobberyDetection plus the amount */
+/* a robbery seen, with the chance GenCharRobberyDetection plus the amount */
 void cGenCharLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	if (amount > 0.0f && Logic_Chance(&self->base, e, g_GenCharRobberyDetection + amount)) {
@@ -320,7 +318,7 @@ void cGenCharLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
 	}
 }
 
-/* vf10: the state of the alarm against the attacker, no accuse for a while */
+/* the state of the alarm against the attacker, no accuse for a while */
 void cGenCharLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	if (self->base.busy || !GenChar_Rand101()) {
@@ -331,7 +329,7 @@ void cGenCharLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 	cGenCharLocalLogic_ResetSpecial(self);
 }
 
-/* vf11: the same, not while accusing */
+/* the same, not while accusing */
 void cGenCharLocalLogic_OnSeen(cLocalLogic *elem, cEntity *e) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	if (self->base.state == GENCHAR_ACCUSE || self->base.busy || !GenChar_Rand101()) {
@@ -341,7 +339,7 @@ void cGenCharLocalLogic_OnSeen(cLocalLogic *elem, cEntity *e) {
 	cGenCharLocalLogic_ResetSpecial(self);
 }
 
-/* vf15: 1 if it refuses the police (GenCharPoliceRefuse in percent), else the state of the alarm against it */
+/* 1 if it refuses the police (GenCharPoliceRefuse in percent), else the state of the alarm against it */
 byte cGenCharLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *police) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	float refuse = g_GenCharPoliceRefuse;
@@ -353,7 +351,7 @@ byte cGenCharLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *police) {
 	return 0;
 }
 
-/* vf35: state 10 ends when the AI arrived */
+/* state 10 ends when the AI arrived */
 void cGenCharLocalLogic_UpdateGetIt(cLocalLogic *base, cAIChar *ai, float dt) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)base;
 	(void)dt;
@@ -379,7 +377,7 @@ void cGenCharLocalLogic_Discover(cGenCharLocalLogic *self) {
 	}
 }
 
-/* vf24: the alert with the alarm (unless IgnoreAlarm), else the default state with its target; OnDefStateCallback
+/* the alert with the alarm (unless IgnoreAlarm), else the default state with its target; OnDefStateCallback
  * (name) when that state was taken */
 void cGenCharLocalLogic_RestartState(cLocalLogic *elem) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
@@ -414,7 +412,7 @@ static void GenChar_Dir(vec3_t *dir, const vec3_t *a, const vec3_t *b) {
 	dir->z = d.z * inv;
 }
 
-/* vf34: the AI walks to e, faced from the character to it */
+/* the AI walks to e, faced from the character to it */
 void cGenCharLocalLogic_GoTo(cLocalLogic *elem, cAIChar *ai, cEntity *e) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	vec3_t t1, t2, t3, dir;
@@ -427,7 +425,7 @@ void cGenCharLocalLogic_GoTo(cLocalLogic *elem, cAIChar *ai, cEntity *e) {
 	AIChar_SetState(ai, AIC_GO_TO, *tp, dir, 70.0, 1.0);
 }
 
-/* vf19: the AI state of the logic state; always 1 */
+/* the AI state of the logic state; always 1 */
 byte cGenCharLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
@@ -504,7 +502,6 @@ byte cGenCharLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) 
 	return 1;
 }
 
-/* vf05 */
 byte cGenCharLocalLogic_VarS(cLocalLogic *elem, const char *name, char **s, byte set) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	if (strcmp(name, "DefaultTarget")) {
@@ -518,7 +515,7 @@ byte cGenCharLocalLogic_VarS(cLocalLogic *elem, const char *name, char **s, byte
 	return 1;
 }
 
-/* vf25: the special attack of e is allowed (energy bar and special actions on, GenCharAttackActive), e is not
+/* the special attack of e is allowed (energy bar and special actions on, GenCharAttackActive), e is not
  * idle, near a camera (GenCharAttackLimit), not on the radar and its AI not in sub state 12 */
 byte cGenCharLocalLogic_CanAttack(cLocalLogic *base, cEntity *e) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)base;

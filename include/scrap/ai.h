@@ -28,15 +28,15 @@ typedef struct CNodesTraffic CNodesTraffic;	/* include/scrap/nodestraffic.h */
 typedef struct cAIEntityGroup cAIEntityGroup;
 
 typedef struct cAIEntityGroupVtbl {
-	void (*Free)(cAIEntityGroup *self);	/* 0x00 */
-	void(*Clear)(cAIEntityGroup *self);				/* 0x04 no entities */
-	byte(*Add)(cAIEntityGroup *self, cEntity *e);			/* 0x08 0 when full */
-	cEntity *(*Get)(cAIEntityGroup *self, int i);			/* 0x0c */
-	int(*Num)(cAIEntityGroup *self);				/* 0x10 */
-	byte(*CanChange)(cAIEntityGroup *self);			/* 0x14 */
-	void(*ResetChange)(cAIEntityGroup *self);			/* 0x18 the time to 0 */
-	void(*AllowChange)(cAIEntityGroup *self);			/* 0x1c the time to the limit */
-	void(*Update)(cAIEntityGroup *self, float dt);		/* 0x20 the time on */
+	void (*Free)(cAIEntityGroup *self);
+	void(*Clear)(cAIEntityGroup *self);				/* no entities */
+	byte(*Add)(cAIEntityGroup *self, cEntity *e);			/* 0 when full */
+	cEntity *(*Get)(cAIEntityGroup *self, int i);
+	int(*Num)(cAIEntityGroup *self);
+	byte(*CanChange)(cAIEntityGroup *self);
+	void(*ResetChange)(cAIEntityGroup *self);			/* the time to 0 */
+	void(*AllowChange)(cAIEntityGroup *self);			/* the time to the limit */
+	void(*Update)(cAIEntityGroup *self, float dt);		/* the time on */
 } cAIEntityGroupVtbl;
 
 /* calls through the slots of cAIEntityGroupVtbl */
@@ -77,25 +77,25 @@ static inline void AIGroup_ResetChange(void *self) {
 }
 
 struct cAIEntityGroup {
-	const cAIEntityGroupVtbl *vftable;	/* 0x00 */
-	cEntity *ents[CAIENTITYGROUP_MAX];	/* 0x04 */
-	int num;				/* 0x54 */
-	byte unused_58;				/* 0x58 */
+	const cAIEntityGroupVtbl *vftable;
+	cEntity *ents[CAIENTITYGROUP_MAX];
+	int num;
+	byte unused_58;
 	byte pad_59[3];
-	float changeTime;			/* 0x5c */
+	float changeTime;
 };
 
 struct cAIVehicleGroup {
-	cAIEntityGroup base;	/* 0x00 the vehicles; changeTime: the time since the last change of state */
+	cAIEntityGroup base;	/* the vehicles; changeTime: the time since the last change of state */
 	/* the vehicle AIs in the internal state STOPPED: all, the traffic by class (2, 1, 0) and IN_ROUTE */
-	int numStopped;			/* 0x60 */
-	int numStoppedHeavy;		/* 0x64 */
-	int numStoppedMedium;		/* 0x68 */
-	int numStoppedLight;		/* 0x6c */
-	int numStoppedRoute;		/* 0x70 */
-	vec3_t elevators[10];		/* 0x74 the elevator and metro doors of the level */
-	int numElevators;		/* 0xec */
-	float reposTime;		/* 0xf0 the world time of the last repositioning */
+	int numStopped;
+	int numStoppedHeavy;
+	int numStoppedMedium;
+	int numStoppedLight;
+	int numStoppedRoute;
+	vec3_t elevators[10];		/* the elevator and metro doors of the level */
+	int numElevators;
+	float reposTime;		/* the world time of the last repositioning */
 };
 
 /* ---- cAI (AI/AI.cpp, src/game/AI/AI.c): the base of every AI (0x38 bytes), the entity, the time of the frame and
@@ -105,20 +105,20 @@ typedef struct cAI cAI;
 
 /* the slots of cAI::vftable (Debugf is pure there) */
 typedef struct cAIBaseVtbl {
-	void (*Free)(cAI *self);					/* 0x00 */
-	void(*Update)(cAI *self, float dt);						/* 0x04 */
-	void(*UpdateOff)(cAI *self, float dt);					/* 0x08 */
-	void(*Draw)(cAI *self);							/* 0x0c */
-	byte(*GetChanged)(cAI *self);						/* 0x10 */
-	byte(*IsVisible)(cAI *self);							/* 0x14 */
-	void (*Debugf)(cAI *self, const char *fmt, ...);					/* 0x18 text of the AI debug view */
-	byte(*VarI)(cAI *self, const char *name, int *i, byte set);			/* 0x1c */
-	byte(*VarF)(cAI *self, const char *name, double *d, byte set);		/* 0x20 */
-	byte(*VarS)(cAI *self, const char *name, char **s, byte set);		/* 0x24 */
-	byte(*VarV)(cAI *self, const char *name, double *x, double *y, double *z, byte set);	/* 0x28 */
-	void(*Print)(cAI *self, const char *text);					/* 0x2c */
-	void(*GetEventName)(cAI *self, int ev, char *out);				/* 0x30 */
-	void(*OnEvent)(cAI *self, int ev);						/* 0x34 */
+	void (*Free)(cAI *self);
+	void(*Update)(cAI *self, float dt);
+	void(*UpdateOff)(cAI *self, float dt);
+	void(*Draw)(cAI *self);
+	byte(*GetChanged)(cAI *self);
+	byte(*IsVisible)(cAI *self);
+	void (*Debugf)(cAI *self, const char *fmt, ...);					/* text of the AI debug view */
+	byte(*VarI)(cAI *self, const char *name, int *i, byte set);
+	byte(*VarF)(cAI *self, const char *name, double *d, byte set);
+	byte(*VarS)(cAI *self, const char *name, char **s, byte set);
+	byte(*VarV)(cAI *self, const char *name, double *x, double *y, double *z, byte set);
+	void(*Print)(cAI *self, const char *text);
+	void(*GetEventName)(cAI *self, int ev, char *out);
+	void(*OnEvent)(cAI *self, int ev);
 } cAIBaseVtbl;
 
 /* calls through the slots of cAIBaseVtbl */
@@ -213,20 +213,20 @@ enum {
 };
 
 struct cAI {
-	const cAIBaseVtbl *vftable;	/* 0x00 */
-	byte started;			/* 0x04 set by the first update */
+	const cAIBaseVtbl *vftable;
+	byte started;			/* set by the first update */
 	byte pad_5[3];
-	cEntity *entity;		/* 0x08 */
-	float dt;			/* 0x0c the time of the last update */
-	cSlotController slotThink;	/* 0x10 0.5 s, the reactions (UpdateThink of cAIChar and cAIVehicle) */
-	byte changing;			/* 0x20 a change of state runs */
+	cEntity *entity;
+	float dt;			/* the time of the last update */
+	cSlotController slotThink;	/* 0.5 s, the reactions (UpdateThink of cAIChar and cAIVehicle) */
+	byte changing;			/* a change of state runs */
 	byte pad_21[3];
-	int relaxCount;			/* 0x24 the relax actions a character played in its internal state */
-	byte changed;			/* 0x28 GetChanged: the state changed in this frame, cleared by every update */
+	int relaxCount;			/* the relax actions a character played in its internal state */
+	byte changed;			/* GetChanged: the state changed in this frame, cleared by every update */
 	byte pad_29[3];
-	float stateTime;		/* 0x2c the time in the state */
-	float waitTime;			/* 0x30 counts while seen is 0 */
-	int seen;			/* 0x34 0 out of view, 1 seen, 2 not seen yet */
+	float stateTime;		/* the time in the state */
+	float waitTime;			/* counts while seen is 0 */
+	int seen;			/* 0 out of view, 1 seen, 2 not seen yet */
 };
 
 cAI *cAI_ctor(cAI *self, cEntity *e);
@@ -265,21 +265,21 @@ typedef struct cAIMove cAIMove;
 
 /* cAIMove::vftable (25 slots, IsMoving is pure there) */
 typedef struct cAIMoveVtbl {
-	cAIBaseVtbl base;									/* 0x00 */
-	Nto1Node *(*GetTarget)(cAI *self);					/* 0x38 the link to the target */
-	byte(*CanJump)(cAI *self);						/* 0x3c flying */
-	byte(*GetStopped)(cAI *self);						/* 0x40 */
-	byte(*IsPaused)(cAI *self);						/* 0x44 */
-	cEntity *(*GetTargetEnt)(cAI *self);					/* 0x48 */
-	byte(*GetArrived)(cAI *self);						/* 0x4c */
+	cAIBaseVtbl base;
+	Nto1Node *(*GetTarget)(cAI *self);					/* the link to the target */
+	byte(*CanJump)(cAI *self);						/* flying */
+	byte(*GetStopped)(cAI *self);
+	byte(*IsPaused)(cAI *self);
+	cEntity *(*GetTargetEnt)(cAI *self);
+	byte(*GetArrived)(cAI *self);
 	/* a random point within r of p the entity can reach (p itself after three tries), out returned */
-	vec3_t *(*RandomPoint)(cAI *self, vec3_t *out, const vec3_t *p, float r);	/* 0x50 */
+	vec3_t *(*RandomPoint)(cAI *self, vec3_t *out, const vec3_t *p, float r);
 	/* moving without a velocity for 10 s: stopped and the event 7 */
-	void(*CheckStopped)(cAI *self, float dt);				/* 0x54 */
+	void(*CheckStopped)(cAI *self, float dt);
 	/* the move tells the AI (arrived, blocked, ..) */
-	byte(*Event)(cAI *self, int ev);						/* 0x58 */
-	byte(*IsMoving)(cAI *self);						/* 0x5c */
-	byte(*CanTarget)(cAI *self, cEntity *e);					/* 0x60 */
+	byte(*Event)(cAI *self, int ev);
+	byte(*IsMoving)(cAI *self);
+	byte(*CanTarget)(cAI *self, cEntity *e);
 } cAIMoveVtbl;
 
 /* calls through the slots of cAIMoveVtbl */
@@ -321,31 +321,31 @@ static inline byte AIMove_IsPaused(void *self) {
 
 struct cAIMove {
 	union {
-		cAI base;			/* 0x00 */
+		cAI base;
 		const cAIMoveVtbl *vftable;
 	};
-	Nto1Node target;		/* 0x38 the target entity at 0x40, data the AI */
-	byte flying;			/* 0x48 the 3D control (CanFly, a Car) */
+	Nto1Node target;		/* the target entity at 0x40, data the AI */
+	byte flying;			/* the 3D control (CanFly, a Car) */
 	byte pad_49[3];
-	vec3_t dest;			/* 0x4c */
-	float dist;			/* 0x58 the goal is reached that near (every move of a vehicle) */
-	int moveMode;			/* 0x5c AICC_, the mode of cAIVehicleControl_SetMove for a vehicle */
-	float speed;			/* 0x60 a character only */
-	vec3_t dir;			/* 0x64 the direction of the orient and path moves */
-	vec3_t center;			/* 0x70 PATROL_ZONE */
-	float radius;			/* 0x7c PATROL_ZONE */
-	byte pathA;			/* 0x80 the flags of the path move (cAICharControl routeA, routeB) */
-	byte pathB;			/* 0x81 a vehicle: the path move stays flat */
-	byte stopped;			/* 0x82 CheckStopped: no velocity for 10 s */
-	byte inPath;			/* 0x83 FOLLOW_THE_PATH set it */
-	byte paused;			/* 0x84 far from the camera: no update */
-	byte arrived;			/* 0x85 GO_TO reached the end */
-	byte repos;			/* 0x86 "Repos" */
-	byte reposing;			/* 0x87 inside Repos */
+	vec3_t dest;
+	float dist;			/* the goal is reached that near (every move of a vehicle) */
+	int moveMode;			/* AICC_, the mode of cAIVehicleControl_SetMove for a vehicle */
+	float speed;			/* a character only */
+	vec3_t dir;			/* the direction of the orient and path moves */
+	vec3_t center;			/* PATROL_ZONE */
+	float radius;			/* PATROL_ZONE */
+	byte pathA;			/* the flags of the path move (cAICharControl routeA, routeB) */
+	byte pathB;			/* a vehicle: the path move stays flat */
+	byte stopped;			/* CheckStopped: no velocity for 10 s */
+	byte inPath;			/* FOLLOW_THE_PATH set it */
+	byte paused;			/* far from the camera: no update */
+	byte arrived;			/* GO_TO reached the end */
+	byte repos;			/* "Repos" */
+	byte reposing;			/* inside Repos */
 	byte trafficPlaced;		/* 0x88 a vehicle in TRAFFIC with a kind of track: placed, repositioned like a
 					 * visible one */
 	byte pad_89[3];
-	float stopTime;			/* 0x8c the time without a velocity */
+	float stopTime;			/* the time without a velocity */
 };
 
 cAIMove *cAIMove_ctor(cAIMove *self, cEntity *e);
@@ -374,106 +374,106 @@ vec3_t *cAIMove_RandomPoint(cAI *elem, vec3_t *out, const vec3_t *p, float r);
 /* a state with its arguments (cAIChar_SaveState): the one to take when the character group lets it (pending), the
  * one to come back to after a pause or an event (resume) and the one of the last change (last) */
 typedef struct cAICharSaved {
-	int state;			/* 0x00 AIC_ */
-	int internState;		/* 0x04 AICI_ */
-	vec3_t dest;			/* 0x08 */
-	float dist;			/* 0x14 */
-	float speed;			/* 0x18 */
-	char target[0x80];		/* 0x1c the name of the target entity, "" for none */
-	vec3_t dir;			/* 0x9c */
-	byte pathA;			/* 0xa8 */
-	byte pauses;			/* 0xa9 */
+	int state;			/* AIC_ */
+	int internState;		/* AICI_ */
+	vec3_t dest;
+	float dist;
+	float speed;
+	char target[0x80];		/* the name of the target entity, "" for none */
+	vec3_t dir;
+	byte pathA;
+	byte pauses;
 	byte pad_aa[2];
-	vec3_t center;			/* 0xac */
-	float radius;			/* 0xb8 */
-	int action;			/* 0xbc */
-	float stateTime;		/* 0xc0 */
-	byte changing;			/* 0xc4 */
-	byte changed;			/* 0xc5 */
-	byte back;			/* 0xc6 */
-	byte orient;			/* 0xc7 */
+	vec3_t center;
+	float radius;
+	int action;
+	float stateTime;
+	byte changing;
+	byte changed;
+	byte back;
+	byte orient;
 } cAICharSaved;
 
 typedef struct cAICharControl cAICharControl;
 
 /* cAIChar::vftable (99 slots) */
 typedef struct cAICharVtbl {
-	cAIMoveVtbl base;									/* 0x00 */
-	void(*CheckParams)(cAI *self, int stupidPathfinding);				/* 0x64 */
-	byte(*ChangeState)(cAI *self, int state, va_list ap);				/* 0x68 */
+	cAIMoveVtbl base;
+	void(*CheckParams)(cAI *self, int stupidPathfinding);
+	byte(*ChangeState)(cAI *self, int state, va_list ap);
 	/* SAI_CHAR_ state; the arguments depend on the state (see SAIPy.c) */
-	byte (*SetState)(cAI *self, int state, ...);						/* 0x6c */
-	byte(*RestoreState)(cAI *self, const cAICharSaved *s);				/* 0x70 */
-	void(*SetInternStateV)(cAI *self, int state, va_list ap);			/* 0x74 */
-	void (*SetInternState)(cAI *self, int state, ...);						/* 0x78 */
-	int(*GetState)(cAI *self);							/* 0x7c */
-	int(*GetInternState)(cAI *self);							/* 0x80 */
-	void(*StateName)(cAI *self, int state, char *buf);				/* 0x84 */
-	void(*GetStateName)(cAI *self, char *buf);					/* 0x88 */
-	void(*InternStateName)(cAI *self, int state, char *buf);				/* 0x8c */
-	void(*GetInternStateName)(cAI *self, char *buf);					/* 0x90 */
-	byte(*GetDirect)(cAI *self);							/* 0x94 */
-	byte(*GetDirect2)(cAI *self);							/* 0x98 */
-	cAICharControl *(*GetControl)(cAI *self);					/* 0x9c */
-	cAICharSaved *(*GetLast)(cAI *self);						/* 0xa0 */
-	cAICharSaved *(*SaveTo)(cAI *self, cAICharSaved *s);				/* 0xa4 */
-	byte(*SetRepos)(cAI *self, byte on, byte now);					/* 0xa8 */
-	byte(*GetRepos)(cAI *self);							/* 0xac */
-	byte(*IsTalking)(cAI *self);							/* 0xb0 */
-	cEntity *(*GetCollide)(cAI *self);						/* 0xb4 */
-	byte(*React)(cAI *self);								/* 0xb8 */
-	byte(*CheckAction)(cAI *self);							/* 0xbc */
-	byte(*GetChanged2)(cAI *self);							/* 0xc0 */
-	byte(*CanTalk)(cAI *self);							/* 0xc4 */
-	byte (*SetStateIntern)(cAI *self, int state, ...);						/* 0xc8 */
-	byte(*RestoreStateIntern)(cAI *self, const cAICharSaved *s);			/* 0xcc */
-	byte(*ChangeStateMore)(cAI *self, int state, int allowed, va_list ap);		/* 0xd0 */
-	byte(*IsGroupState)(cAI *self, int state);					/* 0xd4 */
-	byte(*Repos)(cAI *self, float minDist, float maxDist, byte flag);		/* 0xd8 */
-	void(*AfterRepos)(cAI *self);							/* 0xdc */
-	void(*SetDists)(cAI *self);							/* 0xe0 */
-	void(*SetDists2)(cAI *self);							/* 0xe4 */
-	void(*BeginChange)(cAI *self, int state);					/* 0xe8 */
-	void(*SetPauseCheck)(cAI *self, byte on);					/* 0xec */
-	void(*SaveState)(cAI *self, cAICharSaved *s);					/* 0xf0 */
-	void(*RestoreSaved)(cAI *self, const cAICharSaved *s);				/* 0xf4 */
-	void(*SetPaused)(cAI *self, byte on);						/* 0xf8 */
-	void(*UpdateAction1)(cAI *self);							/* 0xfc */
-	void(*UpdateAction0)(cAI *self);							/* 0x100 */
-	void(*UpdateAction)(cAI *self);							/* 0x104 */
-	void(*CheckActDist)(cAI *self);							/* 0x108 */
-	void(*SetAction)(cAI *self, int action);						/* 0x10c */
-	void(*UpdateMove)(cAI *self, float dt);						/* 0x110 */
-	byte(*EventDefault)(cAI *self, int ev);						/* 0x114 */
-	byte(*EventInRoute)(cAI *self, int ev);						/* 0x118 */
-	byte(*EventPatrol)(cAI *self, int ev);						/* 0x11c */
-	byte(*EventGoTo)(cAI *self, int ev);						/* 0x120 */
-	byte(*EventGetAway)(cAI *self, int ev);						/* 0x124 */
-	byte(*EventChase)(cAI *self, int ev);						/* 0x128 */
-	byte(*EventChaseBack)(cAI *self, int ev);					/* 0x12c */
-	byte(*EventChaseNoAction)(cAI *self, int ev);					/* 0x130 */
-	byte(*EventLostPath)(cAI *self, int ev);						/* 0x134 */
-	void(*Resume)(cAI *self);							/* 0x138 */
-	void(*UpdateThink)(cAI *self);							/* 0x13c */
-	void(*CheckPause)(cAI *self);							/* 0x140 */
-	void(*CheckRepos)(cAI *self);							/* 0x144 */
-	byte(*CanRepos)(cAI *self, int state);						/* 0x148 */
-	void(*Think)(cAI *self);								/* 0x14c */
-	void(*ThinkInRoute)(cAI *self);							/* 0x150 */
-	void(*ThinkGetAway)(cAI *self);							/* 0x154 */
-	void(*ThinkChase)(cAI *self);							/* 0x158 */
-	void(*ThinkChaseBack)(cAI *self);						/* 0x15c */
-	void(*ThinkChaseNoAction)(cAI *self);						/* 0x160 */
-	void(*ThinkLostPath)(cAI *self);							/* 0x164 */
-	void(*ThinkLostPathChase)(cAI *self);						/* 0x168 */
-	void(*ReactLostPath)(cAI *self);							/* 0x16c */
-	void(*ReactLostPathChase)(cAI *self);						/* 0x170 */
-	void(*ReactPatrol)(cAI *self);							/* 0x174 */
-	void(*ReactInRoute)(cAI *self);							/* 0x178 */
-	void(*ThinkGoTo)(cAI *self);							/* 0x17c */
-	void(*ThinkPatrol)(cAI *self);							/* 0x180 */
-	void(*CheckTalk)(cAI *self);							/* 0x184 */
-	byte(*Facing)(cAI *self, cEntity *a, cEntity *b);				/* 0x188 */
+	byte (*SetState)(cAI *self, int state, ...);
+	byte(*RestoreState)(cAI *self, const cAICharSaved *s);
+	void(*SetInternStateV)(cAI *self, int state, va_list ap);
+	void (*SetInternState)(cAI *self, int state, ...);
+	int(*GetState)(cAI *self);
+	int(*GetInternState)(cAI *self);
+	void(*StateName)(cAI *self, int state, char *buf);
+	void(*GetStateName)(cAI *self, char *buf);
+	void(*InternStateName)(cAI *self, int state, char *buf);
+	void(*GetInternStateName)(cAI *self, char *buf);
+	byte(*GetDirect)(cAI *self);
+	byte(*GetDirect2)(cAI *self);
+	cAICharControl *(*GetControl)(cAI *self);
+	cAICharSaved *(*GetLast)(cAI *self);
+	cAICharSaved *(*SaveTo)(cAI *self, cAICharSaved *s);
+	byte(*SetRepos)(cAI *self, byte on, byte now);
+	byte(*GetRepos)(cAI *self);
+	byte(*IsTalking)(cAI *self);
+	cEntity *(*GetCollide)(cAI *self);
+	byte(*React)(cAI *self);
+	byte(*CheckAction)(cAI *self);
+	byte(*GetChanged2)(cAI *self);
+	byte(*CanTalk)(cAI *self);
+	byte (*SetStateIntern)(cAI *self, int state, ...);
+	byte(*RestoreStateIntern)(cAI *self, const cAICharSaved *s);
+	byte(*ChangeStateMore)(cAI *self, int state, int allowed, va_list ap);
+	byte(*IsGroupState)(cAI *self, int state);
+	byte(*Repos)(cAI *self, float minDist, float maxDist, byte flag);
+	void(*AfterRepos)(cAI *self);
+	void(*SetDists)(cAI *self);
+	void(*SetDists2)(cAI *self);
+	void(*BeginChange)(cAI *self, int state);
+	void(*SetPauseCheck)(cAI *self, byte on);
+	void(*SaveState)(cAI *self, cAICharSaved *s);
+	void(*RestoreSaved)(cAI *self, const cAICharSaved *s);
+	void(*SetPaused)(cAI *self, byte on);
+	void(*UpdateAction1)(cAI *self);
+	void(*UpdateAction0)(cAI *self);
+	void(*UpdateAction)(cAI *self);
+	void(*CheckActDist)(cAI *self);
+	void(*SetAction)(cAI *self, int action);
+	void(*UpdateMove)(cAI *self, float dt);
+	byte(*EventDefault)(cAI *self, int ev);
+	byte(*EventInRoute)(cAI *self, int ev);
+	byte(*EventPatrol)(cAI *self, int ev);
+	byte(*EventGoTo)(cAI *self, int ev);
+	byte(*EventGetAway)(cAI *self, int ev);
+	byte(*EventChase)(cAI *self, int ev);
+	byte(*EventChaseBack)(cAI *self, int ev);
+	byte(*EventChaseNoAction)(cAI *self, int ev);
+	byte(*EventLostPath)(cAI *self, int ev);
+	void(*Resume)(cAI *self);
+	void(*UpdateThink)(cAI *self);
+	void(*CheckPause)(cAI *self);
+	void(*CheckRepos)(cAI *self);
+	byte(*CanRepos)(cAI *self, int state);
+	void(*Think)(cAI *self);
+	void(*ThinkInRoute)(cAI *self);
+	void(*ThinkGetAway)(cAI *self);
+	void(*ThinkChase)(cAI *self);
+	void(*ThinkChaseBack)(cAI *self);
+	void(*ThinkChaseNoAction)(cAI *self);
+	void(*ThinkLostPath)(cAI *self);
+	void(*ThinkLostPathChase)(cAI *self);
+	void(*ReactLostPath)(cAI *self);
+	void(*ReactLostPathChase)(cAI *self);
+	void(*ReactPatrol)(cAI *self);
+	void(*ReactInRoute)(cAI *self);
+	void(*ThinkGoTo)(cAI *self);
+	void(*ThinkPatrol)(cAI *self);
+	void(*CheckTalk)(cAI *self);
+	byte(*Facing)(cAI *self, cEntity *a, cEntity *b);
 } cAICharVtbl;
 
 /* calls through the slots of cAICharVtbl */
@@ -718,80 +718,80 @@ static inline void AIChar_UpdateThink(void *self) {
 	VT(cAICharVtbl, self)->UpdateThink(self);
 }
 
-/* 0x380 bytes */
+/* bytes */
 struct cAIChar {
 	union {
-		cAIMove base;			/* 0x000 */
+		cAIMove base;
 		const cAICharVtbl *vftable;
 	};
-	cAICharSaved pending;		/* 0x090 state AIC_STATE_NONE for none */
-	cSlotController slotAction;		/* 0x158 0.2 s, the distance check of the action */
-	cSlotController slotPause;		/* 0x168 1 s */
-	cSlotController slotRepos;		/* 0x178 1 s */
-	cSlotController slotLost;		/* 0x188 0.2 s, LOST_PATH looks for the graph */
-	cEntity *ent;			/* 0x198 the character (cWalkCharEntity) */
-	cAICharControl *control;	/* 0x19c the move control (2D or 3D) */
-	int state;			/* 0x1a0 AIC_ */
-	int internState;		/* 0x1a4 AICI_ */
-	int action;			/* 0x1a8 1 while the action button is used on the target */
-	struct cWalkCharControl *ctrl;	/* 0x1ac the control of the character (0x4ec of it) */
-	float actMin;			/* 0x1b0 the action between these distances to the target */
-	float actMax;			/* 0x1b4 */
-	float chaseNear;		/* 0x1b8 */
-	float chaseFar;			/* 0x1bc */
-	byte pauses;			/* 0x1c0 IN_ROUTE and PATROL_ZONE stop now and then */
-	byte back;			/* 0x1c1 */
-	byte pauseCheck;		/* 0x1c2 */
+	cAICharSaved pending;		/* state AIC_STATE_NONE for none */
+	cSlotController slotAction;		/* 0.2 s, the distance check of the action */
+	cSlotController slotPause;		/* 1 s */
+	cSlotController slotRepos;		/* 1 s */
+	cSlotController slotLost;		/* 0.2 s, LOST_PATH looks for the graph */
+	cEntity *ent;			/* the character (cWalkCharEntity) */
+	cAICharControl *control;	/* the move control (2D or 3D) */
+	int state;			/* AIC_ */
+	int internState;		/* AICI_ */
+	int action;			/* 1 while the action button is used on the target */
+	struct cWalkCharControl *ctrl;	/* the control of the character (0x4ec of it) */
+	float actMin;			/* the action between these distances to the target */
+	float actMax;
+	float chaseNear;
+	float chaseFar;
+	byte pauses;			/* IN_ROUTE and PATROL_ZONE stop now and then */
+	byte back;
+	byte pauseCheck;
 	byte pad_1c3;
-	cAICharSaved resume;		/* 0x1c4 kept before a pause or an event */
-	cAICharSaved last;		/* 0x28c the state when the last change began */
-	float actTime;			/* 0x354 the action button held */
-	float standTime;		/* 0x358 the target did not move */
-	byte canTalk;			/* 0x35c */
-	byte talking;			/* 0x35d */
-	byte talkTurn;			/* 0x35e */
+	cAICharSaved resume;		/* kept before a pause or an event */
+	cAICharSaved last;		/* the state when the last change began */
+	float actTime;			/* the action button held */
+	float standTime;		/* the target did not move */
+	byte canTalk;
+	byte talking;
+	byte talkTurn;
 	byte pad_35f;
-	int numTalks;			/* 0x360 */
-	int talkRun;			/* 0x364 the talk actions in a row */
-	int lastTalk;			/* 0x368 0..2, Talk0..Talk2 */
-	float routeTime;		/* 0x36c */
-	byte orient;			/* 0x370 */
+	int numTalks;
+	int talkRun;			/* the talk actions in a row */
+	int lastTalk;			/* 0..2, Talk0..Talk2 */
+	float routeTime;
+	byte orient;
 	byte pad_371[3];
-	vec3_t lostPoint;		/* 0x374 -FLT_MAX for none */
+	vec3_t lostPoint;		/* -FLT_MAX for none */
 };
 
 /* the three parameter blocks of SAI.EnableAIVehicle, named by the CHECKs of cAIVehicle_CheckParams1..3 */
 typedef struct cAIVehicleParams1 {
-	float damageGetAway;		/* 0x00 FACTOR_DAMAGE_GET_AWAY 0..1 */
-	float damageItemLife;		/* 0x04 FACTOR_DAMAGE_ITEM_LIFE 0..1 */
-	float itemAmmo;			/* 0x08 FACTOR_ITEM_AMMO 0..1 */
-	int boostGetAway;		/* 0x0c CONTROL_BOOST_GET_AWAY 0..1 */
-	int boostItemLife;		/* 0x10 CONTROL_BOOST_ITEM_LIFE 0..1 */
-	int boostItemAmmo;		/* 0x14 CONTROL_BOOST_ITEM_AMMO 0..1 */
-	int hookRace;			/* 0x18 CONTROL_HOOK_RACE */
-	int hookMap;			/* 0x1c FACTOR_HOOK_MAP 0..10 */
-	int strafeEvasion;		/* 0x20 CONTROL_STRAFE_EVASION 0..1 */
-	int percHook;			/* 0x24 USE_PERC_HOOK 0..100 */
-	int percHookGetAway;		/* 0x28 USE_PERC_HOOK_GET_AWAY 0..100 */
+	float damageGetAway;		/* FACTOR_DAMAGE_GET_AWAY 0..1 */
+	float damageItemLife;		/* FACTOR_DAMAGE_ITEM_LIFE 0..1 */
+	float itemAmmo;			/* FACTOR_ITEM_AMMO 0..1 */
+	int boostGetAway;		/* CONTROL_BOOST_GET_AWAY 0..1 */
+	int boostItemLife;		/* CONTROL_BOOST_ITEM_LIFE 0..1 */
+	int boostItemAmmo;		/* CONTROL_BOOST_ITEM_AMMO 0..1 */
+	int hookRace;			/* CONTROL_HOOK_RACE */
+	int hookMap;			/* FACTOR_HOOK_MAP 0..10 */
+	int strafeEvasion;		/* CONTROL_STRAFE_EVASION 0..1 */
+	int percHook;			/* USE_PERC_HOOK 0..100 */
+	int percHookGetAway;		/* USE_PERC_HOOK_GET_AWAY 0..100 */
 } cAIVehicleParams1;
 
 typedef struct cAIVehicleParams2 {
-	int stupidPathfinding;		/* 0x00 STUPID_PATHFINDING, must be 0 */
-	int strafe;			/* 0x04 CONTROL_STRAFE, must be 2 */
-	int brake;			/* 0x08 CONTROL_BRAKE 0..1 */
-	int maxTimeStrafe;		/* 0x0c MAX_TIME_STRAFE 0..10 */
-	float maxVelStrafe;		/* 0x10 MAX_VEL_STRAFE 0..1 */
-	int aim;			/* 0x14 CONTROL_AIM 1..10 */
+	int stupidPathfinding;		/* STUPID_PATHFINDING, must be 0 */
+	int strafe;			/* CONTROL_STRAFE, must be 2 */
+	int brake;			/* CONTROL_BRAKE 0..1 */
+	int maxTimeStrafe;		/* MAX_TIME_STRAFE 0..10 */
+	float maxVelStrafe;		/* MAX_VEL_STRAFE 0..1 */
+	int aim;			/* CONTROL_AIM 1..10 */
 } cAIVehicleParams2;
 
 typedef struct cAIVehicleParams3 {
-	int cadence;			/* 0x00 CADENCE_SHOOT 0..100 */
-	int cadenceCM;			/* 0x04 CADENCE_SHOOT_CM 0..7 */
-	float angAttack;		/* 0x08 ANG_ATTACK 0..pi */
-	float counterattack;		/* 0x0c COUNTERATTACK 0..1 */
-	int percCloud;			/* 0x10 USE_PERC_CLOUD 0..100 */
-	int percSonic;			/* 0x14 USE_PERC_SONIC 0..100 */
-	int percElectro;		/* 0x18 USE_PERC_ELECTRO 0..100 */
+	int cadence;			/* CADENCE_SHOOT 0..100 */
+	int cadenceCM;			/* CADENCE_SHOOT_CM 0..7 */
+	float angAttack;		/* ANG_ATTACK 0..pi */
+	float counterattack;		/* COUNTERATTACK 0..1 */
+	int percCloud;			/* USE_PERC_CLOUD 0..100 */
+	int percSonic;			/* USE_PERC_SONIC 0..100 */
+	int percElectro;		/* USE_PERC_ELECTRO 0..100 */
 } cAIVehicleParams3;
 
 extern cGVar GVar_IsMapOutDoor;
@@ -864,68 +864,68 @@ void cAIEntityGroup_ResetChange(cAIEntityGroup *self);
 void cAIEntityGroup_AllowChange(cAIEntityGroup *self);
 void cAIEntityGroup_Update(cAIEntityGroup *self, float dt);
 
-/* the director and the master (0x384 bytes) */
+/* the director and the master */
 typedef struct cAIBank {
-	cAIChar base;			/* 0x000 */
-	int money;			/* 0x380 the money of the character at the demand of the attack (state 2) */
+	cAIChar base;
+	int money;			/* the money of the character at the demand of the attack (state 2) */
 } cAIBank;
 typedef cAIBank cAIBankDirector;
 typedef cAIBank cAIBankMaster;
 
-/* the classes that add no members (0x380 bytes) */
+/* the classes that add no members */
 typedef cAIChar cAIDesktop;
 typedef cAIChar cAIHuman;
 typedef cAIChar cAIMayor;
 typedef cAIChar cAIPolice;
 typedef cAIChar cAISentinel;
 
-/* the bishop (0x398 bytes) */
+/* the bishop */
 typedef struct cAIBishop {
-	cAIChar base;			/* 0x000 */
-	int targetLife;			/* 0x380 the life of the target at the last check */
-	byte blocked;			/* 0x384 the way to the target is not free */
+	cAIChar base;
+	int targetLife;			/* the life of the target at the last check */
+	byte blocked;			/* the way to the target is not free */
 	byte pad_385[3];
-	int shootFactor;		/* 0x388 ShootBishopAI: one shot in so many */
-	float shootAng;			/* 0x38c OffsetAngShootBishopAI */
-	float shootTime;		/* 0x390 TimeShootBishopAI */
-	float shootDist;		/* 0x394 DistMaxShootBishopAI */
+	int shootFactor;		/* ShootBishopAI: one shot in so many */
+	float shootAng;			/* OffsetAngShootBishopAI */
+	float shootTime;		/* TimeShootBishopAI */
+	float shootDist;		/* DistMaxShootBishopAI */
 } cAIBishop;
 
-/* the gear (0x390 bytes): the shot of the bishop without the time of the button */
+/* the gear: the shot of the bishop without the time of the button */
 typedef struct cAIGear {
-	cAIChar base;			/* 0x000 */
-	int targetLife;			/* 0x380 */
-	byte blocked;			/* 0x384 */
+	cAIChar base;
+	int targetLife;
+	byte blocked;
 	byte pad_385[3];
-	int shootFactor;		/* 0x388 ShootGearAI */
-	float shootAng;			/* 0x38c OffsetAngShootGearAI */
+	int shootFactor;		/* ShootGearAI */
+	float shootAng;			/* OffsetAngShootGearAI */
 } cAIGear;
 
-/* the messenger (0x390 bytes) */
+/* the messenger */
 typedef struct cAIMessenger {
-	cAIChar base;			/* 0x000 */
-	int shootFactor;		/* 0x380 ShootMessengerAI */
-	float shootAng;			/* 0x384 OffsetAngShootMessengerAI */
-	float shootTime;		/* 0x388 TimeShootMessengerAI */
-	float shootDist;		/* 0x38c DistMaxShootMessengerAI */
+	cAIChar base;
+	int shootFactor;		/* ShootMessengerAI */
+	float shootAng;			/* OffsetAngShootMessengerAI */
+	float shootTime;		/* TimeShootMessengerAI */
+	float shootDist;		/* DistMaxShootMessengerAI */
 } cAIMessenger;
 
-/* the nurse (0x384 bytes) */
+/* the nurse */
 typedef struct cAINurse {
-	cAIChar base;			/* 0x000 */
-	byte fresh;			/* 0x380 set by the start of state 2: the action within actMax at once */
+	cAIChar base;
+	byte fresh;			/* set by the start of state 2: the action within actMax at once */
 	byte pad_381[3];
 } cAINurse;
 
-/* vf66 of the director and the master: the attack when the character got money or the control is idle */
+/* of the director and the master: the attack when the character got money or the control is idle */
 void cAIBank_CheckAttack(cAI *elem);
-/* vf27 and vf50 of both: the state from outside and from inside (ATTACK, 2, becomes 7 with the money noted) */
+/* and of both: the state from outside and from inside (ATTACK, 2, becomes 7 with the money noted) */
 byte cAIBank_SetState(cAI *elem, int state, ...);
 byte cAIBank_SetStateIntern(cAI *elem, int state, ...);
-/* the way to the target was not free (vf89 of the move control asks it) */
+/* the way to the target was not free (of the move control asks it) */
 byte cAIGear_IsBlocked(cAIGear *self);
 
-/* cAIChar_dtor, cAIChar_SetDists (vf56) and cAIChar_ChangeState (vf26): aichar.h; the move controls:
+/* cAIChar_dtor, cAIChar_SetDists and cAIChar_ChangeState: aichar.h; the move controls
  * aicharcontrol.h */
 
 extern cGVar GVar_BankMasterVacumDist;

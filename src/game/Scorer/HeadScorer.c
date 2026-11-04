@@ -118,7 +118,7 @@ static void cHeadScorer_Draw(cScorerItem *base, int player) {
 	Eng_ResetViewRect();
 }
 
-/* vf05: the model of that name of the scorer of the item, its animation set again; 1 if found */
+/* the model of that name of the scorer of the item, its animation set again; 1 if found */
 static byte cHeadScorer_SetModel(cScorerItem *base, const char *name) {
 	cHeadScorer *self = (cHeadScorer *)base;
 	cScorerModel *m = cScorer_FindModel(Scorer_Get(self->base.player), name);
@@ -136,7 +136,7 @@ static byte cHeadScorer_SetModel(cScorerItem *base, const char *name) {
 	return self->model != NULL;
 }
 
-/* vf04: the animation (an index of the model's list) from its start, looped */
+/* the animation (an index of the model's list) from its start, looped */
 static void cHeadScorer_SetAnim(cScorerItem *base, int anim) {
 	cHeadScorer *self = (cHeadScorer *)base;
 	cScorerModel *m = self->model;

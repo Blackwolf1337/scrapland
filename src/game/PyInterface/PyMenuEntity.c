@@ -1,5 +1,5 @@
 /*
- * The Python type cPyMenuEntity (type object rva 0x428f78): a handle of a scorer item (HUD and menu element) by
+ * The Python type cPyMenuEntity (type object): a handle of a scorer item (HUD and menu element) by
  * player and name. The item is looked up again on every access. Its attributes are the variables of the item
  * (cScorerItem Var: 1 string, 2 double, 3 int); the type has no methods. The original source file is not known.
  */

@@ -80,7 +80,7 @@ static cGVar GVar_BankMasterBatonPosY;
 static cGVar GVar_BankMasterBatonPosX;
 
 /* the trail array members: CGameTrail by new[] style construction (rva) */
-/* CGameModel as array member: its default constructor (CGameModel_ctor with NULL, rva 0x105e60) and CGameModel_Reset */
+/* CGameModel as array member: its default constructor (CGameModel_ctor with NULL) and CGameModel_Reset */
 
 /* rand() & 0x7fff as 0..1 (double) */
 static inline double FXA_Rnd(void) {
@@ -551,7 +551,7 @@ static void cObjElementFXSebastianFlash_dtor(void *self) {
 	FXA_DtorTrails(self, VT_FXSEBASTIANFLASH, &((cObjElementFXSebastianFlash *)self)->particles, ((cObjElementFXSebastianFlash *)self)->trails, FXSEBASTIAN_TRAILS);
 }
 
-/* ---- deleting destructors (vf00) ---- */
+/* ---- the Free functions ---- */
 
 static void cObjElementFXBankMasterAttack_Free(cObjElementFX *base) {
 	void *self = (void *)base;
@@ -667,7 +667,7 @@ static void cObjElementFXSebastianFlash_Free(cObjElementFX *base) {
 	operator_delete(self);
 }
 
-/* ---- Alive (vf02) ---- */
+/* ---- Alive ---- */
 
 /* BankMasterAttack and BertoAttack: the same start (vtable, entity, particles) */
 static byte FXCharActions_AliveAction(cObjElementFX *base, cDebris *d, cDebrisSys *sys) {
@@ -696,7 +696,7 @@ static void FXA_EffectOff(CGameModel *m) {
 	CGameModel_SetEffectParam(m, 0, 0);
 }
 
-/* Alive (vf02); the 18 byte ones of the other classes are FXMisc_Alive */
+/* Alive; the 18 byte ones of the other classes are FXMisc_Alive */
 static byte cObjElementFXFunctionarySpecialAction_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys) {
 	cObjElementFXFunctionarySpecialAction *self = (cObjElementFXFunctionarySpecialAction *)base;
 	CGameModel *m;
@@ -735,9 +735,9 @@ static byte cObjElementFXPoliceGearConversion_Alive(cObjElementFX *base, cDebris
 	return 0;
 }
 
-/* ---- Attach (vf03) ---- */
+/* ---- Attach ---- */
 
-/* Attach (vf03) */
+/* Attach */
 static void cObjElementFXBankMasterAttack_Attach(cObjElementFX *base, cDebris *d) {
 	cObjElementFXBankMasterAttack *self = (cObjElementFXBankMasterAttack *)base;
 	FXA_AttachDummy01(&self->particles, d);
@@ -998,9 +998,9 @@ static void cObjElementFXSebastianFlash_Attach(cObjElementFX *base, cDebris *d) 
 	CHECK(self->particles.ParticleSystem);
 }
 
-/* ---- Reset (vf04) ---- */
+/* ---- Reset ---- */
 
-/* Reset (vf04) */
+/* Reset */
 static void cObjElementFXBankMasterAttack_Reset(cObjElementFX *base, cDebris *arg) {
 	cObjElementFXBankMasterAttack *self = (cObjElementFXBankMasterAttack *)base;
 	(void)arg;
@@ -1154,7 +1154,7 @@ static void cObjElementFXPoliceGearConversion_Reset(cObjElementFX *base, cDebris
 	self->time = 0.0f;
 	self->lastTime = 0.0f;
 	self->t2 = 0.0f;
-	/* the 45 piece flags, 0x96c..0x998 (the last 0x2d bytes, the movups of the original) */
+	/* the 45 piece flags, 0x96c..0x998 (the last the movups of the original) */
 	for (int i = 0; i < FXGEAR_ARMORS; i++) {
 		for (int k = 0; k < FXGEAR_PIECES; k++) {
 			self->pieceOff[i][k] = 0;
@@ -1188,9 +1188,9 @@ static void cObjElementFXSebastianFlash_Reset(cObjElementFX *base, cDebris *arg)
 
 /* the effects that start with the vtable, their entity and a target entity (BankerSteal, PoliceSteal, ...) */
 typedef struct FXElemTarget {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x04 */
-	cEntity *target;		/* 0x08 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	cEntity *target;
 } FXElemTarget;
 
 void FXCharActions_SetEntity8(void *self, cEntity *e) {
@@ -1724,7 +1724,7 @@ static void GM_FadeSparks(cObjElementFXGearMissile *self, cDebris *debris, float
 	CGameParticles_SetSparksOn(p, 0);
 }
 
-/* vf01: the bolts, the tail, the glows, puffs and sparks of the ball and its fade at the end of the debris */
+/* the bolts, the tail, the glows, puffs and sparks of the ball and its fade at the end of the debris */
 static void cObjElementFXGearMissile_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	cObjElementFXGearMissile *self = (cObjElementFXGearMissile *)base;
 	CGameModel *model = Debris_Model(debris);
@@ -1908,7 +1908,7 @@ void cObjElementFXDTritusAttack_Start(cObjElementFXDTritusAttack *self, cEntity 
 	}
 }
 
-/* the vertices of the Functionary model the special action starts from, found once (rva 0x466fc0..) */
+/* the vertices of the Functionary model the special action starts from, found once (..) */
 static byte g_FXFunctionaryInit;
 static int g_FXFunctionaryVertex[14];
 static uint32_t g_FXFunctionaryColor[14];
@@ -2766,7 +2766,7 @@ void cObjElementFXPoliceGearConversion_Start(cObjElementFXPoliceGearConversion *
 	} while (6.28318548f > a);
 }
 
-/* ---- Update (vf01) ---- */
+/* ---- Update ---- */
 
 static inline float FXA_Delta(void) {
 	return cTimer_GetDelta(&g_pWorld->timer);

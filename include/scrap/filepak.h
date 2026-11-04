@@ -22,35 +22,35 @@
 /* a pack on disk; curPos follows the FILE position so reads need no seek */
 typedef struct cFile2 {
 	cFile file;
-	int curPos;			/* 0x10 */
+	int curPos;
 } cFile2;
 
 typedef struct cFilePack {
 	cFile file;			/* used directly for a file on disk */
-	int start;			/* 0x10 offset in the pack, 0: a file on disk */
-	int size;			/* 0x14 */
-	int pack;			/* 0x18 index in g_PackFiles, -1 */
+	int start;			/* offset in the pack, 0: a file on disk */
+	int size;
+	int pack;			/* index in g_PackFiles, -1 */
 } cFilePack;
 
 /* a value of the index */
 typedef struct cPackLocation {
-	int offset;			/* 0x0 */
-	int size;			/* 0x4 */
-	byte pack;			/* 0x8 */
+	int offset;
+	int size;
+	byte pack;
 	byte pad_9[3];
 } cPackLocation;
 
 /* Global/HashTable.h with a cString key, items from the "HashItem" pool; two instances in this file */
 typedef struct cPackIndexItem {
-	cPackLocation value;		/* 0x00 */
-	char *key;			/* 0x0c cString */
-	struct cPackIndexItem *next;	/* 0x10 */
+	cPackLocation value;
+	char *key;			/* cString */
+	struct cPackIndexItem *next;
 } cPackIndexItem;
 
 typedef struct cNameItem {
-	intptr_t value;			/* 0x0 a number, the bits of a float or a pointer */
-	char *key;			/* 0x4 cString */
-	struct cNameItem *next;		/* 0x8 */
+	intptr_t value;			/* a number, the bits of a float or a pointer */
+	char *key;			/* cString */
+	struct cNameItem *next;
 } cNameItem;
 
 /* the cNameItem instance of HashTable.h (FilePak.c, also the assigned zones of Logic/Domination.c) */
@@ -63,21 +63,21 @@ void NameTable_Clear(HashTable *self);
 
 /* an entry of the build list: name, then offset and size in the new pack */
 typedef struct cPackEntry {
-	char name[0x104];		/* 0x000 */
-	int offset;			/* 0x104 */
-	int size;			/* 0x108 */
+	char name[0x104];
+	int offset;
+	int size;
 } cPackEntry;
 
 typedef struct cPackEntryNode {
-	struct cPackEntryNode *next;	/* 0x0 */
-	struct cPackEntryNode *prev;	/* 0x4 */
-	cPackEntry e;			/* 0x8 */
+	struct cPackEntryNode *next;
+	struct cPackEntryNode *prev;
+	cPackEntry e;
 } cPackEntryNode;
 
 typedef struct cStringNode {
-	struct cStringNode *next;	/* 0x0 */
-	struct cStringNode *prev;	/* 0x4 */
-	char *str;			/* 0x8 cString */
+	struct cStringNode *next;
+	struct cStringNode *prev;
+	char *str;			/* cString */
 } cStringNode;
 
 typedef DLIST(cPackEntryNode) cPackEntryList;

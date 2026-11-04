@@ -1218,7 +1218,7 @@ static int SegmentPlane_Hit(vec3_t *out, const vec3_t *a, const vec3_t *b, const
 	return 1;
 }
 
-#define AIV_TRACK_DIR_MIN 0.1f		/* rva 0x3aab08, compared as double */
+#define AIV_TRACK_DIR_MIN 0.1f		/* compared as double */
 #define AIV_TRACK_RAY 600000.0f
 
 /* a component near 0 for the track directions (fabs as double against 0.1) */

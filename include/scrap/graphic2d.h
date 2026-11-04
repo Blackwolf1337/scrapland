@@ -26,30 +26,30 @@ enum {
 };
 
 typedef struct CGraphic2D {
-	float x, y;			/* 0x00 */
-	float alignX, alignY;		/* 0x08 the part of the size left of and above the position */
-	float scale[2];		/* 0x10 1 */
-	float scale2[2];		/* 0x18 1, multiplied with scale */
-	byte screen;			/* 0x20 GRAPHIC2D_SCREEN */
-	byte screenSize;		/* 0x21 GRAPHIC2D_SCREEN_SIZE */
-	byte centered;			/* 0x22 aligned at the middle */
-	byte noTexture;		/* 0x23 the size is 1x1 instead of the size of the texture */
-	byte own;			/* 0x24 GRAPHIC2D_OWN */
-	byte rot;			/* 0x25 0..3 the corners of the texture turned, odd ones swap width and height */
+	float x, y;
+	float alignX, alignY;		/* the part of the size left of and above the position */
+	float scale[2];		/* 1 */
+	float scale2[2];		/* 1, multiplied with scale */
+	byte screen;			/* GRAPHIC2D_SCREEN */
+	byte screenSize;		/* GRAPHIC2D_SCREEN_SIZE */
+	byte centered;			/* aligned at the middle */
+	byte noTexture;		/* the size is 1x1 instead of the size of the texture */
+	byte own;			/* GRAPHIC2D_OWN */
+	byte rot;			/* 0..3 the corners of the texture turned, odd ones swap width and height */
 	byte pad_26[2];
-	float u0, v0, u1, v1;		/* 0x28 the part of the texture */
-	uint32_t color;			/* 0x38 0xffffff */
-	CMaterial *Mat;			/* 0x3c */
-	CAnimMat *AnimMat;		/* 0x40 the own copy of the animation of the map */
+	float u0, v0, u1, v1;		/* the part of the texture */
+	uint32_t color;			/* 0xffffff */
+	CMaterial *Mat;
+	CAnimMat *AnimMat;		/* the own copy of the animation of the map */
 } CGraphic2D;
 
 /* a pretransformed vertex (D3DFVF_XYZRHW | DIFFUSE | SPECULAR | TEX1) */
 #define D3DFVF_2D 0x1c4
 typedef struct Vert2D {
-	float x, y, z, rhw;		/* 0x00 */
-	uint32_t color;			/* 0x10 */
-	uint32_t specular;		/* 0x14 */
-	float u, v;			/* 0x18 */
+	float x, y, z, rhw;
+	uint32_t color;
+	uint32_t specular;
+	float u, v;
 } Vert2D;
 
 CGraphic2D *CGraphic2D_ctorTex(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags);

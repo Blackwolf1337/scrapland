@@ -1,6 +1,6 @@
 /*
  * The decomposition of an affine matrix into translation, rotation, scale with the axes of the scale and the sign of
- * the determinant, original source Engine/descomp_afin.cpp (rva 0x2d6010..0x2da770, include/scrap/readm3d.h). The
+ * the determinant, original source Engine/descomp_afin.cpp (include/scrap/readm3d.h). The
  * decomposition is Ken Shoemake's decomp.c of Graphics Gems IV ("Polar Matrix Decomposition"), compiled with its
  * mix of float and double (fabs, sqrt and the 0.5 and 2.0 constants are double), in its order of operations. Its
  * matrices are 4x4 arrays for column vectors: a matrix of the engine (row vectors) goes in transposed.
@@ -86,7 +86,7 @@ static hQuat_t Qt_Scale(hQuat_t q, float w) {
 	return r;
 }
 
-/* rva 0x2d60a0: the unit quaternion of a rotation matrix */
+/* the unit quaternion of a rotation matrix */
 static hQuat_t Qt_FromMatrix(HMatrix mat) {
 	hQuat_t qu;
 	double tr, s;
@@ -154,7 +154,7 @@ static float Norm_One(HMatrix m) {
 	return Mat_Norm(m, 1);
 }
 
-/* rva 0x2d7c60: the column of the largest absolute entry, -1 for the zero matrix */
+/* the column of the largest absolute entry, -1 for the zero matrix */
 static int Find_MaxCol(HMatrix m) {
 	float max = 0.0;
 	int col = -1;
@@ -205,7 +205,7 @@ static void Reflect_Rows(HMatrix m, const float *u) {
 	}
 }
 
-/* rva 0x2d6dc0: the orthogonal factor q of a matrix of rank 1 or 0 */
+/* the orthogonal factor q of a matrix of rank 1 or 0 */
 static void Do_Rank1(HMatrix m, HMatrix q) {
 	float v1[3], v2[3], s;
 	int col;
@@ -233,7 +233,7 @@ static void Do_Rank1(HMatrix m, HMatrix q) {
 	Reflect_Rows(q, v2);
 }
 
-/* rva 0x2d74c0: the orthogonal factor q of a matrix of rank 2 or less, from its adjoint transpose */
+/* the orthogonal factor q of a matrix of rank 2 or less, from its adjoint transpose */
 static void Do_Rank2(HMatrix m, HMatrix madjt, HMatrix q) {
 	float v1[3], v2[3];
 	float w, x, y, z, c, s, d;
@@ -279,7 +279,7 @@ static void Do_Rank2(HMatrix m, HMatrix madjt, HMatrix q) {
 	Reflect_Rows(q, v2);
 }
 
-/* rva 0x2d8910: m = q s, q orthogonal, s symmetric positive semi-definite; the determinant of m */
+/* m = q s, q orthogonal, s symmetric positive semi-definite; the determinant of m */
 static float Polar_Decomp(HMatrix m, HMatrix q, HMatrix s) {
 	HMatrix mk, madjtk, ek;
 	float det, m_one, m_inf, madjt_one, madjt_inf, e_one, gamma, g1, g2;
@@ -334,7 +334,7 @@ static float Polar_Decomp(HMatrix m, HMatrix q, HMatrix s) {
 	return det;
 }
 
-/* rva 0x2da2f0: the eigenvalues of the symmetric s (Jacobi), u the eigenvectors in its columns */
+/* the eigenvalues of the symmetric s (Jacobi), u the eigenvectors in its columns */
 static hQuat_t Spect_Decomp(HMatrix s, HMatrix u) {
 	static const char nxt[] = { Y, Z, X };
 	hQuat_t kv;
@@ -416,7 +416,7 @@ static hQuat_t Spect_Decomp(HMatrix s, HMatrix u) {
 		a[0] = a[3]; \
 	}
 
-/* rva 0x2d9780: the rotation p with q p closest to the identity that keeps k a scale, k permuted to match */
+/* the rotation p with q p closest to the identity that keeps k a scale, k permuted to match */
 static hQuat_t Snuggle(hQuat_t q, hQuat_t *k) {
 	hQuat_t p;
 	float ka[4];
@@ -433,7 +433,7 @@ static hQuat_t Snuggle(hQuat_t q, hQuat_t *k) {
 		turn = X;
 	}
 	if (turn >= 0) {
-		/* rva 0x432adc.. */
+		/* .. */
 		static const hQuat_t qxtoz = { 0, SQRTHALF, 0, SQRTHALF };
 		static const hQuat_t qytoz = { SQRTHALF, 0, 0, SQRTHALF };
 		static const hQuat_t qppmm = { 0.5, 0.5, -0.5, -0.5 };
@@ -561,7 +561,7 @@ static hQuat_t Snuggle(hQuat_t q, hQuat_t *k) {
 	return p;
 }
 
-/* rva 0x2d69a0: a = t f r u k u^-1 with the rotation r of q */
+/* a = t f r u k u^-1 with the rotation r of q */
 static void Decomp_Affine(HMatrix a, affineParts_t *parts) {
 	HMatrix q, s, u;
 	hQuat_t p;
@@ -586,7 +586,7 @@ static void Decomp_Affine(HMatrix a, affineParts_t *parts) {
 	parts->u = Qt_Mul(parts->u, p);
 }
 
-/* rva 0x2d6c50: the transform of an engine matrix; the rotations conjugated (the engine's quaternion convention) */
+/* the transform of an engine matrix; the rotations conjugated (the engine's quaternion convention) */
 void Matrix_ToTransform(const matrix_t *m, m3dTransform_t *out) {
 	HMatrix a;
 	affineParts_t parts;
@@ -628,7 +628,7 @@ static void M3DTransform_Scale(const m3dTransform_t *self, matrix_t *mu, matrix_
 	mf->m[10] = self->sign;
 }
 
-/* rva 0x2d65d0: the matrix of a transform without its rotation and translation (the frames of an animation) */
+/* the matrix of a transform without its rotation and translation (the frames of an animation) */
 matrix_t *M3DTransform_ToMatrixAnim(m3dTransform_t *self, matrix_t *out) {
 	matrix_t mu, mui, ms, mf, t, a, b;
 
@@ -639,7 +639,7 @@ matrix_t *M3DTransform_ToMatrixAnim(m3dTransform_t *self, matrix_t *out) {
 	return out;
 }
 
-/* rva 0x2d6750: the whole matrix of a transform (the pivots of the meshes) */
+/* the whole matrix of a transform (the pivots of the meshes) */
 void M3DTransform_ToMatrix(m3dTransform_t *self, matrix_t *out) {
 	matrix_t mu, mui, ms, mf, mq, mt, t, a, b;
 

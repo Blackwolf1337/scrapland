@@ -13,16 +13,16 @@
 #include "scrap/fonts.h"
 
 typedef struct CFont {
-	float x, y;			/* 0x00 the cursor, the end of the last text */
-	float incx;			/* 0x08 the advance of a monospaced font */
-	int unused_0c;			/* 0x0c */
-	uint32_t align;			/* 0x10 FNT_ALIGN_* with CFONT_ALIGN */
-	uint32_t color;			/* 0x14 with CFONT_COLOR, else white */
-	float f18, f1c;			/* 0x18 1 */
-	uint32_t effects;		/* 0x20 with CFONT_EFFECTS: FNT_WAVE, CFONT_SHADOW, FNT_OUTLINE */
-	float wave;			/* 0x24 1 */
-	float shadow[2];		/* 0x28 1, the offset of the shadow */
-	CFont3 *Font;			/* 0x30 */
+	float x, y;			/* the cursor, the end of the last text */
+	float incx;			/* the advance of a monospaced font */
+	int unused_0c;
+	uint32_t align;			/* FNT_ALIGN_* with CFONT_ALIGN */
+	uint32_t color;			/* with CFONT_COLOR, else white */
+	float f18, f1c;			/* 1 */
+	uint32_t effects;		/* with CFONT_EFFECTS: FNT_WAVE, CFONT_SHADOW, FNT_OUTLINE */
+	float wave;			/* 1 */
+	float shadow[2];		/* 1, the offset of the shadow */
+	CFont3 *Font;
 } CFont;
 
 /* the flags of CFont_PrintfV */

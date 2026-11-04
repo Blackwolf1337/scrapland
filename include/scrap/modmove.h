@@ -18,32 +18,32 @@
 #define OBJMOVE_SMOOTH 3		/* f * f * (3 - 2 f) */
 
 typedef struct cObjMove {
-	vec3_t startPos;		/* 0x00 where the move began */
-	vec3_t startAng;		/* 0x0c */
-	vec3_t lastPos;			/* 0x18 of the last tick, the velocity from it */
-	vec3_t lastAng;			/* 0x24 */
-	float time;			/* 0x30 -1 before the first tick of a move */
-	float moveTime;			/* 0x34 "MoveTime" */
-	byte active;			/* 0x38 */
+	vec3_t startPos;		/* where the move began */
+	vec3_t startAng;
+	vec3_t lastPos;			/* of the last tick, the velocity from it */
+	vec3_t lastAng;
+	float time;			/* -1 before the first tick of a move */
+	float moveTime;			/* "MoveTime" */
+	byte active;
 	byte pad_39[3];
-	vec3_t movePos;			/* 0x3c "MovePos" */
-	vec3_t moveAng;			/* 0x48 "MoveAng", radians */
-	cPy_Function onEnd;		/* 0x54 "OnEndMove" (entity) */
-	int fade;			/* 0x68 "MoveFade", OBJMOVE_; back to 0 at the end */
-	byte viewAng;			/* 0x6c "MoveViewAng" */
+	vec3_t movePos;			/* "MovePos" */
+	vec3_t moveAng;			/* "MoveAng", radians */
+	cPy_Function onEnd;		/* "OnEndMove" (entity) */
+	int fade;			/* "MoveFade", OBJMOVE_; back to 0 at the end */
+	byte viewAng;			/* "MoveViewAng" */
 	byte pad_6d[3];
 } cObjMove;
 
 typedef struct cModMove {
-	cEntity *parent;		/* 0x00 the object */
-	Nto1Node head;			/* 0x04 the links of the others to this object, target the object */
-	Nto1Node link;			/* 0x14 in the head of the object linked to, data the object */
-	int nodeIndex;			/* 0x24 the node of the model linked to, -1 */
-	vec3_t offPos;			/* 0x28 "OffModPos" */
-	float offMul;			/* 0x34 "OffMul": 0 own position .. 1 the node */
-	float deltaOffMul;		/* 0x38 "DeltaOffMul" per second */
-	byte useLinkAng;		/* 0x3c "UseLinkAng" */
-	byte offPosAsPos;		/* 0x3d "OffModPosAsPos": the model at offPos */
+	cEntity *parent;		/* the object */
+	Nto1Node head;			/* the links of the others to this object, target the object */
+	Nto1Node link;			/* in the head of the object linked to, data the object */
+	int nodeIndex;			/* the node of the model linked to, -1 */
+	vec3_t offPos;			/* "OffModPos" */
+	float offMul;			/* "OffMul": 0 own position .. 1 the node */
+	float deltaOffMul;		/* "DeltaOffMul" per second */
+	byte useLinkAng;		/* "UseLinkAng" */
+	byte offPosAsPos;		/* "OffModPosAsPos": the model at offPos */
 	byte pad_3e[2];
 } cModMove;
 

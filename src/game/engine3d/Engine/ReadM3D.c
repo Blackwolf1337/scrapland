@@ -1697,11 +1697,11 @@ static void Scene_PhysiqueSkin(CScene *scn) {
 
 /* a node and its parent of the reordering */
 typedef struct M3DNodeParent {
-	CNode3D *node;			/* 0x0 */
-	CNode3D *parent;			/* 0x4 */
+	CNode3D *node;
+	CNode3D *parent;
 } M3DNodeParent;
 
-/* table.h at rva 0x2bc1b0 */
+/* table.h */
 static M3DNodeParent *M3DNodeParent_Get(CTable *t, uint32_t i) {
 	return Table_GetN(t, i, sizeof(M3DNodeParent));
 }

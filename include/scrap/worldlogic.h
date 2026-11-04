@@ -26,8 +26,8 @@ typedef struct cMessengers cMessengers;
 
 /* an item description for the item list (Scrap.AddItem): a string object and a value */
 typedef struct cItemDesc {
-	char *name;			/* 0x0 string object (cString_ctor/dtor, cString_Set) */
-	int value;			/* 0x4 */
+	char *name;			/* string object (cString_ctor/dtor, cString_Set) */
+	int value;
 } cItemDesc;
 
 /* the item list of the world (InfItem.cpp, g_pWorld->logic.items) */
@@ -42,122 +42,122 @@ typedef struct cCTFFriends {
 
 /* DeathMatch.cpp */
 typedef struct cDeathMatch {
-	float timer;			/* 0x0 */
-	cEntityListData *list;		/* 0x4 "DeathMatch" */
+	float timer;
+	cEntityListData *list;		/* "DeathMatch" */
 } cDeathMatch;
 
-/* Domination.cpp, 0x10 bytes */
+/* Domination.cpp */
 struct cDominationLogic {
-	const cDominationLogicVtbl *vftable;	/* 0x00 */
-	HashTable assigned;		/* 0x04 of cNameItem: the zone (value) of a ship (name) */
+	const cDominationLogicVtbl *vftable;
+	HashTable assigned;		/* of cNameItem: the zone (value) of a ship (name) */
 };
 
-/* DominationEnemies.cpp, 0x14 bytes */
+/* DominationEnemies.cpp */
 typedef struct cDominationEnemiesLogic {
-	cDominationLogic base;		/* 0x00 */
-	cDominationSide *side;		/* 0x10 */
+	cDominationLogic base;
+	cDominationSide *side;
 } cDominationEnemiesLogic;
 
-/* DominationFriends.cpp, 0x14 bytes */
+/* DominationFriends.cpp */
 typedef struct cDominationFriendsLogic {
-	cDominationLogic base;		/* 0x00 */
-	cDominationFriendsSide *side;	/* 0x10 */
+	cDominationLogic base;
+	cDominationFriendsSide *side;
 } cDominationFriendsLogic;
 
 /* Enemies.cpp: g_pWorld->logic.enemies, the ships of the list "Enemies" attack the player */
 typedef struct cEnemies {
-	cEntity *usr;			/* 0x0 the car of the player they went for */
-	byte ignoreFriends;		/* 0x4 "IgnoreFriends" of the logic of a ship */
-	byte attacking;			/* 0x5 since the player had a car */
-	byte relax;			/* 0x6 1 */
+	cEntity *usr;			/* the car of the player they went for */
+	byte ignoreFriends;		/* "IgnoreFriends" of the logic of a ship */
+	byte attacking;			/* since the player had a car */
+	byte relax;			/* 1 */
 	byte pad_7;
-	float timer;			/* 0x8 Think every 0.5 s */
-	cEntityListData *list;		/* 0xc "Enemies" */
+	float timer;			/* Think every 0.5 s */
+	cEntityListData *list;		/* "Enemies" */
 } cEnemies;
 
 /* ExtPolice.cpp: g_pWorld->logic.extPolice, the police cars of the outdoor maps ("OutCop") */
 typedef struct cExtPolice {
-	float retarget;			/* 0x00 5 s: while the alarm stays on, the cars go for the player again */
-	byte alarm;			/* 0x04 the alarm at the last think */
+	float retarget;			/* 5 s: while the alarm stays on, the cars go for the player again */
+	byte alarm;			/* the alarm at the last think */
 	byte pad_5[3];
-	cEntity *usr;			/* 0x08 the player at the last think */
-	float timer;			/* 0x0c Think every 0.5 s */
-	int raised;			/* 0x10 1 when the last think set the alarm, else -1 */
-	cEntityListData *list;		/* 0x14 "OutCop" */
+	cEntity *usr;			/* the player at the last think */
+	float timer;			/* Think every 0.5 s */
+	int raised;			/* 1 when the last think set the alarm, else -1 */
+	cEntityListData *list;		/* "OutCop" */
 } cExtPolice;
 
 /* Friends.cpp: g_pWorld->logic.friends, the friend ships of the outdoor missions ("Friends") */
 typedef struct cFriends {
-	float timer;			/* 0x0 Think every 1.5 s */
-	cEntityListData *list;		/* 0x4 "Friends" */
+	float timer;			/* Think every 1.5 s */
+	cEntityListData *list;		/* "Friends" */
 } cFriends;
 
 /* GateKeeperLogic.cpp: the gatekeepers ("GateKeeper", g_pWorld->logic.gateKeepers), every sqrt(2) s their logics update */
 typedef struct cGateKeepers {
-	float timer;			/* 0x0 */
-	cEntityListData *list;		/* 0x4 "GateKeeper" */
+	float timer;
+	cEntityListData *list;		/* "GateKeeper" */
 } cGateKeepers;
 
 /* GenCharGroup.cpp: g_pWorld->logic.genChars, the lists of the generic characters and the maker of their logics */
 typedef struct cGenCharGroup {
-	int attackers;			/* 0x00 counted from 0 every update, two may attack */
-	int level;			/* 0x04 the highest level the logics report in a round, -1 */
-	float timer;			/* 0x08 Think every 0.13 s */
-	cEntityListData *genChars;	/* 0x0c "GenChars" */
-	cEntityListData *police;	/* 0x10 "PoliceSmall" */
-	cEntityListData *bishops;	/* 0x14 "Bishop" */
-	cMessengers *messengers;	/* 0x18 MessengerLogic.cpp */
+	int attackers;			/* counted from 0 every update, two may attack */
+	int level;			/* the highest level the logics report in a round, -1 */
+	float timer;			/* Think every 0.13 s */
+	cEntityListData *genChars;	/* "GenChars" */
+	cEntityListData *police;	/* "PoliceSmall" */
+	cEntityListData *bishops;	/* "Bishop" */
+	cMessengers *messengers;	/* MessengerLogic.cpp */
 } cGenCharGroup;
 
 typedef DLIST(cInfItemNode) cInfItemList;
 
 typedef struct cInfItem {
-	cInfItemList life;		/* 0x04 */
-	cInfItemList ammo0;		/* 0x1c kind 0 */
-	cInfItemList ammo2;		/* 0x34 kind 2 */
-	cInfItemList ammo1;		/* 0x4c kind 1 */
+	cInfItemList life;
+	cInfItemList ammo0;		/* kind 0 */
+	cInfItemList ammo2;		/* kind 2 */
+	cInfItemList ammo1;		/* kind 1 */
 } cInfItem;
 
 /* IntPolice.cpp: the AI control of the indoor police (g_pWorld->logic.aiCtrl): the sentinels
  * search and accuse, the gears attack; two police of the second GenChar list fuse into gears that fight */
 typedef struct cAICtrl {
-	int level;			/* 0x00 the highest alarm level of the round (RaiseLevel), -1 */
-	int attacking;			/* 0x04 the gears in state 1 or 2 */
-	byte alarm;			/* 0x08 the alarm at the last think */
+	int level;			/* the highest alarm level of the round (RaiseLevel), -1 */
+	int attacking;			/* the gears in state 1 or 2 */
+	byte alarm;			/* the alarm at the last think */
 	byte pad_9[3];
-	cEntity *lastUsr;		/* 0x0c the player at the last think */
-	float timer;			/* 0x10 Think every 0.5 s */
-	byte sameChar;			/* 0x14 the alarm is on for the type of now */
-	byte notDefChar;		/* 0x15 */
-	byte alarmOn;			/* 0x16 */
+	cEntity *lastUsr;		/* the player at the last think */
+	float timer;			/* Think every 0.5 s */
+	byte sameChar;			/* the alarm is on for the type of now */
+	byte notDefChar;
+	byte alarmOn;
 	byte pad_17;
-	cEntity *usr;			/* 0x18 */
-	Nto1Node watch;			/* 0x1c to the sentinel in state 5, data the control */
-	float watchTime;		/* 0x2c no sentinel is sent to watch before 0 */
-	byte alerted;			/* 0x30 a sentinel is in state 6 */
-	byte accusing;			/* 0x31 a sentinel accuses */
-	byte chased;			/* 0x32 a gear played the voice "Chase", "Abort" follows */
+	cEntity *usr;
+	Nto1Node watch;			/* to the sentinel in state 5, data the control */
+	float watchTime;		/* no sentinel is sent to watch before 0 */
+	byte alerted;			/* a sentinel is in state 6 */
+	byte accusing;			/* a sentinel accuses */
+	byte chased;			/* a gear played the voice "Chase", "Abort" follows */
 	byte pad_33;
-	cEntityListData *sentinels;	/* 0x34 "Sentinel" */
-	cEntityListData *gears;		/* 0x38 "Gear" */
+	cEntityListData *sentinels;	/* "Sentinel" */
+	cEntityListData *gears;		/* "Gear" */
 } cAICtrl;
 
 typedef DLIST(cParkingNode) cParkingList;
 
 typedef struct cParking {
-	float timer;			/* 0x00 the next check of one zone of each ring */
-	cParkingList ships;		/* 0x04 flag 0, iter the zone checked last */
-	cParkingList items;		/* 0x1c flag 1, checked only while the player is in a ship */
+	float timer;			/* the next check of one zone of each ring */
+	cParkingList ships;		/* flag 0, iter the zone checked last */
+	cParkingList items;		/* flag 1, checked only while the player is in a ship */
 } cParking;
 
 typedef struct cShipRegen {
-	byte unused_00;			/* 0x00 0, not used */
+	byte unused_00;			/* 0, not used */
 	byte pad_1[3];
-	cShipRegenShip *ship;		/* 0x04 made by the first ShipRegen_Set */
-	float time;			/* 0x08 to the next check of the player */
-	byte noLoss;			/* 0x0c no life lost since the last check */
+	cShipRegenShip *ship;		/* made by the first ShipRegen_Set */
+	float time;			/* to the next check of the player */
+	byte noLoss;			/* no life lost since the last check */
 	byte pad_d[3];
-	int life;			/* 0x10 of the player at the last check */
+	int life;			/* of the player at the last check */
 } cShipRegen;
 
 typedef struct cShipGroup {
@@ -166,48 +166,48 @@ typedef struct cShipGroup {
 
 /* Traffic.cpp: the ships of the traffic turn against the player when it hits them (cEnemiesTraffic) */
 typedef struct cEnemiesTraffic {
-	HashTable idle;			/* 0x00 of cNameItem: the time (float bits) a traffic ship stood */
-	int bossRobots;			/* 0x0c "RobotsControlledByBoss" is "1", -1 before the first think */
-	cEntity *usr;			/* 0x10 the player at the last think */
-	float timer;			/* 0x14 think every 0.5 s */
-	float attackTime;		/* 0x18 left of the attack of the traffic enemies */
-	cEntityListData *traffic;	/* 0x1c "Traffic" */
-	cEntityListData *fighting;	/* 0x20 "FightingTraffic" */
-	cEntityListData *chasing;	/* 0x24 "ChasingTraffic" */
-	cEntityListData *enemies;	/* 0x28 "EnemiesTraffic" */
+	HashTable idle;			/* of cNameItem: the time (float bits) a traffic ship stood */
+	int bossRobots;			/* "RobotsControlledByBoss" is "1", -1 before the first think */
+	cEntity *usr;			/* the player at the last think */
+	float timer;			/* think every 0.5 s */
+	float attackTime;		/* left of the attack of the traffic enemies */
+	cEntityListData *traffic;	/* "Traffic" */
+	cEntityListData *fighting;	/* "FightingTraffic" */
+	cEntityListData *chasing;	/* "ChasingTraffic" */
+	cEntityListData *enemies;	/* "EnemiesTraffic" */
 } cEnemiesTraffic;
 
 /* Logic.cpp: the nurses of the logic control (g_pWorld->logic.nurses) */
 typedef struct cNurses {
-	float timer;			/* 0x0 Think every 0.73 s */
-	cEntityListData *list;		/* 0x4 "Nurse" */
+	float timer;			/* Think every 0.73 s */
+	cEntityListData *list;		/* "Nurse" */
 } cNurses;
 
 typedef struct cLogicControl {
-	byte warned;			/* 0x004 the last warning think played one */
+	byte warned;			/* the last warning think played one */
 	byte pad_5[3];
-	float warnTime;			/* 0x008 */
-	float timer;			/* 0x00c the taunts and warnings every 0.5 s */
-	float tauntTime;		/* 0x010 */
-	float talkEnd;			/* 0x014 the world time the talk of RemainTalkTime ends (Taunts_UpdateEndTime) */
-	cParking parking;		/* 0x018 the parking zones */
-	cInfItem items;			/* 0x04c */
-	cShipRegen shipRegen;		/* 0x0b0 */
-	cExtPolice extPolice;		/* 0x0c4 */
-	cEnemies enemies;		/* 0x0dc */
-	cFriends friends;		/* 0x0ec */
-	cShipGroup mosquitos;		/* 0x0f4 "Mosquitos" */
-	cShipGroup madHunters;		/* 0x0f8 "MadHunters" */
-	cDeathMatch deathMatch;		/* 0x0fc */
-	cCTFFriends ctfFriends;		/* 0x104 */
-	cCTFEnemies ctfEnemies;		/* 0x108 */
-	cDominationFriendsLogic dominFriends;	/* 0x10c */
-	cDominationEnemiesLogic dominEnemies;	/* 0x120 */
-	cAICtrl aiCtrl;			/* 0x134 */
-	cEnemiesTraffic enemiesTraffic;	/* 0x170 */
-	cNurses nurses;			/* 0x19c */
-	cGenCharGroup genChars;		/* 0x1a4 */
-	cGateKeepers gateKeepers;	/* 0x1c0 */
+	float warnTime;
+	float timer;			/* the taunts and warnings every 0.5 s */
+	float tauntTime;
+	float talkEnd;			/* the world time the talk of RemainTalkTime ends (Taunts_UpdateEndTime) */
+	cParking parking;		/* the parking zones */
+	cInfItem items;
+	cShipRegen shipRegen;
+	cExtPolice extPolice;
+	cEnemies enemies;
+	cFriends friends;
+	cShipGroup mosquitos;		/* "Mosquitos" */
+	cShipGroup madHunters;		/* "MadHunters" */
+	cDeathMatch deathMatch;
+	cCTFFriends ctfFriends;
+	cCTFEnemies ctfEnemies;
+	cDominationFriendsLogic dominFriends;
+	cDominationEnemiesLogic dominEnemies;
+	cAICtrl aiCtrl;
+	cEnemiesTraffic enemiesTraffic;
+	cNurses nurses;
+	cGenCharGroup genChars;
+	cGateKeepers gateKeepers;
 } cLogicControl;
 
 cItemDesc *cInfItem_FirstLife(cInfItem *self, void **iter);

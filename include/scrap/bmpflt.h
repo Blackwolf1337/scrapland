@@ -15,12 +15,12 @@ typedef CImage CBmpFlt2;
 #define TXF_MAGIC 0x1a465854	/* "TXF\x1a" */
 
 typedef struct TXF_header {
-	int magic;			/* 0x00 */
-	int version;			/* 0x04 */
-	int width;			/* 0x08 */
-	int height;			/* 0x0c */
-	int extra;			/* 0x10 bytes after the pixels */
-	int pad[3];			/* 0x14 */
+	int magic;
+	int version;
+	int width;
+	int height;
+	int extra;			/* bytes after the pixels */
+	int pad[3];
 } TXF_header;
 
 /* the header of each class */

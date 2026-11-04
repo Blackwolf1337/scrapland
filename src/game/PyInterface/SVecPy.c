@@ -1,5 +1,5 @@
 /*
- * Python module SVec (method table SVec_methods, rva 0x42fc80): 3D vector math for the game scripts. Original source:
+ * Python module SVec (method table SVec_methods): 3D vector math for the game scripts. Original source
  * PyInterface/SVecPy.cpp.
  *
  * Vectors come in as tuples. Functions parsing "d" compute in double, functions parsing "f" in float (SSE single
@@ -79,7 +79,7 @@ static PyObject *SVec_Norm(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	double len = sqrt(x * x + y * y + z * z);
-	if (len < (double)1e-6f) { /* the constant at rva 0x3c9658 is the float 1e-6 widened to double */
+	if (len < (double)1e-6f) { /* the constant is the float 1e-6 widened to double */
 		return Py_BuildValue("ddd", 0.0, 1.0, 0.0);
 	}
 	return Py_BuildValue("ddd", x / len, y / len, z / len);

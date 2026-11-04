@@ -14,13 +14,13 @@
 
 /* the "fmt " chunk with its header */
 typedef struct cWavFmt {
-	uint32_t id;			/* 0x00 */
-	uint32_t size;			/* 0x04 */
-	uint16_t format;		/* 0x08 1 PCM */
-	uint16_t channels;		/* 0x0a */
-	uint32_t rate;			/* 0x0c */
-	uint32_t byteRate;		/* 0x10 */
-	uint16_t blockAlign;		/* 0x14 */
-	uint16_t bits;			/* 0x16 */
+	uint32_t id;
+	uint32_t size;
+	uint16_t format;		/* 1 PCM */
+	uint16_t channels;
+	uint32_t rate;
+	uint32_t byteRate;
+	uint16_t blockAlign;
+	uint16_t bits;
 } cWavFmt;
 

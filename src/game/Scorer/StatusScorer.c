@@ -366,7 +366,7 @@ static void Status_DrawBoostIcon(cStatusScorer *self) {
 		self->base.y + 12.0f + self->lifeIconOffY);
 }
 
-/* vf00: the life of the target of the camera (blinking when in danger), the boost segments, the money and lives,
+/* the life of the target of the camera (blinking when in danger), the boost segments, the money and lives
  * the team flag, the hull of a ship; the low life warning and the regeneration siren */
 static void cStatusScorer_Draw(cScorerItem *base, int player) {
 	cStatusScorer *self = (cStatusScorer *)base;

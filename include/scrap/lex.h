@@ -21,25 +21,25 @@ enum {
 };
 
 typedef struct cLexFile {
-	char *name;			/* 0x00 as given to Lex_Open (String_Dup) */
-	char *path;			/* 0x04 full path */
-	void *f;			/* 0x08 FILE of the exe's CRT */
-	int line;			/* 0x0c */
-	int tokens;			/* 0x10 tokens on this line so far: '#' only starts a directive at 0 */
-	int included;			/* 0x14 lines of the files included from this one */
-	int savedCh;			/* 0x18 the character to go on with when an included file ends */
-	struct cLexFile *parent;	/* 0x1c the including file */
-	int escapes;			/* 0x20 '\\' escapes in strings */
+	char *name;			/* as given to Lex_Open (String_Dup) */
+	char *path;			/* full path */
+	void *f;			/* FILE of the exe's CRT */
+	int line;
+	int tokens;			/* tokens on this line so far: '#' only starts a directive at 0 */
+	int included;			/* lines of the files included from this one */
+	int savedCh;			/* the character to go on with when an included file ends */
+	struct cLexFile *parent;	/* the including file */
+	int escapes;			/* '\\' escapes in strings */
 } cLexFile;
 
 /* the current token of cmd_lex */
 typedef struct cClex {
-	char *text;			/* 0x0 g_LexToken */
-	int type;			/* 0x4 CLEX_ */
+	char *text;			/* g_LexToken */
+	int type;			/* CLEX_ */
 	union {
 		int i;			/* CLEX_INT, the character for CLEX_CHAR */
 		double d;		/* CLEX_FLOAT */
-	} value;			/* 0x8 */
+	} value;
 } cClex;
 
 extern char g_LexToken[1024];	/* MAX_LAST_CLEX */

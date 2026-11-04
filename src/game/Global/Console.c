@@ -28,7 +28,7 @@ static cGVar GVar_AlwaysFlushLog;
 void *File_OpenRel(const char *name, const char *mode);
 void App_GetPath(char *buf, int size);
 const char *Version_Get(void);
-void ConsoleWin_Add(const char *text, uint32_t color);	/* the on-screen console, rva 0x20d550 */
+void ConsoleWin_Add(const char *text, uint32_t color);	/* the on-screen console */
 
 /* one text into a log: HTML escaped, CR dropped, at most 511 characters */
 static void DebugLog_Write(const char *text, uint32_t color, void *f) {

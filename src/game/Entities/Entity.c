@@ -77,7 +77,7 @@ cEntity *cEntity_ctor(void *mem, const char *name, float x, float y, float z) {
 	return self;
 }
 
-/* rva 0xeeb20 and 0xeeb90 (the cells of the grid) */
+/* and 0xeeb90 (the cells of the grid) */
 void Nto1Node_dtor(Nto1Node *node) {
 	Nto1Node_Done(node);
 }
@@ -430,7 +430,7 @@ byte cEntity_VarV(cEntity *self, const char *name, double *x, double *y, double 
 	return 0;
 }
 
-/* the inline virtual functions of Entity.h; their code sits in the camera part of the exe (rva 0xbd430..) */
+/* the inline virtual functions of Entity.h; their code sits in the camera part of the exe (..) */
 byte cEntity_TestLine(cEntity *self, const vec3_t *from, vec3_t *hit) {
 	(void)self;
 	(void)from;

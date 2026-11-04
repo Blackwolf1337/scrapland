@@ -1,6 +1,6 @@
 /*
  * Logic/MercenaryLogic.cpp of the game: the mercenaries (the types "Mercenary..."), a GenChar logic without a
- * special attack target (vf30 NULL, vf31 1); the update is the one of the GenChars.
+ * special attack target (NULL 1); the update is the one of the GenChars.
  */
 #include "scrap/logic.h"
 

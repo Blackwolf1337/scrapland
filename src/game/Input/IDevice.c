@@ -26,7 +26,7 @@ static cGVar GVar_CheckInactivityTime;
 static cGVarFunction GVar_CheckInactivityFunc;
 #define DEV_NODE_SIZE sizeof(cInputDevNode)
 
-/* the scorer state the definition of a key switches to (rva 0x1710f0, Scorer/) */
+/* the scorer state the definition of a key switches to (Scorer/) */
 void Scorer_SetInputState(int state);
 
 cInputDevList g_InputDevices;

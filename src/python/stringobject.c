@@ -1,4 +1,4 @@
-/* Objects/stringobject.c and its part of Py_FiniObjects (src/python/pythonrun.c), rva 0x2dbdf0 in the exe: the
+/* Objects/stringobject.c and its part of Py_FiniObjects (src/python/pythonrun.c) in the exe: the
  * object of the interned dictionary, not its table */
 #include "Objects/stringobject.c"
 #include "pyengine.h"

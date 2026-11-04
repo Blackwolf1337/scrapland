@@ -37,118 +37,118 @@ enum {
 };
 
 typedef struct BspQ3Lump {
-	int ofs;			/* 0x0 */
-	int len;			/* 0x4 */
+	int ofs;
+	int len;
 } BspQ3Lump;
 
 typedef struct BspQ3Header {
-	int id;				/* 0x00 BSPQ3_ID */
-	int ver;			/* 0x04 */
-	BspQ3Lump lumps[BSPQ3_NUM_LUMPS];	/* 0x08 */
+	int id;				/* BSPQ3_ID */
+	int ver;
+	BspQ3Lump lumps[BSPQ3_NUM_LUMPS];
 } BspQ3Header;
 
 typedef struct BspQ3Shader {
-	char name[64];			/* 0x00 the texture, without extension */
-	int flags;			/* 0x40 surface flags, 0x20: no light map */
-	int contents;			/* 0x44 */
+	char name[64];			/* the texture, without extension */
+	int flags;			/* surface flags, 0x20: no light map */
+	int contents;
 } BspQ3Shader;
 
 typedef struct BspQ3Vert {
-	vec3_t pos;			/* 0x00 z up */
-	float tc[2];			/* 0x0c */
-	float lm[2];			/* 0x14 in the light map */
-	vec3_t n;			/* 0x1c */
-	byte color[4];			/* 0x28 */
+	vec3_t pos;			/* z up */
+	float tc[2];
+	float lm[2];			/* in the light map */
+	vec3_t n;
+	byte color[4];
 } BspQ3Vert;
 
 /* a face of the file */
 typedef struct BspQ3FileFace {
-	int shader;			/* 0x00 */
-	int effect;			/* 0x04 */
-	int type;			/* 0x08 */
-	int vert;			/* 0x0c the first */
-	int nVerts;			/* 0x10 */
-	int meshVert;			/* 0x14 */
-	int nMeshVerts;			/* 0x18 */
-	int lmIndex;			/* 0x1c */
-	int lmStart[2];			/* 0x20 */
-	int lmSize[2];			/* 0x28 */
-	vec3_t lmOrigin;		/* 0x30 */
-	vec3_t lmVecs[2];		/* 0x3c */
-	vec3_t normal;			/* 0x54 */
-	int size[2];			/* 0x60 */
+	int shader;
+	int effect;
+	int type;
+	int vert;			/* the first */
+	int nVerts;
+	int meshVert;
+	int nMeshVerts;
+	int lmIndex;
+	int lmStart[2];
+	int lmSize[2];
+	vec3_t lmOrigin;
+	vec3_t lmVecs[2];
+	vec3_t normal;
+	int size[2];
 } BspQ3FileFace;
 
 /* a face as the loader keeps it */
 typedef struct BspQ3Face {
-	int unused_00;			/* 0x00 */
-	int type;			/* 0x04 BSPQ3_POLYGON .. */
-	BspQ3Shader *shader;		/* 0x08 */
-	CMaterial *mat;			/* 0x0c polygons, of the shader texture as .tga */
-	int lmIndex;			/* 0x10 -1 for shaders without light map */
-	BspQ3Vert *verts;		/* 0x14 */
-	int nVerts;			/* 0x18 */
-	int unused_1c;			/* 0x1c */
-	int nMeshVerts;			/* 0x20 */
-	int dist;			/* 0x24 polygon: the plane distance, truncated; patch: its index */
-	vec3_t normal;			/* 0x28 polygon */
-	vec3_t origin;			/* 0x34 polygon */
-	vec3_t lmVecs[2];		/* 0x40 patch */
+	int unused_00;
+	int type;			/* BSPQ3_POLYGON .. */
+	BspQ3Shader *shader;
+	CMaterial *mat;			/* polygons, of the shader texture as .tga */
+	int lmIndex;			/* -1 for shaders without light map */
+	BspQ3Vert *verts;
+	int nVerts;
+	int unused_1c;
+	int nMeshVerts;
+	int dist;			/* polygon: the plane distance, truncated; patch: its index */
+	vec3_t normal;			/* polygon */
+	vec3_t origin;			/* polygon */
+	vec3_t lmVecs[2];		/* patch */
 } BspQ3Face;
 
 /* 8 bytes a face */
 typedef struct BspQ3FaceRef {
-	BspQ3Face *face;		/* 0x0 NULL for BSPQ3_OTHER */
+	BspQ3Face *face;		/* NULL for BSPQ3_OTHER */
 	int i4;
 } BspQ3FaceRef;
 
 typedef struct BspQ3LMap {
-	int unused_00;			/* 0x00 -1 */
-	byte *data;			/* 0x04 RGB in the file buffer while loading, then NULL */
-	int width;			/* 0x08 */
-	int height;			/* 0x0c */
-	int bpp;			/* 0x10 3 */
-	CMaterial *mat;			/* 0x14 "Lightmap Mat %04d" */
+	int unused_00;			/* -1 */
+	byte *data;			/* RGB in the file buffer while loading, then NULL */
+	int width;
+	int height;
+	int bpp;			/* 3 */
+	CMaterial *mat;			/* "Lightmap Mat %04d" */
 } BspQ3LMap;
 
-/* the triangles of one material and light map: the vertices in VERT_TEX2 (0x28 bytes) */
+/* the triangles of one material and light map: the vertices in VERT_TEX2 */
 typedef struct BspQ3Mesh {
-	BspQ3Face *face;		/* 0x00 the first face (material and light map) */
-	int nTri;			/* 0x04 counted first, then filled up to totTri */
-	int totTri;			/* 0x08 */
-	tri16_t *pTri;			/* 0x0c new[] */
-	CVertList vert;		/* 0x10 */
-	void *pVertVB;			/* 0x24 */
-	void *pVertIB;			/* 0x28 */
+	BspQ3Face *face;		/* the first face (material and light map) */
+	int nTri;			/* counted first, then filled up to totTri */
+	int totTri;
+	tri16_t *pTri;			/* new[] */
+	CVertList vert;
+	void *pVertVB;
+	void *pVertIB;
 } BspQ3Mesh;
 
 typedef struct BspQ3Meshes {
-	BspQ3Mesh *m[BSPQ3_MAX_MESHES];	/* 0x000 */
-	int n;				/* 0x400 */
+	BspQ3Mesh *m[BSPQ3_MAX_MESHES];
+	int n;
 } BspQ3Meshes;
 
 typedef struct CBspQ3 {
-	char *name;			/* 0x00 Cad */
-	byte *lump;			/* 0x04 the whole file while loading */
-	BspQ3Header *head;		/* 0x08 */
-	int unused_0c;			/* 0x0c */
-	int nVerts;			/* 0x10 */
-	int unused_14[3];			/* 0x14 */
-	int nShaders;			/* 0x20 */
-	int nFaces;			/* 0x24 */
-	int unused_28[2];			/* 0x28 */
-	int nLMaps;			/* 0x30 */
-	int unused_34[3];			/* 0x34 */
-	BspQ3Vert *verts;		/* 0x40 new[] */
-	BspQ3Shader *shaders;		/* 0x44 new[] */
-	BspQ3LMap *lmaps;		/* 0x48 new[] */
-	int nPatches;			/* 0x4c */
-	BspQ3Face *faces;		/* 0x50 new[] */
-	BspQ3FaceRef *faceRefs;		/* 0x54 new[] */
-	int unused_58[2];			/* 0x58 */
-	CMeshD3D *MeshD3D;		/* 0x60 all polygons */
-	void *pMesh;			/* 0x64 ID3DXMesh, drawn instead with the L key held */
-	BspQ3Meshes *MeshList;	/* 0x68 */
+	char *name;			/* Cad */
+	byte *lump;			/* the whole file while loading */
+	BspQ3Header *head;
+	int unused_0c;
+	int nVerts;
+	int unused_14[3];
+	int nShaders;
+	int nFaces;
+	int unused_28[2];
+	int nLMaps;
+	int unused_34[3];
+	BspQ3Vert *verts;		/* new[] */
+	BspQ3Shader *shaders;		/* new[] */
+	BspQ3LMap *lmaps;		/* new[] */
+	int nPatches;
+	BspQ3Face *faces;		/* new[] */
+	BspQ3FaceRef *faceRefs;		/* new[] */
+	int unused_58[2];
+	CMeshD3D *MeshD3D;		/* all polygons */
+	void *pMesh;			/* ID3DXMesh, drawn instead with the L key held */
+	BspQ3Meshes *MeshList;
 } CBspQ3;
 
 extern byte g_KeyboardKeys[256];

@@ -1,5 +1,5 @@
 /*
- * Python module SLogic (method table SLogic_methods, rva 0x42dd20): game logic of characters, ships and the
+ * Python module SLogic (method table SLogic_methods): game logic of characters, ships and the
  * domination mode. Original source: PyInterface/SLogic.cpp.
  */
 #include <string.h>
@@ -9,7 +9,7 @@
 #include "scrap/python.h"
 #include "scrap/vehicleentity.h"
 
-/* the four traffic lists GetNearestShip searches (pointer table at rva 0x42ddf0) */
+/* the four traffic lists GetNearestShip searches (pointer table) */
 static const char *const shipLists[] = { "Traffic", "EnemiesTraffic", "FightingTraffic", "NormalTraffic" };
 
 /*
@@ -90,7 +90,7 @@ static PyObject *SLogic_GetNearestShip(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	const char *nearest = "";
-	float best = 3.4028234663852886e+38f; /* FLT_MAX, rva 0x3a3a38 */
+	float best = 3.4028234663852886e+38f; /* FLT_MAX */
 	for (size_t i = 0; i < sizeof(shipLists) / sizeof(shipLists[0]); i++) {
 		cEntityList *list = cWorld_GetList(g_pWorld, shipLists[i]);
 		cEntity *first = cEntityList_GetFirst(list);

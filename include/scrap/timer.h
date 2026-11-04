@@ -8,17 +8,17 @@
 #include "scrap/shared.h"
 
 typedef struct cTimer {
-	float time;			/* 0x00 last real time, -1 before the first update */
-	float prevTime;			/* 0x04 */
-	float gameTime;			/* 0x08 */
-	float delta;			/* 0x0c game time of the last step */
-	byte paused;			/* 0x10 */
+	float time;			/* last real time, -1 before the first update */
+	float prevTime;
+	float gameTime;
+	float delta;			/* game time of the last step */
+	byte paused;
 	byte pad_11[3];
-	float speed;			/* 0x14 */
-	float speedFrom;		/* 0x18 */
-	float speedTo;			/* 0x1c */
-	float blendLeft;		/* 0x20 */
-	float blendTime;		/* 0x24 */
+	float speed;
+	float speedFrom;
+	float speedTo;
+	float blendLeft;
+	float blendTime;
 } cTimer;
 
 cTimer *cTimer_ctor(cTimer *self);

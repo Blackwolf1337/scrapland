@@ -73,7 +73,7 @@ static int Ent_Life(cEntity *e) {
 	return WChar(e)->wl.life;
 }
 
-/* vf66: the shot at the target in the cone of the view */
+/* the shot at the target in the cone of the view */
 static void cAIBishop_CheckAttack(cAI *elem) {
 	cAIBishop *self = (cAIBishop *)elem;
 	cAIChar *c = &self->base;
@@ -153,7 +153,7 @@ static void cAIBishop_SetRanges(cAI *elem) {
 	c->actMax = mx;
 }
 
-/* vf57: the shot parameters for a target with or without an AI, then the ranges */
+/* the shot parameters for a target with or without an AI, then the ranges */
 static void cAIBishop_SetShoot(cAI *elem) {
 	cAIBishop *self = (cAIBishop *)elem;
 	cEntity *t = self->base.base.target.target;

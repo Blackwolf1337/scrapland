@@ -1,7 +1,7 @@
 /*
- * The D3DX 8.1 math the game calls (D3DX8 is linked statically into Scrap.exe, its code below rva 0x03e800).
+ * The D3DX 8.1 math the game calls (D3DX8 is linked statically into Scrap.exe, its code below).
  *
- * Each public D3DX function of the exe is a stub "jmp [slot]" into a table at rva 0x43da08, which the first call
+ * Each public D3DX function of the exe is a stub "jmp [slot]" into a table which the first call
  * fills for the CPU: the x87 versions first, then the 3DNow!, SSE2 or SSE versions over some of them,
  * unless the registry value Direct3D\DisableD3DXPSGP is set. These are the versions a CPU with SSE2 and without
  * 3DNow! gets (every CPU the game runs on today): SSE2 for normalize, transform, multiply, inverse and the rotations
@@ -33,38 +33,38 @@ typedef union {
 	__m128 v;
 } d3dxConst_t;
 
-/* the constants of the SSE sine and cosine (rva 0x4400e0..0x4402e0, bit patterns) */
-static const d3dxConst_t k_scOut = { K4(0, 0x3f800000, 0, 0x3f800000) };		/* 0x4400e0 */
-static const d3dxConst_t k_scP1 = { K4(0x3f800000, 0xbf000000, 0x3f800000, 0xbf000000) };	/* 0x4400f0 */
-static const d3dxConst_t k_scP2 = { K4(0xbe2aaaa3, 0x3d2aaaa5, 0xbe2aaaa3, 0x3d2aaaa5) };	/* 0x440100 */
-static const d3dxConst_t k_scP3 = { K4(0x3c08839d, 0xbab6061a, 0x3c08839d, 0xbab6061a) };	/* 0x440110 */
-static const d3dxConst_t k_scP4 = { K4(0xb94ca1f0, 0x37ccf5ce, 0xb94ca1f0, 0x37ccf5ce) };	/* 0x440120 */
-static const d3dxConst_t k_two = { K1(2) };						/* 0x440130 */
-static const d3dxConst_t k_one = { K1(1) };						/* 0x440140 */
-static const d3dxConst_t k_mant = { K1(0x007fffff) };					/* 0x440150 */
+/* the constants of the SSE sine and cosine (bit patterns) */
+static const d3dxConst_t k_scOut = { K4(0, 0x3f800000, 0, 0x3f800000) };
+static const d3dxConst_t k_scP1 = { K4(0x3f800000, 0xbf000000, 0x3f800000, 0xbf000000) };
+static const d3dxConst_t k_scP2 = { K4(0xbe2aaaa3, 0x3d2aaaa5, 0xbe2aaaa3, 0x3d2aaaa5) };
+static const d3dxConst_t k_scP3 = { K4(0x3c08839d, 0xbab6061a, 0x3c08839d, 0xbab6061a) };
+static const d3dxConst_t k_scP4 = { K4(0xb94ca1f0, 0x37ccf5ce, 0xb94ca1f0, 0x37ccf5ce) };
+static const d3dxConst_t k_two = { K1(2) };
+static const d3dxConst_t k_one = { K1(1) };
+static const d3dxConst_t k_mant = { K1(0x007fffff) };
 static const d3dxConst_t k_round = { K1(0x4b000000) };					/* 0x440160, 2^23 */
-static const d3dxConst_t k_pio2Parts = { K4(0x3fc90000, 0x39fda000, 0x33a22000, 0x2c34611a) };	/* 0x440170 */
-static const d3dxConst_t k_2opi = { K1(0x3f22f983) };					/* 0x440180 */
-static const d3dxConst_t k_sign = { K1(0x80000000) };					/* 0x440190 */
-static const d3dxConst_t k_abs = { K1(0x7fffffff) };					/* 0x4401a0 */
+static const d3dxConst_t k_pio2Parts = { K4(0x3fc90000, 0x39fda000, 0x33a22000, 0x2c34611a) };
+static const d3dxConst_t k_2opi = { K1(0x3f22f983) };
+static const d3dxConst_t k_sign = { K1(0x80000000) };
+static const d3dxConst_t k_abs = { K1(0x7fffffff) };
 static const d3dxConst_t k_onef = { K1(0x3f800000) };					/* 0x4401b0, 0x4401d0 */
-static const d3dxConst_t k_halfNeg = { K1(0xbf000000) };				/* 0x4401c0 */
-static const d3dxConst_t k_c24 = { K1(0x3d2aaaa5) };					/* 0x4401e0 */
-static const d3dxConst_t k_s6 = { K1(0xbe2aaaa3) };					/* 0x4401f0 */
-static const d3dxConst_t k_c720 = { K1(0xbab6061a) };					/* 0x440200 */
-static const d3dxConst_t k_s120 = { K1(0x3c08839d) };					/* 0x440210 */
-static const d3dxConst_t k_c8 = { K1(0x37ccf5ce) };					/* 0x440250 */
-static const d3dxConst_t k_s7 = { K1(0xb94ca1f0) };					/* 0x440260 */
-static const d3dxConst_t k_pio2_3 = { K1(0x2c34611a) };				/* 0x440280 */
-static const d3dxConst_t k_pio2_2 = { K1(0x33a22000) };				/* 0x440290 */
-static const d3dxConst_t k_pio2_1 = { K1(0x39fda000) };				/* 0x4402a0 */
-static const d3dxConst_t k_pio2_0 = { K1(0x3fc90000) };				/* 0x4402b0 */
+static const d3dxConst_t k_halfNeg = { K1(0xbf000000) };
+static const d3dxConst_t k_c24 = { K1(0x3d2aaaa5) };
+static const d3dxConst_t k_s6 = { K1(0xbe2aaaa3) };
+static const d3dxConst_t k_c720 = { K1(0xbab6061a) };
+static const d3dxConst_t k_s120 = { K1(0x3c08839d) };
+static const d3dxConst_t k_c8 = { K1(0x37ccf5ce) };
+static const d3dxConst_t k_s7 = { K1(0xb94ca1f0) };
+static const d3dxConst_t k_pio2_3 = { K1(0x2c34611a) };
+static const d3dxConst_t k_pio2_2 = { K1(0x33a22000) };
+static const d3dxConst_t k_pio2_1 = { K1(0x39fda000) };
+static const d3dxConst_t k_pio2_0 = { K1(0x3fc90000) };
 
 #define I(v) _mm_castps_si128(v)
 #define F(v) _mm_castsi128_ps(v)
 
 /*
- * rva 0x03a480: cosine and sine of the angle in all four lanes, in lanes 0 and 1 (2 and 3 the same). The lanes of
+ * cosine and sine of the angle in all four lanes, in lanes 0 and 1 (2 and 3 the same). The lanes of
  * the reduction subtract the four parts of pi / 2 in a rotated order, like the original.
  */
 static __m128 D3dx_SinCosSS(__m128 x0) {
@@ -113,7 +113,7 @@ static __m128 D3dx_SinCosSS(__m128 x0) {
 	return _mm_xor_ps(x0, x7);
 }
 
-/* rva 0x03a570: sine and cosine of four angles */
+/* sine and cosine of four angles */
 static void D3dx_SinCosPS(__m128 x0, __m128 *sinOut, __m128 *cosOut) {
 	__m128 x1 = x0, x2, x3, x4, x5, x6, x7;
 
@@ -166,7 +166,7 @@ static void D3dx_SinCosPS(__m128 x0, __m128 *sinOut, __m128 *cosOut) {
 #undef I
 #undef F
 
-/* rva 0x02b490 (SSE2): zero below a squared length of 2^-46, else one Newton step on the estimate */
+/* (SSE2): zero below a squared length of 2^-46, else one Newton step on the estimate */
 vec3_t *__stdcall D3DX_Vec3Normalize(vec3_t *out, const vec3_t *v) {
 	float x = v->x, y = v->y, z = v->z;
 	float len2 = (x * x + y * y) + z * z;
@@ -185,7 +185,7 @@ vec3_t *__stdcall D3DX_Vec3Normalize(vec3_t *out, const vec3_t *v) {
 	return out;
 }
 
-/* rva 0x02b180 (SSE2): v * m divided by w, w from the reciprocal estimate and one Newton step (TransformCoord) */
+/* (SSE2): v * m divided by w, w from the reciprocal estimate and one Newton step (TransformCoord) */
 vec3_t *__stdcall D3DX_Vec3Transform(vec3_t *out, const vec3_t *v, const matrix_t *m) {
 	const float *a = m->m;
 	float r[4];
@@ -201,7 +201,7 @@ vec3_t *__stdcall D3DX_Vec3Transform(vec3_t *out, const vec3_t *v, const matrix_
 	return out;
 }
 
-/* rva 0x02b340 (SSE2); out may be a or b */
+/* (SSE2); out may be a or b */
 matrix_t *__stdcall D3DX_MatrixMultiply(matrix_t *out, const matrix_t *a, const matrix_t *b) {
 	matrix_t r;
 
@@ -215,7 +215,7 @@ matrix_t *__stdcall D3DX_MatrixMultiply(matrix_t *out, const matrix_t *a, const 
 	return out;
 }
 
-/* rva 0x007a07 (x87): one of each pair of elements goes through the FPU, the other and the diagonal as integers */
+/* (x87): one of each pair of elements goes through the FPU, the other and the diagonal as integers */
 matrix_t *__stdcall D3DX_MatrixTranspose(matrix_t *out, const matrix_t *m) {
 	static const byte pairs[5][2] = { { 2, 8 }, { 3, 12 }, { 6, 9 }, { 7, 13 }, { 11, 14 } };
 	float m1 = m->m[1], m4 = m->m[4];
@@ -239,7 +239,7 @@ matrix_t *__stdcall D3DX_MatrixTranspose(matrix_t *out, const matrix_t *m) {
 }
 
 /*
- * rva 0x02b6e0 (SSE2): the inverse by Cramer's rule of Intel's SIMD code (the transposed cofactors from 2x2
+ * (SSE2): the inverse by Cramer's rule of Intel's SIMD code (the transposed cofactors from 2x2
  * products), the reciprocal of the determinant from the estimate and one Newton step. NULL (out untouched) when the
  * determinant is 0 or NaN; det gets it otherwise.
  */
@@ -403,7 +403,7 @@ static void D3dx_Rows(matrix_t *out, const float *r0, const float *r1, const flo
 	out->m[15] = 1.0f;
 }
 
-/* rva 0x02bbb0 (SSE2) */
+/* (SSE2) */
 matrix_t *__stdcall D3DX_MatrixRotationX(matrix_t *out, float ang) {
 	__m128 sc = D3dx_SinCosSS(_mm_set1_ps(ang));
 	float c = Sse_Lane(sc, 0), s = Sse_Lane(sc, 1);
@@ -413,7 +413,7 @@ matrix_t *__stdcall D3DX_MatrixRotationX(matrix_t *out, float ang) {
 	return out;
 }
 
-/* rva 0x02bc30 (SSE2) */
+/* (SSE2) */
 matrix_t *__stdcall D3DX_MatrixRotationY(matrix_t *out, float ang) {
 	__m128 sc = D3dx_SinCosSS(_mm_set1_ps(ang));
 	float c = Sse_Lane(sc, 0), s = Sse_Lane(sc, 1);
@@ -423,7 +423,7 @@ matrix_t *__stdcall D3DX_MatrixRotationY(matrix_t *out, float ang) {
 	return out;
 }
 
-/* rva 0x00843a (x87): fsincos */
+/* (x87): fsincos */
 matrix_t *__stdcall D3DX_MatrixRotationZ(matrix_t *out, float ang) {
 	float s, c;
 
@@ -433,7 +433,7 @@ matrix_t *__stdcall D3DX_MatrixRotationZ(matrix_t *out, float ang) {
 	return out;
 }
 
-/* rva 0x02c3d0 (SSE2): the half angles (roll, pitch, yaw) through the packed sine and cosine */
+/* (SSE2): the half angles (roll, pitch, yaw) through the packed sine and cosine */
 quat_t *__stdcall D3DX_QuaternionRotationYPR(quat_t *out, float yaw, float pitch, float roll) {
 	__m128 sn, cs;
 
@@ -449,7 +449,7 @@ quat_t *__stdcall D3DX_QuaternionRotationYPR(quat_t *out, float yaw, float pitch
 	return out;
 }
 
-/* rva 0x0085f1 (x87): the factors 2x and 2y stored as floats, 2z kept on the FPU stack */
+/* (x87): the factors 2x and 2y stored as floats, 2z kept on the FPU stack */
 matrix_t *__stdcall D3DX_MatrixRotationQuaternion(matrix_t *out, const quat_t *q) {
 	const long double two = 2.0f;
 	float x2 = q->x * two;
@@ -486,7 +486,7 @@ matrix_t *__stdcall D3DX_MatrixRotationQuaternion(matrix_t *out, const quat_t *q
 	return out;
 }
 
-/* rva 0x00a780 (x87): the quaternion of the angles (passed on through the FPU) as a matrix */
+/* (x87): the quaternion of the angles (passed on through the FPU) as a matrix */
 matrix_t *__stdcall D3DX_MatrixRotationYPR(matrix_t *out, float yaw, float pitch, float roll) {
 	quat_t q;
 

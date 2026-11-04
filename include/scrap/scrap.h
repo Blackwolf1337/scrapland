@@ -44,10 +44,10 @@ byte Cfg_ParseLine(char *line, char **value);
 
 struct cFuncGvar;
 
-/* cFuncGvar, 0x14 bytes: the abstract base of the GVAR_FUNCTION variables (cFuncGvar::vftable rva 0x3bc2c8, Save and
+/* cFuncGvar: the abstract base of the GVAR_FUNCTION variables (cFuncGvar::vftable Save and
  * Load pure) */
 typedef struct cFuncGvar {
-	cGvar gvar;			/* 0x04 g_GVars points here */
+	cGvar gvar;			/* g_GVars points here */
 } cFuncGvar;
 #define GVar_ListObj(v) ((void *)((byte *)(v) - offsetof(cFuncGvar, gvar)))
 
@@ -58,7 +58,7 @@ typedef struct cGVarFunction {
 		cGVar var;
 		struct {
 			cGvar head;
-			cPy_Function func;	/* 0x10 */
+			cPy_Function func;
 		};
 	};
 } cGVarFunction;
@@ -75,9 +75,9 @@ const char *Lang_GetLanguage(void);
 
 /* Global/StaticBuffer.h: a buffer that grows and is locked while in use */
 typedef struct cStaticBuffer {
-	void *data;			/* 0x0 */
-	uint32_t size;			/* 0x4 */
-	byte lock;			/* 0x8 */
+	void *data;
+	uint32_t size;
+	byte lock;
 } cStaticBuffer;
 /* at least size bytes, locks the buffer */
 void *cStaticBuffer_Get(cStaticBuffer *self, uint32_t size);
@@ -100,29 +100,29 @@ typedef struct cDebris cDebris;
 typedef void (*DebrisHit_t)(cDebris *debris, void *tri);
 
 typedef struct cDebrisSys {
-	cDebris *idle;			/* 0x00 the free debris */
-	cDebris *active;		/* 0x04 the dropped ones */
-	int idleCount;			/* 0x08 */
-	char *name;			/* 0x0c string object, the key in g_pWorld->debris; the model */
-	float time;			/* 0x10 the time left of the 0.05 s steps */
-	float radiusSq;			/* 0x14 the debris further from the cameras are not moved, 0 for all */
-	float b;			/* 0x18 the friction of the move */
-	float c;			/* 0x1c the scale of the model */
-	float d;			/* 0x20 the gravity */
-	byte flag;			/* 0x24 collisions with the floor */
+	cDebris *idle;			/* the free debris */
+	cDebris *active;		/* the dropped ones */
+	int idleCount;
+	char *name;			/* string object, the key in g_pWorld->debris; the model */
+	float time;			/* the time left of the 0.05 s steps */
+	float radiusSq;			/* the debris further from the cameras are not moved, 0 for all */
+	float b;			/* the friction of the move */
+	float c;			/* the scale of the model */
+	float d;			/* the gravity */
+	byte flag;			/* collisions with the floor */
 	byte pad_25[3];
-	DebrisHit_t onHit;		/* 0x28 */
-	int maxIdle;			/* 0x2c 0x100 */
-	int fxType;			/* 0x30 the cObjElementFX of each debris (cDebris_SetFX), 0 for none */
-	struct cDebrisSys *next;	/* 0x34 g_pWorld->debrisList */
+	DebrisHit_t onHit;
+	int maxIdle;			/* 0x100 */
+	int fxType;			/* the cObjElementFX of each debris (cDebris_SetFX), 0 for none */
+	struct cDebrisSys *next;	/* g_pWorld->debrisList */
 } cDebrisSys;
 
 struct cDebris {
-	CGameModel Mod;			/* 0x00 first: Debris_Model casts the debris */
-	vec3_t drop[4];			/* 0x1c copy of g_DebrisDrop */
-	float life;			/* 0x4c the time left, counts down by 0.05 a step and ends at 0 */
-	cDebris *next;			/* 0x50 in the idle or active list */
-	struct cObjElementFX *fx;	/* 0x54 */
+	CGameModel Mod;			/* first: Debris_Model casts the debris */
+	vec3_t drop[4];			/* copy of g_DebrisDrop */
+	float life;			/* the time left, counts down by 0.05 a step and ends at 0 */
+	cDebris *next;			/* in the idle or active list */
+	struct cObjElementFX *fx;
 };
 #define Debris_Mod(d) (&(d)->Mod)
 
@@ -135,7 +135,7 @@ byte cWorld_DeleteDebrisSys(cWorld *world, const char *name);
 void cDebrisSys_Init(cDebrisSys *sys, int n, int e);
 cDebris *cDebrisSys_NewElement(cDebrisSys *sys);
 void cDebrisSys_Drop(cDebrisSys *sys, cDebris *debris);
-/* rva 0x204ea0: the move of a debris of the system, 0 when it is gone */
+/* the move of a debris of the system, 0 when it is gone */
 byte cDebris_Update(cDebris *self, cDebrisSys *sys);
 
 /* entity list by name for the collision tests */
@@ -181,9 +181,9 @@ int Video_GetCurrentMode(void);
 void Models_List(void);
 
 typedef struct cSaveVar {
-	char *name;			/* 0x0 cString */
-	char *value;			/* 0x4 cString */
-	struct cSaveVar *next;		/* 0x8 g_SaveVars */
+	char *name;			/* cString */
+	char *value;			/* cString */
+	struct cSaveVar *next;		/* g_SaveVars */
 } cSaveVar;
 
 void cFuncGvarDevices_Load(struct cFuncGvar *elem, void *f);

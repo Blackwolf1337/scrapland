@@ -1,5 +1,5 @@
 /*
- * Methods of the Python type cPyEntity (method table cPyEntity_methods, rva 0x428e88). The original source file
+ * Methods of the Python type cPyEntity (method table cPyEntity_methods). The original source file
  * is not known (no CHECK in these functions); the type lives in PyInterface/. Angles are degrees in the script
  * API and radians for the engine (deg * pi / 180 in double, then float).
  */
@@ -108,7 +108,7 @@ static PyObject *cPyEntity_IsType(PyObject *self, PyObject *args) {
 	return Py_BuildValue("i", Entity_IsType(e, type) ? 1 : 0);
 }
 
-/* type functions of cPyEntity (type object rva 0x428e18) */
+/* type functions of cPyEntity (type object) */
 
 static PyTypeObject cPyEntity_Type;
 PyObject *PyEntity_New(const char *name) {

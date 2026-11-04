@@ -144,7 +144,7 @@ void CD3DApp_dtor(CD3DApplication *self) {
 	g_Engine = NULL;
 }
 
-/* vf00: the window style (and in fullscreen the size of the mode) after a change */
+/* the window style (and in fullscreen the size of the mode) after a change */
 /* the window over the screen for fullscreen (the present scales the back buffer to it), the cursor only in a window */
 int CD3DApp_AdjustWindowForChange(CD3DApplication *self) {
 	Plat_SetFullscreen(!self->windowed);
@@ -154,7 +154,7 @@ int CD3DApp_AdjustWindowForChange(CD3DApplication *self) {
 
 static int g_AppPausedCount;
 
-/* vf13: pause counted over the callers, the timer stopped with the first and started with the last */
+/* pause counted over the callers, the timer stopped with the first and started with the last */
 void CD3DApp_Pause(CD3DApplication *self, int pause) {
 	int n = g_AppPausedCount + (pause ? 1 : -1);
 
@@ -248,7 +248,7 @@ static int CD3DApp_Nop(CD3DApplication *self) {
 	return 0;
 }
 
-/* vf01 ConfirmDevice: every device is fine */
+/* ConfirmDevice: every device is fine */
 static int CD3DApp_ConfirmDevice(CD3DApplication *self, D3DCaps8 *caps, uint32_t behavior, uint32_t fmt) {
 	(void)self;
 	(void)caps;

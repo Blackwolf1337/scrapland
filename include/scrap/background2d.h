@@ -11,13 +11,13 @@
 #include "scrap/node3d.h"
 
 typedef struct NodeGraphic2D {
-	struct NodeGraphic2D *next;		/* 0x0 */
-	CGraphic2D *graphic;		/* 0x4 */
+	struct NodeGraphic2D *next;
+	CGraphic2D *graphic;
 } NodeGraphic2D;
 
 typedef struct CGraphic2DList {
-	NodeGraphic2D *first;			/* 0x0 */
-	NodeGraphic2D *last;			/* 0x4 */
+	NodeGraphic2D *first;
+	NodeGraphic2D *last;
 } CGraphic2DList;
 
 CGraphic2DList *CGraphic2DList_ctor(CGraphic2DList *self);
@@ -28,9 +28,9 @@ void CGraphic2DList_Render(CGraphic2DList *self);
 #define BACKGROUND2D_PIECE 0x100
 
 typedef struct CBackground2D {
-	CBmp bmp;			/* 0x00 */
-	ColorIntens color;		/* 0x0c 0xffffff, 1 */
-	CMaterial *Mat;			/* 0x14 shared, its map 0 gets the pieces */
+	CBmp bmp;
+	ColorIntens color;		/* 0xffffff, 1 */
+	CMaterial *Mat;			/* shared, its map 0 gets the pieces */
 } CBackground2D;
 
 /* the background sprite: the name set, a new sprite when it changes */

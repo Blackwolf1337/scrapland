@@ -64,14 +64,14 @@ void Err_Report(int code, int fatal, const char *fmt, ...);
 #define DYNLIST_ID 0x6e69444c	/* "LDin" */
 
 typedef struct cDynList {
-	uint32_t id;			/* 0x00 DYNLIST_ID */
-	byte *mem;			/* 0x04 Mem_Alloc */
-	uint32_t total;			/* 0x08 elements allocated */
-	uint32_t used;			/* 0x0c */
-	uint32_t elemSize;		/* 0x10 */
-	uint16_t blockSize;		/* 0x14 */
-	byte changed;			/* 0x16 set by every change */
-	byte unused17;			/* 0x17 cleared by the constructor */
+	uint32_t id;			/* DYNLIST_ID */
+	byte *mem;			/* Mem_Alloc */
+	uint32_t total;			/* elements allocated */
+	uint32_t used;
+	uint32_t elemSize;
+	uint16_t blockSize;
+	byte changed;			/* set by every change */
+	byte unused17;			/* cleared by the constructor */
 } cDynList;
 
 void DynList_Free(cDynList *dyn);
@@ -95,19 +95,19 @@ enum {
 };
 
 typedef struct cDatLine {
-	struct cDatLine *prev;		/* 0x0 */
-	struct cDatLine *next;		/* 0x4 */
-	int type;			/* 0x8 LINEA_ */
-	char *text;			/* 0xc String_Dup */
+	struct cDatLine *prev;
+	struct cDatLine *next;
+	int type;			/* LINEA_ */
+	char *text;			/* String_Dup */
 } cDatLine;
 
 typedef struct cDataFile {
-	uint32_t id;			/* 0x00 DATAFILE_ID */
-	int count;			/* 0x04 lines with the head */
-	cDatLine *head;		/* 0x08 */
-	cDatLine *cur;			/* 0x0c the line last found */
-	int curIdx;			/* 0x10 its index, -1 for none */
-	int caseSensitive;		/* 0x14 names of sections and keys */
+	uint32_t id;			/* DATAFILE_ID */
+	int count;			/* lines with the head */
+	cDatLine *head;
+	cDatLine *cur;			/* the line last found */
+	int curIdx;			/* its index, -1 for none */
+	int caseSensitive;		/* names of sections and keys */
 } cDataFile;
 
 void DataFile_AddSection(cDataFile *dat, const char *name, int idx);	/* "[name]" after line idx */
@@ -146,9 +146,9 @@ int Proc_Scan(const char *s, const char *fmt, ...);	/* the number of values read
  * than the colors need, the colors start at the first 512 byte boundary after its start.
  */
 typedef struct Pal16Shift {
-	byte rShr, rShl;		/* 0x0 the 8 bit value shifted right, then left into its place */
-	byte gShr, gShl;		/* 0x2 */
-	byte bShr, bShl;		/* 0x4 */
+	byte rShr, rShl;		/* the 8 bit value shifted right, then left into its place */
+	byte gShr, gShl;
+	byte bShr, bShl;
 } Pal16Shift;
 extern Pal16Shift g_Pal16Shift;
 #define PAL16_COLORS(pal) ((uint16_t *)(((uintptr_t)(pal) + 0x200) & ~(uintptr_t)0x1ff))
@@ -158,18 +158,18 @@ void Pal16_SetMasks(uint32_t r, uint32_t g, uint32_t b);
 
 /* Util/Pcx.cpp: 8 bit PCX images, run length coded; lx and ly in the header are the size (from the window when 0) */
 typedef struct PcxHeader {
-	byte manuf;			/* 0x00 10 */
-	byte version;			/* 0x01 5 */
-	byte encoding;			/* 0x02 1 */
-	byte bpp;			/* 0x03 8 */
-	int16_t xmin, ymin;		/* 0x04 */
-	int16_t xmax, ymax;		/* 0x08 */
+	byte manuf;			/* 10 */
+	byte version;			/* 5 */
+	byte encoding;			/* 1 */
+	byte bpp;			/* 8 */
+	int16_t xmin, ymin;
+	int16_t xmax, ymax;
 	byte pad_0c[0x35];
-	byte planes;			/* 0x41 */
-	uint16_t bpl;			/* 0x42 bytes a line of a plane */
-	uint16_t palInfo;		/* 0x44 */
-	uint16_t lx;			/* 0x46 */
-	uint16_t ly;			/* 0x48 */
+	byte planes;
+	uint16_t bpl;			/* bytes a line of a plane */
+	uint16_t palInfo;
+	uint16_t lx;
+	uint16_t ly;
 	byte pad_4a[0x36];
 } PcxHeader;
 
@@ -187,9 +187,9 @@ typedef struct procrange_t {
 typedef int (*proctype_t)(char *dest, const char *name, const void *data, int size);
 
 typedef struct cProcType {
-	const char *name;		/* 0x0 */
-	const void *data;		/* 0x4 the "IDENT value" list of Proc_TypeLookup */
-	proctype_t convert;		/* 0x8 NULL: Proc_TypeLookup */
+	const char *name;
+	const void *data;		/* the "IDENT value" list of Proc_TypeLookup */
+	proctype_t convert;		/* NULL: Proc_TypeLookup */
 } cProcType;
 
 #endif

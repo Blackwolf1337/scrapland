@@ -98,7 +98,7 @@ static void WindFx_Bar(CPsaImage *img, float sx, float sy, float x, float y) {
 	CPsaImage_Draw(img, x, y);
 }
 
-/* vf00: the free space around the ship of the camera (four line tests ahead to the sides, up and down) sets the
+/* the free space around the ship of the camera (four line tests ahead to the sides, up and down) sets the
  * volume, pan and pitch of the wind */
 static void cWindFxScorer_Draw(cScorerItem *base, int player) {
 	cWindFxScorer *self = (cWindFxScorer *)base;

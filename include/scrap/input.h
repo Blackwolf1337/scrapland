@@ -55,54 +55,54 @@ enum {
 
 /* an input action of an action set; value[player] is its current state (SScorer.GetMenuAccept) */
 typedef struct cInputAction {
-	byte pressed[MAX_LOCAL_PLAYERS];	/* 0x00 held over a set change while the value stays above 0.5 */
-	char *name;			/* 0x04 cString */
-	float prev[MAX_LOCAL_PLAYERS];	/* 0x08 value of the last frame */
-	float value[MAX_LOCAL_PLAYERS];	/* 0x18 */
-	cPy_Function func[MAX_LOCAL_PLAYERS];	/* 0x28 SInput.Bind, called with the player on the press */
-	byte latch;			/* 0x78 keeps pressed over a set change */
+	byte pressed[MAX_LOCAL_PLAYERS];	/* held over a set change while the value stays above 0.5 */
+	char *name;			/* cString */
+	float prev[MAX_LOCAL_PLAYERS];	/* value of the last frame */
+	float value[MAX_LOCAL_PLAYERS];
+	cPy_Function func[MAX_LOCAL_PLAYERS];	/* SInput.Bind, called with the player on the press */
+	byte latch;			/* keeps pressed over a set change */
 	byte pad_79[3];
 } cInputAction;
 
 typedef TABLE(cInputAction) cInputActionTable;
 
 typedef struct cActionSet {
-	char *name;			/* 0x0 */
-	cInputActionTable actions;	/* 0x4 */
+	char *name;
+	cInputActionTable actions;
 } cActionSet;
 typedef TABLE(cActionSet) cActionSetTable;
 
 /* the text input of a player: typed through the virtual keyboard grid, the cursor is a cell of it */
 typedef struct cPlayerInput {
-	int maxLen;			/* 0x00 0x80 */
-	int len;			/* 0x04 */
-	char text[0x8c - 0x08];		/* 0x08 SInput.GetString */
-	float cursorX;			/* 0x8c SInput.GetCursorChar */
-	float cursorY;			/* 0x90 */
-	byte keyDown;			/* 0x94 the accept key of this frame */
-	byte keyWasDown;		/* 0x95 */
+	int maxLen;			/* 0x80 */
+	int len;
+	char text[0x8c - 0x08];		/* SInput.GetString */
+	float cursorX;			/* SInput.GetCursorChar */
+	float cursorY;
+	byte keyDown;			/* the accept key of this frame */
+	byte keyWasDown;
 	byte pad_96[2];
-	void (*onDone)(int player, const char *text);	/* 0x98 once on the new line */
-	cPy_Function func;		/* 0x9c SInput.SetInputFunc */
-	byte active;			/* 0xb0 the cursor follows mouse and pad */
+	void (*onDone)(int player, const char *text);	/* once on the new line */
+	cPy_Function func;		/* SInput.SetInputFunc */
+	byte active;			/* the cursor follows mouse and pad */
 	byte pad_b1[3];
 } cPlayerInput;
 
 /* the rumble state of a player */
 typedef struct cPad {
-	int index;			/* 0x00 */
-	float prev[2];			/* 0x04 left and right motor of the last update */
-	float motor[2];			/* 0x0c */
-	float time;			/* 0x14 game time of the last update */
-	float duration;			/* 0x18 seconds left */
-	void (*onRumble)(int index, float left, float right);	/* 0x1c */
+	int index;
+	float prev[2];			/* left and right motor of the last update */
+	float motor[2];
+	float time;			/* game time of the last update */
+	float duration;			/* seconds left */
+	void (*onRumble)(int index, float left, float right);
 } cPad;
 
 typedef struct cVirtualKeyboard {
-	char text[0x100];		/* 0x000 the characters of the grid, row by row */
-	int a;				/* 0x100 columns (SInput.GetVirtualKeyboard) */
-	int b;				/* 0x104 rows */
-	int len;			/* 0x108 */
+	char text[0x100];		/* the characters of the grid, row by row */
+	int a;				/* columns (SInput.GetVirtualKeyboard) */
+	int b;				/* rows */
+	int len;
 } cVirtualKeyboard;
 
 extern cActionSetTable g_ActionSets;
@@ -110,7 +110,7 @@ extern cPlayerInput g_PlayerInput[4];	/* [MAX_LOCAL_PLAYERS] */
 extern cVirtualKeyboard g_VirtualKeyboard;
 extern cPad g_Pads[4];		/* [MAX_LOCAL_PLAYERS] */
 
-/* rva 0x133a30 is cString_EqStr on the name */
+/* is cString_EqStr on the name */
 static inline byte ActionSet_IsNamed(cActionSet *set, const char *name) {
 	return cString_EqStr(&set->name, name);
 }
@@ -132,7 +132,7 @@ cVirtualKeyboard *cVirtualKeyboard_ctor(cVirtualKeyboard *vk);
 byte cVirtualKeyboard_Set(cVirtualKeyboard *vk, const char *text);
 void cPad_Rumble(cPad *pad, float a, float b, float c);
 
-/* rva 0x13a1b0: whether the action is pressed for the player */
+/* whether the action is pressed for the player */
 byte cInputAction_Pressed(cInputAction *a, int player);
 
 /* action of the set set (ACTSET_) pressed by the player in this frame */
@@ -158,25 +158,25 @@ void cPlayerInput_dtor(cPlayerInput *in);
  * action set (-1, -1 for none).
  */
 typedef struct cDevEntry {
-	float prev;			/* 0x00 */
-	float value;			/* 0x04 */
+	float prev;
+	float value;
 	struct {
 		int player;
 		int action;
-	} sets[NUM_SETS];		/* 0x08 */
+	} sets[NUM_SETS];
 } cDevEntry;
 
 typedef struct cAbstractIDevice cAbstractIDevice;
 typedef struct cAbstractIDeviceVtbl {
-	void (*Free)(cAbstractIDevice *self);	/* 0x00 */
-	void(*SetDefaults)(cAbstractIDevice *self);				/* 0x04 menu and debug sets */
-	void(*SetGameDefaults)(cAbstractIDevice *self);			/* 0x08 character and vehicle */
-	const char *(*GetName)(cAbstractIDevice *self);			/* 0x0c */
-	const char *(*GetEntryLabel)(cAbstractIDevice *self, int entry);	/* 0x10 for the menus */
-	const char *(*GetEntryName)(cAbstractIDevice *self, int entry);	/* 0x14 Scrap.cfg */
-	void(*Update)(cAbstractIDevice *self, float dt);			/* 0x18 */
-	byte(*IsReserved)(cAbstractIDevice *self, int entry);		/* 0x1c */
-	byte(*SetEntry)(cAbstractIDevice *self, int entry, int set, int player, int action, byte check);	/* 0x20 */
+	void (*Free)(cAbstractIDevice *self);
+	void(*SetDefaults)(cAbstractIDevice *self);				/* menu and debug sets */
+	void(*SetGameDefaults)(cAbstractIDevice *self);			/* character and vehicle */
+	const char *(*GetName)(cAbstractIDevice *self);
+	const char *(*GetEntryLabel)(cAbstractIDevice *self, int entry);	/* for the menus */
+	const char *(*GetEntryName)(cAbstractIDevice *self, int entry);	/* Scrap.cfg */
+	void(*Update)(cAbstractIDevice *self, float dt);
+	byte(*IsReserved)(cAbstractIDevice *self, int entry);
+	byte(*SetEntry)(cAbstractIDevice *self, int entry, int set, int player, int action, byte check);
 } cAbstractIDeviceVtbl;
 
 /* calls through the slots of cAbstractIDeviceVtbl */
@@ -214,51 +214,51 @@ static inline void InputDev_Update(void *self, float dt) {
 
 /* the engine variable of a device: its bindings as lines of Scrap.cfg */
 typedef struct cFuncGvarDevices {
-	cFuncGvar base;			/* 0x00 the variable is named after the device */
-	cAbstractIDevice *device;	/* 0x14 */
+	cFuncGvar base;			/* the variable is named after the device */
+	cAbstractIDevice *device;
 } cFuncGvarDevices;
 
 struct cAbstractIDevice {
-	const cAbstractIDeviceVtbl *vftable;	/* 0x00 */
-	cFuncGvarDevices *gvar;		/* 0x04 */
-	int nEntries;			/* 0x08 */
-	cDevEntry *entries;		/* 0x0c Mem_Alloc */
+	const cAbstractIDeviceVtbl *vftable;
+	cFuncGvarDevices *gvar;
+	int nEntries;
+	cDevEntry *entries;		/* Mem_Alloc */
 };
 
-/* PcKeyboard.cpp: the keyboard adds no members ((&g_Keyboard), 0x10 bytes) */
+/* PcKeyboard.cpp: the keyboard adds no members ((&g_Keyboard)) */
 typedef cAbstractIDevice cPcKeyboard;
 
 typedef struct cPcMouse {
-	cAbstractIDevice base;		/* 0x00 */
-	float speed[2];			/* 0x10 x and y per second of the last period */
-	float move[2];			/* 0x18 moved in this period */
-	float time;			/* 0x20 */
+	cAbstractIDevice base;
+	float speed[2];			/* x and y per second of the last period */
+	float move[2];			/* moved in this period */
+	float time;
 } cPcMouse;
 
 /* XINPUT_STATE */
 typedef struct exe_xinput_state {
-	uint32_t packet;		/* 0x00 */
-	uint16_t buttons;		/* 0x04 */
-	byte leftTrigger;		/* 0x06 */
-	byte rightTrigger;		/* 0x07 */
-	int16_t thumbLX, thumbLY;	/* 0x08 */
-	int16_t thumbRX, thumbRY;	/* 0x0c */
+	uint32_t packet;
+	uint16_t buttons;
+	byte leftTrigger;
+	byte rightTrigger;
+	int16_t thumbLX, thumbLY;
+	int16_t thumbRX, thumbRY;
 } exe_xinput_state;
 
 typedef struct cPcPad {
-	cAbstractIDevice base;		/* 0x00 */
-	int index;			/* 0x10 */
-	exe_xinput_state state;		/* 0x14 */
+	cAbstractIDevice base;
+	int index;
+	exe_xinput_state state;
 	byte pad_24;
-	byte f25[4];			/* 0x25 cleared by the constructor, unaligned */
+	byte f25[4];			/* cleared by the constructor, unaligned */
 	byte pad_29[3];
 } cPcPad;
 
 /* the node data of the device list */
 typedef struct cInputDevNode {
-	struct cInputDevNode *next;	/* 0x0 */
-	struct cInputDevNode *prev;	/* 0x4 */
-	cAbstractIDevice *dev;		/* 0x8 */
+	struct cInputDevNode *next;
+	struct cInputDevNode *prev;
+	cAbstractIDevice *dev;
 } cInputDevNode;
 typedef DLIST(cInputDevNode) cInputDevList;
 
@@ -285,8 +285,8 @@ void Keyboard_Init(void);
 
 /* DIMOUSESTATE */
 typedef struct exe_mouse_state {
-	int32_t x, y, z;		/* 0x0 */
-	char buttons[4];		/* 0xc */
+	int32_t x, y, z;
+	char buttons[4];
 } exe_mouse_state;
 extern cGVar GVar_IsUsingMouse;
 #define g_IsUsingMouse (GVar_IsUsingMouse.value.i)		/* IsUsingMouse */

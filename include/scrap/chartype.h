@@ -150,7 +150,7 @@ extern cGVar GVar_PoliceStealAmount;
 #define g_PoliceStealAmount (GVar_PoliceStealAmount.value.i)
 
 /* engine side */
-/* the name of the listener into the mayor logic (NULL clears it, rva 0x153010) */
+/* the name of the listener into the mayor logic (NULL clears it) */
 void cMayorLocalLogic_SetListener(cLocalLogic *self, cEntity *e);
 
 void ChType_MessengerTakeDataPack(cAbstractFile *params);

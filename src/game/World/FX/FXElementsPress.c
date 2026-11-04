@@ -835,7 +835,7 @@ static void MainFX_TopGlows(cFXElementsMentalControllerMainFX *self, float dt) {
 	}
 }
 
-/* vf02: while a controller is seen or the camera is near the top: the drops of data along the tubes (phase < 5), the
+/* while a controller is seen or the camera is near the top: the drops of data along the tubes (phase < 5), the
  * glow up the tube and the glows over the top (phase 2..4); else the model off and everything cleared */
 static void cFXElementsMentalControllerMainFX_Update(cMapElement *elem, float dt) {
 	cFXElementsMentalControllerMainFX *self = (cFXElementsMentalControllerMainFX *)elem;

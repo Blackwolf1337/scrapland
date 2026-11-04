@@ -32,11 +32,11 @@
 
 typedef struct cNetController cNetController;
 typedef struct cNetControllerVtbl {
-	void(*Reset)(cNetController *self);					/* 0x00 */
-	void(*Read)(cNetController *self, void *msg);			/* 0x04 */
-	void(*Write)(cNetController *self, int kind, cEntity *e, void *msg, int full);	/* 0x08 */
-	byte(*Changed)(cNetController *self, byte flags, cEntity *e);	/* 0x0c */
-	void(*Apply)(cNetController *self, cEntity *e, float dt, byte move);	/* 0x10 */
+	void(*Reset)(cNetController *self);
+	void(*Read)(cNetController *self, void *msg);
+	void(*Write)(cNetController *self, int kind, cEntity *e, void *msg, int full);
+	byte(*Changed)(cNetController *self, byte flags, cEntity *e);
+	void(*Apply)(cNetController *self, cEntity *e, float dt, byte move);
 } cNetControllerVtbl;
 
 /* calls through the slots of cNetControllerVtbl */
@@ -61,48 +61,48 @@ static inline void NetCtl_Write(void *self, int kind, cEntity *e, void *msg, int
 }
 
 struct cNetController {
-	const cNetControllerVtbl *vftable;	/* 0x00 */
-	float age;			/* 0x04 0.5 when a state came, then counted down by Apply */
-	vec3_t pos;			/* 0x08 */
-	vec3_t ang;			/* 0x14 */
-	vec3_t vel;			/* 0x20 */
-	vec3_t rotVel;			/* 0x2c */
-	byte flags;			/* 0x38 NETC_ of the last state */
+	const cNetControllerVtbl *vftable;
+	float age;			/* 0.5 when a state came, then counted down by Apply */
+	vec3_t pos;
+	vec3_t ang;
+	vec3_t vel;
+	vec3_t rotVel;
+	byte flags;			/* NETC_ of the last state */
 	byte pad_39[3];
 	/* the sends left of each part after a change (pos, ang, ang z, vel, rotVel, rotVel z), 5 at the start */
-	int left[6];			/* 0x3c */
-	byte pending[6];		/* 0x54 1 after Reset: the part may count down once */
+	int left[6];
+	byte pending[6];		/* 1 after Reset: the part may count down once */
 	byte pad_5a[2];
 };
 
 typedef struct cObjEntity {
-	cEntity base;			/* 0x000 */
-	vec3_t slotAng;			/* 0x07c the state of the last slot, the render lerp starts there */
-	vec3_t slotPos;			/* 0x088 */
-	vec3_t renderAng;		/* 0x094 of the model */
-	vec3_t renderPos;		/* 0x0a0 */
-	vec3_t ang;			/* 0x0ac */
-	CGameModel model;		/* 0x0b8 */
-	vec3_t vel;			/* 0x0d4 */
-	vec3_t rotVel;			/* 0x0e0 */
-	byte netRes;			/* 0x0ec "NetRes": the index of the network resource */
+	cEntity base;
+	vec3_t slotAng;			/* the state of the last slot, the render lerp starts there */
+	vec3_t slotPos;
+	vec3_t renderAng;		/* of the model */
+	vec3_t renderPos;
+	vec3_t ang;
+	CGameModel model;
+	vec3_t vel;
+	vec3_t rotVel;
+	byte netRes;			/* "NetRes": the index of the network resource */
 	byte pad_ed[3];
-	cEntity *cam;			/* 0x0f0 the follow camera of the object ("CamName") */
-	cNetController *net;		/* 0x0f4 only in a network game */
-	vec3_t camOff;			/* 0x0f8 "CamTgt" (0, 50, -50) */
-	float lastTime;			/* 0x104 the world time of the last timer step, -1 */
-	int radarShown;			/* 0x108 the RadarShow radarTime belongs to */
-	float radarTime;		/* 0x10c */
-	cTimer timer;			/* 0x110 */
-	byte realTime;			/* 0x138 "UseRealTime": the world speed does not scale the timer */
+	cEntity *cam;			/* the follow camera of the object ("CamName") */
+	cNetController *net;		/* only in a network game */
+	vec3_t camOff;			/* "CamTgt" (0, 50, -50) */
+	float lastTime;			/* the world time of the last timer step, -1 */
+	int radarShown;			/* the RadarShow radarTime belongs to */
+	float radarTime;
+	cTimer timer;
+	byte realTime;			/* "UseRealTime": the world speed does not scale the timer */
 	byte pad_139[3];
-	int radarShow;			/* 0x13c "RadarShow" */
-	cSlotController *slot;		/* 0x140 every 0.05 s */
-	cSndInterface snd;		/* 0x144 */
-	cPy_Function onObjSlot;		/* 0x160 "OnObjSlot" (entity, interval) */
-	cObjMove move;			/* 0x174 */
-	cModMove mod;			/* 0x1e4 */
-	struct cEmbeddedFX *fx;		/* 0x224 */
+	int radarShow;			/* "RadarShow" */
+	cSlotController *slot;		/* every 0.05 s */
+	cSndInterface snd;
+	cPy_Function onObjSlot;		/* "OnObjSlot" (entity, interval) */
+	cObjMove move;
+	cModMove mod;
+	struct cEmbeddedFX *fx;
 } cObjEntity;
 
 /* the sound interface of an object (the weapon and effect sounds by index) */
@@ -110,31 +110,31 @@ typedef struct cObjEntity {
 /* the slots of cObjEntity::vftable after the 23 of cEntity */
 typedef struct cObjEntityVtbl {
 	cEntityVtbl base;
-	void(*Tick)(cEntity *self, float dt);					/* 0x5c vf23 per slot */
-	void(*UpdateModel)(cEntity *self);						/* 0x60 */
-	int(*GetNodeSlot)(cEntity *self);						/* 0x64 */
-	vec3_t *(*GetRenderPos)(cEntity *self, vec3_t *out);			/* 0x68 */
-	vec3_t *(*GetRenderAng)(cEntity *self, vec3_t *out);			/* 0x6c */
-	vec3_t *(*GetSndAng)(cEntity *self, vec3_t *out);				/* 0x70 */
-	vec3_t *(*GetViewPos)(cEntity *self, vec3_t *out);				/* 0x74 */
-	vec3_t *(*GetViewAng)(cEntity *self, vec3_t *out);				/* 0x78 */
-	vec3_t *(*GetSndPos)(cEntity *self, vec3_t *out);				/* 0x7c */
-	vec3_t *(*GetAng)(cEntity *self, vec3_t *out);				/* 0x80 */
-	void(*SetAng)(cEntity *self, const vec3_t *ang);				/* 0x84 */
-	vec3_t *(*GetVel)(cEntity *self, vec3_t *out);				/* 0x88 */
-	void(*SetVel)(cEntity *self, const vec3_t *vel);				/* 0x8c */
-	vec3_t *(*GetRotVel)(cEntity *self, vec3_t *out);				/* 0x90 */
-	void(*SetRotVel)(cEntity *self, const vec3_t *v);				/* 0x94 */
-	CGameModel *(*GetModel)(cEntity *self);					/* 0x98 */
-	void(*GetCamera)(cEntity *self, vec3_t *pos, vec3_t *ang);			/* 0x9c */
-	float(*GetRadius)(cEntity *self);						/* 0xa0 */
+	void(*Tick)(cEntity *self, float dt);					/* per slot */
+	void(*UpdateModel)(cEntity *self);
+	int(*GetNodeSlot)(cEntity *self);
+	vec3_t *(*GetRenderPos)(cEntity *self, vec3_t *out);
+	vec3_t *(*GetRenderAng)(cEntity *self, vec3_t *out);
+	vec3_t *(*GetSndAng)(cEntity *self, vec3_t *out);
+	vec3_t *(*GetViewPos)(cEntity *self, vec3_t *out);
+	vec3_t *(*GetViewAng)(cEntity *self, vec3_t *out);
+	vec3_t *(*GetSndPos)(cEntity *self, vec3_t *out);
+	vec3_t *(*GetAng)(cEntity *self, vec3_t *out);
+	void(*SetAng)(cEntity *self, const vec3_t *ang);
+	vec3_t *(*GetVel)(cEntity *self, vec3_t *out);
+	void(*SetVel)(cEntity *self, const vec3_t *vel);
+	vec3_t *(*GetRotVel)(cEntity *self, vec3_t *out);
+	void(*SetRotVel)(cEntity *self, const vec3_t *v);
+	CGameModel *(*GetModel)(cEntity *self);
+	void(*GetCamera)(cEntity *self, vec3_t *pos, vec3_t *ang);
+	float(*GetRadius)(cEntity *self);
 	/* the network copy of the object (vehicles, missiles, items; nothing in cObjEntity) */
-	void(*NetWrite)(cEntity *self, float dist2, void *msg, int full);		/* 0xa4 vf41 */
-	byte(*NetNeedsSend)(cEntity *self, float dist2);				/* 0xa8 vf42 */
-	void(*NetRead)(cEntity *self, void *msg, int isNew);			/* 0xac vf43 */
-	void(*SetEffect)(cEntity *self, uint32_t fx);				/* 0xb0 */
-	void(*SetEffectParam)(cEntity *self, int i, float v);			/* 0xb4 */
-	void(*Render)(cEntity *self);						/* 0xb8 */
+	void(*NetWrite)(cEntity *self, float dist2, void *msg, int full);
+	byte(*NetNeedsSend)(cEntity *self, float dist2);
+	void(*NetRead)(cEntity *self, void *msg, int isNew);
+	void(*SetEffect)(cEntity *self, uint32_t fx);
+	void(*SetEffectParam)(cEntity *self, int i, float v);
+	void(*Render)(cEntity *self);
 } cObjEntityVtbl;
 
 /* calls through the slots of cObjEntityVtbl */

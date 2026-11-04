@@ -4,7 +4,7 @@
  * misc models, made by the model name in EmbeddedFXMisc_Create (DataPack, DataCube, Capsule, Matrix, Amplifier,
  * DTritusDesktop, MeetingPoint, ExtraLife, Flag, Moto, BossShield, Conversor, Battery, Treasure, the coins and the
  * items).
- * The vtable is the one of cEmbeddedFX (embeddedfxchar.h): 0 deleting destructor, 1 Reset, 2 Release, 3 Update (dt),
+ * The vtable is the one of cEmbeddedFX (embeddedfxchar.h): 0 Free, 1 Reset, 2 Release, 3 Update (dt),
  * 4 Tick (empty in all of them), 5 Stop (keep: 0 the trails cleared).
  * Most Updates draw only while the model is loaded, visible and without a model effect; visible at 0x08 keeps
  * whether they drew in the last frame.
@@ -19,13 +19,13 @@
 
 typedef struct cEmbeddedFXAmplifier {
 	cEmbeddedFX base;
-	byte visible;			/* 0x08 */
+	byte visible;
 	byte pad_09[3];
-	int dummyFlares;		/* 0x0c DOB_Amplificador_Flares */
-	CGameParticles flares;		/* 0x10 */
-	int dummyRoot;			/* 0xc0 OB_Amplificador_Cuerpo */
-	CGameTrail trail;		/* 0xc4 */
-	float t;			/* 0xc8 */
+	int dummyFlares;		/* DOB_Amplificador_Flares */
+	CGameParticles flares;
+	int dummyRoot;			/* OB_Amplificador_Cuerpo */
+	CGameTrail trail;
+	float t;
 } cEmbeddedFXAmplifier;
 
 #define FXBATTERY_TRAILS 3
@@ -38,16 +38,16 @@ typedef struct cEmbeddedFXBatteryRay {
 
 typedef struct cEmbeddedFXBattery {
 	cEmbeddedFX base;
-	byte visible;			/* 0x008 */
+	byte visible;
 	byte pad_09[3];
-	int dummyGlow;			/* 0x00c DOB_Batery_Glow */
-	CGameParticles glow;		/* 0x010 the ray ends and the sparks */
-	int dummyRoot;			/* 0x0c0 DC_Root */
-	float sparkT;			/* 0x0c4 to the next sparks */
-	CGameTrail trails[FXBATTERY_TRAILS];	/* 0x0c8 the rays */
-	cEmbeddedFXBatteryRay rays[FXBATTERY_TRAILS];	/* 0x0d4 */
-	float life[FXBATTERY_TRAILS];	/* 0x11c of the ray */
-	float delay[FXBATTERY_TRAILS];	/* 0x128 to the next ray, 0.4..1.2 after the Reset */
+	int dummyGlow;			/* DOB_Batery_Glow */
+	CGameParticles glow;		/* the ray ends and the sparks */
+	int dummyRoot;			/* DC_Root */
+	float sparkT;			/* to the next sparks */
+	CGameTrail trails[FXBATTERY_TRAILS];	/* the rays */
+	cEmbeddedFXBatteryRay rays[FXBATTERY_TRAILS];
+	float life[FXBATTERY_TRAILS];	/* of the ray */
+	float delay[FXBATTERY_TRAILS];	/* to the next ray, 0.4..1.2 after the Reset */
 } cEmbeddedFXBattery;
 
 #define FXBOSSSHIELD_TRAILS 16
@@ -55,144 +55,144 @@ typedef struct cEmbeddedFXBattery {
 
 typedef struct cEmbeddedFXBossShield {
 	cEmbeddedFX base;
-	CGameParticles particles;	/* 0x0008 Dummy01, a glow per slot */
-	float t[FXBOSSSHIELD_SLOTS];	/* 0x00b8 0..1, -1 after the Reset */
-	float speed[FXBOSSSHIELD_SLOTS];	/* 0x04b4 */
-	vec3_t dir[FXBOSSSHIELD_SLOTS];	/* 0x08b0 on the shield */
-	float size[FXBOSSSHIELD_SLOTS];	/* 0x14a4 */
-	uint32_t color[FXBOSSSHIELD_SLOTS];	/* 0x18a0 */
-	int mode;			/* 0x1c9c 1, 2 shown (the color set), else hidden; the network message */
-	float regen;			/* 0x1ca0 Value of the RegenerationBar of the scorer */
-	float hit;			/* 0x1ca4 1 on a hit, falls to 0 */
-	float spin;			/* 0x1ca8 of the rings */
-	float f1cac;			/* 0x1cac */
-	CGameTrail trails[FXBOSSSHIELD_TRAILS];	/* 0x1cb0 the rings */
+	CGameParticles particles;	/* Dummy01, a glow per slot */
+	float t[FXBOSSSHIELD_SLOTS];	/* 0..1, -1 after the Reset */
+	float speed[FXBOSSSHIELD_SLOTS];
+	vec3_t dir[FXBOSSSHIELD_SLOTS];	/* on the shield */
+	float size[FXBOSSSHIELD_SLOTS];
+	uint32_t color[FXBOSSSHIELD_SLOTS];
+	int mode;			/* 1, 2 shown (the color set), else hidden; the network message */
+	float regen;			/* Value of the RegenerationBar of the scorer */
+	float hit;			/* 1 on a hit, falls to 0 */
+	float spin;			/* of the rings */
+	float f1cac;
+	CGameTrail trails[FXBOSSSHIELD_TRAILS];	/* the rings */
 } cEmbeddedFXBossShield;
 
 #define FXCAPSULE_MOTORS 3
 
 typedef struct cEmbeddedFXCapsule {
 	cEmbeddedFX base;
-	CGameParticles motors[FXCAPSULE_MOTORS];	/* 0x08 DS_CapsulaBill_Motor_01.. */
+	CGameParticles motors[FXCAPSULE_MOTORS];	/* DS_CapsulaBill_Motor_01.. */
 } cEmbeddedFXCapsule;
 
 /* the coins; the items use the same layout and Init */
 typedef struct cEmbeddedFXCoin {
 	cEmbeddedFX base;
-	byte visible;			/* 0x08 */
+	byte visible;
 	byte pad_09[3];
-	int dummyGlow;			/* 0x0c */
-	CGameParticles glow;		/* 0x10 */
-	float scale;			/* 0xc0 */
-	uint32_t color;			/* 0xc4 */
+	int dummyGlow;
+	CGameParticles glow;
+	float scale;
+	uint32_t color;
 } cEmbeddedFXCoin;
 
 typedef struct cEmbeddedFXItem {
 	cEmbeddedFXCoin coin;
-	int phase;			/* 0xc8 0..511 */
+	int phase;			/* 0..511 */
 } cEmbeddedFXItem;
 
 typedef struct cEmbeddedFXConversor {
 	cEmbeddedFX base;
-	byte visible;			/* 0x08 */
+	byte visible;
 	byte pad_09[3];
-	int dummyGlow;			/* 0x0c DOB_Conversor-Mandos_Glow */
-	CGameParticles glow;		/* 0x10 */
-	float t;			/* 0xc0 */
+	int dummyGlow;			/* DOB_Conversor-Mandos_Glow */
+	CGameParticles glow;
+	float t;
 } cEmbeddedFXConversor;
 
 typedef struct cEmbeddedFXDTritusDesktop {
 	cEmbeddedFX base;
-	byte visible;			/* 0x08 */
+	byte visible;
 	byte pad_09[3];
-	float t;			/* 0x0c the blink of the calling light */
-	int dummyGlow;			/* 0x10 DOB_Interfono_Calling */
-	CGameParticles glow;		/* 0x14 */
-	int dummyRoot;			/* 0xc4 OB_Interfono_Base */
-	float arcT;			/* 0xc8 0..1 */
-	CGameTrail trail;		/* 0xcc */
+	float t;			/* the blink of the calling light */
+	int dummyGlow;			/* DOB_Interfono_Calling */
+	CGameParticles glow;
+	int dummyRoot;			/* OB_Interfono_Base */
+	float arcT;			/* 0..1 */
+	CGameTrail trail;
 } cEmbeddedFXDTritusDesktop;
 
 typedef struct cEmbeddedFXDataCube {
 	cEmbeddedFX base;
-	int dummyGlow;			/* 0x08 DOB_DataCube_Glow */
-	CGameParticles glow;		/* 0x0c */
-	int dummyFlares;		/* 0xbc DOB_DataCube_Flares */
-	CGameParticles flares;		/* 0xc0 */
+	int dummyGlow;			/* DOB_DataCube_Glow */
+	CGameParticles glow;
+	int dummyFlares;		/* DOB_DataCube_Flares */
+	CGameParticles flares;
 } cEmbeddedFXDataCube;
 
 typedef struct cEmbeddedFXDataPack {
 	cEmbeddedFX base;
-	byte visible;			/* 0x008 */
-	byte on;			/* 0x009 the laser (the global DataPack switch) */
-	byte shown;			/* 0x00a the state level last reached */
+	byte visible;
+	byte on;			/* the laser (the global DataPack switch) */
+	byte shown;			/* the state level last reached */
 	byte pad_0b;
-	float level;			/* 0x00c 0..1 the laser faded in */
-	int dummyRoot;			/* 0x010 DC_Root */
-	vec3_t rootPos;			/* 0x014 */
-	int dummyGlow;			/* 0x020 DOB_DataPack_Glow */
-	CGameParticles glow;		/* 0x024 */
-	int dummyCodec;			/* 0x0d4 DOB_DataPack_Letras */
-	CGameParticles codec;		/* 0x0d8 */
-	int dummyLaser;			/* 0x188 DF_Laser */
-	CGameParticles laser;		/* 0x18c */
-	CGameTrail trail;		/* 0x23c */
+	float level;			/* 0..1 the laser faded in */
+	int dummyRoot;			/* DC_Root */
+	vec3_t rootPos;
+	int dummyGlow;			/* DOB_DataPack_Glow */
+	CGameParticles glow;
+	int dummyCodec;			/* DOB_DataPack_Letras */
+	CGameParticles codec;
+	int dummyLaser;			/* DF_Laser */
+	CGameParticles laser;
+	CGameTrail trail;
 } cEmbeddedFXDataPack;
 
 typedef struct cEmbeddedFXExtraLife {
 	cEmbeddedFX base;
-	byte visible;			/* 0x08 */
+	byte visible;
 	byte pad_09[3];
-	int dummyGlow;			/* 0x0c DOB_ExtraLife_Glow */
-	CGameParticles glow;		/* 0x10 */
-	int dummyRoot;			/* 0xc0 DC_Root */
-	int dummyBar;			/* 0xc4 OB_ExtraLife_Barra_01 */
-	CGameTrail trail;		/* 0xc8 the rays */
-	float scale;			/* 0xcc */
-	float t;			/* 0xd0 the pulse of the bar glows */
+	int dummyGlow;			/* DOB_ExtraLife_Glow */
+	CGameParticles glow;
+	int dummyRoot;			/* DC_Root */
+	int dummyBar;			/* OB_ExtraLife_Barra_01 */
+	CGameTrail trail;		/* the rays */
+	float scale;
+	float t;			/* the pulse of the bar glows */
 } cEmbeddedFXExtraLife;
 
 typedef struct cEmbeddedFXFlag {
 	cEmbeddedFX base;
-	byte visible;			/* 0x08 */
+	byte visible;
 	byte pad_09[3];
-	int dummy;			/* 0x0c DOB_FlapCTF_Glow */
-	CGameParticles particles;	/* 0x10 */
-	float t;			/* 0xc0 */
-	float scale;			/* 0xc4 */
-	uint32_t color;			/* 0xc8 */
-	uint32_t color2;		/* 0xcc */
+	int dummy;			/* DOB_FlapCTF_Glow */
+	CGameParticles particles;
+	float t;
+	float scale;
+	uint32_t color;
+	uint32_t color2;
 } cEmbeddedFXFlag;
 
 typedef struct cEmbeddedFXMatrix {
 	cEmbeddedFX base;
-	byte visible;			/* 0x008 */
-	byte isMatrix;			/* 0x009 model Matrix.m3d */
+	byte visible;
+	byte isMatrix;			/* model Matrix.m3d */
 	byte pad_0a[2];
-	int dummyGlow;			/* 0x00c DOB_DataCube_Glow */
-	CGameParticles glow;		/* 0x010 */
-	int dummyFlares;		/* 0x0c0 DOB_Matrix_Flares */
-	CGameParticles flares;		/* 0x0c4 */
-	int dummyRoot;			/* 0x174 DC_Root */
-	float timer[3];			/* 0x178 of the three rays */
-	float dur[3];			/* 0x184 */
-	vec3_t off[3];			/* 0x190 the random ends of the rays */
-	CGameTrail trail;		/* 0x1b4 */
-	float scale;			/* 0x1b8 1, MatrixExt 6 */
+	int dummyGlow;			/* DOB_DataCube_Glow */
+	CGameParticles glow;
+	int dummyFlares;		/* DOB_Matrix_Flares */
+	CGameParticles flares;
+	int dummyRoot;			/* DC_Root */
+	float timer[3];			/* of the three rays */
+	float dur[3];
+	vec3_t off[3];			/* the random ends of the rays */
+	CGameTrail trail;
+	float scale;			/* 1, MatrixExt 6 */
 } cEmbeddedFXMatrix;
 
 typedef struct cEmbeddedFXMeetingPoint {
 	cEmbeddedFX base;
-	byte visible;			/* 0x008 */
+	byte visible;
 	byte pad_09[3];
-	int dummy;			/* 0x00c DF_Light */
-	CGameParticles light;		/* 0x010 */
-	float t;			/* 0x0c0 the flash of the light */
-	CGameParticles flares;		/* 0x0c4 DOB_MeetingPoint_Flares */
-	float countT;			/* 0x174 -1: no count down */
-	CGameParticles countDown;	/* 0x178 DF_Light_02 */
-	float countA;			/* 0x228 */
-	float countB;			/* 0x22c */
+	int dummy;			/* DF_Light */
+	CGameParticles light;
+	float t;			/* the flash of the light */
+	CGameParticles flares;		/* DOB_MeetingPoint_Flares */
+	float countT;			/* -1: no count down */
+	CGameParticles countDown;	/* DF_Light_02 */
+	float countA;
+	float countB;
 } cEmbeddedFXMeetingPoint;
 
 #define FXBIKE_ENGINES 3
@@ -201,34 +201,34 @@ typedef struct cEmbeddedFXMeetingPoint {
 
 typedef struct cEmbeddedFXBike {
 	cEmbeddedFX base;
-	float t[FXBIKE_ENGINES];	/* 0x008 the time since the last smoke of each engine */
-	vec3_t pos[FXBIKE_ENGINES];	/* 0x014 the engine at the last smoke (the smoke fills the way from there) */
-	int nodeEngine[FXBIKE_ENGINES];	/* 0x038 DF_MotorTrust_01..03 */
-	CGameParticles engine[FXBIKE_ENGINES];	/* 0x044 */
-	CGameParticles down[FXBIKE_DOWN];	/* 0x254 DF_MotorTrust_04, 05 */
-	CGameParticles tube[FXBIKE_TUBES];	/* 0x3b4 DF_EscapeTube_01..06 */
-	float throttle;			/* 0x7d4 0..1, the size of the flames and the smoke */
-	float boost;			/* 0x7d8 */
-	byte on;			/* 0x7dc the engines run (SetF7d4) */
+	float t[FXBIKE_ENGINES];	/* the time since the last smoke of each engine */
+	vec3_t pos[FXBIKE_ENGINES];	/* the engine at the last smoke (the smoke fills the way from there) */
+	int nodeEngine[FXBIKE_ENGINES];	/* DF_MotorTrust_01..03 */
+	CGameParticles engine[FXBIKE_ENGINES];
+	CGameParticles down[FXBIKE_DOWN];	/* DF_MotorTrust_04, 05 */
+	CGameParticles tube[FXBIKE_TUBES];	/* DF_EscapeTube_01..06 */
+	float throttle;			/* 0..1, the size of the flames and the smoke */
+	float boost;
+	byte on;			/* the engines run (SetF7d4) */
 	byte pad_7dd[3];
 } cEmbeddedFXBike;
 
 typedef struct cEmbeddedFXTreasure {
 	cEmbeddedFX base;
-	byte visible;			/* 0x08 */
+	byte visible;
 	byte pad_09[3];
-	int dummyGlow;			/* 0x0c DOB_Treasure_Glow */
-	CGameParticles glow;		/* 0x10 */
-	int dummyRoot;			/* 0xc0 DC_Root */
-	float timer;			/* 0xc4 to the next spark */
-	float dur;			/* 0xc8 of the spark */
-	float life;			/* 0xcc of the spark */
-	vec3_t spark;			/* 0xd0 the position of the spark */
-	float rot;			/* 0xdc */
-	float rotSpeed;			/* 0xe0 */
-	CGameTrail trail;		/* 0xe4 */
-	int type;			/* 0xe8 1 A, 2 B, 3 C */
-	float scale;			/* 0xec */
+	int dummyGlow;			/* DOB_Treasure_Glow */
+	CGameParticles glow;
+	int dummyRoot;			/* DC_Root */
+	float timer;			/* to the next spark */
+	float dur;			/* of the spark */
+	float life;			/* of the spark */
+	vec3_t spark;			/* the position of the spark */
+	float rot;
+	float rotSpeed;
+	CGameTrail trail;
+	int type;			/* 1 A, 2 B, 3 C */
+	float scale;
 } cEmbeddedFXTreasure;
 
 /* the effect of the object model replaces *fx; other models leave *fx as it is */

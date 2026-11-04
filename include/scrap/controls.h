@@ -9,30 +9,30 @@
 #include "scrap/entity.h"
 
 typedef struct cVehicleControls {
-	int weapon;			/* 0x00 */
-	float hRot;			/* 0x04 "HRot" */
-	float vRot;			/* 0x08 "VRot" */
-	float acc;			/* 0x0c "Acc" */
-	float str;			/* 0x10 "Str" */
-	float vStr;			/* 0x14 "VStr" */
-	float fireWait;			/* 0x18 the fire is held 0.2 s after the button, cleared with a new weapon */
-	float padBounce;		/* 0x1c "VehicleCenterPadBounce" grows back to the pitch of the stick */
-	byte firePrev;			/* 0x20 */
-	byte cmPrev;			/* 0x21 */
-	byte fire;			/* 0x22 */
-	byte cm;			/* 0x23 the ammo button (countermeasures) */
-	byte boostKey;			/* 0x24 the boost button */
-	byte fullThrust;		/* 0x25 1 after Reset: the second accelerate action counts, the thrust follows it at once */
-	byte viewTarget;		/* 0x26 the view-target or next-target button */
-	byte netFire;			/* 0x27 the toggle bit of the fire of the network state */
-	byte follow;			/* 0x28 the follow button: the aim follows the target */
+	int weapon;
+	float hRot;			/* "HRot" */
+	float vRot;			/* "VRot" */
+	float acc;			/* "Acc" */
+	float str;			/* "Str" */
+	float vStr;			/* "VStr" */
+	float fireWait;			/* the fire is held 0.2 s after the button, cleared with a new weapon */
+	float padBounce;		/* "VehicleCenterPadBounce" grows back to the pitch of the stick */
+	byte firePrev;
+	byte cmPrev;
+	byte fire;
+	byte cm;			/* the ammo button (countermeasures) */
+	byte boostKey;			/* the boost button */
+	byte fullThrust;		/* 1 after Reset: the second accelerate action counts, the thrust follows it at once */
+	byte viewTarget;		/* the view-target or next-target button */
+	byte netFire;			/* the toggle bit of the fire of the network state */
+	byte follow;			/* the follow button: the aim follows the target */
 	byte pad_29[3];
-	float attackTime;		/* 0x2c the target is followed */
-	float emptyTime;		/* 0x30 without ammo, the next weapon after TimeWSwitchNo */
-	float rumbleA;			/* 0x34 */
-	float rumbleB;			/* 0x38 */
-	float rumbleARate;		/* 0x3c per second */
-	float rumbleBRate;		/* 0x40 */
+	float attackTime;		/* the target is followed */
+	float emptyTime;		/* without ammo, the next weapon after TimeWSwitchNo */
+	float rumbleA;
+	float rumbleB;
+	float rumbleARate;		/* per second */
+	float rumbleBRate;
 } cVehicleControls;
 
 cVehicleControls *Controls_ctor(cVehicleControls *self);

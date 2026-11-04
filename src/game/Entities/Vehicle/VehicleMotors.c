@@ -892,7 +892,7 @@ CGameModel *cVehicleMotorsEffects_GetModel(cVehicleMotorsEffects *self, int side
 	return NULL;
 }
 
-/* ---- the constructors and destructors (rva 0x10bb90..0x10bdc0, after VehicleEntity.cpp) ---- */
+/* ---- the constructors and destructors (after VehicleEntity.cpp) ---- */
 
 
 /* VehicleEntity.cpp */

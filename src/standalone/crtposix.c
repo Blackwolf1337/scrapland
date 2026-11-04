@@ -265,7 +265,7 @@ int crt_isatty(int fd) {
 	return isatty(fd);
 }
 
-/* struct _stat32 of the MSVC runtime (0x24 bytes): the callers read st_mtime at 0x1c, st_size at 0x14 */
+/* struct _stat32 of the MSVC runtime: the callers read st_mtime at 0x1c, st_size at 0x14 */
 typedef struct CrtStat32 {
 	uint32_t dev;
 	uint16_t ino, mode;

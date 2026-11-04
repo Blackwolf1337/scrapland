@@ -508,7 +508,7 @@ void PaintZone_dtor(PaintZone *self) {
 
 PaintZone g_PaintAll;
 
-/* the static initializer (rva 0x05d6f0, the constructor inlined) and the atexit destructor of
+/* the static initializer (the constructor inlined) and the atexit destructor of
  * (&g_PaintAll) */
 static void GroundPortal_FiniPaintAll(void) {
 	PaintZone_dtor((&g_PaintAll));

@@ -1365,7 +1365,7 @@ void cObjElementFXDebrisCloud_Warm(cObjElementFXDebrisCloud *self, cDebris *debr
 
 #define FXCM_NODE_DTOR 0x0d1190		/* the same code as Nto1Node_dtor */
 
-/* the constructors and destructors (rva 0x1c9610..0x1c99c4, after World/FX/FXCharActions.cpp); the node of the
+/* the constructors and destructors (after World/FX/FXCharActions.cpp); the node of the
  * links of the EMI as array member */
 static Nto1Node *FXCountermeasures_NodeCtor(Nto1Node *self) {
 	self->target = NULL;
@@ -1468,7 +1468,7 @@ static void cObjElementFXSonicExplosion_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-/* the deleting destructors */
+/* the Free functions */
 static void cObjElementFXDebrisCloud_Free(cObjElementFX *self) {
 	cObjElementFXDebrisCloud_dtor(self);
 	operator_delete(self);

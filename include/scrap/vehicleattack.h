@@ -11,24 +11,24 @@
 #include "scrap/entity.h"
 
 typedef struct cVehicleAttack {
-	Nto1Node target;		/* 0x00 the entity shot at, data the attack */
-	Nto1Node sent;			/* 0x10 the target of the last network flags */
-	Nto1Node last;			/* 0x20 the target of the last OnHit */
-	vec3_t point;			/* 0x30 the point shot at */
-	cEntity *owner;			/* 0x3c */
-	int count;			/* 0x40 the shots since the last Update */
-	vec3_t lastPoint;		/* 0x44 the point of the last OnHit */
-	byte hasLast;			/* 0x50 */
+	Nto1Node target;		/* the entity shot at, data the attack */
+	Nto1Node sent;			/* the target of the last network flags */
+	Nto1Node last;			/* the target of the last OnHit */
+	vec3_t point;			/* the point shot at */
+	cEntity *owner;
+	int count;			/* the shots since the last Update */
+	vec3_t lastPoint;		/* the point of the last OnHit */
+	byte hasLast;
 	byte pad_51[3];
-	int netCount;			/* 0x54 the shots since the last network flags */
-	int netSeq;			/* 0x58 */
-	byte netFlags;			/* 0x5c count (4 bits), sequence (3 bits), a target (bit 7) */
+	int netCount;			/* the shots since the last network flags */
+	int netSeq;
+	byte netFlags;			/* count (4 bits), sequence (3 bits), a target (bit 7) */
 	byte pad_5d[3];
-	Nto1Node hitBy;			/* 0x60 the attacker, data the attack */
-	float hitTime;			/* 0x70 the time of the owner of the last hit */
-	byte hitCount;			/* 0x74 */
+	Nto1Node hitBy;			/* the attacker, data the attack */
+	float hitTime;			/* the time of the owner of the last hit */
+	byte hitCount;
 	byte pad_75[3];
-	float resetTime;		/* 0x78 the world time the shots on the target are dropped */
+	float resetTime;		/* the world time the shots on the target are dropped */
 } cVehicleAttack;
 
 cVehicleAttack *cVehicleAttack_ctor(cVehicleAttack *self);

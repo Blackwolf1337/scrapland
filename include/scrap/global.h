@@ -28,18 +28,18 @@ void CheckFailed(const char *expr, const char *file, const char *date, int line)
 
 /* memory statistics: of the whole game ((&g_MemStats)) and of the context set in g_MemStatsContext */
 typedef struct cMemStats {
-	int bytes;			/* 0x00 */
-	int peakBytes;			/* 0x04 */
-	int blocks;			/* 0x08 */
-	int peakBlocks;			/* 0x0c */
-	int allocs;			/* 0x10 */
-	int frees;			/* 0x14 */
+	int bytes;
+	int peakBytes;
+	int blocks;
+	int peakBlocks;
+	int allocs;
+	int frees;
 } cMemStats;
 
 extern cMemStats g_MemStats;
 extern cMemStats *g_MemStatsContext;
 
-/* the engine's operator new and sized delete (rva 0x1334d0, 0x313634; the plain delete is 0x1334e0), with its memory statistics */
+/* the engine's operator new and sized delete (0x313634; the plain delete is 0x1334e0), with its memory statistics */
 void *operator_new(uint32_t size);
 void operator_delete(void *p);
 void *operator_new_array(uint32_t size);
@@ -52,9 +52,6 @@ void __stdcall crt_eh_vector_dtor(void *p, uint32_t size, uint32_t count, void *
  * each; NULL if the allocation fails. Delete_Objects is the delete[] of it. (src/game/Global/Mem.c) */
 void *New_Objects(uint32_t count, uint32_t size, void *ctor, void *dtor);
 void Delete_Objects(void *p, uint32_t size, void *dtor);
-/* the array part of a vector deleting destructor (flags 2): the dtor on each object, the block freed with flags 1;
- * returns the block */
-void *Delete_VectorPart(void *p, uint32_t flags, uint32_t size, void *dtor);
 /* the shared stub of the empty constructors (src/game/Global/Stubs.c) */
 void *Stub_ReturnSelf(void *self);
 /* new[] of count items as the compiler makes it: a size that overflows is -1, which the allocator refuses */
@@ -88,16 +85,16 @@ int Str_VPrintf(char *dst, int size, const char *fmt, va_list ap);
 
 /* Global/HashTable.h: chained hash of string keys, case-insensitive unless caseSensitive */
 typedef struct HashNode {
-	void *value;			/* 0x0 */
-	const char *key;		/* 0x4 */
-	struct HashNode *next;		/* 0x8 */
+	void *value;
+	const char *key;
+	struct HashNode *next;
 } HashNode;
 
 typedef struct HashTable {
-	uint32_t numSlots;		/* 0x0 */
-	HashNode **slots;		/* 0x4 */
-	byte locked;			/* 0x8 no changes while set */
-	byte caseSensitive;		/* 0x9 */
+	uint32_t numSlots;
+	HashNode **slots;
+	byte locked;			/* no changes while set */
+	byte caseSensitive;
 	byte pad_a[2];
 } HashTable;
 

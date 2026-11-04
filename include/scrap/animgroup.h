@@ -26,29 +26,29 @@
 #define ANIMEVENT_END 0xd		/* the event a group puts at its last frame */
 
 typedef struct MorphData {
-	char Tag[2];			/* 0x0 */
-	byte Target;			/* 0x2 */
-	byte param3;			/* 0x3 0 by default */
-	byte Interp;			/* 0x4 */
-	byte NextMin;			/* 0x5 */
-	byte NextMax;			/* 0x6 */
-	byte param7;			/* 0x7 100 by default */
+	char Tag[2];
+	byte Target;
+	byte param3;			/* 0 by default */
+	byte Interp;
+	byte NextMin;
+	byte NextMax;
+	byte param7;			/* 100 by default */
 } MorphData;
 
 typedef struct CAnimGroup {
-	char *name;			/* 0x00 String_Set */
-	CAnimEvent *events;		/* 0x04 */
-	CAnimCtrl ctrl;			/* 0x08 */
-	MorphData *morph;		/* 0x8c new[] of MAX_MORPHDATA */
+	char *name;			/* String_Set */
+	CAnimEvent *events;
+	CAnimCtrl ctrl;
+	MorphData *morph;		/* new[] of MAX_MORPHDATA */
 	union {
-		uint16_t morphAct;	/* 0x90 */
+		uint16_t morphAct;
 		struct {
-			byte iMorph;	/* 0x90 the step played */
-			byte morphCount; /* 0x91 its repetitions left */
+			byte iMorph;	/* the step played */
+			byte morphCount; /* its repetitions left */
 		};
 	};
 	uint16_t pad_92;
-	CScene *Anim;			/* 0x94 a reference */
+	CScene *Anim;			/* a reference */
 } CAnimGroup;
 
 typedef struct CAnimGroups {

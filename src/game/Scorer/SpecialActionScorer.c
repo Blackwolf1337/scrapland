@@ -1,6 +1,6 @@
 /*
  * SpecialActionScorer.cpp of the game (Menu/): cSpecialActionScorer, the special action of the character in the
- * HUD with the draw handler of each character action (the table at rva 0x428cb8) and the target search of the gear.
+ * HUD with the draw handler of each character action (the table) and the target search of the gear.
  * See include/scrap/scoreritems.h.
  */
 #include "scrap/gvar.h"
@@ -205,7 +205,7 @@ extern cGVar GVar_GearStdFar;
 #define GEARAIM_LOCK_TIME 0.3f
 #define GEARAIM_SCREEN_X 320.0f
 #define GEARAIM_SCREEN_Y 240.0f
-#define GEARAIM_SCORE_ALARM -100.0f	/* rva 0x3af490: a gear, a bishop or a radar target in the alarm */
+#define GEARAIM_SCORE_ALARM -100.0f	/* a gear, a bishop or a radar target in the alarm */
 #define GEARAIM_SCORE_MESSENGER -200.0f
 #define GEARAIM_SCORE_SENTINEL -50.0f
 #define SPECIALACTION_FADE 0.2f
@@ -369,7 +369,7 @@ static void cSpecialActionScorer_DrawCrossHair(cSpecialActionScorer *self, int p
 	CPsaImage_DrawPoly(self->cannon, pv, uv, NULL, 4, 6);
 }
 
-/* the handlers of the table at rva 0x428cb8 by character action */
+/* the handlers of the table by character action */
 
 /* 0: the weapon energy above 0.9 */
 static void SpecialAction_DrawDefault(cSpecialActionScorer *self, int player) {

@@ -24,14 +24,14 @@ typedef struct IInput IInput;
 
 /* the slots of IInput; only the null input is made (the platform layer reads the devices) */
 typedef struct IInputVtbl {
-	void (*Free)(IInput *self);						/* 0x00 */
-	int(*Init)(IInput *self, void *hwnd, void *hinst, byte exclusive);			/* 0x04 */
-	int(*Release)(IInput *self);								/* 0x08 */
-	int(*ReadMouse)(IInput *self, int *out);						/* 0x0c dx, dy, dz and the buttons */
-	int(*ReadKeys)(IInput *self);								/* 0x10 */
-	int(*AcquireMouse)(IInput *self, byte on);						/* 0x14 */
-	int(*AcquireKeys)(IInput *self, byte on);						/* 0x18 */
-	void(*WndProc)(IInput *self, void *hwnd, uint32_t msg, uint32_t wparam, uint32_t lparam);	/* 0x1c */
+	void (*Free)(IInput *self);
+	int(*Init)(IInput *self, void *hwnd, void *hinst, byte exclusive);
+	int(*Release)(IInput *self);
+	int(*ReadMouse)(IInput *self, int *out);						/* dx, dy, dz and the buttons */
+	int(*ReadKeys)(IInput *self);
+	int(*AcquireMouse)(IInput *self, byte on);
+	int(*AcquireKeys)(IInput *self, byte on);
+	void(*WndProc)(IInput *self, void *hwnd, uint32_t msg, uint32_t wparam, uint32_t lparam);
 } IInputVtbl;
 
 /* calls through the slots of IInputVtbl */
@@ -52,10 +52,10 @@ static inline void Input3D_Free(void *self) {
 }
 
 struct IInput {
-	const IInputVtbl *vftable;	/* 0x000 */
-	int32_t mouse[3];		/* 0x004 dx, dy, dz */
-	byte buttons[4];		/* 0x010 */
-	byte keys[256];			/* 0x014 0x80 while held */
+	const IInputVtbl *vftable;
+	int32_t mouse[3];		/* dx, dy, dz */
+	byte buttons[4];
+	byte keys[256];			/* 0x80 while held */
 };
 
 /* CEntradaNula: the input that reads nothing (g_Input before the real one), no members of its own */

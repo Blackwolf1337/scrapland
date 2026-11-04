@@ -65,7 +65,7 @@ vec3_t *Matrix_GetEuler(const matrix_t *self, vec3_t *out) {
 	return out;
 }
 
-/* the same in the engine3d (matriz.h, rva 0x2392d0): at the poles the first row turned back by x and y inline */
+/* the same in the engine3d (matriz.h): at the poles the first row turned back by x and y inline */
 vec3_t *Matrix_ToEuler(vec3_t *out, const matrix_t *m) {
 	float m8 = m->m[8], m9 = m->m[9], m10 = m->m[10];
 	float h = (float)__builtin_sqrt((double)(m10 * m10 + m8 * m8));
@@ -130,7 +130,7 @@ static byte Matrix_InvertAffine(matrix_t *out, const matrix_t *m) {
 	return 1;
 }
 
-/* the same as an HRESULT, 0 (S_OK) or E_INVALIDARG (matriz.h, rva 0x239560) */
+/* the same as an HRESULT, 0 (S_OK) or E_INVALIDARG (matriz.h) */
 int Matrix_Invert(matrix_t *out, const matrix_t *m) {
 	return Matrix_InvertAffine(out, m) ? 0 : (int)0x80070057;
 }

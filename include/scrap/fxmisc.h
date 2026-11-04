@@ -2,7 +2,7 @@
  * World/FX/FXMisc.cpp of the game: small effects of the world that ride on a debris of a debris system (the element
  * at cDebris + 0x54): the blink, fade and take effects of the items, the fade and noise of models, particle systems,
  * sparks with trails and trails. Also here: the visibility test of the effects, random vectors and the start of the
- * item and Sputnik effects. The element vtable: 0 deleting destructor, 1 Update (each frame, the debris and dt),
+ * item and Sputnik effects. The element vtable: 0 Free, 1 Update (each frame, the debris and dt),
  * 2 Alive (the debris step, 0 ends the debris), 3 Attach (to the model of the debris), 4 Reset.
  * The constructors and destructors of the FX elements of the FX scenes and of the character effects (the ones after
  * World/CollisionGrid.cpp in the exe) are here too.
@@ -23,7 +23,7 @@
 #define Debris_Model(d) ((CGameModel *)(d))
 #define Debris_Element(d) ((void *)((cDebris *)(d))->fx)
 
-/* Debris.cpp (rva 0x204940..) */
+/* Debris.cpp (..) */
 /* the destructor of the base class: the vtable of cObjElementAbstract */
 void cObjElement_dtor(void *self);
 void cObjElementAbstract_Free(cObjElementFX *base);
@@ -68,124 +68,124 @@ extern cGVar GVar_FXSmokeDebrisFile;
 /* the elements */
 
 typedef struct cObjElementFXItemFade {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x04 */
-	CGameParticles particles;	/* 0x08 */
-	int mode;			/* 0xb8 1 fade out (disabled at the end), 2 fade in */
-	float duration;			/* 0xbc */
-	float t;			/* 0xc0 */
-	float scale;			/* 0xc4 */
-	byte done;			/* 0xc8 */
-	byte started;			/* 0xc9 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	CGameParticles particles;
+	int mode;			/* 1 fade out (disabled at the end), 2 fade in */
+	float duration;
+	float t;
+	float scale;
+	byte done;
+	byte started;
 } cObjElementFXItemFade;
 
 typedef struct cObjElementFXItemTake {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x004 the item */
-	cEntity *target;		/* 0x008 the one that takes it */
-	CGameParticles particles;	/* 0x00c */
-	vec3_t dir[FXITEMTAKE_LINES];	/* 0x0bc */
-	CGameTrail trail;		/* 0x0ec */
-	float phase[FXITEMTAKE_LINES * FXITEMTAKE_POINTS];	/* 0x0f0 0..1 along the curve */
-	float speed[FXITEMTAKE_LINES * FXITEMTAKE_POINTS];	/* 0x1d0 */
-	vec3_t offset[FXITEMTAKE_LINES * FXITEMTAKE_POINTS];	/* 0x2b0 */
-	uint32_t color[FXITEMTAKE_LINES * FXITEMTAKE_POINTS];	/* 0x550 */
-	int mode;			/* 0x630 */
-	float unused_634;			/* 0x634 */
-	float t;			/* 0x638 */
-	float emitT;			/* 0x63c */
-	float scale;			/* 0x640 */
-	byte done;			/* 0x644 */
-	byte started;			/* 0x645 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;			/* the item */
+	cEntity *target;		/* the one that takes it */
+	CGameParticles particles;
+	vec3_t dir[FXITEMTAKE_LINES];
+	CGameTrail trail;
+	float phase[FXITEMTAKE_LINES * FXITEMTAKE_POINTS];	/* 0..1 along the curve */
+	float speed[FXITEMTAKE_LINES * FXITEMTAKE_POINTS];
+	vec3_t offset[FXITEMTAKE_LINES * FXITEMTAKE_POINTS];
+	uint32_t color[FXITEMTAKE_LINES * FXITEMTAKE_POINTS];
+	int mode;
+	float unused_634;
+	float t;
+	float emitT;
+	float scale;
+	byte done;
+	byte started;
 } cObjElementFXItemTake;
 
 /* the start of the effect classes that the setters by name reach (FXMisc_SetEntity, SetF8, SetFC, SetI8): the
  * vtable, the entity, two words and the started flag */
 typedef struct FXElemHead {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x04 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
 	union {
 		float f;
 		int i;
-	} w8;				/* 0x08 */
-	float fC;			/* 0x0c */
-	byte started;			/* 0x10 */
+	} w8;
+	float fC;
+	byte started;
 } FXElemHead;
 
 typedef struct cObjElementFXModelFade {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	float t;			/* 0x04 */
-	float duration;			/* 0x08 */
-	float fadeOut;			/* 0x0c the life of the debris over which it fades out */
-	byte unused_10;			/* 0x10 */
+	const cObjElementFXVtbl *vftable;
+	float t;
+	float duration;
+	float fadeOut;			/* the life of the debris over which it fades out */
+	byte unused_10;
 	byte pad_11[3];
 } cObjElementFXModelFade;
 
 typedef struct cObjElementFXModelNoise {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x04 */
-	float t;			/* 0x08 */
-	float duration;			/* 0x0c */
-	byte unused_10;			/* 0x10 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	float t;
+	float duration;
+	byte unused_10;
 	byte pad_11[3];
 } cObjElementFXModelNoise;
 
 typedef struct cObjElementFXParticleSystem {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	CGameParticles particles;	/* 0x04 */
-	byte move;			/* 0xb4 the debris moves */
-	byte on;			/* 0xb5 */
+	const cObjElementFXVtbl *vftable;
+	CGameParticles particles;
+	byte move;			/* the debris moves */
+	byte on;
 } cObjElementFXParticleSystem;
-/* the same with the particles on "Dummy01 (+dudv_pass)" (0xb8 bytes) */
+/* the same with the particles on "Dummy01 (+dudv_pass)" */
 typedef cObjElementFXParticleSystem cObjElementFXParticleSystemDuDv;
 
 typedef struct cObjElementFXSparks {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	float time;			/* 0x004 */
-	float dt;			/* 0x008 the time of the frame */
+	const cObjElementFXVtbl *vftable;
+	float time;
+	float dt;			/* the time of the frame */
 	byte pad_0c[4];
-	byte active[FXSPARKS_MAXSPARKS];	/* 0x010 */
-	vec3_t pos[FXSPARKS_MAXSPARKS];		/* 0x030 */
-	vec3_t vel[FXSPARKS_MAXSPARKS];		/* 0x1b0 */
-	vec3_t acc[FXSPARKS_MAXSPARKS];		/* 0x330 */
-	vec3_t jerk[FXSPARKS_MAXSPARKS];	/* 0x4b0 */
-	float life[FXSPARKS_MAXSPARKS];		/* 0x630 */
-	float lifeMax[FXSPARKS_MAXSPARKS];	/* 0x6b0 */
-	float delay[FXSPARKS_MAXSPARKS];	/* 0x730 */
-	float size[FXSPARKS_MAXSPARKS];		/* 0x7b0 */
-	uint32_t color[FXSPARKS_MAXSPARKS];	/* 0x830 */
-	float noise[FXSPARKS_MAXSPARKS];	/* 0x8b0 */
-	int segments[FXSPARKS_MAXSPARKS];	/* 0x930 */
-	float trailT;				/* 0x9b0 */
-	int sprite[FXSPARKS_MAXSPARKS];		/* 0x9b4 -1 for none */
-	int numActive;				/* 0xa34 */
-	int activeList[FXSPARKS_MAXSPARKS];	/* 0xa38 */
-	int numFree;				/* 0xab8 */
-	int freeList[FXSPARKS_MAXSPARKS];	/* 0xabc */
-	CGameTrail trails[FXSPARKS_MAXSPARKS];	/* 0xb3c */
-	CGameParticles particles;		/* 0xbbc */
-	byte on;				/* 0xc6c set by the hook laser that emits */
+	byte active[FXSPARKS_MAXSPARKS];
+	vec3_t pos[FXSPARKS_MAXSPARKS];
+	vec3_t vel[FXSPARKS_MAXSPARKS];
+	vec3_t acc[FXSPARKS_MAXSPARKS];
+	vec3_t jerk[FXSPARKS_MAXSPARKS];
+	float life[FXSPARKS_MAXSPARKS];
+	float lifeMax[FXSPARKS_MAXSPARKS];
+	float delay[FXSPARKS_MAXSPARKS];
+	float size[FXSPARKS_MAXSPARKS];
+	uint32_t color[FXSPARKS_MAXSPARKS];
+	float noise[FXSPARKS_MAXSPARKS];
+	int segments[FXSPARKS_MAXSPARKS];
+	float trailT;
+	int sprite[FXSPARKS_MAXSPARKS];		/* -1 for none */
+	int numActive;
+	int activeList[FXSPARKS_MAXSPARKS];
+	int numFree;
+	int freeList[FXSPARKS_MAXSPARKS];
+	CGameTrail trails[FXSPARKS_MAXSPARKS];
+	CGameParticles particles;
+	byte on;				/* set by the hook laser that emits */
 	byte pad_c6d[3];
 } cObjElementFXSparks;
 
 typedef struct cObjElementFXTrail {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	CGameTrail trail;		/* 0x04 */
-	vec3_t last;			/* 0x08 the last point added */
-	float minDist;			/* 0x14 */
-	byte stopped;			/* 0x18 */
-	byte on;			/* 0x19 */
-	byte unused_1a;			/* 0x1a cleared with on by the constructor */
+	const cObjElementFXVtbl *vftable;
+	CGameTrail trail;
+	vec3_t last;			/* the last point added */
+	float minDist;
+	byte stopped;
+	byte on;
+	byte unused_1a;			/* cleared with on by the constructor */
 	byte pad_1b;
 } cObjElementFXTrail;
 
 typedef struct cObjElementFXFadeOutTrail {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	CGameTrail trail;		/* 0x04 */
-	float duration;			/* 0x08 */
-	float t;			/* 0x0c */
-	byte running;			/* 0x10 */
-	byte on;			/* 0x11 */
+	const cObjElementFXVtbl *vftable;
+	CGameTrail trail;
+	float duration;
+	float t;
+	byte running;
+	byte on;
 } cObjElementFXFadeOutTrail;
 
 /* ScrapEngLensFlares.cpp: the lens flare holder of the scene elements */
@@ -204,8 +204,7 @@ void cObjElementFXSparks_Emit(cObjElementFXSparks *self, int n, float px, float 
 	float sizeMin, float sizeMax, float scaleHead, float scaleTail, float lifeMin, float lifeMax, float lmMin,
 	float lmMax, float delayMin, float delayMax, uint32_t color, float noiseMin, float noiseMax, float segMin,
 	float segMax, int sprite);
-/* the constructors and destructors (rva 0x1da190..0x1da6c8) and the deleting destructors (vtable slot
- * 0, rva 0x1da6d0..0x1da940) */
+/* the constructors, the destructors and the Free slots */
 void *cObjElementFXFadeOutTrail_ctor(void *self);
 void *cObjElementFXItemFade_ctor(void *self);
 void *cObjElementFXItemTake_ctor(void *self);

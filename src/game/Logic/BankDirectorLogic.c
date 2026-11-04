@@ -47,7 +47,7 @@ cEntity *Logic_FindInCharLists(cEntity *p) {
 	return NULL;
 }
 
-/* vf31: 0 while the target has more than 25 of money, the special time has not run out and it is in view (also of
+/* 0 while the target has more than 25 of money, the special time has not run out and it is in view (also of
  * the bank master) */
 byte cBankDirectorLocalLogic_LoseTarget(cLocalLogic *elem) {
 	cBankDirectorLocalLogic *self = (cBankDirectorLocalLogic *)elem;
@@ -68,7 +68,7 @@ byte cBankDirectorLocalLogic_LoseTarget(cLocalLogic *elem) {
 	return 1;
 }
 
-/* vf30: the next target when the search time ran out */
+/* the next target when the search time ran out */
 static cEntity *cBankDirectorLocalLogic_FindTarget(cLocalLogic *elem) {
 	cBankDirectorLocalLogic *self = (cBankDirectorLocalLogic *)elem;
 	if (!(0.0f > self->searchTime)) {
@@ -95,7 +95,7 @@ static cEntity *cBankDirectorLocalLogic_FindTarget(cLocalLogic *elem) {
 	return NULL;
 }
 
-/* vf17 (also of the bank master and the bishop) */
+/* (also of the bank master and the bishop) */
 void cBankDirectorLocalLogic_Update(cLocalLogic *base, float dt) {
 	cBankDirectorLocalLogic *self = (cBankDirectorLocalLogic *)base;
 	if (self->specialOn) {

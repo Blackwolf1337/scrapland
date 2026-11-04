@@ -1,5 +1,5 @@
 /*
- * The packet crypto of Net/transport.cpp (the code at rva 0x1898d0..0x18a3f0 and Poly1305 at 0x18fa90, no CHECK in
+ * The packet crypto of Net/transport.cpp (the code and Poly1305 at 0x18fa90, no CHECK in
  * them): cNetBuffer, a growing byte array, ChaCha20 (RFC 7539 block layout, 96 bit nonce) and Poly1305
  * (poly1305-donna, the 32 bit one-shot version). See include/scrap/net.h.
  */

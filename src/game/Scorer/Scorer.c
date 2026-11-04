@@ -720,10 +720,7 @@ void Scorer_Done(void) {
 		sc = g_Scorers;
 	}
 	if (sc) {
-		/* an array of new[], its count before it */
-		uint32_t *mem = (uint32_t *)sc - 1;
-		crt_eh_vector_dtor(sc, sizeof(cScorer), *mem, (void *)cScorer_dtor);
-		operator_delete_array(mem);
+		Delete_Objects(sc, sizeof(cScorer), (void *)cScorer_dtor);
 	}
 	g_Scorers = NULL;
 	Scorer_SetConsole(0);

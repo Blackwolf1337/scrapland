@@ -9,9 +9,9 @@
 #include "scrap/entity.h"
 
 typedef struct cPrimitive {
-	cEntity *owner;			/* 0x0 */
-	float radius;			/* 0x4 "VRadius" */
-	byte on;			/* 0x8 */
+	cEntity *owner;
+	float radius;			/* "VRadius" */
+	byte on;
 	byte pad_9[3];
 } cPrimitive;
 

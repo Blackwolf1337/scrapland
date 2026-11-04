@@ -106,7 +106,7 @@ static void cMonitorScorer_Free(cScorerItem *base) {
 	operator_delete(self);
 }
 
-/* vf01: TargetView=1 */
+/* TargetView=1 */
 static void cMonitorScorer_SetParam(cScorerItem *base, const char *name, const char *value) {
 	cMonitorScorer *self = (cMonitorScorer *)base;
 	if (!crt_stricmp(name, "TargetView")) {

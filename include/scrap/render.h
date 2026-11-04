@@ -70,12 +70,12 @@ extern int g_UseGlowMap;		/* video UsarGlowMap */
 #define MAX_SHADER_TAB 32
 typedef void (*shaderRender_t)(void *a, void *b);
 typedef struct ShaderTab {
-	uint32_t Index;			/* 0x00 its own index */
-	const char *Name;		/* 0x04 */
-	const char *File;		/* 0x08 the .psh, NULL without a pixel shader */
-	int unused_0c;			/* 0x0c */
-	uint32_t flags;			/* 0x10 0x100, 0x101 */
-	shaderRender_t fnRender;	/* 0x14 */
+	uint32_t Index;			/* its own index */
+	const char *Name;
+	const char *File;		/* the .psh, NULL without a pixel shader */
+	int unused_0c;
+	uint32_t flags;			/* 0x100, 0x101 */
+	shaderRender_t fnRender;
 } ShaderTab;
 extern ShaderTab g_ShaderTab[32];	/* [32], ends with a NULL name */
 /* the pixel shaders: on (the device has them), their handles, the ones switched off (a bit each from 0x200000) */
@@ -120,18 +120,18 @@ extern byte g_TexRepeat;	/* D3DPTEXTURECAPS_TEXREPEATNOTSCALEDBYSIZE */
 
 /* a dynamic index buffer of triangles (16 bit indices) */
 typedef struct CRenderIB {
-	void *pVertIB;			/* 0x0 IDirect3DIndexBuffer8 */
-	int Total;			/* 0x4 triangles */
-	int Used;			/* 0x8 */
+	void *pVertIB;			/* IDirect3DIndexBuffer8 */
+	int Total;			/* triangles */
+	int Used;
 } CRenderIB;
 
 /* a dynamic vertex buffer */
 typedef struct CRenderVB {
-	void *pVertVB;			/* 0x00 IDirect3DVertexBuffer8 */
-	int Total;			/* 0x04 vertices */
-	int Used;			/* 0x08 */
-	int Size;			/* 0x0c of a vertex */
-	uint32_t FVF;			/* 0x10 */
+	void *pVertVB;			/* IDirect3DVertexBuffer8 */
+	int Total;			/* vertices */
+	int Used;
+	int Size;			/* of a vertex */
+	uint32_t FVF;
 } CRenderVB;
 
 /* pixel shader i on (flags 1) or off (flags 2), the fixed texture stages (Render_PSFixed) without it; arg is not
@@ -283,24 +283,24 @@ int RenderEVA_DrawSkin(struct CMeshD3D *m, struct CRenderNode *r);
  * world matrix it was queued with. Up to 0x400 of each, a full batch is drawn at once. */
 #define MAX_RENDER_BATCH 0x400
 typedef struct RenderMeshEntry {
-	struct CMeshD3D *mesh;	/* 0x00 */
-	matrix_t world;			/* 0x04 */
-	uint32_t tex;			/* 0x44 the diffuse texture >> 1, 0 without */
-	int list;			/* 0x48 the batch count when the list of the mesh was queued */
-	struct CRenderNode *r;		/* 0x4c */
+	struct CMeshD3D *mesh;
+	matrix_t world;
+	uint32_t tex;			/* the diffuse texture >> 1, 0 without */
+	int list;			/* the batch count when the list of the mesh was queued */
+	struct CRenderNode *r;
 } RenderMeshEntry;
 typedef struct RenderTranspEntry {
-	struct CMeshD3D *mesh;	/* 0x00 */
-	matrix_t world;			/* 0x04 */
-	int group;			/* 0x44 g_TranspGroup, 0 for the identity */
-	struct CRenderNode *r;		/* 0x48 */
-	float dist2;			/* 0x4c to the eye, squared */
+	struct CMeshD3D *mesh;
+	matrix_t world;
+	int group;			/* g_TranspGroup, 0 for the identity */
+	struct CRenderNode *r;
+	float dist2;			/* to the eye, squared */
 } RenderTranspEntry;
 typedef struct RenderObjEntry {
-	struct IObject3D *obj;		/* 0x00 a CParticleSystem or a CFlare */
-	matrix_t world;			/* 0x04 */
-	struct CRenderNode *r;		/* 0x44 */
-	float dist2;			/* 0x48 */
+	struct IObject3D *obj;		/* a CParticleSystem or a CFlare */
+	matrix_t world;
+	struct CRenderNode *r;
+	float dist2;
 } RenderObjEntry;
 
 /* the batches drawn; E_FAIL without a device, else 0 */
@@ -326,12 +326,12 @@ void RenderGamma_LogShaderMask(void);		/* the mask of the shader features on, lo
 /* still the exe's */
 
 /* other modules (src/imports.inc) */
-/* rva 0x267530 (stencil.cpp): the shadow volume of the triangles of a mesh */
+/* (stencil.cpp): the shadow volume of the triangles of a mesh */
 void Stencil_Mesh(struct CVertList *v, const void *tris, uint32_t nTri, struct CMeshD3D *m, struct CRenderNode *r);
 /* CVertList_EnvMapUV: vertlist.h */
-void VertList_InitD3D(void);			/* rva 0x2404f0, empty */
+void VertList_InitD3D(void);			/* empty */
 void RenderTarget_InitD3D(void);
-void VertList_ReleaseD3D(void);		/* rva 0x2404e0 (ListaVert.cpp), empty */
-void RenderTarget_ReleaseD3D(void);		/* rva 0x220c60 (RenderTarget.cpp) */
+void VertList_ReleaseD3D(void);		/* (ListaVert.cpp), empty */
+void RenderTarget_ReleaseD3D(void);		/* (RenderTarget.cpp) */
 
 #endif

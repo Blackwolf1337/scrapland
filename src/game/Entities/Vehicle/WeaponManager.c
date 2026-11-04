@@ -2,7 +2,7 @@
  * Entities/Vehicle/WeaponManager.cpp of the game: the weapons of a vehicle, see include/scrap/weapons.h. The world
  * keeps the weapon and ammo tables (g_pWorld->weapons, ->ammo), the manager the mounted slots, upgrades and ammo of
  * its vehicle, the stamps of the next shot and the lock on an entity or a point.
- * The constructor, the destructor and the small methods before rva 0x11a0f0 sit behind VehicleTraffic.cpp in the exe.
+ * The constructor, the destructor and the small methods sit behind VehicleTraffic.cpp in the exe.
  */
 #include "scrap/console.h"
 #include "scrap/crt.h"
@@ -814,7 +814,7 @@ static int cWeaponManager_WeaponNeed(cWeaponManager *self) {
 	return 0;
 }
 
-/* the functions before rva 0x11a0f0 */
+/* the functions before */
 
 cWeaponManager *cWeaponManager_ctor(cWeaponManager *self) {
 	self->lock.target = NULL;

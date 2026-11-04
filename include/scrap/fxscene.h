@@ -3,7 +3,7 @@
  * model is one of Beating, BillArrives_A, BillArrives_C, Bishops, Decontamination, EnterMatrix, HumanCD, TheEndB or
  * Yakuzzi drops a debris of the matching engine variable file (FXScene_Create); its element follows the model of
  * the entity (the one with life the element holds) until the entity is gone and drives particles, trails and lens
- * flares by the time since the start. The element vtable is the one of World/FX/FXMisc.cpp: 0 deleting destructor,
+ * flares by the time since the start. The element vtable is the one of World/FX/FXMisc.cpp: 0 Free,
  * 1 Update, 2 Alive, 3 Attach, 4 Reset. The constructors and destructors are in FXMisc.c.
  */
 #ifndef SCRAP_FXSCENE_H
@@ -18,132 +18,132 @@
 #define FXMATRIX_TRAILS 16
 
 typedef struct cObjElementFXSceneBeatPickus {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	float t;			/* 0x004 */
-	float tPrev;			/* 0x008 */
-	cEntity *ent;			/* 0x00c */
-	vec3_t dummy;			/* 0x010 DM_Scene_Beating */
-	CGameParticles dust;		/* 0x01c Dummy03: dust and smoke puffs */
-	float dustT;			/* 0x0cc */
-	CGameParticles debris;		/* 0x0d0 Dummy02: debris and the hits */
-	float debrisT;			/* 0x180 */
-	CGameParticles sparks;	/* 0x184 Dummy01: sparks */
-	float sparkT;			/* 0x234 */
-	float hitT;			/* 0x238 until the next hit */
-	byte started;			/* 0x23c */
+	const cObjElementFXVtbl *vftable;
+	float t;
+	float tPrev;
+	cEntity *ent;
+	vec3_t dummy;			/* DM_Scene_Beating */
+	CGameParticles dust;		/* Dummy03: dust and smoke puffs */
+	float dustT;
+	CGameParticles debris;		/* Dummy02: debris and the hits */
+	float debrisT;
+	CGameParticles sparks;	/* Dummy01: sparks */
+	float sparkT;
+	float hitT;			/* until the next hit */
+	byte started;
 } cObjElementFXSceneBeatPickus;
 
 typedef struct cObjElementFXSceneBillArrives_A {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	float t;			/* 0x04 */
-	float tPrev;			/* 0x08 */
-	cEntity *ent;			/* 0x0c */
-	cEntity *capsule;		/* 0x10 BillArrives_ACapsule, its embedded effect holds the jets */
-	void *flare;			/* 0x14 CGameLensFlare */
-	float jetT;			/* 0x18 */
-	CGameParticles particles;	/* 0x1c Dummy01: smoke and dust */
-	float smokeT;			/* 0xcc */
-	vec3_t dummy1;			/* 0xd0 DM_Effects_BillArrives_A_01 */
-	vec3_t dummy2;			/* 0xdc DM_Effects_BillArrives_A_02 */
-	byte started;			/* 0xe8 */
+	const cObjElementFXVtbl *vftable;
+	float t;
+	float tPrev;
+	cEntity *ent;
+	cEntity *capsule;		/* BillArrives_ACapsule, its embedded effect holds the jets */
+	void *flare;			/* CGameLensFlare */
+	float jetT;
+	CGameParticles particles;	/* Dummy01: smoke and dust */
+	float smokeT;
+	vec3_t dummy1;			/* DM_Effects_BillArrives_A_01 */
+	vec3_t dummy2;			/* DM_Effects_BillArrives_A_02 */
+	byte started;
 } cObjElementFXSceneBillArrives_A;
 
 typedef struct cObjElementFXSceneBishops {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x004 */
-	cEntity *detritus;		/* 0x008 BishopsDtritus */
-	CGameParticles dataCodec;	/* 0x00c Dummy01 */
-	CGameParticles glow;		/* 0x0bc Dummy02 */
-	float t;			/* 0x16c */
-	int node;			/* 0x170 R_Detritus_Tronco of the detritus */
-	vec3_t master;			/* 0x174 the position of the node */
-	float glowT;			/* 0x180 */
-	CGameTrail trails[FXBISHOPS_TRAILS];	/* 0x184 */
-	byte started;			/* 0x1b4 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	cEntity *detritus;		/* BishopsDtritus */
+	CGameParticles dataCodec;	/* Dummy01 */
+	CGameParticles glow;		/* Dummy02 */
+	float t;
+	int node;			/* R_Detritus_Tronco of the detritus */
+	vec3_t master;			/* the position of the node */
+	float glowT;
+	CGameTrail trails[FXBISHOPS_TRAILS];
+	byte started;
 } cObjElementFXSceneBishops;
 
 typedef struct cObjElementFXSceneDecontamination {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	CGameParticles particles;	/* 0x0004 Dummy01 */
-	cEntity *ent;			/* 0x00b4 */
-	cEntity *target;		/* 0x00b8 the entity of targetName */
-	char targetName[0x20];		/* 0x00bc */
-	char action[0x20];		/* 0x00dc the action of the target that shows the rays */
-	float height;			/* 0x00fc 145 Decontamination, 80 BillArrives_C */
-	float t;			/* 0x0100 */
-	float t2;			/* 0x0104 */
-	float life[FXDECON_RAYS];	/* 0x0108 of the ray, 0 none */
-	float wait[FXDECON_RAYS];	/* 0x01a8 until the next ray */
-	CGameTrail trails[FXDECON_RAYS];	/* 0x0248 */
-	float width[FXDECON_RAYS];	/* 0x02e8 */
-	uint32_t color[FXDECON_RAYS];	/* 0x0388 */
-	int vertex[FXDECON_RAYS];	/* 0x0428 the vertex of the target nearest to the height of the end */
-	vec3_t end[FXDECON_RAYS];	/* 0x04c8 */
-	vec3_t pts[FXDECON_RAYS][FXDECON_POINTS];	/* 0x06a8 the offsets of the inner points */
-	vec3_t vel[FXDECON_RAYS][FXDECON_POINTS];	/* 0x0c48 their velocities */
-	byte started;			/* 0x11e8 */
+	const cObjElementFXVtbl *vftable;
+	CGameParticles particles;	/* Dummy01 */
+	cEntity *ent;
+	cEntity *target;		/* the entity of targetName */
+	char targetName[0x20];
+	char action[0x20];		/* the action of the target that shows the rays */
+	float height;			/* 145 Decontamination, 80 BillArrives_C */
+	float t;
+	float t2;
+	float life[FXDECON_RAYS];	/* of the ray, 0 none */
+	float wait[FXDECON_RAYS];	/* until the next ray */
+	CGameTrail trails[FXDECON_RAYS];
+	float width[FXDECON_RAYS];
+	uint32_t color[FXDECON_RAYS];
+	int vertex[FXDECON_RAYS];	/* the vertex of the target nearest to the height of the end */
+	vec3_t end[FXDECON_RAYS];
+	vec3_t pts[FXDECON_RAYS][FXDECON_POINTS];	/* the offsets of the inner points */
+	vec3_t vel[FXDECON_RAYS][FXDECON_POINTS];	/* their velocities */
+	byte started;
 } cObjElementFXSceneDecontamination;
 
 typedef struct cObjElementFXSceneEnterMatrix {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	float t;			/* 0x004 */
-	float tPrev;			/* 0x008 */
-	cEntity *ent;			/* 0x00c */
-	CGameParticles particles;	/* 0x010 Dummy01: the glows at the ends of the rays, 6 a ray */
-	vec3_t center;			/* 0x180 of EnterMatrixMatrix */
-	float life[FXMATRIX_TRAILS];	/* 0x18c of the ray, -1 none */
-	float wait[FXMATRIX_TRAILS];	/* 0x1cc until the next ray */
-	float segLen[FXMATRIX_TRAILS];	/* 0x20c the length of a segment of the trail */
-	float uvOff[FXMATRIX_TRAILS];	/* 0x24c the scroll of the texture */
-	CGameTrail trails[FXMATRIX_TRAILS];	/* 0x28c */
-	vec3_t pts[FXMATRIX_TRAILS][5];	/* 0x2cc the control points of the curve of the ray */
-	int kind[FXMATRIX_TRAILS];	/* 0x68c the path of the second part */
-	float prog[FXMATRIX_TRAILS];	/* 0x6cc along the path, 1 at its end */
-	float speed[FXMATRIX_TRAILS];	/* 0x70c */
-	float spread[FXMATRIX_TRAILS];	/* 0x74c the end ahead of the start */
-	int lastKind;			/* 0x78c -1, no path is taken twice in a row */
-	void *flare;			/* 0x790 CGameLensFlare */
-	byte started;			/* 0x794 */
+	const cObjElementFXVtbl *vftable;
+	float t;
+	float tPrev;
+	cEntity *ent;
+	CGameParticles particles;	/* Dummy01: the glows at the ends of the rays, 6 a ray */
+	vec3_t center;			/* of EnterMatrixMatrix */
+	float life[FXMATRIX_TRAILS];	/* of the ray, -1 none */
+	float wait[FXMATRIX_TRAILS];	/* until the next ray */
+	float segLen[FXMATRIX_TRAILS];	/* the length of a segment of the trail */
+	float uvOff[FXMATRIX_TRAILS];	/* the scroll of the texture */
+	CGameTrail trails[FXMATRIX_TRAILS];
+	vec3_t pts[FXMATRIX_TRAILS][5];	/* the control points of the curve of the ray */
+	int kind[FXMATRIX_TRAILS];	/* the path of the second part */
+	float prog[FXMATRIX_TRAILS];	/* along the path, 1 at its end */
+	float speed[FXMATRIX_TRAILS];
+	float spread[FXMATRIX_TRAILS];	/* the end ahead of the start */
+	int lastKind;			/* -1, no path is taken twice in a row */
+	void *flare;			/* CGameLensFlare */
+	byte started;
 } cObjElementFXSceneEnterMatrix;
 
 typedef struct cObjElementFXSceneHumanCD {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	float t;			/* 0x004 */
-	float tPrev;			/* 0x008 */
-	cEntity *ent;			/* 0x00c */
-	CGameParticles particles;		/* 0x010 Dummy01 */
-	CGameParticles sparks;		/* 0x0c0 Dummy03 */
-	vec3_t dummy;			/* 0x170 DM_Element_MentalControllerMainFX */
-	float sparkT;			/* 0x17c */
-	byte started;			/* 0x180 */
+	const cObjElementFXVtbl *vftable;
+	float t;
+	float tPrev;
+	cEntity *ent;
+	CGameParticles particles;		/* Dummy01 */
+	CGameParticles sparks;		/* Dummy03 */
+	vec3_t dummy;			/* DM_Element_MentalControllerMainFX */
+	float sparkT;
+	byte started;
 } cObjElementFXSceneHumanCD;
 
 typedef struct cObjElementFXSceneTheEndB {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	float t;			/* 0x04 */
-	float tPrev;			/* 0x08 */
-	cEntity *ent;			/* 0x0c */
-	cEntity *bike;			/* 0x10 TheEndBMoto */
-	CGameParticles particles;	/* 0x14 Dummy01 */
-	void *flare;			/* 0xc4 CGameLensFlare */
-	byte started;			/* 0xc8 */
+	const cObjElementFXVtbl *vftable;
+	float t;
+	float tPrev;
+	cEntity *ent;
+	cEntity *bike;			/* TheEndBMoto */
+	CGameParticles particles;	/* Dummy01 */
+	void *flare;			/* CGameLensFlare */
+	byte started;
 } cObjElementFXSceneTheEndB;
 
 typedef struct cObjElementFXSceneYakuzzi {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	float t;			/* 0x04 */
-	float tPrev;			/* 0x08 */
-	cEntity *ent;			/* 0x0c */
-	CGameParticles particles;	/* 0x10 Dummy01 */
-	float emitT;			/* 0xc0 */
-	vec3_t dummy;			/* 0xc4 DM_Element_TempleYakuzzi_00 */
-	byte started;			/* 0xd0 */
+	const cObjElementFXVtbl *vftable;
+	float t;
+	float tPrev;
+	cEntity *ent;
+	CGameParticles particles;	/* Dummy01 */
+	float emitT;
+	vec3_t dummy;			/* DM_Element_TempleYakuzzi_00 */
+	byte started;
 } cObjElementFXSceneYakuzzi;
 
 /* the scene effect of the model of e (none for other models) */
 void FXScene_Create(cEntity *e, const char *model);
 
-/* Attach (vf03): the particles to the dummies of the debris model, the positions of the scene dummies */
+/* Attach: the particles to the dummies of the debris model, the positions of the scene dummies */
 void cObjElementFXSceneBeatPickus_Attach(cObjElementFX *base, cDebris *d);
 void cObjElementFXSceneBillArrives_A_Attach(cObjElementFX *base, cDebris *d);
 void cObjElementFXSceneBishops_Attach(cObjElementFX *base, cDebris *d);
@@ -153,7 +153,7 @@ void cObjElementFXSceneHumanCD_Attach(cObjElementFX *base, cDebris *d);
 void cObjElementFXSceneTheEndB_Attach(cObjElementFX *base, cDebris *d);
 void cObjElementFXSceneYakuzzi_Attach(cObjElementFX *base, cDebris *d);
 
-/* Reset (vf04) */
+/* Reset */
 void cObjElementFXSceneBeatPickus_Reset(cObjElementFX *base, cDebris *arg);
 void cObjElementFXSceneBillArrives_A_Reset(cObjElementFX *base, cDebris *arg);
 void cObjElementFXSceneBishops_Reset(cObjElementFX *base, cDebris *arg);
@@ -163,7 +163,7 @@ void cObjElementFXSceneHumanCD_Reset(cObjElementFX *base, cDebris *arg);
 void cObjElementFXSceneTheEndB_Reset(cObjElementFX *base, cDebris *arg);
 void cObjElementFXSceneYakuzzi_Reset(cObjElementFX *base, cDebris *arg);
 
-/* Update (vf01): the life of the debris to 0 once the entity is gone */
+/* Update: the life of the debris to 0 once the entity is gone */
 void cObjElementFXSceneBeatPickus_Update(cObjElementFX *base, cDebris *d, float dt);
 void cObjElementFXSceneBillArrives_A_Update(cObjElementFX *base, cDebris *d, float dt);
 void cObjElementFXSceneBishops_Update(cObjElementFX *base, cDebris *d, float dt);

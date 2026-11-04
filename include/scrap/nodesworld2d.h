@@ -11,22 +11,22 @@
 #include "scrap/gvar.h"
 #include "scrap/nodesworldsup.h"
 
-/* a region of the generation: its points (0x1c bytes) */
+/* a region of the generation: its points */
 typedef struct cNW2DRegion {
-	int id;				/* 0x00 */
-	cNWVecList points;		/* 0x04 */
+	int id;
+	cNWVecList points;
 } cNW2DRegion;
 
 typedef struct cNW2DRegionNode {
-	struct cNW2DRegionNode *next;	/* 0x00 */
-	struct cNW2DRegionNode *prev;	/* 0x04 */
-	cNW2DRegion r;			/* 0x08 */
+	struct cNW2DRegionNode *next;
+	struct cNW2DRegionNode *prev;
+	cNW2DRegion r;
 } cNW2DRegionNode;
 typedef DLIST(cNW2DRegionNode) cNW2DRegionList;
 
 struct CNodesWorld2D {
-	CNodesWorldSup sup;		/* 0x000 the code uses the CNodesWorld layout (NW2D_SUP) */
-	cNW2DRegionList regions;	/* 0x360 */
+	CNodesWorldSup sup;		/* the code uses the CNodesWorld layout (NW2D_SUP) */
+	cNW2DRegionList regions;
 };
 
 /* the CNodesWorldSup part */
@@ -35,10 +35,10 @@ struct CNodesWorld2D {
 /* a body that walks the graph: a capsule of radius r - shrink between the heights h1 and h2 above a foot sphere of
  * radius foot */
 typedef struct cNW2DBody {
-	float r;			/* 0x0 */
-	float h1;			/* 0x4 */
-	float h2;			/* 0x8 */
-	float foot;			/* 0xc */
+	float r;
+	float h1;
+	float h2;
+	float foot;
 } cNW2DBody;
 
 extern cGVar GVar_ShowNodes2DAI;

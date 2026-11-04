@@ -44,7 +44,7 @@ static cGVar GVar_OnMosquitoDeathMoney;
 static cGVar GVar_OnMadHunterDeathMoney;
 #define g_OnMadHunterDeathMoney (GVar_OnMadHunterDeathMoney.value.i)
 /* the ships the sphere native found around a lair */
-/* the callback of the AI when the move ends (rva 0x15c of the AI) */
+/* the callback of the AI when the move ends (of the AI) */
 #define AIV_OnEnd(ai) (((cAIVehicle *)(ai))->onArrive)
 
 static void ShipGroup_SphereNative(cAbstractFile *params);
@@ -264,7 +264,7 @@ void cShipGroup_Update(cShipGroup *self, float dt) {
 	}
 }
 
-/* vf06: "LairPos", the lair of the ship */
+/* "LairPos", the lair of the ship */
 static byte cScrapyardLocalLogic_VarV(cScrapyardLocalLogic *self, const char *name, double *x, double *y, double *z,
 	byte set) {
 	if (strcmp(name, "LairPos")) {

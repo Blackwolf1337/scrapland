@@ -41,7 +41,7 @@ static void cBossLocalLogic_Free(cLocalLogic *elem) {
 	operator_delete(self);
 }
 
-/* vf33 (0x84): at work, the end of the work */
+/* (0x84): at work, the end of the work */
 static void cBossLocalLogic_BreakWork(cLocalLogic *elem, byte on) {
 	cBossLocalLogic *self = (cBossLocalLogic *)elem;
 	if (self->base.base.state != BOSS_WORK || !on) {
@@ -56,7 +56,6 @@ static void cBossLocalLogic_BreakWork(cLocalLogic *elem, byte on) {
 
 static byte g_BossWasIdle;
 
-/* vf17 */
 static void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cBossLocalLogic *self = (cBossLocalLogic *)elem;
 	cGenCharLocalLogic_Update(&self->base.base.logic, dt);
@@ -113,7 +112,7 @@ static void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
 	}
 }
 
-/* vf19: 7 the way to the work place (AI state 4 with the place and the direction of its angle), 8 the work */
+/* 7 the way to the work place (AI state 4 with the place and the direction of its angle), 8 the work */
 static byte cBossLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cBossLocalLogic *self = (cBossLocalLogic *)elem;
 	vec3_t out;

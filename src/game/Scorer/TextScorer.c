@@ -71,7 +71,7 @@ cTextTypingScorer *cTextTypingScorer_ctor(cTextTypingScorer *self) {
 	return self;
 }
 
-/* also the destructor of cTextTypingScorer (rva 0x182bf0, the same code) */
+/* also the destructor of cTextTypingScorer (the same code) */
 static void cTextScorer_dtor(cTextScorer *self) {
 	self->base.base.vftable = CTEXTSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
@@ -240,7 +240,7 @@ static int cTextTypingScorer_Var(cScorerItem *base, const char *name, int set, c
 
 CPsaImage *g_ScorerTabs;
 
-/* vf04: the text being typed with a blinking cursor; with the virtual keyboard active the grid of its keys (the one
+/* the text being typed with a blinking cursor; with the virtual keyboard active the grid of its keys (the one
  * under the cursor lit), the button hints and the cursor item on the key */
 static void cTextScorer_DrawKeyboard(cTextScorer *self, int player) {
 	cAbstractTextScorer *t = &self->base;

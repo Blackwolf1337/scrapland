@@ -11,17 +11,17 @@
 #include "scrap/misc.h"
 
 typedef struct cBlockFile {
-	uint32_t id;			/* 0x0 IdToDword */
-	int pos;			/* 0x4 offset of the size field */
-	struct cBlockFile *prev;		/* 0x8 */
+	uint32_t id;			/* IdToDword */
+	int pos;			/* offset of the size field */
+	struct cBlockFile *prev;
 } cBlockFile;
 
 typedef struct CFileIO {
-	byte error;			/* 0x0 every call fails once set */
+	byte error;			/* every call fails once set */
 	byte pad_1[3];
-	int err;			/* 0x4 errno of the failure */
-	cAbstractFile *f;		/* 0x8 a cFilePack */
-	cBlockFile *block;			/* 0xc the open block */
+	int err;			/* errno of the failure */
+	cAbstractFile *f;		/* a cFilePack */
+	cBlockFile *block;			/* the open block */
 } CFileIO;
 
 CFileIO *CFileIO_ctor(CFileIO *self, const char *name, const char *mode);
@@ -60,7 +60,7 @@ int CFileIO_BeginBlockSize(CFileIO *self, const char *id, int *size);
 typedef struct cDataFile cDataFile;
 
 typedef struct CIniFile {
-	cDataFile *dat;		/* 0x0 */
+	cDataFile *dat;
 } CIniFile;
 
 CIniFile *CIniFile_ctorLoad(CIniFile *self, const char *name, const char *dir);

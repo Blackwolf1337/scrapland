@@ -43,13 +43,13 @@ typedef struct MeshD3D_FileCtx MeshD3D_FileCtx;
 
 /* the slots of the 3D objects (objeto3d.h) */
 typedef struct IObject3DVtbl {
-	void (*Free)(IObject3D *self);				/* 0x00 */
-	void(*Update)(IObject3D *self, CRenderNode *r);				/* 0x04 */
-	void(*Render)(IObject3D *self, void *dev, CRenderNode *r);			/* 0x08 */
-	void(*InitD3D)(IObject3D *self, void *dev);					/* 0x0c */
-	void(*ReleaseD3D)(IObject3D *self, void *dev);				/* 0x10 */
-	byte(*Write)(IObject3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);		/* 0x14 */
-	byte(*Read)(IObject3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);		/* 0x18 */
+	void (*Free)(IObject3D *self);
+	void(*Update)(IObject3D *self, CRenderNode *r);
+	void(*Render)(IObject3D *self, void *dev, CRenderNode *r);
+	void(*InitD3D)(IObject3D *self, void *dev);
+	void(*ReleaseD3D)(IObject3D *self, void *dev);
+	byte(*Write)(IObject3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
+	byte(*Read)(IObject3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
 } IObject3DVtbl;
 
 /* calls through the slots of IObject3DVtbl */
@@ -82,16 +82,16 @@ static inline byte Object3D_Write(void *self, CFileIO *f, MeshD3D_FileCtx *ctx) 
 }
 
 struct IObject3D {
-	const IObject3DVtbl *vftable;	/* 0x0 */
-	uint32_t class;			/* 0x4 */
+	const IObject3DVtbl *vftable;
+	uint32_t class;
 };
 extern const IObject3DVtbl IObject3D_vftable;
 #define IOBJECT3D_VFTABLE (&IObject3D_vftable)
 
-/* a counted reference (objref.h): the head of CNode3D and CScene, the deleting destructor first */
+/* a counted reference (objref.h): the head of CNode3D and CScene, Free first */
 typedef struct ObjRef ObjRef;
 typedef struct ObjRefVtbl {
-	void (*Free)(ObjRef *self);	/* 0x0 */
+	void (*Free)(ObjRef *self);
 } ObjRefVtbl;
 
 /* calls through the slots of ObjRefVtbl */
@@ -100,9 +100,9 @@ static inline void ObjRef_Free(void *self) {
 }
 
 typedef struct ObjRef {
-	const ObjRefVtbl *vftable;	/* 0x0 */
-	char *name;			/* 0x4 */
-	int Refs;			/* 0x8 */
+	const ObjRefVtbl *vftable;
+	char *name;
+	int Refs;
 } ObjRef;
 
 /* *slot released (objref.h): counted down, deleted when nobody holds it any more */
@@ -140,10 +140,10 @@ static inline void *Obj3D_Cast(IObject3D *o, uint32_t class) {
 
 /* a rotation given by angles, its quaternion made on demand */
 typedef struct CRotation {
-	vec3_t ang;			/* 0x00 radians */
-	quat_t q;			/* 0x0c */
-	uint32_t flags;			/* 0x1c ROT_DIRTY, ROT_ZERO */
-	int mode;			/* 0x20 0: Quat_FromEuler of -ang, else the product of the axis rotations */
+	vec3_t ang;			/* radians */
+	quat_t q;
+	uint32_t flags;			/* ROT_DIRTY, ROT_ZERO */
+	int mode;			/* 0: Quat_FromEuler of -ang, else the product of the axis rotations */
 } CRotation;
 #define ROT_DIRTY 1
 #define ROT_ZERO 2			/* all angles 0: the identity */
@@ -154,109 +154,109 @@ typedef struct NodeAnimPair {
 } NodeAnimPair;
 
 typedef struct NodeAnimChannel {
-	NodeAnimPair *anim;		/* 0x00 */
-	int frame;			/* 0x04 */
-	float t;			/* 0x08 */
-	int frame2;			/* 0x0c of anim[1] */
-	float t2;			/* 0x10 */
-	float blend;			/* 0x14 */
+	NodeAnimPair *anim;
+	int frame;
+	float t;
+	int frame2;			/* of anim[1] */
+	float t2;
+	float blend;
 } NodeAnimChannel;
 
 /* the render state of a scene (RenderCtx.h) */
 typedef struct NodeAnimCtx {
-	NodeAnimChannel chan[MAX_ANIM_CHANNEL];	/* 0x00 */
-	matrix_t m;			/* 0x60 the parent of the nodes without one */
-	struct CModel *model;		/* 0xa0 */
-	void *renderNodes;			/* 0xa4 set: the render nodes of model are drawn instead of the scene's */
+	NodeAnimChannel chan[MAX_ANIM_CHANNEL];
+	matrix_t m;			/* the parent of the nodes without one */
+	struct CModel *model;
+	void *renderNodes;			/* set: the render nodes of model are drawn instead of the scene's */
 } NodeAnimCtx;
 
 /* a scene (Engine/escena.cpp): a list of nodes with their materials, an animation and the user properties */
 /* a color (r in the low byte, then g, b, a) and the intensity it is multiplied with (Color_ToD3D) */
 typedef struct ColorIntens {
-	uint32_t rgba;			/* 0x0 */
-	float intens;			/* 0x4 */
+	uint32_t rgba;
+	float intens;
 } ColorIntens;
 
 typedef struct CScene {
 	union {
 		ObjRef ref;
 		struct {
-			const ObjRefVtbl *vftable;	/* 0x00 */
-			char *name;			/* 0x04 */
-			int Refs;			/* 0x08 */
+			const ObjRefVtbl *vftable;
+			char *name;
+			int Refs;
 		};
 	};
-	struct CNode3D *Node3D;		/* 0x0c the first node */
-	NodeAnimCtx *anim;		/* 0x10 the render context during CScene_Render and CScene_Update */
-	ColorIntens ambient;		/* 0x14 0x0b0b0b, 1 */
-	ColorIntens fog;		/* 0x1c the fog color, 0, 1 */
-	box_t box;			/* 0x24 CScene_UpdateBox */
-	struct CAnimation *AnimM3D;	/* 0x3c */
-	char *node;			/* 0x40 the name of the node whose animation node a group starts at */
-	char *mainLOD;			/* 0x44 the scene name of the main LOD */
-	float vertWeldThreshold;		/* 0x48 the weld threshold of the vertices, -1 */
-	CIniFile *ini;			/* 0x4c FileINI */
-	CIniFile *userProp;		/* 0x50 */
-	IObject3D *CollideMesh;		/* 0x54 deleted through vftable[0] */
-	CTable mats;			/* 0x58 TabMaterial: CMaterial * */
-	byte fromAmc;			/* 0x60 loaded from the .sm3 and the .amc */
+	struct CNode3D *Node3D;		/* the first node */
+	NodeAnimCtx *anim;		/* the render context during CScene_Render and CScene_Update */
+	ColorIntens ambient;		/* 0x0b0b0b, 1 */
+	ColorIntens fog;		/* the fog color, 0, 1 */
+	box_t box;			/* CScene_UpdateBox */
+	struct CAnimation *AnimM3D;
+	char *node;			/* the name of the node whose animation node a group starts at */
+	char *mainLOD;			/* the scene name of the main LOD */
+	float vertWeldThreshold;		/* the weld threshold of the vertices, -1 */
+	CIniFile *ini;			/* FileINI */
+	CIniFile *userProp;
+	IObject3D *CollideMesh;		/* deleted through vftable[0] */
+	CTable mats;			/* TabMaterial: CMaterial * */
+	byte fromAmc;			/* loaded from the .sm3 and the .amc */
 } CScene;
 
 /* how a render node orients its node (CRenderNode look) */
 typedef struct NodeLook {
-	int type;			/* 0x00 1: rot of r1 and r2 around the animated one, 2..5: billboards */
-	CRotation r1;			/* 0x04 */
-	CRotation r2;			/* 0x28 */
+	int type;			/* 1: rot of r1 and r2 around the animated one, 2..5: billboards */
+	CRotation r1;
+	CRotation r2;
 } NodeLook;
 
-/* the render instance of a node (Engine/NodoR.cpp, 0xa8 bytes) */
+/* the render instance of a node (Engine/NodoR.cpp) */
 typedef struct CRenderNode {
-	int unused0;			/* 0x00 kept 0, checked at the destruction */
-	byte flags;			/* 0x04 2: a render node of a model */
-	byte unused5;			/* 0x05 cleared by the constructor */
+	int unused0;			/* kept 0, checked at the destruction */
+	byte flags;			/* 2: a render node of a model */
+	byte unused5;			/* cleared by the constructor */
 	byte pad_6[2];
-	struct CModel *owner;		/* 0x08 look 2 turns to the negated angles of its rot */
-	NodeLook *look;			/* 0x0c */
-	matrix_t m;			/* 0x10 world */
-	matrix_t mObj;			/* 0x50 mObj of the node times m */
-	int frame;			/* 0x90 g_FrameCount of the last update */
-	void *skin;			/* 0x94 the CEVA (vertex animation) of the meshes of this node (RenderEVA.cpp) */
-	uint16_t slot;			/* 0x98 the animation slot of the owner model for the vertex animation */
-	int16_t skinFrame;		/* 0x9a the frame of that channel when CMeshD3D_SetRender set skin */
-	IObject3D *obj3D;		/* 0x9c instead of the node's, the same class */
-	struct INodeFX *obj3D2;		/* 0xa0 owned, the effect of the node (a copy of obj58) */
-	struct CNode3D *node;		/* 0xa4 a reference */
+	struct CModel *owner;		/* look 2 turns to the negated angles of its rot */
+	NodeLook *look;
+	matrix_t m;			/* world */
+	matrix_t mObj;			/* mObj of the node times m */
+	int frame;			/* g_FrameCount of the last update */
+	void *skin;			/* the CEVA (vertex animation) of the meshes of this node (RenderEVA.cpp) */
+	uint16_t slot;			/* the animation slot of the owner model for the vertex animation */
+	int16_t skinFrame;		/* the frame of that channel when CMeshD3D_SetRender set skin */
+	IObject3D *obj3D;		/* instead of the node's, the same class */
+	struct INodeFX *obj3D2;		/* owned, the effect of the node (a copy of obj58) */
+	struct CNode3D *node;		/* a reference */
 } CRenderNode;
 
 typedef struct CNode3D {
 	union {
 		ObjRef ref;
 		struct {
-			const ObjRefVtbl *vftable;	/* 0x00 */
-			char *name;			/* 0x04 */
-			int Refs;			/* 0x08 */
+			const ObjRefVtbl *vftable;
+			char *name;
+			int Refs;
 		};
 	};
-	struct CNode3D *next;		/* 0x0c */
-	struct CNode3D *prev;		/* 0x10 */
-	struct CNode3D *parent;		/* 0x14 */
-	uint32_t flags;			/* 0x18 NODO_* */
-	vec3_t pos;			/* 0x1c */
-	quat_t rot;			/* 0x28 */
-	float visible;			/* 0x38 "Visible:" of the M3D, kept in the caches */
-	IObject3D *obj3D;		/* 0x3c owned */
-	CScene *scene;		/* 0x40 */
-	int index;			/* 0x44 the track of the node in the animations, -1: none */
-	int slot;			/* 0x48 in the node table of the scene (Scene_NodeTable), render nodes first; -1 */
-	int renderNode;			/* 0x4c -1, else Update goes to CRenderNode_UpdateNode */
-	int aniLocked;		/* 0x50 ANIM_* channels whose animation is discarded (~AniMask) */
-	int mark;			/* 0x54 scratch: sort order, tree item of the debug view (CScene_SetMarks) */
-	IObject3D *obj58;		/* 0x58 owned, deleted through its vftable[0] */
-	matrix_t m;			/* 0x5c world, the position in m[12..14] */
-	matrix_t mObj;			/* 0x9c the object in the node */
-	quat_t qLook;			/* 0xdc the orientation for the looks 3 and 4 */
-	vec3_t scale;			/* 0xec */
-	CIniFile *ini;			/* 0xf8 */
+	struct CNode3D *next;
+	struct CNode3D *prev;
+	struct CNode3D *parent;
+	uint32_t flags;			/* NODO_* */
+	vec3_t pos;
+	quat_t rot;
+	float visible;			/* "Visible:" of the M3D, kept in the caches */
+	IObject3D *obj3D;		/* owned */
+	CScene *scene;
+	int index;			/* the track of the node in the animations, -1: none */
+	int slot;			/* in the node table of the scene (Scene_NodeTable), render nodes first; -1 */
+	int renderNode;			/* -1, else Update goes to CRenderNode_UpdateNode */
+	int aniLocked;		/* ANIM_* channels whose animation is discarded (~AniMask) */
+	int mark;			/* scratch: sort order, tree item of the debug view (CScene_SetMarks) */
+	IObject3D *obj58;		/* owned, deleted through its vftable[0] */
+	matrix_t m;			/* world, the position in m[12..14] */
+	matrix_t mObj;			/* the object in the node */
+	quat_t qLook;			/* the orientation for the looks 3 and 4 */
+	vec3_t scale;
+	CIniFile *ini;
 } CNode3D;
 
 CNode3D *CNode3D_ctor(CNode3D *self);
@@ -298,7 +298,7 @@ NodeAnimChannel *CNode3D_Channel(CNode3D *self, uint32_t ch);
 
 /* other modules, called from Nodo3D.cpp (src/imports.inc) */
 void CRotation_SetEuler(CRotation *self, const vec3_t *ang);
-void *CParticleSystem_Cast(IObject3D *obj);	/* rva 0x23f310, CHECK of the class */
+void *CParticleSystem_Cast(IObject3D *obj);	/* CHECK of the class */
 CRenderNode *CRenderNode_ctor(CRenderNode *self);
 void CRenderNode_UpdateNode(CRenderNode *self);
 int CRenderNode_ApplyFX(CRenderNode *self, matrix_t *m);

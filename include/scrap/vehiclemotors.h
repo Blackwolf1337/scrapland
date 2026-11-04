@@ -1,6 +1,6 @@
 /*
  * Entities/Vehicle/VehicleMotors.cpp and VehicleMotorsEffects.cpp of the game: the motors of a ship.
- * cVehicleMotors (at +0x720 of the vehicle, vtable rva 0x3b56f8 with the script variables VarI, VarF, VarS, VarV)
+ * cVehicleMotors (at +0x720 of the vehicle, vtable with the script variables VarI, VarF, VarS, VarV)
  * keeps up to four cVehicleMotor, the models of the motor kinds a ship carries (MEng0..3: the file of
  * EnginePathFmt), each hung at one or two render nodes DC_EngineA_01, DC_EngineA_02 (B for the second motor ...) of
  * the ship. cVehicleMotorsEffects are the exhaust effects (DF_MotorTrust nodes: two particle systems, the glow, and
@@ -22,64 +22,64 @@
 typedef struct cVehicleMotor cVehicleMotor;
 typedef struct cVehicleMotors cVehicleMotors;
 
-/* the exhaust effects (0xa8 bytes) */
+/* the exhaust effects */
 typedef struct cVehicleMotorsEffects {
-	cEntity *owner;			/* 0x00 the vehicle */
-	cVehicleMotors *motors;		/* 0x04 the effects of the ship: the nodes of the ship model */
-	cVehicleMotor *motor;		/* 0x08 the effects of one motor: the nodes of its models */
-	byte on;			/* 0x0c a DF_MotorTrust node was found */
+	cEntity *owner;			/* the vehicle */
+	cVehicleMotors *motors;		/* the effects of the ship: the nodes of the ship model */
+	cVehicleMotor *motor;		/* the effects of one motor: the nodes of its models */
+	byte on;			/* a DF_MotorTrust node was found */
 	byte pad_0d[3];
-	int type;			/* 0x10 FxClass, picks the color; 0 no glow */
-	int node[VM_SIDES][2];		/* 0x14 the two DF_MotorTrust nodes per side, -1 none */
-	CGameParticles *particleSystem[VM_SIDES][2];	/* 0x24 the exhaust particles of the nodes */
-	byte visible;			/* 0x34 */
+	int type;			/* FxClass, picks the color; 0 no glow */
+	int node[VM_SIDES][2];		/* the two DF_MotorTrust nodes per side, -1 none */
+	CGameParticles *particleSystem[VM_SIDES][2];	/* the exhaust particles of the nodes */
+	byte visible;
 	byte pad_35[3];
-	CGameTrail *trail[VM_SIDES];	/* 0x38 none for the traffic (type name T...) */
-	float lastThrust;		/* 0x40 trailThrust of the last trail update */
-	float trailThrust;		/* 0x44 approaches the thrust */
-	vec3_t lastPos;			/* 0x48 the position of the last trail segment */
-	float dist;			/* 0x54 from lastPos (squared at a low thrust) */
-	float shrinkTime;		/* 0x58 the trails shrink every 0.05 s at a low thrust */
-	float unused_5c;			/* 0x5c */
-	float colorBlend;		/* 0x60 towards 1 while the color is not white */
-	float segDist;			/* 0x64 the length of a trail segment, longer with the speed */
-	byte trailsOn;			/* 0x68 the first trail update only sets it */
+	CGameTrail *trail[VM_SIDES];	/* none for the traffic (type name T...) */
+	float lastThrust;		/* trailThrust of the last trail update */
+	float trailThrust;		/* approaches the thrust */
+	vec3_t lastPos;			/* the position of the last trail segment */
+	float dist;			/* from lastPos (squared at a low thrust) */
+	float shrinkTime;		/* the trails shrink every 0.05 s at a low thrust */
+	float unused_5c;
+	float colorBlend;		/* towards 1 while the color is not white */
+	float segDist;			/* the length of a trail segment, longer with the speed */
+	byte trailsOn;			/* the first trail update only sets it */
 	byte pad_69[3];
-	uint32_t color;			/* 0x6c ShipMotorColorR/G/B */
-	uint32_t color2;		/* 0x70 color with each channel squared */
-	float scale;			/* 0x74 ShipMotorScale */
-	float offset;			/* 0x78 ShipMotorOffset, z of the glow */
-	int numExhausts;		/* 0x7c */
-	vec3_t exhaustPos[VM_SIDES];	/* 0x80 relative to the ship */
-	int exhaustSide[VM_SIDES];	/* 0x98 the side of exhaust i */
-	byte glowOn;			/* 0xa0 the glow particles are set */
+	uint32_t color;			/* ShipMotorColorR/G/B */
+	uint32_t color2;		/* color with each channel squared */
+	float scale;			/* ShipMotorScale */
+	float offset;			/* ShipMotorOffset, z of the glow */
+	int numExhausts;
+	vec3_t exhaustPos[VM_SIDES];	/* relative to the ship */
+	int exhaustSide[VM_SIDES];	/* the side of exhaust i */
+	byte glowOn;			/* the glow particles are set */
 	byte pad_a1[3];
-	float smokeTime;		/* 0xa4 since the last smoke particles */
+	float smokeTime;		/* since the last smoke particles */
 } cVehicleMotorsEffects;
 
-/* a motor kind of the ship (0x11c bytes, constructor rva 0x10bb90, destructor 0x10bcb0) */
+/* a motor kind of the ship (constructor destructor 0x10bcb0) */
 struct cVehicleMotor {
-	CGameModel model[VM_SIDES];	/* 0x00 a copy at each node */
-	int node[VM_SIDES];		/* 0x38 DC_Engine<A + motor>_0<1 + side> of the ship, -1 none */
-	char name[0x20];		/* 0x40 the file */
-	byte animMOn;			/* 0x60 */
+	CGameModel model[VM_SIDES];	/* a copy at each node */
+	int node[VM_SIDES];		/* DC_Engine<A + motor>_0<1 + side> of the ship, -1 none */
+	char name[0x20];		/* the file */
+	byte animMOn;
 	byte pad_61[3];
-	float durM;			/* 0x64 the animation of channel 1 (EngAnmM) */
-	float timeM;			/* 0x68 */
-	byte animFOn;			/* 0x6c */
+	float durM;			/* the animation of channel 1 (EngAnmM) */
+	float timeM;
+	byte animFOn;
 	byte pad_6d[3];
-	float durF;			/* 0x70 the animation of channel 0 (EngAnmF) */
-	cVehicleMotorsEffects effects;	/* 0x74 */
+	float durF;			/* the animation of channel 0 (EngAnmF) */
+	cVehicleMotorsEffects effects;
 };
 
 struct cVehicleMotors {
-	cEntity *owner;			/* 0x04 */
-	cVehicleMotor *motor[VM_MOTORS];	/* 0x08 */
-	byte stopped;			/* 0x18 the ship stands still, the effects are not updated */
-	byte lastVisible;		/* 0x19 */
+	cEntity *owner;
+	cVehicleMotor *motor[VM_MOTORS];
+	byte stopped;			/* the ship stands still, the effects are not updated */
+	byte lastVisible;
 	byte pad_1a[2];
-	float speed;			/* 0x1c approaches the speed of the ship */
-	cVehicleMotorsEffects effects;	/* 0x20 */
+	float speed;			/* approaches the speed of the ship */
+	cVehicleMotorsEffects effects;
 };
 
 #define Vehicle_Motors(e) (&((cVehicleEntity *)(e))->motors)
@@ -94,7 +94,7 @@ extern cGVar GVar_FXEngineGlowDistFadeMult;
 extern cGVar GVar_FXEngineGlowDistFadeTo;
 #define g_FXEngineGlowDistFadeTo (GVar_FXEngineGlowDistFadeTo.value.f)
 
-/* rva 0xf6b20 (Entities/ObjEntity range): the trail color of the team at +0x74 of the team info (0..3, else
+/* (Entities/ObjEntity range): the trail color of the team at +0x74 of the team info (0..3, else
  * white) */
 
 /* VehicleMotors.cpp */

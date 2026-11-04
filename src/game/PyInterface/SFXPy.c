@@ -1,5 +1,5 @@
 /*
- * Python module SFX (method table SFX_methods, rva 0x42d060): effects. Original source: PyInterface/SFXPy.cpp.
+ * Python module SFX (method table SFX_methods): effects. Original source: PyInterface/SFXPy.cpp.
  * Entities are given by name; a missing entity or one of the wrong type fails a CHECK like in the original.
  */
 #include "scrap/fx.h"

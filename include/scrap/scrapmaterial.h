@@ -10,9 +10,9 @@
 #define BLENDMODE_NUM_MODES 7
 
 typedef struct BlendModeEntry {
-	uint32_t mode;			/* 0x0 the index */
-	uint32_t src;			/* 0x4 D3DBLEND */
-	uint32_t dst;			/* 0x8 */
+	uint32_t mode;			/* the index */
+	uint32_t src;			/* D3DBLEND */
+	uint32_t dst;
 } BlendModeEntry;
 
 uint32_t BlendMode_GetDst(uint32_t mode);

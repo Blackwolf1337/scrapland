@@ -12,14 +12,14 @@
 #include "scrap/ground.h"
 
 typedef struct CGameModel {
-	CModel *Model;			/* 0x00 */
-	CCollideMesh *CollideMesh;	/* 0x04 */
-	int CollisionMeshID;		/* 0x08 -1: the model has none */
-	int CollisionIni;		/* 0x0c the first triangle in the floor */
-	byte collide;			/* 0x10 on */
+	CModel *Model;
+	CCollideMesh *CollideMesh;
+	int CollisionMeshID;		/* -1: the model has none */
+	int CollisionIni;		/* the first triangle in the floor */
+	byte collide;			/* on */
 	byte pad_11[3];
-	float animBaseFPS;		/* 0x14 AnimBaseFPS of the ini, the frames of the animations scaled to it */
-	int frame;			/* 0x18 g_FrameCount of the last transform of the render nodes */
+	float animBaseFPS;		/* AnimBaseFPS of the ini, the frames of the animations scaled to it */
+	int frame;			/* g_FrameCount of the last transform of the render nodes */
 } CGameModel;
 
 #define MAX_RENDERFX_PARAM 1
@@ -118,7 +118,7 @@ byte CGameModel_CollideOn(const CGameModel *self);
 
 /* the sector of the floor at pos, -2 for none (ScrapEngWorld.c) */
 int Sector_At(const vec3_t *pos);
-/* rva 0x23f7f0 (NodoR.cpp): the look type of the node */
+/* (NodoR.cpp): the look type of the node */
 void CRenderNode_SetLook(CRenderNode *self, int type);
 
 #endif

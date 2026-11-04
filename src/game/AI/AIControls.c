@@ -503,7 +503,7 @@ static void cAIControlGear_Strafe(cAIControlGear *self) {
 	ACtl_ShootStrafe(self, 1);
 }
 
-/* vf89: the AI of the gear saw the way to the target blocked */
+/* the AI of the gear saw the way to the target blocked */
 static byte cAIControlGear_AIBlocked(cAICharControl *self) {
 	return cAIGear_IsBlocked((cAIGear *)self->ai);
 }

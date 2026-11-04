@@ -417,7 +417,7 @@ cGVar GVar_S_Show;
 
 #define g_S_Show (GVar_S_Show.value.i)		/* S_Show: 1 the channels, 3 the memory */
 
-/* vf31 (DebugDraw): S_Show 3 the memory of the samples, 1 the channels with their state and the volume, pan and
+/* (DebugDraw): S_Show 3 the memory of the samples, 1 the channels with their state and the volume, pan and
  * frequency of each in two columns (the original also listed FMOD's hardware channels) */
 static void CSoundXBox_DebugDraw(CSoundSys *base, int xi, int yi) {
 	CSoundXBox *self = (CSoundXBox *)base;

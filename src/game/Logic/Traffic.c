@@ -50,7 +50,7 @@ static cGVarFunction GVar_OnNeedMoreChasingTraffic;
 #define g_OnNeedMoreChasingTraffic (((cPy_Function *)&GVar_OnNeedMoreChasingTraffic.func))
 static cGVar GVar_iTrafficNumber;
 #define g_iTrafficNumber (GVar_iTrafficNumber.value.i)
-/* the callback of the AI when the move ends (rva 0x15c of the AI) */
+/* the callback of the AI when the move ends (of the AI) */
 #define AIV_OnEnd(ai) (((cAIVehicle *)(ai))->onArrive)
 
 /* the AI back to the traffic: the patrol (state 3) with its defaults */

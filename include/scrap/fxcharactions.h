@@ -3,7 +3,7 @@
  * (cObjElementFX) on the debris of a debris system like the ones of include/scrap/fxchar.h: the attacks and actions
  * of BankMaster, Banker, Berto, Betty, Bishop, D-Tritus, Functionary, Gear, Mercenary, Messenger, Police and
  * Sebastian. The element vtable: 0 Delete, 1 Update (debris, dt), 2 Alive (debris, sys), 3 Attach (debris),
- * 4 Reset. The native functions that start them (rva 0x4c1000..) set the entities with the setters below.
+ * 4 Reset. The native functions that start them (..) set the entities with the setters below.
  */
 #ifndef SCRAP_FXCHARACTIONS_H
 #define SCRAP_FXCHARACTIONS_H
@@ -42,276 +42,276 @@
 /* a float of the Police character: its center is this much above the feet */
 
 typedef struct cObjElementFXBankMasterAttack {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x04 */
-	CGameParticles particles;	/* 0x08 on Dummy01 */
-	float emitTime;		/* 0xb8 the particles are emitted every 0.04 s of it */
-	float time;			/* 0xbc since the start */
-	CGameTrail trail;		/* 0xc0 */
-	CGameTrail trail2;		/* 0xc4 */
-	int nodeBaton;			/* 0xc8 DF_Batton of the character */
-	float t;			/* 0xcc the time out of the action */
-	byte started;			/* 0xd0 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	CGameParticles particles;	/* on Dummy01 */
+	float emitTime;		/* the particles are emitted every 0.04 s of it */
+	float time;			/* since the start */
+	CGameTrail trail;
+	CGameTrail trail2;
+	int nodeBaton;			/* DF_Batton of the character */
+	float t;			/* the time out of the action */
+	byte started;
 } cObjElementFXBankMasterAttack;
 
 typedef struct cObjElementFXBankMasterSuction {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x004 */
-	cEntity *target;		/* 0x008 */
-	CGameParticles particles;	/* 0x00c on Dummy01 */
-	float emitTime;		/* 0x0bc the particles are emitted every 0.04 s of it */
-	float time;			/* 0x0c0 since the start */
-	float phase[FXBMSUCTION_POINTS];	/* 0x0c4 -0.9..0 */
-	vec3_t dir[FXBMSUCTION_POINTS];	/* 0x0fc random directions of length 0.25..1 */
-	float angle[FXBMSUCTION_POINTS];	/* 0x1a4 0..2 pi */
-	CGameTrail trail;		/* 0x1dc only its Bezier helpers are used */
-	int count;			/* 0x1e0 the points born since the last sound */
-	int lastSound;			/* 0x1e4 */
-	byte started;			/* 0x1e8 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	cEntity *target;
+	CGameParticles particles;	/* on Dummy01 */
+	float emitTime;		/* the particles are emitted every 0.04 s of it */
+	float time;			/* since the start */
+	float phase[FXBMSUCTION_POINTS];	/* -0.9..0 */
+	vec3_t dir[FXBMSUCTION_POINTS];	/* random directions of length 0.25..1 */
+	float angle[FXBMSUCTION_POINTS];	/* 0..2 pi */
+	CGameTrail trail;		/* only its Bezier helpers are used */
+	int count;			/* the points born since the last sound */
+	int lastSound;
+	byte started;
 } cObjElementFXBankMasterSuction;
 
 typedef struct cObjElementFXBankerSteal {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x04 */
-	cEntity *target;		/* 0x08 set by FXMisc_SetI8 */
-	CGameParticles particles;	/* 0x0c on Dummy01 */
-	int node;			/* 0xbc DF_BankerSteal of the character */
-	float time;			/* 0xc0 since the last coin */
-	int toggle;			/* 0xc4 a sound every second coin */
-	int lastSound;			/* 0xc8 0..2, -1 */
-	byte started;			/* 0xcc */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	cEntity *target;		/* set by FXMisc_SetI8 */
+	CGameParticles particles;	/* on Dummy01 */
+	int node;			/* DF_BankerSteal of the character */
+	float time;			/* since the last coin */
+	int toggle;			/* a sound every second coin */
+	int lastSound;			/* 0..2, -1 */
+	byte started;
 } cObjElementFXBankerSteal;
 
 typedef struct cObjElementFXBertoAttack {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x04 */
-	CGameParticles particles;	/* 0x08 on Dummy01 */
-	float emitTime;		/* 0xb8 the particles are emitted every 0.04 s of it */
-	float time;			/* 0xbc since the start */
-	int unused_c0;			/* 0xc0 */
-	int nodeGlass;		/* 0xc4 R_Berto_TroncoInf-cristal */
-	byte started;			/* 0xc8 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	CGameParticles particles;	/* on Dummy01 */
+	float emitTime;		/* the particles are emitted every 0.04 s of it */
+	float time;			/* since the start */
+	int unused_c0;
+	int nodeGlass;		/* R_Berto_TroncoInf-cristal */
+	byte started;
 } cObjElementFXBertoAttack;
 
 typedef struct cObjElementFXBertoFlash {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x004 */
-	cEntity *target;		/* 0x008 */
-	CGameParticles particles;	/* 0x00c on Dummy01 */
-	float emitTime;		/* 0x0bc the particles are emitted every 0.04 s of it */
-	float time;			/* 0x0c0 since the start */
-	vec3_t dir[FXBERTOFLASH_POINTS];	/* 0x0c4 length 10..14 */
-	vec3_t dir2[FXBERTOFLASH_POINTS];	/* 0x394 length 0.65..0.85 of the target radius */
-	CGameTrail trails[FXBERTOFLASH_TRAILS];	/* 0x664 */
-	byte started;			/* 0x674 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	cEntity *target;
+	CGameParticles particles;	/* on Dummy01 */
+	float emitTime;		/* the particles are emitted every 0.04 s of it */
+	float time;			/* since the start */
+	vec3_t dir[FXBERTOFLASH_POINTS];	/* length 10..14 */
+	vec3_t dir2[FXBERTOFLASH_POINTS];	/* length 0.65..0.85 of the target radius */
+	CGameTrail trails[FXBERTOFLASH_TRAILS];
+	byte started;
 } cObjElementFXBertoFlash;
 
 typedef struct cObjElementFXBettyAttack {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x004 */
-	CGameParticles particles;	/* 0x008 on Dummy01 */
-	CGameParticles particles2;	/* 0x0b8 on "Dummy02 (+dudv_pass)" if the model has it */
-	float t2;			/* 0x168 since the start (not read) */
-	float time;			/* 0x16c since the start */
-	float lastTime;			/* 0x170 time of the last Update */
-	vec3_t pos;			/* 0x174 the center of the attack (Emit) */
-	CGameTrail trails[2];		/* 0x180 */
-	float ring;			/* 0x188 the radius of the ring that grows */
-	CGameTrail trails2[FXBETTYATTACK_TRAILS];	/* 0x18c */
-	CGameTrail trail;		/* 0x19c */
-	void *flare;			/* 0x1a0 CGameLensFlare */
-	byte started;			/* 0x1a4 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	CGameParticles particles;	/* on Dummy01 */
+	CGameParticles particles2;	/* on "Dummy02 (+dudv_pass)" if the model has it */
+	float t2;			/* since the start (not read) */
+	float time;			/* since the start */
+	float lastTime;			/* time of the last Update */
+	vec3_t pos;			/* the center of the attack (Emit) */
+	CGameTrail trails[2];
+	float ring;			/* the radius of the ring that grows */
+	CGameTrail trails2[FXBETTYATTACK_TRAILS];
+	CGameTrail trail;
+	void *flare;			/* CGameLensFlare */
+	byte started;
 } cObjElementFXBettyAttack;
 
 /* BettyKill and DTritusKill */
 typedef struct cObjElementFXKill {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x004 */
-	CGameParticles particles;	/* 0x008 on Dummy01 */
-	float emitTime;		/* 0x0b8 the particles are emitted every 0.04 s of it */
-	float time;			/* 0x0bc since the start */
-	int vertex[FXKILL_POINTS];	/* 0x0c0 random vertices of the model */
-	vec3_t point[FXKILL_POINTS];	/* 0x1ec the vertices in the model space (unrotated) */
-	float scale[FXKILL_POINTS];	/* 0x570 15..75 times the radius / 90 */
-	float len[FXKILL_POINTS];	/* 0x69c of the beams, approaches lenTarget */
-	float lenTarget[FXKILL_POINTS];	/* 0x7c8 525..625 */
-	CGameTrail trails[FXKILL_TRAILS];	/* 0x8f4 */
-	vec3_t angles;			/* 0x908 the turn of the beams */
-	byte started;			/* 0x914 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	CGameParticles particles;	/* on Dummy01 */
+	float emitTime;		/* the particles are emitted every 0.04 s of it */
+	float time;			/* since the start */
+	int vertex[FXKILL_POINTS];	/* random vertices of the model */
+	vec3_t point[FXKILL_POINTS];	/* the vertices in the model space (unrotated) */
+	float scale[FXKILL_POINTS];	/* 15..75 times the radius / 90 */
+	float len[FXKILL_POINTS];	/* of the beams, approaches lenTarget */
+	float lenTarget[FXKILL_POINTS];	/* 525..625 */
+	CGameTrail trails[FXKILL_TRAILS];
+	vec3_t angles;			/* the turn of the beams */
+	byte started;
 } cObjElementFXKill;
 typedef cObjElementFXKill cObjElementFXBettyKill;
 typedef cObjElementFXKill cObjElementFXDTritusKill;
 
 typedef struct cObjElementFXBishopAttack {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x04 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
 	byte pad_08[4];
-	float emitTime;		/* 0x0c the particles are emitted every 0.02 s of it */
-	float time;			/* 0x10 since the start */
-	CGameParticles particles;	/* 0x14 on Dummy01 */
-	CGameTrail trails[FXBISHOPATTACK_TRAILS];	/* 0xc4 */
-	vec3_t from;			/* 0xd4 */
-	vec3_t to;			/* 0xe0 */
-	vec3_t dir;			/* 0xec from -> to normalized */
-	byte started;			/* 0xf8 */
+	float emitTime;		/* the particles are emitted every 0.02 s of it */
+	float time;			/* since the start */
+	CGameParticles particles;	/* on Dummy01 */
+	CGameTrail trails[FXBISHOPATTACK_TRAILS];
+	vec3_t from;
+	vec3_t to;
+	vec3_t dir;			/* from -> to normalized */
+	byte started;
 } cObjElementFXBishopAttack;
 
 typedef struct cObjElementFXBishopSellLife {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *attacker;		/* 0x004 */
-	cEntity *attacked;		/* 0x008 */
-	CGameParticles glow;		/* 0x00c on Dummy01 */
-	CGameParticles dataCodec;	/* 0x0bc on Dummy02 */
-	float time;			/* 0x16c since the start */
-	float emitTime;		/* 0x170 the particles are emitted every 0.02 s of it */
-	int nodeHand[2];		/* 0x174 R_Bishop_Mano_Izq, R_Bishop_Mano_Der */
-	byte started;			/* 0x17c */
+	const cObjElementFXVtbl *vftable;
+	cEntity *attacker;
+	cEntity *attacked;
+	CGameParticles glow;		/* on Dummy01 */
+	CGameParticles dataCodec;	/* on Dummy02 */
+	float time;			/* since the start */
+	float emitTime;		/* the particles are emitted every 0.02 s of it */
+	int nodeHand[2];		/* R_Bishop_Mano_Izq, R_Bishop_Mano_Der */
+	byte started;
 } cObjElementFXBishopSellLife;
 
 typedef struct cObjElementFXDTritusAttack {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x0004 */
-	CGameParticles particles;	/* 0x0008 on Dummy01 */
-	float emitTime;		/* 0x00b8 the particles are emitted every 0.04 s of it */
-	float time;			/* 0x00bc since the start */
-	int nodeMaster;			/* 0x00c0 R_Detritus_Tronco */
-	int vertex[FXDTRITUSATTACK_POINTS];	/* 0x00c4 */
-	vec3_t point[FXDTRITUSATTACK_POINTS];	/* 0x031c relative to the trunk, unrotated */
-	float width[FXDTRITUSATTACK_POINTS];	/* 0x0a24 of the beams, 40..55 */
-	float len[FXDTRITUSATTACK_POINTS];	/* 0x0c7c approaches lenTarget, starts at 25..35 */
-	float lenTarget[FXDTRITUSATTACK_POINTS];	/* 0x0ed4 375..425 */
-	CGameTrail trails[FXDTRITUSATTACK_TRAILS];	/* 0x112c */
-	byte started;			/* 0x1154 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	CGameParticles particles;	/* on Dummy01 */
+	float emitTime;		/* the particles are emitted every 0.04 s of it */
+	float time;			/* since the start */
+	int nodeMaster;			/* R_Detritus_Tronco */
+	int vertex[FXDTRITUSATTACK_POINTS];
+	vec3_t point[FXDTRITUSATTACK_POINTS];	/* relative to the trunk, unrotated */
+	float width[FXDTRITUSATTACK_POINTS];	/* of the beams, 40..55 */
+	float len[FXDTRITUSATTACK_POINTS];	/* approaches lenTarget, starts at 25..35 */
+	float lenTarget[FXDTRITUSATTACK_POINTS];	/* 375..425 */
+	CGameTrail trails[FXDTRITUSATTACK_TRAILS];
+	byte started;
 } cObjElementFXDTritusAttack;
 
 typedef struct cObjElementFXFunctionarySpecialAction {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x004 a WalkChar */
-	CGameParticles particles;	/* 0x008 on Dummy01 */
-	float emitTime;		/* 0x0b8 the particles are emitted every 0.04 s of it */
-	float time;			/* 0x0bc since the start */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;			/* a WalkChar */
+	CGameParticles particles;	/* on Dummy01 */
+	float emitTime;		/* the particles are emitted every 0.04 s of it */
+	float time;			/* since the start */
 	byte pad_c0[4];
-	CGameTrail trails[FXFUNCTIONARY_TRAILS];	/* 0x0c4 */
-	vec3_t pos[FXFUNCTIONARY_TRAILS];	/* 0x0fc the vertices of g_FXFunctionaryVertex */
-	float alpha;			/* 0x1a4 the model effect, up with the speed of the character */
-	byte started;			/* 0x1a8 */
+	CGameTrail trails[FXFUNCTIONARY_TRAILS];
+	vec3_t pos[FXFUNCTIONARY_TRAILS];	/* the vertices of g_FXFunctionaryVertex */
+	float alpha;			/* the model effect, up with the speed of the character */
+	byte started;
 } cObjElementFXFunctionarySpecialAction;
 
 /* the electric ball of Gear: lightning bolts to the world or to entities near it, puffs, sparks and a tail */
 typedef struct cObjElementFXGearMissile {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *entity;		/* 0x004 the missile */
-	int node;			/* 0x008 Dummy01 */
-	CGameParticles particles;	/* 0x00c on Dummy01: the ball, 0..3 the glows */
-	int nodeSparks;			/* 0x0bc Dummy02 */
-	CGameParticles sparks;		/* 0x0c0 on Dummy02: 3 i .. 3 i + 2 the end of bolt i */
-	float emitTime;			/* 0x170 since the last puffs */
-	float fadeLife;			/* 0x174 0.5: the life of the debris from which it fades */
-	float time;			/* 0x178 since the start */
-	vec3_t lastPos;			/* 0x17c the position of the last Update with the missile on */
-	CGameTrail trail;		/* 0x188 the tail */
-	float trailStep;		/* 0x18c since the last point of the tail */
-	float boltTime[FXGEARMISSILE_TRAILS];	/* 0x190 the time left of bolt i, -1 */
-	CGameTrail trails[FXGEARMISSILE_TRAILS];	/* 0x1b8 */
-	vec3_t pts[FXGEARMISSILE_TRAILS][FXGEARMISSILE_SLOTS];	/* 0x1e0 the FXGEARMISSILE_POINTS points of bolt i */
-	float boltScale[FXGEARMISSILE_TRAILS];	/* 0x690 0.5: the width of the trail and the end glows */
-	byte started;			/* 0x6b8 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *entity;		/* the missile */
+	int node;			/* Dummy01 */
+	CGameParticles particles;	/* on Dummy01: the ball, 0..3 the glows */
+	int nodeSparks;			/* Dummy02 */
+	CGameParticles sparks;		/* on Dummy02: 3 i .. 3 i + 2 the end of bolt i */
+	float emitTime;			/* since the last puffs */
+	float fadeLife;			/* 0.5: the life of the debris from which it fades */
+	float time;			/* since the start */
+	vec3_t lastPos;			/* the position of the last Update with the missile on */
+	CGameTrail trail;		/* the tail */
+	float trailStep;		/* since the last point of the tail */
+	float boltTime[FXGEARMISSILE_TRAILS];	/* the time left of bolt i, -1 */
+	CGameTrail trails[FXGEARMISSILE_TRAILS];
+	vec3_t pts[FXGEARMISSILE_TRAILS][FXGEARMISSILE_SLOTS];	/* the FXGEARMISSILE_POINTS points of bolt i */
+	float boltScale[FXGEARMISSILE_TRAILS];	/* 0.5: the width of the trail and the end glows */
+	byte started;
 } cObjElementFXGearMissile;
 
 typedef struct cObjElementFXMercenaryDrink {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x04 */
-	CGameParticles particles;	/* 0x08 on Dummy01 */
-	float emitTime;		/* 0xb8 the particles are emitted every 0.04 s of it */
-	float time;			/* 0xbc since the start */
-	vec3_t offset;			/* 0xc0 from the mouth of the jar, in its frame */
-	int nodeJar;			/* 0xcc OB_JarraMercurio_MercA */
-	byte started;			/* 0xd0 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	CGameParticles particles;	/* on Dummy01 */
+	float emitTime;		/* the particles are emitted every 0.04 s of it */
+	float time;			/* since the start */
+	vec3_t offset;			/* from the mouth of the jar, in its frame */
+	int nodeJar;			/* OB_JarraMercurio_MercA */
+	byte started;
 } cObjElementFXMercenaryDrink;
 
 typedef struct cObjElementFXMessengerAttack {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x004 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
 	byte pad_08[4];
-	float emitTime;		/* 0x00c the particles are emitted every 0.02 s of it */
-	float time;			/* 0x010 since the start */
-	CGameParticles particles;	/* 0x014 on Dummy01 */
-	vec3_t from;			/* 0x0c4 */
-	vec3_t to;			/* 0x0d0 */
-	vec3_t dir;			/* 0x0dc */
-	CGameTrail trails[FXMESSENGERATTACK_TRAILS];	/* 0x0e8 */
-	/* 0x100 the ray from .. to (the middle points moved at random), then the 5 branches off it */
+	float emitTime;		/* the particles are emitted every 0.02 s of it */
+	float time;			/* since the start */
+	CGameParticles particles;	/* on Dummy01 */
+	vec3_t from;
+	vec3_t to;
+	vec3_t dir;
+	CGameTrail trails[FXMESSENGERATTACK_TRAILS];
+	/* the ray from .. to (the middle points moved at random), then the 5 branches off it */
 	vec3_t lines[1 + FXMESSENGER_LINES][FXMESSENGER_POINTS];
-	float width[1 + FXMESSENGER_LINES];	/* 0x3d0 */
-	byte started;			/* 0x3e8 */
+	float width[1 + FXMESSENGER_LINES];
+	byte started;
 } cObjElementFXMessengerAttack;
 
 typedef struct cObjElementFXMessengerTakeDataPack {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *owner;			/* 0x004 a WalkChar */
-	cEntity *item;			/* 0x008 an Obj */
-	float time;			/* 0x00c since the start */
-	CGameParticles particles;	/* 0x010 on Dummy01 */
-	CGameTrail trails[FXDATAPACK_TRAILS];	/* 0x0c0 */
-	vec3_t points[FXDATAPACK_TRAILS][FXDATAPACK_POINTS];	/* 0x0d0 */
-	float width[FXDATAPACK_TRAILS];	/* 0x160 0.6..1 */
-	byte started;			/* 0x170 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *owner;			/* a WalkChar */
+	cEntity *item;			/* an Obj */
+	float time;			/* since the start */
+	CGameParticles particles;	/* on Dummy01 */
+	CGameTrail trails[FXDATAPACK_TRAILS];
+	vec3_t points[FXDATAPACK_TRAILS][FXDATAPACK_POINTS];
+	float width[FXDATAPACK_TRAILS];	/* 0.6..1 */
+	byte started;
 } cObjElementFXMessengerTakeDataPack;
 
 typedef struct cObjElementFXPoliceGearConversion {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x004 */
-	float t2;			/* 0x008 since the start (not read) */
-	float time;			/* 0x00c since the start */
-	float lastTime;			/* 0x010 time of the last Update */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	float t2;			/* since the start (not read) */
+	float time;			/* since the start */
+	float lastTime;			/* time of the last Update */
 	byte pad_14[4];
-	CGameParticles particles;	/* 0x018 on Dummy01 */
-	int nodeRoot;			/* 0x0c8 R_Police-NoArmr_tronco-inferior */
-	float smokeT;			/* 0x0cc since the last smoke ring */
+	CGameParticles particles;	/* on Dummy01 */
+	int nodeRoot;			/* R_Police-NoArmr_tronco-inferior */
+	float smokeT;			/* since the last smoke ring */
 	byte pad_d0[4];
-	CGameParticles particles2;	/* 0x0d4 */
-	vec3_t bubblePos[FXGEAR_BUBBLES];	/* 0x1a4 the bubbles of the fusion around the waist */
-	float bubbleH[FXGEAR_BUBBLES];		/* 0x474 their height */
-	float bubbleVel[FXGEAR_BUBBLES];	/* 0x564 */
-	float bubbleAcc[FXGEAR_BUBBLES];	/* 0x654 */
-	float bubbleMax[FXGEAR_BUBBLES];	/* 0x744 */
-	CGameTrail trails[FXGEAR_TRAILS];	/* 0x834 */
-	int count;			/* 0x844 the bubbles made */
-	float emitT;			/* 0x848 since the last smoke */
-	CGameModel armor[FXGEAR_ARMORS];	/* 0x84c Gear_Armor1..3 */
-	int anim[FXGEAR_ARMORS];	/* 0x8a0 Gear_ArmorFusion1..3 */
-	int numPieces[FXGEAR_ARMORS];	/* 0x8ac */
-	int piece[FXGEAR_ARMORS][FXGEAR_PIECES];	/* 0x8b8 nodes OB_PiezasGear_nn of the armors, -1 */
-	byte pieceOff[FXGEAR_ARMORS][FXGEAR_PIECES];	/* 0x96c */
+	CGameParticles particles2;
+	vec3_t bubblePos[FXGEAR_BUBBLES];	/* the bubbles of the fusion around the waist */
+	float bubbleH[FXGEAR_BUBBLES];		/* their height */
+	float bubbleVel[FXGEAR_BUBBLES];
+	float bubbleAcc[FXGEAR_BUBBLES];
+	float bubbleMax[FXGEAR_BUBBLES];
+	CGameTrail trails[FXGEAR_TRAILS];
+	int count;			/* the bubbles made */
+	float emitT;			/* since the last smoke */
+	CGameModel armor[FXGEAR_ARMORS];	/* Gear_Armor1..3 */
+	int anim[FXGEAR_ARMORS];	/* Gear_ArmorFusion1..3 */
+	int numPieces[FXGEAR_ARMORS];
+	int piece[FXGEAR_ARMORS][FXGEAR_PIECES];	/* nodes OB_PiezasGear_nn of the armors, -1 */
+	byte pieceOff[FXGEAR_ARMORS][FXGEAR_PIECES];
 	byte pad_999[3];
-	float pieceTime[FXGEAR_ARMORS][FXGEAR_PIECES];	/* 0x99c the times the pieces fall off */
-	byte started;			/* 0xa50 */
+	float pieceTime[FXGEAR_ARMORS][FXGEAR_PIECES];	/* the times the pieces fall off */
+	byte started;
 } cObjElementFXPoliceGearConversion;
 
 typedef struct cObjElementFXPoliceSteal {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x04 */
-	cEntity *target;		/* 0x08 */
-	CGameParticles particles;	/* 0x0c on Dummy01 */
-	float emitTime;		/* 0xbc the particles are emitted every 0.04 s of it */
-	int unused_c0;			/* 0xc0 */
-	int unused_c4;			/* 0xc4 */
-	byte started;			/* 0xc8 */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	cEntity *target;
+	CGameParticles particles;	/* on Dummy01 */
+	float emitTime;		/* the particles are emitted every 0.04 s of it */
+	int unused_c0;
+	int unused_c4;
+	byte started;
 } cObjElementFXPoliceSteal;
 
 typedef struct cObjElementFXSebastianFlash {
-	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *ent;			/* 0x004 */
-	CGameParticles particles;	/* 0x008 on Dummy01 */
-	float emitTime;		/* 0x0b8 the particles are emitted every 0.04 s of it */
-	float time;			/* 0x0bc since the start */
-	vec3_t dir[FXSEBASTIAN_POINTS];	/* 0x0c0 length 0..3 */
-	vec3_t dir2[FXSEBASTIAN_POINTS];	/* 0x444 length 15..80 */
-	CGameTrail trails[FXSEBASTIAN_TRAILS];	/* 0x7c8 */
-	byte started;			/* 0x7dc */
+	const cObjElementFXVtbl *vftable;
+	cEntity *ent;
+	CGameParticles particles;	/* on Dummy01 */
+	float emitTime;		/* the particles are emitted every 0.04 s of it */
+	float time;			/* since the start */
+	vec3_t dir[FXSEBASTIAN_POINTS];	/* length 0..3 */
+	vec3_t dir2[FXSEBASTIAN_POINTS];	/* length 15..80 */
+	CGameTrail trails[FXSEBASTIAN_TRAILS];
+	byte started;
 } cObjElementFXSebastianFlash;
 
-/* the constructors, destructors and deleting destructors (vf00) */
+/* the constructors, destructors and the Free slots */
 void *cObjElementFXBankMasterAttack_ctor(void *self);
 void *cObjElementFXBankMasterSuction_ctor(void *self);
 void *cObjElementFXBankerSteal_ctor(void *self);

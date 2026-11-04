@@ -2636,11 +2636,11 @@ static int CBsp_ReadEMI(CBsp *self) {
 
 /* the triangles of the map by material and vertex format, for the log */
 typedef struct BspMatStat {
-	CMaterial *Mat;			/* 0x00 */
-	int numTri;			/* 0x04 the sort key (BspTri_CmpId) */
-	int numVert;			/* 0x08 */
-	int count;			/* 0x0c lists */
-	int frmt;			/* 0x10 */
+	CMaterial *Mat;
+	int numTri;			/* the sort key (BspTri_CmpId) */
+	int numVert;
+	int count;			/* lists */
+	int frmt;
 } BspMatStat;
 
 static BspMatStat *BspMatStat_Get(CTable *t, int i) {

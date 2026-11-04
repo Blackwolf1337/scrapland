@@ -31,7 +31,6 @@ byte Logic_Chance(cBaseLocalLogic *l, cEntity *attacker, float chance) {
 	return chance > (float)r;
 }
 
-/* vf30 */
 static cEntity *cBankMasterLocalLogic_FindTarget(cLocalLogic *elem) {
 	cBankMasterLocalLogic *self = (cBankMasterLocalLogic *)elem;
 	if (!(0.0f > self->searchTime)) {
@@ -49,7 +48,7 @@ static cEntity *cBankMasterLocalLogic_FindTarget(cLocalLogic *elem) {
 	return Logic_RichUsrInView(self, usr);
 }
 
-/* vf12 (0x30), the attack of a character: state 4 against it */
+/* (0x30), the attack of a character: state 4 against it */
 static void cBankMasterLocalLogic_OnAttack(cLocalLogic *elem, cEntity *attacker, float value) {
 	cBankMasterLocalLogic *self = (cBankMasterLocalLogic *)elem;
 	(void)value;

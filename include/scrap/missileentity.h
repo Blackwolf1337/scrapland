@@ -22,40 +22,40 @@
 #define MISSILE_HIT_INSIDE 3
 
 typedef struct cMissileEntity {
-	cWithLifeEntity wl;		/* 0x000 */
+	cWithLifeEntity wl;
 	/* cMissileEntity */
-	byte hideMain;			/* 0x3e8 the model hidden */
+	byte hideMain;			/* the model hidden */
 	byte pad_3e9[3];
-	float swDthTime;		/* 0x3ec */
-	float lifeTime;			/* 0x3f0 left */
-	float speed;			/* 0x3f4 */
-	float turnSpeed;		/* 0x3f8 rad, "TurnSpeed" in degrees */
-	char parent[0x80];		/* 0x3fc the entity that fired it */
-	char target[0x80];		/* 0x47c */
-	char swarmSys[0x80];		/* 0x4fc the debris system of the bees */
-	int type;			/* 0x57c Linear 0, Dumb 1, Cloud 2, Fall 3 */
-	float beeTime;			/* 0x580 the bees get a random push every 0.05 s of it */
-	byte beesGather;		/* 0x584 1: on Explode the bees fly into the point; Swarm, Inferno and Gear clear it */
-	byte beesHit;		/* 0x585 1: the bees count in the hits (swarmCount + 1) and die without OnBeeDeath */
+	float swDthTime;
+	float lifeTime;			/* left */
+	float speed;
+	float turnSpeed;		/* rad, "TurnSpeed" in degrees */
+	char parent[0x80];		/* the entity that fired it */
+	char target[0x80];
+	char swarmSys[0x80];		/* the debris system of the bees */
+	int type;			/* Linear 0, Dumb 1, Cloud 2, Fall 3 */
+	float beeTime;			/* the bees get a random push every 0.05 s of it */
+	byte beesGather;		/* 1: on Explode the bees fly into the point; Swarm, Inferno and Gear clear it */
+	byte beesHit;		/* 1: the bees count in the hits (swarmCount + 1) and die without OnBeeDeath */
 	byte pad_586[2];
-	int swarmCount;			/* 0x588 bees */
-	byte hiddenSwarm;		/* 0x58c */
+	int swarmCount;			/* bees */
+	byte hiddenSwarm;
 	byte pad_58d[3];
-	struct cDebris *swarm;		/* 0x590 the bees, linked at 0x50 */
-	float swarmSpeed;		/* 0x594 */
-	vec3_t lastPos;			/* 0x598 the view position of the last Swarm, 0 before the first */
-	float radius;			/* 0x5a4 */
-	float topRadius;		/* 0x5a8 */
-	float radiusGrow;		/* 0x5ac */
-	int netSwarmCount;		/* 0x5b0 the count of a network copy */
-	char hits[4][0x80];		/* 0x5b4 the entities it went through (InOut) */
-	int hitType;			/* 0x7b4 MISSILE_HIT_ */
-	int level;			/* 0x7b8 "HideMain": the upgrade level (Inferno: 0 Uranio, 1 Hidrogeno, 2 Napalm; Swarm) */
-	byte noWorldHit;		/* 0x7bc */
-	byte fallOut;			/* 0x7bd "FallOutAtmosphere" */
+	struct cDebris *swarm;		/* the bees, linked at 0x50 */
+	float swarmSpeed;
+	vec3_t lastPos;			/* the view position of the last Swarm, 0 before the first */
+	float radius;
+	float topRadius;
+	float radiusGrow;
+	int netSwarmCount;		/* the count of a network copy */
+	char hits[4][0x80];		/* the entities it went through (InOut) */
+	int hitType;			/* MISSILE_HIT_ */
+	int level;			/* "HideMain": the upgrade level (Inferno: 0 Uranio, 1 Hidrogeno, 2 Napalm; Swarm) */
+	byte noWorldHit;
+	byte fallOut;			/* "FallOutAtmosphere" */
 	byte pad_7be[2];
-	cPy_Function onBeeDeath;	/* 0x7c0 (missile, x, y, z) */
-	cPy_Function onHit;		/* 0x7d4 (missile, parent, target or the entity it went through, ...) */
+	cPy_Function onBeeDeath;	/* (missile, x, y, z) */
+	cPy_Function onHit;		/* (missile, parent, target or the entity it went through, ...) */
 } cMissileEntity;
 
 static inline cMissileEntity *Missile(const void *e) {

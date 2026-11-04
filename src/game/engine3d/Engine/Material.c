@@ -132,7 +132,7 @@ static byte Color_Equal(const byte *a, const byte *b) {
 	return a[0] == b[0] && a[1] == b[1] && a[2] == b[2] && a[3] == b[3];
 }
 
-/* the 0x18 bytes from params.i2c */
+/* the from params.i2c */
 static byte MatParams_Equal(const uint32_t *self, const uint32_t *other) {
 	for (int i = 0; i < 6; i++) {
 		if (self[i] != other[i]) {
@@ -1136,7 +1136,7 @@ void CMatList_Delete(CMatList *self, CMaterial *mat) {
 	g_TexDeleteUnused = 0;
 }
 
-/* ---- the constructors and destructors of material.h and objref.h (rva 0x2336f0..) ---- */
+/* ---- the constructors and destructors of material.h and objref.h (..) ---- */
 
 /* the constructors and destructors of material.h */
 static void CMatList_dtor(CMatList *self);
@@ -1225,7 +1225,7 @@ static void CMatList_dtor(CMatList *self) {
 	}
 }
 
-/* the atexit destructor of (&g_MatList) (rva 0x38ec70, the destructor inlined) */
+/* the atexit destructor of (&g_MatList) (the destructor inlined) */
 static void Material_FiniMatList(void) {
 	CMatList_dtor((&g_MatList));
 }

@@ -27,9 +27,9 @@ static cGVar GVar_MssnRadarBlinkTime;
 #define OBJ_ONENDMOVE_DESC "<ObjMove.OnEnd> function"
 #define OBJ_ONOBJSLOT_DESC "<OnObjSlot> function"
 
-#define OBJ_MIN_DT 1e-6f			/* rva 0x3b0830: no update for a smaller step */
+#define OBJ_MIN_DT 1e-6f			/* no update for a smaller step */
 #define OBJ_SLOT_INTERVAL 0.05f
-#define OBJ_SLOT_JUMP2 9000000.0f		/* rva 0x3b38f8: a jump of more than 3000 since the slot */
+#define OBJ_SLOT_JUMP2 9000000.0f		/* a jump of more than 3000 since the slot */
 
 static cGVar GVar_ErrorMin;
 
@@ -43,15 +43,15 @@ static cGVar GVar_ErrorFix;
 extern vec3_t g_NetOrigin;
 
 #define NET_POS_STEP 32.0f
-#define NET_ANG_SHORT 10185.916357881302	/* rva 0x3b38d8, 32000 / pi */
-#define NET_ANG_BYTE 40.42535554534142		/* rva 0x3b38c8, 127 / pi */
+#define NET_ANG_SHORT 10185.916357881302	/* 32000 / pi */
+#define NET_ANG_BYTE 40.42535554534142		/* 127 / pi */
 #define NET_ROT_SHORT 6.702064327658225
 #define NET_ROT_BYTE 0.10471975511965977
 #define NET_POS_SCALE 0.03125f
 #define NET_POS_MAX 32640.0f
 #define NET_VEL_MAX 30000.0f
-#define NET_ROT_SHORT_MAX 214466.0584850632	/* rva 0x3b38e8, 32000 * NET_ROT_SHORT */
-#define NET_ROT_BYTE_MAX 13.29940890019679	/* rva 0x3b38c0, 127 * NET_ROT_BYTE */
+#define NET_ROT_SHORT_MAX 214466.0584850632	/* 32000 * NET_ROT_SHORT */
+#define NET_ROT_BYTE_MAX 13.29940890019679	/* 127 * NET_ROT_BYTE */
 
 static inline uint32_t Float_Bits(float f) {
 	uint32_t u;
@@ -257,13 +257,13 @@ vec3_t *cObjEntity_GetRotVel(cEntity *self, vec3_t *out) {
 	return out;
 }
 
-/* vf27 and vf30 */
+/* and */
 vec3_t *cObjEntity_GetRenderAng(cEntity *self, vec3_t *out) {
 	*out = Obj(self)->renderAng;
 	return out;
 }
 
-/* vf26 and vf29 */
+/* and */
 vec3_t *cObjEntity_GetRenderPos(cEntity *self, vec3_t *out) {
 	*out = Obj(self)->renderPos;
 	return out;

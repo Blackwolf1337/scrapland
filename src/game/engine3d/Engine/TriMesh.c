@@ -12,7 +12,7 @@
 static const IObject3DVtbl CTriMesh_vftable;
 #define CTRIMESH_VFTABLE (&CTriMesh_vftable)
 #define TRIMESH_SKIN 16
-/* the box before the first vertex, rva 0x3a3a38 and 0x3a512c */
+/* the box before the first vertex and 0x3a512c */
 #define TRIMESH_FLT_MAX 3.4028234663852886e+38f
 
 /* draw the meshes through their D3D mesh */
@@ -432,7 +432,7 @@ void CTriMesh_CalcBox(CTriMesh *self, box_t *out, byte first) {
 		b->max.y = b->max.y > v->y ? b->max.y : v->y;
 		b->max.z = b->max.z > v->z ? b->max.z : v->z;
 	}
-	/* an identical copy of Box_Merge, rva 0x2b8870 */
+	/* an identical copy of Box_Merge */
 	Box_Merge(out, b, first);
 }
 

@@ -10,15 +10,15 @@
 #include "scrap/mathlib.h"
 
 typedef struct CAnimVert {
-	uint32_t nTr;			/* 0x0 frames */
-	vec3_t *Tr;			/* 0x4 positions, until compressed */
-	float scale;			/* 0x8 */
-	int8_t *Tr2;			/* 0xc compressed */
+	uint32_t nTr;			/* frames */
+	vec3_t *Tr;			/* positions, until compressed */
+	float scale;
+	int8_t *Tr2;			/* compressed */
 } CAnimVert;
 
 typedef struct CEVA {
-	uint32_t nV;			/* 0x0 */
-	CAnimVert *AnimV;		/* 0x4 new[] of nV */
+	uint32_t nV;
+	CAnimVert *AnimV;		/* new[] of nV */
 } CEVA;
 
 CEVA *CEVA_ctor(CEVA *self);

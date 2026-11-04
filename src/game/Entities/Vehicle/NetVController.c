@@ -1,5 +1,5 @@
 /*
- * cNetVController of the game (rva 0x1186b0..0x119850, between VehicleMotorsEffects.cpp and VehicleTraffic.cpp; the
+ * cNetVController of the game (between VehicleMotorsEffects.cpp and VehicleTraffic.cpp; the
  * source file has no CHECK string, its name is not known): the network controller of a vehicle, a cNetController
  * (ObjEntity.c) with the vehicle, the hits and the controls of the client. See include/scrap/vehicleentity.h.
  */
@@ -37,7 +37,7 @@ cNetVController *cNetVController_ctor(void *mem, cEntity *v) {
 	return self;
 }
 
-/* vf03: an active vehicle always sends its position */
+/* an active vehicle always sends its position */
 static byte cNetVController_Changed(cNetController *elem, byte flags, cEntity *e) {
 	cNetVController *self = (cNetVController *)elem;
 	if (self->vehicle->active) {
@@ -48,7 +48,6 @@ static byte cNetVController_Changed(cNetController *elem, byte flags, cEntity *e
 	return cNetController_Changed(&self->base, flags, e);
 }
 
-/* vf00 */
 static void cNetVController_Reset(cNetController *elem) {
 	cNetVController *self = (cNetVController *)elem;
 	cNetController_Reset(&self->base);
@@ -77,7 +76,7 @@ static inline void NetV_Read(cAbstractFile *msg, void *dst, int n) {
 	VFile_Read(msg, dst, n);
 }
 
-/* vf01: a server reads the controls of the client (weapon, camera height, target); a client the ammo levels, the
+/* a server reads the controls of the client (weapon, camera height, target); a client the ammo levels, the
  * lock, fire, cloud and EMI, the life, the weapon, the attack, the hits and the upgrades. Then the state of the
  * cNetController, and the hit flags when its flag bit 7 is set */
 static void cNetVController_Read(cNetController *elem, void *m) {
@@ -279,7 +278,7 @@ static void NetV_WriteOffset(cNetVController *self, cAbstractFile *msg, const ve
 	NetV_Write(msg, &s, 2);
 }
 
-/* vf02: the keys from the controls and the state of the vehicle; then the controls of a "net" vehicle (the client
+/* the keys from the controls and the state of the vehicle; then the controls of a "net" vehicle (the client
  * side: weapon, camera height, the target of the camera), else the state Read takes on a client; then the state of
  * cNetController and the hit flags, whose counters step while hit and force are 2 */
 static void cNetVController_Write(cNetController *elem, int flags, cEntity *e, void *m, int force) {

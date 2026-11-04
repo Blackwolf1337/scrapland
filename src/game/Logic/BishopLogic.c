@@ -23,7 +23,7 @@ static void cBishopLocalLogic_Free(cLocalLogic *elem) {
 	operator_delete(self);
 }
 
-/* vf31: 0 to keep a character target that is idle when the AI asks */
+/* 0 to keep a character target that is idle when the AI asks */
 static byte cBishopLocalLogic_LoseTarget(cLocalLogic *elem) {
 	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
 	cEntity *t = self->base.target.target;
@@ -43,7 +43,6 @@ static byte cBishopLocalLogic_LoseTarget(cLocalLogic *elem) {
 	return 1;
 }
 
-/* vf07 */
 static byte cBishopLocalLogic_UpdateBusy(cLocalLogic *elem) {
 	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
 	if (!strncmp(cActCtrl_GetActionName(ChType_ActCtrl(self->base.parent), 0), "SellLife", 8)) {
@@ -55,7 +54,7 @@ static byte cBishopLocalLogic_UpdateBusy(cLocalLogic *elem) {
 	return r;
 }
 
-/* vf30: with the special action on (energy bar active, SpecialActionActive 2) */
+/* with the special action on (energy bar active, SpecialActionActive 2) */
 static cEntity *cBishopLocalLogic_FindTarget(cLocalLogic *elem) {
 	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
 	cEntityListData **const lists[] = { &g_pWorld->logic.nurses.list, &g_pWorld->logic.aiCtrl.sentinels, &g_pWorld->logic.aiCtrl.gears };
@@ -86,7 +85,7 @@ static cEntity *cBishopLocalLogic_FindTarget(cLocalLogic *elem) {
 	return NULL;
 }
 
-/* vf29 (0x74), the alarm: its alarm state or 2 against target */
+/* (0x74), the alarm: its alarm state or 2 against target */
 static void cBishopLocalLogic_OnAlarm(cLocalLogic *elem, cEntity *target) {
 	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
 	if (g_BishopAttackOnAlarm) {

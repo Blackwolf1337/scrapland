@@ -4,7 +4,7 @@
  * the vector constructor and destructor iterators. The functions are SD_IMPORT_CRT in src/imports.inc, so the
  * entries of the original jump here too (src/core/hook.c).
  *
- * The entry of the original (rva 0x314919: __security_init_cookie, then __scrt_common_main_seh at 0x31478c) runs
+ * The entry of the original (: __security_init_cookie, then __scrt_common_main_seh at 0x31478c) runs
  * the C initializers of the __xi table with _initterm_e, the C++ initializers of the __xc table with _initterm and
  * then WinMain; exit() with its result runs the atexit functions, last registered first. Every __xi entry and the
  * first __xc one belong to the CRT: what they set that the game can see is set here (Crt_InitState). The other
@@ -64,7 +64,7 @@ static void Crt_RunOnexit(void) {
 /* ---- thread-safe statics (_Init_thread_header and _Init_thread_footer) ---- */
 
 /*
- * The original keeps the epoch per thread in its TLS block (+0x20) and the global one at rva 0x43cfe8, both start at
+ * The original keeps the epoch per thread in its TLS block (+0x20) and the global one both start at
  * INT_MIN; a static is made when its guard is above the epoch of the thread. Only the main thread runs game code, so
  * one epoch serves here, and the critical section and the wait of the original for a static another thread is still
  * making are left out (the guard is -1 then).

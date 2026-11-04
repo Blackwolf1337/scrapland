@@ -19,8 +19,8 @@
 	}
 
 typedef struct cDListNode {
-	struct cDListNode *next;	/* 0x0 */
-	struct cDListNode *prev;	/* 0x4 */
+	struct cDListNode *next;
+	struct cDListNode *prev;
 } cDListNode;
 typedef DLIST(cDListNode) cDList;
 

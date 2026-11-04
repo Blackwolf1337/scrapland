@@ -30,7 +30,7 @@ extern cGVarFunction GVar_RestoreUpgradeFunc;
 
 typedef cTargetLock cWeaponManager;
 
-#define TYEN_VEHICLE "Car"			/* the string at rva 0x3a77b8 */
+#define TYEN_VEHICLE "Car"			/* the string */
 
 /* the fields of the vehicles (cVehicleEntity) and other entities the weapons use */
 #define Entity_FollowCam(e) ((cFollowCamEntity *)Obj(e)->cam)	/* of a player, NULL else */
@@ -131,7 +131,7 @@ extern cGVar GVar_DevastatorDistLimit;
 #define g_DevastatorDistLimit (GVar_DevastatorDistLimit.value.f)
 extern cGVar GVar_EMILowRadiusFactor;
 #define g_EMILowRadiusFactor (GVar_EMILowRadiusFactor.value.f)
-/* WeaponManager.cpp before rva 0x11a0f0: the fire stamp delayed by t (to -t when it is beyond t) */
+/* WeaponManager.cpp before: the fire stamp delayed by t (to -t when it is beyond t) */
 void cWeaponManager_DelayFire(cWeaponManager *self, float t);
 cWeaponManager *cWeaponManager_ctor(cWeaponManager *self);
 void cWeaponManager_dtor(cWeaponManager *self);

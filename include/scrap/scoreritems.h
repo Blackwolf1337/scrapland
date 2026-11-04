@@ -1,6 +1,6 @@
 /*
  * The HUD and menu items of Menu/ from AbstractTextScorer.cpp to RadarScorer.cpp (the classes over cScorerItem of
- * include/scrap/scorer.h). Every class has Draw(player) at vf00, Var at vf02 and the deleting destructor at vf03.
+ * include/scrap/scorer.h). Every class has the slots Draw(player), Var and Free.
  */
 #ifndef SCRAP_SCORERITEMS_H
 #define SCRAP_SCORERITEMS_H
@@ -63,29 +63,29 @@ static inline int ScorerVar_Color(const char *name, const char *const names[4], 
 	return 0;
 }
 
-/* ---- the base of the sprite items (SpriteScorer.cpp, not in this module), 0xc4 bytes ---- */
+/* ---- the base of the sprite items (SpriteScorer.cpp, not in this module) ---- */
 /* the vtable of cSpriteScorer and the items made from it (bar, button, hangar ship, mission, gradient) */
 struct cSpriteScorer;
 typedef struct cSpriteScorerVtbl {
 	cScorerItemVtbl base;
-	void(*SetMultiSprite)(struct cSpriteScorer *self, byte on);			/* 0x10 */
+	void(*SetMultiSprite)(struct cSpriteScorer *self, byte on);
 } cSpriteScorerVtbl;
 
 typedef struct cSpriteScorer {
-	cScorerItem base;		/* 0x00 */
-	float jumpFX;			/* 0xac */
-	byte numSubSprites;		/* 0xb0 1 */
-	byte spriteIndex;		/* 0xb1 1, the frame drawn */
-	byte isMultiSprite;		/* 0xb2 */
-	byte highRes;			/* 0xb3 */
-	byte fixPosition;		/* 0xb4 */
-	byte blendingMode;		/* 0xb5 3 */
-	byte rotate;			/* 0xb6 */
-	byte mirror;			/* 0xb7 */
-	byte discardable;		/* 0xb8 */
+	cScorerItem base;
+	float jumpFX;
+	byte numSubSprites;		/* 1 */
+	byte spriteIndex;		/* 1, the frame drawn */
+	byte isMultiSprite;
+	byte highRes;
+	byte fixPosition;
+	byte blendingMode;		/* 3 */
+	byte rotate;
+	byte mirror;
+	byte discardable;
 	byte pad_b9[3];
-	CPsaImage *img;			/* 0xbc */
-	char *file;			/* 0xc0 cString */
+	CPsaImage *img;
+	char *file;			/* cString */
 } cSpriteScorer;
 void cSpriteScorer_SetMultiSprite(cSpriteScorer *self, byte on);
 
@@ -104,45 +104,45 @@ int cSpriteScorer_Var(cScorerItem *base, const char *name, int set, char **s, do
 #define TEXTSCORER_SHADOW 0x20000
 #define TEXTSCORER_OUTLINE 0x40000
 
-/* a text in a font: the base of the text items, 0xc4 bytes */
+/* a text in a font: the base of the text items */
 typedef struct cAbstractTextScorer {
-	cScorerItem base;		/* 0x00 */
-	uint32_t color;			/* 0xac 0xAARRGGBB */
-	int align;			/* 0xb0 TEXTSCORER_LEFT, _RIGHT, _CENTER */
-	int effect;			/* 0xb4 TEXTSCORER_OSCILE, _SHADOW, _OUTLINE or 0 */
-	CFont *font;			/* 0xb8 */
-	char *fontName;			/* 0xbc cString */
-	char *text;			/* 0xc0 cString */
+	cScorerItem base;
+	uint32_t color;			/* 0xAARRGGBB */
+	int align;			/* TEXTSCORER_LEFT, _RIGHT, _CENTER */
+	int effect;			/* TEXTSCORER_OSCILE, _SHADOW, _OUTLINE or 0 */
+	CFont *font;
+	char *fontName;			/* cString */
+	char *text;			/* cString */
 } cAbstractTextScorer;
 
-/* the credits: 20 lines in two fonts, faded in a render target (0x32dc bytes) */
+/* the credits: 20 lines in two fonts, faded in a render target */
 #define CREDITS_LINES 20
 #define CREDITS_LINE_SIZE 0x280
 typedef struct cCreditsScorer {
-	cAbstractTextScorer base;	/* 0x00 */
-	CFont *font;			/* 0xc4 ScrapMedium, the lines after the first */
-	CFont *titleFont;		/* 0xc8 Horatio, the first line */
-	float time;			/* 0xcc */
-	float life;			/* 0xd0 */
-	float fadeIn;			/* 0xd4 */
-	float fadeOut;			/* 0xd8 */
+	cAbstractTextScorer base;
+	CFont *font;			/* ScrapMedium, the lines after the first */
+	CFont *titleFont;		/* Horatio, the first line */
+	float time;
+	float life;
+	float fadeIn;
+	float fadeOut;
 	/* Text0..Text19; a text in line 8 puts the lines in three columns, without the fades */
-	char lines[CREDITS_LINES][CREDITS_LINE_SIZE];	/* 0xdc */
+	char lines[CREDITS_LINES][CREDITS_LINE_SIZE];
 } cCreditsScorer;
 
-/* the hint of the cursor item and the label text (the same layout), with a frame behind (0xd0 bytes) */
+/* the hint of the cursor item and the label text (the same layout), with a frame behind */
 typedef struct cHintScorer {
-	cAbstractTextScorer base;	/* 0x00 */
-	CPsaImage *tab;			/* 0xc4 the frame sprite sheet */
-	int tabIndex;			/* 0xc8 the first frame of Menu_DrawFrame, none if <= 0 */
-	int tabBlend;			/* 0xcc 0..6 */
+	cAbstractTextScorer base;
+	CPsaImage *tab;			/* the frame sprite sheet */
+	int tabIndex;			/* the first frame of Menu_DrawFrame, none if <= 0 */
+	int tabBlend;			/* 0..6 */
 } cHintScorer;
 typedef cHintScorer cLabelScorer;
 
-/* the message text of Scorer_SetMsgText (0xc8 bytes) */
+/* the message text of Scorer_SetMsgText */
 typedef struct cMsgScorer {
-	cAbstractTextScorer base;	/* 0x00 */
-	float lineHeight;		/* 0xc4 the height of "W" */
+	cAbstractTextScorer base;
+	float lineHeight;		/* the height of "W" */
 } cMsgScorer;
 
 /* the engine variables of the credits render target */
@@ -178,20 +178,20 @@ int cAbstractTextScorer_Var(cScorerItem *base, const char *name, int set, char *
 /* a bar of a sprite sheet: main and black frames over a back frame (0x108 bytes). The value and the auto update
  * are engine variables shared by all bars. */
 typedef struct cBarScorer {
-	cSpriteScorer base;		/* 0x00 */
-	float maxValue;			/* 0xc4 */
-	float blinkTime;		/* 0xc8 */
-	byte blink;			/* 0xcc */
-	byte blinkOff;			/* 0xcd the bar is hidden in this half of the blink */
+	cSpriteScorer base;
+	float maxValue;
+	float blinkTime;
+	byte blink;
+	byte blinkOff;			/* the bar is hidden in this half of the blink */
 	byte pad_ce[2];
-	int mainIndex;			/* 0xd0 the frame of the bar */
-	int blackIndex;			/* 0xd4 the frame of the empty part */
-	float mainUV0[2], mainUV1[2];	/* 0xd8 */
-	float blackUV0[2], blackUV1[2];	/* 0xe8 */
-	int backIndex;			/* 0xf8 the frame behind, none if 0 */
-	uint32_t backColor;		/* 0xfc */
-	uint32_t mainColor;		/* 0x100 */
-	uint32_t blackColor;		/* 0x104 */
+	int mainIndex;			/* the frame of the bar */
+	int blackIndex;			/* the frame of the empty part */
+	float mainUV0[2], mainUV1[2];
+	float blackUV0[2], blackUV1[2];
+	int backIndex;			/* the frame behind, none if 0 */
+	uint32_t backColor;
+	uint32_t mainColor;
+	uint32_t blackColor;
 } cBarScorer;
 
 /* IsAutoUpdatable: 1 down to AutoUpdateStopValue, 2 up to the maximum, by the frame time and the speed */
@@ -220,44 +220,44 @@ typedef TABLE(byte) cByteTable;
 /* a menu button: a box of 10 pixel cells of the sprite sheet (Complex) or one frame, a text of lines (name:value
  * pairs in two columns), the focus highlight (0x168 bytes) */
 typedef struct cButtonScorer {
-	cSpriteScorer base;		/* 0x00 */
-	cStrTable lines;		/* 0xc4 */
-	cByteTable isValue;		/* 0xcc 1 for the value of a name:value line */
-	CFont *font;			/* 0xd4 Horatio */
-	float xAlignLeft;		/* 0xd8 XAlignLeft: x */
-	float xAlignRight;		/* 0xdc x + w */
-	float xAlignCenter;		/* 0xe0 x + w / 2 */
-	int highlight;			/* 0xe4 */
-	int glow;			/* 0xe8 */
-	int focusSpriteIndex;		/* 0xec 1 */
-	int borderSpriteIndex;		/* 0xf0 -1 for none */
-	int width;			/* 0xf4 the cells inside the box, 1 */
-	int height;			/* 0xf8 */
-	int maxLineSize;		/* 0xfc -1: no word wrap */
-	int hasText;			/* 0x100 */
-	int textAlign;			/* 0x104 BUTTON_CENTER */
-	int marker;			/* 0x108 */
-	int isNameValuePair;		/* 0x10c 1 */
-	int renderAlphaChannel;		/* 0x110 0, 1 or 2 */
-	int boxH;			/* 0x114 the box height in pixels */
-	int textH;			/* 0x118 the text height in pixels */
-	float markerOffset;		/* 0x11c */
-	float highlightOffset;		/* 0x120 */
-	float lineHeight;		/* 0x124 */
-	float scaleSmoothWidth;		/* 0x128 the scale of the focused sprite */
-	float scaleSmoothHeight;	/* 0x12c */
-	float scaleSmoothTime;		/* 0x130 */
-	uint32_t textColor;		/* 0x134 */
-	uint32_t borderColor;		/* 0x138 */
-	float origScaleX, origScaleY;	/* 0x13c the scale of the sprite */
-	float textWidth;		/* 0x144 the widest line, -1 */
-	float textHeight;		/* 0x148 its height */
-	int complex;			/* 0x14c 1 */
-	uint32_t highLightColor;	/* 0x150 */
-	float minX, maxX;		/* 0x154 the columns of name:value lines, -1 */
-	CPsaImage *alphaImg;		/* 0x15c white, behind the sprite (RenderAlphaChannel) */
-	CPsaImage *focusImg;		/* 0x160 the highlight and border frames (File) */
-	int highLightBlend;		/* 0x164 3 */
+	cSpriteScorer base;
+	cStrTable lines;
+	cByteTable isValue;		/* 1 for the value of a name:value line */
+	CFont *font;			/* Horatio */
+	float xAlignLeft;		/* XAlignLeft: x */
+	float xAlignRight;		/* x + w */
+	float xAlignCenter;		/* x + w / 2 */
+	int highlight;
+	int glow;
+	int focusSpriteIndex;		/* 1 */
+	int borderSpriteIndex;		/* -1 for none */
+	int width;			/* the cells inside the box, 1 */
+	int height;
+	int maxLineSize;		/* -1: no word wrap */
+	int hasText;
+	int textAlign;			/* BUTTON_CENTER */
+	int marker;
+	int isNameValuePair;		/* 1 */
+	int renderAlphaChannel;		/* 0, 1 or 2 */
+	int boxH;			/* the box height in pixels */
+	int textH;			/* the text height in pixels */
+	float markerOffset;
+	float highlightOffset;
+	float lineHeight;
+	float scaleSmoothWidth;		/* the scale of the focused sprite */
+	float scaleSmoothHeight;
+	float scaleSmoothTime;
+	uint32_t textColor;
+	uint32_t borderColor;
+	float origScaleX, origScaleY;	/* the scale of the sprite */
+	float textWidth;		/* the widest line, -1 */
+	float textHeight;		/* its height */
+	int complex;			/* 1 */
+	uint32_t highLightColor;
+	float minX, maxX;		/* the columns of name:value lines, -1 */
+	CPsaImage *alphaImg;		/* white, behind the sprite (RenderAlphaChannel) */
+	CPsaImage *focusImg;		/* the highlight and border frames (File) */
+	int highLightBlend;		/* 3 */
 } cButtonScorer;
 
 cButtonScorer *cButtonScorer_ctor(cButtonScorer *self);
@@ -270,17 +270,17 @@ cButtonScorer *cButtonScorer_ctor(cButtonScorer *self);
  * the lock text and the life warning (0xec bytes) */
 struct cCannonScorer;
 typedef struct cCannonScorer {
-	cScorerItem base;		/* 0x00 */
-	byte shown;			/* 0xac the aim was drawn in the last frame (the no ammo sound when it goes) */
+	cScorerItem base;
+	byte shown;			/* the aim was drawn in the last frame (the no ammo sound when it goes) */
 	byte pad_ad[3];
-	int numWeapons;			/* 0xb0 of the world at the creation */
-	float angle;			/* 0xb4 of the aim */
-	float size[2];			/* 0xb8 20, 20 */
-	uint32_t color;			/* 0xc0 the aim of the weapon in use */
-	CPsaImage *img;			/* 0xc4 */
-	int crossHairIndex;		/* 0xc8 the center frame, none if 0 */
-	int aimIndex[CANNON_WEAPONS];	/* 0xcc the aim frame per weapon, none if 0 */
-	int aimAc;			/* 0xe8 the weapon of AimIndex */
+	int numWeapons;			/* of the world at the creation */
+	float angle;			/* of the aim */
+	float size[2];			/* 20, 20 */
+	uint32_t color;			/* the aim of the weapon in use */
+	CPsaImage *img;
+	int crossHairIndex;		/* the center frame, none if 0 */
+	int aimIndex[CANNON_WEAPONS];	/* the aim frame per weapon, none if 0 */
+	int aimAc;			/* the weapon of AimIndex */
 } cCannonScorer;
 
 extern cGVar GVar_WarningLifeLevel;
@@ -292,19 +292,19 @@ cCannonScorer *cCannonScorer_ctor(cCannonScorer *self);
 
 #define CHAT_MSGS 16
 
-/* the chat lines of Scorer_AddChatMsg (0xbc bytes) */
+/* the chat lines of Scorer_AddChatMsg */
 typedef struct cChatScorer {
-	cScorerItem base;		/* 0x00 */
-	CPsaImage *img;			/* 0xac white, not drawn */
-	int numMsg;			/* 0xb0 the newest lines shown, 0..16 */
-	CFont *font;			/* 0xb4 HoratioSmall */
-	float lineHeight;		/* 0xb8 14 */
+	cScorerItem base;
+	CPsaImage *img;			/* white, not drawn */
+	int numMsg;			/* the newest lines shown, 0..16 */
+	CFont *font;			/* HoratioSmall */
+	float lineHeight;		/* 14 */
 } cChatScorer;
 
 /* a chat line, the oldest first */
 typedef struct cChatMsg {
-	char text[0x50];		/* 0x00 */
-	uint32_t color;			/* 0x50 */
+	char text[0x50];
+	uint32_t color;
 } cChatMsg;
 
 cChatScorer *cChatScorer_ctor(cChatScorer *self);
@@ -315,37 +315,37 @@ cChatScorer *cChatScorer_ctor(cChatScorer *self);
 #define CIRCUIT_FLARES 4
 #define CIRCUIT_TRAIL 24
 
-/* the circuit board picture with flares running along its paths (0xc8 bytes) */
+/* the circuit board picture with flares running along its paths */
 typedef struct cCircuitScorer {
-	cScorerItem base;		/* 0x00 */
-	float lastTime;			/* 0xac the game time of the last frame */
-	float curTime;			/* 0xb0 */
-	char *file;			/* 0xb4 cString, the last FileCircuit or FileFlare */
-	int highRes;			/* 0xb8 */
-	int blend;			/* 0xbc 3 */
-	CPsaImage *circuit;		/* 0xc0 */
-	CPsaImage *flare;		/* 0xc4 frames 1 (head) and 2 (trail) */
+	cScorerItem base;
+	float lastTime;			/* the game time of the last frame */
+	float curTime;
+	char *file;			/* cString, the last FileCircuit or FileFlare */
+	int highRes;
+	int blend;			/* 3 */
+	CPsaImage *circuit;
+	CPsaImage *flare;		/* frames 1 (head) and 2 (trail) */
 } cCircuitScorer;
 
 /* a path of the board in pixels of the picture, with the lengths of its segments */
 typedef struct cCircuitPath {
-	int numPoints;			/* 0x000 */
-	float pts[32][2];		/* 0x004 */
-	float segStart[32];		/* 0x104 the length before each segment */
-	float segLen[32];		/* 0x184 */
-	float normStart[32];		/* 0x204 segStart / total */
-	float normEnd[32];		/* 0x284 (segStart + segLen) / total */
-	float total;			/* 0x304 */
+	int numPoints;
+	float pts[32][2];
+	float segStart[32];		/* the length before each segment */
+	float segLen[32];
+	float normStart[32];		/* segStart / total */
+	float normEnd[32];		/* (segStart + segLen) / total */
+	float total;
 } cCircuitPath;
 
 /* a flare on a path, then a pause */
 typedef struct cCircuitFlare {
-	float time;			/* 0x00 left of the run */
-	float duration;			/* 0x04 */
-	float delay;			/* 0x08 the pause before the next run */
-	int path;			/* 0x0c */
-	int reverse;			/* 0x10 */
-	int unused_14;			/* 0x14 */
+	float time;			/* left of the run */
+	float duration;
+	float delay;			/* the pause before the next run */
+	int path;
+	int reverse;
+	int unused_14;
 } cCircuitFlare;
 
 cCircuitScorer *cCircuitScorer_ctor(cCircuitScorer *self);
@@ -355,41 +355,41 @@ cCircuitScorer *cCircuitScorer_ctor(cCircuitScorer *self);
 /* the police alarm meter: a back frame, a bar to the alarm level of the world, two blinking lights while the
  * alarm is on; fades in with the alarm (0xf0 bytes) */
 typedef struct cCopMeterScorer {
-	cScorerItem base;		/* 0x00 */
-	CPsaImage *img;			/* 0xac */
-	CPsaImage *flash;		/* 0xb0 the same sheet for the lights */
-	float backOffX, backOffY;	/* 0xb4 */
-	int backIndex;			/* 0xbc */
-	float lightOffX, lightOffY;	/* 0xc0 */
-	int lightIndex;			/* 0xc8 the light frames +0..+2 */
-	float barOffX, barOffY;		/* 0xcc */
-	int barIndex;			/* 0xd4 */
-	float percent;			/* 0xd8 the bar 0..1, follows target */
-	float target;			/* 0xdc the alarm level of the world */
-	byte on;			/* 0xe0 the alarm is on */
+	cScorerItem base;
+	CPsaImage *img;
+	CPsaImage *flash;		/* the same sheet for the lights */
+	float backOffX, backOffY;
+	int backIndex;
+	float lightOffX, lightOffY;
+	int lightIndex;			/* the light frames +0..+2 */
+	float barOffX, barOffY;
+	int barIndex;
+	float percent;			/* the bar 0..1, follows target */
+	float target;			/* the alarm level of the world */
+	byte on;			/* the alarm is on */
 	byte pad_e1[3];
-	int unused_e4;			/* 0xe4 */
-	float fade;			/* 0xe8 0..1 */
-	float blink;			/* 0xec 0..0.9 the blink phase */
+	int unused_e4;
+	float fade;			/* 0..1 */
+	float blink;			/* 0..0.9 the blink phase */
 } cCopMeterScorer;
 
 cCopMeterScorer *cCopMeterScorer_ctor(cCopMeterScorer *self);
 
 /* ---- HangarShipScorer.cpp ---- */
 
-/* a ship of the world turning in a view of its own over a grid frame (0xf0 bytes) */
+/* a ship of the world turning in a view of its own over a grid frame */
 typedef struct cHangarShipScorer {
-	cSpriteScorer base;		/* 0x00 */
-	CGameCamera *cam;		/* 0xc4 */
-	CPsaImage *grid;		/* 0xc8 the sprite sheet of the item */
-	char *targetName;		/* 0xcc cString, the ship */
-	byte reset;			/* 0xd0 the angles start at 0 in the next frame */
+	cSpriteScorer base;
+	CGameCamera *cam;
+	CPsaImage *grid;		/* the sprite sheet of the item */
+	char *targetName;		/* cString, the ship */
+	byte reset;			/* the angles start at 0 in the next frame */
 	byte pad_d1[3];
-	vec3_t rot;			/* 0xd4 the angles of the ship in the view */
-	int gridIndex;			/* 0xe0 */
-	uint32_t gridColor;		/* 0xe4 */
-	float camDist;			/* 0xe8 100 */
-	float camFov;			/* 0xec 20 degrees */
+	vec3_t rot;			/* the angles of the ship in the view */
+	int gridIndex;
+	uint32_t gridColor;
+	float camDist;			/* 100 */
+	float camFov;			/* 20 degrees */
 } cHangarShipScorer;
 
 cHangarShipScorer *cHangarShipScorer_ctor(cHangarShipScorer *self);
@@ -397,14 +397,14 @@ cHangarShipScorer *cHangarShipScorer_ctor(cHangarShipScorer *self);
 /* ---- the models of the scorer (Scorer.cpp, SScorer.AddModel) ---- */
 
 typedef struct cScorerModel {
-	char name[0x20];		/* 0x00 */
-	CGameModel model;		/* 0x20 */
-	int numAnims;			/* 0x3c */
-	int anims[8];			/* 0x40 */
-	struct cScorerModel *next;	/* 0x60 */
-	float radius;			/* 0x64 */
-	float height;			/* 0x68 the eyes */
-	struct cEmbeddedFX *extra;	/* 0x6c its Tick draws after the model */
+	char name[0x20];
+	CGameModel model;
+	int numAnims;
+	int anims[8];
+	struct cScorerModel *next;
+	float radius;
+	float height;			/* the eyes */
+	struct cEmbeddedFX *extra;	/* its Tick draws after the model */
 } cScorerModel;
 
 /* the model of that name of the scorer, NULL if none */
@@ -412,12 +412,12 @@ cScorerModel *cScorer_FindModel(cScorer *scorer, const char *name);
 
 /* ---- HeadScorer.cpp ---- */
 
-/* a talking head: a scorer model in a view of its own, the camera swaying (0xc4 bytes) */
+/* a talking head: a scorer model in a view of its own, the camera swaying */
 /* the vtable of cHeadScorer, also the one of cMonitorScorer (the same two slots, its own functions) */
 typedef struct cHeadScorerVtbl {
 	cScorerItemVtbl base;
-	void(*SetAnim)(cScorerItem *self, int anim);					/* 0x10 */
-	byte(*SetModel)(cScorerItem *self, const char *name);			/* 0x14 */
+	void(*SetAnim)(cScorerItem *self, int anim);
+	byte(*SetModel)(cScorerItem *self, const char *name);
 } cHeadScorerVtbl;
 
 /* calls through the slots of cHeadScorerVtbl */
@@ -430,12 +430,12 @@ static inline void HeadScorer_SetAnim(void *self, int anim) {
 }
 
 typedef struct cHeadScorer {
-	cScorerItem base;		/* 0x00 */
-	float time;			/* 0xac the sway, random start */
-	cScorerModel *model;		/* 0xb0 */
-	int anim;			/* 0xb4 1 */
-	CGameCamera *cam;		/* 0xb8 */
-	float vw, vh;			/* 0xbc the view size */
+	cScorerItem base;
+	float time;			/* the sway, random start */
+	cScorerModel *model;
+	int anim;			/* 1 */
+	CGameCamera *cam;
+	float vw, vh;			/* the view size */
 } cHeadScorer;
 
 cHeadScorer *cHeadScorer_ctor(cHeadScorer *self);
@@ -447,17 +447,17 @@ cHeadScorer *cHeadScorer_ctor(cHeadScorer *self);
 /* the mission icons (three status lamps) and the text of the next mission's map (0xec bytes); the status and
  * the blink are engine variables shared by all */
 typedef struct cMissionScorer {
-	cSpriteScorer base;		/* 0x00 */
-	const char *nextText;		/* 0xc4 the language text NextMissionMapText */
-	CFont *font;			/* 0xc8 Horatio */
-	char *forceMap;			/* 0xcc cString, the map instead of the save variable Mission.Map */
-	int backIndex;			/* 0xd0 */
-	int primaryIndex;		/* 0xd4 the frame of status 0 */
-	int secondaryIndex;		/* 0xd8 of status 1 and 2 */
-	uint32_t textColor;		/* 0xdc */
-	CPsaImage *tab;			/* 0xe0 */
-	int tabIndex;			/* 0xe4 */
-	int tabBlend;			/* 0xe8 0..6 */
+	cSpriteScorer base;
+	const char *nextText;		/* the language text NextMissionMapText */
+	CFont *font;			/* Horatio */
+	char *forceMap;			/* cString, the map instead of the save variable Mission.Map */
+	int backIndex;
+	int primaryIndex;		/* the frame of status 0 */
+	int secondaryIndex;		/* of status 1 and 2 */
+	uint32_t textColor;
+	CPsaImage *tab;
+	int tabIndex;
+	int tabBlend;			/* 0..6 */
 } cMissionScorer;
 
 cMissionScorer *cMissionScorer_ctor(cMissionScorer *self);
@@ -470,48 +470,48 @@ cMissionScorer *cMissionScorer_ctor(cMissionScorer *self);
 /* the ship monitor: the panel, the head of the talk (Scorer_SetHeadMonitor) with its text, the weapon and upgrade
  * icons, the objective, the static noise; the view of the target (0x354 bytes) */
 typedef struct cMonitorScorer {
-	cScorerItem base;		/* 0x000 */
-	float textTime;			/* 0x0ac */
-	float noise;			/* 0x0b0 4 */
-	CGameCamera *cam;		/* 0x0b4 */
-	cEntity *lastTarget;		/* 0x0b8 the entity seen last, its descriptor is the text */
-	char text[0x140];		/* 0x0bc */
-	float textShown;		/* 0x1fc the time the text shows, 20 letters a second */
-	CFont *smallFont;		/* 0x200 Terminal8 */
-	CFont *bigFont;			/* 0x204 Horatio */
-	cScorerModel *model;		/* 0x208 the head */
-	int anim;			/* 0x20c 1 */
-	byte targetView;		/* 0x210 */
+	cScorerItem base;
+	float textTime;
+	float noise;			/* 4 */
+	CGameCamera *cam;
+	cEntity *lastTarget;		/* the entity seen last, its descriptor is the text */
+	char text[0x140];
+	float textShown;		/* the time the text shows, 20 letters a second */
+	CFont *smallFont;		/* Terminal8 */
+	CFont *bigFont;			/* Horatio */
+	cScorerModel *model;		/* the head */
+	int anim;			/* 1 */
+	byte targetView;
 	byte pad_211[3];
-	float objFrom[2];		/* 0x214 the objective mark moves from there */
-	float objPos[2];		/* 0x21c to the screen position of the entity to photograph */
-	char objName[0x80];		/* 0x224 the name of that entity */
-	float objBlend;			/* 0x2a4 1 */
-	byte objWas;			/* 0x2a8 the mark was on an entity before */
+	float objFrom[2];		/* the objective mark moves from there */
+	float objPos[2];		/* to the screen position of the entity to photograph */
+	char objName[0x80];		/* the name of that entity */
+	float objBlend;			/* 1 */
+	byte objWas;			/* the mark was on an entity before */
 	byte pad_2a9[3];
-	CPsaImage *weapon;		/* 0x2ac the weapon icons */
-	float weaponOffX, weaponOffY;	/* 0x2b0 */
-	int weaponIcons[MONITOR_WEAPONS];	/* 0x2b8 */
-	int weaponIconAc;		/* 0x2d4 the weapon of WeaponIconIndex */
-	int upgradeIcons[MONITOR_UPGRADES];	/* 0x2d8 */
-	int upgradeIconAc;		/* 0x30c */
-	CPsaImage *panel;		/* 0x310 */
-	int panelIndex;			/* 0x314 */
-	CPsaImage *mask;		/* 0x318 */
-	int maskIndex;			/* 0x31c */
-	CPsaImage *frame;		/* 0x320 */
-	int frameIndex;			/* 0x324 */
-	CPsaImage *staticImg;		/* 0x328 */
-	int staticIndex;		/* 0x32c */
-	CPsaImage *objective;		/* 0x330 */
-	int objectiveIndex;		/* 0x334 */
-	int objectiveChargeIndex;	/* 0x338 */
-	int objectiveBlackIndex;		/* 0x33c */
-	int objectiveWhiteIndex;		/* 0x340 */
-	int canPossessIndex;		/* 0x344 */
-	int canPossessGlowIndex;	/* 0x348 */
-	CPsaImage *noiseImg;		/* 0x34c */
-	CPsaImage *img350;		/* 0x350 white */
+	CPsaImage *weapon;		/* the weapon icons */
+	float weaponOffX, weaponOffY;
+	int weaponIcons[MONITOR_WEAPONS];
+	int weaponIconAc;		/* the weapon of WeaponIconIndex */
+	int upgradeIcons[MONITOR_UPGRADES];
+	int upgradeIconAc;
+	CPsaImage *panel;
+	int panelIndex;
+	CPsaImage *mask;
+	int maskIndex;
+	CPsaImage *frame;
+	int frameIndex;
+	CPsaImage *staticImg;
+	int staticIndex;
+	CPsaImage *objective;
+	int objectiveIndex;
+	int objectiveChargeIndex;
+	int objectiveBlackIndex;
+	int objectiveWhiteIndex;
+	int canPossessIndex;
+	int canPossessGlowIndex;
+	CPsaImage *noiseImg;
+	CPsaImage *img350;		/* white */
 } cMonitorScorer;
 
 cMonitorScorer *cMonitorScorer_ctor(cMonitorScorer *self);
@@ -520,16 +520,16 @@ cMonitorScorer *cMonitorScorer_ctor(cMonitorScorer *self);
 
 #define NETSTATS_SLOTS 16
 
-/* the ping and the bars of the net traffic of the client (0x230 bytes) */
+/* the ping and the bars of the net traffic of the client */
 typedef struct cNetStatsScorer {
-	cScorerItem base;		/* 0x000 */
-	float sent[NETSTATS_SLOTS];	/* 0x0ac the bar heights, going down */
-	float recv[NETSTATS_SLOTS];	/* 0x0ec */
-	float start[NETSTATS_SLOTS];	/* 0x12c the game time of the send before */
-	float end[NETSTATS_SLOTS];	/* 0x16c of the last send */
-	int sentBytes[NETSTATS_SLOTS];	/* 0x1ac */
-	int recvBytes[NETSTATS_SLOTS];	/* 0x1ec */
-	CPsaImage *img;			/* 0x22c white */
+	cScorerItem base;
+	float sent[NETSTATS_SLOTS];	/* the bar heights, going down */
+	float recv[NETSTATS_SLOTS];
+	float start[NETSTATS_SLOTS];	/* the game time of the send before */
+	float end[NETSTATS_SLOTS];	/* of the last send */
+	int sentBytes[NETSTATS_SLOTS];
+	int recvBytes[NETSTATS_SLOTS];
+	CPsaImage *img;			/* white */
 } cNetStatsScorer;
 
 /* the counters of the net (Net/) for the stats: bytes and slot of the last send and receive */
@@ -545,18 +545,18 @@ cNetStatsScorer *cNetStatsScorer_ctor(cNetStatsScorer *self);
 /* the news panel rendered into the texture "NewsPanel": the news head between the background and the logo, or
  * the watched entities while the alarm is on */
 typedef struct cNewsPanel {
-	int engineInits;			/* 0x00 g_EngineInits of the last frame: the texture is drawn again after a reset */
-	vec3_t camPos;			/* 0x04 of the entity view */
-	CGameCamera *cam;		/* 0x10 */
-	char *head;			/* 0x14 cString, NewsHead in use */
-	char *logo;			/* 0x18 cString, NewsLogoBmp in use */
-	char *back;			/* 0x1c cString, BackNewsBmp in use */
-	CGameModel *model;		/* 0x20 of the head (a scorer model or an entity) */
-	CPsaImage *logoImg;		/* 0x24 */
-	CPsaImage *backImg;		/* 0x28 */
-	float lastTime;			/* 0x2c the scorer time of the last update */
-	float open;			/* 0x30 0..1 */
-	byte closedDrawn;		/* 0x34 the closed panel is in the texture */
+	int engineInits;			/* g_EngineInits of the last frame: the texture is drawn again after a reset */
+	vec3_t camPos;			/* of the entity view */
+	CGameCamera *cam;
+	char *head;			/* cString, NewsHead in use */
+	char *logo;			/* cString, NewsLogoBmp in use */
+	char *back;			/* cString, BackNewsBmp in use */
+	CGameModel *model;		/* of the head (a scorer model or an entity) */
+	CPsaImage *logoImg;
+	CPsaImage *backImg;
+	float lastTime;			/* the scorer time of the last update */
+	float open;			/* 0..1 */
+	byte closedDrawn;		/* the closed panel is in the texture */
 	byte pad_35[3];
 } cNewsPanel;
 
@@ -578,35 +578,35 @@ void cNewsPanel_Update(cNewsPanel *self);
 #define RADAR_ICON_OUT_BIG 0x08		/* twice the size */
 #define RADAR_ICON_OUT_HIDE 0x10	/* not drawn */
 
-/* the radar of the ship of the camera, in the menu (MenuMap) the scrolling map of the floors (0x94c bytes) */
+/* the radar of the ship of the camera, in the menu (MenuMap) the scrolling map of the floors */
 typedef struct cRadarScorer {
-	cScorerItem base;		/* 0x000 */
-	float halfW, halfH;		/* 0x0ac the half size of the radar: 55 or 200, 100 in the menu */
-	float halfW2, halfH2;		/* 0x0b4 56.25 or 200, 100 */
-	CPsaImage *radar;		/* 0x0bc */
-	int radarIndex;			/* 0x0c0 */
-	CPsaImage *mask;		/* 0x0c4 */
-	int maskIndex;			/* 0x0c8 */
-	CPsaImage *icons;		/* 0x0cc */
-	int iconAc;			/* 0x0d0 the icon of IconIndex */
-	int iconIndex[(0x8c4 - 0xd4) / 4];	/* 0x0d4 the frames of the icons, from 0x4cc (RADAR_ICONS on) their last colors */
-	CPsaImage *noise;		/* 0x8c4 */
-	CPsaImage *cone;		/* 0x8c8 white, the view cones */
-	int floor;			/* 0x8cc the floor of the ship */
-	int prevFloor;			/* 0x8d0 */
-	float floorFade;		/* 0x8d4 0..1 since the floor changed */
-	int outAlphaFactor;		/* 0x8d8 100 */
-	CPsaImage *floorMaps[RADAR_FLOORS];	/* 0x8dc FileNameMap2D of each floor */
-	float map2dScale;		/* 0x91c 512 */
-	float map2dScaleFactor;		/* 0x920 0.01 */
-	float mapW, mapH;		/* 0x924 the map: DM_2dMap0 to DM_2dMap1, else the box of the world */
-	float mapX0, mapZ0;		/* 0x92c */
-	byte menuMap;			/* 0x934 */
+	cScorerItem base;
+	float halfW, halfH;		/* the half size of the radar: 55 or 200, 100 in the menu */
+	float halfW2, halfH2;		/* 56.25 or 200, 100 */
+	CPsaImage *radar;
+	int radarIndex;
+	CPsaImage *mask;
+	int maskIndex;
+	CPsaImage *icons;
+	int iconAc;			/* the icon of IconIndex */
+	int iconIndex[(0x8c4 - 0xd4) / 4];	/* the frames of the icons, from 0x4cc (RADAR_ICONS on) their last colors */
+	CPsaImage *noise;
+	CPsaImage *cone;		/* white, the view cones */
+	int floor;			/* the floor of the ship */
+	int prevFloor;
+	float floorFade;		/* 0..1 since the floor changed */
+	int outAlphaFactor;		/* 100 */
+	CPsaImage *floorMaps[RADAR_FLOORS];	/* FileNameMap2D of each floor */
+	float map2dScale;		/* 512 */
+	float map2dScaleFactor;		/* 0.01 */
+	float mapW, mapH;		/* the map: DM_2dMap0 to DM_2dMap1, else the box of the world */
+	float mapX0, mapZ0;
+	byte menuMap;
 	byte pad_935[3];
-	float menuMinScale;		/* 0x938 512 */
-	float menuMaxScale;		/* 0x93c 512 */
-	float menuScaleSpeed;		/* 0x940 10 */
-	float scrollX, scrollY;		/* 0x944 of the menu map */
+	float menuMinScale;		/* 512 */
+	float menuMaxScale;		/* 512 */
+	float menuScaleSpeed;		/* 10 */
+	float scrollX, scrollY;		/* of the menu map */
 } cRadarScorer;
 
 extern cGVar GVar_FileNameMap2D;
@@ -704,30 +704,30 @@ static inline void ScorerImg_Free(CPsaImage *img) {
 
 /* the logo of the main menu with its glow, neon and lighting (200 bytes); the animation state is global */
 typedef struct cScraplandMainMenuScorer {
-	cScorerItem base;		/* 0x00 */
-	float time;			/* 0xac the game time of the last draw */
-	float now;			/* 0xb0 */
-	int highRes;			/* 0xb4 HighRes 0 or 1: the files get the flag 0x10000 */
-	CPsaImage *logo;		/* 0xb8 FileLogo */
-	CPsaImage *glow;		/* 0xbc FileGlow */
-	CPsaImage *neon;		/* 0xc0 FileNeon */
-	CPsaImage *lighting;		/* 0xc4 FileLighting */
+	cScorerItem base;
+	float time;			/* the game time of the last draw */
+	float now;
+	int highRes;			/* HighRes 0 or 1: the files get the flag 0x10000 */
+	CPsaImage *logo;		/* FileLogo */
+	CPsaImage *glow;		/* FileGlow */
+	CPsaImage *neon;		/* FileNeon */
+	CPsaImage *lighting;		/* FileLighting */
 } cScraplandMainMenuScorer;
 
-/* the logo of a sub menu with its rings (0xd8 bytes) */
+/* the logo of a sub menu with its rings */
 typedef struct cScraplandSubMenuScorer {
-	cScorerItem base;		/* 0x00 */
-	float time;			/* 0xac */
-	float now;			/* 0xb0 */
-	char *file;			/* 0xb4 cString, the last file set */
-	int highRes;			/* 0xb8 */
-	CPsaImage *logo;		/* 0xbc FileLogo */
-	CPsaImage *glow;		/* 0xc0 FileGlow */
-	CPsaImage *lighting;		/* 0xc4 FileLighting */
-	CPsaImage *ringMask;		/* 0xc8 FileRingMask */
-	CPsaImage *ringReflection;	/* 0xcc FileRingReflection */
-	CPsaImage *ringBorder;		/* 0xd0 FileRingBorder */
-	float scale;			/* 0xd4 Scale 1 */
+	cScorerItem base;
+	float time;
+	float now;
+	char *file;			/* cString, the last file set */
+	int highRes;
+	CPsaImage *logo;		/* FileLogo */
+	CPsaImage *glow;		/* FileGlow */
+	CPsaImage *lighting;		/* FileLighting */
+	CPsaImage *ringMask;		/* FileRingMask */
+	CPsaImage *ringReflection;	/* FileRingReflection */
+	CPsaImage *ringBorder;		/* FileRingBorder */
+	float scale;			/* Scale 1 */
 } cScraplandSubMenuScorer;
 
 cScraplandMainMenuScorer *cScraplandMainMenuScorer_ctor(cScraplandMainMenuScorer *self);
@@ -735,27 +735,27 @@ cScraplandSubMenuScorer *cScraplandSubMenuScorer_ctor(cScraplandSubMenuScorer *s
 
 /* ---- SliderScorer.cpp ---- */
 
-/* a slider of a sprite sheet: the back frame and the knob moved by the cursor (0xf8 bytes) */
+/* a slider of a sprite sheet: the back frame and the knob moved by the cursor */
 typedef struct cSliderScorer {
-	cScorerItem base;		/* 0x00 */
-	int highRes;			/* 0xac HighRes: half sizes, File with the flag 0x10000 */
-	int blend;			/* 0xb0 BlendingMode 0..6, 3 */
-	int backIndex;			/* 0xb4 BackSpriteIndex, not set by the constructor */
-	int sliderIndex;		/* 0xb8 SliderSpriteIndex, not set by the constructor */
-	int focusIndex;			/* 0xbc FocusSpriteIndex, the knob over it while the item is the cursor */
-	float value;			/* 0xc0 Value, MinValue..MaxValue */
-	float lastValue;		/* 0xc4 */
-	float valueStep;		/* 0xc8 ValueStep */
-	float minValue;			/* 0xcc MinValue */
-	float maxValue;			/* 0xd0 MaxValue */
-	float marginSize;		/* 0xd4 MarginSize at both ends */
-	float maxValueForced;		/* 0xd8 MaxValueForced: the drag stops there if > 0 */
-	byte accept;			/* 0xdc the accept of this frame */
-	byte lastAccept;		/* 0xdd */
-	byte dragging;			/* 0xde */
+	cScorerItem base;
+	int highRes;			/* HighRes: half sizes, File with the flag 0x10000 */
+	int blend;			/* BlendingMode 0..6, 3 */
+	int backIndex;			/* BackSpriteIndex, not set by the constructor */
+	int sliderIndex;		/* SliderSpriteIndex, not set by the constructor */
+	int focusIndex;			/* FocusSpriteIndex, the knob over it while the item is the cursor */
+	float value;			/* Value, MinValue..MaxValue */
+	float lastValue;
+	float valueStep;		/* ValueStep */
+	float minValue;			/* MinValue */
+	float maxValue;			/* MaxValue */
+	float marginSize;		/* MarginSize at both ends */
+	float maxValueForced;		/* MaxValueForced: the drag stops there if > 0 */
+	byte accept;			/* the accept of this frame */
+	byte lastAccept;
+	byte dragging;
 	byte pad_df;
-	cPy_Function onChange;		/* 0xe0 OnChange (player, name) */
-	CPsaImage *img;			/* 0xf4 File, its color by Red, Green, Blue, Alpha; Unit its b22 */
+	cPy_Function onChange;		/* OnChange (player, name) */
+	CPsaImage *img;			/* File, its color by Red, Green, Blue, Alpha; Unit its b22 */
 } cSliderScorer;
 
 cSliderScorer *cSliderScorer_ctor(cSliderScorer *self);
@@ -764,36 +764,36 @@ cSliderScorer *cSliderScorer_ctor(cSliderScorer *self);
 
 #define SPECIALACTION_MAX_ACTIONS 15
 
-/* the special action of the character: its icon, energy and battery bars, the cannon aim (0x138 bytes) */
+/* the special action of the character: its icon, energy and battery bars, the cannon aim */
 typedef struct cSpecialActionScorer {
-	cScorerItem base;		/* 0x000 */
-	int charAction;			/* 0x0ac CharAction: the draw handler 0..14 */
-	int backIndex;			/* 0x0b0 BackIndex */
-	float backOffX, backOffY;	/* 0x0b4 BackOffX, BackOffY */
-	CPsaImage *sprite;		/* 0x0bc Sprite */
-	int energyBackIndex;		/* 0x0c0 EnergyBackIndex */
-	float energyBackOffX, energyBackOffY;	/* 0x0c4 */
-	int energyBarIndex;		/* 0x0cc EnergyBarIndex */
-	float energyBarOffX, energyBarOffY;	/* 0x0d0 */
-	int batteryBarIndex;		/* 0x0d8 BatteryBarIndex */
-	float batteryBarOffX, batteryBarOffY;	/* 0x0dc */
-	float textOffX, textOffY;	/* 0x0e4 TextOffX, TextOffY */
-	uint32_t textColor;		/* 0x0ec TextColorRed..Alpha, not set by the constructor */
-	CFont *textFont;		/* 0x0f0 TextFont, Horatio */
-	CPsaImage *cannon;		/* 0x0f4 CannonSprite */
-	int cannonIndex;		/* 0x0f8 CannonIndex */
-	int crossHairIndex;		/* 0x0fc CrossHairIndex */
-	CPsaImage *icon[2];		/* 0x100 IconSprite1, IconSprite2 */
-	CPsaImage *iconGlow[2];		/* 0x108 the same files, blend 2 */
-	int iconIndexSprite0;		/* 0x110 IconIndexSprite0 */
-	float iconOffX, iconOffY;	/* 0x114 IconOffX, IconOffY */
-	int iconIndex;			/* 0x11c IconIndex */
-	int glowIconIndex;		/* 0x120 GlowIconIndex */
-	uint32_t inactiveColor;		/* 0x124 InactiveColorRed..Alpha */
-	uint32_t activeColor;		/* 0x128 ActiveColorRed..Alpha */
-	uint32_t glowColor;		/* 0x12c GlowColorRed..Alpha */
-	uint32_t energyBackColor;	/* 0x130 0x5cffcc00 */
-	uint32_t batteryColor;		/* 0x134 0xffffffff */
+	cScorerItem base;
+	int charAction;			/* CharAction: the draw handler 0..14 */
+	int backIndex;			/* BackIndex */
+	float backOffX, backOffY;	/* BackOffX, BackOffY */
+	CPsaImage *sprite;		/* Sprite */
+	int energyBackIndex;		/* EnergyBackIndex */
+	float energyBackOffX, energyBackOffY;
+	int energyBarIndex;		/* EnergyBarIndex */
+	float energyBarOffX, energyBarOffY;
+	int batteryBarIndex;		/* BatteryBarIndex */
+	float batteryBarOffX, batteryBarOffY;
+	float textOffX, textOffY;	/* TextOffX, TextOffY */
+	uint32_t textColor;		/* TextColorRed..Alpha, not set by the constructor */
+	CFont *textFont;		/* TextFont, Horatio */
+	CPsaImage *cannon;		/* CannonSprite */
+	int cannonIndex;		/* CannonIndex */
+	int crossHairIndex;		/* CrossHairIndex */
+	CPsaImage *icon[2];		/* IconSprite1, IconSprite2 */
+	CPsaImage *iconGlow[2];		/* the same files, blend 2 */
+	int iconIndexSprite0;		/* IconIndexSprite0 */
+	float iconOffX, iconOffY;	/* IconOffX, IconOffY */
+	int iconIndex;			/* IconIndex */
+	int glowIconIndex;		/* GlowIconIndex */
+	uint32_t inactiveColor;		/* InactiveColorRed..Alpha */
+	uint32_t activeColor;		/* ActiveColorRed..Alpha */
+	uint32_t glowColor;		/* GlowColorRed..Alpha */
+	uint32_t energyBackColor;	/* 0x5cffcc00 */
+	uint32_t batteryColor;		/* 0xffffffff */
 } cSpecialActionScorer;
 
 extern cGVar GVar_SpecialActionActive;

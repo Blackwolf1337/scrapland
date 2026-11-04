@@ -41,13 +41,13 @@ typedef struct cLocalLogic cLocalLogic;
 /* the slots of cLocalLogic, the logic of a game mode and the base of the character logics; the variable slots take
  * the name of a script variable. All slots of the logic vtables take the logic as cLocalLogic. */
 typedef struct cLocalLogicVtbl {
-	void (*Free)(cLocalLogic *self);			/* 0x00 */
-	const char *(*GetName)(cLocalLogic *self);				/* 0x04 "BaseLogic" */
-	byte(*AcceptsArrow)(cLocalLogic *self);						/* 0x08 the arrow (talk) of the player may run */
-	byte(*VarI)(cLocalLogic *self, const char *name, int *i, byte set);	/* 0x0c */
-	byte(*VarF)(cLocalLogic *self, const char *name, double *d, byte set);	/* 0x10 */
-	byte(*VarS)(cLocalLogic *self, const char *name, char **s, byte set);	/* 0x14 */
-	byte(*VarV)(cLocalLogic *self, const char *name, double *x, double *y, double *z, byte set); /* 0x18 */
+	void (*Free)(cLocalLogic *self);
+	const char *(*GetName)(cLocalLogic *self);				/* "BaseLogic" */
+	byte(*AcceptsArrow)(cLocalLogic *self);						/* the arrow (talk) of the player may run */
+	byte(*VarI)(cLocalLogic *self, const char *name, int *i, byte set);
+	byte(*VarF)(cLocalLogic *self, const char *name, double *d, byte set);
+	byte(*VarS)(cLocalLogic *self, const char *name, char **s, byte set);
+	byte(*VarV)(cLocalLogic *self, const char *name, double *x, double *y, double *z, byte set);
 } cLocalLogicVtbl;
 
 /* calls through the slots of cLocalLogicVtbl */
@@ -82,24 +82,24 @@ static inline byte LocalLogic_AcceptsArrow(void *self) {
 /* the slots of cBaseLocalLogic, the logic of a character */
 typedef struct cBaseLocalLogicVtbl {
 	cLocalLogicVtbl base;
-	byte(*UpdateBusy)(cLocalLogic *self);						/* 0x1c */
-	void(*Refresh)(cLocalLogic *self);						/* 0x20 */
-	byte(*Listens)(cLocalLogic *self, cEntity *talker);				/* 0x24 vf09 the mayor */
-	void(*OnHit)(cLocalLogic *self, cEntity *attacker);				/* 0x28 */
-	void(*OnSeen)(cLocalLogic *self, cEntity *e);					/* 0x2c vf11 */
-	void(*OnAttack)(cLocalLogic *self, cEntity *attacker, float value);		/* 0x30 vf12 */
-	void(*OnShot)(cLocalLogic *self, cEntity *attacker);				/* 0x34 vf13 */
-	void(*OnHammer)(cLocalLogic *self, cEntity *nurse);				/* 0x38 vf14 */
-	byte(*GivesMoney)(cLocalLogic *self, cEntity *police);				/* 0x3c vf15 */
-	void(*OnAlarm)(cLocalLogic *self, cEntity *e);				/* 0x40 vf16 */
-	void(*Update)(cLocalLogic *self, float dt);					/* 0x44 */
-	void(*SetOriginFrom)(cLocalLogic *self, cEntity *e);				/* 0x48 */
-	byte(*SetState)(cLocalLogic *self, int state, cEntity *target);			/* 0x4c vf19 */
-	void(*SetIdle)(cLocalLogic *self, byte idle);					/* 0x50 */
-	void(*SetActionRadius)(cLocalLogic *self, float radius);				/* 0x54 */
-	void(*SetOrigin)(cLocalLogic *self, float x, float y, float z);			/* 0x58 */
-	void(*SetOriginAng)(cLocalLogic *self, float x, float y, float z);		/* 0x5c */
-	void(*RestartState)(cLocalLogic *self);						/* 0x60 the return value of some is not used */
+	byte(*UpdateBusy)(cLocalLogic *self);
+	void(*Refresh)(cLocalLogic *self);
+	byte(*Listens)(cLocalLogic *self, cEntity *talker);				/* the mayor */
+	void(*OnHit)(cLocalLogic *self, cEntity *attacker);
+	void(*OnSeen)(cLocalLogic *self, cEntity *e);
+	void(*OnAttack)(cLocalLogic *self, cEntity *attacker, float value);
+	void(*OnShot)(cLocalLogic *self, cEntity *attacker);
+	void(*OnHammer)(cLocalLogic *self, cEntity *nurse);
+	byte(*GivesMoney)(cLocalLogic *self, cEntity *police);
+	void(*OnAlarm)(cLocalLogic *self, cEntity *e);
+	void(*Update)(cLocalLogic *self, float dt);
+	void(*SetOriginFrom)(cLocalLogic *self, cEntity *e);
+	byte(*SetState)(cLocalLogic *self, int state, cEntity *target);
+	void(*SetIdle)(cLocalLogic *self, byte idle);
+	void(*SetActionRadius)(cLocalLogic *self, float radius);
+	void(*SetOrigin)(cLocalLogic *self, float x, float y, float z);
+	void(*SetOriginAng)(cLocalLogic *self, float x, float y, float z);
+	void(*RestartState)(cLocalLogic *self);						/* the return value of some is not used */
 } cBaseLocalLogicVtbl;
 
 /* calls through the slots of cBaseLocalLogicVtbl */
@@ -178,17 +178,17 @@ static inline byte Logic_UpdateBusy(void *self) {
 /* the slots of the logics of the generic characters (cGenCharLocalLogic and its children) */
 typedef struct cGenCharLocalLogicVtbl {
 	cBaseLocalLogicVtbl base;
-	byte(*CanAttack)(cLocalLogic *self, cEntity *e);		/* 0x64 vf25 the special attack against e */
-	void(*UpdateView)(cLocalLogic *self);			/* 0x68 vf26 the view flag (+0x381) and the team */
-	void(*ToRelax)(cLocalLogic *self, struct cAIChar *ai);			/* 0x6c vf27 the AI to its zone, relaxed */
-	void(*ToAlert)(cLocalLogic *self, struct cAIChar *ai);			/* 0x70 vf28 the same in alert */
-	void(*Accuse)(cLocalLogic *self, cEntity *e);			/* 0x74 vf29 state 2 against e */
-	cEntity *(*FindTarget)(cLocalLogic *self);			/* 0x78 vf30 of the special attack */
-	byte(*TargetDone)(cLocalLogic *self);				/* 0x7c vf31 the special attack ends */
-	void(*Work)(cLocalLogic *self, float dt);				/* 0x80 vf32 functionaries */
-	void(*BreakWork)(cLocalLogic *self, byte restart);			/* 0x84 busy or moved: stop the work */
-	void(*GoTo)(cLocalLogic *self, struct cAIChar *ai, cEntity *e);		/* 0x88 vf34 the AI walks to e */
-	void(*UpdateGetIt)(cLocalLogic *self, struct cAIChar *ai, float dt);	/* 0x8c vf35 state 10 */
+	byte(*CanAttack)(cLocalLogic *self, cEntity *e);		/* the special attack against e */
+	void(*UpdateView)(cLocalLogic *self);			/* the view flag (+0x381) and the team */
+	void(*ToRelax)(cLocalLogic *self, struct cAIChar *ai);			/* the AI to its zone, relaxed */
+	void(*ToAlert)(cLocalLogic *self, struct cAIChar *ai);			/* the same in alert */
+	void(*Accuse)(cLocalLogic *self, cEntity *e);			/* state 2 against e */
+	cEntity *(*FindTarget)(cLocalLogic *self);			/* of the special attack */
+	byte(*TargetDone)(cLocalLogic *self);				/* the special attack ends */
+	void(*Work)(cLocalLogic *self, float dt);				/* functionaries */
+	void(*BreakWork)(cLocalLogic *self, byte restart);			/* busy or moved: stop the work */
+	void(*GoTo)(cLocalLogic *self, struct cAIChar *ai, cEntity *e);		/* the AI walks to e */
+	void(*UpdateGetIt)(cLocalLogic *self, struct cAIChar *ai, float dt);	/* state 10 */
 } cGenCharLocalLogicVtbl;
 
 /* calls through the slots of cGenCharLocalLogicVtbl */
@@ -239,12 +239,12 @@ static inline void GenChar_Work(void *self, float dt) {
 /* the functionaries and the desk characters (cFunctionaryLocalLogic, Berto, Betty, Humphrey) */
 typedef struct cFunctionaryLocalLogicVtbl {
 	cGenCharLocalLogicVtbl base;
-	byte(*CanTalk)(cLocalLogic *self);				/* 0x90 vf36 */
-	void(*StopWork)(cLocalLogic *self, byte restart);			/* 0x94 vf37 */
-	vec3_t *(*GetWorkAng)(cLocalLogic *self, vec3_t *out);		/* 0x98 vf38 */
-	byte(*FastEscape)(cLocalLogic *self);				/* 0x9c vf39 */
-	void(*AssignDesktop)(cLocalLogic *self, float maxDist);				/* 0xa0 vf40 */
-	void(*ReleaseDesktop)(cLocalLogic *self);					/* 0xa4 vf41 */
+	byte(*CanTalk)(cLocalLogic *self);
+	void(*StopWork)(cLocalLogic *self, byte restart);
+	vec3_t *(*GetWorkAng)(cLocalLogic *self, vec3_t *out);
+	byte(*FastEscape)(cLocalLogic *self);
+	void(*AssignDesktop)(cLocalLogic *self, float maxDist);
+	void(*ReleaseDesktop)(cLocalLogic *self);
 } cFunctionaryLocalLogicVtbl;
 
 /* calls through the slots of cFunctionaryLocalLogicVtbl */
@@ -274,110 +274,110 @@ static inline void Functionary_AssignDesktop(void *self, float maxDist) {
 
 /* Logic/LocalLogic.h, 8 bytes: the logic of the CTFEnemies ships is this only */
 struct cLocalLogic {
-	const cLocalLogicVtbl *vftable;	/* 0x00 */
-	cEntity *parent;		/* 0x04 */
+	const cLocalLogicVtbl *vftable;
+	cEntity *parent;
 };
 
-/* BaseLogic.cpp, 0x48 bytes: the logic of a character ("WalkChar") */
+/* BaseLogic.cpp: the logic of a character ("WalkChar") */
 typedef struct cBaseLocalLogic {
 	union {
-		cLocalLogic logic;	/* 0x00 */
+		cLocalLogic logic;
 		struct {
-			const cBaseLocalLogicVtbl *vftable;	/* 0x00 */
-			cEntity *parent;	/* 0x04 the character */
+			const cBaseLocalLogicVtbl *vftable;
+			cEntity *parent;	/* the character */
 		};
 	};
-	Nto1Node target;		/* 0x08 the target of the state, data the logic */
-	int state;			/* 0x18 "State" */
-	float rageTime;			/* 0x1c while the character has a link (Gear rage, GearRageMaxTime) */
-	byte dazed;			/* 0x20 the action Dazed runs */
+	Nto1Node target;		/* the target of the state, data the logic */
+	int state;			/* "State" */
+	float rageTime;			/* while the character has a link (Gear rage, GearRageMaxTime) */
+	byte dazed;			/* the action Dazed runs */
 	byte pad_21[3];
-	float dazedTime;		/* 0x24 LogicAwakeTime */
-	byte idle;			/* 0x28 "Idle" */
-	byte busy;			/* 0x29 "Lock": Crazy, Flashed or Dazed runs */
-	byte alwaysLock;		/* 0x2a "AlwaysLock" */
+	float dazedTime;		/* LogicAwakeTime */
+	byte idle;			/* "Idle" */
+	byte busy;			/* "Lock": Crazy, Flashed or Dazed runs */
+	byte alwaysLock;		/* "AlwaysLock" */
 	byte pad_2b;
-	float actionRadius;		/* 0x2c "ActionRadius" */
-	vec3_t origin;			/* 0x30 "Origin" */
-	vec3_t originAng;		/* 0x3c "OriginAng" */
+	float actionRadius;		/* "ActionRadius" */
+	vec3_t origin;			/* "Origin" */
+	vec3_t originAng;		/* "OriginAng" */
 } cBaseLocalLogic;
 
-/* GenCharLogic.cpp, 0x68 bytes */
+/* GenCharLogic.cpp */
 typedef struct cGenCharLocalLogic {
-	cBaseLocalLogic base;		/* 0x00 */
-	float time;			/* 0x48 in the state: GenCharAcuseTime left of state 2, the time of state 3 */
-	float accuseAgain;		/* 0x4c GenCharAcuseAgainTime after a hit, no new accuse before 0 */
-	int defaultState;		/* 0x50 "DefaultState" (GENCHAR_STAY, RELAX, CHASE or GET_IT) */
-	char *defaultTarget;		/* 0x54 cString "DefaultTarget" */
-	byte canAttack;			/* 0x58 1: the special attack is allowed (CanAttack) */
-	byte specialOn;			/* 0x59 the special action time runs */
-	byte ignoreAlarm;		/* 0x5a "IgnoreAlarm", set by the bank logics */
+	cBaseLocalLogic base;
+	float time;			/* in the state: GenCharAcuseTime left of state 2, the time of state 3 */
+	float accuseAgain;		/* GenCharAcuseAgainTime after a hit, no new accuse before 0 */
+	int defaultState;		/* "DefaultState" (GENCHAR_STAY, RELAX, CHASE or GET_IT) */
+	char *defaultTarget;		/* cString "DefaultTarget" */
+	byte canAttack;			/* 1: the special attack is allowed (CanAttack) */
+	byte specialOn;			/* the special action time runs */
+	byte ignoreAlarm;		/* "IgnoreAlarm", set by the bank logics */
 	byte pad_5b;
-	float specialTime;		/* 0x5c GenCharSpecialActionTime */
-	float searchTime;		/* 0x60 the next target search when below 0 */
-	int alarmState;			/* 0x64 Bishop: the state at an alarm (BishopAttackOnAlarm) */
+	float specialTime;		/* GenCharSpecialActionTime */
+	float searchTime;		/* the next target search when below 0 */
+	int alarmState;			/* Bishop: the state at an alarm (BishopAttackOnAlarm) */
 } cGenCharLocalLogic;
 
-/* FunctionaryLogic.cpp, 0xb8 bytes */
+/* FunctionaryLogic.cpp */
 typedef struct cFunctionaryLocalLogic {
-	cGenCharLocalLogic base;	/* 0x00 */
-	Nto1Node desktop;		/* 0x68 the desktop of the type ("BertoDesktop"), data the logic */
-	cEntity *forced;		/* 0x78 "ForcedDesktopAssigned", before the linked one */
-	float sitTime;			/* 0x7c "TimeToSitDown" */
-	float workTime;			/* 0x80 "TimeToStopWorking" */
-	float relaxTime;		/* 0x84 half of the work time: the relax at the desktop */
-	float playTime;			/* 0x88 three times the work time, the time when not working */
-	float transTime;		/* 0x8c of the special action states */
-	float specialTime;		/* 0x90 of the special action */
-	float probWorking;		/* 0x94 "ProbTalkWhenWorking" */
-	float probPlaying;		/* 0x98 "ProbTalkWhenPlaying" */
-	float probWalking;		/* 0x9c "ProbTalkWhenWalking" */
-	float escapeRadiusSqr;		/* 0xa0 "EscapeRadiusSqr" */
-	float goToWorkSpeed;		/* 0xa4 "GoToWorkSpeed" */
-	byte relaxed;			/* 0xa8 the relax at the desktop played */
-	byte working;			/* 0xa9 always 1 */
-	byte keepWorking;		/* 0xaa "KeepWorking" */
-	byte special;			/* 0xab the special action runs */
-	byte fast;			/* 0xac the fast part of the special action */
-	byte fastEscape;		/* 0xad "FastEscape" */
-	byte escapeInRadius;		/* 0xae "EscapeWithinRadius" */
-	byte forceSpecial;		/* 0xaf "ForceSpecialBehaviour" */
-	byte forceCancel;		/* 0xb0 "ForceCancelSpecialBehaviour" */
-	byte ignoreBanker;		/* 0xb1 "IgnoreBankerAttack" */
-	byte stopInRelax;		/* 0xb2 "StopInRelax" */
+	cGenCharLocalLogic base;
+	Nto1Node desktop;		/* the desktop of the type ("BertoDesktop"), data the logic */
+	cEntity *forced;		/* "ForcedDesktopAssigned", before the linked one */
+	float sitTime;			/* "TimeToSitDown" */
+	float workTime;			/* "TimeToStopWorking" */
+	float relaxTime;		/* half of the work time: the relax at the desktop */
+	float playTime;			/* three times the work time, the time when not working */
+	float transTime;		/* of the special action states */
+	float specialTime;		/* of the special action */
+	float probWorking;		/* "ProbTalkWhenWorking" */
+	float probPlaying;		/* "ProbTalkWhenPlaying" */
+	float probWalking;		/* "ProbTalkWhenWalking" */
+	float escapeRadiusSqr;		/* "EscapeRadiusSqr" */
+	float goToWorkSpeed;		/* "GoToWorkSpeed" */
+	byte relaxed;			/* the relax at the desktop played */
+	byte working;			/* always 1 */
+	byte keepWorking;		/* "KeepWorking" */
+	byte special;			/* the special action runs */
+	byte fast;			/* the fast part of the special action */
+	byte fastEscape;		/* "FastEscape" */
+	byte escapeInRadius;		/* "EscapeWithinRadius" */
+	byte forceSpecial;		/* "ForceSpecialBehaviour" */
+	byte forceCancel;		/* "ForceCancelSpecialBehaviour" */
+	byte ignoreBanker;		/* "IgnoreBankerAttack" */
+	byte stopInRelax;		/* "StopInRelax" */
 	byte pad_b3;
-	int prevState;			/* 0xb4 the state before the special action */
+	int prevState;			/* the state before the special action */
 } cFunctionaryLocalLogic;
 
 /* BertoLogic.cpp, BettyLogic.cpp and HumphreyLogic.cpp, 0xbc bytes each: a functionary that takes its desktop at the
  * first update when it is the default character ("Berto_Default", "Betty_Default", "Humphrey_Default") */
 typedef struct cBertoLocalLogic {
-	cFunctionaryLocalLogic base;	/* 0x00 */
-	byte isDefault;			/* 0xb8 */
+	cFunctionaryLocalLogic base;
+	byte isDefault;
 	byte pad_b9[3];
 } cBertoLocalLogic;
 
 typedef struct cBettyLocalLogic {
-	cFunctionaryLocalLogic base;	/* 0x00 */
-	byte isDefault;			/* 0xb8 */
+	cFunctionaryLocalLogic base;
+	byte isDefault;
 	byte pad_b9[3];
 } cBettyLocalLogic;
 
 typedef struct cHumphreyLocalLogic {
-	cFunctionaryLocalLogic base;	/* 0x00 */
-	byte isDefault;			/* 0xb8 */
+	cFunctionaryLocalLogic base;
+	byte isDefault;
 	byte pad_b9[3];
 } cHumphreyLocalLogic;
 
-/* BossLogic.cpp, 0x80 bytes */
+/* BossLogic.cpp */
 typedef struct cBossLocalLogic {
-	cGenCharLocalLogic base;	/* 0x00 */
-	vec3_t workPos;			/* 0x68 the dummy BossWorkPlace */
-	float workAng[2];		/* 0x74 */
-	float time;			/* 0x7c in the walk or the work */
+	cGenCharLocalLogic base;
+	vec3_t workPos;			/* the dummy BossWorkPlace */
+	float workAng[2];
+	float time;			/* in the walk or the work */
 } cBossLocalLogic;
 
-/* the GenChar logics that add no members (0x68 bytes in GenCharGroup_MakeLogic) */
+/* the GenChar logics that add no members (in GenCharGroup_MakeLogic) */
 typedef cGenCharLocalLogic cBankDirectorLocalLogic;
 typedef cGenCharLocalLogic cBankMasterLocalLogic;
 typedef cGenCharLocalLogic cBishopLocalLogic;
@@ -541,7 +541,7 @@ void cFunctionaryLocalLogic_UpdateView(cLocalLogic *elem);
 void cFunctionaryLocalLogic_Work(cLocalLogic *elem, float dt);
 void cFunctionaryLocalLogic_BreakWork(cLocalLogic *elem, byte restart);
 void cFunctionaryLocalLogic_StopWork(cLocalLogic *base, byte restart);
-/* GenCharLogic.cpp (imports): the variables, vf12 (a robbery seen) */
+/* GenCharLogic.cpp (imports): the variables (a robbery seen) */
 byte cGenCharLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, byte set);
 byte cGenCharLocalLogic_VarS(cLocalLogic *elem, const char *name, char **s, byte set);
 void cGenCharLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount);
@@ -558,18 +558,18 @@ static inline cEntity *Logic_AttackTarget(cAIVehicle *ai) {
 
 /* CTFEnemies.cpp: g_pWorld->logic.ctfEnemies holds the pointer */
 typedef struct cCTFEnemiesData {
-	char *leader;			/* 0x00 cString, the name of the leader ship */
-	cEntityListData *list;		/* 0x04 "CTFEnemies" */
-	float timer;			/* 0x08 Think every 0.5 s */
-	float bonus;			/* 0x0c the leader goes for the player while > 0 */
-	int numAttack;			/* 0x10 the ships attacking the player */
+	char *leader;			/* cString, the name of the leader ship */
+	cEntityListData *list;		/* "CTFEnemies" */
+	float timer;			/* Think every 0.5 s */
+	float bonus;			/* the leader goes for the player while > 0 */
+	int numAttack;			/* the ships attacking the player */
 } cCTFEnemiesData;
 
 /* CTFFriends.cpp: g_pWorld->logic.ctfFriends holds the pointer */
 typedef struct cCTFFriendsData {
-	cEntityListData *list;		/* 0x00 "CTFFriends" */
-	float timer;			/* 0x04 */
-	int numAttack;			/* 0x08 the ships attacking the leader */
+	cEntityListData *list;		/* "CTFFriends" */
+	float timer;
+	int numAttack;			/* the ships attacking the leader */
 } cCTFFriendsData;
 
 extern cGVar GVar_PlayerCTFTeamIsWinning;
@@ -600,8 +600,8 @@ void cDeathMatch_Update(cDeathMatch *self, float dt);
 #define MAX_DOMIN_ZONES 4
 
 typedef struct DominZone {
-	cEntity *zone;			/* 0x0 */
-	int state;			/* 0x4 0 free, 1 and 2 by a side, 3 and 4 a ship of a side on its way */
+	cEntity *zone;
+	int state;			/* 0 free, 1 and 2 by a side, 3 and 4 a ship of a side on its way */
 } DominZone;
 
 extern int g_DominNumZones;
@@ -610,11 +610,11 @@ extern vec3_t g_DominBatonPos;
 extern int g_DominBatonState;
 
 typedef struct cDominationLogicVtbl {
-	void (*Free)(cDominationLogic *self);	/* 0x00 */
-	void(*Init)(cDominationLogic *self);				/* 0x04 makes the list */
-	void(*Update)(cDominationLogic *self, float dt);			/* 0x08 */
-	cEntityListData *(*GetList)(cDominationLogic *self);		/* 0x0c the list of the side */
-	int(*GetTeam)(cDominationLogic *self);				/* 0x10 0 enemies, 1 friends */
+	void (*Free)(cDominationLogic *self);
+	void(*Init)(cDominationLogic *self);				/* makes the list */
+	void(*Update)(cDominationLogic *self, float dt);
+	cEntityListData *(*GetList)(cDominationLogic *self);		/* the list of the side */
+	int(*GetTeam)(cDominationLogic *self);				/* 0 enemies, 1 friends */
 } cDominationLogicVtbl;
 
 /* calls through the slots of cDominationLogicVtbl */
@@ -634,18 +634,18 @@ static inline void Domination_Update(void *self, float dt) {
 	VT(cDominationLogicVtbl, self)->Update(self, dt);
 }
 
-/* the data of a side: the enemies (0x10 bytes) keep the zone of their leader, the friends (0xc) only the timer */
+/* the data of a side: the enemies keep the zone of their leader, the friends (0xc) only the timer */
 typedef struct cDominationSide {
-	cDominationLogic *owner;	/* 0x0 */
-	cEntityListData *list;		/* 0x4 "DominationEnemies" */
-	int zone;			/* 0x8 the zone the leader goes to, -1 none */
-	float timer;			/* 0xc Think every 0.5 s */
+	cDominationLogic *owner;
+	cEntityListData *list;		/* "DominationEnemies" */
+	int zone;			/* the zone the leader goes to, -1 none */
+	float timer;			/* Think every 0.5 s */
 } cDominationSide;
 
 typedef struct cDominationFriendsSide {
-	cDominationLogic *owner;	/* 0x0 */
-	cEntityListData *list;		/* 0x4 "DominationFriends" */
-	float timer;			/* 0x8 */
+	cDominationLogic *owner;
+	cEntityListData *list;		/* "DominationFriends" */
+	float timer;
 } cDominationFriendsSide;
 
 void Domination_AddZone(cEntity *zone);
@@ -689,13 +689,13 @@ byte ExtPolice_IsChased(cEntity *e);
 
 cFriends *cFriends_ctor(cFriends *self);
 
-/* the logic of a gatekeeper (0x4c bytes): states 0 relaxed, 1 hidden in its shell */
+/* the logic of a gatekeeper: states 0 relaxed, 1 hidden in its shell */
 typedef struct cGateKeeperLocalLogic {
-	cBaseLocalLogic base;		/* 0x00 */
-	float hiddenTime;		/* 0x48 GateKeeperHiddenTime when it hides */
+	cBaseLocalLogic base;
+	float hiddenTime;		/* GateKeeperHiddenTime when it hides */
 } cGateKeeperLocalLogic;
 
-/* GearLogic.cpp: the gears (0x5c bytes) */
+/* GearLogic.cpp: the gears */
 enum {
 	GEAR_RELAX,		/* patrols around its origin */
 	GEAR_CHASE,		/* called */
@@ -705,13 +705,13 @@ enum {
 };
 
 typedef struct cGearLocalLogic {
-	cBaseLocalLogic base;		/* 0x00 */
-	float sirenTime;		/* 0x48 with the alarm: the next siren */
-	float lostTime;			/* 0x4c since the target was lost */
-	byte called;			/* 0x50 sent by the AI control */
+	cBaseLocalLogic base;
+	float sirenTime;		/* with the alarm: the next siren */
+	float lostTime;			/* since the target was lost */
+	byte called;			/* sent by the AI control */
 	byte pad_51[3];
-	int defaultState;		/* 0x54 "DefaultState" */
-	char *defaultTarget;		/* 0x58 cString "DefaultTarget" */
+	int defaultState;		/* "DefaultState" */
+	char *defaultTarget;		/* cString "DefaultTarget" */
 } cGearLocalLogic;
 
 /* the view cone of the arrow of a character (its AI sees in it) */
@@ -727,7 +727,7 @@ void cGenCharGroup_Update(cGenCharGroup *self, float dt);
 int cGenCharGroup_GetLevel(cGenCharGroup *self);
 void cGenCharGroup_RaiseLevel(cGenCharGroup *self, int level);
 byte cGenCharGroup_TakeAttack(cGenCharGroup *self);
-/* the maker of the logics of the GenChar lists (cEntityListData.func, rva 0x14b860) */
+/* the maker of the logics of the GenChar lists (cEntityListData.func) */
 
 /* the Init and Update of the mode objects of part 2 */
 void cExtPolice_Init(cExtPolice *self);
@@ -815,21 +815,21 @@ void cGenCharLocalLogic_UpdateView(cLocalLogic *elem);
 void cGenCharLocalLogic_ToRelax(cLocalLogic *elem, cAIChar *ai);
 void cGenCharLocalLogic_ToAlert(cLocalLogic *elem, cAIChar *ai);
 void cGenCharLocalLogic_UpdateGetIt(cLocalLogic *base, cAIChar *ai, float dt);
-/* SetState(2, e): the vf29 of the GenChars and the vf16 of the nurses */
+/* SetState(2, e): the of the GenChars and the of the nurses */
 void Logic_SetState2(cLocalLogic *base, cEntity *e);
 
-/* HumanLogic.cpp, 0x5c bytes: the characters near the human flee from it */
+/* HumanLogic.cpp: the characters near the human flee from it */
 typedef struct cHumanLocalLogic {
-	cBaseLocalLogic base;		/* 0x00 */
-	cPy_Function func;		/* 0x48 HumanLogic_Escape */
+	cBaseLocalLogic base;
+	cPy_Function func;		/* HumanLogic_Escape */
 } cHumanLocalLogic;
 
 /* InfItem.cpp: the item list of the world (cInfItem of worldlogic.h, g_pWorld->logic.items, 100 bytes), DLists of
  * cItemDesc nodes: the life items and the ammo items of three kinds */
 typedef struct cInfItemNode {
-	struct cInfItemNode *next;	/* 0x0 */
-	struct cInfItemNode *prev;	/* 0x4 */
-	cItemDesc item;			/* 0x8 */
+	struct cInfItemNode *next;
+	struct cInfItemNode *prev;
+	cItemDesc item;
 } cInfItemNode;
 
 cInfItem *cInfItem_ctor(cInfItem *self);
@@ -848,11 +848,11 @@ void AICtrl_SendSentinelToNPC(void *aiCtrl, cEntity *e);
 void AICtrl_GearsChase(void *aiCtrl, cEntity *e);
 
 /* the sentinels (SentinelLogic.cpp, the source after this part, imports) */
-/* the logic of a sentinel, 0x50 bytes */
+/* the logic of a sentinel */
 typedef struct cSentinelLocalLogic {
-	cBaseLocalLogic base;		/* 0x00 */
-	float time;			/* 0x48 of the state (the follow, the watch) */
-	byte seen;			/* 0x4c the player was in view at the last think */
+	cBaseLocalLogic base;
+	float time;			/* of the state (the follow, the watch) */
+	byte seen;			/* the player was in view at the last think */
 	byte pad_4d[3];
 } cSentinelLocalLogic;
 
@@ -861,20 +861,20 @@ void *cSentinelLocalLogic_ctor(void *self, cEntity *parent);
 void cSentinelLocalLogic_Watch(void *self, const vec3_t *pos);
 /* back to state 0 (1 with the alarm), unless idle */
 void cSentinelLocalLogic_Return(void *self);
-/* the voice event of the character of that name (Sound/, rva 0x1a1090) */
+/* the voice event of the character of that name (Sound/) */
 byte Sound_PlayVoice(const char *name, const char *event, const char *arg, int force);
 /* GearLogic.cpp */
 cGearLocalLogic *cGearLocalLogic_ctor(cGearLocalLogic *self, cEntity *parent);
 byte cGearLocalLogic_Call(cGearLocalLogic *self, cEntity *e);
 
-/* LittlePoliceLogic.cpp, 0x78 bytes: the police of the indoor maps (the type "Police") */
+/* LittlePoliceLogic.cpp: the police of the indoor maps (the type "Police") */
 typedef struct cLittlePoliceLocalLogic {
-	cGenCharLocalLogic base;	/* 0x00 specialTime: the time of the chase in state 4 */
-	float sirenTime;		/* 0x68 with the alarm: the next siren */
-	float lostTime;			/* 0x6c of the player, 5 when the AI walks to it */
-	byte bribe;			/* 0x70 the arrow shows the options of the bribe */
+	cGenCharLocalLogic base;	/* specialTime: the time of the chase in state 4 */
+	float sirenTime;		/* with the alarm: the next siren */
+	float lostTime;			/* of the player, 5 when the AI walks to it */
+	byte bribe;			/* the arrow shows the options of the bribe */
 	byte pad_71[3];
-	int policeResult;		/* 0x74 "PoliceResult": 1 when it goes to the main mission */
+	int policeResult;		/* "PoliceResult": 1 when it goes to the main mission */
 } cLittlePoliceLocalLogic;
 
 extern cGVar GVar_PoliceStealAmount;
@@ -882,32 +882,32 @@ extern cGVar GVar_PoliceStealAmount;
 
 /* Parking.cpp: the parking zones of Scrap.AddParkingZone (flag 0: of the ships, 1: of the items), a ring each */
 typedef struct cParkingZone {
-	vec3_t pos;			/* 0x0 */
-	cString name;			/* 0xc "_Junkyard" is not found in ring 0 */
+	vec3_t pos;
+	cString name;			/* "_Junkyard" is not found in ring 0 */
 } cParkingZone;
 
 typedef struct cParkingNode {
-	struct cParkingNode *next;	/* 0x00 */
-	struct cParkingNode *prev;	/* 0x04 */
-	cParkingZone zone;		/* 0x08 */
+	struct cParkingNode *next;
+	struct cParkingNode *prev;
+	cParkingZone zone;
 } cParkingNode;
 
 /* ShipRegen.cpp: the life regeneration of the player, and the ship of SLogic.SetShipToRegenerate */
 typedef struct cShipRegenShip {
-	char name[0x80];		/* 0x00 */
-	float time;			/* 0x80 to the next point */
-	float rate;			/* 0x84 1 / speed: the time per point at no life */
-	float endRate;			/* 0x88 1 / endSpeed: at full life */
-	int life;			/* 0x8c at the last update */
+	char name[0x80];
+	float time;			/* to the next point */
+	float rate;			/* 1 / speed: the time per point at no life */
+	float endRate;			/* 1 / endSpeed: at full life */
+	int life;			/* at the last update */
 } cShipRegenShip;
 
 /* Scrapyard.cpp: a group of ships that guard their lairs ("Mosquitos", "MadHunters"), behind a pointer */
 typedef struct cShipGroupData {
-	cPy_Function onSphere;		/* 0x00 native: the ships in the sphere of the intruder */
-	HashTable lairs;		/* 0x14 of cWorldStrItem: the lair (vec3) of a ship (name) */
-	const char *listName;		/* 0x20 */
-	cEntityListData *list;		/* 0x24 */
-	float timer;			/* 0x28 think every 0.5 s */
+	cPy_Function onSphere;		/* native: the ships in the sphere of the intruder */
+	HashTable lairs;		/* of cWorldStrItem: the lair (vec3) of a ship (name) */
+	const char *listName;
+	cEntityListData *list;
+	float timer;			/* think every 0.5 s */
 } cShipGroupData;
 
 extern cGVar GVar_RemainTalkTime;
@@ -918,29 +918,29 @@ extern void *g_SetOriginFunc;
 /* MaintenanceLogic.cpp, 0xdc bytes: the maintenance robot of the ship editor walks around the ship on the
  * platform (states 7: wait for the ship, 8: work) */
 typedef struct cMaintenanceLocalLogic {
-	cGenCharLocalLogic base;	/* 0x00 */
-	vec3_t points[8];		/* 0x68 the corners of the box around the ship */
-	vec3_t reposition;		/* 0xc8 "RepositionPoint" */
-	int point;			/* 0xd4 the corner it walks to, -1 */
-	float timer;			/* 0xd8 MaintenanceTimeToNextPos */
+	cGenCharLocalLogic base;
+	vec3_t points[8];		/* the corners of the box around the ship */
+	vec3_t reposition;		/* "RepositionPoint" */
+	int point;			/* the corner it walks to, -1 */
+	float timer;			/* MaintenanceTimeToNextPos */
 } cMaintenanceLocalLogic;
 
-/* MayorLogic.cpp, 0xe8 bytes */
+/* MayorLogic.cpp */
 typedef struct cMayorLocalLogic {
-	cGenCharLocalLogic base;	/* 0x00 */
-	char listener[0x80];		/* 0x68 the character that talks to the mayor, "" none */
+	cGenCharLocalLogic base;
+	char listener[0x80];		/* the character that talks to the mayor, "" none */
 } cMayorLocalLogic;
 
 extern cGVar GVar_MayorBlabliblaRadius;
 #define g_MayorBlabliblaRadius (GVar_MayorBlabliblaRadius.value.f)
 
-/* MessengerLogic.cpp: the messengers (cMessengers, 0x14 bytes, of cGenCharGroup) */
+/* MessengerLogic.cpp: the messengers (cMessengers of cGenCharGroup) */
 typedef struct cMessengers {
-	cEntity *desk;			/* 0x00 the desk of the data pack of the player */
-	cEntity *target;		/* 0x04 the desk of the messenger with the pack */
-	float timer;			/* 0x08 5 s */
-	int count;			/* 0x0c the most desks of the type seen, 5 */
-	cEntityListData *list;		/* 0x10 "Messenger" */
+	cEntity *desk;			/* the desk of the data pack of the player */
+	cEntity *target;		/* the desk of the messenger with the pack */
+	float timer;			/* 5 s */
+	int count;			/* the most desks of the type seen, 5 */
+	cEntityListData *list;		/* "Messenger" */
 } cMessengers;
 
 extern cGVar GVar_MessengerTubeState;
@@ -949,20 +949,20 @@ extern cGVar GVar_MessengerTubeState;
 
 /* StrMoney.c (g_pWorld + 0x2078): the money of the world (cWorld.money) as digits, one changes per update */
 typedef struct cStrMoney {
-	char digits[16];		/* 0x00 "0000000000000000", 1..15 change */
-	char end;			/* 0x10 0 */
-	char len;			/* 0x11 the digits from the first one not "0" */
+	char digits[16];		/* "0000000000000000", 1..15 change */
+	char end;			/* 0 */
+	char len;			/* the digits from the first one not "0" */
 	byte pad_12[2];
-	float timer;			/* 0x14 StrMoneyUpdate */
-	int money;			/* 0x18 cWorld.money */
+	float timer;			/* StrMoneyUpdate */
+	int money;			/* cWorld.money */
 } cStrMoney;
 /* the digits from the first one not "0", "0" for none */
 const char *cStrMoney_GetStr(cStrMoney *self);
 
-/* NurseLogic.cpp: the nurses (cLogicControl.nurses) take the dazed characters away; the logic is 0x4c bytes */
+/* NurseLogic.cpp: the nurses (cLogicControl.nurses) take the dazed characters away; the logic is */
 typedef struct cNurseLocalLogic {
-	cBaseLocalLogic base;		/* 0x00 */
-	float time;			/* 0x48 of the escape (state 2) or the pick up (3) */
+	cBaseLocalLogic base;
+	float time;			/* of the escape (state 2) or the pick up (3) */
 } cNurseLocalLogic;
 
 void *cNurses_ctor(cNurses *self);
@@ -993,10 +993,10 @@ void cEnemiesTraffic_dtor(cEnemiesTraffic *self);
 void cEnemiesTraffic_Init(cEnemiesTraffic *self);
 void cEnemiesTraffic_Update(cEnemiesTraffic *self, float dt);
 
-/* RustyLogic.cpp, 0x84 bytes: states 7 the walk to a junk point, 8 the work at it, 9 pissed at the platform */
+/* RustyLogic.cpp: states 7 the walk to a junk point, 8 the work at it, 9 pissed at the platform */
 typedef struct cRustyLocalLogic {
-	cGenCharLocalLogic base;	/* 0x00 */
-	cEntity *junk;			/* 0x68 the junk point */
+	cGenCharLocalLogic base;
+	cEntity *junk;			/* the junk point */
 } cRustyLocalLogic;
 
 /* every TimeBetweeenTaunts (outdoor maps), dt is not used */

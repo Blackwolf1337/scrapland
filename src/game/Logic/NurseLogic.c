@@ -118,7 +118,6 @@ static byte cNurseLocalLogic_Relax(cNurseLocalLogic *self) {
 	return Logic_SetState(self, NURSE_RELAX, NULL);
 }
 
-/* vf17 */
 static void cNurseLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
@@ -173,7 +172,7 @@ static void cNurseLocalLogic_Update(cLocalLogic *elem, float dt) {
 	}
 }
 
-/* vf12: a robbery seen (NurseBankerDetect plus the amount): the escape */
+/* a robbery seen (NurseBankerDetect plus the amount): the escape */
 static void cNurseLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	if (amount > 0.0f && self->base.state != NURSE_ATTACK && Logic_Chance(&self->base, e, g_NurseBankerDetect + amount)) {
@@ -185,7 +184,7 @@ static inline byte Nurse_Rand101(void) {
 	return 101.0f > (float)(Weap_Rand01() * 100.0 + 0.0);
 }
 
-/* vf10: the escape from the attacker */
+/* the escape from the attacker */
 static void cNurseLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	if (!self->base.busy && Nurse_Rand101() && self->base.state != NURSE_ATTACK) {
@@ -193,7 +192,7 @@ static void cNurseLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 	}
 }
 
-/* vf11: the escape from the player */
+/* the escape from the player */
 static void cNurseLocalLogic_OnSeen(cLocalLogic *elem, cEntity *e) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	if (!self->base.busy && Nurse_Rand101() && e == ChType_Usr0() && self->base.state != NURSE_ATTACK) {
@@ -201,7 +200,7 @@ static void cNurseLocalLogic_OnSeen(cLocalLogic *elem, cEntity *e) {
 	}
 }
 
-/* vf15: 1 if it refuses the police (NursePoliceRefuse in percent), else the escape from it */
+/* 1 if it refuses the police (NursePoliceRefuse in percent), else the escape from it */
 static byte cNurseLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *police) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	float refuse = g_NursePoliceRefuse;
@@ -213,7 +212,6 @@ static byte cNurseLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *police) {
 	return 0;
 }
 
-/* vf24 */
 static void cNurseLocalLogic_RestartState(cLocalLogic *base) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)base;
 	Logic_SetState(self, NURSE_RELAX, NULL);
@@ -221,7 +219,7 @@ static void cNurseLocalLogic_RestartState(cLocalLogic *base) {
 
 /* ---- part 2 ---- */
 
-/* vf19: the AI of the state: the walk around the origin (relaxed or in alert), the escape from target (2) or the
+/* the AI of the state: the walk around the origin (relaxed or in alert), the escape from target (2) or the
  * walk to the dazed character (3); always 1 */
 static byte cNurseLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;

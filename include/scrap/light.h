@@ -38,25 +38,25 @@ typedef struct {
 
 /* D3DLIGHT8 (the same layout as D3DLIGHT9) */
 typedef struct D3DLight {
-	int Type;			/* 0x00 */
-	color4_t Diffuse;		/* 0x04 */
-	color4_t Specular;		/* 0x14 */
-	color4_t Ambient;		/* 0x24 */
-	vec3_t Position;		/* 0x34 */
-	vec3_t Direction;		/* 0x40 */
-	float Range;			/* 0x4c */
-	float Falloff;			/* 0x50 */
-	float Attenuation0;		/* 0x54 */
-	float Attenuation1;		/* 0x58 */
-	float Attenuation2;		/* 0x5c */
-	float Theta;			/* 0x60 radians */
-	float Phi;			/* 0x64 */
+	int Type;
+	color4_t Diffuse;
+	color4_t Specular;
+	color4_t Ambient;
+	vec3_t Position;
+	vec3_t Direction;
+	float Range;
+	float Falloff;
+	float Attenuation0;
+	float Attenuation1;
+	float Attenuation2;
+	float Theta;			/* radians */
+	float Phi;
 } D3DLight;
 
 /* Engine/RenderCalcIlum.cpp (RenderCalcIllum.c): a light with the distance from which it fades out to its range */
 typedef struct IllumLight {
-	D3DLight d3d;			/* 0x00 */
-	float rangeIni;			/* 0x68 */
+	D3DLight d3d;
+	float rangeIni;
 } IllumLight;
 #define ILLUM_SOFT 0x1		/* smooth fades instead of the D3D attenuation */
 struct CVertList;
@@ -72,35 +72,35 @@ typedef struct CLight {
 	union {
 		IObject3D base;
 		struct {
-			const IObject3DVtbl *vftable;	/* 0x00 */
-			uint32_t class;			/* 0x04 CLASS_OBJ3D_LIGHT */
+			const IObject3DVtbl *vftable;
+			uint32_t class;			/* CLASS_OBJ3D_LIGHT */
 		};
 	};
-	int type;			/* 0x08 LUZ_* */
-	byte show;			/* 0x0c drawn also without R_ShowLights */
-	byte shadow;			/* 0x0d casts shadows (with NODE_SHADOW) */
+	int type;			/* LUZ_* */
+	byte show;			/* drawn also without R_ShowLights */
+	byte shadow;			/* casts shadows (with NODE_SHADOW) */
 	byte pad_e[2];
-	vec3_t pos;			/* 0x10 */
-	vec3_t dir;			/* 0x1c in the node's frame */
-	byte color[4];			/* 0x28 r, g, b, a */
-	float intensity;		/* 0x2c */
-	float rangeStart;		/* 0x30 "AtenIni": the attenuation starts there */
-	float range;			/* 0x34 0: no limit */
-	float theta;			/* 0x38 degrees */
-	float phi;			/* 0x3c degrees */
-	float mult;			/* 0x40 */
-	float radCoef;		/* 0x44 "radcoef" of the node name / 100, 1: the radiosity factor (BspLight.rad) */
-	float weight;			/* 0x48 sort key of Light_Select, lower first */
-	D3DLight d3d;			/* 0x4c */
-	uint32_t indexD3D;		/* 0xb4 the index of the device light */
-	byte act_D3D;			/* 0xb8 set in the device */
-	byte ena_D3D;			/* 0xb9 enabled in the device */
-	byte active;			/* 0xba in the global list */
+	vec3_t pos;
+	vec3_t dir;			/* in the node's frame */
+	byte color[4];			/* r, g, b, a */
+	float intensity;
+	float rangeStart;		/* "AtenIni": the attenuation starts there */
+	float range;			/* 0: no limit */
+	float theta;			/* degrees */
+	float phi;			/* degrees */
+	float mult;
+	float radCoef;		/* "radcoef" of the node name / 100, 1: the radiosity factor (BspLight.rad) */
+	float weight;			/* sort key of Light_Select, lower first */
+	D3DLight d3d;
+	uint32_t indexD3D;		/* the index of the device light */
+	byte act_D3D;			/* set in the device */
+	byte ena_D3D;			/* enabled in the device */
+	byte active;			/* in the global list */
 	byte pad_bb;
-	int index_list;			/* 0xbc */
-	int sector;			/* 0xc0 -1: all */
-	CNode3D *node;			/* 0xc4 */
-	CNode3D *nodeTarget;		/* 0xc8 the direction points at it (R_LightTarget) */
+	int index_list;
+	int sector;			/* -1: all */
+	CNode3D *node;
+	CNode3D *nodeTarget;		/* the direction points at it (R_LightTarget) */
 } CLight;
 
 CLight *CLight_ctor(CLight *self);
@@ -131,7 +131,7 @@ int Light_NumTotal(void);
 box_t *Box_Zero(box_t *self);
 
 /* other modules, called from luz.cpp (src/imports.inc) */
-/* rva 0x2682d0, the light of the shadows (NULL: none); the second argument is 0 here */
+/* the light of the shadows (NULL: none); the second argument is 0 here */
 void E3D_SetShadowLight(CLight *l, int arg);
 
 #endif

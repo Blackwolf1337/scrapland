@@ -207,7 +207,7 @@ void FXSputnik_SetA(cObjElementFXSputnik *self, float v) {
 	self->duration = v;
 }
 
-/* ---- Attach (vf03) and Reset (vf04) ---- */
+/* ---- Attach and Reset ---- */
 
 /* a new random point of the conversion trails */
 static void FXConversion_NewPoint(cObjElementFXCharacterConversion *self, int i) {
@@ -409,7 +409,7 @@ void cObjElementFXSputnik_Reset(cObjElementFX *base, cDebris *arg) {
 	self->moveT = 0.0f;
 }
 
-/* ---- Alive (vf02) ---- */
+/* ---- Alive ---- */
 
 byte cObjElementFXCharacterConversion_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys) {
 	cObjElementFXCharacterConversion *self = (cObjElementFXCharacterConversion *)base;
@@ -484,7 +484,7 @@ byte cObjElementFXSputnik_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys
 
 static uint32_t cObjElementFXMoneyTransfer_UpdateRamp[9] = { 0xff000000, 0x80808080, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0x80808080, 0xff000000, 0xff000000 };
 
-/* ---- Update (vf01) ---- */
+/* ---- Update ---- */
 
 void cObjElementFXMoneyTransfer_Update(cObjElementFX *base, cDebris *d, float dt) {
 	cObjElementFXMoneyTransfer *self = (cObjElementFXMoneyTransfer *)base;
@@ -2577,7 +2577,7 @@ static void FX_CharacterTeleport(cAbstractFile *params) {
 	if (!cDebrisSys_IsIdle(sys, d)) {
 		cDebrisSys_Drop(sys, d);
 	} else if (Debris_Element(d)) {
-		/* the element of a reused debris starts over (vf04) */
+		/* the element of a reused debris starts over */
 		cObjElementFX *el = Debris_Element(d);
 		FXObj_Reset(el, d);
 	}

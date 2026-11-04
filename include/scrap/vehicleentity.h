@@ -30,114 +30,114 @@ typedef struct cNetVController cNetVController;
  * include/scrap/itementity.h): at 0xf4 for every vehicle, a second one at 0x4fc for the ships of the players on
  * the server. base.age is 0.5 until the first state, then counts down; Apply moves the vehicle to the state */
 struct cNetVController {
-	cNetController base;		/* 0x00 */
-	cEntity *vehicle;		/* 0x5c */
-	byte seq;			/* 0x60 low nibble: hit counter, high nibble: force counter; a change sets hit/force on the client */
+	cNetController base;
+	cEntity *vehicle;
+	byte seq;			/* low nibble: hit counter, high nibble: force counter; a change sets hit/force on the client */
 	byte pad_61[3];
-	int hit;			/* 0x64 2 after a hit */
-	int force;			/* 0x68 2 for "ForceAll" */
-	int bumpSends;		/* 0x6c writes left that carry only the position and velocity after a vehicle bump (3) */
-	float height;			/* 0x70 of the camera point */
-	uint16_t keys;			/* 0x74 the controls of the client */
+	int hit;			/* 2 after a hit */
+	int force;			/* 2 for "ForceAll" */
+	int bumpSends;		/* writes left that carry only the position and velocity after a vehicle bump (3) */
+	float height;			/* of the camera point */
+	uint16_t keys;			/* the controls of the client */
 	byte pad_76[2];
 };
 
 #define VEH_TARGETS 16
 
 typedef struct cVehicleTargetList {
-	int count;			/* 0x000 */
-	float wait;			/* 0x004 3 s after a choice, then a new choice when the target is gone */
-	char names[VEH_TARGETS][0x80];	/* 0x008 the nearest first */
-	float time;			/* 0x808 the world time of the last choice */
-	int cur;			/* 0x80c */
+	int count;
+	float wait;			/* 3 s after a choice, then a new choice when the target is gone */
+	char names[VEH_TARGETS][0x80];	/* the nearest first */
+	float time;			/* the world time of the last choice */
+	int cur;
 } cVehicleTargetList;
 
 typedef struct cVehicleTargets {
-	cEntity *owner;			/* 0x00 */
-	cVehicleTargetList *list;	/* 0x04 only for the player slots */
-	char target[0x80];		/* 0x08 the "Target" of the vehicle */
+	cEntity *owner;
+	cVehicleTargetList *list;	/* only for the player slots */
+	char target[0x80];		/* the "Target" of the vehicle */
 } cVehicleTargets;
 
 struct cVehicleEntity {
-	cWithLifeEntity wl;		/* 0x000 */
+	cWithLifeEntity wl;
 	/* cVehicleEntity */
-	float timeOfs;			/* 0x3e8 random, for the hover wobble */
-	byte launchTaunts;		/* 0x3ec "LaunchTaunts" */
+	float timeOfs;			/* random, for the hover wobble */
+	byte launchTaunts;		/* "LaunchTaunts" */
 	byte pad_3ed[3];
-	byte collision[0x410 - 0x3f0];	/* 0x3f0 the state of the world collision */
-	int slot;			/* 0x410 "UsrControl": the player slot 0..3, -1 for the AI */
-	cVehicleControls controls;	/* 0x414 */
-	float wRadius;			/* 0x458 "WRadius" */
-	float thrust;			/* 0x45c */
-	float turnSpeedX;		/* 0x460 */
-	float turnSpeedY;		/* 0x464 */
-	float roll;			/* 0x468 */
-	float speed;			/* 0x46c "Speed" */
-	float pushTime;			/* 0x470 */
-	vec3_t push;			/* 0x474 */
-	float trustTime;		/* 0x480 "TrustTime" */
-	float frwTrust;			/* 0x484 "FrwTrust" */
-	float backTrust;		/* 0x488 "BackTrust" */
-	float strTrust;			/* 0x48c "StrTrust" */
-	float boost;			/* 0x490 the boost left ("isBoost": 0) */
-	float boostTime;		/* 0x494 "BoostTime" */
-	float maxSpeed;			/* 0x498 "MaxSpeed" */
-	float friction;			/* 0x49c "Friction" */
-	float style;			/* 0x4a0 "Style" */
-	float engine;			/* 0x4a4 "Engine" */
-	float acMass;			/* 0x4a8 "AcMass" */
-	float smoothTurnX;		/* 0x4ac */
-	float smoothThrust;		/* 0x4b0 */
-	float fxEngineTime;		/* 0x4b4 "FxEngineTime" */
-	float fxBoostEngineTime;	/* 0x4b8 "FxBoostEngineTime" */
-	float inAtmosphere;		/* 0x4bc approaches 1 under the atmosphere limit */
-	float active;			/* 0x4c0 approaches 1 while active */
-	float smoothSpeed;		/* 0x4c4 */
-	float shake;			/* 0x4c8 1 at a boost, goes down */
-	vec3_t smoothAng;		/* 0x4cc */
-	vec3_t smoothRotVel;		/* 0x4d8 */
-	vec3_t localVel;		/* 0x4e4 the velocity in the frame of smoothAng */
-	vec3_t localAcc;		/* 0x4f0 */
-	cNetVController *netCtrl;	/* 0x4fc the server side controller of a player ship */
-	CGameModel pilot;		/* 0x500 */
-	int pilotNode;			/* 0x51c DC_Player_01 of the vehicle model, -1 none */
-	char pilotName[0x20];		/* 0x520 */
-	int pilotAnims[VEH_PILOT_ANIMS];	/* 0x540 -1 none */
-	float pilotAnimLen[VEH_PILOT_ANIMS];	/* 0x554 */
-	char typeName[0x20];		/* 0x568 "Model": the model name, "SMosquito", "T..." for traffic */
-	byte rendering;			/* 0x588 inside the extra render of vf46 */
+	byte collision[0x410 - 0x3f0];	/* the state of the world collision */
+	int slot;			/* "UsrControl": the player slot 0..3, -1 for the AI */
+	cVehicleControls controls;
+	float wRadius;			/* "WRadius" */
+	float thrust;
+	float turnSpeedX;
+	float turnSpeedY;
+	float roll;
+	float speed;			/* "Speed" */
+	float pushTime;
+	vec3_t push;
+	float trustTime;		/* "TrustTime" */
+	float frwTrust;			/* "FrwTrust" */
+	float backTrust;		/* "BackTrust" */
+	float strTrust;			/* "StrTrust" */
+	float boost;			/* the boost left ("isBoost": 0) */
+	float boostTime;		/* "BoostTime" */
+	float maxSpeed;			/* "MaxSpeed" */
+	float friction;			/* "Friction" */
+	float style;			/* "Style" */
+	float engine;			/* "Engine" */
+	float acMass;			/* "AcMass" */
+	float smoothTurnX;
+	float smoothThrust;
+	float fxEngineTime;		/* "FxEngineTime" */
+	float fxBoostEngineTime;	/* "FxBoostEngineTime" */
+	float inAtmosphere;		/* approaches 1 under the atmosphere limit */
+	float active;			/* approaches 1 while active */
+	float smoothSpeed;
+	float shake;			/* 1 at a boost, goes down */
+	vec3_t smoothAng;
+	vec3_t smoothRotVel;
+	vec3_t localVel;		/* the velocity in the frame of smoothAng */
+	vec3_t localAcc;
+	cNetVController *netCtrl;	/* the server side controller of a player ship */
+	CGameModel pilot;
+	int pilotNode;			/* DC_Player_01 of the vehicle model, -1 none */
+	char pilotName[0x20];
+	int pilotAnims[VEH_PILOT_ANIMS];	/* -1 none */
+	float pilotAnimLen[VEH_PILOT_ANIMS];
+	char typeName[0x20];		/* "Model": the model name, "SMosquito", "T..." for traffic */
+	byte rendering;			/* inside the extra render of */
 	byte pad_589[3];
-	float emi;			/* 0x58c "EMICounter" */
-	float cloud;			/* 0x590 "MotorDCnt" */
-	byte cloudOn;			/* 0x594 "BoostDeact" */
+	float emi;			/* "EMICounter" */
+	float cloud;			/* "MotorDCnt" */
+	byte cloudOn;			/* "BoostDeact" */
 	byte pad_595[3];
-	float noFire;			/* 0x598 */
-	float histTime;			/* 0x59c */
-	float histSpeed;		/* 0x5a0 */
-	vec3_t histVel;			/* 0x5a4 */
-	vec3_t histAcc;			/* 0x5b0 */
-	float histAccLen;		/* 0x5bc */
-	float hitTime;			/* 0x5c0 of the last collision */
-	cVehicleTraffic traffic;	/* 0x5c4 "Traf_" variables */
-	cTargetLock weapons;		/* 0x5f0 cWeaponManager */
-	byte fixedModel;		/* 0x638 "FixedModel" */
+	float noFire;
+	float histTime;
+	float histSpeed;
+	vec3_t histVel;
+	vec3_t histAcc;
+	float histAccLen;
+	float hitTime;			/* of the last collision */
+	cVehicleTraffic traffic;	/* "Traf_" variables */
+	cTargetLock weapons;		/* cWeaponManager */
+	byte fixedModel;		/* "FixedModel" */
 	byte pad_639[3];
-	int minLife;			/* 0x63c "MinLife" */
-	int maxLife;			/* 0x640 "MaxLife" */
-	byte isInit;			/* 0x644 "isInit" */
+	int minLife;			/* "MinLife" */
+	int maxLife;			/* "MaxLife" */
+	byte isInit;			/* "isInit" */
 	byte pad_645[3];
 	union {
-		cVehicleTargets o648;	/* 0x648 updated for player ships, with the target */
+		cVehicleTargets o648;	/* updated for player ships, with the target */
 		struct {
 			byte pad_648[offsetof(cVehicleTargets, target)];
-			char target[0x80];	/* 0x650 "Target" */
+			char target[0x80];	/* "Target" */
 		};
 	};
-	cAutoAim autoAim;		/* 0x6d0 */
-	cVehicleMotors motors;		/* 0x720 */
-	float vertBalance;		/* 0x7e8 "VerticalBalance" */
-	int money;			/* 0x7ec "Money" */
-	cVehicleEffects effects;	/* 0x7f0 */
+	cAutoAim autoAim;
+	cVehicleMotors motors;
+	float vertBalance;		/* "VerticalBalance" */
+	int money;			/* "Money" */
+	cVehicleEffects effects;
 };
 
 static inline cVehicleEntity *Veh(cEntity *e) {
@@ -161,7 +161,7 @@ static inline struct cEmbeddedFXVehicle *Veh_FX(const cVehicleEntity *v) {
 #define Vehicle_Player(e) (Veh(e)->wl.obj.cam)		/* the follow camera: driven by a player */
 
 /* the cVehicleEntity vtable slots called here */
-/* the motors (rva 0x10d270.., not decompiled yet): their variables through the vtable at 0x720 */
+/* the motors (.., not decompiled yet): their variables through the vtable at 0x720 */
 
 /* the engine variables */
 extern cGVar GVar_AtmosphereLimit;

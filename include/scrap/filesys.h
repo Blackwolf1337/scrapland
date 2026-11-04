@@ -17,15 +17,15 @@
 typedef struct cAbstractFile cAbstractFile;
 
 typedef struct cAbstractFileVtbl {
-	int(*Open)(cAbstractFile *self, const char *name, uint32_t mode);	/* 0x00 */
-	int(*Exists)(cAbstractFile *self, const char *name);		/* 0x04 */
-	int(*Close)(cAbstractFile *self);					/* 0x08 */
-	int(*Read)(cAbstractFile *self, void *dst, int size);		/* 0x0c */
-	int(*Write)(cAbstractFile *self, const void *src, int size);	/* 0x10 */
-	int(*Seek)(cAbstractFile *self, int pos);				/* 0x14 -1 if not possible */
-	int(*Tell)(cAbstractFile *self);					/* 0x18 */
-	int(*Size)(cAbstractFile *self);					/* 0x1c */
-	cAbstractFile *(*Destroy)(cAbstractFile *self, int flags);	/* 0x20 flags 1 frees */
+	int(*Open)(cAbstractFile *self, const char *name, uint32_t mode);
+	int(*Exists)(cAbstractFile *self, const char *name);
+	int(*Close)(cAbstractFile *self);
+	int(*Read)(cAbstractFile *self, void *dst, int size);
+	int(*Write)(cAbstractFile *self, const void *src, int size);
+	int(*Seek)(cAbstractFile *self, int pos);				/* -1 if not possible */
+	int(*Tell)(cAbstractFile *self);
+	int(*Size)(cAbstractFile *self);
+	cAbstractFile *(*Destroy)(cAbstractFile *self, int flags);	/* flags 1 frees */
 } cAbstractFileVtbl;
 
 /* calls through the slots of cAbstractFileVtbl */
@@ -66,23 +66,23 @@ static inline int VFile_Write(void *self, const void *src, int size) {
 }
 
 struct cAbstractFile {
-	const cAbstractFileVtbl *vftable;	/* 0x00 */
-	char *name;			/* 0x04 Mem_Alloc copy while open */
-	uint32_t mode;			/* 0x08 FILE_MODE_ */
+	const cAbstractFileVtbl *vftable;
+	char *name;			/* Mem_Alloc copy while open */
+	uint32_t mode;			/* FILE_MODE_ */
 };
 
 typedef struct cFile {
 	cAbstractFile base;
-	void *f;			/* 0x0c FILE of the exe's CRT */
+	void *f;			/* FILE of the exe's CRT */
 } cFile;
 
 typedef struct cFileMem {
 	cAbstractFile base;
-	byte *buffer;			/* 0x0c */
-	byte *pos;			/* 0x10 */
-	int size;			/* 0x14 */
-	int maxSize;			/* 0x18 */
-	byte ownsBuffer;		/* 0x1c */
+	byte *buffer;
+	byte *pos;
+	int size;
+	int maxSize;
+	byte ownsBuffer;
 	byte pad_1d[3];
 } cFileMem;
 
@@ -129,14 +129,14 @@ int cAbstractFile_ExistsTrue(cAbstractFile *self, const char *name);
  * Reading goes through a cFilePack when only reading, else through a cFile.
  */
 typedef struct cFileBlockNode {
-	uint32_t id;			/* 0x0 the characters of the id, first in the low byte */
-	int pos;			/* 0x4 offset of the size field while writing */
-	struct cFileBlockNode *prev;	/* 0x8 */
+	uint32_t id;			/* the characters of the id, first in the low byte */
+	int pos;			/* offset of the size field while writing */
+	struct cFileBlockNode *prev;
 } cFileBlockNode;
 
 typedef struct cFileBlock {
-	cAbstractFile *f;		/* 0x0 */
-	cFileBlockNode *block;		/* 0x4 the open block */
+	cAbstractFile *f;
+	cFileBlockNode *block;		/* the open block */
 } cFileBlock;
 
 /* Open flags: bit 0 write (with bit 1 still a cFilePack), 0x10 only if the file exists */

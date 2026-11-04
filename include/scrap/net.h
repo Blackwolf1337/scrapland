@@ -49,21 +49,21 @@ extern cGVarFunction GVar_OnUsrString;
 
 /* a reliable message in the queue of a cNetClient (12 bytes, Mem_Alloc) */
 typedef struct cNetMsgNode {
-	uint16_t size;			/* 0x0 with the sequence byte */
+	uint16_t size;			/* with the sequence byte */
 	byte pad_2[2];
-	byte *data;			/* 0x4 data[0] the sequence number (7 bits), then the message */
-	struct cNetMsgNode *next;	/* 0x8 */
+	byte *data;			/* data[0] the sequence number (7 bits), then the message */
+	struct cNetMsgNode *next;
 } cNetMsgNode;
 
 typedef struct cNetClient cNetClient;
 typedef struct cUserNetManager cUserNetManager;
 
 typedef struct cUserNetManagerVtbl {
-	void (*Free)(cUserNetManager *self);			/* 0x00 */
+	void (*Free)(cUserNetManager *self);
 	/* the unreliable part and the reliable message of a packet */
-	void(*OnReceive)(cUserNetManager *self, void *data, int size, void *ctl, int ctlSize);	/* 0x04 */
-	void(*Send)(cUserNetManager *self, uint32_t time);				/* 0x08 */
-	void(*SetLocalData)(cUserNetManager *self);					/* 0x0c */
+	void(*OnReceive)(cUserNetManager *self, void *data, int size, void *ctl, int ctlSize);
+	void(*Send)(cUserNetManager *self, uint32_t time);
+	void(*SetLocalData)(cUserNetManager *self);
 } cUserNetManagerVtbl;
 
 /* calls through the slots of cUserNetManagerVtbl */
@@ -83,36 +83,36 @@ static inline void NetMan_SetLocalData(void *self) {
 	VT(cUserNetManagerVtbl, self)->SetLocalData(self);
 }
 
-/* the base of the user managers (msgman.cpp, 0xc bytes), made by g_NetUserFactory for each cNetClient */
+/* the base of the user managers (msgman.cpp), made by g_NetUserFactory for each cNetClient */
 struct cUserNetManager {
-	const cUserNetManagerVtbl *vftable;	/* 0x0 */
-	int slot;			/* 0x4 the client slot of the server, -1 on a client */
-	cNetClient *client;		/* 0x8 */
+	const cUserNetManagerVtbl *vftable;
+	int slot;			/* the client slot of the server, -1 on a client */
+	cNetClient *client;
 };
 
 #define NET_NAME_SIZE 0x80
 
-/* cServerNetManager (ManClient.cpp, 0x8c bytes): on a client, the connection to the server */
+/* cServerNetManager (ManClient.cpp): on a client, the connection to the server */
 typedef struct cNetShip {
 	cUserNetManager base;
-	char name[NET_NAME_SIZE];	/* 0x0c the entity of the own ship ("net<n>") */
+	char name[NET_NAME_SIZE];	/* the entity of the own ship ("net<n>") */
 } cNetShip;
 typedef cNetShip cServerNetManager;
 
-/* cClientNetManager (ManServer.cpp, 0x49c bytes): on the server, one client and its ship */
+/* cClientNetManager (ManServer.cpp): on the server, one client and its ship */
 typedef struct cClientNetManager {
 	cUserNetManager base;
-	char name[NET_NAME_SIZE];	/* 0x00c the entity "net<slot>" */
-	char usrName[NET_NAME_SIZE];	/* 0x08c */
-	char model[NET_NAME_SIZE];	/* 0x10c the ship model */
-	char pilot[NET_NAME_SIZE];	/* 0x18c */
-	char motors[4][NET_NAME_SIZE];	/* 0x20c */
-	char weapons[NET_NAME_SIZE];	/* 0x40c the weapon bay list */
-	int team;			/* 0x48c */
-	uint16_t maxLife;		/* 0x490 */
+	char name[NET_NAME_SIZE];	/* the entity "net<slot>" */
+	char usrName[NET_NAME_SIZE];
+	char model[NET_NAME_SIZE];	/* the ship model */
+	char pilot[NET_NAME_SIZE];
+	char motors[4][NET_NAME_SIZE];
+	char weapons[NET_NAME_SIZE];	/* the weapon bay list */
+	int team;
+	uint16_t maxLife;
 	byte pad_492[2];
-	uint32_t fullSends;		/* 0x494 the first 5 sends carry everything */
-	uint16_t sends;			/* 0x498 counts the sends, picks the client of the ping byte */
+	uint32_t fullSends;		/* the first 5 sends carry everything */
+	uint16_t sends;			/* counts the sends, picks the client of the ping byte */
 	byte pad_49a[2];
 } cClientNetManager;
 
@@ -129,20 +129,20 @@ typedef struct cClientNetManager {
  * the unreliable data. The queue head goes out again in every packet until the other side acknowledges it.
  */
 struct cNetClient {
-	cNetMsgNode *head;		/* 0x00 the reliable messages not acknowledged yet */
-	cNetMsgNode *tail;		/* 0x04 */
-	byte seqOut;			/* 0x08 the number of the next queued message */
-	byte seqIn;			/* 0x09 the last message received, 0x7f at the start */
+	cNetMsgNode *head;		/* the reliable messages not acknowledged yet */
+	cNetMsgNode *tail;
+	byte seqOut;			/* the number of the next queued message */
+	byte seqIn;			/* the last message received, 0x7f at the start */
 	byte pad_a[2];
-	uint32_t lastRecv;		/* 0x0c time of the last packet */
-	int state;			/* 0x10 NETCLIENT_ */
-	uint32_t pingStart;		/* 0x14 time the toggle flipped, 0 while waiting */
-	int toggle;			/* 0x18 bit 7 of the packets */
-	int ping;			/* 0x1c */
-	uint32_t lastSend;		/* 0x20 */
-	byte received;			/* 0x24 a packet came since the last send */
+	uint32_t lastRecv;		/* time of the last packet */
+	int state;			/* NETCLIENT_ */
+	uint32_t pingStart;		/* time the toggle flipped, 0 while waiting */
+	int toggle;			/* bit 7 of the packets */
+	int ping;
+	uint32_t lastSend;
+	byte received;			/* a packet came since the last send */
 	byte pad_25[3];
-	union {				/* 0x28 the user manager; both derived classes have the entity name at 0xc */
+	union {				/* the user manager; both derived classes have the entity name at 0xc */
 		cNetShip *ship;
 		cUserNetManager *user;
 	};
@@ -160,25 +160,25 @@ static inline uint32_t Net_TimeMs(void) {
 }
 
 /* exe functions of other modules */
-void cWithLifeEntity_SetUsrName(cEntity *e, const char *name);	/* rva 0x12c7c0, "" clears */
+void cWithLifeEntity_SetUsrName(cEntity *e, const char *name);	/* "" clears */
 
-/* the 64 bit Mersenne Twister of the packet nonces with a shuffle table of 256 outputs (0x11cc bytes) */
+/* the 64 bit Mersenne Twister of the packet nonces with a shuffle table of 256 outputs */
 #define NETRAND_NN 312
 #pragma pack(push, 4)
 typedef struct cNetRandom {
-	uint64_t table[0x100];		/* 0x000 */
-	int i;				/* 0x800 */
-	int j;				/* 0x804 */
-	uint64_t mt[NETRAND_NN];	/* 0x808 */
-	int mti;			/* 0x11c8 NETRAND_NN + 1 before the first seed */
+	uint64_t table[0x100];
+	int i;
+	int j;
+	uint64_t mt[NETRAND_NN];
+	int mti;			/* NETRAND_NN + 1 before the first seed */
 } cNetRandom;
 #pragma pack(pop)
 
 /* a growing byte array of the transport (the data of a packet for the Poly1305 tag) */
 typedef struct cNetBuffer {
-	uint32_t size;			/* 0x0 */
-	uint32_t cap;			/* 0x4 */
-	byte *data;			/* 0x8 Mem_Alloc */
+	uint32_t size;
+	uint32_t cap;
+	byte *data;			/* Mem_Alloc */
 } cNetBuffer;
 
 /* the ChaCha20 state */
@@ -188,30 +188,30 @@ typedef struct cChaCha {
 
 /* a sockaddr_in (16 bytes, the same on Winsock and BSD sockets) */
 typedef struct NetAddr {
-	uint16_t family;		/* 0x0 2: AF_INET */
-	uint16_t port;			/* 0x2 network order */
-	uint32_t addr;			/* 0x4 */
-	byte zero[8];			/* 0x8 */
+	uint16_t family;		/* 2: AF_INET */
+	uint16_t port;			/* network order */
+	uint32_t addr;
+	byte zero[8];
 } NetAddr;
 
 /* the servers to ping in browser mode, 0x200 of them */
 #define NET_PING_SERVERS 0x200
 typedef struct NetPingServer {
-	NetAddr addr;			/* 0x00 port 0: free */
-	uint32_t time;			/* 0x10 timeGetTime of the ping */
+	NetAddr addr;			/* port 0: free */
+	uint32_t time;			/* timeGetTime of the ping */
 } NetPingServer;
 
-/* the answer to a ping of the browser (0x5c bytes) */
+/* the answer to a ping of the browser */
 typedef struct NetServerInfo {
-	uint16_t id;			/* 0x00 NET_GAME_ID */
-	uint16_t version;		/* 0x02 NET_GAME_VERSION */
-	uint16_t port;			/* 0x04 */
-	int16_t maxPlayers;		/* 0x06 */
-	int16_t numPlayers;		/* 0x08 */
-	byte flags;			/* 0x0a 1 dedicated, 2 ForceServerVehicle, 4 UseServerPassword */
-	char name[0x20];		/* 0x0b ServerName */
-	char type[0x10];		/* 0x2b ServerType */
-	char map[0x20];			/* 0x3b the level path after "Levels/" */
+	uint16_t id;			/* NET_GAME_ID */
+	uint16_t version;		/* NET_GAME_VERSION */
+	uint16_t port;
+	int16_t maxPlayers;
+	int16_t numPlayers;
+	byte flags;			/* 1 dedicated, 2 ForceServerVehicle, 4 UseServerPassword */
+	char name[0x20];		/* ServerName */
+	char type[0x10];		/* ServerType */
+	char map[0x20];			/* the level path after "Levels/" */
 	byte pad_5b;
 } NetServerInfo;
 

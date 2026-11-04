@@ -12,8 +12,8 @@
 #define TABLE_CHECK(p, i, n) CHECK((p) && (uint32_t)(i) < (uint32_t)(n))
 
 typedef struct CTable {
-	int n;				/* 0x0 */
-	void *p;			/* 0x4 */
+	int n;
+	void *p;
 } CTable;
 
 /* new elements, not initialized; CHECK(!p && num > 0) */

@@ -13,14 +13,14 @@
 #define MUSIC_MAX_VOICES 8
 
 typedef struct cMusicVoice {
-	char name[0x104];		/* 0x000 the file */
-	void *stream;			/* 0x104 FSOUND_STREAM */
-	int channel;			/* 0x108 -1 until it plays */
-	char text[0x80];		/* 0x10c Voice_SetString */
-	int voiceover;			/* 0x18c 0/1 */
-	uint32_t openTime;		/* 0x190 timeGetTime when opened */
-	uint32_t waitTime;		/* 0x194 the last time it was seen opening (debug info) */
-	uint32_t playTime;		/* 0x198 */
+	char name[0x104];		/* the file */
+	void *stream;			/* FSOUND_STREAM */
+	int channel;			/* -1 until it plays */
+	char text[0x80];		/* Voice_SetString */
+	int voiceover;			/* 0/1 */
+	uint32_t openTime;		/* timeGetTime when opened */
+	uint32_t waitTime;		/* the last time it was seen opening (debug info) */
+	uint32_t playTime;
 } cMusicVoice;
 
 int Fmod_Init(void);

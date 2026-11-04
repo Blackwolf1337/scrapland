@@ -20,9 +20,9 @@ void HashItem_Free(void *p);
 
 /* the instance with a pointer value and a key that is not copied (cGVar, cSaveVar) */
 typedef struct cPtrItem {
-	void *value;			/* 0x0 */
-	const char *key;		/* 0x4 */
-	struct cPtrItem *next;		/* 0x8 */
+	void *value;
+	const char *key;
+	struct cPtrItem *next;
 } cPtrItem;
 
 cPtrItem *PtrTable_Insert(HashTable *self, const char *key, uint32_t slot, void *const *value);
@@ -144,9 +144,9 @@ typedef struct cValue12 {
 } cValue12;
 
 typedef struct cWorldStrItem {
-	cValue12 value;			/* 0x00 */
-	char *key;			/* 0x0c cString */
-	struct cWorldStrItem *next;	/* 0x10 */
+	cValue12 value;
+	char *key;			/* cString */
+	struct cWorldStrItem *next;
 } cWorldStrItem;
 
 cWorldStrItem *WorldStrTable_Find(HashTable *self, const char *key, uint32_t slot);

@@ -73,9 +73,9 @@ cGVar GVar_S_VoiceoverVolume;
 
 static cGVar GVar_MinVoiceVolumeChat;
 #define g_MinVoiceVolumeChat (GVar_MinVoiceVolumeChat.value.f)	/* MinVoiceVolumeChat */
-#define VOICE_END 0.001f		/* rva 0x3a3d58: the talk ends with less left */
+#define VOICE_END 0.001f		/* the talk ends with less left */
 #define VOICE_PAN -0.5f
-#define VOICE_MIN_SPEED 0.8f		/* rva 0x3b0844: no voices in slow motion */
+#define VOICE_MIN_SPEED 0.8f		/* no voices in slow motion */
 static cGVar GVar_VoicePlayDelay;
 #define g_VoicePlayDelay (GVar_VoicePlayDelay.value.f)	/* VoicePlayDelay */
 static cGVar GVar_StreamPath;

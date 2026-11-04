@@ -31,7 +31,7 @@ static void cMayorLocalLogic_Free(cLocalLogic *elem) {
 	operator_delete(self);
 }
 
-/* vf31: the special action is over after GenCharSpecialActionTime */
+/* the special action is over after GenCharSpecialActionTime */
 static byte cMayorLocalLogic_TargetDone(cLocalLogic *elem) {
 	cMayorLocalLogic *self = (cMayorLocalLogic *)elem;
 	return self->base.specialTime > g_GenCharSpecialActionTime;
@@ -42,7 +42,7 @@ static cEntity *g_MayorTarget;
 static cEntity *g_MayorSearchEnt;
 static float g_MayorTargetDist = 3.4028235e+38f;
 
-/* vf30: at the search time the nearest dazed character in view in the sphere of MayorBlabliblaRadius */
+/* at the search time the nearest dazed character in view in the sphere of MayorBlabliblaRadius */
 static cEntity *cMayorLocalLogic_FindTarget(cLocalLogic *elem) {
 	cMayorLocalLogic *self = (cMayorLocalLogic *)elem;
 	vec3_t t;
@@ -60,7 +60,7 @@ static cEntity *cMayorLocalLogic_FindTarget(cLocalLogic *elem) {
 	return g_MayorTarget;
 }
 
-/* vf28 and vf27: the AI walks in alert or relaxed */
+/* and: the AI walks in alert or relaxed */
 static void cMayorLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
 	cMayorLocalLogic *self = (cMayorLocalLogic *)base;
 	(void)self;
@@ -73,7 +73,7 @@ static void cMayorLocalLogic_ToRelax(cLocalLogic *base, cAIChar *ai) {
 	AIChar_SetState(ai, AIC_IN_ROUTE, (double)g_GenCharRelaxSpeed, 0);
 }
 
-/* vf17: during the special action the AI listens to the listener once */
+/* during the special action the AI listens to the listener once */
 static void cMayorLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cMayorLocalLogic *self = (cMayorLocalLogic *)elem;
 	if (self->base.specialOn) {

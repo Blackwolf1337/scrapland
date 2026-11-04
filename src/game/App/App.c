@@ -121,13 +121,12 @@ void CApp_dtor(CApp *self) {
 	cString_dtor(&self->levelPath);
 }
 
-/* vf03 */
 static void CApp_Free(CApp *self) {
 	CApp_dtor(self);
 	operator_delete(self);
 }
 
-/* vf02, vf08, vf09: empty */
+/* empty */
 void CApp_Nop(CApp *self) {
 	(void)self;
 }
@@ -135,7 +134,7 @@ void CApp_Nop(CApp *self) {
 cGVar g_GVarMasterServerAddress;
 cGVar g_GVarMasterServerPort;
 
-/* vf00: the world and the subsystems of the level closed */
+/* the world and the subsystems of the level closed */
 void CApp_DoneGame(CApp *self) {
 	cGVar *port = (&g_GVarMasterServerPort), *addr = (&g_GVarMasterServerAddress);
 
@@ -255,13 +254,12 @@ void Console_Execute(const char *cmd) {
 	PyRun_ScrapString(code);
 }
 
-/* vf11 (CWinApp vf11 jumps here too) */
+/* (CWinApp jumps here too) */
 void CApp_Render(CApp *self) {
 	(void)self;
 	Engine_Render();
 }
 
-/* vf06 */
 void CApp_Shutdown(CApp *self) {
 	char path[0x80];
 
@@ -309,12 +307,10 @@ void Loading_End(void) {
 	}
 }
 
-/* vf13 */
 void CApp_ResetParams(CApp *self) {
 	self->build = 0;
 }
 
-/* vf15 */
 double CApp_GetGameTime(CApp *self) {
 	return self->gameTime;
 }
@@ -344,7 +340,7 @@ static byte CApp_InitEnd(CApp *self) {
 	return 1;
 }
 
-/* vf04: the debug logs, Scrap.cfg, the command line, the packs, the input, the engine and the first level */
+/* the debug logs, Scrap.cfg, the command line, the packs, the input, the engine and the first level */
 static void CApp_ParseCmdLine(CApp *self);
 byte CApp_Init(CApp *self) {
 	vec3_t one;
@@ -405,7 +401,7 @@ byte CApp_InitResume(CApp *self) {
 	return 1;
 }
 
-/* vf01: the level path, the network flags, the world and Python */
+/* the level path, the network flags, the world and Python */
 static void CApp_SFLB_0(CApp *self);
 void CApp_InitGame(CApp *self, const char *level) {
 	cString_Set(&self->levelPath, level);
@@ -496,7 +492,7 @@ static void CApp_LoadLevelEnd(CApp *self, const char *level, double t0, byte rel
 	g_DrawNextFrame = 0;
 }
 
-/* vf07: closes the level and loads level (only the logic again for the same level without ForceReload) */
+/* closes the level and loads level (only the logic again for the same level without ForceReload) */
 void CApp_LoadLevelNow(CApp *self, const char *level) {
 	double t0 = App_GetTime(self);
 	Con_Printf("Loading level at '%s'...\n", level);
@@ -699,7 +695,7 @@ static byte CApp_FrameRun(CApp *self) {
 	return 1;
 }
 
-/* vf05: one frame; 0 when the time did not go on (or the app waits in the background) */
+/* one frame; 0 when the time did not go on (or the app waits in the background) */
 byte CApp_Frame(CApp *self) {
 	if (self->loadPending) {
 		App_LoadLevelNow(self, self->newLevelPath);
@@ -753,7 +749,7 @@ static int App_MaxPlayers(void) {
 	return n >= 16 ? 16 : n;
 }
 
-/* vf12: a -param[:ext] of the command line: an engine variable of the config file, build, dedicated or server */
+/* a -param[:ext] of the command line: an engine variable of the config file, build, dedicated or server */
 byte CApp_ParseParam(CApp *self, const char *param, const char *ext) {
 	cGVar *v = GVar_Find(param);
 	if (v && (v->base.flags & 6)) {
@@ -975,7 +971,6 @@ static byte Loading_Draw(void) {
 	return 1;
 }
 
-/* vf19 */
 static byte CApp_RunApp(CApp *self, const char *exe, const char *cmdLine, int arg) {
 	(void)self;
 	(void)exe;
@@ -1002,13 +997,11 @@ static void CApp_SFLB_0(CApp *self) {
 	Con_Print(0, "Scorer initialized.\n", 0);
 }
 
-/* vf10 */
 void CApp_Update(CApp *self, float dt) {
 	(void)self;
 	cWorld_Update(g_pWorld, dt);
 }
 
-/* vf20 */
 static byte CApp_IsDedicatedWin(CApp *self) {
 	(void)self;
 	return 0;

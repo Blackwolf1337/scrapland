@@ -21,44 +21,44 @@
 #include "scrap/scrapworld.h"
 #include "scrap/table.h"
 
-/* CMotorApp of Engine/Motor.cpp, 0x2a600 bytes (g_Engine3D, also g_Engine as its CD3DApplication) */
+/* CMotorApp of Engine/Motor.cpp (g_Engine3D, also g_Engine as its CD3DApplication) */
 typedef struct CEngineApp {
-	CD3DApplication base;			/* 0x00000 */
-	void *menu;				/* 0x2a5dc HMENU */
-	void *cameraMenu;			/* 0x2a5e0 the submenu of the cameras of the global scene */
-	CTable table;				/* 0x2a5e4 */
-	CScene *scene;				/* 0x2a5ec EscenaGlobal, counted */
-	struct CGraphic2DList *overlay;		/* 0x2a5f0 */
-	void **obj2a5f4;			/* 0x2a5f4 an object deleted by FinalCleanup */
-	byte canWBuffer;			/* 0x2a5f8 D3DPRASTERCAPS_WBUFFER of the device */
-	byte useWBuffer;			/* 0x2a5f9 the W buffer (g_ZEnable 2) when the device can */
+	CD3DApplication base;
+	void *menu;				/* HMENU */
+	void *cameraMenu;			/* the submenu of the cameras of the global scene */
+	CTable table;
+	CScene *scene;				/* EscenaGlobal, counted */
+	struct CGraphic2DList *overlay;
+	void **obj2a5f4;			/* an object deleted by FinalCleanup */
+	byte canWBuffer;			/* D3DPRASTERCAPS_WBUFFER of the device */
+	byte useWBuffer;			/* the W buffer (g_ZEnable 2) when the device can */
 	/* the menu items 0x9c5b..0x9c5d: two of them enabled by these, the third checked by menuMode 0, the other two by 1 */
-	byte canMenu9c5d;			/* 0x2a5fa */
-	byte canMenu9c5c;			/* 0x2a5fb */
-	int menuMode;				/* 0x2a5fc */
+	byte canMenu9c5d;
+	byte canMenu9c5c;
+	int menuMode;
 } CEngineApp;
 
-/* a camera of the game (0x3c bytes) over a CCamera of the engine */
+/* a camera of the game over a CCamera of the engine */
 
-/* the watermark drawn with ShowSplashScreen 100 (0x44 bytes, a .psa image) */
+/* the watermark drawn with ShowSplashScreen 100 (a .psa image) */
 typedef struct CPsaImage CPsaImage;
 
-/* an image of a .psa sprite sheet (0x44 bytes): the state of the next draw */
+/* an image of a .psa sprite sheet: the state of the next draw */
 struct CPsaImage {
-	float x, y;			/* 0x00 */
-	float pivotX, pivotY;		/* 0x08 0..1 of the size */
-	float scaleX, scaleY;		/* 0x10 1 */
-	float f18, f1c;			/* 0x18 the second scale of the CGraphic2D (g_Sprite2DScale) */
-	byte screen;			/* 0x20 SPR2D 1: the position in pixels (the CGraphic2D gets the inverse) */
-	byte screenSize;		/* 0x21 SPR2D 2 */
-	byte unit;			/* 0x22 SPR2D 4, the scorer "Unit": sizes of 1 (no texture size, no second scale) */
+	float x, y;
+	float pivotX, pivotY;		/* 0..1 of the size */
+	float scaleX, scaleY;		/* 1 */
+	float f18, f1c;			/* the second scale of the CGraphic2D (g_Sprite2DScale) */
+	byte screen;			/* SPR2D 1: the position in pixels (the CGraphic2D gets the inverse) */
+	byte screenSize;		/* SPR2D 2 */
+	byte unit;			/* SPR2D 4, the scorer "Unit": sizes of 1 (no texture size, no second scale) */
 	byte pad_23;
-	float uv0[2];			/* 0x24 the texture rectangle of frame 0 */
-	float uv1[2];			/* 0x2c 1, 1 */
-	uint32_t color;			/* 0x34 0xAARRGGBB, 0xffffff */
-	int flip;			/* 0x38 0..3 (DrawFrameFlip) */
-	void *sprite;			/* 0x3c */
-	int frame;			/* 0x40 the frame drawn, 0 between the draws */
+	float uv0[2];			/* the texture rectangle of frame 0 */
+	float uv1[2];			/* 1, 1 */
+	uint32_t color;			/* 0xAARRGGBB, 0xffffff */
+	int flip;			/* 0..3 (DrawFrameFlip) */
+	void *sprite;
+	int frame;			/* the frame drawn, 0 between the draws */
 };
 
 /* the size in pixels of a frame of the sheet */
@@ -74,7 +74,7 @@ extern typeof(void (*)(void)) g_EngCallbacks[4];	/* [4], 2 and 3 are g_LoadingDr
 extern byte g_DrawProgressBar;
 #define g_ProgressBarCount g_LoadingCount
 extern byte g_CallbacksOn;
-extern char g_ScreenshotName[256];	/* 0x100 */
+extern char g_ScreenshotName[256];
 extern int g_BspSectorSeen;
 #define g_VideoStatus g_BspSectorSeen
 extern char str_M3dIni[128];

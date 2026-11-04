@@ -15,22 +15,22 @@
 #define CAMERA_FREE (CAMERA_LOOKAT + 1)	/* mode: the angles are set directly */
 
 typedef struct CGameCamera {
-	vec3_t pos;			/* 0x00 */
-	vec3_t rot;			/* 0x0c */
-	vec3_t target;			/* 0x18 */
-	float zNear;			/* 0x24 */
-	float zFar;			/* 0x28 */
-	float fov;			/* 0x2c radians */
-	float aspectScreen;		/* 0x30 */
-	CCamera *Camera;		/* 0x34 owned */
-	CRenderNode *Node;			/* 0x38 a reference (CGameModel_RenderNodeRef) */
+	vec3_t pos;
+	vec3_t rot;
+	vec3_t target;
+	float zNear;
+	float zFar;
+	float fov;			/* radians */
+	float aspectScreen;
+	CCamera *Camera;		/* owned */
+	CRenderNode *Node;			/* a reference (CGameModel_RenderNodeRef) */
 } CGameCamera;
 
 extern cGVar GVar_PhysicalAspectRatio;
 #define g_PhysicalAspectRatio (GVar_PhysicalAspectRatio.value.f)	/* PhysicalAspectRatio */
 extern cGVar GVar_CameraScene;
 #define g_CameraScene (GVar_CameraScene.value.i)		/* CameraScene */
-/* 1: the cameras follow their scene nodes (also CCamera at rva 0x29cba0) */
+/* 1: the cameras follow their scene nodes (also CCamera) */
 extern int g_CameraNodes;
 
 CGameCamera *CGameCamera_ctor(CGameCamera *self);
@@ -48,6 +48,6 @@ void CGameCamera_Strafe(CGameCamera *self, float side, float rise);
 /* from the node, then the values into the CCamera; the CCamera */
 CCamera *CGameCamera_Update(CGameCamera *self);
 
-/* rva 0x215c00 (ScrapEngMain.cpp): the camera the world is drawn with */
+/* (ScrapEngMain.cpp): the camera the world is drawn with */
 
 #endif

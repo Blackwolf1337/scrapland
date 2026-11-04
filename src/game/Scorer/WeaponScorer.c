@@ -319,7 +319,7 @@ static void Weapon_DrawSlots(cWeaponScorer *self, cWeaponManager *wm, int player
 	}
 }
 
-/* vf00: the weapon of the ship of the camera with its upgrade bar, its ammo, the slots mounted, the row of the
+/* the weapon of the ship of the camera with its upgrade bar, its ammo, the slots mounted, the row of the
  * weapons after a change and the fade between the old and the new weapon icon */
 static void cWeaponScorer_Draw(cScorerItem *base, int player) {
 	cWeaponScorer *self = (cWeaponScorer *)base;

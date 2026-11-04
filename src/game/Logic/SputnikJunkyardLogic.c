@@ -65,7 +65,6 @@ static void Sputnik_LaughDone(cAbstractFile *params) {
 	Logic_SetState(l, SPUTNIK_WALK, NULL);
 }
 
-/* vf17 */
 static void cSputnikJunkyardLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cSputnikJunkyardLocalLogic *self = (cSputnikJunkyardLocalLogic *)elem;
 	cEntity *p = self->base.parent;
@@ -102,7 +101,7 @@ static void cSputnikJunkyardLocalLogic_Update(cLocalLogic *elem, float dt) {
 	}
 }
 
-/* vf19: 7 the walk, 8 to the point 200 in front of the camera, facing it; always 1 */
+/* 7 the walk, 8 to the point 200 in front of the camera, facing it; always 1 */
 static byte cSputnikJunkyardLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cSputnikJunkyardLocalLogic *self = (cSputnikJunkyardLocalLogic *)elem;
 	if (state == SPUTNIK_WALK) {

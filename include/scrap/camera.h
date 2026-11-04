@@ -16,26 +16,26 @@ typedef struct CCamera {
 	union {
 		IObject3D base;
 		struct {
-			const IObject3DVtbl *vftable;	/* 0x00 */
-			uint32_t class;			/* 0x04 CLASS_OBJ3D_CAMERA */
+			const IObject3DVtbl *vftable;
+			uint32_t class;			/* CLASS_OBJ3D_CAMERA */
 		};
 	};
-	vec3_t rot;			/* 0x08 */
-	vec3_t pos;			/* 0x14 */
-	vec3_t target;			/* 0x20 */
-	float zNear;			/* 0x2c */
-	float zFar;			/* 0x30 */
-	float rangeNear;		/* 0x34 "RangoCerca" */
-	float rangeFar;			/* 0x38 "RangoLejos" */
-	float fov;			/* 0x3c radians */
-	float aspect;			/* 0x40 */
-	float aspectScreen;		/* 0x44 */
-	int mode;			/* 0x48 */
-	vec3_t viewPos;			/* 0x4c set with dir and up */
-	vec3_t dir;			/* 0x58 */
-	vec3_t up;			/* 0x64 */
-	CNode3D *node;			/* 0x70 */
-	CNode3D *nodeTarget;		/* 0x74 */
+	vec3_t rot;
+	vec3_t pos;
+	vec3_t target;
+	float zNear;
+	float zFar;
+	float rangeNear;		/* "RangoCerca" */
+	float rangeFar;			/* "RangoLejos" */
+	float fov;			/* radians */
+	float aspect;
+	float aspectScreen;
+	int mode;
+	vec3_t viewPos;			/* set with dir and up */
+	vec3_t dir;
+	vec3_t up;
+	CNode3D *node;
+	CNode3D *nodeTarget;
 } CCamera;
 
 CCamera *CCamera_ctor(CCamera *self);

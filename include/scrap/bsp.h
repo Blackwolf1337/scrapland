@@ -26,111 +26,111 @@
 
 /* a link of the radiosity between two regions */
 typedef struct BspLink {
-	struct BspLink *next;		/* 0x0 */
-	struct BspRegion *region;	/* 0x4 */
-	float ff;			/* 0x8 form factor */
+	struct BspLink *next;
+	struct BspRegion *region;
+	float ff;			/* form factor */
 } BspLink;
 
 /* a node of the region tree of a list (Engine radiosity code, 100 bytes) */
 typedef struct BspRegion {
-	struct BspRegion *child[4];	/* 0x00 ra rb rc rd */
-	struct BspRegion *parent;	/* 0x10 */
-	byte interior;			/* 0x14 any child */
+	struct BspRegion *child[4];	/* ra rb rc rd */
+	struct BspRegion *parent;
+	byte interior;			/* any child */
 	byte pad15[3];
-	float area;			/* 0x18 */
-	vec3_t center;			/* 0x1c */
-	plane_t plane;			/* 0x28 */
-	uint16_t x, y;			/* 0x38 texel of the light map */
-	uint16_t lx, ly;		/* 0x3c size in texels */
-	float color[4];			/* 0x40 emitted */
-	float accum[4];			/* 0x50 received */
-	BspLink *links;		/* 0x60 */
+	float area;
+	vec3_t center;
+	plane_t plane;
+	uint16_t x, y;			/* texel of the light map */
+	uint16_t lx, ly;		/* size in texels */
+	float color[4];			/* emitted */
+	float accum[4];			/* received */
+	BspLink *links;
 } BspRegion;
 
 /* the names of the area lights of a list */
 typedef struct BspName {
-	struct BspName *next;		/* 0x00 */
-	char *name;			/* 0x04 Cad */
+	struct BspName *next;
+	char *name;			/* Cad */
 	byte pad08[0x18];
 } BspName;
 
 /* a page of light maps; lmap2 is the page of the secondary maps */
 typedef struct BspLMap {
-	struct BspLMap *next;		/* 0x00 */
-	CBmp bmp;			/* 0x04 */
-	CBmp info;			/* 0x10 the debug colors (.INFO) */
-	CMaterial *Mat;			/* 0x1c */
-	int minX, minY;			/* 0x20 the smallest map that did not fit, size + 1 when empty */
-	int id;				/* 0x28 */
-	struct BspLMap *lmap2;		/* 0x2c */
+	struct BspLMap *next;
+	CBmp bmp;
+	CBmp info;			/* the debug colors (.INFO) */
+	CMaterial *Mat;
+	int minX, minY;			/* the smallest map that did not fit, size + 1 when empty */
+	int id;
+	struct BspLMap *lmap2;
 } BspLMap;
 
-/* a light map texel of a list: the sample point and its weight (CTable of 0x18 bytes) */
+/* a light map texel of a list: the sample point and its weight (CTable of) */
 typedef struct BspArea {
-	vec3_t pos;			/* 0x00 */
-	float weight;			/* 0x0c */
-	uint16_t x, y;			/* 0x10 */
-	float glow;			/* 0x14 the mean glow of the texel */
+	vec3_t pos;
+	float weight;
+	uint16_t x, y;
+	float glow;			/* the mean glow of the texel */
 } BspArea;
 
-/* a list: triangles of one surface with one light map (0x224 bytes) */
+/* a list: triangles of one surface with one light map */
 typedef struct BspTri {
-	struct BspTri *next;		/* 0x000 the next triangle of the list */
-	vec3_t v[3];			/* 0x004 */
-	vec3_t n[3];			/* 0x028 vertex normals */
-	float uv[3][2];			/* 0x04c */
-	float uvl[3][2];		/* 0x064 in the light map */
-	uint32_t color[3];		/* 0x07c */
-	int vid[3];			/* 0x088 vertex ids */
-	plane_t plane;			/* 0x094 */
-	int axis;			/* 0x0a4 the largest axis of the normal */
-	uint32_t flags;			/* 0x0a8 BSPTRI_* */
-	CMaterial *Mat;			/* 0x0ac */
-	CBmpFlt2 light;			/* 0x0b0 the light map */
-	CBmpFlt2 light2;			/* 0x0bc the secondary one */
-	CBmpFlt lightA;			/* 0x0c8 */
-	int lx, ly;			/* 0x0d4 light map size */
-	int ext[4];			/* 0x0dc x0 y0 x1 y1 */
-	int ext2[4];			/* 0x0ec */
-	CBmpFlt2 rad;			/* 0x0fc radiosity */
-	CBmpFlt2 rad2;			/* 0x108 */
-	CBmp mask;			/* 0x114 the list of each texel (color swapped) */
-	CBmp mask2;			/* 0x120 */
-	int maskColor;			/* 0x12c of the triangle in the debug mask (mask2) */
-	int unused_130;			/* 0x130 */
-	BspName *names;		/* 0x134 */
-	char *name;			/* 0x138 Cad */
-	uint32_t radColor;		/* 0x13c area light color, bytes */
-	float radInt;			/* 0x140 */
-	float col144[4];		/* 0x144 */
-	byte radlight_ok;			/* 0x154 */
-	byte glowOn;			/* 0x155 the glow map (lglow) is on: its average is not black */
-	byte big;			/* 0x156 */
+	struct BspTri *next;		/* the next triangle of the list */
+	vec3_t v[3];
+	vec3_t n[3];			/* vertex normals */
+	float uv[3][2];
+	float uvl[3][2];		/* in the light map */
+	uint32_t color[3];
+	int vid[3];			/* vertex ids */
+	plane_t plane;
+	int axis;			/* the largest axis of the normal */
+	uint32_t flags;			/* BSPTRI_* */
+	CMaterial *Mat;
+	CBmpFlt2 light;			/* the light map */
+	CBmpFlt2 light2;			/* the secondary one */
+	CBmpFlt lightA;
+	int lx, ly;			/* light map size */
+	int ext[4];			/* x0 y0 x1 y1 */
+	int ext2[4];
+	CBmpFlt2 rad;			/* radiosity */
+	CBmpFlt2 rad2;
+	CBmp mask;			/* the list of each texel (color swapped) */
+	CBmp mask2;
+	int maskColor;			/* of the triangle in the debug mask (mask2) */
+	int unused_130;
+	BspName *names;
+	char *name;			/* Cad */
+	uint32_t radColor;		/* area light color, bytes */
+	float radInt;
+	float col144[4];
+	byte radlight_ok;
+	byte glowOn;			/* the glow map (lglow) is on: its average is not black */
+	byte big;
 	byte pad157;
-	float glowSum[4];		/* 0x158 r, g, b of the areas summed and the count + 1 */
-	float listGlowSum[4];		/* 0x168 the same of the whole list (in its first triangle) */
-	float glowMax;			/* 0x178 the largest channel of the glow at an area: the LOD */
-	int glowAreas;			/* 0x17c the areas summed */
-	int listGlowAreas;		/* 0x180 of the whole list */
-	CTable areas[4];		/* 0x184 BspArea, by level of detail */
-	int numAreas;			/* 0x1a4 */
-	vec3_t center;			/* 0x1a8 */
-	float radio;			/* 0x1b4 */
-	float area;			/* 0x1b8 */
-	BspRegion *region;		/* 0x1bc */
-	BspLMap *LMap;			/* 0x1c0 */
-	CNode3D *node;			/* 0x1c4 */
-	int zone;			/* 0x1c8 sector, -1 none */
-	struct BspTri *zone_next;	/* 0x1cc the next list of the sector */
-	int numTri;			/* 0x1d0 */
-	uint16_t *pTri;			/* 0x1d4 3 indices a triangle */
-	CVertList lv;			/* 0x1d8 */
-	CVertList lv2;			/* 0x1ec */
-	CVertList lv3;			/* 0x200 */
-	void *pVertVB;			/* 0x214 IDirect3DVertexBuffer8 */
-	void *pVertIB;			/* 0x218 */
-	int baseVert;			/* 0x21c of the vertex buffer */
-	int startTri;			/* 0x220 */
+	float glowSum[4];		/* r, g, b of the areas summed and the count + 1 */
+	float listGlowSum[4];		/* the same of the whole list (in its first triangle) */
+	float glowMax;			/* the largest channel of the glow at an area: the LOD */
+	int glowAreas;			/* the areas summed */
+	int listGlowAreas;		/* of the whole list */
+	CTable areas[4];		/* BspArea, by level of detail */
+	int numAreas;
+	vec3_t center;
+	float radio;
+	float area;
+	BspRegion *region;
+	BspLMap *LMap;
+	CNode3D *node;
+	int zone;			/* sector, -1 none */
+	struct BspTri *zone_next;	/* the next list of the sector */
+	int numTri;
+	uint16_t *pTri;			/* 3 indices a triangle */
+	CVertList lv;
+	CVertList lv2;
+	CVertList lv3;
+	void *pVertVB;			/* IDirect3DVertexBuffer8 */
+	void *pVertIB;
+	int baseVert;			/* of the vertex buffer */
+	int startTri;
 } BspTri;
 
 #define BSPTRI_NOLMAP 0x1		/* flags: no light map, the vertex colors */
@@ -157,68 +157,68 @@ static inline uint32_t Color_SwapRB(uint32_t c) {
 	return (c & 0xff000000) | (c & 0xff) << 16 | (c & 0xff00) | (c >> 16 & 0xff);
 }
 
-/* the vertex and index buffers of the lists without light map (0x2c bytes) */
+/* the vertex and index buffers of the lists without light map */
 typedef struct BspNode {
-	struct BspNode *next;		/* 0x00 */
-	int i04, i08, i0c;		/* 0x04 */
-	uint16_t *pTri;			/* 0x10 */
-	CVertList lv;			/* 0x14 */
-	void *pVertVB;			/* 0x28 */
+	struct BspNode *next;
+	int i04, i08, i0c;
+	uint16_t *pTri;
+	CVertList lv;
+	void *pVertVB;
 } BspNode;
 
 /* a sector: its lists (through zone_next) and the vertex buffers by vertex format */
 typedef struct BspZone {
-	BspTri *tris;			/* 0x00 */
-	int unused_04;			/* 0x04 */
-	CRenderVB vb[8];		/* 0x08 */
-	CRenderIB ib;			/* 0xa8 */
+	BspTri *tris;
+	int unused_04;
+	CRenderVB vb[8];
+	CRenderIB ib;
 } BspZone;
 
-/* the map (gBSP, 0x61aa8 bytes) */
+/* the map (gBSP) */
 typedef struct CBsp {
-	char *name;			/* 0x00000 Cad, the scene path */
-	CModel *model;		/* 0x00004 the map model */
-	BspTri *lists[BSP_MAX_LISTS];	/* 0x00008 */
-	int num_lists;			/* 0x4e208 */
-	BspTri *nolmap[BSP_MAX_NOLMAP];	/* 0x4e20c */
-	int num_nolmap;			/* 0x61a8c */
-	BspNode *nodes;			/* 0x61a90 */
-	void *lights;			/* 0x61a94 4 bytes, the stencil shadows */
-	CTable zones;			/* 0x61a98 BspZone, zones[0] for zone -1 */
-	CMaterial *matFX;		/* 0x61aa0 */
-	CMaterial *matWire;		/* 0x61aa4 the wire frame material */
+	char *name;			/* Cad, the scene path */
+	CModel *model;		/* the map model */
+	BspTri *lists[BSP_MAX_LISTS];
+	int num_lists;
+	BspTri *nolmap[BSP_MAX_NOLMAP];
+	int num_nolmap;
+	BspNode *nodes;
+	void *lights;			/* 4 bytes, the stencil shadows */
+	CTable zones;			/* BspZone, zones[0] for zone -1 */
+	CMaterial *matFX;
+	CMaterial *matWire;		/* the wire frame material */
 } CBsp;
 
 /* the TXF cache of the computed light maps: one file a list, "<map>_TXF/<name>.<ext>.<n>.%05d.TXF" */
 typedef struct BspTxf {
-	byte on;			/* 0x000 */
+	byte on;
 	byte pad01[3];
-	void *FileTXF;			/* 0x004 FILE of the exe, the lock while writing */
-	char base[0x104];		/* 0x008 */
-	char name[0x104];		/* 0x10c */
-	char team[0x20];		/* 0x210 COMPUTERNAME */
-	int written;			/* 0x230 */
-	int skipped;			/* 0x234 */
-	int locked;			/* 0x238 */
-	int writeRetries;		/* 0x23c */
-	int readRetries;		/* 0x240 */
-	int deleted;			/* 0x244 */
-	int rebuild;			/* 0x248 */
-	uint32_t start;		/* 0x24c timeGetTime */
+	void *FileTXF;			/* FILE of the exe, the lock while writing */
+	char base[0x104];
+	char name[0x104];
+	char team[0x20];		/* COMPUTERNAME */
+	int written;
+	int skipped;
+	int locked;
+	int writeRetries;
+	int readRetries;
+	int deleted;
+	int rebuild;
+	uint32_t start;		/* timeGetTime */
 } BspTxf;
 
-/* a light of the compiler, taken from the lights of the scene (0x118 bytes) */
+/* a light of the compiler, taken from the lights of the scene */
 typedef struct BspLight {
-	vec3_t pos;			/* 0x00 */
-	vec3_t dir;			/* 0x0c unit, (2 -1 1) for the omni lights */
-	byte point;			/* 0x18 not a directional light */
-	byte shadow;			/* 0x19 */
-	byte stencil;			/* 0x1a the shadows of the node too (NODE_SHADOW) */
-	byte noLmap;			/* 0x1b node flag 27 */
-	float rad;			/* 0x1c */
-	IllumLight illum;			/* 0x20 the position and direction of its D3D light from pos and dir */
-	CGroundHit cache;		/* 0x8c the last hit of the shadow traces (CGround_Trace) */
-	char name[0x80];		/* 0x98 of the node */
+	vec3_t pos;
+	vec3_t dir;			/* unit, (2 -1 1) for the omni lights */
+	byte point;			/* not a directional light */
+	byte shadow;
+	byte stencil;			/* the shadows of the node too (NODE_SHADOW) */
+	byte noLmap;			/* node flag 27 */
+	float rad;
+	IllumLight illum;			/* the position and direction of its D3D light from pos and dir */
+	CGroundHit cache;		/* the last hit of the shadow traces (CGround_Trace) */
+	char name[0x80];		/* of the node */
 } BspLight;
 
 extern BspLMap *g_BspLMaps;	/* the pages */
@@ -330,20 +330,20 @@ void CBsp_Calculate(CBsp *self);
  * planes through the middle of their box while both sides keep more than 5 triangles.
  */
 typedef struct Bsp2Tri {
-	vec3_t v[3];			/* 0x00 */
-	plane_t plane;			/* 0x24 */
-	CMaterial *Mat;			/* 0x34 */
+	vec3_t v[3];
+	plane_t plane;
+	CMaterial *Mat;
 } Bsp2Tri;
 
 typedef struct Bsp2Node {
-	plane_t plane;			/* 0x00 */
-	struct Bsp2Node *front;		/* 0x10 the side of the normal */
-	struct Bsp2Node *back;		/* 0x14 */
-	CTable tris;			/* 0x18 Bsp2Tri, of the leaves */
+	plane_t plane;
+	struct Bsp2Node *front;		/* the side of the normal */
+	struct Bsp2Node *back;
+	CTable tris;			/* Bsp2Tri, of the leaves */
 } Bsp2Node;
 
 typedef struct BspLights {
-	Bsp2Node *root;			/* 0x0 */
+	Bsp2Node *root;
 } BspLights;
 
 void BspLights_dtor(void *self);
@@ -357,19 +357,19 @@ void Bsp2_Stats(int print);
  * section name of the .rad files of the map ("rgbi", "aten", "falloff").
  */
 typedef struct RadAreaLight {
-	struct RadAreaLight *next;		/* 0x00 */
-	char *name;			/* 0x04 String_Set */
-	byte rgbi[4];			/* 0x08 r g b, from the diffuse color of the material */
-	float intensity;		/* 0x0c */
-	float unused_10;			/* 0x10 */
-	float atten[2];			/* 0x14 */
-	float falloff;			/* 0x1c */
+	struct RadAreaLight *next;
+	char *name;			/* String_Set */
+	byte rgbi[4];			/* r g b, from the diffuse color of the material */
+	float intensity;
+	float unused_10;
+	float atten[2];
+	float falloff;
 } RadAreaLight;
 
 typedef struct CRadiosity {
-	CIniFile ini;			/* 0x0 the .rad files */
-	CHashTable *table;		/* 0x4 the area lights by material */
-	RadAreaLight *list;		/* 0x8 */
+	CIniFile ini;			/* the .rad files */
+	CHashTable *table;		/* the area lights by material */
+	RadAreaLight *list;
 } CRadiosity;
 
 /* the color and the plane of parent */

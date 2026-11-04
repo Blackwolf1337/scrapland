@@ -19,58 +19,58 @@
 #define CWALKCHARENTITY_SIZE sizeof(cWalkCharEntity)
 
 typedef struct cWalkCharEntity {
-	cWithLifeEntity wl;		/* 0x000 */
+	cWithLifeEntity wl;
 	/* cWalkCharEntity */
-	Nto1Node collide;		/* 0x3e8 "CollideEntity": the entity it ran into */
-	float moved2;			/* 0x3f8 the square of the distance of the last walk step */
-	float headPitch;		/* 0x3fc of the camera node (or the render angles) */
-	int camNode;			/* 0x400 DC_Camera of the model */
-	CSphereBox sphereBox;		/* 0x404 the cache of the slides */
-	int ownerSlot;			/* 0x424 "UsrControl": the player slot, -1 for an AI */
-	vec3_t view;			/* 0x428 "ViewAng" */
-	vec3_t viewVel;			/* 0x434 */
-	vec3_t slotView;		/* 0x440 of the last slot */
-	vec3_t renderView;		/* 0x44c between two slots */
-	float relaxTime;		/* 0x458 "TimeToExtraRelax" */
-	float floorDist;		/* 0x45c "FloorDist" */
-	float slideTime;		/* 0x460 "SlidingAndFallingTime" */
-	byte falling;			/* 0x464 "isFalling" */
-	byte walking;			/* 0x465 "isWalking" */
+	Nto1Node collide;		/* "CollideEntity": the entity it ran into */
+	float moved2;			/* the square of the distance of the last walk step */
+	float headPitch;		/* of the camera node (or the render angles) */
+	int camNode;			/* DC_Camera of the model */
+	CSphereBox sphereBox;		/* the cache of the slides */
+	int ownerSlot;			/* "UsrControl": the player slot, -1 for an AI */
+	vec3_t view;			/* "ViewAng" */
+	vec3_t viewVel;
+	vec3_t slotView;		/* of the last slot */
+	vec3_t renderView;		/* between two slots */
+	float relaxTime;		/* "TimeToExtraRelax" */
+	float floorDist;		/* "FloorDist" */
+	float slideTime;		/* "SlidingAndFallingTime" */
+	byte falling;			/* "isFalling" */
+	byte walking;			/* "isWalking" */
 	byte pad_466[2];
-	float displAng;			/* 0x468 "DisplAng": the walk direction against the view */
-	float unused_46c;			/* 0x46c */
-	float lastMove;			/* 0x470 the move of the walk while it stops */
-	float lastDisplAng;		/* 0x474 */
-	float walkTime;			/* 0x478 the stop is kept that long */
-	float move;			/* 0x47c 0..1 from the control */
-	vec3_t fallVel;			/* 0x480 the velocity of the fall */
-	byte disableControl;		/* 0x48c "DisableControl" */
+	float displAng;			/* "DisplAng": the walk direction against the view */
+	float unused_46c;
+	float lastMove;			/* the move of the walk while it stops */
+	float lastDisplAng;
+	float walkTime;			/* the stop is kept that long */
+	float move;			/* 0..1 from the control */
+	vec3_t fallVel;			/* the velocity of the fall */
+	byte disableControl;		/* "DisableControl" */
 	byte pad_48d[3];
-	cAction *walkEnd;		/* 0x490 the end action of the walk */
-	float yModelDisp;		/* 0x494 "YModelDisp" */
-	float energyUsed;		/* 0x498 1 minus the weapon energy */
-	cPy_Function onEnergyFull;	/* 0x49c "OnEnergyBarFull" */
-	float energyBarDecr;		/* 0x4b0 "EnergyBarDecr": the energy an action needs */
-	float energyTime;		/* 0x4b4 "EnergyBarConstantDecr" */
-	float hitFlash;			/* 0x4b8 the seconds left of the flash of a hit */
-	Nto1Node reposHead;		/* 0x4bc the point of the character group it was placed at (cAICGPoint) */
-	int money;			/* 0x4cc "Money" */
-	int moneyReward;		/* 0x4d0 "MoneyReward" */
-	byte viewLock;			/* 0x4d4 the actions set the view angles */
+	cAction *walkEnd;		/* the end action of the walk */
+	float yModelDisp;		/* "YModelDisp" */
+	float energyUsed;		/* 1 minus the weapon energy */
+	cPy_Function onEnergyFull;	/* "OnEnergyBarFull" */
+	float energyBarDecr;		/* "EnergyBarDecr": the energy an action needs */
+	float energyTime;		/* "EnergyBarConstantDecr" */
+	float hitFlash;			/* the seconds left of the flash of a hit */
+	Nto1Node reposHead;		/* the point of the character group it was placed at (cAICGPoint) */
+	int money;			/* "Money" */
+	int moneyReward;		/* "MoneyReward" */
+	byte viewLock;			/* the actions set the view angles */
 	byte pad_4d5[3];
-	float viewLockF;		/* 0x4d8 the blend of the view lock */
-	byte pushOn;			/* 0x4dc a push of an AI */
+	float viewLockF;		/* the blend of the view lock */
+	byte pushOn;			/* a push of an AI */
 	byte pad_4dd[3];
-	vec3_t push;			/* 0x4e0 */
-	cWalkCharControl control;	/* 0x4ec */
-	Nto1Node listen;		/* 0x520 "SelectedEntity": the one it listens to */
-	byte listenOn;			/* 0x530 "AutoSelect" */
+	vec3_t push;
+	cWalkCharControl control;
+	Nto1Node listen;		/* "SelectedEntity": the one it listens to */
+	byte listenOn;			/* "AutoSelect" */
 	byte pad_531[3];
-	Nto1Node victim;		/* 0x534 "AutoSelectedEntity": the selection of the arrow */
-	cPy_Function outSelect;		/* 0x544 "OutSelectFunc" */
-	cPy_Function abortSelect;	/* 0x558 "AbortSelectFunc" */
-	float abortTime;		/* 0x56c the selection is kept that long without a change */
-	int abortOpt;			/* 0x570 the option of the arrow at the last slot */
+	Nto1Node victim;		/* "AutoSelectedEntity": the selection of the arrow */
+	cPy_Function outSelect;		/* "OutSelectFunc" */
+	cPy_Function abortSelect;	/* "AbortSelectFunc" */
+	float abortTime;		/* the selection is kept that long without a change */
+	int abortOpt;			/* the option of the arrow at the last slot */
 } cWalkCharEntity;
 
 static inline cWalkCharEntity *WChar(const void *e) {
@@ -88,18 +88,18 @@ extern cGVar GVar_ArrowDeactivationRadius;
 extern cGVar GVar_ActiveExtrapolation;
 #define g_ActiveExtrapolation (GVar_ActiveExtrapolation.value.i)		/* the view is extrapolated by its velocity */
 
-/* the AI of the character classes (AI/, rva 0x066120..0x086100); operator new of the size, then the constructor */
-void *cAISentinel_ctor(void *mem, cEntity *e, int *arg);	/* 0x380 bytes */
-void *cAIGear_ctor(void *mem, cEntity *e, int *arg);		/* 0x390 */
-void *cAINurse_ctor(void *mem, cEntity *e, int *arg);		/* 0x384 */
-void *cAIBankDirector_ctor(void *mem, cEntity *e, int *arg);	/* 0x384 */
-void *cAIMayor_ctor(void *mem, cEntity *e, int *arg);		/* 0x380 */
-void *cAIPolice_ctor(void *mem, cEntity *e, int *arg);		/* 0x380 */
-void *cAIBishop_ctor(void *mem, cEntity *e, int *arg);		/* 0x398 */
-void *cAIMessenger_ctor(void *mem, cEntity *e, int *arg);	/* 0x390 */
-void *cAIBankMaster_ctor(void *mem, cEntity *e, int *arg);	/* 0x384 */
-void *cAIDesktop_ctor(void *mem, cEntity *e, int *arg);		/* 0x380 */
-void *cAIHuman_ctor(void *mem, cEntity *e, int *arg);		/* 0x380 */
+/* the AI of the character classes (AI/); operator new of the size, then the constructor */
+void *cAISentinel_ctor(void *mem, cEntity *e, int *arg);	/* bytes */
+void *cAIGear_ctor(void *mem, cEntity *e, int *arg);
+void *cAINurse_ctor(void *mem, cEntity *e, int *arg);
+void *cAIBankDirector_ctor(void *mem, cEntity *e, int *arg);
+void *cAIMayor_ctor(void *mem, cEntity *e, int *arg);
+void *cAIPolice_ctor(void *mem, cEntity *e, int *arg);
+void *cAIBishop_ctor(void *mem, cEntity *e, int *arg);
+void *cAIMessenger_ctor(void *mem, cEntity *e, int *arg);
+void *cAIBankMaster_ctor(void *mem, cEntity *e, int *arg);
+void *cAIDesktop_ctor(void *mem, cEntity *e, int *arg);
+void *cAIHuman_ctor(void *mem, cEntity *e, int *arg);
 void *cAIChar_ctor(void *mem, cEntity *e, int *arg);		/* 0x380, every other class */
 
 /* engine side */
@@ -116,7 +116,7 @@ float cWalkCharEntity_GetEnergyFrac(cEntity *e);
 int cWalkCharEntity_GetOwnerSlot(cEntity *e);
 /* the count of the full batteries */
 int cWalkCharEntity_GetBatteries(cEntity *e);
-/* WithLifeEntity.h vf09 and vf10: the tests of the collision sphere */
+/* WithLifeEntity.h and: the tests of the collision sphere */
 byte cWithLifeEntity_TestLine(cEntity *self, const vec3_t *from, vec3_t *hit);
 byte cWithLifeEntity_TestSphere(cEntity *self, cEntity *exclude, const vec3_t *center, float radius,
 	const vec3_t *prev);
@@ -124,7 +124,7 @@ byte cWithLifeEntity_TestSphere(cEntity *self, cEntity *exclude, const vec3_t *c
 void cWalkCharEntity_SetEnergy(cEntity *self, float energy);
 /* the falling state of a character (0x464), with what goes with it */
 void cWalkCharEntity_SetFalling(cEntity *self, byte on);
-/* WithLifeEntity.h vf51 */
+/* WithLifeEntity.h */
 void cWithLifeEntity_SetMass(cEntity *self, float mass);
 /* the view of a character set to the direction from pos to it */
 void cWalkCharEntity_SetViewFrom(cEntity *self, const vec3_t *pos);

@@ -41,138 +41,138 @@ typedef struct cAICharControl cAICharControl;
 /* the slots of cAICharControl::vftable (100); the 2D control adds three, the 3D control one. The handlers of the
  * modes (UpdateGoTo ..) take the time of the frame */
 typedef struct cAICharControlVtbl {
-	void (*Free)(cAICharControl *self);			/* 0x00 */
-	void(*Draw)(cAICharControl *self);						/* 0x04 */
-	int(*GetWalkDir)(cAICharControl *self);					/* 0x08 */
-	int(*Busy)(cAICharControl *self);						/* 0x0c the strafe side */
-	int(*GetOrbitSide)(cAICharControl *self);					/* 0x10 */
+	void (*Free)(cAICharControl *self);
+	void(*Draw)(cAICharControl *self);
+	int(*GetWalkDir)(cAICharControl *self);
+	int(*Busy)(cAICharControl *self);						/* the strafe side */
+	int(*GetOrbitSide)(cAICharControl *self);
 	/* the frame: the checks of the AI, then the handler of the mode; 0 when the target is gone */
-	byte(*Update)(cAICharControl *self, float dt);				/* 0x14 */
-	byte (*SetMove)(cAICharControl *self, int mode, ...);					/* 0x18 */
-	void(*Reset)(cAICharControl *self);						/* 0x1c */
-	void(*SetHold)(cAICharControl *self, byte on);				/* 0x20 */
+	byte(*Update)(cAICharControl *self, float dt);
+	byte (*SetMove)(cAICharControl *self, int mode, ...);
+	void(*Reset)(cAICharControl *self);
+	void(*SetHold)(cAICharControl *self, byte on);
 	/* the turn, walk, strafe and jump values of the control 0 */
-	void(*Stop)(cAICharControl *self);						/* 0x24 */
-	byte(*IsDirect)(cAICharControl *self);					/* 0x28 */
-	byte(*IsDirect2)(cAICharControl *self);					/* 0x2c */
-	void(*GetGoal)(cAICharControl *self, vec3_t *out);				/* 0x30 */
-	void(*GetDest)(cAICharControl *self, vec3_t *out);				/* 0x34 */
+	void(*Stop)(cAICharControl *self);
+	byte(*IsDirect)(cAICharControl *self);
+	byte(*IsDirect2)(cAICharControl *self);
+	void(*GetGoal)(cAICharControl *self, vec3_t *out);
+	void(*GetDest)(cAICharControl *self, vec3_t *out);
 	/* the corridor of the body from a to b free (the radius r) */
-	byte(*TestPath)(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);	/* 0x38 */
-	byte(*TestLine)(cAICharControl *self, const vec3_t *a, const vec3_t *b);		/* 0x3c */
-	byte(*TestSides)(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);	/* 0x40 */
-	void(*GetAvoidA)(cAICharControl *self, vec3_t *out);				/* 0x44 */
-	void(*GetAvoidB)(cAICharControl *self, vec3_t *out);				/* 0x48 */
-	void(*ClearAvoid)(cAICharControl *self);					/* 0x4c */
-	void(*SetSpeed)(cAICharControl *self, float speed);				/* 0x50 */
-	void(*RestartSlots)(cAICharControl *self);					/* 0x54 */
-	byte(*IsBlocked)(cAICharControl *self);					/* 0x58 */
-	byte(*GetE4)(cAICharControl *self);						/* 0x5c */
-	void *(*GetAvoidEnt)(cAICharControl *self);					/* 0x60 */
-	void(*Nop)(cAICharControl *self);						/* 0x64 */
+	byte(*TestPath)(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);
+	byte(*TestLine)(cAICharControl *self, const vec3_t *a, const vec3_t *b);
+	byte(*TestSides)(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);
+	void(*GetAvoidA)(cAICharControl *self, vec3_t *out);
+	void(*GetAvoidB)(cAICharControl *self, vec3_t *out);
+	void(*ClearAvoid)(cAICharControl *self);
+	void(*SetSpeed)(cAICharControl *self, float speed);
+	void(*RestartSlots)(cAICharControl *self);
+	byte(*IsBlocked)(cAICharControl *self);
+	byte(*GetE4)(cAICharControl *self);
+	void *(*GetAvoidEnt)(cAICharControl *self);
+	void(*Nop)(cAICharControl *self);
 	/* the point walked to is the last one before the end (none: no point) */
-	byte(*AtPathEnd)(cAICharControl *self);					/* 0x68 */
-	byte(*GoalAtStart)(cAICharControl *self);					/* 0x6c */
+	byte(*AtPathEnd)(cAICharControl *self);
+	byte(*GoalAtStart)(cAICharControl *self);
 	/* the target of a follow or away move gone: the event 3, 0 */
-	byte(*CheckTarget)(cAICharControl *self);					/* 0x70 */
-	void(*SetTurnSpeed)(cAICharControl *self, float speed);			/* 0x74 */
+	byte(*CheckTarget)(cAICharControl *self);
+	void(*SetTurnSpeed)(cAICharControl *self, float speed);
 	/* the strafe around a character at pos (the two sides of TryStrafe) */
 	byte(*StrafeBack)(cAICharControl *self, const vec3_t *pos, const vec3_t *away, const vec3_t *dir,
-		float dist, byte left, byte flag);						/* 0x78 */
+		float dist, byte left, byte flag);
 	byte(*StrafeFwd)(cAICharControl *self, const vec3_t *pos, const vec3_t *away, const vec3_t *dir,
-		float dist, byte left, byte flag);						/* 0x7c */
+		float dist, byte left, byte flag);
 	byte(*TryStrafe)(cAICharControl *self, int side, cEntity *e, byte a, float b, byte c, float d,
-		byte e2);									/* 0x80 */
-	byte(*Facing)(cAICharControl *self, cEntity *e, vec3_t *toE, vec3_t *toGoal);	/* 0x84 */
-	byte(*InWay)(cAICharControl *self, vec3_t dest, cEntity *e);			/* 0x88 */
-	byte(*Near)(cAICharControl *self, cEntity *e);				/* 0x8c */
-	float(*KeepDist)(cAICharControl *self, cEntity *e);				/* 0x90 */
-	float(*StrafeDist)(cAICharControl *self, cEntity *e);				/* 0x94 */
-	byte(*OnFloor)(cAICharControl *self, const vec3_t *p);			/* 0x98 */
-	byte(*GoalAhead)(cAICharControl *self);					/* 0x9c */
-	byte(*TestPathEnd)(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);	/* 0xa0 */
-	float(*Dist)(cAICharControl *self, const vec3_t *a, const vec3_t *b);		/* 0xa4 */
-	float(*DistSq)(cAICharControl *self, const vec3_t *a, const vec3_t *b);		/* 0xa8 */
-	void(*Away)(cAICharControl *self, Nto1Node *target, byte flag);		/* 0xac */
-	byte(*UpdateAway)(cAICharControl *self, float dt);				/* 0xb0 */
+		byte e2);
+	byte(*Facing)(cAICharControl *self, cEntity *e, vec3_t *toE, vec3_t *toGoal);
+	byte(*InWay)(cAICharControl *self, vec3_t dest, cEntity *e);
+	byte(*Near)(cAICharControl *self, cEntity *e);
+	float(*KeepDist)(cAICharControl *self, cEntity *e);
+	float(*StrafeDist)(cAICharControl *self, cEntity *e);
+	byte(*OnFloor)(cAICharControl *self, const vec3_t *p);
+	byte(*GoalAhead)(cAICharControl *self);
+	byte(*TestPathEnd)(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);
+	float(*Dist)(cAICharControl *self, const vec3_t *a, const vec3_t *b);
+	float(*DistSq)(cAICharControl *self, const vec3_t *a, const vec3_t *b);
+	void(*Away)(cAICharControl *self, Nto1Node *target, byte flag);
+	byte(*UpdateAway)(cAICharControl *self, float dt);
 	/* the view near the way to the target: the event 6 */
-	void(*AwayCheck)(cAICharControl *self);					/* 0xb4 */
+	void(*AwayCheck)(cAICharControl *self);
 	/* the walk back from the target while it comes near, none while another character sees it */
-	void(*AwayWalk)(cAICharControl *self);					/* 0xb8 */
+	void(*AwayWalk)(cAICharControl *self);
 	/* e within ang of the back (the front) of the view, on the floor */
-	byte(*Behind)(cAICharControl *self, cEntity *e, float ang);			/* 0xbc */
-	byte(*InFront)(cAICharControl *self, cEntity *e, float ang);			/* 0xc0 */
-	byte(*Route)(cAICharControl *self, const vec3_t *p, float dist, float speed, byte a, byte b);	/* 0xc4 */
-	void(*SetDir)(cAICharControl *self, const vec3_t *dir);			/* 0xc8 */
-	byte(*UpdateDir)(cAICharControl *self, float dt);				/* 0xcc */
+	byte(*Behind)(cAICharControl *self, cEntity *e, float ang);
+	byte(*InFront)(cAICharControl *self, cEntity *e, float ang);
+	byte(*Route)(cAICharControl *self, const vec3_t *p, float dist, float speed, byte a, byte b);
+	void(*SetDir)(cAICharControl *self, const vec3_t *dir);
+	byte(*UpdateDir)(cAICharControl *self, float dt);
 	/* the view near dir: the event 6 */
-	void(*DirCheck)(cAICharControl *self);					/* 0xd0 */
+	void(*DirCheck)(cAICharControl *self);
 	/* the view turned to the goal (turnGain, turnStep) */
-	void(*DirTurn)(cAICharControl *self);					/* 0xd4 */
-	void(*CheckArrived)(cAICharControl *self);					/* 0xd8 */
+	void(*DirTurn)(cAICharControl *self);
+	void(*CheckArrived)(cAICharControl *self);
 	/* 0 (and the control stopped) when the next segment of the path is cut near the character */
-	byte(*CanMove)(cAICharControl *self);					/* 0xdc */
-	byte(*GoTo)(cAICharControl *self, const vec3_t *p, float dist, float speed);	/* 0xe0 */
-	byte(*GoToDirect)(cAICharControl *self, const vec3_t *p, float dist, float speed);	/* 0xe4 */
-	byte(*FindPath)(cAICharControl *self, const vec3_t *p);			/* 0xe8 */
+	byte(*CanMove)(cAICharControl *self);
+	byte(*GoTo)(cAICharControl *self, const vec3_t *p, float dist, float speed);
+	byte(*GoToDirect)(cAICharControl *self, const vec3_t *p, float dist, float speed);
+	byte(*FindPath)(cAICharControl *self, const vec3_t *p);
 	/* the path is the line to p */
-	byte(*DirectPath)(cAICharControl *self, const vec3_t *p);			/* 0xec */
+	byte(*DirectPath)(cAICharControl *self, const vec3_t *p);
 	/* p moved a random step while the way stays free */
-	void(*StepGoal)(cAICharControl *self, vec3_t *p);				/* 0xf0 */
-	byte(*UpdateGoTo)(cAICharControl *self, float dt);				/* 0xf4 */
-	byte(*UpdateRoute)(cAICharControl *self, float dt);				/* 0xf8 */
-	byte(*UpdateGoToDirect)(cAICharControl *self, float dt);			/* 0xfc */
+	void(*StepGoal)(cAICharControl *self, vec3_t *p);
+	byte(*UpdateGoTo)(cAICharControl *self, float dt);
+	byte(*UpdateRoute)(cAICharControl *self, float dt);
+	byte(*UpdateGoToDirect)(cAICharControl *self, float dt);
 	/* the goal on the first of NumPointsSearchSegmentCharAI points from a to b the body reaches */
-	byte(*GoalOnLine)(cAICharControl *self, const vec3_t *a, const vec3_t *b);	/* 0x100 */
+	byte(*GoalOnLine)(cAICharControl *self, const vec3_t *a, const vec3_t *b);
 	/* near the goal (or with the goal lost) the goal on to the next point of the path, or between */
-	void(*NextGoal)(cAICharControl *self);					/* 0x104 */
+	void(*NextGoal)(cAICharControl *self);
 	/* the goal on to the last point of the path the body reaches, or between it and the next */
-	void(*NextGoalPath)(cAICharControl *self);					/* 0x108 */
+	void(*NextGoalPath)(cAICharControl *self);
 	/* the goal on along the path while the way is cut; the path searched again when no point is free */
-	byte(*UpdatePath)(cAICharControl *self);					/* 0x10c */
+	byte(*UpdatePath)(cAICharControl *self);
 	/* at the end of a path that does not reach dest: the line to dest (stuck, pathRes 2), 0 then */
-	byte(*CheckPathEnd)(cAICharControl *self);					/* 0x110 */
-	byte(*UpdateRoutePath)(cAICharControl *self);				/* 0x114 */
-	void(*Turn)(cAICharControl *self);						/* 0x118 */
+	byte(*CheckPathEnd)(cAICharControl *self);
+	byte(*UpdateRoutePath)(cAICharControl *self);
+	void(*Turn)(cAICharControl *self);
 	/* the strafe around the characters in the way (slotStrafe) */
-	void(*Strafe)(cAICharControl *self);						/* 0x11c */
+	void(*Strafe)(cAICharControl *self);
 	/* the characters near: link to the first one in the way that can be passed */
-	byte(*FindAvoid)(cAICharControl *self);					/* 0x120 */
-	byte(*Avoid)(cAICharControl *self, cEntity *e, byte *found);			/* 0x124 */
+	byte(*FindAvoid)(cAICharControl *self);
+	byte(*Avoid)(cAICharControl *self, cEntity *e, byte *found);
 	/* the strafe around the linked character (or the one the character ran into) */
-	void(*UpdateAvoid)(cAICharControl *self);					/* 0x128 */
+	void(*UpdateAvoid)(cAICharControl *self);
 	/* walking characters within MarginDetectCollCharAI */
-	byte(*CharsNear)(cAICharControl *self);					/* 0x12c */
-	byte(*SideBlocked)(cAICharControl *self, int side);				/* 0x130 */
+	byte(*CharsNear)(cAICharControl *self);
+	byte(*SideBlocked)(cAICharControl *self, int side);
 	/* the unit vector to the side (out returned) */
-	vec3_t *(*SideDir)(cAICharControl *self, vec3_t *out, int side);		/* 0x134 */
-	void(*WalkFwd)(cAICharControl *self);					/* 0x138 */
-	byte(*CheckGoTo)(cAICharControl *self);					/* 0x13c */
-	byte(*CheckRoute)(cAICharControl *self);					/* 0x140 */
-	byte(*CheckFollow)(cAICharControl *self);					/* 0x144 */
-	byte(*FindRoute)(cAICharControl *self);					/* 0x148 */
+	vec3_t *(*SideDir)(cAICharControl *self, vec3_t *out, int side);
+	void(*WalkFwd)(cAICharControl *self);
+	byte(*CheckGoTo)(cAICharControl *self);
+	byte(*CheckRoute)(cAICharControl *self);
+	byte(*CheckFollow)(cAICharControl *self);
+	byte(*FindRoute)(cAICharControl *self);
 	/* the view turned to the target (or along avoidDir) */
-	void(*TurnFollow)(cAICharControl *self);					/* 0x14c */
-	byte(*Follow)(cAICharControl *self, Nto1Node *target, float near, float far, float speed);	/* 0x150 */
-	byte(*UpdateFollowMode)(cAICharControl *self, float dt);			/* 0x154 */
+	void(*TurnFollow)(cAICharControl *self);
+	byte(*Follow)(cAICharControl *self, Nto1Node *target, float near, float far, float speed);
+	byte(*UpdateFollowMode)(cAICharControl *self, float dt);
 	/* the strafe of CheckWait instead of the walk; 0 when there is none */
-	byte(*Wait)(cAICharControl *self, float dt);					/* 0x158 */
+	byte(*Wait)(cAICharControl *self, float dt);
 	/* the strafe while the target goes out of sight (waitTime up to TimeStrafeLostObjCharAI) */
-	byte(*CheckWait)(cAICharControl *self);					/* 0x15c */
-	void(*StrafeWalk)(cAICharControl *self);					/* 0x160 */
-	byte(*AIBlocked)(cAICharControl *self);						/* 0x164 the AI cannot go on (gear), 0 */
-	void(*Strafe2)(cAICharControl *self);					/* 0x168 */
-	void(*Walk)(cAICharControl *self);						/* 0x16c */
-	void(*Walk2)(cAICharControl *self);						/* 0x170 */
-	byte(*UpdateFollow)(cAICharControl *self);					/* 0x174 */
-	byte(*UpdateFollowB)(cAICharControl *self);					/* 0x178 */
-	byte(*FollowPath)(cAICharControl *self, Nto1Node *target, float near, float far, float speed);	/* 0x17c */
-	byte(*UpdateFollowPath)(cAICharControl *self, float dt);			/* 0x180 */
+	byte(*CheckWait)(cAICharControl *self);
+	void(*StrafeWalk)(cAICharControl *self);
+	byte(*AIBlocked)(cAICharControl *self);						/* the AI cannot go on (gear), 0 */
+	void(*Strafe2)(cAICharControl *self);
+	void(*Walk)(cAICharControl *self);
+	void(*Walk2)(cAICharControl *self);
+	byte(*UpdateFollow)(cAICharControl *self);
+	byte(*UpdateFollowB)(cAICharControl *self);
+	byte(*FollowPath)(cAICharControl *self, Nto1Node *target, float near, float far, float speed);
+	byte(*UpdateFollowPath)(cAICharControl *self, float dt);
 	/* the strafe around the target while it looks at the character (orbitSide) */
-	void(*Orbit)(cAICharControl *self);						/* 0x184 */
+	void(*Orbit)(cAICharControl *self);
 	/* the side of the orbit at dist from the target */
-	byte(*StartOrbit)(cAICharControl *self, float dist);				/* 0x188 */
-	void(*Stop2)(cAICharControl *self);						/* 0x18c */
+	byte(*StartOrbit)(cAICharControl *self, float dist);
+	void(*Stop2)(cAICharControl *self);
 } cAICharControlVtbl;
 
 /* calls through the slots of cAICharControlVtbl */
@@ -537,9 +537,9 @@ static inline void AICC_WalkFwd(void *self) {
 /* the slots the 2D and the 3D control add */
 typedef struct cAICharControl2DVtbl {
 	cAICharControlVtbl base;
-	byte(*FloorAhead)(cAICharControl *self, const vec3_t *p);			/* 0x190 */
-	byte(*FloorAt)(cAICharControl *self, const vec3_t *p, vec3_t *out);		/* 0x194 */
-	byte(*TestStep)(cAICharControl *self, const vec3_t *a, const vec3_t *b, const vec3_t *c, float r);	/* 0x198 */
+	byte(*FloorAhead)(cAICharControl *self, const vec3_t *p);
+	byte(*FloorAt)(cAICharControl *self, const vec3_t *p, vec3_t *out);
+	byte(*TestStep)(cAICharControl *self, const vec3_t *a, const vec3_t *b, const vec3_t *c, float r);
 } cAICharControl2DVtbl;
 
 /* calls through the slots of cAICharControl2DVtbl */
@@ -557,7 +557,7 @@ static inline byte AICC2D_TestStep(void *self, const vec3_t *a, const vec3_t *b,
 
 typedef struct cAICharControl3DVtbl {
 	cAICharControlVtbl base;
-	byte(*TestStep)(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);	/* 0x190 */
+	byte(*TestStep)(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);
 } cAICharControl3DVtbl;
 
 /* the AI of the character (cAIChar, include/scrap/ai.h): the control calls GetTarget (0x38) and Event (0x58) */
@@ -569,106 +569,106 @@ typedef struct cAICCSeg {
 } cAICCSeg;
 
 struct cAICharControl {
-	const cAICharControlVtbl *vftable;	/* 0x000 */
-	cSlotController slotWalk;	/* 0x004 the distance checks of Walk and AwayWalk (0.2 s) */
-	cSlotController slotSee2;	/* 0x014 AwayWalk: the other characters that see it (0.2 s) */
-	cSlotController slotStrafe;	/* 0x024 the strafe around the characters in the way (0.133 s) */
-	cSlotController slotStop;	/* 0x034 CanMove (0.2 s) */
-	cAIChar *ai;			/* 0x044 the AI of the character */
-	cEntity *ent;			/* 0x048 the character (cWalkCharEntity) */
-	cWalkCharControl *ctrl;		/* 0x04c the control of the character the AI steers */
-	float radius;			/* 0x050 the radius of the character */
-	float arriveDist;		/* 0x054 the goal is reached that near */
-	float arriveR;			/* 0x058 the smaller of radius and arriveDist */
-	float dt;			/* 0x05c the time of the frame */
-	float diffX;			/* 0x060 the angles to the goal (Turn) */
-	float diffY;			/* 0x064 */
-	vec3_t dest;			/* 0x068 the end of the move */
-	int mode;			/* 0x074 AICC_ */
-	int prevMode;			/* 0x078 */
-	int soft;			/* 0x07c the argument of the constructor: the path search may give up first */
-	float turnX;			/* 0x080 the vertical turn of the last frame */
-	float turnY;			/* 0x084 the horizontal turn of the last frame */
-	byte targetChanged;		/* 0x088 a follow move got a new target */
+	const cAICharControlVtbl *vftable;
+	cSlotController slotWalk;	/* the distance checks of Walk and AwayWalk (0.2 s) */
+	cSlotController slotSee2;	/* AwayWalk: the other characters that see it (0.2 s) */
+	cSlotController slotStrafe;	/* the strafe around the characters in the way (0.133 s) */
+	cSlotController slotStop;	/* CanMove (0.2 s) */
+	cAIChar *ai;			/* the AI of the character */
+	cEntity *ent;			/* the character (cWalkCharEntity) */
+	cWalkCharControl *ctrl;		/* the control of the character the AI steers */
+	float radius;			/* the radius of the character */
+	float arriveDist;		/* the goal is reached that near */
+	float arriveR;			/* the smaller of radius and arriveDist */
+	float dt;			/* the time of the frame */
+	float diffX;			/* the angles to the goal (Turn) */
+	float diffY;
+	vec3_t dest;			/* the end of the move */
+	int mode;			/* AICC_ */
+	int prevMode;
+	int soft;			/* the argument of the constructor: the path search may give up first */
+	float turnX;			/* the vertical turn of the last frame */
+	float turnY;			/* the horizontal turn of the last frame */
+	byte targetChanged;		/* a follow move got a new target */
 	byte pad_89[3];
-	float turnGain;			/* 0x08c the turn for an angle of pi */
-	float turnStep;			/* 0x090 the change of the turn in a frame at most */
-	int walkDir;			/* 0x094 0 stop, 1 forward, 2 back */
-	int side;			/* 0x098 the strafe around a character: 0 none, 1, 2 */
-	int strafeDir;			/* 0x09c the strafe of CheckWait: 0 none, 1, 2 */
-	byte flying;			/* 0x0a0 the argument of FOLLOW */
-	byte stopped;			/* 0x0a1 CanMove stopped the control */
+	float turnGain;			/* the turn for an angle of pi */
+	float turnStep;			/* the change of the turn in a frame at most */
+	int walkDir;			/* 0 stop, 1 forward, 2 back */
+	int side;			/* the strafe around a character: 0 none, 1, 2 */
+	int strafeDir;			/* the strafe of CheckWait: 0 none, 1, 2 */
+	byte flying;			/* the argument of FOLLOW */
+	byte stopped;			/* CanMove stopped the control */
 	byte pad_a2[2];
-	vec3_t avoidA;			/* 0x0a4 the segment of the last path check (the character, the goal), */
-	vec3_t avoidB;			/* 0x0b0 -FLT_MAX after ClearAvoid */
-	byte hold;			/* 0x0bc */
-	byte newPath;			/* 0x0bd */
+	vec3_t avoidA;			/* the segment of the last path check (the character, the goal) */
+	vec3_t avoidB;			/* -FLT_MAX after ClearAvoid */
+	byte hold;
+	byte newPath;
 	byte pad_be[2];
-	float avoidTime;		/* 0x0c0 the time of the strafe around a character */
-	Nto1Node link;			/* 0x0c4 to the character avoided (the head at 0x254 of it), data the AI */
-	byte blocked;			/* 0x0d4 */
-	byte blockedByChar;		/* 0x0d5 other characters are in the way (the collision event may fire) */
+	float avoidTime;		/* the time of the strafe around a character */
+	Nto1Node link;			/* to the character avoided (the head at 0x254 of it), data the AI */
+	byte blocked;
+	byte blockedByChar;		/* other characters are in the way (the collision event may fire) */
 	byte pad_d6[2];
-	vec3_t avoidDir;		/* 0x0d8 0 for none */
-	byte avoidFound;		/* 0x0e4 FindAvoid found a character */
+	vec3_t avoidDir;		/* 0 for none */
+	byte avoidFound;		/* FindAvoid found a character */
 	byte pad_e5[3];
-	float collEventTime;		/* 0x0e8 the times since the last collision event, stop, test (TimeEventCollCharAI ..) */
-	float collStopTime;		/* 0x0ec */
-	float collTestTime;		/* 0x0f0 */
-	float speed;			/* 0x0f4 the walk value */
-	int lifeMark;			/* 0x0f8 the life of the character */
-	cSlotController slotPath;	/* 0x0fc the path is searched again (0.133 s) */
-	vec3_t goal;			/* 0x10c the next point of the path */
-	cNWVecList path;		/* 0x118 */
-	vec3_t *pathPoint;		/* 0x130 the point of the path walked to */
-	vec3_t *prevPoint;		/* 0x134 the one before it UpdatePath skipped */
-	float turnXNew;			/* 0x138 */
-	float turnYNew;			/* 0x13c */
-	byte unused_140;			/* 0x140 */
-	byte goalLost;			/* 0x141 the goal was not reachable at the last UpdatePath */
+	float collEventTime;		/* the times since the last collision event, stop, test (TimeEventCollCharAI ..) */
+	float collStopTime;
+	float collTestTime;
+	float speed;			/* the walk value */
+	int lifeMark;			/* the life of the character */
+	cSlotController slotPath;	/* the path is searched again (0.133 s) */
+	vec3_t goal;			/* the next point of the path */
+	cNWVecList path;
+	vec3_t *pathPoint;		/* the point of the path walked to */
+	vec3_t *prevPoint;		/* the one before it UpdatePath skipped */
+	float turnXNew;
+	float turnYNew;
+	byte unused_140;
+	byte goalLost;			/* the goal was not reachable at the last UpdatePath */
 	byte pad_142[2];
-	cSlotController slotDirect;	/* 0x144 the direct follow checks the way (0.2 s) */
-	cSlotController slotSee;	/* 0x154 the path follow looks for the direct way (0.2 s) */
-	cSlotController slotRepath;	/* 0x164 the path to the target searched again (5 s) */
-	cSlotController slotNear;	/* 0x174 the end of the path near: searched again (0.2 s) */
-	cSlotController slotOrbit;	/* 0x184 the side of the orbit blocked (0.2 s) */
-	cSlotController slotLost;	/* 0x194 the path searched again while stuck (3 s) */
-	cSlotController slotWait;	/* 0x1a4 CheckWait (0.2 s) */
-	Nto1Node *target;		/* 0x1b4 the link to the entity to follow (objDin) */
-	cEntity *targetEnt;		/* 0x1b8 its entity when the move started */
-	float farDist;			/* 0x1bc */
-	float nearDist;			/* 0x1c0 */
-	vec3_t v1c4;			/* 0x1c4 */
-	byte direct;			/* 0x1d0 the follow walks straight to the target */
-	byte waitStart;			/* 0x1d1 CheckWait has its start positions */
+	cSlotController slotDirect;	/* the direct follow checks the way (0.2 s) */
+	cSlotController slotSee;	/* the path follow looks for the direct way (0.2 s) */
+	cSlotController slotRepath;	/* the path to the target searched again (5 s) */
+	cSlotController slotNear;	/* the end of the path near: searched again (0.2 s) */
+	cSlotController slotOrbit;	/* the side of the orbit blocked (0.2 s) */
+	cSlotController slotLost;	/* the path searched again while stuck (3 s) */
+	cSlotController slotWait;	/* CheckWait (0.2 s) */
+	Nto1Node *target;		/* the link to the entity to follow (objDin) */
+	cEntity *targetEnt;		/* its entity when the move started */
+	float farDist;
+	float nearDist;
+	vec3_t v1c4;
+	byte direct;			/* the follow walks straight to the target */
+	byte waitStart;			/* CheckWait has its start positions */
 	byte pad_1d2[2];
-	float waitTime;			/* 0x1d4 the time of the strafe of CheckWait */
-	vec3_t waitPos;			/* 0x1d8 the character and the target at the start of the wait */
-	vec3_t waitTargetPos;		/* 0x1e4 */
-	vec3_t lastTargetPos;		/* 0x1f0 the target at the last Orbit */
-	int pathRes;			/* 0x1fc the result of the path search (2: the end is not reachable) */
-	byte stuck;			/* 0x200 the follow sees no way */
-	byte avoidChar;			/* 0x201 FindAvoid linked a character */
+	float waitTime;			/* the time of the strafe of CheckWait */
+	vec3_t waitPos;			/* the character and the target at the start of the wait */
+	vec3_t waitTargetPos;
+	vec3_t lastTargetPos;		/* the target at the last Orbit */
+	int pathRes;			/* the result of the path search (2: the end is not reachable) */
+	byte stuck;			/* the follow sees no way */
+	byte avoidChar;			/* FindAvoid linked a character */
 	byte pad_202[2];
-	float viewGain;			/* 0x204 the turn of the view to the dest (VelRotDynamic...) */
-	float viewStep;			/* 0x208 (LimVelRotDynamic...) */
-	int orbitSide;			/* 0x20c the strafe around the target: 0 none, 1, 2 */
-	byte orbitStart;		/* 0x210 StartOrbit may run */
+	float viewGain;			/* the turn of the view to the dest (VelRotDynamic...) */
+	float viewStep;			/* (LimVelRotDynamic...) */
+	int orbitSide;			/* the strafe around the target: 0 none, 1, 2 */
+	byte orbitStart;		/* StartOrbit may run */
 	byte pad_211[3];
-	vec3_t orbitDir;		/* 0x214 the back of the target at the start of the orbit (y 0) */
-	vec3_t dir;			/* 0x220 the direction of AICC_DIR */
-	byte awayFlag;			/* 0x22c */
-	byte seen;			/* 0x22d AwayWalk: another character sees it */
-	byte routeA;			/* 0x22e */
-	byte routeB;			/* 0x22f */
-	vec3_t routePoint;		/* 0x230 */
-	cNWNode *routeNode;		/* 0x23c the node of the route BuildPath reached */
-	cAICCSeg debugSegs[9];		/* 0x240 the corridor of the last path test */
-	cNWVecList debugStrafe;		/* 0x318 the points of the strafe tests */
-	cNWVecList debugStrafeInner;	/* 0x330 the same with a smaller radius */
-	cNWSegList debugPath;		/* 0x348 the segments of the path tests (ShowTestCanGoAI) */
+	vec3_t orbitDir;		/* the back of the target at the start of the orbit (y 0) */
+	vec3_t dir;			/* the direction of AICC_DIR */
+	byte awayFlag;
+	byte seen;			/* AwayWalk: another character sees it */
+	byte routeA;
+	byte routeB;
+	vec3_t routePoint;
+	cNWNode *routeNode;		/* the node of the route BuildPath reached */
+	cAICCSeg debugSegs[9];		/* the corridor of the last path test */
+	cNWVecList debugStrafe;		/* the points of the strafe tests */
+	cNWVecList debugStrafeInner;	/* the same with a smaller radius */
+	cNWSegList debugPath;		/* the segments of the path tests (ShowTestCanGoAI) */
 };
-/* the 2D and the 3D control add only vtable slots (both 0x360 bytes, the constructor of cAIChar) */
+/* the 2D and the 3D control add only vtable slots (both the constructor of cAIChar) */
 typedef cAICharControl cAICharControl2D;
 typedef cAICharControl cAICharControl3D;
 
@@ -933,19 +933,19 @@ byte cAICharControl3D_StrafeFwd(cAICharControl3D *self, const vec3_t *pos, const
 /* the bishop, the gear and the sentinel strafe while a Bishop, a Gear (or a Dtritus) aims at them, or (the sentinel)
  * when they were hit */
 typedef struct cAIControlShoot {
-	cAICharControl base;		/* 0x000 */
-	cSlotController slotSide;		/* 0x360 the side of the strafe blocked (0.2 s) */
-	int side;			/* 0x370 the strafe: 0 none, 1, 2 */
-	float time;			/* 0x374 since the last strafe started */
-	byte other;			/* 0x378 the side was blocked: the other side next */
+	cAICharControl base;
+	cSlotController slotSide;		/* the side of the strafe blocked (0.2 s) */
+	int side;			/* the strafe: 0 none, 1, 2 */
+	float time;			/* since the last strafe started */
+	byte other;			/* the side was blocked: the other side next */
 	byte pad_379[3];
-	float strafeTime;		/* 0x37c TimeStrafeUnderAttack<Class>AI (the sentinel: the gvar itself) */
-	float strafeAng;		/* 0x380 AngleStrafeUnderAttack<Class>AI */
+	float strafeTime;		/* TimeStrafeUnderAttack<Class>AI (the sentinel: the gvar itself) */
+	float strafeAng;		/* AngleStrafeUnderAttack<Class>AI */
 } cAIControlShoot;
 typedef cAIControlShoot cAIControlBishop;
 typedef cAIControlShoot cAIControlGear;
 
-/* the classes that add no members to the 2D or the 3D control (0x360 bytes) */
+/* the classes that add no members to the 2D or the 3D control */
 typedef cAICharControl2D cAIControlBankDirector;
 typedef cAICharControl2D cAIControlBankMaster;
 typedef cAICharControl3D cAIControlMessenger;
@@ -954,11 +954,11 @@ typedef cAICharControl3D cAIControlNurse;
 /* the sentinel: the 3D control with the strafe of cAIControlShoot, but the parameters are the gvars (0x37c bytes);
  * its functions work on the cAIControlShoot they share with the bishop and the gear */
 typedef struct cAIControlSentinel {
-	cAICharControl3D base;		/* 0x000 */
-	cSlotController slotSide;		/* 0x360 the side of the strafe blocked (0.2 s) */
-	int side;			/* 0x370 the strafe: 0 none, 1, 2 */
-	float time;			/* 0x374 since the last strafe started */
-	byte other;			/* 0x378 the side was blocked: the other side next */
+	cAICharControl3D base;
+	cSlotController slotSide;		/* the side of the strafe blocked (0.2 s) */
+	int side;			/* the strafe: 0 none, 1, 2 */
+	float time;			/* since the last strafe started */
+	byte other;			/* the side was blocked: the other side next */
 	byte pad_379[3];
 } cAIControlSentinel;
 

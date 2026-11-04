@@ -36,9 +36,9 @@ static void ParamFile_Free(cFileMem *f) {
 }
 
 /*
- * The function of the sphere tests (g_ChTypeSphereFunc, g_DoorSphereFunc and the others at rva 0x46679c): its static
+ * The function of the sphere tests (g_ChTypeSphereFunc, g_DoorSphereFunc and the others): its static
  * initializer has the constructor inlined without the fields that are 0 in the data, it only links it
- * into the ring. The atexit destructor is rva 0x38e3a0.
+ * into the ring. The atexit destructor is.
  */
 extern cPy_Function g_ChTypeSphereFunc;
 #define g_SphereFunc ((&g_ChTypeSphereFunc))

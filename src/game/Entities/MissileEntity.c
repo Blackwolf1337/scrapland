@@ -743,7 +743,7 @@ static byte cMissileEntity_VarV(cEntity *base, const char *name, double *x, doub
 	return cWithLifeEntity_VarV(Missile_Ent(self), name, x, y, z, set);
 }
 
-/* vf12: the model, its debris system of the bees has the same name */
+/* the model, its debris system of the bees has the same name */
 static void cMissileEntity_SetModel(cEntity *elem, const char *file, float sx, float sy, float sz, int flag) {
 	cMissileEntity *self = (cMissileEntity *)elem;
 	vec3_t scale, root, link, rot, pos, cam;
@@ -792,7 +792,7 @@ static cDebris *Missile_FXDebris(cMissileEntity *self, const char *sysName, byte
 	return d;
 }
 
-/* vf15: the fire effects DumbMotor, GearMissile, Cloud and EMI (a debris element of the life time) */
+/* the fire effects DumbMotor, GearMissile, Cloud and EMI (a debris element of the life time) */
 static void cMissileEntity_SetEmbeddedFX(cEntity *elem, const char *name) {
 	cMissileEntity *self = (cMissileEntity *)elem;
 	if (self->wl.obj.base.deadNode.target) {
@@ -974,7 +974,7 @@ static void Missile_InOut(cMissileEntity *self, const vec3_t *old, const vec3_t 
 		Missile_CallHit(self, g);
 		cPy_Function_AddParamI(&self->onHit, 1);
 		cPy_Function_Execute(&self->onHit, 0);
-		/* both are 0x80 bytes, the names of Touch are shorter */
+		/* both are the names of Touch are shorter */
 		char *dst = self->hits[slot];
 		int c = 0;
 		do {
@@ -1067,7 +1067,7 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 	return 0;
 }
 
-/* vf23 (every slot): the flight, the turn to the target and the hits of the world and the entities */
+/* (every slot): the flight, the turn to the target and the hits of the world and the entities */
 static void cMissileEntity_Tick(cEntity *base, float dt) {
 	cMissileEntity *self = (cMissileEntity *)base;
 	if (Net_IsNetEntity(Missile_Ent(self))) {
@@ -1092,7 +1092,7 @@ static inline uint32_t Missile_NetId(const char *name) {
 	return id == -1 ? MISSILE_NET_NONE : (uint32_t)(uint16_t)id;
 }
 
-/* vf41, vf43: the parent or target and the bees in the network state */
+/* the parent or target and the bees in the network state */
 static void cMissileEntity_NetWrite(cEntity *elem, float dist2, void *msg, int full) {
 	cMissileEntity *self = (cMissileEntity *)elem;
 	cAbstractFile *f = msg;
@@ -1178,7 +1178,7 @@ static void Missile_BeePush(cMissileEntity *self, cDebris *d, float dt, float sp
 	} while ((double)self->beeTime > 0.05);
 }
 
-/* vf59: the bees fly around the missile within the radius */
+/* the bees fly around the missile within the radius */
 static void cMissileEntity_Swarm(cMissileEntity *self, float dt) {
 	vec3_t tmp, view, a, n;
 	float r2 = self->radius * self->radius;
@@ -1246,7 +1246,7 @@ static void cMissileEntity_Swarm(cMissileEntity *self, float dt) {
 
 vec3_t g_DebrisDrop[4];
 
-/* vf64: n new bees */
+/* n new bees */
 void cMissileEntity_AddToSwarm(cMissileEntity *self, int n) {
 	if (!self->hiddenSwarm) {
 		cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, self->swarmSys);
@@ -1297,7 +1297,7 @@ void cMissileEntity_AddToSwarm(cMissileEntity *self, int n) {
 	}
 }
 
-/* vf66: the bees fly to at (beesGather) or die where they are */
+/* the bees fly to at (beesGather) or die where they are */
 static void cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at) {
 	vec3_t neg, rot;
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, self->swarmSys);

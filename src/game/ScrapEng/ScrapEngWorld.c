@@ -489,7 +489,7 @@ void Loading_Step(int percent) {
 	int h = (int)engine->backBufferDesc.Height;
 	r.min.y = (float)(h * 0x398 / 1024) / (float)h;
 	r.min.z = 0.0f;
-	r.max.y = 0.90478515625f;	/* 0x3f67a000 */
+	r.max.y = 0.90478515625f;
 	r.max.z = 0.0f;
 	Rd_DevBeginScene(engine->device);
 	float q = 1.0f - p;

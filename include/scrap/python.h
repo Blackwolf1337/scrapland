@@ -17,7 +17,7 @@
 PyObject *PyEval_CallObject(PyObject *func, PyObject *args);
 
 /*
- * malloc, realloc and free of the interpreter: the engine counts them in its "Python" memory pool (rva 0x1935f0,
+ * malloc, realloc and free of the interpreter: the engine counts them in its "Python" memory pool (
  * 0x193620, 0x1935c0). The PyMem_ and PyObject_NEW/DEL macros of the headers would call the DLL's CRT instead,
  * so the C code uses these and _PyObject_New.
  */

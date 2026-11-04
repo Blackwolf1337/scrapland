@@ -24,13 +24,13 @@ enum {
 	EVENT_END = 13
 };
 
-/* an entry of the sorted event list of a group (constructor rva 0x2bb8e0) */
+/* an entry of the sorted event list of a group */
 typedef struct CAnimEvent {
-	int id;				/* 0x00 EVENTO_* */
-	intptr_t arg;			/* 0x04 a number or an event or condition */
-	struct CAnimEvent *next;		/* 0x08 */
-	float t;			/* 0x0c the frame */
-	uint32_t flags;			/* 0x10 1: in a list */
+	int id;				/* EVENTO_* */
+	intptr_t arg;			/* a number or an event or condition */
+	struct CAnimEvent *next;
+	float t;			/* the frame */
+	uint32_t flags;			/* 1: in a list */
 } CAnimEvent;
 
 /* Engine/EventoAnim.cpp: an event of the time t; ctorAdd puts it into the list */
@@ -43,39 +43,39 @@ CAnimEvent *AnimEvents_Add(CAnimEvent **list, CAnimEvent *ev);
 typedef byte (*animCallback_t)(int a, int b, CAnimEvent *ev);
 
 typedef struct CAnimCtrl {
-	float vel;			/* 0x00 frames per second, 25 */
-	float scaleMove;		/* 0x04 the scale of the root motion, 1 */
-	float factor;			/* 0x08 of the time, 1 */
-	float speed;			/* 0x0c 0.12 */
-	byte loop;			/* 0x10 EVENT_JUMP ignored */
+	float vel;			/* frames per second, 25 */
+	float scaleMove;		/* the scale of the root motion, 1 */
+	float factor;			/* of the time, 1 */
+	float speed;			/* 0.12 */
+	byte loop;			/* EVENT_JUMP ignored */
 	byte pad_11[3];
-	vec3_t move;			/* 0x14 the root motion of the last update */
-	vec3_t ofs;			/* 0x20 the root offset */
-	int jumps;			/* 0x2c the jumps of the last update */
-	CAnimNode *node;		/* 0x30 the root node of the animation */
-	int firstFrame;			/* 0x34 */
-	int frames;			/* 0x38 */
-	CAnimEvent **events;		/* 0x3c the list head */
-	animCallback_t callback;	/* 0x40 */
-	int cbA;			/* 0x44 */
-	int cbB;			/* 0x48 */
-	float step;			/* 0x4c factor times the time of the last update */
-	float frame;			/* 0x50 */
-	int state;			/* 0x54 ANIM_* */
-	int unused_58;			/* 0x58 */
-	byte relative;			/* 0x5c EVENT_MOVEMENT: the y of the root motion goes into move, not ofs */
+	vec3_t move;			/* the root motion of the last update */
+	vec3_t ofs;			/* the root offset */
+	int jumps;			/* the jumps of the last update */
+	CAnimNode *node;		/* the root node of the animation */
+	int firstFrame;
+	int frames;
+	CAnimEvent **events;		/* the list head */
+	animCallback_t callback;
+	int cbA;
+	int cbB;
+	float step;			/* factor times the time of the last update */
+	float frame;
+	int state;			/* ANIM_* */
+	int unused_58;
+	byte relative;			/* EVENT_MOVEMENT: the y of the root motion goes into move, not ofs */
 	byte pad_5d[3];
-	float scale;			/* 0x60 EVENT_SCALE, 1 */
-	float fadeVel;			/* 0x64 the fade per second */
-	float fade;			/* 0x68 from 1 down to 0.2 */
-	vec3_t lastPos;			/* 0x6c the root position at lastFrame */
-	uint32_t time;			/* 0x78 g_TimeMs of the last update */
-	float lastFrame;		/* 0x7c */
-	CAnimEvent *event;		/* 0x80 the next event */
+	float scale;			/* EVENT_SCALE, 1 */
+	float fadeVel;			/* the fade per second */
+	float fade;			/* from 1 down to 0.2 */
+	vec3_t lastPos;			/* the root position at lastFrame */
+	uint32_t time;			/* g_TimeMs of the last update */
+	float lastFrame;
+	CAnimEvent *event;		/* the next event */
 } CAnimCtrl;
 
 CAnimCtrl *CAnimCtrl_ctor(CAnimCtrl *self);
-/* rva 0x250f10, empty */
+/* empty */
 void CAnimCtrl_dtor(CAnimCtrl *self);
 void CAnimCtrl_Play(CAnimCtrl *self);
 /* stopped at frame, no event; 1 */

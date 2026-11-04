@@ -13,7 +13,7 @@
 static cGVar GVar_FXBankMasterSuctionFile;
 static cGVar GVar_FXBankMasterAttackFile;
 static cGVar GVar_BankMasterAmmoCost;
-#define BANKMASTER_SUCTION_ANG 1.0471975511965976	/* rva 0x3ad5f8, 60 degrees */
+#define BANKMASTER_SUCTION_ANG 1.0471975511965976	/* 60 degrees */
 
 void ChType_ActionSound(cEntity *v, byte loop, byte stop) {
 	cSndItem *s = PtrArray_Get(&WChar(v)->wl.obj.snd, 0);

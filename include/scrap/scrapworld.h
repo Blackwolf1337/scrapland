@@ -15,10 +15,10 @@
 
 /* what the world node info functions give for one dummy or node */
 typedef struct WorldNodeInfo {
-	char Name[64];			/* 0x00 */
-	vec3_t pos;			/* 0x40 */
-	matrix_t m;			/* 0x4c */
-	byte dummy;			/* 0x8c 1 for a world dummy; for a node: it has no 3D object */
+	char Name[64];
+	vec3_t pos;
+	matrix_t m;
+	byte dummy;			/* 1 for a world dummy; for a node: it has no 3D object */
 } WorldNodeInfo;
 
 /* the state of the walk */
@@ -82,8 +82,8 @@ void Splash_Reset(void);
 void Loading_Step(int percent);
 
 /* other modules (src/imports.inc) */
-/* rva 0x2178e0 (ScrapEngMain.cpp): the splash screen name of the level */
-/* rva 0x267460: the stencil shadows on or off */
-/* rva 0x20d290: the window of the application */
+/* (ScrapEngMain.cpp): the splash screen name of the level */
+/* the stencil shadows on or off */
+/* the window of the application */
 
 #endif

@@ -12,14 +12,14 @@
 #include "scrap/staticinit.h"
 
 typedef struct cLangText {
-	char *text;			/* 0x0 */
-	char *nextId;			/* 0x4 the id of the next line, NULL after the last */
+	char *text;
+	char *nextId;			/* the id of the next line, NULL after the last */
 } cLangText;
 
 typedef struct cLangItem {
-	cLangText value;		/* 0x0 */
-	const char *key;		/* 0x8 */
-	struct cLangItem *next;		/* 0xc */
+	cLangText value;
+	const char *key;
+	struct cLangItem *next;
 } cLangItem;
 
 cGVar GVar_SelectedLanguage;

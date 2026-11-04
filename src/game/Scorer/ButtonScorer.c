@@ -21,7 +21,7 @@ static const char *const s_HighLightColors[3] = {"HighLightColorRed", "HighLight
 
 /* ---- Global/Table.h ---- */
 
-/* also rva 0x1613b0 */
+/* also */
 static void StrTable_Free(cStrTable *self) {
 	if (self->items) {
 		Delete_Objects(self->items, sizeof(cString), (void *)cString_dtor);
@@ -30,7 +30,7 @@ static void StrTable_Free(cStrTable *self) {
 	}
 }
 
-/* also rva 0x161430 */
+/* also */
 static void ByteTable_Free(cByteTable *self) {
 	if (self->items) {
 		operator_delete_array(self->items);

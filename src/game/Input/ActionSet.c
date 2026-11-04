@@ -156,7 +156,7 @@ cPlayerInput *cPlayerInput_ctor(cPlayerInput *in) {
 	return in;
 }
 
-/* the atexit destructor of g_ActionSets (rva 0x38d950, the Free inlined) */
+/* the atexit destructor of g_ActionSets (the Free inlined) */
 static void ActionSetTable_Free(cActionSetTable *t);
 void ActionSet_FiniActionSets(void) {
 	ActionSetTable_Free(&g_ActionSets);
@@ -522,7 +522,7 @@ static void cActionSet_Latch(cActionSet *s) {
 	}
 }
 
-/* the constructor of a static keyboard (rva 0x1392e0, from its initializer): the standard grid */
+/* the constructor of a static keyboard (from its initializer): the standard grid */
 cVirtualKeyboard *cVirtualKeyboard_ctor(cVirtualKeyboard *vk) {
 	cVirtualKeyboard_Set(vk, "Standard");
 	return vk;

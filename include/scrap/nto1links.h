@@ -9,10 +9,10 @@
 #include "scrap/global.h"
 
 typedef struct Nto1Node {
-	struct Nto1Node *next;		/* 0x0 */
-	struct Nto1Node *prev;		/* 0x4 */
-	void *target;			/* 0x8 the linked object, NULL when unlinked */
-	void *data;			/* 0xc NULL for the head */
+	struct Nto1Node *next;
+	struct Nto1Node *prev;
+	void *target;			/* the linked object, NULL when unlinked */
+	void *data;			/* NULL for the head */
 } Nto1Node;
 
 static inline void Nto1Node_Init(Nto1Node *node) {
@@ -41,11 +41,11 @@ static inline void Nto1Node_LinkTo(Nto1Node *head, Nto1Node *node) {
 	head->next = node;
 }
 
-/* the out of line Nto1Node_LinkTo (rva 0x67450, src/game/AI/IChar.c) */
+/* the out of line Nto1Node_LinkTo (src/game/AI/IChar.c) */
 void Nto1Head_Link(Nto1Node *head, Nto1Node *node);
-/* unlinks every node of the head (rva 0xd40f0, ecx = head) */
+/* unlinks every node of the head (ecx = head) */
 void Nto1Head_UnlinkAll(Nto1Node *head);
-/* the out of line Nto1Node_Unlink with the CHECK of Node (rva 0xd4170, src/game/Entities/Char/WalkCharEntity.c) */
+/* the out of line Nto1Node_Unlink with the CHECK of Node (src/game/Entities/Char/WalkCharEntity.c) */
 void Nto1Node_UnlinkChecked(Nto1Node *node);
 
 /* destructor of a node, inlined everywhere */

@@ -15,23 +15,23 @@
 #include "scrap/nto1links.h"
 
 typedef struct cWalkCharControl {
-	float hRot;			/* 0x00 "HRot" the turn left/right */
-	float vRot;			/* 0x04 "VRot" the turn up/down */
-	float centerTime;		/* 0x08 the seconds left until the view centers (WalkCameraCenter) */
-	float walk;			/* 0x0c "Walk" forward/back */
-	float strafe;			/* 0x10 "Str" */
-	float jump;			/* 0x14 */
-	byte act;			/* 0x18 "Act" the action button */
-	byte prevAct;			/* 0x19 of the last frame (cWalkCharControl_Latch) */
-	byte act2;			/* 0x1a action 18 */
-	byte prevAct2;			/* 0x1b */
-	byte act3;			/* 0x1c action 17 while the action button is up */
-	byte prevAct3;			/* 0x1d */
-	byte disabled;			/* 0x1e no input at all */
-	byte lockStart;			/* 0x1f the lock button went down (action 20, or 19 for some classes) */
-	byte lock;			/* 0x20 the view stays on the target */
+	float hRot;			/* "HRot" the turn left/right */
+	float vRot;			/* "VRot" the turn up/down */
+	float centerTime;		/* the seconds left until the view centers (WalkCameraCenter) */
+	float walk;			/* "Walk" forward/back */
+	float strafe;			/* "Str" */
+	float jump;
+	byte act;			/* "Act" the action button */
+	byte prevAct;			/* of the last frame (cWalkCharControl_Latch) */
+	byte act2;			/* action 18 */
+	byte prevAct2;
+	byte act3;			/* action 17 while the action button is up */
+	byte prevAct3;
+	byte disabled;			/* no input at all */
+	byte lockStart;			/* the lock button went down (action 20, or 19 for some classes) */
+	byte lock;			/* the view stays on the target */
 	byte pad_21[3];
-	Nto1Node target;		/* 0x24 the entity the view turns to */
+	Nto1Node target;		/* the entity the view turns to */
 } cWalkCharControl;
 
 extern cGVar GVar_WalkCameraCenter;

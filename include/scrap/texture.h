@@ -30,18 +30,18 @@
 /* Engine/MultiSprite.cpp (src/game/engine3d/Engine/MultiSprite.c): the sprites of a texture, rectangles in pixels
  * numbered by the alpha of the &N.index.bmp beside it (sprite 0: the whole texture), kept in a .mst file */
 typedef struct MSprite {
-	uint16_t x, y;			/* 0x0 */
-	uint16_t cx, cy;		/* 0x4 */
+	uint16_t x, y;
+	uint16_t cx, cy;
 } MSprite;
 
 typedef struct CMultiSprite {
-	int width;			/* 0x0 of the texture */
-	int height;			/* 0x4 */
+	int width;			/* of the texture */
+	int height;
 	union {				/* a CTable: the casts (CTable *)&n hold on every platform */
 		CTable t_n;
 		struct {
-			int n;				/* 0x8 the sprites (CTable) */
-			MSprite *p;			/* 0xc */
+			int n;				/* the sprites (CTable) */
+			MSprite *p;
 		};
 	};
 } CMultiSprite;
@@ -49,33 +49,33 @@ typedef struct CMultiSprite {
 #define MST_VER 100
 
 typedef struct CTexture {
-	int Refs;			/* 0x000 */
-	struct CTexture *next;		/* 0x004 g_TexList */
-	char Name[TEX_MAX_NAME];	/* 0x008 */
-	char Opac[TEX_MAX_NAME];	/* 0x10c the opacity map, "" for none */
-	int width;			/* 0x210 */
-	int height;			/* 0x214 */
-	int kind;			/* 0x218 */
-	int bpp;			/* 0x21c */
-	uint32_t flags;			/* 0x220 TEXF_* */
-	int alpha;			/* 0x224 */
-	void *tex;			/* 0x228 IDirect3DTexture8 */
-	CBmp *bitmap;			/* 0x22c BMP, TGA, TEX */
-	void *PngData;			/* 0x230 PNG, DDC: the file, the texture is created from it again */
-	uint32_t PngSize;		/* 0x234 */
-	int frame;			/* 0x238 the frame it was last used */
-	byte mipmap;			/* 0x23c */
-	byte bump;			/* 0x23d ".bump" */
-	byte dudv;			/* 0x23e ".dudv" */
-	byte cube;			/* 0x23f ".cube" */
-	byte compressed;		/* 0x240 DDS and its variants */
-	byte failed;			/* 0x241 never set in Textura.cpp */
-	byte ddx;			/* 0x242 */
-	byte ddy;			/* 0x243 */
-	byte ddv;			/* 0x244 */
-	byte unused_245;			/* 0x245 */
+	int Refs;
+	struct CTexture *next;		/* g_TexList */
+	char Name[TEX_MAX_NAME];
+	char Opac[TEX_MAX_NAME];	/* the opacity map, "" for none */
+	int width;
+	int height;
+	int kind;
+	int bpp;
+	uint32_t flags;			/* TEXF_* */
+	int alpha;
+	void *tex;			/* IDirect3DTexture8 */
+	CBmp *bitmap;			/* BMP, TGA, TEX */
+	void *PngData;			/* PNG, DDC: the file, the texture is created from it again */
+	uint32_t PngSize;
+	int frame;			/* the frame it was last used */
+	byte mipmap;
+	byte bump;			/* ".bump" */
+	byte dudv;			/* ".dudv" */
+	byte cube;			/* ".cube" */
+	byte compressed;		/* DDS and its variants */
+	byte failed;			/* never set in Textura.cpp */
+	byte ddx;
+	byte ddy;
+	byte ddv;
+	byte unused_245;
 	byte pad_246[2];
-	CMultiSprite multi;		/* 0x248 */
+	CMultiSprite multi;
 } CTexture;
 
 CMultiSprite *CMultiSprite_ctor(CMultiSprite *self);

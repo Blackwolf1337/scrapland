@@ -160,7 +160,7 @@ static void cTalkScorer_DrawUse(cTalkScorer *self, int player, float *pos);
 
 static void cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos);
 
-/* the use text (vf05) and the talk (vf04) up from the item position */
+/* the use text and the talk up from the item position */
 static void cTalkScorer_Draw(cScorerItem *base, int player) {
 	cTalkScorer *self = (cTalkScorer *)base;
 	float pos[2];

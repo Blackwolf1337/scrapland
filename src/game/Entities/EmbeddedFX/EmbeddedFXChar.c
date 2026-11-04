@@ -255,7 +255,7 @@ void cEmbeddedFX_dtor(cEmbeddedFX *self) {
 	EFX_SetVtbl(self, VT_EMBEDDEDFX);
 }
 
-/* vf00 of the base class; it frees 4 bytes, the size of the vtable pointer alone */
+/* of the base class; it frees 4 bytes, the size of the vtable pointer alone */
 static void cEmbeddedFX_Free(cEmbeddedFX *self) {
 	cEmbeddedFX_dtor(self);
 	operator_delete(self);
@@ -327,7 +327,7 @@ static void cEmbeddedFXSentinel_dtor(cEmbeddedFXSentinel *self) {
 	cEmbeddedFX_dtor(&self->base);
 }
 
-/* ---- vf00: deleting destructors ---- */
+/* ---- the Free functions ---- */
 
 static void cEmbeddedFXBankDirector_Free(cEmbeddedFX *elem) {
 	cEmbeddedFXBankDirector *self = (cEmbeddedFXBankDirector *)elem;
@@ -389,7 +389,7 @@ static void cEmbeddedFXSentinel_Free(cEmbeddedFX *elem) {
 	operator_delete(&self->base);
 }
 
-/* ---- vf02: Release ---- */
+/* ----: Release ---- */
 
 static void cEmbeddedFXBankDirector_Release(cEmbeddedFX *base) {
 	cEmbeddedFXBankDirector *self = (cEmbeddedFXBankDirector *)base;
@@ -480,7 +480,7 @@ static void cEmbeddedFXSentinel_Release(cEmbeddedFX *base) {
 	CGameParticles_Release(&self->alarm.particles);
 }
 
-/* ---- the clears of vf05 ---- */
+/* ---- the clears of ---- */
 
 static void cEmbeddedFXCrazyGambler_Clear(cEmbeddedFXCrazyGambler *self) {
 	for (int i = 0; i < FXGAMBLER_ARCS; i++) {
@@ -518,7 +518,7 @@ static void cEmbeddedFXSentinel_Clear(cEmbeddedFXSentinel *self) {
 	CGameParticles_KillAll(&self->status);
 }
 
-/* ---- vf05: Stop ---- */
+/* ----: Stop ---- */
 
 static void cEmbeddedFXCrazyGambler_Stop(cEmbeddedFX *base, byte keep) {
 	cEmbeddedFXCrazyGambler *self = (cEmbeddedFXCrazyGambler *)base;
@@ -550,7 +550,7 @@ static void cEmbeddedFXSentinel_Stop(cEmbeddedFX *base, byte keep) {
 	cEmbeddedFXSentinel_Clear(self);
 }
 
-/* ---- vf01: Reset ---- */
+/* ----: Reset ---- */
 
 static byte cEmbeddedFXAlarm_Reset(cEmbeddedFXAlarm *self) {
 	self->on = 0;
@@ -932,7 +932,7 @@ static void EmbeddedFXChar_AlarmOn(cAbstractFile *f) {
 	EFX_ReadAlarm(f, 1);
 }
 
-/* ---- vf03: Update ---- */
+/* ----: Update ---- */
 
 static inline uint32_t EFX_Color(int a, int g) {
 	return ((uint32_t)a << 24) | ((uint32_t)g << 16) | (uint32_t)g | 0xff00;

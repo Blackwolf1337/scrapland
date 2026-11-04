@@ -1,5 +1,5 @@
 /*
- * Python module SScorer (method table SScorer_methods, rva 0x42ec68): HUD, menus, chat and speech texts of the
+ * Python module SScorer (method table SScorer_methods): HUD, menus, chat and speech texts of the
  * local players. The original source file is not known (no CHECK in it). Most functions take the player number
  * first and give None when that player has no scorer.
  */

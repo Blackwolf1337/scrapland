@@ -19,7 +19,6 @@ static void cCrazyDealerLocalLogic_Free(cLocalLogic *elem) {
 	operator_delete(self);
 }
 
-/* vf17 */
 static void cCrazyDealerLocalLogic_Update(cLocalLogic *base, float dt) {
 	cCrazyDealerLocalLogic *self = (cCrazyDealerLocalLogic *)base;
 	cGenCharLocalLogic_Update(&self->base.logic, dt);

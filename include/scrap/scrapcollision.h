@@ -16,18 +16,18 @@
 #define SPHEREBOX_FREE 0x1		/* no triangle in the box */
 #define SPHEREBOX_INSIDE 0x2		/* the last query was inside the box */
 typedef struct CSphereBox {
-	uint16_t flags;			/* 0x00 SPHEREBOX_* */
-	uint16_t wait;			/* 0x02 */
-	int id;				/* 0x04 g_QuadTriCacheID when it was built */
-	box_t box;			/* 0x08 */
+	uint16_t flags;			/* SPHEREBOX_* */
+	uint16_t wait;
+	int id;				/* g_QuadTriCacheID when it was built */
+	box_t box;
 } CSphereBox;
 
 /* the triangle a segment hit, for Engine_TestLine */
 typedef struct CCollisionTri {
-	vec3_t v[3];			/* 0x00 */
-	plane_t plane;			/* 0x24 */
-	vec3_t hit;			/* 0x34 */
-	int noCollisions;		/* 0x40 bit 4 of the triangle flags */
+	vec3_t v[3];
+	plane_t plane;
+	vec3_t hit;
+	int noCollisions;		/* bit 4 of the triangle flags */
 } CCollisionTri;
 
 /* the collision epsilon divided by 8 for fine queries, with restore back */

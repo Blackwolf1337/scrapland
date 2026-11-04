@@ -63,13 +63,11 @@ static void cDominationFriendsSide_Think(cDominationFriendsSide *self) {
 	} while ((n = Logic_ListNext(n)) != NULL);
 }
 
-/* vf03 */
 static cEntityListData *cDominationFriendsLogic_GetList(cDominationLogic *base) {
 	cDominationFriendsLogic *self = (cDominationFriendsLogic *)base;
 	return self->side->list;
 }
 
-/* vf01 */
 static void cDominationFriendsLogic_Init(cDominationLogic *base) {
 	cDominationFriendsLogic *self = (cDominationFriendsLogic *)base;
 	cDominationFriendsSide *s = self->side;
@@ -90,7 +88,6 @@ static cEntity *cDominationFriendsLogic_ReleaseZone(cDominationLogic *self, cons
 	return Domination_ReleaseZone(self, name, 3, 1);
 }
 
-/* vf02 */
 static void cDominationFriendsLogic_Update(cDominationLogic *base, float dt) {
 	cDominationFriendsLogic *self = (cDominationFriendsLogic *)base;
 	cDominationFriendsSide *s = self->side;

@@ -14,9 +14,9 @@ void App_GetConfigDir(char *buf, int size);
 
 /* an entry of the save list of SaveGames_GetList */
 typedef struct cSaveGameInfo {
-	char desc[0x40];		/* 0x00 */
-	int32_t time;			/* 0x40 modification time of the file */
-	int slot;			/* 0x44 */
+	char desc[0x40];
+	int32_t time;			/* modification time of the file */
+	int slot;
 } cSaveGameInfo;
 
 #define SAVE_MAGIC "Scrapland savegame"

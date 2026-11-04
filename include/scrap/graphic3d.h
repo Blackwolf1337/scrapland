@@ -13,17 +13,17 @@ typedef struct CGraphic3D {
 	union {
 		IObject3D base;
 		struct {
-			const IObject3DVtbl *vftable;	/* 0x00 */
-			uint32_t class;			/* 0x04 CLASS_OBJ3D_GRAPHIC3D */
+			const IObject3DVtbl *vftable;
+			uint32_t class;			/* CLASS_OBJ3D_GRAPHIC3D */
 		};
 	};
-	vec3_t pos;			/* 0x08 */
-	float width;			/* 0x14 */
-	float height;			/* 0x18 */
-	CNode3D *node;			/* 0x1c counted */
-	CMaterial *Mat;			/* 0x20 */
-	CAnimMat *AnimMat;		/* 0x24 of an animated texture */
-	SectorVis vis;			/* 0x28 */
+	vec3_t pos;
+	float width;
+	float height;
+	CNode3D *node;			/* counted */
+	CMaterial *Mat;
+	CAnimMat *AnimMat;		/* of an animated texture */
+	SectorVis vis;
 } CGraphic3D;
 
 /* a vertex of the square (D3DFVF_XYZ | DIFFUSE | SPECULAR | TEX1) */

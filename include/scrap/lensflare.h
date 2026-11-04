@@ -15,33 +15,33 @@
 #define MAX_LENSFLARE_RENDER 8
 
 typedef struct CLensFlare {
-	byte on;			/* 0x00 */
+	byte on;
 	byte pad_1[3];
-	int RenderIndex;		/* 0x04 in gLensFlareRender, -1 */
-	vec3_t pos;			/* 0x08 */
-	float intens;			/* 0x14 1, the alpha of the sprites */
-	float scale;			/* 0x18 1, the size of the sprites */
-	int type;			/* 0x1c the pattern 0..3 */
-	float margin;			/* 0x20 0.2, the part beyond the screen edges in which it fades out */
-	float sx, sy;			/* 0x24 the screen position of the last render (-1..1) */
-	byte relative;			/* 0x2c pos relative to the eye */
+	int RenderIndex;		/* in gLensFlareRender, -1 */
+	vec3_t pos;
+	float intens;			/* 1, the alpha of the sprites */
+	float scale;			/* 1, the size of the sprites */
+	int type;			/* the pattern 0..3 */
+	float margin;			/* 0.2, the part beyond the screen edges in which it fades out */
+	float sx, sy;			/* the screen position of the last render (-1..1) */
+	byte relative;			/* pos relative to the eye */
 	byte pad_2d[3];
-	float traceInterval;		/* 0x30 seconds between the traces against the floor, 0: none */
-	float traceTimer;		/* 0x34 */
-	float transp;			/* 0x38 1, the fade of the traces 0..1 */
-	byte visible;			/* 0x3c the floor did not hide it at the last trace */
+	float traceInterval;		/* seconds between the traces against the floor, 0: none */
+	float traceTimer;
+	float transp;			/* 1, the fade of the traces 0..1 */
+	byte visible;			/* the floor did not hide it at the last trace */
 	byte pad_3d[3];
-	CGroundHit hit;			/* 0x40 the hit cache of the trace */
-	uint32_t lastTime;		/* 0x4c g_TimeMsF of the last render */
+	CGroundHit hit;			/* the hit cache of the trace */
+	uint32_t lastTime;		/* g_TimeMsF of the last render */
 } CLensFlare;
 
 /* a vertex of the sprites (D3DFVF_XYZ | DIFFUSE | SPECULAR | TEX1) */
 #define D3DFVF_LENSFLARE 0x1c2
 typedef struct VertLensFlare {
-	float x, y, z;			/* 0x00 */
-	uint32_t color;			/* 0x0c */
-	uint32_t specular;		/* 0x10 */
-	float u, v;			/* 0x14 */
+	float x, y, z;
+	uint32_t color;
+	uint32_t specular;
+	float u, v;
 } VertLensFlare;
 
 CLensFlare *CLensFlare_ctor(CLensFlare *self);

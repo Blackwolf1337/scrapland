@@ -40,91 +40,91 @@ void cVehicleEffects_ClearDamage(void *self);
 
 /* a motor exhaust of the ship */
 typedef struct FXVExhaust {
-	int motor;			/* 0x0 FXVeh_Motor */
-	int side;			/* 0x4 0 or 1 */
+	int motor;			/* FXVeh_Motor */
+	int side;			/* 0 or 1 */
 } FXVExhaust;
 
-/* the debris fired out of a ship and its smoke: particles emitted along the way of the debris (0xdc bytes) */
+/* the debris fired out of a ship and its smoke: particles emitted along the way of the debris */
 typedef struct cObjElementFXFiredDebris {
 	cObjElementFX base;
-	CGameParticles particles;	/* 0x04 on Dummy01 */
-	float time;			/* 0xb4 since the last emission */
-	float interval;			/* 0xb8 */
-	byte first;			/* 0xbc the next Update takes the position as the last one */
+	CGameParticles particles;	/* on Dummy01 */
+	float time;			/* since the last emission */
+	float interval;
+	byte first;			/* the next Update takes the position as the last one */
 	byte pad_bd[3];
-	vec3_t last;			/* 0xc0 the position of the last emission */
-	float minDist;			/* 0xcc between two emissions */
-	float scale;			/* 0xd0 */
-	float spread;			/* 0xd4 */
-	byte on;			/* 0xd8 */
+	vec3_t last;			/* the position of the last emission */
+	float minDist;			/* between two emissions */
+	float scale;
+	float spread;
+	byte on;
 	byte pad_d9[3];
 } cObjElementFXFiredDebris;
 
 typedef cObjElementFXFiredDebris cObjElementFXSmokeDebris;
 
-/* the trail of a dying vehicle: the Devastator shot with 0x1e trail points (0x14 bytes) */
+/* the trail of a dying vehicle: the Devastator shot with 0x1e trail points */
 typedef cObjElementFXDevastatorShoot cObjElementFXVehicleDeathTrail;
 
-/* the smoke of an entity on fire (0xd4 bytes) */
+/* the smoke of an entity on fire */
 typedef struct cObjElementFXFiredEntity {
 	cObjElementFX base;
-	cEntity *entity;		/* 0x04 */
-	byte posValid;		/* 0x08 pos holds the position of the last frame */
+	cEntity *entity;
+	byte posValid;		/* pos holds the position of the last frame */
 	byte pad_09[3];
-	float radius;			/* 0x0c of its model */
-	vec3_t pos;			/* 0x10 of its model */
-	CGameParticles particles;	/* 0x1c on Dummy01 */
-	float time;			/* 0xcc */
-	byte on;			/* 0xd0 */
+	float radius;			/* of its model */
+	vec3_t pos;			/* of its model */
+	CGameParticles particles;	/* on Dummy01 */
+	float time;
+	byte on;
 	byte pad_d1[3];
 } cObjElementFXFiredEntity;
 
 /* the two inner control points of a ray of the accelerator, offsets that move at random */
 typedef struct FXVAccelCtrl {
-	vec3_t a;			/* 0x00 */
-	vec3_t b;			/* 0x0c */
+	vec3_t a;
+	vec3_t b;
 } FXVAccelCtrl;
 
-/* the rays of the accelerator: Bezier curves from a vertex of the ship (0x4c0 bytes) */
+/* the rays of the accelerator: Bezier curves from a vertex of the ship */
 typedef struct cObjElementFXVehicleAccelerator {
 	cObjElementFX base;
-	cEntity *owner;			/* 0x004 */
-	void *accelerator;		/* 0x008 */
-	CGameParticles particles;	/* 0x00c on Dummy01, two per ray */
-	float fade[FXVACCEL_TRAILS];	/* 0x0bc the time the ray has left */
-	float delay[FXVACCEL_TRAILS];	/* 0x0fc before the ray starts */
-	CGameTrail trails[FXVACCEL_TRAILS];	/* 0x13c */
-	float width[FXVACCEL_TRAILS];	/* 0x17c */
-	vec3_t from[FXVACCEL_TRAILS];	/* 0x1bc in the space of the ship */
-	FXVAccelCtrl ctrl[FXVACCEL_TRAILS];	/* 0x27c */
-	vec3_t to[FXVACCEL_TRAILS];	/* 0x3fc in the space of the ship */
-	byte on;			/* 0x4bc */
+	cEntity *owner;
+	void *accelerator;
+	CGameParticles particles;	/* on Dummy01, two per ray */
+	float fade[FXVACCEL_TRAILS];	/* the time the ray has left */
+	float delay[FXVACCEL_TRAILS];	/* before the ray starts */
+	CGameTrail trails[FXVACCEL_TRAILS];
+	float width[FXVACCEL_TRAILS];
+	vec3_t from[FXVACCEL_TRAILS];	/* in the space of the ship */
+	FXVAccelCtrl ctrl[FXVACCEL_TRAILS];
+	vec3_t to[FXVACCEL_TRAILS];	/* in the space of the ship */
+	byte on;
 	byte pad_4bd[3];
 } cObjElementFXVehicleAccelerator;
 
-/* the damage of a ship: smoke and sparks at the motors while the life is low (0x2d0 bytes) */
+/* the damage of a ship: smoke and sparks at the motors while the life is low */
 typedef struct cObjElementFXVehicleDamage {
 	cObjElementFX base;
-	cEntity *entity;		/* 0x004 */
-	byte active;			/* 0x008 the life is checked */
+	cEntity *entity;
+	byte active;			/* the life is checked */
 	byte pad_09[3];
-	int life;			/* 0x00c */
-	int lifePct;			/* 0x010 */
-	CGameModel *model;		/* 0x014 the model of the debris */
-	byte seen;			/* 0x018 the ship was seen in the last Update, pos is valid */
+	int life;
+	int lifePct;
+	CGameModel *model;		/* the model of the debris */
+	byte seen;			/* the ship was seen in the last Update, pos is valid */
 	byte pad_19[3];
-	CGameParticles parts3;		/* 0x01c on Dummy03: the smoke at the vertices */
-	CGameParticles parts2;		/* 0x0cc on Dummy02: debris, sparks and flames */
-	float level;			/* 0x17c follows lifePct / FXSetOnFireLifePercent: 0 burning, 1 out */
-	float emitTime;			/* 0x180 since the last emission at the vertices */
-	CGameParticles parts1;		/* 0x184 on Dummy01: the trail of smoke */
-	vec3_t pos;			/* 0x234 of the ship model at the last puff of the trail */
-	byte first;			/* 0x240 */
+	CGameParticles parts3;		/* on Dummy03: the smoke at the vertices */
+	CGameParticles parts2;		/* on Dummy02: debris, sparks and flames */
+	float level;			/* follows lifePct / FXSetOnFireLifePercent: 0 burning, 1 out */
+	float emitTime;			/* since the last emission at the vertices */
+	CGameParticles parts1;		/* on Dummy01: the trail of smoke */
+	vec3_t pos;			/* of the ship model at the last puff of the trail */
+	byte first;
 	byte pad_241[3];
-	float trailTime;		/* 0x244 since the last puff of the trail */
-	int numExhausts;		/* 0x248 */
-	FXVExhaust exhausts[FXV_EXHAUSTS];	/* 0x24c */
-	byte on;			/* 0x2cc */
+	float trailTime;		/* since the last puff of the trail */
+	int numExhausts;
+	FXVExhaust exhausts[FXV_EXHAUSTS];
+	byte on;
 	byte pad_2cd[3];
 } cObjElementFXVehicleDamage;
 
@@ -134,63 +134,63 @@ typedef struct cObjElementFXVehicleDamage {
 #define FXVEMI_MARKS 0x200
 typedef struct cObjElementFXVehicleEMI {
 	cObjElementFX base;
-	cEntity *entity;		/* 0x0004 */
-	CGameParticles particles;	/* 0x0008 on Dummy01, three per ray */
-	float stepTime;			/* 0x00b8 a step of the rays every 0.02 */
-	float time;			/* 0x00bc */
-	int numTrails;			/* 0x00c0 16 */
-	float offset;			/* 0x00c4 22, the points out along the normal */
-	int numVerts;			/* 0x00c8 0x1000, the vertices the marks hold */
-	int maxPts;			/* 0x00cc 0x40 */
-	vec3_t dir;			/* 0x00d0 of the last step */
-	int numExhausts;		/* 0x00dc */
-	FXVExhaust exhausts[FXV_EXHAUSTS];	/* 0x00e0 */
-	int part[FXVEMI_TRAILS];	/* 0x0160 the exhaust of the ray, -1 the whole ship */
-	float rayTime[FXVEMI_TRAILS];	/* 0x01a0 */
-	vec3_t pts[FXVEMI_TRAILS][FXVEMI_POINTS];	/* 0x01e0 a ring, in the space of the model */
-	int vidx[FXVEMI_TRAILS][FXVEMI_POINTS];		/* 0x31e0 the vertex of each point */
-	int head[FXVEMI_TRAILS];	/* 0x41e0 */
-	int tail[FXVEMI_TRAILS];	/* 0x4220 */
-	int count[FXVEMI_TRAILS];	/* 0x4260 */
-	uint16_t marks[FXVEMI_TRAILS][FXVEMI_MARKS];	/* 0x42a0 a bit per vertex in the ring */
-	CGameTrail trails[FXVEMI_TRAILS];	/* 0x82a0 */
-	byte on;			/* 0x82e0 */
+	cEntity *entity;
+	CGameParticles particles;	/* on Dummy01, three per ray */
+	float stepTime;			/* a step of the rays every 0.02 */
+	float time;
+	int numTrails;			/* 16 */
+	float offset;			/* 22, the points out along the normal */
+	int numVerts;			/* 0x1000, the vertices the marks hold */
+	int maxPts;			/* 0x40 */
+	vec3_t dir;			/* of the last step */
+	int numExhausts;
+	FXVExhaust exhausts[FXV_EXHAUSTS];
+	int part[FXVEMI_TRAILS];	/* the exhaust of the ray, -1 the whole ship */
+	float rayTime[FXVEMI_TRAILS];
+	vec3_t pts[FXVEMI_TRAILS][FXVEMI_POINTS];	/* a ring, in the space of the model */
+	int vidx[FXVEMI_TRAILS][FXVEMI_POINTS];		/* the vertex of each point */
+	int head[FXVEMI_TRAILS];
+	int tail[FXVEMI_TRAILS];
+	int count[FXVEMI_TRAILS];
+	uint16_t marks[FXVEMI_TRAILS][FXVEMI_MARKS];	/* a bit per vertex in the ring */
+	CGameTrail trails[FXVEMI_TRAILS];
+	byte on;
 	byte pad_82e1[3];
 } cObjElementFXVehicleEMI;
 
-/* the fire at the motors of a ship (0x1fc bytes) */
+/* the fire at the motors of a ship */
 typedef struct cObjElementFXVehicleFire {
 	cObjElementFX base;
-	cEntity *entity;		/* 0x004 */
-	CGameParticles particles;	/* 0x008 on Dummy01 */
-	CGameParticles particlesOut;	/* 0x0b8 on Dummy02, the smoke */
-	float time;			/* 0x168 */
-	float emitTime;			/* 0x16c since the last emission */
+	cEntity *entity;
+	CGameParticles particles;	/* on Dummy01 */
+	CGameParticles particlesOut;	/* on Dummy02, the smoke */
+	float time;
+	float emitTime;			/* since the last emission */
 	byte pad_170[4];
-	int numExhausts;		/* 0x174 */
-	FXVExhaust exhausts[FXV_EXHAUSTS];	/* 0x178 */
-	byte on;			/* 0x1f8 */
+	int numExhausts;
+	FXVExhaust exhausts[FXV_EXHAUSTS];
+	byte on;
 	byte pad_1f9[3];
 } cObjElementFXVehicleFire;
 
-/* the spawn of a ship: rays from vertices of its model, drawn as trails (0xdd8 bytes) */
+/* the spawn of a ship: rays from vertices of its model, drawn as trails */
 #define FXVSPAWN_RAYS 75
 typedef struct cObjElementFXVehicleSpawn {
 	cObjElementFX base;
-	cEntity *entity;		/* 0x004 */
-	CGameParticles particles;	/* 0x008 on Dummy01 */
-	float stepTime;			/* 0x0b8 of the frame */
-	float time;			/* 0x0bc */
-	vec3_t rayBase[FXVSPAWN_RAYS];	/* 0x0d8 */
-	vec3_t rayDir[FXVSPAWN_RAYS];	/* 0x45c */
-	float rayLen[FXVSPAWN_RAYS];	/* 0x7e0 */
-	float raySpeed[FXVSPAWN_RAYS];	/* 0x90c */
-	float rayAcc[FXVSPAWN_RAYS];	/* 0xa38 */
-	float rayMax[FXVSPAWN_RAYS];	/* 0xb64 */
-	CGameTrail trails[FXVSPAWN_TRAILS];	/* 0xc90 */
-	int rayVertex[FXVSPAWN_RAYS];	/* 0xca4 the vertex of the model */
-	int numRays;			/* 0xdd0 */
-	byte on;			/* 0xdd4 */
+	cEntity *entity;
+	CGameParticles particles;	/* on Dummy01 */
+	float stepTime;			/* of the frame */
+	float time;
+	vec3_t rayBase[FXVSPAWN_RAYS];
+	vec3_t rayDir[FXVSPAWN_RAYS];
+	float rayLen[FXVSPAWN_RAYS];
+	float raySpeed[FXVSPAWN_RAYS];
+	float rayAcc[FXVSPAWN_RAYS];
+	float rayMax[FXVSPAWN_RAYS];
+	CGameTrail trails[FXVSPAWN_TRAILS];
+	int rayVertex[FXVSPAWN_RAYS];	/* the vertex of the model */
+	int numRays;
+	byte on;
 	byte pad_dd5[3];
 } cObjElementFXVehicleSpawn;
 
@@ -198,28 +198,28 @@ typedef struct cObjElementFXVehicleSpawn {
  * (0x1720 bytes) */
 typedef struct cObjElementFXVehicleSputnik {
 	cObjElementFX base;
-	cEntity *entity;		/* 0x0004 */
-	CGameParticles particles;	/* 0x0008 on Dummy01 */
-	float time;			/* 0x00b8 */
-	float time2;			/* 0x00bc */
-	int phase;			/* 0x00c0 1 */
-	float duration;			/* 0x00c4 0.8 */
-	byte active;			/* 0x00c8 the active of the entity at the start, a change ends the effect */
+	cEntity *entity;
+	CGameParticles particles;	/* on Dummy01 */
+	float time;
+	float time2;
+	int phase;			/* 1 */
+	float duration;			/* 0.8 */
+	byte active;			/* the active of the entity at the start, a change ends the effect */
 	byte pad_c9[3];
-	int numExhausts;		/* 0x00cc */
-	FXVExhaust exhausts[FXV_EXHAUSTS];	/* 0x00d0 */
-	int sputnikNode;		/* 0x0190 "Bip Spootnick MASTER" of the entity "Sputnik", -1 none */
-	CGameTrail trails[FXVSPUTNIK_TRAILS];	/* 0x0194 15 rays per trail */
-	vec3_t rayPos[FXVSPUTNIK_RANDS];	/* 0x01c8 the point of the ship */
-	float rayLife[FXVSPUTNIK_RANDS];	/* 0x0aec -1 */
-	float rayLifeMax[FXVSPUTNIK_RANDS];	/* 0x0df8 */
-	float rayDelay[FXVSPUTNIK_RANDS];	/* 0x1104 0.15..0.55 before the next ray */
-	float rayWidth[FXVSPUTNIK_RANDS];	/* 0x1410 */
-	byte on;			/* 0x171c */
+	int numExhausts;
+	FXVExhaust exhausts[FXV_EXHAUSTS];
+	int sputnikNode;		/* "Bip Spootnick MASTER" of the entity "Sputnik", -1 none */
+	CGameTrail trails[FXVSPUTNIK_TRAILS];	/* 15 rays per trail */
+	vec3_t rayPos[FXVSPUTNIK_RANDS];	/* the point of the ship */
+	float rayLife[FXVSPUTNIK_RANDS];	/* -1 */
+	float rayLifeMax[FXVSPUTNIK_RANDS];
+	float rayDelay[FXVSPUTNIK_RANDS];	/* 0.15..0.55 before the next ray */
+	float rayWidth[FXVSPUTNIK_RANDS];
+	byte on;
 	byte pad_171d[3];
 } cObjElementFXVehicleSputnik;
 
-/* the constructors (return self), destructors and deleting destructors */
+/* the constructors (return self), destructors and the Free slots */
 void *cObjElementFXFiredDebris_ctor(void *self);
 void *cObjElementFXFiredEntity_ctor(void *self);
 void *cObjElementFXSmokeDebris_ctor(void *self);
@@ -240,6 +240,6 @@ void cObjElementFXVehicleSputnik_SetEntity(cObjElementFXVehicleSputnik *self, cE
 void cObjElementFXVehicleSputnik_SetC0(cObjElementFXVehicleSputnik *self, int v);
 void cObjElementFXVehicleSputnik_SetC4(cObjElementFXVehicleSputnik *self, float v);
 void cObjElementFXVehicleSpawn_SetEntity(cObjElementFXVehicleSpawn *self, cEntity *e);
-/* FXVehicle_RenderAttached (rva 0x1f9050, the damage effect drawn with its ship) is in embeddedfxvehicle.h */
+/* FXVehicle_RenderAttached (the damage effect drawn with its ship) is in embeddedfxvehicle.h */
 
 #endif

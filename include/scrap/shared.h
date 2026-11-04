@@ -1,9 +1,8 @@
 /*
  * Base definitions of ScrapC, the C version of Scrapland Remastered 1.6.1 (Scrap.exe, GOG build 52159).
  *
- * It builds for 64 bit Linux and Windows. The offsets in the comments of the structs are the ones of the original
- * (i686, 4-byte pointers), kept as a reference. Methods take self as their first argument; __stdcall is left only
- * on the callbacks of Windows.
+ * It builds for 64 bit Linux and Windows. Methods take self as their first argument; __stdcall is left only on the
+ * callbacks of Windows.
  */
 #ifndef SCRAP_SHARED_H
 #define SCRAP_SHARED_H

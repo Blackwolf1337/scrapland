@@ -1,6 +1,6 @@
 /*
  * Logic/DesktopLogic.cpp of the game: the desktop (Betty's and Berto's chair), a generic character without a
- * target and vf09 0 (include/scrap/logic.h).
+ * target and 0 (include/scrap/logic.h).
  */
 #include "scrap/logic.h"
 

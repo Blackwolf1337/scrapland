@@ -23,14 +23,13 @@ static void cBettyLocalLogic_Free(cLocalLogic *elem) {
 	operator_delete(self);
 }
 
-/* vf40 */
 static void cBettyLocalLogic_AssignDesktop(cLocalLogic *elem, float maxDist) {
 	cBettyLocalLogic *self = (cBettyLocalLogic *)elem;
 	(void)maxDist;
 	Logic_LinkDesktop(&self->base, "BettyDesktop");
 }
 
-/* vf38 (the callers use the returned out): the angles at the desktop, turned by a quarter the other way */
+/* (the callers use the returned out): the angles at the desktop, turned by a quarter the other way */
 static vec3_t *cBettyLocalLogic_GetWorkAng(cLocalLogic *elem, vec3_t *out) {
 	cBettyLocalLogic *self = (cBettyLocalLogic *)elem;
 	vec3_t tmp;

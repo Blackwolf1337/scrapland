@@ -1,6 +1,6 @@
 /*
  * AI/NodesWorld.cpp of the game: CNodesWorld, the 3D visibility graph of a level. The base class CNodesWorldSup
- * (rva 0xb80f0 and on, another source) loads the graph: the nodes with their links (0x1a8) and the points of
+ * (and on, another source) loads the graph: the nodes with their links (0x1a8) and the points of
  * visibility (the nodes) in a grid of cells (0x18c), which the searches walk ring by ring around the cell of a
  * position.
  * CNodesWorld adds the file names of the graph, the path and visibility queries on the points, the analysis of
@@ -18,60 +18,60 @@ struct CCollisionTri;
 
 /* ---- Global/DList.h instances ---- */
 
-/* a node with one int or pointer (0xc bytes) */
+/* a node with one int or pointer */
 typedef struct cNWIntNode {
-	struct cNWIntNode *next;	/* 0x0 */
-	struct cNWIntNode *prev;	/* 0x4 */
-	void *data;			/* 0x8 */
+	struct cNWIntNode *next;
+	struct cNWIntNode *prev;
+	void *data;
 } cNWIntNode;
 typedef DLIST(cNWIntNode) cNWIntList;
 
-/* a node with 12 bytes: a point, or a cell index with two pointers (0x14 bytes) */
+/* a node with 12 bytes: a point, or a cell index with two pointers */
 typedef struct cNWVecNode {
-	struct cNWVecNode *next;	/* 0x00 */
-	struct cNWVecNode *prev;	/* 0x04 */
-	vec3_t v;			/* 0x08 */
+	struct cNWVecNode *next;
+	struct cNWVecNode *prev;
+	vec3_t v;
 } cNWVecNode;
 typedef DLIST(cNWVecNode) cNWVecList;
 
-/* a segment of the debug view of the path tests (0x20 bytes) */
+/* a segment of the debug view of the path tests */
 typedef struct cNWSegNode {
-	struct cNWSegNode *next;	/* 0x00 */
-	struct cNWSegNode *prev;	/* 0x04 */
-	vec3_t a, b;			/* 0x08 */
+	struct cNWSegNode *next;
+	struct cNWSegNode *prev;
+	vec3_t a, b;
 } cNWSegNode;
 typedef DLIST(cNWSegNode) cNWSegList;
 
-/* a point of visibility of the generation, with the points it sees (0x44 bytes) */
+/* a point of visibility of the generation, with the points it sees */
 typedef struct cNWPointNode {
-	struct cNWPointNode *next;	/* 0x00 */
-	struct cNWPointNode *prev;	/* 0x04 */
-	vec3_t pos;			/* 0x08 */
-	cNWIntList links;		/* 0x14 the pos of the other points */
-	vec3_t boxA;			/* 0x2c */
-	vec3_t boxB;			/* 0x38 */
+	struct cNWPointNode *next;
+	struct cNWPointNode *prev;
+	vec3_t pos;
+	cNWIntList links;		/* the pos of the other points */
+	vec3_t boxA;
+	vec3_t boxB;
 } cNWPointNode;
 typedef DLIST(cNWPointNode) cNWPointList;
 
-/* a triangle with an inverted normal found by Analyze (0x44 bytes, 15 words of data) */
+/* a triangle with an inverted normal found by Analyze (15 words of data) */
 typedef struct cNWTriNode {
-	struct cNWTriNode *next;	/* 0x00 */
-	struct cNWTriNode *prev;	/* 0x04 */
-	float data[15];			/* 0x08 */
+	struct cNWTriNode *next;
+	struct cNWTriNode *prev;
+	float data[15];
 } cNWTriNode;
 typedef DLIST(cNWTriNode) cNWTriList;
 
 /* a pair of points (the positions in their cNWPointNode) with the square of their distance */
 typedef struct cNWPair {
-	const vec3_t *a;		/* 0x0 */
-	const vec3_t *b;		/* 0x4 */
-	float dist;			/* 0x8 */
+	const vec3_t *a;
+	const vec3_t *b;
+	float dist;
 } cNWPair;
 
 typedef struct cNWPairNode {
-	struct cNWPairNode *next;	/* 0x00 */
-	struct cNWPairNode *prev;	/* 0x04 */
-	cNWPair p;			/* 0x08 */
+	struct cNWPairNode *next;
+	struct cNWPairNode *prev;
+	cNWPair p;
 } cNWPairNode;
 typedef DLIST(cNWPairNode) cNWPairList;
 
@@ -84,83 +84,83 @@ typedef struct cNWBox {
 
 /* a node of the loaded graph */
 typedef struct cNWNode {
-	vec3_t pos;			/* 0x00 */
-	int numLinks;			/* 0x0c */
-	struct cNWNode **links;		/* 0x10 */
+	vec3_t pos;
+	int numLinks;
+	struct cNWNode **links;
 } cNWNode;
 
 /* the set of points of visibility seen from cells of the generation buffer (InfPointVis), shared by the cells with
  * the same set: refs counts them; the sets are kept in the hash lists sets[hash] (0x24 bytes) */
 typedef struct cNWVis {
-	int refs;			/* 0x00 */
-	int hash;			/* 0x04 the list of sets it is in */
-	struct cNWVisNode *node;	/* 0x08 its node in that list */
-	cNWIntList points;		/* 0x0c the pos of the points, sorted by address */
+	int refs;
+	int hash;			/* the list of sets it is in */
+	struct cNWVisNode *node;	/* its node in that list */
+	cNWIntList points;		/* the pos of the points, sorted by address */
 } cNWVis;
 
 typedef struct cNWVisNode {
-	struct cNWVisNode *next;	/* 0x00 */
-	struct cNWVisNode *prev;	/* 0x04 */
-	cNWVis vis;			/* 0x08 */
+	struct cNWVisNode *next;
+	struct cNWVisNode *prev;
+	cNWVis vis;
 } cNWVisNode;
 typedef DLIST(cNWVisNode) cNWVisList;
 
 /* a cell of the generation buffer */
 typedef struct cNWCell {
-	int state;			/* 0x0 0, 3, 4, 5, 6: the cellLists of GetInfoNodes */
-	cNWVis *vis;			/* 0x4 */
+	int state;			/* 0, 3, 4, 5, 6: the cellLists of GetInfoNodes */
+	cNWVis *vis;
 } cNWCell;
 
 typedef struct CNodesWorldVtbl {
-	void (*Free)(CNodesWorld *self);	/* 0x00 */
-	void(*GetBox)(CNodesWorld *self, vec3_t *min, vec3_t *max);	/* 0x04 */
-	byte(*LoadFiles)(CNodesWorld *self, const char *path);	/* 0x08 CNodesWorldSup_LoadGraph */
-	byte(*LoadGraph)(CNodesWorld *self);			/* 0x0c CNodesWorld_LoadGraph */
-	byte(*Create)(CNodesWorld *self);			/* 0x10 LoadGraph, created on success */
+	void (*Free)(CNodesWorld *self);
+	void(*GetBox)(CNodesWorld *self, vec3_t *min, vec3_t *max);
+	byte(*LoadFiles)(CNodesWorld *self, const char *path);	/* CNodesWorldSup_LoadGraph */
+	byte(*LoadGraph)(CNodesWorld *self);			/* CNodesWorld_LoadGraph */
+	byte(*Create)(CNodesWorld *self);			/* LoadGraph, created on success */
 	/* the graph file a node was loaded from, -1 for a node not in the array */
-	int(*FileOf)(CNodesWorld *self, const struct cNWNode *node);	/* 0x14 */
+	int(*FileOf)(CNodesWorld *self, const struct cNWNode *node);
 	/* the file of all n nodes, -1 if they differ or n < 1 */
-	int(*CommonFile)(CNodesWorld *self, struct cNWNode *const *nodes, int n);	/* 0x18 */
+	int(*CommonFile)(CNodesWorld *self, struct cNWNode *const *nodes, int n);
 	/* the middle of the buffer cell of pos */
-	vec3_t *(*SnapPos)(CNodesWorld *self, vec3_t *out, const vec3_t *pos);	/* 0x1c */
+	vec3_t *(*SnapPos)(CNodesWorld *self, vec3_t *out, const vec3_t *pos);
 	/* the linked nodes of node not at pos, at most max */
 	void(*OtherLinks)(CNodesWorld *self, const struct cNWNode *node, const vec3_t *pos,
-		struct cNWNode **list, int max, int *count);		/* 0x20 */
-	byte(*IsCreated)(CNodesWorld *self);			/* 0x24 */
+		struct cNWNode **list, int max, int *count);
+	byte(*IsCreated)(CNodesWorld *self);
 	/* nodeInit set to the last node, copied to out */
-	vec3_t *(*LastNodePos)(CNodesWorld *self, vec3_t *out);	/* 0x28 */
-	const vec3_t *(*GetVisPoint)(CNodesWorld *self, int i);	/* 0x2c */
-	int(*NumVisPoints)(CNodesWorld *self);			/* 0x30 */
-	float(*GetMaxVisDist)(CNodesWorld *self);			/* 0x34 */
-	byte(*InGrid)(CNodesWorld *self, const vec3_t *pos);	/* 0x38 */
-	byte(*SavePath)(CNodesWorld *self);				/* 0x3c CNodesWorld_SavePath */
-	byte(*CheckBuffer)(CNodesWorld *self);			/* 0x40 */
-	void(*BuildGrid)(CNodesWorld *self);			/* 0x44 the grid of the points */
-	int(*BufferIndex)(CNodesWorld *self, const vec3_t *pos);	/* 0x48 */
+	vec3_t *(*LastNodePos)(CNodesWorld *self, vec3_t *out);
+	const vec3_t *(*GetVisPoint)(CNodesWorld *self, int i);
+	int(*NumVisPoints)(CNodesWorld *self);
+	float(*GetMaxVisDist)(CNodesWorld *self);
+	byte(*InGrid)(CNodesWorld *self, const vec3_t *pos);
+	byte(*SavePath)(CNodesWorld *self);				/* CNodesWorld_SavePath */
+	byte(*CheckBuffer)(CNodesWorld *self);
+	void(*BuildGrid)(CNodesWorld *self);			/* the grid of the points */
+	int(*BufferIndex)(CNodesWorld *self, const vec3_t *pos);
 	/* the position of a node of the generation buffer (CHECK on the index) */
-	vec3_t *(*BufferPos)(CNodesWorld *self, vec3_t *out, int index);	/* 0x4c */
-	void(*GetInfoNodes)(CNodesWorld *self);			/* 0x50 */
-	void(*AddVis)(CNodesWorld *self, const vec3_t *point, int index);	/* 0x54 */
-	int(*Hash)(CNodesWorld *self, int a, int b);		/* 0x58 */
-	void(*ReleaseVis)(CNodesWorld *self, int index);		/* 0x5c */
-	void(*LinkPoints)(CNodesWorld *self);			/* 0x60 */
-	void(*LinkBack)(CNodesWorld *self);			/* 0x64 */
+	vec3_t *(*BufferPos)(CNodesWorld *self, vec3_t *out, int index);
+	void(*GetInfoNodes)(CNodesWorld *self);
+	void(*AddVis)(CNodesWorld *self, const vec3_t *point, int index);
+	int(*Hash)(CNodesWorld *self, int a, int b);
+	void(*ReleaseVis)(CNodesWorld *self, int index);
+	void(*LinkPoints)(CNodesWorld *self);
+	void(*LinkBack)(CNodesWorld *self);
 	/* the links of point have other */
-	byte(*PointLinked)(CNodesWorld *self, const vec3_t *point, const vec3_t *other);	/* 0x68 */
-	void(*LinkPoint)(CNodesWorld *self, const vec3_t *point);	/* 0x6c */
-	byte(*Unreachable)(CNodesWorld *self, const vec3_t *from, const vec3_t *to, int index);	/* 0x70 */
-	int(*BoxCells)(CNodesWorld *self, const cNWBox *box);	/* 0x74 */
-	byte(*FindSorted)(CNodesWorld *self, cNWIntList *list, const void *key, cNWIntNode **at);	/* 0x78 */
-	byte(*HasPair)(CNodesWorld *self, void *list, const void *pair);	/* 0x7c */
-	void(*InsertPair)(CNodesWorld *self, void *list, const void *pair);	/* 0x80 */
-	byte(*VisHas)(CNodesWorld *self, const vec3_t *point, int index);	/* 0x84 */
-	byte(*Linked)(CNodesWorld *self, const vec3_t *a, const vec3_t *b);	/* 0x88 */
-	void(*FreeGraph)(CNodesWorld *self);			/* 0x8c */
-	void(*FreeTemp)(CNodesWorld *self);			/* 0x90 the buffer and the sets of the generation */
+	byte(*PointLinked)(CNodesWorld *self, const vec3_t *point, const vec3_t *other);
+	void(*LinkPoint)(CNodesWorld *self, const vec3_t *point);
+	byte(*Unreachable)(CNodesWorld *self, const vec3_t *from, const vec3_t *to, int index);
+	int(*BoxCells)(CNodesWorld *self, const cNWBox *box);
+	byte(*FindSorted)(CNodesWorld *self, cNWIntList *list, const void *key, cNWIntNode **at);
+	byte(*HasPair)(CNodesWorld *self, void *list, const void *pair);
+	void(*InsertPair)(CNodesWorld *self, void *list, const void *pair);
+	byte(*VisHas)(CNodesWorld *self, const vec3_t *point, int index);
+	byte(*Linked)(CNodesWorld *self, const vec3_t *a, const vec3_t *b);
+	void(*FreeGraph)(CNodesWorld *self);
+	void(*FreeTemp)(CNodesWorld *self);			/* the buffer and the sets of the generation */
 	/* the node is one of the n nodes of list */
-	byte(*InList)(CNodesWorld *self, struct cNWNode *const *list, int n, const struct cNWNode *node);	/* 0x94 */
-	void(*ClearLists)(CNodesWorld *self);			/* 0x98 CNodesWorld_ClearLists */
-	byte(*SaveInfPath)(CNodesWorld *self, const char *path);	/* 0x9c */
+	byte(*InList)(CNodesWorld *self, struct cNWNode *const *list, int n, const struct cNWNode *node);
+	void(*ClearLists)(CNodesWorld *self);			/* CNodesWorld_ClearLists */
+	byte(*SaveInfPath)(CNodesWorld *self, const char *path);
 } CNodesWorldVtbl;
 
 /* calls through the slots of CNodesWorldVtbl */
@@ -299,66 +299,66 @@ static inline byte NodesWorld_VisHas(void *self, const vec3_t *point, int index)
 /* the base class (AI/NodesWorldSup.cpp, abstract): the first 0x360 bytes of CNodesWorld and CNodesWorld2D. The code
  * of both works on the CNodesWorld layout, which repeats these members */
 typedef struct CNodesWorldSup {
-	const CNodesWorldVtbl *vftable;	/* 0x000 */
-	vec3_t halfNode;		/* 0x004 half of nodeSize */
-	vec3_t axis[3];			/* 0x010 nodeSize along x, y and z */
-	vec3_t nodeSize;		/* 0x034 vectInterNod */
-	float pairRange;		/* 0x040 25000 outdoors, 1500 indoors: a link is tried up to twice it */
-	vec3_t nodeTenth;		/* 0x044 nodeSize / 10 */
-	float margin;			/* 0x050 the smallest component of nodeSize / 100 */
-	float gridCell;			/* 0x054 the cell of the grid of the level, 12500 outdoors, 750 indoors */
-	float linkDist;			/* 0x058 */
-	float startVisDist;		/* 0x05c the search of the visible points a path starts at, 27500 or 1650 */
-	float maxVisDist;		/* 0x060 the searches of points of visibility end at this distance */
-	vec3_t nodeInit;		/* 0x064 PointNodeInit */
-	byte created;			/* 0x070 */
+	const CNodesWorldVtbl *vftable;
+	vec3_t halfNode;		/* half of nodeSize */
+	vec3_t axis[3];			/* nodeSize along x, y and z */
+	vec3_t nodeSize;		/* vectInterNod */
+	float pairRange;		/* 25000 outdoors, 1500 indoors: a link is tried up to twice it */
+	vec3_t nodeTenth;		/* nodeSize / 10 */
+	float margin;			/* the smallest component of nodeSize / 100 */
+	float gridCell;			/* the cell of the grid of the level, 12500 outdoors, 750 indoors */
+	float linkDist;
+	float startVisDist;		/* the search of the visible points a path starts at, 27500 or 1650 */
+	float maxVisDist;		/* the searches of points of visibility end at this distance */
+	vec3_t nodeInit;		/* PointNodeInit */
+	byte created;
 	byte pad_71[3];
-	vec3_t min;			/* 0x074 the box of the level */
-	vec3_t max;			/* 0x080 */
-	char name[0xff];		/* 0x08c the level, the folder of the graph files */
-	byte nodeInitDummy;		/* 0x18b */
-	struct cGridElements *grid;	/* 0x18c the points of visibility by cell (cGridElements_InfPointVisPtr) */
-	cNWPointList points;		/* 0x190 the points of the generation */
-	cNWNode *nodes;			/* 0x1a8 */
-	int numNodes;			/* 0x1ac */
-	cNWCell *buffer;		/* 0x1b0 the cells of the generation, nx * ny * nz (Mem_Alloc) */
-	int nx, ny, nz;			/* 0x1b4 */
-	int dimBuffer;			/* 0x1c0 */
-	int numPointLinks;		/* 0x1c4 the links of the generated points */
-	void *reachedCells;		/* 0x1c8 the indices of the cells the region reached (IniBuffer), FindLinkFree; Mem_Alloc */
-	int numReachedCells;			/* 0x1cc */
-	cNWIntList edgeCells;		/* 0x1d0 the cells the region did not reach, NWSup_NextInit starts next to them */
-	cNWVisList *sets;		/* 0x1e8 numSets hash lists of the sets of points (Mem_Alloc) */
-	int numSets;			/* 0x1ec */
-	cNWVecList extraPoints;		/* 0x1f0 */
-	cNWNode *fileStart[20];		/* 0x208 the first node of each graph file */
-	int numFiles;			/* 0x258 */
-	cNWVecList foundNodes[2];		/* 0x25c the nodes of the debug view */
-	cNWVecList cellLists[5];		/* 0x28c the buffer cells by state (GetInfoNodes) */
-	vec3_t openPos;			/* 0x304 the cell where the region of the generation left the box */
-	cNWVecList errCollide;		/* 0x310 AnalizeGraph: the links through the level, 3 points each */
-	cNWVecList errUnlinked;		/* 0x328 the nodes without links */
-	cNWVecList errOneWay;		/* 0x340 the links without the link back, 2 points each */
-	int debugHits;			/* 0x358 the nodes the debug test found blocked */
-	byte unused_35c;			/* 0x35c */
+	vec3_t min;			/* the box of the level */
+	vec3_t max;
+	char name[0xff];		/* the level, the folder of the graph files */
+	byte nodeInitDummy;
+	struct cGridElements *grid;	/* the points of visibility by cell (cGridElements_InfPointVisPtr) */
+	cNWPointList points;		/* the points of the generation */
+	cNWNode *nodes;
+	int numNodes;
+	cNWCell *buffer;		/* the cells of the generation, nx * ny * nz (Mem_Alloc) */
+	int nx, ny, nz;
+	int dimBuffer;
+	int numPointLinks;		/* the links of the generated points */
+	void *reachedCells;		/* the indices of the cells the region reached (IniBuffer), FindLinkFree; Mem_Alloc */
+	int numReachedCells;
+	cNWIntList edgeCells;		/* the cells the region did not reach, NWSup_NextInit starts next to them */
+	cNWVisList *sets;		/* numSets hash lists of the sets of points (Mem_Alloc) */
+	int numSets;
+	cNWVecList extraPoints;
+	cNWNode *fileStart[20];		/* the first node of each graph file */
+	int numFiles;
+	cNWVecList foundNodes[2];		/* the nodes of the debug view */
+	cNWVecList cellLists[5];		/* the buffer cells by state (GetInfoNodes) */
+	vec3_t openPos;			/* the cell where the region of the generation left the box */
+	cNWVecList errCollide;		/* AnalizeGraph: the links through the level, 3 points each */
+	cNWVecList errUnlinked;		/* the nodes without links */
+	cNWVecList errOneWay;		/* the links without the link back, 2 points each */
+	int debugHits;			/* the nodes the debug test found blocked */
+	byte unused_35c;
 	byte pad_35d[3];
 } CNodesWorldSup;
 
 struct CNodesWorld {
-	CNodesWorldSup sup;		/* 0x000 */
+	CNodesWorldSup sup;
 	/* CNodesWorld */
-	byte analyzing;			/* 0x360 Analyze: Load analyzes the level instead of making the graph */
+	byte analyzing;			/* Analyze: Load analyzes the level instead of making the graph */
 	byte pad_361[3];
-	void *file;			/* 0x364 AnalisisMap.txt */
-	byte open;			/* 0x368 the level is open */
+	void *file;			/* AnalisisMap.txt */
+	byte open;			/* the level is open */
 	byte pad_369[3];
-	byte firstTri[0x44];		/* 0x36c the first triangle the analysis found (a CCollisionTri) */
-	byte firstSaved;		/* 0x3b0 the first bad triangle and hit are kept */
+	byte firstTri[0x44];		/* the first triangle the analysis found (a CCollisionTri) */
+	byte firstSaved;		/* the first bad triangle and hit are kept */
 	byte pad_3b1[3];
-	vec3_t analyzeSize;		/* 0x3b4 */
-	vec3_t hitFrom;			/* 0x3c0 */
-	vec3_t hitTo;			/* 0x3cc */
-	cNWTriList tris;		/* 0x3d8 */
+	vec3_t analyzeSize;
+	vec3_t hitFrom;
+	vec3_t hitTo;
+	cNWTriList tris;
 };
 
 /* the globals of the module */
@@ -389,7 +389,7 @@ void NWVecList_Free(cNWVecList *list);
 /* the list of a struct at +0xc */
 void NWIntList_Add(cNWIntList *list, void *const *data);
 void NWVecList_Add(cNWVecList *list, const vec3_t *v);
-/* data: the 0x3c bytes from pos on */
+/* data: the from pos on */
 void NWPointList_Add(cNWPointList *list, const void *data);
 /* in front of the iterator, the head kept (Add when the iterator is the head) */
 void NWIntList_AddBefore(cNWIntList *list, void *const *data);

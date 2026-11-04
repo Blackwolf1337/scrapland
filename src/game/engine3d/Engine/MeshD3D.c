@@ -148,7 +148,7 @@ static void CMeshD3D_dtor(CMeshD3D *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-/* the deleting destructor */
+/* the Free slot */
 static void CMeshD3D_Free(IObject3D *base) {
 	CMeshD3D *self = (CMeshD3D *)base;
 	CMeshD3D_dtor(self);
@@ -250,7 +250,7 @@ static byte CMeshD3D_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	Array_Read2(f, (void **)&self->vertOrig, &n);
 	CHECK(!self->vertOrig || n == (uint32_t)self->vert.nVert);
 	CFileIO_Read4(f, &self->triBase);
-	/* the copy at rva 0x2af4e0 */
+	/* the copy */
 	Array_Read10(f, &self->pSeg, &self->nSeg);
 	Array_Read8(f, &self->segs, &self->numSegs);
 	Array_ReadC(f, (void **)&self->pPos, &self->nPos);
@@ -416,7 +416,7 @@ static void CMeshD3D_CalcBox(CMeshD3D *self, box_t *out, byte first) {
 	if (self->next) {
 		CMeshD3D_CalcBox(self->next, &self->box, 0);
 	}
-	/* an identical copy of Box_Merge, rva 0x2b8870 */
+	/* an identical copy of Box_Merge */
 	Box_Merge(out, &self->box, first);
 }
 

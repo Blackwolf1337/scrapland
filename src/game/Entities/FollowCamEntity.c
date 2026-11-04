@@ -29,9 +29,9 @@ static cGVar GVar_OutWalkCamNear;
 static cGVar GVar_OutWalkCamFar;
 static cGVar GVar_FullCameraTest;
 static cGVar GVar_FreeCameraCollide;
-#define FCAM_SLOW_DT 0.06666667f		/* rva 0x3ad094: a frame slower than 15 per second */
+#define FCAM_SLOW_DT 0.06666667f		/* a frame slower than 15 per second */
 #define FCAM_HALF_PI 1.5707964f
-#define FCAM_NEAR_SCALE 1.65f			/* rva 0x3ad09c: the sphere radius of the camera, times clipNear */
+#define FCAM_NEAR_SCALE 1.65f			/* the sphere radius of the camera, times clipNear */
 
 static inline cFollowCamEntity *FCam(cEntity *e) {
 	return (cFollowCamEntity *)e;

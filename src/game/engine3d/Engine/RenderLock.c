@@ -220,7 +220,7 @@ void RenderLock_Frame(void) {
 	}
 }
 
-/* the box constructor of two corners (rva 0x2a4830, src/game/engine3d/Engine/RenderLock.c) */
+/* the box constructor of two corners (src/game/engine3d/Engine/RenderLock.c) */
 static box_t *Box_Set(box_t *self, const vec3_t *min, const vec3_t *max) {
 	self->min = *min;
 	self->max = *max;

@@ -43,7 +43,7 @@ static void cAIGear_Free(cAI *base) {
 	operator_delete(self);
 }
 
-/* vf65: blocked by a paused AI it ran into (not the gate keeper, Sebastian): the action button */
+/* blocked by a paused AI it ran into (not the gate keeper, Sebastian): the action button */
 static void cAIGear_UpdateAction(cAI *elem) {
 	cAIGear *self = (cAIGear *)elem;
 	cAIChar *c = &self->base;

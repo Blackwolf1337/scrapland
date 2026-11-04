@@ -16,18 +16,18 @@ enum {
 };
 
 typedef struct CFog {
-	byte active;			/* 0x00 */
+	byte active;
 	byte pad_1[3];
-	float start;			/* 0x04 0.5 */
-	float end;			/* 0x08 1 */
-	float density;			/* 0x0c 0.5, for the exponential table modes */
-	int font;			/* 0x10 NIEBLA_COLOR_* */
-	ColorIntens color;		/* 0x14 */
-	byte table;			/* 0x1c table fog wanted */
-	byte capsW;			/* 0x1d the device has w fog (the range is then the camera's) */
-	byte capsTable;			/* 0x1e the device has table fog */
-	byte capsVertex;		/* 0x1f the device has vertex fog, 1 */
-	int mode;			/* 0x20 D3DFOGMODE of the table fog, 3 linear */
+	float start;			/* 0.5 */
+	float end;			/* 1 */
+	float density;			/* 0.5, for the exponential table modes */
+	int font;			/* NIEBLA_COLOR_* */
+	ColorIntens color;
+	byte table;			/* table fog wanted */
+	byte capsW;			/* the device has w fog (the range is then the camera's) */
+	byte capsTable;			/* the device has table fog */
+	byte capsVertex;		/* the device has vertex fog, 1 */
+	int mode;			/* D3DFOGMODE of the table fog, 3 linear */
 } CFog;
 
 /* the engine variables of the fog (Gvars) */
@@ -35,7 +35,7 @@ extern cGVar GVar_R_FogEnable;
 #define g_FogEnable (GVar_R_FogEnable.value.i)
 
 CFog *CFog_ctor(CFog *self);
-/* rva 0x278390, empty */
+/* empty */
 void CFog_dtor(CFog *self);
 /* the fog capabilities of the device */
 void CFog_InitD3D(CFog *self);

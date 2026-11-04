@@ -12,20 +12,20 @@
 #define MEMPOOL_CLASSES 32
 
 typedef struct cMemBlocks {
-	uint32_t blockSize;		/* 0x00 */
-	uint32_t numBlocks;		/* 0x04 */
-	uint32_t numWords;		/* 0x08 words of status */
-	uint32_t usedBlocks;		/* 0x0c */
-	uint32_t *status;		/* 0x10 bit set: block in use */
-	byte *data;			/* 0x14 */
+	uint32_t blockSize;
+	uint32_t numBlocks;
+	uint32_t numWords;		/* words of status */
+	uint32_t usedBlocks;
+	uint32_t *status;		/* bit set: block in use */
+	byte *data;
 } cMemBlocks;
 
 typedef struct cMemPool {
-	cMemBlocks **blocks;		/* 0x00 MEMPOOL_CLASSES, class i has blocks of (i + 1) * 4 bytes */
-	byte *memory;			/* 0x04 */
-	uint32_t fullSize;		/* 0x08 */
-	const char *name;		/* 0x0c */
-	struct cMemPool *next;		/* 0x10 g_MemPools */
+	cMemBlocks **blocks;		/* MEMPOOL_CLASSES, class i has blocks of (i + 1) * 4 bytes */
+	byte *memory;
+	uint32_t fullSize;
+	const char *name;
+	struct cMemPool *next;		/* g_MemPools */
 } cMemPool;
 
 extern cMemStats g_PyMemStats;	/* the context of the interpreter's allocations */

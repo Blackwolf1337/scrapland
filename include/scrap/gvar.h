@@ -12,11 +12,11 @@ enum { GVAR_STRING = 1, GVAR_INT = 2, GVAR_FLOAT = 4, GVAR_FUNCTION = 5, GVAR_SC
 /* the class cGvar, 0x10 bytes: the part before the value (the value and the default are of the typed variables,
  * classes without RTTI) */
 typedef struct cGvar {
-	struct cGVar *next;		/* 0x00 g_GVars */
-	char *name;			/* 0x04 */
-	char *description;		/* 0x08 */
-	byte flags;			/* 0x0c bit 0: scripts may not write it */
-	byte type;			/* 0x0d GVAR_ */
+	struct cGVar *next;		/* g_GVars */
+	char *name;
+	char *description;
+	byte flags;			/* bit 0: scripts may not write it */
+	byte type;			/* GVAR_ */
 	byte pad_e[2];
 } cGvar;
 
@@ -25,14 +25,14 @@ typedef struct cGvar {
  * variable has a vtable before it (cGVarListVtbl) that saves and loads its lines of the config file.
  */
 typedef struct cGVar {
-	cGvar base;			/* 0x00 */
-	union {				/* 0x10 current value */
+	cGvar base;
+	union {				/* current value */
 		char *s;		/* GVAR_STRING: first member of a string object, cString_Set writes it */
 		int i;
 		uint32_t u;		/* colors, masks, times in ms */
 		float f;
 	} value;
-	union {				/* 0x14 default value */
+	union {				/* default value */
 		char *s;
 		int i;
 		uint32_t u;
