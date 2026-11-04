@@ -13,6 +13,10 @@ setup_*.exe
 /ghidra/*.gpr
 /ghidra/*.lock*
 
+# logs and lists the game writes into its working directory
+log*.html
+filelist*.2Bpack
+
 # Python bytecode caches
 __pycache__/
 
