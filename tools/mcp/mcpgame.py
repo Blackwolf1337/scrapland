@@ -7,7 +7,21 @@ import Scrap
 import string
 import sys
 
-mcpSeen = -1
+
+
+def mcpLastReply():
+	# the number of the last answer: a command that loads a level must not run again in the new level, where this
+	# file starts over
+	try:
+		f = open('mcp_reply.txt', 'r')
+		data = f.read()
+		f.close()
+		return string.atoi(data[:string.find(data, '\n')])
+	except (IOError, ValueError):
+		return -1
+
+
+mcpSeen = mcpLastReply()
 
 
 def mcpRun(code):
