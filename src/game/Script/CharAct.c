@@ -14,56 +14,6 @@
 #include "scrap/script.h"
 #include "scrap/timer.h"
 
-/* handle.var = v (v given away): 0 with the error set */
-static byte Act_Set(PyObject *e, const char *var, PyObject *v) {
-	int ok = v && PyObject_SetAttrString(e, (char *)var, v) == 0;
-	Py_XDECREF(v);
-	return ok;
-}
-
-/* `handle.var == text` of a script; -1 with the error set */
-static int Act_Is(PyObject *e, const char *var, const char *text) {
-	PyObject *v = PyObject_GetAttrString(e, (char *)var);
-	if (!v) {
-		return -1;
-	}
-	int is = PyString_Check(v) && !strcmp(PyString_AsString(v), text);
-	Py_DECREF(v);
-	return is;
-}
-
-/* PyObject_Compare(a, n) of a script value with a small number; -2 with the error set */
-static int Act_Cmp(PyObject *a, long n) {
-	PyObject *b = PyInt_FromLong(n);
-	int c = b ? PyObject_Compare(a, b) : 0;
-	Py_XDECREF(b);
-	return PyErr_Occurred() ? -2 : c;
-}
-
-/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func, args): args given away; 0 with the error set */
-static byte Act_Later(PyObject *delay, PyObject *func, PyObject *args) {
-	PyObject *now = PyFloat_FromDouble((double)Timer_GetTime(&g_pWorld->timer));
-	PyObject *t = now && delay ? PyNumber_Add(now, delay) : NULL;
-	byte ok = t && func && args && Script_Try("Scrap", "AddScheduledFunc", "(OOO)", t, func, args);
-	Py_XDECREF(now);
-	Py_XDECREF(t);
-	Py_XDECREF(args);
-	return ok;
-}
-
-/* the same with a delay in seconds and a function of a module */
-static byte Act_LaterIn(double delay, const char *module, const char *func, PyObject *args) {
-	PyObject *d = PyFloat_FromDouble(delay);
-	PyObject *f = Script_Attr(module, func);
-	byte ok = f && Act_Later(d, f, args);
-	if (!f) {
-		Py_XDECREF(args);
-	}
-	Py_XDECREF(d);
-	Py_XDECREF(f);
-	return ok;
-}
-
 /* OnCreate(EntityName): the standard initializer of a character */
 static PyObject *CharAct_OnCreate(PyObject *self, PyObject *args) {
 	PyObject *name;
@@ -73,10 +23,10 @@ static PyObject *CharAct_OnCreate(PyObject *self, PyObject *args) {
 	}
 	PyObject *eyes = Script_Attr("MakeChar", "MorphEyesList");
 	PyObject *e = eyes ? Script_Ask("Scrap", "GetEntity", "(O)", name) : NULL;
-	PyObject *act = e && Act_Set(e, "OnDeath", PyString_FromString("CharAct.OnDeath")) ?
+	PyObject *act = e && Script_HSet(e, "OnDeath", PyString_FromString("CharAct.OnDeath")) ?
 		PyObject_GetAttrString(e, "ActCtrl") : NULL;
 	int morph = act ? PySequence_In(eyes, act) : -1;
-	byte ok = morph >= 0 && (!morph || Act_Set(e, "Action", PyString_FromString("MorphEyes")));
+	byte ok = morph >= 0 && (!morph || Script_HSet(e, "Action", PyString_FromString("MorphEyes")));
 	Py_XDECREF(act);
 	Py_XDECREF(e);
 	Py_XDECREF(eyes);
@@ -180,7 +130,7 @@ static PyObject *CharAct_PlayerDeathCall(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "O", &e)) {
 		return NULL;
 	}
-	if (PyObject_IsTrue(e) > 0 && !Act_Set(e, "Active", PyInt_FromLong(0))) {
+	if (PyObject_IsTrue(e) > 0 && !Script_HSet(e, "Active", PyInt_FromLong(0))) {
 		return NULL;
 	}
 	return Py_ReturnNone();
@@ -204,7 +154,7 @@ static PyObject *CharAct_NPCDeathCall(PyObject *self, PyObject *args) {
 	PyObject *name = res ? PyObject_GetAttrString(e, "Name") : NULL;
 	PyObject *entry = name ? PyObject_GetItem(res, name) : NULL;
 	Py_XDECREF(res);
-	if (!entry || !Act_LaterIn(6.0, "CharsNPC", "Respawn", Py_BuildValue("(O)", entry))) {
+	if (!entry || !Script_LaterIn(6.0, "CharsNPC", "Respawn", Py_BuildValue("(O)", entry), NULL)) {
 		Py_XDECREF(entry);
 		Py_XDECREF(name);
 		return NULL;
@@ -222,17 +172,17 @@ static PyObject *CharAct_NPCDeathCall(PyObject *self, PyObject *args) {
 	Py_DECREF(name);
 	PyObject *money = r ? PyObject_GetAttrString(e, "Money") : NULL;
 	int ok = money != NULL;
-	if (ok && Act_Cmp(money, 0) != 0) {
-		int gear = Act_Is(e, "ActCtrl", "Gear");
+	if (ok && Script_NumCmp(money, 0) != 0) {
+		int gear = Script_HIs(e, "ActCtrl", "Gear");
 		PyObject *pos = gear >= 0 ? PyObject_GetAttrString(e, "Pos") : NULL;
 		ok = pos != NULL;
 		if (ok && gear) {
-			ok = Act_LaterIn(0.5, "MisItems", "CreateBattery", Py_BuildValue("(O)", pos));
-		} else if (ok && Act_Cmp(r, 0) == 0 && Act_Cmp(money, 2) > 0) {
+			ok = Script_LaterIn(0.5, "MisItems", "CreateBattery", Py_BuildValue("(O)", pos), NULL);
+		} else if (ok && Script_NumCmp(r, 0) == 0 && Script_NumCmp(money, 2) > 0) {
 			PyObject *four = PyInt_FromLong(4);
 			PyObject *coins = four ? PyNumber_Divide(money, four) : NULL;
 			Py_XDECREF(four);
-			ok = coins && Act_LaterIn(0.5, "MisItems", "CreateCoin", Py_BuildValue("(OO)", pos, coins));
+			ok = coins && Script_LaterIn(0.5, "MisItems", "CreateCoin", Py_BuildValue("(OO)", pos, coins), NULL);
 			Py_XDECREF(coins);
 		}
 		Py_XDECREF(pos);
@@ -243,7 +193,7 @@ static PyObject *CharAct_NPCDeathCall(PyObject *self, PyObject *args) {
 	if (!radar) {
 		return NULL;
 	}
-	int shown = Act_Cmp(radar, 1) == 0;
+	int shown = Script_NumCmp(radar, 1) == 0;
 	Py_DECREF(radar);
 	if (shown && !Script_Try("SScorer", "SetMsgText", "(sd)", Script_Lang("MainMissionCharDeath"),
 			(double)Timer_GetTime(&g_pWorld->timer) + 5)) {
@@ -270,8 +220,11 @@ static PyObject *CharAct_NoFXDeath(PyObject *self, PyObject *args) {
 	}
 	PyObject *mf = PyImport_ImportModule("MissionsFuncs");
 	Py_XDECREF(mf);
-	int player = mf ? Act_Is(e, "EntityList", "Players") : -1;
-	int now = player >= 0 ? Act_Cmp(time, 0) == 0 : 0;
+	int player = mf ? Script_HIs(e, "EntityList", "Players") : -1;
+	int now = player >= 0 ? Script_NumCmp(time, 0) == 0 : 0;
+	PyObject *secs = player >= 0 ? PyNumber_Float(time) : NULL;
+	double delay = secs ? PyFloat_AsDouble(secs) : 0.0;
+	Py_XDECREF(secs);
 	PyObject *r = NULL;
 	if (player > 0) {
 		PyObject *a = Py_BuildValue("(O)", e);
@@ -280,20 +233,20 @@ static PyObject *CharAct_NoFXDeath(PyObject *self, PyObject *args) {
 			Py_XDECREF(a);
 		} else {
 			PyObject *f = Script_Attr("CharAct", "PlayerDeathCall");
-			r = f && Act_Later(time, f, a) ? Py_ReturnNone() : NULL;
+			r = f && Script_Later(delay, f, a, NULL) ? Py_ReturnNone() : NULL;
 			if (!f) {
 				Py_XDECREF(a);
 			}
 			Py_XDECREF(f);
 		}
-	} else if (player == 0 && Act_Set(e, "UseFunc", PyString_FromString(""))) {
+	} else if (player == 0 && Script_HSet(e, "UseFunc", PyString_FromString(""))) {
 		PyObject *a = Py_BuildValue("(O)", e);
 		if (now) {
 			r = a ? CharAct_NPCDeathCall(NULL, a) : NULL;
 			Py_XDECREF(a);
-		} else if (Act_Set(e, "ActiveCMask", PyInt_FromLong(0)) && Act_Set(e, "VRadius", PyInt_FromLong(0))) {
+		} else if (Script_HSet(e, "ActiveCMask", PyInt_FromLong(0)) && Script_HSet(e, "VRadius", PyInt_FromLong(0))) {
 			PyObject *f = Script_Attr("CharAct", "NPCDeathCall");
-			r = f && Act_Later(time, f, a) ? Py_ReturnNone() : NULL;
+			r = f && Script_Later(delay, f, a, NULL) ? Py_ReturnNone() : NULL;
 			if (!f) {
 				Py_XDECREF(a);
 			}
@@ -314,7 +267,7 @@ static PyObject *CharAct_OnDeath(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	PyObject *e = Script_Ask("Scrap", "GetEntity", "(O)", looser);
-	PyObject *fx = e && Act_Set(e, "ArrowCanUse", PyInt_FromLong(0)) && Act_Set(e, "AutoSelect", PyInt_FromLong(0)) ?
+	PyObject *fx = e && Script_HSet(e, "ArrowCanUse", PyInt_FromLong(0)) && Script_HSet(e, "AutoSelect", PyInt_FromLong(0)) ?
 		Script_Method(e, "SetFX", "(s)", "CharacterDeath") : NULL;
 	PyObject *a = fx ? Py_BuildValue("(OO)", e, winner) : NULL;
 	PyObject *r = a ? CharAct_NoFXDeath(NULL, a) : NULL;

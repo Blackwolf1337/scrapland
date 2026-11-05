@@ -85,6 +85,16 @@ PyObject *Script_Attr(const char *module, const char *name);
 /* a number variable of a script module (def when it is not there or no number) */
 double Script_GetFloat(const char *module, const char *var, double def);
 
+/* entity handles and values as a script uses them (0 or -1 with the error set): handle.var = v (v given away),
+ * handle.var == text, handle.var[0:len(prefix)] == prefix, cmp(value, n) (-2 on an error), and
+ * Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func, args[, name]) (args given away; name NULL for none) */
+byte Script_HSet(PyObject *e, const char *var, PyObject *v);
+int Script_HIs(PyObject *e, const char *var, const char *text);
+int Script_HPrefix(PyObject *e, const char *var, const char *prefix);
+int Script_NumCmp(PyObject *a, long n);
+byte Script_Later(double delay, PyObject *func, PyObject *args, const char *name);
+byte Script_LaterIn(double delay, const char *module, const char *func, PyObject *args, const char *name);
+
 /* script variables of entities by name, as the Python entity handle reads and writes them: the number of a variable
  * (int, else float; def when the entity or the variable is not there), its text (def likewise), and ent.var = v (v
  * given away; 0, or -1 with the message printed) */
@@ -122,6 +132,8 @@ extern PyMethodDef g_CharsMethods[];
 extern PyMethodDef g_MakeCharMethods[];
 /* the C CharAct module (src/game/Script/CharAct.c) */
 extern PyMethodDef g_CharActMethods[];
+/* the C Speech module (src/game/Script/Speech.c) */
+extern PyMethodDef g_SpeechMethods[];
 /* the C parts of the character scripts, their Init runs data/chars/<name>.def (src/game/Script/Characters.c) */
 extern PyMethodDef g_BettyMethods[];
 extern PyMethodDef g_BankDirectorMethods[];

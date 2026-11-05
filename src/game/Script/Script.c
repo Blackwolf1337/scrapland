@@ -49,6 +49,7 @@
 #include "scrap/scrap.h"
 #include "scrap/scrapfont.h"
 #include "scrap/script.h"
+#include "scrap/timer.h"
 
 #define SCRIPT_MAX_FILE 0x10000
 #define SCRIPT_MAX_TOKENS 16
@@ -70,6 +71,7 @@ static const scriptModule_t script_modules[] = {
 	{ "Chars", g_CharsMethods },
 	{ "MakeChar", g_MakeCharMethods },
 	{ "CharAct", g_CharActMethods },
+	{ "Speech", g_SpeechMethods },
 	{ "Betty", g_BettyMethods },
 	{ "BankDirector", g_BankDirectorMethods },
 	{ "Boss", g_BossMethods },
@@ -256,6 +258,62 @@ double Script_GetFloat(const char *module, const char *var, double def) {
 	}
 	Py_XDECREF(v);
 	return d;
+}
+
+/* ---- entity handles and values as a script uses them ---- */
+
+byte Script_HSet(PyObject *e, const char *var, PyObject *v) {
+	int ok = v && PyObject_SetAttrString(e, (char *)var, v) == 0;
+	Py_XDECREF(v);
+	return ok;
+}
+
+int Script_HIs(PyObject *e, const char *var, const char *text) {
+	PyObject *v = PyObject_GetAttrString(e, (char *)var);
+	if (!v) {
+		return -1;
+	}
+	int is = PyString_Check(v) && !strcmp(PyString_AsString(v), text);
+	Py_DECREF(v);
+	return is;
+}
+
+int Script_HPrefix(PyObject *e, const char *var, const char *prefix) {
+	PyObject *v = PyObject_GetAttrString(e, (char *)var);
+	PyObject *head = v ? PySequence_GetSlice(v, 0, (int)strlen(prefix)) : NULL;
+	Py_XDECREF(v);
+	if (!head) {
+		return -1;
+	}
+	int is = PyString_Check(head) && !strcmp(PyString_AsString(head), prefix);
+	Py_DECREF(head);
+	return is;
+}
+
+int Script_NumCmp(PyObject *a, long n) {
+	PyObject *b = PyInt_FromLong(n);
+	int c = b ? PyObject_Compare(a, b) : 0;
+	Py_XDECREF(b);
+	return PyErr_Occurred() ? -2 : c;
+}
+
+byte Script_Later(double delay, PyObject *func, PyObject *args, const char *name) {
+	double t = (double)Timer_GetTime(&g_pWorld->timer) + delay;
+	byte ok = func && args && (name ? Script_Try("Scrap", "AddScheduledFunc", "(dOOs)", t, func, args, name) :
+		Script_Try("Scrap", "AddScheduledFunc", "(dOO)", t, func, args));
+	Py_XDECREF(args);
+	return ok;
+}
+
+byte Script_LaterIn(double delay, const char *module, const char *func, PyObject *args, const char *name) {
+	PyObject *f = Script_Attr(module, func);
+	if (!f) {
+		Py_XDECREF(args);
+		return 0;
+	}
+	byte ok = Script_Later(delay, f, args, name);
+	Py_DECREF(f);
+	return ok;
 }
 
 /* ---- script variables of entities, as the Python entity handle reads and writes them ---- */
