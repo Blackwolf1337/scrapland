@@ -52,6 +52,8 @@ static const scriptModule_t script_modules[] = {
 	{ "Menu", g_MenuBaseMethods },
 	{ "Menu", g_MenuMainMethods },
 	{ "Menu", g_MenuMissionMethods },
+	{ "Scorer", g_ScorerMethods },
+	{ "CharScorer", g_CharScorerMethods },
 };
 
 void Script_ModuleLoaded(const char *name, PyObject *module) {
