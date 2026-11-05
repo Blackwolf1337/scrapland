@@ -1017,7 +1017,7 @@ static PyObject *Messenger_MakeDataPack(PyObject *self, PyObject *args) {
 	}
 	Py_INCREF(mdp);
 	Script_SetVar("Messenger", "MDP", mdp);
-	PyObject *r = PyObject_CallMethod(mdp, "SetModel", "(s)", "Models/Chars/Messenger/DataPack.M3D");
+	PyObject *r = Script_Method(mdp, "SetModel", "(s)", "Models/Chars/Messenger/DataPack.M3D");
 	PyObject *radius = r ? PyInt_FromLong(250) : NULL;
 	int ok = radius && PyObject_SetAttrString(mdp, "Radius", radius) == 0;
 	Py_XDECREF(radius);

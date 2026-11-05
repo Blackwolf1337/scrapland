@@ -69,6 +69,7 @@ static const scriptModule_t script_modules[] = {
 	{ "RacerScorer", g_RacerScorerMethods },
 	{ "Chars", g_CharsMethods },
 	{ "MakeChar", g_MakeCharMethods },
+	{ "CharAct", g_CharActMethods },
 	{ "Betty", g_BettyMethods },
 	{ "BankDirector", g_BankDirectorMethods },
 	{ "Boss", g_BossMethods },
@@ -334,6 +335,17 @@ PyObject *Script_Ask(const char *module, const char *func, const char *fmt, ...)
 	PyObject *args = Py_VaBuildValue((char *)fmt, va);
 	va_end(va);
 	PyObject *f = Script_Attr(module, func);
+	PyObject *r = Script_Invoke(f, args);
+	Py_XDECREF(f);
+	return r;
+}
+
+PyObject *Script_Method(PyObject *obj, const char *name, const char *fmt, ...) {
+	va_list va;
+	va_start(va, fmt);
+	PyObject *args = Py_VaBuildValue((char *)fmt, va);
+	va_end(va);
+	PyObject *f = PyObject_GetAttrString(obj, (char *)name);
 	PyObject *r = Script_Invoke(f, args);
 	Py_XDECREF(f);
 	return r;

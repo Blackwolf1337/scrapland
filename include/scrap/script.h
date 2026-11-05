@@ -65,6 +65,9 @@ byte Script_Call(const char *module, const char *func, const char *fmt, ...);
  * stops and returns NULL as the script would */
 byte Script_Try(const char *module, const char *func, const char *fmt, ...);
 /* module.func(args) with the result: a new reference, NULL with the error set (not printed) */
+/* obj.name(args) as a script calls it (the error of a missing attribute reads the same): the result, a new reference,
+ * NULL with the error set */
+PyObject *Script_Method(PyObject *obj, const char *name, const char *fmt, ...);
 PyObject *Script_Ask(const char *module, const char *func, const char *fmt, ...);
 /* the same with a tuple of arguments and a dict of keywords (NULL for none), both given away */
 byte Script_CallKw(const char *module, const char *func, PyObject *args, PyObject *kw);
@@ -117,6 +120,8 @@ extern PyMethodDef g_RacerScorerMethods[];
 extern PyMethodDef g_CharsMethods[];
 /* the C MakeChar module (src/game/Script/MakeChar.c) */
 extern PyMethodDef g_MakeCharMethods[];
+/* the C CharAct module (src/game/Script/CharAct.c) */
+extern PyMethodDef g_CharActMethods[];
 /* the C parts of the character scripts, their Init runs data/chars/<name>.def (src/game/Script/Characters.c) */
 extern PyMethodDef g_BettyMethods[];
 extern PyMethodDef g_BankDirectorMethods[];
