@@ -24,8 +24,9 @@ The helpers the ports share are declared in `include/scrap/script.h`.
 | `CharScorer` | the HUD on foot, with the special action of the character the player controls | `src/game/Script/MenuHud.c`, `data/menus/hud.menu` |
 | `RacerScorer` | the HUD in a ship: weapons, cannon, target, waypoint, radar. `CreateRacer` (also for a spectator), `ShowScorer` (the scores of a game, with the super deal variants, and the ping refresh `MultiplayerUpdatePing`) and the scorer of race missions | `src/game/Script/MenuHud.c`, `data/menus/racer.menu` |
 | `Chars` | step 6a, the port of `scripts/chars/chars.py`: the sound events of the animations (`ActSound`, `ActSoundLoop`, `StrSound`, `StrSoundStop`; the character scripts call them about 3400 times while a level loads) go straight to the action classes of the engine, with the same variable sets the script made through `SAct`. Also the resources of the characters (`Chars.CharRes` stays the Python list other scripts fill), `CanDrive`, `SetOnFloor`, `IntSetChar`, `MainCharDeath` with its hook `OnMainCharDeath`, `Init`, `CreateMainChar` and `CreateStartupPlayer`. This module has no .menu file, it holds no layout | `src/game/Script/Chars.c` |
+| `MakeChar` | step 6b, the port of `scripts/chars/makechar.py`: the helpers the character scripts build the action classes with. `InitChar` with the class defaults, the relax, walk, fall, talk, morph, discover, listen, sit and turret actions, the break loop for flashed, crazy and dazed, `EventAnimCommand` and `SetNodeRotation`. They work on the current class and action of `SAct` with the same variable sets and event times the script computed. `MaxSpeed`, `MinSpeed`, `RelaxRotLimit`, `DazedChars` and the morph lists stay variables of the module, because the character scripts change them. Helpers with defaults take keyword arguments. This module has no .menu file, the event times come from animation lengths in loops, which the format does not express | `src/game/Script/MakeChar.c` |
 
-`menu.py` is done, every function of it has a C version. The HUD is done too (`Scorer`, `CharScorer`, `RacerScorer`). The characters are in progress (`Chars`). `chat.py` and `creditstext.py` in the same folder are still Python.
+`menu.py` is done, every function of it has a C version. The HUD is done too (`Scorer`, `CharScorer`, `RacerScorer`). The characters are in progress (`Chars`, `MakeChar`). `chat.py` and `creditstext.py` in the same folder are still Python.
 
 The code of the scripts that sets the margins of the screen (`Scorer.MarginH` and `Scorer.MarginV`) stays in the scripts. The C reads them and gives them to the HUD files as `$mh`, `$mv`, `$right` and `$bottom`. The game modes keep setting `RacerScorer.ScorerTopMessage`, `ScorerBotMessage` and the mission variables.
 
@@ -152,7 +153,9 @@ Step 4 added one more lesson. `Menu.Init` and `InitMenuSys(0)` stop the game tim
 
 The menu dump shows only places, texts and colours, so the HUD ports were also checked by reading back every attribute the .menu files set with `SScorer.Get` in both versions and comparing the lists. Some attributes cannot be read back. Getters that check their input value (`BlendingMode`, `HighRes`, `SpriteIndex`, `TabBlendingMode`, `ScaleY`, `ScaleSmoothWidth`, `ScaleSmoothHeight`) end the game with a failed check, and the indexed icon pairs (`WeaponIconAc` and `WeaponIconIndex` and the like) read out of bounds when the index was never set (the original crashed on that). Attributes a HUD never sets read back as uninitialised memory in both versions and differ from run to run.
 
-Gameplay scripts need a way to see their effect on the engine, a menu dump does not show it. For the characters that is the event table: `SAct.DumpEvents(file)` (ScrapC only, like `SScorer.Items`) writes every action class with its actions and their events (time, name, function, discardable) to the file. After a level load the files of the script and the C version were equal: 2233 lines in Bank, 447 in FZ.
+Gameplay scripts need a way to see their effect on the engine, a menu dump does not show it. For the characters that is the event table: `SAct.DumpEvents(file)` (ScrapC only, like `SScorer.Items`) writes every action class with its actions and their events (time, name, function, discardable) to the file, and since step 6b also the readable variables of every class and action. After a level load the files of the script and the C version were equal: 2794 lines in Bank, 571 in FZ. The whole table was also compared after a direct call of every `MakeChar` helper (683 lines).
+
+A lesson for direct calls of action helpers: creating a class or an action that already exists, or an action whose animation file is missing, ends the game with a failed check in both versions. A direct test needs new action names, existing animations, and `InitChar` of a character that the level does not load.
 
 ## Porting the next script
 
@@ -163,4 +166,4 @@ Gameplay scripts need a way to see their effect on the engine, a menu dump does 
 - Put the layout in `data/menus/` when it is a menu.
 - Compare with `SCRAP_PACK_SCRIPTS=1` as above.
 
-Next are `MakeChar` (the helpers that build the actions of a character), the character scripts, `CharsNPC`, `Speech` and the missions. `chat.py` and `creditstext.py` are still Python.
+Next are the character scripts themselves (mostly declarative: `MakeChar` calls and `SAct` settings, with a few callbacks), `CharAct`, `CharsNPC`, `Speech` and the missions. `chat.py` and `creditstext.py` are still Python.
