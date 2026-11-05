@@ -95,5 +95,7 @@ extern PyMethodDef g_CharScorerMethods[];
 extern PyMethodDef g_RacerScorerMethods[];
 /* the C Chars module (src/game/Script/Chars.c) */
 extern PyMethodDef g_CharsMethods[];
+/* the C MakeChar module (src/game/Script/MakeChar.c) */
+extern PyMethodDef g_MakeCharMethods[];
 
 #endif

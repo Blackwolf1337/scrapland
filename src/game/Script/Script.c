@@ -57,6 +57,7 @@ static const scriptModule_t script_modules[] = {
 	{ "CharScorer", g_CharScorerMethods },
 	{ "RacerScorer", g_RacerScorerMethods },
 	{ "Chars", g_CharsMethods },
+	{ "MakeChar", g_MakeCharMethods },
 };
 
 void Script_ModuleLoaded(const char *name, PyObject *module) {

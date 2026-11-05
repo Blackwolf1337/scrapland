@@ -212,13 +212,36 @@ static void Event_FuncName(const cPy_Function *f, char *out, int size) {
 	}
 }
 
+/* the variables of a class or an action that can be read, one line */
+static void Dump_Vars(FILE *f, const char *indent, varfunc_t var, void *obj, const char *const *names) {
+	fprintf(f, "%s", indent);
+	for (int k = 0; names[k]; k++) {
+		char *s = NULL;
+		double d = 0.0;
+		int i = 0;
+		switch (var(obj, names[k], 0, &s, &d, &i)) {
+		case ACTVAR_STRING:
+			fprintf(f, " %s=%s", names[k], s ? s : "");
+			break;
+		case ACTVAR_DOUBLE:
+			fprintf(f, " %s=%.6g", names[k], d);
+			break;
+		case ACTVAR_INT:
+			fprintf(f, " %s=%d", names[k], i);
+			break;
+		}
+	}
+	fprintf(f, "\n");
+}
+
 static int Dump_Compare(const void *a, const void *b) {
 	return strcmp((*(cActClass *const *)a)->name, (*(cActClass *const *)b)->name);
 }
 
 /*
- * differs from the original (ScrapC only): DumpEvents(file) writes every class with its actions and their events
- * (time, name, function, discardable) to file, the classes by name; to compare script ports. 1 when written.
+ * differs from the original (ScrapC only): DumpEvents(file) writes every class with its readable variables, its
+ * actions with theirs and their events (time, name, function, discardable) to file, the classes by name; to compare
+ * script ports. 1 when written.
  */
 static PyObject *SAct_DumpEvents(PyObject *self, PyObject *args) {
 	char *path;
@@ -247,10 +270,18 @@ static PyObject *SAct_DumpEvents(PyObject *self, PyObject *args) {
 	if (list) {
 		qsort(list, n, sizeof(*list), Dump_Compare);
 	}
+	static const char *const actVars[] = { "AnmFilePath", "AnmName", "AnmTotalTime", "AnmFPS", "isLoop", "RotSpeed",
+		"AngRotLimit", "AngleModifierSpeed", "MaxSpeed", "MinSpeed", "NodeModifier", "PriorityLevel", "InterpTime",
+		"Chanel", "UseDisp", "UseFlyDisp", "UseFlyFall", "SlideAsFly", "AutoFaceSpeed", "AutoFaceOffsetH",
+		"AutoFaceOffsetV", "anmConeView", NULL };
+	static const char *const clsVars[] = { "DefAction", "ModelFilePath", "TurnAngLimit", "FallSound", "FallSoundVol",
+		"PhotoPress", "PossessionPress", "Discardable", "SoundDispX", "SoundDispY", "SoundDispZ", NULL };
 	for (int c = 0; c < n; c++) {
 		fprintf(f, "class %s\n", list[c]->name);
+		Dump_Vars(f, "  ", (varfunc_t)cActClass_Var, list[c], clsVars);
 		for (cAction *a = list[c]->first; a; a = a->next) {
 			fprintf(f, " action %s\n", a->name);
+			Dump_Vars(f, "   ", (varfunc_t)cAction_Var, a, actVars);
 			for (cActEvent *e = a->events; e; e = e->next) {
 				char func[0x100];
 				Event_FuncName(&e->func, func, sizeof(func));
