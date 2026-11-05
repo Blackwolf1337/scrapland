@@ -72,6 +72,7 @@ static const scriptModule_t script_modules[] = {
 	{ "MakeChar", g_MakeCharMethods },
 	{ "CharAct", g_CharActMethods },
 	{ "Speech", g_SpeechMethods },
+	{ "CharsNPC", g_CharsNPCMethods },
 	{ "Betty", g_BettyMethods },
 	{ "BankDirector", g_BankDirectorMethods },
 	{ "Boss", g_BossMethods },

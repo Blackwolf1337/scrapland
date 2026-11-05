@@ -134,6 +134,8 @@ extern PyMethodDef g_MakeCharMethods[];
 extern PyMethodDef g_CharActMethods[];
 /* the C Speech module (src/game/Script/Speech.c) */
 extern PyMethodDef g_SpeechMethods[];
+/* the C CharsNPC module (src/game/Script/CharsNPC.c) */
+extern PyMethodDef g_CharsNPCMethods[];
 /* the C parts of the character scripts, their Init runs data/chars/<name>.def (src/game/Script/Characters.c) */
 extern PyMethodDef g_BettyMethods[];
 extern PyMethodDef g_BankDirectorMethods[];
