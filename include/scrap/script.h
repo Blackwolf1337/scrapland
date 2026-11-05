@@ -110,6 +110,101 @@ PyObject *Script_Eval(const char *text);
 /* the arguments of a menu callback: the player and the item (empty when the callback got none) */
 byte Script_Args(PyObject *args, int *id, const char **control);
 
+/* the print statement with its items as ceval prints them (soft spaces), and a, b, ... = v (UNPACK_TUPLE: n new
+ * references into out); 0 with the error set */
+byte Script_Print(PyObject *const *items, int n);
+byte Script_Unpack(PyObject *v, int n, PyObject **out);
+
+/*
+ * A ported script function line by line (src/game/Script/ScriptFrame.c). The frame keeps the temporary references
+ * and the error state: every Sf_ helper returns a reference the frame keeps (borrowed by the caller) and takes its
+ * arguments borrowed. After the first error each helper does nothing and returns NULL, -1 or 0, as the script stops
+ * at the line that raised; Sf_Done releases the references and gives NULL with the error left set. Conditions are 1,
+ * 0, or -1 after an error.
+ */
+#define SCRIPT_FRAME_REFS 160
+typedef struct scriptFrame_s {
+	PyObject *refs[SCRIPT_FRAME_REFS];
+	int n;
+	byte failed;
+} scriptFrame_t;
+
+/* o (a new reference or NULL with the error set) into the frame */
+PyObject *Sf_Keep(scriptFrame_t *f, PyObject *o);
+/* ok, else the frame fails (the error set); the frame is still good */
+byte Sf_Check(scriptFrame_t *f, int ok);
+/* the references kept after mark (f->n before a loop turn) */
+void Sf_Release(scriptFrame_t *f, int mark);
+/* the end of the function: result (a new reference) or NULL when the frame failed; Sf_Return(o) with o borrowed,
+ * Sf_None for None */
+PyObject *Sf_Done(scriptFrame_t *f, PyObject *result);
+PyObject *Sf_Return(scriptFrame_t *f, PyObject *o);
+PyObject *Sf_None(scriptFrame_t *f);
+/* raise exc(msg): 0 */
+byte Sf_Raise(scriptFrame_t *f, PyObject *exc, const char *msg);
+/* values: a borrowed o kept, an int, a float, a string, Py_BuildValue */
+PyObject *Sf_Ref(scriptFrame_t *f, PyObject *o);
+PyObject *Sf_Int(scriptFrame_t *f, long i);
+PyObject *Sf_Float(scriptFrame_t *f, double d);
+PyObject *Sf_Str(scriptFrame_t *f, const char *s);
+PyObject *Sf_Build(scriptFrame_t *f, const char *fmt, ...);
+/* import name; a global of a module as its functions read it (NameError when missing), global name = v, del name;
+ * module.name and module.name = v as another script does them */
+PyObject *Sf_Import(scriptFrame_t *f, const char *name);
+PyObject *Sf_Global(scriptFrame_t *f, const char *module, const char *name);
+byte Sf_SetGlobal(scriptFrame_t *f, const char *module, const char *name, PyObject *v);
+byte Sf_DelGlobal(scriptFrame_t *f, const char *module, const char *name);
+PyObject *Sf_Mod(scriptFrame_t *f, const char *module, const char *name);
+byte Sf_SetMod(scriptFrame_t *f, const char *module, const char *name, PyObject *v);
+/* o.name, o.name = v, o[i], o[key], o[key] = v, del o[key], o[lo:hi] */
+PyObject *Sf_Attr(scriptFrame_t *f, PyObject *o, const char *name);
+byte Sf_SetAttr(scriptFrame_t *f, PyObject *o, const char *name, PyObject *v);
+byte Sf_SetAttrI(scriptFrame_t *f, PyObject *o, const char *name, long i);
+byte Sf_SetAttrS(scriptFrame_t *f, PyObject *o, const char *name, const char *s);
+PyObject *Sf_Item(scriptFrame_t *f, PyObject *o, long i);
+PyObject *Sf_GetItem(scriptFrame_t *f, PyObject *o, PyObject *key);
+byte Sf_SetItem(scriptFrame_t *f, PyObject *o, PyObject *key, PyObject *v);
+byte Sf_DelItem(scriptFrame_t *f, PyObject *o, PyObject *key);
+PyObject *Sf_Slice(scriptFrame_t *f, PyObject *o, int lo, int hi);
+/* a op b with op one of + - * / %, a op int; a + b + ... of fmt items ('s' a C string, 'O' an object); `o` */
+PyObject *Sf_Op(scriptFrame_t *f, PyObject *a, char op, PyObject *b);
+PyObject *Sf_OpI(scriptFrame_t *f, PyObject *a, char op, long b);
+PyObject *Sf_Cat(scriptFrame_t *f, const char *fmt, ...);
+PyObject *Sf_Repr(scriptFrame_t *f, PyObject *o);
+PyObject *Sf_ReprI(scriptFrame_t *f, long i);
+/* `if o:`, a op b with op "==", "!=", "<", "<=", ">", ">=", a == "text", a == i, x in seq, x in ("text", ..., NULL),
+ * len(o) */
+int Sf_True(scriptFrame_t *f, PyObject *o);
+int Sf_Compare(scriptFrame_t *f, PyObject *a, const char *op, PyObject *b);
+int Sf_EqS(scriptFrame_t *f, PyObject *a, const char *s);
+int Sf_EqI(scriptFrame_t *f, PyObject *a, long i);
+int Sf_In(scriptFrame_t *f, PyObject *x, PyObject *seq);
+int Sf_InS(scriptFrame_t *f, PyObject *x, const char *const *texts);
+int Sf_Len(scriptFrame_t *f, PyObject *o);
+/* item i of `for x in seq` (as ceval loops: NULL at the end without an error, or with the error of the frame) */
+PyObject *Sf_Next(scriptFrame_t *f, PyObject *seq, int i);
+/* callable(args) (args given away), callable(Py_BuildValue args), module.func(args), o.name(args) */
+PyObject *Sf_CallArgs(scriptFrame_t *f, PyObject *callable, PyObject *args);
+PyObject *Sf_Call(scriptFrame_t *f, PyObject *callable, const char *fmt, ...);
+/* callable(args, **kw) (args given away, kw a dict) */
+PyObject *Sf_CallKw(scriptFrame_t *f, PyObject *callable, PyObject *args, PyObject *kw);
+PyObject *Sf_Ask(scriptFrame_t *f, const char *module, const char *func, const char *fmt, ...);
+PyObject *Sf_Method(scriptFrame_t *f, PyObject *o, const char *name, const char *fmt, ...);
+/* Scrap.GetEntity(name), Scrap.GetLangStr(key), Scrap.GetTime() */
+PyObject *Sf_Entity(scriptFrame_t *f, PyObject *name);
+PyObject *Sf_Lang(scriptFrame_t *f, PyObject *key);
+PyObject *Sf_Time(scriptFrame_t *f);
+/* Scrap.AddScheduledFunc(time, func, args[, name]) and the same at Scrap.GetTime() + delay (name NULL for none) */
+byte Sf_Schedule(scriptFrame_t *f, PyObject *time, PyObject *func, PyObject *args, const char *name);
+byte Sf_Later(scriptFrame_t *f, PyObject *delay, PyObject *func, PyObject *args, const char *name);
+/* print with fmt items ('s' a C string, 'O' an object), a, b = v, exec code in a function of module (locals a dict
+ * of its variables) */
+byte Sf_Print(scriptFrame_t *f, const char *fmt, ...);
+byte Sf_Unpack(scriptFrame_t *f, PyObject *v, int n, PyObject **out);
+byte Sf_Exec(scriptFrame_t *f, PyObject *code, const char *module, PyObject *locals);
+/* eval(text) in a function of module (the module's globals; the expressions of the scripts are literals) */
+PyObject *Sf_Eval(scriptFrame_t *f, PyObject *text, const char *module);
+
 /* the C video options of PCMenu (src/game/Script/MenuVideo.c) */
 extern PyMethodDef g_MenuVideoMethods[];
 /* the C options and controls menus of PCMenu (src/game/Script/MenuControls.c) */
@@ -202,6 +297,18 @@ extern PyMethodDef g_BureaucracyMethods[];
 /* the chat of a network game (src/game/Script/Chat.c) and the credits text (src/game/Script/CreditsText.c) */
 extern PyMethodDef g_ChatMethods[];
 extern PyMethodDef g_CreditsTextMethods[];
+
+/* the missions (issue #2 step 8a): the alarm and the news panels (src/game/Script/Alarm.c), the doors, elevators and
+ * teleporters (src/game/Script/Doors.c), the items and the crazy wind (src/game/Script/MisItems.c), the mission flow
+ * (src/game/Script/MissionsFuncs.c) */
+extern PyMethodDef g_AlarmMethods[];
+extern PyMethodDef g_NewsPanelMethods[];
+extern PyMethodDef g_DoorsMethods[];
+extern PyMethodDef g_ElevatorMethods[];
+extern PyMethodDef g_TeleportMethods[];
+extern PyMethodDef g_MisItemsMethods[];
+extern PyMethodDef g_CrazyWingMethods[];
+extern PyMethodDef g_MissionsFuncsMethods[];
 
 /* the gameplay functions of the character modules (src/game/Script/CharFuncs.c), next to their Init tables */
 extern PyMethodDef g_FunctionaryFuncs[];
