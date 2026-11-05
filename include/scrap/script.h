@@ -61,6 +61,11 @@ const char *Script_Lang(const char *key);
 
 /* module.func(args) of a script, args as Py_BuildValue (a tuple, "(is)"); 0 when it failed (the error printed) */
 byte Script_Call(const char *module, const char *func, const char *fmt, ...);
+/* module.func(args) as a line of a script: 0 with the error left set for the caller (not printed), which then
+ * stops and returns NULL as the script would */
+byte Script_Try(const char *module, const char *func, const char *fmt, ...);
+/* module.func(args) with the result: a new reference, NULL with the error set (not printed) */
+PyObject *Script_Ask(const char *module, const char *func, const char *fmt, ...);
 /* the same with a tuple of arguments and a dict of keywords (NULL for none), both given away */
 byte Script_CallKw(const char *module, const char *func, PyObject *args, PyObject *kw);
 /* callable(args), args given away: the result (a new reference, NULL with the error set) */
@@ -83,6 +88,8 @@ double Script_GetFloat(const char *module, const char *var, double def);
 double Script_EntNum(const char *ent, const char *var, double def);
 const char *Script_EntStr(const char *ent, const char *var, const char *def);
 int Script_EntSet(const char *ent, const char *var, PyObject *v);
+/* `if ent.var:` of a script (0 when the entity or the variable is not there) */
+byte Script_EntTrue(const char *ent, const char *var);
 
 /* the value of a Python expression (the save variables keep lists as their text), NULL when it fails */
 PyObject *Script_Eval(const char *text);
@@ -149,5 +156,9 @@ extern PyMethodDef g_MayorFuncs[];
 extern PyMethodDef g_MaintenanceFuncs[];
 extern PyMethodDef g_SputnikJunkyardFuncs[];
 extern PyMethodDef g_CrazyGamblerFuncs[];
+extern PyMethodDef g_GearFuncs[];
+extern PyMethodDef g_PoliceFuncs[];
+extern PyMethodDef g_BishopFuncs[];
+extern PyMethodDef g_MessengerFuncs[];
 
 #endif

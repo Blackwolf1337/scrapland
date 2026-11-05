@@ -87,19 +87,23 @@ static const scriptModule_t script_modules[] = {
 	{ "SputnikJunkyard", g_SputnikJunkyardMethods },
 	{ "SputnikJunkyard", g_SputnikJunkyardFuncs },
 	{ "Bishop", g_BishopMethods },
+	{ "Bishop", g_BishopFuncs },
 	{ "Functionary", g_FunctionaryMethods },
 	{ "Functionary", g_FunctionaryFuncs },
 	{ "Gear", g_GearMethods },
+	{ "Gear", g_GearFuncs },
 	{ "BankMaster", g_BankMasterMethods },
 	{ "Berto", g_BertoMethods },
 	{ "Nurse", g_NurseMethods },
 	{ "Desktop", g_DesktopMethods },
 	{ "Police", g_PoliceMethods },
+	{ "Police", g_PoliceFuncs },
 	{ "GateKeeper", g_GateKeeperMethods },
 	{ "Dtritus", g_DtritusMethods },
 	{ "Sputnik", g_SputnikMethods },
 	{ "PoliceBoss", g_PoliceBossMethods },
 	{ "Messenger", g_MessengerMethods },
+	{ "Messenger", g_MessengerFuncs },
 	{ "Human", g_HumanMethods },
 	{ "MercenaryA", g_MercenaryAMethods },
 	{ "MercenaryB", g_MercenaryBMethods },
@@ -274,6 +278,26 @@ const char *Script_EntStr(const char *ent, const char *var, const char *def) {
 	return e && Entity_VarS(e, var, &s, 0) && s ? s : def;
 }
 
+byte Script_EntTrue(const char *ent, const char *var) {
+	cEntity *e = World_FindEntity(ent);
+	int i;
+	double d, x, y, z;
+	char *s = NULL;
+	if (!e) {
+		return 0;
+	}
+	if (Entity_VarI(e, var, &i, 0)) {
+		return i != 0;
+	}
+	if (Entity_VarF(e, var, &d, 0)) {
+		return d != 0.0;
+	}
+	if (Entity_VarV(e, var, &x, &y, &z, 0)) {
+		return 1;
+	}
+	return Entity_VarS(e, var, &s, 0) && s && *s;
+}
+
 int Script_EntSet(const char *ent, const char *var, PyObject *v) {
 	int r = v ? PyEntity_SetVar(World_FindEntity(ent), ent, var, v) : -1;
 	Py_XDECREF(v);
@@ -302,6 +326,29 @@ byte Script_CallKw(const char *module, const char *func, PyObject *args, PyObjec
 	}
 	Py_DECREF(r);
 	return 1;
+}
+
+PyObject *Script_Ask(const char *module, const char *func, const char *fmt, ...) {
+	va_list va;
+	va_start(va, fmt);
+	PyObject *args = Py_VaBuildValue((char *)fmt, va);
+	va_end(va);
+	PyObject *f = Script_Attr(module, func);
+	PyObject *r = Script_Invoke(f, args);
+	Py_XDECREF(f);
+	return r;
+}
+
+byte Script_Try(const char *module, const char *func, const char *fmt, ...) {
+	va_list va;
+	va_start(va, fmt);
+	PyObject *args = Py_VaBuildValue((char *)fmt, va);
+	va_end(va);
+	PyObject *f = Script_Attr(module, func);
+	PyObject *r = Script_Invoke(f, args);
+	Py_XDECREF(f);
+	Py_XDECREF(r);
+	return r != NULL;
 }
 
 byte Script_Call(const char *module, const char *func, const char *fmt, ...) {
