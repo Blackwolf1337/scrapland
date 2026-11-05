@@ -23,8 +23,9 @@ The helpers the ports share are declared in `include/scrap/script.h`.
 | `Scorer` | the HUD (step 5): status, police meter, monitor, messages, label, talk, mission scorer, radar, `Blink`, `ShowMissionScorer`, `MissionScorerBar_SetDefaults` | `src/game/Script/MenuHud.c`, `data/menus/hud.menu` |
 | `CharScorer` | the HUD on foot, with the special action of the character the player controls | `src/game/Script/MenuHud.c`, `data/menus/hud.menu` |
 | `RacerScorer` | the HUD in a ship: weapons, cannon, target, waypoint, radar. `CreateRacer` (also for a spectator), `ShowScorer` (the scores of a game, with the super deal variants, and the ping refresh `MultiplayerUpdatePing`) and the scorer of race missions | `src/game/Script/MenuHud.c`, `data/menus/racer.menu` |
+| `Chars` | step 6a, the port of `scripts/chars/chars.py`: the sound events of the animations (`ActSound`, `ActSoundLoop`, `StrSound`, `StrSoundStop`; the character scripts call them about 3400 times while a level loads) go straight to the action classes of the engine, with the same variable sets the script made through `SAct`. Also the resources of the characters (`Chars.CharRes` stays the Python list other scripts fill), `CanDrive`, `SetOnFloor`, `IntSetChar`, `MainCharDeath` with its hook `OnMainCharDeath`, `Init`, `CreateMainChar` and `CreateStartupPlayer`. This module has no .menu file, it holds no layout | `src/game/Script/Chars.c` |
 
-`menu.py` is done, every function of it has a C version. The HUD is done too (`Scorer`, `CharScorer`, `RacerScorer`). The next modules in the issue are the characters and the missions. `chat.py` and `creditstext.py` in the same folder are still Python.
+`menu.py` is done, every function of it has a C version. The HUD is done too (`Scorer`, `CharScorer`, `RacerScorer`). The characters are in progress (`Chars`). `chat.py` and `creditstext.py` in the same folder are still Python.
 
 The code of the scripts that sets the margins of the screen (`Scorer.MarginH` and `Scorer.MarginV`) stays in the scripts. The C reads them and gives them to the HUD files as `$mh`, `$mv`, `$right` and `$bottom`. The game modes keep setting `RacerScorer.ScorerTopMessage`, `ScorerBotMessage` and the mission variables.
 
@@ -151,12 +152,15 @@ Step 4 added one more lesson. `Menu.Init` and `InitMenuSys(0)` stop the game tim
 
 The menu dump shows only places, texts and colours, so the HUD ports were also checked by reading back every attribute the .menu files set with `SScorer.Get` in both versions and comparing the lists. Some attributes cannot be read back. Getters that check their input value (`BlendingMode`, `HighRes`, `SpriteIndex`, `TabBlendingMode`, `ScaleY`, `ScaleSmoothWidth`, `ScaleSmoothHeight`) end the game with a failed check, and the indexed icon pairs (`WeaponIconAc` and `WeaponIconIndex` and the like) read out of bounds when the index was never set (the original crashed on that). Attributes a HUD never sets read back as uninitialised memory in both versions and differ from run to run.
 
+Gameplay scripts need a way to see their effect on the engine, a menu dump does not show it. For the characters that is the event table: `SAct.DumpEvents(file)` (ScrapC only, like `SScorer.Items`) writes every action class with its actions and their events (time, name, function, discardable) to the file. After a level load the files of the script and the C version were equal: 2233 lines in Bank, 447 in FZ.
+
 ## Porting the next script
 
 - Find the functions of the module and the state only they use. The original Python sources are in the game packs as `.py` next to the `.pyc` (`scripts/scorer/pcmenu.py`, `menu.py` and so on), the port follows them.
 - Write the C functions in `src/game/Script/` with a `PyMethodDef` table and add the module to `script_modules` in `Script.c`.
-- Use the shared C helpers instead of going through Python: `GVar_GetNum`, `GVar_SetNum`, `GVar_SetStr` (engine variables, `include/scrap/scrap.h`), `Input_SelectActionSetNamed` (`include/scrap/input.h`), and in `include/scrap/script.h` `Script_SetCursor`, `Script_GetString` and `Script_SetInt` besides the older ones. `Script_SetValue` gives a value from a step of a .menu back to the file that runs it, as `$name`. `Script_Eval` returns the value of a Python expression, used for save variables that keep Python lists.
+- Use the shared C helpers instead of going through Python: `GVar_GetNum`, `GVar_SetNum`, `GVar_SetStr` (engine variables, `include/scrap/scrap.h`), `Input_SelectActionSetNamed` (`include/scrap/input.h`), and in `include/scrap/script.h` `Script_SetCursor`, `Script_GetString` and `Script_SetInt` besides the older ones. `Script_SetValue` gives a value from a step of a .menu back to the file that runs it, as `$name`. `Script_Eval` returns the value of a Python expression, used for save variables that keep Python lists. `Script_Invoke(callable, args)` calls a Python function and releases the argument tuple, because `PyEval_CallObject` does not take it over (earlier ports leaked temporary tuples in ten places).
+- Entities have a C interface for their script variables (`cEntity_VarI`, `cEntity_VarF`, `cEntity_VarS`, `cEntity_VarV` in `include/scrap/entity.h`, which the Python entity object also uses). Gameplay ports should use it instead of the Python entity objects. `Chars.c` still uses the Python entity objects for the player creation.
 - Put the layout in `data/menus/` when it is a menu.
 - Compare with `SCRAP_PACK_SCRIPTS=1` as above.
 
-Next in the issue: the characters and the missions (and the small modules `chat.py` and `creditstext.py`).
+Next are `MakeChar` (the helpers that build the actions of a character), the character scripts, `CharsNPC`, `Speech` and the missions. `chat.py` and `creditstext.py` are still Python.
