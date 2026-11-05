@@ -141,6 +141,10 @@ static const scriptModule_t script_modules[] = {
 	{ "MercenaryB", g_MercenaryBMethods },
 	{ "MercenaryC", g_MercenaryCMethods },
 	{ "MercenaryL", g_MercenaryLMethods },
+	{ "InMap", g_InMapMethods },
+	{ "Bureaucracy", g_BureaucracyMethods },
+	{ "Chat", g_ChatMethods },
+	{ "CreditsText", g_CreditsTextMethods },
 };
 
 void Script_ModuleLoaded(const char *name, PyObject *module) {
