@@ -1,6 +1,6 @@
 /*
  * The options and controls menus of PCMenu in C (issue #2, step 2): OptionsMenu, ControlsMenu, the mouse, the keys of
- * the actions and the pad. The layout is data/menus/options.menu, one section per menu.
+ * the actions and the pad. The layout is data/menus/options.def, one section per menu.
  */
 #include <string.h>
 
@@ -9,11 +9,11 @@
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 
-static const char options_menu[] = {
-#embed "../../../data/menus/options.menu"
+static const char options_def[] = {
+#embed "../../../data/menus/options.def"
 	, 0 };
 
-#define OPTIONS_FILE "menus/options.menu"
+#define OPTIONS_FILE "menus/options.def"
 #define KEYS_MAX 24
 
 static struct {
@@ -324,7 +324,7 @@ static const scriptStep_t controls_steps[] = {
 };
 
 static void Controls_RunMenu(int id, const char *section, PyObject *vars) {
-	Script_RunMenu(id, OPTIONS_FILE, section, options_menu, controls_steps, vars);
+	Script_RunFile(id, OPTIONS_FILE, section, options_def, controls_steps, vars);
 }
 
 #define CONTROLS_ARGS(args) \

@@ -8,6 +8,6 @@
 - [packed.md](packed.md): the .packed archive format.
 - [platform.md](platform.md): the platforms, the platform layer and the 64-bit rules.
 - [rename.md](rename.md): the English names of stage 4.
-- [scripts.md](scripts.md): the script loader, the .menu format and how a Python script is ported to C.
+- [scripts.md](scripts.md): the script loader, the .def format and how a Python script is ported to C.
 - [standalone.md](standalone.md): history of the stages to the standalone exe.
 - [vulkan.md](vulkan.md): the Vulkan renderer.

@@ -1,6 +1,6 @@
 /*
  * The mission info pages of the Menu module in C (issue #2, step 4c): the primary mission with the radar, the crazy
- * deal with its objectives and the notes with the blueprints found. The layout is data/menus/mission.menu.
+ * deal with its objectives and the notes with the blueprints found. The layout is data/menus/mission.def.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -10,11 +10,11 @@
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 
-static const char mission_menu[] = {
-#embed "../../../data/menus/mission.menu"
+static const char mission_def[] = {
+#embed "../../../data/menus/mission.def"
 	, 0 };
 
-#define MISSION_FILE "menus/mission.menu"
+#define MISSION_FILE "menus/mission.def"
 
 typedef struct {
 	const char *page, *left, *right;	/* the page and the pages its arrows lead to */
@@ -270,7 +270,7 @@ static const scriptStep_t mission_steps[] = {
 };
 
 static void Mission_Run(int id, const char *section, PyObject *vars) {
-	Script_RunMenu(id, MISSION_FILE, section, mission_menu, mission_steps, vars);
+	Script_RunFile(id, MISSION_FILE, section, mission_def, mission_steps, vars);
 }
 
 static void Mission_Menu(int id, const char *name) {

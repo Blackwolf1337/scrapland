@@ -1,7 +1,7 @@
 /*
  * The building blocks of all menus, from the Menu module of the game in C (issue #2, step 4a): links, logos,
  * circuit, title bar, a new menu, tabs, the vertical menu, the question, the text box, slider and arrows. The fixed
- * layouts are data/menus/base.menu; the functions here compute the places (with the integer and float arithmetic of
+ * layouts are data/menus/base.def; the functions here compute the places (with the integer and float arithmetic of
  * the script) and hand them to it.
  */
 #include <string.h>
@@ -16,11 +16,11 @@
 #include "scrap/script.h"
 #include "scrap/timer.h"
 
-static const char base_menu[] = {
-#embed "../../../data/menus/base.menu"
+static const char base_def[] = {
+#embed "../../../data/menus/base.def"
 	, 0 };
 
-#define BASE_FILE "menus/base.menu"
+#define BASE_FILE "menus/base.def"
 #define TAB_QUAD 14			/* Menu.TabQuadSize */
 
 static void Base_TitleBar(int id, PyObject *y, const char *text, const char *font);
@@ -31,7 +31,7 @@ static void Base_Link(int id, const char *a, const char *va, const char *b, cons
 	Script_SetStr(id, b, vb, a);
 }
 
-/* ---- the steps of base.menu ---- */
+/* ---- the steps of base.def ---- */
 
 /* titlebar y text font */
 static void Step_TitleBar(int id, PyObject *args) {
@@ -56,7 +56,7 @@ static const scriptStep_t base_steps[] = {
 };
 
 static void Base_Run(int id, const char *section, PyObject *vars) {
-	Script_RunMenu(id, BASE_FILE, section, base_menu, base_steps, vars);
+	Script_RunFile(id, BASE_FILE, section, base_def, base_steps, vars);
 }
 
 /* ---- the pieces ---- */

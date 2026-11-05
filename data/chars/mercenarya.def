@@ -1,0 +1,63 @@
+# MercenaryA (the character script chars/mercenarya.py of the game): the Init that builds the action class of the
+# mercenaries; MercenaryB, MercenaryC and MercenaryL use it too. The format is described in src/game/Script/Script.c. A
+# pack in mods/ with scrapc/chars/mercenarya.def replaces this file. The C gives $xbox, $level (the path of the level
+# in capitals), $merc (the class) and $dance (0 for MercenaryL). The section OnCreate ($name: the new entity) is the
+# callback of the class.
+
+section MercenaryA
+let prev %MakeChar.RelaxRotLimit
+setvar MakeChar.RelaxRotLimit 360
+call MakeChar.InitChar $merc
+setvar MakeChar.MaxSpeed 1.0
+setvar MakeChar.MinSpeed 0.7
+call MakeChar.AddRelaxActions $merc 0
+call MakeChar.AddWalkActions $merc 360 0 ActList=(Walk,)
+call MakeChar.AddTalkAction $merc nExtraActions=2
+class $merc
+	WRadius 95
+	VRadius 80
+	SRadius 20
+	YModelDisp -40
+	FOV 90
+	CamDist 330
+	CamAng -5
+	CamRot 0
+if $merc == MercenaryL
+	Node0Name "Bip MercenaryA Head"
+else
+	Node0Name "Bip $(merc) Head"
+end
+call MakeChar.SetNodeRotation 0 0 50 0
+class $merc
+	OnCreate MercenaryA.OnCreate
+call MakeChar.CreateRelaxAction $merc 180 Cheer Cheer
+call MakeChar.CreateRelaxAction $merc 180 Drink Drink
+event &TimeOfFrame5 FXMercenaryDrink !FXMercenaryDrink
+if $dance
+	call MakeChar.CreateRelaxAction $merc 180 DanceInit DanceInit
+	action
+		InterpTime 0.4
+	call MakeChar.CreateRelaxAction $merc 180 Dance Dance
+	action
+		isLoop 1
+		InterpTime 0.4
+	call MakeChar.CreateRelaxAction $merc 180 Dance0Init Dance0Init
+	action
+		InterpTime 0.4
+	call MakeChar.CreateRelaxAction $merc 180 Dance0 Dance0
+	action
+		isLoop 1
+		InterpTime 0.4
+end
+call MercenarySound.Init $merc Mercenary
+run speech $merc CharsNPC GenericNPCSpeech
+setvar MakeChar.RelaxRotLimit $prev
+if %Init.OutMapSkip == 0
+	call Scrap.Set FXMercenaryDrinkFile %MercenaryA.FXMercenaryDrinkFile
+	call Scrap.SetDebrisSys %MercenaryA.FXMercenaryDrinkFile 2 0 0 1 0 0 %Fx.FXMERCENARYDRINK
+	call Scrap.Set FXMercenaryDrinkSmokeFile %MercenaryA.FXMercenaryDrinkSmokeFile
+	call Scrap.SetDebrisSys %MercenaryA.FXMercenaryDrinkSmokeFile 1 0 0 1 0 0 %Fx.FXSISTPART
+end
+
+section OnCreate
+call CharAct.OnCreate $name

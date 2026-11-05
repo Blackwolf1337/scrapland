@@ -1,7 +1,7 @@
 /*
  * The main menus of the Menu module in C (issue #2, step 4b): the main menu, the single player menu, the audio
  * options, the skill, new, saved and loaded games, the death screen, entering and leaving the menu during a game
- * and the scorer of a movie. The layout is data/menus/main.menu.
+ * and the scorer of a movie. The layout is data/menus/main.def.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -16,11 +16,11 @@
 #include "scrap/script.h"
 #include "scrap/timer.h"
 
-static const char main_menu[] = {
-#embed "../../../data/menus/main.menu"
+static const char main_def[] = {
+#embed "../../../data/menus/main.def"
 	, 0 };
 
-#define MAIN_FILE "menus/main.menu"
+#define MAIN_FILE "menus/main.def"
 
 static const struct {
 	const char *slider, *var;
@@ -57,7 +57,7 @@ static const scriptStep_t main_steps[] = {
 };
 
 static void Main_Run(int id, const char *section, PyObject *vars) {
-	Script_RunMenu(id, MAIN_FILE, section, main_menu, main_steps, vars);
+	Script_RunFile(id, MAIN_FILE, section, main_def, main_steps, vars);
 }
 
 /* the number of saved games; the list goes to Menu.saveGamesList when keep */

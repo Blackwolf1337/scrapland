@@ -1,6 +1,6 @@
 /*
  * The video options of the menu: PCMenu.VideoMenu of the game's scripts/scorer/pcmenu.py and its handlers in C, the
- * layout in data/menus/video.menu. ScrapC adds the Display entry (Windowed, Borderless, Fullscreen: FullScreen 0, 2,
+ * layout in data/menus/video.def. ScrapC adds the Display entry (Windowed, Borderless, Fullscreen: FullScreen 0, 2,
  * 1) and a Desktop entry at the front of the video modes (VideoDesktop: the size of the desktop).
  */
 #include <stdio.h>
@@ -12,8 +12,8 @@
 #include "scrap/script.h"
 #include "scrap/video.h"
 
-static const char video_menu[] = {
-#embed "../../../data/menus/video.menu"
+static const char video_def[] = {
+#embed "../../../data/menus/video.def"
 	, 0
 };
 
@@ -268,7 +268,7 @@ static void Video_Values(int id) {
 	Video_SetYes(id, "DuDv", scene && GVar_GetNum("R_SceneDuDvRTarget", 0) == 1);
 }
 
-/* ---- the steps of video.menu ---- */
+/* ---- the steps of video.def ---- */
 
 static void Step_Prepare(int id, PyObject *args) {
 	(void)args;
@@ -312,7 +312,7 @@ static PyObject *PCMenu_VideoMenu(PyObject *self, PyObject *args) {
 	(void)self;
 	VIDEO_ARGS(args);
 	(void)control;
-	Script_RunMenu(id, "menus/video.menu", NULL, video_menu, video_steps, NULL);
+	Script_RunFile(id, "menus/video.def", NULL, video_def, video_steps, NULL);
 	return Py_ReturnNone();
 }
 

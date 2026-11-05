@@ -1,7 +1,7 @@
 /*
  * The multiplayer menus of PCMenu in C (issue #2, step 3): MultiPlayerMenu, the join page with the server browser,
  * the address and password pages, the connection to a server, the create page with the advanced options and the
- * part the create and join pages share. The layout is data/menus/net.menu, one section per page.
+ * part the create and join pages share. The layout is data/menus/net.def, one section per page.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,11 +19,11 @@
 #include "scrap/script.h"
 #include "scrap/timer.h"
 
-static const char net_menu[] = {
-#embed "../../../data/menus/net.menu"
+static const char net_def[] = {
+#embed "../../../data/menus/net.def"
 	, 0 };
 
-#define NET_FILE "menus/net.menu"
+#define NET_FILE "menus/net.def"
 #define NET_SLOTS 13			/* the lines of the browser */
 #define NET_MAX_SERVERS 512
 #define NET_SLIDER_Y 136
@@ -331,7 +331,7 @@ static void Net_TryJoin(int id) {
 	Net_ConnectionStatus();
 }
 
-/* ---- the steps of net.menu ---- */
+/* ---- the steps of net.def ---- */
 
 /* the entry of the game mode (PCMenu.MultiplayerMenu, set by the mode) is disabled when it has no function */
 static void Step_InGame(int id, PyObject *args) {
@@ -698,7 +698,7 @@ static PyObject *Net_Vars(const char *tab) {
 }
 
 static void Net_RunMenu(int id, const char *section, PyObject *vars) {
-	Script_RunMenu(id, NET_FILE, section, net_menu, net_steps, vars);
+	Script_RunFile(id, NET_FILE, section, net_def, net_steps, vars);
 }
 
 static void Net_JoinMenu(int id) {

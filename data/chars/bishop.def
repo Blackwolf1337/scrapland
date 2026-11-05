@@ -1,0 +1,113 @@
+# Bishop (the character script chars/bishop.py of the game): the Init that builds the action class. The format is
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/bishop.def replaces this file. The C gives
+# $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
+
+section Bishop
+call MakeChar.InitChar Bishop
+setvar MakeChar.MaxSpeed 1.0
+setvar MakeChar.MinSpeed 0.7
+call MakeChar.AddRelaxActions Bishop 360
+call MakeChar.AddWalkActions Bishop 360 0
+call MakeChar.AddInitWalkActions Bishop 360 0
+call MakeChar.AddEndWalkActions Bishop 360 0
+call MakeChar.AddFallAction Bishop 45 1 0
+call MakeChar.AddDazeAction Bishop
+call MakeChar.AddTalkAction Bishop nExtraActions=3
+call MakeChar.AddFlashedAction Bishop
+call MakeChar.AddCrazyAction Bishop
+call MakeChar.AddDiscover Bishop
+class Bishop
+	CanFly 0
+	FlyAccel 300.0
+	FlySpeed 300.0
+	FlyFric 2.0
+	FlyFallAccel 4800.0
+	WRadius 120
+	VRadius 130
+	SRadius 30
+	YModelDisp -5
+	FOV 90
+	CamDist 330
+	CamAng -5
+	CamRot 0
+	Node0Name _Move_The_Model_
+	Node1Name "Bip Bishop Head"
+call MakeChar.SetNodeRotation 0 0 0 0
+call MakeChar.SetNodeRotation 0 1 5 50
+call MakeChar.SetNodeRotation 1 0 50 100
+call MakeChar.SetNodeRotation 1 1 0 0
+action ActionInit
+	AnmFilePath Models/Chars/Bishop/Anm/Bishop_ActionInit.M3D
+	isLoop 0
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier 1
+	PriorityLevel 101
+	SlideAsFly 1
+action Action
+	AnmFilePath Models/Chars/Bishop/Anm/Bishop_Action.M3D
+	isLoop 1
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier 1
+	PriorityLevel 100
+	SlideAsFly 1
+event &AnmTotalTime BishopAttack !BishopAttack
+event &AnmTotalTime/2 BishopAttack !BishopAttack
+action ActionEnd
+	AnmFilePath Models/Chars/Bishop/Anm/Bishop_ActionEnd.M3D
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier 1
+	PriorityLevel 101
+	SlideAsFly 1
+event &AnmTotalTime*1.5 EndOfActionEnd !BishopEndActionEnd 0
+action SellLife
+	AnmFilePath Models/Chars/Bishop/Anm/Bishop_SellLife.M3D
+	isLoop 0
+	RotSpeed 720
+	AngRotLimit 720
+	UseDisp 1
+	NodeModifier -1
+	PriorityLevel 100
+	AngleModifierSpeed 5.0
+	AutoFaceSpeed 10
+	AutoFaceOffsetH 0
+	AutoFaceOffsetV 0
+event &AnmTotalTime/2 SellLife Bishop.SellLife
+event 0 FXBishopSellLife Bishop.FXBishopSellLife
+class Bishop
+	OnCreate Bishop.OnCreate
+	OnFreeResources Bishop.OnFreeResources
+	ActionPress !BishopActionPress
+if $level == LEVELS/GAMBLINDEN
+	call MakeChar.CreateRelaxAction Bishop 180 Dance0 Dance0
+	call MakeChar.CreateRelaxAction Bishop 180 Dance Dance
+	action
+		isLoop 1
+end
+call BishopSound.Init Bishop
+if %Init.OutMapSkip == 0
+	run speech Bishop Bishop BishopSpeech
+end
+if %Init.OutMapSkip == 0
+	call Scrap.Set FXBishopSellLifeFile %Bishop.FXBishopSellLifeFile
+	call Scrap.SetDebrisSys %Bishop.FXBishopSellLifeFile 1 0 0 1 0 0 %Fx.FXBISHOPSELLLIFE
+	call Scrap.Set FXBishopAttackFile %Bishop.FXBishopAttackFile
+	call Scrap.SetDebrisSys %Bishop.FXBishopAttackFile 4 0 0 1 0 0 %Fx.FXBISHOPATTACK
+end
+
+section OnCreate
+call BishopSound.InitLoops $name
+call CharAct.OnCreate $name
+
+section OnFreeResources
+call Scrap.SetDebrisSys %Bishop.FXBishopSellLifeFile 0 0 0 1 0 0 %Fx.FXBISHOPSELLLIFE
+call Scrap.SetDebrisSys %Bishop.FXBishopAttackFile 0 0 0 1 0 0 %Fx.FXBISHOPATTACK

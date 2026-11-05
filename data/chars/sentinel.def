@@ -1,0 +1,98 @@
+# Sentinel (the character script chars/sentinel.py of the game): the Init that builds the action class. The format is
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/sentinel.def replaces this file. The C gives
+# $xbox and $level (the path of the level in capitals). The section OnCreate ($name: the new entity) is the callback of
+# the class.
+
+section Sentinel
+call MakeChar.InitChar Sentinel
+setvar MakeChar.MaxSpeed 1.0
+setvar MakeChar.MinSpeed 0.7
+call MakeChar.AddRelaxActions Sentinel 360 3
+getaction Relax0
+	anmConeView 1
+call MakeChar.AddWalkActions Sentinel 360 0 0
+call MakeChar.AddInitWalkActions Sentinel 360 0 0
+call MakeChar.AddEndWalkActions Sentinel 360 0 0
+call MakeChar.AddTalkAction Sentinel nExtraActions=2
+call MakeChar.AddDazeAction Sentinel
+call MakeChar.AddFlashedAction Sentinel
+call MakeChar.AddCrazyAction Sentinel
+class Sentinel
+	CanFly 1
+	FlyAccel 2400.0
+	FlySpeed 500.0
+	FlyFric 2.0
+	FlyFallAccel 200.0
+	SkipInitOnChange 0
+	FireAsSelect 1
+	MinTimeWalking 0.3
+	InitEndWalkInterpFactor 1.0
+	CamDist 250
+	CamAng -10
+	CamRot 0
+	WRadius 90
+	VRadius 70
+	SRadius 20
+	Node0Name _Move_The_Model_
+	Node1Name "Bip Sentinel R UpperArm"
+	Node2Name "Bip Sentinel R ForeArm"
+	Node3Name "Bip Sentinel R Hand"
+call MakeChar.SetNodeRotation 0 0 100 0
+call MakeChar.SetNodeRotation 0 1 0 0
+call MakeChar.SetNodeRotation 0 2 0 0
+call MakeChar.SetNodeRotation 0 3 0 0
+call MakeChar.SetNodeRotation 1 0 100 0
+call MakeChar.SetNodeRotation 1 1 0 30
+call MakeChar.SetNodeRotation 1 2 0 30
+call MakeChar.SetNodeRotation 1 3 0 30
+class Sentinel
+	OnCreate Sentinel.OnCreate
+	ActionPress !SentinelActionPress
+	ActionRelease !SentinelActionRelease
+action ActionInit
+	AnmFilePath Models/Chars/Sentinel/Anm/Sentinel_ActionInit.M3D
+	isLoop 0
+	RotSpeed 180
+	AngRotLimit 90
+	UseDisp 0
+	PriorityLevel 100
+	NodeModifier 1
+	UseFlyFall 0
+event &AnmTotalTime Action !AnmSetAction
+action Action
+	AnmFilePath Models/Chars/Sentinel/Anm/Sentinel_Action.M3D
+	isLoop 1
+	RotSpeed 180
+	AngRotLimit 90
+	UseDisp 0
+	PriorityLevel 101
+	NodeModifier 1
+	UseFlyFall 0
+event 0 SentinelPoint0 !SentinelPoint
+event &AnmTotalTime/2.0 SentinelPoint1 !SentinelPoint
+call MakeChar.AddMorphAction Sentinel MorphEye Sentinel_Morph_Eye.M3D 2
+call MakeChar.AddMorphAction Sentinel MorphEyeLips Sentinel_Morph_EyeLips.M3D 3
+getaction Relax2
+	UseFlyFall 0
+getaction Relax1
+	UseFlyFall 0
+call MakeChar.EventAnimCommand 0 Morph,2,Normal
+call MakeChar.EventAnimCommand 0 Morph,3,R1
+call MakeChar.EventAnimCommand -1 Morph,3,Normal 0
+getaction ActionInit
+call MakeChar.EventAnimCommand 0 Morph,2,Surprise
+call MakeChar.EventAnimCommand 0 Morph,3,Surprise
+getaction Action
+call MakeChar.EventAnimCommand 0 Morph,2,Point
+call MakeChar.EventAnimCommand -1 Morph,2,Normal 0
+call MakeChar.EventAnimCommand 0 Morph,3,Point
+call MakeChar.EventAnimCommand -1 Morph,3,Normal 0
+call SentinelSound.Init Sentinel
+run speech Sentinel CharsNPC GenericNPCSpeech
+
+section OnCreate
+call SentinelSound.InitLoops $name
+call CharAct.OnCreate $name
+entity $name
+	Action MorphEye
+	Action MorphEyeLips

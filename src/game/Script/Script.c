@@ -1,8 +1,8 @@
 /*
  * The script loader of ScrapC (include/scrap/script.h): the C functions of pack modules, the helpers they share and
- * the .menu files.
+ * the .def files (the data of the ported scripts: menus, the HUD, the characters).
  *
- * A .menu file is a list of lines, # starts a comment:
+ * A .def file is a list of lines, # starts a comment:
  *	style <name>			the attribute lines that follow belong to the style, until the next command
  *	item <name> <type> [style ...]	SScorer.Add (unless the item is there), then the attributes of the styles
  *	<Attr> <value>			SScorer.Set of the last item (or of the style being defined)
@@ -12,9 +12,9 @@
  *	default <item>			SScorer.SetDefault
  *	list <name>			the lines that follow are the entries of a list, until the next command
  *	call <Module.Func> [arg ...]	a function of a script, Name=value for a keyword argument
- *	run <step> [arg ...]		a step the C code of the menu does
- *	menu <name>			a section: the menu function picks one, the lines before the first section
- *					always run
+ *	run <step> [arg ...]		a step the C code of the file does
+ *	section <name>			a section: the C function that runs the file picks one, the lines before
+ *					the first section always run
  *	do <name>			the lines of another section, here
  *	if <cond>, elif <cond>, else, end	the lines between only when cond holds: a value (true when not 0 or
  *					empty), <value> == <value>, <value> != <value>, or the numbers compared with
@@ -29,7 +29,7 @@
  *	measure <name> <font> <text>	$name: the width of the text in the font
  * A value is a number, a word or a "quoted text"; {Key} in a text is the language text Key. Unquoted: @Item.Var the
  * number of a variable of another item, %Module.var a variable of a script module, $id the player, $section the
- * section, $name a value the menu function gives or let and measure made,
+ * section, $name a value the C function gives or let and measure made,
  * [name] a list (a tuple of lists, one per entry line; a line with only a value that is a list or tuple is that
  * entry), (a,b,c) a tuple of values, None, &Var a variable of SAct's current action (&TimeOfFrame43,
  * &AnmTotalTime). @, %, $ and & values may end in operations with numbers, done left to right with Python's numbers:
@@ -328,7 +328,7 @@ byte Script_Args(PyObject *args, int *id, const char **control) {
 	return 1;
 }
 
-/* ---- the .menu files ---- */
+/* ---- the .def files ---- */
 
 typedef struct {
 	char *tok[SCRIPT_MAX_TOKENS];
@@ -344,18 +344,18 @@ typedef struct {
 	byte list;
 } scriptBlock_t;
 
-enum { MENU_ITEM, MENU_ACTION, MENU_CLASS, MENU_ENTITY };
+enum { TARGET_ITEM, TARGET_ACTION, TARGET_CLASS, TARGET_ENTITY };
 
 typedef struct {
 	int id;
 	const scriptStep_t *steps;
-	PyObject *vars;			/* the $names of the menu function, a dict or NULL */
+	PyObject *vars;			/* the $names of the C function, a dict or NULL */
 	PyObject *ownVars;		/* the dict of let and measure when the function gave none */
 	const char *text;		/* the whole file */
 	const char *section;
 	char item[0x80];		/* the last item */
-	byte target;			/* what attribute lines set: MENU_ITEM, MENU_ACTION, MENU_CLASS or MENU_ENTITY */
-	char entity[0x80];		/* the entity of MENU_ENTITY */
+	byte target;			/* what attribute lines set: TARGET_ITEM, TARGET_ACTION, TARGET_CLASS or TARGET_ENTITY */
+	char entity[0x80];		/* the entity of TARGET_ENTITY */
 	scriptBlock_t blocks[SCRIPT_MAX_BLOCKS];
 	int numBlocks;
 	scriptBlock_t *open;		/* the style or list whose lines follow */
@@ -365,10 +365,10 @@ typedef struct {
 	int nested;			/* do */
 	const char *name;		/* the file and the line, for the warnings */
 	int line;
-} scriptMenu_t;
+} scriptDef_t;
 
 /* the tokens of one line into buf (a word, a "quoted text", up to # outside quotes); the next line */
-static const char *Menu_Tokens(const char *p, char *buf, int size, scriptLine_t *l) {
+static const char *Def_Tokens(const char *p, char *buf, int size, scriptLine_t *l) {
 	char *o = buf;
 	char *end = buf + size - 1;
 
@@ -411,8 +411,8 @@ static const char *Menu_Tokens(const char *p, char *buf, int size, scriptLine_t 
 	return *p ? p + 1 : p;
 }
 
-/* the text s with {Key} replaced by the language texts and $(name) by the value name of the menu */
-static const char *Menu_Text(scriptMenu_t *m, const char *s, char *out, int size) {
+/* the text s with {Key} replaced by the language texts and $(name) by the value name of the file */
+static const char *Def_Text(scriptDef_t *m, const char *s, char *out, int size) {
 	int n = 0;
 	while (*s && n < size - 1) {
 		const char *close = *s == '{' ? strchr(s, '}') : s[0] == '$' && s[1] == '(' ? strchr(s, ')') : NULL;
@@ -447,7 +447,7 @@ static const char *Menu_Text(scriptMenu_t *m, const char *s, char *out, int size
 }
 
 /* a number token: 1 and its value */
-static byte Menu_Number(const char *s, double *d) {
+static byte Def_Number(const char *s, double *d) {
 	char *e;
 	if (!*s) {
 		return 0;
@@ -456,14 +456,14 @@ static byte Menu_Number(const char *s, double *d) {
 	return *e == 0;
 }
 
-static PyObject *Menu_Number2Py(double d) {
+static PyObject *Def_Number2Py(double d) {
 	return d == (long)d ? PyInt_FromLong((long)d) : PyFloat_FromDouble(d);
 }
 
-static PyObject *Menu_List(scriptMenu_t *m, const char *name);
+static PyObject *Def_List(scriptDef_t *m, const char *name);
 
 /* "A.B" into a (size bytes) and the part after the dot; NULL without a dot */
-static const char *Menu_Split(const char *s, char *a, int size) {
+static const char *Def_Split(const char *s, char *a, int size) {
 	const char *dot = strchr(s, '.');
 	if (!dot || dot - s >= size) {
 		return NULL;
@@ -473,14 +473,14 @@ static const char *Menu_Split(const char *s, char *a, int size) {
 }
 
 /* the start of the arithmetic after a name: the first + - * / (or the end) */
-static const char *Menu_Ops(const char *s) {
+static const char *Def_Ops(const char *s) {
 	const char *op = strpbrk(s, "+-*/");
 	return op ? op : s + strlen(s);
 }
 
 /* v with the operations of ops applied left to right ("+35", "/4*2"): the numbers of Python, an integer stays one
  * with integer operands and divides down; v given away, NULL when it is no number but ops has operations */
-static PyObject *Menu_Arith(scriptMenu_t *m, PyObject *v, const char *ops) {
+static PyObject *Def_Arith(scriptDef_t *m, PyObject *v, const char *ops) {
 	if (!v || !*ops) {
 		return v;
 	}
@@ -503,7 +503,7 @@ static PyObject *Menu_Arith(scriptMenu_t *m, PyObject *v, const char *ops) {
 		int len = next ? (int)(next - p) : (int)strlen(p);
 		Str_Copy(num, p, len + 1 < (int)sizeof(num) ? len + 1 : (int)sizeof(num));
 		double x;
-		if (!Menu_Number(num, &x)) {
+		if (!Def_Number(num, &x)) {
 			Con_Warnf("%s:%d: bad number %s in %s\n", m->name, m->line, num, ops);
 			return NULL;
 		}
@@ -531,13 +531,13 @@ static PyObject *Menu_Arith(scriptMenu_t *m, PyObject *v, const char *ops) {
 }
 
 /* a value token as a Python object (a new reference, NULL with the warning printed) */
-static PyObject *Menu_Value(scriptMenu_t *m, const char *t, byte quoted) {
+static PyObject *Def_Value(scriptDef_t *m, const char *t, byte quoted) {
 	char text[SCRIPT_MAX_TEXT], a[0x80];
 	const char *b;
 	double d;
 
 	if (quoted || strstr(t, "$(")) {
-		return PyString_FromString((char *)Menu_Text(m, t, text, sizeof(text)));
+		return PyString_FromString((char *)Def_Text(m, t, text, sizeof(text)));
 	}
 	if (!strcmp(t, "$id")) {
 		return PyInt_FromLong(m->id);
@@ -547,7 +547,7 @@ static PyObject *Menu_Value(scriptMenu_t *m, const char *t, byte quoted) {
 	}
 	if (t[0] == '$') {
 		char name[0x40];
-		const char *ops = Menu_Ops(t + 1);
+		const char *ops = Def_Ops(t + 1);
 		Str_Copy(name, t + 1, ops - t < (int)sizeof(name) ? (int)(ops - t) : (int)sizeof(name));
 		PyObject *v = m->vars ? PyDict_GetItemString(m->vars, name) : NULL;
 		if (!v) {
@@ -555,7 +555,7 @@ static PyObject *Menu_Value(scriptMenu_t *m, const char *t, byte quoted) {
 			return NULL;
 		}
 		Py_INCREF(v);
-		return Menu_Arith(m, v, ops);
+		return Def_Arith(m, v, ops);
 	}
 	if (!strcmp(t, "None")) {
 		Py_INCREF(Py_None);
@@ -578,7 +578,7 @@ static PyObject *Menu_Value(scriptMenu_t *m, const char *t, byte quoted) {
 			if (comma) {
 				*comma = 0;
 			}
-			PyObject *v = Menu_Value(m, p, 0);
+			PyObject *v = Def_Value(m, p, 0);
 			if (!v) {
 				Py_INCREF(Py_None);
 				v = Py_None;
@@ -591,32 +591,32 @@ static PyObject *Menu_Value(scriptMenu_t *m, const char *t, byte quoted) {
 	if (t[0] == '[' && t[strlen(t) - 1] == ']') {
 		Str_Copy(a, t + 1, sizeof(a));
 		a[strlen(a) - 1] = 0;
-		return Menu_List(m, a);
+		return Def_List(m, a);
 	}
 	if (t[0] == '&') {
 		/* a variable of SAct's current action */
 		char var[0x80], *s;
 		double dv = 0.0;
 		int iv = 0;
-		const char *ops = Menu_Ops(t + 1);
+		const char *ops = Def_Ops(t + 1);
 		Str_Copy(var, t + 1, ops - t < (int)sizeof(var) ? (int)(ops - t) : (int)sizeof(var));
 		switch (g_pAuxAction ? cAction_Var(g_pAuxAction, var, 0, &s, &dv, &iv) : ACTVAR_NONE) {
 		case ACTVAR_STRING:
 			return PyString_FromString(s ? s : "");
 		case ACTVAR_DOUBLE:
-			return Menu_Arith(m, PyFloat_FromDouble(dv), ops);
+			return Def_Arith(m, PyFloat_FromDouble(dv), ops);
 		case ACTVAR_INT:
-			return Menu_Arith(m, PyInt_FromLong(iv), ops);
+			return Def_Arith(m, PyInt_FromLong(iv), ops);
 		}
 		Con_Warnf("%s:%d: no action variable %s\n", m->name, m->line, var);
 		return NULL;
 	}
-	if ((t[0] == '%' || t[0] == '@') && (b = Menu_Split(t + 1, a, sizeof(a)))) {
+	if ((t[0] == '%' || t[0] == '@') && (b = Def_Split(t + 1, a, sizeof(a)))) {
 		char var[0x80];
-		const char *ops = Menu_Ops(b);
+		const char *ops = Def_Ops(b);
 		Str_Copy(var, b, ops - b < (int)sizeof(var) ? (int)(ops - b) + 1 : (int)sizeof(var));
 		if (t[0] == '@') {
-			return Menu_Arith(m, Menu_Number2Py(Script_GetNum(m->id, a, var)), ops);
+			return Def_Arith(m, Def_Number2Py(Script_GetNum(m->id, a, var)), ops);
 		}
 		PyObject *v = Script_Func(a, var);
 		if (!v) {
@@ -624,19 +624,19 @@ static PyObject *Menu_Value(scriptMenu_t *m, const char *t, byte quoted) {
 			Con_Warnf("%s:%d: no %s\n", m->name, m->line, t + 1);
 			return NULL;
 		}
-		return Menu_Arith(m, v, ops);
+		return Def_Arith(m, v, ops);
 	}
-	if (Menu_Number(t, &d)) {
+	if (Def_Number(t, &d)) {
 		return strchr(t, '.') ? PyFloat_FromDouble(d) : PyInt_FromLong((long)d);
 	}
-	return PyString_FromString((char *)Menu_Text(m, t, text, sizeof(text)));
+	return PyString_FromString((char *)Def_Text(m, t, text, sizeof(text)));
 }
 
 /* a value token as a string into out (an item name, a link, a compared value) */
-static const char *Menu_Word(scriptMenu_t *m, const char *t, byte quoted, char *out, int size) {
+static const char *Def_Word(scriptDef_t *m, const char *t, byte quoted, char *out, int size) {
 	out[0] = 0;
 	if (!quoted && (t[0] == '$' || t[0] == '%' || t[0] == '@') && !strstr(t, "$(")) {
-		PyObject *v = Menu_Value(m, t, 0);
+		PyObject *v = Def_Value(m, t, 0);
 		PyObject *str = v ? PyObject_Str(v) : NULL;
 		if (str) {
 			Str_Copy(out, PyString_AsString(str), size);
@@ -645,11 +645,11 @@ static const char *Menu_Word(scriptMenu_t *m, const char *t, byte quoted, char *
 		Py_XDECREF(v);
 		return out;
 	}
-	return Menu_Text(m, t, out, size);
+	return Def_Text(m, t, out, size);
 }
 
 /* the list name as a tuple of lists, one per entry line */
-static PyObject *Menu_List(scriptMenu_t *m, const char *name) {
+static PyObject *Def_List(scriptDef_t *m, const char *name) {
 	for (int i = m->numBlocks - 1; i >= 0; i--) {
 		scriptBlock_t *bl = &m->blocks[i];
 		if (!bl->list || strcmp(bl->name, name)) {
@@ -659,7 +659,7 @@ static PyObject *Menu_List(scriptMenu_t *m, const char *name) {
 		for (const char *p = bl->start; p < bl->end;) {
 			char buf[SCRIPT_MAX_TEXT];
 			scriptLine_t l;
-			p = Menu_Tokens(p, buf, sizeof(buf), &l);
+			p = Def_Tokens(p, buf, sizeof(buf), &l);
 			n += l.n > 0;
 		}
 		PyObject *r = PyTuple_New(n);
@@ -667,13 +667,13 @@ static PyObject *Menu_List(scriptMenu_t *m, const char *name) {
 		for (const char *p = bl->start; r && p < bl->end;) {
 			char buf[SCRIPT_MAX_TEXT];
 			scriptLine_t l;
-			p = Menu_Tokens(p, buf, sizeof(buf), &l);
+			p = Def_Tokens(p, buf, sizeof(buf), &l);
 			if (!l.n) {
 				continue;
 			}
 			if (l.n == 1 && !l.quoted[0]) {
 				/* a single value that is a list or tuple is the entry itself */
-				PyObject *v = Menu_Value(m, l.tok[0], 0);
+				PyObject *v = Def_Value(m, l.tok[0], 0);
 				if (v && (PyList_Check(v) || PyTuple_Check(v))) {
 					PyTuple_SetItem(r, n++, v);
 					continue;
@@ -682,7 +682,7 @@ static PyObject *Menu_List(scriptMenu_t *m, const char *name) {
 			}
 			PyObject *e = PyList_New(l.n);
 			for (int j = 0; e && j < l.n; j++) {
-				PyObject *v = Menu_Value(m, l.tok[j], l.quoted[j]);
+				PyObject *v = Def_Value(m, l.tok[j], l.quoted[j]);
 				if (!v) {
 					Py_INCREF(Py_None);
 					v = Py_None;
@@ -697,9 +697,9 @@ static PyObject *Menu_List(scriptMenu_t *m, const char *name) {
 	return NULL;
 }
 
-static void Menu_Set(scriptMenu_t *m, const char *item, const char *var, const char *value, byte quoted) {
+static void Def_Set(scriptDef_t *m, const char *item, const char *var, const char *value, byte quoted) {
 	if (!quoted && (value[0] == '@' || value[0] == '%' || value[0] == '$') && !strstr(value, "$(")) {
-		PyObject *v = Menu_Value(m, value, 0);
+		PyObject *v = Def_Value(m, value, 0);
 		if (v && (PyInt_Check(v) || PyFloat_Check(v))) {
 			Script_SetNum(m->id, item, var, PyInt_Check(v) ? (double)PyInt_AsLong(v) : PyFloat_AsDouble(v));
 		} else if (v && PyString_Check(v)) {
@@ -709,16 +709,16 @@ static void Menu_Set(scriptMenu_t *m, const char *item, const char *var, const c
 		return;
 	}
 	double d;
-	if (!quoted && Menu_Number(value, &d)) {
+	if (!quoted && Def_Number(value, &d)) {
 		Script_SetNum(m->id, item, var, d);
 	} else {
 		char text[SCRIPT_MAX_TEXT];
-		Script_SetStr(m->id, item, var, Menu_Text(m, value, text, sizeof(text)));
+		Script_SetStr(m->id, item, var, Def_Text(m, value, text, sizeof(text)));
 	}
 }
 
 /* the attribute lines of a style onto the item */
-static void Menu_ApplyStyle(scriptMenu_t *m, const char *name) {
+static void Def_ApplyStyle(scriptDef_t *m, const char *name) {
 	for (int i = m->numBlocks - 1; i >= 0; i--) {
 		scriptBlock_t *st = &m->blocks[i];
 		if (st->list || strcmp(st->name, name)) {
@@ -727,9 +727,9 @@ static void Menu_ApplyStyle(scriptMenu_t *m, const char *name) {
 		for (const char *p = st->start; p < st->end;) {
 			char buf[SCRIPT_MAX_TEXT];
 			scriptLine_t l;
-			p = Menu_Tokens(p, buf, sizeof(buf), &l);
+			p = Def_Tokens(p, buf, sizeof(buf), &l);
 			if (l.n >= 2) {
-				Menu_Set(m, m->item, l.tok[0], l.tok[1], l.quoted[1]);
+				Def_Set(m, m->item, l.tok[0], l.tok[1], l.quoted[1]);
 			}
 		}
 		return;
@@ -738,7 +738,7 @@ static void Menu_ApplyStyle(scriptMenu_t *m, const char *name) {
 }
 
 /* the arguments from token first on: a tuple, and the Name=value ones in *kw (NULL when there are none) */
-static PyObject *Menu_Args(scriptMenu_t *m, scriptLine_t *l, int first, PyObject **kw) {
+static PyObject *Def_Args(scriptDef_t *m, scriptLine_t *l, int first, PyObject **kw) {
 	int n = 0;
 	*kw = NULL;
 	for (int i = first; i < l->n; i++) {
@@ -748,7 +748,7 @@ static PyObject *Menu_Args(scriptMenu_t *m, scriptLine_t *l, int first, PyObject
 	n = 0;
 	for (int i = first; args && i < l->n; i++) {
 		char *eq = l->quoted[i] ? NULL : strchr(l->tok[i], '=');
-		PyObject *v = Menu_Value(m, eq ? eq + 1 : l->tok[i], eq ? eq[1] == '"' : l->quoted[i]);
+		PyObject *v = Def_Value(m, eq ? eq + 1 : l->tok[i], eq ? eq[1] == '"' : l->quoted[i]);
 		if (!v) {
 			Py_INCREF(Py_None);
 			v = Py_None;
@@ -770,25 +770,25 @@ static PyObject *Menu_Args(scriptMenu_t *m, scriptLine_t *l, int first, PyObject
 	return args;
 }
 
-static void Menu_DoCall(scriptMenu_t *m, scriptLine_t *l) {
+static void Def_DoCall(scriptDef_t *m, scriptLine_t *l) {
 	char module[0x40];
-	const char *func = Menu_Split(l->tok[1], module, sizeof(module));
+	const char *func = Def_Split(l->tok[1], module, sizeof(module));
 	if (!func) {
 		Con_Warnf("%s:%d: call needs Module.Function\n", m->name, m->line);
 		return;
 	}
 	PyObject *kw;
-	PyObject *args = Menu_Args(m, l, 2, &kw);
+	PyObject *args = Def_Args(m, l, 2, &kw);
 	Script_CallKw(module, func, args, kw);
 }
 
-static void Menu_DoRun(scriptMenu_t *m, scriptLine_t *l) {
+static void Def_DoRun(scriptDef_t *m, scriptLine_t *l) {
 	for (const scriptStep_t *s = m->steps; s && s->name; s++) {
 		if (strcmp(s->name, l->tok[1])) {
 			continue;
 		}
 		PyObject *kw;
-		PyObject *args = Menu_Args(m, l, 2, &kw);
+		PyObject *args = Def_Args(m, l, 2, &kw);
 		Py_XDECREF(kw);
 		if (args) {
 			s->fn(m->id, args);
@@ -800,17 +800,17 @@ static void Menu_DoRun(scriptMenu_t *m, scriptLine_t *l) {
 }
 
 /* the condition of an if or elif line */
-static byte Menu_Cond(scriptMenu_t *m, scriptLine_t *l) {
+static byte Def_Cond(scriptDef_t *m, scriptLine_t *l) {
 	char a[SCRIPT_MAX_TEXT], b[SCRIPT_MAX_TEXT];
 	if (l->n == 4 && (!strcmp(l->tok[2], "==") || !strcmp(l->tok[2], "!="))) {
-		Menu_Word(m, l->tok[1], l->quoted[1], a, sizeof(a));
-		Menu_Word(m, l->tok[3], l->quoted[3], b, sizeof(b));
+		Def_Word(m, l->tok[1], l->quoted[1], a, sizeof(a));
+		Def_Word(m, l->tok[3], l->quoted[3], b, sizeof(b));
 		return (strcmp(a, b) == 0) == (l->tok[2][0] == '=');
 	}
 	if (l->n == 4 && strchr("<>", l->tok[2][0]) && (!l->tok[2][1] || (l->tok[2][1] == '=' && !l->tok[2][2]))) {
 		/* numbers */
-		double x = strtod(Menu_Word(m, l->tok[1], l->quoted[1], a, sizeof(a)), NULL);
-		double y = strtod(Menu_Word(m, l->tok[3], l->quoted[3], b, sizeof(b)), NULL);
+		double x = strtod(Def_Word(m, l->tok[1], l->quoted[1], a, sizeof(a)), NULL);
+		double y = strtod(Def_Word(m, l->tok[3], l->quoted[3], b, sizeof(b)), NULL);
 		byte eq = l->tok[2][1] == '=';
 		return l->tok[2][0] == '<' ? (x < y || (eq && x == y)) : (x > y || (eq && x == y));
 	}
@@ -818,32 +818,32 @@ static byte Menu_Cond(scriptMenu_t *m, scriptLine_t *l) {
 		Con_Warnf("%s:%d: if <value> or if <value> <op> <value>\n", m->name, m->line);
 		return 0;
 	}
-	Menu_Word(m, l->tok[1], l->quoted[1], a, sizeof(a));
+	Def_Word(m, l->tok[1], l->quoted[1], a, sizeof(a));
 	return a[0] && strcmp(a, "0");
 }
 
-static const char *const menu_commands[] = { "style", "item", "use", "set", "lr", "ud", "default", "list", "call", "run",
-	"menu", "do", "if", "elif", "else", "end", "let", "measure", "action", "getaction", "class", "event", "setvar",
+static const char *const def_commands[] = { "style", "item", "use", "set", "lr", "ud", "default", "list", "call", "run",
+	"section", "do", "if", "elif", "else", "end", "let", "measure", "action", "getaction", "class", "event", "setvar",
 	"entity" };
 
-/* an attribute of SAct's current action or class (MENU_ACTION, MENU_CLASS), as SAct.SetAct and SetCls set it: a
- * text or a number; or a variable of the entity (MENU_ENTITY) */
-static void Menu_SetAct(scriptMenu_t *m, byte target, const char *var, const char *value, byte quoted) {
-	if (target == MENU_ENTITY) {
+/* an attribute of SAct's current action or class (TARGET_ACTION, TARGET_CLASS), as SAct.SetAct and SetCls set it: a
+ * text or a number; or a variable of the entity (TARGET_ENTITY) */
+static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char *value, byte quoted) {
+	if (target == TARGET_ENTITY) {
 		/* a script variable of the entity, as `entity.var = value` of a script */
-		PyObject *v = Menu_Value(m, value, quoted);
+		PyObject *v = Def_Value(m, value, quoted);
 		if (v) {
 			PyEntity_SetVar(World_FindEntity(m->entity), m->entity, var, v);
 			Py_DECREF(v);
 		}
 		return;
 	}
-	void *obj = target == MENU_CLASS ? (void *)g_pAuxActClass : (void *)g_pAuxAction;
+	void *obj = target == TARGET_CLASS ? (void *)g_pAuxActClass : (void *)g_pAuxAction;
 	if (!obj) {
-		Con_Warnf("%s:%d: no current %s for %s\n", m->name, m->line, target == MENU_CLASS ? "class" : "action", var);
+		Con_Warnf("%s:%d: no current %s for %s\n", m->name, m->line, target == TARGET_CLASS ? "class" : "action", var);
 		return;
 	}
-	PyObject *v = Menu_Value(m, value, quoted);
+	PyObject *v = Def_Value(m, value, quoted);
 	char *s = NULL;
 	double d = 0.0;
 	int i = 0;
@@ -857,7 +857,7 @@ static void Menu_SetAct(scriptMenu_t *m, byte target, const char *var, const cha
 		Py_XDECREF(v);
 		return;
 	}
-	if (target == MENU_CLASS) {
+	if (target == TARGET_CLASS) {
 		cActClass_Var(g_pAuxActClass, var, 1, s ? &s : NULL, s ? NULL : &d, s ? NULL : &i);
 	} else {
 		cAction_Var(g_pAuxAction, var, 1, s ? &s : NULL, s ? NULL : &d, s ? NULL : &i);
@@ -865,8 +865,8 @@ static void Menu_SetAct(scriptMenu_t *m, byte target, const char *var, const cha
 	Py_DECREF(v);
 }
 
-/* a $name of the menu: into its own dict when the menu function gave none */
-static void Menu_SetVar(scriptMenu_t *m, const char *name, PyObject *v) {
+/* a $name of the file: into its own dict when the C function gave none */
+static void Def_SetVar(scriptDef_t *m, const char *name, PyObject *v) {
 	if (!m->vars) {
 		m->vars = m->ownVars = PyDict_New();
 	}
@@ -877,19 +877,19 @@ static void Menu_SetVar(scriptMenu_t *m, const char *name, PyObject *v) {
 }
 
 /* let <name> <value> [value ...]: the sum of the values, or the value when there is one that is no number */
-static void Menu_Let(scriptMenu_t *m, scriptLine_t *l) {
+static void Def_Let(scriptDef_t *m, scriptLine_t *l) {
 	double sum = 0.0;
 	byte isInt = 1;
 	if (l->n == 3) {
-		PyObject *v = Menu_Value(m, l->tok[2], l->quoted[2]);
+		PyObject *v = Def_Value(m, l->tok[2], l->quoted[2]);
 		if (v && !PyInt_Check(v) && !PyFloat_Check(v)) {
-			Menu_SetVar(m, l->tok[1], v);
+			Def_SetVar(m, l->tok[1], v);
 			return;
 		}
 		Py_XDECREF(v);
 	}
 	for (int i = 2; i < l->n; i++) {
-		PyObject *v = Menu_Value(m, l->tok[i], l->quoted[i]);
+		PyObject *v = Def_Value(m, l->tok[i], l->quoted[i]);
 		if (v && PyInt_Check(v)) {
 			sum += PyInt_AsLong(v);
 		} else if (v && PyFloat_Check(v)) {
@@ -900,28 +900,28 @@ static void Menu_Let(scriptMenu_t *m, scriptLine_t *l) {
 		}
 		Py_XDECREF(v);
 	}
-	Menu_SetVar(m, l->tok[1], isInt && sum == (long)sum ? PyInt_FromLong((long)sum) : PyFloat_FromDouble(sum));
+	Def_SetVar(m, l->tok[1], isInt && sum == (long)sum ? PyInt_FromLong((long)sum) : PyFloat_FromDouble(sum));
 }
 
 /* measure <name> <font> <text>: the width of the text in the font (SScorer.GetTextArea) */
-static void Menu_Measure(scriptMenu_t *m, scriptLine_t *l) {
+static void Def_Measure(scriptDef_t *m, scriptLine_t *l) {
 	char font[0x40], text[SCRIPT_MAX_TEXT];
 	float pos[2], size[2] = { 0.0f, 0.0f };
-	CFont *f = Font_Get(Menu_Word(m, l->tok[2], l->quoted[2], font, sizeof(font)));
+	CFont *f = Font_Get(Def_Word(m, l->tok[2], l->quoted[2], font, sizeof(font)));
 	if (!f) {
 		Con_Warnf("%s:%d: no font %s\n", m->name, m->line, font);
 	} else {
-		Font_TextSize(f, pos, size, 0.0f, 0.0f, "%s", Menu_Word(m, l->tok[3], l->quoted[3], text, sizeof(text)));
+		Font_TextSize(f, pos, size, 0.0f, 0.0f, "%s", Def_Word(m, l->tok[3], l->quoted[3], text, sizeof(text)));
 	}
-	Menu_SetVar(m, l->tok[1], PyFloat_FromDouble(size[0]));
+	Def_SetVar(m, l->tok[1], PyFloat_FromDouble(size[0]));
 }
 
-static byte Menu_IsCommand(scriptLine_t *l) {
+static byte Def_IsCommand(scriptLine_t *l) {
 	if (l->quoted[0]) {
 		return 0;
 	}
-	for (size_t i = 0; i < sizeof(menu_commands) / sizeof(menu_commands[0]); i++) {
-		if (!strcmp(l->tok[0], menu_commands[i])) {
+	for (size_t i = 0; i < sizeof(def_commands) / sizeof(def_commands[0]); i++) {
+		if (!strcmp(l->tok[0], def_commands[i])) {
 			return 1;
 		}
 	}
@@ -929,7 +929,7 @@ static byte Menu_IsCommand(scriptLine_t *l) {
 }
 
 /* if, elif, else, end: 1 when the line was one of them */
-static byte Menu_Branch(scriptMenu_t *m, scriptLine_t *l) {
+static byte Def_Branch(scriptDef_t *m, scriptLine_t *l) {
 	const char *cmd = l->tok[0];
 	int d = m->depth;
 	byte outer = d < 2 || m->active[d - 2];
@@ -939,12 +939,12 @@ static byte Menu_Branch(scriptMenu_t *m, scriptLine_t *l) {
 			Con_Warnf("%s:%d: if nested too deep\n", m->name, m->line);
 			return 1;
 		}
-		byte run = (d == 0 || m->active[d - 1]) && Menu_Cond(m, l);
+		byte run = (d == 0 || m->active[d - 1]) && Def_Cond(m, l);
 		m->active[d] = run;
 		m->taken[d] = run || !(d == 0 || m->active[d - 1]);
 		m->depth++;
 	} else if (!strcmp(cmd, "elif") && d) {
-		byte run = outer && !m->taken[d - 1] && Menu_Cond(m, l);
+		byte run = outer && !m->taken[d - 1] && Def_Cond(m, l);
 		m->active[d - 1] = run;
 		m->taken[d - 1] |= run;
 	} else if (!strcmp(cmd, "else") && d) {
@@ -960,35 +960,35 @@ static byte Menu_Branch(scriptMenu_t *m, scriptLine_t *l) {
 	return 1;
 }
 
-static void Menu_Run(scriptMenu_t *m, byte header, const char *section);
+static void Def_Run(scriptDef_t *m, byte header, const char *section);
 
-/* the menu that runs (the innermost), for the steps */
-static scriptMenu_t *menu_running;
+/* the file that runs (the innermost), for the steps */
+static scriptDef_t *def_running;
 
 const char *Script_CurrentItem(void) {
-	return menu_running ? menu_running->item : "";
+	return def_running ? def_running->item : "";
 }
 
 void Script_SetValue(const char *name, PyObject *value) {
-	if (menu_running) {
-		Menu_SetVar(menu_running, name, value);
+	if (def_running) {
+		Def_SetVar(def_running, name, value);
 	} else {
 		Py_XDECREF(value);
 	}
 }
 
-static void Menu_Line(scriptMenu_t *m, scriptLine_t *l, const char *next) {
+static void Def_Line(scriptDef_t *m, scriptLine_t *l, const char *next) {
 	const char *cmd = l->tok[0];
 	char a[0x80], b[0x80];
 
-	if (Menu_Branch(m, l)) {
+	if (Def_Branch(m, l)) {
 		m->open = NULL;
 		return;
 	}
 	if (m->depth && !m->active[m->depth - 1]) {
 		return;
 	}
-	if (m->open && !Menu_IsCommand(l)) {
+	if (m->open && !Def_IsCommand(l)) {
 		m->open->end = next;	/* a line of the style or list */
 		return;
 	}
@@ -1004,71 +1004,71 @@ static void Menu_Line(scriptMenu_t *m, scriptLine_t *l, const char *next) {
 		m->open->list = cmd[0] == 'l';
 	} else if (!strcmp(cmd, "action") && l->n == 1) {
 		/* the current action (the last one a helper made) */
-		m->target = MENU_ACTION;
+		m->target = TARGET_ACTION;
 	} else if ((!strcmp(cmd, "action") || !strcmp(cmd, "getaction")) && l->n == 2) {
-		Menu_Word(m, l->tok[1], l->quoted[1], a, sizeof(a));
+		Def_Word(m, l->tok[1], l->quoted[1], a, sizeof(a));
 		if (!g_pAuxActClass) {
 			Con_Warnf("%s:%d: %s without a class\n", m->name, m->line, cmd);
 			return;
 		}
 		g_pAuxAction = cmd[0] == 'a' ? cActClass_CreateAction(g_pAuxActClass, a) : cActClass_GetAction(g_pAuxActClass, a);
-		m->target = MENU_ACTION;
+		m->target = TARGET_ACTION;
 	} else if (!strcmp(cmd, "class") && l->n == 2) {
 		CHECK(g_pActClassList);
-		g_pAuxActClass = cActClassList_Get(g_pActClassList, Menu_Word(m, l->tok[1], l->quoted[1], a, sizeof(a)));
-		m->target = MENU_CLASS;
+		g_pAuxActClass = cActClassList_Get(g_pActClassList, Def_Word(m, l->tok[1], l->quoted[1], a, sizeof(a)));
+		m->target = TARGET_CLASS;
 	} else if (!strcmp(cmd, "event") && (l->n == 4 || l->n == 5)) {
 		/* event <time> <name> <function> [discardable]: the order of the script's SetAct lines */
-		Menu_SetAct(m, MENU_ACTION, "AddEventAtTime", l->tok[1], l->quoted[1]);
-		Menu_Word(m, l->tok[2], l->quoted[2], a, sizeof(a));
+		Def_SetAct(m, TARGET_ACTION, "AddEventAtTime", l->tok[1], l->quoted[1]);
+		Def_Word(m, l->tok[2], l->quoted[2], a, sizeof(a));
 		if (g_pAuxAction) {
 			char *s = a;
 			cAction_Var(g_pAuxAction, "EventName", 1, &s, NULL, NULL);
 		}
 		if (l->n == 5) {
-			Menu_SetAct(m, MENU_ACTION, "EventDiscardable", l->tok[4], l->quoted[4]);
+			Def_SetAct(m, TARGET_ACTION, "EventDiscardable", l->tok[4], l->quoted[4]);
 		}
-		Menu_Word(m, l->tok[3], l->quoted[3], b, sizeof(b));
+		Def_Word(m, l->tok[3], l->quoted[3], b, sizeof(b));
 		if (g_pAuxAction) {
 			char *s = b;
 			cAction_Var(g_pAuxAction, "EventFunc", 1, &s, NULL, NULL);
 		}
 	} else if (!strcmp(cmd, "entity") && l->n == 2) {
-		Menu_Word(m, l->tok[1], l->quoted[1], m->entity, sizeof(m->entity));
-		m->target = MENU_ENTITY;
+		Def_Word(m, l->tok[1], l->quoted[1], m->entity, sizeof(m->entity));
+		m->target = TARGET_ENTITY;
 	} else if (!strcmp(cmd, "setvar") && l->n == 3) {
-		const char *var = Menu_Split(l->tok[1], a, sizeof(a));
+		const char *var = Def_Split(l->tok[1], a, sizeof(a));
 		if (!var) {
 			Con_Warnf("%s:%d: setvar needs Module.var\n", m->name, m->line);
 			return;
 		}
-		Script_SetVar(a, var, Menu_Value(m, l->tok[2], l->quoted[2]));
+		Script_SetVar(a, var, Def_Value(m, l->tok[2], l->quoted[2]));
 	} else if (!strcmp(cmd, "item") && l->n >= 3) {
-		m->target = MENU_ITEM;
-		Menu_Word(m, l->tok[1], l->quoted[1], m->item, sizeof(m->item));
+		m->target = TARGET_ITEM;
+		Def_Word(m, l->tok[1], l->quoted[1], m->item, sizeof(m->item));
 		if (!Script_Item(m->id, m->item)) {
 			Script_Add(m->id, m->item, l->tok[2]);
 		}
 		for (int i = 3; i < l->n; i++) {
-			Menu_ApplyStyle(m, l->tok[i]);
+			Def_ApplyStyle(m, l->tok[i]);
 		}
 	} else if (!strcmp(cmd, "use") && l->n == 2 && m->item[0]) {
-		Menu_ApplyStyle(m, l->tok[1]);
+		Def_ApplyStyle(m, l->tok[1]);
 	} else if (!strcmp(cmd, "set") && l->n == 4) {
-		Menu_Set(m, Menu_Word(m, l->tok[1], l->quoted[1], a, sizeof(a)), l->tok[2], l->tok[3], l->quoted[3]);
+		Def_Set(m, Def_Word(m, l->tok[1], l->quoted[1], a, sizeof(a)), l->tok[2], l->tok[3], l->quoted[3]);
 	} else if ((!strcmp(cmd, "lr") || !strcmp(cmd, "ud")) && l->n == 3) {
 		Script_Call("Menu", cmd[0] == 'l' ? "LinkLR" : "LinkUD", "(iss)", m->id,
-			Menu_Word(m, l->tok[1], l->quoted[1], a, sizeof(a)), Menu_Word(m, l->tok[2], l->quoted[2], b, sizeof(b)));
+			Def_Word(m, l->tok[1], l->quoted[1], a, sizeof(a)), Def_Word(m, l->tok[2], l->quoted[2], b, sizeof(b)));
 	} else if (!strcmp(cmd, "default") && l->n == 2) {
-		Script_SetDefault(m->id, Menu_Word(m, l->tok[1], l->quoted[1], a, sizeof(a)));
+		Script_SetDefault(m->id, Def_Word(m, l->tok[1], l->quoted[1], a, sizeof(a)));
 	} else if (!strcmp(cmd, "call") && l->n >= 2) {
-		Menu_DoCall(m, l);
+		Def_DoCall(m, l);
 	} else if (!strcmp(cmd, "run") && l->n >= 2) {
-		Menu_DoRun(m, l);
+		Def_DoRun(m, l);
 	} else if (!strcmp(cmd, "let") && l->n >= 3) {
-		Menu_Let(m, l);
+		Def_Let(m, l);
 	} else if (!strcmp(cmd, "measure") && l->n == 4) {
-		Menu_Measure(m, l);
+		Def_Measure(m, l);
 	} else if (!strcmp(cmd, "do") && l->n == 2) {
 		if (m->nested >= SCRIPT_MAX_DEPTH) {
 			Con_Warnf("%s:%d: do nested too deep\n", m->name, m->line);
@@ -1076,34 +1076,34 @@ static void Menu_Line(scriptMenu_t *m, scriptLine_t *l, const char *next) {
 		}
 		int depth = m->depth;
 		m->nested++;
-		Menu_Run(m, 0, l->tok[1]);
+		Def_Run(m, 0, l->tok[1]);
 		m->nested--;
 		m->depth = depth;
 		m->open = NULL;
-	} else if (l->n == 2 && m->target != MENU_ITEM && !Menu_IsCommand(l)) {
-		Menu_SetAct(m, m->target, cmd, l->tok[1], l->quoted[1]);
-	} else if (l->n == 2 && m->item[0] && !Menu_IsCommand(l)) {
-		Menu_Set(m, m->item, cmd, l->tok[1], l->quoted[1]);
+	} else if (l->n == 2 && m->target != TARGET_ITEM && !Def_IsCommand(l)) {
+		Def_SetAct(m, m->target, cmd, l->tok[1], l->quoted[1]);
+	} else if (l->n == 2 && m->item[0] && !Def_IsCommand(l)) {
+		Def_Set(m, m->item, cmd, l->tok[1], l->quoted[1]);
 	} else {
 		Con_Warnf("%s:%d: what is '%s'?\n", m->name, m->line, cmd);
 	}
 }
 
 /* the lines before the first section (header) and those of section (NULL: all lines of a file without sections) */
-static void Menu_Run(scriptMenu_t *m, byte header, const char *section) {
+static void Def_Run(scriptDef_t *m, byte header, const char *section) {
 	byte in = header;
 	byte found = 0;
 	int line = 0;
 	for (const char *p = m->text; *p;) {
 		char buf[SCRIPT_MAX_TEXT];
 		scriptLine_t l;
-		const char *next = Menu_Tokens(p, buf, sizeof(buf), &l);
+		const char *next = Def_Tokens(p, buf, sizeof(buf), &l);
 		line++;
 		p = next;
 		if (!l.n) {
 			continue;
 		}
-		if (!l.quoted[0] && !strcmp(l.tok[0], "menu") && l.n == 2) {
+		if (!l.quoted[0] && !strcmp(l.tok[0], "section") && l.n == 2) {
 			if (found) {
 				break;
 			}
@@ -1114,17 +1114,17 @@ static void Menu_Run(scriptMenu_t *m, byte header, const char *section) {
 		}
 		if (in) {
 			m->line = line;
-			Menu_Line(m, &l, next);
+			Def_Line(m, &l, next);
 		}
 	}
 	if (section && !found) {
-		Con_Warnf("%s: no menu %s\n", m->name, section);
+		Con_Warnf("%s: no section %s\n", m->name, section);
 	}
 }
 
-byte Script_RunMenu(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
+byte Script_RunFile(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
 	PyObject *vars) {
-	/* a menu may run another from a call (CreateControlMenu): one buffer per level */
+	/* a file may run another from a call (CreateControlMenu): one buffer per level */
 	static char files[SCRIPT_MAX_NESTED][SCRIPT_MAX_FILE];
 	static int level;
 	char path[0x100];
@@ -1144,13 +1144,13 @@ byte Script_RunMenu(int id, const char *name, const char *section, const char *b
 		Con_Warnf("Script: no %s\n", name);
 		return 0;
 	}
-	scriptMenu_t m = { .id = id, .steps = steps, .vars = vars, .text = text, .section = section, .name = name };
-	scriptMenu_t *outer = menu_running;
-	menu_running = &m;
+	scriptDef_t m = { .id = id, .steps = steps, .vars = vars, .text = text, .section = section, .name = name };
+	scriptDef_t *outer = def_running;
+	def_running = &m;
 	level++;
-	Menu_Run(&m, 1, section);
+	Def_Run(&m, 1, section);
 	level--;
-	menu_running = outer;
+	def_running = outer;
 	if (m.depth) {
 		Con_Warnf("%s: if without end\n", name);
 	}

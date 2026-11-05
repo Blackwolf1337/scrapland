@@ -1,0 +1,31 @@
+# CrazyGambler (the character script chars/crazygambler.py of the game): the Init that builds the action class. The
+# format is described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/crazygambler.def replaces this
+# file. The C gives $xbox and $level (the path of the level in capitals). The section OnCreate ($name: the new entity)
+# is the callback of the class.
+
+section CrazyGambler
+call MakeChar.InitChar CrazyGambler
+setvar MakeChar.MaxSpeed 1.2
+setvar MakeChar.MinSpeed 0.6
+call MakeChar.AddRelaxActions CrazyGambler 360
+call MakeChar.AddWalkActions CrazyGambler 360 0
+call MakeChar.AddInitWalkActions CrazyGambler 360 0
+call MakeChar.AddEndWalkActions CrazyGambler 360 0
+call MakeChar.AddFallAction CrazyGambler 45 1 0
+call MakeChar.AddTalkAction CrazyGambler nExtraActions=3
+call MakeChar.AddFlashedAction CrazyGambler
+call MakeChar.AddCrazyAction CrazyGambler
+class CrazyGambler
+	WRadius 105
+	VRadius 70
+	FOV 90
+	CamDist 270
+	CamAng 6
+	CamRot 0
+	OnCreate CrazyGambler.OnCreate
+call CrazyGamblerSound.Init CrazyGambler
+run speech CrazyGambler CrazyGambler CrazyGamblerSpeech
+
+section OnCreate
+call CharAct.OnCreate $name
+call CrazyGamblerSound.InitLoops $name

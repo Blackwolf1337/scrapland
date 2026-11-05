@@ -1,0 +1,729 @@
+# The multiplayer menus (PCMenu.MultiPlayerMenu, NetJoinGameMenu with the server browser, the address and password
+# pages, NetCreateGameMenu with the advanced options, NetDefaultContentMenu of the game). The format is described in src/game/Script/Script.c. A pack in mods/
+# with scrapc/menus/net.def replaces this file.
+
+style blue
+	Red 183
+	Green 220
+	Blue 255
+
+# ---- the multiplayer menu during a game: $server is 1 on the server ----
+
+section Multiplayer
+if $server
+	list opts
+		"{Menu_ReturnToGame}"		Menu.BackToGame
+		%PCMenu.MultiplayerMenu
+		"{Net_Menu_Restart_Svr}"	PCMenu.MenuRestartServer
+		"{Menu_Multiplayer_ShipMenu}"	ShipEdit.EnterEditShipMenu
+		"{Menu_Options}"		Menu.OptionsMenu
+		"{Menu_AbortGame}"		PCMenu.AbortMultiplayerGame
+else
+	list opts
+		"{Menu_ReturnToGame}"		Menu.BackToGame
+		%PCMenu.MultiplayerMenu
+		"{Menu_Multiplayer_ShipMenu}"	ShipEdit.EnterEditShipMenu
+		"{Menu_Options}"		Menu.OptionsMenu
+		"{Menu_AbortGame}"		PCMenu.AbortMultiplayerGame
+end
+call Menu.VerticalMenu $id Multiplayer [opts] Menu.BackToGame YStart=%Menu.OptionMenuYStart
+# the entry of the game mode is disabled when the mode has no menu
+run ingame
+call Menu.DrawBackOptionMenu $id
+
+# ---- join a game: $domain is Internet, Local or IP ----
+
+section Join
+call Menu.StartNewMenu $id
+item JoinButton_Internet Sprite
+	Unit 1
+	X 73
+	Y 81
+	ScaleX 163
+	ScaleY 24
+	W 163
+	H 24
+	OnAccept PCMenu.NetJoinInternetMenu
+	Red 32
+	Green 255
+	Blue 255
+if $domain == Internet
+	Alpha 48
+else
+	Alpha 10
+end
+item JoinInternet Text
+	Font Horatio
+	Text "{Menu_Multiplayer_JoinGame_Internet}"
+	X 155
+	Y 92
+	use blue
+	CentralText 1
+	OnAccept PCMenu.NetJoinInternetMenu
+run tabwidth
+item JoinButton_Local Sprite
+	Unit 1
+	X 238
+	Y 81
+	ScaleX 163
+	ScaleY 24
+	W 163
+	H 24
+	OnAccept PCMenu.NetJoinLocalMenu
+	Red 32
+	Green 255
+	Blue 255
+if $domain == Local
+	Alpha 48
+else
+	Alpha 10
+end
+item JoinLocal Text
+	Font Horatio
+	Text "{Menu_Multiplayer_JoinGame_LocalNetwork}"
+	X 320
+	Y 92
+	use blue
+	CentralText 1
+	OnAccept PCMenu.NetJoinLocalMenu
+run tabwidth
+item JoinButton_IP Sprite
+	Unit 1
+	X 403
+	Y 81
+	ScaleX 163
+	ScaleY 24
+	W 163
+	H 24
+	OnAccept PCMenu.NetJoinIPMenu
+	Red 32
+	Green 255
+	Blue 255
+if $domain == IP
+	Alpha 48
+else
+	Alpha 10
+end
+item JoinIP Text
+	Font Horatio
+	Text "{Menu_Multiplayer_JoinGame_IP}"
+	X 485
+	Y 92
+	use blue
+	CentralText 1
+	OnAccept PCMenu.NetJoinIPMenu
+run tabwidth
+if $domain == IP
+	do ip
+else
+	do browser
+	# a new list of servers, sorted by the last column again
+	run browse
+end
+do content
+call SScorer.SetOnCancel $id Menu.MainMenu
+call SScorer.SetOnNext $id PCMenu.NetCreateGameMenu
+call SScorer.SetOnPrev $id PCMenu.NetCreateGameMenu
+lr JoinInternet JoinLocal
+lr JoinLocal JoinIP
+ud Join JoinInternet
+ud Join JoinLocal
+ud Join JoinIP
+if $domain == Internet
+	ud Join JoinInternet
+	ud Refresh Back
+elif $domain == Local
+	ud Join JoinLocal
+	ud Refresh Back
+else
+	ud Join JoinIP
+	ud JoinIP Item1
+	ud Item1 Item2
+	ud Item2 Back
+end
+ud Back Join
+# the item that had the cursor keeps it
+default $current
+
+# ---- the server browser ----
+
+section browser
+list slots
+	-	PCMenu.BrowseLocalJoin	BrowserSlot1
+	-	PCMenu.BrowseLocalJoin	BrowserSlot2
+	-	PCMenu.BrowseLocalJoin	BrowserSlot3
+	-	PCMenu.BrowseLocalJoin	BrowserSlot4
+	-	PCMenu.BrowseLocalJoin	BrowserSlot5
+	-	PCMenu.BrowseLocalJoin	BrowserSlot6
+	-	PCMenu.BrowseLocalJoin	BrowserSlot7
+	-	PCMenu.BrowseLocalJoin	BrowserSlot8
+	-	PCMenu.BrowseLocalJoin	BrowserSlot9
+	-	PCMenu.BrowseLocalJoin	BrowserSlot10
+	-	PCMenu.BrowseLocalJoin	BrowserSlot11
+	-	PCMenu.BrowseLocalJoin	BrowserSlot12
+	-	PCMenu.BrowseLocalJoin	BrowserSlot13
+call Menu.VerticalMenu $id "" [slots] PCMenu.BrowserMenuBack 88 VerticalStep=16 Font=Terminal8Fixed YStart=153
+item Refresh Text
+	Font Horatio
+	Text "{Menu_MultiPlayer_Refresh}"
+	X 320
+	Y 384
+	CentralText 1
+	OnAccept PCMenu.RefreshBrowseMenuButton
+	use blue
+	Effect Shadow
+item BrowserColumnLine_H Sprite
+	X 78
+	Y 139
+	Unit 1
+	ScaleX 468
+	ScaleY 1
+	Alpha 64
+# the columns: the title (the text cut by run columntext), the line right of it and the back that sorts by it
+style title
+	Y 128
+	CentralText 1
+	Red 183
+	Green 220
+	Blue 255
+	Effect Shadow
+	W 0
+	H 0
+style line
+	Y 120
+	Unit 1
+	ScaleX 1
+	ScaleY 240
+	Alpha 64
+style back
+	Y 120
+	Unit 1
+	ScaleY 18
+	Alpha 64
+	OnAccept PCMenu.BrowserColumnBack_Click
+	H 18
+item BrowserColumn_Name Text
+	Font Terminal8Fixed
+run columntext Menu_MultiPlayer_ServerName 28
+	X 164
+	use title
+item BrowserColumnLine_Name Sprite
+	X 252
+	use line
+item BrowserColumnBack_Name Sprite
+	X 78
+	ScaleX 173
+	use back
+	W 173
+item BrowserColumn_Type Text
+	Font Terminal8Fixed
+run columntext Menu_MultiPlayer_ServerType 15
+	X 297
+	use title
+item BrowserColumnLine_Type Sprite
+	X 342
+	use line
+item BrowserColumnBack_Type Sprite
+	X 254
+	ScaleX 87
+	use back
+	W 87
+item BrowserColumn_Players Text
+	Font Terminal8Fixed
+run columntext Menu_MultiPlayer_PlayersNumber 7
+	X 366
+	use title
+item BrowserColumnLine_Players Sprite
+	X 390
+	use line
+item BrowserColumnBack_Players Sprite
+	X 344
+	ScaleX 45
+	use back
+	W 45
+item BrowserColumn_Map Text
+	Font Terminal8Fixed
+run columntext Menu_MultiPlayer_Map 19
+	X 450
+	use title
+item BrowserColumnLine_Map Sprite
+	X 510
+	use line
+item BrowserColumnBack_Map Sprite
+	X 392
+	ScaleX 117
+	use back
+	W 117
+item BrowserColumn_Ping Text
+	Font Terminal8Fixed
+run columntext Menu_MultiPlayer_Ping 6
+	X 528
+	use title
+item BrowserColumnLine_Ping Sprite
+	X 546
+	use line
+item BrowserColumnBack_Ping Sprite
+	X 512
+	ScaleX 33
+	use back
+	W 33
+# the arrows and the slider right of the list
+style arrow
+	IsMultiSprite 1
+	HighRes 1
+	File 2D/Menu/GenericButtons.alpha.tga
+	SpriteIndex 3
+	FocusSpriteIndex 4
+	Highlight 1
+	X 547
+item BrowserUp Button arrow
+	Y 120
+	W 20
+	H 20
+	FocusPivotX -2
+	FocusPivotY -2
+	Complex 0
+	Visible 1
+	Rotate 1
+	OnAccept PCMenu.BrowseLocalMenuNext
+	MultiPress 1
+item BrowserDown Button arrow
+	Y 344
+	W 20
+	H 20
+	FocusPivotX -2
+	FocusPivotY -2
+	Complex 0
+	Visible 1
+	Rotate 1
+	Mirror 1
+	OnAccept PCMenu.BrowseLocalMenuPrevious
+	MultiPress 1
+ud BrowserUp BrowserDown
+lr BrowserSlot1 BrowserUp
+lr BrowserSlot1 BrowserDown
+item BrowserSlider Sprite
+	X 550
+	Y 136
+	W 0
+	H 0
+	Unit 1
+	ScaleX 11
+	ScaleY 208
+	Alpha 92
+	Red 192
+	Green 192
+	Blue 255
+item BrowserSliderArea Sprite
+	X 549
+	Y 136
+	Unit 1
+	ScaleX 13
+	ScaleY 208
+	W 20
+	H 208
+	FocusPivotX -3
+	FocusPivotY 0
+	Alpha 24
+	OnGainFocus PCMenu.BrowserSliderGainFocus
+	OnLooseFocus PCMenu.BrowserSliderLooseFocus
+item BrowseTab Tab
+call Menu.SetTabDefaults $id BrowseTab
+	X 72
+	Y 114
+	SizeX 496
+	SizeY 252
+	Type 4
+	Alpha 92
+	Red 32
+	Green 255
+	Blue 255
+
+# ---- the address of a server ----
+
+section ip
+list entries
+	$serveraddress			!EditText
+	"{Menu_Multiplayer_JoinGame}"	PCMenu.MenuJoinGame
+call Menu.VerticalMenu $id "" [entries] "" Font=Horatio VerticalStep=45 YStart=140
+set Item1 Font Horatio
+set Item1 MaxInput 21
+set Item1 X 156
+set Item2 Y @Item1.Y+35
+
+# ---- connecting to $address ----
+
+section connecting
+call Menu.StartNewMenu $id
+list entries
+	"{Menu_Multiplayer_JoinGame_Abort}"	PCMenu.AbortJoin
+	" "					""
+call Menu.VerticalMenu $id $title [entries] PCMenu.AbortJoin YStart=%Menu.SubMenuYStart
+call Menu.DrawBackSubMenu $id
+
+# ---- the password of the server ----
+
+section password
+call Menu.StartNewMenu $id
+list entries
+	$password				!EditText
+	"{Menu_Multiplayer_JoinGame}"		PCMenu.JoinPassword
+	"{Menu_Multiplayer_JoinGame_Abort}"	PCMenu.AbortJoin
+call Menu.VerticalMenu $id $title [entries] PCMenu.AbortJoin Font=Horatio VerticalStep=45 YStart=%Menu.SubMenuYStart
+set Item1 Font Horatio
+set Item1 MaxInput 20
+set Item1 X 80
+set Item2 Y @Item1.Y+35
+set Item2 X 220
+set Item3 Y @Item1.Y+35
+set Item3 X 460
+lr Item2 Item3
+lr Item3 Item2
+call Menu.DrawBackSubMenu $id
+
+# ---- the part the create and join pages share: $tab is Create or Join, $motd and its place ----
+
+section content
+item Back Text
+	Font ScrapBig
+	Text "{Menu_Back}"
+	X 320
+	Y %Menu.BackButtonYStart
+	CentralText 1
+	OnAccept Menu.MainMenu
+	use blue
+	Effect Shadow
+item Garaje Text
+	Font ScrapMedium
+	Text "{Menu_Multiplayer_ShipMenu}"
+	X 504
+	Y 47
+	CentralText 1
+	OnAccept ShipEdit.EnterEditShipMenu
+	use blue
+	Effect Shadow
+item GarajeButtonTab Tab
+call Menu.SetTabDefaults $id GarajeButtonTab
+	X 432
+	Y 32
+	SizeX 150
+	SizeY 36
+	TabInit 0
+	TabEnd 0
+	TabMax 0
+	SizeTabQuad 0
+	Type 0
+	Alpha 128
+	Red 255
+	Green 241
+	Blue 174
+default Back
+list tabs
+	Create	PCMenu.NetCreateGameMenu	"{Menu_Multiplayer_CreateGame}"
+	Join	PCMenu.NetJoinGameMenu		"{Menu_Multiplayer_JoinGame}"
+call Menu.AddTabs $id [tabs] $tab ParamTabSize=26 Hint=0
+lr Join Garaje
+lr Garaje Create
+default $tab
+# the message of the day from the master server
+item MOTD Text
+	Text $motd
+	X $motdx
+	Y $motdy
+	Font HoratioSmall
+	Effect Shadow
+	Align Left
+	use blue
+	Alpha 255
+	Visible 1
+call Menu.DrawCircuitMenu $id
+
+# ---- create a game: $servername, $players, $fraglimit and $advanced come from the menu function ----
+
+section Create
+call Menu.StartNewMenu $id
+style titlecolor
+	Red 143
+	Green 180
+	Blue 215
+	Effect Shadow
+style optioncolor
+	Red 183
+	Green 220
+	Blue 255
+	Effect Shadow
+# the server name
+item ServerNameTitle Text
+	Font Horatio
+	Text "{Menu_MultiPlayer_ServerName}:"
+	X 74
+	Y 80
+	use titlecolor
+measure w Horatio "{Menu_MultiPlayer_ServerName}:"
+let x 74 $w 10
+item ServerName Text
+	Font Horatio
+	Text $servername
+	X $x
+	Y 80
+	OnAccept !EditText
+	MaxInput 18
+	use optioncolor
+	OnGainFocus PCMenu.ServerNameGainFocus
+	OnLooseFocus PCMenu.ServerNameLooseFocus
+	OnRender ""
+# the game mode with its arrows and the help button
+item ServerTypeTitle Text
+	Font Horatio
+	Text "{Menu_MultiPlayer_ServerType}:"
+	X 74
+	Y 116
+	use titlecolor
+measure w Horatio "{Menu_MultiPlayer_ServerType}:"
+let x 74 $w 10
+item ServerType Text
+	Font Horatio
+	Text "{Net_Type_TeamFlag}"
+	X $x+140
+	Y 128
+	Align Center
+	use optioncolor
+call Menu.PreviousNextMenuSimple 0 ServerType $x 128 280
+set ServerTypePrev OnAccept PCMenu.ServerTypePrev
+set ServerTypeNext OnAccept PCMenu.ServerTypeNext
+item ServerTypeInfoDummy Text
+	X $x+32
+	Y 114
+	W 216
+	H 28
+	OnAccept PCMenu.ServerTypeInfo
+item ServerTypeInfo Text
+	Font ScrapMedium
+	Text i
+	X $x+306
+	Y 115
+	W 25
+	H 25
+	Center 1
+	Visible 1
+	Effect Outline
+	FocusPivotX -10
+	FocusPivotY 1
+	Red 165
+	Green 192
+	Blue 255
+	OnAccept PCMenu.ServerTypeInfo
+item ServerTypeInfoBack Sprite
+	IsMultiSprite 1
+	HighRes 1
+	File 2D/ShipEditor/Buttons.alpha.tga
+	SpriteIndex 1
+	X $x+291
+	Y 112
+# the number of players and the limit of the mode (its title comes from run servertype)
+item PlayersNumberTitle Text
+	Font Horatio
+	Text "{Menu_MultiPlayer_PlayersNumber}:"
+	X 74
+	Y 152
+	use titlecolor
+measure w Horatio "{Menu_MultiPlayer_PlayersNumber}:"
+let x 74 $w 10
+item PlayersNumber Text
+	IsNumeric 1
+	Font Horatio
+	Text $players
+	X $x
+	Y 152
+	OnAccept !EditText
+	MaxInput 2
+	use optioncolor
+	OnGainFocus PCMenu.PlayersNumberGainFocus
+	OnLooseFocus PCMenu.PlayersNumberLooseFocus
+	OnRender ""
+measure w Horatio $players
+let x $x $w 40
+item FragLimitTitle Text
+	Font Horatio
+	Text -:
+	X $x
+	Y 152
+	use titlecolor
+measure w Horatio -:
+let x $x $w 10
+item FragLimit Text
+	IsNumeric 1
+	Font Horatio
+	Text $fraglimit
+	X $x
+	Y 152
+	OnAccept !EditText
+	MaxInput 2
+	use optioncolor
+	OnGainFocus PCMenu.FragLimitGainFocus
+	OnLooseFocus PCMenu.FragLimitLooseFocus
+	OnRender ""
+# the maps of the mode: nine lines (run mapslots), the arrows and the slider
+run mapslots
+style arrow
+	IsMultiSprite 1
+	HighRes 1
+	File 2D/Menu/GenericButtons.alpha.tga
+	SpriteIndex 3
+	FocusSpriteIndex 4
+	Highlight 1
+	X 316
+item MapUp Button arrow
+	Y 198
+	W 20
+	H 20
+	FocusPivotX -2
+	FocusPivotY -2
+	Complex 0
+	Visible 1
+	Rotate 1
+	OnAccept PCMenu.MapDown
+	MultiPress 1
+item MapDown Button arrow
+	Y 338
+	W 20
+	H 20
+	FocusPivotX -2
+	FocusPivotY -2
+	Complex 0
+	Visible 1
+	Rotate 1
+	Mirror 1
+	OnAccept PCMenu.MapUp
+	MultiPress 1
+lr MapSlot1 MapDown
+lr MapSlot1 MapUp
+ud FragLimit MapUp
+ud MapUp MapDown
+ud MapDown CreateButton
+item MapSlider Sprite
+	X 319
+	Y 214
+	W 0
+	H 0
+	Unit 1
+	ScaleX 11
+	ScaleY 124
+	Alpha 92
+	Red 192
+	Green 192
+	Blue 255
+item MapSliderArea Sprite
+	X 318
+	Y 214
+	Unit 1
+	ScaleX 13
+	ScaleY 124
+	W 20
+	H 124
+	FocusPivotX -3
+	FocusPivotY 0
+	Alpha 24
+	OnGainFocus PCMenu.MapSliderGainFocus
+	OnLooseFocus PCMenu.MapSliderLooseFocus
+item MapColumn_Line Sprite
+	X 314
+	Y 200
+	Unit 1
+	ScaleX 1
+	ScaleY 152
+	Alpha 64
+item MapListTab Tab
+call Menu.SetTabDefaults $id MapListTab
+	X 72
+	Y 192
+	SizeX 266
+	SizeY 168
+	Type 4
+	Alpha 32
+	Red 32
+	Green 255
+	Blue 255
+# the preview of the map that has the focus (one picture per map, run mappreviews)
+item MapPreviewTab Tab
+call Menu.SetTabDefaults $id MapPreviewTab
+	X 344
+	Y 192
+	SizeX 224
+	SizeY 168
+	Type 4
+	Alpha 1
+	Red 32
+	Green 255
+	Blue 255
+run mappreviews 344 192
+item CreateButton Text
+	Font Horatio
+	Text "{Menu_Multiplayer_CreateGame}"
+	X 320
+	Y 384
+	CentralText 1
+	OnAccept PCMenu.MenuInitServer
+	use optioncolor
+item AdvancedButton Text
+	Font Horatio
+	Text $advanced
+	Y 384
+	CentralText 1
+	X 100
+	OnAccept PCMenu.AdvancedServer
+	use optioncolor
+# the mode, its limit and its maps
+run servertype
+do content
+ud Create ServerName
+lr ServerTypeNext ServerTypeInfo
+ud ServerName ServerTypeInfo
+ud ServerTypeInfo FragLimit
+ud ServerName ServerTypeNext
+ud ServerName ServerTypePrev
+lr ServerTypePrev ServerTypeNext
+ud ServerTypePrev PlayersNumber
+ud ServerTypeNext FragLimit
+lr PlayersNumber FragLimit
+ud FragLimit MapSlot1
+ud PlayersNumber MapSlot1
+ud CreateButton Back
+ud Back Create
+lr AdvancedButton CreateButton
+lr CreateButton AdvancedButton
+call SScorer.SetOnNext $id PCMenu.NetJoinGameMenu
+call SScorer.SetOnPrev $id PCMenu.NetJoinGameMenu
+call SScorer.SetOnCancel $id Menu.MainMenu
+default Create
+
+# ---- the advanced server options: the texts and $usepass come from the menu function ----
+
+section Advanced
+call Menu.StartNewMenu $id
+list entries
+	$pass		PCMenu.SwitchUsePass
+	$password	!EditText
+	$force		PCMenu.SwitchForceVehicle
+	$datarate	PCMenu.SetDataRate
+	"{Menu_Back}"	PCMenu.BackToCreateServer
+call Menu.VerticalMenu $id $title [entries] PCMenu.BackToCreateServer Font=Horatio VerticalStep=45 YStart=%Menu.SubMenuYStart
+set Item1 X 100
+set Item2 Font Horatio
+set Item2 MaxInput 20
+set Item2 X 220
+set Item2 Y @Item1.Y
+ud Item1 Item3
+if $usepass
+	lr Item1 Item2
+	lr Item2 Item1
+else
+	set Item2 Visible 0
+end
+ud Join JoinInternet
+set Item3 Y @Item1.Y+32
+set Item3 X 100
+set Item4 Y @Item3.Y+35
+set Item4 X 100
+set Item5 Y @Item4.Y+35
+call Menu.DrawBackSubMenu $id

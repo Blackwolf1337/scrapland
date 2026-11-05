@@ -1,7 +1,7 @@
 /*
  * The HUD in C (issue #2, step 5): the Scorer module (status, police meter, monitor, messages, mission scorer,
  * radar), the CharScorer module (the HUD on foot) and the RacerScorer module (the HUD in a ship, the scores of a
- * game, the scorer of race missions). The layouts are data/menus/hud.menu and data/menus/racer.menu.
+ * game, the scorer of race missions). The layouts are data/menus/hud.def and data/menus/racer.def.
  */
 #include <string.h>
 
@@ -14,12 +14,12 @@
 #include "scrap/script.h"
 #include "scrap/timer.h"
 
-static const char hud_menu[] = {
-#embed "../../../data/menus/hud.menu"
+static const char hud_def[] = {
+#embed "../../../data/menus/hud.def"
 	, 0 };
 
-static const char racer_menu[] = {
-#embed "../../../data/menus/racer.menu"
+static const char racer_def[] = {
+#embed "../../../data/menus/racer.def"
 	, 0 };
 
 /* the mission scorer is shown when one of its three statuses is on */
@@ -53,16 +53,16 @@ static void Hud_RunFile(int id, const char *file, const char *builtin, const cha
 		PyDict_SetItem(vars, k, v);
 	}
 	Py_XDECREF(more);
-	Script_RunMenu(id, file, section, builtin, hud_steps, vars);
+	Script_RunFile(id, file, section, builtin, hud_steps, vars);
 	Py_XDECREF(vars);
 }
 
 static void Hud_Run(int id, const char *section, PyObject *more) {
-	Hud_RunFile(id, "menus/hud.menu", hud_menu, section, more);
+	Hud_RunFile(id, "menus/hud.def", hud_def, section, more);
 }
 
 static void Racer_Run(int id, const char *section, PyObject *more) {
-	Hud_RunFile(id, "menus/racer.menu", racer_menu, section, more);
+	Hud_RunFile(id, "menus/racer.def", racer_def, section, more);
 }
 
 /* a garage or a network game */

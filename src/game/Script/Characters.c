@@ -1,6 +1,6 @@
 /*
  * The character scripts of the game in C and data (issue #2, step 6c). The Init of a character, which builds its
- * action class, is a .menu file in data/chars/ (a pack in mods/ with scrapc/chars/<name>.menu replaces it); the
+ * action class, is a .def file in data/chars/ (a pack in mods/ with scrapc/chars/<name>.def replaces it); the
  * parts that compute or are called back by the engine are here: steps of the files and the callbacks of each
  * character module. The module code of a script (file names and other values) stays in the script.
  */
@@ -11,108 +11,108 @@
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 
-static const char betty_menu[] = {
-#embed "../../../data/chars/betty.menu"
+static const char betty_def[] = {
+#embed "../../../data/chars/betty.def"
 	, 0 };
 
-static const char bankdirector_menu[] = {
-#embed "../../../data/chars/bankdirector.menu"
+static const char bankdirector_def[] = {
+#embed "../../../data/chars/bankdirector.def"
 	, 0 };
 
-static const char boss_menu[] = {
-#embed "../../../data/chars/boss.menu"
+static const char boss_def[] = {
+#embed "../../../data/chars/boss.def"
 	, 0 };
 
-static const char crazygambler_menu[] = {
-#embed "../../../data/chars/crazygambler.menu"
+static const char crazygambler_def[] = {
+#embed "../../../data/chars/crazygambler.def"
 	, 0 };
 
-static const char humphrey_menu[] = {
-#embed "../../../data/chars/humphrey.menu"
+static const char humphrey_def[] = {
+#embed "../../../data/chars/humphrey.def"
 	, 0 };
 
-static const char maintenance_menu[] = {
-#embed "../../../data/chars/maintenance.menu"
+static const char maintenance_def[] = {
+#embed "../../../data/chars/maintenance.def"
 	, 0 };
 
-static const char mayor_menu[] = {
-#embed "../../../data/chars/mayor.menu"
+static const char mayor_def[] = {
+#embed "../../../data/chars/mayor.def"
 	, 0 };
 
-static const char rusty_menu[] = {
-#embed "../../../data/chars/rusty.menu"
+static const char rusty_def[] = {
+#embed "../../../data/chars/rusty.def"
 	, 0 };
 
-static const char sebastian_menu[] = {
-#embed "../../../data/chars/sebastian.menu"
+static const char sebastian_def[] = {
+#embed "../../../data/chars/sebastian.def"
 	, 0 };
 
-static const char sentinel_menu[] = {
-#embed "../../../data/chars/sentinel.menu"
+static const char sentinel_def[] = {
+#embed "../../../data/chars/sentinel.def"
 	, 0 };
 
-static const char sputnikjunkyard_menu[] = {
-#embed "../../../data/chars/sputnikjunkyard.menu"
+static const char sputnikjunkyard_def[] = {
+#embed "../../../data/chars/sputnikjunkyard.def"
 	, 0 };
 
-static const char bishop_menu[] = {
-#embed "../../../data/chars/bishop.menu"
+static const char bishop_def[] = {
+#embed "../../../data/chars/bishop.def"
 	, 0 };
 
-static const char functionary_menu[] = {
-#embed "../../../data/chars/functionary.menu"
+static const char functionary_def[] = {
+#embed "../../../data/chars/functionary.def"
 	, 0 };
 
-static const char gear_menu[] = {
-#embed "../../../data/chars/gear.menu"
+static const char gear_def[] = {
+#embed "../../../data/chars/gear.def"
 	, 0 };
 
-static const char bankmaster_menu[] = {
-#embed "../../../data/chars/bankmaster.menu"
+static const char bankmaster_def[] = {
+#embed "../../../data/chars/bankmaster.def"
 	, 0 };
 
-static const char berto_menu[] = {
-#embed "../../../data/chars/berto.menu"
+static const char berto_def[] = {
+#embed "../../../data/chars/berto.def"
 	, 0 };
 
-static const char mercenarya_menu[] = {
-#embed "../../../data/chars/mercenarya.menu"
+static const char mercenarya_def[] = {
+#embed "../../../data/chars/mercenarya.def"
 	, 0 };
 
-static const char nurse_menu[] = {
-#embed "../../../data/chars/nurse.menu"
+static const char nurse_def[] = {
+#embed "../../../data/chars/nurse.def"
 	, 0 };
 
-static const char desktop_menu[] = {
-#embed "../../../data/chars/desktop.menu"
+static const char desktop_def[] = {
+#embed "../../../data/chars/desktop.def"
 	, 0 };
 
-static const char police_menu[] = {
-#embed "../../../data/chars/police.menu"
+static const char police_def[] = {
+#embed "../../../data/chars/police.def"
 	, 0 };
 
-static const char gatekeeper_menu[] = {
-#embed "../../../data/chars/gatekeeper.menu"
+static const char gatekeeper_def[] = {
+#embed "../../../data/chars/gatekeeper.def"
 	, 0 };
 
-static const char dtritus_menu[] = {
-#embed "../../../data/chars/dtritus.menu"
+static const char dtritus_def[] = {
+#embed "../../../data/chars/dtritus.def"
 	, 0 };
 
-static const char sputnik_menu[] = {
-#embed "../../../data/chars/sputnik.menu"
+static const char sputnik_def[] = {
+#embed "../../../data/chars/sputnik.def"
 	, 0 };
 
-static const char policeboss_menu[] = {
-#embed "../../../data/chars/policeboss.menu"
+static const char policeboss_def[] = {
+#embed "../../../data/chars/policeboss.def"
 	, 0 };
 
-static const char messenger_menu[] = {
-#embed "../../../data/chars/messenger.menu"
+static const char messenger_def[] = {
+#embed "../../../data/chars/messenger.def"
 	, 0 };
 
-static const char human_menu[] = {
-#embed "../../../data/chars/human.menu"
+static const char human_def[] = {
+#embed "../../../data/chars/human.def"
 	, 0 };
 
 /* ---- the steps of the files ---- */
@@ -261,7 +261,7 @@ static void Char_InitVars(const char *name, const char *file, const char *builti
 	}
 	Py_XDECREF(xbox);
 	Py_XDECREF(lv);
-	Script_RunMenu(0, file, name, builtin, char_steps, vars);
+	Script_RunFile(0, file, name, builtin, char_steps, vars);
 	Py_XDECREF(vars);
 }
 
@@ -277,7 +277,7 @@ static PyObject *Char_Callback(const char *file, const char *builtin, const char
 		return NULL;
 	}
 	PyObject *vars = Py_BuildValue("{s:s}", "name", name);
-	Script_RunMenu(0, file, section, builtin, char_steps, vars);
+	Script_RunFile(0, file, section, builtin, char_steps, vars);
 	Py_XDECREF(vars);
 	return Py_ReturnNone();
 }
@@ -285,13 +285,13 @@ static PyObject *Char_Callback(const char *file, const char *builtin, const char
 #define CHAR_ONCREATE(mod, file) \
 	static PyObject *mod##_OnCreate(PyObject *self, PyObject *args) { \
 		(void)self; \
-		return Char_Callback("chars/" #file ".menu", file##_menu, "OnCreate", args); \
+		return Char_Callback("chars/" #file ".def", file##_def, "OnCreate", args); \
 	}
 
 #define CHAR_ONFREE(mod, file) \
 	static PyObject *mod##_OnFreeResources(PyObject *self, PyObject *args) { \
 		(void)self; \
-		return Char_Callback("chars/" #file ".menu", file##_menu, "OnFreeResources", args); \
+		return Char_Callback("chars/" #file ".def", file##_def, "OnFreeResources", args); \
 	}
 
 /* ---- Betty ---- */
@@ -299,7 +299,7 @@ static PyObject *Char_Callback(const char *file, const char *builtin, const char
 static PyObject *Betty_Init(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	Char_Init("Betty", "chars/betty.menu", betty_menu);
+	Char_Init("Betty", "chars/betty.def", betty_def);
 	return Py_ReturnNone();
 }
 
@@ -342,7 +342,7 @@ PyMethodDef g_BettyMethods[] = {
 	static PyObject *mod##_Init(PyObject *self, PyObject *args) { \
 		(void)self; \
 		(void)args; \
-		Char_Init(#mod, "chars/" #file ".menu", file##_menu); \
+		Char_Init(#mod, "chars/" #file ".def", file##_def); \
 		return Py_ReturnNone(); \
 	}
 
@@ -395,7 +395,7 @@ CHAR_MODULE1(Human, human)
 
 static void Mercenary_Init(const char *merc, int dance) {
 	PyObject *vars = Py_BuildValue("{s:s,s:i}", "merc", merc, "dance", dance);
-	Char_InitVars("MercenaryA", "chars/mercenarya.menu", mercenarya_menu, vars);
+	Char_InitVars("MercenaryA", "chars/mercenarya.def", mercenarya_def, vars);
 	Py_XDECREF(vars);
 }
 

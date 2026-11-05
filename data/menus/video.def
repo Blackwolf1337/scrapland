@@ -1,0 +1,310 @@
+# The video options (PCMenu.VideoMenu of the game, with the Display entry of ScrapC). The format is described in
+# src/game/Script/Script.c. A pack in mods/ with scrapc/menus/video.def replaces this file.
+
+style font
+	Font Horatio
+style titleend
+	Align Right
+	GetExtens 1
+	Align Left
+	Red 143
+	Green 180
+	Blue 215
+	Effect Shadow
+style valueend
+	Align Left
+	Red 183
+	Green 220
+	Blue 255
+	Effect Shadow
+style buttonend
+	CentralText 1
+	Red 183
+	Green 220
+	Blue 255
+	Effect Shadow
+
+run prepare
+call Menu.StartNewMenu $id
+# the title and Back of the option menus, the column at 250
+list title
+	""		""
+	"{Menu_Back}"	PCMenu.VideoMenuBack
+call Menu.VerticalMenu $id "{Menu_Options_Video}" [title] PCMenu.VideoMenuBack XStart=250 YStart=%Menu.OptionMenuYStart
+
+# video mode
+item TitleVideoMode Text font
+	Text "{Menu_Video_Mode}:"
+	CentralText 1
+	X 260
+	Y 172
+	use titleend
+	OnAccept PCMenu.ChangeVideoMode
+call Menu.PreviousNextMenuSimple $id VideoMode 270 184 260
+set VideoModeBack Alpha 32
+set VideoModePrev OnAccept PCMenu.PrevVideoMode
+set VideoModePrev MultiPress 1
+set VideoModeNext OnAccept PCMenu.NextVideoMode
+set VideoModeNext MultiPress 1
+lr TitleVideoMode VideoModePrev
+lr VideoModePrev VideoModeNext
+item VideoMode Text
+	Font Horatio
+	Text WWWWWWWWWWWWWWW
+	X 400
+	Y 184
+	Align Center
+	Red 183
+	Green 220
+	Blue 255
+	Effect Shadow
+
+# texture filter
+item TitleTextureFilter Text font
+	Text "{Menu_Video_TextureFilter}:"
+	CentralText 1
+	X 260
+	Y 200
+	use titleend
+	OnAccept PCMenu.ChangeTextureFilter
+item TextureFilter Text font
+	Text WWWWWWWWWW
+	CentralText 1
+	X 270
+	Y 200
+	use valueend
+	OnAccept PCMenu.ChangeTextureFilter
+
+# texture detail
+item TitleTextureDetail Text font
+	Text "{Menu_Video_TextureDetail}:"
+	CentralText 1
+	X 260
+	Y 228
+	use titleend
+	OnAccept PCMenu.ChangeTextureDetail
+item TextureDetail Text font
+	Text WWWWWWW
+	CentralText 1
+	X 270
+	Y 228
+	use valueend
+	OnAccept PCMenu.ChangeTextureDetail
+
+# gamma, the slider with two dummies that step it from the title
+item TitleGamma Text font
+	Text "{Menu_Video_Gamma}:"
+	CentralText 1
+	X 260
+	Y 256
+	use titleend
+	OnAccept PCMenu.ChangeGamma
+call Menu.SliderMenu $id Gamma 270 256
+set Gamma MinValue 0.0
+set Gamma MaxValue 1.0
+set Gamma ValueStep 0.1
+set Gamma Value 1
+set Gamma OnChange PCMenu.ChangeGamma
+item DummySliderSub Text
+	Text ""
+	W 0
+	H 0
+	OnGainFocus PCMenu.GammaSliderFocus_Sub
+item DummySliderAdd Text
+	Text ""
+	W 0
+	H 0
+	OnGainFocus PCMenu.GammaSliderFocus_Add
+lr Gamma TitleGamma
+lr TitleGamma Gamma
+lr DummySliderSub TitleGamma
+lr TitleGamma DummySliderAdd
+
+# left column
+item TitleShadowsDetail Text font
+	Text "{Menu_Video_Shadows}:"
+	CentralText 1
+	X 240
+	Y 298
+	use titleend
+	OnAccept PCMenu.ChangeShadowsDetail
+item ShadowsDetail Text font
+	Text WWWWWW
+	CentralText 1
+	X 250
+	Y 298
+	use valueend
+	OnAccept PCMenu.ChangeShadowsDetail
+item TitleVSync Text font
+	Text "{Menu_Video_VSync}:"
+	CentralText 1
+	X 240
+	Y 342
+	use titleend
+	OnAccept PCMenu.ChangeVSync
+item VSync Text font
+	Text WWWW
+	CentralText 1
+	X 250
+	Y 342
+	use valueend
+	OnAccept PCMenu.ChangeVSync
+item TitleLock Text font
+	Text "{Menu_Video_Lock}:"
+	CentralText 1
+	X 240
+	Y 364
+	use titleend
+	OnAccept PCMenu.ChangeLock
+item Lock Text font
+	Text WWWW
+	CentralText 1
+	X 250
+	Y 364
+	use valueend
+	OnAccept PCMenu.ChangeLock
+
+# right column
+item TitleFog Text font
+	Text "{Menu_Video_Fog}:"
+	CentralText 1
+	X 460
+	Y 298
+	use titleend
+	OnAccept PCMenu.ChangeFog
+item Fog Text font
+	Text WWWW
+	CentralText 1
+	X 470
+	Y 298
+	use valueend
+	OnAccept PCMenu.ChangeFog
+item TitleBloom Text font
+	Text "{Menu_Video_Bloom}:"
+	CentralText 1
+	X 460
+	Y 320
+	use titleend
+	OnAccept PCMenu.ChangeBloom
+item Bloom Text font
+	Text WWWW
+	CentralText 1
+	X 470
+	Y 320
+	use valueend
+	OnAccept PCMenu.ChangeBloom
+item TitleMotionBlur Text font
+	Text "{Menu_Video_MotionBlur}:"
+	CentralText 1
+	X 460
+	Y 342
+	use titleend
+	OnAccept PCMenu.ChangeMotionBlur
+item MotionBlur Text font
+	Text WWWW
+	CentralText 1
+	X 470
+	Y 342
+	use valueend
+	OnAccept PCMenu.ChangeMotionBlur
+item TitleDuDv Text font
+	Text "{Menu_Video_Deformation}:"
+	CentralText 1
+	X 460
+	Y 364
+	use titleend
+	OnAccept PCMenu.ChangeDuDv
+item DuDv Text font
+	Text WWWW
+	CentralText 1
+	X 470
+	Y 364
+	use valueend
+	OnAccept PCMenu.ChangeDuDv
+
+# Display (ScrapC)
+item TitleDisplay Text font
+	Text "{Menu_Video_Display}:"
+	CentralText 1
+	X 440
+	Y 228
+	use titleend
+	OnAccept PCMenu.ChangeDisplay
+item Display Text font
+	Text WWWWWWWWWW
+	CentralText 1
+	X 450
+	Y 228
+	use valueend
+	OnAccept PCMenu.ChangeDisplay
+
+# the values of the engine into the items
+run values
+run display
+
+item Defaults Text font
+	X 170
+	Y 420
+	Text "{Menu_Video_SetDefaults}"
+	use buttonend
+	OnAccept PCMenu.VideoDefaults
+item Apply Text font
+	X 470
+	Y 420
+	Text "{Menu_Video_Apply}"
+	use buttonend
+	OnAccept PCMenu.ApplyChanges
+
+# the panel behind the options instead of the title bar
+set TitleBarL Visible 0
+set TitleBarM Visible 0
+set TitleBarR Visible 0
+item VideoOptionsTab Tab
+call Menu.SetTabDefaults $id VideoOptionsTab
+	X 64.5
+	Y @TitleBarM.Y
+	SizeX 511
+	SizeY 294
+	TabInit 0
+	TabEnd 0
+	TabMax 0
+	SizeTabQuad 0
+	Type 2
+	Alpha 150
+	Red 60
+	Green 150
+	Blue 200
+
+# the keys between the items
+ud Item2 VideoModePrev
+ud Item2 VideoModeNext
+ud VideoModePrev TitleTextureFilter
+ud VideoModeNext TitleTextureFilter
+ud TitleVideoMode TitleTextureFilter
+ud TitleTextureFilter TitleTextureDetail
+ud TitleTextureDetail TitleGamma
+ud TitleShadowsDetail TitleVSync
+ud TitleVSync TitleLock
+ud TitleLock Defaults
+lr TitleShadowsDetail TitleFog
+lr TitleVSync TitleMotionBlur
+lr TitleLock TitleDuDv
+ud TitleGamma TitleFog
+ud TitleFog TitleBloom
+ud TitleBloom TitleMotionBlur
+ud TitleMotionBlur TitleDuDv
+ud TitleDuDv Apply
+ud TitleGamma TitleShadowsDetail
+ud Apply Item2
+ud Defaults Item2
+lr Defaults Item2
+lr Item2 Apply
+ud Item2 TitleVideoMode
+default TitleVideoMode
+call Menu.DrawBackOptionMenu $id
+
+# the keys of Display
+set TitleTextureDetail Right TitleDisplay
+set TitleDisplay Left TitleTextureDetail
+set TitleDisplay Up VideoModeNext
+set TitleDisplay Down TitleFog

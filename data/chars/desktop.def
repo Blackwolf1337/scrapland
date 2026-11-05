@@ -1,0 +1,81 @@
+# Desktop (the character script chars/desktop.py of the game): the Init that builds the action class. The format is
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/desktop.def replaces this file. The C gives
+# $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
+
+section Desktop
+call MakeChar.InitChar Desktop
+setvar MakeChar.MaxSpeed 1.5
+setvar MakeChar.MinSpeed 0.8
+call MakeChar.AddRelaxActions Desktop 0
+call MakeChar.AddWalkActions Desktop 720 0
+call MakeChar.AddFallAction Desktop 720 1 1
+call MakeChar.AddFlashedAction Desktop
+call MakeChar.AddCrazyAction Desktop
+call MakeChar.AddTalkAction Desktop nExtraActions=1
+class Desktop
+	CanJump 1
+	TurnAngLimit 30
+	MinFallDist 10
+	FlyAccel 1000
+	FlyFric 1
+	FlySpeed 1000
+	WRadius 34
+	VRadius 60
+	SRadius 12
+	YModelDisp -17
+	MinTimeWalking 0.15
+	FOV 90
+	CamDist 200
+	CamAng -30
+	CamRot 20
+	Node0Name "Bip Desktop Spine1"
+call MakeChar.SetNodeRotation 0 0 50 100
+action ActUpB
+	AnmFilePath Models/Chars/Desktop/Anm/Desktop_ActUpB.M3D
+	isLoop 0
+	RotSpeed 360
+	UseDisp 0
+action ActUpF
+	AnmFilePath Models/Chars/Desktop/Anm/Desktop_ActUpF.M3D
+	isLoop 0
+	RotSpeed 360
+	UseDisp 0
+action ActUpL
+	AnmFilePath Models/Chars/Desktop/Anm/Desktop_ActUpL.M3D
+	isLoop 0
+	RotSpeed 360
+	UseDisp 0
+action ActUpR
+	AnmFilePath Models/Chars/Desktop/Anm/Desktop_ActUpR.M3D
+	isLoop 0
+	RotSpeed 360
+	UseDisp 0
+action ActMoreB
+	AnmFilePath Models/Chars/Desktop/Anm/Desktop_ActMoreB.M3D
+	isLoop 0
+	RotSpeed 360
+	UseDisp 0
+action ActMoreF
+	AnmFilePath Models/Chars/Desktop/Anm/Desktop_ActMoreF.M3D
+	isLoop 0
+	RotSpeed 360
+	UseDisp 0
+call DesktopSound.Init Desktop
+class Desktop
+	ActionPress !DesktopActionPress
+	OnCreate Desktop.OnCreate
+	OnFreeResources Desktop.OnFreeResources
+run speech Desktop CharsNPC GenericNPCSpeech
+getaction FallEnd
+event 0 FXDesktopFallEnd !FXDesktopFallEnd
+	EventDiscardable 0
+call Scrap.Set FXDesktopFallEndFile %Desktop.FXDesktopFallEndFile
+call Scrap.SetDebrisSys %Desktop.FXDesktopFallEndFile 2 0 0 1 0 0 %Fx.FXSISTPART
+
+section OnCreate
+call CharAct.OnCreate $name
+call DesktopSound.InitLoops $name
+
+section OnFreeResources
+call Scrap.SetDebrisSys %Desktop.FXDesktopFallEndFile 0 0 0 1 0 0 %Fx.FXSISTPART

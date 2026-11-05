@@ -1,0 +1,98 @@
+# Dtritus (the character script chars/dtritus.py of the game): the Init that builds the action class. The format is
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/dtritus.def replaces this file. The C gives
+# $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
+
+section Dtritus
+call MakeChar.InitChar Dtritus
+setvar MakeChar.MaxSpeed 1.0
+setvar MakeChar.MinSpeed 0.5
+call MakeChar.AddRelaxActions Dtritus 0 4
+call MakeChar.AddWalkActions Dtritus 360 1 ActList=(Walk,Back,StrLeft,StrRight,Sprint)
+call MakeChar.AddFallAction Dtritus 45 1 0
+call MakeChar.AddTalkAction Dtritus nExtraActions=6
+call MakeChar.ListenAction Dtritus PoliceListen !ListeningPolice Relax
+call MakeChar.CreateRelaxAction Dtritus 0 RelaxAlarm0 RelaxAlarm0
+action
+	InterpTime 0.4
+call MakeChar.CreateRelaxAction Dtritus 0 RelaxAlarm RelaxAlarm
+action
+	isLoop 1
+	NodeModifier 0
+	AngleModifierSpeed 1.0
+class Dtritus
+	RelaxAlarm 1
+action
+	InterpTime 0.4
+call MakeChar.CreateRelaxAction Dtritus 180 TurnAlarm TurnAlarm
+action
+	NodeModifier 0
+class Dtritus
+	WRadius 90
+	VRadius %Dtritus.VRadius
+	SRadius 20
+	YModelDisp -33
+	FOV 90
+	CamDist 260
+	CamAng 7
+	CamRot 0
+	Node0Name "Bip Detritus Head"
+	Node1Name "Bip Detritus Spine2"
+	Node2Name "Bip Detritus Spine1"
+action Action
+	AnmFilePath Models/Chars/Dtritus/Anm/Dtritus_Action.M3D
+	isLoop 0
+	RotSpeed 180
+	UseDisp 1
+	PriorityLevel 100
+event &TimeOfFrame23 FXDTritusAttack !FXDTritusAttack
+run spread &TimeOfFrame21 &AnmTotalTime 15 HitEvent !DtritusHitEvent
+event &AnmTotalTime EndEvent !DtritusEndEvent 0
+action ActionOK
+	AnmFilePath Models/Chars/Dtritus/Anm/Dtritus_ActionOK.M3D
+	isLoop 0
+	RotSpeed 180
+	UseDisp 1
+	PriorityLevel 101
+event &AnmTotalTime/2 DtritusRestartEvent !DtritusRestartEvent 0
+action ActionOK1
+	AnmFilePath Models/Chars/Dtritus/Anm/Dtritus_ActionOK1.M3D
+	isLoop 0
+	RotSpeed 180
+	UseDisp 1
+	PriorityLevel 101
+event &AnmTotalTime/2 DtritusRestartEvent !DtritusRestartEvent 0
+action Death
+	AnmFilePath Models/Chars/Dtritus/Anm/Dtritus_Death.M3D
+	isLoop 0
+	RotSpeed 180
+	UseDisp 1
+	PriorityLevel 101
+action ActionFail
+	AnmFilePath Models/Chars/Dtritus/Anm/Dtritus_ActionFail.M3D
+	isLoop 0
+	RotSpeed 180
+	UseDisp 1
+	PriorityLevel 101
+event &AnmTotalTime/2 DtritusRestartEvent !DtritusRestartEvent 0
+call MakeChar.SetNodeRotation 0 0 30 50
+call MakeChar.SetNodeRotation 0 1 10 25
+call MakeChar.SetNodeRotation 0 2 10 25
+class Dtritus
+	OnCreate Dtritus.OnCreate
+	OnFreeResources Dtritus.OnFreeResources
+	ActionPress !DtritusActionPress
+call DtritusSound.Init Dtritus
+if %Init.OutMapSkip == 0
+	call Scrap.Set FXDTritusAttackFile %Dtritus.FXDTritusAttackFile
+	call Scrap.SetDebrisSys %Dtritus.FXDTritusAttackFile 1 0 0 1 0 0 %Fx.FXDTRITUSATTACK
+	call Scrap.Set FXDTritusKillFile %Dtritus.FXDTritusKillFile
+	call Scrap.SetDebrisSys %Dtritus.FXDTritusKillFile 2 0 0 1 0 0 %Fx.FXDTRITUSKILL
+end
+
+section OnCreate
+call CharAct.OnCreate $name
+
+section OnFreeResources
+call Scrap.SetDebrisSys %Dtritus.FXDTritusAttackFile 0 0 0 1 0 0 %Fx.FXDTRITUSATTACK
+call Scrap.SetDebrisSys %Dtritus.FXDTritusKillFile 0 0 0 1 0 0 %Fx.FXDTRITUSKILL

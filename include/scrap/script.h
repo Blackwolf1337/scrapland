@@ -4,8 +4,9 @@
  *
  * The loader: when the engine loads a pack module (Pack_PreloadLibrary), Script_ModuleLoaded puts the C functions
  * ScrapC has for that module into it under their script names. The pack's own code, the callbacks named in strings
- * ("PCMenu.ChangeVideoMode") and other modules then reach the C versions. The layout of a menu is a .menu file
- * (Script_RunMenu): built into ScrapC, a pack in mods/ can replace it (scrapc/<name>, e.g. scrapc/menus/video.menu).
+ * ("PCMenu.ChangeVideoMode") and other modules then reach the C versions. What a port can say as data (the layout
+ * of a menu, the action class of a character) is a .def file (Script_RunFile): built into ScrapC, a pack in mods/
+ * can replace it (scrapc/<name>, e.g. scrapc/menus/video.def, scrapc/chars/betty.def).
  */
 #ifndef SCRAP_SCRIPT_H
 #define SCRAP_SCRIPT_H
@@ -21,23 +22,23 @@ typedef struct scriptModule_s {
 /* a module of the packs is loaded: its C functions go into it */
 void Script_ModuleLoaded(const char *name, PyObject *module);
 
-/* a step of a .menu file that C does ("run <name> [arg ...]"), args the tuple of the arguments */
+/* a step of a .def file that C does ("run <name> [arg ...]"), args the tuple of the arguments */
 typedef struct scriptStep_s {
 	const char *name;
 	void (*fn)(int id, PyObject *args);
 } scriptStep_t;
 
 /*
- * runs the .menu file name (scrapc/<name> of the packs, else builtin) for the scorer of player id: the lines before
+ * runs the .def file name (scrapc/<name> of the packs, else builtin) for the scorer of player id: the lines before
  * the first section and those of section (NULL for a file without sections). steps are the C steps it may run (NULL
  * ends the table), vars a dict of the $names it may use (or NULL). 0 when it could not be read.
  */
-byte Script_RunMenu(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
+byte Script_RunFile(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
 	PyObject *vars);
 
-/* the last item of the .menu file that runs ("" when none runs), for its steps */
+/* the last item of the .def file that runs ("" when none runs), for its steps */
 const char *Script_CurrentItem(void);
-/* a $name of the .menu file that runs, for its steps (value given away) */
+/* a $name of the .def file that runs, for its steps (value given away) */
 void Script_SetValue(const char *name, PyObject *value);
 
 /* the scorer items of player id */
@@ -97,7 +98,7 @@ extern PyMethodDef g_RacerScorerMethods[];
 extern PyMethodDef g_CharsMethods[];
 /* the C MakeChar module (src/game/Script/MakeChar.c) */
 extern PyMethodDef g_MakeCharMethods[];
-/* the C parts of the character scripts, their Init runs data/chars/<name>.menu (src/game/Script/Characters.c) */
+/* the C parts of the character scripts, their Init runs data/chars/<name>.def (src/game/Script/Characters.c) */
 extern PyMethodDef g_BettyMethods[];
 extern PyMethodDef g_BankDirectorMethods[];
 extern PyMethodDef g_BossMethods[];

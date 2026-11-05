@@ -1,0 +1,91 @@
+# Berto (the character script chars/berto.py of the game): the Init that builds the action class. The format is
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/berto.def replaces this file. The C gives
+# $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
+
+section Berto
+call MakeChar.InitChar Berto
+setvar MakeChar.MaxSpeed 1.2
+setvar MakeChar.MinSpeed 0.6
+call MakeChar.AddRelaxActions Berto 0
+call MakeChar.AddWalkActions Berto 360 1
+call MakeChar.AddFallAction Berto 45 1 0
+call MakeChar.AddDazeAction Berto
+call MakeChar.AddTalkAction Berto nExtraActions=3
+call MakeChar.AddFlashedAction Berto
+call MakeChar.AddCrazyAction Berto
+call MakeChar.AddDiscover Berto
+call MakeChar.SetSitActions Berto
+class Berto
+	CanFly 0
+	FlyAccel 300.0
+	FlySpeed 1000.0
+	FlyFric 0.5
+	FlyFallAccel 800.0
+action ActionInit
+	AnmFilePath Models/Chars/Berto/Anm/Berto_ActionInit.M3D
+	isLoop 0
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier -1
+	PriorityLevel 101
+	SlideAsFly 0
+event &AnmTotalTime BertoActionInit !BertoActionInit
+	EventDiscardable 0
+event &TimeOfFrame15 FXBertoAttack !FXBertoAttack
+action Action
+	AnmFilePath Models/Chars/Berto/Anm/Berto_Action.M3D
+	isLoop 1
+	RotSpeed 360
+	MinSpeed 1.2
+	MaxSpeed 1.8
+	UseDisp 0
+	NodeModifier -1
+	PriorityLevel 100
+	SlideAsFly 4
+let numevents 3
+event &AnmTotalTime/3*0 HitEvent !BertoHitEvent
+event &AnmTotalTime/3*1 HitEvent !BertoHitEvent
+event &AnmTotalTime/3*2 HitEvent !BertoHitEvent
+event &AnmTotalTime BertoAttack !BertoAttack
+action ActionEnd
+	AnmFilePath Models/Chars/Berto/Anm/Berto_ActionEnd.M3D
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier -1
+	PriorityLevel 101
+	SlideAsFly 0
+event 0 BertoActionEnd !BertoActionEnd
+	EventDiscardable 0
+class Berto
+	WRadius 105
+	VRadius 70
+	FOV 90
+	CamDist 270
+	CamAng 6
+	CamRot 0
+	OnCreate Berto.OnCreate
+	OnFreeResources Berto.OnFreeResources
+	ActionPress !BertoActionPress
+call BertoSound.Init Berto
+if %Init.OutMapSkip == 0
+	run speech Berto CharsNPC GenericNPCSpeech
+end
+if %Init.OutMapSkip == 0
+	call Scrap.Set FXBertoAttackFile %Berto.FXBertoAttackFile
+	call Scrap.SetDebrisSys %Berto.FXBertoAttackFile 1 0 0 1 0 0 %Fx.FXBERTOATTACK
+	call Scrap.Set FXBertoFlashFile %Berto.FXBertoFlashFile
+	call Scrap.SetDebrisSys %Berto.FXBertoFlashFile 2 0 0 1 0 0 %Fx.FXBERTOFLASH
+end
+
+section OnCreate
+call BertoSound.InitLoops $name
+call CharAct.OnCreate $name
+
+section OnFreeResources
+call Scrap.SetDebrisSys %Berto.FXBertoAttackFile 0 0 0 1 0 0 %Fx.FXBERTOATTACK
+call Scrap.SetDebrisSys %Berto.FXBertoFlashFile 0 0 0 1 0 0 %Fx.FXBERTOFLASH
