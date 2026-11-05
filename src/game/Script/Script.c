@@ -100,6 +100,7 @@ static const scriptModule_t script_modules[] = {
 	{ "SputnikJunkyardSound", g_SputnikJunkyardSoundMethods },
 	{ "SputnikSound", g_SputnikSoundMethods },
 	{ "TestCSound", g_TestCSoundMethods },
+	{ "CharsNPC", g_CharsNPCMethods },
 	{ "Betty", g_BettyMethods },
 	{ "BankDirector", g_BankDirectorMethods },
 	{ "Boss", g_BossMethods },

@@ -162,6 +162,8 @@ extern PyMethodDef g_SentinelSoundMethods[];
 extern PyMethodDef g_SputnikJunkyardSoundMethods[];
 extern PyMethodDef g_SputnikSoundMethods[];
 extern PyMethodDef g_TestCSoundMethods[];
+/* the C CharsNPC module (src/game/Script/CharsNPC.c) */
+extern PyMethodDef g_CharsNPCMethods[];
 /* the C parts of the character scripts, their Init runs data/chars/<name>.def (src/game/Script/Characters.c) */
 extern PyMethodDef g_BettyMethods[];
 extern PyMethodDef g_BankDirectorMethods[];
