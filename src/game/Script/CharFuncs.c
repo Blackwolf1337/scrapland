@@ -599,7 +599,15 @@ static PyObject *Police_PoliceSpeech(PyObject *self, PyObject *args) {
 		if (!Script_Try("CharsNPC", "CheckActualEntity", "(s)", ch)) {
 			return NULL;
 		}
-		if (Script_EntNum(ch, "LLogicState", 0) == 10) {
+		/* ch.LLogicState of the script: an AttributeError when there is no such character */
+		PyObject *e = Char_Handle(ch), *state = PyObject_GetAttrString(e, "LLogicState");
+		int ten = state ? Script_NumCmp(state, 10) == 0 : -1;
+		Py_DECREF(e);
+		Py_XDECREF(state);
+		if (ten < 0) {
+			return NULL;
+		}
+		if (ten) {
 			if (!Script_Try("Speech", "OnSpch", "(ss)", "Generics_PoliceWereIsGoInitMsg1", "Generics_PoliceWereIsGoInitAns1")) {
 				return NULL;
 			}
