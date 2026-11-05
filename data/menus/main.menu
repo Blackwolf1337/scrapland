@@ -253,3 +253,219 @@ if $current
 	default $current
 end
 call Menu.DrawBackOptionMenu $id
+
+# ---- the textures and talking heads loaded when a level starts (Menu.Initialize). The menu function gives: $main
+# (the main menu), $xbox, $outdoor, $outdoorpc (outdoor, not Xbox), $metro (a level with the metro), $multi (a
+# multiplayer game), $editor (junkyard, garage or network: the ship editor), $heads (the talking heads are needed),
+# $edit (garage or multiplayer), $bosses (police boss and mayor), $boss, $dtritus, $lonelymerc, $bertos (the evil
+# Berto), $messenger ----
+
+menu preload
+call SScorer.PreloadTexture 2D/white.tga
+call SScorer.PreloadTexture 2D/arrow.alpha.tga
+if $main
+	call SScorer.PreloadTexture 2D/Menu/Circuit.tga
+	call SScorer.PreloadTexture 2D/Menu/CircuitFlare.tga 1
+elif $xbox == 0
+	call SScorer.PreloadTexture 2D/Menu/Circuit.tga
+	call SScorer.PreloadTexture 2D/Menu/CircuitFlare.tga 1
+end
+if $main
+	call SScorer.PreloadTexture 2D/Menu/LogoMainMenu.alpha.tga
+	call SScorer.PreloadTexture 2D/Menu/LogoMainMenuGlow.tga
+	call SScorer.PreloadTexture 2D/Menu/LogoMainMenuNeon.tga
+	call SScorer.PreloadTexture 2D/Menu/LogoMainMenuLighting.tga 1
+	call SScorer.PreloadTexture 2D/Menu/spacelords.alpha.tga 1
+end
+if $main
+	do preloadsub
+elif $xbox == 0
+	do preloadsub
+end
+call SScorer.PreloadTexture 2D/Menu/GenericButtons.alpha.tga 1
+call SScorer.PreloadTexture 2D/Menu/Slider.alpha.tga 1
+call SScorer.PreloadTexture 2D/Menu/Tabs.alpha.tga 1
+call SScorer.PreloadTexture 2D/Menu/TabsMenu.alpha.tga 1
+call SScorer.PreloadTexture 2D/Menu/TitleBar.alpha.tga 1
+if $main == 0
+	call SScorer.PreloadTexture 2D/HUD/Cannon.alpha.tga 1
+	call SScorer.PreloadTexture 2D/Radar/Radar.alpha.tga 1
+	call SScorer.PreloadTexture 2D/Radar/Icons.alpha.tga 1
+	call SScorer.PreloadTexture 2D/Monitor/Monitor.alpha.tga 1
+	call SScorer.PreloadTexture 2D/HUD/Talk.alpha.tga 1
+	call SScorer.PreloadTexture 2D/HUD/CopMeter.alpha.tga 1
+	call SScorer.PreloadTexture 2D/HUD/Mission.alpha.tga 1
+	call SScorer.PreloadTexture 2D/HUD/HUD.alpha.tga 1
+	if $outdoor
+		call SScorer.PreloadTexture 2D/Racer/Racer.alpha.tga 1
+		call SScorer.PreloadTexture 2D/Racer/Target.alpha.tga 1
+		call SScorer.PreloadTexture 2D/HUD/WeaponIcons3D.alpha.tga 1
+	else
+		call SScorer.PreloadTexture 2D/CharEditor/CharConversor.alpha.tga 1
+		call SScorer.PreloadTexture 2D/HUD/SpecialActions1.alpha.tga 1
+		call SScorer.PreloadTexture 2D/HUD/SpecialActions2.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/Circuits.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/Buttons.alpha.tga 1
+	end
+	if $metro
+		call SScorer.PreloadTexture 2D/Metro/Metro.alpha.tga 1
+		call SScorer.PreloadTexture 2D/Metro/MetroLogo.alpha.tga 1
+		call SScorer.PreloadTexture 2D/Metro/MetroMap.alpha.tga
+	end
+	if $multi
+		call SScorer.PreloadTexture 2D/HUD/FlagColor.alpha.tga 1
+	end
+	if $outdoorpc
+		call SScorer.PreloadTexture 2D/ShipEditor/HangarPanels.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/HangarOnly.alpha.tga 1
+		call SScorer.PreloadTexture 2D/Racer/AmmoIcons.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/Buttons.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/Circuits.tga 1
+	end
+	if $editor
+		call SScorer.PreloadTexture 2D/HUD/WeaponIcons3D.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/HangarPanels.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/HangarOnly.alpha.tga 1
+		call SScorer.PreloadTexture 2D/Racer/AmmoIcons.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/Buttons.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/Circuits.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/FullEditor.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/Weapons.alpha.tga 1
+		call SScorer.PreloadTexture 2D/ShipEditor/MArchbishop1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MBanker1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MBankMaster1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MBerto1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MBetty1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MBishop1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MBoss1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MFunc1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MHump1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MMayor1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MMerc1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MMerc2.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MMerc3.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MPoli1.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MPoli2.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MPoli3.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MPoli4.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MPoli5.alpha.tga
+		call SScorer.PreloadTexture 2D/ShipEditor/MPoliBoss1.alpha.tga
+	end
+end
+if $heads
+	call SScorer.AddModel 0 Police Models/Heads/HeadPolice&Gear/HeadPolice "" 4 22 23
+	call SScorer.AddModel 0 Betty Models/Heads/HeadBetty/HeadBetty "" 4 15
+	call SScorer.AddModel 0 Bishop Models/Heads/HeadBishop/HeadBishop "" 4 30
+	call SScorer.AddModel 0 Functionary Models/Heads/HeadFunctionary/HeadFunctionary "" 4 25
+	call SScorer.AddModel 0 BankDirector Models/Heads/HeadBankDirector/HeadBankDirector "" 4 20
+	call SScorer.AddModel 0 CrazyGambler Models/Heads/HeadGambler/HeadGambler "" 4 20
+	call SScorer.AddModel 0 Humphrey Models/Heads/HeadHumphrey/HeadHumphrey "" 4 18
+	call SScorer.AddModel 0 BankMaster Models/Heads/HeadBankMaster/HeadBankMaster "" 4 20
+	if $bosses
+		call SScorer.AddModel 0 PoliceBoss Models/Heads/HeadPoliceBoss/HeadPoliceBoss "" 4 20
+		call SScorer.AddModel 0 Mayor Models/Heads/HeadMayor/HeadMayor "" 4 22
+	end
+	if $boss
+		call SScorer.AddModel 0 Boss Models/Heads/HeadBoss/HeadBoss "" 4 30
+	end
+	if $edit == 0
+		call SScorer.AddModel 0 DeepThroat Models/Heads/HeadDeepThroat/HeadDeepThroat "" 3 20
+	end
+	if $dtritus
+		call SScorer.AddModel 0 Dtritus Models/Heads/HeadDtritus/HeadDtritus "" 3 15
+	end
+	if $outdoor
+		call SScorer.AddModel 0 MercenaryB Models/Heads/HeadMercenaryB/HeadMercenaryB "" 4 20
+		call SScorer.AddModel 0 MercenaryC Models/Heads/HeadMercenaryC/HeadMercenaryC "" 4 20
+		if $lonelymerc
+			call SScorer.AddModel 0 MercenaryL Models/Heads/HeadMercenaryL/HeadMercenaryL "" 4 20
+		else
+			call SScorer.AddModel 0 MercenaryA Models/Heads/HeadMercenaryA/HeadMercenaryA "" 4 20
+		end
+		if $bertos
+			# the evil Berto outdoors
+			call SScorer.AddModel 0 EvilBerto Models/Heads/HeadEvilBerto/HeadEvilBerto "" 4 25 10
+			call SScorer.AddModel 0 Berto Models/Heads/HeadEvilBerto/HeadEvilBerto "" 4 25 10
+		else
+			call SScorer.AddModel 0 Berto Models/Heads/HeadBerto/HeadBerto "" 4 25 10
+		end
+		if $messenger
+			call SScorer.AddModel 0 Messenger Models/Heads/HeadMessenger/HeadMessenger "" 3 25
+		end
+	else
+		call SScorer.AddModel 0 Human Models/Heads/HeadHuman/HeadHuman "" 3 25
+		call SScorer.AddModel 0 Nurse Models/Heads/HeadNurse/HeadNurse "" 3 20
+		call SScorer.AddModel 0 Gear Models/Heads/HeadPolice&Gear/HeadPolice Models/Heads/HeadPolice&Gear/HeadPoliceGear 3 35 12
+		call SScorer.AddModel 0 Sentinel Models/Chars/Sentinel/Sentinel Models/Chars/Sentinel/Anm/Sentinel 3 35 0 1
+		call SScorer.AddModel 0 Desktop Models/Chars/Desktop/Desktop Models/Chars/Desktop/Anm/Desktop 3 23 0 1
+		call SScorer.AddModel 0 Berto Models/Heads/HeadBerto/HeadBerto "" 4 25 10
+		call SScorer.AddModel 0 Messenger Models/Heads/HeadMessenger/HeadMessenger "" 3 25
+	end
+end
+
+menu preloadsub
+call SScorer.PreloadTexture 2D/Menu/LogoSubMenu.alpha.tga
+call SScorer.PreloadTexture 2D/Menu/LogoSubMenuGlow.tga
+call SScorer.PreloadTexture 2D/Menu/LogoSubMenuLighting.tga 1
+call SScorer.PreloadTexture 2D/Menu/LogoSubMenuMask.alpha.tga
+call SScorer.PreloadTexture 2D/Menu/LogoSubMenuRingBorder.alpha.tga
+call SScorer.PreloadTexture 2D/Menu/LogoReflection.tga
+
+# ---- the debug menu of the developers: $back, $debug (the level), $ai (the AI display) ----
+
+menu Debug
+list entries
+	"Debug Level: X"	Menu.DebugSet_Level
+	Console			Menu.DebugSet_Console
+	"Render Info"		Menu.DebugSet_RenderInfo
+	"Sound Info"		Menu.DebugSet_SoundInfo
+	"World Info"		Menu.DebugSet_WorldInfo
+	"Object Pool Info"	Menu.DebugSet_ObjectPool
+	"Scene Render Target"	Menu.DebugSet_SceneRenderTarget
+	"Stencil Shadows"	Menu.DebugSet_StencilShadows
+	"AI: None"		Menu.DebugSet_AI
+	"Map Collision"		Menu.DebugSet_MapCollision
+	XboxPyDebug		Menu.DebugSet_XboxPyDebug
+	"Change Map"		Menu.DebugSet_ChangeMapMenu
+	"{Menu_Back}"		$back
+call Menu.VerticalMenu $id "Debug Menu" [entries] $back Font=Horatio YStart=%Menu.OptionMenuYStart VerticalStep=19
+set Item1 Text "Debug Level: $(debug)"
+if $ai
+	set Item9 Text "AI: $(ai)"
+end
+call Menu.DrawBackOptionMenu $id
+
+menu ChangeMap
+list maps
+	AB		Menu.DebugSet_ChangeMapExec
+	ABIndoor	Menu.DebugSet_ChangeMapExec
+	Bank		Menu.DebugSet_ChangeMapExec
+	CA		Menu.DebugSet_ChangeMapExec
+	Commercial	Menu.DebugSet_ChangeMapExec
+	DownTown	Menu.DebugSet_ChangeMapExec
+	Fake		Menu.DebugSet_ChangeMapExec
+	FZ		Menu.DebugSet_ChangeMapExec
+	GamblinDen	Menu.DebugSet_ChangeMapExec
+	GDB		Menu.DebugSet_ChangeMapExec
+	Junkyard	Menu.DebugSet_ChangeMapExec
+	MCA		Menu.DebugSet_ChangeMapExec
+	MCB		Menu.DebugSet_ChangeMapExec
+	MDA		Menu.DebugSet_ChangeMapExec
+	MDB		Menu.DebugSet_ChangeMapExec
+	Menu		Menu.DebugSet_ChangeMapExec
+	MOA		Menu.DebugSet_ChangeMapExec
+	MOB		Menu.DebugSet_ChangeMapExec
+	MSA		Menu.DebugSet_ChangeMapExec
+	MSB		Menu.DebugSet_ChangeMapExec
+	OM		Menu.DebugSet_ChangeMapExec
+	Orbit		Menu.DebugSet_ChangeMapExec
+	Outskirts	Menu.DebugSet_ChangeMapExec
+	Police		Menu.DebugSet_ChangeMapExec
+	Press		Menu.DebugSet_ChangeMapExec
+	QF		Menu.DebugSet_ChangeMapExec
+	Scrapyard	Menu.DebugSet_ChangeMapExec
+	ShipEdit	Menu.DebugSet_ChangeMapExec
+	Temple		Menu.DebugSet_ChangeMapExec
+	Townhall	Menu.DebugSet_ChangeMapExec
+call Menu.VerticalMenu $id "Change Map" [maps] Menu.DebugMenu Font=HoratioSmall MinYStart=0 YStart=30 VerticalStep=13
+call Menu.DrawCircuitMenu $id

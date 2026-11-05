@@ -37,6 +37,8 @@ byte Script_RunMenu(int id, const char *name, const char *section, const char *b
 
 /* the last item of the .menu file that runs ("" when none runs), for its steps */
 const char *Script_CurrentItem(void);
+/* a $name of the .menu file that runs, for its steps (value given away) */
+void Script_SetValue(const char *name, PyObject *value);
 
 /* the scorer items of player id */
 void Script_Add(int id, const char *item, const char *type);
@@ -67,6 +69,8 @@ const char *Script_GetString(const char *module, const char *var, char *out, int
 /* sets a variable of a script module (value given away) and an integer one */
 void Script_SetVar(const char *module, const char *var, PyObject *value);
 void Script_SetInt(const char *module, const char *var, int value);
+/* the value of a Python expression (the save variables keep lists as their text), NULL when it fails */
+PyObject *Script_Eval(const char *text);
 
 /* the arguments of a menu callback: the player and the item (empty when the callback got none) */
 byte Script_Args(PyObject *args, int *id, const char **control);
@@ -81,5 +85,7 @@ extern PyMethodDef g_MenuNetMethods[];
 extern PyMethodDef g_MenuBaseMethods[];
 /* the C main menus of the Menu module (src/game/Script/MenuMain.c) */
 extern PyMethodDef g_MenuMainMethods[];
+/* the C mission info pages of the Menu module (src/game/Script/MenuMission.c) */
+extern PyMethodDef g_MenuMissionMethods[];
 
 #endif

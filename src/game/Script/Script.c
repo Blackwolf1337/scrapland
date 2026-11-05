@@ -51,6 +51,7 @@ static const scriptModule_t script_modules[] = {
 	{ "PCMenu", g_MenuNetMethods },
 	{ "Menu", g_MenuBaseMethods },
 	{ "Menu", g_MenuMainMethods },
+	{ "Menu", g_MenuMissionMethods },
 };
 
 void Script_ModuleLoaded(const char *name, PyObject *module) {
@@ -254,6 +255,16 @@ void Script_SetVar(const char *module, const char *var, PyObject *value) {
 
 void Script_SetInt(const char *module, const char *var, int value) {
 	Script_SetVar(module, var, PyInt_FromLong(value));
+}
+
+PyObject *Script_Eval(const char *text) {
+	PyObject *main = PyImport_AddModule("__main__");
+	PyObject *dict = main ? PyModule_GetDict(main) : NULL;
+	PyObject *r = dict ? PyRun_String((char *)text, Py_eval_input, dict, dict) : NULL;
+	if (!r) {
+		PyErr_Clear();
+	}
+	return r;
 }
 
 byte Script_Args(PyObject *args, int *id, const char **control) {
@@ -764,6 +775,14 @@ static scriptMenu_t *menu_running;
 
 const char *Script_CurrentItem(void) {
 	return menu_running ? menu_running->item : "";
+}
+
+void Script_SetValue(const char *name, PyObject *value) {
+	if (menu_running) {
+		Menu_SetVar(menu_running, name, value);
+	} else {
+		Py_XDECREF(value);
+	}
 }
 
 static void Menu_Line(scriptMenu_t *m, scriptLine_t *l, const char *next) {

@@ -10,6 +10,7 @@
 #include "scrap/console.h"
 #include "scrap/game.h"
 #include "scrap/input.h"
+#include "scrap/scheduler.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
@@ -736,6 +737,410 @@ static PyObject *Menu_ComposeSaveGameName(PyObject *self, PyObject *args) {
 	return PyString_FromString(out);
 }
 
+/* ---- the start of a level ---- */
+
+static const char *Main_SaveVarOr(const char *var) {
+	const char *s = SaveVar_Get(var);
+	return s ? s : "";
+}
+
+/* Initialize: the textures and talking heads of the level, then the scorer of the mode */
+static PyObject *Menu_Initialize(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	PyObject *menu = PyImport_ImportModule("Menu");
+	if (menu) {
+		Script_SetVar("PCMenu", "Menu", menu);
+	}
+	PyErr_Clear();
+	byte main = Script_GetInt("Init", "inMainMenu", 0) != 0;
+	byte xbox = Script_GetInt("Menu", "isXbox", 0) != 0;
+	byte outdoor = Script_GetInt("Init", "Outdoor", 0) != 0;
+	byte shipEdit = Script_GetInt("Init", "isShipEdit", 0) != 0;
+	byte junkyard = Script_GetInt("Init", "isJunkYard", 0) != 0;
+	byte multiPlayer = Script_GetInt("Init", "MultiPlayer", 0) != 0;
+	byte net = Main_NetGame();
+	byte edit = shipEdit || multiPlayer;
+	if (Script_GetInt("Init", "isDemo", 0) && xbox) {
+		GVar_SetStr("CheckInactivityFunc", "!ExecuteDemoLauncher");
+	}
+	PyObject *vars = Py_BuildValue("{s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i}", "main", main, "xbox",
+		xbox, "outdoor", outdoor, "outdoorpc", outdoor && !xbox, "metro", !shipEdit && !junkyard && !xbox, "multi",
+		multiPlayer || net, "editor", junkyard || shipEdit || net, "heads",
+		!main && !(shipEdit && GVar_GetNum("isXbox", 0)), "edit", edit, "bosses",
+		edit || strcmp(Main_SaveVarOr("GameAct"), "Epilogue"), "boss", Script_GetInt("Menu", "HeadBoss", 0) || edit,
+		"dtritus", !outdoor || edit, "lonelymerc", !strcmp(Main_SaveVarOr("LonelyMercDataActive"), "1"), "bertos",
+		!strcmp(Main_SaveVarOr("CreateBertos"), "1"), "messenger", Script_GetInt("Menu", "OutHeadMessenger", 0) != 0);
+	Main_Run(0, "preload", vars);
+	Py_XDECREF(vars);
+	if (!main) {
+		Script_Call(outdoor && !shipEdit ? "RacerScorer" : "CharScorer", "Init", "()");
+	}
+	return Py_ReturnNone();
+}
+
+/* CreditsMenu: the credits run in the menu level */
+static PyObject *Menu_CreditsMenu(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	GVar_SetNum("ShowCredits", 1);
+	Script_Call("SaveGame", "QLoad", "(s)", "levels/menu");
+	return Py_ReturnNone();
+}
+
+/* GameOver(id): the death of the player in a single player game, the television switches off */
+static PyObject *Menu_GameOver(PyObject *self, PyObject *args) {
+	int id;
+	(void)self;
+	if (!PyArg_ParseTuple(args, "i", &id)) {
+		return NULL;
+	}
+	Script_Call("MissionsFuncs", "SinglePlayerDeath", "()");
+	Script_Call("Menu", "TVOff", "()");
+	Script_Call("SScorer", "SetCinema", "(iid)", 0, 0, 0.25);
+	return Py_ReturnNone();
+}
+
+/* ---- the debug menu ---- */
+
+static const char *const main_ai[4] = { "None", "ShowNodesAI", "ShowNodes2DAI", "ShowPathAI" };
+
+static PyObject *Menu_DebugMenu(PyObject *self, PyObject *args) {
+	char debug[0x20];
+	(void)self;
+	MAIN_ARGS(args);
+	(void)control;
+	Script_Call("Menu", "StartNewMenu", "(i)", id);
+	const char *ai = "";
+	for (int i = 1; i < 4; i++) {
+		if (GVar_GetNum(main_ai[i], 0) == 1) {
+			ai = main_ai[i];
+		}
+	}
+	Str_Printf(debug, sizeof(debug), "%d", (int)GVar_GetNum("Debug", 0));
+	PyObject *vars = Py_BuildValue("{s:s,s:s,s:s}", "back",
+		Script_GetInt("Menu", "fromSinglePlayer", 0) ? "Menu.SinglePlayerMenu" : "Menu.MainMenu", "debug", debug, "ai", ai);
+	Main_Run(id, "Debug", vars);
+	Py_XDECREF(vars);
+	return Py_ReturnNone();
+}
+
+/* the next value of an engine variable, back to min after max */
+static int Main_Cycle(const char *var, int min, int max) {
+	int v = (int)GVar_GetNum(var, 0);
+	v = v < max ? v + 1 : min;
+	GVar_SetNum(var, v);
+	return v;
+}
+
+#define MAIN_CYCLE(func, var, max) \
+	static PyObject *func(PyObject *self, PyObject *args) { \
+		(void)self; \
+		(void)args; \
+		Main_Cycle(var, 0, max); \
+		return Py_ReturnNone(); \
+	}
+
+MAIN_CYCLE(Menu_DebugSet_Console, "ShowConsoleLog", 1)
+MAIN_CYCLE(Menu_DebugSet_RenderInfo, "R_ShowInfo", 5)
+MAIN_CYCLE(Menu_DebugSet_SoundInfo, "S_Show", 2)
+MAIN_CYCLE(Menu_DebugSet_WorldInfo, "CShow", 7)
+MAIN_CYCLE(Menu_DebugSet_ObjectPool, "O_Show", 1)
+MAIN_CYCLE(Menu_DebugSet_SceneRenderTarget, "R_SceneRTarget", 1)
+MAIN_CYCLE(Menu_DebugSet_MapCollision, "ShowMapCollision", 7)
+
+static PyObject *Menu_DebugSet_Level(PyObject *self, PyObject *args) {
+	char text[0x40];
+	(void)self;
+	MAIN_ARGS(args);
+	(void)control;
+	Str_Printf(text, sizeof(text), "Debug Level: %d", Main_Cycle("Debug", 0, 3));
+	Script_SetStr(id, "Item1", "Text", text);
+	return Py_ReturnNone();
+}
+
+static PyObject *Menu_DebugSet_StencilShadows(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	GVar_SetNum("R_StencilTog", 1);
+	return Py_ReturnNone();
+}
+
+/* the AI display after the one the entry shows, round */
+static PyObject *Menu_DebugSet_AI(PyObject *self, PyObject *args) {
+	char text[0x40];
+	(void)self;
+	MAIN_ARGS(args);
+	const char *opt = Script_GetStr(id, control, "Text");
+	opt = strlen(opt) > 4 ? opt + 4 : "";
+	int sel = -1;
+	for (int i = 0; i < 4; i++) {
+		if (i) {
+			GVar_SetNum(main_ai[i], 0);
+		}
+		if (!strcmp(main_ai[i], opt)) {
+			sel = i;
+		}
+	}
+	sel = sel + 1 < 4 ? sel + 1 : 0;
+	if (sel) {
+		GVar_SetNum(main_ai[sel], 1);
+	}
+	Str_Printf(text, sizeof(text), "AI: %s", main_ai[sel]);
+	Script_SetStr(id, control, "Text", text);
+	return Py_ReturnNone();
+}
+
+/* the Python code of XboxPyDebug runs */
+static PyObject *Menu_DebugSet_XboxPyDebug(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	const char *code = GVar_GetStr("XboxPyDebug");
+	Con_Printf("XboxPyDebug: %s\n", code);
+	PyRun_SimpleString((char *)code);
+	return Py_ReturnNone();
+}
+
+/* DebugSet_CycleVar(var, min, max) */
+static PyObject *Menu_DebugSet_CycleVar(PyObject *self, PyObject *args) {
+	char *var;
+	int min, max;
+	(void)self;
+	if (!PyArg_ParseTuple(args, "sii", &var, &min, &max)) {
+		return NULL;
+	}
+	Main_Cycle(var, min, max);
+	return Py_ReturnNone();
+}
+
+static PyObject *Menu_DebugSet_ChangeMapMenu(PyObject *self, PyObject *args) {
+	(void)self;
+	MAIN_ARGS(args);
+	(void)control;
+	Script_Call("Menu", "StartNewMenu", "(i)", id);
+	Main_Run(id, "ChangeMap", NULL);
+	return Py_ReturnNone();
+}
+
+static PyObject *Menu_DebugSet_ChangeMapExec(PyObject *self, PyObject *args) {
+	char level[0x100];
+	(void)self;
+	MAIN_ARGS(args);
+	Str_Printf(level, sizeof(level), "Levels/%s", Script_GetStr(id, control, "Text"));
+	Script_Call("SaveGame", "QLoad", "(s)", level);
+	return Py_ReturnNone();
+}
+
+/* ---- the death in a single player game: the television switches off ---- */
+
+/* module.func(args) of a script, the result (a new reference, NULL with the error printed) */
+static PyObject *Main_Ask(const char *module, const char *func, PyObject *args) {
+	PyObject *m = PyImport_ImportModule((char *)module);
+	PyObject *f = m ? PyObject_GetAttrString(m, (char *)func) : NULL;
+	PyObject *r = f && args ? PyEval_CallObject(f, args) : NULL;
+	if (!r) {
+		PyErr_Print();
+	}
+	Py_XDECREF(args);
+	Py_XDECREF(f);
+	Py_XDECREF(m);
+	return r;
+}
+
+static void Main_SetAttr(PyObject *o, const char *name, PyObject *v) {
+	if (o && v && PyObject_SetAttrString(o, (char *)name, v) < 0) {
+		PyErr_Print();
+	}
+	Py_XDECREF(v);
+}
+
+/* Scrap.AddScheduledFunc(time, Menu.func, args[, name]) */
+static void Main_Schedule(double t, const char *func, PyObject *args, const char *name) {
+	PyObject *m = PyImport_ImportModule("Menu");
+	PyObject *f = m ? PyObject_GetAttrString(m, (char *)func) : NULL;
+	if (f && args) {
+		Scheduler_Add(&g_pWorld->scheduler, (float)t, f, args, name ? name : "");
+	}
+	PyErr_Clear();
+	Py_XDECREF(args);
+	Py_XDECREF(f);
+	Py_XDECREF(m);
+}
+
+static double Main_Now(void) {
+	return Timer_GetTime(&g_pWorld->timer);
+}
+
+/* TVOff: the view leaves the player along a camera path up and back, then the screen goes dark */
+static PyObject *Menu_TVOff(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	Script_Call("SScorer", "Fade", "(i(iiii)(iiii)d)", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5);
+	Script_Call("SScorer", "SetCinema", "(iid)", 0, 0, 0.25);
+	GVar_SetNum("CinemaBlackBandHeight", 320);
+	PyObject *lastCam = Main_Ask("Scrap", "GetCam", Py_BuildValue("(i)", 0));
+	PyObject *cp = Main_Ask("Scrap", "CreateEntity", Py_BuildValue("(siiis)", "CamPath", 0, 0, 0, "CamPath"));
+	PyObject *lc = lastCam ? Main_Ask("Scrap", "GetEntity", Py_BuildValue("(O)", lastCam)) : NULL;
+	PyObject *usr = Main_Ask("Scrap", "UsrEntity", Py_BuildValue("(i)", 0));
+	if (!cp || !lc) {
+		Py_XDECREF(usr);
+		Py_XDECREF(lc);
+		Py_XDECREF(cp);
+		Py_XDECREF(lastCam);
+		return NULL;
+	}
+	byte hasUsr = usr && PyObject_IsTrue(usr) > 0;
+	if (hasUsr) {
+		PyObject *act = PyObject_GetAttrString(usr, "ActCtrl");
+		if (act && PyString_Check(act) && !strcmp(PyString_AsString(act), "Dtritus")) {
+			Main_SetAttr(usr, "ForceAction", PyString_FromString("Death"));
+			PyObject *u = Main_Ask("Scrap", "UsrEntity", Py_BuildValue("(i)", 0));
+			Main_SetAttr(u, "TimeSpeed", PyInt_FromLong(1));
+			Py_XDECREF(u);
+		}
+		PyErr_Clear();
+		Py_XDECREF(act);
+	}
+	GVar_SetNum("MotionBlurFactorBegin", 0);
+	GVar_SetNum("MotionBlurFactorEnd", 0.75);
+	GVar_SetNum("MotionBlurTime", 0.0);
+	GVar_SetNum("MotionBlurEndTime", 1.75);
+	GVar_SetNum("MotionBlurOffVar", 0);
+	PyObject *camPos = PyObject_GetAttrString(lc, "camPos");
+	PyObject *camAng = PyObject_GetAttrString(lc, "camAng");
+	PyErr_Clear();
+	Main_SetAttr(cp, "nWayPoint", PyInt_FromLong(2));
+	Py_XINCREF(camPos);
+	Main_SetAttr(cp, "camPos", camPos);
+	Py_XINCREF(camAng);
+	Main_SetAttr(cp, "camAng", camAng);
+	Py_INCREF(lastCam);
+	Main_SetAttr(cp, "TgtCam00", lastCam);
+	Main_SetAttr(cp, "TgtCam00", PyString_FromString(""));
+	Py_INCREF(lastCam);
+	Main_SetAttr(cp, "TgtCam01", lastCam);
+	Main_SetAttr(cp, "TgtCam01", PyString_FromString(""));
+	Main_SetAttr(cp, "Time00", PyFloat_FromDouble(3.5));
+	Main_SetAttr(cp, "FadeIn00", PyInt_FromLong(0));
+	Main_SetAttr(cp, "FadeOut00", PyInt_FromLong(1));
+	Main_SetAttr(cp, "FadeIn01", PyInt_FromLong(0));
+	Main_SetAttr(cp, "FadeOut01", PyInt_FromLong(0));
+	byte car = 0;
+	if (hasUsr) {
+		PyObject *r = PyObject_CallMethod(usr, "IsType", "(s)", "Car");
+		car = r && PyObject_IsTrue(r) > 0;
+		PyErr_Clear();
+		Py_XDECREF(r);
+	}
+	Main_SetAttr(cp, "FOV01", PyInt_FromLong(car ? 90 : 100));
+	/* the end of the path: above and behind the camera, under the top of the level, before a wall */
+	PyObject *yaw = camAng ? PySequence_GetItem(camAng, 1) : NULL;
+	PyErr_Clear();
+	PyObject *rot = Main_Ask("SVec", "Rotate3D", Py_BuildValue("((iii)(iOi))", 0, car ? 500 : 200, car ? -1000 : -400, 0,
+		yaw ? yaw : Py_None, 0));
+	PyObject *resv = rot && camPos ? Main_Ask("SVec", "Add", Py_BuildValue("(OO)", camPos, rot)) : NULL;
+	double top = GVar_GetNum("TopLimit", 0);
+	PyObject *y = resv ? PySequence_GetItem(resv, 1) : NULL;
+	if (y && PyFloat_Check(y) ? PyFloat_AsDouble(y) > top : y && PyInt_Check(y) && PyInt_AsLong(y) > top) {
+		PyObject *x = PySequence_GetItem(resv, 0), *z = PySequence_GetItem(resv, 2);
+		PyObject *clamped = Py_BuildValue("(OdO)", x, top, z);
+		Py_XDECREF(x);
+		Py_XDECREF(z);
+		Py_DECREF(resv);
+		resv = clamped;
+	}
+	PyErr_Clear();
+	Py_XDECREF(y);
+	PyObject *dest = resv ? Main_Ask("Scrap", "TestLine", Py_BuildValue("(OOs)", camPos, resv, "")) : NULL;
+	PyObject *pos = NULL;
+	if (dest && dest != Py_None) {
+		pos = PySequence_GetItem(dest, 0);
+	} else if (resv) {
+		Py_INCREF(resv);
+		pos = resv;
+	}
+	PyErr_Clear();
+	Main_SetAttr(cp, "Pos01", pos);
+	Main_SetAttr(cp, "Ang01", Py_BuildValue("(iOi)", 45, yaw ? yaw : Py_None, 0));
+	GVar_SetNum("CinemaBlackBandHeight", 0);
+	PyObject *name = PyObject_GetAttrString(cp, "Name");
+	PyErr_Clear();
+	if (name) {
+		Main_Schedule(Main_Now(), "SetCam", Py_BuildValue("(iO)", 0, name), NULL);
+	}
+	Main_Schedule(Main_Now() + 2.0, "TVOffEnd", PyTuple_New(0), NULL);
+	PyObject *sound = PyImport_ImportModule("Sound");
+	PyObject *snd = sound ? PyObject_GetAttrString(sound, "DeathSound") : NULL;
+	PyObject *vol = sound ? PyObject_GetAttrString(sound, "DeathVolume") : NULL;
+	if (snd && vol) {
+		Script_CallKw("SSound", "Play", Py_BuildValue("(OO)", snd, vol), NULL);
+	}
+	PyErr_Clear();
+	Py_XDECREF(vol);
+	Py_XDECREF(snd);
+	Py_XDECREF(sound);
+	Py_XDECREF(name);
+	Py_XDECREF(dest);
+	Py_XDECREF(resv);
+	Py_XDECREF(rot);
+	Py_XDECREF(yaw);
+	Py_XDECREF(camAng);
+	Py_XDECREF(camPos);
+	Py_XDECREF(usr);
+	Py_XDECREF(lc);
+	Py_XDECREF(cp);
+	Py_XDECREF(lastCam);
+	return Py_ReturnNone();
+}
+
+/* SetCam(id, path): the camera on the path, one frame later */
+static PyObject *Menu_SetCam(PyObject *self, PyObject *args) {
+	PyObject *id, *path;
+	(void)self;
+	if (!PyArg_ParseTuple(args, "OO", &id, &path)) {
+		return NULL;
+	}
+	PyObject *scrap = PyImport_ImportModule("Scrap");
+	PyObject *f = scrap ? PyObject_GetAttrString(scrap, "SetCam") : NULL;
+	if (f) {
+		Scheduler_Add(&g_pWorld->scheduler, (float)Main_Now(), f, args, "");
+	}
+	PyErr_Clear();
+	Py_XDECREF(f);
+	Py_XDECREF(scrap);
+	return Py_ReturnNone();
+}
+
+/* TVOffEnd: noise and the fade to black, then the death screen */
+static PyObject *Menu_TVOffEnd(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	GVar_SetNum("NoiseEndTime", 0.6);
+	GVar_SetNum("NoiseTime", 0.0);
+	GVar_SetNum("NoiseFactorBegin", 0);
+	GVar_SetNum("NoiseFactor", 16);
+	Script_Call("SScorer", "Fade", "(i(iiii)(iiii)d)", 0, 0, 0, 0, 0, 0, 0, 0, 64, 0.75);
+	Main_Schedule(Main_Now() + 0.6, "BlackTV", PyTuple_New(0), NULL);
+	PyObject *sound = PyImport_ImportModule("Sound");
+	PyObject *snd = sound ? PyObject_GetAttrString(sound, "TVOffSound") : NULL;
+	PyObject *vol = sound ? PyObject_GetAttrString(sound, "TVOffVolume") : NULL;
+	if (snd && vol) {
+		Script_CallKw("SSound", "Play", Py_BuildValue("(OO)", snd, vol), NULL);
+	}
+	PyErr_Clear();
+	Py_XDECREF(vol);
+	Py_XDECREF(snd);
+	Py_XDECREF(sound);
+	return Py_ReturnNone();
+}
+
+static PyObject *Menu_BlackTV(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	Script_Call("Menu", "DeathInfo", "(i)", 0);
+	return Py_ReturnNone();
+}
+
 PyMethodDef g_MenuMainMethods[] = {
 	{ "SinglePlayerMenu", Menu_SinglePlayerMenu, 1, NULL },
 	{ "AudioMenu", Menu_AudioMenu, 1, NULL },
@@ -768,5 +1173,27 @@ PyMethodDef g_MenuMainMethods[] = {
 	{ "SaveGameMenu", Menu_SaveGameMenu, 1, NULL },
 	{ "isAutoSave", Menu_isAutoSave, 1, NULL },
 	{ "ComposeSaveGameName", Menu_ComposeSaveGameName, 1, NULL },
+	{ "Initialize", Menu_Initialize, 1, NULL },
+	{ "CreditsMenu", Menu_CreditsMenu, 1, NULL },
+	{ "GameOver", Menu_GameOver, 1, NULL },
+	{ "DebugMenu", Menu_DebugMenu, 1, NULL },
+	{ "DebugSet_Level", Menu_DebugSet_Level, 1, NULL },
+	{ "DebugSet_Console", Menu_DebugSet_Console, 1, NULL },
+	{ "DebugSet_RenderInfo", Menu_DebugSet_RenderInfo, 1, NULL },
+	{ "DebugSet_SoundInfo", Menu_DebugSet_SoundInfo, 1, NULL },
+	{ "DebugSet_WorldInfo", Menu_DebugSet_WorldInfo, 1, NULL },
+	{ "DebugSet_ObjectPool", Menu_DebugSet_ObjectPool, 1, NULL },
+	{ "DebugSet_SceneRenderTarget", Menu_DebugSet_SceneRenderTarget, 1, NULL },
+	{ "DebugSet_StencilShadows", Menu_DebugSet_StencilShadows, 1, NULL },
+	{ "DebugSet_AI", Menu_DebugSet_AI, 1, NULL },
+	{ "DebugSet_MapCollision", Menu_DebugSet_MapCollision, 1, NULL },
+	{ "DebugSet_XboxPyDebug", Menu_DebugSet_XboxPyDebug, 1, NULL },
+	{ "DebugSet_CycleVar", Menu_DebugSet_CycleVar, 1, NULL },
+	{ "DebugSet_ChangeMapMenu", Menu_DebugSet_ChangeMapMenu, 1, NULL },
+	{ "DebugSet_ChangeMapExec", Menu_DebugSet_ChangeMapExec, 1, NULL },
+	{ "TVOff", Menu_TVOff, 1, NULL },
+	{ "SetCam", Menu_SetCam, 1, NULL },
+	{ "TVOffEnd", Menu_TVOffEnd, 1, NULL },
+	{ "BlackTV", Menu_BlackTV, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
