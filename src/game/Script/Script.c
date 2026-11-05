@@ -50,6 +50,7 @@ static const scriptModule_t script_modules[] = {
 	{ "PCMenu", g_MenuControlsMethods },
 	{ "PCMenu", g_MenuNetMethods },
 	{ "Menu", g_MenuBaseMethods },
+	{ "Menu", g_MenuMainMethods },
 };
 
 void Script_ModuleLoaded(const char *name, PyObject *module) {
@@ -66,10 +67,21 @@ void Script_ModuleLoaded(const char *name, PyObject *module) {
 		PyObject *dict = PyModule_GetDict(module);
 		for (PyMethodDef *m = sm->methods; m->ml_name; m++) {
 			PyObject *f = PyCFunction_New(m, NULL);
-			if (f) {
-				PyDict_SetItemString(dict, m->ml_name, f);
-				Py_DECREF(f);
+			if (!f) {
+				continue;
 			}
+			/* names the module bound to the Python function when it loaded (onCreateMainMenu = CreateMainMenu) */
+			PyObject *key, *value;
+			int pos = 0;
+			while (PyDict_Next(dict, &pos, &key, &value)) {
+				if (PyFunction_Check(value) && PyString_Check(((PyFunctionObject *)value)->func_name) &&
+					!strcmp(PyString_AsString(((PyFunctionObject *)value)->func_name), m->ml_name) &&
+					strcmp(PyString_AsString(key), m->ml_name)) {
+					PyDict_SetItem(dict, key, f);
+				}
+			}
+			PyDict_SetItemString(dict, m->ml_name, f);
+			Py_DECREF(f);
 		}
 		Con_Verbosef("Script: the C functions of %s are in place\n", name);
 	}

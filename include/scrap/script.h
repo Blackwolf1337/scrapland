@@ -79,5 +79,7 @@ extern PyMethodDef g_MenuControlsMethods[];
 extern PyMethodDef g_MenuNetMethods[];
 /* the C building blocks of the Menu module (src/game/Script/MenuBase.c) */
 extern PyMethodDef g_MenuBaseMethods[];
+/* the C main menus of the Menu module (src/game/Script/MenuMain.c) */
+extern PyMethodDef g_MenuMainMethods[];
 
 #endif

@@ -1,0 +1,255 @@
+# The main menu, the single player menu, the audio options, the death screen and the scorer of a movie (the Menu
+# module of the game). The format is described in src/game/Script/Script.c. A pack in mods/ with
+# scrapc/menus/main.menu replaces this file.
+
+style blue
+	Red 183
+	Green 220
+	Blue 255
+
+# ---- the main menu: $saves (there are saved games), $back (the function of Escape), $steam ----
+
+menu Main
+if $saves
+	list entries
+		"{Menu_Continue}"	Menu.LoadLastSavedGame
+		"{Menu_SinglePlayer}"	Menu.SinglePlayerMenu
+		"{Menu_Multiplayer}"	PCMenu.MultiPlayerMenu
+		"{Menu_Options}"	Menu.OptionsMenu
+		"{Menu_ExitGame}"	Menu.ByeMenu
+	call Menu.VerticalMenu $id "" [entries] $back YStart=%Menu.MainMenuYStart
+else
+	list entries
+		"{Menu_SinglePlayer_NewGame}"	Menu.StartNewGame
+		"{Menu_Multiplayer}"		PCMenu.MultiPlayerMenu
+		"{Menu_Options}"		Menu.OptionsMenu
+		"{Menu_ExitGame}"		Menu.ByeMenu
+	call Menu.VerticalMenu $id "" [entries] $back YStart=%Menu.MainMenuYStart+25
+end
+if $steam
+	item Spacelords Button
+		IsMultiSprite 1
+		HighRes 1
+		File 2D/Menu/spacelords.alpha.tga
+		Complex 0
+		Highlight 1
+		SpriteIndex 1
+		FocusSpriteIndex 2
+		X 10
+		Y 350
+		W 116
+		H 120
+		ScaleX 0.5
+		ScaleY 0.6666666666666666
+		FocusPivotX 0
+		FocusPivotY 0
+		OnAccept Menu.PlaySpacelords
+		MaxHintLineWidth 400
+		Right Item1
+	# the entries without a left neighbour lead to it
+	run spacelords
+end
+call Menu.DrawBackMainMenu $id
+
+# ---- the single player menu: $menu (main: in the main menu or garage, else in a game), $saves, $xbox, $cansave
+# (saving is possible: not on an Xbox that cannot save, lives left) ----
+
+menu Single
+if $menu == main
+	if $saves == 0
+		list entries
+			"{Menu_SinglePlayer_NewGame}"	Menu.StartNewGame
+			"{Menu_Back}"			Menu.MainMenu
+	elif $xbox
+		list entries
+			"{Menu_Continue}"		Menu.LoadLastSavedGame
+			"{Menu_SinglePlayer_NewGame}"	Menu.StartNewGame
+			"{Menu_LoadGame}"		Menu.LoadGameMenu
+			"{Menu_Back}"			Menu.MainMenu
+	else
+		list entries
+			"{Menu_SinglePlayer_NewGame}"	Menu.StartNewGame
+			"{Menu_LoadGame}"		Menu.LoadGameMenu
+			"{Menu_Back}"			Menu.MainMenu
+	end
+	call Menu.VerticalMenu $id "{Menu_SinglePlayer}" [entries] Menu.MainMenu YStart=%Menu.SubMenuYStart
+	call Menu.DrawBackSubMenu $id
+elif $saves == 0
+	if $cansave
+		list entries
+			"{Menu_ReturnToGame}"	Menu.BackToGame
+			"{Menu_SaveGame}"	Menu.SaveGameMenu
+			"{Menu_Options}"	Menu.OptionsMenu
+			"{Menu_AbortGame}"	Menu.AbortGame
+	else
+		list entries
+			"{Menu_ReturnToGame}"	Menu.BackToGame
+			"{Menu_Options}"	Menu.OptionsMenu
+			"{Menu_AbortGame}"	Menu.AbortGame
+	end
+	call Menu.VerticalMenu $id "{Menu_SinglePlayer}" [entries] Menu.BackToGame YStart=%Menu.SubMenuYStart
+	call Menu.DrawBackSubMenu $id
+else
+	if $cansave
+		list entries
+			"{Menu_ReturnToGame}"	Menu.BackToGame
+			"{Menu_LoadGame}"	Menu.LoadGameMenu
+			"{Menu_SaveGame}"	Menu.SaveGameMenu
+			"{Menu_Options}"	Menu.OptionsMenu
+			"{Menu_AbortGame}"	Menu.AbortGame
+	else
+		list entries
+			"{Menu_ReturnToGame}"	Menu.BackToGame
+			"{Menu_LoadGame}"	Menu.LoadGameMenu
+			"{Menu_Options}"	Menu.OptionsMenu
+			"{Menu_AbortGame}"	Menu.AbortGame
+	end
+	call Menu.VerticalMenu $id "{Menu_SinglePlayer}" [entries] Menu.BackToGame YStart=%Menu.OptionMenuYStart
+	call Menu.DrawBackOptionMenu $id
+end
+
+# ---- the audio options ----
+
+menu Audio
+list entries
+	"{Menu_Audio_SoundVolume}:"	Menu.DummyFunc
+	"{Menu_Audio_VoiceVolume}:"	Menu.DummyFunc
+	"{Menu_Audio_MusicVolume}:"	Menu.DummyFunc
+	"{Menu_Back}"			Menu.OptionsMenu
+call Menu.VerticalMenu $id "{Menu_Options_Audio}" [entries] Menu.OptionsMenu XStart=310 YStart=%Menu.SubMenuYStart
+call Menu.SliderMenu 0 SoundSlider 330 @Item1.Y+5
+set SoundSlider MaxValue 1
+set SoundSlider ValueStep 0.1
+run volume SoundSlider SoundMainVolume
+set SoundSlider OnChange Menu.AudioVolumeChange
+call Menu.SliderMenu 0 VoiceSlider 330 @Item2.Y+5
+set VoiceSlider MaxValue 1
+set VoiceSlider ValueStep 0.1
+run volume VoiceSlider VoiceMainVolume
+set VoiceSlider OnChange Menu.AudioVolumeChange
+call Menu.SliderMenu 0 MusicSlider 330 @Item3.Y+5
+set MusicSlider MaxValue 1
+set MusicSlider ValueStep 0.1
+run volume MusicSlider MusicMainVolume
+set MusicSlider OnChange Menu.AudioVolumeChange
+# two dummies left and right of the titles step the sliders
+item DummySliderSub Text
+	Text ""
+	W 0
+	H 0
+	OnGainFocus Menu.AudioVolumeSliderFocus_Sub
+item DummySliderAdd Text
+	Text ""
+	W 0
+	H 0
+	OnGainFocus Menu.AudioVolumeSliderFocus_Add
+lr SoundSlider Item1
+lr Item1 SoundSlider
+lr DummySliderSub Item1
+lr Item1 DummySliderAdd
+lr VoiceSlider Item2
+lr Item2 VoiceSlider
+lr DummySliderSub Item2
+lr Item2 DummySliderAdd
+lr MusicSlider Item3
+lr Item3 MusicSlider
+lr DummySliderSub Item3
+lr Item3 DummySliderAdd
+call Menu.DrawBackSubMenu $id
+
+# ---- the death screen: $lives (left, -1 for none), $show (lives or jail), $text2 (the lives text) ----
+
+menu Death
+style typing
+	Font ScrapBig
+	X 320
+style gold
+	CentralText 1
+	Red 255
+	Green 234
+	Blue 177
+item Info1 TextTyping typing
+	Text "{Menu_GameOver_1}"
+if $show
+	Y 200
+else
+	Y 240
+end
+	use gold
+	Effect Outline
+	TypingTime -0.05
+	TypingSpeed 0.04
+	CursorAtInit 1
+	CursorAtEnd 1
+if $show == lives
+	item Info2 TextTyping typing
+		Text $text2
+		Y 280
+		use gold
+		Effect Shadow
+		TypingTime -0.2
+		TypingSpeed 0.035
+		CursorAtInit 0
+		CursorAtEnd 0
+		TypingSound 0
+elif $show == jail
+	item Info3 TextTyping typing
+		Text "{Menu_GameOver_3}"
+		Y 280
+		use gold
+		Effect Shadow
+		TypingTime -0.15
+		TypingSpeed 0.035
+		CursorAtInit 0
+		CursorAtEnd 0
+		TypingSound 0
+end
+call SScorer.SetOnCancel $id ""
+call Menu.DrawCircuitMenu $id 0
+
+# ---- the scorer while a movie runs: the talk at the bottom, $talky ----
+
+menu Movie
+item Talk Talk
+	X 320
+	Y $talky
+	TabVisible 1
+	TabBlendingMode 6
+	TabSprite 2D/Menu/Tabs.alpha.tga
+	TabSpriteIndex 1
+	TabAlpha 192
+	TabRed 100
+	TabGreen 140
+	TabBlue 203
+
+# ---- the skill: $func (SetSkill in a game, NewGame for a new one), $back, $lit (the current skill entry, lit in
+# the options) ----
+
+menu Skill
+list entries
+	"{Menu_Skill_Easy}"	$func
+	"{Menu_Skill_Normal}"	$func
+	"{Menu_Skill_Hard}"	$func
+	"{Menu_Back}"		$back
+call Menu.VerticalMenu $id "{Menu_Skill_Level}" [entries] $back YStart=%Menu.SubMenuYStart
+call Menu.DrawBackSubMenu $id
+default $current
+if $lit
+	set $current Red 255
+	set $current Green 241
+	set $current Blue 174
+end
+
+# ---- the saved games: $title, $entries (one per game, then Back), $autosave (the first is the automatic one) ----
+
+menu Games
+call Menu.VerticalMenu $id $title $entries Menu.SinglePlayerMenu VerticalStep=30 Font=Horatio YStart=%Menu.OptionMenuYStart
+if $autosave
+	set Item1 Red 255
+	set Item1 Green 241
+	set Item1 Blue 174
+end
+if $current
+	default $current
+end
+call Menu.DrawBackOptionMenu $id
