@@ -4,7 +4,7 @@ The original game runs its menus, HUD, characters, missions and levels from Pyth
 
 ## The loader
 
-When the engine loads a module from the script pack (`Pack_PreloadLibrary` in `src/game/PyInterface/PythonInit.c`), `Script_ModuleLoaded` (`src/game/Script/Script.c`) puts the C functions ScrapC has for that module into it under their script names. The table `script_modules` lists them, each entry is a module name and a `PyMethodDef` table. So the code of the pack, other modules and the callbacks named in strings (for example the `OnAccept` value `PCMenu.ChangeVideoMode`) reach the C versions. Everything not ported still runs in Python as before.
+When the engine loads a module from the script pack (`Pack_PreloadLibrary` in `src/game/PyInterface/PythonInit.c`), `Script_ModuleLoaded` (`src/game/Script/Script.c`) puts the C functions ScrapC has for that module into it under their script names. The table `script_modules` lists them, each entry is a module name and a `PyMethodDef` table. So the code of the pack, other modules and the callbacks named in strings (for example the `OnAccept` value `PCMenu.ChangeVideoMode`) reach the C versions. Names that a module bound to a ported Python function when it loaded are replaced too (for example `onCreateMainMenu = CreateMainMenu` in `menu.py` points to the C `CreateMainMenu` after loading). Everything not ported still runs in Python as before.
 
 `SCRAP_PACK_SCRIPTS=1` (environment variable) turns the C versions off, so the original pack scripts run. It is used to compare a port with the original.
 
@@ -17,6 +17,10 @@ The helpers the ports share are declared in `include/scrap/script.h`.
 | `PCMenu` | the video options (`VideoMenu` and its handlers, about 1150 lines of `pcmenu.py`) | `src/game/Script/MenuVideo.c`, `data/menus/video.menu` |
 | `PCMenu` | the options and controls: `OptionsMenu`, `ControlsMenu`, `MouseControlsMenu`, the key menus of the four tabs (`RacerMoveControlsMenu`, `RacerAttackControlsMenu`, `WalkCharControlsMenu`, `UseCharControlsMenu`, all through `CreateControlMenu`), the pad menu (`ControllerConfig`, `ControllerConfigCharMenu`, `ControllerConfigShipMenu`, `SwitchOption`) and their handlers | `src/game/Script/MenuControls.c`, `data/menus/options.menu` |
 | `PCMenu` | the multiplayer menus: `MultiPlayerMenu` (the in-game version and the main menu path), the join page `NetJoinGameMenu` with the server browser (Internet, local network, address), the connecting page, the password page, `NetDefaultContentMenu` (the part the create and join pages share), `NetCreateGameMenu` with the advanced options, and all their handlers | `src/game/Script/MenuNet.c`, `data/menus/net.menu` |
+| `Menu` | the building blocks of all menus: `LinkLR`, `LinkUD`, `UnLinkLR`, `UnLinkUD`, the logos (`DrawBackMainMenu`, `DrawBackSubMenu`, `DrawBackOptionMenu`), `DrawCircuitMenu`, `DrawMenuTitleBar`, `StartNewMenu`, `AddTabs`, `VerticalMenu`, `YesNoMenu`, `DisableMenuItem`, `ShowTextBox`, `ShowWarning`, `SetTabDefaults`, `SliderMenu`, `PreviousNextMenu`, `PreviousNextMenuSimple`, `DummyFunc` (step 4a). `VerticalMenu` and `AddTabs` take keyword arguments. The C functions compute the places with the integer and float division of the script (Python 1.5.2 divides integers as integers) and hand them to the file as `$names` | `src/game/Script/MenuBase.c`, `data/menus/base.menu` |
+| `Menu` | the main menu (through `Menu.onCreateMainMenu`, the hook a mod may replace), the single player menu in all its variants, the audio options, the skill menus, new game, abort, the load and save menus with the names of saved games, the death screen, `Init`, `InitMenuSys`, `BackToGame`, `DrawScorer`, `MovieScorer` (step 4b) | `src/game/Script/MenuMain.c`, `data/menus/main.menu` |
+
+Still Python in `menu.py`: the mission info pages, the TV, `GameOver`, the debug menu and `Initialize` (step 4c).
 
 With the multiplayer menus every function of `PCMenu` that a menu or another script calls is C. The helpers still in `pcmenu.py` are only called by the old Python functions.
 
@@ -28,7 +32,7 @@ The video options gained two entries in this step. Display (Windowed, Borderless
 
 ## The .menu format
 
-A layout is a .menu file, built into ScrapC with the C23 `#embed` directive (`data/menus/`). A pack in the `mods/` folder of the game that contains `scrapc/menus/video.menu` (or `scrapc/menus/options.menu`, `scrapc/menus/net.menu`) replaces the built-in file (the engine mounts every `.packed` in `mods/`, later packs win). `Script_RunMenu` reads `scrapc/<name>` from the packs first, else the built-in copy.
+A layout is a .menu file, built into ScrapC with the C23 `#embed` directive (`data/menus/`). A pack in the `mods/` folder of the game that contains `scrapc/menus/video.menu` (or `scrapc/menus/options.menu`, `scrapc/menus/net.menu`, `scrapc/menus/base.menu`, `scrapc/menus/main.menu`) replaces the built-in file (the engine mounts every `.packed` in `mods/`, later packs win). `Script_RunMenu` reads `scrapc/<name>` from the packs first, else the built-in copy.
 
 The file is a list of lines. `#` starts a comment, indentation is only for reading.
 
@@ -65,6 +69,10 @@ A value is a number, a word or a "quoted text". `{Key}` in a text is the languag
 `@Item.Var`, `%Module.var` and `$name` may end in +N or -N, for example `@Item1.Y+35` or `$x+140`.
 
 A condition is a value (true when it is not 0 and not empty), or `<value> == <value>`, or `<value> != <value>`.
+
+`$(name)` inside a word or a text is the value `name` as text, for example `item $(name)Circuit1 Sprite circuit` in the slider section of `base.menu`.
+
+Up to four menus may run inside each other (a .menu calls a function that runs another .menu). Each has its own buffer for an override from a mod pack.
 
 The C function of a menu picks the section and can hand values to the file as `$names`. A `call` can also reach a C function of a script, as the four key sections of `options.menu` do with `call PCMenu.CreateControlMenu`. The key lists are in the file, so a mod pack can change which actions appear.
 
@@ -121,11 +129,15 @@ item ServerName Text
 	Text $servername
 ```
 
+Where the script failed with a Python exception that changes what happens next, the C function raises the same exception. For example the volume dummies of the audio menu without the sliders raise `TypeError` before moving the focus.
+
 ## Checking a port
 
 The scrap MCP server (`tools/mcp/scrap_mcp.py`) opens the menu with `open_menu PCMenu.VideoMenu` and lists every item with `menu_dump` (name, text, position, size, colour, callback, links). Dump the C version, then dump the same build started with `SCRAP_PACK_SCRIPTS=1`. The two must be equal item by item and in draw order. For the video options the only difference is the intended Display entry. Then click the handlers through with the `click` tool and read the engine variables with the `python` tool. Step 2 also compared a click sequence: the same list of opens, clicks, key presses and python calls on both versions, with `menu_dump` and the engine variables after each step, compared as text. Two differences are expected and normalized first: the accept and called names of C functions show without the `PCMenu.` prefix, and the alpha of animated items (the cursor) differs. `tools/test/golden.sh` must still match (see [testing.md](testing.md)).
 
 Step 3 used the same method. Two lessons from it. When a step starts a server, run the C game and the pack game one after the other, because two games on one machine compete for the server port. Saved state matters: the slot's `Scrap.cfg` keeps engine variables and key and pad bindings between runs, so compare runs that start from the same config.
+
+Step 4 added one more lesson. `Menu.Init` and `InitMenuSys(0)` stop the game time in the main menu, and the MCP commands run on scheduled functions of the game time. A test must set the time speed back in the same python call (`Menu.Init(0); Scrap.SetTimeSpeed(1)`). A sequence that clicks New Game starts a game and stops the comparison.
 
 ## Porting the next script
 
