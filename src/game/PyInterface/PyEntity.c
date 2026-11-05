@@ -222,19 +222,18 @@ static PyObject *PyEntity_GetAttr(PyObject *self, char *name) {
 }
 
 /*
- * tp_setattr: the value is tried as int, float, vector and string, each type that parses goes to the matching
- * variable until one takes it
+ * a script variable of an entity from a Python value, as the attribute set of its handle: the value is tried as int,
+ * float, vector and string, each type that parses goes to the matching variable until one takes it. ref names the
+ * entity in the messages. -1 with the message printed when no variable took it.
  */
-static int PyEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
-	cEntityRef *ref = ((cPyEntity *)self)->ref;
-	cEntity *e = ref->link.target;
+int PyEntity_SetVar(cEntity *e, const char *ref, const char *name, PyObject *v) {
 	int parsed = 0;
 	int i;
 	double d, x, y, z;
 	char *s;
 
 	if (!e) {
-		Con_Errorf("'%s'->%s : Entity invalid.\n", ref->name, name);
+		Con_Errorf("'%s'->%s : Entity invalid.\n", ref, name);
 		return -1;
 	}
 	if (PyArg_Parse(v, "i", &i)) {
@@ -268,12 +267,17 @@ static int PyEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
 	} else {
 		PyErr_Clear();
 		if (!parsed) {
-			Con_Errorf("'%s'->%s : Invalid type.\n", ref->name, name);
+			Con_Errorf("'%s'->%s : Invalid type.\n", ref, name);
 			return -1;
 		}
 	}
-	Con_Errorf("'%s'->%s : Member invalid.\n", ref->name, name);
+	Con_Errorf("'%s'->%s : Member invalid.\n", ref, name);
 	return -1;
+}
+
+static int PyEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
+	cEntityRef *ref = ((cPyEntity *)self)->ref;
+	return PyEntity_SetVar(ref->link.target, ref->name, name, v);
 }
 
 /* Global/Nto1Links.h instances */

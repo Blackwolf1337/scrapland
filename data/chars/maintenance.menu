@@ -1,6 +1,7 @@
-# Maintenance (the character script chars/maintenance.py of the game): the Init that builds the action class. The format is
-# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/maintenance.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# Maintenance (the character script chars/maintenance.py of the game): the Init that builds the action class. The format
+# is described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/maintenance.menu replaces this file. The C
+# gives $xbox and $level (the path of the level in capitals). The section OnCreate ($name: the new entity) is the
+# callback of the class.
 
 menu Maintenance
 let prev %MakeChar.RelaxRotLimit
@@ -61,3 +62,12 @@ call MaintenanceSound.Init Maintenance
 call Scrap.Set FXMaintenanceWorkFile %Maintenance.FXMaintenanceWorkFile
 call Scrap.SetDebrisSys %Maintenance.FXMaintenanceWorkFile 2 0 0 1 0 0 %Fx.FXMAINTENANCEWORK
 setvar MakeChar.RelaxRotLimit $prev
+
+menu OnCreate
+call CharAct.OnCreate $name
+entity $name
+	Action Loop
+	OnDeath ""
+	ArrowCanUse 0
+	Descriptor {CharName_Maintenance}
+call MaintenanceSound.InitLoops $name

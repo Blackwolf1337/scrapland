@@ -1,6 +1,6 @@
-# Boss (the character script chars/boss.py of the game): the Init that builds the action class. The format is
-# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/boss.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# Boss (the character script chars/boss.py of the game): the Init that builds the action class. The format is described
+# in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/boss.menu replaces this file. The C gives $xbox and
+# $level (the path of the level in capitals). The section OnCreate ($name: the new entity) is the callback of the class.
 
 menu Boss
 call MakeChar.InitChar Boss
@@ -54,3 +54,7 @@ class Boss
 	ActionPress Boss.ActionPress
 call BossSound.Init Boss
 run speech Boss Boss BossSpeech
+
+menu OnCreate
+call CharAct.OnCreate $name
+call BossSound.InitLoops $name

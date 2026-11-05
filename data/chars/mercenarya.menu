@@ -1,7 +1,8 @@
 # MercenaryA (the character script chars/mercenarya.py of the game): the Init that builds the action class of the
-# mercenaries; MercenaryB, MercenaryC and MercenaryL use it too. The format is described in src/game/Script/Script.c.
-# A pack in mods/ with scrapc/chars/mercenarya.menu replaces this file. The C gives $xbox, $level (the path of the
-# level in capitals), $merc (the class) and $dance (0 for MercenaryL).
+# mercenaries; MercenaryB, MercenaryC and MercenaryL use it too. The format is described in src/game/Script/Script.c. A
+# pack in mods/ with scrapc/chars/mercenarya.menu replaces this file. The C gives $xbox, $level (the path of the level
+# in capitals), $merc (the class) and $dance (0 for MercenaryL). The section OnCreate ($name: the new entity) is the
+# callback of the class.
 
 menu MercenaryA
 let prev %MakeChar.RelaxRotLimit
@@ -57,3 +58,6 @@ if %Init.OutMapSkip == 0
 	call Scrap.Set FXMercenaryDrinkSmokeFile %MercenaryA.FXMercenaryDrinkSmokeFile
 	call Scrap.SetDebrisSys %MercenaryA.FXMercenaryDrinkSmokeFile 1 0 0 1 0 0 %Fx.FXSISTPART
 end
+
+menu OnCreate
+call CharAct.OnCreate $name

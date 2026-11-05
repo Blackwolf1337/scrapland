@@ -1,6 +1,7 @@
 # Sentinel (the character script chars/sentinel.py of the game): the Init that builds the action class. The format is
 # described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/sentinel.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# $xbox and $level (the path of the level in capitals). The section OnCreate ($name: the new entity) is the callback of
+# the class.
 
 menu Sentinel
 call MakeChar.InitChar Sentinel
@@ -88,3 +89,10 @@ call MakeChar.EventAnimCommand 0 Morph,3,Point
 call MakeChar.EventAnimCommand -1 Morph,3,Normal 0
 call SentinelSound.Init Sentinel
 run speech Sentinel CharsNPC GenericNPCSpeech
+
+menu OnCreate
+call SentinelSound.InitLoops $name
+call CharAct.OnCreate $name
+entity $name
+	Action MorphEye
+	Action MorphEyeLips

@@ -1,7 +1,7 @@
-# Betty (the character script chars/betty.py of the game): her actions, the attack with its camera and hit
-# events, the class values, sounds and effects. The format is described in src/game/Script/Script.c; the C part
-# (the hit events, the callbacks) is in src/game/Script/Characters.c. A pack in mods/ with scrapc/chars/betty.menu
-# replaces this file. $xbox comes from the C.
+# Betty (the character script chars/betty.py of the game): her actions, the attack with its camera and hit events, the
+# class values, sounds and effects. The format is described in src/game/Script/Script.c; the C part (the hit events, the
+# callbacks) is in src/game/Script/Characters.c. A pack in mods/ with scrapc/chars/betty.menu replaces this file. $xbox
+# comes from the C. The sections OnCreate ($name: the new entity) and OnFreeResources are the callbacks of the class.
 
 menu Betty
 call MakeChar.InitChar Betty
@@ -73,3 +73,10 @@ if %Init.OutMapSkip == 0
 	call Scrap.Set FXBettyKillFile Models/GFX/Betty/Kill.M3D
 	call Scrap.SetDebrisSys Models/GFX/Betty/Kill.M3D 2 0 0 1 0 0 %Fx.FXBETTYKILL
 end
+
+menu OnCreate
+call CharAct.OnCreate $name
+
+menu OnFreeResources
+call Scrap.SetDebrisSys %Betty.FXBettyAttackFile 0 0 0 1 0 0 %Fx.FXBETTYATTACK
+call Scrap.SetDebrisSys %Betty.FXBettyKillFile 0 0 0 1 0 0 %Fx.FXBETTYKILL

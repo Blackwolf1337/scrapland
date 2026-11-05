@@ -1,6 +1,7 @@
 # Nurse (the character script chars/nurse.py of the game): the Init that builds the action class. The format is
 # described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/nurse.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
 
 menu Nurse
 call MakeChar.InitChar Nurse
@@ -98,3 +99,10 @@ if %Init.OutMapSkip == 0
 	call Scrap.SetDebrisSys %Nurse.HitFile 1 0 0 1 0 0 %Fx.FXSISTPART
 end
 run speech Nurse CharsNPC GenericNPCSpeech
+
+menu OnCreate
+call NurseSound.InitLoops $name
+call CharAct.OnCreate $name
+
+menu OnFreeResources
+call Scrap.SetDebrisSys %Nurse.HitFile 0 0 0 1 0 0 %Fx.FXSISTPART

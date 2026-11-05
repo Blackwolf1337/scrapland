@@ -1,6 +1,7 @@
 # Mayor (the character script chars/mayor.py of the game): the Init that builds the action class. The format is
 # described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/mayor.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# $xbox and $level (the path of the level in capitals). The section OnCreate ($name: the new entity) is the callback of
+# the class.
 
 menu Mayor
 call MakeChar.InitChar Mayor
@@ -96,3 +97,7 @@ call MayorSound.Init Mayor
 if %Init.OutMapSkip == 0
 	run speech Mayor CharsNPC GenericNPCSpeech
 end
+
+menu OnCreate
+call CharAct.OnCreate $name
+call MayorSound.InitLoops $name

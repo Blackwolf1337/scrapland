@@ -1,6 +1,7 @@
-# BankMaster (the character script chars/bankmaster.py of the game): the Init that builds the action class. The format is
-# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/bankmaster.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# BankMaster (the character script chars/bankmaster.py of the game): the Init that builds the action class. The format
+# is described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/bankmaster.menu replaces this file. The C
+# gives $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
 
 menu BankMaster
 call MakeChar.InitChar BankMaster
@@ -90,3 +91,10 @@ if %Init.OutMapSkip == 0
 	call Scrap.Set FXBankMasterSuctionFile %BankMaster.FXBankMasterSuctionFile
 	call Scrap.SetDebrisSys %BankMaster.FXBankMasterSuctionFile 4 0 0 1 0 0 %Fx.FXBANKMASTERSUCTION
 end
+
+menu OnCreate
+call CharAct.OnCreate $name
+
+menu OnFreeResources
+call Scrap.SetDebrisSys %BankMaster.FXBankMasterAttackFile 0 0 0 1 0 0 %Fx.FXBANKMASTERATTACK
+call Scrap.SetDebrisSys %BankMaster.FXBankMasterSuctionFile 0 0 0 1 0 0 %Fx.FXBANKMASTERSUCTION

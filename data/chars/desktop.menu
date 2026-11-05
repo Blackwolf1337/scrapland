@@ -1,6 +1,7 @@
 # Desktop (the character script chars/desktop.py of the game): the Init that builds the action class. The format is
 # described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/desktop.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
 
 menu Desktop
 call MakeChar.InitChar Desktop
@@ -71,3 +72,10 @@ event 0 FXDesktopFallEnd !FXDesktopFallEnd
 	EventDiscardable 0
 call Scrap.Set FXDesktopFallEndFile %Desktop.FXDesktopFallEndFile
 call Scrap.SetDebrisSys %Desktop.FXDesktopFallEndFile 2 0 0 1 0 0 %Fx.FXSISTPART
+
+menu OnCreate
+call CharAct.OnCreate $name
+call DesktopSound.InitLoops $name
+
+menu OnFreeResources
+call Scrap.SetDebrisSys %Desktop.FXDesktopFallEndFile 0 0 0 1 0 0 %Fx.FXSISTPART

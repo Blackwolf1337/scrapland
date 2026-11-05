@@ -1,6 +1,7 @@
 # Messenger (the character script chars/messenger.py of the game): the Init that builds the action class. The format is
-# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/messenger.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/messenger.menu replaces this file. The C
+# gives $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
 
 menu Messenger
 if %Messenger.MakeMDP
@@ -124,3 +125,11 @@ call Scrap.Set FXMessengerAttackFile %Messenger.FXMessengerAttackFile
 call Scrap.SetDebrisSys %Messenger.FXMessengerAttackFile 4 0 0 1 0 0 %Fx.FXMESSENGERATTACK
 call Scrap.Set FXMessengerTakeDataPackFile %Messenger.FXMessengerTakeDataPackFile
 call Scrap.SetDebrisSys %Messenger.FXMessengerTakeDataPackFile 2 0 0 1 0 0 %Fx.FXMESSENGERTAKEDATAPACK
+
+menu OnCreate
+call MessengerSound.InitLoops $name
+call CharAct.OnCreate $name
+
+menu OnFreeResources
+call Scrap.SetDebrisSys %Messenger.FXMessengerAttackFile 0 0 0 1 0 0 %Fx.FXMESSENGERATTACK
+call Scrap.SetDebrisSys %Messenger.FXMessengerTakeDataPackFile 0 0 0 1 0 0 %Fx.FXMESSENGERTAKEDATAPACK

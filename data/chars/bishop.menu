@@ -1,6 +1,7 @@
 # Bishop (the character script chars/bishop.py of the game): the Init that builds the action class. The format is
 # described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/bishop.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
 
 menu Bishop
 call MakeChar.InitChar Bishop
@@ -102,3 +103,11 @@ if %Init.OutMapSkip == 0
 	call Scrap.Set FXBishopAttackFile %Bishop.FXBishopAttackFile
 	call Scrap.SetDebrisSys %Bishop.FXBishopAttackFile 4 0 0 1 0 0 %Fx.FXBISHOPATTACK
 end
+
+menu OnCreate
+call BishopSound.InitLoops $name
+call CharAct.OnCreate $name
+
+menu OnFreeResources
+call Scrap.SetDebrisSys %Bishop.FXBishopSellLifeFile 0 0 0 1 0 0 %Fx.FXBISHOPSELLLIFE
+call Scrap.SetDebrisSys %Bishop.FXBishopAttackFile 0 0 0 1 0 0 %Fx.FXBISHOPATTACK

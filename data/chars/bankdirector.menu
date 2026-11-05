@@ -1,6 +1,7 @@
-# BankDirector (the character script chars/bankdirector.py of the game): the Init that builds the action class. The format is
-# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/bankdirector.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# BankDirector (the character script chars/bankdirector.py of the game): the Init that builds the action class. The
+# format is described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/bankdirector.menu replaces this
+# file. The C gives $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity)
+# and OnFreeResources are the callbacks of the class.
 
 menu BankDirector
 call MakeChar.InitChar BankDirector
@@ -92,3 +93,10 @@ end
 if %Init.OutMapSkip == 0
 	run speech BankDirector CharsNPC GenericNPCSpeech
 end
+
+menu OnCreate
+call CharAct.OnCreate $name
+call BankDirectorSound.InitLoops $name
+
+menu OnFreeResources
+call Scrap.SetDebrisSys %BankDirector.BankerStealFile 0 45000 0 1 0 0 %Fx.FXBANKERSTEAL

@@ -24,6 +24,7 @@
  *	class <name>			SAct.GetClass: the attribute lines that follow set the class (SetCls)
  *	event <time> <name> <func> [discardable]	an event of the current action
  *	setvar <Module.var> <value>	a variable of a script module
+ *	entity <name>			the attribute lines that follow set script variables of the entity
  *	let <name> <value> [value ...]	$name: the sum of the values (or the one value that is no number)
  *	measure <name> <font> <text>	$name: the width of the text in the font
  * A value is a number, a word or a "quoted text"; {Key} in a text is the language text Key. Unquoted: @Item.Var the
@@ -43,6 +44,7 @@
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/filepak.h"
+#include "scrap/pyentity.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapfont.h"
@@ -342,7 +344,7 @@ typedef struct {
 	byte list;
 } scriptBlock_t;
 
-enum { MENU_ITEM, MENU_ACTION, MENU_CLASS };
+enum { MENU_ITEM, MENU_ACTION, MENU_CLASS, MENU_ENTITY };
 
 typedef struct {
 	int id;
@@ -352,7 +354,8 @@ typedef struct {
 	const char *text;		/* the whole file */
 	const char *section;
 	char item[0x80];		/* the last item */
-	byte target;			/* what attribute lines set: MENU_ITEM, MENU_ACTION or MENU_CLASS */
+	byte target;			/* what attribute lines set: MENU_ITEM, MENU_ACTION, MENU_CLASS or MENU_ENTITY */
+	char entity[0x80];		/* the entity of MENU_ENTITY */
 	scriptBlock_t blocks[SCRIPT_MAX_BLOCKS];
 	int numBlocks;
 	scriptBlock_t *open;		/* the style or list whose lines follow */
@@ -820,11 +823,21 @@ static byte Menu_Cond(scriptMenu_t *m, scriptLine_t *l) {
 }
 
 static const char *const menu_commands[] = { "style", "item", "use", "set", "lr", "ud", "default", "list", "call", "run",
-	"menu", "do", "if", "elif", "else", "end", "let", "measure", "action", "getaction", "class", "event", "setvar" };
+	"menu", "do", "if", "elif", "else", "end", "let", "measure", "action", "getaction", "class", "event", "setvar",
+	"entity" };
 
 /* an attribute of SAct's current action or class (MENU_ACTION, MENU_CLASS), as SAct.SetAct and SetCls set it: a
- * text or a number */
+ * text or a number; or a variable of the entity (MENU_ENTITY) */
 static void Menu_SetAct(scriptMenu_t *m, byte target, const char *var, const char *value, byte quoted) {
+	if (target == MENU_ENTITY) {
+		/* a script variable of the entity, as `entity.var = value` of a script */
+		PyObject *v = Menu_Value(m, value, quoted);
+		if (v) {
+			PyEntity_SetVar(World_FindEntity(m->entity), m->entity, var, v);
+			Py_DECREF(v);
+		}
+		return;
+	}
 	void *obj = target == MENU_CLASS ? (void *)g_pAuxActClass : (void *)g_pAuxAction;
 	if (!obj) {
 		Con_Warnf("%s:%d: no current %s for %s\n", m->name, m->line, target == MENU_CLASS ? "class" : "action", var);
@@ -1020,6 +1033,9 @@ static void Menu_Line(scriptMenu_t *m, scriptLine_t *l, const char *next) {
 			char *s = b;
 			cAction_Var(g_pAuxAction, "EventFunc", 1, &s, NULL, NULL);
 		}
+	} else if (!strcmp(cmd, "entity") && l->n == 2) {
+		Menu_Word(m, l->tok[1], l->quoted[1], m->entity, sizeof(m->entity));
+		m->target = MENU_ENTITY;
 	} else if (!strcmp(cmd, "setvar") && l->n == 3) {
 		const char *var = Menu_Split(l->tok[1], a, sizeof(a));
 		if (!var) {

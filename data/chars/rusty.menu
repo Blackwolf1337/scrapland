@@ -1,6 +1,7 @@
 # Rusty (the character script chars/rusty.py of the game): the Init that builds the action class. The format is
 # described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/rusty.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
 
 menu Rusty
 let prev %MakeChar.RelaxRotLimit
@@ -63,3 +64,9 @@ event &TimeOfFrame113 FXRustyHit !FXRustyHit
 call Scrap.Set FXRustyHitFile %Rusty.FXRustyHitFile
 call Scrap.SetDebrisSys %Rusty.FXRustyHitFile 1 0 0 1 0 0 %Fx.FXSISTPART
 setvar MakeChar.RelaxRotLimit $prev
+
+menu OnCreate
+call CharAct.OnCreate $name
+
+menu OnFreeResources
+call Scrap.SetDebrisSys %Rusty.FXRustyHitFile 0 0 0 1 0 0 %Fx.FXSISTPART

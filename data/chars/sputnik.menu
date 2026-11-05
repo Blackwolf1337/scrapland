@@ -1,6 +1,7 @@
 # Sputnik (the character script chars/sputnik.py of the game): the Init that builds the action class. The format is
 # described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/sputnik.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# $xbox and $level (the path of the level in capitals). The section OnCreate ($name: the new entity) is the callback of
+# the class.
 
 menu Sputnik
 call MakeChar.InitChar Sputnik
@@ -53,3 +54,11 @@ class Sputnik
 call SputnikSound.Init Sputnik
 call Scrap.Set FXCharacterSputnikFile Models/GFX/Sputnik/Sputnik.M3D
 call Scrap.SetDebrisSys Models/GFX/Sputnik/Sputnik.M3D 1 0 0 1 0 0 %Fx.FXCHARACTERSPUTNIK
+
+menu OnCreate
+call CharAct.OnCreate $name
+entity $name
+	OnDeath ""
+	Descriptor {CharName_Sputnik}
+	Invulnerable 1
+call SputnikSound.InitLoops $name

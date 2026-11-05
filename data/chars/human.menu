@@ -1,6 +1,7 @@
 # Human (the character script chars/human.py of the game): the Init that builds the action class. The format is
 # described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/human.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# $xbox and $level (the path of the level in capitals). The section OnCreate ($name: the new entity) is the callback of
+# the class.
 
 menu Human
 call MakeChar.InitChar Human
@@ -22,3 +23,8 @@ class Human
 	OnCreate Human.OnCreate
 call HumanSound.Init Human
 run speech Human CharsNPC GenericNPCSpeech
+
+menu OnCreate
+call CharAct.OnCreate $name
+entity $name
+	Invulnerable 1

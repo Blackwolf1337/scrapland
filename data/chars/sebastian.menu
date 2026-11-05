@@ -1,6 +1,7 @@
 # Sebastian (the character script chars/sebastian.py of the game): the Init that builds the action class. The format is
-# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/sebastian.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/sebastian.menu replaces this file. The C
+# gives $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
 
 menu Sebastian
 call MakeChar.InitChar Sebastian
@@ -31,3 +32,11 @@ call SebastianSound.Init Sebastian
 run speech Sebastian CharsNPC GenericNPCSpeech
 call Scrap.Set FXSebastianFlashFile %Sebastian.FXSebastianFlashFile
 call Scrap.SetDebrisSys %Sebastian.FXSebastianFlashFile 1 0 0 1 0 0 %Fx.FXSEBASTIANFLASH
+
+menu OnCreate
+entity $name
+	Invulnerable 1
+	Action MorphEyes
+
+menu OnFreeResources
+call Scrap.SetDebrisSys %Sebastian.FXSebastianFlashFile 0 0 0 1 0 0 %Fx.FXSEBASTIANFLASH

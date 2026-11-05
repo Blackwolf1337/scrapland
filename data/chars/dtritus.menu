@@ -1,6 +1,7 @@
 # Dtritus (the character script chars/dtritus.py of the game): the Init that builds the action class. The format is
 # described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/dtritus.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
 
 menu Dtritus
 call MakeChar.InitChar Dtritus
@@ -88,3 +89,10 @@ if %Init.OutMapSkip == 0
 	call Scrap.Set FXDTritusKillFile %Dtritus.FXDTritusKillFile
 	call Scrap.SetDebrisSys %Dtritus.FXDTritusKillFile 2 0 0 1 0 0 %Fx.FXDTRITUSKILL
 end
+
+menu OnCreate
+call CharAct.OnCreate $name
+
+menu OnFreeResources
+call Scrap.SetDebrisSys %Dtritus.FXDTritusAttackFile 0 0 0 1 0 0 %Fx.FXDTRITUSATTACK
+call Scrap.SetDebrisSys %Dtritus.FXDTritusKillFile 0 0 0 1 0 0 %Fx.FXDTRITUSKILL

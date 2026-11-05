@@ -1,6 +1,7 @@
-# Functionary (the character script chars/functionary.py of the game): the Init that builds the action class. The format is
-# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/functionary.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# Functionary (the character script chars/functionary.py of the game): the Init that builds the action class. The format
+# is described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/functionary.menu replaces this file. The C
+# gives $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
 
 menu Functionary
 call MakeChar.InitChar Functionary
@@ -44,3 +45,11 @@ if %Init.OutMapSkip == 0
 	call Scrap.Set FXFunctionarySpecialActionFile %Functionary.FXFunctionarySpecialActionFile
 	call Scrap.SetDebrisSys %Functionary.FXFunctionarySpecialActionFile 2 0 0 1 0 0 %Fx.FXFUNCTIONARYSPECIALACTION
 end
+
+menu OnCreate
+call CharAct.OnCreate $name
+entity $name
+	Energy 1.0
+
+menu OnFreeResources
+call Scrap.SetDebrisSys %Functionary.FXFunctionarySpecialActionFile 0 0 0 1 0 0 %Fx.FXFUNCTIONARYSPECIALACTION

@@ -269,6 +269,31 @@ static void Char_Init(const char *name, const char *file, const char *builtin) {
 	Char_InitVars(name, file, builtin, NULL);
 }
 
+/* OnCreate(EntityName), OnFreeResources(): the section of the callback in the file of the character, $name the
+ * entity */
+static PyObject *Char_Callback(const char *file, const char *builtin, const char *section, PyObject *args) {
+	char *name = "";
+	if (!PyArg_ParseTuple(args, strcmp(section, "OnCreate") ? "" : "s", &name)) {
+		return NULL;
+	}
+	PyObject *vars = Py_BuildValue("{s:s}", "name", name);
+	Script_RunMenu(0, file, section, builtin, char_steps, vars);
+	Py_XDECREF(vars);
+	return Py_ReturnNone();
+}
+
+#define CHAR_ONCREATE(mod, file) \
+	static PyObject *mod##_OnCreate(PyObject *self, PyObject *args) { \
+		(void)self; \
+		return Char_Callback("chars/" #file ".menu", file##_menu, "OnCreate", args); \
+	}
+
+#define CHAR_ONFREE(mod, file) \
+	static PyObject *mod##_OnFreeResources(PyObject *self, PyObject *args) { \
+		(void)self; \
+		return Char_Callback("chars/" #file ".menu", file##_menu, "OnFreeResources", args); \
+	}
+
 /* ---- Betty ---- */
 
 static PyObject *Betty_Init(PyObject *self, PyObject *args) {
@@ -278,28 +303,8 @@ static PyObject *Betty_Init(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-static PyObject *Betty_OnCreate(PyObject *self, PyObject *args) {
-	PyObject *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
-	}
-	Script_CallKw("CharAct", "OnCreate", Py_BuildValue("(O)", name), NULL);
-	return Py_ReturnNone();
-}
-
-/* the effects of the attack and the kill are freed with her resources */
-static PyObject *Betty_OnFreeResources(PyObject *self, PyObject *args) {
-	char attack[0x100], kill[0x100];
-	(void)self;
-	(void)args;
-	int fxAttack = Script_GetInt("Fx", "FXBETTYATTACK", 0), fxKill = Script_GetInt("Fx", "FXBETTYKILL", 0);
-	Script_GetString("Betty", "FXBettyAttackFile", attack, sizeof(attack));
-	Script_GetString("Betty", "FXBettyKillFile", kill, sizeof(kill));
-	Script_Call("Scrap", "SetDebrisSys", "(siiiiiii)", attack, 0, 0, 0, 1, 0, 0, fxAttack);
-	Script_Call("Scrap", "SetDebrisSys", "(siiiiiii)", kill, 0, 0, 0, 1, 0, 0, fxKill);
-	return Py_ReturnNone();
-}
+CHAR_ONCREATE(Betty, betty)
+CHAR_ONFREE(Betty, betty)
 
 /* the slow motion of her attack */
 static PyObject *Char_Pitch(PyObject *args, double pitch) {
@@ -330,7 +335,8 @@ PyMethodDef g_BettyMethods[] = {
 	{ NULL, NULL, 0, NULL },
 };
 
-/* ---- the characters whose other functions are still in their scripts: only Init ---- */
+/* ---- the other characters: Init, OnCreate and OnFreeResources from the file (as far as the script has them); their
+ * other functions are still in their scripts ---- */
 
 #define CHAR_INIT(mod, file) \
 	static PyObject *mod##_Init(PyObject *self, PyObject *args) { \
@@ -338,33 +344,52 @@ PyMethodDef g_BettyMethods[] = {
 		(void)args; \
 		Char_Init(#mod, "chars/" #file ".menu", file##_menu); \
 		return Py_ReturnNone(); \
-	} \
+	}
+
+/* Init only (GateKeeper keeps its OnCreate in the script, it makes a Python object per gatekeeper) */
+#define CHAR_MODULE0(mod, file) \
+	CHAR_INIT(mod, file) \
 	PyMethodDef g_##mod##Methods[] = { { "Init", mod##_Init, 1, NULL }, { NULL, NULL, 0, NULL } };
 
-CHAR_INIT(BankDirector, bankdirector)
-CHAR_INIT(Boss, boss)
-CHAR_INIT(CrazyGambler, crazygambler)
-CHAR_INIT(Humphrey, humphrey)
-CHAR_INIT(Maintenance, maintenance)
-CHAR_INIT(Mayor, mayor)
-CHAR_INIT(Rusty, rusty)
-CHAR_INIT(Sebastian, sebastian)
-CHAR_INIT(Sentinel, sentinel)
-CHAR_INIT(SputnikJunkyard, sputnikjunkyard)
-CHAR_INIT(Bishop, bishop)
-CHAR_INIT(Functionary, functionary)
-CHAR_INIT(Gear, gear)
-CHAR_INIT(BankMaster, bankmaster)
-CHAR_INIT(Berto, berto)
-CHAR_INIT(Nurse, nurse)
-CHAR_INIT(Desktop, desktop)
-CHAR_INIT(Police, police)
-CHAR_INIT(GateKeeper, gatekeeper)
-CHAR_INIT(Dtritus, dtritus)
-CHAR_INIT(Sputnik, sputnik)
-CHAR_INIT(PoliceBoss, policeboss)
-CHAR_INIT(Messenger, messenger)
-CHAR_INIT(Human, human)
+/* Init and OnCreate */
+#define CHAR_MODULE1(mod, file) \
+	CHAR_INIT(mod, file) \
+	CHAR_ONCREATE(mod, file) \
+	PyMethodDef g_##mod##Methods[] = { { "Init", mod##_Init, 1, NULL }, { "OnCreate", mod##_OnCreate, 1, NULL }, \
+		{ NULL, NULL, 0, NULL } };
+
+/* Init, OnCreate and OnFreeResources */
+#define CHAR_MODULE2(mod, file) \
+	CHAR_INIT(mod, file) \
+	CHAR_ONCREATE(mod, file) \
+	CHAR_ONFREE(mod, file) \
+	PyMethodDef g_##mod##Methods[] = { { "Init", mod##_Init, 1, NULL }, { "OnCreate", mod##_OnCreate, 1, NULL }, \
+		{ "OnFreeResources", mod##_OnFreeResources, 1, NULL }, { NULL, NULL, 0, NULL } };
+
+CHAR_MODULE2(BankDirector, bankdirector)
+CHAR_MODULE1(Boss, boss)
+CHAR_MODULE1(CrazyGambler, crazygambler)
+CHAR_MODULE1(Humphrey, humphrey)
+CHAR_MODULE1(Maintenance, maintenance)
+CHAR_MODULE1(Mayor, mayor)
+CHAR_MODULE2(Rusty, rusty)
+CHAR_MODULE2(Sebastian, sebastian)
+CHAR_MODULE1(Sentinel, sentinel)
+CHAR_MODULE1(SputnikJunkyard, sputnikjunkyard)
+CHAR_MODULE2(Bishop, bishop)
+CHAR_MODULE2(Functionary, functionary)
+CHAR_MODULE2(Gear, gear)
+CHAR_MODULE2(BankMaster, bankmaster)
+CHAR_MODULE2(Berto, berto)
+CHAR_MODULE2(Nurse, nurse)
+CHAR_MODULE2(Desktop, desktop)
+CHAR_MODULE2(Police, police)
+CHAR_MODULE0(GateKeeper, gatekeeper)
+CHAR_MODULE2(Dtritus, dtritus)
+CHAR_MODULE1(Sputnik, sputnik)
+CHAR_MODULE2(PoliceBoss, policeboss)
+CHAR_MODULE2(Messenger, messenger)
+CHAR_MODULE1(Human, human)
 
 /* ---- the mercenaries: one file, the class and the dance from Init(MercName="MercenaryA", doDance=1) ---- */
 
@@ -394,7 +419,10 @@ static PyObject *MercenaryA_Init(PyObject *self, PyObject *args) {
 	} \
 	PyMethodDef g_##mod##Methods[] = { { "Init", mod##_Init, 1, NULL }, { NULL, NULL, 0, NULL } };
 
-PyMethodDef g_MercenaryAMethods[] = { { "Init", MercenaryA_Init, 1, NULL }, { NULL, NULL, 0, NULL } };
+CHAR_ONCREATE(MercenaryA, mercenarya)
+
+PyMethodDef g_MercenaryAMethods[] = { { "Init", MercenaryA_Init, 1, NULL }, { "OnCreate", MercenaryA_OnCreate, 1, NULL },
+	{ NULL, NULL, 0, NULL } };
 MERC_INIT(MercenaryB, 1)
 MERC_INIT(MercenaryC, 1)
 MERC_INIT(MercenaryL, 0)

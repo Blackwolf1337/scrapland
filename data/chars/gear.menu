@@ -1,6 +1,7 @@
-# Gear (the character script chars/gear.py of the game): the Init that builds the action class. The format is
-# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/gear.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# Gear (the character script chars/gear.py of the game): the Init that builds the action class. The format is described
+# in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/gear.menu replaces this file. The C gives $xbox and
+# $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and OnFreeResources are the
+# callbacks of the class.
 
 menu Gear
 call MakeChar.InitChar Gear
@@ -129,3 +130,14 @@ if %Init.OutMapSkip == 0
 	call Scrap.Set FXGearMissileFile %Gear.MissileFile
 	call Scrap.SetDebrisSys %Gear.MissileFile 2 10000 0 1 0 0 %Fx.FXGEARMISSILE
 end
+
+menu OnCreate
+call GearSound.InitLoops $name
+entity $name
+	TgType Green
+	Energy 1.0
+	EnergyBarDecr 0.20
+call CharAct.OnCreate $name
+
+menu OnFreeResources
+call Scrap.SetDebrisSys %Gear.MissileFile 0 10000 0 1 0 0 %Fx.FXGEARMISSILE

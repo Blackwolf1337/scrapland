@@ -1,6 +1,7 @@
-# PoliceBoss (the character script chars/policeboss.py of the game): the Init that builds the action class. The format is
-# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/policeboss.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# PoliceBoss (the character script chars/policeboss.py of the game): the Init that builds the action class. The format
+# is described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/policeboss.menu replaces this file. The C
+# gives $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
 
 menu PoliceBoss
 call MakeChar.InitChar PoliceBoss
@@ -66,3 +67,14 @@ call Scrap.Preload3DObject $(base)D.M3D
 call Scrap.SetDebrisSys $(base)D.M3D 1 0 0 1 0 0 %Fx.FXMODELFADE
 call Scrap.Preload3DObject $(base)E.M3D
 call Scrap.SetDebrisSys $(base)E.M3D 1 0 0 1 0 0 %Fx.FXMODELFADE
+
+menu OnCreate
+call CharAct.OnCreate $name
+
+menu OnFreeResources
+let base %PoliceBoss.BrupBaseFile
+call Scrap.SetDebrisSys $(base)A.M3D 0 0 0 1 0 0 %Fx.FXMODELFADE
+call Scrap.SetDebrisSys $(base)B.M3D 0 0 0 1 0 0 %Fx.FXMODELFADE
+call Scrap.SetDebrisSys $(base)C.M3D 0 0 0 1 0 0 %Fx.FXMODELFADE
+call Scrap.SetDebrisSys $(base)D.M3D 0 0 0 1 0 0 %Fx.FXMODELFADE
+call Scrap.SetDebrisSys $(base)E.M3D 0 0 0 1 0 0 %Fx.FXMODELFADE

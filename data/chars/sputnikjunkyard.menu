@@ -1,6 +1,7 @@
-# SputnikJunkyard (the character script chars/sputnikjunkyard.py of the game): the Init that builds the action class. The format is
-# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/sputnikjunkyard.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# SputnikJunkyard (the character script chars/sputnikjunkyard.py of the game): the Init that builds the action class.
+# The format is described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/sputnikjunkyard.menu replaces
+# this file. The C gives $xbox and $level (the path of the level in capitals). The section OnCreate ($name: the new
+# entity) is the callback of the class.
 
 menu SputnikJunkyard
 let prev %MakeChar.RelaxRotLimit
@@ -35,3 +36,11 @@ class SputnikJunkyard
 run speech SputnikJunkyard SputnikJunkyard SputnikJunkyardTalk
 call SputnikJunkyardSound.Init SputnikJunkyard
 setvar MakeChar.RelaxRotLimit $prev
+
+menu OnCreate
+call CharAct.OnCreate $name
+entity $name
+	OnDeath ""
+	ArrowCanUse 0
+	Descriptor {CharName_Sputnik}
+call SputnikJunkyardSound.InitLoops $name

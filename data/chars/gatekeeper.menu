@@ -1,6 +1,6 @@
-# GateKeeper (the character script chars/gatekeeper.py of the game): the Init that builds the action class. The format is
-# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/gatekeeper.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# GateKeeper (the character script chars/gatekeeper.py of the game): the Init that builds the action class. The format
+# is described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/gatekeeper.menu replaces this file. The C
+# gives $xbox and $level (the path of the level in capitals).
 
 menu GateKeeper
 call MakeChar.InitChar GateKeeper

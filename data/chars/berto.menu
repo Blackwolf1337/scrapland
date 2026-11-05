@@ -1,6 +1,7 @@
 # Berto (the character script chars/berto.py of the game): the Init that builds the action class. The format is
 # described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/berto.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
 
 menu Berto
 call MakeChar.InitChar Berto
@@ -80,3 +81,11 @@ if %Init.OutMapSkip == 0
 	call Scrap.Set FXBertoFlashFile %Berto.FXBertoFlashFile
 	call Scrap.SetDebrisSys %Berto.FXBertoFlashFile 2 0 0 1 0 0 %Fx.FXBERTOFLASH
 end
+
+menu OnCreate
+call BertoSound.InitLoops $name
+call CharAct.OnCreate $name
+
+menu OnFreeResources
+call Scrap.SetDebrisSys %Berto.FXBertoAttackFile 0 0 0 1 0 0 %Fx.FXBERTOATTACK
+call Scrap.SetDebrisSys %Berto.FXBertoFlashFile 0 0 0 1 0 0 %Fx.FXBERTOFLASH

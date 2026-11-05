@@ -1,6 +1,7 @@
 # Police (the character script chars/police.py of the game): the Init that builds the action class. The format is
 # described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/police.menu replaces this file. The C gives
-# $xbox and $level (the path of the level in capitals).
+# $xbox and $level (the path of the level in capitals). The sections OnCreate ($name: the new entity) and
+# OnFreeResources are the callbacks of the class.
 
 menu Police
 call MakeChar.InitChar Police
@@ -112,3 +113,13 @@ if %Init.OutMapSkip == 0
 	call Scrap.SetDebrisSys %Police.FXPoliceGearConversionFile 2 0 0 1 0 0 %Fx.FXPOLICEGEARCONVERSION
 end
 run speech Police Police PoliceSpeech
+
+menu OnCreate
+entity $name
+	TgType Green
+call CharAct.OnCreate $name
+call PoliceSound.InitLoops $name
+
+menu OnFreeResources
+call Scrap.SetDebrisSys %Police.FXPoliceStealFile 0 0 0 1 0 0 %Fx.FXPOLICESTEAL
+call Scrap.SetDebrisSys %Police.FXPoliceGearConversionFile 0 0 0 1 0 0 %Fx.FXPOLICEGEARCONVERSION
