@@ -1,0 +1,75 @@
+# Betty (the character script chars/betty.py of the game): her actions, the attack with its camera and hit
+# events, the class values, sounds and effects. The format is described in src/game/Script/Script.c; the C part
+# (the hit events, the callbacks) is in src/game/Script/Characters.c. A pack in mods/ with scrapc/chars/betty.menu
+# replaces this file. $xbox comes from the C.
+
+menu Betty
+call MakeChar.InitChar Betty
+# the speeds of her walk
+setvar MakeChar.MaxSpeed 1.0
+setvar MakeChar.MinSpeed 0.5
+call MakeChar.AddRelaxActions Betty 0
+call MakeChar.AddWalkActions Betty 360 1
+call MakeChar.AddFallAction Betty 45 1 0
+call MakeChar.AddDazeAction Betty
+call MakeChar.AddTalkAction Betty nExtraActions=3
+call MakeChar.AddFlashedAction Betty
+call MakeChar.AddCrazyAction Betty
+call MakeChar.AddDiscover Betty
+call MakeChar.SetSitActions Betty
+# the attack: slow motion from frame 43 to 83
+action Action
+	AnmFilePath Models/Chars/Betty/Anm/Betty_Action.M3D
+	isLoop 0
+	RotSpeed 0
+	AngRotLimit 360
+	UseDisp 0
+	UseFlyDisp 0
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	NodeModifier -1
+	PriorityLevel 100
+	AngleModifierSpeed 1.0
+	UseFlyFall 0
+event &TimeOfFrame43 EnterSlowSpeed Betty.EnterSlowSpeed 0
+event &TimeOfFrame83 ExitSlowSpeed Betty.ExitSlowSpeed 0
+# the camera turns and the hits in 16 steps between the two frames
+run bettyhit
+event &TimeOfFrame83 BettyRestoreTime !BettyRestoreTime 0
+event &AnmTotalTime EndEvent !BettyEndEvent 0
+event &TimeOfFrame43 FXBettyAttack !FXBettyAttack
+# the collision model
+class Betty
+	WRadius 90
+	VRadius 70
+	SRadius 20
+	YModelDisp 10
+	# the camera
+	FOV 90
+	CamDist 230
+	CamAng 2
+	CamRot 5
+	# the nodes that turn: head, waist, hips
+	Node0Name "Bip XGirl Head"
+	Node1Name "Bip XGirl Spine2"
+	Node2Name "Bip XGirl Spine1"
+call MakeChar.SetNodeRotation 0 0 25 50
+call MakeChar.SetNodeRotation 0 1 5 25
+call MakeChar.SetNodeRotation 0 2 5 25
+class Betty
+	OnCreate Betty.OnCreate
+	OnFreeResources Betty.OnFreeResources
+	ActionPress !BettyActionPress
+call BettySound.Init Betty
+if %Init.OutMapSkip == 0
+	run speech Betty CharsNPC GenericNPCSpeech
+	if $xbox
+		call Scrap.Set FXBettyAttackFile Models/GFX/Betty/AttackNoDuDv.M3D
+		call Scrap.SetDebrisSys Models/GFX/Betty/AttackNoDuDv.M3D 1 0 0 1 0 0 %Fx.FXBETTYATTACK
+	else
+		call Scrap.Set FXBettyAttackFile Models/GFX/Betty/Attack.M3D
+		call Scrap.SetDebrisSys Models/GFX/Betty/Attack.M3D 1 0 0 1 0 0 %Fx.FXBETTYATTACK
+	end
+	call Scrap.Set FXBettyKillFile Models/GFX/Betty/Kill.M3D
+	call Scrap.SetDebrisSys Models/GFX/Betty/Kill.M3D 2 0 0 1 0 0 %Fx.FXBETTYKILL
+end

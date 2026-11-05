@@ -1,0 +1,92 @@
+# BankMaster (the character script chars/bankmaster.py of the game): the Init that builds the action class. The format is
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/bankmaster.menu replaces this file. The C gives
+# $xbox and $level (the path of the level in capitals).
+
+menu BankMaster
+call MakeChar.InitChar BankMaster
+setvar MakeChar.MaxSpeed 1.0
+setvar MakeChar.MinSpeed 0.7
+call MakeChar.AddRelaxActions BankMaster 360
+call MakeChar.AddWalkActions BankMaster 360 1 1
+call MakeChar.AddInitWalkActions BankMaster 360 1 1
+call MakeChar.AddEndWalkActions BankMaster 360 1 1
+call MakeChar.AddCrazyAction BankMaster
+call MakeChar.AddTalkAction BankMaster nExtraActions=2
+call MakeChar.AddFallAction BankMaster 45 1 0
+call MakeChar.AddDazeAction BankMaster
+call MakeChar.AddFlashedAction BankMaster
+class BankMaster
+	WRadius 100
+	VRadius 90
+	SRadius 20
+	YModelDisp -42
+	FOV 90
+	CamDist 330
+	CamAng 10
+	CamRot 0
+action ActionInit
+	AnmFilePath Models/Chars/BankMaster/Anm/BankMaster_ActionInit.M3D
+	isLoop 0
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier 1
+	PriorityLevel 101
+	SlideAsFly 1
+event &AnmTotalTime BankMasterActionInit !BankMasterActionInit
+	EventDiscardable 0
+event &AnmTotalTime FXBankMasterAttack !FXBankMasterAttack
+	EventDiscardable 0
+action Action
+	AnmFilePath Models/Chars/BankMaster/Anm/BankMaster_Action.M3D
+	isLoop 1
+	RotSpeed 360
+	MinSpeed 1.2
+	MaxSpeed 1.4
+	UseDisp 0
+	NodeModifier 1
+	PriorityLevel 100
+	SlideAsFly 1
+let numevents 3
+event &AnmTotalTime/3*0 HitEvent !BankMasterHitEvent
+event &AnmTotalTime/3*1 HitEvent !BankMasterHitEvent
+event &AnmTotalTime/3*2 HitEvent !BankMasterHitEvent
+event &AnmTotalTime BankMasterAttack !BankMasterAttack
+action ActionEnd
+	AnmFilePath Models/Chars/BankMaster/Anm/BankMaster_ActionEnd.M3D
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier 1
+	PriorityLevel 101
+	SlideAsFly 1
+event 0 BankMasterActionEnd !BankMasterActionEnd
+	EventDiscardable 0
+class BankMaster
+	CanFly 0
+	FlyAccel 300.0
+	FlySpeed 1000.0
+	FlyFric 0.5
+	FlyFallAccel 800.0
+	Node0Name _Move_The_Model_
+	Node1Name "Bip BankM Head"
+call MakeChar.SetNodeRotation 0 0 0 0
+call MakeChar.SetNodeRotation 0 1 35 35
+call MakeChar.SetNodeRotation 1 0 0 100
+call MakeChar.SetNodeRotation 1 1 35 0
+class BankMaster
+	ActionPress !BankMasterActionPress
+	OnCreate BankMaster.OnCreate
+	OnFreeResources BankMaster.OnFreeResources
+call BankMasterSound.Init BankMaster
+if %Init.OutMapSkip == 0
+	run speech BankMaster CharsNPC GenericNPCSpeech
+end
+if %Init.OutMapSkip == 0
+	call Scrap.Set FXBankMasterAttackFile %BankMaster.FXBankMasterAttackFile
+	call Scrap.SetDebrisSys %BankMaster.FXBankMasterAttackFile 1 0 0 1 0 0 %Fx.FXBANKMASTERATTACK
+	call Scrap.Set FXBankMasterSuctionFile %BankMaster.FXBankMasterSuctionFile
+	call Scrap.SetDebrisSys %BankMaster.FXBankMasterSuctionFile 4 0 0 1 0 0 %Fx.FXBANKMASTERSUCTION
+end

@@ -435,15 +435,41 @@ static PyObject *Chars_CreatePlayersList(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
+/* module.func(args), args stolen: the result (a new reference, NULL with the error left set for the caller) */
+static PyObject *Chars_Try(const char *module, const char *func, PyObject *args) {
+	PyObject *m = PyImport_ImportModule((char *)module);
+	PyObject *f = m ? PyObject_GetAttrString(m, (char *)func) : NULL;
+	PyObject *r = f && args ? PyEval_CallObject(f, args) : NULL;
+	Py_XDECREF(args);
+	Py_XDECREF(f);
+	Py_XDECREF(m);
+	return r;
+}
+
+/* module.func(args): the result (a new reference, NULL with the error printed) */
+static PyObject *Chars_Ask(const char *module, const char *func, PyObject *args) {
+	PyObject *r = Chars_Try(module, func, args);
+	if (!r) {
+		PyErr_Print();
+	}
+	return r;
+}
+
 /* Init(): the characters of the level: the NPC spawn points, Sputnik outdoors and in the junkyard, the resources
  * so far (from now on lasting), then the class of the player */
 static PyObject *Chars_Init(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	Script_Call("Chars", "CreatePlayersList", "()");
-	if (!Script_GetInt("Init", "OutMapSkip", 0)) {
-		Script_Call("CharsNPC", "BrowseNPC", "()");
+	/* an error stops it and goes to the caller, as in the script (GDB: the save game's character is not loaded) */
+	PyObject *r = Chars_Try("Chars", "CreatePlayersList", PyTuple_New(0));
+	if (r && !Script_GetInt("Init", "OutMapSkip", 0)) {
+		Py_DECREF(r);
+		r = Chars_Try("CharsNPC", "BrowseNPC", PyTuple_New(0));
 	}
+	if (!r) {
+		return NULL;
+	}
+	Py_DECREF(r);
 	if (Script_GetInt("Init", "Outdoor", 0) || Script_GetInt("Init", "isJunkYard", 0)) {
 		PyObject *s = PyString_FromString("Sputnik");
 		Chars_AddRes(s, 0);
@@ -453,34 +479,35 @@ static PyObject *Chars_Init(PyObject *self, PyObject *args) {
 	/* the list may grow while the scripts load: the length of each turn, as the for loop of the script */
 	for (int i = 0; list && i < PySequence_Length(list); i++) {
 		PyObject *cr = PySequence_GetItem(list, i);
-		if (cr) {
-			Script_CallKw("Chars", "LocalLoadRes", Py_BuildValue("(O)", cr), NULL);
-			PyObject *zero = PyInt_FromLong(0);
-			PySequence_SetItem(cr, 1, zero);
+		r = cr ? Chars_Try("Chars", "LocalLoadRes", Py_BuildValue("(O)", cr)) : NULL;
+		PyObject *zero = r ? PyInt_FromLong(0) : NULL;
+		if (!zero || PySequence_SetItem(cr, 1, zero) < 0) {
 			Py_XDECREF(zero);
+			Py_XDECREF(r);
+			Py_XDECREF(cr);
+			Py_DECREF(list);
+			return NULL;
 		}
-		PyErr_Clear();
-		Py_XDECREF(cr);
+		Py_DECREF(zero);
+		Py_DECREF(r);
+		Py_DECREF(cr);
 	}
 	Py_XDECREF(list);
 	const char *ch = SaveVar_Get("Char");
-	Script_Call("Chars", "LoadRes", "(s)", ch ? ch : "");
+	r = Chars_Try("Chars", "LoadRes", Py_BuildValue("(s)", ch ? ch : ""));
+	if (!r) {
+		return NULL;
+	}
+	Py_DECREF(r);
 	Con_Printf("Character system initialized.\n");
 	return Py_ReturnNone();
 }
 
-/* module.func(args): the result (a new reference, NULL with the error printed) */
-static PyObject *Chars_Ask(const char *module, const char *func, PyObject *args) {
-	PyObject *m = PyImport_ImportModule((char *)module);
-	PyObject *f = m ? PyObject_GetAttrString(m, (char *)func) : NULL;
-	PyObject *r = f && args ? PyEval_CallObject(f, args) : NULL;
-	if (!r) {
-		PyErr_Print();
-	}
-	Py_XDECREF(args);
-	Py_XDECREF(f);
-	Py_XDECREF(m);
-	return r;
+/* o.name = v (v stolen): 0 with the error left set for the caller */
+static int Chars_Put(PyObject *o, const char *name, PyObject *v) {
+	int ok = v && PyObject_SetAttrString(o, (char *)name, v) == 0;
+	Py_XDECREF(v);
+	return ok;
 }
 
 static void Chars_Set(PyObject *o, const char *name, PyObject *v) {
@@ -510,30 +537,30 @@ static PyObject *Chars_CreateMainChar(PyObject *self, PyObject *args) {
 		if (!c) {
 			return NULL;
 		}
+		/* the script stops at the first set that fails (an ActCtrl whose module is not loaded) */
 		PyObject *yaw = PySequence_GetItem(ang, 1);
-		Chars_Set(c, "ActCtrl", PyString_FromString(type));
-		Chars_Set(c, "UsrControl", PyInt_FromLong(0));
-		Chars_Set(c, "AutoSelect", PyInt_FromLong(1));
-		Chars_Set(c, "Ang", Py_BuildValue("(iOi)", 0, yaw ? yaw : Py_None, 0));
-		Py_INCREF(ang);
-		Chars_Set(c, "ViewAng", ang);
-		Chars_Set(c, "TgType", PyString_FromString("Green"));
-		Chars_Set(c, "EntityList", PyString_FromString("Players"));
-		Chars_Set(c, "Energy", PyInt_FromLong(2));
+		byte ok = Chars_Put(c, "ActCtrl", PyString_FromString(type))
+			&& Chars_Put(c, "UsrControl", PyInt_FromLong(0))
+			&& Chars_Put(c, "AutoSelect", PyInt_FromLong(1))
+			&& Chars_Put(c, "Ang", Py_BuildValue("(iOi)", 0, yaw ? yaw : Py_None, 0))
+			&& Chars_Put(c, "ViewAng", (Py_INCREF(ang), ang))
+			&& Chars_Put(c, "TgType", PyString_FromString("Green"))
+			&& Chars_Put(c, "EntityList", PyString_FromString("Players"))
+			&& Chars_Put(c, "Energy", PyInt_FromLong(2));
 		Py_XDECREF(yaw);
-		PyErr_Clear();
-		PyObject *m = PyImport_ImportModule("Chars");
+		PyObject *m = ok ? PyImport_ImportModule("Chars") : NULL;
 		PyObject *hook = m ? PyObject_GetAttrString(m, "OnCreateMainChar") : NULL;
-		PyErr_Clear();
+		Py_XDECREF(m);
 		if (hook && PyObject_IsTrue(hook) > 0) {
 			PyObject *r = Script_Invoke(hook, Py_BuildValue("(O)", c));
-			if (!r) {
-				PyErr_Print();
-			}
+			ok = r != NULL;
 			Py_XDECREF(r);
 		}
 		Py_XDECREF(hook);
-		Py_XDECREF(m);
+		if (!ok) {
+			Py_DECREF(c);
+			return NULL;
+		}
 	} else {
 		PyObject *r = PyObject_CallMethod(c, "IsType", "(s)", "WalkChar");
 		PyObject *act = PyObject_GetAttrString(c, "ActCtrl");

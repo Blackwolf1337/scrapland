@@ -1,0 +1,65 @@
+# Rusty (the character script chars/rusty.py of the game): the Init that builds the action class. The format is
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/rusty.menu replaces this file. The C gives
+# $xbox and $level (the path of the level in capitals).
+
+menu Rusty
+let prev %MakeChar.RelaxRotLimit
+setvar MakeChar.RelaxRotLimit 360
+call MakeChar.InitChar Rusty
+setvar MakeChar.MaxSpeed 1.0
+setvar MakeChar.MinSpeed 0.7
+call MakeChar.AddRelaxActions Rusty 0
+call MakeChar.AddWalkActions Rusty 360 1 ActList=(Walk,)
+call MakeChar.AddTalkAction Rusty nExtraActions=3
+class Rusty
+	CanFly 0
+	FlyAccel 100.0
+	FlySpeed 150.0
+	FlyFric 2.0
+	FlyFallAccel 4800.0
+	WRadius 60
+	VRadius 100
+	SRadius 30
+	YModelDisp -16
+	FOV 90
+	CamDist 330
+	CamAng -5
+	CamRot 0
+	Node0Name "Bip Mecanic Head"
+call MakeChar.SetNodeRotation 0 0 80 0
+action Pissed
+	AnmFilePath Models/Chars/Rusty/Anm/Rusty_Pissed.M3D
+	isLoop 0
+	RotSpeed 0
+	AngRotLimit 360
+	UseDisp 0
+	UseFlyDisp 0
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	NodeModifier -1
+	PriorityLevel 100
+	AngleModifierSpeed 1.0
+	UseFlyFall 0
+action Action
+	AnmFilePath Models/Chars/Rusty/Anm/Rusty_Action.M3D
+	isLoop 1
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier 0
+	PriorityLevel 0
+	SlideAsFly 3
+event &AnmTotalTime EndOfHit !IncrementHits
+class Rusty
+	OnCreate Rusty.OnCreate
+	OnFreeResources Rusty.OnFreeResources
+	ActionPress Rusty.ActionPress
+	ActionRelease Rusty.ActionRelease
+call RustySound.Init Rusty
+run speech Rusty CharsNPC GenericNPCSpeech
+getaction Action
+event &TimeOfFrame113 FXRustyHit !FXRustyHit
+call Scrap.Set FXRustyHitFile %Rusty.FXRustyHitFile
+call Scrap.SetDebrisSys %Rusty.FXRustyHitFile 1 0 0 1 0 0 %Fx.FXSISTPART
+setvar MakeChar.RelaxRotLimit $prev

@@ -1,0 +1,126 @@
+# Messenger (the character script chars/messenger.py of the game): the Init that builds the action class. The format is
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/messenger.menu replaces this file. The C gives
+# $xbox and $level (the path of the level in capitals).
+
+menu Messenger
+if %Messenger.MakeMDP
+	call Messenger.MakeDataPack
+end
+call MakeChar.InitChar Messenger
+setvar MakeChar.MaxSpeed 1.0
+setvar MakeChar.MinSpeed 0.7
+call MakeChar.AddRelaxActions Messenger 360
+call MakeChar.AddWalkActions Messenger 360 0 0
+call MakeChar.AddInitWalkActions Messenger 360 0 0
+call MakeChar.AddEndWalkActions Messenger 360 0 0
+call MakeChar.AddTalkAction Messenger nExtraActions=3
+call MakeChar.AddFlashedAction Messenger
+call MakeChar.AddDazeAction Messenger
+class Messenger
+	CanFly 1
+	FlyAccel 3600.0
+	FlySpeed 1000.0
+	FlyFric 2.0
+	FlyFallAccel 100.0
+	SkipInitOnChange 0
+	MinTimeWalking 0.3
+	InitEndWalkInterpFactor 1.0
+	CamDist 250
+	CamAng 0
+	CamRot -10
+	WRadius 80
+	VRadius 65
+	SRadius 20
+	YModelDisp -10
+	Node0Name _Move_The_Model_
+call MakeChar.SetNodeRotation 0 0 75 0
+call MakeChar.SetNodeRotation 1 0 75 100
+action ActionInit
+	AnmFilePath Models/Chars/Messenger/Anm/Messenger_ActionInit.M3D
+	isLoop 0
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier 1
+	PriorityLevel 101
+	SlideAsFly 2
+action Action
+	AnmFilePath Models/Chars/Messenger/Anm/Messenger_Action.M3D
+	isLoop 1
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier 1
+	PriorityLevel 100
+	SlideAsFly 2
+action ActionEnd
+	AnmFilePath Models/Chars/Messenger/Anm/Messenger_ActionEnd.M3D
+	isLoop 0
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier 1
+	PriorityLevel 101
+	SlideAsFly 2
+action DropDataInit
+	AnmFilePath Models/Chars/Messenger/Anm/Messenger_DropDataInit.M3D
+	isLoop 0
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier 1
+	PriorityLevel 111
+	SlideAsFly 2
+action DropData
+	AnmFilePath Models/Chars/Messenger/Anm/Messenger_DropData.M3D
+	isLoop 1
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier 1
+	PriorityLevel 110
+	SlideAsFly 2
+action DropDataEnd
+	AnmFilePath Models/Chars/Messenger/Anm/Messenger_DropDataEnd.M3D
+	isLoop 0
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier 1
+	PriorityLevel 111
+	SlideAsFly 2
+getaction Action
+event &AnmTotalTime/2*0 MessengerAttack !MessengerAttack
+event &AnmTotalTime/2*1 MessengerAttack !MessengerAttack
+getaction ActionEnd
+event &AnmTotalTime*1.5 EndOfAction !MessengerEndActionEnd 0
+getaction DropDataInit
+event &AnmTotalTime/2.0 "1" !AnmStopChan
+getaction DropDataEnd
+event &AnmTotalTime CrabLoop !AnmSetAction
+action CrabLoop
+	AnmFilePath Models/Chars/Messenger/Anm/Messenger_CrabLoop.M3D
+	isLoop 1
+	Chanel 1
+action CrabClose
+	AnmFilePath Models/Chars/Messenger/Anm/Messenger_CrabClose.M3D
+	isLoop 0
+	Chanel 1
+getaction CrabClose
+event &AnmTotalTime CrabLoop !AnmSetAction
+class Messenger
+	OnCreate Messenger.OnCreate
+	OnFreeResources Messenger.OnFreeResources
+	ActionPress !MessengerActionPress
+call MessengerSound.Init Messenger
+run speech Messenger CharsNPC GenericNPCSpeech
+call Scrap.Set FXMessengerAttackFile %Messenger.FXMessengerAttackFile
+call Scrap.SetDebrisSys %Messenger.FXMessengerAttackFile 4 0 0 1 0 0 %Fx.FXMESSENGERATTACK
+call Scrap.Set FXMessengerTakeDataPackFile %Messenger.FXMessengerTakeDataPackFile
+call Scrap.SetDebrisSys %Messenger.FXMessengerTakeDataPackFile 2 0 0 1 0 0 %Fx.FXMESSENGERTAKEDATAPACK

@@ -1,0 +1,114 @@
+# Police (the character script chars/police.py of the game): the Init that builds the action class. The format is
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/police.menu replaces this file. The C gives
+# $xbox and $level (the path of the level in capitals).
+
+menu Police
+call MakeChar.InitChar Police
+setvar MakeChar.MaxSpeed 1.2
+setvar MakeChar.MinSpeed 0.6
+call MakeChar.AddRelaxActions Police 0
+getaction Relax0
+	anmConeView 1
+call MakeChar.AddWalkActions Police 360 1
+call MakeChar.AddFallAction Police 45 1 0
+call MakeChar.AddDazeAction Police
+call MakeChar.AddTalkAction Police nExtraActions=3
+call MakeChar.AddDiscover Police
+call MakeChar.AddInitWalkActions Police 360 0 1 (StrLeftInit,StrRightInit)
+call MakeChar.AddFlashedAction Police
+call MakeChar.AddCrazyAction Police
+class Police
+	WRadius 69
+	VRadius 60
+	SRadius 20
+	MinFallDist 20
+	Node0Name "Bip PoliceNoArmor Head"
+	Node1Name "Bip PoliceNoArmor Spine1"
+call MakeChar.SetNodeRotation 0 0 25 50
+call MakeChar.SetNodeRotation 0 1 25 50
+getaction DazedInit
+event &AnmTotalTime AbortSiren Police.AbortSiren
+call MakeChar.CreateRelaxAction Police 90 AlertCheck Relax0
+getaction AlertCheck
+	anmConeView 1
+action ActionInit
+	AnmFilePath Models/Chars/Police/Anm/Police_ActionInit.M3D
+	isLoop 0
+	RotSpeed 0
+	UseDisp 0
+	PriorityLevel 100
+event 0.3 PoliceRestoreFreeTurn !PoliceRestoreFreeTurn
+	EventDiscardable 0
+action Action
+	AnmFilePath Models/Chars/Police/Anm/Police_Action.M3D
+	isLoop 1
+	RotSpeed 0
+	UseDisp 0
+	PriorityLevel 101
+event &AnmTotalTime*1.5 ShowMeTheMoney !PoliceEndActionMoney
+action ActionInitNPC
+	AnmFilePath Models/Chars/Police/Anm/Police_ActionInit.M3D
+	isLoop 0
+	RotSpeed 360
+	UseDisp 0
+	PriorityLevel 100
+event 0.3 PoliceRestoreFreeTurn !PoliceRestoreFreeTurn
+	EventDiscardable 0
+action ActionNPC
+	AnmFilePath Models/Chars/Police/Anm/Police_Action.M3D
+	isLoop 1
+	RotSpeed 360
+	UseDisp 0
+	PriorityLevel 101
+event &AnmTotalTime*1.5 ShowMeTheMoney !PoliceEndActionMoney
+action ActionBad
+	AnmFilePath Models/Chars/Police/Anm/Police_ActionBad.M3D
+	isLoop 0
+	RotSpeed 0
+	UseDisp 0
+	PriorityLevel 101
+action ActionOK
+	AnmFilePath Models/Chars/Police/Anm/Police_ActionOK.M3D
+	isLoop 0
+	RotSpeed 0
+	UseDisp 0
+	PriorityLevel 101
+action Laugh
+	AnmFilePath Models/Chars/Police/Anm/Police_Laugh.M3D
+	isLoop 0
+	RotSpeed 360
+	UseDisp 0
+	PriorityLevel 102
+	NodeModifier -1
+	AngleModifierSpeed 1.0
+	AutoFaceSpeed 10
+	AutoFaceOffsetH 0
+	AutoFaceOffsetV 0
+if %Init.Outdoor == 0
+	action Fusion
+		AnmFilePath Models/Chars/Police/Anm/Police_Fusion.M3D
+		isLoop 0
+		PriorityLevel 200
+	event 0 FusionInit !FXPoliceGearConversion
+		EventDiscardable 0
+	event &AnmTotalTime FusionInit !Police2GearEnd
+		EventDiscardable 0
+end
+if $level == LEVELS/GAMBLINDEN
+	call MakeChar.CreateRelaxAction Police 180 Dance Dance
+	action
+		isLoop 1
+end
+call Police.LoadSirenActs
+class Police
+	OnCreate Police.OnCreate
+	OnFreeResources Police.OnFreeResources
+	ActionPress !PoliceActionPress
+call PoliceSound.Init Police
+if %Init.OutMapSkip == 0
+	call Scrap.Set FXPoliceStealFile %Police.FXPoliceStealFile
+	call Scrap.SetDebrisSys %Police.FXPoliceStealFile 1 0 0 1 0 0 %Fx.FXPOLICESTEAL
+	call Scrap.Set FXPoliceGearConversionFile %Police.FXPoliceGearConversionFile
+	call Scrap.SetDebrisSys %Police.FXPoliceGearConversionFile 2 0 0 1 0 0 %Fx.FXPOLICEGEARCONVERSION
+end
+run speech Police Police PoliceSpeech

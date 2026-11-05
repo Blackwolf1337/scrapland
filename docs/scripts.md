@@ -25,8 +25,11 @@ The helpers the ports share are declared in `include/scrap/script.h`.
 | `RacerScorer` | the HUD in a ship: weapons, cannon, target, waypoint, radar. `CreateRacer` (also for a spectator), `ShowScorer` (the scores of a game, with the super deal variants, and the ping refresh `MultiplayerUpdatePing`) and the scorer of race missions | `src/game/Script/MenuHud.c`, `data/menus/racer.menu` |
 | `Chars` | step 6a, the port of `scripts/chars/chars.py`: the sound events of the animations (`ActSound`, `ActSoundLoop`, `StrSound`, `StrSoundStop`; the character scripts call them about 3400 times while a level loads) go straight to the action classes of the engine, with the same variable sets the script made through `SAct`. Also the resources of the characters (`Chars.CharRes` stays the Python list other scripts fill), `CanDrive`, `SetOnFloor`, `IntSetChar`, `MainCharDeath` with its hook `OnMainCharDeath`, `Init`, `CreateMainChar` and `CreateStartupPlayer`. This module has no .menu file, it holds no layout | `src/game/Script/Chars.c` |
 | `MakeChar` | step 6b, the port of `scripts/chars/makechar.py`: the helpers the character scripts build the action classes with. `InitChar` with the class defaults, the relax, walk, fall, talk, morph, discover, listen, sit and turret actions, the break loop for flashed, crazy and dazed, `EventAnimCommand` and `SetNodeRotation`. They work on the current class and action of `SAct` with the same variable sets and event times the script computed. `MaxSpeed`, `MinSpeed`, `RelaxRotLimit`, `DazedChars` and the morph lists stay variables of the module, because the character scripts change them. Helpers with defaults take keyword arguments. This module has no .menu file, the event times come from animation lengths in loops, which the format does not express | `src/game/Script/MakeChar.c` |
+| `Betty` | step 6c: `Init` from the file, plus `OnCreate`, `OnFreeResources`, `EnterSlowSpeed` and `ExitSlowSpeed` in C | `src/game/Script/Characters.c`, `data/chars/betty.menu` |
+| `BankDirector`, `Boss`, `CrazyGambler`, `Humphrey`, `Maintenance`, `Mayor`, `Rusty`, `Sebastian`, `Sentinel`, `SputnikJunkyard`, `Bishop`, `Functionary`, `Gear`, `BankMaster`, `Berto`, `Nurse`, `Desktop`, `Police`, `GateKeeper`, `Dtritus`, `Sputnik`, `PoliceBoss`, `Messenger`, `Human` | step 6c: the `Init` of each module is a data file `data/chars/<name>.menu` that a small C `Init` runs (the macro `CHAR_INIT` in `Characters.c`). Their other functions (the `OnCreate` callbacks, speech functions, module variables such as effect file names) stay in the scripts for now | `src/game/Script/Characters.c`, `data/chars/` |
+| `MercenaryA`, `MercenaryB`, `MercenaryC`, `MercenaryL` | step 6c: one file `data/chars/mercenarya.menu` for all four. The script's `MercenaryA.Init(MercName="MercenaryA", doDance=1)` becomes the values `$merc` and `$dance` (`MercenaryL` passes 0). The rest stays in the scripts like above | `src/game/Script/Characters.c`, `data/chars/mercenarya.menu` |
 
-`menu.py` is done, every function of it has a C version. The HUD is done too (`Scorer`, `CharScorer`, `RacerScorer`). The characters are in progress (`Chars`, `MakeChar`). `chat.py` and `creditstext.py` in the same folder are still Python.
+`menu.py` is done, every function of it has a C version. The HUD is done too (`Scorer`, `CharScorer`, `RacerScorer`). The characters are in progress: `Chars`, `MakeChar` and the `Init` of 29 character modules are done, their callbacks are not. `Bureaucracy` (it builds the desktop classes from tables in loops) and `TestC` (a test character no level loads) stay Python. `chat.py` and `creditstext.py` in the same folder are still Python.
 
 The code of the scripts that sets the margins of the screen (`Scorer.MarginH` and `Scorer.MarginV`) stays in the scripts. The C reads them and gives them to the HUD files as `$mh`, `$mv`, `$right` and `$bottom`. The game modes keep setting `RacerScorer.ScorerTopMessage`, `ScorerBotMessage` and the mission variables.
 
@@ -55,12 +58,22 @@ The file is a list of lines. `#` starts a comment, indentation is only for readi
 | `default <item>` | `SScorer.SetDefault` |
 | `list <name>` | the lines that follow are the entries of a list, until the next command |
 | `call <Module.Func> [arg ...]` | a function of a script, `Name=value` for a keyword argument |
-| `run <step> [arg ...]` | a step the C code of the menu does (`MenuVideo.c` has `prepare`, `values`, `display`) |
+| `run <step> [arg ...]` | a step the C code of the menu does (`MenuVideo.c` has `prepare`, `values`, `display`). The steps of the character files are listed below |
 | `menu <name>` | a section. The C function of a menu picks one, the lines before the first section always run |
 | `do <name>` | the lines of another section, in place |
 | `if <cond>`, `elif <cond>`, `else`, `end` | the lines between run only when the condition holds |
 | `let <name> <value> [value ...]` | `$name` is the sum of the values (or the one value, when it is no number) |
 | `measure <name> <font> <text>` | `$name` is the width of the text in that font (what `SScorer.GetTextArea` gave the script) |
+
+The character files (step 6c) use more lines:
+
+| Line | Does |
+|------|------|
+| `action <name>`, `getaction <name>` | `SAct.CreateAction`, `SAct.GetAction`. The attribute lines that follow set the action, like `SAct.SetAct` |
+| `action` (no name) | the current action, the last one a `MakeChar` helper made |
+| `class <name>` | `SAct.GetClass`. The attribute lines that follow set the class, like `SAct.SetCls` |
+| `event <time> <name> <func> [discardable]` | an event of the current action |
+| `setvar <Module.var> <value>` | a variable of a script module |
 
 A value is a number, a word or a "quoted text". `{Key}` in a text is the language text `Key`. Unquoted values:
 
@@ -73,8 +86,12 @@ A value is a number, a word or a "quoted text". `{Key}` in a text is the languag
 | `$name` | a value the C menu function gives to the file, or that `let` or `measure` made, for example `$tab` and `$first` in the keys section |
 | `[name]` | the list `name`, passed as a tuple of lists, one per entry line. An entry line that holds only one value, which is itself a list or tuple, is used as that entry (for example `%PCMenu.MultiplayerMenu`, the entry a game mode sets) |
 | `None` | `None` |
+| `&Var` | a variable of the current action of `SAct`, for example `&TimeOfFrame43` or `&AnmTotalTime` |
+| `(a,b,)` | a tuple of values |
 
-`@Item.Var`, `%Module.var` and `$name` may end in +N or -N, for example `@Item1.Y+35` or `$x+140`.
+`@Item.Var`, `%Module.var`, `$name` and `&Var` may end in +N or -N, for example `@Item1.Y+35` or `$x+140`. For these values a chain of operations on numbers is done left to right with the number rules of Python (`+`, `-`, `*`, `/`), for example `&AnmTotalTime/4*2`.
+
+A quoted argument of `call` and `run` stays a text: `call Gear.DropMissileEvent "22" "35"` passes two strings.
 
 A condition is a value (true when it is not 0 and not empty), or `<value> == <value>`, `<value> != <value>`, or two numbers compared with `<`, `>`, `<=` or `>=`.
 
@@ -82,7 +99,18 @@ A condition is a value (true when it is not 0 and not empty), or `<value> == <va
 
 Up to four menus may run inside each other (a .menu calls a function that runs another .menu). Each has its own buffer for an override from a mod pack.
 
+The character files work the same way. A pack in `mods/` with `scrapc/chars/<name>.menu` replaces the built-in `data/chars/<name>.menu`. The C gives every character file `$xbox` and `$level` (the level path in capitals).
+
 The C function of a menu picks the section and can hand values to the file as `$names`. A `call` can also reach a C function of a script, as the four key sections of `options.menu` do with `call PCMenu.CreateControlMenu`. The key lists are in the file, so a mod pack can change which actions appear.
+
+The steps of the character files (`Characters.c`):
+
+| Step | Does |
+|------|------|
+| `run speech <Name> <Module> <Func>` | sets `Speech.SpeechRoutines[Name]` |
+| `run spread <first> <end> <count> <name> <func>` | adds `count` events at `first + (end - first) * i / count`, the loop the scripts write (the hit events of Dtritus; the 16 hit events of Betty use the same code with numbered names) |
+| `run timedname <name> <func>` | adds an event at time 0 named `name` plus the repr of the `AnmTotalTime` of the action (Sputnik) |
+| `run bettyhit` | the camera turns and hits of Betty |
 
 The order of the attribute lines matters. `CentralText` and `GetExtens` measure the text, so they come after `Text`, `X` and `Y` (also when they come from a style through `use`).
 
@@ -157,6 +185,12 @@ Gameplay scripts need a way to see their effect on the engine, a menu dump does 
 
 A lesson for direct calls of action helpers: creating a class or an action that already exists, or an action whose animation file is missing, ends the game with a failed check in both versions. A direct test needs new action names, existing animations, and `InitChar` of a character that the level does not load.
 
+For step 6c the action tables (`SAct.DumpEvents`) after the start of all 29 levels were equal between the pack scripts and the C version, compared level by level. GDB, Bank and Police were compared again after the two fixes below.
+
+A quoted value must stay a text. The first version passed "22" to `Gear.DropMissileEvent` as a number, its string concatenation failed and two Gear events were missing.
+
+Errors must stop where the script stops. In GDB the character Bishop of the save game is not preloaded, so `Chars.Init` raises an ImportError in the script and the rest of `Init.Init` does not run, and no player is created. The first C version printed the error and went on, and the game crashed in `Alarm_Update` on a player without an action controller. `Chars.Init` and `Chars.CreateMainChar` now stop at the first error like the script.
+
 ## Porting the next script
 
 - Find the functions of the module and the state only they use. The original Python sources are in the game packs as `.py` next to the `.pyc` (`scripts/scorer/pcmenu.py`, `menu.py` and so on), the port follows them.
@@ -166,4 +200,4 @@ A lesson for direct calls of action helpers: creating a class or an action that 
 - Put the layout in `data/menus/` when it is a menu.
 - Compare with `SCRAP_PACK_SCRIPTS=1` as above.
 
-Next are the character scripts themselves (mostly declarative: `MakeChar` calls and `SAct` settings, with a few callbacks), `CharAct`, `CharsNPC`, `Speech` and the missions. `chat.py` and `creditstext.py` are still Python.
+Next are the character callbacks. `OnCreate` and `OnFreeResources` are mostly `CharAct.OnCreate`, the `InitLoops` of a sound module, a few entity variables and `SetDebrisSys` calls, so they fit .menu sections with an entity target. After that come `CharAct`, `CharsNPC`, `Speech`, `InMap`, `Bureaucracy` and the missions. `chat.py` and `creditstext.py` are still Python.

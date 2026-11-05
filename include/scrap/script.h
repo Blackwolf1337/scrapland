@@ -97,5 +97,35 @@ extern PyMethodDef g_RacerScorerMethods[];
 extern PyMethodDef g_CharsMethods[];
 /* the C MakeChar module (src/game/Script/MakeChar.c) */
 extern PyMethodDef g_MakeCharMethods[];
+/* the C parts of the character scripts, their Init runs data/chars/<name>.menu (src/game/Script/Characters.c) */
+extern PyMethodDef g_BettyMethods[];
+extern PyMethodDef g_BankDirectorMethods[];
+extern PyMethodDef g_BossMethods[];
+extern PyMethodDef g_CrazyGamblerMethods[];
+extern PyMethodDef g_HumphreyMethods[];
+extern PyMethodDef g_MaintenanceMethods[];
+extern PyMethodDef g_MayorMethods[];
+extern PyMethodDef g_RustyMethods[];
+extern PyMethodDef g_SebastianMethods[];
+extern PyMethodDef g_SentinelMethods[];
+extern PyMethodDef g_SputnikJunkyardMethods[];
+extern PyMethodDef g_BishopMethods[];
+extern PyMethodDef g_FunctionaryMethods[];
+extern PyMethodDef g_GearMethods[];
+extern PyMethodDef g_BankMasterMethods[];
+extern PyMethodDef g_BertoMethods[];
+extern PyMethodDef g_NurseMethods[];
+extern PyMethodDef g_DesktopMethods[];
+extern PyMethodDef g_PoliceMethods[];
+extern PyMethodDef g_GateKeeperMethods[];
+extern PyMethodDef g_DtritusMethods[];
+extern PyMethodDef g_SputnikMethods[];
+extern PyMethodDef g_PoliceBossMethods[];
+extern PyMethodDef g_MessengerMethods[];
+extern PyMethodDef g_HumanMethods[];
+extern PyMethodDef g_MercenaryAMethods[];
+extern PyMethodDef g_MercenaryBMethods[];
+extern PyMethodDef g_MercenaryCMethods[];
+extern PyMethodDef g_MercenaryLMethods[];
 
 #endif

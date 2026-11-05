@@ -1,0 +1,55 @@
+# Sputnik (the character script chars/sputnik.py of the game): the Init that builds the action class. The format is
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/sputnik.menu replaces this file. The C gives
+# $xbox and $level (the path of the level in capitals).
+
+menu Sputnik
+call MakeChar.InitChar Sputnik
+class Sputnik
+	CanFly 1
+setvar MakeChar.MaxSpeed 1.2
+setvar MakeChar.MinSpeed 0.6
+call MakeChar.AddRelaxActions Sputnik 360 nExtraRlx=6
+getaction Relax
+event &AnmTotalTime ChangeRelax Sputnik.ChangeRelax
+action Suck
+	AnmFilePath Models/Chars/Sputnik/Anm/Sputnik_Suck.M3D
+	isLoop 0
+	InterpTime 0
+event &AnmTotalTime BackCamera Sputnik.BackCamera
+run timedname InitSuck_ Sputnik.InitSuck
+action Hello
+	AnmFilePath Models/Chars/Sputnik/Anm/Sputnik_Hello.M3D
+	isLoop 0
+	InterpTime 0
+run timedname InitHello_ Sputnik.InitHello
+action Bye
+	AnmFilePath Models/Chars/Sputnik/Anm/Sputnik_Bye.M3D
+	isLoop 0
+	InterpTime 0
+event &AnmTotalTime BackCamera Sputnik.ByeBye
+run timedname InitBye_ Sputnik.InitBye
+action Make
+	AnmFilePath Models/Chars/Sputnik/Anm/Sputnik_Make.M3D
+	isLoop 0
+	InterpTime 0
+event &AnmTotalTime BackControl Sputnik.BackControl
+run timedname InitMake_ Sputnik.InitMake
+action Interface
+	AnmFilePath Models/Chars/Sputnik/Anm/Sputnik_Interface.M3D
+	isLoop 0
+	InterpTime 0
+event &AnmTotalTime Interface Sputnik.EnterInterface
+event &AnmTotalTime-0.25 ShowInterface Sputnik.ShowInterface
+event &AnmTotalTime-0.05 ShowInterface Sputnik.CreateShip
+run timedname InitInterface_ Sputnik.InitInterface
+class Sputnik
+	WRadius 90
+	VRadius 90
+	FOV 90
+	CamDist 270
+	CamAng 6
+	CamRot 0
+	OnCreate Sputnik.OnCreate
+call SputnikSound.Init Sputnik
+call Scrap.Set FXCharacterSputnikFile Models/GFX/Sputnik/Sputnik.M3D
+call Scrap.SetDebrisSys Models/GFX/Sputnik/Sputnik.M3D 1 0 0 1 0 0 %Fx.FXCHARACTERSPUTNIK

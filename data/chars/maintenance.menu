@@ -1,0 +1,63 @@
+# Maintenance (the character script chars/maintenance.py of the game): the Init that builds the action class. The format is
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/maintenance.menu replaces this file. The C gives
+# $xbox and $level (the path of the level in capitals).
+
+menu Maintenance
+let prev %MakeChar.RelaxRotLimit
+setvar MakeChar.RelaxRotLimit 360
+call MakeChar.InitChar Maintenance
+class Maintenance
+	CanFly 1
+	FlyAccel 4800.0
+	FlySpeed 1000.0
+	FlyFric 4.5
+	FlyFallAccel 0.0
+	SkipInitOnChange 0
+	MinTimeToExtraRelax 3600
+	MaxTimeToExtraRelax 3600
+setvar MakeChar.MaxSpeed 1.2
+setvar MakeChar.MinSpeed 0.6
+	Node0Name "Bip Maintenance Head"
+call MakeChar.SetNodeRotation 0 0 70 70
+call MakeChar.AddRelaxActions Maintenance 360 nExtraRlx=0
+call MakeChar.AddWalkActions Maintenance 360 0 0 ActList=(Walk,)
+call MakeChar.AddInitWalkActions Maintenance 360 0 0 ActList=(WalkInit,)
+call MakeChar.AddEndWalkActions Maintenance 360 0 0 ActList=(WalkEnd,)
+getaction Walk
+	NodeModifier -1
+getaction WalkInit
+	NodeModifier -1
+getaction WalkEnd
+	NodeModifier -1
+action Loop
+	isLoop 1
+	Chanel 1
+	AnmFilePath Models/Chars/Maintenance/Anm/Maintenance_Loop.M3D
+action Work
+	AnmFilePath Models/Chars/Maintenance/Anm/Maintenance_Work.M3D
+	isLoop 1
+	InterpTime 0.5
+	NodeModifier 0
+event 0 MaintenanceWorkFX Maintenance.MaintenanceWorkFX
+action WorkInit
+	AnmFilePath Models/Chars/Maintenance/Anm/Maintenance_WorkInit.M3D
+	isLoop 0
+	NodeModifier 0
+	InterpTime 0.5
+	AngleModifierSpeed 0.35
+action WorkEnd
+	AnmFilePath Models/Chars/Maintenance/Anm/Maintenance_WorkEnd.M3D
+	isLoop 0
+	InterpTime 0.5
+	NodeModifier 0
+class Maintenance
+	FOV 90
+	CamDist 270
+	CamAng 6
+	CamRot 0
+	OnCreate Maintenance.OnCreate
+run speech Maintenance Maintenance MaintenanceTalk
+call MaintenanceSound.Init Maintenance
+call Scrap.Set FXMaintenanceWorkFile %Maintenance.FXMaintenanceWorkFile
+call Scrap.SetDebrisSys %Maintenance.FXMaintenanceWorkFile 2 0 0 1 0 0 %Fx.FXMAINTENANCEWORK
+setvar MakeChar.RelaxRotLimit $prev

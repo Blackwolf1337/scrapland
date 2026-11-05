@@ -1,0 +1,131 @@
+# Gear (the character script chars/gear.py of the game): the Init that builds the action class. The format is
+# described in src/game/Script/Script.c. A pack in mods/ with scrapc/chars/gear.menu replaces this file. The C gives
+# $xbox and $level (the path of the level in capitals).
+
+menu Gear
+call MakeChar.InitChar Gear
+setvar MakeChar.MaxSpeed 1.0
+setvar MakeChar.MinSpeed 0.5
+call MakeChar.AddRelaxActions Gear 0
+getaction Relax0
+	anmConeView 1
+getaction Relax1
+	anmConeView 1
+call MakeChar.AddWalkActions Gear 360 0 1 (Run,Back,StrLeft,StrRight)
+call MakeChar.AddFlashedAction Gear
+call MakeChar.AddCrazyAction Gear
+call MakeChar.AddInitWalkActions Gear 360 0 1 (RunInit,BackInit,StrLeftInit,StrRightInit)
+call MakeChar.AddEndWalkActions Gear 360 0 1 (RunEnd,BackEnd,StrLeftEnd,StrRightEnd)
+call MakeChar.AddTalkAction Gear 2
+setvar MakeChar.MaxSpeed 0.5
+setvar MakeChar.MinSpeed 0.25
+call MakeChar.AddMove Gear Walk Run 360 1 1
+call MakeChar.AddFallAction Gear 45 1 0
+class Gear
+	MinTimeToExtraRelax 10
+	MaxTimeToExtraRelax 15
+	MinTimeWalking 0.0
+	InitEndWalkInterpFactor 2.0
+	SkipInitOnChange 0
+	Node0Name "Bip_Poli-Armor Head"
+	Node1Name "Bip_Poli-Armor Spine1"
+call MakeChar.SetNodeRotation 0 0 25 50
+call MakeChar.SetNodeRotation 0 1 10 50
+call MakeChar.SetNodeRotation 1 0 0 0
+call MakeChar.SetNodeRotation 1 1 50 100
+call MakeChar.SetNodeRotation 2 0 25 50
+call MakeChar.SetNodeRotation 2 1 50 50
+getaction Relax
+	RotSpeed 360
+	AngleModifierSpeed 0.5
+class Gear
+	FOV 100
+	CamDist 400
+	CamAng -5
+	CamRot 0
+	TurnAngLimit 45
+	MinFallDist 30
+	WRadius 150
+	VRadius 175
+	SRadius 40
+	CanFly 0
+	FlyAccel 600.0
+	FlySpeed 600.0
+	FlyFric 2.0
+	FlyFallAccel 4800.0
+	YModelDisp 0
+action ActionInit
+	AnmFilePath Models/Chars/Gear/Anm/Gear_ActionInit.M3D
+	isLoop 0
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier 1
+	PriorityLevel 100
+	SlideAsFly 1
+event 0 ActionInit !GearInitAction
+action Action
+	AnmFilePath Models/Chars/Gear/Anm/Gear_Action.M3D
+	isLoop 1
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier 1
+	PriorityLevel 101
+	SlideAsFly 1
+event 0 Fire !WarningPolice
+event &AnmTotalTime*1.5 EndOfAction !GearEndAction 0
+call Gear.DropMissileEvent "22" "35"
+action ActionEnd
+	AnmFilePath Models/Chars/Gear/Anm/Gear_ActionEnd.M3D
+	isLoop 0
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier 1
+	PriorityLevel 102
+	SlideAsFly 1
+event &AnmTotalTime*1.5 EndOfActionEnd !GearEndActionEnd 0
+action Patrol
+	AnmFilePath Models/Chars/Gear/Anm/Gear_Patrol.M3D
+	isLoop 1
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier 1
+	PriorityLevel 1
+	SlideAsFly 1
+	anmConeView 1
+action Patrol0
+	AnmFilePath Models/Chars/Gear/Anm/Gear_Relax0.M3D
+	isLoop 0
+	RotSpeed 360
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	UseDisp 0
+	NodeModifier -1
+	PriorityLevel 1
+	SlideAsFly 1
+	anmConeView 1
+event &AnmTotalTime Patrol !AnmSetAction
+action PostFusion
+	AnmFilePath Models/Chars/Gear/Anm/Gear_PostFusion.M3D
+	isLoop 0
+	MaxSpeed 1.0
+	MinSpeed 1.0
+	PriorityLevel 101
+call Gear.LoadSirenActs
+class Gear
+	OnCreate Gear.OnCreate
+	OnFreeResources Gear.OnFreeResources
+	ActionPress !GearActionPress
+call GearSound.Init Gear
+run speech Gear CharsNPC GenericNPCSpeech
+if %Init.OutMapSkip == 0
+	call Scrap.Set FXGearMissileFile %Gear.MissileFile
+	call Scrap.SetDebrisSys %Gear.MissileFile 2 10000 0 1 0 0 %Fx.FXGEARMISSILE
+end

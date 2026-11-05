@@ -19,18 +19,27 @@
  *	if <cond>, elif <cond>, else, end	the lines between only when cond holds: a value (true when not 0 or
  *					empty), <value> == <value>, <value> != <value>, or the numbers compared with
  *					<, >, <= or >=
+ *	action <name>, getaction <name>	SAct.CreateAction, SAct.GetAction: the attribute lines that follow set
+ *					the action (SAct.SetAct); action alone: the current action
+ *	class <name>			SAct.GetClass: the attribute lines that follow set the class (SetCls)
+ *	event <time> <name> <func> [discardable]	an event of the current action
+ *	setvar <Module.var> <value>	a variable of a script module
  *	let <name> <value> [value ...]	$name: the sum of the values (or the one value that is no number)
  *	measure <name> <font> <text>	$name: the width of the text in the font
  * A value is a number, a word or a "quoted text"; {Key} in a text is the language text Key. Unquoted: @Item.Var the
  * number of a variable of another item, %Module.var a variable of a script module, $id the player, $section the
- * section, $name a value the menu function gives or let and measure made (these three may end in +N or -N),
+ * section, $name a value the menu function gives or let and measure made,
  * [name] a list (a tuple of lists, one per entry line; a line with only a value that is a list or tuple is that
- * entry), None. $(name) inside a word or text is the value name as text.
+ * entry), (a,b,c) a tuple of values, None, &Var a variable of SAct's current action (&TimeOfFrame43,
+ * &AnmTotalTime). @, %, $ and & values may end in operations with numbers, done left to right with Python's numbers:
+ * $x+10, &AnmTotalTime/4*2.
+ * $(name) inside a word or text is the value name as text.
  */
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/actions.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/filepak.h"
@@ -58,6 +67,35 @@ static const scriptModule_t script_modules[] = {
 	{ "RacerScorer", g_RacerScorerMethods },
 	{ "Chars", g_CharsMethods },
 	{ "MakeChar", g_MakeCharMethods },
+	{ "Betty", g_BettyMethods },
+	{ "BankDirector", g_BankDirectorMethods },
+	{ "Boss", g_BossMethods },
+	{ "CrazyGambler", g_CrazyGamblerMethods },
+	{ "Humphrey", g_HumphreyMethods },
+	{ "Maintenance", g_MaintenanceMethods },
+	{ "Mayor", g_MayorMethods },
+	{ "Rusty", g_RustyMethods },
+	{ "Sebastian", g_SebastianMethods },
+	{ "Sentinel", g_SentinelMethods },
+	{ "SputnikJunkyard", g_SputnikJunkyardMethods },
+	{ "Bishop", g_BishopMethods },
+	{ "Functionary", g_FunctionaryMethods },
+	{ "Gear", g_GearMethods },
+	{ "BankMaster", g_BankMasterMethods },
+	{ "Berto", g_BertoMethods },
+	{ "Nurse", g_NurseMethods },
+	{ "Desktop", g_DesktopMethods },
+	{ "Police", g_PoliceMethods },
+	{ "GateKeeper", g_GateKeeperMethods },
+	{ "Dtritus", g_DtritusMethods },
+	{ "Sputnik", g_SputnikMethods },
+	{ "PoliceBoss", g_PoliceBossMethods },
+	{ "Messenger", g_MessengerMethods },
+	{ "Human", g_HumanMethods },
+	{ "MercenaryA", g_MercenaryAMethods },
+	{ "MercenaryB", g_MercenaryBMethods },
+	{ "MercenaryC", g_MercenaryCMethods },
+	{ "MercenaryL", g_MercenaryLMethods },
 };
 
 void Script_ModuleLoaded(const char *name, PyObject *module) {
@@ -304,6 +342,8 @@ typedef struct {
 	byte list;
 } scriptBlock_t;
 
+enum { MENU_ITEM, MENU_ACTION, MENU_CLASS };
+
 typedef struct {
 	int id;
 	const scriptStep_t *steps;
@@ -312,6 +352,7 @@ typedef struct {
 	const char *text;		/* the whole file */
 	const char *section;
 	char item[0x80];		/* the last item */
+	byte target;			/* what attribute lines set: MENU_ITEM, MENU_ACTION or MENU_CLASS */
 	scriptBlock_t blocks[SCRIPT_MAX_BLOCKS];
 	int numBlocks;
 	scriptBlock_t *open;		/* the style or list whose lines follow */
@@ -428,6 +469,64 @@ static const char *Menu_Split(const char *s, char *a, int size) {
 	return dot + 1;
 }
 
+/* the start of the arithmetic after a name: the first + - * / (or the end) */
+static const char *Menu_Ops(const char *s) {
+	const char *op = strpbrk(s, "+-*/");
+	return op ? op : s + strlen(s);
+}
+
+/* v with the operations of ops applied left to right ("+35", "/4*2"): the numbers of Python, an integer stays one
+ * with integer operands and divides down; v given away, NULL when it is no number but ops has operations */
+static PyObject *Menu_Arith(scriptMenu_t *m, PyObject *v, const char *ops) {
+	if (!v || !*ops) {
+		return v;
+	}
+	if (!PyInt_Check(v) && !PyFloat_Check(v)) {
+		Con_Warnf("%s:%d: no number for %s\n", m->name, m->line, ops);
+		Py_DECREF(v);
+		return NULL;
+	}
+	byte isInt = PyInt_Check(v);
+	long iv = isInt ? PyInt_AsLong(v) : 0;
+	double dv = isInt ? (double)iv : PyFloat_AsDouble(v);
+	Py_DECREF(v);
+	for (const char *p = ops; *p;) {
+		char op = *p++, num[0x40];
+		const char *next = strpbrk(p, "+-*/");
+		/* a sign right after the operator belongs to the number */
+		if (next == p) {
+			next = strpbrk(p + 1, "+-*/");
+		}
+		int len = next ? (int)(next - p) : (int)strlen(p);
+		Str_Copy(num, p, len + 1 < (int)sizeof(num) ? len + 1 : (int)sizeof(num));
+		double x;
+		if (!Menu_Number(num, &x)) {
+			Con_Warnf("%s:%d: bad number %s in %s\n", m->name, m->line, num, ops);
+			return NULL;
+		}
+		byte xInt = !strchr(num, '.') && x == (long)x;
+		if (isInt && xInt) {
+			long y = (long)x;
+			if (op == '/' && y == 0) {
+				Con_Warnf("%s:%d: division by zero in %s\n", m->name, m->line, ops);
+				return NULL;
+			}
+			/* Python 1.5 divides integers down */
+			iv = op == '+' ? iv + y : op == '-' ? iv - y : op == '*' ? iv * y :
+				(iv / y - ((iv % y != 0) && ((iv < 0) != (y < 0))));
+			dv = (double)iv;
+		} else {
+			if (isInt) {
+				dv = (double)iv;
+				isInt = 0;
+			}
+			dv = op == '+' ? dv + x : op == '-' ? dv - x : op == '*' ? dv * x : dv / x;
+		}
+		p = next ? next : p + len;
+	}
+	return isInt ? PyInt_FromLong(iv) : PyFloat_FromDouble(dv);
+}
+
 /* a value token as a Python object (a new reference, NULL with the warning printed) */
 static PyObject *Menu_Value(scriptMenu_t *m, const char *t, byte quoted) {
 	char text[SCRIPT_MAX_TEXT], a[0x80];
@@ -444,54 +543,85 @@ static PyObject *Menu_Value(scriptMenu_t *m, const char *t, byte quoted) {
 		return PyString_FromString((char *)(m->section ? m->section : ""));
 	}
 	if (t[0] == '$') {
-		/* an offset may follow: $x+10 */
 		char name[0x40];
-		double add = 0.0;
-		const char *op = strpbrk(t + 1, "+-");
-		Str_Copy(name, t + 1, op && op - t < (int)sizeof(name) ? (int)(op - t) : (int)sizeof(name));
+		const char *ops = Menu_Ops(t + 1);
+		Str_Copy(name, t + 1, ops - t < (int)sizeof(name) ? (int)(ops - t) : (int)sizeof(name));
 		PyObject *v = m->vars ? PyDict_GetItemString(m->vars, name) : NULL;
 		if (!v) {
 			Con_Warnf("%s:%d: no value %s\n", m->name, m->line, t);
 			return NULL;
 		}
-		if (op && Menu_Number(op, &add) && (PyInt_Check(v) || PyFloat_Check(v))) {
-			return Menu_Number2Py((PyInt_Check(v) ? (double)PyInt_AsLong(v) : PyFloat_AsDouble(v)) + add);
-		}
 		Py_INCREF(v);
-		return v;
+		return Menu_Arith(m, v, ops);
 	}
 	if (!strcmp(t, "None")) {
 		Py_INCREF(Py_None);
 		return Py_None;
+	}
+	if (t[0] == '(' && t[strlen(t) - 1] == ')') {
+		/* (a,b,c): a tuple of values */
+		char inner[SCRIPT_MAX_TEXT];
+		Str_Copy(inner, t + 1, sizeof(inner));
+		inner[strlen(inner) - 1] = 0;
+		int n = 0;
+		for (char *p = inner; *p; p++) {
+			n += *p == ',';
+		}
+		n += inner[0] && inner[strlen(inner) - 1] != ',';
+		PyObject *tuple = PyTuple_New(n);
+		int k = 0;
+		for (char *p = inner; tuple && *p && k < n;) {
+			char *comma = strchr(p, ',');
+			if (comma) {
+				*comma = 0;
+			}
+			PyObject *v = Menu_Value(m, p, 0);
+			if (!v) {
+				Py_INCREF(Py_None);
+				v = Py_None;
+			}
+			PyTuple_SetItem(tuple, k++, v);
+			p = comma ? comma + 1 : p + strlen(p);
+		}
+		return tuple;
 	}
 	if (t[0] == '[' && t[strlen(t) - 1] == ']') {
 		Str_Copy(a, t + 1, sizeof(a));
 		a[strlen(a) - 1] = 0;
 		return Menu_List(m, a);
 	}
-	if ((t[0] == '%' || t[0] == '@') && (b = Menu_Split(t + 1, a, sizeof(a)))) {
-		/* an offset may follow: @Item1.Y+35 */
-		char var[0x80];
-		double add = 0.0;
-		const char *op = strpbrk(b, "+-");
-		Str_Copy(var, b, op && op - b < (int)sizeof(var) ? (int)(op - b) + 1 : (int)sizeof(var));
-		if (op && !Menu_Number(op, &add)) {
-			Con_Warnf("%s:%d: bad offset in %s\n", m->name, m->line, t);
+	if (t[0] == '&') {
+		/* a variable of SAct's current action */
+		char var[0x80], *s;
+		double dv = 0.0;
+		int iv = 0;
+		const char *ops = Menu_Ops(t + 1);
+		Str_Copy(var, t + 1, ops - t < (int)sizeof(var) ? (int)(ops - t) : (int)sizeof(var));
+		switch (g_pAuxAction ? cAction_Var(g_pAuxAction, var, 0, &s, &dv, &iv) : ACTVAR_NONE) {
+		case ACTVAR_STRING:
+			return PyString_FromString(s ? s : "");
+		case ACTVAR_DOUBLE:
+			return Menu_Arith(m, PyFloat_FromDouble(dv), ops);
+		case ACTVAR_INT:
+			return Menu_Arith(m, PyInt_FromLong(iv), ops);
 		}
+		Con_Warnf("%s:%d: no action variable %s\n", m->name, m->line, var);
+		return NULL;
+	}
+	if ((t[0] == '%' || t[0] == '@') && (b = Menu_Split(t + 1, a, sizeof(a)))) {
+		char var[0x80];
+		const char *ops = Menu_Ops(b);
+		Str_Copy(var, b, ops - b < (int)sizeof(var) ? (int)(ops - b) + 1 : (int)sizeof(var));
 		if (t[0] == '@') {
-			return Menu_Number2Py(Script_GetNum(m->id, a, var) + add);
+			return Menu_Arith(m, Menu_Number2Py(Script_GetNum(m->id, a, var)), ops);
 		}
 		PyObject *v = Script_Func(a, var);
 		if (!v) {
 			PyErr_Clear();
 			Con_Warnf("%s:%d: no %s\n", m->name, m->line, t + 1);
-		} else if (op && (PyInt_Check(v) || PyFloat_Check(v))) {
-			byte isInt = PyInt_Check(v) && add == (long)add;
-			double d = (PyInt_Check(v) ? (double)PyInt_AsLong(v) : PyFloat_AsDouble(v)) + add;
-			Py_DECREF(v);
-			v = isInt ? PyInt_FromLong((long)d) : PyFloat_FromDouble(d);
+			return NULL;
 		}
-		return v;
+		return Menu_Arith(m, v, ops);
 	}
 	if (Menu_Number(t, &d)) {
 		return strchr(t, '.') ? PyFloat_FromDouble(d) : PyInt_FromLong((long)d);
@@ -615,7 +745,7 @@ static PyObject *Menu_Args(scriptMenu_t *m, scriptLine_t *l, int first, PyObject
 	n = 0;
 	for (int i = first; args && i < l->n; i++) {
 		char *eq = l->quoted[i] ? NULL : strchr(l->tok[i], '=');
-		PyObject *v = Menu_Value(m, eq ? eq + 1 : l->tok[i], eq && eq[1] == '"');
+		PyObject *v = Menu_Value(m, eq ? eq + 1 : l->tok[i], eq ? eq[1] == '"' : l->quoted[i]);
 		if (!v) {
 			Py_INCREF(Py_None);
 			v = Py_None;
@@ -690,7 +820,37 @@ static byte Menu_Cond(scriptMenu_t *m, scriptLine_t *l) {
 }
 
 static const char *const menu_commands[] = { "style", "item", "use", "set", "lr", "ud", "default", "list", "call", "run",
-	"menu", "do", "if", "elif", "else", "end", "let", "measure" };
+	"menu", "do", "if", "elif", "else", "end", "let", "measure", "action", "getaction", "class", "event", "setvar" };
+
+/* an attribute of SAct's current action or class (MENU_ACTION, MENU_CLASS), as SAct.SetAct and SetCls set it: a
+ * text or a number */
+static void Menu_SetAct(scriptMenu_t *m, byte target, const char *var, const char *value, byte quoted) {
+	void *obj = target == MENU_CLASS ? (void *)g_pAuxActClass : (void *)g_pAuxAction;
+	if (!obj) {
+		Con_Warnf("%s:%d: no current %s for %s\n", m->name, m->line, target == MENU_CLASS ? "class" : "action", var);
+		return;
+	}
+	PyObject *v = Menu_Value(m, value, quoted);
+	char *s = NULL;
+	double d = 0.0;
+	int i = 0;
+	if (v && PyString_Check(v)) {
+		s = PyString_AsString(v);
+	} else if (v && (PyInt_Check(v) || PyFloat_Check(v))) {
+		d = PyInt_Check(v) ? (double)PyInt_AsLong(v) : PyFloat_AsDouble(v);
+		i = (int)d;
+	} else {
+		Con_Warnf("%s:%d: %s needs a text or a number\n", m->name, m->line, var);
+		Py_XDECREF(v);
+		return;
+	}
+	if (target == MENU_CLASS) {
+		cActClass_Var(g_pAuxActClass, var, 1, s ? &s : NULL, s ? NULL : &d, s ? NULL : &i);
+	} else {
+		cAction_Var(g_pAuxAction, var, 1, s ? &s : NULL, s ? NULL : &d, s ? NULL : &i);
+	}
+	Py_DECREF(v);
+}
 
 /* a $name of the menu: into its own dict when the menu function gave none */
 static void Menu_SetVar(scriptMenu_t *m, const char *name, PyObject *v) {
@@ -829,7 +989,46 @@ static void Menu_Line(scriptMenu_t *m, scriptLine_t *l, const char *next) {
 		Str_Copy(m->open->name, l->tok[1], sizeof(m->open->name));
 		m->open->start = m->open->end = next;
 		m->open->list = cmd[0] == 'l';
+	} else if (!strcmp(cmd, "action") && l->n == 1) {
+		/* the current action (the last one a helper made) */
+		m->target = MENU_ACTION;
+	} else if ((!strcmp(cmd, "action") || !strcmp(cmd, "getaction")) && l->n == 2) {
+		Menu_Word(m, l->tok[1], l->quoted[1], a, sizeof(a));
+		if (!g_pAuxActClass) {
+			Con_Warnf("%s:%d: %s without a class\n", m->name, m->line, cmd);
+			return;
+		}
+		g_pAuxAction = cmd[0] == 'a' ? cActClass_CreateAction(g_pAuxActClass, a) : cActClass_GetAction(g_pAuxActClass, a);
+		m->target = MENU_ACTION;
+	} else if (!strcmp(cmd, "class") && l->n == 2) {
+		CHECK(g_pActClassList);
+		g_pAuxActClass = cActClassList_Get(g_pActClassList, Menu_Word(m, l->tok[1], l->quoted[1], a, sizeof(a)));
+		m->target = MENU_CLASS;
+	} else if (!strcmp(cmd, "event") && (l->n == 4 || l->n == 5)) {
+		/* event <time> <name> <function> [discardable]: the order of the script's SetAct lines */
+		Menu_SetAct(m, MENU_ACTION, "AddEventAtTime", l->tok[1], l->quoted[1]);
+		Menu_Word(m, l->tok[2], l->quoted[2], a, sizeof(a));
+		if (g_pAuxAction) {
+			char *s = a;
+			cAction_Var(g_pAuxAction, "EventName", 1, &s, NULL, NULL);
+		}
+		if (l->n == 5) {
+			Menu_SetAct(m, MENU_ACTION, "EventDiscardable", l->tok[4], l->quoted[4]);
+		}
+		Menu_Word(m, l->tok[3], l->quoted[3], b, sizeof(b));
+		if (g_pAuxAction) {
+			char *s = b;
+			cAction_Var(g_pAuxAction, "EventFunc", 1, &s, NULL, NULL);
+		}
+	} else if (!strcmp(cmd, "setvar") && l->n == 3) {
+		const char *var = Menu_Split(l->tok[1], a, sizeof(a));
+		if (!var) {
+			Con_Warnf("%s:%d: setvar needs Module.var\n", m->name, m->line);
+			return;
+		}
+		Script_SetVar(a, var, Menu_Value(m, l->tok[2], l->quoted[2]));
 	} else if (!strcmp(cmd, "item") && l->n >= 3) {
+		m->target = MENU_ITEM;
 		Menu_Word(m, l->tok[1], l->quoted[1], m->item, sizeof(m->item));
 		if (!Script_Item(m->id, m->item)) {
 			Script_Add(m->id, m->item, l->tok[2]);
@@ -865,6 +1064,8 @@ static void Menu_Line(scriptMenu_t *m, scriptLine_t *l, const char *next) {
 		m->nested--;
 		m->depth = depth;
 		m->open = NULL;
+	} else if (l->n == 2 && m->target != MENU_ITEM && !Menu_IsCommand(l)) {
+		Menu_SetAct(m, m->target, cmd, l->tok[1], l->quoted[1]);
 	} else if (l->n == 2 && m->item[0] && !Menu_IsCommand(l)) {
 		Menu_Set(m, m->item, cmd, l->tok[1], l->quoted[1]);
 	} else {
