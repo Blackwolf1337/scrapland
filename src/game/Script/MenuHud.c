@@ -334,7 +334,7 @@ static PyObject *CharScorer_Create(PyObject *self, PyObject *args) {
 	PyObject *menu = PyImport_ImportModule("Menu");
 	PyObject *call = menu ? PyObject_GetAttrString(menu, "MissionScorerCall") : NULL;
 	if (call && PyObject_IsTrue(call) > 0) {
-		PyObject *r = PyEval_CallObject(call, Py_BuildValue("(i)", id));
+		PyObject *r = Script_Invoke(call, Py_BuildValue("(i)", id));
 		if (!r) {
 			PyErr_Print();
 		}
@@ -421,7 +421,7 @@ static PyObject *Racer_CreateRacer(PyObject *self, PyObject *args) {
 	PyObject *menu = PyImport_ImportModule("Menu");
 	PyObject *call = menu ? PyObject_GetAttrString(menu, "MissionScorerCall") : NULL;
 	if (call && PyObject_IsTrue(call) > 0) {
-		PyObject *r = PyEval_CallObject(call, Py_BuildValue("(i)", id));
+		PyObject *r = Script_Invoke(call, Py_BuildValue("(i)", id));
 		if (!r) {
 			PyErr_Print();
 		}

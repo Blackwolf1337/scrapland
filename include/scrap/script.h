@@ -62,6 +62,8 @@ const char *Script_Lang(const char *key);
 byte Script_Call(const char *module, const char *func, const char *fmt, ...);
 /* the same with a tuple of arguments and a dict of keywords (NULL for none), both given away */
 byte Script_CallKw(const char *module, const char *func, PyObject *args, PyObject *kw);
+/* callable(args), args given away: the result (a new reference, NULL with the error set) */
+PyObject *Script_Invoke(PyObject *callable, PyObject *args);
 /* an integer variable of a script module (def when it is not there) */
 int Script_GetInt(const char *module, const char *var, int def);
 /* a string variable of a script module into out ("" when it is not there or not a string) */
@@ -91,5 +93,7 @@ extern PyMethodDef g_MenuMissionMethods[];
 extern PyMethodDef g_ScorerMethods[];
 extern PyMethodDef g_CharScorerMethods[];
 extern PyMethodDef g_RacerScorerMethods[];
+/* the C Chars module (src/game/Script/Chars.c) */
+extern PyMethodDef g_CharsMethods[];
 
 #endif

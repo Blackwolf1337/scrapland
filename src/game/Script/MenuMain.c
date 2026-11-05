@@ -143,7 +143,7 @@ static void Main_MovieScorer(int id) {
 	PyObject *m = PyImport_ImportModule("Menu");
 	PyObject *call = m ? PyObject_GetAttrString(m, "MovieScorerCall") : NULL;
 	if (call && call != Py_None && PyObject_IsTrue(call)) {
-		PyObject *r = PyEval_CallObject(call, Py_BuildValue("(i)", id));
+		PyObject *r = Script_Invoke(call, Py_BuildValue("(i)", id));
 		if (!r) {
 			PyErr_Print();
 		}
@@ -662,7 +662,7 @@ static PyObject *Menu_AuxSaveGame(PyObject *self, PyObject *args) {
 	PyObject *t = PyString_FromString(text);
 	PyObject *speech = PyImport_ImportModule("Speech");
 	PyObject *f = speech ? PyObject_GetAttrString(speech, "CalculateSpeechTime") : NULL;
-	PyObject *r = f && t ? PyEval_CallObject(f, Py_BuildValue("(O)", t)) : NULL;
+	PyObject *r = f && t ? Script_Invoke(f, Py_BuildValue("(O)", t)) : NULL;
 	double add = r && PyFloat_Check(r) ? PyFloat_AsDouble(r) : r && PyInt_Check(r) ? PyInt_AsLong(r) : 0.0;
 	if (!r) {
 		PyErr_Print();

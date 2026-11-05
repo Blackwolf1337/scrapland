@@ -211,6 +211,24 @@ static byte cPy_Function_SetPython(cPy_Function *self, const char *module, const
 
 static cPy_NativeFunc *g_NativeFuncs;
 
+/* the name of a registered C function (a walk of the tree), NULL when it is none */
+static const char *NativeFunc_Find(const cPy_NativeFunc *n, nativefunc_t func) {
+	for (; n; n = n->greater) {
+		if (n->func == func) {
+			return n->name;
+		}
+		const char *found = NativeFunc_Find(n->less, func);
+		if (found) {
+			return found;
+		}
+	}
+	return NULL;
+}
+
+const char *cPy_NativeFunc_Name(nativefunc_t func) {
+	return NativeFunc_Find(g_NativeFuncs, func);
+}
+
 byte cPy_Function_SetFunc(cPy_Function *self, const char *name) {
 	char module[0x100];
 

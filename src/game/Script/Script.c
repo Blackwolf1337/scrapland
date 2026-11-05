@@ -56,6 +56,7 @@ static const scriptModule_t script_modules[] = {
 	{ "Scorer", g_ScorerMethods },
 	{ "CharScorer", g_CharScorerMethods },
 	{ "RacerScorer", g_RacerScorerMethods },
+	{ "Chars", g_CharsMethods },
 };
 
 void Script_ModuleLoaded(const char *name, PyObject *module) {
@@ -192,6 +193,12 @@ static PyObject *Script_Func(const char *module, const char *func) {
 	PyObject *f = PyObject_GetAttrString(m, (char *)func);
 	Py_DECREF(m);
 	return f;
+}
+
+PyObject *Script_Invoke(PyObject *callable, PyObject *args) {
+	PyObject *r = callable && args ? PyEval_CallObject(callable, args) : NULL;
+	Py_XDECREF(args);
+	return r;
 }
 
 byte Script_CallKw(const char *module, const char *func, PyObject *args, PyObject *kw) {

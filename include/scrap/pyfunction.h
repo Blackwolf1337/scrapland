@@ -34,6 +34,9 @@ typedef struct cPy_NativeFunc {
 	struct cPy_NativeFunc *less;
 } cPy_NativeFunc;
 
+/* the name of a registered C function, NULL when it is none (ScrapC only, for SAct.DumpEvents) */
+const char *cPy_NativeFunc_Name(nativefunc_t func);
+
 /* a static entry, inserted into g_NativeFuncs */
 cPy_NativeFunc *cPy_NativeFunc_ctor(cPy_NativeFunc *self, const char *name, nativefunc_t func);
 

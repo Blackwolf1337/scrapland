@@ -6,7 +6,12 @@
 #include "scrap/actions.h"
 #include "scrap/console.h"
 #include "scrap/global.h"
+#include "scrap/pyfunction.h"
 #include "scrap/python.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 typedef int(*varfunc_t)(void *obj, const char *name, int set, char **s, double *d, int *i);
 
@@ -193,7 +198,72 @@ static const char str_PyMethod_SAct_GetClass[];
 static const char str_PyMethod_SAct_GetCls[];
 static const char str_PyMethod_SAct_SetAct[];
 static const char str_PyMethod_SAct_SetCls[];
-static PyMethodDef SAct_methods[10] = {
+/* the name of the function of an event: !native, the Python function name, or "" */
+static void Event_FuncName(const cPy_Function *f, char *out, int size) {
+	out[0] = 0;
+	if ((f->flags & PYF_NATIVE) && f->func) {
+		const char *n = cPy_NativeFunc_Name((nativefunc_t)f->func);
+		Str_Printf(out, size, "!%s", n ? n : "?");
+	} else if ((f->flags & PYF_PYTHON) && f->func) {
+		PyObject *name = PyObject_GetAttrString((PyObject *)f->func, "__name__");
+		Str_Copy(out, name && PyString_Check(name) ? PyString_AsString(name) : "?", size);
+		Py_XDECREF(name);
+		PyErr_Clear();
+	}
+}
+
+static int Dump_Compare(const void *a, const void *b) {
+	return strcmp((*(cActClass *const *)a)->name, (*(cActClass *const *)b)->name);
+}
+
+/*
+ * differs from the original (ScrapC only): DumpEvents(file) writes every class with its actions and their events
+ * (time, name, function, discardable) to file, the classes by name; to compare script ports. 1 when written.
+ */
+static PyObject *SAct_DumpEvents(PyObject *self, PyObject *args) {
+	char *path;
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s", &path)) {
+		return NULL;
+	}
+	FILE *f = g_pActClassList ? fopen(path, "w") : NULL;
+	if (!f) {
+		return Py_BuildValue("i", 0);
+	}
+	HashTable *t = &g_pActClassList->classes;
+	int n = 0;
+	for (uint32_t i = 0; i < t->numSlots; i++) {
+		for (HashNode *h = t->slots[i]; h; h = h->next) {
+			n++;
+		}
+	}
+	cActClass **list = n ? malloc(n * sizeof(*list)) : NULL;
+	n = 0;
+	for (uint32_t i = 0; list && i < t->numSlots; i++) {
+		for (HashNode *h = t->slots[i]; h; h = h->next) {
+			list[n++] = h->value;
+		}
+	}
+	if (list) {
+		qsort(list, n, sizeof(*list), Dump_Compare);
+	}
+	for (int c = 0; c < n; c++) {
+		fprintf(f, "class %s\n", list[c]->name);
+		for (cAction *a = list[c]->first; a; a = a->next) {
+			fprintf(f, " action %s\n", a->name);
+			for (cActEvent *e = a->events; e; e = e->next) {
+				char func[0x100];
+				Event_FuncName(&e->func, func, sizeof(func));
+				fprintf(f, "  %.6f %s %s %d\n", e->time, e->name, func, e->discardable);
+			}
+		}
+	}
+	free(list);
+	fclose(f);
+	return Py_BuildValue("i", 1);
+}
+
+static PyMethodDef SAct_methods[11] = {
 	{
 		.ml_name = (void *)str_PyMethod_SAct_CreateClass,
 		.ml_meth = (void *)SAct_CreateClass,
@@ -247,6 +317,12 @@ static PyMethodDef SAct_methods[10] = {
 		.ml_meth = (void *)SAct_GetAct,
 		.ml_flags = 1,
 		.ml_doc = (void *)str_PyDoc_SAct_GetAct,
+	},
+	{
+		.ml_name = "DumpEvents",
+		.ml_meth = (void *)SAct_DumpEvents,
+		.ml_flags = 1,
+		.ml_doc = "DumpEvents(file) : ScrapC only, every class, action and event into the file",
 	},
 };
 

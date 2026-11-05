@@ -74,7 +74,7 @@ static void Mission_ObjectiveText(int id, int num, const char *text1, const char
 static PyObject *Mission_DealStatus(int num) {
 	PyObject *m = PyImport_ImportModule("MissionsFuncs");
 	PyObject *f = m ? PyObject_GetAttrString(m, "CrazyDealStatus") : NULL;
-	PyObject *r = f ? PyEval_CallObject(f, Py_BuildValue("(i)", num)) : NULL;
+	PyObject *r = f ? Script_Invoke(f, Py_BuildValue("(i)", num)) : NULL;
 	if (!r) {
 		PyErr_Print();
 	}
@@ -172,7 +172,7 @@ static void Mission_DealDesc(int id, char *desc, int size) {
 		PyObject *init = PyImport_ImportModule("Init");
 		PyObject *mod = init ? PyObject_GetAttrString(init, "SuperDealModule") : NULL;
 		PyObject *f = mod ? PyObject_GetAttrString(mod, "GetMenuDescription") : NULL;
-		PyObject *r = f ? PyEval_CallObject(f, PyTuple_New(0)) : NULL;
+		PyObject *r = f ? Script_Invoke(f, PyTuple_New(0)) : NULL;
 		desc[0] = 0;
 		if (r && PyString_Check(r)) {
 			Str_Copy(desc, PyString_AsString(r), size);
