@@ -46,6 +46,10 @@ void Script_SetNum(int id, const char *item, const char *var, double d);
 const char *Script_GetStr(int id, const char *item, const char *var);
 double Script_GetNum(int id, const char *item, const char *var);
 void Script_SetDefault(int id, const char *item);
+/* the item is in the scorer of player id */
+byte Script_HasItem(int id, const char *item);
+/* SScorer.GetDefault: the item that gets the cursor ("" when none) */
+const char *Script_GetDefault(int id);
 /* SScorer.SetCursor: the item drawn as the cursor ("" for none) */
 void Script_SetCursor(int id, const char *item);
 
@@ -60,7 +64,8 @@ byte Script_CallKw(const char *module, const char *func, PyObject *args, PyObjec
 int Script_GetInt(const char *module, const char *var, int def);
 /* a string variable of a script module into out ("" when it is not there or not a string) */
 const char *Script_GetString(const char *module, const char *var, char *out, int size);
-/* sets an integer variable of a script module */
+/* sets a variable of a script module (value given away) and an integer one */
+void Script_SetVar(const char *module, const char *var, PyObject *value);
 void Script_SetInt(const char *module, const char *var, int value);
 
 /* the arguments of a menu callback: the player and the item (empty when the callback got none) */
@@ -72,5 +77,7 @@ extern PyMethodDef g_MenuVideoMethods[];
 extern PyMethodDef g_MenuControlsMethods[];
 /* the C multiplayer menus of PCMenu (src/game/Script/MenuNet.c) */
 extern PyMethodDef g_MenuNetMethods[];
+/* the C building blocks of the Menu module (src/game/Script/MenuBase.c) */
+extern PyMethodDef g_MenuBaseMethods[];
 
 #endif

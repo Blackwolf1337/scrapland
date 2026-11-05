@@ -24,7 +24,7 @@
  * number of a variable of another item, %Module.var a variable of a script module, $id the player, $section the
  * section, $name a value the menu function gives or let and measure made (these three may end in +N or -N),
  * [name] a list (a tuple of lists, one per entry line; a line with only a value that is a list or tuple is that
- * entry), None.
+ * entry), None. $(name) inside a word or text is the value name as text.
  */
 #include <stdarg.h>
 #include <stdlib.h>
@@ -43,12 +43,13 @@
 #define SCRIPT_MAX_TEXT 0x200
 #define SCRIPT_MAX_BLOCKS 48
 #define SCRIPT_MAX_DEPTH 8
-#define SCRIPT_MAX_NESTED 2
+#define SCRIPT_MAX_NESTED 4
 
 static const scriptModule_t script_modules[] = {
 	{ "PCMenu", g_MenuVideoMethods },
 	{ "PCMenu", g_MenuControlsMethods },
 	{ "PCMenu", g_MenuNetMethods },
+	{ "Menu", g_MenuBaseMethods },
 };
 
 void Script_ModuleLoaded(const char *name, PyObject *module) {
@@ -139,6 +140,15 @@ void Script_SetDefault(int id, const char *item) {
 	}
 }
 
+byte Script_HasItem(int id, const char *item) {
+	return Script_Item(id, item) != NULL;
+}
+
+const char *Script_GetDefault(int id) {
+	cScorer *sc = Scorer_Get(id);
+	return sc && sc->defaultItem ? sc->defaultItem : "";
+}
+
 void Script_SetCursor(int id, const char *item) {
 	cScorer *sc = Scorer_Get(id);
 	if (sc) {
@@ -221,14 +231,17 @@ const char *Script_GetString(const char *module, const char *var, char *out, int
 	return out;
 }
 
-void Script_SetInt(const char *module, const char *var, int value) {
+void Script_SetVar(const char *module, const char *var, PyObject *value) {
 	PyObject *m = PyImport_ImportModule((char *)module);
-	PyObject *v = PyInt_FromLong(value);
-	if (!m || !v || PyObject_SetAttrString(m, (char *)var, v) < 0) {
+	if (!m || !value || PyObject_SetAttrString(m, (char *)var, value) < 0) {
 		PyErr_Clear();
 	}
-	Py_XDECREF(v);
+	Py_XDECREF(value);
 	Py_XDECREF(m);
+}
+
+void Script_SetInt(const char *module, const char *var, int value) {
+	Script_SetVar(module, var, PyInt_FromLong(value));
 }
 
 byte Script_Args(PyObject *args, int *id, const char **control) {
@@ -319,17 +332,32 @@ static const char *Menu_Tokens(const char *p, char *buf, int size, scriptLine_t 
 	return *p ? p + 1 : p;
 }
 
-/* the text s with {Key} replaced by the language texts */
-static const char *Menu_Text(const char *s, char *out, int size) {
+/* the text s with {Key} replaced by the language texts and $(name) by the value name of the menu */
+static const char *Menu_Text(scriptMenu_t *m, const char *s, char *out, int size) {
 	int n = 0;
 	while (*s && n < size - 1) {
-		const char *close = *s == '{' ? strchr(s, '}') : NULL;
+		const char *close = *s == '{' ? strchr(s, '}') : s[0] == '$' && s[1] == '(' ? strchr(s, ')') : NULL;
 		if (close && close - s < 0x40) {
 			char key[0x40];
-			Str_Copy(key, s + 1, (int)(close - s));
-			for (const char *t = Script_Lang(key); *t && n < size - 1; t++) {
+			const char *t = "";
+			PyObject *str = NULL;
+			if (*s == '{') {
+				Str_Copy(key, s + 1, (int)(close - s));
+				t = Script_Lang(key);
+			} else {
+				Str_Copy(key, s + 2, (int)(close - s) - 1);
+				PyObject *v = m && m->vars ? PyDict_GetItemString(m->vars, key) : NULL;
+				str = v ? PyObject_Str(v) : NULL;
+				if (str) {
+					t = PyString_AsString(str);
+				} else {
+					Con_Warnf("%s:%d: no value %s\n", m ? m->name : "", m ? m->line : 0, key);
+				}
+			}
+			for (; *t && n < size - 1; t++) {
 				out[n++] = *t;
 			}
+			Py_XDECREF(str);
 			s = close + 1;
 		} else {
 			out[n++] = *s++;
@@ -371,8 +399,8 @@ static PyObject *Menu_Value(scriptMenu_t *m, const char *t, byte quoted) {
 	const char *b;
 	double d;
 
-	if (quoted) {
-		return PyString_FromString((char *)Menu_Text(t, text, sizeof(text)));
+	if (quoted || strstr(t, "$(")) {
+		return PyString_FromString((char *)Menu_Text(m, t, text, sizeof(text)));
 	}
 	if (!strcmp(t, "$id")) {
 		return PyInt_FromLong(m->id);
@@ -433,13 +461,13 @@ static PyObject *Menu_Value(scriptMenu_t *m, const char *t, byte quoted) {
 	if (Menu_Number(t, &d)) {
 		return strchr(t, '.') ? PyFloat_FromDouble(d) : PyInt_FromLong((long)d);
 	}
-	return PyString_FromString((char *)Menu_Text(t, text, sizeof(text)));
+	return PyString_FromString((char *)Menu_Text(m, t, text, sizeof(text)));
 }
 
 /* a value token as a string into out (an item name, a link, a compared value) */
 static const char *Menu_Word(scriptMenu_t *m, const char *t, byte quoted, char *out, int size) {
 	out[0] = 0;
-	if (!quoted && (t[0] == '$' || t[0] == '%' || t[0] == '@')) {
+	if (!quoted && (t[0] == '$' || t[0] == '%' || t[0] == '@') && !strstr(t, "$(")) {
 		PyObject *v = Menu_Value(m, t, 0);
 		PyObject *str = v ? PyObject_Str(v) : NULL;
 		if (str) {
@@ -449,7 +477,7 @@ static const char *Menu_Word(scriptMenu_t *m, const char *t, byte quoted, char *
 		Py_XDECREF(v);
 		return out;
 	}
-	return Menu_Text(t, out, size);
+	return Menu_Text(m, t, out, size);
 }
 
 /* the list name as a tuple of lists, one per entry line */
@@ -502,7 +530,7 @@ static PyObject *Menu_List(scriptMenu_t *m, const char *name) {
 }
 
 static void Menu_Set(scriptMenu_t *m, const char *item, const char *var, const char *value, byte quoted) {
-	if (!quoted && (value[0] == '@' || value[0] == '%' || value[0] == '$')) {
+	if (!quoted && (value[0] == '@' || value[0] == '%' || value[0] == '$') && !strstr(value, "$(")) {
 		PyObject *v = Menu_Value(m, value, 0);
 		if (v && (PyInt_Check(v) || PyFloat_Check(v))) {
 			Script_SetNum(m->id, item, var, PyInt_Check(v) ? (double)PyInt_AsLong(v) : PyFloat_AsDouble(v));
@@ -517,7 +545,7 @@ static void Menu_Set(scriptMenu_t *m, const char *item, const char *var, const c
 		Script_SetNum(m->id, item, var, d);
 	} else {
 		char text[SCRIPT_MAX_TEXT];
-		Script_SetStr(m->id, item, var, Menu_Text(value, text, sizeof(text)));
+		Script_SetStr(m->id, item, var, Menu_Text(m, value, text, sizeof(text)));
 	}
 }
 
