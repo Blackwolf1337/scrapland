@@ -72,6 +72,18 @@ const char *Script_GetString(const char *module, const char *var, char *out, int
 /* sets a variable of a script module (value given away) and an integer one */
 void Script_SetVar(const char *module, const char *var, PyObject *value);
 void Script_SetInt(const char *module, const char *var, int value);
+/* an attribute of a script module (a new reference, NULL with the error set) */
+PyObject *Script_Attr(const char *module, const char *name);
+/* a number variable of a script module (def when it is not there or no number) */
+double Script_GetFloat(const char *module, const char *var, double def);
+
+/* script variables of entities by name, as the Python entity handle reads and writes them: the number of a variable
+ * (int, else float; def when the entity or the variable is not there), its text (def likewise), and ent.var = v (v
+ * given away; 0, or -1 with the message printed) */
+double Script_EntNum(const char *ent, const char *var, double def);
+const char *Script_EntStr(const char *ent, const char *var, const char *def);
+int Script_EntSet(const char *ent, const char *var, PyObject *v);
+
 /* the value of a Python expression (the save variables keep lists as their text), NULL when it fails */
 PyObject *Script_Eval(const char *text);
 
@@ -128,5 +140,14 @@ extern PyMethodDef g_MercenaryAMethods[];
 extern PyMethodDef g_MercenaryBMethods[];
 extern PyMethodDef g_MercenaryCMethods[];
 extern PyMethodDef g_MercenaryLMethods[];
+
+/* the gameplay functions of the character modules (src/game/Script/CharFuncs.c), next to their Init tables */
+extern PyMethodDef g_FunctionaryFuncs[];
+extern PyMethodDef g_RustyFuncs[];
+extern PyMethodDef g_BossFuncs[];
+extern PyMethodDef g_MayorFuncs[];
+extern PyMethodDef g_MaintenanceFuncs[];
+extern PyMethodDef g_SputnikJunkyardFuncs[];
+extern PyMethodDef g_CrazyGamblerFuncs[];
 
 #endif

@@ -197,4 +197,7 @@ typedef struct cSaveVar {
 void cFuncGvarDevices_Load(struct cFuncGvar *elem, void *f);
 void cFuncGvarDevices_Save(struct cFuncGvar *elem, void *f);
 
+/* Scrap.Rand(a, b): a random number between a and b from the game's rand (one call of it) */
+double Scrap_RandRange(double a, double b);
+
 #endif

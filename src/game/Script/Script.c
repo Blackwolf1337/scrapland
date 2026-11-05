@@ -72,16 +72,23 @@ static const scriptModule_t script_modules[] = {
 	{ "Betty", g_BettyMethods },
 	{ "BankDirector", g_BankDirectorMethods },
 	{ "Boss", g_BossMethods },
+	{ "Boss", g_BossFuncs },
 	{ "CrazyGambler", g_CrazyGamblerMethods },
+	{ "CrazyGambler", g_CrazyGamblerFuncs },
 	{ "Humphrey", g_HumphreyMethods },
 	{ "Maintenance", g_MaintenanceMethods },
+	{ "Maintenance", g_MaintenanceFuncs },
 	{ "Mayor", g_MayorMethods },
+	{ "Mayor", g_MayorFuncs },
 	{ "Rusty", g_RustyMethods },
+	{ "Rusty", g_RustyFuncs },
 	{ "Sebastian", g_SebastianMethods },
 	{ "Sentinel", g_SentinelMethods },
 	{ "SputnikJunkyard", g_SputnikJunkyardMethods },
+	{ "SputnikJunkyard", g_SputnikJunkyardFuncs },
 	{ "Bishop", g_BishopMethods },
 	{ "Functionary", g_FunctionaryMethods },
+	{ "Functionary", g_FunctionaryFuncs },
 	{ "Gear", g_GearMethods },
 	{ "BankMaster", g_BankMasterMethods },
 	{ "Berto", g_BertoMethods },
@@ -226,7 +233,7 @@ const char *Script_Lang(const char *key) {
 
 /* ---- the scripts ---- */
 
-static PyObject *Script_Func(const char *module, const char *func) {
+PyObject *Script_Attr(const char *module, const char *func) {
 	PyObject *m = PyImport_ImportModule((char *)module);
 	if (!m) {
 		return NULL;
@@ -236,6 +243,43 @@ static PyObject *Script_Func(const char *module, const char *func) {
 	return f;
 }
 
+double Script_GetFloat(const char *module, const char *var, double def) {
+	PyObject *v = Script_Attr(module, var);
+	double d = v && PyFloat_Check(v) ? PyFloat_AsDouble(v) : v && PyInt_Check(v) ? (double)PyInt_AsLong(v) : def;
+	if (!v) {
+		PyErr_Clear();
+	}
+	Py_XDECREF(v);
+	return d;
+}
+
+/* ---- script variables of entities, as the Python entity handle reads and writes them ---- */
+
+double Script_EntNum(const char *ent, const char *var, double def) {
+	cEntity *e = World_FindEntity(ent);
+	int i;
+	double d;
+	if (e && Entity_VarI(e, var, &i, 0)) {
+		return i;
+	}
+	if (e && Entity_VarF(e, var, &d, 0)) {
+		return d;
+	}
+	return def;
+}
+
+const char *Script_EntStr(const char *ent, const char *var, const char *def) {
+	cEntity *e = World_FindEntity(ent);
+	char *s = NULL;
+	return e && Entity_VarS(e, var, &s, 0) && s ? s : def;
+}
+
+int Script_EntSet(const char *ent, const char *var, PyObject *v) {
+	int r = v ? PyEntity_SetVar(World_FindEntity(ent), ent, var, v) : -1;
+	Py_XDECREF(v);
+	return r;
+}
+
 PyObject *Script_Invoke(PyObject *callable, PyObject *args) {
 	PyObject *r = callable && args ? PyEval_CallObject(callable, args) : NULL;
 	Py_XDECREF(args);
@@ -243,7 +287,7 @@ PyObject *Script_Invoke(PyObject *callable, PyObject *args) {
 }
 
 byte Script_CallKw(const char *module, const char *func, PyObject *args, PyObject *kw) {
-	PyObject *f = Script_Func(module, func);
+	PyObject *f = Script_Attr(module, func);
 	PyObject *r = NULL;
 	if (f && args) {
 		r = PyEval_CallObjectWithKeywords(f, args, kw);
@@ -269,7 +313,7 @@ byte Script_Call(const char *module, const char *func, const char *fmt, ...) {
 }
 
 int Script_GetInt(const char *module, const char *var, int def) {
-	PyObject *v = Script_Func(module, var);
+	PyObject *v = Script_Attr(module, var);
 	int r = def;
 	if (v && PyInt_Check(v)) {
 		r = (int)PyInt_AsLong(v);
@@ -284,7 +328,7 @@ int Script_GetInt(const char *module, const char *var, int def) {
 }
 
 const char *Script_GetString(const char *module, const char *var, char *out, int size) {
-	PyObject *v = Script_Func(module, var);
+	PyObject *v = Script_Attr(module, var);
 	out[0] = 0;
 	if (v && PyString_Check(v)) {
 		Str_Copy(out, PyString_AsString(v), size);
@@ -618,7 +662,7 @@ static PyObject *Def_Value(scriptDef_t *m, const char *t, byte quoted) {
 		if (t[0] == '@') {
 			return Def_Arith(m, Def_Number2Py(Script_GetNum(m->id, a, var)), ops);
 		}
-		PyObject *v = Script_Func(a, var);
+		PyObject *v = Script_Attr(a, var);
 		if (!v) {
 			PyErr_Clear();
 			Con_Warnf("%s:%d: no %s\n", m->name, m->line, t + 1);

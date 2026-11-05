@@ -1097,7 +1097,18 @@ static PyObject *Scrap_Set(PyObject *self, PyObject *args) {
 	return r < 0 ? NULL : Py_BuildValue("i", r);
 }
 
-/* Rand(a, b) : random number between a and b (CRT rand); a result equal to a bound becomes the middle */
+/* a random number between a and b (CRT rand); a result equal to a bound becomes the middle */
+double Scrap_RandRange(double da, double db) {
+	float a = (float)da, b = (float)db;
+	int r = crt_rand();
+	double v = (double)(float)((double)(r & 0x7fff) * (1.0 / 32767.0) * (double)(b - a) + (double)a);
+	if (v == db || v == da) {
+		v = (da + db) * 0.5;
+	}
+	return v;
+}
+
+/* Rand(a, b) : random number between a and b */
 static PyObject *Scrap_Rand(PyObject *self, PyObject *args) {
 	double da, db;
 
@@ -1105,13 +1116,7 @@ static PyObject *Scrap_Rand(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "dd", &da, &db)) {
 		return NULL;
 	}
-	float a = (float)da, b = (float)db;
-	int r = crt_rand();
-	double v = (double)(float)((double)(r & 0x7fff) * (1.0 / 32767.0) * (double)(b - a) + (double)a);
-	if (v == db || v == da) {
-		v = (da + db) * 0.5;
-	}
-	return Py_BuildValue("d", v);
+	return Py_BuildValue("d", Scrap_RandRange(da, db));
 }
 
 /* FileExist(name) : looks in the packs and on disk */
