@@ -17,7 +17,8 @@
  *					always run
  *	do <name>			the lines of another section, here
  *	if <cond>, elif <cond>, else, end	the lines between only when cond holds: a value (true when not 0 or
- *					empty) or <value> == <value>, <value> != <value>
+ *					empty), <value> == <value>, <value> != <value>, or the numbers compared with
+ *					<, >, <= or >=
  *	let <name> <value> [value ...]	$name: the sum of the values (or the one value that is no number)
  *	measure <name> <font> <text>	$name: the width of the text in the font
  * A value is a number, a word or a "quoted text"; {Key} in a text is the language text Key. Unquoted: @Item.Var the
@@ -54,6 +55,7 @@ static const scriptModule_t script_modules[] = {
 	{ "Menu", g_MenuMissionMethods },
 	{ "Scorer", g_ScorerMethods },
 	{ "CharScorer", g_CharScorerMethods },
+	{ "RacerScorer", g_RacerScorerMethods },
 };
 
 void Script_ModuleLoaded(const char *name, PyObject *module) {
@@ -664,8 +666,15 @@ static byte Menu_Cond(scriptMenu_t *m, scriptLine_t *l) {
 		Menu_Word(m, l->tok[3], l->quoted[3], b, sizeof(b));
 		return (strcmp(a, b) == 0) == (l->tok[2][0] == '=');
 	}
+	if (l->n == 4 && strchr("<>", l->tok[2][0]) && (!l->tok[2][1] || (l->tok[2][1] == '=' && !l->tok[2][2]))) {
+		/* numbers */
+		double x = strtod(Menu_Word(m, l->tok[1], l->quoted[1], a, sizeof(a)), NULL);
+		double y = strtod(Menu_Word(m, l->tok[3], l->quoted[3], b, sizeof(b)), NULL);
+		byte eq = l->tok[2][1] == '=';
+		return l->tok[2][0] == '<' ? (x < y || (eq && x == y)) : (x > y || (eq && x == y));
+	}
 	if (l->n != 2) {
-		Con_Warnf("%s:%d: if <value> or if <value> == <value>\n", m->name, m->line);
+		Con_Warnf("%s:%d: if <value> or if <value> <op> <value>\n", m->name, m->line);
 		return 0;
 	}
 	Menu_Word(m, l->tok[1], l->quoted[1], a, sizeof(a));

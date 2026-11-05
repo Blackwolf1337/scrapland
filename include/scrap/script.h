@@ -87,8 +87,9 @@ extern PyMethodDef g_MenuBaseMethods[];
 extern PyMethodDef g_MenuMainMethods[];
 /* the C mission info pages of the Menu module (src/game/Script/MenuMission.c) */
 extern PyMethodDef g_MenuMissionMethods[];
-/* the C HUD: the Scorer and CharScorer modules (src/game/Script/MenuHud.c) */
+/* the C HUD: the Scorer, CharScorer and RacerScorer modules (src/game/Script/MenuHud.c) */
 extern PyMethodDef g_ScorerMethods[];
 extern PyMethodDef g_CharScorerMethods[];
+extern PyMethodDef g_RacerScorerMethods[];
 
 #endif
