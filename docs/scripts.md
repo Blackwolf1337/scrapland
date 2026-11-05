@@ -19,8 +19,9 @@ The helpers the ports share are declared in `include/scrap/script.h`.
 | `PCMenu` | the multiplayer menus: `MultiPlayerMenu` (the in-game version and the main menu path), the join page `NetJoinGameMenu` with the server browser (Internet, local network, address), the connecting page, the password page, `NetDefaultContentMenu` (the part the create and join pages share), `NetCreateGameMenu` with the advanced options, and all their handlers | `src/game/Script/MenuNet.c`, `data/menus/net.menu` |
 | `Menu` | the building blocks of all menus: `LinkLR`, `LinkUD`, `UnLinkLR`, `UnLinkUD`, the logos (`DrawBackMainMenu`, `DrawBackSubMenu`, `DrawBackOptionMenu`), `DrawCircuitMenu`, `DrawMenuTitleBar`, `StartNewMenu`, `AddTabs`, `VerticalMenu`, `YesNoMenu`, `DisableMenuItem`, `ShowTextBox`, `ShowWarning`, `SetTabDefaults`, `SliderMenu`, `PreviousNextMenu`, `PreviousNextMenuSimple`, `DummyFunc` (step 4a). `VerticalMenu` and `AddTabs` take keyword arguments. The C functions compute the places with the integer and float division of the script (Python 1.5.2 divides integers as integers) and hand them to the file as `$names` | `src/game/Script/MenuBase.c`, `data/menus/base.menu` |
 | `Menu` | the main menu (through `Menu.onCreateMainMenu`, the hook a mod may replace), the single player menu in all its variants, the audio options, the skill menus, new game, abort, the load and save menus with the names of saved games, the death screen, `Init`, `InitMenuSys`, `BackToGame`, `DrawScorer`, `MovieScorer` (step 4b) | `src/game/Script/MenuMain.c`, `data/menus/main.menu` |
+| `Menu` | the rest of `menu.py` (step 4c): the mission info pages (`MenuMissionInfo`, the arrows `MenuMissionInfo_Left` and `MenuMissionInfo_Right`, `GoPrimaryMission`, `GoCrazyDeal`, `GoNotes`, `EnterMissionInfo`, `ExitMissionInfo`, `MenuObjetive`, `CrazyDealObjetive`, `MissionNotesText`) in `MenuMission.c` and `data/menus/mission.menu`. In `MenuMain.c` and `main.menu`: `Initialize` (the textures and talking heads a level preloads, written as `call SScorer.PreloadTexture` and `call SScorer.AddModel` lines with conditions), `CreditsMenu`, `GameOver`, the television that switches off when the player dies (`TVOff`, `SetCam`, `TVOffEnd`, `BlackTV`) and the debug menu of the developers (`DebugMenu` and the `DebugSet_` functions) | `src/game/Script/MenuMission.c`, `data/menus/mission.menu`, `src/game/Script/MenuMain.c`, `data/menus/main.menu` |
 
-Still Python in `menu.py`: the mission info pages, the TV, `GameOver`, the debug menu and `Initialize` (step 4c).
+`menu.py` is done, every function of it has a C version. The next modules in the issue are the HUD (`Scorer`, `CharScorer`, `RacerScorer`), the characters and the missions.
 
 With the multiplayer menus every function of `PCMenu` that a menu or another script calls is C. The helpers still in `pcmenu.py` are only called by the old Python functions.
 
@@ -32,7 +33,7 @@ The video options gained two entries in this step. Display (Windowed, Borderless
 
 ## The .menu format
 
-A layout is a .menu file, built into ScrapC with the C23 `#embed` directive (`data/menus/`). A pack in the `mods/` folder of the game that contains `scrapc/menus/video.menu` (or `scrapc/menus/options.menu`, `scrapc/menus/net.menu`, `scrapc/menus/base.menu`, `scrapc/menus/main.menu`) replaces the built-in file (the engine mounts every `.packed` in `mods/`, later packs win). `Script_RunMenu` reads `scrapc/<name>` from the packs first, else the built-in copy.
+A layout is a .menu file, built into ScrapC with the C23 `#embed` directive (`data/menus/`). A pack in the `mods/` folder of the game that contains `scrapc/menus/video.menu` (or `scrapc/menus/options.menu`, `scrapc/menus/net.menu`, `scrapc/menus/base.menu`, `scrapc/menus/main.menu`, `scrapc/menus/mission.menu`) replaces the built-in file (the engine mounts every `.packed` in `mods/`, later packs win). `Script_RunMenu` reads `scrapc/<name>` from the packs first, else the built-in copy.
 
 The file is a list of lines. `#` starts a comment, indentation is only for reading.
 
@@ -137,14 +138,16 @@ The scrap MCP server (`tools/mcp/scrap_mcp.py`) opens the menu with `open_menu P
 
 Step 3 used the same method. Two lessons from it. When a step starts a server, run the C game and the pack game one after the other, because two games on one machine compete for the server port. Saved state matters: the slot's `Scrap.cfg` keeps engine variables and key and pad bindings between runs, so compare runs that start from the same config.
 
+`Initialize` was checked by replacing `SScorer.PreloadTexture` and `SScorer.AddModel` in the game with functions that record their arguments (the script and the C `call` lines both look them up in the `SScorer` module), calling `Menu.Initialize()` once, and comparing the recorded lists of both versions: 49 calls in a level, 20 in the main menu.
+
 Step 4 added one more lesson. `Menu.Init` and `InitMenuSys(0)` stop the game time in the main menu, and the MCP commands run on scheduled functions of the game time. A test must set the time speed back in the same python call (`Menu.Init(0); Scrap.SetTimeSpeed(1)`). A sequence that clicks New Game starts a game and stops the comparison.
 
 ## Porting the next script
 
 - Find the functions of the module and the state only they use. The original Python sources are in the game packs as `.py` next to the `.pyc` (`scripts/scorer/pcmenu.py`, `menu.py` and so on), the port follows them.
 - Write the C functions in `src/game/Script/` with a `PyMethodDef` table and add the module to `script_modules` in `Script.c`.
-- Use the shared C helpers instead of going through Python: `GVar_GetNum`, `GVar_SetNum`, `GVar_SetStr` (engine variables, `include/scrap/scrap.h`), `Input_SelectActionSetNamed` (`include/scrap/input.h`), and in `include/scrap/script.h` `Script_SetCursor`, `Script_GetString` and `Script_SetInt` besides the older ones.
+- Use the shared C helpers instead of going through Python: `GVar_GetNum`, `GVar_SetNum`, `GVar_SetStr` (engine variables, `include/scrap/scrap.h`), `Input_SelectActionSetNamed` (`include/scrap/input.h`), and in `include/scrap/script.h` `Script_SetCursor`, `Script_GetString` and `Script_SetInt` besides the older ones. `Script_SetValue` gives a value from a step of a .menu back to the file that runs it, as `$name`. `Script_Eval` returns the value of a Python expression, used for save variables that keep Python lists.
 - Put the layout in `data/menus/` when it is a menu.
 - Compare with `SCRAP_PACK_SCRIPTS=1` as above.
 
-Next in the issue: the other menus, then HUD, characters and missions.
+Next in the issue: the HUD, the characters and the missions.
