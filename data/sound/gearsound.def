@@ -1,0 +1,198 @@
+# gearsound (the sound script sound/gearsound.py of the game): the sound files of the character class (LoadSounds), the
+# sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of a new entity
+# (InitLoops, $name the entity) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/gearsound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes mecanismo-gear2.wav
+	AddSoundRes mecanismo-gear4.wav
+	AddSoundRes mecanismo-gear5.wav
+	AddSoundRes mecanismo-gear9.wav
+	AddSoundRes mecanismo-gear10.wav
+	AddSoundRes lopp2.wav
+	AddSoundRes caida4.wav
+	AddSoundRes radar.wav
+	AddSoundRes atasco1.wav
+	AddSoundRes atasco2.wav
+	AddSoundRes atasco3.wav
+	AddSoundRes rodar2.wav
+	AddSoundRes disparoAAA.wav
+	AddSoundRes disparo133.wav
+	AddSoundRes loop-elec10.wav
+	AddSoundRes electricidad2222A.wav
+	AddSoundRes electricidad222.wav
+	AddSoundRes recarga1.wav
+if %GearSound.isPC
+	class
+		AddSoundRes recarga9.wav
+end
+	AddSoundRes Siren.wav
+
+section SetSounds
+let act RunInit
+call Chars.ActSound $char $act 14 mecanismo-gear2 0.015
+call Chars.ActSound $char $act 6 radar 0.02
+let act RunEnd
+call Chars.ActSound $char $act 65 mecanismo-gear2 0.015
+let act BackInit
+call Chars.ActSound $char $act 14 mecanismo-gear2 0.015
+call Chars.ActSound $char $act 6 radar 0.02
+let act BackEnd
+call Chars.ActSound $char $act 65 mecanismo-gear2 0.015
+let act StrRightInit
+call Chars.ActSound $char $act 6 radar 0.02
+let act StrRightEnd
+call Chars.ActSound $char $act 50 mecanismo-gear2 0.015
+let act StrLeftInit
+call Chars.ActSound $char $act 6 radar 0.02
+call Chars.ActSound $char $act 3 mecanismo-gear4 0.015
+let act StrLeftEnd
+call Chars.ActSound $char $act 50 mecanismo-gear2 0.015
+call Chars.ActSound $char $act 53 mecanismo-gear5 0.015
+let act Turn
+call Chars.ActSound $char $act 4 mecanismo-gear2 0.015
+call Chars.ActSound $char $act 6 radar 0.02
+let act ActionInit
+let act Action
+if %GearSound.isPC
+	call Chars.ActSound $char $act 22 recarga9 0.30
+end
+call Chars.ActSound $char $act 38 mecanismo-gear4 0.03
+let act ActionEnd
+call Chars.ActSound $char $act 60 mecanismo-gear2 0.03 +3
+call Chars.ActSound $char $act 59 mecanismo-gear5 0.03 +3
+let act Relax0
+call Chars.ActSound $char $act 3 mecanismo-gear5 0.03
+call Chars.ActSound $char $act 14 mecanismo-gear4 0.03
+call Chars.ActSound $char $act 15 mecanismo-gear9 0.03
+call Chars.ActSound $char $act 16 radar 0.01
+call Chars.ActSound $char $act 31 mecanismo-gear5 0.03
+call Chars.ActSound $char $act 42 mecanismo-gear10 0.03
+call Chars.ActSound $char $act 60 mecanismo-gear9 0.03
+call Chars.ActSound $char $act 61 mecanismo-gear9 0.03
+call Chars.ActSound $char $act 83 radar 0.01
+call Chars.ActSound $char $act 106 mecanismo-gear10 0.03
+call Chars.ActSound $char $act 109 radar 0.01
+call Chars.ActSound $char $act 119 mecanismo-gear4 0.03
+call Chars.ActSound $char $act 127 mecanismo-gear9 0.03
+call Chars.ActSound $char $act 140 mecanismo-gear4 0.03 +2
+call Chars.ActSound $char $act 149 mecanismo-gear5 0.03
+let act Patrol0
+call Chars.ActSound $char $act 3 mecanismo-gear5 0.03
+call Chars.ActSound $char $act 14 mecanismo-gear4 0.03
+call Chars.ActSound $char $act 15 mecanismo-gear9 0.03
+call Chars.ActSound $char $act 16 radar 0.01
+call Chars.ActSound $char $act 31 mecanismo-gear5 0.03
+call Chars.ActSound $char $act 42 mecanismo-gear10 0.03
+call Chars.ActSound $char $act 60 mecanismo-gear9 0.03
+call Chars.ActSound $char $act 61 mecanismo-gear9 0.03
+call Chars.ActSound $char $act 83 radar 0.01
+call Chars.ActSound $char $act 106 mecanismo-gear10 0.03
+call Chars.ActSound $char $act 109 radar 0.01
+call Chars.ActSound $char $act 119 mecanismo-gear4 0.03
+call Chars.ActSound $char $act 127 mecanismo-gear9 0.03
+call Chars.ActSound $char $act 140 mecanismo-gear4 0.03 +2
+call Chars.ActSound $char $act 149 mecanismo-gear5 0.03
+let act Relax1
+call Chars.ActSound $char $act 3 mecanismo-gear9 0.03
+call Chars.ActSound $char $act 3 atasco3 0.15
+call Chars.ActSound $char $act 9 mecanismo-gear10 0.03
+call Chars.ActSound $char $act 25 mecanismo-gear9 0.03
+call Chars.ActSound $char $act 33 mecanismo-gear5 0.03
+call Chars.ActSound $char $act 35 atasco3 0.15
+call Chars.ActSound $char $act 47 mecanismo-gear4 0.03
+call Chars.ActSound $char $act 55 mecanismo-gear10 0.03
+call Chars.ActSound $char $act 68 atasco1 0.15
+call Chars.ActSound $char $act 69 atasco2 0.15
+call Chars.ActSound $char $act 75 atasco1 0.15
+call Chars.ActSound $char $act 76 atasco2 0.15
+call Chars.ActSound $char $act 94 atasco3 0.15
+call Chars.ActSound $char $act 95 rodar2 0.08
+call Chars.ActSound $char $act 101 mecanismo-gear5 0.03
+call Chars.ActSound $char $act 105 mecanismo-gear9 0.03
+call Chars.ActSound $char $act 122 mecanismo-gear4 0.03
+call Chars.ActSound $char $act 137 mecanismo-gear10 0.03 +2
+call Chars.ActSound $char $act 142 mecanismo-gear5 0.03
+call Chars.ActSound $char $act 152 mecanismo-gear4 0.03
+let act FlashedInit
+call Chars.ActSound $char $act 1 mecanismo-gear5 0.03
+let act Flashed
+call Chars.ActSound $char $act 21 atasco1 0.01
+call Chars.ActSound $char $act 28 atasco2 0.01
+call Chars.ActSound $char $act 34 atasco1 0.01
+call Chars.ActSound $char $act 44 atasco2 0.01
+let act FlashedEnd
+call Chars.ActSound $char $act 51 atasco1 0.01 +2
+call Chars.ActSound $char $act 69 mecanismo-gear4 0.01
+let act CrazyInit
+call Chars.ActSound $char $act 1 mecanismo-gear2 0.03
+call Chars.ActSound $char $act 1 mecanismo-gear9 0.03
+let act Crazy
+call Chars.ActSound $char $act 9 mecanismo-gear2 0.03
+call Chars.ActSound $char $act 9 mecanismo-gear9 0.03
+call Chars.ActSound $char $act 49 mecanismo-gear4 0.03
+call Chars.ActSound $char $act 53 mecanismo-gear5 0.03
+call Chars.ActSound $char $act 59 rodar2 0.04 +11
+call Chars.ActSound $char $act 88 mecanismo-gear4 0.03
+call Chars.ActSound $char $act 94 mecanismo-gear9 0.03
+call Chars.ActSound $char $act 138 mecanismo-gear5 0.03
+let act Patrol
+call Chars.ActSound $char $act 3 mecanismo-gear4 0.03
+call Chars.ActSound $char $act 3 mecanismo-gear9 0.03
+call Chars.ActSound $char $act 7 mecanismo-gear2 0.03
+call Chars.ActSound $char $act 25 radar 0.01
+call Chars.ActSound $char $act 31 mecanismo-gear10 0.03
+call Chars.ActSound $char $act 34 mecanismo-gear2 0.03
+call Chars.ActSound $char $act 42 mecanismo-gear5 0.03
+call Chars.ActSound $char $act 61 radar 0.01
+call Chars.ActSound $char $act 96 mecanismo-gear2 0.03
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let act SirenInit
+call Chars.ActSoundLoop $char $act 6 1 0.125
+let act SirenEnd
+call Chars.ActSoundLoop $char $act 65 1 0
+class
+	FallSound caida4
+	FallSoundVol 0.08
+
+section TalkSnd
+call Chars.ActSound $char $talk 7 mecanismo-gear4 0.012
+call Chars.ActSound $char $talk 39 mecanismo-gear5 0.012
+call Chars.ActSound $char $talk 81 mecanismo-gear4 0.012
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"
+call Scrap.Set GearLoadWeaponSound recarga1
+call Scrap.Set GearLoadWeaponSoundVol 0.1
+call Scrap.Set GearShootSound disparoAAA
+call Scrap.Set GearShootSoundVol 0.3
+call Scrap.Set GearHitSound disparo133
+call Scrap.Set GearHitSoundVol 0.18
+call Scrap.Set GearMissileSound loop-elec10
+call Scrap.Set GearMissileSoundVol 0.12
+call Scrap.Set GearMissileThunder1Sound electricidad2222A
+call Scrap.Set GearMissileThunder2Sound electricidad222
+call Scrap.Set GearMissileThunderSoundVol 0.06
+
+section InitLoops
+entity $name
+	snd_n 2
+	snd00_name Lopp2
+	snd00_loop 1
+	snd00_pitch0 -7.0
+	snd00_vol0 0.04
+	snd00_pitch1 +1.0
+	snd00_vol1 0.12
+	snd00_time1 0.6
+	snd00_int0 1
+	snd01_name Siren
+	snd01_loop 1

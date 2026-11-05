@@ -1,0 +1,24 @@
+# testcsound (the sound script sound/testcsound.py of the game): the sound files of the character class (LoadSounds),
+# the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of a new entity
+# (InitLoops, $name the entity) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/testcsound.def
+# replaces this file.
+
+section LoadSounds
+
+section SetSounds
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+
+section TalkSnd
+
+section InitLoops
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

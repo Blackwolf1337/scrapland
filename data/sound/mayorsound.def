@@ -1,0 +1,254 @@
+# mayorsound (the sound script sound/mayorsound.py of the game): the sound files of the character class (LoadSounds),
+# the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of a new entity
+# (InitLoops, $name the entity) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/mayorsound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes rodaje.wav
+if %MayorSound.isPC
+	class
+		AddSoundRes roce-mayor.wav
+end
+	AddSoundRes manos.wav
+	AddSoundRes rechine.wav
+	AddSoundRes mecanismo-mayor1.wav
+	AddSoundRes mecanismo-mayor2.wav
+	AddSoundRes mecanismo11.wav
+if %MayorSound.isPC
+	class
+		AddSoundRes mecanismo12.wav
+end
+	AddSoundRes voz-politica1.wav
+	AddSoundRes voz-politica2.wav
+	AddSoundRes voz-politica3.wav
+	AddSoundRes voz-politica4.wav
+	AddSoundRes voz-politica5.wav
+	AddSoundRes voz-politica6.wav
+	AddSoundRes caida-mayor.wav
+
+section SetSounds
+let act WalkEnd
+call Chars.ActSound $char $act 66 rechine 0.05 -5
+let act BackInit
+call Chars.ActSound $char $act 9 mecanismo-mayor1 0.026 +20
+call Chars.ActSound $char $act 6 mecanismo11 0.016 -2
+let act BackEnd
+call Chars.ActSound $char $act 68 rechine 0.05 -5
+let act StrRightEnd
+call Chars.ActSound $char $act 60 rechine 0.05 -5
+let act StrLeftEnd
+call Chars.ActSound $char $act 60 rechine 0.05 -5
+let act FlashedInit
+if %MayorSound.isPC
+	call Chars.ActSound $char $act 3 mecanismo12 0.016
+else
+	call Chars.ActSound $char $act 3 mecanismo11 0.016
+end
+call Chars.ActSound $char $act 5 mecanismo-mayor2 0.026 +45
+let act Flashed
+if %MayorSound.isPC
+	call Chars.ActSound $char $act 16 mecanismo12 0.016
+else
+	call Chars.ActSound $char $act 16 mecanismo11 0.016
+end
+call Chars.ActSound $char $act 28 mecanismo11 0.016
+if %MayorSound.isPC
+	call Chars.ActSound $char $act 44 mecanismo12 0.016
+else
+	call Chars.ActSound $char $act 44 mecanismo11 0.016
+end
+call Chars.ActSound $char $act 61 mecanismo11 0.016
+let act FlashedEnd
+if %MayorSound.isPC
+	call Chars.ActSound $char $act 72 mecanismo12 0.016
+else
+	call Chars.ActSound $char $act 72 mecanismo11 0.016
+end
+call Chars.ActSound $char $act 72 mecanismo-mayor1 0.026 +20
+let act DazedInit
+call Chars.ActSound $char $act 4 mecanismo11 0.016
+let act DazedEnd
+call Chars.ActSound $char $act 87 mecanismo11 0.016
+let act DiscoverInit
+call Chars.ActSound $char $act 6 mecanismo11 0.016 +3
+call Chars.ActSound $char $act 5 mecanismo-mayor2 0.026 +45
+if %MayorSound.isPC
+	call Chars.ActSound $char $act 14 mecanismo12 0.016 +3
+else
+	call Chars.ActSound $char $act 14 mecanismo11 0.016 +3
+end
+call Chars.ActSound $char $act 19 mecanismo-mayor1 0.026 +45
+let act Discover
+call Chars.ActSound $char $act 26 mecanismo-mayor1 0.026 +45
+call Chars.ActSound $char $act 33 mecanismo-mayor2 0.026 +45
+let act DiscoverEnd
+call Chars.ActSound $char $act 38 mecanismo11 0.016 +3
+call Chars.ActSound $char $act 40 mecanismo-mayor1 0.026 +45
+if %MayorSound.isPC
+	call Chars.ActSound $char $act 54 mecanismo12 0.016 20
+else
+	call Chars.ActSound $char $act 54 mecanismo11 0.016 20
+end
+let act Crazy
+call Chars.ActSound $char $act 8 mecanismo11 0.016 +3
+call Chars.ActSound $char $act 9 mecanismo-mayor1 0.026 +45
+if %MayorSound.isPC
+	call Chars.ActSound $char $act 45 mecanismo12 0.016 +3
+else
+	call Chars.ActSound $char $act 45 mecanismo11 0.016 +3
+end
+call Chars.ActSound $char $act 46 mecanismo-mayor2 0.026 +45
+call Chars.ActSound $char $act 52 mecanismo11 0.016 +3
+call Chars.ActSound $char $act 53 mecanismo-mayor1 0.026 +45
+if %MayorSound.isPC
+	call Chars.ActSound $char $act 89 mecanismo12 0.016 +3
+else
+	call Chars.ActSound $char $act 89 mecanismo11 0.016 +3
+end
+call Chars.ActSound $char $act 90 mecanismo-mayor2 0.026 +45
+let act Relax0
+call Chars.ActSound $char $act 2 mecanismo-mayor2 0.016 +45
+call Chars.ActSound $char $act 6 mecanismo11 0.016
+call Chars.ActSound $char $act 33 mecanismo-mayor1 0.016 +45
+call Chars.ActSound $char $act 50 mecanismo11 0.016 +2
+call Chars.ActSound $char $act 76 mecanismo-mayor2 0.016 +45
+call Chars.ActSound $char $act 99 mecanismo11 0.016 +2
+call Chars.ActSound $char $act 152 mecanismo-mayor1 0.016 +45
+call Chars.ActSound $char $act 181 mecanismo11 0.016 +2
+let act Relax1
+if %MayorSound.isPC
+	call Chars.ActSound $char $act 1 mecanismo12 0.016 -7
+else
+	call Chars.ActSound $char $act 1 mecanismo11 0.016 -7
+end
+call Chars.ActSound $char $act 3 mecanismo-mayor2 0.016 +20
+call Chars.ActSound $char $act 26 mecanismo11 0.016 -7
+if %MayorSound.isPC
+	call Chars.ActSound $char $act 28 manos 0.09 -20
+end
+call Chars.ActSound $char $act 65 mecanismo-mayor1 0.016 +10
+call Chars.ActSound $char $act 66 mecanismo11 0.016 -6
+call Chars.ActSound $char $act 81 mecanismo-mayor2 0.016 +45
+if %MayorSound.isPC
+	call Chars.ActSound $char $act 81 roce-mayor 0.007 +20
+end
+if %MayorSound.isPC
+	call Chars.ActSound $char $act 93 mecanismo12 0.016 -7
+else
+	call Chars.ActSound $char $act 93 mecanismo11 0.016 -7
+end
+call Chars.ActSound $char $act 105 mecanismo-mayor2 0.016 +40
+if %MayorSound.isPC
+	call Chars.ActSound $char $act 113 roce-mayor 0.007 +20
+end
+call Chars.ActSound $char $act 121 mecanismo-mayor1 0.016 +3
+call Chars.ActSound $char $act 166 mecanismo11 0.016 -10
+call Chars.ActSound $char $act 169 mecanismo11 0.016 -7
+let act Action
+call Chars.ActSound $char $act 7 voz-politica1 0.4
+if %MayorSound.isPC
+	call Chars.ActSound $char $act 8 mecanismo12 0.016 +4
+else
+	call Chars.ActSound $char $act 8 mecanismo11 0.016 +4
+end
+call Chars.ActSound $char $act 37 voz-politica2 0.4
+call Chars.ActSound $char $act 53 mecanismo11 0.016 +5
+call Chars.ActSound $char $act 57 voz-politica3 0.4
+call Chars.ActSound $char $act 70 voz-politica4 0.4
+if %MayorSound.isPC
+	call Chars.ActSound $char $act 103 mecanismo12 0.016
+else
+	call Chars.ActSound $char $act 103 mecanismo11 0.016
+end
+call Chars.ActSound $char $act 110 voz-politica5 0.4
+call Chars.ActSound $char $act 113 mecanismo11 0.016 +7
+if %MayorSound.isPC
+	call Chars.ActSound $char $act 138 mecanismo12 0.016 +8
+else
+	call Chars.ActSound $char $act 138 mecanismo11 0.016 +8
+end
+call Chars.ActSound $char $act 142 voz-politica6 0.4
+let act ActionEnd
+call Chars.ActSound $char $act 171 mecanismo11 0.016 +5
+class
+	FallSound caida-mayor
+	FallSoundVol 0.4
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk0
+do Talk0Snd
+let talk TalkNPC0
+do Talk0Snd
+let talk Talk1
+do Talk1Snd
+let talk TalkNPC1
+do Talk1Snd
+let talk Talk2
+do Talk2Snd
+let talk TalkNPC2
+do Talk2Snd
+
+section TalkSnd
+call Chars.ActSound $char $talk 3 mecanismo-mayor2 0.026 +20
+call Chars.ActSound $char $talk 20 mecanismo-mayor1 0.026 +22
+call Chars.ActSound $char $talk 33 mecanismo-mayor2 0.026 +22
+call Chars.ActSound $char $talk 63 mecanismo-mayor1 0.026 +22
+if %MayorSound.isPC
+	call Chars.ActSound $char $talk 63 mecanismo12 0.016 +6
+else
+	call Chars.ActSound $char $talk 63 mecanismo11 0.016 +6
+end
+
+section Talk0Snd
+call Chars.ActSound $char $talk 3 mecanismo-mayor2 0.026 +18
+call Chars.ActSound $char $talk 30 mecanismo-mayor1 0.026 +20
+call Chars.ActSound $char $talk 40 mecanismo-mayor2 0.026 +20
+call Chars.ActSound $char $talk 53 mecanismo-mayor1 0.026 +20
+if %MayorSound.isPC
+	call Chars.ActSound $char $talk 58 mecanismo12 0.016 +6
+else
+	call Chars.ActSound $char $talk 58 mecanismo11 0.016 +6
+end
+
+section Talk1Snd
+call Chars.ActSound $char $talk 1 mecanismo-mayor2 0.026 +18
+call Chars.ActSound $char $talk 21 mecanismo-mayor1 0.026 +22
+call Chars.ActSound $char $talk 33 mecanismo-mayor2 0.026 +24
+call Chars.ActSound $char $talk 55 mecanismo-mayor1 0.026 +22
+if %MayorSound.isPC
+	call Chars.ActSound $char $talk 53 mecanismo12 0.016 +8
+else
+	call Chars.ActSound $char $talk 53 mecanismo11 0.016 +8
+end
+
+section Talk2Snd
+call Chars.ActSound $char $talk 3 mecanismo-mayor2 0.026 +20
+call Chars.ActSound $char $talk 32 mecanismo-mayor1 0.026 +20
+if %MayorSound.isPC
+	call Chars.ActSound $char $talk 56 mecanismo12 0.016 +4
+else
+	call Chars.ActSound $char $talk 56 mecanismo11 0.016 +4
+end
+
+section InitLoops
+entity $name
+	snd_n 1
+	snd00_name rodaje
+	snd00_loop 1
+	snd00_pitch0 -7.0
+	snd00_vol0 0.0
+	snd00_pitch1 -0.0
+	snd00_vol1 0.07
+	snd00_time1 0.6
+	snd00_int0 1
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

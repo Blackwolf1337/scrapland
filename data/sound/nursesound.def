@@ -1,0 +1,115 @@
+# nursesound (the sound script sound/nursesound.py of the game): the sound files of the character class (LoadSounds),
+# the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of a new entity
+# (InitLoops, $name the entity) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/nursesound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes NurseFrat.wav
+	AddSoundRes NurseFrat1.wav
+	AddSoundRes NurseFrat2.wav
+	AddSoundRes NurseFrat3.wav
+	AddSoundRes NurseFrat4.wav
+	AddSoundRes NurseFrat5.wav
+	AddSoundRes NurseLoop.wav
+	AddSoundRes Mecanismo-Nurse1.wav
+	AddSoundRes Mecanismo-Nurse2.wav
+	AddSoundRes Sesgado-Nurse1.wav
+	AddSoundRes Sesgado-Nurse3.wav
+	AddSoundRes Risa.wav
+	AddSoundRes Golpe-Enfermero.wav
+	AddSoundRes golpe-metal.wav
+
+section SetSounds
+let act WalkInit
+call Chars.ActSound $char $act 1 NurseFrat 0.15
+let act WalkEnd
+let act StrLeftInit
+call Chars.ActSound $char $act 1 NurseFrat1 0.15
+let act StrRightInit
+call Chars.ActSound $char $act 1 NurseFrat2 0.15
+let act BackInit
+call Chars.ActSound $char $act 1 NurseFrat3 0.15
+let act Relax1
+call Chars.ActSound $char $act 1 Mecanismo-Nurse1 0.1
+call Chars.ActSound $char $act 15 Sesgado-Nurse3 0.05
+call Chars.ActSound $char $act 39 Mecanismo-Nurse2 0.1
+let act Relax0
+call Chars.ActSound $char $act 8 NurseFrat4 0.15
+call Chars.ActSound $char $act 43 NurseFrat2 0.15
+call Chars.ActSound $char $act 99 NurseFrat5 0.15
+call Chars.ActSound $char $act 155 NurseFrat1 0.15
+call Chars.ActSound $char $act 196 NurseFrat3 0.15
+let act ActionInit
+call Chars.ActSound $char $act 8 Mecanismo-Nurse1 0.1
+let act ActionFail
+call Chars.ActSound $char $act 4 Mecanismo-Nurse2 0.20 +1
+call Chars.ActSound $char $act 5 Sesgado-Nurse1 0.20
+call Chars.ActSound $char $act 40 NurseFrat5 0.17
+let act ActionOK
+call Chars.ActSound $char $act 4 Mecanismo-Nurse2 0.1
+call Chars.ActSound $char $act 5 Sesgado-Nurse1 0.20
+call Chars.ActSound $char $act 9 Golpe-Enfermero 0.35
+call Chars.ActSound $char $act 29 Mecanismo-Nurse1 0.1 +10
+call Chars.ActSound $char $act 30 Risa 0.17
+let act ActionBlock
+call Chars.ActSound $char $act 7 Mecanismo-Nurse2 0.1 +4
+call Chars.ActSound $char $act 2 Sesgado-Nurse1 0.20
+call Chars.ActSound $char $act 6 Golpe-Enfermero 0.35
+call Chars.ActSound $char $act 15 Sesgado-Nurse1 0.14
+call Chars.ActSound $char $act 13 Mecanismo-Nurse1 0.1 +10
+let act BlockHit
+call Chars.ActSound $char $act 20 Mecanismo-Nurse1 0.1
+let act CrazyInit
+call Chars.ActSound $char $act 12 Mecanismo-Nurse1 0.1
+call Chars.ActSound $char $act 38 Golpe-Enfermero 0.1
+let act Crazy
+call Chars.ActSound $char $act 58 golpe-metal 0.1
+call Chars.ActSound $char $act 51 NurseFrat 0.05
+call Chars.ActSound $char $act 83 golpe-metal 0.1
+call Chars.ActSound $char $act 72 NurseFrat 0.05
+let act CrazyEnd
+call Chars.ActSound $char $act 102 NurseFrat3 0.05
+call Chars.ActSound $char $act 110 Mecanismo-Nurse1 0.1
+let act FlashedInit
+call Chars.ActSound $char $act 5 Mecanismo-Nurse1 0.1
+call Chars.ActSound $char $act 8 NurseFrat1 0.010
+let act FlashedEnd
+call Chars.ActSound $char $act 60 Mecanismo-Nurse2 0.1
+call Chars.ActSound $char $act 65 NurseFrat1 0.10
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk0
+do Talk0Snd
+let talk TalkNPC0
+do Talk0Snd
+let talk Talk1
+do Talk1Snd
+let talk TalkNPC1
+do Talk1Snd
+
+section TalkSnd
+
+section Talk0Snd
+
+section Talk1Snd
+
+section InitLoops
+entity $name
+	snd_n 1
+	snd00_name NurseLoop
+	snd00_loop 1
+	snd00_pitch0 0.0
+	snd00_vol0 0.02
+	snd00_pitch1 +10.0
+	snd00_vol1 0.085
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

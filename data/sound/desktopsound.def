@@ -1,0 +1,141 @@
+# desktopsound (the sound script sound/desktopsound.py of the game): the sound files of the character class
+# (LoadSounds), the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of
+# a new entity (InitLoops, $name the entity) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/desktopsound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes Desktop-PasoA.wav
+	AddSoundRes Desktop-PasoB.wav
+	AddSoundRes Desktop-PasoC.wav
+	AddSoundRes Desktop-PasoD.wav
+	AddSoundRes Desktop-soundA.wav
+	AddSoundRes Desktop-soundB.wav
+	AddSoundRes Desktop-soundC.wav
+	AddSoundRes Desktop-soundD.wav
+	AddSoundRes Desktop-soundE.wav
+	AddSoundRes Desktop-soundF.wav
+	AddSoundRes Desktop-soundG.wav
+	AddSoundRes Desktop-soundH.wav
+	AddSoundRes Desktop-soundJ.wav
+	AddSoundRes Desktop-soundK.wav
+	AddSoundRes Desktop-soundL.wav
+	AddSoundRes Desktop-sound1.wav
+	AddSoundRes Desktop-sound2.wav
+	AddSoundRes Desktop-sound3.wav
+	AddSoundRes Desktop-sound4.wav
+	AddSoundRes Desktop-sound5.wav
+	AddSoundRes Desktop-sound6.wav
+	AddSoundRes salto-desktop2.wav
+	AddSoundRes salto-desktop.wav
+	AddSoundRes sesgado2.wav
+	AddSoundRes sesgado1.wav
+	AddSoundRes caida-desktop3.wav
+
+section SetSounds
+let act Walk
+call Chars.ActSound $char $act 5 Desktop-soundB 0.008 0
+call Chars.ActSound $char $act 7 Desktop-PasoA 0.040 0
+call Chars.ActSound $char $act 11 Desktop-soundC 0.008 0
+call Chars.ActSound $char $act 14 Desktop-soundD 0.008 0
+call Chars.ActSound $char $act 16 Desktop-soundE 0.008 0
+call Chars.ActSound $char $act 21 Desktop-soundF 0.008 0
+call Chars.ActSound $char $act 23 Desktop-soundG 0.008 0
+call Chars.ActSound $char $act 18 Desktop-PasoB 0.040 0
+let act Back
+call Chars.ActSound $char $act 5 Desktop-soundH 0.008 0
+call Chars.ActSound $char $act 8 Desktop-PasoA 0.040 0
+call Chars.ActSound $char $act 12 Desktop-soundB 0.008 0
+call Chars.ActSound $char $act 17 Desktop-soundD 0.008 0
+call Chars.ActSound $char $act 20 Desktop-PasoC 0.040 0
+call Chars.ActSound $char $act 24 Desktop-soundE 0.008 0
+call Chars.ActSound $char $act 27 Desktop-soundA 0.008 0
+let act StrLeft
+call Chars.ActSound $char $act 5 Desktop-PasoC 0.040 0
+call Chars.ActSound $char $act 8 Desktop-soundG 0.008 0
+call Chars.ActSound $char $act 12 Desktop-soundC 0.008 0
+call Chars.ActSound $char $act 16 Desktop-soundH 0.008 0
+call Chars.ActSound $char $act 18 Desktop-PasoD 0.040 0
+call Chars.ActSound $char $act 22 Desktop-soundA 0.008 0
+let act StrRight
+call Chars.ActSound $char $act 5 Desktop-PasoC 0.040 0
+call Chars.ActSound $char $act 8 Desktop-soundJ 0.008 0
+call Chars.ActSound $char $act 12 Desktop-soundK 0.008 0
+call Chars.ActSound $char $act 15 Desktop-soundB 0.008 0
+call Chars.ActSound $char $act 18 Desktop-PasoD 0.040 0
+call Chars.ActSound $char $act 23 Desktop-soundE 0.008 0
+let act Relax0
+call Chars.ActSound $char $act 13 Desktop-sound1 0.40 0
+call Chars.ActSound $char $act 48 Desktop-sound2 0.20 0
+call Chars.ActSound $char $act 112 Desktop-sound5 0.20 0
+call Chars.ActSound $char $act 152 Desktop-sound3 0.20 0
+call Chars.ActSound $char $act 202 Desktop-sound4 0.20 0
+let act Relax1
+call Chars.StrSound $char $act 1 Anm_risa_desktop 0.7
+call Chars.StrSoundStop $char $act 150
+let act CrazyInit
+call Chars.ActSound $char $act 21 Desktop-PasoB 0.040
+call Chars.ActSound $char $act 22 Desktop-PasoA 0.040
+call Chars.StrSound $char $act 1 Anm_silbido2 0.7
+let act Crazy
+call Chars.ActSound $char $act 30 Desktop-PasoB 0.040
+call Chars.ActSound $char $act 43 Desktop-PasoB 0.040
+let act CrazyEnd
+call Chars.StrSoundStop $char $act 60
+call Chars.ActSound $char $act 50 Desktop-PasoB 0.040
+call Chars.ActSound $char $act 59 Desktop-PasoA 0.040
+call Chars.ActSound $char $act 60 Desktop-PasoB 0.040
+let act FlashedInit
+call Chars.ActSound $char $act 7 Desktop-sound6 0.40
+let act FlashedEnd
+call Chars.ActSound $char $act 71 Desktop-sound3 0.30
+class
+	FallSound caida-desktop3
+	FallSoundVol 0.06
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk0
+do Talk0Snd
+let talk TalkNPC0
+do Talk0Snd
+
+section TalkSnd
+
+section Talk0Snd
+let talk Fall
+call Chars.ActSound $char $talk 6 Desktop-soundE 0.008 0
+call Chars.ActSound $char $talk 10 Desktop-soundH 0.008 0
+call Chars.ActSound $char $talk 14 Desktop-soundA 0.008 0
+let talk ActUpF
+call Chars.ActSound $char $talk 1 salto-desktop2 0.1 0
+call Chars.ActSound $char $talk 6 Desktop-soundB 0.008 0
+call Chars.ActSound $char $talk 10 Desktop-soundD 0.008 0
+call Chars.ActSound $char $talk 14 Desktop-soundH 0.008 0
+let talk ActMoreF
+call Chars.ActSound $char $talk 1 sesgado2 0.04 0
+let talk ActUpB
+call Chars.ActSound $char $talk 1 salto-desktop 0.2 0
+call Chars.ActSound $char $talk 6 Desktop-soundB 0.008 0
+call Chars.ActSound $char $talk 10 Desktop-soundD 0.008 0
+call Chars.ActSound $char $talk 14 Desktop-soundH 0.008 0
+let talk ActMoreB
+call Chars.ActSound $char $talk 1 sesgado1 0.04 0
+let talk FallEnd
+call Chars.ActSound $char $talk 2 Desktop-PasoB 0.040 0
+let talk Turn
+call Chars.ActSound $char $talk 2 Desktop-soundA 0.01 0
+call Chars.ActSound $char $talk 6 Desktop-PasoA 0.040 0
+call Chars.ActSound $char $talk 10 Desktop-soundB 0.01 0
+call Chars.ActSound $char $talk 14 Desktop-PasoB 0.040 0
+
+section InitLoops
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

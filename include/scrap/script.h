@@ -134,6 +134,34 @@ extern PyMethodDef g_MakeCharMethods[];
 extern PyMethodDef g_CharActMethods[];
 /* the C Speech module (src/game/Script/Speech.c) */
 extern PyMethodDef g_SpeechMethods[];
+/* the sound scripts of the characters (src/game/Script/Sounds.c, data/sound/) */
+extern PyMethodDef g_BankDirectorSoundMethods[];
+extern PyMethodDef g_BankMasterSoundMethods[];
+extern PyMethodDef g_BertoSoundMethods[];
+extern PyMethodDef g_BettySoundMethods[];
+extern PyMethodDef g_BishopSoundMethods[];
+extern PyMethodDef g_BossSoundMethods[];
+extern PyMethodDef g_CrazyGamblerSoundMethods[];
+extern PyMethodDef g_DesktopSoundMethods[];
+extern PyMethodDef g_DtritusSoundMethods[];
+extern PyMethodDef g_FunctionarySoundMethods[];
+extern PyMethodDef g_GateKeeperSoundMethods[];
+extern PyMethodDef g_GearSoundMethods[];
+extern PyMethodDef g_HumanSoundMethods[];
+extern PyMethodDef g_HumphreySoundMethods[];
+extern PyMethodDef g_MaintenanceSoundMethods[];
+extern PyMethodDef g_MayorSoundMethods[];
+extern PyMethodDef g_MercenarySoundMethods[];
+extern PyMethodDef g_MessengerSoundMethods[];
+extern PyMethodDef g_NurseSoundMethods[];
+extern PyMethodDef g_PoliceBossSoundMethods[];
+extern PyMethodDef g_PoliceSoundMethods[];
+extern PyMethodDef g_RustySoundMethods[];
+extern PyMethodDef g_SebastianSoundMethods[];
+extern PyMethodDef g_SentinelSoundMethods[];
+extern PyMethodDef g_SputnikJunkyardSoundMethods[];
+extern PyMethodDef g_SputnikSoundMethods[];
+extern PyMethodDef g_TestCSoundMethods[];
 /* the C parts of the character scripts, their Init runs data/chars/<name>.def (src/game/Script/Characters.c) */
 extern PyMethodDef g_BettyMethods[];
 extern PyMethodDef g_BankDirectorMethods[];

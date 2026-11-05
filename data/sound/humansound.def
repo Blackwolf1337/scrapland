@@ -1,0 +1,189 @@
+# humansound (the sound script sound/humansound.py of the game): the sound files of the character class (LoadSounds),
+# the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of a new entity
+# (InitLoops, $name the entity) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/humansound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes paso-human1.wav
+	AddSoundRes paso-human2.wav
+if %HumanSound.isPC
+	class
+		AddSoundRes mecanismo-human1.wav
+end
+	AddSoundRes mecanismo-human2.wav
+if %HumanSound.isPC
+	class
+		AddSoundRes mecanismo-human3.wav
+end
+	AddSoundRes rasca-human.wav
+	AddSoundRes caida-human.wav
+
+section SetSounds
+let act Turn
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 8 mecanismo-human1 0.012 +4
+else
+	call Chars.ActSound $char $act 8 mecanismo-human2 0.012 +4
+end
+call Chars.ActSound $char $act 10 paso-human1 0.05
+call Chars.ActSound $char $act 16 mecanismo-human2 0.012 +4
+call Chars.ActSound $char $act 18 paso-human1 0.05
+let act Run
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 4 mecanismo-human1 0.012 +4
+else
+	call Chars.ActSound $char $act 4 mecanismo-human2 0.012 +4
+end
+call Chars.ActSound $char $act 6 paso-human1 0.05
+call Chars.ActSound $char $act 15 mecanismo-human2 0.012 +4
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 15 mecanismo-human3 0.011 +4
+end
+call Chars.ActSound $char $act 18 paso-human2 0.05
+let act Back
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 1 mecanismo-human1 0.012 +4
+else
+	call Chars.ActSound $char $act 1 mecanismo-human2 0.012 +4
+end
+call Chars.ActSound $char $act 2 paso-human1 0.05
+call Chars.ActSound $char $act 12 mecanismo-human2 0.015 +4
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 12 mecanismo-human3 0.011 +4
+end
+call Chars.ActSound $char $act 14 paso-human2 0.05
+let act Walk
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 1 mecanismo-human1 0.012 +4
+else
+	call Chars.ActSound $char $act 1 mecanismo-human2 0.012 +4
+end
+call Chars.ActSound $char $act 3 paso-human1 0.05
+call Chars.ActSound $char $act 20 mecanismo-human2 0.015 +4
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 20 mecanismo-human3 0.011 +4
+end
+call Chars.ActSound $char $act 22 paso-human2 0.05
+let act StrLeft
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 1 mecanismo-human1 0.012 +4
+else
+	call Chars.ActSound $char $act 1 mecanismo-human2 0.012 +4
+end
+call Chars.ActSound $char $act 6 paso-human1 0.05
+call Chars.ActSound $char $act 16 mecanismo-human2 0.015 +4
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 16 mecanismo-human3 0.011 +4
+end
+call Chars.ActSound $char $act 18 paso-human2 0.05
+let act StrRight
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 1 mecanismo-human1 0.012 +4
+else
+	call Chars.ActSound $char $act 1 mecanismo-human2 0.012 +4
+end
+call Chars.ActSound $char $act 6 paso-human1 0.05
+call Chars.ActSound $char $act 16 mecanismo-human2 0.015 +4
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 16 mecanismo-human3 0.011 +4
+end
+call Chars.ActSound $char $act 18 paso-human2 0.05
+let act Relax1
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 12 mecanismo-human1 0.013 +4
+else
+	call Chars.ActSound $char $act 12 mecanismo-human2 0.013 +4
+end
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 14 mecanismo-human3 0.014 +4
+end
+call Chars.ActSound $char $act 38 rasca-human 0.05 +4
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 49 mecanismo-human1 0.013 +10
+else
+	call Chars.ActSound $char $act 49 mecanismo-human2 0.013 +10
+end
+call Chars.ActSound $char $act 60 rasca-human 0.05 +4
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 69 mecanismo-human1 0.013 +10
+else
+	call Chars.ActSound $char $act 69 mecanismo-human2 0.013 +10
+end
+call Chars.ActSound $char $act 78 rasca-human 0.05 +4
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 83 mecanismo-human1 0.012 +10
+else
+	call Chars.ActSound $char $act 83 mecanismo-human2 0.012 +10
+end
+call Chars.ActSound $char $act 88 mecanismo-human2 0.017 +3
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 90 mecanismo-human3 0.014 +4
+end
+let act Relax0
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 2 mecanismo-human1 0.013 +10
+else
+	call Chars.ActSound $char $act 2 mecanismo-human2 0.013 +10
+end
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 44 mecanismo-human3 0.014 +4
+end
+call Chars.ActSound $char $act 42 mecanismo-human2 0.017 +8
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 80 mecanismo-human1 0.013 +4
+else
+	call Chars.ActSound $char $act 80 mecanismo-human2 0.013 +4
+end
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 128 mecanismo-human1 0.012 +8
+else
+	call Chars.ActSound $char $act 128 mecanismo-human2 0.012 +8
+end
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 130 mecanismo-human3 0.014 +4
+end
+if %HumanSound.isPC
+	call Chars.ActSound $char $act 169 mecanismo-human1 0.012 +2
+else
+	call Chars.ActSound $char $act 16 mecanismo-human2 0.012 +2
+end
+class
+	FallSound caida-human
+	FallSoundVol 0.05
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk0
+do Talk0Snd
+let talk TalkNPC0
+do Talk0Snd
+
+section TalkSnd
+
+section Talk0Snd
+if %HumanSound.isPC
+	call Chars.ActSound $char $talk 2 mecanismo-human1 0.013 +4
+else
+	call Chars.ActSound $char $talk 2 mecanismo-human2 0.013 +4
+end
+if %HumanSound.isPC
+	call Chars.ActSound $char $talk 4 mecanismo-human3 0.014 +4
+end
+if %HumanSound.isPC
+	call Chars.ActSound $char $talk 42 mecanismo-human1 0.013 +4
+else
+	call Chars.ActSound $char $talk 42 mecanismo-human2 0.013 +4
+end
+if %HumanSound.isPC
+	call Chars.ActSound $char $talk 44 mecanismo-human3 0.014 +4
+end
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

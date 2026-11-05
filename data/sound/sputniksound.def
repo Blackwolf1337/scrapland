@@ -1,0 +1,175 @@
+# sputniksound (the sound script sound/sputniksound.py of the game): the sound files of the character class
+# (LoadSounds), the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of
+# a new entity (InitLoops, $name the entity) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/sputniksound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes arrow-spuknit1.wav
+	AddSoundRes arrow-spuknit2.wav
+	AddSoundRes arrow-spuknit3.wav
+	AddSoundRes arrow-spuknit4.wav
+	AddSoundRes arrow-spuknit5.wav
+	AddSoundRes arrow-spuknit6.wav
+	AddSoundRes arrow-spuknit7.wav
+	AddSoundRes arrow-spuknit-heavy.wav
+	AddSoundRes arrow-spuknit-heavy2.wav
+	AddSoundRes arrow-spuknit-heavy3.wav
+	AddSoundRes boca-abre.wav
+	AddSoundRes boca-mov1.wav
+	AddSoundRes boca-cierre.wav
+	AddSoundRes beep-spuknit.wav
+	AddSoundRes beep-spuknit2.wav
+	AddSoundRes suck.wav
+	AddSoundRes reflejo1.wav
+if %SputnikSound.isPC
+	class
+		AddSoundRes reflejo2.wav
+end
+
+section SetSounds
+let act Relax
+let act Relax0
+call Chars.ActSoundLoop $char $act 6 4 0.25
+let act Relax1
+call Chars.ActSoundLoop $char $act 2 2 0.25
+call Chars.ActSoundLoop $char $act 44 3 0.25
+call Chars.ActSoundLoop $char $act 71 2 0.25
+let act Relax2
+call Chars.ActSoundLoop $char $act 6 1 0.25
+call Chars.ActSoundLoop $char $act 16 2 0.25 +4
+let act Relax3
+call Chars.ActSoundLoop $char $act 11 6 0.25
+call Chars.ActSoundLoop $char $act 11 2 0.25 +4
+call Chars.ActSoundLoop $char $act 25 3 0.25 +4
+call Chars.ActSoundLoop $char $act 26 5 0.25
+call Chars.ActSoundLoop $char $act 39 2 0.25
+let act Relax4
+call Chars.ActSoundLoop $char $act 4 2 0.25
+call Chars.ActSoundLoop $char $act 5 7 0.25
+call Chars.ActSoundLoop $char $act 28 8 0.35
+call Chars.ActSoundLoop $char $act 38 9 0.25
+let act Relax5
+call Chars.ActSoundLoop $char $act 10 1 0.25 +4
+call Chars.ActSoundLoop $char $act 37 2 0.25
+call Chars.ActSoundLoop $char $act 66 3 0.25
+call Chars.ActSoundLoop $char $act 105 6 0.25
+let act Hello
+call Chars.ActSound $char $act 9 arrow-spuknit4 0.25
+call Chars.ActSound $char $act 35 arrow-spuknit6 0.25
+call Chars.ActSound $char $act 60 arrow-spuknit2 0.25 +4
+call Chars.ActSound $char $act 81 arrow-spuknit3 0.25 +4
+call Chars.ActSound $char $act 96 arrow-spuknit2 0.25 +4
+call Chars.ActSound $char $act 110 arrow-spuknit3 0.25 +4
+call Chars.ActSound $char $act 120 arrow-spuknit7 0.25
+call Chars.ActSound $char $act 122 arrow-spuknit2 0.25 +4
+let act Bye
+call Chars.ActSound $char $act 4 arrow-spuknit2 0.25 +6
+call Chars.ActSound $char $act 17 arrow-spuknit3 0.25 +6
+call Chars.ActSound $char $act 15 arrow-spuknit5 0.25
+let act Make
+call Chars.ActSound $char $act 14 arrow-spuknit2 0.25 +6
+call Chars.ActSound $char $act 32 boca-abre 0.12
+call Chars.StrSound $char $act 15 Anm_bocanada 0.5
+call Chars.StrSoundStop $char $act 60
+call Chars.ActSound $char $act 44 reflejo1 0.7
+if %SputnikSound.isPC
+	call Chars.ActSound $char $act 46 reflejo2 1.0
+end
+call Chars.ActSound $char $act 48 reflejo1 0.7
+if %SputnikSound.isPC
+	call Chars.ActSound $char $act 50 reflejo2 1.0
+end
+call Chars.ActSound $char $act 39 beep-spuknit 0.8
+call Chars.ActSound $char $act 50 boca-cierre 0.1
+call Chars.ActSound $char $act 55 reflejo1 0.9
+if %SputnikSound.isPC
+	call Chars.ActSound $char $act 53 reflejo2 1.0
+end
+let act Suck
+call Chars.ActSound $char $act 2 boca-abre 0.1 +4
+call Chars.ActSound $char $act 6 boca-cierre 0.1 +4
+call Chars.StrSound $char $act 12 Anm_bocanada 0.5
+call Chars.StrSoundStop $char $act 90
+call Chars.ActSound $char $act 28 boca-abre 0.3 +4
+call Chars.ActSound $char $act 52 reflejo1 0.7
+if %SputnikSound.isPC
+	call Chars.ActSound $char $act 54 reflejo2 1.0
+end
+call Chars.ActSound $char $act 40 suck 0.35
+call Chars.ActSound $char $act 40 beep-spuknit2 0.8
+call Chars.ActSound $char $act 35 boca-cierre 0.1 +4
+call Chars.ActSound $char $act 56 reflejo1 0.7
+call Chars.ActSound $char $act 58 boca-abre 0.3
+if %SputnikSound.isPC
+	call Chars.ActSound $char $act 58 reflejo2 1.0
+end
+call Chars.ActSound $char $act 60 reflejo1 0.9
+call Chars.ActSound $char $act 69 boca-cierre 0.1
+if %SputnikSound.isPC
+	call Chars.ActSound $char $act 53 reflejo2 1.0
+end
+call Chars.ActSound $char $act 89 arrow-spuknit1 0.25
+let act Interface
+call Chars.ActSound $char $act 1 arrow-spuknit2 0.28
+call Chars.ActSound $char $act 10 arrow-spuknit4 0.28
+call Chars.ActSound $char $act 15 arrow-spuknit-heavy 1.0
+call Chars.ActSound $char $act 20 arrow-spuknit6 0.25
+call Chars.ActSound $char $act 36 arrow-spuknit-heavy2 1.0
+call Chars.ActSound $char $act 36 arrow-spuknit2 0.25
+call Chars.ActSound $char $act 42 arrow-spuknit3 0.25
+call Chars.ActSound $char $act 45 arrow-spuknit-heavy3 0.65
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+
+section TalkSnd
+
+section InitLoops
+entity $name
+	snd_n 10
+	snd01_name arrow-spuknit1
+	snd01_loop 0
+	snd01_ini 0.0
+	snd01_end 1000
+	snd02_name arrow-spuknit2
+	snd02_loop 0
+	snd02_ini 0.0
+	snd02_end 1000
+	snd03_name arrow-spuknit3
+	snd03_loop 0
+	snd03_ini 0.0
+	snd03_end 1000
+	snd04_name arrow-spuknit4
+	snd04_loop 0
+	snd04_ini 0.0
+	snd04_end 1000
+	snd05_name arrow-spuknit5
+	snd05_loop 0
+	snd05_ini 0.0
+	snd05_end 1000
+	snd06_name arrow-spuknit6
+	snd06_loop 0
+	snd06_ini 0.0
+	snd06_end 1000
+	snd07_name boca-abre
+	snd07_loop 0
+	snd07_ini 0.0
+	snd07_end 1000
+	snd08_name boca-mov1
+	snd08_loop 0
+	snd08_ini 0.0
+	snd08_end 1000
+	snd09_name boca-cierre
+	snd09_loop 0
+	snd09_ini 0.0
+	snd09_end 1000
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

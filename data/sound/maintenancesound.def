@@ -1,0 +1,66 @@
+# maintenancesound (the sound script sound/maintenancesound.py of the game): the sound files of the character class
+# (LoadSounds), the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of
+# a new entity (InitLoops, $name the entity) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/maintenancesound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes loop-laserwork.wav
+	AddSoundRes loop-main.wav
+	AddSoundRes beep-main.wav
+	AddSoundRes beep-main2.wav
+	AddSoundRes mecanismo-main.wav
+	AddSoundRes giro-main.wav
+
+section SetSounds
+let act WalkInit
+call Chars.ActSound $char $act 3 beep-main 0.008
+call Chars.ActSound $char $act 2 giro-main 0.009
+let act Walk
+call Chars.ActSound $char $act 16 mecanismo-main 0.002 +4
+call Chars.ActSound $char $act 19 giro-main 0.009
+call Chars.ActSound $char $act 35 mecanismo-main 0.002 +6
+call Chars.ActSound $char $act 55 mecanismo-main 0.002 +5
+let act WalkEnd
+call Chars.ActSound $char $act 78 giro-main 0.009
+call Chars.ActSound $char $act 94 beep-main2 0.008
+call Chars.ActSound $char $act 98 giro-main 0.009
+let act WorkInit
+call Chars.ActSound $char $act 2 giro-main 0.009
+let act Work
+call Chars.ActSound $char $act 16 mecanismo-main 0.002 +4
+call Chars.ActSound $char $act 18 giro-main 0.009
+call Chars.ActSound $char $act 22 mecanismo-main 0.002 +4
+call Chars.ActSound $char $act 26 mecanismo-main 0.002 +4
+call Chars.ActSound $char $act 32 mecanismo-main 0.002 +4
+call Chars.ActSound $char $act 36 mecanismo-main 0.002 +4
+let act WorkEnd
+call Chars.ActSound $char $act 47 giro-main 0.009
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+call Scrap.Set MaintenanceWorkSound loop-laserwork
+call Scrap.Set MaintenanceWorkSoundVol 0.1
+call Scrap.Set MaintenanceWorkSoundAttIni 0.0
+call Scrap.Set MaintenanceWorkSoundAttEnd 3000.0
+
+section TalkSnd
+
+section InitLoops
+entity $name
+	snd_n 1
+	snd00_name loop-main
+	snd00_loop 1
+	snd00_pitch0 -5.0
+	snd00_vol0 0.05
+	snd00_pitch1 +5.0
+	snd00_vol1 0.12
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

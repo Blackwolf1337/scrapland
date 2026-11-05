@@ -1,0 +1,322 @@
+# policesound (the sound script sound/policesound.py of the game): the sound files of the character class (LoadSounds),
+# the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of a new entity
+# (InitLoops, $name the entity) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/policesound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes Police-pasoA.wav
+	AddSoundRes Police-pasoB.wav
+	AddSoundRes Police-paso11.wav
+	AddSoundRes Police-paso12.wav
+	AddSoundRes mecanismo-police1.wav
+	AddSoundRes mecanismo-police2.wav
+	AddSoundRes lenguaje-police1.wav
+	AddSoundRes lenguaje-police4.wav
+	AddSoundRes lenguaje-police5.wav
+	AddSoundRes lenguaje-police6.wav
+	AddSoundRes lenguaje-police8.wav
+	AddSoundRes lenguaje-police9.wav
+	AddSoundRes lenguaje-police10.wav
+	AddSoundRes lenguaje-police14.wav
+	AddSoundRes lenguaje-police15.wav
+	AddSoundRes lenguaje-police7.wav
+	AddSoundRes rasca-Police1.wav
+	AddSoundRes rasca-Police2.wav
+	AddSoundRes comeon-police.wav
+	AddSoundRes comeon-police2.wav
+if %PoliceSound.isPC
+	class
+		AddSoundRes ext-metal1.wav
+end
+if %PoliceSound.isPC
+	class
+		AddSoundRes golpe-mano.wav
+end
+	AddSoundRes Siren1.wav
+	AddSoundRes pluf.wav
+	AddSoundRes efecto1.wav
+if %PoliceSound.isPC
+	class
+		AddSoundRes efecto2.wav
+end
+	AddSoundRes cierre-armadura.wav
+if %PoliceSound.isPC
+	class
+		AddSoundRes cierre-armadura2.wav
+end
+if %PoliceSound.isPC
+	class
+		AddSoundRes mecanismo-fusion5.wav
+end
+if %PoliceSound.isPC
+	class
+		AddSoundRes mecanismo-fusion6.wav
+end
+	AddSoundRes caida-police.wav
+
+section SetSounds
+let act Relax0
+call Chars.ActSound $char $act 7 mecanismo-police1 0.03 +5
+call Chars.ActSound $char $act 9 lenguaje-police14 0.15
+call Chars.ActSound $char $act 31 mecanismo-police2 0.03 +5
+call Chars.ActSound $char $act 32 lenguaje-police9 0.15
+call Chars.ActSound $char $act 68 lenguaje-police1 0.15
+call Chars.ActSound $char $act 72 mecanismo-police1 0.03 +5
+call Chars.ActSound $char $act 100 lenguaje-police4 0.15
+call Chars.ActSound $char $act 104 mecanismo-police1 0.03 +5
+call Chars.ActSound $char $act 150 mecanismo-police2 0.03 -2
+call Chars.ActSound $char $act 155 lenguaje-police6 0.15
+let act Relax1
+call Chars.ActSound $char $act 39 mecanismo-police2 0.03 -2
+call Chars.ActSound $char $act 51 lenguaje-police10 0.15
+call Chars.ActSound $char $act 91 rasca-Police1 0.025
+call Chars.ActSound $char $act 107 rasca-Police2 0.025 +5
+call Chars.ActSound $char $act 120 rasca-Police1 0.025 +5
+call Chars.ActSound $char $act 132 rasca-Police2 0.025 +5
+call Chars.ActSound $char $act 147 mecanismo-police2 0.03 +5
+call Chars.ActSound $char $act 159 lenguaje-police5 0.15
+call Chars.ActSound $char $act 186 mecanismo-police2 0.03 +5
+call Chars.ActSound $char $act 190 Police-paso11 0.03
+let act Turn
+call Chars.ActSound $char $act 1 mecanismo-police1 0.016 +5
+call Chars.ActSound $char $act 7 Police-paso11 0.03
+call Chars.ActSound $char $act 7 mecanismo-police2 0.016 +5
+call Chars.ActSound $char $act 14 Police-paso12 0.03
+let act Run
+call Chars.ActSound $char $act 6 Police-pasoA 0.035
+call Chars.ActSound $char $act 4 mecanismo-police1 0.014
+call Chars.ActSound $char $act 13 mecanismo-police2 0.014
+call Chars.ActSound $char $act 15 Police-pasoB 0.035
+let act Back
+call Chars.ActSound $char $act 6 Police-pasoA 0.035 -1
+call Chars.ActSound $char $act 4 mecanismo-police1 0.014 +5
+call Chars.ActSound $char $act 13 mecanismo-police2 0.014 +5
+call Chars.ActSound $char $act 15 Police-pasoB 0.035 -1
+let act Walk
+call Chars.ActSound $char $act 16 Police-pasoA 0.035
+call Chars.ActSound $char $act 14 mecanismo-police1 0.014
+call Chars.ActSound $char $act 25 mecanismo-police2 0.014
+call Chars.ActSound $char $act 27 Police-pasoB 0.035
+let act StrLeft
+call Chars.ActSound $char $act 5 Police-pasoA 0.035 +1
+call Chars.ActSound $char $act 5 mecanismo-police1 0.014
+call Chars.ActSound $char $act 12 mecanismo-police2 0.014
+call Chars.ActSound $char $act 14 Police-pasoB 0.035 +1
+let act StrLeftInit
+call Chars.ActSound $char $act 2 Police-pasoA 0.035 -1
+call Chars.ActSound $char $act 1 mecanismo-police1 0.014
+let act StrRight
+call Chars.ActSound $char $act 5 Police-pasoA 0.035 -1
+call Chars.ActSound $char $act 5 mecanismo-police1 0.014
+call Chars.ActSound $char $act 12 mecanismo-police2 0.014
+call Chars.ActSound $char $act 14 Police-pasoB 0.035 -1
+let act StrRightInit
+call Chars.ActSound $char $act 2 Police-pasoA 0.035 -1
+call Chars.ActSound $char $act 1 mecanismo-police2 0.014
+let act FallInit
+call Chars.ActSound $char $act 6 mecanismo-police1 0.016 +5
+let act Fall
+call Chars.ActSound $char $act 14 Police-pasoA 0.035 -1
+call Chars.ActSound $char $act 15 Police-pasoB 0.035 -1
+let actplus ""
+let act ActionInit$(actplus)
+call Chars.ActSound $char $act 7 mecanismo-police2 0.03 +5
+call Chars.ActSound $char $act 18 comeon-police 0.6
+call Chars.ActSound $char $act 17 mecanismo-police1 0.03 +4
+call Chars.ActSound $char $act 37 mecanismo-police2 0.03 +4
+call Chars.ActSound $char $act 38 comeon-police 0.6
+let act Action$(actplus)
+call Chars.ActSound $char $act 67 comeon-police2 0.3
+call Chars.ActSound $char $act 72 mecanismo-police1 0.03 +5
+call Chars.ActSound $char $act 83 mecanismo-police2 0.03 +5
+let actplus NPC
+let act ActionInit$(actplus)
+call Chars.ActSound $char $act 7 mecanismo-police2 0.03 +5
+call Chars.ActSound $char $act 18 comeon-police 0.6
+call Chars.ActSound $char $act 17 mecanismo-police1 0.03 +4
+call Chars.ActSound $char $act 37 mecanismo-police2 0.03 +4
+call Chars.ActSound $char $act 38 comeon-police 0.6
+let act Action$(actplus)
+call Chars.ActSound $char $act 67 comeon-police2 0.3
+call Chars.ActSound $char $act 72 mecanismo-police1 0.03 +5
+call Chars.ActSound $char $act 83 mecanismo-police2 0.03 +5
+let act ActionBad
+call Chars.StrSound $char $act 1 Anm_comeon_police4 0.5
+call Chars.ActSound $char $act 15 Police-pasoA 0.04
+call Chars.ActSound $char $act 16 Police-pasoB 0.04
+call Chars.ActSound $char $act 16 mecanismo-police2 0.03 +4
+call Chars.ActSound $char $act 28 Police-pasoB 0.04
+call Chars.ActSound $char $act 29 Police-pasoA 0.04
+call Chars.ActSound $char $act 30 mecanismo-police1 0.03 +4
+call Chars.ActSound $char $act 42 Police-pasoA 0.04
+call Chars.ActSound $char $act 43 mecanismo-police2 0.03 +4
+call Chars.ActSound $char $act 43 Police-pasoB 0.04
+call Chars.ActSound $char $act 61 Police-paso11 0.04
+call Chars.ActSound $char $act 68 Police-paso12 0.04
+let act ActionOK
+call Chars.StrSound $char $act 1 Anm_comeon_police3 0.5
+call Chars.ActSound $char $act 16 mecanismo-police2 0.03 +4
+call Chars.ActSound $char $act 13 Police-pasoA 0.035
+call Chars.ActSound $char $act 15 Police-pasoB 0.035
+call Chars.ActSound $char $act 14 mecanismo-police1 0.03 +4
+call Chars.ActSound $char $act 20 mecanismo-police2 0.03 +4
+call Chars.ActSound $char $act 25 mecanismo-police1 0.03 +4
+call Chars.ActSound $char $act 30 mecanismo-police2 0.03 +4
+call Chars.ActSound $char $act 35 mecanismo-police1 0.03 +4
+call Chars.ActSound $char $act 42 mecanismo-police2 0.03
+call Chars.ActSound $char $act 50 Police-pasoA 0.035
+call Chars.ActSound $char $act 58 Police-pasoB 0.035
+call Chars.ActSound $char $act 70 mecanismo-police1 0.01
+let act DazedInit
+call Chars.ActSound $char $act 10 mecanismo-police2 0.03
+call Chars.ActSound $char $act 20 mecanismo-police1 0.03 +5
+call Chars.ActSound $char $act 30 mecanismo-police2 0.03 +5
+call Chars.ActSound $char $act 11 lenguaje-police15 0.15
+call Chars.ActSound $char $act 30 lenguaje-police7 0.15
+call Chars.ActSound $char $act 60 mecanismo-police1 0.03 +7
+call Chars.ActSound $char $act 76 mecanismo-police2 0.03 +7
+let act DazedEnd
+call Chars.ActSound $char $act 145 lenguaje-police1 0.15
+let act CrazyInit
+call Chars.StrSound $char $act 1 Anm_comeon_police5 0.5
+let act Crazy
+call Chars.ActSound $char $act 8 mecanismo-police2 0.03 +5
+call Chars.ActSound $char $act 12 lenguaje-police9 0.15
+call Chars.ActSound $char $act 63 mecanismo-police1 0.03 +5
+if %PoliceSound.isPC
+	call Chars.ActSound $char $act 68 ext-metal1 0.059 -3
+end
+call Chars.ActSound $char $act 106 mecanismo-police1 0.03 +5
+call Chars.ActSound $char $act 116 lenguaje-police1 0.15 -2
+if %PoliceSound.isPC
+	call Chars.ActSound $char $act 117 ext-metal1 0.059 -2
+end
+call Chars.ActSound $char $act 167 mecanismo-police2 0.03 +5
+let act FlashedInit
+call Chars.ActSound $char $act 6 mecanismo-police2 0.03 +3
+if %PoliceSound.isPC
+	call Chars.ActSound $char $act 11 golpe-mano 0.15
+end
+let act FlashedEnd
+call Chars.ActSound $char $act 108 mecanismo-police1 0.03 +3
+call Chars.ActSound $char $act 120 lenguaje-police1 0.15
+let act DiscoverInit
+call Chars.ActSound $char $act 6 mecanismo-police2 0.03 +3
+call Chars.ActSound $char $act 8 lenguaje-police4 0.15
+call Chars.ActSound $char $act 21 mecanismo-police1 0.03 +5
+call Chars.ActSound $char $act 27 lenguaje-police8 0.015
+call Chars.ActSound $char $act 29 mecanismo-police1 0.03 +7
+call Chars.ActSound $char $act 33 Police-pasoA 0.035 -1
+call Chars.ActSound $char $act 34 Police-pasoB 0.035 -1
+let act Discover
+call Chars.ActSound $char $act 49 mecanismo-police1 0.03 +7
+call Chars.ActSound $char $act 55 mecanismo-police2 0.03 +8
+call Chars.ActSound $char $act 56 Police-pasoA 0.035 -1
+call Chars.ActSound $char $act 57 Police-pasoB 0.035 -1
+let act Fusion
+call Chars.ActSound $char $act 2 mecanismo-police2 0.016 -2
+call Chars.ActSound $char $act 16 pluf 0.75 -2
+call Chars.ActSoundLoop $char $act 10 2 0.45
+call Chars.ActSound $char $act 21 mecanismo-police1 0.016
+if %PoliceSound.isPC
+	call Chars.ActSoundLoop $char $act 45 3 0.45
+end
+if %PoliceSound.isPC
+	call Chars.ActSound $char $act 85 mecanismo-fusion5 0.18 +6
+end
+if %PoliceSound.isPC
+	call Chars.ActSound $char $act 83 mecanismo-fusion6 0.18 +7
+end
+call Chars.ActSound $char $act 85 cierre-armadura 0.3
+if %PoliceSound.isPC
+	call Chars.ActSound $char $act 88 cierre-armadura2 0.3
+	call Chars.ActSound $char $act 90 mecanismo-fusion6 0.18 +8
+end
+if %PoliceSound.isPC
+	call Chars.ActSound $char $act 90 cierre-armadura2 0.3 +2
+end
+call Chars.ActSound $char $act 94 cierre-armadura 0.3
+call Chars.ActSound $char $act 100 cierre-armadura 0.3
+if %PoliceSound.isPC
+	call Chars.ActSound $char $act 103 cierre-armadura2 0.3
+end
+call Chars.ActSound $char $act 105 cierre-armadura 0.3 +3
+let act Laugh
+call Chars.StrSound $char $act 2 Anm_comeon_police6 0.5
+call Chars.ActSound $char $act 2 mecanismo-police2 0.03
+call Chars.ActSound $char $act 15 mecanismo-police1 0.028 +7
+call Chars.ActSound $char $act 21 mecanismo-police2 0.028 +8
+call Chars.ActSound $char $act 27 mecanismo-police1 0.028 +7
+call Chars.ActSound $char $act 33 mecanismo-police2 0.028 +8
+call Chars.ActSound $char $act 39 mecanismo-police1 0.028 +7
+call Chars.ActSound $char $act 45 mecanismo-police2 0.028 +8
+call Chars.ActSound $char $act 51 mecanismo-police1 0.028 +7
+call Chars.ActSound $char $act 57 mecanismo-police2 0.028 +8
+call Chars.ActSound $char $act 63 mecanismo-police1 0.03
+call Chars.ActSound $char $act 68 mecanismo-police2 0.03
+class
+	FallSound caida-police
+	FallSoundVol 0.05
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk0
+do Talk0Snd
+let talk TalkNPC0
+do Talk0Snd
+let talk Talk1
+do Talk1Snd
+let talk TalkNPC1
+do Talk1Snd
+let talk Talk2
+do Talk2Snd
+let talk TalkNPC2
+do Talk2Snd
+
+section TalkSnd
+
+section Talk0Snd
+call Chars.ActSound $char $talk 5 mecanismo-police1 0.02 +2
+call Chars.ActSound $char $talk 16 mecanismo-police2 0.02 +2
+
+section Talk1Snd
+call Chars.ActSound $char $talk 2 mecanismo-police1 0.02 +5
+call Chars.ActSound $char $talk 23 mecanismo-police2 0.02 +5
+call Chars.ActSound $char $talk 45 mecanismo-police2 0.02 +5
+
+section Talk2Snd
+call Chars.ActSound $char $talk 6 mecanismo-police1 0.02 +2
+call Chars.ActSound $char $talk 18 mecanismo-police2 0.02 +2
+call Chars.ActSound $char $talk 42 mecanismo-police1 0.02 +2
+let talk SirenInit
+call Chars.ActSoundLoop $char $talk 6 1 0.1
+let talk SirenEnd
+call Chars.ActSoundLoop $char $talk 65 1 0
+
+section InitLoops
+if %PoliceSound.isPC
+	entity $name
+		snd_n 4
+else
+	entity $name
+		snd_n 3
+end
+	snd01_name Siren1
+	snd01_loop 1
+	snd02_name efecto1
+	snd02_loop 0
+if %PoliceSound.isPC
+	entity $name
+		snd03_name efecto2
+		snd03_loop 0
+end
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

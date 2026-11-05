@@ -1,0 +1,130 @@
+# rustysound (the sound script sound/rustysound.py of the game): the sound files of the character class (LoadSounds),
+# the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of a new entity
+# (InitLoops, $name the entity) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/rustysound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes paso-Rusty1.wav
+	AddSoundRes paso-Rusty2.wav
+	AddSoundRes mecanico2.wav
+	AddSoundRes mecanico3.wav
+	AddSoundRes mecanismoG1.wav
+	AddSoundRes mecanismoG2.wav
+	AddSoundRes mecanismo-rusty3.wav
+	AddSoundRes golpe-rusty.wav
+	AddSoundRes golpe-rusty2.wav
+	AddSoundRes FXRustyChispasSound.wav
+
+section SetSounds
+let act Walk
+call Chars.ActSound $char $act 1 mecanico2 0.028 -2
+call Chars.ActSound $char $act 2 mecanismoG1 0.012
+call Chars.ActSound $char $act 3 paso-Rusty1 0.08
+call Chars.ActSound $char $act 16 mecanico3 0.028 -2
+call Chars.ActSound $char $act 15 mecanismoG2 0.012
+call Chars.ActSound $char $act 18 paso-Rusty2 0.08
+let act Run
+call Chars.ActSound $char $act 1 mecanico2 0.028 -2
+call Chars.ActSound $char $act 1 mecanismoG1 0.012
+call Chars.ActSound $char $act 7 paso-Rusty1 0.08
+call Chars.ActSound $char $act 15 mecanico3 0.028 -2
+call Chars.ActSound $char $act 15 mecanismoG2 0.012
+call Chars.ActSound $char $act 17 paso-Rusty2 0.08
+let act Turn
+call Chars.ActSound $char $act 9 paso-Rusty2 0.08
+call Chars.ActSound $char $act 7 mecanico3 0.028
+call Chars.ActSound $char $act 18 paso-Rusty1 0.08
+call Chars.ActSound $char $act 14 mecanico2 0.028
+let act Relax0
+call Chars.ActSound $char $act 1 mecanismoG1 0.012 +3
+call Chars.ActSound $char $act 3 mecanico2 0.028 -2
+call Chars.ActSound $char $act 45 mecanismoG2 0.012 +4
+call Chars.ActSound $char $act 47 mecanico3 0.028 -2
+call Chars.ActSound $char $act 82 mecanismoG1 0.012
+call Chars.ActSound $char $act 84 mecanico2 0.028 -2
+call Chars.ActSound $char $act 126 mecanismoG2 0.012 +3
+call Chars.ActSound $char $act 128 mecanico3 0.028 -2
+let act Relax1
+call Chars.ActSound $char $act 9 mecanismoG1 0.012
+call Chars.ActSound $char $act 15 mecanismoG2 0.012
+call Chars.ActSound $char $act 16 mecanico2 0.028
+call Chars.ActSound $char $act 49 mecanismo-rusty3 0.014 +7
+call Chars.ActSound $char $act 52 mecanico3 0.028
+call Chars.ActSound $char $act 78 mecanismo-rusty3 0.014 +6
+call Chars.ActSound $char $act 80 mecanico2 0.028
+call Chars.ActSound $char $act 85 mecanismoG1 0.012
+call Chars.ActSound $char $act 87 mecanico3 0.028
+let act Action
+call Chars.ActSound $char $act 1 mecanismoG2 0.012
+call Chars.ActSound $char $act 2 mecanico2 0.028
+call Chars.ActSound $char $act 14 mecanismoG1 0.012
+call Chars.ActSound $char $act 16 mecanico3 0.028
+call Chars.ActSound $char $act 31 golpe-rusty 0.07 +4
+call Chars.ActSound $char $act 41 golpe-rusty 0.07 +5
+call Chars.ActSound $char $act 44 mecanismoG2 0.012 +2
+call Chars.ActSound $char $act 44 mecanico2 0.028
+call Chars.ActSound $char $act 66 golpe-rusty 0.03 +3
+call Chars.ActSound $char $act 95 mecanismoG2 0.012 +3
+call Chars.ActSound $char $act 96 mecanico3 0.028
+call Chars.ActSound $char $act 107 mecanismoG1 0.012 +4
+call Chars.ActSound $char $act 109 mecanico2 0.028
+call Chars.ActSound $char $act 114 golpe-rusty 0.12 +3
+call Chars.ActSound $char $act 114 golpe-rusty2 0.12 +3
+let act Pissed
+call Chars.ActSound $char $act 1 mecanismoG2 0.012
+call Chars.ActSound $char $act 2 mecanico2 0.028
+call Chars.ActSound $char $act 44 mecanismoG1 0.012
+call Chars.ActSound $char $act 45 mecanico3 0.028
+call Chars.ActSound $char $act 51 mecanismoG2 0.012
+call Chars.ActSound $char $act 52 mecanico2 0.028
+call Chars.ActSound $char $act 73 mecanismoG2 0.012
+call Chars.ActSound $char $act 74 mecanico2 0.028
+call Scrap.Set FXRustyChispasSound FXRustyChispasSound
+call Scrap.Set FXRustyChispasSoundVol 0.01
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk0
+do Talk0Snd
+let talk TalkNPC0
+do Talk0Snd
+let talk Talk1
+do Talk1Snd
+let talk TalkNPC1
+do Talk1Snd
+let talk Talk2
+do Talk2Snd
+let talk TalkNPC2
+do Talk2Snd
+
+section TalkSnd
+
+section Talk0Snd
+call Chars.ActSound $char $talk 3 mecanico2 0.028 -3
+call Chars.ActSound $char $talk 42 mecanico2 0.028 -3
+
+section Talk1Snd
+call Chars.ActSound $char $talk 1 mecanismoG2 0.014
+call Chars.ActSound $char $talk 2 mecanico2 0.028
+call Chars.ActSound $char $talk 40 mecanismoG1 0.014
+call Chars.ActSound $char $talk 41 mecanico3 0.028
+
+section Talk2Snd
+call Chars.ActSound $char $talk 1 mecanismoG2 0.014
+call Chars.ActSound $char $talk 2 mecanico2 0.028
+call Chars.ActSound $char $talk 19 golpe-rusty 0.06 +8
+call Chars.ActSound $char $talk 36 mecanismoG2 0.014
+call Chars.ActSound $char $talk 33 golpe-rusty 0.08 +10
+call Chars.ActSound $char $talk 37 mecanico2 0.028
+
+section InitLoops
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

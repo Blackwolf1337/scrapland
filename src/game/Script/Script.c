@@ -21,7 +21,8 @@
  *					<, >, <= or >=
  *	action <name>, getaction <name>	SAct.CreateAction, SAct.GetAction: the attribute lines that follow set
  *					the action (SAct.SetAct); action alone: the current action
- *	class <name>			SAct.GetClass: the attribute lines that follow set the class (SetCls)
+ *	class <name>			SAct.GetClass: the attribute lines that follow set the class (SetCls); class
+ *					alone: the current class
  *	event <time> <name> <func> [discardable]	an event of the current action
  *	setvar <Module.var> <value>	a variable of a script module
  *	entity <name>			the attribute lines that follow set script variables of the entity
@@ -72,6 +73,33 @@ static const scriptModule_t script_modules[] = {
 	{ "MakeChar", g_MakeCharMethods },
 	{ "CharAct", g_CharActMethods },
 	{ "Speech", g_SpeechMethods },
+	{ "BankDirectorSound", g_BankDirectorSoundMethods },
+	{ "BankMasterSound", g_BankMasterSoundMethods },
+	{ "BertoSound", g_BertoSoundMethods },
+	{ "BettySound", g_BettySoundMethods },
+	{ "BishopSound", g_BishopSoundMethods },
+	{ "BossSound", g_BossSoundMethods },
+	{ "CrazyGamblerSound", g_CrazyGamblerSoundMethods },
+	{ "DesktopSound", g_DesktopSoundMethods },
+	{ "DtritusSound", g_DtritusSoundMethods },
+	{ "FunctionarySound", g_FunctionarySoundMethods },
+	{ "GateKeeperSound", g_GateKeeperSoundMethods },
+	{ "GearSound", g_GearSoundMethods },
+	{ "HumanSound", g_HumanSoundMethods },
+	{ "HumphreySound", g_HumphreySoundMethods },
+	{ "MaintenanceSound", g_MaintenanceSoundMethods },
+	{ "MayorSound", g_MayorSoundMethods },
+	{ "MercenarySound", g_MercenarySoundMethods },
+	{ "MessengerSound", g_MessengerSoundMethods },
+	{ "NurseSound", g_NurseSoundMethods },
+	{ "PoliceBossSound", g_PoliceBossSoundMethods },
+	{ "PoliceSound", g_PoliceSoundMethods },
+	{ "RustySound", g_RustySoundMethods },
+	{ "SebastianSound", g_SebastianSoundMethods },
+	{ "SentinelSound", g_SentinelSoundMethods },
+	{ "SputnikJunkyardSound", g_SputnikJunkyardSoundMethods },
+	{ "SputnikSound", g_SputnikSoundMethods },
+	{ "TestCSound", g_TestCSoundMethods },
 	{ "Betty", g_BettyMethods },
 	{ "BankDirector", g_BankDirectorMethods },
 	{ "Boss", g_BossMethods },
@@ -1174,6 +1202,9 @@ static void Def_Line(scriptDef_t *m, scriptLine_t *l, const char *next) {
 		}
 		g_pAuxAction = cmd[0] == 'a' ? cActClass_CreateAction(g_pAuxActClass, a) : cActClass_GetAction(g_pAuxActClass, a);
 		m->target = TARGET_ACTION;
+	} else if (!strcmp(cmd, "class") && l->n == 1) {
+		/* the current class (a sound script adds to the class its character script builds) */
+		m->target = TARGET_CLASS;
 	} else if (!strcmp(cmd, "class") && l->n == 2) {
 		CHECK(g_pActClassList);
 		g_pAuxActClass = cActClassList_Get(g_pActClassList, Def_Word(m, l->tok[1], l->quoted[1], a, sizeof(a)));

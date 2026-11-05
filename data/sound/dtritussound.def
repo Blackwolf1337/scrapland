@@ -1,0 +1,249 @@
+# dtritussound (the sound script sound/dtritussound.py of the game): the sound files of the character class
+# (LoadSounds), the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of
+# a new entity (InitLoops, $name the entity) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/dtritussound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes paso-detritus1.wav
+	AddSoundRes paso-detritus3.wav
+	AddSoundRes caida-dtritus.wav
+	AddSoundRes action.wav
+	AddSoundRes mecanismo-dtritus1.wav
+	AddSoundRes mecanismo-dtritus2.wav
+	AddSoundRes mecanismo-dtritus3.wav
+	AddSoundRes mecanismo-dtritus4.wav
+	AddSoundRes mecanismo-dtritus5.wav
+	AddSoundRes mecanismo-dtritus6.wav
+
+section SetSounds
+let act Turn
+call Chars.ActSound $char $act 8 mecanismo-dtritus1 0.026 +4
+call Chars.ActSound $char $act 10 paso-detritus1 0.055
+call Chars.ActSound $char $act 18 mecanismo-dtritus1 0.026 +4
+call Chars.ActSound $char $act 20 paso-detritus3 0.055
+let act TurnAlarm
+call Chars.ActSound $char $act 6 mecanismo-dtritus1 0.026 +4
+call Chars.ActSound $char $act 8 paso-detritus1 0.055
+call Chars.ActSound $char $act 15 mecanismo-dtritus1 0.026 +4
+call Chars.ActSound $char $act 17 paso-detritus3 0.055
+let act Run
+call Chars.ActSound $char $act 4 mecanismo-dtritus1 0.026 +4
+call Chars.ActSound $char $act 6 paso-detritus1 0.055
+call Chars.ActSound $char $act 15 mecanismo-dtritus2 0.026 +4
+call Chars.ActSound $char $act 17 paso-detritus3 0.055
+let act Sprint
+call Chars.ActSound $char $act 2 mecanismo-dtritus1 0.026 +4
+call Chars.ActSound $char $act 4 paso-detritus1 0.055
+call Chars.ActSound $char $act 11 mecanismo-dtritus2 0.026 +4
+call Chars.ActSound $char $act 13 paso-detritus3 0.055
+let act Walk
+call Chars.ActSound $char $act 2 paso-detritus1 0.055
+call Chars.ActSound $char $act 1 mecanismo-dtritus1 0.026 +4
+call Chars.ActSound $char $act 18 mecanismo-dtritus1 0.026 +4
+call Chars.ActSound $char $act 19 paso-detritus3 0.055
+let act Back
+call Chars.ActSound $char $act 1 mecanismo-dtritus1 0.026 +4
+call Chars.ActSound $char $act 3 paso-detritus1 0.055
+call Chars.ActSound $char $act 15 mecanismo-dtritus1 0.026 +4
+call Chars.ActSound $char $act 17 paso-detritus3 0.055
+let act StrLeft
+call Chars.ActSound $char $act 5 mecanismo-dtritus1 0.026 +4
+call Chars.ActSound $char $act 7 paso-detritus1 0.055
+call Chars.ActSound $char $act 17 mecanismo-dtritus1 0.026 +4
+call Chars.ActSound $char $act 19 paso-detritus3 0.055
+let act StrRight
+call Chars.ActSound $char $act 6 mecanismo-dtritus1 0.026 +4
+call Chars.ActSound $char $act 8 paso-detritus1 0.055
+call Chars.ActSound $char $act 17 mecanismo-dtritus1 0.026 +4
+call Chars.ActSound $char $act 19 paso-detritus3 0.055
+let act Relax0
+call Chars.ActSound $char $act 2 mecanismo-dtritus5 0.024
+call Chars.ActSound $char $act 6 mecanismo-dtritus6 0.024 +4
+call Chars.ActSound $char $act 37 mecanismo-dtritus3 0.025
+call Chars.ActSound $char $act 38 mecanismo-dtritus5 0.024
+call Chars.ActSound $char $act 69 mecanismo-dtritus4 0.025
+call Chars.ActSound $char $act 74 mecanismo-dtritus5 0.024
+call Chars.ActSound $char $act 103 mecanismo-dtritus5 0.024
+call Chars.ActSound $char $act 103 mecanismo-dtritus6 0.024
+call Chars.ActSound $char $act 104 mecanismo-dtritus1 0.025
+call Chars.ActSound $char $act 157 mecanismo-dtritus5 0.024
+call Chars.ActSound $char $act 158 mecanismo-dtritus3 0.025 +4
+call Chars.ActSound $char $act 161 mecanismo-dtritus6 0.024
+let act Relax1
+call Chars.ActSound $char $act 5 mecanismo-dtritus5 0.024
+call Chars.ActSound $char $act 6 mecanismo-dtritus6 0.024 +4
+call Chars.ActSound $char $act 20 mecanismo-dtritus3 0.025
+call Chars.ActSound $char $act 32 mecanismo-dtritus4 0.025
+call Chars.ActSound $char $act 40 mecanismo-dtritus3 0.025
+call Chars.ActSound $char $act 47 mecanismo-dtritus4 0.025
+call Chars.ActSound $char $act 57 mecanismo-dtritus3 0.025
+call Chars.ActSound $char $act 68 mecanismo-dtritus4 0.025
+call Chars.ActSound $char $act 37 mecanismo-dtritus3 0.025
+call Chars.ActSound $char $act 75 mecanismo-dtritus5 0.024
+call Chars.ActSound $char $act 76 mecanismo-dtritus6 0.024 +4
+call Chars.ActSound $char $act 76 mecanismo-dtritus3 0.025
+call Chars.ActSound $char $act 98 paso-detritus3 0.02
+call Chars.ActSound $char $act 99 mecanismo-dtritus1 0.025
+let act Relax2
+call Chars.ActSound $char $act 3 mecanismo-dtritus5 0.024
+call Chars.ActSound $char $act 3 mecanismo-dtritus3 0.025
+call Chars.ActSound $char $act 34 mecanismo-dtritus6 0.024
+call Chars.ActSound $char $act 34 mecanismo-dtritus4 0.025
+let act Relax3
+call Chars.ActSound $char $act 1 mecanismo-dtritus5 0.024
+call Chars.ActSound $char $act 1 mecanismo-dtritus3 0.025
+call Chars.ActSound $char $act 19 mecanismo-dtritus6 0.024 -2
+call Chars.ActSound $char $act 19 mecanismo-dtritus4 0.025
+call Chars.ActSound $char $act 133 mecanismo-dtritus5 0.024
+call Chars.ActSound $char $act 133 mecanismo-dtritus4 0.025
+let act RelaxAlarm
+call Chars.ActSound $char $act 8 mecanismo-dtritus3 0.026 +4
+call Chars.ActSound $char $act 44 mecanismo-dtritus6 0.024 +4
+call Chars.ActSound $char $act 44 mecanismo-dtritus4 0.026 +2
+call Chars.ActSound $char $act 99 mecanismo-dtritus5 0.024 +2
+call Chars.ActSound $char $act 99 mecanismo-dtritus3 0.025 +1
+call Chars.ActSound $char $act 136 mecanismo-dtritus4 0.025 +4
+call Chars.ActSound $char $act 170 mecanismo-dtritus6 0.025 +4
+call Chars.ActSound $char $act 171 mecanismo-dtritus4 0.025 +2
+let act Action
+call Chars.ActSound $char $act 12 action 0.5 +3
+let act ActionFail
+call Chars.ActSound $char $act 44 paso-detritus3 0.07
+call Chars.ActSound $char $act 46 mecanismo-dtritus1 0.027 +4
+call Chars.ActSound $char $act 50 paso-detritus1 0.07
+call Chars.ActSound $char $act 52 mecanismo-dtritus2 0.027 +5
+call Chars.ActSound $char $act 54 paso-detritus3 0.07
+call Chars.ActSound $char $act 56 mecanismo-dtritus1 0.027 +4
+call Chars.ActSound $char $act 60 paso-detritus1 0.07
+call Chars.ActSound $char $act 62 mecanismo-dtritus2 0.027 +3
+let act ActionOK
+call Chars.ActSound $char $act 43 paso-detritus3 0.07
+call Chars.ActSound $char $act 45 mecanismo-dtritus1 0.027 +4
+call Chars.ActSound $char $act 51 paso-detritus1 0.07
+call Chars.ActSound $char $act 53 mecanismo-dtritus2 0.027 +5
+call Chars.ActSound $char $act 45 mecanismo-dtritus6 0.025 +4
+call Chars.ActSound $char $act 46 mecanismo-dtritus3 0.027
+call Chars.ActSound $char $act 52 mecanismo-dtritus5 0.025 +4
+call Chars.ActSound $char $act 53 mecanismo-dtritus3 0.027
+let act ActionOK1
+call Chars.ActSound $char $act 48 paso-detritus3 0.07 +3
+call Chars.ActSound $char $act 50 mecanismo-dtritus1 0.03 +4
+call Chars.ActSound $char $act 64 paso-detritus3 0.08 +3
+call Chars.ActSound $char $act 66 mecanismo-dtritus1 0.03 +4
+call Chars.ActSound $char $act 67 paso-detritus3 0.08 +3
+call Chars.ActSound $char $act 69 mecanismo-dtritus1 0.03 +4
+call Chars.ActSound $char $act 85 mecanismo-dtritus6 0.023 +4
+call Chars.ActSound $char $act 87 mecanismo-dtritus1 0.03 +4
+class
+	FallSound caida-dtritus
+	FallSoundVol 0.05
+let talk Talk
+do TalkSnd
+let talk TalkNPC
+do TalkSnd
+let talk Talk0
+do Talk0Snd
+let talk TalkNPC0
+do Talk0Snd
+let talk Talk1
+do Talk1Snd
+let talk TalkNPC1
+do Talk1Snd
+let talk Talk2
+do Talk2Snd
+let talk TalkNPC2
+do Talk2Snd
+let talk Talk3
+do Talk3Snd
+let talk TalkNPC3
+do Talk3Snd
+let talk Talk4
+do Talk4Snd
+let talk TalkNPC4
+do Talk4Snd
+let talk Talk5
+do Talk5Snd
+let talk TalkNPC5
+do Talk5Snd
+
+section TalkSnd
+
+section Talk0Snd
+call Chars.ActSound $char $talk 2 mecanismo-dtritus5 0.022
+call Chars.ActSound $char $talk 3 mecanismo-dtritus6 0.022
+call Chars.ActSound $char $talk 3 mecanismo-dtritus1 0.023
+call Chars.ActSound $char $talk 15 mecanismo-dtritus5 0.022
+call Chars.ActSound $char $talk 16 mecanismo-dtritus6 0.022 +2
+call Chars.ActSound $char $talk 16 mecanismo-dtritus2 0.023
+call Chars.ActSound $char $talk 41 mecanismo-dtritus2 0.023
+
+section Talk1Snd
+call Chars.ActSound $char $talk 3 mecanismo-dtritus3 0.023
+call Chars.ActSound $char $talk 18 mecanismo-dtritus4 0.023
+call Chars.ActSound $char $talk 20 mecanismo-dtritus3 0.023
+call Chars.ActSound $char $talk 40 mecanismo-dtritus4 0.023
+call Chars.ActSound $char $talk 45 mecanismo-dtritus3 0.023
+
+section Talk2Snd
+call Chars.ActSound $char $talk 2 mecanismo-dtritus5 0.022
+call Chars.ActSound $char $talk 3 mecanismo-dtritus6 0.022
+call Chars.ActSound $char $talk 3 mecanismo-dtritus1 0.023
+call Chars.ActSound $char $talk 13 mecanismo-dtritus5 0.022
+call Chars.ActSound $char $talk 13 mecanismo-dtritus6 0.022
+call Chars.ActSound $char $talk 14 mecanismo-dtritus3 0.023
+call Chars.ActSound $char $talk 38 mecanismo-dtritus5 0.022
+call Chars.ActSound $char $talk 39 mecanismo-dtritus6 0.022
+call Chars.ActSound $char $talk 40 mecanismo-dtritus1 0.023
+
+section Talk3Snd
+call Chars.ActSound $char $talk 3 mecanismo-dtritus3 0.023
+call Chars.ActSound $char $talk 12 mecanismo-dtritus5 0.022
+call Chars.ActSound $char $talk 12 mecanismo-dtritus6 0.022 +2
+call Chars.ActSound $char $talk 13 mecanismo-dtritus4 0.023
+call Chars.ActSound $char $talk 22 mecanismo-dtritus3 0.023
+call Chars.ActSound $char $talk 42 mecanismo-dtritus5 0.022
+call Chars.ActSound $char $talk 43 mecanismo-dtritus6 0.022 +2
+call Chars.ActSound $char $talk 44 mecanismo-dtritus4 0.023
+
+section Talk4Snd
+call Chars.ActSound $char $talk 3 mecanismo-dtritus5 0.022
+call Chars.ActSound $char $talk 4 mecanismo-dtritus6 0.022 +2
+call Chars.ActSound $char $talk 4 mecanismo-dtritus1 0.023
+call Chars.ActSound $char $talk 16 mecanismo-dtritus5 0.022
+call Chars.ActSound $char $talk 17 mecanismo-dtritus6 0.022 +6
+call Chars.ActSound $char $talk 18 mecanismo-dtritus3 0.022
+call Chars.ActSound $char $talk 31 mecanismo-dtritus5 0.022
+call Chars.ActSound $char $talk 32 mecanismo-dtritus6 0.022 +6
+call Chars.ActSound $char $talk 33 mecanismo-dtritus4 0.023
+call Chars.ActSound $char $talk 46 mecanismo-dtritus5 0.022
+call Chars.ActSound $char $talk 47 mecanismo-dtritus6 0.022 +2
+call Chars.ActSound $char $talk 48 mecanismo-dtritus1 0.023
+
+section Talk5Snd
+call Chars.ActSound $char $talk 3 mecanismo-dtritus5 0.022
+call Chars.ActSound $char $talk 4 mecanismo-dtritus6 0.022 +2
+call Chars.ActSound $char $talk 4 mecanismo-dtritus1 0.023
+call Chars.ActSound $char $talk 16 mecanismo-dtritus5 0.022
+call Chars.ActSound $char $talk 17 mecanismo-dtritus6 0.022 +6
+call Chars.ActSound $char $talk 41 mecanismo-dtritus4 0.023
+call Chars.ActSound $char $talk 60 mecanismo-dtritus3 0.023
+call Chars.ActSound $char $talk 79 mecanismo-dtritus3 0.023
+call Chars.ActSound $char $talk 71 mecanismo-dtritus6 0.022 +6
+call Chars.ActSound $char $talk 71 mecanismo-dtritus1 0.023
+call Chars.ActSound $char $talk 103 mecanismo-dtritus5 0.022
+call Chars.ActSound $char $talk 104 mecanismo-dtritus6 0.022 +6
+call Chars.ActSound $char $talk 104 mecanismo-dtritus1 0.023
+call Chars.ActSound $char $talk 126 mecanismo-dtritus1 0.023
+call Chars.ActSound $char $talk 148 mecanismo-dtritus5 0.022
+call Chars.ActSound $char $talk 149 mecanismo-dtritus2 0.023
+
+section InitLoops
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+do SetSounds
+run print "Sounds for $(char) loaded!"

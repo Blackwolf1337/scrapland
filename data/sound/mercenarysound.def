@@ -1,0 +1,107 @@
+# mercenarysound (the sound script sound/mercenarysound.py of the game): the sound files of the character class
+# (LoadSounds), the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of
+# a new entity (InitLoops, $name the entity) and Init, which runs them with $char the class. The format is described in
+# src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/mercenarysound.def
+# replaces this file.
+
+section LoadSounds
+class
+	AddSoundRes roce-mercenario2.wav
+	AddSoundRes roce-mercenario3.wav
+	AddSoundRes paso-merce1.wav
+	AddSoundRes paso-merce3.wav
+	AddSoundRes talk-mercenaryC7.wav
+	AddSoundRes talk-mercenaryC8.wav
+
+section SetSounds
+let act Walk
+call Chars.ActSound $char $act 2 paso-merce1 0.04
+call Chars.ActSound $char $act 1 roce-mercenario2 0.010 -3
+call Chars.ActSound $char $act 18 roce-mercenario3 0.010 -3
+call Chars.ActSound $char $act 19 paso-merce3 0.04
+let act Turn
+call Chars.ActSound $char $act 7 roce-mercenario2 0.010 -3
+call Chars.ActSound $char $act 9 paso-merce1 0.04
+call Chars.ActSound $char $act 15 roce-mercenario2 0.010 -3
+call Chars.ActSound $char $act 17 paso-merce1 0.04
+let act DanceInit
+call Chars.ActSound $char $act 10 roce-mercenario2 0.010 -3
+let act Dance
+call Chars.ActSound $char $act 25 roce-mercenario3 0.008 -3
+call Chars.ActSound $char $act 28 paso-merce3 0.006
+call Chars.ActSound $char $act 41 roce-mercenario2 0.008 -3
+call Chars.ActSound $char $act 44 paso-merce1 0.006
+call Chars.ActSound $char $act 57 roce-mercenario2 0.008 -3
+call Chars.ActSound $char $act 60 paso-merce3 0.006
+call Chars.ActSound $char $act 67 roce-mercenario2 0.008 -3
+call Chars.ActSound $char $act 77 paso-merce3 0.006
+let act DanceEnd
+call Chars.ActSound $char $act 90 roce-mercenario3 0.008 -3
+call Chars.ActSound $char $act 90 paso-merce1 0.006
+let act DanceInit
+call Chars.ActSound $char $act 4 roce-mercenario2 0.010 -3
+call Chars.ActSound $char $act 14 paso-merce1 0.005
+let act Dance0
+call Chars.ActSound $char $act 20 roce-mercenario3 0.008 -3
+call Chars.ActSound $char $act 30 roce-mercenario2 0.008 -3
+call Chars.ActSound $char $act 40 roce-mercenario3 0.008 -3
+call Chars.ActSound $char $act 50 roce-mercenario2 0.008 -3
+let act Dance0End
+call Chars.ActSound $char $act 54 roce-mercenario3 0.014 -3
+call Chars.ActSound $char $act 56 paso-merce1 0.005
+let act Drink
+call Chars.ActSound $char $act 3 roce-mercenario3 0.010 -3
+call Chars.ActSound $char $act 15 roce-mercenario2 0.010 -3
+call Chars.ActSound $char $act 50 roce-mercenario2 0.010 -3
+let act Cheer
+call Chars.ActSound $char $act 3 roce-mercenario3 0.010
+call Chars.ActSound $char $act 31 roce-mercenario2 0.010
+let act FillJar
+call Chars.ActSound $char $act 3 roce-mercenario3 0.010 -3
+call Chars.ActSound $char $act 36 roce-mercenario3 0.010 -3
+let act Relax0
+call Chars.ActSound $char $act 2 roce-mercenario3 0.010 -3
+call Chars.ActSound $char $act 47 roce-mercenario3 0.010 -3
+call Chars.ActSound $char $act 120 roce-mercenario3 0.010 -3
+call Chars.ActSound $char $act 127 roce-mercenario3 0.010 -3
+if $char == MercenaryA
+	let act Talk
+	let act TalkNPC
+	let act Talk0
+	let act TalkNPC0
+	let act Talk1
+	let act TalkNPC1
+	let act Relax1
+	call Chars.ActSound $char $act 3 talk-mercenaryC8 0.8
+	call Chars.ActSound $char $act 27 talk-mercenaryC7 0.8
+elif $char == MercenaryB
+	let act Talk
+	let act TalkNPC
+	let act TalkNPC0
+	let act Talk0
+	let act Talk1
+	let act TalkNPC1
+	let act Relax1
+	call Chars.ActSound $char $act 3 talk-mercenaryC8 0.8
+	call Chars.ActSound $char $act 27 talk-mercenaryC7 0.8
+elif $char == MercenaryC
+	let act Talk
+	let act TalkNPC
+	let act Talk0
+	let act TalkNPC0
+	let act Talk1
+	let act TalkNPC1
+	let act Relax1
+	call Chars.ActSound $char $act 3 talk-mercenaryC8 0.8
+	call Chars.ActSound $char $act 27 talk-mercenaryC7 0.8
+end
+
+section Init
+call Scrap.OpenPack Sounds/Chars/$(char)
+do LoadSounds
+call Scrap.ClosePack
+let keep $char
+let char $class
+do SetSounds
+let char $keep
+run print "Sounds for $(char) loaded!"
