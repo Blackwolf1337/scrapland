@@ -165,6 +165,14 @@ extern PyMethodDef g_MercenaryBMethods[];
 extern PyMethodDef g_MercenaryCMethods[];
 extern PyMethodDef g_MercenaryLMethods[];
 
+/* the start of an indoor map (src/game/Script/InMap.c) and the desks of the functionaries
+ * (src/game/Script/Bureaucracy.c) */
+extern PyMethodDef g_InMapMethods[];
+extern PyMethodDef g_BureaucracyMethods[];
+/* the chat of a network game (src/game/Script/Chat.c) and the credits text (src/game/Script/CreditsText.c) */
+extern PyMethodDef g_ChatMethods[];
+extern PyMethodDef g_CreditsTextMethods[];
+
 /* the gameplay functions of the character modules (src/game/Script/CharFuncs.c), next to their Init tables */
 extern PyMethodDef g_FunctionaryFuncs[];
 extern PyMethodDef g_RustyFuncs[];

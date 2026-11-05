@@ -1,0 +1,35 @@
+# The chat line of a network game (the Chat module of the game, scripts/scorer/chat.py), opened by Chat.InitChat
+# (src/game/Script/Chat.c). The format is described in src/game/Script/Script.c. A pack in mods/ with
+# scrapc/menus/chat.def replaces this file. The C gives $sendid, the text of the receiver (Chat.GetID).
+
+section InitChat
+# the script passes the player as the time speed of InitMenuSys
+call Menu.InitMenuSys $id
+call Menu.StartNewMenu $id
+set Cursor Visible 0
+item ChatText Text
+	Text ""
+	X 8
+	Y 200
+	CentralText 1
+	OnAccept !EditText
+	Font HoratioSmall
+	MaxInput 50
+item Chat Chat
+	NumMsg 13
+	X 100
+item SendID Text
+	Text $sendid
+	X 8
+	Y 230
+call SScorer.SetOnCancel $id Chat.EndChat
+default ChatText
+# the text editing of the line starts at once
+call Scrap.SetCallFunc !EditText
+call Scrap.AddParami $id
+call Scrap.AddParams ChatText
+call Scrap.Execute
+call SInput.Bind $id Menu Cancel Chat.EndChat
+call SInput.Bind $id Menu PgUp Chat.CycleUpAndSet
+call SInput.Bind $id Menu PgDown Chat.CycleDownAndSet
+call SInput.SetInputFunc $id Chat.SendChatString

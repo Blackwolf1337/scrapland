@@ -1,0 +1,17 @@
+# The credits text (the CreditsText module of the game, scripts/scorer/creditstext.py): the scorer item that shows one
+# page of the credits, made by CreditsText.CreditsScorer (src/game/Script/CreditsText.c), which then empties its
+# MAX_TEXT_LINES lines. The format is described in src/game/Script/Script.c. A pack in mods/ with
+# scrapc/menus/credits.def replaces this file.
+
+section CreditsScorer
+item Credits Credits
+	Font %CreditsText.TextFont
+	Effect Outline
+	Align Left
+	Red 160
+	Green 160
+	Blue 255
+	Alpha 255
+	X 6
+	Y 30
+	Visible 0
