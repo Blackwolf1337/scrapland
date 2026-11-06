@@ -80,6 +80,7 @@ Mission_ReinsertOwnMatrix2	gdb	data03.packed/levels/gdb/scripts/mission_reinsert
 Map	junkyard	data03.packed/levels/junkyard/scripts/map.pyc
 MapShipEdit	junkyard	data03.packed/levels/junkyard/scripts/mapshipedit.pyc
 MapSnd	junkyard	data03.packed/levels/junkyard/scripts/mapsnd.pyc
+Mission_RustyFirstContact	junkyard	data03.packed/levels/junkyard/scripts/mission_rustyfirstcontact.pyc
 Map	mca	data03.packed/levels/mca/scripts/map.pyc
 MapSnd	mca	data03.packed/levels/mca/scripts/mapsnd.pyc
 Map	mcb	data03.packed/levels/mcb/scripts/map.pyc

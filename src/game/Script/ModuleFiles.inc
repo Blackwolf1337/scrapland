@@ -233,6 +233,9 @@ static const char mod_levels_junkyard_mapshipedit[] = {
 static const char mod_levels_junkyard_mapsnd[] = {
 #embed "../../../data/levels/junkyard/mapsnd.mod"
 	, 0 };
+static const char mod_levels_junkyard_mission_rustyfirstcontact[] = {
+#embed "../../../data/levels/junkyard/mission_rustyfirstcontact.mod"
+	, 0 };
 static const char mod_levels_mca_map[] = {
 #embed "../../../data/levels/mca/map.mod"
 	, 0 };
@@ -445,6 +448,7 @@ static const moduleFile_t module_files[] = {
 	{ "junkyard", "Map", "levels/junkyard/map.mod", mod_levels_junkyard_map },
 	{ "junkyard", "MapShipEdit", "levels/junkyard/mapshipedit.mod", mod_levels_junkyard_mapshipedit },
 	{ "junkyard", "MapSnd", "levels/junkyard/mapsnd.mod", mod_levels_junkyard_mapsnd },
+	{ "junkyard", "Mission_RustyFirstContact", "levels/junkyard/mission_rustyfirstcontact.mod", mod_levels_junkyard_mission_rustyfirstcontact },
 	{ "mca", "Map", "levels/mca/map.mod", mod_levels_mca_map },
 	{ "mca", "MapSnd", "levels/mca/mapsnd.mod", mod_levels_mca_mapsnd },
 	{ "mcb", "Map", "levels/mcb/map.mod", mod_levels_mcb_map },
