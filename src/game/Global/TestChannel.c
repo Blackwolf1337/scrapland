@@ -1217,7 +1217,7 @@ static int TC_CmpName(const void *a, const void *b) {
 /* ents <list> [x y z radius] */
 static void TC_Ents(tcBuf *b, const char *arg) {
 	char list[0x40], num[0x40];
-	double v[4] = { 0.0, 0.0, 0.0, 300000.0 };
+	double v[4] = { 0.0, 0.0, 0.0, 1e7 };
 	tcNames l = { 0 };
 
 	if (!TC_Word(&arg, list, sizeof(list))) {
