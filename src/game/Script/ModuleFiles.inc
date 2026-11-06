@@ -65,6 +65,33 @@ static const char mod_levels_commercial_maprace[] = {
 static const char mod_levels_commercial_mapsnd[] = {
 #embed "../../../data/levels/commercial/mapsnd.mod"
 	, 0 };
+static const char mod_levels_commercial_mission_defeatcrazygambler3[] = {
+#embed "../../../data/levels/commercial/mission_defeatcrazygambler3.mod"
+	, 0 };
+static const char mod_levels_commercial_mission_destroycommsats2[] = {
+#embed "../../../data/levels/commercial/mission_destroycommsats2.mod"
+	, 0 };
+static const char mod_levels_commercial_mission_destroymickus[] = {
+#embed "../../../data/levels/commercial/mission_destroymickus.mod"
+	, 0 };
+static const char mod_levels_commercial_mission_destroyporkinstransports[] = {
+#embed "../../../data/levels/commercial/mission_destroyporkinstransports.mod"
+	, 0 };
+static const char mod_levels_commercial_mission_destroystupidus[] = {
+#embed "../../../data/levels/commercial/mission_destroystupidus.mod"
+	, 0 };
+static const char mod_levels_commercial_mission_firstmeetdeepthroat[] = {
+#embed "../../../data/levels/commercial/mission_firstmeetdeepthroat.mod"
+	, 0 };
+static const char mod_levels_commercial_mission_getdatapart3[] = {
+#embed "../../../data/levels/commercial/mission_getdatapart3.mod"
+	, 0 };
+static const char mod_levels_commercial_mission_protectgus[] = {
+#embed "../../../data/levels/commercial/mission_protectgus.mod"
+	, 0 };
+static const char mod_levels_commercial_mission_win1strace[] = {
+#embed "../../../data/levels/commercial/mission_win1strace.mod"
+	, 0 };
 static const char mod_levels_downtown_map[] = {
 #embed "../../../data/levels/downtown/map.mod"
 	, 0 };
@@ -263,6 +290,15 @@ static const moduleFile_t module_files[] = {
 	{ "commercial", "Map", "levels/commercial/map.mod", mod_levels_commercial_map },
 	{ "commercial", "MapRace", "levels/commercial/maprace.mod", mod_levels_commercial_maprace },
 	{ "commercial", "MapSnd", "levels/commercial/mapsnd.mod", mod_levels_commercial_mapsnd },
+	{ "commercial", "Mission_DefeatCrazyGambler3", "levels/commercial/mission_defeatcrazygambler3.mod", mod_levels_commercial_mission_defeatcrazygambler3 },
+	{ "commercial", "Mission_DestroyCommSats2", "levels/commercial/mission_destroycommsats2.mod", mod_levels_commercial_mission_destroycommsats2 },
+	{ "commercial", "Mission_DestroyMickus", "levels/commercial/mission_destroymickus.mod", mod_levels_commercial_mission_destroymickus },
+	{ "commercial", "Mission_DestroyPorkinsTransports", "levels/commercial/mission_destroyporkinstransports.mod", mod_levels_commercial_mission_destroyporkinstransports },
+	{ "commercial", "Mission_DestroyStupidus", "levels/commercial/mission_destroystupidus.mod", mod_levels_commercial_mission_destroystupidus },
+	{ "commercial", "Mission_FirstMeetDeepThroat", "levels/commercial/mission_firstmeetdeepthroat.mod", mod_levels_commercial_mission_firstmeetdeepthroat },
+	{ "commercial", "Mission_GetDataPart3", "levels/commercial/mission_getdatapart3.mod", mod_levels_commercial_mission_getdatapart3 },
+	{ "commercial", "Mission_ProtectGus", "levels/commercial/mission_protectgus.mod", mod_levels_commercial_mission_protectgus },
+	{ "commercial", "Mission_Win1stRace", "levels/commercial/mission_win1strace.mod", mod_levels_commercial_mission_win1strace },
 	{ "downtown", "Map", "levels/downtown/map.mod", mod_levels_downtown_map },
 	{ "downtown", "MapRace", "levels/downtown/maprace.mod", mod_levels_downtown_maprace },
 	{ "downtown", "MapSnd", "levels/downtown/mapsnd.mod", mod_levels_downtown_mapsnd },

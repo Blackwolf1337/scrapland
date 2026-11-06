@@ -24,6 +24,15 @@ SuperDeal_Third	ca	data02.packed/levels/ca/scripts/superdeal_third.pyc
 Map	commercial	data02.packed/levels/commercial/scripts/map.pyc
 MapRace	commercial	data02.packed/levels/commercial/scripts/maprace.pyc
 MapSnd	commercial	data02.packed/levels/commercial/scripts/mapsnd.pyc
+Mission_DefeatCrazyGambler3	commercial	data02.packed/levels/commercial/scripts/mission_defeatcrazygambler3.pyc
+Mission_DestroyCommSats2	commercial	data02.packed/levels/commercial/scripts/mission_destroycommsats2.pyc
+Mission_DestroyMickus	commercial	data02.packed/levels/commercial/scripts/mission_destroymickus.pyc
+Mission_DestroyPorkinsTransports	commercial	data02.packed/levels/commercial/scripts/mission_destroyporkinstransports.pyc
+Mission_DestroyStupidus	commercial	data02.packed/levels/commercial/scripts/mission_destroystupidus.pyc
+Mission_FirstMeetDeepThroat	commercial	data02.packed/levels/commercial/scripts/mission_firstmeetdeepthroat.pyc
+Mission_GetDataPart3	commercial	data02.packed/levels/commercial/scripts/mission_getdatapart3.pyc
+Mission_ProtectGus	commercial	data02.packed/levels/commercial/scripts/mission_protectgus.pyc
+Mission_Win1stRace	commercial	data02.packed/levels/commercial/scripts/mission_win1strace.pyc
 Map	downtown	Data.packed/levels/downtown/scripts/map.pyc
 MapRace	downtown	Data.packed/levels/downtown/scripts/maprace.pyc
 MapSnd	downtown	Data.packed/levels/downtown/scripts/mapsnd.pyc
