@@ -485,7 +485,7 @@ static void Level_Install(int i, PyObject *module, levelPool_t *pool, PyObject *
 				def->ml_meth = (PyCFunction)(void (*)(void))Level_Call;
 				def->ml_flags = METH_VARARGS | METH_KEYWORDS;
 				def->ml_doc = NULL;
-				PyObject *f = self ? PyCFunction_New(def, self) : NULL;
+				PyObject *f = self ? Script_CheckFunction(def, self, level_files[i].module) : NULL;
 				Py_XDECREF(self);
 				if (f) {
 					if (kept) {

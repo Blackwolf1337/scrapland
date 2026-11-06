@@ -28,6 +28,12 @@ void Script_ReplaceRefs(PyObject *dict, PyObject *key, PyObject *old, PyObject *
 /* the C functions of a table into the module under their names (and the other names the module bound the Python
  * function to); kept (a list or NULL) keeps the replaced Python functions */
 void Script_Install(PyObject *module, PyMethodDef *methods, PyObject *kept);
+/* the function object of a C function of the script tables (PyCFunction_New(def, self)); with SCRAP_NULL_CHECK set
+ * a wrapper that reports a NULL return without an error (module names it in the report) */
+PyObject *Script_CheckFunction(PyMethodDef *def, PyObject *self, const char *module);
+/* with SCRAP_NULL_CHECK set: reports that a C function or helper fails without a Python error (kind names the
+ * place), once per kind, function and call site */
+void Script_CheckSilent(const char *kind);
 /* a module of the level that loads: the functions its data file has go into it (src/game/Script/Levels.c); kept
  * holds the replaced functions until the module loads again */
 void Script_LevelModuleLoaded(const char *name, PyObject *module, PyObject *kept);

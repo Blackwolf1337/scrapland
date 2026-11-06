@@ -37,9 +37,14 @@
  * $x+10, &AnmTotalTime/4*2.
  * $(name) inside a word or text is the value name as text.
  */
+#define _GNU_SOURCE
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(__GLIBC__)
+#include <dlfcn.h>
+#include <execinfo.h>
+#endif
 
 #include "scrap/actions.h"
 #include "scrap/console.h"
@@ -52,6 +57,8 @@
 #include "scrap/scrapfont.h"
 #include "scrap/script.h"
 #include "scrap/timer.h"
+#include "compile.h"
+#include "frameobject.h"
 
 #define SCRIPT_MAX_FILE 0x10000
 #define SCRIPT_MAX_TOKENS 16
@@ -356,10 +363,163 @@ void Script_ReplaceRefs(PyObject *dict, PyObject *key, PyObject *old, PyObject *
 	PyErr_Clear();
 }
 
+/*
+ * ---- the check of NULL returns (SCRAP_NULL_CHECK) ----
+ *
+ * A C function must return NULL only with a Python error set, else ceval raises "SystemError: error return without
+ * exception set" where the script raised something else or nothing. SCRAP_NULL_CHECK=<file> (or 1 for the console)
+ * puts every C function of the script tables into a wrapper that reports a NULL without an error, and the Sf_ frame
+ * reports the helper that failed without one. A report names the kind, the innermost C function that runs, the line
+ * of the Python code that called it and (glibc) the return addresses as ScrapC+offset for addr2line -f -i -e ScrapC.
+ * Off, nothing changes: the functions are the plain PyCFunctions.
+ */
+typedef struct {
+	PyMethodDef def;		/* the wrapper: the name of the function, Script_CheckCall */
+	PyMethodDef orig;		/* the C function */
+	PyObject *self;			/* its self */
+	char name[64];
+	char label[96];			/* Module.Func */
+} scriptChecked_t;
+
+#define SCRIPT_CHECK_DEPTH 64
+#define SCRIPT_CHECK_SEEN 1024
+static int script_check = -1;
+static FILE *script_checkFile;
+static const char *script_checkStack[SCRIPT_CHECK_DEPTH];
+static int script_checkDepth;
+static unsigned script_checkSeen[SCRIPT_CHECK_SEEN];
+
+static byte Script_CheckOn(void) {
+	if (script_check < 0) {
+		const char *e = getenv("SCRAP_NULL_CHECK");
+		script_check = e && *e && strcmp(e, "0");
+		if (script_check && strcmp(e, "1")) {
+			script_checkFile = fopen(e, "a");
+		}
+	}
+	return script_check > 0;
+}
+
+static unsigned Script_CheckHash(unsigned h, const char *s) {
+	while (s && *s) {
+		h = (h ^ (byte)*s++) * 16777619u;
+	}
+	return h;
+}
+
+void Script_CheckSilent(const char *kind) {
+	if (!Script_CheckOn()) {
+		return;
+	}
+	const char *label = script_checkDepth > 0 ? script_checkStack[script_checkDepth - 1] : "?";
+	char where[160] = "-", trace[400] = "";
+	PyThreadState *ts = PyThreadState_Get();
+	if (ts && ts->frame) {
+		PyFrameObject *fr = ts->frame;
+		Str_Printf(where, sizeof(where), "%s:%d %s", PyString_AsString(fr->f_code->co_filename),
+			PyCode_Addr2Line(fr->f_code, fr->f_lasti), PyString_AsString(fr->f_code->co_name));
+	}
+	unsigned h = Script_CheckHash(Script_CheckHash(2166136261u, kind), label);
+#if defined(__GLIBC__)
+	void *addr[8];
+	int n = backtrace(addr, 8);
+	for (int i = 1; i < n; i++) {
+		Dl_info info;
+		size_t len = strlen(trace);
+		if (dladdr(addr[i], &info) && info.dli_fname) {
+			const char *base = strrchr(info.dli_fname, '/');
+			Str_Printf(trace + len, sizeof(trace) - len, " %s+0x%lx", base ? base + 1 : info.dli_fname,
+				(unsigned long)((char *)addr[i] - (char *)info.dli_fbase));
+		} else {
+			Str_Printf(trace + len, sizeof(trace) - len, " %p", addr[i]);
+		}
+		if (i <= 3) {
+			h = (h ^ (unsigned)(size_t)addr[i]) * 16777619u;
+		}
+	}
+#endif
+	for (int i = 0; i < SCRIPT_CHECK_SEEN; i++) {
+		if (script_checkSeen[i] == h) {
+			return;
+		}
+		if (!script_checkSeen[i]) {
+			script_checkSeen[i] = h;
+			break;
+		}
+	}
+	if (script_checkFile) {
+		fprintf(script_checkFile, "NULLCHECK %s: %s (python %s)%s\n", kind, label, where, trace);
+		fflush(script_checkFile);
+	} else {
+		Con_Warnf("NULLCHECK %s: %s (python %s)%s\n", kind, label, where, trace);
+	}
+}
+
+/* the call of the C function as call_builtin of ceval makes it */
+static PyObject *Script_CheckCall(PyObject *self, PyObject *args, PyObject *kw) {
+	scriptChecked_t *c = PyCObject_AsVoidPtr(self);
+	int flags = c->orig.ml_flags;
+	PyObject *arg = args, *r;
+	if (!(flags & METH_VARARGS)) {
+		int size = PyTuple_Size(args);
+		arg = size == 1 ? PyTuple_GET_ITEM(args, 0) : size == 0 ? NULL : args;
+	}
+	if (script_checkDepth < SCRIPT_CHECK_DEPTH) {
+		script_checkStack[script_checkDepth] = c->label;
+	}
+	script_checkDepth++;
+	if (flags & METH_KEYWORDS) {
+		r = ((PyCFunctionWithKeywords)(void (*)(void))c->orig.ml_meth)(c->self, arg, kw);
+	} else if (kw && PyDict_Size(kw) != 0) {
+		PyErr_SetString(PyExc_TypeError, "this function takes no keyword arguments");
+		r = NULL;
+	} else {
+		r = c->orig.ml_meth(c->self, arg);
+	}
+	if (!r && !PyErr_Occurred()) {
+		Script_CheckSilent("return");
+	}
+	script_checkDepth--;
+	return r;
+}
+
+static void Script_CheckFree(void *p) {
+	scriptChecked_t *c = p;
+	Py_XDECREF(c->self);
+	free(c);
+}
+
+PyObject *Script_CheckFunction(PyMethodDef *def, PyObject *self, const char *module) {
+	if (!Script_CheckOn()) {
+		return PyCFunction_New(def, self);
+	}
+	scriptChecked_t *c = calloc(1, sizeof(*c));
+	if (!c) {
+		return PyErr_NoMemory();
+	}
+	c->orig = *def;
+	c->self = self;
+	Py_XINCREF(self);
+	Str_Copy(c->name, def->ml_name, sizeof(c->name));
+	Str_Printf(c->label, sizeof(c->label), "%s.%s", module ? module : "?", def->ml_name);
+	c->def.ml_name = c->name;
+	c->def.ml_meth = (PyCFunction)(void (*)(void))Script_CheckCall;
+	c->def.ml_flags = METH_VARARGS | METH_KEYWORDS;
+	c->def.ml_doc = def->ml_doc;
+	PyObject *o = PyCObject_FromVoidPtr(c, Script_CheckFree);
+	if (!o) {
+		Script_CheckFree(c);
+		return NULL;
+	}
+	PyObject *f = PyCFunction_New(&c->def, o);
+	Py_DECREF(o);
+	return f;
+}
+
 void Script_Install(PyObject *module, PyMethodDef *methods, PyObject *kept) {
 	PyObject *dict = PyModule_GetDict(module);
 	for (PyMethodDef *m = methods; m->ml_name; m++) {
-		PyObject *f = PyCFunction_New(m, NULL);
+		PyObject *f = Script_CheckFunction(m, NULL, PyModule_GetName(module));
 		if (!f) {
 			continue;
 		}
@@ -533,6 +693,7 @@ byte Script_HSet(PyObject *e, const char *var, PyObject *v) {
 	int ok = v && PyObject_SetAttrString(e, (char *)var, v) == 0;
 	if (v && !ok && !PyErr_Occurred()) {
 		/* an entity variable the engine refuses fails without an exception; ceval reports it so */
+		Script_CheckSilent("Script_HSet (engine)");
 		PyErr_SetString(PyExc_SystemError, "error return without exception set");
 	}
 	Py_XDECREF(v);
@@ -1331,6 +1492,7 @@ static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char 
 			if (PyEntity_SetVar(World_FindEntity(m->entity), m->entity, var, v) < 0 && m->stop) {
 				/* the attribute set of the handle fails without an exception: ceval's SystemError */
 				if (!PyErr_Occurred()) {
+					Script_CheckSilent("def entity set (engine)");
 					PyErr_SetString(PyExc_SystemError, "error return without exception set");
 				}
 				m->failed = 1;
