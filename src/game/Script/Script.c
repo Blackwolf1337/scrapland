@@ -304,6 +304,10 @@ double Script_GetFloat(const char *module, const char *var, double def) {
 
 byte Script_HSet(PyObject *e, const char *var, PyObject *v) {
 	int ok = v && PyObject_SetAttrString(e, (char *)var, v) == 0;
+	if (v && !ok && !PyErr_Occurred()) {
+		/* an entity variable the engine refuses fails without an exception; ceval reports it so */
+		PyErr_SetString(PyExc_SystemError, "error return without exception set");
+	}
 	Py_XDECREF(v);
 	return ok;
 }
