@@ -368,6 +368,33 @@ static const char mod_modules_shipedit[] = {
 static const char mod_modules_menu[] = {
 #embed "../../../data/modules/menu.mod"
 	, 0 };
+static const char mod_modules_alarm[] = {
+#embed "../../../data/modules/alarm.mod"
+	, 0 };
+static const char mod_modules_dtritusdesktop[] = {
+#embed "../../../data/modules/dtritusdesktop.mod"
+	, 0 };
+static const char mod_modules_crazywing[] = {
+#embed "../../../data/modules/crazywing.mod"
+	, 0 };
+static const char mod_modules_versus[] = {
+#embed "../../../data/modules/versus.mod"
+	, 0 };
+static const char mod_modules_traffic[] = {
+#embed "../../../data/modules/traffic.mod"
+	, 0 };
+static const char mod_modules_charconversor[] = {
+#embed "../../../data/modules/charconversor.mod"
+	, 0 };
+static const char mod_modules_domination[] = {
+#embed "../../../data/modules/domination.mod"
+	, 0 };
+static const char mod_modules_racemaker[] = {
+#embed "../../../data/modules/racemaker.mod"
+	, 0 };
+static const char mod_modules_missionsfuncs[] = {
+#embed "../../../data/modules/missionsfuncs.mod"
+	, 0 };
 
 static const moduleFile_t module_files[] = {
 	{ NULL, "Sound", "modules/sound.mod", mod_modules_sound },
@@ -493,4 +520,13 @@ static const moduleFile_t module_files[] = {
 	{ NULL, "HangarTab", "modules/hangartab.mod", mod_modules_hangartab },
 	{ NULL, "ShipEdit", "modules/shipedit.mod", mod_modules_shipedit },
 	{ NULL, "Menu", "modules/menu.mod", mod_modules_menu },
+	{ NULL, "Alarm", "modules/alarm.mod", mod_modules_alarm },
+	{ NULL, "DTritusDesktop", "modules/dtritusdesktop.mod", mod_modules_dtritusdesktop },
+	{ NULL, "CrazyWing", "modules/crazywing.mod", mod_modules_crazywing },
+	{ NULL, "versus", "modules/versus.mod", mod_modules_versus },
+	{ NULL, "Traffic", "modules/traffic.mod", mod_modules_traffic },
+	{ NULL, "CharConversor", "modules/charconversor.mod", mod_modules_charconversor },
+	{ NULL, "domination", "modules/domination.mod", mod_modules_domination },
+	{ NULL, "RaceMaker", "modules/racemaker.mod", mod_modules_racemaker },
+	{ NULL, "MissionsFuncs", "modules/missionsfuncs.mod", mod_modules_missionsfuncs },
 };

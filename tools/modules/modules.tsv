@@ -123,3 +123,12 @@ SaveGame	-	Data.packed/scripts/savegame.pyc
 HangarTab	-	Data.packed/scripts/shipedit/hangartab.pyc
 ShipEdit	-	Data.packed/scripts/shipedit/shipedit.pyc
 Menu	-	Data.packed/scripts/scorer/menu.pyc
+Alarm	-	Data.packed/scripts/missions/alarm.pyc
+DTritusDesktop	-	Data.packed/scripts/missions/dtritusdesktop.pyc
+CrazyWing	-	Data.packed/scripts/missions/crazywing.pyc
+versus	-	Data.packed/scripts/superdeals/versus.pyc
+Traffic	-	Data.packed/scripts/missions/traffic.pyc
+CharConversor	-	Data.packed/scripts/missions/charconversor.pyc
+domination	-	Data.packed/scripts/superdeals/domination.pyc
+RaceMaker	-	Data.packed/scripts/missions/racemaker.pyc
+MissionsFuncs	-	Data.packed/scripts/missions/missionsfuncs.pyc
