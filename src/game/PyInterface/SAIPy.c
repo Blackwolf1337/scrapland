@@ -164,7 +164,11 @@ enum {
 	SSERR_ENTITY_TYPE = 9,
 };
 
-/* the report in the console (Spanish texts of the original), returns None */
+/*
+ * the report in the console (Spanish texts of the original), returns None. differs from the original: after a failed
+ * argument parse (the only step of a handler that sets a Python error) it raises the parse's TypeError; the original
+ * returns None with the error left set, which surfaced at a later line.
+ */
 static PyObject *SetState_Error(const char *entity, const char *state, int err, const char *target) {
 	static const char *const texts[] = {
 		[1] = "PARAMETROS INCORRECTOS\n",
@@ -186,6 +190,9 @@ static PyObject *SetState_Error(const char *entity, const char *state, int err, 
 	}
 	Con_Bluef("\n**************************************************************************************************"
 		"\n\n");
+	if (PyErr_Occurred()) {
+		return NULL;
+	}
 	return Py_ReturnNone();
 }
 
@@ -546,7 +553,8 @@ static PyObject *SetStateChar9(PyObject *self, PyObject *args) {
 
 /*
  * SetStateVehicle(state, ...) / SetStateChar(state, ...) : the handler for the state number. args[0] is read
- * without checks: an empty tuple leaves the Python error set and returns None, as the original.
+ * without checks. differs from the original: an empty tuple or a state that is no number raises the error of the read;
+ * the original returns None with the error left set.
  */
 static PyObject *(*const vehicleStates[10])(PyObject *, PyObject *) = {
 	SetStateVehicle0, SetStateVehicle1, SetStateVehicle2, SetStateVehicle3, SetStateVehicle4,
@@ -560,7 +568,7 @@ static PyObject *(*const charStates[10])(PyObject *, PyObject *) = {
 static PyObject *SAI_SetStateVehicle(PyObject *self, PyObject *args) {
 	uint32_t state = (uint32_t)PyInt_AsLong(PyTuple_GetItem(args, 0));
 	if (state > 9) {
-		return Py_ReturnNone();
+		return PyErr_Occurred() ? NULL : Py_ReturnNone();
 	}
 	return vehicleStates[state](self, args);
 }
@@ -568,37 +576,45 @@ static PyObject *SAI_SetStateVehicle(PyObject *self, PyObject *args) {
 static PyObject *SAI_SetStateChar(PyObject *self, PyObject *args) {
 	uint32_t state = (uint32_t)PyInt_AsLong(PyTuple_GetItem(args, 0));
 	if (state > 9) {
-		return Py_ReturnNone();
+		return PyErr_Occurred() ? NULL : Py_ReturnNone();
 	}
 	return charStates[state](self, args);
 }
 
-/* GetStateVehicle(name) : state number of the vehicle AI, None without AI */
+/*
+ * GetStateVehicle(name) : state number of the vehicle AI, None without AI. differs from the original: a parse error
+ * raises its TypeError (the original returns None with the error left set, which surfaced at a later line).
+ */
 static PyObject *SAI_GetStateVehicle(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
-	if (PyArg_ParseTuple(args, "s", &name)) {
-		cEntity *e = World_FindEntity(name);
-		cAIVehicle *ai = e ? Entity_GetAI(e) : NULL;
-		if (ai) {
-			return Py_BuildValue("i", cAIVehicle_GetState(ai));
-		}
+	if (!PyArg_ParseTuple(args, "s", &name)) {
+		return NULL;
+	}
+	cEntity *e = World_FindEntity(name);
+	cAIVehicle *ai = e ? Entity_GetAI(e) : NULL;
+	if (ai) {
+		return Py_BuildValue("i", cAIVehicle_GetState(ai));
 	}
 	return Py_ReturnNone();
 }
 
-/* GetStateChar(name) : state number of the character AI, None without AI */
+/*
+ * GetStateChar(name) : state number of the character AI, None without AI. differs from the original: a parse error
+ * raises its TypeError (the original returns None with the error left set, which surfaced at a later line).
+ */
 static PyObject *SAI_GetStateChar(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
-	if (PyArg_ParseTuple(args, "s", &name)) {
-		cEntity *e = World_FindEntity(name);
-		cAIChar *ai = e ? Entity_GetAI(e) : NULL;
-		if (ai) {
-			return Py_BuildValue("i", AIChar_GetState(ai));
-		}
+	if (!PyArg_ParseTuple(args, "s", &name)) {
+		return NULL;
+	}
+	cEntity *e = World_FindEntity(name);
+	cAIChar *ai = e ? Entity_GetAI(e) : NULL;
+	if (ai) {
+		return Py_BuildValue("i", AIChar_GetState(ai));
 	}
 	return Py_ReturnNone();
 }
@@ -662,7 +678,9 @@ static PyObject *SAI_EnableAIChar(PyObject *self, PyObject *args) {
 
 /*
  * GetNextRacePoint(initialPoint, minDist, maxDist) : next race point; maxDist grows by 1000 until one is found
- * (outdoors only one try). Past 1e8 the CHECK fails. A parse error returns None with the error set.
+ * (outdoors only one try). Past 1e8 the CHECK fails. differs from the original: a parse error raises its TypeError;
+ * the original returns None with the error left set, and OutMap's spawn searches took the None as no point and went
+ * on to their fallback position (the end of their for loop cleared the error).
  */
 static PyObject *SAI_GetNextRacePoint(PyObject *self, PyObject *args) {
 	vec3_t initial, out;
@@ -670,7 +688,7 @@ static PyObject *SAI_GetNextRacePoint(PyObject *self, PyObject *args) {
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "(fff)ff", &initial.x, &initial.y, &initial.z, &minDist, &maxDist)) {
-		return Py_ReturnNone();
+		return NULL;
 	}
 	int outdoor = g_IsMapOutDoor == 1;
 	byte found;
@@ -688,13 +706,17 @@ static PyObject *SAI_GetNextRacePoint(PyObject *self, PyObject *args) {
 	return Py_BuildValue("fff", (double)out.x, (double)out.y, (double)out.z);
 }
 
-/* GetNearestItemLife(name) : name of the nearest life item for the AI of the entity, else None */
+/*
+ * GetNearestItemLife(name) : name of the nearest life item for the AI of the entity, else None. differs from the
+ * original: a parse error raises its TypeError; the original returns None with the error left set, and its caller
+ * (Mission_StupidMerc) hands the None to Scrap.GetEntity, whose parse raised that error on the next line.
+ */
 static PyObject *SAI_GetNearestItemLife(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return Py_ReturnNone();
+		return NULL;
 	}
 	cEntity *e = World_FindEntity(name);
 	cAIVehicle *ai = e ? Entity_GetAI(e) : NULL;
@@ -718,14 +740,18 @@ static PyObject *SAI_GetRandomVisibilityPoint(PyObject *self, PyObject *args) {
 	return Py_BuildValue("(fff)", (double)p.x, (double)p.y, (double)p.z);
 }
 
-/* GetReposCharPos(pos, name[, targetName]) : free position for a character, None if it fails */
+/*
+ * GetReposCharPos(pos, name[, targetName]) : free position for a character, None if it fails. differs from the
+ * original: a parse error raises its TypeError (the original returns None with the error left set, which surfaced at
+ * a later line).
+ */
 static PyObject *SAI_GetReposCharPos(PyObject *self, PyObject *args) {
 	vec3_t pos, out;
 	char *name, *targetName = NULL;
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "(fff)s|s", &pos.x, &pos.y, &pos.z, &name, &targetName)) {
-		return Py_ReturnNone();
+		return NULL;
 	}
 	cEntity *target = NULL;
 	if (targetName && *targetName) {
@@ -748,48 +774,60 @@ static PyObject *SAI_InitVehicleRace(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-/* AddVehicleRace(name) : adds a vehicle to the race group */
+/*
+ * AddVehicleRace(name) : adds a vehicle to the race group. differs from the original: a parse error raises its
+ * TypeError (the original returns None with the error left set, which surfaced at a later line).
+ */
 static PyObject *SAI_AddVehicleRace(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
-	if (PyArg_ParseTuple(args, "s", &name)) {
-		cEntity *e = FindAIEntity(name, TYEN_CAR);
-		if (e) {
-			AIGroup_Add(g_VehicleGroup, e);
-		}
+	if (!PyArg_ParseTuple(args, "s", &name)) {
+		return NULL;
+	}
+	cEntity *e = FindAIEntity(name, TYEN_CAR);
+	if (e) {
+		AIGroup_Add(g_VehicleGroup, e);
 	}
 	return Py_ReturnNone();
 }
 
-/* SetRotStaticObj(name, a, b) */
+/*
+ * SetRotStaticObj(name, a, b). differs from the original: a parse error raises its TypeError (the original returns
+ * None with the error left set, which surfaced at a later line).
+ */
 static PyObject *SAI_SetRotStaticObj(PyObject *self, PyObject *args) {
 	char *name;
 	float a, b;
 
 	(void)self;
-	if (PyArg_ParseTuple(args, "sff", &name, &a, &b)) {
-		cEntity *e = FindAIEntity(name, TYEN_CAR);
-		cAIVehicle *ai = e ? Entity_GetAI(e) : NULL;
-		if (ai) {
-			cAIVehicle_SetRotStatic(ai, a, b);
-		}
+	if (!PyArg_ParseTuple(args, "sff", &name, &a, &b)) {
+		return NULL;
+	}
+	cEntity *e = FindAIEntity(name, TYEN_CAR);
+	cAIVehicle *ai = e ? Entity_GetAI(e) : NULL;
+	if (ai) {
+		cAIVehicle_SetRotStatic(ai, a, b);
 	}
 	return Py_ReturnNone();
 }
 
-/* SetInertia(name, on) : on only for the value 1 */
+/*
+ * SetInertia(name, on) : on only for the value 1. differs from the original: a parse error raises its TypeError (the
+ * original returns None with the error left set, which surfaced at a later line).
+ */
 static PyObject *SAI_SetInertia(PyObject *self, PyObject *args) {
 	char *name;
 	int on;
 
 	(void)self;
-	if (PyArg_ParseTuple(args, "si", &name, &on)) {
-		cEntity *e = FindAIEntity(name, TYEN_CAR);
-		cAIVehicle *ai = e ? Entity_GetAI(e) : NULL;
-		if (ai) {
-			cAIVehicle_SetInertia(ai, on == 1);
-		}
+	if (!PyArg_ParseTuple(args, "si", &name, &on)) {
+		return NULL;
+	}
+	cEntity *e = FindAIEntity(name, TYEN_CAR);
+	cAIVehicle *ai = e ? Entity_GetAI(e) : NULL;
+	if (ai) {
+		cAIVehicle_SetInertia(ai, on == 1);
 	}
 	return Py_ReturnNone();
 }

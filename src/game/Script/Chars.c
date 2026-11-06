@@ -30,12 +30,37 @@ static byte Chars_PrintLine(const char *fmt, ...) {
 }
 
 
-/* SAct.GetClass(cls) and, when there is one, SAct.GetAction(action): 1 when both exist */
-static byte Chars_Select(const char *cls, const char *action) {
+/* the text of a value as SAct's one-argument "s" parse takes it, else NULL with the parse's TypeError set */
+static const char *Chars_Text(PyObject *o) {
+	char *s = NULL;
+	if (PyString_Check(o) && strlen(PyString_AS_STRING(o)) == (size_t)PyString_GET_SIZE(o)) {
+		return PyString_AS_STRING(o);
+	}
+	PyObject *t = Py_BuildValue("(O)", o);
+	if (t && PyArg_ParseTuple(t, "s", &s)) {
+		PyErr_SetString(PyExc_SystemError, "Chars_Text: the value parsed");
+	}
+	Py_XDECREF(t);
+	return NULL;
+}
+
+/*
+ * SAct.GetClass(cls) and, when there is one, SAct.GetAction(action) as IntSetChar calls them: 1 when both exist, 0
+ * when not, -1 with the error set. A cls or action that is no string raises the TypeError of SAct's parse, the action
+ * only when the class exists (the script's "and").
+ */
+static int Chars_Select(PyObject *clsObj, PyObject *actionObj) {
+	const char *cls = Chars_Text(clsObj), *action;
+	if (!cls) {
+		return -1;
+	}
 	CHECK(g_pActClassList);
 	g_pAuxActClass = cActClassList_Get(g_pActClassList, cls);
 	if (!g_pAuxActClass) {
 		return 0;
+	}
+	if (!(action = Chars_Text(actionObj))) {
+		return -1;
 	}
 	g_pAuxAction = cActClass_GetAction(g_pAuxActClass, action);
 	return g_pAuxAction != NULL;
@@ -48,13 +73,14 @@ static void Chars_SetActStr(const char *name, const char *text) {
 }
 
 /* the event of an animation sound at a frame: SAct.SetAct("AddEventAtTime", SAct.GetAct("TimeOfFrameN")), its name
- * and its function. 0 when the class or the action is not there */
-static byte Chars_AddEvent(const char *cls, const char *action, PyObject *frame, const char *name, const char *func) {
+ * and its function. 0 when the class or the action is not there, -1 with the error set */
+static int Chars_AddEvent(PyObject *cls, PyObject *action, PyObject *frame, const char *name, const char *func) {
 	char var[0x40], *s;
 	double d;
 	int i;
-	if (!Chars_Select(cls, action)) {
-		return 0;
+	int sel = Chars_Select(cls, action);
+	if (sel <= 0) {
+		return sel;
 	}
 	PyObject *r = PyObject_Repr(frame);
 	Str_Printf(var, sizeof(var), "TimeOfFrame%s", r ? PyString_AsString(r) : "");
@@ -100,14 +126,15 @@ static byte Chars_Join(PyObject *a, PyObject *b, PyObject *c, byte reprA, char *
 
 /* ActSound(cls, action, frame, sound, vol[, pitch]): a sound of the animation */
 static PyObject *Chars_ActSound(PyObject *self, PyObject *args) {
-	char *cls, *action, name[0x200];
-	PyObject *frame, *sound, *vol, *pitch = NULL;
+	char name[0x200];
+	PyObject *cls, *action, *frame, *sound, *vol, *pitch = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "ssOOO|O", &cls, &action, &frame, &sound, &vol, &pitch)) {
+	if (!PyArg_ParseTuple(args, "OOOOO|O", &cls, &action, &frame, &sound, &vol, &pitch)) {
 		return NULL;
 	}
-	if (!Chars_Select(cls, action)) {
-		return Py_ReturnNone();
+	int sel = Chars_Select(cls, action);
+	if (sel <= 0) {
+		return sel < 0 ? NULL : Py_ReturnNone();
 	}
 	PyObject *zero = pitch ? NULL : PyInt_FromLong(0);
 	byte ok = Chars_Join(sound, vol, pitch ? pitch : zero, 0, name, sizeof(name));
@@ -121,14 +148,15 @@ static PyObject *Chars_ActSound(PyObject *self, PyObject *args) {
 
 /* ActSoundLoop(cls, action, frame, soundId, vol[, pitch]) */
 static PyObject *Chars_ActSoundLoop(PyObject *self, PyObject *args) {
-	char *cls, *action, name[0x200];
-	PyObject *frame, *sound, *vol, *pitch = NULL;
+	char name[0x200];
+	PyObject *cls, *action, *frame, *sound, *vol, *pitch = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "ssOOO|O", &cls, &action, &frame, &sound, &vol, &pitch)) {
+	if (!PyArg_ParseTuple(args, "OOOOO|O", &cls, &action, &frame, &sound, &vol, &pitch)) {
 		return NULL;
 	}
-	if (!Chars_Select(cls, action)) {
-		return Py_ReturnNone();
+	int sel = Chars_Select(cls, action);
+	if (sel <= 0) {
+		return sel < 0 ? NULL : Py_ReturnNone();
 	}
 	PyObject *zero = pitch ? NULL : PyInt_FromLong(0);
 	byte ok = Chars_Join(sound, vol, pitch ? pitch : zero, 1, name, sizeof(name));
@@ -142,14 +170,15 @@ static PyObject *Chars_ActSoundLoop(PyObject *self, PyObject *args) {
 
 /* StrSound(cls, action, frame, sound[, vol[, dist]]): a streamed voice */
 static PyObject *Chars_StrSound(PyObject *self, PyObject *args) {
-	char *cls, *action, name[0x200];
-	PyObject *frame, *sound, *vol = NULL, *dist = NULL;
+	char name[0x200];
+	PyObject *cls, *action, *frame, *sound, *vol = NULL, *dist = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "ssOO|OO", &cls, &action, &frame, &sound, &vol, &dist)) {
+	if (!PyArg_ParseTuple(args, "OOOO|OO", &cls, &action, &frame, &sound, &vol, &dist)) {
 		return NULL;
 	}
-	if (!Chars_Select(cls, action)) {
-		return Py_ReturnNone();
+	int sel = Chars_Select(cls, action);
+	if (sel <= 0) {
+		return sel < 0 ? NULL : Py_ReturnNone();
 	}
 	PyObject *v = vol ? NULL : PyFloat_FromDouble(1.0), *dd = dist ? NULL : PyInt_FromLong(3000);
 	byte ok = Chars_Join(sound, vol ? vol : v, dist ? dist : dd, 0, name, sizeof(name));
@@ -164,13 +193,16 @@ static PyObject *Chars_StrSound(PyObject *self, PyObject *args) {
 
 /* StrSoundStop(cls, action, frame): the streamed voice stops, also when a new action jumps over the frame */
 static PyObject *Chars_StrSoundStop(PyObject *self, PyObject *args) {
-	char *cls, *action;
-	PyObject *frame;
+	PyObject *cls, *action, *frame;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "ssO", &cls, &action, &frame)) {
+	if (!PyArg_ParseTuple(args, "OOO", &cls, &action, &frame)) {
 		return NULL;
 	}
-	if (Chars_AddEvent(cls, action, frame, "Stop", "!StopStreamingVoice")) {
+	int sel = Chars_AddEvent(cls, action, frame, "Stop", "!StopStreamingVoice");
+	if (sel < 0) {
+		return NULL;
+	}
+	if (sel) {
 		double d = 0.0;
 		int i = 0;
 		cAction_Var(g_pAuxAction, "EventDiscardable", 1, NULL, &d, &i);
@@ -180,12 +212,13 @@ static PyObject *Chars_StrSoundStop(PyObject *self, PyObject *args) {
 
 /* IntSetChar(cls, action): 1 when the class or the action is missing (the name of the script) */
 static PyObject *Chars_IntSetChar(PyObject *self, PyObject *args) {
-	char *cls, *action;
+	PyObject *cls, *action;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "ss", &cls, &action)) {
+	if (!PyArg_ParseTuple(args, "OO", &cls, &action)) {
 		return NULL;
 	}
-	return PyInt_FromLong(!Chars_Select(cls, action));
+	int sel = Chars_Select(cls, action);
+	return sel < 0 ? NULL : PyInt_FromLong(!sel);
 }
 
 /* ---- the resources: Chars.CharRes, a list of [class, discardable] that other scripts fill too ---- */

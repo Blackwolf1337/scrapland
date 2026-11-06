@@ -63,13 +63,17 @@ static PyObject *GetVar(PyObject *args, varfunc_t var, void *obj, const char *na
 cActClassList *g_pActClassList;
 cActClass *g_pAuxActClass;
 
-/* CreateClass(classname) : Crea una clase de objeto animado. A parse error returns None with the error set. */
+/*
+ * CreateClass(classname) : Crea una clase de objeto animado. differs from the original: a parse error raises its
+ * TypeError; the original returns None with the error left set, and its callers went on to set up the current class
+ * (another one) with SetCls until the error came out at a later line, or a SetCls with a number cleared it.
+ */
 static PyObject *SAct_CreateClass(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return Py_ReturnNone();
+		return NULL;
 	}
 	CHECK(g_pActClassList);
 	g_pAuxActClass = cActClassList_Create(g_pActClassList, name);
@@ -87,13 +91,18 @@ static PyObject *SAct_DelClass(PyObject *self, PyObject *args) {
 	return Py_BuildValue("i", cActClassList_Del(g_pActClassList, name) != 0);
 }
 
-/* GetClass(classname) : Activa una clase de objeto animado. A parse error returns None with the error set. */
+/*
+ * GetClass(classname) : Activa una clase de objeto animado. differs from the original: a parse error raises its
+ * TypeError; the original returns None with the error left set and keeps the current class, and its callers went on
+ * (Chars.IntSetChar took None for a missing class, DoorSound.SetInitDoorSound and the sound scripts set actions of the
+ * current class, another one) until the error came out at a later line, or a SetAct or SetCls with a number cleared it.
+ */
 static PyObject *SAct_GetClass(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return Py_ReturnNone();
+		return NULL;
 	}
 	CHECK(g_pActClassList);
 	g_pAuxActClass = cActClassList_Get(g_pActClassList, name);
