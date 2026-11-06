@@ -145,6 +145,13 @@ static const scriptModule_t script_modules[] = {
 	{ "Bureaucracy", g_BureaucracyMethods },
 	{ "Chat", g_ChatMethods },
 	{ "CreditsText", g_CreditsTextMethods },
+	{ "Traffic", g_TrafficMethods },
+	{ "OutPolice", g_OutPoliceMethods },
+	{ "InPolice", g_InPoliceMethods },
+	{ "PhoneCab", g_PhoneCabMethods },
+	{ "DTritusDesktop", g_DTritusDesktopMethods },
+	{ "Metro", g_MetroMethods },
+	{ "Challenge", g_ChallengeMethods },
 };
 
 void Script_ModuleLoaded(const char *name, PyObject *module) {
