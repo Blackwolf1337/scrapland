@@ -41,6 +41,11 @@ extern PyMethodDef g_GamblinDenMapMethods[], g_GamblinDenBeforeFinalFightMethods
 	g_GamblinDenIgorFirstContactMethods[], g_GamblinDenGoToGamblinDenMethods[], g_GamblinDenTalkToTraitoriusAfterCTFMethods[],
 	g_GamblinDenBackFromMortalRaceMethods[], g_GamblinDenCrazyGamblerFirstContactMethods[], g_GamblinDenArrangeMortalRaceMethods[],
 	g_GamblinDenThreeStoogesMethods[];
+extern PyMethodDef g_JunkyardMapMethods[], g_JunkyardMapShipEditMethods[], g_JunkyardRustyFirstContactMethods[];
+extern PyMethodDef g_PressMapMethods[], g_PressMapPlanesMethods[], g_PressMapDemoCloseMethods[], g_PressMapSndMethods[],
+	g_PressFicusBankerMethods[], g_PressGetCrazyDataMethods[], g_PressGoToPressMethods[], g_PressGoWithHumanMethods[],
+	g_PressHumphreyArchbishopKilledMethods[], g_PressIntroHuman2Methods[], g_PressMeetBossMethods[], g_PressPressMeetingMethods[],
+	g_PressTalkToBossMethods[], g_PressWhoIsDeepThroatMethods[], g_PressWhoIsTheBaddieMethods[];
 
 static const levelModule_t level_modules[] = {
 	{ "menu", "Map", g_MenuMapMethods },
@@ -97,6 +102,24 @@ static const levelModule_t level_modules[] = {
 	{ "gamblinden", "Mission_CrazyGamblerFirstContact", g_GamblinDenCrazyGamblerFirstContactMethods },
 	{ "gamblinden", "Mission_ArrangeMortalRace", g_GamblinDenArrangeMortalRaceMethods },
 	{ "gamblinden", "Mission_ThreeStooges", g_GamblinDenThreeStoogesMethods },
+	{ "junkyard", "Map", g_JunkyardMapMethods },
+	{ "junkyard", "MapShipEdit", g_JunkyardMapShipEditMethods },
+	{ "junkyard", "Mission_RustyFirstContact", g_JunkyardRustyFirstContactMethods },
+	{ "press", "Map", g_PressMapMethods },
+	{ "press", "MapPlanes", g_PressMapPlanesMethods },
+	{ "press", "MapDemoClose", g_PressMapDemoCloseMethods },
+	{ "press", "MapSnd", g_PressMapSndMethods },
+	{ "press", "Mission_FicusBanker", g_PressFicusBankerMethods },
+	{ "press", "Mission_GetCrazyData", g_PressGetCrazyDataMethods },
+	{ "press", "Mission_GoToPress", g_PressGoToPressMethods },
+	{ "press", "Mission_GoWithHuman", g_PressGoWithHumanMethods },
+	{ "press", "Mission_HumphreyArchbishopKilled", g_PressHumphreyArchbishopKilledMethods },
+	{ "press", "Mission_IntroHuman2", g_PressIntroHuman2Methods },
+	{ "press", "Mission_MeetBoss", g_PressMeetBossMethods },
+	{ "press", "Mission_PressMeeting", g_PressPressMeetingMethods },
+	{ "press", "Mission_TalkToBoss", g_PressTalkToBossMethods },
+	{ "press", "Mission_WhoIsDeepThroat", g_PressWhoIsDeepThroatMethods },
+	{ "press", "Mission_WhoIsTheBaddie", g_PressWhoIsTheBaddieMethods },
 	{ NULL, NULL, NULL },
 };
 

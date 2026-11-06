@@ -86,6 +86,15 @@ typedef struct {
 	double ivol;
 } lvSndElement_t;
 
+/*
+ * MapPlanes of a level (the blueprints to photograph, the lists Naves and Motores of the module): Init(LevelPath) puts
+ * a photo object at every DM_LocalPlane_ dummy whose blueprint is still to take; TakenPhoto(Name) moves the ship or
+ * engine of a "Plano" photo to the hangar lists (the save variables ships and engines keep the module lists): 1, 0,
+ * or None for another photo
+ */
+PyObject *Lv_PlanesInit(PyObject *args, const char *module);
+PyObject *Lv_PlanesPhoto(PyObject *args, const char *module, const char *ships, const char *engines);
+
 /* SndElements(Name, x, y, z, angx, angy) of the MapSnd of a level with its table of elements (ends with a NULL name) */
 PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table);
 
