@@ -2,13 +2,14 @@
  * The scripts of the level Police in C (data01.packed levels/police/scripts, issue #2): the Map module (the NPCs,
  * Ficus' body, the teleporters and gatekeepers, the fake traffic, the costume of the viscoson, the return from the
  * jail), MapSnd.SndElements (the sounds of the map elements; the rest of MapSnd is data), MapPlanes (the police
- * blueprints to photograph) and the missions Mission_BeatPickus, Mission_FicusDead, Mission_GetAuthorization, Mission_InitEpilogue, Mission_JailBreak and Mission_PoliceBossCheats. The plain functions
- * are data (data/levels/police/<module>.def): MapPlanes.InitStatus, the scene loaders (Mission_BeatPickus.LoadScene,
+ * blueprints to photograph) and the missions Mission_BeatPickus, Mission_FicusDead, Mission_GetAuthorization,
+ * Mission_InitEpilogue, Mission_JailBreak and Mission_PoliceBossCheats. The plain functions are data
+ * (data/levels/police/<module>.def): MapPlanes.InitStatus, the scene loaders (Mission_BeatPickus.LoadScene,
  * Mission_GetAuthorization.LoadScene, Mission_PoliceBossCheats.LoadPoliFightScene) and the functions that only call
  * others (PreHireThugs, PreBeatPickus, OnAlarmDeactivated, PreTalkToTraitoriusAgain and SetNextMission of
  * Mission_BeatPickus, InitStatus, AfterDtritusSpeechShown and PreAfterDeepThroatMessageShown of Mission_FicusDead,
- * GetAuthorization2, PreFreeHuman and OnMainCharDeath of Mission_GetAuthorization, Mission_InitEpilogue.PreSetNextMission,
- * Mission_PoliceBossCheats.InitBossCheats).
+ * GetAuthorization2, PreFreeHuman and OnMainCharDeath of Mission_GetAuthorization,
+ * Mission_InitEpilogue.PreSetNextMission, Mission_PoliceBossCheats.InitBossCheats).
  *
  * The module variables and the module code stay in the scripts: Map (Libraries, ficus, the discardable characters,
  * the jail escape at its load), MapPlanes (Naves, Motores), Mission_BeatPickus (followPlayerVel, thugsStopped,

@@ -1,11 +1,11 @@
 /*
- * The scripts of the level Townhall in C (data02.packed levels/townhall/scripts, issue #2): the Map module (the NPCs,
- * the mayor and his gear, the elevators, the locked elevator to the orbit, the fake traffic), MapSnd.SndElements (the
- * sounds of the map elements; the rest of MapSnd is data) and the missions
+ * The scripts of the level Townhall in C (data02.packed levels/townhall/scripts, issue #2): the Map module (the
+ * NPCs, the mayor and his gear, the elevators, the locked elevator to the orbit, the fake traffic),
+ * MapSnd.SndElements (the sounds of the map elements; the rest of MapSnd is data) and the missions
  * Mission_ApologizeMayor (the staplers of the crazy mayor), Mission_CatchTrurl (the messenger and the blueprints of
  * the mayor's ship), Mission_SheriffMayor (the police boss sells his clues) and Mission_TalkToMayor (the money of
- * Corruptus and Porkins). The plain functions are data (data/levels/townhall/<module>.def): Mission_SheriffMayor.Init and
- * Mission_TalkToMayor.PreStealFunctionary.
+ * Corruptus and Porkins). The plain functions are data (data/levels/townhall/<module>.def):
+ * Mission_SheriffMayor.Init and Mission_TalkToMayor.PreStealFunctionary.
  *
  * The module variables and the module code stay in the scripts: Map (Libraries, the discardable characters
  * _BankDirector, _Bishop, _Functionary), Mission_ApologizeMayor (MaxTargets, SMayorTaunt), Mission_SheriffMayor
