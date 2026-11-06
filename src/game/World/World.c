@@ -1129,9 +1129,9 @@ void cWorld_Update(cWorld *self, float dt) {
 	}
 }
 
-/* calls func(name) for every entity of mask in the sphere, seen from its center unless noWall */
-byte cWorld_SphereCallF(cWorld *self, uint32_t mask, const vec3_t *center, float radius,
-	cPy_Function *func, int noWall) {
+/* calls fn(e, ctx) for every entity of mask in the sphere, seen from its center unless noWall */
+byte cWorld_SphereEach(cWorld *self, uint32_t mask, const vec3_t *center, float radius, int noWall,
+	void (*fn)(cEntity *e, void *ctx), void *ctx) {
 	byte found = 0;
 	vec3_t lo, hi, pos;
 
@@ -1145,11 +1145,21 @@ byte cWorld_SphereCallF(cWorld *self, uint32_t mask, const vec3_t *center, float
 		if (!(byte)noWall && Engine_TestLine(center, Entity_GetPos(e, &pos), NULL, NULL)) {
 			continue;
 		}
-		cPy_Function_AddParamS(func, e->name);
-		cPy_Function_Execute(func, 0);
+		fn(e, ctx);
 		found = 1;
 	}
 	return found;
+}
+
+static void World_SphereFunc(cEntity *e, void *func) {
+	cPy_Function_AddParamS(func, e->name);
+	cPy_Function_Execute(func, 0);
+}
+
+/* calls func(name) for every entity of mask in the sphere, seen from its center unless noWall */
+byte cWorld_SphereCallF(cWorld *self, uint32_t mask, const vec3_t *center, float radius,
+	cPy_Function *func, int noWall) {
+	return cWorld_SphereEach(self, mask, center, radius, noWall, World_SphereFunc, func);
 }
 
 byte cWorld_SphereCall(cWorld *world, uint32_t mask, const vec3_t *center, float radius, const char *func,

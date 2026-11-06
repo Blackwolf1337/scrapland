@@ -159,5 +159,8 @@ void cWorld_ShowDebrisInfo(cWorld *self, int x, int y);
 void cWorld_Update(cWorld *self, float dt);
 byte cWorld_SphereCallF(cWorld *self, uint32_t mask, const vec3_t *center, float radius,
 	cPy_Function *func, int noWall);
+/* fn(e, ctx) for every entity of mask in the sphere (as cWorld_SphereCallF); 1 if there was one */
+byte cWorld_SphereEach(cWorld *self, uint32_t mask, const vec3_t *center, float radius, int noWall,
+	void (*fn)(cEntity *e, void *ctx), void *ctx);
 
 #endif

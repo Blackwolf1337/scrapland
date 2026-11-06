@@ -117,7 +117,12 @@ static void Con_AddLines(const char *text, uint32_t color) {
 static void *g_LogFile;
 static void *g_LogAIFile;
 
+void (*g_ConCapture)(const char *text);
+
 static void Con_Output(const char *text, uint32_t color) {
+	if (g_ConCapture) {
+		g_ConCapture(text);
+	}
 	ConsoleWin_Add(text, color);
 	DebugLog_Write(text, color, g_LogFile);
 	DebugLog_Write(text, color, g_LogAIFile);

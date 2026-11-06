@@ -64,9 +64,9 @@ static byte Con_Number(const char *s, double *d) {
 	return *end == 0;
 }
 
-/* Python 1.5.2 str() of a float: %.12g, ".0" when it looks like an int */
-static void Con_FormatFloat(char *buf, int size, double d) {
-	Str_PrintfQuiet(buf, size, "%.12g", d);
+/* Python 1.5.2 str() (12 digits) or repr() (17) of a float: ".0" added when it looks like an int */
+static void Con_FormatFloatP(char *buf, int size, double d, int digits) {
+	Str_PrintfQuiet(buf, size, "%.*g", digits, d);
 	const char *p = buf[0] == '-' ? buf + 1 : buf;
 	while (*p >= '0' && *p <= '9') {
 		p++;
@@ -75,6 +75,10 @@ static void Con_FormatFloat(char *buf, int size, double d) {
 		size_t len = strlen(buf);
 		Str_Copy(buf + len, ".0", size - (int)len);
 	}
+}
+
+static void Con_FormatFloat(char *buf, int size, double d) {
+	Con_FormatFloatP(buf, size, d, 12);
 }
 
 /* Python 1.5.2 repr() of a string: single quotes unless it holds only single ones, octal escapes */
@@ -133,8 +137,9 @@ static void Con_Unquote(char *dst, int size, const char *s) {
 
 /* ---- engine variables ---- */
 
-/* the value of an engine variable as Python's repr of Scrap.Get / Scrap.Def gives it */
-static void Con_ReprGVar(char *buf, int size, const cGVar *v, byte def) {
+/* the value of an engine variable as Python's repr of Scrap.Get / Scrap.Def gives it (floats with 17 digits as repr,
+ * or 12 as the console shows them) */
+static void Con_ReprGVar(char *buf, int size, const cGVar *v, byte def, int digits) {
 	switch (v->base.type) {
 	case GVAR_STRING:
 		Con_ReprString(buf, size, (def ? v->def.s : v->value.s) ? (def ? v->def.s : v->value.s) : "");
@@ -143,7 +148,7 @@ static void Con_ReprGVar(char *buf, int size, const cGVar *v, byte def) {
 		Str_PrintfQuiet(buf, size, "%d", def ? v->def.i : v->value.i);
 		break;
 	case GVAR_FLOAT:
-		Con_FormatFloat(buf, size, (double)(def ? v->def.f : v->value.f));
+		Con_FormatFloatP(buf, size, (double)(def ? v->def.f : v->value.f), digits);
 		break;
 	case GVAR_FUNCTION:
 		Str_Copy(buf, "'<function>'", size);
@@ -163,8 +168,8 @@ static void Con_ShowVar(const char *name) {
 		Con_Errorf("ERROR: '%s' global variable not defined\n", name);
 		return;
 	}
-	Con_ReprGVar(cur, sizeof(cur), v, 0);
-	Con_ReprGVar(def, sizeof(def), v, 1);
+	Con_ReprGVar(cur, sizeof(cur), v, 0, 12);
+	Con_ReprGVar(def, sizeof(def), v, 1, 12);
 	Str_PrintfQuiet(line, sizeof(line), "%s = %s (default = %s) ### %s\n", name, cur, def,
 		v->base.description ? v->base.description : "");
 	Con_Print(0, line, 0);
@@ -919,4 +924,24 @@ void Console_Execute(const char *cmd) {
 		Console_PythonFallback(cmd);
 		return;
 	}
+}
+
+/* ---- for the test channel (TestChannel.c) ---- */
+
+void Console_ReprFloat(char *buf, int size, double d) {
+	Con_FormatFloatP(buf, size, d, 17);
+}
+
+void Console_ReprString(char *buf, int size, const char *s) {
+	Con_ReprString(buf, size, s);
+}
+
+byte Console_ReprVar(const char *name, char *buf, int size) {
+	const cGVar *v = GVar_Find(name);
+
+	if (!v) {
+		return 0;
+	}
+	Con_ReprGVar(buf, size, v, 0, 17);
+	return 1;
 }
