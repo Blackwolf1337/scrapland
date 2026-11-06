@@ -114,6 +114,7 @@ static const scriptModule_t script_modules[] = {
 	{ "SPostman", g_SPostmanMethods },
 	{ "SRace", g_SRaceMethods },
 	{ "Init", g_InitMethods },
+	{ "string", g_StringMethods },
 	{ "BankDirectorSound", g_BankDirectorSoundMethods },
 	{ "BankMasterSound", g_BankMasterSoundMethods },
 	{ "BertoSound", g_BertoSoundMethods },

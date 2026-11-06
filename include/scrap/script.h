@@ -505,6 +505,8 @@ extern PyMethodDef g_SPostmanMethods[];
 extern PyMethodDef g_SRaceMethods[];
 /* the functions of the Init module (src/game/Script/InitLevel.c) */
 extern PyMethodDef g_InitMethods[];
+/* the functions string.py keeps in Python (src/game/Script/String.c) */
+extern PyMethodDef g_StringMethods[];
 /* the sound scripts of the characters (src/game/Script/Sounds.c, data/sound/) */
 extern PyMethodDef g_BankDirectorSoundMethods[];
 extern PyMethodDef g_BankMasterSoundMethods[];
