@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """gen.py <packs> <repo>: the .mod files of the modules listed in tools/modules/modules.tsv (data/modules/<module>.mod,
 data/levels/<level>/<module>.mod) from the .pyc of the extracted packs (pyc2mod.py), and
-src/game/Script/ModuleFiles.inc that builds them in"""
+src/game/Script/ModuleFiles.inc that builds them in. A module whose .pyc is "-" has a .mod written by hand, which
+stays as it is."""
 import os, sys
 sys.path.insert(0, os.path.dirname(__file__))
 import pyc2mod
@@ -12,8 +13,11 @@ for line in open(os.path.join(repo, 'tools/modules/modules.tsv')):
         continue
     module, level, pyc = line.rstrip('\n').split('\t')
     base = module.lower()
-    lines = pyc2mod.convert(module, os.path.join(root, pyc))
     rel = ('modules/%s.mod' % base) if level == '-' else ('levels/%s/%s.mod' % (level, base))
+    if pyc == '-':
+        entries.append((None if level == '-' else level, module, rel))
+        continue
+    lines = pyc2mod.convert(module, os.path.join(root, pyc))
     head = ['# The module code of %s%s (%s): its imports, variables, functions and load time calls in the order of the' %
         (module, '' if level == '-' else ' in level ' + level, pyc),
         '# script; ScrapC makes the module from this file instead of running the .pyc. Made by tools/modules/pyc2mod.py.',

@@ -1,5 +1,5 @@
 # the pack modules made in C from a .mod file (tools/modules/gen.py): module, level ("-" for every level), the .pyc
-# under the extracted packs
+# under the extracted packs ("-": the .mod is written by hand)
 Sound	-	Data.packed/scripts/sound/sound.pyc
 Parking	-	Data.packed/scripts/vehicles/parking.pyc
 Map	gamblinden	data03.packed/levels/gamblinden/scripts/map.pyc
@@ -134,3 +134,6 @@ RaceMaker	-	Data.packed/scripts/missions/racemaker.pyc
 MissionsFuncs	-	Data.packed/scripts/missions/missionsfuncs.pyc
 Net	-	Data.packed/scripts/net/net.pyc
 Split	-	Data.packed/scripts/split/split.pyc
+Init	-	Data.packed/scripts/init.pyc
+NewsPanel	-	Data.packed/scripts/missions/newspanel.pyc
+CharsNPC	-	Data.packed/scripts/chars/charsnpc.pyc

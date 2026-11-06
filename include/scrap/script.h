@@ -47,6 +47,23 @@ void Script_LevelModuleLoaded(const char *name, PyObject *module, PyObject *kept
  * *module NULL)
  */
 int Script_ModuleMake(const char *name, const char *file, PyObject **module);
+/* text (NAME or NAME.NAME...) as module code loads it (LOAD_NAME in locals, which are the globals too, then the
+ * builtins; LOAD_ATTR): a new reference, NULL with the error set */
+PyObject *Script_ModuleName(PyObject *locals, const char *text);
+/* the body of a for loop of module code: 1, or 0 with the error set */
+typedef byte (*scriptForBody_t)(PyObject *locals, PyObject *item, void *ctx);
+/*
+ * for <var> in <seq>: <body> in module code, for the C hooks of the definitions (FOR_LOOP, STORE_NAME): item i of seq
+ * up to the IndexError, each stored as var in locals before body runs; 1, or 0 with the error set
+ */
+byte Script_ModuleFor(PyObject *locals, const char *var, PyObject *seq, scriptForBody_t body, void *ctx);
+/* the C hooks of the module definitions ("c <name>" lines, module_hooks in ScriptModule.c): 1, or 0 with the error
+ * set; locals is the dict the names of the module code go to */
+int Init_ModLoadChars(PyObject *module, PyObject *locals);
+int Init_ModExtraExecs(PyObject *module, PyObject *locals);
+int NewsPanel_ModSettings(PyObject *module, PyObject *locals);
+int CharsNPC_ModSpawnPosInit(PyObject *module, PyObject *locals);
+int CharsNPC_ModSpawnPosClass(PyObject *module, PyObject *locals);
 /* the function name of module from the C tables (script_modules, the last table that has it), a new reference; NULL
  * without an error when no table has it */
 PyObject *Script_TableFunction(const char *module, const char *name);

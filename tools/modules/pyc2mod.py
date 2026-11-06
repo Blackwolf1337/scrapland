@@ -28,6 +28,15 @@ CMP = ['<', '<=', '==', '!=', '>', '>=', 'in', 'not in', 'is', 'is not']
 BINOP = {'BINARY_ADD': '+', 'BINARY_SUBTRACT': '-', 'BINARY_MULTIPLY': '*', 'BINARY_DIVIDE': '/', 'BINARY_MODULO': '%'}
 
 
+# statements the .mod lines cannot say, made by a C hook (module_hooks of src/game/Script/ScriptModule.c) instead:
+# (module, line of the statement) -> the hook. A loop or a def (a method in a class body) there becomes "c <hook>".
+HOOKS = {('Init', 205): 'LoadChars', ('Init', 251): 'ExtraExecs', ('NewsPanel', 7): 'Settings',
+    ('CharsNPC', 20): 'SpawnPosInit'}
+# (module, class) -> the hook on the line after the end of the class statement (a method made in the body gets its
+# class there)
+CLASS_HOOKS = {('CharsNPC', 'CharSpawnPos'): 'SpawnPosClass'}
+
+
 class Code:
     def __init__(self, **kw):
         self.__dict__.update(kw)
@@ -282,6 +291,8 @@ class Decoder:
                 if name != v.text:
                     self.fail('import %s as %s' % (v.text, name))
                 self.emit(out, ind, 'import ' + name)
+            elif v.kind == 'func' and (self.module, self.line) in HOOKS:
+                self.emit(out, ind, 'c ' + HOOKS[(self.module, self.line)])
             elif v.kind == 'func':
                 if v.code.name.decode() != name:
                     self.fail('def %s stored as %s' % (v.code.name.decode(), name))
@@ -297,6 +308,8 @@ class Decoder:
                 self.emit(out, ind, 'class %s%s' % (name, bases))
                 Decoder(v.body, self.module).body(out, ind + '\t', True)
                 self.emit(out, ind, 'end')
+                if (self.module, name) in CLASS_HOOKS:
+                    self.emit(out, ind, 'c ' + CLASS_HOOKS[(self.module, name)])
             else:
                 self.emit(out, ind, 'let %s = %s' % (name, self.val(v)))
                 v.text = name
@@ -346,6 +359,10 @@ class Decoder:
             st.pop()
         elif op == 'LOAD_LOCALS':
             st.append(E('<locals>'))
+        elif op == 'SETUP_LOOP' and (self.module, self.line) in HOOKS:
+            # the whole loop (up to the end SETUP_LOOP names) is the hook
+            self.emit(out, ind, 'c ' + HOOKS[(self.module, self.line)])
+            return self.at[nxt + arg]
         else:
             self.fail(op)
         return k + 1

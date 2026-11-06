@@ -6,7 +6,8 @@
  *
  * The module variables stay in the module (CharRes, the class CharSpawnPos, AfterBrowseNPC, ReposChars, NPCAttribs,
  * RespawnChars, Repos, optionsList, subOptionsList, ActualEntityName), because the missions and the character
- * scripts read and change them. The code reads them as globals of the module like the script (a missing one is a
+ * scripts read and change them. The module code is data/modules/charsnpc.mod; the __init__ of CharSpawnPos is a C
+ * method (CharsNPC_ModSpawnPosInit). The code reads them as globals of the module like the script (a missing one is a
  * NameError), works on the entity handles and the CharSpawnPos objects, and stops at the first error.
  */
 #include <limits.h>
@@ -42,10 +43,58 @@ static byte Npc_ConsoleError(PyObject *text) {
 
 /* ---- the spawn points ---- */
 
+/* CharSpawnPos.__init__(self) of charsnpc.py:20: self.CallbackFunc = [] */
+static PyObject *Npc_SpawnPosInit(PyObject *self, PyObject *args) {
+	PyObject *inst;
+	(void)self;
+	if (!PyArg_ParseTuple(args, "O", &inst)) {
+		return NULL;
+	}
+	PyObject *list = PyList_New(0);
+	int err = list ? PyObject_SetAttrString(inst, "CallbackFunc", list) : -1;
+	Py_XDECREF(list);
+	return err ? NULL : Py_ReturnNone();
+}
+
+static PyMethodDef npc_spawnPosInit = { "__init__", Npc_SpawnPosInit, 1, NULL };
+
+/*
+ * The __init__ of CharSpawnPos is a method object around the C function: instance_getattr binds it to the instance
+ * as it binds a Python function (a C function alone in the class would get no self). The class does not exist yet
+ * when the body of the class statement runs, so the hook in the body (where the script defines __init__, which
+ * keeps the key order of the class dict) makes the method with None as its class, and the hook after the class
+ * statement puts the class in (im_class) without a write to the dict.
+ */
+int CharsNPC_ModSpawnPosInit(PyObject *module, PyObject *locals) {
+	(void)module;
+	PyObject *f = Script_CheckFunction(&npc_spawnPosInit, NULL, "CharsNPC");
+	PyObject *m = f ? PyMethod_New(f, NULL, Py_None) : NULL;
+	int err = m ? PyDict_SetItemString(locals, "__init__", m) : -1;
+	Py_XDECREF(m);
+	Py_XDECREF(f);
+	return err == 0;
+}
+
+int CharsNPC_ModSpawnPosClass(PyObject *module, PyObject *locals) {
+	(void)module;
+	PyObject *cls = Script_ModuleName(locals, "CharSpawnPos");
+	PyObject *m = cls && PyClass_Check(cls) ? PyDict_GetItemString(((PyClassObject *)cls)->cl_dict, "__init__") : NULL;
+	if (m && PyMethod_Check(m) && PyMethod_GET_CLASS(m) == Py_None) {
+		Py_INCREF(cls);
+		((PyMethodObject *)m)->im_class = cls;
+		Py_DECREF(Py_None);
+	} else if (cls) {
+		PyErr_SetString(PyExc_TypeError, "CharSpawnPos: the class of the module definition without its __init__");
+	}
+	Py_XDECREF(cls);
+	return !PyErr_Occurred();
+}
+
 /*
  * CharSpawnPos(): when the class is the module's own with the __init__ of the pack (self.CallbackFunc = [], the
  * bytecode of scripts/chars/charsnpc.py:20 compared byte for byte, no base class, no __setattr__), the instance is
  * made as PyInstance_New makes it and the attribute set without running the bytecode; any other class is called
+ * (the class of data/modules/charsnpc.mod has the C __init__ above, so no Python runs either)
  */
 static PyObject *Npc_NewSpawnPos(PyObject *cls) {
 	/* SET_LINENO 20, SET_LINENO 21, BUILD_LIST 0, LOAD_FAST 0 (self), STORE_ATTR 1 (CallbackFunc), LOAD_CONST 0 (None),

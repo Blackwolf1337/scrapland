@@ -401,6 +401,15 @@ static const char mod_modules_net[] = {
 static const char mod_modules_split[] = {
 #embed "../../../data/modules/split.mod"
 	, 0 };
+static const char mod_modules_init[] = {
+#embed "../../../data/modules/init.mod"
+	, 0 };
+static const char mod_modules_newspanel[] = {
+#embed "../../../data/modules/newspanel.mod"
+	, 0 };
+static const char mod_modules_charsnpc[] = {
+#embed "../../../data/modules/charsnpc.mod"
+	, 0 };
 
 static const moduleFile_t module_files[] = {
 	{ NULL, "Sound", "modules/sound.mod", mod_modules_sound },
@@ -537,4 +546,7 @@ static const moduleFile_t module_files[] = {
 	{ NULL, "MissionsFuncs", "modules/missionsfuncs.mod", mod_modules_missionsfuncs },
 	{ NULL, "Net", "modules/net.mod", mod_modules_net },
 	{ NULL, "Split", "modules/split.mod", mod_modules_split },
+	{ NULL, "Init", "modules/init.mod", mod_modules_init },
+	{ NULL, "NewsPanel", "modules/newspanel.mod", mod_modules_newspanel },
+	{ NULL, "CharsNPC", "modules/charsnpc.mod", mod_modules_charsnpc },
 };

@@ -3,8 +3,8 @@
  * the level, its mission libraries, the AI, the menus, the sound, the characters, vehicles, weapons, effects, doors,
  * the indoor or outdoor map, the save game values), the mission libraries of a map, the arrows, the station label and
  * the progress bar of the next level (Close). The module code (the preloads, the flags of the level such as Outdoor,
- * MultiPlayer, UpperMap, the tables) stays in the script; the map scripts change those flags while Init runs, so they
- * are read where the script reads them.
+ * MultiPlayer, UpperMap, the tables) is data/modules/init.mod; its two for loops are the C hooks at the end of this
+ * file. The map scripts change the flags while Init runs, so they are read where the script reads them.
  */
 #include <stdarg.h>
 #include <string.h>
@@ -501,6 +501,62 @@ static PyObject *Init_Close(PyObject *self, PyObject *args) {
 		}
 	}
 	return Script_Done(&r, Py_ReturnNone());
+}
+
+/* ---- the loops of the module code (data/modules/init.mod) ---- */
+
+static byte In_LoadCharBody(PyObject *locals, PyObject *fn, void *ctx) {
+	(void)ctx;
+	PyObject *f = Script_ModuleName(locals, "LoadCharLib");
+	PyObject *res = f ? Script_CallObject(f, Py_BuildValue("(O)", fn), NULL) : NULL;
+	Py_XDECREF(f);
+	Py_XDECREF(res);
+	return res != NULL;
+}
+
+/* init.py:205, `for fn in ('Nurse', ...): LoadCharLib(fn)`: the characters of an indoor level and their sounds */
+int Init_ModLoadChars(PyObject *module, PyObject *locals) {
+	static const char *const chars[] = { "Nurse", "Police", "Desktop", "Gear", "Sentinel", "Berto", "BankDirector",
+		"Mayor", "GateKeeper", "Betty", "Dtritus", "Bishop", "Functionary", "Humphrey", "PoliceBoss", "Messenger",
+		"Human", "BankMaster" };
+	enum { NUM_CHARS = sizeof(chars) / sizeof(chars[0]) };
+	(void)module;
+	PyObject *seq = PyTuple_New(NUM_CHARS);
+	for (int i = 0; seq && i < NUM_CHARS; i++) {
+		PyObject *v = Script_StrConst(chars[i], (int)strlen(chars[i]));
+		if (!v) {
+			Py_DECREF(seq);
+			seq = NULL;
+			break;
+		}
+		PyTuple_SET_ITEM(seq, i, v);
+	}
+	byte ok = seq && Script_ModuleFor(locals, "fn", seq, In_LoadCharBody, NULL);
+	Py_XDECREF(seq);
+	return ok;
+}
+
+/* apply(apply, func): func is (Scrap.PreloadLibrary, (module, file)) */
+static byte In_ExtraBody(PyObject *locals, PyObject *func, void *ctx) {
+	(void)ctx;
+	PyObject *apply = Script_ModuleName(locals, "apply");
+	PyObject *res = apply ? Script_CallObject(apply, Py_BuildValue("(OO)", apply, func), NULL) : NULL;
+	Py_XDECREF(apply);
+	Py_XDECREF(res);
+	return res != NULL;
+}
+
+/* init.py:251, `for func in ExtraExecs[UpperMap]: apply(apply, func)`: the extra characters of some levels */
+int Init_ModExtraExecs(PyObject *module, PyObject *locals) {
+	(void)module;
+	PyObject *table = Script_ModuleName(locals, "ExtraExecs");
+	PyObject *key = table ? Script_ModuleName(locals, "UpperMap") : NULL;
+	PyObject *seq = key ? PyObject_GetItem(table, key) : NULL;
+	byte ok = seq && Script_ModuleFor(locals, "func", seq, In_ExtraBody, NULL);
+	Py_XDECREF(table);
+	Py_XDECREF(key);
+	Py_XDECREF(seq);
+	return ok;
 }
 
 PyMethodDef g_InitMethods[] = {
