@@ -134,18 +134,17 @@ void Scheduler_Delete(cScheduledFuncStack *self, const char *name) {
 void Scheduler_Run(cScheduledFuncStack *self, float now) {
 	cSchedList *list = &self->list;
 
-	list->iter = list->head;
-	cScheduledFunc **it = list->iter ? &list->iter->func : NULL;
-	while (it && (*it)->time < now) {
-		cScheduledFunc *f = *it;
-		cSchedNode *iter = list->iter;
-		cScheduledFunc_Run(f);
-		list->iter = iter;
+	/* differs from the original: the entry leaves the list before its call. The original removed the head after the
+	 * call, which is a function the call scheduled before it (time 0) if there is one, and freed the running one
+	 * while its node stayed in the list. Scheduler_Delete passes over a running entry, so leaving the list keeps
+	 * DeleteScheduledFuncs during the call as it was. */
+	while (list->head && list->head->func->time < now) {
+		cScheduledFunc *f = list->head->func;
 		SchedList_RemoveHead(list);
-		list->iter = list->head;
-		it = list->iter ? &list->iter->func : NULL;
+		cScheduledFunc_Run(f);
 		cScheduledFunc_Free(f);
 	}
+	list->iter = list->head;
 }
 
 void cScheduledFuncStack_dtor(void *stack) {
