@@ -196,6 +196,8 @@ extern PyMethodDef g_SaveGameMethods[];
 extern PyMethodDef g_FxMethods[];
 /* the C Items module (src/game/Script/Items.c) */
 extern PyMethodDef g_ItemsMethods[];
+/* the functions of the Init module (src/game/Script/InitLevel.c) */
+extern PyMethodDef g_InitMethods[];
 /* the sound scripts of the characters (src/game/Script/Sounds.c, data/sound/) */
 extern PyMethodDef g_BankDirectorSoundMethods[];
 extern PyMethodDef g_BankMasterSoundMethods[];
