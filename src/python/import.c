@@ -11,6 +11,13 @@
 
 
 int g_PyPackImport;
+/* ScrapC's gate of the pack modules (SCRAP_PY_GATE, src/game/PyInterface/PythonInit.c): told of every .py or .pyc
+ * this import reads, 0 refuses it (ImportError set) */
+int (*g_PyImportGate)(const char *path);
+
+static int pack_gate(const char *path) {
+	return !g_PyImportGate || g_PyImportGate(path);
+}
 
 /* the .pyc that write_compiled_module wrote, until its warning is out */
 static const char *pack_wrote;
@@ -42,7 +49,8 @@ static int pack_fclose(FILE *fp) {
 	return r;
 }
 
-#define PyMarshal_ReadObjectFromFile(fp) (pack_read(cpathname), PyMarshal_ReadObjectFromFile(fp))
+#define PyMarshal_ReadObjectFromFile(fp) (pack_read(cpathname), pack_gate(cpathname) ? PyMarshal_ReadObjectFromFile(fp) : NULL)
+#define PyParser_SimpleParseFile(fp, path, start) (pack_gate(path) ? PyParser_SimpleParseFile(fp, path, start) : NULL)
 #define crt_fflush(fp) pack_fflush(fp, cpathname)
 #define crt_fclose_file(fp) pack_fclose(fp)
 #define PySys_WriteStderr(args...) (PySys_WriteStderr(args), pack_wrote ? pack_wrote_warn() : (void)0)

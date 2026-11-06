@@ -597,6 +597,43 @@ void Script_Install(PyObject *module, PyMethodDef *methods, PyObject *kept) {
 	}
 }
 
+PyObject *Script_TableFunction(const char *module, const char *name) {
+	/* the last table that has the name wins (as Script_Install puts them in) */
+	PyMethodDef *found = NULL;
+	for (size_t i = 0; i < sizeof(script_modules) / sizeof(script_modules[0]); i++) {
+		if (!strcmp(script_modules[i].name, module)) {
+			for (PyMethodDef *m = script_modules[i].methods; m->ml_name; m++) {
+				if (!strcmp(m->ml_name, name)) {
+					found = m;
+				}
+			}
+		}
+	}
+	return found ? Script_CheckFunction(found, NULL, module) : NULL;
+}
+
+void Script_TableExtras(PyObject *module, PyMethodDef *methods) {
+	PyObject *dict = PyModule_GetDict(module);
+	for (PyMethodDef *m = methods; m->ml_name; m++) {
+		if (!PyDict_GetItemString(dict, m->ml_name)) {
+			PyObject *f = Script_CheckFunction(m, NULL, PyModule_GetName(module));
+			if (f) {
+				PyDict_SetItemString(dict, m->ml_name, f);
+				Py_DECREF(f);
+			}
+		}
+	}
+}
+
+void Script_ModuleExtras(const char *name, PyObject *module) {
+	for (size_t i = 0; i < sizeof(script_modules) / sizeof(script_modules[0]); i++) {
+		if (!strcmp(script_modules[i].name, name)) {
+			Script_TableExtras(module, script_modules[i].methods);
+		}
+	}
+	Script_LevelModuleExtras(name, module);
+}
+
 void Script_ModuleLoaded(const char *name, PyObject *module) {
 	/* SCRAP_PACK_SCRIPTS=1: the scripts of the packs only (to compare a port with the original) */
 	const char *only = getenv("SCRAP_PACK_SCRIPTS");

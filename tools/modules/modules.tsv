@@ -1,0 +1,5 @@
+# the pack modules made in C from a .mod file (tools/modules/gen.py): module, level ("-" for every level), the .pyc
+# under the extracted packs
+Sound	-	Data.packed/scripts/sound/sound.pyc
+Parking	-	Data.packed/scripts/vehicles/parking.pyc
+Map	gamblinden	data03.packed/levels/gamblinden/scripts/map.pyc
