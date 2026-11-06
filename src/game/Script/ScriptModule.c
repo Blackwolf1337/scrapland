@@ -79,6 +79,7 @@ typedef struct {
 	int skip;			/* > 0: parse only (the branch not taken, the right side of and/or) */
 	int nest;			/* expressions inside each other */
 	byte syntax;			/* the error is one of the text, not of a value */
+	char lastDef[MOD_NAME];		/* the last function the module code defined (the touch after the code) */
 } modParse_t;
 
 /* ---- errors ---- */
@@ -928,6 +929,9 @@ static byte Mod_Def(modParse_t *m) {
 		if (!Mod_Store(m, name, m->skip ? Mod_Skipped() : Mod_Function(m, name))) {
 			return 0;
 		}
+		if (!m->skip && m->locals == m->globals) {
+			Str_Copy(m->lastDef, name, sizeof(m->lastDef));
+		}
 	}
 	return Mod_EndLine(m);
 }
@@ -1265,6 +1269,20 @@ int Script_ModuleMake(const char *name, const char *file, PyObject **module) {
 	}
 	/* the functions of the C tables that the script does not have go in after the module code, as the loader does */
 	Script_ModuleExtras(name, m);
+	/*
+	 * after the .pyc the loader sets every function of the module again (its C or data version); a dict whose fill
+	 * reached 2/3 grows at that first store, which changes the order of its keys: one store of a function the code
+	 * defined does the same (Mission_StupidMerc and Mission_DefeatCrazyGambler3 have 43 keys in a table of 64)
+	 */
+	if (mp.lastDef[0]) {
+		PyObject *f = PyDict_GetItemString(d, mp.lastDef);
+		if (f) {
+			Py_INCREF(f);
+			PyDict_SetItemString(d, mp.lastDef, f);
+			Py_DECREF(f);
+		}
+		PyErr_Clear();
+	}
 	Py_INCREF(m);
 	*module = m;
 	Con_Verbosef("Script: %s made in C from %s\n", name, mf->name);
