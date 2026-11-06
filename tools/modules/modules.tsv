@@ -134,6 +134,17 @@ Mission_PoliceBossCheats	police	data01.packed/levels/police/scripts/mission_poli
 Map	press	data01.packed/levels/press/scripts/map.pyc
 MapPlanes	press	data01.packed/levels/press/scripts/mapplanes.pyc
 MapSnd	press	data01.packed/levels/press/scripts/mapsnd.pyc
+Mission_FicusBanker	press	data01.packed/levels/press/scripts/mission_ficusbanker.pyc
+Mission_GetCrazyData	press	data01.packed/levels/press/scripts/mission_getcrazydata.pyc
+Mission_GoToPress	press	data01.packed/levels/press/scripts/mission_gotopress.pyc
+Mission_GoWithHuman	press	data01.packed/levels/press/scripts/mission_gowithhuman.pyc
+Mission_HumphreyArchbishopKilled	press	data01.packed/levels/press/scripts/mission_humphreyarchbishopkilled.pyc
+Mission_IntroHuman2	press	data01.packed/levels/press/scripts/mission_introhuman2.pyc
+Mission_MeetBoss	press	data01.packed/levels/press/scripts/mission_meetboss.pyc
+Mission_PressMeeting	press	data01.packed/levels/press/scripts/mission_pressmeeting.pyc
+Mission_TalkToBoss	press	data01.packed/levels/press/scripts/mission_talktoboss.pyc
+Mission_WhoIsDeepThroat	press	data01.packed/levels/press/scripts/mission_whoisdeepthroat.pyc
+Mission_WhoIsTheBaddie	press	data01.packed/levels/press/scripts/mission_whoisthebaddie.pyc
 Map	qf	data03.packed/levels/qf/scripts/map.pyc
 MapSnd	qf	data03.packed/levels/qf/scripts/mapsnd.pyc
 Map	scrapyard	data02.packed/levels/scrapyard/scripts/map.pyc

@@ -395,6 +395,39 @@ static const char mod_levels_press_mapplanes[] = {
 static const char mod_levels_press_mapsnd[] = {
 #embed "../../../data/levels/press/mapsnd.mod"
 	, 0 };
+static const char mod_levels_press_mission_ficusbanker[] = {
+#embed "../../../data/levels/press/mission_ficusbanker.mod"
+	, 0 };
+static const char mod_levels_press_mission_getcrazydata[] = {
+#embed "../../../data/levels/press/mission_getcrazydata.mod"
+	, 0 };
+static const char mod_levels_press_mission_gotopress[] = {
+#embed "../../../data/levels/press/mission_gotopress.mod"
+	, 0 };
+static const char mod_levels_press_mission_gowithhuman[] = {
+#embed "../../../data/levels/press/mission_gowithhuman.mod"
+	, 0 };
+static const char mod_levels_press_mission_humphreyarchbishopkilled[] = {
+#embed "../../../data/levels/press/mission_humphreyarchbishopkilled.mod"
+	, 0 };
+static const char mod_levels_press_mission_introhuman2[] = {
+#embed "../../../data/levels/press/mission_introhuman2.mod"
+	, 0 };
+static const char mod_levels_press_mission_meetboss[] = {
+#embed "../../../data/levels/press/mission_meetboss.mod"
+	, 0 };
+static const char mod_levels_press_mission_pressmeeting[] = {
+#embed "../../../data/levels/press/mission_pressmeeting.mod"
+	, 0 };
+static const char mod_levels_press_mission_talktoboss[] = {
+#embed "../../../data/levels/press/mission_talktoboss.mod"
+	, 0 };
+static const char mod_levels_press_mission_whoisdeepthroat[] = {
+#embed "../../../data/levels/press/mission_whoisdeepthroat.mod"
+	, 0 };
+static const char mod_levels_press_mission_whoisthebaddie[] = {
+#embed "../../../data/levels/press/mission_whoisthebaddie.mod"
+	, 0 };
 static const char mod_levels_qf_map[] = {
 #embed "../../../data/levels/qf/map.mod"
 	, 0 };
@@ -565,6 +598,17 @@ static const moduleFile_t module_files[] = {
 	{ "press", "Map", "levels/press/map.mod", mod_levels_press_map },
 	{ "press", "MapPlanes", "levels/press/mapplanes.mod", mod_levels_press_mapplanes },
 	{ "press", "MapSnd", "levels/press/mapsnd.mod", mod_levels_press_mapsnd },
+	{ "press", "Mission_FicusBanker", "levels/press/mission_ficusbanker.mod", mod_levels_press_mission_ficusbanker },
+	{ "press", "Mission_GetCrazyData", "levels/press/mission_getcrazydata.mod", mod_levels_press_mission_getcrazydata },
+	{ "press", "Mission_GoToPress", "levels/press/mission_gotopress.mod", mod_levels_press_mission_gotopress },
+	{ "press", "Mission_GoWithHuman", "levels/press/mission_gowithhuman.mod", mod_levels_press_mission_gowithhuman },
+	{ "press", "Mission_HumphreyArchbishopKilled", "levels/press/mission_humphreyarchbishopkilled.mod", mod_levels_press_mission_humphreyarchbishopkilled },
+	{ "press", "Mission_IntroHuman2", "levels/press/mission_introhuman2.mod", mod_levels_press_mission_introhuman2 },
+	{ "press", "Mission_MeetBoss", "levels/press/mission_meetboss.mod", mod_levels_press_mission_meetboss },
+	{ "press", "Mission_PressMeeting", "levels/press/mission_pressmeeting.mod", mod_levels_press_mission_pressmeeting },
+	{ "press", "Mission_TalkToBoss", "levels/press/mission_talktoboss.mod", mod_levels_press_mission_talktoboss },
+	{ "press", "Mission_WhoIsDeepThroat", "levels/press/mission_whoisdeepthroat.mod", mod_levels_press_mission_whoisdeepthroat },
+	{ "press", "Mission_WhoIsTheBaddie", "levels/press/mission_whoisthebaddie.mod", mod_levels_press_mission_whoisthebaddie },
 	{ "qf", "Map", "levels/qf/map.mod", mod_levels_qf_map },
 	{ "qf", "MapSnd", "levels/qf/mapsnd.mod", mod_levels_qf_mapsnd },
 	{ "scrapyard", "Map", "levels/scrapyard/map.mod", mod_levels_scrapyard_map },
