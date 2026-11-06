@@ -346,7 +346,8 @@ PyMethodDef g_BettyMethods[] = {
 		return Py_ReturnNone(); \
 	}
 
-/* Init only (GateKeeper keeps its OnCreate in the script, it makes a Python object per gatekeeper) */
+/* Init only (the OnCreate of GateKeeper, which makes an instance of the script's class per gatekeeper, is in
+ * GateKeeper.c) */
 #define CHAR_MODULE0(mod, file) \
 	CHAR_INIT(mod, file) \
 	PyMethodDef g_##mod##Methods[] = { { "Init", mod##_Init, 1, NULL }, { NULL, NULL, 0, NULL } };
