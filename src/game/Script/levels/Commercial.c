@@ -2,7 +2,7 @@
  * The scripts of the level Commercial in C (levels/commercial/scripts, issue #2): the Map module (the traffic, the
  * metro and the elevator to the temple), MapRace (the start positions of the eight races) and the ten missions of the
  * level (Mission_DestroyMickus, Mission_ProtectGus, Mission_DestroyStupidus, Mission_Win1stRace,
- * Mission_DestroyCommSats2, Mission_FirstMeetDeepThroat, Mission_GetDataPart3, Mission_DefeatCrazyGambler3,
+ * Mission_DestroyCommSats2 (in levels/LevelCommon.c), Mission_FirstMeetDeepThroat, Mission_GetDataPart3, Mission_DefeatCrazyGambler3,
  * Mission_DestroyPorkinsTransports). MapSnd is data (data/levels/commercial/mapsnd.def). The module variables of the
  * missions (their counters, lists, constants and the models) and the module code (the save variables they create,
  * MapRace.Races) stay in the scripts; the functions read and write them as their globals.

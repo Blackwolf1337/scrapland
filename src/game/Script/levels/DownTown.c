@@ -2,8 +2,8 @@
  * The scripts of the level DownTown in C (levels/downtown/scripts of Data.packed, issue #2): the Map module (the
  * traffic by who controls the robots, the metro and the elevators to the townhall and the press), MapRace (the start
  * positions of the sixteen races) and the missions of the level (Mission_FirstContactPress, Mission_BertoMassacre,
- * Mission_DefeatCrazyGambler1, Mission_FaceTheMayor, Mission_Massacre, Mission_DestroyCommSats3,
- * Mission_DistractHumphrey, Mission_GetDataPart1, Mission_HumphreyRace, Mission_MultiplusRace,
+ * Mission_DefeatCrazyGambler1, Mission_FaceTheMayor, Mission_Massacre, Mission_DestroyCommSats3 (in
+ * levels/LevelCommon.c), Mission_DistractHumphrey, Mission_GetDataPart1, Mission_HumphreyRace, Mission_MultiplusRace,
  * Mission_ProtectMayorTransport, Mission_StealMayorShip). MapSnd is data (data/levels/downtown/mapsnd.def), and so
  * are the plain functions of the missions. The module variables of the missions (their counters, states, names and
  * constants) and the module code (the save variables they create, MapRace.Races) stay in the scripts; the functions

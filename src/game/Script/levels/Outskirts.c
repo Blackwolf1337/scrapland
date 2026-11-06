@@ -2,7 +2,7 @@
  * The scripts of the level Outskirts in C (levels/outskirts/scripts of data01.packed, issue #2): the Map module (the
  * traffic, the metro and the three elevators), MapRace (the start positions of the eleven races) and the logic of the
  * missions of the level (Mission_AttackTraitorius, Mission_Demo_HumphreyRace, Mission_DestroyBadDebtors,
- * Mission_DestroyCommSats1, Mission_DestroyHumphrey, Mission_FunctionaryHunting, Mission_GoToOutskirts,
+ * Mission_DestroyCommSats1 (in levels/LevelCommon.c), Mission_DestroyHumphrey, Mission_FunctionaryHunting, Mission_GoToOutskirts,
  * Mission_IdentifyMerc, Mission_KillPolice, Mission_KillRudolph, Mission_TransportKiller, Mission_Win2ndRace). MapSnd
  * and the plain functions of the missions are data (data/levels/outskirts/<module>.def). The module variables of the
  * missions and the module code (the save variables they create, MapRace.Races) stay in the scripts; the functions read
