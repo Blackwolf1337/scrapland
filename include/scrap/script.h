@@ -192,7 +192,7 @@ byte Script_Hook(const char *module, const char *target, const char *name, const
 /* eval(text) in a function of the script module (its globals): a new reference, NULL with the error set */
 PyObject *Script_EvalIn(const char *module, PyObject *text);
 /* what eval of s (after the blanks eval skips) in globals gives when s is a plain literal: an int, a float without
- * exponent, a string without backslashes, a list or tuple of those, '-' before a number, blanks between (the
+ * exponent, a string without backslashes, None, a list or tuple of those, '-' before a number, blanks between (the
  * constants shared and interned as the compiler makes them). A new reference, else NULL without an error: the caller
  * evals s then (anything else, also when the globals lack valid __builtins__, so nothing can differ) */
 PyObject *Script_Literal(PyObject *globals, const char *s);

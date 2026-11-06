@@ -262,9 +262,9 @@ PyObject *Script_AskKw(const char *module, const char *func, PyObject *args, PyO
 /*
  * Plain literals as eval makes them (Python 1.5.2: Parser/tokenizer.c, Python/compile.c parsenumber, parsestr,
  * com_addconst and the interning of PyCode_New; UNARY_NEGATIVE, BUILD_LIST and BUILD_TUPLE of ceval). Only the
- * tokens whose value cannot differ are taken; anything else (names, dicts, longs, exponents, octal or hex numbers,
- * escapes, raw or triple quoted strings, adjacent strings, newlines, comments, deep nesting) gives NULL and the
- * caller runs eval.
+ * tokens whose value cannot differ are taken, and the name None (looked up as LOAD_NAME does); anything else (other
+ * names, dicts, longs, exponents, octal or hex numbers, escapes, raw or triple quoted strings, adjacent strings,
+ * newlines, comments, deep nesting) gives NULL and the caller runs eval.
  */
 #define LIT_NAME_CHARS "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
 #define LIT_DEPTH 32
