@@ -95,22 +95,6 @@ static PyObject *Pr_BossDoor(scriptFrame_t *f, const char *foe, const char *use)
 	return elv;
 }
 
-/* SScorer.SetMsgText(cad, Scrap.GetTime() + Speech.CalculateSpeechTime(cad)) */
-static byte Pr_Msg(scriptFrame_t *f, PyObject *cad) {
-	int mark = f->n;
-	PyObject *fn = Sf_Mod(f, "SScorer", "SetMsgText");
-	PyObject *t = Sf_Time(f);
-	Sf_Call(f, fn, "(OO)", cad, Sf_Op(f, t, '+', Sf_Ask(f, "Speech", "CalculateSpeechTime", "(O)", cad)));
-	Sf_Release(f, mark);
-	return !f->failed;
-}
-
-/* Scrap.GetLangStr(key) % SInput.GetDefinedEntry(0, "Walk", action, "Mouse") */
-static PyObject *Pr_KeyText(scriptFrame_t *f, const char *key, const char *action) {
-	PyObject *t = Sf_Lang(f, Sf_Str(f, key));
-	return Sf_Op(f, t, '%', Sf_Ask(f, "SInput", "GetDefinedEntry", "(isss)", 0, "Walk", action, "Mouse"));
-}
-
 /* a taken item: it.rTime = 20, it.Del in 5 s, the take sound Sound.ItemTake[key] at it */
 static byte Pr_Taken(scriptFrame_t *f, PyObject *it, const char *key) {
 	int mark = f->n;
@@ -1222,9 +1206,7 @@ static PyObject *CrazyData_TrurlSpeech(PyObject *self, PyObject *args) {
 /* the text of a mission scorer at y + dy as GetCrazyData sets it */
 static byte Pr_ScorerText(scriptFrame_t *f, PyObject *id, const char *item, long dy, PyObject *text) {
 	int mark = f->n;
-	PyObject *y = Sf_Mod(f, "Scorer", "MissionScorerText_Y");
-	Sf_MissionText(f, id, item, "Text", Sf_Mod(f, "Scorer", "MissionScorerText_X"), dy ? Sf_OpI(f, y, '+', dy) : y, "Horatio", "Shadow", text,
-		"Left", NULL);
+	Lv_Text(f, id, item, Lv_TextY(f, dy), text, NULL);
 	Sf_Release(f, mark);
 	return !f->failed;
 }
@@ -2134,7 +2116,7 @@ static PyObject *MeetBoss_BertoPossession(PyObject *self, PyObject *args) {
 	Sf_Run(&f, "MissionsFuncs", "NewCrazyDeal", "(isi)", 3, "Stats.WinHumphreyRace", 1);
 	Sf_Run(&f, "MissionsFuncs", "SetNextSuperDeal", "(sss)", "CA", "SuperDeal_First", "Versus");
 	Pr_DtritusKeys(&f, "", "Mission_MeetBoss.OnPossession");
-	Pr_Msg(&f, Pr_KeyText(&f, "Mission_FirstCrazyBet_SystemMessage2", "Possession"));
+	Lv_MsgText(&f, Lv_KeyText(&f, "Mission_FirstCrazyBet_SystemMessage2", "Possession"));
 	Sf_Later(&f, Sf_Int(&f, 20), G(MB, "OnWarning"), NOARGS, "Warnings");
 	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "Berto_Default");
 	return Sf_None(&f);
@@ -2152,7 +2134,7 @@ static PyObject *MeetBoss_OnWarning(PyObject *self, PyObject *args) {
 static PyObject *MeetBoss_OnActionPressed(PyObject *self, PyObject *args) {
 	PyObject *ch;
 	SF_ARGS("O", &ch);
-	Pr_Msg(&f, LANG("Mission_TalkToCrazy_SystemMessage1"));
+	Lv_MsgText(&f, LANG("Mission_TalkToCrazy_SystemMessage1"));
 	return Sf_None(&f);
 }
 
@@ -2167,7 +2149,7 @@ static PyObject *MeetBoss_OnPossession(PyObject *self, PyObject *args) {
 	PyObject *b = Sf_Entity(&f, name);
 	int conv = Sf_In(&f, Sf_Attr(&f, b, "ActCtrl"), Sf_Mod(&f, "CharConversor", "ConversionChars"));
 	if (conv == 0) {
-		Pr_Msg(&f, LANG("Generics_ForbiddenPossession_SystemMessage"));
+		Lv_MsgText(&f, LANG("Generics_ForbiddenPossession_SystemMessage"));
 		return Sf_None(&f);
 	}
 	int berto = Sf_EqS(&f, Sf_Attr(&f, b, "ActCtrl"), "Berto");
@@ -2211,7 +2193,7 @@ static PyObject *MeetBoss_OnPossession(PyObject *self, PyObject *args) {
 /* ShowMessage(): the action key of Berto explained; the alarm falls again */
 static PyObject *MeetBoss_ShowMessage(PyObject *self, PyObject *args) {
 	SF_ARGS("");
-	Pr_Msg(&f, Pr_KeyText(&f, "Mission_FirstCrazyBet_SystemMessage1", "Action"));
+	Lv_MsgText(&f, Lv_KeyText(&f, "Mission_FirstCrazyBet_SystemMessage1", "Action"));
 	Sf_Run(&f, "SAct", "GetClass", "(s)", "Berto");
 	Sf_Run(&f, "SAct", "SetCls", "(ss)", "ActionPress", "!BertoActionPress");
 	Sf_Run(&f, "Scrap", "Set", "(sO)", "AlarmFallDelta", G(MB, "alarmFallDelta"));

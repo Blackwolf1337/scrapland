@@ -16,7 +16,6 @@
 #define CG "Mission_DefeatCrazyGambler1"
 #define FM "Mission_FaceTheMayor"
 #define MS "Mission_Massacre"
-#define CS "Mission_DestroyCommSats3"
 #define DH "Mission_DistractHumphrey"
 #define GD "Mission_GetDataPart1"
 #define HR "Mission_HumphreyRace"
@@ -36,15 +35,6 @@
 	SF_ARGS("O", &path); \
 	(void)path
 
-/* Speech.AddRemoteCom(key, who[, then[, params]]) (then NULL: two arguments; params NULL: three) */
-static byte Dt_Com(scriptFrame_t *f, const char *key, const char *who, PyObject *then, PyObject *params) {
-	if (!then) {
-		return Sf_Run(f, "Speech", "AddRemoteCom", "(ss)", key, who);
-	}
-	return params ? Sf_Run(f, "Speech", "AddRemoteCom", "(ssOO)", key, who, then, params) :
-		Sf_Run(f, "Speech", "AddRemoteCom", "(ssO)", key, who, then);
-}
-
 /* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, Speech.AddRemoteCom, args[, name]) */
 static byte Dt_LaterCom(scriptFrame_t *f, PyObject *delay, PyObject *args, const char *name) {
 	int mark = f->n;
@@ -52,32 +42,6 @@ static byte Dt_LaterCom(scriptFrame_t *f, PyObject *delay, PyObject *args, const
 	Sf_Schedule(f, t, Sf_Mod(f, "Speech", "AddRemoteCom"), args, name);
 	Sf_Release(f, mark);
 	return !f->failed;
-}
-
-/* Menu.MissionScorerCall = v */
-static byte Dt_ScorerCall(scriptFrame_t *f, PyObject *v) {
-	return Sf_SetMod(f, "Menu", "MissionScorerCall", v);
-}
-
-/* the X and Y of the mission scorer text plus offsets */
-static PyObject *Dt_X(scriptFrame_t *f, long d) {
-	PyObject *x = Sf_Mod(f, "Scorer", "MissionScorerText_X");
-	return d ? Sf_OpI(f, x, '+', d) : x;
-}
-
-static PyObject *Dt_Y(scriptFrame_t *f, long d) {
-	PyObject *y = Sf_Mod(f, "Scorer", "MissionScorerText_Y");
-	return d ? Sf_OpI(f, y, '+', d) : y;
-}
-
-/* Scrap.GetLangStr(key) + ":" */
-static PyObject *Dt_Label(scriptFrame_t *f, const char *key) {
-	return Sf_Cat(f, "Os", Sf_Lang(f, Sf_Str(f, key)), ":");
-}
-
-/* the text of a mission scorer in Horatio with a shadow at the left (visible NULL: not set) */
-static byte Dt_Text(scriptFrame_t *f, PyObject *id, const char *item, PyObject *y, PyObject *text, PyObject *visible) {
-	return Sf_MissionText(f, id, item, "Text", Dt_X(f, 0), y, "Horatio", "Shadow", text, "Left", visible);
 }
 
 /* the timer of a mission scorer counting TimeSpecialUse, with the function of its end (visible: Visible 1) */
@@ -97,72 +61,10 @@ static byte Dt_Timer(scriptFrame_t *f, PyObject *id, const char *item, PyObject 
 	return !f->failed;
 }
 
-/* MissionsFuncs.SetNextMission(lib, map); SaveGame.MMDesc(desc, 1) */
-static byte Dt_Next(scriptFrame_t *f, const char *lib, const char *map, const char *desc) {
-	return Sf_Run(f, "MissionsFuncs", "SetNextMission", "(ss)", lib, map) && Sf_Run(f, "SaveGame", "MMDesc", "(si)", desc, 1);
-}
-
-/* `usr and usr.Name == name` */
-static int Dt_UsrIs(scriptFrame_t *f, PyObject *usr, PyObject *name) {
-	int t = Sf_True(f, usr);
-	return t > 0 ? Sf_Compare(f, Sf_Attr(f, usr, "Name"), "==", name) : t;
-}
-
 /* `e and e.Active` */
 static int Dt_Active(scriptFrame_t *f, PyObject *e) {
 	int t = Sf_True(f, e);
 	return t > 0 ? Sf_True(f, Sf_Attr(f, e, "Active")) : t;
-}
-
-/* Scrap.GetAlarm()[0] as a condition */
-static int Dt_Alarm(scriptFrame_t *f) {
-	return Sf_True(f, Sf_Item(f, Sf_Ask(f, "Scrap", "GetAlarm", "()"), 0));
-}
-
-/* pc = PhoneCab.GetFree(); MissionsFuncs.SetMissionTarget(pc.Name); pc.UseFunc = use (after import PhoneCab) */
-static PyObject *Dt_PhoneCab(scriptFrame_t *f, const char *use) {
-	Sf_Import(f, "PhoneCab");
-	PyObject *pc = Sf_Ask(f, "PhoneCab", "GetFree", "()");
-	Sf_Run(f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(f, pc, "Name"));
-	Sf_SetAttrS(f, pc, "UseFunc", use);
-	return pc;
-}
-
-/*
- * a mission item dropped at pos (the matrix, the data): its model and radius are globals of module, OnlyUser 1, with
- * its take sound and a mission arrow above it named arrow
- */
-static byte Dt_Drop(scriptFrame_t *f, const char *module, PyObject *pos, const char *name, const char *model, const char *radius,
-	const char *onTake, const char *sound, const char *arrow) {
-	int mark = f->n;
-	PyObject *x = Sf_Item(f, pos, 0), *y = Sf_Item(f, pos, 1), *z = Sf_Item(f, pos, 2);
-	PyObject *l = Sf_Ask(f, "Scrap", "CreateEntity", "(sOOOs)", name, x, y, z, "Item");
-	Sf_Method(f, l, "SetModel", "(O)", Sf_Global(f, module, model));
-	Sf_SetAttr(f, l, "Radius", Sf_Global(f, module, radius));
-	Sf_SetAttrI(f, l, "AppearsIfFree", 0);
-	Sf_SetAttrI(f, l, "AutoFace", 0);
-	Sf_SetAttrI(f, l, "OnlyUser", 1);
-	Sf_SetAttr(f, l, "rTime", Sf_Float(f, 0.25));
-	Sf_SetAttrS(f, l, "OnTake", onTake);
-	Sf_Import(f, "Items");
-	Sf_Run(f, "Items", "SetSound", "(Os)", l, sound);
-	x = Sf_Item(f, pos, 0), y = Sf_Item(f, pos, 1), z = Sf_Item(f, pos, 2);
-	PyObject *l2 = Sf_Ask(f, "Scrap", "CreateEntity", "(sOOOs)", arrow, x, y, z, "WithLife");
-	Sf_SetAttr(f, l2, "CamTgt", Sf_Build(f, "(iii)", 0, 1000, 0));
-	Sf_Run(f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(f, l2, "Name"));
-	Sf_Release(f, mark);
-	return !f->failed;
-}
-
-/* a mission item taken: itm.rTime = 20, deleted 5 s later, its arrow deleted now */
-static byte Dt_Taken(scriptFrame_t *f, const char *item, const char *arrow) {
-	int mark = f->n;
-	PyObject *itm = Sf_Ask(f, "Scrap", "GetEntity", "(s)", item);
-	Sf_SetAttrI(f, itm, "rTime", 20);
-	Sf_Later(f, Sf_Int(f, 5), Sf_Attr(f, itm, "Del"), Sf_Build(f, "()"), NULL);
-	Sf_Method(f, Sf_Ask(f, "Scrap", "GetEntity", "(s)", arrow), "Del", "()");
-	Sf_Release(f, mark);
-	return !f->failed;
 }
 
 /* ---- Map ---- */
@@ -190,22 +92,7 @@ static PyObject *DownTown_InitStatus(PyObject *self, PyObject *args) {
 	Sf_Run(&f, "Elevator", "SetDef", "(ss)", "MetroExt", "DM_Door_MetroExt_Downtown");
 	int boss = Sf_EqS(&f, SAVE("RobotsControlledByBoss"), "1");
 	if (boss > 0) {
-		PyObject *upper = Sf_Mod(&f, "Init", "UpperMap");
-		int done = Sf_In(&f, upper, Sf_Eval(&f, SAVE("ComSatsMissionsMapsFinished"), "Map"));
-		if (done > 0) {
-			Sf_Run(&f, "Scrap", "Set", "(si)", "MaxChasingShips", 0);
-			Sf_Run(&f, "Scrap", "Set", "(si)", "iTrafficNumber", 0);
-			Sf_SetMod(&f, "OutPolice", "PoliceActive", Sf_Int(&f, 0));
-		} else if (done == 0) {
-			Sf_Run(&f, "Scrap", "Set", "(si)", "iTrafficNumber", 5);
-			Sf_Run(&f, "Scrap", "Set", "(si)", "MaxChasingShips", 5);
-		}
-		Sf_SetMod(&f, "Traffic", "AcNormalShips", Sf_Build(&f, "[]"));
-		Sf_SetMod(&f, "Traffic", "NumNormal", Sf_Int(&f, 0));
-		Sf_SetMod(&f, "Traffic", "AcMediumShips", Sf_Build(&f, "[]"));
-		Sf_SetMod(&f, "Traffic", "NumMedium", Sf_Int(&f, 0));
-		Sf_SetMod(&f, "Traffic", "AcHeavyShips", Sf_Build(&f, "[]"));
-		Sf_SetMod(&f, "Traffic", "NumHeavy", Sf_Int(&f, 0));
+		Lv_BossTraffic(&f, 1);
 	} else if (boss == 0) {
 		Sf_Run(&f, "Scrap", "Set", "(si)", "iTrafficNumber", 14);
 		Sf_Run(&f, "Scrap", "Set", "(si)", "MaxChasingShips", -1);
@@ -295,7 +182,7 @@ static PyObject *Press_Init(PyObject *self, PyObject *args) {
 	PATH_ARGS();
 	Sf_Import(&f, "MissionsFuncs");
 	Sf_Import(&f, "Speech");
-	Dt_Com(&f, "Mission_FirstContactPress_RemoteMessage1", "Berto", Sf_Mod(&f, "MissionsFuncs", "SetNextMission"),
+	Lv_Com(&f, "Mission_FirstContactPress_RemoteMessage1", "Berto", Sf_Mod(&f, "MissionsFuncs", "SetNextMission"),
 		Sf_Build(&f, "(ss)", "Mission_MeetBoss", "Press"));
 	return Sf_None(&f);
 }
@@ -321,7 +208,7 @@ static PyObject *Berto_StartMission(PyObject *self, PyObject *args) {
 	SF_ARGS("");
 	Sf_Import(&f, "Parking");
 	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_BertoMassacre_MissionText1", 1);
-	Dt_ScorerCall(&f, G(BM, "MissionScorer"));
+	Lv_ScorerCall(&f, G(BM, "MissionScorer"));
 	Sf_DrawScorer(&f);
 	Sf_Run(&f, "MissionsFuncs", "CreateBertos", "()");
 	Sf_SetMod(&f, "MissionsFuncs", "OnNewWaveCallback", G(BM, "DeepThroatMessage"));
@@ -336,7 +223,7 @@ static PyObject *Berto_DeepThroatMessage(PyObject *self, PyObject *args) {
 	SF_ARGS("");
 	Sf_SetGlobal(&f, BM, "initBar", Sf_Int(&f, 1));
 	Sf_DrawScorer(&f);
-	Dt_Com(&f, "Mission_BertoMassacre_RemoteMessage2", "DeepThroat", NULL, NULL);
+	Lv_Com(&f, "Mission_BertoMassacre_RemoteMessage2", "DeepThroat", NULL, NULL);
 	return Sf_None(&f);
 }
 
@@ -348,7 +235,7 @@ static PyObject *Berto_CheckBertoDeath(PyObject *self, PyObject *args) {
 	int first = Sf_True(&f, G(BM, "firstDeath"));
 	if (first > 0) {
 		Sf_SetGlobal(&f, BM, "firstDeath", Sf_Int(&f, 0));
-		Dt_Com(&f, "Mission_BertoMassacre_RemoteMessage1", "DeepThroat", NULL, NULL);
+		Lv_Com(&f, "Mission_BertoMassacre_RemoteMessage1", "DeepThroat", NULL, NULL);
 	} else if (first == 0) {
 		int found = Sf_True(&f, G(BM, "bertoFound"));
 		if (found > 0) {
@@ -358,7 +245,7 @@ static PyObject *Berto_CheckBertoDeath(PyObject *self, PyObject *args) {
 			Sf_Own(&f, BM, "DropMatrix", "(O)", pos);
 		}
 	}
-	if (Dt_UsrIs(&f, USR(), winner) > 0) {
+	if (Lv_UsrNameIs(&f, USR(), winner) > 0) {
 		Sf_SetGlobal(&f, BM, "bertoDeath", Sf_Int(&f, 1));
 		Sf_DrawScorer(&f);
 	}
@@ -368,7 +255,7 @@ static PyObject *Berto_CheckBertoDeath(PyObject *self, PyObject *args) {
 /* OnBertoFound(): no scorer, the order to destroy that Berto */
 static PyObject *Berto_OnBertoFound(PyObject *self, PyObject *args) {
 	SF_ARGS("");
-	Dt_ScorerCall(&f, Py_None);
+	Lv_ScorerCall(&f, Py_None);
 	Sf_DrawScorer(&f);
 	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_DestroyBerto_MissionText1", 1);
 	return Sf_None(&f);
@@ -380,7 +267,7 @@ static PyObject *Berto_DropMatrix(PyObject *self, PyObject *args) {
 	SF_ARGS("O", &pos);
 	Sf_SetMod(&f, "MissionsFuncs", "OnNewWaveCallback", Py_None);
 	Sf_SetMod(&f, "MissionsFuncs", "OnBertoDeathCallback", Py_None);
-	Dt_Drop(&f, BM, pos, "DTritusMatrix", "DTritusMatrixModel", "DTritusMatrixRadius", "Mission_BertoMassacre.TakeMatrix", "TakeMatrixExt",
+	Lv_Drop(&f, BM, pos, "DTritusMatrix", "DTritusMatrixModel", "DTritusMatrixRadius", 1, "Mission_BertoMassacre.TakeMatrix", "TakeMatrixExt",
 		"MissionCheckArrow");
 	return Sf_None(&f);
 }
@@ -389,8 +276,8 @@ static PyObject *Berto_DropMatrix(PyObject *self, PyObject *args) {
 static PyObject *Berto_TakeMatrix(PyObject *self, PyObject *args) {
 	PyObject *item, *ch;
 	SF_ARGS("OO", &item, &ch);
-	Dt_Taken(&f, "DTritusMatrix", "MissionCheckArrow");
-	Dt_Com(&f, "Mission_DestroyBerto_RemoteMessage1", "DeepThroat", G(BM, "SetNextMission"), NULL);
+	Lv_Taken(&f, Sf_Str(&f, "DTritusMatrix"), Sf_Str(&f, "MissionCheckArrow"));
+	Lv_Com(&f, "Mission_DestroyBerto_RemoteMessage1", "DeepThroat", G(BM, "SetNextMission"), NULL);
 	return Sf_None(&f);
 }
 
@@ -405,7 +292,7 @@ static PyObject *Berto_GetBerto(PyObject *self, PyObject *args) {
 			Sf_SetAttrI(&f, e, "Money", -1);
 		}
 		Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", G(BM, "bertoName"));
-		Dt_Com(&f, "Mission_BertoMassacre_RemoteMessage3", "DeepThroat", G(BM, "OnBertoFound"), NULL);
+		Lv_Com(&f, "Mission_BertoMassacre_RemoteMessage3", "DeepThroat", G(BM, "OnBertoFound"), NULL);
 	} else if (any == 0) {
 		Sf_Later(&f, Sf_Int(&f, 1), G(BM, "GetBerto"), NOARGS, NULL);
 	}
@@ -417,7 +304,7 @@ static PyObject *Berto_MissionScorer(PyObject *self, PyObject *args) {
 	PyObject *id;
 	SF_ARGS("O", &id);
 	Sf_Import(&f, "Scorer");
-	Dt_Text(&f, id, "MassacreText", Dt_Y(&f, 0), Dt_Label(&f, "Mission_BertoMassacre_Scorer1"), Sf_Int(&f, 1));
+	Lv_Text(&f, id, "MassacreText", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_BertoMassacre_Scorer1"), Sf_Int(&f, 1));
 	const char *bar = "MassacreScorer";
 	Sf_Run(&f, "SScorer", "Add", "(Oss)", id, bar, "Bar");
 	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "MaxValue", G(BM, "MaxBarValue"));
@@ -434,7 +321,7 @@ static PyObject *Berto_MissionScorer(PyObject *self, PyObject *args) {
 			v = Sf_Int(&f, 0);
 			Sf_SetGlobal(&f, BM, "bertoFound", Sf_Int(&f, 1));
 			Sf_SetMod(&f, "MissionsFuncs", "OnNewWaveCallback", Py_None);
-			Dt_ScorerCall(&f, Py_None);
+			Lv_ScorerCall(&f, Py_None);
 			Sf_DrawScorer(&f);
 			Sf_Own(&f, BM, "GetBerto", "()");
 		}
@@ -487,7 +374,7 @@ static PyObject *Gambler_Init(PyObject *self, PyObject *args) {
 		Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "Enemies", "OnDeath", "Mission_DefeatCrazyGambler1.OnCrazyGamblerDeath");
 		Sf_Own(&f, CG, "CreateCrazyGambler", "()");
 		Sf_Later(&f, Sf_Int(&f, 3), G(CG, "LaunchTaunts"), NOARGS, NULL);
-		Dt_ScorerCall(&f, G(CG, "MissionScorer"));
+		Lv_ScorerCall(&f, G(CG, "MissionScorer"));
 		Sf_DrawScorer(&f);
 	}
 	return Sf_None(&f);
@@ -536,7 +423,7 @@ static PyObject *Gambler_OnCrazyGamblerDeath(PyObject *self, PyObject *args) {
 	Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "NumCrazyGamblerLifes", Sf_Repr(&f, lifes));
 	int done = Sf_Compare(&f, lifes, "==", G(CG, "CrazyGamblerLifesNextMission"));
 	if (done > 0) {
-		Dt_ScorerCall(&f, Py_None);
+		Lv_ScorerCall(&f, Py_None);
 		Sf_Later(&f, Sf_Int(&f, 7), G(CG, "PreSetNextMission"), NOARGS, NULL);
 	} else if (done == 0) {
 		Sf_Later(&f, Sf_Int(&f, 3), G(CG, "CreateCrazyGambler"), NOARGS, NULL);
@@ -550,8 +437,8 @@ static PyObject *Gambler_MissionScorer(PyObject *self, PyObject *args) {
 	PyObject *id;
 	SF_ARGS("O", &id);
 	Sf_Import(&f, "Scorer");
-	Dt_Text(&f, id, "RemainingLifesText", Dt_Y(&f, 0), Dt_Label(&f, "Mission_DefeatCrazyGambler1_Scorer1"), NULL);
-	Dt_Text(&f, id, "RemainingLifes", Dt_Y(&f, 20), SAVE("NumCrazyGamblerLifes"), NULL);
+	Lv_Text(&f, id, "RemainingLifesText", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_DefeatCrazyGambler1_Scorer1"), NULL);
+	Lv_Text(&f, id, "RemainingLifes", Lv_TextY(&f, 20), SAVE("NumCrazyGamblerLifes"), NULL);
 	return Sf_None(&f);
 }
 
@@ -619,7 +506,7 @@ static PyObject *Mayor_LaunchMayorInitialTaunt(PyObject *self, PyObject *args) {
 	}
 	if (car > 0) {
 		Sf_Import(&f, "Parking");
-		Dt_Com(&f, "Mission_FaceTheMayor_RemoteMessage2", "Mayor", G(FM, "CreateCrazyMayor"), NOARGS);
+		Lv_Com(&f, "Mission_FaceTheMayor_RemoteMessage2", "Mayor", G(FM, "CreateCrazyMayor"), NOARGS);
 		Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Py_None);
 	} else if (car == 0) {
 		Sf_Later(&f, Sf_Float(&f, 1.0), G(FM, "LaunchMayorInitialTaunt"), NOARGS, NULL);
@@ -672,9 +559,9 @@ static PyObject *Mayor_SetPhoneCab(PyObject *self, PyObject *args) {
 	PyObject *pc = Sf_Ask(&f, "PhoneCab", "GetFree", "()");
 	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, pc, "Name"));
 	Sf_SetAttrS(&f, pc, "UseFunc", "Mission_FaceTheMayor.UsePhoneCab");
-	int alarm = Dt_Alarm(&f);
+	int alarm = Lv_Alarm(&f);
 	if (alarm > 0) {
-		Dt_Com(&f, "Mission_FaceTheMayor_RemoteMessage3", "DeepThroat", G(FM, "FleeFromPolice"), NULL);
+		Lv_Com(&f, "Mission_FaceTheMayor_RemoteMessage3", "DeepThroat", G(FM, "FleeFromPolice"), NULL);
 		Sf_Method(&f, Sf_Mod(&f, "Alarm", "SetAlarmCallback"), "append", "(O)", G(FM, "SetAlarmCallback"));
 	} else if (alarm == 0) {
 		Sf_Own(&f, FM, "SetAlarmCallback", "(i)", 1);
@@ -689,7 +576,7 @@ static PyObject *Mayor_UsePhoneCab(PyObject *self, PyObject *args) {
 	Sf_SetMod(&f, "Speech", "NPCName", ch);
 	Sf_Run(&f, "PhoneCab", "UseAudioCom", "(OOOO)", usr, ch, opt, full);
 	PyObject *pc = Sf_Entity(&f, ch);
-	int alarm = Dt_Alarm(&f);
+	int alarm = Lv_Alarm(&f);
 	if (alarm > 0) {
 		Sf_Run(&f, "Speech", "StartObjSpch", "(Oss)", pc, "Mission_TalkToDeepThroat1_RemoteMessage2", "DeepThroat");
 	} else if (alarm == 0) {
@@ -742,9 +629,9 @@ static PyObject *Massacre_Init(PyObject *self, PyObject *args) {
 	Sf_SetMod(&f, "Vehicles", "OnDeathCallback", G(MS, "OnVehicleCallback"));
 	Sf_Run(&f, "Scrap", "Set", "(si)", "CounterType", 2);
 	Sf_Run(&f, "Scrap", "Set", "(sO)", "TimeSpecialUseTimer", G(MS, "betweenDeathsTime"));
-	Dt_ScorerCall(&f, G(MS, "MissionScorer"));
+	Lv_ScorerCall(&f, G(MS, "MissionScorer"));
 	Sf_DrawScorer(&f);
-	Dt_Com(&f, "Mission_Massacre_RemoteMessage4", "Igor", NULL, NULL);
+	Lv_Com(&f, "Mission_Massacre_RemoteMessage4", "Igor", NULL, NULL);
 	Sf_Run(&f, "SScorer", "AddModel", "(isssii)", 0, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3, 25);
 	return Sf_None(&f);
 }
@@ -793,16 +680,16 @@ static PyObject *Massacre_OnVehicleCallback(PyObject *self, PyObject *args) {
 	Sf_Print(&f, "OsOs", prev, "<= 0.25 and", now, "> 0.25");
 	int c = Ms_Crossed(&f, prev, now, 0.25);
 	if (c > 0) {
-		Dt_Com(&f, "Mission_Massacre_RemoteMessage1", "Igor", NULL, NULL);
+		Lv_Com(&f, "Mission_Massacre_RemoteMessage1", "Igor", NULL, NULL);
 	} else if (c == 0 && (c = Ms_Crossed(&f, prev, now, 0.5)) > 0) {
-		Dt_Com(&f, "Mission_Massacre_RemoteMessage1", "Igor", NULL, NULL);
+		Lv_Com(&f, "Mission_Massacre_RemoteMessage1", "Igor", NULL, NULL);
 	} else if (c == 0 && (c = Ms_Crossed(&f, prev, now, 0.75)) > 0) {
-		Dt_Com(&f, "Mission_Massacre_RemoteMessage2", "Igor", NULL, NULL);
+		Lv_Com(&f, "Mission_Massacre_RemoteMessage2", "Igor", NULL, NULL);
 	} else if (c == 0 && Sf_Compare(&f, now, ">=", Sf_Float(&f, 1.0)) > 0) {
 		Sf_SetMod(&f, "Vehicles", "OnDeathCallback", Py_None);
-		Dt_ScorerCall(&f, Py_None);
+		Lv_ScorerCall(&f, Py_None);
 		Sf_DrawScorer(&f);
-		Dt_Com(&f, "Mission_Massacre_RemoteMessage3", "Igor", G(MS, "SetNextMission"), NOARGS);
+		Lv_Com(&f, "Mission_Massacre_RemoteMessage3", "Igor", G(MS, "SetNextMission"), NOARGS);
 	}
 	Sf_Run(&f, "Scrap", "Set", "(sO)", "TimeSpecialUseTimer", Sf_OpI(&f, G(MS, "betweenDeathsTime"), '+', 1));
 	Sf_Run(&f, "Scrap", "Set", "(si)", "CounterType", 0);
@@ -814,35 +701,26 @@ static PyObject *Massacre_MissionScorer(PyObject *self, PyObject *args) {
 	PyObject *id;
 	SF_ARGS("O", &id);
 	Sf_Import(&f, "Scorer");
-	Dt_Text(&f, id, "MassacreText", Dt_Y(&f, 0), Dt_Label(&f, "Mission_Massacre_Scorer_1"), Sf_Int(&f, 1));
+	Lv_Text(&f, id, "MassacreText", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_Massacre_Scorer_1"), Sf_Int(&f, 1));
 	const char *bar = "MassacreScorer";
 	Sf_Run(&f, "SScorer", "Add", "(Oss)", id, bar, "Bar");
 	Lv_BarDefaults(&f, id, bar, NULL, NULL);
 	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "MaxValue", G(MS, "MAX_POINTS"));
 	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "Value", Sf_Eval(&f, SAVE("Mission_Massacre.Points"), MS));
 	Sf_Run(&f, "SScorer", "Set", "(Ossi)", id, bar, "Visible", 1);
-	Dt_Timer(&f, id, "BetweenDeathsTimer", Dt_X(&f, 40), Dt_Y(&f, 60), "Mission_Massacre.TimeExpired", 1);
+	Dt_Timer(&f, id, "BetweenDeathsTimer", Lv_TextX(&f, 40), Lv_TextY(&f, 60), "Mission_Massacre.TimeExpired", 1);
 	return Sf_None(&f);
 }
 
 /* TimeExpired(): the points back to 0 */
 static PyObject *Massacre_TimeExpired(PyObject *self, PyObject *args) {
 	SF_ARGS("");
-	Dt_Com(&f, "Mission_Massacre_RemoteMessage5", "Igor", NULL, NULL);
+	Lv_Com(&f, "Mission_Massacre_RemoteMessage5", "Igor", NULL, NULL);
 	Sf_Run(&f, "Scrap", "Set", "(sO)", "TimeSpecialUseTimer", G(MS, "betweenDeathsTime"));
 	Sf_Run(&f, "Scrap", "Set", "(si)", "CounterType", 2);
 	Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "Mission_Massacre.Points", Sf_ReprI(&f, 0));
 	Sf_Run(&f, "SScorer", "Set", "(issi)", 0, "MassacreScorer", "Value", 0);
 	return Sf_None(&f);
-}
-
-/* bp = eval(Scrap.GetSaveVar(var)); bp = bp + [a, b]; Scrap.SetSaveVar(var, `bp`) */
-static byte Dt_AddBlueprints(scriptFrame_t *f, const char *module, const char *var, const char *a, const char *b) {
-	int mark = f->n;
-	PyObject *bp = Sf_Op(f, Lv_SaveList(f, var, module), '+', Sf_Build(f, "[ss]", a, b));
-	Sf_Run(f, "Scrap", "SetSaveVar", "(sO)", var, Sf_Repr(f, bp));
-	Sf_Release(f, mark);
-	return !f->failed;
 }
 
 /* SetNextMission(): the next mission of NextMissionData, the blueprints of Berto's and Betty's ships, Rusty later */
@@ -852,8 +730,8 @@ static PyObject *Massacre_SetNextMission(PyObject *self, PyObject *args) {
 	PyObject *apply = Sf_Mod(&f, "__builtin__", "apply");
 	Sf_Call(&f, apply, "(OO)", Sf_Mod(&f, "MissionsFuncs", "SetNextMission"), G(MS, "NextMissionData"));
 	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_ArrangeIgorCombat_MissionText1", 1);
-	Dt_AddBlueprints(&f, MS, "PressBlueprints.Ships", "SBerto1", "SBetty1");
-	Dt_AddBlueprints(&f, MS, "PressBlueprints.Engines", "MBerto1", "MBetty1");
+	Lv_SaveCat(&f, MS, "PressBlueprints.Ships", "[ss]", "SBerto1", "SBetty1");
+	Lv_SaveCat(&f, MS, "PressBlueprints.Engines", "[ss]", "MBerto1", "MBetty1");
 	Sf_Import(&f, "Scorer");
 	Dt_LaterCom(&f, Sf_Float(&f, 10.0),
 		Sf_Build(&f, "(ssO(ii))", "Mission_ArrangeIgorCombat_RemoteMessage1", "Rusty", Sf_Mod(&f, "Scorer", "ShowMissionScorer"), 0, 2), NULL);
@@ -870,185 +748,7 @@ PyMethodDef g_DownTownMassacreMethods[] = {
 	{ NULL, NULL, 0, NULL },
 };
 
-/* ---- Mission_DestroyCommSats3: the communication probes of the level ---- */
-
-/* InitStatus(LevelPath): the probes are the heavy traffic, none of it at the start */
-static PyObject *Probes_InitStatus(PyObject *self, PyObject *args) {
-	PATH_ARGS();
-	Sf_Import(&f, "VehiclesNPC");
-	Sf_Import(&f, "Traffic");
-	Sf_SetMod(&f, "Traffic", "AcHeavyShips", Sf_Build(&f, "[s]", "TProbe"));
-	Sf_SetMod(&f, "Traffic", "NumHeavy", Sf_Int(&f, 0));
-	return Sf_None(&f);
-}
-
-static PyObject *Probes_Init(PyObject *self, PyObject *args) {
-	PATH_ARGS();
-	Sf_Own(&f, CS, "CreateProbes", "()");
-	Dt_ScorerCall(&f, G(CS, "MissionScorer"));
-	Sf_DrawScorer(&f);
-	return Sf_None(&f);
-}
-
-/* IsValidPoint(usrPos, pos, posList): a new point far enough from the player and from the other probes */
-static PyObject *Probes_IsValidPoint(PyObject *self, PyObject *args) {
-	PyObject *usrPos, *pos, *list;
-	SF_ARGS("OOO", &usrPos, &pos, &list);
-	int in = Sf_In(&f, pos, list);
-	if (in != 0) {
-		return Sf_Return(&f, in > 0 ? Sf_Int(&f, 0) : NULL);
-	}
-	PyObject *d = Sf_Ask(&f, "SVec", "Mod", "(O)", Sf_Ask(&f, "SVec", "Sub", "(OO)", pos, usrPos));
-	int near = Sf_Compare(&f, d, "<", G(CS, "minPlayerDist"));
-	if (near != 0) {
-		return Sf_Return(&f, near > 0 ? Sf_Int(&f, 0) : NULL);
-	}
-	PyObject *p;
-	for (int k = 0; (p = Sf_Next(&f, list, k)) != NULL; k++) {
-		d = Sf_Ask(&f, "SVec", "Mod", "(O)", Sf_Ask(&f, "SVec", "Sub", "(OO)", p, pos));
-		if (Sf_Compare(&f, d, "<", G(CS, "minDistBetweenProbes")) > 0) {
-			return Sf_Return(&f, Sf_Int(&f, 0));
-		}
-	}
-	return Sf_Return(&f, Sf_Int(&f, 1));
-}
-
-/* CreateProbes(): the probes left at random visible points */
-static PyObject *Probes_CreateProbes(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "OutMap");
-	Sf_Import(&f, "VehiclesNPC");
-	Sf_Import(&f, "Traffic");
-	PyObject *usr = USR();
-	if (Sf_True(&f, usr) != 1) {
-		return Sf_None(&f);
-	}
-	PyObject *list = Sf_Build(&f, "[]");
-	PyObject *usrPos = Sf_Attr(&f, usr, "Pos");
-	PyObject *num = Sf_ToInt(&f, SAVE("NumProbes"));
-	long i = 0;
-	for (;;) {
-		int mark = f.n;
-		if (Sf_Compare(&f, Sf_Int(&f, i), "<", num) <= 0) {
-			break;
-		}
-		PyObject *pos = Sf_Ask(&f, "SAI", "GetRandomVisibilityPoint", "()");
-		int ok = Sf_True(&f, Sf_Own(&f, CS, "IsValidPoint", "(OOO)", usrPos, pos, list));
-		if (ok == 0) {
-			Sf_Release(&f, mark);
-			continue;
-		}
-		Sf_Run(&f, "Traffic", "SetPath", "()");
-		PyObject *p = Sf_Ask(&f, "VehiclesNPC", "MakeAI", "(ssii)", "TProbe", "ProbeMos", 0, 0);
-		Sf_Run(&f, "Traffic", "ResetPath", "()");
-		Sf_SetAttrS(&f, p, "OnDeath", "Mission_DestroyCommSats3.OnProbeDeath");
-		Sf_SetAttr(&f, p, "MovePos", pos);
-		Sf_SetAttr(&f, p, "Pos", pos);
-		PyObject *ang = Sf_Build(&f, "(iii)", 0, 0, 0);
-		Sf_SetAttr(&f, p, "MoveAng", ang);
-		Sf_SetAttr(&f, p, "Ang", ang);
-		Sf_SetAttr(&f, p, "MoveTime", Sf_Float(&f, 0.1));
-		PyObject *life = G(CS, "PROBE_LIFE");
-		Sf_SetAttr(&f, p, "Life", life);
-		Sf_SetAttr(&f, p, "MaxLife", life);
-		Sf_SetAttr(&f, p, "MinLife", life);
-		Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", p, 1);
-		Sf_Method(&f, list, "append", "(O)", pos);
-		Sf_Release(&f, mark);
-		i++;
-	}
-	return Sf_None(&f);
-}
-
-/* OnProbeDeath(LooserName, WinnerName): one probe fewer; the last one ends the mission */
-static PyObject *Probes_OnProbeDeath(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	SF_ARGS("OO", &looser, &winner);
-	Sf_Import(&f, "Vehicles");
-	Sf_Run(&f, "Vehicles", "OnDeath", "(OO)", looser, winner);
-	PyObject *n = Sf_OpI(&f, Sf_ToInt(&f, SAVE("NumProbes")), '-', 1);
-	int last = Sf_EqI(&f, n, 0);
-	if (last > 0) {
-		Sf_Own(&f, CS, "DestroyEnemyShips", "()");
-		Dt_ScorerCall(&f, Py_None);
-		Dt_LaterCom(&f, Sf_Int(&f, 2), Sf_Build(&f, "(ssOO)", "Mission_DestroyCommSats3_RemoteMessage1", "CrazyGambler", G(CS, "SetNextMission"), NOARGS),
-			NULL);
-	} else if (last == 0) {
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "NumProbes", Sf_Repr(&f, n));
-		Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	}
-	Sf_DrawScorer(&f);
-	return Sf_None(&f);
-}
-
-/* DestroyShipsInList(listName): every ship of the list explodes */
-static PyObject *Probes_DestroyShipsInList(PyObject *self, PyObject *args) {
-	PyObject *name;
-	SF_ARGS("O", &name);
-	PyObject *e = Sf_Entity(&f, Sf_Ask(&f, "Scrap", "EntityListGet", "(Os)", name, "First"));
-	int mark = f.n;
-	while (Sf_True(&f, e) > 0) {
-		Sf_SetAttrS(&f, e, "EntityList", "");
-		Sf_SetAttrI(&f, e, "Life", 0);
-		PyObject *next = Sf_Entity(&f, Sf_Ask(&f, "Scrap", "EntityListGet", "(Os)", name, "First"));
-		Sf_ReleaseKeep(&f, mark, &next, 1);
-		e = next;
-	}
-	return Sf_None(&f);
-}
-
-/* DestroyEnemyShips(): no more police nor traffic, the alarm falls, the ships of the lists explode one after another */
-static PyObject *Probes_DestroyEnemyShips(PyObject *self, PyObject *args) {
-	static const char *const lists[] = { "EnemiesTraffic", "ChasingTraffic", "Traffic", "OutCop" };
-	SF_ARGS("");
-	Sf_Run(&f, "Scrap", "Set", "(si)", "MaxChasingShips", 0);
-	Sf_Run(&f, "Scrap", "Set", "(si)", "iTrafficNumber", 0);
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "PoliceWaveEliminated", "");
-	Sf_Run(&f, "Scrap", "Set", "(sd)", "AlarmFallDelta", -0.05);
-	Sf_Run(&f, "Scrap", "SetAlarm", "(i)", 0);
-	for (int i = 0; i < 4; i++) {
-		Sf_Later(&f, Sf_Float(&f, 0.5 * i), G(CS, "DestroyShipsInList"), Sf_Build(&f, "(s)", lists[i]), NULL);
-	}
-	return Sf_None(&f);
-}
-
-/* SetNextMission(): the level counts as freed, the mercenaries leave D-Tritus, on to Mission_GoWithHuman */
-static PyObject *Probes_SetNextMission(PyObject *self, PyObject *args) {
-	static const char *const mercs[] = { "MercsHelpDtritus", "0", "MercFriends.MercenaryA_Smartie", "0", "MercFriends.MercenaryC_Brutus", "0",
-		"MercFriends.MercenaryB_Dumber", "0", NULL };
-	SF_ARGS("");
-	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "NumProbes");
-	PyObject *l = Lv_SaveList(&f, "ComSatsMissionsMapsFinished", CS);
-	Sf_Method(&f, l, "append", "(s)", "DOWNTOWN");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "ComSatsMissionsMapsFinished", Sf_Repr(&f, l));
-	Lv_Saves(&f, mercs);
-	Dt_Next(&f, "Mission_GoWithHuman", "Press", "Mission_GoWithHuman_MissionText1");
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	return Sf_None(&f);
-}
-
-/* MissionScorer(id): the probes left */
-static PyObject *Probes_MissionScorer(PyObject *self, PyObject *args) {
-	PyObject *id;
-	SF_ARGS("O", &id);
-	Sf_Import(&f, "Scorer");
-	Dt_Text(&f, id, "NumProbesText", Dt_Y(&f, 0), Dt_Label(&f, "Mission_DestroyCommSats3_Scorer1"), NULL);
-	Dt_Text(&f, id, "NumProbes", Dt_Y(&f, 20), SAVE("NumProbes"), NULL);
-	return Sf_None(&f);
-}
-
-PyMethodDef g_DownTownDestroyCommSats3Methods[] = {
-	{ "InitStatus", Probes_InitStatus, 1, NULL },
-	{ "Init", Probes_Init, 1, NULL },
-	{ "IsValidPoint", Probes_IsValidPoint, 1, NULL },
-	{ "CreateProbes", Probes_CreateProbes, 1, NULL },
-	{ "OnProbeDeath", Probes_OnProbeDeath, 1, NULL },
-	{ "DestroyShipsInList", Probes_DestroyShipsInList, 1, NULL },
-	{ "DestroyEnemyShips", Probes_DestroyEnemyShips, 1, NULL },
-	{ "SetNextMission", Probes_SetNextMission, 1, NULL },
-	{ "MissionScorer", Probes_MissionScorer, 1, NULL },
-	{ NULL, NULL, 0, NULL },
-};
+/* ---- Mission_DestroyCommSats3: levels/LevelCommon.c ---- */
 
 /* ---- Mission_GetDataPart1: the transports drop the data cubes when the player hits them ---- */
 
@@ -1086,10 +786,10 @@ static PyObject *Data_Init(PyObject *self, PyObject *args) {
 	Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", G(GD, "StopMission"));
 	int first = Sf_EqS(&f, SAVE("MissionState"), "FirstTime");
 	if (first > 0) {
-		Dt_Com(&f, "MissionGetDataPart1_RemoteMessage1", "Boss", NULL, NULL);
+		Lv_Com(&f, "MissionGetDataPart1_RemoteMessage1", "Boss", NULL, NULL);
 		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "MissionState", "GetData");
 	} else if (first == 0) {
-		Dt_Com(&f, "MissionGetDataPart1_RemoteMessage5", "Boss", NULL, NULL);
+		Lv_Com(&f, "MissionGetDataPart1_RemoteMessage5", "Boss", NULL, NULL);
 	}
 	return Sf_None(&f);
 }
@@ -1109,14 +809,14 @@ static int Dt_UsrInCar(scriptFrame_t *f, PyObject *usr) {
 /* InitMission(): the scorer; past half of the data the functionaries come for the transport */
 static PyObject *Data_InitMission(PyObject *self, PyObject *args) {
 	SF_ARGS("");
-	Dt_ScorerCall(&f, G(GD, "MissionScorer"));
+	Lv_ScorerCall(&f, G(GD, "MissionScorer"));
 	Sf_DrawScorer(&f);
 	PyObject *nd = SAVE("NumData");
 	int go = Sf_True(&f, G(GD, "funcsSpawned"));
 	go = go == 0 ? Gd_DataCmp(&f, nd, ">", "NumDataFuncsAttackTransport") : go > 0 ? 0 : -1;
 	if (go > 0) {
 		Sf_SetGlobal(&f, GD, "funcsSpawned", Sf_Int(&f, 1));
-		Dt_Com(&f, "MissionGetDataPart1_RemoteMessage8", "Functionary", NULL, NULL);
+		Lv_Com(&f, "MissionGetDataPart1_RemoteMessage8", "Functionary", NULL, NULL);
 		Sf_Own(&f, GD, "SpawnFunctionaries", "(i)", 2);
 		PyObject *e = Sf_Entity(&f, G(GD, "currentTransport"));
 		PyObject *usr = USR();
@@ -1301,7 +1001,7 @@ static PyObject *Data_OnTransportsDeath(PyObject *self, PyObject *args) {
 		}
 		if (data > 0) {
 			Sf_SetGlobal(&f, GD, "droppedData", Sf_Int(&f, 0));
-			Dt_Com(&f, "MissionGetDataPart1_RemoteMessage3", "Boss", NULL, NULL);
+			Lv_Com(&f, "MissionGetDataPart1_RemoteMessage3", "Boss", NULL, NULL);
 			Sf_Later(&f, Sf_Int(&f, 2), G(GD, "AddTransportToList"), NOARGS, "AddTransport");
 		}
 	}
@@ -1332,7 +1032,7 @@ static PyObject *Data_OnTransportsDamage(PyObject *self, PyObject *args) {
 		}
 		PyObject *nd = SAVE("NumData");
 		if (Gd_DataCmp(&f, nd, "<=", "NumDataFuncsAttackTransport") > 0 && Sf_In(&f, looser, G(GD, "transportsTaunts")) == 0) {
-			Dt_Com(&f, "MissionGetDataPart1_RemoteMessage7", "Functionary", NULL, NULL);
+			Lv_Com(&f, "MissionGetDataPart1_RemoteMessage7", "Functionary", NULL, NULL);
 			Sf_Method(&f, G(GD, "transportsTaunts"), "append", "(O)", looser);
 		}
 		if (Sf_EqI(&f, G(GD, "droppedData"), 0) > 0) {
@@ -1426,7 +1126,7 @@ static byte Gd_TransportDone(scriptFrame_t *f, PyObject *e) {
 static PyObject *Data_TakeData(PyObject *self, PyObject *args) {
 	PyObject *item, *ch, *name;
 	SF_ARGS("OO", &item, &ch);
-	if (Dt_UsrIs(&f, USR(), ch) <= 0) {
+	if (Lv_UsrNameIs(&f, USR(), ch) <= 0) {
 		return Sf_None(&f);
 	}
 	PyObject *itm = Sf_Entity(&f, item);
@@ -1448,7 +1148,7 @@ static PyObject *Data_TakeData(PyObject *self, PyObject *args) {
 		Sf_Run(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "SpawnData");
 		Sf_Run(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "AddTransport");
 		Sf_Import(&f, "Parking");
-		Dt_ScorerCall(&f, Py_None);
+		Lv_ScorerCall(&f, Py_None);
 		Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Py_None);
 		PyObject *funcs = G(GD, "funcsAttackingTransport");
 		int mark = f.n;
@@ -1460,7 +1160,7 @@ static PyObject *Data_TakeData(PyObject *self, PyObject *args) {
 		}
 		Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "Transports", "OnDeath", "");
 		Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "Transports", "OnDamage", "");
-		Dt_Com(&f, "MissionGetDataPart1_RemoteMessage6", "Boss", G(GD, "SetNextMission"), NOARGS);
+		Lv_Com(&f, "MissionGetDataPart1_RemoteMessage6", "Boss", G(GD, "SetNextMission"), NOARGS);
 	} else if (all == 0) {
 		int attack = Sf_Compare(&f, num, ">", G(GD, "NumDataFuncsAttackTransport"));
 		if (attack > 0) {
@@ -1469,7 +1169,7 @@ static PyObject *Data_TakeData(PyObject *self, PyObject *args) {
 		if (attack > 0) {
 			if (Sf_True(&f, G(GD, "funcsAttackTransportMessage")) == 0) {
 				Sf_SetGlobal(&f, GD, "funcsAttackTransportMessage", Sf_Int(&f, 1));
-				Dt_Com(&f, "MissionGetDataPart1_RemoteMessage8", "Functionary", NULL, NULL);
+				Lv_Com(&f, "MissionGetDataPart1_RemoteMessage8", "Functionary", NULL, NULL);
 			}
 			Gd_FuncsAttack(&f);
 		}
@@ -1478,7 +1178,7 @@ static PyObject *Data_TakeData(PyObject *self, PyObject *args) {
 			Gd_TransportDone(&f, e);
 			Sf_SetGlobal(&f, GD, "droppedData", Sf_Int(&f, 0));
 			Sf_Run(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "SpawnData");
-			Dt_Com(&f, "MissionGetDataPart1_RemoteMessage2", "Boss", G(GD, "AddTransportToList"), NOARGS);
+			Lv_Com(&f, "MissionGetDataPart1_RemoteMessage2", "Boss", G(GD, "AddTransportToList"), NOARGS);
 		}
 	}
 	Sf_DrawScorer(&f);
@@ -1492,7 +1192,7 @@ static PyObject *Data_SetNextMission(PyObject *self, PyObject *args) {
 	Gd_TransportDone(&f, Sf_Entity(&f, G(GD, "currentTransport")));
 	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "MissionState");
 	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "NumData");
-	Dt_Next(&f, "Mission_GetDataPart2", "Bank", "Mission_TalkToBoss2_MissionText1");
+	Lv_Next(&f, "Mission_GetDataPart2", "Bank", "Mission_TalkToBoss2_MissionText1");
 	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
 	return Sf_None(&f);
 }
@@ -1501,7 +1201,7 @@ static PyObject *Data_SetNextMission(PyObject *self, PyObject *args) {
 static PyObject *Data_MissionScorer(PyObject *self, PyObject *args) {
 	PyObject *id;
 	SF_ARGS("O", &id);
-	Dt_Text(&f, id, "DataStatusText", Dt_Y(&f, 0), Dt_Label(&f, "Mission_GetDataPart1_Scorer_1"), NULL);
+	Lv_Text(&f, id, "DataStatusText", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_GetDataPart1_Scorer_1"), NULL);
 	const char *bar = "DataStatus";
 	Sf_Run(&f, "SScorer", "Add", "(Oss)", id, bar, "Bar");
 	Lv_BarDefaults(&f, id, bar, NULL, NULL);
@@ -1548,7 +1248,7 @@ static PyObject *Bet_InitStatus(PyObject *self, PyObject *args) {
 		Lv_Saves(&f, race);
 		Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "Race.Profile", G(HR, "RACE_PROFILE"));
 		Sf_SetMod(&f, "MapRace", "Races", Sf_Build(&f, "[O]", Sf_Mod(&f, "MapRace", "EasyRaceDownTown1")));
-		Dt_Com(&f, "Mission_FirstCrazyBet_RemoteMessage5", "CrazyGambler", G(HR, "ShowSystemMessage"), NOARGS);
+		Lv_Com(&f, "Mission_FirstCrazyBet_RemoteMessage5", "CrazyGambler", G(HR, "ShowSystemMessage"), NOARGS);
 	} else if (racing == 0) {
 		Lv_Saves(&f, none);
 		Sf_SetMod(&f, "MapRace", "Races", Sf_Build(&f, "[]"));
@@ -1640,7 +1340,7 @@ static PyObject *Dt_CallCab(PyObject *args, const char *use) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	Dt_PhoneCab(&f, use);
+	Lv_PhoneCab(&f, use, 1, NULL);
 	return Sf_None(&f);
 }
 
@@ -1665,7 +1365,7 @@ static PyObject *Dt_UsePhone(PyObject *args, const char *module, const char *pol
 	Sf_SetMod(&f, "Speech", "PlayerName", usr);
 	Sf_Run(&f, "PhoneCab", "UseAudioCom", "(OOOO)", usr, ch, opt, full);
 	Sf_SetGlobal(&f, module, "pc", Sf_Entity(&f, ch));
-	int alarm = Dt_Alarm(&f);
+	int alarm = Lv_Alarm(&f);
 	if (alarm > 0) {
 		Sf_Run(&f, "Speech", "StartObjSpch", "(Oss)", G(module, "pc"), police, who);
 	} else if (alarm == 0) {
@@ -1685,22 +1385,11 @@ static PyObject *Bet_UsePhoneCab(PyObject *self, PyObject *args) {
 		"PreGivePlans", 1);
 }
 
-/* `if not (item in lst): lst.append(item); Scrap.SetSaveVar(var, `lst`)` with lst the list of the save variable */
-static byte Dt_SaveAdd(scriptFrame_t *f, const char *module, const char *var, const char *item) {
-	int mark = f->n;
-	PyObject *lst = Lv_SaveList(f, var, module);
-	if (Sf_In(f, Sf_Str(f, item), lst) == 0) {
-		Lv_SaveAppend(f, var, lst, Sf_Str(f, item));
-	}
-	Sf_Release(f, mark);
-	return !f->failed;
-}
-
 /* PreGivePlans2(): the blueprints of the mercenary ship and engine, the next mission, the plans 5 s later */
 static PyObject *Bet_PreGivePlans2(PyObject *self, PyObject *args) {
 	SF_ARGS("");
-	Dt_SaveAdd(&f, HR, "Hangar.shipsToEditList", "SMerc1");
-	Dt_SaveAdd(&f, HR, "Hangar.availableEnginesList", "MMERC1");
+	Lv_SaveAdd(&f, HR, "Hangar.shipsToEditList", "SMerc1");
+	Lv_SaveAdd(&f, HR, "Hangar.availableEnginesList", "MMERC1");
 	Sf_Own(&f, HR, "SetNextMission", "()");
 	Sf_Later(&f, Sf_Int(&f, 5), G(HR, "GivePlans"), NOARGS, NULL);
 	return Sf_None(&f);
@@ -1713,7 +1402,7 @@ static PyObject *Bet_GivePlans(PyObject *self, PyObject *args) {
 	PyObject *t = Sf_Time(&f);
 	Sf_Run(&f, "SScorer", "SetMsgText", "(OO)", cad, Sf_Op(&f, t, '+', Sf_Ask(&f, "Speech", "CalculateSpeechTime", "(O)", cad)));
 	Sf_Run(&f, "Scrap", "IncSaveVar", "(si)", "NewBluePrintAvaliable", 2);
-	Dt_Com(&f, "Mission_FirstCrazyBet_RemoteMessage9", "Rusty", NULL, NULL);
+	Lv_Com(&f, "Mission_FirstCrazyBet_RemoteMessage9", "Rusty", NULL, NULL);
 	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
 	return Sf_None(&f);
 }
@@ -1734,7 +1423,7 @@ static PyObject *Bet_SetNextMission(PyObject *self, PyObject *args) {
 	Sf_SetAttrS(&f, pc, "UseFunc", "PhoneCab.DefUseAudioCom");
 	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "HumphreyRaceTutorial");
 	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "MissionState");
-	Dt_Next(&f, "Mission_MeetArchbishop", "Temple", "Mission_FirstContactPress_MissionText3");
+	Lv_Next(&f, "Mission_MeetArchbishop", "Temple", "Mission_FirstContactPress_MissionText3");
 	Lv_Saves(&f, places);
 	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
 	return Sf_None(&f);
@@ -1785,7 +1474,7 @@ static PyObject *Hump_Init(PyObject *self, PyObject *args) {
 	} else if (s == 0 && (s = Sf_EqS(&f, state, "DistractHumphrey")) > 0) {
 		int again = Sf_EqS(&f, SAVE("DistractionStart"), "1");
 		if (again > 0) {
-			Dt_Com(&f, "Mission_DistractHumphrey_RemoteMessage6", "DeepThroat", G(DH, "CreateWaypoint"), NOARGS);
+			Lv_Com(&f, "Mission_DistractHumphrey_RemoteMessage6", "DeepThroat", G(DH, "CreateWaypoint"), NOARGS);
 		} else if (again == 0) {
 			Sf_Own(&f, DH, "CreateWaypoint", "()");
 		}
@@ -1837,11 +1526,11 @@ static PyObject *Hump_OnStartDistraction(PyObject *self, PyObject *args) {
 	}
 	int busy = Sf_True(&f, Sf_Ask(&f, "SLogic", "IsEnemyActive", "()"));
 	if (busy == 0) {
-		busy = Dt_Alarm(&f);
+		busy = Lv_Alarm(&f);
 	}
 	if (busy > 0) {
 		Sf_SetAttrS(&f, G(DH, "missionStartWaypoint"), "OnTake", "");
-		Dt_Com(&f, "Mission_DistractHumphrey_RemoteMessage11", "Humphrey", G(DH, "EnableMissionWaypoint"), NULL);
+		Lv_Com(&f, "Mission_DistractHumphrey_RemoteMessage11", "Humphrey", G(DH, "EnableMissionWaypoint"), NULL);
 		return Sf_None(&f);
 	}
 	if (Sf_EqS(&f, SAVE("DistractionStart"), "0") > 0) {
@@ -1983,7 +1672,7 @@ static PyObject *Hump_LaunchMission(PyObject *self, PyObject *args) {
 	Sf_Run(&f, "Scrap", "Set", "(sO)", "TimeSpecialUseTimer", G(DH, "missionTime"));
 	Sf_Run(&f, "Scrap", "Set", "(si)", "CounterType", 0);
 	Sf_Run(&f, "RacerScorer", "InitMissionScorer", "(iiO)", 0, 0, Sf_Repr(&f, G(DH, "maxShips")));
-	Dt_ScorerCall(&f, G(DH, "MissionScorer"));
+	Lv_ScorerCall(&f, G(DH, "MissionScorer"));
 	Sf_DrawScorer(&f);
 	Sf_Own(&f, DH, "AssignNewHumphreyTarget", "()");
 	Sf_Method(&f, G(DH, "missionStartWaypoint"), "Del", "()");
@@ -2053,7 +1742,7 @@ static PyObject *Hump_OnHumphreyDeath(PyObject *self, PyObject *args) {
 	int complete = Sf_True(&f, G(DH, "missionComplete"));
 	if (complete == 0) {
 		Sf_Own(&f, DH, "StopMission", "()");
-		Dt_Com(&f, "Mission_DistractHumphrey_RemoteMessage6", "DeepThroat", G(DH, "CreateWaypoint"), NOARGS);
+		Lv_Com(&f, "Mission_DistractHumphrey_RemoteMessage6", "DeepThroat", G(DH, "CreateWaypoint"), NOARGS);
 	} else if (complete > 0 && Sf_Compare(&f, SAVE("MissionState"), "!=", Sf_Str(&f, "CallDeepThroat")) > 0) {
 		Sf_Later(&f, Sf_Int(&f, 3), G(DH, "CreateHumphrey"), Sf_Build(&f, "(O)", Py_None), NULL);
 	}
@@ -2200,7 +1889,7 @@ static PyObject *Hump_StopMission(PyObject *self, PyObject *args) {
 	Sf_SetGlobal(&f, DH, "shipNameForTaunt", Sf_Str(&f, ""));
 	Sf_SetGlobal(&f, DH, "numTaunt", Sf_Int(&f, 0));
 	Sf_SetMod(&f, "Vehicles", "OnDeathCallback", Py_None);
-	Dt_ScorerCall(&f, Py_None);
+	Lv_ScorerCall(&f, Py_None);
 	Sf_DrawScorer(&f);
 	return Sf_None(&f);
 }
@@ -2221,13 +1910,13 @@ static PyObject *Hump_MissionScorer(PyObject *self, PyObject *args) {
 	PyObject *id, *wh[2] = { NULL, NULL };
 	SF_ARGS("O", &id);
 	Sf_Import(&f, "RacerScorer");
-	Dt_Text(&f, id, "RemainingTime", Dt_Y(&f, 0), Dt_Label(&f, "Mission_DistractHumphrey_Scorer1"), NULL);
+	Lv_Text(&f, id, "RemainingTime", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_DistractHumphrey_Scorer1"), NULL);
 	if (Sf_True(&f, G(DH, "missionComplete")) > 0) {
 		Sf_Run(&f, "SScorer", "Set", "(Ossi)", id, "RemainingTime", "Visible", 0);
 	}
-	PyObject *area = Sf_Ask(&f, "SScorer", "GetTextArea", "(sO)", "Horatio", Dt_Label(&f, "Mission_DistractHumphrey_Scorer1"));
+	PyObject *area = Sf_Ask(&f, "SScorer", "GetTextArea", "(sO)", "Horatio", Lv_Label(&f, "Mission_DistractHumphrey_Scorer1"));
 	Sf_Unpack(&f, area, 2, wh);
-	Dt_Timer(&f, id, "MissionTimer", Sf_OpI(&f, Sf_Op(&f, Dt_X(&f, 0), '+', wh[0]), '+', 30), Dt_Y(&f, 12),
+	Dt_Timer(&f, id, "MissionTimer", Sf_OpI(&f, Sf_Op(&f, Lv_TextX(&f, 0), '+', wh[0]), '+', 30), Lv_TextY(&f, 12),
 		"Mission_DistractHumphrey.TimeExpired", 0);
 	Sf_Run(&f, "RacerScorer", "MissionScorer", "(i)", 0);
 	return Sf_None(&f);
@@ -2321,14 +2010,14 @@ static PyObject *Plus_EndOfRace(PyObject *self, PyObject *args) {
 	SF_ARGS("OO", &item, &vehicle);
 	int stop = Sf_InS(&f, vehicle, police);
 	if (stop > 0) {
-		Dt_Com(&f, "Mission_WinRaceMultiplus_RemoteMessage1", "Ficus", NULL, NULL);
+		Lv_Com(&f, "Mission_WinRaceMultiplus_RemoteMessage1", "Ficus", NULL, NULL);
 		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "MultiplusRace", "Alarm");
 	} else if (stop == 0) {
 		int won = Sf_Compare(&f, vehicle, "==", Sf_Attr(&f, USR(), "Name"));
 		if (won > 0) {
-			Dt_Com(&f, "Mission_WinRaceMultiplus_RemoteMessage3", "Ficus", G(MR, "PreKillStupidus"), NOARGS);
+			Lv_Com(&f, "Mission_WinRaceMultiplus_RemoteMessage3", "Ficus", G(MR, "PreKillStupidus"), NOARGS);
 		} else if (won == 0) {
-			Dt_Com(&f, "Mission_WinRaceMultiplus_RemoteMessage2", "Ficus", NULL, NULL);
+			Lv_Com(&f, "Mission_WinRaceMultiplus_RemoteMessage2", "Ficus", NULL, NULL);
 			int left = Sf_EqS(&f, vehicle, "Left");
 			if (left >= 0) {
 				Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "MultiplusRace", left ? "Left" : "Loose");
@@ -2362,7 +2051,7 @@ static PyObject *Plus_UsePhoneCab(PyObject *self, PyObject *args) {
 	Sf_SetMod(&f, "Speech", "NPCName", ch);
 	Sf_Run(&f, "PhoneCab", "UseAudioCom", "(OOOO)", usr, ch, opt, full);
 	PyObject *pc = Sf_Entity(&f, ch);
-	int alarm = Dt_Alarm(&f);
+	int alarm = Lv_Alarm(&f);
 	if (alarm > 0) {
 		Sf_Run(&f, "Speech", "OnObjSpch", "(Osss)", pc, "Ficus", "Mission_WinRaceMultiplus_ComFicus_InitMsg1", "Mission_WinRaceMultiplus_RemoteMessage1");
 	} else if (alarm == 0) {
@@ -2420,7 +2109,7 @@ static PyObject *Plus_AfterInitRaceTaunt(PyObject *self, PyObject *args) {
 /* InitKill(): the scorer, Stupidus, the warning when the player leaves his ship */
 static PyObject *Plus_InitKill(PyObject *self, PyObject *args) {
 	SF_ARGS("");
-	Dt_ScorerCall(&f, G(MR, "MissionScorer"));
+	Lv_ScorerCall(&f, G(MR, "MissionScorer"));
 	Sf_DrawScorer(&f);
 	Sf_Own(&f, MR, "SpawnStupidus", "()");
 	Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", G(MR, "HeyYouFight"));
@@ -2463,12 +2152,12 @@ static PyObject *Plus_SpawnStupidus(PyObject *self, PyObject *args) {
 		Sf_SetAttrS(&f, st, "EntityList", "Enemies");
 		int s = Sf_Compare(&f, lives, "==", Sf_OpI(&f, G(MR, "TOTAL_STUPIDUS_LIVES"), '-', 1));
 		if (s > 0) {
-			Dt_Com(&f, "Mission_KillStupidus_RemoteMessage2", "Stupidus", NULL, NULL);
+			Lv_Com(&f, "Mission_KillStupidus_RemoteMessage2", "Stupidus", NULL, NULL);
 		} else if (s == 0 && (s = Sf_Compare(&f, lives, "==", Sf_OpI(&f, G(MR, "TOTAL_STUPIDUS_LIVES"), '-', 2))) > 0) {
-			Dt_Com(&f, "Mission_KillStupidus_RemoteMessage3", "Stupidus", NULL, NULL);
+			Lv_Com(&f, "Mission_KillStupidus_RemoteMessage3", "Stupidus", NULL, NULL);
 		} else if (s == 0 && Sf_Compare(&f, lives, "<=", Sf_OpI(&f, G(MR, "TOTAL_STUPIDUS_LIVES"), '-', 3)) > 0) {
 			if (Sf_Compare(&f, lives, "==", Sf_OpI(&f, G(MR, "TOTAL_STUPIDUS_LIVES"), '-', 3)) > 0) {
-				Dt_Com(&f, "Mission_KillStupidus_RemoteMessage4", "Stupidus", NULL, NULL);
+				Lv_Com(&f, "Mission_KillStupidus_RemoteMessage4", "Stupidus", NULL, NULL);
 			}
 			if (Sf_EqI(&f, Sf_Ask(&f, "Scrap", "EntityListGet", "(ss)", "Enemies", "Num"), 1) > 0) {
 				Sf_Own(&f, MR, "SpawnStupidusFriends", "(i)", 2);
@@ -2520,7 +2209,7 @@ static PyObject *Plus_RestoreEnemies(PyObject *self, PyObject *args) {
 		PyObject *keep[2] = { name, e };
 		Sf_ReleaseKeep(&f, mark, keep, 2);
 	}
-	Dt_Com(&f, "Mission_KillStupidus_RemoteMessage6", "Ficus", G(MR, "SetNextMission"), NOARGS);
+	Lv_Com(&f, "Mission_KillStupidus_RemoteMessage6", "Ficus", G(MR, "SetNextMission"), NOARGS);
 	return Sf_None(&f);
 }
 
@@ -2540,7 +2229,7 @@ static PyObject *Plus_StupidusOnDeath(PyObject *self, PyObject *args) {
 	if (over > 0) {
 		Sf_Later(&f, Sf_Float(&f, 0.5), G(MR, "RestoreEnemies"), NOARGS, NULL);
 		Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", Py_None);
-		Dt_ScorerCall(&f, Py_None);
+		Lv_ScorerCall(&f, Py_None);
 		Sf_DrawScorer(&f);
 	} else if (over == 0) {
 		Sf_Later(&f, Sf_Float(&f, 5.0), G(MR, "SpawnStupidus"), NOARGS, NULL);
@@ -2555,8 +2244,8 @@ static PyObject *Plus_MissionScorer(PyObject *self, PyObject *args) {
 	PyObject *id;
 	SF_ARGS("O", &id);
 	Sf_Import(&f, "Scorer");
-	Dt_Text(&f, id, "RemainingLives", Dt_Y(&f, 0), Dt_Label(&f, "Mission_KillStupidus_Scorer_1"), NULL);
-	Dt_Text(&f, id, "RemainingLivesScorer", Dt_Y(&f, 20), Mr_Lives(&f), NULL);
+	Lv_Text(&f, id, "RemainingLives", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_KillStupidus_Scorer_1"), NULL);
+	Lv_Text(&f, id, "RemainingLivesScorer", Lv_TextY(&f, 20), Mr_Lives(&f), NULL);
 	return Sf_None(&f);
 }
 
@@ -2587,7 +2276,7 @@ static PyObject *Dt_CGCalls(PyObject *args, const char *const *keys, int n) {
 			int s = Sf_EqI(&f, num, i);
 			if (s != 0) {
 				if (s > 0) {
-					Dt_Com(&f, keys[i], "CrazyGambler", NULL, NULL);
+					Lv_Com(&f, keys[i], "CrazyGambler", NULL, NULL);
 				}
 				break;
 			}
@@ -2711,7 +2400,7 @@ static PyObject *Escort_OnMissionStart(PyObject *self, PyObject *args) {
 	Sf_SetAttr(&f, usr, "Ang", Sf_Attr(&f, itm, "Ang"));
 	Sf_SetAttr(&f, usr, "Vel", Sf_Build(&f, "(iii)", 0, 0, 0));
 	Sf_SetAttrI(&f, itm, "rTime", 15);
-	if (Dt_Alarm(&f) > 0) {
+	if (Lv_Alarm(&f) > 0) {
 		Sf_Run(&f, "Speech", "RemoteComunication", "(ss)", "Mission_ProtectMayorTransport_RemoteMessage2", "Mayor");
 		return Sf_None(&f);
 	}
@@ -2868,7 +2557,7 @@ static PyObject *Escort_BackToPlayer(PyObject *self, PyObject *args) {
 	for (int i = 0; i < 3; i++) {
 		Sf_Run(&f, "SSound", "StopVoice", "(i)", i);
 	}
-	Dt_ScorerCall(&f, G(PM, "MissionScorer"));
+	Lv_ScorerCall(&f, G(PM, "MissionScorer"));
 	Sf_Run(&f, "Scene", "EndOutDoorScene", "()");
 	Sf_Run(&f, "Scrap", "Set", "(ss)", "EscapeEvent", "Menu.Init");
 	Sf_Run(&f, "SAI", "SetRotStaticObj", "(Odd)", Sf_Attr(&f, G(PM, "Bad1"), "Name"), 20.0, 20.0);
@@ -2882,11 +2571,6 @@ static PyObject *Escort_BackToPlayer(PyObject *self, PyObject *args) {
 	return Sf_None(&f);
 }
 
-/* `NumTargets` + "/" + `MaxTargets` */
-static PyObject *Pt_Count(scriptFrame_t *f) {
-	return Sf_Cat(f, "OsO", Sf_Repr(f, Sf_Global(f, PM, "NumTargets")), "/", Sf_Repr(f, Sf_Global(f, PM, "MaxTargets")));
-}
-
 /* MadGuyDeath(MainCharnName, Param2): without the transport a mercenary more counts; a dead mercenary comes back */
 static PyObject *Escort_MadGuyDeath(PyObject *self, PyObject *args) {
 	PyObject *name, *p2;
@@ -2895,12 +2579,12 @@ static PyObject *Escort_MadGuyDeath(PyObject *self, PyObject *args) {
 	if (Sf_Compare(&f, G(PM, "trans"), "==", Py_None) > 0) {
 		Sf_SetGlobal(&f, PM, "NumTargets", Sf_OpI(&f, G(PM, "NumTargets"), '+', 1));
 		Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "CrazyMayor.KillThem", Sf_Repr(&f, G(PM, "NumTargets")));
-		Sf_Run(&f, "SScorer", "Set", "(issO)", 0, "RemainingCharsScorer", "Text", Pt_Count(&f));
+		Sf_Run(&f, "SScorer", "Set", "(issO)", 0, "RemainingCharsScorer", "Text", Lv_Count(&f, PM, "NumTargets", "MaxTargets"));
 		if (Sf_Compare(&f, G(PM, "NumTargets"), ">=", G(PM, "MaxTargets")) > 0) {
-			Dt_ScorerCall(&f, Py_None);
+			Lv_ScorerCall(&f, Py_None);
 			Sf_DrawScorer(&f);
 			Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "CrazyMayor.KillThem", Sf_Repr(&f, Sf_OpI(&f, G(PM, "MaxTargets"), '-', 1)));
-			Dt_Com(&f, "Mission_KillMercs_RemoteMessage1", "Mayor", G(PM, "PreLaunchTraitorius"), NULL);
+			Lv_Com(&f, "Mission_KillMercs_RemoteMessage1", "Mayor", G(PM, "PreLaunchTraitorius"), NULL);
 		}
 		if (Sf_Compare(&f, Sf_OpI(&f, G(PM, "NumTargets"), '+', 1), ">=", G(PM, "MaxTargets")) > 0) {
 			return Sf_None(&f);
@@ -2935,7 +2619,7 @@ static PyObject *Escort_SetNextMission(PyObject *self, PyObject *args) {
 	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "CrazyMayor");
 	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "TransportState");
 	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Dt_Next(&f, "Mission_Ambush", "Scrapyard", "Mission_Ambush1_MissionText1");
+	Lv_Next(&f, "Mission_Ambush", "Scrapyard", "Mission_Ambush1_MissionText1");
 	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "MayorAtTownHall", "1");
 	Lv_SaveAppend(&f, "PressBlueprints.Ships", Lv_SaveList(&f, "PressBlueprints.Ships", PM), Sf_Str(&f, "SHump1"));
 	Lv_SaveAppend(&f, "PressBlueprints.Engines", Lv_SaveList(&f, "PressBlueprints.Engines", PM), Sf_Str(&f, "MHump1"));
@@ -3005,7 +2689,7 @@ static PyObject *Escort_OnTravelComplete(PyObject *self, PyObject *args) {
 		Sf_Method(&f, itm, "Del", "()");
 		Sf_Run(&f, "Scrap", "SetMoney", "(O)", Sf_Op(&f, Sf_Ask(&f, "Scrap", "GetMoney", "()"), '+', G(PM, "ScortReward")));
 		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "TransportState", "Saved");
-		Dt_Com(&f, "Mission_ProtectMayorTransport_RemoteMessage5", "Mayor", G(PM, "InitKillBadGuys"), NULL);
+		Lv_Com(&f, "Mission_ProtectMayorTransport_RemoteMessage5", "Mayor", G(PM, "InitKillBadGuys"), NULL);
 	}
 	return Sf_None(&f);
 }
@@ -3026,7 +2710,7 @@ static PyObject *Escort_MissionScorer(PyObject *self, PyObject *args) {
 	Sf_Import(&f, "Scorer");
 	int t = Sf_True(&f, G(PM, "trans"));
 	if (t > 0) {
-		Dt_Text(&f, id, "RemainingLifeText", Dt_Y(&f, 0), Dt_Label(&f, "Mission_ProtectMayorTransport_Scorer1"), Sf_Int(&f, 1));
+		Lv_Text(&f, id, "RemainingLifeText", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_ProtectMayorTransport_Scorer1"), Sf_Int(&f, 1));
 		const char *bar = "RemainingLifeScorer";
 		Sf_Run(&f, "SScorer", "Add", "(Oss)", id, bar, "Bar");
 		Lv_BarDefaults(&f, id, bar, NULL, NULL);
@@ -3034,8 +2718,8 @@ static PyObject *Escort_MissionScorer(PyObject *self, PyObject *args) {
 		Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "Value", Sf_Attr(&f, G(PM, "trans"), "Life"));
 		Sf_Run(&f, "SScorer", "Set", "(Ossi)", id, bar, "Visible", 1);
 	} else if (t == 0) {
-		Dt_Text(&f, id, "RemainingCharsText", Dt_Y(&f, 0), Dt_Label(&f, "Mission_KillMercs_Scorer1"), Sf_Int(&f, 1));
-		Dt_Text(&f, id, "RemainingCharsScorer", Dt_Y(&f, 26), Pt_Count(&f), Sf_Int(&f, 1));
+		Lv_Text(&f, id, "RemainingCharsText", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_KillMercs_Scorer1"), Sf_Int(&f, 1));
+		Lv_Text(&f, id, "RemainingCharsScorer", Lv_TextY(&f, 26), Lv_Count(&f, PM, "NumTargets", "MaxTargets"), Sf_Int(&f, 1));
 	}
 	return Sf_None(&f);
 }
@@ -3045,7 +2729,7 @@ static PyObject *Escort_KillThem(PyObject *self, PyObject *args) {
 	SF_ARGS("");
 	int killed = Sf_EqS(&f, SAVE("TransportState"), "Killed");
 	if (killed >= 0) {
-		Dt_Com(&f, killed ? "Mission_KillMercs_RemoteMessage3" : "Mission_KillMercs_RemoteMessage4", "Mayor", G(PM, "InitKillThemMission"), NULL);
+		Lv_Com(&f, killed ? "Mission_KillMercs_RemoteMessage3" : "Mission_KillMercs_RemoteMessage4", "Mayor", G(PM, "InitKillThemMission"), NULL);
 	}
 	return Sf_None(&f);
 }
@@ -3085,7 +2769,7 @@ static PyObject *Escort_InitKillBadGuys(PyObject *self, PyObject *args, PyObject
 	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
 	Sf_SetGlobal(&f, PM, "NumTargets", Sf_ToInt(&f, SAVE("CrazyMayor.KillThem")));
 	Sf_SetGlobal(&f, PM, "trans", Py_None);
-	Dt_ScorerCall(&f, G(PM, "MissionScorer"));
+	Lv_ScorerCall(&f, G(PM, "MissionScorer"));
 	Sf_DrawScorer(&f);
 	Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "Enemies", "OnDeath", "Mission_ProtectMayorTransport.MadGuyDeath");
 	for (int i = 0; i < 2; i++) {
@@ -3159,9 +2843,9 @@ static PyObject *Steal_Init(PyObject *self, PyObject *args) {
 	int hunt = Sm_Hunting(&f);
 	if (hunt > 0) {
 		Sf_SetMod(&f, "Vehicles", "OnDeathCallback", G(SM, "OnPoliceDeath"));
-		Dt_Com(&f, "Mission_TestMayorShip_RemoteMessage1", "Trurl", NULL, NULL);
+		Lv_Com(&f, "Mission_TestMayorShip_RemoteMessage1", "Trurl", NULL, NULL);
 	} else if (hunt == 0) {
-		Dt_Com(&f, "Mission_ParkMayorShip_RemoteMessage2", "Trurl", NULL, NULL);
+		Lv_Com(&f, "Mission_ParkMayorShip_RemoteMessage2", "Trurl", NULL, NULL);
 	}
 	Sf_Later(&f, Sf_Float(&f, 0.5), G(SM, "CreateMissionShip"), NOARGS, NULL);
 	Sf_Later(&f, Sf_Float(&f, 5.0), G(SM, "TestForMissionShip"), NOARGS, "TestForMissionShip");
@@ -3219,7 +2903,7 @@ static PyObject *Steal_TestForMissionShip(PyObject *self, PyObject *args) {
 	SF_ARGS("");
 	if (Sf_True(&f, Sf_Entity(&f, G(SM, "missionShipName"))) == 0) {
 		Sf_Own(&f, SM, "CreateMissionShip", "()");
-		Dt_Com(&f, "Mission_ParkMayorShip_RemoteMessage2", "Trurl", NULL, NULL);
+		Lv_Com(&f, "Mission_ParkMayorShip_RemoteMessage2", "Trurl", NULL, NULL);
 	}
 	Sf_Later(&f, Sf_Float(&f, 5.0), G(SM, "TestForMissionShip"), NOARGS, "TestForMissionShip");
 	return Sf_None(&f);
@@ -3250,7 +2934,7 @@ static PyObject *Steal_TestForCorrectPlatform(PyObject *self, PyObject *args) {
 		PyObject *d = Sf_Ask(&f, "SVec", "ModSqr", "(O)", Sf_Ask(&f, "SVec", "Sub", "(OO)", Sf_Attr(&f, usr, "Pos"), Sf_Attr(&f, G(SM, "pc"), "Pos")));
 		int far = Sf_Compare(&f, d, ">", Sf_Int(&f, 49000000));
 		if (far > 0) {
-			Dt_Com(&f, "Mission_ParkMayorShip_RemoteMessage1", "Trurl", NULL, NULL);
+			Lv_Com(&f, "Mission_ParkMayorShip_RemoteMessage1", "Trurl", NULL, NULL);
 		} else if (far == 0) {
 			PyObject *e = Sf_Entity(&f, G(SM, "missionShipName"));
 			if (Sf_True(&f, e) > 0) {
@@ -3258,7 +2942,7 @@ static PyObject *Steal_TestForCorrectPlatform(PyObject *self, PyObject *args) {
 				Sf_Run(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "TestForMissionShip");
 				Sf_SetAttrS(&f, e, "UseFunc", "Mission_StealMayorShip.UseParkedMayorShip");
 				Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", Py_None);
-				Dt_Com(&f, "Mission_ParkMayorShip_RemoteMessage3", "Trurl", NULL, NULL);
+				Lv_Com(&f, "Mission_ParkMayorShip_RemoteMessage3", "Trurl", NULL, NULL);
 				Sf_Run(&f, "SaveGame", "QWayPoint", "()");
 				Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_ByeByeTrurl_MissionText1", 1);
 			}
@@ -3284,7 +2968,7 @@ static PyObject *Steal_UsePhoneCab(PyObject *self, PyObject *args) {
 	Sf_SetMod(&f, "Speech", "NPCName", ch);
 	Sf_SetMod(&f, "Speech", "PlayerName", usr);
 	Sf_Run(&f, "PhoneCab", "UseAudioCom", "(OOOO)", usr, ch, opt, full);
-	int alarm = Dt_Alarm(&f);
+	int alarm = Lv_Alarm(&f);
 	if (alarm > 0) {
 		Sf_Run(&f, "Speech", "StartObjSpch", "(Oss)", G(SM, "pc"), "Generics_StillPolice1_Messenger", "Trurl");
 	} else if (alarm == 0) {
@@ -3309,7 +2993,7 @@ static PyObject *Steal_SetNextMission(PyObject *self, PyObject *args) {
 	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "");
 	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "NumCopsKilled");
 	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Dt_Next(&f, "Mission_ThreeStooges", "GamblinDen", "Mission_FirstContactMercs_MissionText1");
+	Lv_Next(&f, "Mission_ThreeStooges", "GamblinDen", "Mission_FirstContactMercs_MissionText1");
 	Lv_Saves(&f, places);
 	Sf_Later(&f, Sf_Int(&f, 2), G(SM, "CGCalls"), NOARGS, NULL);
 	return Sf_None(&f);
@@ -3345,7 +3029,7 @@ static PyObject *Steal_StartMission(PyObject *self, PyObject *args) {
 	Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", e, 0);
 	int hunt = Sm_Hunting(&f);
 	if (hunt > 0) {
-		Dt_Com(&f, "Mission_TestMayorShip_RemoteMessage5", "Trurl", NULL, NULL);
+		Lv_Com(&f, "Mission_TestMayorShip_RemoteMessage5", "Trurl", NULL, NULL);
 		Sf_Own(&f, SM, "SetPoliceTargets", "()");
 	} else if (hunt == 0) {
 		Sf_Own(&f, SM, "SetPlatformTarget", "()");
@@ -3359,9 +3043,9 @@ static PyObject *Steal_ContinueMission(PyObject *self, PyObject *args) {
 	int t = Sm_NotInShip(&f, USR());
 	if (t > 0) {
 		Sf_Import(&f, "Menu");
-		Dt_ScorerCall(&f, Py_None);
+		Lv_ScorerCall(&f, Py_None);
 		Sf_DrawScorer(&f);
-		Dt_Com(&f, "Mission_TestMayorShip_RemoteMessage3", "Trurl", NULL, NULL);
+		Lv_Com(&f, "Mission_TestMayorShip_RemoteMessage3", "Trurl", NULL, NULL);
 		return Sf_None(&f);
 	}
 	Sf_Own(&f, SM, "StartMission", "()");
@@ -3398,15 +3082,10 @@ static PyObject *Steal_ComeBack(PyObject *self, PyObject *args) {
 	}
 	Sf_SetMod(&f, "OutPolice", "OnPoliceCreatedCallback", Py_None);
 	Sf_Own(&f, SM, "SetPoliceListTargetStatus", "(i)", 0);
-	Dt_Com(&f, "Mission_TestMayorShip_RemoteMessage2", "Trurl", NULL, NULL);
+	Lv_Com(&f, "Mission_TestMayorShip_RemoteMessage2", "Trurl", NULL, NULL);
 	Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", Py_None);
 	Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", G(SM, "ContinueMission"));
 	return Sf_None(&f);
-}
-
-/* `numCopsKilled` + "/" + `COPS_TO_KILL` */
-static PyObject *Sm_Count(scriptFrame_t *f) {
-	return Sf_Cat(f, "OsO", Sf_Repr(f, Sf_Global(f, SM, "numCopsKilled")), "/", Sf_Repr(f, Sf_Global(f, SM, "COPS_TO_KILL")));
 }
 
 /* MissionScorer(id): the police ships destroyed */
@@ -3414,8 +3093,8 @@ static PyObject *Steal_MissionScorer(PyObject *self, PyObject *args) {
 	PyObject *id;
 	SF_ARGS("O", &id);
 	Sf_Import(&f, "Scorer");
-	Dt_Text(&f, id, "RemainingCharsText", Dt_Y(&f, 0), Dt_Label(&f, "Mission_TestMayorShip_Scorer_1"), NULL);
-	Dt_Text(&f, id, "RemainingCharsScorer", Dt_Y(&f, 20), Sm_Count(&f), NULL);
+	Lv_Text(&f, id, "RemainingCharsText", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_TestMayorShip_Scorer_1"), NULL);
+	Lv_Text(&f, id, "RemainingCharsScorer", Lv_TextY(&f, 20), Lv_Count(&f, SM, "numCopsKilled", "COPS_TO_KILL"), NULL);
 	return Sf_None(&f);
 }
 
@@ -3432,7 +3111,7 @@ static PyObject *Steal_OnPoliceDeath(PyObject *self, PyObject *args) {
 		return Sf_None(&f);
 	}
 	if (Sf_Compare(&f, Sf_Attr(&f, usr, "Name"), "!=", G(SM, "missionShipName")) > 0) {
-		Dt_Com(&f, "Mission_TestMayorShip_RemoteMessage3", "Trurl", NULL, NULL);
+		Lv_Com(&f, "Mission_TestMayorShip_RemoteMessage3", "Trurl", NULL, NULL);
 		return Sf_None(&f);
 	}
 	Sf_SetGlobal(&f, SM, "numCopsKilled", Sf_OpI(&f, G(SM, "numCopsKilled"), '+', 1));
@@ -3447,12 +3126,12 @@ static PyObject *Steal_OnPoliceDeath(PyObject *self, PyObject *args) {
 		Sf_SetMod(&f, "Vehicles", "OnDeathCallback", Py_None);
 		Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", Py_None);
 		Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Py_None);
-		Dt_ScorerCall(&f, Py_None);
+		Lv_ScorerCall(&f, Py_None);
 		Sf_DrawScorer(&f);
-		Dt_Com(&f, "Mission_TestMayorShip_RemoteMessage4", "Trurl", G(SM, "ParkMayorShip"), NULL);
+		Lv_Com(&f, "Mission_TestMayorShip_RemoteMessage4", "Trurl", G(SM, "ParkMayorShip"), NULL);
 	} else if (done == 0) {
 		Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "NumCopsKilled", Sf_Repr(&f, G(SM, "numCopsKilled")));
-		Sf_Run(&f, "SScorer", "Set", "(issO)", 0, "RemainingCharsScorer", "Text", Sm_Count(&f));
+		Sf_Run(&f, "SScorer", "Set", "(issO)", 0, "RemainingCharsScorer", "Text", Lv_Count(&f, SM, "numCopsKilled", "COPS_TO_KILL"));
 	}
 	return Sf_None(&f);
 }

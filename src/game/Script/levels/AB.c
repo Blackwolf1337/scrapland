@@ -20,15 +20,8 @@ static PyObject *Ff_GetBossProfile(PyObject *self, PyObject *args) {
 		"CounterAttack=0.9", "ControlBoost=1", "ControlBoostItemLife=1", "ControlBoostItemAmmo=1",
 		"FactorDamageGetAway=0.40", "FactorDamageItemLife=0.3", "FactorItemAmmo=0.1", "ControlStrafeEvasion=1",
 		"UsePercHookGetAway=10", "TimeMaxStrafe=8", "VelMaxStrafe=1.0", NULL };
-	scriptFrame_t f = { 0 };
 	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "VehiclesNPC");
-	PyObject *sp = Sf_Ask(&f, "VehiclesNPC", "cShipAI", "()");
-	Sf_SetAttrs(&f, sp, FF, profile);
-	return Sf_Return(&f, sp);
+	return Lv_ProfileFunc(args, FF, profile);
 }
 
 /* FakeShips(): ShipMaker.CreateStdShips while the level runs: the standard ships and the boss ship */
@@ -91,9 +84,7 @@ static PyObject *Ff_Init(PyObject *self, PyObject *args) {
  * VehiclesNPC.ModAIProff(e, pd) */
 static void Ff_Profile(scriptFrame_t *f, PyObject *e) {
 	int mark = f->n;
-	PyObject *pd = Sf_Call(f, Sf_Global(f, FF, "GetBossProfile"), "()");
-	Sf_Run(f, "VehiclesNPC", "SetStdProperties", "(OO)", Sf_Attr(f, e, "Name"), Sf_Attr(f, pd, "Ship"));
-	Sf_Run(f, "VehiclesNPC", "ModAIProff", "(OO)", e, pd);
+	Lv_StdProfile(f, FF, "GetBossProfile", e);
 	Sf_Release(f, mark);
 }
 
