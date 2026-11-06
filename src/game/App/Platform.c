@@ -726,7 +726,7 @@ uint64_t Plat_VirtualMemoryUsed(void) {
 
 byte Plat_StackBounds(uintptr_t *low, uintptr_t *high) {
 #ifdef _WIN32
-	MEMORY_BASIC_INFORMATION mbi;
+	MEMORY_BASIC_INFORMATION mbi = { 0 };
 	if (!VirtualQuery(&mbi, &mbi, sizeof(mbi))) {
 		return 0;
 	}
