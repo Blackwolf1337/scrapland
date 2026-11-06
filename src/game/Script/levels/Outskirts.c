@@ -1502,6 +1502,18 @@ static PyObject *Merc_EndOfScene(PyObject *self, PyObject *args) {
 	return Sf_None(&f);
 }
 
+/* DelLonelyMerc(): the mercenary of the scene goes. C, not data: the converter wrote the method call on the global
+ * as "call lonelyMerc.Del", which the .def runs as a module call (ImportError lonelyMerc), so he stayed */
+static PyObject *Merc_DelLonelyMerc(PyObject *self, PyObject *args) {
+	SF_ARGS("");
+	PyObject *m = G(IM, "lonelyMerc");
+	if (Sf_True(&f, m) > 0) {
+		Sf_Method(&f, m, "Del", "()");
+		Sf_SetGlobal(&f, IM, "lonelyMerc", Py_None);
+	}
+	return Sf_None(&f);
+}
+
 /* CreateLonelyMerc(difficulty="Hard"): the mercenary; hard: only one missile (his weapons kept for later); normal:
  * the weapons kept and the life of the mission */
 static PyObject *Merc_CreateLonelyMerc(PyObject *self, PyObject *args, PyObject *kw) {
@@ -1746,6 +1758,7 @@ PyMethodDef g_OutskirtsIdentifyMercMethods[] = {
 	{ "CreateLonelyMercInScene", Merc_CreateLonelyMercInScene, 1, NULL },
 	{ "CheckTraitoriusDeath", Merc_CheckTraitoriusDeath, 1, NULL },
 	{ "EndOfScene", Merc_EndOfScene, 1, NULL },
+	{ "DelLonelyMerc", Merc_DelLonelyMerc, 1, NULL },
 	{ "CreateLonelyMerc", (PyCFunction)(void (*)(void))Merc_CreateLonelyMerc, METH_VARARGS | METH_KEYWORDS, NULL },
 	{ "InitMission", Merc_InitMission, 1, NULL },
 	{ "ScanShip", Merc_ScanShip, 1, NULL },
