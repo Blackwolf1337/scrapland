@@ -74,6 +74,9 @@ Mission_ThreeStooges	gamblinden	data03.packed/levels/gamblinden/scripts/mission_
 Map	gdb	data03.packed/levels/gdb/scripts/map.pyc
 MapMatrix	gdb	data03.packed/levels/gdb/scripts/mapmatrix.pyc
 MapSnd	gdb	data03.packed/levels/gdb/scripts/mapsnd.pyc
+Mission_IntoTheGDB	gdb	data03.packed/levels/gdb/scripts/mission_intothegdb.pyc
+Mission_ReinsertOwnMatrix	gdb	data03.packed/levels/gdb/scripts/mission_reinsertownmatrix.pyc
+Mission_ReinsertOwnMatrix2	gdb	data03.packed/levels/gdb/scripts/mission_reinsertownmatrix2.pyc
 Map	junkyard	data03.packed/levels/junkyard/scripts/map.pyc
 MapShipEdit	junkyard	data03.packed/levels/junkyard/scripts/mapshipedit.pyc
 MapSnd	junkyard	data03.packed/levels/junkyard/scripts/mapsnd.pyc

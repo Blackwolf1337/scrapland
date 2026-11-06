@@ -215,6 +215,15 @@ static const char mod_levels_gdb_mapmatrix[] = {
 static const char mod_levels_gdb_mapsnd[] = {
 #embed "../../../data/levels/gdb/mapsnd.mod"
 	, 0 };
+static const char mod_levels_gdb_mission_intothegdb[] = {
+#embed "../../../data/levels/gdb/mission_intothegdb.mod"
+	, 0 };
+static const char mod_levels_gdb_mission_reinsertownmatrix[] = {
+#embed "../../../data/levels/gdb/mission_reinsertownmatrix.mod"
+	, 0 };
+static const char mod_levels_gdb_mission_reinsertownmatrix2[] = {
+#embed "../../../data/levels/gdb/mission_reinsertownmatrix2.mod"
+	, 0 };
 static const char mod_levels_junkyard_map[] = {
 #embed "../../../data/levels/junkyard/map.mod"
 	, 0 };
@@ -430,6 +439,9 @@ static const moduleFile_t module_files[] = {
 	{ "gdb", "Map", "levels/gdb/map.mod", mod_levels_gdb_map },
 	{ "gdb", "MapMatrix", "levels/gdb/mapmatrix.mod", mod_levels_gdb_mapmatrix },
 	{ "gdb", "MapSnd", "levels/gdb/mapsnd.mod", mod_levels_gdb_mapsnd },
+	{ "gdb", "Mission_IntoTheGDB", "levels/gdb/mission_intothegdb.mod", mod_levels_gdb_mission_intothegdb },
+	{ "gdb", "Mission_ReinsertOwnMatrix", "levels/gdb/mission_reinsertownmatrix.mod", mod_levels_gdb_mission_reinsertownmatrix },
+	{ "gdb", "Mission_ReinsertOwnMatrix2", "levels/gdb/mission_reinsertownmatrix2.mod", mod_levels_gdb_mission_reinsertownmatrix2 },
 	{ "junkyard", "Map", "levels/junkyard/map.mod", mod_levels_junkyard_map },
 	{ "junkyard", "MapShipEdit", "levels/junkyard/mapshipedit.mod", mod_levels_junkyard_mapshipedit },
 	{ "junkyard", "MapSnd", "levels/junkyard/mapsnd.mod", mod_levels_junkyard_mapsnd },
