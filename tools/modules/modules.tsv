@@ -101,6 +101,9 @@ Map	msb	data03.packed/levels/msb/scripts/map.pyc
 MapSnd	msb	data03.packed/levels/msb/scripts/mapsnd.pyc
 Map	om	data01.packed/levels/om/scripts/map.pyc
 MapSnd	om	data01.packed/levels/om/scripts/mapsnd.pyc
+Mission_BankersCTF	om	data01.packed/levels/om/scripts/mission_bankersctf.pyc
+SuperDeal_Sixth	om	data01.packed/levels/om/scripts/superdeal_sixth.pyc
+SuperDeal_Tenth	om	data01.packed/levels/om/scripts/superdeal_tenth.pyc
 Map	orbit	data01.packed/levels/orbit/scripts/map.pyc
 MapDecont	orbit	data01.packed/levels/orbit/scripts/mapdecont.pyc
 MapSnd	orbit	data01.packed/levels/orbit/scripts/mapsnd.pyc

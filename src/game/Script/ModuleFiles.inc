@@ -296,6 +296,15 @@ static const char mod_levels_om_map[] = {
 static const char mod_levels_om_mapsnd[] = {
 #embed "../../../data/levels/om/mapsnd.mod"
 	, 0 };
+static const char mod_levels_om_mission_bankersctf[] = {
+#embed "../../../data/levels/om/mission_bankersctf.mod"
+	, 0 };
+static const char mod_levels_om_superdeal_sixth[] = {
+#embed "../../../data/levels/om/superdeal_sixth.mod"
+	, 0 };
+static const char mod_levels_om_superdeal_tenth[] = {
+#embed "../../../data/levels/om/superdeal_tenth.mod"
+	, 0 };
 static const char mod_levels_orbit_map[] = {
 #embed "../../../data/levels/orbit/map.mod"
 	, 0 };
@@ -469,6 +478,9 @@ static const moduleFile_t module_files[] = {
 	{ "msb", "MapSnd", "levels/msb/mapsnd.mod", mod_levels_msb_mapsnd },
 	{ "om", "Map", "levels/om/map.mod", mod_levels_om_map },
 	{ "om", "MapSnd", "levels/om/mapsnd.mod", mod_levels_om_mapsnd },
+	{ "om", "Mission_BankersCTF", "levels/om/mission_bankersctf.mod", mod_levels_om_mission_bankersctf },
+	{ "om", "SuperDeal_Sixth", "levels/om/superdeal_sixth.mod", mod_levels_om_superdeal_sixth },
+	{ "om", "SuperDeal_Tenth", "levels/om/superdeal_tenth.mod", mod_levels_om_superdeal_tenth },
 	{ "orbit", "Map", "levels/orbit/map.mod", mod_levels_orbit_map },
 	{ "orbit", "MapDecont", "levels/orbit/mapdecont.mod", mod_levels_orbit_mapdecont },
 	{ "orbit", "MapSnd", "levels/orbit/mapsnd.mod", mod_levels_orbit_mapsnd },
