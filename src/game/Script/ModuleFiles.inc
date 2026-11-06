@@ -170,6 +170,42 @@ static const char mod_levels_fz_superdeal_twelfth[] = {
 static const char mod_levels_gamblinden_mapsnd[] = {
 #embed "../../../data/levels/gamblinden/mapsnd.mod"
 	, 0 };
+static const char mod_levels_gamblinden_mission_afterfinalfight[] = {
+#embed "../../../data/levels/gamblinden/mission_afterfinalfight.mod"
+	, 0 };
+static const char mod_levels_gamblinden_mission_arrangebankerscombat[] = {
+#embed "../../../data/levels/gamblinden/mission_arrangebankerscombat.mod"
+	, 0 };
+static const char mod_levels_gamblinden_mission_arrangebankersctf[] = {
+#embed "../../../data/levels/gamblinden/mission_arrangebankersctf.mod"
+	, 0 };
+static const char mod_levels_gamblinden_mission_arrangeigorcombat[] = {
+#embed "../../../data/levels/gamblinden/mission_arrangeigorcombat.mod"
+	, 0 };
+static const char mod_levels_gamblinden_mission_arrangemortalrace[] = {
+#embed "../../../data/levels/gamblinden/mission_arrangemortalrace.mod"
+	, 0 };
+static const char mod_levels_gamblinden_mission_backfrommortalrace[] = {
+#embed "../../../data/levels/gamblinden/mission_backfrommortalrace.mod"
+	, 0 };
+static const char mod_levels_gamblinden_mission_beforefinalfight[] = {
+#embed "../../../data/levels/gamblinden/mission_beforefinalfight.mod"
+	, 0 };
+static const char mod_levels_gamblinden_mission_crazygamblerfirstcontact[] = {
+#embed "../../../data/levels/gamblinden/mission_crazygamblerfirstcontact.mod"
+	, 0 };
+static const char mod_levels_gamblinden_mission_gotogamblinden[] = {
+#embed "../../../data/levels/gamblinden/mission_gotogamblinden.mod"
+	, 0 };
+static const char mod_levels_gamblinden_mission_igorfirstcontact[] = {
+#embed "../../../data/levels/gamblinden/mission_igorfirstcontact.mod"
+	, 0 };
+static const char mod_levels_gamblinden_mission_talktotraitoriusafterctf[] = {
+#embed "../../../data/levels/gamblinden/mission_talktotraitoriusafterctf.mod"
+	, 0 };
+static const char mod_levels_gamblinden_mission_threestooges[] = {
+#embed "../../../data/levels/gamblinden/mission_threestooges.mod"
+	, 0 };
 static const char mod_levels_gdb_map[] = {
 #embed "../../../data/levels/gdb/map.mod"
 	, 0 };
@@ -379,6 +415,18 @@ static const moduleFile_t module_files[] = {
 	{ "fz", "SuperDeal_Seventh", "levels/fz/superdeal_seventh.mod", mod_levels_fz_superdeal_seventh },
 	{ "fz", "SuperDeal_Twelfth", "levels/fz/superdeal_twelfth.mod", mod_levels_fz_superdeal_twelfth },
 	{ "gamblinden", "MapSnd", "levels/gamblinden/mapsnd.mod", mod_levels_gamblinden_mapsnd },
+	{ "gamblinden", "Mission_AfterFinalFight", "levels/gamblinden/mission_afterfinalfight.mod", mod_levels_gamblinden_mission_afterfinalfight },
+	{ "gamblinden", "Mission_ArrangeBankersCombat", "levels/gamblinden/mission_arrangebankerscombat.mod", mod_levels_gamblinden_mission_arrangebankerscombat },
+	{ "gamblinden", "Mission_ArrangeBankersCTF", "levels/gamblinden/mission_arrangebankersctf.mod", mod_levels_gamblinden_mission_arrangebankersctf },
+	{ "gamblinden", "Mission_ArrangeIgorCombat", "levels/gamblinden/mission_arrangeigorcombat.mod", mod_levels_gamblinden_mission_arrangeigorcombat },
+	{ "gamblinden", "Mission_ArrangeMortalRace", "levels/gamblinden/mission_arrangemortalrace.mod", mod_levels_gamblinden_mission_arrangemortalrace },
+	{ "gamblinden", "Mission_BackFromMortalRace", "levels/gamblinden/mission_backfrommortalrace.mod", mod_levels_gamblinden_mission_backfrommortalrace },
+	{ "gamblinden", "Mission_BeforeFinalFight", "levels/gamblinden/mission_beforefinalfight.mod", mod_levels_gamblinden_mission_beforefinalfight },
+	{ "gamblinden", "Mission_CrazyGamblerFirstContact", "levels/gamblinden/mission_crazygamblerfirstcontact.mod", mod_levels_gamblinden_mission_crazygamblerfirstcontact },
+	{ "gamblinden", "Mission_GoToGamblinDen", "levels/gamblinden/mission_gotogamblinden.mod", mod_levels_gamblinden_mission_gotogamblinden },
+	{ "gamblinden", "Mission_IgorFirstContact", "levels/gamblinden/mission_igorfirstcontact.mod", mod_levels_gamblinden_mission_igorfirstcontact },
+	{ "gamblinden", "Mission_TalkToTraitoriusAfterCTF", "levels/gamblinden/mission_talktotraitoriusafterctf.mod", mod_levels_gamblinden_mission_talktotraitoriusafterctf },
+	{ "gamblinden", "Mission_ThreeStooges", "levels/gamblinden/mission_threestooges.mod", mod_levels_gamblinden_mission_threestooges },
 	{ "gdb", "Map", "levels/gdb/map.mod", mod_levels_gdb_map },
 	{ "gdb", "MapMatrix", "levels/gdb/mapmatrix.mod", mod_levels_gdb_mapmatrix },
 	{ "gdb", "MapSnd", "levels/gdb/mapsnd.mod", mod_levels_gdb_mapsnd },
