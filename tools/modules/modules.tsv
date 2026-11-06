@@ -147,6 +147,9 @@ Mission_WhoIsDeepThroat	press	data01.packed/levels/press/scripts/mission_whoisde
 Mission_WhoIsTheBaddie	press	data01.packed/levels/press/scripts/mission_whoisthebaddie.pyc
 Map	qf	data03.packed/levels/qf/scripts/map.pyc
 MapSnd	qf	data03.packed/levels/qf/scripts/mapsnd.pyc
+Mission_BankersCombat	qf	data03.packed/levels/qf/scripts/mission_bankerscombat.pyc
+SuperDeal_Eleventh	qf	data03.packed/levels/qf/scripts/superdeal_eleventh.pyc
+SuperDeal_Fourth	qf	data03.packed/levels/qf/scripts/superdeal_fourth.pyc
 Map	scrapyard	data02.packed/levels/scrapyard/scripts/map.pyc
 MapSnd	scrapyard	data02.packed/levels/scrapyard/scripts/mapsnd.pyc
 MapTriggers	scrapyard	data02.packed/levels/scrapyard/scripts/maptriggers.pyc

@@ -434,6 +434,15 @@ static const char mod_levels_qf_map[] = {
 static const char mod_levels_qf_mapsnd[] = {
 #embed "../../../data/levels/qf/mapsnd.mod"
 	, 0 };
+static const char mod_levels_qf_mission_bankerscombat[] = {
+#embed "../../../data/levels/qf/mission_bankerscombat.mod"
+	, 0 };
+static const char mod_levels_qf_superdeal_eleventh[] = {
+#embed "../../../data/levels/qf/superdeal_eleventh.mod"
+	, 0 };
+static const char mod_levels_qf_superdeal_fourth[] = {
+#embed "../../../data/levels/qf/superdeal_fourth.mod"
+	, 0 };
 static const char mod_levels_scrapyard_map[] = {
 #embed "../../../data/levels/scrapyard/map.mod"
 	, 0 };
@@ -611,6 +620,9 @@ static const moduleFile_t module_files[] = {
 	{ "press", "Mission_WhoIsTheBaddie", "levels/press/mission_whoisthebaddie.mod", mod_levels_press_mission_whoisthebaddie },
 	{ "qf", "Map", "levels/qf/map.mod", mod_levels_qf_map },
 	{ "qf", "MapSnd", "levels/qf/mapsnd.mod", mod_levels_qf_mapsnd },
+	{ "qf", "Mission_BankersCombat", "levels/qf/mission_bankerscombat.mod", mod_levels_qf_mission_bankerscombat },
+	{ "qf", "SuperDeal_Eleventh", "levels/qf/superdeal_eleventh.mod", mod_levels_qf_superdeal_eleventh },
+	{ "qf", "SuperDeal_Fourth", "levels/qf/superdeal_fourth.mod", mod_levels_qf_superdeal_fourth },
 	{ "scrapyard", "Map", "levels/scrapyard/map.mod", mod_levels_scrapyard_map },
 	{ "scrapyard", "MapSnd", "levels/scrapyard/mapsnd.mod", mod_levels_scrapyard_mapsnd },
 	{ "scrapyard", "MapTriggers", "levels/scrapyard/maptriggers.mod", mod_levels_scrapyard_maptriggers },
