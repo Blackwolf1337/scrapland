@@ -1,0 +1,478 @@
+# doorsound (the sound script sound/doorsound.py of the game): the sound events of the door classes (SetSlide,
+# $class the action class Door<name>, $act the action the next lines add to; run initsound <args> is
+# DoorSound.SetInitDoorSound(args), the default sounds at the start of an action) and of the conversion point
+# (ConversorSetSounds, $char its class).
+# The format is described in src/game/Script/Script.c, the C that runs the sections is src/game/Script/GameSounds.c.
+# A pack in mods/ with scrapc/sound/doorsound.def replaces this file.
+
+section SetSlide
+if $class == DoorElevatorOrbit
+	let act Open
+	call Chars.ActSound $class $act 10 cuchilla1 0.30
+	call Chars.ActSound $class $act 10 up1 0.80 -4
+	call Chars.ActSound $class $act 10 ascensor-orbit2 0.50
+	call Chars.ActSound $class $act 13 cuchilla1 0.30
+	call Chars.ActSound $class $act 17 cuchilla1 0.30
+	call Chars.ActSound $class $act 20 cuchilla1 0.30
+	let act Close
+	call Chars.ActSound $class $act 46 cuchilla2 0.30 +2
+	call Chars.ActSound $class $act 46 up1 1.0 -4
+	call Chars.ActSound $class $act 45 ascensor-orbit2 0.80
+	call Chars.ActSound $class $act 51 clik-mecanismo1 0.50 -8
+	call Chars.ActSound $class $act 50 cuchilla2 0.30 +2
+	call Chars.ActSound $class $act 55 clik-mecanismo1 0.50 -8
+	call Chars.ActSound $class $act 53 cuchilla2 0.30 +2
+	call Chars.ActSound $class $act 59 clik-mecanismo1 0.50 -8
+	call Chars.ActSound $class $act 57 cuchilla2 0.30 +2
+	call Chars.ActSound $class $act 63 clik-mecanismo1 0.50 -8
+	let act Up
+	call Chars.ActSound $class $act 92 subida-ascensor2 0.20 +2
+	let act Down
+	call Chars.ActSound $class $act 123 bajada-ascensor2 0.40 +2
+	call Chars.ActSound $class $act 128 cierre1 0.20 +2
+elif $class == DoorElevatorOrbitB
+	let act Down
+	call Chars.ActSound $class $act 9 cuchilla1 0.30
+	call Chars.ActSound $class $act 18 cuchilla1 0.30
+	call Chars.ActSound $class $act 22 cuchilla1 0.30
+	call Chars.ActSound $class $act 25 up1 0.80 -4
+	call Chars.ActSound $class $act 26 cuchilla1 0.30
+	call Chars.ActSound $class $act 32 cuchilla1 0.30
+	call Chars.ActSound $class $act 41 up1 0.80 -4
+	let act Up
+	call Chars.ActSound $class $act 5 up1 0.30
+	call Chars.ActSound $class $act 15 cuchilla2 0.30 +2
+	call Chars.ActSound $class $act 18 cuchilla2 0.30 +2
+	call Chars.ActSound $class $act 22 cuchilla2 0.30 +2
+	call Chars.ActSound $class $act 27 cuchilla2 0.30 +2
+	call Chars.ActSound $class $act 38 cuchilla2 0.30 +2
+elif $class == DoorElevatorOrbitC
+	let act Down
+	let act UP
+elif $class == DoorTeleporter
+	let act Open
+	call Chars.ActSound $class $act 35 placas-metal22 0.50
+	call Chars.ActSound $class $act 34 apertura2 0.3
+	let act Close
+	call Chars.ActSound $class $act 6 placas-metal22 0.50
+	call Chars.ActSound $class $act 22 placas-metal22 0.50 +3
+	call Chars.ActSound $class $act 1 apertura2 0.3
+	call Scrap.Set CharacterTeleportUpSound transporter3
+	call Scrap.Set CharacterTeleportDownSound transporter4
+	call Scrap.Set CharacterTeleportSoundVol 0.7
+elif $class == DoorTempleTeleporter
+	let act Open
+	call Chars.ActSound $class $act 35 placas-metal22 0.50
+	call Chars.ActSound $class $act 34 apertura2 0.3
+	let act Close
+	call Chars.ActSound $class $act 6 placas-metal22 0.50
+	call Chars.ActSound $class $act 22 placas-metal22 0.50 +3
+	call Chars.ActSound $class $act 1 apertura2 0.3
+	call Scrap.Set CharacterTeleportUpSound transporter3
+	call Scrap.Set CharacterTeleportDownSound transporter4
+	call Scrap.Set CharacterTeleportSoundVol 0.7
+elif $class == DoorTownhallDoorA
+	let act Open
+	call Chars.ActSound $class $act 16 apertura2 0.20
+	let act Open
+	call Chars.ActSound $class $act 18 apertura2 0.20 +4
+	let act Open
+	call Chars.ActSound $class $act 24 OpenMechDoor 0.20
+	let act Close
+	call Chars.ActSound $class $act 53 apertura2 0.20
+	let act Close
+	call Chars.ActSound $class $act 58 apertura2 0.20 +4
+	let act Close
+	call Chars.ActSound $class $act 61 apertura2 0.20 +4
+	let act Close
+	call Chars.ActSound $class $act 63 CloseMechDoor 0.20
+elif $class == DoorTownhallDoorB
+	let act Open
+	call Chars.ActSound $class $act 1 apertura4 0.30
+	let act Open
+	call Chars.ActSound $class $act 6 OpenMechDoor 0.20 +4
+	let act Close
+	call Chars.ActSound $class $act 28 apertura5 0.30
+	let act Close
+	call Chars.ActSound $class $act 38 CloseMechDoor 0.20 +4
+elif $class == DoorTownhallDoorC
+	let act Open
+	call Chars.ActSound $class $act 14 clik-mecanismo2 0.20 +5
+	call Chars.ActSound $class $act 17 clik-mecanismo3 0.50
+	call Chars.ActSound $class $act 23 clik-mecanismo5 0.50
+	call Chars.ActSound $class $act 27 cierre-10 0.50
+	let act Close
+	call Chars.ActSound $class $act 47 clik-mecanismo3 0.50
+	call Chars.ActSound $class $act 53 clik-mecanismo5 0.50
+	call Chars.ActSound $class $act 56 clik-mecanismo7 0.20 +5
+	call Chars.ActSound $class $act 56 CloseMechDoor 0.20
+elif $class == DoorTownhallDoorD
+	let act Open
+	call Chars.ActSound $class $act 1 apertura4 0.30
+	let act Open
+	call Chars.ActSound $class $act 4 apertura2 0.30 +4
+	let act Open
+	call Chars.ActSound $class $act 7 apertura4 0.10 +4
+	let act Open
+	call Chars.ActSound $class $act 12 OpenMechDoor 0.10
+	let act Close
+	call Chars.ActSound $class $act 53 apertura5 0.30
+	let act Close
+	call Chars.ActSound $class $act 59 apertura2 0.30 +4
+	let act Close
+	call Chars.ActSound $class $act 64 apertura5 0.30
+	let act Close
+	call Chars.ActSound $class $act 66 CloseMechDoor 0.20 +4
+elif $class == DoorPressDoorEmero
+	let act Open
+	call Chars.ActSound $class $act 1 puerta-emero-open 0.50
+	let act Close
+	call Chars.ActSound $class $act 36 puerta-emero-close 0.50 +4
+	call Chars.ActSound $class $act 50 cierre-emero 0.40
+elif $class == DoorPressSegurityDoor
+	let act Open
+	call Chars.ActSound $class $act 1 puerta-security-open 0.10
+	let act Close
+	call Chars.ActSound $class $act 30 puerta-security-close 0.10 +4
+elif $class == DoorMetro
+	let act Open
+	call Chars.ActSound $class $act 7 metro-open 0.17
+	call Chars.ActSound $class $act 16 metro-open 0.17
+	call Chars.ActSound $class $act 15 apertura2 0.17 -8
+	call Chars.ActSound $class $act 23 apertura2 0.17 -8
+	let act Close
+	call Chars.ActSound $class $act 60 apertura2 0.17 -8
+	call Chars.ActSound $class $act 63 metro-open 0.17
+	call Chars.ActSound $class $act 66 apertura2 0.17 -8
+	call Chars.ActSound $class $act 70 metro-open 0.17
+	call Chars.ActSound $class $act 84 cierre-metro1 0.17
+	call Chars.ActSound $class $act 91 cierre-metro1 0.17
+	let act Up
+	call SAct.GetAction $act
+	call Scene.AddSound 120 cierre-metro1 0.10
+	call Scene.AddSound 121 llegada-metro22 0.40
+	let act Down
+	call SAct.GetAction $act
+	call Scene.AddSound 340 puerta1 0.10
+	call Scene.AddSound 340 cierre-metro1 0.10
+	call Scene.AddSound 205 llegada-metroB 0.40
+elif $class == DoorPressSlidingDoor
+	let act Open
+	call Chars.ActSound $class $act 21 cuchilla1 0.1 +7
+	call Chars.ActSound $class $act 25 cuchilla2 0.1 +8
+	call Chars.ActSound $class $act 31 cuchilla1 0.1 +9
+	call Chars.ActSound $class $act 37 cuchilla2 0.1 +7
+	call Chars.ActSound $class $act 59 cuchilla1 0.1 +5
+	call Chars.ActSound $class $act 61 cuchilla2 0.1 +4
+	call Chars.ActSound $class $act 64 cuchilla2 0.1
+	call Chars.ActSound $class $act 67 cuchilla2 0.1
+	call Chars.ActSound $class $act 71 cuchilla2 0.1
+elif $class == DoorPressStairsDoor
+	let act Open
+	call Chars.ActSound $class $act 1 abre-stairs 0.90
+	call Chars.ActSound $class $act 11 cierre-stairs 0.90
+	let act Close
+	call Chars.ActSound $class $act 55 abre-stairs 0.90
+	call Chars.ActSound $class $act 70 cierre-stairs 0.90
+elif $class == DoorPressIndustrialDoor
+	let act Open
+	call Chars.ActSound $class $act 1 ascensor-orbit1 0.70
+	let act Close
+	call Chars.ActSound $class $act 30 ascensor-orbit2 0.70
+elif $class == DoorPressDefaultDoor
+	let act Open
+	call Chars.ActSound $class $act 1 ascensor-orbit1 0.70
+	let act Close
+	call Chars.ActSound $class $act 30 ascensor-orbit2 0.70
+elif $class == DoorPressDoor
+	let act Open
+	call Chars.ActSound $class $act 1 apertura4 0.30
+	call Chars.ActSound $class $act 8 ascensor-orbit2 0.30
+	let act Close
+	call Chars.ActSound $class $act 30 apertura5 0.30
+	call Chars.ActSound $class $act 38 ascensor-orbit2 0.30
+elif $class == DoorTempleStairsA
+	let act Close
+	call Chars.ActSound $class $act 1 baldosa7 0.35
+	call Chars.ActSound $class $act 2 baldosa7 0.35
+	call Chars.ActSound $class $act 3 baldosa7 0.35
+	call Chars.ActSound $class $act 4 baldosa7 0.35
+	call Chars.ActSound $class $act 5 baldosa7 0.35
+	call Chars.ActSound $class $act 6 baldosa7 0.35
+	call Chars.ActSound $class $act 7 baldosa7 0.35
+	call Chars.ActSound $class $act 8 baldosa7 0.35
+	call Chars.ActSound $class $act 9 baldosa7 0.35
+	call Chars.ActSound $class $act 10 baldosa7 0.35
+	call Chars.ActSound $class $act 11 baldosa7 0.35
+	call Chars.ActSound $class $act 12 baldosa7 0.35
+	let act Open
+	call Chars.ActSound $class $act 71 baldosa7 0.35
+	call Chars.ActSound $class $act 72 baldosa7 0.35
+	call Chars.ActSound $class $act 73 baldosa7 0.35
+	call Chars.ActSound $class $act 74 baldosa7 0.35
+	call Chars.ActSound $class $act 75 baldosa7 0.35
+	call Chars.ActSound $class $act 76 baldosa7 0.35
+	call Chars.ActSound $class $act 77 baldosa7 0.35
+	call Chars.ActSound $class $act 78 baldosa7 0.35
+	call Chars.ActSound $class $act 79 baldosa7 0.35
+elif $class == DoorTempleStairsB
+	let act Open
+	call Chars.ActSound $class $act 7 baldosa7 0.35
+	call Chars.ActSound $class $act 9 baldosa7 0.35
+	call Chars.ActSound $class $act 11 baldosa7 0.35
+	call Chars.ActSound $class $act 13 baldosa7 0.35
+	call Chars.ActSound $class $act 15 baldosa7 0.35
+	call Chars.ActSound $class $act 17 baldosa7 0.35
+	call Chars.ActSound $class $act 19 baldosa7 0.35
+	call Chars.ActSound $class $act 21 baldosa7 0.35
+	call Chars.ActSound $class $act 23 baldosa7 0.35
+	call Chars.ActSound $class $act 24 baldosa7 0.35
+	let act Close
+	call Chars.ActSound $class $act 60 baldosa7 0.35
+	call Chars.ActSound $class $act 62 baldosa7 0.35
+	call Chars.ActSound $class $act 64 baldosa7 0.35
+	call Chars.ActSound $class $act 66 baldosa7 0.35
+	call Chars.ActSound $class $act 68 baldosa7 0.35
+	call Chars.ActSound $class $act 70 baldosa7 0.35
+	call Chars.ActSound $class $act 72 baldosa7 0.35
+	call Chars.ActSound $class $act 74 baldosa7 0.35
+	call Chars.ActSound $class $act 78 baldosa7 0.35
+	call Chars.ActSound $class $act 80 baldosa7 0.35
+elif $class == DoorTempleFloorA
+	let act Open
+	call Chars.ActSound $class $act 7 baldosa7 0.3
+	call Chars.ActSound $class $act 9 baldosa7 0.3
+	call Chars.ActSound $class $act 10 baldosa7 0.3
+	call Chars.ActSound $class $act 11 baldosa7 0.3
+	let act Close
+	call Chars.ActSound $class $act 30 baldosa7 0.32
+	call Chars.ActSound $class $act 36 baldosa7 0.32
+elif $class == DoorTempleFloor
+	let act Open
+	call Chars.ActSound $class $act 7 baldosa7 0.3
+	call Chars.ActSound $class $act 9 baldosa7 0.3
+	call Chars.ActSound $class $act 10 baldosa7 0.3
+	call Chars.ActSound $class $act 11 baldosa7 0.3
+	let act Close
+	call Chars.ActSound $class $act 30 baldosa7 0.32
+	call Chars.ActSound $class $act 36 baldosa7 0.32
+elif $class == DoorTempleStairsGBD
+	let act Close
+	call Chars.ActSound $class $act 1 baldosa7 0.35
+	call Chars.ActSound $class $act 2 baldosa7 0.35
+	call Chars.ActSound $class $act 3 baldosa7 0.35
+	call Chars.ActSound $class $act 4 baldosa7 0.35
+	call Chars.ActSound $class $act 5 baldosa7 0.35
+	call Chars.ActSound $class $act 6 baldosa7 0.35
+	call Chars.ActSound $class $act 7 baldosa7 0.35
+	call Chars.ActSound $class $act 8 baldosa7 0.35
+	call Chars.ActSound $class $act 9 baldosa7 0.35
+	call Chars.ActSound $class $act 10 baldosa7 0.35
+	call Chars.ActSound $class $act 11 baldosa7 0.35
+	call Chars.ActSound $class $act 12 baldosa7 0.35
+	call Chars.ActSound $class $act 13 baldosa7 0.35
+	call Chars.ActSound $class $act 14 baldosa7 0.35
+	call Chars.ActSound $class $act 14 baldosa7 0.35
+	call Chars.ActSound $class $act 15 baldosa7 0.35
+	call Chars.ActSound $class $act 10 baldosa7 0.35
+	call Chars.ActSound $class $act 16 baldosa7 0.35
+	let act Open
+	call Chars.ActSound $class $act 54 baldosa7 0.35
+	call Chars.ActSound $class $act 55 baldosa7 0.35
+	call Chars.ActSound $class $act 56 baldosa7 0.35
+	call Chars.ActSound $class $act 57 baldosa7 0.35
+	call Chars.ActSound $class $act 58 baldosa7 0.35
+	call Chars.ActSound $class $act 59 baldosa7 0.35
+	call Chars.ActSound $class $act 60 baldosa7 0.35
+	call Chars.ActSound $class $act 61 baldosa7 0.35
+	call Chars.ActSound $class $act 62 baldosa7 0.35
+	call Chars.ActSound $class $act 63 baldosa7 0.35
+	call Chars.ActSound $class $act 64 baldosa7 0.35
+	call Chars.ActSound $class $act 65 baldosa7 0.35
+	call Chars.ActSound $class $act 66 baldosa7 0.35
+	call Chars.ActSound $class $act 67 baldosa7 0.35
+	call Chars.ActSound $class $act 68 baldosa7 0.35
+elif $class == DoorTempleStairsLife
+	let act Open
+	call Chars.ActSound $class $act 5 baldosa7 0.3
+	call Chars.ActSound $class $act 7 baldosa7 0.3
+	call Chars.ActSound $class $act 8 baldosa7 0.3
+	call Chars.ActSound $class $act 9 baldosa7 0.3
+	call Chars.ActSound $class $act 10 baldosa7 0.3
+	call Chars.ActSound $class $act 11 baldosa7 0.3
+	call Chars.ActSound $class $act 12 baldosa7 0.3
+	let act Close
+	call Chars.ActSound $class $act 41 baldosa7 0.32
+	call Chars.ActSound $class $act 42 baldosa7 0.32
+	call Chars.ActSound $class $act 43 baldosa7 0.32
+	call Chars.ActSound $class $act 44 baldosa7 0.32
+	call Chars.ActSound $class $act 45 baldosa7 0.32
+	call Chars.ActSound $class $act 46 baldosa7 0.32
+	call Chars.ActSound $class $act 48 baldosa7 0.32
+	call Chars.ActSound $class $act 53 baldosa7 0.32
+	call Chars.ActSound $class $act 54 baldosa7 0.32
+elif $class == DoorTempleGBD
+	let act Open
+	call Chars.ActSound $class $act 1 apertura2 1.0
+	call Chars.ActSound $class $act 5 metro-open 1.0 -4
+	call Chars.ActSound $class $act 16 cierre-metro2 1.0
+	let act Close
+	call Chars.ActSound $class $act 60 apertura2 1.0
+	call Chars.ActSound $class $act 62 metro-open 1.0 -4
+	call Chars.ActSound $class $act 70 cierre-metro2 1.0
+elif $class == DoorBankinquad
+	let act Open
+	call Chars.ActSound $class $act 15 puerta3 0.9
+	call Chars.ActSound $class $act 24 cierre-viscoso 0.3
+	let act Close
+	call Chars.ActSound $class $act 1 puerta11 0.3
+	call Chars.ActSound $class $act 10 cierre-viscoso 0.3
+elif $class == DoorBankinquadsmall
+	let act Open
+	call Chars.ActSound $class $act 15 puerta3 0.9
+	call Chars.ActSound $class $act 24 cierre2 0.5
+	let act Close
+	call Chars.ActSound $class $act 1 puerta11 0.3
+	call Chars.ActSound $class $act 10 cierre2 0.5
+elif $class == DoorBankcajacon
+	let act Open
+	call Chars.ActSound $class $act 1 cajon-open 0.10
+	let act Close
+	call Chars.ActSound $class $act 15 cajon-close 0.10
+elif $class == DoorBankcajasin
+	let act Open
+	call Chars.ActSound $class $act 1 cajon-open 0.10
+	let act Close
+	call Chars.ActSound $class $act 15 cajon-close 0.10
+elif $class == DoorBureau
+	do Slide1
+elif $class == DoorMetroExt
+	do Slide1
+elif $class == DoorPoliceGlass
+	let act Open
+	call Chars.ActSound $class $act 1 ascensor-orbit1 0.5
+	let act Close
+	call Chars.ActSound $class $act 47 ascensor-orbit2 0.5
+elif $class == DoorPoliceDMetro
+	let act Open
+	call Chars.ActSound $class $act 1 apertura4 0.35
+	call Chars.ActSound $class $act 1 gas2 0.10 +4
+	let act Close
+	call Chars.ActSound $class $act 43 apertura5 0.35
+	call Chars.ActSound $class $act 43 gas2 0.10 +4
+	call Chars.ActSound $class $act 45 cierre-10 0.35
+elif $class == DoorPoliceHeavy
+	let act Open
+	call Chars.ActSound $class $act 1 puerta3 0.90
+	call Chars.ActSound $class $act 10 cierre-emero 0.40 +4
+	let act Close
+	call Chars.ActSound $class $act 45 puerta3 0.90
+	call Chars.ActSound $class $act 48 cierre-10 0.35
+elif $class == DoorPoliceJail
+	let act Open
+	call Chars.ActSound $class $act 1 puerta-jail 0.50 +11
+	let act Close
+	call Chars.ActSound $class $act 41 puerta-jail 0.50 +11
+	call Chars.ActSound $class $act 53 cierre2 0.50
+elif $class == DoorPoliceSegurity
+	let act Open
+	call Chars.ActSound $class $act 1 cierre-viscoso 0.30
+	call Chars.ActSound $class $act 16 clik-mecanismo2 0.30
+	call Chars.ActSound $class $act 40 viscoso-open 0.30
+	call Chars.ActSound $class $act 70 puerta4 0.45 -7
+	call Chars.ActSound $class $act 70 gas2 0.17 -7
+	call Chars.ActSound $class $act 75 tritura2 0.80 -7
+	let act Close
+	call Chars.ActSound $class $act 172 tritura2 0.80 -7
+	call Chars.ActSound $class $act 179 puerta4 0.45 -7
+	call Chars.ActSound $class $act 179 gas2 0.17
+	call Chars.ActSound $class $act 230 cierre-100 0.30
+	call Chars.ActSound $class $act 235 clik-mecanismo2 0.30
+	call Chars.ActSound $class $act 257 cierre-10 0.20 -4
+	call Chars.ActSound $class $act 292 cierre-viscoso 0.80
+elif $class == DoorPoliceTunel
+	let act Open
+	call Chars.ActSound $class $act 1 baldosa7 0.45
+	call Chars.ActSound $class $act 3 baldosa7 0.45
+	call Chars.ActSound $class $act 5 baldosa7 0.45
+	call Chars.ActSound $class $act 7 baldosa7 0.45
+	call Chars.ActSound $class $act 9 baldosa7 0.45
+	call Chars.ActSound $class $act 11 baldosa7 0.45
+	call Chars.ActSound $class $act 13 baldosa7 0.45
+	call Chars.ActSound $class $act 14 baldosa7 0.45
+	let act Close
+	call Chars.ActSound $class $act 51 baldosa7 0.45
+	call Chars.ActSound $class $act 53 baldosa7 0.45
+	call Chars.ActSound $class $act 55 baldosa7 0.45
+	call Chars.ActSound $class $act 57 baldosa7 0.45
+	call Chars.ActSound $class $act 59 baldosa7 0.45
+	call Chars.ActSound $class $act 61 baldosa7 0.45
+	call Chars.ActSound $class $act 63 baldosa7 0.45
+elif $class == DoorPolicePersiana
+	let act Open
+	call Chars.ActSound $class $act 1 baldosa7 0.45 -4
+	let act Close
+	call Chars.ActSound $class $act 60 baldosa7 0.45 -4
+elif $class == DoorPolicePersiana0
+	let act Open
+	call Chars.ActSound $class $act 1 baldosa7 0.85 -4
+	let act Close
+	call Chars.ActSound $class $act 60 baldosa7 0.85 -4
+elif $class == DoorPoliceLight
+	let act Open
+	call Chars.ActSound $class $act 1 puerta-jail 0.50 +11
+	let act Close
+	call Chars.ActSound $class $act 41 puerta-jail 0.50 +11
+	call Chars.ActSound $class $act 46 cierre2 0.50
+elif $class == DoorDataTMaker
+	let act Open
+	call Chars.ActSound $class $act 1 clik-data 0.07
+	call Chars.ActSound $class $act 16 clik-data2 0.12
+	let act Close
+	call Chars.ActSound $class $act 59 clik-data 0.07
+	call Chars.ActSound $class $act 47 clik-data2 0.12
+elif $class == DoorGamblinDenCrazy
+	let act Open
+	call Chars.ActSound $class $act 1 OpenMechDoor 0.4
+	let act Close
+	call Chars.ActSound $class $act 55 CloseMechDoor 0.4
+elif $class == DoorEditShip
+	call SAct.GetClass $class
+	call SAct.GetAction Change
+	call Scene.AddSound 8 cuchilla1111D 0.15 -2 0
+	call Scene.AddSound 19 cuchilla2222D1 0.15 -2 0
+	call SAct.GetAction Up
+	call Scene.AddSound 70 gas2 0.20 0 0
+	call Scene.AddSound 76 up11 0.33 -3 0
+	call Scene.AddSound 103 up22 0.28 -2 0
+	call Scene.AddSound 120 up11 0.23 -1 0
+	call Scene.AddSound 134 cuchilla1111D 0.13 -2 0
+	call Scene.AddSound 148 cuchilla2222D1 0.13 -2 0
+	call SAct.GetAction Down
+	call Scene.AddSound 200 cuchilla1111D 0.13 -2 0
+	call Scene.AddSound 216 up33 0.17 -3 0
+	call Scene.AddSound 242 up33 0.22 -3 0
+	call Scene.AddSound 252 up33 0.27 -1 0
+	call Scene.AddSound 225 cuchilla2222D1 0.13 -2 0
+	call Scene.AddSound 270 gas2 0.22 0 0
+	call Scene.AddSound 285 cierre-100 0.3 0
+elif $class == DoorCityDoorA
+	run initsound $class Open puerta4 0.5 0
+	run initsound $class Close puerta3 0.3 0
+else
+	run initsound $class Open OpenMechDoor 0.35 0
+	run initsound $class Close CloseMechDoor 0.35 0
+end
+
+section Slide1
+let act Open
+let act Close
+
+section ConversorSetSounds
+let act Action
+call Chars.ActSound $char $act 5 electricidad333 0.9
+call Chars.ActSound $char $act 5 desaparicion 0.6
+call Chars.ActSound $char $act 8 desaparicion4 0.38 +5
+call Chars.ActSound $char $act 70 desaparicion3 0.6
+call Chars.ActSound $char $act 64 desaparicion5 0.38 +10
+call Chars.ActSound $char $act 65 electricidad344 0.9

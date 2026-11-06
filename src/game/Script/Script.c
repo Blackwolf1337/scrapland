@@ -181,6 +181,11 @@ static const scriptModule_t script_modules[] = {
 	{ "Scene", g_SceneMethods },
 	{ "CharConversor", g_CharConversorMethods },
 	{ "RaceMaker", g_RaceMakerMethods },
+	{ "Sound", g_SoundMethods },
+	{ "OutSound", g_OutSoundMethods },
+	{ "DoorSound", g_DoorSoundMethods },
+	{ "OutMap", g_OutMapMethods },
+	{ "InTraffic", g_InTrafficMethods },
 };
 
 /*
@@ -640,6 +645,8 @@ typedef struct {
 	int nested;			/* do */
 	const char *name;		/* the file and the line, for the warnings */
 	int line;
+	byte stop;			/* Script_RunFileTry: an error stops the file as it stops a script */
+	byte failed;			/* the file stopped, the error is set */
 } scriptDef_t;
 
 /* the tokens of one line into buf (a word, a "quoted text", up to # outside quotes); the next line */
@@ -1054,6 +1061,15 @@ static void Def_DoCall(scriptDef_t *m, scriptLine_t *l) {
 	}
 	PyObject *kw;
 	PyObject *args = Def_Args(m, l, 2, &kw);
+	if (m->stop) {
+		PyObject *r = args ? Script_AskKw(module, func, args, kw) : NULL;
+		if (!args) {
+			Py_XDECREF(kw);
+		}
+		m->failed = r == NULL;
+		Py_XDECREF(r);
+		return;
+	}
 	Script_CallKw(module, func, args, kw);
 }
 
@@ -1068,6 +1084,15 @@ static void Def_DoRun(scriptDef_t *m, scriptLine_t *l) {
 		if (args) {
 			s->fn(m->id, args);
 			Py_DECREF(args);
+		}
+		/* a step that failed leaves its error set: it stops a file of Script_RunFileTry */
+		if (PyErr_Occurred()) {
+			if (m->stop) {
+				m->failed = 1;
+			} else {
+				Con_Warnf("%s:%d: step %s failed\n", m->name, m->line, l->tok[1]);
+				PyErr_Print();
+			}
 		}
 		return;
 	}
@@ -1108,7 +1133,13 @@ static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char 
 		/* a script variable of the entity, as `entity.var = value` of a script */
 		PyObject *v = Def_Value(m, value, quoted);
 		if (v) {
-			PyEntity_SetVar(World_FindEntity(m->entity), m->entity, var, v);
+			if (PyEntity_SetVar(World_FindEntity(m->entity), m->entity, var, v) < 0 && m->stop) {
+				/* the attribute set of the handle fails without an exception: ceval's SystemError */
+				if (!PyErr_Occurred()) {
+					PyErr_SetString(PyExc_SystemError, "error return without exception set");
+				}
+				m->failed = 1;
+			}
 			Py_DECREF(v);
 		}
 		return;
@@ -1393,6 +1424,9 @@ static void Def_Run(scriptDef_t *m, byte header, const char *section) {
 		if (in) {
 			m->line = line;
 			Def_Line(m, &l, next);
+			if (m->failed) {
+				return;
+			}
 		}
 	}
 	if (section && !found) {
@@ -1400,8 +1434,8 @@ static void Def_Run(scriptDef_t *m, byte header, const char *section) {
 	}
 }
 
-byte Script_RunFile(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
-	PyObject *vars) {
+static byte Def_RunFile(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
+	PyObject *vars, byte stop) {
 	/* a file may run another from a call (CreateControlMenu): one buffer per level */
 	static char files[SCRIPT_MAX_NESTED][SCRIPT_MAX_FILE];
 	static int level;
@@ -1422,16 +1456,33 @@ byte Script_RunFile(int id, const char *name, const char *section, const char *b
 		Con_Warnf("Script: no %s\n", name);
 		return 0;
 	}
-	scriptDef_t m = { .id = id, .steps = steps, .vars = vars, .text = text, .section = section, .name = name };
+	scriptDef_t m = { .id = id, .steps = steps, .vars = vars, .text = text, .section = section, .name = name,
+		.stop = stop };
 	scriptDef_t *outer = def_running;
 	def_running = &m;
 	level++;
 	Def_Run(&m, 1, section);
 	level--;
 	def_running = outer;
-	if (m.depth) {
+	if (m.depth && !m.failed) {
 		Con_Warnf("%s: if without end\n", name);
 	}
 	Py_XDECREF(m.ownVars);
+	return !m.failed;
+}
+
+byte Script_RunFile(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
+	PyObject *vars) {
+	return Def_RunFile(id, name, section, builtin, steps, vars, 0);
+}
+
+byte Script_RunFileTry(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
+	PyObject *vars) {
+	if (!Def_RunFile(id, name, section, builtin, steps, vars, 1)) {
+		if (!PyErr_Occurred()) {
+			PyErr_Format(PyExc_SystemError, "%s could not be read", name);
+		}
+		return 0;
+	}
 	return 1;
 }
