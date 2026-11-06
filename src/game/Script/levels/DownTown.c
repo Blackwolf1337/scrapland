@@ -9,7 +9,6 @@
  * constants) and the module code (the save variables they create, MapRace.Races) stay in the scripts; the functions
  * read and write them as their globals.
  */
-#include "scrap/scrap.h"
 #include "Levels.h"
 
 #define FC "Mission_FirstContactPress"
@@ -1191,8 +1190,8 @@ static PyObject *Data_AddTransportToList(PyObject *self, PyObject *args) {
 	PyObject *transports = G(GD, "transports");
 	if (Sf_Compare(&f, Sf_Int(&f, Sf_Len(&f, transports)), "==", G(GD, "MAX_TRANSPORTS")) > 0) {
 		PyObject *dist = Sf_Int(&f, 0), *remove = Sf_Str(&f, ""), *name;
+		int mark = f.n;
 		for (int k = 0; (name = Sf_Next(&f, transports, k)) != NULL; k++) {
-			int mark = f.n;
 			PyObject *t = Sf_Entity(&f, name);
 			if (Sf_True(&f, t) > 0) {
 				PyObject *d = Sf_Ask(&f, "SVec", "ModSqr", "(O)", Sf_Ask(&f, "SVec", "Sub", "(OO)", usrPos, Sf_Attr(&f, t, "Pos")));
@@ -1282,8 +1281,8 @@ static PyObject *Data_OnTransportsDeath(PyObject *self, PyObject *args) {
 	Sf_Run(&f, "Scrap", "AddParams", "(O)", looser);
 	Sf_Run(&f, "Scrap", "Execute", "()");
 	PyObject *funcs = G(GD, "funcsAttackingTransport");
+	int mark = f.n;
 	for (int k = 0; (name = Sf_Next(&f, funcs, k)) != NULL; k++) {
-		int mark = f.n;
 		PyObject *e = Sf_Entity(&f, name);
 		if (Sf_True(&f, e) > 0) {
 			Sf_SetAttrS(&f, e, "EntityList", "Enemies");
@@ -1403,8 +1402,8 @@ static byte Gd_FuncsAttack(scriptFrame_t *f) {
 		Sf_ReleaseKeep(f, mark, keep, 2);
 	}
 	PyObject *funcs = Sf_Global(f, GD, "funcsAttackingTransport");
+	mark = f->n;
 	for (int k = 0; (name = Sf_Next(f, funcs, k)) != NULL; k++) {
-		mark = f->n;
 		fn = Sf_Entity(f, name);
 		Sf_SetAttrS(f, fn, "WeapList", "0,0,0,0,1,0,1");
 		Sf_SetAttrS(f, fn, "EntityList", "");
@@ -1452,8 +1451,8 @@ static PyObject *Data_TakeData(PyObject *self, PyObject *args) {
 		Dt_ScorerCall(&f, Py_None);
 		Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Py_None);
 		PyObject *funcs = G(GD, "funcsAttackingTransport");
+		int mark = f.n;
 		for (int k = 0; (name = Sf_Next(&f, funcs, k)) != NULL; k++) {
-			int mark = f.n;
 			PyObject *fn = Sf_Entity(&f, name);
 			Sf_SetAttrS(&f, fn, "EntityList", "Traffic");
 			Sf_SetAttrS(&f, fn, "TgType", "none");
@@ -1624,8 +1623,8 @@ static PyObject *Bet_ClosePressHangar(PyObject *self, PyObject *args) {
 static PyObject *Bet_DelRacers(PyObject *self, PyObject *args) {
 	PyObject *names, *name;
 	SF_ARGS("O", &names);
+	int mark = f.n;
 	for (int k = 0; (name = Sf_Next(&f, names, k)) != NULL; k++) {
-		int mark = f.n;
 		PyObject *e = Sf_Entity(&f, name);
 		if (Sf_True(&f, e) > 0) {
 			Sf_Method(&f, e, "Del", "()");
@@ -2023,7 +2022,7 @@ static PyObject *Hump_AssignNewHumphreyTarget(PyObject *self, PyObject *args) {
 	PyObject *e = Sf_Entity(&f, G(DH, "shipNameForTaunt"));
 	int taunt = Sf_True(&f, e);
 	if (taunt > 0) {
-		taunt = Sf_Compare(&f, Sf_Float(&f, Scrap_RandRange(0.0, 0.99)), "<", G(DH, "probHumpreyAttacksPlayerTarget"));
+		taunt = Sf_Compare(&f, Sf_Ask(&f, "Scrap", "Rand", "(dd)", 0.0, 0.99), "<", G(DH, "probHumpreyAttacksPlayerTarget"));
 	}
 	if (taunt > 0) {
 		changed = Hp_Attack(&f, e, G(DH, "shipNameForTaunt"));
@@ -2974,7 +2973,7 @@ static PyObject *Escort_MercTauntMessager(PyObject *self, PyObject *args) {
 	Sf_Import(&f, "Vehicles");
 	if (Sf_InS(&f, SAVE("CrazyMayor"), steps) > 0) {
 		PyObject *t = Sf_Time(&f);
-		t = Sf_Op(&f, t, '+', Sf_Float(&f, f.failed ? 0 : Scrap_RandRange(10, 20)));
+		t = Sf_Op(&f, t, '+', Sf_Ask(&f, "Scrap", "Rand", "(ii)", 10, 20));
 		Sf_Schedule(&f, t, G(PM, "MercTauntMessager"), NOARGS, NULL);
 	}
 	return Sf_None(&f);
