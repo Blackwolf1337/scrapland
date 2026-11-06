@@ -153,6 +153,14 @@ SuperDeal_Fourth	qf	data03.packed/levels/qf/scripts/superdeal_fourth.pyc
 Map	scrapyard	data02.packed/levels/scrapyard/scripts/map.pyc
 MapSnd	scrapyard	data02.packed/levels/scrapyard/scripts/mapsnd.pyc
 MapTriggers	scrapyard	data02.packed/levels/scrapyard/scripts/maptriggers.pyc
+Mission_Ambush	scrapyard	data02.packed/levels/scrapyard/scripts/mission_ambush.pyc
+Mission_DefeatCrazyGambler2	scrapyard	data02.packed/levels/scrapyard/scripts/mission_defeatcrazygambler2.pyc
+Mission_FindDtritusMatrix	scrapyard	data02.packed/levels/scrapyard/scripts/mission_finddtritusmatrix.pyc
+Mission_MeetBerto	scrapyard	data02.packed/levels/scrapyard/scripts/mission_meetberto.pyc
+Mission_MosquitoClue	scrapyard	data02.packed/levels/scrapyard/scripts/mission_mosquitoclue.pyc
+Mission_StupidMerc	scrapyard	data02.packed/levels/scrapyard/scripts/mission_stupidmerc.pyc
+Mission_StupidMercAgain	scrapyard	data02.packed/levels/scrapyard/scripts/mission_stupidmercagain.pyc
+Mission_TalkToDeepThroat	scrapyard	data02.packed/levels/scrapyard/scripts/mission_talktodeepthroat.pyc
 Map	shipedit	data02.packed/levels/shipedit/scripts/map.pyc
 MapSnd	shipedit	data02.packed/levels/shipedit/scripts/mapsnd.pyc
 Map	temple	data02.packed/levels/temple/scripts/map.pyc

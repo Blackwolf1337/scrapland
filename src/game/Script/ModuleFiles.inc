@@ -452,6 +452,30 @@ static const char mod_levels_scrapyard_mapsnd[] = {
 static const char mod_levels_scrapyard_maptriggers[] = {
 #embed "../../../data/levels/scrapyard/maptriggers.mod"
 	, 0 };
+static const char mod_levels_scrapyard_mission_ambush[] = {
+#embed "../../../data/levels/scrapyard/mission_ambush.mod"
+	, 0 };
+static const char mod_levels_scrapyard_mission_defeatcrazygambler2[] = {
+#embed "../../../data/levels/scrapyard/mission_defeatcrazygambler2.mod"
+	, 0 };
+static const char mod_levels_scrapyard_mission_finddtritusmatrix[] = {
+#embed "../../../data/levels/scrapyard/mission_finddtritusmatrix.mod"
+	, 0 };
+static const char mod_levels_scrapyard_mission_meetberto[] = {
+#embed "../../../data/levels/scrapyard/mission_meetberto.mod"
+	, 0 };
+static const char mod_levels_scrapyard_mission_mosquitoclue[] = {
+#embed "../../../data/levels/scrapyard/mission_mosquitoclue.mod"
+	, 0 };
+static const char mod_levels_scrapyard_mission_stupidmerc[] = {
+#embed "../../../data/levels/scrapyard/mission_stupidmerc.mod"
+	, 0 };
+static const char mod_levels_scrapyard_mission_stupidmercagain[] = {
+#embed "../../../data/levels/scrapyard/mission_stupidmercagain.mod"
+	, 0 };
+static const char mod_levels_scrapyard_mission_talktodeepthroat[] = {
+#embed "../../../data/levels/scrapyard/mission_talktodeepthroat.mod"
+	, 0 };
 static const char mod_levels_shipedit_map[] = {
 #embed "../../../data/levels/shipedit/map.mod"
 	, 0 };
@@ -626,6 +650,14 @@ static const moduleFile_t module_files[] = {
 	{ "scrapyard", "Map", "levels/scrapyard/map.mod", mod_levels_scrapyard_map },
 	{ "scrapyard", "MapSnd", "levels/scrapyard/mapsnd.mod", mod_levels_scrapyard_mapsnd },
 	{ "scrapyard", "MapTriggers", "levels/scrapyard/maptriggers.mod", mod_levels_scrapyard_maptriggers },
+	{ "scrapyard", "Mission_Ambush", "levels/scrapyard/mission_ambush.mod", mod_levels_scrapyard_mission_ambush },
+	{ "scrapyard", "Mission_DefeatCrazyGambler2", "levels/scrapyard/mission_defeatcrazygambler2.mod", mod_levels_scrapyard_mission_defeatcrazygambler2 },
+	{ "scrapyard", "Mission_FindDtritusMatrix", "levels/scrapyard/mission_finddtritusmatrix.mod", mod_levels_scrapyard_mission_finddtritusmatrix },
+	{ "scrapyard", "Mission_MeetBerto", "levels/scrapyard/mission_meetberto.mod", mod_levels_scrapyard_mission_meetberto },
+	{ "scrapyard", "Mission_MosquitoClue", "levels/scrapyard/mission_mosquitoclue.mod", mod_levels_scrapyard_mission_mosquitoclue },
+	{ "scrapyard", "Mission_StupidMerc", "levels/scrapyard/mission_stupidmerc.mod", mod_levels_scrapyard_mission_stupidmerc },
+	{ "scrapyard", "Mission_StupidMercAgain", "levels/scrapyard/mission_stupidmercagain.mod", mod_levels_scrapyard_mission_stupidmercagain },
+	{ "scrapyard", "Mission_TalkToDeepThroat", "levels/scrapyard/mission_talktodeepthroat.mod", mod_levels_scrapyard_mission_talktodeepthroat },
 	{ "shipedit", "Map", "levels/shipedit/map.mod", mod_levels_shipedit_map },
 	{ "shipedit", "MapSnd", "levels/shipedit/mapsnd.mod", mod_levels_shipedit_mapsnd },
 	{ "temple", "Map", "levels/temple/map.mod", mod_levels_temple_map },
