@@ -166,7 +166,10 @@ static int cButtonScorer_WrapLines(cButtonScorer *self, char **out, const char *
 			count++;
 			start = cur;
 		}
-		cur = sp + 1;
+		/* differs from the original: it went on after the NUL (sp + 1) when the last word did not fit and read past
+		 * the text; staying on the NUL gives what the original got when the bytes after the text were 0 (the last
+		 * word on a line of its own, and an empty line after it when it does not fit alone) */
+		cur = *sp ? sp + 1 : sp;
 	} while (!done && sp);
 	return count;
 }
