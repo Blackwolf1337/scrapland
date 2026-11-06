@@ -41,4 +41,9 @@ static inline PyObject *Py_ReturnNone(void) {
 /* the engine's flag in its import.c (src/python/import.c) */
 extern int g_PyPackImport;
 
+/* ScrapC only, SCRAP_PY_PROFILE=<file>: the code objects that run, with counts (src/game/PyInterface/PyProfile.c);
+ * Start after Py_Initialize, End after Py_Finalize. Nothing happens without the variable. */
+void PyProfile_Start(void);
+void PyProfile_End(void);
+
 #endif
