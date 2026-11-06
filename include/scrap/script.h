@@ -213,11 +213,14 @@ PyObject *Script_AskKw(const char *module, const char *func, PyObject *args, PyO
 byte Script_Hook(const char *module, const char *target, const char *name, const char *last);
 /* eval(text) in a function of the script module (its globals): a new reference, NULL with the error set */
 PyObject *Script_EvalIn(const char *module, PyObject *text);
-/* what eval of s (after the blanks eval skips) in globals gives when s is a plain literal: an int, a float without
- * exponent, a string without backslashes, None, a list or tuple of those, '-' before a number, blanks between (the
- * constants shared and interned as the compiler makes them). A new reference, else NULL without an error: the caller
- * evals s then (anything else, also when the globals lack valid __builtins__, so nothing can differ) */
+/* what eval of s (after the blanks eval skips) in globals gives when s is a plain literal: an int, long or float in
+ * decimal (with exponent), a string in single or double quotes (with escapes), None, a list, tuple or dict of those,
+ * '-' before a number, blanks between (the constants shared and interned as the compiler makes them). A new
+ * reference, else NULL without an error: the caller evals s then (anything else, also when the globals lack valid
+ * __builtins__, so nothing can differ) */
 PyObject *Script_Literal(PyObject *globals, const char *s);
+/* the globals give a frame valid builtins (a dict or a module in __builtins__), as exec and eval need */
+byte Script_HasBuiltins(PyObject *globals);
 /* Script_Eval(text) with a plain literal made directly */
 PyObject *Script_EvalMain(const char *text);
 /* a string constant of len chars as the compiler makes it (interned when it has only name characters) */
