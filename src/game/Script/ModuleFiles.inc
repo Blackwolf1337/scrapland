@@ -314,6 +314,60 @@ static const char mod_modules_spostman[] = {
 static const char mod_modules_srace[] = {
 #embed "../../../data/modules/srace.mod"
 	, 0 };
+static const char mod_modules_weapons[] = {
+#embed "../../../data/modules/weapons.mod"
+	, 0 };
+static const char mod_modules_bankdirector[] = {
+#embed "../../../data/modules/bankdirector.mod"
+	, 0 };
+static const char mod_modules_bishop[] = {
+#embed "../../../data/modules/bishop.mod"
+	, 0 };
+static const char mod_modules_charact[] = {
+#embed "../../../data/modules/charact.mod"
+	, 0 };
+static const char mod_modules_gear[] = {
+#embed "../../../data/modules/gear.mod"
+	, 0 };
+static const char mod_modules_hulltab[] = {
+#embed "../../../data/modules/hulltab.mod"
+	, 0 };
+static const char mod_modules_scorer[] = {
+#embed "../../../data/modules/scorer.mod"
+	, 0 };
+static const char mod_modules_chars[] = {
+#embed "../../../data/modules/chars.mod"
+	, 0 };
+static const char mod_modules_gatekeeper[] = {
+#embed "../../../data/modules/gatekeeper.mod"
+	, 0 };
+static const char mod_modules_vehicles[] = {
+#embed "../../../data/modules/vehicles.mod"
+	, 0 };
+static const char mod_modules_shipmaker[] = {
+#embed "../../../data/modules/shipmaker.mod"
+	, 0 };
+static const char mod_modules_weaponstab[] = {
+#embed "../../../data/modules/weaponstab.mod"
+	, 0 };
+static const char mod_modules_enginestab[] = {
+#embed "../../../data/modules/enginestab.mod"
+	, 0 };
+static const char mod_modules_vehiclesnpc[] = {
+#embed "../../../data/modules/vehiclesnpc.mod"
+	, 0 };
+static const char mod_modules_savegame[] = {
+#embed "../../../data/modules/savegame.mod"
+	, 0 };
+static const char mod_modules_hangartab[] = {
+#embed "../../../data/modules/hangartab.mod"
+	, 0 };
+static const char mod_modules_shipedit[] = {
+#embed "../../../data/modules/shipedit.mod"
+	, 0 };
+static const char mod_modules_menu[] = {
+#embed "../../../data/modules/menu.mod"
+	, 0 };
 
 static const moduleFile_t module_files[] = {
 	{ NULL, "Sound", "modules/sound.mod", mod_modules_sound },
@@ -421,4 +475,22 @@ static const moduleFile_t module_files[] = {
 	{ NULL, "sflaghunt", "modules/sflaghunt.mod", mod_modules_sflaghunt },
 	{ NULL, "spostman", "modules/spostman.mod", mod_modules_spostman },
 	{ NULL, "srace", "modules/srace.mod", mod_modules_srace },
+	{ NULL, "Weapons", "modules/weapons.mod", mod_modules_weapons },
+	{ NULL, "BankDirector", "modules/bankdirector.mod", mod_modules_bankdirector },
+	{ NULL, "Bishop", "modules/bishop.mod", mod_modules_bishop },
+	{ NULL, "CharAct", "modules/charact.mod", mod_modules_charact },
+	{ NULL, "Gear", "modules/gear.mod", mod_modules_gear },
+	{ NULL, "HullTab", "modules/hulltab.mod", mod_modules_hulltab },
+	{ NULL, "Scorer", "modules/scorer.mod", mod_modules_scorer },
+	{ NULL, "Chars", "modules/chars.mod", mod_modules_chars },
+	{ NULL, "GateKeeper", "modules/gatekeeper.mod", mod_modules_gatekeeper },
+	{ NULL, "Vehicles", "modules/vehicles.mod", mod_modules_vehicles },
+	{ NULL, "ShipMaker", "modules/shipmaker.mod", mod_modules_shipmaker },
+	{ NULL, "WeaponsTab", "modules/weaponstab.mod", mod_modules_weaponstab },
+	{ NULL, "EnginesTab", "modules/enginestab.mod", mod_modules_enginestab },
+	{ NULL, "VehiclesNPC", "modules/vehiclesnpc.mod", mod_modules_vehiclesnpc },
+	{ NULL, "SaveGame", "modules/savegame.mod", mod_modules_savegame },
+	{ NULL, "HangarTab", "modules/hangartab.mod", mod_modules_hangartab },
+	{ NULL, "ShipEdit", "modules/shipedit.mod", mod_modules_shipedit },
+	{ NULL, "Menu", "modules/menu.mod", mod_modules_menu },
 };
