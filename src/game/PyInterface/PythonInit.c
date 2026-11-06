@@ -10,6 +10,9 @@
 #include "scrap/staticinit.h"
 
 #include <marshal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 cGVar GVar_Viewer;
 
@@ -81,43 +84,133 @@ void Python_Shutdown(void) {
 }
 
 /*
+ * The gate of the pack modules (the way to a build without Python). SCRAP_PY_GATE=<file> appends a line per pack
+ * module the engine would load: the level, what happened, the module name and the file. What happened: "pyc" (the
+ * module code of the .pyc runs), "cmod" (the module is made from its C definition, Script_ModuleMake), "loaded" (it
+ * is loaded already, PreloadLibrary does nothing), "import" (a file the import of Python reads, not preloaded),
+ * "packlog" (the import while the engine records the files of the packs) and "refused". With SCRAP_PY_REFUSE=1 as
+ * well no module code runs: a module without a C definition stays out of sys.modules (an import of it raises
+ * ImportError). Without the variables nothing changes.
+ */
+static int py_gate = -1;
+static byte py_refuse;
+static FILE *py_gateFile;
+
+static byte Py_GateOn(void) {
+	if (py_gate < 0) {
+		const char *e = getenv("SCRAP_PY_GATE");
+		py_gate = e && *e && strcmp(e, "0");
+		if (py_gate) {
+			py_gateFile = strcmp(e, "1") ? fopen(e, "a") : NULL;
+			e = getenv("SCRAP_PY_REFUSE");
+			py_refuse = e && *e == '1';
+		}
+	}
+	return py_gate > 0;
+}
+
+void Py_GateNote(const char *what, const char *name, const char *file) {
+	if (!Py_GateOn()) {
+		return;
+	}
+	const char *level = g_pApp && g_pApp->levelPath ? g_pApp->levelPath : "-";
+	if (py_gateFile) {
+		fprintf(py_gateFile, "%s\t%s\t%s\t%s\n", level, what, name, file);
+		fflush(py_gateFile);
+	} else {
+		Con_Printf("PYGATE %s %s %s %s\n", level, what, name, file);
+	}
+}
+
+/* 1 when the module code may run; else the refusal is logged and ImportError set */
+static byte Py_GateAllow(const char *name, const char *file) {
+	if (!Py_GateOn() || !py_refuse) {
+		return 1;
+	}
+	Py_GateNote("refused", name, file);
+	PyErr_Format(PyExc_ImportError, "pack module %.100s (%.100s) refused: no C definition", name, file);
+	return 0;
+}
+
+/* the import of Python reads a .py or .pyc that was not preloaded (src/python/import.c) */
+static int Py_GateImport(const char *path) {
+	const char *base = strrchr(path, '/');
+	Py_GateNote("import", base ? base + 1 : path, path);
+	return Py_GateAllow(base ? base + 1 : path, path);
+}
+
+/* a module made from its C definition (1), none (0, the .pyc runs) or a failed one (-1, error set); logged */
+static int Py_ModuleMake(const char *name, const char *file, PyObject **m) {
+	int made = Script_ModuleMake(name, file, m);
+	if (made) {
+		Py_GateNote("cmod", name, file);
+	}
+	return made;
+}
+
+/*
  * PreloadLibrary(name, file): imports the compiled module file of the open pack as name. While the engine
- * records the files read from packs it imports through the normal path instead and logs the file.
+ * records the files read from packs it imports through the normal path instead and logs the file. A module that has
+ * a C definition (Script_ModuleMake) is made from it and its .pyc is not read.
  */
 void Pack_PreloadLibrary(const char *name, const char *file) {
 	cFilePack f;
 
 	cFilePack_ctor(&f);
 	CHECK(Py_IsReady());
+	if (Py_GateOn()) {
+		g_PyImportGate = Py_GateImport;
+	}
 	if (PackLog_Closed()) {
-		if (!PyDict_GetItemString(PyImport_GetModuleDict(), (char *)name)) {
-			CHECK(cFilePack_Open(&f.file.base, file, FILE_MODE_READ));
-			int size = cFilePack_Size(&f.file.base);
-			char *data = cStaticBuffer_Get(g_PyStaticBuffer, size);
-			cFilePack_Read(&f.file.base, data, size);
-			CHECK(cFilePack_Close(&f.file.base));
-			/* .pyc: magic and time, then the marshaled code object */
-			PyObject *co = PyMarshal_ReadObjectFromString(data + 8, size - 8);
-			CHECK(g_PyStaticBuffer->lock);
-			g_PyStaticBuffer->lock = 0;
-			CHECK(co != NULL);
-			CHECK(co->ob_type == &PyCode_Type);
-			char path[0x100];
-			Str_Printf(path, sizeof(path), "PACK: %s", file);
-			PyObject *m = PyImport_ExecCodeModuleEx((char *)name, co, path);
-			Py_DECREF(co);
-			CHECK(m != NULL);
-			Script_ModuleLoaded(name, m);
-			Py_DECREF(m);
+		if (PyDict_GetItemString(PyImport_GetModuleDict(), (char *)name)) {
+			Py_GateNote("loaded", name, file);
+		} else {
+			PyObject *m = NULL;
+			int made = Py_ModuleMake(name, file, &m);
+			if (made) {
+				if (made < 0) {
+					PyErr_Print();
+				}
+				CHECK(m != NULL);
+			} else if (Py_GateAllow(name, file)) {
+				Py_GateNote("pyc", name, file);
+				CHECK(cFilePack_Open(&f.file.base, file, FILE_MODE_READ));
+				int size = cFilePack_Size(&f.file.base);
+				char *data = cStaticBuffer_Get(g_PyStaticBuffer, size);
+				cFilePack_Read(&f.file.base, data, size);
+				CHECK(cFilePack_Close(&f.file.base));
+				/* .pyc: magic and time, then the marshaled code object */
+				PyObject *co = PyMarshal_ReadObjectFromString(data + 8, size - 8);
+				CHECK(g_PyStaticBuffer->lock);
+				g_PyStaticBuffer->lock = 0;
+				CHECK(co != NULL);
+				CHECK(co->ob_type == &PyCode_Type);
+				char path[0x100];
+				Str_Printf(path, sizeof(path), "PACK: %s", file);
+				m = PyImport_ExecCodeModuleEx((char *)name, co, path);
+				Py_DECREF(co);
+				CHECK(m != NULL);
+				Script_ModuleLoaded(name, m);
+			} else {
+				PyErr_Clear();
+			}
+			Py_XDECREF(m);
 		}
 	} else {
 		Con_Verbosef("Trying to open 'PACK: %s', using import %s\n", file, name);
 		PackLog_Add(file);
-		g_PyPackImport = 0;
-		PyObject *m = PyImport_ImportModule((char *)name);
-		g_PyPackImport = 1;
+		PyObject *m = NULL;
+		int made = PyDict_GetItemString(PyImport_GetModuleDict(), (char *)name) ? 0 : Py_ModuleMake(name, file, &m);
+		if (!made && Py_GateAllow(name, file)) {
+			Py_GateNote("packlog", name, file);
+			g_PyPackImport = 0;
+			m = PyImport_ImportModule((char *)name);
+			g_PyPackImport = 1;
+			if (m) {
+				Script_ModuleLoaded(name, m);
+			}
+		}
 		if (m) {
-			Script_ModuleLoaded(name, m);
 			Py_DECREF(m);
 		} else {
 			PyObject *err = PySys_GetObject("stderr");

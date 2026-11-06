@@ -40,6 +40,31 @@ void Script_CheckEngine(void);
  * holds the replaced functions until the module loads again */
 void Script_LevelModuleLoaded(const char *name, PyObject *module, PyObject *kept);
 
+/*
+ * a pack module made in C instead of running its .pyc (src/game/Script/ScriptModule.c): when the module has a C
+ * definition (a .mod file), *module is the new module (in sys.modules, with its variables, functions and load time
+ * calls in the order of the script) and the result 1; 0 when it has none; -1 when a statement failed (error set,
+ * *module NULL)
+ */
+int Script_ModuleMake(const char *name, const char *file, PyObject **module);
+/* the function name of module from the C tables (script_modules, the last table that has it), a new reference; NULL
+ * without an error when no table has it */
+PyObject *Script_TableFunction(const char *module, const char *name);
+/* the functions of a table the module does not have yet into it (a table may have more than the script) */
+void Script_TableExtras(PyObject *module, PyMethodDef *methods);
+/* the extras of every C table of the module, script_modules then level_modules */
+void Script_ModuleExtras(const char *name, PyObject *module);
+/* the level that loads, lower case ("police"); 0 when Init.Path is not set yet */
+byte Script_LevelName(char *out, int size);
+/* for a module of the level made in C (src/game/Script/Levels.c): its data functions start over in their pool */
+void Script_LevelModuleStart(const char *module);
+/* the C function name of the level table of module in this level, NULL without an error if none */
+PyObject *Script_LevelTableFunction(const char *module, const char *name);
+/* the data function name of the level file of module in this level, NULL without an error if none */
+PyObject *Script_LevelDataFunction(const char *module, const char *name);
+/* the extras of the level tables of the module (Script_TableExtras) */
+void Script_LevelModuleExtras(const char *name, PyObject *module);
+
 /* CreateFixedInit(e) of the level scripts: the character e stands where it is (src/game/Script/levels/Orbit.c) */
 PyObject *Level_FixedInit(PyObject *self, PyObject *args);
 /* a step of a .def file that C does ("run <name> [arg ...]"), args the tuple of the arguments */

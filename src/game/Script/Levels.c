@@ -196,6 +196,7 @@ enum { LEVEL_FUNCS = 96, LEVEL_POOLS = 256, LEVEL_NAME = 0x40 };
 /* the method definitions of the functions of one module name; reused when the module loads again */
 typedef struct {
 	char module[LEVEL_NAME];
+	int used;			/* the slots a module made in C took (Script_LevelDataFunction) */
 	PyMethodDef defs[LEVEL_FUNCS];
 	char names[LEVEL_FUNCS][LEVEL_NAME];
 } levelPool_t;
@@ -446,6 +447,47 @@ static PyObject *Level_Default(const char *text) {
 	return v;
 }
 
+/* the words of a section line "section <Func> <params>" (line: the text after "section ", len chars) into line and
+ * tok; the number of words */
+static int Level_SectionWords(const char *text, int len, char line[0x200], char *tok[24]) {
+	int nt = 0;
+	Str_Copy(line, text, len + 1 < 0x200 ? len + 1 : 0x200);
+	for (char *s = strtok(line, " \t\r"); s && nt < 24; s = strtok(NULL, " \t\r")) {
+		tok[nt++] = s;
+	}
+	return nt;
+}
+
+/* the function of the section tok of file i, its method definition in slot n of the pool (a new reference, NULL on
+ * an error) */
+static PyObject *Level_SectionFunction(int i, levelPool_t *pool, int n, char *tok[24], int nt) {
+	PyObject *params = PyTuple_New(nt - 1), *defs = PyDict_New();
+	for (int k = 1; params && defs && k < nt; k++) {
+		char *eq = strchr(tok[k], '=');
+		if (eq) {
+			*eq = 0;
+			PyObject *d = Level_Default(eq + 1);
+			if (d) {
+				PyDict_SetItemString(defs, tok[k], d);
+				Py_DECREF(d);
+			}
+		}
+		PyTuple_SET_ITEM(params, k - 1, PyString_FromString(tok[k]));
+	}
+	PyObject *self = params && defs ? Py_BuildValue("(isOO)", i, tok[0], params, defs) : NULL;
+	Py_XDECREF(params);
+	Py_XDECREF(defs);
+	Str_Copy(pool->names[n], tok[0], LEVEL_NAME);
+	PyMethodDef *def = &pool->defs[n];
+	def->ml_name = pool->names[n];
+	def->ml_meth = (PyCFunction)(void (*)(void))Level_Call;
+	def->ml_flags = METH_VARARGS | METH_KEYWORDS;
+	def->ml_doc = NULL;
+	PyObject *f = self ? Script_CheckFunction(def, self, level_files[i].module) : NULL;
+	Py_XDECREF(self);
+	return f;
+}
+
 /* the sections of file i into functions of the module (only those the script has, under their names) */
 static void Level_Install(int i, PyObject *module, levelPool_t *pool, PyObject *kept) {
 	const char *p = level_files[i].text;
@@ -456,37 +498,10 @@ static void Level_Install(int i, PyObject *module, levelPool_t *pool, PyObject *
 		int len = eol ? (int)(eol - p) : (int)strlen(p);
 		if (len > 8 && !strncmp(p, "section ", 8)) {
 			char line[0x200], *tok[24];
-			int nt = 0;
-			Str_Copy(line, p + 8, len - 8 + 1 < (int)sizeof(line) ? len - 8 + 1 : (int)sizeof(line));
-			for (char *s = strtok(line, " \t\r"); s && nt < 24; s = strtok(NULL, " \t\r")) {
-				tok[nt++] = s;
-			}
+			int nt = Level_SectionWords(p + 8, len - 8, line, tok);
 			PyObject *old = nt ? PyDict_GetItemString(dict, tok[0]) : NULL;
 			if (old && PyFunction_Check(old)) {
-				PyObject *params = PyTuple_New(nt - 1), *defs = PyDict_New();
-				for (int k = 1; params && defs && k < nt; k++) {
-					char *eq = strchr(tok[k], '=');
-					if (eq) {
-						*eq = 0;
-						PyObject *d = Level_Default(eq + 1);
-						if (d) {
-							PyDict_SetItemString(defs, tok[k], d);
-							Py_DECREF(d);
-						}
-					}
-					PyTuple_SET_ITEM(params, k - 1, PyString_FromString(tok[k]));
-				}
-				PyObject *self = params && defs ? Py_BuildValue("(isOO)", i, tok[0], params, defs) : NULL;
-				Py_XDECREF(params);
-				Py_XDECREF(defs);
-				Str_Copy(pool->names[n], tok[0], LEVEL_NAME);
-				PyMethodDef *def = &pool->defs[n];
-				def->ml_name = pool->names[n];
-				def->ml_meth = (PyCFunction)(void (*)(void))Level_Call;
-				def->ml_flags = METH_VARARGS | METH_KEYWORDS;
-				def->ml_doc = NULL;
-				PyObject *f = self ? Script_CheckFunction(def, self, level_files[i].module) : NULL;
-				Py_XDECREF(self);
+				PyObject *f = Level_SectionFunction(i, pool, n, tok, nt);
 				if (f) {
 					if (kept) {
 						PyList_Append(kept, old);
@@ -508,6 +523,83 @@ static void Level_Install(int i, PyObject *module, levelPool_t *pool, PyObject *
 	Con_Verbosef("Script: %d functions of %s are data in %s\n", n, level_files[i].module, level_files[i].name);
 }
 
+byte Script_LevelName(char *out, int size) {
+	return Level_Current(out, size);
+}
+
+/* the data file of module in the level that loads, -1 if none */
+static int Level_File(const char *module) {
+	char level[LEVEL_NAME];
+	if (!Level_Current(level, sizeof(level))) {
+		return -1;
+	}
+	for (size_t i = 0; i < sizeof(level_files) / sizeof(level_files[0]); i++) {
+		if (!strcmp(level_files[i].level, level) && !strcmp(level_files[i].module, module)) {
+			return (int)i;
+		}
+	}
+	return -1;
+}
+
+void Script_LevelModuleStart(const char *module) {
+	levelPool_t *pool = Level_File(module) >= 0 ? Level_Pool(module) : NULL;
+	if (pool) {
+		pool->used = 0;
+	}
+}
+
+PyObject *Script_LevelTableFunction(const char *module, const char *name) {
+	char level[LEVEL_NAME];
+	if (!Level_Current(level, sizeof(level))) {
+		return NULL;
+	}
+	/* the last row that has the name wins (as Script_Install puts them in) */
+	PyMethodDef *found = NULL;
+	for (const levelModule_t *lm = level_modules; lm->level; lm++) {
+		if (!strcmp(lm->level, level) && !strcmp(lm->module, module)) {
+			for (PyMethodDef *m = lm->methods; m->ml_name; m++) {
+				if (!strcmp(m->ml_name, name)) {
+					found = m;
+				}
+			}
+		}
+	}
+	return found ? Script_CheckFunction(found, NULL, module) : NULL;
+}
+
+PyObject *Script_LevelDataFunction(const char *module, const char *name) {
+	int i = Level_File(module);
+	levelPool_t *pool = i >= 0 ? Level_Pool(module) : NULL;
+	if (!pool) {
+		return NULL;
+	}
+	/* the last section of the name (a script that defines a function twice gives the last one, so does the converter) */
+	const char *p = level_files[i].text, *at = NULL;
+	int atLen = 0;
+	size_t nlen = strlen(name);
+	while (*p) {
+		const char *eol = strchr(p, '\n');
+		int len = eol ? (int)(eol - p) : (int)strlen(p);
+		const char *e = p + 8 + nlen;
+		if (len >= 8 + (int)nlen && !strncmp(p, "section ", 8) && !strncmp(p + 8, name, nlen) &&
+			(len == 8 + (int)nlen || *e == ' ' || *e == '\t' || *e == '\r')) {
+			at = p + 8;
+			atLen = len - 8;
+		}
+		p += len + (eol != NULL);
+	}
+	if (!at) {
+		return NULL;
+	}
+	if (pool->used >= LEVEL_FUNCS) {
+		PyErr_Format(PyExc_SystemError, "more than %d data functions in %s", LEVEL_FUNCS, module);
+		return NULL;
+	}
+	char line[0x200], *tok[24];
+	int nt = Level_SectionWords(at, atLen, line, tok);
+	return nt ? Level_SectionFunction(i, pool, pool->used++, tok, nt) : NULL;
+}
+
 void Script_LevelModuleLoaded(const char *name, PyObject *module, PyObject *kept) {
 	char level[LEVEL_NAME];
 	if (!Level_Current(level, sizeof(level))) {
@@ -525,6 +617,18 @@ void Script_LevelModuleLoaded(const char *name, PyObject *module, PyObject *kept
 	for (const levelModule_t *lm = level_modules; lm->level; lm++) {
 		if (!strcmp(lm->level, level) && !strcmp(lm->module, name)) {
 			Script_Install(module, lm->methods, kept);
+		}
+	}
+}
+
+void Script_LevelModuleExtras(const char *name, PyObject *module) {
+	char level[LEVEL_NAME];
+	if (!Level_Current(level, sizeof(level))) {
+		return;
+	}
+	for (const levelModule_t *lm = level_modules; lm->level; lm++) {
+		if (!strcmp(lm->level, level) && !strcmp(lm->module, name)) {
+			Script_TableExtras(module, lm->methods);
 		}
 	}
 }
