@@ -90,6 +90,7 @@ static const scriptModule_t script_modules[] = {
 	{ "Sonic", g_SonicMethods },
 	{ "SputnikInterface", g_SputnikInterfaceMethods },
 	{ "Vehicles", g_VehiclesMethods },
+	{ "VehiclesNPC", g_VehiclesNPCMethods },
 	{ "Split", g_SplitMethods },
 	{ "SDeathMatch", g_SDeathMatchMethods },
 	{ "SFlagHunt", g_SFlagHuntMethods },
@@ -629,7 +630,7 @@ typedef struct {
 	byte list;
 } scriptBlock_t;
 
-enum { TARGET_ITEM, TARGET_ACTION, TARGET_CLASS, TARGET_ENTITY };
+enum { TARGET_ITEM, TARGET_ACTION, TARGET_CLASS, TARGET_ENTITY, TARGET_OBJECT };
 
 typedef struct {
 	int id;
@@ -641,6 +642,7 @@ typedef struct {
 	char item[0x80];		/* the last item */
 	byte target;			/* what attribute lines set: TARGET_ITEM, TARGET_ACTION, TARGET_CLASS or TARGET_ENTITY */
 	char entity[0x80];		/* the entity of TARGET_ENTITY */
+	PyObject *object;		/* the Python object of TARGET_OBJECT (a reference of the file) */
 	scriptBlock_t blocks[SCRIPT_MAX_BLOCKS];
 	int numBlocks;
 	scriptBlock_t *open;		/* the style or list whose lines follow */
@@ -1129,11 +1131,25 @@ static byte Def_Cond(scriptDef_t *m, scriptLine_t *l) {
 
 static const char *const def_commands[] = { "style", "item", "use", "set", "lr", "ud", "default", "list", "call", "run",
 	"section", "do", "if", "elif", "else", "end", "let", "measure", "action", "getaction", "class", "event", "setvar",
-	"entity" };
+	"entity", "object" };
 
 /* an attribute of SAct's current action or class (TARGET_ACTION, TARGET_CLASS), as SAct.SetAct and SetCls set it: a
  * text or a number; or a variable of the entity (TARGET_ENTITY) */
 static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char *value, byte quoted) {
+	if (target == TARGET_OBJECT) {
+		/* an attribute of a Python object, as `obj.var = value` of a script */
+		PyObject *v = Def_Value(m, value, quoted);
+		if (v && m->object && PyObject_SetAttrString(m->object, (char *)var, v) < 0) {
+			if (m->stop) {
+				m->failed = 1;
+			} else {
+				Con_Warnf("%s:%d: cannot set %s\n", m->name, m->line, var);
+				PyErr_Clear();
+			}
+		}
+		Py_XDECREF(v);
+		return;
+	}
 	if (target == TARGET_ENTITY) {
 		/* a script variable of the entity, as `entity.var = value` of a script */
 		PyObject *v = Def_Value(m, value, quoted);
@@ -1350,6 +1366,10 @@ static void Def_Line(scriptDef_t *m, scriptLine_t *l, const char *next) {
 	} else if (!strcmp(cmd, "entity") && l->n == 2) {
 		Def_Word(m, l->tok[1], l->quoted[1], m->entity, sizeof(m->entity));
 		m->target = TARGET_ENTITY;
+	} else if (!strcmp(cmd, "object") && l->n == 2) {
+		Py_XDECREF(m->object);
+		m->object = Def_Value(m, l->tok[1], l->quoted[1]);
+		m->target = TARGET_OBJECT;
 	} else if (!strcmp(cmd, "setvar") && l->n == 3) {
 		const char *var = Def_Split(l->tok[1], a, sizeof(a));
 		if (!var) {
@@ -1473,6 +1493,7 @@ static byte Def_RunFile(int id, const char *name, const char *section, const cha
 		Con_Warnf("%s: if without end\n", name);
 	}
 	Py_XDECREF(m.ownVars);
+	Py_XDECREF(m.object);
 	return !m.failed;
 }
 

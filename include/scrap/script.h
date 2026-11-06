@@ -326,6 +326,7 @@ extern PyMethodDef g_EMIMethods[];
 extern PyMethodDef g_SonicMethods[];
 extern PyMethodDef g_SputnikInterfaceMethods[];
 extern PyMethodDef g_VehiclesMethods[];
+extern PyMethodDef g_VehiclesNPCMethods[];
 extern PyMethodDef g_SplitMethods[];
 extern PyMethodDef g_SDeathMatchMethods[];
 extern PyMethodDef g_SFlagHuntMethods[];
