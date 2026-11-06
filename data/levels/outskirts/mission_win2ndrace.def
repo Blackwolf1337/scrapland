@@ -1,5 +1,5 @@
 # The functions of Mission_Win2ndRace in level outskirts (the script levels/outskirts/scripts/mission_win2ndrace.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, InitRace, OnCounterMeasure, GetRaceWaypointIndex, RacerDamaged, OnRaceStart, OnCheckPoint, OnNearCheckPoint, NameOponGoItem, CancelMission.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Outskirts.c): InitStatus, Init, InitRace, OnCounterMeasure, GetRaceWaypointIndex, RacerDamaged, OnRaceStart, OnCheckPoint, OnNearCheckPoint, NameOponGoItem, CancelMission.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/outskirts/mission_win2ndrace.def replaces this file.
 section RacerKilled LooserName WinnerName
 call Vehicles.OnDeath $LooserName $WinnerName
