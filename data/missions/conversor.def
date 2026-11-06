@@ -1,0 +1,20 @@
+# The action class of the character conversors (CharConversor.CreateConversorClass of missions/charconversor.py):
+# the machine idles in Relax; Action is the conversion, with its events at the start (the player vanishes), in the
+# middle (the interface opens) and at the end. The format is described in src/game/Script/Script.c. A pack in mods/
+# with scrapc/missions/conversor.def replaces this file.
+
+section Class
+call SAct.CreateClass Conversor
+class
+	ModelFilePath "Models/Misc/Conversor/Conversor.M3D"
+action Relax
+	AnmFilePath "Models/Misc/Conversor/Anm/Relax.M3D"
+	isLoop 1
+action Action
+	AnmFilePath "Models/Misc/Conversor/Anm/Action.M3D"
+	isLoop 0
+event 0 Init! CharConversor.InitOfScene 0
+event &AnmTotalTime/2.0 Activate! CharConversor.InitInterfaceEvent 0
+event &AnmTotalTime Desactivate! CharConversor.EndOfScene 0
+class
+	DefAction Relax

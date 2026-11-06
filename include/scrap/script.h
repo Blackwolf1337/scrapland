@@ -194,6 +194,12 @@ PyObject *Sf_Keep(scriptFrame_t *f, PyObject *o);
 byte Sf_Check(scriptFrame_t *f, int ok);
 /* the references kept after mark (f->n before a loop turn) */
 void Sf_Release(scriptFrame_t *f, int mark);
+/* the references kept after mark released, except the n values of keep (kept by the frame, NULL skipped): the
+ * values a loop turn carries to the next one */
+void Sf_ReleaseKeep(scriptFrame_t *f, int mark, PyObject *const *keep, int n);
+/* a bare `except:` after the lines of a `try:` block: 1 when one of them raised (the error is cleared and the frame
+ * goes on), else 0 */
+byte Sf_Except(scriptFrame_t *f);
 /* the end of the function: result (a new reference) or NULL when the frame failed; Sf_Return(o) with o borrowed,
  * Sf_None for None */
 PyObject *Sf_Done(scriptFrame_t *f, PyObject *result);
@@ -214,6 +220,8 @@ PyObject *Sf_Global(scriptFrame_t *f, const char *module, const char *name);
 byte Sf_SetGlobal(scriptFrame_t *f, const char *module, const char *name, PyObject *v);
 byte Sf_DelGlobal(scriptFrame_t *f, const char *module, const char *name);
 PyObject *Sf_Mod(scriptFrame_t *f, const char *module, const char *name);
+/* `from module import name` (ImportError "cannot import name" when the module has no such name) */
+PyObject *Sf_From(scriptFrame_t *f, const char *module, const char *name);
 byte Sf_SetMod(scriptFrame_t *f, const char *module, const char *name, PyObject *v);
 /* o.name, o.name = v, o[i], o[key], o[key] = v, del o[key], o[lo:hi] */
 PyObject *Sf_Attr(scriptFrame_t *f, PyObject *o, const char *name);
@@ -404,6 +412,11 @@ extern PyMethodDef g_TeleportMethods[];
 extern PyMethodDef g_MisItemsMethods[];
 extern PyMethodDef g_CrazyWingMethods[];
 extern PyMethodDef g_MissionsFuncsMethods[];
+/* the cut scenes (src/game/Script/Scene.c), the character conversors and the possession
+ * (src/game/Script/CharConversor.c), the races and combats of the challenges (src/game/Script/RaceMaker.c) */
+extern PyMethodDef g_SceneMethods[];
+extern PyMethodDef g_CharConversorMethods[];
+extern PyMethodDef g_RaceMakerMethods[];
 
 /* the gameplay functions of the character modules (src/game/Script/CharFuncs.c), next to their Init tables */
 extern PyMethodDef g_FunctionaryFuncs[];

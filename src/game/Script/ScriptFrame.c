@@ -48,6 +48,28 @@ void Sf_Release(scriptFrame_t *f, int mark) {
 	}
 }
 
+void Sf_ReleaseKeep(scriptFrame_t *f, int mark, PyObject *const *keep, int n) {
+	for (int i = 0; i < n; i++) {
+		Py_XINCREF(keep[i]);
+	}
+	Sf_Release(f, mark);
+	for (int i = 0; i < n; i++) {
+		if (keep[i]) {
+			CHECK(f->n < SCRIPT_FRAME_REFS);
+			f->refs[f->n++] = keep[i];
+		}
+	}
+}
+
+byte Sf_Except(scriptFrame_t *f) {
+	if (!f->failed) {
+		return 0;
+	}
+	PyErr_Clear();
+	f->failed = 0;
+	return 1;
+}
+
 PyObject *Sf_Done(scriptFrame_t *f, PyObject *result) {
 	Sf_Release(f, 0);
 	if (f->failed) {
@@ -135,6 +157,20 @@ byte Sf_DelGlobal(scriptFrame_t *f, const char *module, const char *name) {
 		return Sf_Raise(f, PyExc_NameError, name);
 	}
 	return 1;
+}
+
+PyObject *Sf_From(scriptFrame_t *f, const char *module, const char *name) {
+	PyObject *m = Sf_Module(f, module);
+	if (!m) {
+		return NULL;
+	}
+	PyObject *v = PyDict_GetItemString(PyModule_GetDict(m), (char *)name);
+	if (!v) {
+		PyErr_Format(PyExc_ImportError, "cannot import name %.230s", name);
+		f->failed = 1;
+		return NULL;
+	}
+	return Sf_Ref(f, v);
 }
 
 PyObject *Sf_Mod(scriptFrame_t *f, const char *module, const char *name) {
