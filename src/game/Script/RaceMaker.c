@@ -1532,18 +1532,21 @@ static PyObject *RaceMaker_GetRandomShipIAProfile(PyObject *self, PyObject *args
 		return NULL;
 	}
 	int turn = Sf_InS(&f, foe, groups);
-	PyObject *n = NULL;
+	PyObject *n = NULL, *head = NULL;
+	/* "S" + ChallengeFoeType first, then the number (the order of the script's expression) */
 	if (turn > 0) {
 		PyObject *len = Sf_Int(&f, Sf_Len(&f, Sf_GetItem(&f, Rm_G(&f, "AISHIPS"), foe)));
 		Sf_SetGlobal(&f, RM, "nextIAProfile", Sf_Op(&f, Sf_OpI(&f, Rm_G(&f, "nextIAProfile"), '+', 1), '%', len));
+		head = Sf_Cat(&f, "sO", "S", foe);
 		n = Sf_OpI(&f, Rm_G(&f, "nextIAProfile"), '+', 1);
 	} else if (turn == 0) {
+		head = Sf_Cat(&f, "sO", "S", foe);
 		int len = Sf_Len(&f, Sf_GetItem(&f, Rm_G(&f, "AISHIPS"), foe));
 		if (!f.failed) {
 			n = Sf_ToInt(&f, Sf_Op(&f, Sf_Float(&f, Scrap_RandRange(1, len)), '+', Sf_Float(&f, 0.9)));
 		}
 	}
-	return Sf_Return(&f, Sf_Cat(&f, "sOOsO", "S", foe, Sf_Repr(&f, n), "_", profile));
+	return Sf_Return(&f, Sf_Cat(&f, "OOsO", head, Sf_Repr(&f, n), "_", profile));
 }
 
 #define KW(fn) (PyCFunction)(void (*)(void))fn, 3

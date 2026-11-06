@@ -1327,6 +1327,11 @@ static void Def_Set(scriptDef_t *m, const char *item, const char *var, const cha
 			Script_SetNum(m->id, item, var, PyInt_Check(v) ? (double)PyInt_AsLong(v) : PyFloat_AsDouble(v));
 		} else if (v && PyString_Check(v)) {
 			Script_SetStr(m->id, item, var, PyString_AsString(v));
+		} else if (v && m->stop) {
+			/* another value goes to SScorer.Set as in the script, with its TypeError */
+			PyObject *r = Script_Ask("SScorer", "Set", "(issO)", m->id, item, var, v);
+			m->failed = r == NULL;
+			Py_XDECREF(r);
 		}
 		Py_XDECREF(v);
 		return;

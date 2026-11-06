@@ -190,108 +190,60 @@ static PyObject *Chars_IntSetChar(PyObject *self, PyObject *args) {
 
 /* ---- the resources: Chars.CharRes, a list of [class, discardable] that other scripts fill too ---- */
 
+/* the global CharRes of the module (NameError when it is missing, as the script reads it) */
 static PyObject *Chars_ResList(void) {
-	PyObject *m = PyImport_ImportModule("Chars");
-	PyObject *l = m ? PyObject_GetAttrString(m, "CharRes") : NULL;
-	Py_XDECREF(m);
-	if (!l) {
-		PyErr_Clear();
-	}
-	return l;
+	return Script_Global("Chars", "CharRes");
 }
 
-/* [cls, discardable] is in the list: its index, -1 when not */
-static int Chars_ResFind(PyObject *list, PyObject *cls, int discardable) {
-	PyObject *e = Py_BuildValue("[Oi]", cls, discardable);
-	int n = list ? PySequence_Length(list) : 0;
-	int found = -1;
-	for (int i = 0; e && i < n && found < 0; i++) {
-		PyObject *x = PySequence_GetItem(list, i);
-		if (x && PyObject_Compare(x, e) == 0) {
-			found = i;
+/*
+ * AddNewCharRes(cr, Discardable): [cr, Discardable] into Chars.CharRes unless [cr, 0] is there, or [cr, 1] is there
+ * and Discardable is true (a lasting one replaces the discardable one): 1 when it goes in, 0 when not, -1 with the
+ * error set
+ */
+static int Chars_AddRes(PyObject *cls, PyObject *disc) {
+	scriptFrame_t f = { 0 };
+	int add = 0;
+	int in0 = Sf_In(&f, Sf_Build(&f, "[Oi]", cls, 0), Sf_Global(&f, "Chars", "CharRes"));
+	if (in0 == 0) {
+		int in1 = Sf_In(&f, Sf_Build(&f, "[Oi]", cls, 1), Sf_Global(&f, "Chars", "CharRes"));
+		if (in1 > 0 && Sf_True(&f, disc) == 0) {
+			Sf_Method(&f, Sf_Global(&f, "Chars", "CharRes"), "remove", "(O)", Sf_Build(&f, "[Oi]", cls, 1));
+			add = 1;
+		} else if (in1 == 0) {
+			add = 1;
 		}
-		Py_XDECREF(x);
 	}
-	PyErr_Clear();
-	Py_XDECREF(e);
-	return found;
-}
-
-/* AddNewCharRes(cls[, discardable]): 1 when the class goes into the list */
-static int Chars_AddRes(PyObject *cls, int discardable) {
-	PyObject *list = Chars_ResList();
-	int r = 0;
-	if (!list) {
-		return 0;
+	if (add) {
+		Sf_Method(&f, Sf_Global(&f, "Chars", "CharRes"), "append", "(O)", Sf_Build(&f, "[OO]", cls, disc));
 	}
-	if (Chars_ResFind(list, cls, 0) >= 0) {
-		/* a lasting one is there */
-	} else if (Chars_ResFind(list, cls, 1) >= 0 && discardable) {
-		/* the discardable one is there */
-	} else {
-		int i = Chars_ResFind(list, cls, 1);
-		if (i >= 0) {
-			PySequence_DelItem(list, i);
-		}
-		PyObject *e = Py_BuildValue("[Oi]", cls, discardable);
-		PyList_Append(list, e);
-		Py_XDECREF(e);
-		r = 1;
-	}
-	Py_DECREF(list);
-	return r;
+	byte failed = f.failed;
+	Sf_Done(&f, NULL);
+	return failed ? -1 : add;
 }
 
 static PyObject *Chars_AddNewCharRes(PyObject *self, PyObject *args) {
-	PyObject *cls;
-	int discardable = 1;
+	PyObject *cls, *disc = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "O|i", &cls, &discardable)) {
+	if (!PyArg_ParseTuple(args, "O|O", &cls, &disc)) {
 		return NULL;
 	}
-	return PyInt_FromLong(Chars_AddRes(cls, discardable));
+	PyObject *one = disc ? NULL : PyInt_FromLong(1);
+	int r = Chars_AddRes(cls, disc ? disc : one);
+	Py_XDECREF(one);
+	return r < 0 ? NULL : PyInt_FromLong(r);
 }
 
-/* LocalLoadRes([cls, discardable]): the character script of the class initialises it */
+/* LocalLoadRes(cr): exec("import "+cr[0]+";"+cr[0]+".Init()"), then the class gets Discardable cr[1] (SAct.SetCls
+ * without the class fails without an exception: ceval's SystemError, as in the script) */
 static PyObject *Chars_LocalLoadRes(PyObject *self, PyObject *args) {
-	PyObject *res;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &res)) {
-		return NULL;
-	}
-	PyObject *cls = PySequence_GetItem(res, 0), *disc = PySequence_GetItem(res, 1);
-	if (!cls || !disc || !PyString_Check(cls)) {
-		Py_XDECREF(cls);
-		Py_XDECREF(disc);
-		PyErr_SetString(PyExc_TypeError, "LocalLoadRes: [class, discardable]");
-		return NULL;
-	}
-	/* exec("import X; X.Init()") of the script: an error goes to the caller */
-	PyObject *mod = PyImport_ImportModule(PyString_AsString(cls));
-	PyObject *init = mod ? PyObject_GetAttrString(mod, "Init") : NULL;
-	PyObject *r = init ? Script_Invoke(init, PyTuple_New(0)) : NULL;
-	Py_XDECREF(init);
-	Py_XDECREF(mod);
-	byte ok = r != NULL;
-	Py_XDECREF(r);
-	if (!ok) {
-		Py_DECREF(cls);
-		Py_DECREF(disc);
-		return NULL;
-	}
-	if (ok) {
-		g_pAuxActClass = cActClassList_Get(g_pActClassList, PyString_AsString(cls));
-		if (g_pAuxActClass) {
-			double d = PyInt_Check(disc) ? (double)PyInt_AsLong(disc) : PyFloat_AsDouble(disc);
-			int i = (int)d;
-			cActClass_Var(g_pAuxActClass, "Discardable", 1, NULL, &d, &i);
-		} else {
-			Con_Print(CON_COLOR_ERROR, "ERROR SAct.SetCls(): AuxActClass not defined.\n", 0);
-		}
-	}
-	Py_DECREF(cls);
-	Py_DECREF(disc);
-	return Py_ReturnNone();
+	PyObject *cr;
+	SF_ARGS("O", &cr);
+	PyObject *loc = Sf_Build(&f, "{s:O}", "cr", cr);
+	PyObject *a = Sf_Cat(&f, "sO", "import ", Sf_Item(&f, cr, 0));
+	Sf_Exec(&f, Sf_Cat(&f, "OsOs", a, ";", Sf_Item(&f, cr, 0), ".Init()"), "Chars", loc);
+	Sf_Ask(&f, "SAct", "GetClass", "(O)", Sf_Item(&f, cr, 0));
+	Sf_Ask(&f, "SAct", "SetCls", "(sO)", "Discardable", Sf_Item(&f, cr, 1));
+	return Sf_None(&f);
 }
 
 /* LoadRes(cls): a discardable class, loaded when it is new */
@@ -301,12 +253,16 @@ static PyObject *Chars_LoadRes(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "O", &cls)) {
 		return NULL;
 	}
-	if (Chars_AddRes(cls, 1)) {
-		PyObject *m = PyImport_ImportModule("Chars");
-		PyObject *f = m ? PyObject_GetAttrString(m, "LocalLoadRes") : NULL;
+	PyObject *one = PyInt_FromLong(1);
+	int a = one ? Chars_AddRes(cls, one) : -1;
+	Py_XDECREF(one);
+	if (a < 0) {
+		return NULL;
+	}
+	if (a) {
+		PyObject *f = Script_Global("Chars", "LocalLoadRes");
 		PyObject *r = f ? Script_Invoke(f, Py_BuildValue("([Oi])", cls, 1)) : NULL;
 		Py_XDECREF(f);
-		Py_XDECREF(m);
 		if (!r) {
 			return NULL;
 		}
@@ -315,69 +271,26 @@ static PyObject *Chars_LoadRes(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-/* DiscardRes(cls): a discardable class goes after this frame; 1 when it was one */
+/* DiscardRes(cr): [cr, 1] in CharRes; when it is, TryToDiscardThis([cr, 1]) is scheduled now */
 static PyObject *Chars_DiscardRes(PyObject *self, PyObject *args) {
-	PyObject *cls;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &cls)) {
-		return NULL;
+	PyObject *cr;
+	SF_ARGS("O", &cr);
+	int in = Sf_In(&f, Sf_Build(&f, "[Oi]", cr, 1), Sf_Global(&f, "Chars", "CharRes"));
+	if (in > 0) {
+		Sf_Schedule(&f, Sf_Time(&f), Sf_Global(&f, "Chars", "TryToDiscardThis"), Sf_Build(&f, "([Oi])", cr, 1), NULL);
 	}
-	PyObject *list = Chars_ResList();
-	byte found = list && Chars_ResFind(list, cls, 1) >= 0;
-	Py_XDECREF(list);
-	if (found) {
-		PyObject *m = PyImport_ImportModule("Chars");
-		PyObject *f = m ? PyObject_GetAttrString(m, "TryToDiscardThis") : NULL;
-		PyObject *a = Py_BuildValue("([Oi])", cls, 1);
-		if (f && a) {
-			Scheduler_Add(&g_pWorld->scheduler, Timer_GetTime(&g_pWorld->timer), f, a, "");
-		}
-		PyErr_Clear();
-		Py_XDECREF(a);
-		Py_XDECREF(f);
-		Py_XDECREF(m);
-	}
-	return PyInt_FromLong(found);
+	return Sf_Return(&f, Sf_Int(&f, in));
 }
 
-/* TryToDiscardThis([cls, discardable]): the class is deleted when nothing uses it, then it leaves the list */
+/* TryToDiscardThis(res): SAct.DelClass(res[0]); the class leaves CharRes when it is gone (SAct.GetClass(res[0]) == 0) */
 static PyObject *Chars_TryToDiscardThis(PyObject *self, PyObject *args) {
 	PyObject *res;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &res)) {
-		return NULL;
+	SF_ARGS("O", &res);
+	Sf_Ask(&f, "SAct", "DelClass", "(O)", Sf_Item(&f, res, 0));
+	if (Sf_EqI(&f, Sf_Ask(&f, "SAct", "GetClass", "(O)", Sf_Item(&f, res, 0)), 0) > 0) {
+		Sf_Method(&f, Sf_Global(&f, "Chars", "CharRes"), "remove", "(O)", res);
 	}
-	PyObject *cls = PySequence_GetItem(res, 0);
-	if (!cls || !PyString_Check(cls)) {
-		Py_XDECREF(cls);
-		PyErr_SetString(PyExc_TypeError, "TryToDiscardThis: [class, discardable]");
-		return NULL;
-	}
-	cActClassList_Del(g_pActClassList, PyString_AsString(cls));
-	g_pAuxActClass = cActClassList_Get(g_pActClassList, PyString_AsString(cls));
-	if (!g_pAuxActClass) {
-		PyObject *list = Chars_ResList();
-		int i = -1, n = list ? PySequence_Length(list) : 0;
-		for (int k = 0; k < n && i < 0; k++) {
-			PyObject *x = PySequence_GetItem(list, k);
-			if (x && PyObject_Compare(x, res) == 0) {
-				i = k;
-			}
-			Py_XDECREF(x);
-		}
-		if (i >= 0) {
-			PySequence_DelItem(list, i);
-		} else if (list) {
-			/* list.remove of the script */
-			PyErr_SetString(PyExc_ValueError, "list.remove(x): x not in list");
-			Py_DECREF(list);
-			Py_DECREF(cls);
-			return NULL;
-		}
-		Py_XDECREF(list);
-	}
-	Py_DECREF(cls);
-	return Py_ReturnNone();
+	return Sf_None(&f);
 }
 
 /* ---- the player ---- */
@@ -416,53 +329,33 @@ static PyObject *Chars_SetOnFloor(PyObject *self, PyObject *args) {
 /* MainCharDeath(name, param): the hook of a mission, else the end of the game */
 static PyObject *Chars_MainCharDeath(PyObject *self, PyObject *args) {
 	PyObject *name, *param;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &name, &param)) {
-		return NULL;
+	SF_ARGS("OO", &name, &param);
+	PyObject *hook = Sf_Global(&f, "Chars", "OnMainCharDeath");
+	int t = Sf_True(&f, hook);
+	if (t > 0) {
+		Sf_Call(&f, hook, "(OO)", name, param);
+	} else if (t == 0) {
+		Sf_Import(&f, "MissionsFuncs");
+		Sf_Ask(&f, "MissionsFuncs", "FinishGame", "(i)", 0);
 	}
-	PyObject *m = PyImport_ImportModule("Chars");
-	PyObject *hook = m ? PyObject_GetAttrString(m, "OnMainCharDeath") : NULL;
-	PyErr_Clear();
-	if (hook && PyObject_IsTrue(hook) > 0) {
-		PyObject *r = Script_Invoke(hook, Py_BuildValue("(OO)", name, param));
-		if (!r) {
-			Py_DECREF(hook);
-			Py_XDECREF(m);
-			return NULL;
-		}
-		Py_DECREF(r);
-	} else {
-		Script_Call("MissionsFuncs", "FinishGame", "(i)", 0);
-	}
-	Py_XDECREF(hook);
-	Py_XDECREF(m);
-	return Py_ReturnNone();
+	return Sf_None(&f);
 }
 
 static PyObject *Chars_CreatePlayersList(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	Script_Call("Scrap", "EntityListSet", "(sss)", "Players", "OnDeath", "Chars.MainCharDeath");
-	return Py_ReturnNone();
+	SF_ARGS("");
+	Sf_Ask(&f, "Scrap", "EntityListSet", "(sss)", "Players", "OnDeath", "Chars.MainCharDeath");
+	return Sf_None(&f);
 }
 
 /* module.func(args), args stolen: the result (a new reference, NULL with the error left set for the caller) */
 static PyObject *Chars_Try(const char *module, const char *func, PyObject *args) {
 	PyObject *m = PyImport_ImportModule((char *)module);
-	PyObject *f = m ? PyObject_GetAttrString(m, (char *)func) : NULL;
+	/* a function of this module as the script calls it: its global (NameError when missing) */
+	PyObject *f = !m ? NULL : !strcmp(module, "Chars") ? Script_Global(module, func) : PyObject_GetAttrString(m, (char *)func);
 	PyObject *r = f && args ? Script_CallObject(f, args, NULL) : NULL;
 	Py_XDECREF(args);
 	Py_XDECREF(f);
 	Py_XDECREF(m);
-	return r;
-}
-
-/* module.func(args): the result (a new reference, NULL with the error printed) */
-static PyObject *Chars_Ask(const char *module, const char *func, PyObject *args) {
-	PyObject *r = Chars_Try(module, func, args);
-	if (!r) {
-		PyErr_Print();
-	}
 	return r;
 }
 
@@ -482,13 +375,20 @@ static PyObject *Chars_Init(PyObject *self, PyObject *args) {
 	}
 	Py_DECREF(r);
 	if (Script_GetInt("Init", "Outdoor", 0) || Script_GetInt("Init", "isJunkYard", 0)) {
-		PyObject *s = PyString_FromString("Sputnik");
-		Chars_AddRes(s, 0);
+		PyObject *s = PyString_FromString("Sputnik"), *zero = PyInt_FromLong(0);
+		int a = s && zero ? Chars_AddRes(s, zero) : -1;
 		Py_XDECREF(s);
+		Py_XDECREF(zero);
+		if (a < 0) {
+			return NULL;
+		}
 	}
 	PyObject *list = Chars_ResList();
+	if (!list) {
+		return NULL;
+	}
 	/* the list may grow while the scripts load: the length of each turn, as the for loop of the script */
-	for (int i = 0; list && i < PySequence_Length(list); i++) {
+	for (int i = 0; i < PySequence_Length(list); i++) {
 		PyObject *cr = PySequence_GetItem(list, i);
 		r = cr ? Chars_Try("Chars", "LocalLoadRes", Py_BuildValue("(O)", cr)) : NULL;
 		PyObject *zero = r ? PyInt_FromLong(0) : NULL;
@@ -503,7 +403,7 @@ static PyObject *Chars_Init(PyObject *self, PyObject *args) {
 		Py_DECREF(r);
 		Py_DECREF(cr);
 	}
-	Py_XDECREF(list);
+	Py_DECREF(list);
 	const char *ch = SaveVar_Get("Char");
 	r = Chars_Try("Chars", "LoadRes", Py_BuildValue("(s)", ch ? ch : ""));
 	if (!r) {
@@ -516,186 +416,88 @@ static PyObject *Chars_Init(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-/* o.name = v (v stolen): 0 with the error left set for the caller */
-static int Chars_Put(PyObject *o, const char *name, PyObject *v) {
-	int ok = v && PyObject_SetAttrString(o, (char *)name, v) == 0;
-	Py_XDECREF(v);
-	return ok;
-}
 
-static void Chars_Set(PyObject *o, const char *name, PyObject *v) {
-	if (o && v && PyObject_SetAttrString(o, (char *)name, v) < 0) {
-		PyErr_Print();
-	}
-	Py_XDECREF(v);
-}
-
-/* CreateMainChar(name, type, pos, ang): the character of the player (made when it is not there), the camera on
- * it, the controls and the HUD on foot */
+/* CreateMainChar(CharName, CharType, Pos, Ang): the character of the player (made when it is not there), the camera
+ * on it, the controls and the HUD on foot; None after the print of a character of another kind */
 static PyObject *Chars_CreateMainChar(PyObject *self, PyObject *args) {
-	char *name, *type;
-	PyObject *pos, *ang;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "ssOO", &name, &type, &pos, &ang)) {
-		return NULL;
-	}
-	PyObject *c = Chars_Ask("Scrap", "GetEntity", Py_BuildValue("(s)", name));
-	if (!c || PyObject_IsTrue(c) <= 0) {
-		Py_XDECREF(c);
-		PyObject *x = PySequence_GetItem(pos, 0), *y = PySequence_GetItem(pos, 1), *z = PySequence_GetItem(pos, 2);
-		c = x && y && z ? Chars_Ask("Scrap", "CreateEntity", Py_BuildValue("(sOOOs)", name, x, y, z, "WalkChar")) : NULL;
-		Py_XDECREF(x);
-		Py_XDECREF(y);
-		Py_XDECREF(z);
-		if (!c) {
-			return NULL;
+	PyObject *name, *type, *pos, *ang;
+	SF_ARGS("OOOO", &name, &type, &pos, &ang);
+	Sf_Import(&f, "CharScorer");
+	PyObject *c = Sf_Entity(&f, name);
+	int t = Sf_True(&f, c);
+	if (t == 0) {
+		PyObject *x = Sf_Item(&f, pos, 0), *y = Sf_Item(&f, pos, 1), *z = Sf_Item(&f, pos, 2);
+		c = Sf_Ask(&f, "Scrap", "CreateEntity", "(OOOOs)", name, x, y, z, "WalkChar");
+		Sf_SetAttr(&f, c, "ActCtrl", type);
+		Sf_SetAttrI(&f, c, "UsrControl", 0);
+		Sf_SetAttrI(&f, c, "AutoSelect", 1);
+		Sf_SetAttr(&f, c, "Ang", Sf_Build(&f, "(iOi)", 0, Sf_Item(&f, ang, 1), 0));
+		Sf_SetAttr(&f, c, "ViewAng", ang);
+		Sf_SetAttrS(&f, c, "TgType", "Green");
+		Sf_SetAttrS(&f, c, "EntityList", "Players");
+		Sf_SetAttrI(&f, c, "Energy", 2);
+		PyObject *hook = Sf_Global(&f, "Chars", "OnCreateMainChar");
+		if (Sf_True(&f, hook) > 0) {
+			Sf_Call(&f, hook, "(O)", c);
 		}
-		/* the script stops at the first set that fails (an ActCtrl whose module is not loaded) */
-		PyObject *yaw = PySequence_GetItem(ang, 1);
-		byte ok = Chars_Put(c, "ActCtrl", PyString_FromString(type))
-			&& Chars_Put(c, "UsrControl", PyInt_FromLong(0))
-			&& Chars_Put(c, "AutoSelect", PyInt_FromLong(1))
-			&& Chars_Put(c, "Ang", Py_BuildValue("(iOi)", 0, yaw ? yaw : Py_None, 0))
-			&& Chars_Put(c, "ViewAng", (Py_INCREF(ang), ang))
-			&& Chars_Put(c, "TgType", PyString_FromString("Green"))
-			&& Chars_Put(c, "EntityList", PyString_FromString("Players"))
-			&& Chars_Put(c, "Energy", PyInt_FromLong(2));
-		Py_XDECREF(yaw);
-		PyObject *m = ok ? PyImport_ImportModule("Chars") : NULL;
-		PyObject *hook = m ? PyObject_GetAttrString(m, "OnCreateMainChar") : NULL;
-		Py_XDECREF(m);
-		if (hook && PyObject_IsTrue(hook) > 0) {
-			PyObject *r = Script_Invoke(hook, Py_BuildValue("(O)", c));
-			ok = r != NULL;
-			Py_XDECREF(r);
-		}
-		Py_XDECREF(hook);
-		if (!ok) {
-			Py_DECREF(c);
-			return NULL;
-		}
-	} else {
-		PyObject *r = PyObject_CallMethod(c, "IsType", "(s)", "WalkChar");
-		PyObject *act = PyObject_GetAttrString(c, "ActCtrl");
-		byte walk = r && PyObject_IsTrue(r) > 0;
-		byte same = act && PyString_Check(act) && !strcmp(PyString_AsString(act), type);
-		Py_XDECREF(r);
-		Py_XDECREF(act);
-		PyErr_Clear();
-		if (!walk || !same) {
-			Py_DECREF(c);
-			return Chars_PrintLine("Invalid '%s' character created.", name) ? Py_ReturnNone() : NULL;
+	} else if (t > 0) {
+		int walk = Sf_True(&f, Sf_Method(&f, c, "IsType", "(s)", "WalkChar"));
+		int other = walk == 0 ? 1 : walk > 0 ? Sf_Compare(&f, Sf_Attr(&f, c, "ActCtrl"), "!=", type) : -1;
+		if (other > 0) {
+			Sf_Print(&f, "O", Sf_Cat(&f, "sOs", "Invalid '", name, "' character created."));
+			return Sf_None(&f);
 		}
 	}
-	PyObject *camName = Chars_Ask("Scrap", "GetCam", Py_BuildValue("(i)", 0));
-	PyObject *cam = camName ? Chars_Ask("Scrap", "GetEntity", Py_BuildValue("(O)", camName)) : NULL;
-	PyObject *cname = PyObject_GetAttrString(c, "Name");
-	PyErr_Clear();
-	if (cam && cname) {
-		Py_INCREF(cname);
-		Chars_Set(cam, "MainTarget", cname);
-		Py_INCREF(cname);
-		Chars_Set(cam, "Target", cname);
-		Chars_Set(cam, "FreeCam", PyInt_FromLong(0));
-	}
-	Py_XDECREF(cname);
-	Py_XDECREF(cam);
-	Py_XDECREF(camName);
-	Input_SelectActionSetNamed("Walk");
-	Script_Call("CharScorer", "Create", "(i)", 0);
-	return c;
+	PyObject *cam = Sf_Entity(&f, Sf_Ask(&f, "Scrap", "GetCam", "(i)", 0));
+	PyObject *cname = Sf_Attr(&f, c, "Name");
+	Sf_SetAttr(&f, cam, "MainTarget", cname);
+	Sf_SetAttr(&f, cam, "Target", cname);
+	Sf_SetAttrI(&f, cam, "FreeCam", 0);
+	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Walk");
+	Sf_Ask(&f, "CharScorer", "Create", "(i)", 0);
+	return Sf_Return(&f, c);
 }
 
 /* CreateStartupPlayer(): offline, the camera and the character of the player at the spawn point of the save game
  * (or the first deathmatch spawn), with the batteries of the save game */
 static PyObject *Chars_CreateStartupPlayer(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	if (g_pApp->flags & 7) {
-		return Py_ReturnNone();
+	SF_ARGS("");
+	if (Sf_Compare(&f, Sf_Ask(&f, "Scrap", "GetNetFlags", "()"), "==", Sf_Build(&f, "(iii)", 0, 0, 0)) <= 0) {
+		return Sf_None(&f);
 	}
-	const char *spawn = SaveVar_Get("Spawn");
-	PyObject *dummy = Chars_Ask("Scrap", "StartDummySearch", Py_BuildValue("(si)", spawn ? spawn : "", 1));
-	Py_XDECREF(dummy);
-	dummy = Chars_Ask("Scrap", "NextDummySearch", PyTuple_New(0));
-	if (!dummy || PyObject_IsTrue(dummy) <= 0) {
-		Py_XDECREF(dummy);
-		if (!Chars_PrintLine("%s Not found!!!!", spawn ? spawn : "")) {
-			return NULL;
+	Sf_Ask(&f, "Scrap", "StartDummySearch", "(Oi)", Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Spawn"), 1);
+	PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
+	if (Sf_True(&f, dummy) == 0) {
+		Sf_Print(&f, "O", Sf_Cat(&f, "Os", Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Spawn"), " Not found!!!!"));
+		Sf_Ask(&f, "Scrap", "StartDummySearch", "(si)", "DM_Player_Spawn*", 1);
+		dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
+		if (Sf_EqS(&f, Sf_Item(&f, dummy, 0), "DM_Player_Spawn_Junkyard") > 0) {
+			dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
 		}
-		PyObject *r = Chars_Ask("Scrap", "StartDummySearch", Py_BuildValue("(si)", "DM_Player_Spawn*", 1));
-		Py_XDECREF(r);
-		dummy = Chars_Ask("Scrap", "NextDummySearch", PyTuple_New(0));
-		/* the script read dummy[0] here before it checked the dummy */
-		PyObject *n = dummy ? PySequence_GetItem(dummy, 0) : NULL;
-		if (n && PyString_Check(n) && !strcmp(PyString_AsString(n), "DM_Player_Spawn_Junkyard")) {
-			Py_DECREF(dummy);
-			dummy = Chars_Ask("Scrap", "NextDummySearch", PyTuple_New(0));
+		if (Sf_True(&f, dummy) == 0) {
+			Sf_Print(&f, "s", "Cannot create a main char!");
+			return Sf_None(&f);
 		}
-		Py_XDECREF(n);
-		PyErr_Clear();
-		if (!dummy || PyObject_IsTrue(dummy) <= 0) {
-			Py_XDECREF(dummy);
-			return Chars_PrintLine("Cannot create a main char!") ? Py_ReturnNone() : NULL;
-		}
-		PyObject *dn = PySequence_GetItem(dummy, 0);
-		byte ok = Chars_PrintLine("Using %s indeed.", dn && PyString_Check(dn) ? PyString_AsString(dn) : "");
-		Py_XDECREF(dn);
-		if (!ok) {
-			Py_DECREF(dummy);
-			return NULL;
-		}
+		Sf_Print(&f, "O", Sf_Cat(&f, "sOs", "Using ", Sf_Item(&f, dummy, 0), " indeed."));
 	}
-	PyObject *dname = PySequence_GetItem(dummy, 0), *dpos = PySequence_GetItem(dummy, 1), *dang = PySequence_GetItem(dummy, 2);
-	PyObject *c = NULL;
-	if (dname && dpos && dang) {
-		PyObject *x = PySequence_GetItem(dpos, 0), *y = PySequence_GetItem(dpos, 1), *z = PySequence_GetItem(dpos, 2);
-		PyObject *cam = Chars_Ask("Scrap", "CreateEntity", Py_BuildValue("(sOOOs)", "MainCam", x, y, z, "FCam"));
-		PyObject *camName = cam ? PyObject_GetAttrString(cam, "Name") : NULL;
-		if (camName) {
-			Script_CallKw("Scrap", "SetCam", Py_BuildValue("(iO)", 0, camName), NULL);
-		}
-		PyObject *yaw = PySequence_GetItem(dang, 1);
-		PyObject *half = PyInt_FromLong(180);
-		PyObject *ang = yaw && half ? PyNumber_Add(yaw, half) : NULL;
-		Py_XDECREF(half);
-		const char *ch = SaveVar_Get("Char");
-		c = ang ? Chars_Ask("Chars", "CreateMainChar", Py_BuildValue("(ssO(iOi))", "Player0", ch ? ch : "", dpos, 0, ang, 0)) : NULL;
-		if (c && c != Py_None) {
-			const char *bat = SaveVar_Get("AcBatteries");
-			PyObject *energy = Script_EvalMain(bat ? bat : "");
-			double e = energy && PyFloat_Check(energy) ? PyFloat_AsDouble(energy) : energy && PyInt_Check(energy) ? PyInt_AsLong(energy) : 0;
-			if (e < 2.0) {
-				Py_XDECREF(energy);
-				energy = PyInt_FromLong(2);
-				SaveVar_Set("AcBatteries", "2");
-			}
-			Chars_Set(c, "Energy", energy);
-			if (strncmp(PyString_AsString(dname), "DM_Ship_Spawn_", 14)) {
-				PyObject *cn = PyObject_GetAttrString(c, "Name");
-				if (cn) {
-					Script_CallKw("SLogic", "SetOnFloor", Py_BuildValue("(O)", cn), NULL);
-				}
-				Py_XDECREF(cn);
-			}
-		}
-		PyErr_Clear();
-		Py_XDECREF(ang);
-		Py_XDECREF(yaw);
-		Py_XDECREF(camName);
-		Py_XDECREF(cam);
-		Py_XDECREF(x);
-		Py_XDECREF(y);
-		Py_XDECREF(z);
+	PyObject *at = Sf_Item(&f, dummy, 1);
+	PyObject *x = Sf_Item(&f, at, 0), *y = Sf_Item(&f, at, 1), *z = Sf_Item(&f, at, 2);
+	PyObject *cam = Sf_Ask(&f, "Scrap", "CreateEntity", "(sOOOs)", "MainCam", x, y, z, "FCam");
+	Sf_Ask(&f, "Scrap", "SetCam", "(iO)", 0, Sf_Attr(&f, cam, "Name"));
+	PyObject *fn = Sf_Global(&f, "Chars", "CreateMainChar");
+	PyObject *ch = Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Char");
+	PyObject *yaw = Sf_OpI(&f, Sf_Item(&f, Sf_Item(&f, dummy, 2), 1), '+', 180);
+	PyObject *c = Sf_Call(&f, fn, "(sOO(iOi))", "Player0", ch, Sf_Item(&f, dummy, 1), 0, yaw, 0);
+	PyObject *energy = Sf_Eval(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "AcBatteries"), "Chars");
+	if (Sf_Compare(&f, energy, "<", Sf_Float(&f, 2.0)) > 0) {
+		energy = Sf_Int(&f, 2);
+		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "AcBatteries", "2");
 	}
-	Py_XDECREF(dname);
-	Py_XDECREF(dpos);
-	Py_XDECREF(dang);
-	Py_DECREF(dummy);
-	if (!c) {
-		return Py_ReturnNone();
+	Sf_SetAttr(&f, c, "Energy", energy);
+	if (Sf_Compare(&f, Sf_Slice(&f, Sf_Item(&f, dummy, 0), 0, 14), "!=", Sf_Str(&f, "DM_Ship_Spawn_")) > 0) {
+		Sf_Ask(&f, "SLogic", "SetOnFloor", "(O)", Sf_Attr(&f, c, "Name"));
 	}
-	return c;
+	return Sf_Return(&f, c);
 }
 
 PyMethodDef g_CharsMethods[] = {

@@ -4,7 +4,8 @@
  * clients (ClientCreate, hooked into Net.ClientCreate), the hints and the interactive objects of the missions. The
  * module variables (Upgrades, UpgradesRTime, UpgradesID, LastClientCreate, Hints, HINT_RADIUS) stay in the script,
  * other scripts read them. The script reads and writes ship variables by built names ("Upgrd0" + `i`) with eval and
- * exec; here they are attribute reads and writes, which raise the same errors.
+ * exec; here they are attribute reads and writes for weapon numbers, which raise the same errors (BaseOnTakeUpgrade
+ * runs the script's text for any other iWeap).
  */
 #include <string.h>
 
@@ -218,54 +219,84 @@ static PyObject *Items_DropAll(PyObject *self, PyObject *args) {
 	return Script_Done(&r, Py_ReturnNone());
 }
 
+/*
+ * eval("obj." + prefix + `iWeap`) (exec of it + rest when rest is given) of BaseOnTakeUpgrade with its locals
+ * loc: for a weapon number >= 0 the attribute of the ship obj (value set for exec), for any other value the text the
+ * script makes, run in the module's globals (its SyntaxError and the like). A new reference, NULL with the error set
+ */
+static PyObject *It_WeapVar(PyObject *obj, const char *prefix, PyObject *weap, PyObject *loc, const char *rest,
+	PyObject *value) {
+	if (PyInt_Check(weap) && PyInt_AsLong(weap) >= 0) {
+		if (!rest) {
+			return It_Var(obj, prefix, PyInt_AsLong(weap));
+		}
+		char name[0x20];
+		Str_Printf(name, sizeof(name), "%s%ld", prefix, PyInt_AsLong(weap));
+		return Script_HSet(obj, name, Script_Ref(value)) ? Py_ReturnNone() : NULL;
+	}
+	char head[0x20];
+	Str_Printf(head, sizeof(head), "obj.%s", prefix);
+	PyObject *m = PyImport_ImportModule("Items"), *r = m ? PyObject_Repr(weap) : NULL;
+	PyObject *text = r ? Script_SPlus(head, r) : NULL;
+	text = text && rest ? Script_PlusS(text, rest) : text;
+	PyObject *v = text ? PyRun_String(PyString_AsString(text), rest ? Py_file_input : Py_eval_input,
+		PyModule_GetDict(m), loc) : NULL;
+	Py_XDECREF(text);
+	Py_XDECREF(r);
+	Py_XDECREF(m);
+	return v;
+}
+
 /* BaseOnTakeUpgrade(ItemName, VehicleName, iWeap, iupgrd): a ship with the weapon takes its upgrade (and drops the one
  * it had) */
-static PyObject *It_BaseOnTake(PyObject *item, PyObject *veh, long weap, long upgrd) {
+static PyObject *It_BaseOnTake(PyObject *item, PyObject *veh, PyObject *weap, PyObject *upgrd) {
 	scriptRefs_t r = { .n = 0 };
-	PyObject *obj = K(Script_Entity(veh)), *has = obj ? K(It_Var(obj, "isWpn0", weap)) : NULL;
+	PyObject *obj = K(Script_Entity(veh));
+	PyObject *loc = obj ? K(Py_BuildValue("{s:O,s:O,s:O,s:O,s:O}", "ItemName", item, "VehicleName", veh, "iWeap", weap,
+		"iupgrd", upgrd, "obj", obj)) : NULL;
+	PyObject *has = loc ? K(It_WeapVar(obj, "isWpn0", weap, loc, NULL, NULL)) : NULL;
 	int is = has ? Script_True(has) : -1;
 	if (is <= 0) {
 		return is < 0 ? Script_Done(&r, NULL) : Script_Done(&r, Py_ReturnNone());
 	}
 	PyObject *itm = K(Script_Entity(item));
-	PyObject *old = itm && Script_HSet(itm, "rTime", PyFloat_FromDouble(0.1)) && Script_HSet(itm, "Owner", Script_Ref(veh)) ?
-		K(It_Var(obj, "Upgrd0", weap)) : NULL;
-	PyObject *ammo = old ? K(It_Var(obj, "UAmmo0", weap)) : NULL;
+	PyObject *old = itm && PyDict_SetItemString(loc, "itm", itm) == 0 && Script_HSet(itm, "rTime", PyFloat_FromDouble(0.1)) &&
+		Script_HSet(itm, "Owner", Script_Ref(veh)) ? K(It_WeapVar(obj, "Upgrd0", weap, loc, NULL, NULL)) : NULL;
+	PyObject *ammo = old ? K(It_WeapVar(obj, "UAmmo0", weap, loc, NULL, NULL)) : NULL;
 	PyObject *d = ammo ? K(It_DropUpgrade(veh, old, ammo)) : NULL;
-	PyObject *ups = d ? K(Script_Global("Items", "Upgrades")) : NULL, *key = ups ? K(PyInt_FromLong(upgrd)) : NULL;
-	int known = key ? PyMapping_HasKey(ups, key) : -1;
-	if (known < 0) {
+	PyObject *ups = d ? K(Script_Global("Items", "Upgrades")) : NULL;
+	PyObject *known = ups ? K(Script_Method(ups, "has_key", "(O)", upgrd)) : NULL;
+	int t = known ? Script_True(known) : -1;
+	if (t < 0) {
 		FAIL();
 	}
-	if (!known) {
+	if (!t) {
 		PyObject *v = K(Py_BuildValue("(Oi)", item, 200));
-		if (!v || PyObject_SetItem(ups, key, v) < 0) {
+		if (!v || PyObject_SetItem(ups, upgrd, v) < 0) {
 			FAIL();
 		}
 	}
-	char name[0x20];
-	Str_Printf(name, sizeof(name), "Upgrd0%ld", weap);
-	if (!Script_HSet(obj, name, Script_Ref(key))) {
+	if (!K(It_WeapVar(obj, "Upgrd0", weap, loc, " = iupgrd", upgrd))) {
 		FAIL();
 	}
-	PyObject *up = K(It_Upgrade(ups, key)), *left = up ? K(Script_Index(up, 1)) : NULL;
-	Str_Printf(name, sizeof(name), "UAmmo0%ld", weap);
-	if (!left || !Script_HSet(obj, name, Script_Ref(left))) {
+	/* the value first, as the assignment evaluates it (exec of the text for another iWeap evaluates it itself) */
+	byte num = PyInt_Check(weap) && PyInt_AsLong(weap) >= 0;
+	PyObject *up = num ? K(It_Upgrade(ups, upgrd)) : NULL, *left = up ? K(Script_Index(up, 1)) : NULL;
+	if ((num && !left) || !K(It_WeapVar(obj, "UAmmo0", weap, loc, " = Upgrades[iupgrd][1]", left))) {
 		FAIL();
 	}
-	PyObject *up2 = K(It_Upgrade(ups, key)), *left2 = up2 ? K(Script_Index(up2, 1)) : NULL;
+	PyObject *up2 = K(It_Upgrade(ups, upgrd)), *left2 = up2 ? K(Script_Index(up2, 1)) : NULL;
 	PyObject *v = left2 ? K(Py_BuildValue("(OO)", item, left2)) : NULL;
-	if (!v || PyObject_SetItem(ups, key, v) < 0) {
+	if (!v || PyObject_SetItem(ups, upgrd, v) < 0) {
 		FAIL();
 	}
 	return Script_Done(&r, Py_ReturnNone());
 }
 
 static PyObject *Items_BaseOnTakeUpgrade(PyObject *self, PyObject *args) {
-	PyObject *item, *veh;
-	long weap, upgrd;
+	PyObject *item, *veh, *weap, *upgrd;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "OOll", &item, &veh, &weap, &upgrd)) {
+	if (!PyArg_ParseTuple(args, "OOOO", &item, &veh, &weap, &upgrd)) {
 		return NULL;
 	}
 	return It_BaseOnTake(item, veh, weap, upgrd);
@@ -275,12 +306,16 @@ static PyObject *Items_BaseOnTakeUpgrade(PyObject *self, PyObject *args) {
  * Swarm (1), Vulcan (0) */
 #define IT_TAKE(id, weap, upgrd) \
 	static PyObject *Items_OnTake##id(PyObject *self, PyObject *args) { \
-		PyObject *item, *veh, *res; \
+		PyObject *item, *veh, *w, *u, *res; \
 		(void)self; \
 		if (!PyArg_ParseTuple(args, "OO", &item, &veh)) { \
 			return NULL; \
 		} \
-		res = It_BaseOnTake(item, veh, weap, upgrd); \
+		w = PyInt_FromLong(weap); \
+		u = PyInt_FromLong(upgrd); \
+		res = w && u ? It_BaseOnTake(item, veh, w, u) : NULL; \
+		Py_XDECREF(w); \
+		Py_XDECREF(u); \
 		return res; \
 	}
 
