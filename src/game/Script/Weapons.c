@@ -19,24 +19,22 @@ static const scriptStep_t weapons_steps[] = {
 #define K(o) Script_Keep(&r, (o))
 #define FAIL() return Script_Done(&r, NULL)
 
-/* a section of weapons.def with $idWeap, $idAmmo and $server (NULL for those a section does not use) */
-static void Weap_Run(const char *section, PyObject *idWeap, PyObject *idAmmo, PyObject *server) {
+/* a section of weapons.def with $idWeap, $idAmmo and $server (NULL for those a section does not use); it stops where
+ * the script stops: 0 with the error set */
+static byte Weap_Run(const char *section, PyObject *idWeap, PyObject *idAmmo, PyObject *server) {
 	PyObject *vars = PyDict_New();
 	if (!vars) {
-		PyErr_Clear();
-		return;
+		return 0;
 	}
-	if (idWeap) {
-		PyDict_SetItemString(vars, "idWeap", idWeap);
+	if ((idWeap && PyDict_SetItemString(vars, "idWeap", idWeap) < 0) ||
+		(idAmmo && PyDict_SetItemString(vars, "idAmmo", idAmmo) < 0) ||
+		(server && PyDict_SetItemString(vars, "server", server) < 0)) {
+		Py_DECREF(vars);
+		return 0;
 	}
-	if (idAmmo) {
-		PyDict_SetItemString(vars, "idAmmo", idAmmo);
-	}
-	if (server) {
-		PyDict_SetItemString(vars, "server", server);
-	}
-	Script_RunFile(0, "weapons/weapons.def", section, weapons_def, weapons_steps, vars);
+	byte ok = Script_RunFileTry(0, "weapons/weapons.def", section, weapons_def, weapons_steps, vars);
 	Py_DECREF(vars);
+	return ok;
 }
 
 /* `global name; name = "0"+`id`` */
@@ -57,8 +55,7 @@ static PyObject *Weap_LoadResources(const char *mod) {
 		return NULL;
 	}
 	Str_Printf(section, sizeof(section), "%sRes", mod);
-	Weap_Run(section, NULL, NULL, NULL);
-	return Py_ReturnNone();
+	return Weap_Run(section, NULL, NULL, NULL) ? Py_ReturnNone() : NULL;
 }
 
 /* LoadResources() as Init calls it, through the module */
@@ -82,10 +79,10 @@ static PyObject *Weap_Init(const char *mod, PyObject *args, byte net) {
 			return NULL;
 		}
 	}
-	Weap_Run(mod, idWeap, idAmmo, server);
+	byte ok = Weap_Run(mod, idWeap, idAmmo, server);
 	Py_XDECREF(server);
 	Py_XDECREF(flags);
-	return Py_ReturnNone();
+	return ok ? Py_ReturnNone() : NULL;
 }
 
 /* Init(IdAmmo) of a countermeasure (Cloud, EMI, Sonic); EMI also keeps IDAmmo */
@@ -95,8 +92,7 @@ static PyObject *Weap_InitCounter(const char *mod, PyObject *args, byte keepId) 
 		!Weap_SetId(mod, "IDAmmo", idAmmo))) || !Weap_Hook(mod) || !Weap_CallLoad(mod)) {
 		return NULL;
 	}
-	Weap_Run(mod, NULL, idAmmo, NULL);
-	return Py_ReturnNone();
+	return Weap_Run(mod, NULL, idAmmo, NULL) ? Py_ReturnNone() : NULL;
 }
 
 /*
@@ -257,15 +253,13 @@ static PyObject *Weap_SetUpStart(PyObject *args) {
 static PyObject *Weapons_InitAmmo(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	Weap_Run("Ammo", NULL, NULL, NULL);
-	return Py_ReturnNone();
+	return Weap_Run("Ammo", NULL, NULL, NULL) ? Py_ReturnNone() : NULL;
 }
 
 static PyObject *Weapons_InitWeapons(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	Weap_Run("Weapons", NULL, NULL, NULL);
-	return Py_ReturnNone();
+	return Weap_Run("Weapons", NULL, NULL, NULL) ? Py_ReturnNone() : NULL;
 }
 
 static PyObject *Weapons_Init(PyObject *self, PyObject *args) {

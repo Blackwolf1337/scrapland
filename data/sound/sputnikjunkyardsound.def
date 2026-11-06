@@ -1,6 +1,6 @@
 # sputnikjunkyardsound (the sound script sound/sputnikjunkyardsound.py of the game): the sound files of the character
 # class (LoadSounds), the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the
-# loops of a new entity (InitLoops, $name the entity) and Init, which runs them with $char the class. The format is
+# loops of a new entity (InitLoops, $e its handle) and Init, which runs them with $char the class. The format is
 # described in src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with
 # scrapc/sound/sputnikjunkyardsound.def replaces this file.
 
@@ -35,7 +35,7 @@ do TalkSnd
 section TalkSnd
 
 section InitLoops
-entity $name
+object $e
 	snd_n 1
 	snd00_name loop-sputnikJ
 	snd00_loop 1

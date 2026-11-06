@@ -8,7 +8,7 @@
 # A pack in mods/ with scrapc/sound/sound.def replaces this file.
 
 section SetStdDamageSounds
-entity $name
+object $e
 	sdd00_name BulletLo1E
 	sdd00_pitch0 0.0
 	sdd00_vol0 0.06
@@ -38,7 +38,7 @@ entity $name
 	sdd08_vol0 0.25
 
 section SetStdDamageSoundLoops
-entity $name
+object $e
 	sdl00_name ElectricDamageLo
 	sdl00_pitch0 0.0
 	sdl00_vol0 0.2
