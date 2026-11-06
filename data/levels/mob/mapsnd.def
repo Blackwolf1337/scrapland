@@ -1,5 +1,5 @@
 # The functions of MapSnd in level mob (the script levels/mob/scripts/mapsnd.py of data03.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: SndElements.
+# per function, its parameters after the name. The other functions of the script stay Python.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/mob/mapsnd.def replaces this file.
 section LoadSounds
 if %MapSnd.isPC
@@ -22,6 +22,64 @@ end
 call SSound.LoadSound "tunel334-out.wav"
 if %MapSnd.isPC
 	call SSound.LoadSound "ventilador3.wav"
+end
+
+section SndElements Name x y z angx angy
+setvar MapSnd.cntr %MapSnd.cntr+1
+if $Name == "OUTSKIRTSFXLighting01"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		run vecrot _v1 ($x,$y,$z) (0,0,-300) ($angx,$angy,0)
+		call Sound.SetPSLoop "$(Name)$(_cntr)" $_v1 "transformer3" 1.0 0
+end
+elif $Name == "OUTSKIRTSFXLighting02"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		run vecrot _v1 ($x,$y,$z) (0,0,-300) ($angx,$angy,0)
+		call Sound.SetPSLoop "$(Name)$(_cntr)" $_v1 "transformer3" 1.0 0
+end
+elif $Name == "OUTSKIRTSFXLighting03"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		run vecrot _v1 ($x,$y,$z) (0,0,-300) ($angx,$angy,0)
+		call Sound.SetPSLoop "$(Name)$(_cntr)" $_v1 "transformer3" 1.0 0
+end
+elif $Name == "OUTSKIRTSFXLighting04"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		run vecrot _v1 ($x,$y,$z) (0,0,-300) ($angx,$angy,0)
+		call Sound.SetPSLoop "$(Name)$(_cntr)" $_v1 "transformer3" 1.0 0
+end
+elif $Name == "OUTSKIRTSFXLighting05"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		run vecrot _v1 ($x,$y,$z) (0,0,-300) ($angx,$angy,0)
+		call Sound.SetPSLoop "$(Name)$(_cntr)" $_v1 "transformer3" 1.0 0
+end
+elif $Name == "OUTSKIRTSFXLighting06"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		run vecrot _v1 ($x,$y,$z) (0,0,-300) ($angx,$angy,0)
+		call Sound.SetPSLoop "$(Name)$(_cntr)" $_v1 "transformer3" 1.0 0
+end
+elif $Name == "OUTSKIRTSFXLighting07"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		run vecrot _v1 ($x,$y,$z) (0,0,-300) ($angx,$angy,0)
+		call Sound.SetPSLoop "$(Name)$(_cntr)" $_v1 "transformer3" 1.0 0
+end
+elif $Name == "OUTSKIRTSFXLighting08"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		run vecrot _v1 ($x,$y,$z) (0,0,-300) ($angx,$angy,0)
+		call Sound.SetPSLoop "$(Name)$(_cntr)" $_v1 "transformer3" 1.0 0
+end
+elif $Name == "OutFloatLamp"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		run vecrot _v1 ($x,$y,$z) (0,0,-300) ($angx,$angy,0)
+		call Sound.SetPSLoop "$(Name)$(_cntr)" $_v1 "ventilador3" 0.4 +6
+end
 end
 
 section SetSounds

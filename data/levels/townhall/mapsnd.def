@@ -1,5 +1,5 @@
 # The functions of MapSnd in level townhall (the script levels/townhall/scripts/mapsnd.py of data02.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: SndElements.
+# per function, its parameters after the name. The other functions of the script stay Python.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/townhall/mapsnd.def replaces this file.
 section LoadSounds
 call SSound.LoadSound "space-int1.wav"
@@ -34,6 +34,147 @@ call SSound.LoadSound "atmosfera-oscura-loop8.wav"
 call SSound.LoadSound "atmosfera-oscura-loop9.wav"
 call SSound.LoadSound "atmosfera-oscura-loop10.wav"
 call SSound.LoadSound "space-int3.wav"
+
+section SndElements Name x y z angx angy
+setvar MapSnd.cntr %MapSnd.cntr+1
+if $Name == "TownhallAlmLB"
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSInterval "$(Name)$(_cntr)" ($x,$y,$z) "beep3" 6 10 0.14 0
+elif $Name == "TownhallAlmLA"
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSInterval "$(Name)$(_cntr)" ($x,$y,$z) "beep5" 6 10 0.044 0
+elif $Name == "TownhallAlmLC"
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSInterval "$(Name)$(_cntr)" ($x,$y,$z) "beep5" 6 10 0.044 0
+elif $Name == "TownhallServerA"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSInterval "$(Name)$(_cntr)" ($x,$y,$z) "beep2" 4 10 0.129 0
+	else
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSInterval "$(Name)$(_cntr)" ($x,$y,$z) "beep6" 4 10 0.129 0
+end
+elif $Name == "TownhallServerB"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSInterval "$(Name)$(_cntr)" ($x,$y,$z) "beep2" 4 10 0.129 0
+	else
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSInterval "$(Name)$(_cntr)" ($x,$y,$z) "beep6" 4 10 0.129 0
+end
+elif $Name == "TownhallHelix"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		run vecrot _v1 ($x,$y,$z) (0,0,-300) ($angx,$angy,0)
+		call Sound.SetPSLoop "$(Name)$(_cntr)" $_v1 "ventilador3" 0.30 -8
+end
+elif $Name == "TownhallLamp"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "light2" 0.04 +10
+end
+elif $Name == "TownhallLampDesk"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "light2" 0.04 +10
+end
+elif $Name == "TownhallHolo00"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "holograma2" 0.3
+end
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSInterval "I$(Name)$(_cntr)" ($x,$y,$z) "beep6" 4 10 0.08 0
+elif $Name == "TownhallHolo01"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "holograma2" 0.3
+end
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSInterval "I$(Name)$(_cntr)" ($x,$y,$z) "beep5" 4 10 0.06 0
+elif $Name == "TownhallHolo02"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "holograma2" 0.3
+end
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSInterval "I$(Name)$(_cntr)" ($x,$y,$z) "beep5" 4 10 0.06 0
+elif $Name == "TownhallHolo03"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "holograma2" 0.3
+end
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSInterval "I$(Name)$(_cntr)" ($x,$y,$z) "beep5" 4 10 0.06 0
+elif $Name == "TownhallHolo04"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "holograma2" 0.3
+end
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSInterval "I$(Name)$(_cntr)" ($x,$y,$z) "beep5" 4 10 0.06 0
+elif $Name == "TownhallHolo05"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "holograma2" 0.3
+end
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSInterval "I$(Name)$(_cntr)" ($x,$y,$z) "beep6" 4 10 0.08 0
+elif $Name == "TownhallHolo06"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "holograma2" 0.3
+end
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSInterval "I$(Name)$(_cntr)" ($x,$y,$z) "beep5" 4 10 0.06 0
+elif $Name == "TownhallHolo07"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "holograma2" 0.3
+end
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSInterval "I$(Name)$(_cntr)" ($x,$y,$z) "beep5" 4 10 0.06 0
+elif $Name == "TownhallHolo08"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "holograma2" 0.3
+end
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSInterval "I$(Name)$(_cntr)" ($x,$y,$z) "beep6" 4 10 0.08 0
+elif $Name == "TownhallHolo09"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "holograma2" 0.3
+end
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSInterval "I$(Name)$(_cntr)" ($x,$y,$z) "beep5" 4 10 0.06 0
+elif $Name == "TownhallHolo10"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "holograma2" 0.3
+end
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSInterval "I$(Name)$(_cntr)" ($x,$y,$z) "beep5" 4 10 0.06 0
+elif $Name == "TownhallHolo11"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "holograma2" 0.3
+end
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSInterval "I$(Name)$(_cntr)" ($x,$y,$z) "beep6" 4 10 0.08 0
+elif $Name == "TownhallHolo12"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "holograma2" 0.3
+end
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSInterval "I$(Name)$(_cntr)" ($x,$y,$z) "beep5" 4 10 0.06 0
+elif $Name == "Holotree00"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "buble1" 0.08
+end
+end
 
 section SetSounds
 call Scrap.CallElements "MapSnd.SndElements"

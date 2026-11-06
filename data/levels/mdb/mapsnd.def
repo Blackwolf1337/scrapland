@@ -1,5 +1,5 @@
 # The functions of MapSnd in level mdb (the script levels/mdb/scripts/mapsnd.py of data03.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: SndElements.
+# per function, its parameters after the name. The other functions of the script stay Python.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/mdb/mapsnd.def replaces this file.
 section LoadSounds
 if %MapSnd.isPC
@@ -20,6 +20,23 @@ if %MapSnd.isPC
 end
 if %MapSnd.isPC
 	call SSound.LoadSound "tube1-quimera.wav"
+end
+
+section SndElements Name x y z angx angy
+setvar MapSnd.cntr %MapSnd.cntr+1
+if $Name == "DownTFarola"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "light1" 0.08
+end
+elif $Name == "HoloMonument"
+	if %MapSnd.isPC
+		let _cntr %MapSnd.cntr
+		call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "holograma2" 0.9
+end
+elif $Name == "GdbAcelerador"
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
 end
 
 section SetSounds

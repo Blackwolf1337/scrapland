@@ -75,7 +75,23 @@ static byte Level_Current(char *out, int size) {
 	return 1;
 }
 
+/* "run vecrot <name> <pos> <offset> <angles>": $name = SVec.Add(pos, SVec.Rotate3D(offset, angles)), the position of a
+ * sound beside an element of the map */
+static void Level_StepVecRot(int id, PyObject *args) {
+	PyObject *name, *pos, *off, *ang;
+	(void)id;
+	if (!PyArg_ParseTuple(args, "SOOO", &name, &pos, &off, &ang)) {
+		return;
+	}
+	PyObject *rot = Script_Ask("SVec", "Rotate3D", "(OO)", off, ang), *v = rot ? Script_Ask("SVec", "Add", "(OO)", pos, rot) : NULL;
+	Py_XDECREF(rot);
+	if (v) {
+		Script_SetValue(PyString_AsString(name), v);
+	}
+}
+
 static const scriptStep_t level_steps[] = {
+	{ "vecrot", Level_StepVecRot },
 	{ NULL, NULL },
 };
 

@@ -1,9 +1,19 @@
 # The functions of MapSnd in level gdb (the script levels/gdb/scripts/mapsnd.py of data03.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: SndElements.
+# per function, its parameters after the name. The other functions of the script stay Python.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/gdb/mapsnd.def replaces this file.
 section LoadSounds
 call SSound.LoadSound "tunel334.wav"
 call SSound.LoadSound "maquina-mov999.wav"
+
+section SndElements Name x y z angx angy
+setvar MapSnd.cntr %MapSnd.cntr+1
+if $Name == "GDBAcelerador"
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+elif $Name == "GDBGenerador"
+	let _cntr %MapSnd.cntr
+	call Sound.SetPSLoop "$(Name)$(_cntr)" ($x,$y,$z) "tunel334" 0.0
+end
 
 section SetSounds
 call Scrap.CallElements "MapSnd.SndElements"

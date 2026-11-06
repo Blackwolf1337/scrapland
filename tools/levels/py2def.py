@@ -41,6 +41,7 @@ def split_args(s):
 class Conv:
     def __init__(self, module, globs, funcs):
         self.module, self.globs, self.funcs = module, globs, funcs
+        self.pre, self.numeric = [], set()
 
     def value(self, v, scope):
         v = v.strip()
@@ -77,6 +78,9 @@ class Conv:
                     text += m.group(2) if m.group(2) is not None else m.group(3)
                 elif NAME.match(p) and p in scope:
                     text += '$(%s)' % p
+                elif p.startswith('`') and p.endswith('`') and p[1:-1] in self.numeric:
+                    self.pre.append('let _%s %%%s.%s' % (p[1:-1], self.module, p[1:-1]))
+                    text += '$(_%s)' % p[1:-1]
                 else:
                     raise Unsupported('value ' + v)
             return '"%s"' % text
@@ -116,6 +120,18 @@ class Conv:
             raise Unsupported('method ' + fn)
         out = ['call', fn]
         for a in split_args(m.group(2)):
+            r = re.match(r'^(?:([A-Za-z_]\w*)\s*=\s*)?SVec\.Add\((.*)\)$', a)
+            if r:
+                parts = split_args(r.group(2))
+                rot = re.match(r'^SVec\.Rotate3D\((.*)\)$', parts[1]) if len(parts) == 2 else None
+                inner = split_args(rot.group(1)) if rot else []
+                if len(inner) != 2:
+                    raise Unsupported('arg ' + a)
+                tmp = '_v%d' % len(self.pre)
+                self.pre.append('run vecrot %s %s %s %s' % (tmp, self.value(parts[0], scope), self.value(inner[0], scope),
+                    self.value(inner[1], scope)))
+                out.append(('%s=' % r.group(1) if r.group(1) else '') + '$' + tmp)
+                continue
             k = re.match(r'^([A-Za-z_]\w*)\s*=(?!=)\s*(.*)$', a)
             if k:
                 out.append('%s=%s' % (k.group(1), self.value(k.group(2), scope)))
@@ -126,6 +142,7 @@ class Conv:
         return ' '.join(out)
 
     def body(self, name, params, lines):
+        self.pre, self.numeric = [], set()
         scope = set(p.split('=')[0] for p in params)
         glob = set()
         out, stack = [], []   # stack of indentation levels of open if blocks
@@ -163,6 +180,10 @@ class Conv:
             if m:
                 var, val = m.group(1), m.group(2)
                 v = self.value(val, scope)
+                out.extend(pad + x for x in self.pre)
+                self.pre = []
+                if var in glob and re.match(r'^%s\s*\+\s*\d+$' % var, val):
+                    self.numeric.add(var)
                 if var in glob:
                     out.append(pad + 'setvar %s.%s %s' % (self.module, var, v))
                 else:
@@ -171,7 +192,10 @@ class Conv:
                     out.append(pad + 'let %s %s' % (var, v))
                     scope.add(var)
                 continue
-            out.append(pad + self.call(t, scope))
+            line = self.call(t, scope)
+            out.extend(pad + x for x in self.pre)
+            self.pre = []
+            out.append(pad + line)
         while stack:
             stack.pop()
             out.append('end')
