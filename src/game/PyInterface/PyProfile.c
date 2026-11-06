@@ -11,7 +11,8 @@
  * interpreter ends (Python_Close) and by Scrap.DumpPyProfile([file]), which exists only while the profile is on.
  *
  * The kinds: "module" is a code object named "?" (the module code at its load, or an exec/eval string), "class" a
- * class body, "function" a code object with CO_NEWLOCALS (functions, methods, lambdas). "shadowed" counts the calls
+ * class body (compile.c ends it with LOAD_LOCALS, RETURN_VALUE; it has CO_NEWLOCALS like a function), "function"
+ * the rest (functions, methods, lambdas). "shadowed" counts the calls
  * of a function while the module global of its name is a C function: a C or data version exists, yet the Python one
  * ran (a reference kept from before the loader replaced it).
  */
@@ -20,6 +21,7 @@
 #include "scrap/python.h"
 
 #include <frameobject.h>
+#include <opcode.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -75,7 +77,10 @@ static pyProfEntry_t *PyProf_Entry(PyFrameObject *f) {
 	const char *file = PyProf_Str(co->co_filename);
 	const char *name = PyProf_Str(co->co_name);
 	const char *module = PyProf_Str(f->f_globals ? PyDict_GetItemString(f->f_globals, "__name__") : NULL);
-	int kind = (co->co_flags & CO_NEWLOCALS) ? 2 : !strcmp(name, "?") ? 0 : 1;
+	int size = co->co_code ? PyString_Size((PyObject *)co->co_code) : 0;
+	const byte *code = size ? (const byte *)PyString_AsString((PyObject *)co->co_code) : NULL;
+	int kind = !(co->co_flags & CO_NEWLOCALS) ? 0 :
+		size >= 2 && code[size - 2] == LOAD_LOCALS && code[size - 1] == RETURN_VALUE ? 1 : 2;
 	char names[96] = "";
 	if (*file == '<' && co->co_names && PyTuple_Check(co->co_names)) {
 		for (int i = 0; i < PyTuple_Size(co->co_names); i++) {
@@ -94,7 +99,7 @@ static pyProfEntry_t *PyProf_Entry(PyFrameObject *f) {
 			e->hash = h;
 			e->kind = kind;
 			e->line = co->co_firstlineno;
-			e->codeSize = co->co_code ? PyString_Size((PyObject *)co->co_code) : 0;
+			e->codeSize = size;
 			Str_Copy(e->file, file, sizeof(e->file));
 			Str_Copy(e->name, name, sizeof(e->name));
 			Str_Copy(e->module, module, sizeof(e->module));
