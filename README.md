@@ -26,6 +26,14 @@ ScrapC does not include any game files. You need the game files of a legally own
 - A Display option in the video settings: Windowed, Borderless or Fullscreen.
 - The window can be resized, and the game renders at the real window size.
 
+## Progress
+
+<p align="center"><img src="docs/images/progress.svg" alt="ScrapC progress" width="840"></p>
+
+About three quarters of the whole project is done (the graphic shows 77%). The recreation in C, the clean code, the Vulkan renderer with FFmpeg videos and the own mixer, and the Linux and 64 bit builds are done or nearly done. The port of the Python scripts to C (issue #2) is about three quarters done: every game and level script is C or data and checked against the original scripts, but removing the Python interpreter itself is not started. The free-roam multiplayer (issue #1) is not started. The percentages are estimates, and each step is weighted by its share of the work (recreation in C 30, clean C code 10, renderer and media 10, Linux and 64 bit 10, Python scripts 25, multiplayer 15).
+
+For developers: the graphic is drawn by `tools/progress/progress.py` from `tools/progress/progress.json`. Change the JSON when a milestone moves and run the script.
+
 ## Getting it
 
 There are no ready-made downloads yet. For now you build it yourself. The steps are in [docs/building.md](docs/building.md).

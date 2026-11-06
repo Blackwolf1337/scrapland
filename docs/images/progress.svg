@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 1152" width="920" height="1152">
+<title>ScrapC progress</title>
+<rect width="920" height="1152" rx="14" fill="#1b1814"/>
+<circle cx="130" cy="125" r="78" fill="none" stroke="#3a342b" stroke-width="16"/>
+<path d="M130.0,47.0 A78,78 0 1 1 52.4,116.8" fill="none" stroke="#e7b85a" stroke-width="16" stroke-linecap="round"/>
+<text x="130" y="137" text-anchor="middle" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="44" fill="#f1e9d8">77%</text>
+<text x="130" y="161" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#a89c86">of the whole project</text>
+<text x="260" y="44" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="18" font-weight="600" fill="#f1e9d8">Progress</text>
+<text x="260" y="64" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#a89c86">State of 2026-11-06. Percentages are estimates, steps weighted by their share of the work.</text>
+<text x="260" y="100" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="600" fill="#f1e9d8">1. Recreation in C<tspan dx="10" font-weight="400" fill="#a89c86" font-size="12">The engine and game code of Scrap.exe as C, weight 30</tspan></text>
+<text x="880" y="100" text-anchor="end" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="18" fill="#f1e9d8">100%</text>
+<rect x="260" y="109" width="620" height="10" rx="5" fill="#3a342b"/>
+<rect x="260" y="109" width="620.0" height="10" rx="5" fill="#e7b85a"/>
+<text x="260" y="146" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="600" fill="#f1e9d8">2. Clean C code<tspan dx="10" font-weight="400" fill="#a89c86" font-size="12">Readable code without the decompilation scaffolding, weight 10</tspan></text>
+<text x="880" y="146" text-anchor="end" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="18" fill="#f1e9d8">90%</text>
+<rect x="260" y="155" width="620" height="10" rx="5" fill="#3a342b"/>
+<rect x="260" y="155" width="558.0" height="10" rx="5" fill="#d9603f"/>
+<text x="260" y="192" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="600" fill="#f1e9d8">3. Modern renderer and media<tspan dx="10" font-weight="400" fill="#a89c86" font-size="12">Vulkan, FFmpeg and an own sound mixer, weight 10</tspan></text>
+<text x="880" y="192" text-anchor="end" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="18" fill="#f1e9d8">93%</text>
+<rect x="260" y="201" width="620" height="10" rx="5" fill="#3a342b"/>
+<rect x="260" y="201" width="578.7" height="10" rx="5" fill="#8fb3c9"/>
+<text x="260" y="238" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="600" fill="#f1e9d8">4. Linux and 64 bit<tspan dx="10" font-weight="400" fill="#a89c86" font-size="12">Native builds for Linux and Windows, weight 10</tspan></text>
+<text x="880" y="238" text-anchor="end" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="18" fill="#f1e9d8">100%</text>
+<rect x="260" y="247" width="620" height="10" rx="5" fill="#3a342b"/>
+<rect x="260" y="247" width="620.0" height="10" rx="5" fill="#e7b85a"/>
+<text x="260" y="284" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="600" fill="#f1e9d8">5. Python scripts in C (issue #2)<tspan dx="10" font-weight="400" fill="#a89c86" font-size="12">The game's Python 1.5.2 scripts as C and data files, weight 25</tspan></text>
+<text x="880" y="284" text-anchor="end" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="18" fill="#f1e9d8">73%</text>
+<rect x="260" y="293" width="620" height="10" rx="5" fill="#3a342b"/>
+<rect x="260" y="293" width="454.7" height="10" rx="5" fill="#d9603f"/>
+<text x="260" y="330" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="600" fill="#f1e9d8">6. Free-roam multiplayer (issue #1)<tspan dx="10" font-weight="400" fill="#a89c86" font-size="12">Players meet on the open map, weight 15</tspan></text>
+<text x="880" y="330" text-anchor="end" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="18" fill="#f1e9d8">0%</text>
+<rect x="260" y="339" width="620" height="10" rx="5" fill="#3a342b"/>
+<rect x="260" y="339" width="4.0" height="10" rx="5" fill="#8fb3c9"/>
+<line x1="30" y1="386" x2="890" y2="386" stroke="#3a342b"/>
+<text x="30" y="416" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="15" font-weight="600" fill="#f1e9d8">Milestones</text>
+<text x="30" y="456" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="600" fill="#e7b85a">1. RECREATION IN C</text>
+<text x="30" y="486" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Engine and game functions in C</text>
+<rect x="290" y="473" width="84" height="18" rx="9" fill="none" stroke="#7fbf6a"/>
+<text x="332" y="486" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#7fbf6a">done</text>
+<rect x="385" y="478" width="90" height="6" rx="3" fill="#3a342b"/>
+<rect x="385" y="478" width="90.0" height="6" rx="3" fill="#e7b85a"/>
+<text x="511" y="486" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">100%</text>
+<text x="520" y="486" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">every function of the game range is C</text>
+<text x="30" y="512" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Standalone executable</text>
+<rect x="290" y="499" width="84" height="18" rx="9" fill="none" stroke="#7fbf6a"/>
+<text x="332" y="512" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#7fbf6a">done</text>
+<rect x="385" y="504" width="90" height="6" rx="3" fill="#3a342b"/>
+<rect x="385" y="504" width="90.0" height="6" rx="3" fill="#e7b85a"/>
+<text x="511" y="512" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">100%</text>
+<text x="520" y="512" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">ScrapC runs without Scrap.exe or a hook DLL</text>
+<text x="30" y="538" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Game data in the build</text>
+<rect x="290" y="525" width="84" height="18" rx="9" fill="none" stroke="#7fbf6a"/>
+<text x="332" y="538" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#7fbf6a">done</text>
+<rect x="385" y="530" width="90" height="6" rx="3" fill="#3a342b"/>
+<rect x="385" y="530" width="90.0" height="6" rx="3" fill="#e7b85a"/>
+<text x="511" y="538" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">100%</text>
+<text x="520" y="538" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">tables and strings are typed C data</text>
+<text x="30" y="568" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="600" fill="#d9603f">2. CLEAN C CODE</text>
+<text x="30" y="598" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Debloat and plain C</text>
+<rect x="290" y="585" width="84" height="18" rx="9" fill="none" stroke="#7fbf6a"/>
+<text x="332" y="598" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#7fbf6a">done</text>
+<rect x="385" y="590" width="90" height="6" rx="3" fill="#3a342b"/>
+<rect x="385" y="590" width="90.0" height="6" rx="3" fill="#d9603f"/>
+<text x="511" y="598" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">100%</text>
+<text x="520" y="598" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">hooks, rva macros and exactness code removed</text>
+<text x="30" y="624" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Readable names and types</text>
+<rect x="290" y="611" width="84" height="18" rx="9" fill="none" stroke="#7fbf6a"/>
+<text x="332" y="624" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#7fbf6a">done</text>
+<rect x="385" y="616" width="90" height="6" rx="3" fill="#3a342b"/>
+<rect x="385" y="616" width="90.0" height="6" rx="3" fill="#d9603f"/>
+<text x="511" y="624" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">100%</text>
+<text x="520" y="624" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">English names, merged structs and types</text>
+<text x="30" y="650" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Symbols for the PC tools</text>
+<rect x="290" y="637" width="84" height="18" rx="9" fill="none" stroke="#e7b85a"/>
+<text x="332" y="650" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#e7b85a">in progress</text>
+<rect x="385" y="642" width="90" height="6" rx="3" fill="#3a342b"/>
+<rect x="385" y="642" width="45.0" height="6" rx="3" fill="#d9603f"/>
+<text x="511" y="650" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">50%</text>
+<text x="520" y="650" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">Ghidra project not yet updated to the new names</text>
+<text x="30" y="680" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="600" fill="#8fb3c9">3. MODERN RENDERER AND MEDIA</text>
+<text x="30" y="710" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Vulkan renderer</text>
+<rect x="290" y="697" width="84" height="18" rx="9" fill="none" stroke="#7fbf6a"/>
+<text x="332" y="710" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#7fbf6a">done</text>
+<rect x="385" y="702" width="90" height="6" rx="3" fill="#3a342b"/>
+<rect x="385" y="702" width="90.0" height="6" rx="3" fill="#8fb3c9"/>
+<text x="511" y="710" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">100%</text>
+<text x="520" y="710" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">Direct3D 8 removed, shaders as GLSL</text>
+<text x="30" y="736" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Videos through FFmpeg</text>
+<rect x="290" y="723" width="84" height="18" rx="9" fill="none" stroke="#7fbf6a"/>
+<text x="332" y="736" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#7fbf6a">done</text>
+<rect x="385" y="728" width="90" height="6" rx="3" fill="#3a342b"/>
+<rect x="385" y="728" width="90.0" height="6" rx="3" fill="#8fb3c9"/>
+<text x="511" y="736" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">100%</text>
+<text x="520" y="736" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">intro and mission videos play</text>
+<text x="30" y="762" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Sound mixer</text>
+<rect x="290" y="749" width="84" height="18" rx="9" fill="none" stroke="#7fbf6a"/>
+<text x="332" y="762" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#7fbf6a">done</text>
+<rect x="385" y="754" width="90" height="6" rx="3" fill="#3a342b"/>
+<rect x="385" y="754" width="90.0" height="6" rx="3" fill="#8fb3c9"/>
+<text x="511" y="762" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">100%</text>
+<text x="520" y="762" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">FMOD replaced</text>
+<text x="30" y="788" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Checks on the PC</text>
+<rect x="290" y="775" width="84" height="18" rx="9" fill="none" stroke="#e7b85a"/>
+<text x="332" y="788" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#e7b85a">in progress</text>
+<rect x="385" y="780" width="90" height="6" rx="3" fill="#3a342b"/>
+<rect x="385" y="780" width="54.0" height="6" rx="3" fill="#8fb3c9"/>
+<text x="511" y="788" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">60%</text>
+<text x="520" y="788" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">display modes and lasso confirmed; gamepad, mouse, Alt-Tab untested</text>
+<text x="30" y="818" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="600" fill="#e7b85a">4. LINUX AND 64 BIT</text>
+<text x="30" y="848" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Native Linux x86_64</text>
+<rect x="290" y="835" width="84" height="18" rx="9" fill="none" stroke="#7fbf6a"/>
+<text x="332" y="848" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#7fbf6a">done</text>
+<rect x="385" y="840" width="90" height="6" rx="3" fill="#3a342b"/>
+<rect x="385" y="840" width="90.0" height="6" rx="3" fill="#e7b85a"/>
+<text x="511" y="848" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">100%</text>
+<text x="520" y="848" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">all 29 levels start clean under ASan</text>
+<text x="30" y="874" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Windows x64</text>
+<rect x="290" y="861" width="84" height="18" rx="9" fill="none" stroke="#7fbf6a"/>
+<text x="332" y="874" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#7fbf6a">done</text>
+<rect x="385" y="866" width="90" height="6" rx="3" fill="#3a342b"/>
+<rect x="385" y="866" width="90.0" height="6" rx="3" fill="#e7b85a"/>
+<text x="511" y="874" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">100%</text>
+<text x="520" y="874" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">all 29 levels start under Wine</text>
+<text x="30" y="904" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="600" fill="#d9603f">5. PYTHON SCRIPTS IN C (ISSUE #2)</text>
+<text x="30" y="934" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Game scripts</text>
+<rect x="290" y="921" width="84" height="18" rx="9" fill="none" stroke="#7fbf6a"/>
+<text x="332" y="934" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#7fbf6a">done</text>
+<rect x="385" y="926" width="90" height="6" rx="3" fill="#3a342b"/>
+<rect x="385" y="926" width="90.0" height="6" rx="3" fill="#d9603f"/>
+<text x="511" y="934" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">100%</text>
+<text x="520" y="934" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">menus, HUD, characters, missions; Xbox menus and dev tools skipped</text>
+<text x="30" y="960" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Level scripts</text>
+<rect x="290" y="947" width="84" height="18" rx="9" fill="none" stroke="#7fbf6a"/>
+<text x="332" y="960" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#7fbf6a">done</text>
+<rect x="385" y="952" width="90" height="6" rx="3" fill="#3a342b"/>
+<rect x="385" y="952" width="90.0" height="6" rx="3" fill="#d9603f"/>
+<text x="511" y="960" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">100%</text>
+<text x="520" y="960" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">all 263 level scripts are C or data</text>
+<text x="30" y="986" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Online modes</text>
+<rect x="290" y="973" width="84" height="18" rx="9" fill="none" stroke="#7fbf6a"/>
+<text x="332" y="986" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#7fbf6a">done</text>
+<rect x="385" y="978" width="90" height="6" rx="3" fill="#3a342b"/>
+<rect x="385" y="978" width="90.0" height="6" rx="3" fill="#d9603f"/>
+<text x="511" y="986" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">100%</text>
+<text x="520" y="986" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">Ffa and the seven modes, checked with a real server and client</text>
+<text x="30" y="1012" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Checks against the original scripts</text>
+<rect x="290" y="999" width="84" height="18" rx="9" fill="none" stroke="#e7b85a"/>
+<text x="332" y="1012" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#e7b85a">in progress</text>
+<rect x="385" y="1004" width="90" height="6" rx="3" fill="#3a342b"/>
+<rect x="385" y="1004" width="81.0" height="6" rx="3" fill="#d9603f"/>
+<text x="511" y="1012" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">90%</text>
+<text x="520" y="1012" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">29 levels, 107 mission starts, full campaign; 90% line coverage</text>
+<text x="30" y="1038" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Python interpreter removed</text>
+<rect x="290" y="1025" width="84" height="18" rx="9" fill="none" stroke="#8a7f6c"/>
+<text x="332" y="1038" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#8a7f6c">not started</text>
+<rect x="385" y="1030" width="90" height="6" rx="3" fill="#3a342b"/>
+<text x="511" y="1038" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">0%</text>
+<text x="520" y="1038" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">module code and module variables still run in Python</text>
+<text x="30" y="1068" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="600" fill="#8fb3c9">6. FREE-ROAM MULTIPLAYER (ISSUE #1)</text>
+<text x="30" y="1098" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Design</text>
+<rect x="290" y="1085" width="84" height="18" rx="9" fill="none" stroke="#8a7f6c"/>
+<text x="332" y="1098" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#8a7f6c">not started</text>
+<rect x="385" y="1090" width="90" height="6" rx="3" fill="#3a342b"/>
+<text x="511" y="1098" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">0%</text>
+<text x="520" y="1098" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">waits for the design</text>
+<text x="30" y="1124" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Server and client</text>
+<rect x="290" y="1111" width="84" height="18" rx="9" fill="none" stroke="#8a7f6c"/>
+<text x="332" y="1124" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#8a7f6c">not started</text>
+<rect x="385" y="1116" width="90" height="6" rx="3" fill="#3a342b"/>
+<text x="511" y="1124" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">0%</text>
+<text x="520" y="1124" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">the old PvP modes work as before</text>
+</svg>
