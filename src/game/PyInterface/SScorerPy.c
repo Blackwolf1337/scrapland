@@ -354,18 +354,32 @@ static PyObject *SScorer_GetItem(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-/* New(player, name, type[, flag]) : makes the item and returns its Python object; NULL if that fails */
+/*
+ * New(player, name, type[, flag]) : makes the item and returns its Python object. The original returns NULL without
+ * an exception when that fails (SystemError in Python). An unknown type still does so: tools/test/golden records it.
+ * differs from the original: a player without a scorer and a duplicated name raise a ValueError.
+ */
 static PyObject *SScorer_New(PyObject *self, PyObject *args) {
 	int player, flag = 0;
 	char *name, *type;
+	char msg[0x100];
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "iss|i", &player, &name, &type, &flag)) {
 		return NULL;
 	}
 	cScorer *sc = Scorer_Get(player);
-	if (sc && cScorer_AddItem(sc, name, type, flag != 0)) {
+	if (!sc) {
+		Str_Printf(msg, sizeof(msg), "SScorer.New: no scorer for player %d", player);
+		PyErr_SetString(PyExc_ValueError, msg);
+		return NULL;
+	}
+	if (cScorer_AddItem(sc, name, type, flag != 0)) {
 		return ScorerItem_PyNew(player, name);
+	}
+	if (cScorer_FindItem(sc, name)) {
+		Str_Printf(msg, sizeof(msg), "SScorer.New: item '%.128s' already exists", name);
+		PyErr_SetString(PyExc_ValueError, msg);
 	}
 	return NULL;
 }

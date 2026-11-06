@@ -257,7 +257,7 @@ static PyObject *Scrap_DelSaveVars(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-/* Des(name) : description of an engine variable; NULL without exception if there is none */
+/* Des(name) : description of an engine variable; NULL without exception if there is none (golden records it) */
 static PyObject *Scrap_Des(PyObject *self, PyObject *args) {
 	char *name;
 
@@ -954,7 +954,7 @@ static PyObject *Scrap_SwitchMissionArrows(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-/* UsrEntity(player) : the entity of a local player; NULL without exception for a player above 3 */
+/* UsrEntity(player) : the entity of a local player; NULL without exception for a player above 3 (golden records it) */
 static PyObject *Scrap_UsrEntity(PyObject *self, PyObject *args) {
 	uint32_t player;
 
@@ -1035,7 +1035,8 @@ static PyObject *Scrap_VideoPlayer(PyObject *self, PyObject *args) {
 
 /* --- batch 4: engine variables, entities, files, random numbers, Steam apps --- */
 
-/* Get(name) / Def(name) : current or default value of an engine variable in its type */
+/* Get(name) / Def(name) : current or default value of an engine variable in its type; NULL without exception for an
+ * unknown name (golden records it) */
 static PyObject *GVarValue(PyObject *args, int def, int checkLine) {
 	char *name;
 
@@ -1077,7 +1078,8 @@ static PyObject *Scrap_Def(PyObject *self, PyObject *args) {
 
 /*
  * Set(name, value) : string ("ss") for string and script function variables, number ("sd") for int and float
- * ones. A read only variable gives 0 and a message; a wrong type or an unknown name NULL without exception.
+ * ones. A read only variable gives 0 and a message; a wrong type or an unknown name NULL without exception (golden
+ * records both).
  */
 static PyObject *Scrap_Set(PyObject *self, PyObject *args) {
 	char *name, *s;
@@ -1195,12 +1197,17 @@ static PyObject *Scrap_RunApp(PyObject *self, PyObject *args) {
 
 /* --- batch 5: entity lists, cameras, parking zones, video modes, grid --- */
 
-/* EntityListGet(listName, var) : value in its type; NULL without exception for a missing list or a bad type */
+/*
+ * EntityListGet(listName, var) : value in its type. The original returns NULL without an exception (SystemError in
+ * Python) for a missing list and for a variable the list cannot give. A missing list still does so: tools/test/golden
+ * records it. differs from the original: an unknown variable raises an AttributeError.
+ */
 static PyObject *Scrap_EntityListGet(PyObject *self, PyObject *args) {
 	/* differs from the original: the values start at 0, as in SScorer.Get */
 	char *listName, *var, *s = NULL;
 	double d = 0.0;
 	int i = 0;
+	char msg[0x100];
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "ss", &listName, &var)) {
@@ -1220,10 +1227,12 @@ static PyObject *Scrap_EntityListGet(PyObject *self, PyObject *args) {
 		return Py_BuildValue("i", i);
 	}
 	Con_Errorf("ERROR: EntityListGet '%s','%s' Typecast error.\n", listName, var);
+	Str_Printf(msg, sizeof(msg), "EntityListGet: list '%.64s' has no variable '%.64s'", listName, var);
+	PyErr_SetString(PyExc_AttributeError, msg);
 	return NULL;
 }
 
-/* EntityListSet(listName, var, value) */
+/* EntityListSet(listName, var, value) : NULL without exception for a missing list (golden records it) */
 static PyObject *Scrap_EntityListSet(PyObject *self, PyObject *args) {
 	char *listName, *var, *value;
 

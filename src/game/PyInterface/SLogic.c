@@ -14,18 +14,26 @@ static const char *const shipLists[] = { "Traffic", "EnemiesTraffic", "FightingT
 
 /*
  * void SetCharState(entityName, state, entityTargetName) : Pone a una entidad en un estado de logica y un target
- * determinados. Any failure (no such WalkChar, no logic) returns NULL without a Python exception, as the original.
+ * determinados. The original returns NULL without a Python exception (SystemError in Python) for every failure. A
+ * missing entity still does so: tools/test/golden records it. differs from the original: an entity that is no
+ * WalkChar raises a TypeError, a WalkChar without a BaseLogic a ValueError.
  */
 static PyObject *SLogic_SetCharState(PyObject *self, PyObject *args) {
 	char *name, *targetName;
 	int state;
+	char msg[0x100];
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "sis", &name, &state, &targetName)) {
 		return NULL;
 	}
 	cEntity *e = World_FindEntity(name);
-	if (!e || !Entity_IsType(e, TYEN_WALKCHAR)) {
+	if (!e) {
+		return NULL;
+	}
+	if (!Entity_IsType(e, TYEN_WALKCHAR)) {
+		Str_Printf(msg, sizeof(msg), "SLogic.SetCharState: '%.128s' is no WalkChar", name);
+		PyErr_SetString(PyExc_TypeError, msg);
 		return NULL;
 	}
 	cEntity *target = World_FindEntity(targetName);
@@ -33,6 +41,8 @@ static PyObject *SLogic_SetCharState(PyObject *self, PyObject *args) {
 	CHECK(actCtrl);
 	cLocalLogic *logic = Logic_GetLocalLogic(e);
 	if (!logic) {
+		Str_Printf(msg, sizeof(msg), "SLogic.SetCharState: '%.128s' has no BaseLogic", name);
+		PyErr_SetString(PyExc_ValueError, msg);
 		return NULL;
 	}
 	Logic_SetState(logic, state, target);

@@ -6,7 +6,7 @@
 #include "scrap/net.h"
 #include "scrap/python.h"
 
-/* ModifyUsrData(arg) : modifica desde el servidor los datos locales; NULL without a server */
+/* ModifyUsrData(arg) : modifica desde el servidor los datos locales; NULL without a server (golden records it) */
 static PyObject *SNet_ModifyUsrData(PyObject *self, PyObject *args) {
 	int arg;
 
