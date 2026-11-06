@@ -691,7 +691,8 @@ static PyObject *ET_SetEnginesPanel(PyObject *self, PyObject *args) {
 	Sf_Import(&f, "ShipMaker");
 	ET_Run(&f, id, "desc", NULL);
 	PyObject *aspect = Sf_Ask(&f, "Scrap", "Get", "(s)", "PhysicalAspectRatio");
-	PyObject *ratio = Sf_Op(&f, Sf_Float(&f, 1.3333333333333), '/', aspect);
+	/* 1.3333333333333 in the source; the marshal of the shipped .pyc kept 12 digits */
+	PyObject *ratio = Sf_Op(&f, Sf_Float(&f, 1.33333333333), '/', aspect);
 	int ships = Sf_Len(&f, Sf_Mod(&f, "ShipEdit", "shipsToEditList"));
 	for (int k = 0; k < ships && !f.failed; k++) {
 		int mark = f.n;
