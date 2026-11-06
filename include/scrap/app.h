@@ -48,6 +48,15 @@ byte CApp_ParseParam(CApp *self, const char *param, const char *ext);
 void CApp_ResetParams(CApp *self);
 double CApp_GetGameTime(CApp *self);
 void Console_Execute(const char *cmd);
+/* the forms of ConsoleCmd.c for the test channel: Python 1.5.2 repr() of a float and of a string, and of an engine
+ * variable as Scrap.Get gives it (0 when there is none) */
+void Console_ReprFloat(char *buf, int size, double d);
+void Console_ReprString(char *buf, int size, const char *s);
+byte Console_ReprVar(const char *name, char *buf, int size);
+/* the test channel (TestChannel.c): on by -TestChannel or SCRAP_TEST_CHANNEL=1; the check once a frame (now: the
+ * real time in seconds, at most one check in 5 ms) */
+void TestChannel_Enable(void);
+void TestChannel_Frame(double now);
 void CWinApp_LoadLevel(CApp *app, const char *level);
 void Loading_Init(void);
 void Loading_End(void);
