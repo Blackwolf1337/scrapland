@@ -34,6 +34,8 @@ PyObject *Script_CheckFunction(PyMethodDef *def, PyObject *self, const char *mod
 /* with SCRAP_NULL_CHECK set: reports that a C function or helper fails without a Python error (kind names the
  * place), once per kind, function and call site */
 void Script_CheckSilent(const char *kind);
+/* with SCRAP_NULL_CHECK and SCRAP_NULL_CHECK_ENGINE=1: the functions of the engine modules into the same wrapper */
+void Script_CheckEngine(void);
 /* a module of the level that loads: the functions its data file has go into it (src/game/Script/Levels.c); kept
  * holds the replaced functions until the module loads again */
 void Script_LevelModuleLoaded(const char *name, PyObject *module, PyObject *kept);

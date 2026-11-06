@@ -741,8 +741,13 @@ static PyObject *DTritus_CreatePressDesktopClass(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	if (!PyString_Check(name)) {
-		/* the script fails at its first string concatenation, after SAct.CreateClass */
-		PyObject *v = Script_SPlus("Models/Misc/DesktopPress/", name);
+		/* the script's SAct.CreateClass raises its TypeError */
+		PyObject *v = Script_Ask("SAct", "CreateClass", "(O)", name);
+		Py_XDECREF(v);
+		if (!v) {
+			return NULL;
+		}
+		v = Script_SPlus("Models/Misc/DesktopPress/", name);
 		Py_XDECREF(v);
 		return NULL;
 	}
