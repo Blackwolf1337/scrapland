@@ -149,6 +149,13 @@ static const scriptModule_t script_modules[] = {
 	{ "Bureaucracy", g_BureaucracyMethods },
 	{ "Chat", g_ChatMethods },
 	{ "CreditsText", g_CreditsTextMethods },
+	{ "Traffic", g_TrafficMethods },
+	{ "OutPolice", g_OutPoliceMethods },
+	{ "InPolice", g_InPoliceMethods },
+	{ "PhoneCab", g_PhoneCabMethods },
+	{ "DTritusDesktop", g_DTritusDesktopMethods },
+	{ "Metro", g_MetroMethods },
+	{ "Challenge", g_ChallengeMethods },
 };
 
 void Script_ModuleLoaded(const char *name, PyObject *module) {
@@ -301,6 +308,10 @@ double Script_GetFloat(const char *module, const char *var, double def) {
 
 byte Script_HSet(PyObject *e, const char *var, PyObject *v) {
 	int ok = v && PyObject_SetAttrString(e, (char *)var, v) == 0;
+	if (v && !ok && !PyErr_Occurred()) {
+		/* an entity variable the engine refuses fails without an exception; ceval reports it so */
+		PyErr_SetString(PyExc_SystemError, "error return without exception set");
+	}
 	Py_XDECREF(v);
 	return ok;
 }

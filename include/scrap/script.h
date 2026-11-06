@@ -165,6 +165,9 @@ PyObject *Script_LangOf(PyObject *key);
 PyObject *Script_SaveVar(const char *name);
 PyObject *Script_Entity(PyObject *name);
 PyObject *Script_Usr(void);
+/* module.func(*args, **kw) as a script calls it (args and kw given away, kw may be NULL): the result, a new
+ * reference, NULL with the error set (not printed) */
+PyObject *Script_AskKw(const char *module, const char *func, PyObject *args, PyObject *kw);
 
 /* the C video options of PCMenu (src/game/Script/MenuVideo.c) */
 extern PyMethodDef g_MenuVideoMethods[];
@@ -266,6 +269,19 @@ extern PyMethodDef g_BureaucracyMethods[];
 /* the chat of a network game (src/game/Script/Chat.c) and the credits text (src/game/Script/CreditsText.c) */
 extern PyMethodDef g_ChatMethods[];
 extern PyMethodDef g_CreditsTextMethods[];
+
+/* the mission scripts: the traffic and the police (src/game/Script/Traffic.c), the phone cabs and Dtritus' desktop
+ * (src/game/Script/PhoneCab.c), the metro (src/game/Script/Metro.c) and the challenges (src/game/Script/Challenge.c) */
+extern PyMethodDef g_TrafficMethods[];
+extern PyMethodDef g_OutPoliceMethods[];
+extern PyMethodDef g_InPoliceMethods[];
+extern PyMethodDef g_PhoneCabMethods[];
+extern PyMethodDef g_DTritusDesktopMethods[];
+extern PyMethodDef g_MetroMethods[];
+extern PyMethodDef g_ChallengeMethods[];
+/* the options of a challenge against foe of the kind type ("Race", "Combat") on the entity ch, with the rewards or
+ * the lives they cost (Challenge.SetChallengeOptions, PhoneCab.SetRevengeOptions): 0 with the error set */
+byte Challenge_SetOptions(PyObject *ch, PyObject *type, PyObject *foe);
 
 /* the gameplay functions of the character modules (src/game/Script/CharFuncs.c), next to their Init tables */
 extern PyMethodDef g_FunctionaryFuncs[];

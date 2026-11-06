@@ -129,12 +129,8 @@ byte Script_Range(PyObject *n, long *count) {
 	if (!n) {
 		return 0;
 	}
-	if (!PyArg_Parse(n, "l", count)) {
-		PyErr_Clear();
-		PyErr_SetString(PyExc_TypeError, "range() requires 1-3 int arguments");
-		return 0;
-	}
-	return 1;
+	/* the conversion of range's argument parser, with its errors */
+	return PyArg_Parse(n, "l", count) != 0;
 }
 
 int Script_Next(PyObject *seq, int i, PyObject **item) {
@@ -220,4 +216,13 @@ PyObject *Script_Entity(PyObject *name) {
 
 PyObject *Script_Usr(void) {
 	return Script_Ask("Scrap", "UsrEntity", "(i)", 0);
+}
+
+PyObject *Script_AskKw(const char *module, const char *func, PyObject *args, PyObject *kw) {
+	PyObject *f = args ? Script_Attr(module, func) : NULL;
+	PyObject *r = f ? PyEval_CallObjectWithKeywords(f, args, kw) : NULL;
+	Py_XDECREF(f);
+	Py_XDECREF(args);
+	Py_XDECREF(kw);
+	return r;
 }
