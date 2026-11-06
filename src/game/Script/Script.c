@@ -284,32 +284,30 @@ static PyObject *Script_TupleWith(PyObject *t, PyObject *old, PyObject *f) {
 	return r;
 }
 
-/* the values of dict d that are old become f; the keys are set after the walk, a set may resize d under PyDict_Next */
-static void Script_DictWith(PyObject *d, PyObject *old, PyObject *f, PyObject *skip) {
-	PyObject *k, *v, *keys = PyList_New(0);
-	int pos = 0;
-	if (!keys) {
-		PyErr_Clear();
-		return;
+/* (k, v) for a set after the walk of a dict: a set may resize the dict under PyDict_Next (later made at the first) */
+static void Script_Defer(PyObject **later, PyObject *k, PyObject *v) {
+	PyObject *kv = (*later || (*later = PyList_New(0))) ? Py_BuildValue("(OO)", k, v) : NULL;
+	if (kv) {
+		PyList_Append(*later, kv);
+		Py_DECREF(kv);
 	}
-	while (PyDict_Next(d, &pos, &k, &v)) {
-		if (v == old && (!skip || PyObject_Compare(k, skip) != 0)) {
-			PyList_Append(keys, k);
-		}
+}
+
+static void Script_SetDeferred(PyObject *d, PyObject *later) {
+	for (int i = 0; later && i < PyList_GET_SIZE(later); i++) {
+		PyObject *kv = PyList_GET_ITEM(later, i);
+		PyDict_SetItem(d, PyTuple_GET_ITEM(kv, 0), PyTuple_GET_ITEM(kv, 1));
 	}
-	for (int i = 0; i < PyList_GET_SIZE(keys); i++) {
-		PyDict_SetItem(d, PyList_GET_ITEM(keys, i), f);
-	}
-	Py_DECREF(keys);
+	Py_XDECREF(later);
 }
 
 void Script_ReplaceRefs(PyObject *dict, PyObject *key, PyObject *old, PyObject *f) {
 	/*
 	 * other names, the list items, the tuple items (Doors.DefDoorInfo = 800, StdInitializator, StdObjInitializator,
 	 * 0, 0: a new tuple under the same name) and the dict values of the module that hold the replaced function
-	 * (MapRace.Races = [EasyRace1, ...]); only items that are old itself, one level deep
+	 * (MapRace.Races = [EasyRace1, ...]); only items that are old itself, one level deep (not __builtins__)
 	 */
-	PyObject *k, *v, *later;
+	PyObject *k, *v, *later = NULL;
 	int pos = 0;
 	if (!old) {
 		return;
@@ -325,13 +323,12 @@ void Script_ReplaceRefs(PyObject *dict, PyObject *key, PyObject *old, PyObject *
 	}
 	script_rebindOld[script_rebinds] = old;
 	script_rebindNew[script_rebinds++] = f;
-	Script_DictWith(dict, old, f, key);
-	if (!(later = PyList_New(0))) {
-		PyErr_Clear();
-		return;
-	}
 	while (PyDict_Next(dict, &pos, &k, &v)) {
-		if (PyList_Check(v)) {
+		if (v == old) {
+			if (PyObject_Compare(k, key) != 0) {
+				Script_Defer(&later, k, f);
+			}
+		} else if (PyList_Check(v)) {
 			for (int i = 0; i < PyList_GET_SIZE(v); i++) {
 				if (PyList_GET_ITEM(v, i) == old) {
 					Py_INCREF(f);
@@ -340,21 +337,22 @@ void Script_ReplaceRefs(PyObject *dict, PyObject *key, PyObject *old, PyObject *
 			}
 		} else if (PyTuple_Check(v)) {
 			PyObject *t = Script_TupleWith(v, old, f);
-			PyObject *kt = t ? Py_BuildValue("(OO)", k, t) : NULL;
-			if (kt) {
-				PyList_Append(later, kt);
+			if (t) {
+				Script_Defer(&later, k, t);
+				Py_DECREF(t);
 			}
-			Py_XDECREF(kt);
-			Py_XDECREF(t);
-		} else if (PyDict_Check(v) && v != dict) {
-			Script_DictWith(v, old, f, NULL);
+		} else if (PyDict_Check(v) && v != dict && !(PyString_Check(k) && !strcmp(PyString_AS_STRING(k), "__builtins__"))) {
+			PyObject *inner = NULL, *ik, *iv;
+			int ipos = 0;
+			while (PyDict_Next(v, &ipos, &ik, &iv)) {
+				if (iv == old) {
+					Script_Defer(&inner, ik, f);
+				}
+			}
+			Script_SetDeferred(v, inner);
 		}
 	}
-	for (int i = 0; i < PyList_GET_SIZE(later); i++) {
-		PyObject *kt = PyList_GET_ITEM(later, i);
-		PyDict_SetItem(dict, PyTuple_GET_ITEM(kt, 0), PyTuple_GET_ITEM(kt, 1));
-	}
-	Py_DECREF(later);
+	Script_SetDeferred(dict, later);
 	PyErr_Clear();
 }
 
@@ -367,19 +365,16 @@ void Script_Install(PyObject *module, PyMethodDef *methods, PyObject *kept) {
 		}
 		/* names the module bound to the Python function when it loaded (onCreateMainMenu = CreateMainMenu), set
 		 * after the walk */
-		PyObject *key, *value, *keys = PyList_New(0);
+		PyObject *key, *value, *later = NULL;
 		int pos = 0;
-		while (keys && PyDict_Next(dict, &pos, &key, &value)) {
+		while (PyDict_Next(dict, &pos, &key, &value)) {
 			if (PyFunction_Check(value) && PyString_Check(((PyFunctionObject *)value)->func_name) &&
 				!strcmp(PyString_AsString(((PyFunctionObject *)value)->func_name), m->ml_name) &&
 				strcmp(PyString_AsString(key), m->ml_name)) {
-				PyList_Append(keys, key);
+				Script_Defer(&later, key, f);
 			}
 		}
-		for (int i = 0; keys && i < PyList_GET_SIZE(keys); i++) {
-			PyDict_SetItem(dict, PyList_GET_ITEM(keys, i), f);
-		}
-		Py_XDECREF(keys);
+		Script_SetDeferred(dict, later);
 		PyObject *old = PyDict_GetItemString(dict, m->ml_name);
 		if (old && kept && PyFunction_Check(old)) {
 			PyList_Append(kept, old);
