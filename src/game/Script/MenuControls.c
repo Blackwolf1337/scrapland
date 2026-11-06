@@ -517,11 +517,14 @@ static PyObject *Mouse_Step(PyObject *args, double sign) {
 		return NULL;
 	}
 	const char *slider = !strcmp(prev, "Item2") ? "SensitivitySliderX" : !strcmp(prev, "Item3") ? "SensitivitySliderY" : NULL;
-	if (slider) {
-		double v = Script_GetNum(id, slider, "Value");
-		Script_SetNum(id, slider, "Value", v + sign * Script_GetNum(id, slider, "ValueStep"));
-		Mouse_Apply(id);
+	/* without the slider the script failed on None + None, before it moved the focus */
+	if (!slider || !Script_HasItem(id, slider)) {
+		PyErr_SetString(PyExc_TypeError, sign > 0 ? "bad operand type(s) for +" : "bad operand type(s) for -");
+		return NULL;
 	}
+	double v = Script_GetNum(id, slider, "Value");
+	Script_SetNum(id, slider, "Value", v + sign * Script_GetNum(id, slider, "ValueStep"));
+	Mouse_Apply(id);
 	Script_SetDefault(id, prev);
 	return Py_ReturnNone();
 }

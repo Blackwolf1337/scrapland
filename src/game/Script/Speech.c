@@ -699,7 +699,9 @@ static PyObject *Speech_StdOnSpch(PyObject *self, PyObject *args, PyObject *kw) 
 /* PlayerAnsEnd(): the end of the player's answer, its callback once */
 static PyObject *Speech_PlayerAnsEnd(PyObject *self, PyObject *args) {
 	(void)self;
-	(void)args;
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
 	if (!Script_Try("SSound", "StopVoice", "(i)", 0)) {
 		return NULL;
 	}
@@ -1451,7 +1453,9 @@ static byte Sp_TestLater(void) {
 /* TestInRange(): OnOutOfRange when the player walks away (5 m) or the object offers to talk again */
 static PyObject *Speech_TestInRange(PyObject *self, PyObject *args) {
 	(void)self;
-	(void)args;
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
 	PyObject *player = Sp_Usr(), *obj = player ? Sp_Get("ObjEntity") : NULL;
 	byte ok = obj != NULL;
 	if (ok && PyObject_IsTrue(player) > 0 && PyObject_IsTrue(obj) > 0) {
@@ -1731,7 +1735,9 @@ static PyObject *Speech_ObjectAutoAnswer2(PyObject *self, PyObject *args) {
 /* EndObjectAnswer(): the object listens again, the head stops talking */
 static PyObject *Speech_EndObjectAnswer(PyObject *self, PyObject *args) {
 	(void)self;
-	(void)args;
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
 	PyObject *obj = Sp_Get("ObjEntity");
 	int relax = obj ? Script_HIs(obj, "Action", "Relax") : -1;
 	byte ok = relax >= 0 && (relax || Script_HSet(obj, "Action", PyString_FromString("Listen"))) &&

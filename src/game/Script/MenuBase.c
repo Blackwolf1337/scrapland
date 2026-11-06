@@ -403,8 +403,7 @@ static PyObject *Menu_VerticalMenu(PyObject *self, PyObject *args, PyObject *kw)
 	double start;
 	char backText[0x200];
 
-	if (n <= 0) {
-		PyErr_SetString(PyExc_IndexError, "VerticalMenu: no entries");
+	if (n < 0) {
 		return NULL;
 	}
 	if (!yStart || !PyObject_IsTrue(yStart)) {
@@ -440,6 +439,11 @@ static PyObject *Menu_VerticalMenu(PyObject *self, PyObject *args, PyObject *kw)
 		Py_XDECREF(y);
 		Py_XDECREF(t);
 		start += step + 16;
+	}
+	/* the script reads the last entry after the title */
+	if (n <= 0) {
+		PyErr_SetString(PyExc_IndexError, PyList_Check(menu) ? "list index out of range" : "tuple index out of range");
+		return NULL;
 	}
 	Str_Copy(backText, Script_Lang("Menu_Back"), sizeof(backText));
 	byte xbox = GVar_GetNum("IsXbox", 0) != 0;
