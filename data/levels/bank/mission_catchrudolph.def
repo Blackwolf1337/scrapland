@@ -1,0 +1,5 @@
+# The functions of Mission_CatchRudolph in level bank (the script levels/bank/scripts/mission_catchrudolph.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Bank.c): InitStatus, CreateRudolph, OnCatchRudolph, SetNextMission.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/bank/mission_catchrudolph.def replaces this file.
+section Init LevelPath
+call MissionsFuncs.SetMissionTarget "Functionary_Rudolph"

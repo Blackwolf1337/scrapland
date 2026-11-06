@@ -1,0 +1,242 @@
+# The functions of Mission_BeatPickus in level police (the script levels/police/scripts/mission_beatpickus.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Police.c): InitStatus, Init, DisableIAFunctionary, OnTraitoriusRespawn, OnThugRespawn, SetThugsState, SetState, TraitoriusSpeech, HireThugs, ThugLeaderSpeech, ThugNormalSpeech, BeatPickus, OnAlarmActivated, CheckMaxDist, CheckThugsDist, CreateLauncher, LaunchPickusFightScene, CreatePickusBeatenClass, InitPickusBeaten, DelThug, AskPickus, OnTalkToPickus, PreGetFuncShipPlans, GetFuncShipPlans, TakePlanPhoto, TalkToTraitoriusAgain, TraitoriusAgainSpeech, LightingActivate.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/police/mission_beatpickus.def replaces this file.
+section PreHireThugs CharName
+call Speech.RestoreState $CharName
+call Scrap.SetSaveVar "MissionState" "HireThugs"
+call SaveGame.QWayPoint
+call SaveGame.MMDesc "Mission_HireThugs_MissionText1" 1
+call Mission_BeatPickus.HireThugs
+
+section PreBeatPickus CharName
+call Scrap.SetSaveVar "MissionState" "BeatPickus"
+call Speech.RestoreState $CharName
+call Mission_BeatPickus.BeatPickus
+
+section OnAlarmDeactivated
+call Scrap.SetSaveVar "MissionState" "HireThugs"
+call Mission_BeatPickus.HireThugs
+call Mission_BeatPickus.SetThugsState
+
+section PreTalkToTraitoriusAgain
+call Scrap.SetSaveVar "MissionState" "TalkToTraitoriusAgain"
+call SaveGame.QWayPoint
+call SaveGame.MMDesc "Mission_TalkToTraitorius2_MissionText1" 1
+call Mission_BeatPickus.TalkToTraitoriusAgain
+
+section SetNextMission
+setvar Mission_BeatPickus.alreadyTalked 1
+call MissionsFuncs.SetMissionTarget None
+call Scrap.DelSaveVars "MissionState"
+call SaveGame.QWayPoint
+call MissionsFuncs.SetNextMission "Mission_DestroyMickus" "Commercial"
+call SaveGame.MMDesc "Mission_Search&DestroyMickus_MissionText1" 1
+call Scrap.SetSaveVar "Parked.Police" "['SPOLI1', 'SPOLI2', 'SPOLI3']"
+call Scrap.SetSaveVar "Parked.Mercs" "['SMERC1', 'SMERC2']"
+call Scrap.SetSaveVar "Parked.TownHall" "['SFUNC1']"
+call Scrap.SetSaveVar "Parked.Bank" "['SBANKER1']"
+call Scrap.SetSaveVar "Parked.Temple" "['SPOLI3']"
+
+section LoadScene
+call Scene.Load "Beating"
+call Scene.ActorAction 0 "Dtritus" "RelaxDown"
+call Scene.ActorAction 170 "Dtritus" "Turn"
+call Scene.ActorAction 190 "Dtritus" "Relax"
+call Scene.ActorAction 310 "Dtritus" "RelaxDownLeft"
+call Scene.ActorAction 385 "Dtritus" "Relax"
+call Scene.ActorAction 450 "Dtritus" "RelaxAstonished"
+call Scene.ActorAction 615 "Dtritus" "Turn"
+call Scene.ActorAction 635 "Dtritus" "RelaxDown"
+call Scene.ActorAction 700 "Dtritus" "TalkDown1"
+call Scene.ActorAction 745 "Dtritus" "RelaxDown"
+call Scene.ActorAction 775 "Dtritus" "Turn"
+call Scene.ActorAction 795 "Dtritus" "Relax"
+call Scene.ActorAction 835 "Dtritus" "Turn"
+call Scene.ActorAction 855 "Dtritus" "RelaxDown"
+call Scene.ActorAction 920 "Dtritus" "TalkDown2"
+call Scene.ActorAction 965 "Dtritus" "RelaxDown"
+call Scene.ActorAction 1020 "Dtritus" "Relax0"
+call Scene.ActorAction 1060 "Dtritus" "Turn"
+call Scene.ActorAction 1080 "Dtritus" "Relax"
+call Scene.ActorAction 0 "PoliceJefe" "RelaxUp"
+call Scene.ActorAction 30 "PoliceJefe" "Talk2Up"
+call Scene.ActorAction 80 "PoliceJefe" "TalkUp"
+call Scene.ActorAction 165 "PoliceJefe" "Turn"
+call Scene.ActorAction 185 "PoliceJefe" "Relax"
+call Scene.ActorAction 305 "PoliceJefe" "Talk1UpRight"
+call Scene.ActorAction 352 "PoliceJefe" "TalkUpRight"
+call Scene.ActorAction 380 "PoliceJefe" "Relax"
+call Scene.ActorAction 610 "PoliceJefe" "Turn"
+call Scene.ActorAction 630 "PoliceJefe" "TalkUp"
+call Scene.ActorAction 690 "PoliceJefe" "RelaxUp"
+call Scene.ActorAction 755 "PoliceJefe" "Turn"
+call Scene.ActorAction 775 "PoliceJefe" "Talk"
+call Scene.ActorAction 825 "PoliceJefe" "TalkUpRight"
+call Scene.ActorAction 910 "PoliceJefe" "RelaxUpRight"
+call Scene.ActorAction 975 "PoliceJefe" "TalkComeOn"
+call Scene.ActorAction 1005 "PoliceJefe" "Turn"
+call Scene.ActorAction 1035 "PoliceJefe" "Run"
+call Scene.ActorAction 0 "Functionary" "Relax"
+call Scene.ActorAction 150 "Functionary" "WalkScared"
+call Scene.ActorAction 295 "Functionary" "GetBeating"
+call Scene.ActorAction 0 "PickusBeaten" "Relax"
+call Scene.ActorAction 0 "PickusFloor" "Relax"
+call Scene.ActorAction 0 "PoliceMaton1" "Run"
+call Scene.ActorAction 171 "PoliceMaton1" "WalkMenacing"
+call Scene.ActorAction 340 "PoliceMaton1" "BeatingFist"
+call Scene.ActorAction 400 "PoliceMaton1" "BeatingHeadbutt"
+call Scene.ActorAction 429 "PoliceMaton1" "BeatingFist"
+call Scene.ActorAction 460 "PoliceMaton1" "BeatingHammer"
+call Scene.ActorAction 495 "PoliceMaton1" "BeatingFist"
+call Scene.ActorAction 555 "PoliceMaton1" "BeatingHammer"
+call Scene.ActorAction 590 "PoliceMaton1" "BeatingFist"
+call Scene.ActorAction 620 "PoliceMaton1" "BeatingHeadbutt"
+call Scene.ActorAction 649 "PoliceMaton1" "BeatingFist"
+call Scene.ActorAction 680 "PoliceMaton1" "BeatingHammer"
+call Scene.ActorAction 715 "PoliceMaton1" "BeatingFist"
+call Scene.ActorAction 914 "PoliceMaton1" "Run"
+call Scene.ActorAction 0 "PoliceMaton2" "Run"
+call Scene.ActorAction 190 "PoliceMaton2" "WalkMenacing"
+call Scene.ActorAction 344 "PoliceMaton2" "BeatingFist"
+call Scene.ActorAction 440 "PoliceMaton2" "BeatingHeadbutt"
+call Scene.ActorAction 469 "PoliceMaton2" "BeatingFist"
+call Scene.ActorAction 560 "PoliceMaton2" "BeatingHeadbutt"
+call Scene.ActorAction 599 "PoliceMaton2" "BeatingFist"
+call Scene.ActorAction 620 "PoliceMaton2" "BeatingHammer"
+call Scene.ActorAction 655 "PoliceMaton2" "BeatingFist"
+call Scene.ActorAction 710 "PoliceMaton2" "BeatingHeadbutt"
+call Scene.ActorAction 739 "PoliceMaton2" "BeatingFist"
+call Scene.ActorAction 900 "PoliceMaton2" "Run"
+call Scene.ActorAction 0 "PoliceMaton3" "Relax"
+call Scene.ActorAction 66 "PoliceMaton3" "WalkMenacing"
+call Scene.ActorAction 342 "PoliceMaton3" "BeatingFist"
+call Scene.ActorAction 420 "PoliceMaton3" "BeatingHammer"
+call Scene.ActorAction 455 "PoliceMaton3" "BeatingFist"
+call Scene.ActorAction 595 "PoliceMaton3" "BeatingHammer"
+call Scene.ActorAction 620 "PoliceMaton3" "BeatingFist"
+call Scene.ActorAction 645 "PoliceMaton3" "BeatingHeadbutt"
+call Scene.ActorAction 674 "PoliceMaton3" "BeatingFist"
+call Scene.ActorAction 705 "PoliceMaton3" "BeatingHeadbutt"
+call Scene.ActorAction 734 "PoliceMaton3" "BeatingFist"
+call Scene.ActorAction 909 "PoliceMaton3" "Run"
+call Scene.ActorAction 0 "PoliceMaton4" "Relax"
+call Scene.ActorAction 85 "PoliceMaton4" "WalkMenacing"
+call Scene.ActorAction 350 "PoliceMaton4" "BeatingFist"
+call Scene.ActorAction 460 "PoliceMaton4" "BeatingHeadbutt"
+call Scene.ActorAction 499 "PoliceMaton4" "BeatingFist"
+call Scene.ActorAction 580 "PoliceMaton4" "BeatingHammer"
+call Scene.ActorAction 615 "PoliceMaton4" "BeatingFist"
+call Scene.ActorAction 650 "PoliceMaton4" "BeatingHeadbutt"
+call Scene.ActorAction 679 "PoliceMaton4" "BeatingFist"
+call Scene.ActorAction 900 "PoliceMaton4" "Relax"
+call Scene.ActorAction 0 "PoliceMaton5" "Relax"
+call Scene.ActorAction 27 "PoliceMaton5" "WalkMenacing"
+call Scene.ActorAction 340 "PoliceMaton5" "BeatingJump"
+call Scene.ActorAction 903 "PoliceMaton5" "Run"
+call Scene.AddText 30 "Mission_Scene_HireThugs_Beating_1" 16
+call Scene.AddText 305 "Mission_Scene_HireThugs_Beating_2" 17
+call Scene.AddText 630 "Mission_Scene_HireThugs_Beating_3" 4
+call Scene.AddText 700 "Mission_Scene_HireThugs_Beating_4" 3
+call Scene.AddText 775 "Mission_Scene_HireThugs_Beating_5" 8
+call Scene.AddText 920 "Mission_Scene_HireThugs_Beating_6" 3
+call Scene.AddText 975 "Mission_Scene_HireThugs_Beating_7" 3
+call Scrap.Set "DefInterpTime" 0.6
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Relax0" "Relax0" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxDown" "RelaxDown" 1
+call Scene.CreateLocalAction $CharType 0 "TalkDown" "TalkDown" 1
+call Scene.CreateLocalAction $CharType 0 "TalkDown1" "TalkDown1" 1
+call Scene.CreateLocalAction $CharType 0 "TalkDown2" "TalkDown2" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxDownLeft" "RelaxDownLeft" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxAstonished" "RelaxAstonished" 1
+call Scene.SetDefSounds "Dtritus" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Police"
+call Scene.AddCharActor "PoliceJefe" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Run" "Run" 1
+call Scene.CreateLocalAction $CharType 0 "TalkUp" "TalkUp" 1
+call Scene.CreateLocalAction $CharType 0 "TalkComeOn" "TalkComeOn" 1
+call Scene.CreateLocalAction $CharType 0 "Talk1Up" "Talk1Up" 1
+call Scene.CreateLocalAction $CharType 0 "Talk2Up" "Talk2Up" 1
+call Scene.CreateLocalAction $CharType 0 "TalkUpRight" "TalkUpRight" 1
+call Scene.CreateLocalAction $CharType 0 "Talk1UpRight" "Talk1UpRight" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxUpRight" "RelaxUpRight" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxUp" "RelaxUp" 1
+call Scene.SetDefSounds "PoliceJefe" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Functionary"
+call Scene.AddCharActor "Functionary" $CharType
+call Scene.CreateLocalAction $CharType 0 "WalkScared" "WalkScared" 1
+call Scrap.Set "DefInterpTime" 0.5
+call Scene.CreateLocalAction $CharType 0 "GetBeating" "GetBeating" 1
+call Scene.SetDefSounds "Functionary" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Police"
+call Scene.AddCharActor "PoliceMaton1" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Run" "Run" 1
+call Scene.CreateLocalAction $CharType 0 "WalkMenacing" "WalkMenacing" 1
+call Scene.CreateLocalAction $CharType 0 "BeatingFist" "BeatingFist" 1
+call Scrap.Set "DefInterpTime" 0.1
+call Scene.CreateLocalAction $CharType 0 "BeatingHammer" "BeatingHammer" 1
+call Scrap.Set "DefInterpTime" 0.1
+call Scene.CreateLocalAction $CharType 0 "BeatingHeadbutt" "BeatingHeadbutt" 1
+call Scrap.Set "DefInterpTime" 0.1
+call Scene.SetDefSounds "PoliceMaton1" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Police"
+call Scene.AddCharActor "PoliceMaton2" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Run" "Run" 1
+call Scene.CreateLocalAction $CharType 0 "WalkMenacing" "WalkMenacing" 1
+call Scene.CreateLocalAction $CharType 0 "BeatingFist" "BeatingFist" 1
+call Scrap.Set "DefInterpTime" 0.1
+call Scene.CreateLocalAction $CharType 0 "BeatingHammer" "BeatingHammer" 1
+call Scrap.Set "DefInterpTime" 0.1
+call Scene.CreateLocalAction $CharType 0 "BeatingHeadbutt" "BeatingHeadbutt" 1
+call Scrap.Set "DefInterpTime" 0.1
+call Scene.SetDefSounds "PoliceMaton2" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Police"
+call Scene.AddCharActor "PoliceMaton3" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Run" "Run" 1
+call Scene.CreateLocalAction $CharType 0 "WalkMenacing" "WalkMenacing" 1
+call Scene.CreateLocalAction $CharType 0 "BeatingFist" "BeatingFist" 1
+call Scrap.Set "DefInterpTime" 0.1
+call Scene.CreateLocalAction $CharType 0 "BeatingHammer" "BeatingHammer" 1
+call Scrap.Set "DefInterpTime" 0.1
+call Scene.CreateLocalAction $CharType 0 "BeatingHeadbutt" "BeatingHeadbutt" 1
+call Scrap.Set "DefInterpTime" 0.1
+call Scene.SetDefSounds "PoliceMaton3" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Police"
+call Scene.AddCharActor "PoliceMaton4" $CharType
+call Scene.CreateLocalAction $CharType 0 "WalkMenacing" "WalkMenacing" 1
+call Scene.CreateLocalAction $CharType 0 "BeatingFist" "BeatingFist" 1
+call Scrap.Set "DefInterpTime" 0.1
+call Scene.CreateLocalAction $CharType 0 "BeatingHammer" "BeatingHammer" 1
+call Scrap.Set "DefInterpTime" 0.1
+call Scene.CreateLocalAction $CharType 0 "BeatingHeadbutt" "BeatingHeadbutt" 1
+call Scrap.Set "DefInterpTime" 0.1
+call Scene.SetDefSounds "PoliceMaton4" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Police"
+call Scene.AddCharActor "PoliceMaton5" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Run" "Run" 1
+call Scene.CreateLocalAction $CharType 0 "WalkMenacing" "WalkMenacing" 1
+call Scene.CreateLocalAction $CharType 0 "BeatingJump" "BeatingJump" 1
+call Scene.SetDefSounds "PoliceMaton5" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "PickusBeaten"
+call Scene.AddLocalActor "PickusBeaten" $CharType
+call Scene.CreateLocalAction $CharType 0 "Relax" "Relax" 1
+call SAct.SetCls "DefAction" "Relax"
+let CharType "PickusFloor"
+call Scene.AddLocalActor "PickusFloor" $CharType
+call Scene.CreateLocalAction $CharType 0 "Relax" "Relax" 1
+call SAct.SetCls "DefAction" "Relax"
+run setdef "DefInterpTime"
+call Scrap.Set "FXSceneBeatPickusFile" %Mission_BeatPickus.FXSceneBeatPickusFile
+call Scrap.SetDebrisSys %Mission_BeatPickus.FXSceneBeatPickusFile 1 0 0 1 0 0 %Fx.FXSCENEBEATPICKUS

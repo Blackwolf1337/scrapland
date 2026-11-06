@@ -1,0 +1,12 @@
+# The functions of Mission_FicusDead in level police (the script levels/police/scripts/mission_ficusdead.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Police.c): InitFicusDead, Init, OnTalkToFicus, AfterDeepThroatMessageShown, DeepThroatSpeech, SetNextMission.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/police/mission_ficusdead.def replaces this file.
+section InitStatus LevelPath
+
+section AfterDtritusSpeechShown
+call Speech.AddRemoteCom "Mission_FirstMeetCrazyGambler_RemoteMessage1" "DeepThroat" %Mission_FicusDead.PreAfterDeepThroatMessageShown ()
+
+section PreAfterDeepThroatMessageShown
+call SaveGame.MMDesc "Mission_CallDeepThroat_MissionText1" 1
+call Scrap.SetSaveVar "MissionState" "TalkToDeepThroat"
+call Mission_FicusDead.AfterDeepThroatMessageShown

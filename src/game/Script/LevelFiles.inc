@@ -8,6 +8,18 @@ static const char lvl_999_mapsnd[] = {
 static const char lvl_bank_mapsnd[] = {
 #embed "../../../data/levels/bank/mapsnd.def"
 	, 0 };
+static const char lvl_bank_maptreasure[] = {
+#embed "../../../data/levels/bank/maptreasure.def"
+	, 0 };
+static const char lvl_bank_mission_catchrudolph[] = {
+#embed "../../../data/levels/bank/mission_catchrudolph.def"
+	, 0 };
+static const char lvl_bank_mission_getdatapart2[] = {
+#embed "../../../data/levels/bank/mission_getdatapart2.def"
+	, 0 };
+static const char lvl_bank_mission_infiltratebank[] = {
+#embed "../../../data/levels/bank/mission_infiltratebank.def"
+	, 0 };
 static const char lvl_downtown_mapsnd[] = {
 #embed "../../../data/levels/downtown/mapsnd.def"
 	, 0 };
@@ -41,8 +53,26 @@ static const char lvl_orbit_mapsnd[] = {
 static const char lvl_outskirts_mapsnd[] = {
 #embed "../../../data/levels/outskirts/mapsnd.def"
 	, 0 };
+static const char lvl_police_mapplanes[] = {
+#embed "../../../data/levels/police/mapplanes.def"
+	, 0 };
 static const char lvl_police_mapsnd[] = {
 #embed "../../../data/levels/police/mapsnd.def"
+	, 0 };
+static const char lvl_police_mission_beatpickus[] = {
+#embed "../../../data/levels/police/mission_beatpickus.def"
+	, 0 };
+static const char lvl_police_mission_ficusdead[] = {
+#embed "../../../data/levels/police/mission_ficusdead.def"
+	, 0 };
+static const char lvl_police_mission_getauthorization[] = {
+#embed "../../../data/levels/police/mission_getauthorization.def"
+	, 0 };
+static const char lvl_police_mission_initepilogue[] = {
+#embed "../../../data/levels/police/mission_initepilogue.def"
+	, 0 };
+static const char lvl_police_mission_policebosscheats[] = {
+#embed "../../../data/levels/police/mission_policebosscheats.def"
 	, 0 };
 static const char lvl_press_mapsnd[] = {
 #embed "../../../data/levels/press/mapsnd.def"
@@ -67,6 +97,12 @@ static const char lvl_temple_mapsnd[] = {
 	, 0 };
 static const char lvl_townhall_mapsnd[] = {
 #embed "../../../data/levels/townhall/mapsnd.def"
+	, 0 };
+static const char lvl_townhall_mission_sheriffmayor[] = {
+#embed "../../../data/levels/townhall/mission_sheriffmayor.def"
+	, 0 };
+static const char lvl_townhall_mission_talktomayor[] = {
+#embed "../../../data/levels/townhall/mission_talktomayor.def"
 	, 0 };
 static const char lvl_tuczone_map[] = {
 #embed "../../../data/levels/tuczone/map.def"
@@ -163,6 +199,10 @@ static const levelFile_t level_files[] = {
 	{ "999", "Map", "levels/999/map.def", lvl_999_map },
 	{ "999", "MapSnd", "levels/999/mapsnd.def", lvl_999_mapsnd },
 	{ "bank", "MapSnd", "levels/bank/mapsnd.def", lvl_bank_mapsnd },
+	{ "bank", "MapTreasure", "levels/bank/maptreasure.def", lvl_bank_maptreasure },
+	{ "bank", "Mission_CatchRudolph", "levels/bank/mission_catchrudolph.def", lvl_bank_mission_catchrudolph },
+	{ "bank", "Mission_GetDataPart2", "levels/bank/mission_getdatapart2.def", lvl_bank_mission_getdatapart2 },
+	{ "bank", "Mission_InfiltrateBank", "levels/bank/mission_infiltratebank.def", lvl_bank_mission_infiltratebank },
 	{ "downtown", "MapSnd", "levels/downtown/mapsnd.def", lvl_downtown_mapsnd },
 	{ "fake", "Map", "levels/fake/map.def", lvl_fake_map },
 	{ "fake", "MapSnd", "levels/fake/mapsnd.def", lvl_fake_mapsnd },
@@ -174,7 +214,13 @@ static const levelFile_t level_files[] = {
 	{ "om", "MapSnd", "levels/om/mapsnd.def", lvl_om_mapsnd },
 	{ "orbit", "MapSnd", "levels/orbit/mapsnd.def", lvl_orbit_mapsnd },
 	{ "outskirts", "MapSnd", "levels/outskirts/mapsnd.def", lvl_outskirts_mapsnd },
+	{ "police", "MapPlanes", "levels/police/mapplanes.def", lvl_police_mapplanes },
 	{ "police", "MapSnd", "levels/police/mapsnd.def", lvl_police_mapsnd },
+	{ "police", "Mission_BeatPickus", "levels/police/mission_beatpickus.def", lvl_police_mission_beatpickus },
+	{ "police", "Mission_FicusDead", "levels/police/mission_ficusdead.def", lvl_police_mission_ficusdead },
+	{ "police", "Mission_GetAuthorization", "levels/police/mission_getauthorization.def", lvl_police_mission_getauthorization },
+	{ "police", "Mission_InitEpilogue", "levels/police/mission_initepilogue.def", lvl_police_mission_initepilogue },
+	{ "police", "Mission_PoliceBossCheats", "levels/police/mission_policebosscheats.def", lvl_police_mission_policebosscheats },
 	{ "press", "MapSnd", "levels/press/mapsnd.def", lvl_press_mapsnd },
 	{ "ca", "Map", "levels/ca/map.def", lvl_ca_map },
 	{ "ca", "MapSnd", "levels/ca/mapsnd.def", lvl_ca_mapsnd },
@@ -183,6 +229,8 @@ static const levelFile_t level_files[] = {
 	{ "shipedit", "MapSnd", "levels/shipedit/mapsnd.def", lvl_shipedit_mapsnd },
 	{ "temple", "MapSnd", "levels/temple/mapsnd.def", lvl_temple_mapsnd },
 	{ "townhall", "MapSnd", "levels/townhall/mapsnd.def", lvl_townhall_mapsnd },
+	{ "townhall", "Mission_SheriffMayor", "levels/townhall/mission_sheriffmayor.def", lvl_townhall_mission_sheriffmayor },
+	{ "townhall", "Mission_TalkToMayor", "levels/townhall/mission_talktomayor.def", lvl_townhall_mission_talktomayor },
 	{ "tuczone", "Map", "levels/tuczone/map.def", lvl_tuczone_map },
 	{ "tuczone", "MapSnd", "levels/tuczone/mapsnd.def", lvl_tuczone_mapsnd },
 	{ "ab", "MapSnd", "levels/ab/mapsnd.def", lvl_ab_mapsnd },

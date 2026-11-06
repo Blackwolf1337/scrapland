@@ -1,0 +1,11 @@
+# The functions of Mission_GetDataPart2 in level bank (the script levels/bank/scripts/mission_getdatapart2.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Bank.c): ComputeAutoUpdateStopValue, InitStatus, Init, TalkToBoss, BossSpeech, PreInitMission, InitMission, SetDesktopState, CreateFuncInit, OnFunctionarySpeech, OnFuncDefState, SetStopDownloadingState, SetNormalState, AbortDownload, OnDownloadAborted, OnBeginDownloadData, OnFuncStartsWorking, OnDownloadComplete, MissionScorer.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/bank/mission_getdatapart2.def replaces this file.
+section SetNextMission
+call Scrap.DelSaveVars "MissionState"
+call Scrap.Set "OnFunctionaryStartsWorking" ""
+call Scrap.Set "OnDefStateCallback" ""
+call Scrap.Set "OnFinishAutoUpdate" ""
+call SaveGame.QWayPoint
+call MissionsFuncs.SetNextMission "Mission_GetDataPart3" "Commercial"
+call SaveGame.MMDesc "Mission_TalkToBoss3_MissionText1" 1
