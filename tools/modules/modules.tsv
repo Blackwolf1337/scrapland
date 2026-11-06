@@ -3,3 +3,24 @@
 Sound	-	Data.packed/scripts/sound/sound.pyc
 Parking	-	Data.packed/scripts/vehicles/parking.pyc
 Map	gamblinden	data03.packed/levels/gamblinden/scripts/map.pyc
+
+# level modules (stage 3): Map, MapSnd, the map libraries, the missions and super deals of each level
+Map	abindoor	data03.packed/levels/abindoor/scripts/map.pyc
+MapSnd	abindoor	data03.packed/levels/abindoor/scripts/mapsnd.pyc
+Map	bank	Data.packed/levels/bank/scripts/map.pyc
+MapSnd	bank	Data.packed/levels/bank/scripts/mapsnd.pyc
+MapSnd	gamblinden	data03.packed/levels/gamblinden/scripts/mapsnd.pyc
+Map	orbit	data01.packed/levels/orbit/scripts/map.pyc
+MapDecont	orbit	data01.packed/levels/orbit/scripts/mapdecont.pyc
+MapSnd	orbit	data01.packed/levels/orbit/scripts/mapsnd.pyc
+Map	police	data01.packed/levels/police/scripts/map.pyc
+MapPlanes	police	data01.packed/levels/police/scripts/mapplanes.pyc
+MapSnd	police	data01.packed/levels/police/scripts/mapsnd.pyc
+Map	press	data01.packed/levels/press/scripts/map.pyc
+MapPlanes	press	data01.packed/levels/press/scripts/mapplanes.pyc
+MapSnd	press	data01.packed/levels/press/scripts/mapsnd.pyc
+Map	temple	data02.packed/levels/temple/scripts/map.pyc
+MapExtraLifes	temple	data02.packed/levels/temple/scripts/mapextralifes.pyc
+MapSnd	temple	data02.packed/levels/temple/scripts/mapsnd.pyc
+Map	townhall	data02.packed/levels/townhall/scripts/map.pyc
+MapSnd	townhall	data02.packed/levels/townhall/scripts/mapsnd.pyc
