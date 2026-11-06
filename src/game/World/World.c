@@ -669,10 +669,12 @@ void cWorld_Clear(cWorld *self) {
 		}
 		cEntity *e = n->data;
 		if (e) {
-			/* out of the name table first, as the dead list does: a dtor's callback (a camera's OnSwitch) may look
-			 * up names while the others are freed; the original left them in and read freed names */
-			PtrTable_Delete(&self->entities, e->name);
+			/* out of the name table right after its free, by its pointer: its own destructor may still look itself
+			 * up (a missile's death callback), and a later one must not meet freed names (a camera's OnSwitch); the
+			 * original left all names in and read freed ones */
+			uint32_t slot = HashTable_Slot(&self->entities, e->name);
 			Entity_Free(e);
+			PtrTable_DeleteValue(&self->entities, slot, e);
 		}
 	}
 	while (self->debrisList) {

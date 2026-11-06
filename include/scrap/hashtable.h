@@ -28,6 +28,9 @@ typedef struct cPtrItem {
 cPtrItem *PtrTable_Insert(HashTable *self, const char *key, uint32_t slot, void *const *value);
 byte PtrTable_Add(HashTable *self, const char *key, void *const *value, byte warn);
 byte PtrTable_Delete(HashTable *self, const char *key);
+/* takes the item whose value is value out of slot (found by the pointer, the keys are not read): after the owner of
+ * the key was freed */
+byte PtrTable_DeleteValue(HashTable *self, uint32_t slot, const void *value);
 void PtrTable_Clear(HashTable *self);
 /* the value of key, NULL if it is not there */
 void *PtrTable_Value(HashTable *self, const char *key);
