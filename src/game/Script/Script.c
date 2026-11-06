@@ -186,6 +186,12 @@ static const scriptModule_t script_modules[] = {
 	{ "DoorSound", g_DoorSoundMethods },
 	{ "OutMap", g_OutMapMethods },
 	{ "InTraffic", g_InTrafficMethods },
+	{ "DeathMatch", g_DeathMatchMethods },
+	{ "TeamDeathMatch", g_TeamDeathMatchMethods },
+	{ "Versus", g_VersusMethods },
+	{ "CTF", g_CTFMethods },
+	{ "Domination", g_DominationMethods },
+	{ "MortalRace", g_MortalRaceMethods },
 };
 
 /*
