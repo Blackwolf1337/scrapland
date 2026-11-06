@@ -509,6 +509,18 @@ static const char mod_levels_townhall_map[] = {
 static const char mod_levels_townhall_mapsnd[] = {
 #embed "../../../data/levels/townhall/mapsnd.mod"
 	, 0 };
+static const char mod_levels_townhall_mission_apologizemayor[] = {
+#embed "../../../data/levels/townhall/mission_apologizemayor.mod"
+	, 0 };
+static const char mod_levels_townhall_mission_catchtrurl[] = {
+#embed "../../../data/levels/townhall/mission_catchtrurl.mod"
+	, 0 };
+static const char mod_levels_townhall_mission_sheriffmayor[] = {
+#embed "../../../data/levels/townhall/mission_sheriffmayor.mod"
+	, 0 };
+static const char mod_levels_townhall_mission_talktomayor[] = {
+#embed "../../../data/levels/townhall/mission_talktomayor.mod"
+	, 0 };
 
 static const moduleFile_t module_files[] = {
 	{ NULL, "Sound", "modules/sound.mod", mod_modules_sound },
@@ -681,4 +693,8 @@ static const moduleFile_t module_files[] = {
 	{ "temple", "Mission_TalkToDeepThroat", "levels/temple/mission_talktodeepthroat.mod", mod_levels_temple_mission_talktodeepthroat },
 	{ "townhall", "Map", "levels/townhall/map.mod", mod_levels_townhall_map },
 	{ "townhall", "MapSnd", "levels/townhall/mapsnd.mod", mod_levels_townhall_mapsnd },
+	{ "townhall", "Mission_ApologizeMayor", "levels/townhall/mission_apologizemayor.mod", mod_levels_townhall_mission_apologizemayor },
+	{ "townhall", "Mission_CatchTrurl", "levels/townhall/mission_catchtrurl.mod", mod_levels_townhall_mission_catchtrurl },
+	{ "townhall", "Mission_SheriffMayor", "levels/townhall/mission_sheriffmayor.mod", mod_levels_townhall_mission_sheriffmayor },
+	{ "townhall", "Mission_TalkToMayor", "levels/townhall/mission_talktomayor.mod", mod_levels_townhall_mission_talktomayor },
 };

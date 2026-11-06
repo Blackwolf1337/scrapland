@@ -172,3 +172,7 @@ Mission_MeetArchbishop	temple	data02.packed/levels/temple/scripts/mission_meetar
 Mission_TalkToDeepThroat	temple	data02.packed/levels/temple/scripts/mission_talktodeepthroat.pyc
 Map	townhall	data02.packed/levels/townhall/scripts/map.pyc
 MapSnd	townhall	data02.packed/levels/townhall/scripts/mapsnd.pyc
+Mission_ApologizeMayor	townhall	data02.packed/levels/townhall/scripts/mission_apologizemayor.pyc
+Mission_CatchTrurl	townhall	data02.packed/levels/townhall/scripts/mission_catchtrurl.pyc
+Mission_SheriffMayor	townhall	data02.packed/levels/townhall/scripts/mission_sheriffmayor.pyc
+Mission_TalkToMayor	townhall	data02.packed/levels/townhall/scripts/mission_talktomayor.pyc
