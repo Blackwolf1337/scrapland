@@ -111,6 +111,17 @@ Mission_IntroHuman	orbit	data01.packed/levels/orbit/scripts/mission_introhuman.p
 Map	outskirts	data01.packed/levels/outskirts/scripts/map.pyc
 MapRace	outskirts	data01.packed/levels/outskirts/scripts/maprace.pyc
 MapSnd	outskirts	data01.packed/levels/outskirts/scripts/mapsnd.pyc
+Mission_AttackTraitorius	outskirts	data01.packed/levels/outskirts/scripts/mission_attacktraitorius.pyc
+Mission_DestroyBadDebtors	outskirts	data01.packed/levels/outskirts/scripts/mission_destroybaddebtors.pyc
+Mission_DestroyCommSats1	outskirts	data01.packed/levels/outskirts/scripts/mission_destroycommsats1.pyc
+Mission_DestroyHumphrey	outskirts	data01.packed/levels/outskirts/scripts/mission_destroyhumphrey.pyc
+Mission_FunctionaryHunting	outskirts	data01.packed/levels/outskirts/scripts/mission_functionaryhunting.pyc
+Mission_GoToOutskirts	outskirts	data01.packed/levels/outskirts/scripts/mission_gotooutskirts.pyc
+Mission_IdentifyMerc	outskirts	data01.packed/levels/outskirts/scripts/mission_identifymerc.pyc
+Mission_KillPolice	outskirts	data01.packed/levels/outskirts/scripts/mission_killpolice.pyc
+Mission_KillRudolph	outskirts	data01.packed/levels/outskirts/scripts/mission_killrudolph.pyc
+Mission_TransportKiller	outskirts	data01.packed/levels/outskirts/scripts/mission_transportkiller.pyc
+Mission_Win2ndRace	outskirts	data01.packed/levels/outskirts/scripts/mission_win2ndrace.pyc
 Map	police	data01.packed/levels/police/scripts/map.pyc
 MapPlanes	police	data01.packed/levels/police/scripts/mapplanes.pyc
 MapSnd	police	data01.packed/levels/police/scripts/mapsnd.pyc

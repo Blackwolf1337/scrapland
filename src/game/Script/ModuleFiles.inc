@@ -326,6 +326,39 @@ static const char mod_levels_outskirts_maprace[] = {
 static const char mod_levels_outskirts_mapsnd[] = {
 #embed "../../../data/levels/outskirts/mapsnd.mod"
 	, 0 };
+static const char mod_levels_outskirts_mission_attacktraitorius[] = {
+#embed "../../../data/levels/outskirts/mission_attacktraitorius.mod"
+	, 0 };
+static const char mod_levels_outskirts_mission_destroybaddebtors[] = {
+#embed "../../../data/levels/outskirts/mission_destroybaddebtors.mod"
+	, 0 };
+static const char mod_levels_outskirts_mission_destroycommsats1[] = {
+#embed "../../../data/levels/outskirts/mission_destroycommsats1.mod"
+	, 0 };
+static const char mod_levels_outskirts_mission_destroyhumphrey[] = {
+#embed "../../../data/levels/outskirts/mission_destroyhumphrey.mod"
+	, 0 };
+static const char mod_levels_outskirts_mission_functionaryhunting[] = {
+#embed "../../../data/levels/outskirts/mission_functionaryhunting.mod"
+	, 0 };
+static const char mod_levels_outskirts_mission_gotooutskirts[] = {
+#embed "../../../data/levels/outskirts/mission_gotooutskirts.mod"
+	, 0 };
+static const char mod_levels_outskirts_mission_identifymerc[] = {
+#embed "../../../data/levels/outskirts/mission_identifymerc.mod"
+	, 0 };
+static const char mod_levels_outskirts_mission_killpolice[] = {
+#embed "../../../data/levels/outskirts/mission_killpolice.mod"
+	, 0 };
+static const char mod_levels_outskirts_mission_killrudolph[] = {
+#embed "../../../data/levels/outskirts/mission_killrudolph.mod"
+	, 0 };
+static const char mod_levels_outskirts_mission_transportkiller[] = {
+#embed "../../../data/levels/outskirts/mission_transportkiller.mod"
+	, 0 };
+static const char mod_levels_outskirts_mission_win2ndrace[] = {
+#embed "../../../data/levels/outskirts/mission_win2ndrace.mod"
+	, 0 };
 static const char mod_levels_police_map[] = {
 #embed "../../../data/levels/police/map.mod"
 	, 0 };
@@ -491,6 +524,17 @@ static const moduleFile_t module_files[] = {
 	{ "outskirts", "Map", "levels/outskirts/map.mod", mod_levels_outskirts_map },
 	{ "outskirts", "MapRace", "levels/outskirts/maprace.mod", mod_levels_outskirts_maprace },
 	{ "outskirts", "MapSnd", "levels/outskirts/mapsnd.mod", mod_levels_outskirts_mapsnd },
+	{ "outskirts", "Mission_AttackTraitorius", "levels/outskirts/mission_attacktraitorius.mod", mod_levels_outskirts_mission_attacktraitorius },
+	{ "outskirts", "Mission_DestroyBadDebtors", "levels/outskirts/mission_destroybaddebtors.mod", mod_levels_outskirts_mission_destroybaddebtors },
+	{ "outskirts", "Mission_DestroyCommSats1", "levels/outskirts/mission_destroycommsats1.mod", mod_levels_outskirts_mission_destroycommsats1 },
+	{ "outskirts", "Mission_DestroyHumphrey", "levels/outskirts/mission_destroyhumphrey.mod", mod_levels_outskirts_mission_destroyhumphrey },
+	{ "outskirts", "Mission_FunctionaryHunting", "levels/outskirts/mission_functionaryhunting.mod", mod_levels_outskirts_mission_functionaryhunting },
+	{ "outskirts", "Mission_GoToOutskirts", "levels/outskirts/mission_gotooutskirts.mod", mod_levels_outskirts_mission_gotooutskirts },
+	{ "outskirts", "Mission_IdentifyMerc", "levels/outskirts/mission_identifymerc.mod", mod_levels_outskirts_mission_identifymerc },
+	{ "outskirts", "Mission_KillPolice", "levels/outskirts/mission_killpolice.mod", mod_levels_outskirts_mission_killpolice },
+	{ "outskirts", "Mission_KillRudolph", "levels/outskirts/mission_killrudolph.mod", mod_levels_outskirts_mission_killrudolph },
+	{ "outskirts", "Mission_TransportKiller", "levels/outskirts/mission_transportkiller.mod", mod_levels_outskirts_mission_transportkiller },
+	{ "outskirts", "Mission_Win2ndRace", "levels/outskirts/mission_win2ndrace.mod", mod_levels_outskirts_mission_win2ndrace },
 	{ "police", "Map", "levels/police/map.mod", mod_levels_police_map },
 	{ "police", "MapPlanes", "levels/police/mapplanes.mod", mod_levels_police_mapplanes },
 	{ "police", "MapSnd", "levels/police/mapsnd.mod", mod_levels_police_mapsnd },
