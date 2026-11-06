@@ -71,6 +71,7 @@ static const scriptModule_t script_modules[] = {
 	{ "PCMenu", g_MenuVideoMethods },
 	{ "PCMenu", g_MenuControlsMethods },
 	{ "PCMenu", g_MenuNetMethods },
+	{ "PCMenu", g_MenuVideoVarsMethods },
 	{ "Menu", g_MenuBaseMethods },
 	{ "Menu", g_MenuMainMethods },
 	{ "Menu", g_MenuMissionMethods },

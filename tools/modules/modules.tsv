@@ -137,4 +137,5 @@ Split	-	Data.packed/scripts/split/split.pyc
 Init	-	Data.packed/scripts/init.pyc
 NewsPanel	-	Data.packed/scripts/missions/newspanel.pyc
 CharsNPC	-	Data.packed/scripts/chars/charsnpc.pyc
+PCMenu	-	Data.packed/scripts/scorer/pcmenu.pyc
 string	-	-

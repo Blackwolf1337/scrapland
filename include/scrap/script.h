@@ -448,6 +448,8 @@ extern PyMethodDef g_MenuVideoMethods[];
 extern PyMethodDef g_MenuControlsMethods[];
 /* the C multiplayer menus of PCMenu (src/game/Script/MenuNet.c) */
 extern PyMethodDef g_MenuNetMethods[];
+/* the helpers of pcmenu.py on the variables of its video menu (src/game/Script/MenuVideoVars.c) */
+extern PyMethodDef g_MenuVideoVarsMethods[];
 /* the C building blocks of the Menu module (src/game/Script/MenuBase.c) */
 extern PyMethodDef g_MenuBaseMethods[];
 /* the C main menus of the Menu module (src/game/Script/MenuMain.c) */

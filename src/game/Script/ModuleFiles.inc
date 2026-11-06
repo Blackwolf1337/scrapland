@@ -410,6 +410,9 @@ static const char mod_modules_newspanel[] = {
 static const char mod_modules_charsnpc[] = {
 #embed "../../../data/modules/charsnpc.mod"
 	, 0 };
+static const char mod_modules_pcmenu[] = {
+#embed "../../../data/modules/pcmenu.mod"
+	, 0 };
 static const char mod_modules_string[] = {
 #embed "../../../data/modules/string.mod"
 	, 0 };
@@ -552,5 +555,6 @@ static const moduleFile_t module_files[] = {
 	{ NULL, "Init", "modules/init.mod", mod_modules_init },
 	{ NULL, "NewsPanel", "modules/newspanel.mod", mod_modules_newspanel },
 	{ NULL, "CharsNPC", "modules/charsnpc.mod", mod_modules_charsnpc },
+	{ NULL, "PCMenu", "modules/pcmenu.mod", mod_modules_pcmenu },
 	{ NULL, "string", "modules/string.mod", mod_modules_string },
 };
