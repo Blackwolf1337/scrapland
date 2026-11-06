@@ -58,7 +58,7 @@ All tools take an optional `name` (default `main`), so several games can run at 
 | `click` | Activates an item by name. It runs the OnAccept of the item with the player and the item name, as the accept key of the menu does. | `item`, `player`, `screenshot` |
 | `key` | Real key presses into the game. Keys are names like `down`, `enter`, `esc`, `f1`, one character, or combos like `ctrl+a`. | `keys`, `hold` (default 0.08 s), `gap` (default 0.15 s), `screenshot` |
 | `mouse` | Real mouse input into the game: relative motion in pixels, then an optional button press. | `dx`, `dy`, `button` (1 left, 2 middle, 3 right), `hold` (default 0.08 s), `screenshot` |
-| `configure` | Points `native64` or `native64asan` at another build folder for this server process only, from the next launch. An empty `build` goes back to the default. | `exe`, `build` (absolute or relative to the repo, e.g. a worktree) |
+| `configure` | Points `native64`, `native64asan` or `c64` at another build folder for this server process only, from the next launch. An empty `build` goes back to the default. | `exe`, `build` (absolute or relative to the repo, e.g. a worktree) |
 
 `map` loads a level with `-imap:` (`FZ` or `Levels/FZ`). `trace` is the number of seconds after the device is created; the render calls of the first frame after that go into `scrapdecomp.log`. `wait` with `kind=log` reads `log.html` by default.
 

@@ -67,6 +67,7 @@ def sockets(since=0.0):
 WIN_BUILDS = {'c64': 'build-win64'}
 NATIVE_BUILDS = {'native64': 'build-linux64', 'native64asan': 'build-linux64-asan'}
 DEFAULT_NATIVE_BUILDS = dict(NATIVE_BUILDS)
+DEFAULT_WIN_BUILDS = dict(WIN_BUILDS)
 
 
 class Game:
@@ -514,9 +515,9 @@ TOOLS = [
          'button': {'type': 'integer', 'description': '1 left, 2 middle, 3 right'},
          'hold': {'type': 'number', 'description': 'seconds the button is held, default 0.08'},
          'screenshot': {'type': 'boolean'}})},
-    {'name': 'configure', 'description': 'Point native64 or native64asan at another build folder for this server '
-     'process only (e.g. a worktree), or back to the default; applies to the next launch.', 'inputSchema': schema({
-         'exe': {'type': 'string', 'enum': ['native64', 'native64asan']},
+    {'name': 'configure', 'description': 'Point native64, native64asan or c64 at another build folder for this '
+     'server process only (e.g. a worktree), or back to the default; applies to the next launch.', 'inputSchema': schema({
+         'exe': {'type': 'string', 'enum': ['native64', 'native64asan', 'c64']},
          'build': {'type': 'string', 'description': 'build folder, absolute or relative to the repo; empty: default'}},
          ['exe'])},
 ]
@@ -861,11 +862,13 @@ def call(name, a):
         return after_shot(g, a, msg)
     if name == 'configure':
         exe = a['exe']
-        build = a.get('build') or DEFAULT_NATIVE_BUILDS[exe]
+        builds, defaults, binary = (WIN_BUILDS, DEFAULT_WIN_BUILDS, 'ScrapC.exe') if exe in WIN_BUILDS else \
+            (NATIVE_BUILDS, DEFAULT_NATIVE_BUILDS, 'ScrapC')
+        build = a.get('build') or defaults[exe]
         path = os.path.join(ROOT, build)
-        if not os.path.isfile(os.path.join(path, 'ScrapC')):
-            raise RuntimeError('%s has no ScrapC (build it first)' % path)
-        NATIVE_BUILDS[exe] = build
+        if not os.path.isfile(os.path.join(path, binary)):
+            raise RuntimeError('%s has no %s (build it first)' % (path, binary))
+        builds[exe] = build
         return [text('%s now uses %s (next launch)' % (exe, path))]
     raise RuntimeError('unknown tool %s' % name)
 
