@@ -1108,6 +1108,14 @@ static byte Mod_Class(modParse_t *m) {
 				PyErr_SetString(PyExc_TypeError, "base is not a class object");
 			}
 		}
+		/* PyClass_New takes __module__ from the globals of the frame that runs, which is not this module's here */
+		PyObject *modname = PyDict_GetItemString(m->globals, "__name__");
+		if (!PyErr_Occurred() && !PyDict_GetItemString(body.locals, "__doc__")) {
+			PyDict_SetItemString(body.locals, "__doc__", Py_None);
+		}
+		if (!PyErr_Occurred() && modname && !PyDict_GetItemString(body.locals, "__module__")) {
+			PyDict_SetItemString(body.locals, "__module__", modname);
+		}
 		PyObject *n = PyErr_Occurred() ? NULL : PyString_InternFromString(name);
 		cls = n ? PyClass_New(bases, body.locals, n) : NULL;
 		Py_XDECREF(n);

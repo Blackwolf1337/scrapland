@@ -207,9 +207,9 @@ class Decoder:
         elif op in ('LOAD_NAME', 'LOAD_GLOBAL'):
             st.append(E(names[arg].decode()))
         elif op == 'LOAD_ATTR':
-            st.append(E('%s.%s' % (st.pop().text, names[arg].decode())))
+            st.append(E('%s.%s' % (self.val(st.pop()), names[arg].decode())))
         elif op in ('BUILD_TUPLE', 'BUILD_LIST'):
-            items = [s.text for s in st[len(st) - arg:]] if arg else []
+            items = [self.val(s) for s in st[len(st) - arg:]] if arg else []
             del st[len(st) - arg:]
             if op == 'BUILD_LIST':
                 st.append(E('[' + ', '.join(items) + ']'))
@@ -224,17 +224,17 @@ class Decoder:
         elif op == 'STORE_SUBSCR':
             key, obj, val = st.pop(), st.pop(), st.pop()
             if obj.kind == 'dict':
-                obj.items.append((key.text, val.text))
+                obj.items.append((self.val(key), self.val(val)))
             else:
-                self.emit(out, ind, 'set %s[%s] = %s' % (obj.text, key.text, val.text))
+                self.emit(out, ind, 'set %s[%s] = %s' % (self.val(obj), self.val(key), self.val(val)))
         elif op == 'BINARY_SUBSCR':
             i, o = st.pop(), st.pop()
-            st.append(E('%s[%s]' % (o.text, i.text)))
+            st.append(E('%s[%s]' % (self.val(o), self.val(i))))
         elif op.startswith('SLICE'):
             n = int(op[6:] or 0)
-            hi = st.pop().text if n & 2 else ''
-            lo = st.pop().text if n & 1 else ''
-            st.append(E('%s[%s:%s]' % (st.pop().text, lo, hi)))
+            hi = self.val(st.pop()) if n & 2 else ''
+            lo = self.val(st.pop()) if n & 1 else ''
+            st.append(E('%s[%s:%s]' % (self.val(st.pop()), lo, hi)))
         elif op in BINOP:
             b, a = st.pop(), st.pop()
             st.append(E('(%s %s %s)' % (self.val(a), BINOP[op], self.val(b))))
@@ -260,13 +260,13 @@ class Decoder:
                     self.fail('call of a function definition')
                 st.append(E(None, 'classbody', code=f.code))
             else:
-                st.append(E('%s(%s)' % (f.text, ', '.join(args + kw))))
+                st.append(E('%s(%s)' % (self.val(f), ', '.join(args + kw))))
         elif op == 'MAKE_FUNCTION':
             code = st.pop()
             defaults = [st.pop() for _ in range(arg)]
             for d in defaults:
                 if not self.plain(d.text):
-                    self.fail('a default value that is not a constant: ' + d.text)
+                    self.fail('a default value with a call: ' + d.text)
             st.append(E(None, 'func', code=code.code))
         elif op == 'BUILD_CLASS':
             body, bases, name = st.pop(), st.pop(), st.pop()
@@ -302,7 +302,7 @@ class Decoder:
                 v.text = name
         elif op == 'STORE_ATTR':
             o, v = st.pop(), st.pop()
-            self.emit(out, ind, 'set %s.%s = %s' % (o.text, names[arg].decode(), self.val(v)))
+            self.emit(out, ind, 'set %s.%s = %s' % (self.val(o), names[arg].decode(), self.val(v)))
         elif op == 'DELETE_NAME':
             self.emit(out, ind, 'del ' + names[arg].decode())
         elif op == 'POP_TOP':
@@ -359,7 +359,9 @@ class Decoder:
 
     @staticmethod
     def plain(text):
-        return text == 'None' or text[:1] in '\'"0123456789(-['
+        """a default value without a call: a constant, a name or an attribute (the C function has its own defaults;
+        the name was bound before the def, as the script needs it)"""
+        return '(' not in text.lstrip('(') or text[:1] in '\'"0123456789-['
 
     def body(self, out, indent, cls=False):
         """the statements of a module or class body; the module ends with return None, a class with LOAD_LOCALS"""
