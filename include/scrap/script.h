@@ -162,6 +162,13 @@ byte Script_SetGlobal(const char *module, const char *name, PyObject *v);
 byte Script_Import(const char *const *names);
 /* o[i] as a script subscripts (a new reference) */
 PyObject *Script_Index(PyObject *o, int i);
+/* o.name as a script reads it (a new reference, NULL with the error set; o NULL stays NULL): an attribute the engine
+ * fails to give without an exception (the handle of a deleted entity) raises ceval's "SystemError: error return
+ * without exception set", as the line of the script does */
+PyObject *Script_GetAttr(PyObject *o, const char *name);
+/* NULL with ceval's SystemError set unless an error is set already: the return of a C function where an engine call
+ * failed without an exception */
+PyObject *Script_Fail(void);
 /* a + b (a given away), a + "text" (a given away), "text" + b: new references, NULL stays NULL */
 PyObject *Script_Plus(PyObject *a, PyObject *b);
 PyObject *Script_PlusS(PyObject *a, const char *text);

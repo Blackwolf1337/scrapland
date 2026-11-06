@@ -138,7 +138,7 @@ static byte Phone_Spawn(PyObject *c, PyObject *pos, PyObject *ang, int turn) {
 	PyObject *t = p && Script_HSet(c, "Pos", p) ? Script_Keep(&r, PyInt_FromLong(turn < 0 ? -turn : turn)) : NULL;
 	PyObject *a = t ? Script_Keep(&r, turn < 0 ? PyNumber_Subtract(ang, t) : PyNumber_Add(ang, t)) : NULL;
 	PyObject *name = a && Script_HSet(c, "Ang", Py_BuildValue("(iOi)", 0, a, 0)) ?
-		Script_Keep(&r, PyObject_GetAttrString(c, "Name")) : NULL;
+		Script_Keep(&r, Script_GetAttr(c, "Name")) : NULL;
 	byte ok = name && Script_Try("SLogic", "SetOnFloor", "(O)", name);
 	Script_Done(&r, NULL);
 	return ok;
@@ -461,8 +461,8 @@ static PyObject *PhoneCab_SpawnChar(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	scriptRefs_t r = { 0 };
-	PyObject *pos = Script_Keep(&r, PyObject_GetAttrString(phone, "Pos"));
-	PyObject *ang = pos ? Script_Keep(&r, PyObject_GetAttrString(phone, "Ang")) : NULL;
+	PyObject *pos = Script_Keep(&r, Script_GetAttr(phone, "Pos"));
+	PyObject *ang = pos ? Script_Keep(&r, Script_GetAttr(phone, "Ang")) : NULL;
 	PyObject *y = ang ? Script_Keep(&r, Script_Index(ang, 1)) : NULL;
 	/* c.Ang reads Phone.Ang again */
 	byte ok = y && Phone_Spawn(c, pos, y, 180);

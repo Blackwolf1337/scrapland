@@ -368,10 +368,10 @@ void Script_ReplaceRefs(PyObject *dict, PyObject *key, PyObject *old, PyObject *
  *
  * A C function must return NULL only with a Python error set, else ceval raises "SystemError: error return without
  * exception set" where the script raised something else or nothing. SCRAP_NULL_CHECK=<file> (or 1 for the console)
- * puts every C function of the script tables into a wrapper that reports a NULL without an error, and the Sf_ frame
- * reports the helper that failed without one. A report names the kind, the innermost C function that runs, the line
- * of the Python code that called it and (glibc) the return addresses as ScrapC+offset for addr2line -f -i -e ScrapC.
- * Off, nothing changes: the functions are the plain PyCFunctions.
+ * puts every C function of the script tables into a wrapper that reports a NULL without an error and a result with an
+ * error left pending, and the Sf_ frame reports the helper that failed without one. A report names the kind, the
+ * innermost C function that runs, the line of the Python code that called it and (glibc) the return addresses as
+ * ScrapC+offset for addr2line -f -i -e ScrapC. Off, nothing changes: the functions are the plain PyCFunctions.
  */
 typedef struct {
 	PyMethodDef def;		/* the wrapper: the name of the function, Script_CheckCall */
@@ -478,6 +478,9 @@ static PyObject *Script_CheckCall(PyObject *self, PyObject *args, PyObject *kw) 
 	}
 	if (!r && !PyErr_Occurred()) {
 		Script_CheckSilent("return");
+	} else if (r && PyErr_Occurred()) {
+		/* the error stays pending and raises at a later line */
+		Script_CheckSilent("return with error set");
 	}
 	script_checkDepth--;
 	return r;
@@ -701,7 +704,7 @@ byte Script_HSet(PyObject *e, const char *var, PyObject *v) {
 }
 
 int Script_HIs(PyObject *e, const char *var, const char *text) {
-	PyObject *v = PyObject_GetAttrString(e, (char *)var);
+	PyObject *v = Script_GetAttr(e, var);
 	if (!v) {
 		return -1;
 	}
@@ -711,7 +714,7 @@ int Script_HIs(PyObject *e, const char *var, const char *text) {
 }
 
 int Script_HPrefix(PyObject *e, const char *var, const char *prefix) {
-	PyObject *v = PyObject_GetAttrString(e, (char *)var);
+	PyObject *v = Script_GetAttr(e, var);
 	PyObject *head = v ? PySequence_GetSlice(v, 0, (int)strlen(prefix)) : NULL;
 	Py_XDECREF(v);
 	if (!head) {
@@ -844,7 +847,7 @@ PyObject *Script_Method(PyObject *obj, const char *name, const char *fmt, ...) {
 	va_start(va, fmt);
 	PyObject *args = Py_VaBuildValue((char *)fmt, va);
 	va_end(va);
-	PyObject *f = PyObject_GetAttrString(obj, (char *)name);
+	PyObject *f = Script_GetAttr(obj, name);
 	PyObject *r = Script_Invoke(f, args);
 	Py_XDECREF(f);
 	return r;
@@ -1476,6 +1479,11 @@ static void Def_SetAct(scriptDef_t *m, byte target, const char *var, const char 
 		PyObject *v = Def_Value(m, value, quoted);
 		if (v && m->object && PyObject_SetAttrString(m->object, (char *)var, v) < 0) {
 			if (m->stop) {
+				/* an entity handle the engine refuses without an exception: ceval's SystemError */
+				if (!PyErr_Occurred()) {
+					Script_CheckSilent("def object set (engine)");
+					Script_Fail();
+				}
 				m->failed = 1;
 			} else {
 				Con_Warnf("%s:%d: cannot set %s\n", m->name, m->line, var);
@@ -1842,6 +1850,7 @@ byte Script_RunFileTry(int id, const char *name, const char *section, const char
 	PyObject *vars) {
 	if (!Def_RunFile(id, name, section, builtin, steps, vars, 1)) {
 		if (!PyErr_Occurred()) {
+			Script_CheckSilent("Script_RunFileTry");
 			PyErr_Format(PyExc_SystemError, "%s could not be read", name);
 		}
 		return 0;

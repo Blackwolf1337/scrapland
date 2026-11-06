@@ -78,10 +78,10 @@ static PyObject *Fx_SetUpShipMotors(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "O", &e) || !Script_Import((const char *const[]){ "string", NULL })) {
 		return NULL;
 	}
-	PyObject *model = Script_Keep(&r, PyObject_GetAttrString(e, "Model"));
+	PyObject *model = Script_Keep(&r, Script_GetAttr(e, "Model"));
 	PyObject *up = model ? Script_Keep(&r, Script_Ask("string", "upper", "(O)", model)) : NULL;
 	PyObject *last = up ? Script_Keep(&r, PySequence_GetItem(up, -1)) : NULL;
-	PyObject *name = last ? Script_Keep(&r, PyObject_GetAttrString(e, "Name")) : NULL;
+	PyObject *name = last ? Script_Keep(&r, Script_GetAttr(e, "Name")) : NULL;
 	if (!name) {
 		return Script_Done(&r, NULL);
 	}
@@ -98,7 +98,7 @@ static PyObject *Fx_SetUpShipMotors(PyObject *self, PyObject *args) {
 	}
 	Script_RunFile(0, "fx/fx.def", "Motors", fx_def, fx_steps, vars);
 	if (indoor) {
-		PyObject *scale = Script_Keep(&r, PyObject_GetAttrString(e, "ShipMotorScale"));
+		PyObject *scale = Script_Keep(&r, Script_GetAttr(e, "ShipMotorScale"));
 		PyObject *f = scale ? Script_Keep(&r, PyFloat_FromDouble(0.6)) : NULL;
 		PyObject *v = f ? PyNumber_Multiply(scale, f) : NULL;
 		if (!Script_HSet(e, "ShipMotorScale", v)) {

@@ -568,17 +568,17 @@ static PyObject *Items_Hint(PyObject *self, PyObject *args) {
 /* SetInteractiveObjOnFloor(c): the object on the floor below it */
 static byte It_OnFloor(PyObject *c) {
 	scriptRefs_t r = { .n = 0 };
-	PyObject *pos = K(PyObject_GetAttrString(c, "Pos")), *down = pos ? K(Script_Ask("SVec", "Add", "(O(iii))", pos, 0, -10000, 0)) : NULL;
+	PyObject *pos = K(Script_GetAttr(c, "Pos")), *down = pos ? K(Script_Ask("SVec", "Add", "(O(iii))", pos, 0, -10000, 0)) : NULL;
 	PyObject *res = down ? K(Script_Ask("Scrap", "TestLine", "(OOs)", pos, down, "")) : NULL;
 	int hit = res ? Script_True(res) : -1;
 	byte ok = hit >= 0;
 	if (hit > 0) {
 		PyObject *p = K(Script_Index(res, 0)), *p0 = p ? K(Script_Index(p, 0)) : NULL;
 		PyObject *p1 = p0 ? K(Script_Index(p, 1)) : NULL, *p2 = p1 ? K(Script_Index(p, 2)) : NULL;
-		PyObject *vr = p2 ? K(PyObject_GetAttrString(c, "VRadius")) : NULL, *y = vr ? K(PyNumber_Add(p1, vr)) : NULL;
+		PyObject *vr = p2 ? K(Script_GetAttr(c, "VRadius")) : NULL, *y = vr ? K(PyNumber_Add(p1, vr)) : NULL;
 		ok = y && Script_HSet(c, "Pos", Py_BuildValue("(OOO)", p0, y, p2));
 	} else if (hit == 0) {
-		PyObject *name = K(PyObject_GetAttrString(c, "Name"));
+		PyObject *name = K(Script_GetAttr(c, "Name"));
 		PyObject *msg = name ? K(Script_PlusS(Script_SPlus("B R U T A L    E R R O R : ", name), " was created in an invalid position.\n")) : NULL;
 		ok = msg && Script_Try("Scrap", "ConsoleError", "(O)", msg);
 	}

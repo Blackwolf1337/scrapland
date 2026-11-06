@@ -232,14 +232,14 @@ static PyObject *VehiclesNPC_ModAIProff(PyObject *self, PyObject *args, PyObject
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|O", names, &o1, &pd, &use)) {
 		return NULL;
 	}
-	PyObject *a = K(PyTuple_New(NVARS + 2)), *name = a ? PyObject_GetAttrString(o1, "Name") : NULL;
+	PyObject *a = K(PyTuple_New(NVARS + 2)), *name = a ? Script_GetAttr(o1, "Name") : NULL;
 	if (!name) {
 		FAIL();
 	}
 	PyTuple_SET_ITEM(a, 0, name);
 	PyTuple_SET_ITEM(a, 1, PyInt_FromLong(1));
 	for (int i = 0; i < NVARS; i++) {
-		PyObject *v = PyObject_GetAttrString(pd, (char *)vars[i]);
+		PyObject *v = Script_GetAttr(pd, vars[i]);
 		if (!v) {
 			FAIL();
 		}
@@ -254,7 +254,7 @@ static PyObject *VehiclesNPC_ModAIProff(PyObject *self, PyObject *args, PyObject
 		FAIL();
 	}
 	if (life) {
-		PyObject *l = K(PyObject_GetAttrString(o1, "Life")), *m = l ? K(PyObject_GetAttrString(pd, "LifeMult")) : NULL;
+		PyObject *l = K(Script_GetAttr(o1, "Life")), *m = l ? K(Script_GetAttr(pd, "LifeMult")) : NULL;
 		if (!m || !Script_HSet(o1, "Life", PyNumber_Multiply(l, m))) {
 			FAIL();
 		}
@@ -271,18 +271,18 @@ static PyObject *VehiclesNPC_SetIAProf(PyObject *self, PyObject *args, PyObject 
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|O", names, &o1, &type, &init)) {
 		return NULL;
 	}
-	PyObject *pd = K(Npc_Call("GetIAProf", Py_BuildValue("(O)", type))), *name = pd ? K(PyObject_GetAttrString(o1, "Name")) : NULL;
-	PyObject *ship = name ? K(PyObject_GetAttrString(pd, "Ship")) : NULL;
+	PyObject *pd = K(Npc_Call("GetIAProf", Py_BuildValue("(O)", type))), *name = pd ? K(Script_GetAttr(o1, "Name")) : NULL;
+	PyObject *ship = name ? K(Script_GetAttr(pd, "Ship")) : NULL;
 	if (!ship || !K(Npc_Call("SetStdProperties", Py_BuildValue("(OO)", name, ship))) ||
 		!K(Npc_Call("ModAIProff", Py_BuildValue("(OO)", o1, pd)))) {
 		FAIL();
 	}
 	int st = init ? Script_True(init) : 1;
-	PyObject *n2 = st > 0 ? K(PyObject_GetAttrString(o1, "Name")) : NULL;
+	PyObject *n2 = st > 0 ? K(Script_GetAttr(o1, "Name")) : NULL;
 	if (st < 0 || (st && (!n2 || !Script_Try("SAI", "SetStateVehicle", "(iO)", 3, n2)))) {
 		FAIL();
 	}
-	PyObject *l = K(PyObject_GetAttrString(o1, "Life")), *m = l ? K(PyObject_GetAttrString(pd, "LifeMult")) : NULL;
+	PyObject *l = K(Script_GetAttr(o1, "Life")), *m = l ? K(Script_GetAttr(pd, "LifeMult")) : NULL;
 	if (!m || !Script_HSet(o1, "Life", PyNumber_Multiply(l, m))) {
 		FAIL();
 	}

@@ -373,12 +373,10 @@ static PyObject *Chars_CanDrive(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "O", &ch)) {
 		return NULL;
 	}
-	PyObject *act = PyObject_GetAttrString(ch, "ActCtrl");
-	PyObject *m = PyImport_ImportModule("Chars");
-	PyObject *list = m ? PyObject_GetAttrString(m, "CanDriveList") : NULL;
-	int r = act && list ? PySequence_Contains(list, act) : -1;
+	PyObject *act = Script_GetAttr(ch, "ActCtrl");
+	PyObject *list = act ? Script_Global("Chars", "CanDriveList") : NULL;
+	int r = list ? PySequence_Contains(list, act) : -1;
 	Py_XDECREF(list);
-	Py_XDECREF(m);
 	Py_XDECREF(act);
 	if (r < 0) {
 		return NULL;
@@ -393,13 +391,10 @@ static PyObject *Chars_SetOnFloor(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "O", &ch)) {
 		return NULL;
 	}
-	PyObject *name = PyObject_GetAttrString(ch, "Name");
-	if (!name) {
-		return NULL;
-	}
-	Script_CallKw("SLogic", "SetOnFloor", Py_BuildValue("(O)", name), NULL);
-	Py_DECREF(name);
-	return Py_ReturnNone();
+	PyObject *name = Script_GetAttr(ch, "Name");
+	byte ok = name && Script_Try("SLogic", "SetOnFloor", "(O)", name);
+	Py_XDECREF(name);
+	return ok ? Py_ReturnNone() : NULL;
 }
 
 /* MainCharDeath(name, param): the hook of a mission, else the end of the game */
