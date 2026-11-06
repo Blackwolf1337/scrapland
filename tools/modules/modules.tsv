@@ -166,5 +166,9 @@ MapSnd	shipedit	data02.packed/levels/shipedit/scripts/mapsnd.pyc
 Map	temple	data02.packed/levels/temple/scripts/map.pyc
 MapExtraLifes	temple	data02.packed/levels/temple/scripts/mapextralifes.pyc
 MapSnd	temple	data02.packed/levels/temple/scripts/mapsnd.pyc
+Mission_ArchbishopDead	temple	data02.packed/levels/temple/scripts/mission_archbishopdead.pyc
+Mission_AskGus	temple	data02.packed/levels/temple/scripts/mission_askgus.pyc
+Mission_MeetArchbishop	temple	data02.packed/levels/temple/scripts/mission_meetarchbishop.pyc
+Mission_TalkToDeepThroat	temple	data02.packed/levels/temple/scripts/mission_talktodeepthroat.pyc
 Map	townhall	data02.packed/levels/townhall/scripts/map.pyc
 MapSnd	townhall	data02.packed/levels/townhall/scripts/mapsnd.pyc

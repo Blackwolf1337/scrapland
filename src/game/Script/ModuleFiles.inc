@@ -491,6 +491,18 @@ static const char mod_levels_temple_mapextralifes[] = {
 static const char mod_levels_temple_mapsnd[] = {
 #embed "../../../data/levels/temple/mapsnd.mod"
 	, 0 };
+static const char mod_levels_temple_mission_archbishopdead[] = {
+#embed "../../../data/levels/temple/mission_archbishopdead.mod"
+	, 0 };
+static const char mod_levels_temple_mission_askgus[] = {
+#embed "../../../data/levels/temple/mission_askgus.mod"
+	, 0 };
+static const char mod_levels_temple_mission_meetarchbishop[] = {
+#embed "../../../data/levels/temple/mission_meetarchbishop.mod"
+	, 0 };
+static const char mod_levels_temple_mission_talktodeepthroat[] = {
+#embed "../../../data/levels/temple/mission_talktodeepthroat.mod"
+	, 0 };
 static const char mod_levels_townhall_map[] = {
 #embed "../../../data/levels/townhall/map.mod"
 	, 0 };
@@ -663,6 +675,10 @@ static const moduleFile_t module_files[] = {
 	{ "temple", "Map", "levels/temple/map.mod", mod_levels_temple_map },
 	{ "temple", "MapExtraLifes", "levels/temple/mapextralifes.mod", mod_levels_temple_mapextralifes },
 	{ "temple", "MapSnd", "levels/temple/mapsnd.mod", mod_levels_temple_mapsnd },
+	{ "temple", "Mission_ArchbishopDead", "levels/temple/mission_archbishopdead.mod", mod_levels_temple_mission_archbishopdead },
+	{ "temple", "Mission_AskGus", "levels/temple/mission_askgus.mod", mod_levels_temple_mission_askgus },
+	{ "temple", "Mission_MeetArchbishop", "levels/temple/mission_meetarchbishop.mod", mod_levels_temple_mission_meetarchbishop },
+	{ "temple", "Mission_TalkToDeepThroat", "levels/temple/mission_talktodeepthroat.mod", mod_levels_temple_mission_talktodeepthroat },
 	{ "townhall", "Map", "levels/townhall/map.mod", mod_levels_townhall_map },
 	{ "townhall", "MapSnd", "levels/townhall/mapsnd.mod", mod_levels_townhall_mapsnd },
 };
