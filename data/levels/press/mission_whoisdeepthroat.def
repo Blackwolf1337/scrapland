@@ -1,5 +1,5 @@
 # The functions of Mission_WhoIsDeepThroat in level press (the script levels/press/scripts/mission_whoisdeepthroat.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: Init, UseTeleporter, LaunchScene, PlayScene, LoadScene.
+# per function, its parameters after the name. The other functions of the script stay Python: Init, UseTeleporter, LaunchScene, PlayScene.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_whoisdeepthroat.def replaces this file.
 section InitStatus LevelPath
 
@@ -16,3 +16,156 @@ call Scrap.SetSaveVar "Char" "Dtritus"
 call Scrap.Set "PlayVideo" "Video/Viscous.avi"
 call Scrap.Achievement 6
 call SaveGame.QLoad "Levels/Police"
+
+section LoadScene
+call Scene.Load "DiscoverDeep"
+call Scene.ActorAction 0 "Dtritus" "Walk"
+call Scene.ActorAction 130 "Dtritus" "Relax0"
+call Scene.ActorAction 220 "Dtritus" "Talk"
+call Scene.ActorAction 244 "Dtritus" "Relax0"
+call Scene.ActorAction 410 "Dtritus" "Turn"
+call Scene.ActorAction 435 "Dtritus" "Relax"
+call Scene.ActorAction 445 "Dtritus" "Talk"
+call Scene.ActorAction 492 "Dtritus" "Relax"
+call Scene.ActorAction 585 "Dtritus" "Surprise"
+call Scene.ActorAction 645 "Dtritus" "Relax"
+call Scene.ActorAction 685 "Dtritus" "Talk"
+call Scene.ActorAction 718 "Dtritus" "Relax"
+call Scene.ActorAction 775 "Dtritus" "Talk"
+call Scene.ActorAction 790 "Dtritus" "Relax"
+call Scene.ActorAction 825 "Dtritus" "Turn"
+call Scene.ActorAction 850 "Dtritus" "Relax"
+call Scene.ActorAction 910 "Dtritus" "Talk"
+call Scene.ActorAction 970 "Dtritus" "Talk1"
+call Scene.ActorAction 1020 "Dtritus" "Talk"
+call Scene.ActorAction 1099 "Dtritus" "Relax"
+call Scene.ActorAction 1250 "Dtritus" "Talk"
+call Scene.ActorAction 1271 "Dtritus" "Relax"
+call Scene.ActorAction 1575 "Dtritus" "LookUp"
+call Scene.ActorAction 1800 "Dtritus" "LookLeft"
+call Scene.ActorAction 1985 "Dtritus" "Relax"
+call Scene.ActorAction 2010 "Dtritus" "Turn"
+call Scene.ActorAction 2030 "Dtritus" "Relax"
+call Scene.ActorAction 0 "Betty" "Walk"
+call Scene.ActorAction 400 "Betty" "MorphLips"
+call Scene.ActorAction 400 "Betty" "Talk"
+call Scene.ActorBreakChannel 430 "Betty" 3
+call Scene.ActorAction 415 "Betty" "Relax"
+call Scene.ActorAction 510 "Betty" "MorphLips"
+call Scene.ActorAction 510 "Betty" "Talk"
+call Scene.ActorBreakChannel 591 "Betty" 3
+call Scene.ActorAction 576 "Betty" "Relax"
+call Scene.ActorAction 655 "Betty" "MorphLips"
+call Scene.ActorAction 655 "Betty" "Talk"
+call Scene.ActorBreakChannel 688 "Betty" 3
+call Scene.ActorAction 673 "Betty" "Relax"
+call Scene.ActorAction 730 "Betty" "MorphLips"
+call Scene.ActorAction 730 "Betty" "Talk"
+call Scene.ActorBreakChannel 778 "Betty" 3
+call Scene.ActorAction 763 "Betty" "Relax"
+call Scene.ActorAction 815 "Betty" "MorphLips"
+call Scene.ActorAction 815 "Betty" "WalkSide"
+call Scene.ActorAction 865 "Betty" "TalkSide"
+call Scene.ActorBreakChannel 880 "Betty" 3
+call Scene.ActorAction 899 "Betty" "RelaxSide"
+call Scene.ActorAction 1110 "Betty" "MorphLips"
+call Scene.ActorAction 1110 "Betty" "TalkSideUp"
+call Scene.ActorBreakChannel 1257 "Betty" 3
+call Scene.ActorAction 1242 "Betty" "TurnSide"
+call Scene.ActorAction 1260 "Betty" "Relax"
+call Scene.ActorAction 1750 "Betty" "WalkLittle"
+call Scene.ActorAction 1775 "Betty" "Relax"
+call Scene.ActorAction 1795 "Betty" "MorphLips"
+call Scene.ActorAction 1795 "Betty" "Talk"
+call Scene.ActorAction 1850 "Betty" "Talk2"
+call Scene.ActorAction 1900 "Betty" "Talk"
+call Scene.ActorBreakChannel 1910 "Betty" 3
+call Scene.ActorAction 1969 "Betty" "Relax"
+call Scene.ActorAction 2012 "Betty" "Turn"
+call Scene.ActorAction 2032 "Betty" "Relax"
+call Scene.ActorAction 0 "Humphrey" "Work"
+call Scene.ActorAction 1810 "Humphrey" "RelaxLookInit"
+call Scene.ActorAction 1821 "Humphrey" "RelaxLook"
+call Scene.ActorAction 2020 "Humphrey" "GetUp"
+call Scene.ActorAction 2080 "Humphrey" "Talk"
+call Scene.ActorAction 2100 "Humphrey" "Talk2"
+call Scene.ActorAction 2160 "Humphrey" "Talk"
+call Scene.ActorAction 2205 "Humphrey" "Relax"
+call Scene.ActorAction 0 "Boss" "Relax"
+call Scene.ActorAction 1390 "Boss" "Talk"
+call Scene.ActorAction 1435 "Boss" "Talk0"
+call Scene.ActorAction 1490 "Boss" "Talk"
+call Scene.ActorAction 1540 "Boss" "Relax"
+call Scene.ActorAction 1600 "Boss" "Talk"
+call Scene.ActorAction 1783 "Boss" "Relax"
+call Scene.ActorAction 1980 "Boss" "TalkSide"
+call Scene.ActorAction 2070 "Boss" "Relax"
+call Scene.ObjAction 0 "DM_Door_Teleporter_07" "Opened" "Opened"
+call Scene.ObjAction 0 "DM_Door_PressSlidingDoor_00" "Opened" "Opened"
+call Scene.AddGeneric 60 "Scrap.GetEntity('DM_Door_PressSlidingDoor_00').OnObjSlot = '!AutoDoorUsrSlot'"
+call Scene.AddGeneric 1315 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),1.0)"
+call Scene.AddGeneric 1360 "SScorer.Fade(0,(0,0,0,255),(0,0,0,0),1.0)"
+call Scene.AddGeneric 2220 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),1.0)"
+call Scene.AddText 220 "Mission_Scene_WhoIsDeepThroat_1" 1
+call Scene.AddText 400 "Mission_Scene_WhoIsDeepThroat_2" 1
+call Scene.AddText 440 "Mission_Scene_WhoIsDeepThroat_3" 2
+call Scene.AddText 510 "Mission_Scene_WhoIsDeepThroat_4" 3
+call Scene.AddText 620 "Mission_Scene_WhoIsDeepThroat_5" 1
+call Scene.AddText 655 "Mission_Scene_WhoIsDeepThroat_6" 1
+call Scene.AddText 685 "Mission_Scene_WhoIsDeepThroat_7" 2
+call Scene.AddText 730 "Mission_Scene_WhoIsDeepThroat_8" 2
+call Scene.AddText 775 "Mission_Scene_WhoIsDeepThroat_9" 1
+call Scene.AddText 825 "Mission_Scene_WhoIsDeepThroat_10" 3
+call Scene.AddText 910 "Mission_Scene_WhoIsDeepThroat_11" 6
+call Scene.AddText 1100 "Mission_Scene_WhoIsDeepThroat_12" 5
+call Scene.AddText 1250 "Mission_Scene_WhoIsDeepThroat_13" 1
+call Scene.AddText 1390 "Mission_Scene_WhoIsDeepThroat_14" 5
+call Scene.AddText 1600 "Mission_Scene_WhoIsDeepThroat_15" 6
+call Scene.AddText 1795 "Mission_Scene_WhoIsDeepThroat_16" 6
+call Scene.AddText 1980 "Mission_Scene_WhoIsDeepThroat_17" 3
+call Scene.AddText 2080 "Mission_Scene_WhoIsDeepThroat_18" 4
+call Scrap.Set "DefInterpTime" 0.6
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Relax0" "Relax0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call Scene.CreateLocalAction $CharType 0 "Surprise" "Surprise" 0
+call Scene.CreateLocalAction $CharType 0 "LookLeft" "LookLeft" 1
+call Scene.CreateLocalAction $CharType 0 "LookUp" "LookUp" 1
+call Scene.SetDefSounds "Dtritus" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Betty"
+call Scene.AddCharActor "Betty" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk2" "Talk2" 1
+call Scene.CreateLocalAction $CharType 0 "WalkSide" "WalkSide" 0
+call Scene.CreateLocalAction $CharType 0 "WalkLittle" "WalkLittle" 1
+call Scene.CreateLocalAction $CharType 0 "TalkSide" "TalkSide" 1
+call Scene.CreateLocalAction $CharType 0 "TurnSide" "TurnSide" 0
+call Scene.CreateLocalAction $CharType 0 "TalkSideUp" "TalkSideUp" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxSide" "RelaxSide" 1
+call Scene.SetDefSounds "Betty" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Humphrey"
+call Scene.AddCharActor "Humphrey" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Work" "Work" 1
+call MakeChar.CreateRelaxAction $CharType 0 "WorkRelax" "WorkRelax" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk2" "Talk2" 1
+call MakeChar.CreateRelaxAction $CharType 0 "GetUp" "GetUp" 0
+call Scene.CreateLocalAction $CharType 0 "RelaxLookInit" "RelaxLookInit" 0
+call Scene.CreateLocalAction $CharType 0 "RelaxLook" "RelaxLook" 1
+call Scene.SetDefSounds "Humphrey" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Boss"
+call Scene.AddCharActor "Boss" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk0" "Talk0" 1
+call Scene.CreateLocalAction $CharType 0 "TalkSide" "TalkSide" 1
+call Scene.SetDefSounds "Boss" $CharType
+call SAct.SetCls "DefAction" "Relax"
+run setdef "DefInterpTime"

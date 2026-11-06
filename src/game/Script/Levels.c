@@ -2,13 +2,15 @@
  * The scripts of the levels in C (issue #2): each level loads modules of the same names (Map, MapSnd, the missions)
  * from its own pack. The functions of a level module that are data are the sections of a file
  * data/levels/<level>/<module>.def ("section <Func> <params>"; a parameter with a default is name=value); when the
- * module loads in that level, each section becomes the function of that name. The functions the file does not have
- * stay Python, and so do the module variables and the module code.
+ * module loads in that level, each section becomes the function of that name. The levels whose logic is C too have
+ * a table per module in src/game/Script/levels/<Level>.c (level_modules), put in after the data. The functions neither
+ * has stay Python, and so do the module variables and the module code.
  */
 #include <string.h>
 
 #include "scrap/console.h"
 #include "scrap/script.h"
+#include "levels/Levels.h"
 
 typedef struct {
 	const char *level;		/* the folder of the level in the packs, lower case: "police" */
@@ -26,10 +28,37 @@ typedef struct {
 	PyMethodDef *methods;
 } levelModule_t;
 
-extern PyMethodDef g_MenuMapMethods[];
+extern PyMethodDef g_MenuMapMethods[], g_TempleMapMethods[], g_TempleXlMethods[], g_TempleArchbishopDeadMethods[],
+	g_TempleAskGusMethods[], g_TempleMeetArchbishopMethods[], g_TempleTalkToDeepThroatMethods[];
 
 static const levelModule_t level_modules[] = {
 	{ "menu", "Map", g_MenuMapMethods },
+	{ "temple", "Map", g_TempleMapMethods },
+	{ "temple", "MapExtraLifes", g_TempleXlMethods },
+	{ "temple", "Mission_ArchbishopDead", g_TempleArchbishopDeadMethods },
+	{ "temple", "Mission_AskGus", g_TempleAskGusMethods },
+	{ "temple", "Mission_MeetArchbishop", g_TempleMeetArchbishopMethods },
+	{ "temple", "Mission_TalkToDeepThroat", g_TempleTalkToDeepThroatMethods },
+	{ "bank", "Map", g_BankMapMethods },
+	{ "bank", "MapTreasure", g_BankMapTreasureMethods },
+	{ "bank", "Mission_CatchRudolph", g_BankCatchRudolphMethods },
+	{ "bank", "Mission_GetDataPart2", g_BankGetDataPart2Methods },
+	{ "bank", "Mission_InfiltrateBank", g_BankInfiltrateBankMethods },
+	{ "police", "Map", g_PoliceMapMethods },
+	{ "police", "MapSnd", g_PoliceMapSndMethods },
+	{ "police", "MapPlanes", g_PoliceMapPlanesMethods },
+	{ "police", "Mission_BeatPickus", g_PoliceBeatPickusMethods },
+	{ "police", "Mission_FicusDead", g_PoliceFicusDeadMethods },
+	{ "police", "Mission_GetAuthorization", g_PoliceGetAuthorizationMethods },
+	{ "police", "Mission_InitEpilogue", g_PoliceInitEpilogueMethods },
+	{ "police", "Mission_JailBreak", g_PoliceJailBreakMethods },
+	{ "police", "Mission_PoliceBossCheats", g_PolicePoliceBossCheatsMethods },
+	{ "townhall", "Map", g_TownhallMapMethods },
+	{ "townhall", "MapSnd", g_TownhallMapSndMethods },
+	{ "townhall", "Mission_ApologizeMayor", g_TownhallApologizeMayorMethods },
+	{ "townhall", "Mission_CatchTrurl", g_TownhallCatchTrurlMethods },
+	{ "townhall", "Mission_SheriffMayor", g_TownhallSheriffMayorMethods },
+	{ "townhall", "Mission_TalkToMayor", g_TownhallTalkToMayorMethods },
 	{ NULL, NULL, NULL },
 };
 
@@ -93,8 +122,25 @@ static void Level_StepVecRot(int id, PyObject *args) {
 	}
 }
 
+/* run setdef <var>: Scrap.Set(var, Scrap.Def(var)), the engine variable back to its default (the end of the scene
+ * loaders); a failed call leaves its error set and stops the section */
+static void Level_StepSetDef(int id, PyObject *args) {
+	(void)id;
+	PyObject *var = PyTuple_Size(args) == 1 ? PyTuple_GetItem(args, 0) : NULL;
+	if (!var) {
+		PyErr_SetString(PyExc_TypeError, "setdef takes one variable name");
+		return;
+	}
+	PyObject *def = Script_Ask("Scrap", "Def", "(O)", var);
+	if (def) {
+		Script_Try("Scrap", "Set", "(OO)", var, def);
+		Py_DECREF(def);
+	}
+}
+
 static const scriptStep_t level_steps[] = {
 	{ "vecrot", Level_StepVecRot },
+	{ "setdef", Level_StepSetDef },
 	{ NULL, NULL },
 };
 

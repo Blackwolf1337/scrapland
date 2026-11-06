@@ -1,5 +1,5 @@
 # The functions of Mission_PressMeeting in level press (the script levels/press/scripts/mission_pressmeeting.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: SetNextMission, LoadScene.
+# per function, its parameters after the name. The other functions of the script stay Python: SetNextMission.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_pressmeeting.def replaces this file.
 section InitStatus LevelPath
 call Scrap.SetSaveVar "MayorAtTownHall" "0"
@@ -18,3 +18,157 @@ call Scrap.Set "isActionIndoor" 0
 call SSound.SetMusicVolume 0
 call SSound.UsePS 0
 setvar Scene.EndOfSceneCallback %Mission_PressMeeting.SetNextMission
+
+section LoadScene
+call Scene.Load "News2"
+call Scene.ActorAction 0 "Betty" "TV-Relax"
+call Scene.ActorAction 100 "Betty" "TV-Look"
+call Scene.ActorAction 140 "Betty" "MorphLips"
+call Scene.ActorAction 140 "Betty" "TV-Talk"
+call Scene.ActorAction 200 "Betty" "TV-Talk1"
+call Scene.ActorAction 260 "Betty" "TV-Talk"
+call Scene.ActorAction 340 "Betty" "TV-Boton"
+call Scene.ActorAction 380 "Betty" "TV-Talk"
+call Scene.ActorAction 690 "Betty" "TV-Talk0"
+call Scene.ActorAction 750 "Betty" "TV-Talk"
+call Scene.ActorAction 780 "Betty" "TV-Look"
+call Scene.ActorAction 810 "Betty" "TV-Talk1"
+call Scene.ActorAction 870 "Betty" "TV-Talk"
+call Scene.ActorAction 950 "Betty" "TV-Look"
+call Scene.ActorAction 1010 "Betty" "TV-Relax"
+call Scene.ActorBreakChannel 1020 "Betty" 3
+call Scene.ActorAction 0 "Dtritus" "Relax"
+call Scene.ActorAction 1080 "Dtritus" "Turn"
+call Scene.ActorAction 1100 "Dtritus" "Talk"
+call Scene.ActorAction 1125 "Dtritus" "Talk1"
+call Scene.ActorAction 1175 "Dtritus" "Relax"
+call Scene.ActorAction 1195 "Dtritus" "Turn"
+call Scene.ActorAction 1215 "Dtritus" "Relax"
+call Scene.ActorAction 1297 "Dtritus" "Talk1"
+call Scene.ActorAction 1371 "Dtritus" "Talk"
+call Scene.ActorAction 1471 "Dtritus" "Relax"
+call Scene.ActorAction 1587 "Dtritus" "Talk5"
+call Scene.ActorAction 1818 "Dtritus" "Relax"
+call Scene.ActorAction 1918 "Dtritus" "Turn"
+call Scene.ActorAction 1943 "Dtritus" "Relax"
+call Scene.ActorAction 2043 "Dtritus" "Talk"
+call Scene.ActorAction 2157 "Dtritus" "Relax"
+call Scene.ActorAction 2322 "Dtritus" "Listen"
+call Scene.ActorAction 2424 "Dtritus" "Relax"
+call Scene.ActorAction 2600 "Dtritus" "Turn"
+call Scene.ActorAction 2625 "Dtritus" "Relax"
+call Scene.ActorAction 2752 "Dtritus" "Listen"
+call Scene.ActorAction 2854 "Dtritus" "Relax"
+call Scene.ActorAction 2977 "Dtritus" "Talk"
+call Scene.ActorAction 2987 "Dtritus" "Talk3"
+call Scene.ActorAction 3037 "Dtritus" "Relax"
+call Scene.ActorAction 0 "Berto" "Relax"
+call Scene.ActorAction 1100 "Berto" "Turn"
+call Scene.ActorAction 1115 "Berto" "Relax"
+call Scene.ActorAction 1185 "Berto" "Turn"
+call Scene.ActorAction 1200 "Berto" "Relax"
+call Scene.ActorAction 1300 "Berto" "Turn"
+call Scene.ActorAction 1315 "Berto" "Relax"
+call Scene.ActorAction 1480 "Berto" "Turn"
+call Scene.ActorAction 1495 "Berto" "Relax"
+call Scene.ActorAction 1577 "Berto" "Turn"
+call Scene.ActorAction 1603 "Berto" "Relax"
+call Scene.ActorAction 1818 "Berto" "Turn"
+call Scene.ActorAction 1843 "Berto" "Relax"
+call Scene.ActorAction 1958 "Berto" "Talk2"
+call Scene.ActorAction 2036 "Berto" "Turn"
+call Scene.ActorAction 2058 "Berto" "Relax"
+call Scene.ActorAction 2179 "Berto" "Turn"
+call Scene.ActorAction 2204 "Berto" "Relax"
+call Scene.ActorAction 2607 "Berto" "Talk"
+call Scene.ActorAction 2762 "Berto" "Talk2"
+call Scene.ActorAction 2817 "Berto" "Talk"
+call Scene.ActorAction 2912 "Berto" "Talk1"
+call Scene.ActorAction 2967 "Berto" "Relax"
+call Scene.ActorAction 0 "Boss" "Relax"
+call Scene.ActorAction 1185 "Boss" "Talk2"
+call Scene.ActorAction 1235 "Boss" "Talk"
+call Scene.ActorAction 1287 "Boss" "Relax"
+call Scene.ActorAction 1481 "Boss" "Talk2"
+call Scene.ActorAction 1532 "Boss" "Talk"
+call Scene.ActorAction 1577 "Boss" "Relax"
+call Scene.ActorAction 1828 "Boss" "Talk"
+call Scene.ActorAction 1948 "Boss" "Relax"
+call Scene.ActorAction 2177 "Boss" "Talk"
+call Scene.ActorAction 2352 "Boss" "Talk2"
+call Scene.ActorAction 2407 "Boss" "Talk"
+call Scene.ActorAction 2544 "Boss" "Talk1"
+call Scene.ActorAction 2597 "Boss" "Relax"
+call Scene.AddText 140 "News_2ndMurder_RemoteMessage1" 28
+call Scene.AddText 1100 "Mission_Scene_PoliceBossKilled_Interview_1" 3
+call Scene.AddText 1185 "Mission_Scene_PoliceBossKilled_Interview_2" 4
+call Scene.AddText 1297 "Mission_Scene_PoliceBossKilled_Interview_3" 6
+call Scene.AddText 1481 "Mission_Scene_PoliceBossKilled_Interview_4" 4
+call Scene.AddText 1587 "Mission_Scene_PoliceBossKilled_Interview_5" 8
+call Scene.AddText 1828 "Mission_Scene_PoliceBossKilled_Interview_6" 4
+call Scene.AddText 1958 "Mission_Scene_PoliceBossKilled_Interview_7" 3
+call Scene.AddText 2043 "Mission_Scene_PoliceBossKilled_Interview_8" 4
+call Scene.AddText 2177 "Mission_Scene_PoliceBossKilled_Interview_9" 14
+call Scene.AddText 2607 "Mission_Scene_PoliceBossKilled_Interview_10" 12
+call Scene.AddText 2977 "Mission_Scene_PoliceBossKilled_Interview_11" 2
+call Scene.ActorAction 0 "Cabecera" "Relax"
+call Scene.ActorAction 0 "Screenshot1" "Relax"
+call Scene.ActorAction 0 "Final" "Relax"
+call Scene.ActorAction 0 "Portatil" "Relax"
+call Scene.AddGeneric 3042 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),1.0)"
+call Scrap.Set "DefInterpTime" 1.0
+let CharType "Betty"
+call Scene.AddCharActor "Betty" $CharType
+call Scene.CreateLocalAction $CharType 0 "TV-Relax" "TV-Relax" 1
+call Scene.CreateLocalAction $CharType 0 "TV-Talk" "TV-Talk" 1
+call Scene.CreateLocalAction $CharType 0 "TV-Talk0" "TV-Talk0" 1
+call Scene.CreateLocalAction $CharType 0 "TV-Talk1" "TV-Talk1" 1
+call Scene.CreateLocalAction $CharType 0 "TV-Boton" "TV-Boton" 1
+call Scene.CreateLocalAction $CharType 0 "TV-Look" "TV-Look" 1
+call Scene.SetDefSounds "Betty" $CharType
+call SAct.SetCls "DefAction" "TV-Relax"
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk0" "Talk0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk2" "Talk2" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk3" "Talk3" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk4" "Talk4" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk5" "Talk5" 1
+call Scene.CreateLocalAction $CharType 0 "Listen" "Listen" 1
+call Scene.SetDefSounds "Dtritus" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Berto"
+call Scene.AddCharActor "Berto" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk2" "Talk2" 1
+call Scene.SetDefSounds "Berto" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Boss"
+call Scene.AddCharActor "Boss" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk2" "Talk2" 1
+call Scene.SetDefSounds "Boss" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Cabecera"
+call Scene.AddLocalActor "Cabecera" $CharType
+call Scene.CreateLocalAction $CharType 0 "Relax" "Relax" 1
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Screenshot1"
+call Scene.AddLocalActor "Screenshot1" $CharType
+call Scene.CreateLocalAction $CharType 0 "Relax" "Relax" 1
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Final"
+call Scene.AddLocalActor "Final" $CharType
+call Scene.CreateLocalAction $CharType 0 "Relax" "Relax" 1
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Portatil"
+call Scene.AddLocalActor "Portatil" $CharType
+call Scene.CreateLocalAction $CharType 0 "Relax" "Relax" 1
+call SAct.SetCls "DefAction" "Relax"
+run setdef "DefInterpTime"

@@ -1,5 +1,5 @@
 # The functions of Mission_IntroHuman in level orbit (the script levels/orbit/scripts/mission_introhuman.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: Init, BillArrives_B, SetNextMission, LoadSceneA, LoadSceneB, LoadSceneC.
+# per function, its parameters after the name. The other functions of the script stay Python: Init, BillArrives_B, SetNextMission.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/orbit/mission_introhuman.def replaces this file.
 section InitStatus LevelPath
 call Chars.AddNewCharRes "Gear"
@@ -8,3 +8,139 @@ call Chars.AddNewCharRes "Human"
 section BillArrives_C usr=None
 call Scene.Play "BillArrives_C"
 setvar Scene.EndOfSceneCallback %Mission_IntroHuman.SetNextMission
+
+section LoadSceneA
+call Scene.Load "BillArrives_A"
+call Scene.ActorAction 0 "Human" "JumpPos"
+call Scene.ActorAction 530 "Human" "Jump"
+call Scene.ActorAction 0 "Capsule" "LoopA" "LoopA"
+call Scene.ActorAction 330 "Capsule" "Landing" "LoopA"
+call Scene.ActorAction 380 "Capsule" "LoopB" "LoopA"
+call Scene.ActorAction 404 "Capsule" "GateOpen" "LoopA"
+call Scene.ActorAction 488 "Capsule" "LoopC" "LoopA"
+call Scrap.Set "DefInterpTime" 0.0
+let CharType "Human"
+call Scene.AddCharActor "Human" $CharType
+call Scene.CreateLocalAction $CharType 0 "Jump" "Jump" 1
+call Scene.CreateLocalAction $CharType 0 "JumpPos" "JumpPos" 1
+call Scene.SetDefSounds "Human" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Capsule"
+call Scene.AddLocalActor "Capsule" $CharType
+call Scene.CreateLocalAction $CharType 0 "GateOpen" "GateOpen" 1
+call Scene.CreateLocalAction $CharType 0 "Landing" "Landing" 1
+call Scene.CreateLocalAction $CharType 0 "LoopA" "LoopA" 1
+call Scene.CreateLocalAction $CharType 0 "LoopB" "LoopB" 1
+call Scene.CreateLocalAction $CharType 0 "LoopC" "LoopC" 1
+call SAct.SetCls "DefAction" "LoopA"
+run setdef "DefInterpTime"
+call Scrap.Set "FXSceneBillArrives_AFile" %Mission_IntroHuman.FXSceneBillArrives_AFile
+call Scrap.SetDebrisSys %Mission_IntroHuman.FXSceneBillArrives_AFile 1 0 0 1 0 0 %Fx.FXSCENEBILLARRIVES_A
+
+section LoadSceneB
+call Scene.Load "BillArrives_B"
+call Scene.ActorAction 530 "Human" "TurnSlow"
+call Scene.ActorAction 550 "Human" "Relax0"
+call Scene.ActorAction 660 "Human" "WalkLook"
+call Scene.ActorAction 860 "Human" "Relax0"
+call Scene.ActorAction 960 "Human" "WalkLookSininter"
+call Scene.ActorAction 1090 "Human" "Think"
+call Scene.ActorAction 530 "Capsule" "LoopC" "LoopC"
+call Scene.ObjAction 1000 "DM_Door_OrbitDoorA_01" "Close" "Closed"
+call Scene.AddGeneric 710 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),1.0)"
+call Scene.AddGeneric 740 "SScorer.Fade(0,(0,0,0,255),(0,0,0,0),1.0)"
+call Scene.AddGeneric 800 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),1.0)"
+call Scene.AddGeneric 830 "SScorer.Fade(0,(0,0,0,255),(0,0,0,0),1.0)"
+call Scene.AddGeneric 930 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),1.0)"
+call Scene.AddGeneric 980 "SScorer.Fade(0,(0,0,0,255),(0,0,0,0),1.0)"
+call Scene.AddText 650 "Mission_Scene_IntroHuman_1" 3
+call Scene.AddText 760 "Mission_Scene_IntroHuman_2" 3
+call Scene.AddText 1125 "Mission_Scene_IntroHuman_3" 3
+call Scrap.Set "DefInterpTime" 1.0
+let CharType "Human"
+call Scene.AddCharActor "Human" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Relax0" "Relax0" 1
+call Scene.CreateLocalAction $CharType 0 "Think" "Think" 1
+call Scene.CreateLocalAction $CharType 0 "TurnSlow" "TurnSlow" 1
+call Scene.CreateLocalAction $CharType 0 "WalkLook" "WalkLook" 1
+call Scene.CreateLocalAction $CharType 0 "WalkLookSininter" "WalkLookSininter" 1
+call Scrap.Set "DefInterpTime" 0.0
+call Scene.SetDefSounds "Human" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Capsule"
+call Scene.AddLocalActor "Capsule" $CharType
+call Scene.CreateLocalAction $CharType 0 "LoopC" "LoopC" 1
+call SAct.SetCls "DefAction" "LoopC"
+run setdef "DefInterpTime"
+
+section LoadSceneC
+call Scene.Load "BillArrives_C"
+call Scene.ObjAction 0 "DM_Door_OrbitDoorA_01" "Closed" "Closed"
+call Scene.ActorAction 0 "Human" "DropCase"
+call Scene.ActorAction 40 "Human" "Descontamination"
+call Scene.ActorAction 280 "Human" "Alarm"
+call Scene.ActorAction 378 "Human" "TurnDuck"
+call Scene.ActorAction 395 "Human" "Alarm"
+call Scene.ActorAction 0 "Case" "Invisible" "Invisible"
+call Scene.ActorAction 20 "Case" "Visible" "Invisible"
+call Scene.ActorAction 0 "Gear1" "Run"
+call Scene.ActorAction 260 "Gear1" "SirenInit"
+call Scene.ActorAction 280 "Gear1" "Siren"
+call Scene.ActorAction 494 "Gear1" "RunEnd"
+call Scene.ActorAction 518 "Gear1" "Relax"
+call Scene.ActorAction 0 "Gear2" "Run"
+call Scene.ActorAction 260 "Gear2" "SirenInit"
+call Scene.ActorAction 280 "Gear2" "Siren"
+call Scene.ActorAction 510 "Gear2" "RunEnd"
+call Scene.ActorAction 534 "Gear2" "Relax"
+call Scene.ActorAction 540 "Gear2" "Talk"
+call Scene.AddGeneric 535 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),1.5)"
+call Scene.AddText 80 "Mission_Scene_IntroHuman_4" 3
+call Scene.AddText 160 "Mission_IntroHuman_RemoteMessage1" 3
+call Scene.AddText 260 "Mission_IntroHuman_RemoteMessage2" 3
+call Scrap.Set "DefInterpTime" 1.0
+let CharType "Human"
+call Scene.AddCharActor "Human" $CharType
+call Scene.CreateLocalAction $CharType 0 "Alarm" "Alarm" 1
+call Scene.CreateLocalAction $CharType 0 "TurnDuck" "TurnDuck" 1
+call Scene.CreateLocalAction $CharType 0 "DropCase" "DropCase" 1
+call Scene.CreateLocalAction $CharType 0 "Descontamination" "Descontamination" 0
+call Scene.SetDefSounds "Human" $CharType
+call SAct.SetCls "DefAction" "DropCase"
+let CharType "Gear"
+call Scene.AddCharActor "Gear1" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Run" "Run" 1
+call MakeChar.CreateRelaxAction $CharType 0 "RunEnd" "RunEnd" 0
+call Scene.SetDefSounds "Gear1" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "SirenInit" "SirenInit" 0
+call SAct.SetAct "Chanel" 1
+call SAct.SetAct "AddEventAtTime" 0
+call SAct.SetAct "EventName" "FXPoliceAlarmInit"
+call SAct.SetAct "EventFunc" "!FXPoliceAlarmInit"
+call MakeChar.CreateRelaxAction $CharType 0 "Siren" "Siren" 1
+call SAct.SetAct "Chanel" 1
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Gear"
+call Scene.AddCharActor "Gear2" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Run" "Run" 1
+call MakeChar.CreateRelaxAction $CharType 0 "RunEnd" "RunEnd" 0
+call Scene.SetDefSounds "Gear2" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "SirenInit" "SirenInit" 0
+call SAct.SetAct "Chanel" 1
+call SAct.SetAct "AddEventAtTime" 0
+call SAct.SetAct "EventName" "FXPoliceAlarmInit"
+call SAct.SetAct "EventFunc" "!FXPoliceAlarmInit"
+call MakeChar.CreateRelaxAction $CharType 0 "Siren" "Siren" 1
+call SAct.SetAct "Chanel" 1
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Case"
+call Scene.AddLocalActor "Case" $CharType
+call Scene.CreateLocalAction $CharType 0 "Visible" "Visible" 1
+call Scrap.Set "DefInterpTime" 0.0
+call Scene.CreateLocalAction $CharType 0 "Invisible" "Invisible" 1
+call Scrap.Set "DefInterpTime" 0.0
+call SAct.SetCls "DefAction" "Invisible"
+run setdef "DefInterpTime"
+call Scrap.Set "FXSceneDecontaminationFile" %Mission_IntroHuman.FXSceneDecontaminationFile
+call Scrap.SetDebrisSys %Mission_IntroHuman.FXSceneDecontaminationFile 1 0 0 1 0 0 %Fx.FXSCENEDECONTAMINATION

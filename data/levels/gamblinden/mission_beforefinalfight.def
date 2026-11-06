@@ -1,5 +1,5 @@
 # The functions of Mission_BeforeFinalFight in level gamblinden (the script levels/gamblinden/scripts/mission_beforefinalfight.py of data03.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, SetNextMission, LoadScene.
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, SetNextMission.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/gamblinden/mission_beforefinalfight.def replaces this file.
 section CrazyGamblerSpeech UsrName CharName optId FullOption
 setvar Speech.PlayerName $UsrName
@@ -14,3 +14,82 @@ setvar Speech.NPCName $CharName
 if $optId == "Talk"
 	call Speech.OnSpch "Mission_FinalFight_InitMsg2" "Mission_FinalFight_InitAns2"
 end
+
+section LoadScene
+call Scene.Load "Plan2"
+call Scene.ActorAction 0 "Dtritus" "Relax"
+call Scene.ActorAction 70 "Dtritus" "Listen"
+call Scene.ActorAction 170 "Dtritus" "Relax"
+call Scene.ActorAction 205 "Dtritus" "Talk"
+call Scene.ActorAction 235 "Dtritus" "Relax"
+call Scene.ActorAction 475 "Dtritus" "Talk1"
+call Scene.ActorAction 505 "Dtritus" "Relax"
+call Scene.ActorAction 545 "Dtritus" "Walk"
+call Scene.ActorAction 600 "Dtritus" "WalkLook"
+call Scene.ActorAction 685 "Dtritus" "Walk"
+call Scene.ActorAction 705 "Dtritus" "Relax"
+call Scene.ActorAction 900 "Dtritus" "TalkEnergy"
+call Scene.ActorAction 930 "Dtritus" "Relax"
+call Scene.ActorAction 0 "CrazyGambler" "Relax"
+call Scene.ActorAction 30 "CrazyGambler" "Talk1"
+call Scene.ActorAction 70 "CrazyGambler" "Talk"
+call Scene.ActorAction 110 "CrazyGambler" "Talk2"
+call Scene.ActorAction 150 "CrazyGambler" "Talk0"
+call Scene.ActorAction 195 "CrazyGambler" "Relax"
+call Scene.ActorAction 245 "CrazyGambler" "Talk1"
+call Scene.ActorAction 285 "CrazyGambler" "Talk"
+call Scene.ActorAction 325 "CrazyGambler" "Talk0"
+call Scene.ActorAction 365 "CrazyGambler" "Talk2"
+call Scene.ActorAction 405 "CrazyGambler" "Talk1"
+call Scene.ActorAction 445 "CrazyGambler" "Talk"
+call Scene.ActorAction 467 "CrazyGambler" "Relax"
+call Scene.ActorAction 515 "CrazyGambler" "Talk"
+call Scene.ActorAction 555 "CrazyGambler" "Talk1"
+call Scene.ActorAction 595 "CrazyGambler" "Talk0"
+call Scene.ActorAction 635 "CrazyGambler" "Talk"
+call Scene.ActorAction 675 "CrazyGambler" "Talk1"
+call Scene.ActorAction 715 "CrazyGambler" "Talk"
+call Scene.ActorAction 755 "CrazyGambler" "Talk2"
+call Scene.ActorAction 795 "CrazyGambler" "Talk"
+call Scene.ActorAction 835 "CrazyGambler" "Talk1"
+call Scene.ActorAction 890 "CrazyGambler" "Relax"
+call Scene.ActorAction 940 "CrazyGambler" "Talk0"
+call Scene.ActorAction 980 "CrazyGambler" "Talk"
+call Scene.ActorAction 1020 "CrazyGambler" "Talk2"
+call Scene.ActorAction 1060 "CrazyGambler" "Talk1"
+call Scene.ActorAction 1100 "CrazyGambler" "Talk"
+call Scene.ActorAction 1140 "CrazyGambler" "Talk2"
+call Scene.ActorAction 1180 "CrazyGambler" "Talk0"
+call Scene.ActorAction 1220 "CrazyGambler" "Talk1"
+call Scene.ActorAction 1246 "CrazyGambler" "Relax"
+call Scene.AddGeneric 0 "SScorer.Fade(0,(0,0,0,255),(0,0,0,255),3.0)"
+call Scene.AddGeneric 10 "SScorer.Fade(0,(0,0,0,255),(0,0,0,0),1.5)"
+call Scene.AddGeneric 1285 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),1.0)"
+call Scene.ObjAction 610 "DM_Door_GamblinDenChupito_00" "Open" "Opened"
+call Scene.AddText 30 "Mission_Scene_GoWithHuman_ThePlan1" 6
+call Scene.AddText 205 "Mission_Scene_GoWithHuman_ThePlan2" 1
+call Scene.AddText 245 "Mission_Scene_GoWithHuman_ThePlan3" 7
+call Scene.AddText 475 "Mission_Scene_GoWithHuman_ThePlan4" 1
+call Scene.AddText 515 "Mission_Scene_GoWithHuman_ThePlan5" 13
+call Scene.AddText 900 "Mission_Scene_GoWithHuman_ThePlan6" 1
+call Scene.AddText 940 "Mission_Scene_GoWithHuman_ThePlan7" 10
+call Scrap.Set "DefInterpTime" 0.7
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.CreateLocalAction $CharType 0 "WalkLook" "WalkLook" 1
+call Scene.CreateLocalAction $CharType 0 "TalkEnergy" "TalkEnergy" 1
+call Scene.CreateLocalAction $CharType 0 "Listen" "Listen" 1
+call Scene.SetDefSounds "Dtritus" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "CrazyGambler"
+call Scene.AddCharActor "CrazyGambler" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk0" "Talk0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk2" "Talk2" 1
+call Scene.SetDefSounds "CrazyGambler" $CharType
+call SAct.SetCls "DefAction" "Relax"
+run setdef "DefInterpTime"

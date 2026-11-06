@@ -27,12 +27,14 @@ for path in sorted(glob.glob(root + '/*/levels/*/scripts/*.py')):
     module = module_name(base)
     if level.startswith('_') or not module:
         continue
-    sections, kept = py2def.convert(module, path)
+    sections, kept = py2def.convert(module, path, True)
     if not sections:
         continue
     pack = path.split('/packs/')[1].split('/')[0]
+    cfiles = dict((f.lower(), f) for f in os.listdir(os.path.join(repo, 'src/game/Script/levels')))
+    rest = 'are C (src/game/Script/levels/%s)' % cfiles[level + '.c'] if level + '.c' in cfiles else 'stay Python'
     head = ['# The functions of %s in level %s (the script levels/%s/scripts/%s.py of %s) that are data: one section' % (module, level, level, base, pack),
-            '# per function, its parameters after the name. The other functions of the script stay Python%s.' % (
+            '# per function, its parameters after the name. The other functions of the script %s%s.' % (rest,
                 (': ' + ', '.join(k for k, _ in kept)) if kept else ''),
             '# Made by a converter from the script. A pack in mods/ with scrapc/levels/%s/%s.def replaces this file.' % (level, base), '']
     text = '\n'.join(head) + '\n\n'.join('\n'.join(s) for s in sections) + '\n'

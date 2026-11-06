@@ -1,6 +1,47 @@
 # The functions of Mission_TalkToBoss in level press (the script levels/press/scripts/mission_talktoboss.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, AfterBrowseNPC, SetBossSpeech, CreateHuman, Init, HideHumanIntoBureau, CreateSceneLaunchers, LaunchScene, EndOfScene, LoadScene, OnPossession, OnExitConversor, CheckMaxDist, CheckHumanDist, GoTalkToBoss, BossSpeech, SetNextMission.
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, AfterBrowseNPC, SetBossSpeech, CreateHuman, Init, HideHumanIntoBureau, CreateSceneLaunchers, LaunchScene, EndOfScene, OnPossession, OnExitConversor, CheckMaxDist, CheckHumanDist, GoTalkToBoss, BossSpeech, SetNextMission.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_talktoboss.def replaces this file.
+section LoadScene
+call Scene.Load "HideHuman"
+call Scene.ActorAction 0 "Dtritus" "Run"
+call Scene.ActorAction 50 "Dtritus" "OpenBureau"
+call Scene.ActorAction 125 "Dtritus" "Turn"
+call Scene.ActorAction 150 "Dtritus" "Alarm"
+call Scene.ActorAction 270 "Dtritus" "Turn"
+call Scene.ActorAction 290 "Dtritus" "CloseBureau"
+call Scene.ActorAction 320 "Dtritus" "Turn"
+call Scene.ActorAction 345 "Dtritus" "Cough"
+call Scene.ActorAction 440 "Dtritus" "Relax"
+call Scene.ActorAction 0 "Human" "Walk"
+call Scene.ActorAction 160 "Human" "Relax"
+call Scene.ActorAction 180 "Human" "Hide"
+call Scene.ActorAction 272 "Human" "Hidden"
+call Scene.ObjAction 75 "DM_Door_Bureau_00" "Open" "Opened"
+call Scene.ObjAction 315 "DM_Door_Bureau_00" "Close" "Closed"
+call Scene.AddText 95 "Mission_Scene_SetHumanFree_HideHuman1" 20
+call Scrap.Set "DefInterpTime" 1.0
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Run" "Run" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call Scene.CreateLocalAction $CharType 0 "OpenBureau" "OpenBureau" 1
+call Scrap.Set "DefInterpTime" 0.75
+call Scene.CreateLocalAction $CharType 0 "CloseBureau" "CloseBureau" 1
+call Scrap.Set "DefInterpTime" 0.75
+call Scene.CreateLocalAction $CharType 0 "Alarm" "Alarm" 1
+call Scene.CreateLocalAction $CharType 0 "Cough" "Cough" 0
+call Scene.SetDefSounds "Dtritus" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Human"
+call Scene.AddCharActor "Human" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call Scene.CreateLocalAction $CharType 0 "Hide" "Hide" 1
+call Scene.CreateLocalAction $CharType 0 "Hidden" "Hidden" 1
+call Scrap.Set "DefInterpTime" 0.0
+call Scene.SetDefSounds "Human" $CharType
+call SAct.SetCls "DefAction" "Relax"
+run setdef "DefInterpTime"
+
 section PreGoTalkToBoss
 call Scrap.SetSaveVar "MissionState" "TalkToBoss"
 call SaveGame.MMDesc "Mission_TalkToBoss_MissionText1" 1

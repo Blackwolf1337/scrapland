@@ -1,5 +1,5 @@
 # The functions of Mission_MeetBoss in level press (the script levels/press/scripts/mission_meetboss.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, AfterBrowseNPC, CreateHumphreyInit, CreateBertoInit, BertoSpeech, BertoSpeech2, DeactivateEmero, ActivateEmero, Init, PlayProlog0, PlayProlog1, PlayProlog2, CreateBattery, AssingOnTakeBattery, OnTakeBattery, PreBertoPossession, BertoPossession, OnWarning, OnActionPressed, OnPossession, ShowMessage, OnAlarmEnd, UseConversor, OnConversorUsed, CheckConversion, ChallengeHumphrey, HumphreySpeech, SetNextMission, LoadProlog0Scene, LoadProlog1Scene, LoadProlog2Scene.
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, AfterBrowseNPC, CreateHumphreyInit, CreateBertoInit, BertoSpeech, BertoSpeech2, DeactivateEmero, ActivateEmero, Init, PlayProlog0, PlayProlog1, PlayProlog2, CreateBattery, AssingOnTakeBattery, OnTakeBattery, PreBertoPossession, BertoPossession, OnWarning, OnActionPressed, OnPossession, ShowMessage, OnAlarmEnd, UseConversor, OnConversorUsed, CheckConversion, ChallengeHumphrey, HumphreySpeech, SetNextMission.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_meetboss.def replaces this file.
 section EndOfMetroAnim elv
 setvar Elevator.OnElevatorReachDown None
@@ -55,6 +55,303 @@ call Speech.RunNI
 section PreChallengeHumphrey
 call Scrap.SetSaveVar "MissionState" "ChallengeHumphrey"
 call Mission_MeetBoss.ChallengeHumphrey
+
+section LoadProlog0Scene
+call Scene.Load "Prolog0"
+call Scene.ActorAction 0 "Dtritus" "Talk"
+call Scene.ActorAction 25 "Dtritus" "Relax"
+call Scene.ActorAction 135 "Dtritus" "Turn"
+call Scene.ActorAction 155 "Dtritus" "Walk"
+call Scene.ActorAction 240 "Dtritus" "Relax"
+call Scene.ActorAction 0 "Berto" "Relax"
+call Scene.ActorAction 30 "Berto" "Talk"
+call Scene.ActorAction 130 "Berto" "Turn"
+call Scene.ActorAction 150 "Berto" "Walk"
+call Scene.ActorAction 245 "Berto" "Relax"
+call Scene.ObjAction 0 "DM_Door_PressSlidingDoor_01" "Open" "Opened"
+call Scene.ObjAction 210 "DM_Door_Teleporter_08" "Open" "Opened"
+call Scene.AddGeneric 230 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),0.5)"
+call Scene.AddText 0 "Mission_Scene_FirstcontactPress_Part1_1" 2
+call Scene.AddText 45 "Mission_Scene_FirstcontactPress_Part1_2" 3
+call Scrap.Set "DefInterpTime" 1.0
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call Scene.SetDefSounds "Dtritus" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Berto"
+call Scene.AddCharActor "Berto" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call Scene.SetDefSounds "Berto" $CharType
+call SAct.SetCls "DefAction" "Relax"
+run setdef "DefInterpTime"
+
+section LoadProlog1Scene
+call Scene.Load "Prolog1"
+call Scene.ActorAction 0 "Dtritus" "Walk"
+call Scene.ActorAction 216 "Dtritus" "RelaxAstonished"
+call Scene.ActorAction 700 "Dtritus" "LookShip"
+call Scene.ActorAction 780 "Dtritus" "Walk"
+call Scene.ActorAction 1232 "Dtritus" "Relax"
+call Scene.ActorAction 1475 "Dtritus" "Talk1"
+call Scene.ActorAction 1535 "Dtritus" "Talk"
+call Scene.ActorAction 1595 "Dtritus" "Relax"
+call Scene.ActorAction 1765 "Dtritus" "Talk"
+call Scene.ActorAction 1820 "Dtritus" "Relax"
+call Scene.ActorAction 2021 "Dtritus" "Turn"
+call Scene.ActorAction 2036 "Dtritus" "Relax"
+call Scene.ActorAction 0 "Berto" "Walk"
+call Scene.ActorAction 216 "Berto" "Relax"
+call Scene.ActorAction 650 "Berto" "Talk0"
+call Scene.ActorAction 710 "Berto" "TalkRegana"
+call Scene.ActorAction 778 "Berto" "Walk"
+call Scene.ActorAction 1225 "Berto" "Hi"
+call Scene.ActorAction 1350 "Berto" "Relax"
+call Scene.ActorAction 1490 "Berto" "Relax0"
+call Scene.ActorAction 1600 "Berto" "Relax"
+call Scene.ActorAction 2025 "Berto" "Turn"
+call Scene.ActorAction 2040 "Berto" "Relax"
+call Scene.ActorAction 0 "Betty" "Relax"
+call Scene.ActorAction 315 "Betty" "Relax1"
+call Scene.ActorAction 405 "Betty" "Relax"
+call Scene.ActorAction 485 "Betty" "MorphLips"
+call Scene.ActorAction 485 "Betty" "Talk"
+call Scene.ActorAction 535 "Betty" "Talk"
+call Scene.ActorBreakChannel 585 "Betty" 3
+call Scene.ActorAction 585 "Betty" "Walk"
+call Scene.ActorAction 1250 "Betty" "Turn"
+call Scene.ActorAction 1270 "Betty" "Relax"
+call Scene.ActorAction 2020 "Betty" "MorphLips"
+call Scene.ActorAction 2020 "Betty" "Talk"
+call Scene.ActorBreakChannel 2090 "Betty" 3
+call Scene.ActorAction 2090 "Betty" "Relax"
+call Scene.ActorAction 0 "Boss" "Relax"
+call Scene.ActorAction 1355 "Boss" "Talk0"
+call Scene.ActorAction 1400 "Boss" "Talk"
+call Scene.ActorAction 1470 "Boss" "Relax"
+call Scene.ActorAction 1600 "Boss" "Talk1"
+call Scene.ActorAction 1650 "Boss" "Talk2"
+call Scene.ActorAction 1700 "Boss" "Talk"
+call Scene.ActorAction 1760 "Boss" "Relax"
+call Scene.ActorAction 1825 "Boss" "Talk"
+call Scene.ActorAction 1965 "Boss" "Talk2"
+call Scene.ActorAction 2015 "Boss" "Relax"
+call Scene.ObjAction 0 "DM_Door_PressSlidingDoor_00" "Open" "Opened"
+call Scene.ObjAction 30 "DM_Door_Teleporter_07" "Open" "Opened"
+call Scene.ObjAction 216 "DM_Door_PressSlidingDoor_00" "Close" "Closed"
+call Scene.AddGeneric 2100 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),1.0)"
+call Scene.AddGeneric 231 "import Mission_MeetBoss; Mission_MeetBoss.PlayBettyTheme()"
+call Scene.AddGeneric 1224 "import Mission_MeetBoss; Mission_MeetBoss.StopBettyTheme()"
+call Scene.AddText 485 "Mission_Scene_FirstcontactPress_Part1_3" 3
+call Scene.AddText 535 "Mission_Scene_FirstcontactPress_Part1_4" 3
+call Scene.AddText 650 "Mission_Scene_FirstcontactPress_Part1_5" 5
+call Scene.AddText 1225 "Mission_Scene_FirstcontactPress_Part1_6" 6
+call Scene.AddText 1355 "Mission_Scene_FirstcontactPress_Part1_7" 6
+call Scene.AddText 1475 "Mission_Scene_FirstcontactPress_Part1_8" 6
+call Scene.AddText 1600 "Mission_Scene_FirstcontactPress_Part1_9" 8
+call Scene.AddText 1765 "Mission_Scene_FirstcontactPress_Part1_10" 5
+call Scene.AddText 1825 "Mission_Scene_FirstcontactPress_Part1_11" 5
+call Scene.AddText 2020 "Mission_Scene_FirstcontactPress_Part1_12" 5
+call Scrap.Set "DefInterpTime" 1.0
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk0" "Talk0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxAstonished" "RelaxAstonished" 1
+call Scene.CreateLocalAction $CharType 0 "LookShip" "LookShip" 0
+call Scene.SetDefSounds "Dtritus" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Berto"
+call Scene.AddCharActor "Berto" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Relax0" "Relax0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk0" "Talk0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call Scene.CreateLocalAction $CharType 0 "Hi" "Hi" 0
+call Scene.CreateLocalAction $CharType 0 "TalkRegana" "TalkRegana" 1
+call Scene.SetDefSounds "Berto" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Betty"
+call Scene.AddCharActor "Betty" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Relax1" "Relax1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call Scene.SetDefSounds "Betty" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Boss"
+call Scene.AddCharActor "Boss" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk0" "Talk0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk2" "Talk2" 1
+call Scene.SetDefSounds "Boss" $CharType
+call SAct.SetCls "DefAction" "Relax"
+run setdef "DefInterpTime"
+
+section LoadProlog2Scene
+call Scene.Load "Prolog2"
+call Scene.ActorAction 100 "Dtritus" "Relax"
+call Scene.ActorAction 355 "Dtritus" "Talk"
+call Scene.ActorAction 415 "Dtritus" "Relax"
+call Scene.ActorAction 625 "Dtritus" "Talk"
+call Scene.ActorAction 640 "Dtritus" "Relax"
+call Scene.ActorAction 780 "Dtritus" "Relax0"
+call Scene.ActorAction 920 "Dtritus" "Turn"
+call Scene.ActorAction 940 "Dtritus" "RelaxLookDown"
+call Scene.ActorAction 980 "Dtritus" "TalkLookDown"
+call Scene.ActorAction 1020 "Dtritus" "RelaxLookDown"
+call Scene.ActorAction 1280 "Dtritus" "Talk2LookDown"
+call Scene.ActorAction 1310 "Dtritus" "TalkLookDown"
+call Scene.ActorAction 1395 "Dtritus" "RelaxLookDown"
+call Scene.ActorAction 1650 "Dtritus" "Listen"
+call Scene.ActorAction 1755 "Dtritus" "RelaxLookDown"
+call Scene.ActorAction 1795 "Dtritus" "Talk1LookDown"
+call Scene.ActorAction 1840 "Dtritus" "RelaxLookDown"
+call Scene.ActorAction 1960 "Dtritus" "Walk"
+call Scene.ActorAction 1985 "Dtritus" "TouchCamera"
+call Scene.ActorAction 2070 "Dtritus" "Turn"
+call Scene.ActorAction 2090 "Dtritus" "RelaxLookDown"
+call Scene.ActorAction 2180 "Dtritus" "TalkLookDown"
+call Scene.ActorAction 2240 "Dtritus" "RelaxLookDown"
+call Scene.ActorAction 2345 "Dtritus" "TalkLookDown"
+call Scene.ActorAction 2425 "Dtritus" "RelaxLookDown"
+call Scene.ActorAction 2855 "Dtritus" "Talk1LookDown"
+call Scene.ActorAction 2915 "Dtritus" "RelaxLookDown"
+call Scene.ActorAction 3350 "Dtritus" "Listen"
+call Scene.ActorAction 3460 "Dtritus" "RelaxLookDown"
+call Scene.ActorAction 100 "Betty" "Relax"
+call Scene.ActorAction 135 "Betty" "MorphLips"
+call Scene.ActorAction 135 "Betty" "Talk"
+call Scene.ActorAction 210 "Betty" "Talk1"
+call Scene.ActorAction 270 "Betty" "Talk"
+call Scene.ActorBreakChannel 350 "Betty" 3
+call Scene.ActorAction 350 "Betty" "Relax"
+call Scene.ActorAction 420 "Betty" "MorphLips"
+call Scene.ActorAction 420 "Betty" "Talk"
+call Scene.ActorAction 480 "Betty" "Talk1"
+call Scene.ActorAction 520 "Betty" "Talk"
+call Scene.ActorAction 580 "Betty" "Talk2"
+call Scene.ActorAction 625 "Betty" "Hi"
+call Scene.ActorBreakChannel 625 "Betty" 3
+call Scene.ActorAction 650 "Betty" "Walk"
+call Scene.ActorAction 100 "Gatekeeper" "Static"
+call Scene.ActorAction 760 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 780 "Gatekeeper" "Static"
+call Scene.ActorAction 850 "Gatekeeper" "StaticRelax"
+call Scene.ActorAction 910 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 975 "Gatekeeper" "RelaxUp"
+call Scene.ActorAction 1025 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 1050 "Gatekeeper" "Talk1Up"
+call Scene.ActorAction 1100 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 1150 "Gatekeeper" "Talk1Up"
+call Scene.ActorAction 1200 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 1275 "Gatekeeper" "RelaxUp"
+call Scene.ActorAction 1400 "Gatekeeper" "Talk4Up"
+call Scene.ActorAction 1500 "Gatekeeper" "Talk3Up"
+call Scene.ActorAction 1550 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 1620 "Gatekeeper" "Talk1Up"
+call Scene.ActorAction 1670 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 1790 "Gatekeeper" "RelaxUp"
+call Scene.ActorAction 1845 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 1915 "Gatekeeper" "TalkSignUp"
+call Scene.ActorAction 1965 "Gatekeeper" "RelaxUp"
+call Scene.ActorAction 2090 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 2175 "Gatekeeper" "RelaxUp"
+call Scene.ActorAction 2245 "Gatekeeper" "Talk2Up"
+call Scene.ActorAction 2295 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 2340 "Gatekeeper" "RelaxUp"
+call Scene.ActorAction 2430 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 2550 "Gatekeeper" "Talk1Up"
+call Scene.ActorAction 2600 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 2650 "Gatekeeper" "Talk3Up"
+call Scene.ActorAction 2700 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 2720 "Gatekeeper" "Talk2Up"
+call Scene.ActorAction 2770 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 2850 "Gatekeeper" "RelaxUp"
+call Scene.ActorAction 2920 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 3100 "Gatekeeper" "Talk2Up"
+call Scene.ActorAction 3150 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 3220 "Gatekeeper" "Talk1Up"
+call Scene.ActorAction 3270 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 3320 "Gatekeeper" "Talk3Up"
+call Scene.ActorAction 3370 "Gatekeeper" "Talk2Up"
+call Scene.ActorAction 3420 "Gatekeeper" "TalkUp"
+call Scene.ActorAction 3450 "Gatekeeper" "RelaxUp"
+call Scene.AddGeneric 2016 "import Mission_MeetBoss;Mission_MeetBoss.FXMeetBossProlog2Flash()"
+call Scene.AddGeneric 3470 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),1.0)"
+call Scene.AddText 135 "Mission_Scene_FirstcontactPress_Part2_1" 7
+call Scene.AddText 355 "Mission_Scene_FirstcontactPress_Part2_2" 2
+call Scene.AddText 420 "Mission_Scene_FirstcontactPress_Part2_3" 7
+call Scene.AddText 625 "Mission_Scene_FirstcontactPress_Part2_4" 2
+call Scene.AddText 760 "Mission_Scene_FirstcontactPress_Part2_5" 3
+call Scene.AddText 910 "Mission_Scene_FirstcontactPress_Part2_6" 4
+call Scene.AddText 980 "Mission_Scene_FirstcontactPress_Part2_7" 4
+call Scene.AddText 1025 "Mission_Scene_FirstcontactPress_Part2_8" 7
+call Scene.AddText 1280 "Mission_Scene_FirstcontactPress_Part2_9" 6
+call Scene.AddText 1400 "Mission_Scene_FirstcontactPress_Part2_10" 12
+call Scene.AddText 1795 "Mission_Scene_FirstcontactPress_Part2_11" 4
+call Scene.AddText 1845 "Mission_Scene_FirstcontactPress_Part2_12" 12
+call Scene.AddText 2090 "Mission_Scene_FirstcontactPress_Part2_13" 4
+call Scene.AddText 2180 "Mission_Scene_FirstcontactPress_Part2_14" 13
+call Scene.AddText 2245 "Mission_Scene_FirstcontactPress_Part2_15" 4
+call Scene.AddText 2345 "Mission_Scene_FirstcontactPress_Part2_16" 4
+call Scene.AddText 2430 "Mission_Scene_FirstcontactPress_Part2_17" 13
+call Scene.AddText 2855 "Mission_Scene_FirstcontactPress_Part2_18" 4
+call Scene.AddText 2920 "Mission_Scene_FirstcontactPress_Part2_19" 21
+call Scrap.Set "DefInterpTime" 1.0
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Relax0" "Relax0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk2" "Talk2" 1
+call Scene.CreateLocalAction $CharType 0 "WalkHi" "WalkHi" 1
+call Scrap.Set "DefInterpTime" 0.7
+call Scene.CreateLocalAction $CharType 0 "RelaxLookDown" "RelaxLookDown" 1
+call Scene.CreateLocalAction $CharType 0 "Listen" "Listen" 1
+call Scene.CreateLocalAction $CharType 0 "TouchCamera" "TouchCamera" 1
+call Scene.CreateLocalAction $CharType 0 "Talk1LookDown" "Talk1LookDown" 1
+call Scene.CreateLocalAction $CharType 0 "TalkLookDown" "TalkLookDown" 1
+call Scene.CreateLocalAction $CharType 0 "Talk2LookDown" "Talk2LookDown" 1
+call Scene.SetDefSounds "Dtritus" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Betty"
+call Scene.AddCharActor "Betty" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk2" "Talk2" 1
+call Scene.CreateLocalAction $CharType 0 "Hi" "Hi" 1
+call Scene.SetDefSounds "Betty" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Sebastian"
+call Scene.AddCharActor "Gatekeeper" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxUp" "RelaxUp" 1
+call Scene.CreateLocalAction $CharType 0 "StaticRelax" "StaticRelax" 0
+call Scene.CreateLocalAction $CharType 0 "Static" "Static" 1
+call Scene.CreateLocalAction $CharType 0 "TalkUp" "TalkUp" 1
+call Scene.CreateLocalAction $CharType 0 "Talk1Up" "Talk1Up" 1
+call Scene.CreateLocalAction $CharType 0 "Talk2Up" "Talk2Up" 1
+call Scene.CreateLocalAction $CharType 0 "Talk3Up" "Talk3Up" 1
+call Scene.CreateLocalAction $CharType 0 "Talk4Up" "Talk4Up" 1
+call Scene.CreateLocalAction $CharType 0 "TalkSignUp" "TalkSignUp" 1
+call Scene.SetDefSounds "Gatekeeper" $CharType
+call SAct.SetCls "DefAction" "Static"
+run setdef "DefInterpTime"
 
 section FXMeetBossProlog2Flash
 call Scrap.SetCallFunc "!FXSebastianFlash"

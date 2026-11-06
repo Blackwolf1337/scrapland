@@ -39,8 +39,8 @@ def split_args(s):
 
 
 class Conv:
-    def __init__(self, module, globs, funcs):
-        self.module, self.globs, self.funcs = module, globs, funcs
+    def __init__(self, module, globs, funcs, setdef=False):
+        self.module, self.globs, self.funcs, self.setdef = module, globs, funcs, setdef
         self.pre, self.numeric = [], set()
 
     def value(self, v, scope):
@@ -108,6 +108,11 @@ class Conv:
         return self.value(c, scope)
 
     def call(self, t, scope):
+        # an engine variable back to its default (the end of the scene loaders): a step of Levels.c (only for the
+        # levels whose logic is C so far)
+        m = re.match(r'^Scrap\.Set\(\s*(["\']\w+["\'])\s*,\s*Scrap\.Def\(\s*(["\']\w+["\'])\s*\)\s*\)$', t)
+        if m and self.setdef and m.group(1)[1:-1] == m.group(2)[1:-1]:
+            return 'run setdef "%s"' % m.group(1)[1:-1]
         m = re.match(r'^([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)?)\((.*)\)$', t)
         if not m:
             raise Unsupported('stmt ' + t)
@@ -143,7 +148,7 @@ class Conv:
 
     def body(self, name, params, lines):
         self.pre, self.numeric = [], set()
-        scope = set(p.split('=')[0] for p in params)
+        scope = set(p.split('=')[0].strip() for p in params)
         glob = set()
         out, stack = [], []   # stack of indentation levels of open if blocks
         for n, (ind, t) in enumerate(lines):
@@ -266,7 +271,7 @@ def strip_comment(line):
     return line
 
 
-def convert(module, path):
+def convert(module, path, setdef=False):
     src = open(path, encoding='latin1').read().replace('\r', '')
     lines = logical_lines(src)
     globs, funcs = set(), set()
@@ -284,7 +289,7 @@ def convert(module, path):
         m = re.match(r'^import\s+(.*)$', t)
         if m:
             pass
-    conv = Conv(module, globs, funcs)
+    conv = Conv(module, globs, funcs, setdef)
     defs = []
     i = 0
     while i < len(lines):

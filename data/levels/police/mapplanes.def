@@ -1,4 +1,4 @@
 # The functions of MapPlanes in level police (the script levels/police/scripts/mapplanes.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: Init, TakenPhoto.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Police.c): Init, TakenPhoto.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/police/mapplanes.def replaces this file.
 section InitStatus LevelPath

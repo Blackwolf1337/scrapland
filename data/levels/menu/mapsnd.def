@@ -1,5 +1,5 @@
 # The functions of MapSnd in level menu (the script levels/menu/scripts/mapsnd.py of data03.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Menu.c).
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/menu/mapsnd.def replaces this file.
 section LoadSounds
 

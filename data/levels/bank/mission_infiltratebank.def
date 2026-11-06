@@ -1,5 +1,5 @@
 # The functions of Mission_InfiltrateBank in level bank (the script levels/bank/scripts/mission_infiltratebank.py of Data.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, UseDoor, TestEndOfElevator, ReAssignTarget, AfterDTMessage, ShowDeepThroatMessage, SetArrowToBankMaster, CreateBankMaster, LaunchScene, LaunchScene2, SetNextMission, LoadScene.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Bank.c): InitStatus, Init, UseDoor, TestEndOfElevator, ReAssignTarget, AfterDTMessage, ShowDeepThroatMessage, SetArrowToBankMaster, CreateBankMaster, LaunchScene, LaunchScene2, SetNextMission.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/bank/mission_infiltratebank.def replaces this file.
 section OnPossession name pos
 if $name == %Mission_InfiltrateBank.BankMasterName
@@ -13,3 +13,99 @@ setvar Speech.NPCName $CharName
 if $optId == "Talk"
 	call Speech.OnSpch "Mission_MeetBerto_BankBoss_InitMsg1" "Mission_MeetBerto_BankBoss_InitAns1"
 end
+
+section LoadScene
+call Scene.Load "DirectorDiscovered"
+call Scene.ActorAction 0 "Dtritus" "Walk"
+call Scene.ActorAction 75 "Dtritus" "Relax"
+call Scene.ActorAction 100 "Dtritus" "Talk1"
+call Scene.ActorAction 145 "Dtritus" "Relax"
+call Scene.ActorAction 155 "Dtritus" "Walk"
+call Scene.ActorAction 305 "Dtritus" "Relax"
+call Scene.ActorAction 315 "Dtritus" "TalkTouch"
+call Scene.ActorAction 450 "Dtritus" "Jump"
+call Scene.ActorAction 480 "Dtritus" "RelaxSurprise"
+call Scene.ActorAction 555 "Dtritus" "TalkSurprise"
+call Scene.ActorAction 635 "Dtritus" "Turn"
+call Scene.ActorAction 650 "Dtritus" "Relax"
+call Scene.ActorAction 1340 "Dtritus" "LookDown"
+call Scene.ActorAction 1390 "Dtritus" "Relax"
+call Scene.ActorAction 0 "BankMaster" "Relax"
+call Scene.ActorAction 620 "BankMaster" "Talk"
+call Scene.ActorAction 650 "BankMaster" "Relax"
+call Scene.ActorAction 670 "BankMaster" "Talk"
+call Scene.ActorAction 742 "BankMaster" "Relax"
+call Scene.ActorAction 770 "BankMaster" "Talk0"
+call Scene.ActorAction 840 "BankMaster" "Talk"
+call Scene.ActorAction 878 "BankMaster" "Relax"
+call Scene.ActorAction 900 "BankMaster" "Talk1"
+call Scene.ActorAction 970 "BankMaster" "Talk"
+call Scene.ActorAction 1025 "BankMaster" "Relax"
+call Scene.ActorAction 1040 "BankMaster" "Talk"
+call Scene.ActorAction 1110 "BankMaster" "Talk0"
+call Scene.ActorAction 1163 "BankMaster" "Relax"
+call Scene.ActorAction 1190 "BankMaster" "Talk1"
+call Scene.ActorAction 1238 "BankMaster" "Relax"
+call Scene.ActorAction 1260 "BankMaster" "Talk"
+call Scene.ActorAction 1330 "BankMaster" "Talk1"
+call Scene.ActorAction 1390 "BankMaster" "Talk0"
+call Scene.ActorAction 1449 "BankMaster" "Relax"
+call Scene.ActorAction 1470 "BankMaster" "Talk"
+call Scene.ActorAction 1540 "BankMaster" "Talk1"
+call Scene.ActorAction 1600 "BankMaster" "Talk"
+call Scene.ActorAction 1626 "BankMaster" "Relax"
+call Scene.ActorAction 0 "Costume" "Relax"
+call Scene.ActorAction 427 "Costume" "Turn"
+call Scene.ActorAction 447 "Costume" "Fall"
+call Scene.ActorAction 620 "Costume" "Falled"
+call Scene.ActorAction 640 "Costume" "FalledTrick"
+call Scene.AddGeneric 0 "SScorer.Fade(0,(0,0,0,255),(0,0,0,255),3.0)"
+call Scene.AddGeneric 10 "SScorer.Fade(0,(0,0,0,255),(0,0,0,0),2.0)"
+call Scene.AddGeneric 1640 "SScorer.Fade(0,(0,0,0,0),(0,0,0,255),2.0)"
+call Scene.AddText 100 "Mission_Scene_InfiltrateBank_1" 2
+call Scene.AddText 315 "Mission_Scene_InfiltrateBank_2" 1
+call Scene.AddText 565 "Mission_Scene_InfiltrateBank_3" 1
+call Scene.AddText 620 "Mission_Scene_InfiltrateBank_4" 1
+call Scene.AddText 670 "Mission_Scene_InfiltrateBank_5" 3
+call Scene.AddText 770 "Mission_Scene_InfiltrateBank_6" 4
+call Scene.AddText 900 "Mission_Scene_InfiltrateBank_7" 7
+call Scene.AddText 1040 "Mission_Scene_InfiltrateBank_8" 4
+call Scene.AddText 1190 "Mission_Scene_InfiltrateBank_9" 2
+call Scene.AddText 1260 "Mission_Scene_InfiltrateBank_10" 7
+call Scene.AddText 1470 "Mission_Scene_InfiltrateBank_11" 5
+call Scrap.Set "DefInterpTime" 0.7
+let CharType "Dtritus"
+call Scene.AddCharActor "Dtritus" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Walk" "Walk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Turn" "Turn" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk0" "Talk0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk2" "Talk2" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk3" "Talk3" 1
+call Scene.CreateLocalAction $CharType 0 "TalkTouch" "TalkTouch" 1
+call Scene.CreateLocalAction $CharType 0 "Jump" "Jump" 1
+call Scene.CreateLocalAction $CharType 0 "LookDown" "LookDown" 1
+call Scene.CreateLocalAction $CharType 0 "RelaxSurprise" "RelaxSurprise" 1
+call Scene.CreateLocalAction $CharType 0 "TalkSurprise" "TalkSurprise" 1
+call Scene.SetDefSounds "Dtritus" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "BankMaster"
+call Scene.AddCharActor "BankMaster" $CharType
+call MakeChar.CreateRelaxAction $CharType 0 "Talk" "Talk" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk0" "Talk0" 1
+call MakeChar.CreateRelaxAction $CharType 0 "Talk1" "Talk1" 1
+call Scene.SetDefSounds "BankMaster" $CharType
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Costume"
+call Scene.AddLocalActor "Costume" $CharType
+call Scene.CreateLocalAction $CharType 0 "Relax" "Relax" 1
+call Scene.CreateLocalAction $CharType 0 "Turn" "Turn" 0
+call Scene.CreateLocalAction $CharType 0 "Fall" "Fall" 0
+call Scrap.Set "DefInterpTime" 0.5
+call Scene.CreateLocalAction $CharType 0 "Falled" "Falled" 1
+call Scrap.Set "DefInterpTime" 0.5
+call Scene.CreateLocalAction $CharType 0 "FalledTrick" "FalledTrick" 1
+call Scrap.Set "DefInterpTime" 0.5
+call SAct.SetCls "DefAction" "Relax"
+run setdef "DefInterpTime"

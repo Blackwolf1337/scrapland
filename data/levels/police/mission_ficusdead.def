@@ -1,5 +1,5 @@
 # The functions of Mission_FicusDead in level police (the script levels/police/scripts/mission_ficusdead.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitFicusDead, Init, OnTalkToFicus, AfterDeepThroatMessageShown, DeepThroatSpeech.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Police.c): InitFicusDead, Init, OnTalkToFicus, AfterDeepThroatMessageShown, DeepThroatSpeech.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/police/mission_ficusdead.def replaces this file.
 section InitStatus LevelPath
 

@@ -1,4 +1,4 @@
 # The functions of MapExtraLifes in level temple (the script levels/temple/scripts/mapextralifes.py of data02.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: TakeExtraLife, SetRespawnTime, MoveLifes, SwitchAlarm, Init, GetMoney.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Temple.c): TakeExtraLife, SetRespawnTime, MoveLifes, SwitchAlarm, Init, GetMoney.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/temple/mapextralifes.def replaces this file.
 section InitStatus LevelPath
