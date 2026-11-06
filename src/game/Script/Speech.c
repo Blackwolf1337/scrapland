@@ -632,10 +632,11 @@ static PyObject *Speech_OnSpch(PyObject *self, PyObject *args) {
 
 /* OnChallengeSpch(LngSpeechText, LngSpeechAnswer, _AnsAnima_="TalkNPC", isMerc=0): the player's text as it is, the
  * challenge voice of the player */
-static PyObject *Speech_OnChallengeSpch(PyObject *self, PyObject *args) {
+static PyObject *Speech_OnChallengeSpch(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "LngSpeechText", "LngSpeechAnswer", "_AnsAnima_", "isMerc", NULL };
 	PyObject *text, *ans, *anima = NULL, *merc = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "OS|OO", &text, &ans, &anima, &merc)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OS|OO", names, &text, &ans, &anima, &merc)) {
 		return NULL;
 	}
 	PyObject *you = Sp_Lang(PyString_AsString(ans));
@@ -1652,10 +1653,11 @@ static PyObject *Speech_StdObjSpch(PyObject *self, PyObject *args) {
 }
 
 /* OnChallengeObjSpch(_ObjEntity, _ObjCharType, SpeechText, SpeechAnswer, action="Talk", defLoop="Talk", isMerc=0) */
-static PyObject *Speech_OnChallengeObjSpch(PyObject *self, PyObject *args) {
+static PyObject *Speech_OnChallengeObjSpch(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "_ObjEntity", "_ObjCharType", "SpeechText", "SpeechAnswer", "action", "defLoop", "isMerc", NULL };
 	PyObject *obj, *type, *text, *ans, *action = NULL, *defLoop = NULL, *merc = NULL, *own[2];
 	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOS|OOO", &obj, &type, &text, &ans, &action, &defLoop, &merc)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOOS|OOO", names, &obj, &type, &text, &ans, &action, &defLoop, &merc)) {
 		return NULL;
 	}
 	Sp_TalkDefaults(&action, &defLoop, own);
@@ -1743,7 +1745,7 @@ PyMethodDef g_SpeechMethods[] = {
 	{ "StdOnSpch", Speech_StdOnSpch, 1, NULL },
 	{ "CalculateSpeechTime", Speech_CalculateSpeechTime, 1, NULL },
 	{ "OnSpch", Speech_OnSpch, 1, NULL },
-	{ "OnChallengeSpch", Speech_OnChallengeSpch, 1, NULL },
+	{ "OnChallengeSpch", (PyCFunction)(void (*)(void))Speech_OnChallengeSpch, 3, NULL },
 	{ "OnSpeech", Speech_OnSpeech, 1, NULL },
 	{ "PlayerAnsEnd", Speech_PlayerAnsEnd, 1, NULL },
 	{ "PlayerAns", Speech_PlayerAns, 1, NULL },
@@ -1771,7 +1773,7 @@ PyMethodDef g_SpeechMethods[] = {
 	{ "StartObjectSpeech", Speech_StartObjectSpeech, 1, NULL },
 	{ "StdObjSpch", Speech_StdObjSpch, 1, NULL },
 	{ "OnObjSpch", Speech_OnObjSpch, 1, NULL },
-	{ "OnChallengeObjSpch", Speech_OnChallengeObjSpch, 1, NULL },
+	{ "OnChallengeObjSpch", (PyCFunction)(void (*)(void))Speech_OnChallengeObjSpch, 3, NULL },
 	{ "OnObjectSpeech", Speech_OnObjectSpeech, 1, NULL },
 	{ "ObjectAutoAnswer", Speech_ObjectAutoAnswer, 1, NULL },
 	{ "ObjectAutoAnswer2", Speech_ObjectAutoAnswer2, 1, NULL },
