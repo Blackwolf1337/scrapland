@@ -80,11 +80,11 @@ static PyObject *Phone_DefUse(PyObject *args, PyObject *(*use)(PyObject *, PyObj
 		return NULL;
 	}
 	PyObject *e = Script_Entity(chname);
-	PyObject *radar = e ? PyObject_GetAttrString(e, "RadarShow") : NULL;
+	PyObject *radar = e ? Script_GetAttr(e, "RadarShow") : NULL;
 	int c = radar ? Script_NumCmp(radar, 1) : -2;
 	Py_XDECREF(radar);
 	if (c != 0 && c != -2) {
-		radar = PyObject_GetAttrString(e, "RadarShow");
+		radar = Script_GetAttr(e, "RadarShow");
 		c = radar ? Script_NumCmp(radar, 2) : -2;
 		Py_XDECREF(radar);
 		if (c != 0 && c != -2) {
@@ -114,10 +114,10 @@ static PyObject *Phone_Mark(PyObject *chname) {
 	byte ok = path && Script_Try("SaveGame", "MarkWayPoint", "(OOO)", path, chname, chname);
 	Py_XDECREF(path);
 	PyObject *e = ok ? Script_Entity(chname) : NULL;
-	PyObject *cur = e ? PyObject_GetAttrString(e, "ArriOpt") : NULL;
+	PyObject *cur = e ? Script_GetAttr(e, "ArriOpt") : NULL;
 	PyObject *one = cur ? PyInt_FromLong(1) : NULL;
 	PyObject *next = one ? PyNumber_Add(cur, one) : NULL;
-	PyObject *n = next ? PyObject_GetAttrString(e, "ArrnOpt") : NULL;
+	PyObject *n = next ? Script_GetAttr(e, "ArrnOpt") : NULL;
 	ok = n && Script_HSet(e, "ArriOpt", PyNumber_Remainder(next, n));
 	Py_XDECREF(n);
 	Py_XDECREF(next);
@@ -322,7 +322,7 @@ static PyObject *PhoneCab_GetNearestPhoneCab(PyObject *self, PyObject *args) {
 	Py_XDECREF(name);
 	int t;
 	while ((t = Script_True(pc)) > 0) {
-		PyObject *pos = PyObject_GetAttrString(pc, "Pos");
+		PyObject *pos = Script_GetAttr(pc, "Pos");
 		PyObject *d = pos ? Script_Ask("SVec", "Sub", "(OO)", pos, usrPos) : NULL;
 		PyObject *newdist = d ? Script_Ask("SVec", "ModSqr", "(O)", d) : NULL;
 		Py_XDECREF(d);
@@ -341,7 +341,7 @@ static PyObject *PhoneCab_GetNearestPhoneCab(PyObject *self, PyObject *args) {
 			dist = Script_Ref(newdist);
 		}
 		Py_XDECREF(newdist);
-		PyObject *next = nearer >= 0 ? PyObject_GetAttrString(pc, "NextInList") : NULL;
+		PyObject *next = nearer >= 0 ? Script_GetAttr(pc, "NextInList") : NULL;
 		Py_DECREF(pc);
 		pc = Script_Entity(next);
 		Py_XDECREF(next);
@@ -436,10 +436,10 @@ static PyObject *PhoneCab_UseAudioCom(PyObject *self, PyObject *args) {
 		PyObject *text = Script_Keep(&r, Script_SPlus("Generics_StillPolice1_", foe));
 		ok = text && Script_Keep(&r, Script_Ask("Speech", "StartObjSpch", "(OOO)", e, text, foe));
 	} else if (t == 0) {
-		PyObject *radar = Script_Keep(&r, PyObject_GetAttrString(e, "RadarShow"));
+		PyObject *radar = Script_Keep(&r, Script_GetAttr(e, "RadarShow"));
 		int c = radar ? Script_NumCmp(radar, 1) : -2;
 		if (c != 0 && c != -2) {
-			radar = Script_Keep(&r, PyObject_GetAttrString(e, "RadarShow"));
+			radar = Script_Keep(&r, Script_GetAttr(e, "RadarShow"));
 			c = radar ? Script_NumCmp(radar, 2) : -2;
 		}
 		ok = c != -2 && (c != 0 || Script_Keep(&r, PhoneCab_RevengeSpeech(NULL, args)));
@@ -532,7 +532,7 @@ static PyObject *PhoneCab_Init(PyObject *self, PyObject *args) {
 		yang = d2 ? Script_Keep(&r, Script_Index(d2, 1)) : NULL;
 		a = yang ? Script_Keep(&r, Py_BuildValue("(OOO)", d0, d1, yang)) : NULL;
 		PyObject *ac = a ? Script_Keep(&r, PhoneCab_CreateAudioCom(NULL, a)) : NULL;
-		PyObject *pcname = ac ? Script_Keep(&r, PyObject_GetAttrString(pc, "Name")) : NULL;
+		PyObject *pcname = ac ? Script_Keep(&r, Script_GetAttr(pc, "Name")) : NULL;
 		byte ok = pcname && Script_HSet(ac, "LinkModel", Script_PlusS(Script_Ref(pcname), ",DC_JackCom")) && Phone_Set(ac, link);
 		Script_Done(&r, NULL);
 		if (!ok) {
@@ -552,7 +552,7 @@ static PyObject *PhoneCab_GetFree(PyObject *self, PyObject *args) {
 		return Script_Done(&r, NULL);
 	}
 	if (t) {
-		PyObject *pos = Script_Keep(&r, PyObject_GetAttrString(usr, "Pos"));
+		PyObject *pos = Script_Keep(&r, Script_GetAttr(usr, "Pos"));
 		PyObject *a = pos ? Script_Keep(&r, Py_BuildValue("(O)", pos)) : NULL;
 		return Script_Done(&r, a ? PhoneCab_GetNearestPhoneCab(NULL, a) : NULL);
 	}
@@ -583,7 +583,7 @@ static PyObject *PhoneCab_GetFree(PyObject *self, PyObject *args) {
 				}
 				i++;
 			} else {
-				PyObject *radar = Script_Keep(&r, PyObject_GetAttrString(res, "RadarShow"));
+				PyObject *radar = Script_Keep(&r, Script_GetAttr(res, "RadarShow"));
 				int c = radar ? Script_NumCmp(radar, 0) : -2;
 				if (c == -2) {
 					return Script_Done(&r, NULL);
@@ -592,7 +592,7 @@ static PyObject *PhoneCab_GetFree(PyObject *self, PyObject *args) {
 					return Script_Done(&r, Script_Ref(res));
 				}
 			}
-			PyObject *next = Script_Keep(&r, PyObject_GetAttrString(res, "NextInList"));
+			PyObject *next = Script_Keep(&r, Script_GetAttr(res, "NextInList"));
 			res = next ? Script_Keep(&r, Script_Entity(next)) : NULL;
 		}
 		if (t < 0) {
@@ -602,7 +602,7 @@ static PyObject *PhoneCab_GetFree(PyObject *self, PyObject *args) {
 			if (!t) {
 				break;
 			}
-			PyObject *radar = Script_Keep(&r, PyObject_GetAttrString(res, "RadarShow"));
+			PyObject *radar = Script_Keep(&r, Script_GetAttr(res, "RadarShow"));
 			int c = radar ? Script_NumCmp(radar, 0) : -2;
 			if (c == -2) {
 				return Script_Done(&r, NULL);

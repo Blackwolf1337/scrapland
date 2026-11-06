@@ -163,8 +163,8 @@ static PyObject *Split_CreateUserShip(PyObject *self, PyObject *args) {
 	PyObject *cname = K(Script_SPlus("Cam", K(Script_Repr(id))));
 	PyObject *cam = cname ? K(Script_Ask("Scrap", "CreateEntity", "(Oddds)", cname, 0.0, 0.0, 0.0, "FCam")) : NULL;
 	PyObject *vn = cam && Script_HSet(cam, "camPos", Script_Index(sp, 0)) && Script_HSet(cam, "camAng", Split_Ang(sp)) ?
-		K(PyObject_GetAttrString(v, "Name")) : NULL;
-	PyObject *cn = vn ? K(PyObject_GetAttrString(cam, "Name")) : NULL;
+		K(Script_GetAttr(v, "Name")) : NULL;
+	PyObject *cn = vn ? K(Script_GetAttr(cam, "Name")) : NULL;
 	return Script_Done(&r, cn && Script_Try("Vehicles", "SetActiveCam", "(OOO)", vn, cn, id) ? Py_ReturnNone() : NULL);
 }
 
@@ -897,7 +897,7 @@ static PyObject *Mode_Zone(const char *mod) {
 
 /* Scrap.Set(var, Flag.Name) */
 static byte Mode_WayToFlag(const char *mod, const char *var) {
-	PyObject *flag = Script_Global(mod, "Flag"), *name = flag ? PyObject_GetAttrString(flag, "Name") : NULL;
+	PyObject *flag = Script_Global(mod, "Flag"), *name = flag ? Script_GetAttr(flag, "Name") : NULL;
 	byte ok = name && Script_Try("Scrap", "Set", "(sO)", var, name);
 	Py_XDECREF(name);
 	Py_XDECREF(flag);
@@ -1149,7 +1149,7 @@ static PyObject *SPostman_OnDeathFunc(PyObject *self, PyObject *args) {
 		K(Script_Global("SPostman", "BattModel")) : NULL;
 	PyObject *e = model && Mode_FlagCall("SPostman", "SetModel", model) &&
 		Mode_FlagSet("SPostman", "OnTake", PyString_FromString("SPostman.TakeFlag")) ? K(Script_Entity(looser)) : NULL;
-	byte ok = e && Mode_FlagSet("SPostman", "Pos", PyObject_GetAttrString(e, "Pos")) &&
+	byte ok = e && Mode_FlagSet("SPostman", "Pos", Script_GetAttr(e, "Pos")) &&
 		Script_LaterIn(30, "SPostman", "BattonRepos", PyTuple_New(0), "BattonRepos");
 	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
 }
@@ -1305,7 +1305,7 @@ static PyObject *SRace_GetReSpawnPos(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "O", &v)) {
 		return NULL;
 	}
-	PyObject *pos = K(PyObject_GetAttrString(v, "Pos")), *ang = pos ? K(PyObject_GetAttrString(v, "Ang")) : NULL;
+	PyObject *pos = K(Script_GetAttr(v, "Pos")), *ang = pos ? K(Script_GetAttr(v, "Ang")) : NULL;
 	PyObject *a1 = ang ? K(Script_Index(ang, 1)) : NULL;
 	return Script_Done(&r, a1 ? Py_BuildValue("(OO)", pos, a1) : NULL);
 }

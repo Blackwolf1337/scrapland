@@ -115,12 +115,12 @@ static PyObject *Metro_SetUsrParams(PyObject *self, PyObject *args) {
 	}
 	PyObject *ply = Script_Keep(&r, Script_Entity(name));
 	PyObject *speeds = ply && Script_HSet(ply, "UsrControl", PyInt_FromLong(-1)) ? Script_Keep(&r, Script_Global("Metro", "WalkCharSpeed")) : NULL;
-	PyObject *act = speeds ? Script_Keep(&r, PyObject_GetAttrString(ply, "ActCtrl")) : NULL;
+	PyObject *act = speeds ? Script_Keep(&r, Script_GetAttr(ply, "ActCtrl")) : NULL;
 	int t = Script_True(act ? Script_Keep(&r, Script_Method(speeds, "has_key", "(O)", act)) : NULL);
 	PyObject *walk = NULL;
 	if (t > 0) {
 		speeds = Script_Keep(&r, Script_Global("Metro", "WalkCharSpeed"));
-		act = speeds ? Script_Keep(&r, PyObject_GetAttrString(ply, "ActCtrl")) : NULL;
+		act = speeds ? Script_Keep(&r, Script_GetAttr(ply, "ActCtrl")) : NULL;
 		walk = act ? PyObject_GetItem(speeds, act) : NULL;
 	} else if (t == 0) {
 		walk = PyFloat_FromDouble(0.0);
@@ -130,7 +130,7 @@ static PyObject *Metro_SetUsrParams(PyObject *self, PyObject *args) {
 	}
 	t = ang ? Script_True(ang) : 0;
 	if (t > 0) {
-		PyObject *cur = Script_Keep(&r, PyObject_GetAttrString(ply, "Ang"));
+		PyObject *cur = Script_Keep(&r, Script_GetAttr(ply, "Ang"));
 		PyObject *y = cur ? Script_Keep(&r, Script_Index(cur, 1)) : NULL;
 		PyObject *ny = y ? Script_Keep(&r, PyNumber_Add(y, ang)) : NULL;
 		t = ny && Script_HSet(ply, "Ang", Py_BuildValue("(iOi)", 0, ny, 0)) ? 1 : -1;
@@ -180,14 +180,14 @@ static PyObject *Metro_UseMetro(PyObject *self, PyObject *args) {
 		int hide = Script_True(walk);
 		Py_XDECREF(walk);
 		if (hide > 0) {
-			PyObject *name = PyObject_GetAttrString(e, "Name");
+			PyObject *name = Script_GetAttr(e, "Name");
 			PyObject *player = name ? Script_Global("Metro", "PlayerName") : NULL;
 			hide = player ? Script_Eq(name, player) : -1;
 			hide = hide < 0 ? -1 : !hide;
 			Py_XDECREF(player);
 			Py_XDECREF(name);
 		}
-		PyObject *next = hide >= 0 && (hide == 0 || Script_HSet(e, "Active", PyInt_FromLong(0))) ? PyObject_GetAttrString(e, "NextInSlot") : NULL;
+		PyObject *next = hide >= 0 && (hide == 0 || Script_HSet(e, "Active", PyInt_FromLong(0))) ? Script_GetAttr(e, "NextInSlot") : NULL;
 		Py_DECREF(e);
 		e = Script_Entity(next);
 		Py_XDECREF(next);

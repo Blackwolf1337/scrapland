@@ -85,7 +85,7 @@ static PyObject *Chat_IdText(int id) {
 			Py_XDECREF(r);
 		}
 		if (car) {
-			PyObject *d = car > 0 ? PyObject_GetAttrString(v, "Descriptor") : NULL;
+			PyObject *d = car > 0 ? Script_GetAttr(v, "Descriptor") : NULL;
 			Py_DECREF(v);
 			return d;
 		}

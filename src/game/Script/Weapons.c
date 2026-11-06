@@ -187,7 +187,7 @@ static PyObject *Weap_Create(const char *mod, PyObject *args, const weapStep_t *
 			ok = Script_LaterIn(0.2, mod, "ActivateHitType", Py_BuildValue("(Os)", l, s->s), NULL);
 			break;
 		case WS_DETONATE: {
-			PyObject *n = K(PyObject_GetAttrString(l, "Name"));
+			PyObject *n = K(Script_GetAttr(l, "Name"));
 			ok = n && Script_LaterIn(0.2, mod, "SetUpToDetonate", Py_BuildValue("(O)", n), NULL);
 			break;
 		}
@@ -243,9 +243,9 @@ static PyObject *Weap_SetUpStart(PyObject *args) {
 	if (!PyArg_ParseTuple(args, "O", &name)) {
 		return NULL;
 	}
-	PyObject *l = K(Script_Entity(name)), *parent = l ? K(PyObject_GetAttrString(l, "Parent")) : NULL;
+	PyObject *l = K(Script_Entity(name)), *parent = l ? K(Script_GetAttr(l, "Parent")) : NULL;
 	PyObject *ent = parent ? K(Script_Entity(parent)) : NULL;
-	if (!ent || !Script_HSet(l, "nSwarm", PyObject_GetAttrString(l, "NetnSwarm")) ||
+	if (!ent || !Script_HSet(l, "nSwarm", Script_GetAttr(l, "NetnSwarm")) ||
 		!Script_HSet(l, "Radius", PyInt_FromLong(100))) {
 		FAIL();
 	}
@@ -365,9 +365,9 @@ static PyObject *Cloud_SetUpCloud(PyObject *self, PyObject *args) {
 	scriptRefs_t r = { .n = 0 };
 	(void)self;
 	PyObject *l = K(Weap_SetUpStart(args));
-	PyObject *n = l ? K(PyObject_GetAttrString(l, "nSwarm")) : NULL, *six = n ? K(PyInt_FromLong(600)) : NULL;
+	PyObject *n = l ? K(Script_GetAttr(l, "nSwarm")) : NULL, *six = n ? K(PyInt_FromLong(600)) : NULL;
 	if (!six || !Script_HSet(l, "TopRadius", PyNumber_Multiply(six, n)) || !Script_HSet(l, "RadiusGrow", PyInt_FromLong(1500)) ||
-		!K(PyObject_GetAttrString(l, "Pos")) || !K(Script_Method(l, "SetFX", "(s)", "Cloud"))) {
+		!K(Script_GetAttr(l, "Pos")) || !K(Script_Method(l, "SetFX", "(s)", "Cloud"))) {
 		FAIL();
 	}
 	return Script_Done(&r, Script_Ref(l));
@@ -394,11 +394,11 @@ static PyObject *EMI_SetUpEMI(PyObject *self, PyObject *args) {
 	scriptRefs_t r = { .n = 0 };
 	(void)self;
 	PyObject *l = K(Weap_SetUpStart(args));
-	PyObject *radius = l ? K(Script_Global("EMI", "Radius")) : NULL, *n = radius ? K(PyObject_GetAttrString(l, "nSwarm")) : NULL;
+	PyObject *radius = l ? K(Script_Global("EMI", "Radius")) : NULL, *n = radius ? K(Script_GetAttr(l, "nSwarm")) : NULL;
 	if (!n || !Script_HSet(l, "TopRadius", PyNumber_Multiply(radius, n))) {
 		FAIL();
 	}
-	PyObject *top = K(PyObject_GetAttrString(l, "TopRadius")), *three = top ? K(PyInt_FromLong(3)) : NULL;
+	PyObject *top = K(Script_GetAttr(l, "TopRadius")), *three = top ? K(PyInt_FromLong(3)) : NULL;
 	if (!three || !Script_HSet(l, "RadiusGrow", PyNumber_Divide(top, three)) ||
 		!K(Script_Method(l, "SetFX", "(s)", "EMI"))) {
 		FAIL();
@@ -430,11 +430,11 @@ static PyObject *Sonic_SonicHit(PyObject *self, PyObject *args) {
 	if (live <= 0) {
 		return Script_Done(&r, live < 0 ? NULL : Py_ReturnNone());
 	}
-	PyObject *pos = K(PyObject_GetAttrString(v, "Pos")), *at = pos ? K(Script_Global("Sonic", "SwarmPos")) : NULL;
+	PyObject *pos = K(Script_GetAttr(v, "Pos")), *at = pos ? K(Script_Global("Sonic", "SwarmPos")) : NULL;
 	PyObject *vec = at ? K(Script_Ask("SVec", "Sub", "(OO)", pos, at)) : NULL;
 	PyObject *xr = vec ? K(Script_Global("Sonic", "XP_Radius")) : NULL, *len = xr ? K(Script_Ask("SVec", "Mod", "(O)", vec)) : NULL;
 	PyObject *d = len ? K(PyNumber_Subtract(xr, len)) : NULL, *mod = d ? K(PyNumber_Divide(d, xr)) : NULL;
-	PyObject *pow = mod ? K(Script_Global("Sonic", "SwarmPow")) : NULL, *mass = pow ? K(PyObject_GetAttrString(v, "Mass")) : NULL;
+	PyObject *pow = mod ? K(Script_Global("Sonic", "SwarmPow")) : NULL, *mass = pow ? K(Script_GetAttr(v, "Mass")) : NULL;
 	PyObject *k = mass ? K(PyInt_FromLong(1000)) : NULL, *tons = k ? K(PyNumber_Divide(mass, k)) : NULL;
 	PyObject *add = tons ? K(PyNumber_Divide(pow, tons)) : NULL, *speed = add ? K(PyNumber_Multiply(mod, add)) : NULL;
 	int low = speed ? Script_NumCmp(speed, 700) : -2;
@@ -444,7 +444,7 @@ static PyObject *Sonic_SonicHit(PyObject *self, PyObject *args) {
 	if (low < 0) {
 		speed = K(PyInt_FromLong(700));
 	}
-	PyObject *vel = K(PyObject_GetAttrString(v, "Vel")), *norm = vel ? K(Script_Ask("SVec", "Norm", "(O)", vec)) : NULL;
+	PyObject *vel = K(Script_GetAttr(v, "Vel")), *norm = vel ? K(Script_Ask("SVec", "Norm", "(O)", vec)) : NULL;
 	PyObject *push = norm ? K(Script_Ask("SVec", "Prod", "(OO)", norm, speed)) : NULL;
 	if (!push || !Script_HSet(v, "Vel", Script_Ask("SVec", "Add", "(OO)", vel, push))) {
 		FAIL();
@@ -465,7 +465,7 @@ static PyObject *Sonic_OnHit(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "OOO", &swarm, &winner, &looser)) {
 		return NULL;
 	}
-	PyObject *s = K(Script_Entity(swarm)), *orig = s ? K(PyObject_GetAttrString(s, "Pos")) : NULL;
+	PyObject *s = K(Script_Entity(swarm)), *orig = s ? K(Script_GetAttr(s, "Pos")) : NULL;
 	if (!orig || !Script_Try("SSound", "PlaySound", "(Osd)", orig, "SonicBoom", 1.0) ||
 		!Script_Try("Scrap", "SetCallFunc", "(s)", "!SonicXplde")) {
 		FAIL();
@@ -499,7 +499,7 @@ static PyObject *Sonic_OnServerHit(PyObject *self, PyObject *args) {
 		byte ok = a && b[0] && b[2] && b[4] && b[6] && Script_Print(&a, 1) && Script_Print(b, 7);
 		return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
 	}
-	PyObject *pos = K(PyObject_GetAttrString(s, "Pos"));
+	PyObject *pos = K(Script_GetAttr(s, "Pos"));
 	if (!pos || !Script_SetGlobal("Sonic", "SwarmPos", Script_Ref(pos))) {
 		FAIL();
 	}
@@ -525,7 +525,7 @@ static PyObject *Sonic_OnDeath(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "OO", &looser, &winner)) {
 		return NULL;
 	}
-	PyObject *s = K(Script_Entity(looser)), *active = s ? K(PyObject_GetAttrString(s, "Active")) : NULL;
+	PyObject *s = K(Script_Entity(looser)), *active = s ? K(Script_GetAttr(s, "Active")) : NULL;
 	int on = active ? Script_True(active) : -1;
 	if (on < 0) {
 		FAIL();

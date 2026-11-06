@@ -215,7 +215,7 @@ static byte Traffic_RailDeath(PyObject *killer) {
 	PyObject *u = Script_Usr();
 	int hit = Script_True(u);
 	if (hit > 0) {
-		PyObject *name = PyObject_GetAttrString(u, "Name");
+		PyObject *name = Script_GetAttr(u, "Name");
 		hit = Script_Eq(name, killer);
 		Py_XDECREF(name);
 	}
@@ -246,7 +246,7 @@ static PyObject *Traffic_TrackDeath(PyObject *args, const char *ships, const cha
 	PyObject *ship = Script_Keep(&r, Traffic_RandomShip(ships));
 	PyObject *o1 = ship ? Script_Keep(&r, Script_Ask("VehiclesNPC", "MakeAI", "(Osii)", ship, list, 0, 0)) : NULL;
 	PyObject *name = o1 && Script_HSet(o1, "EntityList", PyString_FromString(list)) &&
-		Script_HSet(o1, "Traf_Type", PyString_FromString(type)) ? Script_Keep(&r, PyObject_GetAttrString(o1, "Name")) : NULL;
+		Script_HSet(o1, "Traf_Type", PyString_FromString(type)) ? Script_Keep(&r, Script_GetAttr(o1, "Name")) : NULL;
 	PyObject *hook = name && Script_Try("SAI", "SetStateVehicle", "(iO)", 4, name) ?
 		Script_Keep(&r, Script_Global("Traffic", "onTrackCreate")) : NULL;
 	byte ok = hook && Script_Keep(&r, Script_Invoke(hook, Py_BuildValue("(O)", o1))) && Traffic_RailDeath(p2) &&
@@ -607,7 +607,7 @@ static PyObject *InPolice_Include(PyObject *self, PyObject *args) {
 	}
 	PyObject *res = Script_Keep(&r, Script_Attr("CharsNPC", "CharRes"));
 	PyObject *ctr = res ? Script_Keep(&r, PyObject_GetItem(res, name)) : NULL;
-	PyObject *act = ctr ? Script_Keep(&r, PyObject_GetAttrString(ctr, "ActCtrl")) : NULL;
+	PyObject *act = ctr ? Script_Keep(&r, Script_GetAttr(ctr, "ActCtrl")) : NULL;
 	if (!act) {
 		return Script_Done(&r, NULL);
 	}

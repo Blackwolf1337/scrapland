@@ -87,7 +87,7 @@ static PyObject *Veh_Att(PyObject *radius, const char *att, const char *factor) 
 static byte Veh_Boom(PyObject *pos, PyObject *vel, PyObject *e, const char *var, double lo, double hi, long div, double tlo,
 	double thi, byte big, PyObject *soundPos, const char *sound) {
 	scriptRefs_t r = { .n = 0 };
-	PyObject *rnd = K(Veh_Rand(lo, hi)), *radius = K(PyObject_GetAttrString(e, (char *)var));
+	PyObject *rnd = K(Veh_Rand(lo, hi)), *radius = K(Script_GetAttr(e, var));
 	PyObject *part = K(Veh_OpN(PyNumber_Divide, radius, div)), *sum = K(Veh_Op(PyNumber_Add, rnd, part));
 	PyObject *f = sum ? K(Veh_G("ShipExplosionScaleFactor")) : NULL, *size = K(Veh_Op(PyNumber_Multiply, sum, f));
 	PyObject *t = size ? K(Veh_Rand(tlo, thi)) : NULL;
@@ -95,11 +95,11 @@ static byte Veh_Boom(PyObject *pos, PyObject *vel, PyObject *e, const char *var,
 	if (!n || !Script_Try("SFX", "ShipExplosion", "(OOOOOi)", pos, vel, size, t, n, 0)) {
 		BAD();
 	}
-	PyObject *at = soundPos ? soundPos : K(PyObject_GetAttrString(e, "Pos"));
+	PyObject *at = soundPos ? soundPos : K(Script_GetAttr(e, "Pos"));
 	PyObject *vol = at ? K(Veh_G("ShipExplosionSoundVol")) : NULL;
-	PyObject *r1 = vol ? K(PyObject_GetAttrString(e, (char *)var)) : NULL;
+	PyObject *r1 = vol ? K(Script_GetAttr(e, var)) : NULL;
 	PyObject *ini = r1 ? K(Veh_Att(r1, "ShipExplosionSoundAttIni", "ShipExplosionSoundAttIniRadiusFactor")) : NULL;
-	PyObject *r2 = ini ? K(PyObject_GetAttrString(e, (char *)var)) : NULL;
+	PyObject *r2 = ini ? K(Script_GetAttr(e, var)) : NULL;
 	PyObject *end = r2 ? K(Veh_Att(r2, "ShipExplosionSoundAttEnd", "ShipExplosionSoundAttEndRadiusFactor")) : NULL;
 	byte ok = end && Script_Try("SSound", "PlaySound", "(OsOOOi)", at, sound, vol, ini, end, 0);
 	Script_Done(&r, NULL);
@@ -183,7 +183,7 @@ static PyObject *Vehicles_ServerMotorHit(PyObject *self, PyObject *args) {
 	if (Script_Is(looser, "")) {
 		return Script_Done(&r, Py_ReturnNone());
 	}
-	PyObject *ls = K(Script_Entity(looser)), *life = ls ? K(PyObject_GetAttrString(ls, "Life")) : NULL;
+	PyObject *ls = K(Script_Entity(looser)), *life = ls ? K(Script_GetAttr(ls, "Life")) : NULL;
 	if (!life || !Script_HSet(ls, "Life", Veh_OpN(PyNumber_Subtract, life, 80)) ||
 		(Script_Is(winner, "") && !Script_HSet(ls, "Hit_Target", Script_Ref(looser)))) {
 		FAIL();
@@ -194,9 +194,9 @@ static PyObject *Vehicles_ServerMotorHit(PyObject *self, PyObject *args) {
 /* ls.Vel = ls.Vel[i] + msl.Vel[i]*Speed1 for the three axes, Speed1 = 10000/ls.Mass */
 static byte Veh_Push(PyObject *ls, PyObject *msl) {
 	scriptRefs_t r = { .n = 0 };
-	PyObject *mass = K(PyObject_GetAttrString(ls, "Mass")), *k = mass ? K(PyInt_FromLong(10000)) : NULL;
+	PyObject *mass = K(Script_GetAttr(ls, "Mass")), *k = mass ? K(PyInt_FromLong(10000)) : NULL;
 	PyObject *speed = K(Veh_Op(PyNumber_Divide, k, mass));
-	PyObject *lv = speed ? K(PyObject_GetAttrString(ls, "Vel")) : NULL, *mv = lv ? K(PyObject_GetAttrString(msl, "Vel")) : NULL;
+	PyObject *lv = speed ? K(Script_GetAttr(ls, "Vel")) : NULL, *mv = lv ? K(Script_GetAttr(msl, "Vel")) : NULL;
 	PyObject *vel = mv ? K(PyTuple_New(3)) : NULL;
 	for (int i = 0; vel && i < 3; i++) {
 		PyObject *a = K(Script_Index(lv, i)), *b = a ? K(Script_Index(mv, i)) : NULL;
@@ -225,24 +225,24 @@ static PyObject *Vehicles_MotorHit(PyObject *self, PyObject *args) {
 	}
 	if (!Script_Is(looser, "")) {
 		PyObject *ls = K(Script_Entity(looser));
-		at = ls ? K(Veh_XYZ(K(PyObject_GetAttrString(ls, "Pos")))) : NULL;
-		if (!at || !K(PyObject_GetAttrString(ls, "VRadius")) || !Veh_Push(ls, msl)) {
+		at = ls ? K(Veh_XYZ(K(Script_GetAttr(ls, "Pos")))) : NULL;
+		if (!at || !K(Script_GetAttr(ls, "VRadius")) || !Veh_Push(ls, msl)) {
 			FAIL();
 		}
 	} else {
-		at = K(Veh_XYZ(K(PyObject_GetAttrString(msl, "Pos"))));
-		if (!at || !K(PyObject_GetAttrString(msl, "Radius"))) {
+		at = K(Veh_XYZ(K(Script_GetAttr(msl, "Pos"))));
+		if (!at || !K(Script_GetAttr(msl, "Radius"))) {
 			FAIL();
 		}
 	}
-	PyObject *rnd = K(Veh_Rand(0.1, 0.2)), *radius = K(PyObject_GetAttrString(msl, "Radius"));
+	PyObject *rnd = K(Veh_Rand(0.1, 0.2)), *radius = K(Script_GetAttr(msl, "Radius"));
 	PyObject *part = K(Veh_OpN(PyNumber_Divide, radius, 80)), *sum = K(Veh_Op(PyNumber_Add, rnd, part));
 	PyObject *f = sum ? K(Veh_G("MotorExplosionScaleFactor")) : NULL, *size = K(Veh_Op(PyNumber_Multiply, sum, f));
 	PyObject *t = size ? K(Veh_Rand(0.8, 1.0)) : NULL;
 	if (!t || !Script_Try("SFX", "ShipExplosion", "(O(iii)OOii)", at, 0, 0, 0, size, t, 0, 0)) {
 		FAIL();
 	}
-	PyObject *pos = K(PyObject_GetAttrString(msl, "Pos")), *vol = pos ? K(Veh_G("MotorExplosionSoundVol")) : NULL;
+	PyObject *pos = K(Script_GetAttr(msl, "Pos")), *vol = pos ? K(Veh_G("MotorExplosionSoundVol")) : NULL;
 	PyObject *ini = vol ? K(Veh_G("MotorExplosionSoundAttIni")) : NULL, *end = ini ? K(Veh_G("MotorExplosionSoundAttEnd")) : NULL;
 	if (!end || !Script_Try("SSound", "PlaySound", "(OsOOOi)", pos, "SoloMotorBoom", vol, ini, end, 0)) {
 		FAIL();
@@ -294,8 +294,8 @@ static PyObject *Vehicles_DumbShipHit(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "OOO", &missile, &winner, &looser) || !Script_Import((const char *const[]){ "SVec", NULL })) {
 		return NULL;
 	}
-	PyObject *msl = K(Script_Entity(missile)), *pos = msl ? K(PyObject_GetAttrString(msl, "Pos")) : NULL;
-	PyObject *vel = pos ? K(PyObject_GetAttrString(msl, "Vel")) : NULL, *lim = vel ? K(Veh_Limit(vel)) : NULL;
+	PyObject *msl = K(Script_Entity(missile)), *pos = msl ? K(Script_GetAttr(msl, "Pos")) : NULL;
+	PyObject *vel = pos ? K(Script_GetAttr(msl, "Vel")) : NULL, *lim = vel ? K(Veh_Limit(vel)) : NULL;
 	PyObject *at = lim ? K(Veh_Jitter(pos)) : NULL;
 	if (!at || !Veh_Boom(at, lim, msl, "Radius", 2.8, 3.0, 250, 1.8, 2.1, 1, at, "ShipXplode")) {
 		FAIL();
@@ -335,8 +335,8 @@ static byte Veh_Hull(PyObject *v, PyObject *name, PyObject *pos, PyObject *vel, 
 		file = K(Veh_ModelFile("Models/Vehicles/Ships/", model));
 	}
 	if (!file || !K(Script_Method(l, "SetModel", "(O)", file)) ||
-		!Script_HSet(l, "Radius", PyObject_GetAttrString(v, "WRadius")) ||
-		!Script_HSet(l, "TopRadius", PyObject_GetAttrString(v, "WRadius")) || !Script_HSet(l, "RadiusGrow", PyInt_FromLong(0)) ||
+		!Script_HSet(l, "Radius", Script_GetAttr(v, "WRadius")) ||
+		!Script_HSet(l, "TopRadius", Script_GetAttr(v, "WRadius")) || !Script_HSet(l, "RadiusGrow", PyInt_FromLong(0)) ||
 		!Script_HSet(l, "OnHit", PyString_FromString("Vehicles.DumbShipHit")) || !K(Script_Method(l, "SetFX", "(s)", "DumbMotor")) ||
 		!Veh_MotorLoop(l)) {
 		BAD();
@@ -356,9 +356,9 @@ static PyObject *Vehicles_OnClientDeath(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	PyObject *v = K(Script_Entity(looser)), *usr = v ? K(Script_Usr()) : NULL;
-	PyObject *pos = usr ? K(PyObject_GetAttrString(v, "Pos")) : NULL, *vel = pos ? K(PyObject_GetAttrString(v, "Vel")) : NULL;
-	PyObject *ang = vel ? K(PyObject_GetAttrString(v, "Ang")) : NULL, *speed = ang ? K(PyObject_GetAttrString(v, "Speed")) : NULL;
-	PyObject *model = speed ? K(PyObject_GetAttrString(v, "Model")) : NULL, *lim = model ? K(Veh_Limit(vel)) : NULL;
+	PyObject *pos = usr ? K(Script_GetAttr(v, "Pos")) : NULL, *vel = pos ? K(Script_GetAttr(v, "Vel")) : NULL;
+	PyObject *ang = vel ? K(Script_GetAttr(v, "Ang")) : NULL, *speed = ang ? K(Script_GetAttr(v, "Speed")) : NULL;
+	PyObject *model = speed ? K(Script_GetAttr(v, "Model")) : NULL, *lim = model ? K(Veh_Limit(vel)) : NULL;
 	if (!lim) {
 		FAIL();
 	}
@@ -370,7 +370,7 @@ static PyObject *Vehicles_OnClientDeath(PyObject *self, PyObject *args) {
 		isusr = isusr < 0 ? -1 : !isusr;
 	}
 	if (isusr > 0) {
-		PyObject *a = K(PyObject_GetAttrString(usr, "Name")), *b = a ? K(PyObject_GetAttrString(v, "Name")) : NULL;
+		PyObject *a = K(Script_GetAttr(usr, "Name")), *b = a ? K(Script_GetAttr(v, "Name")) : NULL;
 		isusr = b ? Script_Eq(a, b) : -1;
 	}
 	if (isusr < 0) {
@@ -421,7 +421,7 @@ static PyObject *Vehicles_GetCoin(PyObject *self, PyObject *args) {
 	PyObject *v = K(Script_Entity(name));
 	int live = v ? Script_True(v) : -1;
 	if (live > 0) {
-		PyObject *active = K(PyObject_GetAttrString(v, "Active"));
+		PyObject *active = K(Script_GetAttr(v, "Active"));
 		live = active ? Script_True(active) : -1;
 	}
 	if (live <= 0) {
@@ -467,7 +467,7 @@ static byte Veh_LosePlayerShip(void) {
 		BAD();
 	}
 	Script_SetVar("Parking", "PlayerShip", Script_Ref(Py_None));
-	PyObject *spt = K(Script_Attr("Sputnik", "spt")), *at = spt ? K(PyObject_GetAttrString(spt, "Pos")) : NULL;
+	PyObject *spt = K(Script_Attr("Sputnik", "spt")), *at = spt ? K(Script_GetAttr(spt, "Pos")) : NULL;
 	ship = at && Script_Try("Parking", "CreatePlayerShip", "(O)", at) ? K(Script_Attr("Parking", "PlayerShip")) : NULL;
 	PyObject *plate = ship && Script_HSet(ship, "Active", PyInt_FromLong(0)) ? K(Script_Attr("Parking", "DtritusPlate")) : NULL;
 	byte ok = plate && Script_HSet(plate, "Active", PyInt_FromLong(0));
@@ -481,7 +481,7 @@ static byte Veh_CoinForAttacker(PyObject *v, PyObject *winner) {
 	PyObject *attacker = K(Script_Entity(winner));
 	int is = attacker ? Script_True(attacker) : -1;
 	if (is > 0) {
-		PyObject *list = K(PyObject_GetAttrString(attacker, "EntityList"));
+		PyObject *list = K(Script_GetAttr(attacker, "EntityList"));
 		is = list ? Script_Is(list, "FightingTraffic") : -1;
 	}
 	if (is <= 0) {
@@ -489,7 +489,7 @@ static byte Veh_CoinForAttacker(PyObject *v, PyObject *winner) {
 		return is == 0;
 	}
 	PyObject *xyz[3];
-	PyObject *pos = Script_Import((const char *const[]){ "MisItems", NULL }) ? K(PyObject_GetAttrString(v, "Pos")) : NULL;
+	PyObject *pos = Script_Import((const char *const[]){ "MisItems", NULL }) ? K(Script_GetAttr(v, "Pos")) : NULL;
 	if (!pos || !Script_Unpack(pos, 3, xyz)) {
 		BAD();
 	}
@@ -502,7 +502,7 @@ static byte Veh_CoinForAttacker(PyObject *v, PyObject *winner) {
 	if (high >= 0) {
 		PyObject *e = K(Script_Entity(winner));
 		int live = e ? Script_True(e) : -1;
-		PyObject *epos = live > 0 ? K(PyObject_GetAttrString(e, "Pos")) : NULL;
+		PyObject *epos = live > 0 ? K(Script_GetAttr(e, "Pos")) : NULL;
 		if (live < 0 || (live > 0 && !(epos && (xyz[1] = K(Script_Index(epos, 1)))))) {
 			BAD();
 		}
@@ -526,15 +526,15 @@ static byte Veh_FreeHunters(PyObject *looser, PyObject *winner) {
 			Script_Done(&r, NULL);
 			return live == 0;
 		}
-		PyObject *next = K(PyObject_GetAttrString(e, "NextInList")), *ename = next ? K(PyObject_GetAttrString(e, "Name")) : NULL;
+		PyObject *next = K(Script_GetAttr(e, "NextInList")), *ename = next ? K(Script_GetAttr(e, "Name")) : NULL;
 		int other = ename ? Script_Eq(ename, winner) : -1;
 		other = other < 0 ? -1 : !other;
 		if (other > 0) {
-			PyObject *target = K(PyObject_GetAttrString(e, "AI_Target"));
+			PyObject *target = K(Script_GetAttr(e, "AI_Target"));
 			other = target ? Script_Eq(target, looser) : -1;
 		}
 		if (other < 0 || (other && (!Script_HSet(e, "EntityList", PyString_FromString("Traffic")) ||
-			!(ename = K(PyObject_GetAttrString(e, "Name"))) || !Script_Try("SAI", "SetStateVehicle", "(iO)", 3, ename)))) {
+			!(ename = K(Script_GetAttr(e, "Name"))) || !Script_Try("SAI", "SetStateVehicle", "(iO)", 3, ename)))) {
 			BAD();
 		}
 		e = Script_Entity(next);
@@ -557,14 +557,14 @@ static byte Veh_Taunt(PyObject *v, PyObject *winner) {
 	PyObject *usr = K(Script_Usr());
 	int mine = usr ? Script_True(usr) : -1;
 	if (mine > 0) {
-		PyObject *n = K(PyObject_GetAttrString(usr, "Name"));
+		PyObject *n = K(Script_GetAttr(usr, "Name"));
 		mine = n ? Script_Eq(winner, n) : -1;
 	}
 	if (mine <= 0) {
 		Script_Done(&r, NULL);
 		return mine == 0;
 	}
-	PyObject *mpil = K(PyObject_GetAttrString(v, "MPil0")), *pilot = mpil ? K(PySequence_GetSlice(mpil, 2, 0x7fffffff)) : NULL;
+	PyObject *mpil = K(Script_GetAttr(v, "MPil0")), *pilot = mpil ? K(PySequence_GetSlice(mpil, 2, 0x7fffffff)) : NULL;
 	if (!pilot) {
 		BAD();
 	}
@@ -604,7 +604,7 @@ static byte Veh_DeathSingle(PyObject *v, PyObject *looser, PyObject *winner) {
 	if (same < 0 || (same && (!Script_Try("Scrap", "Set", "(si)", "RemainTalkTime", 0) || !Script_Try("Speech", "AbortSpeech", "()")))) {
 		BAD();
 	}
-	PyObject *list = K(PyObject_GetAttrString(v, "EntityList"));
+	PyObject *list = K(Script_GetAttr(v, "EntityList"));
 	if (!list) {
 		BAD();
 	}
@@ -620,8 +620,8 @@ static byte Veh_DeathSingle(PyObject *v, PyObject *looser, PyObject *winner) {
 		!Script_Try("MisItems", "OnVehicleDeat", "(O)", v)))) {
 		BAD();
 	}
-	PyObject *ship = K(Script_Attr("Parking", "PlayerShip")), *sname = ship ? K(PyObject_GetAttrString(ship, "Name")) : NULL;
-	PyObject *vname = sname ? K(PyObject_GetAttrString(v, "Name")) : NULL;
+	PyObject *ship = K(Script_Attr("Parking", "PlayerShip")), *sname = ship ? K(Script_GetAttr(ship, "Name")) : NULL;
+	PyObject *vname = sname ? K(Script_GetAttr(v, "Name")) : NULL;
 	int mine = vname ? Script_Eq(sname, vname) : -1;
 	if (mine > 0) {
 		PyObject *del = K(Veh_G("DelPlayerShipOnDeath"));
@@ -639,7 +639,7 @@ static byte Veh_Motors(PyObject *v) {
 		scriptRefs_t r = { .n = 0 };
 		char var[0x10];
 		Str_Printf(var, sizeof(var), "NEng%d", k);
-		PyObject *num = K(PyObject_GetAttrString(v, var));
+		PyObject *num = K(Script_GetAttr(v, var));
 		int any = num ? Script_NumCmp(num, 0) : -2;
 		if (any == -2) {
 			BAD();
@@ -649,7 +649,7 @@ static byte Veh_Motors(PyObject *v) {
 			continue;
 		}
 		Str_Printf(var, sizeof(var), "MEng%d", k);
-		PyObject *model = K(PyObject_GetAttrString(v, var));
+		PyObject *model = K(Script_GetAttr(v, var));
 		long count;
 		if (!model || !Script_Range(num, &count)) {
 			BAD();
@@ -662,9 +662,9 @@ static byte Veh_Motors(PyObject *v) {
 				BAD();
 			}
 			Str_Printf(var, sizeof(var), "PEng%d%c", k, (int)('A' + i));
-			PyObject *pos = Script_Keep(&q, PyObject_GetAttrString(v, var));
+			PyObject *pos = Script_Keep(&q, Script_GetAttr(v, var));
 			Str_Printf(var, sizeof(var), "AEng%d%c", k, (int)('A' + i));
-			PyObject *ang = pos ? Script_Keep(&q, PyObject_GetAttrString(v, var)) : NULL;
+			PyObject *ang = pos ? Script_Keep(&q, Script_GetAttr(v, var)) : NULL;
 			PyObject *oname = ang ? Script_Keep(&q, Script_Ask("SNet", "GetObjName", "()")) : NULL;
 			PyObject *l = oname ? Script_Keep(&q, Veh_Call("CreateDumbMotor", Py_BuildValue("(OOOO)", oname, pos, ang, model))) : NULL;
 			PyObject *off = l && Script_HSet(l, "OnHit", PyString_FromString("Vehicles.ServerMotorHit")) &&
@@ -673,7 +673,7 @@ static byte Veh_Motors(PyObject *v) {
 			PyObject *lname = NULL;
 			byte ok = offline >= 0 && Script_HSet(l, "LifeTime", offline ? Veh_Rand(2.2, 5.2) : Veh_Rand(4.0, 4.5)) &&
 				Script_LaterIn(0.3, "Vehicles", "ActivateHitType", Py_BuildValue("(Os)", l, "Hit"), NULL) &&
-				(lname = Script_Keep(&q, PyObject_GetAttrString(l, "Name"))) &&
+				(lname = Script_Keep(&q, Script_GetAttr(l, "Name"))) &&
 				Script_Keep(&q, Veh_Call("SetUpDumbMotor", Py_BuildValue("(OO)", lname, model)));
 			Script_Done(&q, NULL);
 			if (!ok) {
@@ -695,8 +695,8 @@ static PyObject *Vehicles_OnDeath(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	PyObject *v = K(Script_Entity(looser));
-	if (!v || !K(PyObject_GetAttrString(v, "Pos")) || !K(PyObject_GetAttrString(v, "Ang")) ||
-		!K(PyObject_GetAttrString(v, "Vel")) || !K(PyObject_GetAttrString(v, "Model")) ||
+	if (!v || !K(Script_GetAttr(v, "Pos")) || !K(Script_GetAttr(v, "Ang")) ||
+		!K(Script_GetAttr(v, "Vel")) || !K(Script_GetAttr(v, "Model")) ||
 		!K(Veh_Call("OnClientDeath", Py_BuildValue("(OO)", looser, winner)))) {
 		FAIL();
 	}
@@ -740,9 +740,9 @@ static PyObject *Vehicles_SwitchView(PyObject *self, PyObject *args) {
 		(!Script_Import((const char *const[]){ "RacerScorer", NULL }) || !Script_Try("RacerScorer", "Create", "(O)", id)))) {
 		FAIL();
 	}
-	PyObject *cam = K(Script_Entity(camName)), *main = cam ? K(PyObject_GetAttrString(cam, "MainTarget")) : NULL;
-	PyObject *ply = main ? K(Script_Entity(main)) : NULL, *t = ply ? K(PyObject_GetAttrString(cam, "Target")) : NULL;
-	PyObject *m = t ? K(PyObject_GetAttrString(cam, "MainTarget")) : NULL;
+	PyObject *cam = K(Script_Entity(camName)), *main = cam ? K(Script_GetAttr(cam, "MainTarget")) : NULL;
+	PyObject *ply = main ? K(Script_Entity(main)) : NULL, *t = ply ? K(Script_GetAttr(cam, "Target")) : NULL;
+	PyObject *m = t ? K(Script_GetAttr(cam, "MainTarget")) : NULL;
 	int same = m ? Script_Eq(t, m) : -1;
 	if (same < 0 || !Script_HSet(ply, "UsrControl", same ? Script_Ref(id) : PyInt_FromLong(-1))) {
 		FAIL();
@@ -759,11 +759,11 @@ static PyObject *Vehicles_SetActiveCam(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	PyObject *cam = K(Script_Entity(camName)), *ply = cam ? K(Script_Entity(plyName)) : NULL;
-	PyObject *cname = ply ? K(PyObject_GetAttrString(cam, "Name")) : NULL;
+	PyObject *cname = ply ? K(Script_GetAttr(cam, "Name")) : NULL;
 	byte ok = cname && Script_Try("Scrap", "SetCam", "(OO)", id, cname) &&
 		Script_HSet(cam, "OnSwitch", PyString_FromString("Vehicles.SwitchView")) &&
-		Script_HSet(cam, "MainTarget", PyObject_GetAttrString(ply, "Name")) &&
-		Script_HSet(cam, "Target", PyObject_GetAttrString(ply, "Name")) && Script_HSet(cam, "FreeCam", PyInt_FromLong(0));
+		Script_HSet(cam, "MainTarget", Script_GetAttr(ply, "Name")) &&
+		Script_HSet(cam, "Target", Script_GetAttr(ply, "Name")) && Script_HSet(cam, "FreeCam", PyInt_FromLong(0));
 	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
 }
 
@@ -842,7 +842,7 @@ static PyObject *Vehicles_ReSpawnShip(PyObject *self, PyObject *args) {
 			FAIL();
 		}
 	} else if (!Script_HSet(v, "OnDeath", PyString_FromString("Vehicles.OnDeath")) || !Script_HSet(v, "Active", PyInt_FromLong(1)) ||
-		!Script_HSet(v, "Life", PyObject_GetAttrString(v, "MaxLife")) || !Script_HSet(v, "Vel", Py_BuildValue("(iii)", 0, 0, 0)) ||
+		!Script_HSet(v, "Life", Script_GetAttr(v, "MaxLife")) || !Script_HSet(v, "Vel", Py_BuildValue("(iii)", 0, 0, 0)) ||
 		!Script_HSet(v, "ForceAll", PyInt_FromLong(1)) || !Veh_Restock(v) || !Script_Try("Parking", "SetDtritusPlate", "(Oi)", v, 1)) {
 		FAIL();
 	}

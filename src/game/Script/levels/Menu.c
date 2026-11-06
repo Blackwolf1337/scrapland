@@ -199,8 +199,8 @@ static byte Mn_Cameras(void) {
 	}
 	PyObject *cam = K(Script_Ask("Scrap", "CreateEntity", "(siiis)", "MenuCamara", 0, 0, 0, "Cam"));
 	PyObject *cn = cam && Script_HSet(cam, "Fov", PyInt_FromLong(60)) && Script_HSet(cam, "clipNear", PyInt_FromLong(50)) &&
-		Script_HSet(cam, "clipFar", PyInt_FromLong(500000)) && Script_HSet(cam, "EntityLink", PyObject_GetAttrString(c, "Name")) ?
-		K(PyObject_GetAttrString(cam, "Name")) : NULL;
+		Script_HSet(cam, "clipFar", PyInt_FromLong(500000)) && Script_HSet(cam, "EntityLink", Script_GetAttr(c, "Name")) ?
+		K(Script_GetAttr(cam, "Name")) : NULL;
 	byte ok = cn && Script_Try("Scrap", "SetCam", "(iO)", 0, cn);
 	Script_Done(&r, NULL);
 	return ok;
@@ -373,8 +373,8 @@ static PyObject *Menu_drotorito(PyObject *self, PyObject *args) {
 	}
 	PyObject *cam = K(Script_Ask("Scrap", "GetEntity", "(s)", "MenuCamara"));
 	PyObject *dmc = cam ? K(Script_Ask("Scrap", "GetEntity", "(s)", "DemoCam")) : NULL;
-	PyObject *vec = dmc ? K(PyObject_GetAttrString(dmc, "NodePos_DM_Camera_01")) : NULL;
-	PyObject *pos = vec ? K(PyObject_GetAttrString(dmc, "Pos")) : NULL, *sub = pos ? K(Script_Ask("SVec", "Sub", "(OO)", vec, pos)) : NULL;
+	PyObject *vec = dmc ? K(Script_GetAttr(dmc, "NodePos_DM_Camera_01")) : NULL;
+	PyObject *pos = vec ? K(Script_GetAttr(dmc, "Pos")) : NULL, *sub = pos ? K(Script_Ask("SVec", "Sub", "(OO)", vec, pos)) : NULL;
 	PyObject *dis = sub ? K(Script_Ask("SVec", "Norm", "(O)", sub)) : NULL, *mmr = dis ? K(Mn_Inc("mmr")) : NULL;
 	double centre, impulse;
 	if (!mmr || !Mn_Throw(mmr, &centre, &impulse)) {
