@@ -12,6 +12,9 @@ Map	abindoor	data03.packed/levels/abindoor/scripts/map.pyc
 MapSnd	abindoor	data03.packed/levels/abindoor/scripts/mapsnd.pyc
 Map	bank	Data.packed/levels/bank/scripts/map.pyc
 MapSnd	bank	Data.packed/levels/bank/scripts/mapsnd.pyc
+Mission_CatchRudolph	bank	Data.packed/levels/bank/scripts/mission_catchrudolph.pyc
+Mission_GetDataPart2	bank	Data.packed/levels/bank/scripts/mission_getdatapart2.pyc
+Mission_InfiltrateBank	bank	Data.packed/levels/bank/scripts/mission_infiltratebank.pyc
 Map	ca	data02.packed/levels/ca/scripts/map.pyc
 MapSnd	ca	data02.packed/levels/ca/scripts/mapsnd.pyc
 Map	commercial	data02.packed/levels/commercial/scripts/map.pyc
