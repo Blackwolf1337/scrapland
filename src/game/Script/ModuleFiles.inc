@@ -92,6 +92,93 @@ static const char mod_modules_sputnikjunkyardsound[] = {
 static const char mod_modules_sputniksound[] = {
 #embed "../../../data/modules/sputniksound.mod"
 	, 0 };
+static const char mod_modules_bankmaster[] = {
+#embed "../../../data/modules/bankmaster.mod"
+	, 0 };
+static const char mod_modules_berto[] = {
+#embed "../../../data/modules/berto.mod"
+	, 0 };
+static const char mod_modules_betty[] = {
+#embed "../../../data/modules/betty.mod"
+	, 0 };
+static const char mod_modules_boss[] = {
+#embed "../../../data/modules/boss.mod"
+	, 0 };
+static const char mod_modules_bureaucracy[] = {
+#embed "../../../data/modules/bureaucracy.mod"
+	, 0 };
+static const char mod_modules_crazygambler[] = {
+#embed "../../../data/modules/crazygambler.mod"
+	, 0 };
+static const char mod_modules_desktop[] = {
+#embed "../../../data/modules/desktop.mod"
+	, 0 };
+static const char mod_modules_dtritus[] = {
+#embed "../../../data/modules/dtritus.mod"
+	, 0 };
+static const char mod_modules_functionary[] = {
+#embed "../../../data/modules/functionary.mod"
+	, 0 };
+static const char mod_modules_human[] = {
+#embed "../../../data/modules/human.mod"
+	, 0 };
+static const char mod_modules_humphrey[] = {
+#embed "../../../data/modules/humphrey.mod"
+	, 0 };
+static const char mod_modules_inmap[] = {
+#embed "../../../data/modules/inmap.mod"
+	, 0 };
+static const char mod_modules_maintenance[] = {
+#embed "../../../data/modules/maintenance.mod"
+	, 0 };
+static const char mod_modules_makechar[] = {
+#embed "../../../data/modules/makechar.mod"
+	, 0 };
+static const char mod_modules_mayor[] = {
+#embed "../../../data/modules/mayor.mod"
+	, 0 };
+static const char mod_modules_mercenarya[] = {
+#embed "../../../data/modules/mercenarya.mod"
+	, 0 };
+static const char mod_modules_mercenaryb[] = {
+#embed "../../../data/modules/mercenaryb.mod"
+	, 0 };
+static const char mod_modules_mercenaryc[] = {
+#embed "../../../data/modules/mercenaryc.mod"
+	, 0 };
+static const char mod_modules_mercenaryl[] = {
+#embed "../../../data/modules/mercenaryl.mod"
+	, 0 };
+static const char mod_modules_messenger[] = {
+#embed "../../../data/modules/messenger.mod"
+	, 0 };
+static const char mod_modules_nurse[] = {
+#embed "../../../data/modules/nurse.mod"
+	, 0 };
+static const char mod_modules_police[] = {
+#embed "../../../data/modules/police.mod"
+	, 0 };
+static const char mod_modules_policeboss[] = {
+#embed "../../../data/modules/policeboss.mod"
+	, 0 };
+static const char mod_modules_rusty[] = {
+#embed "../../../data/modules/rusty.mod"
+	, 0 };
+static const char mod_modules_sebastian[] = {
+#embed "../../../data/modules/sebastian.mod"
+	, 0 };
+static const char mod_modules_sentinel[] = {
+#embed "../../../data/modules/sentinel.mod"
+	, 0 };
+static const char mod_modules_speech[] = {
+#embed "../../../data/modules/speech.mod"
+	, 0 };
+static const char mod_modules_sputnik[] = {
+#embed "../../../data/modules/sputnik.mod"
+	, 0 };
+static const char mod_modules_sputnikjunkyard[] = {
+#embed "../../../data/modules/sputnikjunkyard.mod"
+	, 0 };
 
 static const moduleFile_t module_files[] = {
 	{ NULL, "Sound", "modules/sound.mod", mod_modules_sound },
@@ -125,4 +212,33 @@ static const moduleFile_t module_files[] = {
 	{ NULL, "SentinelSound", "modules/sentinelsound.mod", mod_modules_sentinelsound },
 	{ NULL, "SputnikJunkyardSound", "modules/sputnikjunkyardsound.mod", mod_modules_sputnikjunkyardsound },
 	{ NULL, "SputnikSound", "modules/sputniksound.mod", mod_modules_sputniksound },
+	{ NULL, "BankMaster", "modules/bankmaster.mod", mod_modules_bankmaster },
+	{ NULL, "Berto", "modules/berto.mod", mod_modules_berto },
+	{ NULL, "Betty", "modules/betty.mod", mod_modules_betty },
+	{ NULL, "Boss", "modules/boss.mod", mod_modules_boss },
+	{ NULL, "Bureaucracy", "modules/bureaucracy.mod", mod_modules_bureaucracy },
+	{ NULL, "CrazyGambler", "modules/crazygambler.mod", mod_modules_crazygambler },
+	{ NULL, "Desktop", "modules/desktop.mod", mod_modules_desktop },
+	{ NULL, "Dtritus", "modules/dtritus.mod", mod_modules_dtritus },
+	{ NULL, "Functionary", "modules/functionary.mod", mod_modules_functionary },
+	{ NULL, "Human", "modules/human.mod", mod_modules_human },
+	{ NULL, "Humphrey", "modules/humphrey.mod", mod_modules_humphrey },
+	{ NULL, "InMap", "modules/inmap.mod", mod_modules_inmap },
+	{ NULL, "Maintenance", "modules/maintenance.mod", mod_modules_maintenance },
+	{ NULL, "MakeChar", "modules/makechar.mod", mod_modules_makechar },
+	{ NULL, "Mayor", "modules/mayor.mod", mod_modules_mayor },
+	{ NULL, "MercenaryA", "modules/mercenarya.mod", mod_modules_mercenarya },
+	{ NULL, "MercenaryB", "modules/mercenaryb.mod", mod_modules_mercenaryb },
+	{ NULL, "MercenaryC", "modules/mercenaryc.mod", mod_modules_mercenaryc },
+	{ NULL, "MercenaryL", "modules/mercenaryl.mod", mod_modules_mercenaryl },
+	{ NULL, "Messenger", "modules/messenger.mod", mod_modules_messenger },
+	{ NULL, "Nurse", "modules/nurse.mod", mod_modules_nurse },
+	{ NULL, "Police", "modules/police.mod", mod_modules_police },
+	{ NULL, "PoliceBoss", "modules/policeboss.mod", mod_modules_policeboss },
+	{ NULL, "Rusty", "modules/rusty.mod", mod_modules_rusty },
+	{ NULL, "Sebastian", "modules/sebastian.mod", mod_modules_sebastian },
+	{ NULL, "Sentinel", "modules/sentinel.mod", mod_modules_sentinel },
+	{ NULL, "Speech", "modules/speech.mod", mod_modules_speech },
+	{ NULL, "Sputnik", "modules/sputnik.mod", mod_modules_sputnik },
+	{ NULL, "SputnikJunkyard", "modules/sputnikjunkyard.mod", mod_modules_sputnikjunkyard },
 };
