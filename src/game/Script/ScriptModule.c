@@ -1263,7 +1263,8 @@ int Script_ModuleMake(const char *name, const char *file, PyObject **module) {
 	if (!ok) {
 		return -1;
 	}
-	/* the functions of the C tables that the script does not have go in after the module code, as the loader does */
+	/* the writes the loader makes after the module code (the functions of the C tables the script does not have, the
+	 * sets that may resize the dict), as after the .pyc */
 	Script_ModuleExtras(name, m);
 	Py_INCREF(m);
 	*module = m;

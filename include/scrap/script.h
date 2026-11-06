@@ -52,7 +52,8 @@ int Script_ModuleMake(const char *name, const char *file, PyObject **module);
 PyObject *Script_TableFunction(const char *module, const char *name);
 /* the functions of a table the module does not have yet into it (a table may have more than the script) */
 void Script_TableExtras(PyObject *module, PyMethodDef *methods);
-/* the extras of every C table of the module, script_modules then level_modules */
+/* after a module made in C: the writes of Script_Install for every table of script_modules (the functions the script
+ * lacks, the sets that resize the dict as after the .pyc), then the extras of level_modules */
 void Script_ModuleExtras(const char *name, PyObject *module);
 /* the level that loads, lower case ("police"); 0 when Init.Path is not set yet */
 byte Script_LevelName(char *out, int size);
