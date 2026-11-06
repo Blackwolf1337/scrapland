@@ -669,6 +669,9 @@ void cWorld_Clear(cWorld *self) {
 		}
 		cEntity *e = n->data;
 		if (e) {
+			/* out of the name table first, as the dead list does: a dtor's callback (a camera's OnSwitch) may look
+			 * up names while the others are freed; the original left them in and read freed names */
+			PtrTable_Delete(&self->entities, e->name);
 			Entity_Free(e);
 		}
 	}
