@@ -204,3 +204,75 @@ PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table) {
 	}
 	return Sf_None(&f);
 }
+
+PyObject *Lv_PlanesInit(PyObject *args, const char *module) {
+	PyObject *path;
+	scriptFrame_t f = { 0 };
+	if (!PyArg_ParseTuple(args, "O", &path)) {
+		return NULL;
+	}
+	Sf_Import(&f, "MissionsFuncs");
+	Sf_Import(&f, "CharAct");
+	Sf_SetMod(&f, "CharAct", "TakenPhotoMap", Sf_Global(&f, module, "TakenPhoto"));
+	Sf_Ask(&f, "Scrap", "StartDummySearch", "(si)", "DM_LocalPlane_*", 1);
+	while (!f.failed) {
+		int mark = f.n;
+		PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
+		if (Sf_Compare(&f, dummy, "==", Py_None) != 0) {
+			break;
+		}
+		PyObject *plane = Sf_Slice(&f, Sf_Item(&f, dummy, 0), 14, 0x7fffffff);
+		if (Sf_In(&f, plane, Sf_Op(&f, Sf_Global(&f, module, "Naves"), '+', Sf_Global(&f, module, "Motores"))) > 0) {
+			PyObject *ang = Sf_Item(&f, dummy, 2);
+			PyObject *name = Sf_Cat(&f, "sO", "Plano", Sf_Slice(&f, Sf_Item(&f, dummy, 0), 14, 0x7fffffff));
+			PyObject *pln = Sf_Ask(&f, "MissionsFuncs", "CreatePhotoObject", "(OOO)", name, Sf_Item(&f, dummy, 1),
+				Sf_Build(&f, "(OOi)", Sf_Item(&f, ang, 0), Sf_Item(&f, ang, 1), 0));
+			Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", pln, 0);
+		}
+		Sf_Release(&f, mark);
+	}
+	return Sf_None(&f);
+}
+
+PyObject *Lv_PlanesPhoto(PyObject *args, const char *module, const char *ships, const char *engines) {
+	PyObject *name;
+	scriptFrame_t f = { 0 };
+	if (!PyArg_ParseTuple(args, "O", &name)) {
+		return NULL;
+	}
+	if (Sf_EqS(&f, Sf_Slice(&f, name, 0, 5), "Plano") <= 0) {
+		return Sf_None(&f);
+	}
+	long res = 0;
+	Sf_Import(&f, "string");
+	Sf_Import(&f, "RaceMaker");
+	PyObject *plano = Sf_Slice(&f, name, 5, 0x7fffffff);
+	int ship = Sf_In(&f, plano, Sf_Global(&f, module, "Naves"));
+	int engine = ship == 0 ? Sf_In(&f, plano, Sf_Global(&f, module, "Motores")) : 0;
+	if (ship > 0) {
+		Sf_Method(&f, Sf_Global(&f, module, "Naves"), "remove", "(O)", plano);
+		Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", ships, Sf_Repr(&f, Sf_Global(&f, module, "Naves")));
+		Lv_SaveAppend(&f, "Hangar.shipsToEditList", Lv_SaveList(&f, "Hangar.shipsToEditList", module), plano);
+		PyObject *key = Sf_Cat(&f, "sO", "SHIP_", Sf_Ask(&f, "string", "upper", "(O)", plano));
+		PyObject *text = Sf_Ask(&f, "string", "replace", "(OsO)", Sf_Lang(&f, Sf_Str(&f, "OnPhotoShipBlueprints")), "<n1>", Sf_Lang(&f, key));
+		Sf_Ask(&f, "RaceMaker", "ShowSystemMessage", "(O)", text);
+		res = 1;
+	} else if (engine > 0) {
+		Sf_Method(&f, Sf_Global(&f, module, "Motores"), "remove", "(O)", plano);
+		Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", engines, Sf_Repr(&f, Sf_Global(&f, module, "Motores")));
+		Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Hangar.availableEnginesList");
+		PyObject *lst = Lv_SaveList(&f, "Hangar.availableEnginesList", module);
+		Lv_SaveAppend(&f, "Hangar.availableEnginesList", lst, Sf_Ask(&f, "string", "upper", "(O)", plano));
+		PyObject *key = Sf_Cat(&f, "sO", "SHIP_S", Sf_Ask(&f, "string", "upper", "(O)", Sf_Slice(&f, plano, 1, 0x7fffffff)));
+		PyObject *text = Sf_Ask(&f, "string", "replace", "(OsO)", Sf_Lang(&f, Sf_Str(&f, "OnPhotoEngineBlueprints")), "<n1>", Sf_Lang(&f, key));
+		Sf_Ask(&f, "RaceMaker", "ShowSystemMessage", "(O)", text);
+		res = 1;
+	}
+	if (res && !f.failed) {
+		Sf_Import(&f, "SaveGame");
+		Sf_SetAttrI(&f, Sf_Entity(&f, name), "ArrowCanView", 0);
+		Sf_Ask(&f, "Scrap", "IncSaveVar", "(s)", "NewBluePrintAvaliable");
+		Sf_Ask(&f, "SaveGame", "CheckAllBlueprints", "()");
+	}
+	return Sf_Return(&f, Sf_Int(&f, res));
+}

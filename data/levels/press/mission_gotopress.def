@@ -1,5 +1,5 @@
 # The functions of Mission_GoToPress in level press (the script levels/press/scripts/mission_gotopress.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: Init, CrazySads.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Press.c): Init, CrazySads.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_gotopress.def replaces this file.
 section InitStatus LevelPath
 call Chars.AddNewCharRes "Betty"

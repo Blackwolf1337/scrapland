@@ -1,5 +1,5 @@
 # The functions of Mission_WhoIsTheBaddie in level press (the script levels/press/scripts/mission_whoisthebaddie.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, GoForHuman, OnBureauUsed, PlayScene, EndOfScene, CreateFakeSpeech, NormCamera, SetTalk, LoadScene.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Press.c): InitStatus, Init, GoForHuman, OnBureauUsed, PlayScene, EndOfScene, CreateFakeSpeech, NormCamera, SetTalk, LoadScene.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_whoisthebaddie.def replaces this file.
 section AfterScene
 call MissionsFuncs.SetMissionTarget ""

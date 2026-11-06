@@ -1,5 +1,5 @@
 # The functions of Mission_GetCrazyData in level press (the script levels/press/scripts/mission_getcrazydata.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: Init, GetCrazyData, OnAlarmActivated, OnSwitchPressed, StartTimer, TimeExpired, GoToPressRoom, OnFakeBureauTaken, FindHumphrey, HumphreySpeech, FindTrurl, TrurlSpeech, MissionScorer.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Press.c): Init, GetCrazyData, OnAlarmActivated, OnSwitchPressed, StartTimer, TimeExpired, GoToPressRoom, OnFakeBureauTaken, FindHumphrey, HumphreySpeech, FindTrurl, TrurlSpeech, MissionScorer.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_getcrazydata.def replaces this file.
 section InitStatus LevelPath
 setvar Messenger.MakeMDP 0

@@ -1,5 +1,5 @@
 # The functions of Mission_HumphreyArchbishopKilled in level press (the script levels/press/scripts/mission_humphreyarchbishopkilled.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: SetNextMission, CGCalls.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Press.c): SetNextMission, CGCalls.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_humphreyarchbishopkilled.def replaces this file.
 section InitStatus LevelPath
 call Scrap.SetSaveVar "Spawn" "DM_Player_Spawn_Press"

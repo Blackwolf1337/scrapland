@@ -1,5 +1,5 @@
 # The functions of Mission_IntroHuman2 in level press (the script levels/press/scripts/mission_introhuman2.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: LaunchHumphreySpeech.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Press.c): LaunchHumphreySpeech.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_introhuman2.def replaces this file.
 section InitStatus LevelPath
 call Scrap.SetSaveVar "Char" "Dtritus"

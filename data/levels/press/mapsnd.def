@@ -1,5 +1,5 @@
 # The functions of MapSnd in level press (the script levels/press/scripts/mapsnd.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: LoadSounds, SetSounds, News1.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Press.c): LoadSounds, SetSounds, News1.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mapsnd.def replaces this file.
 section SndElements Name x y z angx angy
 setvar MapSnd.cntr %MapSnd.cntr+1

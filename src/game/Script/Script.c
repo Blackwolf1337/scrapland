@@ -899,7 +899,13 @@ static PyObject *Def_Value(scriptDef_t *m, const char *t, byte quoted) {
 			if (comma) {
 				*comma = 0;
 			}
-			PyObject *v = Def_Value(m, p, 0);
+			/* an item in "" or '' is a text (the converter writes tuples of texts without spaces or commas) */
+			size_t len = strlen(p);
+			byte q = len >= 2 && (p[0] == '"' || p[0] == '\'') && p[len - 1] == p[0];
+			if (q) {
+				p[len - 1] = 0;
+			}
+			PyObject *v = Def_Value(m, p + q, q);
 			if (!v) {
 				Py_INCREF(Py_None);
 				v = Py_None;

@@ -6,6 +6,7 @@
  * a table per module in src/game/Script/levels/<Level>.c (level_modules), put in after the data. The functions neither
  * has stay Python, and so do the module variables and the module code.
  */
+#include <stdlib.h>
 #include <string.h>
 
 #include "scrap/console.h"
@@ -44,6 +45,11 @@ extern PyMethodDef g_GamblinDenMapMethods[], g_GamblinDenBeforeFinalFightMethods
 extern PyMethodDef g_OmSixthMethods[], g_OmTenthMethods[], g_QfBankersCombatMethods[],
 	g_ABIndoorMapMethods[], g_FakeMapMethods[], g_TucZoneMapMethods[], g_NanoMapMethods[], g_ShipEditMapMethods[],
 	g_ShipEditMapSndMethods[], g_ABFinalFightMethods[];
+extern PyMethodDef g_JunkyardMapMethods[], g_JunkyardMapShipEditMethods[], g_JunkyardRustyFirstContactMethods[];
+extern PyMethodDef g_PressMapMethods[], g_PressMapPlanesMethods[], g_PressMapDemoCloseMethods[], g_PressMapSndMethods[],
+	g_PressFicusBankerMethods[], g_PressGetCrazyDataMethods[], g_PressGoToPressMethods[], g_PressGoWithHumanMethods[],
+	g_PressHumphreyArchbishopKilledMethods[], g_PressIntroHuman2Methods[], g_PressMeetBossMethods[], g_PressPressMeetingMethods[],
+	g_PressTalkToBossMethods[], g_PressWhoIsDeepThroatMethods[], g_PressWhoIsTheBaddieMethods[];
 
 static const levelModule_t level_modules[] = {
 	{ "menu", "Map", g_MenuMapMethods },
@@ -125,10 +131,28 @@ static const levelModule_t level_modules[] = {
 	{ "gdb", "Mission_IntoTheGDB", g_GDBIntoTheGDBMethods },
 	{ "gdb", "Mission_ReinsertOwnMatrix", g_GDBReinsertOwnMatrixMethods },
 	{ "gdb", "Mission_ReinsertOwnMatrix2", g_GDBReinsertOwnMatrix2Methods },
+	{ "junkyard", "Map", g_JunkyardMapMethods },
+	{ "junkyard", "MapShipEdit", g_JunkyardMapShipEditMethods },
+	{ "junkyard", "Mission_RustyFirstContact", g_JunkyardRustyFirstContactMethods },
+	{ "press", "Map", g_PressMapMethods },
+	{ "press", "MapPlanes", g_PressMapPlanesMethods },
+	{ "press", "MapDemoClose", g_PressMapDemoCloseMethods },
+	{ "press", "MapSnd", g_PressMapSndMethods },
+	{ "press", "Mission_FicusBanker", g_PressFicusBankerMethods },
+	{ "press", "Mission_GetCrazyData", g_PressGetCrazyDataMethods },
+	{ "press", "Mission_GoToPress", g_PressGoToPressMethods },
+	{ "press", "Mission_GoWithHuman", g_PressGoWithHumanMethods },
+	{ "press", "Mission_HumphreyArchbishopKilled", g_PressHumphreyArchbishopKilledMethods },
+	{ "press", "Mission_IntroHuman2", g_PressIntroHuman2Methods },
+	{ "press", "Mission_MeetBoss", g_PressMeetBossMethods },
+	{ "press", "Mission_PressMeeting", g_PressPressMeetingMethods },
+	{ "press", "Mission_TalkToBoss", g_PressTalkToBossMethods },
+	{ "press", "Mission_WhoIsDeepThroat", g_PressWhoIsDeepThroatMethods },
+	{ "press", "Mission_WhoIsTheBaddie", g_PressWhoIsTheBaddieMethods },
 	{ NULL, NULL, NULL },
 };
 
-enum { LEVEL_FUNCS = 96, LEVEL_POOLS = 8, LEVEL_NAME = 0x40 };
+enum { LEVEL_FUNCS = 96, LEVEL_POOLS = 256, LEVEL_NAME = 0x40 };
 
 /* the method definitions of the functions of one module name; reused when the module loads again */
 typedef struct {
@@ -137,21 +161,27 @@ typedef struct {
 	char names[LEVEL_FUNCS][LEVEL_NAME];
 } levelPool_t;
 
-static levelPool_t g_LevelPools[LEVEL_POOLS];
+/* one pool per module name seen (104 in the packs, more with mods), made on first use: its method definitions stay
+ * in use by the module's functions until the end */
+static levelPool_t *g_LevelPools[LEVEL_POOLS];
 
 static levelPool_t *Level_Pool(const char *module) {
-	for (int i = 0; i < LEVEL_POOLS; i++) {
-		if (!strcmp(g_LevelPools[i].module, module)) {
-			return &g_LevelPools[i];
+	int i = 0;
+	for (; i < LEVEL_POOLS && g_LevelPools[i]; i++) {
+		if (!strcmp(g_LevelPools[i]->module, module)) {
+			return g_LevelPools[i];
 		}
 	}
-	for (int i = 0; i < LEVEL_POOLS; i++) {
-		if (!g_LevelPools[i].module[0]) {
-			Str_Copy(g_LevelPools[i].module, module, sizeof(g_LevelPools[i].module));
-			return &g_LevelPools[i];
-		}
+	if (i == LEVEL_POOLS) {
+		Con_Warnf("Levels: more than %d level module names, %s stays Python\n", LEVEL_POOLS, module);
+		return NULL;
 	}
-	return NULL;
+	levelPool_t *pool = calloc(1, sizeof(*pool));
+	if (pool) {
+		Str_Copy(pool->module, module, sizeof(pool->module));
+		g_LevelPools[i] = pool;
+	}
+	return pool;
 }
 
 /* the folder of the level that loads: the last part of Init.Path in lower case ("Levels/Police" -> "police") */

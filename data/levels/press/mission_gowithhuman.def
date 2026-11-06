@@ -1,5 +1,5 @@
 # The functions of Mission_GoWithHuman in level press (the script levels/press/scripts/mission_gowithhuman.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, CreateHuman, Init, OnPossession, OnExitConversor, CheckMaxDist, CheckHumanDist, LoadNextMission, LoadScene2, CreateFakeSpeech, NormCamera, SetTalk.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Press.c): InitStatus, CreateHuman, Init, OnPossession, OnExitConversor, CheckMaxDist, CheckHumanDist, LoadNextMission, LoadScene2, CreateFakeSpeech, NormCamera, SetTalk.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_gowithhuman.def replaces this file.
 section LaunchScene
 call Scrap.SetAlarm 0
