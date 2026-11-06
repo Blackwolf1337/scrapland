@@ -94,3 +94,14 @@ PhoneCab	-	Data.packed/scripts/missions/phonecab.pyc
 Scene	-	Data.packed/scripts/missions/scene.pyc
 Teleport	-	Data.packed/scripts/missions/teleport.pyc
 teamdeathmatch	-	Data.packed/scripts/superdeals/teamdeathmatch.pyc
+Ffa	-	Data.packed/scripts/net/ffa.pyc
+ndeathmatch	-	Data.packed/scripts/net/ndeathmatch.pyc
+nflaghunt	-	Data.packed/scripts/net/nflaghunt.pyc
+npostman	-	Data.packed/scripts/net/npostman.pyc
+nteamdm	-	Data.packed/scripts/net/nteamdm.pyc
+nteamflag	-	Data.packed/scripts/net/nteamflag.pyc
+nteampost	-	Data.packed/scripts/net/nteampost.pyc
+sdeathmatch	-	Data.packed/scripts/split/sdeathmatch.pyc
+sflaghunt	-	Data.packed/scripts/split/sflaghunt.pyc
+spostman	-	Data.packed/scripts/split/spostman.pyc
+srace	-	Data.packed/scripts/split/srace.pyc

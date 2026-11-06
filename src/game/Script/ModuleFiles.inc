@@ -281,6 +281,39 @@ static const char mod_modules_teleport[] = {
 static const char mod_modules_teamdeathmatch[] = {
 #embed "../../../data/modules/teamdeathmatch.mod"
 	, 0 };
+static const char mod_modules_ffa[] = {
+#embed "../../../data/modules/ffa.mod"
+	, 0 };
+static const char mod_modules_ndeathmatch[] = {
+#embed "../../../data/modules/ndeathmatch.mod"
+	, 0 };
+static const char mod_modules_nflaghunt[] = {
+#embed "../../../data/modules/nflaghunt.mod"
+	, 0 };
+static const char mod_modules_npostman[] = {
+#embed "../../../data/modules/npostman.mod"
+	, 0 };
+static const char mod_modules_nteamdm[] = {
+#embed "../../../data/modules/nteamdm.mod"
+	, 0 };
+static const char mod_modules_nteamflag[] = {
+#embed "../../../data/modules/nteamflag.mod"
+	, 0 };
+static const char mod_modules_nteampost[] = {
+#embed "../../../data/modules/nteampost.mod"
+	, 0 };
+static const char mod_modules_sdeathmatch[] = {
+#embed "../../../data/modules/sdeathmatch.mod"
+	, 0 };
+static const char mod_modules_sflaghunt[] = {
+#embed "../../../data/modules/sflaghunt.mod"
+	, 0 };
+static const char mod_modules_spostman[] = {
+#embed "../../../data/modules/spostman.mod"
+	, 0 };
+static const char mod_modules_srace[] = {
+#embed "../../../data/modules/srace.mod"
+	, 0 };
 
 static const moduleFile_t module_files[] = {
 	{ NULL, "Sound", "modules/sound.mod", mod_modules_sound },
@@ -377,4 +410,15 @@ static const moduleFile_t module_files[] = {
 	{ NULL, "Scene", "modules/scene.mod", mod_modules_scene },
 	{ NULL, "Teleport", "modules/teleport.mod", mod_modules_teleport },
 	{ NULL, "teamdeathmatch", "modules/teamdeathmatch.mod", mod_modules_teamdeathmatch },
+	{ NULL, "Ffa", "modules/ffa.mod", mod_modules_ffa },
+	{ NULL, "ndeathmatch", "modules/ndeathmatch.mod", mod_modules_ndeathmatch },
+	{ NULL, "nflaghunt", "modules/nflaghunt.mod", mod_modules_nflaghunt },
+	{ NULL, "npostman", "modules/npostman.mod", mod_modules_npostman },
+	{ NULL, "nteamdm", "modules/nteamdm.mod", mod_modules_nteamdm },
+	{ NULL, "nteamflag", "modules/nteamflag.mod", mod_modules_nteamflag },
+	{ NULL, "nteampost", "modules/nteampost.mod", mod_modules_nteampost },
+	{ NULL, "sdeathmatch", "modules/sdeathmatch.mod", mod_modules_sdeathmatch },
+	{ NULL, "sflaghunt", "modules/sflaghunt.mod", mod_modules_sflaghunt },
+	{ NULL, "spostman", "modules/spostman.mod", mod_modules_spostman },
+	{ NULL, "srace", "modules/srace.mod", mod_modules_srace },
 };
