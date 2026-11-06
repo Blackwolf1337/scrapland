@@ -512,3 +512,72 @@ PyObject *Sf_Eval(scriptFrame_t *f, PyObject *text, const char *module) {
 	PyObject *g = PyModule_GetDict(m);
 	return Sf_Keep(f, PyRun_String((char *)s, Py_eval_input, g, g));
 }
+
+byte Sf_Line(scriptFrame_t *f, PyObject *callable, const char *fmt, ...) {
+	if (f->failed || !callable) {
+		return Sf_Check(f, 0);
+	}
+	va_list va;
+	va_start(va, fmt);
+	PyObject *args = Py_VaBuildValue((char *)fmt, va);
+	va_end(va);
+	PyObject *r = args ? Script_Invoke(callable, args) : NULL;
+	Py_XDECREF(r);
+	return Sf_Check(f, r != NULL);
+}
+
+/* ---- the scorer of the menus ---- */
+
+const char *Sf_Text(scriptFrame_t *f, PyObject *o) {
+	if (f->failed || !o) {
+		return NULL;
+	}
+	if (!PyString_Check(o)) {
+		Sf_Raise(f, PyExc_TypeError, "argument 2: expected string found");
+		return NULL;
+	}
+	return PyString_AsString(o);
+}
+
+byte Sf_ScorerSet(scriptFrame_t *f, int id, const char *item, const char *var, PyObject *v) {
+	if (f->failed || !item || !v) {
+		return Sf_Check(f, 0);
+	}
+	if (PyString_Check(v)) {
+		Script_SetStr(id, item, var, PyString_AsString(v));
+	} else if (PyInt_Check(v)) {
+		Script_SetNum(id, item, var, (double)PyInt_AsLong(v));
+	} else if (PyFloat_Check(v)) {
+		Script_SetNum(id, item, var, PyFloat_AsDouble(v));
+	} else {
+		int mark = f->n;
+		Sf_Ask(f, "SScorer", "Set", "(issO)", id, item, var, v);
+		Sf_Release(f, mark);
+	}
+	return !f->failed;
+}
+
+byte Sf_ScorerNum(scriptFrame_t *f, int id, const char *item, const char *var, double d) {
+	if (!f->failed && item) {
+		Script_SetNum(id, item, var, d);
+	}
+	return Sf_Check(f, item != NULL);
+}
+
+byte Sf_ScorerStr(scriptFrame_t *f, int id, const char *item, const char *var, const char *s) {
+	if (!f->failed && item && s) {
+		Script_SetStr(id, item, var, s);
+	}
+	return Sf_Check(f, item && s);
+}
+
+double Sf_ScorerGet(scriptFrame_t *f, int id, const char *item, const char *var) {
+	return f->failed || !item ? 0.0 : Script_GetNum(id, item, var);
+}
+
+byte Sf_ScorerDefault(scriptFrame_t *f, int id, const char *item) {
+	if (!f->failed && item) {
+		Script_SetDefault(id, item);
+	}
+	return Sf_Check(f, item != NULL);
+}

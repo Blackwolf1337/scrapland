@@ -207,6 +207,9 @@ static const scriptModule_t script_modules[] = {
 	{ "CTF", g_CTFMethods },
 	{ "Domination", g_DominationMethods },
 	{ "MortalRace", g_MortalRaceMethods },
+	{ "EnginesTab", g_EnginesTabMethods },
+	{ "WeaponsTab", g_WeaponsTabMethods },
+	{ "HullTab", g_HullTabMethods },
 };
 
 /*
