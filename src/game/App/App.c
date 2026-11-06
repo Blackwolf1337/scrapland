@@ -592,6 +592,7 @@ static void CApp_FrameNet(void) {
 /* the frame after the level load */
 static byte CApp_FrameRun(CApp *self) {
 	double t = App_GetTime(self);
+	TestChannel_Frame(t);
 	uint32_t flags = self->flags;
 	self->time = t;
 	if (!flags && !self->active) {
@@ -698,7 +699,7 @@ static int App_MaxPlayers(void) {
 	return n >= 16 ? 16 : n;
 }
 
-/* a -param[:ext] of the command line: an engine variable of the config file, build, dedicated or server */
+/* a -param[:ext] of the command line: an engine variable of the config file, build, TestChannel, dedicated or server */
 byte CApp_ParseParam(CApp *self, const char *param, const char *ext) {
 	cGVar *v = GVar_Find(param);
 	if (v && (v->base.flags & 6)) {
@@ -738,6 +739,10 @@ byte CApp_ParseParam(CApp *self, const char *param, const char *ext) {
 		} else {
 			self->build = 1;
 		}
+		return 1;
+	}
+	if (!crt_stricmp("TestChannel", param)) {
+		TestChannel_Enable();
 		return 1;
 	}
 	if (!crt_stricmp("dedicated", param)) {

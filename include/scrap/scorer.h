@@ -125,6 +125,9 @@ typedef struct cScorer {
 
 cScorer *Scorer_Get(int player);
 cScorerItem *cScorer_FindItem(cScorer *scorer, const char *name);
+/* runs the OnAccept of the item with the player and the item name, as the accept key of the menu does (SScorer.Accept,
+ * the test channel); 0 when the item or its OnAccept is missing */
+byte Scorer_AcceptItem(int player, const char *name);
 cScorerItem *cScorer_AddItem(cScorer *scorer, const char *name, const char *type, byte flag);
 void cScorer_Clear(cScorer *scorer);
 void cScorer_SetDefault(cScorer *scorer, const char *name);

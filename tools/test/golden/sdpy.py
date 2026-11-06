@@ -10,6 +10,12 @@
 # of a string with a huge length (the pool allocation fails), the regex a** (regexpr.c loops).
 import marshal, math, regex, strop
 
+# the interpreter itself: the integer overflow paths of 1.5.2 (ScrapC.exe runs its own build of it, see -fwrapv)
+sdMinInt = -2147483647 - 1
+check('Python int overflow', lambda: (sdMinInt % 7, sdMinInt / 7, divmod(sdMinInt, 65521)))
+check('Python int mul overflow', lambda: 65536 * 65536)
+check('Python int neg overflow', lambda: -sdMinInt)
+
 def spyTry(fn):
 	try:
 		return fn()

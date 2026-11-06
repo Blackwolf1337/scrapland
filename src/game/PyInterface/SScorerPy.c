@@ -317,6 +317,18 @@ static PyObject *SScorer_Items(PyObject *self, PyObject *args) {
 	return list;
 }
 
+byte Scorer_AcceptItem(int player, const char *name) {
+	cScorer *sc = Scorer_Get(player);
+	cScorerItem *it = sc ? cScorer_FindItem(sc, name) : NULL;
+	if (!it || !cPy_Function_IsValid(&it->onAccept)) {
+		return 0;
+	}
+	cPy_Function_AddParamI(&it->onAccept, player);
+	cPy_Function_AddParamS(&it->onAccept, name);
+	cPy_Function_Execute(&it->onAccept, 0);
+	return 1;
+}
+
 /* differs from the original (ScrapC only): Accept(player, item) : runs the OnAccept of the item with the player and
  * the item name, as the accept key of the menu does; 1 if it has one */
 static PyObject *SScorer_Accept(PyObject *self, PyObject *args) {
@@ -327,15 +339,7 @@ static PyObject *SScorer_Accept(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "is", &player, &name)) {
 		return NULL;
 	}
-	cScorer *sc = Scorer_Get(player);
-	cScorerItem *it = sc ? cScorer_FindItem(sc, name) : NULL;
-	if (!it || !cPy_Function_IsValid(&it->onAccept)) {
-		return Py_BuildValue("i", 0);
-	}
-	cPy_Function_AddParamI(&it->onAccept, player);
-	cPy_Function_AddParamS(&it->onAccept, name);
-	cPy_Function_Execute(&it->onAccept, 0);
-	return Py_BuildValue("i", 1);
+	return Py_BuildValue("i", Scorer_AcceptItem(player, name));
 }
 
 /* GetItem(player, item) : the Python object of the item, None if not found */
