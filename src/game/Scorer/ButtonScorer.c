@@ -74,6 +74,9 @@ cButtonScorer *cButtonScorer_ctor(cButtonScorer *self) {
 	self->marker = 0;
 	self->isNameValuePair = 1;
 	self->renderAlphaChannel = 0;
+	/* differs from the original: not set before the first Text, SizeX of a name:value button reads them */
+	self->boxH = 0;
+	self->textH = 0;
 	self->markerOffset = 0.0f;
 	self->highlightOffset = 0.0f;
 	self->lineHeight = 0.0f;
