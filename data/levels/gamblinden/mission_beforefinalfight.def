@@ -1,0 +1,16 @@
+# The functions of Mission_BeforeFinalFight in level gamblinden (the script levels/gamblinden/scripts/mission_beforefinalfight.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, SetNextMission, LoadScene.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/gamblinden/mission_beforefinalfight.def replaces this file.
+section CrazyGamblerSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_FinalFight_InitMsg1" "Mission_FinalFight_InitAns1"
+end
+
+section MercenariesSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_FinalFight_InitMsg2" "Mission_FinalFight_InitAns2"
+end

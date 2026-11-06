@@ -1,0 +1,46 @@
+# The functions of Mission_RustyFirstContact in level junkyard (the script levels/junkyard/scripts/mission_rustyfirstcontact.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, CreateFakeBertoShip, ShowExtras, StartInitialScene, LoadMecanicFinalScene, FXMecanicFinalSputnik, LoadMecanicScene, BertoGoHome, BackDownBerto, EndOfBertoBye, StartInitBuildShip, InitBuildShip, EnterEditShipFirstTime, NoTutorialEnterEditShip, OnEndOfShipEditFirstTime, UseElevatorFirstTime, EndOfMission, EnterEditShipTutorial, TutorialMsgInit, EditShipTutorial_Step.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/junkyard/mission_rustyfirstcontact.def replaces this file.
+section RustyFirstSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	setvar Speech.OnEndOfSpeech %Mission_RustyFirstContact.StartInitBuildShip
+	setvar Speech.OnEndOfSpeechParams ()
+	call Speech.NISpeech
+	call Speech.AutoAddNI "Mission_TalkToRusty_Rusty_NI_1Msg"
+	call Speech.RunNI
+end
+
+section OnEndOfShipEditTutorial id control
+call Scrap.Set "EscapeEvent" "Menu.Init"
+call Scrap.Set "MainMissionEvent" "MissionsFuncs.ShowMissionInfo"
+call SInput.SetActionSet "Walk"
+call Mission_RustyFirstContact.OnEndOfShipEditFirstTime $id $control
+
+section TutorialMsg id control msg
+call Scrap.SetTimeSpeed 0
+call SInput.Bind $id "Inactive" "SeleShip" "Mission_RustyFirstContact.TutorialContinue"
+let y 215
+let iname "TutorialMsg"
+call SScorer.Set $id $iname "Text" $msg
+call SScorer.Set $id $iname "X" 320
+call SScorer.Set $id $iname "Y" $y
+call SScorer.Set $id $iname "CentralText" 1
+call SScorer.Set $id $iname "Visible" 1
+call SScorer.Set $id $iname "TypingTime" -0.10
+call SScorer.Set $id $iname "TypingSpeed" 0.03
+let iname "TutorialMsgContinue"
+call SScorer.Set $id $iname "Visible" 1
+call SScorer.Set $id $iname "TypingTime" -1.50
+call SScorer.Set $id $iname "TypingSpeed" 0.03
+call SScorer.Set $id "TutorialMsgBack" "Visible" 1
+call Scrap.Set "ScorerMarker" 0
+
+section TutorialContinue id
+call Scrap.Set "ScorerMarker" 1
+call SInput.Bind $id "Inactive" "SeleShip" ""
+call SScorer.Set $id "TutorialMsg" "Visible" 0
+call SScorer.Set $id "TutorialMsgContinue" "Visible" 0
+call SScorer.Set $id "TutorialMsgBack" "Visible" 0
+call Scrap.SetTimeSpeed 1

@@ -1,0 +1,12 @@
+# The functions of MapFinalFight in level ab (the script levels/ab/scripts/mapfinalfight.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: GetBossProfile, FakeShips, Init, CreateBoss, MissionScorer, SetFase, BossAttacks, BossRelax, OnPlayerDeath, RespawnPlayer, LaunchTaunt, OnBossRecoversZero, OnBossRecoversEnd, OnBossDestroyed, PreLoadFinal, LoadFinal.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/ab/mapfinalfight.def replaces this file.
+section InitStatus LevelPath
+setvar MapFinalFight.PrevCreateStdShips %ShipMaker.CreateStdShips
+setvar ShipMaker.CreateStdShips %MapFinalFight.FakeShips
+
+section SetShieldPhase
+call Scrap.SetCallFunc "!FXBossShieldSet"
+call Scrap.AddParams "BossShield"
+call Scrap.AddParami %MapFinalFight.FASE
+call Scrap.Execute

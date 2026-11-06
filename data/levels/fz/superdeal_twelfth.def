@@ -1,0 +1,7 @@
+# The functions of SuperDeal_Twelfth in level fz (the script levels/fz/scripts/superdeal_twelfth.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: SetVars, Victory.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/fz/superdeal_twelfth.def replaces this file.
+section InitStatus LevelPath
+call SuperDeal_Twelfth.SetVars
+
+section Init LevelPath

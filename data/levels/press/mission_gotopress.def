@@ -1,0 +1,20 @@
+# The functions of Mission_GoToPress in level press (the script levels/press/scripts/mission_gotopress.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: Init, CrazySads, LoadScene.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_gotopress.def replaces this file.
+section InitStatus LevelPath
+call Chars.AddNewCharRes "Betty"
+call Chars.AddNewCharRes "Berto"
+call Chars.AddNewCharRes "Humphrey"
+call Scrap.SetSaveVar "Char" "Dtritus"
+
+section LaunchScene charName
+setvar Elevator.OnElevatorReachDown None
+call MissionsFuncs.SetMissionTarget ""
+call Scene.Play "Confesion"
+setvar Scene.EndOfSceneCallback %Mission_GoToPress.CrazySads
+
+section SetNextMission
+call MissionsFuncs.SetNextMission "Mission_DefeatCrazyGambler1" "DownTown"
+call SaveGame.MMDesc "Mission_DefeatCrazyGambler1_MissionText1" 1
+call Scrap.SetSaveVar "CrazyGamblerAtGambinDen" "0"
+call SaveGame.QWayPoint

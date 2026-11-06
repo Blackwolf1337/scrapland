@@ -1,0 +1,28 @@
+# The functions of Mission_DistractHumphrey in level downtown (the script levels/downtown/scripts/mission_distracthumphrey.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: GetHumphreyProfile, InitStatus, Init, CallHumphrey, UsePhoneCab, CreateWaypoint, OnStartDistraction, EnableMissionWaypoint, StartCameraTravelling, AbortCameraTravelling, CreateHumphrey, LaunchMission, AssignNewHumphreyTarget, OnHumphreyDeath, OnHumphreyDamage, OnGeneralDamage, OnDeath, StopMission, CallDeepThroat, UsePhoneCab2, MissionScorer.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/downtown/mission_distracthumphrey.def replaces this file.
+section PreDistractHumphrey
+setvar pc.UseFunc "PhoneCab.DefUseAudioCom"
+call Scrap.SetSaveVar "MissionState" "DistractHumphrey"
+call SaveGame.MMDesc "Mission_DistractHumphrey_MissionText1" 1
+call SaveGame.QWayPoint
+call Mission_DistractHumphrey.CreateWaypoint
+
+section TimeExpired
+setvar Mission_DistractHumphrey.missionComplete 1
+call SScorer.Set 0 "RemainingTime" "Visible" 0
+call Scrap.SetSaveVar "MissionState" "CallDeepThroat"
+call Speech.AddRemoteCom "Mission_DistractHumphrey_RemoteMessage5" "DeepThroat"
+
+section PreCallDeepThroat
+call SaveGame.MMDesc "Mission_TalkToDeepThroat9_MissionText1" 1
+call SaveGame.QWayPoint
+call Mission_DistractHumphrey.CallDeepThroat
+
+section SetNextMission
+setvar pc.UseFunc "PhoneCab.DefUseAudioCom"
+call Scrap.DelSaveVars "MissionState"
+call Scrap.DelSaveVars "DistractionStart"
+call MissionsFuncs.SetNextMission "Mission_GetCrazyData" "Press"
+call SaveGame.MMDesc "Mission_GetCrazyData_MissionText1" 1
+call SaveGame.QWayPoint

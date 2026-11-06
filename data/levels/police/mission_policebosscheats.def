@@ -1,0 +1,25 @@
+# The functions of Mission_PoliceBossCheats in level police (the script levels/police/scripts/mission_policebosscheats.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, CreatePoliceFicusPal, FicusPalMissionSpeech, CreateFakeChar, CheatingLoop, PlayAnm, WatchEvents, PlayDumb1, CheatPoliceBoss, PlayDumb2, BrupPoliceBoss, PlayPoliceBoss, OnPhoto, LoadPoliFightScene, InitAfterPhoto, InitAfterPhoto2, InitAfterPhoto3, InitAskCrazyGambler, CrazyGamblerSpeech, SetNextMission.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/police/mission_policebosscheats.def replaces this file.
+section InitBossCheats
+call Scrap.SetSaveVar "Mission_PoliceBossCheats" "BossCheats"
+call SaveGame.QWayPoint
+call MissionsFuncs.SetMissionTarget "DM_Mission_PoliceBoss_BossCheater"
+call SaveGame.MMDesc "Mission_PhotoPoliceBoss_MissionText1" 1
+call Mission_PoliceBossCheats.PlayDumb1
+
+section PhotoOn EntityName EventName Time
+setvar PoliceBoss.CanPhoto 1
+
+section PhotoOff EntityName EventName Time
+setvar PoliceBoss.CanPhoto 0
+
+section EndOfPhoto
+call SInput.SetActionSet "Walk"
+call Scrap.SetTimeSpeed 1.0
+call SScorer.Fade 0 (0,0,0,255) (0,0,0,0) 1.0
+call Scene.Play "PoliFight"
+setvar Scene.EndOfSceneCallback %Mission_PoliceBossCheats.InitAfterPhoto
+setvar PoliceBossc.Active 0
+setvar Dumb1c.Active 0
+setvar Dumb2c.Active 0

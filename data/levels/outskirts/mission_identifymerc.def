@@ -1,0 +1,29 @@
+# The functions of Mission_IdentifyMerc in level outskirts (the script levels/outskirts/scripts/mission_identifymerc.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: CreateLonelyMercProfiles, InitStatus, Init, InitIdentifyMerc, CreateLonelyMercInScene, CheckTraitoriusDeath, EndOfScene, CreateLonelyMerc, InitMission, ScanShip, OnFinishScan, OnLonelyMercDeath, OnLonelyMercDamage, PreRespawnLonelyMerc, RespawnLonelyMerc, SetPhoneCab, UsePhoneCab, SetNextMission, MissionScorer.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/outskirts/mission_identifymerc.def replaces this file.
+section DelLonelyMerc
+if %Mission_IdentifyMerc.lonelyMerc
+	call lonelyMerc.Del
+	setvar Mission_IdentifyMerc.lonelyMerc None
+end
+
+section PreInitMission
+call SaveGame.QWayPoint
+call SaveGame.MMDesc "Mission_IdentifyMerc_MissionText1" 1
+
+section StopMission
+setvar Menu.MissionScorerCall None
+call Scrap.DeleteScheduledFuncs "ScanShip"
+
+section ResetScan
+call SScorer.Set 0 "ScanRemainingTime" "Blink" 0
+call SScorer.Set 0 "ScanRemainingTime" "IsAutoUpdatable" 1
+call SScorer.Set 0 "ScanRemainingTime" "MaxValue" %Mission_IdentifyMerc.MAX_SCANNING_TIME
+call SScorer.Set 0 "ScanRemainingTime" "Value" %Mission_IdentifyMerc.MAX_SCANNING_TIME
+call SScorer.Set 0 "ScanRemainingTime" "Visible" 0
+call SScorer.Set 0 "ScanStatusText" "Visible" 0
+
+section PreCallDeepThroat
+call SaveGame.MMDesc "Mission_TalkToDeepThroat3_MissionText1" 1
+call SaveGame.QWayPoint
+call Mission_IdentifyMerc.SetPhoneCab

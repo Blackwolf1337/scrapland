@@ -1,0 +1,35 @@
+# The functions of Mission_GetAuthorization in level police (the script levels/police/scripts/mission_getauthorization.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, CreateHuman, Init, AfterDeepThroatMessage, PreGetAuthorization, ShowNearestConversor, ShowAfterConversionMessage, OnDataTaken, OnDataDropped, FreeHuman, TalkPepe, StartScene, OnTriggerActivated, GoToPress, GoToPress2, OnPossession, OnExitConversor, CheckMaxDist, CheckHumanDist, OnMetroUsed, LoadScene.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/police/mission_getauthorization.def replaces this file.
+section DeepThroatSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+setvar Speech.OnEndOfSpeech %Mission_GetAuthorization.PreGetAuthorization
+setvar Speech.OnEndOfSpeechParams ()
+call MissionsFuncs.SetMissionTarget None
+call Speech.NISpeech "DeepThroat"
+call Speech.AutoAddNI "Mission_TalkToDeepThroat7__ComDeepThroat_NI_1Msg"
+call Speech.RunNI
+
+section GetAuthorization
+setvar CharConversor.afterExitConversor %Mission_GetAuthorization.ShowAfterConversionMessage
+call Mission_GetAuthorization.ShowNearestConversor
+
+section GetAuthorization2
+call Scrap.Set "MessengerDataPackMissionArrow" 1
+call Scrap.Set "MessengerTakenCallback" "Mission_GetAuthorization.OnDataTaken"
+call Scrap.Set "MessengerDropCallback" "Mission_GetAuthorization.OnDataDropped"
+
+section PreFreeHuman
+call Scrap.Set "MessengerDataPackMissionArrow" 2
+call Scrap.Set "MessengerTakenCallback" ""
+call Scrap.Set "MessengerDropCallback" ""
+call Scrap.SetSaveVar "MissionState" "FreeHuman"
+call SaveGame.MMDesc "Mission_FirstMeetHuman_MissionText1" 1
+call SaveGame.QWayPoint
+call Mission_GetAuthorization.FreeHuman
+
+section OnMainCharDeath MainCharnName Param2
+call Scrap.SetAlarm 0
+call Scrap.Set "AlarmFallDelta" %Mission_GetAuthorization.alarmFallDelta
+call MissionsFuncs.FinishGame 0

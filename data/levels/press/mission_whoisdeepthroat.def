@@ -1,0 +1,18 @@
+# The functions of Mission_WhoIsDeepThroat in level press (the script levels/press/scripts/mission_whoisdeepthroat.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: Init, UseTeleporter, LaunchScene, PlayScene, LoadScene.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_whoisdeepthroat.def replaces this file.
+section InitStatus LevelPath
+
+section SetNextMission charName=""
+call SScorer.Fade 0 (0,0,0,255) (0,0,0,0) 1.0
+call Scrap.SetSaveVar "Journalist.Berto_Defaut" "NoPlace"
+call Scrap.SetSaveVar "Journalist.Betty_Defaut" "NoPlace"
+call Scrap.SetSaveVar "Journalist.Humphrey_Defaut" "NoPlace"
+call Scrap.SetSaveVar "GameAct" "Epilogue"
+call MissionsFuncs.SetNextMission "Mission_InitEpilogue" "Police"
+call SaveGame.QWayPoint
+call Scrap.SetSaveVar "Map" "Levels/Police"
+call Scrap.SetSaveVar "Char" "Dtritus"
+call Scrap.Set "PlayVideo" "Video/Viscous.avi"
+call Scrap.Achievement 6
+call SaveGame.QLoad "Levels/Police"

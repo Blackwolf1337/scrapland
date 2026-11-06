@@ -1,0 +1,34 @@
+# The functions of Mission_GetCrazyData in level press (the script levels/press/scripts/mission_getcrazydata.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: Init, GetCrazyData, OnAlarmActivated, OnSwitchPressed, StartTimer, TimeExpired, GoToPressRoom, OnFakeBureauTaken, FindHumphrey, HumphreySpeech, FindTrurl, TrurlSpeech, MissionScorer.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_getcrazydata.def replaces this file.
+section InitStatus LevelPath
+setvar Messenger.MakeMDP 0
+call Chars.AddNewCharRes "Humphrey"
+call Chars.AddNewCharRes "Messenger"
+
+section PreGoToPressRoom
+call SaveGame.QWayPoint
+call SaveGame.MMDesc "Mission_GoToPressRoom_MissionText1" 1
+call Scrap.SetSaveVar "MissionState" "GoToPressRoom"
+call Mission_GetCrazyData.GoToPressRoom
+
+section PreFindHumphrey
+call SaveGame.QWayPoint
+call SaveGame.MMDesc "Mission_FindHumphrey_MissionText1" 1
+call Scrap.SetSaveVar "MissionState" "FindHumphrey"
+call Mission_GetCrazyData.FindHumphrey
+
+section PreFindTrurl
+call Speech.AddRemoteCom "Mission_FindHumphrey_RemoteMessage1" "DeepThroat" %Mission_GetCrazyData.PreFindTrurl2 ()
+
+section PreFindTrurl2
+call SaveGame.QWayPoint
+call SaveGame.MMDesc "Mission_FindTrurl_MissionText1" 1
+call Scrap.SetSaveVar "MissionState" "FindTrurl"
+call Mission_GetCrazyData.FindTrurl
+
+section SetNextMission
+call Scrap.DelSaveVars "MissionState"
+call SaveGame.QWayPoint
+call MissionsFuncs.SetNextMission "Mission_Win1stRace" "Commercial"
+call SaveGame.MMDesc "Mission_Win1stRace_MissionText1" 1

@@ -1,0 +1,5 @@
+# The functions of MapShipEdit in level junkyard (the script levels/junkyard/scripts/mapshipedit.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: EnterEditShip, SetInteract, OnEndOfShipEdit, CanUseElevator, UseElevator, Init.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/junkyard/mapshipedit.def replaces this file.
+section InitStatus LevelPath
+setvar ShipEdit.EndShipEditCallBack %MapShipEdit.OnEndOfShipEdit

@@ -176,6 +176,13 @@ class Conv:
                 continue
             if t == 'return' and n == len(lines) - 1:
                 continue
+            m = re.match(r'^([A-Za-z_]\w*)\.([A-Za-z_]\w*)\s*=(?!=)\s*(.*)$', t)
+            if m and m.group(1) not in scope and m.group(1) not in self.globs:
+                v = self.value(m.group(3), scope)
+                out.extend(pad + x for x in self.pre)
+                self.pre = []
+                out.append(pad + 'setvar %s.%s %s' % (m.group(1), m.group(2), v))
+                continue
             m = re.match(r'^([A-Za-z_]\w*)\s*=(?!=)\s*(.*)$', t)
             if m:
                 var, val = m.group(1), m.group(2)

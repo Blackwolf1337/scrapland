@@ -1,0 +1,20 @@
+# The functions of Mission_PressMeeting in level press (the script levels/press/scripts/mission_pressmeeting.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: SetNextMission, LoadScene.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_pressmeeting.def replaces this file.
+section InitStatus LevelPath
+call Scrap.SetSaveVar "MayorAtTownHall" "0"
+call Scrap.SetSaveVar "PoliceBossAtPolice" "0"
+call Scrap.SetSaveVar "BankMasterAtBank" "1"
+call Scrap.SetSaveVar "Journalist.Berto_Defaut" "Press"
+call Scrap.SetSaveVar "Journalist.Betty_Defaut" "Press"
+call Scrap.SetSaveVar "Journalist.Humphrey_Defaut" "Press"
+call Scrap.SetSaveVar "Spawn" "DM_Player_Spawn_Press"
+call Scrap.SetSaveVar "ComeFrom" ""
+
+section Init LevelPath
+call Mission_PressMeeting.LoadScene
+call Scene.Play "News2"
+call Scrap.Set "isActionIndoor" 0
+call SSound.SetMusicVolume 0
+call SSound.UsePS 0
+setvar Scene.EndOfSceneCallback %Mission_PressMeeting.SetNextMission

@@ -1,0 +1,7 @@
+# The functions of Mission_SheriffMayor in level townhall (the script levels/townhall/scripts/mission_sheriffmayor.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, CreateMayor, CreatePoliceBoss, ReadyToTalk, Blablibla, PoliceBossMissionSpeech, OnPay, SetNextMission.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/townhall/mission_sheriffmayor.def replaces this file.
+section Init LevelPath
+call MissionsFuncs.SetMissionTarget "PoliceBoss_SheriffMayor"
+call Mission_SheriffMayor.Blablibla
+call Scrap.Set "GenCharStdFar" 1000

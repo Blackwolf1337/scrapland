@@ -1,0 +1,7 @@
+# The functions of SuperDeal_Third in level ca (the script levels/ca/scripts/superdeal_third.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: SetVars, Victory.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/ca/superdeal_third.def replaces this file.
+section InitStatus LevelPath
+call SuperDeal_Third.SetVars
+
+section Init LevelPath

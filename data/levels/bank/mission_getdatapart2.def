@@ -1,0 +1,28 @@
+# The functions of Mission_GetDataPart2 in level bank (the script levels/bank/scripts/mission_getdatapart2.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: ComputeAutoUpdateStopValue, InitStatus, Init, TalkToBoss, InitMission, SetDesktopState, CreateFuncInit, OnFunctionarySpeech, OnFuncDefState, SetStopDownloadingState, SetNormalState, AbortDownload, OnDownloadAborted, OnBeginDownloadData, OnFuncStartsWorking, OnDownloadComplete, MissionScorer.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/bank/mission_getdatapart2.def replaces this file.
+section BossSpeech UsrName CharName optId FullOption
+call MissionsFuncs.ActivateTarget %Mission_GetDataPart2.dd 0
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+setvar Speech.OnEndOfSpeech %Mission_GetDataPart2.PreInitMission
+setvar Speech.OnEndOfSpeechParams ()
+call Speech.NISpeech "Boss"
+call Speech.AutoAddNI "Mission_TalkToBoss2__ComBoss_NI_1Msg"
+call Speech.RunNI
+
+section PreInitMission
+call SaveGame.QWayPoint
+call SaveGame.MMDesc "Mission_GetDataPart2_MissionText1" 1
+call Scrap.SetSaveVar "MissionState" "Funcs"
+setvar DTritusDesktop.DialogController None
+call Mission_GetDataPart2.InitMission
+
+section SetNextMission
+call Scrap.DelSaveVars "MissionState"
+call Scrap.Set "OnFunctionaryStartsWorking" ""
+call Scrap.Set "OnDefStateCallback" ""
+call Scrap.Set "OnFinishAutoUpdate" ""
+call SaveGame.QWayPoint
+call MissionsFuncs.SetNextMission "Mission_GetDataPart3" "Commercial"
+call SaveGame.MMDesc "Mission_TalkToBoss3_MissionText1" 1

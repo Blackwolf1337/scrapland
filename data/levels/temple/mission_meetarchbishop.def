@@ -1,0 +1,18 @@
+# The functions of Mission_MeetArchbishop in level temple (the script levels/temple/scripts/mission_meetarchbishop.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: UseDoor, TestEndOfElevator, CreateFakeSpeech, Init, LoadYakuzziScene.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/temple/mission_meetarchbishop.def replaces this file.
+section InitStatus LevelPath
+setvar NewsPanel.MissionUse 1
+
+section SetNextMission usr=None
+call SaveGame.QWayPoint
+call MissionsFuncs.SetNextMission "Mission_HumphreyArchbishopKilled" "Press"
+call SaveGame.MMDesc "Mission_ArchBishopKilled_MissionText1" 1
+call Scrap.SetSaveVar "Char" "Dtritus"
+call SaveGame.MarkWayPoint "Levels/Press" "DM_Player_Spawn_DownTown" ""
+call Scrap.SetSaveVar "GameAct" "1stMurder"
+call Scrap.SetSaveVar "BadReputation" "1"
+call Scrap.SetSaveVar "StdShipAIProfile" "Pilot"
+call Scrap.Set "PlayVideo" "Video/Bishop.avi"
+call Scrap.Achievement 2
+call SaveGame.StartGame

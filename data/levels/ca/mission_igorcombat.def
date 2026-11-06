@@ -1,0 +1,7 @@
+# The functions of Mission_IgorCombat in level ca (the script levels/ca/scripts/mission_igorcombat.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: SetVars.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/ca/mission_igorcombat.def replaces this file.
+section InitStatus LevelPath
+call Mission_IgorCombat.SetVars
+
+section Init LevelPath

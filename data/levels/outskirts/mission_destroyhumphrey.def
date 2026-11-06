@@ -1,0 +1,20 @@
+# The functions of Mission_DestroyHumphrey in level outskirts (the script levels/outskirts/scripts/mission_destroyhumphrey.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: GetHumphreyProfile, InitStatus, CreateHumphrey, HumphreyAttacks, LaunchTaunt, OnHumphreyDeath, MissionScorer.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/outskirts/mission_destroyhumphrey.def replaces this file.
+section Init LevelPath
+call SScorer.AddModel 0 "EvilHumphrey" "Models/Heads/HeadEvilHumphrey/HeadEvilHumphrey" "" 4 18
+call Mission_DestroyHumphrey.CreateHumphrey
+setvar Parking.SwitchVehicleMissionCallback %Mission_DestroyHumphrey.StartMission
+
+section StartMission
+setvar Parking.SwitchVehicleMissionCallback None
+call Speech.AddRemoteCom "Mission_DestroyHumphrey_RemoteMessage2" "EvilHumphrey" %Mission_DestroyHumphrey.HumphreyAttacks ()
+
+section BossAppears
+call SScorer.Set 0 "Monitor" "Noise" 0
+call Speech.AddRemoteCom "Mission_DestroyHumphrey_RemoteMessage7" "Boss" %Mission_DestroyHumphrey.SetNextMission ()
+
+section SetNextMission
+call MissionsFuncs.SetNextMission "Mission_WhoIsTheBaddie" "Press"
+call SaveGame.MMDesc "Mission_MyBossIsTheBaddie_MissionText1" 1
+call SaveGame.QWayPoint

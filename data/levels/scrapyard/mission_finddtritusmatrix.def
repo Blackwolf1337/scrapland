@@ -1,0 +1,21 @@
+# The functions of Mission_FindDtritusMatrix in level scrapyard (the script levels/scrapyard/scripts/mission_finddtritusmatrix.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: SetLonelyMercProfile, InitStatus, Init, CreateLonelyMercShip, OnLonelyMercShipDeath, CheckLonelyMercShipExist, TestForLonelyMercShip, CheckCreateBadGuy, OutOfLonelyMercShip, ActivateMissionObjects, CreateBadGuy, OnBadGuyDeath, CreatePlan, TakePlanPhoto, CreateDtritusMatrix, TakeMatrix, CheckEndOfMission.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/scrapyard/mission_finddtritusmatrix.def replaces this file.
+section BadGuyAppears
+call Scrap.DeleteScheduledFuncs "CheckCreateBadGuy"
+call Speech.AddRemoteCom "Mission_FindDtritusMatrix1_RemoteMessage2" "DeepThroat"
+
+section CreateMissionPlans
+setvar CharAct.TakenPhoto %Mission_FindDtritusMatrix.TakePlanPhoto
+call Mission_FindDtritusMatrix.CreatePlan "DM_Mission_TeslaPlan" "No existe el dummy de los planos del Tesla"
+call Mission_FindDtritusMatrix.CreatePlan "DM_Mission_LonelyMercShipPlan" "No existe el dummy de los planos de la nave del mercenario solitario"
+call Mission_FindDtritusMatrix.CreatePlan "DM_Mission_LonelyMercEnginesPlan" "No existe el dummy de los planos de los motores de la nave del mercenario solitario"
+
+section SetNextMission
+call MissionsFuncs.SetNextMission "Mission_ReinsertOwnMatrix" "GDB"
+call SaveGame.MMDesc "Mission_ReinsertOwnMatrix_MissionText1" 1
+call Scrap.SetSaveVar "BadReputation" "3"
+call Scrap.SetSaveVar "StdShipAIProfile" "Elite"
+call Scrap.SetSaveVar "LonelyMercInGamblinDen" "0"
+call Scrap.SetSaveVar "LonelyMercDataActive" "0"
+call SaveGame.QWayPoint

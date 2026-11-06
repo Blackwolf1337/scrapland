@@ -1,0 +1,33 @@
+# The functions of Mission_Win2ndRace in level outskirts (the script levels/outskirts/scripts/mission_win2ndrace.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, InitRace, OnCounterMeasure, GetRaceWaypointIndex, RacerDamaged, OnRaceStart, OnCheckPoint, OnNearCheckPoint, NameOponGoItem, CancelMission.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/outskirts/mission_win2ndrace.def replaces this file.
+section RacerKilled LooserName WinnerName
+call Vehicles.OnDeath $LooserName $WinnerName
+call Scrap.SetAlarm 1
+
+section RaceGo ItemName VehicleName
+call Scrap.Set "isActionMusic" 1
+call RaceMaker.AbortCameraTravelling
+call RaceMaker.DestroyRaceCountDown
+call Mission_Win2ndRace.OnCheckPoint $ItemName $VehicleName
+call SInput.Bind 0 "Racer" "CM" "Mission_Win2ndRace.OnCounterMeasure"
+setvar Mission_Win2ndRace.LastCmTime -1
+
+section OnAlarmOn
+call Scrap.Set "isActionMusic" 0
+setvar Alarm.TempAbortMissionCallback None
+call Speech.AddRemoteCom "Mission_Win2ndRace_RemoteMessage1" "Trurl"
+call Mission_Win2ndRace.CancelMission
+
+section OnAlarmOff
+setvar Alarm.TempAbortMissionCallback %Mission_Win2ndRace.OnAlarmOn
+call Speech.AddRemoteCom "Mission_Win2ndRace_RemoteMessage2" "Trurl" %Mission_Win2ndRace.InitRace ()
+
+section PreSetNextMission
+call Scrap.Set "isActionMusic" 0
+call Speech.AddRemoteCom "Mission_Win2ndRace_RemoteMessage3" "Trurl" %Mission_Win2ndRace.SetNextMission ()
+
+section SetNextMission
+call MissionsFuncs.SetNextMission "Mission_ArrangeMortalRace" "GamblinDen"
+call SaveGame.MMDesc "Mission_ArrangeMortalRace_MissionText1" 1
+call SaveGame.QWayPoint

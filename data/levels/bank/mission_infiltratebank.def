@@ -1,0 +1,15 @@
+# The functions of Mission_InfiltrateBank in level bank (the script levels/bank/scripts/mission_infiltratebank.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, UseDoor, TestEndOfElevator, ReAssignTarget, AfterDTMessage, ShowDeepThroatMessage, SetArrowToBankMaster, CreateBankMaster, LaunchScene, LaunchScene2, SetNextMission, LoadScene.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/bank/mission_infiltratebank.def replaces this file.
+section OnPossession name pos
+if $name == %Mission_InfiltrateBank.BankMasterName
+	call MissionsFuncs.SetMissionTarget None
+	call Speech.AddRemoteCom "Mission_InfiltrateBank_RemoteMessage3" "DeepThroat" %Mission_InfiltrateBank.AfterDTMessage ()
+end
+
+section BankMasterSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_MeetBerto_BankBoss_InitMsg1" "Mission_MeetBerto_BankBoss_InitAns1"
+end

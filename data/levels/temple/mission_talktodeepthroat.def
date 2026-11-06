@@ -1,0 +1,16 @@
+# The functions of Mission_TalkToDeepThroat in level temple (the script levels/temple/scripts/mission_talktodeepthroat.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: Init, DeepThroatSpeech.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/temple/mission_talktodeepthroat.def replaces this file.
+section InitStatus LevelPath
+
+section SetNextMission
+setvar DTritusDesktop.DialogController None
+call SaveGame.QWayPoint
+call MissionsFuncs.SetNextMission "Mission_TalkToMayor" "TownHall"
+call SaveGame.MMDesc "Mission_TalkToMayor_MissionText1" 1
+call Scrap.SetSaveVar "MayorAtGambinDen" "0"
+call Scrap.SetSaveVar "MayorAtTownHall" "1"
+call Scrap.SetSaveVar "BankMasterAtBank" "1"
+call Scrap.SetSaveVar "Journalist.Humphrey_Defaut" "TownHall"
+call Scrap.SetSaveVar "Journalist.Betty_Defaut" "TownHall"
+call Scrap.SetSaveVar "Journalist.Berto_Defaut" "Press"

@@ -5,13 +5,28 @@ sys.path.insert(0, os.path.dirname(__file__))
 import py2def
 root, repo = sys.argv[1], sys.argv[2]
 MODULES = {'mapsnd': 'MapSnd', 'map': 'Map'}
+# the other modules of a level (missions, map libraries): the packs keep lower case file names, the module name is the
+# spelling the scripts use (Mission_MeetArchbishop)
+alltext = '\n'.join(open(f, encoding='latin1').read() for f in glob.glob(root + '/**/*.py', recursive=True))
+
+
+def module_name(base):
+    if base in MODULES:
+        return MODULES[base]
+    found = {}
+    for m in re.findall(r'\b(%s)\b' % re.escape(base), alltext, re.I):
+        if m != base:
+            found[m] = found.get(m, 0) + 1
+    return max(found, key=found.get) if found else None
+
+
 entries = []
 for path in sorted(glob.glob(root + '/*/levels/*/scripts/*.py')):
     level = path.split('/levels/')[1].split('/')[0]
     base = os.path.basename(path)[:-3]
-    if level.startswith('_') or base not in MODULES:
+    module = module_name(base)
+    if level.startswith('_') or not module:
         continue
-    module = MODULES[base]
     sections, kept = py2def.convert(module, path)
     if not sections:
         continue

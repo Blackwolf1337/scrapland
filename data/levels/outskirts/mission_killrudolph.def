@@ -1,0 +1,8 @@
+# The functions of Mission_KillRudolph in level outskirts (the script levels/outskirts/scripts/mission_killrudolph.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: GetRudolphProfile, RaceList, InitStatus, Init, GetDealType, InitRace, initCreateRudolph, SetRudolphDef, OnDamage, EndOfRace, SetRudolphAsNone, RudolphKilled, CreateClue, ActivateClue, OnClueTaken, InitTalkToPoliceBoss, UsePhoneCab, SetNextMission2.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/outskirts/mission_killrudolph.def replaces this file.
+section SetNextMission
+call Scrap.SetSaveVar "KillRudolphMissionData" "TalkToPoliceBoss"
+call SaveGame.QWayPoint
+call SaveGame.MMDesc "Mission_Get3rdClue_MissionText1" 1
+call Mission_KillRudolph.InitTalkToPoliceBoss

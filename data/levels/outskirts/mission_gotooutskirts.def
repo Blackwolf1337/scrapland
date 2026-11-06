@@ -1,0 +1,12 @@
+# The functions of Mission_GoToOutskirts in level outskirts (the script levels/outskirts/scripts/mission_gotooutskirts.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, LaunchCrazyGamblerComunication, PlayCrazyGamblerComunication.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/outskirts/mission_gotooutskirts.def replaces this file.
+section OnMainCharDeath MainCharnName Param2
+call Scrap.SetSaveVar "PlayerHasBeenKilled" "1"
+call MissionsFuncs.FinishGame 0
+
+section UseElevator UsrName ElevatorName optId FullOption
+call Scrap.DelSaveVars "PlayerHasBeenKilled"
+call SaveGame.QWayPoint
+call MissionsFuncs.SetNextMission "Mission_CrazyGamblerFirstContact" "GamblinDen"
+call Elevator.UseElevator $UsrName $ElevatorName $optId $FullOption

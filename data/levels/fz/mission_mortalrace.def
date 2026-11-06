@@ -1,0 +1,7 @@
+# The functions of Mission_MortalRace in level fz (the script levels/fz/scripts/mission_mortalrace.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: SetVars.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/fz/mission_mortalrace.def replaces this file.
+section InitStatus LevelPath
+call Mission_MortalRace.SetVars
+
+section Init LevelPath

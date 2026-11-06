@@ -1,0 +1,12 @@
+# The functions of MapMatrix in level gdb (the script levels/gdb/scripts/mapmatrix.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: EndOFScene, Load.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/gdb/mapmatrix.def replaces this file.
+section InitStatus LevelPath
+
+section Init LevelPath
+call MapMatrix.Load
+
+section RestoreMatrix Carlback=None
+setvar Scene.EndOfSceneCallback %MapMatrix.EndOFScene
+call Scene.Play "EnterMatrix"
+setvar MapMatrix.EndFunc $Carlback

@@ -1,0 +1,30 @@
+# The functions of Mission_AskGus in level temple (the script levels/temple/scripts/mission_askgus.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, AfterBrowseNPC, CreateGusInit, Init, DeepThroatAppears, PreCallDeepThroat, CallDeepThroat, DeepThroatSpeech.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/temple/mission_askgus.def replaces this file.
+section GusSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	setvar Speech.OnEndOfSpeech %Mission_AskGus.DeepThroatAppears
+	setvar Speech.OnEndOfSpeechParams ($CharName,)
+	call Speech.NISpeech "Bishop"
+	call Speech.AutoAddNI "Mission_TalkToGus_Gus_NI_1Msg"
+	call Speech.RunNI
+end
+
+section DeepThroatCalls
+call Speech.AddRemoteCom "Mission_TalkToGus_RemoteMessage1" "DeepThroat" %Mission_AskGus.PreCallDeepThroat
+
+section SetNextMission
+setvar DTritusDesktop.DialogController None
+call Scrap.DelSaveVars "MissionState"
+call Scrap.SetSaveVar "LonelyMercInGamblinDen" "1"
+call Scrap.SetSaveVar "LonelyMercDataActive" "1"
+call SaveGame.QWayPoint
+call MissionsFuncs.SetNextMission "Mission_FindDtritusMatrix" "Scrapyard"
+call SaveGame.MMDesc "Mission_FindDtritusMatrix1_MissionText1" 1
+call Scrap.SetSaveVar "Parked.Police" "['SPOLI1', 'SPOLI2', 'SPOLI3', 'SPOLI4']"
+call Scrap.SetSaveVar "Parked.Mercs" "['SMERC1', 'SMERC2']"
+call Scrap.SetSaveVar "Parked.TownHall" "['SFUNC1']"
+call Scrap.SetSaveVar "Parked.Bank" "['SBANKER1']"
+call Scrap.SetSaveVar "Parked.Temple" "['SBISHOP1']"

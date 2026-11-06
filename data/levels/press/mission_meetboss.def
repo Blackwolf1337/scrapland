@@ -1,0 +1,64 @@
+# The functions of Mission_MeetBoss in level press (the script levels/press/scripts/mission_meetboss.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, AfterBrowseNPC, CreateHumphreyInit, CreateBertoInit, BertoSpeech, BertoSpeech2, DeactivateEmero, ActivateEmero, Init, PlayProlog0, PlayProlog1, PlayProlog2, CreateBattery, AssingOnTakeBattery, OnTakeBattery, PreBertoPossession, BertoPossession, OnWarning, OnActionPressed, OnPossession, ShowMessage, OnAlarmEnd, UseConversor, OnConversorUsed, CheckConversion, ChallengeHumphrey, HumphreySpeech, SetNextMission, LoadProlog0Scene, LoadProlog1Scene, LoadProlog2Scene.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_meetboss.def replaces this file.
+section EndOfMetroAnim elv
+setvar Elevator.OnElevatorReachDown None
+setvar Mission_MeetBoss.FirstBertoSpeech 1
+call Mission_MeetBoss.BertoSpeech "" "" "" ""
+call SScorer.Fade 0 (0,0,0,255) (0,0,0,0) 0.25
+
+section OnMainCharDeath MainCharnName Param2
+call Scrap.SetSaveVar "PlayerHasBeenKilled" "1"
+call MissionsFuncs.FinishGame 0
+
+section OnTryingToExit UsrName MetroName optId FullOption
+call Speech.AddRemoteCom "Mission_FirstContactPress_RemoteMessage3" "Berto"
+
+section OnTryingToExit2 UsrName MetroName optId FullOption
+call Speech.AddRemoteCom "Mission_GetBatteries_RemoteMessage5" "CrazyGambler"
+
+section OnTryingToExit3 UsrName MetroName optId FullOption
+call Speech.AddRemoteCom "Mission_TalkToCrazy_RemoteMessage1" "CrazyGambler"
+
+section PlayBettyTheme
+call Scrap.Set "isActionIndoor" 0
+call SSound.SetMusic "Music/Betty.ogg" 1.0
+
+section StopBettyTheme
+call SSound.SetMusic "Music/Track1.ogg" 1.0
+
+section AssignFirstMission usr=None
+call Scrap.Set "isActionIndoor" 1
+call SScorer.Fade 0 (0,0,0,0) (0,0,0,0) 0.1
+call Scrap.SetSaveVar "MissionState" "GetBattery"
+call SaveGame.MMDesc "Mission_GetBatteries_MissionText1" 1
+call Mission_MeetBoss.CreateBattery
+
+section PreFirstCrazyDeal
+call SaveGame.MMDesc "Mission_TalkToCrazy_MissionText1" 1
+call Mission_MeetBoss.FirstCrazyDeal
+
+section FirstCrazyDeal
+call MissionsFuncs.SetMissionTarget "DM_DTritusDesktop"
+setvar DTritusDesktop.DialogController %Mission_MeetBoss.CrazyGamblerSpeech
+
+section CrazyGamblerSpeech UsrName CharName optId FullOption
+call MissionsFuncs.SetMissionTarget None
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+setvar Speech.OnEndOfSpeech %Mission_MeetBoss.PreBertoPossession
+setvar Speech.OnEndOfSpeechParams ()
+call Speech.NISpeech "CrazyGambler"
+call Speech.AutoAddNI "Mission_TalkToCrazy_ComCrazyGambler_NI_1Msg"
+call Speech.RunNI
+
+section PreChallengeHumphrey
+call Scrap.SetSaveVar "MissionState" "ChallengeHumphrey"
+call Mission_MeetBoss.ChallengeHumphrey
+
+section FXMeetBossProlog2Flash
+call Scrap.SetCallFunc "!FXSebastianFlash"
+call Scrap.AddParams "Prolog2Gatekeeper"
+call Scrap.AddParams ""
+call Scrap.AddParamf 0
+call Scrap.Execute

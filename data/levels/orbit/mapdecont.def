@@ -1,0 +1,15 @@
+# The functions of MapDecont in level orbit (the script levels/orbit/scripts/mapdecont.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Decontamination, EndOfScene, SetWaypoint, LoadDecontamination, Init, MsgOffVoice, SetFirstInfoPointAsMission, CantUseElevator, CloseGateKeeperDoor, OpenGateKeeperDoor, AfterBrowseNPC, CreateFunctionaryInit, CreateBishopInit, CreateGateKeeperInit, CreateSentinelInit, ShowSkipConvsMsg, GateKeeperSpeech, SentinelSpeech, GaugeBlink, CheckShowNextHowto, CreateBishopsLauncher, EndOfSceneBishops, LoadBishopsScene, FXBishopsPray, PlayBishops, LoadFunctionaryScene, AddDF, SetDFAnm, EndOfSceneFunctionary, CreateDownKeyPad, PlayFalling, LoadFallingScene.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/orbit/mapdecont.def replaces this file.
+section DecontaminatedWaypoint
+call Scrap.SetSaveVar "Orbit.Decontaminated" "yes"
+call SaveGame.MarkWayPoint "Levels/Orbit" "DM_Player_Spawn_Decontamination"
+
+section JumpNextMission usr
+call Scrap.SetSaveVar "Challenge" "1"
+call SaveGame.MarkWayPoint "Levels/Fake" "DM_Player_Spawn_Orbit"
+call SaveGame.StartGame
+
+section PlayFunctionary UsrName CharName optId FullOption
+setvar Scene.EndOfSceneCallback %MapDecont.EndOfSceneFunctionary
+call Scene.Play "Functionary"

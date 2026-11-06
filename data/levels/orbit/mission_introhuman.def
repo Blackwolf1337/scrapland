@@ -1,0 +1,10 @@
+# The functions of Mission_IntroHuman in level orbit (the script levels/orbit/scripts/mission_introhuman.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: Init, BillArrives_B, SetNextMission, LoadSceneA, LoadSceneB, LoadSceneC.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/orbit/mission_introhuman.def replaces this file.
+section InitStatus LevelPath
+call Chars.AddNewCharRes "Gear"
+call Chars.AddNewCharRes "Human"
+
+section BillArrives_C usr=None
+call Scene.Play "BillArrives_C"
+setvar Scene.EndOfSceneCallback %Mission_IntroHuman.SetNextMission

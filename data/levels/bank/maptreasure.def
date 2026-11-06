@@ -1,0 +1,5 @@
+# The functions of MapTreasure in level bank (the script levels/bank/scripts/maptreasure.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitDeal, TakeMiniDeal, BlinkBigPrize, BigPrize, DeleteShent, RestartShents, InitStatus, MakeCoin, CreateCoins.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/bank/maptreasure.def replaces this file.
+section Init LevelPath
+call MapTreasure.CreateCoins

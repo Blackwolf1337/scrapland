@@ -1,6 +1,38 @@
 # The functions of Map in level abindoor (the script levels/abindoor/scripts/map.py of data03.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, CreateHuman, CreateBerto, CreateBetty, CreateCrazyGambler, OnHumanSpeech, OnBettySpeech, OnBertoSpeech, OnCrazyGamblerSpeech, Init, PlaySceneA, Goodbye, LaunchCinematic, ShowEndTitle, FadeEndTitle, LoadSceneA, LoadSceneB.
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, CreateHuman, CreateBerto, CreateBetty, CreateCrazyGambler, Init, Goodbye, LaunchCinematic, ShowEndTitle, FadeEndTitle, LoadSceneA, LoadSceneB.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/abindoor/map.def replaces this file.
+section OnHumanSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_TheEnd_InitMsg3" "Mission_TheEnd_InitAns3"
+end
+
+section OnBettySpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_TheEnd_InitMsg4" "Mission_TheEnd_InitAns4"
+end
+
+section OnBertoSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_TheEnd_InitMsg2" "Mission_TheEnd_InitAns2"
+end
+
+section OnCrazyGamblerSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_TheEnd_InitMsg1" "Mission_TheEnd_InitAns1"
+end
+
+section PlaySceneA
+call Scene.Play "TheEndA"
+setvar Scene.EndOfSceneCallback %Map.Goodbye
+
 section Credits usr=None
 call Scrap.Achievement 7
 call Scrap.Set "MotionBlurFactorBegin" 0

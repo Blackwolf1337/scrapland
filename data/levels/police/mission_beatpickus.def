@@ -1,0 +1,46 @@
+# The functions of Mission_BeatPickus in level police (the script levels/police/scripts/mission_beatpickus.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, DisableIAFunctionary, OnTraitoriusRespawn, OnThugRespawn, SetThugsState, SetState, TraitoriusSpeech, HireThugs, ThugLeaderSpeech, ThugNormalSpeech, BeatPickus, OnAlarmActivated, CheckMaxDist, CheckThugsDist, CreateLauncher, LaunchPickusFightScene, CreatePickusBeatenClass, InitPickusBeaten, DelThug, AskPickus, OnTalkToPickus, GetFuncShipPlans, TakePlanPhoto, TalkToTraitoriusAgain, TraitoriusAgainSpeech, LoadScene, LightingActivate.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/police/mission_beatpickus.def replaces this file.
+section PreHireThugs CharName
+call Speech.RestoreState $CharName
+call Scrap.SetSaveVar "MissionState" "HireThugs"
+call SaveGame.QWayPoint
+call SaveGame.MMDesc "Mission_HireThugs_MissionText1" 1
+call Mission_BeatPickus.HireThugs
+
+section PreBeatPickus CharName
+call Scrap.SetSaveVar "MissionState" "BeatPickus"
+call Speech.RestoreState $CharName
+call Mission_BeatPickus.BeatPickus
+
+section OnAlarmDeactivated
+call Scrap.SetSaveVar "MissionState" "HireThugs"
+call Mission_BeatPickus.HireThugs
+call Mission_BeatPickus.SetThugsState
+
+section PreGetFuncShipPlans
+setvar Alarm.RestoreMissionCallback None
+setvar Alarm.AbortMissionCallback None
+call Scrap.SetSaveVar "MissionState" "GetFuncShipPlans"
+call SaveGame.QWayPoint
+call SaveGame.MMDesc "Mission_GetFuncShipPlans_MissionText1" 1
+call Mission_BeatPickus.GetFuncShipPlans
+
+section PreTalkToTraitoriusAgain
+call Scrap.SetSaveVar "MissionState" "TalkToTraitoriusAgain"
+call SaveGame.QWayPoint
+call SaveGame.MMDesc "Mission_TalkToTraitorius2_MissionText1" 1
+call Mission_BeatPickus.TalkToTraitoriusAgain
+
+section SetNextMission
+setvar Mission_BeatPickus.alreadyTalked 1
+call MissionsFuncs.SetMissionTarget None
+call Scrap.DelSaveVars "MissionState"
+call SaveGame.QWayPoint
+call MissionsFuncs.SetNextMission "Mission_DestroyMickus" "Commercial"
+call SaveGame.MMDesc "Mission_Search&DestroyMickus_MissionText1" 1
+call Scrap.SetSaveVar "Parked.Police" "['SPOLI1', 'SPOLI2', 'SPOLI3']"
+call Scrap.SetSaveVar "Parked.Mercs" "['SMERC1', 'SMERC2']"
+call Scrap.SetSaveVar "Parked.TownHall" "['SFUNC1']"
+call Scrap.SetSaveVar "Parked.Bank" "['SBANKER1']"
+call Scrap.SetSaveVar "Parked.Temple" "['SPOLI3']"

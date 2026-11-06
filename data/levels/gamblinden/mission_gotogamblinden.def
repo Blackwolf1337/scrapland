@@ -1,0 +1,31 @@
+# The functions of Mission_GoToGamblinDen in level gamblinden (the script levels/gamblinden/scripts/mission_gotogamblinden.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, AfterBrowseNPC, CreateMercenaryInit, Init, LoadScene.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/gamblinden/mission_gotogamblinden.def replaces this file.
+section MercenarySpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_DestroyCommSats1_Merc_InitMsg1" "Mission_DestroyCommSats1_Merc_InitAns1"
+end
+
+section HumanSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_DestroyCommSats1_Human_InitMsg1" "Mission_DestroyCommSats1_Human_InitAns1"
+end
+
+section CrazyGamblerSpeech UsrName CharName optId FullOption
+setvar Speech.PlayerName $UsrName
+setvar Speech.NPCName $CharName
+if $optId == "Talk"
+	call Speech.OnSpch "Mission_DestroyCommSats1_CrazyGambler_InitMsg1" "Mission_DestroyCommSats1_CrazyGambler_InitAns1"
+end
+
+section SetNextMission usr=None
+call SScorer.Fade 0 (0,0,0,255) (0,0,0,0) 1.0
+call Scrap.SetSaveVar "MercsHelpDtritus" "1"
+call MissionsFuncs.SetNextMission "Mission_DestroyCommSats1" "Outskirts"
+call SaveGame.MMDesc "Mission_DestroyCommSats1_MissionText1" 1
+call SaveGame.QWayPoint
+call SSound.SetMusicVolume 1.0
