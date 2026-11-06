@@ -26,7 +26,10 @@ typedef struct {
 	PyMethodDef *methods;
 } levelModule_t;
 
+extern PyMethodDef g_MenuMapMethods[];
+
 static const levelModule_t level_modules[] = {
+	{ "menu", "Map", g_MenuMapMethods },
 	{ NULL, NULL, NULL },
 };
 
