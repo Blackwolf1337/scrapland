@@ -242,6 +242,45 @@ static const char mod_modules_tesla[] = {
 static const char mod_modules_vulcan[] = {
 #embed "../../../data/modules/vulcan.mod"
 	, 0 };
+static const char mod_modules_ctf[] = {
+#embed "../../../data/modules/ctf.mod"
+	, 0 };
+static const char mod_modules_challenge[] = {
+#embed "../../../data/modules/challenge.mod"
+	, 0 };
+static const char mod_modules_deathmatch[] = {
+#embed "../../../data/modules/deathmatch.mod"
+	, 0 };
+static const char mod_modules_doors[] = {
+#embed "../../../data/modules/doors.mod"
+	, 0 };
+static const char mod_modules_elevator[] = {
+#embed "../../../data/modules/elevator.mod"
+	, 0 };
+static const char mod_modules_inpolice[] = {
+#embed "../../../data/modules/inpolice.mod"
+	, 0 };
+static const char mod_modules_metro[] = {
+#embed "../../../data/modules/metro.mod"
+	, 0 };
+static const char mod_modules_mortalrace[] = {
+#embed "../../../data/modules/mortalrace.mod"
+	, 0 };
+static const char mod_modules_outpolice[] = {
+#embed "../../../data/modules/outpolice.mod"
+	, 0 };
+static const char mod_modules_phonecab[] = {
+#embed "../../../data/modules/phonecab.mod"
+	, 0 };
+static const char mod_modules_scene[] = {
+#embed "../../../data/modules/scene.mod"
+	, 0 };
+static const char mod_modules_teleport[] = {
+#embed "../../../data/modules/teleport.mod"
+	, 0 };
+static const char mod_modules_teamdeathmatch[] = {
+#embed "../../../data/modules/teamdeathmatch.mod"
+	, 0 };
 
 static const moduleFile_t module_files[] = {
 	{ NULL, "Sound", "modules/sound.mod", mod_modules_sound },
@@ -325,4 +364,17 @@ static const moduleFile_t module_files[] = {
 	{ NULL, "Swarm", "modules/swarm.mod", mod_modules_swarm },
 	{ NULL, "Tesla", "modules/tesla.mod", mod_modules_tesla },
 	{ NULL, "Vulcan", "modules/vulcan.mod", mod_modules_vulcan },
+	{ NULL, "CTF", "modules/ctf.mod", mod_modules_ctf },
+	{ NULL, "Challenge", "modules/challenge.mod", mod_modules_challenge },
+	{ NULL, "DeathMatch", "modules/deathmatch.mod", mod_modules_deathmatch },
+	{ NULL, "Doors", "modules/doors.mod", mod_modules_doors },
+	{ NULL, "Elevator", "modules/elevator.mod", mod_modules_elevator },
+	{ NULL, "InPolice", "modules/inpolice.mod", mod_modules_inpolice },
+	{ NULL, "Metro", "modules/metro.mod", mod_modules_metro },
+	{ NULL, "MortalRace", "modules/mortalrace.mod", mod_modules_mortalrace },
+	{ NULL, "OutPolice", "modules/outpolice.mod", mod_modules_outpolice },
+	{ NULL, "PhoneCab", "modules/phonecab.mod", mod_modules_phonecab },
+	{ NULL, "Scene", "modules/scene.mod", mod_modules_scene },
+	{ NULL, "Teleport", "modules/teleport.mod", mod_modules_teleport },
+	{ NULL, "teamdeathmatch", "modules/teamdeathmatch.mod", mod_modules_teamdeathmatch },
 };

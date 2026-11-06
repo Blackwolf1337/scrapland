@@ -81,3 +81,16 @@ SputnikInterface	-	Data.packed/scripts/shipedit/sputnikinterface.pyc
 Swarm	-	Data.packed/scripts/weapons/swarm.pyc
 Tesla	-	Data.packed/scripts/weapons/tesla.pyc
 Vulcan	-	Data.packed/scripts/weapons/vulcan.pyc
+CTF	-	Data.packed/scripts/superdeals/ctf.pyc
+Challenge	-	Data.packed/scripts/missions/challenge.pyc
+DeathMatch	-	Data.packed/scripts/superdeals/deathmatch.pyc
+Doors	-	Data.packed/scripts/missions/doors.pyc
+Elevator	-	Data.packed/scripts/missions/elevator.pyc
+InPolice	-	Data.packed/scripts/missions/inpolice.pyc
+Metro	-	Data.packed/scripts/missions/metro.pyc
+MortalRace	-	Data.packed/scripts/superdeals/mortalrace.pyc
+OutPolice	-	Data.packed/scripts/missions/outpolice.pyc
+PhoneCab	-	Data.packed/scripts/missions/phonecab.pyc
+Scene	-	Data.packed/scripts/missions/scene.pyc
+Teleport	-	Data.packed/scripts/missions/teleport.pyc
+teamdeathmatch	-	Data.packed/scripts/superdeals/teamdeathmatch.pyc
