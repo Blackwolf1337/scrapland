@@ -89,6 +89,8 @@ static const scriptModule_t script_modules[] = {
 	{ "EMI", g_EMIMethods },
 	{ "Sonic", g_SonicMethods },
 	{ "SputnikInterface", g_SputnikInterfaceMethods },
+	{ "ShipEdit", g_ShipEditMethods },
+	{ "HangarTab", g_HangarTabMethods },
 	{ "Vehicles", g_VehiclesMethods },
 	{ "VehiclesNPC", g_VehiclesNPCMethods },
 	{ "Split", g_SplitMethods },

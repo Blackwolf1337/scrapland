@@ -328,6 +328,9 @@ extern PyMethodDef g_CloudMethods[];
 extern PyMethodDef g_EMIMethods[];
 extern PyMethodDef g_SonicMethods[];
 extern PyMethodDef g_SputnikInterfaceMethods[];
+/* the ship editor (src/game/Script/ShipEdit.c, HangarTab.c, data/menus/shipedit.def) */
+extern PyMethodDef g_ShipEditMethods[];
+extern PyMethodDef g_HangarTabMethods[];
 extern PyMethodDef g_VehiclesMethods[];
 extern PyMethodDef g_VehiclesNPCMethods[];
 extern PyMethodDef g_SplitMethods[];
