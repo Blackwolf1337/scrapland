@@ -1,0 +1,16 @@
+# The functions of Map in level gamblinden (the script levels/gamblinden/scripts/map.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/GamblinDen.c): InitStatus, AfterBrowseNPC, CreateFixedMercInit, Init, LonelyMercSpeech, CharUsrAct, CharUsrDance, MercDrink, ChatNPCs, CharDance, MercenarySpeech, StartContract.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/gamblinden/map.def replaces this file.
+section CreateFixedInit e
+object $e
+LLogicDefaultState 6
+LLogicDefaultTarget ""
+LLogicState 6
+LLogicTarget ""
+LLogicIdle 1
+LLogicIdle 0
+
+section CreateLonelyMerc e
+call Map.CreateFixedInit $e
+object $e
+UseFunc "Map.LonelyMercSpeech"

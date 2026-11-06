@@ -699,17 +699,19 @@ static const char *Def_Tokens(const char *p, char *buf, int size, scriptLine_t *
 		if (!*p || *p == '\n' || *p == '#') {
 			break;
 		}
+		/* a text in "" or in '' (for texts that hold a ", like the Python lines of OnVictory) */
+		char q = *p == '"' || *p == '\'' ? *p : 0;
 		if (l->n < SCRIPT_MAX_TOKENS) {
-			l->quoted[l->n] = *p == '"';
+			l->quoted[l->n] = q != 0;
 			l->tok[l->n++] = o;
 		}
-		if (*p == '"') {
-			for (p++; *p && *p != '"' && *p != '\n'; p++) {
+		if (q) {
+			for (p++; *p && *p != q && *p != '\n'; p++) {
 				if (o < end) {
 					*o++ = *p;
 				}
 			}
-			if (*p == '"') {
+			if (*p == q) {
 				p++;
 			}
 		} else {

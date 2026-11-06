@@ -20,6 +20,18 @@ def module_name(base):
     return max(found, key=found.get) if found else None
 
 
+# the C file of a level module: the file that defines the table of its row in level_modules (Levels.c)
+ldir = os.path.join(repo, 'src/game/Script/levels')
+cfiles = dict((f.lower(), f) for f in os.listdir(ldir))
+defs = {}
+for f in os.listdir(ldir):
+    for t in re.findall(r'^PyMethodDef (g_\w+)\[\]', open(os.path.join(ldir, f), encoding='latin1').read(), re.M):
+        defs[t] = f
+ctables = {}
+for lv, mod, t in re.findall(r'\{ "(\w+)", "(\w+)", (g_\w+) \}', open(os.path.join(repo, 'src/game/Script/Levels.c')).read()):
+    if t in defs:
+        ctables[(lv, mod)] = defs[t]
+
 entries = []
 for path in sorted(glob.glob(root + '/*/levels/*/scripts/*.py')):
     level = path.split('/levels/')[1].split('/')[0]
@@ -31,8 +43,8 @@ for path in sorted(glob.glob(root + '/*/levels/*/scripts/*.py')):
     if not sections:
         continue
     pack = path.split('/packs/')[1].split('/')[0]
-    cfiles = dict((f.lower(), f) for f in os.listdir(os.path.join(repo, 'src/game/Script/levels')))
-    rest = 'are C (src/game/Script/levels/%s)' % cfiles[level + '.c'] if level + '.c' in cfiles else 'stay Python'
+    cfile = ctables.get((level, module)) or cfiles.get(level + '.c')
+    rest = 'are C (src/game/Script/levels/%s)' % cfile if cfile else 'stay Python'
     head = ['# The functions of %s in level %s (the script levels/%s/scripts/%s.py of %s) that are data: one section' % (module, level, level, base, pack),
             '# per function, its parameters after the name. The other functions of the script %s%s.' % (rest,
                 (': ' + ', '.join(k for k, _ in kept)) if kept else ''),

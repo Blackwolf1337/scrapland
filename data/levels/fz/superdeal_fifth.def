@@ -1,7 +1,43 @@
 # The functions of SuperDeal_Fifth in level fz (the script levels/fz/scripts/superdeal_fifth.py of Data.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: SetVars, Victory.
+# per function, its parameters after the name. The other functions of the script stay Python.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/fz/superdeal_fifth.def replaces this file.
+section SetVars
+call Scrap.SetSaveVar "CTFFlags" "10"
+call Scrap.SetSaveVar "CTFNumEnemies" "4"
+call Scrap.SetSaveVar "CTFNumFriends" "4"
+call Scrap.SetSaveVar "CTFEnemyType" "Mercs"
+call Scrap.SetSaveVar "CTFFriendType" "Press"
+call Scrap.SetSaveVar "CTFFriendHead" "CrazyGambler"
+run saveint reputation "BadReputation"
+if $reputation < 2
+	call Scrap.SetSaveVar "CTFFriendProfile" "SuperDealFifthFriendsPilot"
+	call Scrap.SetSaveVar "CTFEnemyProfile" "SuperDealFifthEnemiesPilot"
+elif $reputation < 4
+	call Scrap.SetSaveVar "CTFFriendProfile" "SuperDealFifthFriendsElite"
+	call Scrap.SetSaveVar "CTFEnemyProfile" "SuperDealFifthEnemiesElite"
+else
+	call Scrap.SetSaveVar "CTFFriendProfile" "SuperDealFifthFriendsMegaAce"
+	call Scrap.SetSaveVar "CTFEnemyProfile" "SuperDealFifthEnemiesMegaAce"
+end
+call Scrap.SetSaveVar "CTFOnDeathSpawnTime" "5.0"
+call Scrap.SetSaveVar "CTFStartTextCad" "SuperDeal_Fifth_RemoteMessage1"
+call Scrap.SetSaveVar "CTFFinishPlayerWinsTextCad" "SuperDeal_Fifth_RemoteMessage2"
+call Scrap.SetSaveVar "CTFFinishPlayerLoosesTextCad" "SuperDeal_Fifth_RemoteMessage3"
+let executeOnAbort "import MissionsFuncs; MissionsFuncs.EndOfSuperDeal('SuperDeal_Faliure_SystemMessage1')"
+let executeOnVictory "import SuperDeal_Fifth;SuperDeal_Fifth.Victory()"
+call Scrap.SetSaveVar "OnAbort" $executeOnAbort
+call Scrap.SetSaveVar "OnVictory" $executeOnVictory
+
 section InitStatus LevelPath
 call SuperDeal_Fifth.SetVars
 
 section Init LevelPath
+
+section Victory
+run savelistadd "Hangar.availableUpgradesList" "DevastatorUpgrade2"
+call Scrap.IncSaveVar "NewBluePrintAvaliable"
+call MissionsFuncs.NewCrazyDeal 1 "Stats.BankDirector" 5000
+call MissionsFuncs.NewCrazyDeal 2 "Stats.Race.Bankers" 3
+call MissionsFuncs.NewCrazyDeal 3 "Stats.TempleLife" 3
+call MissionsFuncs.SetNextSuperDeal "OM" "SuperDeal_Sixth" "Domination"
+call MissionsFuncs.EndOfSuperDeal "SuperDeal_Fifth_SystemMessage1"

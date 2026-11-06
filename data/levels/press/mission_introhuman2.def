@@ -1,5 +1,5 @@
 # The functions of Mission_IntroHuman2 in level press (the script levels/press/scripts/mission_introhuman2.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: LaunchHumphreySpeech, LoadScene.
+# per function, its parameters after the name. The other functions of the script stay Python: LaunchHumphreySpeech.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_introhuman2.def replaces this file.
 section InitStatus LevelPath
 call Scrap.SetSaveVar "Char" "Dtritus"
@@ -22,3 +22,56 @@ call Scrap.SetSaveVar "Journalist.Humphrey_Defaut" "Police"
 call Scrap.SetSaveVar "Journalist.Betty_Defaut" "Press"
 call Scrap.SetSaveVar "Journalist.Berto_Defaut" "Press"
 call Scrap.DelSaveVars "Mission_IntroHuman2"
+
+section LoadScene
+call Scene.Load "News3"
+call Scene.ActorAction 0 "Betty" "TV-Relax"
+call Scene.ActorAction 60 "Betty" "TV-Look"
+call Scene.ActorAction 100 "Betty" "TV-Relax"
+call Scene.ActorAction 140 "Betty" "MorphLips"
+call Scene.ActorAction 140 "Betty" "TV-Talk"
+call Scene.ActorAction 200 "Betty" "TV-Look"
+call Scene.ActorAction 260 "Betty" "TV-Talk"
+call Scene.ActorAction 290 "Betty" "TV-Talk1"
+call Scene.ActorAction 340 "Betty" "TV-Talk0"
+call Scene.ActorAction 380 "Betty" "TV-Boton"
+call Scene.ActorAction 420 "Betty" "TV-Talk"
+call Scene.ActorAction 660 "Betty" "TV-Talk1"
+call Scene.ActorAction 720 "Betty" "TV-Talk"
+call Scene.ActorAction 785 "Betty" "TV-Talk0"
+call Scene.ActorAction 845 "Betty" "TV-Relax"
+call Scene.ActorBreakChannel 860 "Betty" 3
+call Scene.ActorAction 0 "Cabecera" "Relax"
+call Scene.AddGeneric 90 'Scrap.GetEntity("News3Cabecera").Active=0'
+call Scene.ActorAction 0 "Screenshot1" "Relax"
+call Scene.ActorAction 0 "Final" "Relax"
+call Scene.ActorAction 0 "Portatil" "Relax"
+call Scene.AddText 140 "News_3rdMurder_RemoteMessage1" 24
+call Scrap.Set "DefInterpTime" 1.0
+let CharType "Betty"
+call Scene.AddCharActor "Betty" $CharType
+call Scene.CreateLocalAction $CharType 0 "TV-Relax" "TV-Relax" 1
+call Scene.CreateLocalAction $CharType 0 "TV-Talk" "TV-Talk" 1
+call Scene.CreateLocalAction $CharType 0 "TV-Talk0" "TV-Talk0" 1
+call Scene.CreateLocalAction $CharType 0 "TV-Talk1" "TV-Talk1" 1
+call Scene.CreateLocalAction $CharType 0 "TV-Boton" "TV-Boton" 1
+call Scene.CreateLocalAction $CharType 0 "TV-Look" "TV-Look" 1
+call Scene.SetDefSounds "Betty" $CharType
+call SAct.SetCls "DefAction" "TV-Relax"
+let CharType "Cabecera"
+call Scene.AddLocalActor "Cabecera" $CharType
+call Scene.CreateLocalAction $CharType 0 "Relax" "Relax" 1
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Screenshot1"
+call Scene.AddLocalActor "Screenshot1" $CharType
+call Scene.CreateLocalAction $CharType 0 "Relax" "Relax" 1
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Final"
+call Scene.AddLocalActor "Final" $CharType
+call Scene.CreateLocalAction $CharType 0 "Relax" "Relax" 1
+call SAct.SetCls "DefAction" "Relax"
+let CharType "Portatil"
+call Scene.AddLocalActor "Portatil" $CharType
+call Scene.CreateLocalAction $CharType 0 "Relax" "Relax" 1
+call SAct.SetCls "DefAction" "Relax"
+run setdef "DefInterpTime"

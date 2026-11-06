@@ -1,5 +1,5 @@
 # The functions of MapFinalFight in level ab (the script levels/ab/scripts/mapfinalfight.py of data03.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: GetBossProfile, FakeShips, Init, CreateBoss, MissionScorer, SetFase, BossAttacks, BossRelax, OnPlayerDeath, RespawnPlayer, LaunchTaunt, OnBossRecoversZero, OnBossRecoversEnd, OnBossDestroyed, PreLoadFinal, LoadFinal.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/AB.c): GetBossProfile, FakeShips, Init, CreateBoss, MissionScorer, SetFase, BossAttacks, BossRelax, OnPlayerDeath, RespawnPlayer, LaunchTaunt, OnBossRecoversZero, OnBossRecoversEnd, OnBossDestroyed, PreLoadFinal.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/ab/mapfinalfight.def replaces this file.
 section InitStatus LevelPath
 setvar MapFinalFight.PrevCreateStdShips %ShipMaker.CreateStdShips
@@ -10,3 +10,12 @@ call Scrap.SetCallFunc "!FXBossShieldSet"
 call Scrap.AddParams "BossShield"
 call Scrap.AddParami %MapFinalFight.FASE
 call Scrap.Execute
+
+section LoadFinal
+call Scrap.Set "useDynamicMusic" 1
+run savelistadd "Hangar.shipsToEditList" "SBoss1"
+run savelistadd "Hangar.availableEnginesList" "MBOSS1"
+call SaveGame.CheckAllBlueprints
+call Scrap.IncSaveVar "NewBluePrintAvaliable" 2
+call Scrap.SetSaveVar "Map" "Levels/ABIndoor"
+call SaveGame.QLoad "Levels/ABIndoor"

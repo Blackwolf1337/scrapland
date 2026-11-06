@@ -1,4 +1,4 @@
 # The functions of Map in level nano (the script levels/nano/scripts/map.py of Data.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Small.c): InitStatus, Init.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/nano/map.def replaces this file.
 section AfterBrowseNPC

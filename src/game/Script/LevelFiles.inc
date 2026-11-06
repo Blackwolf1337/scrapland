@@ -107,6 +107,9 @@ static const char lvl_om_superdeal_sixth[] = {
 static const char lvl_om_superdeal_tenth[] = {
 #embed "../../../data/levels/om/superdeal_tenth.def"
 	, 0 };
+static const char lvl_orbit_map[] = {
+#embed "../../../data/levels/orbit/map.def"
+	, 0 };
 static const char lvl_orbit_mapdecont[] = {
 #embed "../../../data/levels/orbit/mapdecont.def"
 	, 0 };
@@ -284,6 +287,9 @@ static const char lvl_scrapyard_mission_mosquitoclue[] = {
 static const char lvl_scrapyard_mission_stupidmercagain[] = {
 #embed "../../../data/levels/scrapyard/mission_stupidmercagain.def"
 	, 0 };
+static const char lvl_shipedit_map[] = {
+#embed "../../../data/levels/shipedit/map.def"
+	, 0 };
 static const char lvl_shipedit_mapsnd[] = {
 #embed "../../../data/levels/shipedit/mapsnd.def"
 	, 0 };
@@ -304,6 +310,9 @@ static const char lvl_temple_mission_meetarchbishop[] = {
 	, 0 };
 static const char lvl_temple_mission_talktodeepthroat[] = {
 #embed "../../../data/levels/temple/mission_talktodeepthroat.def"
+	, 0 };
+static const char lvl_townhall_map[] = {
+#embed "../../../data/levels/townhall/map.def"
 	, 0 };
 static const char lvl_townhall_mapsnd[] = {
 #embed "../../../data/levels/townhall/mapsnd.def"
@@ -344,6 +353,9 @@ static const char lvl_arealight_map[] = {
 static const char lvl_arealight_mapsnd[] = {
 #embed "../../../data/levels/arealight/mapsnd.def"
 	, 0 };
+static const char lvl_gamblinden_map[] = {
+#embed "../../../data/levels/gamblinden/map.def"
+	, 0 };
 static const char lvl_gamblinden_mapsnd[] = {
 #embed "../../../data/levels/gamblinden/mapsnd.def"
 	, 0 };
@@ -376,6 +388,12 @@ static const char lvl_gamblinden_mission_igorfirstcontact[] = {
 	, 0 };
 static const char lvl_gamblinden_mission_talktotraitoriusafterctf[] = {
 #embed "../../../data/levels/gamblinden/mission_talktotraitoriusafterctf.def"
+	, 0 };
+static const char lvl_gamblinden_mission_threestooges[] = {
+#embed "../../../data/levels/gamblinden/mission_threestooges.def"
+	, 0 };
+static const char lvl_gdb_map[] = {
+#embed "../../../data/levels/gdb/map.def"
 	, 0 };
 static const char lvl_gdb_mapmatrix[] = {
 #embed "../../../data/levels/gdb/mapmatrix.def"
@@ -508,6 +526,7 @@ static const levelFile_t level_files[] = {
 	{ "om", "Mission_BankersCTF", "levels/om/mission_bankersctf.def", lvl_om_mission_bankersctf },
 	{ "om", "SuperDeal_Sixth", "levels/om/superdeal_sixth.def", lvl_om_superdeal_sixth },
 	{ "om", "SuperDeal_Tenth", "levels/om/superdeal_tenth.def", lvl_om_superdeal_tenth },
+	{ "orbit", "Map", "levels/orbit/map.def", lvl_orbit_map },
 	{ "orbit", "MapDecont", "levels/orbit/mapdecont.def", lvl_orbit_mapdecont },
 	{ "orbit", "MapSnd", "levels/orbit/mapsnd.def", lvl_orbit_mapsnd },
 	{ "orbit", "Mission_IntroHuman", "levels/orbit/mission_introhuman.def", lvl_orbit_mission_introhuman },
@@ -567,6 +586,7 @@ static const levelFile_t level_files[] = {
 	{ "scrapyard", "Mission_FindDtritusMatrix", "levels/scrapyard/mission_finddtritusmatrix.def", lvl_scrapyard_mission_finddtritusmatrix },
 	{ "scrapyard", "Mission_MosquitoClue", "levels/scrapyard/mission_mosquitoclue.def", lvl_scrapyard_mission_mosquitoclue },
 	{ "scrapyard", "Mission_StupidMercAgain", "levels/scrapyard/mission_stupidmercagain.def", lvl_scrapyard_mission_stupidmercagain },
+	{ "shipedit", "Map", "levels/shipedit/map.def", lvl_shipedit_map },
 	{ "shipedit", "MapSnd", "levels/shipedit/mapsnd.def", lvl_shipedit_mapsnd },
 	{ "temple", "MapExtraLifes", "levels/temple/mapextralifes.def", lvl_temple_mapextralifes },
 	{ "temple", "MapSnd", "levels/temple/mapsnd.def", lvl_temple_mapsnd },
@@ -574,6 +594,7 @@ static const levelFile_t level_files[] = {
 	{ "temple", "Mission_AskGus", "levels/temple/mission_askgus.def", lvl_temple_mission_askgus },
 	{ "temple", "Mission_MeetArchbishop", "levels/temple/mission_meetarchbishop.def", lvl_temple_mission_meetarchbishop },
 	{ "temple", "Mission_TalkToDeepThroat", "levels/temple/mission_talktodeepthroat.def", lvl_temple_mission_talktodeepthroat },
+	{ "townhall", "Map", "levels/townhall/map.def", lvl_townhall_map },
 	{ "townhall", "MapSnd", "levels/townhall/mapsnd.def", lvl_townhall_mapsnd },
 	{ "townhall", "Mission_ApologizeMayor", "levels/townhall/mission_apologizemayor.def", lvl_townhall_mission_apologizemayor },
 	{ "townhall", "Mission_CatchTrurl", "levels/townhall/mission_catchtrurl.def", lvl_townhall_mission_catchtrurl },
@@ -587,6 +608,7 @@ static const levelFile_t level_files[] = {
 	{ "abindoor", "MapSnd", "levels/abindoor/mapsnd.def", lvl_abindoor_mapsnd },
 	{ "arealight", "Map", "levels/arealight/map.def", lvl_arealight_map },
 	{ "arealight", "MapSnd", "levels/arealight/mapsnd.def", lvl_arealight_mapsnd },
+	{ "gamblinden", "Map", "levels/gamblinden/map.def", lvl_gamblinden_map },
 	{ "gamblinden", "MapSnd", "levels/gamblinden/mapsnd.def", lvl_gamblinden_mapsnd },
 	{ "gamblinden", "Mission_ArrangeBankersCombat", "levels/gamblinden/mission_arrangebankerscombat.def", lvl_gamblinden_mission_arrangebankerscombat },
 	{ "gamblinden", "Mission_ArrangeBankersCTF", "levels/gamblinden/mission_arrangebankersctf.def", lvl_gamblinden_mission_arrangebankersctf },
@@ -598,6 +620,8 @@ static const levelFile_t level_files[] = {
 	{ "gamblinden", "Mission_GoToGamblinDen", "levels/gamblinden/mission_gotogamblinden.def", lvl_gamblinden_mission_gotogamblinden },
 	{ "gamblinden", "Mission_IgorFirstContact", "levels/gamblinden/mission_igorfirstcontact.def", lvl_gamblinden_mission_igorfirstcontact },
 	{ "gamblinden", "Mission_TalkToTraitoriusAfterCTF", "levels/gamblinden/mission_talktotraitoriusafterctf.def", lvl_gamblinden_mission_talktotraitoriusafterctf },
+	{ "gamblinden", "Mission_ThreeStooges", "levels/gamblinden/mission_threestooges.def", lvl_gamblinden_mission_threestooges },
+	{ "gdb", "Map", "levels/gdb/map.def", lvl_gdb_map },
 	{ "gdb", "MapMatrix", "levels/gdb/mapmatrix.def", lvl_gdb_mapmatrix },
 	{ "gdb", "MapSnd", "levels/gdb/mapsnd.def", lvl_gdb_mapsnd },
 	{ "gdb", "Mission_IntoTheGDB", "levels/gdb/mission_intothegdb.def", lvl_gdb_mission_intothegdb },

@@ -41,6 +41,9 @@ extern PyMethodDef g_GamblinDenMapMethods[], g_GamblinDenBeforeFinalFightMethods
 	g_GamblinDenIgorFirstContactMethods[], g_GamblinDenGoToGamblinDenMethods[], g_GamblinDenTalkToTraitoriusAfterCTFMethods[],
 	g_GamblinDenBackFromMortalRaceMethods[], g_GamblinDenCrazyGamblerFirstContactMethods[], g_GamblinDenArrangeMortalRaceMethods[],
 	g_GamblinDenThreeStoogesMethods[];
+extern PyMethodDef g_OmSixthMethods[], g_OmTenthMethods[], g_QfBankersCombatMethods[],
+	g_ABIndoorMapMethods[], g_FakeMapMethods[], g_TucZoneMapMethods[], g_NanoMapMethods[], g_ShipEditMapMethods[],
+	g_ShipEditMapSndMethods[], g_ABFinalFightMethods[];
 
 static const levelModule_t level_modules[] = {
 	{ "menu", "Map", g_MenuMapMethods },
@@ -84,6 +87,16 @@ static const levelModule_t level_modules[] = {
 	{ "orbit", "Map", g_OrbitMapMethods },
 	{ "orbit", "MapDecont", g_OrbitMapDecontMethods },
 	{ "orbit", "Mission_IntroHuman", g_OrbitIntroHumanMethods },
+	{ "om", "SuperDeal_Sixth", g_OmSixthMethods },
+	{ "om", "SuperDeal_Tenth", g_OmTenthMethods },
+	{ "qf", "Mission_BankersCombat", g_QfBankersCombatMethods },
+	{ "abindoor", "Map", g_ABIndoorMapMethods },
+	{ "fake", "Map", g_FakeMapMethods },
+	{ "tuczone", "Map", g_TucZoneMapMethods },
+	{ "nano", "Map", g_NanoMapMethods },
+	{ "shipedit", "Map", g_ShipEditMapMethods },
+	{ "shipedit", "MapSnd", g_ShipEditMapSndMethods },
+	{ "ab", "MapFinalFight", g_ABFinalFightMethods },
 	{ "gamblinden", "Map", g_GamblinDenMapMethods },
 	{ "gamblinden", "Mission_BeforeFinalFight", g_GamblinDenBeforeFinalFightMethods },
 	{ "gamblinden", "Mission_AfterFinalFight", g_GamblinDenAfterFinalFightMethods },
@@ -176,9 +189,95 @@ static void Level_StepSetDef(int id, PyObject *args) {
 	}
 }
 
+/* run saveint <name> <savevar>: $name = int(Scrap.GetSaveVar(savevar)) */
+static void Level_StepSaveInt(int id, PyObject *args) {
+	char *name;
+	PyObject *var;
+	(void)id;
+	if (!PyArg_ParseTuple(args, "sO", &name, &var)) {
+		return;
+	}
+	PyObject *s = Script_Ask("Scrap", "GetSaveVar", "(O)", var), *v = s ? PyNumber_Int(s) : NULL;
+	Py_XDECREF(s);
+	if (v) {
+		Script_SetValue(name, v);
+	}
+}
+
+/*
+ * run savelistadd <savevar> <item>: the four lines of the missions that add a blueprint to a hangar list
+ *   lst = eval(Scrap.GetSaveVar(savevar))
+ *   if not item in lst:
+ *       lst.append(item)
+ *       Scrap.SetSaveVar(savevar, `lst`)
+ */
+static void Level_StepSaveListAdd(int id, PyObject *args) {
+	PyObject *var, *item;
+	(void)id;
+	if (!PyArg_ParseTuple(args, "OO", &var, &item)) {
+		return;
+	}
+	PyObject *s = Script_Ask("Scrap", "GetSaveVar", "(O)", var);
+	PyObject *lst = s ? Script_EvalIn("__main__", s) : NULL;
+	Py_XDECREF(s);
+	if (!lst) {
+		return;
+	}
+	int in = PySequence_Contains(lst, item);
+	if (in == 0) {
+		PyObject *r = Script_Method(lst, "append", "(O)", item), *text = r ? PyObject_Repr(lst) : NULL;
+		Py_XDECREF(r);
+		if (text) {
+			Script_Try("Scrap", "SetSaveVar", "(OO)", var, text);
+			Py_DECREF(text);
+		}
+	}
+	Py_DECREF(lst);
+}
+
+/* run newlist <name>: $name = [] */
+static void Level_StepNewList(int id, PyObject *args) {
+	char *name;
+	(void)id;
+	if (PyArg_ParseTuple(args, "s", &name)) {
+		Script_SetValue(name, PyList_New(0));
+	}
+}
+
+/* run evalappend <list> <text>: list.append(<text>) of a literal (the waypoints of the races, list.append(a, b) of
+ * Python 1.5.2 appends the tuple (a, b)) */
+static void Level_StepEvalAppend(int id, PyObject *args) {
+	PyObject *lst, *text;
+	(void)id;
+	if (!PyArg_ParseTuple(args, "OS", &lst, &text)) {
+		return;
+	}
+	PyObject *v = Script_EvalIn("__main__", text), *r = v ? Script_Method(lst, "append", "(O)", v) : NULL;
+	Py_XDECREF(v);
+	Py_XDECREF(r);
+}
+
+/* run repr <name> <value>: $name = `value` */
+static void Level_StepRepr(int id, PyObject *args) {
+	char *name;
+	PyObject *v;
+	(void)id;
+	if (PyArg_ParseTuple(args, "sO", &name, &v)) {
+		PyObject *r = PyObject_Repr(v);
+		if (r) {
+			Script_SetValue(name, r);
+		}
+	}
+}
+
 static const scriptStep_t level_steps[] = {
+	{ "newlist", Level_StepNewList },
+	{ "evalappend", Level_StepEvalAppend },
+	{ "repr", Level_StepRepr },
 	{ "vecrot", Level_StepVecRot },
 	{ "setdef", Level_StepSetDef },
+	{ "saveint", Level_StepSaveInt },
+	{ "savelistadd", Level_StepSaveListAdd },
 	{ NULL, NULL },
 };
 

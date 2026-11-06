@@ -1,6 +1,16 @@
 # The functions of Mission_GoToOutskirts in level outskirts (the script levels/outskirts/scripts/mission_gotooutskirts.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, LaunchCrazyGamblerComunication, PlayCrazyGamblerComunication.
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, LaunchCrazyGamblerComunication.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/outskirts/mission_gotooutskirts.def replaces this file.
+section PlayCrazyGamblerComunication
+if %Mission_GoToOutskirts.numCrazyGamblerComs < 2
+	setvar Mission_GoToOutskirts.numCrazyGamblerComs %Mission_GoToOutskirts.numCrazyGamblerComs+1
+end
+if %Mission_GoToOutskirts.numCrazyGamblerComs == 1
+	call Speech.AddRemoteCom "Mission_TalkToFicus3_RemoteMessage2" "CrazyGambler" %Mission_GoToOutskirts.LaunchCrazyGamblerComunication (%Mission_GoToOutskirts.messageInterval,)
+else
+	call Speech.AddRemoteCom "Mission_TalkToFicus3_RemoteMessage3" "CrazyGambler" %Mission_GoToOutskirts.LaunchCrazyGamblerComunication (%Mission_GoToOutskirts.messageInterval,)
+end
+
 section OnMainCharDeath MainCharnName Param2
 call Scrap.SetSaveVar "PlayerHasBeenKilled" "1"
 call MissionsFuncs.FinishGame 0

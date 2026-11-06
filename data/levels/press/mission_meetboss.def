@@ -1,6 +1,16 @@
 # The functions of Mission_MeetBoss in level press (the script levels/press/scripts/mission_meetboss.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, AfterBrowseNPC, CreateHumphreyInit, CreateBertoInit, BertoSpeech, BertoSpeech2, DeactivateEmero, ActivateEmero, Init, PlayProlog0, PlayProlog1, PlayProlog2, CreateBattery, AssingOnTakeBattery, OnTakeBattery, PreBertoPossession, BertoPossession, OnWarning, OnActionPressed, OnPossession, ShowMessage, OnAlarmEnd, UseConversor, OnConversorUsed, CheckConversion, ChallengeHumphrey, HumphreySpeech, SetNextMission.
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, AfterBrowseNPC, CreateHumphreyInit, BertoSpeech, BertoSpeech2, DeactivateEmero, ActivateEmero, Init, PlayProlog0, PlayProlog1, PlayProlog2, CreateBattery, OnTakeBattery, PreBertoPossession, BertoPossession, OnWarning, OnActionPressed, OnPossession, ShowMessage, OnAlarmEnd, UseConversor, OnConversorUsed, CheckConversion, ChallengeHumphrey, HumphreySpeech, SetNextMission.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/press/mission_meetboss.def replaces this file.
+section CreateBertoInit e
+object $e
+UseFunc "Mission_MeetBoss.BertoSpeech"
+LLogicDefaultState 6
+LLogicDefaultTarget ""
+LLogicState 6
+LLogicTarget ""
+LLogicIdle 1
+LLogicIdle 0
+
 section EndOfMetroAnim elv
 setvar Elevator.OnElevatorReachDown None
 setvar Mission_MeetBoss.FirstBertoSpeech 1
@@ -33,6 +43,10 @@ call SScorer.Fade 0 (0,0,0,0) (0,0,0,0) 0.1
 call Scrap.SetSaveVar "MissionState" "GetBattery"
 call SaveGame.MMDesc "Mission_GetBatteries_MissionText1" 1
 call Mission_MeetBoss.CreateBattery
+
+section AssingOnTakeBattery l
+object $l
+OnTake "Mission_MeetBoss.OnTakeBattery"
 
 section PreFirstCrazyDeal
 call SaveGame.MMDesc "Mission_TalkToCrazy_MissionText1" 1

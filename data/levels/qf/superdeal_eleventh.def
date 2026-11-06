@@ -1,7 +1,41 @@
 # The functions of SuperDeal_Eleventh in level qf (the script levels/qf/scripts/superdeal_eleventh.py of data03.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: SetVars, Victory.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/QF.c).
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/qf/superdeal_eleventh.def replaces this file.
+section SetVars
+call Scrap.SetSaveVar "CombatDeaths" "20"
+call Scrap.SetSaveVar "CombatNumEnemies" "5"
+call Scrap.SetSaveVar "CombatEnemyType" "Bishop"
+call Scrap.SetSaveVar "CombatNumFriends" "4"
+call Scrap.SetSaveVar "CombatFriendType" "Functionary"
+call Scrap.SetSaveVar "CombatStartTextCad" "SuperDeal_Eleventh_RemoteMessage1"
+call Scrap.SetSaveVar "CombatFinishPlayerWinsTextCad" "SuperDeal_Eleventh_RemoteMessage2"
+call Scrap.SetSaveVar "CombatFinishPlayerLoosesTextCad" "SuperDeal_Eleventh_RemoteMessage3"
+run saveint reputation "BadReputation"
+if $reputation < 2
+	call Scrap.SetSaveVar "CombatFriendProfile" "SuperDealEleventhFriendsPilot"
+	call Scrap.SetSaveVar "CombatEnemyProfile" "SuperDealEleventhEnemiesPilot"
+elif $reputation < 4
+	call Scrap.SetSaveVar "CombatFriendProfile" "SuperDealEleventhFriendsElite"
+	call Scrap.SetSaveVar "CombatEnemyProfile" "SuperDealEleventhEnemiesElite"
+else
+	call Scrap.SetSaveVar "CombatFriendProfile" "SuperDealEleventhFriendsMegaAce"
+	call Scrap.SetSaveVar "CombatEnemyProfile" "SuperDealEleventhEnemiesMegaAce"
+end
+let executeOnAbort "import MissionsFuncs; MissionsFuncs.EndOfSuperDeal('SuperDeal_Faliure_SystemMessage1')"
+let executeOnVictory "import SuperDeal_Eleventh;SuperDeal_Eleventh.Victory()"
+call Scrap.SetSaveVar "OnAbort" $executeOnAbort
+call Scrap.SetSaveVar "OnVictory" $executeOnVictory
+
 section InitStatus LevelPath
 call SuperDeal_Eleventh.SetVars
 
 section Init LevelPath
+
+section Victory
+run savelistadd "Hangar.availableUpgradesList" "InfernoUpgrade1"
+call Scrap.IncSaveVar "NewBluePrintAvaliable"
+call MissionsFuncs.NewCrazyDeal 1 "Stats.Gear" 15
+call MissionsFuncs.NewCrazyDeal 2 "Stats.Messenger" 5
+call MissionsFuncs.NewCrazyDeal 3 "Stats.Mosquito" 100
+call MissionsFuncs.SetNextSuperDeal "FZ" "SuperDeal_Twelfth" "MortalRace"
+call MissionsFuncs.EndOfSuperDeal "SuperDeal_Eleventh_SystemMessage1"

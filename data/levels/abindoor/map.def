@@ -1,6 +1,43 @@
 # The functions of Map in level abindoor (the script levels/abindoor/scripts/map.py of data03.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, CreateHuman, CreateBerto, CreateBetty, CreateCrazyGambler, Init, Goodbye, LaunchCinematic, ShowEndTitle, FadeEndTitle.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/ABIndoor.c): InitStatus, Init, Goodbye, LaunchCinematic, ShowEndTitle, FadeEndTitle.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/abindoor/map.def replaces this file.
+section CreateHuman e
+object $e
+LLogicTarget ""
+LLogicIdle 1
+LLogicIdle 0
+UseFunc "Map.OnHumanSpeech"
+
+section CreateBerto e
+object $e
+LLogicDefaultState 6
+LLogicDefaultTarget ""
+LLogicState 6
+LLogicTarget ""
+LLogicIdle 1
+LLogicIdle 0
+UseFunc "Map.OnBertoSpeech"
+
+section CreateBetty e
+object $e
+LLogicDefaultState 6
+LLogicDefaultTarget ""
+LLogicState 6
+LLogicTarget ""
+LLogicIdle 1
+LLogicIdle 0
+UseFunc "Map.OnBettySpeech"
+
+section CreateCrazyGambler e
+object $e
+LLogicDefaultState 6
+LLogicDefaultTarget ""
+LLogicState 6
+LLogicTarget ""
+LLogicIdle 1
+LLogicIdle 0
+UseFunc "Map.OnCrazyGamblerSpeech"
+
 section OnHumanSpeech UsrName CharName optId FullOption
 setvar Speech.PlayerName $UsrName
 setvar Speech.NPCName $CharName

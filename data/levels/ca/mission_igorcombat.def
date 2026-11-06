@@ -1,6 +1,20 @@
 # The functions of Mission_IgorCombat in level ca (the script levels/ca/scripts/mission_igorcombat.py of data02.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: SetVars.
+# per function, its parameters after the name. The other functions of the script stay Python.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/ca/mission_igorcombat.def replaces this file.
+section SetVars
+call Scrap.SetSaveVar "CombatDeaths" "10"
+call Scrap.SetSaveVar "CombatEnemyType" "Bishop"
+call Scrap.SetSaveVar "CombatEnemyTypeHead" "Bishop"
+call Scrap.SetSaveVar "CombatEnemyProfile" "VersusAgainstIgor"
+call Scrap.SetSaveVar "CombatStartTextCad" "Mission_VersusAgainstIgor_RemoteMessage1"
+call Scrap.SetSaveVar "CombatFinishPlayerWinsTextCad" "Mission_VersusAgainstIgor_RemoteMessage2"
+call Scrap.SetSaveVar "CombatFinishPlayerLoosesTextCad" "Mission_VersusAgainstIgor_RemoteMessage3"
+let executeOnAbort 'import SaveGame; SaveGame.MMDesc("Mission_ArrangeIgorCombat_MissionText1",1);import MissionsFuncs; MissionsFuncs.SetNextMission("Mission_ArrangeIgorCombat", "GamblinDen");Scrap.SetSaveVar("Map", "Levels/GamblinDen");import SaveGame; SaveGame.QLoad("Levels/GamblinDen")'
+let executeOnVictory 'import SaveGame; SaveGame.QWayPoint();import MissionsFuncs; MissionsFuncs.SetNextMission("Mission_ArrangeBankersCombat", "GamblinDen");Scrap.SetSaveVar("Map", "Levels/GamblinDen");import SaveGame; SaveGame.QLoad("Levels/GamblinDen")'
+call Scrap.SetSaveVar "OnAbort" $executeOnAbort
+call Scrap.SetSaveVar "OnVictory" $executeOnVictory
+call Scrap.SetSaveVar "PoliceBossAtPolice" "0"
+
 section InitStatus LevelPath
 call Mission_IgorCombat.SetVars
 

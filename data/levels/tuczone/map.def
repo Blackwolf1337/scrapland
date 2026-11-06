@@ -1,6 +1,10 @@
 # The functions of Map in level tuczone (the script levels/tuczone/scripts/map.py of data02.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Small.c): Init.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/tuczone/map.def replaces this file.
+section InitStatus LevelPath
+setvar Init.Outdoor 1
+call Scrap.Set "iTrafficNumber" 10
+
 section LoadNano UsrName CharName optId FullOption
 call Scrap.SetSaveVar "Map" "Levels/Nano"
 call Scrap.SetSaveVar "Spawn" "DM_Player_Spawn_Main"

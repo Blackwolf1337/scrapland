@@ -1,0 +1,7 @@
+# The functions of Map in level shipedit (the script levels/shipedit/scripts/map.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Small.c): Init.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/shipedit/map.def replaces this file.
+section InitStatus LevelPath
+setvar Init.Outdoor 1
+setvar Init.isShipEdit 1
+call OutMap.BrowseAtmospherePos

@@ -1,6 +1,11 @@
 # The functions of Map in level om (the script levels/om/scripts/map.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/OM.c).
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/om/map.def replaces this file.
+section InitStatus LevelPath
+setvar Init.Outdoor 1
+setvar OutPolice.PoliceActive 0
+call Scrap.Set "iTrafficNumber" 0
+
 section Init LevelPath
 call Scrap.Set "CameraCloudRed" 120
 call Scrap.Set "CameraCloudGreen" 20

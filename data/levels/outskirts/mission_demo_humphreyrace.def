@@ -1,5 +1,5 @@
 # The functions of Mission_Demo_HumphreyRace in level outskirts (the script levels/outskirts/scripts/mission_demo_humphreyrace.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, ShowSystemMessage, Init, ShowBoostMessage, ClosePressHangar, DelRacers, OnPlayerWinsRace, CallCrazyGambler, ShowRustyMapsSystemMessage, UsePhoneCab, EnableMetro, OnMetroUsed.
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, ShowSystemMessage, Init, ShowBoostMessage, ClosePressHangar, DelRacers, CallCrazyGambler, ShowRustyMapsSystemMessage, UsePhoneCab, EnableMetro, OnMetroUsed.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/outskirts/mission_demo_humphreyrace.def replaces this file.
 section OnMetroUsedToPress UsrName MetroName optId FullOption
 call Elevator.UseElevator $UsrName $MetroName "MoveLevel Press" $FullOption
@@ -14,6 +14,22 @@ call MissionsFuncs.SetMissionTarget $name
 section OnPlayerLoosesRace
 call MissionsFuncs.SetMissionTarget None
 call Speech.AddRemoteCom "Mission_FirstCrazyBet_RemoteMessage6" "CrazyGambler"
+
+section OnPlayerWinsRace
+setvar RaceMaker.OnPlayerWinsRace None
+setvar RaceMaker.OnPlayerLoosesRace None
+setvar RaceMaker.OnPreInitRace None
+setvar RaceMaker.OnInitRace None
+call MissionsFuncs.SetMissionTarget None
+call Scrap.SetSaveVar "Stats.WinHumphreyRace" "1"
+call Scrap.SetSaveVar "JackInTheBox.Active" "0"
+call Scrap.SetSaveVar "MissionState" "CallCrazyGambler"
+call Scrap.SetSaveVar "Revenge.Type" ""
+call Scrap.SetSaveVar "Revenge.Foe" ""
+call Scrap.SetSaveVar "Revenge.NumEnemies" ""
+run savelistadd "Hangar.shipsToEditList" "SMerc1"
+run savelistadd "Hangar.availableEnginesList" "MMERC1"
+call Speech.AddRemoteCom "Mission_FirstCrazyBet_RemoteMessage7" "CrazyGambler" %Mission_Demo_HumphreyRace.CallCrazyGambler ()
 
 section RustyAppears
 call Scrap.IncSaveVar "NewBluePrintAvaliable" 2

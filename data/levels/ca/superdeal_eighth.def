@@ -1,7 +1,36 @@
 # The functions of SuperDeal_Eighth in level ca (the script levels/ca/scripts/superdeal_eighth.py of data02.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: SetVars, Victory.
+# per function, its parameters after the name. The other functions of the script stay Python.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/ca/superdeal_eighth.def replaces this file.
+section SetVars
+call Scrap.SetSaveVar "CombatDeaths" "10"
+call Scrap.SetSaveVar "CombatEnemyType" "Police"
+call Scrap.SetSaveVar "CombatEnemyTypeHead" "CrazyGambler"
+run saveint reputation "BadReputation"
+if $reputation < 2
+	call Scrap.SetSaveVar "CombatEnemyProfile" "SuperDealEighthPilot"
+elif $reputation < 4
+	call Scrap.SetSaveVar "CombatEnemyProfile" "SuperDealEighthElite"
+else
+	call Scrap.SetSaveVar "CombatEnemyProfile" "SuperDealEighthMegaAce"
+end
+call Scrap.SetSaveVar "CombatStartTextCad" "SuperDeal_Eighth_RemoteMessage1"
+call Scrap.SetSaveVar "CombatFinishPlayerWinsTextCad" "SuperDeal_Eighth_RemoteMessage2"
+call Scrap.SetSaveVar "CombatFinishPlayerLoosesTextCad" "SuperDeal_Eighth_RemoteMessage3"
+let executeOnAbort "import MissionsFuncs; MissionsFuncs.EndOfSuperDeal('SuperDeal_Faliure_SystemMessage1')"
+let executeOnVictory "import SuperDeal_Eighth;SuperDeal_Eighth.Victory()"
+call Scrap.SetSaveVar "OnAbort" $executeOnAbort
+call Scrap.SetSaveVar "OnVictory" $executeOnVictory
+
 section InitStatus LevelPath
 call SuperDeal_Eighth.SetVars
 
 section Init LevelPath
+
+section Victory
+run savelistadd "Hangar.availableUpgradesList" "ATPCUpgrade1"
+call Scrap.IncSaveVar "NewBluePrintAvaliable"
+call MissionsFuncs.NewCrazyDeal 1 "Stats.Battery" 10
+call MissionsFuncs.NewCrazyDeal 2 "Stats.Combat.Bankers" 5
+call MissionsFuncs.NewCrazyDeal 3 "Stats.Messenger" 5
+call MissionsFuncs.SetNextSuperDeal "FZ" "SuperDeal_Ninth" "CTF"
+call MissionsFuncs.EndOfSuperDeal "SuperDeal_Eighth_SystemMessage1"
