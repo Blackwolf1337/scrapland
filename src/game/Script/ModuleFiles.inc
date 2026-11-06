@@ -179,6 +179,69 @@ static const char mod_modules_sputnik[] = {
 static const char mod_modules_sputnikjunkyard[] = {
 #embed "../../../data/modules/sputnikjunkyard.mod"
 	, 0 };
+static const char mod_modules_atpc[] = {
+#embed "../../../data/modules/atpc.mod"
+	, 0 };
+static const char mod_modules_accelerator[] = {
+#embed "../../../data/modules/accelerator.mod"
+	, 0 };
+static const char mod_modules_charscorer[] = {
+#embed "../../../data/modules/charscorer.mod"
+	, 0 };
+static const char mod_modules_chat[] = {
+#embed "../../../data/modules/chat.mod"
+	, 0 };
+static const char mod_modules_cloud[] = {
+#embed "../../../data/modules/cloud.mod"
+	, 0 };
+static const char mod_modules_creditstext[] = {
+#embed "../../../data/modules/creditstext.mod"
+	, 0 };
+static const char mod_modules_devastator[] = {
+#embed "../../../data/modules/devastator.mod"
+	, 0 };
+static const char mod_modules_emi[] = {
+#embed "../../../data/modules/emi.mod"
+	, 0 };
+static const char mod_modules_fx[] = {
+#embed "../../../data/modules/fx.mod"
+	, 0 };
+static const char mod_modules_intraffic[] = {
+#embed "../../../data/modules/intraffic.mod"
+	, 0 };
+static const char mod_modules_inferno[] = {
+#embed "../../../data/modules/inferno.mod"
+	, 0 };
+static const char mod_modules_items[] = {
+#embed "../../../data/modules/items.mod"
+	, 0 };
+static const char mod_modules_laser[] = {
+#embed "../../../data/modules/laser.mod"
+	, 0 };
+static const char mod_modules_misitems[] = {
+#embed "../../../data/modules/misitems.mod"
+	, 0 };
+static const char mod_modules_outmap[] = {
+#embed "../../../data/modules/outmap.mod"
+	, 0 };
+static const char mod_modules_racerscorer[] = {
+#embed "../../../data/modules/racerscorer.mod"
+	, 0 };
+static const char mod_modules_sonic[] = {
+#embed "../../../data/modules/sonic.mod"
+	, 0 };
+static const char mod_modules_sputnikinterface[] = {
+#embed "../../../data/modules/sputnikinterface.mod"
+	, 0 };
+static const char mod_modules_swarm[] = {
+#embed "../../../data/modules/swarm.mod"
+	, 0 };
+static const char mod_modules_tesla[] = {
+#embed "../../../data/modules/tesla.mod"
+	, 0 };
+static const char mod_modules_vulcan[] = {
+#embed "../../../data/modules/vulcan.mod"
+	, 0 };
 
 static const moduleFile_t module_files[] = {
 	{ NULL, "Sound", "modules/sound.mod", mod_modules_sound },
@@ -241,4 +304,25 @@ static const moduleFile_t module_files[] = {
 	{ NULL, "Speech", "modules/speech.mod", mod_modules_speech },
 	{ NULL, "Sputnik", "modules/sputnik.mod", mod_modules_sputnik },
 	{ NULL, "SputnikJunkyard", "modules/sputnikjunkyard.mod", mod_modules_sputnikjunkyard },
+	{ NULL, "ATPC", "modules/atpc.mod", mod_modules_atpc },
+	{ NULL, "Accelerator", "modules/accelerator.mod", mod_modules_accelerator },
+	{ NULL, "CharScorer", "modules/charscorer.mod", mod_modules_charscorer },
+	{ NULL, "Chat", "modules/chat.mod", mod_modules_chat },
+	{ NULL, "Cloud", "modules/cloud.mod", mod_modules_cloud },
+	{ NULL, "CreditsText", "modules/creditstext.mod", mod_modules_creditstext },
+	{ NULL, "Devastator", "modules/devastator.mod", mod_modules_devastator },
+	{ NULL, "EMI", "modules/emi.mod", mod_modules_emi },
+	{ NULL, "Fx", "modules/fx.mod", mod_modules_fx },
+	{ NULL, "InTraffic", "modules/intraffic.mod", mod_modules_intraffic },
+	{ NULL, "Inferno", "modules/inferno.mod", mod_modules_inferno },
+	{ NULL, "Items", "modules/items.mod", mod_modules_items },
+	{ NULL, "Laser", "modules/laser.mod", mod_modules_laser },
+	{ NULL, "MisItems", "modules/misitems.mod", mod_modules_misitems },
+	{ NULL, "OutMap", "modules/outmap.mod", mod_modules_outmap },
+	{ NULL, "RacerScorer", "modules/racerscorer.mod", mod_modules_racerscorer },
+	{ NULL, "Sonic", "modules/sonic.mod", mod_modules_sonic },
+	{ NULL, "SputnikInterface", "modules/sputnikinterface.mod", mod_modules_sputnikinterface },
+	{ NULL, "Swarm", "modules/swarm.mod", mod_modules_swarm },
+	{ NULL, "Tesla", "modules/tesla.mod", mod_modules_tesla },
+	{ NULL, "Vulcan", "modules/vulcan.mod", mod_modules_vulcan },
 };
