@@ -239,6 +239,27 @@ static PyObject *Script_Replaced(const char *name, size_t i) {
 	return kept;
 }
 
+void Script_ReplaceRefs(PyObject *dict, PyObject *key, PyObject *old, PyObject *f) {
+	/* other names and the list items of the module that hold the replaced function (MapRace.Races = [EasyRace1, ...]) */
+	PyObject *k, *v;
+	int pos = 0;
+	if (!old) {
+		return;
+	}
+	while (PyDict_Next(dict, &pos, &k, &v)) {
+		if (v == old && PyObject_Compare(k, key) != 0) {
+			PyDict_SetItem(dict, k, f);
+		} else if (PyList_Check(v)) {
+			for (int i = 0; i < PyList_GET_SIZE(v); i++) {
+				if (PyList_GET_ITEM(v, i) == old) {
+					Py_INCREF(f);
+					PyList_SetItem(v, i, f);
+				}
+			}
+		}
+	}
+}
+
 void Script_Install(PyObject *module, PyMethodDef *methods, PyObject *kept) {
 	PyObject *dict = PyModule_GetDict(module);
 	for (PyMethodDef *m = methods; m->ml_name; m++) {
@@ -259,6 +280,11 @@ void Script_Install(PyObject *module, PyMethodDef *methods, PyObject *kept) {
 		PyObject *old = PyDict_GetItemString(dict, m->ml_name);
 		if (old && kept && PyFunction_Check(old)) {
 			PyList_Append(kept, old);
+		}
+		PyObject *name = PyString_FromString(m->ml_name);
+		if (name) {
+			Script_ReplaceRefs(dict, name, old, f);
+			Py_DECREF(name);
 		}
 		PyDict_SetItemString(dict, m->ml_name, f);
 		Py_DECREF(f);

@@ -490,6 +490,11 @@ static void Level_Install(int i, PyObject *module, levelPool_t *pool, PyObject *
 					if (kept) {
 						PyList_Append(kept, old);
 					}
+					PyObject *name = PyString_FromString(tok[0]);
+					if (name) {
+						Script_ReplaceRefs(dict, name, old, f);
+						Py_DECREF(name);
+					}
 					PyDict_SetItemString(dict, tok[0], f);
 					Py_DECREF(f);
 					n++;
