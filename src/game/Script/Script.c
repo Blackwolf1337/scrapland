@@ -181,6 +181,7 @@ static const scriptModule_t script_modules[] = {
 	{ "InMap", g_InMapMethods },
 	{ "Bureaucracy", g_BureaucracyMethods },
 	{ "Chat", g_ChatMethods },
+	{ "Ffa", g_FfaMethods },
 	{ "CreditsText", g_CreditsTextMethods },
 	{ "Traffic", g_TrafficMethods },
 	{ "OutPolice", g_OutPoliceMethods },

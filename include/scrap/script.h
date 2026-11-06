@@ -480,6 +480,8 @@ extern PyMethodDef g_BureaucracyMethods[];
 /* the chat of a network game (src/game/Script/Chat.c) and the credits text (src/game/Script/CreditsText.c) */
 extern PyMethodDef g_ChatMethods[];
 extern PyMethodDef g_CreditsTextMethods[];
+/* the base of the online game modes (src/game/Script/Ffa.c) */
+extern PyMethodDef g_FfaMethods[];
 
 /* the mission scripts: the traffic and the police (src/game/Script/Traffic.c), the phone cabs and Dtritus' desktop
  * (src/game/Script/PhoneCab.c), the metro (src/game/Script/Metro.c) and the challenges (src/game/Script/Challenge.c) */
