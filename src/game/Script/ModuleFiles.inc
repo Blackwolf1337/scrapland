@@ -53,6 +53,12 @@ static const char mod_levels_downtown_maprace[] = {
 static const char mod_levels_downtown_mapsnd[] = {
 #embed "../../../data/levels/downtown/mapsnd.mod"
 	, 0 };
+static const char mod_levels_fake_map[] = {
+#embed "../../../data/levels/fake/map.mod"
+	, 0 };
+static const char mod_levels_fake_mapsnd[] = {
+#embed "../../../data/levels/fake/mapsnd.mod"
+	, 0 };
 static const char mod_levels_fz_map[] = {
 #embed "../../../data/levels/fz/map.mod"
 	, 0 };
@@ -70,6 +76,69 @@ static const char mod_levels_gdb_mapmatrix[] = {
 	, 0 };
 static const char mod_levels_gdb_mapsnd[] = {
 #embed "../../../data/levels/gdb/mapsnd.mod"
+	, 0 };
+static const char mod_levels_junkyard_map[] = {
+#embed "../../../data/levels/junkyard/map.mod"
+	, 0 };
+static const char mod_levels_junkyard_mapshipedit[] = {
+#embed "../../../data/levels/junkyard/mapshipedit.mod"
+	, 0 };
+static const char mod_levels_junkyard_mapsnd[] = {
+#embed "../../../data/levels/junkyard/mapsnd.mod"
+	, 0 };
+static const char mod_levels_mca_map[] = {
+#embed "../../../data/levels/mca/map.mod"
+	, 0 };
+static const char mod_levels_mca_mapsnd[] = {
+#embed "../../../data/levels/mca/mapsnd.mod"
+	, 0 };
+static const char mod_levels_mcb_map[] = {
+#embed "../../../data/levels/mcb/map.mod"
+	, 0 };
+static const char mod_levels_mcb_mapsnd[] = {
+#embed "../../../data/levels/mcb/mapsnd.mod"
+	, 0 };
+static const char mod_levels_mda_map[] = {
+#embed "../../../data/levels/mda/map.mod"
+	, 0 };
+static const char mod_levels_mda_mapsnd[] = {
+#embed "../../../data/levels/mda/mapsnd.mod"
+	, 0 };
+static const char mod_levels_mdb_map[] = {
+#embed "../../../data/levels/mdb/map.mod"
+	, 0 };
+static const char mod_levels_mdb_mapsnd[] = {
+#embed "../../../data/levels/mdb/mapsnd.mod"
+	, 0 };
+static const char mod_levels_menu_map[] = {
+#embed "../../../data/levels/menu/map.mod"
+	, 0 };
+static const char mod_levels_menu_mapsnd[] = {
+#embed "../../../data/levels/menu/mapsnd.mod"
+	, 0 };
+static const char mod_levels_moa_map[] = {
+#embed "../../../data/levels/moa/map.mod"
+	, 0 };
+static const char mod_levels_moa_mapsnd[] = {
+#embed "../../../data/levels/moa/mapsnd.mod"
+	, 0 };
+static const char mod_levels_mob_map[] = {
+#embed "../../../data/levels/mob/map.mod"
+	, 0 };
+static const char mod_levels_mob_mapsnd[] = {
+#embed "../../../data/levels/mob/mapsnd.mod"
+	, 0 };
+static const char mod_levels_msa_map[] = {
+#embed "../../../data/levels/msa/map.mod"
+	, 0 };
+static const char mod_levels_msa_mapsnd[] = {
+#embed "../../../data/levels/msa/mapsnd.mod"
+	, 0 };
+static const char mod_levels_msb_map[] = {
+#embed "../../../data/levels/msb/map.mod"
+	, 0 };
+static const char mod_levels_msb_mapsnd[] = {
+#embed "../../../data/levels/msb/mapsnd.mod"
 	, 0 };
 static const char mod_levels_om_map[] = {
 #embed "../../../data/levels/om/map.mod"
@@ -128,6 +197,12 @@ static const char mod_levels_scrapyard_mapsnd[] = {
 static const char mod_levels_scrapyard_maptriggers[] = {
 #embed "../../../data/levels/scrapyard/maptriggers.mod"
 	, 0 };
+static const char mod_levels_shipedit_map[] = {
+#embed "../../../data/levels/shipedit/map.mod"
+	, 0 };
+static const char mod_levels_shipedit_mapsnd[] = {
+#embed "../../../data/levels/shipedit/mapsnd.mod"
+	, 0 };
 static const char mod_levels_temple_map[] = {
 #embed "../../../data/levels/temple/map.mod"
 	, 0 };
@@ -163,12 +238,35 @@ static const moduleFile_t module_files[] = {
 	{ "downtown", "Map", "levels/downtown/map.mod", mod_levels_downtown_map },
 	{ "downtown", "MapRace", "levels/downtown/maprace.mod", mod_levels_downtown_maprace },
 	{ "downtown", "MapSnd", "levels/downtown/mapsnd.mod", mod_levels_downtown_mapsnd },
+	{ "fake", "Map", "levels/fake/map.mod", mod_levels_fake_map },
+	{ "fake", "MapSnd", "levels/fake/mapsnd.mod", mod_levels_fake_mapsnd },
 	{ "fz", "Map", "levels/fz/map.mod", mod_levels_fz_map },
 	{ "fz", "MapSnd", "levels/fz/mapsnd.mod", mod_levels_fz_mapsnd },
 	{ "gamblinden", "MapSnd", "levels/gamblinden/mapsnd.mod", mod_levels_gamblinden_mapsnd },
 	{ "gdb", "Map", "levels/gdb/map.mod", mod_levels_gdb_map },
 	{ "gdb", "MapMatrix", "levels/gdb/mapmatrix.mod", mod_levels_gdb_mapmatrix },
 	{ "gdb", "MapSnd", "levels/gdb/mapsnd.mod", mod_levels_gdb_mapsnd },
+	{ "junkyard", "Map", "levels/junkyard/map.mod", mod_levels_junkyard_map },
+	{ "junkyard", "MapShipEdit", "levels/junkyard/mapshipedit.mod", mod_levels_junkyard_mapshipedit },
+	{ "junkyard", "MapSnd", "levels/junkyard/mapsnd.mod", mod_levels_junkyard_mapsnd },
+	{ "mca", "Map", "levels/mca/map.mod", mod_levels_mca_map },
+	{ "mca", "MapSnd", "levels/mca/mapsnd.mod", mod_levels_mca_mapsnd },
+	{ "mcb", "Map", "levels/mcb/map.mod", mod_levels_mcb_map },
+	{ "mcb", "MapSnd", "levels/mcb/mapsnd.mod", mod_levels_mcb_mapsnd },
+	{ "mda", "Map", "levels/mda/map.mod", mod_levels_mda_map },
+	{ "mda", "MapSnd", "levels/mda/mapsnd.mod", mod_levels_mda_mapsnd },
+	{ "mdb", "Map", "levels/mdb/map.mod", mod_levels_mdb_map },
+	{ "mdb", "MapSnd", "levels/mdb/mapsnd.mod", mod_levels_mdb_mapsnd },
+	{ "menu", "Map", "levels/menu/map.mod", mod_levels_menu_map },
+	{ "menu", "MapSnd", "levels/menu/mapsnd.mod", mod_levels_menu_mapsnd },
+	{ "moa", "Map", "levels/moa/map.mod", mod_levels_moa_map },
+	{ "moa", "MapSnd", "levels/moa/mapsnd.mod", mod_levels_moa_mapsnd },
+	{ "mob", "Map", "levels/mob/map.mod", mod_levels_mob_map },
+	{ "mob", "MapSnd", "levels/mob/mapsnd.mod", mod_levels_mob_mapsnd },
+	{ "msa", "Map", "levels/msa/map.mod", mod_levels_msa_map },
+	{ "msa", "MapSnd", "levels/msa/mapsnd.mod", mod_levels_msa_mapsnd },
+	{ "msb", "Map", "levels/msb/map.mod", mod_levels_msb_map },
+	{ "msb", "MapSnd", "levels/msb/mapsnd.mod", mod_levels_msb_mapsnd },
 	{ "om", "Map", "levels/om/map.mod", mod_levels_om_map },
 	{ "om", "MapSnd", "levels/om/mapsnd.mod", mod_levels_om_mapsnd },
 	{ "orbit", "Map", "levels/orbit/map.mod", mod_levels_orbit_map },
@@ -188,6 +286,8 @@ static const moduleFile_t module_files[] = {
 	{ "scrapyard", "Map", "levels/scrapyard/map.mod", mod_levels_scrapyard_map },
 	{ "scrapyard", "MapSnd", "levels/scrapyard/mapsnd.mod", mod_levels_scrapyard_mapsnd },
 	{ "scrapyard", "MapTriggers", "levels/scrapyard/maptriggers.mod", mod_levels_scrapyard_maptriggers },
+	{ "shipedit", "Map", "levels/shipedit/map.mod", mod_levels_shipedit_map },
+	{ "shipedit", "MapSnd", "levels/shipedit/mapsnd.mod", mod_levels_shipedit_mapsnd },
 	{ "temple", "Map", "levels/temple/map.mod", mod_levels_temple_map },
 	{ "temple", "MapExtraLifes", "levels/temple/mapextralifes.mod", mod_levels_temple_mapextralifes },
 	{ "temple", "MapSnd", "levels/temple/mapsnd.mod", mod_levels_temple_mapsnd },
