@@ -382,7 +382,7 @@ PyObject *Sf_CallKw(scriptFrame_t *f, PyObject *callable, PyObject *args, PyObje
 		Py_XDECREF(args);
 		return NULL;
 	}
-	PyObject *r = PyEval_CallObjectWithKeywords(callable, args, kw);
+	PyObject *r = Script_CallObject(callable, args, kw);
 	Py_DECREF(args);
 	return Sf_Keep(f, r);
 }

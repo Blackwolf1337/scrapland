@@ -5,11 +5,15 @@
  * and the mouse motion and the pads to the input state the devices of the game read. The hotkeys of the accelerator table of the original stay: Shift+Esc quits, F12 starts the tiled screenshot,
  * Ctrl+Shift+Alt+Enter switches fullscreen.
  */
+#ifndef _WIN32
+#define _GNU_SOURCE	/* pthread_getattr_np */
+#endif
 #include <string.h>
 #ifdef _WIN32
 #include <windows.h>
 #else
 #include <errno.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
 #endif
@@ -717,6 +721,33 @@ uint64_t Plat_VirtualMemoryUsed(void) {
 		fclose(f);
 	}
 	return (uint64_t)pages * (uint64_t)sysconf(_SC_PAGESIZE);
+#endif
+}
+
+byte Plat_StackBounds(uintptr_t *low, uintptr_t *high) {
+#ifdef _WIN32
+	MEMORY_BASIC_INFORMATION mbi;
+	if (!VirtualQuery(&mbi, &mbi, sizeof(mbi))) {
+		return 0;
+	}
+	*low = (uintptr_t)mbi.AllocationBase;
+	*high = (uintptr_t)((NT_TIB *)NtCurrentTeb())->StackBase;
+	return 1;
+#else
+	pthread_attr_t attr;
+	void *addr;
+	size_t size;
+	if (pthread_getattr_np(pthread_self(), &attr) != 0) {
+		return 0;
+	}
+	int err = pthread_attr_getstack(&attr, &addr, &size);
+	pthread_attr_destroy(&attr);
+	if (err != 0) {
+		return 0;
+	}
+	*low = (uintptr_t)addr;
+	*high = (uintptr_t)addr + size;
+	return 1;
 #endif
 }
 

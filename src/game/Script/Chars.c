@@ -450,7 +450,7 @@ static PyObject *Chars_CreatePlayersList(PyObject *self, PyObject *args) {
 static PyObject *Chars_Try(const char *module, const char *func, PyObject *args) {
 	PyObject *m = PyImport_ImportModule((char *)module);
 	PyObject *f = m ? PyObject_GetAttrString(m, (char *)func) : NULL;
-	PyObject *r = f && args ? PyEval_CallObject(f, args) : NULL;
+	PyObject *r = f && args ? Script_CallObject(f, args, NULL) : NULL;
 	Py_XDECREF(args);
 	Py_XDECREF(f);
 	Py_XDECREF(m);

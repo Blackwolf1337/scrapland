@@ -189,7 +189,7 @@ static PyObject *Speech_CallEndOfSpeech(PyObject *self, PyObject *args) {
 		Py_INCREF(Py_None);
 		Script_SetVar("Speech", "OnEndOfSpeech", Py_None);
 		Script_SetVar("Speech", "OnEndOfSpeechParams", PyTuple_New(0));
-		PyObject *r = params ? PyEval_CallObject(end, params) : NULL;
+		PyObject *r = params ? Script_CallObject(end, params, NULL) : NULL;
 		Py_XDECREF(params);
 		if (!r) {
 			Py_DECREF(end);
@@ -699,7 +699,7 @@ static PyObject *Speech_PlayerAnsEnd(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	PyObject *a = PyTuple_New(0);
-	PyObject *r = a ? PyEval_CallObject(cb, a) : NULL;
+	PyObject *r = a ? Script_CallObject(cb, a, NULL) : NULL;
 	Py_XDECREF(a);
 	Py_XDECREF(cb);
 	if (!r) {
@@ -831,7 +831,7 @@ static PyObject *Speech_AutoSpeech(PyObject *self, PyObject *args) {
 	PyObject *f = routines ? PyObject_GetItem(routines, type) : NULL;
 	PyObject *r = NULL;
 	if (f) {
-		r = PyEval_CallObject(f, args);
+		r = Script_CallObject(f, args, NULL);
 	} else if (routines && PyErr_ExceptionMatches(PyExc_KeyError)) {
 		PyErr_Clear();
 		char ans[0x20];
@@ -1048,7 +1048,7 @@ static PyObject *Speech_ObjNIEnd(PyObject *self, PyObject *args) {
 	PyObject *end = Sp_Get("OnEndOfSpeechNI"), *params = end ? Sp_Get("OnEndOfSpeechParamsNI") : NULL;
 	PyObject *ch = params && Sp_Del("OnEndOfSpeechNI") && Sp_Del("OnEndOfSpeechParamsNI") ? Sp_Entity("NPCName") : NULL;
 	PyObject *ch2 = ch && Script_HSet(ch, "HeadModel", PyString_FromString("")) ? Sp_Entity("NPCName") : NULL;
-	PyObject *r = ch2 && Script_HSet(ch2, "Action", PyString_FromString("Relax")) ? PyEval_CallObject(end, params) : NULL;
+	PyObject *r = ch2 && Script_HSet(ch2, "Action", PyString_FromString("Relax")) ? Script_CallObject(end, params, NULL) : NULL;
 	Py_XDECREF(end);
 	Py_XDECREF(params);
 	Py_XDECREF(ch);
@@ -1480,7 +1480,7 @@ static PyObject *Speech_TestInRange(PyObject *self, PyObject *args) {
 		ok = abort >= 0 && far >= 0;
 		if (ok && (abort || far)) {
 			if (PyObject_IsTrue(hook) > 0) {
-				PyObject *a = PyTuple_New(0), *r = a ? PyEval_CallObject(hook, a) : NULL;
+				PyObject *a = PyTuple_New(0), *r = a ? Script_CallObject(hook, a, NULL) : NULL;
 				Py_XDECREF(a);
 				ok = r && Script_Try("Scrap", "Set", "(sd)", "RemainTalkTime", 0.0);
 				Py_XDECREF(r);

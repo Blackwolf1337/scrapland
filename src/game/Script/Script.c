@@ -800,7 +800,7 @@ int Script_EntSet(const char *ent, const char *var, PyObject *v) {
 }
 
 PyObject *Script_Invoke(PyObject *callable, PyObject *args) {
-	PyObject *r = callable && args ? PyEval_CallObject(callable, args) : NULL;
+	PyObject *r = callable && args ? Script_CallObject(callable, args, NULL) : NULL;
 	Py_XDECREF(args);
 	return r;
 }
@@ -809,7 +809,7 @@ byte Script_CallKw(const char *module, const char *func, PyObject *args, PyObjec
 	PyObject *f = Script_Attr(module, func);
 	PyObject *r = NULL;
 	if (f && args) {
-		r = PyEval_CallObjectWithKeywords(f, args, kw);
+		r = Script_CallObject(f, args, kw);
 	}
 	Py_XDECREF(f);
 	Py_XDECREF(args);

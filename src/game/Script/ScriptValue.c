@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "scrap/global.h"
+#include "scrap/platform.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 
@@ -80,6 +81,40 @@ PyObject *Script_Fail(void) {
 		PyErr_SetString(PyExc_SystemError, "error return without exception set");
 	}
 	return NULL;
+}
+
+/* ceval.c MAX_RECURSION_DEPTH */
+#define SCRIPT_MAX_DEPTH 10000
+/* the stack left below which a call from C raises the same RuntimeError: ceval checks no stack on this build, the
+ * scripts reach the depth limit in 8 MB, a chain of C functions needs more per level (more again under ASan) and
+ * the Windows build has 2 MB */
+#define SCRIPT_STACK_MARGIN (512 * 1024)
+
+/* the lowest address a call from C may run at (0: unknown, no check) */
+static uintptr_t Script_StackFloor(void) {
+	static uintptr_t floor;
+	static byte known;
+	if (!known) {
+		uintptr_t low, high;
+		known = 1;
+		if (Plat_StackBounds(&low, &high) && high - low > 2 * SCRIPT_STACK_MARGIN) {
+			floor = low + SCRIPT_STACK_MARGIN;
+		}
+	}
+	return floor;
+}
+
+PyObject *Script_CallObject(PyObject *callable, PyObject *args, PyObject *kw) {
+	PyThreadState *ts = PyThreadState_Get();
+	/* the frame address, not a local's: ASan may keep locals on its fake stack */
+	if (ts->recursion_depth >= SCRIPT_MAX_DEPTH || (uintptr_t)__builtin_frame_address(0) < Script_StackFloor()) {
+		PyErr_SetString(PyExc_RuntimeError, "Maximum recursion depth exceeded");
+		return NULL;
+	}
+	ts->recursion_depth++;
+	PyObject *r = PyEval_CallObjectWithKeywords(callable, args, kw);
+	ts->recursion_depth--;
+	return r;
 }
 
 PyObject *Script_Plus(PyObject *a, PyObject *b) {
@@ -264,7 +299,7 @@ PyObject *Script_Usr(void) {
 
 PyObject *Script_AskKw(const char *module, const char *func, PyObject *args, PyObject *kw) {
 	PyObject *f = args ? Script_Attr(module, func) : NULL;
-	PyObject *r = f ? PyEval_CallObjectWithKeywords(f, args, kw) : NULL;
+	PyObject *r = f ? Script_CallObject(f, args, kw) : NULL;
 	Py_XDECREF(f);
 	Py_XDECREF(args);
 	Py_XDECREF(kw);

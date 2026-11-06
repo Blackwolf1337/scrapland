@@ -87,6 +87,8 @@ const char *Plat_InstallLanguage(void);
 uint32_t Plat_FileAttributes(const char *name);
 int Plat_SetFileAttributes(const char *name, uint32_t attr);
 uint64_t Plat_VirtualMemoryUsed(void);
+/* the address range of the stack of the calling thread (the reservation, not only what is committed): 0 if unknown */
+byte Plat_StackBounds(uintptr_t *low, uintptr_t *high);
 uint32_t Plat_LastError(void);
 /* a debugger is attached; a break into it */
 byte Plat_DebuggerPresent(void);
