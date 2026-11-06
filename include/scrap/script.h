@@ -187,6 +187,8 @@ extern PyMethodDef g_MakeCharMethods[];
 extern PyMethodDef g_CharActMethods[];
 /* the C Speech module (src/game/Script/Speech.c) */
 extern PyMethodDef g_SpeechMethods[];
+/* the C SaveGame module (src/game/Script/SaveGame.c) */
+extern PyMethodDef g_SaveGameMethods[];
 /* the sound scripts of the characters (src/game/Script/Sounds.c, data/sound/) */
 extern PyMethodDef g_BankDirectorSoundMethods[];
 extern PyMethodDef g_BankMasterSoundMethods[];
