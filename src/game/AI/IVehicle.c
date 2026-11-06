@@ -354,6 +354,10 @@ static byte cAIVehicle_NeedRepos(cAIVehicle *self) {
 	cWorld *w = g_pWorld;
 	vec3_t cam = w->camPos[w->curCam];
 	cEntity *c = World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
+	/* the main camera entity can be deleted by a script (Mission_FunctionaryHunting.AbortCameraTravelling) */
+	if (!c) {
+		return 0;
+	}
 	const vec3_t *v = Entity_GetPos(self->vehicle, &a);
 
 	d.y = v->y - cam.y;
@@ -1456,10 +1460,14 @@ static inline int AIV_FloatArg(float f) {
 	return i;
 }
 
-/* the camera of view 0, its position and its direction (z axis turned by its angles) */
+/* the camera of view 0, its position and its direction (z axis turned by its angles); NULL without the camera
+ * entity (deleted by a script) */
 static cCamControl *AIV_ReposCam(vec3_t *camPos, vec3_t *dir) {
 	*camPos = g_pWorld->camPos[g_pWorld->curCam];
 	cCamControl *cam = (cCamControl *)World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
+	if (!cam) {
+		return NULL;
+	}
 	vec3_t z = { 0.0f, 0.0f, 1.0f };
 	Vec3_Rotate(dir, &z, &cam->cam.rot);
 	return cam;
@@ -1521,6 +1529,9 @@ static byte cAIVehicle_ReposTraffic(cAIVehicle *self, vec3_t *out, float minVis,
 	byte behind = 0;
 	byte r;
 
+	if (!cam) {
+		return 0;
+	}
 	if (AIV_ReposSlowShip(cam) && !self->reposBehind) {
 		vis = crt_rand() % 2 == 0;
 	}
@@ -1592,6 +1603,9 @@ static byte cAIVehicle_Repos(cAIVehicle *self) {
 		return 0;
 	}
 	cCamControl *cam = AIV_ReposCam(&camPos, &dir);
+	if (!cam) {
+		return 0;
+	}
 	if (AIV_ReposSlowShip(cam) && !self->reposBehind && crt_rand() % 2 != 0) {
 		back.x = -dir.x;
 		back.y = -dir.y;
@@ -3202,6 +3216,10 @@ static void cAIVehicle_GraphTraffic(cAIVehicle *self) {
 		return;
 	}
 	cCamControl *cam = (cCamControl *)World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
+	/* without the main camera entity (deleted by a script) the vehicle stays on its track */
+	if (!cam) {
+		return;
+	}
 	vec3_t camPos = g_pWorld->camPos[g_pWorld->curCam];
 	const vec3_t *pos = Entity_GetPos(self->vehicle, &tmp);
 	d.x = pos->x - camPos.x;
