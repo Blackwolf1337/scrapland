@@ -828,6 +828,14 @@ byte CNodesWorld_HasPointVis(CNodesWorld *self, const vec3_t *pos, float radius)
 void NW_CamPos(float *x, float *y, float *z) {
 	cEntity *e = World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
 
+	/* the last view position of the world when a script deleted the main camera entity */
+	if (!e) {
+		const vec3_t *p = &g_pWorld->camPos[g_pWorld->curCam];
+		*x = p->x;
+		*y = p->y;
+		*z = p->z;
+		return;
+	}
 	CamCtl_GetCamPos(e, x, y, z);
 }
 

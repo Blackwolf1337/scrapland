@@ -93,6 +93,10 @@ byte cAI_IsVisible(cAI *self) {
 	}
 	cEntity *cam = World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
 	vec3_t camPos, pos;
+	/* seen without the main camera entity (deleted by a script) */
+	if (!cam) {
+		return vis;
+	}
 	CamCtl_GetCamPos(cam, &camPos.x, &camPos.y, &camPos.z);
 	int camSector = Video_GetStatus();
 	int atCam = Sector_At(&camPos);

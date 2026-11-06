@@ -313,6 +313,10 @@ byte cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity *e, float m
 	cWorld *w = g_pWorld;
 	vec3_t cam = w->camPos[w->curCam];
 	cEntity *camEnt = World_FindEntity(cWorld_GetCamName(w, 0));
+	/* no place without the main camera entity (deleted by a script) */
+	if (!camEnt) {
+		return 0;
+	}
 	/* of the camera entity: its angles */
 	Vec3_Rotate(&look, &fwd, &((cCamControl *)camEnt)->cam.rot);
 	for (zi = 0; zi < self->numZones; zi++) {
