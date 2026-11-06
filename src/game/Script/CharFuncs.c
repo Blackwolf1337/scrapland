@@ -977,12 +977,11 @@ static PyObject *Bishop_StartSellingLife(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-/* the event of the sale */
+/* SellLife(EntityName, EventName, Time): the event of the sale (the script does not use the entity name: any value) */
 static PyObject *Bishop_SellLife(PyObject *self, PyObject *args) {
-	char *name;
-	PyObject *event, *time;
+	PyObject *name, *event, *time;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "sOO", &name, &event, &time)) {
+	if (!PyArg_ParseTuple(args, "OOO", &name, &event, &time)) {
 		return NULL;
 	}
 	if (Char_Usr0() && Bishop_AddLifes() < 0) {

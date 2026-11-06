@@ -16,26 +16,31 @@ static const char bureaucracy_def[] = {
 	, 0 };
 
 /* CreateBureaucracyClass(BureaucracyClass, FilePath): the class Bureaucracy<BureaucracyClass> unless it is there
- * (SAct.GetClass, which selects it when it is) */
+ * (SAct.GetClass, which selects it when it is); it stops where the script stops ("Bureaucracy" + BureaucracyClass
+ * and "Models/Misc/" + FilePath raise for values that are no strings, the second after the class is made) */
 static PyObject *Bureaucracy_CreateBureaucracyClass(PyObject *self, PyObject *args) {
-	char *cls, *file, name[0x100];
+	PyObject *cls, *file;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "ss", &cls, &file)) {
+	if (!PyArg_ParseTuple(args, "OO", &cls, &file)) {
 		return NULL;
 	}
-	Str_Printf(name, sizeof(name), "Bureaucracy%s", cls);
-	CHECK(g_pActClassList);
-	g_pAuxActClass = cActClassList_Get(g_pActClassList, name);
-	if (!g_pAuxActClass) {
-		g_pAuxActClass = cActClassList_Create(g_pActClassList, name);
-		PyObject *vars = Py_BuildValue("{s:s,s:s}", "cls", cls, "file", file);
-		if (!vars) {
-			return NULL;
-		}
-		Script_RunFile(0, "chars/bureaucracy.def", "Class", bureaucracy_def, NULL, vars);
-		Py_DECREF(vars);
+	PyObject *full = Script_SPlus("Bureaucracy", cls);
+	if (!full) {
+		return NULL;
 	}
-	return Py_ReturnNone();
+	CHECK(g_pActClassList);
+	g_pAuxActClass = cActClassList_Get(g_pActClassList, PyString_AsString(full));
+	byte ok = 1;
+	if (!g_pAuxActClass) {
+		g_pAuxActClass = cActClassList_Create(g_pActClassList, PyString_AsString(full));
+		PyObject *path = Script_SPlus("Models/Misc/", file);
+		PyObject *vars = path ? Py_BuildValue("{s:O,s:O}", "cls", cls, "file", file) : NULL;
+		ok = vars && Script_RunFileTry(0, "chars/bureaucracy.def", "Class", bureaucracy_def, NULL, vars);
+		Py_XDECREF(path);
+		Py_XDECREF(vars);
+	}
+	Py_DECREF(full);
+	return ok ? Py_ReturnNone() : NULL;
 }
 
 /* names[1] of string.splitfields(name, "_"): a new reference, NULL with the error of the script set */

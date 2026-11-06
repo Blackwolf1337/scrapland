@@ -155,21 +155,21 @@ static void Char_Event(double t, const char *name, const char *func) {
 	cAction_Var(g_pAuxAction, "EventFunc", 1, &s, NULL, NULL);
 }
 
-/* speech name module func: Speech.SpeechRoutines[name] = module.func */
+/* speech name module func: Speech.SpeechRoutines[name] = module.func (an error is left set: the loader prints it, as
+ * it does for every step, or stops a file that stops where the script stops) */
 static void Step_Speech(int id, PyObject *args) {
 	char *name, *module, *func;
 	(void)id;
 	if (!PyArg_ParseTuple(args, "sss", &name, &module, &func)) {
-		PyErr_Print();
 		return;
 	}
 	PyObject *speech = PyImport_ImportModule("Speech");
 	PyObject *routines = speech ? PyObject_GetAttrString(speech, "SpeechRoutines") : NULL;
-	PyObject *m = PyImport_ImportModule(module);
+	PyObject *m = routines ? PyImport_ImportModule(module) : NULL;
 	PyObject *f = m ? PyObject_GetAttrString(m, func) : NULL;
-	PyObject *key = PyString_FromString(name);
-	if (!routines || !f || !key || PyObject_SetItem(routines, key, f) < 0) {
-		PyErr_Print();
+	PyObject *key = f ? PyString_FromString(name) : NULL;
+	if (key) {
+		PyObject_SetItem(routines, key, f);
 	}
 	Py_XDECREF(key);
 	Py_XDECREF(f);

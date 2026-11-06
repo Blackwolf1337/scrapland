@@ -122,16 +122,40 @@ static const scriptStep_t sound_steps[] = {
 	{ NULL, NULL },
 };
 
-/* a section of a sound file with one value (char for Init, name for InitLoops) */
-static PyObject *Sound_Run(const char *file, const char *builtin, const char *section, const char *var, PyObject *args) {
-	PyObject *v;
-	if (!PyArg_ParseTuple(args, "O", &v)) {
+/*
+ * the section Init with vars (given away; $char CharName): it stops where the script stops. The script's first line,
+ * Scrap.OpenPack("Sounds/Chars/"+CharName), raises for a CharName that is no string before anything runs ($(char) of
+ * the file would take any value as text)
+ */
+static PyObject *Sound_RunInit(const char *file, const char *builtin, PyObject *vars, PyObject *name) {
+	PyObject *path = vars ? Script_SPlus("Sounds/Chars/", name) : NULL;
+	byte ok = path && Script_RunFileTry(0, file, "Init", builtin, sound_steps, vars);
+	Py_XDECREF(path);
+	Py_XDECREF(vars);
+	return ok ? Py_ReturnNone() : NULL;
+}
+
+/* Init(CharName) */
+static PyObject *Sound_Init(const char *file, const char *builtin, PyObject *args) {
+	PyObject *c;
+	if (!PyArg_ParseTuple(args, "O", &c)) {
 		return NULL;
 	}
-	PyObject *vars = Py_BuildValue("{s:O}", var, v);
-	Script_RunFile(0, file, section, builtin, sound_steps, vars);
+	return Sound_RunInit(file, builtin, Py_BuildValue("{s:O}", "char", c), c);
+}
+
+/* InitLoops(EntityName): e = Scrap.GetEntity(EntityName), then the attribute sets of the section on $e */
+static PyObject *Sound_Loops(const char *file, const char *builtin, PyObject *args) {
+	PyObject *name;
+	if (!PyArg_ParseTuple(args, "O", &name)) {
+		return NULL;
+	}
+	PyObject *e = Script_Entity(name);
+	PyObject *vars = e ? Py_BuildValue("{s:O,s:O}", "name", name, "e", e) : NULL;
+	byte ok = vars && Script_RunFileTry(0, file, "InitLoops", builtin, sound_steps, vars);
 	Py_XDECREF(vars);
-	return Py_ReturnNone();
+	Py_XDECREF(e);
+	return ok ? Py_ReturnNone() : NULL;
 }
 
 /*
@@ -155,13 +179,13 @@ static PyObject *Sound_Section(const char *file, const char *builtin, const char
 #define SOUND_INIT(mod, file) \
 	static PyObject *mod##_Init(PyObject *self, PyObject *args) { \
 		(void)self; \
-		return Sound_Run("sound/" #file ".def", file##_def, "Init", "char", args); \
+		return Sound_Init("sound/" #file ".def", file##_def, args); \
 	}
 
 #define SOUND_LOOPS(mod, file) \
 	static PyObject *mod##_InitLoops(PyObject *self, PyObject *args) { \
 		(void)self; \
-		return Sound_Run("sound/" #file ".def", file##_def, "InitLoops", "name", args); \
+		return Sound_Loops("sound/" #file ".def", file##_def, args); \
 	}
 
 /* a section with CharName (talk 0) or CharName, ActName (talk 1) */
@@ -525,10 +549,8 @@ static PyObject *MercenarySound_Init(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "OO", &cls, &name)) {
 		return NULL;
 	}
-	PyObject *vars = Py_BuildValue("{s:O,s:O}", "class", cls, "char", name);
-	Script_RunFile(0, "sound/mercenarysound.def", "Init", mercenarysound_def, sound_steps, vars);
-	Py_XDECREF(vars);
-	return Py_ReturnNone();
+	return Sound_RunInit("sound/mercenarysound.def", mercenarysound_def, Py_BuildValue("{s:O,s:O}", "class", cls, "char",
+		name), name);
 }
 
 SOUND_SECTION(MercenarySound, mercenarysound, LoadSounds, 0)

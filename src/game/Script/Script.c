@@ -800,7 +800,7 @@ int Script_EntSet(const char *ent, const char *var, PyObject *v) {
 }
 
 PyObject *Script_Invoke(PyObject *callable, PyObject *args) {
-	PyObject *r = callable && args ? PyEval_CallObject(callable, args) : NULL;
+	PyObject *r = callable && args ? Script_CallObject(callable, args, NULL) : NULL;
 	Py_XDECREF(args);
 	return r;
 }
@@ -809,7 +809,7 @@ byte Script_CallKw(const char *module, const char *func, PyObject *args, PyObjec
 	PyObject *f = Script_Attr(module, func);
 	PyObject *r = NULL;
 	if (f && args) {
-		r = PyEval_CallObjectWithKeywords(f, args, kw);
+		r = Script_CallObject(f, args, kw);
 	}
 	Py_XDECREF(f);
 	Py_XDECREF(args);
@@ -1327,6 +1327,11 @@ static void Def_Set(scriptDef_t *m, const char *item, const char *var, const cha
 			Script_SetNum(m->id, item, var, PyInt_Check(v) ? (double)PyInt_AsLong(v) : PyFloat_AsDouble(v));
 		} else if (v && PyString_Check(v)) {
 			Script_SetStr(m->id, item, var, PyString_AsString(v));
+		} else if (v && m->stop) {
+			/* another value goes to SScorer.Set as in the script, with its TypeError */
+			PyObject *r = Script_Ask("SScorer", "Set", "(issO)", m->id, item, var, v);
+			m->failed = r == NULL;
+			Py_XDECREF(r);
 		}
 		Py_XDECREF(v);
 		return;

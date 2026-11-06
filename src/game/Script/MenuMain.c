@@ -937,7 +937,7 @@ static PyObject *Menu_DebugSet_ChangeMapExec(PyObject *self, PyObject *args) {
 static PyObject *Main_Ask(const char *module, const char *func, PyObject *args) {
 	PyObject *m = PyImport_ImportModule((char *)module);
 	PyObject *f = m ? PyObject_GetAttrString(m, (char *)func) : NULL;
-	PyObject *r = f && args ? PyEval_CallObject(f, args) : NULL;
+	PyObject *r = f && args ? Script_CallObject(f, args, NULL) : NULL;
 	if (!r) {
 		PyErr_Print();
 	}

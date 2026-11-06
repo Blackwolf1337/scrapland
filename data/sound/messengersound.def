@@ -1,6 +1,6 @@
 # messengersound (the sound script sound/messengersound.py of the game): the sound files of the character class
 # (LoadSounds), the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of
-# a new entity (InitLoops, $name the entity) and Init, which runs them with $char the class. The format is described in
+# a new entity (InitLoops, $e its handle) and Init, which runs them with $char the class. The format is described in
 # src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/messengersound.def
 # replaces this file.
 
@@ -138,10 +138,10 @@ call Chars.ActSound $char $talk 59 giro5 0.028 +10
 
 section InitLoops
 if %MessengerSound.isPC
-	entity $name
+	object $e
 		snd_n 2
 else
-	entity $name
+	object $e
 		snd_n 1
 end
 	snd00_name loop-msm
@@ -151,7 +151,7 @@ end
 	snd00_pitch1 +10.0
 	snd00_vol1 0.04
 if %MessengerSound.isPC
-	entity $name
+	object $e
 		snd01_name loop-msm2
 		snd01_loop 1
 		snd01_vol 0.008

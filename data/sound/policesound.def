@@ -1,6 +1,6 @@
 # policesound (the sound script sound/policesound.py of the game): the sound files of the character class (LoadSounds),
 # the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of a new entity
-# (InitLoops, $name the entity) and Init, which runs them with $char the class. The format is described in
+# (InitLoops, $e its handle) and Init, which runs them with $char the class. The format is described in
 # src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/policesound.def
 # replaces this file.
 
@@ -298,10 +298,10 @@ call Chars.ActSoundLoop $char $talk 65 1 0
 
 section InitLoops
 if %PoliceSound.isPC
-	entity $name
+	object $e
 		snd_n 4
 else
-	entity $name
+	object $e
 		snd_n 3
 end
 	snd01_name Siren1
@@ -309,7 +309,7 @@ end
 	snd02_name efecto1
 	snd02_loop 0
 if %PoliceSound.isPC
-	entity $name
+	object $e
 		snd03_name efecto2
 		snd03_loop 0
 end

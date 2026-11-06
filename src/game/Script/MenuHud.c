@@ -243,7 +243,7 @@ static PyObject *CharScorer_CreateRadarScorer(PyObject *self, PyObject *args) {
 static PyObject *Hud_Ask(const char *module, const char *func, PyObject *args) {
 	PyObject *m = PyImport_ImportModule((char *)module);
 	PyObject *f = m ? PyObject_GetAttrString(m, (char *)func) : NULL;
-	PyObject *r = f && args ? PyEval_CallObject(f, args) : NULL;
+	PyObject *r = f && args ? Script_CallObject(f, args, NULL) : NULL;
 	if (!r) {
 		PyErr_Print();
 	}
@@ -253,52 +253,50 @@ static PyObject *Hud_Ask(const char *module, const char *func, PyObject *args) {
 	return r;
 }
 
-/* the entity the player controls, or the one the camera follows; NULL when there is none (a new reference) */
-static PyObject *Hud_Controlled(int id) {
-	PyObject *u = Hud_Ask("Scrap", "UsrEntity", Py_BuildValue("(i)", id));
-	if (u && u != Py_None) {
-		return u;
+/*
+ * the entity the player controls, or the one the camera follows: 1 with *out (a new reference), 0 where the script
+ * returns, -1 with the error set where it raises (None.IsType without a camera entity, None.MainTarget when the
+ * camera follows nobody)
+ */
+static int Hud_Controlled(int id, PyObject **out) {
+	scriptFrame_t f = { 0 };
+	*out = NULL;
+	/* from Scorer import MarginH, MarginV */
+	Sf_From(&f, "Scorer", "MarginH");
+	Sf_From(&f, "Scorer", "MarginV");
+	PyObject *u = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", id);
+	if (Sf_Compare(&f, u, "==", Py_None) > 0) {
+		u = Sf_Entity(&f, Sf_Ask(&f, "Scrap", "GetCam", "(i)", id));
+		if (Sf_True(&f, Sf_Method(&f, u, "IsType", "(s)", "FCam")) == 0) {
+			Sf_Done(&f, NULL);
+			return 0;
+		}
+		u = Sf_Entity(&f, Sf_Attr(&f, u, "Target"));
+		if (Sf_Compare(&f, u, "==", Py_None) > 0) {
+			u = Sf_Entity(&f, Sf_Attr(&f, u, "MainTarget"));
+		}
 	}
-	Py_XDECREF(u);
-	PyObject *cam = Hud_Ask("Scrap", "GetCam", Py_BuildValue("(i)", id));
-	u = cam ? Hud_Ask("Scrap", "GetEntity", Py_BuildValue("(O)", cam)) : NULL;
-	Py_XDECREF(cam);
-	if (!u || u == Py_None) {
-		/* the script failed here on None.IsType */
-		Py_XDECREF(u);
-		return NULL;
+	int none = Sf_Compare(&f, u, "==", Py_None);
+	if (none == 0) {
+		*out = Script_Ref(u);
 	}
-	PyObject *r = PyObject_CallMethod(u, "IsType", "(s)", "FCam");
-	byte fcam = r && PyObject_IsTrue(r) > 0;
-	Py_XDECREF(r);
-	PyErr_Clear();
-	if (!fcam) {
-		Py_DECREF(u);
-		return NULL;
-	}
-	PyObject *target = PyObject_GetAttrString(u, "Target");
-	Py_DECREF(u);
-	u = target ? Hud_Ask("Scrap", "GetEntity", Py_BuildValue("(O)", target)) : NULL;
-	Py_XDECREF(target);
-	if (!u || u == Py_None) {
-		/* the script asked None for its MainTarget here and failed */
-		Py_XDECREF(u);
-		return NULL;
-	}
-	return u;
+	Sf_Done(&f, NULL);
+	return none == 0 ? 1 : none > 0 ? 0 : -1;
 }
 
-static void Hud_SpecialAction(int id) {
-	PyObject *u = Hud_Controlled(id);
-	if (!u) {
-		PyErr_Clear();
-		return;
+/* the HUD of a special action */
+static byte Hud_SpecialAction(int id) {
+	PyObject *u;
+	int c = Hud_Controlled(id, &u);
+	if (c <= 0) {
+		return c == 0;
 	}
 	PyObject *act = PyObject_GetAttrString(u, "ActCtrl");
 	PyErr_Clear();
 	Hud_Run(id, "specialaction", Py_BuildValue("{s:s}", "act", act && PyString_Check(act) ? PyString_AsString(act) : ""));
 	Py_XDECREF(act);
 	Py_DECREF(u);
+	return 1;
 }
 
 static PyObject *CharScorer_CreateSpecialActionScorer(PyObject *self, PyObject *args) {
@@ -307,8 +305,7 @@ static PyObject *CharScorer_CreateSpecialActionScorer(PyObject *self, PyObject *
 	if (!PyArg_ParseTuple(args, "i", &id)) {
 		return NULL;
 	}
-	Hud_SpecialAction(id);
-	return Py_ReturnNone();
+	return Hud_SpecialAction(id) ? Py_ReturnNone() : NULL;
 }
 
 /* Create(id): the HUD on foot */

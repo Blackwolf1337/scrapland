@@ -1,6 +1,6 @@
 # sentinelsound (the sound script sound/sentinelsound.py of the game): the sound files of the character class
 # (LoadSounds), the sound events of its actions (SetSounds and the Talk sections, through Chars.ActSound), the loops of
-# a new entity (InitLoops, $name the entity) and Init, which runs them with $char the class. The format is described in
+# a new entity (InitLoops, $e its handle) and Init, which runs them with $char the class. The format is described in
 # src/game/Script/Script.c; the C is in src/game/Script/Sounds.c. A pack in mods/ with scrapc/sound/sentinelsound.def
 # replaces this file.
 
@@ -117,7 +117,7 @@ call Chars.ActSound $char $talk 38 mecanismo-sentinel4 0.025 +2
 call Chars.ActSound $char $talk 44 mecanismo-sentinel1 0.025 +2
 
 section InitLoops
-entity $name
+object $e
 	snd_n 1
 	snd00_name loop-sentinel
 	snd00_loop 1

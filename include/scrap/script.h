@@ -169,6 +169,11 @@ PyObject *Script_GetAttr(PyObject *o, const char *name);
 /* NULL with ceval's SystemError set unless an error is set already: the return of a C function where an engine call
  * failed without an exception */
 PyObject *Script_Fail(void);
+/* callable(*args, **kw) from C (kw may be NULL; nothing given away): the C function making the call counts toward
+ * the recursion depth of the interpreter for the time of the call, as the frame of the Python function it replaces
+ * does in eval_code2, so a cycle through C functions raises "RuntimeError: Maximum recursion depth exceeded" like
+ * the scripts (also when the C stack runs short first) */
+PyObject *Script_CallObject(PyObject *callable, PyObject *args, PyObject *kw);
 /* a + b (a given away), a + "text" (a given away), "text" + b: new references, NULL stays NULL */
 PyObject *Script_Plus(PyObject *a, PyObject *b);
 PyObject *Script_PlusS(PyObject *a, const char *text);

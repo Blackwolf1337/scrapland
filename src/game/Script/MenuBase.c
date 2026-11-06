@@ -59,6 +59,11 @@ static void Base_Run(int id, const char *section, PyObject *vars) {
 	Script_RunFile(id, BASE_FILE, section, base_def, base_steps, vars);
 }
 
+/* a section that stops where the script stops: 0 with the error set */
+static byte Base_RunTry(int id, const char *section, PyObject *vars) {
+	return Script_RunFileTry(id, BASE_FILE, section, base_def, base_steps, vars);
+}
+
 /* ---- the pieces ---- */
 
 /* the bar behind a title, as wide as the text in whole quads of 18 */
@@ -575,7 +580,7 @@ static PyObject *Menu_DisableMenuItem(PyObject *self, PyObject *args) {
 }
 
 /* ShowTextBox(id, desc, accept, back[, button]): a text in a box with one button under it */
-static void Base_TextBox(int id, PyObject *desc, const char *accept, const char *back, PyObject *button) {
+static byte Base_TextBox(int id, PyObject *desc, const char *accept, const char *back, PyObject *button) {
 	char text[0x200];
 	byte xbox = GVar_GetNum("IsXbox", 0) != 0;
 	Base_NewMenu(id);
@@ -599,9 +604,10 @@ static void Base_TextBox(int id, PyObject *desc, const char *accept, const char 
 	}
 	PyObject *vars = Py_BuildValue("{s:O,s:s,s:s,s:O,s:i}", "desc", desc, "accept", accept, "back", back, "button", b,
 		"xbox", xbox);
-	Base_Run(id, "textbox", vars);
+	byte ok = vars && Base_RunTry(id, "textbox", vars);
 	Py_XDECREF(vars);
 	Py_XDECREF(b);
+	return ok;
 }
 
 static PyObject *Menu_ShowTextBox(PyObject *self, PyObject *args) {
@@ -612,8 +618,7 @@ static PyObject *Menu_ShowTextBox(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "iOss|O", &id, &desc, &accept, &back, &button)) {
 		return NULL;
 	}
-	Base_TextBox(id, desc, accept, back, button);
-	return Py_ReturnNone();
+	return Base_TextBox(id, desc, accept, back, button) ? Py_ReturnNone() : NULL;
 }
 
 /* ShowWarning(id, desc): a text box once the player plays (on foot or in a ship, time running), else later */
@@ -627,11 +632,14 @@ static PyObject *Menu_ShowWarning(PyObject *self, PyObject *args) {
 	cActionSet *set = TABLE_AT(g_ActionSets, Input_GetActionSet());
 	if ((ActionSet_IsNamed(set, "Walk") || ActionSet_IsNamed(set, "Racer")) && g_pWorld->timer.speed > 0.0f) {
 		char back[0x80];
-		Script_Call("Menu", "InitMenuSys", "(i)", 0);
+		PyObject *bf = Script_Try("Menu", "InitMenuSys", "(i)", 0) ? Script_Global("Menu", "backFunc") : NULL;
+		if (!bf) {
+			return NULL;
+		}
+		Py_DECREF(bf);
 		Script_GetString("Menu", "backFunc", back, sizeof(back));
 		const char *func = back[0] ? back : "Menu.ExitMissionInfo";
-		Base_TextBox(id, desc, func, func, NULL);
-		return Py_ReturnNone();
+		return Base_TextBox(id, desc, func, func, NULL) ? Py_ReturnNone() : NULL;
 	}
 	PyObject *m = PyImport_ImportModule("Menu");
 	PyObject *f = m ? PyObject_GetAttrString(m, "ShowWarning") : NULL;
