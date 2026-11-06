@@ -157,7 +157,7 @@
      "weight": 3,
      "percent": 20,
      "status": "in progress",
-     "note": "stages 0 and 5 of 8 done: pack module gate, C modules, console in C"
+     "note": "gate and C module object, save strings and console done; module conversion running"
     },
     {
      "item": "Python object library removed",
