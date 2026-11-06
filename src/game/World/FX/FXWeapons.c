@@ -176,6 +176,11 @@ void *cObjElementFXSwarmMissile_ctor(void *self) {
 	CGameTrail_ctor(&s->trail);
 	CGameParticles_ctor(&s->particles);
 	s->on = 0;
+	/* differs from the original: the first Update measures from the last trail point before it is set; 0 as in a
+	 * zeroed block */
+	s->last.x = 0.0f;
+	s->last.y = 0.0f;
+	s->last.z = 0.0f;
 	return s;
 }
 
@@ -194,6 +199,11 @@ void *cObjElementFXTesla_ctor(void *self) {
 	s->time = 0.0f;
 	s->fadeStart = -1.0f;
 	s->followTime = g_FXTeslaFollowTime;
+	/* differs from the original: Reset reads the slot flags before anything set them (the ATPC sets its own);
+	 * 0 as in a zeroed block */
+	for (int i = 0; i < FXTESLA_SLOTS; i++) {
+		s->slotOn[i] = 0;
+	}
 	return s;
 }
 
