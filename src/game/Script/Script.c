@@ -372,6 +372,10 @@ void Script_ReplaceRefs(PyObject *dict, PyObject *key, PyObject *old, PyObject *
  * error left pending, and the Sf_ frame reports the helper that failed without one. A report names the kind, the
  * innermost C function that runs, the line of the Python code that called it and (glibc) the return addresses as
  * ScrapC+offset for addr2line -f -i -e ScrapC. Off, nothing changes: the functions are the plain PyCFunctions.
+ * SCRAP_NULL_CHECK_ENGINE=1 as well wraps the functions of the engine modules (Scrap, SAI, SAct, ...) when Python
+ * starts, also with SCRAP_PACK_SCRIPTS=1, so both versions report; then the Python line is part of what a report is
+ * deduplicated by, and a call made while an error is pending reports "call with error pending" (where a stale error
+ * is carried to).
  */
 typedef struct {
 	PyMethodDef def;		/* the wrapper: the name of the function, Script_CheckCall */
@@ -384,6 +388,7 @@ typedef struct {
 #define SCRIPT_CHECK_DEPTH 64
 #define SCRIPT_CHECK_SEEN 1024
 static int script_check = -1;
+static byte script_checkEngine;
 static FILE *script_checkFile;
 static const char *script_checkStack[SCRIPT_CHECK_DEPTH];
 static int script_checkDepth;
@@ -396,6 +401,8 @@ static byte Script_CheckOn(void) {
 		if (script_check && strcmp(e, "1")) {
 			script_checkFile = fopen(e, "a");
 		}
+		e = getenv("SCRAP_NULL_CHECK_ENGINE");
+		script_checkEngine = script_check && e && *e == '1';
 	}
 	return script_check > 0;
 }
@@ -420,6 +427,9 @@ void Script_CheckSilent(const char *kind) {
 			PyCode_Addr2Line(fr->f_code, fr->f_lasti), PyString_AsString(fr->f_code->co_name));
 	}
 	unsigned h = Script_CheckHash(Script_CheckHash(2166136261u, kind), label);
+	if (script_checkEngine) {
+		h = Script_CheckHash(h, where);
+	}
 #if defined(__GLIBC__)
 	void *addr[8];
 	int n = backtrace(addr, 8);
@@ -468,6 +478,9 @@ static PyObject *Script_CheckCall(PyObject *self, PyObject *args, PyObject *kw) 
 		script_checkStack[script_checkDepth] = c->label;
 	}
 	script_checkDepth++;
+	if (pending && script_checkEngine) {
+		Script_CheckSilent("call with error pending");
+	}
 	if (flags & METH_KEYWORDS) {
 		r = ((PyCFunctionWithKeywords)(void (*)(void))c->orig.ml_meth)(c->self, arg, kw);
 	} else if (kw && PyDict_Size(kw) != 0) {
@@ -518,6 +531,37 @@ PyObject *Script_CheckFunction(PyMethodDef *def, PyObject *self, const char *mod
 	PyObject *f = PyCFunction_New(&c->def, o);
 	Py_DECREF(o);
 	return f;
+}
+
+void Script_CheckEngine(void) {
+	static const char *const modules[] = {
+		"Scrap", "SInput", "SNet", "SWeap", "SScorer", "SVec", "SSound", "SAI", "SAct", "SFX", "SLogic",
+	};
+
+	if (!Script_CheckOn() || !script_checkEngine) {
+		return;
+	}
+	for (size_t i = 0; i < sizeof(modules) / sizeof(modules[0]); i++) {
+		PyObject *m = PyDict_GetItemString(PyImport_GetModuleDict(), (char *)modules[i]);
+		PyObject *dict = m ? PyModule_GetDict(m) : NULL;
+		PyObject *keys = dict ? PyDict_Keys(dict) : NULL;
+		int n = keys ? PyList_Size(keys) : 0;
+		for (int k = 0; k < n; k++) {
+			PyObject *key = PyList_GetItem(keys, k);
+			PyObject *v = PyDict_GetItem(dict, key);
+			if (!v || !PyCFunction_Check(v)) {
+				continue;
+			}
+			PyCFunctionObject *cf = (PyCFunctionObject *)v;
+			PyObject *f = Script_CheckFunction(cf->m_ml, cf->m_self, modules[i]);
+			if (f) {
+				PyDict_SetItem(dict, key, f);
+				Py_DECREF(f);
+			}
+		}
+		Py_XDECREF(keys);
+		PyErr_Clear();
+	}
 }
 
 void Script_Install(PyObject *module, PyMethodDef *methods, PyObject *kept) {

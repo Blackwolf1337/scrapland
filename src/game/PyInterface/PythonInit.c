@@ -45,6 +45,7 @@ void Python_Init(void) {
 	PyRun_ScrapString("print 'Python Ver '+sys.version");
 	PyRun_ScrapString("sys.path.append('Scripts')");
 	PyRun_ScrapString("import Scrap,SInput,SNet,SWeap,SScorer,SVec,SSound,SAI,SAct,SFX,SLogic");
+	Script_CheckEngine();
 	g_PyPackImport = 1;
 	if (g_IsViewer) {
 		PyRun_ScrapString("import Viewer");
