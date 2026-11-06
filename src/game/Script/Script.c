@@ -625,10 +625,53 @@ void Script_TableExtras(PyObject *module, PyMethodDef *methods) {
 	}
 }
 
+/*
+ * The dict writes of Script_Install on a module made in C, with the values in place: per function of the table the
+ * other names that hold it (the aliases), the tuples that hold it (Script_ReplaceRefs) and the name itself, which a
+ * function the script lacks gets here as Script_Install gives it. PyDict_SetItem doubles a dict that is 2/3 full
+ * before the write, also for a key that is in it, so these writes decide the key order of the module dict as they
+ * do after the .pyc (Sound modules of 21 keys).
+ */
+static void Script_TableReplay(PyObject *module, PyMethodDef *methods) {
+	PyObject *dict = PyModule_GetDict(module);
+	for (PyMethodDef *m = methods; m->ml_name; m++) {
+		PyObject *f = Script_CheckFunction(m, NULL, PyModule_GetName(module));
+		if (!f) {
+			continue;
+		}
+		PyObject *cur = PyDict_GetItemString(dict, m->ml_name);
+		if (cur) {
+			PyObject *key, *value, *later = NULL;
+			int pos = 0;
+			while (PyDict_Next(dict, &pos, &key, &value)) {
+				if (value == cur && PyString_Check(key) && strcmp(PyString_AsString(key), m->ml_name)) {
+					Script_Defer(&later, key, value);
+				}
+			}
+			pos = 0;
+			while (PyDict_Next(dict, &pos, &key, &value)) {
+				if (PyTuple_Check(value)) {
+					int i, n = PyTuple_GET_SIZE(value);
+					for (i = 0; i < n && PyTuple_GET_ITEM(value, i) != cur; i++) {
+					}
+					if (i < n) {
+						Script_Defer(&later, key, value);
+					}
+				}
+			}
+			Script_SetDeferred(dict, later);
+			PyDict_SetItemString(dict, m->ml_name, cur);
+		} else {
+			PyDict_SetItemString(dict, m->ml_name, f);
+		}
+		Py_DECREF(f);
+	}
+}
+
 void Script_ModuleExtras(const char *name, PyObject *module) {
 	for (size_t i = 0; i < sizeof(script_modules) / sizeof(script_modules[0]); i++) {
 		if (!strcmp(script_modules[i].name, name)) {
-			Script_TableExtras(module, script_modules[i].methods);
+			Script_TableReplay(module, script_modules[i].methods);
 		}
 	}
 	Script_LevelModuleExtras(name, module);
