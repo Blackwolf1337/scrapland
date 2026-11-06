@@ -17,6 +17,10 @@ Mission_GetDataPart2	bank	Data.packed/levels/bank/scripts/mission_getdatapart2.p
 Mission_InfiltrateBank	bank	Data.packed/levels/bank/scripts/mission_infiltratebank.pyc
 Map	ca	data02.packed/levels/ca/scripts/map.pyc
 MapSnd	ca	data02.packed/levels/ca/scripts/mapsnd.pyc
+Mission_IgorCombat	ca	data02.packed/levels/ca/scripts/mission_igorcombat.pyc
+SuperDeal_Eighth	ca	data02.packed/levels/ca/scripts/superdeal_eighth.pyc
+SuperDeal_First	ca	data02.packed/levels/ca/scripts/superdeal_first.pyc
+SuperDeal_Third	ca	data02.packed/levels/ca/scripts/superdeal_third.pyc
 Map	commercial	data02.packed/levels/commercial/scripts/map.pyc
 MapRace	commercial	data02.packed/levels/commercial/scripts/maprace.pyc
 MapSnd	commercial	data02.packed/levels/commercial/scripts/mapsnd.pyc

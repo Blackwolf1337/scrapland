@@ -44,6 +44,18 @@ static const char mod_levels_ca_map[] = {
 static const char mod_levels_ca_mapsnd[] = {
 #embed "../../../data/levels/ca/mapsnd.mod"
 	, 0 };
+static const char mod_levels_ca_mission_igorcombat[] = {
+#embed "../../../data/levels/ca/mission_igorcombat.mod"
+	, 0 };
+static const char mod_levels_ca_superdeal_eighth[] = {
+#embed "../../../data/levels/ca/superdeal_eighth.mod"
+	, 0 };
+static const char mod_levels_ca_superdeal_first[] = {
+#embed "../../../data/levels/ca/superdeal_first.mod"
+	, 0 };
+static const char mod_levels_ca_superdeal_third[] = {
+#embed "../../../data/levels/ca/superdeal_third.mod"
+	, 0 };
 static const char mod_levels_commercial_map[] = {
 #embed "../../../data/levels/commercial/map.mod"
 	, 0 };
@@ -244,6 +256,10 @@ static const moduleFile_t module_files[] = {
 	{ "bank", "Mission_InfiltrateBank", "levels/bank/mission_infiltratebank.mod", mod_levels_bank_mission_infiltratebank },
 	{ "ca", "Map", "levels/ca/map.mod", mod_levels_ca_map },
 	{ "ca", "MapSnd", "levels/ca/mapsnd.mod", mod_levels_ca_mapsnd },
+	{ "ca", "Mission_IgorCombat", "levels/ca/mission_igorcombat.mod", mod_levels_ca_mission_igorcombat },
+	{ "ca", "SuperDeal_Eighth", "levels/ca/superdeal_eighth.mod", mod_levels_ca_superdeal_eighth },
+	{ "ca", "SuperDeal_First", "levels/ca/superdeal_first.mod", mod_levels_ca_superdeal_first },
+	{ "ca", "SuperDeal_Third", "levels/ca/superdeal_third.mod", mod_levels_ca_superdeal_third },
 	{ "commercial", "Map", "levels/commercial/map.mod", mod_levels_commercial_map },
 	{ "commercial", "MapRace", "levels/commercial/maprace.mod", mod_levels_commercial_maprace },
 	{ "commercial", "MapSnd", "levels/commercial/mapsnd.mod", mod_levels_commercial_mapsnd },
