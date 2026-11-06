@@ -168,6 +168,8 @@ PyObject *Script_Usr(void);
 /* module.func(*args, **kw) as a script calls it (args and kw given away, kw may be NULL): the result, a new
  * reference, NULL with the error set (not printed) */
 PyObject *Script_AskKw(const char *module, const char *func, PyObject *args, PyObject *kw);
+/* eval(text) in a function of the script module (its globals): a new reference, NULL with the error set */
+PyObject *Script_EvalIn(const char *module, PyObject *text);
 
 /*
  * A ported script function line by line (src/game/Script/ScriptFrame.c). The frame keeps the temporary references
@@ -291,6 +293,18 @@ extern PyMethodDef g_SaveGameMethods[];
 extern PyMethodDef g_FxMethods[];
 /* the C Items module (src/game/Script/Items.c) */
 extern PyMethodDef g_ItemsMethods[];
+extern PyMethodDef g_NetMethods[];
+extern PyMethodDef g_WeaponsMethods[];
+extern PyMethodDef g_VulcanMethods[];
+extern PyMethodDef g_DevastatorMethods[];
+extern PyMethodDef g_TeslaMethods[];
+extern PyMethodDef g_ATPCMethods[];
+extern PyMethodDef g_LaserMethods[];
+extern PyMethodDef g_SwarmMethods[];
+extern PyMethodDef g_InfernoMethods[];
+extern PyMethodDef g_CloudMethods[];
+extern PyMethodDef g_EMIMethods[];
+extern PyMethodDef g_SonicMethods[];
 /* the functions of the Init module (src/game/Script/InitLevel.c) */
 extern PyMethodDef g_InitMethods[];
 /* the sound scripts of the characters (src/game/Script/Sounds.c, data/sound/) */

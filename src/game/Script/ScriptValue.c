@@ -210,6 +210,14 @@ PyObject *Script_SaveVar(const char *name) {
 	return Script_Ask("Scrap", "GetSaveVar", "(s)", name);
 }
 
+PyObject *Script_EvalIn(const char *module, PyObject *text) {
+	PyObject *mod = PyImport_ImportModule((char *)module);
+	PyObject *g = mod ? PyModule_GetDict(mod) : NULL;
+	PyObject *v = g ? Script_Ask("__builtin__", "eval", "(OO)", text, g) : NULL;
+	Py_XDECREF(mod);
+	return v;
+}
+
 PyObject *Script_Entity(PyObject *name) {
 	return name ? Script_Ask("Scrap", "GetEntity", "(O)", name) : NULL;
 }

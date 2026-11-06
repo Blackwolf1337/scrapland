@@ -16,15 +16,6 @@
 #define K(o) Script_Keep(&r, (o))
 #define FAIL() return Script_Done(&r, NULL)
 
-/* eval(text) in a function of the script: the globals of the module (a new reference) */
-static PyObject *SG_Eval(PyObject *text) {
-	PyObject *mod = PyImport_ImportModule("SaveGame");
-	PyObject *g = mod ? PyModule_GetDict(mod) : NULL;
-	PyObject *v = g ? Script_Ask("__builtin__", "eval", "(OO)", text, g) : NULL;
-	Py_XDECREF(mod);
-	return v;
-}
-
 /* Scrap.SetSaveVar(name, v) (v a Python value, not given away) */
 static byte SG_SetSave(const char *name, PyObject *v) {
 	return v && Script_Try("Scrap", "SetSaveVar", "(sO)", name, v);
@@ -141,7 +132,7 @@ static PyObject *SaveGame_LoadAlarm(PyObject *self, PyObject *args) {
 	}
 	PyObject *set = K(Script_Ask("SInput", "GetActionSet", "()"));
 	PyObject *status = set && Script_Try("SInput", "SetActionSet", "(s)", "Walk") ? K(Script_SaveVar("AlarmStatus")) : NULL;
-	PyObject *level = status ? K(SG_Eval(status)) : NULL;
+	PyObject *level = status ? K(Script_EvalIn("SaveGame", status)) : NULL;
 	PyObject *boss = level && Script_Try("Scrap", "SetAlarm", "(O)", level) && Script_Try("Scrap", "SetAlarmGrow", "(i)", -1) ?
 		K(Script_SaveVar("RobotsControlledByBoss")) : NULL;
 	PyObject *active = boss ? K(Script_SaveVar("AlarmActive")) : NULL;
@@ -169,7 +160,7 @@ static PyObject *SaveGame_LoadMoney(PyObject *self, PyObject *args) {
 	scriptRefs_t r = { .n = 0 };
 	(void)self;
 	(void)args;
-	PyObject *m = K(Script_SaveVar("Money")), *v = m ? K(SG_Eval(m)) : NULL;
+	PyObject *m = K(Script_SaveVar("Money")), *v = m ? K(Script_EvalIn("SaveGame", m)) : NULL;
 	if (!v || !Script_Try("Scrap", "SetMoney", "(O)", v)) {
 		FAIL();
 	}
@@ -292,7 +283,7 @@ static PyObject *SaveGame_QLoad(PyObject *self, PyObject *args, PyObject *kw) {
 	}
 	if (keepTime) {
 		PyObject *t = Script_Try("Scrap", "CreateSaveVar", "(ss)", "GameplayTime", "0") ? K(Script_SaveVar("GameplayTime")) : NULL;
-		PyObject *v = t ? K(SG_Eval(t)) : NULL, *now = v ? K(SG_Time()) : NULL;
+		PyObject *v = t ? K(Script_EvalIn("SaveGame", t)) : NULL, *now = v ? K(SG_Time()) : NULL;
 		PyObject *sum = now ? K(PyNumber_Add(v, now)) : NULL, *text = sum ? K(Script_Repr(sum)) : NULL;
 		if (!text || !SG_SetSave("GameplayTime", text)) {
 			FAIL();
@@ -387,7 +378,7 @@ static PyObject *SaveGame_InstantSaveGame(PyObject *self, PyObject *args, PyObje
 		!SG_SetSaveS("AutoSaveGameOnLoad", "0") || !SG_Call("QWayPoint", "()")) {
 		return NULL;
 	}
-	PyObject *t = K(Script_SaveVar("GameplayTime")), *v = t ? K(SG_Eval(t)) : NULL, *now = v ? K(SG_Time()) : NULL;
+	PyObject *t = K(Script_SaveVar("GameplayTime")), *v = t ? K(Script_EvalIn("SaveGame", t)) : NULL, *now = v ? K(SG_Time()) : NULL;
 	PyObject *gpt = now ? K(PyNumber_Add(v, now)) : NULL, *text = gpt ? K(Script_Repr(gpt)) : NULL;
 	if (!text || !SG_SetSave("GameplayTime", text)) {
 		FAIL();
@@ -649,8 +640,8 @@ static PyObject *SaveGame_CheckAllBlueprints(PyObject *self, PyObject *args) {
 	scriptRefs_t r = { .n = 0 };
 	(void)self;
 	(void)args;
-	PyObject *a = K(Script_SaveVar("Hangar.shipsToEditList")), *la = a ? K(SG_Eval(a)) : NULL;
-	PyObject *b = la ? K(Script_SaveVar("Hangar.availableEnginesList")) : NULL, *lb = b ? K(SG_Eval(b)) : NULL;
+	PyObject *a = K(Script_SaveVar("Hangar.shipsToEditList")), *la = a ? K(Script_EvalIn("SaveGame", a)) : NULL;
+	PyObject *b = la ? K(Script_SaveVar("Hangar.availableEnginesList")) : NULL, *lb = b ? K(Script_EvalIn("SaveGame", b)) : NULL;
 	int na = lb ? PyObject_Length(la) : -1, nb = na >= 0 ? PyObject_Length(lb) : -1;
 	if (nb < 0) {
 		FAIL();
@@ -734,7 +725,7 @@ static PyObject *SaveGame_GetReg(PyObject *self, PyObject *args) {
 	if (lst == Py_None) {
 		lst = K(PyString_FromString("[]"));
 	}
-	PyObject *regs = K(SG_Eval(lst)), *locals = regs ? K(Py_BuildValue("{s:O,s:O,s:O}", "name", name, "res", res, "lst", lst)) : NULL;
+	PyObject *regs = K(Script_EvalIn("SaveGame", lst)), *locals = regs ? K(Py_BuildValue("{s:O,s:O,s:O}", "name", name, "res", res, "lst", lst)) : NULL;
 	if (!locals) {
 		FAIL();
 	}
