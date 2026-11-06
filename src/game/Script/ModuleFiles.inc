@@ -368,6 +368,24 @@ static const char mod_levels_police_mapplanes[] = {
 static const char mod_levels_police_mapsnd[] = {
 #embed "../../../data/levels/police/mapsnd.mod"
 	, 0 };
+static const char mod_levels_police_mission_beatpickus[] = {
+#embed "../../../data/levels/police/mission_beatpickus.mod"
+	, 0 };
+static const char mod_levels_police_mission_ficusdead[] = {
+#embed "../../../data/levels/police/mission_ficusdead.mod"
+	, 0 };
+static const char mod_levels_police_mission_getauthorization[] = {
+#embed "../../../data/levels/police/mission_getauthorization.mod"
+	, 0 };
+static const char mod_levels_police_mission_initepilogue[] = {
+#embed "../../../data/levels/police/mission_initepilogue.mod"
+	, 0 };
+static const char mod_levels_police_mission_jailbreak[] = {
+#embed "../../../data/levels/police/mission_jailbreak.mod"
+	, 0 };
+static const char mod_levels_police_mission_policebosscheats[] = {
+#embed "../../../data/levels/police/mission_policebosscheats.mod"
+	, 0 };
 static const char mod_levels_press_map[] = {
 #embed "../../../data/levels/press/map.mod"
 	, 0 };
@@ -538,6 +556,12 @@ static const moduleFile_t module_files[] = {
 	{ "police", "Map", "levels/police/map.mod", mod_levels_police_map },
 	{ "police", "MapPlanes", "levels/police/mapplanes.mod", mod_levels_police_mapplanes },
 	{ "police", "MapSnd", "levels/police/mapsnd.mod", mod_levels_police_mapsnd },
+	{ "police", "Mission_BeatPickus", "levels/police/mission_beatpickus.mod", mod_levels_police_mission_beatpickus },
+	{ "police", "Mission_FicusDead", "levels/police/mission_ficusdead.mod", mod_levels_police_mission_ficusdead },
+	{ "police", "Mission_GetAuthorization", "levels/police/mission_getauthorization.mod", mod_levels_police_mission_getauthorization },
+	{ "police", "Mission_InitEpilogue", "levels/police/mission_initepilogue.mod", mod_levels_police_mission_initepilogue },
+	{ "police", "Mission_JailBreak", "levels/police/mission_jailbreak.mod", mod_levels_police_mission_jailbreak },
+	{ "police", "Mission_PoliceBossCheats", "levels/police/mission_policebosscheats.mod", mod_levels_police_mission_policebosscheats },
 	{ "press", "Map", "levels/press/map.mod", mod_levels_press_map },
 	{ "press", "MapPlanes", "levels/press/mapplanes.mod", mod_levels_press_mapplanes },
 	{ "press", "MapSnd", "levels/press/mapsnd.mod", mod_levels_press_mapsnd },

@@ -125,6 +125,12 @@ Mission_Win2ndRace	outskirts	data01.packed/levels/outskirts/scripts/mission_win2
 Map	police	data01.packed/levels/police/scripts/map.pyc
 MapPlanes	police	data01.packed/levels/police/scripts/mapplanes.pyc
 MapSnd	police	data01.packed/levels/police/scripts/mapsnd.pyc
+Mission_BeatPickus	police	data01.packed/levels/police/scripts/mission_beatpickus.pyc
+Mission_FicusDead	police	data01.packed/levels/police/scripts/mission_ficusdead.pyc
+Mission_GetAuthorization	police	data01.packed/levels/police/scripts/mission_getauthorization.pyc
+Mission_InitEpilogue	police	data01.packed/levels/police/scripts/mission_initepilogue.pyc
+Mission_JailBreak	police	data01.packed/levels/police/scripts/mission_jailbreak.pyc
+Mission_PoliceBossCheats	police	data01.packed/levels/police/scripts/mission_policebosscheats.pyc
 Map	press	data01.packed/levels/press/scripts/map.pyc
 MapPlanes	press	data01.packed/levels/press/scripts/mapplanes.pyc
 MapSnd	press	data01.packed/levels/press/scripts/mapsnd.pyc
