@@ -1,0 +1,147 @@
+# The functions of MapSnd in level moa (the script levels/moa/scripts/mapsnd.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: SndElements.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/moa/mapsnd.def replaces this file.
+section LoadSounds
+if %MapSnd.isPC
+	call SSound.LoadSound "transformer3.wav"
+end
+call SSound.LoadSound "piston2.wav"
+call SSound.LoadSound "rueda4.wav"
+if %MapSnd.isPC
+	call SSound.LoadSound "aire-out.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "horno-out.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "horno22-out.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "maquina-out2.wav"
+end
+call SSound.LoadSound "tunel334-out.wav"
+if %MapSnd.isPC
+	call SSound.LoadSound "ventilador3.wav"
+end
+
+section SetSounds
+call Scrap.CallElements "MapSnd.SndElements"
+call Sound.SetPSLoop "Out1" (-206111.78125,64757.265625,-10557.0068359) "piston2" Volume=0.2 Pitch=-8.0 AttenIni=33356.0 AttenEnd=56168.0 Doppler=0.0
+call Sound.SetPSLoop "Out2" (-145481.234375,79168.2734375,-78965.4375) "rueda4" Volume=0.15 Pitch=0.0 AttenIni=33356.0 AttenEnd=56168.0 Doppler=0.0
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out3" (-187345.234375,74201.2578125,-56230.96875) "aire-out" Volume=0.22 Pitch=-5.0 AttenIni=14860.0 AttenEnd=32104.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out4" (-140135.453125,-8243.70117188,-9938.30371094) "horno-out" Volume=0.22 Pitch=-2.0 AttenIni=46604.0 AttenEnd=122472.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out5" (-142742.578125,55500.0117188,-48553.09375) "aire-out" Volume=0.22 Pitch=-5.0 AttenIni=9292.0 AttenEnd=21800.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out6" (-140040.734375,22303.765625,28445.2421875) "maquina-out2" Volume=0.22 Pitch=0.0 AttenIni=9344.0 AttenEnd=18216.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out7" (-158045.28125,61229.296875,15009.9960938) "maquina-out2" Volume=0.22 Pitch=0.0 AttenIni=5056.0 AttenEnd=20416.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out8" (-140472.609375,78461.84375,-9672.61621094) "maquina-out2" Volume=0.22 Pitch=0.0 AttenIni=5056.0 AttenEnd=20416.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out9" (-118764.070313,67995.6953125,-10091.9638672) "maquina-out2" Volume=0.22 Pitch=0.0 AttenIni=5056.0 AttenEnd=20416.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out10" (-140199.59375,68123.1953125,-31351.1386719) "maquina-out2" Volume=0.22 Pitch=0.0 AttenIni=4928.0 AttenEnd=20416.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out11" (-140121.6875,68230.03125,11320.0302734) "maquina-out2" Volume=0.22 Pitch=0.0 AttenIni=4928.0 AttenEnd=20416.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out12" (-62929.546875,46976.4570313,-117467.296875) "aire-out" Volume=0.22 Pitch=0.0 AttenIni=7308.0 AttenEnd=22952.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out13" (-161481.078125,68086.203125,-9926.33203125) "maquina-out2" Volume=0.22 Pitch=0.0 AttenIni=4928.0 AttenEnd=20416.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out14" (-43646.6328125,41053.8789063,-95701.3203125) "horno22-out" Volume=0.28 Pitch=0.0 AttenIni=19596.0 AttenEnd=53672.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out15" (27060.9628906,53881.4453125,-137431.078125) "aire-out" Volume=0.22 Pitch=0.0 AttenIni=7308.0 AttenEnd=22952.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out16" (6980.95214844,74342.828125,-164039.625) "maquina-out2" Volume=0.22 Pitch=0.0 AttenIni=7308.0 AttenEnd=22952.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out17" (-13882.0957031,47952.0507813,-170462.109375) "horno22-out" Volume=0.28 Pitch=-4.0 AttenIni=11916.0 AttenEnd=33192.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out18" (-32360.9960938,64454.3515625,-186515.4375) "horno22-out" Volume=0.28 Pitch=-6.0 AttenIni=11916.0 AttenEnd=33192.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out19" (-70298.3125,75111.4765625,-194115.34375) "aire-out" Volume=0.22 Pitch=-10.0 AttenIni=9676.0 AttenEnd=23208.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out20" (23640.2421875,78084.7578125,-184321.234375) "maquina-out2" Volume=0.22 Pitch=0.0 AttenIni=7308.0 AttenEnd=22952.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out21" (-61144.7460938,46764.2265625,-133960.828125) "aire-out" Volume=0.22 Pitch=0.0 AttenIni=7308.0 AttenEnd=22952.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out22" (-144752.75,67098.640625,-169877.28125) "aire-out" Volume=0.12 Pitch=0.0 AttenIni=7308.0 AttenEnd=22952.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out23" (-272108.6875,22017.7050781,17915.3183594) "horno-out" Volume=0.22 Pitch=0.0 AttenIni=18432.0 AttenEnd=77824.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out24" (-293282.9375,-27885.6054688,183120.65625) "horno-out" Volume=0.22 Pitch=0.0 AttenIni=29952.0 AttenEnd=140800.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out25" (-292222.03125,61706.078125,184138.421875) "horno22-out" Volume=0.22 Pitch=-5.0 AttenIni=17664.0 AttenEnd=42304.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out26" (-339848.125,28245.9394531,186404.3125) "maquina-out2" Volume=0.22 Pitch=0.0 AttenIni=7308.0 AttenEnd=22952.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out27" (-192364.65625,50611.2109375,125151.53125) "horno22-out" Volume=0.22 Pitch=0.0 AttenIni=19788.0 AttenEnd=33192.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out28" (-202552.84375,79976.796875,170358.640625) "aire-out" Volume=0.22 Pitch=-3.0 AttenIni=12620.0 AttenEnd=30632.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out29" (-223844.921875,75166.8203125,136574.828125) "aire-out" Volume=0.28 Pitch=-3.0 AttenIni=12620.0 AttenEnd=30632.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Out30" (-143287.0,46780.1601563,247282.8125) "horno22-out" Volume=0.22 Pitch=-4.0 AttenIni=29964.0 AttenEnd=42408.0 Doppler=0.0
+	call Sound.SetPSLoop "Out31" (-67006.6953125,46494.8632813,247532.84375) "horno22-out" Volume=0.22 Pitch=-4.0 AttenIni=29964.0 AttenEnd=42408.0 Doppler=0.0
+	call Sound.SetPSLoop "Out32" (32887.0507813,63150.8671875,-106841.546875) "aire-out" Volume=0.22 Pitch=-3.0 AttenIni=12620.0 AttenEnd=30632.0 Doppler=0.0
+	call Sound.SetPSLoop "Out33" (38067.2382813,77866.28125,-50841.2578125) "aire-out" Volume=0.22 Pitch=-3.0 AttenIni=12620.0 AttenEnd=30632.0 Doppler=0.0
+	call Sound.SetPSLoop "Out34" (24435.7871094,76558.640625,-66052.4765625) "maquina-out2" Volume=0.22 Pitch=-3.0 AttenIni=7500.0 AttenEnd=29032.0 Doppler=0.0
+	call Sound.SetPSLoop "Out35" (-2951.47875977,76791.0625,-66072.34375) "maquina-out2" Volume=0.22 Pitch=-3.0 AttenIni=7500.0 AttenEnd=29032.0 Doppler=0.0
+	call Sound.SetPSLoop "Out36" (22355.5,65792.4921875,-9791.84960938) "aire-out" Volume=0.2 Pitch=-3.0 AttenIni=8460.0 AttenEnd=26408.0 Doppler=0.0
+	call Sound.SetPSLoop "Out37" (4853.41015625,81851.28125,51758.4296875) "horno22-out" Volume=0.18 Pitch=-3.0 AttenIni=8460.0 AttenEnd=26408.0 Doppler=0.0
+	call Sound.SetPSLoop "Out38" (-36600.5351563,62284.0976563,27988.5214844) "horno22-out" Volume=0.2 Pitch=-3.0 AttenIni=8460.0 AttenEnd=26408.0 Doppler=0.0
+	call Sound.SetPSLoop "Out39" (-34432.265625,61979.5742188,5308.23925781) "maquina-out2" Volume=0.22 Pitch=-3.0 AttenIni=7500.0 AttenEnd=29032.0 Doppler=0.0
+	call Sound.SetPSLoop "Out40" (-99660.96875,17641.6464844,64658.7460938) "maquina-out2" Volume=0.22 Pitch=-3.0 AttenIni=15692.0 AttenEnd=29032.0 Doppler=0.0
+	call Sound.SetPSLoop "Out41" (-98420.0,50444.0664063,64836.34375) "horno-out" Volume=0.22 Pitch=-6.0 AttenIni=15692.0 AttenEnd=29032.0 Doppler=0.0
+	call Sound.SetPSLoop "Out42" (-66211.265625,22321.0136719,77788.1640625) "aire-out" Volume=0.2 Pitch=-8.0 AttenIni=12620.0 AttenEnd=30632.0 Doppler=0.0
+	call Sound.SetPSLoop "Out43" (-268714.0625,29642.9414063,268757.3125) "maquina-out2" Volume=0.22 Pitch=-5.0 AttenIni=7564.0 AttenEnd=29032.0 Doppler=0.0
+	call Sound.SetPSLoop "Out44" (-340316.96875,54238.96875,-53294.6835938) "aire-out" Volume=0.2 Pitch=-3.0 AttenIni=8460.0 AttenEnd=26408.0 Doppler=0.0
+	call Sound.SetPSLoop "Out45" (-390935.65625,60831.4765625,-21999.3105469) "horno22-out" Volume=0.22 Pitch=-6.0 AttenIni=15692.0 AttenEnd=39016.0 Doppler=0.0
+	call Sound.SetPSLoop "Out46" (-380138.3125,53512.3359375,-52604.3398438) "aire-out" Volume=0.2 Pitch=-4.0 AttenIni=8192.0 AttenEnd=30824.0 Doppler=0.0
+	call Sound.SetPSLoop "Out47" (-465663.78125,71451.4453125,-67377.0703125) "horno22-out" Volume=0.22 Pitch=-6.0 AttenIni=8192.0 AttenEnd=30824.0 Doppler=0.0
+	call Sound.SetPSLoop "Out48" (-433172.84375,57019.4023438,6574.60302734) "horno22-out" Volume=0.22 Pitch=-8.0 AttenIni=10240.0 AttenEnd=47208.0 Doppler=0.0
+	call Sound.SetPSLoop "Out49" (-436411.71875,51002.359375,-161851.640625) "horno22-out" Volume=0.22 Pitch=-6.0 AttenIni=10240.0 AttenEnd=47208.0 Doppler=0.0
+end
+call Sound.SetPSLoop "tunelout1" (-364127.625,47404.4921875,108704.789063) "tunel334-out" 0.5
+call Sound.SetPSLoop "tunelout2" (-442856.375,43488.9453125,153498.875) "tunel334-out" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=1.0
+call Sound.SetPSLoop "tunelout3" (-414244.65625,43283.40625,214645.765625) "tunel334-out" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=1.0
+call Sound.SetPSLoop "tunelout4" (-41998.4023438,43129.0546875,-151001.671875) "tunel334-out" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=1.0
+call Sound.SetPSLoop "tunelout5" (10736.6044922,42888.2773438,-87787.6484375) "tunel334-out" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=1.0
+call Sound.SetPSLoop "tunelout6" (-51569.1445313,44459.7460938,44285.8164063) "tunel334-out" Volume=0.4 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=1.0
+call Sound.SetPSLoop "tunelout7" (-401642.6875,48359.5820313,-24781.1367188) "tunel334-out" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=1.0
+call Sound.SetPSLoop "tunelout8" (-398008.6875,49261.2226563,-197454.375) "tunel334-out" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=1.0
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds

@@ -1,0 +1,70 @@
+# The functions of MapSnd in level abindoor (the script levels/abindoor/scripts/mapsnd.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/abindoor/mapsnd.def replaces this file.
+section LoadSounds
+call SSound.LoadSound "atmosfera-space2.wav"
+
+section SetSounds
+call Sound.SetPSLoop "Atmosfera1" (-133469.25,-1830.26098633,2664.02270508) "atmosfera-space2" Volume=0.15 Pitch=0.0 AttenIni=589824.0 AttenEnd=772096.0 Doppler=0.0
+
+section TheEndA
+call Scene.AddSound 388 "mecanismo-dtritus1" 0.026 0 0
+call Scene.AddSound 390 "paso-detritus1" 0.055 0 0
+call Scene.AddSound 392 "mecanismo-dtritus1" 0.026 0 0
+call Scene.AddSound 394 "paso-detritus3" 0.055 0 0
+
+section TheEndABerto
+let CharName "TheEndABerto"
+let ActName "TalkCongrat"
+call Chars.ActSound $CharName $ActName 3 "mecanismo-berto1" 0.012 +7
+call Chars.ActSound $CharName $ActName 43 "mecanismo-berto2" 0.012 +7
+
+section TheEndAHuman
+let CharName "TheEndAHuman"
+let ActName "TalkCongrat"
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 4 "mecanismo-human1" 0.014 +4
+else
+	call Chars.ActSound $CharName $ActName 4 "mecanismo-human2" 0.014 +4
+end
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 46 "mecanismo-human1" 0.014 +4
+else
+	call Chars.ActSound $CharName $ActName 46 "mecanismo-human2" 0.014 +4
+end
+
+section TheEndABetty
+let CharName "TheEndABetty"
+let ActName "TalkCool"
+call Chars.ActSound $CharName $ActName 9 "mecanismo-betty1" 0.25
+
+section TheEndADtritus
+let CharName "TheEndADtritus"
+let ActName "TalkFly"
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus5" 0.024
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus3" 0.025
+call Chars.ActSound $CharName $ActName 49 "mecanismo-dtritus5" 0.024 +3
+call Chars.ActSound $CharName $ActName 49 "mecanismo-dtritus3" 0.025
+
+section TheEndB
+call SSound.LoadSound "EndB/mov-silla1.wav"
+call SSound.LoadSound "EndB/pasada-grave.wav"
+call Scene.AddSound 25 "mov-silla1" 0.41 +4 0
+call Scene.AddStream 1 "motor-ext4" 0.7
+call Scene.AddSound 860 "pasada-grave" 1.0 -12 0
+
+section TheEndBBetty
+let CharName "TheEndBBetty"
+let ActName "Sit"
+call Chars.ActSound $CharName $ActName 5 "mecanismo-betty1" 0.25
+call Chars.ActSound $CharName $ActName 36 "paso-fem-metal1" 0.07
+call Chars.ActSound $CharName $ActName 53 "mecanismo-betty2" 0.25
+let ActName "TalkSit"
+call Chars.ActSound $CharName $ActName 6 "mecanismo-betty1" 0.25
+call Chars.ActSound $CharName $ActName 58 "mecanismo-betty2" 0.25
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds

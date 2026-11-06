@@ -1,0 +1,499 @@
+# The functions of MapSnd in level orbit (the script levels/orbit/scripts/mapsnd.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/orbit/mapsnd.def replaces this file.
+section LoadSounds
+call SSound.LoadSound "light1.wav"
+call SSound.LoadSound "light2.wav"
+call SSound.LoadSound "space-ext1.wav"
+call SSound.LoadSound "space-int1.wav"
+call SSound.LoadSound "space-int2.wav"
+if %MapSnd.isPC
+	call SSound.LoadSound "tube1.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "beep1.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "beep2.wav"
+end
+
+section Bishops
+let SceneName "Bishops"
+call SSound.LoadSound "Bishops/pasada-orbit.wav"
+call SSound.LoadSound "Bishops/hologram-orbit.wav"
+call SSound.LoadSound "Bishops/fe.wav"
+
+section BishopsDtritus
+let CharName "BishopsDtritus"
+let ActName "Talk1Right"
+call Chars.ActSound $CharName $ActName 3 "mecanismo-dtritus3" 0.021
+call Chars.ActSound $CharName $ActName 18 "mecanismo-dtritus4" 0.021
+call Chars.ActSound $CharName $ActName 20 "mecanismo-dtritus3" 0.021
+call Chars.ActSound $CharName $ActName 40 "mecanismo-dtritus4" 0.021
+call Chars.ActSound $CharName $ActName 45 "mecanismo-dtritus3" 0.021
+let ActName "Talk1Left"
+call Chars.ActSound $CharName $ActName 3 "mecanismo-dtritus3" 0.021
+call Chars.ActSound $CharName $ActName 18 "mecanismo-dtritus4" 0.021
+call Chars.ActSound $CharName $ActName 20 "mecanismo-dtritus3" 0.021
+call Chars.ActSound $CharName $ActName 40 "mecanismo-dtritus4" 0.021
+call Chars.ActSound $CharName $ActName 45 "mecanismo-dtritus3" 0.021
+let ActName "Talk2Right"
+call Chars.ActSound $CharName $ActName 3 "mecanismo-dtritus3" 0.021
+call Chars.ActSound $CharName $ActName 18 "mecanismo-dtritus4" 0.021
+call Chars.ActSound $CharName $ActName 20 "mecanismo-dtritus3" 0.021
+call Chars.ActSound $CharName $ActName 40 "mecanismo-dtritus4" 0.021
+call Chars.ActSound $CharName $ActName 45 "mecanismo-dtritus3" 0.021
+let ActName "Talk2Left"
+call Chars.ActSound $CharName $ActName 3 "mecanismo-dtritus3" 0.021
+call Chars.ActSound $CharName $ActName 18 "mecanismo-dtritus4" 0.021
+call Chars.ActSound $CharName $ActName 20 "mecanismo-dtritus3" 0.021
+call Chars.ActSound $CharName $ActName 40 "mecanismo-dtritus4" 0.021
+call Chars.ActSound $CharName $ActName 45 "mecanismo-dtritus3" 0.021
+let ActName "Hi"
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus5" 0.022
+call Chars.ActSound $CharName $ActName 3 "mecanismo-dtritus6" 0.022 +4
+call Chars.ActSound $CharName $ActName 22 "mecanismo-dtritus3" 0.021
+call Chars.ActSound $CharName $ActName 57 "mecanismo-dtritus5" 0.022
+call Chars.ActSound $CharName $ActName 58 "mecanismo-dtritus6" 0.022 +4
+let ActName "ScaredOK"
+call Chars.ActSound $CharName $ActName 3 "pasada-orbit" 0.3 +1
+call Chars.ActSound $CharName $ActName 2 "hologram-orbit" 0.4
+call Chars.ActSound $CharName $ActName 21 "fe" 0.3
+call Chars.ActSound $CharName $ActName 13 "pasada-orbit" 0.3 +1
+call Chars.ActSound $CharName $ActName 12 "hologram-orbit" 0.4
+call Chars.ActSound $CharName $ActName 23 "pasada-orbit" 0.3 +1
+call Chars.ActSound $CharName $ActName 22 "hologram-orbit" 0.4
+call Chars.ActSound $CharName $ActName 32 "hologram-orbit" 0.4
+call Chars.ActSound $CharName $ActName 33 "pasada-orbit" 0.3 +2
+call Chars.ActSound $CharName $ActName 42 "hologram-orbit" 0.4
+call Chars.ActSound $CharName $ActName 43 "pasada-orbit" 0.3 +1
+call Chars.ActSound $CharName $ActName 52 "hologram-orbit" 0.4
+call Chars.ActSound $CharName $ActName 53 "pasada-orbit" 0.3 +3
+call Chars.ActSound $CharName $ActName 62 "hologram-orbit" 0.4
+call Chars.ActSound $CharName $ActName 63 "pasada-orbit" 0.3 +2
+call Chars.ActSound $CharName $ActName 72 "hologram-orbit" 0.4
+call Chars.ActSound $CharName $ActName 73 "pasada-orbit" 0.3 +1
+call Chars.ActSound $CharName $ActName 82 "hologram-orbit" 0.4
+call Chars.ActSound $CharName $ActName 83 "pasada-orbit" 0.3 +3
+call Chars.ActSound $CharName $ActName 92 "hologram-orbit" 0.4
+call Chars.ActSound $CharName $ActName 93 "pasada-orbit" 0.3 +1
+call Chars.ActSound $CharName $ActName 102 "hologram-orbit" 0.4
+call Chars.ActSound $CharName $ActName 103 "pasada-orbit" 0.3 +2
+call Chars.ActSound $CharName $ActName 135 "mecanismo-dtritus5" 0.022
+call Chars.ActSound $CharName $ActName 136 "mecanismo-dtritus6" 0.022 +6
+call Chars.ActSound $CharName $ActName 146 "mecanismo-dtritus5" 0.022
+call Chars.ActSound $CharName $ActName 147 "mecanismo-dtritus6" 0.022 +4
+call Chars.ActSound $CharName $ActName 150 "mecanismo-dtritus3" 0.021
+call Chars.ActSound $CharName $ActName 184 "mecanismo-dtritus5" 0.022
+call Chars.ActSound $CharName $ActName 185 "mecanismo-dtritus6" 0.022 +4
+call Chars.ActSound $CharName $ActName 203 "mecanismo-dtritus5" 0.022
+call Chars.ActSound $CharName $ActName 204 "mecanismo-dtritus6" 0.022 +6
+let ActName "WalkHi"
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus5" 0.022
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus6" 0.022 +4
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus1" 0.024 +4
+call Chars.ActSound $CharName $ActName 3 "paso-detritus1" 0.1
+call Chars.ActSound $CharName $ActName 18 "mecanismo-dtritus2" 0.021 +4
+call Chars.ActSound $CharName $ActName 20 "paso-detritus3" 0.1
+let ActName "LeftToRight"
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus5" 0.022 +2
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus6" 0.022 +8
+call Chars.ActSound $CharName $ActName 4 "mecanismo-dtritus1" 0.021 +4
+let ActName "RightToLeft"
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus5" 0.022 +2
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus6" 0.022 +8
+call Chars.ActSound $CharName $ActName 4 "mecanismo-dtritus2" 0.021 +4
+
+section BishopsBishop1
+call MapSnd.BishopsBishop_1_2 "BishopsBishop1"
+
+section BishopsBishop2
+call MapSnd.BishopsBishop_1_2 "BishopsBishop2"
+
+section BishopsBishop_1_2 CharName
+let ActName "Talk3"
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 2 "mecanismo-bishop5" 0.02 +4
+end
+call Chars.ActSound $CharName $ActName 2 "mecanismo-bishop3" 0.018 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 21 "mecanismo-bishop5" 0.02 +6
+end
+call Chars.ActSound $CharName $ActName 21 "mecanismo-bishop1" 0.018 +6
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 32 "mecanismo-bishop5" 0.02 +6
+end
+call Chars.ActSound $CharName $ActName 32 "mecanismo-bishop1" 0.018 +8
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 57 "mecanismo-bishop5" 0.02 +6
+end
+call Chars.ActSound $CharName $ActName 57 "mecanismo-bishop1" 0.018 +8
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 69 "mecanismo-bishop5" 0.02 +6
+end
+call Chars.ActSound $CharName $ActName 69 "mecanismo-bishop3" 0.018 +8
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 114 "mecanismo-bishop5" 0.02 +6
+end
+call Chars.ActSound $CharName $ActName 114 "mecanismo-bishop4" 0.018 +6
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 160 "mecanismo-bishop5" 0.02 +6
+end
+call Chars.ActSound $CharName $ActName 160 "mecanismo-bishop4" 0.018 +8
+let ActName "Pray"
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 2 "mecanismo-bishop5" 0.02 +4
+end
+call Chars.ActSound $CharName $ActName 3 "mecanismo-bishop1" 0.016 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 22 "mecanismo-bishop5" 0.02 +4
+end
+call Chars.ActSound $CharName $ActName 23 "mecanismo-bishop3" 0.016 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 51 "mecanismo-bishop5" 0.02 +4
+end
+call Chars.ActSound $CharName $ActName 52 "mecanismo-bishop4" 0.016 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 70 "mecanismo-bishop5" 0.02 +4
+end
+call Chars.ActSound $CharName $ActName 71 "mecanismo-bishop2" 0.016 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 98 "mecanismo-bishop5" 0.02 +4
+end
+call Chars.ActSound $CharName $ActName 99 "mecanismo-bishop1" 0.016 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 121 "mecanismo-bishop5" 0.02 +4
+end
+call Chars.ActSound $CharName $ActName 122 "mecanismo-bishop3" 0.016 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 154 "mecanismo-bishop5" 0.02 +4
+end
+call Chars.ActSound $CharName $ActName 154 "mecanismo-bishop2" 0.016 +6
+
+section Functionary
+if %MapSnd.isPC
+	call SSound.LoadSound "Functionary/volteo15.wav"
+end
+if %MapSnd.isPC
+	call Scene.AddSound 1900 "volteo15" 0.20 0 0
+end
+
+section FunctionaryDtritus
+let CharName "FunctionaryDtritus"
+let ActName "Attention"
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus5" 0.022
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus6" 0.022 +2
+call Chars.ActSound $CharName $ActName 3 "mecanismo-dtritus1" 0.021 +2
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus5" 0.022
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus6" 0.022 +2
+call Chars.ActSound $CharName $ActName 3 "mecanismo-dtritus1" 0.021 +2
+let ActName "GoThink"
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus5" 0.022
+call Chars.ActSound $CharName $ActName 3 "mecanismo-dtritus1" 0.021
+call Chars.ActSound $CharName $ActName 19 "paso-detritus3" 0.055
+call Chars.ActSound $CharName $ActName 18 "mecanismo-dtritus1" 0.021 +4
+call Chars.ActSound $CharName $ActName 34 "mecanismo-dtritus5" 0.022
+call Chars.ActSound $CharName $ActName 34 "mecanismo-dtritus6" 0.022 +2
+call Chars.ActSound $CharName $ActName 35 "mecanismo-dtritus1" 0.021 +2
+call Chars.ActSound $CharName $ActName 62 "mecanismo-dtritus5" 0.022
+call Chars.ActSound $CharName $ActName 62 "mecanismo-dtritus6" 0.022
+call Chars.ActSound $CharName $ActName 63 "mecanismo-dtritus1" 0.021
+call Chars.ActSound $CharName $ActName 70 "paso-detritus1" 0.055
+call Chars.ActSound $CharName $ActName 70 "mecanismo-dtritus1" 0.021 +4
+
+section FunctionaryFunctionary
+let CharName "FunctionaryFunctionary"
+let ActName "GoOut"
+call Chars.ActSound $CharName $ActName 3 "keyboard2" 0.08
+call Chars.ActSound $CharName $ActName 5 "mecanismo-funcionario1" 0.165 +4
+call Chars.ActSound $CharName $ActName 15 "keyboard1" 0.08
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 17 "mecanismo-funcionario2" 0.163 +4
+else
+	call Chars.ActSound $CharName $ActName 17 "mecanismo-funcionario1" 0.163 +4
+end
+call Chars.ActSound $CharName $ActName 19 "keyboard2" 0.08
+call Chars.ActSound $CharName $ActName 25 "mecanismo-funcionario1" 0.165 +4
+call Chars.ActSound $CharName $ActName 29 "keyboard1" 0.08
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 32 "mecanismo-funcionario2" 0.163 +4
+else
+	call Chars.ActSound $CharName $ActName 32 "mecanismo-funcionario1" 0.163 +4
+end
+call Chars.ActSound $CharName $ActName 35 "keyboard1" 0.08
+call Chars.ActSound $CharName $ActName 44 "keyboard1" 0.08
+call Chars.ActSound $CharName $ActName 48 "mecanismo-funcionario1" 0.165 +4
+call Chars.ActSound $CharName $ActName 48 "mecanismo-funcionario6" 0.04 +8
+call Chars.ActSound $CharName $ActName 45 "mecanismo-funcionario1" 0.165 +2
+call Chars.ActSound $CharName $ActName 45 "mecanismo-funcionario5" 0.04 +6
+call Chars.ActSound $CharName $ActName 54 "keyboard1" 0.08
+call Chars.ActSound $CharName $ActName 60 "keyboard1" 0.08
+call Chars.ActSound $CharName $ActName 74 "keyboard1" 0.08
+call Chars.ActSound $CharName $ActName 75 "mecanismo-funcionario1" 0.165 +6
+call Chars.ActSound $CharName $ActName 75 "mecanismo-funcionario5" 0.04 +10
+call Chars.ActSound $CharName $ActName 96 "keyboard1" 0.08
+call Chars.ActSound $CharName $ActName 102 "mecanismo-funcionario1" 0.165 +6
+call Chars.ActSound $CharName $ActName 102 "mecanismo-funcionario5" 0.04 +10
+let ActName "TalkWork"
+call Chars.ActSound $CharName $ActName 4 "keyboard1" 0.08
+call Chars.ActSound $CharName $ActName 8 "mecanismo-funcionario1" 0.165 +4
+call Chars.ActSound $CharName $ActName 16 "keyboard2" 0.08
+call Chars.ActSound $CharName $ActName 21 "keyboard1" 0.08
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 26 "mecanismo-funcionario2" 0.163 +4
+else
+	call Chars.ActSound $CharName $ActName 26 "mecanismo-funcionario1" 0.163 +4
+end
+call Chars.ActSound $CharName $ActName 38 "mecanismo-funcionario1" 0.165 +4
+call Chars.ActSound $CharName $ActName 42 "keyboard2" 0.08
+call Chars.ActSound $CharName $ActName 52 "keyboard1" 0.08
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 52 "mecanismo-funcionario2" 0.163 +4
+else
+	call Chars.ActSound $CharName $ActName 52 "mecanismo-funcionario1" 0.163 +4
+end
+call Chars.ActSound $CharName $ActName 60 "keyboard1" 0.08
+call Chars.ActSound $CharName $ActName 66 "keyboard2" 0.08
+call Chars.ActSound $CharName $ActName 74 "keyboard1" 0.08
+call Chars.ActSound $CharName $ActName 84 "mecanismo-funcionario1" 0.165 +4
+call Chars.ActSound $CharName $ActName 88 "keyboard2" 0.08
+call Chars.ActSound $CharName $ActName 94 "keyboard1" 0.08
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 101 "mecanismo-funcionario2" 0.163 +4
+else
+	call Chars.ActSound $CharName $ActName 101 "mecanismo-funcionario1" 0.163 +4
+end
+
+section BillArrives_A
+call SSound.LoadSound "Bill/atmosfera-space2.wav"
+call SSound.LoadSound "Bill/pose-human.wav"
+call Scene.AddSound 1 "atmosfera-space2" 0.7 0 0
+call Scene.AddStream 28 "Bill" 1.0
+call Scene.AddSound 545 "caida-human" 0.45 0 0
+
+section BillArrives_BHuman
+let CharName "BillArrives_BHuman"
+let ActName "TurnSlow"
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 10 "mecanismo-human1" 0.013 +4
+else
+	call Chars.ActSound $CharName $ActName 10 "mecanismo-human2" 0.013 +4
+end
+call Chars.ActSound $CharName $ActName 16 "paso-human1" 0.04
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 23 "mecanismo-human1" 0.013 +4
+else
+	call Chars.ActSound $CharName $ActName 23 "mecanismo-human2" 0.013 +4
+end
+call Chars.ActSound $CharName $ActName 29 "paso-human2" 0.04
+let ActName "WalkLook"
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 1 "mecanismo-human1" 0.013 +4
+else
+	call Chars.ActSound $CharName $ActName 1 "mecanismo-human2" 0.013 +4
+end
+call Chars.ActSound $CharName $ActName 3 "paso-human1" 0.04
+call Chars.ActSound $CharName $ActName 20 "mecanismo-human2" 0.016 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 20 "mecanismo-human3" 0.015 +4
+end
+call Chars.ActSound $CharName $ActName 22 "paso-human2" 0.04
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 41 "mecanismo-human1" 0.013 +4
+else
+	call Chars.ActSound $CharName $ActName 41 "mecanismo-human2" 0.013 +4
+end
+call Chars.ActSound $CharName $ActName 43 "paso-human1" 0.04
+call Chars.ActSound $CharName $ActName 60 "mecanismo-human2" 0.016 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 60 "mecanismo-human3" 0.015 +4
+end
+call Chars.ActSound $CharName $ActName 62 "paso-human2" 0.04
+let ActName "WalkLookSininter"
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 1 "mecanismo-human1" 0.013 +4
+else
+	call Chars.ActSound $CharName $ActName 1 "mecanismo-human2" 0.013 +4
+end
+call Chars.ActSound $CharName $ActName 3 "paso-human1" 0.04
+call Chars.ActSound $CharName $ActName 20 "mecanismo-human2" 0.016 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 20 "mecanismo-human3" 0.015 +4
+end
+call Chars.ActSound $CharName $ActName 22 "paso-human2" 0.04
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 41 "mecanismo-human1" 0.013 +4
+else
+	call Chars.ActSound $CharName $ActName 41 "mecanismo-human2" 0.013 +4
+end
+call Chars.ActSound $CharName $ActName 43 "paso-human1" 0.04
+call Chars.ActSound $CharName $ActName 60 "mecanismo-human2" 0.016 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 60 "mecanismo-human3" 0.015 +4
+end
+call Chars.ActSound $CharName $ActName 62 "paso-human2" 0.04
+let ActName "Think"
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 22 "mecanismo-human1" 0.013 +4
+else
+	call Chars.ActSound $CharName $ActName 22 "mecanismo-human2" 0.013 +4
+end
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 24 "mecanismo-human3" 0.015 +4
+end
+call Chars.ActSound $CharName $ActName 51 "rasca-human" 0.05 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 61 "mecanismo-human1" 0.013 +10
+else
+	call Chars.ActSound $CharName $ActName 61 "mecanismo-human2" 0.013 +10
+end
+call Chars.ActSound $CharName $ActName 71 "rasca-human" 0.05 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 80 "mecanismo-human1" 0.013 +10
+else
+	call Chars.ActSound $CharName $ActName 80 "mecanismo-human2" 0.013 +10
+end
+call Chars.ActSound $CharName $ActName 91 "rasca-human" 0.05 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 96 "mecanismo-human1" 0.013 +10
+else
+	call Chars.ActSound $CharName $ActName 96 "mecanismo-human2" 0.013 +10
+end
+call Chars.ActSound $CharName $ActName 101 "mecanismo-human2" 0.017 +3
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 103 "mecanismo-human3" 0.015 +4
+end
+
+section BillArrives_C
+call Scene.AddSound 17 "mecanismo-human2" 0.017 5 0
+call Scene.AddSound 19 "pose-human" 0.029 0 0
+call Scene.AddSound 53 "mecanismo-human2" 0.017 5 0
+call Scene.AddSound 62 "mecanismo-human2" 0.017 7 0
+call Scene.AddStream 55 "Decontamination2" 1.0
+
+section Falling
+let SceneName "Falling"
+call SSound.LoadSound "fall/abre-puerta.wav"
+call SSound.LoadSound "fall/pulse.wav"
+if %MapSnd.isPC
+	call SSound.LoadSound "fall/volteo15.wav"
+end
+call Scene.AddSound 21 "pulse" 0.2 0 0
+if %MapSnd.isPC
+	call Scene.AddSound 27 "volteo15" 0.1 8 0
+end
+call Scene.AddSound 36 "abre-puerta" 0.4 6 0
+
+section FallingDtritus
+let CharName "FallingDtritus"
+let ActName "Push"
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus5" 0.022 +4
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus1" 0.021 +2
+call Chars.ActSound $CharName $ActName 11 "mecanismo-dtritus6" 0.022 +8
+call Chars.ActSound $CharName $ActName 12 "mecanismo-dtritus2" 0.021 +6
+call Chars.ActSound $CharName $ActName 29 "mecanismo-dtritus5" 0.022
+call Chars.ActSound $CharName $ActName 30 "mecanismo-dtritus1" 0.021
+let ActName "Falling"
+call Chars.ActSound $CharName $ActName 35 "mecanismo-dtritus5" 0.022 +4
+call Chars.ActSound $CharName $ActName 36 "mecanismo-dtritus1" 0.021 +4
+call Chars.ActSound $CharName $ActName 58 "mecanismo-dtritus6" 0.022 +6
+call Chars.ActSound $CharName $ActName 59 "mecanismo-dtritus2" 0.021 +6
+call Chars.ActSound $CharName $ActName 65 "mecanismo-dtritus5" 0.022 +4
+call Chars.ActSound $CharName $ActName 66 "mecanismo-dtritus1" 0.021 +3
+
+section Decontamination
+call SSound.LoadSound "Decontamination/mecanismo-berto3.wav"
+call SSound.LoadSound "Decontamination/mecanismo-berto4.wav"
+call Scene.AddSound 3 "mecanismo-berto3" 0.07 5 0
+call Scene.AddSound 13 "mecanismo-berto4" 0.07 7 0
+call Scene.AddStream 6 "Decontamination" 1.0
+
+section DecontaminationDtritus
+
+section SetSounds
+call Sound.SetPSLoop "LuzPowerMed1" (-16189.6,-7.9,-21627.6) "light2" 0.05
+call Sound.SetPSLoop "LuzPowerMed2" (-15410.7,-112.6,-22932.0) "light2" 0.05
+call Sound.SetPSLoop "LuzPowerMed3" (-17467.9,-56.9,-23692.8) "light2" 0.05
+if %MapSnd.isPC
+	call Sound.SetPSLoop "LuzPowerLow1" (-18777.0,-60.0,-21644.5) "light1" 0.07
+else
+	call Sound.SetPSLoop "LuzPowerLow1" (-18777.0,-60.0,-21644.5) "light2" 0.07
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "LuzPowerLow2" (-17958.1,-57.1,-20819.5) "light1" 0.07
+else
+	call Sound.SetPSLoop "LuzPowerLow2" (-17958.1,-57.1,-20819.5) "light1" 0.07
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "LuzPowerLow3" (-15731.4,-25.6,-21180.1) "light1" 0.07
+else
+	call Sound.SetPSLoop "LuzPowerLow3" (-15731.4,-25.6,-21180.1) "light1" 0.07
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "LuzPowerLow4" (-14914.3,-62.4,-21961.5) "light1" 0.07
+else
+	call Sound.SetPSLoop "LuzPowerLow4" (-14914.3,-62.4,-21961.5) "light1" 0.07
+end
+call Sound.SetPSLoop "Space1" (-16674.5644531,-1034.58886719,-22389.703125) "space-ext1" Volume=0.07 Pitch=0.0 AttenIni=2304.0 AttenEnd=3264.0 Doppler=0.0
+if %MapSnd.isPC
+	call Sound.SetPSLoop "TubeSpace1" (-17775.0,-580.8,-25525.0) "tube1" 0.17
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "TubeSpace2" (-16620.8,-570.8,-25463.6) "tube1" 0.17
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "TubeSpace3" (-18110.1,-565.8,-25808.7) "tube1" 0.17
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "TubeSpace4" (-23184.7,929.5,-25290.2) "tube1" 0.17
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "TubeSpace5" (-21853.7,949.1,-25292.7) "tube1" 0.17
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "TubeSpace6" (-20484.8,929.7,-25280.8) "tube1" 0.17
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Computer1" (-16868.2,-588.9,-24936.4) "beep1" 0.1
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Computer2" (-18261.4,-572.8,-24962.4) "beep2" 0.1
+end
+call Sound.SetPSLoop "Space2" (-16868.2,-588.9,-24936.4) "space-int1" 0.18 -8
+call Sound.SetPSLoop "Space3" (-18261.4,-572.8,-24962.4) "space-int1" 0.18 -8
+call Sound.SetPSLoop "Interior1" (-19761.3,-598.8,-25057.1) "space-int1" 0.18 -8
+call Sound.SetPSLoop "Interior5" (-24356.7929688,1012.60424805,-23137.6054688) "space-int1" Volume=0.2 Pitch=-8.0 AttenIni=2304.0 AttenEnd=3264.0 Doppler=0.0
+call Sound.SetPSLoop "Interior2" (-19118.6,1168.1,-25311.1) "space-int1" 0.18 -8
+call Sound.SetPSLoop "Interior3" (-21132.6,954.3,-25249.8) "space-int1" 0.18 -8
+call Sound.SetPSLoop "Interior4" (-23587.7,945.7,-25241.4) "space-int1" 0.18 -8
+call Sound.SetPSLoop "Interior10" (-24391.1,996.3,-25987.1) "space-int1" 0.18 -8
+call Sound.SetPSLoop "Interior11" (-24354.4,981.3,-27076.4) "space-int1" 0.18 -8
+call Sound.SetPSLoop "Interior12" (-23210.4,962.9,-27525.4) "space-int1" 0.18 -8
+call Sound.SetPSLoop "Interior13" (-22462.8,941.7,-27461.4) "space-int1" 0.18 -8
+call Sound.SetPSLoop "Interior14" (-21478.6,949.4,-27474.1) "space-int2" 0.35
+call Sound.SetPSLoop "Interior15" (-20493.9,989.9,-27453.8) "space-int2" 0.35
+call Sound.SetPSLoop "Interior16" (-20493.9,989.9,-27453.8) "space-int2" 0.35
+call Sound.SetPSLoop "Interior16" (-19665.2,975.8,-27474.4) "space-int1" 0.18 -8
+call Sound.SetPSLoop "Interior17" (-18846.4,1004.4,-27467.8) "space-int1" 0.18 -8
+call Sound.SetPSLoop "Interior18" (-18095.9,964.5,-27808.7) "space-int1" 0.18 -8
+call Sound.SetPSLoop "Interior19" (-18087.4,955.6,-28719.2) "space-int1" 0.18 -8
+call Sound.SetPSLoop "Interior20" (-18081.5,934.7,-29299.9) "space-int1" 0.18 -8
+call Sound.SetPSLoop "Interior21" (-18066.7,963.3,-30008.9) "space-int1" 0.18 -8
+call Sound.SetPSLoop "Interior22" (-18109.3,989.6,-31006.5) "space-int1" 0.18 -8
+call Sound.SetPSLoop "Interior23" (-19198.4,937.2,-31097.9) "space-int1" 0.18 -8
+if %MapSnd.isPC
+	call Sound.SetPSLoop "TubeSpace7" (-18065.5,927.3,-29055.9) "tube1" 0.17
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "TubeSpace8" (-20774.4,1081.7,-29715.6) "tube1" 0.17
+end
+call Sound.SetPSLoop "Interior6" (-22089.0351563,976.21661377,-31113.7617188) "space-ext1" Volume=0.05 Pitch=0.0 AttenIni=2304.0 AttenEnd=3264.0 Doppler=0.0
+call Sound.SetPSLoop "LuzPowerLow5" (-21319.0,1509.5,-32355.6) "light1" 0.07
+call Sound.SetPSLoop "LuzPowerLow6" (-21926.3,1513.9,-29545.3) "light1" 0.07
+call Sound.SetPSLoop "LuzPowerLow7" (-23563.0,1516.3,-31084.4) "light1" 0.07
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds

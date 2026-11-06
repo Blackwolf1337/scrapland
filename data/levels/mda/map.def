@@ -1,0 +1,4 @@
+# The functions of Map in level mda (the script levels/mda/scripts/map.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/mda/map.def replaces this file.
+section Init LevelPath

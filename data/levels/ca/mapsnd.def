@@ -1,0 +1,18 @@
+# The functions of MapSnd in level ca (the script levels/ca/scripts/mapsnd.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/ca/mapsnd.def replaces this file.
+section LoadSounds
+call SSound.LoadSound "tunel334-quimera.wav"
+
+section SetSounds
+call Sound.SetPSLoop "AceleradorAC1" (29617.9,-22903.4,-29157.7) "tunel334-quimera" 0.5
+call Sound.SetPSLoop "AceleradorAC2" (-16440.8,-22739.1,-13915.4) "tunel334-quimera" 0.5
+call Sound.SetPSLoop "AceleradorAC3" (-15794.2,-22791.7,34497.2) "tunel334-quimera" 0.5
+call Sound.SetPSLoop "AceleradorAC4" (29958.1,-22700.0,49286.3) "tunel334-quimera" 0.5
+call Sound.SetPSLoop "AceleradorAC5" (58029.8,-22437.9,10123.3) "tunel334-quimera" 0.5
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds

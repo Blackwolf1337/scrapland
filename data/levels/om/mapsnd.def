@@ -1,0 +1,165 @@
+# The functions of MapSnd in level om (the script levels/om/scripts/mapsnd.py of data01.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: SndElements.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/om/mapsnd.def replaces this file.
+section LoadSounds
+if %MapSnd.isPC
+	call SSound.LoadSound "ventilador3-quimera.wav"
+	call SSound.LoadSound "tube1-quimera.wav"
+	call SSound.LoadSound "maquina2-quimera.wav"
+	call SSound.LoadSound "transformer3-quimera.wav"
+	call SSound.LoadSound "light1-quimera.wav"
+	call SSound.LoadSound "aire2-quimera.wav"
+	call SSound.LoadSound "horno1-quimera.wav"
+	call SSound.LoadSound "horno2-quimera.wav"
+end
+call SSound.LoadSound "tunel334-quimera.wav"
+if %MapSnd.isPC
+	call SSound.LoadSound "cinta.wav"
+	call SSound.LoadSound "excav.wav"
+	call SSound.LoadSound "radar1.wav"
+	call SSound.LoadSound "radar2.wav"
+	call SSound.LoadSound "radar3.wav"
+	call SSound.LoadSound "radar4.wav"
+	call SSound.LoadSound "radar5.wav"
+	call SSound.LoadSound "humo.wav"
+	call SSound.LoadSound "gas4.wav"
+	call SSound.LoadSound "gas5.wav"
+	call SSound.LoadSound "gas3.wav"
+end
+
+section SetSounds
+call Scrap.CallElements "MapSnd.SndElements"
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Maquina1" (33323.5546875,-10567.6767578,161749.28125) "cinta" Volume=0.07 Pitch=0.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Maquina2" (-201165.9375,548.729187012,66317.390625) "maquina2-quimera" Volume=0.4 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Transformer1" (-191985.515625,-2228.09228516,-2236.41870117) "transformer3-quimera" Volume=0.5 Pitch=0.0 AttenIni=10624.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSInterval "Radar1" (-173284.09375,7564.23339844,238.829177856) "radar1" MinInterval=1.0 MaxInterval=20.0 Volume=0.008 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "Radar2" (-173284.09375,7564.23339844,238.829177856) "radar2" MinInterval=1.0 MaxInterval=24.0 Volume=0.008 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "Radar3" (-173284.09375,7564.23339844,238.829177856) "radar3" MinInterval=1.0 MaxInterval=15.0 Volume=0.008 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "Radar4" (-212648.71875,12914.5146484,69976.15625) "radar4" MinInterval=1.0 MaxInterval=20.0 Volume=0.008 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "Radar5" (-212648.71875,12914.5146484,69976.15625) "radar5" MinInterval=1.0 MaxInterval=25.0 Volume=0.008 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "Radar6" (-212648.71875,12914.5146484,69976.15625) "radar3" MinInterval=1.0 MaxInterval=15.0 Volume=0.008 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Aire1" (-237083.328125,1441.94580078,-12029.3173828) "aire2-quimera" Volume=0.15 Pitch=-6.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Aire2" (-226402.828125,-5757.56494141,18961.9453125) "aire2-quimera" Volume=0.15 Pitch=-3.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Aire3" (-197374.765625,-1496.9630127,81884.71875) "aire2-quimera" Volume=0.15 Pitch=-4.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Horno1" (-249636.71875,11552.2998047,2893.7175293) "horno2-quimera" Volume=0.2 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Horno2" (-241543.515625,11154.6474609,-14654.7548828) "horno2-quimera" Volume=0.2 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Horno3" (6856.2265625,-18753.1621094,24382.5234375) "horno1-quimera" Volume=0.25 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Horno4" (-4382.90136719,-18294.5097656,19351.7480469) "horno2-quimera" Volume=0.2 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "Radar7" (177102.03125,7297.66308594,38814.0195313) "radar1" MinInterval=1.0 MaxInterval=20.0 Volume=0.00800000037998 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "Radar8" (177102.03125,7297.66308594,38814.0195313) "radar2" MinInterval=1.0 MaxInterval=24.0 Volume=0.00800000037998 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "Radar9" (177102.03125,7297.66308594,38814.0195313) "radar3" MinInterval=1.0 MaxInterval=15.0 Volume=0.00800000037998 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "Radar10" (216612.078125,12759.6953125,-30969.1484375) "radar3" MinInterval=1.0 MaxInterval=20.0 Volume=0.00800000037998 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "Radar11" (216612.078125,12759.6953125,-30969.1484375) "radar4" MinInterval=1.0 MaxInterval=25.0 Volume=0.00800000037998 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "Radar12" (216612.078125,12759.6953125,-30969.1484375) "radar5" MinInterval=1.0 MaxInterval=15.0 Volume=0.00800000037998 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Aire4" (241177.796875,1393.57177734,51190.625) "aire2-quimera" Volume=0.15 Pitch=-6.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Aire5" (230476.921875,-4976.82226563,19838.2714844) "aire2-quimera" Volume=0.15000000596 Pitch=-6.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Aire6" (202209.734375,-1762.28234863,-43707.9101563) "aire2-quimera" Volume=0.15000000596 Pitch=-6.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Horno5" (253365.921875,11329.9072266,37594.75) "horno2-quimera" Volume=0.15 Pitch=-6.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Horno6" (245120.1875,10695.5996094,54508.4726563) "horno2-quimera" Volume=0.15 Pitch=-6.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Transformer2" (196097.3125,-958.055419922,39873.9023438) "transformer3-quimera" Volume=0.5 Pitch=0.0 AttenIni=10624.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Maquina3" (205181.84375,-1026.42163086,-27229.1855469) "maquina2-quimera" Volume=0.300000011921 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Cinta2" (-26707.5039063,-11738.4052734,-123294.898438) "cinta" Volume=0.07 Pitch=0.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Cinta3" (19448.9746094,-5903.12695313,-172726.328125) "cinta" Volume=0.07 Pitch=0.0 AttenIni=2560.0 AttenEnd=47168.0 Doppler=0.0
+	call Sound.SetPSLoop "Cinta4" (-30341.4472656,-19921.4375,-211790.71875) "cinta" Volume=0.07 Pitch=0.0 AttenIni=2560.0 AttenEnd=47168.0 Doppler=0.0
+	call Sound.SetPSLoop "Mina1" (-16797.4140625,-3714.953125,-160755.0) "excav" Volume=0.15 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Mina2" (-16879.4765625,-20603.8066406,-160808.875) "excav" Volume=0.15 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Humo1" (62981.3828125,-5446.61865234,-167321.65625) "humo" Volume=0.15 Pitch=-8.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Humo2" (66148.421875,-5888.13232422,-179137.265625) "humo" Volume=0.15 Pitch=-7.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Humo3" (-6261.73681641,-26625.9667969,-194387.609375) "humo" Volume=0.15 Pitch=-8.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Humo4" (-8958.92382813,-26105.8085938,-154691.109375) "humo" Volume=0.15 Pitch=-7.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Humo5" (-16839.328125,-25553.1367188,-139964.890625) "humo" Volume=0.15 Pitch=-7.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Humo6" (-8081.22460938,-26656.9003906,-123030.273438) "humo" Volume=0.15 Pitch=-7.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Humo7" (14044.8095703,-13208.6386719,-101262.765625) "humo" Volume=0.15 Pitch=-7.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Humo8" (6780.95800781,-9615.28613281,-93367.8671875) "humo" Volume=0.15 Pitch=-7.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Humo9" (48589.65625,-28406.2597656,-188507.734375) "humo" Volume=0.15 Pitch=-7.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSInterval "gas1" (62981.3828125,-5446.61865234,-167321.65625) "gas3" MinInterval=1.0 MaxInterval=10.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "gas2" (66148.421875,-5888.13232422,-179137.265625) "gas4" MinInterval=1.0 MaxInterval=7.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "gas3" (-6261.73681641,-26625.9667969,-194387.609375) "gas5" MinInterval=1.0 MaxInterval=7.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "gas4" (-8958.92382813,-26105.8085938,-154691.109375) "gas3" MinInterval=1.0 MaxInterval=10.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "gas5" (-16839.328125,-25553.1367188,-139964.890625) "gas4" MinInterval=1.0 MaxInterval=7.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "gas6" (-8081.22460938,-26656.9003906,-123030.273438) "gas5" MinInterval=1.0 MaxInterval=10.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "gas7" (14044.8095703,-13208.6386719,-101262.765625) "gas3" MinInterval=1.0 MaxInterval=7.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "gas8" (6780.95800781,-9615.28613281,-93367.8671875) "gas4" MinInterval=1.0 MaxInterval=10.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "gas9" (48589.65625,-28406.2597656,-188507.734375) "gas5" MinInterval=1.0 MaxInterval=7.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Maquina4" (-62510.3828125,-16636.0859375,-180839.296875) "horno2-quimera" Volume=0.3 Pitch=0.0 AttenIni=13376.0 AttenEnd=47296.0 Doppler=0.0
+	call Sound.SetPSLoop "Maquina5" (-45055.5585938,1151.36853027,-206116.734375) "horno2-quimera" Volume=0.2 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube1" (-12159.0126953,-20506.5566406,-228066.34375) "tube1-quimera" Volume=0.3 Pitch=0.0 AttenIni=9152.0 AttenEnd=29568.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube2" (-25601.59375,-28525.2519531,-137104.4375) "tube1-quimera" Volume=0.3 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube3" (-31445.2949219,-24933.046875,-159727.59375) "tube1-quimera" Volume=0.3 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube4" (48248.578125,-26976.2597656,-171755.34375) "tube1-quimera" Volume=0.3 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube5" (47545.140625,-28196.1210938,-134075.671875) "tube1-quimera" Volume=0.3 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube6" (44959.8867188,-22747.3203125,-216149.359375) "tube1-quimera" Volume=0.3 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube7" (48490.3007813,-21955.1640625,-170670.328125) "tube1-quimera" Volume=0.3 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube8" (12934.1123047,-28417.2109375,-211392.3125) "tube1-quimera" Volume=0.3 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube9" (-2386.46044922,-26160.765625,-211289.484375) "tube1-quimera" Volume=0.3 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Humo10" (-58003.1757813,-5926.50537109,206022.421875) "humo" Volume=0.15 Pitch=-8.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Humo11" (-60817.3828125,-5229.05029297,218206.40625) "humo" Volume=0.15 Pitch=-8.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Humo12" (-43408.2070313,-26126.4023438,221657.546875) "humo" Volume=0.15 Pitch=-8.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Humo13" (11400.2197266,-27340.0878906,231713.234375) "humo" Volume=0.15 Pitch=-8.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Humo14" (20789.1914063,-26317.9160156,179030.203125) "humo" Volume=0.15 Pitch=-8.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Humo15" (12268.2460938,-28533.3203125,161355.515625) "humo" Volume=0.15000000596 Pitch=-8.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Humo16" (-8410.296875,-13315.5234375,141039.140625) "humo" Volume=0.15000000596 Pitch=-8.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Humo17" (-2768.05908203,-7831.15820313,131795.5625) "humo" Volume=0.15000000596 Pitch=-8.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSInterval "gas10" (-58003.1757813,-5926.50537109,206022.421875) "gas3" MinInterval=1.0 MaxInterval=10.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "gas11" (-60817.3828125,-5229.05029297,218206.40625) "gas4" MinInterval=1.0 MaxInterval=7.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "gas12" (-43408.2070313,-26126.4023438,221657.546875) "gas5" MinInterval=1.0 MaxInterval=10.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "gas13" (11400.2197266,-27340.0878906,231713.234375) "gas3" MinInterval=1.0 MaxInterval=7.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "gas14" (20789.1914063,-26317.9160156,179030.203125) "gas4" MinInterval=1.0 MaxInterval=7.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "gas15" (12268.2460938,-28533.3203125,161355.515625) "gas5" MinInterval=1.0 MaxInterval=10.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "gas16" (-8410.296875,-13315.5234375,141039.140625) "gas3" MinInterval=1.0 MaxInterval=7.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSInterval "gas17" (20789.1914063,-26317.9160156,179030.203125) "gas4" MinInterval=1.0 MaxInterval=10.0 Volume=0.1 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Maquina6" (66894.7734375,-19174.3007813,219964.265625) "horno2-quimera" Volume=0.300000011921 Pitch=0.0 AttenIni=13376.0 AttenEnd=47296.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube10" (14827.7763672,-22713.5097656,267841.59375) "tube1-quimera" Volume=0.300000011921 Pitch=0.0 AttenIni=6144.0 AttenEnd=28864.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube11" (37433.8476563,-25286.4238281,199001.078125) "tube1-quimera" Volume=0.25 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube12" (-40716.0390625,-23232.5,254376.625) "tube1-quimera" Volume=0.25 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube13" (-43695.2460938,-28597.4492188,201473.90625) "tube1-quimera" Volume=0.25 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube14" (-40598.7226563,-29496.2324219,170241.46875) "tube1-quimera" Volume=0.25 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube15" (31067.5214844,-29084.90625,177121.0625) "tube1-quimera" Volume=0.25 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube16" (12045.9033203,-29448.2519531,174851.515625) "tube1-quimera" Volume=0.25 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube17" (-6345.5625,-29288.8964844,169989.6875) "tube1-quimera" Volume=0.25 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube18" (-42727.015625,-28729.5722656,172849.84375) "tube1-quimera" Volume=0.25 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Tube19" (-43766.390625,-29085.8671875,207070.796875) "tube1-quimera" Volume=0.25 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Cinta5" (-15496.0878906,-6133.15478516,211293.921875) "cinta" Volume=0.07 Pitch=0.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Cinta6" (34632.0039063,-22509.9003906,250044.375) "cinta" Volume=0.07 Pitch=0.0 AttenIni=2560.0 AttenEnd=37440.0 Doppler=0.0
+	call Sound.SetPSLoop "Mina3" (20831.6425781,13312.3720703,199682.140625) "excav" Volume=0.15000000596 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Mina4" (20652.5683594,-2572.49658203,199791.046875) "excav" Volume=0.15000000596 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+	call Sound.SetPSLoop "Mina5" (21238.6152344,-18881.25,199742.8125) "excav" Volume=0.15000000596 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.0
+end
+call Sound.SetPSLoop "ACELERADOR1" (110428.0,15603.6,-160402.0) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR2" (126037.0,15603.6,-127898.0) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR3" (10957.3,-19743.9,-51566.2) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR4" (-4664.95,3967.04,-26411.0) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR5" (-49729.4,-7652.38,8740.99) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR6" (-44095.4,21757.4,31431.2) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR7" (16004.6,-19743.9,-12355.7) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR8" (-145634.0,15603.6,127379.0) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR9" (-95154.2,-1968.3,23424.7) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR10" (-88995.9,21757.4,63607.4) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR11" (-8480.85,-19743.9,-99860.9) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR12" (75473.0,15603.6,-175817.0) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR13" (11570.5,3967.04,-82756.4) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR14" (-122076.0,15428.7,166876.0) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR15" (-6996.25,-19918.9,90544.3) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR16" (-8626.02,3792.08,65389.1) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR17" (53690.4,-7827.33,30237.1) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR18" (48056.5,21582.4,7546.94) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR19" (149595.0,15428.7,-88400.7) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR20" (99115.3,-2143.26,15553.4) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR21" (92957.0,21582.4,-24629.3) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR22" (12441.9,-19918.9,138839.0) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR23" (-71511.9,15428.7,214795.0) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR24" (-7609.4,3792.08,121735.0) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "ACELERADOR25" (-12043.5,-19918.9,51333.9) "tunel334-quimera" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds

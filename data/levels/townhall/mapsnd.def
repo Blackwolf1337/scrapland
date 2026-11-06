@@ -1,0 +1,137 @@
+# The functions of MapSnd in level townhall (the script levels/townhall/scripts/mapsnd.py of data02.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: SndElements.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/townhall/mapsnd.def replaces this file.
+section LoadSounds
+call SSound.LoadSound "space-int1.wav"
+if %MapSnd.isPC
+	call SSound.LoadSound "ventilador3.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "beep2.wav"
+end
+call SSound.LoadSound "beep3.wav"
+call SSound.LoadSound "beep5.wav"
+call SSound.LoadSound "beep6.wav"
+if %MapSnd.isPC
+	call SSound.LoadSound "beep122.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "holograma2.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "maquina2.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "light2.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "buble1.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "tube1-town.wav"
+end
+call SSound.LoadSound "atmosfera-oscura-loop8.wav"
+call SSound.LoadSound "atmosfera-oscura-loop9.wav"
+call SSound.LoadSound "atmosfera-oscura-loop10.wav"
+call SSound.LoadSound "space-int3.wav"
+
+section SetSounds
+call Scrap.CallElements "MapSnd.SndElements"
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Boom1" (-3127.0,4365.9,6804.4) "maquina2" 0.3 -5 AttenIni=4300 AttenEnd=5800 Doppler=1.0
+end
+call Sound.SetPSLoop "Boom2" (-3127.0,18484.9003906,6804.39990234) "atmosfera-oscura-loop8" Volume=0.4 Pitch=0.0 AttenIni=19112.0 AttenEnd=19368.0 Doppler=0.0
+call Sound.SetPSLoop "Boom3" (-9693.765625,-2997.86791992,4936.27636719) "atmosfera-oscura-loop9" Volume=0.05 Pitch=0.0 AttenIni=2496.0 AttenEnd=3968.0 Doppler=0.0
+call Sound.SetPSLoop "Boom4" (-12460.5869141,-2822.72045898,3945.38427734) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=3136.0 AttenEnd=3648.0 Doppler=0.0
+call Sound.SetPSLoop "Boom5" (-5824.21875,-3578.45727539,3601.60766602) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=3456.0 AttenEnd=4608.0 Doppler=0.0
+call Sound.SetPSLoop "Boom6" (-2476.99389648,-1887.00012207,2832.96435547) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=1664.0 AttenEnd=2336.0 Doppler=0.0
+call Sound.SetPSLoop "Boom7" (73.4271469116,-1486.08679199,3316.55639648) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=1664.0 AttenEnd=1856.0 Doppler=0.0
+call Sound.SetPSLoop "Boom8" (-1133.19067383,-915.739929199,5756.01513672) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=1664.0 AttenEnd=3904.0 Doppler=0.0
+call Sound.SetPSLoop "Boom9" (312.904663086,-3080.47290039,9412.30175781) "atmosfera-oscura-loop9" Volume=0.05 Pitch=0.0 AttenIni=3008.0 AttenEnd=3904.0 Doppler=0.0
+call Sound.SetPSLoop "Boom10" (-2699.49829102,-935.234313965,8250.24023438) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=512.0 AttenEnd=1664.0 Doppler=0.0
+call Sound.SetPSLoop "Boom11" (-2842.52587891,-956.555297852,9518.64453125) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=512.0 AttenEnd=1664.0 Doppler=0.0
+call Sound.SetPSLoop "Boom12" (-4087.08032227,-1038.70507813,6387.55126953) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=512.0 AttenEnd=1664.0 Doppler=0.0
+call Sound.SetPSLoop "Boom13" (-4114.171875,-1096.9888916,7645.69726563) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=640.0 AttenEnd=1664.0 Doppler=0.0
+call Sound.SetPSLoop "Boom14" (-4357.74707031,-1376.39770508,9530.93261719) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=1216.0 AttenEnd=1664.0 Doppler=0.0
+call Sound.SetPSLoop "Boom15" (-6483.84912109,-3062.95019531,8914.44921875) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=2880.0 AttenEnd=4288.0 Doppler=0.0
+call Sound.SetPSLoop "Boom16" (-8726.92480469,-1445.58007813,7286.84912109) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=768.0 AttenEnd=1472.0 Doppler=0.0
+call Sound.SetPSLoop "Boom17" (-7678.94482422,-1883.75,11873.7412109) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=1600.0 AttenEnd=5632.0 Doppler=0.0
+call Sound.SetPSLoop "Boom18" (-10617.2998047,-2401.34130859,10661.4091797) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=1920.0 AttenEnd=3808.0 Doppler=0.0
+call Sound.SetPSLoop "Boom19" (-11335.4316406,-936.424743652,8821.10351563) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=512.0 AttenEnd=1664.0 Doppler=0.0
+call Sound.SetPSLoop "Boom20" (-11177.4599609,-1062.17443848,7069.67919922) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=512.0 AttenEnd=1664.0 Doppler=0.0
+call Sound.SetPSLoop "Boom21" (-8155.51757813,-1006.8145752,13840.4394531) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=512.0 AttenEnd=1408.0 Doppler=0.0
+call Sound.SetPSLoop "Boom22" (-8663.63671875,-5352.33935547,17647.2304688) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=5120.0 AttenEnd=5952.0 Doppler=0.0
+call Sound.SetPSLoop "Boom23" (-2066.5859375,-10126.828125,17834.8222656) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=9632.0 AttenEnd=10400.0 Doppler=0.0
+call Sound.SetPSLoop "Boom24" (1833.88208008,-3708.03540039,15389.3339844) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=3232.0 AttenEnd=3648.0 Doppler=0.0
+call Sound.SetPSLoop "Boom25" (3534.99707031,-4117.51708984,12726.1025391) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=4032.0 AttenEnd=4672.0 Doppler=0.0
+call Sound.SetPSLoop "Boom26" (-6391.94287109,-1022.38897705,14142.6650391) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=512.0 AttenEnd=1408.0 Doppler=0.0
+call Sound.SetPSLoop "Boom27" (-5789.47314453,-1453.41809082,14419.5332031) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=960.0 AttenEnd=1536.0 Doppler=0.0
+call Sound.SetPSLoop "Boom28" (-5739.37548828,-1740.03735352,15826.9970703) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=1216.0 AttenEnd=1472.0 Doppler=0.0
+call Sound.SetPSLoop "Boom29" (-5876.79199219,-3485.68798828,17567.8183594) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=2912.0 AttenEnd=3584.0 Doppler=0.0
+call Sound.SetPSLoop "Boom30" (-1433.04187012,-888.436157227,14844.09375) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=512.0 AttenEnd=1408.0 Doppler=0.0
+call Sound.SetPSLoop "Boom31" (-1344.20751953,-955.053588867,13730.1875) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=512.0 AttenEnd=1408.0 Doppler=0.0
+call Sound.SetPSLoop "Boom32" (-2867.10229492,-3035.70507813,12973.7958984) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=2752.0 AttenEnd=4608.0 Doppler=0.0
+call Sound.SetPSLoop "Boom33" (-4155.44970703,-2116.19287109,15121.0859375) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=1696.0 AttenEnd=2272.0 Doppler=0.0
+call Sound.SetPSLoop "Boom34" (553.226318359,-3219.27392578,13143.6386719) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=2592.0 AttenEnd=3008.0 Doppler=0.0
+call Sound.SetPSLoop "Boom35" (4187.38183594,-1775.74645996,9956.81640625) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=1344.0 AttenEnd=2624.0 Doppler=0.0
+call Sound.SetPSLoop "Boom36" (5100.79736328,-1245.91210938,8554.55566406) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=768.0 AttenEnd=1920.0 Doppler=0.0
+call Sound.SetPSLoop "Boom37" (6775.79980469,-1240.31274414,7675.90527344) "atmosfera-oscura-loop10" Volume=0.4 Pitch=7.0 AttenIni=1024.0 AttenEnd=1408.0 Doppler=0.0
+call Sound.SetPSLoop "Boom38" (7407.17285156,-1698.11657715,10415.7861328) "atmosfera-oscura-loop10" Volume=0.4 Pitch=7.0 AttenIni=1600.0 AttenEnd=2304.0 Doppler=0.0
+call Sound.SetPSLoop "Boom39" (4965.60400391,-1669.77197266,6847.53369141) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=1152.0 AttenEnd=1984.0 Doppler=0.0
+call Sound.SetPSLoop "Boom40" (3996.72900391,-4781.44189453,3837.09521484) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=4736.0 AttenEnd=5376.0 Doppler=0.0
+call Sound.SetPSLoop "Boom41" (2150.33203125,-1325.96838379,6366.18896484) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=768.0 AttenEnd=1728.0 Doppler=0.0
+call Sound.SetPSLoop "Boom42" (-10048.6552734,-1053.69262695,8588.22265625) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=576.0 AttenEnd=972.0 Doppler=0.0
+call Sound.SetPSLoop "Boom43" (-9611.19238281,-540.468139648,7748.89599609) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=448.0 AttenEnd=972.0 Doppler=0.0
+call Sound.SetPSLoop "Boom44" (-10447.0361328,-1591.8248291,6955.09667969) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=2048.0 AttenEnd=3072.0 Doppler=0.0
+call Sound.SetPSLoop "Boom45" (-10933.3457031,95.6290893555,8830.05859375) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=832.0 AttenEnd=1792.0 Doppler=0.0
+call Sound.SetPSLoop "Boom46" (-9167.82910156,374.018310547,8879.48242188) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=832.0 AttenEnd=1792.0 Doppler=0.0
+call Sound.SetPSLoop "Boom47" (-10265.7011719,441.514404297,10579.5253906) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=832.0 AttenEnd=1792.0 Doppler=0.0
+call Sound.SetPSLoop "Boom48" (-9110.47265625,381.066009521,12379.9257813) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=832.0 AttenEnd=1792.0 Doppler=0.0
+call Sound.SetPSLoop "Boom49" (-6894.12597656,110.349853516,14140.3017578) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=832.0 AttenEnd=1792.0 Doppler=0.0
+call Sound.SetPSLoop "Boom50" (-5531.53369141,47.5572891235,14550.8662109) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=832.0 AttenEnd=1792.0 Doppler=0.0
+call Sound.SetPSLoop "Boom51" (-3212.91601563,1276.41955566,14718.5546875) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=1600.0 AttenEnd=2752.0 Doppler=0.0
+call Sound.SetPSLoop "Boom52" (-3189.2434082,2049.03271484,17652.6367188) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=2624.0 AttenEnd=3200.0 Doppler=0.0
+call Sound.SetPSLoop "Boom53" (-829.614257813,-36.1861000061,14786.1054688) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=832.0 AttenEnd=1792.0 Doppler=0.0
+call Sound.SetPSLoop "Boom54" (506.04498291,151.047821045,14226.9091797) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=832.0 AttenEnd=1792.0 Doppler=0.0
+call Sound.SetPSLoop "Boom55" (970.352416992,1896.62768555,12388.7597656) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=1920.0 AttenEnd=2496.0 Doppler=0.0
+call Sound.SetPSLoop "Boom56" (2013.6574707,424.53213501,13237.5214844) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=512.0 AttenEnd=1408.0 Doppler=0.0
+call Sound.SetPSLoop "Boom57" (2837.41845703,321.929382324,12256.3564453) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=512.0 AttenEnd=1408.0 Doppler=0.0
+call Sound.SetPSLoop "Boom58" (3429.43969727,380.839660645,11576.0390625) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=512.0 AttenEnd=1408.0 Doppler=0.0
+call Sound.SetPSLoop "Boom59" (4242.26269531,507.033508301,10671.7773438) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=512.0 AttenEnd=1408.0 Doppler=0.0
+call Sound.SetPSLoop "Boom60" (4802.52099609,461.169555664,9296.12597656) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=832.0 AttenEnd=1792.0 Doppler=0.0
+call Sound.SetPSLoop "Boom61" (2656.36132813,363.835784912,8805.37011719) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=1920.0 AttenEnd=2496.0 Doppler=0.0
+call Sound.SetPSLoop "Boom62" (4410.46728516,-69.615486145,6877.16064453) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=1920.0 AttenEnd=2496.0 Doppler=0.0
+call Sound.SetPSLoop "Boom63" (3405.8125,387.376220703,15974.8964844) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=5120.0 AttenEnd=5952.0 Doppler=0.0
+call Sound.SetPSLoop "Boom64" (-9477.05761719,380.160461426,15901.9345703) "space-int3" Volume=0.08 Pitch=3.0 AttenIni=5120.0 AttenEnd=5952.0 Doppler=0.0
+call Sound.SetPSLoop "Boom65" (7245.83447266,-934.07220459,7498.99755859) "space-int3" Volume=0.0799999982119 Pitch=3.0 AttenIni=5120.0 AttenEnd=5952.0 Doppler=0.0
+if %MapSnd.isPC
+	call Sound.SetPSLoop "tuberia1" (-754.0,-1090.7,9192.9) "tube1-town" 0.12
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "tuberia2" (655.9,-1142.6,9221.9) "tube1-town" 0.12
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "tuberia3" (1559.6,-1162.6,9235.9) "tube1-town" 0.12
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "tuberia4" (-9614.1,-1386.9,4950.9) "tube1-town" 0.12
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "beep1" (8767.7,-713.6,10460.2) "beep122" 4 10 0.03 0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "beep2" (7951.8,-711.5,10455.3) "beep122" 6 10 0.03 0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "beep3" (5899.8,-720.9,10479.4) "beep122" 4 10 0.03 0
+end
+if %MapSnd.isPC
+	call Sound.SetPSInterval "beep4" (6714.1,-715.1,10465.0) "beep122" 6 10 0.03 0
+end
+call Sound.SetPSLoop "int1" (-5171.8,-1098.4,11516.6) "space-int1" 0.4
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds

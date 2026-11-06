@@ -1,0 +1,164 @@
+# The functions of MapSnd in level gamblinden (the script levels/gamblinden/scripts/mapsnd.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/gamblinden/mapsnd.def replaces this file.
+section LoadSounds
+
+section MeetGambler
+let SceneName "MeetGambler"
+
+section MeetGamblerCrazyGambler
+let CharName "MeetGamblerCrazyGambler"
+let ActName "TalkHand1"
+call Chars.ActSound $CharName $ActName 2 "mecanismoGG1" 0.044 +2
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 3 "giro111-gate" 0.058 +1
+end
+call Chars.ActSound $CharName $ActName 28 "mecanismoGG2" 0.044 +6
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 28 "giro222-gate" 0.058 +5
+end
+let ActName "TalkHand2"
+call Chars.ActSound $CharName $ActName 1 "mecanismoGG1" 0.044 +2
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 2 "giro111-gate" 0.058 +1
+end
+call Chars.ActSound $CharName $ActName 30 "mecanismoGG2" 0.044 +5
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 30 "giro222-gate" 0.058 +4
+end
+let ActName "TalkHi"
+call Chars.ActSound $CharName $ActName 10 "mecanismoGG1" 0.044 +2
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 11 "giro111-gate" 0.058 +1
+end
+call Chars.ActSound $CharName $ActName 64 "mecanismoGG2" 0.044 +5
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 64 "giro222-gate" 0.058 +4
+end
+let ActName "PutHead"
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 6 "giro111-gate" 0.056 +1
+end
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 31 "giro222-gate" 0.056 +2
+end
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 60 "giro111-gate" 0.056 +5
+end
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 71 "giro111-gate" 0.056 +6
+end
+call Chars.ActSound $CharName $ActName 72 "pasada-bishop" 0.49 +4
+call Chars.ActSound $CharName $ActName 89 "down" 0.65 +12
+
+section PlanDtritus
+let CharName "PlanDtritus"
+let ActName "WalkHi"
+call Chars.ActSound $CharName $ActName 2 "paso-detritus1" 0.055
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus1" 0.021 +4
+call Chars.ActSound $CharName $ActName 16 "mecanismo-dtritus1" 0.021 +4
+call Chars.ActSound $CharName $ActName 17 "paso-detritus3" 0.055
+call Chars.ActSound $CharName $ActName 32 "paso-detritus1" 0.055
+call Chars.ActSound $CharName $ActName 33 "mecanismo-dtritus1" 0.021 +4
+call Chars.ActSound $CharName $ActName 47 "paso-detritus1" 0.055
+call Chars.ActSound $CharName $ActName 48 "mecanismo-dtritus1" 0.021 +4
+call Chars.ActSound $CharName $ActName 4 "mecanismo-dtritus5" 0.022
+call Chars.ActSound $CharName $ActName 5 "mecanismo-dtritus6" 0.022 +4
+call Chars.ActSound $CharName $ActName 30 "mecanismo-dtritus5" 0.022
+call Chars.ActSound $CharName $ActName 31 "mecanismo-dtritus6" 0.022 +4
+
+section Plan
+let SceneName "Plan"
+
+section PlanHuman
+let CharName "PlanHuman"
+let ActName "TalkFunny"
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 2 "mecanismo-human1" 0.013 +4
+else
+	call Chars.ActSound $CharName $ActName 2 "mecanismo-human2" 0.013 +4
+end
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 4 "mecanismo-human3" 0.014 +4
+end
+call Chars.ActSound $CharName $ActName 28 "rasca-human" 0.05 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 38 "mecanismo-human1" 0.013 +4
+else
+	call Chars.ActSound $CharName $ActName 38 "mecanismo-human2" 0.013 +4
+end
+call Chars.ActSound $CharName $ActName 48 "rasca-human" 0.05 +4
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 58 "mecanismo-human1" 0.013 +4
+else
+	call Chars.ActSound $CharName $ActName 58 "mecanismo-human2" 0.013 +4
+end
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 64 "mecanismo-human1" 0.013 +4
+else
+	call Chars.ActSound $CharName $ActName 64 "mecanismo-human2" 0.013 +4
+end
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 64 "mecanismo-human3" 0.014 +4
+end
+let ActName "TalkCase"
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 2 "mecanismo-human1" 0.013 +2
+else
+	call Chars.ActSound $CharName $ActName 2 "mecanismo-human2" 0.013 +2
+end
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 4 "mecanismo-human3" 0.013 +2
+end
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 90 "mecanismo-human1" 0.013 +2
+else
+	call Chars.ActSound $CharName $ActName 90 "mecanismo-human2" 0.013 +2
+end
+if %MapSnd.isPC
+	call Chars.ActSound $CharName $ActName 92 "mecanismo-human3" 0.013 +2
+end
+
+section PlanMercenaryA
+let CharName "PlanMercenaryA"
+let ActName "TalkHappy"
+call Chars.ActSound $CharName $ActName 2 "roce-mercenario3" 0.014 -3
+call Chars.ActSound $CharName $ActName 2 "roce-mercenario2" 0.014
+
+section PlanMercenaryB
+let CharName "PlanMercenaryB"
+let ActName "TalkHappy"
+call Chars.ActSound $CharName $ActName 2 "roce-mercenario3" 0.014 -3
+call Chars.ActSound $CharName $ActName 2 "roce-mercenario2" 0.014
+
+section PlanMercenaryC
+let CharName "PlanMercenaryC"
+let ActName "TalkHappy"
+call Chars.ActSound $CharName $ActName 2 "roce-mercenario3" 0.014 -3
+call Chars.ActSound $CharName $ActName 2 "roce-mercenario2" 0.014
+
+section Plan2
+let SceneName "Plan2"
+
+section Plan2Dtritus
+let CharName "Plan2Dtritus"
+let ActName "TalkEnergy"
+call Chars.ActSound $CharName $ActName 2 "mecanismo-dtritus6" 0.022
+call Chars.ActSound $CharName $ActName 4 "mecanismo-dtritus1" 0.021
+call Chars.ActSound $CharName $ActName 40 "mecanismo-dtritus6" 0.022
+call Chars.ActSound $CharName $ActName 42 "mecanismo-dtritus1" 0.021
+let ActName "Listen"
+call Chars.ActSound $CharName $ActName 3 "mecanismo-dtritus6" 0.022
+call Chars.ActSound $CharName $ActName 5 "mecanismo-dtritus1" 0.021
+call Chars.ActSound $CharName $ActName 97 "mecanismo-dtritus6" 0.022
+call Chars.ActSound $CharName $ActName 99 "mecanismo-dtritus1" 0.021
+let ActName "WalkLook"
+call Chars.ActSound $CharName $ActName 3 "paso-detritus1" 0.055
+call Chars.ActSound $CharName $ActName 1 "mecanismo-dtritus1" 0.021 +4
+call Chars.ActSound $CharName $ActName 15 "mecanismo-dtritus2" 0.021 +4
+call Chars.ActSound $CharName $ActName 17 "paso-detritus3" 0.055
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack

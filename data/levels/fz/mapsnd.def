@@ -1,0 +1,23 @@
+# The functions of MapSnd in level fz (the script levels/fz/scripts/mapsnd.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: SndElements.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/fz/mapsnd.def replaces this file.
+section LoadSounds
+if %MapSnd.isPC
+	call SSound.LoadSound "light1.wav"
+end
+call SSound.LoadSound "tunel334.wav"
+if %MapSnd.isPC
+	call SSound.LoadSound "humo.wav"
+	call SSound.LoadSound "radar1.wav"
+	call SSound.LoadSound "radar5.wav"
+	call SSound.LoadSound "humo.wav"
+end
+
+section SetSounds
+call Scrap.CallElements "MapSnd.SndElements"
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds

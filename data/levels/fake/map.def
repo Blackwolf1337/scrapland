@@ -1,0 +1,17 @@
+# The functions of Map in level fake (the script levels/fake/scripts/map.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, PlayFake0, PlayFake1, PlayFake2, NextLevel, CreateFakeBertoShip, ActivateBertoEngines, LoadFake0Scene, LoadFake1Scene, LoadFake2Scene.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/fake/map.def replaces this file.
+section SetMotionBlur active
+if $active
+	call Scrap.Set "MotionBlurFactorBegin" 0.0
+	call Scrap.Set "MotionBlurFactorEnd" 0.55
+	call Scrap.Set "MotionBlurTime" 0.0
+	call Scrap.Set "MotionBlurEndTime" 0.25
+	call Scrap.Set "MotionBlurOffVar" 0
+else
+	call Scrap.Set "MotionBlurFactorBegin" 0.55
+	call Scrap.Set "MotionBlurFactorEnd" 0.0
+	call Scrap.Set "MotionBlurTime" 0.0
+	call Scrap.Set "MotionBlurEndTime" 1.75
+	call Scrap.Set "MotionBlurOffVar" 0
+end

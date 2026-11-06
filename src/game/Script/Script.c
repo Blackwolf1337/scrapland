@@ -234,6 +234,32 @@ static PyObject *Script_Replaced(const char *name, size_t i) {
 	return kept;
 }
 
+void Script_Install(PyObject *module, PyMethodDef *methods, PyObject *kept) {
+	PyObject *dict = PyModule_GetDict(module);
+	for (PyMethodDef *m = methods; m->ml_name; m++) {
+		PyObject *f = PyCFunction_New(m, NULL);
+		if (!f) {
+			continue;
+		}
+		/* names the module bound to the Python function when it loaded (onCreateMainMenu = CreateMainMenu) */
+		PyObject *key, *value;
+		int pos = 0;
+		while (PyDict_Next(dict, &pos, &key, &value)) {
+			if (PyFunction_Check(value) && PyString_Check(((PyFunctionObject *)value)->func_name) &&
+				!strcmp(PyString_AsString(((PyFunctionObject *)value)->func_name), m->ml_name) &&
+				strcmp(PyString_AsString(key), m->ml_name)) {
+				PyDict_SetItem(dict, key, f);
+			}
+		}
+		PyObject *old = PyDict_GetItemString(dict, m->ml_name);
+		if (old && kept && PyFunction_Check(old)) {
+			PyList_Append(kept, old);
+		}
+		PyDict_SetItemString(dict, m->ml_name, f);
+		Py_DECREF(f);
+	}
+}
+
 void Script_ModuleLoaded(const char *name, PyObject *module) {
 	/* SCRAP_PACK_SCRIPTS=1: the scripts of the packs only (to compare a port with the original) */
 	const char *only = getenv("SCRAP_PACK_SCRIPTS");
@@ -245,32 +271,18 @@ void Script_ModuleLoaded(const char *name, PyObject *module) {
 		if (strcmp(sm->name, name)) {
 			continue;
 		}
-		PyObject *dict = PyModule_GetDict(module);
-		PyObject *kept = Script_Replaced(name, i);
-		for (PyMethodDef *m = sm->methods; m->ml_name; m++) {
-			PyObject *f = PyCFunction_New(m, NULL);
-			if (!f) {
-				continue;
-			}
-			/* names the module bound to the Python function when it loaded (onCreateMainMenu = CreateMainMenu) */
-			PyObject *key, *value;
-			int pos = 0;
-			while (PyDict_Next(dict, &pos, &key, &value)) {
-				if (PyFunction_Check(value) && PyString_Check(((PyFunctionObject *)value)->func_name) &&
-					!strcmp(PyString_AsString(((PyFunctionObject *)value)->func_name), m->ml_name) &&
-					strcmp(PyString_AsString(key), m->ml_name)) {
-					PyDict_SetItem(dict, key, f);
-				}
-			}
-			PyObject *old = PyDict_GetItemString(dict, m->ml_name);
-			if (old && kept && PyFunction_Check(old)) {
-				PyList_Append(kept, old);
-			}
-			PyDict_SetItemString(dict, m->ml_name, f);
-			Py_DECREF(f);
-		}
+		Script_Install(module, sm->methods, Script_Replaced(name, i));
 		Con_Verbosef("Script: the C functions of %s are in place\n", name);
 	}
+	/* the functions of a level module that are data in this level; the replaced ones live until it loads again */
+	char key[0x80];
+	Str_Printf(key, sizeof(key), "level %s", name);
+	PyObject *kept = (script_replaced || (script_replaced = PyDict_New())) ? PyList_New(0) : NULL;
+	if (kept) {
+		PyDict_SetItemString(script_replaced, key, kept);
+		Py_DECREF(kept);
+	}
+	Script_LevelModuleLoaded(name, module, kept);
 }
 
 /* ---- the scorer of a player ---- */
@@ -920,8 +932,14 @@ static PyObject *Def_Value(scriptDef_t *m, const char *t, byte quoted) {
 		if (t[0] == '@') {
 			return Def_Arith(m, Def_Number2Py(Script_GetNum(m->id, a, var)), ops);
 		}
-		PyObject *v = Script_Attr(a, var);
+		/* a global of the level module whose function runs ($__module__) raises NameError like the script's read */
+		PyObject *own = m->vars ? PyDict_GetItemString(m->vars, "__module__") : NULL;
+		PyObject *v = own && PyString_Check(own) && !strcmp(PyString_AsString(own), a) ? Script_Global(a, var) : Script_Attr(a, var);
 		if (!v) {
+			if (m->stop) {
+				m->failed = 1;
+				return NULL;
+			}
 			PyErr_Clear();
 			Con_Warnf("%s:%d: no %s\n", m->name, m->line, t + 1);
 			return NULL;
@@ -1081,6 +1099,11 @@ static void Def_DoCall(scriptDef_t *m, scriptLine_t *l) {
 	}
 	PyObject *kw;
 	PyObject *args = Def_Args(m, l, 2, &kw);
+	if (m->failed) {
+		Py_XDECREF(args);
+		Py_XDECREF(kw);
+		return;
+	}
 	if (m->stop) {
 		PyObject *r = args ? Script_AskKw(module, func, args, kw) : NULL;
 		if (!args) {
@@ -1450,7 +1473,7 @@ static void Def_Run(scriptDef_t *m, byte header, const char *section) {
 		if (!l.n) {
 			continue;
 		}
-		if (!l.quoted[0] && !strcmp(l.tok[0], "section") && l.n == 2) {
+		if (!l.quoted[0] && !strcmp(l.tok[0], "section") && l.n >= 2) {
 			if (found) {
 				break;
 			}

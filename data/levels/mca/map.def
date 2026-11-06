@@ -1,0 +1,7 @@
+# The functions of Map in level mca (the script levels/mca/scripts/map.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/mca/map.def replaces this file.
+section Init LevelPath
+call Scrap.Set "CameraCloudRed" 30
+call Scrap.Set "CameraCloudGreen" 60
+call Scrap.Set "CameraCloudBlue" 100

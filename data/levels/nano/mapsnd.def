@@ -1,0 +1,13 @@
+# The functions of MapSnd in level nano (the script levels/nano/scripts/mapsnd.py of Data.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/nano/mapsnd.def replaces this file.
+section LoadSounds
+call SSound.LoadSound "Map_Boom.wav"
+
+section SetSounds
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds

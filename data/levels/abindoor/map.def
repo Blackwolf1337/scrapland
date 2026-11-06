@@ -1,0 +1,14 @@
+# The functions of Map in level abindoor (the script levels/abindoor/scripts/map.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, CreateHuman, CreateBerto, CreateBetty, CreateCrazyGambler, OnHumanSpeech, OnBettySpeech, OnBertoSpeech, OnCrazyGamblerSpeech, Init, PlaySceneA, Goodbye, LaunchCinematic, ShowEndTitle, FadeEndTitle, LoadSceneA, LoadSceneB.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/abindoor/map.def replaces this file.
+section Credits usr=None
+call Scrap.Achievement 7
+call Scrap.Set "MotionBlurFactorBegin" 0
+call Scrap.Set "MotionBlurFactorEnd" 0
+call Scrap.Set "MotionBlurTime" 0
+call Scrap.Set "MotionBlurEndTime" 0
+call Scrap.Set "MotionBlurOffVar" 0
+call Scrap.Set "R_SceneMotionBlurValue" 0
+call Scrap.Set "ShowCredits" 1
+call Scrap.DelSaveVars ""
+call SaveGame.QLoad "Levels/Menu"

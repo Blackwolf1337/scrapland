@@ -21,6 +21,12 @@ typedef struct scriptModule_s {
 
 /* a module of the packs is loaded: its C functions go into it */
 void Script_ModuleLoaded(const char *name, PyObject *module);
+/* the C functions of a table into the module under their names (and the other names the module bound the Python
+ * function to); kept (a list or NULL) keeps the replaced Python functions */
+void Script_Install(PyObject *module, PyMethodDef *methods, PyObject *kept);
+/* a module of the level that loads: the functions its data file has go into it (src/game/Script/Levels.c); kept
+ * holds the replaced functions until the module loads again */
+void Script_LevelModuleLoaded(const char *name, PyObject *module, PyObject *kept);
 
 /* a step of a .def file that C does ("run <name> [arg ...]"), args the tuple of the arguments */
 typedef struct scriptStep_s {

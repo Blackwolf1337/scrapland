@@ -1,0 +1,66 @@
+# The functions of MapSnd in level mcb (the script levels/mcb/scripts/mapsnd.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: SndElements.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/mcb/mapsnd.def replaces this file.
+section LoadSounds
+if %MapSnd.isPC
+	call SSound.LoadSound "holograma2.wav"
+	call SSound.LoadSound "ventilador3.wav"
+	call SSound.LoadSound "HologramBuzz2.wav"
+	call SSound.LoadSound "light1.wav"
+end
+call SSound.LoadSound "tunel334.wav"
+if %MapSnd.isPC
+	call SSound.LoadSound "maquina-commer.wav"
+	call SSound.LoadSound "transformer3-commer.wav"
+	call SSound.LoadSound "buble-commer.wav"
+	call SSound.LoadSound "rueda-commer.wav"
+end
+
+section SetSounds
+call Scrap.CallElements "MapSnd.SndElements"
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Commercial1" (-81982.359375,-13588.5419922,727729.5) "transformer3-commer" Volume=0.65 Pitch=0.0 AttenIni=16652.0 AttenEnd=26344.0 Doppler=0.0
+	call Sound.SetPSLoop "Commercial2" (-81982.359375,-13588.5419922,727729.5) "maquina-commer" Volume=0.2 Pitch=0.0 AttenIni=16652.0 AttenEnd=26344.0 Doppler=0.0
+	call Sound.SetPSLoop "Commercial3" (-99947.078125,-30297.0878906,729871.4375) "transformer3-commer" Volume=0.65 Pitch=0.0 AttenIni=13580.0 AttenEnd=21480.0 Doppler=0.0
+	call Sound.SetPSLoop "Rueda1" (-356728.34375,-338.7421875,592279.6875) "rueda-commer" Volume=0.07 Pitch=-7.0 AttenIni=23308.0 AttenEnd=38632.0 Doppler=0.0
+end
+call Sound.SetPSLoop "Acelerador1" (-178207.2,-70467.3,600846.5) "tunel334" 0.3
+call Sound.SetPSLoop "Acelerador2" (-268790.5,-35734.3,714668.2) "tunel334" 0.3
+call Sound.SetPSLoop "Acelerador3" (-178213.2,-70400.8,600565.4) "tunel334" 0.3
+call Sound.SetPSLoop "Acelerador4" (-110657.6,-70374.3,796030.2) "tunel334" 0.3
+call Sound.SetPSLoop "Acelerador5" (-201528.3,-70464.9,796995.9) "tunel334" 0.3
+call Sound.SetPSLoop "Acelerador6" (-286798.2,-82166.8,686513.3) "tunel334" 0.3
+if %MapSnd.isPC
+	call Sound.SetPSLoop "Holograma1" (-322049.3,-24999.8,499355.4) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma2" (-269538.3,-35446.9,538511.3) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma3" (-269687.0,-36309.4,554491.5) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma4" (-272796.2,-36262.6,571557.7) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma5" (-279746.4,-34954.3,586809.9) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma6" (-264138.5,-31555.0,628090.5) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma7" (-227393.5,-21230.0,680752.7) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma8" (-341914.4,-25582.2,762645.5) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma9" (-316099.2,-10801.6,776896.9) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma10" (-343851.4,-2951.1,509798.7) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma11" (-334739.6,-3059.3,518673.7) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma12" (-154360.4,-13287.8,670302.2) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma13" (-182272.1,-33354.9,674430.2) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma14" (-191087.2,-10030.6,657203.3) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma15" (-154981.3,-14823.1,670465.8) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma16" (-127410.7,-49089.4,676603.3) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma17" (-146944.8,-59074.7,645735.8) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma18" (-31736.1,-5158.6,674458.6) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma19" (-99271.6,-48359.3,703451.0) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma20" (-162877.4,-61254.2,744224.9) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma21" (-168041.0,-63093.3,696484.4) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma22" (-197924.6,-16371.5,555079.4) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma23" (-241755.4,-45641.2,593133.8) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma24" (-50038.2,-27553.2,593553.3) "holograma2" 0.3
+	call Sound.SetPSLoop "Holograma25" (-103892.1,-5310.9,609817.8) "holograma2" 0.3
+	call Sound.SetPSLoop "Luz1" (-357632.1,-28044.5,594948.3) "light1" 0.15
+end
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds

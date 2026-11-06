@@ -1,0 +1,139 @@
+# The functions of MapSnd in level mda (the script levels/mda/scripts/mapsnd.py of data03.packed) that are data: one section
+# per function, its parameters after the name. The other functions of the script stay Python: SndElements.
+# Made by a converter from the script. A pack in mods/ with scrapc/levels/mda/mapsnd.def replaces this file.
+section LoadSounds
+if %MapSnd.isPC
+	call SSound.LoadSound "light1.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "holograma2.wav"
+end
+call SSound.LoadSound "tunel334.wav"
+if %MapSnd.isPC
+	call SSound.LoadSound "humo.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "maquina2-quimera.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "aire2-quimera.wav"
+end
+if %MapSnd.isPC
+	call SSound.LoadSound "tube1-quimera.wav"
+end
+
+section SetSounds
+call Scrap.CallElements "MapSnd.SndElements"
+if %MapSnd.isPC
+	call Sound.SetPSLoop "lampara51" (-208791.3,-104033.9,353037.9) "light1" 0.05
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "lampara52" (-162920.3,-105068.9,358992.5) "light1" 0.05
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "lampara53" (-212059.7,-105164.6,379161.0) "light1" 0.05
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "lampara54" (-183590.5,-105136.0,341452.7) "light1" 0.05
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "lampara55" (-109432.0,-59996.4,24771.2) "light1" 0.1
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "lampara56" (-104650.5,-60402.0,21179.1) "light1" 0.1
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "lampara57" (-103861.4,-59851.6,27071.0) "light1" 0.1
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "lampara58" (-76720.4,-60295.9,21260.1) "light1" 0.1
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "lampara59" (-72043.3,-59919.0,24617.6) "light1" 0.1
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "lampara60" (-77280.9,-60314.1,27216.5) "light1" 0.1
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "lampara61" (-63446.7,-59997.1,50198.7) "light1" 0.1
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "lampara62" (-64804.1,-60085.1,56132.2) "light1" 0.1
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "lampara63" (-69221.8,-59817.1,52121.6) "light1" 0.1
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "lampara64" (-87096.5,-59960.9,72438.4) "light1" 0.1
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "lampara65" (-93146.5,-60283.0,72556.5) "light1" 0.1
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "lampara66" (-90381.3,-60089.1,67301.1) "light1" 0.1
+end
+call Sound.SetPSLoop "tunel1" (-182999.7,-89645.6,319672.6) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel2" (-194968.3,-77320.9,205423.4) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel3" (-106687.5,-85174.9,276301.4) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel4" (-144447.9,-86937.5,371621.9) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel5" (-274667.6,-68561.8,405031.9) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel6" (-334507.9,-55282.2,309327.0) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel7" (-380441.8,-63024.4,142096.7) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel8" (-285242.8,-63905.8,60015.4) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel9" (-145580.4,-14194.0,102670.1) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel10" (-274035.3,-27195.0,405296.8) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel11" (-187974.3,-102461.2,276452.2) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel12" (-127386.5,-101140.2,276185.7) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel13" (-378284.6,-59179.1,288354.9) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel14" (-398456.8,-59380.5,267427.8) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel15" (-351486.8,-59368.3,236714.5) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel16" (-198467.1,-51072.9,54502.0) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel17" (-213744.0,-50967.2,100797.0) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel18" (-210784.3,-42675.3,4843.3) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel19" (-160236.3,-42948.3,-31675.3) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+call Sound.SetPSLoop "tunel20" (-274111.7,-50390.7,406442.5) "tunel334" Volume=0.5 Pitch=0.0 AttenIni=0.0 AttenEnd=0.0 Doppler=0.5
+if %MapSnd.isPC
+	call Sound.SetPSLoop "humo1" (-106887.4,-97763.9,29678.0) "humo" 0.2 -8
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "humo2" (-88304.3,-97843.3,11488.8) "humo" 0.2 -8
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "humo3" (-346161.5,-41212.9,52281.6) "humo" 0.2 -8
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "humo4" (-326605.6,-37427.9,51736.6) "humo" 0.2 -8
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "humo5" (-355466.9,-40614.2,201818.4) "humo" 0.2 -8
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "humo6" (-346419.3,-40365.9,203629.8) "humo" 0.2 -8
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "maquina1" (-49363.3,-78893.7,47348.4) "maquina2-quimera" 0.45
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "maquina2" (-54109.7,-75974.4,61898.9) "aire2-quimera" 0.2
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "maquina3" (-54124.8,-73759.0,66665.4) "aire2-quimera" 0.2
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "maquina4" (-54297.5,-75438.8,72255.9) "aire2-quimera" 0.2
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "tubo1" (-57774.5,-72956.2,24285.8) "tube1-quimera" 0.2
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "tubo2" (-56549.1,-71228.7,28606.2) "tube1-quimera" 0.2
+end
+if %MapSnd.isPC
+	call Sound.SetPSLoop "tubo3" (-55070.5,-76174.9,33449.2) "tube1-quimera" 0.2
+end
+
+section Init LevelPath
+call Scrap.OpenPack "$(LevelPath)/Sounds"
+call MapSnd.LoadSounds
+call Scrap.ClosePack
+call MapSnd.SetSounds
