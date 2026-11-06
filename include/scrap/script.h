@@ -110,10 +110,58 @@ PyObject *Script_Eval(const char *text);
 /* the arguments of a menu callback: the player and the item (empty when the callback got none) */
 byte Script_Args(PyObject *args, int *id, const char **control);
 
-/* the print statement with its items as ceval prints them (soft spaces), and a, b, ... = v (UNPACK_TUPLE: n new
- * references into out); 0 with the error set */
+/* ---- Python values as the scripts use them (src/game/Script/ScriptValue.c) ---- */
+
+/* the temporary references of a C function, released together by Script_Done */
+#define SCRIPT_REFS 48
+typedef struct scriptRefs_s {
+	PyObject *o[SCRIPT_REFS];
+	int n;
+} scriptRefs_t;
+/* o into the references of r (NULL passes through) */
+PyObject *Script_Keep(scriptRefs_t *r, PyObject *o);
+/* releases the references of r, then result */
+PyObject *Script_Done(scriptRefs_t *r, PyObject *result);
+/* a new reference of o (NULL stays NULL) */
+PyObject *Script_Ref(PyObject *o);
+/* a global of a module as a function of its script reads it: a new reference, a NameError with the name when it is
+ * missing (a deleted variable) */
+PyObject *Script_Global(const char *module, const char *name);
+/* `global name; name = v` (v given away): 0 with the error set */
+byte Script_SetGlobal(const char *module, const char *name, PyObject *v);
+/* the import line of a function (the names end with NULL): 0 with the error set */
+byte Script_Import(const char *const *names);
+/* o[i] as a script subscripts (a new reference) */
+PyObject *Script_Index(PyObject *o, int i);
+/* a + b (a given away), a + "text" (a given away), "text" + b: new references, NULL stays NULL */
+PyObject *Script_Plus(PyObject *a, PyObject *b);
+PyObject *Script_PlusS(PyObject *a, const char *text);
+PyObject *Script_SPlus(const char *text, PyObject *b);
+/* a % b of a script (the string format for a string) */
+PyObject *Script_Mod(PyObject *a, PyObject *b);
+/* o == "text" (a string equals only a string), o in ("text", ...) (the texts end with NULL) */
+byte Script_Is(PyObject *o, const char *text);
+byte Script_In(PyObject *o, const char *const *texts);
+/* `if o:`, a == b: 1, 0, or -1 with the error set (also for NULL) */
+int Script_True(PyObject *o);
+int Script_Eq(PyObject *a, PyObject *b);
+/* int(o), `o` (new references, NULL stays NULL) */
+PyObject *Script_Int(PyObject *o);
+PyObject *Script_Repr(PyObject *o);
+/* the count of range(n): 0 with the error of range set */
+byte Script_Range(PyObject *n, long *count);
+/* item i of a for loop over seq: 1 with a new reference in *item, 0 at the end, -1 with the error set */
+int Script_Next(PyObject *seq, int i, PyObject **item);
+/* the print statement with its items, as ceval prints them: 0 with the error set */
 byte Script_Print(PyObject *const *items, int n);
+/* a, b, ... = v: n new references into out, 0 with the error set */
 byte Script_Unpack(PyObject *v, int n, PyObject **out);
+/* Scrap.GetLangStr(key) (key given away), Scrap.GetSaveVar(name), Scrap.GetEntity(name), Scrap.UsrEntity(0): new
+ * references, NULL with the error set */
+PyObject *Script_LangOf(PyObject *key);
+PyObject *Script_SaveVar(const char *name);
+PyObject *Script_Entity(PyObject *name);
+PyObject *Script_Usr(void);
 
 /*
  * A ported script function line by line (src/game/Script/ScriptFrame.c). The frame keeps the temporary references
@@ -150,7 +198,7 @@ PyObject *Sf_Str(scriptFrame_t *f, const char *s);
 PyObject *Sf_Build(scriptFrame_t *f, const char *fmt, ...);
 /* import name; a global of a module as its functions read it (NameError when missing), global name = v, del name;
  * module.name and module.name = v as another script does them */
-PyObject *Sf_Import(scriptFrame_t *f, const char *name);
+byte Sf_Import(scriptFrame_t *f, const char *name);
 PyObject *Sf_Global(scriptFrame_t *f, const char *module, const char *name);
 byte Sf_SetGlobal(scriptFrame_t *f, const char *module, const char *name, PyObject *v);
 byte Sf_DelGlobal(scriptFrame_t *f, const char *module, const char *name);
@@ -172,6 +220,8 @@ PyObject *Sf_OpI(scriptFrame_t *f, PyObject *a, char op, long b);
 PyObject *Sf_Cat(scriptFrame_t *f, const char *fmt, ...);
 PyObject *Sf_Repr(scriptFrame_t *f, PyObject *o);
 PyObject *Sf_ReprI(scriptFrame_t *f, long i);
+/* int(o) */
+PyObject *Sf_ToInt(scriptFrame_t *f, PyObject *o);
 /* `if o:`, a op b with op "==", "!=", "<", "<=", ">", ">=", a == "text", a == i, x in seq, x in ("text", ..., NULL),
  * len(o) */
 int Sf_True(scriptFrame_t *f, PyObject *o);

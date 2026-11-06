@@ -40,11 +40,6 @@ static PyObject *Mf_Lang(scriptFrame_t *f, const char *key) {
 /* a function of the module as its functions call it, with Py_BuildValue arguments */
 #define Mf_Call(f, func, ...) Sf_Call(f, Sf_Global(f, MF, func), __VA_ARGS__)
 
-/* int(o) of a script */
-static PyObject *Mf_Int(scriptFrame_t *f, PyObject *o) {
-	return o ? Sf_Ask(f, "__builtin__", "int", "(O)", o) : NULL;
-}
-
 /* `for x in seq` of a global list of the module, fn(f, x, arg) for every item */
 static void Mf_Each(scriptFrame_t *f, PyObject *seq, void (*fn)(scriptFrame_t *f, PyObject *x, PyObject *arg), PyObject *arg) {
 	for (int i = 0;; i++) {
@@ -423,7 +418,7 @@ static PyObject *MissionsFuncs_SinglePlayerDeath(PyObject *self, PyObject *args)
 	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
 	PyObject *restart = Sf_Mod(&f, "SaveGame", "StartGame");
 	PyObject *params = Sf_Keep(&f, PyTuple_New(0));
-	PyObject *lifes = Mf_Int(&f, Mf_Save(&f, "Player.NumLives"));
+	PyObject *lifes = Sf_ToInt(&f, Mf_Save(&f, "Player.NumLives"));
 	if (Sf_EqS(&f, Mf_Save(&f, "Player.InfiniteLives"), "0") > 0) {
 		lifes = Sf_OpI(&f, lifes, '-', 1);
 		Mf_SetSave(&f, "Player.NumLives", Sf_Repr(&f, lifes));
@@ -661,9 +656,9 @@ static PyObject *MissionsFuncs_CrazyDealStatus(PyObject *self, PyObject *args) {
 	}
 	PyObject *name = Sf_Ask(&f, "Scrap", "GetSaveVar", "(O)", Mf_DealVar(&f, number, ".Var"));
 	PyObject *val = Sf_Ask(&f, "Scrap", "GetSaveVar", "(O)", name);
-	PyObject *tgt = Mf_Int(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(O)", Mf_DealVar(&f, number, ".Tgt")));
+	PyObject *tgt = Sf_ToInt(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(O)", Mf_DealVar(&f, number, ".Tgt")));
 	int none = Sf_Compare(&f, val, "==", Py_None);
-	val = none > 0 ? Sf_Int(&f, 0) : Mf_Int(&f, val);
+	val = none > 0 ? Sf_Int(&f, 0) : Sf_ToInt(&f, val);
 	return Sf_Return(&f, Sf_Build(&f, "(OOO)", name, val, tgt));
 }
 
@@ -1073,7 +1068,7 @@ static PyObject *MissionsFuncs_BuildVersusData(PyObject *self, PyObject *args) {
 
 /* int(Scrap.GetSaveVar(name)) */
 static PyObject *Mf_SaveInt(scriptFrame_t *f, const char *name) {
-	return Mf_Int(f, Mf_Save(f, name));
+	return Sf_ToInt(f, Mf_Save(f, name));
 }
 
 /* BuildDominationData(playerWins): the rounds of the two teams */

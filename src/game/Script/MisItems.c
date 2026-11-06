@@ -11,11 +11,6 @@
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 
-/* int(o) of a script */
-static PyObject *Mi_Int(scriptFrame_t *f, PyObject *o) {
-	return o ? Sf_Ask(f, "__builtin__", "int", "(O)", o) : NULL;
-}
-
 /* Scrap.Rand(a, b) */
 static PyObject *Mi_Rand(scriptFrame_t *f, double a, double b) {
 	return f->failed ? NULL : Sf_Float(f, Scrap_RandRange(a, b));
@@ -137,7 +132,7 @@ static PyObject *MisItems_GetTargetReward(PyObject *self, PyObject *args) {
 	}
 	int car = Sf_True(&f, Sf_Method(&f, v, "IsType", "(s)", "Car"));
 	if (car > 0) {
-		return Sf_Return(&f, Mi_Int(&f, Mi_Rand(&f, 400, 1200)));
+		return Sf_Return(&f, Sf_ToInt(&f, Mi_Rand(&f, 400, 1200)));
 	}
 	return Sf_Return(&f, car == 0 ? Sf_Int(&f, 1) : NULL);
 }
@@ -161,10 +156,10 @@ static PyObject *MisItems_GiveMoney(PyObject *self, PyObject *args) {
 	int mine = Sf_Compare(&f, vehicle, "==", Sf_Attr(&f, usr, "Name"));
 	if (mine > 0) {
 		PyObject *money = Sf_Ask(&f, "Scrap", "GetMoney", "()");
-		Sf_Ask(&f, "Scrap", "SetMoney", "(O)", Sf_Op(&f, money, '+', Mi_Int(&f, Sf_Item(&f, names, 2))));
+		Sf_Ask(&f, "Scrap", "SetMoney", "(O)", Sf_Op(&f, money, '+', Sf_ToInt(&f, Sf_Item(&f, names, 2))));
 	} else if (mine == 0) {
 		PyObject *reward = Sf_Call(&f, Sf_Global(&f, "MisItems", "GetTargetReward"), "(O)", e);
-		Sf_SetAttr(&f, e, "Money", Sf_Op(&f, reward, '+', Mi_Int(&f, Sf_Item(&f, names, 2))));
+		Sf_SetAttr(&f, e, "Money", Sf_Op(&f, reward, '+', Sf_ToInt(&f, Sf_Item(&f, names, 2))));
 	}
 	PyObject *itm = Sf_Entity(&f, item);
 	Sf_SetAttr(&f, itm, "rTime", Sf_OpI(&f, Sf_Global(&f, "MisItems", "MONEY_TIME"), '*', 2));
@@ -312,7 +307,7 @@ static PyObject *MisItems_TakeBattery(PyObject *self, PyObject *args) {
 	PyObject *me = Sf_Entity(&f, charName);
 	Sf_SetAttr(&f, me, "Energy", Sf_OpI(&f, Sf_Attr(&f, me, "Energy"), '+', 1));
 	Sf_Ask(&f, "Scrap", "IncSaveVar", "(s)", "Stats.Battery");
-	PyObject *full = Mi_Int(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Batteries"));
+	PyObject *full = Sf_ToInt(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Batteries"));
 	if (Sf_Compare(&f, Sf_Attr(&f, me, "Energy"), ">", full) > 0) {
 		Sf_SetAttr(&f, me, "Energy", full);
 	}
@@ -335,7 +330,7 @@ static PyObject *MisItems_DazedCoin(PyObject *self, PyObject *args) {
 	if (Sf_Compare(&f, Sf_Attr(&f, e, "Money"), "<=", limit) != 0) {
 		return Sf_None(&f);
 	}
-	PyObject *reward = Mi_Int(&f, Sf_Op(&f, Sf_Attr(&f, e, "Money"), '/', Sf_Global(&f, "MisItems", "DazedReward")));
+	PyObject *reward = Sf_ToInt(&f, Sf_Op(&f, Sf_Attr(&f, e, "Money"), '/', Sf_Global(&f, "MisItems", "DazedReward")));
 	PyObject *pos = Sf_Attr(&f, e, "Pos");
 	PyObject *radius = Sf_Op(&f, Sf_Int(&f, 120), '+', Sf_Attr(&f, e, "VRadius"));
 	for (int i = 0; i < 360 && !f.failed; i += 45) {

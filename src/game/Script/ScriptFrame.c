@@ -3,63 +3,14 @@
  * references of the function and its error state: after the first error every helper does nothing and returns NULL
  * (or -1), as the script stops at the line that raised, and Sf_Done releases the references and returns NULL with the
  * error left set for the caller. The values keep their Python types and the operations are those of ceval (the
- * number and sequence rules of Python 1.5.2, PyObject_Compare for the comparisons, repr for the backquotes).
+ * number and sequence rules of Python 1.5.2, PyObject_Compare for the comparisons, repr for the backquotes). Where a
+ * value helper of ScriptValue.c does the operation, the frame helper only keeps its result.
  */
-#include <ctype.h>
 #include <stdarg.h>
 #include <string.h>
 
 #include "scrap/global.h"
 #include "scrap/script.h"
-
-/* ---- shared with the older ports ---- */
-
-byte Script_Print(PyObject *const *items, int n) {
-	PyObject *w = PySys_GetObject("stdout");
-	if (!w) {
-		PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
-		return 0;
-	}
-	for (int i = 0; i < n; i++) {
-		if ((PyFile_SoftSpace(w, 1) && PyFile_WriteString(" ", w) != 0) || PyFile_WriteObject(items[i], w, Py_PRINT_RAW) != 0) {
-			return 0;
-		}
-		if (PyString_Check(items[i])) {
-			const char *s = PyString_AsString(items[i]);
-			int len = PyString_Size(items[i]);
-			if (len > 0 && isspace((unsigned char)s[len - 1]) && s[len - 1] != ' ') {
-				PyFile_SoftSpace(w, 0);
-			}
-		}
-	}
-	if (PyFile_WriteString("\n", w) != 0) {
-		return 0;
-	}
-	PyFile_SoftSpace(w, 0);
-	return 1;
-}
-
-byte Script_Unpack(PyObject *v, int n, PyObject **out) {
-	if (!PySequence_Check(v)) {
-		PyErr_SetString(PyExc_TypeError, "unpack non-sequence");
-		return 0;
-	}
-	if (PySequence_Length(v) != n) {
-		PyErr_SetString(PyExc_ValueError, PyTuple_Check(v) ? "unpack tuple of wrong size" :
-			PyList_Check(v) ? "unpack list of wrong size" : "unpack sequence of wrong size");
-		return 0;
-	}
-	for (int i = 0; i < n; i++) {
-		out[i] = PySequence_GetItem(v, i);
-		if (!out[i]) {
-			while (i-- > 0) {
-				Py_DECREF(out[i]);
-			}
-			return 0;
-		}
-	}
-	return 1;
-}
 
 /* ---- the frame ---- */
 
@@ -156,30 +107,26 @@ PyObject *Sf_Build(scriptFrame_t *f, const char *fmt, ...) {
 
 /* ---- modules ---- */
 
-PyObject *Sf_Import(scriptFrame_t *f, const char *name) {
+/* the module object (a new reference) for the dict of its globals */
+static PyObject *Sf_Module(scriptFrame_t *f, const char *name) {
 	return f->failed ? NULL : Sf_Keep(f, PyImport_ImportModule((char *)name));
 }
 
+byte Sf_Import(scriptFrame_t *f, const char *name) {
+	const char *names[2] = { name, NULL };
+	return Sf_Check(f, f->failed || Script_Import(names));
+}
+
 PyObject *Sf_Global(scriptFrame_t *f, const char *module, const char *name) {
-	PyObject *m = Sf_Import(f, module);
-	if (!m) {
-		return NULL;
-	}
-	PyObject *v = PyDict_GetItemString(PyModule_GetDict(m), (char *)name);
-	if (!v) {
-		Sf_Raise(f, PyExc_NameError, name);
-		return NULL;
-	}
-	return Sf_Ref(f, v);
+	return f->failed ? NULL : Sf_Keep(f, Script_Global(module, name));
 }
 
 byte Sf_SetGlobal(scriptFrame_t *f, const char *module, const char *name, PyObject *v) {
-	PyObject *m = v ? Sf_Import(f, module) : NULL;
-	return Sf_Check(f, m && PyDict_SetItemString(PyModule_GetDict(m), (char *)name, v) == 0);
+	return Sf_Check(f, !f->failed && v && Script_SetGlobal(module, name, Script_Ref(v)));
 }
 
 byte Sf_DelGlobal(scriptFrame_t *f, const char *module, const char *name) {
-	PyObject *m = Sf_Import(f, module);
+	PyObject *m = Sf_Module(f, module);
 	if (!m) {
 		return 0;
 	}
@@ -191,12 +138,11 @@ byte Sf_DelGlobal(scriptFrame_t *f, const char *module, const char *name) {
 }
 
 PyObject *Sf_Mod(scriptFrame_t *f, const char *module, const char *name) {
-	PyObject *m = Sf_Import(f, module);
-	return m ? Sf_Keep(f, PyObject_GetAttrString(m, (char *)name)) : NULL;
+	return f->failed ? NULL : Sf_Keep(f, Script_Attr(module, name));
 }
 
 byte Sf_SetMod(scriptFrame_t *f, const char *module, const char *name, PyObject *v) {
-	PyObject *m = v ? Sf_Import(f, module) : NULL;
+	PyObject *m = v ? Sf_Module(f, module) : NULL;
 	return Sf_Check(f, m && PyObject_SetAttrString(m, (char *)name, v) == 0);
 }
 
@@ -219,7 +165,7 @@ byte Sf_SetAttrS(scriptFrame_t *f, PyObject *o, const char *name, const char *s)
 }
 
 PyObject *Sf_Item(scriptFrame_t *f, PyObject *o, long i) {
-	return Sf_GetItem(f, o, Sf_Int(f, i));
+	return f->failed || !o ? NULL : Sf_Keep(f, Script_Index(o, (int)i));
 }
 
 PyObject *Sf_GetItem(scriptFrame_t *f, PyObject *o, PyObject *key) {
@@ -244,7 +190,7 @@ PyObject *Sf_Op(scriptFrame_t *f, PyObject *a, char op, PyObject *b) {
 	}
 	switch (op) {
 	case '+':
-		return Sf_Keep(f, PyNumber_Add(a, b));
+		return Sf_Keep(f, Script_Plus(Script_Ref(a), b));
 	case '-':
 		return Sf_Keep(f, PyNumber_Subtract(a, b));
 	case '*':
@@ -252,7 +198,7 @@ PyObject *Sf_Op(scriptFrame_t *f, PyObject *a, char op, PyObject *b) {
 	case '/':
 		return Sf_Keep(f, PyNumber_Divide(a, b));
 	case '%':
-		return Sf_Keep(f, PyNumber_Remainder(a, b));
+		return Sf_Keep(f, Script_Mod(a, b));
 	}
 	Sf_Raise(f, PyExc_SystemError, "unknown operator");
 	return NULL;
@@ -275,7 +221,11 @@ PyObject *Sf_Cat(scriptFrame_t *f, const char *fmt, ...) {
 }
 
 PyObject *Sf_Repr(scriptFrame_t *f, PyObject *o) {
-	return f->failed || !o ? NULL : Sf_Keep(f, PyObject_Repr(o));
+	return f->failed || !o ? NULL : Sf_Keep(f, Script_Repr(o));
+}
+
+PyObject *Sf_ToInt(scriptFrame_t *f, PyObject *o) {
+	return f->failed || !o ? NULL : Sf_Keep(f, Script_Int(o));
 }
 
 PyObject *Sf_ReprI(scriptFrame_t *f, long i) {
@@ -288,7 +238,7 @@ int Sf_True(scriptFrame_t *f, PyObject *o) {
 	if (f->failed || !o) {
 		return -1;
 	}
-	int t = PyObject_IsTrue(o);
+	int t = Script_True(o);
 	return Sf_Check(f, t >= 0) ? t : -1;
 }
 
@@ -349,20 +299,12 @@ int Sf_Len(scriptFrame_t *f, PyObject *o) {
 }
 
 PyObject *Sf_Next(scriptFrame_t *f, PyObject *seq, int i) {
+	PyObject *item;
 	if (f->failed || !seq) {
 		return NULL;
 	}
-	PySequenceMethods *sq = seq->ob_type->tp_as_sequence;
-	if (!sq || !sq->sq_item) {
-		Sf_Raise(f, PyExc_TypeError, "loop over non-sequence");
-		return NULL;
-	}
-	PyObject *v = sq->sq_item(seq, i);
-	if (!v && PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_IndexError)) {
-		PyErr_Clear();
-		return NULL;
-	}
-	return Sf_Keep(f, v);
+	int r = Script_Next(seq, i, &item);
+	return r > 0 ? Sf_Keep(f, item) : r < 0 ? Sf_Keep(f, NULL) : NULL;
 }
 
 /* ---- calls ---- */
@@ -421,11 +363,11 @@ PyObject *Sf_Method(scriptFrame_t *f, PyObject *o, const char *name, const char 
 }
 
 PyObject *Sf_Entity(scriptFrame_t *f, PyObject *name) {
-	return name ? Sf_Ask(f, "Scrap", "GetEntity", "(O)", name) : NULL;
+	return f->failed || !name ? NULL : Sf_Keep(f, Script_Entity(name));
 }
 
 PyObject *Sf_Lang(scriptFrame_t *f, PyObject *key) {
-	return key ? Sf_Ask(f, "Scrap", "GetLangStr", "(O)", key) : NULL;
+	return f->failed || !key ? NULL : Sf_Keep(f, Script_LangOf(Script_Ref(key)));
 }
 
 PyObject *Sf_Time(scriptFrame_t *f) {
@@ -472,7 +414,7 @@ byte Sf_Unpack(scriptFrame_t *f, PyObject *v, int n, PyObject **out) {
 }
 
 byte Sf_Exec(scriptFrame_t *f, PyObject *code, const char *module, PyObject *locals) {
-	PyObject *m = code && locals ? Sf_Import(f, module) : NULL;
+	PyObject *m = code && locals ? Sf_Module(f, module) : NULL;
 	if (!m) {
 		return Sf_Check(f, 0);
 	}
@@ -487,7 +429,7 @@ byte Sf_Exec(scriptFrame_t *f, PyObject *code, const char *module, PyObject *loc
 }
 
 PyObject *Sf_Eval(scriptFrame_t *f, PyObject *text, const char *module) {
-	PyObject *m = text ? Sf_Import(f, module) : NULL;
+	PyObject *m = text ? Sf_Module(f, module) : NULL;
 	if (!m) {
 		return NULL;
 	}
