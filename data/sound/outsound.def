@@ -1,0 +1,681 @@
+# outsound (the sound script sound/outsound.py of the game): the engine, weapon, hook and crash sounds of a ship
+# (SetVehicleSounds: the sound variables of the entity $name, $model the model in capitals, $pc for the PC sounds,
+# $armed when the weapon sounds are set, that is outside the indoor traffic), the sound files the outdoor levels load
+# (LoadEngines, LoadWeapons, LoadScorer, LoadMisc, LoadCrash) and the engine variables of Init.
+# The format is described in src/game/Script/Script.c, the C that runs the sections is src/game/Script/GameSounds.c.
+# A pack in mods/ with scrapc/sound/outsound.def replaces this file.
+
+section SetVehicleSounds
+entity $name
+if $pc
+	if $model == MADHUNT
+		do Engine1
+	elif $model == TLIGHT3
+		do Engine1
+	elif $model == SPOLI2
+		do Engine2
+	elif $model == SPOLI3
+		do Engine2
+	elif $model == SMERC3
+		do Engine2
+	elif $model == SPOLI5
+		do Engine2
+	elif $model == SBANKMASTER1
+		do Engine2
+	elif $model == SBETTY1
+		do Engine2
+	elif $model == SBANKER1
+		do Engine3
+	elif $model == SMERC1
+		do Engine3
+	elif $model == SPOLIBOSS1
+		do Engine3
+	elif $model == SBERTO1
+		do Engine3
+	elif $model == SHUMP1
+		do Engine3
+	elif $model == SMOSQUITO
+			snd00_name mosca2
+			snd00_loop 1
+			snd00_pitch0 -2.0
+			snd00_vol0 0.03
+			snd00_pitch1 4.0
+			snd00_vol1 0.12
+			snd00_pitch2 10.0
+			snd00_vol2 0.14
+			snd00_time0 1.2
+			snd00_dopp 0.5
+	elif $model == SLIFEBOAT
+			snd00_name motor222B
+			snd00_loop 1
+			snd00_pitch0 -10.0
+			snd00_vol0 0.05
+			snd00_pitch1 -2.0
+			snd00_vol1 0.12
+			snd00_pitch2 +5.0
+			snd00_vol2 0.20
+			snd00_time0 1.2
+			snd00_dopp 0.5
+	elif $model == SMAYOR1
+		do Engine4
+	elif $model == SMERC1
+		do Engine4
+	elif $model == SMERC2
+		do Engine4
+	elif $model == SPOLI3
+		do Engine4
+	elif $model == SPOLI4
+		do Engine4
+	elif $model == SFUNC1
+		do Engine4
+	elif $model == SBISHOP1
+		do Engine4
+	elif $model == SARCHBISHOP1
+		do Engine4
+	elif $model == SBOSS1
+		do Engine4
+	elif $model == TMED1
+		do Engine5
+	elif $model == TMED2
+		do Engine5
+	elif $model == TMED3
+		do Engine5
+	elif $model == THEAVY1
+		do Engine6
+	elif $model == THEAVY2
+		do Engine6
+	elif $model == THEAVY3
+		do Engine6
+	elif $model == TLIGHT1
+		do Engine7
+	elif $model == TLIGHT2
+		do Engine7
+	elif $model == TLIGHT3
+		do Engine7
+	else
+			snd00_name EngDiesel98b
+			snd00_loop 1
+			snd00_pitch0 0.0
+			snd00_vol0 0.05
+			snd00_pitch1 +12.0
+			snd00_vol1 0.10
+			snd00_pitch2 +25.0
+			snd00_vol2 0.12
+			snd00_time0 1.2
+			snd00_dopp 0.5
+	end
+else
+	if $model == SMOSQUITO
+			snd00_name mosca2
+			snd00_loop 1
+			snd00_pitch0 -2.0
+			snd00_vol0 0.03
+			snd00_pitch1 4.0
+			snd00_vol1 0.12
+			snd00_pitch2 10.0
+			snd00_vol2 0.14
+			snd00_time0 1.2
+			snd00_dopp 0.5
+	elif $model == SLIFEBOAT
+			snd00_name motor222B
+			snd00_loop 1
+			snd00_pitch0 -10.0
+			snd00_vol0 0.05
+			snd00_pitch1 -2.0
+			snd00_vol1 0.12
+			snd00_pitch2 +5.0
+			snd00_vol2 0.20
+			snd00_time0 1.2
+			snd00_dopp 0.5
+	elif $model == TLIGHT1
+		do Engine8
+	elif $model == TLIGHT2
+		do Engine8
+	elif $model == TLIGHT3
+		do Engine8
+	elif $model == MADHUNT
+		do Engine8
+	elif $model == THEAVY1
+		do Engine9
+	elif $model == THEAVY2
+		do Engine9
+	elif $model == THEAVY3
+		do Engine9
+	elif $model == TMED1
+		do Engine9
+	elif $model == TMED2
+		do Engine9
+	elif $model == TMED3
+		do Engine9
+	else
+			snd00_name motor9
+			snd00_loop 1
+			snd00_pitch0 -12.0
+			snd00_vol0 0.05
+			snd00_pitch1 -4.0
+			snd00_vol1 0.10
+			snd00_pitch2 +3.0
+			snd00_vol2 0.12
+			snd00_time0 1.2
+			snd00_dopp 0.5
+			snd08_name motorLL
+			snd08_loop 1
+			snd08_pitch0 -4.0
+			snd08_vol0 0.07
+			snd08_pitch1 10.0
+			snd08_vol1 0.09
+			snd08_pitch2 +10.0
+			snd08_vol2 0.11
+			snd08_time0 1.2
+			snd08_dopp 0.5
+	end
+end
+	snd01_name BoostDiesel16
+	snd01_loop 1
+	snd01_pitch0 -9.0
+	snd01_vol0 0.01
+	snd01_pitch1 0.0
+	snd01_vol1 0.015
+	snd01_pitch2 +12.0
+	snd01_vol2 0.018
+	snd02_name FailDiesel0
+	snd02_loop 1
+	snd02_pitch0 0.0
+	snd02_vol0 0.10
+	snd02_pitch1 0.0
+	snd02_vol1 0.10
+	snd02_pitch2 0.0
+	snd02_vol2 0.10
+	snd02_time0 0.0
+if $pc
+		snd03_name EngDiesel98b
+else
+		snd03_name motor-heavy
+end
+	snd03_loop 1
+	snd03_pitch0 -4.0
+	snd03_vol0 0.20
+	snd03_pitch1 -4.0
+	snd03_vol1 0.20
+	snd03_pitch2 -4.0
+	snd03_vol2 0.20
+if $model == SLIFEBOAT
+		snd04_name BoomOnLifeBoat
+		snd04_loop 0
+		snd04_pitch0 0.0
+		snd04_vol0 0.2
+else
+		snd04_name BoomOnBoost2
+		snd04_loop 0
+		snd04_pitch0 0.0
+		snd04_vol0 0.4
+end
+if $armed
+		snd05_name disparoAA
+		snd05_loop 0
+		snd05_int0 +2
+		snd05_int1 2
+		snd05_dopp 0.0
+		snd05_ini 0.0
+		snd05_end 30000
+		snd05_pitch0 0.0
+		snd05_vol0 0.17
+		snd05_time1 0.1
+		snd05_time2 0.07
+		snd06_name disparoAA
+		snd06_loop 0
+		snd06_int0 +1
+		snd06_int1 2
+		snd06_pitch0 0.5
+		snd06_vol0 0.17
+		snd06_dopp 0.0
+		snd06_ini 0.0
+		snd06_end 30000
+		snd07_name disparoAA
+		snd07_loop 0
+		snd07_int0 0
+		snd07_int1 2
+		snd07_pitch0 -0.5
+		snd07_vol0 0.17
+		snd07_ini 0.0
+		snd07_end 30000
+		snd07_dopp 0.0
+		snd09_name SwarmDrop11
+		snd09_loop 0
+		snd09_pitch0 0.0
+		snd09_vol0 0.47
+		snd09_ini 0.0
+		snd09_end 30000
+		snd09_dopp 0.0
+		snd10_name TeslaStart1
+		snd10_loop 0
+		snd10_pitch0 0.0
+		snd10_vol0 0.37
+		snd10_dopp 0.0
+		snd11_name TeslaLoop1
+		snd11_loop 1
+		snd11_pitch0 0.0
+		snd11_vol0 0.24
+		snd11_dopp 0.0
+		snd11_ini 0.0
+		snd11_end 30000
+		snd12_name TeslaTrack1
+		snd12_loop 1
+		snd12_pitch0 0.0
+		snd12_vol0 0.24
+		snd12_dopp 0.0
+		snd12_ini 0.0
+		snd12_end 30000
+		snd13_name Devastator-aaa
+		snd13_loop 0
+		snd13_int0 +2
+		snd13_int1 2
+		snd13_pitch0 0.0
+		snd13_vol0 0.27
+		snd13_time1 0.1
+		snd13_time2 0.07
+		snd13_dopp 0.0
+	if $pc
+			snd14_name Devastator-bbb
+			snd14_loop 0
+			snd14_int0 +1
+			snd14_int1 2
+			snd14_pitch0 0.0
+			snd14_vol0 0.27
+			snd14_dopp 0.0
+			snd15_name Devastator-ccc
+			snd15_loop 0
+			snd15_int0 +0
+			snd15_int1 2
+			snd15_pitch0 0.0
+			snd15_vol0 0.27
+			snd15_dopp 0.0
+	else
+			snd14_name Devastator-aaa
+			snd14_loop 0
+			snd14_int0 +1
+			snd14_int1 2
+			snd14_pitch0 1.0
+			snd14_vol0 0.27
+			snd14_dopp 0.0
+			snd15_name Devastator-aaa
+			snd15_loop 0
+			snd15_int0 +0
+			snd15_int1 2
+			snd15_pitch0 -1.0
+			snd15_vol0 0.27
+			snd15_dopp 0.0
+	end
+		snd16_name ATPCNormal2
+		snd16_loop 0
+		snd16_pitch0 0.0
+		snd16_vol0 0.32
+		snd16_ini 0.0
+		snd16_end 35000
+		snd16_dopp 0.0
+	if $pc
+			snd17_name ATPCFast2
+			snd17_loop 0
+			snd17_pitch0 0.0
+			snd17_vol0 0.32
+			snd17_dopp 0.0
+			snd17_ini 0.0
+			snd17_end 35000
+			snd18_name ATPCExtend2
+			snd18_loop 0
+			snd18_pitch0 0.0
+			snd18_vol0 0.27
+			snd18_ini 0.0
+			snd18_end 35000
+			snd18_dopp 0.0
+	else
+			snd17_name ATPCNormal2
+			snd17_loop 0
+			snd17_pitch0 0.0
+			snd17_vol0 0.32
+			snd17_ini 0.0
+			snd17_end 35000
+			snd17_dopp 0.0
+			snd18_name ATPCNormal2
+			snd18_loop 0
+			snd18_pitch0 0.0
+			snd18_vol0 0.32
+			snd18_ini 0.0
+			snd18_end 35000
+			snd18_dopp 0.0
+	end
+		snd19_name CMDrop2
+		snd19_loop 0
+		snd19_pitch0 0.0
+		snd19_vol0 0.2
+		snd19_dopp 0.0
+end
+	snd20_name WeapChange
+	snd20_loop 0
+	snd20_pitch0 0.0
+	snd20_vol0 0.25
+	snd20_ini 0.0
+	snd20_end 5000
+	snd20_dopp 0.0
+if $armed
+		snd21_name "InfernoDrop"
+		snd21_loop 0
+		snd21_pitch0 0.0
+		snd21_vol0 0.375
+		snd21_ini 0.0
+		snd21_end 35000
+		snd21_dopp 0.0
+end
+	snd22_name Laser60000
+	snd22_pitch0 0
+	snd22_vol0 0.19
+	snd22_dopp 0.0
+	snd23_name HookInit1
+	snd23_pitch0 0.0
+	snd23_vol0 0.15
+	snd23_dopp 0.0
+	snd24_name hookLoop
+	snd24_loop 1
+	snd24_pitch0 0.0
+	snd24_vol0 0.1
+	snd24_dopp 0.0
+	snd25_name HookPlug7
+	snd25_pitch0 0.0
+	snd25_vol0 0.15
+	snd25_dopp 0.0
+	snd26_name HookUnplug2
+	snd26_pitch0 0.0
+	snd26_vol0 0.15
+	snd26_dopp 0.0
+	snd27_name VehicleCrashLo3
+	snd27_pitch0 0.0
+	snd27_vol0 0.15
+	snd28_name VehicleCrashLo3
+	snd28_pitch0 0.0
+	snd28_vol0 0.2
+	snd29_name VehicleCrashLo3
+	snd29_pitch0 0.0
+	snd29_vol0 0.25
+	snd30_name VehicleCrashHeavy1
+	snd30_pitch0 -10.0
+	snd30_vol0 0.10
+	snd31_name siren2
+	snd31_loop 1
+	snd31_dopp 0.15
+	snd31_pitch0 0.0
+	snd31_vol0 0.5
+
+section Engine1
+entity $name
+	snd00_name EngDiesel98C
+	snd00_loop 1
+	snd00_pitch0 -14.0
+	snd00_vol0 0.07
+	snd00_pitch1 +0.0
+	snd00_vol1 0.07
+	snd00_pitch2 +7.0
+	snd00_vol2 0.09
+	snd00_time0 1.2
+	snd00_dopp 0.5
+
+section Engine2
+entity $name
+	snd00_name EngDiesel98C
+	snd00_loop 1
+	snd00_pitch0 -14.0
+	snd00_vol0 0.05
+	snd00_pitch1 0.0
+	snd00_vol1 0.06
+	snd00_pitch2 8.0
+	snd00_vol2 0.08
+	snd00_time0 1.2
+	snd00_dopp 0.5
+	snd08_name motorLL
+	snd08_loop 1
+	snd08_pitch0 -4.0
+	snd08_vol0 0.07
+	snd08_pitch1 10.0
+	snd08_vol1 0.11
+	snd08_pitch2 +10.0
+	snd08_vol2 0.13
+	snd08_time0 1.2
+	snd08_dopp 0.5
+
+section Engine3
+entity $name
+	snd00_name motorLL
+	snd00_loop 1
+	snd00_pitch0 -20.0
+	snd00_vol0 0.05
+	snd00_pitch1 -10.0
+	snd00_vol1 0.13
+	snd00_pitch2 +10.0
+	snd00_vol2 0.15
+	snd00_time0 1.2
+	snd00_dopp 0.5
+
+section Engine4
+entity $name
+	snd00_name motor9
+	snd00_loop 1
+	snd00_pitch0 -12.0
+	snd00_vol0 0.05
+	snd00_pitch1 -4.0
+	snd00_vol1 0.12
+	snd00_pitch2 +3.0
+	snd00_vol2 0.14
+	snd00_time0 1.2
+	snd00_dopp 0.5
+	snd08_name EngDiesel98C
+	snd08_loop 1
+	snd08_pitch0 -4.0
+	snd08_vol0 0.07
+	snd08_pitch1 10.0
+	snd08_vol1 0.11
+	snd08_pitch2 +10.0
+	snd08_vol2 0.13
+	snd08_time0 1.2
+	snd08_dopp 0.5
+
+section Engine5
+entity $name
+	snd00_name motorKKK
+	snd00_loop 1
+	snd00_pitch0 -20.0
+	snd00_vol0 0.07
+	snd00_pitch1 -10.0
+	snd00_vol1 0.09
+	snd00_pitch2 2.0
+	snd00_vol2 0.11
+	snd00_time0 1.2
+	snd00_dopp 0.5
+
+section Engine6
+entity $name
+	snd00_name motor-heavy
+	snd00_loop 1
+	snd00_pitch0 -20.0
+	snd00_vol0 0.08
+	snd00_pitch1 -10.0
+	snd00_vol1 0.10
+	snd00_pitch2 2.0
+	snd00_vol2 0.13
+	snd00_time0 1.2
+	snd00_dopp 0.5
+
+section Engine7
+entity $name
+	snd00_name motorLL
+	snd00_loop 1
+	snd00_pitch0 -4.0
+	snd00_vol0 0.07
+	snd00_pitch1 10.0
+	snd00_vol1 0.09
+	snd00_pitch2 +10.0
+	snd00_vol2 0.11
+	snd00_time0 1.2
+	snd00_dopp 0.5
+
+section Engine8
+entity $name
+	snd00_name EngDiesel98C
+	snd00_loop 1
+	snd00_pitch0 -14.0
+	snd00_vol0 0.07
+	snd00_pitch1 +0.0
+	snd00_vol1 0.07
+	snd00_pitch2 +7.0
+	snd00_vol2 0.09
+	snd00_time0 1.2
+	snd00_dopp 0.5
+
+section Engine9
+entity $name
+	snd00_name motorLL
+	snd00_loop 1
+	snd00_pitch0 -4.0
+	snd00_vol0 0.10
+	snd00_pitch1 10.0
+	snd00_vol1 0.11
+	snd00_pitch2 +10.0
+	snd00_vol2 0.13
+	snd00_time0 1.2
+	snd00_dopp 0.5
+
+section LoadEngines
+call SSound.LoadSound Engines/EngDiesel98C.wav
+if $pc
+	call SSound.LoadSound Engines/EngDiesel98b.wav
+end
+call SSound.LoadSound Engines/BoostDiesel16.wav
+call SSound.LoadSound Engines/FailDiesel0.wav
+call SSound.LoadSound Engines/BoomOnBoost2.wav
+call SSound.LoadSound Engines/mosca2.wav
+call SSound.LoadSound Engines/motor-heavy.wav
+call SSound.LoadSound Engines/motor9.wav
+if $pc
+	call SSound.LoadSound Engines/motorKKK.wav
+end
+call SSound.LoadSound Engines/motorLL.wav
+call SSound.LoadSound Engines/motor222B.wav
+call SSound.LoadSound Engines/BoomOnLifeBoat.wav
+
+section LoadWeapons
+call SSound.LoadSound Weapons/CMDrop2.wav
+call SSound.LoadSound Weapons/SonicLoop.wav
+call SSound.LoadSound Weapons/SonicBoom.wav
+call SSound.LoadSound Weapons/EMILoop.wav
+call SSound.LoadSound Weapons/EMIRayo1.wav
+call SSound.LoadSound Weapons/EMIRayo2.wav
+call Scrap.Set EMIThunderSoundVol 0.1
+call Scrap.Set EMIThunderSoundAttIni 0.0
+call Scrap.Set EMIThunderSoundAttEnd 0.0
+call Scrap.Set EMIThunder1Sound EMIRayo1
+call Scrap.Set EMIThunder2Sound EMIRayo2
+call SSound.LoadSound Weapons/CloudLoop.wav
+call SSound.LoadSound Weapons/WeapChange.wav
+call SSound.LoadSound Weapons/SwarmEngine.wav
+call SSound.LoadSound Weapons/SwarmBoom.wav
+call SSound.LoadSound Weapons/SwarmDrop11.wav
+call SSound.LoadSound Weapons/SwarmBang.wav
+call Scrap.Set SwarmBeeSoundAttIni 0.0
+call Scrap.Set SwarmBeeSoundAttEnd 35000
+call Scrap.Set SwarmBeeSoundVol 0.25
+call Scrap.Set SwarmHitSoundAttIni 0.0
+call Scrap.Set SwarmHitSoundAttEnd 35000
+call Scrap.Set SwarmHitSoundVol 0.45
+call Scrap.Set SwarmEngineSoundAttIni 0.0
+call Scrap.Set SwarmEngineSoundAttEnd 35000
+call Scrap.Set SwarmEngineSoundVol 0.35
+call SSound.LoadSound Weapons/disparoAA.wav
+call Scrap.Set VulcanRic0SoundVol 0.15
+call Scrap.Set VulcanRic0Sound VulcanRic0
+call SSound.LoadSound Weapons/VulcanRic0.wav
+call Scrap.Set VulcanRic1SoundVol 0.15
+call Scrap.Set VulcanRic1Sound VulcanRic1
+call SSound.LoadSound Weapons/VulcanRic1.wav
+call Scrap.Set VulcanRic2SoundVol 0.15
+call Scrap.Set VulcanRic2Sound VulcanRic2
+call SSound.LoadSound Weapons/VulcanRic2.wav
+call SSound.LoadSound Weapons/TeslaStart1.wav
+call SSound.LoadSound Weapons/TeslaLoop1.wav
+call SSound.LoadSound Weapons/TeslaTrack1.wav
+call SSound.LoadSound Weapons/Devastator-aaa.wav
+if $pc
+	call SSound.LoadSound Weapons/Devastator-bbb.wav
+	call SSound.LoadSound Weapons/Devastator-ccc.wav
+end
+call Scrap.Set DevastatorBoomSoundVol 0.10
+call Scrap.Set DevastatorBoomSoundAttIni 0.0
+call Scrap.Set DevastatorBoomSoundAttEnd 30000
+call Scrap.Set DevastatorBoomSound DevastatorBoom
+call SSound.LoadSound Weapons/DevastatorBoom.wav
+call SSound.LoadSound Weapons/ATPCNormal2.wav
+call SSound.LoadSound Weapons/ATPCFast2.wav
+call SSound.LoadSound Weapons/ATPCExtend2.wav
+call Scrap.Set ATPCHitSoundVol 0.5
+call Scrap.Set ATPCHitSound ATPCImpact
+call SSound.LoadSound Weapons/ATPCImpact.wav
+call Scrap.Set ATPCCapsuleSoundVol 0.3
+call Scrap.Set ATPCCapsuleSound ATPCCapsule
+call SSound.LoadSound Weapons/ATPCCapsule.wav
+call Scrap.Set ATPCCapsuleExtendedSoundVol 0.3
+call Scrap.Set ATPCCapsuleExtendedSound ATPCCapsuleExtended
+call SSound.LoadSound Weapons/ATPCCapsuleExtended.wav
+call SSound.LoadSound Weapons/InfernoEngine.wav
+call SSound.LoadSound Weapons/InfernoBoom.wav
+call SSound.LoadSound Weapons/InfernoDrop.wav
+call SSound.LoadSound Weapons/FireStormLoop.wav
+call Scrap.Set "InfernoHitSoundVol" 0.3
+call Scrap.Set "InfernoHitSoundAttIniRadius" 0.0
+call Scrap.Set "InfernoHitSoundAttEndRadius" 3
+call Scrap.Set "InfernoEngineSoundAttIni" 0.0
+call Scrap.Set "InfernoEngineSoundAttEnd" 35000
+call Scrap.Set "InfernoEngineSoundVol" 0.32
+call SSound.LoadSound Weapons/Laser60000.wav
+call Scrap.Set LaserRicSoundVol 0.15
+call Scrap.Set LaserRicSound LaserRic
+call SSound.LoadSound Weapons/LaserRic.wav
+call SSound.LoadSound Weapons/HookInit1.wav
+call SSound.LoadSound Weapons/HookLoop.wav
+call SSound.LoadSound Weapons/HookPlug7.wav
+call SSound.LoadSound Weapons/HookUnplug2.wav
+
+section LoadScorer
+call SSound.LoadSound Scorer/SwitchTarget.wav
+call Scrap.Set TargetScorerSwitchSound SwitchTarget
+call Scrap.Set TargetScorerSwitchSoundVol 1.0
+call SSound.LoadSound Scorer/NoAmmo.wav
+call Scrap.Set CannonScorerNoAmmoSound NoAmmo
+call Scrap.Set CannonScorerNoAmmoSoundVol 1.0
+
+section LoadMisc
+call SSound.LoadSound Misc/siren2.wav
+call SSound.LoadSound Misc/SoloMotorBoom.wav
+call SSound.LoadSound Misc/SoloMotorEngine.wav
+call SSound.LoadSound Misc/ShipXplode.wav
+call SSound.LoadSound Misc/FastFXWind.wav
+call Scrap.Set WindFxScorerSound FastFXWind
+call Scrap.Set WindFxScorerSoundVol 0.3
+call Scrap.Set WindFxScorerSpeedVol 0.2
+call Scrap.Set WindFxScorerSpeedPitch 7.0
+call Scrap.Set WindFxScorerHorizontal 10000.0
+call Scrap.Set WindFxScorerVertical 5000.0
+call Scrap.Set WindFxScorerFadeFactor 5.0
+call Scrap.Set WindFxScorerFwAngle 50.0
+call Scrap.Set WindFxScorerShow 0
+call SSound.LoadSound Misc/FireDrop.wav
+call Scrap.Set FXElementsFireDropSound FireDrop
+call Scrap.Set FXElementsFireDropSoundVol 0.5
+call Scrap.Set FXElementsFireDropSoundAttIni 0.0
+call Scrap.Set FXElementsFireDropSoundAttEnd 45000.0
+
+section LoadCrash
+call SSound.LoadSound Crash/VehicleCrashLo3.wav
+call SSound.LoadSound Crash/VehicleCrashHeavy1.wav
+
+section Init
+call Scrap.Set SoundAutoplayVolume -60.0
+call Scrap.Set SoundDopplerLevel 1.0
+call Scrap.Set SoundDistAttenuation 0.05
+call Scrap.Set NPCSndMotorVolFactor 2

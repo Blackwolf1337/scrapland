@@ -1,0 +1,211 @@
+# sound (the sound script sound/sound.py of the game): the general sounds. SetStdDamageSounds and
+# SetStdDamageSoundLoops set the damage sound variables of the entity $name, the other sections load the sound files
+# and set the engine variables and the module variables of Sound (run take <key> <sound> <volume> is
+# Sound.ItemTake[key] = (sound, volume) and loads Missions/<sound>.wav). The C gives the tests of the script as values:
+# $out (Init.Outdoor, in LoadDamageSounds Outdoor and neither JunkYard nor ShipEdit), $action (an indoor level with
+# action music) and $demo.
+# The format is described in src/game/Script/Script.c, the C that runs the sections is src/game/Script/GameSounds.c.
+# A pack in mods/ with scrapc/sound/sound.def replaces this file.
+
+section SetStdDamageSounds
+entity $name
+	sdd00_name BulletLo1E
+	sdd00_pitch0 0.0
+	sdd00_vol0 0.06
+	sdd01_name BulletLo1F
+	sdd01_pitch0 0.0
+	sdd01_vol0 0.06
+	sdd02_name BulletLo1E
+	sdd02_pitch0 0.0
+	sdd02_vol0 0.06
+	sdd03_name BulletLo1F
+	sdd03_pitch0 0.0
+	sdd03_vol0 0.06
+	sdd04_name BulletLo1E
+	sdd04_pitch0 0.0
+	sdd04_vol0 0.06
+	sdd05_name BulletLo1F
+	sdd05_pitch0 0.0
+	sdd05_vol0 0.06
+	sdd06_name HeavyHitLo
+	sdd06_pitch0 0.0
+	sdd06_vol0 0.25
+	sdd07_name HeavyHitMed
+	sdd07_pitch0 0.0
+	sdd07_vol0 0.25
+	sdd08_name HeavyHitHi
+	sdd08_pitch0 0.0
+	sdd08_vol0 0.25
+
+section SetStdDamageSoundLoops
+entity $name
+	sdl00_name ElectricDamageLo
+	sdl00_pitch0 0.0
+	sdl00_vol0 0.2
+	sdl00_time0 0.3
+	sdl00_time1 0.2
+	sdl01_name ElectricDamageLo
+	sdl01_pitch0 0.0
+	sdl01_vol0 0.3
+	sdl01_time0 0.3
+	sdl01_time1 0.2
+	sdl02_name ElectricDamageLo
+	sdl02_pitch0 0.0
+	sdl02_vol0 0.5
+	sdl02_time0 0.3
+	sdl02_time1 0.2
+	sdl03_name EMIOnShipLoop
+	sdl03_pitch0 0.0
+	sdl03_vol0 0.25
+	sdl03_time0 0.3
+	sdl03_time1 0.2
+	sdl04_name BurnFire1
+	sdl04_pitch0 0.0
+	sdl04_vol0 0.5
+	sdl04_time0 0.3
+	sdl04_time1 0.2
+
+section LoadDamageSounds
+if $out
+	call SSound.LoadSound Damage/BulletLo1F.wav
+	call SSound.LoadSound Damage/BulletLo1E.wav
+	call SSound.LoadSound Damage/HeavyHitLo.wav
+	call SSound.LoadSound Damage/HeavyHitMed.wav
+	call SSound.LoadSound Damage/HeavyHitHi.wav
+	call SSound.LoadSound Damage/ElectricDamageLo.wav
+	call SSound.LoadSound Damage/EMIOnShipLoop.wav
+	call SSound.LoadSound Damage/BurnFire1.wav
+end
+call SSound.LoadSound Damage/CharDeath.wav
+call Scrap.Set CharacterDeathSound CharDeath
+call Scrap.Set CharacterDeathSoundVol 1.0
+
+section LoadMenuSounds
+call SSound.LoadSound Menu/menuclik.wav
+call Scrap.Set OnAcceptSound menuclik
+call Scrap.Set OnAcceptSoundVol 0.5
+call SSound.LoadSound Menu/menufocus.wav
+call Scrap.Set OnFocusSound menufocus
+call Scrap.Set OnFocusSoundVol 0.5
+
+section ScorerSounds
+call SSound.LoadSound Scorer/LifeDanger.wav
+call Scrap.Set DangerLifeSound LifeDanger
+call Scrap.Set DangerLifeSoundVol 0.3
+call SSound.LoadSound Scorer/Regeneration.wav
+call Scrap.Set RegenerationSound Regeneration
+call Scrap.Set RegenerationSoundVol 0.4
+call Scrap.Set RegenerationSoundPitchMin -10
+call Scrap.Set RegenerationSoundPitchMax +10
+call SSound.LoadSound Scorer/InitRegeneration.wav
+call Scrap.Set InitRegenerationSound InitRegeneration
+call Scrap.Set InitRegenerationSoundVol 0.5
+call SSound.LoadSound Scorer/EndRegeneration.wav
+call Scrap.Set EndRegenerationSound EndRegeneration
+call Scrap.Set EndRegenerationSoundVol 0.3
+setvar Sound.DeathSound OnDeath
+setvar Sound.DeathVolume 1.0
+call SSound.LoadSound Scorer/OnDeath.wav
+setvar Sound.TVOffSound TVOff
+setvar Sound.TVOffVolume 1.0
+call SSound.LoadSound Scorer/TVOff.wav
+call SSound.LoadSound Scorer/keyboard1.wav
+call SSound.LoadSound Scorer/keyboard2.wav
+call Scrap.Set TextTypingSound keyboard%d
+call Scrap.Set TextTypingSoundVol 0.2
+
+section WayPoints
+run take MoneyItem money 1.0
+run take MoneyItemOther money2 0.25
+if $out
+	setvar Sound.WaySound CheckPoint
+	setvar Sound.WayVolume 0.75
+	call SSound.LoadSound Missions/CheckPoint.wav
+	setvar Sound.EneWaySound EnePoint
+	setvar Sound.EneWayVolume 0.75
+	call SSound.LoadSound Missions/EnePoint.wav
+	run take Life vida4 0.7
+	run take Part recarga-bala7 0.70
+	run take Miss recarga-misil5 0.50
+	run take Ener recarga-energia 0.70
+	run take iXtr upgrade 0.50
+	run take iSiz upgrade 0.40
+	run take aBom upgrade 0.40
+	run take aSpd upgrade 0.40
+	run take dAim upgrade 0.40
+	run take dBom upgrade 0.40
+	run take tAim upgrade 0.40
+	run take tTra upgrade 0.40
+	run take sRot upgrade 0.40
+	run take sRot upgrade 0.40
+	run take sRck upgrade 0.40
+	run take vAim upgrade 0.40
+	run take vSpd upgrade 0.40
+	run take TakeBDataPack upgrade3 0.40
+	run take TakeMatrixExt upgrade3 0.40
+	run take TakeDataCube upgrade3 0.40
+	run take TakeEreasure upgrade3 0.40
+	run take TakeAmplifier upgrade3 0.40
+else
+	run take TakeBattery upgrade 0.20
+	run take TakeExtraLife upgrade2 0.20
+end
+
+section PhotoSounds
+setvar Sound.PhotoSound TakePhoto
+setvar Sound.PhotoVolume 0.75
+call SSound.LoadSound Photo/TakePhoto.wav
+
+section CharConversionSounds
+call SSound.LoadSound Photo/DoFlash.wav
+call Scrap.Set CharacterConversionSound DoFlash
+call Scrap.Set CharacterConversionSoundVol 0.6
+
+section LoadShipEditInterfaceSounds
+setvar Sound.RotateShipSound ShipRotation
+setvar Sound.RotateShipVolume 0.05
+setvar Sound.RotateShipFastSound ShipRotationFast
+setvar Sound.RotateShipFastVolume 0.05
+setvar Sound.HologramStartSound HologramBuzz
+setvar Sound.HologramStartVolume 1.0
+setvar Sound.HologramLoopSound HologramBuzzLoop
+setvar Sound.HologramLoopVolume 0.85
+setvar Sound.ShipEditLoadShipSound recarga-nave
+setvar Sound.ShipEditLoadShipVolume 0.22
+setvar Sound.ShipEditLoadWeaponSound recarga-arma
+setvar Sound.ShipEditLoadWeaponVolume 0.25
+setvar Sound.ShipEditLoadEngineSound recarga-engine
+setvar Sound.ShipEditLoadEngineVolume 0.25
+setvar Sound.ShipEditUnLoadSound descargar
+setvar Sound.ShipEditUnLoadVolume 0.05
+call SSound.LoadSound Scorer/ShipRotation.wav
+call SSound.LoadSound Scorer/ShipRotationFast.wav
+call SSound.LoadSound Scorer/HologramBuzz.wav
+call SSound.LoadSound Scorer/HologramBuzzLoop.wav
+call SSound.LoadSound Scorer/recarga-nave.wav
+call SSound.LoadSound Scorer/recarga-arma.wav
+call SSound.LoadSound Scorer/recarga-engine.wav
+call SSound.LoadSound Scorer/descargar.wav
+
+section SetOutMusic
+call Scrap.Set OutRelaxMusic Music/Track%d.ogg
+call Scrap.Set iOutRelaxMusic 4
+call Scrap.Set OutRelaxMusicVolume 1.0
+if $out
+	call Scrap.Set OutActionMusic Music/Outdoor%d.ogg
+	call Scrap.Set iOutActionMusic 11
+	call Scrap.Set OutActionMusicVolume 0.78
+else
+	if $action
+		call Scrap.Set isActionIndoor 1
+	end
+	call Scrap.Set OutActionMusic Music/Indoor%d.ogg
+	call Scrap.Set iOutActionMusic 9
+	call Scrap.Set OutActionMusicVolume 0.78
+end
+if $demo
+	call Scrap.Set iOutRelaxMusic 1
+	call Scrap.Set iOutActionMusic 1
+end
+call Scrap.Set ActionMusicTimeFade 5.0
+call Scrap.Set MusicTimeChange 15.0

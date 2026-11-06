@@ -153,7 +153,7 @@ PyObject *Sf_Attr(scriptFrame_t *f, PyObject *o, const char *name) {
 }
 
 byte Sf_SetAttr(scriptFrame_t *f, PyObject *o, const char *name, PyObject *v) {
-	return Sf_Check(f, o && v && PyObject_SetAttrString(o, (char *)name, v) == 0);
+	return Sf_Check(f, !f->failed && o && v && PyObject_SetAttrString(o, (char *)name, v) == 0);
 }
 
 byte Sf_SetAttrI(scriptFrame_t *f, PyObject *o, const char *name, long i) {
@@ -173,11 +173,11 @@ PyObject *Sf_GetItem(scriptFrame_t *f, PyObject *o, PyObject *key) {
 }
 
 byte Sf_SetItem(scriptFrame_t *f, PyObject *o, PyObject *key, PyObject *v) {
-	return Sf_Check(f, o && key && v && PyObject_SetItem(o, key, v) == 0);
+	return Sf_Check(f, !f->failed && o && key && v && PyObject_SetItem(o, key, v) == 0);
 }
 
 byte Sf_DelItem(scriptFrame_t *f, PyObject *o, PyObject *key) {
-	return Sf_Check(f, o && key && PyObject_DelItem(o, key) == 0);
+	return Sf_Check(f, !f->failed && o && key && PyObject_DelItem(o, key) == 0);
 }
 
 PyObject *Sf_Slice(scriptFrame_t *f, PyObject *o, int lo, int hi) {

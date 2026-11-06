@@ -36,6 +36,14 @@ typedef struct scriptStep_s {
 byte Script_RunFile(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
 	PyObject *vars);
 
+/*
+ * Script_RunFile for a port that must stop where the script stops: a call line whose function raises, an entity line
+ * the entity refuses (SystemError, as the attribute set of the handle) and a step that leaves an error set end the
+ * file; 0 with the error left set for the caller (not printed)
+ */
+byte Script_RunFileTry(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
+	PyObject *vars);
+
 /* the step "print <text>" of .def files: a line on the console, as a script's print */
 void Script_StepPrint(int id, PyObject *args);
 
@@ -385,6 +393,15 @@ extern PyMethodDef g_TeleportMethods[];
 extern PyMethodDef g_MisItemsMethods[];
 extern PyMethodDef g_CrazyWingMethods[];
 extern PyMethodDef g_MissionsFuncsMethods[];
+
+/* the general sounds: the sound files of a level, the ship and damage sounds, the point sounds of the maps and the door
+ * sounds (src/game/Script/GameSounds.c, data/sound/sound.def, outsound.def, doorsound.def) */
+extern PyMethodDef g_SoundMethods[];
+extern PyMethodDef g_OutSoundMethods[];
+extern PyMethodDef g_DoorSoundMethods[];
+/* the start of an outdoor level and its spawn points, the fake traffic indoors (src/game/Script/OutMap.c) */
+extern PyMethodDef g_OutMapMethods[];
+extern PyMethodDef g_InTrafficMethods[];
 
 /* the gameplay functions of the character modules (src/game/Script/CharFuncs.c), next to their Init tables */
 extern PyMethodDef g_FunctionaryFuncs[];
