@@ -30,37 +30,215 @@ void Py_FiniObjects(void);
 
 byte g_PythonReady;
 
-void Python_Init(void) {
+/*
+ * The start and end lines of the exe, each a PyRun_ScrapString in __main__ (single_input), made in C: a line that
+ * fails prints its error and the next line runs; a value an expression statement gives is printed when it is not None
+ * (PRINT_EXPR of the interactive mode); Py_FlushLine ends every line. Names are looked up in __main__ as LOAD_NAME
+ * does, imports stored there.
+ */
+
+/* the end of a start line: its error printed, else the line flushed */
+static void Py_LineEnd(byte ok) {
+	if (!ok) {
+		PyErr_Print();
+	} else if (Py_FlushLine()) {
+		PyErr_Clear();
+	}
+}
+
+/* an expression statement of single_input (PRINT_EXPR): a value that is not None printed with its repr and kept in
+ * __builtin__._; v given away; 0 with the error set */
+static byte Py_LineExpr(PyObject *v) {
+	int err = 0;
+	if (!v) {
+		return 0;
+	}
+	if (v != Py_None) {
+		PyObject *b = PyEval_GetBuiltins(), *out = NULL;
+		err = PyDict_SetItemString(b, "_", Py_None);
+		if (!err) {
+			err = Py_FlushLine();
+		}
+		if (!err && !(out = PySys_GetObject("stdout"))) {
+			PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
+			err = -1;
+		}
+		if (!err) {
+			err = PyFile_WriteObject(v, out, 0);
+		}
+		if (!err) {
+			PyFile_SoftSpace(out, 1);
+			err = Py_FlushLine();
+		}
+		if (!err) {
+			err = PyDict_SetItemString(b, "_", v);
+		}
+	}
+	Py_DECREF(v);
+	return err == 0;
+}
+
+/* name = v in __main__ (STORE_NAME, v given away) */
+static byte Py_LineStore(const char *name, PyObject *v) {
+	PyObject *m = v ? PyImport_AddModule("__main__") : NULL, *k = m ? PyString_InternFromString((char *)name) : NULL;
+	int bad = !k || PyDict_SetItem(PyModule_GetDict(m), k, v) != 0;
+	Py_XDECREF(k);
+	Py_XDECREF(v);
+	return !bad;
+}
+
+/* import a, b, ... in __main__ (NULL ends the names; the line stops at the first error) */
+static byte Py_LineImport(const char *const *names) {
+	for (; *names; names++) {
+		if (!Py_LineStore(*names, PyImport_ImportModule((char *)*names))) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+/* a name of __main__ with attributes ("Init.Init") as LOAD_NAME and LOAD_ATTR find it: a new reference */
+static PyObject *Py_LineName(const char *text) {
+	PyObject *m = PyImport_AddModule("__main__"), *v = NULL;
+	return m && Script_NameChain(NULL, PyModule_GetDict(m), text, &v) > 0 ? v : NULL;
+}
+
+/* name(args) as an expression statement of a line (args given away) */
+static byte Py_LineCall(const char *name, PyObject *args) {
+	PyObject *f = args ? Py_LineName(name) : NULL, *r = f ? PyEval_CallObject(f, args) : NULL;
+	Py_XDECREF(f);
+	Py_XDECREF(args);
+	return Py_LineExpr(r);
+}
+
+/* func('text') of a line as the exe builds it (Str_Printf in 0x100 chars): the text between the quotes becomes the
+ * string the compiler makes of it (escapes, interning); a quote or a control character in it, or a cut line, is the
+ * line's SyntaxError */
+static byte Py_LineCallText(const char *func, const char *text) {
 	char cmd[0x100];
+	int n = Str_Printf(cmd, sizeof(cmd), "%s('%s')", func, text), len = (int)strlen(func);
+	PyObject *m = PyImport_AddModule("__main__"), *v = NULL;
+	if (m && n == (int)strlen(cmd) && n > len + 2 && cmd[n - 1] == ')') {
+		cmd[n - 1] = '\0';
+		v = Script_Literal(PyModule_GetDict(m), cmd + len + 1);
+	}
+	if (!v || !PyString_Check(v)) {
+		Py_XDECREF(v);
+		Script_NotRead("start line", cmd);
+		return 0;
+	}
+	return Py_LineCall(func, Py_BuildValue("(N)", v));
+}
+
+/* write(message) of the classes ConsoleOutput and ConsoleErrorOutput: Scrap.ConsoleOut(message) or
+ * Scrap.ConsoleError(message), 'None' for None */
+static PyObject *Py_ConsoleWrite(PyObject *args, const char *func) {
+	PyObject *message;
+	if (!PyArg_ParseTuple(args, "O", &message)) {
+		return NULL;
+	}
+	PyObject *r = message == Py_None ? Script_Ask("Scrap", func, "(s)", "None") : Script_Ask("Scrap", func, "(O)",
+		message);
+	if (!r) {
+		return NULL;
+	}
+	Py_DECREF(r);
+	return Py_ReturnNone();
+}
+
+static PyObject *Py_ConsoleOutWrite(PyObject *self, PyObject *args) {
+	(void)self;
+	return Py_ConsoleWrite(args, "ConsoleOut");
+}
+
+static PyObject *Py_ConsoleErrorWrite(PyObject *self, PyObject *args) {
+	(void)self;
+	return Py_ConsoleWrite(args, "ConsoleError");
+}
+
+static PyObject *Py_ConsoleFlush(PyObject *self, PyObject *args) {
+	(void)self;
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
+	return Py_ReturnNone();
+}
+
+static PyMethodDef py_consoleOut[] = { { "write", Py_ConsoleOutWrite, 1, NULL }, { "flush", Py_ConsoleFlush, 1, NULL } };
+static PyMethodDef py_consoleError[] = { { "write", Py_ConsoleErrorWrite, 1, NULL },
+	{ "flush", Py_ConsoleFlush, 1, NULL } };
+
+/* class name: softspace = 1, write(message), flush() (C functions in the class, called from the instance with the
+ * message alone), in __main__; the dict filled in the order of the class body, then __doc__ and __module__ as
+ * PyClass_New adds them */
+static byte Py_LineConsoleClass(const char *name, PyMethodDef *methods) {
+	PyObject *d = PyDict_New(), *n = d ? PyString_InternFromString((char *)name) : NULL, *c = NULL;
+	PyObject *one = n ? PyInt_FromLong(1) : NULL, *w = one ? PyCFunction_New(&methods[0], NULL) : NULL;
+	PyObject *fl = w ? PyCFunction_New(&methods[1], NULL) : NULL, *b = fl ? PyTuple_New(0) : NULL;
+	if (b && !PyDict_SetItemString(d, "softspace", one) && !PyDict_SetItemString(d, "write", w) &&
+		!PyDict_SetItemString(d, "flush", fl) && !PyDict_SetItemString(d, "__doc__", Py_None) &&
+		!PyDict_SetItemString(d, "__module__", PyDict_GetItemString(PyModule_GetDict(PyImport_AddModule("__main__")),
+		"__name__"))) {
+		c = PyClass_New(b, d, n);
+	}
+	Py_XDECREF(b);
+	Py_XDECREF(fl);
+	Py_XDECREF(w);
+	Py_XDECREF(one);
+	Py_XDECREF(n);
+	Py_XDECREF(d);
+	return Py_LineStore(name, c);
+}
+
+/* sys.<attr> = <name of a class>() */
+static byte Py_LineSysOutput(const char *attr, const char *cls) {
+	PyObject *c = Py_LineName(cls), *o = c ? PyEval_CallObject(c, NULL) : NULL, *sys = o ? Py_LineName("sys") : NULL;
+	int bad = !sys || PyObject_SetAttrString(sys, (char *)attr, o) != 0;
+	Py_XDECREF(sys);
+	Py_XDECREF(o);
+	Py_XDECREF(c);
+	return !bad;
+}
+
+/* print 'Python Ver '+sys.version */
+static byte Py_LineVersion(void) {
+	PyObject *v = Py_LineName("sys.version"), *t = v ? Script_SPlus("Python Ver ", v) : NULL;
+	byte ok = t && Script_Print(&t, 1);
+	Py_XDECREF(t);
+	Py_XDECREF(v);
+	return ok;
+}
+
+void Python_Init(void) {
+	static const char *const sys[] = { "sys", NULL }, *const engine[] = { "Scrap", "SInput", "SNet", "SWeap", "SScorer",
+		"SVec", "SSound", "SAI", "SAct", "SFX", "SLogic", NULL }, *const init[] = { "Init", NULL },
+		*const viewer[] = { "Viewer", NULL };
 
 	Py_Initialize();
 	PyProfile_Start();
 	g_PythonReady = 1;
-	PyRun_ScrapString("class ConsoleOutput:\n  softspace=1\n  def write(self,message):\n    import Scrap\n"
-		"    if message is None:\n      Scrap.ConsoleOut('None')\n    else:\n      Scrap.ConsoleOut(message)\n"
-		"  def flush(self):\n    pass\n");
-	PyRun_ScrapString("class ConsoleErrorOutput:\n  softspace=1\n  def write(self,message):\n    import Scrap\n"
-		"    if message is None:\n      Scrap.ConsoleError('None')\n    else:\n      Scrap.ConsoleError(message)\n"
-		"  def flush(self):\n    pass\n");
-	PyRun_ScrapString("import sys");
-	PyRun_ScrapString("sys.stdout=ConsoleOutput()");
-	PyRun_ScrapString("sys.stderr=ConsoleErrorOutput()");
-	PyRun_ScrapString("print 'Python Ver '+sys.version");
-	PyRun_ScrapString("sys.path.append('Scripts')");
-	PyRun_ScrapString("import Scrap,SInput,SNet,SWeap,SScorer,SVec,SSound,SAI,SAct,SFX,SLogic");
+	Py_LineEnd(Py_LineConsoleClass("ConsoleOutput", py_consoleOut));
+	Py_LineEnd(Py_LineConsoleClass("ConsoleErrorOutput", py_consoleError));
+	Py_LineEnd(Py_LineImport(sys));
+	Py_LineEnd(Py_LineSysOutput("stdout", "ConsoleOutput"));
+	Py_LineEnd(Py_LineSysOutput("stderr", "ConsoleErrorOutput"));
+	Py_LineEnd(Py_LineVersion());
+	Py_LineEnd(Py_LineCall("sys.path.append", Py_BuildValue("(s)", "Scripts")));
+	Py_LineEnd(Py_LineImport(engine));
 	Script_CheckEngine();
 	g_PyPackImport = 1;
 	if (g_IsViewer) {
-		PyRun_ScrapString("import Viewer");
-		Str_Printf(cmd, sizeof(cmd), "Viewer.Init('%s')", g_pApp->levelPath);
+		Py_LineEnd(Py_LineImport(viewer));
+		Py_LineEnd(Py_LineCallText("Viewer.Init", g_pApp->levelPath));
 	} else {
-		PyRun_ScrapString("Scrap.OpenPack('Scripts')");
-		PyRun_ScrapString("Scrap.PreloadLibrary('Init','Init.pyc')");
-		PyRun_ScrapString("Scrap.ClosePack()");
-		PyRun_ScrapString("import Init");
-		Str_Printf(cmd, sizeof(cmd), "Init.Init('%s')", g_pApp->levelPath);
+		Py_LineEnd(Py_LineCall("Scrap.OpenPack", Py_BuildValue("(s)", "Scripts")));
+		Py_LineEnd(Py_LineCall("Scrap.PreloadLibrary", Py_BuildValue("(ss)", "Init", "Init.pyc")));
+		Py_LineEnd(Py_LineCall("Scrap.ClosePack", PyTuple_New(0)));
+		Py_LineEnd(Py_LineImport(init));
+		Py_LineEnd(Py_LineCallText("Init.Init", g_pApp->levelPath));
 	}
-	PyRun_ScrapString(cmd);
+	/* STAGE 7: the engine variable PythonExecute (the command line, the MCP harness) is Python; it goes with the
+	 * interpreter (a C command channel takes the harness) */
 	PyRun_ScrapString(g_PythonExecute);
 	/* the marshal buffer of Pack_PreloadLibrary is not needed after the start */
 	cStaticBuffer *buf = g_PyStaticBuffer;
@@ -71,7 +249,9 @@ void Python_Init(void) {
 }
 
 void Python_Close(void) {
-	PyRun_ScrapString("import Init;Init.Close()");
+	static const char *const init[] = { "Init", NULL };
+
+	Py_LineEnd(Py_LineImport(init) && Py_LineCall("Init.Close", PyTuple_New(0)));
 	cPy_Function_ClearAll();
 	Py_Finalize();
 	PyProfile_End();
