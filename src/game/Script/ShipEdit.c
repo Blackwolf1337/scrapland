@@ -735,7 +735,7 @@ static PyObject *Se_DrawBackground(PyObject *args, PyObject *kw, byte elem) {
 	return Sf_None(&f);
 }
 
-static PyObject *SE_DrawBackground(PyObject *self, PyObject *args, PyObject *kw) {
+PyObject *ShipEdit_DrawBackground(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
 	return Se_DrawBackground(args, kw, 1);
 }
@@ -1695,7 +1695,7 @@ PyMethodDef g_ShipEditMethods[] = {
 	{ "LoopRotateShip", SE_LoopRotateShip, 1, NULL },
 	{ "StartRotateLoop", SE_StartRotateLoop, 1, NULL },
 	{ "StopRotateLoop", SE_StopRotateLoop, 1, NULL },
-	{ "DrawBackground", (PyCFunction)(void (*)(void))SE_DrawBackground, 3, NULL },
+	{ "DrawBackground", (PyCFunction)(void (*)(void))ShipEdit_DrawBackground, 3, NULL },
 	{ "AddShipEditTabs", SE_AddShipEditTabs, 1, NULL },
 	{ "AddDefaultPanelContent", SE_AddDefaultPanelContent, 1, NULL },
 	{ "ChangeTabLeft", SE_ChangeTabLeft, 1, NULL },

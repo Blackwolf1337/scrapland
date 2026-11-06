@@ -43,6 +43,8 @@ PyObject *Se_Mod(scriptFrame_t *f, const char *module, const char *name);
 /* (dummy[2][0], dummy[2][1] + 180 + extra, 0) of editShipPosDummy: the ship faces the camera (extra NULL for none) */
 PyObject *Se_FrontAng(scriptFrame_t *f, PyObject *dummy, PyObject *extra);
 
+/* ShipEdit.DrawBackground(id, elem, posX=64, ...), also SputnikInterface.DrawBackground (the same script code) */
+PyObject *ShipEdit_DrawBackground(PyObject *self, PyObject *args, PyObject *kw);
 /* HangarTab.DrawBackground(id, posX=64, ...): ShipEdit's DrawBackground without elem (the sprite Background) */
 PyObject *HangarTab_DrawBackground(PyObject *self, PyObject *args, PyObject *kw);
 

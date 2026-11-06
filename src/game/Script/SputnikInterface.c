@@ -6,33 +6,10 @@
  */
 #include "scrap/script.h"
 
+#include "ShipEdit.h"
+
 #define K(o) Script_Keep(&r, (o))
 #define FAIL() return Script_Done(&r, NULL)
-
-/* DrawBackground(id, elem, posX=64, posY=64, sizeX=512, sizeY=352, alpha=92, red=0, green=0, blue=32) */
-static PyObject *SI_DrawBackground(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "elem", "posX", "posY", "sizeX", "sizeY", "alpha", "red", "green", "blue", NULL };
-	static const char *const vars[] = { "X", "Y", "ScaleX", "ScaleY", "Unit", "Alpha", "Red", "Green", "Blue" };
-	static const long defs[] = { 64, 64, 512, 352, 1, 92, 0, 0, 32 };
-	scriptRefs_t r = { .n = 0 };
-	PyObject *id, *elem, *v[9] = { NULL };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|OOOOOOOO", names, &id, &elem, &v[0], &v[1], &v[2], &v[3], &v[5], &v[6],
-		&v[7], &v[8])) {
-		return NULL;
-	}
-	PyObject *name = K(Script_SPlus("BackgroundElement", elem));
-	if (!name || !Script_Try("SScorer", "Add", "(OOs)", id, name, "Sprite")) {
-		FAIL();
-	}
-	for (int i = 0; i < 9; i++) {
-		PyObject *val = v[i] ? v[i] : K(PyInt_FromLong(defs[i]));
-		if (!val || !Script_Try("SScorer", "Set", "(OOsO)", id, name, vars[i], val)) {
-			FAIL();
-		}
-	}
-	return Script_Done(&r, Py_ReturnNone());
-}
 
 /* AddDefaultPanelContent(id): the editor background with the Hangar tab only */
 static PyObject *SI_AddDefaultPanelContent(PyObject *self, PyObject *args) {
@@ -277,7 +254,7 @@ static PyObject *SI_SelectShip(PyObject *self, PyObject *args) {
 }
 
 PyMethodDef g_SputnikInterfaceMethods[] = {
-	{ "DrawBackground", (PyCFunction)(void (*)(void))SI_DrawBackground, 3, NULL },
+	{ "DrawBackground", (PyCFunction)(void (*)(void))ShipEdit_DrawBackground, 3, NULL },
 	{ "AddDefaultPanelContent", SI_AddDefaultPanelContent, 1, NULL },
 	{ "EnterSputnikInterface", SI_EnterSputnikInterface, 1, NULL },
 	{ "ExitSputnikInterface", SI_ExitSputnikInterface, 1, NULL },
