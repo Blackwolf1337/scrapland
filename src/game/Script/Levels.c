@@ -44,7 +44,7 @@ extern PyMethodDef g_GamblinDenMapMethods[], g_GamblinDenBeforeFinalFightMethods
 	g_GamblinDenThreeStoogesMethods[];
 extern PyMethodDef g_OmSixthMethods[], g_OmTenthMethods[], g_QfBankersCombatMethods[],
 	g_ABIndoorMapMethods[], g_FakeMapMethods[], g_TucZoneMapMethods[], g_NanoMapMethods[], g_ShipEditMapMethods[],
-	g_ShipEditMapSndMethods[], g_ABFinalFightMethods[];
+	g_ShipEditMapSndMethods[], g_ABFinalFightMethods[], g_ABMapMethods[];
 extern PyMethodDef g_JunkyardMapMethods[], g_JunkyardMapShipEditMethods[], g_JunkyardRustyFirstContactMethods[];
 extern PyMethodDef g_PressMapMethods[], g_PressMapPlanesMethods[], g_PressMapDemoCloseMethods[], g_PressMapSndMethods[],
 	g_PressFicusBankerMethods[], g_PressGetCrazyDataMethods[], g_PressGoToPressMethods[], g_PressGoWithHumanMethods[],
@@ -113,6 +113,7 @@ static const levelModule_t level_modules[] = {
 	{ "shipedit", "Map", g_ShipEditMapMethods },
 	{ "shipedit", "MapSnd", g_ShipEditMapSndMethods },
 	{ "ab", "MapFinalFight", g_ABFinalFightMethods },
+	{ "ab", "Map", g_ABMapMethods },
 	{ "gamblinden", "Map", g_GamblinDenMapMethods },
 	{ "gamblinden", "Mission_BeforeFinalFight", g_GamblinDenBeforeFinalFightMethods },
 	{ "gamblinden", "Mission_AfterFinalFight", g_GamblinDenAfterFinalFightMethods },

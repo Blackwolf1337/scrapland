@@ -1,9 +1,10 @@
 /*
  * The scripts of the level AB in C (levels/ab/scripts of data03.packed, issue #2): MapFinalFight, the fight against
  * the boss in three phases (the shield, the regeneration bar, the taunts, the hints after deaths), then the end of
- * the game in ABIndoor. LoadFinal, Map and MapSnd are data (the files in data/levels/ab). The module variables (the
- * BOSS_ numbers, the hint times, respawnTime, bossName, numTaunt, pos, time, FASE, HINT_COUNTER,
- * PrevCreateStdShips) stay in the script.
+ * the game in ABIndoor; and Map, the asteroid field (asteroids that drift a moment, split in two on every second death).
+ * LoadFinal and MapSnd are data (the files in data/levels/ab). The module variables (the BOSS_ numbers, the hint
+ * times, respawnTime, bossName, numTaunt, pos, time, FASE, HINT_COUNTER, PrevCreateStdShips; Map's SpawnPositions,
+ * asttype, SinglePlayer, idctr, LastTime, ctrTimer, Duplicate) stay in the scripts.
  */
 #include "scrap/script.h"
 #include "Levels.h"
@@ -468,5 +469,219 @@ PyMethodDef g_ABFinalFightMethods[] = {
 	{ "OnBossRecoversEnd", Ff_OnBossRecoversEnd, 1, NULL },
 	{ "OnBossDestroyed", Ff_OnBossDestroyed, 1, NULL },
 	{ "PreLoadFinal", Ff_PreLoadFinal, 1, NULL },
+	{ NULL, NULL, 0, NULL },
+};
+
+/* ---- Map ---- */
+
+#define MAP "Map"
+
+/* onTrackCreate(o): a traffic asteroid: fixed model, life 20, no money */
+static PyObject *AbMap_onTrackCreate(PyObject *self, PyObject *args) {
+	PyObject *o;
+	scriptFrame_t f = { 0 };
+	(void)self;
+	if (!PyArg_ParseTuple(args, "O", &o)) {
+		return NULL;
+	}
+	Sf_SetAttrI(&f, o, "FixedModel", 1);
+	PyObject *life = Sf_Int(&f, 20);
+	Sf_SetAttr(&f, o, "Life", life);
+	Sf_SetAttr(&f, o, "MinLife", life);
+	Sf_SetAttr(&f, o, "MaxLife", life);
+	Sf_SetAttrI(&f, o, "Money", -1);
+	return Sf_None(&f);
+}
+
+/* InitStatus(LevelPath): single player only: an outdoor map without police and traffic, quick hull deaths, the
+ * traffic asteroids through onTrackCreate */
+static PyObject *AbMap_InitStatus(PyObject *self, PyObject *args) {
+	static const char *const mods[] = { "Init", "Chars", "Elevator", "OutPolice", "Traffic", "Vehicles" };
+	static const char *const lists[] = { "AcNormalShips", "AcMediumShips", "AcHeavyShips" };
+	static const char *const nums[] = { "NumNormal", "NumMedium", "NumHeavy" };
+	PyObject *path;
+	scriptFrame_t f = { 0 };
+	(void)self;
+	if (!PyArg_ParseTuple(args, "O", &path)) {
+		return NULL;
+	}
+	if (Sf_True(&f, Sf_Global(&f, MAP, "SinglePlayer")) <= 0) {
+		return Sf_None(&f);
+	}
+	for (int i = 0; i < 6; i++) {
+		Sf_Import(&f, mods[i]);
+	}
+	Sf_SetMod(&f, "Vehicles", "HullLifeTimeDeath", Sf_Build(&f, "(dd)", 0.01, 0.02));
+	Sf_SetMod(&f, "Init", "Outdoor", Sf_Int(&f, 1));
+	Sf_SetMod(&f, "OutPolice", "PoliceActive", Sf_Int(&f, 0));
+	Sf_Run(&f, "Scrap", "Set", "(si)", "iTrafficNumber", 0);
+	for (int i = 0; i < 3; i++) {
+		Sf_SetMod(&f, "Traffic", lists[i], Sf_Build(&f, "[]"));
+	}
+	for (int i = 0; i < 3; i++) {
+		Sf_SetMod(&f, "Traffic", nums[i], Sf_Int(&f, 0));
+	}
+	Sf_SetMod(&f, "Traffic", "onTrackCreate", Sf_Global(&f, MAP, "onTrackCreate"));
+	return Sf_None(&f);
+}
+
+/* Init(LevelPath): the free space magnet around the mission centre, the teleporter, the asteroid ship types, an
+ * asteroid at every spawn position */
+static PyObject *AbMap_Init(PyObject *self, PyObject *args) {
+	static const char *const axes[] = { "FreeSpaceMagnetCenterX", "FreeSpaceMagnetCenterY", "FreeSpaceMagnetCenterZ" };
+	PyObject *path;
+	scriptFrame_t f = { 0 };
+	(void)self;
+	if (!PyArg_ParseTuple(args, "O", &path)) {
+		return NULL;
+	}
+	Sf_Import(&f, "Elevator");
+	Sf_Run(&f, "Scrap", "Set", "(si)", "FreeSpaceMagnet", 1);
+	PyObject *dummy = Lv_Dummy(&f, "DM_Mission_Centre", 1);
+	for (int i = 0; i < 3; i++) {
+		Sf_Run(&f, "Scrap", "Set", "(sO)", axes[i], Sf_Item(&f, Sf_Item(&f, dummy, 1), i));
+	}
+	Sf_Run(&f, "Scrap", "Set", "(si)", "FreeSpaceMagnetHiRadius", 95000);
+	Sf_Run(&f, "Scrap", "Set", "(si)", "FreeSpaceMagnetAccel", 56000);
+	Sf_Run(&f, "Elevator", "ConnectElevators", "([s][s])", "DM_Door_Teleporter_GamblinDen", "GamblinDen");
+	Sf_Run(&f, "Traffic", "SetPath", "()");
+	PyObject *types = Sf_Global(&f, MAP, "asttype");
+	for (int i = 0; !f.failed; i++) {
+		int mark = f.n;
+		PyObject *name = Sf_Next(&f, types, i);
+		if (!name) {
+			break;
+		}
+		Sf_Run(&f, "ShipMaker", "AddShip", "(Oiii)", name, 20000, 1000, 10000);
+		Sf_Run(&f, "ShipMaker", "AddShipTon", "(Oiii)", name, 20, 20, 30000);
+		Sf_Run(&f, "ShipMaker", "AddShipBalance", "(O(iiii))", name, 0, 0, 0, 0);
+		Sf_Run(&f, "ShipMaker", "InitAnmShip", "(OOOOO)", name, Py_None, Py_None, Py_None, Py_None);
+		PyObject *ship = Sf_Build(&f, "(Osssssi)", name, "", "", "", "", "0,0,0,0,0,0", 20);
+		Sf_SetItem(&f, Sf_Mod(&f, "ShipMaker", "StdShips"), Sf_Ask(&f, "string", "upper", "(O)", name), ship);
+		Sf_Release(&f, mark);
+	}
+	Sf_Run(&f, "Traffic", "ResetPath", "()");
+	PyObject *spawns = Sf_Global(&f, MAP, "SpawnPositions");
+	for (int i = 0; !f.failed; i++) {
+		int mark = f.n;
+		PyObject *pos = Sf_Next(&f, spawns, i);
+		if (!pos) {
+			break;
+		}
+		Sf_Call(&f, Sf_Global(&f, MAP, "CreateAsteroid"), "(sO)", "Asteroid", pos);
+		Sf_Release(&f, mark);
+	}
+	return Sf_None(&f);
+}
+
+/* CreateAsteroid(name, SpwPos): an asteroid of the next type that drifts with the traffic for 0.5 to 2 s: the
+ * asteroid */
+static PyObject *AbMap_CreateAsteroid(PyObject *self, PyObject *args) {
+	PyObject *name, *pos;
+	scriptFrame_t f = { 0 };
+	(void)self;
+	if (!PyArg_ParseTuple(args, "OO", &name, &pos)) {
+		return NULL;
+	}
+	Sf_Run(&f, "Traffic", "SetPath", "()");
+	PyObject *p = Sf_Ask(&f, "Scrap", "CreateEntity", "(OOOOs)", name, Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1),
+		Sf_Item(&f, pos, 2), "Car");
+	PyObject *types = Sf_Global(&f, MAP, "asttype");
+	PyObject *type = Sf_GetItem(&f, types, Sf_OpI(&f, Sf_Global(&f, MAP, "idctr"), '%', Sf_Len(&f, types)));
+	Sf_Run(&f, "Vehicles", "SetStdProperties", "(OOs)", Sf_Attr(&f, p, "Name"), type, "");
+	Sf_SetAttrI(&f, p, "FixedModel", 1);
+	Sf_SetAttrI(&f, p, "Money", -1);
+	Sf_SetAttrS(&f, p, "OnDeath", "Map.OnDeath");
+	Sf_SetAttrI(&f, p, "Traf_Active", 1);
+	Sf_SetAttrI(&f, p, "Traf_Speed", 28000);
+	Sf_SetAttrI(&f, p, "MaxSpeed", 28000);
+	Sf_SetAttr(&f, p, "Fric", Sf_Float(&f, 1.0));
+	Sf_SetAttr(&f, p, "InCtrl_Acc", Sf_Float(&f, 0.125));
+	Sf_SetAttr(&f, p, "InCtrl_HRot", Sf_Float(&f, 0.05));
+	Sf_SetAttr(&f, p, "Ang", Sf_Build(&f, "(iOi)", 0, Sf_Ask(&f, "Scrap", "Rand", "(ii)", -180, 180), 0));
+	Sf_Run(&f, "Traffic", "ResetPath", "()");
+	Sf_SetGlobal(&f, MAP, "idctr", Sf_OpI(&f, Sf_Global(&f, MAP, "idctr"), '+', 1));
+	PyObject *at = Sf_Op(&f, Sf_Time(&f), '+', Sf_Ask(&f, "Scrap", "Rand", "(di)", 0.5, 2));
+	Sf_Schedule(&f, at, Sf_Global(&f, MAP, "detraffic"), Sf_Build(&f, "(O)", Sf_Attr(&f, p, "Name")), NULL);
+	return Sf_Return(&f, p);
+}
+
+/* detraffic(Name): the asteroid leaves the traffic paths */
+static PyObject *AbMap_detraffic(PyObject *self, PyObject *args) {
+	PyObject *name;
+	scriptFrame_t f = { 0 };
+	(void)self;
+	if (!PyArg_ParseTuple(args, "O", &name)) {
+		return NULL;
+	}
+	PyObject *e = Sf_Entity(&f, name);
+	if (Sf_True(&f, e) > 0) {
+		Sf_SetAttrI(&f, e, "Traf_Active", 0);
+	}
+	return Sf_None(&f);
+}
+
+/* OnDeath(LooserName, WinnerName): deaths in the same frame are spread 0.05 s apart */
+static PyObject *AbMap_OnDeath(PyObject *self, PyObject *args) {
+	PyObject *looser, *winner;
+	scriptFrame_t f = { 0 };
+	(void)self;
+	if (!PyArg_ParseTuple(args, "OO", &looser, &winner)) {
+		return NULL;
+	}
+	PyObject *now = Sf_Time(&f);
+	int same = Sf_Compare(&f, now, "==", Sf_Global(&f, MAP, "LastTime"));
+	if (same > 0) {
+		PyObject *at = Sf_Op(&f, Sf_Time(&f), '+', Sf_Global(&f, MAP, "ctrTimer"));
+		Sf_Schedule(&f, at, Sf_Global(&f, MAP, "RealOnDeath"), Sf_Build(&f, "(OO)", looser, winner), NULL);
+		Sf_SetGlobal(&f, MAP, "ctrTimer", Sf_Op(&f, Sf_Global(&f, MAP, "ctrTimer"), '+', Sf_Float(&f, 0.05)));
+	} else if (same == 0) {
+		Sf_SetGlobal(&f, MAP, "LastTime", now);
+		Sf_Call(&f, Sf_Global(&f, MAP, "RealOnDeath"), "(OO)", looser, winner);
+		Sf_SetGlobal(&f, MAP, "ctrTimer", Sf_Float(&f, 0.05));
+	}
+	return Sf_None(&f);
+}
+
+/* RealOnDeath(LooserName, WinnerName): a small explosion in place; every second death two asteroids fly apart from
+ * where it died */
+static PyObject *AbMap_RealOnDeath(PyObject *self, PyObject *args) {
+	PyObject *looser, *winner;
+	scriptFrame_t f = { 0 };
+	(void)self;
+	if (!PyArg_ParseTuple(args, "OO", &looser, &winner)) {
+		return NULL;
+	}
+	Sf_SetMod(&f, "Vehicles", "ShipExplosionForceInplace", Sf_Int(&f, 1));
+	Sf_SetMod(&f, "Vehicles", "ShipExplosionScaleFactor", Sf_Ask(&f, "Scrap", "Rand", "(dd)", 0.55, 0.65));
+	Sf_Run(&f, "Vehicles", "OnDeath", "(OO)", looser, winner);
+	Sf_SetMod(&f, "Vehicles", "ShipExplosionForceInplace", Sf_Int(&f, 0));
+	Sf_SetMod(&f, "Vehicles", "ShipExplosionScaleFactor", Sf_Float(&f, 1.0));
+	int dup = Sf_True(&f, Sf_Global(&f, MAP, "Duplicate"));
+	if (dup >= 0) {
+		Sf_SetGlobal(&f, MAP, "Duplicate", Sf_Int(&f, !dup));
+	}
+	if (dup == 0) {
+		PyObject *pos = Sf_Attr(&f, Sf_Entity(&f, looser), "Pos");
+		PyObject *a = Sf_Call(&f, Sf_Global(&f, MAP, "CreateAsteroid"), "(sO)", "Asteroids", pos);
+		PyObject *r1 = Sf_Ask(&f, "Scrap", "Rand", "(ii)", -180, 180);
+		PyObject *r2 = Sf_Ask(&f, "Scrap", "Rand", "(ii)", -180, 180);
+		PyObject *r3 = Sf_Ask(&f, "Scrap", "Rand", "(ii)", -180, 180);
+		PyObject *vel = Sf_Ask(&f, "SVec", "Rotate3D", "((iii)(OOO))", 0, 28000, 0, r1, r2, r3);
+		Sf_SetAttr(&f, a, "Vel", vel);
+		a = Sf_Call(&f, Sf_Global(&f, MAP, "CreateAsteroid"), "(sO)", "Asteroids", pos);
+		Sf_SetAttr(&f, a, "Vel", Sf_Ask(&f, "SVec", "Sub", "((iii)O)", 0, 0, 0, vel));
+	}
+	return Sf_None(&f);
+}
+
+PyMethodDef g_ABMapMethods[] = {
+	{ "onTrackCreate", AbMap_onTrackCreate, 1, NULL },
+	{ "InitStatus", AbMap_InitStatus, 1, NULL },
+	{ "Init", AbMap_Init, 1, NULL },
+	{ "CreateAsteroid", AbMap_CreateAsteroid, 1, NULL },
+	{ "detraffic", AbMap_detraffic, 1, NULL },
+	{ "OnDeath", AbMap_OnDeath, 1, NULL },
+	{ "RealOnDeath", AbMap_RealOnDeath, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
