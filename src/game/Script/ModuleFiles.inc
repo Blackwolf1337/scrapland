@@ -395,6 +395,12 @@ static const char mod_modules_racemaker[] = {
 static const char mod_modules_missionsfuncs[] = {
 #embed "../../../data/modules/missionsfuncs.mod"
 	, 0 };
+static const char mod_modules_net[] = {
+#embed "../../../data/modules/net.mod"
+	, 0 };
+static const char mod_modules_split[] = {
+#embed "../../../data/modules/split.mod"
+	, 0 };
 
 static const moduleFile_t module_files[] = {
 	{ NULL, "Sound", "modules/sound.mod", mod_modules_sound },
@@ -529,4 +535,6 @@ static const moduleFile_t module_files[] = {
 	{ NULL, "domination", "modules/domination.mod", mod_modules_domination },
 	{ NULL, "RaceMaker", "modules/racemaker.mod", mod_modules_racemaker },
 	{ NULL, "MissionsFuncs", "modules/missionsfuncs.mod", mod_modules_missionsfuncs },
+	{ NULL, "Net", "modules/net.mod", mod_modules_net },
+	{ NULL, "Split", "modules/split.mod", mod_modules_split },
 };

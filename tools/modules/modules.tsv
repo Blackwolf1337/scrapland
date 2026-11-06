@@ -132,3 +132,5 @@ CharConversor	-	Data.packed/scripts/missions/charconversor.pyc
 domination	-	Data.packed/scripts/superdeals/domination.pyc
 RaceMaker	-	Data.packed/scripts/missions/racemaker.pyc
 MissionsFuncs	-	Data.packed/scripts/missions/missionsfuncs.pyc
+Net	-	Data.packed/scripts/net/net.pyc
+Split	-	Data.packed/scripts/split/split.pyc
