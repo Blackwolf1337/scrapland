@@ -1,5 +1,5 @@
 # The functions of MapSnd in level outskirts (the script levels/outskirts/scripts/mapsnd.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Outskirts.c).
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/outskirts/mapsnd.def replaces this file.
 section LoadSounds
 if %MapSnd.isPC

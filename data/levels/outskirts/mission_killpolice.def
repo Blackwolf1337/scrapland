@@ -1,5 +1,5 @@
 # The functions of Mission_KillPolice in level outskirts (the script levels/outskirts/scripts/mission_killpolice.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, InitMission, OnAlarm, OnPoliceDeath, BertoAppears, EnableMetro.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Outskirts.c): InitStatus, Init, InitMission, OnAlarm, OnPoliceDeath, BertoAppears, EnableMetro.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/outskirts/mission_killpolice.def replaces this file.
 section SetPos e pos
 object $e

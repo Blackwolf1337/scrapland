@@ -55,6 +55,11 @@ extern PyMethodDef g_DownTownMapMethods[], g_DownTownMapRaceMethods[], g_DownTow
 	g_DownTownBertoMassacreMethods[], g_DownTownDefeatCrazyGambler1Methods[], g_DownTownFaceTheMayorMethods[], g_DownTownMassacreMethods[],
 	g_DownTownDestroyCommSats3Methods[], g_DownTownDistractHumphreyMethods[], g_DownTownGetDataPart1Methods[], g_DownTownHumphreyRaceMethods[],
 	g_DownTownMultiplusRaceMethods[], g_DownTownProtectMayorTransportMethods[], g_DownTownStealMayorShipMethods[];
+extern PyMethodDef g_OutskirtsMapMethods[], g_OutskirtsMapRaceMethods[], g_OutskirtsAttackTraitoriusMethods[],
+	g_OutskirtsDemoHumphreyRaceMethods[], g_OutskirtsDestroyBadDebtorsMethods[], g_OutskirtsDestroyCommSats1Methods[],
+	g_OutskirtsDestroyHumphreyMethods[], g_OutskirtsFunctionaryHuntingMethods[], g_OutskirtsGoToOutskirtsMethods[],
+	g_OutskirtsIdentifyMercMethods[], g_OutskirtsKillPoliceMethods[], g_OutskirtsKillRudolphMethods[],
+	g_OutskirtsTransportKillerMethods[], g_OutskirtsWin2ndRaceMethods[];
 
 static const levelModule_t level_modules[] = {
 	{ "menu", "Map", g_MenuMapMethods },
@@ -168,6 +173,20 @@ static const levelModule_t level_modules[] = {
 	{ "downtown", "Mission_MultiplusRace", g_DownTownMultiplusRaceMethods },
 	{ "downtown", "Mission_ProtectMayorTransport", g_DownTownProtectMayorTransportMethods },
 	{ "downtown", "Mission_StealMayorShip", g_DownTownStealMayorShipMethods },
+	{ "outskirts", "Map", g_OutskirtsMapMethods },
+	{ "outskirts", "MapRace", g_OutskirtsMapRaceMethods },
+	{ "outskirts", "Mission_AttackTraitorius", g_OutskirtsAttackTraitoriusMethods },
+	{ "outskirts", "Mission_Demo_HumphreyRace", g_OutskirtsDemoHumphreyRaceMethods },
+	{ "outskirts", "Mission_DestroyBadDebtors", g_OutskirtsDestroyBadDebtorsMethods },
+	{ "outskirts", "Mission_DestroyCommSats1", g_OutskirtsDestroyCommSats1Methods },
+	{ "outskirts", "Mission_DestroyHumphrey", g_OutskirtsDestroyHumphreyMethods },
+	{ "outskirts", "Mission_FunctionaryHunting", g_OutskirtsFunctionaryHuntingMethods },
+	{ "outskirts", "Mission_GoToOutskirts", g_OutskirtsGoToOutskirtsMethods },
+	{ "outskirts", "Mission_IdentifyMerc", g_OutskirtsIdentifyMercMethods },
+	{ "outskirts", "Mission_KillPolice", g_OutskirtsKillPoliceMethods },
+	{ "outskirts", "Mission_KillRudolph", g_OutskirtsKillRudolphMethods },
+	{ "outskirts", "Mission_TransportKiller", g_OutskirtsTransportKillerMethods },
+	{ "outskirts", "Mission_Win2ndRace", g_OutskirtsWin2ndRaceMethods },
 	{ NULL, NULL, NULL },
 };
 

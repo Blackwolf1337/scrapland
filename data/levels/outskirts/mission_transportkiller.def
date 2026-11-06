@@ -1,5 +1,5 @@
 # The functions of Mission_TransportKiller in level outskirts (the script levels/outskirts/scripts/mission_transportkiller.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, InitTransport, isValidDamage, TryToDeath, TakeDataPack, TryToDamage, InitCall, SetNextMission.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Outskirts.c): InitStatus, Init, InitTransport, isValidDamage, TryToDeath, TakeDataPack, TryToDamage, InitCall, SetNextMission.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/outskirts/mission_transportkiller.def replaces this file.
 section UsePhoneCab UsrName CharName optId FullOption
 setvar Speech.PlayerName $UsrName
