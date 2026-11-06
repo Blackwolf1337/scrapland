@@ -21,7 +21,9 @@ typedef struct scriptModule_s {
 
 /* a module of the packs is loaded: its C functions go into it */
 void Script_ModuleLoaded(const char *name, PyObject *module);
-/* the other names and list items of a module dict that hold old get f (old is the function under key) */
+/* the other names, list and tuple items and dict values of a module dict that hold old get f (old is the function
+ * under key; a tuple is replaced by a new one), and so do the engine callbacks bound to old (at the end of
+ * Script_ModuleLoaded) */
 void Script_ReplaceRefs(PyObject *dict, PyObject *key, PyObject *old, PyObject *f);
 /* the C functions of a table into the module under their names (and the other names the module bound the Python
  * function to); kept (a list or NULL) keeps the replaced Python functions */

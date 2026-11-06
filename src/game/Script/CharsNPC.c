@@ -42,6 +42,47 @@ static byte Npc_ConsoleError(PyObject *text) {
 
 /* ---- the spawn points ---- */
 
+/*
+ * CharSpawnPos(): when the class is the module's own with the __init__ of the pack (self.CallbackFunc = [], the
+ * bytecode of scripts/chars/charsnpc.py:20 compared byte for byte, no base class, no __setattr__), the instance is
+ * made as PyInstance_New makes it and the attribute set without running the bytecode; any other class is called
+ */
+static PyObject *Npc_NewSpawnPos(PyObject *cls) {
+	/* SET_LINENO 20, SET_LINENO 21, BUILD_LIST 0, LOAD_FAST 0 (self), STORE_ATTR 1 (CallbackFunc), LOAD_CONST 0 (None),
+	 * RETURN_VALUE */
+	static const char code[] = "\x7f\x14\x00\x7f\x15\x00\x67\x00\x00\x7c\x00\x00\x5f\x01\x00\x64\x00\x00\x53";
+	PyClassObject *c = PyClass_Check(cls) ? (PyClassObject *)cls : NULL;
+	PyObject *init = c && PyTuple_Size(c->cl_bases) == 0 && !PyDict_GetItemString(c->cl_dict, "__setattr__") ?
+		PyDict_GetItemString(c->cl_dict, "__init__") : NULL;
+	PyCodeObject *co = init && PyFunction_Check(init) && !PyFunction_GET_DEFAULTS(init) ?
+		(PyCodeObject *)PyFunction_GET_CODE(init) : NULL;
+	byte pack = co && co->co_argcount == 1 && PyString_Check(co->co_code) &&
+		PyString_GET_SIZE(co->co_code) == (int)sizeof(code) - 1 &&
+		!memcmp(PyString_AS_STRING(co->co_code), code, sizeof(code) - 1) &&
+		PyTuple_Check(co->co_consts) && PyTuple_GET_SIZE(co->co_consts) >= 1 &&
+		PyTuple_GET_ITEM(co->co_consts, 0) == Py_None && PyTuple_Check(co->co_names) &&
+		PyTuple_GET_SIZE(co->co_names) >= 2 && PyString_Check(PyTuple_GET_ITEM(co->co_names, 1)) &&
+		!strcmp(PyString_AS_STRING(PyTuple_GET_ITEM(co->co_names, 1)), "CallbackFunc");
+	if (!pack) {
+		return Script_Invoke(cls, PyTuple_New(0));
+	}
+	PyInstanceObject *inst = PyObject_NEW(PyInstanceObject, &PyInstance_Type);
+	if (!inst) {
+		return NULL;
+	}
+	Py_INCREF(cls);
+	inst->in_class = c;
+	inst->in_dict = PyDict_New();
+	PyObject *list = inst->in_dict ? PyList_New(0) : NULL;
+	int err = list ? PyDict_SetItemString(inst->in_dict, "CallbackFunc", list) : -1;
+	Py_XDECREF(list);
+	if (err) {
+		Py_DECREF(inst);
+		return NULL;
+	}
+	return (PyObject *)inst;
+}
+
 /* AddNPCPos(dummy, IsMissionChar=0): a CharSpawnPos from the dummy (name, pos, ang, flag) into CharRes; a name
  * already there gets "_R" (a new reference) */
 static PyObject *Npc_AddNPCPos(PyObject *dummy, PyObject *mission) {
@@ -60,7 +101,7 @@ static PyObject *Npc_AddNPCPos(PyObject *dummy, PyObject *mission) {
 	PyObject *nam = d0 ? Script_Keep(&r, Script_Ask("string", "split", "(Os)", d0, "_")) : NULL;
 	PyObject *act = nam ? Script_Keep(&r, Script_Index(nam, typeid)) : NULL;
 	PyObject *cls = act && Script_Try("Chars", "AddNewCharRes", "(OO)", act, flag) ? Script_Keep(&r, Npc_Global("CharSpawnPos")) : NULL;
-	PyObject *csp = cls ? Script_Keep(&r, Script_Invoke(cls, PyTuple_New(0))) : NULL;
+	PyObject *csp = cls ? Script_Keep(&r, Npc_NewSpawnPos(cls)) : NULL;
 	byte ok = csp && Script_HSet(csp, "Pos", Script_Index(dummy, 1)) &&
 		Script_HSet(csp, "Name", PySequence_GetSlice(d0, starts, INT_MAX));
 	PyObject *d2 = ok ? Script_Keep(&r, Script_Index(dummy, 2)) : NULL;
