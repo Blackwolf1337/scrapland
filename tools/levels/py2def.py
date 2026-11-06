@@ -185,7 +185,8 @@ class Conv:
             if fn not in self.funcs:
                 raise Unsupported('call ' + fn)
             fn = '%s.%s' % (self.module, fn)
-        elif fn.split('.')[0] in scope:
+        elif not self.module_name(fn.split('.')[0], scope):
+            # a method of a local or of a module global (lonelyMerc.Del()), not a module function
             raise Unsupported('method ' + fn)
         out = ['call', fn]
         for a in split_args(m.group(2)):
