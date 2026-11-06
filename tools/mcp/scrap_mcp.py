@@ -152,10 +152,10 @@ class Game:
         exe = a.get('exe', 'native64')
         if exe != 'ref' and exe not in WIN_BUILDS and exe not in NATIVE_BUILDS:
             raise RuntimeError("exe is one of: ref, %s" % ', '.join(list(WIN_BUILDS) + list(NATIVE_BUILDS)))
-        harness = a.get('harness') or ('python' if exe == 'ref' else 'channel')
+        self.prepare(exe)
+        harness = a.get('harness') or ('channel' if exe != 'ref' and self.has_channel(exe) else 'python')
         if harness not in ('channel', 'python') or (exe == 'ref' and harness == 'channel'):
             raise RuntimeError('harness is channel or python (ref: only python)')
-        self.prepare(exe)
         self.opts = dict(a, exe=exe, harness=harness)
         env = dict(os.environ)
         env.update({'SCRAP_GAME_DIR': self.game, 'SCRAP_PREFIX': self.prefix,
@@ -269,6 +269,15 @@ class Game:
         self.proc = None
         self.socket = None
         return 'game %s stopped (exit code %s)' % (self.name, code)
+
+    def has_channel(self, exe):
+        """whether the prepared game binary has the test channel (builds from before it get the python harness)"""
+        name = 'ScrapC' if exe in NATIVE_BUILDS else 'ScrapC.exe'
+        try:
+            with open(os.path.join(self.game, 'Bin', name), 'rb') as f:
+                return b'test_cmd.txt' in f.read()
+        except OSError:
+            return False
 
     def channel(self):
         return self.opts.get('harness', 'channel') == 'channel'
@@ -444,7 +453,7 @@ TOOLS = [
          'env': {'type': 'object', 'description': 'more environment variables (SCRAP_VK_DEBUG, SCRAP_RD_DUMP, ...)'},
          'validation': {'type': 'boolean', 'description': 'the Vulkan validation layer on (see vkcheck)'},
          'harness': {'type': 'string', 'enum': ['channel', 'python'], 'description': 'how the tools talk to the game: '
-                     'channel (default) = the test channel of the game (SCRAP_TEST_CHANNEL=1, answers also while '
+                     'channel (default when the build has it, else python) = the test channel of the game (SCRAP_TEST_CHANNEL=1, answers also while '
                      'the world clock stands), python = the old mcpgame.py through -PythonExecute (answers only while '
                      'the world clock runs; the only one of ref; STAGE 7: goes with the interpreter)'},
          'trace': {'type': 'number', 'description': 'SCRAP_VK_TRACE: the render calls of the first frame this many '
