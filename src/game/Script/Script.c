@@ -1720,6 +1720,14 @@ static void Def_Line(scriptDef_t *m, scriptLine_t *l, const char *next) {
 		Py_XDECREF(m->object);
 		m->object = Def_Value(m, l->tok[1], l->quoted[1]);
 		m->target = TARGET_OBJECT;
+		/* a stopping file stops at an object it cannot get, as the script's obj.var = ... raises (a missing $value
+		 * is an unbound name there) */
+		if (!m->object && m->stop) {
+			if (!PyErr_Occurred()) {
+				PyErr_SetString(PyExc_NameError, l->tok[1][0] == '$' ? l->tok[1] + 1 : l->tok[1]);
+			}
+			m->failed = 1;
+		}
 	} else if (!strcmp(cmd, "setvar") && l->n == 3) {
 		const char *var = Def_Split(l->tok[1], a, sizeof(a));
 		if (!var) {
