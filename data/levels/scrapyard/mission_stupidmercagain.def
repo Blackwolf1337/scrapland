@@ -1,5 +1,5 @@
 # The functions of Mission_StupidMercAgain in level scrapyard (the script levels/scrapyard/scripts/mission_stupidmercagain.py of data02.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: GetMercsEnemiesProfile, InitStatus, Init, InitFollow, CreateMerc, CreateMercs, SmartMerDeath, GotoNext, CreateMercPlans, AddMercPlans, StartEvasion, CheckEvasion, InitTalkBishop, SetNextMission.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Scrapyard.c): GetMercsEnemiesProfile, InitStatus, Init, InitFollow, CreateMerc, CreateMercs, SmartMerDeath, GotoNext, CreateMercPlans, AddMercPlans, StartEvasion, CheckEvasion, InitTalkBishop, SetNextMission.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/scrapyard/mission_stupidmercagain.def replaces this file.
 section InitEvasion
 call Speech.AddRemoteCom "Mission_GetMercShipPlans_RemoteMessage4" "Igor" %Mission_StupidMercAgain.StartEvasion ()

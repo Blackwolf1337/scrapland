@@ -1,5 +1,5 @@
 # The functions of Mission_ReinsertOwnMatrix2 in level gdb (the script levels/gdb/scripts/mission_reinsertownmatrix2.py of data03.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: GetBishopProfile, InitMission, BishopsAttackPlayer, CreateBishop, CreateBishops, OnBishopsDeath, PreSetNextMission.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/GDB.c): GetBishopProfile, InitMission, BishopsAttackPlayer, CreateBishop, CreateBishops, OnBishopsDeath, PreSetNextMission.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/gdb/mission_reinsertownmatrix2.def replaces this file.
 section InitStatus LevelPath
 setvar Map.CreateBishops 0

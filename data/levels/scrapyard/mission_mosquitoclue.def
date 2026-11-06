@@ -1,5 +1,5 @@
 # The functions of Mission_MosquitoClue in level scrapyard (the script levels/scrapyard/scripts/mission_mosquitoclue.py of data02.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: GetMosquitoProfile, InitStatus, Init, InitSwarm, InitMosquito, CreateMosquito, MosquitoDeath, TakeDataPack, InitPoliChat, SetNextMission.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Scrapyard.c): GetMosquitoProfile, InitStatus, Init, InitSwarm, InitMosquito, CreateMosquito, MosquitoDeath, TakeDataPack, InitPoliChat, SetNextMission.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/scrapyard/mission_mosquitoclue.def replaces this file.
 section UsePhoneCab UsrName CharName optId FullOption
 setvar Speech.PlayerName $UsrName
