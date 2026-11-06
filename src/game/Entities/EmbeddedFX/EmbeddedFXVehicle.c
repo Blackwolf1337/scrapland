@@ -45,14 +45,6 @@ static float EFX_Rand(double scale, double add) {
 	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * scale + add);
 }
 
-/* the inlined strcmp of the original: the first two characters as a word, then the rest */
-static int Str_EqualW(const char *a, const char *b) {
-	if (*(const uint16_t *)a != *(const uint16_t *)b) {
-		return 0;
-	}
-	return strcmp(a + 2, b + 2) == 0;
-}
-
 static void Particles_SetPos(CGameParticles *p, const vec3_t *pos) {
 	p->birthRate = 0;
 	p->initPosMin = *pos;
@@ -185,7 +177,7 @@ static void cEmbeddedFXVehicle_Configure(cEmbeddedFXVehicleSub *base, float unus
 		}
 		pl = g_pWorld->owners[0];
 		if (pl && Entity_IsType(pl, TYEN_CAR) && Veh(pl)->target[0]) {
-			self->followed = Str_EqualW(self->owner->name, Veh(pl)->target);
+			self->followed = strcmp(self->owner->name, Veh(pl)->target) == 0;
 		}
 	}
 	if (g_SplitScreenGame) {
@@ -468,8 +460,10 @@ static void Sirens_Flash(cFXVehicleSirens *self, const vec3_t *pos, byte alarm, 
 	}
 }
 
+/* differs from the original: its inlined strcmp read the first two characters as a word, 2 bytes past an empty name
+ * (a police ship without a pilot) */
 static int Sirens_IsPolice(cEntity *v) {
-	return Str_EqualW(cVehicleEntity_GetPilot(Veh(v), 0), "P_Police");
+	return strcmp(cVehicleEntity_GetPilot(Veh(v), 0), "P_Police") == 0;
 }
 
 static uint32_t DataRamp[9] = { 0xff0000ff, 0x200000ff, 0x300000ff, 0x400000ff, 0x5c0000ff, 0x800000ff, 0xc40000ff, 0xff0000ff, 0xff0000ff };

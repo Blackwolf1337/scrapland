@@ -36,9 +36,10 @@ static PyObject *SetVar(PyObject *args, varfunc_t var, void *obj, int *parsed) {
 
 /* Get*(varname): the value in its own type; None and a debug message when there is no object or variable */
 static PyObject *GetVar(PyObject *args, varfunc_t var, void *obj, const char *nameNoObj, const char *nameNoVar) {
-	char *name, *s;
-	double d;
-	int i;
+	/* differs from the original: the values start at 0 (stack garbage there), as in SScorer.Get */
+	char *name, *s = NULL;
+	double d = 0.0;
+	int i = 0;
 
 	if (!PyArg_ParseTuple(args, "s", &name)) {
 		return NULL;

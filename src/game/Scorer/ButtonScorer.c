@@ -74,6 +74,9 @@ cButtonScorer *cButtonScorer_ctor(cButtonScorer *self) {
 	self->marker = 0;
 	self->isNameValuePair = 1;
 	self->renderAlphaChannel = 0;
+	/* differs from the original: not set before the first Text, SizeX of a name:value button reads them */
+	self->boxH = 0;
+	self->textH = 0;
 	self->markerOffset = 0.0f;
 	self->highlightOffset = 0.0f;
 	self->lineHeight = 0.0f;
@@ -166,7 +169,10 @@ static int cButtonScorer_WrapLines(cButtonScorer *self, char **out, const char *
 			count++;
 			start = cur;
 		}
-		cur = sp + 1;
+		/* differs from the original: it went on after the NUL (sp + 1) when the last word did not fit and read past
+		 * the text; staying on the NUL gives what the original got when the bytes after the text were 0 (the last
+		 * word on a line of its own, and an empty line after it when it does not fit alone) */
+		cur = *sp ? sp + 1 : sp;
 	} while (!done && sp);
 	return count;
 }

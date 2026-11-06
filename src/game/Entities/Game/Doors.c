@@ -27,6 +27,12 @@ static inline byte Door_IsActive(cEntity *door, const char *action) {
 	return cActCtrl_IsActive(WithLife_GetActCtrl(door), action);
 }
 
+/* differs from the original: the slot functions of the doors return on an entity without an action class (the
+ * original crashed in ActCtrl_Radius when a script set an !AutoDoor*Slot on such an entity) */
+static byte Door_HasClass(cEntity *door) {
+	return door && Entity_IsType(door, TYEN_WITH_LIFE) && WithLife_GetActCtrl(door);
+}
+
 /* the action, then its end state as the default loop */
 static void Door_Play(cEntity *door, const char *action, const char *loop) {
 	cActCtrl_Play(WithLife_GetActCtrl(door), action, 0, 1.0f);
@@ -119,6 +125,9 @@ static void Doors_Slot(cAbstractFile *params, uint32_t flags) {
 		return;
 	}
 	cEntity *door = World_FindEntity(name);
+	if (!Door_HasClass(door)) {
+		return;
+	}
 	cPy_Function_SetNative(g_DoorSphereFunc, (nativefunc_t)Doors_SphereEntity);
 	g_DoorBack = 0;
 	g_DoorFront = 0;
@@ -234,6 +243,9 @@ static void Doors_Usr0AutoDoorSlot(cAbstractFile *params) {
 		return;
 	}
 	cEntity *door = World_FindEntity(name);
+	if (!Door_HasClass(door)) {
+		return;
+	}
 	float r = ActCtrl_Radius(WithLife_GetActCtrl(door)) + WLife(usr)->prim.radius;
 	const vec3_t *pu = Entity_GetPos(usr, &t1);
 	const vec3_t *pd = Entity_GetPos(door, &t2);
