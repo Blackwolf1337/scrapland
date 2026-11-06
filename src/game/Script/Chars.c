@@ -3,6 +3,8 @@
  * call ActSound and its kin a few thousand times while a level loads), the resources of the characters of a level
  * and the creation of the player. The module code (default values, the Players list) stays in the script.
  */
+#include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "scrap/actions.h"
@@ -13,6 +15,20 @@
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/timer.h"
+
+/* print text as the script's print statement does (sys.stdout, not the console log): 0 with the error set */
+static byte Chars_PrintLine(const char *fmt, ...) {
+	char buf[0x200];
+	va_list va;
+	va_start(va, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, va);
+	va_end(va);
+	PyObject *t = PyString_FromString(buf);
+	byte ok = t && Script_Print(&t, 1);
+	Py_XDECREF(t);
+	return ok;
+}
+
 
 /* SAct.GetClass(cls) and, when there is one, SAct.GetAction(action): 1 when both exist */
 static byte Chars_Select(const char *cls, const char *action) {
@@ -499,7 +515,9 @@ static PyObject *Chars_Init(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Py_DECREF(r);
-	Con_Printf("Character system initialized.\n");
+	if (!Chars_PrintLine("Character system initialized.")) {
+		return NULL;
+	}
 	return Py_ReturnNone();
 }
 
@@ -570,9 +588,8 @@ static PyObject *Chars_CreateMainChar(PyObject *self, PyObject *args) {
 		Py_XDECREF(act);
 		PyErr_Clear();
 		if (!walk || !same) {
-			Con_Printf("Invalid '%s' character created.\n", name);
 			Py_DECREF(c);
-			return Py_ReturnNone();
+			return Chars_PrintLine("Invalid '%s' character created.", name) ? Py_ReturnNone() : NULL;
 		}
 	}
 	PyObject *camName = Chars_Ask("Scrap", "GetCam", Py_BuildValue("(i)", 0));
@@ -608,7 +625,9 @@ static PyObject *Chars_CreateStartupPlayer(PyObject *self, PyObject *args) {
 	dummy = Chars_Ask("Scrap", "NextDummySearch", PyTuple_New(0));
 	if (!dummy || PyObject_IsTrue(dummy) <= 0) {
 		Py_XDECREF(dummy);
-		Con_Printf("%s Not found!!!!\n", spawn ? spawn : "");
+		if (!Chars_PrintLine("%s Not found!!!!", spawn ? spawn : "")) {
+			return NULL;
+		}
 		PyObject *r = Chars_Ask("Scrap", "StartDummySearch", Py_BuildValue("(si)", "DM_Player_Spawn*", 1));
 		Py_XDECREF(r);
 		dummy = Chars_Ask("Scrap", "NextDummySearch", PyTuple_New(0));
@@ -622,12 +641,15 @@ static PyObject *Chars_CreateStartupPlayer(PyObject *self, PyObject *args) {
 		PyErr_Clear();
 		if (!dummy || PyObject_IsTrue(dummy) <= 0) {
 			Py_XDECREF(dummy);
-			Con_Printf("Cannot create a main char!\n");
-			return Py_ReturnNone();
+			return Chars_PrintLine("Cannot create a main char!") ? Py_ReturnNone() : NULL;
 		}
 		PyObject *dn = PySequence_GetItem(dummy, 0);
-		Con_Printf("Using %s indeed.\n", dn && PyString_Check(dn) ? PyString_AsString(dn) : "");
+		byte ok = Chars_PrintLine("Using %s indeed.", dn && PyString_Check(dn) ? PyString_AsString(dn) : "");
 		Py_XDECREF(dn);
+		if (!ok) {
+			Py_DECREF(dummy);
+			return NULL;
+		}
 	}
 	PyObject *dname = PySequence_GetItem(dummy, 0), *dpos = PySequence_GetItem(dummy, 1), *dang = PySequence_GetItem(dummy, 2);
 	PyObject *c = NULL;
