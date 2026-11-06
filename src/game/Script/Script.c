@@ -46,6 +46,7 @@
 #include "scrap/crt.h"
 #include "scrap/filepak.h"
 #include "scrap/pyentity.h"
+#include "scrap/pyfunction.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapfont.h"
@@ -221,10 +222,11 @@ static const scriptModule_t script_modules[] = {
 };
 
 /*
- * the Python functions the C ones replaced stay alive: an engine callback the module code set by name holds a
+ * the Python functions the C ones replaced stay alive: an engine callback the module code set by name held a
  * borrowed pointer to the function it found then (alarm.py: Scrap.Set("AlarmCallback", "Alarm.SetAlarm")), and it
- * pointed to freed memory once the C function took the name. They are kept by module name until the module loads
- * again (its code then sets such callbacks anew).
+ * pointed to freed memory once the C function took the name. Such callbacks now follow the C function (Script_Rebind),
+ * but other holders the loader does not reach (a container nested deeper, a scheduled call) may still use the Python
+ * function. They are kept by module name until the module loads again (its code then sets such callbacks anew).
  */
 static PyObject *script_replaced;
 
@@ -247,25 +249,113 @@ static PyObject *Script_Replaced(const char *name, size_t i) {
 	return kept;
 }
 
+/*
+ * the replaced functions whose engine bindings (cPy_Function) still have to follow them: the module code may have
+ * bound a callback by name before the C took the name (alarm.py: Scrap.Set("AlarmCallback", "Alarm.SetAlarm"),
+ * parking.py: OnParkingOccupied and OnParkedOut). Script_ModuleLoaded rebinds them once at its end.
+ */
+#define SCRIPT_REBIND 256
+static PyObject *script_rebindOld[SCRIPT_REBIND], *script_rebindNew[SCRIPT_REBIND];
+static int script_rebinds;
+
+static void Script_Rebind(void) {
+	int n = cPy_Function_Rebind(script_rebindOld, script_rebindNew, script_rebinds);
+	if (n) {
+		Con_Verbosef("Script: %d engine callbacks follow the C functions\n", n);
+	}
+	script_rebinds = 0;
+}
+
+/* a tuple like t with f for each item that is old, NULL when no item is old (a tuple cannot change in place) */
+static PyObject *Script_TupleWith(PyObject *t, PyObject *old, PyObject *f) {
+	int n = PyTuple_GET_SIZE(t), i;
+	for (i = 0; i < n && PyTuple_GET_ITEM(t, i) != old; i++) {
+	}
+	if (i == n) {
+		return NULL;
+	}
+	PyObject *r = PyTuple_New(n);
+	for (i = 0; r && i < n; i++) {
+		PyObject *v = PyTuple_GET_ITEM(t, i);
+		v = v == old ? f : v;
+		Py_INCREF(v);
+		PyTuple_SET_ITEM(r, i, v);
+	}
+	return r;
+}
+
+/* the values of dict d that are old become f; the keys are set after the walk, a set may resize d under PyDict_Next */
+static void Script_DictWith(PyObject *d, PyObject *old, PyObject *f, PyObject *skip) {
+	PyObject *k, *v, *keys = PyList_New(0);
+	int pos = 0;
+	if (!keys) {
+		PyErr_Clear();
+		return;
+	}
+	while (PyDict_Next(d, &pos, &k, &v)) {
+		if (v == old && (!skip || PyObject_Compare(k, skip) != 0)) {
+			PyList_Append(keys, k);
+		}
+	}
+	for (int i = 0; i < PyList_GET_SIZE(keys); i++) {
+		PyDict_SetItem(d, PyList_GET_ITEM(keys, i), f);
+	}
+	Py_DECREF(keys);
+}
+
 void Script_ReplaceRefs(PyObject *dict, PyObject *key, PyObject *old, PyObject *f) {
-	/* other names and the list items of the module that hold the replaced function (MapRace.Races = [EasyRace1, ...]) */
-	PyObject *k, *v;
+	/*
+	 * other names, the list items, the tuple items (Doors.DefDoorInfo = 800, StdInitializator, StdObjInitializator,
+	 * 0, 0: a new tuple under the same name) and the dict values of the module that hold the replaced function
+	 * (MapRace.Races = [EasyRace1, ...]); only items that are old itself, one level deep
+	 */
+	PyObject *k, *v, *later;
 	int pos = 0;
 	if (!old) {
 		return;
 	}
+	/* a name replaced twice before the rebind (a second table): the bindings go to the last function */
+	for (int i = 0; i < script_rebinds; i++) {
+		if (script_rebindNew[i] == old) {
+			script_rebindNew[i] = f;
+		}
+	}
+	if (script_rebinds == SCRIPT_REBIND) {
+		Script_Rebind();
+	}
+	script_rebindOld[script_rebinds] = old;
+	script_rebindNew[script_rebinds++] = f;
+	Script_DictWith(dict, old, f, key);
+	if (!(later = PyList_New(0))) {
+		PyErr_Clear();
+		return;
+	}
 	while (PyDict_Next(dict, &pos, &k, &v)) {
-		if (v == old && PyObject_Compare(k, key) != 0) {
-			PyDict_SetItem(dict, k, f);
-		} else if (PyList_Check(v)) {
+		if (PyList_Check(v)) {
 			for (int i = 0; i < PyList_GET_SIZE(v); i++) {
 				if (PyList_GET_ITEM(v, i) == old) {
 					Py_INCREF(f);
 					PyList_SetItem(v, i, f);
 				}
 			}
+		} else if (PyTuple_Check(v)) {
+			PyObject *t = Script_TupleWith(v, old, f);
+			PyObject *kt = t ? Py_BuildValue("(OO)", k, t) : NULL;
+			if (kt) {
+				PyList_Append(later, kt);
+			}
+			Py_XDECREF(kt);
+			Py_XDECREF(t);
+		} else if (PyDict_Check(v) && v != dict) {
+			Script_DictWith(v, old, f, NULL);
 		}
 	}
+	for (int i = 0; i < PyList_GET_SIZE(later); i++) {
+		PyObject *kt = PyList_GET_ITEM(later, i);
+		PyDict_SetItem(dict, PyTuple_GET_ITEM(kt, 0), PyTuple_GET_ITEM(kt, 1));
+	}
+	Py_DECREF(later);
+	PyErr_Clear();
 }
 
 void Script_Install(PyObject *module, PyMethodDef *methods, PyObject *kept) {
@@ -275,16 +365,21 @@ void Script_Install(PyObject *module, PyMethodDef *methods, PyObject *kept) {
 		if (!f) {
 			continue;
 		}
-		/* names the module bound to the Python function when it loaded (onCreateMainMenu = CreateMainMenu) */
-		PyObject *key, *value;
+		/* names the module bound to the Python function when it loaded (onCreateMainMenu = CreateMainMenu), set
+		 * after the walk */
+		PyObject *key, *value, *keys = PyList_New(0);
 		int pos = 0;
-		while (PyDict_Next(dict, &pos, &key, &value)) {
+		while (keys && PyDict_Next(dict, &pos, &key, &value)) {
 			if (PyFunction_Check(value) && PyString_Check(((PyFunctionObject *)value)->func_name) &&
 				!strcmp(PyString_AsString(((PyFunctionObject *)value)->func_name), m->ml_name) &&
 				strcmp(PyString_AsString(key), m->ml_name)) {
-				PyDict_SetItem(dict, key, f);
+				PyList_Append(keys, key);
 			}
 		}
+		for (int i = 0; keys && i < PyList_GET_SIZE(keys); i++) {
+			PyDict_SetItem(dict, PyList_GET_ITEM(keys, i), f);
+		}
+		Py_XDECREF(keys);
 		PyObject *old = PyDict_GetItemString(dict, m->ml_name);
 		if (old && kept && PyFunction_Check(old)) {
 			PyList_Append(kept, old);
@@ -322,6 +417,7 @@ void Script_ModuleLoaded(const char *name, PyObject *module) {
 		Py_DECREF(kept);
 	}
 	Script_LevelModuleLoaded(name, module, kept);
+	Script_Rebind();
 }
 
 /* ---- the scorer of a player ---- */

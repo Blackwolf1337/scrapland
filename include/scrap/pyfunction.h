@@ -59,6 +59,10 @@ void cPy_Function_AddParamS(cPy_Function *self, const char *v);
 int cPy_Function_Execute(cPy_Function *self, byte clear);
 /* clears every function of the ring and frees the parameter files */
 void cPy_Function_ClearAll(void);
+/* ScrapC: every Python binding of the ring to old[i] gets f[i] instead (the script loader put the C version f[i] in
+ * the place of old[i] after the module code had bound it, alarm.py: Scrap.Set("AlarmCallback", "Alarm.SetAlarm"));
+ * f[i] is borrowed like the binding it replaces. Returns the number of bindings changed. */
+int cPy_Function_Rebind(PyObject *const *old, PyObject *const *f, int n);
 
 byte Py_IsReady(void);
 
