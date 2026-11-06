@@ -20,14 +20,9 @@
 #define G(m, n) Sf_Global(&f, m, n)
 #define NOARGS Sf_Build(&f, "()")
 
-/* SScorer.Set(0, item, var, v) */
-static byte Gd_Set0(scriptFrame_t *f, const char *item, const char *var, PyObject *v) {
-	return Sf_Run(f, "SScorer", "Set", "(issO)", 0, item, var, v);
-}
-
 /* the scan bar of IntoTheGDB blinks (lost: Blink 1, IsAutoUpdatable 0) or runs */
 static byte Gd_Blink(scriptFrame_t *f, int lost) {
-	return Gd_Set0(f, "ScanRemainingTime", "Blink", Sf_Int(f, lost)) && Gd_Set0(f, "ScanRemainingTime", "IsAutoUpdatable", Sf_Int(f, !lost));
+	return Lv_Set0(f, "ScanRemainingTime", "Blink", Sf_Int(f, lost)) && Lv_Set0(f, "ScanRemainingTime", "IsAutoUpdatable", Sf_Int(f, !lost));
 }
 
 /* SVec.ModSqr(SVec.Sub(e.Pos, usr.Pos)) < (or >) MAX_SCANNING_DIST * MAX_SCANNING_DIST of IntoTheGDB */
@@ -261,17 +256,9 @@ static const char *const ig_bishop_profile[] = { "Ship=SBISHOP1", "StupidPathFin
 	"ControlBoostItemLife=1", "ControlBoostItemAmmo=1", "FactorDamageGetAway=0.2", "FactorDamageItemLife=0.50", "FactorItemAmmo=0.1",
 	"ControlStrafeEvasion=1", "UsePercHookGetAway=3", "TimeMaxStrafe=6", "VelMaxStrafe=0.75", NULL };
 
-static PyObject *Gdb_Profile(PyObject *args, const char *module, const char *const *vars) {
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Sf_Return(&f, Lv_Profile(&f, module, vars));
-}
-
 static PyObject *Into_GetBishopProfile(PyObject *self, PyObject *args) {
 	(void)self;
-	return Gdb_Profile(args, IG, ig_bishop_profile);
+	return Lv_ProfileFunc(args, IG, ig_bishop_profile);
 }
 
 /* Init(LevelPath): the lists of the bishops, the eight bishops (identified when the matrix is already taken), the
@@ -388,11 +375,11 @@ static PyObject *Into_ScanShip(PyObject *self, PyObject *args) {
 		if (Sf_True(&f, e) > 0 && Gd_Scan(&f, e, usr, "<") > 0) {
 			Sf_SetGlobal(&f, IG, "currentScannedShip", Sf_Attr(&f, e, "Name"));
 			Sf_Run(&f, "Scrap", "Set", "(sO)", "CurrentWaypointName", G(IG, "currentScannedShip"));
-			Gd_Set0(&f, "ScanStatusText", "Visible", Sf_Int(&f, 1));
+			Lv_Set0(&f, "ScanStatusText", "Visible", Sf_Int(&f, 1));
 			Gd_Blink(&f, 0);
-			Gd_Set0(&f, "ScanRemainingTime", "MaxValue", G(IG, "MAX_SCANNING_TIME"));
-			Gd_Set0(&f, "ScanRemainingTime", "Value", G(IG, "MAX_SCANNING_TIME"));
-			Gd_Set0(&f, "ScanRemainingTime", "Visible", Sf_Int(&f, 1));
+			Lv_Set0(&f, "ScanRemainingTime", "MaxValue", G(IG, "MAX_SCANNING_TIME"));
+			Lv_Set0(&f, "ScanRemainingTime", "Value", G(IG, "MAX_SCANNING_TIME"));
+			Lv_Set0(&f, "ScanRemainingTime", "Visible", Sf_Int(&f, 1));
 			break;
 		}
 		Sf_Release(&f, mark);
@@ -424,8 +411,8 @@ static PyObject *Into_ResetScan(PyObject *self, PyObject *args) {
 	if (Sf_True(&f, G(IG, "traitorFound")) == 0) {
 		Sf_Run(&f, "Scrap", "Set", "(ss)", "CurrentWaypointName", "");
 	}
-	Gd_Set0(&f, "ScanRemainingTime", "Visible", Sf_Int(&f, 0));
-	Gd_Set0(&f, "ScanStatusText", "Visible", Sf_Int(&f, 0));
+	Lv_Set0(&f, "ScanRemainingTime", "Visible", Sf_Int(&f, 0));
+	Lv_Set0(&f, "ScanStatusText", "Visible", Sf_Int(&f, 0));
 	Sf_Later(&f, Sf_Float(&f, 0.25), G(IG, "ResetScan2"), NOARGS, NULL);
 	return Sf_None(&f);
 }
@@ -433,8 +420,8 @@ static PyObject *Into_ResetScan(PyObject *self, PyObject *args) {
 /* OnFinishScan(): the scan bar ran out: the traitor found (the others stop being targets), or one bishop fewer */
 static PyObject *Into_OnFinishScan(PyObject *self, PyObject *args) {
 	SF_ARGS("");
-	Gd_Set0(&f, "ScanStatusText", "Visible", Sf_Int(&f, 0));
-	Gd_Set0(&f, "ScanRemainingTime", "Visible", Sf_Int(&f, 0));
+	Lv_Set0(&f, "ScanStatusText", "Visible", Sf_Int(&f, 0));
+	Lv_Set0(&f, "ScanRemainingTime", "Visible", Sf_Int(&f, 0));
 	if (Sf_True(&f, USR()) != 1) {
 		return Sf_None(&f);
 	}
@@ -585,7 +572,7 @@ static PyObject *Into_ActivateMatrix(PyObject *self, PyObject *args) {
 static PyObject *Into_TakeMatrix(PyObject *self, PyObject *args) {
 	PyObject *item, *ch;
 	SF_ARGS("OO", &item, &ch);
-	if (Lv_UsrIs(&f, USR(), ch) <= 0) {
+	if (Lv_UsrNameIs(&f, USR(), ch) <= 0) {
 		return Sf_None(&f);
 	}
 	PyObject *e = Sf_Ask(&f, "Scrap", "GetEntity", "(s)", "GusMatrix");
@@ -704,12 +691,12 @@ static const char *const r2_bishop_profile[] = { "Ship=SBISHOP1", "StupidPathFin
 
 static PyObject *Re1_GetBishopProfile(PyObject *self, PyObject *args) {
 	(void)self;
-	return Gdb_Profile(args, R1, r1_bishop_profile);
+	return Lv_ProfileFunc(args, R1, r1_bishop_profile);
 }
 
 static PyObject *Re2_GetBishopProfile(PyObject *self, PyObject *args) {
 	(void)self;
-	return Gdb_Profile(args, R2, r2_bishop_profile);
+	return Lv_ProfileFunc(args, R2, r2_bishop_profile);
 }
 
 /* InitMission(): the restore point and the eight bishops (the second mission: they attack when the player boards) */

@@ -6,7 +6,7 @@
  * (FXSceneDecontaminationFile, FXSceneBishopsFile, FXSceneBillArrives_AFile) and the module code (the save variable
  * Orbit.Decontaminated) stay in the scripts.
  */
-#include "scrap/script.h"
+#include "Levels.h"
 
 #define MD "MapDecont"
 #define IH "Mission_IntroHuman"
@@ -14,12 +14,6 @@
 #define ENT(n) Sf_Ask(&f, "Scrap", "GetEntity", "(s)", n)
 #define LANG(k) Sf_Lang(&f, Sf_Str(&f, k))
 #define LATER(d, fn, args) Sf_Later(&f, Sf_Float(&f, d), fn, args, NULL)
-
-/* Scrap.GetLangStr(key) % SInput.GetDefinedEntry(0, "Walk", action, "Mouse") */
-static PyObject *Ob_KeyText(scriptFrame_t *f, const char *key, const char *action) {
-	PyObject *t = Sf_Lang(f, Sf_Str(f, key));
-	return Sf_Op(f, t, '%', Sf_Ask(f, "SInput", "GetDefinedEntry", "(isss)", 0, "Walk", action, "Mouse"));
-}
 
 /* SScorer.SetMsgText(text, Scrap.GetTime() + secs) */
 static byte Ob_Msg(scriptFrame_t *f, PyObject *text, long secs) {
@@ -260,7 +254,7 @@ static PyObject *Decont_Init(PyObject *self, PyObject *args) {
 		Sf_Later(&f, Sf_Int(&f, 2), Sf_Mod(&f, "Scorer", "Blink"), Sf_Build(&f, "(i)", 20), NULL);
 		Sf_Import(&f, "Items");
 		PyObject *fn = Sf_Mod(&f, "Items", "Hint");
-		PyObject *text = Ob_KeyText(&f, "Mission_Decontamination_SystemMessage5", "Use");
+		PyObject *text = Lv_KeyText(&f, "Mission_Decontamination_SystemMessage5", "Use");
 		Sf_Call(&f, fn, "((iii)Oii)", -18893, -654, -25042, text, 5, 0);
 	}
 	Sf_Own(&f, MD, "LoadBishopsScene", "()");
@@ -353,7 +347,7 @@ static PyObject *Decont_CloseGateKeeperDoor(PyObject *self, PyObject *args) {
 	Sf_SetAttrS(&f, door, "OnObjSlot", "!CloseDoorSlot");
 	Sf_Import(&f, "Items");
 	PyObject *fn = Sf_Mod(&f, "Items", "Hint");
-	Sf_Call(&f, fn, "((iii)Oii)", -16501, -652, -24098, Ob_KeyText(&f, "Mission_Decontamination_SystemMessage2", "Use"), 5, 1);
+	Sf_Call(&f, fn, "((iii)Oii)", -16501, -652, -24098, Lv_KeyText(&f, "Mission_Decontamination_SystemMessage2", "Use"), 5, 1);
 	return Sf_None(&f);
 }
 
@@ -453,7 +447,7 @@ static PyObject *Decont_ShowSkipConvsMsg(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	Ob_Msg(&f, Ob_KeyText(&f, "Mission_Decontamination_SystemMessage8", "Use"), 10);
+	Ob_Msg(&f, Lv_KeyText(&f, "Mission_Decontamination_SystemMessage8", "Use"), 10);
 	return Sf_None(&f);
 }
 
@@ -561,7 +555,7 @@ static PyObject *Decont_CheckShowNextHowto(PyObject *self, PyObject *args) {
 			sel = Sf_True(&f, Sf_Attr(&f, e, "AutoSelect"));
 		}
 		if (sel > 0) {
-			Ob_Msg(&f, Ob_KeyText(&f, "Mission_Decontamination_SystemMessage3", "NextAction"), 10);
+			Ob_Msg(&f, Lv_KeyText(&f, "Mission_Decontamination_SystemMessage3", "NextAction"), 10);
 			Sf_Later(&f, Sf_Int(&f, 1), Sf_Mod(&f, "Scorer", "Blink"), Sf_Build(&f, "(is)", 20, "Talk"), NULL);
 			return Sf_None(&f);
 		}

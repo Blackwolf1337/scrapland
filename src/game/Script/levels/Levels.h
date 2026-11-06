@@ -7,6 +7,7 @@
 #ifndef SCRAP_LEVELS_H
 #define SCRAP_LEVELS_H
 
+#include "scrap/global.h"
 #include "scrap/script.h"
 
 /* Bank (Data.packed levels/bank) */
@@ -98,13 +99,16 @@ int Lv_UsrIs(scriptFrame_t *f, PyObject *usr, PyObject *name);
 PyObject *Lv_SpawnCar(scriptFrame_t *f, const char *name, byte nearest);
 /* Lv_SpawnCar that also gives the spawn position SpwPos (borrowed, kept by the frame) */
 PyObject *Lv_SpawnCarAt(scriptFrame_t *f, const char *name, byte nearest, PyObject **spw);
-/* pd = profile() (a global of module); VehiclesNPC.SetStdProperties(e.Name, pd.Ship); VehiclesNPC.ModAIProff(e, pd) */
+/* VehiclesNPC.SetStdProperties(e.Name, pd.Ship); VehiclesNPC.ModAIProff(e, pd) */
+byte Lv_StdAI(scriptFrame_t *f, PyObject *e, PyObject *pd);
+/* pd = profile() (a global of module) and Lv_StdAI(e, pd): pd */
 PyObject *Lv_StdProfile(scriptFrame_t *f, const char *module, const char *profile, PyObject *e);
 /* e.Life = e.MaxLife = the global life of module */
 byte Lv_Life(scriptFrame_t *f, PyObject *e, const char *module, const char *life);
-/* pc = PhoneCab.GetFree() with pc.UseFunc = use and the cab as the mission target (targetFirst: the target is set
- * before the UseFunc, as most missions do): pc */
-PyObject *Lv_PhoneCab(scriptFrame_t *f, const char *use, byte targetFirst);
+/* import PhoneCab; pc = PhoneCab.GetFree() with pc.UseFunc = use and the cab as the mission target (targetFirst: the
+ * target is set before the UseFunc, as most missions do; pcModule: the global pc of that module is the cab right after
+ * GetFree, NULL: a local): pc */
+PyObject *Lv_PhoneCab(scriptFrame_t *f, const char *use, byte targetFirst, const char *pcModule);
 /* (dummy[1][0], dummy[1][1], dummy[1][2]) and (dummy[2][0], dummy[2][1], 0) of a dummy search */
 byte Lv_DummyPosAng(scriptFrame_t *f, PyObject *dummy, PyObject **pos, PyObject **ang);
 /* raise o of a function of module (`raise exceptString`, the rules of Python's raise for any value) */
@@ -123,6 +127,61 @@ void Lv_Colour(scriptFrame_t *f, PyObject *id, const char *item);
 /* Scorer.MissionScorerBar_SetDefaults(id, item, the back colour of Scorer, main, black); NULL main or black: the colours
  * of Scorer */
 void Lv_BarDefaults(scriptFrame_t *f, PyObject *id, const char *item, PyObject *main, PyObject *black);
+/* `usr and usr.Name == name` (the order of most missions; Lv_UsrIs compares the other way round): 1, 0, -1 */
+int Lv_UsrNameIs(scriptFrame_t *f, PyObject *usr, PyObject *name);
+/* `a and b` of two values already there: 1, 0, -1 */
+int Lv_And(scriptFrame_t *f, PyObject *a, PyObject *b);
+/* Scrap.GetAlarm()[0] as a condition: 1, 0, -1 */
+int Lv_Alarm(scriptFrame_t *f);
+/* Speech.AddRemoteCom(key, who[, then[, params]]) (then NULL: two arguments; params NULL: three) */
+byte Lv_Com(scriptFrame_t *f, const char *key, const char *who, PyObject *then, PyObject *params);
+/* MissionsFuncs.SetNextMission(lib, map); SaveGame.MMDesc(desc, 1) */
+byte Lv_Next(scriptFrame_t *f, const char *lib, const char *map, const char *desc);
+/* Menu.MissionScorerCall = v */
+byte Lv_ScorerCall(scriptFrame_t *f, PyObject *v);
+/* SScorer.Set(0, item, var, v) */
+byte Lv_Set0(scriptFrame_t *f, const char *item, const char *var, PyObject *v);
+/* Scorer.MissionScorerText_X + d and Scorer.MissionScorerText_Y + d (d 0: the value itself); Scrap.GetLangStr(key) +
+ * ":" */
+PyObject *Lv_TextX(scriptFrame_t *f, long d);
+PyObject *Lv_TextY(scriptFrame_t *f, long d);
+PyObject *Lv_Label(scriptFrame_t *f, const char *key);
+/* the text item of a mission scorer in Horatio with a shadow at the left, at Lv_TextX(0) and y (visible NULL: not set) */
+byte Lv_Text(scriptFrame_t *f, PyObject *id, const char *item, PyObject *y, PyObject *text, PyObject *visible);
+/* `num` + "/" + `max` of two globals of module (num read first) */
+PyObject *Lv_Count(scriptFrame_t *f, const char *module, const char *num, const char *max);
+/* SScorer.SetMsgText(cad, Scrap.GetTime() + Speech.CalculateSpeechTime(cad)) */
+byte Lv_MsgText(scriptFrame_t *f, PyObject *cad);
+/* Scrap.CreateEntity(name, p[0], p[1], p[2], type) with name a value */
+PyObject *Lv_CreateAt(scriptFrame_t *f, PyObject *name, PyObject *p, const char *type);
+/* `lst = eval(Scrap.GetSaveVar(var)); if not (item in lst): lst.append(item); Scrap.SetSaveVar(var, `lst`)` */
+byte Lv_SaveAdd(scriptFrame_t *f, const char *module, const char *var, const char *item);
+/* `bp = eval(Scrap.GetSaveVar(var)); bp = bp + items; Scrap.SetSaveVar(var, `bp`)` with items the Py_BuildValue of fmt */
+byte Lv_SaveCat(scriptFrame_t *f, const char *module, const char *var, const char *fmt, ...);
+/* a blueprint of a list of the hangar: Lv_SaveAdd of item, and when it was new the message msg (NULL: none; delay:
+ * RaceMaker.ShowSystemMessageDelay(text, 0.25), else import RaceMaker; RaceMaker.ShowSystemMessage(text)) and
+ * NewBluePrintAvaliable + 1 */
+byte Lv_Blueprint(scriptFrame_t *f, const char *module, const char *var, const char *item, const char *msg, byte delay);
+/* pc.UseFunc = "PhoneCab.DefUseAudioCom" with pc the global of module */
+byte Lv_PcDefault(scriptFrame_t *f, const char *module);
+/*
+ * a mission item dropped at pos (money, amplifier, data, matrix): the model and radius are globals of module (radius
+ * NULL: 3500), with the take sound and a mission arrow above it named arrow (NULL: the item's name + "CheckArrow")
+ */
+byte Lv_Drop(scriptFrame_t *f, const char *module, PyObject *pos, const char *name, const char *model, const char *radius,
+	int onlyUser, const char *onTake, const char *sound, const char *arrow);
+/* a mission item taken: itm.rTime = 20, deleted 5 s later, its arrow deleted now (the names of both) */
+byte Lv_Taken(scriptFrame_t *f, PyObject *item, PyObject *arrow);
+
+/* Scrap.GetLangStr(key) % SInput.GetDefinedEntry(0, "Walk", action, "Mouse") */
+PyObject *Lv_KeyText(scriptFrame_t *f, const char *key, const char *action);
+/* InitStatus of an outdoor map while the boss controls the robots: police and traffic 5 (comSats: none when the level
+ * Init.UpperMap is in ComSatsMissionsMapsFinished, and OutPolice.PoliceActive = 0), no ships of the traffic */
+void Lv_BossTraffic(scriptFrame_t *f, byte comSats);
+/* Mission_DestroyCommSats1, 2 and 3: one script in three levels */
+extern PyMethodDef g_OutskirtsDestroyCommSats1Methods[];
+extern PyMethodDef g_CommercialDestroyCommSats2Methods[];
+extern PyMethodDef g_DownTownDestroyCommSats3Methods[];
 
 /*
  * a sound element of the map (MapSnd.SndElements(Name, x, y, z, angx, angy), called by the engine for the map

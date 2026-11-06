@@ -891,17 +891,6 @@ static PyObject *BeatPickus_GetFuncShipPlans(PyObject *self, PyObject *args) {
 	return Sf_None(&f);
 }
 
-/* the blueprint item into the hangar list of the save variable var (once), with its message */
-static void Bp_Blueprint(scriptFrame_t *f, const char *var, const char *item, const char *msg) {
-	PyObject *lst = Lv_SaveList(f, var, BP);
-	if (Sf_In(f, Sf_Str(f, item), lst) == 0) {
-		Lv_SaveAppend(f, var, lst, Sf_Str(f, item));
-		Sf_Import(f, "RaceMaker");
-		Sf_Ask(f, "RaceMaker", "ShowSystemMessage", "(O)", Sf_Lang(f, Sf_Str(f, msg)));
-		Sf_Ask(f, "Scrap", "IncSaveVar", "(s)", "NewBluePrintAvaliable");
-	}
-}
-
 /* TakePlanPhoto(planName): the photo of a blueprint of the mission (1, else 0); after both Traitorius calls */
 static PyObject *BeatPickus_TakePlanPhoto(PyObject *self, PyObject *args) {
 	PyObject *plan;
@@ -917,9 +906,9 @@ static PyObject *BeatPickus_TakePlanPhoto(PyObject *self, PyObject *args) {
 	Sf_Ask(&f, "MissionsFuncs", "UnsetPhotoObject", "(O)", Sf_Entity(&f, plan));
 	int engine = Sf_EqS(&f, plan, "PlanoMFunc1");
 	if (engine > 0) {
-		Bp_Blueprint(&f, "Hangar.availableEnginesList", "MFUNC1", "Mission_GetFuncShipPlans_SystemMessage2");
+		Lv_Blueprint(&f, BP, "Hangar.availableEnginesList", "MFUNC1", "Mission_GetFuncShipPlans_SystemMessage2", 0);
 	} else if (engine == 0) {
-		Bp_Blueprint(&f, "Hangar.shipsToEditList", "SFunc1", "Mission_GetFuncShipPlans_SystemMessage1");
+		Lv_Blueprint(&f, BP, "Hangar.shipsToEditList", "SFunc1", "Mission_GetFuncShipPlans_SystemMessage1", 0);
 	}
 	Sf_SetGlobal(&f, BP, "numPlansWithPhoto", Sf_OpI(&f, BPG("numPlansWithPhoto"), '+', 1));
 	if (Sf_EqI(&f, BPG("numPlansWithPhoto"), 2) > 0) {
@@ -1748,14 +1737,6 @@ static PyObject *InitEpilogue_OnBertoSpeech(PyObject *self, PyObject *args) {
 	return Ie_Speech(args, "Mission_DestroyHumphrey_Berto_InitMsg1", "Mission_DestroyHumphrey_Berto_InitAns1");
 }
 
-/* item into the hangar list of the save variable var, once */
-static void Ie_Blueprint(scriptFrame_t *f, const char *var, const char *item) {
-	PyObject *lst = Lv_SaveList(f, var, IE);
-	if (Sf_In(f, Sf_Str(f, item), lst) == 0) {
-		Lv_SaveAppend(f, var, lst, Sf_Str(f, item));
-	}
-}
-
 /* SetNextMission(): the archbishop's ship and engine, Mission_DestroyHumphrey in Outskirts, the hard enemies */
 static PyObject *InitEpilogue_SetNextMission(PyObject *self, PyObject *args) {
 	scriptFrame_t f = { 0 };
@@ -1763,8 +1744,8 @@ static PyObject *InitEpilogue_SetNextMission(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	Ie_Blueprint(&f, "Hangar.shipsToEditList", "SArchbishop1");
-	Ie_Blueprint(&f, "Hangar.availableEnginesList", "MARCHBISHOP1");
+	Lv_SaveAdd(&f, IE, "Hangar.shipsToEditList", "SArchbishop1");
+	Lv_SaveAdd(&f, IE, "Hangar.availableEnginesList", "MARCHBISHOP1");
 	Sf_Ask(&f, "Scrap", "IncSaveVar", "(si)", "NewBluePrintAvaliable", 2);
 	Sf_Ask(&f, "RaceMaker", "ShowSystemMessage", "(O)", Sf_Lang(&f, Sf_Str(&f, "Mission_DestroyHumphrey_SystemMessage1")));
 	Sf_Ask(&f, "MissionsFuncs", "SetNextMission", "(ss)", "Mission_DestroyHumphrey", "Outskirts");
