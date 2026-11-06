@@ -31,6 +31,7 @@ void Python_Init(void) {
 	char cmd[0x100];
 
 	Py_Initialize();
+	PyProfile_Start();
 	g_PythonReady = 1;
 	PyRun_ScrapString("class ConsoleOutput:\n  softspace=1\n  def write(self,message):\n    import Scrap\n"
 		"    if message is None:\n      Scrap.ConsoleOut('None')\n    else:\n      Scrap.ConsoleOut(message)\n"
@@ -69,6 +70,7 @@ void Python_Close(void) {
 	PyRun_ScrapString("import Init;Init.Close()");
 	cPy_Function_ClearAll();
 	Py_Finalize();
+	PyProfile_End();
 	g_PythonReady = 0;
 }
 
