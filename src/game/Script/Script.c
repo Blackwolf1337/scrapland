@@ -75,6 +75,7 @@ static const scriptModule_t script_modules[] = {
 	{ "Speech", g_SpeechMethods },
 	{ "SaveGame", g_SaveGameMethods },
 	{ "Fx", g_FxMethods },
+	{ "Items", g_ItemsMethods },
 	{ "BankDirectorSound", g_BankDirectorSoundMethods },
 	{ "BankMasterSound", g_BankMasterSoundMethods },
 	{ "BertoSound", g_BertoSoundMethods },
