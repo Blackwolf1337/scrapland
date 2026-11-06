@@ -1,4 +1,4 @@
-# The module code of domination (Data.packed/scripts/superdeals/domination.pyc): its imports, variables, functions and load time calls in the order of the
+# The module code of Domination (Data.packed/scripts/superdeals/domination.pyc): its imports, variables, functions and load time calls in the order of the
 # script; ScrapC makes the module from this file instead of running the .pyc. Made by tools/modules/pyc2mod.py.
 # A pack in mods/ with scrapc/modules/domination.mod replaces this file.
 

@@ -1,4 +1,4 @@
-# The module code of spostman (Data.packed/scripts/split/spostman.pyc): its imports, variables, functions and load time calls in the order of the
+# The module code of SPostman (Data.packed/scripts/split/spostman.pyc): its imports, variables, functions and load time calls in the order of the
 # script; ScrapC makes the module from this file instead of running the .pyc. Made by tools/modules/pyc2mod.py.
 # A pack in mods/ with scrapc/modules/spostman.mod replaces this file.
 
