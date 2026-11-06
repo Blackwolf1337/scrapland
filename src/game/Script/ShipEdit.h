@@ -10,6 +10,12 @@
 #define SE "ShipEdit"
 #define HT "HangarTab"
 
+/* a helper that is a function of the script runs in its own frame g, so its values go when it returns like the locals
+ * of the Python function: SE_SUB(f, Helper(&g, ...)); an error in g fails f. Se_JoinValue keeps the result v of g in f */
+#define SE_SUB(f, call) do { if (!(f)->failed) { scriptFrame_t g = { 0 }; call; Se_Join((f), &g); } } while (0)
+void Se_Join(scriptFrame_t *f, scriptFrame_t *g);
+PyObject *Se_JoinValue(scriptFrame_t *f, scriptFrame_t *g, PyObject *v);
+
 /* SScorer.Set(id, item, var, value) of a script line (nothing after the frame failed): a number, a text, a Python
  * value (item a C text or a Python value), the language text key and key % UseTxt of module (its global) */
 void Se_SetI(scriptFrame_t *f, int id, const char *item, const char *var, double v);

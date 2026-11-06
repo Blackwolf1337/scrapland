@@ -28,6 +28,23 @@ static const char shipedit_def[] = {
 
 /* ---- shared with HangarTab.c ---- */
 
+void Se_Join(scriptFrame_t *f, scriptFrame_t *g) {
+	Sf_Release(g, 0);
+	if (g->failed) {
+		f->failed = 1;
+	}
+}
+
+PyObject *Se_JoinValue(scriptFrame_t *f, scriptFrame_t *g, PyObject *v) {
+	Py_XINCREF(v);
+	Se_Join(f, g);
+	if (f->failed) {
+		Py_XDECREF(v);
+		return NULL;
+	}
+	return Sf_Keep(f, v);
+}
+
 void Se_SetI(scriptFrame_t *f, int id, const char *item, const char *var, double v) {
 	if (!f->failed) {
 		Script_SetNum(id, item, var, v);
@@ -266,13 +283,22 @@ static PyObject *SE_IsEditingMultiplayer(PyObject *self, PyObject *args) {
 }
 
 /* RustyOnPlatform(rusty): the scrap dealer stands on the platform (the comparison, a new kept value) */
-static PyObject *Se_RustyOnPlatform(scriptFrame_t *f, PyObject *rusty) {
+static PyObject *Se_RustyOnPlatform_(scriptFrame_t *f, PyObject *rusty) {
 	PyObject *pp = Sf_Build(f, "(OiO)", Sf_Item(f, Sf_Attr(f, GF("editPlatform"), "Pos"), 0), 0,
 		Sf_Item(f, Sf_Attr(f, GF("editPlatform"), "Pos"), 2));
 	PyObject *rp = Sf_Build(f, "(OiO)", Sf_Item(f, Sf_Attr(f, rusty, "Pos"), 0), 0, Sf_Item(f, Sf_Attr(f, rusty, "Pos"), 2));
 	PyObject *d = Sf_Ask(f, "SVec", "ModSqr", "(O)", Sf_Ask(f, "SVec", "Sub", "(OO)", rp, pp));
 	int c = Sf_Compare(f, d, "<=", Sf_Ask(f, "Scrap", "Get", "(s)", "PlatformRadiusSqr"));
 	return c >= 0 ? Sf_Int(f, c) : NULL;
+}
+
+static PyObject *Se_RustyOnPlatform(scriptFrame_t *f, PyObject *rusty) {
+	PyObject *r = NULL;
+	if (!f->failed) {
+		scriptFrame_t g = { 0 };
+		r = Se_JoinValue(f, &g, Se_RustyOnPlatform_(&g, rusty));
+	}
+	return r;
 }
 
 /* rusty and RustyOnPlatform(rusty): 1, 0, -1 */
@@ -292,7 +318,7 @@ static PyObject *SE_RustyOnPlatform(PyObject *self, PyObject *args) {
 }
 
 /* PointObjectTo(object, point): the object turns to the point (around the vertical axis) */
-static void Se_PointTo(scriptFrame_t *f, PyObject *obj, PyObject *point) {
+static void Se_PointTo_(scriptFrame_t *f, PyObject *obj, PyObject *point) {
 	PyObject *start = Sf_Build(f, "(iii)", 0, 0, -1);
 	PyObject *p = Sf_Build(f, "(OiO)", Sf_Item(f, point, 0), 0, Sf_Item(f, point, 2));
 	PyObject *q = Sf_Build(f, "(OiO)", Sf_Item(f, Sf_Attr(f, obj, "Pos"), 0), 0, Sf_Item(f, Sf_Attr(f, obj, "Pos"), 2));
@@ -303,6 +329,10 @@ static void Se_PointTo(scriptFrame_t *f, PyObject *obj, PyObject *point) {
 		ang = f->failed ? NULL : Sf_Keep(f, PyNumber_Negative(ang));
 	}
 	Sf_SetAttr(f, obj, "Ang", Sf_Build(f, "(iOi)", 0, ang, 0));
+}
+
+static void Se_PointTo(scriptFrame_t *f, PyObject *obj, PyObject *point) {
+	SE_SUB(f, Se_PointTo_(&g, obj, point));
 }
 
 static PyObject *SE_PointObjectTo(PyObject *self, PyObject *args) {
@@ -406,6 +436,7 @@ static PyObject *SE_VerifyChangeShip(PyObject *self, PyObject *args) {
 		Sf_SetAttrI(&f, rusty, "LLogicState", 9);
 		Sf_SetAttrS(&f, rusty, "LLogicTarget", "");
 	}
+	Sf_Release(&f, f.failed ? f.n : 0);
 	const int id = 0;
 	PyObject *ship = Sf_GetItem(&f, Sf_Mod(&f, SE, "editedShips"), HTA("currentHangar"));
 	int lost = Sf_EqI(&f, Sf_GetItem(&f, G("destroyedShips"), HTA("currentHangar")), 1);
@@ -472,6 +503,7 @@ static PyObject *SE_VerifyChangeShip(PyObject *self, PyObject *args) {
 			Sf_Own(&f, SE, "StartRotateLoop", "()");
 		}
 	}
+	Sf_Release(&f, f.failed ? f.n : 0);
 	Sf_Ask(&f, HT, "EnableChangePlatformButtons", "(i)", id);
 	return Sf_None(&f);
 }
@@ -566,15 +598,19 @@ static PyObject *SE_EndMoveEngine(PyObject *self, PyObject *args) {
 }
 
 /* StopRotateLoop(): the ship stops turning */
-static void Se_StopRotate(scriptFrame_t *f) {
+static void Se_StopRotate_(scriptFrame_t *f) {
 	Sf_SetGlobal(f, SE, "ctnRotating", Sf_OpI(f, GF("ctnRotating"), '+', 1));
 	Sf_Import(f, HT);
 	Sf_SetAttrI(f, Se_Mod(f, HT, "prevShip"), "MoveTime", 0);
 	Sf_SetGlobal(f, SE, "isRotating", Sf_Int(f, 0));
 }
 
+static void Se_StopRotate(scriptFrame_t *f) {
+	SE_SUB(f, Se_StopRotate_(&g));
+}
+
 /* RotateShip(Angle): the ship turns to Angle in half a second (EndMoveEngine at the end) */
-static void Se_RotateShip(scriptFrame_t *f, PyObject *angle) {
+static void Se_RotateShip_(scriptFrame_t *f, PyObject *angle) {
 	Sf_Import(f, HT);
 	Se_StopRotate(f);
 	if (Sf_Compare(f, Se_Mod(f, HT, "prevShip"), "!=", Py_None) > 0) {
@@ -585,6 +621,10 @@ static void Se_RotateShip(scriptFrame_t *f, PyObject *angle) {
 		Sf_SetAttrI(f, Se_Mod(f, HT, "prevShip"), "MoveFade", 3);
 		Sf_SetAttrS(f, Se_Mod(f, HT, "prevShip"), "OnEndMove", "ShipEdit.EndMoveEngine");
 	}
+}
+
+static void Se_RotateShip(scriptFrame_t *f, PyObject *angle) {
+	SE_SUB(f, Se_RotateShip_(&g, angle));
 }
 
 static PyObject *SE_RotateShip(PyObject *self, PyObject *args) {
@@ -599,7 +639,7 @@ static PyObject *SE_RotateShip(PyObject *self, PyObject *args) {
 }
 
 /* LoopRotateShip(Rot): one turn of 170 degrees in 10 s, again 9 s later while the loop Rot runs */
-static void Se_LoopRotate(scriptFrame_t *f, PyObject *rot) {
+static void Se_LoopRotate_(scriptFrame_t *f, PyObject *rot) {
 	Sf_Import(f, HT);
 	int c = Sf_Compare(f, GF("ctnRotating"), "==", rot);
 	if (c > 0) {
@@ -617,6 +657,10 @@ static void Se_LoopRotate(scriptFrame_t *f, PyObject *rot) {
 	}
 }
 
+static void Se_LoopRotate(scriptFrame_t *f, PyObject *rot) {
+	SE_SUB(f, Se_LoopRotate_(&g, rot));
+}
+
 static PyObject *SE_LoopRotateShip(PyObject *self, PyObject *args) {
 	scriptFrame_t f = { 0 };
 	PyObject *rot;
@@ -629,10 +673,14 @@ static PyObject *SE_LoopRotateShip(PyObject *self, PyObject *args) {
 }
 
 /* StartRotateLoop(): the ship starts turning (a new loop, the old one ends) */
-static void Se_StartRotate(scriptFrame_t *f) {
+static void Se_StartRotate_(scriptFrame_t *f) {
 	Sf_SetGlobal(f, SE, "isRotating", Sf_Int(f, 1));
 	Sf_SetGlobal(f, SE, "ctnRotating", Sf_OpI(f, GF("ctnRotating"), '+', 1));
 	Se_LoopRotate(f, GF("ctnRotating"));
+}
+
+static void Se_StartRotate(scriptFrame_t *f) {
+	SE_SUB(f, Se_StartRotate_(&g));
 }
 
 static PyObject *SE_StartRotateLoop(PyObject *self, PyObject *args) {
@@ -784,7 +832,7 @@ static PyObject *SE_ChangeTabRight(PyObject *self, PyObject *args) {
 }
 
 /* the tab control in front (yellow title, the tab drawn as the panel) or behind */
-static void Se_TabFront(scriptFrame_t *f, int id, PyObject *tab, byte front) {
+static void Se_TabFront_(scriptFrame_t *f, int id, PyObject *tab, byte front) {
 	Se_SetOO(f, id, tab, "Red", front ? Sf_Int(f, 255) : Sf_Float(f, 255 / 1.5));
 	Se_SetOO(f, id, tab, "Green", front ? Sf_Int(f, 234) : Sf_Float(f, 234 / 1.5));
 	Se_SetOO(f, id, tab, "Blue", front ? Sf_Int(f, 177) : Sf_Float(f, 177 / 1.5));
@@ -794,6 +842,10 @@ static void Se_TabFront(scriptFrame_t *f, int id, PyObject *tab, byte front) {
 	for (int i = 0; i < 5; i++) {
 		Se_SetOO(f, id, name, vars[i], Sf_Int(f, front ? on[i] : off[i]));
 	}
+}
+
+static void Se_TabFront(scriptFrame_t *f, int id, PyObject *tab, byte front) {
+	SE_SUB(f, Se_TabFront_(&g, id, tab, front));
 }
 
 /* math.fabs(a - b) of the angles */
@@ -931,7 +983,7 @@ static PyObject *SE_ChangeTab(PyObject *self, PyObject *args, PyObject *kw) {
 
 /* CleanEditedShips(): the ships of the hangars are deleted (all but the one on the platform), editedShips is ten
  * Nones */
-static void Se_Clean(scriptFrame_t *f) {
+static void Se_Clean_(scriptFrame_t *f) {
 	Sf_Import(f, HT);
 	int n = Sf_Len(f, GF("editedShips"));
 	for (int i = 0; i < n && !f->failed; i++) {
@@ -953,6 +1005,10 @@ static void Se_Clean(scriptFrame_t *f) {
 	for (int i = 0; i < 10; i++) {
 		Sf_Method(f, GF("editedShips"), "append", "(O)", Py_None);
 	}
+}
+
+static void Se_Clean(scriptFrame_t *f) {
+	SE_SUB(f, Se_Clean_(&g));
 }
 
 static PyObject *SE_CleanEditedShips(PyObject *self, PyObject *args) {
@@ -1029,7 +1085,7 @@ static PyObject *SE_SetupForEdit(PyObject *self, PyObject *args) {
 }
 
 /* the text of a ship in a save variable: model<-engine0<-...<-engine3<-weapons<-hull<-upgrades ("" for None) */
-static PyObject *Se_ShipText(scriptFrame_t *f, PyObject *ship) {
+static PyObject *Se_ShipText_(scriptFrame_t *f, PyObject *ship) {
 	if (Sf_Compare(f, ship, "!=", Py_None) <= 0) {
 		return f->failed ? NULL : Sf_Str(f, "");
 	}
@@ -1048,9 +1104,18 @@ static PyObject *Se_ShipText(scriptFrame_t *f, PyObject *ship) {
 	return Sf_Cat(f, "OsOsO", cad, "<-", Sf_Repr(f, Sf_Attr(f, ship, "MaxLife")), "<-", upgrades);
 }
 
+static PyObject *Se_ShipText(scriptFrame_t *f, PyObject *ship) {
+	PyObject *r = NULL;
+	if (!f->failed) {
+		scriptFrame_t g = { 0 };
+		r = Se_JoinValue(f, &g, Se_ShipText_(&g, ship));
+	}
+	return r;
+}
+
 /* SaveShipInfoInSaveVar(ship, hangar), SaveShipInfoInGVar(ship, hangar): the ship into Hangar.HangarShip<hangar+1>
  * (a save variable) or the engine variable HangarShip<hangar+1> */
-static void Se_SaveShip(scriptFrame_t *f, PyObject *ship, PyObject *hangar, byte save) {
+static void Se_SaveShip_(scriptFrame_t *f, PyObject *ship, PyObject *hangar, byte save) {
 	PyObject *cad = Se_ShipText(f, ship);
 	PyObject *n = Sf_Repr(f, Sf_OpI(f, hangar, '+', 1));
 	if (save) {
@@ -1058,6 +1123,10 @@ static void Se_SaveShip(scriptFrame_t *f, PyObject *ship, PyObject *hangar, byte
 	} else {
 		Sf_Ask(f, "Scrap", "Set", "(OO)", Sf_Cat(f, "sO", "HangarShip", n), cad);
 	}
+}
+
+static void Se_SaveShip(scriptFrame_t *f, PyObject *ship, PyObject *hangar, byte save) {
+	SE_SUB(f, Se_SaveShip_(&g, ship, hangar, save));
 }
 
 static PyObject *Se_SaveShipArgs(PyObject *args, byte save) {
@@ -1150,7 +1219,7 @@ static PyObject *SE_AssignShip(PyObject *self, PyObject *args) {
 }
 
 /* Scrap.Set(var, Scrap.Def(var)) for the player's ship variables */
-static void Se_DefaultShip(scriptFrame_t *f, byte name) {
+static void Se_DefaultShip_(scriptFrame_t *f, byte name) {
 	static const char *const vars[] = { "PlayerName", "PilotModel", "PlayerMaxLife", "PlayerModel", "Motor0Model",
 		"Motor1Model", "Motor2Model", "Motor3Model", "WeaponBayList", NULL };
 	for (const char *const *v = vars + (name ? 0 : 2); *v && !f->failed; v++) {
@@ -1158,9 +1227,13 @@ static void Se_DefaultShip(scriptFrame_t *f, byte name) {
 	}
 }
 
+static void Se_DefaultShip(scriptFrame_t *f, byte name) {
+	SE_SUB(f, Se_DefaultShip_(&g, name));
+}
+
 /* a default ship (the Def values of the engine) in hangar p, facing the camera, hidden; pilot the pilot model of
  * SetProperties */
-static void Se_MakeDefault(scriptFrame_t *f, PyObject *p, PyObject *pilot) {
+static void Se_MakeDefault_(scriptFrame_t *f, PyObject *p, PyObject *pilot) {
 	PyObject *pos = Sf_Item(f, GF("editShipPosDummy"), 1);
 	PyObject *model = Sf_Ask(f, "Scrap", "Def", "(s)", "PlayerModel");
 	Sf_SetItem(f, GF("editedShips"), p, Sf_Ask(f, "Scrap", "CreateEntity", "(OOOOs)", model, Sf_Item(f, pos, 0),
@@ -1176,6 +1249,10 @@ static void Se_MakeDefault(scriptFrame_t *f, PyObject *p, PyObject *pilot) {
 	Sf_Ask(f, "Vehicles", "SetProperties", "(OOOOOOOOOsi)", ename, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], "", 1);
 	Sf_SetAttr(f, Sf_GetItem(f, GF("editedShips"), p), "Ang", Se_FrontAng(f, GF("editShipPosDummy"), NULL));
 	Sf_SetAttrI(f, Sf_GetItem(f, GF("editedShips"), p), "Active", 0);
+}
+
+static void Se_MakeDefault(scriptFrame_t *f, PyObject *p, PyObject *pilot) {
+	SE_SUB(f, Se_MakeDefault_(&g, p, pilot));
 }
 
 /* SetupEdit(id): the camera flies to the platform; the ships of the hangars are made (from the engine variables in a
@@ -1205,6 +1282,7 @@ static PyObject *SE_SetupEdit(PyObject *self, PyObject *args) {
 		Sf_SetAttr(&f, G("camera"), "Pos00", Sf_Build(&f, "(iii)", 0, 0, 0));
 		Sf_SetAttr(&f, G("camera"), "Ang00", Sf_Build(&f, "(iii)", 0, 0, 0));
 	}
+	Sf_Release(&f, f.failed ? f.n : 0);
 	PyObject *camAng = Sf_Build(&f, "(OOi)", G("EditCameraPitch"), Sf_OpI(&f, Sf_Item(&f, Sf_Item(&f, G("editShipPosDummy"),
 		2), 1), '-', 180), 0);
 	PyObject *back = Sf_Build(&f, "(iiO)", 0, 0, f.failed ? NULL : Sf_Keep(&f, PyNumber_Negative(G("CameraDist"))));
@@ -1218,6 +1296,7 @@ static PyObject *SE_SetupEdit(PyObject *self, PyObject *args) {
 	if (Se_Multi(&f, 1) > 0) {
 		Sf_SetAttr(&f, G("camera"), "Time00", Sf_Float(&f, 0.0));
 	}
+	Sf_Release(&f, f.failed ? f.n : 0);
 	Se_Clean(&f);
 	int mp = Se_Multi(&f, 1);
 	if (mp > 0) {
@@ -1274,17 +1353,22 @@ static PyObject *SE_SetupEdit(PyObject *self, PyObject *args) {
 			Sf_Own(&f, SE, "AssignShip", "(Oi)", cad, 9);
 		}
 	}
+	Sf_Release(&f, f.failed ? f.n : 0);
 	Sf_Own(&f, SE, "SetupForEdit", "(O)", G("editedShips"));
 	return Sf_None(&f);
 }
 
 /* FreeEdit(): the camera of the editor goes, the old one comes back */
-static void Se_FreeEdit(scriptFrame_t *f) {
+static void Se_FreeEdit_(scriptFrame_t *f) {
 	if (Sf_True(f, GF("camera")) > 0) {
 		Sf_Method(f, GF("camera"), "Del", "()");
 		Sf_SetGlobal(f, SE, "camera", Py_None);
 		Sf_Ask(f, "Scrap", "SetCam", "(iO)", 0, GF("lastCam"));
 	}
+}
+
+static void Se_FreeEdit(scriptFrame_t *f) {
+	SE_SUB(f, Se_FreeEdit_(&g));
 }
 
 static PyObject *SE_FreeEdit(PyObject *self, PyObject *args) {
@@ -1332,6 +1416,7 @@ static PyObject *SE_EnterEditShipMenu(PyObject *self, PyObject *args) {
 	PyObject *lost = Sf_Eval(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Hangar.DestroyedShips"), SE);
 	Sf_SetGlobal(&f, SE, "destroyedShips", lost);
 	Sf_SetItem(&f, G("destroyedShips"), Sf_Int(&f, 9), Sf_Int(&f, 0));
+	Sf_Release(&f, f.failed ? f.n : 0);
 	Sf_Ask(&f, "Menu", "StartNewMenu", "(i)", id);
 	Sf_Own(&f, SE, "AddShipEditTabs", "(iO)", id, G("tabs"));
 	Sf_Own(&f, SE, "AddDefaultPanelContent", "(ii)", id, 4);
@@ -1339,6 +1424,7 @@ static PyObject *SE_EnterEditShipMenu(PyObject *self, PyObject *args) {
 	Sf_Ask(&f, "EnginesTab", "SetEnginesPanel", "(i)", id);
 	Sf_Ask(&f, "WeaponsTab", "SetWeaponsPanel", "(i)", id);
 	Sf_Ask(&f, "HullTab", "SetHullPanel", "(i)", id);
+	Sf_Release(&f, f.failed ? f.n : 0);
 	Sf_Ask(&f, "SScorer", "SetOnSpecialHint", "(iss)", id, "ShipEdit.ShowSpecialHint", f.failed ? "" : Script_Lang("HINT_NoMoney"));
 	static const char *const links[] = { "Sell", "Exit", "Hangar2", "Hangar3", "Hangar1" };
 	for (int i = 0; i < 5; i++) {
@@ -1346,6 +1432,7 @@ static PyObject *SE_EnterEditShipMenu(PyObject *self, PyObject *args) {
 	}
 	Sf_Ask(&f, HT, "SetSellVisible", "(ii)", id, 1);
 	Sf_Ask(&f, HT, "SetSellActive", "(ii)", id, 0);
+	Sf_Release(&f, f.failed ? f.n : 0);
 	PyObject *hangar = Sf_Str(&f, "");
 	if (Sf_Compare(&f, HTA("currentHangar"), ">=", Sf_Int(&f, 0)) > 0) {
 		hangar = Sf_Cat(&f, "sO", "Hangar", Sf_Repr(&f, Sf_OpI(&f, HTA("currentHangar"), '+', 1)));
@@ -1374,6 +1461,7 @@ static PyObject *SE_EnterEditShipMenu(PyObject *self, PyObject *args) {
 	} else if (!f.failed) {
 		Sf_Ask(&f, "SScorer", "SetDefault", "(is)", id, "Hangar1");
 	}
+	Sf_Release(&f, f.failed ? f.n : 0);
 	Sf_Ask(&f, HT, "ShowHangarPanel", "(i)", id);
 	Sf_Ask(&f, "SScorer", "SetOnCancel", "(is)", id, "ShipEdit.ExitEditShipMenu");
 	if (Sf_Compare(&f, HTA("prevShip"), "!=", Py_None) > 0) {
@@ -1406,12 +1494,14 @@ static PyObject *SE_ExitEditShipMenu(PyObject *self, PyObject *args) {
 		Sf_SetAttr(&f, rusty, "Pos", Sf_Build(&f, "(OOO)", Sf_OpI(&f, Sf_Item(&f, vec, 0), '*', 1000), Sf_Item(&f,
 			Sf_Attr(&f, rusty, "Pos"), 1), Sf_OpI(&f, Sf_Item(&f, vec, 2), '*', 1000)));
 	}
+	Sf_Release(&f, f.failed ? f.n : 0);
 	PyObject *robot = Sf_Entity(&f, Sf_Str(&f, "Maintenance_00"));
 	if (Sf_True(&f, robot) > 0) {
 		Sf_SetAttrI(&f, robot, "Active", 0);
 		Sf_SetAttr(&f, robot, "Pos", Sf_Build(&f, "(iii)", -908, -1940, 458));
 		Sf_SetAttrI(&f, robot, "Active", 1);
 	}
+	Sf_Release(&f, f.failed ? f.n : 0);
 	Sf_Ask(&f, "SaveGame", "MarkWayPoint", "(ss)", "Levels/Junkyard", "DM_Player_Spawn_");
 	Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "Hangar.DestroyedShips", Sf_Repr(&f, G("destroyedShips")));
 	Sf_SetMod(&f, HT, "holograms", Sf_Int(&f, 0));
@@ -1422,6 +1512,7 @@ static PyObject *SE_ExitEditShipMenu(PyObject *self, PyObject *args) {
 		Sf_SetAttr(&f, HTA("prevShip"), "Ang", Se_FrontAng(&f, G("editShipPosDummy"), NULL));
 		Sf_SetAttrI(&f, HTA("prevShip"), "ActiveCMask", 1);
 	}
+	Sf_Release(&f, f.failed ? f.n : 0);
 	Sf_Ask(&f, HT, "HideHangarPanel", "(i)", id);
 	Sf_Ask(&f, "EnginesTab", "HideEnginesPanel", "(i)", id);
 	Sf_Ask(&f, "WeaponsTab", "HideWeaponsPanel", "(i)", id);
@@ -1430,6 +1521,7 @@ static PyObject *SE_ExitEditShipMenu(PyObject *self, PyObject *args) {
 	Sf_Own(&f, SE, "FreeEdit", "()");
 	Sf_Ask(&f, "Scrap", "Set", "(si)", "VehicleEditingMode", 0);
 	Sf_SetAttrS(&f, G("editPlatform"), "OnObjSlot", "!Usr0AutoDoorSlot");
+	Sf_Release(&f, f.failed ? f.n : 0);
 	if (Sf_True(&f, G("EndShipEditCallBack")) > 0) {
 		Sf_Call(&f, G("EndShipEditCallBack"), "(iO)", id, control);
 	} else if (Sf_True(&f, G("isXbox")) > 0) {
@@ -1447,7 +1539,7 @@ static PyObject *SE_ExitEditShipMenu(PyObject *self, PyObject *args) {
 }
 
 /* (s.MEng0 != "") or ... or (s.MEng3 != ""): the ship has an engine (1, 0, -1) */
-static int Se_HasEngine(scriptFrame_t *f, PyObject *s) {
+static int Se_HasEngine_(scriptFrame_t *f, PyObject *s) {
 	for (int i = 0; i < 4; i++) {
 		char var[8];
 		Str_Printf(var, sizeof(var), "MEng%d", i);
@@ -1457,6 +1549,12 @@ static int Se_HasEngine(scriptFrame_t *f, PyObject *s) {
 		}
 	}
 	return 0;
+}
+
+static int Se_HasEngine(scriptFrame_t *f, PyObject *s) {
+	int r = -1;
+	SE_SUB(f, r = Se_HasEngine_(&g, s));
+	return f->failed ? -1 : r;
 }
 
 /* SaveShip(id): in a network game the selected (or a valid, or a default) ship becomes the player's ship and the

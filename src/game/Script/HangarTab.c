@@ -87,7 +87,7 @@ static void Ht_TabsAccept(scriptFrame_t *f, int id, byte on) {
 
 /* the buttons that change the ship on the platform: OnAccept of the hangars, the tabs, Sell, Exit, the ship type
  * buttons and the pilot buttons; off while the platform moves */
-static void Ht_PlatformButtons(scriptFrame_t *f, int id, byte on) {
+static void Ht_PlatformButtons_(scriptFrame_t *f, int id, byte on) {
 	for (int i = 0; i < 9; i++) {
 		char name[0x10];
 		Str_Printf(name, sizeof(name), "Hangar%d", i + 1);
@@ -122,6 +122,10 @@ static void Ht_PlatformButtons(scriptFrame_t *f, int id, byte on) {
 		Se_TabRing(f, id, SEAF("tabs"), "UnLinkLR");
 	}
 	Sf_Ask(f, "SScorer", "SetOnCancel", "(is)", id, on ? "ShipEdit.ExitEditShipMenu" : "");
+}
+
+static void Ht_PlatformButtons(scriptFrame_t *f, int id, byte on) {
+	SE_SUB(f, Ht_PlatformButtons_(&g, id, on));
 }
 
 static PyObject *Ht_PlatformArgs(PyObject *args, byte on) {
@@ -256,7 +260,7 @@ static PyObject *HT_SetSellActive(PyObject *self, PyObject *args) {
 }
 
 /* the words of the language text key (string.split), each the item prefix<word>: Visible v */
-static void Ht_Words(scriptFrame_t *f, int id, const char *key, const char *prefix, long v) {
+static void Ht_Words_(scriptFrame_t *f, int id, const char *key, const char *prefix, long v) {
 	PyObject *words = Sf_Ask(f, "string", "split", "(O)", Sf_Str(f, f->failed ? "" : Script_Lang(key)));
 	for (int i = 0; !f->failed; i++) {
 		int mark = f->n;
@@ -269,8 +273,12 @@ static void Ht_Words(scriptFrame_t *f, int id, const char *key, const char *pref
 	}
 }
 
+static void Ht_Words(scriptFrame_t *f, int id, const char *key, const char *prefix, long v) {
+	SE_SUB(f, Ht_Words_(&g, id, key, prefix, v));
+}
+
 /* HideShipMiniInfo(id, control, lostFocus): the mini information of a hangar hides */
-static void Ht_HideMini(scriptFrame_t *f, int id) {
+static void Ht_HideMini_(scriptFrame_t *f, int id) {
 	Sf_Import(f, "string");
 	if (Sf_True(f, GF("miniShip")) > 0) {
 		Sf_SetGlobal(f, HT, "miniShip", Py_None);
@@ -283,6 +291,10 @@ static void Ht_HideMini(scriptFrame_t *f, int id) {
 		"MiniWeight", "MiniCurrentWeight", "MiniMaxWeight", "MiniSlashWeight", "MiniShipInfo", "HLine", "VLine", "MLine",
 		"AuxShipText", NULL };
 	Ht_Show(f, id, items, 0);
+}
+
+static void Ht_HideMini(scriptFrame_t *f, int id) {
+	SE_SUB(f, Ht_HideMini_(&g, id));
 }
 
 static PyObject *HT_HideShipMiniInfo(PyObject *self, PyObject *args) {
@@ -335,7 +347,7 @@ static void Ht_Color(scriptFrame_t *f, int id, const char *name, int kind) {
 }
 
 /* IsShipValid(ship): the ship has engines (the lifeboat always counts): the NEng value that decided, 0 or 1 */
-static PyObject *Ht_IsShipValid(scriptFrame_t *f, PyObject *ship) {
+static PyObject *Ht_IsShipValid_(scriptFrame_t *f, PyObject *ship) {
 	if (Sf_Compare(f, ship, "==", Py_None) != 0) {
 		return f->failed ? NULL : Sf_Int(f, 0);
 	}
@@ -354,6 +366,15 @@ static PyObject *Ht_IsShipValid(scriptFrame_t *f, PyObject *ship) {
 	return has;
 }
 
+static PyObject *Ht_IsShipValid(scriptFrame_t *f, PyObject *ship) {
+	PyObject *r = NULL;
+	if (!f->failed) {
+		scriptFrame_t g = { 0 };
+		r = Se_JoinValue(f, &g, Ht_IsShipValid_(&g, ship));
+	}
+	return r;
+}
+
 static PyObject *HT_IsShipValid(PyObject *self, PyObject *args) {
 	scriptFrame_t f = { 0 };
 	PyObject *ship;
@@ -366,7 +387,7 @@ static PyObject *HT_IsShipValid(PyObject *self, PyObject *args) {
 
 /* UpdateHangars(id): the hangars in their state: selected, empty, with a valid, incomplete or destroyed ship, and
  * their hints */
-static void Ht_UpdateHangars(scriptFrame_t *f, int id) {
+static void Ht_UpdateHangars_(scriptFrame_t *f, int id) {
 	Sf_Import(f, SE);
 	if (Se_Multi(f, 0) == 0) {
 		Se_SetI(f, id, "HangarAux", "Visible", 1);
@@ -467,6 +488,10 @@ static void Ht_UpdateHangars(scriptFrame_t *f, int id) {
 	}
 }
 
+static void Ht_UpdateHangars(scriptFrame_t *f, int id) {
+	SE_SUB(f, Ht_UpdateHangars_(&g, id));
+}
+
 static PyObject *HT_UpdateHangars(PyObject *self, PyObject *args) {
 	scriptFrame_t f = { 0 };
 	int id;
@@ -533,7 +558,7 @@ static PyObject *Ht_Eval(scriptFrame_t *f, PyObject *text, PyObject *locals) {
 
 /* ComputeShipTotalCost(cad="prevShip"): the price of the ship cad names (an expression the function evaluates): the
  * model, its engines, its weapons and the armour above the minimum */
-static PyObject *Ht_TotalCost(scriptFrame_t *f, PyObject *cad) {
+static PyObject *Ht_TotalCost_(scriptFrame_t *f, PyObject *cad) {
 	Sf_Import(f, SE);
 	Sf_Import(f, "ShipMaker");
 	Sf_Import(f, "string");
@@ -581,6 +606,15 @@ static PyObject *Ht_TotalCost(scriptFrame_t *f, PyObject *cad) {
 	return Sf_Op(f, cost, '+', Sf_Op(f, hull, '*', Sf_Mod(f, "ShipMaker", "armorPieceCost")));
 }
 
+static PyObject *Ht_TotalCost(scriptFrame_t *f, PyObject *cad) {
+	PyObject *r = NULL;
+	if (!f->failed) {
+		scriptFrame_t g = { 0 };
+		r = Se_JoinValue(f, &g, Ht_TotalCost_(&g, cad));
+	}
+	return r;
+}
+
 static PyObject *HT_ComputeShipTotalCost(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "cad", NULL };
 	scriptFrame_t f = { 0 };
@@ -604,7 +638,7 @@ static void Ht_Predict(scriptFrame_t *f, int id, const char *sign, PyObject *cos
 
 /* ShowShipMiniInfo(id, control, lostFocus): the mini information of the hangar under the cursor, linked to it by the
  * lines; the texts of an available hangar, a destroyed or an incomplete ship */
-static void Ht_ShowMini(scriptFrame_t *f, int id, PyObject *control) {
+static void Ht_ShowMini_(scriptFrame_t *f, int id, PyObject *control) {
 	Sf_Import(f, SE);
 	Sf_Import(f, "ShipMaker");
 	Sf_Import(f, "string");
@@ -711,6 +745,10 @@ static void Ht_ShowMini(scriptFrame_t *f, int id, PyObject *control) {
 	}
 }
 
+static void Ht_ShowMini(scriptFrame_t *f, int id, PyObject *control) {
+	SE_SUB(f, Ht_ShowMini_(&g, id, control));
+}
+
 static PyObject *HT_ShowShipMiniInfo(PyObject *self, PyObject *args) {
 	scriptFrame_t f = { 0 };
 	PyObject *control, *lost;
@@ -777,7 +815,7 @@ static PyObject *Ht_ShipsList(scriptFrame_t *f, int *rebuild) {
 
 /* AuxShowMoney(id, symbol): the money a new ship costs ("-") or a sold or rebuilt one gives or costs (its whole
  * price, shipTotalCost) */
-static void Ht_AuxShowMoney(scriptFrame_t *f, int id, const char *symbol) {
+static void Ht_AuxShowMoney_(scriptFrame_t *f, int id, const char *symbol) {
 	Sf_Import(f, SE);
 	Sf_Import(f, "ShipMaker");
 	Sf_Import(f, "string");
@@ -796,6 +834,10 @@ static void Ht_AuxShowMoney(scriptFrame_t *f, int id, const char *symbol) {
 		Sf_SetGlobal(f, HT, "shipTotalCost", cost);
 	}
 	Ht_Predict(f, id, symbol, cost, minus ? money : NULL);
+}
+
+static void Ht_AuxShowMoney(scriptFrame_t *f, int id, const char *symbol) {
+	SE_SUB(f, Ht_AuxShowMoney_(&g, id, symbol));
 }
 
 static PyObject *Ht_MoneyArgs(PyObject *args, const char *symbol) {
@@ -886,7 +928,7 @@ static PyObject *HT_ScaleSpeedRamp(PyObject *self, PyObject *args, PyObject *kw)
 }
 
 /* GetMaxSpeedTime(v): the time the ship v needs to reach its top speed */
-static PyObject *Ht_MaxSpeedTime(scriptFrame_t *f, PyObject *v) {
+static PyObject *Ht_MaxSpeedTime_(scriptFrame_t *f, PyObject *v) {
 	Sf_Import(f, "math");
 	PyObject *ft = Sf_Attr(f, v, "FrwTrust");
 	PyObject *neg = f->failed ? NULL : Sf_Keep(f, PyNumber_Negative(ft));
@@ -897,6 +939,15 @@ static PyObject *Ht_MaxSpeedTime(scriptFrame_t *f, PyObject *v) {
 	PyObject *num = Sf_Op(f, neg, '+', Sf_Ask(f, "math", "sqrt", "(O)", in));
 	PyObject *den = Sf_Op(f, Sf_Op(f, Sf_Int(f, 2), '*', Sf_Attr(f, v, "FrwTrust")), '*', Sf_Attr(f, v, "Fric"));
 	return Sf_Op(f, num, '/', den);
+}
+
+static PyObject *Ht_MaxSpeedTime(scriptFrame_t *f, PyObject *v) {
+	PyObject *r = NULL;
+	if (!f->failed) {
+		scriptFrame_t g = { 0 };
+		r = Se_JoinValue(f, &g, Ht_MaxSpeedTime_(&g, v));
+	}
+	return r;
 }
 
 static PyObject *HT_GetMaxSpeedTime(PyObject *self, PyObject *args) {
@@ -935,7 +986,7 @@ static PyObject *HT_CmSec2Value(PyObject *self, PyObject *args) {
 
 /* AddReferenceShipControls(id): the mini information of a hangar: the words of the three hangar texts, the ship
  * window, the speed, boost, hull and weight, the lines to the hangar */
-static void Ht_Reference(scriptFrame_t *f, int id) {
+static void Ht_Reference_(scriptFrame_t *f, int id) {
 	Sf_Import(f, "string");
 	PyObject *x = Sf_Op(f, GF("baseMiniShipInfoX"), '+', Sf_OpI(f, Sf_Int(f, 144), '/', 2));
 	static const char *const texts[][2] = { { "ShipEdit_UncompletedShip", "UncompletedShipText_" },
@@ -956,6 +1007,10 @@ static void Ht_Reference(scriptFrame_t *f, int id) {
 		}
 	}
 	Se_Def(f, id, "reference", NULL, HT);
+}
+
+static void Ht_Reference(scriptFrame_t *f, int id) {
+	SE_SUB(f, Ht_Reference_(&g, id));
 }
 
 static PyObject *HT_AddReferenceShipControls(PyObject *self, PyObject *args) {
@@ -996,6 +1051,7 @@ static PyObject *HT_SetHangarPanel(PyObject *self, PyObject *args) {
 			Se_Def(&f, id, "hangar", v, HT);
 		}
 	}
+	Sf_Release(&f, f.failed ? f.n : 0);
 	vars = Sf_Build(&f, "{s:i,s:i,s:O}", "mp", mp, "sputnik", sput, "money", Sf_Repr(&f, Sf_Ask(&f, "Scrap", "GetMoney",
 		"()")));
 	Se_Def(&f, id, "info", vars, HT);
@@ -1041,7 +1097,7 @@ static const char *const ht_speedInfo[] = { "MaxSpeedText", "MaxSpeed", "BoostRe
 
 /* ShowShipInfo(id, showAmmoInfo=1): the information of the ship on the platform (of the selected hangar on Sputnik's
  * screen): speed, hull, weight, boost, the speed ramp for a valid ship, the weapon counts */
-static void Ht_ShowInfo(scriptFrame_t *f, int id, int ammo) {
+static void Ht_ShowInfo_(scriptFrame_t *f, int id, int ammo) {
 	Sf_Import(f, "ShipMaker");
 	Sf_Import(f, SE);
 	Sf_Import(f, HT);
@@ -1086,6 +1142,10 @@ static void Ht_ShowInfo(scriptFrame_t *f, int id, int ammo) {
 	if (Sf_True(f, SEAF("fromSputnik")) > 0) {
 		Sf_SetAttrI(f, ship, "Active", 0);
 	}
+}
+
+static void Ht_ShowInfo(scriptFrame_t *f, int id, int ammo) {
+	SE_SUB(f, Ht_ShowInfo_(&g, id, ammo));
 }
 
 static PyObject *HT_ShowShipInfo(PyObject *self, PyObject *args, PyObject *kw) {
@@ -1172,7 +1232,7 @@ static void Ht_NoSlots(scriptFrame_t *f, int id) {
 
 /* SelectShipToEdit(id): the plan of the ship type to buy (a hologram on the platform) or the destroyed ship to
  * rebuild, its slots and information; the other tabs are off; the hologram sound starts */
-static void Ht_SelectShipToEdit(scriptFrame_t *f, int id) {
+static void Ht_SelectShipToEdit_(scriptFrame_t *f, int id) {
 	Sf_From(f, "Menu", "LinkUD");
 	static const char *const mods[] = { SE, HT, "Sound", "string" };
 	for (int i = 0; i < 4; i++) {
@@ -1203,10 +1263,12 @@ static void Ht_SelectShipToEdit(scriptFrame_t *f, int id) {
 		Sf_Ask(f, SE, "StartRotateLoop", "()");
 		Ht_TypeState(f, id, 1);
 	}
+	Sf_Release(f, f->failed ? f->n : 0);
 	Ht_WeaponSprites(f, id, 0);
 	Se_SetO(f, id, "NumSlotsParticleWeapons", "Text", Sf_Repr(f, Sf_ToInt(f, Sf_Attr(f, GF("prevShip"), "nSlot00"))));
 	Se_SetO(f, id, "NumSlotsMissileWeapons", "Text", Sf_Repr(f, Sf_ToInt(f, Sf_Attr(f, GF("prevShip"), "nSlot01"))));
 	Se_SetO(f, id, "NumSlotsEnergyWeapons", "Text", Sf_Repr(f, Sf_ToInt(f, Sf_Attr(f, GF("prevShip"), "nSlot02"))));
+	Sf_Release(f, f->failed ? f->n : 0);
 	Ht_ShowInfo(f, id, 0);
 	Se_TabsOn(f, id, SEAF("tabs"), 0);
 	if (Sf_True(f, GF("holograms")) == 0) {
@@ -1222,6 +1284,10 @@ static void Ht_SelectShipToEdit(scriptFrame_t *f, int id) {
 		Sf_Ask(f, "SSound", "SetPS", "(ssi)", "EditHologramLoopSound", "Loop", 1);
 		Sf_Ask(f, "SSound", "SetPS", "(ssd)", "EditHologramLoopSound", "Volume", 0.17);
 	}
+}
+
+static void Ht_SelectShipToEdit(scriptFrame_t *f, int id) {
+	SE_SUB(f, Ht_SelectShipToEdit_(&g, id));
 }
 
 static PyObject *HT_SelectShipToEdit(PyObject *self, PyObject *args) {
@@ -1298,7 +1364,7 @@ static int Ht_Empty(scriptFrame_t *f, PyObject *n) {
 
 /* SelectHangar(id, control="", skipanim=0): the hangar currentHangar is selected: its ship comes up on the platform
  * (the animation, or at once with skipanim), an empty or destroyed one shows the ship plans when the platform is up */
-static void Ht_SelectHangar(scriptFrame_t *f, int id, PyObject *control, int skipanim) {
+static void Ht_SelectHangar_(scriptFrame_t *f, int id, PyObject *control, int skipanim) {
 	static const char *const links[] = { "LinkLR", "LinkUD", "UnLinkUD", "UnLinkLR" };
 	for (int i = 0; i < 4; i++) {
 		Sf_From(f, "Menu", links[i]);
@@ -1320,6 +1386,7 @@ static void Ht_SelectHangar(scriptFrame_t *f, int id, PyObject *control, int ski
 	if (c > 0 && Sf_Compare(f, GF("prevShip"), "!=", Py_None) > 0) {
 		Sf_SetAttrI(f, GF("prevShip"), "Active", 0);
 	}
+	Sf_Release(f, f->failed ? f->n : 0);
 	Ht_Show(f, id, ht_shipType, 0);
 	int pilots = Ht_Pilots(f);
 	if (pilots > 0) {
@@ -1335,6 +1402,7 @@ static void Ht_SelectHangar(scriptFrame_t *f, int id, PyObject *control, int ski
 	} else if (pilots == 0) {
 		Se_Link(f, "LinkLR", id, "NextShip", "Exit");
 	}
+	Sf_Release(f, f->failed ? f->n : 0);
 	int empty = Ht_Empty(f, GF("currentHangar"));
 	if (empty > 0) {
 		static const char *const nums[] = { "NumVulcans", "NumDevastators", "NumInfernoMissiles", "NumSwarmMissiles",
@@ -1381,6 +1449,7 @@ static void Ht_SelectHangar(scriptFrame_t *f, int id, PyObject *control, int ski
 	if (empty < 0) {
 		return;
 	}
+	Sf_Release(f, f->failed ? f->n : 0);
 	Ht_WeaponSprites(f, id, 1);
 	int notAux = Sf_Compare(f, GF("currentHangar"), "!=", Sf_Int(f, 9));
 	if (notAux > 0) {
@@ -1415,6 +1484,7 @@ static void Ht_SelectHangar(scriptFrame_t *f, int id, PyObject *control, int ski
 		Sf_Ask(f, "SScorer", "SetOnNext", "(is)", id, "");
 		Sf_Ask(f, "SScorer", "SetOnPrev", "(is)", id, "");
 	}
+	Sf_Release(f, f->failed ? f->n : 0);
 	Ht_NoSlots(f, id);
 	int isAux = Sf_Compare(f, control, "!=", Sf_Str(f, "HangarAux"));
 	if (isAux > 0) {
@@ -1425,6 +1495,7 @@ static void Ht_SelectHangar(scriptFrame_t *f, int id, PyObject *control, int ski
 	} else if (isAux == 0) {
 		Se_SetOO(f, id, control, "Hint", Sf_Str(f, Script_Lang("HINT_Hangar18")));
 	}
+	Sf_Release(f, f->failed ? f->n : 0);
 	Ht_HideInfo(f, id);
 	if (Sf_EqS(f, control, "HangarAux") > 0) {
 		Sf_Ask(f, "SScorer", "SetDefault", "(is)", id, "HangarAux");
@@ -1434,6 +1505,10 @@ static void Ht_SelectHangar(scriptFrame_t *f, int id, PyObject *control, int ski
 	}
 	Ht_PlatformButtons(f, id, 0);
 	Sf_Ask(f, SE, "LaunchPlatformAnim", "()");
+}
+
+static void Ht_SelectHangar(scriptFrame_t *f, int id, PyObject *control, int skipanim) {
+	SE_SUB(f, Ht_SelectHangar_(&g, id, control, skipanim));
 }
 
 static PyObject *HT_SelectHangar(PyObject *self, PyObject *args, PyObject *kw) {
@@ -1554,6 +1629,7 @@ static PyObject *HT_BuyShip(PyObject *self, PyObject *args) {
 			Sf_Release(&f, f.failed ? f.n : mark);
 		}
 	}
+	Sf_Release(&f, f.failed ? f.n : 0);
 	Sf_SetGlobal(&f, HT, "holograms", Sf_Int(&f, 0));
 	Sf_Ask(&f, "SSound", "SetPS", "(ssi)", "EditHologramLoopSound", "Loop", 0);
 	Sf_Ask(&f, "SSound", "SetPS", "(ssd)", "EditHologramLoopSound", "Volume", 0.0);
@@ -1567,6 +1643,7 @@ static PyObject *HT_BuyShip(PyObject *self, PyObject *args) {
 		Sf_Method(&f, G("prevShip"), "SetFX", "(s)", "ShipEditBuild");
 		Sf_SetItem(&f, SEA("editedShips"), G("currentHangar"), G("prevShip"));
 	}
+	Sf_Release(&f, f.failed ? f.n : 0);
 	Ht_WeaponSprites(&f, id, 1);
 	Ht_Show(&f, id, ht_shipType, 0);
 	Ht_NoSlots(&f, id);
@@ -1577,6 +1654,7 @@ static PyObject *HT_BuyShip(PyObject *self, PyObject *args) {
 	Sf_Ask(&f, "SScorer", "SetOnNext", "(is)", id, "ShipEdit.ChangeTabRight");
 	Sf_Ask(&f, "SScorer", "SetOnPrev", "(is)", id, "ShipEdit.ChangeTabLeft");
 	Ht_SellActive(&f, id, 1);
+	Sf_Release(&f, f.failed ? f.n : 0);
 	Sf_Ask(&f, "SSound", "Play", "(OO)", Sf_Mod(&f, "Sound", "ShipEditLoadShipSound"), Sf_Mod(&f, "Sound",
 		"ShipEditLoadShipVolume"));
 	if (Se_Multi(&f, 0) == 0) {
@@ -1621,6 +1699,7 @@ static PyObject *HT_SellShip(PyObject *self, PyObject *args) {
 		Se_SetO(&f, id, "Money", "Text", Sf_Repr(&f, money));
 		Sf_SetItem(&f, SEA("destroyedShips"), G("currentHangar"), Sf_Int(&f, 0));
 	}
+	Sf_Release(&f, f.failed ? f.n : 0);
 	Sf_Method(&f, Sf_GetItem(&f, SEA("editedShips"), G("currentHangar")), "Del", "()");
 	Sf_SetItem(&f, SEA("editedShips"), G("currentHangar"), Py_None);
 	Sf_SetGlobal(&f, HT, "prevShip", Py_None);
@@ -1635,6 +1714,7 @@ static PyObject *HT_SellShip(PyObject *self, PyObject *args) {
 		Se_Link(&f, "UnLinkUD", id, "PilotName", "Sell");
 		Se_Link(&f, "LinkUD", id, "PilotName", "Exit");
 	}
+	Sf_Release(&f, f.failed ? f.n : 0);
 	Ht_HideInfo(&f, id);
 	/* the script unlinks the whole ring of tabs once per tab */
 	PyObject *rest = Sf_Slice(&f, SEA("tabs"), 1, 0x7fffffff);
