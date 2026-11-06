@@ -1,5 +1,5 @@
 # The functions of Mission_DestroyMickus in level commercial (the script levels/commercial/scripts/mission_destroymickus.py of data02.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: GetFuncEnemiesProfile, InitStatus, Init, CreateTransports, InitMission, OnMickusDamage, ScanShip, CheckContinueScanning, ResetScan, OnFinishScan, MickusIdentified, ReassignTarget, TraitoriusFuncEnemiesCom, CheckMickusVisibility, CreateFuncEnemies, OnFuncEnemiesDeath, OnTransportsDeath, DropMoney, TakeMoney, MissionScorer.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Commercial.c): GetFuncEnemiesProfile, InitStatus, Init, CreateTransports, InitMission, OnMickusDamage, ScanShip, CheckContinueScanning, ResetScan, OnFinishScan, MickusIdentified, ReassignTarget, TraitoriusFuncEnemiesCom, CheckMickusVisibility, CreateFuncEnemies, OnFuncEnemiesDeath, OnTransportsDeath, DropMoney, TakeMoney, MissionScorer.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/commercial/mission_destroymickus.def replaces this file.
 section StopMission
 setvar Menu.MissionScorerCall None

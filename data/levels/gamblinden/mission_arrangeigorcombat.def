@@ -1,5 +1,5 @@
 # The functions of Mission_ArrangeIgorCombat in level gamblinden (the script levels/gamblinden/scripts/mission_arrangeigorcombat.py of data03.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: Init, TalkToIgor, IgorSpeech, TalkToCrazyGambler, CrazyGamblerSpeech.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/GamblinDen.c): Init, TalkToIgor, IgorSpeech, TalkToCrazyGambler, CrazyGamblerSpeech.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/gamblinden/mission_arrangeigorcombat.def replaces this file.
 section InitStatus LevelPath
 call Scrap.SetSaveVar "PoliceBossAtPolice" "0"

@@ -1,5 +1,5 @@
 # The functions of Mission_GetDataPart3 in level commercial (the script levels/commercial/scripts/mission_getdatapart3.py of data02.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: GetFunctionariesEnemiesProfile, InitStatus, Init, InitMission, CreateWave, CreateFunctionary, ReinsertFunctionaryInWave, OnFunctionaryDeath, OnFunctionaryDamage, DropData, CheckAITakesData, CheckAI, TakeData, CallBoss, UsePhoneCab, PreGetData, GetData, CallDeepThroat, UsePhoneCab2, SetNextMission, MissionScorer.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Commercial.c): GetFunctionariesEnemiesProfile, InitStatus, Init, InitMission, CreateWave, CreateFunctionary, ReinsertFunctionaryInWave, OnFunctionaryDeath, OnFunctionaryDamage, DropData, CheckAITakesData, CheckAI, TakeData, CallBoss, UsePhoneCab, PreGetData, GetData, CallDeepThroat, UsePhoneCab2, SetNextMission, MissionScorer.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/commercial/mission_getdatapart3.def replaces this file.
 section StopMission
 setvar Menu.MissionScorerCall None

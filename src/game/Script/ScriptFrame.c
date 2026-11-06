@@ -7,6 +7,7 @@
  * value helper of ScriptValue.c does the operation, the frame helper only keeps its result.
  */
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "scrap/global.h"
@@ -580,4 +581,215 @@ byte Sf_ScorerDefault(scriptFrame_t *f, int id, const char *item) {
 		Script_SetDefault(id, item);
 	}
 	return Sf_Check(f, item != NULL);
+}
+
+/* ---- statements and tables of the level scripts ---- */
+
+byte Sf_Run(scriptFrame_t *f, const char *module, const char *func, const char *fmt, ...) {
+	int mark = f->n;
+	PyObject *fn = Sf_Mod(f, module, func);
+	if (fn) {
+		va_list va;
+		va_start(va, fmt);
+		PyObject *args = Py_VaBuildValue((char *)fmt, va);
+		va_end(va);
+		Sf_CallArgs(f, fn, Sf_Check(f, args != NULL) ? args : NULL);
+	}
+	Sf_Release(f, mark);
+	return !f->failed;
+}
+
+PyObject *Sf_Value(scriptFrame_t *f, const char *module, const char *text, int len) {
+	char buf[0x100], *end;
+	if (f->failed) {
+		return NULL;
+	}
+	if (len < 0) {
+		len = (int)strlen(text);
+	}
+	if (len <= 0 || len >= (int)sizeof(buf)) {
+		Sf_Raise(f, PyExc_SystemError, "bad value in a call table");
+		return NULL;
+	}
+	memcpy(buf, text, len);
+	buf[len] = 0;
+	if (buf[0] == '\'') {
+		return Sf_Str(f, buf + 1);
+	}
+	if (buf[0] == '%' || buf[0] == '^') {
+		char *dot = strchr(buf, '.'), *colon = buf[0] == '^' && dot ? strchr(dot, ':') : NULL;
+		if (!dot || (buf[0] == '^' && !colon)) {
+			Sf_Raise(f, PyExc_SystemError, "bad value in a call table");
+			return NULL;
+		}
+		*dot = 0;
+		if (colon) {
+			*colon = 0;
+			return Sf_Ask(f, buf + 1, dot + 1, "(s)", colon + 1);
+		}
+		return Sf_Mod(f, buf + 1, dot + 1);
+	}
+	if (buf[0] == '-' || (buf[0] >= '0' && buf[0] <= '9')) {
+		if (!strchr(buf, '.')) {
+			long i = strtol(buf, &end, 10);
+			if (*end == 0) {
+				return Sf_Int(f, i);
+			}
+		} else {
+			double d = strtod(buf, &end);
+			if (*end == 0) {
+				return Sf_Float(f, d);
+			}
+		}
+	}
+	(void)module;
+	return Sf_Str(f, buf);
+}
+
+byte Sf_Calls(scriptFrame_t *f, const char *module, const char *const *lines) {
+	for (; *lines && !f->failed; lines++) {
+		const char *p = *lines, *bar = strchr(p, '|');
+		char name[0x80];
+		int len = bar ? (int)(bar - p) : (int)strlen(p);
+		if (len >= (int)sizeof(name)) {
+			return Sf_Raise(f, PyExc_SystemError, "bad call in a call table");
+		}
+		memcpy(name, p, len);
+		name[len] = 0;
+		int mark = f->n;
+		PyObject *fn;
+		if (name[0] == '@') {
+			fn = Sf_Global(f, module, name + 1);
+		} else {
+			char *dot = strchr(name, '.');
+			if (!dot) {
+				return Sf_Raise(f, PyExc_SystemError, "bad call in a call table");
+			}
+			*dot = 0;
+			fn = Sf_Mod(f, name, dot + 1);
+		}
+		PyObject *vals[8];
+		int n = 0;
+		for (p = bar; p && n < 8 && !f->failed; n++) {
+			const char *next = strchr(p + 1, '|');
+			vals[n] = Sf_Value(f, module, p + 1, next ? (int)(next - p - 1) : -1);
+			p = next;
+		}
+		PyObject *args = f->failed ? NULL : PyTuple_New(n);
+		for (int i = 0; args && i < n; i++) {
+			Py_INCREF(vals[i]);
+			PyTuple_SET_ITEM(args, i, vals[i]);
+		}
+		Sf_CallArgs(f, fn, Sf_Check(f, f->failed || args != NULL) ? args : NULL);
+		Sf_Release(f, mark);
+	}
+	return !f->failed;
+}
+
+byte Sf_SetAttrs(scriptFrame_t *f, PyObject *o, const char *module, const char *const *pairs) {
+	for (; *pairs && !f->failed; pairs++) {
+		const char *eq = strchr(*pairs, '=');
+		char name[0x40];
+		int len = eq ? (int)(eq - *pairs) : 0;
+		if (!eq || len >= (int)sizeof(name)) {
+			return Sf_Raise(f, PyExc_SystemError, "bad attribute in a table");
+		}
+		memcpy(name, *pairs, len);
+		name[len] = 0;
+		int mark = f->n;
+		Sf_SetAttr(f, o, name, Sf_Value(f, module, eq + 1, -1));
+		Sf_Release(f, mark);
+	}
+	return !f->failed;
+}
+
+/* ---- the speech and the mission scorer of the missions ---- */
+
+byte Sf_SpeechNames(scriptFrame_t *f, PyObject *usr, PyObject *npc) {
+	return Sf_SetMod(f, "Speech", "PlayerName", usr) && Sf_SetMod(f, "Speech", "NPCName", npc);
+}
+
+byte Sf_SpeechEnd(scriptFrame_t *f, PyObject *fn, PyObject *params) {
+	int mark = f->n;
+	Sf_SetMod(f, "Speech", "OnEndOfSpeech", fn);
+	Sf_SetMod(f, "Speech", "OnEndOfSpeechParams", params ? params : Sf_Build(f, "()"));
+	Sf_Release(f, mark);
+	return !f->failed;
+}
+
+byte Sf_NISpeech(scriptFrame_t *f, const char *who, const char *key) {
+	return (who ? Sf_Run(f, "Speech", "NISpeech", "(s)", who) : Sf_Run(f, "Speech", "NISpeech", "()")) &&
+		Sf_Run(f, "Speech", "AutoAddNI", "(s)", key) && Sf_Run(f, "Speech", "RunNI", "()");
+}
+
+byte Sf_DrawScorer(scriptFrame_t *f) {
+	int mark = f->n;
+	PyObject *fn = Sf_Mod(f, "Menu", "DrawScorer");
+	Sf_Call(f, fn, "(iO)", 0, Sf_Ask(f, "SInput", "GetActionSet", "()"));
+	Sf_Release(f, mark);
+	return !f->failed;
+}
+
+byte Sf_MissionText(scriptFrame_t *f, PyObject *id, const char *item, const char *type, PyObject *x, PyObject *y,
+	const char *font, const char *effect, PyObject *text, const char *align, PyObject *visible) {
+	static const char *const rgba[] = { "Red", "Green", "Blue", "Alpha" };
+	int mark = f->n;
+	if (type) {
+		Sf_Run(f, "SScorer", "Add", "(Oss)", id, item, type);
+	}
+	Sf_Run(f, "SScorer", "Set", "(OssO)", id, item, "X", x);
+	Sf_Run(f, "SScorer", "Set", "(OssO)", id, item, "Y", y);
+	Sf_Run(f, "SScorer", "Set", "(Osss)", id, item, "Font", font);
+	if (effect) {
+		Sf_Run(f, "SScorer", "Set", "(Osss)", id, item, "Effect", effect);
+	}
+	Sf_Run(f, "SScorer", "Set", "(OssO)", id, item, "Text", text);
+	Sf_Run(f, "SScorer", "Set", "(Osss)", id, item, "Align", align);
+	for (int i = 0; i < 4 && !f->failed; i++) {
+		Sf_Run(f, "SScorer", "Set", "(OssO)", id, item, rgba[i], Sf_Item(f, Sf_Mod(f, "Scorer", "MissionScorerText_Color"), i));
+	}
+	if (visible) {
+		Sf_Run(f, "SScorer", "Set", "(OssO)", id, item, "Visible", visible);
+	}
+	Sf_Release(f, mark);
+	return !f->failed;
+}
+
+byte Sf_MissionSprite(scriptFrame_t *f, PyObject *id, const char *item, PyObject *x, PyObject *y, int alpha, int r, int g, int b) {
+	int mark = f->n;
+	Sf_Run(f, "SScorer", "Add", "(Oss)", id, item, "Sprite");
+	Sf_Run(f, "SScorer", "Set", "(OssO)", id, item, "X", x);
+	Sf_Run(f, "SScorer", "Set", "(OssO)", id, item, "Y", y);
+	Sf_Run(f, "SScorer", "Set", "(Ossi)", id, item, "ScaleX", 30);
+	Sf_Run(f, "SScorer", "Set", "(Ossi)", id, item, "ScaleY", 19);
+	Sf_Run(f, "SScorer", "Set", "(Ossi)", id, item, "Unit", 1);
+	Sf_Run(f, "SScorer", "Set", "(Ossi)", id, item, "Alpha", alpha);
+	Sf_Run(f, "SScorer", "Set", "(Ossi)", id, item, "Red", r);
+	Sf_Run(f, "SScorer", "Set", "(Ossi)", id, item, "Green", g);
+	Sf_Run(f, "SScorer", "Set", "(Ossi)", id, item, "Blue", b);
+	Sf_Release(f, mark);
+	return !f->failed;
+}
+
+byte Sf_EntSet(scriptFrame_t *f, const char *name, const char *var, PyObject *v) {
+	int mark = f->n;
+	Sf_SetAttr(f, Sf_Ask(f, "Scrap", "GetEntity", "(s)", name), var, v);
+	Sf_Release(f, mark);
+	return !f->failed;
+}
+
+byte Sf_EntSetS(scriptFrame_t *f, const char *name, const char *var, const char *s) {
+	int mark = f->n;
+	PyObject *e = Sf_Ask(f, "Scrap", "GetEntity", "(s)", name);
+	Sf_SetAttr(f, e, var, Sf_Str(f, s));
+	Sf_Release(f, mark);
+	return !f->failed;
+}
+
+byte Sf_EntSetI(scriptFrame_t *f, const char *name, const char *var, long i) {
+	int mark = f->n;
+	PyObject *e = Sf_Ask(f, "Scrap", "GetEntity", "(s)", name);
+	Sf_SetAttr(f, e, var, Sf_Int(f, i));
+	Sf_Release(f, mark);
+	return !f->failed;
 }

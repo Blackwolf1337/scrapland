@@ -31,6 +31,17 @@ typedef struct {
 extern PyMethodDef g_MenuMapMethods[], g_TempleMapMethods[], g_TempleXlMethods[], g_TempleArchbishopDeadMethods[],
 	g_TempleAskGusMethods[], g_TempleMeetArchbishopMethods[], g_TempleTalkToDeepThroatMethods[];
 
+extern PyMethodDef g_CommercialMapMethods[], g_CommercialMapRaceMethods[], g_CommercialDestroyMickusMethods[],
+	g_CommercialProtectGusMethods[], g_CommercialDestroyStupidusMethods[], g_CommercialWin1stRaceMethods[],
+	g_CommercialDestroyCommSats2Methods[], g_CommercialFirstMeetDeepThroatMethods[], g_CommercialGetDataPart3Methods[],
+	g_CommercialDefeatCrazyGambler3Methods[], g_CommercialDestroyPorkinsTransportsMethods[];
+extern PyMethodDef g_OrbitMapMethods[], g_OrbitMapDecontMethods[], g_OrbitIntroHumanMethods[];
+extern PyMethodDef g_GamblinDenMapMethods[], g_GamblinDenBeforeFinalFightMethods[], g_GamblinDenAfterFinalFightMethods[],
+	g_GamblinDenArrangeIgorCombatMethods[], g_GamblinDenArrangeBankersCTFMethods[], g_GamblinDenArrangeBankersCombatMethods[],
+	g_GamblinDenIgorFirstContactMethods[], g_GamblinDenGoToGamblinDenMethods[], g_GamblinDenTalkToTraitoriusAfterCTFMethods[],
+	g_GamblinDenBackFromMortalRaceMethods[], g_GamblinDenCrazyGamblerFirstContactMethods[], g_GamblinDenArrangeMortalRaceMethods[],
+	g_GamblinDenThreeStoogesMethods[];
+
 static const levelModule_t level_modules[] = {
 	{ "menu", "Map", g_MenuMapMethods },
 	{ "temple", "Map", g_TempleMapMethods },
@@ -59,6 +70,33 @@ static const levelModule_t level_modules[] = {
 	{ "townhall", "Mission_CatchTrurl", g_TownhallCatchTrurlMethods },
 	{ "townhall", "Mission_SheriffMayor", g_TownhallSheriffMayorMethods },
 	{ "townhall", "Mission_TalkToMayor", g_TownhallTalkToMayorMethods },
+	{ "commercial", "Map", g_CommercialMapMethods },
+	{ "commercial", "MapRace", g_CommercialMapRaceMethods },
+	{ "commercial", "Mission_DestroyMickus", g_CommercialDestroyMickusMethods },
+	{ "commercial", "Mission_ProtectGus", g_CommercialProtectGusMethods },
+	{ "commercial", "Mission_DestroyStupidus", g_CommercialDestroyStupidusMethods },
+	{ "commercial", "Mission_Win1stRace", g_CommercialWin1stRaceMethods },
+	{ "commercial", "Mission_DestroyCommSats2", g_CommercialDestroyCommSats2Methods },
+	{ "commercial", "Mission_FirstMeetDeepThroat", g_CommercialFirstMeetDeepThroatMethods },
+	{ "commercial", "Mission_GetDataPart3", g_CommercialGetDataPart3Methods },
+	{ "commercial", "Mission_DefeatCrazyGambler3", g_CommercialDefeatCrazyGambler3Methods },
+	{ "commercial", "Mission_DestroyPorkinsTransports", g_CommercialDestroyPorkinsTransportsMethods },
+	{ "orbit", "Map", g_OrbitMapMethods },
+	{ "orbit", "MapDecont", g_OrbitMapDecontMethods },
+	{ "orbit", "Mission_IntroHuman", g_OrbitIntroHumanMethods },
+	{ "gamblinden", "Map", g_GamblinDenMapMethods },
+	{ "gamblinden", "Mission_BeforeFinalFight", g_GamblinDenBeforeFinalFightMethods },
+	{ "gamblinden", "Mission_AfterFinalFight", g_GamblinDenAfterFinalFightMethods },
+	{ "gamblinden", "Mission_ArrangeIgorCombat", g_GamblinDenArrangeIgorCombatMethods },
+	{ "gamblinden", "Mission_ArrangeBankersCTF", g_GamblinDenArrangeBankersCTFMethods },
+	{ "gamblinden", "Mission_ArrangeBankersCombat", g_GamblinDenArrangeBankersCombatMethods },
+	{ "gamblinden", "Mission_IgorFirstContact", g_GamblinDenIgorFirstContactMethods },
+	{ "gamblinden", "Mission_GoToGamblinDen", g_GamblinDenGoToGamblinDenMethods },
+	{ "gamblinden", "Mission_TalkToTraitoriusAfterCTF", g_GamblinDenTalkToTraitoriusAfterCTFMethods },
+	{ "gamblinden", "Mission_BackFromMortalRace", g_GamblinDenBackFromMortalRaceMethods },
+	{ "gamblinden", "Mission_CrazyGamblerFirstContact", g_GamblinDenCrazyGamblerFirstContactMethods },
+	{ "gamblinden", "Mission_ArrangeMortalRace", g_GamblinDenArrangeMortalRaceMethods },
+	{ "gamblinden", "Mission_ThreeStooges", g_GamblinDenThreeStoogesMethods },
 	{ NULL, NULL, NULL },
 };
 

@@ -1,5 +1,5 @@
 # The functions of Mission_ArrangeMortalRace in level gamblinden (the script levels/gamblinden/scripts/mission_arrangemortalrace.py of data03.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: Init, CrazyGamblerSpeech.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/GamblinDen.c): Init, CrazyGamblerSpeech.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/gamblinden/mission_arrangemortalrace.def replaces this file.
 section InitStatus LevelPath
 call Scrap.SetSaveVar "FunctionaryTwinsAtGambinDen" "0"

@@ -28,6 +28,8 @@ void Script_Install(PyObject *module, PyMethodDef *methods, PyObject *kept);
  * holds the replaced functions until the module loads again */
 void Script_LevelModuleLoaded(const char *name, PyObject *module, PyObject *kept);
 
+/* CreateFixedInit(e) of the level scripts: the character e stands where it is (src/game/Script/levels/Orbit.c) */
+PyObject *Level_FixedInit(PyObject *self, PyObject *args);
 /* a step of a .def file that C does ("run <name> [arg ...]"), args the tuple of the arguments */
 typedef struct scriptStep_s {
 	const char *name;
@@ -202,6 +204,14 @@ typedef struct scriptFrame_s {
 	byte failed;
 } scriptFrame_t;
 
+/* the start of a ported function (self, args): the frame f and the arguments as PyArg_ParseTuple(args, ...) parses
+ * them (a bad call returns NULL) */
+#define SF_ARGS(...) \
+	scriptFrame_t f = { 0 }; \
+	(void)self; \
+	if (!PyArg_ParseTuple(args, __VA_ARGS__)) { \
+		return NULL; \
+	}
 /* o (a new reference or NULL with the error set) into the frame */
 PyObject *Sf_Keep(scriptFrame_t *f, PyObject *o);
 /* ok, else the frame fails (the error set); the frame is still good */
@@ -307,6 +317,35 @@ byte Sf_ScorerStr(scriptFrame_t *f, int id, const char *item, const char *var, c
 double Sf_ScorerGet(scriptFrame_t *f, int id, const char *item, const char *var);
 /* SScorer.SetDefault(id, item), nothing after an error */
 byte Sf_ScorerDefault(scriptFrame_t *f, int id, const char *item);
+/* module.func(Py_BuildValue args) as a statement: the result dropped at once */
+byte Sf_Run(scriptFrame_t *f, const char *module, const char *func, const char *fmt, ...);
+/*
+ * the tables of the level scripts (scenes, ship profiles): a value as text (len -1 for the whole text) is an int
+ * ("205"), a float ("0.7"), "%Module.name" (an attribute of a module), "^Module.Func:text" (Module.Func("text")),
+ * "'text" (always a string) or else a string; Sf_Calls runs lines "Module.Func|value|..." ("@Func" a global of module,
+ * as its own functions call it) in order as statements (the table ends with NULL); Sf_SetAttrs sets "name=value"
+ * pairs as o.name = value
+ */
+PyObject *Sf_Value(scriptFrame_t *f, const char *module, const char *text, int len);
+byte Sf_Calls(scriptFrame_t *f, const char *module, const char *const *lines);
+byte Sf_SetAttrs(scriptFrame_t *f, PyObject *o, const char *module, const char *const *pairs);
+/* Speech.PlayerName = usr; Speech.NPCName = npc. Speech.OnEndOfSpeech = fn; Speech.OnEndOfSpeechParams = params
+ * (NULL for ()). Speech.NISpeech(who) (who NULL: no argument); Speech.AutoAddNI(key); Speech.RunNI() */
+byte Sf_SpeechNames(scriptFrame_t *f, PyObject *usr, PyObject *npc);
+byte Sf_SpeechEnd(scriptFrame_t *f, PyObject *fn, PyObject *params);
+byte Sf_NISpeech(scriptFrame_t *f, const char *who, const char *key);
+/* Scrap.GetEntity(name).var = v, a text, an int (v borrowed) */
+byte Sf_EntSet(scriptFrame_t *f, const char *name, const char *var, PyObject *v);
+byte Sf_EntSetS(scriptFrame_t *f, const char *name, const char *var, const char *s);
+byte Sf_EntSetI(scriptFrame_t *f, const char *name, const char *var, long i);
+/* Menu.DrawScorer(0, SInput.GetActionSet()) */
+byte Sf_DrawScorer(scriptFrame_t *f);
+/* a text of a mission scorer as the missions set it: SScorer.Add(id, item, type) (type NULL: none), X, Y, Font,
+ * Effect (NULL: none), Text, Align, the colour Scorer.MissionScorerText_Color and Visible (NULL: none) */
+byte Sf_MissionText(scriptFrame_t *f, PyObject *id, const char *item, const char *type, PyObject *x, PyObject *y,
+	const char *font, const char *effect, PyObject *text, const char *align, PyObject *visible);
+/* a 30 x 19 sprite behind a number of a mission scorer: Add, X, Y, ScaleX, ScaleY, Unit 1, Alpha, Red, Green, Blue */
+byte Sf_MissionSprite(scriptFrame_t *f, PyObject *id, const char *item, PyObject *x, PyObject *y, int alpha, int r, int g, int b);
 
 /* the C video options of PCMenu (src/game/Script/MenuVideo.c) */
 extern PyMethodDef g_MenuVideoMethods[];

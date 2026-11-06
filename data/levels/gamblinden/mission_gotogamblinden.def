@@ -1,5 +1,5 @@
 # The functions of Mission_GoToGamblinDen in level gamblinden (the script levels/gamblinden/scripts/mission_gotogamblinden.py of data03.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, AfterBrowseNPC, CreateMercenaryInit, Init, LoadScene.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/GamblinDen.c): InitStatus, AfterBrowseNPC, CreateMercenaryInit, Init, LoadScene.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/gamblinden/mission_gotogamblinden.def replaces this file.
 section MercenarySpeech UsrName CharName optId FullOption
 setvar Speech.PlayerName $UsrName

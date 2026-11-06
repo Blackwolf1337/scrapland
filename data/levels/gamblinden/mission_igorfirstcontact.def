@@ -1,5 +1,5 @@
 # The functions of Mission_IgorFirstContact in level gamblinden (the script levels/gamblinden/scripts/mission_igorfirstcontact.py of data03.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: Init, TalkToCrazyGambler, CrazyGamblerSpeech, TalkToIgor, IgorSpeech, TalkToMercenaries, MercenaryASpeech, MercenaryCSpeech, MercenaryBSpeech.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/GamblinDen.c): Init, TalkToCrazyGambler, CrazyGamblerSpeech, TalkToIgor, IgorSpeech, TalkToMercenaries, MercenaryASpeech, MercenaryCSpeech, MercenaryBSpeech.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/gamblinden/mission_igorfirstcontact.def replaces this file.
 section InitStatus LevelPath
 

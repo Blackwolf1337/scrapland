@@ -1,5 +1,5 @@
 # The functions of Mission_ArrangeBankersCombat in level gamblinden (the script levels/gamblinden/scripts/mission_arrangebankerscombat.py of data03.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, LaunchIgorDefeatedSpeech, LaunchDeepThroatMessage, TalkToPoliceBoss, TalkToCrazyGambler, CrazyGamblerSpeech.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/GamblinDen.c): InitStatus, Init, LaunchIgorDefeatedSpeech, LaunchDeepThroatMessage, TalkToPoliceBoss, TalkToCrazyGambler, CrazyGamblerSpeech.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/gamblinden/mission_arrangebankerscombat.def replaces this file.
 section TalkToDeepThroat
 call MissionsFuncs.ActivateTarget %Mission_ArrangeBankersCombat.dd 1

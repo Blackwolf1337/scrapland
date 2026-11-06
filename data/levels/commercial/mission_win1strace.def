@@ -1,5 +1,5 @@
 # The functions of Mission_Win1stRace in level commercial (the script levels/commercial/scripts/mission_win1strace.py of data02.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, Init, InitTimeRace, OnRaceStart, RaceGo, OnCheckPoint, OnAlarmOn, TimeExpired, MissionScorer.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Commercial.c): InitStatus, Init, InitTimeRace, OnRaceStart, RaceGo, OnCheckPoint, OnAlarmOn, TimeExpired, MissionScorer.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/commercial/mission_win1strace.def replaces this file.
 section OnAlarmOff
 setvar Alarm.TempAbortMissionCallback %Mission_Win1stRace.OnAlarmOn

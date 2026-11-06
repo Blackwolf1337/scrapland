@@ -1,5 +1,5 @@
 # The functions of Mission_DestroyPorkinsTransports in level commercial (the script levels/commercial/scripts/mission_destroyporkinstransports.py of data02.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: GetBishopsEnemiesProfile, InitStatus, Init, InitMission, CreateMayorTransport, CreatePorkinsTransport, CreateBishop, AttackMayorTransport, OnPorkinsTransportDeath, OnMayorTransportDeath, CheckBishopWithoutTarget, OnBishopDeath, OnBishopDamage, GetMayorReward, CallDeepThroat, UsePhoneCab, SetNextMission, UpdateScorer, MissionScorer.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Commercial.c): GetBishopsEnemiesProfile, InitStatus, Init, InitMission, CreateMayorTransport, CreatePorkinsTransport, CreateBishop, AttackMayorTransport, OnPorkinsTransportDeath, OnMayorTransportDeath, CheckBishopWithoutTarget, OnBishopDeath, OnBishopDamage, GetMayorReward, CallDeepThroat, UsePhoneCab, SetNextMission, UpdateScorer, MissionScorer.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/commercial/mission_destroyporkinstransports.def replaces this file.
 section PreCallDeepThroat
 call Scrap.SetSaveVar "MissionState" "CallDeepThroat"
