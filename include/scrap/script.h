@@ -305,6 +305,7 @@ extern PyMethodDef g_InfernoMethods[];
 extern PyMethodDef g_CloudMethods[];
 extern PyMethodDef g_EMIMethods[];
 extern PyMethodDef g_SonicMethods[];
+extern PyMethodDef g_SputnikInterfaceMethods[];
 /* the functions of the Init module (src/game/Script/InitLevel.c) */
 extern PyMethodDef g_InitMethods[];
 /* the sound scripts of the characters (src/game/Script/Sounds.c, data/sound/) */

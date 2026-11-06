@@ -88,6 +88,7 @@ static const scriptModule_t script_modules[] = {
 	{ "Cloud", g_CloudMethods },
 	{ "EMI", g_EMIMethods },
 	{ "Sonic", g_SonicMethods },
+	{ "SputnikInterface", g_SputnikInterfaceMethods },
 	{ "Init", g_InitMethods },
 	{ "BankDirectorSound", g_BankDirectorSoundMethods },
 	{ "BankMasterSound", g_BankMasterSoundMethods },
