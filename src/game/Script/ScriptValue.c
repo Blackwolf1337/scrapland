@@ -70,6 +70,18 @@ PyObject *Script_Index(PyObject *o, int i) {
 	return v;
 }
 
+PyObject *Script_GetAttr(PyObject *o, const char *name) {
+	PyObject *v = o ? PyObject_GetAttrString(o, (char *)name) : NULL;
+	return v || !o ? v : Script_Fail();
+}
+
+PyObject *Script_Fail(void) {
+	if (!PyErr_Occurred()) {
+		PyErr_SetString(PyExc_SystemError, "error return without exception set");
+	}
+	return NULL;
+}
+
 PyObject *Script_Plus(PyObject *a, PyObject *b) {
 	PyObject *r = a && b ? PyNumber_Add(a, b) : NULL;
 	Py_XDECREF(a);
@@ -554,7 +566,7 @@ int Script_NameChain(PyObject *locals, PyObject *globals, const char *text, PyOb
 			Py_XDECREF(w);
 			v = Script_Ref(x);
 		} else {
-			PyObject *x = PyObject_GetAttrString(v, name);
+			PyObject *x = Script_GetAttr(v, name);
 			Py_DECREF(v);
 			v = x;
 		}

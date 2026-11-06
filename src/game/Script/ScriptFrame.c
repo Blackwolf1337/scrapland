@@ -22,7 +22,10 @@ PyObject *Sf_Keep(scriptFrame_t *f, PyObject *o) {
 	}
 	if (!o) {
 		if (!PyErr_Occurred()) {
-			PyErr_SetString(PyExc_SystemError, "NULL result without error");
+			/* an engine call that fails without an exception (an entity handle of a deleted entity): ceval's
+			 * SystemError, as the line of the script raises it */
+			Script_CheckSilent("Sf_Keep");
+			PyErr_SetString(PyExc_SystemError, "error return without exception set");
 		}
 		f->failed = 1;
 		return NULL;
@@ -35,6 +38,7 @@ PyObject *Sf_Keep(scriptFrame_t *f, PyObject *o) {
 byte Sf_Check(scriptFrame_t *f, int ok) {
 	if (!f->failed && !ok) {
 		if (!PyErr_Occurred()) {
+			Script_CheckSilent("Sf_Check");
 			PyErr_SetString(PyExc_SystemError, "error return without exception set");
 		}
 		f->failed = 1;
@@ -73,6 +77,9 @@ byte Sf_Except(scriptFrame_t *f) {
 
 PyObject *Sf_Done(scriptFrame_t *f, PyObject *result) {
 	Sf_Release(f, 0);
+	if (f->failed && !PyErr_Occurred()) {
+		Script_CheckSilent("Sf_Done");
+	}
 	if (f->failed) {
 		Py_XDECREF(result);
 		return NULL;

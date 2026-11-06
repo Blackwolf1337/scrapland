@@ -125,7 +125,7 @@ static PyObject *TpMap_EndOfAppears(PyObject *self, PyObject *args) {
 	}
 	Script_SetVar("Elevator", "OnElevatorReachDown", Script_Ref(Py_None));
 	PyObject *dummy = Script_Try("Scrap", "StartDummySearch", "(si)", "DM_Player_Spawn_GDB", 0) ? K(Script_Ask("Scrap", "NextDummySearch", "()")) : NULL;
-	PyObject *v = dummy ? K(Script_Usr()) : NULL, *name = v && Script_HSet(v, "Pos", Script_Index(dummy, 1)) ? K(PyObject_GetAttrString(v, "Name")) : NULL;
+	PyObject *v = dummy ? K(Script_Usr()) : NULL, *name = v && Script_HSet(v, "Pos", Script_Index(dummy, 1)) ? K(Script_GetAttr(v, "Name")) : NULL;
 	return Script_Done(&r, name && Script_Try("SLogic", "SetOnFloor", "(O)", name) ? Py_ReturnNone() : NULL);
 }
 
@@ -175,7 +175,7 @@ static PyObject *Xl_TakeExtraLife(PyObject *self, PyObject *args) {
 	}
 	PyObject *spawn = K(Script_Global(XL, "TimeToSpawn")), *take = spawn && Script_HSet(l, "rTime", Script_Ref(spawn)) ? K(Script_Attr("Sound", "ItemTake")) : NULL;
 	PyObject *a = take ? K(PyObject_GetItem(take, K(PyString_FromString("TakeExtraLife")))) : NULL;
-	PyObject *a0 = a ? K(Script_Index(a, 0)) : NULL, *a1 = a0 ? K(Script_Index(a, 1)) : NULL, *pos = a1 ? K(PyObject_GetAttrString(l, "Pos")) : NULL;
+	PyObject *a0 = a ? K(Script_Index(a, 0)) : NULL, *a1 = a0 ? K(Script_Index(a, 1)) : NULL, *pos = a1 ? K(Script_GetAttr(l, "Pos")) : NULL;
 	byte ok = pos && Script_Try("SSound", "PlaySound", "(OOO)", pos, a0, a1) && Script_Try("Scrap", "SetAlarm", "(i)", 1) &&
 		Script_Try("Scrap", "Set", "(si)", "BishopAttackOnAlarm", 1);
 	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
@@ -189,7 +189,7 @@ static PyObject *Xl_SetRespawnTime(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "O", &l)) {
 		return NULL;
 	}
-	PyObject *name = K(PyObject_GetAttrString(l, "Name")), *taken = name ? K(Tp_SaveFloat(name)) : NULL;
+	PyObject *name = K(Script_GetAttr(l, "Name")), *taken = name ? K(Tp_SaveFloat(name)) : NULL;
 	PyObject *gt = taken ? K(Tp_SaveFloat(K(PyString_FromString("GameplayTime")))) : NULL, *a = gt ? K(PyNumber_Subtract(taken, gt)) : NULL;
 	PyObject *spawn = a ? K(Script_Global(XL, "TimeToSpawn")) : NULL, *b = spawn ? K(PyNumber_Add(a, spawn)) : NULL;
 	PyObject *now = b ? K(Script_Ask("Scrap", "GetTime", "()")) : NULL, *rt = now ? K(PyNumber_Subtract(b, now)) : NULL;
@@ -213,15 +213,15 @@ static PyObject *Xl_MoveLifes(PyObject *self, PyObject *args) {
 	for (int i = 0; lifes && (more = Script_Next(lifes, i, &l)) > 0; i++) {
 		scriptRefs_t r = { .n = 0 };
 		K(l);
-		PyObject *mp = K(PyObject_GetAttrString(l, "MovePos"));
+		PyObject *mp = K(Script_GetAttr(l, "MovePos"));
 		PyObject *to = mp ? K(Script_Ask("SVec", "Add", "(O(iOi))", mp, 0, dist, 0)) : NULL;
-		PyObject *rt = to && Script_HSet(l, "MovePos", Script_Ref(to)) && Script_HSet(l, "MoveAng", PyObject_GetAttrString(l, "Ang")) ?
-			K(PyObject_GetAttrString(l, "rTime")) : NULL;
+		PyObject *rt = to && Script_HSet(l, "MovePos", Script_Ref(to)) && Script_HSet(l, "MoveAng", Script_GetAttr(l, "Ang")) ?
+			K(Script_GetAttr(l, "rTime")) : NULL;
 		PyObject *zero = rt ? K(PyFloat_FromDouble(0.0)) : NULL;
 		int there = zero ? PyObject_Compare(rt, zero) == 0 : -1;
 		byte ok = there >= 0 && !PyErr_Occurred() && (there ? Tp_Do(XL, "SetRespawnTime", Py_BuildValue("(O)", l)) &&
 			Script_HSet(l, "MoveTime", PyFloat_FromDouble(0.3)) : Script_HSet(l, "MoveTime", PyFloat_FromDouble(0.0)) &&
-			Script_HSet(l, "Pos", PyObject_GetAttrString(l, "MovePos")));
+			Script_HSet(l, "Pos", Script_GetAttr(l, "MovePos")));
 		Script_Done(&r, NULL);
 		if (!ok) {
 			more = -1;
@@ -270,7 +270,7 @@ static byte Xl_Life(PyObject *dummy) {
 	if (!model || !K(Script_Method(l, "SetModel", "(O)", model)) || !Tp_Do(XL, "SetRespawnTime", Py_BuildValue("(O)", l)) ||
 		!Script_HSet(l, "OnlyUser", PyInt_FromLong(1)) || !Script_HSet(l, "Radius", Script_Attr("MisItems", "COIN_RADIUS_INDOOR")) ||
 		!Script_HSet(l, "OnTake", PyString_FromString("MapExtraLifes.TakeExtraLife")) ||
-		!Script_HSet(l, "MovePos", PyObject_GetAttrString(l, "Pos")) || !Script_HSet(l, "MoveAng", PyObject_GetAttrString(l, "Ang"))) {
+		!Script_HSet(l, "MovePos", Script_GetAttr(l, "Pos")) || !Script_HSet(l, "MoveAng", Script_GetAttr(l, "Ang"))) {
 		BAD();
 	}
 	PyObject *lifes = K(Script_Global(XL, "Lifes"));
@@ -443,9 +443,9 @@ static PyObject *Ad_CreateViscProofs(PyObject *self, PyObject *args) {
 		Str_Printf(name, sizeof(name), "ViscProof%d", i);
 		PyObject *prf = c[4] ? K(Script_Ask("MissionsFuncs", "CreatePhotoObject", "(s(OOO)(OOi)s)", name, c[0], c[1], c[2], c[3], c[4], 0,
 			"Mission_ArchbishopDead.ViewProof")) : NULL;
-		PyObject *pos = prf ? K(PyObject_GetAttrString(prf, "Pos")) : NULL, *v = pos ? K(Script_Ask("SVec", "Add", "(O(iii))", pos, 0, -25, 0)) : NULL;
+		PyObject *pos = prf ? K(Script_GetAttr(prf, "Pos")) : NULL, *v = pos ? K(Script_Ask("SVec", "Add", "(O(iii))", pos, 0, -25, 0)) : NULL;
 		PyObject *names = v && Script_HSet(prf, "MovePos", Script_Ref(v)) && Script_HSet(prf, "Pos", Script_Ref(v)) ? K(Script_Global(AD, "ProofsNames")) : NULL;
-		PyObject *pn = names ? K(PyObject_GetAttrString(prf, "Name")) : NULL;
+		PyObject *pn = names ? K(Script_GetAttr(prf, "Name")) : NULL;
 		if (!pn || !K(Script_Method(names, "append", "(O)", pn))) {
 			FAIL();
 		}
@@ -538,7 +538,7 @@ PyMethodDef g_TempleArchbishopDeadMethods[] = {
  * TalkToDeepThroat) */
 static byte Tp_CallDeepThroat(const char *module) {
 	PyObject *dd = Script_Import((const char *const[]){ "DTritusDesktop", NULL }) ? Script_Ask("Scrap", "GetEntity", "(s)", "DM_DTritusDesktop") : NULL;
-	PyObject *name = dd ? PyObject_GetAttrString(dd, "Name") : NULL;
+	PyObject *name = dd ? Script_GetAttr(dd, "Name") : NULL;
 	PyObject *f = name && Script_Try("MissionsFuncs", "SetMissionTarget", "(O)", name) ? Script_Global(module, "DeepThroatSpeech") : NULL;
 	Py_XDECREF(name);
 	Py_XDECREF(dd);
@@ -602,7 +602,7 @@ static PyObject *Ag_AfterBrowseNPC(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	PyObject *res = K(Script_Attr("CharsNPC", "CharRes")), *gus = res ? K(PyObject_GetItem(res, K(PyString_FromString("Bishop_Gus")))) : NULL;
-	PyObject *cbs = gus ? K(PyObject_GetAttrString(gus, "CallbackFunc")) : NULL, *f = cbs ? K(Script_Global(AG, "CreateGusInit")) : NULL;
+	PyObject *cbs = gus ? K(Script_GetAttr(gus, "CallbackFunc")) : NULL, *f = cbs ? K(Script_Global(AG, "CreateGusInit")) : NULL;
 	return Script_Done(&r, f && K(Script_Method(cbs, "append", "(O)", f)) ? Py_ReturnNone() : NULL);
 }
 
@@ -622,7 +622,7 @@ static PyObject *Ag_CreateGusInit(PyObject *self, PyObject *args) {
 		return Script_Done(&r, Py_ReturnNone());
 	}
 	PyObject *name = Script_HSet(e, "UseFunc", PyString_FromString("Mission_AskGus.GusSpeech")) &&
-		Script_HSet(e, "Descriptor", Script_LangOf(PyString_FromString("CharName_Gus"))) ? K(PyObject_GetAttrString(e, "Name")) : NULL;
+		Script_HSet(e, "Descriptor", Script_LangOf(PyString_FromString("CharName_Gus"))) ? K(Script_GetAttr(e, "Name")) : NULL;
 	return Script_Done(&r, name && Script_Try("MissionsFuncs", "SetMissionTarget", "(O)", name) ? Py_ReturnNone() : NULL);
 }
 
@@ -813,7 +813,7 @@ static PyObject *Ma_CreateFakeSpeech(PyObject *self, PyObject *args) {
 		PyErr_SetString(PyExc_NameError, "kb");
 		FAIL();
 	}
-	PyObject *kn = K(PyObject_GetAttrString(kb, "Name"));
+	PyObject *kn = K(Script_GetAttr(kb, "Name"));
 	if (!kn || !Script_Try("Scrap", "Set", "(sO)", "NewsHead", kn)) {
 		FAIL();
 	}

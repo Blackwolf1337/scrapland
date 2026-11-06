@@ -45,7 +45,7 @@ static PyObject *Net_Spectate(PyObject *self, PyObject *args) {
 	}
 	int on = Script_True(value);
 	PyObject *name = on >= 0 ? K(Script_Ask("Scrap", "GetCam", "(O)", id)) : NULL, *cam = name ? K(Script_Entity(name)) : NULL;
-	PyObject *target = cam ? K(PyObject_GetAttrString(cam, "MainTarget")) : NULL, *t = target ? K(Script_Entity(target)) : NULL;
+	PyObject *target = cam ? K(Script_GetAttr(cam, "MainTarget")) : NULL, *t = target ? K(Script_Entity(target)) : NULL;
 	byte ok = t && Script_HSet(t, "Active", PyInt_FromLong(!on)) && Script_HSet(cam, "FreeCam", PyInt_FromLong(on));
 	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
 }

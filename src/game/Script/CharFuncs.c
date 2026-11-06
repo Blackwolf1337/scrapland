@@ -300,7 +300,7 @@ static PyObject *Maintenance_MaintenanceWorkFX(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	PyObject *ship = Script_Attr("HangarTab", "prevShip");
-	PyObject *shipName = ship ? PyObject_GetAttrString(ship, "Name") : NULL;
+	PyObject *shipName = ship ? Script_GetAttr(ship, "Name") : NULL;
 	Py_XDECREF(ship);
 	if (!shipName || !PyString_Check(shipName)) {
 		Py_XDECREF(shipName);
@@ -600,7 +600,7 @@ static PyObject *Police_PoliceSpeech(PyObject *self, PyObject *args) {
 			return NULL;
 		}
 		/* ch.LLogicState of the script: an AttributeError when there is no such character */
-		PyObject *e = Char_Handle(ch), *state = PyObject_GetAttrString(e, "LLogicState");
+		PyObject *e = Char_Handle(ch), *state = Script_GetAttr(e, "LLogicState");
 		int ten = state ? Script_NumCmp(state, 10) == 0 : -1;
 		Py_DECREF(e);
 		Py_XDECREF(state);
@@ -958,7 +958,7 @@ static PyObject *Bishop_StartSellingLife(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "O", &e)) {
 		return NULL;
 	}
-	PyObject *name = PyObject_GetAttrString(e, "Name");
+	PyObject *name = Script_GetAttr(e, "Name");
 	if (!name || !PyString_Check(name)) {
 		Py_XDECREF(name);
 		return NULL;
@@ -1026,11 +1026,9 @@ static PyObject *Messenger_MakeDataPack(PyObject *self, PyObject *args) {
 	Py_INCREF(mdp);
 	Script_SetVar("Messenger", "MDP", mdp);
 	PyObject *r = Script_Method(mdp, "SetModel", "(s)", "Models/Chars/Messenger/DataPack.M3D");
-	PyObject *radius = r ? PyInt_FromLong(250) : NULL;
-	int ok = radius && PyObject_SetAttrString(mdp, "Radius", radius) == 0;
-	Py_XDECREF(radius);
+	int ok = r && Script_HSet(mdp, "Radius", PyInt_FromLong(250));
 	Py_XDECREF(r);
-	PyObject *name = ok ? PyObject_GetAttrString(mdp, "Name") : NULL;
+	PyObject *name = ok ? Script_GetAttr(mdp, "Name") : NULL;
 	Py_DECREF(mdp);
 	if (!name) {
 		return NULL;
@@ -1063,9 +1061,8 @@ static PyObject *Messenger_ObjInitializator(PyObject *self, PyObject *args) {
 	}
 	int ok = 1;
 	if (PyObject_IsTrue(mdp) > 0) {
-		PyObject *pos = PyObject_GetAttrString(elv, "NT_NodePos_DC_DataPack");
-		ok = pos && PyObject_SetAttrString(mdp, "Pos", pos) == 0;
-		Py_XDECREF(pos);
+		PyObject *pos = Script_GetAttr(elv, "NT_NodePos_DC_DataPack");
+		ok = pos && Script_HSet(mdp, "Pos", pos);
 	} else {
 		Script_SetInt("Messenger", "MakeMDP", 0);
 	}

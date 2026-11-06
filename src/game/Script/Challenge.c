@@ -406,7 +406,7 @@ static PyObject *Challenge_SetRevenge(PyObject *self, PyObject *args) {
 	if (t <= 0) {
 		return Script_Done(&r, t < 0 ? NULL : Py_ReturnNone());
 	}
-	PyObject *pos = Script_Keep(&r, PyObject_GetAttrString(player, "Pos"));
+	PyObject *pos = Script_Keep(&r, Script_GetAttr(player, "Pos"));
 	PyObject *cab = pos ? Script_Keep(&r, Script_Ask("PhoneCab", "GetNearestPhoneCab", "(O)", pos)) : NULL;
 	PyObject *tut = cab ? Script_Keep(&r, Script_SaveVar("HumphreyRaceTutorial")) : NULL;
 	PyObject *foe = tut && Script_Try("MissionsFuncs", "ActivateTarget", "(Oi)", cab, Script_Is(tut, "1") ? 1 : 2) &&
@@ -546,11 +546,11 @@ static byte Chal_Release(PyObject *seq) {
 		Script_Keep(&r, name);
 		PyObject *veh = Script_Keep(&r, Script_Entity(name));
 		PyObject *model = veh && Script_HSet(veh, "MoveTime", PyFloat_FromDouble(0.0)) &&
-			Script_HSet(veh, "TgType", PyString_FromString("None")) ? Script_Keep(&r, PyObject_GetAttrString(veh, "Model")) : NULL;
+			Script_HSet(veh, "TgType", PyString_FromString("None")) ? Script_Keep(&r, Script_GetAttr(veh, "Model")) : NULL;
 		PyObject *at = model ? Script_Keep(&r, Script_Ask("string", "find", "(Os)", model, "SPoli")) : NULL;
 		int c = at ? Script_NumCmp(at, 0) : -2;
 		PyObject *vname = c != -2 && Script_HSet(veh, "EntityList", PyString_FromString(c >= 0 ? "OutCop" : "Traffic")) ?
-			Script_Keep(&r, PyObject_GetAttrString(veh, "Name")) : NULL;
+			Script_Keep(&r, Script_GetAttr(veh, "Name")) : NULL;
 		byte ok = vname && Script_Try("SAI", "SetStateVehicle", "(iO)", 3, vname);
 		Script_Done(&r, NULL);
 		if (!ok) {

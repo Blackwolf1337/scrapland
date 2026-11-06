@@ -24,7 +24,7 @@ static PyObject *CharAct_OnCreate(PyObject *self, PyObject *args) {
 	PyObject *eyes = Script_Attr("MakeChar", "MorphEyesList");
 	PyObject *e = eyes ? Script_Ask("Scrap", "GetEntity", "(O)", name) : NULL;
 	PyObject *act = e && Script_HSet(e, "OnDeath", PyString_FromString("CharAct.OnDeath")) ?
-		PyObject_GetAttrString(e, "ActCtrl") : NULL;
+		Script_GetAttr(e, "ActCtrl") : NULL;
 	int morph = act ? PySequence_In(eyes, act) : -1;
 	byte ok = morph >= 0 && (!morph || Script_HSet(e, "Action", PyString_FromString("MorphEyes")));
 	Py_XDECREF(act);
@@ -70,7 +70,7 @@ static PyObject *CharAct_Photograph(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	if (PyObject_IsTrue(walk) > 0) {
-		PyObject *act = PyObject_GetAttrString(e, "Action");
+		PyObject *act = Script_GetAttr(e, "Action");
 		PyObject *head = act ? PySequence_GetSlice(act, 0, 5) : NULL;
 		Py_XDECREF(act);
 		int crazy = head ? PyString_Check(head) && !strcmp(PyString_AsString(head), "Crazy") : -1;
@@ -111,7 +111,7 @@ static PyObject *CharAct_ActionPhoto(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	PyObject *e = Script_Ask("Scrap", "GetEntity", "(O)", name);
-	PyObject *sel = e ? PyObject_GetAttrString(e, "SelectedEntity") : NULL;
+	PyObject *sel = e ? Script_GetAttr(e, "SelectedEntity") : NULL;
 	Py_XDECREF(e);
 	if (!sel) {
 		return NULL;
@@ -151,7 +151,7 @@ static PyObject *CharAct_NPCDeathCall(PyObject *self, PyObject *args) {
 	}
 	Py_DECREF(items);
 	PyObject *res = Script_Attr("CharsNPC", "CharRes");
-	PyObject *name = res ? PyObject_GetAttrString(e, "Name") : NULL;
+	PyObject *name = res ? Script_GetAttr(e, "Name") : NULL;
 	PyObject *entry = name ? PyObject_GetItem(res, name) : NULL;
 	Py_XDECREF(res);
 	if (!entry || !Script_LaterIn(6.0, "CharsNPC", "Respawn", Py_BuildValue("(O)", entry), NULL)) {
@@ -163,18 +163,18 @@ static PyObject *CharAct_NPCDeathCall(PyObject *self, PyObject *args) {
 	PyObject *hook = Script_Attr("CharAct", "onNPCDeath");
 	PyObject *r = hook ? PyInt_FromLong(0) : NULL;
 	if (hook && PyObject_IsTrue(hook) > 0) {
-		PyObject *pos = PyObject_GetAttrString(e, "Pos");
+		PyObject *pos = Script_GetAttr(e, "Pos");
 		Py_XDECREF(r);
 		r = pos ? Script_Invoke(hook, Py_BuildValue("(OO)", name, pos)) : NULL;
 		Py_XDECREF(pos);
 	}
 	Py_XDECREF(hook);
 	Py_DECREF(name);
-	PyObject *money = r ? PyObject_GetAttrString(e, "Money") : NULL;
+	PyObject *money = r ? Script_GetAttr(e, "Money") : NULL;
 	int ok = money != NULL;
 	if (ok && Script_NumCmp(money, 0) != 0) {
 		int gear = Script_HIs(e, "ActCtrl", "Gear");
-		PyObject *pos = gear >= 0 ? PyObject_GetAttrString(e, "Pos") : NULL;
+		PyObject *pos = gear >= 0 ? Script_GetAttr(e, "Pos") : NULL;
 		ok = pos != NULL;
 		if (ok && gear) {
 			ok = Script_LaterIn(0.5, "MisItems", "CreateBattery", Py_BuildValue("(O)", pos), NULL);
@@ -189,7 +189,7 @@ static PyObject *CharAct_NPCDeathCall(PyObject *self, PyObject *args) {
 	}
 	Py_XDECREF(money);
 	Py_XDECREF(r);
-	PyObject *radar = ok && !PyErr_Occurred() ? PyObject_GetAttrString(e, "RadarShow") : NULL;
+	PyObject *radar = ok && !PyErr_Occurred() ? Script_GetAttr(e, "RadarShow") : NULL;
 	if (!radar) {
 		return NULL;
 	}

@@ -204,14 +204,14 @@ static PyObject *SaveGame_MarkWayPoint(PyObject *self, PyObject *args, PyObject 
 			FAIL();
 		}
 		if (walk) {
-			PyObject *type = K(PyObject_GetAttrString(e, "ActCtrl"));
+			PyObject *type = K(Script_GetAttr(e, "ActCtrl"));
 			PyObject *bar = type && SG_SetSave("Char", type) ? K(Script_Ask("Scrap", "Get", "(s)", "EnergyBarActive")) : NULL;
 			int on = bar ? Script_True(bar) : -1;
 			if (on < 0) {
 				FAIL();
 			}
 			if (on) {
-				PyObject *energy = K(PyObject_GetAttrString(e, "Energy")), *text = energy ? K(Script_Repr(energy)) : NULL;
+				PyObject *energy = K(Script_GetAttr(e, "Energy")), *text = energy ? K(Script_Repr(energy)) : NULL;
 				if (!text || !SG_SetSave("AcBatteries", text)) {
 					FAIL();
 				}

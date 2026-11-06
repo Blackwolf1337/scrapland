@@ -19,7 +19,7 @@
 static PyObject *It_Var(PyObject *obj, const char *prefix, long n) {
 	char name[0x20];
 	Str_Printf(name, sizeof(name), "%s%ld", prefix, n);
-	return PyObject_GetAttrString(obj, name);
+	return Script_GetAttr(obj, name);
 }
 
 /* SVec.Prod(SVec.Norm((Scrap.Rand(-1,1), Scrap.Rand(-1,1), Scrap.Rand(-1,1))), 100.0): a random speed of a dropped
@@ -92,7 +92,7 @@ static PyObject *Items_RestoreUpgrade(PyObject *self, PyObject *args) {
 		PyObject *itm = n ? K(Script_Entity(n)) : NULL, *rt = itm ? K(Script_Global("Items", "UpgradesRTime")) : NULL;
 		PyObject *origin = rt && Script_HSet(itm, "Owner", PyString_FromString("")) &&
 			Script_HSet(itm, "BackTime", PyFloat_FromDouble(0.0)) && Script_HSet(itm, "rTime", Script_Ref(rt)) ?
-			K(PyObject_GetAttrString(itm, "Origin")) : NULL;
+			K(Script_GetAttr(itm, "Origin")) : NULL;
 		PyObject *up2 = origin && Script_HSet(itm, "Pos", Script_Ref(origin)) ? K(It_Upgrade(ups, id)) : NULL;
 		PyObject *n2 = up2 ? K(Script_Index(up2, 0)) : NULL, *v = n2 ? K(Py_BuildValue("(Oi)", n2, 200)) : NULL;
 		if (!v || PyObject_SetItem(ups, id, v) < 0) {
@@ -124,9 +124,9 @@ static PyObject *It_DropUpgrade(PyObject *veh, PyObject *id, PyObject *ammo) {
 	if (!v || PyObject_SetItem(ups, id, v) < 0 || !Script_HSet(itm, "Owner", PyString_FromString(""))) {
 		FAIL();
 	}
-	PyObject *ovel = K(PyObject_GetAttrString(obj, "Vel")), *vel = ovel ? K(Script_Ask("SVec", "Norm", "(O)", ovel)) : NULL;
-	PyObject *pos = vel ? K(PyObject_GetAttrString(obj, "Pos")) : NULL;
-	PyObject *vr = pos ? K(PyObject_GetAttrString(obj, "VRadius")) : NULL, *ir = vr ? K(PyObject_GetAttrString(itm, "Radius")) : NULL;
+	PyObject *ovel = K(Script_GetAttr(obj, "Vel")), *vel = ovel ? K(Script_Ask("SVec", "Norm", "(O)", ovel)) : NULL;
+	PyObject *pos = vel ? K(Script_GetAttr(obj, "Pos")) : NULL;
+	PyObject *vr = pos ? K(Script_GetAttr(obj, "VRadius")) : NULL, *ir = vr ? K(Script_GetAttr(itm, "Radius")) : NULL;
 	PyObject *sum = ir ? K(PyNumber_Add(vr, ir)) : NULL, *ten = sum ? K(PyInt_FromLong(10)) : NULL;
 	PyObject *dist = ten ? K(PyNumber_Add(sum, ten)) : NULL, *back = dist ? K(Script_Ask("SVec", "Prod", "(OO)", vel, dist)) : NULL;
 	PyObject *at = back ? K(Script_Ask("SVec", "Sub", "(OO)", pos, back)) : NULL;
@@ -151,7 +151,7 @@ static PyObject *Items_DropUpgrade(PyObject *self, PyObject *args) {
 /* the dropped item flies off in a random direction from the ship */
 static byte It_Scatter(PyObject *itm, PyObject *obj) {
 	PyObject *vel = It_RandomVel();
-	PyObject *pos = vel && Script_HSet(itm, "Vel", vel) ? PyObject_GetAttrString(obj, "Pos") : NULL;
+	PyObject *pos = vel && Script_HSet(itm, "Vel", vel) ? Script_GetAttr(obj, "Pos") : NULL;
 	return pos && Script_HSet(itm, "Pos", pos);
 }
 
@@ -201,7 +201,7 @@ static PyObject *Items_DropAll(PyObject *self, PyObject *args) {
 		if (has > 0) {
 			PyObject *up = Script_Keep(&t, It_Upgrade(ups, key)), *nm = up ? Script_Keep(&t, Script_Index(up, 0)) : NULL;
 			PyObject *itm = nm ? Script_Keep(&t, Script_Entity(nm)) : NULL;
-			PyObject *owner = itm ? Script_Keep(&t, PyObject_GetAttrString(itm, "Owner")) : NULL;
+			PyObject *owner = itm ? Script_Keep(&t, Script_GetAttr(itm, "Owner")) : NULL;
 			int mine = owner ? Script_Eq(owner, veh) : -1;
 			ok = mine >= 0;
 			if (mine > 0) {
@@ -421,7 +421,7 @@ static PyObject *Items_BrowseItemPos(PyObject *self, PyObject *args) {
 				PyObject *z = y ? Script_Keep(&t, Script_Index(pos, 2)) : NULL;
 				PyObject *nm = z ? Script_Keep(&t, Script_Ask("SNet", "GetObjName", "()")) : NULL;
 				PyObject *l = nm ? Script_Keep(&t, It_CreateBox(nm, x, y, z, typo)) : NULL;
-				PyObject *lname = l && It_SetSound(l, typo) ? Script_Keep(&t, PyObject_GetAttrString(l, "Name")) : NULL;
+				PyObject *lname = l && It_SetSound(l, typo) ? Script_Keep(&t, Script_GetAttr(l, "Name")) : NULL;
 				ok = lname != NULL;
 				if (ok && Script_Is(typo, "Life")) {
 					ok = Script_Try("Scrap", "AddItem", "(sOi)", "Life", lname, 50) && Script_HSet(l, "OnTake", PyString_FromString("!TakeLife"));
@@ -557,7 +557,7 @@ static PyObject *Items_Hint(PyObject *self, PyObject *args) {
 	PyObject *rad = l ? K(Script_Global("Items", "HINT_RADIUS")) : NULL;
 	PyObject *hints = rad && Script_HSet(l, "Radius", Script_Ref(rad)) && Script_HSet(l, "OnlyUser", PyInt_FromLong(1)) &&
 		Script_HSet(l, "OnTake", PyString_FromString("Items.ShowHint")) ? K(Script_Global("Items", "Hints")) : NULL;
-	PyObject *name = hints ? K(PyObject_GetAttrString(l, "Name")) : NULL;
+	PyObject *name = hints ? K(Script_GetAttr(l, "Name")) : NULL;
 	PyObject *v = name ? K(Py_BuildValue("(OOOO)", text, time, delit, extra)) : NULL;
 	if (!v || PyObject_SetItem(hints, name, v) < 0) {
 		FAIL();
@@ -568,17 +568,17 @@ static PyObject *Items_Hint(PyObject *self, PyObject *args) {
 /* SetInteractiveObjOnFloor(c): the object on the floor below it */
 static byte It_OnFloor(PyObject *c) {
 	scriptRefs_t r = { .n = 0 };
-	PyObject *pos = K(PyObject_GetAttrString(c, "Pos")), *down = pos ? K(Script_Ask("SVec", "Add", "(O(iii))", pos, 0, -10000, 0)) : NULL;
+	PyObject *pos = K(Script_GetAttr(c, "Pos")), *down = pos ? K(Script_Ask("SVec", "Add", "(O(iii))", pos, 0, -10000, 0)) : NULL;
 	PyObject *res = down ? K(Script_Ask("Scrap", "TestLine", "(OOs)", pos, down, "")) : NULL;
 	int hit = res ? Script_True(res) : -1;
 	byte ok = hit >= 0;
 	if (hit > 0) {
 		PyObject *p = K(Script_Index(res, 0)), *p0 = p ? K(Script_Index(p, 0)) : NULL;
 		PyObject *p1 = p0 ? K(Script_Index(p, 1)) : NULL, *p2 = p1 ? K(Script_Index(p, 2)) : NULL;
-		PyObject *vr = p2 ? K(PyObject_GetAttrString(c, "VRadius")) : NULL, *y = vr ? K(PyNumber_Add(p1, vr)) : NULL;
+		PyObject *vr = p2 ? K(Script_GetAttr(c, "VRadius")) : NULL, *y = vr ? K(PyNumber_Add(p1, vr)) : NULL;
 		ok = y && Script_HSet(c, "Pos", Py_BuildValue("(OOO)", p0, y, p2));
 	} else if (hit == 0) {
-		PyObject *name = K(PyObject_GetAttrString(c, "Name"));
+		PyObject *name = K(Script_GetAttr(c, "Name"));
 		PyObject *msg = name ? K(Script_PlusS(Script_SPlus("B R U T A L    E R R O R : ", name), " was created in an invalid position.\n")) : NULL;
 		ok = msg && Script_Try("Scrap", "ConsoleError", "(O)", msg);
 	}

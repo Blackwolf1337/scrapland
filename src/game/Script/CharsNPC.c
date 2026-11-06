@@ -110,13 +110,13 @@ static PyObject *Npc_AddNPCPos(PyObject *dummy, PyObject *mission) {
 	PyObject *yt = turn ? Script_Keep(&r, PyNumber_Add(y, turn)) : NULL;
 	ok = yt && Script_HSet(csp, "Ang", Py_BuildValue("(iOi)", 0, yt, 0)) && Script_HSet(csp, "ActCtrl", Script_Ref(act));
 	PyObject *res = ok ? Script_Keep(&r, Npc_Global("CharRes")) : NULL;
-	PyObject *name = res ? Script_Keep(&r, PyObject_GetAttrString(csp, "Name")) : NULL;
+	PyObject *name = res ? Script_Keep(&r, Script_GetAttr(csp, "Name")) : NULL;
 	int dup = name ? Script_True(Script_Keep(&r, Script_Method(res, "has_key", "(O)", name))) : -1;
 	if (dup > 0) {
 		dup = Npc_ConsoleError(Script_PlusS(Script_Plus(Script_PlusS(Script_Ref(name), "  char duplicated, using "), name), "_R\n")) &&
 			Script_HSet(csp, "Name", Script_PlusS(Script_Ref(name), "_R")) ? 1 : -1;
 	}
-	PyObject *key = dup >= 0 ? Script_Keep(&r, PyObject_GetAttrString(csp, "Name")) : NULL;
+	PyObject *key = dup >= 0 ? Script_Keep(&r, Script_GetAttr(csp, "Name")) : NULL;
 	if (!key || PyObject_SetItem(res, key, csp) != 0) {
 		return Script_Done(&r, NULL);
 	}
@@ -296,7 +296,7 @@ static PyObject *CharsNPC_BrowseNPC(PyObject *self, PyObject *args) {
 /* AssignAttrib(c): money, reward and life of the type from NPCAttribs (else 50, 5, 100), PrevLife as Life */
 static byte Npc_AssignAttrib(PyObject *c) {
 	scriptRefs_t r = { 0 };
-	PyObject *act = Script_Keep(&r, PyObject_GetAttrString(c, "ActCtrl"));
+	PyObject *act = Script_Keep(&r, Script_GetAttr(c, "ActCtrl"));
 	PyObject *attribs = act ? Script_Keep(&r, Npc_Global("NPCAttribs")) : NULL;
 	int has = attribs ? Script_True(Script_Keep(&r, Script_Method(attribs, "has_key", "(O)", act))) : -1;
 	PyObject *vals = has > 0 ? Script_Keep(&r, PyObject_GetItem(attribs, act)) : has == 0 ? Script_Keep(&r, Py_BuildValue("(iii)", 50, 5, 100)) : NULL;
@@ -312,7 +312,7 @@ static byte Npc_AssignAttrib(PyObject *c) {
 				Py_DECREF(v[i]);
 			}
 		}
-		ok = ok && Script_HSet(c, "PrevLife", PyObject_GetAttrString(c, "Life"));
+		ok = ok && Script_HSet(c, "PrevLife", Script_GetAttr(c, "Life"));
 	}
 	Script_Done(&r, NULL);
 	return ok;
@@ -336,7 +336,7 @@ static byte Npc_CharNPCInclude(PyObject *name) {
 	scriptRefs_t r = { 0 };
 	PyObject *res = Script_Keep(&r, Npc_Global("CharRes"));
 	PyObject *ctr = res ? Script_Keep(&r, PyObject_GetItem(res, name)) : NULL;
-	PyObject *act = ctr ? Script_Keep(&r, PyObject_GetAttrString(ctr, "ActCtrl")) : NULL;
+	PyObject *act = ctr ? Script_Keep(&r, Script_GetAttr(ctr, "ActCtrl")) : NULL;
 	if (!act) {
 		Script_Done(&r, NULL);
 		return 0;
@@ -379,13 +379,13 @@ static PyObject *Npc_CreateChar(PyObject *csp, PyObject *fixed) {
 	if (!Script_Import(mods)) {
 		return NULL;
 	}
-	PyObject *name = Script_Keep(&r, PyObject_GetAttrString(csp, "Name"));
-	PyObject *pos = name ? Script_Keep(&r, PyObject_GetAttrString(csp, "Pos")) : NULL;
+	PyObject *name = Script_Keep(&r, Script_GetAttr(csp, "Name"));
+	PyObject *pos = name ? Script_Keep(&r, Script_GetAttr(csp, "Pos")) : NULL;
 	PyObject *x = pos ? Script_Keep(&r, Script_Index(pos, 0)) : NULL;
 	PyObject *y = x ? Script_Keep(&r, Script_Index(pos, 1)) : NULL;
 	PyObject *z = y ? Script_Keep(&r, Script_Index(pos, 2)) : NULL;
 	PyObject *c = z ? Script_Keep(&r, Script_Ask("Scrap", "CreateEntity", "(OOOOs)", name, x, y, z, "WalkChar")) : NULL;
-	PyObject *cname = c ? Script_Keep(&r, PyObject_GetAttrString(c, "Name")) : NULL;
+	PyObject *cname = c ? Script_Keep(&r, Script_GetAttr(c, "Name")) : NULL;
 	if (!cname) {
 		return Script_Done(&r, NULL);
 	}
@@ -400,31 +400,31 @@ static PyObject *Npc_CreateChar(PyObject *csp, PyObject *fixed) {
 		}
 		Py_DECREF(del);
 	}
-	PyObject *act = Script_Keep(&r, PyObject_GetAttrString(csp, "ActCtrl"));
-	byte ok = act && Script_HSet(c, "ActCtrl", Script_Ref(act)) && Script_HSet(c, "Ang", PyObject_GetAttrString(csp, "Ang")) &&
+	PyObject *act = Script_Keep(&r, Script_GetAttr(csp, "ActCtrl"));
+	byte ok = act && Script_HSet(c, "ActCtrl", Script_Ref(act)) && Script_HSet(c, "Ang", Script_GetAttr(csp, "Ang")) &&
 		Script_HSet(c, "ArrowCanUse", PyInt_FromLong(1)) && Script_HSet(c, "ArrowCanView", PyInt_FromLong(1)) &&
 		Script_HSet(c, "UseFunc", PyString_FromString("Speech.AutoSpeech")) &&
 		Script_HSet(c, "ViewFunc", PyString_FromString("Speech.InspectChar"));
-	PyObject *act2 = ok ? Script_Keep(&r, PyObject_GetAttrString(csp, "ActCtrl")) : NULL;
+	PyObject *act2 = ok ? Script_Keep(&r, Script_GetAttr(csp, "ActCtrl")) : NULL;
 	ok = act2 && Script_HSet(c, "Descriptor", Script_LangOf(Script_SPlus("CharName_", act2))) &&
 		Script_HSet(c, "ArrnOpt", PyInt_FromLong(0)) &&
 		Script_HSet(c, "ArrOpt0", Script_SPlus("Talk:", Script_Keep(&r, Script_Ask("Scrap", "GetLangStr", "(s)", "TalkOpt"))));
 	int fix = ok ? (fixed ? Script_True(fixed) : 0) : -1;
 	if (fix > 0) {
-		ok = Script_HSet(c, "MovePos", PyObject_GetAttrString(c, "Pos")) && Script_HSet(c, "MoveAng", PyObject_GetAttrString(c, "Ang")) &&
+		ok = Script_HSet(c, "MovePos", Script_GetAttr(c, "Pos")) && Script_HSet(c, "MoveAng", Script_GetAttr(c, "Ang")) &&
 			Script_HSet(c, "MoveTime", PyFloat_FromDouble(0.001)) && Script_HSet(c, "MoveViewAng", PyInt_FromLong(0));
 	} else if (fix == 0) {
-		PyObject *n = Script_Keep(&r, PyObject_GetAttrString(c, "Name"));
+		PyObject *n = Script_Keep(&r, Script_GetAttr(c, "Name"));
 		ok = n && Script_Try("SLogic", "SetOnFloor", "(O)", n);
 	} else {
 		ok = 0;
 	}
-	PyObject *n1 = ok && Npc_AssignAttrib(c) ? Script_Keep(&r, PyObject_GetAttrString(c, "Name")) : NULL;
-	PyObject *n2 = n1 && Script_Try("InPolice", "Include", "(O)", n1) ? Script_Keep(&r, PyObject_GetAttrString(c, "Name")) : NULL;
-	PyObject *repos = n2 && Npc_CharNPCInclude(n2) ? Script_Keep(&r, PyObject_GetAttrString(csp, "repos")) : NULL;
+	PyObject *n1 = ok && Npc_AssignAttrib(c) ? Script_Keep(&r, Script_GetAttr(c, "Name")) : NULL;
+	PyObject *n2 = n1 && Script_Try("InPolice", "Include", "(O)", n1) ? Script_Keep(&r, Script_GetAttr(c, "Name")) : NULL;
+	PyObject *repos = n2 && Npc_CharNPCInclude(n2) ? Script_Keep(&r, Script_GetAttr(csp, "repos")) : NULL;
 	int rep = Script_True(repos);
 	ok = rep >= 0 && (!rep || Script_HSet(c, "AI_Repos", Npc_Global("Repos")));
-	PyObject *funcs = ok ? Script_Keep(&r, PyObject_GetAttrString(csp, "CallbackFunc")) : NULL;
+	PyObject *funcs = ok ? Script_Keep(&r, Script_GetAttr(csp, "CallbackFunc")) : NULL;
 	ok = funcs != NULL;
 	for (int i = 0; ok && i < PySequence_Length(funcs); i++) {
 		PyObject *f = PySequence_GetItem(funcs, i);
@@ -477,13 +477,13 @@ static PyObject *CharsNPC_Init(PyObject *self, PyObject *args) {
 		scriptRefs_t t = { 0 };
 		PyObject *k = Script_Keep(&t, PySequence_GetItem(keys, i));
 		PyObject *cls = k ? Script_Keep(&t, PyObject_GetItem(res, k)) : NULL;
-		int skip = cls ? Script_True(Script_Keep(&t, PyObject_GetAttrString(cls, "repos"))) : -1;
+		int skip = cls ? Script_True(Script_Keep(&t, Script_GetAttr(cls, "repos"))) : -1;
 		if (skip > 0) {
-			PyObject *act = Script_Keep(&t, PyObject_GetAttrString(cls, "ActCtrl"));
+			PyObject *act = Script_Keep(&t, Script_GetAttr(cls, "ActCtrl"));
 			skip = act ? Script_Is(act, "Gear") : -1;
 		}
 		if (skip == 0) {
-			PyObject *act = Script_Keep(&t, PyObject_GetAttrString(cls, "ActCtrl"));
+			PyObject *act = Script_Keep(&t, Script_GetAttr(cls, "ActCtrl"));
 			PyObject *fixed = act ? Script_Keep(&t, PyInt_FromLong(Script_In(act, fixedTypes))) : NULL;
 			skip = fixed && Script_Keep(&t, Npc_CreateChar(cls, fixed)) ? 1 : -1;
 		}
@@ -526,14 +526,14 @@ static PyObject *CharsNPC_Respawn(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "O", &csp) || !Script_Import(mods)) {
 		return NULL;
 	}
-	PyObject *name = Script_Keep(&r, PyObject_GetAttrString(csp, "Name"));
-	PyObject *act = name && Script_Print(&name, 1) ? Script_Keep(&r, PyObject_GetAttrString(csp, "ActCtrl")) : NULL;
+	PyObject *name = Script_Keep(&r, Script_GetAttr(csp, "Name"));
+	PyObject *act = name && Script_Print(&name, 1) ? Script_Keep(&r, Script_GetAttr(csp, "ActCtrl")) : NULL;
 	if (!act) {
 		return Script_Done(&r, NULL);
 	}
 	int swap = Script_Is(act, "Gear");
 	if (swap) {
-		PyObject *repos = Script_Keep(&r, PyObject_GetAttrString(csp, "repos"));
+		PyObject *repos = Script_Keep(&r, Script_GetAttr(csp, "repos"));
 		swap = repos ? Script_NumCmp(repos, 1) : -2;
 		swap = swap == -2 ? -1 : swap == 0;
 	}
@@ -544,25 +544,25 @@ static PyObject *CharsNPC_Respawn(PyObject *self, PyObject *args) {
 	}
 	if (swap > 0) {
 		PyObject *res = Script_Keep(&r, Script_Attr("CharsNPC", "CharRes"));
-		PyObject *n = res ? Script_Keep(&r, PyObject_GetAttrString(csp, "Name")) : NULL;
+		PyObject *n = res ? Script_Keep(&r, Script_GetAttr(csp, "Name")) : NULL;
 		PyObject *key = n ? Script_Keep(&r, Script_SPlus("Police", Script_Keep(&r, PySequence_GetSlice(n, 4, INT_MAX)))) : NULL;
 		csp = key ? Script_Keep(&r, PyObject_GetItem(res, key)) : NULL;
 	}
 	PyObject *usr = swap >= 0 && csp ? Script_Keep(&r, Script_Ask("Scrap", "UsrEntity", "(i)", 0)) : NULL;
-	int dorepos = usr ? Script_True(Script_Keep(&r, PyObject_GetAttrString(csp, "repos"))) : -1;
+	int dorepos = usr ? Script_True(Script_Keep(&r, Script_GetAttr(csp, "repos"))) : -1;
 	if (dorepos > 0) {
 		dorepos = Script_True(usr);
 	}
 	if (dorepos > 0) {
-		PyObject *upos = Script_Keep(&r, PyObject_GetAttrString(usr, "Pos"));
-		PyObject *ract = upos ? Script_Keep(&r, PyObject_GetAttrString(csp, "ActCtrl")) : NULL;
+		PyObject *upos = Script_Keep(&r, Script_GetAttr(usr, "Pos"));
+		PyObject *ract = upos ? Script_Keep(&r, Script_GetAttr(csp, "ActCtrl")) : NULL;
 		PyObject *rpos = ract ? Script_Keep(&r, Script_Ask("SAI", "GetReposCharPos", "(OO)", upos, ract)) : NULL;
 		dorepos = Script_True(rpos);
 		if (dorepos > 0 && !Script_HSet(csp, "Pos", Script_Ref(rpos))) {
 			dorepos = -1;
 		}
 	}
-	PyObject *cpos = dorepos >= 0 ? Script_Keep(&r, PyObject_GetAttrString(csp, "Pos")) : NULL;
+	PyObject *cpos = dorepos >= 0 ? Script_Keep(&r, Script_GetAttr(csp, "Pos")) : NULL;
 	PyObject *conv = cpos ? Script_Keep(&r, Script_Ask("CharConversor", "GetNearestConversionPoint", "(O)", cpos)) : NULL;
 	int hit = conv ? Script_True(Script_Keep(&r, Npc_TestConv(conv))) : -1;
 	if (hit > 0) {
@@ -574,7 +574,7 @@ static PyObject *CharsNPC_Respawn(PyObject *self, PyObject *args) {
 				conv = prev;
 			} else if (p == 0) {
 				PyObject *u0 = Script_Keep(&r, Script_Ask("Scrap", "UsrEntity", "(i)", 0));
-				PyObject *upos = u0 ? Script_Keep(&r, PyObject_GetAttrString(u0, "Pos")) : NULL;
+				PyObject *upos = u0 ? Script_Keep(&r, Script_GetAttr(u0, "Pos")) : NULL;
 				conv = upos ? Script_Keep(&r, Script_Ask("CharConversor", "GetNearestConversionPoint", "(O)", upos)) : NULL;
 			} else {
 				conv = NULL;
@@ -586,7 +586,7 @@ static PyObject *CharsNPC_Respawn(PyObject *self, PyObject *args) {
 	}
 	int later = hit;
 	if (later == 0) {
-		PyObject *ract = Script_Keep(&r, PyObject_GetAttrString(csp, "ActCtrl"));
+		PyObject *ract = Script_Keep(&r, Script_GetAttr(csp, "ActCtrl"));
 		PyObject *chars = ract ? Script_Keep(&r, Npc_Global("RespawnChars")) : NULL;
 		int in = chars ? PySequence_In(chars, ract) : -1;
 		later = in < 0 ? -1 : in ? 0 : Script_True(Script_Keep(&r, Npc_Alarm()));
@@ -600,15 +600,15 @@ static PyObject *CharsNPC_Respawn(PyObject *self, PyObject *args) {
 	PyObject *c = Script_Keep(&r, Npc_CreateChar(csp, NULL));
 	byte ok = c && Script_Try("CharConversor", "SpawnChar", "(OO)", c, conv) &&
 		Script_HSet(c, "LLogicIdle", PyInt_FromLong(1)) && Script_HSet(c, "Invulnerable", PyInt_FromLong(1));
-	PyObject *cn = ok ? Script_Keep(&r, PyObject_GetAttrString(c, "Name")) : NULL;
+	PyObject *cn = ok ? Script_Keep(&r, Script_GetAttr(c, "Name")) : NULL;
 	ok = cn && Script_LaterIn(1.5, "CharsNPC", "ActiveSpawned", Py_BuildValue("(O)", cn), NULL);
 	if (ok && dorepos) {
-		PyObject *p = Script_Keep(&r, PyObject_GetAttrString(c, "Pos"));
-		PyObject *a = p ? Script_Keep(&r, PyObject_GetAttrString(c, "ActCtrl")) : NULL;
-		PyObject *n = a ? Script_Keep(&r, PyObject_GetAttrString(c, "Name")) : NULL;
+		PyObject *p = Script_Keep(&r, Script_GetAttr(c, "Pos"));
+		PyObject *a = p ? Script_Keep(&r, Script_GetAttr(c, "ActCtrl")) : NULL;
+		PyObject *n = a ? Script_Keep(&r, Script_GetAttr(c, "Name")) : NULL;
 		ok = n && Script_Keep(&r, Script_Ask("SAI", "GetReposCharPos", "(OOO)", p, a, n));
 	}
-	PyObject *n = ok ? Script_Keep(&r, PyObject_GetAttrString(c, "Name")) : NULL;
+	PyObject *n = ok ? Script_Keep(&r, Script_GetAttr(c, "Name")) : NULL;
 	int target = n ? Script_True(Script_Keep(&r, Script_Ask("MissionsFuncs", "IsCharMissionObjective", "(O)", n))) : -1;
 	if (target > 0) {
 		PyObject *msg = Script_Try("MissionsFuncs", "ActivateTarget", "(Oi)", c, 1) ?
@@ -649,7 +649,7 @@ static byte Npc_CheckActualEntity(PyObject *ename) {
 	if (ok && diff) {
 		PyObject *ent = Script_Ask("Scrap", "GetEntity", "(O)", cur);
 		int idle = Script_True(ent);
-		PyObject *v = idle > 0 ? PyObject_GetAttrString(ent, "LLogicIdle") : NULL;
+		PyObject *v = idle > 0 ? Script_GetAttr(ent, "LLogicIdle") : NULL;
 		if (idle > 0) {
 			idle = Script_True(v);
 		}
@@ -738,12 +738,15 @@ static PyObject *Npc_Classify(PyObject *l, PyObject *cad) {
 	static const char *const mods[] = { "string", NULL };
 	PyObject *aux = Script_Import(mods) ? PyList_New(0) : NULL;
 	byte ok = aux != NULL;
-	for (int i = 0; ok && i < PySequence_Length(l); i++) {
-		PyObject *c = PySequence_GetItem(l, i);
-		int in = c ? Npc_Find(c, cad) : -1;
+	PyObject *c;
+	int st = 1;
+	/* for c in l: (a TypeError "loop over non-sequence" for l that is none) */
+	for (int i = 0; ok && (st = Script_Next(l, i, &c)) > 0; i++) {
+		int in = Npc_Find(c, cad);
 		ok = in >= 0 && (!in || PyList_Append(aux, c) == 0);
-		Py_XDECREF(c);
+		Py_DECREF(c);
 	}
+	ok = ok && st == 0;
 	if (!ok) {
 		Py_XDECREF(aux);
 		return NULL;
@@ -849,7 +852,7 @@ static PyObject *Npc_ClassifyOptions(PyObject *type) {
 	PyObject *usr = Script_Keep(&r, Script_Ask("Scrap", "UsrEntity", "(i)", 0));
 	int t = Script_True(usr);
 	if (t > 0) {
-		PyObject *ua = Script_Keep(&r, PyObject_GetAttrString(usr, "ActCtrl"));
+		PyObject *ua = Script_Keep(&r, Script_GetAttr(usr, "ActCtrl"));
 		t = ua ? !Script_Is(ua, "Dtritus") && Script_In(type, disguised) : -1;
 	}
 	if (t > 0) {
@@ -982,7 +985,7 @@ static PyObject *CharsNPC_GenericNPCSpeech(PyObject *self, PyObject *args) {
 	Script_SetVar("Speech", "PlayerName", Script_Ref(usr));
 	Script_SetVar("Speech", "NPCName", Script_Ref(chname));
 	PyObject *e = Script_Keep(&r, Script_Ask("Scrap", "GetEntity", "(O)", chname));
-	PyObject *type0 = e ? Script_Keep(&r, PyObject_GetAttrString(e, "ActCtrl")) : NULL;
+	PyObject *type0 = e ? Script_Keep(&r, Script_GetAttr(e, "ActCtrl")) : NULL;
 	if (!type0) {
 		return Script_Done(&r, NULL);
 	}
@@ -999,7 +1002,7 @@ static PyObject *CharsNPC_GenericNPCSpeech(PyObject *self, PyObject *args) {
 			betty = Script_True(u);
 		}
 		if (betty > 0) {
-			PyObject *ua = Script_Keep(&r, PyObject_GetAttrString(u, "ActCtrl"));
+			PyObject *ua = Script_Keep(&r, Script_GetAttr(u, "ActCtrl"));
 			betty = ua ? !Script_Is(ua, "Dtritus") : -1;
 		}
 		if (betty > 0) {

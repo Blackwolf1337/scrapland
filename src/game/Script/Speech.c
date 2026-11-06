@@ -17,9 +17,10 @@
 #include "scrap/script.h"
 #include "scrap/timer.h"
 
-/* a variable of the module (a new reference, NULL with the error set) */
+/* a variable of the module as a function of the script reads it (a new reference, NULL with the error set: a
+ * NameError with the name when it is missing, TalkNI before NISpeech) */
 static PyObject *Sp_Get(const char *var) {
-	return Script_Attr("Speech", var);
+	return Script_Global("Speech", var);
 }
 
 /* Scrap.GetEntity(<module variable var>): a handle or None (a new reference, NULL with the error set) */
@@ -75,10 +76,7 @@ static byte Sp_SpeechText(PyObject *text, PyObject *time, const char *colour) {
 
 /* a + text: string concatenation as a script does it (a new reference, NULL with the error set) */
 static PyObject *Sp_Cat(PyObject *a, const char *text) {
-	PyObject *t = PyString_FromString(text);
-	PyObject *r = a && t ? PySequence_Concat(a, t) : NULL;
-	Py_XDECREF(t);
-	return r;
+	return a ? Script_PlusS(Script_Ref(a), text) : NULL;
 }
 
 /* `if handle:` of a script */
@@ -88,7 +86,7 @@ static byte Sp_True(PyObject *o) {
 
 /* SVec.GetRotAng(SVec.Sub(me.Pos, ch.Pos)): the angles from ch to me (a new reference) */
 static PyObject *Sp_RotAng(PyObject *me, PyObject *ch) {
-	PyObject *a = PyObject_GetAttrString(me, "Pos"), *b = a ? PyObject_GetAttrString(ch, "Pos") : NULL;
+	PyObject *a = Script_GetAttr(me, "Pos"), *b = a ? Script_GetAttr(ch, "Pos") : NULL;
 	PyObject *d = b ? Script_Ask("SVec", "Sub", "(OO)", a, b) : NULL;
 	PyObject *v = d ? Script_Ask("SVec", "GetRotAng", "(O)", d) : NULL;
 	Py_XDECREF(a);
@@ -266,7 +264,7 @@ static PyObject *Speech_AbortSpeech(PyObject *self, PyObject *args, PyObject *kw
 			ok = Script_HSet(ch, "ArrowCanMission", Sp_Get("ArrowCanMission")) &&
 				Script_HSet(ch, "SelectedEntity", PyString_FromString("")) && Sp_StopTalk(ch);
 			/* the logic of the character back when talking was its only option */
-			PyObject *n = ok ? PyObject_GetAttrString(ch, "ArrnOpt") : NULL;
+			PyObject *n = ok ? Script_GetAttr(ch, "ArrnOpt") : NULL;
 			int one = n ? Script_NumCmp(n, 1) : -2;
 			Py_XDECREF(n);
 			ok = one != -2;
@@ -274,7 +272,7 @@ static PyObject *Speech_AbortSpeech(PyObject *self, PyObject *args, PyObject *kw
 				int talk = Script_HPrefix(ch, "ArrOpt0", "Talk:");
 				ok = talk >= 0;
 				if (talk > 0) {
-					PyObject *name = PyObject_GetAttrString(ch, "Name");
+					PyObject *name = Script_GetAttr(ch, "Name");
 					PyObject *ra = name ? Py_BuildValue("(O)", name) : NULL;
 					PyObject *r = ra ? Speech_RestoreState(NULL, ra) : NULL;
 					Py_XDECREF(name);
@@ -352,7 +350,7 @@ static PyObject *Speech_PerformAnswer(PyObject *self, PyObject *args, PyObject *
 		PyString_Check(anima) ? PyString_AsString(anima) : "") : -1;
 	PyObject *r = NULL;
 	if (answers > 0) {
-		PyObject *name = PyObject_GetAttrString(ch, "Name");
+		PyObject *name = Script_GetAttr(ch, "Name");
 		PyObject *rest = name && Script_HSet(ch, "ForceDefLoop", (Py_INCREF(anima), anima)) &&
 			Script_Try("SSound", "StopVoice", "(i)", 0) && Script_Try("SSound", "PlayVoice", "(iO)", 1, name) ?
 			Script_Ask("SSound", "VoiceRemain", "(iO)", 1, time ? time : six) : NULL;
@@ -488,11 +486,11 @@ static int Sp_SetPlayerToTalk(PyObject *me, PyObject *ch) {
 	if (!Sp_True(me)) {
 		return 0;
 	}
-	PyObject *sel = PyObject_GetAttrString(me, "AutoSelect");
+	PyObject *sel = Script_GetAttr(me, "AutoSelect");
 	int can = sel ? Script_NumCmp(sel, 1) == 0 : -1;
 	Py_XDECREF(sel);
 	if (can > 0) {
-		PyObject *life = PyObject_GetAttrString(ch, "Life");
+		PyObject *life = Script_GetAttr(ch, "Life");
 		int c = life ? Script_NumCmp(life, 0) : -2;
 		Py_XDECREF(life);
 		can = c == -2 ? -1 : c > 0;
@@ -500,7 +498,7 @@ static int Sp_SetPlayerToTalk(PyObject *me, PyObject *ch) {
 	if (can <= 0) {
 		return can;
 	}
-	PyObject *name = PyObject_GetAttrString(ch, "Name");
+	PyObject *name = Script_GetAttr(ch, "Name");
 	byte ok = name && Script_HSet(me, "SelectedEntity", (Py_INCREF(name), name)) && Script_HSet(me, "Action", PyString_FromString("Talk")) &&
 		Script_HSet(me, "DefLoop", PyString_FromString("Talk"));
 	/* globals().get('TalkNI') == None or globals().get('CurrNI') == 0 */
@@ -516,7 +514,7 @@ static int Sp_SetPlayerToTalk(PyObject *me, PyObject *ch) {
 		ok = fcam != NULL;
 		if (ok && PyObject_IsTrue(fcam) > 0) {
 			/* the script keeps the speeds in a local it never uses */
-			PyObject *v = PyObject_GetAttrString(cam, "VSpeed"), *h = v ? PyObject_GetAttrString(cam, "HSpeed") : NULL;
+			PyObject *v = Script_GetAttr(cam, "VSpeed"), *h = v ? Script_GetAttr(cam, "HSpeed") : NULL;
 			ok = h && Script_HSet(cam, "VSpeed", PyFloat_FromDouble(1.1)) && Script_HSet(cam, "HSpeed", PyFloat_FromDouble(1.1));
 			Py_XDECREF(v);
 			Py_XDECREF(h);
@@ -525,7 +523,7 @@ static int Sp_SetPlayerToTalk(PyObject *me, PyObject *ch) {
 		Py_XDECREF(cam);
 		PyObject *vang = ok ? Sp_RotAng(me, ch) : NULL;
 		PyObject *y = vang ? PySequence_GetItem(vang, 1) : NULL;
-		PyObject *pos = y ? PyObject_GetAttrString(me, "Pos") : NULL;
+		PyObject *pos = y ? Script_GetAttr(me, "Pos") : NULL;
 		ok = pos && Script_HSet(me, "DisplAng", PyInt_FromLong(45)) && Script_HSet(me, "ViewAng", Sp_Turned(vang, 45)) &&
 			Script_HSet(me, "MoveAng", Py_BuildValue("(iOi)", 0, y, 0)) && Script_HSet(me, "MovePos", (Py_INCREF(pos), pos)) &&
 			Script_HSet(me, "MoveTime", PyFloat_FromDouble(0.20)) && Script_HSet(me, "MoveViewAng", PyInt_FromLong(0)) &&
@@ -572,8 +570,8 @@ static PyObject *Speech_OnSpeech(PyObject *self, PyObject *args, PyObject *kw) {
 	PyObject *me = Sp_Entity("PlayerName"), *ch = me ? Sp_Entity("NPCName") : NULL;
 	int r = ch ? Sp_SetPlayerToTalk(me, ch) : -1;
 	if (r > 0) {
-		PyObject *name = PyObject_GetAttrString(me, "Name");
-		PyObject *ca = name ? PyObject_GetAttrString(ch, "Ang") : NULL, *ma = ca ? PyObject_GetAttrString(me, "Ang") : NULL;
+		PyObject *name = Script_GetAttr(me, "Name");
+		PyObject *ca = name ? Script_GetAttr(ch, "Ang") : NULL, *ma = ca ? Script_GetAttr(me, "Ang") : NULL;
 		PyObject *cy = ma ? PySequence_GetItem(ca, 1) : NULL, *my = cy ? PySequence_GetItem(ma, 1) : NULL;
 		PyObject *norm = my ? Script_Ask("SVec", "NormAng", "(d)", PyFloat_AsDouble(cy) - PyFloat_AsDouble(my) - 180) : NULL;
 		byte ok = norm && Script_HSet(ch, "AbortSelectFunc", PyString_FromString("Speech.RestoreState")) &&
@@ -591,7 +589,7 @@ static PyObject *Speech_OnSpeech(PyObject *self, PyObject *args, PyObject *kw) {
 			Py_INCREF(ans);
 			Script_SetVar("Speech", "NPCAnswer", ans);
 			Script_SetVar("Speech", "NPCAnswerTime", PyFloat_FromDouble(ansTime));
-			PyObject *arrow = PyObject_GetAttrString(ch, "ArrowCanMission");
+			PyObject *arrow = Script_GetAttr(ch, "ArrowCanMission");
 			ok = arrow != NULL;
 			if (ok) {
 				Script_SetVar("Speech", "ArrowCanMission", arrow);
@@ -673,7 +671,7 @@ static PyObject *Speech_StdOnSpch(PyObject *self, PyObject *args, PyObject *kw) 
 	}
 	Py_DECREF(r);
 	PyObject *ch = Sp_Entity("NPCName");
-	PyObject *i = ch ? PyObject_GetAttrString(ch, "ArriOpt") : NULL, *n = i ? PyObject_GetAttrString(ch, "ArrnOpt") : NULL;
+	PyObject *i = ch ? Script_GetAttr(ch, "ArriOpt") : NULL, *n = i ? Script_GetAttr(ch, "ArrnOpt") : NULL;
 	PyObject *one = n ? PyInt_FromLong(1) : NULL, *next = one ? PyNumber_Add(i, one) : NULL;
 	PyObject *mod = next ? PyNumber_Remainder(next, n) : NULL;
 	byte ok = mod && Script_HSet(ch, "ArriOpt", mod);
@@ -764,7 +762,7 @@ static PyObject *Speech_InspectChar(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	PyObject *me = Script_Ask("Scrap", "GetEntity", "(O)", usr), *ch = me ? Script_Ask("Scrap", "GetEntity", "(O)", chName) : NULL;
-	PyObject *type = ch ? PyObject_GetAttrString(ch, "ActCtrl") : NULL, *state = type ? PyObject_GetAttrString(ch, "LLogicState") : NULL;
+	PyObject *type = ch ? Script_GetAttr(ch, "ActCtrl") : NULL, *state = type ? Script_GetAttr(ch, "LLogicState") : NULL;
 	const char *t = type && PyString_Check(type) ? PyString_AsString(type) : "";
 	const char *key = NULL;
 	char buf[0x80];
@@ -784,7 +782,7 @@ static PyObject *Speech_InspectChar(PyObject *self, PyObject *args) {
 		if (on && PyObject_IsTrue(on) > 0) {
 			key = "INSPECT_CHAR_Alarm";
 		} else if (on && !strcmp(t, "Sentinel")) {
-			PyObject *mine = PyObject_GetAttrString(me, "ActCtrl"), *def = mine ? Script_Ask("Scrap", "Get", "(s)", "UsrDefChar") : NULL;
+			PyObject *mine = Script_GetAttr(me, "ActCtrl"), *def = mine ? Script_Ask("Scrap", "Get", "(s)", "UsrDefChar") : NULL;
 			key = def ? PyObject_Compare(mine, def) == 0 ? "INSPECT_CHAR_Sentinel_Act" : "INSPECT_CHAR_Sentinel" : NULL;
 			Py_XDECREF(mine);
 			Py_XDECREF(def);
@@ -828,7 +826,7 @@ static PyObject *Speech_AutoSpeech(PyObject *self, PyObject *args) {
 	Py_INCREF(chName);
 	Script_SetVar("Speech", "NPCName", chName);
 	PyObject *ch = Sp_Entity("NPCName");
-	PyObject *type = ch ? PyObject_GetAttrString(ch, "ActCtrl") : NULL;
+	PyObject *type = ch ? Script_GetAttr(ch, "ActCtrl") : NULL;
 	PyObject *routines = type ? Sp_Get("SpeechRoutines") : NULL;
 	PyObject *f = routines ? PyObject_GetItem(routines, type) : NULL;
 	PyObject *r = NULL;
@@ -1026,7 +1024,7 @@ static PyObject *Speech_RunNI(PyObject *self, PyObject *args, PyObject *kw) {
 			Script_SetVar("Speech", "OnEndOfSpeech", Sp_Get("OnEndOfSpeechNI"));
 			Script_SetVar("Speech", "OnEndOfSpeechParams", Sp_Get("OnEndOfSpeechParamsNI"));
 			ok = Sp_Del("OnEndOfSpeechNI") && Sp_Del("OnEndOfSpeechParamsNI");
-			PyObject *type = ok ? PyObject_GetAttrString(ch, "ActCtrl") : NULL;
+			PyObject *type = ok ? Script_GetAttr(ch, "ActCtrl") : NULL;
 			const char *t = type && PyString_Check(type) ? PyString_AsString(type) : "";
 			ok = type && (!strcmp(t, "Human") || !strcmp(t, "GateKeeper") || !strcmp(t, "Sebastian") || !strcmp(t, "Sputnik") ||
 				Script_HSet(ch, "Invulnerable", PyInt_FromLong(0)));
@@ -1115,7 +1113,7 @@ static int Sp_DoRemote(void) {
 	} else {
 		PyObject *w = Script_Method(e, "IsType", "(s)", "WalkChar");
 		if (w && PyObject_IsTrue(w) > 0) {
-			PyObject *sel = PyObject_GetAttrString(e, "AutoSelect");
+			PyObject *sel = Script_GetAttr(e, "AutoSelect");
 			doit = sel ? Script_NumCmp(sel, 1) == 0 : -1;
 			Py_XDECREF(sel);
 		} else if (w) {
@@ -1268,7 +1266,7 @@ static PyObject *Speech_OffVoice(PyObject *self, PyObject *args) {
 		PyObject *w = Script_Method(e, "IsType", "(s)", "WalkChar");
 		go = w ? PyObject_IsTrue(w) <= 0 : -1;
 		if (go == 0) {
-			PyObject *sel = PyObject_GetAttrString(e, "AutoSelect");
+			PyObject *sel = Script_GetAttr(e, "AutoSelect");
 			go = sel ? Script_NumCmp(sel, 1) == 0 : -1;
 			if (go > 0) {
 				go = Script_HIs(e, "SelectedEntity", "");
@@ -1465,13 +1463,13 @@ static PyObject *Speech_TestInRange(PyObject *self, PyObject *args) {
 			abort = Script_HPrefix(obj, "ArrOpt0", "Talk:");
 		}
 		if (abort > 0) {
-			PyObject *sel = PyObject_GetAttrString(player, "AutoSelect");
+			PyObject *sel = Script_GetAttr(player, "AutoSelect");
 			abort = sel ? PyObject_IsTrue(sel) > 0 : -1;
 			Py_XDECREF(sel);
 		}
 		int far = 0;
 		if (abort == 0) {
-			PyObject *a = PyObject_GetAttrString(obj, "Pos"), *b = a ? PyObject_GetAttrString(player, "Pos") : NULL;
+			PyObject *a = Script_GetAttr(obj, "Pos"), *b = a ? Script_GetAttr(player, "Pos") : NULL;
 			PyObject *d = b ? Script_Ask("SVec", "Sub", "(OO)", a, b) : NULL, *m = d ? Script_Ask("SVec", "ModSqr", "(O)", d) : NULL;
 			far = m ? Script_NumCmp(m, 250000) > 0 : -1;
 			Py_XDECREF(a);
@@ -1564,7 +1562,7 @@ static PyObject *Sp_OnObjectSpeech(PyObject *obj, PyObject *type, PyObject *text
 	Script_SetVar("Speech", "ObjAnswer", ans);
 	Py_INCREF(type);
 	Script_SetVar("Speech", "ObjCharType", type);
-	PyObject *name = PyObject_GetAttrString(player, "Name");
+	PyObject *name = Script_GetAttr(player, "Name");
 	PyObject *me = name ? Script_Ask("Scrap", "GetEntity", "(O)", name) : NULL;
 	Py_XDECREF(name);
 	Py_DECREF(player);
