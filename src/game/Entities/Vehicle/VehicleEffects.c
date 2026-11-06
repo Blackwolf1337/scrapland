@@ -310,6 +310,11 @@ void cVehicleEffects_Init(cVehicleEffects *self) {
 				crt_eh_vector_ctor(t->trails, sizeof(CGameTrail), VEFF_TRAILS, (void *)CGameTrail_ctor,
 					(void *)CGameTrail_dtor);
 				t->owner = NULL;
+				/* differs from the original: the first update measures from the last point before it is set;
+				 * 0 as in a zeroed block */
+				t->last.x = 0.0f;
+				t->last.y = 0.0f;
+				t->last.z = 0.0f;
 			}
 			self->trails = t;
 		}

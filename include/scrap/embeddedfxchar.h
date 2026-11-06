@@ -202,7 +202,7 @@ typedef struct cEmbeddedFXRusty {
 	int dummyGlowLighting;
 	CGameParticles glowLighting;
 	float life[FXRUSTY_TRAILS];	/* of the lightning bolts */
-	float pause[FXRUSTY_TRAILS];	/* before the next bolt (never set by Reset) */
+	float pause[FXRUSTY_TRAILS];	/* before the next bolt (set by the constructor only, not by Reset) */
 	CGameTrail trails[FXRUSTY_TRAILS];
 } cEmbeddedFXRusty;
 

@@ -83,6 +83,7 @@ static cEmbeddedFXAmplifier *cEmbeddedFXAmplifier_ctor(cEmbeddedFXAmplifier *sel
 	CGameParticles_ctor(&self->flares);
 	CGameTrail_ctor(&self->trail);
 	self->base.ent = NULL;
+	self->visible = 0;	/* differs from the original, see EFXM_Shown */
 	self->t = 0.0f;
 	return self;
 }
@@ -92,6 +93,7 @@ static cEmbeddedFXBattery *cEmbeddedFXBattery_ctor(cEmbeddedFXBattery *self) {
 	CGameParticles_ctor(&self->glow);
 	EFXM_TrailsCtor(self->trails, FXBATTERY_TRAILS);
 	self->base.ent = NULL;
+	self->visible = 0;	/* differs from the original, see EFXM_Shown */
 	return self;
 }
 
@@ -115,6 +117,7 @@ static void *EFXM_Ctor10(void *self, const cEmbeddedFXVtbl *vt) {
 	EFX_SetVtbl(self, vt);
 	CGameParticles_ctor(&((cEmbeddedFXCoin *)self)->glow);	/* the same prefix in the four classes */
 	((cEmbeddedFX *)self)->ent = NULL;
+	((cEmbeddedFXCoin *)self)->visible = 0;	/* differs from the original, see EFXM_Shown */
 	return self;
 }
 
@@ -131,6 +134,7 @@ static cEmbeddedFXDTritusDesktop *cEmbeddedFXDTritusDesktop_ctor(cEmbeddedFXDTri
 	CGameParticles_ctor(&self->glow);
 	CGameTrail_ctor(&self->trail);
 	self->base.ent = NULL;
+	self->visible = 0;	/* differs from the original, see EFXM_Shown */
 	self->t = 0.0f;
 	self->arcT = 0.0f;
 	return self;
@@ -151,6 +155,7 @@ static cEmbeddedFXDataPack *cEmbeddedFXDataPack_ctor(cEmbeddedFXDataPack *self) 
 	CGameParticles_ctor(&self->laser);
 	CGameTrail_ctor(&self->trail);
 	self->base.ent = NULL;
+	self->visible = 0;	/* differs from the original, see EFXM_Shown */
 	self->on = 0;
 	self->shown = 0;
 	self->level = 0.0f;
@@ -162,6 +167,7 @@ static cEmbeddedFXExtraLife *cEmbeddedFXExtraLife_ctor(cEmbeddedFXExtraLife *sel
 	CGameParticles_ctor(&self->glow);
 	CGameTrail_ctor(&self->trail);
 	self->base.ent = NULL;
+	self->visible = 0;	/* differs from the original, see EFXM_Shown */
 	return self;
 }
 
@@ -169,6 +175,7 @@ static cEmbeddedFXFlag *cEmbeddedFXFlag_ctor(cEmbeddedFXFlag *self) {
 	EFX_SetVtbl(self, VT_EFX_FLAG);
 	CGameParticles_ctor(&self->particles);
 	self->base.ent = NULL;
+	self->visible = 0;	/* differs from the original, see EFXM_Shown */
 	self->t = 0.0f;
 	self->scale = 1.0f;
 	return self;
@@ -184,6 +191,7 @@ static cEmbeddedFXMatrix *cEmbeddedFXMatrix_ctor(cEmbeddedFXMatrix *self) {
 	CGameParticles_ctor(&self->flares);
 	CGameTrail_ctor(&self->trail);
 	self->base.ent = NULL;
+	self->visible = 0;	/* differs from the original, see EFXM_Shown */
 	self->isMatrix = 0;
 	return self;
 }
@@ -194,6 +202,7 @@ static cEmbeddedFXMeetingPoint *cEmbeddedFXMeetingPoint_ctor(cEmbeddedFXMeetingP
 	CGameParticles_ctor(&self->flares);
 	CGameParticles_ctor(&self->countDown);
 	self->base.ent = NULL;
+	self->visible = 0;	/* differs from the original, see EFXM_Shown */
 	self->t = 0.0f;
 	self->countT = -1.0f;
 	self->countA = 1.9f;
@@ -215,6 +224,7 @@ static cEmbeddedFXTreasure *cEmbeddedFXTreasure_ctor(cEmbeddedFXTreasure *self) 
 	CGameParticles_ctor(&self->glow);
 	CGameTrail_ctor(&self->trail);
 	self->base.ent = NULL;
+	self->visible = 0;	/* differs from the original, see EFXM_Shown */
 	self->type = 0;
 	self->scale = 1.0f;
 	return self;
@@ -1176,7 +1186,8 @@ static cGVar GVar_DataPackLaserSize;
 
 /*
  * The model if it is loaded, visible and without a model effect (*visible set), else NULL (*visible cleared, the
- * trail too if given).
+ * trail too if given). The constructors did not set the visible flags (read here before the first show); they start
+ * at 0 now, as in a zeroed block, which differs from the original.
  */
 static CGameModel *EFXM_Shown(cEmbeddedFX *self, byte *visible, CGameTrail *trail) {
 	CGameModel *model = Obj_GetModel(self->ent);

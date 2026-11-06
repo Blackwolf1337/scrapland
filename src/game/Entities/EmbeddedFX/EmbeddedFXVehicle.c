@@ -83,6 +83,9 @@ cEmbeddedFXVehicle *cEmbeddedFXVehicle_ctor(cEmbeddedFXVehicle *self) {
 	self->attached = NULL;
 	self->sirens = NULL;
 	self->other = NULL;
+	/* differs from the original: set by the first Update, but the motors of the vehicle read it before (the glow
+	 * fade by the camera distance); 0 as in a zeroed block */
+	self->camDist = 0.0f;
 	return self;
 }
 
