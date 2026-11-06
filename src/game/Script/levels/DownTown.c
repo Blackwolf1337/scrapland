@@ -440,7 +440,7 @@ static PyObject *Berto_MissionScorer(PyObject *self, PyObject *args) {
 		}
 		Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "Value", v);
 	}
-	Lv_BarDefaults(&f, id, bar);
+	Lv_BarDefaults(&f, id, bar, NULL, NULL);
 	return Sf_None(&f);
 }
 
@@ -817,7 +817,7 @@ static PyObject *Massacre_MissionScorer(PyObject *self, PyObject *args) {
 	Dt_Text(&f, id, "MassacreText", Dt_Y(&f, 0), Dt_Label(&f, "Mission_Massacre_Scorer_1"), Sf_Int(&f, 1));
 	const char *bar = "MassacreScorer";
 	Sf_Run(&f, "SScorer", "Add", "(Oss)", id, bar, "Bar");
-	Lv_BarDefaults(&f, id, bar);
+	Lv_BarDefaults(&f, id, bar, NULL, NULL);
 	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "MaxValue", G(MS, "MAX_POINTS"));
 	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "Value", Sf_Eval(&f, SAVE("Mission_Massacre.Points"), MS));
 	Sf_Run(&f, "SScorer", "Set", "(Ossi)", id, bar, "Visible", 1);
@@ -1504,7 +1504,7 @@ static PyObject *Data_MissionScorer(PyObject *self, PyObject *args) {
 	Dt_Text(&f, id, "DataStatusText", Dt_Y(&f, 0), Dt_Label(&f, "Mission_GetDataPart1_Scorer_1"), NULL);
 	const char *bar = "DataStatus";
 	Sf_Run(&f, "SScorer", "Add", "(Oss)", id, bar, "Bar");
-	Lv_BarDefaults(&f, id, bar);
+	Lv_BarDefaults(&f, id, bar, NULL, NULL);
 	Sf_Run(&f, "SScorer", "Set", "(Ossi)", id, bar, "IsAutoUpdatable", 0);
 	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "MaxValue", G(GD, "MAX_DATA_UNITS"));
 	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "Value", Sf_ToInt(&f, SAVE("NumData")));
@@ -3029,7 +3029,7 @@ static PyObject *Escort_MissionScorer(PyObject *self, PyObject *args) {
 		Dt_Text(&f, id, "RemainingLifeText", Dt_Y(&f, 0), Dt_Label(&f, "Mission_ProtectMayorTransport_Scorer1"), Sf_Int(&f, 1));
 		const char *bar = "RemainingLifeScorer";
 		Sf_Run(&f, "SScorer", "Add", "(Oss)", id, bar, "Bar");
-		Lv_BarDefaults(&f, id, bar);
+		Lv_BarDefaults(&f, id, bar, NULL, NULL);
 		Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "MaxValue", Sf_Attr(&f, G(PM, "trans"), "MaxLife"));
 		Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "Value", Sf_Attr(&f, G(PM, "trans"), "Life"));
 		Sf_Run(&f, "SScorer", "Set", "(Ossi)", id, bar, "Visible", 1);

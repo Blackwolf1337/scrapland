@@ -8,6 +8,7 @@
  * MapRace.Races) stay in the scripts; the functions read and write them as their globals.
  */
 #include "scrap/script.h"
+#include "Levels.h"
 
 #define DMK "Mission_DestroyMickus"
 #define PG "Mission_ProtectGus"
@@ -27,32 +28,6 @@
 #define NOARGS Sf_Build(&f, "()")
 
 static const char *const ac_ships_bertos = "[\"SMerc1\",\"SMerc2\",\"SBishop1\",\"SBerto1\",\"SArchbishop1\"]";
-
-/* InitStatus of most missions: the ships of the traffic as a save variable, read back into Traffic.AcShips */
-static byte Cm_AcShips(scriptFrame_t *f, const char *module, const char *ships) {
-	int mark = f->n;
-	Sf_Import(f, "Traffic");
-	Sf_Run(f, "Scrap", "SetSaveVar", "(ss)", "Traffic.AcShips", ships);
-	Sf_SetMod(f, "Traffic", "AcShips", Sf_Eval(f, Sf_Ask(f, "Scrap", "GetSaveVar", "(s)", "Traffic.AcShips"), module));
-	Sf_Release(f, mark);
-	return !f->failed;
-}
-
-static PyObject *Cm_AcShipsStatus(PyObject *args, const char *module, const char *ships) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Cm_AcShips(&f, module, ships);
-	return Sf_None(&f);
-}
-
-/* `usr and usr.Name == name` */
-static int Cm_UsrIs(scriptFrame_t *f, PyObject *usr, PyObject *name) {
-	int t = Sf_True(f, usr);
-	return t > 0 ? Sf_Compare(f, Sf_Attr(f, usr, "Name"), "==", name) : t;
-}
 
 /* `a and b` of two values already there */
 static int Cm_And(scriptFrame_t *f, PyObject *a, PyObject *b) {
@@ -80,39 +55,6 @@ static PyObject *Cm_Long(scriptFrame_t *f, PyObject *o) {
 static PyObject *Cm_Sqr(scriptFrame_t *f, const char *module, const char *name) {
 	PyObject *a = Sf_Global(f, module, name);
 	return Sf_Op(f, a, '*', Sf_Global(f, module, name));
-}
-
-/* sp = VehiclesNPC.cShipAI() with the attributes of the table */
-static PyObject *Cm_Profile(scriptFrame_t *f, const char *module, const char *const *vars) {
-	Sf_Import(f, "VehiclesNPC");
-	PyObject *sp = Sf_Ask(f, "VehiclesNPC", "cShipAI", "()");
-	Sf_SetAttrs(f, sp, module, vars);
-	return sp;
-}
-
-/* SpwPos = OutMap.GetFreeSpawnPos(); Scrap.CreateEntity(name, SpwPos[0][0], SpwPos[0][1], SpwPos[0][2], "Car") */
-static PyObject *Cm_Spawn(scriptFrame_t *f, const char *name, PyObject **spw) {
-	PyObject *s = Sf_Ask(f, "OutMap", "GetFreeSpawnPos", "()");
-	PyObject *fn = Sf_Mod(f, "Scrap", "CreateEntity");
-	PyObject *x = Sf_Item(f, Sf_Item(f, s, 0), 0), *y = Sf_Item(f, Sf_Item(f, s, 0), 1), *z = Sf_Item(f, Sf_Item(f, s, 0), 2);
-	if (spw) {
-		*spw = s;
-	}
-	return Sf_Call(f, fn, "(sOOOs)", name, x, y, z, "Car");
-}
-
-/* VehiclesNPC.SetStdProperties(e.Name, pd.Ship); VehiclesNPC.ModAIProff(e, pd) with pd the profile function of module */
-static PyObject *Cm_SetProfile(scriptFrame_t *f, const char *module, const char *profile, PyObject *e) {
-	PyObject *pd = Sf_Own(f, module, profile, "()");
-	Sf_Run(f, "VehiclesNPC", "SetStdProperties", "(OO)", Sf_Attr(f, e, "Name"), Sf_Attr(f, pd, "Ship"));
-	Sf_Run(f, "VehiclesNPC", "ModAIProff", "(OO)", e, pd);
-	return pd;
-}
-
-/* e.Life = e.MaxLife = the global life */
-static byte Cm_Life(scriptFrame_t *f, PyObject *e, const char *module, const char *life) {
-	PyObject *v = Sf_Global(f, module, life);
-	return Sf_SetAttr(f, e, "Life", v) && Sf_SetAttr(f, e, "MaxLife", v);
 }
 
 /*
@@ -248,19 +190,6 @@ static PyObject *Cm_Label(scriptFrame_t *f, const char *key) {
 	return Sf_Cat(f, "Os", Sf_Lang(f, Sf_Str(f, key)), ":");
 }
 
-/* Scorer.MissionScorerBar_SetDefaults(id, item, back, main, black) with the colours of the scorer (main and black NULL)
- * or the given ones */
-static byte Cm_BarDefaults(scriptFrame_t *f, PyObject *id, const char *item, PyObject *main, PyObject *black) {
-	int mark = f->n;
-	PyObject *fn = Sf_Mod(f, "Scorer", "MissionScorerBar_SetDefaults");
-	PyObject *back = Sf_Mod(f, "Scorer", "MissionScorerBar_ColorBack");
-	main = main ? main : Sf_Mod(f, "Scorer", "MissionScorerBar_ColorMain");
-	black = black ? black : Sf_Mod(f, "Scorer", "MissionScorerBar_ColorBlack");
-	Sf_Call(f, fn, "(OsOOO)", id, item, back, main, black);
-	Sf_Release(f, mark);
-	return !f->failed;
-}
-
 /* ---- Map ---- */
 
 /* InitStatus(LevelPath): outdoors; the traffic by who controls the robots, the metro and the elevator */
@@ -337,27 +266,10 @@ static PyObject *MapRace_Pass(PyObject *self, PyObject *args) {
 	return Sf_None(&f);
 }
 
-/* EasyRaceCommercial<n>(): RaceMaker.StartPos, the checkpoints of race n ((x, y, z), angle) */
-static PyObject *MapRace_Race(PyObject *args, int n) {
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "RaceMaker");
-	Sf_SetMod(&f, "RaceMaker", "StartPos", Sf_Build(&f, "[]"));
-	for (int i = 0; i < races[n].n && !f.failed; i++) {
-		int mark = f.n;
-		const double *p = races[n].pos[i];
-		Sf_Method(&f, Sf_Mod(&f, "RaceMaker", "StartPos"), "append", "((ddd)d)", p[0], p[1], p[2], p[3]);
-		Sf_Release(&f, mark);
-	}
-	return Sf_None(&f);
-}
-
-#define RACE(n) \
-	static PyObject *MapRace_Race##n(PyObject *self, PyObject *args) { \
+#define RACE(k) \
+	static PyObject *MapRace_Race##k(PyObject *self, PyObject *args) { \
 		(void)self; \
-		return MapRace_Race(args, n - 1); \
+		return Lv_StartPos(args, races[k - 1].pos, races[k - 1].n); \
 	}
 RACE(1)
 RACE(2)
@@ -392,12 +304,12 @@ static const char *const func_enemies_profile[] = { "Ship=SFUNC1", "StupidPathFi
 
 static PyObject *Mickus_GetFuncEnemiesProfile(PyObject *self, PyObject *args) {
 	SF_ARGS("");
-	return Sf_Return(&f, Cm_Profile(&f, DMK, func_enemies_profile));
+	return Sf_Return(&f, Lv_Profile(&f, DMK, func_enemies_profile));
 }
 
 static PyObject *Mickus_InitStatus(PyObject *self, PyObject *args) {
 	(void)self;
-	return Cm_AcShipsStatus(args, DMK, ac_ships_bertos);
+	return Lv_AcShipsStatus(args, DMK, ac_ships_bertos);
 }
 
 /* Init(LevelPath): the transports, the mission when the player has a ship, the callbacks of boarding */
@@ -489,7 +401,7 @@ static PyObject *Mickus_StopMission(PyObject *self, PyObject *args) {
 static PyObject *Mickus_OnMickusDamage(PyObject *self, PyObject *args) {
 	PyObject *looser, *winner, *damage;
 	SF_ARGS("OOO", &looser, &winner, &damage);
-	if (Cm_UsrIs(&f, USR(), winner) > 0) {
+	if (Lv_UsrIs(&f, USR(), winner) > 0) {
 		PyObject *e = Sf_Entity(&f, looser);
 		if (Sf_True(&f, e) > 0) {
 			Sf_SetAttrS(&f, e, "OnDamage", "");
@@ -744,11 +656,11 @@ static PyObject *Mickus_CreateFuncEnemies(PyObject *self, PyObject *args) {
 		PyObject *range = Sf_Ask(&f, "__builtin__", "range", "(O)", num), *i;
 		for (int k = 0; (i = Sf_Next(&f, range, k)) != NULL; k++) {
 			int mark = f.n;
-			PyObject *fn = Cm_Spawn(&f, "Functionary", NULL);
-			Cm_SetProfile(&f, DMK, "GetFuncEnemiesProfile", fn);
+			PyObject *fn = Lv_SpawnCar(&f, "Functionary", 0);
+			Lv_StdProfile(&f, DMK, "GetFuncEnemiesProfile", fn);
 			Sf_SetAttrS(&f, fn, "TgType", "red");
 			Sf_SetAttrS(&f, fn, "EntityList", "FuncEnemies");
-			Cm_Life(&f, fn, DMK, "FUNCS_LIFE");
+			Lv_Life(&f, fn, DMK, "FUNCS_LIFE");
 			Sf_Run(&f, "SAI", "SetStateVehicle", "(iOO)", 2, Sf_Attr(&f, fn, "Name"), Sf_Attr(&f, usr, "Name"));
 			Sf_Release(&f, mark);
 		}
@@ -766,7 +678,7 @@ static int Cm_NoAlarm(scriptFrame_t *f) {
 static PyObject *Mickus_OnFuncEnemiesDeath(PyObject *self, PyObject *args) {
 	PyObject *looser, *winner;
 	SF_ARGS("OO", &looser, &winner);
-	int on = Cm_UsrIs(&f, USR(), winner);
+	int on = Lv_UsrIs(&f, USR(), winner);
 	if (on > 0) {
 		on = Cm_NoAlarm(&f);
 	}
@@ -789,7 +701,7 @@ static PyObject *Mickus_OnTransportsDeath(PyObject *self, PyObject *args) {
 			Sf_SetGlobal(&f, DMK, "currentScannedShip", Sf_Str(&f, ""));
 		}
 	}
-	if (Cm_UsrIs(&f, USR(), winner) > 0) {
+	if (Lv_UsrIs(&f, USR(), winner) > 0) {
 		if (Cm_NoAlarm(&f) > 0) {
 			Sf_Run(&f, "Scrap", "SetAlarm", "(i)", 1);
 		}
@@ -816,7 +728,7 @@ static PyObject *Mickus_DropMoney(PyObject *self, PyObject *args) {
 static PyObject *Mickus_TakeMoney(PyObject *self, PyObject *args) {
 	PyObject *item, *ch;
 	SF_ARGS("OO", &item, &ch);
-	if (Cm_UsrIs(&f, USR(), ch) > 0) {
+	if (Lv_UsrIs(&f, USR(), ch) > 0) {
 		Cm_Taken(&f, Sf_Str(&f, "MickusMoney"), Sf_Str(&f, "MissionCheckArrow"));
 		Cm_Com(&f, "Mission_Search&DestroyMickus_RemoteMessage8", "Traitorius", G(DMK, "SetNextMission"), NULL);
 	}
@@ -850,7 +762,7 @@ static PyObject *Mickus_MissionScorer(PyObject *self, PyObject *args) {
 	Sf_MissionText(&f, id, "ScanStatusText", "Text", Cm_X(&f, 0), Cm_Y(&f, 0), "Horatio", "Shadow",
 		Cm_Label(&f, "Mission_Search&DestroyMickus_Scorer_1"), "Left", vis);
 	Sf_Run(&f, "SScorer", "Add", "(Oss)", id, "ScanRemainingTime", "Bar");
-	Cm_BarDefaults(&f, id, "ScanRemainingTime", NULL, NULL);
+	Lv_BarDefaults(&f, id, "ScanRemainingTime", NULL, NULL);
 	Sf_Run(&f, "SScorer", "Set", "(Ossi)", id, "ScanRemainingTime", "IsAutoUpdatable", 0);
 	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, "ScanRemainingTime", "MaxValue", G(DMK, "MAX_SCANNING_TIME"));
 	if (scanning == 0) {
@@ -905,7 +817,7 @@ static PyObject *Pg_Profile(PyObject *args, const char *const *vars, const char 
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	PyObject *pd = Cm_Profile(&f, PG, vars);
+	PyObject *pd = Lv_Profile(&f, PG, vars);
 	Sf_SetItem(&f, Sf_Mod(&f, "VehiclesNPC", "AIProf"), Sf_Str(&f, name), pd);
 	return Sf_None(&f);
 }
@@ -922,7 +834,7 @@ static PyObject *Gus_CreateBishopGusProfile(PyObject *self, PyObject *args) {
 
 static PyObject *Gus_InitStatus(PyObject *self, PyObject *args) {
 	(void)self;
-	return Cm_AcShipsStatus(args, PG, ac_ships_bertos);
+	return Lv_AcShipsStatus(args, PG, ac_ships_bertos);
 }
 
 /* Init(LevelPath): the fight (now or when the player boards a ship), or the phone cab after it */
@@ -1194,12 +1106,12 @@ static const char *const stupidus_profile[] = { "Ship=SFUNC1", "StupidPathFindin
 
 static PyObject *Stupidus_GetStupidusProfile(PyObject *self, PyObject *args) {
 	SF_ARGS("");
-	return Sf_Return(&f, Cm_Profile(&f, DS, stupidus_profile));
+	return Sf_Return(&f, Lv_Profile(&f, DS, stupidus_profile));
 }
 
 static PyObject *Stupidus_InitStatus(PyObject *self, PyObject *args) {
 	(void)self;
-	return Cm_AcShipsStatus(args, DS, "[\"SMerc1\",\"SMerc2\",\"SBishop1\",\"SArchbishop1\"]");
+	return Lv_AcShipsStatus(args, DS, "[\"SMerc1\",\"SMerc2\",\"SBishop1\",\"SArchbishop1\"]");
 }
 
 /* Init(LevelPath): the head of evil Berto, the amplifier model, Stupidus */
@@ -1220,7 +1132,7 @@ static PyObject *Stupidus_CreateStupidus(PyObject *self, PyObject *args) {
 	Sf_Import(&f, "Traffic");
 	if (Sf_True(&f, USR()) > 0) {
 		PyObject *spw;
-		PyObject *o1 = Cm_Spawn(&f, "FuncFighter", &spw);
+		PyObject *o1 = Lv_SpawnCarAt(&f, "FuncFighter", 0, &spw);
 		Sf_SetAttrI(&f, o1, "Money", -1);
 		Sf_SetAttrS(&f, o1, "TgType", "red");
 		Sf_SetAttr(&f, o1, "Ang", Sf_Build(&f, "(iOi)", 0, Sf_Item(&f, spw, 1), 0));
@@ -1231,7 +1143,7 @@ static PyObject *Stupidus_CreateStupidus(PyObject *self, PyObject *args) {
 		Sf_SetAttrS(&f, o1, "OnDamage", "Mission_DestroyStupidus.OnStupidusDamage");
 		Sf_Run(&f, "VehiclesNPC", "ModAIProff", "(OO)", o1, pd);
 		Sf_Run(&f, "SAI", "SetStateVehicle", "(iOi)", 3, name, 0);
-		Cm_Life(&f, o1, DS, "STUPIDUS_LIFE");
+		Lv_Life(&f, o1, DS, "STUPIDUS_LIFE");
 		Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", name);
 	}
 	return Sf_None(&f);
@@ -1275,7 +1187,7 @@ static PyObject *Stupidus_DropAmplifier(PyObject *self, PyObject *args) {
 static PyObject *Stupidus_TakeAmplifier(PyObject *self, PyObject *args) {
 	PyObject *item, *ch;
 	SF_ARGS("OO", &item, &ch);
-	if (Cm_UsrIs(&f, USR(), ch) > 0) {
+	if (Lv_UsrIs(&f, USR(), ch) > 0) {
 		Cm_Taken(&f, Sf_Str(&f, "Amplifier"), Sf_Str(&f, "MissionCheckArrow"));
 		Cm_Com(&f, "Mission_DestroyStupidus_RemoteMessage1", "DeepThroat", NULL, NULL);
 		Sf_Later(&f, Sf_Int(&f, 10), G(DS, "BertoFound"), NOARGS, NULL);
@@ -1314,7 +1226,7 @@ PyMethodDef g_CommercialDestroyStupidusMethods[] = {
 
 static PyObject *Race_InitStatus(PyObject *self, PyObject *args) {
 	(void)self;
-	return Cm_AcShipsStatus(args, WR, ac_ships_bertos);
+	return Lv_AcShipsStatus(args, WR, ac_ships_bertos);
 }
 
 /* Init(LevelPath): the alarm hooks, the countdown resources, the race (unless the alarm is on) */
@@ -1369,7 +1281,7 @@ static PyObject *Race_OnRaceStart(PyObject *self, PyObject *args) {
 	PyObject *item, *veh;
 	SF_ARGS("OO", &item, &veh);
 	Sf_Import(&f, "RaceMaker");
-	if (Cm_UsrIs(&f, USR(), veh) > 0) {
+	if (Lv_UsrIs(&f, USR(), veh) > 0) {
 		PyObject *t = Sf_Ask(&f, "RaceMaker", "StartCameraTravelling", "(OO)", item, veh);
 		Sf_Later(&f, t, G(WR, "RaceGo"), Sf_Build(&f, "(OO)", item, veh), NULL);
 		Sf_Run(&f, "RaceMaker", "CreateRaceCountDown", "()");
@@ -1725,7 +1637,7 @@ PyMethodDef g_CommercialDestroyCommSats2Methods[] = {
 
 static PyObject *Deep_InitStatus(PyObject *self, PyObject *args) {
 	(void)self;
-	return Cm_AcShipsStatus(args, FM, ac_ships_bertos);
+	return Lv_AcShipsStatus(args, FM, ac_ships_bertos);
 }
 
 /* DeepThroat's call in 60 s: Speech.RemoteComunication(key, "DeepThroat", 1, then) under the name DeepThroatFirstMeet */
@@ -1856,12 +1768,12 @@ static const char *const functionaries_profile[] = { "Ship=SFUNC1", "StupidPathF
 
 static PyObject *Data_GetFunctionariesEnemiesProfile(PyObject *self, PyObject *args) {
 	SF_ARGS("");
-	return Sf_Return(&f, Cm_Profile(&f, GD, functionaries_profile));
+	return Sf_Return(&f, Lv_Profile(&f, GD, functionaries_profile));
 }
 
 static PyObject *Data_InitStatus(PyObject *self, PyObject *args) {
 	(void)self;
-	return Cm_AcShipsStatus(args, GD, ac_ships_bertos);
+	return Lv_AcShipsStatus(args, GD, ac_ships_bertos);
 }
 
 /* Init(LevelPath): the part of the mission of the save state: call the boss, get the data, call DeepThroat */
@@ -1992,12 +1904,12 @@ static PyObject *Data_CreateFunctionary(PyObject *self, PyObject *args) {
 	Sf_Import(&f, "OutMap");
 	Sf_Import(&f, "Traffic");
 	PyObject *spw;
-	PyObject *o1 = Cm_Spawn(&f, "FuncFighter", &spw);
+	PyObject *o1 = Lv_SpawnCarAt(&f, "FuncFighter", 0, &spw);
 	Sf_SetAttrI(&f, o1, "Money", -1);
 	Sf_SetAttrS(&f, o1, "TgType", "red");
 	Sf_SetAttr(&f, o1, "Ang", Sf_Build(&f, "(iOi)", 0, Sf_Item(&f, spw, 1), 0));
-	Cm_SetProfile(&f, GD, "GetFunctionariesEnemiesProfile", o1);
-	Cm_Life(&f, o1, GD, "FUNC_LIFE");
+	Lv_StdProfile(&f, GD, "GetFunctionariesEnemiesProfile", o1);
+	Lv_Life(&f, o1, GD, "FUNC_LIFE");
 	return Sf_Return(&f, o1);
 }
 
@@ -2344,7 +2256,7 @@ static PyObject *Data_MissionScorer(PyObject *self, PyObject *args) {
 	Sf_MissionText(&f, id, "DataStatusText", "Text", Cm_X(&f, 0), Cm_Y(&f, 0), "Horatio", "Shadow", Cm_Label(&f, "Mission_GetDataPart3_Scorer_1"),
 		"Left", NULL);
 	Sf_Run(&f, "SScorer", "Add", "(Oss)", id, "DataStatus", "Bar");
-	Cm_BarDefaults(&f, id, "DataStatus", NULL, NULL);
+	Lv_BarDefaults(&f, id, "DataStatus", NULL, NULL);
 	Sf_Run(&f, "SScorer", "Set", "(Ossi)", id, "DataStatus", "IsAutoUpdatable", 0);
 	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, "DataStatus", "MaxValue", G(GD, "MAX_DATA_UNITS"));
 	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, "DataStatus", "Value", Sf_ToInt(&f, SAVE("NumData")));
@@ -2389,12 +2301,12 @@ static const char *const crazy_gambler_profile[] = { "Ship=SBANKMASTER1", "Stupi
 
 static PyObject *Gambler_GetCrazyGamblerProfile(PyObject *self, PyObject *args) {
 	SF_ARGS("");
-	return Sf_Return(&f, Cm_Profile(&f, CG, crazy_gambler_profile));
+	return Sf_Return(&f, Lv_Profile(&f, CG, crazy_gambler_profile));
 }
 
 static PyObject *Gambler_InitStatus(PyObject *self, PyObject *args) {
 	(void)self;
-	return Cm_AcShipsStatus(args, CG, ac_ships_bertos);
+	return Lv_AcShipsStatus(args, CG, ac_ships_bertos);
 }
 
 /* Init(LevelPath): the evil gambler's head, his copies (or the matrix when all are dead), the taunts */
@@ -2462,14 +2374,14 @@ static PyObject *Gambler_CreateCrazyGambler(PyObject *self, PyObject *args) {
 	SF_ARGS("");
 	Sf_Import(&f, "VehiclesNPC");
 	Sf_Import(&f, "OutMap");
-	PyObject *h = Cm_Spawn(&f, "CrazyGambler", NULL);
-	Cm_SetProfile(&f, CG, "GetCrazyGamblerProfile", h);
+	PyObject *h = Lv_SpawnCar(&f, "CrazyGambler", 0);
+	Lv_StdProfile(&f, CG, "GetCrazyGamblerProfile", h);
 	Sf_SetAttrI(&f, h, "LaunchTaunts", 0);
 	Sf_SetAttrI(&f, h, "Money", -1);
 	Sf_SetAttr(&f, h, "MPil0", G(CG, "pilotName"));
 	Sf_SetAttrS(&f, h, "TgType", "red");
 	Sf_SetAttrS(&f, h, "EntityList", "Enemies");
-	Cm_Life(&f, h, CG, "GAMBLER_LIFE");
+	Lv_Life(&f, h, CG, "GAMBLER_LIFE");
 	Sf_Method(&f, G(CG, "crazyGamblers"), "append", "(O)", Sf_Attr(&f, h, "Name"));
 	Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", h, 1);
 	return Sf_None(&f);
@@ -2598,7 +2510,7 @@ static const char *const bishops_profile[] = { "Ship=SBishop1", "StupidPathFindi
 
 static PyObject *Porkins_GetBishopsEnemiesProfile(PyObject *self, PyObject *args) {
 	SF_ARGS("");
-	return Sf_Return(&f, Cm_Profile(&f, PT, bishops_profile));
+	return Sf_Return(&f, Lv_Profile(&f, PT, bishops_profile));
 }
 
 /* InitStatus(LevelPath): half the traffic, the vote transports as heavy traffic, no traffic until the end */
@@ -2615,7 +2527,7 @@ static PyObject *Porkins_InitStatus(PyObject *self, PyObject *args) {
 	if (Sf_EqS(&f, SAVE("MissionState"), "Popularity") > 0) {
 		Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", G(PT, "InitMission"));
 	}
-	Cm_AcShips(&f, PT, ac_ships_bertos);
+	Lv_AcShips(&f, PT, ac_ships_bertos);
 	return Sf_None(&f);
 }
 
@@ -2659,7 +2571,7 @@ static PyObject *Pt_Transport(scriptFrame_t *f, const char *model, const char *l
 	PyObject *p = Sf_Ask(f, "VehiclesNPC", "MakeAI", "(ssii)", model, "Traffic", 1, 0);
 	Sf_Run(f, "Traffic", "ResetPath", "()");
 	Sf_Run(f, "SAI", "SetStateVehicle", "(iOi)", 3, Sf_Attr(f, p, "Name"), 0);
-	Cm_Life(f, p, PT, life);
+	Lv_Life(f, p, PT, life);
 	Sf_SetAttrS(f, p, "OnDeath", onDeath);
 	Sf_SetAttrS(f, p, "TgType", tg);
 	Sf_SetAttrI(f, p, "FixedModel", 1);
@@ -2698,10 +2610,10 @@ static PyObject *Porkins_CreateBishop(PyObject *self, PyObject *args, PyObject *
 	if (Sf_Len(&f, G(PT, "mayorTransports")) == 0) {
 		Sf_RaiseText(&f, "Se han de crear primero los transportes del alcalde");
 	}
-	PyObject *p = Cm_Spawn(&f, "Bishop", NULL);
+	PyObject *p = Lv_SpawnCar(&f, "Bishop", 0);
 	Sf_SetAttrS(&f, p, "TgType", "red");
-	Cm_SetProfile(&f, PT, "GetBishopsEnemiesProfile", p);
-	Cm_Life(&f, p, PT, "BISHOPS_LIFE");
+	Lv_StdProfile(&f, PT, "GetBishopsEnemiesProfile", p);
+	Lv_Life(&f, p, PT, "BISHOPS_LIFE");
 	Sf_Own(&f, PT, "AttackMayorTransport", "(O)", Sf_Attr(&f, p, "Name"));
 	Sf_Method(&f, G(PT, "bishops"), "append", "(O)", Sf_Attr(&f, p, "Name"));
 	if (Sf_True(&f, taunt) > 0) {
@@ -2772,7 +2684,7 @@ static PyObject *Porkins_OnPorkinsTransportDeath(PyObject *self, PyObject *args)
 	Sf_Import(&f, "Vehicles");
 	Sf_Method(&f, G(PT, "bishopTransports"), "remove", "(O)", looser);
 	Sf_Run(&f, "Vehicles", "OnDeath", "(OO)", looser, winner);
-	if (Cm_UsrIs(&f, USR(), winner) > 0) {
+	if (Lv_UsrIs(&f, USR(), winner) > 0) {
 		Sf_SetGlobal(&f, PT, "mayorPopularity", Sf_Op(&f, G(PT, "mayorPopularity"), '+', Sf_Float(&f, 1.0)));
 	}
 	Sf_Own(&f, PT, "UpdateScorer", "()");
@@ -2932,7 +2844,7 @@ static PyObject *Porkins_MissionScorer(PyObject *self, PyObject *args) {
 	Sf_Run(&f, "SScorer", "Add", "(Oss)", id, "PopularityBar", "Bar");
 	Sf_MissionText(&f, id, "PopularityText", NULL, Cm_X(&f, 0), Cm_Y(&f, 0), "Horatio", "Shadow", Cm_Label(&f, "Mission_Campaign2_Scorer1"),
 		"Left", NULL);
-	Cm_BarDefaults(&f, id, "PopularityBar", Sf_Build(&f, "(iiii)", 16, 16, 255, 192), Sf_Build(&f, "(iiii)", 255, 16, 192, 192));
+	Lv_BarDefaults(&f, id, "PopularityBar", Sf_Build(&f, "(iiii)", 16, 16, 255, 192), Sf_Build(&f, "(iiii)", 255, 16, 192, 192));
 	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, "PopularityBar", "MaxValue", G(PT, "MAX_POPULARITY"));
 	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, "PopularityBar", "Value", G(PT, "mayorPopularity"));
 	Sf_Run(&f, "SScorer", "Set", "(Ossi)", id, "PopularityBar", "Red", 255);

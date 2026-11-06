@@ -7,6 +7,7 @@
  * save variables, the alarm off) stay in the scripts.
  */
 #include "scrap/script.h"
+#include "Levels.h"
 
 #define BF "Mission_BeforeFinalFight"
 #define AF "Mission_AfterFinalFight"
@@ -40,14 +41,6 @@ static byte Gd_Callback(scriptFrame_t *f, const char *name, PyObject *fn) {
 /* CharsNPC.CreateMissionChar(name) with the callback fn */
 static byte Gd_MissionChar(scriptFrame_t *f, const char *name, PyObject *fn) {
 	return Sf_Run(f, "CharsNPC", "CreateMissionChar", "(s)", name) && Gd_Callback(f, name, fn);
-}
-
-/* Scrap.SetSaveVar of pairs of name and value, ending with NULL */
-static byte Gd_Saves(scriptFrame_t *f, const char *const *pairs) {
-	for (; *pairs && !f->failed; pairs += 2) {
-		Sf_Run(f, "Scrap", "SetSaveVar", "(ss)", pairs[0], pairs[1]);
-	}
-	return !f->failed;
 }
 
 /* the characters of the den the mission wants: MayorAtGambinDen, FunctionaryTwins..., Bankers..., Bishops...,
@@ -679,7 +672,7 @@ static PyObject *Before_InitStatus(PyObject *self, PyObject *args) {
 	PyObject *path;
 	SF_ARGS("O", &path);
 	if (Sf_EqS(&f, SAVE("BeforeFinalFightPlayed"), "0") > 0) {
-		Gd_Saves(&f, start);
+		Lv_Saves(&f, start);
 	}
 	Gd_Den(&f, "0", "0", "0", "0", "0");
 	return Sf_None(&f);
@@ -929,7 +922,7 @@ static PyObject *Igor_LaunchIgorCombat(PyObject *self, PyObject *args) {
 	Sf_Import(&f, "SaveGame");
 	Sf_Import(&f, "MissionsFuncs");
 	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_VersusAgainstIgor_MissionText1", 1);
-	Gd_Saves(&f, places);
+	Lv_Saves(&f, places);
 	Sf_Run(&f, "MissionsFuncs", "StartSuperDeal", "(sss)", "CA", "Mission_IgorCombat", "Versus");
 	return Sf_None(&f);
 }
@@ -1042,7 +1035,7 @@ static PyObject *Bankers_InitStatus(PyObject *self, PyObject *args) {
 	Sf_Import(&f, "CharsNPC");
 	Sf_Import(&f, "Map");
 	if (Sf_EqS(&f, SAVE("Mission_ArrangeBankersCombat"), "Igor") > 0) {
-		Gd_Saves(&f, start);
+		Lv_Saves(&f, start);
 	}
 	Gd_MissionChar(&f, "PoliceBoss_BankersCombat", Sf_Mod(&f, "Map", "CreateFixedInit"));
 	Gd_Den(&f, "1", "1", "1", "0", "0");
@@ -1350,7 +1343,7 @@ static PyObject *Go_InitStatus(PyObject *self, PyObject *args) {
 	static const char *const start[] = { "Spawn", "DM_Player_Spawn_Meeting_Room", "ComeFrom", "", "Char", "Dtritus", NULL };
 	PyObject *path;
 	SF_ARGS("O", &path);
-	Gd_Saves(&f, start);
+	Lv_Saves(&f, start);
 	Sf_Run(&f, "Chars", "AddNewCharRes", "(s)", "Human");
 	Sf_Method(&f, Sf_Mod(&f, "CharsNPC", "AfterBrowseNPC"), "append", "(O)", G(GG, "AfterBrowseNPC"));
 	return Sf_None(&f);

@@ -96,6 +96,8 @@ int Lv_UsrIs(scriptFrame_t *f, PyObject *usr, PyObject *name);
 /* a ship at a free spawn point: SpwPos = OutMap.GetFreeSpawnPos(); Scrap.CreateEntity(name, SpwPos[0][0],
  * SpwPos[0][1], SpwPos[0][2], "Car"), or with nearest OutMap.GetNearestFreeSpawnPos() and SpwPos[0], [1], [2] */
 PyObject *Lv_SpawnCar(scriptFrame_t *f, const char *name, byte nearest);
+/* Lv_SpawnCar that also gives the spawn position SpwPos (borrowed, kept by the frame) */
+PyObject *Lv_SpawnCarAt(scriptFrame_t *f, const char *name, byte nearest, PyObject **spw);
 /* pd = profile() (a global of module); VehiclesNPC.SetStdProperties(e.Name, pd.Ship); VehiclesNPC.ModAIProff(e, pd) */
 PyObject *Lv_StdProfile(scriptFrame_t *f, const char *module, const char *profile, PyObject *e);
 /* e.Life = e.MaxLife = the global life of module */
@@ -118,8 +120,9 @@ void Lv_Saves(scriptFrame_t *f, const char *const *pairs);
 PyObject *Lv_StartPos(PyObject *args, const double (*pos)[4], int n);
 /* the colour Scorer.MissionScorerText_Color of a scorer item (Red, Green, Blue, Alpha) */
 void Lv_Colour(scriptFrame_t *f, PyObject *id, const char *item);
-/* Scorer.MissionScorerBar_SetDefaults(id, item, the back, main and black colours of Scorer) */
-void Lv_BarDefaults(scriptFrame_t *f, PyObject *id, const char *item);
+/* Scorer.MissionScorerBar_SetDefaults(id, item, the back colour of Scorer, main, black); NULL main or black: the colours
+ * of Scorer */
+void Lv_BarDefaults(scriptFrame_t *f, PyObject *id, const char *item, PyObject *main, PyObject *black);
 
 /*
  * a sound element of the map (MapSnd.SndElements(Name, x, y, z, angx, angy), called by the engine for the map

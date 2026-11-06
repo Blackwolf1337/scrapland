@@ -114,12 +114,19 @@ int Lv_UsrIs(scriptFrame_t *f, PyObject *usr, PyObject *name) {
 	return t > 0 ? Sf_Compare(f, name, "==", Sf_Attr(f, usr, "Name")) : t;
 }
 
-PyObject *Lv_SpawnCar(scriptFrame_t *f, const char *name, byte nearest) {
+PyObject *Lv_SpawnCarAt(scriptFrame_t *f, const char *name, byte nearest, PyObject **spw) {
 	PyObject *s = Sf_Ask(f, "OutMap", nearest ? "GetNearestFreeSpawnPos" : "GetFreeSpawnPos", "()");
 	PyObject *fn = Sf_Mod(f, "Scrap", "CreateEntity");
 	PyObject *p = nearest ? s : Sf_Item(f, s, 0);
 	PyObject *x = Sf_Item(f, p, 0), *y = Sf_Item(f, p, 1), *z = Sf_Item(f, p, 2);
+	if (spw) {
+		*spw = s;
+	}
 	return Sf_Call(f, fn, "(sOOOs)", name, x, y, z, "Car");
+}
+
+PyObject *Lv_SpawnCar(scriptFrame_t *f, const char *name, byte nearest) {
+	return Lv_SpawnCarAt(f, name, nearest, NULL);
 }
 
 PyObject *Lv_StdProfile(scriptFrame_t *f, const char *module, const char *profile, PyObject *e) {
@@ -327,12 +334,12 @@ void Lv_Colour(scriptFrame_t *f, PyObject *id, const char *item) {
 	}
 }
 
-void Lv_BarDefaults(scriptFrame_t *f, PyObject *id, const char *item) {
+void Lv_BarDefaults(scriptFrame_t *f, PyObject *id, const char *item, PyObject *main, PyObject *black) {
 	int mark = f->n;
 	PyObject *fn = Sf_Mod(f, "Scorer", "MissionScorerBar_SetDefaults");
 	PyObject *back = Sf_Mod(f, "Scorer", "MissionScorerBar_ColorBack");
-	PyObject *main = Sf_Mod(f, "Scorer", "MissionScorerBar_ColorMain");
-	PyObject *black = Sf_Mod(f, "Scorer", "MissionScorerBar_ColorBlack");
+	main = main ? main : Sf_Mod(f, "Scorer", "MissionScorerBar_ColorMain");
+	black = black ? black : Sf_Mod(f, "Scorer", "MissionScorerBar_ColorBlack");
 	Sf_Call(f, fn, "(OsOOO)", id, item, back, main, black);
 	Sf_Release(f, mark);
 }
