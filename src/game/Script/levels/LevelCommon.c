@@ -93,6 +93,75 @@ PyObject *Lv_Dummy(scriptFrame_t *f, const char *pattern, int flag) {
 	return Sf_Ask(f, "Scrap", "NextDummySearch", "()");
 }
 
+byte Lv_AcShips(scriptFrame_t *f, const char *module, const char *ships) {
+	int mark = f->n;
+	Sf_Import(f, "Traffic");
+	Sf_Run(f, "Scrap", "SetSaveVar", "(ss)", "Traffic.AcShips", ships);
+	Sf_SetMod(f, "Traffic", "AcShips", Sf_Eval(f, Sf_Ask(f, "Scrap", "GetSaveVar", "(s)", "Traffic.AcShips"), module));
+	Sf_Release(f, mark);
+	return !f->failed;
+}
+
+PyObject *Lv_Profile(scriptFrame_t *f, const char *module, const char *const *vars) {
+	Sf_Import(f, "VehiclesNPC");
+	PyObject *sp = Sf_Ask(f, "VehiclesNPC", "cShipAI", "()");
+	Sf_SetAttrs(f, sp, module, vars);
+	return sp;
+}
+
+int Lv_UsrIs(scriptFrame_t *f, PyObject *usr, PyObject *name) {
+	int t = Sf_True(f, usr);
+	return t > 0 ? Sf_Compare(f, name, "==", Sf_Attr(f, usr, "Name")) : t;
+}
+
+PyObject *Lv_SpawnCar(scriptFrame_t *f, const char *name, byte nearest) {
+	PyObject *s = Sf_Ask(f, "OutMap", nearest ? "GetNearestFreeSpawnPos" : "GetFreeSpawnPos", "()");
+	PyObject *fn = Sf_Mod(f, "Scrap", "CreateEntity");
+	PyObject *p = nearest ? s : Sf_Item(f, s, 0);
+	PyObject *x = Sf_Item(f, p, 0), *y = Sf_Item(f, p, 1), *z = Sf_Item(f, p, 2);
+	return Sf_Call(f, fn, "(sOOOs)", name, x, y, z, "Car");
+}
+
+PyObject *Lv_StdProfile(scriptFrame_t *f, const char *module, const char *profile, PyObject *e) {
+	PyObject *pd = Sf_Own(f, module, profile, "()");
+	Sf_Run(f, "VehiclesNPC", "SetStdProperties", "(OO)", Sf_Attr(f, e, "Name"), Sf_Attr(f, pd, "Ship"));
+	Sf_Run(f, "VehiclesNPC", "ModAIProff", "(OO)", e, pd);
+	return pd;
+}
+
+byte Lv_Life(scriptFrame_t *f, PyObject *e, const char *module, const char *life) {
+	PyObject *v = Sf_Global(f, module, life);
+	return Sf_SetAttr(f, e, "Life", v) && Sf_SetAttr(f, e, "MaxLife", v);
+}
+
+PyObject *Lv_PhoneCab(scriptFrame_t *f, const char *use, byte targetFirst) {
+	PyObject *pc = Sf_Ask(f, "PhoneCab", "GetFree", "()");
+	if (!targetFirst) {
+		Sf_SetAttrS(f, pc, "UseFunc", use);
+	}
+	Sf_Run(f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(f, pc, "Name"));
+	if (targetFirst) {
+		Sf_SetAttrS(f, pc, "UseFunc", use);
+	}
+	return pc;
+}
+
+byte Lv_DummyPosAng(scriptFrame_t *f, PyObject *dummy, PyObject **pos, PyObject **ang) {
+	PyObject *p = Sf_Item(f, dummy, 1);
+	PyObject *x = Sf_Item(f, p, 0), *y = Sf_Item(f, p, 1), *z = Sf_Item(f, p, 2);
+	*pos = Sf_Build(f, "(OOO)", x, y, z);
+	PyObject *a = Sf_Item(f, dummy, 2);
+	PyObject *ax = Sf_Item(f, a, 0), *ay = Sf_Item(f, a, 1);
+	*ang = Sf_Build(f, "(OOi)", ax, ay, 0);
+	return !f->failed;
+}
+
+byte Lv_RaiseValue(scriptFrame_t *f, const char *module, PyObject *o) {
+	PyObject *locals = Sf_Build(f, "{s:O}", "exceptString", o);
+	Sf_Exec(f, Sf_Str(f, "raise exceptString\n"), module, locals);
+	return Sf_Check(f, 0);
+}
+
 PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table) {
 	PyObject *name, *x, *y, *z, *angx, *angy;
 	scriptFrame_t f = { 0 };

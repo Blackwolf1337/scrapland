@@ -35,6 +35,25 @@ extern PyMethodDef g_TownhallCatchTrurlMethods[];
 extern PyMethodDef g_TownhallSheriffMayorMethods[];
 extern PyMethodDef g_TownhallTalkToMayorMethods[];
 
+/* Scrapyard (data02.packed levels/scrapyard) */
+extern PyMethodDef g_ScrapyardMapMethods[];
+extern PyMethodDef g_ScrapyardMapTriggersMethods[];
+extern PyMethodDef g_ScrapyardAmbushMethods[];
+extern PyMethodDef g_ScrapyardDefeatCrazyGambler2Methods[];
+extern PyMethodDef g_ScrapyardFindDtritusMatrixMethods[];
+extern PyMethodDef g_ScrapyardMeetBertoMethods[];
+extern PyMethodDef g_ScrapyardMosquitoClueMethods[];
+extern PyMethodDef g_ScrapyardStupidMercMethods[];
+extern PyMethodDef g_ScrapyardStupidMercAgainMethods[];
+extern PyMethodDef g_ScrapyardTalkToDeepThroatMethods[];
+
+/* GDB (data03.packed levels/gdb) */
+extern PyMethodDef g_GDBMapMethods[];
+extern PyMethodDef g_GDBMapMatrixMethods[];
+extern PyMethodDef g_GDBIntoTheGDBMethods[];
+extern PyMethodDef g_GDBReinsertOwnMatrixMethods[];
+extern PyMethodDef g_GDBReinsertOwnMatrix2Methods[];
+
 /* ---- lines the level scripts share (src/game/Script/levels/LevelCommon.c); all do nothing after the frame failed */
 
 /* `not Scrap.Get("IsXbox") or name` with name a global of the map script (the discardable characters): 1, 0, -1 */
@@ -66,6 +85,28 @@ extern const int lv_black[4], lv_clear[4];
 void Lv_Fade(scriptFrame_t *f, const int from[4], const int to[4], double time);
 /* Scrap.StartDummySearch(pattern, flag); dummy = Scrap.NextDummySearch() (borrowed) */
 PyObject *Lv_Dummy(scriptFrame_t *f, const char *pattern, int flag);
+
+/* InitStatus of the missions: import Traffic; Scrap.SetSaveVar("Traffic.AcShips", ships); Traffic.AcShips =
+ * eval(Scrap.GetSaveVar("Traffic.AcShips")) (in the globals of module) */
+byte Lv_AcShips(scriptFrame_t *f, const char *module, const char *ships);
+/* import VehiclesNPC; sp = VehiclesNPC.cShipAI() with the "name=value" attributes of vars (Sf_SetAttrs): sp */
+PyObject *Lv_Profile(scriptFrame_t *f, const char *module, const char *const *vars);
+/* `usr and usr.Name == name`: 1, 0, -1 */
+int Lv_UsrIs(scriptFrame_t *f, PyObject *usr, PyObject *name);
+/* a ship at a free spawn point: SpwPos = OutMap.GetFreeSpawnPos(); Scrap.CreateEntity(name, SpwPos[0][0],
+ * SpwPos[0][1], SpwPos[0][2], "Car"), or with nearest OutMap.GetNearestFreeSpawnPos() and SpwPos[0], [1], [2] */
+PyObject *Lv_SpawnCar(scriptFrame_t *f, const char *name, byte nearest);
+/* pd = profile() (a global of module); VehiclesNPC.SetStdProperties(e.Name, pd.Ship); VehiclesNPC.ModAIProff(e, pd) */
+PyObject *Lv_StdProfile(scriptFrame_t *f, const char *module, const char *profile, PyObject *e);
+/* e.Life = e.MaxLife = the global life of module */
+byte Lv_Life(scriptFrame_t *f, PyObject *e, const char *module, const char *life);
+/* pc = PhoneCab.GetFree() with pc.UseFunc = use and the cab as the mission target (targetFirst: the target is set
+ * before the UseFunc, as most missions do): pc */
+PyObject *Lv_PhoneCab(scriptFrame_t *f, const char *use, byte targetFirst);
+/* (dummy[1][0], dummy[1][1], dummy[1][2]) and (dummy[2][0], dummy[2][1], 0) of a dummy search */
+byte Lv_DummyPosAng(scriptFrame_t *f, PyObject *dummy, PyObject **pos, PyObject **ang);
+/* raise o of a function of module (`raise exceptString`, the rules of Python's raise for any value) */
+byte Lv_RaiseValue(scriptFrame_t *f, const char *module, PyObject *o);
 
 /*
  * a sound element of the map (MapSnd.SndElements(Name, x, y, z, angx, angy), called by the engine for the map
