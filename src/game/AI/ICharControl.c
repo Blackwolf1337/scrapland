@@ -142,6 +142,8 @@ cAICharControl *cAICharControl_ctor(void *mem, cEntity *ent, cAIChar *ai, int *a
 	self->pathRes = 0;
 	self->blocked = 0;
 	self->blockedByChar = 0;
+	self->avoidFound = 0;	/* not set by the original: the strafe test of the 2D shooters read it before the first
+				 * avoid check (differs from the original) */
 	self->avoidDir.x = self->avoidDir.y = self->avoidDir.z = 0.0f;
 	self->orbitStart = 1;
 	self->orbitDir.x = self->orbitDir.y = self->orbitDir.z = 0.0f;
