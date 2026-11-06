@@ -1,0 +1,253 @@
+# The ships of ShipMaker (scripts/vehicles/shipmaker.py, issue #2): the hulls, engines and weapons Init adds and the
+# standard ships of CreateStdShips. ShipMaker.Init (src/game/Script/ShipMaker.c) runs the section Init with $full (not
+# the demo), $boss (the boss ship is needed in this level and it is not the demo) and $online (a multiplayer game or
+# the ship editor). The engine animations are FLAPS_ANM (1) and MOTOR_ANM (2) of the module, 3 is both.
+
+section Init
+
+# the standard default ship
+call ShipMaker.AddShip        SLifeBoat 400 3700 4900 10 10
+call ShipMaker.AddShipTon     SLifeBoat 30 30 1000
+call ShipMaker.AddShipBalance SLifeBoat (-1,0,0,0)
+call ShipMaker.InitAnmShip    SLifeBoat Loop Helix Rudder Boost
+call ShipMaker.SetShipPrice   SLifeBoat 200
+
+# the police ships
+call ShipMaker.AddShip        SPoli1 400 3700 4900 5 6
+call ShipMaker.AddShipTon     SPoli1 55 150 1550
+call ShipMaker.AddShipBalance SPoli1 (-1,0,0,0)
+call ShipMaker.InitAnmShip    SPoli1 Left Right None None
+call ShipMaker.SetShipPrice   SPoli1 400
+
+call ShipMaker.AddShip        SPoli2 400 2700 4700 6 7
+call ShipMaker.AddShipTon     SPoli2 60 170 2025
+call ShipMaker.AddShipBalance SPoli2 (-0.9,0,0,0)
+call ShipMaker.InitAnmShip    SPoli2 Left Right None None
+call ShipMaker.SetShipPrice   SPoli2 900
+
+call ShipMaker.AddShip        SPoli3 600 1600 4500 7 9
+call ShipMaker.AddShipTon     SPoli3 70 210 3825
+call ShipMaker.AddShipBalance SPoli3 (-0.2,-1,0,0)
+call ShipMaker.InitAnmShip    SPoli3 None None None None
+call ShipMaker.SetShipPrice   SPoli3 2500
+
+if $full
+	call ShipMaker.AddShip        SPoli4 600 300 4325 8 9.5
+	call ShipMaker.AddShipTon     SPoli4 100 220 5215
+	call ShipMaker.AddShipBalance SPoli4 (1,-1,0,0)
+	call ShipMaker.InitAnmShip    SPoli4 Rudder None None None
+	call ShipMaker.SetShipPrice   SPoli4 3500
+
+	call ShipMaker.AddShip        SPoli5 600 -200 4300 9 11
+	call ShipMaker.AddShipTon     SPoli5 105 225 5340
+	call ShipMaker.AddShipBalance SPoli5 (1,-1,0,0)
+	call ShipMaker.InitAnmShip    SPoli5 Rudder None None None
+	call ShipMaker.SetShipPrice   SPoli5 5000
+
+	call ShipMaker.AddShip        SPoliBoss1 600 -200 4350 10 12
+	call ShipMaker.AddShipTon     SPoliBoss1 110 230 7025
+	call ShipMaker.AddShipBalance SPoliBoss1 (1,-1,0,0)
+	call ShipMaker.InitAnmShip    SPoliBoss1 Rudder None None None
+	call ShipMaker.SetShipPrice   SPoliBoss1 6000
+end
+
+# the mercenary ships
+call ShipMaker.AddShip        SMerc1 500 2950 4800 5 7
+call ShipMaker.AddShipTon     SMerc1 65 190 3150
+call ShipMaker.AddShipBalance SMerc1 (-0.5,0,0,0)
+call ShipMaker.InitAnmShip    SMerc1 Rudder None None None
+call ShipMaker.SetShipPrice   SMerc1 1300
+
+call ShipMaker.AddShip        SMerc2 650 1300 4700 7 9
+call ShipMaker.AddShipTon     SMerc2 80 210 4435
+call ShipMaker.AddShipBalance SMerc2 (-1.0,0,1.0,0)
+call ShipMaker.InitAnmShip    SMerc2 Rudder None None None
+call ShipMaker.SetShipPrice   SMerc2 2800
+
+if $full
+	call ShipMaker.AddShip        SMerc3 650 -200 4350 7 7.5
+	call ShipMaker.AddShipTon     SMerc3 95 270 6735
+	call ShipMaker.AddShipBalance SMerc3 (1,-1,0,0)
+	call ShipMaker.InitAnmShip    SMerc3 Rudder None None None
+	call ShipMaker.SetShipPrice   SMerc3 6200
+
+	# the mayor and functionaries ships
+	call ShipMaker.AddShip        SMayor1 600 2000 4900 6 8.5
+	call ShipMaker.AddShipTon     SMayor1 70 180 3720
+	call ShipMaker.AddShipBalance SMayor1 (-0.5,0,0,0)
+	call ShipMaker.InitAnmShip    SMayor1 Rudder VRudder Flaps Motor
+	call ShipMaker.SetShipPrice   SMayor1 1600
+
+	call ShipMaker.AddShip        SFunc1 400 3700 5000 3 4
+	call ShipMaker.AddShipTon     SFunc1 40 130 1505
+	call ShipMaker.AddShipBalance SFunc1 (-1,0,0,0)
+	call ShipMaker.InitAnmShip    SFunc1 LeftFlap RightFlap None None
+	call ShipMaker.SetShipPrice   SFunc1 800
+end
+
+# the bankers ships
+call ShipMaker.AddShip        SBanker1 500 4000 4700 5 7.5
+call ShipMaker.AddShipTon     SBanker1 65 190 2750
+call ShipMaker.AddShipBalance SBanker1 (-0.5,0,0,0)
+call ShipMaker.InitAnmShip    SBanker1 Left Right None None
+call ShipMaker.SetShipPrice   SBanker1 1600
+
+if $full
+	call ShipMaker.AddShip        SBankMaster1 600 200 4600 8 10
+	call ShipMaker.AddShipTon     SBankMaster1 70 230 6780
+	call ShipMaker.AddShipBalance SBankMaster1 (1,-1,0,0)
+	call ShipMaker.InitAnmShip    SBankMaster1 Rudder VRudder "" ""
+	call ShipMaker.SetShipPrice   SBankMaster1 7000
+
+	# the bishops ships
+	call ShipMaker.AddShip        SBishop1 550 -50 4200 7 8
+	call ShipMaker.AddShipTon     SBishop1 85 215 4825
+	call ShipMaker.AddShipBalance SBishop1 (1,0,-1,0)
+	call ShipMaker.InitAnmShip    SBishop1 Flaps Motor Rudder VRudder
+	call ShipMaker.SetShipPrice   SBishop1 3000
+
+	call ShipMaker.AddShip        SArchbishop1 600 500 4400 8 10
+	call ShipMaker.AddShipTon     SArchbishop1 75 238 6040
+	call ShipMaker.AddShipBalance SArchbishop1 (1,-1,0,0)
+	call ShipMaker.InitAnmShip    SArchbishop1 Flaps Motor Rudder VRudder
+	call ShipMaker.SetShipPrice   SArchbishop1 7000
+end
+
+# the press ships
+call ShipMaker.AddShip        SBetty1 490 3250 4700 4 5
+call ShipMaker.AddShipTon     SBetty1 60 180 2960
+call ShipMaker.AddShipBalance SBetty1 (-0.5,0,0,0)
+call ShipMaker.InitAnmShip    SBetty1 Rudder None None None
+call ShipMaker.SetShipPrice   SBetty1 2000
+
+call ShipMaker.AddShip        SBerto1 600 4000 4900 6 7.5
+call ShipMaker.AddShipTon     SBerto1 60 200 3980
+call ShipMaker.AddShipBalance SBerto1 (-1,0,1,0)
+call ShipMaker.InitAnmShip    SBerto1 Rudder None None None
+call ShipMaker.SetShipPrice   SBerto1 2000
+
+call ShipMaker.AddShip        SHump1 600 1000 4200 7.5 8.5
+call ShipMaker.AddShipTon     SHump1 90 220 4535
+call ShipMaker.AddShipBalance SHump1 (1,-1,0,0)
+call ShipMaker.InitAnmShip    SHump1 Rudder Motor None None
+call ShipMaker.SetShipPrice   SHump1 3300
+
+# the boss ship, stronger offline
+if $boss
+	if $online
+		call ShipMaker.AddShip    SBoss1 700 1000 4400 8 10
+		call ShipMaker.AddShipTon SBoss1 80 280 6330
+	else
+		call ShipMaker.AddShip    SBoss1 700 1000 4400 3 4
+		call ShipMaker.AddShipTon SBoss1 80 280 7555
+	end
+	call ShipMaker.AddShipBalance SBoss1 (1,-1,0,0)
+	call ShipMaker.InitAnmShip    SBoss1 Rudder Motor None None
+	call ShipMaker.SetShipPrice   SBoss1 8000
+end
+
+# the police engines
+call ShipMaker.AddMotor       MPoli1 100 500 200 3
+call ShipMaker.SetEnginePrice MPoli1 200
+call ShipMaker.AddMotor       MPoli2 125 800 400 3
+call ShipMaker.SetEnginePrice MPoli2 350
+call ShipMaker.AddMotor       MPoli3 225 1000 600 3
+call ShipMaker.SetEnginePrice MPoli3 550
+if $full
+	call ShipMaker.AddMotor       MPoli4 315 1195 690 3
+	call ShipMaker.SetEnginePrice MPoli4 1000
+	call ShipMaker.AddMotor       MPoli5 375 1170 900 3
+	call ShipMaker.SetEnginePrice MPoli5 1100
+	call ShipMaker.AddMotor       MPoliBoss1 385 1170 1000 3
+	call ShipMaker.SetEnginePrice MPoliBoss1 1300
+end
+
+# the mercenary engines
+call ShipMaker.AddMotor       MMerc1 200 700 525 3
+call ShipMaker.SetEnginePrice MMerc1 400
+call ShipMaker.AddMotor       MMerc2 325 1200 700 3
+call ShipMaker.SetEnginePrice MMerc2 600
+if $full
+	call ShipMaker.AddMotor       MMerc3 360 1170 875 3
+	call ShipMaker.SetEnginePrice MMerc3 1350
+
+	# the mayor and functionaries engines
+	call ShipMaker.AddMotor       MMayor1 250 1200 625 3
+	call ShipMaker.SetEnginePrice MMayor1 650
+	call ShipMaker.AddMotor       MFunc1 105 450 395 3
+	call ShipMaker.SetEnginePrice MFunc1 300
+end
+
+# the bankers engines
+call ShipMaker.AddMotor       MBanker1 290 1200 670 3
+call ShipMaker.SetEnginePrice MBanker1 500
+if $full
+	call ShipMaker.AddMotor       MBankMaster1 380 1170 950 3
+	call ShipMaker.SetEnginePrice MBankMaster1 1400
+
+	# the bishops engines
+	call ShipMaker.AddMotor       MBishop1 350 1225 775 3
+	call ShipMaker.SetEnginePrice MBishop1 700
+	call ShipMaker.AddMotor       MArchbishop1 390 1200 1050 3
+	call ShipMaker.SetEnginePrice MArchbishop1 1500
+end
+
+# the press engines
+call ShipMaker.AddMotor       MBetty1 275 1200 650 3
+call ShipMaker.SetEnginePrice MBetty1 600
+call ShipMaker.AddMotor       MBerto1 340 1200 750 3
+call ShipMaker.SetEnginePrice MBerto1 500
+call ShipMaker.AddMotor       MHump1 355 1200 825 3
+call ShipMaker.SetEnginePrice MHump1 800
+
+# the boss engine, flaps only, stronger offline
+if $boss
+	if $online
+		call ShipMaker.AddMotor MBoss1 395 1170 1200 1
+	else
+		call ShipMaker.AddMotor MBoss1 395 1170 1650 1
+	end
+	call ShipMaker.SetEnginePrice MBoss1 1600
+end
+
+# the weapons: mass and cost
+call ShipMaker.AddWeapon Vulcan 50 100
+call ShipMaker.AddWeapon Devastator 100 200
+call ShipMaker.AddWeapon Tesla 150 600
+call ShipMaker.AddWeapon ATPC 200 700
+call ShipMaker.AddWeapon Inferno 300 1400
+call ShipMaker.AddWeapon Swarm 250 400
+
+# CreateStdShips: model, engines 0 to 3, the weapons, the armour
+section StdShips
+
+# the police ships
+run stdship SPOLI1       SPoli1       MPoli1       ""           ""           "" "0,1,0,1,3,0"     55
+run stdship SPOLI2       SPoli2       MPoli2       ""           ""           "" "1,1,3,0,0,0"     60
+run stdship SPOLI3       SPoli3       MPoli3       MPoli3       ""           "" "3,3,3,3,3,0"     70
+run stdship SPOLI4       SPoli4       MPoli4       MPoli4       ""           "" "7,0,7,0,7,0"     100
+run stdship SPOLI5       SPoli5       MPoli5       MPoli5       ""           "" "0,15,15,0,0,0"   105
+run stdship SPOLIBOSS1   SPoliBoss1   MPoliBoss1   MPoliBoss1   ""           "" "15,0,15,0,0,0"   110
+
+# the mercenary ships
+run stdship SMERC1       SMerc1       MMerc1       ""           ""           "" "0,3,3,3,0,0"     65
+run stdship SMERC2       SMerc2       MMerc2       MMerc2       MMerc2       "" "7,3,7,0,7,0"     80
+run stdship SMERC3       SMerc3       MMerc3       MMerc3       ""           "" "15,9,15,0,15,0,1" 95
+
+# the mayor and functionaries ships
+run stdship SMAYOR1      SMayor1      MMayor1      ""           ""           "" "3,3,0,3,3,0"     70
+run stdship SFUNC1       SFunc1       MFunc1       ""           ""           "" "7,0,7,7,0,0"     40
+
+# the bankers ships
+run stdship SBANKER1     SBanker1     MBanker1     ""           ""           "" "3,3,0,0,3,0"     65
+run stdship SBANKMASTER1 SBankMaster1 MBankMaster1 MBankMaster1 ""           "" "7,7,0,0,7,0"     70
+
+# the bishops ships
+run stdship SBISHOP1     SBishop1     MBishop1     MBishop1     MBishop1     "" "7,0,7,7,0,0"     85
+run stdship SARCHBISHOP1 SArchbishop1 MArchbishop1 MArchbishop1 ""           "" "0,15,15,15,0,0"  75
+
+# the press ships
+run stdship SBERTO1      SBerto1      MBerto1      MBerto1      MBerto1      "" "3,3,0,3,0,0"     60
+run stdship SHUMP1       SHump1       MHump1       MHump1       ""           "" "7,3,7,0,7,0"     90
+run stdship SBETTY1      SBetty1      MBetty1      ""           ""           "" "3,3,3,3,3,0"     60
+run stdship SBOSS1       SBoss1       MBoss1       MBoss1       ""           "" "15,0,15,15,6,0"  80

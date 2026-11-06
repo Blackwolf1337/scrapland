@@ -266,6 +266,9 @@ PyObject *Sf_Call(scriptFrame_t *f, PyObject *callable, const char *fmt, ...);
 /* callable(args, **kw) (args given away, kw a dict) */
 PyObject *Sf_CallKw(scriptFrame_t *f, PyObject *callable, PyObject *args, PyObject *kw);
 PyObject *Sf_Ask(scriptFrame_t *f, const char *module, const char *func, const char *fmt, ...);
+/* func(args) of a ported module as its own functions call it: the global func of module (NameError when missing,
+ * a function a mission put there is called) */
+PyObject *Sf_Own(scriptFrame_t *f, const char *module, const char *func, const char *fmt, ...);
 PyObject *Sf_Method(scriptFrame_t *f, PyObject *o, const char *name, const char *fmt, ...);
 /* Scrap.GetEntity(name), Scrap.GetLangStr(key), Scrap.GetTime() */
 PyObject *Sf_Entity(scriptFrame_t *f, PyObject *name);
@@ -440,6 +443,11 @@ extern PyMethodDef g_DoorSoundMethods[];
 /* the start of an outdoor level and its spawn points, the fake traffic indoors (src/game/Script/OutMap.c) */
 extern PyMethodDef g_OutMapMethods[];
 extern PyMethodDef g_InTrafficMethods[];
+/* the ship tables and SetShipParams (src/game/Script/ShipMaker.c, data/vehicles/shipmaker.def), the player's ship,
+ * boarding, parking and the parked ships, the speed rings (src/game/Script/Parking.c) */
+extern PyMethodDef g_ShipMakerMethods[];
+extern PyMethodDef g_ParkingMethods[];
+extern PyMethodDef g_AcceleratorMethods[];
 
 /* the gameplay functions of the character modules (src/game/Script/CharFuncs.c), next to their Init tables */
 extern PyMethodDef g_FunctionaryFuncs[];
@@ -453,5 +461,11 @@ extern PyMethodDef g_GearFuncs[];
 extern PyMethodDef g_PoliceFuncs[];
 extern PyMethodDef g_BishopFuncs[];
 extern PyMethodDef g_MessengerFuncs[];
+/* the siren actions and missile events of Gear and Police from their files (src/game/Script/Characters.c) */
+extern PyMethodDef g_GearDefFuncs[];
+extern PyMethodDef g_PoliceDefFuncs[];
+/* Sputnik's ship functions (src/game/Script/Sputnik.c) and the gatekeepers (src/game/Script/GateKeeper.c) */
+extern PyMethodDef g_SputnikFuncs[];
+extern PyMethodDef g_GateKeeperFuncs[];
 
 #endif

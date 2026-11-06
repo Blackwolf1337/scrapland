@@ -100,24 +100,8 @@ if $level == LEVELS/GAMBLINDEN
 	action
 		isLoop 1
 end
-# the siren on channel 1 (LoadSirenActs of the script)
-action SirenInit
-	isLoop 0
-	Chanel 1
-	AnmFilePath Models/Chars/Police/Anm/Police_SirenInit.M3D
-event &AnmTotalTime Siren !AnmSetAction
-event &TimeOfFrame6 FXPoliceAlarmInit !FXPoliceAlarmInit
-action Siren
-	isLoop 1
-	Chanel 1
-	AnmFilePath Models/Chars/Police/Anm/Police_Siren.M3D
-	MaxSpeed 1.3
-	MinSpeed 1.4
-action SirenEnd
-	isLoop 0
-	Chanel 1
-	AnmFilePath Models/Chars/Police/Anm/Police_SirenEnd.M3D
-event &TimeOfFrame65 FXPoliceAlarmEnd !FXPoliceAlarmEnd
+# the siren on channel 1
+do LoadSirenActs
 class Police
 	OnCreate Police.OnCreate
 	OnFreeResources Police.OnFreeResources
@@ -140,3 +124,23 @@ call PoliceSound.InitLoops $name
 section OnFreeResources
 call Scrap.SetDebrisSys %Police.FXPoliceStealFile 0 0 0 1 0 0 %Fx.FXPOLICESTEAL
 call Scrap.SetDebrisSys %Police.FXPoliceGearConversionFile 0 0 0 1 0 0 %Fx.FXPOLICEGEARCONVERSION
+
+# LoadSirenActs of the script: the siren actions on channel 1 of the current class (the Init above runs it)
+section LoadSirenActs
+action SirenInit
+	isLoop 0
+	Chanel 1
+	AnmFilePath Models/Chars/Police/Anm/Police_SirenInit.M3D
+event &AnmTotalTime Siren !AnmSetAction
+event &TimeOfFrame6 FXPoliceAlarmInit !FXPoliceAlarmInit
+action Siren
+	isLoop 1
+	Chanel 1
+	AnmFilePath Models/Chars/Police/Anm/Police_Siren.M3D
+	MaxSpeed 1.3
+	MinSpeed 1.4
+action SirenEnd
+	isLoop 0
+	Chanel 1
+	AnmFilePath Models/Chars/Police/Anm/Police_SirenEnd.M3D
+event &TimeOfFrame65 FXPoliceAlarmEnd !FXPoliceAlarmEnd
