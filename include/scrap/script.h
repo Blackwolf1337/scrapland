@@ -326,6 +326,11 @@ extern PyMethodDef g_EMIMethods[];
 extern PyMethodDef g_SonicMethods[];
 extern PyMethodDef g_SputnikInterfaceMethods[];
 extern PyMethodDef g_VehiclesMethods[];
+extern PyMethodDef g_SplitMethods[];
+extern PyMethodDef g_SDeathMatchMethods[];
+extern PyMethodDef g_SFlagHuntMethods[];
+extern PyMethodDef g_SPostmanMethods[];
+extern PyMethodDef g_SRaceMethods[];
 /* the functions of the Init module (src/game/Script/InitLevel.c) */
 extern PyMethodDef g_InitMethods[];
 /* the sound scripts of the characters (src/game/Script/Sounds.c, data/sound/) */

@@ -1,0 +1,129 @@
+# The split screen (the script split/split.py of the game): the scorer items of each half and the keys of the
+# menus between the rounds (action set Inactive). The C (src/game/Script/Split.c) runs a section for one player and
+# gives $y (the line in that half, the script adds 240 for the lower half), $limit (FragLimit), $r $g $b $a (the color
+# of Scorer.MissionScorerText_Color), $exec and $event (the two keys of a question). The texts of the menus come from
+# the C (language texts with the button characters). A pack in mods/ with scrapc/menus/split.def replaces this file.
+
+section separator
+item $(name) Sprite
+	X 0
+	Y $y
+	ScaleX 640
+	ScaleY 1
+	Unit 1
+	Alpha 192
+	Red 0
+	Green 0
+	Blue 0
+
+section mission
+item MissionBest Text
+	X %Scorer.MarginH+20
+	Y $y
+	Font BigNumbers
+	Text "0"
+	Align Center
+	Red 255
+	Green 255
+	Blue 255
+item MissionLimit Text
+	X %Scorer.MarginH+50
+	Y $y
+	Font BigNumbers
+	Text "$(limit)"
+	Align Center
+	Red 255
+	Green 255
+	Blue 255
+item MissionYou Sprite
+	X %Scorer.MarginH+5
+	Y $y-10
+	ScaleX 30
+	ScaleY 20
+	Unit 1
+	Alpha 128
+	Red 0
+	Green 0
+	Blue 255
+item MissionTab Tab
+call Menu.SetTabDefaults $id MissionTab
+set MissionTab X %Scorer.MarginH
+set MissionTab Y $y-15
+set MissionTab SizeX 70
+set MissionTab SizeY 30
+set MissionTab TabInit 0
+set MissionTab TabEnd 0
+set MissionTab TabMax 0
+set MissionTab SizeTabQuad 0
+set MissionTab Type 4
+set MissionTab Alpha 128
+set MissionTab Red 32
+set MissionTab Green 64
+set MissionTab Blue 255
+
+# LittleText: the C adds the item and sets its Text first, as the script does
+section little
+item $(name) Text
+	Font Horatio
+	Effect Shadow
+	Align Center
+	Red $r
+	Green $g
+	Blue $b
+	Alpha $a
+	X 320
+	Y $y
+	Visible 1
+
+section black
+item BlackZoneUp Sprite
+	X 0
+	Y $y
+	ScaleX 640
+	ScaleY 90
+	Unit 1
+	Alpha 94
+	Red 0
+	Green 0
+	Blue 0
+
+# the keys of the menus, in the order the script binds them
+section keys_off
+call SInput.Bind $id Inactive NextShip ""
+call SInput.Bind $id Inactive PrevShip ""
+call SInput.Bind $id Inactive SeleShip ""
+call SInput.Bind $id Inactive ExitShip ""
+call SInput.Bind $id Inactive No ""
+call SInput.Bind $id Inactive Abort ""
+
+section keys_choose
+call SInput.Bind $id Inactive Abort ""
+call SInput.Bind $id Inactive NextShip Split.NextShip
+call SInput.Bind $id Inactive PrevShip Split.PrevShip
+call SInput.Bind $id Inactive SeleShip Split.SeleShip
+call SInput.Bind $id Inactive ExitShip Split.ConfirmAbortMain
+call SInput.Bind $id Inactive No ""
+
+section keys_ready
+call SInput.Bind $id Inactive Abort ""
+call SInput.Bind $id Inactive NextShip ""
+call SInput.Bind $id Inactive PrevShip ""
+call SInput.Bind $id Inactive SeleShip ""
+call SInput.Bind $id Inactive ExitShip Split.InitChooseScorer
+call SInput.Bind $id Inactive No ""
+
+section keys_confirm
+call SInput.Bind $id Inactive Abort ""
+call SInput.Bind $id Inactive NextShip ""
+call SInput.Bind $id Inactive PrevShip ""
+call SInput.Bind $id Inactive SeleShip $exec
+call SInput.Bind $id Inactive ExitShip ""
+call SInput.Bind $id Inactive No $event
+
+section keys_pause
+call SInput.Bind $id Inactive NextShip ""
+call SInput.Bind $id Inactive PrevShip ""
+call SInput.Bind $id Inactive Abort Split.StartGame
+call SInput.Bind $id Inactive SeleShip Split.ConfirmRestartPause
+call SInput.Bind $id Inactive ExitShip Split.ConfirmAbortPause
+call SInput.Bind $id Inactive No ""
