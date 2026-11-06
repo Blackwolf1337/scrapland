@@ -1943,7 +1943,7 @@ static byte Pr_Exits(scriptFrame_t *f, const char *use) {
 static PyObject *MeetBoss_Init(PyObject *self, PyObject *args) {
 	PyObject *path;
 	SF_ARGS("O", &path);
-	Sf_Run(&f, "SScorer", "AddModel", "(issssiiii)", 0, "Sebastian", "Models/Chars/Sebastian/Sebastian", "Models/Chars/Sebastian/Anm/Sebastian",
+	Sf_Run(&f, "SScorer", "AddModel", "(isssiiii)", 0, "Sebastian", "Models/Chars/Sebastian/Sebastian", "Models/Chars/Sebastian/Anm/Sebastian",
 		3, 25, -10, 1);
 	PyObject *state = SAVE("MissionState");
 	Sf_Own(&f, MB, "DeactivateEmero", "()");
