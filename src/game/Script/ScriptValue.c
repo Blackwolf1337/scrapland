@@ -4,6 +4,8 @@
  * of the interpreter, the print statement, tuple unpacking and the for loop over a sequence.
  */
 #include <ctype.h>
+#include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "scrap/global.h"
@@ -224,8 +226,18 @@ byte Script_Hook(const char *module, const char *target, const char *name, const
 
 PyObject *Script_EvalIn(const char *module, PyObject *text) {
 	PyObject *mod = PyImport_ImportModule((char *)module);
-	PyObject *g = mod ? PyModule_GetDict(mod) : NULL;
-	PyObject *v = g ? Script_Ask("__builtin__", "eval", "(OO)", text, g) : NULL;
+	PyObject *g = mod ? PyModule_GetDict(mod) : NULL, *v = NULL;
+	/* the checks of builtin eval before it parses: a string without NUL, its leading blanks skipped */
+	if (g && PyString_Check(text) && (int)strlen(PyString_AsString(text)) == PyString_Size(text)) {
+		const char *s = PyString_AsString(text);
+		while (*s == ' ' || *s == '\t') {
+			s++;
+		}
+		v = Script_Literal(g, s);
+	}
+	if (g && !v) {
+		v = Script_Ask("__builtin__", "eval", "(OO)", text, g);
+	}
 	Py_XDECREF(mod);
 	return v;
 }
@@ -245,4 +257,315 @@ PyObject *Script_AskKw(const char *module, const char *func, PyObject *args, PyO
 	Py_XDECREF(args);
 	Py_XDECREF(kw);
 	return r;
+}
+
+/*
+ * Plain literals as eval makes them (Python 1.5.2: Parser/tokenizer.c, Python/compile.c parsenumber, parsestr,
+ * com_addconst and the interning of PyCode_New; UNARY_NEGATIVE, BUILD_LIST and BUILD_TUPLE of ceval). Only the
+ * tokens whose value cannot differ are taken; anything else (names, dicts, longs, exponents, octal or hex numbers,
+ * escapes, raw or triple quoted strings, adjacent strings, newlines, comments, deep nesting) gives NULL and the
+ * caller runs eval.
+ */
+#define LIT_NAME_CHARS "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
+#define LIT_DEPTH 32
+
+typedef struct {
+	const char *p;
+	PyObject *consts;	/* the constants so far, a list as com_add keeps them */
+	PyObject *globals;	/* also the locals of eval */
+	int depth;
+} scriptLit_t;
+
+static void Lit_Blanks(scriptLit_t *l) {
+	while (*l->p == ' ' || *l->p == '\t') {
+		l->p++;
+	}
+}
+
+PyObject *Script_StrConst(const char *s, int len) {
+	PyObject *v = PyString_FromStringAndSize((char *)s, len);
+	if (v && (int)strspn(PyString_AsString(v), LIT_NAME_CHARS) == len) {
+		PyString_InternInPlace(&v);
+	}
+	return v;
+}
+
+/* v (a new constant, given away) or the equal constant of the same type made before it */
+static PyObject *Lit_Const(scriptLit_t *l, PyObject *v) {
+	if (!v) {
+		return NULL;
+	}
+	for (int i = PyList_Size(l->consts); --i >= 0;) {
+		PyObject *w = PyList_GetItem(l->consts, i);
+		if (v->ob_type == w->ob_type && PyObject_Compare(v, w) == 0) {
+			Py_DECREF(v);
+			return Script_Ref(w);
+		}
+	}
+	if (PyErr_Occurred() || PyList_Append(l->consts, v) != 0) {
+		Py_DECREF(v);
+		return NULL;
+	}
+	return v;
+}
+
+/* the end of a token: a blank, a comma, a closing bracket or the end of the text */
+static byte Lit_End(char c) {
+	return c == '\0' || c == ' ' || c == '\t' || c == ',' || c == ')' || c == ']';
+}
+
+/* 0, 123, 0.5, 12. or 3.25 (an int as parsenumber reads it, a float through atof as it does) */
+static PyObject *Lit_Number(scriptLit_t *l) {
+	const char *s = l->p, *e = s;
+	char buf[64];
+	byte isFloat = 0;
+	if (*e == '0') {
+		e++;
+	} else {
+		while (*e >= '0' && *e <= '9') {
+			e++;
+		}
+	}
+	if (*e == '.') {
+		isFloat = 1;
+		for (e++; *e >= '0' && *e <= '9'; e++) {
+		}
+	}
+	if (!Lit_End(*e) || e - s >= (int)sizeof(buf)) {
+		return NULL;
+	}
+	memcpy(buf, s, e - s);
+	buf[e - s] = '\0';
+	l->p = e;
+	if (isFloat) {
+		return Lit_Const(l, PyFloat_FromDouble(atof(buf)));
+	}
+	char *end;
+	errno = 0;
+	long x = buf[0] == '0' ? (long)PyOS_strtoul(buf, &end, 0) : PyOS_strtol(buf, &end, 0);
+	if (*end != '\0' || errno != 0) {
+		return NULL;
+	}
+	return Lit_Const(l, PyInt_FromLong(x));
+}
+
+/* a character the tokenizer and parsestr keep as it is inside a string without escapes */
+static byte Lit_Plain(unsigned char c) {
+	return c >= 0x20 && c != 0x7f && c != '\\';
+}
+
+/* 'text' or "text" */
+static PyObject *Lit_String(scriptLit_t *l) {
+	char q = *l->p;
+	const char *s = l->p + 1, *e = s;
+	if (s[0] == q && s[1] == q) {
+		return NULL;
+	}
+	while (*e != q) {
+		if (!Lit_Plain((unsigned char)*e)) {
+			return NULL;
+		}
+		e++;
+	}
+	if (!Lit_End(e[1])) {
+		return NULL;
+	}
+	l->p = e + 1;
+	return Lit_Const(l, Script_StrConst(s, (int)(e - s)));
+}
+
+static PyObject *Lit_Item(scriptLit_t *l);
+
+/* the items up to close (')' or ']', '\0' at the top) into a new list: *commas tells whether a comma came */
+static PyObject *Lit_Items(scriptLit_t *l, char close, byte *commas) {
+	PyObject *list = PyList_New(0);
+	*commas = 0;
+	Lit_Blanks(l);
+	while (list && *l->p != close) {
+		PyObject *v = Lit_Item(l);
+		if (!v || PyList_Append(list, v) != 0) {
+			Py_XDECREF(v);
+			Py_DECREF(list);
+			return NULL;
+		}
+		Py_DECREF(v);
+		Lit_Blanks(l);
+		if (*l->p == ',') {
+			*commas = 1;
+			l->p++;
+			Lit_Blanks(l);
+		} else if (*l->p != close) {
+			Py_DECREF(list);
+			return NULL;
+		}
+	}
+	return list;
+}
+
+/* the builtins of the frame of eval (a dict, the one of a module) */
+static PyObject *Lit_BuiltinsDict(PyObject *globals) {
+	PyObject *b = PyDict_GetItemString(globals, "__builtins__");
+	return PyModule_Check(b) ? PyModule_GetDict(b) : b;
+}
+
+static PyObject *Lit_Item(scriptLit_t *l) {
+	char c = *l->p;
+	if (c == '\'' || c == '"') {
+		return Lit_String(l);
+	}
+	if (!strncmp(l->p, "None", 4) && Lit_End(l->p[4])) {
+		/* LOAD_NAME None: the globals (the locals of eval), the builtins; a NameError is left to eval */
+		PyObject *v = PyDict_GetItemString(l->globals, "None");
+		v = v ? v : PyDict_GetItemString(Lit_BuiltinsDict(l->globals), "None");
+		l->p += 4;
+		return Script_Ref(v);
+	}
+	if (c >= '0' && c <= '9') {
+		return Lit_Number(l);
+	}
+	if (c == '-') {
+		l->p++;
+		Lit_Blanks(l);
+		PyObject *n = *l->p >= '0' && *l->p <= '9' ? Lit_Number(l) : NULL;
+		PyObject *v = n ? PyNumber_Negative(n) : NULL;
+		Py_XDECREF(n);
+		return v;
+	}
+	if ((c != '[' && c != '(') || l->depth >= LIT_DEPTH) {
+		return NULL;
+	}
+	char close = c == '[' ? ']' : ')';
+	byte commas;
+	l->p++;
+	l->depth++;
+	PyObject *list = Lit_Items(l, close, &commas);
+	l->depth--;
+	if (!list) {
+		return NULL;
+	}
+	l->p++;
+	if (!Lit_End(*l->p)) {
+		Py_DECREF(list);
+		return NULL;
+	}
+	if (close == ']') {
+		return list;
+	}
+	/* (x) is x, (x,) and () are tuples */
+	PyObject *v = PyList_Size(list) == 1 && !commas ? Script_Ref(PyList_GetItem(list, 0)) : PyList_AsTuple(list);
+	Py_DECREF(list);
+	return v;
+}
+
+/* the globals give the frame of eval its builtins (else PyFrame_New raises) */
+static byte Lit_Builtins(PyObject *globals) {
+	PyObject *b = globals && PyDict_Check(globals) ? PyDict_GetItemString(globals, "__builtins__") : NULL;
+	return b && (PyDict_Check(b) || PyModule_Check(b));
+}
+
+PyObject *Script_Literal(PyObject *globals, const char *s) {
+	if (!s || !Lit_Builtins(globals) || *s == ' ' || *s == '\t' || *s == '\0') {
+		return NULL;
+	}
+	scriptLit_t l = { .p = s, .consts = PyList_New(0), .globals = globals, .depth = 0 };
+	byte commas;
+	PyObject *list = l.consts ? Lit_Items(&l, '\0', &commas) : NULL, *v = NULL;
+	if (list) {
+		/* a, b is a tuple, a alone is a */
+		v = PyList_Size(list) == 1 && !commas ? Script_Ref(PyList_GetItem(list, 0)) : PyList_AsTuple(list);
+		Py_DECREF(list);
+	}
+	Py_XDECREF(l.consts);
+	if (!v) {
+		PyErr_Clear();
+	}
+	return v;
+}
+
+PyObject *Script_EvalMain(const char *text) {
+	PyObject *main = PyImport_AddModule("__main__");
+	PyObject *v = main ? Script_Literal(PyModule_GetDict(main), text) : NULL;
+	PyErr_Clear();
+	return v ? v : Script_Eval(text);
+}
+
+byte Script_IsName(const char *s, int len) {
+	static const char *const keywords[] = { "and", "assert", "break", "class", "continue", "def", "del", "elif", "else",
+		"except", "exec", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "not", "or", "pass",
+		"print", "raise", "return", "try", "while", NULL };
+	if (len <= 0 || (s[0] >= '0' && s[0] <= '9') || (int)strspn(s, LIT_NAME_CHARS) < len) {
+		return 0;
+	}
+	for (int i = 0; keywords[i]; i++) {
+		if ((int)strlen(keywords[i]) == len && !strncmp(keywords[i], s, len)) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+byte Script_IsQuotable(PyObject *o) {
+	if (!o || !PyString_Check(o)) {
+		return 0;
+	}
+	const char *s = PyString_AsString(o);
+	int n = PyString_Size(o);
+	for (int i = 0; i < n; i++) {
+		if (!Lit_Plain((unsigned char)s[i]) || s[i] == '\'') {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+int Script_NameChain(PyObject *locals, PyObject *globals, const char *text, PyObject **out) {
+	*out = NULL;
+	if (!Lit_Builtins(globals)) {
+		return 0;
+	}
+	for (const char *p = text;; p++) {
+		int len = (int)strspn(p, LIT_NAME_CHARS);
+		if (!Script_IsName(p, len) || (p[len] != '.' && p[len] != '\0')) {
+			return 0;
+		}
+		p += len;
+		if (!*p) {
+			break;
+		}
+	}
+	PyObject *b = Lit_BuiltinsDict(globals), *v = NULL;
+	for (const char *p = text;; p++) {
+		int len = (int)strspn(p, LIT_NAME_CHARS);
+		char name[0x100];
+		if (len >= (int)sizeof(name)) {
+			Py_XDECREF(v);
+			return 0;
+		}
+		memcpy(name, p, len);
+		name[len] = '\0';
+		if (!v) {
+			/* LOAD_NAME: the locals, the globals, the builtins */
+			PyObject *w = PyString_InternFromString(name);
+			PyObject *x = !w ? NULL : locals && PyDict_GetItem(locals, w) ? PyDict_GetItem(locals, w) :
+				PyDict_GetItem(globals, w) ? PyDict_GetItem(globals, w) : PyDict_GetItem(b, w);
+			if (w && !x) {
+				PyErr_SetObject(PyExc_NameError, w);
+			}
+			Py_XDECREF(w);
+			v = Script_Ref(x);
+		} else {
+			PyObject *x = PyObject_GetAttrString(v, name);
+			Py_DECREF(v);
+			v = x;
+		}
+		if (!v) {
+			return -1;
+		}
+		p += len;
+		if (!*p) {
+			break;
+		}
+	}
+	*out = v;
+	return 1;
 }

@@ -510,8 +510,57 @@ PyObject *Sf_Eval(scriptFrame_t *f, PyObject *text, const char *module) {
 	while (*s == ' ' || *s == '\t') {
 		s++;
 	}
-	PyObject *g = PyModule_GetDict(m);
-	return Sf_Keep(f, PyRun_String((char *)s, Py_eval_input, g, g));
+	PyObject *g = PyModule_GetDict(m), *v = Script_Literal(g, s);
+	return Sf_Keep(f, v ? v : PyRun_String((char *)s, Py_eval_input, g, g));
+}
+
+byte Sf_RaiseValue(scriptFrame_t *f, PyObject *o) {
+	if (f->failed || !o) {
+		return Sf_Check(f, 0);
+	}
+	/* do_raise of ceval with the value and the traceback left out */
+	PyObject *type = Script_Ref(o), *value = Script_Ref(Py_None), *tb = NULL;
+	while (PyTuple_Check(type) && PyTuple_Size(type) > 0) {
+		PyObject *tmp = type;
+		type = Script_Ref(PyTuple_GET_ITEM(type, 0));
+		Py_DECREF(tmp);
+	}
+	if (PyClass_Check(type)) {
+		PyErr_NormalizeException(&type, &value, &tb);
+	} else if (PyInstance_Check(type)) {
+		Py_DECREF(value);
+		value = type;
+		type = Script_Ref((PyObject *)((PyInstanceObject *)type)->in_class);
+	} else if (!PyString_Check(type)) {
+		Py_DECREF(type);
+		Py_DECREF(value);
+		return Sf_Raise(f, PyExc_TypeError, "exceptions must be strings, classes, or instances");
+	}
+	PyErr_Restore(type, value, tb);
+	f->failed = 1;
+	return 0;
+}
+
+byte Sf_ImportTo(scriptFrame_t *f, const char *module, PyObject *locals, PyObject *name) {
+	if (f->failed || !name || !locals || !PyString_Check(name) ||
+		!Script_IsName(PyString_AsString(name), PyString_Size(name))) {
+		return Sf_Exec(f, Sf_Cat(f, "sO", "import ", name), module, locals);
+	}
+	/* the exec'd line imports in the module's globals, where a name without a dot is a top level module */
+	PyObject *m = Sf_Module(f, module) ? Sf_Keep(f, PyImport_ImportModule(PyString_AsString(name))) : NULL;
+	return Sf_Check(f, m && PyDict_SetItem(locals, name, m) == 0);
+}
+
+byte Sf_ImportCall(scriptFrame_t *f, const char *module, PyObject *locals, const char *target, PyObject *func) {
+	if (f->failed || !func || !locals || !PyString_Check(func) ||
+		!Script_IsName(PyString_AsString(func), PyString_Size(func))) {
+		return Sf_Exec(f, Sf_Cat(f, "sssssOs", "import ", target, ";", target, ".", func, "()"), module, locals);
+	}
+	PyObject *name = Sf_Str(f, target);
+	if (!Sf_ImportTo(f, module, locals, name)) {
+		return 0;
+	}
+	return Sf_Line(f, Sf_Attr(f, Sf_Keep(f, Script_Ref(PyDict_GetItem(locals, name))), PyString_AsString(func)), "()");
 }
 
 byte Sf_Line(scriptFrame_t *f, PyObject *callable, const char *fmt, ...) {

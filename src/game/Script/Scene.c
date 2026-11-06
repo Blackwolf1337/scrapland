@@ -203,6 +203,22 @@ static PyObject *Scene_ObjActEvent(PyObject *self, PyObject *args) {
 	return Sc_ActEvent(args, 0);
 }
 
+/* exec(ActorType + "Sound.SetSounds('" + SceneName + ActorName + "')") of SetDefSounds: the call made directly when
+ * the line is that call (the sound module imported into locals before) */
+static void Sc_SetSounds(scriptFrame_t *f, PyObject *locals, PyObject *type, PyObject *scene, PyObject *name) {
+	if (!f->failed && type && scene && name && PyString_Check(type) && PyString_Check(scene) && PyString_Check(name)) {
+		PyObject *mod = Sf_Cat(f, "Os", type, "Sound"), *arg = Sf_Op(f, scene, '+', name);
+		PyObject *snd = arg && Script_IsName(PyString_AsString(mod), PyString_Size(mod)) && Script_IsQuotable(arg) ?
+			PyDict_GetItem(locals, mod) : NULL;
+		if (snd) {
+			PyObject *text = Sf_Keep(f, Script_StrConst(PyString_AsString(arg), PyString_Size(arg)));
+			Sf_Line(f, Sf_Attr(f, snd, "SetSounds"), "(O)", text);
+			return;
+		}
+	}
+	Sf_Exec(f, Sf_Cat(f, "OsOOs", type, "Sound.SetSounds('", scene, name, "')"), SC, locals);
+}
+
 /* SetDefSounds(ActorName, ActorType): the sounds of the character's sound script on the actor's class, then the
  * MapSnd function of the actor when the level has one */
 static PyObject *Scene_SetDefSounds(PyObject *self, PyObject *args) {
@@ -214,14 +230,22 @@ static PyObject *Scene_SetDefSounds(PyObject *self, PyObject *args) {
 	}
 	/* the function has exec, so its variables are a dict the exec'd lines share */
 	PyObject *locals = Sf_Keep(&f, Py_BuildValue("{s:O,s:O}", "ActorName", name, "ActorType", type));
-	Sf_Exec(&f, Sf_Cat(&f, "sOs", "import ", type, "Sound"), SC, locals);
+	if (PyString_Check(type)) {
+		Sf_ImportTo(&f, SC, locals, Sf_Cat(&f, "Os", type, "Sound"));
+	} else {
+		Sf_Exec(&f, Sf_Cat(&f, "sOs", "import ", type, "Sound"), SC, locals);
+	}
 	PyObject *scene = Sf_Global(&f, SC, "SceneName");
-	Sf_Exec(&f, Sf_Cat(&f, "OsOOs", type, "Sound.SetSounds('", scene, name, "')"), SC, locals);
+	Sc_SetSounds(&f, locals, type, scene, name);
 	if (f.failed) {
 		return Sf_None(&f);
 	}
 	scene = Sf_Global(&f, SC, "SceneName");
-	Sf_Exec(&f, Sf_Cat(&f, "sOOs", "import MapSnd;MapSnd.", scene, name, "()"), SC, locals);
+	if (scene && PyString_Check(scene) && PyString_Check(name)) {
+		Sf_ImportCall(&f, SC, locals, "MapSnd", Sf_Op(&f, scene, '+', name));
+	} else {
+		Sf_Exec(&f, Sf_Cat(&f, "sOOs", "import MapSnd;MapSnd.", scene, name, "()"), SC, locals);
+	}
 	if (Sf_Except(&f)) {
 		scene = Sf_Global(&f, SC, "SceneName");
 		Sf_Print(&f, "O", Sf_Cat(&f, "sOOs", "Sound warning: MapSnd.", scene, name, "() not found\n"));
@@ -553,7 +577,11 @@ static PyObject *Scene_Load(PyObject *self, PyObject *args) {
 	/* the function has exec, so its variables (the import of Init too) are a dict the exec'd line shares */
 	PyObject *init = Sf_Keep(&f, PyImport_ImportModule("Init"));
 	PyObject *locals = Sf_Keep(&f, Py_BuildValue("{s:O,s:O,s:O}", "SceneClass", cls, "Init", init, "path", path));
-	Sf_Exec(&f, Sf_Cat(&f, "sOs", "import MapSnd;MapSnd.", cls, "()"), SC, locals);
+	if (PyString_Check(cls)) {
+		Sf_ImportCall(&f, SC, locals, "MapSnd", cls);
+	} else {
+		Sf_Exec(&f, Sf_Cat(&f, "sOs", "import MapSnd;MapSnd.", cls, "()"), SC, locals);
+	}
 	if (Sf_Except(&f)) {
 		Sf_Print(&f, "O", Sf_Cat(&f, "sOs", "Sound warning: MapSnd.", cls, "() not found\n"));
 	}

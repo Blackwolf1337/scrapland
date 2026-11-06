@@ -354,8 +354,17 @@ static PyObject *Elevator_ElevatorBackCamera(PyObject *self, PyObject *args) {
 	return Sf_None(&f);
 }
 
-/* exec("elv.ArrOpt" + `i` + "    = '" + idcad + ":'+fullcad") in ConnectElevators */
-static void Elv_ExecOpt(scriptFrame_t *f, PyObject *locals, long i, PyObject *idcad, PyObject *fullcad) {
+/* exec("elv.ArrOpt" + `i` + "    = '" + idcad + ":'+fullcad") in ConnectElevators: elv.ArrOpt<i> = idcad + ":" +
+ * fullcad made directly when idcad pasted between the quotes is itself again */
+static void Elv_ExecOpt(scriptFrame_t *f, PyObject *locals, PyObject *elv, long i, PyObject *idcad, PyObject *fullcad) {
+	if (!f->failed && Script_IsQuotable(idcad)) {
+		char name[0x20];
+		Str_Printf(name, sizeof(name), "ArrOpt%ld", i);
+		PyObject *lit = Sf_Cat(f, "Os", idcad, ":");
+		PyObject *text = lit ? Sf_Keep(f, Script_StrConst(PyString_AsString(lit), PyString_Size(lit))) : NULL;
+		Sf_SetAttr(f, elv, name, Sf_Op(f, text, '+', fullcad));
+		return;
+	}
 	PyObject *code = Sf_Cat(f, "sOsOs", "elv.ArrOpt", Sf_ReprI(f, i), "    = '", idcad, ":'+fullcad");
 	Sf_Check(f, !code || PyDict_SetItemString(locals, "idcad", idcad) == 0);
 	Sf_Check(f, !code || PyDict_SetItemString(locals, "fullcad", fullcad) == 0);
@@ -406,7 +415,7 @@ static PyObject *Elevator_ConnectElevators(PyObject *self, PyObject *args) {
 			if (other > 0) {
 				PyObject *idcad = Sf_Op(&f, key, '+', tgt);
 				PyObject *fullcad = Elv_Text(&f, tgt);
-				Elv_ExecOpt(&f, locals, i, idcad, fullcad);
+				Elv_ExecOpt(&f, locals, elv, i, idcad, fullcad);
 				i++;
 			} else if (other == 0 && Sf_True(&f, updown) > 0) {
 				key = Sf_Global(&f, "Elevator", "MOVE_UP");
@@ -422,7 +431,7 @@ static PyObject *Elevator_ConnectElevators(PyObject *self, PyObject *args) {
 			}
 			PyObject *idcad = Sf_Op(&f, Sf_Global(&f, "Elevator", "MOVE_LEVEL"), '+', map);
 			PyObject *fullcad = Elv_Text(&f, Sf_Cat(&f, "Os", map, "Goto"));
-			Elv_ExecOpt(&f, locals, i, idcad, fullcad);
+			Elv_ExecOpt(&f, locals, elv, i, idcad, fullcad);
 			i++;
 			Sf_Release(&f, mmark);
 		}

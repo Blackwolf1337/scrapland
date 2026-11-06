@@ -2225,14 +2225,14 @@ static void Pc_Event(scriptFrame_t *f, PyObject *time, const char *name, const c
 	Sf_Release(f, mark);
 }
 
-/* try: exec(code) except: Scrap.ConsoleError(msg) */
-static void Pc_TrySound(scriptFrame_t *f, const char *code, const char *msg) {
+/* try: exec("import MapSnd;MapSnd.<func>()") except: Scrap.ConsoleError(msg) */
+static void Pc_TrySound(scriptFrame_t *f, const char *func, const char *msg) {
 	if (f->failed) {
 		return;
 	}
 	int mark = f->n;
 	PyObject *locals = Sf_Keep(f, PyDict_New());
-	Sf_Exec(f, Sf_Str(f, code), PC, locals);
+	Sf_ImportCall(f, PC, locals, "MapSnd", Sf_Str(f, func));
 	if (Sf_Except(f)) {
 		Sf_Ask(f, "Scrap", "ConsoleError", "(s)", msg);
 	}
@@ -2273,9 +2273,9 @@ static PyObject *PoliceBossCheats_CheatingLoop(PyObject *self, PyObject *args) {
 		Sf_Release(&f, mark);
 	}
 	Sf_Ask(&f, "SAct", "GetClass", "(s)", "Police");
-	Pc_TrySound(&f, "import MapSnd;MapSnd.PoliceCheats()", "SOUND ERROR : MapSnd.PoliceCheats() \n");
+	Pc_TrySound(&f, "PoliceCheats", "SOUND ERROR : MapSnd.PoliceCheats() \n");
 	Sf_Ask(&f, "SAct", "GetClass", "(s)", "PoliceBoss");
-	Pc_TrySound(&f, "import MapSnd;MapSnd.PoliceBossCheats()", "SOUND ERROR : MapSnd.PoliceBossCheats() \n");
+	Pc_TrySound(&f, "PoliceBossCheats", "SOUND ERROR : MapSnd.PoliceBossCheats() \n");
 	static const struct {
 		const char *dummy, *type, *card, *player, *cards;
 	} players[] = { { "DM_Mission_Police_Dumb", "Police", "PokerCartasPoli", "Dumb2", "Dumb2c" },

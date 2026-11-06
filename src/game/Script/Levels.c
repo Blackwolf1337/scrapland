@@ -439,7 +439,7 @@ static PyObject *Level_Call(PyObject *self, PyObject *args, PyObject *kw) {
 static PyObject *Level_Default(const char *text) {
 	char buf[LEVEL_NAME + 8];
 	Str_Printf(buf, sizeof(buf), "(%s,)", text);
-	PyObject *t = Script_Eval(buf);
+	PyObject *t = Script_EvalMain(buf);
 	PyObject *v = t && PyTuple_Check(t) && PyTuple_Size(t) == 1 ? PyTuple_GetItem(t, 0) : NULL;
 	Py_XINCREF(v);
 	Py_XDECREF(t);

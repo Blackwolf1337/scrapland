@@ -164,9 +164,33 @@ static PyObject *WT_Last(scriptFrame_t *f, PyObject *control) {
 	return Sf_ToInt(f, len < 0 ? NULL : Sf_Item(f, control, len - 1));
 }
 
-/* exec(code) in a function of the module that imported HangarTab */
+/* exec(code) in a function of the module that imported HangarTab; the lines "HangarTab.prevShip.<name> = <literal>"
+ * and "HangarTab.prevShip.<name> = 1 - HangarTab.prevShip.<name>" made directly */
 static void WT_Exec(scriptFrame_t *f, PyObject *code) {
+	static const char ship[] = "HangarTab.prevShip.";
+	const int sl = (int)sizeof(ship) - 1;
 	PyObject *hangar = Sf_Keep(f, f->failed ? NULL : PyImport_ImportModule("HangarTab"));
+	PyObject *mod = hangar ? Sf_Keep(f, PyImport_ImportModule(MOD)) : NULL;
+	const char *s = mod && code && PyString_Check(code) ? PyString_AsString(code) : NULL;
+	const char *eq = s && (int)strlen(s) == PyString_Size(code) && !strncmp(s, ship, sl) ? strstr(s, " = ") : NULL;
+	char attr[0x40];
+	int len = eq ? (int)(eq - s) - sl : 0;
+	if (eq && len < (int)sizeof(attr) && Script_IsName(s + sl, len)) {
+		const char *rhs = eq + 3;
+		PyObject *v;
+		memcpy(attr, s + sl, len);
+		attr[len] = '\0';
+		if (!strncmp(rhs, "1 - ", 4) && !strncmp(rhs + 4, ship, sl) && !strcmp(rhs + 4 + sl, attr)) {
+			v = Sf_Op(f, Sf_Int(f, 1), '-', Sf_Attr(f, Sf_Attr(f, hangar, "prevShip"), attr));
+		} else {
+			v = Script_Literal(PyModule_GetDict(mod), rhs);
+			v = v ? Sf_Keep(f, v) : NULL;
+		}
+		if (v || f->failed) {
+			Sf_SetAttr(f, Sf_Attr(f, hangar, "prevShip"), attr, v);
+			return;
+		}
+	}
 	Sf_Exec(f, code, MOD, Sf_Build(f, "{s:O}", "HangarTab", hangar));
 }
 

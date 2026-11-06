@@ -217,7 +217,7 @@ static byte In_BossShip(void) {
 			PyObject *rep = Script_Import((const char *const[]){ "Traffic", NULL }) ?
 				K(Script_Ask("string", "replace", "(Ossi)", cad, "SPoliBoss1", "SPoli6", 1)) : NULL;
 			PyObject *mod = rep && Script_Try("Scrap", "SetSaveVar", "(sO)", "Traffic.AcShips", rep) ? K(PyImport_ImportModule("Init")) : NULL;
-			PyObject *ships = mod ? K(Script_Ask("__builtin__", "eval", "(OO)", rep, PyModule_GetDict(mod))) : NULL;
+			PyObject *ships = mod ? K(Script_EvalIn("Init", rep)) : NULL;
 			ok = ships && Script_SetGlobal("Traffic", "AcShips", Script_Ref(ships));
 		}
 	}
@@ -300,7 +300,7 @@ static byte In_BossRobots(void) {
 	}
 	PyObject *upper = K(Script_Global("Init", "UpperMap")), *done = upper ? K(Script_SaveVar("ComSatsMissionsMapsFinished")) : NULL;
 	PyObject *mod = done ? K(PyImport_ImportModule("Init")) : NULL;
-	PyObject *list = mod ? K(Script_Ask("__builtin__", "eval", "(OO)", done, PyModule_GetDict(mod))) : NULL;
+	PyObject *list = mod ? K(Script_EvalIn("Init", done)) : NULL;
 	int in = list ? PySequence_Contains(list, upper) : -1;
 	byte ok = in >= 0 && (in ? Script_Try("Scrap", "Set", "(sd)", "AlarmFallDelta", -0.05) && Script_Try("Scrap", "SetAlarm", "(i)", 0) :
 		Script_Try("Scrap", "SetAlarm", "(i)", 1) && Script_Try("Scrap", "Set", "(si)", "AlarmFallDelta", 0));
