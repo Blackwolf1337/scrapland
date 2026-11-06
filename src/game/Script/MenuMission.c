@@ -124,7 +124,7 @@ static int Mission_ListCount(const char *var) {
 	if (!s) {
 		return 0;
 	}
-	PyObject *v = Script_Eval(s);
+	PyObject *v = Script_EvalMain(s);
 	int n = v ? PySequence_Length(v) : 0;
 	PyErr_Clear();
 	Py_XDECREF(v);

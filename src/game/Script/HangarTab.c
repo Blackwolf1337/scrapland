@@ -550,9 +550,21 @@ static PyObject *HT_ShowHangarPanel(PyObject *self, PyObject *args) {
 	return Sf_None(&f);
 }
 
-/* eval(text) in a function of HangarTab (its globals, locals the dict of the function's variables) */
+/* eval(text) in a function of HangarTab (its globals, locals the dict of the function's variables); a name with
+ * attributes ("prevShip.Model") is looked up directly */
 static PyObject *Ht_Eval(scriptFrame_t *f, PyObject *text, PyObject *locals) {
-	PyObject *g = Sf_Mod(f, HT, "__dict__");
+	PyObject *g = Sf_Mod(f, HT, "__dict__"), *v;
+	if (g && text && PyString_Check(text) && PyDict_Check(locals) &&
+		(int)strlen(PyString_AsString(text)) == PyString_Size(text)) {
+		const char *s = PyString_AsString(text);
+		while (*s == ' ' || *s == '\t') {
+			s++;
+		}
+		int found = Script_NameChain(locals, g, s, &v);
+		if (found) {
+			return Sf_Keep(f, found > 0 ? v : NULL);
+		}
+	}
 	return Sf_Ask(f, "__builtin__", "eval", "(OOO)", text, g, locals);
 }
 

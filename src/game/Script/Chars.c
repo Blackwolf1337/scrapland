@@ -646,7 +646,7 @@ static PyObject *Chars_CreateStartupPlayer(PyObject *self, PyObject *args) {
 		c = ang ? Chars_Ask("Chars", "CreateMainChar", Py_BuildValue("(ssO(iOi))", "Player0", ch ? ch : "", dpos, 0, ang, 0)) : NULL;
 		if (c && c != Py_None) {
 			const char *bat = SaveVar_Get("AcBatteries");
-			PyObject *energy = Script_Eval(bat ? bat : "");
+			PyObject *energy = Script_EvalMain(bat ? bat : "");
 			double e = energy && PyFloat_Check(energy) ? PyFloat_AsDouble(energy) : energy && PyInt_Check(energy) ? PyInt_AsLong(energy) : 0;
 			if (e < 2.0) {
 				Py_XDECREF(energy);

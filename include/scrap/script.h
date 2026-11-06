@@ -193,6 +193,22 @@ PyObject *Script_AskKw(const char *module, const char *func, PyObject *args, PyO
 byte Script_Hook(const char *module, const char *target, const char *name, const char *last);
 /* eval(text) in a function of the script module (its globals): a new reference, NULL with the error set */
 PyObject *Script_EvalIn(const char *module, PyObject *text);
+/* what eval of s (after the blanks eval skips) in globals gives when s is a plain literal: an int, a float without
+ * exponent, a string without backslashes, None, a list or tuple of those, '-' before a number, blanks between (the
+ * constants shared and interned as the compiler makes them). A new reference, else NULL without an error: the caller
+ * evals s then (anything else, also when the globals lack valid __builtins__, so nothing can differ) */
+PyObject *Script_Literal(PyObject *globals, const char *s);
+/* Script_Eval(text) with a plain literal made directly */
+PyObject *Script_EvalMain(const char *text);
+/* a string constant of len chars as the compiler makes it (interned when it has only name characters) */
+PyObject *Script_StrConst(const char *s, int len);
+/* s[0:len] is a Python 1.5.2 name (ASCII letters, digits and _, not a keyword) */
+byte Script_IsName(const char *s, int len);
+/* o is a string that between single quotes in a line of Python is itself again */
+byte Script_IsQuotable(PyObject *o);
+/* a NAME(.NAME)* text evaluated with the locals, the globals and their builtins (no blanks): 1 with a new reference
+ * in *out, -1 with the error of the lookup set (NameError, AttributeError), 0 when text is not such a chain */
+int Script_NameChain(PyObject *locals, PyObject *globals, const char *text, PyObject **out);
 
 /*
  * A ported script function line by line (src/game/Script/ScriptFrame.c). The frame keeps the temporary references
@@ -305,8 +321,17 @@ byte Sf_Later(scriptFrame_t *f, PyObject *delay, PyObject *func, PyObject *args,
 byte Sf_Print(scriptFrame_t *f, const char *fmt, ...);
 byte Sf_Unpack(scriptFrame_t *f, PyObject *v, int n, PyObject **out);
 byte Sf_Exec(scriptFrame_t *f, PyObject *code, const char *module, PyObject *locals);
-/* eval(text) in a function of module (the module's globals; the expressions of the scripts are literals) */
+/* eval(text) in a function of module (the module's globals; the expressions of the scripts are literals, made
+ * directly by Script_Literal) */
 PyObject *Sf_Eval(scriptFrame_t *f, PyObject *text, const char *module);
+/* `raise o` of a script (a string, a class, an instance or a tuple of them; else its TypeError): 0 */
+byte Sf_RaiseValue(scriptFrame_t *f, PyObject *o);
+/* exec("import " + name) in a function of module (locals: the dict of its variables, the import is stored there);
+ * a name that is not a plain module name runs through exec */
+byte Sf_ImportTo(scriptFrame_t *f, const char *module, PyObject *locals, PyObject *name);
+/* exec("import " + target + ";" + target + "." + func + "()") in a function of module (locals as for Sf_ImportTo),
+ * func a string; one that is not a name runs through exec (its SyntaxError) */
+byte Sf_ImportCall(scriptFrame_t *f, const char *module, PyObject *locals, const char *target, PyObject *func);
 /* callable(Py_BuildValue args) as a statement of a script: the result is dropped at once (no reference kept) */
 byte Sf_Line(scriptFrame_t *f, PyObject *callable, const char *fmt, ...);
 /* the C string of a text of the script, an item name: another value raises the TypeError of the name argument of

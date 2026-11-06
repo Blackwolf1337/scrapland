@@ -8,6 +8,8 @@
  * panels (Panels, ShowingNews, MissionUse, NewsOnMem, act, NewsList) and the module code (the engine variables of the
  * panels, Scrap.Set("AlarmCallback", ...)) stay in the modules; the functions read them as their globals.
  */
+#include <string.h>
+
 #include "scrap/script.h"
 
 /* ---- Alarm ---- */
@@ -121,6 +123,28 @@ static PyObject *NewsPanel_GetNews(PyObject *self, PyObject *args) {
 	return Sf_None(&f);
 }
 
+/* exec(xqt[0]) of FillNews: a line as GetNews makes it ("kb.<name> = '<text>'+keydata") is kb.<name> = '<text>' +
+ * keydata made directly, any other line runs through exec */
+static void Np_Exec(scriptFrame_t *f, PyObject *code, PyObject *kb, PyObject *keydata, PyObject *locals) {
+	static const char tail[] = "'+keydata";
+	const char *s = !f->failed && code && PyString_Check(code) ? PyString_AsString(code) : NULL;
+	const char *eq = s ? strstr(s, " = '") : NULL;
+	int n = s ? PyString_Size(code) : 0, tl = (int)sizeof(tail) - 1;
+	if (eq && (int)strlen(s) == n && !strncmp(s, "kb.", 3) && Script_IsName(s + 3, (int)(eq - s) - 3) &&
+		eq + 4 <= s + n - tl && !strcmp(s + n - tl, tail)) {
+		char name[0x40];
+		int len = (int)(eq - s) - 3, tlen = (int)(s + n - tl - (eq + 4));
+		PyObject *text = len < (int)sizeof(name) ? Sf_Keep(f, Script_StrConst(eq + 4, tlen)) : NULL;
+		if (text && Script_IsQuotable(text)) {
+			memcpy(name, s + 3, len);
+			name[len] = '\0';
+			Sf_SetAttr(f, kb, name, Sf_Op(f, text, '+', keydata));
+			return;
+		}
+	}
+	Sf_Exec(f, code, "NewsPanel", locals);
+}
+
 /* FillNews(kb): the lines of NewsList run on the panel kb */
 static PyObject *NewsPanel_FillNews(PyObject *self, PyObject *args) {
 	PyObject *kb;
@@ -139,7 +163,7 @@ static PyObject *NewsPanel_FillNews(PyObject *self, PyObject *args) {
 		PyObject *keydata = Sf_Item(&f, xqt, 1);
 		PyObject *code = Sf_Item(&f, xqt, 0);
 		PyObject *locals = Sf_Build(&f, "{sOsOsO}", "kb", kb, "xqt", xqt, "keydata", keydata);
-		Sf_Exec(&f, code, "NewsPanel", locals);
+		Np_Exec(&f, code, kb, keydata, locals);
 		Sf_Release(&f, mark);
 	}
 	return Sf_None(&f);

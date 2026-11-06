@@ -175,9 +175,8 @@ byte Lv_DummyPosAng(scriptFrame_t *f, PyObject *dummy, PyObject **pos, PyObject 
 }
 
 byte Lv_RaiseValue(scriptFrame_t *f, const char *module, PyObject *o) {
-	PyObject *locals = Sf_Build(f, "{s:O}", "exceptString", o);
-	Sf_Exec(f, Sf_Str(f, "raise exceptString\n"), module, locals);
-	return Sf_Check(f, 0);
+	Sf_Import(f, module);
+	return Sf_RaiseValue(f, o);
 }
 
 PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table) {
