@@ -96,6 +96,18 @@ byte Sf_Raise(scriptFrame_t *f, PyObject *exc, const char *msg) {
 	return 0;
 }
 
+byte Sf_RaiseText(scriptFrame_t *f, const char *text) {
+	if (!f->failed) {
+		PyObject *s = PyString_FromString((char *)text);
+		if (s) {
+			PyErr_SetObject(s, Py_None);
+			Py_DECREF(s);
+		}
+		f->failed = 1;
+	}
+	return 0;
+}
+
 PyObject *Sf_Ref(scriptFrame_t *f, PyObject *o) {
 	if (f->failed) {
 		return NULL;
@@ -262,6 +274,10 @@ PyObject *Sf_Repr(scriptFrame_t *f, PyObject *o) {
 
 PyObject *Sf_ToInt(scriptFrame_t *f, PyObject *o) {
 	return f->failed || !o ? NULL : Sf_Keep(f, Script_Int(o));
+}
+
+PyObject *Sf_ToFloat(scriptFrame_t *f, PyObject *o) {
+	return f->failed || !o ? NULL : Sf_Keep(f, PyNumber_Float(o));
 }
 
 PyObject *Sf_ReprI(scriptFrame_t *f, long i) {

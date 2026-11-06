@@ -215,6 +215,8 @@ PyObject *Sf_Return(scriptFrame_t *f, PyObject *o);
 PyObject *Sf_None(scriptFrame_t *f);
 /* raise exc(msg): 0 */
 byte Sf_Raise(scriptFrame_t *f, PyObject *exc, const char *msg);
+/* raise "text" (a string exception of Python 1.5.2, the value None): 0 */
+byte Sf_RaiseText(scriptFrame_t *f, const char *text);
 /* values: a borrowed o kept, an int, a float, a string, Py_BuildValue */
 PyObject *Sf_Ref(scriptFrame_t *f, PyObject *o);
 PyObject *Sf_Int(scriptFrame_t *f, long i);
@@ -247,8 +249,9 @@ PyObject *Sf_OpI(scriptFrame_t *f, PyObject *a, char op, long b);
 PyObject *Sf_Cat(scriptFrame_t *f, const char *fmt, ...);
 PyObject *Sf_Repr(scriptFrame_t *f, PyObject *o);
 PyObject *Sf_ReprI(scriptFrame_t *f, long i);
-/* int(o) */
+/* int(o), float(o) */
 PyObject *Sf_ToInt(scriptFrame_t *f, PyObject *o);
+PyObject *Sf_ToFloat(scriptFrame_t *f, PyObject *o);
 /* `if o:`, a op b with op "==", "!=", "<", "<=", ">", ">=", a == "text", a == i, x in seq, x in ("text", ..., NULL),
  * len(o) */
 int Sf_True(scriptFrame_t *f, PyObject *o);
@@ -448,6 +451,13 @@ extern PyMethodDef g_InTrafficMethods[];
 extern PyMethodDef g_ShipMakerMethods[];
 extern PyMethodDef g_ParkingMethods[];
 extern PyMethodDef g_AcceleratorMethods[];
+/* the game modes of the single player super deals (src/game/Script/SuperDeals.c) */
+extern PyMethodDef g_DeathMatchMethods[];
+extern PyMethodDef g_TeamDeathMatchMethods[];
+extern PyMethodDef g_VersusMethods[];
+extern PyMethodDef g_CTFMethods[];
+extern PyMethodDef g_DominationMethods[];
+extern PyMethodDef g_MortalRaceMethods[];
 
 /* the gameplay functions of the character modules (src/game/Script/CharFuncs.c), next to their Init tables */
 extern PyMethodDef g_FunctionaryFuncs[];

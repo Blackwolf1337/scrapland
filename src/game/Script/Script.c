@@ -199,6 +199,12 @@ static const scriptModule_t script_modules[] = {
 	{ "ShipMaker", g_ShipMakerMethods },
 	{ "Parking", g_ParkingMethods },
 	{ "Accelerator", g_AcceleratorMethods },
+	{ "DeathMatch", g_DeathMatchMethods },
+	{ "TeamDeathMatch", g_TeamDeathMatchMethods },
+	{ "Versus", g_VersusMethods },
+	{ "CTF", g_CTFMethods },
+	{ "Domination", g_DominationMethods },
+	{ "MortalRace", g_MortalRaceMethods },
 };
 
 /*
