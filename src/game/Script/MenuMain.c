@@ -550,20 +550,32 @@ static PyObject *Menu_SetSkillMenu(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-/* SetSkill(id, "ItemN"): skill N-1, back to the game with a message */
+/* SetSkill(id, "ItemN"): skill N-1, back to the game with a message; like the script a skill out of the three is set
+ * and saved before the name lookup raises (a negative one counts from the end) */
 static PyObject *Menu_SetSkill(PyObject *self, PyObject *args) {
 	char n[0x10], text[0x200];
 	(void)self;
 	MAIN_ARGS(args);
-	int i = Main_Digit(control, 4) - 1;
-	if (i < 0 || i > 2) {
-		PyErr_SetString(PyExc_IndexError, "SetSkill: no such skill");
+	if (strlen(control) < 5) {
+		PyErr_SetString(PyExc_IndexError, "string index out of range");
 		return NULL;
 	}
+	if (control[4] < '0' || control[4] > '9') {
+		PyErr_Format(PyExc_ValueError, "invalid literal for int(): %c", control[4]);
+		return NULL;
+	}
+	int i = control[4] - '0' - 1;
 	GVar_SetNum("GameSkill", i);
 	Str_Printf(n, sizeof(n), "%d", i);
 	SaveVar_Set("GameSkill", n);
 	Script_Call("Menu", "BackToGame", "(is)", id, control);
+	if (i > 2) {
+		PyErr_SetString(PyExc_IndexError, "tuple index out of range");
+		return NULL;
+	}
+	if (i < 0) {
+		i += 3;
+	}
 	Main_Format(Script_Lang("Menu_Skill_SystemMessage"), Script_Lang(main_skills[i]), text, sizeof(text));
 	Scorer_SetMsgText(text, Timer_GetTime(&g_pWorld->timer) + 5.0f, "Horatio");
 	return Py_ReturnNone();
