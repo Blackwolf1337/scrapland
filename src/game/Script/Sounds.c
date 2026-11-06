@@ -116,18 +116,8 @@ static const char testcsound_def[] = {
 #embed "../../../data/sound/testcsound.def"
 	, 0 };
 
-/* print <text>: a line on the console, as the script's print */
-static void Step_Print(int id, PyObject *args) {
-	char *text;
-	(void)id;
-	PyObject *out = PySys_GetObject("stdout");
-	if (!PyArg_ParseTuple(args, "s", &text) || !out || PyFile_WriteString(text, out) < 0 || PyFile_WriteString("\n", out) < 0) {
-		PyErr_Print();
-	}
-}
-
 static const scriptStep_t sound_steps[] = {
-	{ "print", Step_Print },
+	{ "print", Script_StepPrint },
 	{ NULL, NULL },
 };
 

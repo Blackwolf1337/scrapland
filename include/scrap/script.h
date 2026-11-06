@@ -36,6 +36,9 @@ typedef struct scriptStep_s {
 byte Script_RunFile(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
 	PyObject *vars);
 
+/* the step "print <text>" of .def files: a line on the console, as a script's print */
+void Script_StepPrint(int id, PyObject *args);
+
 /* the last item of the .def file that runs ("" when none runs), for its steps */
 const char *Script_CurrentItem(void);
 /* a $name of the .def file that runs, for its steps (value given away) */
@@ -189,6 +192,8 @@ extern PyMethodDef g_CharActMethods[];
 extern PyMethodDef g_SpeechMethods[];
 /* the C SaveGame module (src/game/Script/SaveGame.c) */
 extern PyMethodDef g_SaveGameMethods[];
+/* the C Fx module (src/game/Script/Fx.c, data/fx/fx.def) */
+extern PyMethodDef g_FxMethods[];
 /* the sound scripts of the characters (src/game/Script/Sounds.c, data/sound/) */
 extern PyMethodDef g_BankDirectorSoundMethods[];
 extern PyMethodDef g_BankMasterSoundMethods[];

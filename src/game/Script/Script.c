@@ -74,6 +74,7 @@ static const scriptModule_t script_modules[] = {
 	{ "CharAct", g_CharActMethods },
 	{ "Speech", g_SpeechMethods },
 	{ "SaveGame", g_SaveGameMethods },
+	{ "Fx", g_FxMethods },
 	{ "BankDirectorSound", g_BankDirectorSoundMethods },
 	{ "BankMasterSound", g_BankMasterSoundMethods },
 	{ "BertoSound", g_BertoSoundMethods },
@@ -430,6 +431,15 @@ PyObject *Script_Ask(const char *module, const char *func, const char *fmt, ...)
 	PyObject *r = Script_Invoke(f, args);
 	Py_XDECREF(f);
 	return r;
+}
+
+void Script_StepPrint(int id, PyObject *args) {
+	char *text;
+	(void)id;
+	PyObject *out = PySys_GetObject("stdout");
+	if (!PyArg_ParseTuple(args, "s", &text) || !out || PyFile_WriteString(text, out) < 0 || PyFile_WriteString("\n", out) < 0) {
+		PyErr_Print();
+	}
 }
 
 PyObject *Script_Method(PyObject *obj, const char *name, const char *fmt, ...) {
