@@ -1,6 +1,6 @@
 {
  "title": "ScrapC progress",
- "date": "2026-11-06",
+ "date": "2026-11-07",
  "steps": [
   {
    "step": 1,
@@ -155,9 +155,16 @@
     {
      "item": "Python interpreter removed",
      "weight": 3,
+     "percent": 20,
+     "status": "in progress",
+     "note": "stages 0 and 5 of 8 done: pack module gate, C modules, console in C"
+    },
+    {
+     "item": "Python object library removed",
+     "weight": 3,
      "percent": 0,
      "status": "not started",
-     "note": "module code and module variables still run in Python"
+     "note": "the C ports move from PyObject to native C types after the interpreter"
     }
    ]
   },
