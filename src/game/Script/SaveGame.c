@@ -187,11 +187,12 @@ static PyObject *SaveGame_InitVars(PyObject *self, PyObject *args) {
 
 /* MarkWayPoint(Map, Spawn, ExtraComeFrom=""): where the game goes on, the character and its batteries, the alarm and
  * the money */
-static PyObject *SaveGame_MarkWayPoint(PyObject *self, PyObject *args) {
+static PyObject *SaveGame_MarkWayPoint(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "Map", "Spawn", "ExtraComeFrom", NULL };
 	scriptRefs_t r = { .n = 0 };
 	PyObject *map, *spawn, *from = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "OO|O", &map, &spawn, &from)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|O", names, &map, &spawn, &from)) {
 		return NULL;
 	}
 	if (!from) {
@@ -248,11 +249,12 @@ static PyObject *SaveGame_QWayPoint(PyObject *self, PyObject *args) {
 /* ---- the level change ---- */
 
 /* QLoad(MapName, useGameplayTime=1): the level after this frame, the music and voices off, the gameplay time kept */
-static PyObject *SaveGame_QLoad(PyObject *self, PyObject *args) {
+static PyObject *SaveGame_QLoad(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "MapName", "useGameplayTime", NULL };
 	scriptRefs_t r = { .n = 0 };
 	PyObject *map, *useTime = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "O|O", &map, &useTime) || !Script_Import((const char *const[]){ "string", NULL })) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O", names, &map, &useTime) || !Script_Import((const char *const[]){ "string", NULL })) {
 		return NULL;
 	}
 	PyObject *sm3 = K(Script_PlusS(Script_Ref(map), "/Map/Map3D.SM3"));
@@ -334,11 +336,12 @@ static PyObject *SaveGame_QLoad(PyObject *self, PyObject *args) {
 
 /* StartGame(CleanChallenge=1, CleanRevenge=0): the map of the save game, the current one becomes the previous one,
  * the challenge (and the revenge) cleaned unless kept */
-static PyObject *SaveGame_StartGame(PyObject *self, PyObject *args) {
+static PyObject *SaveGame_StartGame(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "CleanChallenge", "CleanRevenge", NULL };
 	scriptRefs_t r = { .n = 0 };
 	PyObject *cleanChallenge = NULL, *cleanRevenge = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "|OO", &cleanChallenge, &cleanRevenge) ||
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|OO", names, &cleanChallenge, &cleanRevenge) ||
 		!Script_Import((const char *const[]){ "Init", "Challenge", NULL })) {
 		return NULL;
 	}
@@ -374,11 +377,12 @@ static PyObject *SaveGame_Restart(PyObject *self, PyObject *args) {
 
 /* InstantSaveGame(iSlot, showMsgOnFailure=1): the game into Save/Save<n>.sav with the map and the gameplay time as its
  * name, the message of the result, the autosave slot 0 too */
-static PyObject *SaveGame_InstantSaveGame(PyObject *self, PyObject *args) {
+static PyObject *SaveGame_InstantSaveGame(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "iSlot", "showMsgOnFailure", NULL };
 	scriptRefs_t r = { .n = 0 };
 	PyObject *slot, *show = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "O|O", &slot, &show) ||
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O", names, &slot, &show) ||
 		!Script_Import((const char *const[]){ "string", "Speech", "Init", NULL }) ||
 		!SG_SetSaveS("AutoSaveGameOnLoad", "0") || !SG_Call("QWayPoint", "()")) {
 		return NULL;
@@ -760,18 +764,18 @@ PyMethodDef g_SaveGameMethods[] = {
 	{ "MMDesc", SaveGame_MMDesc, 1, NULL },
 	{ "SMDesc", SaveGame_SMDesc, 1, NULL },
 	{ "SaveGame", SaveGame_SaveGame, 1, NULL },
-	{ "InstantSaveGame", SaveGame_InstantSaveGame, 1, NULL },
+	{ "InstantSaveGame", (PyCFunction)(void (*)(void))SaveGame_InstantSaveGame, 3, NULL },
 	{ "LoadGame", SaveGame_LoadGame, 1, NULL },
 	{ "NewGame", SaveGame_NewGame, 1, NULL },
 	{ "CheckAllBlueprints", SaveGame_CheckAllBlueprints, 1, NULL },
-	{ "MarkWayPoint", SaveGame_MarkWayPoint, 1, NULL },
+	{ "MarkWayPoint", (PyCFunction)(void (*)(void))SaveGame_MarkWayPoint, 3, NULL },
 	{ "QWayPoint", SaveGame_QWayPoint, 1, NULL },
 	{ "SaveAlarm", SaveGame_SaveAlarm, 1, NULL },
 	{ "LoadAlarm", SaveGame_LoadAlarm, 1, NULL },
 	{ "SaveMoney", SaveGame_SaveMoney, 1, NULL },
 	{ "LoadMoney", SaveGame_LoadMoney, 1, NULL },
-	{ "QLoad", SaveGame_QLoad, 1, NULL },
-	{ "StartGame", SaveGame_StartGame, 1, NULL },
+	{ "QLoad", (PyCFunction)(void (*)(void))SaveGame_QLoad, 3, NULL },
+	{ "StartGame", (PyCFunction)(void (*)(void))SaveGame_StartGame, 3, NULL },
 	{ "Restart", SaveGame_Restart, 1, NULL },
 	{ "QSaveReg", SaveGame_QSaveReg, 1, NULL },
 	{ "SaveReg", SaveGame_SaveReg, 1, NULL },

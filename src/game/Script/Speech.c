@@ -239,10 +239,11 @@ static byte Sp_StopTalk(PyObject *e) {
 }
 
 /* AbortSpeech(UsrName="", CharName="", extrangextra=""): the speech ends, both go back to what they did */
-static PyObject *Speech_AbortSpeech(PyObject *self, PyObject *args) {
+static PyObject *Speech_AbortSpeech(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "UsrName", "CharName", "extrangextra", NULL };
 	PyObject *a = NULL, *b = NULL, *c = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "|OOO", &a, &b, &c)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|OOO", names, &a, &b, &c)) {
 		return NULL;
 	}
 	PyObject *me = Sp_Entity("PlayerName"), *ch = me ? Sp_Entity("NPCName") : NULL;
@@ -311,14 +312,15 @@ static PyObject *Speech_NormalAbortSpeech(PyObject *self, PyObject *args) {
 		Py_XDECREF(cam);
 	}
 	Py_DECREF(me);
-	return ok ? Speech_AbortSpeech(NULL, PyTuple_New(0)) : NULL;
+	return ok ? Speech_AbortSpeech(NULL, PyTuple_New(0), NULL) : NULL;
 }
 
 /* AbortNPCSpeech(UsrName="", CharName=""): prints the names */
-static PyObject *Speech_AbortNPCSpeech(PyObject *self, PyObject *args) {
+static PyObject *Speech_AbortNPCSpeech(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "UsrName", "CharName", NULL };
 	PyObject *a = NULL, *b = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "|OO", &a, &b)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|OO", names, &a, &b)) {
 		return NULL;
 	}
 	PyObject *out = PySys_GetObject("stdout");
@@ -333,10 +335,11 @@ static PyObject *Speech_AbortNPCSpeech(PyObject *self, PyObject *args) {
 /* ---- the answer ---- */
 
 /* PerformAnswer(SpeechText, Time=6): the character answers with its voice */
-static PyObject *Speech_PerformAnswer(PyObject *self, PyObject *args) {
+static PyObject *Speech_PerformAnswer(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "SpeechText", "Time", NULL };
 	PyObject *text, *time = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "O|O", &text, &time)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O", names, &text, &time)) {
 		return NULL;
 	}
 	PyObject *six = time ? NULL : PyInt_FromLong(6);
@@ -361,7 +364,7 @@ static PyObject *Speech_PerformAnswer(PyObject *self, PyObject *args) {
 		Py_XDECREF(name);
 		Py_XDECREF(rest);
 	} else if (answers == 0) {
-		PyObject *a = Speech_AbortSpeech(NULL, PyTuple_New(0));
+		PyObject *a = Speech_AbortSpeech(NULL, PyTuple_New(0), NULL);
 		if (a) {
 			Py_DECREF(a);
 			Script_SetVar("Speech", "AnsAnima", PyString_FromString("TalkNPC"));
@@ -549,10 +552,11 @@ static PyObject *Speech_SetPlayerToTalk(PyObject *self, PyObject *args) {
 
 /* OnSpeech(SpeechText, SpeechAnswer="", _AnsAnima_="TalkNPC"): the player says the text, the character listens and
  * answers when it ends (AutoAnswer); 1 when the speech starts */
-static PyObject *Speech_OnSpeech(PyObject *self, PyObject *args) {
+static PyObject *Speech_OnSpeech(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "SpeechText", "SpeechAnswer", "_AnsAnima_", NULL };
 	PyObject *text, *ans = NULL, *anima = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "O|OO", &text, &ans, &anima)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|OO", names, &text, &ans, &anima)) {
 		return NULL;
 	}
 	PyObject *noAns = ans ? NULL : PyString_FromString(""), *talk = anima ? NULL : PyString_FromString("TalkNPC");
@@ -614,16 +618,17 @@ static PyObject *Speech_OnSpeech(PyObject *self, PyObject *args) {
 
 /* OnSpch(LngSpeechText, LngSpeechAnswer, _AnsAnima_="TalkNPC"): a speech by the keys of the language file, with the
  * voices of both */
-static PyObject *Speech_OnSpch(PyObject *self, PyObject *args) {
+static PyObject *Speech_OnSpch(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "LngSpeechText", "LngSpeechAnswer", "_AnsAnima_", NULL };
 	PyObject *text, *ans, *anima = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "SS|O", &text, &ans, &anima)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|O", names, &text, &ans, &anima)) {
 		return NULL;
 	}
-	PyObject *me = Sp_Lang(PyString_AsString(text)), *you = me ? Sp_Lang(PyString_AsString(ans)) : NULL;
+	PyObject *me = Script_LangOf(Script_Ref(text)), *you = me ? Script_LangOf(Script_Ref(ans)) : NULL;
 	PyObject *a = you && Sp_OpenVoice(text, 0) && Sp_OpenVoice(ans, 1) ?
 		(anima ? Py_BuildValue("(OOO)", me, you, anima) : Py_BuildValue("(OO)", me, you)) : NULL;
-	PyObject *r = a ? Speech_OnSpeech(NULL, a) : NULL;
+	PyObject *r = a ? Speech_OnSpeech(NULL, a, NULL) : NULL;
 	Py_XDECREF(a);
 	Py_XDECREF(me);
 	Py_XDECREF(you);
@@ -643,22 +648,23 @@ static PyObject *Speech_OnChallengeSpch(PyObject *self, PyObject *args, PyObject
 	int isMerc = merc ? Script_NumCmp(merc, 1) == 0 : 0;
 	PyObject *a = you && Sp_OpenVoiceStr(isMerc ? "ChallengeRaceStdOpt2Voice" : "ChallengeRaceStdOpt1Voice", 0) &&
 		Sp_OpenVoice(ans, 1) ? (anima ? Py_BuildValue("(OOO)", text, you, anima) : Py_BuildValue("(OO)", text, you)) : NULL;
-	PyObject *r = a ? Speech_OnSpeech(NULL, a) : NULL;
+	PyObject *r = a ? Speech_OnSpeech(NULL, a, NULL) : NULL;
 	Py_XDECREF(a);
 	Py_XDECREF(you);
 	return r;
 }
 
 /* StdOnSpch(optId, _AnsAnima_="TalkNPC"): the speech of an option, the arrow on the next option */
-static PyObject *Speech_StdOnSpch(PyObject *self, PyObject *args) {
+static PyObject *Speech_StdOnSpch(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "optId", "_AnsAnima_", NULL };
 	PyObject *opt, *anima = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "O|O", &opt, &anima)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O", names, &opt, &anima)) {
 		return NULL;
 	}
 	PyObject *msg = Sp_Cat(opt, "Msg"), *ans = msg ? Sp_Cat(opt, "Ans") : NULL;
 	PyObject *a = ans ? (anima ? Py_BuildValue("(OOO)", msg, ans, anima) : Py_BuildValue("(OO)", msg, ans)) : NULL;
-	PyObject *r = a ? Speech_OnSpch(NULL, a) : NULL;
+	PyObject *r = a ? Speech_OnSpch(NULL, a, NULL) : NULL;
 	Py_XDECREF(a);
 	Py_XDECREF(msg);
 	Py_XDECREF(ans);
@@ -833,7 +839,7 @@ static PyObject *Speech_AutoSpeech(PyObject *self, PyObject *args) {
 		char ans[0x20];
 		Str_Printf(ans, sizeof(ans), "StdAnsw%d", (int)Scrap_RandRange(0, 2.9));
 		PyObject *a = Py_BuildValue("(ss)", "TalkMsg", ans);
-		r = a ? Speech_OnSpch(NULL, a) : NULL;
+		r = a ? Speech_OnSpch(NULL, a, NULL) : NULL;
 		Py_XDECREF(a);
 		if (r) {
 			Py_DECREF(r);
@@ -871,10 +877,11 @@ static PyObject *Sp_Usr(void) {
 }
 
 /* NISpeech(headName=""): a non-interactive talk starts, the end of the speech waits until it is over */
-static PyObject *Speech_NISpeech(PyObject *self, PyObject *args) {
+static PyObject *Speech_NISpeech(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "headName", NULL };
 	PyObject *head = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "|O", &head)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &head)) {
 		return NULL;
 	}
 	PyObject *end = Sp_Get("OnEndOfSpeech"), *params = end ? Sp_Get("OnEndOfSpeechParams") : NULL;
@@ -891,10 +898,11 @@ static PyObject *Speech_NISpeech(PyObject *self, PyObject *args) {
 
 /* AddNI(LngSpeechText, LngSpeechAnswer, _AnsAnima_="TalkNPC", HeadName=None): a line of the talk (the head of the
  * talk unless one is given) */
-static PyObject *Speech_AddNI(PyObject *self, PyObject *args) {
+static PyObject *Speech_AddNI(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "LngSpeechText", "LngSpeechAnswer", "_AnsAnima_", "HeadName", NULL };
 	PyObject *text, *ans, *anima = NULL, *head = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "OO|OO", &text, &ans, &anima, &head)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|OO", names, &text, &ans, &anima, &head)) {
 		return NULL;
 	}
 	PyObject *h = head && PyObject_IsTrue(head) > 0 ? (Py_INCREF(head), head) : Sp_Get("NISpeechHeadName");
@@ -916,10 +924,11 @@ static PyObject *Speech_AddNI(PyObject *self, PyObject *args) {
 }
 
 /* AutoAddNI(TextBase, _AnsAnima_="TalkNPC", HeadName=None): the lines Msg/Ans of the language entries of a base */
-static PyObject *Speech_AutoAddNI(PyObject *self, PyObject *args) {
+static PyObject *Speech_AutoAddNI(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "TextBase", "_AnsAnima_", "HeadName", NULL };
 	PyObject *base, *anima = NULL, *head = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "O|OO", &base, &anima, &head)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|OO", names, &base, &anima, &head)) {
 		return NULL;
 	}
 	PyObject *keys = Script_Ask("Scrap", "GetLangEntries", "(Oi)", base, 2);
@@ -935,7 +944,7 @@ static PyObject *Speech_AutoAddNI(PyObject *self, PyObject *args) {
 			Py_DECREF(a);
 			a = t;
 		}
-		PyObject *r = a ? Speech_AddNI(NULL, a) : NULL;
+		PyObject *r = a ? Speech_AddNI(NULL, a, NULL) : NULL;
 		ok = r != NULL;
 		Py_XDECREF(r);
 		Py_XDECREF(a);
@@ -947,13 +956,14 @@ static PyObject *Speech_AutoAddNI(PyObject *self, PyObject *args) {
 	return ok ? Py_ReturnNone() : NULL;
 }
 
-static PyObject *Speech_OnObjSpch(PyObject *self, PyObject *args);
+static PyObject *Speech_OnObjSpch(PyObject *self, PyObject *args, PyObject *kw);
 
 /* RunNI(i=0): line i of the talk; the next one when it ends, after the last the end of the talk */
-static PyObject *Speech_RunNI(PyObject *self, PyObject *args) {
+static PyObject *Speech_RunNI(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "i", NULL };
 	PyObject *iv = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "|O", &iv)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &iv)) {
 		return NULL;
 	}
 	PyObject *zero = iv ? NULL : PyInt_FromLong(0);
@@ -980,7 +990,7 @@ static PyObject *Speech_RunNI(PyObject *self, PyObject *args) {
 		Py_XDECREF(w);
 		if (ok && isWch) {
 			PyObject *a = PySequence_GetSlice(line, 0, 3);
-			PyObject *r = a ? Speech_OnSpch(NULL, a) : NULL;
+			PyObject *r = a ? Speech_OnSpch(NULL, a, NULL) : NULL;
 			ok = r && Script_HSet(ch, "Invulnerable", PyInt_FromLong(1));
 			Py_XDECREF(r);
 			Py_XDECREF(a);
@@ -990,7 +1000,7 @@ static PyObject *Speech_RunNI(PyObject *self, PyObject *args) {
 			PyObject *ans = t ? PySequence_GetItem(line, 1) : NULL;
 			PyObject *a = ans && me && Script_HSet(me, "SelectedEntity", Sp_Get("NPCName")) ?
 				Py_BuildValue("(OOOO)", ch, head, t, ans) : NULL;
-			PyObject *r = a ? Speech_OnObjSpch(NULL, a) : NULL;
+			PyObject *r = a ? Speech_OnObjSpch(NULL, a, NULL) : NULL;
 			PyObject *cur = r ? Sp_Get("NISpeechHeadName") : NULL;
 			ok = cur != NULL;
 			if (ok && PyObject_Compare(head, cur) != 0) {
@@ -1172,10 +1182,11 @@ static byte Sp_ForceRemoteComunication(PyObject *text, PyObject *head, PyObject 
 }
 
 /* the arguments (SpeechText, HeadName, HeadIndex=1, AfterRemoteComFunc=None, Parameters=()) */
-static byte Sp_RemoteArgs(PyObject *args, PyObject **text, PyObject **head, PyObject **index, PyObject **after,
+static byte Sp_RemoteArgs(PyObject *args, PyObject *kw, PyObject **text, PyObject **head, PyObject **index, PyObject **after,
 	PyObject **params, PyObject **own) {
+	static char *names[] = { "SpeechText", "HeadName", "HeadIndex", "AfterRemoteComFunc", "Parameters", NULL };
 	*index = *after = *params = NULL;
-	if (!PyArg_ParseTuple(args, "OO|OOO", text, head, index, after, params)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|OOO", names, text, head, index, after, params)) {
 		return 0;
 	}
 	own[0] = *index ? NULL : PyInt_FromLong(1);
@@ -1192,10 +1203,10 @@ static byte Sp_RemoteArgs(PyObject *args, PyObject **text, PyObject **head, PyOb
 	return *index && *params;
 }
 
-static PyObject *Speech_ForceRemoteComunication(PyObject *self, PyObject *args) {
+static PyObject *Speech_ForceRemoteComunication(PyObject *self, PyObject *args, PyObject *kw) {
 	PyObject *text, *head, *index, *after, *params, *own[2] = { NULL, NULL };
 	(void)self;
-	byte ok = Sp_RemoteArgs(args, &text, &head, &index, &after, &params, own) &&
+	byte ok = Sp_RemoteArgs(args, kw, &text, &head, &index, &after, &params, own) &&
 		Sp_ForceRemoteComunication(text, head, index, after, params);
 	Py_XDECREF(own[0]);
 	Py_XDECREF(own[1]);
@@ -1214,10 +1225,10 @@ static byte Sp_ForceRemoteComInternal(PyObject *text, PyObject *head, PyObject *
 	return ok;
 }
 
-static PyObject *Speech_ForceRemoteComInternal(PyObject *self, PyObject *args) {
+static PyObject *Speech_ForceRemoteComInternal(PyObject *self, PyObject *args, PyObject *kw) {
 	PyObject *text, *head, *index, *after, *params, *own[2] = { NULL, NULL };
 	(void)self;
-	byte ok = Sp_RemoteArgs(args, &text, &head, &index, &after, &params, own) &&
+	byte ok = Sp_RemoteArgs(args, kw, &text, &head, &index, &after, &params, own) &&
 		Sp_ForceRemoteComInternal(text, head, index, after, params);
 	Py_XDECREF(own[0]);
 	Py_XDECREF(own[1]);
@@ -1233,10 +1244,10 @@ static int Sp_RemoteComunication(PyObject *text, PyObject *head, PyObject *index
 	return doit;
 }
 
-static PyObject *Speech_RemoteComunication(PyObject *self, PyObject *args) {
+static PyObject *Speech_RemoteComunication(PyObject *self, PyObject *args, PyObject *kw) {
 	PyObject *text, *head, *index, *after, *params, *own[2] = { NULL, NULL };
 	(void)self;
-	int r = Sp_RemoteArgs(args, &text, &head, &index, &after, &params, own) ?
+	int r = Sp_RemoteArgs(args, kw, &text, &head, &index, &after, &params, own) ?
 		Sp_RemoteComunication(text, head, index, after, params) : -1;
 	Py_XDECREF(own[0]);
 	Py_XDECREF(own[1]);
@@ -1375,10 +1386,11 @@ static byte Sp_AddRemoteCom(PyObject *text, PyObject *head, PyObject *after, PyO
 	return ok;
 }
 
-static PyObject *Speech_AddRemoteCom(PyObject *self, PyObject *args) {
+static PyObject *Speech_AddRemoteCom(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "SpeechText", "HeadName", "AfterRemoteComFunc", "Parameters", "HeadIndex", "InsertFirst", NULL };
 	PyObject *text, *head, *after = Py_None, *params = NULL, *index = NULL, *first = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "OO|OOOO", &text, &head, &after, &params, &index, &first)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|OOOO", names, &text, &head, &after, &params, &index, &first)) {
 		return NULL;
 	}
 	PyObject *p = params ? (Py_INCREF(params), params) : PyTuple_New(0), *i = index ? (Py_INCREF(index), index) : PyInt_FromLong(1);
@@ -1389,10 +1401,10 @@ static PyObject *Speech_AddRemoteCom(PyObject *self, PyObject *args) {
 }
 
 /* ForceRemoteCom(...): the message first in the queue, the current speech ends */
-static PyObject *Speech_ForceRemoteCom(PyObject *self, PyObject *args) {
+static PyObject *Speech_ForceRemoteCom(PyObject *self, PyObject *args, PyObject *kw) {
 	PyObject *text, *head, *index, *after, *params, *own[2] = { NULL, NULL };
 	(void)self;
-	byte ok = Sp_RemoteArgs(args, &text, &head, &index, &after, &params, own) &&
+	byte ok = Sp_RemoteArgs(args, kw, &text, &head, &index, &after, &params, own) &&
 		Sp_AddRemoteCom(text, head, after, params, index, 1) && Script_Try("SScorer", "CancelSpeech", "()");
 	Py_XDECREF(own[0]);
 	Py_XDECREF(own[1]);
@@ -1518,10 +1530,11 @@ static PyObject *Speech_StartObjectSpeech(PyObject *self, PyObject *args) {
 }
 
 /* StartObjSpch(obj, text, charType, speechCallback="Speech.EndObjectAnswer"): with the voice of the text */
-static PyObject *Speech_StartObjSpch(PyObject *self, PyObject *args) {
+static PyObject *Speech_StartObjSpch(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "obj", "text", "charType", "speechCallback", NULL };
 	PyObject *obj, *text, *type, *cb = NULL;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "OSO|O", &obj, &text, &type, &cb)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OSO|O", names, &obj, &text, &type, &cb)) {
 		return NULL;
 	}
 	PyObject *def = cb ? NULL : PyString_FromString("Speech.EndObjectAnswer"), *empty = PyString_FromString("");
@@ -1596,10 +1609,11 @@ static void Sp_TalkDefaults(PyObject **action, PyObject **defLoop, PyObject **ow
 	}
 }
 
-static PyObject *Speech_OnObjectSpeech(PyObject *self, PyObject *args) {
+static PyObject *Speech_OnObjectSpeech(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "_ObjEntity", "_ObjCharType", "SpeechText", "SpeechAnswer", "action", "defLoop", NULL };
 	PyObject *obj, *type, *text, *ans, *action = NULL, *defLoop = NULL, *own[2];
 	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO|OO", &obj, &type, &text, &ans, &action, &defLoop)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOOO|OO", names, &obj, &type, &text, &ans, &action, &defLoop)) {
 		return NULL;
 	}
 	Sp_TalkDefaults(&action, &defLoop, own);
@@ -1611,10 +1625,11 @@ static PyObject *Speech_OnObjectSpeech(PyObject *self, PyObject *args) {
 
 /* OnObjSpch(_ObjEntity, _ObjCharType, SpeechText, SpeechAnswer, action="Talk", defLoop="Talk"): by the keys of the
  * language file, with the voices */
-static PyObject *Speech_OnObjSpch(PyObject *self, PyObject *args) {
+static PyObject *Speech_OnObjSpch(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "_ObjEntity", "_ObjCharType", "SpeechText", "SpeechAnswer", "action", "defLoop", NULL };
 	PyObject *obj, *type, *text, *ans, *action = NULL, *defLoop = NULL, *own[2];
 	(void)self;
-	if (!PyArg_ParseTuple(args, "OOSS|OO", &obj, &type, &text, &ans, &action, &defLoop)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOSS|OO", names, &obj, &type, &text, &ans, &action, &defLoop)) {
 		return NULL;
 	}
 	Sp_TalkDefaults(&action, &defLoop, own);
@@ -1634,16 +1649,17 @@ static PyObject *Speech_OnObjSpch(PyObject *self, PyObject *args) {
 }
 
 /* StdObjSpch(_ObjEntity, _ObjCharType, optId, action="Talk", defLoop="Talk") */
-static PyObject *Speech_StdObjSpch(PyObject *self, PyObject *args) {
+static PyObject *Speech_StdObjSpch(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "_ObjEntity", "_ObjCharType", "optId", "action", "defLoop", NULL };
 	PyObject *obj, *type, *opt, *action = NULL, *defLoop = NULL, *own[2];
 	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO|OO", &obj, &type, &opt, &action, &defLoop)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOO|OO", names, &obj, &type, &opt, &action, &defLoop)) {
 		return NULL;
 	}
 	Sp_TalkDefaults(&action, &defLoop, own);
 	PyObject *msg = Sp_Cat(opt, "Msg"), *ans = msg ? Sp_Cat(opt, "Ans") : NULL;
 	PyObject *a = ans ? Py_BuildValue("(OOOOOO)", obj, type, msg, ans, action, defLoop) : NULL;
-	PyObject *r = a ? Speech_OnObjSpch(NULL, a) : NULL;
+	PyObject *r = a ? Speech_OnObjSpch(NULL, a, NULL) : NULL;
 	Py_XDECREF(a);
 	Py_XDECREF(msg);
 	Py_XDECREF(ans);
@@ -1731,50 +1747,50 @@ static PyObject *Speech_EndObjectAnswer(PyObject *self, PyObject *args) {
 PyMethodDef g_SpeechMethods[] = {
 	{ "ScheduledVoiceCallback", Speech_ScheduledVoiceCallback, 1, NULL },
 	{ "PlayVoiceScheduled", Speech_PlayVoiceScheduled, 1, NULL },
-	{ "PerformAnswer", Speech_PerformAnswer, 1, NULL },
+	{ "PerformAnswer", (PyCFunction)(void (*)(void))Speech_PerformAnswer, 3, NULL },
 	{ "NormalAbortSpeech", Speech_NormalAbortSpeech, 1, NULL },
 	{ "CallEndOfSpeech", Speech_CallEndOfSpeech, 1, NULL },
-	{ "AbortSpeech", Speech_AbortSpeech, 1, NULL },
+	{ "AbortSpeech", (PyCFunction)(void (*)(void))Speech_AbortSpeech, 3, NULL },
 	{ "RestoreState", Speech_RestoreState, 1, NULL },
-	{ "AbortNPCSpeech", Speech_AbortNPCSpeech, 1, NULL },
+	{ "AbortNPCSpeech", (PyCFunction)(void (*)(void))Speech_AbortNPCSpeech, 3, NULL },
 	{ "AutoAnswer", Speech_AutoAnswer, 1, NULL },
 	{ "StopMenuEvents", Speech_StopMenuEvents, 1, NULL },
 	{ "RestartMenuEvents", Speech_RestartMenuEvents, 1, NULL },
 	{ "RestoreMoveTime", Speech_RestoreMoveTime, 1, NULL },
 	{ "StdAnsLst", Speech_StdAnsLst, 1, NULL },
-	{ "StdOnSpch", Speech_StdOnSpch, 1, NULL },
+	{ "StdOnSpch", (PyCFunction)(void (*)(void))Speech_StdOnSpch, 3, NULL },
 	{ "CalculateSpeechTime", Speech_CalculateSpeechTime, 1, NULL },
-	{ "OnSpch", Speech_OnSpch, 1, NULL },
+	{ "OnSpch", (PyCFunction)(void (*)(void))Speech_OnSpch, 3, NULL },
 	{ "OnChallengeSpch", (PyCFunction)(void (*)(void))Speech_OnChallengeSpch, 3, NULL },
-	{ "OnSpeech", Speech_OnSpeech, 1, NULL },
+	{ "OnSpeech", (PyCFunction)(void (*)(void))Speech_OnSpeech, 3, NULL },
 	{ "PlayerAnsEnd", Speech_PlayerAnsEnd, 1, NULL },
 	{ "PlayerAns", Speech_PlayerAns, 1, NULL },
 	{ "SetPlayerToTalk", Speech_SetPlayerToTalk, 1, NULL },
 	{ "InspectChar", Speech_InspectChar, 1, NULL },
 	{ "AutoSpeech", Speech_AutoSpeech, 1, NULL },
-	{ "NISpeech", Speech_NISpeech, 1, NULL },
-	{ "AutoAddNI", Speech_AutoAddNI, 1, NULL },
-	{ "AddNI", Speech_AddNI, 1, NULL },
-	{ "RunNI", Speech_RunNI, 1, NULL },
+	{ "NISpeech", (PyCFunction)(void (*)(void))Speech_NISpeech, 3, NULL },
+	{ "AutoAddNI", (PyCFunction)(void (*)(void))Speech_AutoAddNI, 3, NULL },
+	{ "AddNI", (PyCFunction)(void (*)(void))Speech_AddNI, 3, NULL },
+	{ "RunNI", (PyCFunction)(void (*)(void))Speech_RunNI, 3, NULL },
 	{ "ObjNIEnd", Speech_ObjNIEnd, 1, NULL },
 	{ "LaunchTaunt", Speech_LaunchTaunt, 1, NULL },
 	{ "RestoreSpeech", Speech_RestoreSpeech, 1, NULL },
 	{ "DoRemote", Speech_DoRemote, 1, NULL },
 	{ "OffVoice", Speech_OffVoice, 1, NULL },
-	{ "RemoteComunication", Speech_RemoteComunication, 1, NULL },
-	{ "ForceRemoteComInternal", Speech_ForceRemoteComInternal, 1, NULL },
-	{ "ForceRemoteCom", Speech_ForceRemoteCom, 1, NULL },
-	{ "ForceRemoteComunication", Speech_ForceRemoteComunication, 1, NULL },
-	{ "AddRemoteCom", Speech_AddRemoteCom, 1, NULL },
+	{ "RemoteComunication", (PyCFunction)(void (*)(void))Speech_RemoteComunication, 3, NULL },
+	{ "ForceRemoteComInternal", (PyCFunction)(void (*)(void))Speech_ForceRemoteComInternal, 3, NULL },
+	{ "ForceRemoteCom", (PyCFunction)(void (*)(void))Speech_ForceRemoteCom, 3, NULL },
+	{ "ForceRemoteComunication", (PyCFunction)(void (*)(void))Speech_ForceRemoteComunication, 3, NULL },
+	{ "AddRemoteCom", (PyCFunction)(void (*)(void))Speech_AddRemoteCom, 3, NULL },
 	{ "ProcessRemoteCom", Speech_ProcessRemoteCom, 1, NULL },
 	{ "CancelRemoteCom", Speech_CancelRemoteCom, 1, NULL },
 	{ "TestInRange", Speech_TestInRange, 1, NULL },
-	{ "StartObjSpch", Speech_StartObjSpch, 1, NULL },
+	{ "StartObjSpch", (PyCFunction)(void (*)(void))Speech_StartObjSpch, 3, NULL },
 	{ "StartObjectSpeech", Speech_StartObjectSpeech, 1, NULL },
-	{ "StdObjSpch", Speech_StdObjSpch, 1, NULL },
-	{ "OnObjSpch", Speech_OnObjSpch, 1, NULL },
+	{ "StdObjSpch", (PyCFunction)(void (*)(void))Speech_StdObjSpch, 3, NULL },
+	{ "OnObjSpch", (PyCFunction)(void (*)(void))Speech_OnObjSpch, 3, NULL },
 	{ "OnChallengeObjSpch", (PyCFunction)(void (*)(void))Speech_OnChallengeObjSpch, 3, NULL },
-	{ "OnObjectSpeech", Speech_OnObjectSpeech, 1, NULL },
+	{ "OnObjectSpeech", (PyCFunction)(void (*)(void))Speech_OnObjectSpeech, 3, NULL },
 	{ "ObjectAutoAnswer", Speech_ObjectAutoAnswer, 1, NULL },
 	{ "ObjectAutoAnswer2", Speech_ObjectAutoAnswer2, 1, NULL },
 	{ "EndObjectAnswer", Speech_EndObjectAnswer, 1, NULL },
