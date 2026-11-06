@@ -287,6 +287,20 @@ byte Sf_Unpack(scriptFrame_t *f, PyObject *v, int n, PyObject **out);
 byte Sf_Exec(scriptFrame_t *f, PyObject *code, const char *module, PyObject *locals);
 /* eval(text) in a function of module (the module's globals; the expressions of the scripts are literals) */
 PyObject *Sf_Eval(scriptFrame_t *f, PyObject *text, const char *module);
+/* callable(Py_BuildValue args) as a statement of a script: the result is dropped at once (no reference kept) */
+byte Sf_Line(scriptFrame_t *f, PyObject *callable, const char *fmt, ...);
+/* the C string of a text of the script, an item name: another value raises the TypeError of the name argument of
+ * the SScorer functions; NULL after an error */
+const char *Sf_Text(scriptFrame_t *f, PyObject *o);
+/* SScorer.Set(id, item, var, v) as a line of a script: a text, a number or (any other value) the engine function
+ * with its TypeError; the same with a C number and a C text; 0 after an error */
+byte Sf_ScorerSet(scriptFrame_t *f, int id, const char *item, const char *var, PyObject *v);
+byte Sf_ScorerNum(scriptFrame_t *f, int id, const char *item, const char *var, double d);
+byte Sf_ScorerStr(scriptFrame_t *f, int id, const char *item, const char *var, const char *s);
+/* SScorer.Get(id, item, var) as a number (0 when the item or the variable is not there), nothing after an error */
+double Sf_ScorerGet(scriptFrame_t *f, int id, const char *item, const char *var);
+/* SScorer.SetDefault(id, item), nothing after an error */
+byte Sf_ScorerDefault(scriptFrame_t *f, int id, const char *item);
 
 /* the C video options of PCMenu (src/game/Script/MenuVideo.c) */
 extern PyMethodDef g_MenuVideoMethods[];
@@ -458,6 +472,11 @@ extern PyMethodDef g_VersusMethods[];
 extern PyMethodDef g_CTFMethods[];
 extern PyMethodDef g_DominationMethods[];
 extern PyMethodDef g_MortalRaceMethods[];
+/* the tabs of the ship editor: engines, weapons and hull (src/game/Script/EnginesTab.c, WeaponsTab.c, HullTab.c,
+ * data/menus/enginestab.def, weaponstab.def, hulltab.def) */
+extern PyMethodDef g_EnginesTabMethods[];
+extern PyMethodDef g_WeaponsTabMethods[];
+extern PyMethodDef g_HullTabMethods[];
 
 /* the gameplay functions of the character modules (src/game/Script/CharFuncs.c), next to their Init tables */
 extern PyMethodDef g_FunctionaryFuncs[];

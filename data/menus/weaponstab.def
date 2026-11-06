@@ -1,0 +1,387 @@
+# The weapons tab of the ship editor (WeaponsTab.SetWeaponsPanel of shipedit/weaponstab.py): the descriptions of a
+# weapon and of an upgrade, the six weapons, the upgrade icons (single player only), the slot buttons, the boxes
+# around the slots and the upgrades, and the marker of the selected slot on the ship. The format is described in
+# src/game/Script/Script.c. A pack in mods/ with scrapc/menus/weaponstab.def replaces this file. The C runs panel
+# ($single: an offline game, which shows the upgrades), slot for each slot button ($name), then boxes ($multi:
+# ShipEdit.IsEditingMultiplayer(), the slots box takes the whole width). hideweight hides the mass and boost
+# predictions. The step weaponhint <key> sets the Hint of a weapon button: the language text key with
+# WeaponsTab.UseTxt in it, <n> replaced by the name of the weapon (ShipEdit_<item>Name).
+
+style text
+	TextAlign Left
+	Font HoratioSmall
+	TextColorRed 251
+	TextColorGreen 241
+	TextColorBlue 174
+	XAlignRight 580
+	Y 196
+	Visible 0
+	MaxX 575
+	Visible 0
+style tab
+	Type 4
+	Alpha 164
+	Red 255
+	Green 220
+	Blue 50
+	Visible 0
+style normal
+	Red 115
+	Green 150
+	Blue 255
+style icon
+	IsMultiSprite 1
+	HighRes 1
+	File "2D/HUD/WeaponIcons3D.alpha.tga"
+	Highlight 0
+style scale
+	ScaleX 0.75
+	ScaleY 0.75
+	Visible 0
+style upgradetile
+	BlendingMode 6
+	IsMultiSprite 1
+	HighRes 1
+	File "2D/ShipEditor/Weapons.alpha.tga"
+	Highlight 1
+	SpriteIndex 12
+	FocusSpriteIndex 13
+	Complex 0
+
+# a weapon: $w, the button at x $x (y 68), $tile and $icon the sprites of its tile and icon
+section weapon
+item $(w)Tile Sprite
+	HighRes 1
+	IsMultiSprite 1
+	File "2D/ShipEditor/Weapons.alpha.tga"
+	Highlight 0
+	SpriteIndex $tile
+	X $x-2
+	Y 66
+	use normal
+	Visible 0
+item $(w)Icon Sprite
+	HighRes 1
+	IsMultiSprite 1
+	File "2D/HUD/WeaponIcons3D.alpha.tga"
+	Highlight 0
+	SpriteIndex $icon
+	X $x+36
+	Y 106
+	use normal
+	ScaleX 0.75
+	ScaleY 0.75
+	Visible 0
+item $(w)Rect Sprite
+	BlendingMode 6
+	HighRes 1
+	IsMultiSprite 1
+	File "2D/ShipEditor/Weapons.alpha.tga"
+	Highlight 0
+	SpriteIndex 12
+	X $x+32
+	Y 102
+	Alpha 255
+	use normal
+	Visible 0
+item $w Button
+	BlendingMode 6
+	IsMultiSprite 1
+	HighRes 1
+	File "2D/ShipEditor/FullEditor.alpha.tga"
+	Highlight 1
+	SpriteIndex 16
+	FocusSpriteIndex 17
+	X $x
+	Y 68
+	W 71
+	H 62
+	Visible 0
+	OnAccept WeaponsTab.SelectWeapon
+	OnGainFocus WeaponsTab.ShowWeaponDesc
+	OnLooseFocus WeaponsTab.HideWeaponDesc
+	run weaponhint HINT_Weapons1
+	MaxHintLineWidth 550
+	Complex 0
+	Alpha 255
+	use normal
+	HighLightColorRed 255
+	HighLightColorGreen 255
+	HighLightColorBlue 190
+
+section panel
+item WeaponDesc Button
+	IsMultiSprite 0
+	IsNameValuePair 1
+	Text ""
+	use text
+item WeaponDescTab Tab
+call Menu.SetTabDefaults $id WeaponDescTab
+	X 360
+	Y 190
+	SizeX 230
+	SizeY 120
+	use tab
+item WeaponUpgradeDesc Button
+	IsMultiSprite 0
+	IsNameValuePair 0
+	Text ""
+	use text
+	MaxLineSize 180
+item WeaponUpgradeDescTab Tab
+call Menu.SetTabDefaults $id WeaponUpgradeDescTab
+	X 360
+	Y 190
+	SizeX 230
+	SizeY 57
+	use tab
+
+# the bullet weapons from x 58, the energy weapons from 203, the missiles from 348, 70 apart
+let w Vulcan
+let x 58
+let tile 2
+let icon 1
+do weapon
+let w Devastator
+let x 128
+let tile 3
+let icon 4
+do weapon
+let w Tesla
+let x 203
+let tile 4
+let icon 7
+do weapon
+let w ATPC
+let x 273
+let tile 5
+let icon 10
+do weapon
+let w Swarm
+let x 348
+let tile 7
+let icon 13
+do weapon
+let w Inferno
+let x 418
+let tile 6
+let icon 16
+do weapon
+
+# the upgrades right of their title (x 328, y 145), 43 apart
+if $single
+	measure tw Horatio "{ShipEdit_Upgrades}"
+	let x 328 $tw 8
+	item UpgradeText Text
+		Font Horatio
+		Text "{ShipEdit_Upgrades}:"
+		Alpha 255
+		Red 174
+		Green 229
+		Blue 251
+		Align Left
+		X 328
+		Y 151
+		Visible 0
+	item VulcanUpgrade1 Sprite
+		use icon
+		SpriteIndex 2
+		X $x+4
+		Y 148
+		use scale
+	item VulcanUpgrade2 Sprite
+		use icon
+		SpriteIndex 3
+		X $x+43+4
+		Y 148
+		use scale
+	item DevastatorUpgrade1 Sprite
+		use icon
+		SpriteIndex 5
+		X $x+4
+		Y 148
+		use scale
+	item DevastatorUpgrade2 Sprite
+		use icon
+		SpriteIndex 6
+		X $x+43+4
+		Y 148
+		use scale
+	item TeslaUpgrade1 Sprite
+		use icon
+		SpriteIndex 9
+		X $x+4
+		Y 148
+		use scale
+	item TeslaUpgrade2 Sprite
+		use icon
+		SpriteIndex 8
+		X $x+43+4
+		Y 148
+		use scale
+	item ATPCUpgrade1 Sprite
+		use icon
+		SpriteIndex 11
+		X $x+4
+		Y 148
+		use scale
+	item ATPCUpgrade2 Sprite
+		use icon
+		SpriteIndex 12
+		X $x+43+4
+		Y 148
+		use scale
+	item SwarmUpgrade1 Sprite
+		use icon
+		SpriteIndex 14
+		X $x+4
+		Y 148
+		use scale
+	item SwarmUpgrade2 Sprite
+		use icon
+		SpriteIndex 15
+		X $x+43+4
+		Y 148
+		use scale
+	item InfernoUpgrade1 Sprite
+		use icon
+		SpriteIndex 17
+		X $x+4
+		Y 148
+		use scale
+	item InfernoUpgrade2 Sprite
+		use icon
+		SpriteIndex 18
+		X $x+43+4
+		Y 148
+		use scale
+	item Upgrade1Tile Button
+		use upgradetile
+		X $x+0
+		Y 144
+		W 40
+		H 40
+		FocusPivotX 2
+		FocusPivotY 2
+		Alpha 255
+		use normal
+		Visible 0
+		OnAccept WeaponsTab.SelectUpgrade
+		OnGainFocus WeaponsTab.ShowWeaponUpgradeDesc
+		OnLooseFocus WeaponsTab.HideWeaponUpgradeDesc
+	item Upgrade2Tile Button
+		use upgradetile
+		X $x+43+0
+		Y 144
+		W 40
+		H 40
+		FocusPivotX 2
+		FocusPivotY 2
+		Alpha 255
+		use normal
+		Visible 0
+		OnAccept WeaponsTab.SelectUpgrade
+		OnGainFocus WeaponsTab.ShowWeaponUpgradeDesc
+		OnLooseFocus WeaponsTab.HideWeaponUpgradeDesc
+end
+
+item WeaponSlotText Text
+	Font Horatio
+	Text "{ShipEdit_WeaponsMounted}:"
+	Align Left
+	Alpha 255
+	Red 174
+	Green 229
+	Blue 251
+	Visible 0
+
+section slot
+item $name Button
+	BlendingMode 6
+	HighRes 1
+	IsMultiSprite 1
+	Highlight 1
+	File "2D/ShipEditor/Weapons.alpha.tga"
+	SpriteIndex 16
+	FocusSpriteIndex 17
+	W 22
+	H 22
+	FocusPivotX 1
+	FocusPivotY 1
+	OnGainFocus WeaponsTab.ShowSlotMarker
+	OnLooseFocus WeaponsTab.HideSlotMarker
+	Alpha 32
+	Red 255
+	Green 255
+	Blue 255
+	Visible 0
+	Complex 0
+
+# the box of the slots and upgrades: 36 quads of 14 wide in the middle (x 68), y 100
+section boxes
+item SlotsBox Tab
+call Menu.SetTabDefaults $id SlotsBox
+	X 75
+	Y 142
+	SizeX 245
+	SizeY 42
+	Type 4
+	Alpha 128
+	Red 115
+	Green 150
+	Blue 210
+	Visible 0
+if $multi
+	SizeX 490
+end
+item UpgradesBox Tab
+call Menu.SetTabDefaults $id UpgradesBox
+	X 320
+	Y 142
+	SizeX 245
+	SizeY 42
+	Type 4
+	Alpha 128
+	Red 255
+	Green 220
+	Blue 50
+	Visible 0
+item SlotsAndUpgradesBox Tab
+call Menu.SetTabDefaults $id SlotsAndUpgradesBox
+	X 68
+	Y 100
+	SizeX 504
+	SizeY 170
+	Type 4
+	Alpha 127
+	Red 57
+	Green 75
+	Blue 127
+	Visible 0
+	SizeY 91.0
+item SlotMarker Button
+	HighRes 1
+	IsMultiSprite 1
+	File "2D/ShipEditor/Weapons.alpha.tga"
+	Glow 1
+	SpriteIndex 16
+	FocusSpriteIndex 17
+	Alpha 32
+	Red 255
+	Green 255
+	Blue 255
+	Visible 0
+	PivotX 0.5
+	PivotY 0.5
+	Complex 0
+lr Upgrade1Tile Upgrade2Tile
+
+section hideweight
+set WeightUp Visible 0
+set WeightDown Visible 0
+set WeightEqual Visible 0
+set WeightBack Visible 0
+set BoostUp Visible 0
+set BoostDown Visible 0
+set BoostEqual Visible 0
+set BoostBack Visible 0
