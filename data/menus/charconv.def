@@ -1,0 +1,177 @@
+# The interface of the character conversor (CharConversor.AddInterfaceContent of missions/charconversor.py): a
+# button for each of the 15 characters of CharConversor.ConversionChars in 3 rows of 5, with the head of the
+# character or a mark when it is not available, the exit button and the description box. The format is described in
+# src/game/Script/Script.c. A pack in mods/ with scrapc/menus/charconv.def replaces this file. The C runs na or head,
+# then button for each character ($char, $x and $y the place of its button, $state sel for the character of the
+# player, dead when not available, else normal), then the section rest.
+
+section na
+item CharNotAvailable_$(char) Sprite
+	BlendingMode 6
+	HighRes 1
+	IsMultiSprite 1
+	File "2D/CharEditor/CharConversor.alpha.tga"
+	SpriteIndex 35
+	X $x+19
+	Y $y+8
+	Alpha 128
+	Red 220
+	Green 220
+	Blue 220
+
+section head
+let size 90
+item CharHead_$(char) Head
+	HeadModel $char
+	HeadAnimIndex 0
+	X $x-18
+	Y $y-27
+	W 0
+	H 0
+	VW $size*1.3333
+	VH $size
+
+section button
+item Char_$(char) Button
+	HighRes 1
+	Highlight 1
+	IsMultiSprite 1
+	BlendingMode 6
+	File "2D/CharEditor/CharConversor.alpha.tga"
+	OnAccept CharConversor.Convert
+	OnGainFocus CharConversor.ShowCharDesc
+	OnLooseFocus CharConversor.HideCharDesc
+	Complex 0
+	SpriteIndex 32
+	FocusSpriteIndex 33
+	X $x
+	Y $y
+	W 82
+	H 62
+	HighLightColorAlpha 64
+	HighLightColorRed 255
+	HighLightColorGreen 240
+	HighLightColorBlue 90
+if $state == sel
+	Alpha 96
+	Red 250
+	Green 240
+	Blue 95
+	set Cursor Visible 0
+	default Char_$(char)
+elif $state == dead
+	Alpha 64
+	Red 220
+	Green 30
+	Blue 30
+else
+	Alpha 64
+	Red 85
+	Green 140
+	Blue 220
+end
+
+# the frame is 532 x 392 in the middle of the screen (54, 44); the exit button in its bottom right corner
+section rest
+style exit
+	IsMultiSprite 1
+	HighRes 1
+style circuit
+	BlendingMode 2
+	IsMultiSprite 1
+	HighRes 1
+	File "2D/ShipEditor/Circuits.tga"
+item CharExit Button
+	use exit
+	File "2D/ShipEditor/Buttons.alpha.tga"
+	Complex 0
+	Highlight 1
+	SpriteIndex 5
+	FocusSpriteIndex 6
+	Alpha 255
+	Red 255
+	Green 255
+	Blue 255
+	X 541
+	Y 396
+	W 35
+	H 35
+	FocusPivotX -5
+	FocusPivotY -5
+	OnAccept CharConversor.ExitCharConversor
+item CharExitBack Sprite
+	use exit
+	File "2D/ShipEditor/Buttons.alpha.tga"
+	SpriteIndex 1
+	X 536
+	Y 391
+item CharExitCircuit1 Sprite
+	use exit
+	File "2D/Menu/GenericButtons.alpha.tga"
+	SpriteIndex 16
+	X 531
+	Y 388
+	Rotate 1
+	Mirror 0
+item CharExitCircuit2 Sprite
+	use circuit
+	SpriteIndex 1
+	X 532
+	Y 386
+	Alpha 128
+	Rotate 1
+item CharExitCircuit3 Sprite
+	use circuit
+	SpriteIndex 2
+	X 517
+	Y 383
+	Alpha 128
+	Mirror 1
+item CharExitCircuit4 Sprite
+	use circuit
+	SpriteIndex 5
+	X 551
+	Y 426
+	Alpha 128
+	Mirror 1
+item CharDesc Button
+	IsMultiSprite 0
+	IsNameValuePair 0
+	MaxLineSize 314
+	Font Horatio
+	TextAlign Center
+	Highlight 0
+	TextColorAlpha 255
+	TextColorRed 251
+	TextColorGreen 241
+	TextColorBlue 174
+	ForceWidth 420
+	ForceHeight 84.0
+	X 90
+	Y 342
+	W 0
+	H 0
+	Visible 0
+item CharDescriptionTab Tab
+call Menu.SetTabDefaults $id CharDescriptionTab
+	X 88
+	Y 342
+	SizeX 420
+	SizeY 84.0
+	Type 4
+	Alpha 64
+	Red 255
+	Green 255
+	Blue 32
+item CharConversorTab Tab
+call Menu.SetTabDefaults $id CharConversorTab
+	X 54
+	Y 44
+	SizeX 532
+	SizeY 392
+	Type 4
+	Alpha 128
+	Red 95
+	Green 150
+	Blue 255
+call Menu.DrawCircuitMenu $id

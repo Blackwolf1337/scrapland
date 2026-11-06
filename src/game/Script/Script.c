@@ -164,6 +164,9 @@ static const scriptModule_t script_modules[] = {
 	{ "MisItems", g_MisItemsMethods },
 	{ "CrazyWing", g_CrazyWingMethods },
 	{ "MissionsFuncs", g_MissionsFuncsMethods },
+	{ "Scene", g_SceneMethods },
+	{ "CharConversor", g_CharConversorMethods },
+	{ "RaceMaker", g_RaceMakerMethods },
 };
 
 void Script_ModuleLoaded(const char *name, PyObject *module) {

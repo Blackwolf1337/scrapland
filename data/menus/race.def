@@ -1,0 +1,74 @@
+# The scorer of a race or a combat challenge (RaceMaker.MissionScorer and MissionScorer2 of missions/racemaker.py):
+# the time left to get into a ship, and in a race the checkpoints of the player, of the best rival and the limit.
+# The format is described in src/game/Script/Script.c. A pack in mods/ with scrapc/menus/race.def replaces this
+# file. The C runs timer ($x, $y and the colour $r, $g, $b, $a from Scorer.MissionScorerText_X, _Y and _Color) or
+# scores ($mh: Scorer.MarginH); RaceMaker.SetScorerValues fills the scores in.
+
+section timer
+item MissionTimer Timer
+	X $x
+	Y $y
+	Align Left
+	Font Horatio
+	Effect Shadow
+	OnTimeExpired RaceMaker.RacerLeft
+	Red $r
+	Green $g
+	Blue $b
+	Alpha $a
+
+section scores
+style number
+	Font BigNumbers
+	Text "000"
+	Align Center
+	Red 255
+	Green 255
+	Blue 255
+style mark
+	ScaleX 30
+	ScaleY 19
+	Unit 1
+item MissionBest Text
+	X $mh+20
+	Y 190
+	use number
+item MissionLimit Text
+	X $mh+50
+	Y 190
+	use number
+item MissionBad Text
+	X $mh+20
+	Y 210
+	use number
+item MissionYou Sprite
+	X $mh+5
+	Y 180
+	use mark
+	Alpha 128
+	Red 0
+	Green 0
+	Blue 255
+item MissionSLimit Sprite
+	X $mh+35
+	Y 180
+	use mark
+	Alpha 64
+	Red 0
+	Green 0
+	Blue 0
+item MissionTab Tab
+call Menu.SetTabDefaults $id MissionTab
+	X $mh+20-20
+	Y 175
+	SizeX 70
+	SizeY 52
+	TabInit 0
+	TabEnd 0
+	TabMax 0
+	SizeTabQuad 0
+	Type 0
+	Alpha 64
+	Red 32
+	Green 64
+	Blue 255
