@@ -169,6 +169,33 @@ static const scriptModule_t script_modules[] = {
 	{ "RaceMaker", g_RaceMakerMethods },
 };
 
+/*
+ * the Python functions the C ones replaced stay alive: an engine callback the module code set by name holds a
+ * borrowed pointer to the function it found then (alarm.py: Scrap.Set("AlarmCallback", "Alarm.SetAlarm")), and it
+ * pointed to freed memory once the C function took the name. They are kept by module name until the module loads
+ * again (its code then sets such callbacks anew).
+ */
+static PyObject *script_replaced;
+
+/* the list of the replaced functions of a module, new at its first table (index i of script_modules) */
+static PyObject *Script_Replaced(const char *name, size_t i) {
+	if (!script_replaced && !(script_replaced = PyDict_New())) {
+		return NULL;
+	}
+	PyObject *kept = PyDict_GetItemString(script_replaced, (char *)name);
+	for (size_t j = 0; j < i; j++) {
+		if (!strcmp(script_modules[j].name, name)) {
+			return kept;
+		}
+	}
+	kept = PyList_New(0);
+	if (kept) {
+		PyDict_SetItemString(script_replaced, (char *)name, kept);
+		Py_DECREF(kept);
+	}
+	return kept;
+}
+
 void Script_ModuleLoaded(const char *name, PyObject *module) {
 	/* SCRAP_PACK_SCRIPTS=1: the scripts of the packs only (to compare a port with the original) */
 	const char *only = getenv("SCRAP_PACK_SCRIPTS");
@@ -181,6 +208,7 @@ void Script_ModuleLoaded(const char *name, PyObject *module) {
 			continue;
 		}
 		PyObject *dict = PyModule_GetDict(module);
+		PyObject *kept = Script_Replaced(name, i);
 		for (PyMethodDef *m = sm->methods; m->ml_name; m++) {
 			PyObject *f = PyCFunction_New(m, NULL);
 			if (!f) {
@@ -195,6 +223,10 @@ void Script_ModuleLoaded(const char *name, PyObject *module) {
 					strcmp(PyString_AsString(key), m->ml_name)) {
 					PyDict_SetItem(dict, key, f);
 				}
+			}
+			PyObject *old = PyDict_GetItemString(dict, m->ml_name);
+			if (old && kept && PyFunction_Check(old)) {
+				PyList_Append(kept, old);
 			}
 			PyDict_SetItemString(dict, m->ml_name, f);
 			Py_DECREF(f);
