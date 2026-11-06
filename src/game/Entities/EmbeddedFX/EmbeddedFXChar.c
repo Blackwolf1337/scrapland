@@ -228,6 +228,11 @@ static cEmbeddedFX *cEmbeddedFXRusty_ctor(void *p) {
 	self->dummySparks = -1;
 	self->visible = 0;
 	self->sparkT = 0.0f;
+	/* differs from the original: the pauses before the bolts were never set before the first Update counts them
+	 * down (a big garbage value kept a bolt from ever showing); 0 as in a zeroed block */
+	for (int i = 0; i < FXRUSTY_TRAILS; i++) {
+		self->pause[i] = 0.0f;
+	}
 	return &self->base;
 }
 
