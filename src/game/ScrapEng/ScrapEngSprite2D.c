@@ -91,12 +91,23 @@ int CPsaImage_GetNumFrames(CPsaImage *self) {
 
 byte CPsaImage_GetFrameSize(CPsaImage *self, int frame, int *w, int *h) {
 	CHECK(self->sprite);
-	return CMultiSprite_GetSize(Sprite_MultiSprite(self), (uint32_t)frame, (uint32_t *)w, (uint32_t *)h);
+	const CMultiSprite *ms = Sprite_MultiSprite(self);
+	/* differs from the original: an image loaded without its sprite table read the table at NULL; the sizes of an
+	 * empty table now */
+	if (!ms) {
+		*w = 0;
+		*h = 0;
+		return 0;
+	}
+	return CMultiSprite_GetSize(ms, (uint32_t)frame, (uint32_t *)w, (uint32_t *)h);
 }
 
 byte CPsaImage_GetFrameUV(CPsaImage *self, int frame, float *uv0, float *uv1) {
 	CHECK(self->sprite);
-	if (frame == 0) {
+	/* differs from the original: an image loaded without its sprite table (the default 2D/white.tga of a Button,
+	 * drawn with IsMultiSprite 1 before any File) read the table at NULL and crashed; it draws whole now, as frame
+	 * 0. The scripts always set a File or IsMultiSprite 0 first. */
+	if (frame == 0 || !Sprite_MultiSprite(self)) {
 		uv0[0] = self->uv0[0];
 		uv0[1] = self->uv0[1];
 		uv1[0] = self->uv1[0];
