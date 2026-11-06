@@ -380,6 +380,14 @@ extern PyMethodDef g_FxMethods[];
 /* the C Items module (src/game/Script/Items.c) */
 extern PyMethodDef g_ItemsMethods[];
 extern PyMethodDef g_NetMethods[];
+/* the online game modes (src/game/Script/NetModes.c) */
+extern PyMethodDef g_NDeathMatchMethods[];
+extern PyMethodDef g_NDeathMatchBotsMethods[];
+extern PyMethodDef g_NTeamDMMethods[];
+extern PyMethodDef g_NTeamFlagMethods[];
+extern PyMethodDef g_NFlagHuntMethods[];
+extern PyMethodDef g_NPostmanMethods[];
+extern PyMethodDef g_NTeamPostMethods[];
 extern PyMethodDef g_WeaponsMethods[];
 extern PyMethodDef g_VulcanMethods[];
 extern PyMethodDef g_DevastatorMethods[];
