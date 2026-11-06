@@ -1,5 +1,5 @@
 # The functions of MapRace in level downtown (the script levels/downtown/scripts/maprace.py of Data.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: EasyRaceDownTown1, EasyRaceDownTown2, EasyRaceDownTown3, EasyRaceDownTown4, MediumRaceDownTown1, MediumRaceDownTown2, MediumRaceDownTown3, MediumRaceDownTown4, MediumRaceDownTown5, MediumRaceDownTown6, MediumRaceDownTown7, MediumRaceDownTown8, HardRaceDownTown1, HardRaceDownTown2, HardRaceDownTown3, HardRaceDownTown4.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/DownTown.c): EasyRaceDownTown1, EasyRaceDownTown2, EasyRaceDownTown3, EasyRaceDownTown4, MediumRaceDownTown1, MediumRaceDownTown2, MediumRaceDownTown3, MediumRaceDownTown4, MediumRaceDownTown5, MediumRaceDownTown6, MediumRaceDownTown7, MediumRaceDownTown8, HardRaceDownTown1, HardRaceDownTown2, HardRaceDownTown3, HardRaceDownTown4.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/downtown/maprace.def replaces this file.
 section InitStatus LevelPath
 

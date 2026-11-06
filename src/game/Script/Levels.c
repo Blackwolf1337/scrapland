@@ -51,6 +51,11 @@ extern PyMethodDef g_PressMapMethods[], g_PressMapPlanesMethods[], g_PressMapDem
 	g_PressHumphreyArchbishopKilledMethods[], g_PressIntroHuman2Methods[], g_PressMeetBossMethods[], g_PressPressMeetingMethods[],
 	g_PressTalkToBossMethods[], g_PressWhoIsDeepThroatMethods[], g_PressWhoIsTheBaddieMethods[];
 
+extern PyMethodDef g_DownTownMapMethods[], g_DownTownMapRaceMethods[], g_DownTownFirstContactPressMethods[],
+	g_DownTownBertoMassacreMethods[], g_DownTownDefeatCrazyGambler1Methods[], g_DownTownFaceTheMayorMethods[], g_DownTownMassacreMethods[],
+	g_DownTownDestroyCommSats3Methods[], g_DownTownDistractHumphreyMethods[], g_DownTownGetDataPart1Methods[], g_DownTownHumphreyRaceMethods[],
+	g_DownTownMultiplusRaceMethods[], g_DownTownProtectMayorTransportMethods[], g_DownTownStealMayorShipMethods[];
+
 static const levelModule_t level_modules[] = {
 	{ "menu", "Map", g_MenuMapMethods },
 	{ "temple", "Map", g_TempleMapMethods },
@@ -149,6 +154,20 @@ static const levelModule_t level_modules[] = {
 	{ "press", "Mission_TalkToBoss", g_PressTalkToBossMethods },
 	{ "press", "Mission_WhoIsDeepThroat", g_PressWhoIsDeepThroatMethods },
 	{ "press", "Mission_WhoIsTheBaddie", g_PressWhoIsTheBaddieMethods },
+	{ "downtown", "Map", g_DownTownMapMethods },
+	{ "downtown", "MapRace", g_DownTownMapRaceMethods },
+	{ "downtown", "Mission_FirstContactPress", g_DownTownFirstContactPressMethods },
+	{ "downtown", "Mission_BertoMassacre", g_DownTownBertoMassacreMethods },
+	{ "downtown", "Mission_DefeatCrazyGambler1", g_DownTownDefeatCrazyGambler1Methods },
+	{ "downtown", "Mission_FaceTheMayor", g_DownTownFaceTheMayorMethods },
+	{ "downtown", "Mission_Massacre", g_DownTownMassacreMethods },
+	{ "downtown", "Mission_DestroyCommSats3", g_DownTownDestroyCommSats3Methods },
+	{ "downtown", "Mission_DistractHumphrey", g_DownTownDistractHumphreyMethods },
+	{ "downtown", "Mission_GetDataPart1", g_DownTownGetDataPart1Methods },
+	{ "downtown", "Mission_HumphreyRace", g_DownTownHumphreyRaceMethods },
+	{ "downtown", "Mission_MultiplusRace", g_DownTownMultiplusRaceMethods },
+	{ "downtown", "Mission_ProtectMayorTransport", g_DownTownProtectMayorTransportMethods },
+	{ "downtown", "Mission_StealMayorShip", g_DownTownStealMayorShipMethods },
 	{ NULL, NULL, NULL },
 };
 

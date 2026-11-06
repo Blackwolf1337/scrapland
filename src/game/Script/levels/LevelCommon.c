@@ -276,3 +276,63 @@ PyObject *Lv_PlanesPhoto(PyObject *args, const char *module, const char *ships, 
 	}
 	return Sf_Return(&f, Sf_Int(&f, res));
 }
+
+PyObject *Lv_AcShipsStatus(PyObject *args, const char *module, const char *ships) {
+	PyObject *path;
+	scriptFrame_t f = { 0 };
+	if (!PyArg_ParseTuple(args, "O", &path)) {
+		return NULL;
+	}
+	Lv_AcShips(&f, module, ships);
+	return Sf_None(&f);
+}
+
+PyObject *Lv_ProfileFunc(PyObject *args, const char *module, const char *const *vars) {
+	scriptFrame_t f = { 0 };
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
+	return Sf_Return(&f, Lv_Profile(&f, module, vars));
+}
+
+void Lv_Saves(scriptFrame_t *f, const char *const *pairs) {
+	for (; *pairs && !f->failed; pairs += 2) {
+		int mark = f->n;
+		Sf_Ask(f, "Scrap", "SetSaveVar", "(ss)", pairs[0], pairs[1]);
+		Sf_Release(f, mark);
+	}
+}
+
+PyObject *Lv_StartPos(PyObject *args, const double (*pos)[4], int n) {
+	scriptFrame_t f = { 0 };
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
+	Sf_Import(&f, "RaceMaker");
+	Sf_SetMod(&f, "RaceMaker", "StartPos", Sf_Build(&f, "[]"));
+	for (int i = 0; i < n && !f.failed; i++) {
+		int mark = f.n;
+		Sf_Method(&f, Sf_Mod(&f, "RaceMaker", "StartPos"), "append", "((ddd)d)", pos[i][0], pos[i][1], pos[i][2], pos[i][3]);
+		Sf_Release(&f, mark);
+	}
+	return Sf_None(&f);
+}
+
+void Lv_Colour(scriptFrame_t *f, PyObject *id, const char *item) {
+	static const char *const rgba[] = { "Red", "Green", "Blue", "Alpha" };
+	for (int i = 0; i < 4 && !f->failed; i++) {
+		int mark = f->n;
+		Lv_ScorerSet(f, id, item, rgba[i], Sf_Item(f, Sf_Mod(f, "Scorer", "MissionScorerText_Color"), i));
+		Sf_Release(f, mark);
+	}
+}
+
+void Lv_BarDefaults(scriptFrame_t *f, PyObject *id, const char *item) {
+	int mark = f->n;
+	PyObject *fn = Sf_Mod(f, "Scorer", "MissionScorerBar_SetDefaults");
+	PyObject *back = Sf_Mod(f, "Scorer", "MissionScorerBar_ColorBack");
+	PyObject *main = Sf_Mod(f, "Scorer", "MissionScorerBar_ColorMain");
+	PyObject *black = Sf_Mod(f, "Scorer", "MissionScorerBar_ColorBlack");
+	Sf_Call(f, fn, "(OsOOO)", id, item, back, main, black);
+	Sf_Release(f, mark);
+}

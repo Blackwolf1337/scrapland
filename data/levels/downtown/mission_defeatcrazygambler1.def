@@ -1,5 +1,5 @@
 # The functions of Mission_DefeatCrazyGambler1 in level downtown (the script levels/downtown/scripts/mission_defeatcrazygambler1.py of Data.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: GetCrazyGamblerProfile, InitStatus, Init, LaunchTaunts, CreateCrazyGambler, OnCrazyGamblerDeath, MissionScorer.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/DownTown.c): GetCrazyGamblerProfile, InitStatus, Init, LaunchTaunts, CreateCrazyGambler, OnCrazyGamblerDeath, MissionScorer.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/downtown/mission_defeatcrazygambler1.def replaces this file.
 section PreSetNextMission
 call Speech.AddRemoteCom "Mission_DefeatCrazyGambler1_RemoteMessage7" "DeepThroat" %Mission_DefeatCrazyGambler1.SetNextMission ()

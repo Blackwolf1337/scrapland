@@ -1,5 +1,5 @@
 # The functions of MapSnd in level downtown (the script levels/downtown/scripts/mapsnd.py of Data.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/DownTown.c).
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/downtown/mapsnd.def replaces this file.
 section LoadSounds
 if %MapSnd.isPC

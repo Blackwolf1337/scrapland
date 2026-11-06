@@ -107,6 +107,19 @@ PyObject *Lv_PhoneCab(scriptFrame_t *f, const char *use, byte targetFirst);
 byte Lv_DummyPosAng(scriptFrame_t *f, PyObject *dummy, PyObject **pos, PyObject **ang);
 /* raise o of a function of module (`raise exceptString`, the rules of Python's raise for any value) */
 byte Lv_RaiseValue(scriptFrame_t *f, const char *module, PyObject *o);
+/* InitStatus(LevelPath) of a mission with only the lines of Lv_AcShips */
+PyObject *Lv_AcShipsStatus(PyObject *args, const char *module, const char *ships);
+/* the profile function itself (no arguments, returns the Lv_Profile of vars) */
+PyObject *Lv_ProfileFunc(PyObject *args, const char *module, const char *const *vars);
+/* Scrap.SetSaveVar of pairs of name and value, ending with NULL */
+void Lv_Saves(scriptFrame_t *f, const char *const *pairs);
+/* a race of MapRace (no arguments): import RaceMaker; RaceMaker.StartPos = [] and the n points appended as
+ * ((x, y, z), angle) */
+PyObject *Lv_StartPos(PyObject *args, const double (*pos)[4], int n);
+/* the colour Scorer.MissionScorerText_Color of a scorer item (Red, Green, Blue, Alpha) */
+void Lv_Colour(scriptFrame_t *f, PyObject *id, const char *item);
+/* Scorer.MissionScorerBar_SetDefaults(id, item, the back, main and black colours of Scorer) */
+void Lv_BarDefaults(scriptFrame_t *f, PyObject *id, const char *item);
 
 /*
  * a sound element of the map (MapSnd.SndElements(Name, x, y, z, angx, angy), called by the engine for the map

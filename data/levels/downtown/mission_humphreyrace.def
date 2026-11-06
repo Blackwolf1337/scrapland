@@ -1,5 +1,5 @@
 # The functions of Mission_HumphreyRace in level downtown (the script levels/downtown/scripts/mission_humphreyrace.py of Data.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: InitStatus, ShowSystemMessage, Init, ShowBoostMessage, ClosePressHangar, DelRacers, CallCrazyGambler, UsePhoneCab, PreGivePlans2, GivePlans, SetNextMission.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/DownTown.c): InitStatus, ShowSystemMessage, Init, ShowBoostMessage, ClosePressHangar, DelRacers, CallCrazyGambler, UsePhoneCab, PreGivePlans2, GivePlans, SetNextMission.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/downtown/mission_humphreyrace.def replaces this file.
 section OnTryingToExit UsrName MetroName optId FullOption
 call Speech.AddRemoteCom "Mission_FirstCrazyBet_RemoteMessage12" "Humphrey"

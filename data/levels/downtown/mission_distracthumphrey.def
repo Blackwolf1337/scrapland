@@ -1,5 +1,5 @@
 # The functions of Mission_DistractHumphrey in level downtown (the script levels/downtown/scripts/mission_distracthumphrey.py of Data.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script stay Python: GetHumphreyProfile, InitStatus, Init, CallHumphrey, UsePhoneCab, CreateWaypoint, OnStartDistraction, EnableMissionWaypoint, StartCameraTravelling, AbortCameraTravelling, CreateHumphrey, LaunchMission, AssignNewHumphreyTarget, OnHumphreyDeath, OnHumphreyDamage, OnGeneralDamage, OnDeath, StopMission, CallDeepThroat, UsePhoneCab2, MissionScorer.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/DownTown.c): GetHumphreyProfile, InitStatus, Init, CallHumphrey, UsePhoneCab, CreateWaypoint, OnStartDistraction, EnableMissionWaypoint, StartCameraTravelling, AbortCameraTravelling, CreateHumphrey, LaunchMission, AssignNewHumphreyTarget, OnHumphreyDeath, OnHumphreyDamage, OnGeneralDamage, OnDeath, StopMission, CallDeepThroat, UsePhoneCab2, MissionScorer.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/downtown/mission_distracthumphrey.def replaces this file.
 section PreDistractHumphrey
 setvar pc.UseFunc "PhoneCab.DefUseAudioCom"
