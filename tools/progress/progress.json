@@ -1,0 +1,187 @@
+{
+ "title": "ScrapC progress",
+ "date": "2026-11-06",
+ "steps": [
+  {
+   "step": 1,
+   "name": "Recreation in C",
+   "weight": 30,
+   "detail": "The engine and game code of Scrap.exe as C",
+   "milestones": [
+    {
+     "item": "Engine and game functions in C",
+     "weight": 3,
+     "percent": 100,
+     "status": "done",
+     "note": "every function of the game range is C"
+    },
+    {
+     "item": "Standalone executable",
+     "weight": 2,
+     "percent": 100,
+     "status": "done",
+     "note": "ScrapC runs without Scrap.exe or a hook DLL"
+    },
+    {
+     "item": "Game data in the build",
+     "weight": 1,
+     "percent": 100,
+     "status": "done",
+     "note": "tables and strings are typed C data"
+    }
+   ]
+  },
+  {
+   "step": 2,
+   "name": "Clean C code",
+   "weight": 10,
+   "detail": "Readable code without the decompilation scaffolding",
+   "milestones": [
+    {
+     "item": "Debloat and plain C",
+     "weight": 2,
+     "percent": 100,
+     "status": "done",
+     "note": "hooks, rva macros and exactness code removed"
+    },
+    {
+     "item": "Readable names and types",
+     "weight": 2,
+     "percent": 100,
+     "status": "done",
+     "note": "English names, merged structs and types"
+    },
+    {
+     "item": "Symbols for the PC tools",
+     "weight": 1,
+     "percent": 50,
+     "status": "in progress",
+     "note": "Ghidra project not yet updated to the new names"
+    }
+   ]
+  },
+  {
+   "step": 3,
+   "name": "Modern renderer and media",
+   "weight": 10,
+   "detail": "Vulkan, FFmpeg and an own sound mixer",
+   "milestones": [
+    {
+     "item": "Vulkan renderer",
+     "weight": 3,
+     "percent": 100,
+     "status": "done",
+     "note": "Direct3D 8 removed, shaders as GLSL"
+    },
+    {
+     "item": "Videos through FFmpeg",
+     "weight": 1,
+     "percent": 100,
+     "status": "done",
+     "note": "intro and mission videos play"
+    },
+    {
+     "item": "Sound mixer",
+     "weight": 1,
+     "percent": 100,
+     "status": "done",
+     "note": "FMOD replaced"
+    },
+    {
+     "item": "Checks on the PC",
+     "weight": 1,
+     "percent": 60,
+     "status": "in progress",
+     "note": "display modes and lasso confirmed; gamepad, mouse, Alt-Tab untested"
+    }
+   ]
+  },
+  {
+   "step": 4,
+   "name": "Linux and 64 bit",
+   "weight": 10,
+   "detail": "Native builds for Linux and Windows",
+   "milestones": [
+    {
+     "item": "Native Linux x86_64",
+     "weight": 2,
+     "percent": 100,
+     "status": "done",
+     "note": "all 29 levels start clean under ASan"
+    },
+    {
+     "item": "Windows x64",
+     "weight": 1,
+     "percent": 100,
+     "status": "done",
+     "note": "all 29 levels start under Wine"
+    }
+   ]
+  },
+  {
+   "step": 5,
+   "name": "Python scripts in C (issue #2)",
+   "weight": 25,
+   "detail": "The game's Python 1.5.2 scripts as C and data files",
+   "milestones": [
+    {
+     "item": "Game scripts",
+     "weight": 3,
+     "percent": 100,
+     "status": "done",
+     "note": "menus, HUD, characters, missions; Xbox menus and dev tools skipped"
+    },
+    {
+     "item": "Level scripts",
+     "weight": 3,
+     "percent": 100,
+     "status": "done",
+     "note": "all 263 level scripts are C or data"
+    },
+    {
+     "item": "Online modes",
+     "weight": 1,
+     "percent": 100,
+     "status": "done",
+     "note": "Ffa and the seven modes, checked with a real server and client"
+    },
+    {
+     "item": "Checks against the original scripts",
+     "weight": 2,
+     "percent": 90,
+     "status": "in progress",
+     "note": "29 levels, 107 mission starts, full campaign; 90% line coverage"
+    },
+    {
+     "item": "Python interpreter removed",
+     "weight": 3,
+     "percent": 0,
+     "status": "not started",
+     "note": "module code and module variables still run in Python"
+    }
+   ]
+  },
+  {
+   "step": 6,
+   "name": "Free-roam multiplayer (issue #1)",
+   "weight": 15,
+   "detail": "Players meet on the open map",
+   "milestones": [
+    {
+     "item": "Design",
+     "weight": 1,
+     "percent": 0,
+     "status": "not started",
+     "note": "waits for the design"
+    },
+    {
+     "item": "Server and client",
+     "weight": 3,
+     "percent": 0,
+     "status": "not started",
+     "note": "the old PvP modes work as before"
+    }
+   ]
+  }
+ ]
+}
