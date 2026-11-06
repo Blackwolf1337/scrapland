@@ -156,6 +156,14 @@ static const scriptModule_t script_modules[] = {
 	{ "DTritusDesktop", g_DTritusDesktopMethods },
 	{ "Metro", g_MetroMethods },
 	{ "Challenge", g_ChallengeMethods },
+	{ "Alarm", g_AlarmMethods },
+	{ "NewsPanel", g_NewsPanelMethods },
+	{ "Doors", g_DoorsMethods },
+	{ "Elevator", g_ElevatorMethods },
+	{ "Teleport", g_TeleportMethods },
+	{ "MisItems", g_MisItemsMethods },
+	{ "CrazyWing", g_CrazyWingMethods },
+	{ "MissionsFuncs", g_MissionsFuncsMethods },
 };
 
 void Script_ModuleLoaded(const char *name, PyObject *module) {
