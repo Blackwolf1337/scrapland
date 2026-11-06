@@ -1,5 +1,5 @@
 # The functions of Mission_DestroyCommSats1 in level outskirts (the script levels/outskirts/scripts/mission_destroycommsats1.py of data01.packed) that are data: one section
-# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/Outskirts.c): InitStatus, Init, IsValidPoint, CreateProbes, OnProbeDeath, DestroyShipsInList, DestroyEnemyShips, MissionScorer.
+# per function, its parameters after the name. The other functions of the script are C (src/game/Script/levels/LevelCommon.c): InitStatus, Init, IsValidPoint, CreateProbes, OnProbeDeath, DestroyShipsInList, DestroyEnemyShips, MissionScorer.
 # Made by a converter from the script. A pack in mods/ with scrapc/levels/outskirts/mission_destroycommsats1.def replaces this file.
 section SetNextMission
 call Scrap.DelSaveVars "NumProbes"
