@@ -103,7 +103,8 @@ static PyObject *SWeap_SetFAmmo(PyObject *self, PyObject *args) {
 /*
  * SetSAmmo(numammo,svar,svalue) : Pone un valor cadena de las municiones. Unlike the other setters it returns
  * NULL without a Python exception for n >= count (signed compare first) and for an unknown var; Python then
- * reports "error return without exception set". Kept as the original does it.
+ * reports SystemError "NULL result without error in call_object". Kept as the original does it: tools/test/golden
+ * records both.
  */
 static PyObject *SWeap_SetSAmmo(PyObject *self, PyObject *args) {
 	int n;

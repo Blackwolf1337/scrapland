@@ -109,7 +109,8 @@ static PyObject *SAct_GetClass(PyObject *self, PyObject *args) {
 	return Py_BuildValue("i", g_pAuxActClass ? 1 : 0);
 }
 
-/* SetCls(varname,value) : Modifica el valor de una variable de una class objeto animado */
+/* SetCls(varname,value) : Modifica el valor de una variable de una class objeto animado; NULL without exception when
+ * there is no current class, as the original (golden records it) */
 static PyObject *SAct_SetCls(PyObject *self, PyObject *args) {
 	int parsed;
 
