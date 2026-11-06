@@ -101,6 +101,42 @@ static const char mod_levels_downtown_maprace[] = {
 static const char mod_levels_downtown_mapsnd[] = {
 #embed "../../../data/levels/downtown/mapsnd.mod"
 	, 0 };
+static const char mod_levels_downtown_mission_bertomassacre[] = {
+#embed "../../../data/levels/downtown/mission_bertomassacre.mod"
+	, 0 };
+static const char mod_levels_downtown_mission_defeatcrazygambler1[] = {
+#embed "../../../data/levels/downtown/mission_defeatcrazygambler1.mod"
+	, 0 };
+static const char mod_levels_downtown_mission_destroycommsats3[] = {
+#embed "../../../data/levels/downtown/mission_destroycommsats3.mod"
+	, 0 };
+static const char mod_levels_downtown_mission_distracthumphrey[] = {
+#embed "../../../data/levels/downtown/mission_distracthumphrey.mod"
+	, 0 };
+static const char mod_levels_downtown_mission_facethemayor[] = {
+#embed "../../../data/levels/downtown/mission_facethemayor.mod"
+	, 0 };
+static const char mod_levels_downtown_mission_firstcontactpress[] = {
+#embed "../../../data/levels/downtown/mission_firstcontactpress.mod"
+	, 0 };
+static const char mod_levels_downtown_mission_getdatapart1[] = {
+#embed "../../../data/levels/downtown/mission_getdatapart1.mod"
+	, 0 };
+static const char mod_levels_downtown_mission_humphreyrace[] = {
+#embed "../../../data/levels/downtown/mission_humphreyrace.mod"
+	, 0 };
+static const char mod_levels_downtown_mission_massacre[] = {
+#embed "../../../data/levels/downtown/mission_massacre.mod"
+	, 0 };
+static const char mod_levels_downtown_mission_multiplusrace[] = {
+#embed "../../../data/levels/downtown/mission_multiplusrace.mod"
+	, 0 };
+static const char mod_levels_downtown_mission_protectmayortransport[] = {
+#embed "../../../data/levels/downtown/mission_protectmayortransport.mod"
+	, 0 };
+static const char mod_levels_downtown_mission_stealmayorship[] = {
+#embed "../../../data/levels/downtown/mission_stealmayorship.mod"
+	, 0 };
 static const char mod_levels_fake_map[] = {
 #embed "../../../data/levels/fake/map.mod"
 	, 0 };
@@ -302,6 +338,18 @@ static const moduleFile_t module_files[] = {
 	{ "downtown", "Map", "levels/downtown/map.mod", mod_levels_downtown_map },
 	{ "downtown", "MapRace", "levels/downtown/maprace.mod", mod_levels_downtown_maprace },
 	{ "downtown", "MapSnd", "levels/downtown/mapsnd.mod", mod_levels_downtown_mapsnd },
+	{ "downtown", "Mission_BertoMassacre", "levels/downtown/mission_bertomassacre.mod", mod_levels_downtown_mission_bertomassacre },
+	{ "downtown", "Mission_DefeatCrazyGambler1", "levels/downtown/mission_defeatcrazygambler1.mod", mod_levels_downtown_mission_defeatcrazygambler1 },
+	{ "downtown", "Mission_DestroyCommSats3", "levels/downtown/mission_destroycommsats3.mod", mod_levels_downtown_mission_destroycommsats3 },
+	{ "downtown", "Mission_DistractHumphrey", "levels/downtown/mission_distracthumphrey.mod", mod_levels_downtown_mission_distracthumphrey },
+	{ "downtown", "Mission_FaceTheMayor", "levels/downtown/mission_facethemayor.mod", mod_levels_downtown_mission_facethemayor },
+	{ "downtown", "Mission_FirstContactPress", "levels/downtown/mission_firstcontactpress.mod", mod_levels_downtown_mission_firstcontactpress },
+	{ "downtown", "Mission_GetDataPart1", "levels/downtown/mission_getdatapart1.mod", mod_levels_downtown_mission_getdatapart1 },
+	{ "downtown", "Mission_HumphreyRace", "levels/downtown/mission_humphreyrace.mod", mod_levels_downtown_mission_humphreyrace },
+	{ "downtown", "Mission_Massacre", "levels/downtown/mission_massacre.mod", mod_levels_downtown_mission_massacre },
+	{ "downtown", "Mission_MultiplusRace", "levels/downtown/mission_multiplusrace.mod", mod_levels_downtown_mission_multiplusrace },
+	{ "downtown", "Mission_ProtectMayorTransport", "levels/downtown/mission_protectmayortransport.mod", mod_levels_downtown_mission_protectmayortransport },
+	{ "downtown", "Mission_StealMayorShip", "levels/downtown/mission_stealmayorship.mod", mod_levels_downtown_mission_stealmayorship },
 	{ "fake", "Map", "levels/fake/map.mod", mod_levels_fake_map },
 	{ "fake", "MapSnd", "levels/fake/mapsnd.mod", mod_levels_fake_mapsnd },
 	{ "fz", "Map", "levels/fz/map.mod", mod_levels_fz_map },
