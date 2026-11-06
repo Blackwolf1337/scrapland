@@ -203,57 +203,6 @@ void CApp_DoneGame(CApp *self) {
 	Con_Print(0, "Action class list closed.\n", 0);
 }
 
-/* the lines of the console window: "/f a" QuickConsole.f(a), ":var value" sets, ":var" shows, "?filter" lists */
-void Console_Execute(const char *cmd) {
-	/* the characters after ':var ' that make the value a Python expression ('"' to '9') */
-	static const byte numeric[0x18] = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-	char code[0x400], name[0x400];
-	char *val;
-
-	switch (cmd[0]) {
-	case '/':
-		Str_Copy(name, cmd + 1, 0x400);
-		val = strchr(name, ' ');
-		if (val) {
-			*val++ = 0;
-			Str_TrimBlanks(val);
-			Str_TrimBlanks(name);
-			Str_PrintfQuiet(code, 0x400, "import QuickConsole;QuickConsole.%s(%s)", name, val);
-		} else {
-			Str_PrintfQuiet(code, 0x400, "import QuickConsole;QuickConsole.%s()", name);
-		}
-		break;
-	case ':':
-		Str_Copy(name, cmd + 1, 0x400);
-		val = strchr(name, ' ');
-		if (val) {
-			*val++ = 0;
-			Str_TrimBlanks(val);
-			Str_TrimBlanks(name);
-			uint32_t c = (uint32_t)((int)(signed char)*val - '"');
-			if (c < sizeof(numeric) && numeric[c]) {
-				Str_PrintfQuiet(code, 0x400, "if Scrap.Set('%s',%s):\n print '%s = %s'", name, val, name, val);
-			} else {
-				Str_PrintfQuiet(code, 0x400, "if Scrap.Set('%s','%s'):\n print '%s = %s'", name, val, name, val);
-			}
-		} else {
-			Str_TrimBlanks(name);
-			Str_PrintfQuiet(code, 0x400,
-				"Scrap.Print('%s = '+`Scrap.Get('%s')`+' (default = '+`Scrap.Def('%s')`+') ### '+Scrap.Des('%s')+'\\n')",
-				name, name, name, name);
-		}
-		break;
-	case '?':
-		Str_PrintfQuiet(name, 0x400, "Scrap.ShowGVars(\"%s\")", cmd + 1);
-		PyRun_ScrapString(name);
-		return;
-	default:
-		PyRun_ScrapString(cmd);
-		return;
-	}
-	PyRun_ScrapString(code);
-}
-
 /* (CWinApp jumps here too) */
 void CApp_Render(CApp *self) {
 	(void)self;

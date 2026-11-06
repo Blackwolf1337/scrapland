@@ -929,6 +929,19 @@ static PyObject *Scrap_ShowGVars(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
+/* ConsoleExec(line) : runs a line of the console (Console_Execute); not in the original, the test path of the console
+ * command table */
+static PyObject *Scrap_ConsoleExec(PyObject *self, PyObject *args) {
+	char *line;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s", &line)) {
+		return NULL;
+	}
+	Console_Execute(line);
+	return Py_ReturnNone();
+}
+
 /* StartDummySearch(name[, flag]) : flag default 1 */
 static PyObject *Scrap_StartDummySearch(PyObject *self, PyObject *args) {
 	char *name;
@@ -1793,7 +1806,7 @@ static const char str_PyMethod_Scrap_UsrEntity[];
 static const char str_PyMethod_Scrap_Ver[];
 static const char str_PyMethod_Scrap_Verbose[];
 static const char str_PyMethod_Scrap_VideoPlayer[];
-static PyMethodDef Scrap_methods[115] = {
+static PyMethodDef Scrap_methods[116] = {
 	{
 		.ml_name = (void *)str_PyMethod_Scrap_Print,
 		.ml_meth = (void *)Scrap_Print,
@@ -2477,6 +2490,12 @@ static PyMethodDef Scrap_methods[115] = {
 		.ml_meth = (void *)Scrap_GetGogID,
 		.ml_flags = 1,
 		.ml_doc = (void *)str_PyDoc_Scrap_GetGogID,
+	},
+	{
+		.ml_name = "ConsoleExec",
+		.ml_meth = (void *)Scrap_ConsoleExec,
+		.ml_flags = 1,
+		.ml_doc = "ConsoleExec(line) : runs a line of the console",
 	},
 };
 

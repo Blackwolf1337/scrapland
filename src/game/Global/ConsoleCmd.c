@@ -1,0 +1,922 @@
+/*
+ * The command table of the console (the console window, the full screen console of Scorer.c and the remote console
+ * of the server): engine variables by name (":name" shows, ":name value" sets, "?prefix" lists), "help", and the
+ * "/command args" commands of the dev console (the ones of QuickConsole.py that are engine calls, in C). No Python:
+ * a line the table does not know goes to Console_PythonFallback, the one place left that runs Python.
+ */
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "scrap/app.h"
+#include "scrap/console.h"
+#include "scrap/crt.h"
+#include "scrap/entity.h"
+#include "scrap/game.h"
+#include "scrap/gvar.h"
+#include "scrap/mathlib.h"
+#include "scrap/net.h"
+#include "scrap/scrap.h"
+#include "scrap/timer.h"
+#include "scrap/world.h"
+
+/*
+ * STAGE 7 of the removal of the interpreter: set CONSOLE_PYTHON to 0. Until then a line the table does not know runs
+ * as Python (a "/command" as QuickConsole.command(args), any other line as a Python statement), as before the table.
+ */
+#define CONSOLE_PYTHON 1
+
+#define CON_COLOR_OUT 0xff0000		/* the color of Python's print (Scrap.ConsoleOut) */
+#define CON_MAXARGS 9
+#define CON_TEXT 0x100
+
+static const char con_help1[] = ":name shows a variable, :name value sets it, ?prefix lists variables (? = all)\n";
+static const char con_help2[] = "/command a,b,c runs a command; name=value for named args; help shows this\n";
+
+/* ---- values ---- */
+
+enum { CA_NONE, CA_NUM, CA_STR, CA_VEC };
+
+typedef struct conArg {
+	int type;			/* CA_ */
+	double v[3];			/* CA_NUM: v[0] */
+	char s[CON_TEXT];		/* CA_STR: the text; CA_NUM, CA_VEC: as typed */
+} conArg;
+
+/* a number as Python reads its literal: decimal, 0x hex, 0 octal, float with exponent; 0 if s is none */
+static byte Con_Number(const char *s, double *d) {
+	const char *p = s;
+	char *end;
+
+	if (*p == '+' || *p == '-') {
+		p++;
+	}
+	if (!((*p >= '0' && *p <= '9') || (*p == '.' && p[1] >= '0' && p[1] <= '9'))) {
+		return 0;
+	}
+	errno = 0;
+	long long i = strtoll(s, &end, 0);
+	if (!*end && !errno) {
+		*d = (double)i;
+		return 1;
+	}
+	*d = strtod(s, &end);
+	return *end == 0;
+}
+
+/* Python 1.5.2 str() of a float: %.12g, ".0" when it looks like an int */
+static void Con_FormatFloat(char *buf, int size, double d) {
+	Str_PrintfQuiet(buf, size, "%.12g", d);
+	const char *p = buf[0] == '-' ? buf + 1 : buf;
+	while (*p >= '0' && *p <= '9') {
+		p++;
+	}
+	if (!*p) {
+		size_t len = strlen(buf);
+		Str_Copy(buf + len, ".0", size - (int)len);
+	}
+}
+
+/* Python 1.5.2 repr() of a string: single quotes unless it holds only single ones, octal escapes */
+static void Con_ReprString(char *buf, int size, const char *s) {
+	char quote = strchr(s, '\'') && !strchr(s, '"') ? '"' : '\'';
+	int n = 0;
+
+	if (size < 3) {
+		return;
+	}
+	buf[n++] = quote;
+	for (; *s && n < size - 6; s++) {
+		unsigned char c = (unsigned char)*s;
+		if (c == (unsigned char)quote || c == '\\') {
+			buf[n++] = '\\';
+			buf[n++] = (char)c;
+		} else if (c < ' ' || c >= 0x7f) {
+			n += Str_PrintfQuiet(buf + n, size - n, "\\%03o", c);
+		} else {
+			buf[n++] = (char)c;
+		}
+	}
+	buf[n++] = quote;
+	buf[n] = 0;
+}
+
+/* "(x, y, z)" as Python prints a tuple of floats */
+static void Con_FormatVec(char *buf, int size, double x, double y, double z) {
+	char a[0x40], b[0x40], c[0x40];
+
+	Con_FormatFloat(a, sizeof(a), x);
+	Con_FormatFloat(b, sizeof(b), y);
+	Con_FormatFloat(c, sizeof(c), z);
+	Str_PrintfQuiet(buf, size, "(%s, %s, %s)", a, b, c);
+}
+
+/* the text inside matching quotes (backslash escapes as in Python), else the text itself */
+static void Con_Unquote(char *dst, int size, const char *s) {
+	size_t len = strlen(s);
+	int n = 0;
+
+	if (len < 2 || (s[0] != '"' && s[0] != '\'') || s[len - 1] != s[0]) {
+		Str_Copy(dst, s, size);
+		return;
+	}
+	for (const char *p = s + 1; p < s + len - 1 && n < size - 1; p++) {
+		if (*p == '\\' && p + 1 < s + len - 1) {
+			p++;
+			dst[n++] = *p == 'n' ? '\n' : *p == 't' ? '\t' : *p;
+		} else {
+			dst[n++] = *p;
+		}
+	}
+	dst[n] = 0;
+}
+
+/* ---- engine variables ---- */
+
+/* the value of an engine variable as Python's repr of Scrap.Get / Scrap.Def gives it */
+static void Con_ReprGVar(char *buf, int size, const cGVar *v, byte def) {
+	switch (v->base.type) {
+	case GVAR_STRING:
+		Con_ReprString(buf, size, (def ? v->def.s : v->value.s) ? (def ? v->def.s : v->value.s) : "");
+		break;
+	case GVAR_INT:
+		Str_PrintfQuiet(buf, size, "%d", def ? v->def.i : v->value.i);
+		break;
+	case GVAR_FLOAT:
+		Con_FormatFloat(buf, size, (double)(def ? v->def.f : v->value.f));
+		break;
+	case GVAR_FUNCTION:
+		Str_Copy(buf, "'<function>'", size);
+		break;
+	default:
+		Str_Copy(buf, "'<Script function>'", size);
+		break;
+	}
+}
+
+/* ":name": "name = value (default = value) ### description" */
+static void Con_ShowVar(const char *name) {
+	char cur[0x400], def[0x400], line[0xa00];
+
+	cGVar *v = GVar_Find(name);
+	if (!v) {
+		Con_Errorf("ERROR: '%s' global variable not defined\n", name);
+		return;
+	}
+	Con_ReprGVar(cur, sizeof(cur), v, 0);
+	Con_ReprGVar(def, sizeof(def), v, 1);
+	Str_PrintfQuiet(line, sizeof(line), "%s = %s (default = %s) ### %s\n", name, cur, def,
+		v->base.description ? v->base.description : "");
+	Con_Print(0, line, 0);
+}
+
+/* ":name value": a number for int and float variables, the text (quotes taken off) for the others */
+static void Con_SetVar(const char *name, const char *val) {
+	char s[0x400];
+	double d;
+	int r;
+
+	cGVar *v = GVar_Find(name);
+	if (v && (v->base.type == GVAR_INT || v->base.type == GVAR_FLOAT)) {
+		if (!Con_Number(val, &d)) {
+			Con_Errorf("ERROR: '%s' global variable must be integer or float\n", name);
+			return;
+		}
+		r = GVar_SetNum(name, d);
+	} else {
+		Con_Unquote(s, sizeof(s), val);
+		r = GVar_SetStr(name, s);
+	}
+	if (r == 1) {
+		Str_PrintfQuiet(s, sizeof(s), "%s = %s", name, val);
+		Con_Print(CON_COLOR_OUT, s, 0);
+		Con_Print(CON_COLOR_OUT, "\n", 0);
+	}
+}
+
+/* ---- commands ---- */
+
+typedef struct conParam {
+	const char *name;
+	char type;			/* n number, s text (a number is taken as its text), v vector, a number or text */
+	const char *def;		/* NULL: required; "None": may be left out */
+} conParam;
+
+typedef struct conCmd {
+	const char *name;
+	void (*fn)(const char *cmd, const conArg *a);
+	const char *desc;
+	conParam p[4];
+} conCmd;
+
+static const conCmd *Con_FindCmd(const char *name);
+static void Con_Help(void);
+
+/* one value at *pp up to the next top level comma: "text", 'text', (x,y,z), None, a number or bare text */
+static byte Con_ParseValue(const char **pp, conArg *a) {
+	const char *p = *pp;
+	int n = 0;
+
+	memset(a, 0, sizeof(*a));
+	while (*p == ' ' || *p == '\t') {
+		p++;
+	}
+	if (*p == '"' || *p == '\'') {
+		char q = *p++;
+		for (; *p && *p != q; p++) {
+			if (*p == '\\' && p[1]) {
+				p++;
+				if (n < CON_TEXT - 1) {
+					a->s[n++] = *p == 'n' ? '\n' : *p == 't' ? '\t' : *p;
+				}
+			} else if (n < CON_TEXT - 1) {
+				a->s[n++] = *p;
+			}
+		}
+		if (*p != q) {
+			return 0;
+		}
+		p++;
+		a->type = CA_STR;
+	} else if (*p == '(') {
+		const char *end = strchr(p, ')');
+		char piece[0x40];
+		int k = 0;
+		if (!end) {
+			return 0;
+		}
+		Str_Copy(a->s, p, (int)(end - p + 2) < CON_TEXT ? (int)(end - p + 2) : CON_TEXT);
+		for (p++; p < end; k++) {
+			const char *c = memchr(p, ',', (size_t)(end - p));
+			if (!c) {
+				c = end;
+			}
+			if (k >= 3 || c - p >= (int)sizeof(piece)) {
+				return 0;
+			}
+			memcpy(piece, p, (size_t)(c - p));
+			piece[c - p] = 0;
+			Str_TrimBlanks(piece);
+			if (!Con_Number(piece, &a->v[k])) {
+				return 0;
+			}
+			p = c < end ? c + 1 : end;
+		}
+		if (k != 3) {
+			return 0;
+		}
+		p = end + 1;
+		a->type = CA_VEC;
+	} else {
+		const char *c = strchr(p, ',');
+		size_t len = c ? (size_t)(c - p) : strlen(p);
+		if (len >= CON_TEXT) {
+			len = CON_TEXT - 1;
+		}
+		memcpy(a->s, p, len);
+		a->s[len] = 0;
+		Str_TrimBlanks(a->s);
+		p += c ? (size_t)(c - p) : strlen(p);
+		if (!a->s[0]) {
+			return 0;
+		}
+		a->type = Con_Number(a->s, &a->v[0]) ? CA_NUM : strcmp(a->s, "None") ? CA_STR : CA_NONE;
+	}
+	while (*p == ' ' || *p == '\t') {
+		p++;
+	}
+	if (*p && *p != ',') {
+		return 0;
+	}
+	*pp = p;
+	return 1;
+}
+
+/* "name=" at *pp (not "=="): the name, *pp after the '=' */
+static byte Con_ParseKeyword(const char **pp, char *name, int size) {
+	const char *p = *pp;
+	int n = 0;
+
+	while (*p == ' ' || *p == '\t') {
+		p++;
+	}
+	if (!((*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z') || *p == '_')) {
+		return 0;
+	}
+	while (((*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9') || *p == '_')) {
+		if (n < size - 1) {
+			name[n++] = *p;
+		}
+		p++;
+	}
+	name[n] = 0;
+	while (*p == ' ' || *p == '\t') {
+		p++;
+	}
+	if (*p != '=' || p[1] == '=') {
+		return 0;
+	}
+	*pp = p + 1;
+	return 1;
+}
+
+static void Con_Usage(const conCmd *c) {
+	char args[0x100];
+	int n = 0;
+
+	args[0] = 0;
+	for (const conParam *p = c->p; p->name; p++) {
+		n += Str_PrintfQuiet(args + n, (int)sizeof(args) - n, "%s%s%s%s", p == c->p ? "" : ",", p->name,
+			p->def ? "=" : "", p->def ? p->def : "");
+	}
+	Con_Errorf("Usage: /%s %s\n", c->name, args);
+}
+
+/* the arguments of a command line on the parameters of c (positional, then name=value; a vector parameter also
+ * takes three numbers), the defaults filled in and the types checked; 0 with the message printed */
+static byte Con_BindArgs(const conCmd *c, const char *line, conArg *out) {
+	conArg in[CON_MAXARGS];
+	char kw[CON_MAXARGS][0x20];
+	byte set[4] = { 0 };
+	int n = 0, np = 0;
+	const char *p = line;
+
+	while (c->p[np].name) {
+		np++;
+	}
+	while (*p == ' ' || *p == '\t') {
+		p++;
+	}
+	while (*p) {
+		const char *save = p;
+		if (n >= CON_MAXARGS) {
+			Con_Usage(c);
+			return 0;
+		}
+		if (!Con_ParseKeyword(&p, kw[n], sizeof(kw[n]))) {
+			kw[n][0] = 0;
+			p = save;
+		}
+		if (!Con_ParseValue(&p, &in[n])) {
+			Con_Errorf("/%s: cannot read the arguments (open quote?)\n", c->name);
+			return 0;
+		}
+		n++;
+		if (*p == ',') {
+			p++;
+		}
+		while (*p == ' ' || *p == '\t') {
+			p++;
+		}
+	}
+	for (int i = 0, k = 0; i < n; i++) {
+		int at = k;
+		if (kw[i][0]) {
+			for (at = 0; at < np && strcmp(c->p[at].name, kw[i]); at++) {
+			}
+			if (at == np) {
+				Con_Errorf("/%s: unknown argument name %s\n", c->name, kw[i]);
+				return 0;
+			}
+		} else {
+			if (k >= np) {
+				Con_Usage(c);
+				return 0;
+			}
+			k++;
+		}
+		if (set[at]) {
+			Con_Usage(c);
+			return 0;
+		}
+		out[at] = in[i];
+		if (c->p[at].type == 'v' && in[i].type == CA_NUM && !kw[i][0] && i + 2 < n && !kw[i + 1][0] && !kw[i + 2][0]
+			&& in[i + 1].type == CA_NUM && in[i + 2].type == CA_NUM) {
+			out[at].type = CA_VEC;
+			out[at].v[1] = in[i + 1].v[0];
+			out[at].v[2] = in[i + 2].v[0];
+			i += 2;
+		}
+		set[at] = 1;
+	}
+	for (int k = 0; k < np; k++) {
+		const conParam *prm = &c->p[k];
+		if (!set[k]) {
+			const char *d = prm->def;
+			if (!d || !Con_ParseValue(&d, &out[k])) {
+				Con_Usage(c);
+				return 0;
+			}
+		}
+		conArg *a = &out[k];
+		if (a->type == CA_NONE && prm->def && !strcmp(prm->def, "None")) {
+			continue;
+		}
+		if (prm->type == 's' && a->type == CA_NUM) {
+			a->type = CA_STR;
+		}
+		if ((prm->type == 'n' && a->type != CA_NUM) || (prm->type == 's' && a->type != CA_STR)
+			|| (prm->type == 'v' && a->type != CA_VEC) || (prm->type == 'a' && a->type != CA_NUM && a->type != CA_STR)) {
+			Con_Errorf(prm->type == 'n' ? "/%s: argument %s is not a number\n" : prm->type == 'v'
+				? "/%s: argument %s is not a vector\n" : "/%s: argument %s is not text\n", c->name, prm->name);
+			return 0;
+		}
+	}
+	return 1;
+}
+
+/* ---- entity variables as the attribute get and set of an entity handle (PyEntity.c) ---- */
+
+static cEntity *Con_Entity(const char *name) {
+	return name ? World_FindEntity(name) : NULL;
+}
+
+static cEntity *Con_Cam(void) {
+	return Con_Entity(cWorld_GetCamName(g_pWorld, 0));
+}
+
+/* the entity or the message of a missing one */
+static cEntity *Con_Need(const char *cmd, cEntity *e, const char *name) {
+	if (!e) {
+		Con_Errorf("/%s: no such entity: %s\n", cmd, name ? name : "");
+	}
+	return e;
+}
+
+/* a number: the int variable, else the float one */
+static void Con_EntSetNum(cEntity *e, const char *var, double d) {
+	int i = (int)d;
+
+	if (!Entity_VarI(e, var, &i, 1) && !Entity_VarF(e, var, &d, 1)) {
+		Con_Errorf("'%s'->%s : Member invalid.\n", e->name, var);
+	}
+}
+
+static void Con_EntSetVec(cEntity *e, const char *var, const double *v) {
+	double x = v[0], y = v[1], z = v[2];
+
+	if (!Entity_VarV(e, var, &x, &y, &z, 1)) {
+		Con_Errorf("'%s'->%s : Member invalid.\n", e->name, var);
+	}
+}
+
+static void Con_EntSetStr(cEntity *e, const char *var, const char *s) {
+	char *t = (char *)s;
+
+	if (!Entity_VarS(e, var, &t, 1)) {
+		Con_Errorf("'%s'->%s : Member invalid.\n", e->name, var);
+	}
+}
+
+static byte Con_EntVec(cEntity *e, const char *var, double *v) {
+	if (!Entity_VarV(e, var, &v[0], &v[1], &v[2], 0)) {
+		Con_Errorf("'%s'->%s : Member invalid.\n", e->name, var);
+		return 0;
+	}
+	return 1;
+}
+
+/* a variable as Python's str() of the attribute prints it; 0 with the message when there is none */
+static byte Con_EntText(cEntity *e, const char *var, char *buf, int size) {
+	int i = 0;
+	double x = 0.0, y = 0.0, z = 0.0;
+	char *s = NULL;
+
+	if (Entity_VarI(e, var, &i, 0)) {
+		Str_PrintfQuiet(buf, size, "%d", i);
+	} else if (Entity_VarF(e, var, &x, 0)) {
+		Con_FormatFloat(buf, size, x);
+	} else if (Entity_VarV(e, var, &x, &y, &z, 0)) {
+		Con_FormatVec(buf, size, x, y, z);
+	} else if (Entity_VarS(e, var, &s, 0)) {
+		Str_Copy(buf, s ? s : "None", size);
+	} else {
+		Con_Errorf("'%s'->%s : Member invalid.\n", e->name, var);
+		return 0;
+	}
+	return 1;
+}
+
+/* ---- the commands (QuickConsole.py) ---- */
+
+static double con_lastTimeSpeed = 1.0;		/* QuickConsole.LastTimeSpeed */
+
+static void Cmd_Speed(const char *cmd, const conArg *a) {
+	(void)cmd;
+	Timer_SetSpeed(&g_pWorld->timer, (float)a[0].v[0]);
+}
+
+static void Cmd_Stop(const char *cmd, const conArg *a) {
+	(void)cmd;
+	(void)a;
+	if (con_lastTimeSpeed > 0.0) {
+		con_lastTimeSpeed = (double)g_pWorld->timer.speed;
+		Timer_SetSpeed(&g_pWorld->timer, 0.0f);
+	}
+}
+
+static void Cmd_Go(const char *cmd, const conArg *a) {
+	(void)cmd;
+	(void)a;
+	Timer_SetSpeed(&g_pWorld->timer, (float)con_lastTimeSpeed);
+}
+
+static void Cmd_CShow(const char *cmd, const conArg *a) {
+	(void)cmd;
+	if (a[0].type == CA_NUM) {
+		GVar_SetNum("cshow", a[0].v[0]);
+	} else {
+		GVar_SetStr("cshow", a[0].s);
+	}
+}
+
+static void Cmd_ListModels(const char *cmd, const conArg *a) {
+	(void)cmd;
+	(void)a;
+	Models_List();
+}
+
+static void Cmd_ModelInfo(const char *cmd, const conArg *a) {
+	(void)cmd;
+	Model_Info(a[0].s, (int)a[1].v[0]);
+}
+
+static void Cmd_Screenshot(const char *cmd, const conArg *a) {
+	char name[CON_TEXT + 2];
+
+	(void)cmd;
+	Str_PrintfQuiet(name, sizeof(name), "%s*", a[0].s);
+	Screenshot_Take(name);
+}
+
+static void Cmd_Reset3D(const char *cmd, const conArg *a) {
+	(void)cmd;
+	(void)a;
+	Video_SetCurrentMode(Video_GetCurrentMode());
+}
+
+static void Con_ShowMap(int on) {
+	GVar_SetNum("RenderSky", on);
+	GVar_SetNum("RenderMap", on);
+	GVar_SetNum("R_SkipUpdateVis", !on);
+}
+
+static void Cmd_HideMap(const char *cmd, const conArg *a) {
+	(void)cmd;
+	(void)a;
+	Con_ShowMap(0);
+}
+
+static void Cmd_ShowMap(const char *cmd, const conArg *a) {
+	(void)cmd;
+	(void)a;
+	Con_ShowMap(1);
+}
+
+static void Cmd_CamRot(const char *cmd, const conArg *a) {
+	cEntity *cam = Con_Need(cmd, Con_Cam(), cWorld_GetCamName(g_pWorld, 0));
+	if (cam) {
+		Con_EntSetNum(cam, "AddTurn", a[0].v[0]);
+	}
+}
+
+static void Cmd_MyPos(const char *cmd, const conArg *a) {
+	char line[0x100], vec[0xc0];
+	double v[3];
+
+	cEntity *e = Con_Need(cmd, cWorld_GetUsrEntity(g_pWorld, 0), "Player1");
+	if (!e) {
+		return;
+	}
+	if (a[0].type == CA_NUM && a[1].type == CA_NUM && a[2].type == CA_NUM) {
+		v[0] = a[0].v[0];
+		v[1] = a[1].v[0];
+		v[2] = a[2].v[0];
+		Con_EntSetVec(e, "Pos", v);
+		return;
+	}
+	if (!Con_EntVec(e, "Pos", v)) {
+		return;
+	}
+	Con_FormatVec(vec, sizeof(vec), v[0], v[1], v[2]);
+	Str_PrintfQuiet(line, sizeof(line), "e.Pos =  %s\n", vec);
+	Con_Print(CON_COLOR_OUT, line, 0);
+	if (!Con_EntVec(e, "Ang", v)) {
+		return;
+	}
+	Con_FormatVec(vec, sizeof(vec), v[0], v[1], v[2]);
+	Str_PrintfQuiet(line, sizeof(line), "e.Ang =  %s\n", vec);
+	Con_Print(CON_COLOR_OUT, line, 0);
+}
+
+static void Cmd_SetCam(const char *cmd, const conArg *a) {
+	cEntity *cam = Con_Need(cmd, Con_Cam(), cWorld_GetCamName(g_pWorld, 0));
+	if (cam) {
+		Con_EntSetVec(cam, "camPos", a[0].v);
+		Con_EntSetVec(cam, "camAng", a[1].v);
+		Con_EntSetNum(cam, "Fov", a[2].v[0]);
+	}
+}
+
+static void Cmd_GetCam(const char *cmd, const conArg *a) {
+	char pos[0xc0], ang[0xc0], fov[0x40], line[0x200];
+
+	(void)a;
+	cEntity *cam = Con_Need(cmd, Con_Cam(), cWorld_GetCamName(g_pWorld, 0));
+	if (cam && Con_EntText(cam, "camPos", pos, sizeof(pos)) && Con_EntText(cam, "camAng", ang, sizeof(ang))
+		&& Con_EntText(cam, "Fov", fov, sizeof(fov))) {
+		Str_PrintfQuiet(line, sizeof(line), "/setcam %s , %s , %s\n", pos, ang, fov);
+		Con_Print(CON_COLOR_OUT, line, 0);
+	}
+}
+
+static void Cmd_CamEnt(const char *cmd, const conArg *a) {
+	char target[CON_TEXT], name[CON_TEXT], line[0x240];
+
+	(void)a;
+	cEntity *cam = Con_Need(cmd, Con_Cam(), cWorld_GetCamName(g_pWorld, 0));
+	if (cam && Con_EntText(cam, "Target", target, sizeof(target)) && Con_EntText(cam, "Name", name, sizeof(name))) {
+		Str_PrintfQuiet(line, sizeof(line), "Entity '%s' at camera '%s'\n", target, name);
+		Con_Print(CON_COLOR_OUT, line, 0);
+	}
+}
+
+static void Cmd_Act(const char *cmd, const conArg *a) {
+	char target[CON_TEXT];
+	const char *name = a[0].s;
+
+	if (a[0].type == CA_NONE || !a[0].s[0]) {
+		cEntity *cam = Con_Need(cmd, Con_Cam(), cWorld_GetCamName(g_pWorld, 0));
+		if (!cam || !Con_EntText(cam, "Target", target, sizeof(target))) {
+			return;
+		}
+		name = target;
+	}
+	cEntity *e = Con_Need(cmd, Con_Entity(name), name);
+	if (e) {
+		Con_EntSetStr(e, "ForceAction", a[1].s);
+	}
+}
+
+typedef struct conDummy {
+	char name[0x40];
+	double pos[3];
+	double ang[2];
+	int flag;
+} conDummy;
+
+/* the order of Python's sort of the tuples (name, pos, ang, flag) */
+static int Con_DummyCmp(const void *pa, const void *pb) {
+	const conDummy *a = pa, *b = pb;
+	int r = strcmp(a->name, b->name);
+
+	for (int k = 0; !r && k < 3; k++) {
+		r = (a->pos[k] > b->pos[k]) - (a->pos[k] < b->pos[k]);
+	}
+	for (int k = 0; !r && k < 2; k++) {
+		r = (a->ang[k] > b->ang[k]) - (a->ang[k] < b->ang[k]);
+	}
+	return r ? r : (a->flag > b->flag) - (a->flag < b->flag);
+}
+
+static void Cmd_Dms(const char *cmd, const conArg *a) {
+	char line[0x200], pattern[CON_TEXT + 2], repr[0x100], x[0x40], y[0x40], z[0x40], p[0x40], q[0x40];
+	conDummy *list = NULL;
+	int n = 0, cap = 0;
+	vec3_t pos;
+	float ang[2];
+	byte flag;
+
+	(void)cmd;
+	Str_PrintfQuiet(line, sizeof(line), "Searching '%s*'...\n", a[0].s);
+	Con_Print(CON_COLOR_OUT, line, 0);
+	Str_PrintfQuiet(pattern, sizeof(pattern), "%s*", a[0].s);
+	DummySearch_Start(pattern, 1);
+	for (;;) {
+		conDummy d;
+		if (!DummySearch_Next(d.name, sizeof(d.name), &pos, ang, &flag)) {
+			break;
+		}
+		d.pos[0] = (double)pos.x;
+		d.pos[1] = (double)pos.y;
+		d.pos[2] = (double)pos.z;
+		d.ang[0] = (double)ang[0] * DEG_PER_PI / M_PI_D;
+		d.ang[1] = (double)ang[1] * DEG_PER_PI / M_PI_D;
+		d.flag = flag != 0;
+		if (n == cap) {
+			cap = cap ? cap * 2 : 64;
+			list = Mem_Realloc(list, (uint32_t)cap * sizeof(*list));
+		}
+		list[n++] = d;
+	}
+	if (n) {
+		qsort(list, (size_t)n, sizeof(*list), Con_DummyCmp);
+	}
+	for (int i = 0; i < n; i++) {
+		Con_ReprString(repr, sizeof(repr), list[i].name);
+		Con_FormatFloat(x, sizeof(x), list[i].pos[0]);
+		Con_FormatFloat(y, sizeof(y), list[i].pos[1]);
+		Con_FormatFloat(z, sizeof(z), list[i].pos[2]);
+		Con_FormatFloat(p, sizeof(p), list[i].ang[0]);
+		Con_FormatFloat(q, sizeof(q), list[i].ang[1]);
+		Str_PrintfQuiet(line, sizeof(line), "(%s, (%s, %s, %s), (%s, %s), %d)\n", repr, x, y, z, p, q, list[i].flag);
+		Con_Print(CON_COLOR_OUT, line, 0);
+	}
+	if (list) {
+		Mem_Free(list);
+	}
+}
+
+static void Cmd_Dmm(const char *cmd, const conArg *a) {
+	char line[0x200];
+	double pos[3], rot[3];
+
+	cEntity *e = cWorld_GetUsrEntity(g_pWorld, 0);
+	Str_PrintfQuiet(line, sizeof(line), "\n\n[%s]\n", a[0].s);
+	Con_Print(CON_COLOR_ERROR, line, 0);
+	if (e) {
+		if (!Con_EntVec(e, "Pos", pos) || !Con_EntVec(e, "Ang", rot)) {
+			return;
+		}
+	} else {
+		e = Con_Need(cmd, Con_Cam(), cWorld_GetCamName(g_pWorld, 0));
+		if (!e || !Con_EntVec(e, "camPos", pos) || !Con_EntVec(e, "camAng", rot)) {
+			return;
+		}
+	}
+	Str_PrintfQuiet(line, sizeof(line), "Pos = \t%d\t%d\t%d\n", (int)pos[0], (int)pos[1], (int)pos[2]);
+	Con_Print(CON_COLOR_ERROR, line, 0);
+	Str_PrintfQuiet(line, sizeof(line), "Rot = \t%d\t%d\t%d\n\n\n", (int)-rot[0], (int)(rot[1] + 180.0), (int)rot[2]);
+	Con_Print(CON_COLOR_ERROR, line, 0);
+}
+
+static void Cmd_Kick(const char *cmd, const conArg *a) {
+	char line[CON_TEXT + 0x20];
+
+	(void)cmd;
+	if (g_pApp->flags & APPF_CLIENT) {
+		Str_PrintfQuiet(line, sizeof(line), "/kick '%s'", a[0].s);
+		Net_SendCtrlString(line);
+		return;
+	}
+	Str_PrintfQuiet(line, sizeof(line), Net_Kick(a[0].s) ? "%s is going to be kicked...\n" : "%s cannot be kicked\n",
+		a[0].s);
+	Con_Print(0, line, 0);
+}
+
+static void Cmd_Join(const char *cmd, const conArg *a) {
+	(void)cmd;
+	Net_InitClient(a[0].s, (int)a[1].v[0]);
+}
+
+static void Cmd_Help(const char *cmd, const conArg *a) {
+	(void)cmd;
+	(void)a;
+	Con_Help();
+}
+
+static const conCmd con_cmds[] = {
+	{ "help", Cmd_Help, "show this help", { { NULL } } },
+	{ "speed", Cmd_Speed, "set the game speed (1 normal, 0 paused)", { { "ts", 'n', NULL }, { NULL } } },
+	{ "stop", Cmd_Stop, "pause the game and remember the speed", { { NULL } } },
+	{ "go", Cmd_Go, "continue at the remembered speed", { { NULL } } },
+	{ "cshow", Cmd_CShow, "set the engine variable cshow", { { "f", 'a', NULL }, { NULL } } },
+	{ "listmodels", Cmd_ListModels, "list the loaded models", { { NULL } } },
+	{ "modelinfo", Cmd_ModelInfo, "print information about a model",
+		{ { "Ename", 's', "\"\"" }, { "Nmodel", 'n', "1" }, { NULL } } },
+	{ "screenshot", Cmd_Screenshot, "save a screenshot", { { "name", 's', "\"Shot\"" }, { NULL } } },
+	{ "reset3d", Cmd_Reset3D, "restart the video mode", { { NULL } } },
+	{ "hidemap", Cmd_HideMap, "hide the map and the sky", { { NULL } } },
+	{ "showmap", Cmd_ShowMap, "show the map and the sky", { { NULL } } },
+	{ "camrot", Cmd_CamRot, "turn the camera by an angle in degrees", { { "angulus", 'n', "180" }, { NULL } } },
+	{ "mypos", Cmd_MyPos, "move the player, or print position and angles",
+		{ { "x", 'n', "None" }, { "y", 'n', "None" }, { "z", 'n', "None" }, { NULL } } },
+	{ "setcam", Cmd_SetCam, "place the camera (position, angles, fov)",
+		{ { "pos", 'v', NULL }, { "ang", 'v', NULL }, { "fov", 'n', NULL }, { NULL } } },
+	{ "getcam", Cmd_GetCam, "print the /setcam line for the camera", { { NULL } } },
+	{ "CamEnt", Cmd_CamEnt, "print the entity the camera follows", { { NULL } } },
+	{ "act", Cmd_Act, "force an action on an entity",
+		{ { "EntityName", 's', "None" }, { "ActName", 's', "\"Relax\"" }, { NULL } } },
+	{ "dms", Cmd_Dms, "list dummies whose names start with name", { { "name", 's', NULL }, { NULL } } },
+	{ "dmm", Cmd_Dmm, "print a dummy line for the player position", { { "DummyName", 's', "\"DummyName\"" }, { NULL } } },
+	{ "kick", Cmd_Kick, "disconnect a player (server only)", { { "name", 's', NULL }, { NULL } } },
+	{ "join", Cmd_Join, "connect to a server", { { "address", 's', "\"Localhost\"" }, { "port", 'n', "0" }, { NULL } } },
+};
+
+/* by the exact name, as Python finds QuickConsole's functions */
+static const conCmd *Con_FindCmd(const char *name) {
+	for (size_t i = 0; i < sizeof(con_cmds) / sizeof(con_cmds[0]); i++) {
+		if (!strcmp(con_cmds[i].name, name)) {
+			return &con_cmds[i];
+		}
+	}
+	return NULL;
+}
+
+/* the help lines, with all the commands and their arguments */
+static void Con_Help(void) {
+	char line[0x100], usage[0x80];
+
+	Con_Print(0, con_help1, 0);
+	Con_Print(0, con_help2, 0);
+	Con_Print(0, "Commands (use /name args, separate args with commas):\n", 0);
+	for (size_t i = 0; i < sizeof(con_cmds) / sizeof(con_cmds[0]); i++) {
+		const conCmd *c = &con_cmds[i];
+		int n = Str_PrintfQuiet(usage, sizeof(usage), "/%s", c->name);
+		for (const conParam *p = c->p; p->name; p++) {
+			n += Str_PrintfQuiet(usage + n, (int)sizeof(usage) - n, "%s%s%s%s", p == c->p ? " " : ",", p->name,
+				p->def ? "=" : "", p->def ? p->def : "");
+		}
+		Str_PrintfQuiet(line, sizeof(line), "  %-32s %s\n", usage, c->desc);
+		Con_Print(0, line, 0);
+	}
+}
+
+/* ---- the fallback and the parser ---- */
+
+/* the one place where a console line still runs as Python (see CONSOLE_PYTHON) */
+static void Console_PythonFallback(const char *line) {
+#if CONSOLE_PYTHON
+	char code[0x400], name[0x400];
+
+	if (line[0] != '/') {
+		PyRun_ScrapString(line);
+		return;
+	}
+	Str_Copy(name, line + 1, sizeof(name));
+	char *val = strchr(name, ' ');
+	if (val) {
+		*val++ = 0;
+		Str_TrimBlanks(val);
+		Str_TrimBlanks(name);
+		Str_PrintfQuiet(code, sizeof(code), "import QuickConsole;QuickConsole.%s(%s)", name, val);
+	} else {
+		Str_PrintfQuiet(code, sizeof(code), "import QuickConsole;QuickConsole.%s()", name);
+	}
+	PyRun_ScrapString(code);
+#else
+	Con_Errorf("Unknown command or line: %s (type help for the list)\n", line);
+#endif
+}
+
+/* "/name args": a command of the table, else the fallback */
+static void Console_Command(const char *line) {
+	char name[0x40];
+	conArg args[4];
+	const char *p = line + 1;
+	int n = 0;
+
+	while (*p == ' ') {
+		p++;
+	}
+	while (*p && *p != ' ' && n < (int)sizeof(name) - 1) {
+		name[n++] = *p++;
+	}
+	name[n] = 0;
+	const conCmd *c = Con_FindCmd(n ? name : "help");
+	if (!c) {
+		Console_PythonFallback(line);
+		return;
+	}
+	memset(args, 0, sizeof(args));
+	if (Con_BindArgs(c, p, args)) {
+		c->fn(c->name, args);
+	}
+}
+
+/* a line of the console: "/command args", ":name" and ":name value", "?prefix", "help" */
+void Console_Execute(const char *cmd) {
+	char name[0x400];
+
+	switch (cmd[0]) {
+	case '/':
+		Console_Command(cmd);
+		return;
+	case ':': {
+		Str_Copy(name, cmd + 1, sizeof(name));
+		char *val = strchr(name, ' ');
+		if (val) {
+			*val++ = 0;
+			Str_TrimBlanks(val);
+			Str_TrimBlanks(name);
+			Con_SetVar(name, val);
+		} else {
+			Str_TrimBlanks(name);
+			Con_ShowVar(name);
+		}
+		return;
+	}
+	case '?':
+		GVars_Show(cmd + 1);
+		return;
+	default:
+		Str_Copy(name, cmd, sizeof(name));
+		Str_TrimBlanks(name);
+		if (!crt_stricmp(name, "help")) {
+			Con_Help();
+			return;
+		}
+		Console_PythonFallback(cmd);
+		return;
+	}
+}
