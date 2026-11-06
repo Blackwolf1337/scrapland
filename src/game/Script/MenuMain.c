@@ -469,8 +469,12 @@ static void Main_SaveName(const char *save, char *out, int size) {
 	Str_Copy(station, cad, end + 1 < (int)sizeof(station) ? end + 1 : (int)sizeof(station));
 	Str_Printf(key, sizeof(key), "Station_%s", station);
 	const char *lang = Script_Lang(key);
-	int from = index < 0 ? len + index : index;
-	Str_Printf(text, sizeof(text), "%s %s", *lang ? lang : station, cad + (from < 0 ? 0 : from));
+	/* saveGameCad[i + index:]: a slice of the whole name, an autosave name without a dash goes on from character 8 */
+	int from = (autoSave ? 9 : 0) + index;
+	if (from < 0) {
+		from += (int)strlen(save);
+	}
+	Str_Printf(text, sizeof(text), "%s %s", *lang ? lang : station, save + (from < 0 ? 0 : from));
 	if (autoSave) {
 		Str_Printf(out, size, "(%s) %s", Script_Lang("Menu_AutoSave"), text);
 	} else {
