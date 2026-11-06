@@ -107,6 +107,7 @@ SuperDeal_Tenth	om	data01.packed/levels/om/scripts/superdeal_tenth.pyc
 Map	orbit	data01.packed/levels/orbit/scripts/map.pyc
 MapDecont	orbit	data01.packed/levels/orbit/scripts/mapdecont.pyc
 MapSnd	orbit	data01.packed/levels/orbit/scripts/mapsnd.pyc
+Mission_IntroHuman	orbit	data01.packed/levels/orbit/scripts/mission_introhuman.pyc
 Map	outskirts	data01.packed/levels/outskirts/scripts/map.pyc
 MapRace	outskirts	data01.packed/levels/outskirts/scripts/maprace.pyc
 MapSnd	outskirts	data01.packed/levels/outskirts/scripts/mapsnd.pyc

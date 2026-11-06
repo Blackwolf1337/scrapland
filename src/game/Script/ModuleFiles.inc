@@ -314,6 +314,9 @@ static const char mod_levels_orbit_mapdecont[] = {
 static const char mod_levels_orbit_mapsnd[] = {
 #embed "../../../data/levels/orbit/mapsnd.mod"
 	, 0 };
+static const char mod_levels_orbit_mission_introhuman[] = {
+#embed "../../../data/levels/orbit/mission_introhuman.mod"
+	, 0 };
 static const char mod_levels_outskirts_map[] = {
 #embed "../../../data/levels/outskirts/map.mod"
 	, 0 };
@@ -484,6 +487,7 @@ static const moduleFile_t module_files[] = {
 	{ "orbit", "Map", "levels/orbit/map.mod", mod_levels_orbit_map },
 	{ "orbit", "MapDecont", "levels/orbit/mapdecont.mod", mod_levels_orbit_mapdecont },
 	{ "orbit", "MapSnd", "levels/orbit/mapsnd.mod", mod_levels_orbit_mapsnd },
+	{ "orbit", "Mission_IntroHuman", "levels/orbit/mission_introhuman.mod", mod_levels_orbit_mission_introhuman },
 	{ "outskirts", "Map", "levels/outskirts/map.mod", mod_levels_outskirts_map },
 	{ "outskirts", "MapRace", "levels/outskirts/maprace.mod", mod_levels_outskirts_maprace },
 	{ "outskirts", "MapSnd", "levels/outskirts/mapsnd.mod", mod_levels_outskirts_mapsnd },
