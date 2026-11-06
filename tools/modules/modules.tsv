@@ -52,6 +52,12 @@ Map	fake	Data.packed/levels/fake/scripts/map.pyc
 MapSnd	fake	Data.packed/levels/fake/scripts/mapsnd.pyc
 Map	fz	Data.packed/levels/fz/scripts/map.pyc
 MapSnd	fz	Data.packed/levels/fz/scripts/mapsnd.pyc
+Mission_MortalRace	fz	Data.packed/levels/fz/scripts/mission_mortalrace.pyc
+SuperDeal_Fifth	fz	Data.packed/levels/fz/scripts/superdeal_fifth.pyc
+SuperDeal_Ninth	fz	Data.packed/levels/fz/scripts/superdeal_ninth.pyc
+SuperDeal_Second	fz	Data.packed/levels/fz/scripts/superdeal_second.pyc
+SuperDeal_Seventh	fz	Data.packed/levels/fz/scripts/superdeal_seventh.pyc
+SuperDeal_Twelfth	fz	Data.packed/levels/fz/scripts/superdeal_twelfth.pyc
 MapSnd	gamblinden	data03.packed/levels/gamblinden/scripts/mapsnd.pyc
 Map	gdb	data03.packed/levels/gdb/scripts/map.pyc
 MapMatrix	gdb	data03.packed/levels/gdb/scripts/mapmatrix.pyc

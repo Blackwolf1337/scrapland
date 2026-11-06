@@ -149,6 +149,24 @@ static const char mod_levels_fz_map[] = {
 static const char mod_levels_fz_mapsnd[] = {
 #embed "../../../data/levels/fz/mapsnd.mod"
 	, 0 };
+static const char mod_levels_fz_mission_mortalrace[] = {
+#embed "../../../data/levels/fz/mission_mortalrace.mod"
+	, 0 };
+static const char mod_levels_fz_superdeal_fifth[] = {
+#embed "../../../data/levels/fz/superdeal_fifth.mod"
+	, 0 };
+static const char mod_levels_fz_superdeal_ninth[] = {
+#embed "../../../data/levels/fz/superdeal_ninth.mod"
+	, 0 };
+static const char mod_levels_fz_superdeal_second[] = {
+#embed "../../../data/levels/fz/superdeal_second.mod"
+	, 0 };
+static const char mod_levels_fz_superdeal_seventh[] = {
+#embed "../../../data/levels/fz/superdeal_seventh.mod"
+	, 0 };
+static const char mod_levels_fz_superdeal_twelfth[] = {
+#embed "../../../data/levels/fz/superdeal_twelfth.mod"
+	, 0 };
 static const char mod_levels_gamblinden_mapsnd[] = {
 #embed "../../../data/levels/gamblinden/mapsnd.mod"
 	, 0 };
@@ -354,6 +372,12 @@ static const moduleFile_t module_files[] = {
 	{ "fake", "MapSnd", "levels/fake/mapsnd.mod", mod_levels_fake_mapsnd },
 	{ "fz", "Map", "levels/fz/map.mod", mod_levels_fz_map },
 	{ "fz", "MapSnd", "levels/fz/mapsnd.mod", mod_levels_fz_mapsnd },
+	{ "fz", "Mission_MortalRace", "levels/fz/mission_mortalrace.mod", mod_levels_fz_mission_mortalrace },
+	{ "fz", "SuperDeal_Fifth", "levels/fz/superdeal_fifth.mod", mod_levels_fz_superdeal_fifth },
+	{ "fz", "SuperDeal_Ninth", "levels/fz/superdeal_ninth.mod", mod_levels_fz_superdeal_ninth },
+	{ "fz", "SuperDeal_Second", "levels/fz/superdeal_second.mod", mod_levels_fz_superdeal_second },
+	{ "fz", "SuperDeal_Seventh", "levels/fz/superdeal_seventh.mod", mod_levels_fz_superdeal_seventh },
+	{ "fz", "SuperDeal_Twelfth", "levels/fz/superdeal_twelfth.mod", mod_levels_fz_superdeal_twelfth },
 	{ "gamblinden", "MapSnd", "levels/gamblinden/mapsnd.mod", mod_levels_gamblinden_mapsnd },
 	{ "gdb", "Map", "levels/gdb/map.mod", mod_levels_gdb_map },
 	{ "gdb", "MapMatrix", "levels/gdb/mapmatrix.mod", mod_levels_gdb_mapmatrix },
