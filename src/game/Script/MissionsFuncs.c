@@ -10,7 +10,10 @@
  * with the module code (the save variables it creates), because the missions read and change them; the functions read
  * them as their globals.
  */
+#include <ctype.h>
 #include <limits.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "scrap/script.h"
 
@@ -1124,7 +1127,190 @@ static PyObject *MissionsFuncs_BuildCTFData(PyObject *self, PyObject *args) {
 	return Sf_Return(&f, data);
 }
 
-/* exec(Scrap.GetSaveVar(var)) when it holds code; on victory the super deal type is cleared first */
+/*
+ * The code the super deals and the crazy gambler missions leave in the save variables OnAbort and OnVictory
+ * (superdeal_*.py, mission_igorcombat, mission_bankerscombat, mission_bankersctf, mission_mortalrace and OM.c write
+ * them; a save of the original game holds the same texts). Each known text has its statements in order: "import Mod",
+ * or "Name.Func" and its constant arguments after '|' ('text or an int). They run as exec runs them in
+ * SuperDealOnDefeat and SuperDealOnVictory: the imports stored in the locals of the function, a name looked up in the
+ * locals, the globals of MissionsFuncs and the builtins (mission_bankerscombat never imports SaveGame: NameError, as
+ * in the original), the string constants shared and interned as the compiler makes them.
+ */
+#define MF_CODE_STEPS 8
+
+typedef struct {
+	const char *text;
+	const char *steps[MF_CODE_STEPS];
+} mfCode_t;
+
+#define MF_DEAL(n) { "import SuperDeal_" n ";SuperDeal_" n ".Victory()", { "import SuperDeal_" n, "SuperDeal_" n ".Victory" } }
+#define MF_END_DEAL "MissionsFuncs.EndOfSuperDeal|'SuperDeal_Faliure_SystemMessage1"
+#define MF_SETMAP(level) "Scrap.SetSaveVar|'Map|'Levels/" level
+#define MF_QLOAD(level) "SaveGame.QLoad|'Levels/" level
+
+static const mfCode_t mf_codes[] = {
+	{ "import MissionsFuncs; MissionsFuncs.EndOfSuperDeal('SuperDeal_Faliure_SystemMessage1')",
+		{ "import MissionsFuncs", MF_END_DEAL } },
+	/* superdeal_third.py */
+	{ "import MissionsFuncs; import MissionsFuncs; MissionsFuncs.EndOfSuperDeal('SuperDeal_Faliure_SystemMessage1')",
+		{ "import MissionsFuncs", "import MissionsFuncs", MF_END_DEAL } },
+	MF_DEAL("First"), MF_DEAL("Second"), MF_DEAL("Third"), MF_DEAL("Fourth"), MF_DEAL("Fifth"), MF_DEAL("Sixth"),
+	MF_DEAL("Seventh"), MF_DEAL("Eighth"), MF_DEAL("Ninth"), MF_DEAL("Tenth"), MF_DEAL("Eleventh"), MF_DEAL("Twelfth"),
+	/* ca/mission_igorcombat.py */
+	{ "import SaveGame; SaveGame.MMDesc(\"Mission_ArrangeIgorCombat_MissionText1\",1);import MissionsFuncs; "
+		"MissionsFuncs.SetNextMission(\"Mission_ArrangeIgorCombat\", \"GamblinDen\");Scrap.SetSaveVar(\"Map\", "
+		"\"Levels/GamblinDen\");import SaveGame; SaveGame.QLoad(\"Levels/GamblinDen\")",
+		{ "import SaveGame", "SaveGame.MMDesc|'Mission_ArrangeIgorCombat_MissionText1|1", "import MissionsFuncs",
+			"MissionsFuncs.SetNextMission|'Mission_ArrangeIgorCombat|'GamblinDen", MF_SETMAP("GamblinDen"),
+			"import SaveGame", MF_QLOAD("GamblinDen") } },
+	{ "import SaveGame; SaveGame.QWayPoint();import MissionsFuncs; MissionsFuncs.SetNextMission("
+		"\"Mission_ArrangeBankersCombat\", \"GamblinDen\");Scrap.SetSaveVar(\"Map\", \"Levels/GamblinDen\");"
+		"import SaveGame; SaveGame.QLoad(\"Levels/GamblinDen\")",
+		{ "import SaveGame", "SaveGame.QWayPoint", "import MissionsFuncs",
+			"MissionsFuncs.SetNextMission|'Mission_ArrangeBankersCombat|'GamblinDen", MF_SETMAP("GamblinDen"),
+			"import SaveGame", MF_QLOAD("GamblinDen") } },
+	/* qf/mission_bankerscombat.py */
+	{ "import MissionsFuncs; MissionsFuncs.SetNextMission(\"Mission_ArrangeBankersCombat\", \"GamblinDen\");"
+		"Scrap.SetSaveVar(\"Map\", \"Levels/GamblinDen\");SaveGame.QLoad(\"Levels/GamblinDen\")",
+		{ "import MissionsFuncs", "MissionsFuncs.SetNextMission|'Mission_ArrangeBankersCombat|'GamblinDen",
+			MF_SETMAP("GamblinDen"), MF_QLOAD("GamblinDen") } },
+	{ "Scrap.SetSaveVar(\"GameAct\", \"2ndMurder\");SaveGame.QWayPoint();import MissionsFuncs; "
+		"MissionsFuncs.SetNextMission(\"Mission_PressMeeting\", \"Press\");Scrap.SetSaveVar(\"Map\", "
+		"\"Levels/Press\");SaveGame.QLoad(\"Levels/Press\")",
+		{ "Scrap.SetSaveVar|'GameAct|'2ndMurder", "SaveGame.QWayPoint", "import MissionsFuncs",
+			"MissionsFuncs.SetNextMission|'Mission_PressMeeting|'Press", MF_SETMAP("Press"), MF_QLOAD("Press") } },
+	/* om/mission_bankersctf.py */
+	{ "import MissionsFuncs; MissionsFuncs.SetNextMission(\"Mission_ArrangeBankersCTF\", \"GamblinDen\");"
+		"Scrap.SetSaveVar(\"Map\", \"Levels/GamblinDen\");import SaveGame; SaveGame.QLoad(\"Levels/GamblinDen\")",
+		{ "import MissionsFuncs", "MissionsFuncs.SetNextMission|'Mission_ArrangeBankersCTF|'GamblinDen",
+			MF_SETMAP("GamblinDen"), "import SaveGame", MF_QLOAD("GamblinDen") } },
+	{ "import SaveGame; SaveGame.QWayPoint();import MissionsFuncs; MissionsFuncs.SetNextMission("
+		"\"Mission_TalkToTraitoriusAfterCTF\", \"GamblinDen\");Scrap.SetSaveVar(\"Map\", \"Levels/GamblinDen\");"
+		"import SaveGame; SaveGame.QLoad(\"Levels/GamblinDen\")",
+		{ "import SaveGame", "SaveGame.QWayPoint", "import MissionsFuncs",
+			"MissionsFuncs.SetNextMission|'Mission_TalkToTraitoriusAfterCTF|'GamblinDen", MF_SETMAP("GamblinDen"),
+			"import SaveGame", MF_QLOAD("GamblinDen") } },
+	/* fz/mission_mortalrace.py */
+	{ "import SaveGame; SaveGame.QWayPoint();import MissionsFuncs; MissionsFuncs.SetNextMission("
+		"\"Mission_BackFromMortalRace\", \"GamblinDen\");Scrap.SetSaveVar(\"Map\", \"Levels/GamblinDen\");"
+		"import SaveGame; SaveGame.QLoad(\"Levels/GamblinDen\");Scrap.SetSaveVar('MapPress_BureauExists','1')",
+		{ "import SaveGame", "SaveGame.QWayPoint", "import MissionsFuncs",
+			"MissionsFuncs.SetNextMission|'Mission_BackFromMortalRace|'GamblinDen", MF_SETMAP("GamblinDen"),
+			"import SaveGame", MF_QLOAD("GamblinDen"), "Scrap.SetSaveVar|'MapPress_BureauExists|'1" } },
+	{ "import SaveGame; SaveGame.QWayPoint();import MissionsFuncs; MissionsFuncs.SetNextMission("
+		"\"Mission_ArrangeMortalRace\", \"GamblinDen\");Scrap.SetSaveVar(\"Map\", \"Levels/GamblinDen\");"
+		"import SaveGame; SaveGame.QLoad(\"Levels/GamblinDen\");",
+		{ "import SaveGame", "SaveGame.QWayPoint", "import MissionsFuncs",
+			"MissionsFuncs.SetNextMission|'Mission_ArrangeMortalRace|'GamblinDen", MF_SETMAP("GamblinDen"),
+			"import SaveGame", MF_QLOAD("GamblinDen") } },
+};
+
+/* the text with the blanks between tokens taken out (one kept between two name characters), texts in quotes as they
+ * are; 0 when it does not fit or starts with a blank (exec's SyntaxError stays with exec) */
+static byte Mf_CodeKey(const char *s, char *out, int size) {
+	int n = 0;
+	char quote = 0;
+	if (*s == ' ' || *s == '\t') {
+		return 0;
+	}
+	for (; *s; s++) {
+		char c = *s;
+		if (!quote && (c == ' ' || c == '\t')) {
+			while (s[1] == ' ' || s[1] == '\t') {
+				s++;
+			}
+			byte name = n > 0 && (isalnum((unsigned char)out[n - 1]) || out[n - 1] == '_') &&
+				(isalnum((unsigned char)s[1]) || s[1] == '_');
+			if (!name) {
+				continue;
+			}
+		} else if (c == '\\' || c == '\n' || c == '\r') {
+			return 0;
+		} else if (quote ? c == quote : c == '\'' || c == '"') {
+			quote = quote ? 0 : c;
+		}
+		if (n + 1 >= size) {
+			return 0;
+		}
+		out[n++] = c;
+	}
+	out[n] = 0;
+	return !quote;
+}
+
+static const mfCode_t *Mf_FindCode(PyObject *cad) {
+	char key[0x200], known[0x200];
+	if (!PyString_Check(cad) || (int)strlen(PyString_AsString(cad)) != PyString_Size(cad) ||
+		!Mf_CodeKey(PyString_AsString(cad), key, sizeof(key))) {
+		return NULL;
+	}
+	for (int i = 0; i < (int)(sizeof(mf_codes) / sizeof(mf_codes[0])); i++) {
+		if (Mf_CodeKey(mf_codes[i].text, known, sizeof(known)) && !strcmp(key, known)) {
+			return &mf_codes[i];
+		}
+	}
+	return NULL;
+}
+
+/* a constant of the code: 'text (shared with an equal one before it, as com_addconst does) or an int */
+static PyObject *Mf_CodeConst(scriptFrame_t *f, const char *s, int len, PyObject **consts, int *count) {
+	if (*s != '\'') {
+		char buf[0x20];
+		Str_Copy(buf, s, len + 1 < (int)sizeof(buf) ? len + 1 : (int)sizeof(buf));
+		return Sf_Int(f, strtol(buf, NULL, 10));
+	}
+	PyObject *v = Sf_Keep(f, Script_StrConst(s + 1, len - 1));
+	for (int i = 0; v && i < *count; i++) {
+		if (PyObject_Compare(v, consts[i]) == 0) {
+			return consts[i];
+		}
+	}
+	if (v && *count < MF_CODE_STEPS * 2) {
+		consts[(*count)++] = v;
+	}
+	return v;
+}
+
+/* the statements of a known text, in the frame of SuperDealOnDefeat or SuperDealOnVictory */
+static void Mf_RunCode(scriptFrame_t *f, const mfCode_t *code, PyObject *globals, PyObject *locals) {
+	PyObject *consts[MF_CODE_STEPS * 2];
+	int count = 0;
+	for (int i = 0; i < MF_CODE_STEPS && code->steps[i] && !f->failed; i++) {
+		const char *step = code->steps[i];
+		if (!strncmp(step, "import ", 7)) {
+			Sf_ImportTo(f, MF, locals, Sf_Keep(f, PyString_InternFromString((char *)step + 7)));
+			continue;
+		}
+		char name[0x40];
+		const char *bar = strchr(step, '|');
+		int len = bar ? (int)(bar - step) : (int)strlen(step);
+		Str_Copy(name, step, len + 1 < (int)sizeof(name) ? len + 1 : (int)sizeof(name));
+		PyObject *fn = NULL;
+		/* LOAD_NAME, LOAD_ATTR: the callable before its constant arguments */
+		if (Script_NameChain(locals, globals, name, &fn) < 0) {
+			Sf_Check(f, 0);
+			break;
+		}
+		Sf_Keep(f, fn);
+		PyObject *vals[4];
+		int n = 0;
+		while (bar && n < 4 && !f->failed) {
+			const char *next = strchr(bar + 1, '|');
+			vals[n++] = Mf_CodeConst(f, bar + 1, next ? (int)(next - bar - 1) : (int)strlen(bar + 1), consts, &count);
+			bar = next;
+		}
+		PyObject *args = f->failed ? NULL : PyTuple_New(n);
+		for (int k = 0; args && k < n; k++) {
+			Py_INCREF(vals[k]);
+			PyTuple_SET_ITEM(args, k, vals[k]);
+		}
+		/* the result is dropped (POP_TOP); the constants stay for the next statements */
+		Sf_CallArgs(f, fn, Sf_Check(f, f->failed || args != NULL) ? args : NULL);
+	}
+}
+
+/* exec(Scrap.GetSaveVar(var)) when it holds code; on victory the super deal type is cleared first. A known text runs
+ * in C; any other text (a mod, a save edited by hand) still runs through exec. */
 static PyObject *Mf_SuperDealEnd(PyObject *args, const char *var, byte victory) {
 	PyObject *id, *control;
 	scriptFrame_t f = { 0 };
@@ -1140,7 +1326,16 @@ static PyObject *Mf_SuperDealEnd(PyObject *args, const char *var, byte victory) 
 		if (victory) {
 			Mf_SetSaveS(&f, "SuperDealType", "");
 		}
-		Sf_Exec(&f, cad, MF, Sf_Build(&f, "{sOsOsO}", "id", id, "control", control, "cad", cad));
+		PyObject *locals = Sf_Build(&f, "{sOsOsO}", "id", id, "control", control, "cad", cad);
+		PyObject *m = locals ? Sf_Keep(&f, PyImport_ImportModule(MF)) : NULL;
+		PyObject *g = m ? PyModule_GetDict(m) : NULL;
+		const mfCode_t *code = g && Script_HasBuiltins(g) ? Mf_FindCode(cad) : NULL;
+		if (code) {
+			Mf_RunCode(&f, code, g, locals);
+		} else {
+			/* STAGE 7: an unknown text becomes a logged error when the interpreter goes */
+			Sf_Exec(&f, cad, MF, locals);
+		}
 	}
 	return Sf_None(&f);
 }

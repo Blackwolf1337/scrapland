@@ -518,6 +518,7 @@ PyObject *Sf_Eval(scriptFrame_t *f, PyObject *text, const char *module) {
 		s++;
 	}
 	PyObject *g = PyModule_GetDict(m), *v = Script_Literal(g, s);
+	/* STAGE 7: eval of a text that is no literal goes with the interpreter */
 	return Sf_Keep(f, v ? v : PyRun_String((char *)s, Py_eval_input, g, g));
 }
 

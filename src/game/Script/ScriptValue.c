@@ -283,6 +283,7 @@ PyObject *Script_EvalIn(const char *module, PyObject *text) {
 		v = Script_Literal(g, s);
 	}
 	if (g && !v) {
+		/* STAGE 7: a text that is no literal becomes an error when the interpreter goes */
 		v = Script_Ask("__builtin__", "eval", "(OO)", text, g);
 	}
 	Py_XDECREF(mod);
@@ -308,10 +309,12 @@ PyObject *Script_AskKw(const char *module, const char *func, PyObject *args, PyO
 
 /*
  * Plain literals as eval makes them (Python 1.5.2: Parser/tokenizer.c, Python/compile.c parsenumber, parsestr,
- * com_addconst and the interning of PyCode_New; UNARY_NEGATIVE, BUILD_LIST and BUILD_TUPLE of ceval). Only the
- * tokens whose value cannot differ are taken, and the name None (looked up as LOAD_NAME does); anything else (other
- * names, dicts, longs, exponents, octal or hex numbers, escapes, raw or triple quoted strings, adjacent strings,
- * newlines, comments, deep nesting) gives NULL and the caller runs eval.
+ * com_addconst and the interning of PyCode_New; UNARY_NEGATIVE, BUILD_LIST, BUILD_TUPLE, BUILD_MAP and STORE_SUBSCR
+ * of ceval). Only the tokens whose value cannot differ are taken, and the name None (looked up as LOAD_NAME does):
+ * ints, longs and floats in decimal (exponents too), strings in single or double quotes with the escapes of parsestr,
+ * lists, tuples and dicts. Anything else (other names, octal or hex numbers, raw or triple quoted strings, adjacent
+ * strings, control characters, newlines, comments, deep nesting) gives NULL and the caller runs eval (STAGE 7: the
+ * fallback becomes an error when the interpreter goes).
  */
 #define LIT_NAME_CHARS "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
 #define LIT_DEPTH 32
@@ -356,26 +359,50 @@ static PyObject *Lit_Const(scriptLit_t *l, PyObject *v) {
 	return v;
 }
 
-/* the end of a token: a blank, a comma, a closing bracket or the end of the text */
+/* the end of a token: a blank, a comma, a colon, a closing bracket or the end of the text */
 static byte Lit_End(char c) {
-	return c == '\0' || c == ' ' || c == '\t' || c == ',' || c == ')' || c == ']';
+	return c == '\0' || c == ' ' || c == '\t' || c == ',' || c == ':' || c == ')' || c == ']' || c == '}';
 }
 
-/* 0, 123, 0.5, 12. or 3.25 (an int as parsenumber reads it, a float through atof as it does) */
+static byte Lit_Digit(char c) {
+	return c >= '0' && c <= '9';
+}
+
+/* 0, 123, 0.5, 12., 3.25, 1e-05, 2.5E+12, 7L (an int or long as parsenumber reads it, a float through atof as it
+ * does; the tokenizer reads an exponent only after a fraction or a number that does not start with 0) */
 static PyObject *Lit_Number(scriptLit_t *l) {
 	const char *s = l->p, *e = s;
 	char buf[64];
-	byte isFloat = 0;
+	byte isFloat = 0, isLong = 0;
 	if (*e == '0') {
 		e++;
 	} else {
-		while (*e >= '0' && *e <= '9') {
+		while (Lit_Digit(*e)) {
 			e++;
 		}
 	}
-	if (*e == '.') {
-		isFloat = 1;
-		for (e++; *e >= '0' && *e <= '9'; e++) {
+	if (*e == 'l' || *e == 'L') {
+		isLong = 1;
+		e++;
+	} else {
+		if (*e == '.') {
+			isFloat = 1;
+			for (e++; Lit_Digit(*e); e++) {
+			}
+		}
+		if ((*e == 'e' || *e == 'E') && (isFloat || *s != '0')) {
+			const char *x = e + 1;
+			if (*x == '+' || *x == '-') {
+				x++;
+			}
+			if (!Lit_Digit(*x)) {
+				return NULL;
+			}
+			while (Lit_Digit(*x)) {
+				x++;
+			}
+			isFloat = 1;
+			e = x;
 		}
 	}
 	if (!Lit_End(*e) || e - s >= (int)sizeof(buf)) {
@@ -386,6 +413,9 @@ static PyObject *Lit_Number(scriptLit_t *l) {
 	l->p = e;
 	if (isFloat) {
 		return Lit_Const(l, PyFloat_FromDouble(atof(buf)));
+	}
+	if (isLong) {
+		return Lit_Const(l, PyLong_FromString(buf, NULL, 0));
 	}
 	char *end;
 	errno = 0;
@@ -401,14 +431,75 @@ static byte Lit_Plain(unsigned char c) {
 	return c >= 0x20 && c != 0x7f && c != '\\';
 }
 
-/* 'text' or "text" */
+/* the escapes of parsestr in s[0:len] (no newline after a backslash) into out, its length */
+static int Lit_Unescape(const char *s, int len, char *out) {
+	const char *end = s + len;
+	char *p = out;
+	while (s < end) {
+		if (*s != '\\') {
+			*p++ = *s++;
+			continue;
+		}
+		s++;
+		switch (*s++) {
+		case '\\': *p++ = '\\'; break;
+		case '\'': *p++ = '\''; break;
+		case '"': *p++ = '"'; break;
+		case 'b': *p++ = '\b'; break;
+		case 'f': *p++ = '\014'; break;
+		case 't': *p++ = '\t'; break;
+		case 'n': *p++ = '\n'; break;
+		case 'r': *p++ = '\r'; break;
+		case 'v': *p++ = '\013'; break;
+		case 'a': *p++ = '\007'; break;
+		case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': {
+			int c = s[-1] - '0';
+			if ('0' <= *s && *s <= '7') {
+				c = (c << 3) + *s++ - '0';
+				if ('0' <= *s && *s <= '7') {
+					c = (c << 3) + *s++ - '0';
+				}
+			}
+			*p++ = (char)c;
+			break;
+		}
+		case 'x':
+			if (isxdigit((unsigned char)*s)) {
+				unsigned int x = 0;
+				do {
+					int c = (unsigned char)*s++;
+					x = (x << 4) & ~0xFu;
+					x += isdigit(c) ? (unsigned int)(c - '0') : islower(c) ? (unsigned int)(10 + c - 'a') :
+						(unsigned int)(10 + c - 'A');
+				} while (isxdigit((unsigned char)*s));
+				*p++ = (char)x;
+				break;
+			}
+			/* fall through */
+		default:
+			*p++ = '\\';
+			*p++ = s[-1];
+			break;
+		}
+	}
+	return (int)(p - out);
+}
+
+/* 'text' or "text", with backslash escapes */
 static PyObject *Lit_String(scriptLit_t *l) {
 	char q = *l->p;
 	const char *s = l->p + 1, *e = s;
+	byte escapes = 0;
 	if (s[0] == q && s[1] == q) {
 		return NULL;
 	}
 	while (*e != q) {
+		if (*e == '\\' && (e[1] == '\\' || Lit_Plain((unsigned char)e[1]))) {
+			/* the tokenizer takes the character after a backslash as it is, a quote too */
+			escapes = 1;
+			e += 2;
+			continue;
+		}
 		if (!Lit_Plain((unsigned char)*e)) {
 			return NULL;
 		}
@@ -418,7 +509,18 @@ static PyObject *Lit_String(scriptLit_t *l) {
 		return NULL;
 	}
 	l->p = e + 1;
-	return Lit_Const(l, Script_StrConst(s, (int)(e - s)));
+	if (!escapes) {
+		return Lit_Const(l, Script_StrConst(s, (int)(e - s)));
+	}
+	/* as parsestr: the string made at the full length, then cut; interned as Script_StrConst does */
+	PyObject *v = PyString_FromStringAndSize(NULL, (int)(e - s));
+	if (!v || _PyString_Resize(&v, Lit_Unescape(s, (int)(e - s), PyString_AsString(v))) != 0) {
+		return NULL;
+	}
+	if ((int)strspn(PyString_AsString(v), LIT_NAME_CHARS) == PyString_Size(v)) {
+		PyString_InternInPlace(&v);
+	}
+	return Lit_Const(l, v);
 }
 
 static PyObject *Lit_Item(scriptLit_t *l);
@@ -449,6 +551,52 @@ static PyObject *Lit_Items(scriptLit_t *l, char close, byte *commas) {
 	return list;
 }
 
+/* {key: value, ...}: BUILD_MAP, then each pair stored as STORE_SUBSCR does (an unhashable key fails here and raises
+ * in eval) */
+static PyObject *Lit_Dict(scriptLit_t *l) {
+	PyObject *d = PyDict_New();
+	l->p++;
+	l->depth++;
+	Lit_Blanks(l);
+	while (d && *l->p != '}') {
+		PyObject *k = Lit_Item(l), *v = NULL;
+		if (k) {
+			Lit_Blanks(l);
+			if (*l->p == ':') {
+				l->p++;
+				Lit_Blanks(l);
+				v = Lit_Item(l);
+			}
+		}
+		int bad = !v || PyDict_SetItem(d, k, v) != 0;
+		Py_XDECREF(k);
+		Py_XDECREF(v);
+		if (!bad) {
+			Lit_Blanks(l);
+			if (*l->p == ',') {
+				l->p++;
+				Lit_Blanks(l);
+			} else if (*l->p != '}') {
+				bad = 1;
+			}
+		}
+		if (bad) {
+			Py_DECREF(d);
+			d = NULL;
+		}
+	}
+	l->depth--;
+	if (!d) {
+		return NULL;
+	}
+	l->p++;
+	if (!Lit_End(*l->p)) {
+		Py_DECREF(d);
+		return NULL;
+	}
+	return d;
+}
+
 /* the builtins of the frame of eval (a dict, the one of a module) */
 static PyObject *Lit_BuiltinsDict(PyObject *globals) {
 	PyObject *b = PyDict_GetItemString(globals, "__builtins__");
@@ -477,6 +625,9 @@ static PyObject *Lit_Item(scriptLit_t *l) {
 		PyObject *v = n ? PyNumber_Negative(n) : NULL;
 		Py_XDECREF(n);
 		return v;
+	}
+	if (c == '{' && l->depth < LIT_DEPTH) {
+		return Lit_Dict(l);
 	}
 	if ((c != '[' && c != '(') || l->depth >= LIT_DEPTH) {
 		return NULL;
@@ -510,6 +661,10 @@ static byte Lit_Builtins(PyObject *globals) {
 	return b && (PyDict_Check(b) || PyModule_Check(b));
 }
 
+byte Script_HasBuiltins(PyObject *globals) {
+	return Lit_Builtins(globals);
+}
+
 PyObject *Script_Literal(PyObject *globals, const char *s) {
 	if (!s || !Lit_Builtins(globals) || *s == ' ' || *s == '\t' || *s == '\0') {
 		return NULL;
@@ -533,6 +688,7 @@ PyObject *Script_EvalMain(const char *text) {
 	PyObject *main = PyImport_AddModule("__main__");
 	PyObject *v = main ? Script_Literal(PyModule_GetDict(main), text) : NULL;
 	PyErr_Clear();
+	/* STAGE 7: eval of a text that is no literal goes with the interpreter */
 	return v ? v : Script_Eval(text);
 }
 
