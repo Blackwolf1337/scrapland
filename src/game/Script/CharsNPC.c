@@ -738,12 +738,15 @@ static PyObject *Npc_Classify(PyObject *l, PyObject *cad) {
 	static const char *const mods[] = { "string", NULL };
 	PyObject *aux = Script_Import(mods) ? PyList_New(0) : NULL;
 	byte ok = aux != NULL;
-	for (int i = 0; ok && i < PySequence_Length(l); i++) {
-		PyObject *c = PySequence_GetItem(l, i);
-		int in = c ? Npc_Find(c, cad) : -1;
+	PyObject *c;
+	int st = 1;
+	/* for c in l: (a TypeError "loop over non-sequence" for l that is none) */
+	for (int i = 0; ok && (st = Script_Next(l, i, &c)) > 0; i++) {
+		int in = Npc_Find(c, cad);
 		ok = in >= 0 && (!in || PyList_Append(aux, c) == 0);
-		Py_XDECREF(c);
+		Py_DECREF(c);
 	}
+	ok = ok && st == 0;
 	if (!ok) {
 		Py_XDECREF(aux);
 		return NULL;

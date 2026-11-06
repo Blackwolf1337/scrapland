@@ -459,7 +459,7 @@ void Script_CheckSilent(const char *kind) {
 static PyObject *Script_CheckCall(PyObject *self, PyObject *args, PyObject *kw) {
 	scriptChecked_t *c = PyCObject_AsVoidPtr(self);
 	int flags = c->orig.ml_flags;
-	PyObject *arg = args, *r;
+	PyObject *arg = args, *r, *pending = PyErr_Occurred();
 	if (!(flags & METH_VARARGS)) {
 		int size = PyTuple_Size(args);
 		arg = size == 1 ? PyTuple_GET_ITEM(args, 0) : size == 0 ? NULL : args;
@@ -478,8 +478,9 @@ static PyObject *Script_CheckCall(PyObject *self, PyObject *args, PyObject *kw) 
 	}
 	if (!r && !PyErr_Occurred()) {
 		Script_CheckSilent("return");
-	} else if (r && PyErr_Occurred()) {
-		/* the error stays pending and raises at a later line */
+	} else if (r && !pending && PyErr_Occurred()) {
+		/* the error stays pending and raises at a later line (one pending before the call is an engine
+		 * function's that returned a value with an error set, as the original does) */
 		Script_CheckSilent("return with error set");
 	}
 	script_checkDepth--;
