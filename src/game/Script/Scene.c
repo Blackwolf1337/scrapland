@@ -281,7 +281,8 @@ static PyObject *Scene_CreateLocalAction(PyObject *self, PyObject *args, PyObjec
 	return Sf_None(&f);
 }
 
-/* ExecGeneric(EntityName, EventName, Time): the event is a line of Python */
+/* ExecGeneric(EntityName, EventName, Time): the event is a line of Python (the forms of the scene lines run in C,
+ * Sf_Exec) */
 static PyObject *Scene_ExecGeneric(PyObject *self, PyObject *args) {
 	PyObject *ename, *event, *time;
 	scriptFrame_t f = { 0 };
