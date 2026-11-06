@@ -268,9 +268,11 @@ static PyObject *SScorer_Set(PyObject *self, PyObject *args) {
 
 /* Get(player, item, var) : value in its type, None if not found */
 static PyObject *SScorer_Get(PyObject *self, PyObject *args) {
-	int player, i;
-	char *name, *var, *s;
-	double d;
+	/* differs from the original: the values start at 0. Some variables read the int on a get too (ForceWidth sets
+	 * the width of a button from it, HighRes and BlendingMode of a tab check it), which was stack garbage. */
+	int player, i = 0;
+	char *name, *var, *s = NULL;
+	double d = 0.0;
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "iss", &player, &name, &var)) {

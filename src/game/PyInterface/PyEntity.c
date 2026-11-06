@@ -190,9 +190,11 @@ static PyObject *PyEntity_FindMethod(PyObject *self, char *name) {
 static PyObject *PyEntity_GetAttr(PyObject *self, char *name) {
 	cEntityRef *ref = ((cPyEntity *)self)->ref;
 	cEntity *e = ref->link.target;
-	int i;
-	double d, x, y, z;
-	char *s;
+	/* differs from the original: the values start at 0. A get of SwDthTime writes the value into the missile (the
+	 * original reverses set and get there), which was stack garbage. */
+	int i = 0;
+	double d = 0.0, x = 0.0, y = 0.0, z = 0.0;
+	char *s = NULL;
 
 	if (!e) {
 		Con_Errorf("'%s'->%s : Entity invalid.\n", ref->name, name);

@@ -1197,9 +1197,10 @@ static PyObject *Scrap_RunApp(PyObject *self, PyObject *args) {
 
 /* EntityListGet(listName, var) : value in its type; NULL without exception for a missing list or a bad type */
 static PyObject *Scrap_EntityListGet(PyObject *self, PyObject *args) {
-	char *listName, *var, *s;
-	double d;
-	int i;
+	/* differs from the original: the values start at 0, as in SScorer.Get */
+	char *listName, *var, *s = NULL;
+	double d = 0.0;
+	int i = 0;
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "ss", &listName, &var)) {

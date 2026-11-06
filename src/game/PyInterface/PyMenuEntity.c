@@ -64,9 +64,10 @@ static cScorerItem *PyMenuEntity_Item(cPyMenuEntity *m, const char *attr) {
 static PyObject *PyMenuEntity_GetAttr(PyObject *self, char *name) {
 	cPyMenuEntity *m = (cPyMenuEntity *)self;
 	cScorerItem *item = PyMenuEntity_Item(m, name);
-	char *s;
-	double d;
-	int i;
+	/* differs from the original: 0 as in SScorer.Get */
+	char *s = NULL;
+	double d = 0.0;
+	int i = 0;
 
 	if (!item) {
 		return NULL;

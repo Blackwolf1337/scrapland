@@ -130,9 +130,10 @@ static PyObject *SSound_SetPS(PyObject *self, PyObject *args) {
 
 /* GetPS(psname, var) : value in its type; None for an unknown set or variable */
 static PyObject *SSound_GetPS(PyObject *self, PyObject *args) {
-	char *psName, *var, *s;
-	double d;
-	int i;
+	/* differs from the original: the values start at 0, as in SScorer.Get */
+	char *psName, *var, *s = NULL;
+	double d = 0.0;
+	int i = 0;
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "ss", &psName, &var)) {
