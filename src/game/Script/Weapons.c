@@ -46,26 +46,8 @@ static byte Weap_SetId(const char *mod, const char *name, PyObject *id) {
 
 /* import Net; LastClientCreate = Net.ClientCreate; Net.ClientCreate = ClientCreate; the same for ClientAfterCreate */
 static byte Weap_Hook(const char *mod) {
-	static const char *const names[][2] = { { "LastClientCreate", "ClientCreate" },
-		{ "LastClientAfterCreate", "ClientAfterCreate" } };
-	if (!Script_Import((const char *const[]){ "Net", NULL })) {
-		return 0;
-	}
-	for (int i = 0; i < 2; i++) {
-		PyObject *prev = Script_Attr("Net", names[i][1]);
-		if (!prev || !Script_SetGlobal(mod, names[i][0], prev)) {
-			return 0;
-		}
-		PyObject *mine = Script_Global(mod, names[i][1]);
-		PyObject *net = mine ? PyImport_ImportModule("Net") : NULL;
-		int bad = !net || PyObject_SetAttrString(net, (char *)names[i][1], mine) < 0;
-		Py_XDECREF(net);
-		Py_XDECREF(mine);
-		if (bad) {
-			return 0;
-		}
-	}
-	return 1;
+	return Script_Import((const char *const[]){ "Net", NULL }) && Script_Hook(mod, "Net", "ClientCreate", "LastClientCreate") &&
+		Script_Hook(mod, "Net", "ClientAfterCreate", "LastClientAfterCreate");
 }
 
 /* the section <mod>Res of LoadResources (import Fx first, as the scripts do) */

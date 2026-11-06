@@ -210,6 +210,18 @@ PyObject *Script_SaveVar(const char *name) {
 	return Script_Ask("Scrap", "GetSaveVar", "(s)", name);
 }
 
+byte Script_Hook(const char *module, const char *target, const char *name, const char *last) {
+	PyObject *prev = Script_Attr(target, name);
+	if (!prev || !Script_SetGlobal(module, last, prev)) {
+		return 0;
+	}
+	PyObject *mine = Script_Global(module, name), *t = mine ? PyImport_ImportModule((char *)target) : NULL;
+	int bad = !t || PyObject_SetAttrString(t, (char *)name, mine) < 0;
+	Py_XDECREF(t);
+	Py_XDECREF(mine);
+	return !bad;
+}
+
 PyObject *Script_EvalIn(const char *module, PyObject *text) {
 	PyObject *mod = PyImport_ImportModule((char *)module);
 	PyObject *g = mod ? PyModule_GetDict(mod) : NULL;

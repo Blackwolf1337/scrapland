@@ -168,6 +168,9 @@ PyObject *Script_Usr(void);
 /* module.func(*args, **kw) as a script calls it (args and kw given away, kw may be NULL): the result, a new
  * reference, NULL with the error set (not printed) */
 PyObject *Script_AskKw(const char *module, const char *func, PyObject *args, PyObject *kw);
+/* `global last; last = target.name; target.name = name` in a function of the script module (name its global, the
+ * chain of callbacks the net weapons and Vehicles put in front of Net's): 0 with the error set */
+byte Script_Hook(const char *module, const char *target, const char *name, const char *last);
 /* eval(text) in a function of the script module (its globals): a new reference, NULL with the error set */
 PyObject *Script_EvalIn(const char *module, PyObject *text);
 
@@ -306,6 +309,7 @@ extern PyMethodDef g_CloudMethods[];
 extern PyMethodDef g_EMIMethods[];
 extern PyMethodDef g_SonicMethods[];
 extern PyMethodDef g_SputnikInterfaceMethods[];
+extern PyMethodDef g_VehiclesMethods[];
 /* the functions of the Init module (src/game/Script/InitLevel.c) */
 extern PyMethodDef g_InitMethods[];
 /* the sound scripts of the characters (src/game/Script/Sounds.c, data/sound/) */
