@@ -391,6 +391,48 @@ CHAR_MODULE2(PoliceBoss, policeboss)
 CHAR_MODULE2(Messenger, messenger)
 CHAR_MODULE1(Human, human)
 
+/* Gear.LoadSirenActs(), Police.LoadSirenActs(): the siren actions on channel 1 of the current class, the section
+ * LoadSirenActs of the file (the Init sections run it with do) */
+static PyObject *Gear_LoadSirenActs(PyObject *self, PyObject *args) {
+	(void)self;
+	return Char_Callback("chars/gear.def", gear_def, "LoadSirenActs", args);
+}
+
+static PyObject *Police_LoadSirenActs(PyObject *self, PyObject *args) {
+	(void)self;
+	return Char_Callback("chars/police.def", police_def, "LoadSirenActs", args);
+}
+
+/* Gear.DropMissileEvent(LoadFrame, DropFrame): the events of loading and shooting the missile on the current action
+ * at the two frames (texts, "TimeOfFrame" + LoadFrame like the script); gear.def writes its own two events */
+static PyObject *Gear_DropMissileEvent(PyObject *self, PyObject *args) {
+	static const char *const what[2][2] = { { "LoadMissile", "!GearShootLoad" }, { "DropMissile", "!GearShoot" } };
+	PyObject *frame[2];
+	scriptFrame_t f = { 0 };
+	(void)self;
+	if (!PyArg_ParseTuple(args, "OO", &frame[0], &frame[1])) {
+		return NULL;
+	}
+	for (int i = 0; i < 2 && !f.failed; i++) {
+		PyObject *t = Sf_Ask(&f, "SAct", "GetAct", "(O)", Sf_Cat(&f, "sO", "TimeOfFrame", frame[i]));
+		Sf_Ask(&f, "SAct", "SetAct", "(sO)", "AddEventAtTime", t);
+		Sf_Ask(&f, "SAct", "SetAct", "(sO)", "EventName", Sf_Cat(&f, "sO", what[i][0], frame[i]));
+		Sf_Ask(&f, "SAct", "SetAct", "(ss)", "EventFunc", what[i][1]);
+	}
+	return Sf_None(&f);
+}
+
+PyMethodDef g_GearDefFuncs[] = {
+	{ "LoadSirenActs", Gear_LoadSirenActs, 1, NULL },
+	{ "DropMissileEvent", Gear_DropMissileEvent, 1, NULL },
+	{ NULL, NULL, 0, NULL },
+};
+
+PyMethodDef g_PoliceDefFuncs[] = {
+	{ "LoadSirenActs", Police_LoadSirenActs, 1, NULL },
+	{ NULL, NULL, 0, NULL },
+};
+
 /* ---- the mercenaries: one file, the class and the dance from Init(MercName="MercenaryA", doDance=1) ---- */
 
 static void Mercenary_Init(const char *merc, int dance) {

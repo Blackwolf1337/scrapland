@@ -386,6 +386,18 @@ PyObject *Sf_Ask(scriptFrame_t *f, const char *module, const char *func, const c
 	return Sf_CallArgs(f, fn, Sf_Check(f, args != NULL) ? args : NULL);
 }
 
+PyObject *Sf_Own(scriptFrame_t *f, const char *module, const char *func, const char *fmt, ...) {
+	PyObject *fn = Sf_Global(f, module, func);
+	if (!fn) {
+		return NULL;
+	}
+	va_list va;
+	va_start(va, fmt);
+	PyObject *args = Py_VaBuildValue((char *)fmt, va);
+	va_end(va);
+	return Sf_CallArgs(f, fn, Sf_Check(f, args != NULL) ? args : NULL);
+}
+
 PyObject *Sf_Method(scriptFrame_t *f, PyObject *o, const char *name, const char *fmt, ...) {
 	PyObject *fn = Sf_Attr(f, o, name);
 	if (!fn) {
