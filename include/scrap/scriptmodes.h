@@ -546,5 +546,7 @@ byte Mode_Abs(const nativeVal_t *v, nativeVal_t *out);
 /* f(args...) of the script on a value f (a function or method held as NV_OBJ, or the TypeError of a value that is no
  * callable) with the n values of args: the result into out (NULL: dropped) */
 byte Mode_CallArgs(const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *args, int n);
+/* -v of the script (PyNumber_Negative: ints, long ints, floats; the errors of 1.5.2) */
+byte Mode_Neg(const nativeVal_t *v, nativeVal_t *out);
 
 #endif
