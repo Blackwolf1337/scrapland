@@ -364,11 +364,9 @@ byte Mode_NISpeech(const char *who, const char *key);
 /* Scrap.GetEntity(name).var = "text", = i (the TypeError of None when there is no such entity) */
 byte Mode_EntSetS(const char *name, const char *var, const char *s);
 byte Mode_EntSetI(const char *name, const char *var, long i);
-
 /* Scrap.SetLockAlarm(lock) through its seam (fc-r6b-or2 records it): the TypeError of "i" for a value that is no
  * number */
 byte Mode_SetLockAlarm(const nativeVal_t *lock);
-
 /* o.var of a value as any value (Mode_VGet takes only native values from an object that is no entity handle: here a
  * function, an instance or a handle in the attribute is an NV_OBJ, OBJLIB 7); the errors of the attribute */
 byte Mode_VObj(const nativeVal_t *o, const char *var, nativeVal_t *out);
@@ -405,11 +403,9 @@ byte Mode_Connect(const char *a, const char *b, byte pair);
 byte Mode_GSetS(const char *module, const char *var, const char *attr, const char *s);
 /* Scrap.AddScheduledFunc(time, func, args) with time a value and func the global of module (its NameError; OBJLIB 4) */
 byte Mode_AtG(const nativeVal_t *time, const char *module, const char *func, const nativeVal_t *args, int n);
-
 /* a op b of the script as Native_Arith, with the long ints of 1.5.2 for * / % too (a case can put a long int into a
  * variable; OBJLIB 9: those go through the Python number functions) */
 byte Mode_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
-
 /* Scrap.Set(name, Scrap.Def(name)): the engine variable back to its default */
 byte Mode_GVarSetDef(const char *name);
 
