@@ -13,6 +13,8 @@
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 
+#define LIT_NAME_CHARS "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
+
 PyObject *Script_Keep(scriptRefs_t *r, PyObject *o) {
 	if (o) {
 		CHECK(r->n < SCRIPT_REFS);
@@ -284,6 +286,44 @@ PyObject *Script_NotRead(const char *where, const char *text) {
 	return NULL;
 }
 
+/* the end of a name or a decimal number at p, else p */
+static const char *Eval_Atom(const char *p) {
+	const char *q = p;
+	if (*q >= '0' && *q <= '9') {
+		q += strspn(q, "0123456789");
+		if (*q == '.') {
+			q += 1 + strspn(q + 1, "0123456789");
+		}
+		return q;
+	}
+	int len = (int)strspn(q, LIT_NAME_CHARS);
+	return Script_IsName(q, len) ? q + len : p;
+}
+
+/*
+ * eval of two names or numbers with blanks between them ("bad list", "x y", a save variable of a case): the parser of
+ * Python 1.5.2 fails at the second one. When reading it took the tokenizer to the end of the text, parsetok reports
+ * E_EOF (Parser/parsetok.c: tok->done == E_EOF on line 1), else E_SYNTAX; err_input raises SyntaxError((msg,
+ * (filename, line, offset, text))) with no file name and the offset after that token. 0 when s has another form.
+ */
+static byte Eval_Juxtaposed(const char *s) {
+	const char *a = Eval_Atom(s);
+	if (a == s || (*a != ' ' && *a != '\t')) {
+		return 0;
+	}
+	const char *b = a + strspn(a, " \t"), *e = Eval_Atom(b);
+	if (e == b) {
+		return 0;
+	}
+	PyObject *v = Py_BuildValue("(s(ziis))", *e ? "invalid syntax" : "unexpected EOF while parsing", NULL, 1,
+		(int)(e - s), s);
+	if (v) {
+		PyErr_SetObject(PyExc_SyntaxError, v);
+		Py_DECREF(v);
+	}
+	return 1;
+}
+
 PyObject *Script_EvalValue(PyObject *globals, PyObject *text) {
 	/* the checks of builtin eval before it parses: a string without NUL, its leading blanks skipped */
 	if (!PyString_Check(text)) {
@@ -317,7 +357,9 @@ PyObject *Script_EvalValue(PyObject *globals, PyObject *text) {
 			return found > 0 ? v : NULL;
 		}
 	}
-	return Script_NotRead("eval", s);
+	Script_NotRead("eval", s);
+	Eval_Juxtaposed(s);
+	return NULL;
 }
 
 PyObject *Script_Entity(PyObject *name) {
@@ -346,7 +388,6 @@ PyObject *Script_AskKw(const char *module, const char *func, PyObject *args, PyO
  * strings, control characters, newlines, comments, deep nesting) gives NULL: the values the game writes and reads
  * back never have those forms, Script_EvalValue raises SyntaxError for them.
  */
-#define LIT_NAME_CHARS "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
 #define LIT_DEPTH 32
 
 typedef struct {
