@@ -2390,27 +2390,29 @@ int Native_Seam(const char *module, const char *name, PyObject **hook) {
 	return 1;
 }
 
-byte Native_GVarGet(const char *name, nativeVal_t *out) {
-	/* GVarValue of Scrap.Get */
+/* GVarValue of Scrap.Get (def 0) and Scrap.Def (def 1) */
+static byte Native_GVarValue(const char *name, byte def, nativeVal_t *out) {
 	cGVar *v = GVar_Find(name);
 	if (!v) {
 		Con_Errorf("ERROR: '%s' global variable not defined\n", name);
 		return Native_NullResult();
 	}
 	switch (v->base.type) {
-	case GVAR_STRING:
+	case GVAR_STRING: {
 		/* Py_BuildValue "s" of NULL is None */
-		if (v->value.s) {
-			Native_SetText(out, v->value.s, (int)strlen(v->value.s));
+		const char *str = def ? v->def.s : v->value.s;
+		if (str) {
+			Native_SetText(out, str, (int)strlen(str));
 		} else {
 			Native_SetNone(out);
 		}
 		return 1;
+	}
 	case GVAR_INT:
-		Native_SetInt(out, v->value.i);
+		Native_SetInt(out, def ? v->def.i : v->value.i);
 		return 1;
 	case GVAR_FLOAT:
-		Native_SetFloat(out, (double)v->value.f);
+		Native_SetFloat(out, (double)(def ? v->def.f : v->value.f));
 		return 1;
 	case GVAR_FUNCTION:
 		Native_SetStr(out, "<function>");
@@ -2421,6 +2423,10 @@ byte Native_GVarGet(const char *name, nativeVal_t *out) {
 	}
 	CHECK(0);
 	return 0;
+}
+
+byte Native_GVarGet(const char *name, nativeVal_t *out) {
+	return Native_GVarValue(name, 0, out);
 }
 
 /* OBJLIB 7: module.name(args) with what a test put there instead of the engine function (hook from Native_Seam,
@@ -2755,4 +2761,10 @@ byte Native_Put(const char *module, const nativeVar_t *var, int index) {
 	}
 	Py_DECREF(o);
 	return r == 0;
+}
+
+/* ---- the native level files of batch G ---- */
+
+byte Native_GVarDef(const char *name, nativeVal_t *out) {
+	return Native_GVarValue(name, 1, out);
 }
