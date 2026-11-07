@@ -528,5 +528,8 @@ byte Mode_SetGrid(double x, double y, double z);
 byte Mode_EntitySeam(const nativeVal_t *name, nativeVal_t *out);
 /* SInput.SetActionSet(name) through its seam (fc-om-dt and the _bon lists of fr6b.py record it) */
 byte Mode_ActionSet(const char *name);
+/* Scrap.SetMoney(money) and Scrap.IncSaveVar(name) through their seams (fc-r7b-jy and fc-r7c-dt6 record them) */
+byte Mode_SetMoneySeam(const nativeVal_t *money);
+byte Mode_IncSaveVar(const char *name);
 
 #endif

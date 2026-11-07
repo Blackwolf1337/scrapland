@@ -2626,3 +2626,20 @@ byte Mode_ActionSet(const char *name) {
 	Mode_SetActionSet(name);
 	return 1;
 }
+
+byte Mode_SetMoneySeam(const nativeVal_t *money) {
+	MODE_SEAM("Scrap", "SetMoney");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "v", money);
+	}
+	return Mode_SetMoney(money);
+}
+
+byte Mode_IncSaveVar(const char *name) {
+	MODE_SEAM("Scrap", "IncSaveVar");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "s", name);
+	}
+	SaveVar_Inc(name, 1);
+	return 1;
+}
