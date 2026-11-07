@@ -27,7 +27,8 @@ PyObject *TcX_Main(void);
 PyObject *TcX_Name(const char *name);
 /* a whole line as one expression: the value, NULL with the error set */
 PyObject *TcX_Eval(const char *line);
-/* an expression, or "target = expr" (the value None), in the globals of __main__: NULL with the error set */
+/* an expression, or "target = expr" (the value None), in the globals of __main__: NULL with the error set. Attributes
+ * that fail without an error raise as the getattr and setattr builtins do (golden's check lines) */
 PyObject *TcX_Statement(const char *line);
 /* the statements of a line ("a = f(); b(); result = (a, b)") in the globals of a module dict, answered as the game
  * side of the MCP server (tools/mcp/mcpgame.py) answered a line: a single expression its repr, statements the repr of

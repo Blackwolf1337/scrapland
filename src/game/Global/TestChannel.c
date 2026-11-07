@@ -3,8 +3,9 @@
  * running game through two files in the game folder, with no Python code run in the game. Not in the original. Off in
  * normal play: on with the command line switch -TestChannel or the environment variable SCRAP_TEST_CHANNEL=1.
  *
- * Once a frame (at the start of CApp_FrameRun, also while the world clock stands or the window is in the background;
- * a command file that is there before the first frame runs while the clock is still at 0) the game reads the first
+ * Once a frame (while the world clock runs in cWorld_Update right after the scheduled functions, where the script
+ * function of the old harness ran; else at the start of CApp_FrameRun, also while the window is in the background; a
+ * command file that is there before the first frame runs while the clock is still at 0) the game reads the first
  * line of test_cmd.txt, a number (optionally followed by " pace=<seconds>": the file waits until that much game time
  * has passed since the last answer, as the old harness polled every 0.1 s of game time). A number it has not seen runs the rest of the file and writes the answers to
  * test_reply.txt as "<number>\n<answers>\n.end\n" (written to test_reply.tmp, then renamed). The tool writes the
@@ -73,6 +74,7 @@ static long tc_seq = -1;
 static double tc_answerTime;	/* game time of the last answer (pace=) */
 static double tc_paceLast;		/* game time of the frame before */
 static int tc_paceStill;		/* frames the game clock stood while a paced command waited */
+static byte tc_worldRan;		/* the world update looked in the frame before (TestChannel_WorldFrame) */
 
 /* ---- the answer: a growing text ---- */
 
@@ -1060,27 +1062,8 @@ void TestChannel_Enable(void) {
 	tc_on = 1;
 }
 
-void TestChannel_Frame(double now) {
-	static double last;
-
-	if (tc_started && (!tc_on || (now >= last && now - last < 0.005))) {
-		return;
-	}
-	last = now;
-	if (!tc_started) {
-		const char *e = getenv("SCRAP_TEST_CHANNEL");
-		tc_started = 1;
-		tc_on |= e && *e && strcmp(e, "0");
-		if (!tc_on) {
-			return;
-		}
-		/* the answer of a run before this start (the same game folder) is not run again */
-		tc_seq = TC_FileSeq(TC_REPLY, NULL);
-		Con_Printf("Test channel on: %s\n", TC_CMD);
-	}
-	if (!tc_on) {
-		return;
-	}
+/* a new command file runs (paced) and is answered */
+static void TC_Poll(void) {
 	double pace;
 	long seq = TC_FileSeq(TC_CMD, &pace);
 	if (seq < 0 || seq == tc_seq) {
@@ -1110,4 +1093,38 @@ void TestChannel_Frame(double now) {
 	tc_answerTime = g_pWorld ? (double)Timer_GetTime(&g_pWorld->timer) : 0.0;
 	Mem_Free(b.p);
 	Mem_Free(text);
+}
+
+void TestChannel_Frame(double now) {
+	static double last;
+
+	if (tc_started && (!tc_on || (now >= last && now - last < 0.005))) {
+		return;
+	}
+	last = now;
+	if (!tc_started) {
+		const char *e = getenv("SCRAP_TEST_CHANNEL");
+		tc_started = 1;
+		tc_on |= e && *e && strcmp(e, "0");
+		if (!tc_on) {
+			return;
+		}
+		/* the answer of a run before this start (the same game folder) is not run again */
+		tc_seq = TC_FileSeq(TC_REPLY, NULL);
+		Con_Printf("Test channel on: %s\n", TC_CMD);
+	}
+	/* the world update of the frame before looked already (the clock runs): it looks again in this frame */
+	if (!tc_on || tc_worldRan) {
+		tc_worldRan = 0;
+		return;
+	}
+	TC_Poll();
+}
+
+void TestChannel_WorldFrame(void) {
+	if (!tc_on) {
+		return;
+	}
+	tc_worldRan = 1;
+	TC_Poll();
 }

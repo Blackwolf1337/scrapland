@@ -1179,12 +1179,24 @@ static PyObject *X_Name(PyObject *name, tcScope *s) {
 
 static PyObject *X_Eval(tcNode *x, tcScope *s);
 
-/* getattr(o, name): an object that gives NULL without an error raises what the getattr builtin raises then */
+/* set while a check line runs: golden's checks (tools/test/golden) read and set attributes with the getattr and setattr
+ * builtins */
+static byte tx_builtinAttr;
+
+/* the error raised when o.name or o.name = v failed without one (an object that gives NULL or -1 without an error): the
+ * interpreter's (ceval.c), in a check line the one of the getattr and setattr builtins */
+static void X_NoError(void) {
+	if (!PyErr_Occurred()) {
+		PyErr_SetString(PyExc_SystemError, tx_builtinAttr ? "NULL result without error in call_object"
+			: "error return without exception set");
+	}
+}
+
 static PyObject *X_GetAttr(PyObject *o, PyObject *name) {
 	PyObject *v = PyObject_GetAttr(o, name);
 
-	if (!v && !PyErr_Occurred()) {
-		PyErr_SetString(PyExc_SystemError, "NULL result without error in call_object");
+	if (!v) {
+		X_NoError();
 	}
 	return v;
 }
@@ -1612,9 +1624,8 @@ static byte X_Store(tcNode *t, PyObject *v, tcScope *s) {
 		o = X_Eval(t->a, s);
 		if (o) {
 			r = PyObject_SetAttr(o, t->obj, v);
-			if (r != 0 && !PyErr_Occurred()) {
-				/* what the setattr builtin raises then */
-				PyErr_SetString(PyExc_SystemError, "NULL result without error in call_object");
+			if (r != 0) {
+				X_NoError();
 			}
 		}
 		Py_XDECREF(o);
@@ -1790,11 +1801,14 @@ PyObject *TcX_Statement(const char *line) {
 	tcTree *tree;
 	tcNode *prog = TX_Read(line, &tree);
 	PyObject *v = NULL;
+	byte was = tx_builtinAttr;
 
+	tx_builtinAttr = 1;
 	if (prog && TX_RunTree(tree, prog, TcX_Main(), &v) && !v) {
 		v = Py_None;
 		Py_INCREF(v);
 	}
+	tx_builtinAttr = was;
 	TX_Release(tree);
 	return v;
 }
