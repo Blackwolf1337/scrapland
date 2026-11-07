@@ -2643,3 +2643,7 @@ byte Mode_IncSaveVar(const char *name) {
 	SaveVar_Inc(name, 1);
 	return 1;
 }
+
+byte Mode_IsText(const nativeVal_t *v, const char *text) {
+	return v->type == NV_STR && !strcmp(Native_Text(v), text);
+}
