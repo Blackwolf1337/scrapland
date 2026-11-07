@@ -5,6 +5,11 @@
  * cabs and the mission items; and Mission_DestroyCommSats1, 2 and 3, one script in three levels.
  */
 #include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "scrap/input.h"
+#include "scrap/scrap.h"
 
 #include "Levels.h"
 
@@ -801,3 +806,545 @@ PyMethodDef g_DownTownDestroyCommSats3Methods[] = {
 	PROBES_DEF(2, SetNextMission)
 	{ NULL, NULL, 0, NULL },
 };
+
+/* ---- native lines of the level scripts (Levels.h; docs/objlib-plan.md, stage 2) ---- */
+
+void LvN_Int(nativeVal_t *v, long i) {
+	Native_SetInt(v, i);
+}
+
+void LvN_Str(nativeVal_t *v, const char *s) {
+	Native_SetText(v, s, (int)strlen(s));
+}
+
+byte LvN_ModGet(const char *module, const char *var, nativeVal_t *out) {
+	PyObject *o = Script_Attr(module, var);
+	Native_SetNone(out);
+	if (!o) {
+		return 0;
+	}
+	Native_Arg(o, out);
+	Py_DECREF(o);
+	return 1;
+}
+
+byte LvN_ModSetGlobal(const char *module, const char *var, const char *src, const char *name) {
+	PyObject *o = Mode_GlobalPy(src, name);
+	byte ok = o && Mode_SetModPy(module, var, o);
+	Py_XDECREF(o);
+	return ok;
+}
+
+byte LvN_ModNone(const char *module, const char *var) {
+	return Mode_SetModPy(module, var, Py_None);
+}
+
+byte LvN_ModAppend(const char *module, const char *var, const nativeVal_t *v) {
+	PyObject *o = Script_Attr(module, var);
+	PyObject *x = o ? Native_ToPy(v) : NULL;
+	PyObject *r = x ? Script_Method(o, "append", "(O)", x) : NULL;
+	Py_XDECREF(r);
+	Py_XDECREF(x);
+	Py_XDECREF(o);
+	return r != NULL;
+}
+
+byte LvN_GObj(const char *module, const char *name, nativeVal_t *out) {
+	PyObject *o = Mode_GlobalPy(module, name);
+	Native_SetNone(out);
+	if (!o) {
+		return 0;
+	}
+	Native_Arg(o, out);
+	Py_DECREF(o);
+	return 1;
+}
+
+byte LvN_GAdd(const char *module, const char *name, long add, nativeVal_t *out) {
+	nativeVal_t v, n, r;
+	Native_SetInt(&n, add);
+	Native_SetNone(&r);
+	byte ok = Mode_G(module, name, &v) && Native_Arith('+', &v, &n, &r) && Mode_Put(module, name, NULL, &r);
+	Native_Free(&v);
+	if (ok && out) {
+		*out = r;
+	} else {
+		Native_Free(&r);
+	}
+	return ok;
+}
+
+byte LvN_PutI(const char *module, const char *name, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return Mode_Put(module, name, NULL, &v);
+}
+
+byte LvN_PutS(const char *module, const char *name, const char *s) {
+	nativeVal_t v;
+	LvN_Str(&v, s);
+	byte ok = Mode_Put(module, name, NULL, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+int LvN_GTrue(const char *module, const char *name) {
+	nativeVal_t v;
+	int r = Mode_G(module, name, &v) ? Native_True(&v) : -1;
+	Native_Free(&v);
+	return r;
+}
+
+int LvN_GEqI(const char *module, const char *name, long i) {
+	nativeVal_t v;
+	int r = Mode_G(module, name, &v) ? LvN_EqI(&v, i) : -1;
+	Native_Free(&v);
+	return r;
+}
+
+byte LvN_EqI(const nativeVal_t *a, long i) {
+	nativeVal_t b;
+	Native_SetInt(&b, i);
+	return !Native_Compare(a, &b);
+}
+
+byte LvN_EqS(const nativeVal_t *a, const char *s) {
+	nativeVal_t b;
+	LvN_Str(&b, s);
+	byte eq = !Native_Compare(a, &b);
+	Native_Free(&b);
+	return eq;
+}
+
+byte LvN_SetI(const nativeVal_t *h, const char *var, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return Mode_VSet(h, var, &v);
+}
+
+byte LvN_SetS(const nativeVal_t *h, const char *var, const char *s) {
+	nativeVal_t v;
+	LvN_Str(&v, s);
+	byte ok = Mode_VSet(h, var, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+byte LvN_SetF(const nativeVal_t *h, const char *var, double d) {
+	nativeVal_t v;
+	Native_SetFloat(&v, d);
+	return Mode_VSet(h, var, &v);
+}
+
+byte LvN_Item(const nativeVal_t *x, long i, nativeVal_t *out) {
+	nativeVal_t k;
+	Native_SetInt(&k, i);
+	Native_SetNone(out);
+	return Native_Subscript(x, &k, out);
+}
+
+byte LvN_RaiseText(const char *text) {
+	/* OBJLIB 7 */
+	PyObject *s = PyString_FromString((char *)text);
+	if (s) {
+		PyErr_SetObject(s, Py_None);
+		Py_DECREF(s);
+	}
+	return 0;
+}
+
+void LvN_Dummy(const char *pattern, int flag, nativeVal_t *dummy) {
+	Mode_DummyStart(pattern, flag);
+	Mode_DummyNext(dummy);
+}
+
+byte LvN_DummyPosAng(const nativeVal_t *dummy, nativeVal_t *pos, nativeVal_t *ang) {
+	nativeVal_t p, a;
+	Native_SetNone(&p);
+	Native_SetNone(&a);
+	Native_SetEmpty(pos, NV_TUPLE);
+	Native_SetEmpty(ang, NV_TUPLE);
+	byte ok = LvN_Item(dummy, 1, &p);
+	for (int i = 0; i < 3 && ok; i++) {
+		ok = LvN_Item(&p, i, Native_Append(pos));
+	}
+	ok = ok && LvN_Item(dummy, 2, &a);
+	for (int i = 0; i < 2 && ok; i++) {
+		ok = LvN_Item(&a, i, Native_Append(ang));
+	}
+	if (ok) {
+		Native_SetInt(Native_Append(ang), 0);
+	}
+	Native_Free(&p);
+	Native_Free(&a);
+	return ok;
+}
+
+byte LvN_SaveList(const char *var, const char *module, nativeVal_t *out) {
+	nativeVal_t s;
+	Mode_SaveVar(var, &s);
+	Native_SetNone(out);
+	byte ok = Native_EvalText(module, &s, out);
+	Native_Free(&s);
+	return ok;
+}
+
+void LvN_SaveRepr(const char *var, const nativeVal_t *v) {
+	nativeBuf_t b;
+	Native_BufInit(&b);
+	Native_Repr(&b, v, NR_REPR);
+	SaveVar_Set(var, b.p);
+	Native_BufFree(&b);
+}
+
+byte LvN_SaveAppend(const char *var, nativeVal_t *lst, const nativeVal_t *item) {
+	if (lst->type != NV_LIST) {
+		/* the append method of another value: its error, as the script meets it */
+		PyObject *o = Native_ToPy(lst), *x = o ? Native_ToPy(item) : NULL;
+		PyObject *r = x ? Script_Method(o, "append", "(O)", x) : NULL;
+		Py_XDECREF(r);
+		Py_XDECREF(x);
+		Py_XDECREF(o);
+		if (!r) {
+			return 0;
+		}
+		return Native_Raise(NE_SYSTEM, "append of a value that is no list");
+	}
+	Native_Copy(Native_Append(lst), item);
+	LvN_SaveRepr(var, lst);
+	return 1;
+}
+
+byte LvN_ListRemove(nativeVal_t *lst, const nativeVal_t *x) {
+	if (lst->type != NV_LIST) {
+		PyObject *o = Native_ToPy(lst), *v = o ? Native_ToPy(x) : NULL;
+		PyObject *r = v ? Script_Method(o, "remove", "(O)", v) : NULL;
+		Py_XDECREF(r);
+		Py_XDECREF(v);
+		Py_XDECREF(o);
+		return r ? Native_Raise(NE_SYSTEM, "remove of a value that is no list") : 0;
+	}
+	for (int i = 0; i < lst->n; i++) {
+		if (!Native_Compare(&lst->items[i], x)) {
+			Native_Free(&lst->items[i]);
+			memmove(&lst->items[i], &lst->items[i + 1], (size_t)(lst->n - i - 1) * sizeof(*lst->items));
+			lst->n--;
+			return 1;
+		}
+	}
+	return Native_Raise(NE_VALUE, "list.remove(x): x not in list");
+}
+
+byte LvN_SaveIs(const char *name, const char *text) {
+	const char *s = SaveVar_Get(name);
+	return s && !strcmp(s, text);
+}
+
+const nativeVal_t *LvN_NoArgs(void) {
+	static nativeVal_t empty = { .type = NV_TUPLE };
+	return &empty;
+}
+
+byte LvN_Com(const char *key, const char *who, const char *module, const char *func, const nativeVal_t *params) {
+	PyObject *add = Script_Attr("Speech", "AddRemoteCom");
+	if (!add) {
+		return 0;
+	}
+	if (!func) {
+		return Native_HookCall(add, NULL, "ss", key, who);
+	}
+	PyObject *then = Mode_GlobalPy(module, func);
+	if (!then) {
+		Py_DECREF(add);
+		return 0;
+	}
+	byte ok = params ? Native_HookCall(add, NULL, "ssOv", key, who, then, params) :
+		Native_HookCall(add, NULL, "ssO", key, who, then);
+	Py_DECREF(then);
+	return ok;
+}
+
+byte LvN_Speakers(const nativeVal_t *usr, const nativeVal_t *ch) {
+	return Mode_SetModVar("Speech", "PlayerName", usr) && Mode_SetModVar("Speech", "NPCName", ch);
+}
+
+byte LvN_OnEnd(const char *module, const char *func, const nativeVal_t *params) {
+	return LvN_ModSetGlobal("Speech", "OnEndOfSpeech", module, func) &&
+		Mode_SetModVar("Speech", "OnEndOfSpeechParams", params ? params : LvN_NoArgs());
+}
+
+byte LvN_Stay(const nativeVal_t *e, long state, const nativeVal_t *target) {
+	return LvN_SetI(e, "LLogicDefaultState", state) && Mode_VSet(e, "LLogicDefaultTarget", target) &&
+		LvN_SetI(e, "LLogicState", state) && Mode_VSet(e, "LLogicTarget", target) && LvN_SetI(e, "LLogicIdle", 1) &&
+		LvN_SetI(e, "LLogicIdle", 0);
+}
+
+byte LvN_Callback(const char *name, const char *module, const char *func) {
+	/* OBJLIB 5: CharRes holds the character objects of CharsNPC */
+	PyObject *res = Script_Attr("CharsNPC", "CharRes");
+	PyObject *key = res ? PyString_FromString((char *)name) : NULL;
+	PyObject *ch = key ? PyObject_GetItem(res, key) : NULL;
+	PyObject *cb = ch ? PyObject_GetAttrString(ch, "CallbackFunc") : NULL;
+	PyObject *append = cb ? PyObject_GetAttrString(cb, "append") : NULL;
+	PyObject *fn = append ? Mode_GlobalPy(module, func) : NULL;
+	PyObject *a = fn ? Py_BuildValue("(O)", fn) : NULL;
+	PyObject *r = a ? Script_CallObject(append, a, NULL) : NULL;
+	Py_XDECREF(r);
+	Py_XDECREF(a);
+	Py_XDECREF(fn);
+	Py_XDECREF(append);
+	Py_XDECREF(cb);
+	Py_XDECREF(ch);
+	Py_XDECREF(key);
+	Py_XDECREF(res);
+	return r != NULL;
+}
+
+byte LvN_MissionChar(const char *name, const char *module, const char *func) {
+	return LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", name) && LvN_Callback(name, module, func);
+}
+
+int LvN_PcOr(const char *module, const char *name) {
+	nativeVal_t x;
+	if (!Native_GVarGet("IsXbox", &x)) {
+		return -1;
+	}
+	int r = Native_True(&x) ? LvN_GTrue(module, name) : 1;
+	Native_Free(&x);
+	return r;
+}
+
+byte LvN_ScorerSet(const nativeVal_t *id, const char *item, const char *var, const nativeVal_t *v) {
+	nativeVal_t it;
+	LvN_Str(&it, item);
+	byte ok = Mode_ScorerSet(id, &it, var, v);
+	Native_Free(&it);
+	return ok;
+}
+
+byte LvN_ScorerTextBegin(const nativeVal_t *id, const char *item, long dy) {
+	nativeVal_t it, x, y, d, v;
+	LvN_Str(&it, item);
+	Native_SetNone(&x);
+	Native_SetNone(&y);
+	Native_SetNone(&v);
+	Native_SetInt(&d, dy);
+	byte ok = Mode_ScorerAdd(id, &it, "Text") && LvN_ModGet("Scorer", "MissionScorerText_X", &x) &&
+		LvN_ScorerSet(id, item, "X", &x) && LvN_ModGet("Scorer", "MissionScorerText_Y", &y) &&
+		(!dy || Native_Arith('+', &y, &d, &v)) && LvN_ScorerSet(id, item, "Y", dy ? &v : &y);
+	if (ok) {
+		LvN_Str(&v, "Horatio");
+		ok = LvN_ScorerSet(id, item, "Font", &v);
+		Native_Free(&v);
+	}
+	if (ok) {
+		LvN_Str(&v, "Shadow");
+		ok = LvN_ScorerSet(id, item, "Effect", &v);
+	}
+	Native_Free(&it);
+	Native_Free(&x);
+	Native_Free(&y);
+	Native_Free(&v);
+	return ok;
+}
+
+byte LvN_ScorerTextEnd(const nativeVal_t *id, const char *item) {
+	static const char *const rgba[] = { "Red", "Green", "Blue", "Alpha" };
+	nativeVal_t v, c, k;
+	LvN_Str(&v, "Left");
+	byte ok = LvN_ScorerSet(id, item, "Align", &v);
+	Native_Free(&v);
+	for (int i = 0; i < 4 && ok; i++) {
+		Native_SetNone(&k);
+		ok = LvN_ModGet("Scorer", "MissionScorerText_Color", &c) && LvN_Item(&c, i, &k) &&
+			LvN_ScorerSet(id, item, rgba[i], &k);
+		Native_Free(&c);
+		Native_Free(&k);
+	}
+	return ok;
+}
+
+byte LvN_Life(const nativeVal_t *e, const char *module, const char *life) {
+	nativeVal_t v;
+	byte ok = Mode_G(module, life, &v) && Mode_VSet(e, "Life", &v) && Mode_VSet(e, "MaxLife", &v);
+	Native_Free(&v);
+	return ok;
+}
+
+byte LvN_Value(const char *text, int len, nativeVal_t *out) {
+	char buf[0x100], *end;
+	Native_SetNone(out);
+	if (len < 0) {
+		len = (int)strlen(text);
+	}
+	if (len <= 0 || len >= (int)sizeof(buf)) {
+		return Native_Raise(NE_SYSTEM, "bad value in a call table");
+	}
+	memcpy(buf, text, len);
+	buf[len] = 0;
+	if (buf[0] == '\'') {
+		LvN_Str(out, buf + 1);
+		return 1;
+	}
+	if (buf[0] == '%' || buf[0] == '^') {
+		char *dot = strchr(buf, '.'), *colon = buf[0] == '^' && dot ? strchr(dot, ':') : NULL;
+		if (!dot || (buf[0] == '^' && !colon)) {
+			return Native_Raise(NE_SYSTEM, "bad value in a call table");
+		}
+		*dot = 0;
+		if (colon) {
+			*colon = 0;
+			return LV_CALL(buf + 1, dot + 1, out, "s", colon + 1);
+		}
+		return LvN_ModGet(buf + 1, dot + 1, out);
+	}
+	if (buf[0] == '-' || (buf[0] >= '0' && buf[0] <= '9')) {
+		if (!strchr(buf, '.')) {
+			long i = strtol(buf, &end, 10);
+			if (*end == 0) {
+				Native_SetInt(out, i);
+				return 1;
+			}
+		} else {
+			double d = strtod(buf, &end);
+			if (*end == 0) {
+				Native_SetFloat(out, d);
+				return 1;
+			}
+		}
+	}
+	LvN_Str(out, buf);
+	return 1;
+}
+
+byte LvN_Profile(const char *const *vars, nativeVal_t *out) {
+	if (!Mode_Import("VehiclesNPC") || !LV_CALL("VehiclesNPC", "cShipAI", out, "")) {
+		return 0;
+	}
+	for (; *vars; vars++) {
+		const char *eq = strchr(*vars, '=');
+		char name[0x40];
+		int len = eq ? (int)(eq - *vars) : 0;
+		if (!eq || len >= (int)sizeof(name)) {
+			return Native_Raise(NE_SYSTEM, "bad attribute in a table");
+		}
+		memcpy(name, *vars, len);
+		name[len] = 0;
+		nativeVal_t v;
+		byte ok = LvN_Value(eq + 1, -1, &v) && Mode_VSet(out, name, &v);
+		Native_Free(&v);
+		if (!ok) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+byte LvN_StdAI(const nativeVal_t *e, const nativeVal_t *pd) {
+	nativeVal_t name, ship;
+	Native_SetNone(&name);
+	Native_SetNone(&ship);
+	byte ok = Mode_VGet(e, "Name", &name) && Mode_VGet(pd, "Ship", &ship) &&
+		LV_CALL("VehiclesNPC", "SetStdProperties", NULL, "vv", &name, &ship) &&
+		LV_CALL("VehiclesNPC", "ModAIProff", NULL, "vv", e, pd);
+	Native_Free(&name);
+	Native_Free(&ship);
+	return ok;
+}
+
+byte LvN_StdProfile(const char *module, const char *profile, const nativeVal_t *e, nativeVal_t *pd) {
+	return LV_OWN(module, profile, pd, "") && LvN_StdAI(e, pd);
+}
+
+int LvN_UsrNameIs(const nativeVal_t *usr, const nativeVal_t *name) {
+	nativeVal_t n;
+	if (!Native_True(usr)) {
+		return 0;
+	}
+	Native_SetNone(&n);
+	int r = Mode_VGet(usr, "Name", &n) ? !Native_Compare(&n, name) : -1;
+	Native_Free(&n);
+	return r;
+}
+
+byte LvN_Draw(void) {
+	nativeVal_t set;
+	PyObject *fn = Script_Attr("Menu", "DrawScorer");
+	if (!fn) {
+		return 0;
+	}
+	Native_SetStr(&set, TABLE_AT(g_ActionSets, Input_GetActionSet())->name);
+	return Native_HookCall(fn, NULL, "iv", 0L, &set);
+}
+
+byte LvN_ScorerOff(void) {
+	return LvN_ModNone("Menu", "MissionScorerCall");
+}
+
+byte LvN_ScorerCallG(const char *module, const char *func) {
+	return LvN_ModSetGlobal("Menu", "MissionScorerCall", module, func);
+}
+
+byte LvN_Next(const char *lib, const char *map, const char *desc) {
+	return LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", lib, map) && LV_CALL("SaveGame", "MMDesc", NULL, "si", desc, 1L);
+}
+
+byte LvN_Entity(const char *name, nativeVal_t *out) {
+	nativeVal_t n;
+	LvN_Str(&n, name);
+	byte ok = Mode_EntityH(&n, out);
+	Native_Free(&n);
+	return ok;
+}
+
+byte LvN_LaterObj(double delay, const nativeVal_t *func, const nativeVal_t *args, int n) {
+	nativeVal_t t;
+	PyObject *fn = Native_ToPy(func);
+	if (!fn) {
+		return 0;
+	}
+	Native_SetFloat(&t, Mode_Time() + delay);
+	byte ok = Mode_Schedule(&t, fn, args, n, NULL);
+	Py_DECREF(fn);
+	return ok;
+}
+
+byte LvN_Create(const nativeVal_t *name, const nativeVal_t *x, const nativeVal_t *y, const nativeVal_t *z, const char *cls,
+	nativeVal_t *out) {
+	PyObject *hook;
+	Native_SetNone(out);
+	int seam = Native_Seam("Scrap", "CreateEntity", &hook);
+	if (seam) {
+		return seam > 0 && Native_HookCall(hook, out, "vvvvs", name, x, y, z, cls);
+	}
+	cEntity *e;
+	return Mode_Create(name, x, y, z, cls, &e) && Mode_EntHandle(e, out);
+}
+
+byte LvN_CreateAt(const nativeVal_t *name, const nativeVal_t *pos, const char *cls, nativeVal_t *out) {
+	nativeVal_t c[3];
+	int n = 0;
+	byte ok = 1;
+	Native_SetNone(out);
+	for (; ok && n < 3; n++) {
+		ok = LvN_Item(pos, n, &c[n]);
+	}
+	if (!ok) {
+		Native_Free(&c[--n]);
+	}
+	ok = ok && LvN_Create(name, &c[0], &c[1], &c[2], cls, out);
+	while (n-- > 0) {
+		Native_Free(&c[n]);
+	}
+	return ok;
+}
+
+void LvN_Label(const char *key, nativeVal_t *out) {
+	nativeVal_t t, colon;
+	Mode_Lang(key, &t);
+	LvN_Str(&colon, ":");
+	Native_SetNone(out);
+	Native_Arith('+', &t, &colon, out);
+	Native_Free(&t);
+	Native_Free(&colon);
+}
