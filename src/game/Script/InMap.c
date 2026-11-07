@@ -3,54 +3,42 @@
  * the grid and the sound of an interior, creates the player and the NPCs (CharsNPC.Init, still Python or its own
  * port) and starts the other systems of an interior (conversors, crazy winds, elevators, police, the Dtritus desk,
  * the news panel). Every call stops the start where the script would stop.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the engine calls are C; the module has no state. The calls of the other
+ * ports and Init.UpperMap stay by name.
  */
 #include <string.h>
 
+#include "scrap/collisiongrid.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptnative.h"
+#include "scrap/world.h"
 
-/* Init(LevelPath) */
-static PyObject *InMap_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	PyObject *chars = PyImport_ImportModule("Chars");
-	PyObject *string = chars ? PyImport_ImportModule("string") : NULL;
-	Py_XDECREF(chars);
-	if (!string) {
-		return NULL;
-	}
-	Py_DECREF(string);
-	PyObject *suffix = PyString_FromString("/2D/Map%i.tga");
-	PyObject *map = suffix ? PyNumber_Add(path, suffix) : NULL;
-	Py_XDECREF(suffix);
-	byte ok = map && Script_Try("Scrap", "Set", "(sO)", "FileNameMap2D", map);
-	Py_XDECREF(map);
-	if (!ok) {
-		return NULL;
-	}
+/* the start after the map name is set */
+static byte InMap_Start(void) {
 	GVar_SetNum("GridUseTopLimit", 0);
-	if (!Script_Try("Scrap", "SetGrid", "(iii)", 3500, 3500, 3500)) {
-		return NULL;
-	}
+	/* Scrap.SetGrid(3500, 3500, 3500) */
+	vec3_t grid = { 3500.0f, 3500.0f, 3500.0f };
+	Grid_Set(&g_pWorld->grid, &grid);
 	GVar_SetNum("Max_Rad_Obj", 1000);
 	GVar_SetNum("SoundAutoplayVolume", -60.0);
 	GVar_SetNum("SoundDopplerLevel", 1.0);
 	GVar_SetNum("SoundDistAttenuation", 12.5);
+	/* OBJLIB 3: the calls of other ports go through their modules until the ports call each other in C */
 	if (!Script_Try("Chars", "CreateStartupPlayer", "()") || !Script_Try("CharsNPC", "Init", "()")) {
-		return NULL;
+		return 0;
 	}
 	GVar_SetNum("CameraCloudDistance", 0);
 	if (!Script_Try("CharConversor", "Init", "()") || !Script_Try("CrazyWing", "InitCrazyWing", "()") ||
 		!Script_Try("Elevator", "PlayerCreatedElevator", "()") || !Script_Try("InPolice", "Init", "()")) {
-		return NULL;
+		return 0;
 	}
-	/* the mercenaries only stay friends in Gamblinden and the Junkyard */
+	/* the mercenaries only stay friends in Gamblinden and the Junkyard (OBJLIB 5: Init.UpperMap is a variable of
+	 * Init) */
 	PyObject *upper = Script_Attr("Init", "UpperMap");
 	if (!upper) {
-		return NULL;
+		return 0;
 	}
 	const char *u = PyString_Check(upper) ? PyString_AsString(upper) : NULL;
 	if (!u || (strcmp(u, "GAMBLINDEN") && strcmp(u, "JUNKYARD"))) {
@@ -61,14 +49,51 @@ static PyObject *InMap_Init(PyObject *self, PyObject *args) {
 	Py_DECREF(upper);
 	GVar_SetNum("CharGrav", 1960);
 	if (!Script_Try("DTritusDesktop", "Init", "()") || !Script_Try("NewsPanel", "Init", "()")) {
-		return NULL;
+		return 0;
 	}
 	GVar_SetNum("AtmosphereLimit", 1000000000);
 	GVar_SetNum("TopLimit", 1000200000);
-	return Py_ReturnNone();
+	return 1;
+}
+
+/* Init(LevelPath): Scrap.Set("FileNameMap2D", LevelPath + "/2D/Map%i.tga"), then the start */
+static byte InMap_Init(const char *path) {
+	char map[0x200];
+	Str_Printf(map, sizeof(map), "%s/2D/Map%%i.tga", path);
+	if (GVar_SetStr("FileNameMap2D", map) < 0) {
+		/* Scrap.Set gives NULL for a variable of another type */
+		return Native_NullResult();
+	}
+	return InMap_Start();
+}
+
+/* ---- the adapter of the module table (OBJLIB 7: the argument and the errors of the Python calls) ---- */
+
+static PyObject *InMap_InitPy(PyObject *self, PyObject *args) {
+	PyObject *path;
+	(void)self;
+	if (!PyArg_ParseTuple(args, "O", &path)) {
+		return NULL;
+	}
+	/* OBJLIB 6: the imports of the function stay with the module objects until then */
+	PyObject *chars = PyImport_ImportModule("Chars");
+	PyObject *string = chars ? PyImport_ImportModule("string") : NULL;
+	Py_XDECREF(chars);
+	if (!string) {
+		return NULL;
+	}
+	Py_DECREF(string);
+	if (PyString_Check(path) && PyString_Size(path) < 0x100 && strlen(PyString_AsString(path)) == (size_t)PyString_Size(path)) {
+		return InMap_Init(PyString_AsString(path)) ? Py_ReturnNone() : NULL;
+	}
+	/* any other LevelPath goes the script's way: the error of + (or a value Scrap.Set takes or refuses) */
+	PyObject *map = Script_PlusS(Script_Ref(path), "/2D/Map%i.tga");
+	byte ok = map && Script_Try("Scrap", "Set", "(sO)", "FileNameMap2D", map);
+	Py_XDECREF(map);
+	return ok && InMap_Start() ? Py_ReturnNone() : NULL;
 }
 
 PyMethodDef g_InMapMethods[] = {
-	{ "Init", InMap_Init, 1, NULL },
+	{ "Init", InMap_InitPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
