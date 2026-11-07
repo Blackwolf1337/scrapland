@@ -471,5 +471,22 @@ byte Mode_TextColour(const nativeVal_t *id, const char *item);
  * arguments and kw a new reference to the dict that the call takes over (NULL: its error is set); the result into out
  * (NULL: dropped) */
 byte Mode_CallKw(const char *module, const char *name, nativeVal_t *out, const nativeVal_t *args, int n, PyObject *kw);
+/* GateKeeper.DoorFoe(gk, GateKeeper.<group>) with the group object itself (OBJLIB 5: the group lists of GateKeeper keep
+ * their identity) */
+byte Mode_DoorFoe(const char *gk, const char *group);
+/* SSound.PlaySound(pos, name, volume) through its seam (fr7b.py records it), else Mode_PlaySound */
+byte Mode_PlaySoundSeam(const nativeVal_t *pos, const nativeVal_t *name, const nativeVal_t *volume);
+/* Scrap.GetLangStr(key) of a value (the TypeError of "s" for one that is no text) into out */
+byte Mode_LangV(const nativeVal_t *key, nativeVal_t *out);
+/* SAct.CreateClass(name), SAct.GetClass(name) or SAct.CreateAction(name) through their seams (fn the name of the SAct
+ * function; the result dropped) */
+byte Mode_SAct(const char *fn, const char *name);
+/* SAct.SetCls(name, v) (cls 1) or SAct.SetAct(name, v) through their seams, v the text s or the int i for s NULL */
+byte Mode_SActSet(byte cls, const char *name, const char *s, long i);
+/* the same with v = Init.Path + rest (the files in the folder of the level) */
+byte Mode_PathSet(byte cls, const char *name, const char *rest);
+/* Scrap.CreateEntity(dummy[0], dummy[1][0], dummy[1][1], dummy[1][2], type) through its seam, then e.Ang = (dummy[2][0],
+ * dummy[2][1], 0): the handle into e */
+byte Mode_FromDummy(const nativeVal_t *dummy, const char *type, nativeVal_t *e);
 
 #endif
