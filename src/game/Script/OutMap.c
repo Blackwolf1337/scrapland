@@ -11,7 +11,10 @@
 #include <stdarg.h>
 
 #include "scrap/scrap.h"
+#include "scrap/game.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
+#include "scrap/world.h"
 
 /* a function of the module as its script calls it (a global of the module) */
 static PyObject *Om_Own(scriptFrame_t *f, const char *module, const char *func, const char *fmt, ...) {
@@ -423,133 +426,221 @@ PyMethodDef g_OutMapMethods[] = {
 
 /* ---- InTraffic ---- */
 
+/*
+ * InTraffic is native C (docs/objlib-plan.md, stage 2): its functions work on C values and read the variables of the
+ * module where the script reads them (OBJLIB 5). The engine calls fc-snd-th records (SWeap.InitAmmo, InitWeap,
+ * SetFWeap, SSound.LoadSound, Scrap.Preload3DObject) and Scrap.CreateEntity and Scrap.Set go through their seams
+ * (OBJLIB 7); the traffic ships are handle values (OBJLIB 7); Fx.SetUpShipMotors, SAI.EnableAIVehicle,
+ * SAI.SetStateVehicle and the module's own functions stay by name (OBJLIB 3, 7).
+ */
+
+/* a global of the module as its functions read it (out None before) */
+static byte It_G(const char *name, nativeVal_t *out) {
+	return Mode_G("InTraffic", name, out);
+}
+
 /* GetNam(name): the model file of a traffic ship */
-static PyObject *InTraffic_GetNam(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+static byte It_GetNam(const nativeVal_t *name, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *path = Mode_V(&t);
+	byte ok = It_G("Path", path) && Mode_Cat(&t, out, 3, path, name, Mode_S(&t, ".M3D"));
+	return Mode_Done(&t, ok);
+}
+
+/* SWeap.<name>(n) (InitAmmo, InitWeap) through its seam */
+static byte It_InitTable(const char *name, void *table, byte weap) {
+	PyObject *hook;
+	int seam = Native_Seam("SWeap", name, &hook);
+	if (seam) {
+		return seam > 0 && Native_HookCall(hook, NULL, "i", 1L);
 	}
-	return Sf_Return(&f, Sf_Cat(&f, "OOs", Sf_Global(&f, "InTraffic", "Path"), name, ".M3D"));
+	if (weap) {
+		WeapTable_Init(table, 1);
+	} else {
+		AmmoTable_Init(table, 1);
+	}
+	return 1;
 }
 
 /* FakeWeap(): one weapon without ammunition for the traffic */
-static PyObject *InTraffic_FakeWeap(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte It_FakeWeap(void) {
+	PyObject *hook;
+	if (!It_InitTable("InitAmmo", &g_pWorld->ammo, 0) || !It_InitTable("InitWeap", &g_pWorld->weapons, 1)) {
+		return 0;
 	}
-	Sf_Ask(&f, "SWeap", "InitAmmo", "(i)", 1);
-	Sf_Ask(&f, "SWeap", "InitWeap", "(i)", 1);
-	Sf_Ask(&f, "SWeap", "SetFWeap", "(isi)", 0, "iAmmo", 0);
-	return Sf_None(&f);
+	/* SWeap.SetFWeap(0, "iAmmo", 0) */
+	int seam = Native_Seam("SWeap", "SetFWeap", &hook);
+	if (seam) {
+		return seam > 0 && Native_HookCall(hook, NULL, "isi", 0L, "iAmmo", 0L);
+	}
+	cWeapInfo_SetF(TABLE_AT(g_pWorld->weapons, 0), "iAmmo", 0.0f);
+	return 1;
+}
+
+/* SSound.LoadSound(file) through its seam */
+static byte It_LoadSound(const char *file) {
+	PyObject *hook;
+	nativeVal_t v;
+	int seam = Native_Seam("SSound", "LoadSound", &hook);
+	if (seam) {
+		return seam > 0 && Native_HookCall(hook, NULL, "s", file);
+	}
+	Native_SetStr(&v, file);
+	return Mode_LoadSound(&v);
 }
 
 /* LoadFakeTraffic(): the engine sound, the weapon and the models of the three traffic lists */
-static PyObject *InTraffic_LoadFakeTraffic(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte It_LoadFakeTraffic(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *n = Mode_V(&t), *m = Mode_V(&t), *h = Mode_V(&t), *nm = Mode_V(&t), *all = Mode_V(&t);
+	/* OBJLIB 3: the module's FakeWeap as its global */
+	if (!It_LoadSound("Sounds/Vehicles/Engines/EngDiesel98CC.wav") ||
+		!Native_CallGlobal("InTraffic", "FakeWeap", NULL, "") || !It_G("N_TrafficList", n) || !It_G("M_TrafficList", m) ||
+		!Native_Arith('+', n, m, nm) || !It_G("H_TrafficList", h) || !Native_Arith('+', nm, h, all)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Ask(&f, "SSound", "LoadSound", "(s)", "Sounds/Vehicles/Engines/EngDiesel98CC.wav");
-	Om_Own(&f, "InTraffic", "FakeWeap", "()");
-	PyObject *all = Sf_Op(&f, Sf_Op(&f, Sf_Global(&f, "InTraffic", "N_TrafficList"), '+',
-		Sf_Global(&f, "InTraffic", "M_TrafficList")), '+', Sf_Global(&f, "InTraffic", "H_TrafficList"));
-	for (int i = 0; !f.failed; i++) {
-		int mark = f.n;
-		PyObject *name = Sf_Next(&f, all, i);
-		if (!name) {
-			break;
-		}
-		Sf_Ask(&f, "Scrap", "Preload3DObject", "(Oiii)", Om_Own(&f, "InTraffic", "GetNam", "(O)", name), 1, 1, 1);
-		if (!f.failed) {
-			Sf_Release(&f, mark);
+	/* for name in all */
+	int count = Native_ForCount(all);
+	if (count < 0) {
+		Native_Raise(NE_TYPE, "loop over non-sequence");
+		return Mode_Done(&t, 0);
+	}
+	for (int i = 0; i < count; i++) {
+		nativeVal_t name = { 0 }, file = { 0 };
+		byte ok = Native_SeqItem(all, i, &name) && Native_CallGlobal("InTraffic", "GetNam", &file, "v", &name) &&
+			Mode_PreloadOnes(&file);
+		Native_Free(&name);
+		Native_Free(&file);
+		if (!ok) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, 1);
+}
+
+/* Scrap.CreateEntity(name, 0, 0, 0, "Car") through its seam (fr6.py swaps it): the handle value or None */
+static byte It_Create(const nativeVal_t *name, nativeVal_t *out) {
+	PyObject *hook;
+	int seam = Native_Seam("Scrap", "CreateEntity", &hook);
+	if (seam) {
+		return seam > 0 && Native_HookCall(hook, out, "viiis", name, 0L, 0L, 0L, "Car");
+	}
+	nativeVal_t zero;
+	cEntity *e;
+	Native_SetInt(&zero, 0);
+	return Mode_Create(name, &zero, &zero, &zero, "Car", &e) && Mode_EntHandle(e, out);
+}
+
+/* the ship i of CreateList: a random model of the list, its type, motors, AI and sound */
+static byte It_Ship(long i, const nativeVal_t *list, const nativeVal_t *typo) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *num = Mode_V(&t), *rep = Mode_V(&t), *name = Mode_V(&t), *v = Mode_V(&t), *r = Mode_V(&t);
+	nativeVal_t *k = Mode_V(&t), *model = Mode_V(&t), *vname = Mode_V(&t), *vname2 = Mode_V(&t);
+	Native_SetInt(num, i);
+	Mode_Repr(num, rep);
+	if (!Native_Arith('+', Mode_S(&t, "FakeTraffic"), rep, name) || !It_Create(name, v)) {
+		return Mode_Done(&t, 0);
+	}
+	/* OBJLIB 4, 7: fn = v.SetModel, taken before the model is picked as the script does */
+	PyObject *fn = Mode_VBound(v, "SetModel");
+	int n = fn ? Native_Size(list) : -1;
+	if (n >= 0) {
+		Native_SetFloat(r, Scrap_RandRange(0.0, (double)n - 0.1));
+	}
+	/* OBJLIB 3: Fx and the AI of the vehicle by name */
+	byte ok = n >= 0 && Native_ToInt(r, k) && Native_Subscript(list, k, model) && Native_Call(fn, NULL, "v", model) &&
+		Mode_VSet(v, "Traf_Type", typo) && Native_CallMod("Fx", "SetUpShipMotors", NULL, "v", v) &&
+		Mode_VGet(v, "Name", vname) &&
+		Native_CallMod("SAI", "EnableAIVehicle", NULL, "vidiiiiidiidd", vname, 1L, 0.1, 2L, 0L, 1L, 0L, 4L, 0.5, 3L, 4L,
+			0.785, 0.25) &&
+		Mode_VGet(v, "Name", vname2) && Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 4L, vname2) &&
+		Mode_VSet(v, "Traf_Active", Mode_I(&t, 1)) && Native_CallGlobal("InTraffic", "SetSound", NULL, "v", v);
+	Py_XDECREF(fn);
+	return Mode_Done(&t, ok);
 }
 
 /* CreateList(TrafficList, NumTraffic, typo): NumTraffic ships FakeTraffic<i> of random models of the list, driven by
  * the AI (the names start at 0 for each list, as in the script) */
-static PyObject *InTraffic_CreateList(PyObject *self, PyObject *args) {
-	PyObject *list, *num, *typo;
-	scriptFrame_t f = { 0 };
+static byte It_CreateList(const nativeVal_t *list, const nativeVal_t *num, const nativeVal_t *typo) {
 	long count = 0;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &list, &num, &typo)) {
-		return NULL;
+	if (!Mode_Import("Fx") || !Mode_Range(num, &count)) {
+		return 0;
 	}
-	Sf_Import(&f, "Fx");
-	if (!f.failed) {
-		Sf_Check(&f, Script_Range(num, &count));
-	}
-	for (long i = 0; i < count && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *name = Sf_Cat(&f, "sO", "FakeTraffic", Sf_ReprI(&f, i));
-		PyObject *v = Sf_Ask(&f, "Scrap", "CreateEntity", "(Oiiis)", name, 0, 0, 0, "Car");
-		PyObject *fn = Sf_Attr(&f, v, "SetModel");
-		int n = Sf_Len(&f, list);
-		PyObject *k = n >= 0 ? Sf_ToInt(&f, Sf_Float(&f, Scrap_RandRange(0.0, (double)n - 0.1))) : NULL;
-		Sf_Call(&f, fn, "(O)", Sf_GetItem(&f, list, k));
-		Sf_SetAttr(&f, v, "Traf_Type", typo);
-		Sf_Ask(&f, "Fx", "SetUpShipMotors", "(O)", v);
-		Sf_Ask(&f, "SAI", "EnableAIVehicle", "(Oidiiiiidiidd)", Sf_Attr(&f, v, "Name"), 1, 0.1, 2, 0, 1, 0, 4, 0.5, 3, 4,
-			0.785, 0.25);
-		Sf_Ask(&f, "SAI", "SetStateVehicle", "(iO)", 4, Sf_Attr(&f, v, "Name"));
-		Sf_SetAttrI(&f, v, "Traf_Active", 1);
-		Om_Own(&f, "InTraffic", "SetSound", "(O)", v);
-		if (!f.failed) {
-			Sf_Release(&f, mark);
+	for (long i = 0; i < count; i++) {
+		if (!It_Ship(i, list, typo)) {
+			return 0;
 		}
 	}
-	return Sf_None(&f);
+	return 1;
 }
 
 /* FakeTraffic(): the light, medium and heavy traffic of the lists, with the indoor model path */
-static PyObject *InTraffic_FakeTraffic(PyObject *self, PyObject *args) {
+static byte It_FakeTraffic(void) {
 	static const char *const lists[][3] = { { "N_TrafficList", "N_NumTraffic", "Light" },
 		{ "M_TrafficList", "M_NumTraffic", "Medium" }, { "H_TrafficList", "H_NumTraffic", "Heavy" } };
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *prev = Mode_V(&t), *path = Mode_V(&t), *fmt = Mode_V(&t);
+	if (!Native_GVarGet("ShipPathFmt", prev) || !It_G("Path", path) || !Mode_Cat(&t, fmt, 2, path, Mode_S(&t, "%s.m3d")) ||
+		!Mode_GVarSet("ShipPathFmt", fmt)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *prev = Sf_Ask(&f, "Scrap", "Get", "(s)", "ShipPathFmt");
-	Sf_Ask(&f, "Scrap", "Set", "(sO)", "ShipPathFmt", Sf_Cat(&f, "Os", Sf_Global(&f, "InTraffic", "Path"), "%s.m3d"));
 	for (int i = 0; i < 3; i++) {
-		Om_Own(&f, "InTraffic", "CreateList", "(OOs)", Sf_Global(&f, "InTraffic", lists[i][0]),
-			Sf_Global(&f, "InTraffic", lists[i][1]), lists[i][2]);
+		nativeVal_t list = { 0 }, num = { 0 };
+		/* OBJLIB 3: the module's CreateList as its global */
+		byte ok = It_G(lists[i][0], &list) && It_G(lists[i][1], &num) &&
+			Native_CallGlobal("InTraffic", "CreateList", NULL, "vvs", &list, &num, lists[i][2]);
+		Native_Free(&list);
+		Native_Free(&num);
+		if (!ok) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	Sf_Ask(&f, "Scrap", "Set", "(sO)", "ShipPathFmt", prev);
-	return Sf_None(&f);
+	return Mode_Done(&t, Mode_GVarSet("ShipPathFmt", prev));
 }
 
 /* SetSound(v): the engine loop of a traffic ship */
-static PyObject *InTraffic_SetSound(PyObject *self, PyObject *args) {
-	PyObject *v;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &v)) {
-		return NULL;
+static byte It_SetSound(const nativeVal_t *v) {
+	nativeVal_t name, x;
+	Native_SetStr(&name, "EngDiesel98CC");
+	if (!Mode_VSet(v, "snd00_name", &name)) {
+		return 0;
 	}
-	Sf_SetAttrS(&f, v, "snd00_name", "EngDiesel98CC");
-	Sf_SetAttrI(&f, v, "snd00_loop", 1);
-	Sf_SetAttrI(&f, v, "snd00_ini", 1000);
-	Sf_SetAttrI(&f, v, "snd00_end", 15000);
-	Sf_SetAttr(&f, v, "snd00_dopp", Sf_Float(&f, 1.0));
-	Sf_SetAttr(&f, v, "snd00_vol", Sf_Float(&f, 0.08));
-	return Sf_None(&f);
+	static const char *const ints[3] = { "snd00_loop", "snd00_ini", "snd00_end" };
+	static const long values[3] = { 1, 1000, 15000 };
+	for (int i = 0; i < 3; i++) {
+		Native_SetInt(&x, values[i]);
+		if (!Mode_VSet(v, ints[i], &x)) {
+			return 0;
+		}
+	}
+	Native_SetFloat(&x, 1.0);
+	if (!Mode_VSet(v, "snd00_dopp", &x)) {
+		return 0;
+	}
+	Native_SetFloat(&x, 0.08);
+	return Mode_VSet(v, "snd00_vol", &x);
 }
 
+/* the adapters */
+#define IT_FN0(fn, call) \
+	static PyObject *fn(PyObject *self, PyObject *args) { \
+		(void)self; \
+		return PyArg_ParseTuple(args, "") ? Mode_Result(call) : NULL; \
+	}
+
+MODE_FN(It, GetNamPy, 1, It_GetNam(&a[0], out))
+IT_FN0(InTraffic_FakeWeap, It_FakeWeap())
+IT_FN0(InTraffic_LoadFakeTraffic, It_LoadFakeTraffic())
+MODE_FN(It, CreateListPy, 3, It_CreateList(&a[0], &a[1], &a[2]))
+IT_FN0(InTraffic_FakeTraffic, It_FakeTraffic())
+MODE_FN(It, SetSoundPy, 1, It_SetSound(&a[0]))
+
 PyMethodDef g_InTrafficMethods[] = {
-	{ "GetNam", InTraffic_GetNam, 1, NULL },
+	{ "GetNam", It_GetNamPy, 1, NULL },
 	{ "FakeWeap", InTraffic_FakeWeap, 1, NULL },
 	{ "LoadFakeTraffic", InTraffic_LoadFakeTraffic, 1, NULL },
-	{ "CreateList", InTraffic_CreateList, 1, NULL },
+	{ "CreateList", It_CreateListPy, 1, NULL },
 	{ "FakeTraffic", InTraffic_FakeTraffic, 1, NULL },
-	{ "SetSound", InTraffic_SetSound, 1, NULL },
+	{ "SetSound", It_SetSoundPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
