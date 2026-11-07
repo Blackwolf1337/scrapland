@@ -17,6 +17,7 @@
 #include "scrap/game.h"
 #include "scrap/scheduler.h"
 #include "scrap/scorer.h"
+#include "scrap/scrapfont.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -1507,4 +1508,143 @@ byte Mode_ListSet(const char *list, const char *var, const char *value) {
 
 byte Mode_VecOf(const nativeVal_t *v, double *x) {
 	return Mode_Vec3(v, x);
+}
+
+/* ---- the ship editor tabs ---- */
+
+void Mode_Repr(const nativeVal_t *v, nativeVal_t *out) {
+	nativeBuf_t b;
+	Native_BufInit(&b);
+	Native_Repr(&b, v, NR_REPR);
+	Native_SetText(out, b.p, b.len);
+	Native_BufFree(&b);
+}
+
+byte Mode_ItemText(const nativeVal_t *v, const char **out) {
+	if (v->type != NV_STR) {
+		return Native_Raise(NE_TYPE, "argument 2: expected string found");
+	}
+	*out = Native_Text(v);
+	return 1;
+}
+
+PyObject *Mode_From(const char *module, const char *name) {
+	PyObject *m = PyImport_ImportModule((char *)module);
+	PyObject *v = m ? PyDict_GetItemString(PyModule_GetDict(m), (char *)name) : NULL;
+	if (m && !v) {
+		PyErr_Format(PyExc_ImportError, "cannot import name %.230s", name);
+	}
+	Py_XINCREF(v);
+	Py_XDECREF(m);
+	return v;
+}
+
+byte Mode_PrevShip(nativeVal_t *ship) {
+	PyObject *o = Script_Attr("HangarTab", "prevShip");
+	Native_SetNone(ship);
+	if (!o) {
+		return 0;
+	}
+	Native_Arg(o, ship);
+	Py_DECREF(o);
+	return 1;
+}
+
+byte Mode_ShipGet(const char *var, nativeVal_t *out) {
+	nativeVal_t ship;
+	byte ok = Mode_PrevShip(&ship) && Mode_VGet(&ship, var, out);
+	Native_Free(&ship);
+	return ok;
+}
+
+byte Mode_ShipSet(const char *var, const nativeVal_t *v) {
+	nativeVal_t ship;
+	byte ok = Mode_PrevShip(&ship) && Mode_VSet(&ship, var, v);
+	Native_Free(&ship);
+	return ok;
+}
+
+byte Mode_ShipTable(const char *table, long i, nativeVal_t *out) {
+	nativeVal_t model = { 0 }, up = { 0 }, tab = { 0 }, row = { 0 }, k;
+	Native_SetInt(&k, i);
+	byte ok = Mode_ShipGet("Model", &model) && Native_Upper(&model, &up) && Mode_ModVar("ShipMaker", table, &tab) &&
+		Native_Subscript(&tab, &up, &row) && Native_Subscript(&row, &k, out);
+	Native_Free(&model);
+	Native_Free(&up);
+	Native_Free(&tab);
+	Native_Free(&row);
+	return ok;
+}
+
+void Mode_Replace(const nativeVal_t *s, const char *old, const nativeVal_t *with, nativeVal_t *out) {
+	nativeBuf_t b;
+	const char *t = Native_Text(s);
+	int len = (int)strlen(old), from = 0;
+	Native_BufInit(&b);
+	for (int i = 0; i + len <= s->n; i++) {
+		if (!memcmp(t + i, old, (size_t)len)) {
+			Native_BufAdd(&b, t + from, i - from);
+			Native_BufAdd(&b, Native_Text(with), with->n);
+			from = i + len;
+			i += len - 1;
+		}
+	}
+	Native_BufAdd(&b, t + from, s->n - from);
+	Native_SetText(out, b.p, b.len);
+	Native_BufFree(&b);
+}
+
+byte Mode_Range(const nativeVal_t *n, long *count) {
+	int i;
+	if (n->type == NV_INT) {
+		*count = n->i;
+		return 1;
+	}
+	if (n->type == NV_LONG) {
+		nativeVal_t x;
+		Native_SetNone(&x);
+		byte ok = Native_ToInt(n, &x) && (x.type == NV_INT || Native_Raise(NE_OVERFLOW, "long int too long to convert"));
+		if (ok) {
+			*count = x.i;
+		}
+		Native_Free(&x);
+		return ok;
+	}
+	if (!Native_ArgInt(n, &i)) {
+		return 0;
+	}
+	*count = i;
+	return 1;
+}
+
+/* the pair (a, b) of floats an engine function gives into *out */
+static void Mode_Pair(double a, double b, nativeVal_t *out) {
+	Native_SetEmpty(out, NV_TUPLE);
+	Native_SetFloat(Native_Append(out), a);
+	Native_SetFloat(Native_Append(out), b);
+}
+
+byte Mode_Get2DPos(const nativeVal_t *pos, nativeVal_t *out) {
+	double x[3];
+	float uv[2];
+	if (!Mode_VecOf(pos, x)) {
+		/* "(fff)" of the engine function: its TypeError */
+		return Native_CallMod("SScorer", "Get2DPos", out, "v", pos);
+	}
+	vec3_t p = { (float)x[0], (float)x[1], (float)x[2] };
+	Engine_WorldToScreen(&p, uv, 0);
+	Mode_Pair((double)uv[0], (double)uv[1], out);
+	return 1;
+}
+
+byte Mode_TextArea(const char *font, const nativeVal_t *text, nativeVal_t *out) {
+	const char *s;
+	float rect[2], size[2];
+	/* "ss" */
+	if (!Native_ArgStr(text, 2, &s)) {
+		return 0;
+	}
+	Font_TextSize(Font_Get(font), rect, size, 0.0f, 0.0f, "%s", s);
+	Mode_Pair((double)size[0], (double)size[1], out);
+	return 1;
 }
