@@ -59,30 +59,6 @@ static byte Sd_SaveInt(const char *name, nativeVal_t *out) {
 	return ok;
 }
 
-/* the count of range(n) as its argument parser takes it ("l": an int, a long int that fits, a float cut) */
-static byte Sd_Range(const nativeVal_t *n, long *count) {
-	int i;
-	if (n->type == NV_INT) {
-		*count = n->i;
-		return 1;
-	}
-	if (n->type == NV_LONG) {
-		nativeVal_t x;
-		Native_SetNone(&x);
-		byte ok = Native_ToInt(n, &x) && (x.type == NV_INT || Native_Raise(NE_OVERFLOW, "long int too long to convert"));
-		if (ok) {
-			*count = x.i;
-		}
-		Native_Free(&x);
-		return ok;
-	}
-	if (!Native_ArgInt(n, &i)) {
-		return 0;
-	}
-	*count = i;
-	return 1;
-}
-
 /* h.var = i, h.var = "text", h.var = d of a handle value */
 static byte Sd_SetI(const nativeVal_t *h, const char *var, long i) {
 	nativeVal_t v;
@@ -687,7 +663,7 @@ static byte Dm_CreateEnemiesC(void) {
 		return Mode_Done(&t, 0);
 	}
 	int size = Native_Size(keys);
-	if (size < 0 || !Sd_Range(num, &n)) {
+	if (size < 0 || !Mode_Range(num, &n)) {
 		return Mode_Done(&t, 0);
 	}
 	byte ok = 1;
@@ -1094,15 +1070,6 @@ static byte Vs_AuxText(void) {
 	return ok;
 }
 
-/* `x` of the script as a text value */
-static void Sd_Repr(const nativeVal_t *v, nativeVal_t *out) {
-	nativeBuf_t b;
-	Native_BufInit(&b);
-	Native_Repr(&b, v, NR_REPR);
-	Native_SetText(out, b.p, b.len);
-	Native_BufFree(&b);
-}
-
 /* StartCombat(): the deaths counted, the scorer, the enemy as the red target */
 static byte Vs_StartCombatC(void) {
 	modeVals_t t = { .n = 0 };
@@ -1113,7 +1080,7 @@ static byte Vs_StartCombatC(void) {
 		!Sd_SaveInt("NumPlayerDeaths", b) || !Mode_Read(VS, "combatDeaths", &vs.combatDeaths)) {
 		return Mode_Done(&t, 0);
 	}
-	Sd_Repr(&vs.combatDeaths, limit);
+	Mode_Repr(&vs.combatDeaths, limit);
 	if (!Sd_ScorerOn(a, b, limit) || !Sd_SetS(e, "TgType", "red") || !Sd_SetS(e, "EntityList", "Enemies") ||
 		!Sd_SetI(e, "Invulnerable", 0) || !CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 1L)) {
 		return Mode_Done(&t, 0);
@@ -1133,7 +1100,7 @@ static byte Vs_Count(const char *name) {
 	Native_SetInt(&one, 1);
 	byte ok = Sd_SaveInt(name, &n) && Native_Arith('+', &n, &one, &r);
 	if (ok) {
-		Sd_Repr(&r, &s);
+		Mode_Repr(&r, &s);
 		ok = Mode_SetSaveVar(name, &s);
 	}
 	Native_Free(&n);
@@ -1382,7 +1349,7 @@ static byte Tdm_CreateTeam(byte enemy) {
 	long n = 0;
 	if (!Mode_Import("OutMap") || !Sd_SaveInt(enemy ? "CombatNumEnemies" : "CombatNumFriends", num) ||
 		!Sd_PutI(TDM, enemy ? "enemiesFrags" : "friendsFrags", enemy ? &tdm.enemiesFrags : &tdm.friendsFrags, 0) ||
-		!Sd_Range(num, &n)) {
+		!Mode_Range(num, &n)) {
 		return Mode_Done(&t, 0);
 	}
 	byte ok = 1;
@@ -1750,7 +1717,7 @@ static byte Ctf_CreateTeam(byte enemy) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *num = Mode_V(&t);
 	long n = 0;
-	if (!Mode_Import("OutMap") || !Sd_SaveInt(enemy ? "CTFNumEnemies" : "CTFNumFriends", num) || !Sd_Range(num, &n)) {
+	if (!Mode_Import("OutMap") || !Sd_SaveInt(enemy ? "CTFNumEnemies" : "CTFNumFriends", num) || !Mode_Range(num, &n)) {
 		return Mode_Done(&t, 0);
 	}
 	byte ok = 1;
@@ -1796,7 +1763,7 @@ static byte Ctf_StartCTFC(void) {
 		!Sd_GlobalTo("Vehicles", "OnDeathCallback", CTF, "OnVehicleDeathCallback") || !Mode_Read(CTF, "flags", &ctf.flags)) {
 		return Mode_Done(&t, 0);
 	}
-	Sd_Repr(&ctf.flags, limit);
+	Mode_Repr(&ctf.flags, limit);
 	if (!Sd_ScorerOn(zero, zero, limit) || !OWN(CTF, "CreateFlag", NULL, "") || !Mode_Read(CTF, "enemies", &ctf.enemies) ||
 		!Sd_MarkShips(&ctf.enemies, "red", "CTFEnemies") || !Mode_Read(CTF, "enemies", &ctf.enemies)) {
 		return Mode_Done(&t, 0);
@@ -2190,7 +2157,7 @@ static byte Ctf_SpawnFlagsC(const nativeVal_t *pos, const nativeVal_t *num) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *usr = Mode_V(&t), *minName = Mode_V(&t), *minDist = Mode_V(&t);
 	long n = 0;
-	byte ok = Sd_Range(num, &n);
+	byte ok = Mode_Range(num, &n);
 	for (long i = 0; ok && i < n; i++) {
 		/* flagsSpecial.append(CTF.CreateFlag(pos)) on the list read before the call */
 		nativeVal_t name;
@@ -2490,7 +2457,7 @@ static byte Dom_CreateTeam(byte enemy) {
 		ok = Mode_UsrHandle(num);
 		Native_Free(num);
 	}
-	if (!ok || !Sd_SaveInt(enemy ? "DominationNumEnemies" : "DominationNumFriends", num) || !Sd_Range(num, &n)) {
+	if (!ok || !Sd_SaveInt(enemy ? "DominationNumEnemies" : "DominationNumFriends", num) || !Mode_Range(num, &n)) {
 		return Mode_Done(&t, 0);
 	}
 	for (long i = 0; ok && i < n; i++) {
@@ -2806,7 +2773,7 @@ static byte Dom_CreateZoneC(const nativeVal_t *i, const nativeVal_t *pos) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *rep = Mode_V(&t), *name = Mode_V(&t), *l = Mode_V(&t), *ln = Mode_V(&t), *wname = Mode_V(&t);
 	nativeVal_t *l2 = Mode_V(&t), *model = Mode_V(&t);
-	Sd_Repr(i, rep);
+	Mode_Repr(i, rep);
 	if (!Mode_Cat(&t, name, 2, Mode_S(&t, "Zone"), rep) || !Sd_Create(name, pos, "Item", l) ||
 		!Mode_Read(DOM, "ZoneModelNeutral", model) || !Mode_VModel(l, model) || !Sd_SetI(l, "Radius", 3000) ||
 		!Sd_SetS(l, "OnTake", "Domination.TakeZone") || !Sd_SetI(l, "RadarShow", 0) || !Mode_VGet(l, "Name", ln) ||
@@ -2910,7 +2877,7 @@ static int Dom_ZoneTaken(byte enemy, const nativeVal_t *item, const nativeVal_t 
 		return Mode_Done(&t, 0) ? 1 : -1;
 	}
 	Native_Free(rep);
-	Sd_Repr(won, rep);
+	Mode_Repr(won, rep);
 	if (!Mode_SetSaveVar(enemy ? "EnemyRounds" : "PlayerRounds", rep) || !Sd_PutI(DOM, "zonesCanBeTaken", &dom.zonesCanBeTaken, 0)) {
 		return Mode_Done(&t, 0) ? 1 : -1;
 	}
@@ -3678,7 +3645,7 @@ static byte Mr_Scorer(void) {
 	if (!Mode_Read(MR, "numWaypoints", &mr.numWaypoints)) {
 		return 0;
 	}
-	Sd_Repr(&mr.numWaypoints, &limit);
+	Mode_Repr(&mr.numWaypoints, &limit);
 	byte ok = CALL("RacerScorer", "InitMissionScorer", NULL, "iiv", 0L, 0L, &limit) &&
 		Sd_ModTo("Menu", "MissionScorerCall", "RacerScorer", "MissionScorer") && Sd_Draw();
 	Native_Free(&limit);
