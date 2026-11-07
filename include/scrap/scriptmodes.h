@@ -531,5 +531,7 @@ byte Mode_ActionSet(const char *name);
 /* Scrap.SetMoney(money) and Scrap.IncSaveVar(name) through their seams (fc-r7b-jy and fc-r7c-dt6 record them) */
 byte Mode_SetMoneySeam(const nativeVal_t *money);
 byte Mode_IncSaveVar(const char *name);
+/* v is a text and its C text (up to its first 0 byte) is text (Script_Is of the ports) */
+byte Mode_IsText(const nativeVal_t *v, const char *text);
 
 #endif
