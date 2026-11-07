@@ -64,6 +64,7 @@ static const struct {
 	{ "NewsPanel", "Settings", NewsPanel_ModSettings },
 	{ "CharsNPC", "SpawnPosInit", CharsNPC_ModSpawnPosInit },
 	{ "CharsNPC", "SpawnPosClass", CharsNPC_ModSpawnPosClass },
+	{ "MapTreasure", "Coins", MapTreasure_ModCoins },
 	{ NULL, NULL, NULL },
 };
 

@@ -437,6 +437,9 @@ static const char mod_levels_bank_map[] = {
 static const char mod_levels_bank_mapsnd[] = {
 #embed "../../../data/levels/bank/mapsnd.mod"
 	, 0 };
+static const char mod_levels_bank_maptreasure[] = {
+#embed "../../../data/levels/bank/maptreasure.mod"
+	, 0 };
 static const char mod_levels_bank_mission_catchrudolph[] = {
 #embed "../../../data/levels/bank/mission_catchrudolph.mod"
 	, 0 };
@@ -1077,6 +1080,7 @@ static const moduleFile_t module_files[] = {
 	{ "abindoor", "MapSnd", "levels/abindoor/mapsnd.mod", mod_levels_abindoor_mapsnd },
 	{ "bank", "Map", "levels/bank/map.mod", mod_levels_bank_map },
 	{ "bank", "MapSnd", "levels/bank/mapsnd.mod", mod_levels_bank_mapsnd },
+	{ "bank", "MapTreasure", "levels/bank/maptreasure.mod", mod_levels_bank_maptreasure },
 	{ "bank", "Mission_CatchRudolph", "levels/bank/mission_catchrudolph.mod", mod_levels_bank_mission_catchrudolph },
 	{ "bank", "Mission_GetDataPart2", "levels/bank/mission_getdatapart2.mod", mod_levels_bank_mission_getdatapart2 },
 	{ "bank", "Mission_InfiltrateBank", "levels/bank/mission_infiltratebank.mod", mod_levels_bank_mission_infiltratebank },

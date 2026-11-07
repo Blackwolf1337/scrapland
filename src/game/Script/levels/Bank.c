@@ -7,7 +7,8 @@
  * (data/levels/bank/<module>.def): MapTreasure.Init, Mission_CatchRudolph.Init, Mission_GetDataPart2.SetNextMission,
  * Mission_InfiltrateBank.OnPossession and LoadScene.
  *
- * The module variables and the module code stay in the scripts: Map (Libraries, the discardable characters
+ * The module code is data/levels/bank/<module>.mod; the loop of MapTreasure over the circuits is the hook
+ * MapTreasure_ModCoins. The module variables stay in the modules: Map (Libraries, the discardable characters
  * _BankDirector, _Bishop, _Functionary, _Messenger), MapTreasure (TimeToSpawn, the models, PrizeModels, PrizeMoney,
  * Circuit, Coins, DealCoins and the state of a running chain shent, counter, idx), Mission_CatchRudolph (rudolph),
  * Mission_GetDataPart2 (funcNames, activatedDesktops, dataDownloaded, maxDataDownloaded, speedFactor, dd, firstTime),
@@ -385,6 +386,64 @@ static PyObject *MapTreasure_CreateCoins(PyObject *self, PyObject *args) {
 		Sf_Release(&f, mark);
 	}
 	return Sf_None(&f);
+}
+
+/* one round of the loop of the module code (f stored before): varname = "Bank.Circuit."+`f`;
+ * Scrap.CreateSaveVar(varname, "0"); Coins.append(Circuit[f][int(Scrap.GetSaveVar(varname))]) */
+static byte Mt_CoinsBody(PyObject *locals, PyObject *f, void *ctx) {
+	(void)ctx;
+	PyObject *key = PyString_InternFromString("varname");
+	PyObject *repr = key ? Script_Repr(f) : NULL;
+	PyObject *name = repr ? Script_SPlus("Bank.Circuit.", repr) : NULL;
+	byte ok = name && PyDict_SetItem(locals, key, name) == 0;
+	Py_XDECREF(key);
+	Py_XDECREF(repr);
+	Py_XDECREF(name);
+	PyObject *create = ok ? Script_ModuleName(locals, "Scrap.CreateSaveVar") : NULL;
+	PyObject *var = create ? Script_ModuleName(locals, "varname") : NULL;
+	PyObject *res = var ? Script_Invoke(create, Py_BuildValue("(ON)", var, Script_StrConst("0", 1))) : NULL;
+	Py_XDECREF(create);
+	Py_XDECREF(var);
+	ok = res != NULL;
+	Py_XDECREF(res);
+	PyObject *append = ok ? Script_ModuleName(locals, "Coins.append") : NULL;
+	PyObject *circuit = append ? Script_ModuleName(locals, "Circuit") : NULL;
+	PyObject *row = circuit ? PyObject_GetItem(circuit, f) : NULL;
+	PyObject *toInt = row ? Script_ModuleName(locals, "int") : NULL;
+	PyObject *get = toInt ? Script_ModuleName(locals, "Scrap.GetSaveVar") : NULL;
+	var = get ? Script_ModuleName(locals, "varname") : NULL;
+	PyObject *saved = var ? Script_Invoke(get, Py_BuildValue("(O)", var)) : NULL;
+	PyObject *index = saved ? Script_Invoke(toInt, Py_BuildValue("(O)", saved)) : NULL;
+	PyObject *coin = index ? PyObject_GetItem(row, index) : NULL;
+	res = coin ? Script_Invoke(append, Py_BuildValue("(O)", coin)) : NULL;
+	Py_XDECREF(append);
+	Py_XDECREF(circuit);
+	Py_XDECREF(row);
+	Py_XDECREF(toInt);
+	Py_XDECREF(get);
+	Py_XDECREF(var);
+	Py_XDECREF(saved);
+	Py_XDECREF(index);
+	Py_XDECREF(coin);
+	Py_XDECREF(res);
+	return res != NULL;
+}
+
+/* maptreasure.py:2836, `for f in range(len(Circuit)): ...`: the chain of each circuit as the save variable keeps it */
+int MapTreasure_ModCoins(PyObject *module, PyObject *locals) {
+	(void)module;
+	PyObject *range = Script_ModuleName(locals, "range");
+	PyObject *len = range ? Script_ModuleName(locals, "len") : NULL;
+	PyObject *circuit = len ? Script_ModuleName(locals, "Circuit") : NULL;
+	PyObject *n = circuit ? Script_Invoke(len, Py_BuildValue("(O)", circuit)) : NULL;
+	PyObject *seq = n ? Script_Invoke(range, Py_BuildValue("(O)", n)) : NULL;
+	byte ok = seq && Script_ModuleFor(locals, "f", seq, Mt_CoinsBody, NULL);
+	Py_XDECREF(range);
+	Py_XDECREF(len);
+	Py_XDECREF(circuit);
+	Py_XDECREF(n);
+	Py_XDECREF(seq);
+	return ok;
 }
 
 PyMethodDef g_BankMapTreasureMethods[] = {
