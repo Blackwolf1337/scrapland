@@ -134,6 +134,67 @@ After this stage every port is typed C inside. Its functions take C arguments, k
 - The `Sf_` frame and `Script_` value helpers lose callers module by module. `ScriptFrame.c` and `ScriptValue.c` go at the end of stage 3.
 - The size is the bulk of the work: 80000 lines of ports. The pilot took Chat (482 lines) in one step with its checks. Parallel module agents fit here, one module file per agent, each with its own worktree and slots.
 
+#### State of stage 2 (2026-11-07)
+
+These modules are native C inside now, with adapters in the `PyMethodDef` tables.
+
+Merged into script-loader:
+
+- Chat (the pilot).
+- Batch A: InMap, Fx, Bureaucracy, CreditsText, Metro, Characters, Sounds.
+- Batch B: Net, NetModes with the N* modes, Ffa, Split with the S* modes.
+- Batch C: Weapons and the ten weapon modules, Items, MisItems, CrazyWing, PhoneCab, DTritusDesktop, HullTab.
+- Batch D: the six super deal modes in `SuperDeals.c`.
+- Batch E: WeaponsTab, EnginesTab, InPolice, OutPolice, InTraffic.
+- Batch F: the levels OM, Small, QF, ABIndoor, Fake, Menu, AB, Junkyard, LevelCommon, Temple, GDB and Bank.
+
+Done on branches and being merged now:
+
+- Batch G: Orbit, Townhall, GamblinDen, Scrapyard.
+- Batch H: Commercial, Police, Press.
+- Batch I: DownTown, Outskirts.
+
+Running: batch J with Traffic, OutMap, Challenge, CharConversor, RaceMaker and Doors (with Elevator and Teleport).
+
+Left are the big hubs: Init, InitLevel, Parking, Speech, the Menu modules, Scene, MissionsFuncs, SaveGame, CharsNPC and Alarm. They have the most shared state, so they are the hard part of the stage.
+
+#### Where the shared code lives
+
+- `ScriptNative.c`: the native values, the Python operators (compare, `+`, `%`, `int()`, slices, `in`, `len`, unpack, with the 1.5.2 error texts) and the calls into the engine and the seams.
+- `ScriptModes.c`: the helpers for modes and levels (`Mode_` functions for globals, lists, dicts, handles, keyword calls and seams). Each batch has its own section at the end of the file.
+- `levels/Levels.h` and `levels/LevelCommon.c`: the `LvN_` helpers of the level files. Several of them are `#define`s of the `Mode_` ones now.
+
+A helper that only one file needs stays a static function in that file. A second user moves it to the shared files.
+
+#### Rules the batches learned
+
+- A variable of another module that can hold a module or any other object must be read as `NV_OBJ` or by its truth. Batch C read `Init.SuperDealModule` as a native value in MisItems. During a super deal it holds the deal's module, so every ship that died below the atmosphere raised a TypeError and dropped no box. Batch D found it with the regress of the Domination case. The fix takes the truth of the object, as `Sf_True` did.
+- A list that holds entity handles arrives as one `NV_OBJ`. Walk it with `Mode_Loop` or `Mode_Elems`. `Native_ForCount` refuses it, and a tuple of handles (`CreateFakeChar`) needs `Mode_Elems` before `Mode_Unpack`.
+- `Mode_VGet` on a Python object that is no entity handle fails when the attribute holds a function, an instance or a handle. Use `Mode_VObj` there (AI profiles, `CharRes` objects).
+- Long ints in `*`, `/` and `%` go through `Mode_Arith`. The plain C operators give other results.
+- Native locals that a failed call earlier in the same condition can leave unset start as `{ 0 }` or None. `Native_Free` on an uninitialized value crashed Bank, and Scrapyard crashed at `Ambush.IsValidPos` the same way. Batch H fixed two more failure paths of this kind.
+- `Script_SetGlobal` takes over the reference it gets. Releasing the value after it crashed AB.
+- Values that `Mode_G` and `Mode_VGet` return are not freed by them. Free them before the next read into the same slot, or use `Mode_Read`.
+- Read globals and engine calls in the order the script does. Python evaluates `GetTime() + Rand()` before the function name, so a C argument order can change which error comes first.
+- A `try` block clears the Python error for the lines of the script's `try` only, not for earlier ones.
+- Engine functions that a case replaces or records go through a seam (`SSound.LoadSound` through `Mode_LoadSoundSeam`). A direct engine call hides them from the case. `grep` the cases for the functions a module calls before choosing seam or direct call.
+- Slot tags that start with `p` make `rd/msw-run.py` run the pack scripts. Base runs of C builds use `c` slots, or the base side is a pack run.
+- Parallel batches add shared helpers as helper-only commits in their own section of `ScriptModes.c` or `ScriptNative.c`, and each commit builds alone. The next batch takes them by cherry-pick. Check `git log <base>..objlib-2<x> -- ScriptModes.* ScriptNative.*` before writing a helper.
+- Forked sub-agents that write the same worktree caused trouble (half converted files, held slots). Batches work alone, or the forks get one file each and their own slots.
+
+#### How the batches were checked
+
+Each batch compared a build of its base commit against the build after it. The checks were:
+
+- Raw replies of the regress cases of the touched modules, base against new, with floats and heap addresses masked. The pack baselines are loose, so the raw replies are the main evidence. What differs must be live state (entity numbers, AI states, random traffic models, idle animations, timing), and a rerun of the base binary must differ the same way.
+- Edge files `rd/fc-ol2<batch>-<name>.txt` for the paths the stored cases miss: odd argument types, long ints, 0 bytes in texts, deleted and odd module values, recorded or swapped engine functions, arity and keyword errors. Base and new must be identical line by line.
+- Mission starts (`rd/msw-run.py`) for the missions and super deals of the batch, base against new, exact lines equal apart from live entities and random values.
+- Saves both ways: a save of each build loads in the other, and the states match.
+- The online pair test (`rd/r8g.py`) where a module runs online (Fx, Net, Ffa, Split, NetModes, Chat, the net weapons).
+- Golden (9961 checks), sweep (29 of 29), ASan runs of the cases and edge files (0 reports), and 0 warnings in build-linux64, build-linux64-asan, build-win64 and build-nopy64.
+
+Things the checks could not cover are listed in the batch hand-backs: levels that do not start in either build (Nano, TucZone), `Mission_Demo_HumphreyRace` (no .pyc in the pack), and engine fatal checks that end the game in both builds. These were checked by compile and review only.
+
 ### Stage 3: direct calls between ports
 
 After this stage the 1686 by-name calls between ports are C calls of the typed cores. Functions that a mission, a mod .mod line or another port replaces at run time become explicit C hook pointers in the module struct. They come from the `Sf_Own` sites, `Script_Hook`, the .mod aliases and the recorders of the cases. After this stage only data and engine callbacks call by name.
