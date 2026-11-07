@@ -1412,26 +1412,17 @@ static byte Tm_Speech(const nativeVal_t *a, const char *msg, const char *ans) {
 MODE_FN(TalkToMayor, BishopSpeech, 4, Tm_Speech(a, "Mission_Campaign1_Porkins_InitMsg1", "Mission_Campaign1_Porkins_InitAns1"))
 MODE_FN(TalkToMayor, FunctionarySpeech, 4, Tm_Speech(a, "Mission_Campaign_Functionary_InitMsg1", "Mission_Campaign_Functionary_InitAns1"))
 
-/* Scrap.GetEntity(<the global name of the mission>) as the handle value */
-static byte Tm_Ent(const char *var, nativeVal_t *out) {
-	nativeVal_t name = { 0 };
-	Native_SetNone(out);
-	byte ok = Mode_G(TM, var, &name) && Mode_EntityH(&name, out);
-	Native_Free(&name);
-	return ok;
-}
-
 /* StealFunctionary(): Porkins and Corruptus are the targets, the money bar, the money check */
 static byte ThTm_StealFunctionary(const nativeVal_t *a, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *e = Mode_V(&t), *m = Mode_V(&t), *list = Mode_V(&t);
 	(void)a;
 	(void)out;
-	if (!Tm_Ent("porkinsName", e) || (Native_True(e) && !LvN_SetS(e, "UseFunc", "Mission_TalkToMayor.BishopSpeech"))) {
+	if (!Mode_GEntity(TM, "porkinsName", e) || (Native_True(e) && !LvN_SetS(e, "UseFunc", "Mission_TalkToMayor.BishopSpeech"))) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(e);
-	if (!Tm_Ent("functionaryTamayoName", e) || (Native_True(e) && !(LvN_SetS(e, "UseFunc", "Mission_TalkToMayor.FunctionarySpeech") &&
+	if (!Mode_GEntity(TM, "functionaryTamayoName", e) || (Native_True(e) && !(LvN_SetS(e, "UseFunc", "Mission_TalkToMayor.FunctionarySpeech") &&
 		Mode_G(TM, "tamayoMoney", m) && Mode_VSet(e, "Money", m)))) {
 		return Mode_Done(&t, 0);
 	}
@@ -1541,12 +1532,12 @@ static byte ThTm_CheckTamayoMoney(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t *st = Mode_V(&t);
 	(void)a;
 	(void)out;
-	if (!Tm_Ent("functionaryTamayoName", e)) {
+	if (!Mode_GEntity(TM, "functionaryTamayoName", e)) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(e)) {
 		if (!Mode_VGet(e, "Money", m) || !Mode_Put(TM, "tamayoMoney", NULL, m) || !Mode_G(TM, "tamayoMoney", tm) ||
-			!Native_ToFloat(tm, fm) || !LvN_ScorerSet(Mode_I(&t, 0), "TamayoMoneyBar", "Value", fm) || !Tm_Ent("porkinsName", p)) {
+			!Native_ToFloat(tm, fm) || !LvN_ScorerSet(Mode_I(&t, 0), "TamayoMoneyBar", "Value", fm) || !Mode_GEntity(TM, "porkinsName", p)) {
 			return Mode_Done(&t, 0);
 		}
 		if (Native_True(p)) {
@@ -1591,14 +1582,14 @@ static byte ThTm_RestoreTamayoState(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t *e = Mode_V(&t), *p = Mode_V(&t), *o = Mode_V(&t), *empty = Mode_V(&t);
 	(void)a;
 	(void)out;
-	if (!Tm_Ent("functionaryTamayoName", e)) {
+	if (!Mode_GEntity(TM, "functionaryTamayoName", e)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_True(e)) {
 		return Mode_Done(&t, 1);
 	}
 	LvN_Str(empty, "");
-	if (!Tm_Ent("porkinsName", p) || !(Native_True(p) ? Mode_VGet(p, "Pos", o) : Mode_G(TM, "tamayoStartOrigin", o))) {
+	if (!Mode_GEntity(TM, "porkinsName", p) || !(Native_True(p) ? Mode_VGet(p, "Pos", o) : Mode_G(TM, "tamayoStartOrigin", o))) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, Mode_VSet(e, "LLogicOrigin", o) && LvN_Stay(e, 0, empty) && LvN_SetF(e, "LLogicProbTalkWhenWalking", 1.0) &&
@@ -1623,7 +1614,7 @@ static byte ThTm_OnBankerSteal(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t *e = Mode_V(&t), *m = Mode_V(&t), *p = Mode_V(&t);
 	(void)a;
 	(void)out;
-	if (!Tm_Ent("functionaryTamayoName", e)) {
+	if (!Mode_GEntity(TM, "functionaryTamayoName", e)) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(e)) {
@@ -1632,7 +1623,7 @@ static byte ThTm_OnBankerSteal(const nativeVal_t *a, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 		if (empty) {
-			if (!Mode_Target(NULL) || !LvN_SetS(e, "UseFunc", "CharsNPC.GenericNPCSpeech") || !Tm_Ent("porkinsName", p) ||
+			if (!Mode_Target(NULL) || !LvN_SetS(e, "UseFunc", "CharsNPC.GenericNPCSpeech") || !Mode_GEntity(TM, "porkinsName", p) ||
 				(Native_True(p) && !LvN_SetS(p, "UseFunc", "CharsNPC.GenericNPCSpeech"))) {
 				return Mode_Done(&t, 0);
 			}
@@ -1645,7 +1636,7 @@ static byte ThTm_OnBankerSteal(const nativeVal_t *a, nativeVal_t *out) {
 		}
 	}
 	Native_Free(m);
-	if (!Tm_Ent("porkinsName", p)) {
+	if (!Mode_GEntity(TM, "porkinsName", p)) {
 		return Mode_Done(&t, 0);
 	}
 	int poor = Native_True(p);

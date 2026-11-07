@@ -817,5 +817,7 @@ byte Mode_FlagSet(const char *module, const char *var, const nativeVal_t *v);
 /* Scrap.GetEntity(Scrap.GetCam(0)) through the seam of GetEntity; its EntityLink = link */
 byte Mode_Cam0(nativeVal_t *out);
 byte Mode_CamLink(const nativeVal_t *link);
+/* Scrap.GetEntity(<the global name var of the module>) as the handle value (None for none) */
+byte Mode_GEntity(const char *module, const char *var, nativeVal_t *out);
 
 #endif

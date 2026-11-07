@@ -2420,15 +2420,6 @@ static byte Sa_GiveUp(const nativeVal_t *o) {
 	return ok;
 }
 
-/* the entity of a global name of the module (a handle or None) */
-static byte Sa_Ent(const char *var, nativeVal_t *out) {
-	nativeVal_t n = { 0 };
-	Native_SetNone(out);
-	byte ok = Mode_G(SA, var, &n) && Mode_EntityH(&n, out);
-	Native_Free(&n);
-	return ok;
-}
-
 /* CheckEvasion(): every 2 s: both smart mercenaries dead, or EVASION_TIME away from them: the call to the bishop */
 static byte Again_CheckEvasionN(void) {
 	modeVals_t t = { .n = 0 };
@@ -2438,7 +2429,7 @@ static byte Again_CheckEvasionN(void) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(now, Mode_Time());
-	int dead = Sa_Ent("SmartMercName", o1) && Sa_Ent("MedMercName", o2) ? Sy_CmpNone(o1, "==") : -1;
+	int dead = Mode_GEntity(SA, "SmartMercName", o1) && Mode_GEntity(SA, "MedMercName", o2) ? Sy_CmpNone(o1, "==") : -1;
 	if (dead > 0) {
 		dead = Sy_CmpNone(o2, "==");
 	}

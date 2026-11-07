@@ -513,15 +513,6 @@ static byte Se_LaunchPlatformAnim(void) {
 	return Mode_Done(&t, Se_G("editPlatform", e) && LvN_SetS(e, "Action", "Change"));
 }
 
-/* Scrap.GetEntity(Scrap.GetCam(0)) */
-static byte Se_Cam(nativeVal_t *out) {
-	nativeVal_t n = { 0 };
-	Mode_CamName(0, &n);
-	byte ok = Mode_EntitySeam(&n, out);
-	Native_Free(&n);
-	return ok;
-}
-
 /* editedShips[HangarTab.currentHangar] != None and (destroyedShips[...] == 0 or IsEditingMultiplayer()): 1, 0, -1 */
 static int Se_CurIntact(void) {
 	nativeVal_t v = { 0 };
@@ -553,7 +544,7 @@ static byte Se_ChangeShip(const nativeVal_t *entityName) {
 	if (c > 0) {
 		int on = Se_Entity("Rusty_0", rusty) ? Se_RustyOn(rusty) : -1;
 		if (on > 0) {
-			byte ok = Se_Cam(cam);
+			byte ok = Mode_Cam0(cam);
 			if (ok && !Native_True(cam)) {
 				ok = Se_Entity("EditCamera", e) && Mode_VGet(e, "Pos", pos) && Se_PointTo(rusty, pos);
 			} else if (ok) {

@@ -3893,3 +3893,11 @@ byte Mode_CamLink(const nativeVal_t *link) {
 	Native_Free(&e);
 	return ok;
 }
+
+byte Mode_GEntity(const char *module, const char *var, nativeVal_t *out) {
+	nativeVal_t name = { 0 };
+	Native_SetNone(out);
+	byte ok = Mode_G(module, var, &name) && Mode_EntityH(&name, out);
+	Native_Free(&name);
+	return ok;
+}
