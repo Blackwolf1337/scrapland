@@ -2,8 +2,27 @@
  * Python/pythonrun.c with what the engine added to it in Scrap.exe: PyRun_ScrapString, the PyRun_SimpleString of
  * the console and the startup, and Py_FiniObjects. Both use statics of the file.
  */
+#ifdef SCRAP_NO_PYTHON
+/* without the interpreter (src/python/nopy) the runners of code get other names, so a caller does not link, and
+ * --gc-sections drops them; Py_Finalize has no frames and no grammar to free */
+#define PyRun_AnyFile Py_NoRunAnyFile
+#define PyRun_InteractiveLoop Py_NoRunInteractiveLoop
+#define PyRun_InteractiveOne Py_NoRunInteractiveOne
+#define PyRun_SimpleFile Py_NoRunSimpleFile
+#define PyRun_SimpleString Py_NoRunSimpleString
+#define PyRun_String Py_NoRunString
+#define PyRun_File Py_NoRunFile
+#define Py_CompileString Py_NoCompileString
+#define PyParser_SimpleParseFile Py_NoParseFile
+#define PyParser_SimpleParseString Py_NoParseString
+#define PyFrame_Fini() ((void)0)
+#define PyGrammar_RemoveAccelerators(g) ((void)0)
+#endif
+
 #include "Python/pythonrun.c"
 #include "pyengine.h"
+
+#ifndef SCRAP_NO_PYTHON
 
 
 static char scrap_input[0x800];
@@ -51,6 +70,7 @@ int PyRun_ScrapString(const char *command) {
 		PyErr_Clear();
 	return 0;
 }
+#endif
 
 /*
  * After Py_Finalize, before the engine deletes its Python pool: frees the objects that static pointers of the
