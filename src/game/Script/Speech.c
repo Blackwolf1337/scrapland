@@ -104,7 +104,7 @@ static byte Sp_Item(const nativeVal_t *v, long i, nativeVal_t *out) {
 /* e.var == text (a text variable): 1, 0, -1 with the error (Script_HIs) */
 static int Sp_HIs(const nativeVal_t *e, const char *var, const char *text) {
 	nativeVal_t v = { 0 };
-	int r = Mode_VObj(e, var, &v) ? Mode_IsText(&v, text) : -1;
+	int r = Mode_VObj(e, var, &v) ? Native_IsStr(&v, text) : -1;
 	Native_Free(&v);
 	return r;
 }
@@ -112,7 +112,7 @@ static int Sp_HIs(const nativeVal_t *e, const char *var, const char *text) {
 /* e.var[0:len(prefix)] == prefix (Script_HPrefix) */
 static int Sp_HPrefix(const nativeVal_t *e, const char *var, const char *prefix) {
 	nativeVal_t v = { 0 }, head = { 0 };
-	int r = Mode_VObj(e, var, &v) && Native_Slice(&v, 0, (long)strlen(prefix), &head) ? Mode_IsText(&head, prefix) : -1;
+	int r = Mode_VObj(e, var, &v) && Native_Slice(&v, 0, (long)strlen(prefix), &head) ? Native_IsStr(&head, prefix) : -1;
 	Native_Free(&v);
 	Native_Free(&head);
 	return r;
@@ -502,7 +502,7 @@ static byte Sp_StdAnsLst(const nativeVal_t *lstArg) {
 		ok = Sp_Item(lst, i, msg) && Sp_Cat(msg, "Opt", key);
 		if (ok) {
 			Sp_Lang(Native_Text(key), opt);
-			if (Mode_IsText(opt, "")) {
+			if (Native_IsStr(opt, "")) {
 				Native_Free(key);
 				Native_Free(opt);
 				ok = Sp_Cat(msg, "Msg", key);
@@ -950,7 +950,7 @@ static byte Sp_RunNI(const nativeVal_t *i) {
 		}
 		byte keep = 0;
 		for (int k = 0; keepMortal[k]; k++) {
-			keep |= Mode_IsText(ctrl, keepMortal[k]);
+			keep |= Native_IsStr(ctrl, keepMortal[k]);
 		}
 		return Mode_Done(&t, keep || Sp_HSetI(ch, "Invulnerable", 0));
 	}
@@ -1008,7 +1008,7 @@ static int Sp_DoRemote(void) {
 	} else if (!Native_GVarGet("TimeToMsg", msg) || !Native_ArgDouble(msg, &m)) {
 	} else if (m > now) {
 		doit = 0;
-	} else if ((Mode_ActionSetName(set), Mode_IsText(set, "Inactive")) || e->type == NV_NONE) {
+	} else if ((Mode_ActionSetName(set), Native_IsStr(set, "Inactive")) || e->type == NV_NONE) {
 		doit = 0;
 		if (Mode_ModGetI("Init", "HasSuperDeal", 0) && e->type == NV_NONE) {
 			if (!Sp_Cam(cam)) {
@@ -1047,7 +1047,7 @@ static byte Sp_ForceRemoteComunication(const nativeVal_t *text, const nativeVal_
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (!Mode_IsText(head, "")) {
+	if (!Native_IsStr(head, "")) {
 		if (!Sp_CatS("CharName_", head, full)) {
 			return Mode_Done(&t, 0);
 		}
@@ -1317,8 +1317,8 @@ static byte Sp_StartObjectSpeech(const nativeVal_t *obj, const nativeVal_t *acti
 	Mode_ModPut(SP, "ObjEntity", obj);
 	Mode_ModPut(SP, "ObjCharType", type);
 	Native_SetInt(&one, 1);
-	byte ok = (Mode_IsText(action, "") || Mode_VSet(obj, "Action", action)) &&
-		(Mode_IsText(defLoop, "") || Mode_VSet(obj, "DefLoop", defLoop)) && Sp_G("OnEndOfSpeech", &end) &&
+	byte ok = (Native_IsStr(action, "") || Mode_VSet(obj, "Action", action)) &&
+		(Native_IsStr(defLoop, "") || Mode_VSet(obj, "DefLoop", defLoop)) && Sp_G("OnEndOfSpeech", &end) &&
 		Sp_G("OnEndOfSpeechParams", &params) && Sp_ForceRemoteComunication(text, type, &one, &end, &params) &&
 		Mode_SpeechCallbackV(cb) && Sp_TestLater();
 	Native_Free(&end);

@@ -273,15 +273,9 @@ PyMethodDef g_FunctionaryFuncs[] = {
 
 /* ---- Rusty: his action presses do nothing (the class names them) ---- */
 
-static PyObject *Char_Nothing(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Py_ReturnNone();
-}
-
 PyMethodDef g_RustyFuncs[] = {
-	{ "ActionPress", Char_Nothing, 1, NULL },
-	{ "ActionRelease", Char_Nothing, 1, NULL },
+	{ "ActionPress", Mode_PyNone, 1, NULL },
+	{ "ActionRelease", Mode_PyNone, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 

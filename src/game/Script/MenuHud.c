@@ -420,12 +420,6 @@ static void Hud_CharCreate(int id) {
 
 /* ---- the functions of CharScorer (adapters) ---- */
 
-static PyObject *CharScorer_Init(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Py_ReturnNone();
-}
-
 static PyObject *CharScorer_CreateRadarScorer(PyObject *self, PyObject *args) {
 	int id;
 	(void)self;
@@ -456,7 +450,7 @@ static PyObject *CharScorer_Create(PyObject *self, PyObject *args) {
 }
 
 PyMethodDef g_CharScorerMethods[] = {
-	{ "Init", CharScorer_Init, 1, NULL },
+	{ "Init", Mode_PyNone, 1, NULL },
 	{ "CreateRadarScorer", CharScorer_CreateRadarScorer, 1, NULL },
 	{ "CreateSpecialActionScorer", CharScorer_CreateSpecialActionScorer, 1, NULL },
 	{ "Create", CharScorer_Create, 1, NULL },
@@ -702,12 +696,6 @@ RACER_SECTION(Racer_CreateTargetScorer, "target")
 RACER_SECTION(Racer_CreateWaypointScorer, "waypoint")
 RACER_SECTION(Racer_CreateRadarScorer, "radar")
 
-static PyObject *Racer_Init(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Py_ReturnNone();
-}
-
 static PyObject *Racer_CreateRacer(PyObject *self, PyObject *args) {
 	int id;
 	(void)self;
@@ -810,7 +798,7 @@ static PyObject *Racer_MissionScorer(PyObject *self, PyObject *args) {
 RACER_SECTION(Racer_MissionScorerTeam, "missionteam")
 
 PyMethodDef g_RacerScorerMethods[] = {
-	{ "Init", Racer_Init, 1, NULL },
+	{ "Init", Mode_PyNone, 1, NULL },
 	{ "CreateWeaponScorer", Racer_CreateWeaponScorer, 1, NULL },
 	{ "CreateCannonScorer", Racer_CreateCannonScorer, 1, NULL },
 	{ "CreateTargetScorer", Racer_CreateTargetScorer, 1, NULL },

@@ -746,12 +746,12 @@ static byte Sc_InitOutDoorScene(const nativeVal_t *hide) {
 	while (Native_True(e)) {
 		int police = Mode_AlarmOn();
 		if (police > 0) {
-			police = Mode_VObj(e, "EntityList", list) ? Mode_IsText(list, "Police") : -1;
+			police = Mode_VObj(e, "EntityList", list) ? Native_IsStr(list, "Police") : -1;
 			Native_Free(list);
 		}
 		int enemy = 0;
 		if (police == 0) {
-			enemy = Mode_VObj(e, "EntityList", list) ? Mode_IsText(list, "EnemiesTraffic") : -1;
+			enemy = Mode_VObj(e, "EntityList", list) ? Native_IsStr(list, "EnemiesTraffic") : -1;
 			Native_Free(list);
 		}
 		if (police < 0 || enemy < 0 || ((police > 0 || enemy > 0) && !Sc_HideOf(e)) || !Mode_VObj(e, "NextInSlot", next)) {

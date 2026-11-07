@@ -130,7 +130,7 @@ static byte Np_GetNews(void) {
 		Mode_SaveVar("Mission.Library", lib);
 		byte stop = 0;
 		for (int i = 0; dead[i]; i++) {
-			stop |= Mode_IsText(lib, dead[i]);
+			stop |= Native_IsStr(lib, dead[i]);
 		}
 		if (stop) {
 			break;

@@ -610,8 +610,6 @@ byte Mode_ActionSet(const char *name);
 /* Scrap.SetMoney(money) and Scrap.IncSaveVar(name) through their seams (fc-r7b-jy and fc-r7c-dt6 record them) */
 byte Mode_SetMoneySeam(const nativeVal_t *money);
 byte Mode_IncSaveVar(const char *name);
-/* v is a text and its C text (up to its first 0 byte) is text (Script_Is of the ports) */
-byte Mode_IsText(const nativeVal_t *v, const char *text);
 /* Scrap.SetTimeSpeed(speed) through its seam (fc-r7b-jy records it) */
 byte Mode_TimeSpeed(double speed);
 /* Scrap.GetCam(i): the name of the camera of player i (None when there is none) */
@@ -787,5 +785,11 @@ void Mode_ItemColor(int id, const char *item, const int *c);
 void Mode_ItemVisible(int id, const char *item, int v);
 byte Mode_LinkCall(PyObject *fn, int id, const char *a, const char *b);
 byte Mode_SoundOf(const char *name);
+/* the int value i in v (v returned); (a, b, c) of copies of three values; Scrap.Rand(a, b) as the C ports draw it
+ * (the C directly); an adapter of a script function that does nothing (any arguments, None) */
+const nativeVal_t *Mode_IntVal(nativeVal_t *v, long i);
+void Mode_Tuple3(nativeVal_t *out, const nativeVal_t *a, const nativeVal_t *b, const nativeVal_t *c);
+void Mode_RandF(double a, double b, nativeVal_t *out);
+PyObject *Mode_PyNone(PyObject *self, PyObject *args);
 
 #endif

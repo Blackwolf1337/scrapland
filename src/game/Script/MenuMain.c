@@ -714,14 +714,6 @@ static void Main_Sound(const char *sound, const char *volume) {
 	Native_Free(&snd);
 }
 
-/* (a, b, c) of the values into out */
-static void Main_Tuple3(nativeVal_t *out, const nativeVal_t *a, const nativeVal_t *b, const nativeVal_t *c) {
-	Native_SetEmpty(out, NV_TUPLE);
-	Native_Copy(Native_Append(out), a);
-	Native_Copy(Native_Append(out), b);
-	Native_Copy(Native_Append(out), c);
-}
-
 /*
  * TVOff: the view leaves the player along a camera path up and back, then the screen goes dark. The engine calls are
  * asked one by one with their errors printed; 0 (no error left set) where the C returned NULL: no camera path or no
@@ -818,7 +810,7 @@ static byte Main_TVOff(void) {
 			Native_SetFloat(&t, top);
 			/* a missing item is the NULL Py_BuildValue refused: no clamped place, as the C had none */
 			if (x && z) {
-				Main_Tuple3(&clamped, x, &t, z);
+				Mode_Tuple3(&clamped, x, &t, z);
 				Native_Free(&resv);
 				resv = clamped;
 			} else {
@@ -970,13 +962,6 @@ static PyObject *Menu_CreateMainMenu(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Main_Create(id, back);
-	return Py_ReturnNone();
-}
-
-/* PlaySpacelords: the store page of another game of the studio; there is no store here */
-static PyObject *Menu_PlaySpacelords(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
 	return Py_ReturnNone();
 }
 
@@ -1341,7 +1326,8 @@ PyMethodDef g_MenuMainMethods[] = {
 	{ "AudioVolumeChange", Menu_AudioVolumeChange, 1, NULL },
 	{ "MainMenu", Menu_MainMenu, 1, NULL },
 	{ "CreateMainMenu", Menu_CreateMainMenu, 1, NULL },
-	{ "PlaySpacelords", Menu_PlaySpacelords, 1, NULL },
+	/* the store page of another game of the studio; there is no store here */
+	{ "PlaySpacelords", Mode_PyNone, 1, NULL },
 	{ "BackToGame", Menu_BackToGame, 1, NULL },
 	{ "DrawScorer", Menu_DrawScorer, 1, NULL },
 	{ "InitMenuSys", Menu_InitMenuSys, 1, NULL },

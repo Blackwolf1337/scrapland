@@ -16,6 +16,7 @@
 #include "scrap/net.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 
 static const char chat_def[] = {
@@ -45,14 +46,6 @@ static const nativeVar_t chat_sendIDOnly[] = {
 	{ "SendID", chat.sendID, CHAT_PLAYERS, 1 << NV_STR },
 	{ NULL, NULL, 0, 0 },
 };
-
-/* `import name` of a function of the script: 0 with the error set */
-static byte Chat_Import(const char *name) {
-	/* OBJLIB 6: module loading stays with the module objects until then */
-	PyObject *m = PyImport_ImportModule((char *)name);
-	Py_XDECREF(m);
-	return m != NULL;
-}
 
 /* a + b + c of the script on texts; c NULL is a value that is no text (the TypeError of string +) */
 static byte Chat_Cat(char *out, const char *a, const char *b, const char *c) {
@@ -190,7 +183,7 @@ static byte Chat_ShowTo(int id, const nativeVal_t *t) {
  * tests the number with "or", so every number passes); cad NULL is a value that is no text */
 static byte Chat_ReSend(const char *sendto, const char *cad) {
 	char line[CHAT_LINE];
-	if (!Chat_Import("string")) {
+	if (!Mode_Import("string")) {
 		return 0;
 	}
 	if (!strcmp(sendto, "ALL")) {
@@ -206,7 +199,7 @@ static byte Chat_ReSend(const char *sendto, const char *cad) {
 /* PrintChatString(id, Str): a line "<receiver>\t<text>" arrives: the server sends it on; the text goes to the chat
  * and the console (a line without a tab is dropped) */
 static byte Chat_Print(const char *str) {
-	if (!Chat_Import("string")) {
+	if (!Mode_Import("string")) {
 		return 0;
 	}
 	/* cadinfo[0] and cadinfo[1] of string.split(Str, "\t") */
@@ -230,7 +223,7 @@ static byte Chat_Print(const char *str) {
 
 /* EndChat(id): the chat line closes, back to the game */
 static byte Chat_End(int id) {
-	if (!Chat_Import("Menu")) {
+	if (!Mode_Import("Menu")) {
 		return 0;
 	}
 	/* SInput.Bind x3, SInput.SetInputFunc(id, ""), SScorer.SetOnCancel(id, "") */
@@ -303,7 +296,7 @@ static byte Chat_MyShip(void) {
 static byte Chat_Init(int id) {
 	int slot;
 	nativeVal_t t;
-	if (!Chat_Import("Menu") || !Chat_MyShip() || !Native_Index(id, CHAT_PLAYERS, &slot) || !Chat_IdText(slot, &t)) {
+	if (!Mode_Import("Menu") || !Chat_MyShip() || !Native_Index(id, CHAT_PLAYERS, &slot) || !Chat_IdText(slot, &t)) {
 		return 0;
 	}
 	/* OBJLIB 6: the .def runner takes its $names as a dict until it takes C values */
@@ -325,10 +318,6 @@ static const char *Chat_Text(PyObject *o) {
 	return PyString_Check(o) ? PyString_AsString(o) : NULL;
 }
 
-static PyObject *Chat_Result(byte ok) {
-	return ok ? Py_ReturnNone() : NULL;
-}
-
 static PyObject *Chat_GetID(PyObject *self, PyObject *args) {
 	int id, slot;
 	nativeVal_t t;
@@ -348,7 +337,7 @@ static PyObject *Chat_CycleSet(PyObject *args, int step, byte set) {
 		!Chat_Cycle(slot, step)) {
 		return NULL;
 	}
-	return Chat_Result(!set || (Chat_IdText(slot, &t) && Chat_ShowTo(id, &t)));
+	return Mode_Result(!set || (Chat_IdText(slot, &t) && Chat_ShowTo(id, &t)));
 }
 
 static PyObject *Chat_CycleUp(PyObject *self, PyObject *args) {
@@ -380,9 +369,9 @@ static PyObject *Chat_ServerReSendChat(PyObject *self, PyObject *args) {
 	if (!Chat_Text(sendto)) {
 		/* sendto[0:3] == "net" of the script: another sequence is not "net", anything else cannot be sliced */
 		PySequenceMethods *sq = sendto->ob_type->tp_as_sequence;
-		return Chat_Result(Chat_Import("string") && (sq && sq->sq_slice ? 1 : Native_Raise(NE_TYPE, "unsliceable object")));
+		return Mode_Result(Mode_Import("string") && (sq && sq->sq_slice ? 1 : Native_Raise(NE_TYPE, "unsliceable object")));
 	}
-	return Chat_Result(Chat_ReSend(Chat_Text(sendto), Chat_Text(cad)));
+	return Mode_Result(Chat_ReSend(Chat_Text(sendto), Chat_Text(cad)));
 }
 
 static PyObject *Chat_PrintChatString(PyObject *self, PyObject *args) {
@@ -393,10 +382,10 @@ static PyObject *Chat_PrintChatString(PyObject *self, PyObject *args) {
 	}
 	if (!Chat_Text(str)) {
 		/* the error of string.split on a value that is no text, after the import */
-		return Chat_Result(Chat_Import("string") && Native_Raise(NE_TYPE,
+		return Mode_Result(Mode_Import("string") && Native_Raise(NE_TYPE,
 			"argument 1: expected read-only character buffer, %.50s found", str->ob_type->tp_name));
 	}
-	return Chat_Result(Chat_Print(Chat_Text(str)));
+	return Mode_Result(Chat_Print(Chat_Text(str)));
 }
 
 static PyObject *Chat_SendChatString(PyObject *self, PyObject *args) {
@@ -407,24 +396,24 @@ static PyObject *Chat_SendChatString(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	int c = console ? PyObject_IsTrue(console) : 0;
-	return Chat_Result(c >= 0 && Native_Import("Chat", chat_sendIDOnly) && Chat_Send(id, Chat_Text(text), c));
+	return Mode_Result(c >= 0 && Native_Import("Chat", chat_sendIDOnly) && Chat_Send(id, Chat_Text(text), c));
 }
 
 static PyObject *Chat_EndChat(PyObject *self, PyObject *args) {
 	int id;
 	(void)self;
-	return PyArg_ParseTuple(args, "i", &id) ? Chat_Result(Chat_End(id)) : NULL;
+	return PyArg_ParseTuple(args, "i", &id) ? Mode_Result(Chat_End(id)) : NULL;
 }
 
 static PyObject *Chat_GetMyShip(PyObject *self, PyObject *args) {
 	(void)self;
-	return PyArg_ParseTuple(args, "") ? Chat_Result(Chat_MyShip()) : NULL;
+	return PyArg_ParseTuple(args, "") ? Mode_Result(Chat_MyShip()) : NULL;
 }
 
 static PyObject *Chat_InitChat(PyObject *self, PyObject *args) {
 	int id;
 	(void)self;
-	return PyArg_ParseTuple(args, "i", &id) && Native_Import("Chat", chat_sendIDOnly) ? Chat_Result(Chat_Init(id)) : NULL;
+	return PyArg_ParseTuple(args, "i", &id) && Native_Import("Chat", chat_sendIDOnly) ? Mode_Result(Chat_Init(id)) : NULL;
 }
 
 /* ConsoleChatString(estrin): a line of the full screen console goes to the receiver of player 0 */
@@ -434,7 +423,7 @@ static PyObject *Chat_ConsoleChatString(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "O", &str)) {
 		return NULL;
 	}
-	return Chat_Result(Native_Import("Chat", chat_sendIDOnly) && Chat_Send(0, Chat_Text(str), 1));
+	return Mode_Result(Native_Import("Chat", chat_sendIDOnly) && Chat_Send(0, Chat_Text(str), 1));
 }
 
 /* qchat1 .. qchat6(id): the quick message QuickMessageString<n> */
@@ -445,7 +434,7 @@ static PyObject *Chat_Quick(PyObject *args, int n) {
 		return NULL;
 	}
 	Str_Printf(var, sizeof(var), "QuickMessageString%d", n);
-	return Chat_Result(Native_Import("Chat", chat_sendIDOnly) && Chat_Send(id, GVar_GetStr(var), 1));
+	return Mode_Result(Native_Import("Chat", chat_sendIDOnly) && Chat_Send(id, GVar_GetStr(var), 1));
 }
 
 #define CHAT_QUICK(n) \

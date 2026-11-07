@@ -100,14 +100,6 @@ static void MC_Create(const char *name) {
 	g_pAuxAction = cActClass_CreateAction(g_pAuxActClass, name);
 }
 
-static void MC_GetAction(const char *name) {
-	if (!g_pAuxActClass) {
-		Con_Debugf("Caution: SAct.GetAction(): AuxActClass not defined.\n");
-		return;
-	}
-	g_pAuxAction = cActClass_GetAction(g_pAuxActClass, name);
-}
-
 /* "Models/Chars/<char>/Anm/<char>_<anm>.M3D" */
 static void MC_Anm(const char *ch, const char *anm) {
 	char path[0x200];
@@ -460,7 +452,7 @@ static void MC_TalkAction(const char *ch, double nodeMod, int extra) {
 		for (int k = 0; k < 2; k++) {
 			char name[0x40];
 			const char *ev = k ? "TalkNPC" : "Talk";
-			MC_GetAction(ev);
+			Native_ActAction(ev);
 			Str_Printf(name, sizeof(name), "%s:%d", ev, extra);
 			MC_Event(MC_Get("AnmTotalTime"), name, -1, "!AnmChangeRandomAnm");
 		}
@@ -630,9 +622,9 @@ static PyObject *MakeChar_AddFlashedAction(PyObject *self, PyObject *args, PyObj
 		return NULL;
 	}
 	MC_BreakLoop(ch, "Flashed", 201);
-	MC_GetAction("FlashedInit");
+	Native_ActAction("FlashedInit");
 	MC_Event(MC_Get("AnmTotalTime"), "Flashed", -1, "!AnmSetAction");
-	MC_GetAction("Flashed");
+	Native_ActAction("Flashed");
 	MC_Event(MC_Get("AnmTotalTime"), "FlashedEnd", -1, "!AnmSetAction");
 	if (listen) {
 		MC_Listen(ch, "PoliceListen", "!ListeningPolice", "Relax");
@@ -666,7 +658,7 @@ static PyObject *MakeChar_AddDazeAction(PyObject *self, PyObject *args, PyObject
 	}
 	Native_Free(&s);
 	MC_BreakLoop(ch, "Dazed", 202);
-	MC_GetAction("DazedInit");
+	Native_ActAction("DazedInit");
 	MC_Event(MC_Get("AnmTotalTime") / 4.0, "DazedMoney", -1, "MisItems.DazedCoin");
 	if (listen) {
 		MC_Listen(ch, "MayorListen", "!ListeningMayor", "Relax");
@@ -804,7 +796,7 @@ static PyObject *MakeChar_TurretBasicActions(PyObject *self, PyObject *args, PyO
 
 /* the turret turns only its head while it talks */
 static void MC_NoTurn(const char *act) {
-	MC_GetAction(act);
+	Native_ActAction(act);
 	MC_SetNum("RotSpeed", 0);
 	MC_SetNum("AngRotLimit", 360);
 }

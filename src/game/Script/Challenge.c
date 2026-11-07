@@ -73,7 +73,7 @@ static byte Chal_Reward(const nativeVal_t *type, const nativeVal_t *foe, const n
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *group = Mode_V(&t), *name = Mode_V(&t), *table = Mode_V(&t), *base = Mode_V(&t), *f = Mode_V(&t);
 	nativeVal_t *b2 = Mode_V(&t), *a = Mode_V(&t), *b = Mode_V(&t);
-	byte combat = Mode_IsText(type, "Combat");
+	byte combat = Native_IsStr(type, "Combat");
 	long total;
 	if (!Chal_Group(foe, group) || !Mode_Cat(&t, name, 2, Mode_S(&t, combat ? "Stats.TotalCombats." : "Stats.TotalRaces."),
 		group) || !Chal_Total(name, &total) || !Chal_G(combat ? "combatRewards" : "raceRewards", table) ||
@@ -115,7 +115,7 @@ static byte Chal_Init(const nativeVal_t *revengeArg) {
 	}
 	Mode_SaveVar("Challenge.Type", type);
 	Mode_SaveVar("Challenge.Foe", foe);
-	if (Mode_IsText(type, "Race")) {
+	if (Native_IsStr(type, "Race")) {
 		Mode_SaveVar("Challenge.Money", money);
 		if (!Mode_SaveInt("Challenge.NumEnemies", num)) {
 			return Mode_Done(&t, 0);
@@ -131,7 +131,7 @@ static byte Chal_Init(const nativeVal_t *revengeArg) {
 		Py_XDECREF(r);
 		return Mode_Done(&t, kw && Mode_CallKw("RaceMaker", "InitRace", NULL, NULL, 0, kw));
 	}
-	if (Mode_IsText(type, "Combat")) {
+	if (Native_IsStr(type, "Combat")) {
 		if (!Mode_SaveInt("Challenge.NumEnemies", num)) {
 			return Mode_Done(&t, 0);
 		}
@@ -144,7 +144,7 @@ static byte Chal_Init(const nativeVal_t *revengeArg) {
 	}
 	Mode_SaveVar("Revenge.Type", money);
 	Mode_SaveVar("Revenge.Foe", num);
-	return Mode_Done(&t, Mode_IsText(money, "") || Mode_IsText(num, "") || Chal_SetRevenge(NULL));
+	return Mode_Done(&t, Native_IsStr(money, "") || Native_IsStr(num, "") || Chal_SetRevenge(NULL));
 }
 
 /* the skill of the challengers by the number of challenges against the group: Race.Profile and Combat.Profile */
@@ -297,7 +297,7 @@ static byte Chal_BetLives(int num, int indoor, const nativeVal_t *ch, const nati
 		}
 		if (indoor) {
 			int out = Chal_Movie() && Chal_G("foeType", local) && Chal_Group(local, lg) ? 1 : -1;
-			if (out > 0 && Mode_IsText(lg, "Mercs")) {
+			if (out > 0 && Native_IsStr(lg, "Mercs")) {
 				Native_Free(local);
 				Native_SetStr(local, "Mercs");
 			}
@@ -309,7 +309,7 @@ static byte Chal_BetLives(int num, int indoor, const nativeVal_t *ch, const nati
 			int out = Chal_Group(local, lg) ? Chal_Outdoor() : -1;
 			if (out < 0) {
 				ok = 0;
-			} else if (Mode_IsText(lg, "Mercs")) {
+			} else if (Native_IsStr(lg, "Mercs")) {
 				ok = Chal_Spch(1, local, cad, out ? "ChallengeRaceMercsMsg2_Filter" : "ChallengeRaceMercsMsg2", NULL, NULL, 1);
 			} else {
 				ok = Chal_Spch(1, local, cad, "ChallengeRace", local, out ? "Msg2_Filter" : "Msg2", 0);
@@ -344,12 +344,12 @@ static byte Chal_OnChallengeOpt(const nativeVal_t *opt, const nativeVal_t *ch, c
 		}
 	} else {
 		Mode_SaveVar("Challenge.Foe", foe);
-		if (Mode_IsText(foe, "")) {
+		if (Native_IsStr(foe, "")) {
 			Native_Free(foe);
 			Mode_SaveVar("Revenge.Foe", foe);
 		}
 		Mode_SaveVar("Challenge.Type", type);
-		if (Mode_IsText(type, "")) {
+		if (Native_IsStr(type, "")) {
 			Native_Free(type);
 			Mode_SaveVar("Revenge.Type", type);
 		}
@@ -357,7 +357,7 @@ static byte Chal_OnChallengeOpt(const nativeVal_t *opt, const nativeVal_t *ch, c
 	if (!Chal_Group(foe, group)) {
 		return Mode_Done(&t, 0);
 	}
-	byte mercs = Mode_IsText(group, "Mercs");
+	byte mercs = Native_IsStr(group, "Mercs");
 	int c1 = Mode_CmpI(opt, "==", 1), c2 = c1 ? 0 : Mode_CmpI(opt, "==", 2);
 	int c3 = !c1 && !c2 && !mercs ? Mode_CmpI(opt, "==", 3) : 0;
 	if (c1 < 0 || c2 < 0 || c3 < 0) {
@@ -398,7 +398,7 @@ static byte Chal_SetRevenge(const nativeVal_t *looses) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("HumphreyRaceTutorial", tut);
-	if (!Native_CallMod("MissionsFuncs", "ActivateTarget", NULL, "vi", cab, Mode_IsText(tut, "1") ? 1L : 2L) ||
+	if (!Native_CallMod("MissionsFuncs", "ActivateTarget", NULL, "vi", cab, Native_IsStr(tut, "1") ? 1L : 2L) ||
 		!Native_CallMod("MissionsFuncs", "SetSecondary", NULL, "i", 1L)) {
 		return Mode_Done(&t, 0);
 	}
@@ -406,14 +406,14 @@ static byte Chal_SetRevenge(const nativeVal_t *looses) {
 	if (!Native_Slice(foe, 0, 4, head)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Mode_IsText(head, "Merc")) {
+	if (Native_IsStr(head, "Merc")) {
 		Native_Free(foe);
 		Native_SetStr(foe, "Mercs");
 	}
 	if (lost) {
 		Native_Free(tut);
 		Mode_SaveVar("HumphreyRaceTutorial", tut);
-		if (Mode_IsText(tut, "1")) {
+		if (Native_IsStr(tut, "1")) {
 			return Mode_Done(&t, 1);
 		}
 	}
@@ -472,7 +472,7 @@ static byte Chal_LaunchChallenge(void) {
 		return Mode_Done(&t, 0);
 	}
 	if (same) {
-		const char *next = Mode_IsText(mm, "DOWNTOWN") ? "Commercial" : "DownTown";
+		const char *next = Native_IsStr(mm, "DOWNTOWN") ? "Commercial" : "DownTown";
 		Native_Free(mm);
 		Native_SetStr(mm, next);
 	} else {
@@ -494,7 +494,7 @@ static byte Chal_Clean(const char *prefix, byte revenge) {
 	char name[32];
 	Str_Printf(name, sizeof(name), "%s.Type", prefix);
 	Mode_SaveVar(name, &type);
-	byte ok = Mode_IsText(&type, "") || (Mode_Import("MissionsFuncs") &&
+	byte ok = Native_IsStr(&type, "") || (Mode_Import("MissionsFuncs") &&
 		Native_CallMod("MissionsFuncs", "SetSecondary", NULL, "i", 0L) && Mode_Import("SaveGame") &&
 		Native_CallMod("SaveGame", "SMDesc", NULL, "si", "", 1L));
 	Native_Free(&type);
@@ -561,11 +561,11 @@ static byte Chal_CancelChallenge(const nativeVal_t *type) {
 		return Mode_Done(&t, 0);
 	}
 	byte ok = 1;
-	if (Mode_IsText(type, "Race")) {
+	if (Native_IsStr(type, "Race")) {
 		ok = Mode_EntitySeam(Mode_S(&t, "CheckPoint"), cp) &&
 			(!Native_True(cp) || (LvN_SetS(cp, "OnTake", "") && Mode_VDel(cp))) &&
 			LvN_ModGet("RaceMaker", "Players", list) && Chal_Release(list);
-	} else if (Mode_IsText(type, "Combat")) {
+	} else if (Native_IsStr(type, "Combat")) {
 		ok = LvN_ModGet("RaceMaker", "challenged_NPCs_Names", list) && Chal_Release(list);
 	}
 	if (!ok || !Mode_SetSaveVar("Revenge.Type", type)) {
@@ -619,14 +619,14 @@ static byte Chal_SetOptions(const nativeVal_t *ch, const nativeVal_t *type, cons
 	if (!Chal_Group(foe, group)) {
 		return Mode_Done(&t, 0);
 	}
-	byte press = Mode_IsText(group, "Press"), mercs = 0;
+	byte press = Native_IsStr(group, "Press"), mercs = 0;
 	if (!press) {
 		/* the elif looks the group up again */
 		Native_Free(group);
 		if (!Chal_Group(foe, group)) {
 			return Mode_Done(&t, 0);
 		}
-		mercs = Mode_IsText(group, "Mercs");
+		mercs = Native_IsStr(group, "Mercs");
 	}
 	Mode_Lang(mercs ? "ChallengeMercs" : "ChallengeRaceStdOpt1", cad);
 	byte ok = LvN_SetI(ch, "ArrnOpt", 0);
@@ -685,7 +685,7 @@ static byte Chal_AddChallenge(const nativeVal_t *ch, const nativeVal_t *usr, con
 		Native_Free(can);
 		ok = Native_CallMod("Chars", "CanDrive", can, "v", ch) ? Native_True(can) : -1;
 		if (ok == 0) {
-			ok = Mode_VObj(ch, "ActCtrl", act) ? Mode_IsText(act, "Humphrey") : -1;
+			ok = Mode_VObj(ch, "ActCtrl", act) ? Native_IsStr(act, "Humphrey") : -1;
 		}
 	}
 	for (int i = 0; ok > 0 && i < 2; i++) {

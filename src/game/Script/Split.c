@@ -894,12 +894,6 @@ static byte Sm_Actualize(void) {
 		return Mode_Result(call); \
 	}
 
-static PyObject *Sm_Pass(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Py_ReturnNone();
-}
-
 static PyObject *Sm_Pass2(PyObject *self, PyObject *args) {
 	PyObject *a, *b;
 	(void)self;
@@ -927,7 +921,7 @@ SM_NOARGS(SDeathMatch, Init, SDeathMatch_InitC())
 MODE_FN(SDeathMatch, OnDeathFunc, 2, SDeathMatch_OnDeathFuncC(&a[0], &a[1]))
 
 PyMethodDef g_SDeathMatchMethods[] = {
-	{ "InitStatus", Sm_Pass, 1, NULL },
+	{ "InitStatus", Mode_PyNone, 1, NULL },
 	{ "Init", SDeathMatch_Init, 1, NULL },
 	{ "OnDeathFunc", SDeathMatch_OnDeathFunc, 1, NULL },
 	{ NULL, NULL, 0, NULL },

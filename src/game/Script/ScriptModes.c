@@ -2961,10 +2961,6 @@ byte Mode_IncSaveVar(const char *name) {
 	return 1;
 }
 
-byte Mode_IsText(const nativeVal_t *v, const char *text) {
-	return v->type == NV_STR && !strcmp(Native_Text(v), text);
-}
-
 byte Mode_TimeSpeed(double speed) {
 	MODE_SEAM("Scrap", "SetTimeSpeed");
 	if (seam) {
@@ -3756,4 +3752,26 @@ byte Mode_SoundOf(const char *name) {
 	Str_Printf(snd, sizeof(snd), "%sSound", name);
 	Str_Printf(vol, sizeof(vol), "%sVolume", name);
 	return Mode_Sound(snd, vol);
+}
+
+const nativeVal_t *Mode_IntVal(nativeVal_t *v, long i) {
+	Native_SetInt(v, i);
+	return v;
+}
+
+void Mode_Tuple3(nativeVal_t *out, const nativeVal_t *a, const nativeVal_t *b, const nativeVal_t *c) {
+	Native_SetEmpty(out, NV_TUPLE);
+	Native_Copy(Native_Append(out), a);
+	Native_Copy(Native_Append(out), b);
+	Native_Copy(Native_Append(out), c);
+}
+
+void Mode_RandF(double a, double b, nativeVal_t *out) {
+	Native_SetFloat(out, Scrap_RandRange(a, b));
+}
+
+PyObject *Mode_PyNone(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	return Py_ReturnNone();
 }

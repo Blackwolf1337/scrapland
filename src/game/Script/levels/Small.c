@@ -140,15 +140,9 @@ static byte Se_Init(const nativeVal_t *a, nativeVal_t *out) {
 	return ok;
 }
 
-/* MapSnd.Init(LevelPath): returns at once (the editor has no map sounds) */
-static byte Se_SndInit(const nativeVal_t *a, nativeVal_t *out) {
-	(void)a;
-	(void)out;
-	return 1;
-}
-
 LV_FN(Se, InitPy, 1, Se_Init)
-LV_FN(Se, SndInitPy, 1, Se_SndInit)
+/* MapSnd.Init(LevelPath): returns at once (the editor has no map sounds) */
+LV_FN(Se, SndInitPy, 1, LvN_Pass)
 
 PyMethodDef g_ShipEditMapMethods[] = {
 	{ "Init", Se_InitPy, 1, NULL },

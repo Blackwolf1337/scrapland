@@ -1548,3 +1548,9 @@ byte LvN_HumanFollow(const char *module, const nativeVal_t *usr) {
 	Native_Free(&un);
 	return ok;
 }
+
+byte LvN_Pass(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return 1;
+}

@@ -307,16 +307,11 @@ static byte Sm_CalculateVerticalBalanceN(const nativeVal_t *e) {
 	return Mode_Done(&t, Mode_VSet(e, "VerticalBalance", vb));
 }
 
-/* the entity handle of a name through Scrap.GetEntity (its seam) */
-static byte Sm_Entity(const nativeVal_t *name, nativeVal_t *out) {
-	return Mode_EntitySeam(name, out);
-}
-
 /* SetUpChars(EntityName): the animations of the pilot (the module's Chars table) */
 static byte Sm_SetUpCharsN(const nativeVal_t *name) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *v = Mode_V(&t), *chars = Mode_V(&t), *pil = Mode_V(&t), *list = Mode_V(&t), *anm = Mode_V(&t);
-	if (!Sm_Entity(name, v) || !Mode_G(SM, "Chars", chars) || !Mode_VGet(v, "MPil0", pil)) {
+	if (!Mode_EntitySeam(name, v) || !Mode_G(SM, "Chars", chars) || !Mode_VGet(v, "MPil0", pil)) {
 		return Mode_Done(&t, 0);
 	}
 	int has = Mode_HasKey(SM, "Chars", 1, pil);
@@ -412,7 +407,7 @@ static byte Sm_SetShipParamsN(const nativeVal_t *name, nativeVal_t *out) {
 	nativeVal_t *mass = Mode_V(&t), *style = Mode_V(&t), *engine = Mode_V(&t);
 	char var[0x40];
 	long count;
-	if (!Mode_Import("Fx") || !Sm_Entity(name, e) || !Mode_VGet(e, "Model", model) || !Sm_ShipAndTon(model, &t, &s, &ton)) {
+	if (!Mode_Import("Fx") || !Mode_EntitySeam(name, e) || !Mode_VGet(e, "Model", model) || !Sm_ShipAndTon(model, &t, &s, &ton)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Copy(mass, &s[0]);

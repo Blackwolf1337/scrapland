@@ -66,12 +66,6 @@ static int Mission_ModInt(const char *module, const char *var, int def) {
 	return r;
 }
 
-/* the text value of an int */
-static const nativeVal_t *Mission_Int(nativeVal_t *v, long i) {
-	Native_SetInt(v, i);
-	return v;
-}
-
 /* a text of any length as a value (Native_Free it) */
 static const nativeVal_t *Mission_Text(nativeVal_t *v, const char *s) {
 	Native_SetText(v, s, (int)strlen(s));
@@ -92,10 +86,10 @@ static void Mission_Replace(const char *text, const char *tag, const char *arg, 
 static void Mission_Objective(int id, int num, const nativeVal_t *text1, const nativeVal_t *text2, const int *frame,
 	const int *text) {
 	nativeVal_t v[8];
-	PyObject *vars = Mode_DefVars(10, "num", Mission_Int(&v[0], num), "y", Mission_Int(&v[1], 150 + num * 50), "text1", text1,
-		"text2", text2, "red", Mission_Int(&v[2], frame[0]), "green", Mission_Int(&v[3], frame[1]), "blue",
-		Mission_Int(&v[4], frame[2]), "tred", Mission_Int(&v[5], text[0]), "tgreen", Mission_Int(&v[6], text[1]), "tblue",
-		Mission_Int(&v[7], text[2]));
+	PyObject *vars = Mode_DefVars(10, "num", Mode_IntVal(&v[0], num), "y", Mode_IntVal(&v[1], 150 + num * 50), "text1", text1,
+		"text2", text2, "red", Mode_IntVal(&v[2], frame[0]), "green", Mode_IntVal(&v[3], frame[1]), "blue",
+		Mode_IntVal(&v[4], frame[2]), "tred", Mode_IntVal(&v[5], text[0]), "tgreen", Mode_IntVal(&v[6], text[1]), "tblue",
+		Mode_IntVal(&v[7], text[2]));
 	Mission_Run(id, "objective", vars);
 	Py_XDECREF(vars);
 }
@@ -374,10 +368,10 @@ static void Mission_Menu(int id, const char *name) {
 	Str_Printf(back, sizeof(back), "\x15 %s", Script_Lang("XBox_Menu_Back"));
 	nativeVal_t v[12];
 	PyObject *vars = Mode_DefVars(12, "page", Mission_Text(&v[0], p->page), "ltitle", Mission_Text(&v[1], p->left), "rtitle",
-		Mission_Text(&v[2], p->right), "red", Mission_Int(&v[3], p->red), "green", Mission_Int(&v[4], p->green), "blue",
-		Mission_Int(&v[5], p->blue), "tred", Mission_Int(&v[6], p->tred), "tgreen", Mission_Int(&v[7], p->tgreen), "tblue",
-		Mission_Int(&v[8], p->tblue), "xbox", Mission_Int(&v[9], GVar_GetNum("IsXbox", 0) != 0), "outdoor",
-		Mission_Int(&v[10], Mission_ModInt("Init", "Outdoor", 0) != 0), "xboxback", Mission_Text(&v[11], back));
+		Mission_Text(&v[2], p->right), "red", Mode_IntVal(&v[3], p->red), "green", Mode_IntVal(&v[4], p->green), "blue",
+		Mode_IntVal(&v[5], p->blue), "tred", Mode_IntVal(&v[6], p->tred), "tgreen", Mode_IntVal(&v[7], p->tgreen), "tblue",
+		Mode_IntVal(&v[8], p->tblue), "xbox", Mode_IntVal(&v[9], GVar_GetNum("IsXbox", 0) != 0), "outdoor",
+		Mode_IntVal(&v[10], Mission_ModInt("Init", "Outdoor", 0) != 0), "xboxback", Mission_Text(&v[11], back));
 	for (int i = 0; i < 12; i++) {
 		Native_Free(&v[i]);
 	}

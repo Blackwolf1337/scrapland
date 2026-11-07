@@ -654,12 +654,6 @@ static PyObject *Menu_AddTabs(PyObject *self, PyObject *args, PyObject *kw) {
 	return Mode_Result(ok);
 }
 
-static PyObject *Menu_DummyFunc(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Py_ReturnNone();
-}
-
 static PyObject *Menu_VerticalMenu(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "title", "menu", "backfunc", "XStart", "VerticalStep", "Font", "MinYStart", "YStart",
 		"FontTitle", NULL };
@@ -847,7 +841,7 @@ PyMethodDef g_MenuBaseMethods[] = {
 	{ "DrawMenuTitleBar", Menu_DrawMenuTitleBar, 1, NULL },
 	{ "StartNewMenu", Menu_StartNewMenu, 1, NULL },
 	{ "AddTabs", (PyCFunction)(void (*)(void))Menu_AddTabs, 3, NULL },
-	{ "DummyFunc", Menu_DummyFunc, 1, NULL },
+	{ "DummyFunc", Mode_PyNone, 1, NULL },
 	{ "VerticalMenu", (PyCFunction)(void (*)(void))Menu_VerticalMenu, 3, NULL },
 	{ "YesNoMenu", Menu_YesNoMenu, 1, NULL },
 	{ "DisableMenuItem", Menu_DisableMenuItem, 1, NULL },

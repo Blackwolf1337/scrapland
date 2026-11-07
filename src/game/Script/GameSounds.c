@@ -76,12 +76,6 @@ static int Gs_NotOutdoor(void) {
 	return t;
 }
 
-/* an int as a value */
-static const nativeVal_t *Gs_Int(nativeVal_t *v, long i) {
-	Native_SetInt(v, i);
-	return v;
-}
-
 /* ---- Sound ---- */
 
 #define SND "Sound"
@@ -139,7 +133,7 @@ static byte Gs_LoadDamageSounds(void) {
 		out = Gs_Init("isShipEdit");
 		out = out < 0 ? -1 : !out;
 	}
-	return out >= 0 && Gs_RunSound("LoadDamageSounds", Mode_DefVars(1, "out", Gs_Int(&v, out)));
+	return out >= 0 && Gs_RunSound("LoadDamageSounds", Mode_DefVars(1, "out", Mode_IntVal(&v, out)));
 }
 
 /* WayPoints(): the money, the check points and the items of the outdoor levels ($out), or the battery and the extra
@@ -147,7 +141,7 @@ static byte Gs_LoadDamageSounds(void) {
 static byte Gs_WayPoints(void) {
 	nativeVal_t v;
 	int out = Mode_Import("Init") ? Gs_Init("Outdoor") : -1;
-	return out >= 0 && Gs_RunSound("WayPoints", Mode_DefVars(1, "out", Gs_Int(&v, out)));
+	return out >= 0 && Gs_RunSound("WayPoints", Mode_DefVars(1, "out", Mode_IntVal(&v, out)));
 }
 
 /* SetOutMusic(): the relax and action music of the level */
@@ -164,8 +158,8 @@ static byte Gs_SetOutMusic(void) {
 		Native_Free(&map);
 	}
 	int demo = out >= 0 && act >= 0 ? Gs_Init("isDemo") : -1;
-	return demo >= 0 && Gs_RunSound("SetOutMusic", Mode_DefVars(3, "out", Gs_Int(&a, out), "action", Gs_Int(&b, act), "demo",
-		Gs_Int(&c, demo)));
+	return demo >= 0 && Gs_RunSound("SetOutMusic", Mode_DefVars(3, "out", Mode_IntVal(&a, out), "action", Mode_IntVal(&b, act), "demo",
+		Mode_IntVal(&c, demo)));
 }
 
 /* Init(): the generic sounds of every level, then the music */
@@ -338,8 +332,8 @@ static byte Gs_SetVehicleSounds(const nativeVal_t *name) {
 	if (armed < 0) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, Gs_RunOut("SetVehicleSounds", Mode_DefVars(4, "name", name, "model", model, "pc", Gs_Int(pcv, pc), "armed",
-		Gs_Int(armedv, armed))) && Mode_Import(SND) && Native_CallMod(SND, "SetStdDamageSounds", NULL, "v", name));
+	return Mode_Done(&t, Gs_RunOut("SetVehicleSounds", Mode_DefVars(4, "name", name, "model", model, "pc", Mode_IntVal(pcv, pc), "armed",
+		Mode_IntVal(armedv, armed))) && Mode_Import(SND) && Native_CallMod(SND, "SetStdDamageSounds", NULL, "v", name));
 }
 
 /* the load sections, LoadEngines and LoadWeapons with $pc */
@@ -349,7 +343,7 @@ static byte Gs_OutSection(const char *section, byte pcTest) {
 		return Gs_RunOut(section, NULL);
 	}
 	int pc = Gs_IsPC();
-	return pc >= 0 && Gs_RunOut(section, Mode_DefVars(1, "pc", Gs_Int(&v, pc)));
+	return pc >= 0 && Gs_RunOut(section, Mode_DefVars(1, "pc", Mode_IntVal(&v, pc)));
 }
 
 /* LoadVehicles(): the vehicle sounds of an outdoor level, from the pack Sounds/Vehicles */

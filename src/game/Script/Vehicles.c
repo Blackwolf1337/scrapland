@@ -28,16 +28,6 @@
 /* a function of the module through its global (a mission, a net weapon or a case may replace it) */
 #define VEH_OWN(name, out, ...) Native_CallGlobal(VEH, name, out, __VA_ARGS__)
 
-/* Scrap.Rand(a, b) as the C port drew it */
-static void Veh_Rand(double a, double b, nativeVal_t *out) {
-	Native_SetFloat(out, Scrap_RandRange(a, b));
-}
-
-/* Scrap.GetEntity(name) as the handle value through its seam */
-static byte Veh_Entity(const nativeVal_t *name, nativeVal_t *out) {
-	return Mode_EntitySeam(name, out);
-}
-
 /* the value of o.var into slot (freed first; the errors of the attribute) */
 static byte Veh_Attr(const nativeVal_t *o, const char *var, nativeVal_t *slot) {
 	Native_Free(slot);
@@ -88,14 +78,14 @@ static byte Veh_Boom(const nativeVal_t *pos, const nativeVal_t *vel, const nativ
 	nativeVal_t *rnd = Mode_V(&t), *radius = Mode_V(&t), *part = Mode_V(&t), *sum = Mode_V(&t), *f = Mode_V(&t);
 	nativeVal_t *size = Mode_V(&t), *tm = Mode_V(&t), *r23 = Mode_V(&t), *n = Mode_V(&t), *at = Mode_V(&t), *vol = Mode_V(&t);
 	nativeVal_t *ini = Mode_V(&t), *end = Mode_V(&t);
-	Veh_Rand(lo, hi, rnd);
+	Mode_RandF(lo, hi, rnd);
 	if (!Mode_VObj(e, var, radius) || !Mode_Arith('/', radius, Mode_I(&t, div), part) || !Native_Arith('+', rnd, part, sum) ||
 		!Mode_G(VEH, "ShipExplosionScaleFactor", f) || !Mode_Arith('*', sum, f, size)) {
 		return Mode_Done(&t, 0);
 	}
-	Veh_Rand(tlo, thi, tm);
+	Mode_RandF(tlo, thi, tm);
 	if (big) {
-		Veh_Rand(2, 3, r23);
+		Mode_RandF(2, 3, r23);
 		if (!Native_ToInt(r23, n)) {
 			return Mode_Done(&t, 0);
 		}
@@ -155,7 +145,7 @@ static int Veh_IsMotor(const nativeVal_t *res, nativeVal_t *model) {
 	if (!Native_Slice(res, 0, 4, &head)) {
 		return -1;
 	}
-	int is = Mode_IsText(&head, "DmM:");
+	int is = Native_IsStr(&head, "DmM:");
 	Native_Free(&head);
 	return !is ? 0 : Native_Slice(res, 4, 0x7fffffff, model) ? 1 : -1;
 }
@@ -194,13 +184,13 @@ static byte Veh_ServerMotorHitN(const nativeVal_t *msl, const nativeVal_t *winne
 	if (!VEH_OWN("MotorHit", NULL, "vvv", msl, winner, looser)) {
 		return 0;
 	}
-	if (Mode_IsText(looser, "")) {
+	if (Native_IsStr(looser, "")) {
 		return 1;
 	}
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *ls = Mode_V(&t), *life = Mode_V(&t), *left = Mode_V(&t);
-	return Mode_Done(&t, Veh_Entity(looser, ls) && Mode_VObj(ls, "Life", life) && Native_Arith('-', life, Mode_I(&t, 80), left) &&
-		Mode_VSet(ls, "Life", left) && (!Mode_IsText(winner, "") || Mode_VSet(ls, "Hit_Target", looser)));
+	return Mode_Done(&t, Mode_EntitySeam(looser, ls) && Mode_VObj(ls, "Life", life) && Native_Arith('-', life, Mode_I(&t, 80), left) &&
+		Mode_VSet(ls, "Life", left) && (!Native_IsStr(winner, "") || Mode_VSet(ls, "Hit_Target", looser)));
 }
 
 /* ls.Vel = ls.Vel[i] + msl.Vel[i]*Speed1 for the three axes, Speed1 = 10000/ls.Mass */
@@ -229,22 +219,22 @@ static byte Veh_MotorHitN(const nativeVal_t *missile, const nativeVal_t *looser,
 	nativeVal_t *msl = Mode_V(&t), *ls = Mode_V(&t), *p = Mode_V(&t), *at = Mode_V(&t), *x = Mode_V(&t), *rnd = Mode_V(&t);
 	nativeVal_t *radius = Mode_V(&t), *part = Mode_V(&t), *sum = Mode_V(&t), *f = Mode_V(&t), *size = Mode_V(&t);
 	nativeVal_t *tm = Mode_V(&t), *z = Mode_V(&t), *pos = Mode_V(&t), *vol = Mode_V(&t), *ini = Mode_V(&t), *end = Mode_V(&t);
-	if (!Veh_Entity(missile, msl)) {
+	if (!Mode_EntitySeam(missile, msl)) {
 		return Mode_Done(&t, 0);
 	}
-	if (!Mode_IsText(looser, "")) {
-		if (!Veh_Entity(looser, ls) || !Mode_VObj(ls, "Pos", p) || !Veh_XYZ(p, at) || !Mode_VObj(ls, "VRadius", x) || !Veh_Push(ls, msl)) {
+	if (!Native_IsStr(looser, "")) {
+		if (!Mode_EntitySeam(looser, ls) || !Mode_VObj(ls, "Pos", p) || !Veh_XYZ(p, at) || !Mode_VObj(ls, "VRadius", x) || !Veh_Push(ls, msl)) {
 			return Mode_Done(&t, 0);
 		}
 	} else if (!Mode_VObj(msl, "Pos", p) || !Veh_XYZ(p, at) || !Mode_VObj(msl, "Radius", x)) {
 		return Mode_Done(&t, 0);
 	}
-	Veh_Rand(0.1, 0.2, rnd);
+	Mode_RandF(0.1, 0.2, rnd);
 	if (!Mode_VObj(msl, "Radius", radius) || !Mode_Arith('/', radius, Mode_I(&t, 80), part) || !Native_Arith('+', rnd, part, sum) ||
 		!Mode_G(VEH, "MotorExplosionScaleFactor", f) || !Mode_Arith('*', sum, f, size)) {
 		return Mode_Done(&t, 0);
 	}
-	Veh_Rand(0.8, 1.0, tm);
+	Mode_RandF(0.8, 1.0, tm);
 	Mode_Ints3(z, 0, 0, 0);
 	if (!Native_CallMod("SFX", "ShipExplosion", NULL, "vvvvii", at, z, size, tm, 0L, 0L) || !Mode_VObj(msl, "Pos", pos) ||
 		!Mode_G(VEH, "MotorExplosionSoundVol", vol) || !Mode_G(VEH, "MotorExplosionSoundAttIni", ini) ||
@@ -279,7 +269,7 @@ static byte Veh_ModelFile(modeVals_t *t, const char *dir, const nativeVal_t *mod
 static byte Veh_SetUpDumbMotorN(const nativeVal_t *name, const nativeVal_t *model, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *l = Mode_V(&t), *file = Mode_V(&t);
-	if (!Veh_Entity(name, l) || !Veh_ModelFile(&t, "Models/Vehicles/Engines/", model, file) || !Mode_VModel(l, file) ||
+	if (!Mode_EntitySeam(name, l) || !Veh_ModelFile(&t, "Models/Vehicles/Engines/", model, file) || !Mode_VModel(l, file) ||
 		!LvN_SetI(l, "Radius", 100) || !LvN_SetI(l, "TopRadius", 100) || !LvN_SetI(l, "RadiusGrow", 0) ||
 		!Veh_SetFX(l, "DumbMotor") || !Veh_MotorLoop(l)) {
 		return Mode_Done(&t, 0);
@@ -292,7 +282,7 @@ static byte Veh_SetUpDumbMotorN(const nativeVal_t *name, const nativeVal_t *mode
 static byte Veh_DumbShipHitN(const nativeVal_t *missile, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *msl = Mode_V(&t), *pos = Mode_V(&t), *vel = Mode_V(&t), *lim = Mode_V(&t), *at = Mode_V(&t);
-	if (!Mode_Import("SVec") || !Veh_Entity(missile, msl) || !Mode_VObj(msl, "Pos", pos) || !Mode_VObj(msl, "Vel", vel) ||
+	if (!Mode_Import("SVec") || !Mode_EntitySeam(missile, msl) || !Mode_VObj(msl, "Pos", pos) || !Mode_VObj(msl, "Vel", vel) ||
 		!Veh_Limit(vel, lim) || !Veh_Jitter(pos, at) || !Veh_Boom(at, lim, msl, "Radius", 2.8, 3.0, 250, 1.8, 2.1, 1, at, "ShipXplode")) {
 		return Mode_Done(&t, 0);
 	}
@@ -339,12 +329,12 @@ static byte Veh_Hull(const nativeVal_t *v, const nativeVal_t *name, const native
 		!LvN_ModGet("Scrap", "Rand", rand) || !Veh_Apply(rand, hull, life) || !Mode_VSet(l, "LifeTime", life)) {
 		return Mode_Done(&t, 0);
 	}
-	Veh_Rand(0.45, 0.65, r);
+	Mode_RandF(0.45, 0.65, r);
 	if (!Mode_Arith('*', speed, r, sp) || !Mode_VSet(l, "Speed", sp) || !LvN_SetS(l, "Type", "Fall") ||
 		!LvN_SetS(l, "HitType", "Hit") || !LvN_Item(model, 0, first)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Mode_IsText(first, "T")) {
+	if (Native_IsStr(first, "T")) {
 		if (!Mode_Import("Traffic") || !LvN_ModGet("Traffic", "Path", path) || !Mode_Cat(&t, file, 3, path, model, Mode_S(&t, ".m3d"))) {
 			return Mode_Done(&t, 0);
 		}
@@ -364,7 +354,7 @@ static byte Veh_OnClientDeathN(const nativeVal_t *looser) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *v = Mode_V(&t), *usr = Mode_V(&t), *pos = Mode_V(&t), *vel = Mode_V(&t), *ang = Mode_V(&t), *speed = Mode_V(&t);
 	nativeVal_t *model = Mode_V(&t), *lim = Mode_V(&t), *a = Mode_V(&t), *b = Mode_V(&t), *inplace = Mode_V(&t);
-	if (!Mode_Import("string") || !Veh_Entity(looser, v) || !Mode_UsrHandle(usr) || !Mode_VObj(v, "Pos", pos) ||
+	if (!Mode_Import("string") || !Mode_EntitySeam(looser, v) || !Mode_UsrHandle(usr) || !Mode_VObj(v, "Pos", pos) ||
 		!Mode_VObj(v, "Vel", vel) || !Mode_VObj(v, "Ang", ang) || !Mode_VObj(v, "Speed", speed) || !Mode_VObj(v, "Model", model) ||
 		!Veh_Limit(vel, lim)) {
 		return Mode_Done(&t, 0);
@@ -404,7 +394,7 @@ static byte Veh_GetCoinN(const nativeVal_t *name, const nativeVal_t *coin) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *v = Mode_V(&t), *active = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t), *rad = Mode_V(&t);
 	nativeVal_t *st = Mode_V(&t);
-	if (!Veh_Entity(name, v)) {
+	if (!Mode_EntitySeam(name, v)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_True(v)) {
@@ -479,7 +469,7 @@ static byte Veh_CoinForAttacker(const nativeVal_t *v, const nativeVal_t *winner)
 	nativeVal_t *epos = Mode_V(&t), *mt = Mode_V(&t), *at = Mode_V(&t), *args = Mode_V(&t), *xyz = Mode_V(&t);
 	Mode_V(&t);
 	Mode_V(&t);
-	if (!Veh_Entity(winner, attacker)) {
+	if (!Mode_EntitySeam(winner, attacker)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_True(attacker)) {
@@ -488,7 +478,7 @@ static byte Veh_CoinForAttacker(const nativeVal_t *v, const nativeVal_t *winner)
 	if (!Mode_VObj(attacker, "EntityList", list)) {
 		return Mode_Done(&t, 0);
 	}
-	if (!Mode_IsText(list, "FightingTraffic")) {
+	if (!Native_IsStr(list, "FightingTraffic")) {
 		return Mode_Done(&t, 1);
 	}
 	if (!Mode_Import("MisItems") || !Mode_VObj(v, "Pos", pos) || !Mode_Unpack(pos, 3, xyz) || !Native_GVarGet("AtmosphereLimit", limit)) {
@@ -499,7 +489,7 @@ static byte Veh_CoinForAttacker(const nativeVal_t *v, const nativeVal_t *winner)
 		return Mode_Done(&t, 0);
 	}
 	if (high) {
-		if (!Veh_Entity(winner, e)) {
+		if (!Mode_EntitySeam(winner, e)) {
 			return Mode_Done(&t, 0);
 		}
 		if (Native_True(e)) {
@@ -534,7 +524,7 @@ static byte Veh_FirstHunter(nativeVal_t *out) {
 static byte Veh_FreeHunters(const nativeVal_t *looser, const nativeVal_t *winner) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *name = Mode_V(&t), *e = Mode_V(&t), *next = Mode_V(&t), *ename = Mode_V(&t), *target = Mode_V(&t);
-	if (!Veh_FirstHunter(name) || !Veh_Entity(name, e)) {
+	if (!Veh_FirstHunter(name) || !Mode_EntitySeam(name, e)) {
 		return Mode_Done(&t, 0);
 	}
 	while (Native_True(e)) {
@@ -550,7 +540,7 @@ static byte Veh_FreeHunters(const nativeVal_t *looser, const nativeVal_t *winner
 			return Mode_Done(&t, 0);
 		}
 		Native_Free(e);
-		if (!Veh_Entity(next, e)) {
+		if (!Mode_EntitySeam(next, e)) {
 			return Mode_Done(&t, 0);
 		}
 	}
@@ -585,14 +575,14 @@ static byte Veh_Taunt(const nativeVal_t *v, const nativeVal_t *winner) {
 	if (!Mode_VObj(v, "MPil0", mpil) || !Native_Slice(mpil, 2, 0x7fffffff, pilot)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Mode_IsText(pilot, "None") || Mode_IsText(pilot, "")) {
+	if (Native_IsStr(pilot, "None") || Native_IsStr(pilot, "")) {
 		return Mode_Done(&t, 1);
 	}
 	const nativeVal_t *head = pilot;
 	if (!Mode_Import("SLogic")) {
 		return Mode_Done(&t, 0);
 	}
-	if (Mode_IsText(pilot, "Police")) {
+	if (Native_IsStr(pilot, "Police")) {
 		Native_SetInt(num, (long)(int)Scrap_RandRange(0.0, 2.9) + 13);
 		Mode_Repr(num, rep);
 		if (!Mode_Cat(&t, text, 2, Mode_S(&t, "Generics_PoliceTaunt_"), rep)) {
@@ -626,7 +616,7 @@ static byte Veh_DeathSingle(const nativeVal_t *v, const nativeVal_t *looser, con
 	if (!Mode_VObj(v, "EntityList", list)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Mode_IsText(list, "Players")) {
+	if (Native_IsStr(list, "Players")) {
 		if (!Mode_PrintV(Mode_S(&t, "GAME OVER")) || !Native_CallMod("Parking", "SetDtritusPlate", NULL, "vi", v, 0L)) {
 			return Mode_Done(&t, 0);
 		}
@@ -687,9 +677,9 @@ static byte Veh_Motors(const nativeVal_t *v) {
 				return Mode_Done(&t, 0);
 			}
 			if (Native_True(off)) {
-				Veh_Rand(2.2, 5.2, life);
+				Mode_RandF(2.2, 5.2, life);
 			} else {
-				Veh_Rand(4.0, 4.5, life);
+				Mode_RandF(4.0, 4.5, life);
 			}
 			Native_SetEmpty(args, NV_TUPLE);
 			Native_Copy(Native_Append(args), l);
@@ -709,7 +699,7 @@ static byte Veh_Motors(const nativeVal_t *v) {
 static byte Veh_OnDeathN(const nativeVal_t *looser, const nativeVal_t *winner) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *v = Mode_V(&t), *x = Mode_V(&t), *split = Mode_V(&t), *cb = Mode_V(&t);
-	if (!Mode_Import("string") || !Mode_Import("Init") || !Mode_Import("Parking") || !Mode_Import("Speech") || !Veh_Entity(looser, v) ||
+	if (!Mode_Import("string") || !Mode_Import("Init") || !Mode_Import("Parking") || !Mode_Import("Speech") || !Mode_EntitySeam(looser, v) ||
 		!Veh_Attr(v, "Pos", x) || !Veh_Attr(v, "Ang", x) || !Veh_Attr(v, "Vel", x) || !Veh_Attr(v, "Model", x) ||
 		!VEH_OWN("OnClientDeath", NULL, "vv", looser, winner)) {
 		return Mode_Done(&t, 0);
@@ -740,7 +730,7 @@ static byte Veh_SwitchViewN(const nativeVal_t *camName, const nativeVal_t *id) {
 		(!Mode_Import("RacerScorer") || !Native_CallMod("RacerScorer", "Create", NULL, "v", id))) {
 		return Mode_Done(&t, 0);
 	}
-	if (!Veh_Entity(camName, cam) || !Mode_VObj(cam, "MainTarget", main) || !Veh_Entity(main, ply) || !Mode_VObj(cam, "Target", tg) ||
+	if (!Mode_EntitySeam(camName, cam) || !Mode_VObj(cam, "MainTarget", main) || !Mode_EntitySeam(main, ply) || !Mode_VObj(cam, "Target", tg) ||
 		!Mode_VObj(cam, "MainTarget", m)) {
 		return Mode_Done(&t, 0);
 	}
@@ -751,7 +741,7 @@ static byte Veh_SwitchViewN(const nativeVal_t *camName, const nativeVal_t *id) {
 static byte Veh_SetActiveCamN(const nativeVal_t *plyName, const nativeVal_t *camName, const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *cam = Mode_V(&t), *ply = Mode_V(&t), *cname = Mode_V(&t), *pname = Mode_V(&t);
-	return Mode_Done(&t, Veh_Entity(camName, cam) && Veh_Entity(plyName, ply) && Mode_VObj(cam, "Name", cname) &&
+	return Mode_Done(&t, Mode_EntitySeam(camName, cam) && Mode_EntitySeam(plyName, ply) && Mode_VObj(cam, "Name", cname) &&
 		Native_CallMod("Scrap", "SetCam", NULL, "vv", id, cname) && LvN_SetS(cam, "OnSwitch", "Vehicles.SwitchView") &&
 		Mode_VObj(ply, "Name", pname) && Mode_VSet(cam, "MainTarget", pname) && Veh_Attr(ply, "Name", pname) &&
 		Mode_VSet(cam, "Target", pname) && LvN_SetI(cam, "FreeCam", 0));
@@ -809,7 +799,7 @@ static byte Veh_ReSpawnShipN(const nativeVal_t *name) {
 		{ "FireDelayTime", 1 }, { "FireStamp", 0 }, { "CMStamp", 0 }, { "WeapA06", 1 }, { "AcWeap", 6 } };
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *v = Mode_V(&t), *flags = Mode_V(&t), *f0 = Mode_V(&t), *head = Mode_V(&t), *life = Mode_V(&t);
-	if (!Mode_Import("string") || !Mode_Import("Init") || !Mode_Import("Parking") || !Veh_Entity(name, v) || !Mode_NetFlags(flags) ||
+	if (!Mode_Import("string") || !Mode_Import("Init") || !Mode_Import("Parking") || !Mode_EntitySeam(name, v) || !Mode_NetFlags(flags) ||
 		!LvN_Item(flags, 0, f0)) {
 		return Mode_Done(&t, 0);
 	}
@@ -818,7 +808,7 @@ static byte Veh_ReSpawnShipN(const nativeVal_t *name) {
 		if (!Native_Slice(name, 0, 3, head)) {
 			return Mode_Done(&t, 0);
 		}
-		client = Mode_IsText(head, "net");
+		client = Native_IsStr(head, "net");
 	}
 	if (client) {
 		if (!LvN_SetS(v, "OnDeath", "Vehicles.OnClientDeath")) {
@@ -845,7 +835,7 @@ static byte Veh_SetPropertiesN(const nativeVal_t *a, const nativeVal_t *local, n
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *v = Mode_V(&t), *flags = Mode_V(&t), *f0 = Mode_V(&t), *cbs = Mode_V(&t), *entry = Mode_V(&t);
 	nativeVal_t *fn = Mode_V(&t), *valid = Mode_V(&t), *msg = Mode_V(&t);
-	if (!Mode_Import("ShipMaker") || !Mode_Import("OutSound") || !Veh_Entity(name, v) || !LvN_SetI(v, "isInit", 1) ||
+	if (!Mode_Import("ShipMaker") || !Mode_Import("OutSound") || !Mode_EntitySeam(name, v) || !LvN_SetI(v, "isInit", 1) ||
 		!LvN_SetF(v, "FxEngineTime", 0.5) || !LvN_SetF(v, "FxBoostEngineTime", 0.25) || !Mode_NetFlags(flags)) {
 		return Mode_Done(&t, 0);
 	}

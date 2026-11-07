@@ -358,13 +358,7 @@ PyMethodDef g_CommercialMapMethods[] = {
 #include "CommercialRaces.inc"
 
 /* InitStatus(LevelPath), Init(LevelPath): nothing */
-static byte MapRace_Pass(const nativeVal_t *a, nativeVal_t *out) {
-	(void)a;
-	(void)out;
-	return 1;
-}
-
-LV_FN(MapRace, PassA, 1, MapRace_Pass)
+LV_FN(MapRace, PassA, 1, LvN_Pass)
 
 #define RACE(k) \
 	static PyObject *MapRace_Race##k(PyObject *self, PyObject *args) { \

@@ -166,7 +166,7 @@ static byte Npc_SaveIs(const char *name, const char *text) {
 /* v is one of the texts (NULL ends them) */
 static byte Npc_In(const nativeVal_t *v, const char *const *texts) {
 	for (; *texts; texts++) {
-		if (Mode_IsText(v, *texts)) {
+		if (Native_IsStr(v, *texts)) {
 			return 1;
 		}
 	}
@@ -187,14 +187,6 @@ static int Npc_Count(const nativeVal_t *v) {
 static byte Npc_Attr(const nativeVal_t *h, const char *var, nativeVal_t *slot) {
 	Native_Free(slot);
 	return Mode_VObj(h, var, slot);
-}
-
-/* (a, b, c) of three values */
-static void Npc_Tuple3(nativeVal_t *out, const nativeVal_t *a, const nativeVal_t *b, const nativeVal_t *c) {
-	Native_SetEmpty(out, NV_TUPLE);
-	Native_Copy(Native_Append(out), a);
-	Native_Copy(Native_Append(out), b);
-	Native_Copy(Native_Append(out), c);
 }
 
 /* lst.insert(0, v) of a list of the function */
@@ -290,7 +282,7 @@ static byte Npc_AddNPCPos(const nativeVal_t *dummy, const nativeVal_t *mission, 
 		Mode_VSet(csp, "Pos", d1) && Native_Slice(d0, starts, INT_MAX, name) && Mode_VSet(csp, "Name", name) &&
 		Mode_Item(dummy, 2, d2) && Mode_Item(d2, 1, y) && Mode_Arith('+', y, Mode_I(&t, 180), yt);
 	if (ok) {
-		Npc_Tuple3(ang, Mode_I(&t, 0), yt, Mode_I(&t, 0));
+		Mode_Tuple3(ang, Mode_I(&t, 0), yt, Mode_I(&t, 0));
 		ok = Mode_VSet(csp, "Ang", ang) && Mode_VSet(csp, "ActCtrl", act) && Mode_VObj(csp, "Name", cur);
 	}
 	int has = ok ? Mode_HasKey(NPC, "CharRes", 1, cur) : -1;
@@ -345,7 +337,7 @@ static byte Npc_ReposOne(byte police) {
 			Native_Slice(d0, 19, INT_MAX, tail) && Mode_Cat(&t, name, 2, gear, tail) && Mode_Item(dummy, 1, d1) &&
 			Mode_Item(dummy, 2, d2) && Mode_Item(dummy, 3, d3);
 		if (ok) {
-			Npc_Tuple3(dummy2, name, d1, d2);
+			Mode_Tuple3(dummy2, name, d1, d2);
 			Native_Copy(Native_Append(dummy2), d3);
 			ok = Npc_AddNPCPos(dummy2, NULL, csp2) && LvN_SetI(csp2, "repos", 1);
 		}
@@ -363,7 +355,7 @@ static byte Npc_CreateReposChars(void) {
 		nativeVal_t *type = Mode_V(&t), *num = Mode_V(&t), *pat = Mode_V(&t);
 		long count = 0;
 		byte ok = Native_SeqItem(keys, i, type) && Mode_Sub(repos, type, num);
-		byte police = Mode_IsText(type, "Police");
+		byte police = Native_IsStr(type, "Police");
 		ok = ok && Mode_Cat(&t, pat, 3, Mode_S(&t, "DM_NPC_Repos_"), type, Mode_S(&t, "_*")) && Npc_DummyStart(pat, 1) &&
 			Npc_Range(num, &count);
 		for (long j = 0; ok && j < count; j++) {
@@ -443,14 +435,14 @@ static byte Npc_CharNPCInclude(const nativeVal_t *name) {
 		return Mode_Done(&t, 0);
 	}
 	byte ai = 0;
-	if (Mode_IsText(act, "Nurse")) {
+	if (Native_IsStr(act, "Nurse")) {
 		ai = 1;
 		Native_SetStr(list, "Nurse");
 	} else if (Npc_In(act, gate)) {
 		Native_SetStr(list, "GateKeeper");
 	} else if (Npc_In(act, gen)) {
 		ai = 1;
-		if (Mode_IsText(act, "Bishop") || Mode_IsText(act, "Messenger")) {
+		if (Native_IsStr(act, "Bishop") || Native_IsStr(act, "Messenger")) {
 			Native_Copy(list, act);
 		} else {
 			Native_SetStr(list, "GenChars");
@@ -519,7 +511,7 @@ static byte Npc_CallCreateChar(const nativeVal_t *name, const nativeVal_t *x, co
 	nativeVal_t csp = { 0 }, pos = { 0 };
 	byte ok = Npc_Res(name, &csp);
 	if (ok) {
-		Npc_Tuple3(&pos, x, y, z);
+		Mode_Tuple3(&pos, x, y, z);
 		ok = Mode_VSet(&csp, "Pos", &pos) && Npc_CreateChar(&csp, NULL, NULL);
 	}
 	Native_Free(&pos);
@@ -540,7 +532,7 @@ static byte Npc_Init(void) {
 		int skip = Native_SeqItem(keys, i, k) && Mode_Sub(res, k, cls) && Mode_VObj(cls, "repos", repos) ?
 			Native_True(repos) : -1;
 		if (skip > 0) {
-			skip = Mode_VObj(cls, "ActCtrl", act) ? Mode_IsText(act, "Gear") : -1;
+			skip = Mode_VObj(cls, "ActCtrl", act) ? Native_IsStr(act, "Gear") : -1;
 		}
 		if (skip == 0) {
 			Native_Free(act);
@@ -581,7 +573,7 @@ static byte Npc_Respawn(const nativeVal_t *cspArg) {
 		!Mode_VObj(csp, "ActCtrl", act)) {
 		return Mode_Done(&t, 0);
 	}
-	int swap = Mode_IsText(act, "Gear");
+	int swap = Native_IsStr(act, "Gear");
 	if (swap) {
 		swap = Mode_VObj(csp, "repos", repos) ? Mode_CmpI(repos, "==", 1) : -1;
 	}
@@ -773,8 +765,8 @@ static byte Npc_ClassifyOptions(const nativeVal_t *type, nativeVal_t *out) {
 		if (c < 0) {
 			return Mode_Done(&t, 0);
 		}
-		const char *next = Mode_IsText(act, "Prologue") ? "1stMurder" : Mode_IsText(act, "1stMurder") ? "2ndMurder" :
-			Mode_IsText(act, "2ndMurder") ? "3rdMurder" : Mode_IsText(act, "3rdMurder") || Mode_IsText(act, "Epilogue") ? "" :
+		const char *next = Native_IsStr(act, "Prologue") ? "1stMurder" : Native_IsStr(act, "1stMurder") ? "2ndMurder" :
+			Native_IsStr(act, "2ndMurder") ? "3rdMurder" : Native_IsStr(act, "3rdMurder") || Native_IsStr(act, "Epilogue") ? "" :
 			NULL;
 		if (c || !next) {
 			break;
@@ -829,7 +821,7 @@ static byte Npc_ClassifyOptions(const nativeVal_t *type, nativeVal_t *out) {
 	}
 	int d = Mode_UsrHandle(usr) ? Native_True(usr) : -1;
 	if (d > 0) {
-		d = Mode_VObj(usr, "ActCtrl", ua) ? !Mode_IsText(ua, "Dtritus") && Npc_In(type, disguised) : -1;
+		d = Mode_VObj(usr, "ActCtrl", ua) ? !Native_IsStr(ua, "Dtritus") && Npc_In(type, disguised) : -1;
 	}
 	if (d > 0) {
 		d = Mode_Cat(&t, s, 3, Mode_S(&t, "Generics_Disguise"), type, Mode_S(&t, "_1")) ? 0 : -1;
@@ -840,7 +832,7 @@ static byte Npc_ClassifyOptions(const nativeVal_t *type, nativeVal_t *out) {
 	if (d < 0) {
 		return Mode_Done(&t, 0);
 	}
-	if (!Mode_IsText(type, "Bishop") || Npc_SaveIs("Player.InfiniteLives", "0")) {
+	if (!Native_IsStr(type, "Bishop") || Npc_SaveIs("Player.InfiniteLives", "0")) {
 		Native_Free(key);
 		int c = Mode_Cat(&t, key, 4, Mode_S(&t, "Generics_Special"), type, Mode_S(&t, "_"), Mode_S(&t, "1Opt")) ?
 			Npc_Entries(key, special) : -1;
@@ -945,13 +937,13 @@ static byte Npc_GenericNPCSpeech(const nativeVal_t *usr, const nativeVal_t *chna
 		return Mode_Done(&t, 0);
 	}
 	const nativeVal_t *type = Npc_In(type0, mercs) ? Mode_S(&t, "Mercs") : type0;
-	if (Mode_IsText(opt, "Talk")) {
-		int betty = Npc_CheckActualEntity(chname) && Mode_UsrHandle(u) ? Mode_IsText(type, "Betty") : -1;
+	if (Native_IsStr(opt, "Talk")) {
+		int betty = Npc_CheckActualEntity(chname) && Mode_UsrHandle(u) ? Native_IsStr(type, "Betty") : -1;
 		if (betty > 0) {
 			betty = Native_True(u);
 		}
 		if (betty > 0) {
-			betty = Mode_VObj(u, "ActCtrl", ua) ? !Mode_IsText(ua, "Dtritus") : -1;
+			betty = Mode_VObj(u, "ActCtrl", ua) ? !Native_IsStr(ua, "Dtritus") : -1;
 		}
 		if (betty > 0) {
 			return Mode_Done(&t, Mode_Spch("Generics_Betty_InitMsg2", "Generics_Betty_InitAns4", NULL));
@@ -969,7 +961,7 @@ static byte Npc_GenericNPCSpeech(const nativeVal_t *usr, const nativeVal_t *chna
 		}
 		int n = 0;
 		if (Npc_SaveIs("GameAct", "Epilogue")) {
-			if (Mode_IsText(type, "Bishop") || Mode_IsText(type, "Mercs")) {
+			if (Native_IsStr(type, "Bishop") || Native_IsStr(type, "Mercs")) {
 				n = Mode_Cat(&t, key, 4, Mode_S(&t, "Generics_Special"), type, Mode_S(&t, "_"), Mode_S(&t, "1Opt")) &&
 					Native_CallMod("Scrap", "GetLangEntries", special, "v", key) && Mode_Item(special, 0, first) ? 0 : -1;
 				if (!n) {
@@ -985,7 +977,7 @@ static byte Npc_GenericNPCSpeech(const nativeVal_t *usr, const nativeVal_t *chna
 		if (n < 0) {
 			return Mode_Done(&t, 0);
 		}
-		if (Npc_SaveIs("Player.InfiniteLives", "0") && (!Mode_IsText(type, "Mercs") || !Npc_MercsHired())) {
+		if (Npc_SaveIs("Player.InfiniteLives", "0") && (!Native_IsStr(type, "Mercs") || !Npc_MercsHired())) {
 			return Mode_Done(&t, Npc_AddChallenge(ch, usr, n));
 		}
 		return Mode_Done(&t, 1);
@@ -998,17 +990,17 @@ static byte Npc_GenericNPCSpeech(const nativeVal_t *usr, const nativeVal_t *chna
 		return Mode_Done(&t, Mode_Cat(&t, m, 2, opt, Mode_S(&t, "Msg")) && Mode_Cat(&t, a, 2, opt, Mode_S(&t, "Ans")) &&
 			Npc_PlayOption(opt, m, a, usr, ch));
 	}
-	if (Mode_IsText(opt, "ChallengeRaceStdOpt0") || Mode_IsText(opt, "ChallengeCombatStdOpt0")) {
-		byte race = Mode_IsText(opt, "ChallengeRaceStdOpt0");
+	if (Native_IsStr(opt, "ChallengeRaceStdOpt0") || Native_IsStr(opt, "ChallengeCombatStdOpt0")) {
+		byte race = Native_IsStr(opt, "ChallengeRaceStdOpt0");
 		const char *pre = race ? "ChallengeRace" : "ChallengeCombat";
 		int said = Npc_ChallengeSpch(pre, type, "Opt1", pre, "Msg1");
 		return Mode_Done(&t, said >= 0 && (!said || Npc_StartChallenge(race ? "Race" : "Combat", type0, ch)));
 	}
-	if (Mode_IsText(opt, "ChallengeRaceStdOpt1") || Mode_IsText(opt, "ChallengeRaceStdOpt2") ||
-		Mode_IsText(opt, "ChallengeRaceStdOpt3")) {
+	if (Native_IsStr(opt, "ChallengeRaceStdOpt1") || Native_IsStr(opt, "ChallengeRaceStdOpt2") ||
+		Native_IsStr(opt, "ChallengeRaceStdOpt3")) {
 		return Mode_Done(&t, Native_CallMod("Challenge", "OnChallengeOpt", NULL, "iv", (long)(Native_Text(opt)[19] - '0'), ch));
 	}
-	if (Mode_IsText(opt, "ChallengeRaceStdOpt4")) {
+	if (Native_IsStr(opt, "ChallengeRaceStdOpt4")) {
 		int said = Npc_ChallengeSpch("ChallengeRaceStdOpt2", type, NULL, "ChallengeRace", "Msg3");
 		int n = said > 0 ? Npc_ShowOptions() : 0;
 		return Mode_Done(&t, said >= 0 && n >= 0 && (!said || Npc_AddChallenge(ch, usr, n)));

@@ -1626,12 +1626,6 @@ PyMethodDef g_GamblinDenArrangeBankersCombatMethods[] = {
 
 /* ---- Mission_IgorFirstContact: the crazy gambler, Igor, then the three mercenaries ---- */
 
-static byte First_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
-	(void)a;
-	(void)out;
-	return 1;
-}
-
 static byte First_InitC(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
@@ -1750,7 +1744,7 @@ static byte First_SetNextMissionC(const nativeVal_t *a, nativeVal_t *out) {
 		LvN_Next("Mission_StupidMercAgain", "Scrapyard", "Mission_GetMercShipPlans_MissionText2");
 }
 
-LV_FN(First, InitStatus, 1, First_InitStatusC)
+LV_FN(First, InitStatus, 1, LvN_Pass)
 LV_FN(First, Init, 1, First_InitC)
 LV_FN(First, TalkToCrazyGambler, 0, First_TalkToCrazyGamblerC)
 LV_FN(First, CrazyGamblerSpeech, 4, First_CrazyGamblerSpeechC)
