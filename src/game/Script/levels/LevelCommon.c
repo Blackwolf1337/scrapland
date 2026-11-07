@@ -480,8 +480,8 @@ PyObject *Lv_ProfileFunc(PyObject *args, const char *module, const char *const *
 }
 
 void Lv_Saves(scriptFrame_t *f, const char *const *pairs) {
-	for (; *pairs && !f->failed; pairs += 2) {
-		SaveVar_Set(pairs[0], pairs[1]);
+	if (!f->failed) {
+		Mode_Saves(pairs);
 	}
 }
 
@@ -975,9 +975,7 @@ static byte Probes_SetNextMission(const nativeVal_t *a, const lvProbes_t *p, nat
 	Native_Free(&l);
 	Native_Free(&map);
 	if (ok && p->saves) {
-		for (const char *const *s = p->saves; *s; s += 2) {
-			SaveVar_Set(s[0], s[1]);
-		}
+		Mode_Saves(p->saves);
 	}
 	return ok && LvN_Next(p->nextLib, p->nextMap, p->nextDesc) && LV_CALL("SaveGame", "QWayPoint", NULL, "");
 }
