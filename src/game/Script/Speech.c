@@ -7,313 +7,440 @@
  *
  * The state of a speech stays in the variables of the module (PlayerName, NPCName, OnEndOfSpeech, the colours,
  * AnsAnima, TalkNI and so on), because the character scripts and the missions read and set them. The code works on
- * the entity handles like the script, so the values it passes on keep their Python types, and it stops at the first
- * error like the script.
+ * the entity handles like the script, so the values it passes on keep their types, and it stops at the first error
+ * like the script.
+ *
+ * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the variables of the
+ * module where the script reads them and write them back at once, the lists TalkNI and RemoteCom changed in place
+ * (OBJLIB 5: the missions, the levels and the cases read and set them). The functions call each other in C as the
+ * port did; the scheduled ones, the hooks (OnEndOfSpeech, PlayerAnsCallback, OnOutOfRange, the SpeechRoutines) and
+ * the functions RunNI calls (OnSpch, OnObjSpch) are the values of the module. The entities are handle values; the
+ * voices, SScorer.SetSpeechText, SetSpeechCallback, SetHeadMonitor, CancelSpeech, SetMsgText and Set, Scrap.Set,
+ * GetEntity, UsrEntity, SetLockAlarm, GetAlarm, DeleteScheduledFuncs and the scheduler go through their seams
+ * (OBJLIB 7: the cases record most of them); SVec.GetRotAng, NormAng, Scrap.GetLangEntries, string.split and find
+ * stay by name (OBJLIB 3, 7).
  */
 #include <string.h>
 
-#include "scrap/pyentity.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
-#include "scrap/timer.h"
+#include "scrap/scriptmodes.h"
+#include "game/Script/levels/Levels.h"
 
-/* a variable of the module as a function of the script reads it (a new reference, NULL with the error set: a
- * NameError with the name when it is missing, TalkNI before NISpeech) */
-static PyObject *Sp_Get(const char *var) {
-	return Script_Global("Speech", var);
+#define SP "Speech"
+
+/* ---- the variables of the module ---- */
+
+/* a variable of the module as a function of the script reads it (a NameError with the name when it is missing) */
+static byte Sp_G(const char *var, nativeVal_t *out) {
+	return Mode_G(SP, var, out);
 }
 
-/* Scrap.GetEntity(<module variable var>): a handle or None (a new reference, NULL with the error set) */
-static PyObject *Sp_Entity(const char *var) {
-	PyObject *name = Sp_Get(var);
-	PyObject *e = name ? Script_Ask("Scrap", "GetEntity", "(O)", name) : NULL;
-	Py_XDECREF(name);
-	return e;
+/* a variable of the module = v as the port set it (Script_SetVar: an error is dropped) */
+static void Sp_Set(const char *var, const nativeVal_t *v) {
+	if (!Mode_Put(SP, var, NULL, v)) {
+		PyErr_Clear();
+	}
 }
 
-/* Scrap.GetLangStr(key) (a new reference) */
-static PyObject *Sp_Lang(const char *key) {
-	return Script_Ask("Scrap", "GetLangStr", "(s)", key);
+static void Sp_SetS(const char *var, const char *s) {
+	nativeVal_t v;
+	Native_SetText(&v, s, (int)strlen(s));
+	Sp_Set(var, &v);
+	Native_Free(&v);
 }
 
-/* the entity of camera 0 (a new reference) */
-static PyObject *Sp_Cam(void) {
-	PyObject *name = Script_Ask("Scrap", "GetCam", "(i)", 0);
-	PyObject *cam = name ? Script_Ask("Scrap", "GetEntity", "(O)", name) : NULL;
-	Py_XDECREF(name);
-	return cam;
+static void Sp_SetI(const char *var, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	Sp_Set(var, &v);
 }
 
-/* Scrap.Get("VoicePath") + text, opened on a voice channel */
-static byte Sp_OpenVoice(PyObject *text, int channel) {
-	PyObject *path = Script_Ask("Scrap", "Get", "(s)", "VoicePath");
-	PyObject *file = path ? PySequence_Concat(path, text) : NULL;
-	byte ok = file && Script_Try("SSound", "OpenVoice", "(Oi)", file, channel);
-	Py_XDECREF(path);
-	Py_XDECREF(file);
+/* module.var as Script_GetInt reads it: an int, a float cut, else def (no error) */
+static long Sp_Int(const char *module, const char *var, long def) {
+	nativeVal_t v = { 0 };
+	long r = def;
+	if (!LvN_ModGet(module, var, &v)) {
+		PyErr_Clear();
+	} else if (v.type == NV_INT) {
+		r = (int)v.i;
+	} else if (v.type == NV_FLOAT) {
+		r = (int)v.f;
+	}
+	Native_Free(&v);
+	return r;
+}
+
+/* a global of the module when it is there (globals().get of the script): 1 with *out, else 0 (no error) */
+static byte Sp_Has(const char *var, nativeVal_t *out) {
+	if (Sp_G(var, out)) {
+		return 1;
+	}
+	PyErr_Clear();
+	return 0;
+}
+
+/* ---- values ---- */
+
+/* `v` == n of the script (PyObject_Compare): -1, 0, 1 */
+static int Sp_NumCmp(const nativeVal_t *v, long n) {
+	nativeVal_t b;
+	Native_SetInt(&b, n);
+	return Native_Compare(v, &b);
+}
+
+/* a + text, text + a of the script */
+static byte Sp_Cat(const nativeVal_t *a, const char *text, nativeVal_t *out) {
+	nativeVal_t t;
+	Native_SetText(&t, text, (int)strlen(text));
+	byte ok = Native_Arith('+', a, &t, out);
+	Native_Free(&t);
 	return ok;
 }
 
-static byte Sp_OpenVoiceStr(const char *text, int channel) {
-	PyObject *t = PyString_FromString(text);
-	byte ok = t && Sp_OpenVoice(t, channel);
-	Py_XDECREF(t);
+static byte Sp_CatS(const char *text, const nativeVal_t *b, nativeVal_t *out) {
+	nativeVal_t t;
+	Native_SetText(&t, text, (int)strlen(text));
+	byte ok = Native_Arith('+', &t, b, out);
+	Native_Free(&t);
+	return ok;
+}
+
+/* v[i] as PySequence_GetItem takes it (a dict is no sequence; an NV_OBJ the Python way) */
+static byte Sp_Item(const nativeVal_t *v, long i, nativeVal_t *out) {
+	nativeVal_t tmp;
+	Native_SetNone(out);
+	if (v->type == NV_OBJ) {
+		PyObject *r = PySequence_GetItem(v->obj, (int)i);
+		if (!r) {
+			return 0;
+		}
+		Native_Arg(r, out);
+		Py_DECREF(r);
+		return 1;
+	}
+	Native_SetNone(&tmp);
+	const nativeVal_t *x = Native_GetItem(v, i, 0, &tmp);
+	if (x) {
+		Native_Copy(out, x);
+	}
+	Native_Free(&tmp);
+	return x != NULL;
+}
+
+/* e.var == text (a text variable): 1, 0, -1 with the error (Script_HIs) */
+static int Sp_HIs(const nativeVal_t *e, const char *var, const char *text) {
+	nativeVal_t v = { 0 };
+	int r = Mode_VObj(e, var, &v) ? Mode_IsText(&v, text) : -1;
+	Native_Free(&v);
+	return r;
+}
+
+/* e.var[0:len(prefix)] == prefix (Script_HPrefix) */
+static int Sp_HPrefix(const nativeVal_t *e, const char *var, const char *prefix) {
+	nativeVal_t v = { 0 }, head = { 0 };
+	int r = Mode_VObj(e, var, &v) && Native_Slice(&v, 0, (long)strlen(prefix), &head) ? Mode_IsText(&head, prefix) : -1;
+	Native_Free(&v);
+	Native_Free(&head);
+	return r;
+}
+
+/* ---- the engine ---- */
+
+/* Scrap.GetEntity(<module variable var>): a handle or None */
+static byte Sp_Entity(const char *var, nativeVal_t *out) {
+	nativeVal_t name = { 0 };
+	Native_SetNone(out);
+	byte ok = Sp_G(var, &name) && Mode_EntitySeam(&name, out);
+	Native_Free(&name);
+	return ok;
+}
+
+/* the entity of camera 0 */
+static byte Sp_Cam(nativeVal_t *out) {
+	nativeVal_t name;
+	Mode_CamName(0, &name);
+	byte ok = Mode_EntitySeam(&name, out);
+	Native_Free(&name);
+	return ok;
+}
+
+/* Scrap.UsrEntity(0) */
+static byte Sp_Usr(nativeVal_t *out) {
+	Native_SetNone(out);
+	return Mode_UsrHandle(out);
+}
+
+/* SScorer.SetMsgText and the speeches: Scrap.GetLangStr(key) of a C text */
+static void Sp_Lang(const char *key, nativeVal_t *out) {
+	Mode_Lang(key, out);
+}
+
+/* Scrap.Get("VoicePath") + text, opened on a voice channel */
+static byte Sp_OpenVoice(const nativeVal_t *text, int channel) {
+	nativeVal_t path = { 0 }, file = { 0 }, ch;
+	Native_SetInt(&ch, channel);
+	byte ok = Native_GVarGet("VoicePath", &path) && Native_Arith('+', &path, text, &file) && Mode_OpenVoice(&file, &ch, NULL);
+	Native_Free(&path);
+	Native_Free(&file);
+	return ok;
+}
+
+static byte Sp_OpenVoiceS(const char *text, int channel) {
+	nativeVal_t t;
+	Native_SetText(&t, text, (int)strlen(text));
+	byte ok = Sp_OpenVoice(&t, channel);
+	Native_Free(&t);
 	return ok;
 }
 
 /* SScorer.SetSpeechText(text, time, colour[0], colour[1], colour[2]) with a colour variable of the module */
-static byte Sp_SpeechText(PyObject *text, PyObject *time, const char *colour) {
-	PyObject *c = Sp_Get(colour);
-	PyObject *r = c ? PySequence_GetItem(c, 0) : NULL, *g = r ? PySequence_GetItem(c, 1) : NULL;
-	PyObject *b = g ? PySequence_GetItem(c, 2) : NULL;
-	byte ok = b && Script_Try("SScorer", "SetSpeechText", "(OOOOO)", text, time, r, g, b);
-	Py_XDECREF(c);
-	Py_XDECREF(r);
-	Py_XDECREF(g);
-	Py_XDECREF(b);
+static byte Sp_SpeechText(const nativeVal_t *text, const nativeVal_t *time, const char *colour) {
+	nativeVal_t c = { 0 }, r = { 0 }, g = { 0 }, b = { 0 };
+	byte ok = Sp_G(colour, &c) && Sp_Item(&c, 0, &r) && Sp_Item(&c, 1, &g) && Sp_Item(&c, 2, &b) &&
+		Mode_SpeechText(text, time, &r, &g, &b);
+	Native_Free(&c);
+	Native_Free(&r);
+	Native_Free(&g);
+	Native_Free(&b);
 	return ok;
 }
 
-/* a + text: string concatenation as a script does it (a new reference, NULL with the error set) */
-static PyObject *Sp_Cat(PyObject *a, const char *text) {
-	return a ? Script_PlusS(Script_Ref(a), text) : NULL;
-}
-
-/* `if handle:` of a script */
-static byte Sp_True(PyObject *o) {
-	return o && PyObject_IsTrue(o) > 0;
-}
-
-/* SVec.GetRotAng(SVec.Sub(me.Pos, ch.Pos)): the angles from ch to me (a new reference) */
-static PyObject *Sp_RotAng(PyObject *me, PyObject *ch) {
-	PyObject *a = Script_GetAttr(me, "Pos"), *b = a ? Script_GetAttr(ch, "Pos") : NULL;
-	PyObject *d = b ? Script_Ask("SVec", "Sub", "(OO)", a, b) : NULL;
-	PyObject *v = d ? Script_Ask("SVec", "GetRotAng", "(O)", d) : NULL;
-	Py_XDECREF(a);
-	Py_XDECREF(b);
-	Py_XDECREF(d);
-	return v;
+/* SVec.GetRotAng(SVec.Sub(me.Pos, ch.Pos)): the angles from ch to me (OBJLIB 7: GetRotAng by name) */
+static byte Sp_RotAng(const nativeVal_t *me, const nativeVal_t *ch, nativeVal_t *out) {
+	nativeVal_t a = { 0 }, b = { 0 }, d = { 0 };
+	Native_SetNone(out);
+	byte ok = Mode_VObj(me, "Pos", &a) && Mode_VObj(ch, "Pos", &b) && Mode_VecSub(&a, &b, &d) &&
+		Native_CallMod("SVec", "GetRotAng", out, "v", &d);
+	Native_Free(&a);
+	Native_Free(&b);
+	Native_Free(&d);
+	return ok;
 }
 
 /* (vang[0], vang[1] - turn, 0): the view of the player turned from the character */
-static PyObject *Sp_Turned(PyObject *vang, long turn) {
-	PyObject *x = PySequence_GetItem(vang, 0), *y = x ? PySequence_GetItem(vang, 1) : NULL;
-	PyObject *t = y ? PyInt_FromLong(turn) : NULL;
-	PyObject *yt = t ? PyNumber_Subtract(y, t) : NULL;
-	PyObject *r = yt ? Py_BuildValue("(OOi)", x, yt, 0) : NULL;
-	Py_XDECREF(x);
-	Py_XDECREF(y);
-	Py_XDECREF(t);
-	Py_XDECREF(yt);
-	return r;
+static byte Sp_Turned(const nativeVal_t *vang, long turn, nativeVal_t *out) {
+	nativeVal_t x = { 0 }, y = { 0 }, yt = { 0 }, t;
+	Native_SetInt(&t, turn);
+	Native_SetNone(out);
+	byte ok = Sp_Item(vang, 0, &x) && Sp_Item(vang, 1, &y) && Native_Arith('-', &y, &t, &yt);
+	if (ok) {
+		Native_SetEmpty(out, NV_TUPLE);
+		Native_Copy(Native_Append(out), &x);
+		Native_Copy(Native_Append(out), &yt);
+		Native_SetInt(Native_Append(out), 0);
+	}
+	Native_Free(&x);
+	Native_Free(&y);
+	Native_Free(&yt);
+	return ok;
 }
+
+/* e.var = "text", = i, = d (the handle values of the script) */
+#define Sp_HSetS LvN_SetS
+#define Sp_HSetI LvN_SetI
+#define Sp_HSetF LvN_SetF
 
 /* ---- the voices ---- */
 
 /* ScheduledVoiceCallback(channel, rtime): the voice starts; the talk time is its rest plus rtime (0.2 at least) */
-static PyObject *Speech_ScheduledVoiceCallback(PyObject *self, PyObject *args) {
-	PyObject *channel, *rtime;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &channel, &rtime) || !Script_Try("SSound", "PlayVoice", "(O)", channel)) {
-		return NULL;
-	}
-	PyObject *full = Script_Ask("Scrap", "Get", "(s)", "FullTalkTime");
-	PyObject *rest = full ? Script_Ask("SSound", "VoiceRemain", "(OO)", channel, full) : NULL;
-	PyObject *t = rest ? PyNumber_Add(rest, rtime) : NULL;
-	PyObject *least = t ? PyFloat_FromDouble(0.2) : NULL;
-	Py_XDECREF(full);
-	Py_XDECREF(rest);
-	if (!least) {
-		Py_XDECREF(t);
-		return NULL;
-	}
-	if (PyObject_Compare(least, t) > 0) {
-		Py_DECREF(t);
-		Py_INCREF(least);
+static byte Sp_ScheduledVoiceCallback(const nativeVal_t *channel, const nativeVal_t *rtime) {
+	nativeVal_t full = { 0 }, rest = { 0 }, t = { 0 }, least;
+	Native_SetFloat(&least, 0.2);
+	byte ok = Mode_PlayVoice(channel, NULL) && Native_GVarGet("FullTalkTime", &full) && Mode_VoiceRemain(channel, &full, &rest) &&
+		Mode_Arith('+', &rest, rtime, &t);
+	if (ok && Native_Compare(&least, &t) > 0) {
+		Native_Free(&t);
 		t = least;
 	}
-	Py_DECREF(least);
-	byte ok = Script_Try("Scrap", "Set", "(sO)", "FullTalkTime", t) && Script_Try("Scrap", "Set", "(sO)", "RemainTalkTime", t);
-	Py_DECREF(t);
-	return ok ? Py_ReturnNone() : NULL;
+	ok = ok && Mode_GVarSet("FullTalkTime", &t) && Mode_GVarSet("RemainTalkTime", &t);
+	Native_Free(&full);
+	Native_Free(&rest);
+	Native_Free(&t);
+	return ok;
 }
 
 /* PlayVoiceScheduled(channel, stime, rtime) */
-static byte Sp_PlayVoiceScheduled(PyObject *channel, double stime, PyObject *rtime) {
-	return Script_LaterIn(stime, "Speech", "ScheduledVoiceCallback", Py_BuildValue("(OO)", channel, rtime), NULL);
+static byte Sp_PlayVoiceScheduled(const nativeVal_t *channel, double stime, const nativeVal_t *rtime) {
+	nativeVal_t a[2];
+	Native_Copy(&a[0], channel);
+	Native_Copy(&a[1], rtime);
+	byte ok = Mode_LaterIn(stime, SP, "ScheduledVoiceCallback", a, 2, NULL);
+	Native_Free(&a[0]);
+	Native_Free(&a[1]);
+	return ok;
 }
 
-/* the same with the voice delay of the module and a channel number */
-static byte Sp_PlayVoiceAfter(int channel, PyObject *rtime) {
-	PyObject *c = PyInt_FromLong(channel);
-	byte ok = c && rtime && Sp_PlayVoiceScheduled(c, Script_GetFloat("Speech", "VoiceShTime", 0.25), rtime);
-	Py_XDECREF(c);
-	Py_XDECREF(rtime);
-	return ok;
+/* the same with the voice delay of the module (Script_GetFloat of VoiceShTime, 0.25) and a channel number */
+static byte Sp_PlayVoiceAfter(int channel, const nativeVal_t *rtime) {
+	nativeVal_t c, v = { 0 };
+	double stime = 0.25;
+	Native_SetInt(&c, channel);
+	if (!LvN_ModGet(SP, "VoiceShTime", &v)) {
+		PyErr_Clear();
+	} else if (v.type == NV_FLOAT) {
+		stime = v.f;
+	} else if (v.type == NV_INT) {
+		stime = (double)v.i;
+	}
+	Native_Free(&v);
+	return Sp_PlayVoiceScheduled(&c, stime, rtime);
+}
+
+static byte Sp_PlayVoiceAfterI(int channel, long rtime) {
+	nativeVal_t r;
+	Native_SetInt(&r, rtime);
+	return Sp_PlayVoiceAfter(channel, &r);
 }
 
 /* Scrap.AddScheduledFunc(Scrap.GetTime()+stime, ScheduledVoiceCallback, (channel, rtime)) with any stime: the
  * TypeError of the addition for one that is no number */
-static PyObject *Speech_PlayVoiceScheduled(PyObject *self, PyObject *args) {
-	PyObject *channel, *stime, *rtime;
-	SF_ARGS("OOO", &channel, &stime, &rtime);
-	PyObject *t = Sf_Op(&f, Sf_Time(&f), '+', stime);
-	Sf_Schedule(&f, t, Sf_Global(&f, "Speech", "ScheduledVoiceCallback"), Sf_Build(&f, "(OO)", channel, rtime), NULL);
-	return Sf_None(&f);
+static byte Sp_PlayVoiceScheduledV(const nativeVal_t *channel, const nativeVal_t *stime, const nativeVal_t *rtime) {
+	nativeVal_t now, t = { 0 }, a[2];
+	Native_SetFloat(&now, Mode_Time());
+	if (!Mode_Arith('+', &now, stime, &t)) {
+		return 0;
+	}
+	PyObject *fn = Mode_GlobalPy(SP, "ScheduledVoiceCallback");
+	Native_Copy(&a[0], channel);
+	Native_Copy(&a[1], rtime);
+	byte ok = fn && Mode_Schedule(&t, fn, a, 2, NULL);
+	Py_XDECREF(fn);
+	Native_Free(&a[0]);
+	Native_Free(&a[1]);
+	Native_Free(&t);
+	return ok;
 }
 
 /* ---- the end of a speech ---- */
 
 /* CallEndOfSpeech(): the voices stop, the alarm unlocks, OnEndOfSpeech(*OnEndOfSpeechParams) runs once */
-static PyObject *Speech_CallEndOfSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+static byte Sp_CallEndOfSpeech(void) {
+	nativeVal_t ch, end = { 0 }, params = { 0 }, none, empty;
 	for (int i = 0; i < 3; i++) {
-		if (!Script_Try("SSound", "StopVoice", "(i)", i)) {
-			return NULL;
+		Native_SetInt(&ch, i);
+		if (!Mode_StopVoice(&ch)) {
+			return 0;
 		}
 	}
-	Script_SetVar("Speech", "TalkListen", PyString_FromString("TalkListen"));
-	if (Script_GetInt("Speech", "LockAlarm", 0)) {
-		if (!Script_Try("Scrap", "SetLockAlarm", "(i)", 0)) {
-			return NULL;
+	Sp_SetS("TalkListen", "TalkListen");
+	if (Sp_Int(SP, "LockAlarm", 0)) {
+		Native_SetInt(&ch, 0);
+		if (!Mode_SetLockAlarm(&ch)) {
+			return 0;
 		}
-		Script_SetInt("Speech", "LockAlarm", 0);
+		Sp_SetI("LockAlarm", 0);
 	}
-	PyObject *end = Sp_Get("OnEndOfSpeech");
-	if (!end) {
-		return NULL;
+	if (!Sp_G("OnEndOfSpeech", &end)) {
+		return 0;
 	}
-	if (PyObject_IsTrue(end) > 0) {
-		PyObject *params = Sp_Get("OnEndOfSpeechParams");
-		Py_INCREF(Py_None);
-		Script_SetVar("Speech", "OnEndOfSpeech", Py_None);
-		Script_SetVar("Speech", "OnEndOfSpeechParams", PyTuple_New(0));
-		PyObject *r = params ? Script_CallObject(end, params, NULL) : NULL;
-		Py_XDECREF(params);
-		if (!r) {
-			Py_DECREF(end);
-			return NULL;
-		}
-		Py_DECREF(r);
+	byte ok = 1;
+	if (Native_True(&end)) {
+		ok = Sp_G("OnEndOfSpeechParams", &params);
+		Native_SetNone(&none);
+		Native_SetEmpty(&empty, NV_TUPLE);
+		Sp_Set("OnEndOfSpeech", &none);
+		Sp_Set("OnEndOfSpeechParams", &empty);
+		Native_Free(&empty);
+		ok = ok && Mode_Apply(&end, &params, NULL);
 	}
-	Py_DECREF(end);
-	Script_SetVar("Speech", "CurrentRemoteCom", PyString_FromString(""));
-	Script_SetVar("Speech", "LaunchedTauntEntityName", PyString_FromString(""));
-	Script_SetInt("Speech", "CanLaunchRemote", 1);
-	return Py_ReturnNone();
+	Native_Free(&end);
+	Native_Free(&params);
+	if (!ok) {
+		return 0;
+	}
+	Sp_SetS("CurrentRemoteCom", "");
+	Sp_SetS("LaunchedTauntEntityName", "");
+	Sp_SetI("CanLaunchRemote", 1);
+	return 1;
 }
 
 /* RestoreState(UsrName): the character offers to talk again and goes back to its own logic */
-static PyObject *Speech_RestoreState(PyObject *self, PyObject *args) {
-	PyObject *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+static byte Sp_RestoreState(const nativeVal_t *name) {
+	nativeVal_t c = { 0 }, talk = { 0 }, opt = { 0 };
+	byte ok = Mode_EntitySeam(name, &c);
+	if (ok && Native_True(&c)) {
+		Sp_Lang("TalkOpt", &talk);
+		ok = Sp_CatS("Talk:", &talk, &opt) && Sp_HSetI(&c, "ArrnOpt", 0) && Mode_VSet(&c, "ArrOpt0", &opt) &&
+			Sp_HSetI(&c, "LLogicIdle", 0);
 	}
-	PyObject *c = Script_Ask("Scrap", "GetEntity", "(O)", name);
-	if (!c) {
-		return NULL;
-	}
-	byte ok = 1;
-	if (PyObject_IsTrue(c) > 0) {
-		PyObject *talk = Sp_Lang("TalkOpt");
-		PyObject *head = talk ? PyString_FromString("Talk:") : NULL;
-		PyObject *opt = head ? PySequence_Concat(head, talk) : NULL;
-		Py_XDECREF(talk);
-		Py_XDECREF(head);
-		ok = Script_HSet(c, "ArrnOpt", PyInt_FromLong(0)) && Script_HSet(c, "ArrOpt0", opt) &&
-			Script_HSet(c, "LLogicIdle", PyInt_FromLong(0));
-	}
-	Py_DECREF(c);
-	return ok ? Py_ReturnNone() : NULL;
+	Native_Free(&c);
+	Native_Free(&talk);
+	Native_Free(&opt);
+	return ok;
 }
 
 /* the player or the character stops talking: Relax unless it does something else */
-static byte Sp_StopTalk(PyObject *e) {
-	int talk = Script_HPrefix(e, "Action", "Talk");
-	return talk >= 0 && (!talk || (Script_HSet(e, "ForceAction", PyString_FromString("Relax")) &&
-		Script_HSet(e, "ForceDefLoop", PyString_FromString("Relax"))));
+static byte Sp_StopTalk(const nativeVal_t *e) {
+	int talk = Sp_HPrefix(e, "Action", "Talk");
+	return talk >= 0 && (!talk || (Sp_HSetS(e, "ForceAction", "Relax") && Sp_HSetS(e, "ForceDefLoop", "Relax")));
 }
 
 /* AbortSpeech(UsrName="", CharName="", extrangextra=""): the speech ends, both go back to what they did */
-static PyObject *Speech_AbortSpeech(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "UsrName", "CharName", "extrangextra", NULL };
-	PyObject *a = NULL, *b = NULL, *c = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|OOO", names, &a, &b, &c)) {
-		return NULL;
+static byte Sp_AbortSpeech(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *me = Mode_V(&t), *ch = Mode_V(&t), *def = Mode_V(&t), *arrow = Mode_V(&t), *n = Mode_V(&t), *name = Mode_V(&t);
+	if (!Sp_Entity("PlayerName", me) || !Sp_Entity("NPCName", ch)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *me = Sp_Entity("PlayerName"), *ch = me ? Sp_Entity("NPCName") : NULL;
-	PyObject *empty = ch ? PyString_FromString("") : NULL, *zero = empty ? PyInt_FromLong(0) : NULL;
-	byte ok = zero != NULL;
-	if (ok) {
-		Script_SetVar("Speech", "TextColor", Sp_Get("DefTextColor"));
-		ok = Sp_SpeechText(empty, zero, "TextColor") && Script_Try("SScorer", "SetSpeechCallback", "(s)", "");
+	/* TextColor = DefTextColor (Script_SetVar of a failed read drops the error) */
+	if (Sp_G("DefTextColor", def)) {
+		Sp_Set("TextColor", def);
+	} else {
+		PyErr_Clear();
 	}
-	Py_XDECREF(empty);
-	Py_XDECREF(zero);
-	if (ok && Sp_True(me)) {
-		ok = Script_HSet(me, "AutoSelect", PyInt_FromLong(1)) && Script_HSet(me, "SelectedEntity", PyString_FromString(""))
-			&& Sp_StopTalk(me) && Script_HSet(me, "OutSelectFunc", PyString_FromString(""));
+	if (!Sp_SpeechText(Mode_S(&t, ""), Mode_I(&t, 0), "TextColor") || !Mode_SpeechCallback("")) {
+		return Mode_Done(&t, 0);
 	}
-	if (ok && Sp_True(ch)) {
-		int walk = Script_HIs(ch, "Type", "WalkChar");
-		ok = walk >= 0;
-		if (walk > 0) {
-			ok = Script_HSet(ch, "ArrowCanMission", Sp_Get("ArrowCanMission")) &&
-				Script_HSet(ch, "SelectedEntity", PyString_FromString("")) && Sp_StopTalk(ch);
+	if (Native_True(me) && (!Sp_HSetI(me, "AutoSelect", 1) || !Sp_HSetS(me, "SelectedEntity", "") || !Sp_StopTalk(me) ||
+		!Sp_HSetS(me, "OutSelectFunc", ""))) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_True(ch)) {
+		int walk = Sp_HIs(ch, "Type", "WalkChar");
+		if (walk < 0) {
+			return Mode_Done(&t, 0);
+		}
+		if (walk) {
+			if (!Sp_G("ArrowCanMission", arrow) || !Mode_VSet(ch, "ArrowCanMission", arrow) || !Sp_HSetS(ch, "SelectedEntity", "") ||
+				!Sp_StopTalk(ch) || !Mode_VObj(ch, "ArrnOpt", n)) {
+				return Mode_Done(&t, 0);
+			}
 			/* the logic of the character back when talking was its only option */
-			PyObject *n = ok ? Script_GetAttr(ch, "ArrnOpt") : NULL;
-			int one = n ? Script_NumCmp(n, 1) : -2;
-			Py_XDECREF(n);
-			ok = one != -2;
-			if (ok && one == 0) {
-				int talk = Script_HPrefix(ch, "ArrOpt0", "Talk:");
-				ok = talk >= 0;
-				if (talk > 0) {
-					PyObject *name = Script_GetAttr(ch, "Name");
-					PyObject *ra = name ? Py_BuildValue("(O)", name) : NULL;
-					PyObject *r = ra ? Speech_RestoreState(NULL, ra) : NULL;
-					Py_XDECREF(name);
-					Py_XDECREF(ra);
-					ok = r && Script_HSet(ch, "AbortSelectFunc", PyString_FromString(""));
-					Py_XDECREF(r);
+			if (Sp_NumCmp(n, 1) == 0) {
+				int talk = Sp_HPrefix(ch, "ArrOpt0", "Talk:");
+				if (talk < 0 || (talk > 0 && (!Mode_VObj(ch, "Name", name) || !Sp_RestoreState(name) ||
+					!Sp_HSetS(ch, "AbortSelectFunc", "")))) {
+					return Mode_Done(&t, 0);
 				}
 			}
 		}
 	}
-	Py_XDECREF(me);
-	Py_XDECREF(ch);
-	return ok ? Speech_CallEndOfSpeech(NULL, NULL) : NULL;
+	Mode_Done(&t, 1);
+	return Sp_CallEndOfSpeech();
 }
 
 /* NormalAbortSpeech(): the end of the answer; the camera turns from the character once the player listened */
-static PyObject *Speech_NormalAbortSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	PyObject *me = Sp_Entity("PlayerName");
-	if (!me) {
-		return NULL;
+static byte Sp_NormalAbortSpeech(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *me = Mode_V(&t), *ch = Mode_V(&t), *cam = Mode_V(&t), *vang = Mode_V(&t), *turned = Mode_V(&t);
+	if (!Sp_Entity("PlayerName", me)) {
+		return Mode_Done(&t, 0);
 	}
-	int listen = Sp_True(me) ? Script_HIs(me, "Action", "TalkListen") : 0;
-	byte ok = listen >= 0;
-	if (listen > 0) {
-		PyObject *ch = Sp_Entity("NPCName"), *cam = ch ? Sp_Cam() : NULL;
-		ok = cam && Script_HSet(cam, "VSpeed", PyFloat_FromDouble(1.1)) && Script_HSet(cam, "HSpeed", PyFloat_FromDouble(1.1));
-		if (ok && Sp_True(ch)) {
-			PyObject *vang = Sp_RotAng(me, ch);
-			ok = vang && Script_HSet(me, "ViewAng", Sp_Turned(vang, 25)) && Script_HSet(me, "DisplAng", PyInt_FromLong(25));
-			Py_XDECREF(vang);
-		}
-		Py_XDECREF(ch);
-		Py_XDECREF(cam);
+	int listen = Native_True(me) ? Sp_HIs(me, "Action", "TalkListen") : 0;
+	if (listen < 0) {
+		return Mode_Done(&t, 0);
 	}
-	Py_DECREF(me);
-	return ok ? Speech_AbortSpeech(NULL, PyTuple_New(0), NULL) : NULL;
+	if (listen && (!Sp_Entity("NPCName", ch) || !Sp_Cam(cam) || !Sp_HSetF(cam, "VSpeed", 1.1) || !Sp_HSetF(cam, "HSpeed", 1.1) ||
+		(Native_True(ch) && (!Sp_RotAng(me, ch, vang) || !Sp_Turned(vang, 25, turned) || !Mode_VSet(me, "ViewAng", turned) ||
+		!Sp_HSetI(me, "DisplAng", 25))))) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_Done(&t, 1);
+	return Sp_AbortSpeech();
 }
 
-/* AbortNPCSpeech(UsrName="", CharName=""): prints the names */
+/* AbortNPCSpeech(UsrName="", CharName=""): prints the names (OBJLIB 7: the print of the script on Python's stdout) */
 static PyObject *Speech_AbortNPCSpeech(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "UsrName", "CharName", NULL };
 	PyObject *a = NULL, *b = NULL;
@@ -332,793 +459,1062 @@ static PyObject *Speech_AbortNPCSpeech(PyObject *self, PyObject *args, PyObject 
 
 /* ---- the answer ---- */
 
-/* PerformAnswer(SpeechText, Time=6): the character answers with its voice */
-static PyObject *Speech_PerformAnswer(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "SpeechText", "Time", NULL };
-	PyObject *text, *time = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O", names, &text, &time)) {
-		return NULL;
+/* PerformAnswer(SpeechText, Time=6): the character answers with its voice; 1, or 0 when it cannot (out) */
+static byte Sp_PerformAnswer(const nativeVal_t *text, const nativeVal_t *time, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *me = Mode_V(&t), *ch = Mode_V(&t), *listen = Mode_V(&t), *anima = Mode_V(&t), *name = Mode_V(&t);
+	nativeVal_t *rest = Mode_V(&t);
+	if (!Sp_Entity("PlayerName", me) || !Sp_Entity("NPCName", ch)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *six = time ? NULL : PyInt_FromLong(6);
-	PyObject *me = Sp_Entity("PlayerName"), *ch = me ? Sp_Entity("NPCName") : NULL;
-	int talk = ch ? Script_HPrefix(me, "Action", "Talk") : -1;
-	byte ok = talk >= 0 && (!talk || (Script_HSet(me, "ForceAction", Sp_Get("TalkListen")) &&
-		Script_HSet(me, "ForceDefLoop", PyString_FromString("Relax"))));
-	PyObject *anima = ok ? Sp_Get("AnsAnima") : NULL;
-	int answers = anima && Script_HSet(ch, "Action", (Py_INCREF(anima), anima)) ? Script_HIs(ch, "Action",
-		PyString_Check(anima) ? PyString_AsString(anima) : "") : -1;
-	PyObject *r = NULL;
+	int talk = Sp_HPrefix(me, "Action", "Talk");
+	if (talk < 0 || (talk && (!Sp_G("TalkListen", listen) || !Mode_VSet(me, "ForceAction", listen) ||
+		!Sp_HSetS(me, "ForceDefLoop", "Relax")))) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Sp_G("AnsAnima", anima) || !Mode_VSet(ch, "Action", anima)) {
+		return Mode_Done(&t, 0);
+	}
+	int answers = Sp_HIs(ch, "Action", anima->type == NV_STR ? Native_Text(anima) : "");
 	if (answers > 0) {
-		PyObject *name = Script_GetAttr(ch, "Name");
-		PyObject *rest = name && Script_HSet(ch, "ForceDefLoop", (Py_INCREF(anima), anima)) &&
-			Script_Try("SSound", "StopVoice", "(i)", 0) && Script_Try("SSound", "PlayVoice", "(iO)", 1, name) ?
-			Script_Ask("SSound", "VoiceRemain", "(iO)", 1, time ? time : six) : NULL;
-		if (rest && Script_Try("SScorer", "SetSpeechCallback", "(s)", "Speech.NormalAbortSpeech") &&
-			Sp_SpeechText(text, rest, "TextColor")) {
-			Script_SetVar("Speech", "AnsAnima", PyString_FromString("TalkNPC"));
-			r = PyInt_FromLong(1);
+		if (!Mode_VObj(ch, "Name", name) || !Mode_VSet(ch, "ForceDefLoop", anima) || !Mode_StopVoice(Mode_I(&t, 0)) ||
+			!Mode_PlayVoice(Mode_I(&t, 1), name) || !Mode_VoiceRemain(Mode_I(&t, 1), time, rest) ||
+			!Mode_SpeechCallback("Speech.NormalAbortSpeech") || !Sp_SpeechText(text, rest, "TextColor")) {
+			return Mode_Done(&t, 0);
 		}
-		Py_XDECREF(name);
-		Py_XDECREF(rest);
-	} else if (answers == 0) {
-		PyObject *a = Speech_AbortSpeech(NULL, PyTuple_New(0), NULL);
-		if (a) {
-			Py_DECREF(a);
-			Script_SetVar("Speech", "AnsAnima", PyString_FromString("TalkNPC"));
-			r = PyInt_FromLong(0);
-		}
+		Sp_SetS("AnsAnima", "TalkNPC");
+		Native_SetInt(out, 1);
+		return Mode_Done(&t, 1);
 	}
-	Py_XDECREF(anima);
-	Py_XDECREF(me);
-	Py_XDECREF(ch);
-	Py_XDECREF(six);
-	return r;
+	if (answers < 0 || !Sp_AbortSpeech()) {
+		return Mode_Done(&t, 0);
+	}
+	Sp_SetS("AnsAnima", "TalkNPC");
+	Native_SetInt(out, 0);
+	return Mode_Done(&t, 1);
 }
 
 /* StopMenuEvents(), RestartMenuEvents(): the menu keys while the answer starts */
-static PyObject *Speech_StopMenuEvents(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+static byte Sp_StopMenuEvents(void) {
 	GVar_SetStr("EscapeEvent", "");
 	GVar_SetStr("MainMissionEvent", "");
-	return Py_ReturnNone();
+	return 1;
 }
 
-static PyObject *Speech_RestartMenuEvents(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
+static byte Sp_RestartMenuEvents(void) {
 	GVar_SetStr("EscapeEvent", "Menu.Init");
 	GVar_SetStr("MainMissionEvent", "MissionsFuncs.ShowMissionInfo");
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* AutoAnswer(): the end of the player's line, the answer follows */
-static PyObject *Speech_AutoAnswer(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	PyObject *me = Sp_Entity("PlayerName");
-	int talk = me ? Script_HPrefix(me, "Action", "Talk") : -1;
-	byte ok = talk >= 0 && (!talk || Script_HSet(me, "ForceAction", PyString_FromString("TalkListenNPC")));
-	Py_XDECREF(me);
+static byte Sp_AutoAnswer(void) {
+	nativeVal_t me = { 0 }, a[2] = { { 0 }, { 0 } };
+	int talk = Sp_Entity("PlayerName", &me) ? Sp_HPrefix(&me, "Action", "Talk") : -1;
+	byte ok = talk >= 0 && (!talk || Sp_HSetS(&me, "ForceAction", "TalkListenNPC"));
+	Native_Free(&me);
 	if (ok) {
-		Speech_StopMenuEvents(NULL, NULL);
-		PyObject *ans = Sp_Get("NPCAnswer"), *t = ans ? Sp_Get("NPCAnswerTime") : NULL;
-		ok = t && Script_LaterIn(1.0, "Speech", "RestartMenuEvents", PyTuple_New(0), NULL) &&
-			Script_LaterIn(0.45, "Speech", "PerformAnswer", Py_BuildValue("(OO)", ans, t), NULL);
-		Py_XDECREF(ans);
-		Py_XDECREF(t);
+		Sp_StopMenuEvents();
+		ok = Sp_G("NPCAnswer", &a[0]) && Sp_G("NPCAnswerTime", &a[1]) && Mode_LaterIn(1.0, SP, "RestartMenuEvents", NULL, 0, NULL) &&
+			Mode_LaterIn(0.45, SP, "PerformAnswer", a, 2, NULL);
 	}
-	return ok ? Py_ReturnNone() : NULL;
+	Native_Free(&a[0]);
+	Native_Free(&a[1]);
+	return ok;
 }
 
-static PyObject *Speech_RestoreMoveTime(PyObject *self, PyObject *args) {
-	PyObject *me;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &me)) {
-		return NULL;
-	}
-	return Script_HSet(me, "MoveTime", PyInt_FromLong(0)) ? Py_ReturnNone() : NULL;
-}
-
-/* StdAnsLst(lst): the answers of the player as the options of the character ("msg:text", the Opt text or the Msg) */
-static PyObject *Speech_StdAnsLst(PyObject *self, PyObject *args) {
-	PyObject *lst;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &lst)) {
-		return NULL;
-	}
-	PyObject *ch = Sp_Entity("NPCName");
-	byte ok = ch && Script_HSet(ch, "ArrnOpt", PyInt_FromLong(0));
-	int n = ok ? PySequence_Length(lst) : 0;
+/* StdAnsLst(lst): the answers of the player as the options of the character ("msg:text", the Opt text or the Msg).
+ * A lst that is no sequence raises at once (the port went on with the TypeError of its length left set) */
+static byte Sp_StdAnsLst(const nativeVal_t *lstArg) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ch = Mode_V(&t), *lst = Mode_V(&t);
+	Native_Copy(lst, lstArg);
+	int n = Sp_Entity("NPCName", ch) && Sp_HSetI(ch, "ArrnOpt", 0) ? Mode_Len(lst) : -1;
+	byte ok = n >= 0;
 	for (int i = 0; ok && i < n; i++) {
-		PyObject *msg = PySequence_GetItem(lst, i);
-		PyObject *key = Sp_Cat(msg, "Opt");
-		PyObject *opt = key && PyString_Check(key) ? Sp_Lang(PyString_AsString(key)) : NULL;
-		Py_XDECREF(key);
-		if (opt && PyString_Check(opt) && !*PyString_AsString(opt)) {
-			Py_DECREF(opt);
-			key = Sp_Cat(msg, "Msg");
-			opt = key && PyString_Check(key) ? Sp_Lang(PyString_AsString(key)) : NULL;
-			Py_XDECREF(key);
-		}
-		PyObject *head = opt ? Sp_Cat(msg, ":") : NULL;
-		PyObject *v = head ? PySequence_Concat(head, opt) : NULL;
+		int mark = t.n;
+		nativeVal_t *msg = Mode_V(&t), *key = Mode_V(&t), *opt = Mode_V(&t), *head = Mode_V(&t), *v = Mode_V(&t);
 		char var[0x20];
+		ok = Sp_Item(lst, i, msg) && Sp_Cat(msg, "Opt", key);
+		if (ok) {
+			Sp_Lang(Native_Text(key), opt);
+			if (Mode_IsText(opt, "")) {
+				Native_Free(key);
+				Native_Free(opt);
+				ok = Sp_Cat(msg, "Msg", key);
+				if (ok) {
+					Sp_Lang(Native_Text(key), opt);
+				}
+			}
+		}
 		Str_Printf(var, sizeof(var), "ArrOpt%d", i);
-		ok = v && Script_HSet(ch, var, v);
-		Py_XDECREF(head);
-		Py_XDECREF(opt);
-		Py_XDECREF(msg);
+		ok = ok && Sp_Cat(msg, ":", head) && Native_Arith('+', head, opt, v) && Mode_VSet(ch, var, v);
+		Mode_Release(&t, mark);
 	}
-	Py_XDECREF(ch);
-	return ok ? Py_ReturnNone() : NULL;
+	return Mode_Done(&t, ok);
 }
 
 /* ---- a speech ---- */
 
-/*
- * CalculateSpeechTime(cad): len(string.split(cad)) * 0.3 + 2, 0.3 s a word and 2 s (a new reference, NULL with the
- * error set). A value that is no string goes to string.split, which raises as in the script
- */
-static PyObject *Sp_SpeechTime(PyObject *text) {
+/* CalculateSpeechTime(cad): len(string.split(cad)) * 0.3 + 2, 0.3 s a word and 2 s. A value that is no string goes
+ * to string.split, which raises as in the script (OBJLIB 3) */
+static byte Sp_SpeechTime(const nativeVal_t *text, nativeVal_t *out) {
 	int words = 0;
-	if (!PyString_Check(text)) {
-		PyObject *list = Script_Ask("string", "split", "(O)", text);
-		words = list ? PyObject_Length(list) : -1;
-		Py_XDECREF(list);
-		return words < 0 ? NULL : PyFloat_FromDouble(words * 0.3 + 2);
+	if (text->type != NV_STR) {
+		nativeVal_t l = { 0 };
+		byte ok = Native_CallMod("string", "split", &l, "v", text);
+		words = ok ? Mode_Len(&l) : -1;
+		Native_Free(&l);
+		if (words < 0) {
+			return 0;
+		}
+	} else {
+		byte in = 0;
+		const char *p = Native_Text(text);
+		for (int i = 0; i < text->n; i++) {
+			byte space = p[i] == ' ' || p[i] == '\t' || p[i] == '\n' || p[i] == '\r' || p[i] == '\v' || p[i] == '\f';
+			words += !space && !in;
+			in = !space;
+		}
 	}
-	byte in = 0;
-	const char *p = PyString_AsString(text);
-	for (int i = 0, n = PyString_Size(text); i < n; i++) {
-		byte space = p[i] == ' ' || p[i] == '\t' || p[i] == '\n' || p[i] == '\r' || p[i] == '\v' || p[i] == '\f';
-		words += !space && !in;
-		in = !space;
-	}
-	return PyFloat_FromDouble(words * 0.3 + 2);
-}
-
-static PyObject *Speech_CalculateSpeechTime(PyObject *self, PyObject *args) {
-	PyObject *text;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &text)) {
-		return NULL;
-	}
-	return Sp_SpeechTime(text);
+	Native_SetFloat(out, words * 0.3 + 2);
+	return 1;
 }
 
 /* SetPlayerToTalk(me, ch): the player faces the character to talk (the camera turns unless a non-interactive talk
- * goes on), 1 when the player can talk */
-static int Sp_SetPlayerToTalk(PyObject *me, PyObject *ch) {
-	if (!Sp_True(me)) {
+ * goes on), 1 when the player can talk, -1 with the error */
+static int Sp_SetPlayerToTalk(const nativeVal_t *me, const nativeVal_t *ch) {
+	if (!Native_True(me)) {
 		return 0;
 	}
-	PyObject *sel = Script_GetAttr(me, "AutoSelect");
-	int can = sel ? Script_NumCmp(sel, 1) == 0 : -1;
-	Py_XDECREF(sel);
-	if (can > 0) {
-		PyObject *life = Script_GetAttr(ch, "Life");
-		int c = life ? Script_NumCmp(life, 0) : -2;
-		Py_XDECREF(life);
-		can = c == -2 ? -1 : c > 0;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *sel = Mode_V(&t), *life = Mode_V(&t), *name = Mode_V(&t), *ni = Mode_V(&t), *cur = Mode_V(&t);
+	nativeVal_t *cam = Mode_V(&t), *v = Mode_V(&t), *h = Mode_V(&t), *vang = Mode_V(&t), *y = Mode_V(&t), *pos = Mode_V(&t);
+	nativeVal_t *turned = Mode_V(&t), *ang = Mode_V(&t);
+	if (!Mode_VObj(me, "AutoSelect", sel)) {
+		return Mode_Done(&t, 0), -1;
 	}
-	if (can <= 0) {
-		return can;
-	}
-	PyObject *name = Script_GetAttr(ch, "Name");
-	byte ok = name && Script_HSet(me, "SelectedEntity", (Py_INCREF(name), name)) && Script_HSet(me, "Action", PyString_FromString("Talk")) &&
-		Script_HSet(me, "DefLoop", PyString_FromString("Talk"));
-	/* globals().get('TalkNI') == None or globals().get('CurrNI') == 0 */
-	PyObject *mod = ok ? PyImport_ImportModule("Speech") : NULL;
-	PyObject *dict = mod ? PyModule_GetDict(mod) : NULL;
-	PyObject *ni = dict ? PyDict_GetItemString(dict, "TalkNI") : NULL, *cur = dict ? PyDict_GetItemString(dict, "CurrNI") : NULL;
-	byte turn = dict && (!ni || ni == Py_None || (cur && Script_NumCmp(cur, 0) == 0));
-	Py_XDECREF(mod);
-	ok = ok && dict;
-	if (ok && turn) {
-		PyObject *cam = Sp_Cam();
-		PyObject *fcam = cam ? Script_Method(cam, "IsType", "(s)", "FCam") : NULL;
-		ok = fcam != NULL;
-		if (ok && PyObject_IsTrue(fcam) > 0) {
-			/* the script keeps the speeds in a local it never uses */
-			PyObject *v = Script_GetAttr(cam, "VSpeed"), *h = v ? Script_GetAttr(cam, "HSpeed") : NULL;
-			ok = h && Script_HSet(cam, "VSpeed", PyFloat_FromDouble(1.1)) && Script_HSet(cam, "HSpeed", PyFloat_FromDouble(1.1));
-			Py_XDECREF(v);
-			Py_XDECREF(h);
+	int can = Sp_NumCmp(sel, 1) == 0;
+	if (can) {
+		if (!Mode_VObj(ch, "Life", life)) {
+			return Mode_Done(&t, 0), -1;
 		}
-		Py_XDECREF(fcam);
-		Py_XDECREF(cam);
-		PyObject *vang = ok ? Sp_RotAng(me, ch) : NULL;
-		PyObject *y = vang ? PySequence_GetItem(vang, 1) : NULL;
-		PyObject *pos = y ? Script_GetAttr(me, "Pos") : NULL;
-		ok = pos && Script_HSet(me, "DisplAng", PyInt_FromLong(45)) && Script_HSet(me, "ViewAng", Sp_Turned(vang, 45)) &&
-			Script_HSet(me, "MoveAng", Py_BuildValue("(iOi)", 0, y, 0)) && Script_HSet(me, "MovePos", (Py_INCREF(pos), pos)) &&
-			Script_HSet(me, "MoveTime", PyFloat_FromDouble(0.20)) && Script_HSet(me, "MoveViewAng", PyInt_FromLong(0)) &&
-			Script_LaterIn(0.25, "Speech", "RestoreMoveTime", Py_BuildValue("(O)", me), NULL);
-		Py_XDECREF(pos);
-		Py_XDECREF(y);
-		Py_XDECREF(vang);
+		can = Sp_NumCmp(life, 0) > 0;
 	}
-	Py_XDECREF(name);
-	ok = ok && Script_HSet(me, "AutoSelect", PyInt_FromLong(0)) &&
-		Script_HSet(me, "OutSelectFunc", PyString_FromString("Speech.AbortSpeech"));
-	return ok ? 1 : -1;
+	if (!can) {
+		return Mode_Done(&t, 1), 0;
+	}
+	if (!Mode_VObj(ch, "Name", name) || !Mode_VSet(me, "SelectedEntity", name) || !Sp_HSetS(me, "Action", "Talk") ||
+		!Sp_HSetS(me, "DefLoop", "Talk")) {
+		return Mode_Done(&t, 0), -1;
+	}
+	/* globals().get('TalkNI') == None or globals().get('CurrNI') == 0 */
+	byte hasNI = Sp_Has("TalkNI", ni), hasCur = Sp_Has("CurrNI", cur);
+	if (!hasNI || ni->type == NV_NONE || (hasCur && Sp_NumCmp(cur, 0) == 0)) {
+		int fcam = Sp_Cam(cam) ? Mode_VIsType(cam, "FCam") : -1;
+		/* the script keeps the speeds in a local it never uses */
+		if (fcam < 0 || (fcam && (!Mode_VObj(cam, "VSpeed", v) || !Mode_VObj(cam, "HSpeed", h) || !Sp_HSetF(cam, "VSpeed", 1.1) ||
+			!Sp_HSetF(cam, "HSpeed", 1.1)))) {
+			return Mode_Done(&t, 0), -1;
+		}
+		if (!Sp_RotAng(me, ch, vang) || !Sp_Item(vang, 1, y) || !Mode_VObj(me, "Pos", pos) || !Sp_HSetI(me, "DisplAng", 45) ||
+			!Sp_Turned(vang, 45, turned) || !Mode_VSet(me, "ViewAng", turned)) {
+			return Mode_Done(&t, 0), -1;
+		}
+		Native_SetEmpty(ang, NV_TUPLE);
+		Native_SetInt(Native_Append(ang), 0);
+		Native_Copy(Native_Append(ang), y);
+		Native_SetInt(Native_Append(ang), 0);
+		if (!Mode_VSet(me, "MoveAng", ang) || !Mode_VSet(me, "MovePos", pos) || !Sp_HSetF(me, "MoveTime", 0.20) ||
+			!Sp_HSetI(me, "MoveViewAng", 0) || !Mode_LaterIn(0.25, SP, "RestoreMoveTime", me, 1, NULL)) {
+			return Mode_Done(&t, 0), -1;
+		}
+	}
+	if (!Sp_HSetI(me, "AutoSelect", 0) || !Sp_HSetS(me, "OutSelectFunc", "Speech.AbortSpeech")) {
+		return Mode_Done(&t, 0), -1;
+	}
+	return Mode_Done(&t, 1), 1;
 }
 
-static PyObject *Speech_SetPlayerToTalk(PyObject *self, PyObject *args) {
-	PyObject *me, *ch;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &me, &ch)) {
-		return NULL;
+/* the int result of a speech function into out: 0 for r < 0 (the error) */
+static byte Sp_IntOut(int r, nativeVal_t *out) {
+	if (r < 0) {
+		return 0;
 	}
-	int r = Sp_SetPlayerToTalk(me, ch);
-	return r < 0 ? NULL : PyInt_FromLong(r);
+	Native_SetInt(out, r);
+	return 1;
 }
 
 /* OnSpeech(SpeechText, SpeechAnswer="", _AnsAnima_="TalkNPC"): the player says the text, the character listens and
- * answers when it ends (AutoAnswer); 1 when the speech starts */
-static PyObject *Speech_OnSpeech(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "SpeechText", "SpeechAnswer", "_AnsAnima_", NULL };
-	PyObject *text, *ans = NULL, *anima = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|OO", names, &text, &ans, &anima)) {
-		return NULL;
+ * answers when it ends (AutoAnswer); 1 when the speech starts, -1 with the error */
+static int Sp_OnSpeech(const nativeVal_t *text, const nativeVal_t *ans, const nativeVal_t *anima) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *time = Mode_V(&t), *ansTime = Mode_V(&t), *me = Mode_V(&t), *ch = Mode_V(&t), *name = Mode_V(&t);
+	nativeVal_t *ca = Mode_V(&t), *ma = Mode_V(&t), *cy = Mode_V(&t), *my = Mode_V(&t), *norm = Mode_V(&t);
+	nativeVal_t *rt = Mode_V(&t), *arrow = Mode_V(&t), *one = Mode_V(&t);
+	if (!Sp_SpeechTime(text, time) || !Sp_SpeechTime(ans, ansTime)) {
+		return Mode_Done(&t, 0), -1;
 	}
-	PyObject *noAns = ans ? NULL : PyString_FromString(""), *talk = anima ? NULL : PyString_FromString("TalkNPC");
-	if (!ans) {
-		ans = noAns;
+	Sp_Set("AnsAnima", anima);
+	int r = Sp_Entity("PlayerName", me) && Sp_Entity("NPCName", ch) ? Sp_SetPlayerToTalk(me, ch) : -1;
+	if (r <= 0) {
+		return Mode_Done(&t, 0), r;
 	}
-	if (!anima) {
-		anima = talk;
+	double dc, dm, d;
+	if (!Mode_VObj(me, "Name", name) || !Mode_VObj(ch, "Ang", ca) || !Mode_VObj(me, "Ang", ma) || !Sp_Item(ca, 1, cy) ||
+		!Sp_Item(ma, 1, my) || !Native_ArgDouble(cy, &dc) || !Native_ArgDouble(my, &dm) ||
+		!Native_CallMod("SVec", "NormAng", norm, "d", dc - dm - 180) || !Sp_HSetS(ch, "AbortSelectFunc", "Speech.RestoreState") ||
+		!Sp_HSetI(ch, "LLogicIdle", 1) || !Mode_VSet(ch, "SelectedEntity", name) || !Native_ArgDouble(norm, &d)) {
+		return Mode_Done(&t, 0), -1;
 	}
-	PyObject *time = Sp_SpeechTime(text), *ansTime = time ? Sp_SpeechTime(ans) : NULL;
-	if (ansTime) {
-		Py_INCREF(anima);
-		Script_SetVar("Speech", "AnsAnima", anima);
+	Native_SetFloat(rt, -0.15);
+	if (!Sp_HSetS(ch, "Action", (d < 0 ? -d : d) > 5 ? "FaceToTalk" : "TalkListenNPC") || !Sp_HSetS(ch, "DefLoop", "TalkListenNPC") ||
+		!Sp_HSetI(ch, "DisplAng", 0) || !Sp_HSetI(ch, "TimeToExtraRelax", 240) || !Sp_PlayVoiceAfter(0, rt) ||
+		!Sp_SpeechText(text, time, "UsrTextColor") || !Mode_SpeechCallback("Speech.AutoAnswer")) {
+		return Mode_Done(&t, 0), -1;
 	}
-	PyObject *me = ansTime ? Sp_Entity("PlayerName") : NULL, *ch = me ? Sp_Entity("NPCName") : NULL;
-	int r = ch ? Sp_SetPlayerToTalk(me, ch) : -1;
-	if (r > 0) {
-		PyObject *name = Script_GetAttr(me, "Name");
-		PyObject *ca = name ? Script_GetAttr(ch, "Ang") : NULL, *ma = ca ? Script_GetAttr(me, "Ang") : NULL;
-		PyObject *cy = ma ? PySequence_GetItem(ca, 1) : NULL, *my = cy ? PySequence_GetItem(ma, 1) : NULL;
-		PyObject *norm = my ? Script_Ask("SVec", "NormAng", "(d)", PyFloat_AsDouble(cy) - PyFloat_AsDouble(my) - 180) : NULL;
-		byte ok = norm && Script_HSet(ch, "AbortSelectFunc", PyString_FromString("Speech.RestoreState")) &&
-			Script_HSet(ch, "LLogicIdle", PyInt_FromLong(1)) && Script_HSet(ch, "SelectedEntity", (Py_INCREF(name), name));
-		if (ok) {
-			double d = PyFloat_AsDouble(norm);
-			ok = Script_HSet(ch, "Action", PyString_FromString((d < 0 ? -d : d) > 5 ? "FaceToTalk" : "TalkListenNPC")) &&
-				Script_HSet(ch, "DefLoop", PyString_FromString("TalkListenNPC")) && Script_HSet(ch, "DisplAng", PyInt_FromLong(0)) &&
-				Script_HSet(ch, "TimeToExtraRelax", PyInt_FromLong(240)) && Sp_PlayVoiceAfter(0, PyFloat_FromDouble(-0.15));
-		}
-		ok = ok && Sp_SpeechText(text, time, "UsrTextColor") && Script_Try("SScorer", "SetSpeechCallback", "(s)", "Speech.AutoAnswer");
-		if (ok) {
-			Py_INCREF(ans);
-			Script_SetVar("Speech", "NPCAnswer", ans);
-			Py_INCREF(ansTime);
-			Script_SetVar("Speech", "NPCAnswerTime", ansTime);
-			PyObject *arrow = Script_GetAttr(ch, "ArrowCanMission");
-			ok = arrow != NULL;
-			if (ok) {
-				Script_SetVar("Speech", "ArrowCanMission", arrow);
-				ok = Script_HSet(ch, "ArrowCanMission", PyInt_FromLong(0)) &&
-					(!Script_GetInt("Speech", "LockAlarm", 0) || Script_Try("Scrap", "SetLockAlarm", "(i)", 1));
-			}
-		}
-		Py_XDECREF(name);
-		Py_XDECREF(ca);
-		Py_XDECREF(ma);
-		Py_XDECREF(cy);
-		Py_XDECREF(my);
-		Py_XDECREF(norm);
-		if (!ok) {
-			r = -1;
-		}
+	Sp_Set("NPCAnswer", ans);
+	Sp_Set("NPCAnswerTime", ansTime);
+	if (!Mode_VObj(ch, "ArrowCanMission", arrow)) {
+		return Mode_Done(&t, 0), -1;
 	}
-	Py_XDECREF(me);
-	Py_XDECREF(ch);
-	Py_XDECREF(time);
-	Py_XDECREF(ansTime);
-	Py_XDECREF(noAns);
-	Py_XDECREF(talk);
-	return r < 0 ? NULL : PyInt_FromLong(r);
+	Sp_Set("ArrowCanMission", arrow);
+	Native_SetInt(one, 1);
+	if (!Sp_HSetI(ch, "ArrowCanMission", 0) || (Sp_Int(SP, "LockAlarm", 0) && !Mode_SetLockAlarm(one))) {
+		return Mode_Done(&t, 0), -1;
+	}
+	return Mode_Done(&t, 1), r;
 }
 
 /* OnSpch(LngSpeechText, LngSpeechAnswer, _AnsAnima_="TalkNPC"): a speech by the keys of the language file, with the
  * voices of both */
-static PyObject *Speech_OnSpch(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "LngSpeechText", "LngSpeechAnswer", "_AnsAnima_", NULL };
-	PyObject *text, *ans, *anima = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|O", names, &text, &ans, &anima)) {
-		return NULL;
-	}
-	PyObject *me = Script_LangOf(Script_Ref(text)), *you = me ? Script_LangOf(Script_Ref(ans)) : NULL;
-	PyObject *a = you && Sp_OpenVoice(text, 0) && Sp_OpenVoice(ans, 1) ?
-		(anima ? Py_BuildValue("(OOO)", me, you, anima) : Py_BuildValue("(OO)", me, you)) : NULL;
-	PyObject *r = a ? Speech_OnSpeech(NULL, a, NULL) : NULL;
-	Py_XDECREF(a);
-	Py_XDECREF(me);
-	Py_XDECREF(you);
+static int Sp_OnSpch(const nativeVal_t *text, const nativeVal_t *ans, const nativeVal_t *anima) {
+	nativeVal_t me = { 0 }, you = { 0 };
+	int r = Mode_LangV(text, &me) && Mode_LangV(ans, &you) && Sp_OpenVoice(text, 0) && Sp_OpenVoice(ans, 1) ?
+		Sp_OnSpeech(&me, &you, anima) : -1;
+	Native_Free(&me);
+	Native_Free(&you);
 	return r;
 }
 
 /* OnChallengeSpch(LngSpeechText, LngSpeechAnswer, _AnsAnima_="TalkNPC", isMerc=0): the player's text as it is, the
  * challenge voice of the player */
-static PyObject *Speech_OnChallengeSpch(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "LngSpeechText", "LngSpeechAnswer", "_AnsAnima_", "isMerc", NULL };
-	PyObject *text, *ans, *anima = NULL, *merc = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|OO", names, &text, &ans, &anima, &merc)) {
-		return NULL;
-	}
-	PyObject *you = Script_LangOf(Script_Ref(ans));
-	int isMerc = merc ? Script_NumCmp(merc, 1) == 0 : 0;
-	PyObject *a = you && Sp_OpenVoiceStr(isMerc ? "ChallengeRaceStdOpt2Voice" : "ChallengeRaceStdOpt1Voice", 0) &&
-		Sp_OpenVoice(ans, 1) ? (anima ? Py_BuildValue("(OOO)", text, you, anima) : Py_BuildValue("(OO)", text, you)) : NULL;
-	PyObject *r = a ? Speech_OnSpeech(NULL, a, NULL) : NULL;
-	Py_XDECREF(a);
-	Py_XDECREF(you);
+static int Sp_OnChallengeSpch(const nativeVal_t *text, const nativeVal_t *ans, const nativeVal_t *anima, const nativeVal_t *merc) {
+	nativeVal_t you = { 0 };
+	byte isMerc = merc && Sp_NumCmp(merc, 1) == 0;
+	int r = Mode_LangV(ans, &you) && Sp_OpenVoiceS(isMerc ? "ChallengeRaceStdOpt2Voice" : "ChallengeRaceStdOpt1Voice", 0) &&
+		Sp_OpenVoice(ans, 1) ? Sp_OnSpeech(text, &you, anima) : -1;
+	Native_Free(&you);
 	return r;
 }
 
 /* StdOnSpch(optId, _AnsAnima_="TalkNPC"): the speech of an option, the arrow on the next option */
-static PyObject *Speech_StdOnSpch(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "optId", "_AnsAnima_", NULL };
-	PyObject *opt, *anima = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O", names, &opt, &anima)) {
-		return NULL;
+static byte Sp_StdOnSpch(const nativeVal_t *opt, const nativeVal_t *anima) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *msg = Mode_V(&t), *ans = Mode_V(&t), *ch = Mode_V(&t), *i = Mode_V(&t), *n = Mode_V(&t), *next = Mode_V(&t);
+	nativeVal_t *mod = Mode_V(&t);
+	if (!Sp_Cat(opt, "Msg", msg) || !Sp_Cat(opt, "Ans", ans) || Sp_OnSpch(msg, ans, anima) < 0) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *msg = Sp_Cat(opt, "Msg"), *ans = msg ? Sp_Cat(opt, "Ans") : NULL;
-	PyObject *a = ans ? (anima ? Py_BuildValue("(OOO)", msg, ans, anima) : Py_BuildValue("(OO)", msg, ans)) : NULL;
-	PyObject *r = a ? Speech_OnSpch(NULL, a, NULL) : NULL;
-	Py_XDECREF(a);
-	Py_XDECREF(msg);
-	Py_XDECREF(ans);
-	if (!r) {
-		return NULL;
-	}
-	Py_DECREF(r);
-	PyObject *ch = Sp_Entity("NPCName");
-	PyObject *i = ch ? Script_GetAttr(ch, "ArriOpt") : NULL, *n = i ? Script_GetAttr(ch, "ArrnOpt") : NULL;
-	PyObject *one = n ? PyInt_FromLong(1) : NULL, *next = one ? PyNumber_Add(i, one) : NULL;
-	PyObject *mod = next ? PyNumber_Remainder(next, n) : NULL;
-	byte ok = mod && Script_HSet(ch, "ArriOpt", mod);
-	Py_XDECREF(ch);
-	Py_XDECREF(i);
-	Py_XDECREF(n);
-	Py_XDECREF(one);
-	Py_XDECREF(next);
-	return ok ? Py_ReturnNone() : NULL;
+	return Mode_Done(&t, Sp_Entity("NPCName", ch) && Mode_VObj(ch, "ArriOpt", i) && Mode_VObj(ch, "ArrnOpt", n) &&
+		Mode_Arith('+', i, Mode_I(&t, 1), next) && Mode_Arith('%', next, n, mod) && Mode_VSet(ch, "ArriOpt", mod));
 }
 
 /* ---- the player answers ---- */
 
 /* PlayerAnsEnd(): the end of the player's answer, its callback once */
-static PyObject *Speech_PlayerAnsEnd(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	if (!Script_Try("SSound", "StopVoice", "(i)", 0)) {
-		return NULL;
-	}
-	PyObject *cb = Sp_Get("PlayerAnsCallback");
-	if (!cb) {
-		PyErr_Clear();
-		PyErr_SetString(PyExc_NameError, "PlayerAnsCallback");
-		return NULL;
-	}
-	PyObject *a = PyTuple_New(0);
-	PyObject *r = a ? Script_CallObject(cb, a, NULL) : NULL;
-	Py_XDECREF(a);
-	Py_XDECREF(cb);
-	if (!r) {
-		return NULL;
-	}
-	Py_DECREF(r);
-	PyObject *mod = PyImport_ImportModule("Speech");
-	int del = mod ? PyDict_DelItemString(PyModule_GetDict(mod), "PlayerAnsCallback") : -1;
-	Py_XDECREF(mod);
-	if (del < 0) {
-		PyErr_SetString(PyExc_NameError, "PlayerAnsCallback");
-		return NULL;
-	}
-	return Py_ReturnNone();
+static byte Sp_PlayerAnsEnd(void) {
+	nativeVal_t zero, cb = { 0 };
+	Native_SetInt(&zero, 0);
+	byte ok = Mode_StopVoice(&zero) && Sp_G("PlayerAnsCallback", &cb) && Mode_CallArgs(&cb, NULL, NULL, 0) &&
+		Mode_DelGlobal(SP, "PlayerAnsCallback");
+	Native_Free(&cb);
+	return ok;
 }
 
 /* PlayerAns(me, ch, LangText, callbakck): the player says a text to the character, then the callback; 1 when the
  * player can talk */
-static PyObject *Speech_PlayerAns(PyObject *self, PyObject *args) {
-	PyObject *me, *ch, *key, *cb;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &me, &ch, &key, &cb)) {
-		return NULL;
-	}
+static int Sp_PlayerAns(const nativeVal_t *me, const nativeVal_t *ch, const nativeVal_t *key, const nativeVal_t *cb) {
 	int r = Sp_SetPlayerToTalk(me, ch);
 	if (r > 0) {
-		PyObject *text = Script_LangOf(Script_Ref(key));
-		PyObject *t = text ? Sp_SpeechTime(text) : NULL;
-		byte ok = t && Sp_SpeechText(text, t, "UsrTextColor");
+		nativeVal_t text = { 0 }, t = { 0 };
+		byte ok = Mode_LangV(key, &text) && Sp_SpeechTime(&text, &t) && Sp_SpeechText(&text, &t, "UsrTextColor");
 		if (ok) {
-			Py_INCREF(cb);
-			Script_SetVar("Speech", "PlayerAnsCallback", cb);
-			ok = Script_Try("SScorer", "SetSpeechCallback", "(s)", "Speech.PlayerAnsEnd") && Sp_OpenVoice(key, 0) &&
-				Sp_PlayVoiceAfter(0, PyInt_FromLong(0));
+			Sp_Set("PlayerAnsCallback", cb);
+			ok = Mode_SpeechCallback("Speech.PlayerAnsEnd") && Sp_OpenVoice(key, 0) && Sp_PlayVoiceAfterI(0, 0);
 		}
-		Py_XDECREF(text);
-		Py_XDECREF(t);
+		Native_Free(&text);
+		Native_Free(&t);
 		if (!ok) {
 			r = -1;
 		}
 	}
-	return r < 0 ? NULL : PyInt_FromLong(r);
+	return r;
 }
 
 /* ---- the standard speech routines ---- */
 
 /* SScorer.SetMsgText(Scrap.GetLangStr(key), Scrap.GetTime() + 2) */
 static byte Sp_Msg(const char *key) {
-	PyObject *text = Sp_Lang(key);
-	byte ok = text && Script_Try("SScorer", "SetMsgText", "(Od)", text, (double)Timer_GetTime(&g_pWorld->timer) + 2);
-	Py_XDECREF(text);
+	nativeVal_t text;
+	Sp_Lang(key, &text);
+	byte ok = Mode_MsgText(&text, Mode_Time() + 2);
+	Native_Free(&text);
 	return ok;
 }
 
 /* InspectChar(UsrName, CharName, optId, FullOption): why the character does not talk */
-static PyObject *Speech_InspectChar(PyObject *self, PyObject *args) {
-	PyObject *usr, *chName, *opt, *full;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &chName, &opt, &full)) {
-		return NULL;
+static byte Sp_InspectChar(const nativeVal_t *usr, const nativeVal_t *chName) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *me = Mode_V(&t), *ch = Mode_V(&t), *type = Mode_V(&t), *state = Mode_V(&t), *mine = Mode_V(&t), *def = Mode_V(&t);
+	if (!Mode_EntitySeam(usr, me) || !Mode_EntitySeam(chName, ch) || !Mode_VObj(ch, "ActCtrl", type) ||
+		!Mode_VObj(ch, "LLogicState", state)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *me = Script_Ask("Scrap", "GetEntity", "(O)", usr), *ch = me ? Script_Ask("Scrap", "GetEntity", "(O)", chName) : NULL;
-	PyObject *type = ch ? Script_GetAttr(ch, "ActCtrl") : NULL, *state = type ? Script_GetAttr(ch, "LLogicState") : NULL;
-	const char *t = type && PyString_Check(type) ? PyString_AsString(type) : "";
+	const char *ty = type->type == NV_STR ? Native_Text(type) : "";
 	const char *key = NULL;
 	char buf[0x80];
 	int a;
-	if (!state) {
-		key = NULL;
-	} else if ((a = Script_HPrefix(ch, "Action", "Flashed")) != 0) {
+	if ((a = Sp_HPrefix(ch, "Action", "Flashed")) != 0) {
 		key = a > 0 ? "INSPECT_CHAR_Flashed" : NULL;
-	} else if ((a = Script_HPrefix(ch, "Action", "Dazed")) != 0) {
+	} else if ((a = Sp_HPrefix(ch, "Action", "Dazed")) != 0) {
 		key = a > 0 ? "INSPECT_CHAR_Dazed" : NULL;
-	} else if ((a = Script_HPrefix(ch, "Action", "Crazy")) != 0) {
+	} else if ((a = Sp_HPrefix(ch, "Action", "Crazy")) != 0) {
 		key = a > 0 ? "INSPECT_CHAR_Crazy" : NULL;
+	} else if ((a = Mode_AlarmOn()) != 0) {
+		key = a > 0 ? "INSPECT_CHAR_Alarm" : NULL;
+	} else if (!strcmp(ty, "Sentinel")) {
+		key = Mode_VObj(me, "ActCtrl", mine) && Native_GVarGet("UsrDefChar", def) ?
+			Native_Compare(mine, def) == 0 ? "INSPECT_CHAR_Sentinel_Act" : "INSPECT_CHAR_Sentinel" : NULL;
 	} else {
-		PyObject *alarm = Script_Ask("Scrap", "GetAlarm", "()");
-		PyObject *on = alarm ? PySequence_GetItem(alarm, 0) : NULL;
-		Py_XDECREF(alarm);
-		if (on && PyObject_IsTrue(on) > 0) {
-			key = "INSPECT_CHAR_Alarm";
-		} else if (on && !strcmp(t, "Sentinel")) {
-			PyObject *mine = Script_GetAttr(me, "ActCtrl"), *def = mine ? Script_Ask("Scrap", "Get", "(s)", "UsrDefChar") : NULL;
-			key = def ? PyObject_Compare(mine, def) == 0 ? "INSPECT_CHAR_Sentinel_Act" : "INSPECT_CHAR_Sentinel" : NULL;
-			Py_XDECREF(mine);
-			Py_XDECREF(def);
-		} else if (on) {
-			int same = Script_HIs(me, "ActCtrl", t);
-			if (same < 0) {
-				key = NULL;
-			} else if (same && (!strcmp(t, "Mayor") || !strcmp(t, "PoliceBoss") || !strcmp(t, "Betty") || !strcmp(t, "Berto"))) {
-				key = "INSPECT_CHAR_Unique";
-			} else if (!strcmp(t, "Nurse") && Script_NumCmp(state, 3) == 0) {
-				key = "INSPECT_CHAR_Nurse";
-			} else if (!strcmp(t, "Gear") && Script_NumCmp(state, 2) == 0) {
-				key = "INSPECT_CHAR_Gear";
-			} else if (Script_NumCmp(state, 4) == 0 || Script_NumCmp(state, 5) == 0) {
-				Str_Printf(buf, sizeof(buf), "INSPECT_CHAR_%s", t);
-				key = buf;
-			} else {
-				key = "INSPECT_CHAR_CantTalk";
-			}
+		int same = Sp_HIs(me, "ActCtrl", ty);
+		if (same < 0) {
+			key = NULL;
+		} else if (same && (!strcmp(ty, "Mayor") || !strcmp(ty, "PoliceBoss") || !strcmp(ty, "Betty") || !strcmp(ty, "Berto"))) {
+			key = "INSPECT_CHAR_Unique";
+		} else if (!strcmp(ty, "Nurse") && Sp_NumCmp(state, 3) == 0) {
+			key = "INSPECT_CHAR_Nurse";
+		} else if (!strcmp(ty, "Gear") && Sp_NumCmp(state, 2) == 0) {
+			key = "INSPECT_CHAR_Gear";
+		} else if (Sp_NumCmp(state, 4) == 0 || Sp_NumCmp(state, 5) == 0) {
+			Str_Printf(buf, sizeof(buf), "INSPECT_CHAR_%s", ty);
+			key = buf;
+		} else {
+			key = "INSPECT_CHAR_CantTalk";
 		}
-		Py_XDECREF(on);
 	}
-	byte ok = key && !PyErr_Occurred() && Sp_Msg(key);
-	Py_XDECREF(me);
-	Py_XDECREF(ch);
-	Py_XDECREF(type);
-	Py_XDECREF(state);
-	return ok ? Py_ReturnNone() : NULL;
+	return Mode_Done(&t, key && Sp_Msg(key));
 }
 
-/* AutoSpeech(UsrName, CharName, optId, FullOption): the speech routine of the character's class, else a standard
- * answer */
-static PyObject *Speech_AutoSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *chName, *opt, *full;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &chName, &opt, &full)) {
-		return NULL;
+/* AutoSpeech(UsrName, CharName, optId, FullOption): the speech routine of the character's class (called with the
+ * four arguments), else a standard answer */
+static byte Sp_AutoSpeech(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ch = Mode_V(&t), *type = Mode_V(&t), *routines = Mode_V(&t), *f = Mode_V(&t), *msg = Mode_V(&t), *ans = Mode_V(&t);
+	Sp_Set("PlayerName", &a[0]);
+	Sp_Set("NPCName", &a[1]);
+	if (!Sp_Entity("NPCName", ch) || !Mode_VObj(ch, "ActCtrl", type) || !Sp_G("SpeechRoutines", routines)) {
+		return Mode_Done(&t, 0);
 	}
-	Py_INCREF(usr);
-	Script_SetVar("Speech", "PlayerName", usr);
-	Py_INCREF(chName);
-	Script_SetVar("Speech", "NPCName", chName);
-	PyObject *ch = Sp_Entity("NPCName");
-	PyObject *type = ch ? Script_GetAttr(ch, "ActCtrl") : NULL;
-	PyObject *routines = type ? Sp_Get("SpeechRoutines") : NULL;
-	PyObject *f = routines ? PyObject_GetItem(routines, type) : NULL;
-	PyObject *r = NULL;
-	if (f) {
-		r = Script_CallObject(f, args, NULL);
-	} else if (routines && PyErr_ExceptionMatches(PyExc_KeyError)) {
-		PyErr_Clear();
-		char ans[0x20];
-		Str_Printf(ans, sizeof(ans), "StdAnsw%d", (int)Scrap_RandRange(0, 2.9));
-		PyObject *a = Py_BuildValue("(ss)", "TalkMsg", ans);
-		r = a ? Speech_OnSpch(NULL, a, NULL) : NULL;
-		Py_XDECREF(a);
-		if (r) {
-			Py_DECREF(r);
-			r = Py_ReturnNone();
-		}
+	if (Mode_Sub(routines, type, f)) {
+		return Mode_Done(&t, Mode_CallArgs(f, NULL, a, 4));
 	}
-	Py_XDECREF(f);
-	Py_XDECREF(routines);
-	Py_XDECREF(type);
-	Py_XDECREF(ch);
-	if (r) {
-		Py_DECREF(r);
-		r = Py_ReturnNone();
+	/* OBJLIB 7: the KeyError of the script is the Python exception */
+	if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+		return Mode_Done(&t, 0);
 	}
-	return r;
+	PyErr_Clear();
+	char buf[0x20];
+	Str_Printf(buf, sizeof(buf), "StdAnsw%d", (int)Scrap_RandRange(0, 2.9));
+	Native_SetStr(msg, "TalkMsg");
+	Native_SetStr(ans, buf);
+	return Mode_Done(&t, Sp_OnSpch(msg, ans, Mode_S(&t, "TalkNPC")) >= 0);
 }
 
 /* ---- part 2: the non-interactive talks ---- */
 
-/* del <module variable> of a script: 0 with a NameError when it is not there */
-static byte Sp_Del(const char *var) {
-	PyObject *mod = PyImport_ImportModule("Speech");
-	int r = mod ? PyDict_DelItemString(PyModule_GetDict(mod), (char *)var) : -1;
-	Py_XDECREF(mod);
-	if (r < 0) {
-		PyErr_Clear();
-		PyErr_SetString(PyExc_NameError, var);
-	}
-	return r == 0;
-}
-
-/* Scrap.UsrEntity(0): the handle or None (a new reference) */
-static PyObject *Sp_Usr(void) {
-	return Script_Ask("Scrap", "UsrEntity", "(i)", 0);
-}
-
 /* NISpeech(headName=""): a non-interactive talk starts, the end of the speech waits until it is over */
-static PyObject *Speech_NISpeech(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "headName", NULL };
-	PyObject *head = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &head)) {
-		return NULL;
+static byte Sp_NISpeech(const nativeVal_t *head) {
+	nativeVal_t end = { 0 }, params = { 0 }, empty;
+	byte ok = Sp_G("OnEndOfSpeech", &end) && Sp_G("OnEndOfSpeechParams", &params);
+	if (ok) {
+		Native_SetEmpty(&empty, NV_LIST);
+		Sp_Set("TalkNI", &empty);
+		Native_Free(&empty);
+		Sp_Set("OnEndOfSpeechNI", &end);
+		Sp_Set("OnEndOfSpeechParamsNI", &params);
+		Sp_Set("NISpeechHeadName", head);
 	}
-	PyObject *end = Sp_Get("OnEndOfSpeech"), *params = end ? Sp_Get("OnEndOfSpeechParams") : NULL;
-	if (!params) {
-		Py_XDECREF(end);
-		return NULL;
-	}
-	Script_SetVar("Speech", "TalkNI", PyList_New(0));
-	Script_SetVar("Speech", "OnEndOfSpeechNI", end);
-	Script_SetVar("Speech", "OnEndOfSpeechParamsNI", params);
-	Script_SetVar("Speech", "NISpeechHeadName", head ? (Py_INCREF(head), head) : PyString_FromString(""));
-	return Py_ReturnNone();
+	Native_Free(&end);
+	Native_Free(&params);
+	return ok;
 }
 
 /* AddNI(LngSpeechText, LngSpeechAnswer, _AnsAnima_="TalkNPC", HeadName=None): a line of the talk (the head of the
  * talk unless one is given) */
-static PyObject *Speech_AddNI(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "LngSpeechText", "LngSpeechAnswer", "_AnsAnima_", "HeadName", NULL };
-	PyObject *text, *ans, *anima = NULL, *head = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|OO", names, &text, &ans, &anima, &head)) {
-		return NULL;
+static byte Sp_AddNI(const nativeVal_t *text, const nativeVal_t *ans, const nativeVal_t *anima, const nativeVal_t *head) {
+	nativeVal_t h = { 0 }, line, list = { 0 };
+	byte ok = head && Native_True(head) ? (Native_Copy(&h, head), 1) : Sp_G("NISpeechHeadName", &h);
+	/* the list read as the port read it: its NameError before the line */
+	ok = ok && Sp_G("TalkNI", &list);
+	if (ok) {
+		Native_SetEmpty(&line, NV_TUPLE);
+		Native_Copy(Native_Append(&line), text);
+		Native_Copy(Native_Append(&line), ans);
+		if (anima) {
+			Native_Copy(Native_Append(&line), anima);
+		} else {
+			Native_SetStr(Native_Append(&line), "TalkNPC");
+		}
+		Native_Copy(Native_Append(&line), &h);
+		ok = Mode_ListAddG(SP, "TalkNI", &line, 0);
+		Native_Free(&line);
 	}
-	PyObject *h = head && PyObject_IsTrue(head) > 0 ? (Py_INCREF(head), head) : Sp_Get("NISpeechHeadName");
-	PyObject *list = h ? Sp_Get("TalkNI") : NULL;
-	PyObject *line = list ? Py_BuildValue("(OOOO)", text, ans, anima ? anima : PyString_FromString("TalkNPC"), h) : NULL;
-	if (!anima && line) {
-		/* the default anima string built above is held by the tuple only */
-		PyObject *a = PyTuple_GetItem(line, 2);
-		Py_DECREF(a);
-	}
-	if (!h && !PyErr_Occurred()) {
-		PyErr_SetString(PyExc_NameError, "NISpeechHeadName");
-	}
-	byte ok = line && PyList_Append(list, line) == 0;
-	Py_XDECREF(line);
-	Py_XDECREF(list);
-	Py_XDECREF(h);
-	return ok ? Py_ReturnNone() : NULL;
+	Native_Free(&h);
+	Native_Free(&list);
+	return ok;
 }
 
-/* AutoAddNI(TextBase, _AnsAnima_="TalkNPC", HeadName=None): the lines Msg/Ans of the language entries of a base */
-static PyObject *Speech_AutoAddNI(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "TextBase", "_AnsAnima_", "HeadName", NULL };
-	PyObject *base, *anima = NULL, *head = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|OO", names, &base, &anima, &head)) {
-		return NULL;
-	}
-	PyObject *keys = Script_Ask("Scrap", "GetLangEntries", "(Oi)", base, 2);
-	int n = keys ? PySequence_Length(keys) : -1;
+/* AutoAddNI(TextBase, _AnsAnima_="TalkNPC", HeadName=None): the lines Msg/Ans of the language entries of a base (the
+ * head is passed on only with the anima, as the port did) */
+static byte Sp_AutoAddNI(const nativeVal_t *base, const nativeVal_t *anima, const nativeVal_t *head) {
+	nativeVal_t keys = { 0 }, txt = { 0 }, msg = { 0 }, ans = { 0 }, none;
+	Native_SetNone(&none);
+	int n = Native_CallMod("Scrap", "GetLangEntries", &keys, "vi", base, 2L) ? Mode_Len(&keys) : -1;
 	byte ok = n >= 0;
 	for (int i = 0; ok && i < n; i++) {
-		PyObject *txt = PySequence_GetItem(keys, i);
-		PyObject *msg = Sp_Cat(txt, "Msg"), *ans = msg ? Sp_Cat(txt, "Ans") : NULL;
-		PyObject *a = ans ? Py_BuildValue("(OOOO)", msg, ans, anima ? anima : Py_None, head ? head : Py_None) : NULL;
-		if (a && !anima) {
-			/* AddNI's default for the anima */
-			PyObject *t = PyTuple_GetSlice(a, 0, 2);
-			Py_DECREF(a);
-			a = t;
-		}
-		PyObject *r = a ? Speech_AddNI(NULL, a, NULL) : NULL;
-		ok = r != NULL;
-		Py_XDECREF(r);
-		Py_XDECREF(a);
-		Py_XDECREF(msg);
-		Py_XDECREF(ans);
-		Py_XDECREF(txt);
+		ok = Sp_Item(&keys, i, &txt) && Sp_Cat(&txt, "Msg", &msg) && Sp_Cat(&txt, "Ans", &ans) &&
+			Sp_AddNI(&msg, &ans, anima, anima ? head ? head : &none : NULL);
+		Native_Free(&txt);
+		Native_Free(&msg);
+		Native_Free(&ans);
 	}
-	Py_XDECREF(keys);
-	return ok ? Py_ReturnNone() : NULL;
+	Native_Free(&keys);
+	return ok;
+}
+
+/* TalkNI[i][k] of the module (each a read of the global as the script reads it) */
+static byte Sp_NI(const nativeVal_t *i, long k, nativeVal_t *out) {
+	nativeVal_t list = { 0 }, line = { 0 };
+	Native_SetNone(out);
+	byte ok = Sp_G("TalkNI", &list) && Mode_Sub(&list, i, &line) && LvN_Item(&line, k, out);
+	Native_Free(&list);
+	Native_Free(&line);
+	return ok;
 }
 
 /* RunNI(i=0): line i of the talk; the next one when it ends, after the last the end of the talk */
-static PyObject *Speech_RunNI(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "i", NULL };
+static byte Sp_RunNI(const nativeVal_t *i) {
 	static const char *const keepMortal[] = { "Human", "GateKeeper", "Sebastian", "Sputnik", NULL };
-	scriptFrame_t f = { 0 };
-	PyObject *i = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &i)) {
-		return NULL;
+	modeVals_t t = { .n = 0 };
+	/* a: the four arguments of the calls, one after the other */
+	nativeVal_t *a = Mode_V(&t);
+	Mode_V(&t);
+	Mode_V(&t);
+	Mode_V(&t);
+	nativeVal_t *list = Mode_V(&t), *npc = Mode_V(&t), *ch = Mode_V(&t), *fn = Mode_V(&t), *me = Mode_V(&t), *head = Mode_V(&t);
+	nativeVal_t *cur = Mode_V(&t), *v = Mode_V(&t), *ctrl = Mode_V(&t), *last = Mode_V(&t);
+	int n = Sp_G("TalkNI", list) ? Mode_Len(list) : -1;
+	if (n < 0) {
+		return Mode_Done(&t, 0);
 	}
-	if (!i) {
-		i = Sf_Int(&f, 0);
+	Native_SetInt(last, n - 1);
+	byte ltkn = Native_Compare(i, last) < 0;
+	Sp_Set("CurrNI", i);
+	Sp_SetI("LockAlarm", 1);
+	if (ltkn) {
+		Sp_SetS("TalkListen", "TalkListenNPC");
 	}
-	int ltkn = Sf_Compare(&f, i, "<", Sf_Int(&f, Sf_Len(&f, Sf_Global(&f, "Speech", "TalkNI")) - 1));
-	Sf_SetGlobal(&f, "Speech", "CurrNI", i);
-	Sf_SetGlobal(&f, "Speech", "LockAlarm", Sf_Int(&f, 1));
-	if (ltkn > 0) {
-		Sf_SetGlobal(&f, "Speech", "TalkListen", Sf_Str(&f, "TalkListenNPC"));
-	}
-	PyObject *ch = Sf_Entity(&f, Sf_Global(&f, "Speech", "NPCName"));
-	int isWch = Sf_True(&f, Sf_Method(&f, ch, "IsType", "(s)", "WalkChar"));
+	int isWch = Sp_G("NPCName", npc) && Mode_EntitySeam(npc, ch) ? Mode_VIsType(ch, "WalkChar") : -1;
 	if (isWch > 0) {
-		PyObject *fn = Sf_Global(&f, "Speech", "OnSpch");
-		PyObject *a = Sf_Item(&f, Sf_GetItem(&f, Sf_Global(&f, "Speech", "TalkNI"), i), 0);
-		PyObject *b = Sf_Item(&f, Sf_GetItem(&f, Sf_Global(&f, "Speech", "TalkNI"), i), 1);
-		PyObject *c = Sf_Item(&f, Sf_GetItem(&f, Sf_Global(&f, "Speech", "TalkNI"), i), 2);
-		Sf_Call(&f, fn, "(OOO)", a, b, c);
-		Sf_SetAttrI(&f, ch, "Invulnerable", 1);
+		if (!Sp_G("OnSpch", fn) || !Sp_NI(i, 0, &a[0]) || !Sp_NI(i, 1, &a[1]) || !Sp_NI(i, 2, &a[2]) ||
+			!Mode_CallArgs(fn, NULL, a, 3) || !Sp_HSetI(ch, "Invulnerable", 1)) {
+			return Mode_Done(&t, 0);
+		}
 	} else if (isWch == 0) {
-		PyObject *npc = Sf_Global(&f, "Speech", "NPCName");
-		Sf_SetAttr(&f, Sf_Entity(&f, Sf_Global(&f, "Speech", "PlayerName")), "SelectedEntity", npc);
-		PyObject *fn = Sf_Global(&f, "Speech", "OnObjSpch");
-		PyObject *head = Sf_Item(&f, Sf_GetItem(&f, Sf_Global(&f, "Speech", "TalkNI"), i), 3);
-		PyObject *a = Sf_Item(&f, Sf_GetItem(&f, Sf_Global(&f, "Speech", "TalkNI"), i), 0);
-		PyObject *b = Sf_Item(&f, Sf_GetItem(&f, Sf_Global(&f, "Speech", "TalkNI"), i), 1);
-		Sf_Call(&f, fn, "(OOOO)", ch, head, a, b);
-		head = Sf_Item(&f, Sf_GetItem(&f, Sf_Global(&f, "Speech", "TalkNI"), i), 3);
-		if (Sf_Compare(&f, head, "!=", Sf_Global(&f, "Speech", "NISpeechHeadName")) > 0) {
-			Sf_SetAttrS(&f, ch, "HeadModel", "");
-			Sf_SetGlobal(&f, "Speech", "NISpeechHeadName", Sf_Item(&f, Sf_GetItem(&f, Sf_Global(&f, "Speech", "TalkNI"), i), 3));
+		Native_Free(npc);
+		if (!Sp_G("NPCName", npc) || !Sp_Entity("PlayerName", me) || !Mode_VSet(me, "SelectedEntity", npc) || !Sp_G("OnObjSpch", fn)) {
+			return Mode_Done(&t, 0);
 		}
-	}
-	if (ltkn > 0) {
-		Sf_SetGlobal(&f, "Speech", "OnEndOfSpeech", Sf_Global(&f, "Speech", "RunNI"));
-		Sf_SetGlobal(&f, "Speech", "OnEndOfSpeechParams", Sf_Build(&f, "(O)", Sf_OpI(&f, i, '+', 1)));
-	} else if (ltkn == 0) {
-		Sf_DelGlobal(&f, "Speech", "CurrNI");
-		Sf_DelGlobal(&f, "Speech", "TalkNI");
-		Sf_DelGlobal(&f, "Speech", "NISpeechHeadName");
-		if (isWch > 0) {
-			Sf_SetGlobal(&f, "Speech", "OnEndOfSpeech", Sf_Global(&f, "Speech", "OnEndOfSpeechNI"));
-			Sf_SetGlobal(&f, "Speech", "OnEndOfSpeechParams", Sf_Global(&f, "Speech", "OnEndOfSpeechParamsNI"));
-			Sf_DelGlobal(&f, "Speech", "OnEndOfSpeechNI");
-			Sf_DelGlobal(&f, "Speech", "OnEndOfSpeechParamsNI");
-			if (Sf_InS(&f, Sf_Attr(&f, ch, "ActCtrl"), keepMortal) == 0) {
-				Sf_SetAttrI(&f, ch, "Invulnerable", 0);
+		Native_Copy(&a[0], ch);
+		if (!Sp_NI(i, 3, &a[1]) || !Sp_NI(i, 0, &a[2]) || !Sp_NI(i, 1, &a[3]) || !Mode_CallArgs(fn, NULL, a, 4) ||
+			!Sp_NI(i, 3, head) || !Sp_G("NISpeechHeadName", cur)) {
+			return Mode_Done(&t, 0);
+		}
+		if (Native_Compare(head, cur) != 0) {
+			Native_Free(head);
+			if (!Sp_HSetS(ch, "HeadModel", "") || !Sp_NI(i, 3, head)) {
+				return Mode_Done(&t, 0);
 			}
-		} else if (isWch == 0) {
-			Sf_SetGlobal(&f, "Speech", "OnEndOfSpeech", Sf_Global(&f, "Speech", "ObjNIEnd"));
-			Sf_SetGlobal(&f, "Speech", "OnEndOfSpeechParams", Sf_Build(&f, "()"));
+			Sp_Set("NISpeechHeadName", head);
 		}
+	} else {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	if (ltkn) {
+		nativeVal_t *next = &a[0];
+		Native_Free(next);
+		Native_Free(fn);
+		if (!Sp_G("RunNI", fn)) {
+			return Mode_Done(&t, 0);
+		}
+		Sp_Set("OnEndOfSpeech", fn);
+		if (!Mode_Arith('+', i, Mode_I(&t, 1), next)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_Free(v);
+		Native_SetEmpty(v, NV_TUPLE);
+		Native_Copy(Native_Append(v), next);
+		Sp_Set("OnEndOfSpeechParams", v);
+		return Mode_Done(&t, 1);
+	}
+	if (!Mode_DelGlobal(SP, "CurrNI") || !Mode_DelGlobal(SP, "TalkNI") || !Mode_DelGlobal(SP, "NISpeechHeadName")) {
+		return Mode_Done(&t, 0);
+	}
+	if (isWch > 0) {
+		if (!Sp_G("OnEndOfSpeechNI", v)) {
+			return Mode_Done(&t, 0);
+		}
+		Sp_Set("OnEndOfSpeech", v);
+		Native_Free(v);
+		if (!Sp_G("OnEndOfSpeechParamsNI", v)) {
+			return Mode_Done(&t, 0);
+		}
+		Sp_Set("OnEndOfSpeechParams", v);
+		if (!Mode_DelGlobal(SP, "OnEndOfSpeechNI") || !Mode_DelGlobal(SP, "OnEndOfSpeechParamsNI") || !Mode_VObj(ch, "ActCtrl", ctrl)) {
+			return Mode_Done(&t, 0);
+		}
+		byte keep = 0;
+		for (int k = 0; keepMortal[k]; k++) {
+			keep |= Mode_IsText(ctrl, keepMortal[k]);
+		}
+		return Mode_Done(&t, keep || Sp_HSetI(ch, "Invulnerable", 0));
+	}
+	if (!Sp_G("ObjNIEnd", v)) {
+		return Mode_Done(&t, 0);
+	}
+	Sp_Set("OnEndOfSpeech", v);
+	Native_Free(v);
+	Native_SetEmpty(v, NV_TUPLE);
+	Sp_Set("OnEndOfSpeechParams", v);
+	return Mode_Done(&t, 1);
 }
 
 /* ObjNIEnd(): the end of a talk with an object: its head goes, then the end of the talk */
-static PyObject *Speech_ObjNIEnd(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	PyObject *end = Sp_Get("OnEndOfSpeechNI"), *params = end ? Sp_Get("OnEndOfSpeechParamsNI") : NULL;
-	PyObject *ch = params && Sp_Del("OnEndOfSpeechNI") && Sp_Del("OnEndOfSpeechParamsNI") ? Sp_Entity("NPCName") : NULL;
-	PyObject *ch2 = ch && Script_HSet(ch, "HeadModel", PyString_FromString("")) ? Sp_Entity("NPCName") : NULL;
-	PyObject *r = ch2 && Script_HSet(ch2, "Action", PyString_FromString("Relax")) ? Script_CallObject(end, params, NULL) : NULL;
-	Py_XDECREF(end);
-	Py_XDECREF(params);
-	Py_XDECREF(ch);
-	Py_XDECREF(ch2);
-	if (!r) {
-		return NULL;
-	}
-	Py_DECREF(r);
-	return Py_ReturnNone();
+static byte Sp_ObjNIEnd(void) {
+	nativeVal_t end = { 0 }, params = { 0 }, ch = { 0 }, ch2 = { 0 };
+	byte ok = Sp_G("OnEndOfSpeechNI", &end) && Sp_G("OnEndOfSpeechParamsNI", &params) && Mode_DelGlobal(SP, "OnEndOfSpeechNI") &&
+		Mode_DelGlobal(SP, "OnEndOfSpeechParamsNI") && Sp_Entity("NPCName", &ch) && Sp_HSetS(&ch, "HeadModel", "") &&
+		Sp_Entity("NPCName", &ch2) && Sp_HSetS(&ch2, "Action", "Relax") && Mode_Apply(&end, &params, NULL);
+	Native_Free(&end);
+	Native_Free(&params);
+	Native_Free(&ch);
+	Native_Free(&ch2);
+	return ok;
 }
 
 /* ---- remote communications ---- */
 
 /* RestoreSpeech(): the end of a remote communication */
-static PyObject *Speech_RestoreSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	PyObject *e = Sp_Usr();
-	byte ok = e != NULL;
-	if (ok && PyObject_IsTrue(e) > 0) {
-		PyObject *w = Script_Method(e, "IsType", "(s)", "WalkChar");
-		ok = w && (PyObject_IsTrue(w) <= 0 || Script_HSet(e, "AutoSelect", PyInt_FromLong(1)));
-		Py_XDECREF(w);
+static byte Sp_RestoreSpeech(void) {
+	nativeVal_t e;
+	byte ok = Sp_Usr(&e);
+	if (ok && Native_True(&e)) {
+		int w = Mode_VIsType(&e, "WalkChar");
+		ok = w >= 0 && (!w || Sp_HSetI(&e, "AutoSelect", 1));
 	}
-	Py_XDECREF(e);
-	return ok ? Speech_CallEndOfSpeech(NULL, NULL) : NULL;
+	Native_Free(&e);
+	return ok && Sp_CallEndOfSpeech();
 }
 
 /* DoRemote(): 1 when a remote communication may start now (no talk, no system message, a player who can listen) */
 static int Sp_DoRemote(void) {
-	PyObject *init = PyImport_ImportModule("Init");
-	PyObject *e = init ? Sp_Usr() : NULL;
-	Py_XDECREF(init);
-	if (!e) {
-		return -1;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *rest = Mode_V(&t), *msg = Mode_V(&t), *set = Mode_V(&t), *cam = Mode_V(&t), *sel = Mode_V(&t);
+	if (!Mode_Import("Init") || !Sp_Usr(e)) {
+		return Mode_Done(&t, 0), -1;
 	}
-	double now = (double)Timer_GetTime(&g_pWorld->timer);
+	double now = Mode_Time(), m;
 	int doit = -1;
-	PyObject *rest = NULL, *msg = NULL, *set = NULL;
 	if (now < 0.2) {
 		doit = 0;
-	} else if (!(rest = Script_Ask("Scrap", "Get", "(s)", "RemainTalkTime"))) {
-	} else if (Script_NumCmp(rest, 0) > 0 || !Script_GetInt("Speech", "CanLaunchRemote", 0)) {
+	} else if (!Native_GVarGet("RemainTalkTime", rest)) {
+	} else if (Sp_NumCmp(rest, 0) > 0 || !Sp_Int(SP, "CanLaunchRemote", 0)) {
 		doit = 0;
-	} else if (!(msg = Script_Ask("Scrap", "Get", "(s)", "TimeToMsg"))) {
-	} else if (PyFloat_AsDouble(msg) > now) {
+	} else if (!Native_GVarGet("TimeToMsg", msg) || !Native_ArgDouble(msg, &m)) {
+	} else if (m > now) {
 		doit = 0;
-	} else if (!(set = Script_Ask("SInput", "GetActionSet", "()"))) {
-	} else if ((PyString_Check(set) && !strcmp(PyString_AsString(set), "Inactive")) || e == Py_None) {
+	} else if ((Mode_ActionSetName(set), Mode_IsText(set, "Inactive")) || e->type == NV_NONE) {
 		doit = 0;
-		if (Script_GetInt("Init", "HasSuperDeal", 0) && e == Py_None) {
-			PyObject *cam = Sp_Cam();
-			if (cam && PyObject_IsTrue(cam) > 0 && Script_HIs(cam, "Type", "FCam") > 0) {
-				int target = Script_HIs(cam, "Target", ""), link = target == 0 ? Script_HIs(cam, "EntityLink", "") : 0;
-				doit = target == 0 && link > 0;
-			}
-			Py_XDECREF(cam);
-			if (PyErr_Occurred()) {
+		if (Sp_Int("Init", "HasSuperDeal", 0) && e->type == NV_NONE) {
+			if (!Sp_Cam(cam)) {
 				doit = -1;
+			} else if (Native_True(cam)) {
+				int fcam = Sp_HIs(cam, "Type", "FCam");
+				int target = fcam > 0 ? Sp_HIs(cam, "Target", "") : 0;
+				int link = fcam > 0 && target == 0 ? Sp_HIs(cam, "EntityLink", "") : 0;
+				doit = fcam < 0 || target < 0 || link < 0 ? -1 : fcam > 0 && target == 0 && link > 0;
 			}
 		}
 	} else {
-		PyObject *w = Script_Method(e, "IsType", "(s)", "WalkChar");
-		if (w && PyObject_IsTrue(w) > 0) {
-			PyObject *sel = Script_GetAttr(e, "AutoSelect");
-			doit = sel ? Script_NumCmp(sel, 1) == 0 : -1;
-			Py_XDECREF(sel);
-		} else if (w) {
+		int w = Mode_VIsType(e, "WalkChar");
+		if (w > 0) {
+			doit = Mode_VObj(e, "AutoSelect", sel) ? Sp_NumCmp(sel, 1) == 0 : -1;
+		} else if (w == 0) {
 			doit = 1;
-			Script_SetInt("Speech", "CanLaunchRemote", 0);
+			Sp_SetI("CanLaunchRemote", 0);
 		}
-		Py_XDECREF(w);
 	}
-	Py_XDECREF(rest);
-	Py_XDECREF(msg);
-	Py_XDECREF(set);
-	Py_DECREF(e);
+	return Mode_Done(&t, 0), doit;
+}
+
+/* ForceRemoteComunication(SpeechText, HeadName, HeadIndex=1, AfterRemoteComFunc=None, Parameters=()): the text with
+ * the head of the speaker on the monitor, the function after it */
+static byte Sp_ForceRemoteComunication(const nativeVal_t *text, const nativeVal_t *head, const nativeVal_t *index,
+	const nativeVal_t *after, const nativeVal_t *params) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *time = Mode_V(&t), *e = Mode_V(&t), *full = Mode_V(&t), *txt = Mode_V(&t), *dict = Mode_V(&t), *model = Mode_V(&t);
+	if (!Sp_SpeechTime(text, time) || !Sp_SpeechText(text, time, "DefTextColor") || !Sp_Usr(e)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_True(e)) {
+		int w = Mode_VIsType(e, "WalkChar");
+		if (w < 0 || (w && (!Sp_HSetI(e, "AutoSelect", 0) || !Sp_HSetS(e, "SelectedEntity", "") || !Sp_HSetS(e, "OutSelectFunc", "")))) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	if (!Mode_IsText(head, "")) {
+		if (!Sp_CatS("CharName_", head, full)) {
+			return Mode_Done(&t, 0);
+		}
+		Sp_Lang(Native_Text(full), txt);
+		if (!Sp_G("HeadDict", dict)) {
+			return Mode_Done(&t, 0);
+		}
+		if (!Mode_Sub(dict, head, model)) {
+			/* OBJLIB 7: the KeyError of the script is the Python exception */
+			if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+				return Mode_Done(&t, 0);
+			}
+			PyErr_Clear();
+			Native_Copy(model, head);
+		}
+		if (!Mode_HeadMonitor(model, txt, index)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	Sp_Set("OnEndOfSpeech", after);
+	Sp_Set("OnEndOfSpeechParams", params);
+	return Mode_Done(&t, Mode_SpeechCallback("Speech.RestoreSpeech"));
+}
+
+/* ForceRemoteComInternal(...): the voice of the text on channel 2 and the communication */
+static byte Sp_ForceRemoteComInternal(const nativeVal_t *text, const nativeVal_t *head, const nativeVal_t *index,
+	const nativeVal_t *after, const nativeVal_t *params) {
+	nativeVal_t lang = { 0 };
+	if (text->type != NV_STR) {
+		return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
+	}
+	Sp_Lang(Native_Text(text), &lang);
+	byte ok = Sp_OpenVoice(text, 2) && Sp_PlayVoiceAfterI(2, 0) && Sp_ForceRemoteComunication(&lang, head, index, after, params);
+	Native_Free(&lang);
+	return ok;
+}
+
+/* RemoteComunication(...): the communication when one may start now (DoRemote); its result */
+static int Sp_RemoteComunication(const nativeVal_t *text, const nativeVal_t *head, const nativeVal_t *index,
+	const nativeVal_t *after, const nativeVal_t *params) {
+	int doit = Sp_DoRemote();
+	if (doit > 0 && !Sp_ForceRemoteComInternal(text, head, index, after, params)) {
+		return -1;
+	}
 	return doit;
 }
+
+/* OffVoice(SpeechText): a voice without a head when nobody talks */
+static byte Sp_OffVoice(const nativeVal_t *text) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *rest = Mode_V(&t), *sel = Mode_V(&t), *params = Mode_V(&t);
+	if (!Sp_Usr(e)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Native_True(e)) {
+		return Mode_Done(&t, 1);
+	}
+	if (!Native_GVarGet("RemainTalkTime", rest)) {
+		return Mode_Done(&t, 0);
+	}
+	int go = Sp_NumCmp(rest, 0) <= 0;
+	if (go) {
+		int w = Mode_VIsType(e, "WalkChar");
+		go = w < 0 ? -1 : !w;
+		if (go == 0) {
+			go = Mode_VObj(e, "AutoSelect", sel) ? Sp_NumCmp(sel, 1) == 0 : -1;
+			if (go > 0) {
+				go = Sp_HIs(e, "SelectedEntity", "");
+			}
+		}
+	}
+	if (go <= 0) {
+		return Mode_Done(&t, go == 0);
+	}
+	Native_SetEmpty(params, NV_TUPLE);
+	return Mode_Done(&t, Sp_ForceRemoteComInternal(text, Mode_S(&t, ""), Mode_I(&t, 0), Mode_V(&t), params));
+}
+
+/* LaunchTaunt(entityName, charType, numTaunt): the taunt of a character over the radio, not twice in a row */
+static byte Sp_LaunchTaunt(const nativeVal_t *ent, const nativeVal_t *typeV, const nativeVal_t *numArg) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *num = Mode_V(&t), *r = Mode_V(&t), *less = Mode_V(&t), *prevV = Mode_V(&t), *mapV = Mode_V(&t), *tt = Mode_V(&t);
+	nativeVal_t *h = Mode_V(&t), *params = Mode_V(&t);
+	if (typeV->type != NV_STR) {
+		/* string.find(charType, "Mercenary") raises for a value that is no string (one it takes fails at the
+		 * "Generics_" + charType after it); OBJLIB 3: the string port by name */
+		byte ok = Native_CallMod("string", "find", r, "vs", typeV, "Mercenary") && Sp_CatS("Generics_", typeV, less);
+		return Mode_Done(&t, ok ? Native_Raise(NE_SYSTEM, "error return without exception set") : 0);
+	}
+	const char *type = Native_Text(typeV);
+	char taunt[0x80], head[0x40], prev[0x80], map[0x40];
+	Native_Copy(num, numArg);
+	if (strstr(type, "Mercenary")) {
+		Mode_Repr(num, r);
+		Str_Printf(taunt, sizeof(taunt), "Generics_MercsTaunt_%s", Native_Text(r));
+	} else {
+		/* in the CA of the eighth super deal the police taunts 5 and 7 (to the group) are 4 and 6 */
+		const char *lib = SaveVar_Get("Mission.Library");
+		map[0] = 0;
+		if (!LvN_ModGet("Init", "UpperMap", mapV)) {
+			PyErr_Clear();
+		} else if (mapV->type == NV_STR) {
+			Str_Copy(map, Native_Text(mapV), sizeof(map));
+		}
+		if (!strcmp(map, "CA") && lib && !strcmp(lib, "SuperDeal_Eighth") && (Sp_NumCmp(num, 5) == 0 || Sp_NumCmp(num, 7) == 0)) {
+			if (!Mode_Arith('-', num, Mode_I(&t, 1), less)) {
+				return Mode_Done(&t, 0);
+			}
+			num = less;
+		}
+		Mode_Repr(num, r);
+		Str_Printf(taunt, sizeof(taunt), "Generics_%sTaunt_%s", type, Native_Text(r));
+	}
+	prev[0] = 0;
+	if (!LvN_ModGet(SP, "prevTaunt", prevV)) {
+		PyErr_Clear();
+	} else if (prevV->type == NV_STR) {
+		Str_Copy(prev, Native_Text(prevV), sizeof(prev));
+	}
+	if (!strcmp(taunt, prev)) {
+		Sp_SetS("LaunchedTauntEntityName", "");
+		return Mode_Done(&t, 1);
+	}
+	Sp_SetS("prevTaunt", taunt);
+	const char *bertos = SaveVar_Get("CreateBertos");
+	Str_Copy(head, !strcmp(type, "Berto") && bertos && !strcmp(bertos, "1") ? "EvilBerto" : type, sizeof(head));
+	Native_SetStr(tt, taunt);
+	Native_SetStr(h, head);
+	Native_SetEmpty(params, NV_TUPLE);
+	int sent = Sp_RemoteComunication(tt, h, Mode_I(&t, 1), Mode_V(&t), params);
+	if (sent > 0) {
+		Sp_Set("LaunchedTauntEntityName", ent);
+	}
+	return Mode_Done(&t, sent >= 0);
+}
+
+/* AddRemoteCom(SpeechText, HeadName, AfterRemoteComFunc=None, Parameters=(), HeadIndex=1, InsertFirst=0): a message
+ * in the queue (not twice), sent 0.2 s later */
+static byte Sp_AddRemoteCom(const nativeVal_t *text, const nativeVal_t *head, const nativeVal_t *after, const nativeVal_t *params,
+	const nativeVal_t *index, byte first) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cur = Mode_V(&t), *list = Mode_V(&t), *item = Mode_V(&t), *it = Mode_V(&t), *msg = Mode_V(&t);
+	if (!Sp_G("CurrentRemoteCom", cur) || !Sp_G("RemoteCom", list)) {
+		return Mode_Done(&t, 0);
+	}
+	int n = Mode_Len(list);
+	if (n < 0) {
+		return Mode_Done(&t, 0);
+	}
+	byte dup = Native_Compare(text, cur) == 0;
+	for (int i = 0; !dup && i < n; i++) {
+		Native_Free(item);
+		Native_Free(it);
+		if (!Sp_Item(list, i, item) || !Sp_Item(item, 0, it)) {
+			return Mode_Done(&t, 0);
+		}
+		dup = Native_Compare(it, text) == 0;
+	}
+	if (dup) {
+		return Mode_Done(&t, 1);
+	}
+	Native_SetEmpty(msg, NV_TUPLE);
+	Native_Copy(Native_Append(msg), text);
+	Native_Copy(Native_Append(msg), head);
+	Native_Copy(Native_Append(msg), after);
+	Native_Copy(Native_Append(msg), params);
+	Native_Free(list);
+	if (!Mode_ListAddG(SP, "RemoteCom", msg, first) || !Sp_G("RemoteCom", list)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Mode_Len(list) < 1) {
+		return Mode_Done(&t, 1);
+	}
+	Native_Free(item);
+	Native_Free(it);
+	if (!Sp_Item(list, 0, item) || !Sp_Item(item, 0, it)) {
+		return Mode_Done(&t, 0);
+	}
+	byte ok = Mode_DelSchedS("ProcessRemoteComList");
+	Sp_Set("CurrentRemoteCom", it);
+	return Mode_Done(&t, ok && Mode_LaterIn(0.2, SP, "ProcessRemoteCom", index, 1, "ProcessRemoteComList"));
+}
+
+/* ProcessRemoteCom(HeadIndex): the first message of the queue when it can be sent, again 5 s later while some wait */
+static byte Sp_ProcessRemoteCom(const nativeVal_t *index) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *list = Mode_V(&t), *msg = Mode_V(&t), *a = Mode_V(&t);
+	Mode_V(&t);
+	Mode_V(&t);
+	Mode_V(&t);
+	if (!Sp_G("RemoteCom", list)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Native_True(list)) {
+		return Mode_Done(&t, 1);
+	}
+	if (!Sp_Item(list, 0, msg) || !Sp_Item(msg, 0, &a[0]) || !Sp_Item(msg, 1, &a[1]) || !Sp_Item(msg, 2, &a[2]) ||
+		!Sp_Item(msg, 3, &a[3])) {
+		return Mode_Done(&t, 0);
+	}
+	int sent = Sp_RemoteComunication(&a[0], &a[1], index, &a[2], &a[3]);
+	if (sent < 0 || (sent && !Mode_DelItemG(SP, "RemoteCom", 0))) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(list);
+	if (!Sp_G("RemoteCom", list)) {
+		return Mode_Done(&t, 0);
+	}
+	int n = Mode_Len(list);
+	return Mode_Done(&t, n >= 0 && (n == 0 || Mode_LaterIn(5.0, SP, "ProcessRemoteCom", index, 1, "ProcessRemoteComList")));
+}
+
+/* ---- speeches with objects ---- */
+
+/* the range test each second while OnOutOfRange is set */
+static byte Sp_TestLater(void) {
+	nativeVal_t f = { 0 };
+	byte ok = Sp_G("OnOutOfRange", &f) && (!Native_True(&f) || Mode_LaterIn(1, SP, "TestInRange", NULL, 0, "TestInRange"));
+	Native_Free(&f);
+	return ok;
+}
+
+/* TestInRange(): OnOutOfRange when the player walks away (5 m) or the object offers to talk again */
+static byte Sp_TestInRange(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *player = Mode_V(&t), *obj = Mode_V(&t), *hook = Mode_V(&t), *sel = Mode_V(&t), *a = Mode_V(&t), *b = Mode_V(&t);
+	nativeVal_t *d = Mode_V(&t), *m = Mode_V(&t);
+	if (!Sp_Usr(player) || !Sp_G("ObjEntity", obj)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Native_True(player) || !Native_True(obj)) {
+		return Mode_Done(&t, 1);
+	}
+	int abort = Sp_G("OnOutOfRange", hook) ? Native_True(hook) : -1;
+	if (abort > 0) {
+		abort = Sp_HPrefix(obj, "ArrOpt0", "Talk:");
+	}
+	if (abort > 0) {
+		abort = Mode_VObj(player, "AutoSelect", sel) ? Native_True(sel) : -1;
+	}
+	int far = 0;
+	if (abort == 0) {
+		far = Mode_VObj(obj, "Pos", a) && Mode_VObj(player, "Pos", b) && Mode_VecSub(a, b, d) && Mode_VecModSqr(d, m) ?
+			Sp_NumCmp(m, 250000) > 0 : -1;
+	}
+	if (abort < 0 || far < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (!abort && !far) {
+		return Mode_Done(&t, Mode_LaterIn(1, SP, "TestInRange", NULL, 0, "TestInRange"));
+	}
+	if (!Native_True(hook)) {
+		return Mode_Done(&t, 1);
+	}
+	if (!Mode_CallArgs(hook, NULL, NULL, 0) || !Mode_GVarSetN("RemainTalkTime", 0.0)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetNone(a);
+	Sp_Set("OnOutOfRange", a);
+	return Mode_Done(&t, 1);
+}
+
+/* StartObjectSpeech(obj, action, defLoop, text, charType, speechCallback): the object speaks over the radio */
+static byte Sp_StartObjectSpeech(const nativeVal_t *obj, const nativeVal_t *action, const nativeVal_t *defLoop,
+	const nativeVal_t *text, const nativeVal_t *type, const nativeVal_t *cb) {
+	nativeVal_t end = { 0 }, params = { 0 }, one;
+	Sp_Set("ObjEntity", obj);
+	Sp_Set("ObjCharType", type);
+	Native_SetInt(&one, 1);
+	byte ok = (Mode_IsText(action, "") || Mode_VSet(obj, "Action", action)) &&
+		(Mode_IsText(defLoop, "") || Mode_VSet(obj, "DefLoop", defLoop)) && Sp_G("OnEndOfSpeech", &end) &&
+		Sp_G("OnEndOfSpeechParams", &params) && Sp_ForceRemoteComunication(text, type, &one, &end, &params) &&
+		Mode_SpeechCallbackV(cb) && Sp_TestLater();
+	Native_Free(&end);
+	Native_Free(&params);
+	return ok;
+}
+
+/* StartObjSpch(obj, text, charType, speechCallback="Speech.EndObjectAnswer"): with the voice of the text */
+static byte Sp_StartObjSpch(const nativeVal_t *obj, const nativeVal_t *text, const nativeVal_t *type, const nativeVal_t *cb) {
+	nativeVal_t empty, lang = { 0 };
+	Native_SetText(&empty, "", 0);
+	byte ok = Sp_OpenVoice(text, 2) && Sp_PlayVoiceAfterI(2, 0) && Mode_LangV(text, &lang) &&
+		Sp_StartObjectSpeech(obj, &empty, &empty, &lang, type, cb);
+	Native_Free(&lang);
+	return ok;
+}
+
+/* OnObjectSpeech(_ObjEntity, _ObjCharType, SpeechText, SpeechAnswer, action="Talk", defLoop="Talk"): the player
+ * talks to an object with the head of a character; it answers when the text ends (ObjectAutoAnswer). 1 into out, None
+ * without a player */
+static byte Sp_OnObjectSpeech(const nativeVal_t *obj, const nativeVal_t *type, const nativeVal_t *text, const nativeVal_t *ans,
+	const nativeVal_t *action, const nativeVal_t *defLoop, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *player = Mode_V(&t), *name = Mode_V(&t), *me = Mode_V(&t), *time = Mode_V(&t), *dict = Mode_V(&t);
+	nativeVal_t *model = Mode_V(&t), *one = Mode_V(&t);
+	if (out) {
+		Native_SetNone(out);
+	}
+	if (!Sp_Usr(player)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Native_True(player)) {
+		return Mode_Done(&t, 1);
+	}
+	Sp_Set("ObjEntity", obj);
+	Sp_Set("ObjAnswer", ans);
+	Sp_Set("ObjCharType", type);
+	if (!Mode_VObj(player, "Name", name) || !Mode_EntitySeam(name, me)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_True(me) && (!Sp_HSetS(obj, "Action", "Listen") || !Sp_HSetS(me, "Action", "Talk") || !Sp_HSetS(me, "DefLoop", "Talk") ||
+		!Sp_HSetS(me, "OutSelectFunc", "Speech.AbortSpeech") || !Sp_HSetI(me, "AutoSelect", 0))) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Sp_SpeechTime(text, time) || !Sp_SpeechText(text, time, "UsrTextColor") || !Sp_G("HeadDict", dict)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Mode_Sub(dict, type, model)) {
+		/* OBJLIB 7: the KeyError of the script is the Python exception */
+		if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+			return Mode_Done(&t, 0);
+		}
+		PyErr_Clear();
+		Native_Copy(model, type);
+	}
+	if (!Mode_VSet(obj, "HeadModel", model) || !Sp_HSetI(obj, "HeadAnimIndex", 0)) {
+		return Mode_Done(&t, 0);
+	}
+	Sp_Set("ObjAutoAnswerAction", action);
+	Sp_Set("ObjAutoAnswerDefLoop", defLoop);
+	Native_SetInt(one, 1);
+	if (!Mode_SpeechCallback("Speech.ObjectAutoAnswer") || (Sp_Int(SP, "LockAlarm", 0) && !Mode_SetLockAlarm(one)) || !Sp_TestLater()) {
+		return Mode_Done(&t, 0);
+	}
+	if (out) {
+		Native_SetInt(out, 1);
+	}
+	return Mode_Done(&t, 1);
+}
+
+/* OnObjSpch(_ObjEntity, _ObjCharType, SpeechText, SpeechAnswer, action="Talk", defLoop="Talk"): by the keys of the
+ * language file, with the voices */
+static byte Sp_OnObjSpch(const nativeVal_t *obj, const nativeVal_t *type, const nativeVal_t *text, const nativeVal_t *ans,
+	const nativeVal_t *action, const nativeVal_t *defLoop) {
+	nativeVal_t tl = { 0 }, al = { 0 };
+	byte ok = Sp_OpenVoice(text, 0) && Sp_OpenVoice(ans, 2) && Sp_PlayVoiceAfterI(0, 0) && Mode_LangV(text, &tl) &&
+		Mode_LangV(ans, &al) && Sp_OnObjectSpeech(obj, type, &tl, &al, action, defLoop, NULL);
+	Native_Free(&tl);
+	Native_Free(&al);
+	return ok;
+}
+
+/* StdObjSpch(_ObjEntity, _ObjCharType, optId, action="Talk", defLoop="Talk") */
+static byte Sp_StdObjSpch(const nativeVal_t *obj, const nativeVal_t *type, const nativeVal_t *opt, const nativeVal_t *action,
+	const nativeVal_t *defLoop) {
+	nativeVal_t msg = { 0 }, ans = { 0 };
+	byte ok = Sp_Cat(opt, "Msg", &msg) && Sp_Cat(opt, "Ans", &ans) && Sp_OnObjSpch(obj, type, &msg, &ans, action, defLoop);
+	Native_Free(&msg);
+	Native_Free(&ans);
+	return ok;
+}
+
+/* OnChallengeObjSpch(_ObjEntity, _ObjCharType, SpeechText, SpeechAnswer, action="Talk", defLoop="Talk", isMerc=0) */
+static byte Sp_OnChallengeObjSpch(const nativeVal_t *obj, const nativeVal_t *type, const nativeVal_t *text, const nativeVal_t *ans,
+	const nativeVal_t *action, const nativeVal_t *defLoop, const nativeVal_t *merc) {
+	nativeVal_t al = { 0 };
+	byte isMerc = merc && Sp_NumCmp(merc, 1) == 0;
+	byte ok = Sp_OpenVoiceS(isMerc ? "ChallengeRaceStdOpt2Voice" : "ChallengeRaceStdOpt1Voice", 0) && Sp_OpenVoice(ans, 2) &&
+		Sp_PlayVoiceAfterI(0, 0) && Mode_LangV(ans, &al) && Sp_OnObjectSpeech(obj, type, text, &al, action, defLoop, NULL);
+	Native_Free(&al);
+	return ok;
+}
+
+/* ObjectAutoAnswer(): the end of the player's line to the object, its answer follows */
+static byte Sp_ObjectAutoAnswer(void) {
+	nativeVal_t me = { 0 };
+	int talk = Sp_Usr(&me) ? Sp_HPrefix(&me, "Action", "Talk") : -1;
+	byte ok = talk >= 0 && (!talk || Sp_HSetS(&me, "ForceAction", "TalkListenNPC"));
+	Native_Free(&me);
+	if (ok) {
+		Sp_StopMenuEvents();
+		ok = Mode_LaterIn(1.0, SP, "RestartMenuEvents", NULL, 0, NULL) && Mode_LaterIn(0.45, SP, "ObjectAutoAnswer2", NULL, 0, NULL);
+	}
+	return ok;
+}
+
+/* ObjectAutoAnswer2(): the answer of the object over the radio */
+static byte Sp_ObjectAutoAnswer2(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *obj = Mode_V(&t), *action = Mode_V(&t), *loop = Mode_V(&t), *ans = Mode_V(&t), *type = Mode_V(&t);
+	nativeVal_t *me = Mode_V(&t), *listen = Mode_V(&t);
+	if (!Mode_StopVoice(Mode_I(&t, 0)) || !Sp_PlayVoiceScheduled(Mode_I(&t, 2), 0, Mode_I(&t, 0)) || !Sp_G("ObjEntity", obj) ||
+		!Sp_G("ObjAutoAnswerAction", action) || !Sp_G("ObjAutoAnswerDefLoop", loop) || !Sp_G("ObjAnswer", ans) ||
+		!Sp_G("ObjCharType", type) || !Sp_StartObjectSpeech(obj, action, loop, ans, type, Mode_S(&t, "Speech.EndObjectAnswer")) ||
+		!Sp_Usr(me)) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, !Native_True(me) || (Sp_G("TalkListen", listen) && Mode_VSet(me, "ForceAction", listen) &&
+		Sp_HSetS(me, "ForceDefLoop", "Relax")));
+}
+
+/* EndObjectAnswer(): the object listens again, the head stops talking */
+static byte Sp_EndObjectAnswer(void) {
+	nativeVal_t obj = { 0 };
+	int relax = Sp_G("ObjEntity", &obj) ? Sp_HIs(&obj, "Action", "Relax") : -1;
+	byte ok = relax >= 0 && (relax || Sp_HSetS(&obj, "Action", "Listen")) && Mode_Set0I("Monitor", "HeadAnimIndex", 0);
+	Native_Free(&obj);
+	return ok && Sp_RestoreSpeech();
+}
+
+/* ---- adapters ---- */
+
+/* the functions the port called without parsing their arguments (any arguments are taken) */
+#define SP_ANY(name, call) \
+	static PyObject *Speech_##name(PyObject *self, PyObject *args) { \
+		(void)self; \
+		(void)args; \
+		return Mode_Result(call); \
+	}
+
+SP_ANY(CallEndOfSpeech, Sp_CallEndOfSpeech())
+SP_ANY(NormalAbortSpeech, Sp_NormalAbortSpeech())
+SP_ANY(StopMenuEvents, Sp_StopMenuEvents())
+SP_ANY(RestartMenuEvents, Sp_RestartMenuEvents())
+SP_ANY(AutoAnswer, Sp_AutoAnswer())
+SP_ANY(ObjNIEnd, Sp_ObjNIEnd())
+SP_ANY(RestoreSpeech, Sp_RestoreSpeech())
+SP_ANY(CancelRemoteCom, Mode_CancelSpeech())
+SP_ANY(ObjectAutoAnswer, Sp_ObjectAutoAnswer())
+SP_ANY(ObjectAutoAnswer2, Sp_ObjectAutoAnswer2())
 
 static PyObject *Speech_DoRemote(PyObject *self, PyObject *args) {
 	(void)self;
@@ -1127,672 +1523,268 @@ static PyObject *Speech_DoRemote(PyObject *self, PyObject *args) {
 	return r < 0 ? NULL : PyInt_FromLong(r);
 }
 
-/* ForceRemoteComunication(SpeechText, HeadName, HeadIndex=1, AfterRemoteComFunc=None, Parameters=()): the text with
- * the head of the speaker on the monitor, the function after it */
-static byte Sp_ForceRemoteComunication(PyObject *text, PyObject *head, PyObject *index, PyObject *after, PyObject *params) {
-	PyObject *t = Sp_SpeechTime(text);
-	byte ok = t && Sp_SpeechText(text, t, "DefTextColor");
-	Py_XDECREF(t);
-	PyObject *e = ok ? Sp_Usr() : NULL;
-	PyObject *w = e && PyObject_IsTrue(e) > 0 ? Script_Method(e, "IsType", "(s)", "WalkChar") : NULL;
-	ok = e && (PyObject_IsTrue(e) <= 0 || w);
-	if (ok && w && PyObject_IsTrue(w) > 0) {
-		ok = Script_HSet(e, "AutoSelect", PyInt_FromLong(0)) && Script_HSet(e, "SelectedEntity", PyString_FromString("")) &&
-			Script_HSet(e, "OutSelectFunc", PyString_FromString(""));
+MODE_FN(Speech, ScheduledVoiceCallback, 2, Sp_ScheduledVoiceCallback(&a[0], &a[1]))
+MODE_FN(Speech, PlayVoiceScheduled, 3, Sp_PlayVoiceScheduledV(&a[0], &a[1], &a[2]))
+MODE_FN(Speech, RestoreState, 1, Sp_RestoreState(&a[0]))
+MODE_FN(Speech, RestoreMoveTime, 1, Sp_HSetI(&a[0], "MoveTime", 0))
+MODE_FN(Speech, StdAnsLst, 1, Sp_StdAnsLst(&a[0]))
+MODE_FN(Speech, CalculateSpeechTime, 1, Sp_SpeechTime(&a[0], out))
+MODE_FN(Speech, PlayerAnsEnd, 0, Sp_PlayerAnsEnd())
+MODE_FN(Speech, PlayerAns, 4, Sp_IntOut(Sp_PlayerAns(&a[0], &a[1], &a[2], &a[3]), out))
+MODE_FN(Speech, SetPlayerToTalk, 2, Sp_IntOut(Sp_SetPlayerToTalk(&a[0], &a[1]), out))
+MODE_FN(Speech, InspectChar, 4, Sp_InspectChar(&a[0], &a[1]))
+MODE_FN(Speech, AutoSpeech, 4, Sp_AutoSpeech(a))
+MODE_FN(Speech, LaunchTaunt, 3, Sp_LaunchTaunt(&a[0], &a[1], &a[2]))
+MODE_FN(Speech, OffVoice, 1, Sp_OffVoice(&a[0]))
+MODE_FN(Speech, ProcessRemoteCom, 1, Sp_ProcessRemoteCom(&a[0]))
+MODE_FN(Speech, TestInRange, 0, Sp_TestInRange())
+MODE_FN(Speech, StartObjectSpeech, 6, Sp_StartObjectSpeech(&a[0], &a[1], &a[2], &a[3], &a[4], &a[5]))
+MODE_FN(Speech, EndObjectAnswer, 0, Sp_EndObjectAnswer())
+
+/* a keyword function: its arguments by name with the defaults of the script (a value of def NULL stays None) */
+#define SP_KW(fmt, n) \
+	nativeVal_t a[8]; \
+	byte given[8]; \
+	(void)self; \
+	if (!Mode_Kw(args, kw, fmt, names, n, a, given)) { \
+		return NULL; \
 	}
-	Py_XDECREF(w);
-	Py_XDECREF(e);
-	if (ok && !(PyString_Check(head) && !*PyString_AsString(head))) {
-		PyObject *key = PyString_FromString("CharName_");
-		PyObject *full = key ? PySequence_Concat(key, head) : NULL;
-		PyObject *txt = full && PyString_Check(full) ? Sp_Lang(PyString_AsString(full)) : NULL;
-		PyObject *dict = txt ? Sp_Get("HeadDict") : NULL;
-		PyObject *model = dict ? PyObject_GetItem(dict, head) : NULL;
-		if (!model && dict && PyErr_ExceptionMatches(PyExc_KeyError)) {
-			PyErr_Clear();
-			Py_INCREF(head);
-			model = head;
-		}
-		ok = model && Script_Try("SScorer", "SetHeadMonitor", "(OOO)", model, txt, index);
-		Py_XDECREF(key);
-		Py_XDECREF(full);
-		Py_XDECREF(txt);
-		Py_XDECREF(dict);
-		Py_XDECREF(model);
+
+/* argument i a text default when not given */
+static void Sp_DefS(nativeVal_t *a, const byte *given, int i, const char *s) {
+	if (!given[i]) {
+		Native_SetStr(&a[i], s);
 	}
-	if (ok) {
-		Py_INCREF(after);
-		Script_SetVar("Speech", "OnEndOfSpeech", after);
-		Py_INCREF(params);
-		Script_SetVar("Speech", "OnEndOfSpeechParams", params);
-		ok = Script_Try("SScorer", "SetSpeechCallback", "(s)", "Speech.RestoreSpeech");
+}
+
+static void Sp_DefI(nativeVal_t *a, const byte *given, int i, long v) {
+	if (!given[i]) {
+		Native_SetInt(&a[i], v);
 	}
-	return ok;
+}
+
+static PyObject *Speech_AbortSpeech(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "UsrName", "CharName", "extrangextra", NULL };
+	SP_KW("|OOO", 3)
+	return Mode_KwOut(a, 3, Sp_AbortSpeech(), NULL);
+}
+
+static PyObject *Speech_PerformAnswer(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "SpeechText", "Time", NULL };
+	nativeVal_t out = { 0 };
+	SP_KW("O|O", 2)
+	Sp_DefI(a, given, 1, 6);
+	return Mode_KwOut(a, 2, Sp_PerformAnswer(&a[0], &a[1], &out), &out);
+}
+
+static PyObject *Speech_OnSpeech(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "SpeechText", "SpeechAnswer", "_AnsAnima_", NULL };
+	nativeVal_t out = { 0 };
+	SP_KW("O|OO", 3)
+	Sp_DefS(a, given, 1, "");
+	Sp_DefS(a, given, 2, "TalkNPC");
+	return Mode_KwOut(a, 3, Sp_IntOut(Sp_OnSpeech(&a[0], &a[1], &a[2]), &out), &out);
+}
+
+static PyObject *Speech_OnSpch(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "LngSpeechText", "LngSpeechAnswer", "_AnsAnima_", NULL };
+	nativeVal_t out = { 0 };
+	SP_KW("OO|O", 3)
+	Sp_DefS(a, given, 2, "TalkNPC");
+	return Mode_KwOut(a, 3, Sp_IntOut(Sp_OnSpch(&a[0], &a[1], &a[2]), &out), &out);
+}
+
+static PyObject *Speech_OnChallengeSpch(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "LngSpeechText", "LngSpeechAnswer", "_AnsAnima_", "isMerc", NULL };
+	nativeVal_t out = { 0 };
+	SP_KW("OO|OO", 4)
+	Sp_DefS(a, given, 2, "TalkNPC");
+	return Mode_KwOut(a, 4, Sp_IntOut(Sp_OnChallengeSpch(&a[0], &a[1], &a[2], given[3] ? &a[3] : NULL), &out), &out);
+}
+
+static PyObject *Speech_StdOnSpch(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "optId", "_AnsAnima_", NULL };
+	SP_KW("O|O", 2)
+	Sp_DefS(a, given, 1, "TalkNPC");
+	return Mode_KwOut(a, 2, Sp_StdOnSpch(&a[0], &a[1]), NULL);
+}
+
+static PyObject *Speech_NISpeech(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "headName", NULL };
+	SP_KW("|O", 1)
+	Sp_DefS(a, given, 0, "");
+	return Mode_KwOut(a, 1, Sp_NISpeech(&a[0]), NULL);
+}
+
+static PyObject *Speech_AddNI(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "LngSpeechText", "LngSpeechAnswer", "_AnsAnima_", "HeadName", NULL };
+	SP_KW("OO|OO", 4)
+	return Mode_KwOut(a, 4, Sp_AddNI(&a[0], &a[1], given[2] ? &a[2] : NULL, given[3] ? &a[3] : NULL), NULL);
+}
+
+static PyObject *Speech_AutoAddNI(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "TextBase", "_AnsAnima_", "HeadName", NULL };
+	SP_KW("O|OO", 3)
+	return Mode_KwOut(a, 3, Sp_AutoAddNI(&a[0], given[1] ? &a[1] : NULL, given[2] ? &a[2] : NULL), NULL);
+}
+
+static PyObject *Speech_RunNI(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "i", NULL };
+	SP_KW("|O", 1)
+	Sp_DefI(a, given, 0, 0);
+	return Mode_KwOut(a, 1, Sp_RunNI(&a[0]), NULL);
 }
 
 /* the arguments (SpeechText, HeadName, HeadIndex=1, AfterRemoteComFunc=None, Parameters=()) */
-static byte Sp_RemoteArgs(PyObject *args, PyObject *kw, PyObject **text, PyObject **head, PyObject **index, PyObject **after,
-	PyObject **params, PyObject **own) {
+static byte Sp_RemoteArgs(PyObject *args, PyObject *kw, nativeVal_t *a) {
 	static char *names[] = { "SpeechText", "HeadName", "HeadIndex", "AfterRemoteComFunc", "Parameters", NULL };
-	*index = *after = *params = NULL;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|OOO", names, text, head, index, after, params)) {
+	byte given[5];
+	if (!Mode_Kw(args, kw, "OO|OOO", names, 5, a, given)) {
 		return 0;
 	}
-	own[0] = *index ? NULL : PyInt_FromLong(1);
-	own[1] = *params ? NULL : PyTuple_New(0);
-	if (!*index) {
-		*index = own[0];
+	Sp_DefI(a, given, 2, 1);
+	if (!given[4]) {
+		Native_SetEmpty(&a[4], NV_TUPLE);
 	}
-	if (!*after) {
-		*after = Py_None;
-	}
-	if (!*params) {
-		*params = own[1];
-	}
-	return *index && *params;
+	return 1;
 }
 
 static PyObject *Speech_ForceRemoteComunication(PyObject *self, PyObject *args, PyObject *kw) {
-	PyObject *text, *head, *index, *after, *params, *own[2] = { NULL, NULL };
+	nativeVal_t a[5];
 	(void)self;
-	byte ok = Sp_RemoteArgs(args, kw, &text, &head, &index, &after, &params, own) &&
-		Sp_ForceRemoteComunication(text, head, index, after, params);
-	Py_XDECREF(own[0]);
-	Py_XDECREF(own[1]);
-	return ok ? Py_ReturnNone() : NULL;
-}
-
-/* ForceRemoteComInternal(...): the voice of the text on channel 2 and the communication */
-static byte Sp_ForceRemoteComInternal(PyObject *text, PyObject *head, PyObject *index, PyObject *after, PyObject *params) {
-	PyObject *lang = PyString_Check(text) ? Sp_Lang(PyString_AsString(text)) : NULL;
-	byte ok = lang && Sp_OpenVoice(text, 2) && Sp_PlayVoiceAfter(2, PyInt_FromLong(0)) &&
-		Sp_ForceRemoteComunication(lang, head, index, after, params);
-	if (!lang && !PyErr_Occurred()) {
-		PyErr_SetString(PyExc_TypeError, "illegal argument type for built-in operation");
+	if (!Sp_RemoteArgs(args, kw, a)) {
+		return NULL;
 	}
-	Py_XDECREF(lang);
-	return ok;
+	return Mode_KwOut(a, 5, Sp_ForceRemoteComunication(&a[0], &a[1], &a[2], &a[3], &a[4]), NULL);
 }
 
 static PyObject *Speech_ForceRemoteComInternal(PyObject *self, PyObject *args, PyObject *kw) {
-	PyObject *text, *head, *index, *after, *params, *own[2] = { NULL, NULL };
+	nativeVal_t a[5];
 	(void)self;
-	byte ok = Sp_RemoteArgs(args, kw, &text, &head, &index, &after, &params, own) &&
-		Sp_ForceRemoteComInternal(text, head, index, after, params);
-	Py_XDECREF(own[0]);
-	Py_XDECREF(own[1]);
-	return ok ? Py_ReturnNone() : NULL;
-}
-
-/* RemoteComunication(...): the communication when one may start now (DoRemote); its result */
-static int Sp_RemoteComunication(PyObject *text, PyObject *head, PyObject *index, PyObject *after, PyObject *params) {
-	int doit = Sp_DoRemote();
-	if (doit > 0 && !Sp_ForceRemoteComInternal(text, head, index, after, params)) {
-		return -1;
+	if (!Sp_RemoteArgs(args, kw, a)) {
+		return NULL;
 	}
-	return doit;
+	return Mode_KwOut(a, 5, Sp_ForceRemoteComInternal(&a[0], &a[1], &a[2], &a[3], &a[4]), NULL);
 }
 
 static PyObject *Speech_RemoteComunication(PyObject *self, PyObject *args, PyObject *kw) {
-	PyObject *text, *head, *index, *after, *params, *own[2] = { NULL, NULL };
+	nativeVal_t a[5], out = { 0 };
 	(void)self;
-	int r = Sp_RemoteArgs(args, kw, &text, &head, &index, &after, &params, own) ?
-		Sp_RemoteComunication(text, head, index, after, params) : -1;
-	Py_XDECREF(own[0]);
-	Py_XDECREF(own[1]);
-	return r < 0 ? NULL : PyInt_FromLong(r);
-}
-
-/* OffVoice(SpeechText): a voice without a head when nobody talks */
-static PyObject *Speech_OffVoice(PyObject *self, PyObject *args) {
-	PyObject *text;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &text)) {
+	if (!Sp_RemoteArgs(args, kw, a)) {
 		return NULL;
 	}
-	PyObject *e = Sp_Usr(), *rest = e && PyObject_IsTrue(e) > 0 ? Script_Ask("Scrap", "Get", "(s)", "RemainTalkTime") : NULL;
-	byte ok = e && (PyObject_IsTrue(e) <= 0 || rest);
-	int go = ok && rest && Script_NumCmp(rest, 0) <= 0;
-	if (go) {
-		PyObject *w = Script_Method(e, "IsType", "(s)", "WalkChar");
-		go = w ? PyObject_IsTrue(w) <= 0 : -1;
-		if (go == 0) {
-			PyObject *sel = Script_GetAttr(e, "AutoSelect");
-			go = sel ? Script_NumCmp(sel, 1) == 0 : -1;
-			if (go > 0) {
-				go = Script_HIs(e, "SelectedEntity", "");
-			}
-			Py_XDECREF(sel);
-		}
-		Py_XDECREF(w);
-		ok = go >= 0;
-	}
-	if (go > 0) {
-		PyObject *none = PyString_FromString(""), *zero = PyInt_FromLong(0), *params = PyTuple_New(0);
-		ok = Sp_ForceRemoteComInternal(text, none, zero, Py_None, params);
-		Py_XDECREF(none);
-		Py_XDECREF(zero);
-		Py_XDECREF(params);
-	}
-	Py_XDECREF(rest);
-	Py_XDECREF(e);
-	return ok ? Py_ReturnNone() : NULL;
-}
-
-/* LaunchTaunt(entityName, charType, numTaunt): the taunt of a character over the radio, not twice in a row */
-static PyObject *Speech_LaunchTaunt(PyObject *self, PyObject *args) {
-	PyObject *ent, *typeObj, *num;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &ent, &typeObj, &num)) {
-		return NULL;
-	}
-	if (!PyString_Check(typeObj)) {
-		/* string.find(charType, "Mercenary") raises for a value that is no string (one it takes fails at the
-		 * "Generics_" + charType after it) */
-		PyObject *r = Script_Ask("string", "find", "(Os)", typeObj, "Mercenary");
-		PyObject *t = r ? Script_SPlus("Generics_", typeObj) : NULL;
-		Py_XDECREF(r);
-		Py_XDECREF(t);
-		return t ? Script_Fail() : NULL;
-	}
-	const char *type = PyString_AsString(typeObj);
-	char taunt[0x80], head[0x40];
-	Py_INCREF(num);
-	if (strstr(type, "Mercenary")) {
-		PyObject *r = PyObject_Repr(num);
-		Str_Printf(taunt, sizeof(taunt), "Generics_MercsTaunt_%s", r ? PyString_AsString(r) : "");
-		Py_XDECREF(r);
-	} else {
-		/* in the CA of the eighth super deal the police taunts 5 and 7 (to the group) are 4 and 6 */
-		char map[0x40];
-		const char *lib = SaveVar_Get("Mission.Library");
-		Script_GetString("Init", "UpperMap", map, sizeof(map));
-		if (!strcmp(map, "CA") && lib && !strcmp(lib, "SuperDeal_Eighth") &&
-			(Script_NumCmp(num, 5) == 0 || Script_NumCmp(num, 7) == 0)) {
-			PyObject *one = PyInt_FromLong(1), *less = PyNumber_Subtract(num, one);
-			Py_XDECREF(one);
-			Py_DECREF(num);
-			num = less;
-		}
-		PyObject *r = num ? PyObject_Repr(num) : NULL;
-		Str_Printf(taunt, sizeof(taunt), "Generics_%sTaunt_%s", type, r ? PyString_AsString(r) : "");
-		Py_XDECREF(r);
-	}
-	Py_XDECREF(num);
-	if (PyErr_Occurred()) {
-		return NULL;
-	}
-	char prev[0x80];
-	Script_GetString("Speech", "prevTaunt", prev, sizeof(prev));
-	if (!strcmp(taunt, prev)) {
-		Script_SetVar("Speech", "LaunchedTauntEntityName", PyString_FromString(""));
-		return Py_ReturnNone();
-	}
-	Script_SetVar("Speech", "prevTaunt", PyString_FromString(taunt));
-	const char *bertos = SaveVar_Get("CreateBertos");
-	Str_Copy(head, !strcmp(type, "Berto") && bertos && !strcmp(bertos, "1") ? "EvilBerto" : type, sizeof(head));
-	PyObject *t = PyString_FromString(taunt), *h = PyString_FromString(head), *one = PyInt_FromLong(1);
-	PyObject *params = PyTuple_New(0);
-	int r = params ? Sp_RemoteComunication(t, h, one, Py_None, params) : -1;
-	Py_XDECREF(t);
-	Py_XDECREF(h);
-	Py_XDECREF(one);
-	Py_XDECREF(params);
-	if (r > 0) {
-		Py_INCREF(ent);
-		Script_SetVar("Speech", "LaunchedTauntEntityName", ent);
-	}
-	return r < 0 ? NULL : Py_ReturnNone();
-}
-
-/* CancelRemoteCom(): the current speech ends */
-static PyObject *Speech_CancelRemoteCom(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Script_Try("SScorer", "CancelSpeech", "()") ? Py_ReturnNone() : NULL;
-}
-
-/* AddRemoteCom(SpeechText, HeadName, AfterRemoteComFunc=None, Parameters=(), HeadIndex=1, InsertFirst=0): a message
- * in the queue (not twice), sent 0.2 s later */
-static byte Sp_AddRemoteCom(PyObject *text, PyObject *head, PyObject *after, PyObject *params, PyObject *index, int first) {
-	PyObject *cur = Sp_Get("CurrentRemoteCom"), *list = cur ? Sp_Get("RemoteCom") : NULL;
-	int n = list ? PySequence_Length(list) : -1;
-	byte ok = n >= 0, dup = ok && PyObject_Compare(text, cur) == 0;
-	for (int i = 0; ok && !dup && i < n; i++) {
-		PyObject *item = PySequence_GetItem(list, i), *t = item ? PySequence_GetItem(item, 0) : NULL;
-		ok = t != NULL;
-		dup = t && PyObject_Compare(t, text) == 0;
-		Py_XDECREF(item);
-		Py_XDECREF(t);
-	}
-	if (ok && !dup) {
-		PyObject *msg = Py_BuildValue("(OOOO)", text, head, after, params);
-		ok = msg && (first ? PyList_Insert(list, 0, msg) : PyList_Append(list, msg)) == 0;
-		Py_XDECREF(msg);
-		if (ok && PySequence_Length(list) >= 1) {
-			PyObject *top = PySequence_GetItem(list, 0), *t = top ? PySequence_GetItem(top, 0) : NULL;
-			Py_XDECREF(top);
-			ok = t && Script_Try("Scrap", "DeleteScheduledFuncs", "(s)", "ProcessRemoteComList");
-			if (t) {
-				Script_SetVar("Speech", "CurrentRemoteCom", t);
-			}
-			ok = ok && Script_LaterIn(0.2, "Speech", "ProcessRemoteCom", Py_BuildValue("(O)", index), "ProcessRemoteComList");
-		}
-	}
-	Py_XDECREF(cur);
-	Py_XDECREF(list);
-	return ok;
-}
-
-static PyObject *Speech_AddRemoteCom(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "SpeechText", "HeadName", "AfterRemoteComFunc", "Parameters", "HeadIndex", "InsertFirst", NULL };
-	PyObject *text, *head, *after = Py_None, *params = NULL, *index = NULL, *first = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|OOOO", names, &text, &head, &after, &params, &index, &first)) {
-		return NULL;
-	}
-	PyObject *p = params ? (Py_INCREF(params), params) : PyTuple_New(0), *i = index ? (Py_INCREF(index), index) : PyInt_FromLong(1);
-	byte ok = p && i && Sp_AddRemoteCom(text, head, after, p, i, first && PyObject_IsTrue(first) > 0);
-	Py_XDECREF(p);
-	Py_XDECREF(i);
-	return ok ? Py_ReturnNone() : NULL;
+	return Mode_KwOut(a, 5, Sp_IntOut(Sp_RemoteComunication(&a[0], &a[1], &a[2], &a[3], &a[4]), &out), &out);
 }
 
 /* ForceRemoteCom(...): the message first in the queue, the current speech ends */
 static PyObject *Speech_ForceRemoteCom(PyObject *self, PyObject *args, PyObject *kw) {
-	PyObject *text, *head, *index, *after, *params, *own[2] = { NULL, NULL };
+	nativeVal_t a[5];
 	(void)self;
-	byte ok = Sp_RemoteArgs(args, kw, &text, &head, &index, &after, &params, own) &&
-		Sp_AddRemoteCom(text, head, after, params, index, 1) && Script_Try("SScorer", "CancelSpeech", "()");
-	Py_XDECREF(own[0]);
-	Py_XDECREF(own[1]);
-	return ok ? Py_ReturnNone() : NULL;
-}
-
-/* ProcessRemoteCom(HeadIndex): the first message of the queue when it can be sent, again 5 s later while some wait */
-static PyObject *Speech_ProcessRemoteCom(PyObject *self, PyObject *args) {
-	PyObject *index;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &index)) {
+	if (!Sp_RemoteArgs(args, kw, a)) {
 		return NULL;
 	}
-	PyObject *list = Sp_Get("RemoteCom");
-	if (!list) {
-		return NULL;
-	}
-	byte ok = 1;
-	if (PyObject_IsTrue(list) > 0) {
-		PyObject *msg = PySequence_GetItem(list, 0);
-		PyObject *t = msg ? PySequence_GetItem(msg, 0) : NULL, *h = t ? PySequence_GetItem(msg, 1) : NULL;
-		PyObject *f = h ? PySequence_GetItem(msg, 2) : NULL, *p = f ? PySequence_GetItem(msg, 3) : NULL;
-		int sent = p ? Sp_RemoteComunication(t, h, index, f, p) : -1;
-		ok = sent >= 0 && (!sent || PySequence_DelItem(list, 0) == 0);
-		if (ok && PySequence_Length(list) > 0) {
-			ok = Script_LaterIn(5.0, "Speech", "ProcessRemoteCom", Py_BuildValue("(O)", index), "ProcessRemoteComList");
-		}
-		Py_XDECREF(msg);
-		Py_XDECREF(t);
-		Py_XDECREF(h);
-		Py_XDECREF(f);
-		Py_XDECREF(p);
-	}
-	Py_DECREF(list);
-	return ok ? Py_ReturnNone() : NULL;
+	return Mode_KwOut(a, 5, Sp_AddRemoteCom(&a[0], &a[1], &a[3], &a[4], &a[2], 1) && Mode_CancelSpeech(), NULL);
 }
 
-/* ---- speeches with objects ---- */
-
-/* the range test each second while OnOutOfRange is set */
-static byte Sp_TestLater(void) {
-	PyObject *f = Sp_Get("OnOutOfRange");
-	byte ok = f && (PyObject_IsTrue(f) <= 0 || Script_LaterIn(1, "Speech", "TestInRange", PyTuple_New(0), "TestInRange"));
-	Py_XDECREF(f);
-	return ok;
-}
-
-/* TestInRange(): OnOutOfRange when the player walks away (5 m) or the object offers to talk again */
-static PyObject *Speech_TestInRange(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static PyObject *Speech_AddRemoteCom(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "SpeechText", "HeadName", "AfterRemoteComFunc", "Parameters", "HeadIndex", "InsertFirst", NULL };
+	SP_KW("OO|OOOO", 6)
+	if (!given[3]) {
+		Native_SetEmpty(&a[3], NV_TUPLE);
 	}
-	PyObject *player = Sp_Usr(), *obj = player ? Sp_Get("ObjEntity") : NULL;
-	byte ok = obj != NULL;
-	if (ok && PyObject_IsTrue(player) > 0 && PyObject_IsTrue(obj) > 0) {
-		PyObject *hook = Sp_Get("OnOutOfRange");
-		int abort = hook ? PyObject_IsTrue(hook) > 0 : -1;
-		if (abort > 0) {
-			abort = Script_HPrefix(obj, "ArrOpt0", "Talk:");
-		}
-		if (abort > 0) {
-			PyObject *sel = Script_GetAttr(player, "AutoSelect");
-			abort = sel ? PyObject_IsTrue(sel) > 0 : -1;
-			Py_XDECREF(sel);
-		}
-		int far = 0;
-		if (abort == 0) {
-			PyObject *a = Script_GetAttr(obj, "Pos"), *b = a ? Script_GetAttr(player, "Pos") : NULL;
-			PyObject *d = b ? Script_Ask("SVec", "Sub", "(OO)", a, b) : NULL, *m = d ? Script_Ask("SVec", "ModSqr", "(O)", d) : NULL;
-			far = m ? Script_NumCmp(m, 250000) > 0 : -1;
-			Py_XDECREF(a);
-			Py_XDECREF(b);
-			Py_XDECREF(d);
-			Py_XDECREF(m);
-		}
-		ok = abort >= 0 && far >= 0;
-		if (ok && (abort || far)) {
-			if (PyObject_IsTrue(hook) > 0) {
-				PyObject *a = PyTuple_New(0), *r = a ? Script_CallObject(hook, a, NULL) : NULL;
-				Py_XDECREF(a);
-				ok = r && Script_Try("Scrap", "Set", "(sd)", "RemainTalkTime", 0.0);
-				Py_XDECREF(r);
-				if (ok) {
-					Py_INCREF(Py_None);
-					Script_SetVar("Speech", "OnOutOfRange", Py_None);
-				}
-			}
-		} else if (ok) {
-			ok = Script_LaterIn(1, "Speech", "TestInRange", PyTuple_New(0), "TestInRange");
-		}
-		Py_XDECREF(hook);
-	}
-	Py_XDECREF(player);
-	Py_XDECREF(obj);
-	return ok ? Py_ReturnNone() : NULL;
+	Sp_DefI(a, given, 4, 1);
+	return Mode_KwOut(a, 6, Sp_AddRemoteCom(&a[0], &a[1], &a[2], &a[3], &a[4], given[5] && Native_True(&a[5])), NULL);
 }
 
-/* StartObjectSpeech(obj, action, defLoop, text, charType, speechCallback): the object speaks over the radio */
-static byte Sp_StartObjectSpeech(PyObject *obj, PyObject *action, PyObject *defLoop, PyObject *text, PyObject *type,
-	PyObject *cb) {
-	Py_INCREF(obj);
-	Script_SetVar("Speech", "ObjEntity", obj);
-	Py_INCREF(type);
-	Script_SetVar("Speech", "ObjCharType", type);
-	byte ok = (PyString_Check(action) && !*PyString_AsString(action)) || Script_HSet(obj, "Action", (Py_INCREF(action), action));
-	ok = ok && ((PyString_Check(defLoop) && !*PyString_AsString(defLoop)) || Script_HSet(obj, "DefLoop", (Py_INCREF(defLoop), defLoop)));
-	PyObject *end = ok ? Sp_Get("OnEndOfSpeech") : NULL, *params = end ? Sp_Get("OnEndOfSpeechParams") : NULL;
-	PyObject *one = params ? PyInt_FromLong(1) : NULL;
-	ok = one && Sp_ForceRemoteComunication(text, type, one, end, params) &&
-		Script_Try("SScorer", "SetSpeechCallback", "(O)", cb) && Sp_TestLater();
-	Py_XDECREF(end);
-	Py_XDECREF(params);
-	Py_XDECREF(one);
-	return ok;
-}
-
-static PyObject *Speech_StartObjectSpeech(PyObject *self, PyObject *args) {
-	PyObject *obj, *action, *defLoop, *text, *type, *cb;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOOOO", &obj, &action, &defLoop, &text, &type, &cb)) {
-		return NULL;
-	}
-	return Sp_StartObjectSpeech(obj, action, defLoop, text, type, cb) ? Py_ReturnNone() : NULL;
-}
-
-/* StartObjSpch(obj, text, charType, speechCallback="Speech.EndObjectAnswer"): with the voice of the text */
 static PyObject *Speech_StartObjSpch(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "obj", "text", "charType", "speechCallback", NULL };
-	PyObject *obj, *text, *type, *cb = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOO|O", names, &obj, &text, &type, &cb)) {
-		return NULL;
-	}
-	PyObject *def = cb ? NULL : PyString_FromString("Speech.EndObjectAnswer"), *empty = PyString_FromString("");
-	PyObject *lang = empty && Sp_OpenVoice(text, 2) && Sp_PlayVoiceAfter(2, PyInt_FromLong(0)) ? Script_LangOf(Script_Ref(text)) : NULL;
-	byte ok = lang && Sp_StartObjectSpeech(obj, empty, empty, lang, type, cb ? cb : def);
-	Py_XDECREF(def);
-	Py_XDECREF(empty);
-	Py_XDECREF(lang);
-	return ok ? Py_ReturnNone() : NULL;
-}
-
-/* OnObjectSpeech(_ObjEntity, _ObjCharType, SpeechText, SpeechAnswer, action="Talk", defLoop="Talk"): the player
- * talks to an object with the head of a character; it answers when the text ends (ObjectAutoAnswer) */
-static PyObject *Sp_OnObjectSpeech(PyObject *obj, PyObject *type, PyObject *text, PyObject *ans, PyObject *action,
-	PyObject *defLoop) {
-	PyObject *player = Sp_Usr();
-	if (!player) {
-		return NULL;
-	}
-	if (PyObject_IsTrue(player) <= 0) {
-		Py_DECREF(player);
-		return Py_ReturnNone();
-	}
-	Py_INCREF(obj);
-	Script_SetVar("Speech", "ObjEntity", obj);
-	Py_INCREF(ans);
-	Script_SetVar("Speech", "ObjAnswer", ans);
-	Py_INCREF(type);
-	Script_SetVar("Speech", "ObjCharType", type);
-	PyObject *name = Script_GetAttr(player, "Name");
-	PyObject *me = name ? Script_Ask("Scrap", "GetEntity", "(O)", name) : NULL;
-	Py_XDECREF(name);
-	Py_DECREF(player);
-	byte ok = me != NULL;
-	if (ok && PyObject_IsTrue(me) > 0) {
-		ok = Script_HSet(obj, "Action", PyString_FromString("Listen")) && Script_HSet(me, "Action", PyString_FromString("Talk")) &&
-			Script_HSet(me, "DefLoop", PyString_FromString("Talk")) &&
-			Script_HSet(me, "OutSelectFunc", PyString_FromString("Speech.AbortSpeech")) && Script_HSet(me, "AutoSelect", PyInt_FromLong(0));
-	}
-	Py_XDECREF(me);
-	PyObject *t = ok ? Sp_SpeechTime(text) : NULL;
-	ok = t && Sp_SpeechText(text, t, "UsrTextColor");
-	Py_XDECREF(t);
-	PyObject *dict = ok ? Sp_Get("HeadDict") : NULL, *model = dict ? PyObject_GetItem(dict, type) : NULL;
-	if (!model && dict && PyErr_ExceptionMatches(PyExc_KeyError)) {
-		PyErr_Clear();
-		Py_INCREF(type);
-		model = type;
-	}
-	ok = model && Script_HSet(obj, "HeadModel", model) && Script_HSet(obj, "HeadAnimIndex", PyInt_FromLong(0));
-	Py_XDECREF(dict);
-	if (ok) {
-		Py_INCREF(action);
-		Script_SetVar("Speech", "ObjAutoAnswerAction", action);
-		Py_INCREF(defLoop);
-		Script_SetVar("Speech", "ObjAutoAnswerDefLoop", defLoop);
-		ok = Script_Try("SScorer", "SetSpeechCallback", "(s)", "Speech.ObjectAutoAnswer") &&
-			(!Script_GetInt("Speech", "LockAlarm", 0) || Script_Try("Scrap", "SetLockAlarm", "(i)", 1)) && Sp_TestLater();
-	}
-	return ok ? PyInt_FromLong(1) : NULL;
-}
-
-/* the optional (action="Talk", defLoop="Talk") of the object speeches */
-static void Sp_TalkDefaults(PyObject **action, PyObject **defLoop, PyObject **own) {
-	own[0] = *action ? NULL : PyString_FromString("Talk");
-	own[1] = *defLoop ? NULL : PyString_FromString("Talk");
-	if (!*action) {
-		*action = own[0];
-	}
-	if (!*defLoop) {
-		*defLoop = own[1];
-	}
+	SP_KW("OOO|O", 4)
+	Sp_DefS(a, given, 3, "Speech.EndObjectAnswer");
+	return Mode_KwOut(a, 4, Sp_StartObjSpch(&a[0], &a[1], &a[2], &a[3]), NULL);
 }
 
 static PyObject *Speech_OnObjectSpeech(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "_ObjEntity", "_ObjCharType", "SpeechText", "SpeechAnswer", "action", "defLoop", NULL };
-	PyObject *obj, *type, *text, *ans, *action = NULL, *defLoop = NULL, *own[2];
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOOO|OO", names, &obj, &type, &text, &ans, &action, &defLoop)) {
-		return NULL;
-	}
-	Sp_TalkDefaults(&action, &defLoop, own);
-	PyObject *r = action && defLoop ? Sp_OnObjectSpeech(obj, type, text, ans, action, defLoop) : NULL;
-	Py_XDECREF(own[0]);
-	Py_XDECREF(own[1]);
-	return r;
+	nativeVal_t out = { 0 };
+	SP_KW("OOOO|OO", 6)
+	Sp_DefS(a, given, 4, "Talk");
+	Sp_DefS(a, given, 5, "Talk");
+	return Mode_KwOut(a, 6, Sp_OnObjectSpeech(&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &out), &out);
 }
 
-/* OnObjSpch(_ObjEntity, _ObjCharType, SpeechText, SpeechAnswer, action="Talk", defLoop="Talk"): by the keys of the
- * language file, with the voices */
 static PyObject *Speech_OnObjSpch(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "_ObjEntity", "_ObjCharType", "SpeechText", "SpeechAnswer", "action", "defLoop", NULL };
-	PyObject *obj, *type, *text, *ans, *action = NULL, *defLoop = NULL, *own[2];
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOOO|OO", names, &obj, &type, &text, &ans, &action, &defLoop)) {
-		return NULL;
-	}
-	Sp_TalkDefaults(&action, &defLoop, own);
-	PyObject *t = Sp_OpenVoice(text, 0) && Sp_OpenVoice(ans, 2) && Sp_PlayVoiceAfter(0, PyInt_FromLong(0)) ?
-		Script_LangOf(Script_Ref(text)) : NULL;
-	PyObject *a = t ? Script_LangOf(Script_Ref(ans)) : NULL;
-	PyObject *r = a ? Sp_OnObjectSpeech(obj, type, t, a, action, defLoop) : NULL;
-	Py_XDECREF(t);
-	Py_XDECREF(a);
-	Py_XDECREF(own[0]);
-	Py_XDECREF(own[1]);
-	if (r) {
-		Py_DECREF(r);
-		r = Py_ReturnNone();
-	}
-	return r;
+	SP_KW("OOOO|OO", 6)
+	Sp_DefS(a, given, 4, "Talk");
+	Sp_DefS(a, given, 5, "Talk");
+	return Mode_KwOut(a, 6, Sp_OnObjSpch(&a[0], &a[1], &a[2], &a[3], &a[4], &a[5]), NULL);
 }
 
-/* StdObjSpch(_ObjEntity, _ObjCharType, optId, action="Talk", defLoop="Talk") */
 static PyObject *Speech_StdObjSpch(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "_ObjEntity", "_ObjCharType", "optId", "action", "defLoop", NULL };
-	PyObject *obj, *type, *opt, *action = NULL, *defLoop = NULL, *own[2];
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOO|OO", names, &obj, &type, &opt, &action, &defLoop)) {
-		return NULL;
-	}
-	Sp_TalkDefaults(&action, &defLoop, own);
-	PyObject *msg = Sp_Cat(opt, "Msg"), *ans = msg ? Sp_Cat(opt, "Ans") : NULL;
-	PyObject *a = ans ? Py_BuildValue("(OOOOOO)", obj, type, msg, ans, action, defLoop) : NULL;
-	PyObject *r = a ? Speech_OnObjSpch(NULL, a, NULL) : NULL;
-	Py_XDECREF(a);
-	Py_XDECREF(msg);
-	Py_XDECREF(ans);
-	Py_XDECREF(own[0]);
-	Py_XDECREF(own[1]);
-	return r;
+	SP_KW("OOO|OO", 5)
+	Sp_DefS(a, given, 3, "Talk");
+	Sp_DefS(a, given, 4, "Talk");
+	return Mode_KwOut(a, 5, Sp_StdObjSpch(&a[0], &a[1], &a[2], &a[3], &a[4]), NULL);
 }
 
-/* OnChallengeObjSpch(_ObjEntity, _ObjCharType, SpeechText, SpeechAnswer, action="Talk", defLoop="Talk", isMerc=0) */
 static PyObject *Speech_OnChallengeObjSpch(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "_ObjEntity", "_ObjCharType", "SpeechText", "SpeechAnswer", "action", "defLoop", "isMerc", NULL };
-	PyObject *obj, *type, *text, *ans, *action = NULL, *defLoop = NULL, *merc = NULL, *own[2];
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOOO|OOO", names, &obj, &type, &text, &ans, &action, &defLoop, &merc)) {
-		return NULL;
-	}
-	Sp_TalkDefaults(&action, &defLoop, own);
-	int isMerc = merc ? Script_NumCmp(merc, 1) == 0 : 0;
-	PyObject *a = Sp_OpenVoiceStr(isMerc ? "ChallengeRaceStdOpt2Voice" : "ChallengeRaceStdOpt1Voice", 0) &&
-		Sp_OpenVoice(ans, 2) && Sp_PlayVoiceAfter(0, PyInt_FromLong(0)) ? Script_LangOf(Script_Ref(ans)) : NULL;
-	PyObject *r = a ? Sp_OnObjectSpeech(obj, type, text, a, action, defLoop) : NULL;
-	Py_XDECREF(a);
-	Py_XDECREF(own[0]);
-	Py_XDECREF(own[1]);
-	if (r) {
-		Py_DECREF(r);
-		r = Py_ReturnNone();
-	}
-	return r;
+	SP_KW("OOOO|OOO", 7)
+	Sp_DefS(a, given, 4, "Talk");
+	Sp_DefS(a, given, 5, "Talk");
+	return Mode_KwOut(a, 7, Sp_OnChallengeObjSpch(&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], given[6] ? &a[6] : NULL), NULL);
 }
 
-/* ObjectAutoAnswer(): the end of the player's line to the object, its answer follows */
-static PyObject *Speech_ObjectAutoAnswer(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	PyObject *me = Sp_Usr();
-	int talk = me ? Script_HPrefix(me, "Action", "Talk") : -1;
-	byte ok = talk >= 0 && (!talk || Script_HSet(me, "ForceAction", PyString_FromString("TalkListenNPC")));
-	Py_XDECREF(me);
-	if (ok) {
-		Speech_StopMenuEvents(NULL, NULL);
-		ok = Script_LaterIn(1.0, "Speech", "RestartMenuEvents", PyTuple_New(0), NULL) &&
-			Script_LaterIn(0.45, "Speech", "ObjectAutoAnswer2", PyTuple_New(0), NULL);
-	}
-	return ok ? Py_ReturnNone() : NULL;
-}
-
-/* ObjectAutoAnswer2(): the answer of the object over the radio */
-static PyObject *Speech_ObjectAutoAnswer2(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	PyObject *two = PyInt_FromLong(2), *zero = PyInt_FromLong(0);
-	byte ok = Script_Try("SSound", "StopVoice", "(i)", 0) && Sp_PlayVoiceScheduled(two, 0, zero);
-	Py_XDECREF(two);
-	Py_XDECREF(zero);
-	PyObject *obj = ok ? Sp_Get("ObjEntity") : NULL, *action = obj ? Sp_Get("ObjAutoAnswerAction") : NULL;
-	PyObject *loop = action ? Sp_Get("ObjAutoAnswerDefLoop") : NULL, *ans = loop ? Sp_Get("ObjAnswer") : NULL;
-	PyObject *type = ans ? Sp_Get("ObjCharType") : NULL, *cb = type ? PyString_FromString("Speech.EndObjectAnswer") : NULL;
-	ok = cb && Sp_StartObjectSpeech(obj, action, loop, ans, type, cb);
-	Py_XDECREF(obj);
-	Py_XDECREF(action);
-	Py_XDECREF(loop);
-	Py_XDECREF(ans);
-	Py_XDECREF(type);
-	Py_XDECREF(cb);
-	PyObject *me = ok ? Sp_Usr() : NULL;
-	ok = me && (PyObject_IsTrue(me) <= 0 || (Script_HSet(me, "ForceAction", Sp_Get("TalkListen")) &&
-		Script_HSet(me, "ForceDefLoop", PyString_FromString("Relax"))));
-	Py_XDECREF(me);
-	return ok ? Py_ReturnNone() : NULL;
-}
-
-/* EndObjectAnswer(): the object listens again, the head stops talking */
-static PyObject *Speech_EndObjectAnswer(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	PyObject *obj = Sp_Get("ObjEntity");
-	int relax = obj ? Script_HIs(obj, "Action", "Relax") : -1;
-	byte ok = relax >= 0 && (relax || Script_HSet(obj, "Action", PyString_FromString("Listen"))) &&
-		Script_Try("SScorer", "Set", "(issi)", 0, "Monitor", "HeadAnimIndex", 0);
-	Py_XDECREF(obj);
-	return ok ? Speech_RestoreSpeech(NULL, NULL) : NULL;
-}
+#define KW(fn) (PyCFunction)(void (*)(void))fn, 3
 
 PyMethodDef g_SpeechMethods[] = {
 	{ "ScheduledVoiceCallback", Speech_ScheduledVoiceCallback, 1, NULL },
 	{ "PlayVoiceScheduled", Speech_PlayVoiceScheduled, 1, NULL },
-	{ "PerformAnswer", (PyCFunction)(void (*)(void))Speech_PerformAnswer, 3, NULL },
+	{ "PerformAnswer", KW(Speech_PerformAnswer), NULL },
 	{ "NormalAbortSpeech", Speech_NormalAbortSpeech, 1, NULL },
 	{ "CallEndOfSpeech", Speech_CallEndOfSpeech, 1, NULL },
-	{ "AbortSpeech", (PyCFunction)(void (*)(void))Speech_AbortSpeech, 3, NULL },
+	{ "AbortSpeech", KW(Speech_AbortSpeech), NULL },
 	{ "RestoreState", Speech_RestoreState, 1, NULL },
-	{ "AbortNPCSpeech", (PyCFunction)(void (*)(void))Speech_AbortNPCSpeech, 3, NULL },
+	{ "AbortNPCSpeech", KW(Speech_AbortNPCSpeech), NULL },
 	{ "AutoAnswer", Speech_AutoAnswer, 1, NULL },
 	{ "StopMenuEvents", Speech_StopMenuEvents, 1, NULL },
 	{ "RestartMenuEvents", Speech_RestartMenuEvents, 1, NULL },
 	{ "RestoreMoveTime", Speech_RestoreMoveTime, 1, NULL },
 	{ "StdAnsLst", Speech_StdAnsLst, 1, NULL },
-	{ "StdOnSpch", (PyCFunction)(void (*)(void))Speech_StdOnSpch, 3, NULL },
+	{ "StdOnSpch", KW(Speech_StdOnSpch), NULL },
 	{ "CalculateSpeechTime", Speech_CalculateSpeechTime, 1, NULL },
-	{ "OnSpch", (PyCFunction)(void (*)(void))Speech_OnSpch, 3, NULL },
-	{ "OnChallengeSpch", (PyCFunction)(void (*)(void))Speech_OnChallengeSpch, 3, NULL },
-	{ "OnSpeech", (PyCFunction)(void (*)(void))Speech_OnSpeech, 3, NULL },
+	{ "OnSpch", KW(Speech_OnSpch), NULL },
+	{ "OnChallengeSpch", KW(Speech_OnChallengeSpch), NULL },
+	{ "OnSpeech", KW(Speech_OnSpeech), NULL },
 	{ "PlayerAnsEnd", Speech_PlayerAnsEnd, 1, NULL },
 	{ "PlayerAns", Speech_PlayerAns, 1, NULL },
 	{ "SetPlayerToTalk", Speech_SetPlayerToTalk, 1, NULL },
 	{ "InspectChar", Speech_InspectChar, 1, NULL },
 	{ "AutoSpeech", Speech_AutoSpeech, 1, NULL },
-	{ "NISpeech", (PyCFunction)(void (*)(void))Speech_NISpeech, 3, NULL },
-	{ "AutoAddNI", (PyCFunction)(void (*)(void))Speech_AutoAddNI, 3, NULL },
-	{ "AddNI", (PyCFunction)(void (*)(void))Speech_AddNI, 3, NULL },
-	{ "RunNI", (PyCFunction)(void (*)(void))Speech_RunNI, 3, NULL },
+	{ "NISpeech", KW(Speech_NISpeech), NULL },
+	{ "AutoAddNI", KW(Speech_AutoAddNI), NULL },
+	{ "AddNI", KW(Speech_AddNI), NULL },
+	{ "RunNI", KW(Speech_RunNI), NULL },
 	{ "ObjNIEnd", Speech_ObjNIEnd, 1, NULL },
 	{ "LaunchTaunt", Speech_LaunchTaunt, 1, NULL },
 	{ "RestoreSpeech", Speech_RestoreSpeech, 1, NULL },
 	{ "DoRemote", Speech_DoRemote, 1, NULL },
 	{ "OffVoice", Speech_OffVoice, 1, NULL },
-	{ "RemoteComunication", (PyCFunction)(void (*)(void))Speech_RemoteComunication, 3, NULL },
-	{ "ForceRemoteComInternal", (PyCFunction)(void (*)(void))Speech_ForceRemoteComInternal, 3, NULL },
-	{ "ForceRemoteCom", (PyCFunction)(void (*)(void))Speech_ForceRemoteCom, 3, NULL },
-	{ "ForceRemoteComunication", (PyCFunction)(void (*)(void))Speech_ForceRemoteComunication, 3, NULL },
-	{ "AddRemoteCom", (PyCFunction)(void (*)(void))Speech_AddRemoteCom, 3, NULL },
+	{ "RemoteComunication", KW(Speech_RemoteComunication), NULL },
+	{ "ForceRemoteComInternal", KW(Speech_ForceRemoteComInternal), NULL },
+	{ "ForceRemoteCom", KW(Speech_ForceRemoteCom), NULL },
+	{ "ForceRemoteComunication", KW(Speech_ForceRemoteComunication), NULL },
+	{ "AddRemoteCom", KW(Speech_AddRemoteCom), NULL },
 	{ "ProcessRemoteCom", Speech_ProcessRemoteCom, 1, NULL },
 	{ "CancelRemoteCom", Speech_CancelRemoteCom, 1, NULL },
 	{ "TestInRange", Speech_TestInRange, 1, NULL },
-	{ "StartObjSpch", (PyCFunction)(void (*)(void))Speech_StartObjSpch, 3, NULL },
+	{ "StartObjSpch", KW(Speech_StartObjSpch), NULL },
 	{ "StartObjectSpeech", Speech_StartObjectSpeech, 1, NULL },
-	{ "StdObjSpch", (PyCFunction)(void (*)(void))Speech_StdObjSpch, 3, NULL },
-	{ "OnObjSpch", (PyCFunction)(void (*)(void))Speech_OnObjSpch, 3, NULL },
-	{ "OnChallengeObjSpch", (PyCFunction)(void (*)(void))Speech_OnChallengeObjSpch, 3, NULL },
-	{ "OnObjectSpeech", (PyCFunction)(void (*)(void))Speech_OnObjectSpeech, 3, NULL },
+	{ "StdObjSpch", KW(Speech_StdObjSpch), NULL },
+	{ "OnObjSpch", KW(Speech_OnObjSpch), NULL },
+	{ "OnChallengeObjSpch", KW(Speech_OnChallengeObjSpch), NULL },
+	{ "OnObjectSpeech", KW(Speech_OnObjectSpeech), NULL },
 	{ "ObjectAutoAnswer", Speech_ObjectAutoAnswer, 1, NULL },
 	{ "ObjectAutoAnswer2", Speech_ObjectAutoAnswer2, 1, NULL },
 	{ "EndObjectAnswer", Speech_EndObjectAnswer, 1, NULL },
