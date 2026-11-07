@@ -1113,8 +1113,7 @@ static byte Gd_Print(const char *prefix, const nativeVal_t *name) {
 	nativeVal_t t = { 0 };
 	byte ok = Ba_Cat(prefix, name, &t);
 	if (ok) {
-		const nativeVal_t *items[1] = { &t };
-		ok = Mode_Print(items, 1);
+		ok = Mode_PrintV(&t);
 	}
 	Native_Free(&t);
 	return ok;

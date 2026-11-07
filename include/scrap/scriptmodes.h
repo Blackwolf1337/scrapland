@@ -71,8 +71,9 @@ void Mode_DummyStart(const char *name, int flag);
 void Mode_DummyNext(nativeVal_t *out);
 /* Scrap.Preload3DObject(name) */
 byte Mode_Preload(const nativeVal_t *name);
-/* print a, b, ... (n values, up to 8) as the script's print statement (OBJLIB 7: through Python's sys.stdout until
- * the console takes C texts) */
+/* print a, b, ... (n values, up to MODE_PRINT_MAX; Elevator.UseElevator prints 9) as the script's print statement
+ * (OBJLIB 7: through Python's sys.stdout until the console takes C texts) */
+#define MODE_PRINT_MAX 12
 byte Mode_Print(const nativeVal_t *const *items, int n);
 /* module.var = v of a Python object as it is (OBJLIB 5: a value passed between modules keeps its identity) */
 byte Mode_SetModPy(const char *module, const char *var, PyObject *v);
@@ -626,11 +627,8 @@ byte Mode_CallArgs(const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *ar
 byte Mode_Neg(const nativeVal_t *v, nativeVal_t *out);
 
 /* SScorer.Fade(id, (r, g, b, a), (r, g, b, a), time) with the time a value of the script (the recorders see the int the
- * script passes; the TypeError of "f" for one that is no number), else Mode_Fade */
+ * script passes; the TypeError of "f" for one that is no number); Mode_Fade passes a float */
 byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time);
-/* print a, b, ... as Mode_Print with up to MODE_PRINT_MAX values (Elevator.UseElevator prints 9) */
-#define MODE_PRINT_MAX 12
-byte Mode_PrintN(const nativeVal_t *const *items, int n);
 
 /* ---- the hubs of batch K (CharAct, Alarm, NewsPanel, Scene, Speech) ---- */
 
@@ -768,5 +766,11 @@ byte Mode_Exit(void);
 /* module.var as Script_GetString reads it: its text (up to the first 0 byte) cut to size, else "" (no error; a missing
  * variable or module is "" too); out */
 const char *Mode_ModGetS(const char *module, const char *var, char *out, int size);
+
+/* ---- shared after stage 2 (the copies the batches wrote, joined) ---- */
+
+/* print v, print text: Mode_Print of one value (the text of any length) */
+byte Mode_PrintV(const nativeVal_t *v);
+byte Mode_PrintS(const char *text);
 
 #endif

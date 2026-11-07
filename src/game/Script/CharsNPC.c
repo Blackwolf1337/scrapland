@@ -577,7 +577,7 @@ static byte Npc_Respawn(const nativeVal_t *cspArg) {
 	nativeVal_t *v = Mode_V(&t), *msg = Mode_V(&t), *p = Mode_V(&t), *a = Mode_V(&t), *n = Mode_V(&t);
 	Native_Copy(csp, cspArg);
 	if (!Mode_Import("CharConversor") || !Mode_Import("Chars") || !Mode_Import("MissionsFuncs") || !Mode_Import(NPC) ||
-		!Mode_VObj(csp, "Name", name) || !Mode_Print((const nativeVal_t *const[]){ name }, 1) ||
+		!Mode_VObj(csp, "Name", name) || !Mode_PrintV(name) ||
 		!Mode_VObj(csp, "ActCtrl", act)) {
 		return Mode_Done(&t, 0);
 	}
@@ -785,7 +785,7 @@ static byte Npc_ClassifyOptions(const nativeVal_t *type, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (!Mode_Print((const nativeVal_t *const[]){ all }, 1)) {
+	if (!Mode_PrintV(all)) {
 		return Mode_Done(&t, 0);
 	}
 	for (;;) {

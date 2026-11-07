@@ -1087,9 +1087,8 @@ static byte Jy_Recycle(const nativeVal_t *a, nativeVal_t *time, double tf) {
 			ok = Mode_Arith('+', &p, &rep, &line);
 			Native_Free(&p);
 			if (ok) {
-				const nativeVal_t *items[1] = { &line };
 				LvN_Str(&p, "Hangar");
-				ok = Mode_Print(items, 1) && Mode_Arith('+', &p, &rep, &hangar) &&
+				ok = Mode_PrintV(&line) && Mode_Arith('+', &p, &rep, &hangar) &&
 					Jy_SchedItem(time, 0.0 * tf, "SScorer", "SetDefault", &a[0], &hangar) &&
 					Jy_SchedItem(time, 1.0 * tf, "HangarTab", "SelectItem", &a[0], &hangar) &&
 					Jy_SchedItemS(time, 3.5 * tf, "SScorer", "SetDefault", &a[0], "Sell") &&

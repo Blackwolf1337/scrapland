@@ -76,14 +76,6 @@ static int Gs_NotOutdoor(void) {
 	return t;
 }
 
-/* print text */
-static byte Gs_Print(const char *text) {
-	nativeVal_t v;
-	Native_SetStr(&v, text);
-	const nativeVal_t *items[1] = { &v };
-	return Mode_Print(items, 1);
-}
-
 /* an int as a value */
 static const nativeVal_t *Gs_Int(nativeVal_t *v, long i) {
 	Native_SetInt(v, i);
@@ -179,7 +171,7 @@ static byte Gs_SetOutMusic(void) {
 /* Init(): the generic sounds of every level, then the music */
 static byte Gs_SoundInit(void) {
 	nativeVal_t pack;
-	if (!Gs_Print("Loading default sounds...") || !Mode_Import("DoorSound") || !Mode_Import("Init") ||
+	if (!Mode_PrintS("Loading default sounds...") || !Mode_Import("DoorSound") || !Mode_Import("Init") ||
 		!Mode_GVarSetN("SndLoopCharNPCMul", 2.5)) {
 		return 0;
 	}
@@ -369,7 +361,7 @@ static byte Gs_LoadVehicles(void) {
 		return no > 0;
 	}
 	Native_SetStr(&pack, "Sounds/Vehicles");
-	if (!Gs_Print("Loading vehicle sounds...") || !Mode_Pack(&pack)) {
+	if (!Mode_PrintS("Loading vehicle sounds...") || !Mode_Pack(&pack)) {
 		return 0;
 	}
 	for (int i = 0; loads[i]; i++) {
@@ -382,7 +374,7 @@ static byte Gs_LoadVehicles(void) {
 
 /* Init(): the sound engine settings of the outdoor levels, then the vehicle sounds */
 static byte Gs_OutInit(void) {
-	return Gs_Print("Loading outdor sounds...") && Gs_RunOut("Init", NULL) && Native_CallGlobal(OUT, "LoadVehicles", NULL, "");
+	return Mode_PrintS("Loading outdor sounds...") && Gs_RunOut("Init", NULL) && Native_CallGlobal(OUT, "LoadVehicles", NULL, "");
 }
 
 MODE_FN(OutSound, SetVehicleSounds, 1, Gs_SetVehicleSounds(&a[0]))

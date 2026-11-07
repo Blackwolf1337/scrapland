@@ -529,8 +529,7 @@ static byte Den_CreateFixedMercInitC(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	LvN_Str(&line, "---------------");
-	const nativeVal_t *items[] = { &line };
-	byte ok = Mode_Print(items, 1);
+	byte ok = Mode_PrintV(&line);
 	Native_Free(&line);
 	return ok;
 }
@@ -1113,8 +1112,7 @@ static byte Before_InitC(const nativeVal_t *a, nativeVal_t *out) {
 			return 0;
 		}
 		LvN_Str(&line, "SSound.SetMusicVolume(0)");
-		const nativeVal_t *items[] = { &line };
-		byte ok = Mode_Print(items, 1);
+		byte ok = Mode_PrintV(&line);
 		Native_Free(&line);
 		if (!ok) {
 			return 0;

@@ -487,8 +487,7 @@ static byte Mi_DazedCoin(const nativeVal_t *name) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *e = Mode_V(&t), *dr = Mode_V(&t), *limit = Mode_V(&t), *money = Mode_V(&t), *q = Mode_V(&t);
 	nativeVal_t *reward = Mode_V(&t), *pos = Mode_V(&t), *vr = Mode_V(&t), *radius = Mode_V(&t);
-	const nativeVal_t *line[] = { Mode_S(&t, "DazedCoin") };
-	if (!Mode_Print(line, 1) || !Mode_EntityH(name, e) || !Mode_G("MisItems", "DazedReward", dr) ||
+	if (!Mode_PrintV(Mode_S(&t, "DazedCoin")) || !Mode_EntityH(name, e) || !Mode_G("MisItems", "DazedReward", dr) ||
 		!Native_Arith('*', dr, Mode_I(&t, 8), limit) || !Mode_VGet(e, "Money", money)) {
 		return Mode_Done(&t, 0);
 	}

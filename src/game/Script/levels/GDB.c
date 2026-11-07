@@ -67,12 +67,6 @@ static byte Gd_Target(const nativeVal_t *e, long on) {
 	return LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, on);
 }
 
-/* print of one value */
-static byte Gd_Print(const nativeVal_t *v) {
-	const nativeVal_t *items[1] = { v };
-	return Mode_Print(items, 1);
-}
-
 /* Scrap.GetLangStr(key) % arg */
 static byte Gd_LangPct(const char *key, const nativeVal_t *arg, nativeVal_t *out) {
 	nativeVal_t t;
@@ -301,7 +295,7 @@ static byte GDB_EndOfAppears(void) {
 	Native_SetNone(&left);
 	Native_SetNone(&msg);
 	LvN_Dummy("DM_Player_Spawn_Temple", 0, &dummy);
-	byte ok = Gd_Print(&dummy) && Mode_UsrHandle(&v) && LvN_Item(&dummy, 1, &pos) && Mode_VSet(&v, "Pos", &pos) &&
+	byte ok = Mode_PrintV(&dummy) && Mode_UsrHandle(&v) && LvN_Item(&dummy, 1, &pos) && Mode_VSet(&v, "Pos", &pos) &&
 		Mode_VGet(&v, "Name", &name) && LvN_SetOnFloor(&name);
 	if (ok) {
 		Mode_SaveVar("GDB.BishopsMsg", &msg);
@@ -796,7 +790,7 @@ static byte Into_OnBishopsDeath(const nativeVal_t *looser, const nativeVal_t *wi
 		ok = Mode_EntityH(looser, &e);
 		if (ok && Native_True(&e)) {
 			LvN_Str(&msg, "Grabe ahora!");
-			ok = Gd_Print(&msg) && Mode_GVarSetS("CurrentWaypointName", "") && Mode_DelSchedS("ScanShip") &&
+			ok = Mode_PrintV(&msg) && Mode_GVarSetS("CurrentWaypointName", "") && Mode_DelSchedS("ScanShip") &&
 				LvN_PutS(IG, "traitor", "") && Mode_VGet(&e, "Pos", &pos) && LV_OWN(IG, "DropMatrix", NULL, "v", &pos);
 			Native_Free(&msg);
 		}

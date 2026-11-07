@@ -632,13 +632,12 @@ static byte Ambush_CreateProbeN(void) {
 		Native_Free(pos);
 		Mode_RandomVisPoint(pos);
 	}
-	const nativeVal_t *items[1] = { name };
 	byte ok = LV_CALL("Traffic", "SetPath", NULL, "") && LV_CALL("VehiclesNPC", "MakeAI", p, "ssii", "TProbe", "ProbeMos", 0L, 0L) &&
 		LV_CALL("Traffic", "ResetPath", NULL, "") && LvN_SetS(p, "OnDeath", "Mission_Ambush.OnProbeDeath") &&
 		Mode_VSet(p, "MovePos", pos) && Mode_VSet(p, "Pos", pos) && LvN_SetInts3(p, "MoveAng", 0, 0, 0) && LvN_SetInts3(p, "Ang", 0, 0, 0) &&
 		LvN_SetF(p, "MoveTime", 0.1) && Mode_G(AM, "PROBE_LIFE", life) && Mode_VSet(p, "Life", life) && Mode_VSet(p, "MaxLife", life) &&
 		Mode_VSet(p, "MinLife", life) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", p, 1L) && Mode_VGet(p, "Name", name) &&
-		Mode_Print(items, 1);
+		Mode_PrintV(name);
 	return Mode_Done(&t, ok);
 }
 

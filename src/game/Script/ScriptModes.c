@@ -245,9 +245,9 @@ byte Mode_Preload(const nativeVal_t *name) {
 }
 
 byte Mode_Print(const nativeVal_t *const *items, int n) {
-	PyObject *o[8] = { NULL };
+	PyObject *o[MODE_PRINT_MAX] = { NULL };
 	byte ok = 1;
-	n = n < 8 ? n : 8;
+	n = n < MODE_PRINT_MAX ? n : MODE_PRINT_MAX;
 	for (int k = 0; ok && k < n; k++) {
 		ok = (o[k] = Native_ToPy(items[k])) != NULL;
 	}
@@ -529,12 +529,13 @@ byte Mode_ScorerSet(const nativeVal_t *id, const nativeVal_t *item, const char *
 	return Native_ArgInt(id, &i) && Native_ArgStr(item, 2, &name) && Native_ScorerSet(i, name, var, v);
 }
 
-byte Mode_Fade(long id, const int *from, const int *to, double time) {
+byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time) {
+	double d;
 	MODE_SEAM("SScorer", "Fade");
 	if (seam) {
 		PyObject *a = Py_BuildValue("(iiii)", from[0], from[1], from[2], from[3]);
 		PyObject *b = a ? Py_BuildValue("(iiii)", to[0], to[1], to[2], to[3]) : NULL;
-		byte ok = b && Native_HookCall(hook, NULL, "iOOd", id, a, b, time);
+		byte ok = b && Native_HookCall(hook, NULL, "iOOv", id, a, b, time);
 		if (!b) {
 			Py_DECREF(hook);
 		}
@@ -542,12 +543,22 @@ byte Mode_Fade(long id, const int *from, const int *to, double time) {
 		Py_XDECREF(b);
 		return ok;
 	}
+	if (!Native_ArgDouble(time, &d)) {
+		return 0;
+	}
 	cScorer *sc = Scorer_Get((int)id);
 	if (sc) {
 		ScorerFade_Start(&sc->fade, Scorer_PackColor((uint32_t)from[0], (uint32_t)from[1], (uint32_t)from[2], (uint32_t)from[3]),
-			Scorer_PackColor((uint32_t)to[0], (uint32_t)to[1], (uint32_t)to[2], (uint32_t)to[3]), (float)time);
+			Scorer_PackColor((uint32_t)to[0], (uint32_t)to[1], (uint32_t)to[2], (uint32_t)to[3]), (float)d);
 	}
 	return 1;
+}
+
+byte Mode_Fade(long id, const int *from, const int *to, double time) {
+	/* the time as a float value: the recorders see the float "d" gave */
+	nativeVal_t t;
+	Native_SetFloat(&t, time);
+	return Mode_FadeV(id, from, to, &t);
 }
 
 byte Mode_Bind(const nativeVal_t *id, const char *set, const char *action, const char *func) {
@@ -3077,37 +3088,6 @@ byte Mode_Neg(const nativeVal_t *v, nativeVal_t *out) {
 	return Native_Raise(NE_TYPE, "bad operand type for unary -");
 }
 
-byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time) {
-	double d;
-	MODE_SEAM("SScorer", "Fade");
-	if (seam) {
-		PyObject *a = Py_BuildValue("(iiii)", from[0], from[1], from[2], from[3]);
-		PyObject *b = a ? Py_BuildValue("(iiii)", to[0], to[1], to[2], to[3]) : NULL;
-		byte ok = b && Native_HookCall(hook, NULL, "iOOv", id, a, b, time);
-		if (!b) {
-			Py_DECREF(hook);
-		}
-		Py_XDECREF(a);
-		Py_XDECREF(b);
-		return ok;
-	}
-	return Native_ArgDouble(time, &d) && Mode_Fade(id, from, to, d);
-}
-
-byte Mode_PrintN(const nativeVal_t *const *items, int n) {
-	PyObject *o[MODE_PRINT_MAX] = { NULL };
-	byte ok = 1;
-	n = n < MODE_PRINT_MAX ? n : MODE_PRINT_MAX;
-	for (int k = 0; ok && k < n; k++) {
-		ok = (o[k] = Native_ToPy(items[k])) != NULL;
-	}
-	ok = ok && Script_Print(o, n);
-	for (int k = 0; k < n; k++) {
-		Py_XDECREF(o[k]);
-	}
-	return ok;
-}
-
 /* ---- the hubs of batch K (CharAct, Alarm, NewsPanel, Scene, Speech) ---- */
 
 int Mode_In(const nativeVal_t *seq, const nativeVal_t *x) {
@@ -3717,4 +3697,19 @@ const char *Mode_ModGetS(const char *module, const char *var, char *out, int siz
 	}
 	Native_Free(&v);
 	return out;
+}
+
+/* ---- shared after stage 2 (the copies the batches wrote, joined) ---- */
+
+byte Mode_PrintV(const nativeVal_t *v) {
+	const nativeVal_t *items[1] = { v };
+	return Mode_Print(items, 1);
+}
+
+byte Mode_PrintS(const char *text) {
+	nativeVal_t t;
+	Native_SetText(&t, text, (int)strlen(text));
+	byte ok = Mode_PrintV(&t);
+	Native_Free(&t);
+	return ok;
 }

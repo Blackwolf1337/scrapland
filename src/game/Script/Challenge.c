@@ -209,14 +209,6 @@ static int Chal_Outdoor(void) {
 	return c;
 }
 
-/* print the error of a wrong option */
-static byte Chal_PrintError(void) {
-	nativeVal_t s;
-	const nativeVal_t *items[1] = { &s };
-	Native_SetStr(&s, CHAL_ERROR);
-	return Mode_Print(items, 1);
-}
-
 /* string.replace(cad, "<n>", n, 1) (OBJLIB 3: the string port by name, the count of the script) */
 static byte Chal_Replace1(const nativeVal_t *cad, const nativeVal_t *n, nativeVal_t *out) {
 	return Native_CallMod("string", "replace", out, "vsvi", cad, "<n>", n, 1L);
@@ -373,7 +365,7 @@ static byte Chal_OnChallengeOpt(const nativeVal_t *opt, const nativeVal_t *ch, c
 	}
 	int num = c1 > 0 ? 1 : c2 > 0 ? 3 : c3 > 0 && !mercs ? 5 : 0;
 	if (!num) {
-		return Mode_Done(&t, Chal_PrintError());
+		return Mode_Done(&t, Mode_PrintS(CHAL_ERROR));
 	}
 	return Mode_Done(&t, mercs ? Chal_BetLives(num, indoor, ch, type, foe) : Chal_BetMoney(num, indoor, ch, type, foe, money));
 }

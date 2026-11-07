@@ -25,16 +25,6 @@
 
 /* ---- Alarm ---- */
 
-/* print text, as the print statement of the script */
-static byte Al_Print(const char *text) {
-	nativeVal_t s;
-	const nativeVal_t *items[1] = { &s };
-	Native_SetText(&s, text, (int)strlen(text));
-	byte ok = Mode_Print(items, 1);
-	Native_Free(&s);
-	return ok;
-}
-
 /* the hook temp (a global of Alarm) when it is set, else once the variable once (set to None before the call) */
 static byte Al_Hook(const char *temp, const char *once) {
 	nativeVal_t t = { 0 }, cb = { 0 }, none;
@@ -57,10 +47,10 @@ static byte Al_SetAlarm(const nativeVal_t *status) {
 	nativeVal_t prev = { 0 }, empty, func = { 0 };
 	byte ok;
 	if (Native_True(status)) {
-		ok = Al_Print("Sound the alarm !") && Native_CallGlobal("Alarm", "ActivateAlarm", NULL, "") &&
+		ok = Mode_PrintS("Sound the alarm !") && Native_CallGlobal("Alarm", "ActivateAlarm", NULL, "") &&
 			Al_Hook("TempAbortMissionCallback", "AbortMissionCallback");
 	} else {
-		ok = Al_Print("Free way!") && Native_CallGlobal("Alarm", "DeactivateAlarm", NULL, "") &&
+		ok = Mode_PrintS("Free way!") && Native_CallGlobal("Alarm", "DeactivateAlarm", NULL, "") &&
 			Al_Hook("TempRestoreMissionCallback", "RestoreMissionCallback");
 	}
 	Native_SetEmpty(&empty, NV_LIST);

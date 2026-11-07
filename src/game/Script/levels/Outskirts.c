@@ -3722,9 +3722,8 @@ static byte Hunt_OnMissionStart(const nativeVal_t *a) {
 	}
 	int busy = police > 0 ? Os_Busy() : -1;
 	if (busy > 0) {
-		const nativeVal_t *items[1] = { msg };
 		LvN_Str(msg, "No deberia entrar aqui por segunda vez");
-		return Mode_Done(&t, Mode_Print(items, 1) && Mode_G(FH, "missionStartWaypoint", wp) && LvN_SetS(wp, "OnTake", "") &&
+		return Mode_Done(&t, Mode_PrintV(msg) && Mode_G(FH, "missionStartWaypoint", wp) && LvN_SetS(wp, "OnTake", "") &&
 			LvN_Com("Mission_FunctionaryHunting_RemoteMessage3", "Police", FH, "EnableMissionWaypoint", NULL));
 	}
 	byte ok = busy == 0 && Mode_G(FH, "missionStartWaypoint", wp) && LvN_SetI(wp, "Active", 0) && Mode_Read(FH, "missionStartWaypoint", wp) &&

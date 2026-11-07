@@ -548,7 +548,7 @@ static byte Fl_BrowseAreasC(const char *m, int v) {
 	while (Native_True(dummy)) {
 		int mark = t.n;
 		nativeVal_t *pos = Mode_V(&t), *name = Mode_V(&t), *key = Mode_V(&t);
-		if ((!v && !Mode_Print((const nativeVal_t *const[]){ dummy }, 1)) || !Native_Subscript(dummy, Mode_I(&t, 1), pos) || !Native_Subscript(dummy, Mode_I(&t, 0), name) ||
+		if ((!v && !Mode_PrintV(dummy)) || !Native_Subscript(dummy, Mode_I(&t, 1), pos) || !Native_Subscript(dummy, Mode_I(&t, 0), name) ||
 			!Native_Slice(name, 19, INT_MAX, key) || !Mode_DictPut(m, "ZoneList", zones, key, pos)) {
 			return Mode_Done(&t, 0);
 		}

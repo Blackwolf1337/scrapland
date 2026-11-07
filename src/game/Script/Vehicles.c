@@ -627,8 +627,7 @@ static byte Veh_DeathSingle(const nativeVal_t *v, const nativeVal_t *looser, con
 		return Mode_Done(&t, 0);
 	}
 	if (Mode_IsText(list, "Players")) {
-		const nativeVal_t *msg[1] = { Mode_S(&t, "GAME OVER") };
-		if (!Mode_Print(msg, 1) || !Native_CallMod("Parking", "SetDtritusPlate", NULL, "vi", v, 0L)) {
+		if (!Mode_PrintV(Mode_S(&t, "GAME OVER")) || !Native_CallMod("Parking", "SetDtritusPlate", NULL, "vi", v, 0L)) {
 			return Mode_Done(&t, 0);
 		}
 	}
@@ -928,10 +927,7 @@ static byte Veh_InitN(void) {
 		!Native_CallMod("ShipMaker", "Init", NULL, "") || !Mode_Import("OutSound") || !Native_CallMod("OutSound", "Init", NULL, "")) {
 		return 0;
 	}
-	nativeVal_t msg;
-	Native_SetStr(&msg, "Vehicle.Init() executed.");
-	const nativeVal_t *items[1] = { &msg };
-	return Mode_Print(items, 1);
+	return Mode_PrintS("Vehicle.Init() executed.");
 }
 
 /* SetProperties takes localedit as a keyword */

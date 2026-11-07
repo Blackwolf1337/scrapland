@@ -1236,10 +1236,9 @@ static byte Se_Clean(void) {
 			Native_Free(&e);
 			/* try: editedShips[i].Del() except: print "Ya borrada" (the error of the lookup too) */
 			if (!Se_AtI("editedShips", i, &e) || !Mode_VDel(&e)) {
-				const nativeVal_t *items[1] = { &msg };
 				PyErr_Clear();
 				Native_SetStr(&msg, "Ya borrada");
-				c = Mode_Print(items, 1) ? 1 : -1;
+				c = Mode_PrintV(&msg) ? 1 : -1;
 			}
 		}
 		ok = c >= 0;

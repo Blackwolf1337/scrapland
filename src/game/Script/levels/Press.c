@@ -395,9 +395,8 @@ static byte PressMap_BrowseAlarmLaunchers(const nativeVal_t *a, nativeVal_t *out
 			modeVals_t t = { .n = 0 };
 			nativeVal_t *dummy = Mode_V(&t), *p = Mode_V(&t), *name = Mode_V(&t), *parts = Mode_V(&t), *rs = Mode_V(&t), *r = Mode_V(&t);
 			nativeVal_t *item = Mode_V(&t);
-			const nativeVal_t *items[1] = { dummy };
 			Mode_DummyNext(dummy);
-			if (!Mode_Print(items, 1)) {
+			if (!Mode_PrintV(dummy)) {
 				return Mode_Done(&t, 0);
 			}
 			if (!Native_True(dummy)) {
@@ -878,11 +877,10 @@ static const char *const news1_sounds[] = {
 /* News1(): the sounds of Betty's news of the archbishop's murder */
 static byte PressSnd_News1(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t line;
-	const nativeVal_t *items[1] = { &line };
 	(void)a;
 	(void)out;
 	LvN_Str(&line, "-----------------------------");
-	byte ok = Mode_Import("Scene") && Mode_Print(items, 1);
+	byte ok = Mode_Import("Scene") && Mode_PrintV(&line);
 	Native_Free(&line);
 	return ok && Pr_LoadSound("News1/sweep-apagado.wav") && Pr_LoadSound("News1/sweep-encendido.wav") && Mode_Calls("MapSnd", news1_sounds);
 }

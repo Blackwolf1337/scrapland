@@ -26,20 +26,6 @@
 
 #define CH "Chars"
 
-/* print text as the script's print statement does (sys.stdout, not the console log) */
-static byte Ch_Print(const nativeVal_t *v) {
-	const nativeVal_t *items[1] = { v };
-	return Mode_Print(items, 1);
-}
-
-static byte Ch_PrintS(const char *text) {
-	nativeVal_t t;
-	Native_SetText(&t, text, (int)strlen(text));
-	byte ok = Ch_Print(&t);
-	Native_Free(&t);
-	return ok;
-}
-
 /*
  * SAct.GetClass(cls) and, when there is one, SAct.GetAction(action) as IntSetChar calls them: 1 when both exist, 0
  * when not, -1 with the error set. A cls or action that is no text raises the TypeError of SAct's parse, the action
@@ -472,7 +458,7 @@ static byte Ch_Init(void) {
 	}
 	Py_DECREF(list);
 	const char *ch = SaveVar_Get("Char");
-	return Native_CallGlobal(CH, "LoadRes", NULL, "s", ch ? ch : "") && Ch_PrintS("Character system initialized.");
+	return Native_CallGlobal(CH, "LoadRes", NULL, "s", ch ? ch : "") && Mode_PrintS("Character system initialized.");
 }
 
 /* CreateMainChar(CharName, CharType, Pos, Ang): the character of the player (made when it is not there), the camera
@@ -509,7 +495,7 @@ static byte Ch_CreateMainChar(const nativeVal_t *a, nativeVal_t *out) {
 		}
 		if (other) {
 			return Mode_Done(&t, Mode_Cat(&t, text, 3, Mode_S(&t, "Invalid '"), name, Mode_S(&t, "' character created.")) &&
-				Ch_Print(text));
+				Mode_PrintV(text));
 		}
 	}
 	Mode_CamName(0, cname);
@@ -570,7 +556,7 @@ static byte Ch_CreateStartupPlayer(nativeVal_t *out) {
 	if (!Native_True(dummy)) {
 		Native_Free(spawn);
 		Mode_SaveVar("Spawn", spawn);
-		if (!Mode_Cat(&t, text, 2, spawn, Mode_S(&t, " Not found!!!!")) || !Ch_Print(text) ||
+		if (!Mode_Cat(&t, text, 2, spawn, Mode_S(&t, " Not found!!!!")) || !Mode_PrintV(text) ||
 			!Mode_DummyStartSeam("DM_Player_Spawn*", 1)) {
 			return Mode_Done(&t, 0);
 		}
@@ -585,12 +571,12 @@ static byte Ch_CreateStartupPlayer(nativeVal_t *out) {
 			}
 		}
 		if (!Native_True(dummy)) {
-			return Mode_Done(&t, Ch_PrintS("Cannot create a main char!"));
+			return Mode_Done(&t, Mode_PrintS("Cannot create a main char!"));
 		}
 		Native_Free(head);
 		Native_Free(text);
 		if (!LvN_Item(dummy, 0, head) || !Mode_Cat(&t, text, 3, Mode_S(&t, "Using "), head, Mode_S(&t, " indeed.")) ||
-			!Ch_Print(text)) {
+			!Mode_PrintV(text)) {
 			return Mode_Done(&t, 0);
 		}
 	}

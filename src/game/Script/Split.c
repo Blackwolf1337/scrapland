@@ -360,7 +360,7 @@ static byte Split_StartGameC(void) {
 		Py_XDECREF(mod);
 		Py_XDECREF(v);
 		Native_SetStr(msg, "Cu\xf1" "aaaao");
-		if (!v || !Mode_Put("Split", "FirstTime", NULL, Mode_I(&t, 0)) || !Mode_Print((const nativeVal_t *const[]){ msg }, 1)) {
+		if (!v || !Mode_Put("Split", "FirstTime", NULL, Mode_I(&t, 0)) || !Mode_PrintV(msg)) {
 			return Mode_Done(&t, 0);
 		}
 	}
