@@ -2732,23 +2732,21 @@ static byte MeetBoss_OnAlarmEnd(const nativeVal_t *a, nativeVal_t *out) {
 	return ok;
 }
 
-/* set the use of every conversion point (OBJLIB 5 and 7: the handles in the list of CharConversor) */
+/* set the use of every conversion point (OBJLIB 7: the handles in the list of CharConversor) */
 static byte Pr_Conversors(const char *use) {
-	nativeVal_t u;
-	PyObject *points = Script_Attr("CharConversor", "ConversionPoints");
-	if (!points) {
+	nativeVal_t pts;
+	if (!LvN_ModGet("CharConversor", "ConversionPoints", &pts)) {
 		return 0;
 	}
-	LvN_Str(&u, use);
-	int n = PyObject_Length(points);
+	int n = Mode_Loop(&pts);
 	byte ok = n >= 0;
 	for (int i = 0; ok && i < n; i++) {
-		PyObject *cc = PySequence_GetItem(points, i);
-		ok = cc && Mode_HSet(cc, "UseFunc", &u);
-		Py_XDECREF(cc);
+		nativeVal_t cc;
+		Native_SetNone(&cc);
+		ok = Native_SeqItem(&pts, i, &cc) && LvN_SetS(&cc, "UseFunc", use);
+		Native_Free(&cc);
 	}
-	Native_Free(&u);
-	Py_DECREF(points);
+	Native_Free(&pts);
 	return ok;
 }
 
