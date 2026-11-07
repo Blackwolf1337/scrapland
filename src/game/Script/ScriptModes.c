@@ -1791,3 +1791,23 @@ byte Mode_SetLockAlarm(const nativeVal_t *lock) {
 	Alarm_SetLock(&g_pWorld->alarm, i != 0);
 	return 1;
 }
+
+byte Mode_VObj(const nativeVal_t *o, const char *var, nativeVal_t *out) {
+	PyObject *po = Native_ToPy(o);
+	if (!po) {
+		return 0;
+	}
+	if (PyEntity_Check(po)) {
+		byte ok = Mode_HGet(po, var, out);
+		Py_DECREF(po);
+		return ok;
+	}
+	PyObject *r = PyObject_GetAttrString(po, (char *)var);
+	Py_DECREF(po);
+	if (!r) {
+		return Mode_AttrFail();
+	}
+	Native_Arg(r, out);
+	Py_DECREF(r);
+	return 1;
+}
