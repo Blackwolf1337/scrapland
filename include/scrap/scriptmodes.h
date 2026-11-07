@@ -209,11 +209,6 @@ byte Mode_PreloadOnes(const nativeVal_t *name);
 /* Scrap.EntityListGet(list, var): a text (None for none), a float or an int; the engine's console line and NULL result
  * for a missing list, its AttributeError for a missing variable */
 byte Mode_ListGet(const char *list, const char *var, nativeVal_t *out);
-/* Scrap.EntityListSet(list, var, value) on texts: the engine's console line and NULL result for a missing list */
-byte Mode_ListSet(const char *list, const char *var, const char *value);
-/* the three numbers of a vector or a tuple of three numbers into x, as "(ddd)" or "(fff)" takes them: 0 for other
- * values (no error set) */
-byte Mode_VecOf(const nativeVal_t *v, double *x);
 /* SLogic.SetOnFloor(name) (the TypeError of "s") */
 byte Mode_SetOnFloor(const nativeVal_t *name);
 /* Scrap.GetAlarm()[0] (the alarm is on) through its seam (fc-pk-dt swaps it): 1 or 0, -1 with the error */
@@ -260,10 +255,6 @@ byte Mode_G(const char *module, const char *name, nativeVal_t *out);
  * methods of whatever value is there */
 byte Mode_Keys(const char *module, const char *var, byte global, nativeVal_t *out);
 int Mode_HasKey(const char *module, const char *var, byte global, const nativeVal_t *key);
-/* var.values() of a variable of a module (global as for Mode_Keys), the Python method of whatever value is there */
-byte Mode_Values(const char *module, const char *var, byte global, nativeVal_t *out);
-/* var.remove(v) of a list variable of the module (its global), in place: the errors of the method */
-byte Mode_Remove(const char *module, const char *var, const nativeVal_t *v);
 /* list.index(x) of the script (a value that is no list has no index method) */
 byte Mode_Index(const nativeVal_t *list, const nativeVal_t *x, nativeVal_t *out);
 /* var.append(v) of a list variable of the module, in place (the method of whatever value is there, as the script
@@ -302,5 +293,17 @@ PyObject *Mode_Out(modeVals_t *t, byte ok, const nativeVal_t *out);
 PyObject *Mode_Result(byte ok);
 /* the value as the result of an adapter (freed), NULL for 0 */
 PyObject *Mode_Return(byte ok, nativeVal_t *v);
+
+/* ---- helpers of the native super deals (SuperDeals.c) ---- */
+
+/* var.values() of a variable of a module (global as for Mode_Keys), the Python method of whatever value is there */
+byte Mode_Values(const char *module, const char *var, byte global, nativeVal_t *out);
+/* var.remove(v) of a list variable of the module (its global), in place: the errors of the method */
+byte Mode_Remove(const char *module, const char *var, const nativeVal_t *v);
+/* Scrap.EntityListSet(list, var, value) on texts: the engine's console line and NULL result for a missing list */
+byte Mode_ListSet(const char *list, const char *var, const char *value);
+/* the three numbers of a vector or a tuple of three numbers into x, as "(ddd)" or "(fff)" takes them: 0 for other
+ * values (no error set) */
+byte Mode_VecOf(const nativeVal_t *v, double *x);
 
 #endif
