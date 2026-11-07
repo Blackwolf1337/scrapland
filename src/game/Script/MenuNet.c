@@ -2,6 +2,14 @@
  * The multiplayer menus of PCMenu in C (issue #2, step 3): MultiPlayerMenu, the join page with the server browser,
  * the address and password pages, the connection to a server, the create page with the advanced options and the
  * part the create and join pages share. The layout is data/menus/net.def, one section per page.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the state is the struct net (the servers of the browser, the page, the
+ * sort, the message of the day), the functions call the engine in C; the PyMethodDef entries are adapters (the
+ * argument formats as before). The variables of other modules are read where the C read them (Init.inMainMenu,
+ * isShipEdit, Path, Scorer.MarginH and MarginV, PCMenu.MultiplayerMenu, Net.Modes, ModesMap and NetMaps; OBJLIB 5),
+ * Menu.fromMultiPlayer is written at once. Menu, PCMenu.AskPassword, Net.PurgeServerMapList, Scrap.SaveConfig and
+ * Scrap.Exit are called by name with their failure printed as before (OBJLIB 3 and 7); the connection status
+ * schedules itself as a Python function (OBJLIB 4); the .def runner takes Python values (OBJLIB 6).
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,6 +25,7 @@
 #include "scrap/scrapfont.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 #include "scrap/timer.h"
 
 static const char net_def[] = {
@@ -71,8 +80,14 @@ static void Net_RunMenu(int id, const char *section, PyObject *vars);
 static PyObject *Net_Vars(const char *tab);
 static void Net_JoinMenu(int id);
 
+/* Menu.func(id) by name (OBJLIB 3), a failure printed */
 static void Net_Menu(const char *func, int id) {
-	Script_Call("Menu", func, "(i)", id);
+	Mode_Printed(Native_CallMod("Menu", func, NULL, "i", (long)id), "Menu", func);
+}
+
+/* Menu.LinkUD or Menu.LinkLR (id, a, b) by name (OBJLIB 3), a failure printed */
+static void Net_Link(const char *func, int id, const char *a, const char *b) {
+	Mode_Printed(Native_CallMod("Menu", func, NULL, "iss", (long)id, a, b), "Menu", func);
 }
 
 /* ---- the server list ---- */
@@ -157,12 +172,12 @@ static void Net_UpdateBrowser(int id) {
 	}
 	const char *tab = !strcmp(net.domain, "Internet") ? "JoinInternet" : !strcmp(net.domain, "Local") ? "JoinLocal" : NULL;
 	if (tab) {
-		Script_Call("Menu", "LinkUD", "(iss)", id, tab, count ? "BrowserSlot1" : "Refresh");
+		Net_Link("LinkUD", id, tab, count ? "BrowserSlot1" : "Refresh");
 	}
 	if (count) {
 		char last[0x20];
 		Str_Printf(last, sizeof(last), "BrowserSlot%d", count);
-		Script_Call("Menu", "LinkUD", "(iss)", id, last, "Refresh");
+		Net_Link("LinkUD", id, last, "Refresh");
 	}
 	Net_UpdateSlider(id);
 }
@@ -274,7 +289,7 @@ static void Net_ConnectionStatus(void) {
 		Script_SetStr(0, "Title", "Text", Script_Lang("Net_Menu_ServerDown"));
 	} else if (!strcmp(status, "need_password")) {
 		Net_CloseClient();
-		Script_Call("PCMenu", "AskPassword", "(is)", 0, "");
+		Mode_Printed(Native_CallMod("PCMenu", "AskPassword", NULL, "is", 0L, ""), "PCMenu", "AskPassword");
 		return;
 	} else if (!strcmp(status, "server_is_full")) {
 		static const struct {
@@ -296,9 +311,10 @@ static void Net_ConnectionStatus(void) {
 	double bar = Script_GetNum(0, "TitleBarM", "Y");
 	const char *title = Script_GetStr(0, "Title", "Text");
 	if (strcmp(last, title)) {
-		Script_Call("Menu", "DrawMenuTitleBar", "(ids)", 0, bar, title);
+		Mode_Printed(Native_CallMod("Menu", "DrawMenuTitleBar", NULL, "ids", 0L, bar, title), "Menu", "DrawMenuTitleBar");
 	}
-	/* a full server ends the polling (the script deleted its own next call) */
+	/* a full server ends the polling (the script deleted its own next call); OBJLIB 4: the scheduler keeps the
+	 * Python function and an empty argument tuple */
 	if (!full) {
 		PyObject *f = Net_StatusFunc();
 		PyObject *params = PyTuple_New(0);
@@ -325,6 +341,7 @@ static void Net_TryJoin(int id) {
 	} else {
 		Str_Copy(title, fmt, sizeof(title));
 	}
+	/* OBJLIB 6: the $names of the section as a dict */
 	PyObject *vars = Py_BuildValue("{s:s}", "title", title);
 	Net_RunMenu(id, "connecting", vars);
 	Py_XDECREF(vars);
@@ -335,18 +352,23 @@ static void Net_TryJoin(int id) {
 
 /* the entry of the game mode (PCMenu.MultiplayerMenu, set by the mode) is disabled when it has no function */
 static void Step_InGame(int id, PyObject *args) {
+	nativeVal_t opt, tmp = { 0 };
+	const nativeVal_t *func = NULL;
 	(void)args;
-	PyObject *m = PyImport_ImportModule("PCMenu");
-	PyObject *opt = m ? PyObject_GetAttrString(m, "MultiplayerMenu") : NULL;
-	PyObject *func = opt ? PySequence_GetItem(opt, 1) : NULL;
-	if (func && PyString_Check(func) && !PyString_AsString(func)[0]) {
-		Script_Call("Menu", "DisableMenuItem", "(iii)", id, 2, 5);
+	/* PCMenu.MultiplayerMenu[1] as PySequence_GetItem takes it (a list that holds objects item by item) */
+	if (Mode_ModGet("PCMenu", "MultiplayerMenu", &opt)) {
+		Mode_Elems(&opt);
+		func = Native_GetItem(&opt, 1, 0, &tmp);
 	}
-	PyErr_Clear();
-	Py_XDECREF(func);
-	Py_XDECREF(opt);
-	Py_XDECREF(m);
-	Script_SetInt("Menu", "fromMultiPlayer", 1);
+	if (func && func->type == NV_STR && !Native_Text(func)[0]) {
+		Mode_Printed(Native_CallMod("Menu", "DisableMenuItem", NULL, "iii", (long)id, 2L, 5L), "Menu", "DisableMenuItem");
+	}
+	Mode_DropError();
+	if (func == &tmp) {
+		Native_Free(&tmp);
+	}
+	Native_Free(&opt);
+	Mode_ModPutI("Menu", "fromMultiPlayer", 1);
 }
 
 /* the tabs of the join page: the focus box over the whole button */
@@ -362,6 +384,7 @@ static void Step_ColumnText(int id, PyObject *args) {
 	const char *key;
 	int maxlen;
 	char text[0x200];
+	/* OBJLIB 6: the steps take the arguments of the line as a tuple */
 	if (!PyArg_ParseTuple(args, "si", &key, &maxlen)) {
 		PyErr_Print();
 		return;
@@ -417,31 +440,57 @@ static void Net_SetServerMaps(const netMapList_t *list) {
 	GVar_SetStr("ServerMapList", text);
 }
 
-/* a list or other variable of the Net script (a new reference, NULL when it is not there) */
-static PyObject *Net_Script(const char *var) {
-	PyObject *m = PyImport_ImportModule("Net");
-	PyObject *v = m ? PyObject_GetAttrString(m, (char *)var) : NULL;
-	if (!v) {
-		PyErr_Clear();
+/* a list or other variable of the Net script into *out (OBJLIB 5: read as the attribute of Net): 1, else 0 with None
+ * when it is not there (no error); a list that holds objects is made native item by item */
+static byte Net_Script(const char *var, nativeVal_t *out) {
+	if (!Mode_ModGet("Net", var, out)) {
+		Mode_DropError();
+		return 0;
 	}
-	Py_XDECREF(m);
-	return v;
+	Mode_Elems(out);
+	return 1;
 }
 
-/* the maps of the current mode, Net.ModesMap[ServerType] */
+/* len(seq) as PySequence_Length takes it: -1 with its TypeError */
+static int Net_Len(const nativeVal_t *seq) {
+	int n;
+	return Native_Len(seq, &n) ? n : -1;
+}
+
+/* the C text of seq[i] (PySequence_GetItem; a character of a text goes into tmp, Native_Free it), NULL when it is no
+ * text (the error of the item left set) */
+static const char *Net_Item(const nativeVal_t *seq, int i, nativeVal_t *tmp) {
+	const nativeVal_t *e = Native_GetItem(seq, i, 0, tmp);
+	return e && e->type == NV_STR ? Native_Text(e) : NULL;
+}
+
+/* the maps of the current mode, Net.ModesMap[ServerType] (PyDict_GetItemString: nothing when ModesMap is no dict) */
 static void Net_ModeMaps(netMapList_t *list) {
-	PyObject *modes = Net_Script("ModesMap");
-	PyObject *maps = modes ? PyDict_GetItemString(modes, (char *)GVar_GetStr("ServerType")) : NULL;
-	list->num = 0;
-	for (int i = 0; maps && i < PySequence_Length(maps) && list->num < NET_MAX_MAPS; i++) {
-		PyObject *e = PySequence_GetItem(maps, i);
-		if (e && PyString_Check(e)) {
-			Str_Copy(list->names[list->num++], PyString_AsString(e), sizeof(list->names[0]));
-		}
-		Py_XDECREF(e);
+	nativeVal_t modes, key, sub = { 0 }, *maps = NULL;
+	Net_Script("ModesMap", &modes);
+	Native_SetStr(&key, GVar_GetStr("ServerType"));
+	if (modes.type == NV_DICT) {
+		maps = Native_DictGet(&modes, &key);
+	} else if (modes.type == NV_OBJ && Mode_Sub(&modes, &key, &sub)) {
+		/* OBJLIB 7: a dict that holds objects (handles) looked up the Python way */
+		maps = &sub;
 	}
-	PyErr_Clear();
-	Py_XDECREF(modes);
+	Native_Free(&key);
+	list->num = 0;
+	if (maps) {
+		Mode_Elems(maps);
+	}
+	for (int i = 0; maps && i < Net_Len(maps) && list->num < NET_MAX_MAPS; i++) {
+		nativeVal_t tmp = { 0 };
+		const char *e = Net_Item(maps, i, &tmp);
+		if (e) {
+			Str_Copy(list->names[list->num++], e, sizeof(list->names[0]));
+		}
+		Native_Free(&tmp);
+	}
+	Mode_DropError();
+	Native_Free(&sub);
+	Native_Free(&modes);
 }
 
 static byte Net_HasMap(const netMapList_t *list, const char *name) {
@@ -515,12 +564,12 @@ static void Net_UpdateMapList(int id) {
 		Script_SetStr(id, item, "Down", link);
 		slot++;
 		Str_Printf(link, sizeof(link), "MapSlot%d", slot);
-		Script_Call("Menu", "LinkLR", "(iss)", id, link, slot <= NET_MAP_SLOTS / 2 ? "MapUp" : "MapDown");
+		Net_Link("LinkLR", id, link, slot <= NET_MAP_SLOTS / 2 ? "MapUp" : "MapDown");
 	}
-	Script_Call("Menu", "LinkLR", "(iss)", id, "MapSlot1", "MapUp");
+	Net_Link("LinkLR", id, "MapSlot1", "MapUp");
 	Str_Printf(link, sizeof(link), "MapSlot%d", slot);
-	Script_Call("Menu", "LinkLR", "(iss)", id, link, "MapDown");
-	Script_Call("Menu", "LinkUD", "(iss)", id, link, "CreateButton");
+	Net_Link("LinkLR", id, link, "MapDown");
+	Net_Link("LinkUD", id, link, "CreateButton");
 	Net_UpdateMapSlider(id);
 }
 
@@ -539,37 +588,40 @@ static void Net_UpdateServerType(int id) {
 	Font_TextSize(Font_Get("Horatio"), pos, size, 0.0f, 0.0f, "%s", title);
 	Script_SetStr(id, "FragLimitTitle", "Text", title);
 	Script_SetNum(id, "FragLimit", "X", Script_GetNum(id, "FragLimitTitle", "X") + size[0] + 10);
-	Script_Call("Net", "PurgeServerMapList", "()");
+	/* OBJLIB 3: Net by name */
+	Mode_Printed(Native_CallMod("Net", "PurgeServerMapList", NULL, ""), "Net", "PurgeServerMapList");
 	Net_UpdateMapList(id);
 }
 
 /* the modes of Net.Modes: the index of ServerType (-1 when it is none of them) and the number of modes */
 static int Net_ModeIndex(int *count) {
-	PyObject *modes = Net_Script("Modes");
+	nativeVal_t modes;
+	byte there = Net_Script("Modes", &modes);
 	const char *type = GVar_GetStr("ServerType");
 	int found = -1;
-	*count = modes ? PySequence_Length(modes) : 0;
+	*count = there ? Net_Len(&modes) : 0;
 	for (int i = 0; i < *count; i++) {
-		PyObject *e = PySequence_GetItem(modes, i);
-		if (e && PyString_Check(e) && !strcmp(PyString_AsString(e), type)) {
+		nativeVal_t tmp = { 0 };
+		const char *e = Net_Item(&modes, i, &tmp);
+		if (e && !strcmp(e, type)) {
 			found = i;
 		}
-		Py_XDECREF(e);
+		Native_Free(&tmp);
 	}
-	PyErr_Clear();
-	Py_XDECREF(modes);
+	Mode_DropError();
+	Native_Free(&modes);
 	return found;
 }
 
 static void Net_SetMode(int index) {
-	PyObject *modes = Net_Script("Modes");
-	PyObject *e = modes ? PySequence_GetItem(modes, index) : NULL;
-	if (e && PyString_Check(e)) {
-		GVar_SetStr("ServerType", PyString_AsString(e));
+	nativeVal_t modes, tmp = { 0 };
+	const char *e = Net_Script("Modes", &modes) ? Net_Item(&modes, index, &tmp) : NULL;
+	if (e) {
+		GVar_SetStr("ServerType", e);
 	}
-	PyErr_Clear();
-	Py_XDECREF(e);
-	Py_XDECREF(modes);
+	Mode_DropError();
+	Native_Free(&tmp);
+	Native_Free(&modes);
 }
 
 static void Net_CreateMenu(int id) {
@@ -583,6 +635,7 @@ static void Net_CreateMenu(int id) {
 	const char *advanced = Script_Lang("Menu_Multiplayer_Advanced");
 	Str_Printf(players, sizeof(players), "%d", (int)GVar_GetNum("DefaultMaxPlayersOnServer", 0) + 1);
 	Str_Printf(frags, sizeof(frags), "%d", (int)GVar_GetNum("FragLimit", 0));
+	/* OBJLIB 6: the $names of the section as a dict */
 	PyObject *vars = Net_Vars("Create");
 	PyObject *more = Py_BuildValue("{s:s,s:s,s:s,s:s}", "servername", GVar_GetStr("ServerName"), "players", players,
 		"fraglimit", frags, "advanced", *advanced ? advanced : "Advanced");
@@ -650,17 +703,20 @@ static void Step_MapSlots(int id, PyObject *args) {
 /* mappreviews x y: a hidden picture of each map of Net.NetMaps */
 static void Step_MapPreviews(int id, PyObject *args) {
 	int x, y;
+	/* OBJLIB 6: the steps take the arguments of the line as a tuple */
 	if (!PyArg_ParseTuple(args, "ii", &x, &y)) {
 		PyErr_Print();
 		return;
 	}
-	PyObject *maps = Net_Script("NetMaps");
-	for (int i = 0; maps && i < PySequence_Length(maps); i++) {
-		PyObject *e = PySequence_GetItem(maps, i);
-		if (e && PyString_Check(e)) {
+	nativeVal_t maps;
+	byte there = Net_Script("NetMaps", &maps);
+	for (int i = 0; there && i < Net_Len(&maps); i++) {
+		nativeVal_t tmp = { 0 };
+		const char *e = Net_Item(&maps, i, &tmp);
+		if (e) {
 			char item[0x80], file[0x100];
-			Str_Printf(item, sizeof(item), "MapPreviewSlot_%s", PyString_AsString(e));
-			Str_Printf(file, sizeof(file), "Levels/%s/2D/MapPreview.alpha.tga", PyString_AsString(e));
+			Str_Printf(item, sizeof(item), "MapPreviewSlot_%s", e);
+			Str_Printf(file, sizeof(file), "Levels/%s/2D/MapPreview.alpha.tga", e);
 			Script_Add(id, item, "Sprite");
 			Script_SetNum(id, item, "X", x);
 			Script_SetNum(id, item, "Y", y);
@@ -668,10 +724,10 @@ static void Step_MapPreviews(int id, PyObject *args) {
 			Script_SetNum(id, item, "Visible", 0);
 			Script_SetNum(id, item, "Alpha", 0);
 		}
-		Py_XDECREF(e);
+		Native_Free(&tmp);
 	}
-	PyErr_Clear();
-	Py_XDECREF(maps);
+	Mode_DropError();
+	Native_Free(&maps);
 }
 
 static void Step_ServerType(int id, PyObject *args) {
@@ -690,13 +746,15 @@ static const scriptStep_t net_steps[] = {
 	{ NULL, NULL },
 };
 
-/* the values every page may use */
+/* the values every page may use (OBJLIB 6: the $names of a section as a dict) */
 static PyObject *Net_Vars(const char *tab) {
+	int marginH = (int)Mode_ModGetI("Scorer", "MarginH", 0);
+	int marginV = (int)Mode_ModGetI("Scorer", "MarginV", 0);
 	return Py_BuildValue("{s:s,s:s,s:s,s:i,s:i,s:s}", "tab", tab, "domain", net.domain, "motd", net.motd, "motdx",
-		Script_GetInt("Scorer", "MarginH", 0) + 5, "motdy", 480 - Script_GetInt("Scorer", "MarginV", 0) - 20,
-		"serveraddress", GVar_GetStr("DefaultServerAddress"));
+		marginH + 5, "motdy", 480 - marginV - 20, "serveraddress", GVar_GetStr("DefaultServerAddress"));
 }
 
+/* OBJLIB 6: the .def runner takes the $names as a Python dict */
 static void Net_RunMenu(int id, const char *section, PyObject *vars) {
 	Script_RunFile(id, NET_FILE, section, net_def, net_steps, vars);
 }
@@ -705,6 +763,7 @@ static void Net_JoinMenu(int id) {
 	cScorer *sc = Scorer_Get(id);
 	char current[0x80];
 	Str_Copy(current, sc && sc->current ? sc->current : "Join", sizeof(current));
+	/* OBJLIB 6: the $names of the section as a dict */
 	PyObject *vars = Net_Vars("Join");
 	if (vars) {
 		PyObject *c = PyString_FromString(current);
@@ -729,7 +788,7 @@ static PyObject *PCMenu_MultiPlayerMenu(PyObject *self, PyObject *args) {
 	NET_ARGS(args);
 	(void)control;
 	Net_Menu("StartNewMenu", id);
-	if (Script_GetInt("Init", "inMainMenu", 0) || Script_GetInt("Init", "isShipEdit", 0)) {
+	if (Mode_ModGetI("Init", "inMainMenu", 0) || Mode_ModGetI("Init", "isShipEdit", 0)) {
 		Net_JoinMenu(id);
 		return Py_ReturnNone();
 	}
@@ -746,7 +805,7 @@ static PyObject *PCMenu_MenuRestartServer(PyObject *self, PyObject *args) {
 	(void)control;
 	char path[0x100];
 	if (Timer_GetTime(&g_pWorld->timer) > 15 && Net_IsServer()) {
-		Net_ServerChangeLevel(Script_GetString("Init", "Path", path, sizeof(path)));
+		Net_ServerChangeLevel(Mode_ModGetS("Init", "Path", path, sizeof(path)));
 	}
 	return Py_ReturnNone();
 }
@@ -839,8 +898,8 @@ static PyObject *PCMenu_AbortMultiplayerGame(PyObject *self, PyObject *args) {
 	(void)self;
 	NET_ARGS(args);
 	(void)control;
-	Script_Call("Menu", "YesNoMenu", "(isss)", id, Script_Lang("Menu_AbortGame_Question"), "Menu.AuxAbortGame",
-		"PCMenu.MultiPlayerMenu");
+	Mode_Printed(Native_CallMod("Menu", "YesNoMenu", NULL, "isss", (long)id, Script_Lang("Menu_AbortGame_Question"),
+		"Menu.AuxAbortGame", "PCMenu.MultiPlayerMenu"), "Menu", "YesNoMenu");
 	return Py_ReturnNone();
 }
 
@@ -974,7 +1033,7 @@ static PyObject *PCMenu_BrowserMenuBack(PyObject *self, PyObject *args) {
 		cPy_Function_SetFunc(&sc->onPrev, "");
 	}
 	Net_DoneBrowser();
-	Script_Call("Menu", "MainMenu", "(is)", id, control);
+	Mode_Printed(Native_CallMod("Menu", "MainMenu", NULL, "is", (long)id, control), "Menu", "MainMenu");
 	return Py_ReturnNone();
 }
 
@@ -1216,7 +1275,7 @@ static PyObject *PCMenu_MenuInitServer(PyObject *self, PyObject *args) {
 		Net_UpdateMapList(id);
 	}
 	if (maps.num <= 0) {
-		PyErr_SetString(PyExc_IndexError, "MenuInitServer: no maps");
+		Native_Raise(NE_INDEX, "MenuInitServer: no maps");
 		return NULL;
 	}
 	Str_Printf(level, sizeof(level), "Levels/%s", maps.names[0]);
@@ -1282,8 +1341,8 @@ static PyObject *PCMenu_SwitchUsePass(PyObject *self, PyObject *args) {
 		GVar_SetNum("UseServerPassword", 1);
 		Str_Printf(text, sizeof(text), "\x02 %s:", password);
 		Script_SetStr(id, "Item1", "Text", text);
-		Script_Call("Menu", "LinkLR", "(iss)", id, "Item1", "Item2");
-		Script_Call("Menu", "LinkLR", "(iss)", id, "Item2", "Item1");
+		Net_Link("LinkLR", id, "Item1", "Item2");
+		Net_Link("LinkLR", id, "Item2", "Item1");
 		Script_SetNum(id, "Item2", "Visible", 1);
 	}
 	return Py_ReturnNone();
@@ -1302,10 +1361,11 @@ static PyObject *PCMenu_RunDedicatedServer(PyObject *self, PyObject *args) {
 		Net_SetServerMaps(&maps);
 	}
 	GVar_SetStr("ServerPassword", Script_GetStr(id, "Item2", "Text"));
-	Script_Call("Scrap", "SaveConfig", "()");
+	/* OBJLIB 7: the engine functions by name as the C called them */
+	Mode_Printed(Native_CallMod("Scrap", "SaveConfig", NULL, ""), "Scrap", "SaveConfig");
 	Str_Printf(params, sizeof(params), "-console -dedicated -imap:\"Levels/%s\"", maps.num ? maps.names[0] : "");
 	GVar_SetStr("ReRunAtExitParams", params);
-	Script_Call("Scrap", "Exit", "()");
+	Mode_Printed(Native_CallMod("Scrap", "Exit", NULL, ""), "Scrap", "Exit");
 	return Py_ReturnNone();
 }
 
@@ -1385,7 +1445,8 @@ static PyObject *PCMenu_ServerTypeInfo(PyObject *self, PyObject *args) {
 		name = type;
 		help = "Unofficial modification!";
 	}
-	Script_Call("Menu", "ShowTextBox", "(isss)", id, help, "PCMenu.NetCreateGameMenu", "PCMenu.NetCreateGameMenu");
+	Mode_Printed(Native_CallMod("Menu", "ShowTextBox", NULL, "isss", (long)id, help, "PCMenu.NetCreateGameMenu",
+		"PCMenu.NetCreateGameMenu"), "Menu", "ShowTextBox");
 	double y = Script_GetNum(id, "MissionDesc", "Y");
 	Script_SetNum(id, "MissionDesc", "Y", y + 45);
 	cScorer *sc = Scorer_Get(id);
