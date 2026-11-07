@@ -3,7 +3,9 @@
 each with the stored pack baselines (README.md next to this file).
 
   regress.py check [--build DIR] [--lanes ca,ca2,ca3] [--out DIR] [case ...]   C run, compare, summary, exit code
-  regress.py baseline [--runs 2] [--lanes pa,pa2,pa3] [--add] [case ...]       pack runs into baselines/
+  regress.py baseline [--runs 2] [--lanes pa,pa2,pa3] [--add] [case ...]       pack runs into baselines/ (on the
+                                                                               reference build with the interpreter,
+                                                                               default <repo>/build-py64)
   regress.py compare RESULTDIR [case ...]                                      compare stored C results again
   regress.py show RESULTDIR case                                               every difference of one case
   regress.py accept RESULTDIR case ...                                         accept a C run's differences
@@ -47,9 +49,11 @@ def _data_root():
 
 # REGRESS_MCP_DIR: the tools/mcp of another checkout; default the scrap_mcp.py of this checkout. The game data and the
 # slots are those of SCRAP_MCP_ROOT (default: _data_root()). REGRESS_HARNESS=channel: the games run with the test
-# channel of the game (scrap_mcp 0.3.0 or newer, no Python code in the game); python: mcpgame.py in the game.
+# channel of the game (scrap_mcp 0.3.0 or newer, no Python code in the game); python: mcpgame.py in the game, only in
+# a build with the interpreter (cmake -DSCRAP_NO_PYTHON=OFF). Unset: channel for a build without the interpreter (the
+# default build), python for one with it (pick_harness).
 MCP_DIR = os.environ.get('REGRESS_MCP_DIR', os.path.join(REPO, 'tools', 'mcp'))
-HARNESS = os.environ.get('REGRESS_HARNESS', 'python')
+HARNESS = os.environ.get('REGRESS_HARNESS') or None
 os.environ.setdefault('SCRAP_MCP_ROOT', _data_root())
 sys.path.insert(0, MCP_DIR)
 import scrap_mcp  # noqa: E402
@@ -58,6 +62,8 @@ import tochannel  # noqa: E402
 from compare import compare, show_diff, load_json  # noqa: E402
 
 DEFAULT_BUILD = os.path.join(REPO, 'build-linux64')
+# the pack runs of baseline need the interpreter: the reference build made with cmake -DSCRAP_NO_PYTHON=OFF
+REFERENCE_BUILD = os.path.join(REPO, 'build-py64')
 BASELINES = os.path.join(HERE, 'baselines')
 HELPERS = os.path.join(HERE, 'helpers')
 RESULTS = os.path.join(REPO, 'build-regress')
@@ -686,6 +692,34 @@ def _stop(signum, frame):
 	os._exit(130)
 
 
+def no_python(build):
+	"""whether the build folder was made without the Python interpreter (SCRAP_NO_PYTHON in its CMakeCache.txt)"""
+	try:
+		with open(os.path.join(build, 'CMakeCache.txt'), errors='replace') as f:
+			return 'SCRAP_NO_PYTHON:BOOL=ON' in f.read().split('\n')
+	except OSError:
+		return False
+
+
+def pick_harness(a):
+	"""HARNESS for the build of a check or baseline run; refuses what needs the interpreter in a build without it"""
+	global HARNESS
+	if a.cmd not in ('check', 'baseline'):
+		return
+	build = a.build + ('-asan' if getattr(a, 'asan', False) else '')
+	nopy = no_python(build)
+	if a.cmd == 'baseline' and nopy:
+		raise SystemExit('regress: baseline runs the scripts of the packs (SCRAP_PACK_SCRIPTS=1, Python code), but %s '
+						 'has no Python interpreter: pass --build with a build made with cmake -DSCRAP_NO_PYTHON=OFF '
+						 '(e.g. build-py64)' % build)
+	if HARNESS == 'python' and nopy:
+		raise SystemExit('regress: REGRESS_HARNESS=python runs Python in the game, but %s has no Python interpreter: '
+						 'use REGRESS_HARNESS=channel (the default there)' % build)
+	if HARNESS is None:
+		HARNESS = 'channel' if nopy else 'python'
+	log('harness %s (%s)' % (HARNESS, 'no Python interpreter in the build' if nopy else 'build with the interpreter'))
+
+
 def main():
 	signal.signal(signal.SIGINT, _stop)
 	signal.signal(signal.SIGTERM, _stop)
@@ -696,7 +730,7 @@ def main():
 	b.add_argument('--add', action='store_true', help='add runs after the stored ones')
 	b.add_argument('--index', type=int, help='number of the first run (p<index>.json), default 1')
 	b.add_argument('--lanes', default='pa,pa2,pa3')
-	b.add_argument('--build', default=os.environ.get('FUNC_BUILD', DEFAULT_BUILD))
+	b.add_argument('--build', default=os.environ.get('FUNC_BUILD', REFERENCE_BUILD))
 	b.add_argument('cases', nargs='*')
 	c = sub.add_parser('check')
 	c.add_argument('--lanes', default='ca,ca2,ca3')
@@ -715,6 +749,10 @@ def main():
 	s.add_argument('resultdir')
 	s.add_argument('case')
 	a = ap.parse_args()
+	if getattr(a, 'build', None):
+		# scrap_mcp joins a relative build folder to SCRAP_MCP_ROOT (the main checkout of a worktree)
+		a.build = os.path.abspath(a.build)
+	pick_harness(a)
 	return {'baseline': cmd_baseline, 'check': cmd_check, 'compare': cmd_compare, 'show': cmd_show,
 			'accept': cmd_accept}[a.cmd](a) or 0
 

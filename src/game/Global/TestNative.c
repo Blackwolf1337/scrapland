@@ -5,6 +5,8 @@
  *   native <literal>         the repr of what the native literal reader makes of the text
  *   native str <literal>     its str
  *   native check <literal>   its text as check() of the golden test writes it (floats with 17 digits)
+ *   native esc ...           the same three with the literal escaped, \n a line end and \\ a backslash (the channel
+ *                            reads lines; litfuzz.sh sends the stored texts that have a line end this way)
  *   native py                (STAGE 7, the build with the interpreter) puts two functions into __main__ for code
  *                            that the channel's py command runs:
  *                              _native_lit(text, globals): (native taken, Script_Literal taken, the native value as
@@ -103,17 +105,40 @@ static void TN_Install(nativeBuf_t *out) {
 #endif
 
 void TestNative_Command(nativeBuf_t *out, const char *arg) {
-	if (!strncmp(arg, "str ", 4)) {
-		TN_Line(out, arg + 4, NR_STR);
-	} else if (!strncmp(arg, "check ", 6)) {
-		TN_Line(out, arg + 6, NR_CHECK);
+	byte esc = !strncmp(arg, "esc ", 4);
+	nativeRepr_t mode = NR_REPR;
+
+	if (esc) {
+		arg += 4;
 	} else if (!strcmp(arg, "py")) {
 #ifndef SCRAP_NO_PYTHON
 		TN_Install(out);
 #else
 		Native_BufAdd(out, "error: SystemError: py: no Python interpreter in this build\n", -1);
 #endif
-	} else {
-		TN_Line(out, arg, NR_REPR);
+		return;
 	}
+	if (!strncmp(arg, "str ", 4)) {
+		mode = NR_STR;
+		arg += 4;
+	} else if (!strncmp(arg, "check ", 6)) {
+		mode = NR_CHECK;
+		arg += 6;
+	}
+	if (!esc) {
+		TN_Line(out, arg, mode);
+		return;
+	}
+	nativeBuf_t text;
+	Native_BufInit(&text);
+	for (; *arg; arg++) {
+		if (*arg == '\\' && (arg[1] == 'n' || arg[1] == '\\')) {
+			Native_BufAdd(&text, arg[1] == 'n' ? "\n" : "\\", 1);
+			arg++;
+		} else {
+			Native_BufAdd(&text, arg, 1);
+		}
+	}
+	TN_Line(out, text.p, mode);
+	Native_BufFree(&text);
 }

@@ -8,7 +8,7 @@ results made on the same engine (SCRAP_PACK_SCRIPTS=1). One command, pass or fai
     ./regress.py check --build <build> fc-r6b-cm3.txt r7c      # some cases (name or substring)
     ./regress.py show <repo>/build-regress/<stamp> fc-r6b-cm3.txt   # every differing line of a case
     ./regress.py compare <repo>/build-regress/<stamp>          # judge stored C results again
-    ./regress.py baseline --build <build> [cases]          # pack runs 1 and 2 into baselines/ (lanes pa pa2 pa3)
+    ./regress.py baseline --build <build> [cases]          # pack runs 1 and 2 into baselines/ (lanes pa pa2 pa3; default build: <repo>/build-py64, the reference build with the interpreter)
     ./regress.py baseline --index 2 --lanes ca,ca2,ca3 ... # a run of its own number on other lanes (in parallel)
     ./regress.py baseline --add [cases]                    # one more pack run (p3, ...) for cases that vary rarely
     ./regress.py accept <repo>/build-regress/<stamp> <case> ...   # accept a C run's looked-at differences for the cases
@@ -64,7 +64,9 @@ checkout (tools/mcp); REGRESS_MCP_DIR takes the tools/mcp of another checkout.
 
 ## Harness
 
-REGRESS_HARNESS=python (default) runs the old game side, mcpgame.py, with -PythonExecute. REGRESS_HARNESS=channel runs
+With REGRESS_HARNESS unset, the runner takes the channel harness for a build without the interpreter (the default
+build) and the python harness for a build with it. REGRESS_HARNESS=python runs the old game side, mcpgame.py, with
+-PythonExecute. On a build without the interpreter it is refused with a message. REGRESS_HARNESS=channel runs
 the game with the test channel and no Python code at all. tochannel.py turns each case line into the channel commands
 of one command file (run in one frame, as the Python line was):
 
@@ -133,8 +135,9 @@ for all cases). Accepted C runs are baselines/<case>.accepted.xz. The baseline c
 baselines/<case>.p<k>.json during its run and folds them into the .xz at its end (file lock, so a parallel
 `baseline --index 2` is fine).
 
-The runs are pack runs (SCRAP_PACK_SCRIPTS=1, Python) on the build named in the file, so they can only be remade while
-the build still has Python. After stage 7 of the Python removal they are fixed reference data. Remake them after an
+The runs are pack runs (SCRAP_PACK_SCRIPTS=1, Python) on the build named in the file, so they can only be remade with
+the reference build (build-py64, configured with -DSCRAP_NO_PYTHON=OFF). `baseline` is refused on a build without the
+interpreter. After step B of the Python removal they are fixed reference data. Remake them after an
 engine change that the pack side sees too (they are pack results on the C engine): `baseline` and
 `baseline --index 2 --lanes ca,ca2,ca3` at the same time, then `baseline --index 3` (three runs catch most of the
 pack's own variation; masks/ covers the rest). Old baselines are kept in git history only. Set REGRESS_PACK_SRC for

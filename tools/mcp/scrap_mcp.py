@@ -7,10 +7,11 @@ validation errors that are ours.
 Each game runs in a slot of its own (build-mcp/slot-<name>, made by tools/test/mkgame.sh --into: the game data
 linked, Bin, the configs and the Wine prefix copied), through tools/test/wine.sh (gamescope headless, muted). The
 game side is the test channel of the game (src/game/Global/TestChannel.c, tools/test/channel.py: no Python of the
-tool runs in the game), or with harness=python the old tools/mcp/mcpgame.py, started with -PythonExecute (STAGE 7:
-goes with the interpreter; the reference exe has only this one). The server speaks the Model Context Protocol over
-stdio (JSON-RPC 2.0, one message a line) and needs only the Python standard library; Pillow does crops, zoom and
-comparisons.
+tool runs in the game), or with harness=python the old tools/mcp/mcpgame.py, started with -PythonExecute: the only
+one of the reference exe, and for one round the one of a C build made with the interpreter (cmake
+-DSCRAP_NO_PYTHON=OFF; STAGE 7: goes with the interpreter). The default C builds have no interpreter. The server
+speaks the Model Context Protocol over stdio (JSON-RPC 2.0, one message a line) and needs only the Python standard
+library; Pillow does crops, zoom and comparisons.
 """
 import ast
 import base64
@@ -29,7 +30,7 @@ import time
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'test'))
 import channel  # noqa: E402
 
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 PROTOCOLS = ('2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05')
 ROOT = os.environ.get('SCRAP_MCP_ROOT') or os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 REF_EXE = os.path.join(ROOT, 'build-ref-noexact', 'ScrapC.exe')
@@ -40,8 +41,8 @@ INSTRUCTIONS = (
     'launch starts a named game (exe native64 = build-linux64/ScrapC by default, native64asan, c64 = the Windows '
     'build under Wine, ref = the frozen reference; map= loads a level), wait kind=ready waits until the menu or the '
     'level runs. cmd runs test channel commands in the game (values, calls with literal arguments, engine and entity '
-    'variables, module dumps, console lines); python runs Python 1.5.2 code. menu_dump lists the items of the '
-    'open menu, open_menu, click, key and mouse drive it. screenshot and compare show the window, log reads log.html '
+    'variables, module dumps, console lines); python runs Python 1.5.2 code (only ref and a build made with the '
+    'interpreter). menu_dump lists the items of the open menu, open_menu, click, key and mouse drive it. screenshot and compare show the window, log reads log.html '
     'or scrapdecomp.log, trace and vkcheck need launch with trace= or validation=true. quit ends a game. Build '
     'first; launch copies the build into the slot.')
 
@@ -68,6 +69,20 @@ WIN_BUILDS = {'c64': 'build-win64'}
 NATIVE_BUILDS = {'native64': 'build-linux64', 'native64asan': 'build-linux64-asan'}
 DEFAULT_NATIVE_BUILDS = dict(NATIVE_BUILDS)
 DEFAULT_WIN_BUILDS = dict(WIN_BUILDS)
+
+
+def build_dir(exe):
+    """the build folder of a C exe"""
+    return os.path.join(ROOT, NATIVE_BUILDS.get(exe) or WIN_BUILDS[exe])
+
+
+def no_python(exe):
+    """whether the build of a C exe was made without the Python interpreter (SCRAP_NO_PYTHON in its CMakeCache.txt)"""
+    try:
+        with open(os.path.join(build_dir(exe), 'CMakeCache.txt'), errors='replace') as f:
+            return 'SCRAP_NO_PYTHON:BOOL=ON' in f.read().split('\n')
+    except OSError:
+        return False
 
 
 class Game:
@@ -152,11 +167,17 @@ class Game:
         exe = a.get('exe', 'native64')
         if exe != 'ref' and exe not in WIN_BUILDS and exe not in NATIVE_BUILDS:
             raise RuntimeError("exe is one of: ref, %s" % ', '.join(list(WIN_BUILDS) + list(NATIVE_BUILDS)))
-        self.prepare(exe)
-        harness = a.get('harness') or ('channel' if exe != 'ref' and self.has_channel(exe) else 'python')
+        harness = a.get('harness') or ('python' if exe == 'ref' else 'channel')
         if harness not in ('channel', 'python') or (exe == 'ref' and harness == 'channel'):
             raise RuntimeError('harness is channel or python (ref: only python)')
-        self.opts = dict(a, exe=exe, harness=harness)
+        nopy = exe != 'ref' and no_python(exe)
+        if harness == 'python' and nopy:
+            raise RuntimeError('harness=python runs Python in the game, but %s is built without the interpreter '
+                               '(SCRAP_NO_PYTHON, the default): use the channel' % build_dir(exe))
+        self.prepare(exe)
+        if harness == 'channel' and not self.has_channel(exe):
+            raise RuntimeError('the game binary of %s has no test channel (an old build): build it again' % exe)
+        self.opts = dict(a, exe=exe, harness=harness, nopy=nopy)
         env = dict(os.environ)
         env.update({'SCRAP_GAME_DIR': self.game, 'SCRAP_PREFIX': self.prefix,
                     'HEADLESS_TIMEOUT': str(int(a.get('timeout', 3600))), 'WINE_LOG': self.wine_log,
@@ -295,6 +316,9 @@ class Game:
                                'loads)' % (self.name, timeout))
 
     def python(self, code, timeout=10.0):
+        if self.opts.get('nopy'):
+            raise RuntimeError('game %s has no Python interpreter (SCRAP_NO_PYTHON, the default build): use cmd'
+                               % self.name)
         if self.channel():
             # STAGE 7: the channel's py command goes with the interpreter
             return self.cmd('py\n' + code, timeout)
@@ -453,9 +477,10 @@ TOOLS = [
          'env': {'type': 'object', 'description': 'more environment variables (SCRAP_VK_DEBUG, SCRAP_RD_DUMP, ...)'},
          'validation': {'type': 'boolean', 'description': 'the Vulkan validation layer on (see vkcheck)'},
          'harness': {'type': 'string', 'enum': ['channel', 'python'], 'description': 'how the tools talk to the game: '
-                     'channel (default when the build has it, else python) = the test channel of the game (SCRAP_TEST_CHANNEL=1, answers also while '
-                     'the world clock stands), python = the old mcpgame.py through -PythonExecute (answers only while '
-                     'the world clock runs; the only one of ref; STAGE 7: goes with the interpreter)'},
+                     'channel (default of the C builds) = the test channel of the game (SCRAP_TEST_CHANNEL=1, answers '
+                     'also while the world clock stands), python = the old mcpgame.py through -PythonExecute (answers '
+                     'only while the world clock runs; the only one of ref, and for C builds only one made with the '
+                     'interpreter, cmake -DSCRAP_NO_PYTHON=OFF; STAGE 7: goes with the interpreter)'},
          'trace': {'type': 'number', 'description': 'SCRAP_VK_TRACE: the render calls of the first frame this many '
                    'seconds after the device go into scrapdecomp.log (see trace)'},
          'size': {'type': 'string', 'description': 'the display of gamescope, default 1280x720'},
@@ -472,8 +497,8 @@ TOOLS = [
          'timeout': {'type': 'number', 'description': 'default 120'},
          'screenshot': {'type': 'boolean', 'description': 'a screenshot after the wait'}}, ['kind'])},
     {'name': 'python', 'description': 'Run Python 1.5.2 in the game (modules Scrap, SAI, SVec, ...). An expression gives '
-     'its repr; statements give the repr of the global result, or ok. Goes with the interpreter (stage 7 of the '
-     'removal of Python): use cmd where it covers the check.', 'inputSchema': schema({
+     'its repr; statements give the repr of the global result, or ok. Only ref and a C build made with the '
+     'interpreter (cmake -DSCRAP_NO_PYTHON=OFF); the default C builds have none: use cmd.', 'inputSchema': schema({
          'name': NAME, 'code': {'type': 'string'}, 'timeout': {'type': 'number', 'description': 'default 10'},
          'screenshot': {'type': 'boolean'}}, ['code'])},
     {'name': 'cmd', 'description': 'Test channel commands in the game (no Python), one a line: an expression gives its '

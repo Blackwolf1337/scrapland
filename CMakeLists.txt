@@ -1,4 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
+# a build folder configured before (its cache has the variables of project()); for SCRAP_NO_PYTHON below
+if(DEFINED CACHE{scrapdecomp_BINARY_DIR})
+	set(SCRAP_OLD_CACHE ON)
+endif()
 project(scrapdecomp C)
 
 set(CMAKE_C_STANDARD 23)
@@ -117,7 +121,20 @@ target_include_directories(scrapcode PRIVATE ${SHADER_DIR} ${FFMPEG_DIR}/include
 # compile and input of the builtins and code objects of marshal and new raise. The object library stays. The files
 # of src/python/nopy wrap the vendored ones that keep a part, with the references to what is gone made refusals;
 # --gc-sections drops the rest of them (the bytecode loop, the runners, the compiler, the frame functions).
-option(SCRAP_NO_PYTHON "build without the Python interpreter (only the object library of Python 1.5.2)" OFF)
+# The default since 2026-11-08. -DSCRAP_NO_PYTHON=OFF builds the interpreter as before: the reference build of one round
+# (the update and python modes of golden.sh, litfuzz.sh against the linked Python, the python harness and the pack
+# baselines of tools/test/regress); it goes with the interpreter files. A build folder configured while OFF was the
+# default has OFF in its cache: it is switched to ON once (SCRAP_NO_PYTHON_ON marks a cache that has seen the switch).
+if(SCRAP_OLD_CACHE AND NOT DEFINED CACHE{SCRAP_NO_PYTHON_ON} AND DEFINED CACHE{SCRAP_NO_PYTHON} AND NOT SCRAP_NO_PYTHON)
+	message(NOTICE "SCRAP_NO_PYTHON is ON now, the default since 2026-11-08 (this build folder had the old default OFF); "
+		"configure again with -DSCRAP_NO_PYTHON=OFF for the reference build with the interpreter")
+	set_property(CACHE SCRAP_NO_PYTHON PROPERTY VALUE ON)
+endif()
+set(SCRAP_NO_PYTHON_ON ON CACHE INTERNAL "the build folder has seen the default ON of SCRAP_NO_PYTHON")
+option(SCRAP_NO_PYTHON "build without the Python interpreter (only the object library of Python 1.5.2)" ON)
+if(NOT SCRAP_NO_PYTHON)
+	message(STATUS "SCRAP_NO_PYTHON is OFF: the reference build with the Python interpreter")
+endif()
 set(PY152 third_party/python-1.5.2)
 add_library(python152 STATIC
 	src/python/classobject.c
