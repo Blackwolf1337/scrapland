@@ -36,39 +36,12 @@ static byte Sp_G(const char *var, nativeVal_t *out) {
 	return Mode_G(SP, var, out);
 }
 
-/* a variable of the module = v as the port set it (Script_SetVar: an error is dropped) */
-static void Sp_Set(const char *var, const nativeVal_t *v) {
-	if (!Mode_Put(SP, var, NULL, v)) {
-		PyErr_Clear();
-	}
-}
-
+/* a variable of the module = s as the port set it (Script_SetVar: an error is dropped) */
 static void Sp_SetS(const char *var, const char *s) {
 	nativeVal_t v;
 	Native_SetText(&v, s, (int)strlen(s));
-	Sp_Set(var, &v);
+	Mode_ModPut(SP, var, &v);
 	Native_Free(&v);
-}
-
-static void Sp_SetI(const char *var, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	Sp_Set(var, &v);
-}
-
-/* module.var as Script_GetInt reads it: an int, a float cut, else def (no error) */
-static long Sp_Int(const char *module, const char *var, long def) {
-	nativeVal_t v = { 0 };
-	long r = def;
-	if (!LvN_ModGet(module, var, &v)) {
-		PyErr_Clear();
-	} else if (v.type == NV_INT) {
-		r = (int)v.i;
-	} else if (v.type == NV_FLOAT) {
-		r = (int)v.f;
-	}
-	Native_Free(&v);
-	return r;
 }
 
 /* a global of the module when it is there (globals().get of the script): 1 with *out, else 0 (no error) */
@@ -273,18 +246,9 @@ static byte Sp_PlayVoiceScheduled(const nativeVal_t *channel, double stime, cons
 
 /* the same with the voice delay of the module (Script_GetFloat of VoiceShTime, 0.25) and a channel number */
 static byte Sp_PlayVoiceAfter(int channel, const nativeVal_t *rtime) {
-	nativeVal_t c, v = { 0 };
-	double stime = 0.25;
+	nativeVal_t c;
 	Native_SetInt(&c, channel);
-	if (!LvN_ModGet(SP, "VoiceShTime", &v)) {
-		PyErr_Clear();
-	} else if (v.type == NV_FLOAT) {
-		stime = v.f;
-	} else if (v.type == NV_INT) {
-		stime = (double)v.i;
-	}
-	Native_Free(&v);
-	return Sp_PlayVoiceScheduled(&c, stime, rtime);
+	return Sp_PlayVoiceScheduled(&c, Mode_ModGetN(SP, "VoiceShTime", 0.25), rtime);
 }
 
 static byte Sp_PlayVoiceAfterI(int channel, long rtime) {
@@ -324,12 +288,12 @@ static byte Sp_CallEndOfSpeech(void) {
 		}
 	}
 	Sp_SetS("TalkListen", "TalkListen");
-	if (Sp_Int(SP, "LockAlarm", 0)) {
+	if (Mode_ModGetI(SP, "LockAlarm", 0)) {
 		Native_SetInt(&ch, 0);
 		if (!Mode_SetLockAlarm(&ch)) {
 			return 0;
 		}
-		Sp_SetI("LockAlarm", 0);
+		Mode_ModPutI(SP, "LockAlarm", 0);
 	}
 	if (!Sp_G("OnEndOfSpeech", &end)) {
 		return 0;
@@ -339,8 +303,8 @@ static byte Sp_CallEndOfSpeech(void) {
 		ok = Sp_G("OnEndOfSpeechParams", &params);
 		Native_SetNone(&none);
 		Native_SetEmpty(&empty, NV_TUPLE);
-		Sp_Set("OnEndOfSpeech", &none);
-		Sp_Set("OnEndOfSpeechParams", &empty);
+		Mode_ModPut(SP, "OnEndOfSpeech", &none);
+		Mode_ModPut(SP, "OnEndOfSpeechParams", &empty);
 		Native_Free(&empty);
 		ok = ok && Mode_Apply(&end, &params, NULL);
 	}
@@ -351,7 +315,7 @@ static byte Sp_CallEndOfSpeech(void) {
 	}
 	Sp_SetS("CurrentRemoteCom", "");
 	Sp_SetS("LaunchedTauntEntityName", "");
-	Sp_SetI("CanLaunchRemote", 1);
+	Mode_ModPutI(SP, "CanLaunchRemote", 1);
 	return 1;
 }
 
@@ -385,7 +349,7 @@ static byte Sp_AbortSpeech(void) {
 	}
 	/* TextColor = DefTextColor (Script_SetVar of a failed read drops the error) */
 	if (Sp_G("DefTextColor", def)) {
-		Sp_Set("TextColor", def);
+		Mode_ModPut(SP, "TextColor", def);
 	} else {
 		PyErr_Clear();
 	}
@@ -655,7 +619,7 @@ static int Sp_OnSpeech(const nativeVal_t *text, const nativeVal_t *ans, const na
 	if (!Sp_SpeechTime(text, time) || !Sp_SpeechTime(ans, ansTime)) {
 		return Mode_Done(&t, 0), -1;
 	}
-	Sp_Set("AnsAnima", anima);
+	Mode_ModPut(SP, "AnsAnima", anima);
 	int r = Sp_Entity("PlayerName", me) && Sp_Entity("NPCName", ch) ? Sp_SetPlayerToTalk(me, ch) : -1;
 	if (r <= 0) {
 		return Mode_Done(&t, 0), r;
@@ -673,14 +637,14 @@ static int Sp_OnSpeech(const nativeVal_t *text, const nativeVal_t *ans, const na
 		!Sp_SpeechText(text, time, "UsrTextColor") || !Mode_SpeechCallback("Speech.AutoAnswer")) {
 		return Mode_Done(&t, 0), -1;
 	}
-	Sp_Set("NPCAnswer", ans);
-	Sp_Set("NPCAnswerTime", ansTime);
+	Mode_ModPut(SP, "NPCAnswer", ans);
+	Mode_ModPut(SP, "NPCAnswerTime", ansTime);
 	if (!Mode_VObj(ch, "ArrowCanMission", arrow)) {
 		return Mode_Done(&t, 0), -1;
 	}
-	Sp_Set("ArrowCanMission", arrow);
+	Mode_ModPut(SP, "ArrowCanMission", arrow);
 	Native_SetInt(one, 1);
-	if (!Sp_HSetI(ch, "ArrowCanMission", 0) || (Sp_Int(SP, "LockAlarm", 0) && !Mode_SetLockAlarm(one))) {
+	if (!Sp_HSetI(ch, "ArrowCanMission", 0) || (Mode_ModGetI(SP, "LockAlarm", 0) && !Mode_SetLockAlarm(one))) {
 		return Mode_Done(&t, 0), -1;
 	}
 	return Mode_Done(&t, 1), r;
@@ -740,7 +704,7 @@ static int Sp_PlayerAns(const nativeVal_t *me, const nativeVal_t *ch, const nati
 		nativeVal_t text = { 0 }, t = { 0 };
 		byte ok = Mode_LangV(key, &text) && Sp_SpeechTime(&text, &t) && Sp_SpeechText(&text, &t, "UsrTextColor");
 		if (ok) {
-			Sp_Set("PlayerAnsCallback", cb);
+			Mode_ModPut(SP, "PlayerAnsCallback", cb);
 			ok = Mode_SpeechCallback("Speech.PlayerAnsEnd") && Sp_OpenVoice(key, 0) && Sp_PlayVoiceAfterI(0, 0);
 		}
 		Native_Free(&text);
@@ -811,8 +775,8 @@ static byte Sp_InspectChar(const nativeVal_t *usr, const nativeVal_t *chName) {
 static byte Sp_AutoSpeech(const nativeVal_t *a) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *ch = Mode_V(&t), *type = Mode_V(&t), *routines = Mode_V(&t), *f = Mode_V(&t), *msg = Mode_V(&t), *ans = Mode_V(&t);
-	Sp_Set("PlayerName", &a[0]);
-	Sp_Set("NPCName", &a[1]);
+	Mode_ModPut(SP, "PlayerName", &a[0]);
+	Mode_ModPut(SP, "NPCName", &a[1]);
 	if (!Sp_Entity("NPCName", ch) || !Mode_VObj(ch, "ActCtrl", type) || !Sp_G("SpeechRoutines", routines)) {
 		return Mode_Done(&t, 0);
 	}
@@ -839,11 +803,11 @@ static byte Sp_NISpeech(const nativeVal_t *head) {
 	byte ok = Sp_G("OnEndOfSpeech", &end) && Sp_G("OnEndOfSpeechParams", &params);
 	if (ok) {
 		Native_SetEmpty(&empty, NV_LIST);
-		Sp_Set("TalkNI", &empty);
+		Mode_ModPut(SP, "TalkNI", &empty);
 		Native_Free(&empty);
-		Sp_Set("OnEndOfSpeechNI", &end);
-		Sp_Set("OnEndOfSpeechParamsNI", &params);
-		Sp_Set("NISpeechHeadName", head);
+		Mode_ModPut(SP, "OnEndOfSpeechNI", &end);
+		Mode_ModPut(SP, "OnEndOfSpeechParamsNI", &params);
+		Mode_ModPut(SP, "NISpeechHeadName", head);
 	}
 	Native_Free(&end);
 	Native_Free(&params);
@@ -920,8 +884,8 @@ static byte Sp_RunNI(const nativeVal_t *i) {
 	}
 	Native_SetInt(last, n - 1);
 	byte ltkn = Native_Compare(i, last) < 0;
-	Sp_Set("CurrNI", i);
-	Sp_SetI("LockAlarm", 1);
+	Mode_ModPut(SP, "CurrNI", i);
+	Mode_ModPutI(SP, "LockAlarm", 1);
 	if (ltkn) {
 		Sp_SetS("TalkListen", "TalkListenNPC");
 	}
@@ -946,7 +910,7 @@ static byte Sp_RunNI(const nativeVal_t *i) {
 			if (!Sp_HSetS(ch, "HeadModel", "") || !Sp_NI(i, 3, head)) {
 				return Mode_Done(&t, 0);
 			}
-			Sp_Set("NISpeechHeadName", head);
+			Mode_ModPut(SP, "NISpeechHeadName", head);
 		}
 	} else {
 		return Mode_Done(&t, 0);
@@ -958,14 +922,14 @@ static byte Sp_RunNI(const nativeVal_t *i) {
 		if (!Sp_G("RunNI", fn)) {
 			return Mode_Done(&t, 0);
 		}
-		Sp_Set("OnEndOfSpeech", fn);
+		Mode_ModPut(SP, "OnEndOfSpeech", fn);
 		if (!Mode_Arith('+', i, Mode_I(&t, 1), next)) {
 			return Mode_Done(&t, 0);
 		}
 		Native_Free(v);
 		Native_SetEmpty(v, NV_TUPLE);
 		Native_Copy(Native_Append(v), next);
-		Sp_Set("OnEndOfSpeechParams", v);
+		Mode_ModPut(SP, "OnEndOfSpeechParams", v);
 		return Mode_Done(&t, 1);
 	}
 	if (!Mode_DelGlobal(SP, "CurrNI") || !Mode_DelGlobal(SP, "TalkNI") || !Mode_DelGlobal(SP, "NISpeechHeadName")) {
@@ -975,12 +939,12 @@ static byte Sp_RunNI(const nativeVal_t *i) {
 		if (!Sp_G("OnEndOfSpeechNI", v)) {
 			return Mode_Done(&t, 0);
 		}
-		Sp_Set("OnEndOfSpeech", v);
+		Mode_ModPut(SP, "OnEndOfSpeech", v);
 		Native_Free(v);
 		if (!Sp_G("OnEndOfSpeechParamsNI", v)) {
 			return Mode_Done(&t, 0);
 		}
-		Sp_Set("OnEndOfSpeechParams", v);
+		Mode_ModPut(SP, "OnEndOfSpeechParams", v);
 		if (!Mode_DelGlobal(SP, "OnEndOfSpeechNI") || !Mode_DelGlobal(SP, "OnEndOfSpeechParamsNI") || !Mode_VObj(ch, "ActCtrl", ctrl)) {
 			return Mode_Done(&t, 0);
 		}
@@ -993,10 +957,10 @@ static byte Sp_RunNI(const nativeVal_t *i) {
 	if (!Sp_G("ObjNIEnd", v)) {
 		return Mode_Done(&t, 0);
 	}
-	Sp_Set("OnEndOfSpeech", v);
+	Mode_ModPut(SP, "OnEndOfSpeech", v);
 	Native_Free(v);
 	Native_SetEmpty(v, NV_TUPLE);
-	Sp_Set("OnEndOfSpeechParams", v);
+	Mode_ModPut(SP, "OnEndOfSpeechParams", v);
 	return Mode_Done(&t, 1);
 }
 
@@ -1039,14 +1003,14 @@ static int Sp_DoRemote(void) {
 	if (now < 0.2) {
 		doit = 0;
 	} else if (!Native_GVarGet("RemainTalkTime", rest)) {
-	} else if (Sp_NumCmp(rest, 0) > 0 || !Sp_Int(SP, "CanLaunchRemote", 0)) {
+	} else if (Sp_NumCmp(rest, 0) > 0 || !Mode_ModGetI(SP, "CanLaunchRemote", 0)) {
 		doit = 0;
 	} else if (!Native_GVarGet("TimeToMsg", msg) || !Native_ArgDouble(msg, &m)) {
 	} else if (m > now) {
 		doit = 0;
 	} else if ((Mode_ActionSetName(set), Mode_IsText(set, "Inactive")) || e->type == NV_NONE) {
 		doit = 0;
-		if (Sp_Int("Init", "HasSuperDeal", 0) && e->type == NV_NONE) {
+		if (Mode_ModGetI("Init", "HasSuperDeal", 0) && e->type == NV_NONE) {
 			if (!Sp_Cam(cam)) {
 				doit = -1;
 			} else if (Native_True(cam)) {
@@ -1062,7 +1026,7 @@ static int Sp_DoRemote(void) {
 			doit = Mode_VObj(e, "AutoSelect", sel) ? Sp_NumCmp(sel, 1) == 0 : -1;
 		} else if (w == 0) {
 			doit = 1;
-			Sp_SetI("CanLaunchRemote", 0);
+			Mode_ModPutI(SP, "CanLaunchRemote", 0);
 		}
 	}
 	return Mode_Done(&t, 0), doit;
@@ -1103,8 +1067,8 @@ static byte Sp_ForceRemoteComunication(const nativeVal_t *text, const nativeVal_
 			return Mode_Done(&t, 0);
 		}
 	}
-	Sp_Set("OnEndOfSpeech", after);
-	Sp_Set("OnEndOfSpeechParams", params);
+	Mode_ModPut(SP, "OnEndOfSpeech", after);
+	Mode_ModPut(SP, "OnEndOfSpeechParams", params);
 	return Mode_Done(&t, Mode_SpeechCallback("Speech.RestoreSpeech"));
 }
 
@@ -1215,7 +1179,7 @@ static byte Sp_LaunchTaunt(const nativeVal_t *ent, const nativeVal_t *typeV, con
 	Native_SetEmpty(params, NV_TUPLE);
 	int sent = Sp_RemoteComunication(tt, h, Mode_I(&t, 1), Mode_V(&t), params);
 	if (sent > 0) {
-		Sp_Set("LaunchedTauntEntityName", ent);
+		Mode_ModPut(SP, "LaunchedTauntEntityName", ent);
 	}
 	return Mode_Done(&t, sent >= 0);
 }
@@ -1263,7 +1227,7 @@ static byte Sp_AddRemoteCom(const nativeVal_t *text, const nativeVal_t *head, co
 		return Mode_Done(&t, 0);
 	}
 	byte ok = Mode_DelSchedS("ProcessRemoteComList");
-	Sp_Set("CurrentRemoteCom", it);
+	Mode_ModPut(SP, "CurrentRemoteCom", it);
 	return Mode_Done(&t, ok && Mode_LaterIn(0.2, SP, "ProcessRemoteCom", index, 1, "ProcessRemoteComList"));
 }
 
@@ -1342,7 +1306,7 @@ static byte Sp_TestInRange(void) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetNone(a);
-	Sp_Set("OnOutOfRange", a);
+	Mode_ModPut(SP, "OnOutOfRange", a);
 	return Mode_Done(&t, 1);
 }
 
@@ -1350,8 +1314,8 @@ static byte Sp_TestInRange(void) {
 static byte Sp_StartObjectSpeech(const nativeVal_t *obj, const nativeVal_t *action, const nativeVal_t *defLoop,
 	const nativeVal_t *text, const nativeVal_t *type, const nativeVal_t *cb) {
 	nativeVal_t end = { 0 }, params = { 0 }, one;
-	Sp_Set("ObjEntity", obj);
-	Sp_Set("ObjCharType", type);
+	Mode_ModPut(SP, "ObjEntity", obj);
+	Mode_ModPut(SP, "ObjCharType", type);
 	Native_SetInt(&one, 1);
 	byte ok = (Mode_IsText(action, "") || Mode_VSet(obj, "Action", action)) &&
 		(Mode_IsText(defLoop, "") || Mode_VSet(obj, "DefLoop", defLoop)) && Sp_G("OnEndOfSpeech", &end) &&
@@ -1389,9 +1353,9 @@ static byte Sp_OnObjectSpeech(const nativeVal_t *obj, const nativeVal_t *type, c
 	if (!Native_True(player)) {
 		return Mode_Done(&t, 1);
 	}
-	Sp_Set("ObjEntity", obj);
-	Sp_Set("ObjAnswer", ans);
-	Sp_Set("ObjCharType", type);
+	Mode_ModPut(SP, "ObjEntity", obj);
+	Mode_ModPut(SP, "ObjAnswer", ans);
+	Mode_ModPut(SP, "ObjCharType", type);
 	if (!Mode_VObj(player, "Name", name) || !Mode_EntitySeam(name, me)) {
 		return Mode_Done(&t, 0);
 	}
@@ -1413,10 +1377,11 @@ static byte Sp_OnObjectSpeech(const nativeVal_t *obj, const nativeVal_t *type, c
 	if (!Mode_VSet(obj, "HeadModel", model) || !Sp_HSetI(obj, "HeadAnimIndex", 0)) {
 		return Mode_Done(&t, 0);
 	}
-	Sp_Set("ObjAutoAnswerAction", action);
-	Sp_Set("ObjAutoAnswerDefLoop", defLoop);
+	Mode_ModPut(SP, "ObjAutoAnswerAction", action);
+	Mode_ModPut(SP, "ObjAutoAnswerDefLoop", defLoop);
 	Native_SetInt(one, 1);
-	if (!Mode_SpeechCallback("Speech.ObjectAutoAnswer") || (Sp_Int(SP, "LockAlarm", 0) && !Mode_SetLockAlarm(one)) || !Sp_TestLater()) {
+	if (!Mode_SpeechCallback("Speech.ObjectAutoAnswer") || (Mode_ModGetI(SP, "LockAlarm", 0) && !Mode_SetLockAlarm(one)) ||
+		!Sp_TestLater()) {
 		return Mode_Done(&t, 0);
 	}
 	if (out) {
