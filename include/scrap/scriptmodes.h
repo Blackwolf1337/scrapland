@@ -498,4 +498,10 @@ byte Mode_AppendG(const char *module, const char *var, const char *gmod, const c
 byte Mode_GOp(const char *module, const char *name, char op, const nativeVal_t *v);
 byte Mode_GOpI(const char *module, const char *name, char op, long i);
 
+/* SSound.LoadSound(file) through its seam (fc-r7b-pr1 records it), else Mode_LoadSound */
+byte Mode_LoadSoundSeam(const nativeVal_t *file);
+/* the count of items a loop of the script takes from *v (Native_ForCount), a list or tuple held as one NV_OBJ (it holds
+ * handles) first turned into a native list or tuple of its items */
+int Mode_Loop(nativeVal_t *v);
+
 #endif
