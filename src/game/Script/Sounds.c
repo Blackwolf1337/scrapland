@@ -4,10 +4,15 @@
  * a file). The C here runs the sections, one C function for each function of a script: Init(CharName) (MercenarySound:
  * Init(CharClass, CharName)), InitLoops(EntityName), LoadSounds(CharName), SetSounds(CharName) and the Talk sections
  * (CharName, ActName). The module code (isPC) stays in the scripts.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the module has no state and calls no engine function itself; the sections
+ * call the engine through the .def runner, which takes its $names (and the entity handle $e of InitLoops) as a dict
+ * until it takes C values (OBJLIB 6).
  */
 #include <string.h>
 
 #include "scrap/script.h"
+#include "scrap/scriptnative.h"
 
 static const char bankdirectorsound_def[] = {
 #embed "../../../data/sound/bankdirectorsound.def"
@@ -128,9 +133,10 @@ static const scriptStep_t sound_steps[] = {
  * the file would take any value as text)
  */
 static PyObject *Sound_RunInit(const char *file, const char *builtin, PyObject *vars, PyObject *name) {
-	PyObject *path = vars ? Script_SPlus("Sounds/Chars/", name) : NULL;
-	byte ok = path && Script_RunFileTry(0, file, "Init", builtin, sound_steps, vars);
-	Py_XDECREF(path);
+	/* "Sounds/Chars/" + CharName: string_concat refuses a value that is no text (OBJLIB 7: a class instance with
+	 * __radd__ is refused too) */
+	byte ok = vars && (PyString_Check(name) || Native_Raise(NE_TYPE, "illegal argument type for built-in operation")) &&
+		Script_RunFileTry(0, file, "Init", builtin, sound_steps, vars);
 	Py_XDECREF(vars);
 	return ok ? Py_ReturnNone() : NULL;
 }
@@ -150,6 +156,7 @@ static PyObject *Sound_Loops(const char *file, const char *builtin, PyObject *ar
 	if (!PyArg_ParseTuple(args, "O", &name)) {
 		return NULL;
 	}
+	/* OBJLIB 6: Scrap.GetEntity(EntityName) by name, the handle goes to the .def runner as $e */
 	PyObject *e = Script_Entity(name);
 	PyObject *vars = e ? Py_BuildValue("{s:O,s:O}", "name", name, "e", e) : NULL;
 	byte ok = vars && Script_RunFileTry(0, file, "InitLoops", builtin, sound_steps, vars);

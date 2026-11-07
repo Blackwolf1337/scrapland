@@ -13,15 +13,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/actions.h"
 #include "scrap/console.h"
 #include "scrap/global.h"
+#include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptnative.h"
 
 /* ---- values ---- */
 
-/* the key of a free slot of a dict */
+/* the key of a free slot of a dict, and of a slot whose key was deleted (the dummy of dictobject.c) */
 #define NV_FREE 0xff
+#define NV_DUMMY 0xfe
 /* the digits of a long int this file works with (base 2^15, 3840 bits): a longer one has no hash */
 #define NATIVE_DIGITS 256
 
@@ -31,6 +34,7 @@ static void Native_Clear(nativeVal_t *v, byte type) {
 	v->max = 0;
 	v->text = NULL;
 	v->items = NULL;
+	v->obj = NULL;
 }
 
 void Native_SetNone(nativeVal_t *v) {
@@ -86,6 +90,8 @@ const char *Native_Text(const nativeVal_t *v) {
 
 void Native_SetEmpty(nativeVal_t *v, nativeType_t type) {
 	Native_Clear(v, (byte)type);
+	/* a dict: the slots used or deleted (ma_fill) */
+	v->i = 0;
 }
 
 nativeVal_t *Native_Append(nativeVal_t *list) {
@@ -105,14 +111,36 @@ void Native_Free(nativeVal_t *v) {
 		}
 	} else if (v->type == NV_DICT) {
 		for (int i = 0; i < v->max * 2; i++) {
-			if (v->items[i].type != NV_FREE) {
+			if (v->items[i].type != NV_FREE && v->items[i].type != NV_DUMMY) {
 				Native_Free(&v->items[i]);
 			}
 		}
 	}
 	Mem_Free(v->text);
 	Mem_Free(v->items);
+	Py_XDECREF(v->obj);
 	Native_Clear(v, NV_NONE);
+}
+
+void Native_Copy(nativeVal_t *out, const nativeVal_t *v) {
+	*out = *v;
+	Py_XINCREF(v->obj);
+	if (v->text) {
+		out->text = Mem_Alloc((uint32_t)v->n + 1);
+		memcpy(out->text, v->text, (size_t)v->n + 1);
+	}
+	if (v->items) {
+		/* a list or tuple has max items of room, a dict 2 * max slots (free ones copied as they are) */
+		int n = v->type == NV_DICT ? 2 * v->max : v->max, used = v->type == NV_DICT ? n : v->n;
+		out->items = Mem_Alloc((uint32_t)(n * sizeof(nativeVal_t)));
+		for (int i = 0; i < used; i++) {
+			if (v->items[i].type == NV_FREE) {
+				out->items[i] = v->items[i];
+			} else {
+				Native_Copy(&out->items[i], &v->items[i]);
+			}
+		}
+	}
 }
 
 byte Native_IsStr(const nativeVal_t *v, const char *text) {
@@ -215,6 +243,9 @@ byte Native_Equal(const nativeVal_t *a, const nativeVal_t *b) {
 			}
 		}
 		return 1;
+	case NV_OBJ:
+		/* OBJLIB 7: a type without compare is equal only to itself */
+		return a->obj == b->obj;
 	case NV_DICT: {
 		const nativeVal_t *k, *x, *y;
 		int pos = 0;
@@ -232,7 +263,7 @@ byte Native_Equal(const nativeVal_t *a, const nativeVal_t *b) {
 	return 0;
 }
 
-/* ---- hash and dicts (dictobject.c of 1.5.2, without deleted keys) ---- */
+/* ---- hash and dicts (dictobject.c of 1.5.2) ---- */
 
 /* long_hash over the digits: its "32-bit circular shift" on a C long, as the build's Python computes it */
 static long Native_DigitHash(const unsigned short *dig, int n, byte neg) {
@@ -320,6 +351,14 @@ byte Native_Hash(const nativeVal_t *v, long *out) {
 		}
 		x ^= (unsigned long)Native_Count(v);
 		break;
+	case NV_OBJ:
+		/* OBJLIB 7 */
+		*out = PyObject_Hash(v->obj);
+		if (*out == -1) {
+			PyErr_Clear();
+			return 0;
+		}
+		return 1;
 	default:
 		return 0;
 	}
@@ -340,17 +379,26 @@ static unsigned Native_Poly(int size) {
 	return polys[i];
 }
 
-/* the slot that holds a key equal to key (same hash and equal), else the free slot it goes to: lookdict */
+/* the slot that holds a key equal to key (same hash and equal), else the slot it goes to (the first deleted one
+ * on its way, else the free one that ends it): lookdict */
 static int Native_Look(const nativeVal_t *d, const nativeVal_t *key, long hash) {
 	unsigned mask = (unsigned)d->max - 1, i = (unsigned)~hash & mask, j = i;
 	unsigned incr = (unsigned)(((unsigned long)hash ^ ((unsigned long)hash >> 3)) & mask);
+	int freeslot = -1;
 	if (!incr) {
 		incr = mask;
 	}
 	for (;;) {
 		const nativeVal_t *k = &d->items[2 * j];
 		long h;
-		if (k->type == NV_FREE || (Native_Hash(k, &h) && h == hash && Native_Equal(k, key))) {
+		if (k->type == NV_FREE) {
+			return freeslot >= 0 ? freeslot : (int)j;
+		}
+		if (k->type == NV_DUMMY) {
+			if (freeslot < 0) {
+				freeslot = (int)j;
+			}
+		} else if (Native_Hash(k, &h) && h == hash && Native_Equal(k, key)) {
 			return (int)j;
 		}
 		/* cycle through GF(2^n) - {0} */
@@ -380,9 +428,10 @@ static void Native_Resize(nativeVal_t *d, int minused) {
 		size <<= 1;
 	}
 	Native_Table(d, size);
+	d->i = d->n;
 	for (int i = 0; i < oldMax; i++) {
 		long h;
-		if (old[2 * i].type != NV_FREE && Native_Hash(&old[2 * i], &h)) {
+		if (old[2 * i].type != NV_FREE && old[2 * i].type != NV_DUMMY && Native_Hash(&old[2 * i], &h)) {
 			int j = Native_Look(d, &old[2 * i], h);
 			d->items[2 * j] = old[2 * i];
 			d->items[2 * j + 1] = old[2 * i + 1];
@@ -398,12 +447,16 @@ byte Native_DictSet(nativeVal_t *d, nativeVal_t *key, nativeVal_t *value) {
 		Native_Free(value);
 		return 0;
 	}
-	/* PyDict_SetItem: from 2/3 filled the table grows first, also when the key is there already */
-	if (d->n * 3 >= d->max * 2) {
+	/* PyDict_SetItem: from 2/3 filled (deleted slots count) the table grows first, also when the key is there
+	 * already */
+	if (d->i * 3 >= d->max * 2) {
 		Native_Resize(d, d->n * 2);
 	}
 	nativeVal_t *k = &d->items[2 * Native_Look(d, key, hash)];
-	if (k->type == NV_FREE) {
+	if (k->type == NV_FREE || k->type == NV_DUMMY) {
+		if (k->type == NV_FREE) {
+			d->i++;
+		}
 		*k = *key;
 		d->n++;
 	} else {
@@ -422,11 +475,24 @@ nativeVal_t *Native_DictGet(const nativeVal_t *d, const nativeVal_t *key) {
 		return NULL;
 	}
 	nativeVal_t *k = &d->items[2 * Native_Look(d, key, hash)];
-	return k->type == NV_FREE ? NULL : &k[1];
+	return k->type == NV_FREE || k->type == NV_DUMMY ? NULL : &k[1];
+}
+
+byte Native_DictDel(nativeVal_t *d, const nativeVal_t *key) {
+	nativeVal_t *v = Native_DictGet(d, key);
+	if (!v) {
+		return 0;
+	}
+	/* PyDict_DelItem: the slot keeps its place in the probe chains as a dummy, the table does not shrink */
+	Native_Free(v - 1);
+	Native_Free(v);
+	Native_Clear(v - 1, NV_DUMMY);
+	d->n--;
+	return 1;
 }
 
 byte Native_DictNext(const nativeVal_t *d, int *pos, const nativeVal_t **key, const nativeVal_t **value) {
-	while (*pos < d->max && d->items[2 * *pos].type == NV_FREE) {
+	while (*pos < d->max && (d->items[2 * *pos].type == NV_FREE || d->items[2 * *pos].type == NV_DUMMY)) {
 		(*pos)++;
 	}
 	if (*pos >= d->max) {
@@ -532,6 +598,16 @@ void Native_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 	case NV_NONE:
 		Native_BufAdd(b, "None", 4);
 		return;
+	case NV_OBJ: {
+		/* OBJLIB 7: the repr of the Python value */
+		PyObject *r = PyObject_Repr(v->obj);
+		if (r) {
+			Native_BufAdd(b, PyString_AsString(r), PyString_Size(r));
+			Py_DECREF(r);
+		}
+		PyErr_Clear();
+		return;
+	}
 	case NV_INT:
 		snprintf(t, sizeof(t), "%ld", v->i);
 		Native_BufAdd(b, t, -1);
@@ -909,6 +985,9 @@ byte Native_Raise(nativeError_t kind, const char *fmt, ...) {
 		[NE_TYPE] = &PyExc_TypeError,
 		[NE_ATTRIBUTE] = &PyExc_AttributeError,
 		[NE_SYSTEM] = &PyExc_SystemError,
+		[NE_OVERFLOW] = &PyExc_OverflowError,
+		[NE_ZERODIV] = &PyExc_ZeroDivisionError,
+		[NE_NAME] = &PyExc_NameError,
 	};
 	char text[0x200];
 	va_list va;
@@ -917,6 +996,175 @@ byte Native_Raise(nativeError_t kind, const char *fmt, ...) {
 	va_end(va);
 	PyErr_SetString(*types[kind], text);
 	return 0;
+}
+
+byte Native_RaiseKey(const nativeVal_t *key) {
+	/* OBJLIB 7: the KeyError of a dict carries the key itself */
+	PyObject *k = Native_ToPy(key);
+	if (k) {
+		PyErr_SetObject(PyExc_KeyError, k);
+		Py_DECREF(k);
+	}
+	return 0;
+}
+
+const char *Native_TypeName(const nativeVal_t *v) {
+	static const char *const names[] = {
+		[NV_NONE] = "None",
+		[NV_INT] = "int",
+		[NV_FLOAT] = "float",
+		[NV_STR] = "string",
+		[NV_VEC] = "tuple",
+		[NV_LONG] = "long int",
+		[NV_LIST] = "list",
+		[NV_TUPLE] = "tuple",
+		[NV_DICT] = "dictionary",
+	};
+	return v->type == NV_OBJ ? v->obj->ob_type->tp_name : names[v->type];
+}
+
+byte Native_ArgStr(const nativeVal_t *v, int arg, const char **out) {
+	/* "s" of getargs.c */
+	if (v->type != NV_STR) {
+		return Native_Raise(NE_TYPE, "argument %d: expected string, %s found", arg, Native_TypeName(v));
+	}
+	if (strlen(Native_Text(v)) != (size_t)v->n) {
+		return Native_Raise(NE_TYPE, "argument %d: expected string without null bytes, string found", arg);
+	}
+	*out = Native_Text(v);
+	return 1;
+}
+
+byte Native_Upper(const nativeVal_t *in, nativeVal_t *out) {
+	/* strop.upper ("t#": any text, 0 bytes too; islower and toupper of the C library) */
+	if (in->type != NV_STR) {
+		return Native_Raise(NE_TYPE, "read-only character buffer, %s", Native_TypeName(in));
+	}
+	const char *t = Native_Text(in);
+	Native_SetText(out, t, in->n);
+	char *o = out->text ? out->text : out->s;
+	for (int i = 0; i < out->n; i++) {
+		int c = (unsigned char)o[i];
+		if (islower(c)) {
+			o[i] = (char)toupper(c);
+		}
+	}
+	return 1;
+}
+
+byte Native_Split(const nativeVal_t *s, const char *sep, nativeVal_t *out) {
+	/* strop.split ("t#|z#i": any text, 0 bytes too; maxsplit 0) */
+	if (s->type != NV_STR) {
+		return Native_Raise(NE_TYPE, "argument 1: expected read-only character buffer, %s found", Native_TypeName(s));
+	}
+	const char *t = Native_Text(s);
+	int len = s->n, i = 0, j = 0;
+	nativeVal_t list;
+	Native_SetEmpty(&list, NV_LIST);
+	if (!sep) {
+		/* split_whitespace */
+		while (i < len) {
+			while (i < len && isspace((unsigned char)t[i])) {
+				i++;
+			}
+			j = i;
+			while (i < len && !isspace((unsigned char)t[i])) {
+				i++;
+			}
+			if (j < i) {
+				Native_SetText(Native_Append(&list), t + j, i - j);
+			}
+		}
+		*out = list;
+		return 1;
+	}
+	int n = (int)strlen(sep);
+	if (!n) {
+		return Native_Raise(NE_VALUE, "empty separator");
+	}
+	while (i + n <= len) {
+		if (t[i] == sep[0] && (n == 1 || !memcmp(t + i, sep, (size_t)n))) {
+			Native_SetText(Native_Append(&list), t + j, i - j);
+			i = j = i + n;
+		} else {
+			i++;
+		}
+	}
+	Native_SetText(Native_Append(&list), t + j, len - j);
+	*out = list;
+	return 1;
+}
+
+byte Native_EvalText(const char *module, const nativeVal_t *text, nativeVal_t *out) {
+	/* Script_EvalValue: the checks of builtin eval, then the literal after the leading blanks */
+	if (text->type != NV_STR) {
+		return Native_Raise(NE_TYPE, "eval() argument 1 must be string or code object");
+	}
+	const char *s = Native_Text(text);
+	if (strlen(s) != (size_t)text->n) {
+		return Native_Raise(NE_VALUE, "embedded '\\0' in string arg");
+	}
+	while (*s == ' ' || *s == '\t') {
+		s++;
+	}
+	if (Native_Literal(s, out)) {
+		return 1;
+	}
+	/* OBJLIB 6: the error of a text no reader takes (and its note in the gate log) */
+	(void)module;
+	Script_NotRead("eval", s);
+	return 0;
+}
+
+byte Native_Len(const nativeVal_t *seq, int *n) {
+	*n = 0;
+	switch (seq->type) {
+	case NV_LIST:
+	case NV_TUPLE:
+	case NV_STR:
+		*n = seq->n;
+		return 1;
+	case NV_VEC:
+		*n = 3;
+		return 1;
+	}
+	return Native_Raise(NE_TYPE, "len() of unsized object");
+}
+
+const nativeVal_t *Native_GetItem(const nativeVal_t *seq, long i, byte subscript, nativeVal_t *tmp) {
+	int n;
+	if (seq->type == NV_DICT && subscript) {
+		/* d[i] */
+		nativeVal_t key;
+		Native_SetInt(&key, i);
+		const nativeVal_t *v = Native_DictGet(seq, &key);
+		if (!v) {
+			Native_RaiseKey(&key);
+		}
+		return v;
+	}
+	if (seq->type == NV_DICT || !Native_Len(seq, &n)) {
+		PyErr_Clear();
+		Native_Raise(NE_TYPE, subscript ? "unsubscriptable object" : "unindexable object");
+		return NULL;
+	}
+	if (i < 0) {
+		i += n;
+	}
+	if (i < 0 || i >= n) {
+		Native_Raise(NE_INDEX, "%s index out of range", seq->type == NV_LIST ? "list" : seq->type == NV_STR ? "string" :
+			"tuple");
+		return NULL;
+	}
+	switch (seq->type) {
+	case NV_STR:
+		Native_SetText(tmp, Native_Text(seq) + i, 1);
+		return tmp;
+	case NV_VEC:
+		Native_SetFloat(tmp, seq->v[i]);
+		return tmp;
+	}
+	return &seq->items[i];
 }
 
 byte Native_Index(long i, int count, int *out) {
@@ -982,13 +1230,828 @@ byte Native_IntOfText(const char *text, long *out) {
 	return 1;
 }
 
+/* ---- operations of the scripts (Objects/ of 1.5.2: the number, sequence and compare rules with their errors) ---- */
+
+
+
+/* the sign of a long int text compared with another (long_compare) */
+static int Native_LongCompare(const char *a, const char *b) {
+	byte na = *a == '-', nb = *b == '-';
+	if (na != nb) {
+		return na ? -1 : 1;
+	}
+	size_t la = strlen(a), lb = strlen(b);
+	int c = la != lb ? (la < lb ? -1 : 1) : strcmp(a, b);
+	c = c < 0 ? -1 : c > 0;
+	return na ? -c : c;
+}
+
+int Native_Compare(const nativeVal_t *a, const nativeVal_t *b) {
+	if (Native_IsNum(a) && Native_IsNum(b)) {
+		/* coerced: a float with any number as floats, an int with a long as longs */
+		if (a->type == NV_FLOAT || b->type == NV_FLOAT) {
+			double x = a->type == NV_FLOAT ? a->f : a->type == NV_INT ? (double)a->i : Native_LongDouble(Native_Text(a));
+			double y = b->type == NV_FLOAT ? b->f : b->type == NV_INT ? (double)b->i : Native_LongDouble(Native_Text(b));
+			return x < y ? -1 : x > y;
+		}
+		if (a->type == NV_LONG || b->type == NV_LONG) {
+			char ta[0x20], tb[0x20];
+			snprintf(ta, sizeof(ta), "%ld", a->i);
+			snprintf(tb, sizeof(tb), "%ld", b->i);
+			return Native_LongCompare(a->type == NV_LONG ? Native_Text(a) : ta, b->type == NV_LONG ? Native_Text(b) : tb);
+		}
+		return a->i < b->i ? -1 : a->i > b->i;
+	}
+	byte ta = Native_SeqType(a), tb = Native_SeqType(b);
+	if (ta == NV_OBJ && tb == NV_OBJ) {
+		/* OBJLIB 7: two Python values of other types compare as Python compares them */
+		int c = PyObject_Compare(a->obj, b->obj);
+		PyErr_Clear();
+		return c < 0 ? -1 : c > 0;
+	}
+	if (ta != tb || ta == NV_OBJ) {
+		/* by the names of the types; the numbers are smaller than all others */
+		int c = strcmp(Native_IsNum(a) ? "" : Native_TypeName(a), Native_IsNum(b) ? "" : Native_TypeName(b));
+		return c < 0 ? -1 : c > 0;
+	}
+	switch (ta) {
+	case NV_STR: {
+		int la = a->n, lb = b->n, n = la < lb ? la : lb;
+		int c = n > 0 ? memcmp(Native_Text(a), Native_Text(b), (size_t)n) : 0;
+		if (c) {
+			return c < 0 ? -1 : 1;
+		}
+		return la < lb ? -1 : la > lb;
+	}
+	case NV_LIST:
+	case NV_TUPLE: {
+		int la = Native_Count(a), lb = Native_Count(b);
+		for (int i = 0; i < la && i < lb; i++) {
+			nativeVal_t xa, xb;
+			int c = Native_Compare(Native_Item(a, i, &xa), Native_Item(b, i, &xb));
+			if (c) {
+				return c;
+			}
+		}
+		return la < lb ? -1 : la > lb;
+	}
+	case NV_DICT:
+		/* dict_compare: the lengths first; two different dicts of one length are ordered by their keys and values in
+		 * 1.5.2, here only told apart */
+		if (a->n != b->n) {
+			return a->n < b->n ? -1 : 1;
+		}
+		return Native_Equal(a, b) ? 0 : 1;
+	}
+	/* None with None */
+	return 0;
+}
+
+/* the operator text of the errors */
+static const char *Native_OpName(char op) {
+	switch (op) {
+	case '+':
+		return "+";
+	case '-':
+		return "-";
+	case '*':
+		return "*";
+	case '/':
+		return "/";
+	}
+	return "%";
+}
+
+/* int op int of intobject.c (the overflow and division errors, i_divmod's rounding down) */
+static byte Native_IntOp(char op, long a, long b, nativeVal_t *out) {
+	long x;
+	switch (op) {
+	case '+':
+		if (__builtin_add_overflow(a, b, &x)) {
+			return Native_Raise(NE_OVERFLOW, "integer addition");
+		}
+		break;
+	case '-':
+		if (__builtin_sub_overflow(a, b, &x)) {
+			return Native_Raise(NE_OVERFLOW, "integer subtraction");
+		}
+		break;
+	case '*':
+		if (__builtin_mul_overflow(a, b, &x)) {
+			return Native_Raise(NE_OVERFLOW, "integer multiplication");
+		}
+		break;
+	default: {
+		if (b == 0) {
+			return Native_Raise(NE_ZERODIV, "integer division or modulo");
+		}
+		long d = a / b, m = a - d * b;
+		if ((m < 0 && b > 0) || (m > 0 && b < 0)) {
+			m += b;
+			d -= 1;
+		}
+		x = op == '/' ? d : m;
+	}
+	}
+	Native_SetInt(out, x);
+	return 1;
+}
+
+/* float op float of floatobject.c */
+static byte Native_FloatOp(char op, double a, double b, nativeVal_t *out) {
+	double x;
+	switch (op) {
+	case '+':
+		x = a + b;
+		break;
+	case '-':
+		x = a - b;
+		break;
+	case '*':
+		x = a * b;
+		break;
+	case '/':
+		if (b == 0.0) {
+			return Native_Raise(NE_ZERODIV, "float division");
+		}
+		x = a / b;
+		break;
+	default:
+		if (b == 0.0) {
+			return Native_Raise(NE_ZERODIV, "float modulo");
+		}
+		x = fmod(a, b);
+		if (b * x < 0) {
+			x += b;
+		}
+	}
+	Native_SetFloat(out, x);
+	return 1;
+}
+
+/* the items of a and b in a new list or tuple of the type (sq_concat of lists and tuples, a vector as a tuple) */
+static void Native_Join(nativeType_t type, const nativeVal_t *a, const nativeVal_t *b, int times, nativeVal_t *out) {
+	nativeVal_t r, tmp;
+	Native_SetEmpty(&r, type);
+	for (int t = 0; t < times; t++) {
+		for (int i = 0; i < Native_Count(a); i++) {
+			Native_Copy(Native_Append(&r), Native_Item(a, i, &tmp));
+		}
+		for (int i = 0; b && i < Native_Count(b); i++) {
+			Native_Copy(Native_Append(&r), Native_Item(b, i, &tmp));
+		}
+	}
+	*out = r;
+}
+
+/* |x| + |y| or |x| - |y| (|x| >= |y|) of decimal digit texts into r (the digits reversed, their count back) */
+static int Native_DigitsOp(const char *x, int nx, const char *y, int ny, byte sub, char *r) {
+	int carry = 0, n = 0;
+	for (int i = 0; i < nx || i < ny || carry; i++) {
+		int d = (i < nx ? x[nx - 1 - i] - '0' : 0) + (sub ? -1 : 1) * (i < ny ? y[ny - 1 - i] - '0' : 0) + carry;
+		carry = d < 0 ? -1 : d > 9;
+		r[n++] = (char)('0' + (d < 0 ? d + 10 : d % 10));
+	}
+	while (n > 1 && r[n - 1] == '0') {
+		n--;
+	}
+	return n;
+}
+
+/* a + b or a - b of two long int texts into a long int (long_add, long_sub) */
+static void Native_LongAdd(const char *a, const char *b, byte sub, nativeVal_t *out) {
+	byte na = *a == '-', nb = (*b == '-') != sub;
+	a += *a == '-';
+	b += *b == '-';
+	int la = (int)strlen(a), lb = (int)strlen(b);
+	char *r = Mem_Alloc((uint32_t)(la + lb + 3)), *t = Mem_Alloc((uint32_t)(la + lb + 3));
+	int n;
+	byte neg;
+	if (na == nb) {
+		n = Native_DigitsOp(a, la, b, lb, 0, r);
+		neg = na;
+	} else {
+		/* the larger magnitude minus the smaller, with its sign */
+		int c = la != lb ? (la < lb ? -1 : 1) : strcmp(a, b);
+		n = c >= 0 ? Native_DigitsOp(a, la, b, lb, 1, r) : Native_DigitsOp(b, lb, a, la, 1, r);
+		neg = c >= 0 ? na : nb;
+	}
+	int k = 0;
+	if (neg && !(n == 1 && r[0] == '0')) {
+		t[k++] = '-';
+	}
+	while (n > 0) {
+		t[k++] = r[--n];
+	}
+	Native_SetLong(out, t, k);
+	Mem_Free(r);
+	Mem_Free(t);
+}
+
+byte Native_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
+	byte sa = Native_SeqType(a);
+	if (op == '%' && a->type == NV_STR) {
+		return Native_Format(a, b, out);
+	}
+	if (op == '+' && (sa == NV_STR || sa == NV_LIST || sa == NV_TUPLE)) {
+		/* sq_concat: the other must be of the same type (PyErr_BadArgument) */
+		if (Native_SeqType(b) != sa) {
+			return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
+		}
+		if (sa == NV_STR) {
+			nativeBuf_t t;
+			Native_BufInit(&t);
+			Native_BufAdd(&t, Native_Text(a), a->n);
+			Native_BufAdd(&t, Native_Text(b), b->n);
+			Native_SetText(out, t.p, t.len);
+			Native_BufFree(&t);
+		} else {
+			Native_Join(sa, a, b, 1, out);
+		}
+		return 1;
+	}
+	if (op == '*') {
+		/* number * sequence is sequence * number; a sequence takes an int to repeat */
+		const nativeVal_t *s = sa == NV_STR || sa == NV_LIST || sa == NV_TUPLE ? a : NULL, *n = b;
+		byte sb = Native_SeqType(b);
+		if (Native_IsNum(a) && (sb == NV_STR || sb == NV_LIST || sb == NV_TUPLE)) {
+			s = b;
+			n = a;
+		}
+		if (s) {
+			if (n->type != NV_INT) {
+				return Native_Raise(NE_TYPE, "can't multiply sequence with non-int");
+			}
+			int times = n->i > 0 ? (int)n->i : 0;
+			if (s->type == NV_STR) {
+				nativeBuf_t t;
+				Native_BufInit(&t);
+				for (int i = 0; i < times; i++) {
+					Native_BufAdd(&t, Native_Text(s), s->n);
+				}
+				Native_SetText(out, t.p, t.len);
+				Native_BufFree(&t);
+			} else {
+				Native_Join(Native_SeqType(s), s, NULL, times, out);
+			}
+			return 1;
+		}
+	}
+	if (!Native_IsNum(a)) {
+		return Native_Raise(NE_TYPE, "bad operand type(s) for %s", Native_OpName(op));
+	}
+	if (!Native_IsNum(b)) {
+		return Native_Raise(NE_TYPE, "number coercion failed");
+	}
+	if (a->type == NV_FLOAT || b->type == NV_FLOAT) {
+		double x = a->type == NV_FLOAT ? a->f : a->type == NV_INT ? (double)a->i : Native_LongDouble(Native_Text(a));
+		double y = b->type == NV_FLOAT ? b->f : b->type == NV_INT ? (double)b->i : Native_LongDouble(Native_Text(b));
+		return Native_FloatOp(op, x, y, out);
+	}
+	if (a->type == NV_LONG || b->type == NV_LONG) {
+		if (op == '+' || op == '-') {
+			char ta[0x20], tb[0x20];
+			snprintf(ta, sizeof(ta), "%ld", a->i);
+			snprintf(tb, sizeof(tb), "%ld", b->i);
+			Native_LongAdd(a->type == NV_LONG ? Native_Text(a) : ta, b->type == NV_LONG ? Native_Text(b) : tb, op == '-', out);
+			return 1;
+		}
+		/* the native values multiply and divide no long ints (no script makes long ints) */
+		return Native_Raise(NE_TYPE, "long int %s: not done on native values", Native_OpName(op));
+	}
+	return Native_IntOp(op, a->i, b->i, out);
+}
+
+byte Native_ToInt(const nativeVal_t *v, nativeVal_t *out) {
+	switch (v->type) {
+	case NV_INT:
+		Native_SetInt(out, v->i);
+		return 1;
+	case NV_FLOAT: {
+		double x = v->f;
+		if (x < 0 ? (x = ceil(x)) < (double)LONG_MIN : (x = floor(x)) > (double)LONG_MAX) {
+			return Native_Raise(NE_OVERFLOW, "float too large to convert");
+		}
+		Native_SetInt(out, (long)x);
+		return 1;
+	}
+	case NV_LONG: {
+		errno = 0;
+		long l = strtol(Native_Text(v), NULL, 10);
+		if (errno == ERANGE) {
+			return Native_Raise(NE_OVERFLOW, "long int too long to convert");
+		}
+		Native_SetInt(out, l);
+		return 1;
+	}
+	case NV_STR: {
+		/* int_from_string: the literal up to a 0 byte, then the 0 byte itself is the error */
+		long l;
+		if (!Native_IntOfText(Native_Text(v), &l)) {
+			return 0;
+		}
+		if (strlen(Native_Text(v)) != (size_t)v->n) {
+			return Native_Raise(NE_VALUE, "null byte in argument for int()");
+		}
+		Native_SetInt(out, l);
+		return 1;
+	}
+	}
+	return Native_Raise(NE_TYPE, "object can't be converted to int");
+}
+
+byte Native_ToFloat(const nativeVal_t *v, nativeVal_t *out) {
+	switch (v->type) {
+	case NV_INT:
+		Native_SetFloat(out, (double)v->i);
+		return 1;
+	case NV_FLOAT:
+		Native_SetFloat(out, v->f);
+		return 1;
+	case NV_LONG:
+		Native_SetFloat(out, Native_LongDouble(Native_Text(v)));
+		return 1;
+	case NV_STR: {
+		/* float_from_string */
+		const char *s = Native_Text(v), *last = s + v->n;
+		while (*s && isspace((unsigned char)*s)) {
+			s++;
+		}
+		if (!*s) {
+			return Native_Raise(NE_VALUE, "empty string for float()");
+		}
+		char *end;
+		errno = 0;
+		double x = strtod(s, &end);
+		if (end > last) {
+			end = (char *)last;
+		}
+		while (*end && isspace((unsigned char)*end)) {
+			end++;
+		}
+		if (*end) {
+			return Native_Raise(NE_VALUE, "invalid literal for float(): %.200s", s);
+		}
+		if (end != last) {
+			return Native_Raise(NE_VALUE, "null byte in argument for float()");
+		}
+		if (errno) {
+			return Native_Raise(NE_VALUE, "float() literal too large: %.200s", s);
+		}
+		Native_SetFloat(out, x);
+		return 1;
+	}
+	}
+	return Native_Raise(NE_TYPE, "object can't be converted to float");
+}
+
+/* a text, list, tuple or vector */
+static byte Native_IsSeq(const nativeVal_t *v) {
+	byte t = Native_SeqType(v);
+	return t == NV_STR || t == NV_LIST || t == NV_TUPLE;
+}
+
+int Native_ForCount(const nativeVal_t *seq) {
+	if (!Native_IsSeq(seq)) {
+		Native_Raise(NE_TYPE, "loop over non-sequence");
+		return -1;
+	}
+	return Native_Count(seq);
+}
+
+int Native_Size(const nativeVal_t *v) {
+	/* PyObject_Length: a dict too */
+	if (!Native_IsSeq(v) && v->type != NV_DICT) {
+		Native_Raise(NE_TYPE, "len() of unsized object");
+		return -1;
+	}
+	return Native_Count(v);
+}
+
+byte Native_SeqItem(const nativeVal_t *v, long i, nativeVal_t *out) {
+	nativeVal_t tmp;
+	const nativeVal_t *x = Native_GetItem(v, i, 0, &tmp);
+	if (!x) {
+		return 0;
+	}
+	if (x == &tmp) {
+		*out = tmp;
+	} else {
+		Native_Copy(out, x);
+	}
+	return 1;
+}
+
+byte Native_Subscript(const nativeVal_t *v, const nativeVal_t *key, nativeVal_t *out) {
+	if (v->type == NV_DICT) {
+		long h;
+		if (!Native_Hash(key, &h)) {
+			return Native_Raise(NE_TYPE, "unhashable type");
+		}
+		const nativeVal_t *x = Native_DictGet(v, key);
+		if (!x) {
+			return Native_RaiseKey(key);
+		}
+		Native_Copy(out, x);
+		return 1;
+	}
+	if (!Native_IsSeq(v)) {
+		return Native_Raise(NE_TYPE, "unsubscriptable object");
+	}
+	if (key->type != NV_INT) {
+		return Native_Raise(NE_TYPE, "sequence index must be integer");
+	}
+	nativeVal_t tmp;
+	const nativeVal_t *x = Native_GetItem(v, key->i, 1, &tmp);
+	if (!x) {
+		return 0;
+	}
+	if (x == &tmp) {
+		*out = tmp;
+	} else {
+		Native_Copy(out, x);
+	}
+	return 1;
+}
+
+byte Native_Slice(const nativeVal_t *v, long lo, long hi, nativeVal_t *out) {
+	if (!Native_IsSeq(v)) {
+		return Native_Raise(NE_TYPE, "unsliceable object");
+	}
+	/* PySequence_GetSlice adds the length to a negative end, the slice clamps */
+	long n = Native_Count(v);
+	lo = lo < 0 ? lo + n : lo;
+	hi = hi < 0 ? hi + n : hi;
+	lo = lo < 0 ? 0 : lo > n ? n : lo;
+	hi = hi < lo ? lo : hi > n ? n : hi;
+	if (v->type == NV_STR) {
+		Native_SetText(out, Native_Text(v) + lo, (int)(hi - lo));
+		return 1;
+	}
+	nativeVal_t r, tmp;
+	Native_SetEmpty(&r, Native_SeqType(v));
+	for (long i = lo; i < hi; i++) {
+		Native_Copy(Native_Append(&r), Native_Item(v, (int)i, &tmp));
+	}
+	*out = r;
+	return 1;
+}
+
+int Native_Contains(const nativeVal_t *seq, const nativeVal_t *x) {
+	if (seq->type == NV_STR) {
+		if (x->type != NV_STR || x->n != 1) {
+			Native_Raise(NE_TYPE, "string member test needs char left operand");
+			return -1;
+		}
+		return memchr(Native_Text(seq), Native_Text(x)[0], (size_t)seq->n) != NULL;
+	}
+	if (!Native_IsSeq(seq)) {
+		Native_Raise(NE_TYPE, "'in' or 'not in' needs sequence right argument");
+		return -1;
+	}
+	for (int i = 0; i < Native_Count(seq); i++) {
+		nativeVal_t tmp;
+		if (!Native_Compare(Native_Item(seq, i, &tmp), x)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/* the number of a % argument as formatint ("l") or formatfloat ("d") of 1.5.2 reads it: 0 when it is no number */
+static byte Native_FmtNum(const nativeVal_t *v, byte asLong, long *l, double *d) {
+	switch (v->type) {
+	case NV_INT:
+		*l = v->i;
+		*d = (double)v->i;
+		return 1;
+	case NV_FLOAT:
+		if (asLong) {
+			nativeVal_t i;
+			if (!Native_ToInt(v, &i)) {
+				return 0;
+			}
+			*l = i.i;
+		}
+		*d = v->f;
+		return 1;
+	case NV_LONG:
+		if (asLong) {
+			nativeVal_t i;
+			if (!Native_ToInt(v, &i)) {
+				return 0;
+			}
+			*l = i.i;
+		}
+		*d = Native_LongDouble(Native_Text(v));
+		return 1;
+	}
+	/* PyArg_Parse "l;int argument required": PyInt_AsLong (PyFloat_AsDouble) set its own error first */
+	(void)asLong;
+	return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
+}
+
+byte Native_Format(const nativeVal_t *format, const nativeVal_t *args, nativeVal_t *out) {
+	/* PyString_Format: a tuple gives the arguments in turn, any other value is the one argument; a dict is the
+	 * mapping of "%(key)" */
+	const char *fmt = Native_Text(format);
+	int fmtcnt = format->n, argidx, arglen;
+	const nativeVal_t *dict = args->type == NV_DICT ? args : NULL;
+	nativeVal_t keyed;
+	byte keyedOwned = 0;
+	nativeBuf_t res;
+	byte ok = 0;
+	if (Native_SeqType(args) == NV_TUPLE) {
+		arglen = Native_Count(args);
+		argidx = 0;
+	} else {
+		arglen = -1;
+		argidx = -2;
+	}
+	Native_BufInit(&res);
+	while (--fmtcnt >= 0) {
+		if (*fmt != '%') {
+			Native_BufAdd(&res, fmt++, 1);
+			continue;
+		}
+		int flags = 0, width = -1, prec = -1, c = 0, fill = ' ', sign = 0, len;
+		const nativeVal_t *v = NULL;
+		nativeVal_t tmp;
+		char tmpbuf[120], cfmt[20];
+		const char *buf = NULL;
+		nativeBuf_t str;
+		byte strUsed = 0;
+		fmt++;
+		/* the next argument (getnextarg) */
+#define NFMT_NEXT() \
+	do { \
+		if (argidx >= arglen) { \
+			Native_Raise(NE_TYPE, "not enough arguments for format string"); \
+			goto error; \
+		} \
+		v = arglen < 0 ? (argidx++, args) : Native_Item(args, argidx++, &tmp); \
+	} while (0)
+		if (*fmt == '(') {
+			if (!dict) {
+				Native_Raise(NE_TYPE, "format requires a mapping");
+				goto error;
+			}
+			const char *keystart = ++fmt;
+			int pcount = 1;
+			--fmtcnt;
+			while (pcount > 0 && --fmtcnt >= 0) {
+				if (*fmt == ')') {
+					--pcount;
+				} else if (*fmt == '(') {
+					++pcount;
+				}
+				fmt++;
+			}
+			if (fmtcnt < 0 || pcount > 0) {
+				Native_Raise(NE_VALUE, "incomplete format key");
+				goto error;
+			}
+			nativeVal_t key;
+			Native_SetText(&key, keystart, (int)(fmt - keystart - 1));
+			if (keyedOwned) {
+				Native_Free(&keyed);
+				keyedOwned = 0;
+			}
+			ok = Native_Subscript(dict, &key, &keyed);
+			Native_Free(&key);
+			if (!ok) {
+				goto error;
+			}
+			ok = 0;
+			keyedOwned = 1;
+			args = &keyed;
+			arglen = -1;
+			argidx = -2;
+		}
+		while (--fmtcnt >= 0) {
+			c = (unsigned char)*fmt++;
+			if (c == '-') {
+				flags |= 1;
+			} else if (c == '+') {
+				flags |= 2;
+			} else if (c == ' ') {
+				flags |= 4;
+			} else if (c == '#') {
+				flags |= 8;
+			} else if (c == '0') {
+				flags |= 16;
+			} else {
+				break;
+			}
+		}
+		if (c == '*') {
+			NFMT_NEXT();
+			if (v->type != NV_INT) {
+				Native_Raise(NE_TYPE, "* wants int");
+				goto error;
+			}
+			width = v->i < 0 ? 0 : (int)v->i;
+			if (--fmtcnt >= 0) {
+				c = (unsigned char)*fmt++;
+			}
+		} else if (isdigit(c)) {
+			width = c - '0';
+			while (--fmtcnt >= 0) {
+				c = (unsigned char)*fmt++;
+				if (!isdigit(c)) {
+					break;
+				}
+				width = width * 10 + (c - '0');
+			}
+		}
+		if (c == '.') {
+			prec = 0;
+			if (--fmtcnt >= 0) {
+				c = (unsigned char)*fmt++;
+			}
+			if (c == '*') {
+				NFMT_NEXT();
+				if (v->type != NV_INT) {
+					Native_Raise(NE_TYPE, "* wants int");
+					goto error;
+				}
+				prec = v->i < 0 ? 0 : (int)v->i;
+				if (--fmtcnt >= 0) {
+					c = (unsigned char)*fmt++;
+				}
+			} else if (isdigit(c)) {
+				prec = c - '0';
+				while (--fmtcnt >= 0) {
+					c = (unsigned char)*fmt++;
+					if (!isdigit(c)) {
+						break;
+					}
+					prec = prec * 10 + (c - '0');
+				}
+			}
+		}
+		if (fmtcnt >= 0 && (c == 'h' || c == 'l' || c == 'L') && --fmtcnt >= 0) {
+			c = (unsigned char)*fmt++;
+		}
+		if (fmtcnt < 0) {
+			Native_Raise(NE_VALUE, "incomplete format");
+			goto error;
+		}
+		if (c != '%') {
+			NFMT_NEXT();
+		}
+		switch (c) {
+		case '%':
+			buf = "%";
+			len = 1;
+			break;
+		case 's':
+			Native_BufInit(&str);
+			strUsed = 1;
+			Native_Repr(&str, v, NR_STR);
+			buf = str.p;
+			len = str.len;
+			if (prec >= 0 && len > prec) {
+				len = prec;
+			}
+			break;
+		case 'i':
+		case 'd':
+		case 'u':
+		case 'o':
+		case 'x':
+		case 'X': {
+			long l;
+			double d;
+			if (c == 'i') {
+				c = 'd';
+			}
+			if (!Native_FmtNum(v, 1, &l, &d)) {
+				goto error;
+			}
+			snprintf(cfmt, sizeof(cfmt), "%%%s.%dl%c", flags & 8 ? "#" : "", prec < 0 ? 1 : prec, c);
+			len = snprintf(tmpbuf, sizeof(tmpbuf), cfmt, l);
+			buf = tmpbuf;
+			sign = c == 'd';
+			if (flags & 16) {
+				fill = '0';
+				if ((flags & 8) && (c == 'x' || c == 'X') && buf[0] == '0' && buf[1] == c) {
+					Native_BufAdd(&res, buf, 2);
+					buf += 2;
+					len -= 2;
+					width = width - 2 < 0 ? 0 : width - 2;
+				}
+			}
+			break;
+		}
+		case 'e':
+		case 'E':
+		case 'f':
+		case 'g':
+		case 'G': {
+			long l;
+			double d;
+			if (!Native_FmtNum(v, 0, &l, &d)) {
+				goto error;
+			}
+			int p = prec < 0 ? 6 : prec > 50 ? 50 : prec;
+			snprintf(cfmt, sizeof(cfmt), "%%%s.%d%c", flags & 8 ? "#" : "", p, c == 'f' && fabs(d) / 1e25 >= 1e25 ? 'g' : c);
+			len = snprintf(tmpbuf, sizeof(tmpbuf), cfmt, d);
+			buf = tmpbuf;
+			sign = 1;
+			if (flags & 16) {
+				fill = '0';
+			}
+			break;
+		}
+		case 'c':
+			if (v->type == NV_STR && v->n == 1) {
+				tmpbuf[0] = Native_Text(v)[0];
+			} else if (v->type == NV_INT && v->i >= 0 && v->i <= 255) {
+				tmpbuf[0] = (char)v->i;
+			} else {
+				Native_Raise(NE_TYPE, "%%c requires int or char");
+				goto error;
+			}
+			buf = tmpbuf;
+			len = 1;
+			break;
+		default:
+			Native_Raise(NE_VALUE, "unsupported format character '%c' (0x%x)", c, c);
+			goto error;
+		}
+		if (sign) {
+			if (*buf == '-' || *buf == '+') {
+				sign = *buf++;
+				len--;
+			} else {
+				sign = flags & 2 ? '+' : flags & 4 ? ' ' : 0;
+			}
+		}
+		if (width < len) {
+			width = len;
+		}
+		if (sign) {
+			if (fill != ' ') {
+				char sc = (char)sign;
+				Native_BufAdd(&res, &sc, 1);
+			}
+			if (width > len) {
+				width--;
+			}
+		}
+		if (width > len && !(flags & 1)) {
+			char fc = (char)fill;
+			do {
+				Native_BufAdd(&res, &fc, 1);
+			} while (--width > len);
+		}
+		if (sign && fill == ' ') {
+			char sc = (char)sign;
+			Native_BufAdd(&res, &sc, 1);
+		}
+		Native_BufAdd(&res, buf, len);
+		while (--width >= len) {
+			Native_BufAdd(&res, " ", 1);
+		}
+		if (strUsed) {
+			Native_BufFree(&str);
+		}
+		if (dict && argidx < arglen && c != '%') {
+			Native_Raise(NE_TYPE, "not all arguments converted");
+			goto error;
+		}
+#undef NFMT_NEXT
+	}
+	if (argidx < arglen && !dict) {
+		Native_Raise(NE_TYPE, "not all arguments converted");
+		goto error;
+	}
+	Native_SetText(out, res.p, res.len);
+	ok = 1;
+error:
+	Native_BufFree(&res);
+	if (keyedOwned) {
+		Native_Free(&keyed);
+	}
+	return ok;
+}
+
 /* ---- the engine ---- */
+
+byte Native_NullResult(void) {
+	return Native_Raise(NE_SYSTEM, "NULL result without error in call_object");
+}
 
 byte Native_EntVar(cEntity *e, const char *ref, const char *name, nativeVal_t *out) {
 	/* PyEntity_GetAttr: the values start at 0, the types in this order */
 	int i = 0;
 	double d = 0.0, x = 0.0, y = 0.0, z = 0.0;
 	char *s = NULL;
+	if (!e) {
+		Con_Errorf("'%s'->%s : Entity invalid.\n", ref, name);
+		return Native_Raise(NE_SYSTEM, "error return without exception set");
+	}
 	if (Entity_VarI(e, name, &i, 0)) {
 		Native_SetInt(out, i);
 	} else if (Entity_VarF(e, name, &d, 0)) {
@@ -1009,6 +2072,310 @@ byte Native_EntVar(cEntity *e, const char *ref, const char *name, nativeVal_t *o
 	return 1;
 }
 
+/* the number of a value as the "i" (int 0) or "d" (int 1) of PyArg_Parse reads it (PyInt_AsLong and PyFloat_AsDouble
+ * of 1.5.2 through the number methods, no range check for "i"): 0 when it reads none */
+static byte Native_ArgNum(const nativeVal_t *v, byte asDouble, double *d, int *i) {
+	switch (v->type) {
+	case NV_INT:
+		*i = (int)v->i;
+		*d = (double)v->i;
+		return 1;
+	case NV_FLOAT:
+		if (!asDouble && (v->f < (double)LONG_MIN || v->f > (double)LONG_MAX)) {
+			/* float_int: "float too large to convert" */
+			return 0;
+		}
+		*i = (int)(long)v->f;
+		*d = v->f;
+		return 1;
+	case NV_LONG: {
+		/* PyLong_AsLong and PyLong_AsDouble: the value must fit */
+		errno = 0;
+		const char *t = Native_Text(v);
+		long l = strtol(t, NULL, 10);
+		if (!asDouble && errno == ERANGE) {
+			return 0;
+		}
+		*i = (int)l;
+		/* PyLong_AsDouble of 1.5.2 has no overflow check (inf) */
+		*d = strtod(t, NULL);
+		return 1;
+	}
+	}
+	return 0;
+}
+
+
+byte Native_ArgDouble(const nativeVal_t *v, double *out) {
+	int i;
+	if (!Native_ArgNum(v, 1, out, &i)) {
+		/* PyFloat_AsDouble of a value without number methods */
+		return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
+	}
+	return 1;
+}
+
+byte Native_ArgInt(const nativeVal_t *v, int *out) {
+	double d;
+	if (!Native_ArgNum(v, 0, &d, out)) {
+		/* PyInt_AsLong of a value without number methods (a float too large for a long: its OverflowError, not
+		 * reached by the ports) */
+		return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
+	}
+	return 1;
+}
+
+byte Native_True(const nativeVal_t *v) {
+	switch (v->type) {
+	case NV_INT:
+		return v->i != 0;
+	case NV_FLOAT:
+		return v->f != 0.0;
+	case NV_STR:
+	case NV_LIST:
+	case NV_TUPLE:
+	case NV_DICT:
+		return v->n != 0;
+	case NV_LONG:
+		return strcmp(Native_Text(v), "0") != 0;
+	case NV_VEC:
+		return 1;
+	case NV_OBJ: {
+		/* OBJLIB 7: PyObject_IsTrue (an entity handle is true) */
+		int t = PyObject_IsTrue(v->obj);
+		PyErr_Clear();
+		return t > 0;
+	}
+	}
+	return 0;
+}
+
+byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVal_t *v) {
+	/* PyEntity_SetVar: the value is tried as int, float, vector and text, each form that parses goes to the
+	 * variable of that type until one takes it */
+	byte parsed = 0;
+	double d, x[3];
+	int i;
+	if (!e) {
+		Con_Errorf("'%s'->%s : Entity invalid.\n", ref, name);
+		return Native_Raise(NE_SYSTEM, "error return without exception set");
+	}
+	if (Native_ArgNum(v, 0, &d, &i)) {
+		parsed = 1;
+		if (Entity_VarI(e, name, &i, 1)) {
+			return 1;
+		}
+	}
+	if (Native_ArgNum(v, 1, &d, &i)) {
+		parsed = 1;
+		if (Entity_VarF(e, name, &d, 1)) {
+			return 1;
+		}
+	}
+	byte vec = v->type == NV_VEC;
+	if (vec) {
+		x[0] = v->v[0];
+		x[1] = v->v[1];
+		x[2] = v->v[2];
+	} else if (v->type == NV_TUPLE && v->n == 3) {
+		vec = 1;
+		for (int k = 0; vec && k < 3; k++) {
+			vec = Native_ArgNum(&v->items[k], 1, &x[k], &i);
+		}
+	}
+	if (vec) {
+		parsed = 1;
+		if (Entity_VarV(e, name, &x[0], &x[1], &x[2], 1)) {
+			return 1;
+		}
+	}
+	/* "s": a text without 0 bytes */
+	if (v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n) {
+		char *s = (char *)Native_Text(v);
+		if (Entity_VarS(e, name, &s, 1)) {
+			return 1;
+		}
+	} else if (!parsed) {
+		Con_Errorf("'%s'->%s : Invalid type.\n", ref, name);
+		return Native_Raise(NE_SYSTEM, "error return without exception set");
+	}
+	Con_Errorf("'%s'->%s : Member invalid.\n", ref, name);
+	return Native_Raise(NE_SYSTEM, "error return without exception set");
+}
+
+/* the argument tuple of the mini format of Native_Call (NULL with the error set) */
+static PyObject *Native_Args(const char *fmt, va_list va) {
+	int n = (int)strlen(fmt);
+	PyObject *t = PyTuple_New(n);
+	for (int i = 0; t && i < n; i++) {
+		PyObject *o = NULL;
+		switch (fmt[i]) {
+		case 'v':
+			o = Native_ToPy(va_arg(va, const nativeVal_t *));
+			break;
+		case 'i':
+			o = PyInt_FromLong(va_arg(va, long));
+			break;
+		case 'd':
+			o = PyFloat_FromDouble(va_arg(va, double));
+			break;
+		case 's':
+			o = PyString_FromString((char *)va_arg(va, const char *));
+			break;
+		case 'O':
+			o = va_arg(va, PyObject *);
+			Py_XINCREF(o);
+			break;
+		}
+		if (!o) {
+			Py_DECREF(t);
+			return NULL;
+		}
+		PyTuple_SET_ITEM(t, i, o);
+	}
+	return t;
+}
+
+/* callable(args) (a reference taken over), the result into *out (NULL: dropped) */
+static byte Native_CallV(PyObject *callable, nativeVal_t *out, const char *fmt, va_list va) {
+	PyObject *args = callable ? Native_Args(fmt, va) : NULL;
+	PyObject *r = args ? Script_Invoke(callable, args) : NULL;
+	Py_XDECREF(callable);
+	if (!r) {
+		return 0;
+	}
+	/* any other object is an NV_OBJ (OBJLIB 7) */
+	if (out) {
+		Native_Arg(r, out);
+	}
+	Py_DECREF(r);
+	return 1;
+}
+
+PyObject *Native_CallObj(PyObject *callable, const char *fmt, ...) {
+	va_list va;
+	va_start(va, fmt);
+	PyObject *args = Native_Args(fmt, va);
+	va_end(va);
+	return args ? Script_Invoke(callable, args) : NULL;
+}
+
+byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...) {
+	va_list va;
+	va_start(va, fmt);
+	Py_XINCREF(callable);
+	byte ok = Native_CallV(callable, out, fmt, va);
+	va_end(va);
+	return ok;
+}
+
+byte Native_HookCall(PyObject *hook, nativeVal_t *out, const char *fmt, ...) {
+	va_list va;
+	va_start(va, fmt);
+	byte ok = Native_CallV(hook, out, fmt, va);
+	va_end(va);
+	return ok;
+}
+
+byte Native_CallMod(const char *module, const char *name, nativeVal_t *out, const char *fmt, ...) {
+	va_list va;
+	va_start(va, fmt);
+	byte ok = Native_CallV(Script_Attr(module, name), out, fmt, va);
+	va_end(va);
+	return ok;
+}
+
+byte Native_CallGlobal(const char *module, const char *name, nativeVal_t *out, const char *fmt, ...) {
+	va_list va;
+	va_start(va, fmt);
+	byte ok = Native_CallV(Script_Global(module, name), out, fmt, va);
+	va_end(va);
+	return ok;
+}
+
+byte Native_GetEntity(const nativeVal_t *name, cEntity **out) {
+	const char *s;
+	if (!Native_ArgStr(name, 1, &s)) {
+		return 0;
+	}
+	*out = World_FindEntity(s);
+	return 1;
+}
+
+byte Native_ActClass(const char *name) {
+	CHECK(g_pActClassList);
+	g_pAuxActClass = cActClassList_Get(g_pActClassList, name);
+	return g_pAuxActClass != NULL;
+}
+
+void Native_ActAction(const char *name) {
+	if (!g_pAuxActClass) {
+		Con_Debugf("Caution: SAct.GetAction(): AuxActClass not defined.\n");
+		return;
+	}
+	g_pAuxAction = cActClass_GetAction(g_pAuxActClass, name);
+}
+
+void Native_ActVar(const char *name, nativeVal_t *out) {
+	/* GetVar of SActPy.c on the current action */
+	char *s = NULL;
+	double d = 0.0;
+	int i = 0;
+	Native_SetNone(out);
+	if (!g_pAuxAction) {
+		Con_Debugf("Caution: SAct.GetAct('%s'): AuxActClass not defined.\n", name);
+		return;
+	}
+	switch (cAction_Var(g_pAuxAction, name, 0, &s, &d, &i)) {
+	case ACTVAR_STRING:
+		if (s) {
+			Native_SetText(out, s, (int)strlen(s));
+		}
+		return;
+	case ACTVAR_DOUBLE:
+		Native_SetFloat(out, d);
+		return;
+	case ACTVAR_INT:
+		Native_SetInt(out, i);
+		return;
+	}
+	Con_Debugf("Caution: SAct.GetAct('%s'): element not found.\n", name);
+}
+
+/* SetVar of SActPy.c: "ss", else "sd" (the int cut from the number); 0 when the value is neither (no error set) */
+static byte Native_ActSetVar(int (*var)(void *obj, const char *name, int set, char **s, double *d, int *i), void *obj,
+	const char *name, const nativeVal_t *v) {
+	double d;
+	int i;
+	if (v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n) {
+		char *s = (char *)Native_Text(v);
+		var(obj, name, 1, &s, NULL, NULL);
+		return 1;
+	}
+	if (!Native_ArgNum(v, 1, &d, &i)) {
+		return 0;
+	}
+	i = (int)d;
+	var(obj, name, 1, NULL, &d, &i);
+	return 1;
+}
+
+void Native_ActSet(const char *name, const nativeVal_t *v) {
+	if (!g_pAuxAction || !Native_ActSetVar((int (*)(void *, const char *, int, char **, double *, int *))cAction_Var,
+		g_pAuxAction, name, v)) {
+		Con_Debugf("Caution: SAct.SetAct(): AuxActClass not defined.\n");
+	}
+}
+
+byte Native_ClsSet(const char *name, const nativeVal_t *v) {
+	if (!g_pAuxActClass) {
+		Con_Print(CON_COLOR_ERROR, "ERROR SAct.SetCls(): AuxActClass not defined.\n", 0);
+		return Native_NullResult();
+	}
+	return Native_ActSetVar((int (*)(void *, const char *, int, char **, double *, int *))cActClass_Var, g_pAuxActClass,
+		name, v) || Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
+}
+
 int Native_Seam(const char *module, const char *name, PyObject **hook) {
 	PyObject *f = Script_Attr(module, name);
 	if (!f) {
@@ -1021,6 +2388,106 @@ int Native_Seam(const char *module, const char *name, PyObject **hook) {
 	}
 	*hook = f;
 	return 1;
+}
+
+byte Native_GVarGet(const char *name, nativeVal_t *out) {
+	/* GVarValue of Scrap.Get */
+	cGVar *v = GVar_Find(name);
+	if (!v) {
+		Con_Errorf("ERROR: '%s' global variable not defined\n", name);
+		return Native_NullResult();
+	}
+	switch (v->base.type) {
+	case GVAR_STRING:
+		/* Py_BuildValue "s" of NULL is None */
+		if (v->value.s) {
+			Native_SetText(out, v->value.s, (int)strlen(v->value.s));
+		} else {
+			Native_SetNone(out);
+		}
+		return 1;
+	case GVAR_INT:
+		Native_SetInt(out, v->value.i);
+		return 1;
+	case GVAR_FLOAT:
+		Native_SetFloat(out, (double)v->value.f);
+		return 1;
+	case GVAR_FUNCTION:
+		Native_SetStr(out, "<function>");
+		return 1;
+	case GVAR_SCRIPT_FUNCTION:
+		Native_SetStr(out, "<Script function>");
+		return 1;
+	}
+	CHECK(0);
+	return 0;
+}
+
+/* OBJLIB 7: module.name(args) with what a test put there instead of the engine function (hook from Native_Seam,
+ * released; args a new tuple or NULL): 0 with the error set */
+static byte Native_CallHook(PyObject *hook, PyObject *args) {
+	PyObject *r = args ? Script_Invoke(hook, args) : NULL;
+	Py_DECREF(hook);
+	Py_XDECREF(r);
+	return r != NULL;
+}
+
+byte Native_GVarSet(const char *name, const nativeVal_t *v) {
+	/* Scrap.Set: "ss", else "sd"; a variable of another type or no variable gives NULL without an exception */
+	double d;
+	int r;
+	PyObject *hook;
+	int seam = Native_Seam("Scrap", "Set", &hook);
+	if (seam) {
+		PyObject *o = seam > 0 ? Native_ToPy(v) : NULL;
+		return seam > 0 && Native_CallHook(hook, o ? Py_BuildValue("(sN)", name, o) : NULL);
+	}
+	if (v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n) {
+		r = GVar_SetStr(name, Native_Text(v));
+	} else if (Native_ArgDouble(v, &d)) {
+		r = GVar_SetNum(name, d);
+	} else {
+		return 0;
+	}
+	return r < 0 ? Native_NullResult() : 1;
+}
+
+byte Native_ScorerSet(int id, const char *item, const char *var, const nativeVal_t *v) {
+	/* SScorer.Set: "isss", else "issd" */
+	double d;
+	PyObject *hook;
+	int seam = Native_Seam("SScorer", "Set", &hook);
+	if (seam) {
+		PyObject *o = seam > 0 ? Native_ToPy(v) : NULL;
+		return seam > 0 && Native_CallHook(hook, o ? Py_BuildValue("(issN)", id, item, var, o) : NULL);
+	}
+	if (v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n) {
+		Script_SetStr(id, item, var, Native_Text(v));
+	} else if (Native_ArgDouble(v, &d)) {
+		Script_SetNum(id, item, var, d);
+	} else {
+		return 0;
+	}
+	return 1;
+}
+
+int Native_NetOff(void) {
+	PyObject *hook;
+	int s = Native_Seam("Scrap", "GetNetFlags", &hook);
+	if (s == 0) {
+		return (g_pApp->flags & 7) == 0;
+	}
+	if (s < 0) {
+		return -1;
+	}
+	/* GetNetFlags() == (0, 0, 0) with what the test put there */
+	PyObject *flags = Script_Invoke(hook, PyTuple_New(0));
+	Py_DECREF(hook);
+	PyObject *off = flags ? Py_BuildValue("(iii)", 0, 0, 0) : NULL;
+	int r = off ? Script_Eq(flags, off) : -1;
+	Py_XDECREF(off);
+	Py_XDECREF(flags);
+	return r;
 }
 
 int Native_NetFlag(int i) {
@@ -1046,6 +2513,9 @@ int Native_NetFlag(int i) {
 PyObject *Native_ToPy(const nativeVal_t *v) {
 	PyObject *o = NULL;
 	switch (v->type) {
+	case NV_OBJ:
+		Py_INCREF(v->obj);
+		return v->obj;
 	case NV_INT:
 		return PyInt_FromLong(v->i);
 	case NV_FLOAT:
@@ -1109,12 +2579,18 @@ byte Native_FromPy(PyObject *o, unsigned types, nativeVal_t *v) {
 
 /* OBJLIB 9: the head of a dict of the vendored dictobject.c (the struct is private there): its table size */
 typedef struct {
+	long me_hash;
+	PyObject *me_key;
+	PyObject *me_value;
+} nativePyEntry_t;
+
+typedef struct {
 	PyObject_HEAD
 	int ma_fill;
 	int ma_used;
 	int ma_size;
 	int ma_poly;
-	void *ma_table;
+	nativePyEntry_t *ma_table;
 } nativePyDict_t;
 
 static byte Native_FromPyIn(PyObject *o, nativeVal_t *v, int depth) {
@@ -1158,9 +2634,17 @@ static byte Native_FromPyIn(PyObject *o, nativeVal_t *v, int depth) {
 		/* each key and value in the slot Python has it in */
 		int pos = 0;
 		PyObject *k, *x;
+		const nativePyDict_t *pd = (const nativePyDict_t *)o;
 		Native_SetEmpty(v, NV_DICT);
-		if (((nativePyDict_t *)o)->ma_size) {
-			Native_Table(v, ((nativePyDict_t *)o)->ma_size);
+		if (pd->ma_size) {
+			Native_Table(v, pd->ma_size);
+		}
+		/* the deleted keys stay dummies in their slots (a key past one on its probe chain is found) */
+		v->i = pd->ma_fill;
+		for (int i = 0; i < pd->ma_size; i++) {
+			if (pd->ma_table[i].me_key && !pd->ma_table[i].me_value) {
+				Native_Clear(&v->items[2 * i], NV_DUMMY);
+			}
 		}
 		while (ok && PyDict_Next(o, &pos, &k, &x)) {
 			nativeVal_t *slot = &v->items[2 * (pos - 1)];
@@ -1180,20 +2664,50 @@ byte Native_FromPyAny(PyObject *o, nativeVal_t *v) {
 	return Native_FromPyIn(o, v, 0);
 }
 
-byte Native_Import(const char *module, const nativeVar_t *vars) {
+/* a value of the mirror from Python into *v (what *v owned is freed first): the short forms of Native_FromPy, and
+ * with a long int, list, tuple or dict among the types any value of those types (texts of any length too) */
+static byte Native_Take(PyObject *o, unsigned types, nativeVal_t *v) {
+	Native_Free(v);
+	/* a mirror that takes tuples keeps a tuple of three ints a tuple of ints (the short forms would make it a vector
+	 * of floats) */
+	if (types & 1 << NV_TUPLE && PyTuple_Check(o)) {
+		if (Native_FromPyAny(o, v)) {
+			return 1;
+		}
+		return types & 1 << NV_OBJ ? Native_Arg(o, v) : 0;
+	}
+	if (Native_FromPy(o, types, v)) {
+		return 1;
+	}
+	if (types & 1 << NV_OBJ) {
+		return Native_Arg(o, v);
+	}
+	if (!(types & (1 << NV_LONG | 1 << NV_LIST | 1 << NV_TUPLE | 1 << NV_DICT)) || !Native_FromPyAny(o, v)) {
+		return 0;
+	}
+	if (types & 1 << v->type) {
+		return 1;
+	}
+	Native_Free(v);
+	return 0;
+}
+
+/* the variables from the dict of module: a missing one is the AttributeError of a module attribute (global 0) or the
+ * NameError of a global the script reads (global 1) */
+static byte Native_ImportBy(const char *module, const nativeVar_t *vars, byte global) {
 	for (const nativeVar_t *var = vars; var->name; var++) {
-		PyObject *o = Script_Attr(module, var->name);
+		PyObject *o = global ? Script_Global(module, var->name) : Script_Attr(module, var->name);
 		if (!o) {
 			return 0;
 		}
 		byte ok = 1;
 		if (!var->count) {
-			ok = Native_FromPy(o, var->types, var->values);
+			ok = Native_Take(o, var->types, var->values);
 		} else if (!PyList_Check(o) || PyList_Size(o) != var->count) {
 			ok = 0;
 		} else {
 			for (int i = 0; ok && i < var->count; i++) {
-				ok = Native_FromPy(PyList_GetItem(o, i), var->types, &var->values[i]);
+				ok = Native_Take(PyList_GetItem(o, i), var->types, &var->values[i]);
 			}
 		}
 		Py_DECREF(o);
@@ -1204,6 +2718,23 @@ byte Native_Import(const char *module, const nativeVar_t *vars) {
 		}
 	}
 	return 1;
+}
+
+byte Native_Arg(PyObject *o, nativeVal_t *v) {
+	if (!Native_FromPyAny(o, v)) {
+		Native_Clear(v, NV_OBJ);
+		Py_INCREF(o);
+		v->obj = o;
+	}
+	return 1;
+}
+
+byte Native_Import(const char *module, const nativeVar_t *vars) {
+	return Native_ImportBy(module, vars, 0);
+}
+
+byte Native_ImportGlobals(const char *module, const nativeVar_t *vars) {
+	return Native_ImportBy(module, vars, 1);
 }
 
 byte Native_Put(const char *module, const nativeVar_t *var, int index) {
