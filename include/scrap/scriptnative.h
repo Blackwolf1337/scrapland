@@ -196,6 +196,13 @@ byte Native_GetEntity(const nativeVal_t *name, cEntity **out);
 /* Scrap.Get(name): the engine variable as the script gets it (a text, an int, a float, "<function>" or "<Script
  * function>"); 0 for an unknown name (the console line of Scrap.Get and Native_NullResult) */
 byte Native_GVarGet(const char *name, nativeVal_t *out);
+/* Scrap.Set(name, v): a text (without 0 bytes) to a text variable, a number to a number variable; 0 with the
+ * TypeError of its arguments for other values ("illegal argument type for built-in operation") or Native_NullResult
+ * when the variable is not there or of the other type */
+byte Native_GVarSet(const char *name, const nativeVal_t *v);
+/* SScorer.Set(id, item, var, v) with a text or a number (nothing when the item is not there); 0 with the TypeError
+ * of its arguments for other values */
+byte Native_ScorerSet(int id, const char *item, const char *var, const nativeVal_t *v);
 /* Scrap.GetNetFlags() == (0, 0, 0), one call through the seam: 1 or 0, -1 with the error set */
 int Native_NetOff(void);
 /* Scrap.GetNetFlags()[i] (0 client, 1 server, 2 dedicated): 1 or 0, -1 with the error set (through the seam) */
