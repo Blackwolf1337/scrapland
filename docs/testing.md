@@ -9,9 +9,19 @@ tools/test/levels.sh [level ...]
 
 ## golden.sh
 
-Runs `tools/test/golden/sdtest.py` in the main menu: the script functions of the game and the Python interpreter (`sdpy.py`), 9961 checks. The output is compared with `tools/test/golden/sdtest.out`. `GOLDEN_UPDATE=1` stores a new expected output, `SCRAP_BUILD` selects the build folder (default `build-linux64`).
+Runs 9961 checks in the main menu and compares the output with `tools/test/golden/sdtest.out`. `GOLDEN_UPDATE=1` stores a new expected output, `SCRAP_BUILD` selects the build folder (default `build-linux64`).
+
+`GOLDEN_MODE` selects how the checks run. `channel` is the default and starts the game without `-PythonExecute`. The 1481 checks of the script functions of the game (`tools/test/golden/sdtest.cmd`) go through the test channel in the first frame. The 8480 checks of the Python interpreter (`sdpy.py`) still run Python through the channel command `py`. They go with the interpreter at stage 7 of the removal of Python. `python` is the old way, `sdtest.py` and `sdpy.py` run as Python in the game. `record` rebuilds `sdtest.cmd`. The total is 9961 in both ways.
+
+## Test channel
+
+`src/game/Global/TestChannel.c` lets a test tool ask the game things without running Python in it. It is off unless the game starts with `-TestChannel` or `SCRAP_TEST_CHANNEL=1`. At the start of each frame (at most every 5 ms, also while the world clock stands) the game reads `test_cmd.txt` in the game folder. A new number on line 1 runs the commands below it, and the answers go to `test_reply.txt` through a temp file and a rename. It never sleeps or blocks, a missing or unchanged file does nothing. It does not answer during a level load.
+
+The commands are expressions and assignments, `do`, `check`, `print`, `con`, `get`, `ent`, `ents`, `dump`, `menu`, `click`, `recorder` and `py`. `py` still runs Python and goes with the interpreter at stage 7. The tool side is `tools/test/channel.py`, the scrap MCP server uses it (see `tools/mcp/README.md`).
 
 The stored output was checked against the frozen i686 reference before it was stored. It equals the reference except where 64 bit differs on purpose: Python ints are 64 bits on Linux x86_64 (overflows, `%x` of negative numbers, literal sizes, string hashes), the text of NaN, and there is no SDTest module.
+
+In the ASan build 14 lines of `sdpy.py` (`cmp`) differ in both modes, because the ASan `strcmp` interceptor returns -1 or 1. This is known and not a regression.
 
 ## levels.sh
 
