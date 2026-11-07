@@ -347,5 +347,7 @@ void Mode_RandomVisPoint(nativeVal_t *out);
 /* Scrap.SetAlarm(level) through its seam (cases record it with _bon): the TypeError of "f" for a value that is no
  * number */
 byte Mode_SetAlarm(const nativeVal_t *level);
+/* Scrap.Set(name, i) with an int, as the scripts set it (Mode_GVarSetN sets a float) */
+byte Mode_GVarSetI(const char *name, long i);
 
 #endif

@@ -1677,3 +1677,9 @@ byte Mode_SetAlarm(const nativeVal_t *level) {
 	Alarm_Set(&g_pWorld->alarm, (float)d);
 	return 1;
 }
+
+byte Mode_GVarSetI(const char *name, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return Mode_GVarSet(name, &v);
+}
