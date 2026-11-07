@@ -1373,9 +1373,13 @@ byte LvN_SetLangOpt(const nativeVal_t *e, const char *var, const char *prefix, c
 	return ok;
 }
 
+byte LvN_Activate(const nativeVal_t *v, long on) {
+	return LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", v, on);
+}
+
 byte LvN_GActivate(const char *module, const char *var, long on) {
 	nativeVal_t h;
-	byte ok = Mode_G(module, var, &h) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &h, on);
+	byte ok = Mode_G(module, var, &h) && LvN_Activate(&h, on);
 	Native_Free(&h);
 	return ok;
 }
@@ -1397,4 +1401,102 @@ byte LvN_LaterG(const char *module, const char *delay, const char *func, const n
 
 byte LvN_PcDefault(const char *module) {
 	return Mode_GSetS(module, "pc", "UseFunc", "PhoneCab.DefUseAudioCom");
+}
+
+byte LvN_Target(const nativeVal_t *v) {
+	return LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", v);
+}
+
+byte LvN_TargetName(const nativeVal_t *h) {
+	nativeVal_t n;
+	Native_SetNone(&n);
+	byte ok = Mode_VGet(h, "Name", &n) && LvN_Target(&n);
+	Native_Free(&n);
+	return ok;
+}
+
+byte LvN_TargetG(const char *module, const char *name) {
+	nativeVal_t h;
+	byte ok = Mode_G(module, name, &h) && LvN_TargetName(&h);
+	Native_Free(&h);
+	return ok;
+}
+
+byte LvN_GAttr(const char *module, const char *name, const char *var, nativeVal_t *out) {
+	nativeVal_t h;
+	Native_SetNone(out);
+	byte ok = Mode_G(module, name, &h) && Mode_VGet(&h, var, out);
+	Native_Free(&h);
+	return ok;
+}
+
+byte LvN_PutNone(const char *module, const char *name) {
+	nativeVal_t v;
+	Native_SetNone(&v);
+	return Mode_Put(module, name, NULL, &v);
+}
+
+byte LvN_SetG(const nativeVal_t *h, const char *var, const char *module, const char *name) {
+	nativeVal_t v;
+	byte ok = Mode_G(module, name, &v) && Mode_VSet(h, var, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+void LvN_SetVar(const char *module, const char *var, const nativeVal_t *v) {
+	if (!Mode_SetModVar(module, var, v)) {
+		/* OBJLIB 7 */
+		PyErr_Clear();
+	}
+}
+
+int LvN_Usr(nativeVal_t *usr) {
+	return Mode_UsrHandle(usr) ? Native_True(usr) : -1;
+}
+
+int LvN_CtrlIs(const nativeVal_t *usr, const char *ctrl) {
+	nativeVal_t a;
+	Native_SetNone(&a);
+	int r = Mode_VGet(usr, "ActCtrl", &a) ? LvN_EqS(&a, ctrl) : -1;
+	Native_Free(&a);
+	return r;
+}
+
+byte LvN_Cat(const char *text, const nativeVal_t *v, nativeVal_t *out) {
+	nativeVal_t a;
+	LvN_Str(&a, text);
+	Native_SetNone(out);
+	byte ok = Native_Arith('+', &a, v, out);
+	Native_Free(&a);
+	return ok;
+}
+
+const nativeVal_t *LvN_Empty(void) {
+	static nativeVal_t empty = { .type = NV_STR };
+	return &empty;
+}
+
+byte LvN_SetLang(const nativeVal_t *h, const char *var, const char *key) {
+	nativeVal_t t;
+	Mode_Lang(key, &t);
+	byte ok = Mode_VSet(h, var, &t);
+	Native_Free(&t);
+	return ok;
+}
+
+byte LvN_Repos(const char *name, long n) {
+	return LV_CALL("CharsNPC", "SetReposChars", NULL, "si", name, n);
+}
+
+byte LvN_ScanBlink(int lost) {
+	return LvN_Set0I("ScanRemainingTime", "Blink", lost) && LvN_Set0I("ScanRemainingTime", "IsAutoUpdatable", !lost);
+}
+
+byte LvN_InTraffic(const char *list, const char *const *models, int n, const char *num, long count) {
+	nativeVal_t l, c;
+	Mode_Texts(&l, models, n);
+	Native_SetInt(&c, count);
+	byte ok = Mode_SetModVar("InTraffic", list, &l) && Mode_SetModVar("InTraffic", num, &c);
+	Native_Free(&l);
+	return ok;
 }

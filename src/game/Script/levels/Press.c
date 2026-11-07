@@ -82,20 +82,11 @@ static byte Pr_DelIfS(const char *name) {
 	return ok;
 }
 
-/* (x, y, z) of three ints as h.var */
-static byte Pr_SetInts3(const nativeVal_t *h, const char *var, long x, long y, long z) {
-	nativeVal_t v;
-	Mode_Ints3(&v, x, y, z);
-	byte ok = Mode_VSet(h, var, &v);
-	Native_Free(&v);
-	return ok;
-}
-
 /* usr = Scrap.UsrEntity(0); usr.Pos = pos; usr.Ang = 0, ang, 0; then the fade from black of the scene's end */
 static byte Pr_UsrBack(long x, long y, long z, long ang, double fade) {
 	nativeVal_t usr;
 	Native_SetNone(&usr);
-	byte ok = Mode_UsrHandle(&usr) && Pr_SetInts3(&usr, "Pos", x, y, z) && Pr_SetInts3(&usr, "Ang", 0, ang, 0) &&
+	byte ok = Mode_UsrHandle(&usr) && LvN_SetInts3(&usr, "Pos", x, y, z) && LvN_SetInts3(&usr, "Ang", 0, ang, 0) &&
 		Mode_Fade(0, lv_black, lv_clear, fade);
 	Native_Free(&usr);
 	return ok;
@@ -141,80 +132,6 @@ static byte Pr_Scene(const char *module, const char *const *lines) {
 		}
 	}
 	return 1;
-}
-
-/* MissionsFuncs.SetMissionTarget(h.Name), of a global handle, and of a C name (None for NULL) */
-static byte Pr_TargetName(const nativeVal_t *h) {
-	nativeVal_t n;
-	Native_SetNone(&n);
-	byte ok = Mode_VGet(h, "Name", &n) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &n);
-	Native_Free(&n);
-	return ok;
-}
-
-/* MissionsFuncs.ActivateTarget(v, on), of a global */
-static byte Pr_Activate(const nativeVal_t *v, long on) {
-	return LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", v, on);
-}
-
-static byte Pr_ActivateG(const char *module, const char *name, long on) {
-	nativeVal_t h;
-	byte ok = Mode_G(module, name, &h) && Pr_Activate(&h, on);
-	Native_Free(&h);
-	return ok;
-}
-
-/* the global handle name of module .var into out */
-static byte Pr_GAttr(const char *module, const char *name, const char *var, nativeVal_t *out) {
-	nativeVal_t h;
-	Native_SetNone(out);
-	byte ok = Mode_G(module, name, &h) && Mode_VGet(&h, var, out);
-	Native_Free(&h);
-	return ok;
-}
-
-/* h.var = i of the global handle name of module */
-static byte Pr_GSetI(const char *module, const char *name, const char *var, long i) {
-	nativeVal_t h;
-	byte ok = Mode_G(module, name, &h) && LvN_SetI(&h, var, i);
-	Native_Free(&h);
-	return ok;
-}
-
-/* the global name of module = None */
-static byte Pr_GNone(const char *module, const char *name) {
-	nativeVal_t v;
-	Native_SetNone(&v);
-	return Mode_Put(module, name, NULL, &v);
-}
-
-/* h.var = Scrap.GetLangStr(key) */
-static byte Pr_SetLang(const nativeVal_t *h, const char *var, const char *key) {
-	nativeVal_t t;
-	Mode_Lang(key, &t);
-	byte ok = Mode_VSet(h, var, &t);
-	Native_Free(&t);
-	return ok;
-}
-
-/* `usr.ActCtrl == ctrl` of a handle: 1, 0, -1 */
-static int Pr_CtrlIs(const nativeVal_t *usr, const char *ctrl) {
-	nativeVal_t a;
-	Native_SetNone(&a);
-	int r = Mode_VGet(usr, "ActCtrl", &a) ? LvN_EqS(&a, ctrl) : -1;
-	Native_Free(&a);
-	return r;
-}
-
-/* the player is there (usr into *usr): 1, 0, -1 */
-static int Pr_Usr(nativeVal_t *usr) {
-	return Mode_UsrHandle(usr) ? Native_True(usr) : -1;
-}
-
-/* the empty text "" as a value */
-static const nativeVal_t *Pr_Empty(void) {
-	static nativeVal_t empty = { .type = NV_STR };
-	return &empty;
 }
 
 /* SScorer.SetLabelText(Scrap.GetLangStr("Generics_ForbiddenArea_Label"), time + 0.5) through its seam */
@@ -320,9 +237,9 @@ static byte PressMap_StartAlarmator(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	Native_SetNone(&usr);
-	int on = Pr_Usr(&usr);
+	int on = LvN_Usr(&usr);
 	if (on > 0) {
-		on = Pr_CtrlIs(&usr, "Gear");
+		on = LvN_CtrlIs(&usr, "Gear");
 		on = on < 0 ? -1 : !on;
 	}
 	Native_Free(&usr);
@@ -385,7 +302,7 @@ static byte PressMap_ActivateAlarm(const nativeVal_t *a, nativeVal_t *out) {
 		ok = zero ? LV_OWN(MAP, "StartAlarmator", NULL, "") : LV_OWN(MAP, "RemoteMsg", NULL, "i", 0L);
 	} else {
 		Native_SetNone(&usr);
-		int gear = zero ? zero : Mode_EntityH(&a[1], &usr) ? Pr_CtrlIs(&usr, "Gear") : -1;
+		int gear = zero ? zero : Mode_EntityH(&a[1], &usr) ? LvN_CtrlIs(&usr, "Gear") : -1;
 		Native_Free(&usr);
 		ok = gear > 0 ? Mode_GVarSetS("GuaranteedChars", ",Gear,") && LV_OWN(MAP, "ForbiddenMsg", NULL, "") :
 			gear == 0 && LV_OWN(MAP, "RemoteMsg", NULL, "i", 0L);
@@ -504,11 +421,6 @@ static byte PressMap_BrowseAlarmLaunchers(const nativeVal_t *a, nativeVal_t *out
 	return LV_OWN(MAP, "CreateActivators", NULL, "");
 }
 
-/* CharsNPC.SetReposChars(name, n) */
-static byte Pr_Repos(const char *name, long n) {
-	return LV_CALL("CharsNPC", "SetReposChars", NULL, "si", name, n);
-}
-
 /* CharConversor.AvailableChars.remove(v) of the list of CharConversor in place (OBJLIB 5) */
 static byte Pr_NotAvailable(const char *name) {
 	nativeVal_t v, l;
@@ -552,21 +464,21 @@ static byte PressMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	byte isDemo = Native_True(&v);
 	Native_Free(&v);
 	if (!isDemo) {
-		if (!Pr_Repos("Nurse", 3)) {
+		if (!LvN_Repos("Nurse", 3)) {
 			return 0;
 		}
 		int m = LvN_PcOr(MAP, "_Messenger");
 		Native_SetInt(&v, 0);
-		if (m < 0 || (m ? !Pr_Repos("Messenger", 2) : !Mode_Import("Messenger") || !Mode_SetModVar("Messenger", "MakeMDP", &v))) {
+		if (m < 0 || (m ? !LvN_Repos("Messenger", 2) : !Mode_Import("Messenger") || !Mode_SetModVar("Messenger", "MakeMDP", &v))) {
 			return 0;
 		}
 	}
-	if (!Pr_Repos("Sentinel", 3) || !Pr_Repos("Police", 5) || !Pr_Repos("Desktop", 3)) {
+	if (!LvN_Repos("Sentinel", 3) || !LvN_Repos("Police", 5) || !LvN_Repos("Desktop", 3)) {
 		return 0;
 	}
 	for (int i = 0; i < 3; i++) {
 		int go = LvN_PcOr(MAP, pcs[i][0]);
-		if (go < 0 || (go && !Pr_Repos(pcs[i][1], 3))) {
+		if (go < 0 || (go && !LvN_Repos(pcs[i][1], 3))) {
 			return 0;
 		}
 	}
@@ -591,16 +503,6 @@ static byte PressMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	return 1;
 }
 
-/* InTraffic.<list> = the models and InTraffic.<num> = count */
-static byte Pr_Traffic(const char *list, const char *const *models, const char *num, long count) {
-	nativeVal_t l, c;
-	Mode_Texts(&l, models, -1);
-	Native_SetInt(&c, count);
-	byte ok = Mode_SetModVar("InTraffic", list, &l) && Mode_SetModVar("InTraffic", num, &c);
-	Native_Free(&l);
-	return ok;
-}
-
 /* Init(LevelPath): the elevators and the metro, the boss room after the mental controller, the fake traffic, the
  * alarm area, the bureau gone when it was taken */
 static byte PressMap_Init(const nativeVal_t *a, nativeVal_t *out) {
@@ -619,8 +521,8 @@ static byte PressMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	Native_Free(&l2);
 	if (!ok || !LV_CALL("Metro", "SetAsMetro", NULL, "s", "DM_Door_Metro_Press") ||
 		(LvN_SaveIs("Press.MentalControllerStatus", "1") && !Pr_BossDoor("NoOneGroupGateKeeper", "GateKeeper.UseDoor", NULL)) ||
-		!Mode_Import("InTraffic") || !Pr_Traffic("N_TrafficList", light, "N_NumTraffic", 30) || !Pr_Traffic("M_TrafficList", none, "M_NumTraffic", 0) ||
-		!Pr_Traffic("H_TrafficList", none, "H_NumTraffic", 0) || !LV_CALL("InTraffic", "LoadFakeTraffic", NULL, "") ||
+		!Mode_Import("InTraffic") || !LvN_InTraffic("N_TrafficList", light, -1, "N_NumTraffic", 30) || !LvN_InTraffic("M_TrafficList", none, -1, "M_NumTraffic", 0) ||
+		!LvN_InTraffic("H_TrafficList", none, -1, "H_NumTraffic", 0) || !LV_CALL("InTraffic", "LoadFakeTraffic", NULL, "") ||
 		!LV_CALL("InTraffic", "FakeTraffic", NULL, "") || !LV_OWN(MAP, "BrowseAlarmLaunchers", NULL, "")) {
 		return 0;
 	}
@@ -1042,8 +944,8 @@ static byte FicusBanker_Init(const nativeVal_t *a, nativeVal_t *out) {
 /* CreatePoliceFicusInit(e): Ficus talks the mission and stays where he is */
 static byte FicusBanker_CreatePoliceFicusInit(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
-	return LvN_SetS(&a[0], "UseFunc", "Mission_FicusBanker.FicusMissionSpeech") && LvN_Stay(&a[0], 6, Pr_Empty()) &&
-		Pr_SetLang(&a[0], "Descriptor", "CharName_Ficus");
+	return LvN_SetS(&a[0], "UseFunc", "Mission_FicusBanker.FicusMissionSpeech") && LvN_Stay(&a[0], 6, LvN_Empty()) &&
+		LvN_SetLang(&a[0], "Descriptor", "CharName_Ficus");
 }
 
 /* Speech.SpeechRoutines[kind](UsrName, CharName, optId, FullOption) (OBJLIB 5: the functions of Speech) */
@@ -1068,7 +970,7 @@ static byte FicusBanker_FicusMissionSpeech(const nativeVal_t *a, nativeVal_t *ou
 		return 0;
 	}
 	Native_SetNone(&usr);
-	int dt = Mode_UsrHandle(&usr) ? Pr_CtrlIs(&usr, "Dtritus") : -1;
+	int dt = Mode_UsrHandle(&usr) ? LvN_CtrlIs(&usr, "Dtritus") : -1;
 	Native_Free(&usr);
 	if (dt <= 0) {
 		return dt == 0 && Mode_Spch("Mission_TalkToFicus_Ficus_InitMsg2", "Mission_TalkToFicus_Ficus_InitAns2", NULL);
@@ -1102,7 +1004,7 @@ static byte FicusBanker_FicusMissionSpeech(const nativeVal_t *a, nativeVal_t *ou
 /* CreateBankDirectorScrapusInit(e) */
 static byte FicusBanker_CreateBankDirectorScrapusInit(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
-	return LvN_SetS(&a[0], "UseFunc", "Mission_FicusBanker.ScrapusMissionSpeech") && Pr_SetLang(&a[0], "Descriptor", "CharName_Scrapus");
+	return LvN_SetS(&a[0], "UseFunc", "Mission_FicusBanker.ScrapusMissionSpeech") && LvN_SetLang(&a[0], "Descriptor", "CharName_Scrapus");
 }
 
 /* ScrapusMissionSpeech(UsrName, CharName, optId, FullOption) */
@@ -1166,7 +1068,7 @@ static byte FicusBanker_SpawnCheck(const nativeVal_t *a, nativeVal_t *out) {
 		LvN_CreateAt(Mode_S(&t, "MissionCheck"), &a[1], "Item", l) && Mode_G(FB, "Model_Check", m) && Mode_VModel(l, m) &&
 		LvN_SetI(l, "Radius", 60) && LvN_SetI(l, "AppearsIfFree", 0) && LvN_SetI(l, "AutoFace", 0) && LvN_SetI(l, "OnlyUser", 1) &&
 		LvN_SetF(l, "rTime", 0.25) && LvN_SetS(l, "OnTake", "Mission_FicusBanker.TakeCheck") &&
-		LvN_CreateAt(Mode_S(&t, "MissionCheckArrow"), &a[1], "WithLife", l2) && Mode_VSet(l2, "CamTgt", cam) && Pr_TargetName(l2);
+		LvN_CreateAt(Mode_S(&t, "MissionCheckArrow"), &a[1], "WithLife", l2) && Mode_VSet(l2, "CamTgt", cam) && LvN_TargetName(l2);
 	return Mode_Done(&t, ok);
 }
 
@@ -1368,7 +1270,7 @@ static byte Gc_SwitchesOff(byte use) {
 		Native_SetNone(&sw);
 		Native_SetNone(&e);
 		ok = Native_SeqItem(&switches, i, &sw) && Mode_EntityH(&sw, &e) && (!Native_True(&e) || (LvN_SetS(&e, "DefLoop", "StayOFF") &&
-			LvN_SetS(&e, "Action", "OFF") && (use ? Pr_SwitchUse(&e) && Pr_Activate(&e, 0) : LvN_SetS(&e, "UseFunc", "") &&
+			LvN_SetS(&e, "Action", "OFF") && (use ? Pr_SwitchUse(&e) && LvN_Activate(&e, 0) : LvN_SetS(&e, "UseFunc", "") &&
 			LvN_SetI(&e, "ArrowCanUse", 0))));
 		Native_Free(&sw);
 		Native_Free(&e);
@@ -1410,7 +1312,7 @@ static byte CrazyData_OnSwitchPressed(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	/* SLogic.SendSentinelToWatch by name: fc-r7b-gc records it (OBJLIB 7) */
 	if (!LvN_SetS(e, "DefLoop", "StayON") || !LvN_SetS(e, "Action", "ON") || !LvN_SetS(e, "UseFunc", "") || !LvN_SetI(e, "ArrowCanUse", 0) ||
-		!Pr_Activate(e, 0) || !Mode_VGet(e, "Pos", pos) || !LV_CALL("SLogic", "SendSentinelToWatch", NULL, "v", pos) ||
+		!LvN_Activate(e, 0) || !Mode_VGet(e, "Pos", pos) || !LV_CALL("SLogic", "SendSentinelToWatch", NULL, "v", pos) ||
 		!Mode_GOpI(GC, "switchesRemaining", '-', 1) || !LV_OWN(GC, "MissionScorer", NULL, "i", 0L) || !Mode_G(GC, "switchesRemaining", left)) {
 		return Mode_Done(&t, 0);
 	}
@@ -1460,7 +1362,7 @@ static byte CrazyData_GoToPressRoom(const nativeVal_t *a, nativeVal_t *out) {
 		LvN_SetF(l, "rTime", 0.25) && LvN_SetS(l, "OnTake", "Mission_GetCrazyData.OnFakeBureauTaken") && Mode_VGet(l, "Name", ln) &&
 		Native_Arith('+', Mode_S(&t, "CheckArrow"), ln, name);
 	Native_Free(bp);
-	ok = ok && Mode_G(GC, "bureauPos", bp) && LvN_CreateAt(name, bp, "WithLife", l2) && Mode_VSet(l2, "CamTgt", cam) && Pr_TargetName(l2);
+	ok = ok && Mode_G(GC, "bureauPos", bp) && LvN_CreateAt(name, bp, "WithLife", l2) && Mode_VSet(l2, "CamTgt", cam) && LvN_TargetName(l2);
 	return Mode_Done(&t, ok);
 }
 
@@ -1481,7 +1383,7 @@ static byte CrazyData_OnFakeBureauTaken(const nativeVal_t *a, nativeVal_t *out) 
 	(void)out;
 	Native_SetNone(&usr);
 	Native_SetNone(&un);
-	int u = Pr_Usr(&usr);
+	int u = LvN_Usr(&usr);
 	int me = u > 0 ? (Mode_VGet(&usr, "Name", &un) ? Mode_Cmp(&a[1], "==", &un) : -1) : u;
 	byte ok = me >= 0 && (!me || (Pr_DelIf(&a[0]) && Gc_ArrowDel(&a[0]) &&
 		Pr_Remote("Mission_GoToPressRoom_RemoteMessage1", "DeepThroat", GC, "PreFindHumphrey", 1)));
@@ -1506,7 +1408,7 @@ static byte Pr_MissionTarget(const char *name, const char *use, const long *pos)
 	if (!ok || !LvN_Entity(name, &e)) {
 		return 0;
 	}
-	ok = !Native_True(&e) || ((!pos || Pr_SetInts3(&e, "Pos", pos[0], pos[1], pos[2])) && LvN_SetS(&e, "UseFunc", use) && Pr_TargetName(&e));
+	ok = !Native_True(&e) || ((!pos || LvN_SetInts3(&e, "Pos", pos[0], pos[1], pos[2])) && LvN_SetS(&e, "UseFunc", use) && LvN_TargetName(&e));
 	Native_Free(&e);
 	return ok;
 }
@@ -1532,7 +1434,7 @@ static byte CrazyData_HumphreySpeech(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_EntityH(&a[1], &e)) {
 		return 0;
 	}
-	byte ok = !Native_True(&e) || (Pr_Activate(&e, 0) && LvN_SetS(&e, "UseFunc", "CharsNPC.GenericNPCSpeech"));
+	byte ok = !Native_True(&e) || (LvN_Activate(&e, 0) && LvN_SetS(&e, "UseFunc", "CharsNPC.GenericNPCSpeech"));
 	Native_Free(&e);
 	return ok && LvN_OnEnd(GC, "PreFindTrurl", NULL) && Mode_Spch("Mission_FindHumphrey_Humphrey_InitMsg1", "Mission_FindHumphrey_Humphrey_InitAns1", NULL);
 }
@@ -1566,7 +1468,7 @@ static byte CrazyData_TrurlSpeech(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	byte ok;
 	if (target > 0) {
-		ok = Pr_Activate(&e, 0) && LvN_OnEnd(GC, "SetNextMission", NULL);
+		ok = LvN_Activate(&e, 0) && LvN_OnEnd(GC, "SetNextMission", NULL);
 	} else if (target == 0) {
 		ok = LvN_ModNone("Speech", "OnEndOfSpeech") && Mode_SetModVar("Speech", "OnEndOfSpeechParams", LvN_NoArgs());
 	} else {
@@ -1678,7 +1580,7 @@ static byte Pr_CreateHuman(const nativeVal_t *e, const char *module, int nouse) 
 	if (!Mode_Put(module, "human", NULL, e) || !Mode_G(module, "human", &h)) {
 		return 0;
 	}
-	byte ok = Pr_SetLang(&h, "Descriptor", "CharName_Human") && (!nouse || LvN_SetS(&h, "UseFunc", "")) && LvN_SetI(&h, "ArrowCanUse", 0);
+	byte ok = LvN_SetLang(&h, "Descriptor", "CharName_Human") && (!nouse || LvN_SetS(&h, "UseFunc", "")) && LvN_SetI(&h, "ArrowCanUse", 0);
 	Native_Free(&h);
 	return ok;
 }
@@ -1686,9 +1588,9 @@ static byte Pr_CreateHuman(const nativeVal_t *e, const char *module, int nouse) 
 /* the human stops and complains (SAI state 0, the message msg, not the target) */
 static byte Pr_HumanStops(const char *module, const char *msg) {
 	nativeVal_t hn;
-	byte ok = Pr_GAttr(module, "human", "Name", &hn) && CHAR_STATE("iv", 0L, &hn);
+	byte ok = LvN_GAttr(module, "human", "Name", &hn) && CHAR_STATE("iv", 0L, &hn);
 	Native_Free(&hn);
-	return ok && Pr_Remote(msg, "Human", NULL, NULL, 0) && Pr_ActivateG(module, "human", 0);
+	return ok && Pr_Remote(msg, "Human", NULL, NULL, 0) && LvN_GActivate(module, "human", 0);
 }
 
 /* OnPossession(newCharName, pos): the human will not follow a possessed character */
@@ -1703,8 +1605,8 @@ static byte Pr_HumanOnExitConversor(const char *module, const char *msg) {
 		return 0;
 	}
 	Native_SetNone(&usr);
-	int u = Pr_Usr(&usr);
-	int dt = u > 0 ? Pr_CtrlIs(&usr, "Dtritus") : u;
+	int u = LvN_Usr(&usr);
+	int dt = u > 0 ? LvN_CtrlIs(&usr, "Dtritus") : u;
 	Native_Free(&usr);
 	if (u <= 0) {
 		return u == 0;
@@ -1712,7 +1614,7 @@ static byte Pr_HumanOnExitConversor(const char *module, const char *msg) {
 	if (dt == 0) {
 		return Pr_HumanStops(module, msg);
 	}
-	return dt > 0 && Pr_ActivateG(module, "human", 2);
+	return dt > 0 && LvN_GActivate(module, "human", 2);
 }
 
 /* `SVec.ModSqr(SVec.Sub(a.Pos, b.Pos)) <= d * d` with d the global dist of module: 1, 0, -1 */
@@ -1730,7 +1632,7 @@ static byte Pr_CheckHumanDist(const char *module, nativeVal_t *out) {
 	nativeVal_t usr, h;
 	Native_SetNone(&usr);
 	Native_SetNone(&h);
-	int near = Pr_Usr(&usr);
+	int near = LvN_Usr(&usr);
 	if (near > 0) {
 		near = Mode_G(module, "human", &h) ? Pr_Within(&usr, &h, module, "maxHumanDist") : -1;
 	}
@@ -1744,7 +1646,7 @@ static byte Pr_CheckHumanDist(const char *module, nativeVal_t *out) {
 static byte Pr_HumanFollow(const char *module, const nativeVal_t *usr) {
 	nativeVal_t hn, un;
 	Native_SetNone(&un);
-	byte ok = Pr_GAttr(module, "human", "Name", &hn) && Mode_VGet(usr, "Name", &un) && CHAR_STATE("ivvd", 3L, &hn, &un, 1.0);
+	byte ok = LvN_GAttr(module, "human", "Name", &hn) && Mode_VGet(usr, "Name", &un) && CHAR_STATE("ivvd", 3L, &hn, &un, 1.0);
 	Native_Free(&hn);
 	Native_Free(&un);
 	return ok;
@@ -1817,7 +1719,7 @@ static byte GoWithHuman_Init(const nativeVal_t *a, nativeVal_t *out) {
 		Native_SetInt(Native_Append(ang), 0);
 	}
 	ok = ok && Mode_VSet(sw, "Ang", ang) && LvN_SetI(sw, "ActiveCMask", 0) && LvN_SetI(sw, "MapCollision", 1) && Mode_VSet(sw, "CamTgt", cam) &&
-		Pr_TargetName(sw) && Mode_UsrHandle(usr) && Pr_HumanFollow(GW, usr) && Pr_ActivateG(GW, "human", 2) &&
+		LvN_TargetName(sw) && Mode_UsrHandle(usr) && Pr_HumanFollow(GW, usr) && LvN_GActivate(GW, "human", 2) &&
 		PR_HOOK("CharConversor", "OnPossession", GW, "OnPossession") && PR_HOOK("CharConversor", "afterExitConversor", GW, "OnExitConversor") &&
 		LV_OWN(GW, "CheckMaxDist", NULL, "") && LV_OWN(GW, "LoadScene", NULL, "") && LV_OWN(GW, "LoadScene2", NULL, "");
 	return Mode_Done(&t, ok);
@@ -1840,7 +1742,7 @@ static byte GoWithHuman_OnExitConversor(const nativeVal_t *a, nativeVal_t *out) 
 static int Pr_HumanState(const char *module, const char *op, long i) {
 	nativeVal_t hn, st;
 	Native_SetNone(&st);
-	int r = Pr_GAttr(module, "human", "Name", &hn) && LV_CALL("SAI", "GetStateChar", &st, "v", &hn) ? Mode_CmpI(&st, op, i) : -1;
+	int r = LvN_GAttr(module, "human", "Name", &hn) && LV_CALL("SAI", "GetStateChar", &st, "v", &hn) ? Mode_CmpI(&st, op, i) : -1;
 	Native_Free(&hn);
 	Native_Free(&st);
 	return r;
@@ -1855,17 +1757,17 @@ static byte GoWithHuman_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_Later(1.0, GW, "CheckMaxDist", NULL, 0, "CheckMaxDist")) {
 		return Mode_Done(&t, 0);
 	}
-	int u = Pr_Usr(usr);
+	int u = LvN_Usr(usr);
 	if (u <= 0) {
 		return Mode_Done(&t, u == 0);
 	}
-	int near = Pr_GAttr(GW, "human", "Name", hn) && LV_OWN(GW, "CheckHumanDist", r, "") ? Native_True(r) : -1;
+	int near = LvN_GAttr(GW, "human", "Name", hn) && LV_OWN(GW, "CheckHumanDist", r, "") ? Native_True(r) : -1;
 	if (near == 0) {
 		int moving = LV_CALL("SAI", "GetStateChar", st, "v", hn) ? Mode_CmpI(st, "!=", 0) : -1;
 		return Mode_Done(&t, moving >= 0 && (!moving || (CHAR_STATE("iv", 0L, hn) && Pr_Remote("Mission_GoWithHuman_RemoteMessage1", "Human", NULL,
 			NULL, 0))));
 	}
-	int dt = near > 0 ? Pr_CtrlIs(usr, "Dtritus") : -1;
+	int dt = near > 0 ? LvN_CtrlIs(usr, "Dtritus") : -1;
 	if (dt <= 0) {
 		return Mode_Done(&t, dt == 0);
 	}
@@ -2037,7 +1939,7 @@ static byte Pr_FakeSpeech(const char *name, const char *ctrl, const char *talk) 
 	Native_SetInt(&y, -1573);
 	Native_SetInt(&z, -1949);
 	Native_SetNone(&kb);
-	byte ok = LvN_Create(&n, &x, &y, &z, "WithLife", &kb) && Pr_SetInts3(&kb, "Ang", 0, 0, 0) && LvN_SetS(&kb, "ActCtrl", ctrl) &&
+	byte ok = LvN_Create(&n, &x, &y, &z, "WithLife", &kb) && LvN_SetInts3(&kb, "Ang", 0, 0, 0) && LvN_SetS(&kb, "ActCtrl", ctrl) &&
 		(!talk || (LvN_SetS(&kb, "Action", talk) && LvN_SetS(&kb, "DefLoop", talk)));
 	Native_Free(&n);
 	Native_Free(&kb);
@@ -2296,7 +2198,7 @@ static byte MeetBoss_CreateHumphreyInit(const nativeVal_t *a, nativeVal_t *out) 
 /* CreateBertoInit(e): Berto talks and stays where he is */
 static byte MeetBoss_CreateBertoInit(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
-	return LvN_SetS(&a[0], "UseFunc", "Mission_MeetBoss.BertoSpeech") && LvN_Stay(&a[0], 6, Pr_Empty());
+	return LvN_SetS(&a[0], "UseFunc", "Mission_MeetBoss.BertoSpeech") && LvN_Stay(&a[0], 6, LvN_Empty());
 }
 
 /* Speech.AutoSpeech(UsrName, CharName, optId, FullOption) */
@@ -2313,7 +2215,7 @@ static byte MeetBoss_BertoSpeech(const nativeVal_t *a, nativeVal_t *out) {
 		return LvN_PutI(MB, "FirstBertoSpeech", 0) && Mode_Target(NULL) &&
 			Mode_EntSetS("DM_Door_Metro_Press", "UseFunc", "Mission_MeetBoss.OnTryingToExit2") &&
 			Mode_EntSetS("DM_Door_Elevator_Press", "OnObjSlot", "!CloseDoorSlot") && Pr_DelIfS("Berto_MeetBos") &&
-			Pr_GSetI(MB, "sebastian", "Active", 1) && LV_OWN(MB, "PlayProlog0", NULL, "");
+			Mode_GSetI(MB, "sebastian", "Active", 1) && LV_OWN(MB, "PlayProlog0", NULL, "");
 	}
 	return first == 0 && Pr_AutoSpeech(a);
 }
@@ -2423,7 +2325,7 @@ static byte MeetBoss_Init(const nativeVal_t *a, nativeVal_t *out) {
 	if (LvN_EqS(&state, "MeetBoss")) {
 		ok = Mode_Import("Init") && Mode_Import("Elevator") && Pr_Exits("Mission_MeetBoss.OnTryingToExit") && LV_OWN(MB, "LoadProlog0Scene", NULL, "") &&
 			LV_OWN(MB, "LoadProlog1Scene", NULL, "") && LV_OWN(MB, "LoadProlog2Scene", NULL, "") &&
-			Mode_EntSetS("DM_Door_PressSlidingDoor_01", "OnObjSlot", "") && Mode_Target("Berto_MeetBos") && Pr_GSetI(MB, "sebastian", "Active", 0) &&
+			Mode_EntSetS("DM_Door_PressSlidingDoor_01", "OnObjSlot", "") && Mode_Target("Berto_MeetBos") && Mode_GSetI(MB, "sebastian", "Active", 0) &&
 			Mode_GVarSetI("GenCharAttackActive", 0);
 		int demo = ok ? Pr_Demo() : -1;
 		Native_SetInt(&five, 5);
@@ -2463,7 +2365,7 @@ static byte Mb_PlayProlog0(void) {
 	nativeVal_t ch, gc;
 	Native_SetNone(&gc);
 	Native_SetNone(&ch);
-	byte ok = Mode_UsrHandle(&ch) && Pr_SetInts3(&ch, "Pos", -1114, -312, 7562) && Pr_SetInts3(&ch, "Ang", 0, 0, 0) &&
+	byte ok = Mode_UsrHandle(&ch) && LvN_SetInts3(&ch, "Pos", -1114, -312, 7562) && LvN_SetInts3(&ch, "Ang", 0, 0, 0) &&
 		LV_CALL("Scene", "Play", NULL, "s", "Prolog0") && PR_HOOK("Scene", "EndOfSceneCallback", MB, "PlayProlog1") && Mode_Target("");
 	Native_Free(&ch);
 	if (!ok || !LvN_Entity("GateKeeper_DTritusBossRoom", &gc)) {
@@ -2521,7 +2423,7 @@ static byte MeetBoss_CreateBattery(const nativeVal_t *a, nativeVal_t *out) {
 	byte ok = Mode_Import("MisItems") && Mode_Import("MissionsFuncs") && LvN_GObj(MB, "AssingOnTakeBattery", fn) &&
 		LV_CALL("MisItems", "CreateBattery", b, "vv", at, fn) && Mode_VGet(b, "Pos", pos) && Mode_VGet(b, "Name", bn) &&
 		Native_Arith('+', bn, Mode_S(&t, "CheckArrow"), name) && LvN_CreateAt(name, pos, "WithLife", b2) && Mode_VSet(b2, "CamTgt", cam) &&
-		Mode_DelSchedS("DeleteCoin") && Pr_TargetName(b2) && Pr_DtritusKeys("", "") && Pr_EnergyBar(0);
+		Mode_DelSchedS("DeleteCoin") && LvN_TargetName(b2) && Pr_DtritusKeys("", "") && Pr_EnergyBar(0);
 	return Mode_Done(&t, ok);
 }
 
@@ -2758,7 +2660,7 @@ static byte MeetBoss_UseConversor(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	Native_SetNone(&usr);
-	int u = Pr_Usr(&usr);
+	int u = LvN_Usr(&usr);
 	Native_Free(&usr);
 	if (u <= 0) {
 		return u == 0;
@@ -2789,7 +2691,7 @@ static byte MeetBoss_CheckConversion(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	Native_SetNone(&usr);
-	int dt = Mode_UsrHandle(&usr) ? Pr_CtrlIs(&usr, "Dtritus") : -1;
+	int dt = Mode_UsrHandle(&usr) ? LvN_CtrlIs(&usr, "Dtritus") : -1;
 	Native_Free(&usr);
 	if (dt <= 0) {
 		return dt == 0;
@@ -2841,16 +2743,6 @@ static byte MeetBoss_HumphreySpeech(const nativeVal_t *a, nativeVal_t *out) {
 	return drives == 0 && Pr_Remote("Mission_FirstCrazyBet_RemoteMessage10", "CrazyGambler", NULL, NULL, 0);
 }
 
-/* `text + v` of the script into out */
-static byte Pr_Cat(const char *text, const nativeVal_t *v, nativeVal_t *out) {
-	nativeVal_t a;
-	LvN_Str(&a, text);
-	Native_SetNone(out);
-	byte ok = Native_Arith('+', &a, v, out);
-	Native_Free(&a);
-	return ok;
-}
-
 /* SetNextMission(): the race against Humphrey next (in Outskirts in the demo), the crazy wind on; a new game from
  * the way point with a character that can drive */
 static byte MeetBoss_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
@@ -2874,7 +2766,7 @@ static byte MeetBoss_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 		Native_SetNone(&tail);
 		Native_SetNone(&spawn);
 		ok = LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_HumphreyRace", "DownTown") && LvN_ModGet("Init", "Path", &path) &&
-			Native_Slice(&path, 7, 0x7fffffff, &tail) && Pr_Cat("DM_Player_Spawn_", &tail, &spawn) &&
+			Native_Slice(&path, 7, 0x7fffffff, &tail) && LvN_Cat("DM_Player_Spawn_", &tail, &spawn) &&
 			LV_CALL("SaveGame", "MarkWayPoint", NULL, "sv", "Levels/DownTown", &spawn);
 		Native_Free(&path);
 		Native_Free(&tail);
@@ -3009,7 +2901,7 @@ static byte TalkToBoss_Init(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	if (LvN_SaveIs("MissionState", "FreeHuman2")) {
 		return Mode_Import("MissionsFuncs") && LV_OWN(TB, "LoadScene", NULL, "") && LV_OWN(TB, "HideHumanIntoBureau", NULL, "") &&
-			Pr_ActivateG(TB, "human", 2);
+			LvN_GActivate(TB, "human", 2);
 	}
 	return LV_OWN(TB, "GoTalkToBoss", NULL, "");
 }
@@ -3027,7 +2919,7 @@ static byte TalkToBoss_HideHumanIntoBureau(const nativeVal_t *a, nativeVal_t *ou
 	byte ok = LvN_SetS(&bure, "OnObjSlot", "") && LvN_SetS(&bure, "Action", "Closed");
 	Native_Free(&bure);
 	Native_SetNone(&usr);
-	int u = ok ? Pr_Usr(&usr) : -1;
+	int u = ok ? LvN_Usr(&usr) : -1;
 	if (u > 0) {
 		ok = Pr_HumanFollow(TB, &usr) && PR_HOOK("CharConversor", "OnPossession", TB, "OnPossession") &&
 			PR_HOOK("CharConversor", "afterExitConversor", TB, "OnExitConversor") && LV_OWN(TB, "CreateSceneLaunchers", NULL, "") &&
@@ -3098,12 +2990,12 @@ static byte TalkToBoss_LaunchScene(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetNone(&h);
 	(void)out;
 	Native_SetNone(&usr);
-	int other = Pr_GAttr(TB, "human", "Name", &hn) ? Mode_Cmp(&a[1], "!=", &hn) : -1;
+	int other = LvN_GAttr(TB, "human", "Name", &hn) ? Mode_Cmp(&a[1], "!=", &hn) : -1;
 	Native_Free(&hn);
 	if (other) {
 		return other > 0;
 	}
-	int u = Pr_Usr(&usr);
+	int u = LvN_Usr(&usr);
 	Native_Free(&usr);
 	if (u <= 0) {
 		return u == 0;
@@ -3120,7 +3012,7 @@ static byte TalkToBoss_LaunchScene(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	ok = Mode_VDel(&h);
 	Native_Free(&h);
-	return ok && Pr_GNone(TB, "human") && Tb_BossTalk() && LV_CALL("Scene", "Play", NULL, "s", "HideHuman") &&
+	return ok && LvN_PutNone(TB, "human") && Tb_BossTalk() && LV_CALL("Scene", "Play", NULL, "s", "HideHuman") &&
 		PR_HOOK("Scene", "EndOfSceneCallback", TB, "EndOfScene");
 }
 
@@ -3162,17 +3054,17 @@ static byte TalkToBoss_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	Native_SetNone(&usr);
 	Native_SetNone(&r);
-	int u = Pr_Usr(&usr);
+	int u = LvN_Usr(&usr);
 	byte ok = u >= 0;
 	if (u > 0) {
 		int near = LV_OWN(TB, "CheckHumanDist", &r, "") ? Native_True(&r) : -1;
 		if (near == 0) {
 			int moving = Pr_HumanState(TB, "!=", 0);
-			ok = moving >= 0 && (!moving || (Pr_GAttr(TB, "human", "Name", &hn) && CHAR_STATE("iv", 0L, &hn) &&
+			ok = moving >= 0 && (!moving || (LvN_GAttr(TB, "human", "Name", &hn) && CHAR_STATE("iv", 0L, &hn) &&
 				Pr_Remote("Mission_SetHumanFree_RemoteMessage2", "Human", NULL, NULL, 0)));
 			Native_Free(&hn);
 		} else if (near > 0) {
-			int dt = Pr_CtrlIs(&usr, "Dtritus");
+			int dt = LvN_CtrlIs(&usr, "Dtritus");
 			ok = dt >= 0 && (!dt || Pr_HumanFollow(TB, &usr));
 		} else {
 			ok = 0;
@@ -3216,7 +3108,7 @@ static byte TalkToBoss_BossSpeech(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	Native_SetNone(&usr);
-	int dt = Mode_UsrHandle(&usr) ? Pr_CtrlIs(&usr, "Dtritus") : -1;
+	int dt = Mode_UsrHandle(&usr) ? LvN_CtrlIs(&usr, "Dtritus") : -1;
 	Native_Free(&usr);
 	if (dt <= 0) {
 		return dt == 0 && Mode_Spch("Mission_TalkToBoss_Boss_InitMsg2", "Mission_TalkToBoss_Boss_InitAns2", NULL);
@@ -3325,7 +3217,7 @@ static byte DeepThroat_Init(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	Native_SetNone(&elv);
-	byte ok = Pr_BossDoor("DtritusGroupGateKeeper", "Mission_WhoIsDeepThroat.UseTeleporter", &elv) && Pr_TargetName(&elv) &&
+	byte ok = Pr_BossDoor("DtritusGroupGateKeeper", "Mission_WhoIsDeepThroat.UseTeleporter", &elv) && LvN_TargetName(&elv) &&
 		LV_OWN(WD, "LoadScene", NULL, "");
 	Native_Free(&elv);
 	return ok;
@@ -3420,7 +3312,7 @@ static byte Baddie_Init(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetNone(&elv);
 	byte ok = Pr_BossDoor("NoOneGroupGateKeeper", "GateKeeper.UseDoor", &elv);
 	if (ok && LvN_SaveIs("MissionState", "TalkToBoss")) {
-		ok = Pr_TargetName(&elv) && LV_OWN(WB, "InitScene", NULL, "v", &a[0]) && LV_OWN(WB, "PlayScene", NULL, "");
+		ok = LvN_TargetName(&elv) && LV_OWN(WB, "InitScene", NULL, "v", &a[0]) && LV_OWN(WB, "PlayScene", NULL, "");
 	} else if (ok) {
 		ok = LV_OWN(WB, "GoForHuman", NULL, "");
 	}
@@ -3441,7 +3333,7 @@ static byte Baddie_GoForHuman(const nativeVal_t *a, nativeVal_t *out) {
 		Native_Arith('+', en, Mode_S(&t, "CheckArrow"), name) && LvN_CreateAt(name, pos, "WithLife", e2) && LvN_SetI(e2, "ArrowCanUse", 1) &&
 		LvN_SetI(e2, "UseAngSel", 1) && LvN_SetI(e2, "UseMapCheck", 0) && LvN_SetI(e2, "VRadius", 60) && LvN_SetI(e2, "ArrnOpt", 0) &&
 		Native_Arith('+', Mode_S(&t, "Use:"), use, opt) && Mode_VSet(e2, "ArrOpt0", opt) && Mode_VSet(e2, "CamTgt", cam) &&
-		LvN_SetS(e2, "UseFunc", "Mission_WhoIsTheBaddie.OnBureauUsed") && Pr_TargetName(e2);
+		LvN_SetS(e2, "UseFunc", "Mission_WhoIsTheBaddie.OnBureauUsed") && LvN_TargetName(e2);
 	return Mode_Done(&t, ok);
 }
 

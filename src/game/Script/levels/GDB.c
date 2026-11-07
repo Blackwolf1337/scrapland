@@ -98,11 +98,6 @@ static byte Gd_Range1(const nativeVal_t *n1, long *count) {
 	return n >= 0;
 }
 
-/* the scan bar of IntoTheGDB blinks (lost: Blink 1, IsAutoUpdatable 0) or runs */
-static byte Gd_Blink(int lost) {
-	return LvN_Set0I("ScanRemainingTime", "Blink", lost) && LvN_Set0I("ScanRemainingTime", "IsAutoUpdatable", !lost);
-}
-
 /* SVec.ModSqr(SVec.Sub(e.Pos, usr.Pos)) < (far 0) or > (far 1) MAX_SCANNING_DIST * MAX_SCANNING_DIST of IntoTheGDB:
  * 1, 0, -1 */
 static int Gd_Scan(const nativeVal_t *e, const nativeVal_t *usr, byte far) {
@@ -612,11 +607,11 @@ static byte Into_ScanShip(void) {
 		if (far > 0) {
 			Mode_ScorerGet(0, "ScanRemainingTime", "Blink", &blink);
 			if (LvN_EqI(&blink, 0)) {
-				ok = Gd_Blink(1) && LvN_LaterG(IG, "MAX_TIME_TARGET_LOST", "CheckContinueScanning", NULL, 0);
+				ok = LvN_ScanBlink(1) && LvN_LaterG(IG, "MAX_TIME_TARGET_LOST", "CheckContinueScanning", NULL, 0);
 			}
 			Native_Free(&blink);
 		} else {
-			ok = far == 0 && Gd_Blink(0);
+			ok = far == 0 && LvN_ScanBlink(0);
 		}
 		Native_Free(&e);
 		Native_Free(&usr);
@@ -639,7 +634,7 @@ static byte Into_ScanShip(void) {
 			Native_Free(&cur);
 			ok = ok && Mode_G(IG, "currentScannedShip", &cur) && Mode_GVarSet("CurrentWaypointName", &cur);
 			Native_Free(&cur);
-			ok = ok && LvN_Set0I("ScanStatusText", "Visible", 1) && Gd_Blink(0) &&
+			ok = ok && LvN_Set0I("ScanStatusText", "Visible", 1) && LvN_ScanBlink(0) &&
 				Gd_Set0G("ScanRemainingTime", "MaxValue", IG, "MAX_SCANNING_TIME") &&
 				Gd_Set0G("ScanRemainingTime", "Value", IG, "MAX_SCANNING_TIME") && LvN_Set0I("ScanRemainingTime", "Visible", 1);
 			n = 0;
@@ -667,7 +662,7 @@ static byte Into_CheckContinueScanning(void) {
 	int near = Gd_EntG(IG, "currentScannedShip", &e) ? Gd_Scanning(&usr, &e) : -1;
 	Native_Free(&usr);
 	Native_Free(&e);
-	return near > 0 ? Gd_Blink(0) : near == 0 && LV_OWN(IG, "ResetScan", NULL, "");
+	return near > 0 ? LvN_ScanBlink(0) : near == 0 && LV_OWN(IG, "ResetScan", NULL, "");
 }
 
 /* ResetScan(): no bishop scanned, the scorer hidden (refilled a moment later) */

@@ -124,14 +124,6 @@ static int Mn_GetTrue(const char *name) {
 	return r;
 }
 
-/* module.var = v as Script_SetVar sets it (an error is dropped, as the port did) */
-static void Mn_SetVar(const char *module, const char *var, const nativeVal_t *v) {
-	if (!Mode_SetModVar(module, var, v)) {
-		/* OBJLIB 7 */
-		PyErr_Clear();
-	}
-}
-
 /* the functions of the module through its globals with no arguments */
 static byte Mn_Own(const char *fn) {
 	return LV_OWN(MAP, fn, NULL, "");
@@ -148,7 +140,7 @@ static byte Menu_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	Native_SetInt(&one, 1);
-	Mn_SetVar("Init", "inMainMenu", &one);
+	LvN_SetVar("Init", "inMainMenu", &one);
 	int s = Mn_GetTrue("ShowCredits");
 	/* OBJLIB 6: the loading of a module stays with the module objects */
 	return s == 0 || (s > 0 && LV_CALL("Scrap", "OpenPack", NULL, "s", "Scripts/Scorer") &&
@@ -234,7 +226,7 @@ static byte Menu_ShowCredits(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	/* OBJLIB 5: the function object of Map */
-	Mn_SetVar("CreditsText", "EndOfCredits", &next);
+	LvN_SetVar("CreditsText", "EndOfCredits", &next);
 	Native_Free(&next);
 	return Mn_Own("NextCredit") && Mode_GVarSetS("EscapeEvent", "Map.EndCredits") &&
 		Mode_LaterIn(0.15, MAP, "SetMotionBlur", NULL, 0, NULL);

@@ -41,11 +41,6 @@
 
 /* ---- shared lines ---- */
 
-/* CharsNPC.SetReposChars(name, n) */
-static byte Ba_Repos(const char *name, long n) {
-	return LV_CALL("CharsNPC", "SetReposChars", NULL, "si", name, n);
-}
-
 /* [a] or [a, b] (b NULL: one item), [] for a NULL a */
 static void Ba_List(nativeVal_t *out, const char *a, const char *b) {
 	Native_SetEmpty(out, NV_LIST);
@@ -55,21 +50,6 @@ static void Ba_List(nativeVal_t *out, const char *a, const char *b) {
 	if (b) {
 		LvN_Str(Native_Append(out), b);
 	}
-}
-
-/* del name of a global of the module (the NameError of a missing one) */
-static byte Ba_DelGlobal(const char *module, const char *name) {
-	PyObject *m = PyImport_ImportModule((char *)module);
-	if (!m) {
-		return 0;
-	}
-	int r = PyDict_DelItemString(PyModule_GetDict(m), (char *)name);
-	Py_DECREF(m);
-	if (r != 0) {
-		PyErr_Clear();
-		return Native_Raise(NE_NAME, "%s", name);
-	}
-	return 1;
 }
 
 /* prefix + v of the script */
@@ -117,20 +97,20 @@ static byte BankMap_InitStatus(void) {
 	LvN_Str(&v, "Outskirts");
 	byte ok = Mode_SetModVar("Init", "OutArea", &v);
 	Native_Free(&v);
-	if (!ok || !Ba_Repos("Sentinel", 2) || !Ba_Repos("Police", 3) || !Ba_Repos("Nurse", 2)) {
+	if (!ok || !LvN_Repos("Sentinel", 2) || !LvN_Repos("Police", 3) || !LvN_Repos("Nurse", 2)) {
 		return 0;
 	}
 	int c = LvN_PcOr(MAP, "_BankDirector");
-	if (c < 0 || (c > 0 && !Ba_Repos("BankDirector", 5))) {
+	if (c < 0 || (c > 0 && !LvN_Repos("BankDirector", 5))) {
 		return 0;
 	}
 	c = LvN_PcOr(MAP, "_Bishop");
-	if (c < 0 || (c > 0 && !Ba_Repos("Bishop", 2))) {
+	if (c < 0 || (c > 0 && !LvN_Repos("Bishop", 2))) {
 		return 0;
 	}
 	c = LvN_PcOr(MAP, "_Messenger");
 	if (c > 0) {
-		ok = Ba_Repos("Messenger", 2);
+		ok = LvN_Repos("Messenger", 2);
 	} else if (c == 0) {
 		LvN_Int(&v, 0);
 		ok = Mode_Import("Messenger") && Mode_SetModVar("Messenger", "MakeMDP", &v);
@@ -144,7 +124,7 @@ static byte BankMap_InitStatus(void) {
 	}
 	if (!LvN_SaveIs("Mission.Library", "Mission_GetDataPart2")) {
 		c = LvN_PcOr(MAP, "_Functionary");
-		if (c < 0 || (c > 0 && !Ba_Repos("Functionary", 3))) {
+		if (c < 0 || (c > 0 && !LvN_Repos("Functionary", 3))) {
 			return 0;
 		}
 	}
@@ -617,7 +597,7 @@ static byte MapTreasure_DeleteShent(void) {
 /* RestartShents(): the coins of the chain deleted, its state forgotten, the dollars back one after the other */
 static byte MapTreasure_RestartShents(void) {
 	nativeVal_t ctr = { 0 }, step = { 0 }, deal = { 0 };
-	if (!Mt_EachCoin("shent", 1) || !Ba_DelGlobal(MT, "shent") || !Ba_DelGlobal(MT, "counter") || !Ba_DelGlobal(MT, "idx")) {
+	if (!Mt_EachCoin("shent", 1) || !Mode_DelGlobal(MT, "shent") || !Mode_DelGlobal(MT, "counter") || !Mode_DelGlobal(MT, "idx")) {
 		return 0;
 	}
 	Native_SetFloat(&ctr, 0.1);
@@ -1304,7 +1284,7 @@ static byte GetDataPart2_OnDownloadComplete(void) {
 	Native_SetEmpty(&v, NV_LIST);
 	byte ok = LvN_ScorerOff() && LvN_Draw() && LV_OWN(GD, "SetDesktopState", NULL, "si", "DM_DesktopFunctionary_00", 0L) &&
 		LV_OWN(GD, "SetDesktopState", NULL, "si", "DM_DesktopFunctionary_01", 0L) &&
-		LV_OWN(GD, "SetDesktopState", NULL, "si", "DM_DesktopFunctionary_02", 0L) && Ba_DelGlobal(GD, "activatedDesktops") &&
+		LV_OWN(GD, "SetDesktopState", NULL, "si", "DM_DesktopFunctionary_02", 0L) && Mode_DelGlobal(GD, "activatedDesktops") &&
 		Mode_Put(GD, "activatedDesktops", NULL, &v) && Mode_G(GD, "funcNames", &names);
 	int count = ok ? Native_ForCount(&names) : -1;
 	ok = count >= 0;

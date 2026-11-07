@@ -49,82 +49,9 @@
 
 /* ---- native helpers of this file ---- */
 
-/* MissionsFuncs.SetMissionTarget(v), of h.Name, and with None (OBJLIB 3) */
-static byte Po_Target(const nativeVal_t *v) {
-	return LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", v);
-}
-
-static byte Po_TargetName(const nativeVal_t *h) {
-	nativeVal_t n;
-	Native_SetNone(&n);
-	byte ok = Mode_VGet(h, "Name", &n) && Po_Target(&n);
-	Native_Free(&n);
-	return ok;
-}
-
+/* MissionsFuncs.SetMissionTarget(None) */
 static byte Po_TargetNone(void) {
 	return Mode_Target(NULL);
-}
-
-/* the global name of module (a handle) as the target, and its activation */
-static byte Po_TargetG(const char *module, const char *name) {
-	nativeVal_t h;
-	byte ok = Mode_G(module, name, &h) && Po_TargetName(&h);
-	Native_Free(&h);
-	return ok;
-}
-
-static byte Po_ActivateG(const char *module, const char *name, long on) {
-	nativeVal_t h;
-	byte ok = Mode_G(module, name, &h) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &h, on);
-	Native_Free(&h);
-	return ok;
-}
-
-/* the global handle name of module .var into out */
-static byte Po_GAttr(const char *module, const char *name, const char *var, nativeVal_t *out) {
-	nativeVal_t h;
-	Native_SetNone(out);
-	byte ok = Mode_G(module, name, &h) && Mode_VGet(&h, var, out);
-	Native_Free(&h);
-	return ok;
-}
-
-/* the global name of module = None */
-static byte Po_GNone(const char *module, const char *name) {
-	nativeVal_t v;
-	Native_SetNone(&v);
-	return Mode_Put(module, name, NULL, &v);
-}
-
-/* Speech.AddRemoteCom(key, who) */
-static byte Po_Com(const char *key, const char *who) {
-	return LvN_Com(key, who, NULL, NULL, NULL);
-}
-
-/* h.var = i, = "text" of the global handle name of module */
-static byte Po_GSetI(const char *module, const char *name, const char *var, long i) {
-	nativeVal_t h;
-	byte ok = Mode_G(module, name, &h) && LvN_SetI(&h, var, i);
-	Native_Free(&h);
-	return ok;
-}
-
-/* h.var = the global src of module (a function, a value) */
-static byte Po_SetG(const nativeVal_t *h, const char *var, const char *module, const char *src) {
-	nativeVal_t v;
-	byte ok = Mode_G(module, src, &v) && Mode_VSet(h, var, &v);
-	Native_Free(&v);
-	return ok;
-}
-
-/* h.var = Scrap.GetLangStr(key) */
-static byte Po_SetLang(const nativeVal_t *h, const char *var, const char *key) {
-	nativeVal_t t;
-	Mode_Lang(key, &t);
-	byte ok = Mode_VSet(h, var, &t);
-	Native_Free(&t);
-	return ok;
 }
 
 /* h.ArrOpt0 = "Talk:" + Scrap.GetLangStr("TalkOpt") */
@@ -137,16 +64,6 @@ static byte Po_TalkOpt(const nativeVal_t *h) {
 	Native_Free(&a);
 	Native_Free(&b);
 	Native_Free(&r);
-	return ok;
-}
-
-/* `text + v` of the script into out */
-static byte Po_Cat(const char *text, const nativeVal_t *v, nativeVal_t *out) {
-	nativeVal_t a;
-	LvN_Str(&a, text);
-	Native_SetNone(out);
-	byte ok = Native_Arith('+', &a, v, out);
-	Native_Free(&a);
 	return ok;
 }
 
@@ -168,21 +85,12 @@ static int Po_NameIs(const nativeVal_t *usrName, const char *ctrl) {
 	return r;
 }
 
-/* `usr.ActCtrl == ctrl` of a handle: 1, 0, -1 */
-static int Po_CtrlIs(const nativeVal_t *usr, const char *ctrl) {
-	nativeVal_t a;
-	Native_SetNone(&a);
-	int r = Mode_VGet(usr, "ActCtrl", &a) ? LvN_EqS(&a, ctrl) : -1;
-	Native_Free(&a);
-	return r;
-}
-
 /* `usr and usr.ActCtrl == ctrl` of the player (usr into *usr): 1, 0, -1 */
 static int Po_UsrCtrl(nativeVal_t *usr, const char *ctrl) {
 	if (!Mode_UsrHandle(usr)) {
 		return -1;
 	}
-	return Native_True(usr) ? Po_CtrlIs(usr, ctrl) : 0;
+	return Native_True(usr) ? LvN_CtrlIs(usr, ctrl) : 0;
 }
 
 /* an item at pos (Scrap.CreateEntity(name, pos[0], pos[1], pos[2], "Item") through its seam) with Radius, OnlyUser (-1:
@@ -246,25 +154,10 @@ static byte Po_Generic(const nativeVal_t *a) {
 /* module.var = the global name of src (a function) and = None (OBJLIB 5) */
 #define PO_HOOK(module, var, src, name) LvN_ModSetGlobal(module, var, src, name)
 
-/* (x, y, z) of three ints as h.var */
-static byte Po_SetInts3(const nativeVal_t *h, const char *var, long x, long y, long z) {
-	nativeVal_t v;
-	Mode_Ints3(&v, x, y, z);
-	byte ok = Mode_VSet(h, var, &v);
-	Native_Free(&v);
-	return ok;
-}
-
 /* the entity of a C name with h.var = "text", = i (Scrap.GetEntity(name).var = ...: the error of None when it is not
  * there) */
 #define PO_ENTS(name, var, s) Mode_EntSetS(name, var, s)
 #define PO_ENTI(name, var, i) Mode_EntSetI(name, var, i)
-
-/* the empty text "" as a value */
-static const nativeVal_t *Po_Empty(void) {
-	static nativeVal_t empty = { .type = NV_STR };
-	return &empty;
-}
 
 /* ---- Map ---- */
 
@@ -523,7 +416,7 @@ static byte BeatPickus_Init(const nativeVal_t *a, nativeVal_t *out) {
 	Native_Free(&tr);
 	if (ok) {
 		if (LvN_EqS(&state, "TalkToTraitorius")) {
-			ok = Po_TargetG(BP, "traitorius");
+			ok = LvN_TargetG(BP, "traitorius");
 		} else if (LvN_EqS(&state, "HireThugs") || LvN_EqS(&state, "BeatPickus")) {
 			ok = LV_OWN(BP, "HireThugs", NULL, "");
 		} else if (LvN_EqS(&state, "GetFuncShipPlans")) {
@@ -542,7 +435,7 @@ static byte BeatPickus_DisableIAFunctionary(const nativeVal_t *a, nativeVal_t *o
 	nativeVal_t name, key, desc;
 	byte tr = LvN_EqS(&a[0], "Traitorius");
 	Native_SetNone(&name);
-	if (!Po_Cat("Functionary_", &a[0], &name) || !Mode_EntityH(&name, out)) {
+	if (!LvN_Cat("Functionary_", &a[0], &name) || !Mode_EntityH(&name, out)) {
 		Native_Free(&name);
 		return 0;
 	}
@@ -556,7 +449,7 @@ static byte BeatPickus_DisableIAFunctionary(const nativeVal_t *a, nativeVal_t *o
 	byte ok = (!tr || LvN_SetS(out, "UseFunc", "Mission_BeatPickus.TraitoriusSpeech")) && LvN_SetI(out, "LLogicDefaultState", 6) &&
 		LvN_SetS(out, "LLogicDefaultTarget", "") && LvN_SetI(out, "LLogicState", 6) && LvN_SetS(out, "LLogicTarget", "") &&
 		LvN_SetF(out, "LLogicProbTalkWhenWalking", 1.0) && LvN_SetI(out, "LLogicIdle", 1) && LvN_SetI(out, "LLogicIdle", 0) &&
-		Po_Cat("CharName_", &a[0], &key) && Mode_LangV(&key, &desc) && Mode_VSet(out, "Descriptor", &desc);
+		LvN_Cat("CharName_", &a[0], &key) && Mode_LangV(&key, &desc) && Mode_VSet(out, "Descriptor", &desc);
 	Native_Free(&key);
 	Native_Free(&desc);
 	return ok;
@@ -570,14 +463,14 @@ static byte BeatPickus_OnTraitoriusRespawn(const nativeVal_t *a, nativeVal_t *ou
 	if (!Mode_Put(BP, "traitorius", NULL, &a[0]) || !Mode_G(BP, "traitorius", &tr)) {
 		return 0;
 	}
-	byte ok = Po_SetLang(&tr, "Descriptor", "CharName_Traitorius");
+	byte ok = LvN_SetLang(&tr, "Descriptor", "CharName_Traitorius");
 	Native_Free(&tr);
 	if (!ok) {
 		return 0;
 	}
 	Mode_SaveVar("MissionState", &state);
 	if (LvN_EqS(&state, "TalkToTraitorius")) {
-		ok = Po_TargetG(BP, "traitorius") && Mode_GSetS(BP, "traitorius", "UseFunc", "Mission_BeatPickus.TraitoriusSpeech");
+		ok = LvN_TargetG(BP, "traitorius") && Mode_GSetS(BP, "traitorius", "UseFunc", "Mission_BeatPickus.TraitoriusSpeech");
 	} else if (LvN_EqS(&state, "TalkToTraitoriusAgain")) {
 		ok = LV_OWN(BP, "TalkToTraitoriusAgain", NULL, "");
 	} else {
@@ -643,7 +536,7 @@ static byte Bp_SetThugsState(const nativeVal_t *vel) {
 		follow = Native_True(usr);
 	}
 	if (follow > 0) {
-		follow = Po_CtrlIs(usr, "Dtritus");
+		follow = LvN_CtrlIs(usr, "Dtritus");
 	}
 	if (follow < 0 || !Mode_GVarSet("GenCharSpecialChaseSpeed", vel)) {
 		return Mode_Done(&t, 0);
@@ -653,9 +546,9 @@ static byte Bp_SetThugsState(const nativeVal_t *vel) {
 		Native_SetFloat(lim, 0.0);
 		int stop = Mode_Cmp(vel, "==", lim);
 		if (stop > 0) {
-			ok = Bp_State(thug1, 6, Po_Empty()) && LvN_SetS(thug1, "UseFunc", "Mission_BeatPickus.ThugNormalSpeech");
+			ok = Bp_State(thug1, 6, LvN_Empty()) && LvN_SetS(thug1, "UseFunc", "Mission_BeatPickus.ThugNormalSpeech");
 		} else if (stop == 0) {
-			ok = Bp_State(thug1, 0, Po_Empty()) && LvN_SetS(thug1, "UseFunc", LvN_SaveIs("MissionState", "TalkToTraitorius") ?
+			ok = Bp_State(thug1, 0, LvN_Empty()) && LvN_SetS(thug1, "UseFunc", LvN_SaveIs("MissionState", "TalkToTraitorius") ?
 				"CharsNPC.GenericNPCSpeech" : "Mission_BeatPickus.ThugLeaderSpeech");
 		} else {
 			ok = 0;
@@ -745,7 +638,7 @@ static byte BeatPickus_HireThugs(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Bp_Thug(1, &thug1)) {
 		return 0;
 	}
-	byte ok = Native_True(&thug1) ? LvN_SetS(&thug1, "UseFunc", "Mission_BeatPickus.ThugLeaderSpeech") && Po_TargetName(&thug1) :
+	byte ok = Native_True(&thug1) ? LvN_SetS(&thug1, "UseFunc", "Mission_BeatPickus.ThugLeaderSpeech") && LvN_TargetName(&thug1) :
 		PO_LATER(1.0, BP, "HireThugs");
 	Native_Free(&thug1);
 	return ok;
@@ -815,7 +708,7 @@ static byte BeatPickus_BeatPickus(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetInt(&d, 1500);
 	byte ok = PO_HOOK("Alarm", "RestoreMissionCallback", BP, "OnAlarmDeactivated") && PO_HOOK("Alarm", "AbortMissionCallback", BP, "OnAlarmActivated") &&
 		Mode_VGet(&pickus, "Pos", &pos) && LV_OWN(BP, "CreateLauncher", NULL, "v", &pos) &&
-		Mode_Later(1.0, BP, "CheckMaxDist", &d, 1, "CheckMaxDist") && Po_TargetName(&pickus) && Bp_FollowVel();
+		Mode_Later(1.0, BP, "CheckMaxDist", &d, 1, "CheckMaxDist") && LvN_TargetName(&pickus) && Bp_FollowVel();
 	Native_Free(&pickus);
 	Native_Free(&pos);
 	return ok;
@@ -844,7 +737,7 @@ static byte BeatPickus_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_Later(1.0, BP, "CheckMaxDist", &a[0], 1, "CheckMaxDist")) {
 		return Mode_Done(&t, 0);
 	}
-	int u = Mode_UsrHandle(usr) ? Native_True(usr) : -1;
+	int u = LvN_Usr(usr);
 	if (u <= 0) {
 		return Mode_Done(&t, u == 0);
 	}
@@ -864,7 +757,7 @@ static byte BeatPickus_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	int c = LvN_GTrue(BP, "thugsStopped");
 	if (c > 0) {
-		c = Po_CtrlIs(usr, "Dtritus");
+		c = LvN_CtrlIs(usr, "Dtritus");
 	}
 	return Mode_Done(&t, c >= 0 && (!c || (LvN_PutI(BP, "thugsStopped", 0) && Bp_FollowVel())));
 }
@@ -908,8 +801,8 @@ static byte BeatPickus_CreateLauncher(const nativeVal_t *a, nativeVal_t *out) {
 	if (!there) {
 		LvN_Str(&name, "PickusFightLauncher");
 		Native_SetNone(&l);
-		byte ok = LvN_CreateAt(&name, &a[0], "Item", &l) && Mode_Put(BP, "launcher", NULL, &l) && Po_GSetI(BP, "launcher", "Radius", 600) &&
-			Po_GSetI(BP, "launcher", "OnlyUser", 1);
+		byte ok = LvN_CreateAt(&name, &a[0], "Item", &l) && Mode_Put(BP, "launcher", NULL, &l) && Mode_GSetI(BP, "launcher", "Radius", 600) &&
+			Mode_GSetI(BP, "launcher", "OnlyUser", 1);
 		Native_Free(&name);
 		Native_Free(&l);
 		if (!ok) {
@@ -955,7 +848,7 @@ static byte BeatPickus_LaunchPickusFightScene(const nativeVal_t *a, nativeVal_t 
 		bad = Mode_VGet(usr, "Name", un) ? Mode_Cmp(un, "!=", &a[1]) : -1;
 	}
 	if (bad == 0) {
-		bad = Po_CtrlIs(usr, "Dtritus");
+		bad = LvN_CtrlIs(usr, "Dtritus");
 		bad = bad < 0 ? -1 : !bad;
 	}
 	if (bad) {
@@ -1003,7 +896,7 @@ static byte BeatPickus_InitPickusBeaten(const nativeVal_t *a, nativeVal_t *out) 
 	byte ok = Mode_FromDummy(&dummy, "WithLife", out) && LvN_SetS(out, "ActCtrl", "PickusBeaten") && LvN_SetI(out, "ActiveCMask", 0) &&
 		LvN_SetI(out, "MapCollision", 1) && LvN_SetI(out, "UseAngSel", 1) && LvN_SetI(out, "UseAbsAngSel", 0) && LvN_SetI(out, "VRadius", 150) &&
 		LvN_SetI(out, "ArrowCanUse", 1) && LvN_SetI(out, "UseMapCheck", 0) && LvN_SetS(out, "UseFunc", "Mission_BeatPickus.OnTalkToPickus") &&
-		LvN_SetI(out, "ArrnOpt", 0) && Po_TalkOpt(out) && Po_SetLang(out, "Descriptor", "CharName_Pickus") && LvN_SetI(out, "OffModPosAsPos", 1) &&
+		LvN_SetI(out, "ArrnOpt", 0) && Po_TalkOpt(out) && LvN_SetLang(out, "Descriptor", "CharName_Pickus") && LvN_SetI(out, "OffModPosAsPos", 1) &&
 		Mode_VGet(out, "Pos", &pos) && Mode_VSet(out, "OffModPos", &pos);
 	Native_Free(&pos);
 	ok = ok && Mode_VGet(out, "Pos", &pos) && Mode_VecAdd(&pos, &add, &np) && Mode_VSet(out, "Pos", &np);
@@ -1042,7 +935,7 @@ static byte Bp_AskPickus(void) {
 	Native_SetNone(&e);
 	Native_SetNone(&pickus);
 	byte ok = LvN_Entity("Functionary_Pickus", &e) && Mode_VDel(&e) && LV_OWN(BP, "InitPickusBeaten", &pickus, "") &&
-		(!Native_True(&pickus) || Po_TargetName(&pickus));
+		(!Native_True(&pickus) || LvN_TargetName(&pickus));
 	Native_Free(&e);
 	Native_Free(&pickus);
 	return ok;
@@ -1195,7 +1088,7 @@ static byte BeatPickus_TalkToTraitoriusAgain(const nativeVal_t *a, nativeVal_t *
 	(void)out;
 	int there = Bp_GetTraitorius() ? LvN_GTrue(BP, "traitorius") : -1;
 	return there >= 0 && (!there || (Mode_GSetS(BP, "traitorius", "UseFunc", "Mission_BeatPickus.TraitoriusAgainSpeech") &&
-		Po_TargetG(BP, "traitorius")));
+		LvN_TargetG(BP, "traitorius")));
 }
 
 /* TraitoriusAgainSpeech(UsrName, CharName, optId, FullOption): the plans brought: Traitorius sends Dtritus on
@@ -1215,7 +1108,7 @@ static byte BeatPickus_TraitoriusAgainSpeech(const nativeVal_t *a, nativeVal_t *
 			return Mode_Spch("Mission_Search&DestroyMickus_Traitorius_InitMsg1", "Mission_Search&DestroyMickus_Traitorius_InitAns1", NULL);
 		}
 		return talked == 0 && Bp_GetTraitorius() && Mode_GSetS(BP, "traitorius", "UseFunc", "Mission_BeatPickus.TraitoriusSpeech") &&
-			Po_ActivateG(BP, "traitorius", 0) && LvN_OnEnd(BP, "SetNextMission", NULL) && Po_NI("Functionary", ni);
+			LvN_GActivate(BP, "traitorius", 0) && LvN_OnEnd(BP, "SetNextMission", NULL) && Po_NI("Functionary", ni);
 	}
 	int dt = fn == 0 ? Po_NameIs(&a[0], "Dtritus") : -1;
 	if (dt > 0) {
@@ -1333,7 +1226,7 @@ static byte FicusDead_InitFicusDead(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	Mode_Ints3(&cam, 0, 280, 0);
 	ok = Mode_VSet(&ficus, "CamTgt", &cam) && LvN_SetI(&ficus, "ArrowCanUse", 1) && LvN_SetS(&ficus, "UseFunc", "Mission_FicusDead.OnTalkToFicus") &&
-		LvN_SetI(&ficus, "ArrnOpt", 0) && Po_TalkOpt(&ficus) && Po_SetLang(&ficus, "Descriptor", "CharName_Ficus");
+		LvN_SetI(&ficus, "ArrnOpt", 0) && Po_TalkOpt(&ficus) && LvN_SetLang(&ficus, "Descriptor", "CharName_Ficus");
 	Native_Free(&ficus);
 	Native_Free(&cam);
 	return ok;
@@ -1346,7 +1239,7 @@ static byte FicusDead_Init(const nativeVal_t *a, nativeVal_t *out) {
 	if (LvN_SaveIs("MissionState", "TalkToDeepThroat")) {
 		return LV_OWN(FD, "AfterDeepThroatMessageShown", NULL, "");
 	}
-	return LV_OWN(FD, "InitFicusDead", NULL, "") && Po_TargetG(FD, "ficus");
+	return LV_OWN(FD, "InitFicusDead", NULL, "") && LvN_TargetG(FD, "ficus");
 }
 
 /* OnTalkToFicus(UsrName, CharName, optId, FullOption): Ficus is dead; Dtritus says so */
@@ -1371,7 +1264,7 @@ static byte Po_Desktop(const char *module, const char *func) {
 	if (!Mode_Import("DTritusDesktop") || !LvN_Entity("DM_DTritusDesktop", &dd)) {
 		return 0;
 	}
-	byte ok = Po_TargetName(&dd) && PO_HOOK("DTritusDesktop", "DialogController", module, func);
+	byte ok = LvN_TargetName(&dd) && PO_HOOK("DTritusDesktop", "DialogController", module, func);
 	Native_Free(&dd);
 	return ok;
 }
@@ -1441,7 +1334,7 @@ static byte GetAuthorization_CreateHuman(const nativeVal_t *a, nativeVal_t *out)
 	if (!Mode_Put(GA, "human", NULL, &a[0]) || !Mode_G(GA, "human", &h)) {
 		return 0;
 	}
-	byte ok = Po_SetLang(&h, "Descriptor", "CharName_Human") && LvN_SetS(&h, "UseFunc", "") && LvN_SetI(&h, "ArrowCanUse", 0);
+	byte ok = LvN_SetLang(&h, "Descriptor", "CharName_Human") && LvN_SetS(&h, "UseFunc", "") && LvN_SetI(&h, "ArrowCanUse", 0);
 	Native_Free(&h);
 	return ok;
 }
@@ -1481,7 +1374,7 @@ static byte GetAuthorization_AfterDeepThroatMessage(const nativeVal_t *a, native
 	}
 	byte ok = Mode_Put(GA, "dd", NULL, &dd);
 	Native_Free(&dd);
-	return ok && Po_TargetG(GA, "dd") && Mode_MMDesc("Mission_TalkToDeepThroat7_MissionText1", 1) &&
+	return ok && LvN_TargetG(GA, "dd") && Mode_MMDesc("Mission_TalkToDeepThroat7_MissionText1", 1) &&
 		PO_HOOK("DTritusDesktop", "DialogController", GA, "DeepThroatSpeech");
 }
 
@@ -1497,7 +1390,7 @@ static byte GetAuthorization_PreGetAuthorization(const nativeVal_t *a, nativeVal
 	nativeVal_t usr;
 	(void)a;
 	(void)out;
-	if (!LvN_ModNone("DTritusDesktop", "DialogController") || !Po_ActivateG(GA, "dd", 0) || !Mode_MMDesc("Mission_GetPassword_MissionText1", 1) ||
+	if (!LvN_ModNone("DTritusDesktop", "DialogController") || !LvN_GActivate(GA, "dd", 0) || !Mode_MMDesc("Mission_GetPassword_MissionText1", 1) ||
 		!Mode_WayPoint()) {
 		return 0;
 	}
@@ -1527,13 +1420,13 @@ static byte GetAuthorization_ShowNearestConversor(const nativeVal_t *a, nativeVa
 	Native_SetNone(&usr);
 	Native_SetNone(&pos);
 	Native_SetNone(&conv);
-	int u = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
+	int u = LvN_Usr(&usr);
 	byte ok = u >= 0;
 	if (u > 0) {
 		ok = Mode_VGet(&usr, "Pos", &pos) && LV_CALL("CharConversor", "GetNearestConversionPoint", &conv, "v", &pos) &&
 			Mode_Put(GA, "conv", NULL, &conv);
 		int c = ok ? LvN_GTrue(GA, "conv") : -1;
-		ok = c >= 0 && (!c || (Po_TargetG(GA, "conv") && Mode_Later(3, GA, "ShowNearestConversor", NULL, 0, "ShowConversor")));
+		ok = c >= 0 && (!c || (LvN_TargetG(GA, "conv") && Mode_Later(3, GA, "ShowNearestConversor", NULL, 0, "ShowConversor")));
 	}
 	Native_Free(&usr);
 	Native_Free(&pos);
@@ -1548,7 +1441,7 @@ static byte GetAuthorization_ShowAfterConversionMessage(const nativeVal_t *a, na
 	(void)out;
 	Native_SetNone(&usr);
 	Native_SetNone(&un);
-	int m = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
+	int m = LvN_Usr(&usr);
 	if (m > 0) {
 		m = Mode_VGet(&usr, "Name", &un) ? Po_NameIs(&un, "Messenger") : -1;
 	}
@@ -1557,12 +1450,12 @@ static byte GetAuthorization_ShowAfterConversionMessage(const nativeVal_t *a, na
 	if (m <= 0) {
 		return m == 0;
 	}
-	if (!Mode_DelSchedS("ShowConversor") || !LvN_ModNone("CharConversor", "afterExitConversor") || !Po_ActivateG(GA, "conv", 0) ||
-		!Po_Com("Mission_GetPassword_RemoteMessage1", "DeepThroat")) {
+	if (!Mode_DelSchedS("ShowConversor") || !LvN_ModNone("CharConversor", "afterExitConversor") || !LvN_GActivate(GA, "conv", 0) ||
+		!LvN_Com("Mission_GetPassword_RemoteMessage1", "DeepThroat", NULL, NULL, NULL)) {
 		return 0;
 	}
 	SaveVar_Set("MissionState", "GetAuthorization2");
-	return Po_GNone(GA, "conv") && LV_OWN(GA, "GetAuthorization2", NULL, "");
+	return LvN_PutNone(GA, "conv") && LV_OWN(GA, "GetAuthorization2", NULL, "");
 }
 
 /* OnDataTaken(messengerName): the player took a tube: empty, filled by him, or filled by another */
@@ -1572,7 +1465,7 @@ static byte GetAuthorization_OnDataTaken(const nativeVal_t *a, nativeVal_t *out)
 	Native_SetNone(&usr);
 	Native_SetNone(&un);
 	Native_SetNone(&st);
-	int mine = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
+	int mine = LvN_Usr(&usr);
 	if (mine > 0) {
 		mine = Mode_VGet(&usr, "Name", &un) ? Mode_Cmp(&un, "==", &a[0]) : -1;
 	}
@@ -1580,8 +1473,8 @@ static byte GetAuthorization_OnDataTaken(const nativeVal_t *a, nativeVal_t *out)
 	if (mine > 0) {
 		int full = Native_GVarGet("MessengerTubeState", &st) ? Native_True(&st) : -1;
 		int byUser = full > 0 ? LvN_GTrue(GA, "filledByUser") : 0;
-		ok = full >= 0 && byUser >= 0 && Po_Com(full == 0 ? "Mission_GetPassword_RemoteMessage2" : byUser > 0 ?
-			"Mission_GetPassword_RemoteMessage3" : "Mission_GetPassword_RemoteMessage6", "DeepThroat");
+		ok = full >= 0 && byUser >= 0 && LvN_Com(full == 0 ? "Mission_GetPassword_RemoteMessage2" : byUser > 0 ?
+			"Mission_GetPassword_RemoteMessage3" : "Mission_GetPassword_RemoteMessage6", "DeepThroat", NULL, NULL, NULL);
 	}
 	Native_Free(&usr);
 	Native_Free(&un);
@@ -1596,7 +1489,7 @@ static byte GetAuthorization_OnDataDropped(const nativeVal_t *a, nativeVal_t *ou
 	(void)out;
 	Native_SetNone(&usr);
 	Native_SetNone(&un);
-	int u = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
+	int u = LvN_Usr(&usr);
 	byte ok = u >= 0;
 	if (u > 0) {
 		int full = LvN_EqI(&a[1], 1);
@@ -1606,7 +1499,7 @@ static byte GetAuthorization_OnDataDropped(const nativeVal_t *a, nativeVal_t *ou
 		if (full > 0) {
 			int self = Mode_VGet(&usr, "Name", &un) ? Mode_Cmp(&a[0], "==", &un) : -1;
 			ok = self > 0 ? LvN_Com("Mission_GetPassword_RemoteMessage5", "DeepThroat", GA, "PreFreeHuman", LvN_NoArgs()) :
-				self == 0 && Po_Com("Mission_GetPassword_RemoteMessage4", "DeepThroat");
+				self == 0 && LvN_Com("Mission_GetPassword_RemoteMessage4", "DeepThroat", NULL, NULL, NULL);
 		} else if (full == 0 && LvN_EqI(&a[1], 0)) {
 			int by = Mode_VGet(&usr, "Name", &un) ? Mode_Cmp(&a[0], "==", &un) : -1;
 			ok = by >= 0 && LvN_PutI(GA, "filledByUser", by);
@@ -1700,7 +1593,7 @@ static byte GetAuthorization_OnTriggerActivated(const nativeVal_t *a, nativeVal_
 	Native_SetNone(&hn);
 	Native_SetNone(&e);
 	Native_SetNone(&fall);
-	int it = Po_GAttr(GA, "human", "Name", &hn) ? Mode_Cmp(&a[1], "==", &hn) : -1;
+	int it = LvN_GAttr(GA, "human", "Name", &hn) ? Mode_Cmp(&a[1], "==", &hn) : -1;
 	byte ok = it >= 0;
 	if (it > 0) {
 		Native_SetInt(&one, 1);
@@ -1726,7 +1619,7 @@ static byte Po_OnFloor(const nativeVal_t *h) {
 static byte Ga_Follow(const nativeVal_t *usr) {
 	nativeVal_t hn, un;
 	Native_SetNone(&un);
-	byte ok = Po_GAttr(GA, "human", "Name", &hn) && Mode_VGet(usr, "Name", &un) && CHAR_STATE("ivvd", 3L, &hn, &un, 1.0);
+	byte ok = LvN_GAttr(GA, "human", "Name", &hn) && Mode_VGet(usr, "Name", &un) && CHAR_STATE("ivvd", 3L, &hn, &un, 1.0);
 	Native_Free(&hn);
 	Native_Free(&un);
 	return ok;
@@ -1750,13 +1643,13 @@ static byte GetAuthorization_GoToPress(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	int played = LvN_GEqI(GA, "scenePlayed", 0);
 	if (played < 0 || !LvN_Com(played ? "Mission_FirstMeetHuman_RemoteMessage1" : "Mission_FirstMeetHuman_RemoteMessage2", "DeepThroat", GA,
-		"GoToPress2", LvN_NoArgs()) || !LvN_SetI(&a[0], "Invulnerable", 0) || !Po_SetInts3(&a[0], "Pos", 4227, -1771, 28400) ||
-		!Po_SetInts3(&a[0], "Ang", 0, 160, 0) || !Po_OnFloor(&a[0]) || !Mode_Import("MissionsFuncs") || !Mode_G(GA, "human", &h)) {
+		"GoToPress2", LvN_NoArgs()) || !LvN_SetI(&a[0], "Invulnerable", 0) || !LvN_SetInts3(&a[0], "Pos", 4227, -1771, 28400) ||
+		!LvN_SetInts3(&a[0], "Ang", 0, 160, 0) || !Po_OnFloor(&a[0]) || !Mode_Import("MissionsFuncs") || !Mode_G(GA, "human", &h)) {
 		return 0;
 	}
-	ok = Po_SetInts3(&h, "Pos", 4227, -1771, 28866) && Po_SetInts3(&h, "Ang", 0, 0, 0);
+	ok = LvN_SetInts3(&h, "Pos", 4227, -1771, 28866) && LvN_SetInts3(&h, "Ang", 0, 0, 0);
 	Native_Free(&h);
-	if (!ok || !Po_ActivateG(GA, "human", 2) || !Mode_G(GA, "human", &h)) {
+	if (!ok || !LvN_GActivate(GA, "human", 2) || !Mode_G(GA, "human", &h)) {
 		return 0;
 	}
 	ok = Po_OnFloor(&h);
@@ -1774,7 +1667,7 @@ static byte GetAuthorization_GoToPress2(const nativeVal_t *a, nativeVal_t *out) 
 	if (!LvN_Entity("DM_Door_Metro_Press", &e)) {
 		return 0;
 	}
-	byte ok = LvN_SetS(&e, "UseFunc", "Mission_GetAuthorization.OnMetroUsed") && Po_TargetName(&e);
+	byte ok = LvN_SetS(&e, "UseFunc", "Mission_GetAuthorization.OnMetroUsed") && LvN_TargetName(&e);
 	Native_Free(&e);
 	return ok && Mode_MMDesc("Mission_SetHumanFree_MissionText1", 1) && Mode_WayPoint();
 }
@@ -1782,16 +1675,16 @@ static byte GetAuthorization_GoToPress2(const nativeVal_t *a, nativeVal_t *out) 
 /* the human stops and asks the player to come back */
 static byte Ga_HumanStops(void) {
 	nativeVal_t hn;
-	byte ok = Po_GAttr(GA, "human", "Name", &hn) && CHAR_STATE("iv", 0L, &hn);
+	byte ok = LvN_GAttr(GA, "human", "Name", &hn) && CHAR_STATE("iv", 0L, &hn);
 	Native_Free(&hn);
-	return ok && Po_Com("Mission_SetHumanFree_RemoteMessage2", "Human");
+	return ok && LvN_Com("Mission_SetHumanFree_RemoteMessage2", "Human", NULL, NULL, NULL);
 }
 
 /* OnPossession(newCharName, pos): a possession: the human stops */
 static byte GetAuthorization_OnPossession(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Mode_Import("MissionsFuncs") && Ga_HumanStops() && Po_ActivateG(GA, "human", 0);
+	return Mode_Import("MissionsFuncs") && Ga_HumanStops() && LvN_GActivate(GA, "human", 0);
 }
 
 /* OnExitConversor(): out of a conversor: the human follows only Dtritus */
@@ -1803,16 +1696,16 @@ static byte GetAuthorization_OnExitConversor(const nativeVal_t *a, nativeVal_t *
 		return 0;
 	}
 	Native_SetNone(&usr);
-	int u = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
-	int dt = u > 0 ? Po_CtrlIs(&usr, "Dtritus") : 0;
+	int u = LvN_Usr(&usr);
+	int dt = u > 0 ? LvN_CtrlIs(&usr, "Dtritus") : 0;
 	Native_Free(&usr);
 	if (u <= 0) {
 		return u == 0;
 	}
 	if (dt == 0) {
-		return Ga_HumanStops() && Po_ActivateG(GA, "human", 0);
+		return Ga_HumanStops() && LvN_GActivate(GA, "human", 0);
 	}
-	return dt > 0 && Po_ActivateG(GA, "human", 2);
+	return dt > 0 && LvN_GActivate(GA, "human", 2);
 }
 
 /* CheckMaxDist(): every second: the human stops when the player is too far, and follows Dtritus again */
@@ -1827,15 +1720,15 @@ static byte GetAuthorization_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out
 	Native_SetNone(&r);
 	Native_SetNone(&hn);
 	Native_SetNone(&st);
-	int u = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
+	int u = LvN_Usr(&usr);
 	byte ok = u >= 0;
 	if (u > 0) {
 		int near = LV_OWN(GA, "CheckHumanDist", &r, "") ? Native_True(&r) : -1;
 		if (near == 0) {
-			int moving = Po_GAttr(GA, "human", "Name", &hn) && LV_CALL("SAI", "GetStateChar", &st, "v", &hn) ? Mode_CmpI(&st, "!=", 0) : -1;
+			int moving = LvN_GAttr(GA, "human", "Name", &hn) && LV_CALL("SAI", "GetStateChar", &st, "v", &hn) ? Mode_CmpI(&st, "!=", 0) : -1;
 			ok = moving >= 0 && (!moving || Ga_HumanStops());
 		} else if (near > 0) {
-			int dt = Po_CtrlIs(&usr, "Dtritus");
+			int dt = LvN_CtrlIs(&usr, "Dtritus");
 			ok = dt >= 0 && (!dt || Ga_Follow(&usr));
 		} else {
 			ok = 0;
@@ -1852,7 +1745,7 @@ static byte GetAuthorization_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out
 static int Ga_Near(const nativeVal_t *usr, const char *dist) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *up = Mode_V(&t), *hp = Mode_V(&t), *sub = Mode_V(&t), *d = Mode_V(&t), *m1 = Mode_V(&t), *m2 = Mode_V(&t), *mm = Mode_V(&t);
-	int r = Mode_VGet(usr, "Pos", up) && Po_GAttr(GA, "human", "Pos", hp) && Mode_VecSub(up, hp, sub) && Mode_VecModSqr(sub, d) &&
+	int r = Mode_VGet(usr, "Pos", up) && LvN_GAttr(GA, "human", "Pos", hp) && Mode_VecSub(up, hp, sub) && Mode_VecModSqr(sub, d) &&
 		Mode_G(GA, dist, m1) && Mode_G(GA, dist, m2) && Mode_Arith('*', m1, m2, mm) ? Mode_Cmp(d, "<=", mm) : -1;
 	Mode_Done(&t, 1);
 	return r;
@@ -1863,7 +1756,7 @@ static byte GetAuthorization_CheckHumanDist(const nativeVal_t *a, nativeVal_t *o
 	nativeVal_t usr;
 	(void)a;
 	Native_SetNone(&usr);
-	int near = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
+	int near = LvN_Usr(&usr);
 	if (near > 0) {
 		near = Ga_Near(&usr, "maxHumanDist");
 	}
@@ -1880,7 +1773,7 @@ static byte GetAuthorization_OnMetroUsed(const nativeVal_t *a, nativeVal_t *out)
 	nativeVal_t usr;
 	(void)out;
 	Native_SetNone(&usr);
-	int near = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
+	int near = LvN_Usr(&usr);
 	if (near > 0) {
 		near = Ga_Near(&usr, "minHumanDist");
 	} else if (near == 0) {
@@ -1895,7 +1788,7 @@ static byte GetAuthorization_OnMetroUsed(const nativeVal_t *a, nativeVal_t *out)
 		Mode_Saves(saves);
 		return Mode_WayPoint() && LV_CALL("Elevator", "UseElevator", NULL, "vvsv", &a[0], &a[1], "MoveLevel Press", &a[3]);
 	}
-	return near == 0 && Po_Com("Mission_SetHumanFree_RemoteMessage2", "Human");
+	return near == 0 && LvN_Com("Mission_SetHumanFree_RemoteMessage2", "Human", NULL, NULL, NULL);
 }
 
 LV_FN(GetAuthorization, InitStatusA, 1, GetAuthorization_InitStatus)
@@ -1963,8 +1856,8 @@ static byte InitEpilogue_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 
 /* a prisoner stays at origin facing ang, with his talk */
 static byte Ie_Prisoner(const nativeVal_t *e, const long origin[3], long ang, const char *use) {
-	return Po_SetInts3(e, "LLogicOrigin", origin[0], origin[1], origin[2]) && Po_SetInts3(e, "LLogicOriginAng", 0, ang, 0) &&
-		LvN_Stay(e, 6, Po_Empty()) && LvN_SetS(e, "UseFunc", use);
+	return LvN_SetInts3(e, "LLogicOrigin", origin[0], origin[1], origin[2]) && LvN_SetInts3(e, "LLogicOriginAng", 0, ang, 0) &&
+		LvN_Stay(e, 6, LvN_Empty()) && LvN_SetS(e, "UseFunc", use);
 }
 
 /* CreateBettyJail(e), CreateBertoJail(e) */
@@ -2162,7 +2055,7 @@ static byte JailBreak_CreateMCList(const nativeVal_t *a, nativeVal_t *out) {
 /* CreateGearStay(ch): a gear guard stays */
 static byte JailBreak_CreateGearStay(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
-	return LvN_Stay(&a[0], 3, Po_Empty());
+	return LvN_Stay(&a[0], 3, LvN_Empty());
 }
 
 /* CreatePuff(e): Poof; unless the player is a guard he starts jumping in 5 s */
@@ -2170,12 +2063,12 @@ static byte JailBreak_CreatePuff(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const guards[] = { "Gear", "Sentinel", "Police", "Desktop" };
 	nativeVal_t usr, act;
 	(void)out;
-	if (!Po_SetLang(&a[0], "Descriptor", "CharName_Poof")) {
+	if (!LvN_SetLang(&a[0], "Descriptor", "CharName_Poof")) {
 		return 0;
 	}
 	Native_SetNone(&usr);
 	Native_SetNone(&act);
-	int c = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
+	int c = LvN_Usr(&usr);
 	if (c > 0) {
 		c = Mode_VGet(&usr, "ActCtrl", &act) ? 1 : -1;
 		for (int i = 0; c > 0 && i < 4; i++) {
@@ -2210,7 +2103,7 @@ static byte JailBreak_InitPuffReborn(const nativeVal_t *a, nativeVal_t *out) {
 	Native_Free(&v);
 	Py_DECREF(cr);
 	Native_SetNone(&name);
-	ok = ok && Po_SetG(&a[0], "InCtrl_Walk", JB, "PuffWalk") && Po_SetG(&a[0], "InCtrl_HRot", JB, "PuffTurn") && Mode_VGet(&a[0], "Name", &name) &&
+	ok = ok && LvN_SetG(&a[0], "InCtrl_Walk", JB, "PuffWalk") && LvN_SetG(&a[0], "InCtrl_HRot", JB, "PuffTurn") && Mode_VGet(&a[0], "Name", &name) &&
 		PO_LATER1(2.0, JB, "CheckForJump", &name) && LvN_SetS(&a[0], "UseFunc", "Mission_JailBreak.StaplerSpeech");
 	Native_Free(&name);
 	return ok;
@@ -2251,7 +2144,7 @@ static byte JailBreak_CheckForJump(const nativeVal_t *a, nativeVal_t *out) {
 		}
 	} else if (at == 0) {
 		Native_SetFloat(&timy, 0.5);
-		ok = Po_SetG(&e, "InCtrl_Walk", JB, "PuffWalk") && Po_SetG(&e, "InCtrl_HRot", JB, "PuffTurn");
+		ok = LvN_SetG(&e, "InCtrl_Walk", JB, "PuffWalk") && LvN_SetG(&e, "InCtrl_HRot", JB, "PuffTurn");
 	}
 	ok = ok && Mode_LaterV(&timy, JB, "CheckForJump", &a[0], 1, NULL);
 	Native_Free(&e);
@@ -2431,7 +2324,7 @@ static byte PoliceBossCheats_Init(const nativeVal_t *a, nativeVal_t *out) {
 /* CreatePoliceFicusPal(e): Ficus' friend stays and talks */
 static byte PoliceBossCheats_CreatePoliceFicusPal(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
-	return LvN_SetS(&a[0], "UseFunc", "Mission_PoliceBossCheats.FicusPalMissionSpeech") && LvN_Stay(&a[0], 6, Po_Empty());
+	return LvN_SetS(&a[0], "UseFunc", "Mission_PoliceBossCheats.FicusPalMissionSpeech") && LvN_Stay(&a[0], 6, LvN_Empty());
 }
 
 /* Speech.SpeechRoutines["Police"](UsrName, CharName, optId, FullOption) (OBJLIB 5: the functions of Speech) */
@@ -2455,7 +2348,7 @@ static byte PoliceBossCheats_FicusPalMissionSpeech(const nativeVal_t *a, nativeV
 		return 0;
 	}
 	Native_SetNone(&usr);
-	int police = Mode_UsrHandle(&usr) ? Po_CtrlIs(&usr, "Police") : -1;
+	int police = Mode_UsrHandle(&usr) ? LvN_CtrlIs(&usr, "Police") : -1;
 	Native_Free(&usr);
 	if (police <= 0) {
 		return police == 0 && Mode_Spch("Mission_TalkToFicusFriend_Police_InitMsg2", "Mission_TalkToFicusFriend_Police_InitAns2", NULL);
@@ -2658,7 +2551,7 @@ static byte PoliceBossCheats_CheatingLoop(const nativeVal_t *a, nativeVal_t *out
 			return 0;
 		}
 	}
-	return Po_GSetI(PC, "PoliceBoss", "ArrowCanUse", 1) && PO_HOOK("CharAct", "TakenPhoto", PC, "OnPhoto");
+	return Mode_GSetI(PC, "PoliceBoss", "ArrowCanUse", 1) && PO_HOOK("CharAct", "TakenPhoto", PC, "OnPhoto");
 }
 
 /* PlayAnm(Ent1, Ent2, Action): the action of a player and of his cards */
@@ -2790,19 +2683,19 @@ static byte PoliceBossCheats_BrupPoliceBoss(const nativeVal_t *a, nativeVal_t *o
 static byte PoliceBossCheats_PhotoOn(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Po_GSetI(PC, "PoliceBoss", "CanPhoto", 1);
+	return Mode_GSetI(PC, "PoliceBoss", "CanPhoto", 1);
 }
 
 static byte PoliceBossCheats_PhotoOff(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Po_GSetI(PC, "PoliceBoss", "CanPhoto", 0);
+	return Mode_GSetI(PC, "PoliceBoss", "CanPhoto", 0);
 }
 
 /* OnPhoto(SelectedEntity): the photo of the cheating boss: the game slows down, the scene follows (1); else 0 */
 static byte PoliceBossCheats_OnPhoto(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t n;
-	int it = Po_GAttr(PC, "PoliceBoss", "Name", &n) ? Mode_Cmp(&a[0], "==", &n) : -1;
+	int it = LvN_GAttr(PC, "PoliceBoss", "Name", &n) ? Mode_Cmp(&a[0], "==", &n) : -1;
 	Native_Free(&n);
 	if (it <= 0) {
 		Native_SetInt(out, 0);
@@ -2822,7 +2715,7 @@ static byte PoliceBossCheats_OnPhoto(const nativeVal_t *a, nativeVal_t *out) {
 
 /* the Active of the three card entities */
 static byte Pc_CardsActive(long on) {
-	return Po_GSetI(PC, "PoliceBossc", "Active", on) && Po_GSetI(PC, "Dumb1c", "Active", on) && Po_GSetI(PC, "Dumb2c", "Active", on);
+	return Mode_GSetI(PC, "PoliceBossc", "Active", on) && Mode_GSetI(PC, "Dumb1c", "Active", on) && Mode_GSetI(PC, "Dumb2c", "Active", on);
 }
 
 /* EndOfPhoto(): the scene PoliFight, InitAfterPhoto at its end; the cards hidden */

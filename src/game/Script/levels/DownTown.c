@@ -1734,7 +1734,7 @@ static byte Hump_AssignNewHumphreyTarget(void) {
 	if (taunt > 0) {
 		changed = Mode_Read(DH, "shipNameForTaunt", st) ? Hp_Attack(e, st) : -1;
 	} else if (taunt == 0) {
-		int u = Mode_UsrHandle(usr) ? Native_True(usr) : -1;
+		int u = LvN_Usr(usr);
 		if (u > 0) {
 			Native_Free(e);
 			changed = Mode_VGet(usr, "Pos", pos) && Mode_Read(DH, "shipNameForTaunt", st) &&
@@ -2920,7 +2920,7 @@ static byte Steal_SetPlatformTarget(void) {
 static byte Steal_TestForCorrectPlatform(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *usr = TV(), *pc = TV(), *up = TV(), *pp = TV(), *sub = TV(), *d = TV(), *name = TV(), *e = TV();
-	int c = Mode_UsrHandle(usr) ? Native_True(usr) : -1;
+	int c = LvN_Usr(usr);
 	if (c > 0) {
 		c = Mode_G(SM, "pc", pc) ? Native_True(pc) : -1;
 	}

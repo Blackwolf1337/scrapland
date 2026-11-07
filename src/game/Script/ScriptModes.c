@@ -1951,6 +1951,13 @@ byte Mode_GSetS(const char *module, const char *var, const char *attr, const cha
 	return ok;
 }
 
+byte Mode_GSetI(const char *module, const char *var, const char *attr, long i) {
+	nativeVal_t h;
+	byte ok = Mode_G(module, var, &h) && LvN_SetI(&h, attr, i);
+	Native_Free(&h);
+	return ok;
+}
+
 byte Mode_AtG(const nativeVal_t *time, const char *module, const char *func, const nativeVal_t *args, int n) {
 	PyObject *fn = Script_Global(module, func);
 	if (!fn) {

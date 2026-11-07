@@ -403,8 +403,9 @@ byte Mode_WayPoint(void);
 byte Mode_Target(const char *name);
 /* Elevator.ConnectElevators([a], [b]), or Elevator.ConnectElevators([a, b], [], 0) for pair (OBJLIB 3) */
 byte Mode_Connect(const char *a, const char *b, byte pair);
-/* var.attr = "text" of the global var of module (a handle) */
+/* var.attr = "text", = i of the global var of module (a handle) */
 byte Mode_GSetS(const char *module, const char *var, const char *attr, const char *s);
+byte Mode_GSetI(const char *module, const char *var, const char *attr, long i);
 /* Scrap.AddScheduledFunc(time, func, args) with time a value and func the global of module (its NameError; OBJLIB 4) */
 byte Mode_AtG(const nativeVal_t *time, const char *module, const char *func, const nativeVal_t *args, int n);
 /* a op b of the script as Native_Arith, with the long ints of 1.5.2 for * / % too (a case can put a long int into a

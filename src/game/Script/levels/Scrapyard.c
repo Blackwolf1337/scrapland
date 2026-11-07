@@ -55,37 +55,10 @@ static int Sy_CmpNone(const nativeVal_t *a, const char *op) {
 	return Mode_Cmp(a, op, &b);
 }
 
-/* the global name of module = i, = None, = v */
-static byte Sy_PutNone(const char *module, const char *name) {
-	nativeVal_t v = { 0 };
-	Native_SetNone(&v);
-	return Mode_Put(module, name, NULL, &v);
-}
-
 /* h.var into *out where the script reads it (out None before) */
 static byte Sy_Get(const nativeVal_t *h, const char *var, nativeVal_t *out) {
 	Native_SetNone(out);
 	return Mode_VGet(h, var, out);
-}
-
-/* MissionsFuncs.SetMissionTarget(v), with None, with h.Name (OBJLIB 3) */
-static byte Sy_Target(const nativeVal_t *v) {
-	return LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", v);
-}
-
-static byte Sy_TargetName(const nativeVal_t *h) {
-	nativeVal_t n = { 0 };
-	byte ok = Sy_Get(h, "Name", &n) && Sy_Target(&n);
-	Native_Free(&n);
-	return ok;
-}
-
-/* the global name of module (a handle) .Name as the target */
-static byte Sy_TargetG(const char *module, const char *name) {
-	nativeVal_t h = { 0 };
-	byte ok = Mode_G(module, name, &h) && Sy_TargetName(&h);
-	Native_Free(&h);
-	return ok;
 }
 
 /* Vehicles.OnDeath(LooserName, WinnerName) after import Vehicles */
@@ -907,7 +880,7 @@ static byte Gambler_CreateCrazyGamblerN(void) {
 		LvN_StdProfile(CG, "GetCrazyGamblerProfile", h, pd) && LvN_SetI(h, "LaunchTaunts", 0) && Mode_G(CG, "pilotName", pilot) &&
 		Mode_VSet(h, "MPil0", pilot) && LvN_SetS(h, "TgType", "red") && LvN_SetS(h, "EntityList", "Enemies") &&
 		LvN_Life(h, CG, "CRAZY_GAMBLER_LIFE") && Mode_VGet(h, "Name", name) && Mode_Put(CG, "crazyGamblerName", NULL, name) &&
-		Mode_G(CG, "crazyGamblerName", g) && Sy_Target(g);
+		Mode_G(CG, "crazyGamblerName", g) && LvN_Target(g);
 	return Mode_Done(&t, ok);
 }
 
@@ -1084,7 +1057,7 @@ static byte Dtritus_CreateLonelyMercShipN(void) {
 		Mode_Put(FD, "prevLonelyMercShipCameraPos", NULL, cam) && LvN_SetInts3(ship, "CamTgt", 0, 400, 0);
 	if (ok) {
 		Native_Free(name);
-		ok = Mode_G(FD, "lonelyMercShipName", name) && Sy_Target(name) && LV_OWN(FD, "CheckLonelyMercShipExist", NULL, "");
+		ok = Mode_G(FD, "lonelyMercShipName", name) && LvN_Target(name) && LV_OWN(FD, "CheckLonelyMercShipExist", NULL, "");
 	}
 	return Mode_Done(&t, ok);
 }
@@ -1211,7 +1184,7 @@ static byte Dtritus_OutOfLonelyMercShipN(void) {
 		/* a local of the script (no global statement): the camera of the ship is read and dropped */
 		Native_Free(sn);
 		byte ok = LV_OWN(FD, "ActivateMissionObjects", NULL, "i", 0L) && Mode_VGet(ship, "CamTgt", cam) &&
-			LvN_SetInts3(ship, "CamTgt", 0, 400, 0) && Mode_G(FD, "lonelyMercShipName", sn) && Sy_Target(sn);
+			LvN_SetInts3(ship, "CamTgt", 0, 400, 0) && Mode_G(FD, "lonelyMercShipName", sn) && LvN_Target(sn);
 		return Mode_Done(&t, ok);
 	}
 	if (far == 0) {
@@ -1405,8 +1378,8 @@ static byte Dtritus_TakeMatrixN(const nativeVal_t *a) {
 	}
 	if (ok) {
 		Native_Free(arrow);
-		ok = Mode_G(FD, "dtritusMatrixArrow", arrow) && Mode_VDel(arrow) && Sy_PutNone(FD, "dtritusMatrix") &&
-			Sy_PutNone(FD, "dtritusMatrixArrow");
+		ok = Mode_G(FD, "dtritusMatrixArrow", arrow) && Mode_VDel(arrow) && LvN_PutNone(FD, "dtritusMatrix") &&
+			LvN_PutNone(FD, "dtritusMatrixArrow");
 	}
 	int end = ok ? Fd_End() : -1;
 	ok = end == 0 || (end > 0 && Fd_EndCallbacks() && LvN_Com("Mission_FindDtritusMatrix1_RemoteMessage5", "DeepThroat", FD, "SetNextMission", NULL));
@@ -1484,7 +1457,7 @@ static byte Sy_PhoneInitN(const char *module, const char *use, byte berto) {
 	if (berto) {
 		Sy_AddHead("EvilBerto", "Models/Heads/HeadEvilBerto/HeadEvilBerto", 25.0f, 10.0f);
 	}
-	byte ok = LV_CALL("PhoneCab", "GetFree", &pc, "") && Mode_Put(module, "pc", NULL, &pc) && Sy_TargetG(module, "pc") &&
+	byte ok = LV_CALL("PhoneCab", "GetFree", &pc, "") && Mode_Put(module, "pc", NULL, &pc) && LvN_TargetG(module, "pc") &&
 		Mode_GSetS(module, "pc", "UseFunc", use);
 	Native_Free(&pc);
 	return ok;
@@ -1631,7 +1604,7 @@ static byte Clue_InitSwarmN(void) {
 		Mc_Create("MosquitosLauncherCheckArrow", pos, "WithLife", arrow) && Mode_Put(MC, "checkArrow", NULL, arrow) &&
 		Mode_G(MC, "checkArrow", g) && LvN_SetInts3(g, "CamTgt", 0, 500, 0) && Mc_Create("MosquitosLauncher", pos, "Item", l) &&
 		LvN_SetI(l, "Radius", 20000) && LvN_SetS(l, "OnTake", "Mission_MosquitoClue.InitMosquito") && LvN_SetI(l, "OnlyUser", 1) &&
-		Sy_TargetG(MC, "checkArrow");
+		LvN_TargetG(MC, "checkArrow");
 	return Mode_Done(&t, ok);
 }
 
@@ -1725,7 +1698,7 @@ static byte Clue_MosquitoDeathN(const nativeVal_t *a) {
 			LvN_SetI(l, "AutoFace", 0) && LvN_SetI(l, "OnlyUser", 1) && LvN_SetF(l, "rTime", 0.25) &&
 			LvN_SetS(l, "OnTake", "Mission_MosquitoClue.TakeDataPack") && Mode_Import("Items") &&
 			LV_CALL("Items", "SetSound", NULL, "vs", l, "TakeBDataPack") && Mc_Create("MissionCheckArrow", pos, "WithLife", l2) &&
-			LvN_SetInts3(l2, "CamTgt", 0, 1000, 0) && Sy_TargetName(l2) && LvN_Com("Mission_Get1stClue_RemoteMessage4", "PoliceBoss", NULL, NULL, NULL);
+			LvN_SetInts3(l2, "CamTgt", 0, 1000, 0) && LvN_TargetName(l2) && LvN_Com("Mission_Get1stClue_RemoteMessage4", "PoliceBoss", NULL, NULL, NULL);
 		return Mode_Done(&t, ok);
 	}
 	if (third < 0) {
@@ -1754,7 +1727,7 @@ static byte Sy_CallFrom(const char *module, const char *state, const char *value
 	Native_SetNone(&pc);
 	SaveVar_Set(state, value);
 	byte ok = (!desc || Mode_MMDesc(desc, 1L)) && LV_CALL("PhoneCab", "GetFree", &pc, "") && Mode_Put(module, "pc", NULL, &pc) &&
-		Mode_GSetS(module, "pc", "UseFunc", use) && Sy_TargetG(module, "pc");
+		Mode_GSetS(module, "pc", "UseFunc", use) && LvN_TargetG(module, "pc");
 	Native_Free(&pc);
 	return ok;
 }
@@ -2013,7 +1986,7 @@ static byte Sy_Allowed(const char *module, const char *var) {
 /* Scrap.Set("CurrentWaypointName", MercName); MissionsFuncs.SetMissionTarget(o1.Name) */
 static byte Sy_MercTarget(const char *module, const nativeVal_t *o1) {
 	nativeVal_t name = { 0 };
-	byte ok = Mode_G(module, "MercName", &name) && Mode_GVarSet("CurrentWaypointName", &name) && Sy_TargetName(o1);
+	byte ok = Mode_G(module, "MercName", &name) && Mode_GVarSet("CurrentWaypointName", &name) && LvN_TargetName(o1);
 	Native_Free(&name);
 	return ok;
 }
@@ -2202,7 +2175,7 @@ static byte Merc_CreateATPCPlansN(const nativeVal_t *name) {
 	if (ok && prf.type != NV_NONE) {
 		ok = Mode_VGet(&prf, "Name", &pn) && Mode_Put(SM, "ATPCPlansName", NULL, &pn);
 		Native_Free(&pn);
-		ok = ok && Mode_G(SM, "ATPCPlansName", &pn) && Sy_Target(&pn);
+		ok = ok && Mode_G(SM, "ATPCPlansName", &pn) && LvN_Target(&pn);
 	}
 	Native_Free(&e);
 	Native_Free(&prf);

@@ -141,16 +141,6 @@ static byte ThMap_CreateGearMayor(const nativeVal_t *a, nativeVal_t *out) {
 	return LvN_Stay(&a[0], 4, &t);
 }
 
-/* InTraffic.<list> = the n models and InTraffic.<num> = count */
-static byte Th_Traffic(const char *list, const char *const *models, int n, const char *num, long count) {
-	nativeVal_t l = { 0 }, c = { 0 };
-	Mode_Texts(&l, models, n);
-	Native_SetInt(&c, count);
-	byte ok = Mode_SetModVar("InTraffic", list, &l) && Mode_SetModVar("InTraffic", num, &c);
-	Native_Free(&l);
-	return ok;
-}
-
 /* Init(LevelPath): the elevators and teleporters, the metro, the locked elevator to the orbit, the fake traffic */
 static byte ThMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const light[] = { "TLight1B", "TLight2B", "TLight3B" };
@@ -169,8 +159,8 @@ static byte ThMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	byte ok = LvN_Entity("DM_Door_ElevatorOrbit_Orbit", &e) && LvN_SetS(&e, "UseFunc", "Map.OrbitLockMsg") &&
 		LvN_SetI(&e, "ArrnOpt", 0);
 	Native_Free(&e);
-	return ok && Mode_Import("InTraffic") && Th_Traffic("N_TrafficList", light, 3, "N_NumTraffic", 20) &&
-		Th_Traffic("M_TrafficList", med, 3, "M_NumTraffic", 5) && Th_Traffic("H_TrafficList", NULL, 0, "H_NumTraffic", 0) &&
+	return ok && Mode_Import("InTraffic") && LvN_InTraffic("N_TrafficList", light, 3, "N_NumTraffic", 20) &&
+		LvN_InTraffic("M_TrafficList", med, 3, "M_NumTraffic", 5) && LvN_InTraffic("H_TrafficList", NULL, 0, "H_NumTraffic", 0) &&
 		LV_CALL("InTraffic", "LoadFakeTraffic", NULL, "") && LV_CALL("InTraffic", "FakeTraffic", NULL, "");
 }
 

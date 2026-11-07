@@ -3127,7 +3127,7 @@ static byte At_State(long state, const nativeVal_t *target, long dist) {
 static byte Traitorius_ReassignTarget(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *usr = TV(), *tr = TV(), *name = TV(), *state = TV(), *un = TV();
-	int both = Mode_UsrHandle(usr) ? Native_True(usr) : -1;
+	int both = LvN_Usr(usr);
 	if (both > 0) {
 		both = Mode_G(AT, "traitorius", tr) ? Native_True(tr) : -1;
 	}
@@ -3463,7 +3463,7 @@ static byte Hunt_Init(void) {
 	if (back != 0) {
 		return Mode_Done(&t, back > 0 && LV_OWN(FH, "ComeBack", NULL, ""));
 	}
-	int police = LV_OWN(FH, "CreateWaypoint", NULL, "") && Mode_UsrHandle(e) ? Native_True(e) : -1;
+	int police = LV_OWN(FH, "CreateWaypoint", NULL, "") && LvN_Usr(e);
 	if (police > 0) {
 		police = Mode_VIsType(e, "Car");
 	}

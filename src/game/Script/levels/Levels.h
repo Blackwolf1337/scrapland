@@ -275,7 +275,8 @@ byte LvN_ModTexts(const char *module, const char *var, const char *const *texts)
 byte LvN_SetInts3(const nativeVal_t *h, const char *var, long x, long y, long z);
 /* e.var = prefix + Scrap.GetLangStr(key) */
 byte LvN_SetLangOpt(const nativeVal_t *e, const char *var, const char *prefix, const char *key);
-/* MissionsFuncs.ActivateTarget(var, on) of a global var of the module (a handle) */
+/* MissionsFuncs.ActivateTarget(v, on), of a global var of the module (a handle) */
+byte LvN_Activate(const nativeVal_t *v, long on);
 byte LvN_GActivate(const char *module, const char *var, long on);
 /* Speech.SpeechRoutines[key] = fn */
 byte LvN_Routine(const char *key, const nativeVal_t *fn);
@@ -283,6 +284,34 @@ byte LvN_Routine(const char *key, const nativeVal_t *fn);
 byte LvN_LaterG(const char *module, const char *delay, const char *func, const nativeVal_t *args, int n);
 /* pc.UseFunc = "PhoneCab.DefUseAudioCom" of the global pc of the module: the phone cab back to normal */
 byte LvN_PcDefault(const char *module);
+/* MissionsFuncs.SetMissionTarget(v), of h.Name, of the global name of module (a handle) .Name */
+byte LvN_Target(const nativeVal_t *v);
+byte LvN_TargetName(const nativeVal_t *h);
+byte LvN_TargetG(const char *module, const char *name);
+/* the global handle name of module .var into out */
+byte LvN_GAttr(const char *module, const char *name, const char *var, nativeVal_t *out);
+/* the global name of module = None */
+byte LvN_PutNone(const char *module, const char *name);
+/* h.var = the global name of module */
+byte LvN_SetG(const nativeVal_t *h, const char *var, const char *module, const char *name);
+/* module.var = v of another module as Script_SetVar sets it: an error is dropped (OBJLIB 5) */
+void LvN_SetVar(const char *module, const char *var, const nativeVal_t *v);
+/* the player is there (usr into *usr): 1, 0, -1 */
+int LvN_Usr(nativeVal_t *usr);
+/* `usr.ActCtrl == ctrl` of a handle: 1, 0, -1 */
+int LvN_CtrlIs(const nativeVal_t *usr, const char *ctrl);
+/* `text + v` of the script into out */
+byte LvN_Cat(const char *text, const nativeVal_t *v, nativeVal_t *out);
+/* the empty text "" as a value */
+const nativeVal_t *LvN_Empty(void);
+/* h.var = Scrap.GetLangStr(key) */
+byte LvN_SetLang(const nativeVal_t *h, const char *var, const char *key);
+/* CharsNPC.SetReposChars(name, n) */
+byte LvN_Repos(const char *name, long n);
+/* the scan bar ScanRemainingTime of mission scorer 0 blinks (lost: Blink 1, IsAutoUpdatable 0) or runs */
+byte LvN_ScanBlink(int lost);
+/* InTraffic.<list> = the n models (n -1: up to NULL) and InTraffic.<num> = count */
+byte LvN_InTraffic(const char *list, const char *const *models, int n, const char *num, long count);
 /* the parameters of the native helpers: an int, a text */
 void LvN_Int(nativeVal_t *v, long i);
 void LvN_Str(nativeVal_t *v, const char *s);

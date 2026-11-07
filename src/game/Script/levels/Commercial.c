@@ -88,36 +88,6 @@ static byte Cm_PreloadG(const char *module, const char *name) {
 	return ok;
 }
 
-/* the global name of module (a handle) .var into out */
-static byte Cm_GAttr(const char *module, const char *name, const char *var, nativeVal_t *out) {
-	nativeVal_t h;
-	Native_SetNone(out);
-	byte ok = Mode_G(module, name, &h) && Mode_VGet(&h, var, out);
-	Native_Free(&h);
-	return ok;
-}
-
-/* MissionsFuncs.ActivateTarget(v, on) (OBJLIB 3) */
-static byte Cm_Activate(const nativeVal_t *v, long on) {
-	return LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", v, on);
-}
-
-static byte Cm_ActivateG(const char *module, const char *name, long on) {
-	nativeVal_t h;
-	byte ok = Mode_G(module, name, &h) && Cm_Activate(&h, on);
-	Native_Free(&h);
-	return ok;
-}
-
-/* MissionsFuncs.SetMissionTarget(h.Name) */
-static byte Cm_TargetName(const nativeVal_t *h) {
-	nativeVal_t n;
-	Native_SetNone(&n);
-	byte ok = Mode_VGet(h, "Name", &n) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &n);
-	Native_Free(&n);
-	return ok;
-}
-
 /* module.var = the global name of src (a function) and = None (OBJLIB 5) */
 #define CM_HOOK(module, var, src, name) LvN_ModSetGlobal(module, var, src, name)
 
@@ -150,14 +120,6 @@ static int Cm_AttrEqS(const nativeVal_t *h, const char *var, const char *s) {
 	return r;
 }
 
-/* h.var = the global name of module */
-static byte Cm_SetG(const nativeVal_t *h, const char *var, const char *module, const char *name) {
-	nativeVal_t v;
-	byte ok = Mode_G(module, name, &v) && Mode_VSet(h, var, &v);
-	Native_Free(&v);
-	return ok;
-}
-
 /* the global name of module = [] (del name first when del: the NameError of a missing one) */
 static byte Cm_GEmpty(const char *module, const char *name, byte del) {
 	nativeVal_t v;
@@ -168,21 +130,6 @@ static byte Cm_GEmpty(const char *module, const char *name, byte del) {
 	byte ok = Mode_Put(module, name, NULL, &v);
 	Native_Free(&v);
 	return ok;
-}
-
-/* the global name of module = None, = "text" */
-static byte Cm_GNone(const char *module, const char *name) {
-	nativeVal_t v;
-	Native_SetNone(&v);
-	return Mode_Put(module, name, NULL, &v);
-}
-
-/* x in the global name of module: 1, 0, -1 */
-static int Cm_GIn(const char *module, const char *name, const nativeVal_t *x) {
-	nativeVal_t l;
-	int r = Mode_G(module, name, &l) ? Native_Contains(&l, x) : -1;
-	Native_Free(&l);
-	return r;
 }
 
 /* the global name of module (a list) .append(h.Name) */
@@ -206,11 +153,6 @@ static int Cm_UsrNameIs(const nativeVal_t *name) {
 	int r = Mode_UsrHandle(&usr) ? LvN_UsrNameIs(&usr, name) : -1;
 	Native_Free(&usr);
 	return r;
-}
-
-/* the player is there (usr into *usr): 1, 0, -1 */
-static int Cm_Usr(nativeVal_t *usr) {
-	return Mode_UsrHandle(usr) ? Native_True(usr) : -1;
 }
 
 /* `x` of the global name of module into out */
@@ -314,7 +256,7 @@ static byte Cm_UsePhone(const nativeVal_t *a, const char *module, const cmPhone_
 	if (alarm > 0) {
 		ok = (!p->global || Mode_G(module, "pc", &gpc)) && LV_CALL("Speech", "StartObjSpch", NULL, "vss", cab, p->police, p->who);
 	} else if (alarm == 0) {
-		ok = (!p->activate || ((!p->global || Mode_G(module, "pc", &gpc)) && Cm_Activate(cab, 0))) && (!p->stop || Mode_DelSchedS(p->stop)) &&
+		ok = (!p->activate || ((!p->global || Mode_G(module, "pc", &gpc)) && LvN_Activate(cab, 0))) && (!p->stop || Mode_DelSchedS(p->stop)) &&
 			LvN_OnEnd(module, p->end, NULL) && Mode_NISpeech(p->who, p->ni) && (!p->after || LvN_SetS(&pc, "UseFunc", p->after));
 	} else {
 		ok = 0;
@@ -484,7 +426,7 @@ static byte Mickus_Init(const nativeVal_t *a, nativeVal_t *out) {
 	byte ok = Mode_SaveInt("NumTransports", &n) && LV_OWN(DMK, "CreateTransports", NULL, "v", &n);
 	Native_Free(&n);
 	Native_SetNone(&usr);
-	int car = ok ? Cm_Usr(&usr) : -1;
+	int car = ok ? LvN_Usr(&usr) : -1;
 	if (car > 0) {
 		car = Cm_UsrCar(&usr);
 	}
@@ -596,11 +538,6 @@ static byte Mickus_OnMickusDamage(const nativeVal_t *a, nativeVal_t *out) {
 	return ok;
 }
 
-/* the scan bar blinks (lost) or runs */
-static byte Mk_Blink(int lost) {
-	return LvN_Set0I("ScanRemainingTime", "Blink", lost) && LvN_Set0I("ScanRemainingTime", "IsAutoUpdatable", !lost);
-}
-
 /* SScorer.Set(0, "ScanRemainingTime", var, MAX_SCANNING_TIME) */
 static byte Mk_ScanTime(const char *var) {
 	nativeVal_t v;
@@ -615,7 +552,7 @@ static byte Mickus_ScanShip(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t *usr = Mode_V(&t), *cur = Mode_V(&t), *e = Mode_V(&t), *blink = Mode_V(&t), *lst = Mode_V(&t);
 	(void)a;
 	(void)out;
-	int u = Cm_Usr(usr);
+	int u = LvN_Usr(usr);
 	if (u <= 0) {
 		return Mode_Done(&t, u == 0);
 	}
@@ -629,14 +566,14 @@ static byte Mickus_ScanShip(const nativeVal_t *a, nativeVal_t *out) {
 			Mode_ScorerGet(0, "ScanRemainingTime", "Blink", blink);
 			if (LvN_EqI(blink, 0)) {
 				Native_SetNone(&lost);
-				byte ok = Mk_Blink(1) && Mode_G(DMK, "MAX_TIME_TARGET_LOST", &lost) &&
+				byte ok = LvN_ScanBlink(1) && Mode_G(DMK, "MAX_TIME_TARGET_LOST", &lost) &&
 					Mode_LaterV(&lost, DMK, "CheckContinueScanning", NULL, 0, NULL);
 				Native_Free(&lost);
 				return Mode_Done(&t, ok);
 			}
 			return Mode_Done(&t, 1);
 		}
-		return Mode_Done(&t, far == 0 && Mk_Blink(0));
+		return Mode_Done(&t, far == 0 && LvN_ScanBlink(0));
 	}
 	if (!Mode_G(DMK, "transports", lst)) {
 		return Mode_Done(&t, 0);
@@ -656,7 +593,7 @@ static byte Mickus_ScanShip(const nativeVal_t *a, nativeVal_t *out) {
 			ok = Mode_VGet(&h, "Name", &name) && Mode_Put(DMK, "currentScannedShip", NULL, &name);
 			Native_Free(&name);
 			ok = ok && Mode_G(DMK, "currentScannedShip", &name) && Cm_Waypoint(&name) && LvN_Set0I("ScanStatusText", "Visible", 1) &&
-				Mk_Blink(0) && Mk_ScanTime("MaxValue") && Mk_ScanTime("Value") && LvN_Set0I("ScanRemainingTime", "Visible", 1);
+				LvN_ScanBlink(0) && Mk_ScanTime("MaxValue") && Mk_ScanTime("Value") && LvN_Set0I("ScanRemainingTime", "Visible", 1);
 		}
 		ok = ok && near >= 0;
 		Native_Free(&s);
@@ -680,7 +617,7 @@ static byte Mickus_CheckContinueScanning(const nativeVal_t *a, nativeVal_t *out)
 	}
 	int near = Native_True(usr) && Native_True(e) ? Cm_Scan(e, usr, "<") : 0;
 	if (near > 0) {
-		return Mode_Done(&t, Mk_Blink(0));
+		return Mode_Done(&t, LvN_ScanBlink(0));
 	}
 	return Mode_Done(&t, near == 0 && LV_OWN(DMK, "ResetScan", NULL, ""));
 }
@@ -708,7 +645,7 @@ static byte Mickus_OnFinishScan(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Cm_WaypointS("") || !LvN_Set0I("ScanStatusText", "Visible", 0) || !LvN_Set0I("ScanRemainingTime", "Visible", 0)) {
 		return Mode_Done(&t, 0);
 	}
-	int u = Cm_Usr(usr);
+	int u = LvN_Usr(usr);
 	if (u <= 0) {
 		return Mode_Done(&t, u == 0);
 	}
@@ -721,7 +658,7 @@ static byte Mickus_OnFinishScan(const nativeVal_t *a, nativeVal_t *out) {
 		ok = LvN_Com("Mission_Search&DestroyMickus_RemoteMessage2", "Traitorius", NULL, NULL, NULL) && Mode_G(DMK, "currentScannedShip", cur) &&
 			Mode_Remove(DMK, "transports", cur);
 		Native_Free(cur);
-		ok = ok && Mode_G(DMK, "currentScannedShip", cur) && Mode_EntityH(cur, e) && (!Native_True(e) || Cm_Activate(e, 0));
+		ok = ok && Mode_G(DMK, "currentScannedShip", cur) && Mode_EntityH(cur, e) && (!Native_True(e) || LvN_Activate(e, 0));
 	}
 	return Mode_Done(&t, ok && LV_OWN(DMK, "ResetScan", NULL, ""));
 }
@@ -746,7 +683,7 @@ static byte Mickus_MickusIdentified(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_Import("Parking") || !CM_HOOK("Parking", "SwitchVehicleMissionCallback", DMK, "ReassignTarget")) {
 		return Mode_Done(&t, 0);
 	}
-	int u = Cm_Usr(usr);
+	int u = LvN_Usr(usr);
 	if (u <= 0) {
 		return Mode_Done(&t, u == 0);
 	}
@@ -782,7 +719,7 @@ static byte Mickus_MickusIdentified(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Native_True(e)) {
 		return Mode_Done(&t, 1);
 	}
-	byte ok = LvN_Com("Mission_Search&DestroyMickus_RemoteMessage4", "Traitorius", DMK, "TraitoriusFuncEnemiesCom", NULL) && Cm_TargetName(e) &&
+	byte ok = LvN_Com("Mission_Search&DestroyMickus_RemoteMessage4", "Traitorius", DMK, "TraitoriusFuncEnemiesCom", NULL) && LvN_TargetName(e) &&
 		Mode_VGet(e, "Style", style) && Native_Arith('+', style, Mode_I(&t, 2000), s2) && Mode_VSet(e, "Style", s2) &&
 		LvN_SetS(e, "TgType", "red") && LvN_SetS(e, "OnDamage", "") && LvN_ScorerOff() && LvN_Draw() && Mk_Flee(usr) &&
 		Mode_DelSchedS("ScanShip") && Mode_SaveInt("NumTransports", n);
@@ -800,7 +737,7 @@ static byte Mickus_ReassignTarget(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t *usr = Mode_V(&t), *m = Mode_V(&t), *e = Mode_V(&t), *name = Mode_V(&t);
 	(void)a;
 	(void)out;
-	int u = Cm_Usr(usr);
+	int u = LvN_Usr(usr);
 	if (u <= 0) {
 		return Mode_Done(&t, u == 0);
 	}
@@ -941,7 +878,7 @@ static byte Mickus_CreateFuncEnemies(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	Native_SetNone(&usr);
-	int u = Cm_Usr(&usr);
+	int u = LvN_Usr(&usr);
 	byte ok = u >= 0 && (!u || Mode_Range(&a[0], &n));
 	for (long i = 0; ok && u > 0 && i < n; i++) {
 		nativeVal_t fn, pd, fname, uname;
@@ -987,7 +924,7 @@ static byte Mickus_OnTransportsDeath(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_Import("Vehicles")) {
 		return 0;
 	}
-	int in = Cm_GIn(DMK, "transports", &a[0]);
+	int in = Mode_InG(&a[0], DMK, "transports");
 	if (in < 0) {
 		return 0;
 	}
@@ -1064,26 +1001,11 @@ static byte Mickus_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	return Mode_WayPoint();
 }
 
-/* SScorer.Set(id, item, var, i) and the same with a global of module */
-static byte Cm_SetI(const nativeVal_t *id, const char *item, const char *var, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return LvN_ScorerSet(id, item, var, &v);
-}
-
+/* SScorer.Set(id, item, var, the global name of module) */
 static byte Cm_ScorerG(const nativeVal_t *id, const char *item, const char *var, const char *module, const char *name) {
 	nativeVal_t v;
 	byte ok = Mode_G(module, name, &v) && LvN_ScorerSet(id, item, var, &v);
 	Native_Free(&v);
-	return ok;
-}
-
-/* SScorer.Add(id, item, type) */
-static byte Cm_Add(const nativeVal_t *id, const char *item, const char *type) {
-	nativeVal_t it;
-	LvN_Str(&it, item);
-	byte ok = Mode_ScorerAdd(id, &it, type);
-	Native_Free(&it);
 	return ok;
 }
 
@@ -1104,8 +1026,8 @@ static byte Mickus_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
 	LvN_Label("Mission_Search&DestroyMickus_Scorer_1", label);
 	byte ok = LvN_TextX(0, x) && LvN_TextY(0, y) &&
 		LvN_MissionText(&a[0], "ScanStatusText", "Text", x, y, "Horatio", "Shadow", label, "Left", vis) &&
-		Cm_Add(&a[0], "ScanRemainingTime", "Bar") && Mode_BarDefaults(&a[0], "ScanRemainingTime", NULL, NULL) &&
-		Cm_SetI(&a[0], "ScanRemainingTime", "IsAutoUpdatable", 0) && Cm_ScorerG(&a[0], "ScanRemainingTime", "MaxValue", DMK, "MAX_SCANNING_TIME") &&
+		Mode_ScorerAddS(&a[0], "ScanRemainingTime", "Bar") && Mode_BarDefaults(&a[0], "ScanRemainingTime", NULL, NULL) &&
+		Mode_ScorerSetI(&a[0], "ScanRemainingTime", "IsAutoUpdatable", 0) && Cm_ScorerG(&a[0], "ScanRemainingTime", "MaxValue", DMK, "MAX_SCANNING_TIME") &&
 		(scanning || Cm_ScorerG(&a[0], "ScanRemainingTime", "Value", DMK, "MAX_SCANNING_TIME")) &&
 		LvN_ScorerSet(&a[0], "ScanRemainingTime", "Visible", vis);
 	return Mode_Done(&t, ok);
@@ -1232,7 +1154,7 @@ static byte Gus_InitMission(const nativeVal_t *a, nativeVal_t *out) {
 /* `x.Active` of a global handle: 1, 0, -1 */
 static int Pg_GActive(const char *name) {
 	nativeVal_t v;
-	int r = Cm_GAttr(PG, name, "Active", &v) ? Native_True(&v) : -1;
+	int r = LvN_GAttr(PG, name, "Active", &v) ? Native_True(&v) : -1;
 	Native_Free(&v);
 	return r;
 }
@@ -1241,7 +1163,7 @@ static int Pg_GActive(const char *name) {
 static byte Pg_Attack(const char *a, const char *b) {
 	nativeVal_t an, bn;
 	Native_SetNone(&bn);
-	byte ok = Cm_GAttr(PG, a, "Name", &an) && Cm_GAttr(PG, b, "Name", &bn) && STATE("ivv", 2L, &an, &bn);
+	byte ok = LvN_GAttr(PG, a, "Name", &an) && LvN_GAttr(PG, b, "Name", &bn) && STATE("ivv", 2L, &an, &bn);
 	Native_Free(&an);
 	Native_Free(&bn);
 	return ok;
@@ -1309,7 +1231,7 @@ static byte Gus_CreateBishopGus(const nativeVal_t *a, nativeVal_t *out) {
 	byte ok = Pg_Fighter("bishopGus", "BishopGus", "BishopGus", &h) && LvN_SetS(&h, "OnDeath", "Mission_ProtectGus.OnBishopGusDeath") &&
 		LvN_SetI(&h, "Money", -1) && Pg_Life(&h, "BISHOP_GUS_LIFE");
 	int live = ok ? Mode_GCmpI(PG, "lonelyMercLifes", ">", 0) : -1;
-	ok = live >= 0 && (!live || (Cm_Activate(&h, 1) && Mode_VGet(&h, "Name", &name) && Cm_Waypoint(&name)));
+	ok = live >= 0 && (!live || (LvN_Activate(&h, 1) && Mode_VGet(&h, "Name", &name) && Cm_Waypoint(&name)));
 	Native_Free(&h);
 	Native_Free(&name);
 	return ok;
@@ -1335,7 +1257,7 @@ static int Pg_Active(const char *name) {
 /* SAI.SetStateVehicle(3, x.Name, 0) of a global handle */
 static byte Pg_Wander(const char *name) {
 	nativeVal_t n;
-	byte ok = Cm_GAttr(PG, name, "Name", &n) && STATE("ivi", 3L, &n, 0L);
+	byte ok = LvN_GAttr(PG, name, "Name", &n) && STATE("ivi", 3L, &n, 0L);
 	Native_Free(&n);
 	return ok;
 }
@@ -1344,7 +1266,7 @@ static byte Pg_Wander(const char *name) {
 static byte Pg_Died(const nativeVal_t *a, const char *global, const char *lifes, const char *item, const char *other) {
 	nativeVal_t text;
 	Native_SetNone(&text);
-	if (!Mode_Import("Vehicles") || !Cm_GNone(PG, global) || !Mode_GOpI(PG, lifes, '-', 1) || !Cm_GRepr(PG, lifes, &text)) {
+	if (!Mode_Import("Vehicles") || !LvN_PutNone(PG, global) || !Mode_GOpI(PG, lifes, '-', 1) || !Cm_GRepr(PG, lifes, &text)) {
 		return 0;
 	}
 	byte ok = LvN_Set0(item, "Text", &text) && Cm_OnDeath(a);
@@ -1365,7 +1287,7 @@ static byte Gus_OnLonelyMercDeath(const nativeVal_t *a, nativeVal_t *out) {
 	int over = LvN_GEqI(PG, "lonelyMercLifes", 0);
 	if (over > 0) {
 		int g = LvN_GTrue(PG, "bishopGus");
-		return g >= 0 && (!g || Cm_ActivateG(PG, "bishopGus", 0)) && Cm_WaypointS("") && Pg_Over("Mission_ProtectGus_RemoteMessage3");
+		return g >= 0 && (!g || LvN_GActivate(PG, "bishopGus", 0)) && Cm_WaypointS("") && Pg_Over("Mission_ProtectGus_RemoteMessage3");
 	}
 	return over == 0 && Pg_Again("CreateLonelyMerc");
 }
@@ -1374,7 +1296,7 @@ static byte Gus_OnLonelyMercDeath(const nativeVal_t *a, nativeVal_t *out) {
 static byte Gus_OnBishopGusDeath(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t m;
 	(void)out;
-	if (!Mode_Import("Vehicles") || !Cm_GNone(PG, "bishopGus") || !Mode_GOpI(PG, "bishopGusLifes", '-', 1)) {
+	if (!Mode_Import("Vehicles") || !LvN_PutNone(PG, "bishopGus") || !Mode_GOpI(PG, "bishopGusLifes", '-', 1)) {
 		return 0;
 	}
 	nativeVal_t text;
@@ -1448,7 +1370,7 @@ static byte Gus_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
 	byte ok = LvN_PcDefault(PG) && Mode_G(PG, "pc", &pc) && LvN_SetI(&pc, "ArrowCanUse", 0);
 	Native_Free(&pc);
-	if (!ok || !Cm_ActivateG(PG, "pc", 0) || !Mode_DelSaveVars("MissionState") ||
+	if (!ok || !LvN_GActivate(PG, "pc", 0) || !Mode_DelSaveVars("MissionState") ||
 		!LvN_Next("Mission_IntoTheGDB", "GDB", "Mission_IntoTheGDB_MissionText1")) {
 		return 0;
 	}
@@ -1567,7 +1489,7 @@ static byte Stupidus_CreateStupidus(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_Import("VehiclesNPC") || !Mode_Import("OutMap") || !Mode_Import("Traffic")) {
 		return Mode_Done(&t, 0);
 	}
-	int u = Cm_Usr(usr);
+	int u = LvN_Usr(usr);
 	if (u <= 0) {
 		return Mode_Done(&t, u == 0);
 	}
@@ -1882,14 +1804,14 @@ static byte Race_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
 	/* width, height = SScorer.GetTextArea("Horatio", the label of DistractHumphrey) */
 	LvN_Label("Mission_DistractHumphrey_Scorer1", l2);
 	Native_Free(x0);
-	if (!Mode_TextArea("Horatio", l2, area) || !Mode_Unpack(area, 2, ar) || !Cm_Add(id, "RaceTimer", "Timer") || !LvN_TextX(0, x0) ||
+	if (!Mode_TextArea("Horatio", l2, area) || !Mode_Unpack(area, 2, ar) || !Mode_ScorerAddS(id, "RaceTimer", "Timer") || !LvN_TextX(0, x0) ||
 		!Native_Arith('+', x0, ar, s1) || !Native_Arith('+', s1, Mode_I(&t, 30), s2) || !LvN_ScorerSet(id, "RaceTimer", "X", s2) ||
 		!LvN_TextY(12, y12) || !LvN_ScorerSet(id, "RaceTimer", "Y", y12) || !LvN_ScorerSet(id, "RaceTimer", "Align", Mode_S(&t, "Left")) ||
 		!LvN_ScorerSet(id, "RaceTimer", "TimerType", Mode_S(&t, "TimeSpecialUse")) ||
 		!LvN_ScorerSet(id, "RaceTimer", "OnTimeExpired", Mode_S(&t, "Mission_Win1stRace.TimeExpired")) || !Mode_TextColour(id, "RaceTimer")) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, Cm_SetI(id, "RaceTimer", "Visible", 1));
+	return Mode_Done(&t, Mode_ScorerSetI(id, "RaceTimer", "Visible", 1));
 }
 
 LV_FN(Race, InitA, 1, Race_Init)
@@ -2120,7 +2042,7 @@ static byte Data_Init(const nativeVal_t *a, nativeVal_t *out) {
 /* usr.Target = funcWithDataName when the functionary with the data is there and the player has a ship */
 static byte Gd_Target(const nativeVal_t *usr, const nativeVal_t *e) {
 	int t = Native_True(e) ? Cm_UsrCar(usr) : 0;
-	return t >= 0 && (!t || Cm_SetG(usr, "Target", GD, "funcWithDataName"));
+	return t >= 0 && (!t || LvN_SetG(usr, "Target", GD, "funcWithDataName"));
 }
 
 /* the functionaries of Funcs that flee or idle flee from the player (the script never moves name on: the state of the
@@ -2187,7 +2109,7 @@ static byte Data_CreateWave(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t *usr = Mode_V(&t), *n = Mode_V(&t), *dataPos = Mode_V(&t), *e = Mode_V(&t), *fwd = Mode_V(&t);
 	long count;
 	(void)out;
-	int u = Cm_Usr(usr);
+	int u = LvN_Usr(usr);
 	if (u <= 0) {
 		return Mode_Done(&t, u == 0);
 	}
@@ -2216,7 +2138,7 @@ static byte Data_CreateWave(const nativeVal_t *a, nativeVal_t *out) {
 			Native_Free(dataPos);
 			ok = Mode_VGet(&fn, "Pos", dataPos) && Mode_VGet(&fn, "Name", &name) && Mode_Put(GD, "funcWithDataName", NULL, &name);
 			Native_Free(&name);
-			ok = ok && Cm_TargetName(&fn) && Mode_VGet(&fn, "Name", &name) && STATE("ivi", 3L, &name, 0L);
+			ok = ok && LvN_TargetName(&fn) && Mode_VGet(&fn, "Name", &name) && STATE("ivi", 3L, &name, 0L);
 		} else if (ok) {
 			ok = Mode_VSet(&fn, "Pos", dataPos) && Mode_VGet(&fn, "Name", &name) && Mode_G(GD, "funcWithDataName", fwd) &&
 				STATE("ivv", 7L, &name, fwd);
@@ -2265,7 +2187,7 @@ static byte Data_ReinsertFunctionaryInWave(const nativeVal_t *a, nativeVal_t *ou
 	int withData = 0, toData = 0;
 	(void)a;
 	(void)out;
-	int u = Cm_Usr(usr);
+	int u = LvN_Usr(usr);
 	if (u <= 0) {
 		return Mode_Done(&t, u == 0);
 	}
@@ -2345,7 +2267,7 @@ static byte Data_OnFunctionaryDeath(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t *e = Mode_V(&t), *lst = Mode_V(&t), *pos = Mode_V(&t), *delay = Mode_V(&t), *f0 = Mode_V(&t), *usr = Mode_V(&t);
 	nativeVal_t *un = Mode_V(&t);
 	(void)out;
-	int in = Cm_GIn(GD, "funcsInWave", &a[0]);
+	int in = Mode_InG(&a[0], GD, "funcsInWave");
 	if (in <= 0) {
 		return Mode_Done(&t, in == 0);
 	}
@@ -2444,7 +2366,7 @@ static byte Data_OnFunctionaryDamage(const nativeVal_t *a, nativeVal_t *out) {
 		if (first < 0) {
 			return Mode_Done(&t, 0);
 		}
-		int u = Cm_Usr(usr);
+		int u = LvN_Usr(usr);
 		return Mode_Done(&t, u >= 0 && (!u || (Mode_VGet(usr, "Name", un) && STATE("ivvi", 5L, &a[0], un, 100000L))) && Gd_Attack(&a[0], 0));
 	}
 	return Mode_Done(&t, data == 0 && Gd_Attack(NULL, 1));
@@ -2478,7 +2400,7 @@ static byte Data_CheckAI(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	byte ok = go >= 0;
 	if (go > 0) {
-		int u = Cm_Usr(&usr);
+		int u = LvN_Usr(&usr);
 		if (u == 0) {
 			ok = Mode_VGet(&e, "Name", &en) && STATE("ivi", 3L, &en, 1L);
 		} else if (u > 0) {
@@ -2523,13 +2445,13 @@ static byte Data_TakeData(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t *usr = Mode_V(&t), *un = Mode_V(&t), *n = Mode_V(&t), *max = Mode_V(&t), *n1 = Mode_V(&t), *e = Mode_V(&t);
 	nativeVal_t *arrow = Mode_V(&t);
 	(void)out;
-	int u = Cm_Usr(usr);
+	int u = LvN_Usr(usr);
 	if (u <= 0) {
 		return Mode_Done(&t, u == 0);
 	}
 	int player = Mode_VGet(usr, "Name", un) ? Mode_Cmp(un, "==", &a[1]) : -1;
 	if (player > 0) {
-		if (!Cm_GNone(GD, "droppedDataPos") || !Cm_TakenArrow(&a[0]) || !Cm_SaveAdd("NumData", 1, n) || !Mode_DelSchedS("ReinsertFunctionaryInWave") ||
+		if (!LvN_PutNone(GD, "droppedDataPos") || !Cm_TakenArrow(&a[0]) || !Cm_SaveAdd("NumData", 1, n) || !Mode_DelSchedS("ReinsertFunctionaryInWave") ||
 			!Mode_G(GD, "MAX_DATA_UNITS", max)) {
 			return Mode_Done(&t, 0);
 		}
@@ -2546,11 +2468,11 @@ static byte Data_TakeData(const nativeVal_t *a, nativeVal_t *out) {
 	if (player < 0) {
 		return Mode_Done(&t, 0);
 	}
-	int in = Cm_GIn(GD, "funcsInWave", &a[1]);
+	int in = Mode_InG(&a[1], GD, "funcsInWave");
 	if (in <= 0) {
 		return Mode_Done(&t, in == 0);
 	}
-	byte ok = Cm_GNone(GD, "droppedDataPos") && Mode_EntityH(&a[0], e) && Mode_VDel(e) && Native_Arith('+', &a[0], Mode_S(&t, "CheckArrow"), arrow);
+	byte ok = LvN_PutNone(GD, "droppedDataPos") && Mode_EntityH(&a[0], e) && Mode_VDel(e) && Native_Arith('+', &a[0], Mode_S(&t, "CheckArrow"), arrow);
 	Native_Free(e);
 	ok = ok && Mode_EntityH(arrow, e) && Mode_VDel(e);
 	Native_Free(e);
@@ -2658,8 +2580,8 @@ static byte Data_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetNone(&n);
 	LvN_Label("Mission_GetDataPart3_Scorer_1", &label);
 	byte ok = LvN_TextX(0, &x) && LvN_TextY(0, &y) &&
-		LvN_MissionText(&a[0], "DataStatusText", "Text", &x, &y, "Horatio", "Shadow", &label, "Left", NULL) && Cm_Add(&a[0], "DataStatus", "Bar") &&
-		Mode_BarDefaults(&a[0], "DataStatus", NULL, NULL) && Cm_SetI(&a[0], "DataStatus", "IsAutoUpdatable", 0) &&
+		LvN_MissionText(&a[0], "DataStatusText", "Text", &x, &y, "Horatio", "Shadow", &label, "Left", NULL) && Mode_ScorerAddS(&a[0], "DataStatus", "Bar") &&
+		Mode_BarDefaults(&a[0], "DataStatus", NULL, NULL) && Mode_ScorerSetI(&a[0], "DataStatus", "IsAutoUpdatable", 0) &&
 		Cm_ScorerG(&a[0], "DataStatus", "MaxValue", GD, "MAX_DATA_UNITS") && Mode_SaveInt("NumData", &n) && LvN_ScorerSet(&a[0], "DataStatus", "Value", &n);
 	Native_Free(&x);
 	Native_Free(&y);
@@ -2815,8 +2737,8 @@ static byte Gambler_CreateCrazyGambler(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetNone(&pd);
 	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_SpawnCar("CrazyGambler", 0, &h, NULL) &&
 		LvN_StdProfile(CG, "GetCrazyGamblerProfile", &h, &pd) && LvN_SetI(&h, "LaunchTaunts", 0) && LvN_SetI(&h, "Money", -1) &&
-		Cm_SetG(&h, "MPil0", CG, "pilotName") && LvN_SetS(&h, "TgType", "red") && LvN_SetS(&h, "EntityList", "Enemies") &&
-		LvN_Life(&h, CG, "GAMBLER_LIFE") && Cm_AppendName(CG, "crazyGamblers", &h) && Cm_Activate(&h, 1);
+		LvN_SetG(&h, "MPil0", CG, "pilotName") && LvN_SetS(&h, "TgType", "red") && LvN_SetS(&h, "EntityList", "Enemies") &&
+		LvN_Life(&h, CG, "GAMBLER_LIFE") && Cm_AppendName(CG, "crazyGamblers", &h) && LvN_Activate(&h, 1);
 	Native_Free(&h);
 	Native_Free(&pd);
 	return ok;
@@ -2882,7 +2804,7 @@ static byte Gambler_OnCrazyGamblerDeath(const nativeVal_t *a, nativeVal_t *out) 
 	if (!Mode_Import("Vehicles")) {
 		return Mode_Done(&t, 0);
 	}
-	int in = Cm_GIn(CG, "crazyGamblers", &a[0]);
+	int in = Mode_InG(&a[0], CG, "crazyGamblers");
 	if (in < 0) {
 		return Mode_Done(&t, 0);
 	}
@@ -3095,7 +3017,7 @@ static byte Porkins_CreatePorkinsTransport(const nativeVal_t *a, nativeVal_t *ou
 	(void)a;
 	(void)out;
 	byte ok = Pt_Transport("TVoteBishop", "BISHOP_TRANSPORT_LIFE", "Mission_DestroyPorkinsTransports.OnPorkinsTransportDeath", "red", &p) &&
-		Cm_Activate(&p, 1) && Cm_AppendName(PT, "bishopTransports", &p);
+		LvN_Activate(&p, 1) && Cm_AppendName(PT, "bishopTransports", &p);
 	Native_Free(&p);
 	return ok;
 }
@@ -3208,7 +3130,7 @@ static byte Pt_Release(const char *list, int bishops, int deactivate) {
 		Native_SetNone(&name);
 		Native_SetNone(&e);
 		ok = Native_SeqItem(&lst, i, &name) && Mode_EntityH(&name, &e) && (!Native_True(&e) || (LvN_SetS(&e, "TgType", "none") &&
-			(bishops ? LvN_SetS(&e, "EntityList", "Traffic") : LvN_SetS(&e, "OnDeath", "Vehicles.OnDeath")) && (!deactivate || Cm_Activate(&e, 0))));
+			(bishops ? LvN_SetS(&e, "EntityList", "Traffic") : LvN_SetS(&e, "OnDeath", "Vehicles.OnDeath")) && (!deactivate || LvN_Activate(&e, 0))));
 		Native_Free(&name);
 		Native_Free(&e);
 	}
@@ -3334,7 +3256,7 @@ static byte Porkins_OnBishopDamage(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetNone(&un);
 	Native_SetNone(&e);
 	Native_SetNone(&en);
-	int by = Cm_Usr(&usr);
+	int by = LvN_Usr(&usr);
 	if (by > 0) {
 		by = Mode_VGet(&usr, "Name", &un) ? Mode_Cmp(&a[1], "==", &un) : -1;
 	}
@@ -3455,16 +3377,16 @@ static byte Porkins_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
 	LvN_Label("Mission_Campaign2_Scorer1", label);
 	Cm_Ints4(main, 16, 16, 255, 192);
 	Cm_Ints4(black, 255, 16, 192, 192);
-	if (!Cm_Add(id, "PopularityText", "Text") || !Cm_Add(id, "PopularitySeparator", "Sprite") || !Cm_Add(id, "PopularityBar", "Bar") ||
+	if (!Mode_ScorerAddS(id, "PopularityText", "Text") || !Mode_ScorerAddS(id, "PopularitySeparator", "Sprite") || !Mode_ScorerAddS(id, "PopularityBar", "Bar") ||
 		!LvN_TextX(0, x) || !LvN_TextY(0, y) || !LvN_MissionText(id, "PopularityText", NULL, x, y, "Horatio", "Shadow", label, "Left", NULL) ||
 		!Mode_BarDefaults(id, "PopularityBar", main, black) || !Cm_ScorerG(id, "PopularityBar", "MaxValue", PT, "MAX_POPULARITY") ||
-		!Cm_ScorerG(id, "PopularityBar", "Value", PT, "mayorPopularity") || !Cm_SetI(id, "PopularityBar", "Red", 255) ||
-		!Cm_SetI(id, "PopularityBar", "Green", 0) || !Cm_SetI(id, "PopularityBar", "Blue", 0)) {
+		!Cm_ScorerG(id, "PopularityBar", "Value", PT, "mayorPopularity") || !Mode_ScorerSetI(id, "PopularityBar", "Red", 255) ||
+		!Mode_ScorerSetI(id, "PopularityBar", "Green", 0) || !Mode_ScorerSetI(id, "PopularityBar", "Blue", 0)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_ScorerGet(0, "PopularityBar", "H", h);
-	if (!Cm_SetI(id, "PopularitySeparator", "Red", 0) || !Cm_SetI(id, "PopularitySeparator", "Green", 255) ||
-		!Cm_SetI(id, "PopularitySeparator", "Blue", 0)) {
+	if (!Mode_ScorerSetI(id, "PopularitySeparator", "Red", 0) || !Mode_ScorerSetI(id, "PopularitySeparator", "Green", 255) ||
+		!Mode_ScorerSetI(id, "PopularitySeparator", "Blue", 0)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_ScorerGet(0, "PopularityBar", "X", bx);
