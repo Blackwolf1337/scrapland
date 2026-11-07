@@ -1977,6 +1977,359 @@ byte Mode_GVarSetDef(const char *name) {
 	return ok;
 }
 
+/* ---- the native level files of batch H (Commercial, Police, Press) ---- */
+
+byte Mode_Set0(const char *item, const char *var, const nativeVal_t *v) {
+	nativeVal_t id, it;
+	Native_SetInt(&id, 0);
+	Native_SetText(&it, item, (int)strlen(item));
+	byte ok = Mode_ScorerSet(&id, &it, var, v);
+	Native_Free(&it);
+	return ok;
+}
+
+byte Mode_Set0I(const char *item, const char *var, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return Mode_Set0(item, var, &v);
+}
+
+/* Scorer.<var> + d */
+static byte Mode_TextAt(const char *var, long d, nativeVal_t *out) {
+	nativeVal_t v, n;
+	if (!LvN_ModGet("Scorer", var, &v)) {
+		Native_SetNone(out);
+		return 0;
+	}
+	if (!d) {
+		*out = v;
+		return 1;
+	}
+	Native_SetInt(&n, d);
+	Native_SetNone(out);
+	byte ok = Native_Arith('+', &v, &n, out);
+	Native_Free(&v);
+	return ok;
+}
+
+byte Mode_TextX(long d, nativeVal_t *out) {
+	return Mode_TextAt("MissionScorerText_X", d, out);
+}
+
+byte Mode_TextY(long d, nativeVal_t *out) {
+	return Mode_TextAt("MissionScorerText_Y", d, out);
+}
+
+/* SScorer.Set(id, item, var, "text") */
+static byte Mode_ScorerSetS(const nativeVal_t *id, const char *item, const char *var, const char *s) {
+	nativeVal_t v;
+	Native_SetText(&v, s, (int)strlen(s));
+	byte ok = LvN_ScorerSet(id, item, var, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+static byte Mode_ScorerSetI(const nativeVal_t *id, const char *item, const char *var, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return LvN_ScorerSet(id, item, var, &v);
+}
+
+/* SScorer.Add(id, item, type) with a C item name */
+static byte Mode_ScorerAddS(const nativeVal_t *id, const char *item, const char *type) {
+	nativeVal_t it;
+	Native_SetText(&it, item, (int)strlen(item));
+	byte ok = Mode_ScorerAdd(id, &it, type);
+	Native_Free(&it);
+	return ok;
+}
+
+byte Mode_MissionText(const nativeVal_t *id, const char *item, const char *type, const nativeVal_t *x, const nativeVal_t *y,
+	const char *font, const char *effect, const nativeVal_t *text, const char *align, const nativeVal_t *visible) {
+	static const char *const rgba[] = { "Red", "Green", "Blue", "Alpha" };
+	if ((type && !Mode_ScorerAddS(id, item, type)) || !LvN_ScorerSet(id, item, "X", x) || !LvN_ScorerSet(id, item, "Y", y) ||
+		!Mode_ScorerSetS(id, item, "Font", font) || (effect && !Mode_ScorerSetS(id, item, "Effect", effect)) ||
+		!LvN_ScorerSet(id, item, "Text", text) || !Mode_ScorerSetS(id, item, "Align", align)) {
+		return 0;
+	}
+	for (int i = 0; i < 4; i++) {
+		nativeVal_t c, k;
+		Native_SetNone(&k);
+		byte ok = LvN_ModGet("Scorer", "MissionScorerText_Color", &c) && LvN_Item(&c, i, &k) && LvN_ScorerSet(id, item, rgba[i], &k);
+		Native_Free(&c);
+		Native_Free(&k);
+		if (!ok) {
+			return 0;
+		}
+	}
+	return !visible || LvN_ScorerSet(id, item, "Visible", visible);
+}
+
+byte Mode_MissionSprite(const nativeVal_t *id, const char *item, const nativeVal_t *x, const nativeVal_t *y, long alpha, long r,
+	long g, long b) {
+	return Mode_ScorerAddS(id, item, "Sprite") && LvN_ScorerSet(id, item, "X", x) && LvN_ScorerSet(id, item, "Y", y) &&
+		Mode_ScorerSetI(id, item, "ScaleX", 30) && Mode_ScorerSetI(id, item, "ScaleY", 19) && Mode_ScorerSetI(id, item, "Unit", 1) &&
+		Mode_ScorerSetI(id, item, "Alpha", alpha) && Mode_ScorerSetI(id, item, "Red", r) && Mode_ScorerSetI(id, item, "Green", g) &&
+		Mode_ScorerSetI(id, item, "Blue", b);
+}
+
+byte Mode_BarDefaults(const nativeVal_t *id, const char *item, const nativeVal_t *main, const nativeVal_t *black) {
+	nativeVal_t back, m, k;
+	PyObject *fn = Script_Attr("Scorer", "MissionScorerBar_SetDefaults");
+	if (!fn) {
+		return 0;
+	}
+	Native_SetNone(&m);
+	Native_SetNone(&k);
+	byte ok = LvN_ModGet("Scorer", "MissionScorerBar_ColorBack", &back) && (main || LvN_ModGet("Scorer", "MissionScorerBar_ColorMain", &m)) &&
+		(black || LvN_ModGet("Scorer", "MissionScorerBar_ColorBlack", &k));
+	if (ok) {
+		ok = Native_HookCall(fn, NULL, "vsvvv", id, item, &back, main ? main : &m, black ? black : &k);
+	} else {
+		Py_DECREF(fn);
+	}
+	Native_Free(&back);
+	Native_Free(&m);
+	Native_Free(&k);
+	return ok;
+}
+
+byte Mode_PhoneCab(const char *use, byte targetFirst, const char *pcModule, nativeVal_t *out) {
+	nativeVal_t pc, name;
+	Native_SetNone(&pc);
+	Native_SetNone(&name);
+	byte ok = Mode_Import("PhoneCab") && Native_CallMod("PhoneCab", "GetFree", &pc, "") && (!pcModule || Mode_Put(pcModule, "pc", NULL, &pc)) &&
+		(targetFirst || LvN_SetS(&pc, "UseFunc", use)) && Mode_VGet(&pc, "Name", &name) &&
+		Native_CallMod("MissionsFuncs", "SetMissionTarget", NULL, "v", &name) && (!targetFirst || LvN_SetS(&pc, "UseFunc", use));
+	Native_Free(&name);
+	if (ok && out) {
+		*out = pc;
+	} else {
+		Native_Free(&pc);
+	}
+	return ok;
+}
+
+byte Mode_SpawnCar(const char *name, byte nearest, nativeVal_t *out, nativeVal_t *spw) {
+	nativeVal_t s, p, n;
+	Native_SetNone(&s);
+	Native_SetNone(&p);
+	Native_SetNone(out);
+	if (!Native_CallMod("OutMap", nearest ? "GetNearestFreeSpawnPos" : "GetFreeSpawnPos", &s, "")) {
+		return 0;
+	}
+	Native_SetText(&n, name, (int)strlen(name));
+	byte ok = (nearest || LvN_Item(&s, 0, &p)) && LvN_CreateAt(&n, nearest ? &s : &p, "Car", out);
+	Native_Free(&n);
+	Native_Free(&p);
+	if (spw) {
+		*spw = s;
+	} else {
+		Native_Free(&s);
+	}
+	return ok;
+}
+
+byte Mode_Drop(const char *module, const nativeVal_t *pos, const char *name, const char *model, const char *radius, long onlyUser,
+	const char *onTake, const char *sound, const char *arrow) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *l = Mode_V(&t), *m = Mode_V(&t), *r = Mode_V(&t), *an = Mode_V(&t), *l2 = Mode_V(&t), *cam = Mode_V(&t);
+	nativeVal_t *ln = Mode_V(&t);
+	if (!LvN_CreateAt(Mode_S(&t, name), pos, "Item", l) || !Mode_G(module, model, m) || !Mode_VModel(l, m)) {
+		return Mode_Done(&t, 0);
+	}
+	if (radius ? !Mode_G(module, radius, r) : (Native_SetInt(r, 3500), 0)) {
+		return Mode_Done(&t, 0);
+	}
+	byte ok = Mode_VSet(l, "Radius", r) && LvN_SetI(l, "AppearsIfFree", 0) && LvN_SetI(l, "AutoFace", 0) && LvN_SetI(l, "OnlyUser", onlyUser) &&
+		LvN_SetF(l, "rTime", 0.25) && LvN_SetS(l, "OnTake", onTake) && Mode_Import("Items") &&
+		Native_CallMod("Items", "SetSound", NULL, "vs", l, sound);
+	if (ok && arrow) {
+		Native_SetText(an, arrow, (int)strlen(arrow));
+	} else if (ok) {
+		ok = Mode_VGet(l, "Name", ln) && Native_Arith('+', ln, Mode_S(&t, "CheckArrow"), an);
+	}
+	Mode_Ints3(cam, 0, 1000, 0);
+	ok = ok && LvN_CreateAt(an, pos, "WithLife", l2) && Mode_VSet(l2, "CamTgt", cam) && Mode_VGet(l2, "Name", ln) &&
+		Native_CallMod("MissionsFuncs", "SetMissionTarget", NULL, "v", ln);
+	return Mode_Done(&t, ok);
+}
+
+byte Mode_Taken(const nativeVal_t *item, const nativeVal_t *arrow) {
+	nativeVal_t itm, a, time;
+	Native_SetNone(&itm);
+	Native_SetNone(&a);
+	if (!Mode_EntityH(item, &itm) || !LvN_SetI(&itm, "rTime", 20)) {
+		Native_Free(&itm);
+		return 0;
+	}
+	/* OBJLIB 4: the scheduler keeps the bound method */
+	PyObject *del = Mode_VBound(&itm, "Del");
+	Native_Free(&itm);
+	if (!del) {
+		return 0;
+	}
+	Native_SetFloat(&time, Mode_Time() + 5);
+	byte ok = Mode_Schedule(&time, del, NULL, 0, NULL);
+	Py_DECREF(del);
+	ok = ok && Mode_EntityH(arrow, &a) && Mode_VDel(&a);
+	Native_Free(&a);
+	return ok;
+}
+
+/* module.var = i and = [] of another module */
+static byte Mode_ModInt(const char *module, const char *var, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return Mode_SetModVar(module, var, &v);
+}
+
+static byte Mode_ModEmpty(const char *module, const char *var) {
+	nativeVal_t v;
+	Native_SetEmpty(&v, NV_LIST);
+	byte ok = Mode_SetModVar(module, var, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+byte Mode_BossTraffic(byte comSats) {
+	int done = 0;
+	if (comSats) {
+		nativeVal_t upper, lst;
+		Native_SetNone(&lst);
+		done = LvN_ModGet("Init", "UpperMap", &upper) && LvN_SaveList("ComSatsMissionsMapsFinished", "Map", &lst) ?
+			Native_Contains(&lst, &upper) : -1;
+		Native_Free(&upper);
+		Native_Free(&lst);
+		if (done < 0) {
+			return 0;
+		}
+	}
+	if (done ? !Mode_GVarSetI("MaxChasingShips", 0) || !Mode_GVarSetI("iTrafficNumber", 0) || !Mode_ModInt("OutPolice", "PoliceActive", 0) :
+		!Mode_GVarSetI("iTrafficNumber", 5) || !Mode_GVarSetI("MaxChasingShips", 5)) {
+		return 0;
+	}
+	return Mode_ModEmpty("Traffic", "AcNormalShips") && Mode_ModInt("Traffic", "NumNormal", 0) &&
+		Mode_ModEmpty("Traffic", "AcMediumShips") && Mode_ModInt("Traffic", "NumMedium", 0) &&
+		Mode_ModEmpty("Traffic", "AcHeavyShips") && Mode_ModInt("Traffic", "NumHeavy", 0);
+}
+
+byte Mode_AcShips(const char *module, const char *ships) {
+	nativeVal_t v;
+	if (!Mode_Import("Traffic")) {
+		return 0;
+	}
+	SaveVar_Set("Traffic.AcShips", ships);
+	byte ok = LvN_SaveList("Traffic.AcShips", module, &v) && Mode_SetModVar("Traffic", "AcShips", &v);
+	Native_Free(&v);
+	return ok;
+}
+
+byte Mode_DelSaveVars(const char *prefix) {
+	MODE_SEAM("Scrap", "DelSaveVars");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "s", prefix);
+	}
+	SaveVars_Delete(prefix);
+	return 1;
+}
+
+byte Mode_DelGlobal(const char *module, const char *name) {
+	/* OBJLIB 5: the globals are the module dict */
+	PyObject *m = PyImport_ImportModule((char *)module);
+	if (!m) {
+		return 0;
+	}
+	int r = PyDict_DelItemString(PyModule_GetDict(m), (char *)name);
+	Py_DECREF(m);
+	if (r != 0) {
+		PyErr_Clear();
+		PyErr_SetString(PyExc_NameError, (char *)name);
+		return 0;
+	}
+	return 1;
+}
+
+byte Mode_LaterV(const nativeVal_t *delay, const char *module, const char *func, const nativeVal_t *args, int n, const char *name) {
+	nativeVal_t now, time, nm;
+	Native_SetFloat(&now, Mode_Time());
+	Native_SetNone(&time);
+	if (!Native_Arith('+', &now, delay, &time)) {
+		return 0;
+	}
+	/* OBJLIB 4: the function the scheduler keeps is the one of the module (a mission may have replaced it) */
+	PyObject *fn = Script_Global(module, func);
+	if (!fn) {
+		Native_Free(&time);
+		return 0;
+	}
+	if (name) {
+		Native_SetText(&nm, name, (int)strlen(name));
+	}
+	byte ok = Mode_Schedule(&time, fn, args, n, name ? &nm : NULL);
+	if (name) {
+		Native_Free(&nm);
+	}
+	Native_Free(&time);
+	Py_DECREF(fn);
+	return ok;
+}
+
+byte Mode_TestLineSeam(const nativeVal_t *from, const nativeVal_t *to, const nativeVal_t *list, nativeVal_t *out) {
+	MODE_SEAM("Scrap", "TestLine");
+	if (seam) {
+		return Native_HookCall(hook, out, "vvv", from, to, list);
+	}
+	return Mode_TestLine(from, to, list, out);
+}
+
+/* the list of the save variable var with item added when it was not there: 1 added, 0 there, -1 with the error */
+static int Mode_SaveAddTo(const char *module, const char *var, const char *item) {
+	nativeVal_t lst, it;
+	Native_SetText(&it, item, (int)strlen(item));
+	int in = LvN_SaveList(var, module, &lst) ? Native_Contains(&lst, &it) : -1;
+	int r = in < 0 ? -1 : in ? 0 : LvN_SaveAppend(var, &lst, &it) ? 1 : -1;
+	Native_Free(&lst);
+	Native_Free(&it);
+	return r;
+}
+
+byte Mode_SaveAdd(const char *module, const char *var, const char *item) {
+	return Mode_SaveAddTo(module, var, item) >= 0;
+}
+
+byte Mode_Blueprint(const char *module, const char *var, const char *item, const char *msg, byte delay) {
+	nativeVal_t text;
+	int r = Mode_SaveAddTo(module, var, item);
+	if (r <= 0) {
+		return r == 0;
+	}
+	if (msg) {
+		Mode_Lang(msg, &text);
+		byte ok = delay ? Native_CallMod("RaceMaker", "ShowSystemMessageDelay", NULL, "vd", &text, 0.25) :
+			Mode_Import("RaceMaker") && Native_CallMod("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
+		Native_Free(&text);
+		if (!ok) {
+			return 0;
+		}
+	}
+	SaveVar_Inc("NewBluePrintAvaliable", 1);
+	return 1;
+}
+
+byte Mode_SpeechMsg(const nativeVal_t *cad) {
+	nativeVal_t now, r, t;
+	double d;
+	Native_SetFloat(&now, Mode_Time());
+	Native_SetNone(&r);
+	Native_SetNone(&t);
+	byte ok = Native_CallMod("Speech", "CalculateSpeechTime", &r, "v", cad) && Native_Arith('+', &now, &r, &t) && Native_ArgDouble(&t, &d) &&
+		Mode_MsgText(cad, d);
+	Native_Free(&r);
+	Native_Free(&t);
+	return ok;
+}
+
 /* ---- helpers of batch I (the super deals and the native level files of batch I) ---- */
 
 byte Mode_VSetI(const nativeVal_t *h, const char *var, long i) {
