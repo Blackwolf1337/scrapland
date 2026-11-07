@@ -34,6 +34,7 @@ static void Native_Clear(nativeVal_t *v, byte type) {
 	v->max = 0;
 	v->text = NULL;
 	v->items = NULL;
+	v->obj = NULL;
 }
 
 void Native_SetNone(nativeVal_t *v) {
@@ -117,11 +118,13 @@ void Native_Free(nativeVal_t *v) {
 	}
 	Mem_Free(v->text);
 	Mem_Free(v->items);
+	Py_XDECREF(v->obj);
 	Native_Clear(v, NV_NONE);
 }
 
 void Native_Copy(nativeVal_t *out, const nativeVal_t *v) {
 	*out = *v;
+	Py_XINCREF(v->obj);
 	if (v->text) {
 		out->text = Mem_Alloc((uint32_t)v->n + 1);
 		memcpy(out->text, v->text, (size_t)v->n + 1);
@@ -240,6 +243,9 @@ byte Native_Equal(const nativeVal_t *a, const nativeVal_t *b) {
 			}
 		}
 		return 1;
+	case NV_OBJ:
+		/* OBJLIB 7: a type without compare is equal only to itself */
+		return a->obj == b->obj;
 	case NV_DICT: {
 		const nativeVal_t *k, *x, *y;
 		int pos = 0;
@@ -345,6 +351,14 @@ byte Native_Hash(const nativeVal_t *v, long *out) {
 		}
 		x ^= (unsigned long)Native_Count(v);
 		break;
+	case NV_OBJ:
+		/* OBJLIB 7 */
+		*out = PyObject_Hash(v->obj);
+		if (*out == -1) {
+			PyErr_Clear();
+			return 0;
+		}
+		return 1;
 	default:
 		return 0;
 	}
@@ -584,6 +598,16 @@ void Native_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode) {
 	case NV_NONE:
 		Native_BufAdd(b, "None", 4);
 		return;
+	case NV_OBJ: {
+		/* OBJLIB 7: the repr of the Python value */
+		PyObject *r = PyObject_Repr(v->obj);
+		if (r) {
+			Native_BufAdd(b, PyString_AsString(r), PyString_Size(r));
+			Py_DECREF(r);
+		}
+		PyErr_Clear();
+		return;
+	}
 	case NV_INT:
 		snprintf(t, sizeof(t), "%ld", v->i);
 		Native_BufAdd(b, t, -1);
@@ -996,7 +1020,7 @@ const char *Native_TypeName(const nativeVal_t *v) {
 		[NV_TUPLE] = "tuple",
 		[NV_DICT] = "dictionary",
 	};
-	return names[v->type];
+	return v->type == NV_OBJ ? v->obj->ob_type->tp_name : names[v->type];
 }
 
 byte Native_ArgStr(const nativeVal_t *v, int arg, const char **out) {
@@ -2165,6 +2189,12 @@ byte Native_True(const nativeVal_t *v) {
 		return strcmp(Native_Text(v), "0") != 0;
 	case NV_VEC:
 		return 1;
+	case NV_OBJ: {
+		/* OBJLIB 7: PyObject_IsTrue (an entity handle is true) */
+		int t = PyObject_IsTrue(v->obj);
+		PyErr_Clear();
+		return t > 0;
+	}
 	}
 	return 0;
 }
@@ -2530,6 +2560,9 @@ int Native_NetFlag(int i) {
 PyObject *Native_ToPy(const nativeVal_t *v) {
 	PyObject *o = NULL;
 	switch (v->type) {
+	case NV_OBJ:
+		Py_INCREF(v->obj);
+		return v->obj;
 	case NV_INT:
 		return PyInt_FromLong(v->i);
 	case NV_FLOAT:
@@ -2685,6 +2718,9 @@ static byte Native_Take(PyObject *o, unsigned types, nativeVal_t *v) {
 	if (Native_FromPy(o, types, v)) {
 		return 1;
 	}
+	if (types & 1 << NV_OBJ) {
+		return Native_Arg(o, v);
+	}
 	if (!(types & (1 << NV_LONG | 1 << NV_LIST | 1 << NV_TUPLE | 1 << NV_DICT)) || !Native_FromPyAny(o, v)) {
 		return 0;
 	}
@@ -2724,7 +2760,12 @@ static byte Native_ImportBy(const char *module, const nativeVar_t *vars, byte gl
 }
 
 byte Native_Arg(PyObject *o, nativeVal_t *v) {
-	return Native_FromPyAny(o, v) || Native_Raise(NE_TYPE, "a value of type %.50s has no native form", o->ob_type->tp_name);
+	if (!Native_FromPyAny(o, v)) {
+		Native_Clear(v, NV_OBJ);
+		Py_INCREF(o);
+		v->obj = o;
+	}
+	return 1;
 }
 
 byte Native_Import(const char *module, const nativeVar_t *vars) {
