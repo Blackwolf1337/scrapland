@@ -42,10 +42,12 @@ checkout (tools/mcp); REGRESS_MCP_DIR takes the tools/mcp of another checkout.
   state a slot can carry.
 - The intro video MSE.vds is left out of the slot's Video folder (the engine skips a missing intro video): a game is
   ready 6 s after its start instead of 38 s.
-- GPU: the games render on the AMD 610M by default (SCRAP_VK_DEVICE=1002:164e); REGRESS_VK_DEVICE=10de:27b0 puts them
-  on the RTX 4000 (shared with the ollama LXC, only with the user's OK). With the other agents' games on the 610M the
-  world clock ran at 0.3 to 0.4 of real time there (slow frames, CApp caps a frame at 0.1 s of game time); on the RTX
-  it runs at 1.0. Needs about 300 MB of VRAM per game.
+- GPU: the default device of the runner is still the AMD 610M (SCRAP_VK_DEVICE=1002:164e). Since 2026-11-07 the test
+  games run on the RTX 4000 (the user's choice): set REGRESS_VK_DEVICE=10de:27b0 and SCRAP_VK_DEVICE=10de:27b0 for
+  every run. The stored baselines are RTX runs. ASan runs stay on the AMD (ASan crashes inside the NVIDIA driver):
+  `REGRESS_VK_DEVICE=1002:164e SCRAP_VK_DEVICE=1002:164e ./regress.py check --asan --lanes cax ...`. With the other
+  agents' games on the shared 610M the world clock ran at 0.3 to 0.4 of real time (slow frames, CApp caps a frame at
+  0.1 s of game time); on the RTX it runs at 1.0. Needs about 300 MB of VRAM per game.
 - `!sleep N` waits N seconds of game time, not real time (so machine load does not change what a case sees). A level
   load is seen in the game output (wine.log of the slot: the engine prints "Loading level at" and "Level loaded in",
   App.c). When a load started during the case line before the sleep or during the sleep, the wait ends when the new
@@ -108,15 +110,21 @@ Other variables:
   Pack runs differ but have the same token structure: the differing places are wildcards (number or any), the rest
   must match. Pack runs differ in structure (random list lengths): the line is masked and only has to agree on
   being an error or not.
-  Script_EvalValue (the C eval of the game's texts) raises SyntaxError('invalid syntax') for texts it cannot read; the
-  pack's parser gives the 1.5.2 message with position, e.g. "('unexpected EOF while parsing', (None, 1, 8, 'bad
-  list'))". Two names or numbers with blanks between them get the parser's message in C too, other forms differ
-  (fc-misth2, fc-nm-po, fc-nm-fl, fc-r8r-sg).
+  Script_EvalValue (the C eval of the game's texts): a text that is a bare name or a name chain evaluates as eval does
+  (its value, or NameError). Two names or numbers with blanks between them raise the 1.5.2 parser's SyntaxError with
+  its message and position, e.g. "('unexpected EOF while parsing', (None, 1, 8, 'bad list'))". Native_EvalText, the
+  eval of the ports on native C values, gives the same errors (both call Script_EvalOther). Other texts the reader
+  cannot take raise the plain 'invalid syntax', where the pack's parser gives "('unexpected EOF while parsing', (None,
+  1, col, text))": eval('('), eval(''), eval('(1,') and exec('res.zz = 1 +') in fc-misth2, fc-nm-po, fc-nm-fl and
+  fc-r8r-sg. The game never evals such texts and the parser goes away at stage 7, so these four cases have accepted C
+  runs, with the reason in a comment above the line in the case file.
 - baselines/<case>.accepted.xz (regress.py accept): a C run whose differences were looked at and accepted; a line
   equal to it (same case line, same normalised reply) passes. Used for the deleted-handle probes fc-nc-* (the C
   raises at other points than the script, the open items of round 8n, e.g. OutMap.GetNearestFreeSpawnPosReal) and
-  fc-r8r-mi / fc-r8r-video (explained in round 8r: MenuMissionInfo with an unknown page, the new Display entry).
-  Remake after a fix that changes such a line.
+  fc-r8r-mi / fc-r8r-video (explained in round 8r: MenuMissionInfo with an unknown page, the new Display entry) and
+  fc-misth2, fc-nm-po, fc-nm-fl and fc-r8r-sg (the parser messages above). Remake after a fix that changes such a
+  line. A comment added to a case file changes its hash, so the stored pack runs of these four cases got the new hash
+  without a rerun (only comment lines changed).
 - masks/<case>: `ignore <text of the case line>` and `sub <regex> => <text>`, each with a # reason. They cover lines
   that depend on randomness the case cannot control in C (the recorders replace Scrap.Rand, C ports call
   Scrap_RandRange directly), NPC and AI timing, and accepted differences named in the round reports.
@@ -140,8 +148,10 @@ engine change that the pack side sees too (they are pack results on the C engine
 pack's own variation; masks/ covers the rest). Old baselines are kept in git history only. Set REGRESS_PACK_SRC for
 baseline runs (fc-nm-bots needs the source on the pack side).
 
-The baselines were remade on 2026-11-07 at script-loader 250d6e41 (three pack runs per case; fc-r6-am has a fourth run
-because Mayor_Default was missing in run 3).
+The baselines were remade on 2026-11-07 on the RTX 4000 at script-loader 50259f8a, three pack runs per case (fc-r6-am
+has three runs too now). With the world clock at real time the three runs agree on more lines than the 610M runs did,
+so lines that vary with game time or chance (NPC turns, AI states, respawns, random draws) fail in C more often and
+need a mask in masks/.
 
 To check whether a difference between old and new pack runs is an engine change, run the old build (its commit built
 in a scratch folder) with the current runner on a slot and compare. If it gives the old values the engine changed. If
@@ -161,6 +171,11 @@ random).
   On 2026-11-07, with the 610M shared with the other agents' games (world clock about 0.3 of real time), one pack run
   of all cases took about 3 h with 3 lanes, and the C runs of both harnesses side by side (3 lanes each) took 213 and
   215 min.
+- RTX run times of 2026-11-07: with both harnesses side by side (7 games), a channel run of all 294 cases took 51 min
+  on 4 lanes and 56 min on 3 lanes, a python run 43 min on 4 lanes, and pack run 3 of 245 cases 52 min on 3 lanes.
+- Three times on 2026-11-07 a DownTown game on the RTX just ended with no ASan report (pack run 3 of fc-r7c-dt1 during
+  the DownTown load, pack run 3 and one C channel run of fc-r8j-snd-DownTown at SebastianSound.SetSounds). 12 reruns
+  of fc-r8j-snd-DownTown passed. Rerun a case that ends this way before treating it as a port difference.
 - Ctrl-C or SIGTERM to regress.py also ends the lane games. A game left over (a killed runner) is found with
   `pgrep -x ScrapC` and readlink /proc/<pid>/exe (the slot path); kill it by pid.
 - Slots: C lanes ca ca2 ca3 (default for check), pack lanes pa pa2 pa3 (default for baseline), ASan cax
