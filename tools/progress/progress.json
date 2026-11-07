@@ -155,16 +155,16 @@
     {
      "item": "Python interpreter removed",
      "weight": 3,
-     "percent": 50,
+     "percent": 85,
      "status": "in progress",
-     "note": "global modules, code strings, console and test channel done; level modules running"
+     "note": "every pack module made in C; the build without it starts all levels and missions"
     },
     {
      "item": "Python object library removed",
      "weight": 3,
-     "percent": 0,
-     "status": "not started",
-     "note": "the C ports move from PyObject to native C types after the interpreter"
+     "percent": 15,
+     "status": "in progress",
+     "note": "native value layer done; the C ports move to native C module by module"
     }
    ]
   },
