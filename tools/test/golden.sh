@@ -18,7 +18,7 @@
 #        SCRAP_BUILD                     the build folder, default build-linux64
 #        GOLDEN_TIMEOUT                  seconds, default 240
 root=$(cd "$(dirname "$0")/../.." && pwd)
-build=${SCRAP_BUILD:-$root/build-linux64}
+build=$(realpath -m "${SCRAP_BUILD:-$root/build-linux64}")
 game=$build/golden
 dir=$root/tools/test/golden
 mode=${GOLDEN_MODE:-channel}
