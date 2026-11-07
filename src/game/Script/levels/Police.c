@@ -565,6 +565,7 @@ static byte BeatPickus_DisableIAFunctionary(const nativeVal_t *a, nativeVal_t *o
 /* OnTraitoriusRespawn(tr): Traitorius back: his name and his talk for the state of the mission */
 static byte BeatPickus_OnTraitoriusRespawn(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t tr, state;
+	Native_SetNone(&tr);
 	(void)out;
 	if (!Mode_Put(BP, "traitorius", NULL, &a[0]) || !Mode_G(BP, "traitorius", &tr)) {
 		return 0;
@@ -823,6 +824,7 @@ static byte BeatPickus_BeatPickus(const nativeVal_t *a, nativeVal_t *out) {
 /* OnAlarmActivated(): the alarm stops the beating: no distance check, Pickus no target, the launcher off */
 static byte BeatPickus_OnAlarmActivated(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t pickus;
+	Native_SetNone(&pickus);
 	(void)a;
 	(void)out;
 	if (!Mode_DelSchedS("CheckMaxDist") || !LvN_Entity("Functionary_Pickus", &pickus)) {
@@ -1124,6 +1126,7 @@ static byte Bp_Plan(const char *pattern, const char *name, const char *missing) 
 /* GetFuncShipPlans(): the two blueprints to photograph */
 static byte BeatPickus_GetFuncShipPlans(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t plans;
+	Native_SetNone(&plans);
 	(void)a;
 	(void)out;
 	if (!Mode_GVarSetI("LittlePoliceAsksForMoney", 1) || !Mode_GVarSetS("NotCleanableByGear", "") || !Mode_Import("CharAct") ||
@@ -1141,6 +1144,7 @@ static byte BeatPickus_GetFuncShipPlans(const nativeVal_t *a, nativeVal_t *out) 
 /* TakePlanPhoto(planName): the photo of a blueprint of the mission (1, else 0); after both Traitorius calls */
 static byte BeatPickus_TakePlanPhoto(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t plans, e, args[3];
+	Native_SetNone(&plans);
 	if (!Mode_Import("CharAct") || !Mode_G(BP, "plansNames", &plans)) {
 		return 0;
 	}
@@ -1316,6 +1320,7 @@ PyMethodDef g_PoliceBeatPickusMethods[] = {
 /* InitFicusDead(): Ficus' body of the map talks */
 static byte FicusDead_InitFicusDead(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t ficus, cam;
+	Native_SetNone(&ficus);
 	(void)a;
 	(void)out;
 	if (!Mode_Import("Map") || !LvN_ModGet("Map", "ficus", &ficus)) {
@@ -1362,6 +1367,7 @@ static byte FicusDead_OnTalkToFicus(const nativeVal_t *a, nativeVal_t *out) {
 /* Dtritus' desktop as the target, the dialog of the desktop the global func of module */
 static byte Po_Desktop(const char *module, const char *func) {
 	nativeVal_t dd;
+	Native_SetNone(&dd);
 	if (!Mode_Import("DTritusDesktop") || !LvN_Entity("DM_DTritusDesktop", &dd)) {
 		return 0;
 	}
@@ -1430,6 +1436,7 @@ static byte GetAuthorization_InitStatus(const nativeVal_t *a, nativeVal_t *out) 
 /* CreateHuman(e): the human (the module variable human), no talk */
 static byte GetAuthorization_CreateHuman(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t h;
+	Native_SetNone(&h);
 	(void)out;
 	if (!Mode_Put(GA, "human", NULL, &a[0]) || !Mode_G(GA, "human", &h)) {
 		return 0;
@@ -1658,6 +1665,7 @@ static byte GetAuthorization_TalkPepe(const nativeVal_t *a, nativeVal_t *out) {
  * end), else straight to the metro */
 static byte GetAuthorization_StartScene(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t e, usr;
+	Native_SetNone(&e);
 	(void)a;
 	(void)out;
 	if (!PO_ENTI("DM_Conversion_Point_08", "ArrowCanUse", 1) || !PO_ENTS("GateKeeper_08", "UseFunc", "Speech.AutoSpeech") || !Po_TargetNone() ||
@@ -1727,6 +1735,7 @@ static byte Ga_Follow(const nativeVal_t *usr) {
 /* GoToPress(usr): the door closes; the player and the human out of the jail, the human follows him to the metro */
 static byte GetAuthorization_GoToPress(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t e, h;
+	Native_SetNone(&h);
 	(void)out;
 	if (!LvN_Entity("DM_Door_PoliceSegurity_00", &e)) {
 		return 0;
@@ -2309,6 +2318,7 @@ static byte JailBreak_Init(const nativeVal_t *a, nativeVal_t *out) {
 /* NextMission(ItemName, CharName): out of the jail: black, no input, the level loads again in 0.5 s */
 static byte JailBreak_NextMission(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t x, text, i;
+	Native_SetNone(&x);
 	(void)out;
 	if (!Mode_Import("Menu") || !Po_Fade(lv_clear, lv_black, 0.5)) {
 		return 0;
@@ -2595,6 +2605,7 @@ static byte PoliceBossCheats_CheatingLoop(const nativeVal_t *a, nativeVal_t *out
 		{ "DM_Mission_Police_Dumber", "Police", "PokerCartasPoli", "Dumb1", "Dumb1c" },
 		{ "DM_Mission_PoliceBoss_BossCheater", "PoliceBoss", "PokerCartasBoss", "PoliceBoss", "PoliceBossc" } };
 	nativeVal_t v, name, empty;
+	Native_SetNone(&name);
 	(void)a;
 	(void)out;
 	LvN_Str(&v, "Poker");
@@ -2720,6 +2731,7 @@ static byte PoliceBossCheats_WatchEvents(const nativeVal_t *a, nativeVal_t *out)
 /* the turns of the poker game: two plays, then WatchEvents(next) */
 static byte Pc_Turn(const char *p1, const char *a1, const char *p2, const char *a2, const char *next) {
 	nativeVal_t n;
+	Native_SetNone(&n);
 	if (!Pc_Play(p1, a1) || !Pc_Play(p2, a2) || !Mode_G(PC, next, &n)) {
 		return 0;
 	}
@@ -2852,6 +2864,8 @@ static byte PoliceBossCheats_InitAfterPhoto2(const nativeVal_t *a, nativeVal_t *
 /* InitAfterPhoto3(Usr): the player back in control, a way point, Dtritus' remark, the crazy gambler next */
 static byte PoliceBossCheats_InitAfterPhoto3(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t un, usr, path, spawn, sp;
+	Native_SetNone(&path);
+	Native_SetNone(&un);
 	(void)a;
 	(void)out;
 	if (!Mode_Import("Init") || !Mode_Import("Menu")) {

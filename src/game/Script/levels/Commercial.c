@@ -1254,6 +1254,7 @@ static int Pg_GActive(const char *name) {
 /* SAI.SetStateVehicle(2, a.Name, b.Name) of two global handles (the names read in this order) */
 static byte Pg_Attack(const char *a, const char *b) {
 	nativeVal_t an, bn;
+	Native_SetNone(&bn);
 	byte ok = Cm_GAttr(PG, a, "Name", &an) && Cm_GAttr(PG, b, "Name", &bn) && STATE("ivv", 2L, &an, &bn);
 	Native_Free(&an);
 	Native_Free(&bn);
@@ -1356,6 +1357,7 @@ static byte Pg_Wander(const char *name) {
 /* a fighter died: the global None, a life less in the scorer, Vehicles.OnDeath, the other one wanders */
 static byte Pg_Died(const nativeVal_t *a, const char *global, const char *lifes, const char *item, const char *other) {
 	nativeVal_t text;
+	Native_SetNone(&text);
 	if (!Mode_Import("Vehicles") || !Cm_GNone(PG, global) || !Mode_GOpI(PG, lifes, '-', 1) || !Cm_GRepr(PG, lifes, &text)) {
 		return 0;
 	}
@@ -1460,6 +1462,7 @@ static byte Gus_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const places[] = { "MayorAtTownHall", "0", "BankMasterAtBank", "1", "Journalist.Humphrey_Defaut", "Temple",
 		"Journalist.Betty_Defaut", "Press", "Journalist.Berto_Defaut", "Temple", NULL };
 	nativeVal_t pc;
+	Native_SetNone(&pc);
 	(void)a;
 	(void)out;
 	byte ok = Cm_PcDefault(PG) && Mode_G(PG, "pc", &pc) && LvN_SetI(&pc, "ArrowCanUse", 0);
@@ -2825,6 +2828,7 @@ static byte Gambler_RefreshScorer(const nativeVal_t *a, nativeVal_t *out) {
 /* CreateCrazyGambler(): one copy of the gambler at a free spawn point */
 static byte Gambler_CreateCrazyGambler(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t h, pd;
+	Native_SetNone(&h);
 	(void)a;
 	(void)out;
 	Native_SetNone(&pd);
@@ -3118,6 +3122,7 @@ static byte Porkins_CreatePorkinsTransport(const nativeVal_t *a, nativeVal_t *ou
 /* CreateBishop(launchTaunt=1): a bishop that attacks the nearest transport of the mayor; every other one taunts */
 static byte Porkins_CreateBishopN(const nativeVal_t *taunt) {
 	nativeVal_t lst, p, pd, name;
+	Native_SetNone(&lst);
 	if (!Mode_Import("VehiclesNPC") || !Mode_Import("OutMap") || !Mode_G(PT, "mayorTransports", &lst)) {
 		return 0;
 	}

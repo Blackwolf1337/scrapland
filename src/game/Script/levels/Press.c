@@ -105,6 +105,7 @@ static byte Pr_UsrBack(long x, long y, long z, long ang, double fade) {
  * (NULL: dropped) */
 static byte Pr_BossDoor(const char *foe, const char *use, nativeVal_t *out) {
 	nativeVal_t elv;
+	Native_SetNone(&elv);
 	if (!LV_CALL("GateKeeper", "SetDoor", NULL, "ss", "GateKeeper_DTritusBossRoom", "DM_Door_Teleporter_08") ||
 		!Mode_DoorFoe("GateKeeper_DTritusBossRoom", foe) || !LvN_Entity("DM_Door_Teleporter_08", &elv)) {
 		return 0;
@@ -395,6 +396,7 @@ static byte PressMap_ActivateAlarm(const nativeVal_t *a, nativeVal_t *out) {
 /* global list = []; an item named name for every (x, y, z, radius) of the global pos, taken by the player only */
 static byte Pr_Launchers(const char *list, const char *posName, const char *name, const char *take) {
 	nativeVal_t items, pos, n;
+	Native_SetNone(&pos);
 	Native_SetEmpty(&items, NV_LIST);
 	byte ok = Mode_Put(MAP, list, NULL, &items);
 	Native_Free(&items);
@@ -436,6 +438,7 @@ static byte PressMap_CreateDeactivators(const nativeVal_t *a, nativeVal_t *out) 
 /* DeactivateAlarm(ItemName, VehicleName): out of the area: the alarm values back, the activators again */
 static byte PressMap_DeactivateAlarm(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t v;
+	Native_SetNone(&v);
 	(void)out;
 	int go = Pr_NoUsrControl(&a[1]);
 	if (go <= 0) {
@@ -693,6 +696,7 @@ PyMethodDef g_PressMapPlanesMethods[] = {
 /* Init(LevelPath): the demo: the metro only to Outskirts, the elevator closed */
 static byte DemoClose_Init(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t lv;
+	Native_SetNone(&lv);
 	(void)a;
 	(void)out;
 	if (!Mode_EntSetS("DM_Door_Metro_Press", "UseFunc", "MapDemoClose.OnMetroUsed") || !LvN_Entity("DM_Door_Elevator_Press", &lv)) {
@@ -1202,6 +1206,7 @@ static byte Pr_TakenSound(const nativeVal_t *it, const char *key) {
 /* TakeCheck(ItemName, UsrName): the check taken: back to Ficus */
 static byte FicusBanker_TakeCheck(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t it, arrow;
+	Native_SetNone(&it);
 	(void)a;
 	(void)out;
 	if (!Mode_Import("Sound") || !LV_OWN(FB, "InitTalkFicus2", NULL, "") || !LvN_Entity("MissionCheck", &it)) {
@@ -1315,6 +1320,7 @@ static byte CrazyData_GetCrazyData(const nativeVal_t *a, nativeVal_t *out) {
 	} acts[] = { { "ON", "/Map/Switch/Anm/ON.M3D", 0 }, { "OFF", "/Map/Switch/Anm/OFF.M3D", 0 }, { "StayON", "/Map/Switch/Anm/StayON.M3D", 1 },
 		{ "StayOFF", "/Map/Switch/Anm/StayOFF.M3D", 1 } };
 	nativeVal_t switches;
+	Native_SetNone(&switches);
 	(void)a;
 	(void)out;
 	if (!Mode_Import("Init") || !Mode_Import("Alarm") || !Pr_DelIfS("Humphrey_Default")) {
@@ -1387,6 +1393,7 @@ static byte Gc_SwitchesOff(byte use) {
 /* OnAlarmActivated(): the alarm resets the switches, the counter and the timer */
 static byte CrazyData_OnAlarmActivated(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t switches;
+	Native_SetNone(&switches);
 	(void)a;
 	(void)out;
 	if (!Gc_SwitchesOff(1) || !Mode_G(GC, "switches", &switches)) {
@@ -1435,6 +1442,7 @@ static byte CrazyData_OnSwitchPressed(const nativeVal_t *a, nativeVal_t *out) {
 /* StartTimer(): the countdown of the data is visible */
 static byte CrazyData_StartTimer(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t mt;
+	Native_SetNone(&mt);
 	(void)a;
 	(void)out;
 	if (!LvN_PutI(GC, "TimerCanBeSeen", 1) || !Mode_G(GC, "missionTime", &mt)) {
@@ -1498,6 +1506,7 @@ static byte CrazyData_OnFakeBureauTaken(const nativeVal_t *a, nativeVal_t *out) 
 /* a mission character made now; when it is there it gets use and becomes the target (pos NULL: where it is) */
 static byte Pr_MissionTarget(const char *name, const char *use, const long *pos) {
 	nativeVal_t k, e;
+	Native_SetNone(&e);
 	if (!LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", name)) {
 		return 0;
 	}
@@ -1678,6 +1687,7 @@ PyMethodDef g_PressGoToPressMethods[] = {
 /* CreateHuman(e): the human of the mission (the global human); TalkToBoss also takes his use */
 static byte Pr_CreateHuman(const nativeVal_t *e, const char *module, int nouse) {
 	nativeVal_t h;
+	Native_SetNone(&h);
 	if (!Mode_Put(module, "human", NULL, e) || !Mode_G(module, "human", &h)) {
 		return 0;
 	}
@@ -2401,6 +2411,7 @@ static byte Pr_FadeAt(const nativeVal_t *time, const int *from, const int *to, d
 static byte MeetBoss_Init(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t state, meet, seb, five;
 	byte ok;
+	Native_SetNone(&seb);
 	(void)a;
 	(void)out;
 	/* SScorer.AddModel by name: the cases record it (OBJLIB 7) */
@@ -2463,6 +2474,7 @@ static byte MeetBoss_Init(const nativeVal_t *a, nativeVal_t *out) {
 /* PlayProlog0(usr=None): the player at the start of the prolog; the gatekeeper of the boss room comes alive */
 static byte Mb_PlayProlog0(void) {
 	nativeVal_t ch, gc;
+	Native_SetNone(&gc);
 	Native_SetNone(&ch);
 	byte ok = Mode_UsrHandle(&ch) && Pr_SetInts3(&ch, "Pos", -1114, -312, 7562) && Pr_SetInts3(&ch, "Ang", 0, 0, 0) &&
 		LV_CALL("Scene", "Play", NULL, "s", "Prolog0") && PR_HOOK("Scene", "EndOfSceneCallback", MB, "PlayProlog1") && Mode_Target("");
@@ -2536,6 +2548,7 @@ static byte MeetBoss_AssingOnTakeBattery(const nativeVal_t *a, nativeVal_t *out)
  * messages of Sebastian and the gambler */
 static byte MeetBoss_OnTakeBattery(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t it, usr, k;
+	Native_SetNone(&it);
 	(void)out;
 	if (!Mode_Import("Scorer") || !Mode_Import("Sound") || !Pr_Exits("Mission_MeetBoss.OnTryingToExit3") || !Mode_EntityH(&a[0], &it)) {
 		return 0;
@@ -2559,6 +2572,7 @@ static byte MeetBoss_OnTakeBattery(const nativeVal_t *a, nativeVal_t *out) {
 /* PreBertoPossession(): the special action level 2, Berto's own talk, then the possession task */
 static byte MeetBoss_PreBertoPossession(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t e;
+	Native_SetNone(&e);
 	(void)a;
 	(void)out;
 	if (!Mode_Import("DTritusDesktop") || !Mode_GVarSetI("SpecialActionActive", 2)) {
@@ -2698,6 +2712,7 @@ static byte MeetBoss_OnPossession(const nativeVal_t *a, nativeVal_t *out) {
 /* ShowMessage(): the action key of Berto explained; the alarm falls again */
 static byte MeetBoss_ShowMessage(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t fall;
+	Native_SetNone(&fall);
 	(void)a;
 	(void)out;
 	if (!Pr_KeyMsg("Mission_FirstCrazyBet_SystemMessage1", "Action") || !Mode_SAct("GetClass", "Berto") ||
@@ -2800,6 +2815,7 @@ static byte MeetBoss_CheckConversion(const nativeVal_t *a, nativeVal_t *out) {
 /* ChallengeHumphrey(): Humphrey is the target */
 static byte MeetBoss_ChallengeHumphrey(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t h;
+	Native_SetNone(&h);
 	(void)a;
 	(void)out;
 	if (!Mode_Target("Humphrey_Default") || !LvN_Entity("Humphrey_Default", &h)) {
@@ -2852,6 +2868,7 @@ static byte Pr_Cat(const char *text, const nativeVal_t *v, nativeVal_t *out) {
  * the way point with a character that can drive */
 static byte MeetBoss_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t path, tail, spawn, ch;
+	Native_SetNone(&path);
 	(void)a;
 	(void)out;
 	if (!Mode_Import("Init") || !LV_OWN(MB, "ActivateEmero", NULL, "")) {
@@ -3013,6 +3030,8 @@ static byte TalkToBoss_Init(const nativeVal_t *a, nativeVal_t *out) {
 /* HideHumanIntoBureau(): the bureau is the target and closed; the human follows Dtritus, the alarm does not fall */
 static byte TalkToBoss_HideHumanIntoBureau(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t bure, usr, fall;
+	Native_SetNone(&bure);
+	Native_SetNone(&fall);
 	(void)a;
 	(void)out;
 	if (!Mode_Target("DM_Door_Bureau_00") || !LvN_Entity("DM_Door_Bureau_00", &bure)) {
@@ -3088,6 +3107,8 @@ static byte Tb_BossTalk(void) {
 /* LaunchScene(ItemName, CharName): the human reaches the room: the alarm off, the scene of the human hiding */
 static byte TalkToBoss_LaunchScene(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t hn, usr, zero, fall, h;
+	Native_SetNone(&fall);
+	Native_SetNone(&h);
 	(void)out;
 	Native_SetNone(&usr);
 	int other = Pr_GAttr(TB, "human", "Name", &hn) ? Mode_Cmp(&a[1], "!=", &hn) : -1;
@@ -3146,6 +3167,7 @@ static byte TalkToBoss_OnExitConversor(const nativeVal_t *a, nativeVal_t *out) {
 /* CheckMaxDist(): every second: the human stops when Dtritus is too far, else follows him */
 static byte TalkToBoss_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t usr, r, hn;
+	Native_SetNone(&hn);
 	(void)a;
 	(void)out;
 	if (!Mode_Later(1.0, TB, "CheckMaxDist", NULL, 0, "CheckMaxDist")) {
@@ -3439,6 +3461,7 @@ static byte Baddie_GoForHuman(const nativeVal_t *a, nativeVal_t *out) {
 /* OnBureauUsed(UsrName, CharName, optId, FullOption): the bureau opens, the gambler's message */
 static byte Baddie_OnBureauUsed(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t bureau, b;
+	Native_SetNone(&b);
 	(void)out;
 	if (!Mode_EntityH(&a[1], &bureau)) {
 		return 0;
