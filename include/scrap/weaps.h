@@ -12,5 +12,8 @@ cEntity *Swarm_NetCreate(const char *name, vec3_t pos, vec3_t dir);
 void Swarm_NetSetUp(const char *name);
 cEntity *Inferno_NetCreate(const char *name, vec3_t pos, vec3_t dir);
 void Inferno_NetSetUp(const char *name);
+/* SWeap.NetExec(cmd, name): CreateSwarm, SetUpSwarm, CreateInferno or SetUpInferno of the missile name (other
+ * commands do nothing) */
+void Missile_NetExec(const char *cmd, const char *name);
 
 #endif

@@ -208,14 +208,8 @@ static PyObject *SWeap_GetFirstiWeap(PyObject *self, PyObject *args) {
  * NetExec(cmd[,name]) : Rutinas de red de los misiles. Unknown commands do nothing. Without the second argument
  * the original passes an uninitialized pointer; here it is NULL.
  */
-static PyObject *SWeap_NetExec(PyObject *self, PyObject *args) {
-	char *cmd, *name = NULL;
+void Missile_NetExec(const char *cmd, const char *name) {
 	const vec3_t zero = { 0.0f, 0.0f, 0.0f };
-
-	(void)self;
-	if (!PyArg_ParseTuple(args, "s|s", &cmd, &name)) {
-		return NULL;
-	}
 	if (!strcmp(cmd, "CreateSwarm")) {
 		Swarm_NetCreate(name, zero, zero);
 	}
@@ -228,6 +222,16 @@ static PyObject *SWeap_NetExec(PyObject *self, PyObject *args) {
 	else if (!strcmp(cmd, "SetUpInferno")) {
 		Inferno_NetSetUp(name);
 	}
+}
+
+static PyObject *SWeap_NetExec(PyObject *self, PyObject *args) {
+	char *cmd, *name = NULL;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s|s", &cmd, &name)) {
+		return NULL;
+	}
+	Missile_NetExec(cmd, name);
 	return Py_ReturnNone();
 }
 

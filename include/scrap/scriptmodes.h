@@ -160,6 +160,71 @@ byte Mode_AIState(const nativeVal_t *name, nativeVal_t *out);
 /* SScorer.SetMsgText (msg 1) or SetLabelText of Scrap.GetLangStr(key) until Scrap.GetTime() + secs */
 byte Mode_Label(byte msg, const char *key, long secs);
 
+/* ---- engine calls of the item and weapon ports ---- */
+
+/* Scrap.GetNetFlags() (a tuple of three ints) through its seam (fc-weap-rg swaps it) */
+byte Mode_NetFlags(nativeVal_t *out);
+/* SVec.Sub(a, b), SVec.Mod(a), SVec.Norm(a) and SVec.Prod(a, f) on vectors (three numbers) and a number; other values
+ * go to the engine function by name for its error */
+byte Mode_VecSub(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
+byte Mode_VecMod(const nativeVal_t *a, nativeVal_t *out);
+byte Mode_VecNorm(const nativeVal_t *a, nativeVal_t *out);
+byte Mode_VecProd(const nativeVal_t *a, const nativeVal_t *f, nativeVal_t *out);
+/* SVec.ModSqr(a) (other values by name) */
+byte Mode_VecModSqr(const nativeVal_t *a, nativeVal_t *out);
+/* SSound.PlaySound(pos, name, volume) (other values by name, as above) */
+byte Mode_PlaySound(const nativeVal_t *pos, const nativeVal_t *name, const nativeVal_t *volume);
+/* Scrap.TestSphere(x, y, z, r, list[, exclude]) (exclude NULL: not given): the name of the entity hit, "" for the
+ * level, None (other values by name) */
+byte Mode_TestSphere(const nativeVal_t *x, const nativeVal_t *y, const nativeVal_t *z, const nativeVal_t *r,
+	const nativeVal_t *list, const nativeVal_t *exclude, nativeVal_t *out);
+/* Scrap.TestLine(from, to, list): ((x, y, z), name or "") or None (other values by name) */
+byte Mode_TestLine(const nativeVal_t *from, const nativeVal_t *to, const nativeVal_t *list, nativeVal_t *out);
+/* Scrap.SphereCall(x, y, z, r, list, func): func ("Module.Func") called for each entity of the list in the sphere
+ * (other values by name) */
+byte Mode_SphereCall(const nativeVal_t *x, const nativeVal_t *y, const nativeVal_t *z, const nativeVal_t *r,
+	const nativeVal_t *list, const nativeVal_t *func);
+/* the methods SetModel(file), SetFX(type), IsType(type) and Del() of the handle of entity e; e NULL is the None of
+ * Scrap.GetEntity (its AttributeError). IsType and Del give 1 or 0, -1 with the error */
+byte Mode_SetModel(cEntity *e, const nativeVal_t *file);
+byte Mode_SetFX(cEntity *e, const char *type);
+int Mode_IsType(cEntity *e, const char *type);
+int Mode_Del(cEntity *e);
+/* Scrap.UsrEntity(0) through its seam (fc-mis2 swaps it): the handle (NV_OBJ, OBJLIB 7) or None */
+byte Mode_UsrHandle(nativeVal_t *out);
+/* the handle of entity e as a value (NV_OBJ, OBJLIB 7), None for NULL */
+byte Mode_EntHandle(cEntity *e, nativeVal_t *out);
+/* Scrap.GetEntity(name) as the handle value (NV_OBJ, OBJLIB 7) or None */
+byte Mode_EntityH(const nativeVal_t *name, nativeVal_t *out);
+/* h.IsType(type), h.Del(), h.SetModel(file) of a value of the script: an entity handle in C (None and a handle whose
+ * entity is gone with the errors of the script), another object the Python way. IsType gives 1 or 0, -1 with the
+ * error */
+int Mode_VIsType(const nativeVal_t *h, const char *type);
+byte Mode_VDel(const nativeVal_t *h);
+byte Mode_VModel(const nativeVal_t *h, const nativeVal_t *file);
+/* h.method as a bound method (OBJLIB 4: what the scheduler keeps, e.g. l.Del): a new reference, NULL with the error */
+PyObject *Mode_VBound(const nativeVal_t *h, const char *method);
+/* Scrap.Preload3DObject(name, 1, 1, 1) as the item scripts call it (OBJLIB 7: through the seam with those arguments) */
+byte Mode_PreloadOnes(const nativeVal_t *name);
+/* Scrap.EntityListGet(list, var): a text (None for none), a float or an int; the engine's console line and NULL result
+ * for a missing list, its AttributeError for a missing variable */
+byte Mode_ListGet(const char *list, const char *var, nativeVal_t *out);
+/* SLogic.SetOnFloor(name) (the TypeError of "s") */
+byte Mode_SetOnFloor(const nativeVal_t *name);
+/* Scrap.GetAlarm()[0] (the alarm is on) through its seam (fc-pk-dt swaps it): 1 or 0, -1 with the error */
+int Mode_AlarmOn(void);
+/* the SScorer.Set the C ports make on a text or number directly (Script_SetStr of the text up to its first 0 byte,
+ * Script_SetNum), other values through SScorer.Set by name (its errors) */
+byte Mode_ScorerPut(int id, const char *item, const char *var, const nativeVal_t *v);
+/* SScorer.Get(id, item, var): a text, float, int or None */
+void Mode_ScorerGet(int id, const char *item, const char *var, nativeVal_t *out);
+/* Scrap.GetMoney(), Scrap.SetMoney(money) (the TypeError of "i") */
+int Mode_GetMoney(void);
+byte Mode_SetMoney(const nativeVal_t *money);
+/* Scrap.GetSaveVar(name) (None when it is not there), Scrap.SetSaveVar(name, value) (the TypeError of "s") */
+void Mode_SaveVar(const char *name, nativeVal_t *out);
+byte Mode_SetSaveVar(const char *name, const nativeVal_t *value);
+
 /* ---- module state ---- */
 
 /* `import name` in a function of a script (OBJLIB 6: module loading stays with the module objects) */

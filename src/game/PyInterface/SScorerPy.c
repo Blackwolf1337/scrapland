@@ -262,28 +262,34 @@ static PyObject *SScorer_Set(PyObject *self, PyObject *args) {
 }
 
 /* Get(player, item, var) : value in its type, None if not found */
-static PyObject *SScorer_Get(PyObject *self, PyObject *args) {
+int Scorer_GetItemVar(int player, const char *name, const char *var, char **s, double *d, int *i) {
 	/* differs from the original: the values start at 0. Some variables read the int on a get too (ForceWidth sets
 	 * the width of a button from it, HighRes and BlendingMode of a tab check it), which was stack garbage. */
-	int player, i = 0;
-	char *name, *var, *s = NULL;
-	double d = 0.0;
+	*s = NULL;
+	*d = 0.0;
+	*i = 0;
+	cScorer *sc = Scorer_Get(player);
+	cScorerItem *item = sc ? cScorer_FindItem(sc, name) : NULL;
+	int kind = item ? ScorerItem_Var(item, var, 0, s, d, i) : 0;
+	return kind >= 1 && kind <= 3 ? kind : 0;
+}
+
+static PyObject *SScorer_Get(PyObject *self, PyObject *args) {
+	int player, i;
+	char *name, *var, *s;
+	double d;
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "iss", &player, &name, &var)) {
 		return NULL;
 	}
-	cScorer *sc = Scorer_Get(player);
-	cScorerItem *item = sc ? cScorer_FindItem(sc, name) : NULL;
-	if (item) {
-		switch (ScorerItem_Var(item, var, 0, &s, &d, &i)) {
-		case 1:
-			return Py_BuildValue("s", s);
-		case 2:
-			return Py_BuildValue("d", d);
-		case 3:
-			return Py_BuildValue("i", i);
-		}
+	switch (Scorer_GetItemVar(player, name, var, &s, &d, &i)) {
+	case 1:
+		return Py_BuildValue("s", s);
+	case 2:
+		return Py_BuildValue("d", d);
+	case 3:
+		return Py_BuildValue("i", i);
 	}
 	return Py_ReturnNone();
 }

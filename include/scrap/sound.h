@@ -271,6 +271,9 @@ extern cGVar GVar_isDolby;
 /* volume 0..1 to the engine's volume value */
 int Snd_Volume(float volume);
 void cSoundDesc_Init(cSoundDesc *desc);
+/* SSound.PlaySound(pos, name, volume, p1, p2, p3): a 3D sound at pos (volume as Snd_Volume takes it, added to the
+ * description's) */
+void Sound_PlayAt(const vec3_t *pos, const char *name, double volume, double p1, double p2, double p3);
 /* the volume and pan of a sound at pos (without doppler) */
 void cSoundDesc_SetPos(cSoundDesc *desc, const vec3_t *pos);
 
