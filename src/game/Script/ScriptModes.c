@@ -3,15 +3,18 @@
  * split screen modes and the super deals on native values, the seams of the engine functions their case files record
  * or swap (OBJLIB 7), the module state they read and write in other modules (OBJLIB 5) and their adapters.
  */
+#include <math.h>
 #include <stdarg.h>
 #include <string.h>
 
 #include "scrap/console.h"
 #include "scrap/input.h"
+#include "scrap/logic.h"
 #include "scrap/mathlib.h"
 #include "scrap/net.h"
 #include "scrap/pyentity.h"
 #include "scrap/ai.h"
+#include "scrap/game.h"
 #include "scrap/scheduler.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
@@ -830,6 +833,367 @@ byte Mode_Label(byte msg, const char *key, long secs) {
 	byte ok = msg ? Mode_MsgText(&text, tm) : Mode_LabelText(&text, tm);
 	Native_Free(&text);
 	return ok;
+}
+
+/* ---- engine calls of the item and weapon ports ---- */
+
+byte Mode_NetFlags(nativeVal_t *out) {
+	MODE_SEAM("Scrap", "GetNetFlags");
+	if (seam) {
+		return Native_HookCall(hook, out, "");
+	}
+	uint32_t f = g_pApp->flags;
+	Native_SetEmpty(out, NV_TUPLE);
+	for (int i = 0; i < 3; i++) {
+		Native_SetInt(Native_Append(out), (long)(f >> i & 1));
+	}
+	return 1;
+}
+
+/* a number as "d" reads it without an error (an int or a float) */
+static byte Mode_Num(const nativeVal_t *v, double *d) {
+	if (v->type == NV_INT) {
+		*d = (double)v->i;
+		return 1;
+	}
+	if (v->type == NV_FLOAT) {
+		*d = v->f;
+		return 1;
+	}
+	return 0;
+}
+
+/* a text as "s" reads it without an error (no 0 bytes) */
+static byte Mode_Str(const nativeVal_t *v, const char **s) {
+	if (v->type != NV_STR || (int)strlen(Native_Text(v)) != v->n) {
+		return 0;
+	}
+	*s = Native_Text(v);
+	return 1;
+}
+
+byte Mode_VecSub(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
+	double x[3], y[3];
+	if (!Mode_Vec3(a, x) || !Mode_Vec3(b, y)) {
+		return Native_CallMod("SVec", "Sub", out, "vv", a, b);
+	}
+	Native_SetVec(out, x[0] - y[0], x[1] - y[1], x[2] - y[2]);
+	return 1;
+}
+
+byte Mode_VecMod(const nativeVal_t *a, nativeVal_t *out) {
+	double x[3];
+	if (!Mode_Vec3(a, x)) {
+		return Native_CallMod("SVec", "Mod", out, "v", a);
+	}
+	Native_SetFloat(out, sqrt(x[0] * x[0] + x[1] * x[1] + x[2] * x[2]));
+	return 1;
+}
+
+byte Mode_VecNorm(const nativeVal_t *a, nativeVal_t *out) {
+	double x[3];
+	if (!Mode_Vec3(a, x)) {
+		return Native_CallMod("SVec", "Norm", out, "v", a);
+	}
+	double len = sqrt(x[0] * x[0] + x[1] * x[1] + x[2] * x[2]);
+	/* SVec.Norm: the float 1e-6 widened to double */
+	if (len < (double)1e-6f) {
+		Native_SetVec(out, 0.0, 1.0, 0.0);
+	} else {
+		Native_SetVec(out, x[0] / len, x[1] / len, x[2] / len);
+	}
+	return 1;
+}
+
+byte Mode_VecModSqr(const nativeVal_t *a, nativeVal_t *out) {
+	double x[3];
+	if (!Mode_Vec3(a, x)) {
+		return Native_CallMod("SVec", "ModSqr", out, "v", a);
+	}
+	Native_SetFloat(out, x[0] * x[0] + x[1] * x[1] + x[2] * x[2]);
+	return 1;
+}
+
+byte Mode_VecProd(const nativeVal_t *a, const nativeVal_t *f, nativeVal_t *out) {
+	double x[3], d;
+	if (!Mode_Vec3(a, x) || !Mode_Num(f, &d)) {
+		return Native_CallMod("SVec", "Prod", out, "vv", a, f);
+	}
+	Native_SetVec(out, x[0] * d, x[1] * d, x[2] * d);
+	return 1;
+}
+
+byte Mode_PlaySound(const nativeVal_t *pos, const nativeVal_t *name, const nativeVal_t *volume) {
+	double p[3], vol;
+	const char *s;
+	if (!Mode_Vec3(pos, p) || !Mode_Str(name, &s) || !Mode_Num(volume, &vol)) {
+		return Native_CallMod("SSound", "PlaySound", NULL, "vvv", pos, name, volume);
+	}
+	vec3_t at = { (float)p[0], (float)p[1], (float)p[2] };
+	Sound_PlayAt(&at, s, vol, 0.0, 0.0, 1.0);
+	return 1;
+}
+
+byte Mode_TestSphere(const nativeVal_t *x, const nativeVal_t *y, const nativeVal_t *z, const nativeVal_t *r,
+	const nativeVal_t *list, const nativeVal_t *exclude, nativeVal_t *out) {
+	double c[3], rad;
+	const char *l, *ex = "";
+	if (!Mode_Num(x, &c[0]) || !Mode_Num(y, &c[1]) || !Mode_Num(z, &c[2]) || !Mode_Num(r, &rad) || !Mode_Str(list, &l) ||
+		(exclude && !Mode_Str(exclude, &ex))) {
+		return exclude ? Native_CallMod("Scrap", "TestSphere", out, "vvvvvv", x, y, z, r, list, exclude) :
+			Native_CallMod("Scrap", "TestSphere", out, "vvvvv", x, y, z, r, list);
+	}
+	vec3_t at = { (float)c[0], (float)c[1], (float)c[2] };
+	byte level;
+	cEntity *e = World_TestSphere(&at, (float)rad, l, ex, &level);
+	if (e) {
+		Native_SetStr(out, e->name);
+	} else if (level) {
+		Native_SetStr(out, "");
+	} else {
+		Native_SetNone(out);
+	}
+	return 1;
+}
+
+byte Mode_TestLine(const nativeVal_t *from, const nativeVal_t *to, const nativeVal_t *list, nativeVal_t *out) {
+	double a[3], b[3];
+	const char *l;
+	if (!Mode_Vec3(from, a) || !Mode_Vec3(to, b) || !Mode_Str(list, &l)) {
+		return Native_CallMod("Scrap", "TestLine", out, "vvv", from, to, list);
+	}
+	vec3_t p = { (float)a[0], (float)a[1], (float)a[2] }, q = { (float)b[0], (float)b[1], (float)b[2] }, hit;
+	cEntity *e;
+	if (!World_TestLine(&p, &q, l, &hit, &e)) {
+		Native_SetNone(out);
+		return 1;
+	}
+	/* "(ddd)s" */
+	Native_SetEmpty(out, NV_TUPLE);
+	Native_SetVec(Native_Append(out), (double)hit.x, (double)hit.y, (double)hit.z);
+	Native_SetStr(Native_Append(out), e ? e->name : "");
+	return 1;
+}
+
+byte Mode_SphereCall(const nativeVal_t *x, const nativeVal_t *y, const nativeVal_t *z, const nativeVal_t *r,
+	const nativeVal_t *list, const nativeVal_t *func) {
+	double c[3], rad;
+	const char *l, *f;
+	if (!Mode_Num(x, &c[0]) || !Mode_Num(y, &c[1]) || !Mode_Num(z, &c[2]) || !Mode_Num(r, &rad) || !Mode_Str(list, &l) ||
+		!Mode_Str(func, &f)) {
+		return Native_CallMod("Scrap", "SphereCall", NULL, "vvvvvv", x, y, z, r, list, func);
+	}
+	vec3_t at = { (float)c[0], (float)c[1], (float)c[2] };
+	cWorld_SphereCall(g_pWorld, EntityLists_Get(l), &at, (float)rad, f, 1);
+	return 1;
+}
+
+/* the method of entity e (the handle made for name) found: 0 with the AttributeError of None for e NULL */
+static byte Mode_Method(cEntity *e, const char *method) {
+	return e ? 1 : Native_Raise(NE_ATTRIBUTE, "'None' object has no attribute '%.400s'", method);
+}
+
+byte Mode_SetModel(cEntity *e, const nativeVal_t *file) {
+	/* "s|d" */
+	const char *f;
+	if (!Mode_Method(e, "SetModel") || !Native_ArgStr(file, 1, &f)) {
+		return 0;
+	}
+	Entity_SetModel(e, f, 1.0f, 1.0f, 1.0f, 1);
+	return 1;
+}
+
+byte Mode_SetFX(cEntity *e, const char *type) {
+	if (!Mode_Method(e, "SetFX")) {
+		return 0;
+	}
+	Entity_SetEmbeddedFX(e, type);
+	return 1;
+}
+
+int Mode_IsType(cEntity *e, const char *type) {
+	return Mode_Method(e, "IsType") ? Entity_IsType(e, type) != 0 : -1;
+}
+
+int Mode_Del(cEntity *e) {
+	return Mode_Method(e, "Del") ? cEntity_Del(e) != 0 : -1;
+}
+
+byte Mode_UsrHandle(nativeVal_t *out) {
+	MODE_SEAM("Scrap", "UsrEntity");
+	if (seam) {
+		return Native_HookCall(hook, out, "i", 0L);
+	}
+	PyObject *h = Mode_Handle(Mode_Usr());
+	if (!h) {
+		return 0;
+	}
+	Native_Arg(h, out);
+	Py_DECREF(h);
+	return 1;
+}
+
+byte Mode_EntHandle(cEntity *e, nativeVal_t *out) {
+	PyObject *h = Mode_Handle(e);
+	if (!h) {
+		return 0;
+	}
+	Native_Arg(h, out);
+	Py_DECREF(h);
+	return 1;
+}
+
+byte Mode_EntityH(const nativeVal_t *name, nativeVal_t *out) {
+	cEntity *e;
+	return Mode_Ent(name, &e) && Mode_EntHandle(e, out);
+}
+
+/* the entity of the handle value h for its method: 1 with *e (a live entity), 0 with the error of the lookup (None's
+ * AttributeError, the line and SystemError of a handle whose entity is gone), -1 for another object (the caller calls
+ * its method the Python way) */
+static int Mode_MethodOf(const nativeVal_t *h, const char *method, cEntity **e) {
+	if (h->type == NV_OBJ && PyEntity_Check(h->obj)) {
+		nativeVal_t x;
+		*e = PyEntity_Get(h->obj);
+		return *e ? 1 : Native_EntVar(NULL, ((cPyEntity *)h->obj)->ref->name, method, &x);
+	}
+	return h->type == NV_NONE ? Mode_Method(NULL, method) : -1;
+}
+
+/* h.method(args) of another object the Python way (fmt and the arguments as Native_Call takes them) */
+static byte Mode_PyMethod(const nativeVal_t *h, const char *method, nativeVal_t *out, const char *fmt, const char *s) {
+	PyObject *o = Native_ToPy(h), *m = o ? PyObject_GetAttrString(o, (char *)method) : NULL;
+	byte ok = m ? (s ? Native_Call(m, out, fmt, s) : Native_Call(m, out, fmt)) : (o && Mode_AttrFail());
+	Py_XDECREF(m);
+	Py_XDECREF(o);
+	return ok;
+}
+
+int Mode_VIsType(const nativeVal_t *h, const char *type) {
+	cEntity *e;
+	int k = Mode_MethodOf(h, "IsType", &e);
+	if (k >= 0) {
+		return k ? Entity_IsType(e, type) != 0 : -1;
+	}
+	nativeVal_t r = { 0 };
+	k = Mode_PyMethod(h, "IsType", &r, "s", type) ? Native_True(&r) : -1;
+	Native_Free(&r);
+	return k;
+}
+
+byte Mode_VDel(const nativeVal_t *h) {
+	cEntity *e;
+	int k = Mode_MethodOf(h, "Del", &e);
+	if (k >= 0) {
+		return k && (cEntity_Del(e), 1);
+	}
+	return Mode_PyMethod(h, "Del", NULL, "", NULL);
+}
+
+byte Mode_VModel(const nativeVal_t *h, const nativeVal_t *file) {
+	PyObject *o = Native_ToPy(h);
+	byte ok = o && Mode_HModel(o, file);
+	Py_XDECREF(o);
+	return ok;
+}
+
+PyObject *Mode_VBound(const nativeVal_t *h, const char *method) {
+	PyObject *o = Native_ToPy(h), *m = o ? PyObject_GetAttrString(o, (char *)method) : NULL;
+	if (o && !m) {
+		Mode_AttrFail();
+	}
+	Py_XDECREF(o);
+	return m;
+}
+
+byte Mode_PreloadOnes(const nativeVal_t *name) {
+	PyObject *hook;
+	int seam = Native_Seam("Scrap", "Preload3DObject", &hook);
+	if (seam) {
+		return seam > 0 && Native_HookCall(hook, NULL, "viii", name, 1L, 1L, 1L);
+	}
+	return Mode_Preload(name);
+}
+
+byte Mode_ListGet(const char *list, const char *var, nativeVal_t *out) {
+	char *s;
+	double d;
+	int i;
+	switch (EntityList_Get(list, var, &s, &d, &i)) {
+	case -1:
+		return Native_NullResult();
+	case 1:
+		if (s) {
+			Native_SetText(out, s, (int)strlen(s));
+		} else {
+			Native_SetNone(out);
+		}
+		return 1;
+	case 2:
+		Native_SetFloat(out, d);
+		return 1;
+	case 3:
+		Native_SetInt(out, i);
+		return 1;
+	}
+	return Native_Raise(NE_ATTRIBUTE, "EntityListGet: list '%.64s' has no variable '%.64s'", list, var);
+}
+
+byte Mode_SetOnFloor(const nativeVal_t *name) {
+	const char *n;
+	if (!Native_ArgStr(name, 1, &n)) {
+		return 0;
+	}
+	Logic_SetOnFloor(World_FindEntity(n));
+	return 1;
+}
+
+int Mode_AlarmOn(void) {
+	PyObject *hook;
+	int seam = Native_Seam("Scrap", "GetAlarm", &hook);
+	if (!seam) {
+		return g_pWorld->alarm.on != 0;
+	}
+	if (seam < 0) {
+		return -1;
+	}
+	nativeVal_t a = { 0 }, k, on = { 0 };
+	Native_SetInt(&k, 0);
+	int t = Native_HookCall(hook, &a, "") && Native_Subscript(&a, &k, &on) ? Native_True(&on) : -1;
+	Native_Free(&a);
+	Native_Free(&on);
+	return t;
+}
+
+int Mode_GetMoney(void) {
+	return g_pWorld->money;
+}
+
+byte Mode_SetMoney(const nativeVal_t *money) {
+	int i;
+	if (!Native_ArgInt(money, &i)) {
+		return 0;
+	}
+	g_pWorld->money = i;
+	return 1;
+}
+
+void Mode_SaveVar(const char *name, nativeVal_t *out) {
+	const char *s = SaveVar_Get(name);
+	if (s) {
+		Native_SetText(out, s, (int)strlen(s));
+	} else {
+		Native_SetNone(out);
+	}
+}
+
+byte Mode_SetSaveVar(const char *name, const nativeVal_t *value) {
+	const char *s;
+	if (!Native_ArgStr(value, 2, &s)) {
+		return 0;
+	}
+	SaveVar_Set(name, s);
+	return 1;
 }
 
 /* ---- module state ---- */
