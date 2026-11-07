@@ -59,11 +59,22 @@ static byte Sd_SaveInt(const char *name, nativeVal_t *out) {
 	return ok;
 }
 
-/* the count of range(n) as its argument parser takes it ("l": an int, a float cut) */
+/* the count of range(n) as its argument parser takes it ("l": an int, a long int that fits, a float cut) */
 static byte Sd_Range(const nativeVal_t *n, long *count) {
 	int i;
+	if (n->type == NV_INT) {
+		*count = n->i;
+		return 1;
+	}
 	if (n->type == NV_LONG) {
-		return Native_Raise(NE_OVERFLOW, "long int too long to convert");
+		nativeVal_t x;
+		Native_SetNone(&x);
+		byte ok = Native_ToInt(n, &x) && (x.type == NV_INT || Native_Raise(NE_OVERFLOW, "long int too long to convert"));
+		if (ok) {
+			*count = x.i;
+		}
+		Native_Free(&x);
+		return ok;
 	}
 	if (!Native_ArgInt(n, &i)) {
 		return 0;
@@ -1929,19 +1940,23 @@ static byte Ctf_EndOfCTFC(void) {
 		Native_Free(name);
 		Native_Free(e);
 	}
-	/* for name in flagsActive: CTF.RemoveFlag(name), on the list as RemoveFlag changes it (the global read again at
-	 * each step: the loop of the script runs on the object of the module) */
+	/* for name in flagsActive: CTF.RemoveFlag(name), on the list object read before the loop as RemoveFlag changes it
+	 * (OBJLIB 5: the loop of the script runs on the object of the module dict) */
+	PyObject *flags = ok ? Mode_GlobalPy(CTF, "flagsActive") : NULL;
+	ok = flags != NULL;
 	for (int i = 0; ok; i++) {
-		Native_Free(name);
-		ok = Mode_Read(CTF, "flagsActive", &ctf.flagsActive);
-		int count = ok ? Native_ForCount(&ctf.flagsActive) : -1;
-		if (count < 0) {
-			ok = 0;
-		} else if (i >= count) {
+		PyObject *item;
+		int r = Script_Next(flags, i, &item);
+		if (r <= 0) {
+			ok = r == 0;
 			break;
 		}
-		ok = ok && Native_SeqItem(&ctf.flagsActive, i, name) && OWN(CTF, "RemoveFlag", NULL, "v", name);
+		Native_Free(name);
+		Native_Arg(item, name);
+		Py_DECREF(item);
+		ok = OWN(CTF, "RemoveFlag", NULL, "v", name);
 	}
+	Py_XDECREF(flags);
 	if (!ok || !Mode_GVarSetS("LeaderFlag", "") ||
 		!CALL("MissionsFuncs", "SetInvulnerableShipsInList", NULL, "s", "CTFEnemies") ||
 		!CALL("MissionsFuncs", "SetInvulnerableShipsInList", NULL, "s", "CTFFriends") ||
@@ -2177,9 +2192,15 @@ static byte Ctf_SpawnFlagsC(const nativeVal_t *pos, const nativeVal_t *num) {
 	long n = 0;
 	byte ok = Sd_Range(num, &n);
 	for (long i = 0; ok && i < n; i++) {
+		/* flagsSpecial.append(CTF.CreateFlag(pos)) on the list read before the call */
 		nativeVal_t name;
 		Native_SetNone(&name);
-		ok = OWN(CTF, "CreateFlag", &name, "v", pos) && Mode_Append(CTF, "flagsSpecial", &name);
+		PyObject *list = Mode_GlobalPy(CTF, "flagsSpecial"), *x = NULL, *r = NULL;
+		ok = list && OWN(CTF, "CreateFlag", &name, "v", pos) && (x = Native_ToPy(&name)) != NULL &&
+			(r = Script_Method(list, "append", "(O)", x)) != NULL;
+		Py_XDECREF(r);
+		Py_XDECREF(x);
+		Py_XDECREF(list);
 		Native_Free(&name);
 	}
 	if (!ok || !Mode_UsrHandle(usr)) {
@@ -2477,7 +2498,7 @@ static byte Dom_CreateTeam(byte enemy) {
 		nativeVal_t *sp = Mode_V(&t), *pos = Mode_V(&t), *ang = Mode_V(&t), *name = Mode_V(&t), *e = Mode_V(&t);
 		nativeVal_t *en = Mode_V(&t);
 		Sd_Numbered(enemy ? "Enemy" : "Friend", i, name);
-		ok = Sd_Item(spawns, i, sp) && Sd_Item(sp, 0, pos) && Sd_Item(spawns, i, sp) && Sd_Item(sp, 1, ang) &&
+		ok = Sd_Item(spawns, i, sp) && Sd_Item(sp, 0, pos) && Sd_Item(sp, 1, ang) &&
 			Sd_Create(name, pos, "Car", e) && Sd_SetS(e, "WeapList", "15,15,15,15,15,0") &&
 			(!enemy || Sd_SetI(e, "LaunchTaunts", 0)) && Sd_Ang(e, ang) && (!enemy || i || Sd_SetI(e, "Money", -1)) &&
 			OWN(DOM, "SetProfile", NULL, "vi", e, (long)enemy) && Sd_AppendName(DOM, enemy ? "enemies" : "friends", e) &&
@@ -2712,19 +2733,21 @@ static byte Dom_SetState(const nativeVal_t *z, long state) {
 	return Mode_DictPut(DOM, "zonesStates", &dom.zonesStates, z, &v);
 }
 
-/* the player or the leader took the baton: the baton and its arrow gone, SLogic.ChangeBatonState((0, 0, 0), state),
- * the holder, the crazy gambler's message and the sound */
-static byte Dom_Took(long state, long user, const nativeVal_t *ship, const char *key,
+/* the player or the leader took the baton: SLogic.ChangeBatonState((0, 0, 0), state), the holder (ship, or the name of
+ * the player's handle usr read then), the crazy gambler's message and the sound */
+static byte Dom_Took(long state, long user, const nativeVal_t *ship, const nativeVal_t *usr, const char *key,
 	const char *snd, const char *vol) {
-	nativeVal_t zero;
+	nativeVal_t zero, un;
+	Native_SetNone(&un);
 	Native_SetEmpty(&zero, NV_TUPLE);
 	for (int i = 0; i < 3; i++) {
 		Native_SetInt(Native_Append(&zero), 0);
 	}
 	byte ok = Sd_BatonState(&zero, state) && Sd_PutI(DOM, "userWithBaton", &dom.userWithBaton, user) &&
-		Mode_Put(DOM, "shipWithBaton", &dom.shipWithBaton, ship) && CALL("Speech", "ForceRemoteCom", NULL, "ss", key, CG) &&
+		(!usr || Mode_VGet(usr, "Name", &un)) && Mode_Put(DOM, "shipWithBaton", &dom.shipWithBaton, usr ? &un : ship) && CALL("Speech", "ForceRemoteCom", NULL, "ss", key, CG) &&
 		Mode_Sound(snd, vol);
 	Native_Free(&zero);
+	Native_Free(&un);
 	return ok;
 }
 
@@ -2732,7 +2755,7 @@ static byte Dom_Took(long state, long user, const nativeVal_t *ship, const char 
  * show on the radar */
 static byte Dom_TakeBatonC(const nativeVal_t *item, const nativeVal_t *who) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *leader = Mode_V(&t), *usr = Mode_V(&t), *keys = Mode_V(&t), *z = Mode_V(&t), *un = Mode_V(&t);
+	nativeVal_t *leader = Mode_V(&t), *usr = Mode_V(&t), *keys = Mode_V(&t), *z = Mode_V(&t);
 	cEntity *e;
 	if (!Native_GVarGet("LeaderName", leader) || !Mode_Import("Sound") || !Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
@@ -2740,7 +2763,7 @@ static byte Dom_TakeBatonC(const nativeVal_t *item, const nativeVal_t *who) {
 	if (Sd_Eq(who, leader)) {
 		if (!Sd_Del(item) || !Sd_DelArrow(item) || !CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", who) ||
 			!Mode_GVarSet("CurrentWaypointName", who) ||
-			!Dom_Took(1, 0, who, "SuperDeal_DominationRemoteMessage6", "EneWaySound", "EneWayVolume")) {
+			!Dom_Took(1, 0, who, NULL, "SuperDeal_DominationRemoteMessage6", "EneWaySound", "EneWayVolume")) {
 			return Mode_Done(&t, 0);
 		}
 	} else {
@@ -2763,8 +2786,8 @@ static byte Dom_TakeBatonC(const nativeVal_t *item, const nativeVal_t *who) {
 				}
 				ok = show >= 0 && (!show || (Mode_Ent(z, &e) && (!e || Mode_SetI(e, Native_Text(z), "RadarShow", 1))));
 			}
-			if (!ok || !Sd_Del(item) || !Sd_DelArrow(item) || !Mode_VGet(usr, "Name", un) ||
-				!Dom_Took(2, 1, un, "SuperDeal_DominationRemoteMessage5", "WaySound", "WayVolume")) {
+			if (!ok || !Sd_Del(item) || !Sd_DelArrow(item) ||
+				!Dom_Took(2, 1, NULL, usr, "SuperDeal_DominationRemoteMessage5", "WaySound", "WayVolume")) {
 				return Mode_Done(&t, 0);
 			}
 		}
@@ -3998,6 +4021,7 @@ static byte Mr_MoveRacersToTrafficC(void) {
 	byte ok = Sd_EachInList("Race", Mr_Collect, &players);
 	for (int i = 0; ok && i < players.n; i++) {
 		nativeVal_t e, n;
+		Native_SetNone(&e);
 		Native_SetNone(&n);
 		ok = Mode_EntityH(&players.items[i], &e);
 		if (ok && Native_True(&e)) {
@@ -4151,8 +4175,9 @@ static byte Mr_RacerDamagedC(const nativeVal_t *winner) {
 		return 0;
 	}
 	Native_SetNone(&un);
-	byte ok = !Native_True(&usr) ? 1 : Mode_VGet(&usr, "Name", &un) && Mode_Read(MR, "YourScore", &mr.yourScore);
-	if (ok && Native_True(&usr) && Sd_Eq(&un, winner) && Sd_EqI(&mr.yourScore, -1)) {
+	byte ok = !Native_True(&usr) || Mode_VGet(&usr, "Name", &un);
+	if (ok && Native_True(&usr) && Sd_Eq(&un, winner) && (ok = Mode_Read(MR, "YourScore", &mr.yourScore)) &&
+		Sd_EqI(&mr.yourScore, -1)) {
 		ok = Mode_ListSet("Race", "OnDamage", "") && Mr_Scorer() && Mode_Read(MR, "waypointName", &mr.waypointName) &&
 			OWN(MR, "OnCheckPoint", NULL, "vv", &mr.waypointName, winner);
 	}
