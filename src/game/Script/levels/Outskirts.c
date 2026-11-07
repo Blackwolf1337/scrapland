@@ -759,14 +759,7 @@ static byte Demo_InitStatus(void) {
 }
 
 static byte Demo_ShowSystemMessage(void) {
-	nativeVal_t text = { 0 };
-	if (!Mode_Import("RaceMaker")) {
-		return 0;
-	}
-	Mode_Lang("RaceSystemGetShip", &text);
-	byte ok = LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
-	Native_Free(&text);
-	return ok;
+	return LvN_SystemMessage("RaceSystemGetShip");
 }
 
 /* Init(LevelPath): the gates closed, the metro to the press; the race hooks, the call or the metro by the state */
@@ -793,23 +786,12 @@ static byte Demo_Init(void) {
 
 /* ShowBoostMessage(): the first ship: the previous callback back, the message about the boost key */
 static byte Demo_ShowBoostMessage(void) {
-	modeVals_t t = { .n = 0 };
-	nativeVal_t *prev = TV(), *text = TV(), *key = TV(), *msg = TV();
-	byte called;
-	byte ok = Mode_Import("Parking") && Mode_Import("RaceMaker") && Mode_CallIf(DH, "prevSwitchVehicleMissionCallback", &called) &&
-		Mode_G(DH, "prevSwitchVehicleMissionCallback", prev) && Mode_SetModVar("Parking", "SwitchVehicleMissionCallback", prev);
-	if (ok) {
-		Mode_Lang("Mission_FirstCrazyBet_SystemMessage4", text);
-		ok = LV_CALL("SInput", "GetDefinedEntry", key, "isss", 0L, "Racer", "Boost", "Mouse") && Native_Arith('%', text, key, msg) &&
-			Mode_MsgText(msg, Mode_Time() + 10);
-	}
-	return Mode_Done(&t, ok);
+	return LvN_BoostMessage(DH);
 }
 
 /* ClosePressHangar(): the first checkpoint: the hangar of the press closes */
 static byte Demo_ClosePressHangar(void) {
-	return Mode_Import("RaceMaker") && Mode_EntSetS("DM_Door_CityDoorA_01", "OnObjSlot", "!CloseDoorSlot") &&
-		LvN_ModNone("RaceMaker", "OnCheckPointCallback");
+	return LvN_ClosePressHangar();
 }
 
 /* DelRacers(names): the racers of the names that exist go */

@@ -1534,3 +1534,33 @@ byte LvN_CamTravelEnd(const nativeVal_t *a, const char *module, byte racerScorer
 	}
 	return Mode_Done(&t, ok && LV_OWN(module, "LaunchMission", NULL, ""));
 }
+
+byte LvN_SystemMessage(const char *key) {
+	nativeVal_t text = { 0 };
+	if (!Mode_Import("RaceMaker")) {
+		return 0;
+	}
+	Mode_Lang(key, &text);
+	byte ok = LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
+	Native_Free(&text);
+	return ok;
+}
+
+byte LvN_BoostMessage(const char *module) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *prev = Mode_V(&t), *text = Mode_V(&t), *key = Mode_V(&t), *msg = Mode_V(&t);
+	byte called;
+	byte ok = Mode_Import("Parking") && Mode_Import("RaceMaker") && Mode_CallIf(module, "prevSwitchVehicleMissionCallback", &called) &&
+		Mode_G(module, "prevSwitchVehicleMissionCallback", prev) && Mode_SetModVar("Parking", "SwitchVehicleMissionCallback", prev);
+	if (ok) {
+		Mode_Lang("Mission_FirstCrazyBet_SystemMessage4", text);
+		ok = LV_CALL("SInput", "GetDefinedEntry", key, "isss", 0L, "Racer", "Boost", "Mouse") && Native_Arith('%', text, key, msg) &&
+			Mode_MsgText(msg, Mode_Time() + 10);
+	}
+	return Mode_Done(&t, ok);
+}
+
+byte LvN_ClosePressHangar(void) {
+	return Mode_Import("RaceMaker") && Mode_EntSetS("DM_Door_CityDoorA_01", "OnObjSlot", "!CloseDoorSlot") &&
+		LvN_ModNone("RaceMaker", "OnCheckPointCallback");
+}

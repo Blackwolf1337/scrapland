@@ -1161,20 +1161,13 @@ static byte Gd_TransportDone(const nativeVal_t *e) {
 /* TakeData(ItemName, CharName): a data unit more; all of them end the mission, the transport's share a new transport */
 static byte Data_TakeData(const nativeVal_t *a) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *usr = TV(), *itm = TV(), *at = TV(), *sv = TV(), *ni = TV(), *num = TV(), *max = TV(), *rep = TV(), *cur = TV(), *e = TV();
+	nativeVal_t *usr = TV(), *itm = TV(), *sv = TV(), *ni = TV(), *num = TV(), *max = TV(), *rep = TV(), *cur = TV(), *e = TV();
 	nativeVal_t *lst = TV(), *fn = TV(), *sd = TV();
 	int c = Mode_UsrHandle(usr) ? LvN_UsrNameIs(usr, &a[1]) : -1;
 	if (c <= 0) {
 		return Mode_Done(&t, c == 0);
 	}
-	byte ok = Mode_EntityH(&a[0], itm) && LvN_SetI(itm, "rTime", 20);
-	if (ok) {
-		PyObject *del = Mode_VBound(itm, "Del");
-		Native_SetFloat(at, Mode_Time() + 5);
-		ok = del && Mode_Schedule(at, del, NULL, 0, NULL);
-		Py_XDECREF(del);
-	}
-	if (!ok) {
+	if (!Mode_EntityH(&a[0], itm) || !Mode_DelLater(itm)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("NumData", sv);
@@ -1187,7 +1180,7 @@ static byte Data_TakeData(const nativeVal_t *a) {
 		return Mode_Done(&t, 1);
 	}
 	Mode_Repr(num, rep);
-	ok = Mode_SetSaveVar("NumData", rep) && Mode_G(GD, "currentTransport", cur) && Mode_EntityH(cur, e);
+	byte ok = Mode_SetSaveVar("NumData", rep) && Mode_G(GD, "currentTransport", cur) && Mode_EntityH(cur, e);
 	int all = ok ? Mode_CmpG(num, "==", GD, "MAX_DATA_UNITS") : -1;
 	if (all > 0) {
 		ok = Gd_TransportDone(e) && Mode_DelSchedS("SpawnData") && Mode_DelSchedS("AddTransport") && Mode_Import("Parking") && LvN_ScorerOff() &&
@@ -1319,14 +1312,7 @@ static byte Bet_InitStatus(void) {
 }
 
 static byte Bet_ShowSystemMessage(void) {
-	nativeVal_t text = { 0 };
-	if (!Mode_Import("RaceMaker")) {
-		return 0;
-	}
-	Mode_Lang("RaceSystemGetShip", &text);
-	byte ok = LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
-	Native_Free(&text);
-	return ok;
+	return LvN_SystemMessage("RaceSystemGetShip");
 }
 
 /* Init(LevelPath): the doors of the level closed; the race with its callbacks and the boost message, or the call of
@@ -1360,27 +1346,12 @@ static byte Bet_Init(void) {
 
 /* ShowBoostMessage(): the callback it replaced, then the message of the boost key */
 static byte Bet_ShowBoostMessage(void) {
-	modeVals_t t = { .n = 0 };
-	nativeVal_t *prev = TV(), *text = TV(), *key = TV(), *msg = TV();
-	byte ok = Mode_Import("Parking") && Mode_Import("RaceMaker") && Mode_G(HR, "prevSwitchVehicleMissionCallback", prev);
-	if (ok && Native_True(prev)) {
-		PyObject *fn = Native_ToPy(prev);
-		ok = fn && Native_Call(fn, NULL, "");
-		Py_XDECREF(fn);
-	}
-	ok = ok && Mode_Read(HR, "prevSwitchVehicleMissionCallback", prev) && Mode_SetModVar("Parking", "SwitchVehicleMissionCallback", prev);
-	if (ok) {
-		Mode_Lang("Mission_FirstCrazyBet_SystemMessage4", text);
-		ok = LV_CALL("SInput", "GetDefinedEntry", key, "isss", 0L, "Racer", "Boost", "Mouse") && Native_Arith('%', text, key, msg) &&
-			Mode_MsgText(msg, Mode_Time() + 10);
-	}
-	return Mode_Done(&t, ok);
+	return LvN_BoostMessage(HR);
 }
 
 /* ClosePressHangar(): at the first checkpoint the door of the press hangar closes */
 static byte Bet_ClosePressHangar(void) {
-	return Mode_Import("RaceMaker") && Mode_EntSetS("DM_Door_CityDoorA_01", "OnObjSlot", "!CloseDoorSlot") &&
-		LvN_ModNone("RaceMaker", "OnCheckPointCallback");
+	return LvN_ClosePressHangar();
 }
 
 /* DelRacers(names): the other racers go, only Humphrey races */
@@ -2804,16 +2775,6 @@ static byte Steal_Init(void) {
 		Mode_Later(5.0, SM, "TestForMissionShip", NULL, 0, "TestForMissionShip");
 }
 
-/* `string.find(string.upper(v.Model), text) != -1`: 1, 0, -1 */
-static int Sm_ModelHas(const nativeVal_t *v, const char *text) {
-	nativeVal_t m = { 0 }, up = { 0 }, at = { 0 };
-	int r = Mode_VGet(v, "Model", &m) && Native_Upper(&m, &up) && LV_CALL("string", "find", &at, "vs", &up, text) ? !LvN_EqI(&at, -1) : -1;
-	Native_Free(&m);
-	Native_Free(&up);
-	Native_Free(&at);
-	return r;
-}
-
 /* CreateMissionShip(): the player's mayor ship (not his own) is the mission ship, else a parked mayor ship instead of
  * the farthest parked one */
 static byte Steal_CreateMissionShip(void) {
@@ -2826,7 +2787,7 @@ static byte Steal_CreateMissionShip(void) {
 		c = LvN_ModGet("Parking", "PlayerShip", ps) ? Native_True(ps) : -1;
 	}
 	if (c > 0) {
-		int mayor = Sm_ModelHas(usr, "MAYOR");
+		int mayor = Mode_ModelHas(usr, "MAYOR");
 		if (mayor > 0) {
 			Native_Free(ps);
 			mayor = Mode_VGet(usr, "Name", name) && LvN_ModGet("Parking", "PlayerShip", ps) && Mode_VGet(ps, "Name", pn) ? Native_Compare(name, pn) != 0 :
@@ -2893,14 +2854,7 @@ static byte Steal_TestForCorrectPlatform(void) {
 
 /* UseParkedMayorShip(UsrName, CharName, optId, FullOption): the parked ship is not to be used any more */
 static byte Steal_UseParkedMayorShip(void) {
-	nativeVal_t text = { 0 };
-	if (!Mode_Import("RaceMaker")) {
-		return 0;
-	}
-	Mode_Lang("Mission_ParkMayorShip_SystemMessage1", &text);
-	byte ok = LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
-	Native_Free(&text);
-	return ok;
+	return LvN_SystemMessage("Mission_ParkMayorShip_SystemMessage1");
 }
 
 /* UsePhoneCab(UsrName, CharName, optId, FullOption): Trurl's farewell and DeepThroat at the phone of the platform */
@@ -3035,7 +2989,7 @@ static byte Steal_OnPoliceDeath(const nativeVal_t *a) {
 	if (c <= 0) {
 		return Mode_Done(&t, c == 0);
 	}
-	c = Mode_EntityH(&a[0], v) ? Sm_ModelHas(v, "POLI") : -1;
+	c = Mode_EntityH(&a[0], v) ? Mode_ModelHas(v, "POLI") : -1;
 	if (c <= 0) {
 		return Mode_Done(&t, c == 0);
 	}

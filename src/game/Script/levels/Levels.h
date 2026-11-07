@@ -322,6 +322,13 @@ byte LvN_CamTravel(const char *module, const char *text, byte again);
 /* AbortCameraTravelling(UsrEntityName, prevCamera) of those missions: the player's control, the menus and the camera
  * back (racerScorer: RacerScorer.Create(0) too), then LaunchMission() of module */
 byte LvN_CamTravelEnd(const nativeVal_t *a, const char *module, byte racerScorer);
+/* import RaceMaker; RaceMaker.ShowSystemMessage(Scrap.GetLangStr(key)) */
+byte LvN_SystemMessage(const char *key);
+/* ShowBoostMessage() of the Humphrey races (DownTown's HumphreyRace, Outskirts' Demo_HumphreyRace): the callback of
+ * Parking that module.prevSwitchVehicleMissionCallback holds called when set and put back, the message of the boost key */
+byte LvN_BoostMessage(const char *module);
+/* ClosePressHangar() of the same races: the door of the press hangar closes, RaceMaker.OnCheckPointCallback = None */
+byte LvN_ClosePressHangar(void);
 /* the parameters of the native helpers: an int, a text */
 void LvN_Int(nativeVal_t *v, long i);
 void LvN_Str(nativeVal_t *v, const char *s);
