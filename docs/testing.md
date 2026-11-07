@@ -11,7 +11,7 @@ tools/test/levels.sh [level ...]
 
 Runs 9961 checks in the main menu and compares the output with `tools/test/golden/sdtest.out`. `GOLDEN_UPDATE=1` stores a new expected output, `SCRAP_BUILD` selects the build folder (default `build-linux64`).
 
-`GOLDEN_MODE` selects how the checks run. `channel` is the default and starts the game without `-PythonExecute`. The 1481 checks of the script functions of the game (`tools/test/golden/sdtest.cmd`) go through the test channel in the first frame. The 8480 checks of the Python interpreter (`sdpy.py`) still run Python through the channel command `py`. They go with the interpreter at stage 7 of the removal of Python. `python` is the old way, `sdtest.py` and `sdpy.py` run as Python in the game. `record` rebuilds `sdtest.cmd`. The total is 9961 in both ways.
+`GOLDEN_MODE` selects how the checks run. `channel` is the default and starts the game without `-PythonExecute`. The 1481 checks of the script functions of the game (`tools/test/golden/sdtest.cmd`) go through the test channel in the first frame. The 8480 checks of the Python interpreter (`sdpy.py`) still run Python through the channel command `py`. They go with the interpreter at stage 7 of the removal of Python. `python` is the old way, `sdtest.py` and `sdpy.py` run as Python in the game. `record` rebuilds `sdtest.cmd`. The total is 9961 in both ways. In a build with `SCRAP_NO_PYTHON` (read from `CMakeCache.txt`) only `channel` runs, the 8480 interpreter checks are skipped, and `GOLDEN_UPDATE` is refused.
 
 ## Test channel
 
