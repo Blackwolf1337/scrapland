@@ -69,6 +69,10 @@ LINE_TIMEOUT = 30.0
 CASE_TIMEOUT = 1500.0
 # game seconds a level load counts for in a !sleep (the real-time sleeps of the cases covered the load)
 LOAD_CREDIT = 20.0
+# real seconds a command may wait longer than its timeout while a level load it started runs
+LOAD_WAIT = 240.0
+# real seconds after the end of a load that still count as the load (the new level's scripts start)
+LOAD_START = 15.0
 _lock = threading.Lock()
 PORT_CASES = set()
 
@@ -131,19 +135,28 @@ def _python(self, code, timeout=10.0):
 	game time; at about 10000 case lines a run this saves a few minutes). Same files and protocol."""
 	if not self.running():
 		raise RuntimeError('game %s does not run' % self.name)
+	# a level load that a command started (Scrap.LoadLevel loads at once, the answer comes after it) does not count
+	# against the timeout: loads took 40 s on the shared 610M (Lane.loads)
+	loading = getattr(self, 'loading', None)
 	if self.opts.get('harness') == 'channel':
-		try:
-			# paced as the old harness answered: every line at least 0.1 s of game time after the one before
-			return scrap_mcp.channel.send(self.game, code, timeout=timeout, alive=self.running, pace=0.1)
-		except scrap_mcp.channel.NoAnswer:
-			raise RuntimeError('no answer from game %s in %.0f s' % (self.name, timeout))
+		# paced as the old harness answered: every line at least 0.1 s of game time after the one before
+		seq = scrap_mcp.channel.write(self.game, code, None, 0.1)
+		end = time.time() + timeout
+		while True:
+			try:
+				return scrap_mcp.channel.answer(self.game, seq, max(end - time.time(), 0.5), self.running)
+			except scrap_mcp.channel.NoAnswer:
+				if not (self.running() and loading and loading() and time.time() < end + LOAD_WAIT):
+					raise RuntimeError('no answer from game %s in %.0f s' % (self.name, timeout))
+				end = time.time() + 1.0
 	self.seq += 1
 	reply = os.path.join(self.game, 'mcp_reply.txt')
 	tmp = os.path.join(self.game, 'mcp_cmd.tmp')
 	with open(tmp, 'w', newline='\r\n') as f:
 		f.write('%d\n%s\n' % (self.seq, code))
 	os.replace(tmp, os.path.join(self.game, 'mcp_cmd.txt'))
-	end = time.time() + timeout
+	start = time.time()
+	end = start + timeout
 	want = str(self.seq)
 	while time.time() < end:
 		try:
@@ -156,6 +169,8 @@ def _python(self, code, timeout=10.0):
 			return rest[:-len('.end\n')].rstrip('\n')
 		if not self.running():
 			break
+		if time.time() >= end and loading and loading() and time.time() < start + timeout + LOAD_WAIT:
+			end = time.time() + 1.0
 		time.sleep(0.01)
 	raise RuntimeError('no answer from game %s in %.0f s' % (self.name, timeout))
 
@@ -223,13 +238,61 @@ class Lane:
 			return None
 		return float(m.group(1)), m.group(2) != 'None'
 
+	def loads(self):
+		"""[level loads started, 1 while one runs] of this game: the 'Loading level at' and 'Level loaded in' lines
+		of its output (App.c), read on from where the last call stopped."""
+		try:
+			with open(self.game.wine_log, 'rb') as f:
+				f.seek(self.logpos)
+				data = f.read()
+		except OSError:
+			return self.nload
+		cut = data.rfind(b'\n') + 1
+		self.logpos += cut
+		for ln in data[:cut].split(b'\n'):
+			if ln.startswith(b'Loading level at '):
+				self.nload = [self.nload[0] + 1, 1]
+			elif ln.startswith(b'Level loaded in '):
+				self.nload[1] = 0
+				self.load_end = time.time()
+		return self.nload
+
+	def gsleep_load(self, n, end):
+		"""!sleep n after a level load that started during the case line before or during this wait (seen in the game
+		output): the wait ends at n - LOAD_CREDIT seconds of the new level's own time (Scrap.GetTime() starts at the
+		level start), however long the load took in real time. Real seconds count only while the new level answers
+		with its clock standing (a menu)."""
+		stand, prev, last_prog, last_real = 0.0, None, time.time(), time.time()
+		while time.time() < end:
+			time.sleep(0.2)
+			st = None if self.loads()[1] else self.gstate()
+			if not self.game.running():
+				return
+			now = time.time()
+			if st is None:
+				prev = None
+			else:
+				t = st[0]
+				if prev is not None and t <= prev and now - last_prog > 3.0:
+					stand += now - last_real
+				if prev is None or t > prev:
+					last_prog = now
+				prev = t
+				if LOAD_CREDIT + t + stand >= n:
+					return
+			last_real = now
+
 	def gsleep(self, n):
 		"""!sleep n: n seconds of game time. A level load during the wait (the case line before loaded a level) is
 		seen by the mark (a level load starts Python over): the load counts as LOAD_CREDIT seconds and the time of the
 		new level from its start. Real seconds count instead while the game clock stands (a menu stopped it) or the
-		game does not answer; at most 2 n + 120 real seconds."""
+		game does not answer; at most 2 n + 120 real seconds. A load the game output shows (loads()) goes to
+		gsleep_load: real seconds of a slow load must not count, or the read after the wait comes earlier in the new
+		level on a loaded machine (on the 610M shared with other games a load took 40 s instead of 5)."""
 		start = time.time()
 		end = start + 2 * n + 120
+		if self.loads()[0] > self.line_loads:
+			return self.gsleep_load(n, end)
 		try:
 			self.q('_rg_mark = 1', timeout=2.0)
 		except RuntimeError:
@@ -242,10 +305,14 @@ class Lane:
 			if not self.game.running():
 				return
 			if st is None:
+				if self.loads()[0] > self.line_loads:
+					return self.gsleep_load(n, end)
 				if now - last_prog > 3.0:
 					acc += now - last_real
 				last_real = now
 				continue
+			if self.loads()[0] > self.line_loads:
+				return self.gsleep_load(n, end)
 			t, marked = st
 			if not marked:
 				try:
@@ -288,6 +355,9 @@ class Lane:
 		scrap_mcp.NATIVE_BUILDS['native64'] = build
 		scrap_mcp.NATIVE_BUILDS['native64asan'] = build + '-asan'
 		g = scrap_mcp.Game(self.tag)
+		self.logpos, self.nload, self.line_loads, self.load_end = 0, [0, 0], 0, 0.0
+		# a level load runs or ended a moment ago (the new level starts its scripts before it answers)
+		g.loading = lambda: self.loads()[1] or time.time() < self.load_end + LOAD_START
 		with _lock:
 			scrap_mcp.GAMES[self.tag] = g
 		self.game = g
@@ -332,6 +402,7 @@ class Lane:
 					res['status'] = 'timeout'
 					break
 				try:
+					self.line_loads = self.loads()[0]
 					reply = self.line(line)
 					timeouts = 0
 				except RuntimeError as e:
