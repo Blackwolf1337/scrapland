@@ -522,8 +522,8 @@ byte Mode_TestSpherePos(const nativeVal_t *pos, long r, const char *list, native
  * swap them) */
 byte Mode_DummyStartSeam(const char *name, long flag);
 byte Mode_DummyNextSeam(nativeVal_t *out);
-/* Scrap.SetGrid(x, y, z) through its seam (fc-om-dt records it) */
-byte Mode_SetGrid(double x, double y, double z);
+/* Scrap.SetGrid(x, y, z) of three ints through its seam (fc-om-dt records it) */
+byte Mode_SetGrid(long x, long y, long z);
 /* Scrap.GetEntity(name) through its seam (fc-om-dt swaps it): the handle value or None */
 byte Mode_EntitySeam(const nativeVal_t *name, nativeVal_t *out);
 /* SInput.SetActionSet(name) through its seam (fc-om-dt and the _bon lists of fr6b.py record it) */

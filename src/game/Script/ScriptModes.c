@@ -2599,10 +2599,10 @@ byte Mode_DummyNextSeam(nativeVal_t *out) {
 	return 1;
 }
 
-byte Mode_SetGrid(double x, double y, double z) {
+byte Mode_SetGrid(long x, long y, long z) {
 	MODE_SEAM("Scrap", "SetGrid");
 	if (seam) {
-		return Native_HookCall(hook, NULL, "ddd", x, y, z);
+		return Native_HookCall(hook, NULL, "iii", x, y, z);
 	}
 	vec3_t size = { (float)x, (float)y, (float)z };
 	Grid_Set(&g_pWorld->grid, &size);

@@ -455,7 +455,7 @@ static byte Om_Init(const nativeVal_t *path) {
 		!Mode_GVarSet("FileNameMap2D", file) || !Mode_GVarSetI("CharGrav", 3000) ||
 		!Native_CallGlobal("OutMap", "BrowseAtmospherePos", NULL, "") ||
 		!Native_CallGlobal("OutMap", "BrowseSpawnPos", NULL, "") || !Mode_GVarSetI("GridUseTopLimit", 1) ||
-		!Mode_SetGrid(50000.0, 50000.0, 50000.0) || !Mode_GVarSetI("Max_Rad_Obj", 10000)) {
+		!Mode_SetGrid(50000, 50000, 50000) || !Mode_GVarSetI("Max_Rad_Obj", 10000)) {
 		return Mode_Done(&t, 0);
 	}
 	for (size_t i = 0; i < sizeof(clouds) / sizeof(clouds[0]); i++) {
