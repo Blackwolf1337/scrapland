@@ -71,7 +71,7 @@ void Mode_DummyStart(const char *name, int flag);
 void Mode_DummyNext(nativeVal_t *out);
 /* Scrap.Preload3DObject(name) */
 byte Mode_Preload(const nativeVal_t *name);
-/* print a, b, ... (n values, up to 12) as the script's print statement (OBJLIB 7: through Python's sys.stdout until
+/* print a, b, ... (n values, up to 8) as the script's print statement (OBJLIB 7: through Python's sys.stdout until
  * the console takes C texts) */
 byte Mode_Print(const nativeVal_t *const *items, int n);
 /* module.var = v of a Python object as it is (OBJLIB 5: a value passed between modules keeps its identity) */
@@ -118,8 +118,6 @@ byte Mode_MPFunc(long id, const char *func);
 byte Mode_ScorerSet(const nativeVal_t *id, const nativeVal_t *item, const char *var, const nativeVal_t *v);
 /* SScorer.Fade(id, (r, g, b, a), (r, g, b, a), time) */
 byte Mode_Fade(long id, const int *from, const int *to, double time);
-/* the same with the time a value of the script (the TypeError of "f" for one that is no number) */
-byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time);
 /* SInput.Bind(id, set, action, func) */
 byte Mode_Bind(const nativeVal_t *id, const char *set, const char *action, const char *func);
 /* Scrap.DeleteScheduledFuncs(name) */
@@ -548,5 +546,12 @@ byte Mode_Abs(const nativeVal_t *v, nativeVal_t *out);
 byte Mode_CallArgs(const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *args, int n);
 /* -v of the script (PyNumber_Negative: ints, long ints, floats; the errors of 1.5.2) */
 byte Mode_Neg(const nativeVal_t *v, nativeVal_t *out);
+
+/* SScorer.Fade(id, (r, g, b, a), (r, g, b, a), time) with the time a value of the script (the recorders see the int the
+ * script passes; the TypeError of "f" for one that is no number), else Mode_Fade */
+byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time);
+/* print a, b, ... as Mode_Print with up to MODE_PRINT_MAX values (Elevator.UseElevator prints 9) */
+#define MODE_PRINT_MAX 12
+byte Mode_PrintN(const nativeVal_t *const *items, int n);
 
 #endif

@@ -672,7 +672,7 @@ static byte Elv_UseElevator(const nativeVal_t *usrName, const nativeVal_t *elvNa
 	if (is == 0) {
 		const nativeVal_t *items[9] = { Mode_S(&t, "Unknow command at Elevator.UseElevator("), usrName, Mode_S(&t, ","),
 			elvName, Mode_S(&t, ","), opt, Mode_S(&t, ","), full, Mode_S(&t, ")") };
-		return Mode_Done(&t, Mode_Print(items, 9));
+		return Mode_Done(&t, Mode_PrintN(items, 9));
 	}
 	if (is < 0 || !Mode_EntitySeam(tgt, e) || !LvN_SetS(e, "OnObjSlot", "") ||
 		!Native_CallGlobal(ELV, "ElevatorCloseToGo", NULL, "v", elvName) || !Dr_G(ELV, "TELEPORTER_UP", up) ||

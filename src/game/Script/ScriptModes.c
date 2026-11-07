@@ -3,16 +3,13 @@
  * split screen modes and the super deals on native values, the seams of the engine functions their case files record
  * or swap (OBJLIB 7), the module state they read and write in other modules (OBJLIB 5) and their adapters.
  */
-#include <limits.h>
 #include <math.h>
 #include <stdarg.h>
 #include <string.h>
 
-#include "scrap/collisiongrid.h"
 #include "scrap/console.h"
 #include "scrap/input.h"
 #include "scrap/logic.h"
-#include "scrap/mapfloors.h"
 #include "scrap/mathlib.h"
 #include "scrap/net.h"
 #include "scrap/pyentity.h"
@@ -248,9 +245,9 @@ byte Mode_Preload(const nativeVal_t *name) {
 }
 
 byte Mode_Print(const nativeVal_t *const *items, int n) {
-	PyObject *o[12] = { NULL };
+	PyObject *o[8] = { NULL };
 	byte ok = 1;
-	n = n < 12 ? n : 12;
+	n = n < 8 ? n : 8;
 	for (int k = 0; ok && k < n; k++) {
 		ok = (o[k] = Native_ToPy(items[k])) != NULL;
 	}
@@ -533,17 +530,11 @@ byte Mode_ScorerSet(const nativeVal_t *id, const nativeVal_t *item, const char *
 }
 
 byte Mode_Fade(long id, const int *from, const int *to, double time) {
-	nativeVal_t t;
-	Native_SetFloat(&t, time);
-	return Mode_FadeV(id, from, to, &t);
-}
-
-byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time) {
 	MODE_SEAM("SScorer", "Fade");
 	if (seam) {
 		PyObject *a = Py_BuildValue("(iiii)", from[0], from[1], from[2], from[3]);
 		PyObject *b = a ? Py_BuildValue("(iiii)", to[0], to[1], to[2], to[3]) : NULL;
-		byte ok = b && Native_HookCall(hook, NULL, "iOOv", id, a, b, time);
+		byte ok = b && Native_HookCall(hook, NULL, "iOOd", id, a, b, time);
 		if (!b) {
 			Py_DECREF(hook);
 		}
@@ -551,14 +542,10 @@ byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time
 		Py_XDECREF(b);
 		return ok;
 	}
-	double d;
-	if (!Native_ArgDouble(time, &d)) {
-		return 0;
-	}
 	cScorer *sc = Scorer_Get((int)id);
 	if (sc) {
 		ScorerFade_Start(&sc->fade, Scorer_PackColor((uint32_t)from[0], (uint32_t)from[1], (uint32_t)from[2], (uint32_t)from[3]),
-			Scorer_PackColor((uint32_t)to[0], (uint32_t)to[1], (uint32_t)to[2], (uint32_t)to[3]), (float)d);
+			Scorer_PackColor((uint32_t)to[0], (uint32_t)to[1], (uint32_t)to[2], (uint32_t)to[3]), (float)time);
 	}
 	return 1;
 }
@@ -2529,6 +2516,11 @@ int Mode_Loop(nativeVal_t *v) {
 
 /* ---- the hubs of batch J (Traffic, OutMap, Challenge, CharConversor, RaceMaker, Doors) ---- */
 
+#include <limits.h>
+
+#include "scrap/collisiongrid.h"
+#include "scrap/mapfloors.h"
+
 int Mode_Len(nativeVal_t *v) {
 	Mode_Elems(v);
 	return Native_Size(v);
@@ -2781,4 +2773,35 @@ byte Mode_Neg(const nativeVal_t *v, nativeVal_t *out) {
 	}
 	}
 	return Native_Raise(NE_TYPE, "bad operand type for unary -");
+}
+
+byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time) {
+	double d;
+	MODE_SEAM("SScorer", "Fade");
+	if (seam) {
+		PyObject *a = Py_BuildValue("(iiii)", from[0], from[1], from[2], from[3]);
+		PyObject *b = a ? Py_BuildValue("(iiii)", to[0], to[1], to[2], to[3]) : NULL;
+		byte ok = b && Native_HookCall(hook, NULL, "iOOv", id, a, b, time);
+		if (!b) {
+			Py_DECREF(hook);
+		}
+		Py_XDECREF(a);
+		Py_XDECREF(b);
+		return ok;
+	}
+	return Native_ArgDouble(time, &d) && Mode_Fade(id, from, to, d);
+}
+
+byte Mode_PrintN(const nativeVal_t *const *items, int n) {
+	PyObject *o[MODE_PRINT_MAX] = { NULL };
+	byte ok = 1;
+	n = n < MODE_PRINT_MAX ? n : MODE_PRINT_MAX;
+	for (int k = 0; ok && k < n; k++) {
+		ok = (o[k] = Native_ToPy(items[k])) != NULL;
+	}
+	ok = ok && Script_Print(o, n);
+	for (int k = 0; k < n; k++) {
+		Py_XDECREF(o[k]);
+	}
+	return ok;
 }
