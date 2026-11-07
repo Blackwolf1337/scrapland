@@ -744,4 +744,7 @@ void Mode_ModPutI(const char *module, const char *var, long i);
  * module; OBJLIB 6: Script_EvalIn): the value into out (any object as Native_Arg makes it) */
 byte Mode_EvalIn(const char *module, const nativeVal_t *text, nativeVal_t *out);
 
+/* Scrap.EntityListSet(list, var, value) on texts through its seam, else Mode_ListSet */
+byte Mode_ListSetSeam(const char *list, const char *var, const char *value);
+
 #endif

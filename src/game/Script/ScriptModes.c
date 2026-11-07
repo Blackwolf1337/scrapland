@@ -3612,3 +3612,11 @@ byte Mode_EvalIn(const char *module, const nativeVal_t *text, nativeVal_t *out) 
 	Py_DECREF(v);
 	return 1;
 }
+
+byte Mode_ListSetSeam(const char *list, const char *var, const char *value) {
+	MODE_SEAM("Scrap", "EntityListSet");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "sss", list, var, value);
+	}
+	return Mode_ListSet(list, var, value);
+}
