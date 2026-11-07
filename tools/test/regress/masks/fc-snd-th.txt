@@ -1,0 +1,6 @@
+# line 8: each FakeTraffic gets a ShipMotorScale of 0.48, 0.54 or 0.6 at random (the pack runs differ among themselves
+# in every place; three runs that agree in a place make it look fixed)
+sub \('ShipMotorScale', 0\.(?:48|53|54|6)\d*\) => ('ShipMotorScale', SCALE)
+# line 52: the model of each FakeTraffic made by CreateList is drawn at random from TLight1B to TLight3B (all runs, pack
+# and C, differ among themselves)
+sub \('Model', 'TLight[123]B'\) => ('Model', MODEL)

@@ -1,2 +1,9 @@
 # line 38: AI and traffic state at the moment of the line (which racer is ahead depends on the race AI)
 ignore RM.NameOponGoItem('CheckPoint')
+# lines 33 to 39: whether a racer passed the first checkpoint during the start line (EnePoint played, iStartPos 2, and
+# with it the foes' count and the rank bars of lines 34 and 36) or only during line 39 depends on the race AI's speed in
+# game time between the lines (a 610M pack run and C runs of both harnesses show the late pass)
+ignore I.cb(), Scrap.GetCam(0), Scrap.Get('EscapeEvent')
+ignore I._sc(['MissionTimer', 'MissionBest', 'MissionLimit'
+ignore RM.OnNearCheckPoint('CheckPoint_Trigg', Scrap.UsrEntity(0).Name); result
+ignore RM.OnCheckPoint('CheckPoint', 'BadBoy1'); result

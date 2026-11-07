@@ -2,3 +2,7 @@
 ignore (_sdent((Scrap.GetEntity(Scrap.EntityListGet('Traffic', 'First')).Name,), ('isAI', 'Traf_Active', 'Traf_Type', 'Model', 'nSlot00')), _sdfreeze([Scrap.GetEntity(Scrap.EntityListGet('Traffic', 'First')).Name]))
 # line 15: random in C: the case recorder controls Scrap.Rand on the pack side only, the C port calls Scrap_RandRange directly (brief)
 ignore (setattr(Scrap.GetEntity(Scrap.EntityListGet('Traffic', 'First')), 'Traf_Active', 0), _sdent((Scrap.GetEntity(Scrap.EntityListGet('Traffic', 'First')).Name,), ('Traf_Active',)), Scrap.SetSaveVar('Mission_Massacre.Points', '1'), _sd(__import__('Mission_Massacre').OnVehicleCallback, Scrap.GetEntity(Scrap.EntityListGet('Traffic', 'First')).Name, Scrap.UsrEntity(0).Name), _bsv(('Mission_Massacre.Points',)))
+# lines 10 to 16: the points OnVehicleCallback adds depend on the type of the first Traffic vehicle (random traffic: 6
+# or 7 more points; the pack runs of the 610M and of 2026-11-06 and the C runs show both)
+sub \('Points', '[\d.]+'\) => ('Points', POINTS)
+sub \('MassacreScorer', [\d.]+\) => ('MassacreScorer', POINTS)

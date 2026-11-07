@@ -2,3 +2,9 @@
 ignore RM.ChallengeFoeType = 'Police'; RM.challenged_NPCs_Names = list(RM.Players); RM.EndOfRace('CheckPoint', 'Left'); result = (I._takecalls(), map(I.E, RM.Players))
 # line 37: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
 ignore I.S.HideVehiclesToo(); result = (len(I.S.HidenChars), I.S.HidenChars[:5])
+# line 9: Pos and Ang of the racers after EndOfRace: they keep moving between the lines (the pack runs differ by 100
+# units, a C channel run on the RTX by 600)
+sub \('Pos', \([^)]*\)\), \('Ang', \([^)]*\)\) => ('Pos', POS), ('Ang', ANG)
+# line 29: the AI state of the first challenged NPC right after MoveCombatNPCsToPos (1, or 16 while it still does what
+# it did before): engine AI timing (pack run 2 of 2026-11-06 and a C python run on the RTX show 16)
+sub ^\[(?:1|16), 16\]$ => [AISTATE, 16]

@@ -1,0 +1,4 @@
+# line 51: Scrap.GetAlarm() a few seconds after the possession raised the alarm: still at its top (1, 1.0, 1 or 0) or
+# already going down (1, 0.17 to 0.23, -1), depending on the game time the lines took (pack run 2 of 2026-11-06 and a
+# C channel run on the RTX show the top)
+sub , \(1, [-\d.e+]+, -?[01]\)\)$ => , (1, ALARM))

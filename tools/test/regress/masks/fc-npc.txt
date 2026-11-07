@@ -12,3 +12,6 @@ ignore __import__('Init')._npcs()
 ignore __import__('Init')._ent('Nurse_01', ('ActCtrl','LLogicIdle','Invulnerable','Money','EntityList','UseFunc','Life'))
 # line 132: NPC walk, idle and talk state and spawn position change from run to run (CharsNPC timing)
 ignore __import__('Init')._res()
+# line 26: the Mayor's Action right after _sp starts the talk: FaceToTalk while it turns to the player, TalkListenNPC
+# once it faces it (talk timing; pack run 1 of 2026-11-06 and a C channel run on the RTX show TalkListenNPC)
+sub \('Action', '(?:FaceToTalk|TalkListenNPC)'\), \('ArrOpt0', 'Talk:Talk'\) => ('Action', TALK), ('ArrOpt0', 'Talk:Talk')

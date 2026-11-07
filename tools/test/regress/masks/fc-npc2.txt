@@ -1,2 +1,16 @@
 # line 20: NPC walk, idle and talk state and spawn position change from run to run (CharsNPC timing)
 ignore __import__('Init')._sp('PoliceBoss_Default')
+# lines 9, 12 and 14: whether the police has turned to the player by the read (Fusion and the talk options in ArrOpt0)
+# or is still turning (FaceToTalk, Talk:Talk) depends on where the walking NPC faced at the call: NPC timing (the 610M
+# pack runs show FaceToTalk at line 9, C runs of both harnesses at all three)
+ignore __import__('Init')._sp('Police_05')
+ignore __import__('Init')._sp('Police_06')
+# lines 4, 23, 24 and 28 to 32: police and gears of the Police level that die and respawn on their own (at the level
+# start or near the respawn time after OnDeath) change the CharRes positions, whether Police_02 is back after 9 and 11 s,
+# whether Police_04 still exists and the name the respawned Gear_04 gets (pack run 3 of the 610M shows Police_02
+# missing, pack run 2 of 2026-11-06 the KeyError of the respawn, a C channel run on the RTX all of them)
+ignore __import__('Init')._res()
+ignore __import__('Init')._ent('Police_02', ('ActCtrl'
+ignore Scrap.GetEntity('Police_04').Del()
+ignore __import__('CharsNPC').Respawn(__import__('CharsNPC').CharRes['Gear_04'])
+ignore __import__('Init')._ent('Gear_04', ('ActCtrl'
