@@ -1232,56 +1232,7 @@ byte Native_IntOfText(const char *text, long *out) {
 
 /* ---- operations of the scripts (Objects/ of 1.5.2: the number, sequence and compare rules with their errors) ---- */
 
-void Native_Copy(nativeVal_t *out, const nativeVal_t *v) {
-	switch (v->type) {
-	case NV_STR:
-		Native_SetText(out, Native_Text(v), v->n);
-		return;
-	case NV_LONG:
-		Native_SetLong(out, Native_Text(v), v->n);
-		return;
-	case NV_LIST:
-	case NV_TUPLE:
-		Native_SetEmpty(out, v->type);
-		for (int i = 0; i < v->n; i++) {
-			Native_Copy(Native_Append(out), &v->items[i]);
-		}
-		return;
-	case NV_DICT:
-		/* slot by slot: the same order and the same deleted slots */
-		Native_SetEmpty(out, NV_DICT);
-		if (v->max) {
-			Native_Table(out, v->max);
-			for (int i = 0; i < 2 * v->max; i++) {
-				if (v->items[i].type == NV_FREE || v->items[i].type == NV_DUMMY) {
-					Native_Clear(&out->items[i], v->items[i].type);
-				} else {
-					Native_Copy(&out->items[i], &v->items[i]);
-				}
-			}
-		}
-		out->n = v->n;
-		out->i = v->i;
-		return;
-	}
-	*out = *v;
-}
 
-byte Native_Truth(const nativeVal_t *v) {
-	switch (v->type) {
-	case NV_NONE:
-		return 0;
-	case NV_INT:
-		return v->i != 0;
-	case NV_FLOAT:
-		return v->f != 0.0;
-	case NV_LONG:
-		return !(v->n == 1 && Native_Text(v)[0] == '0');
-	case NV_VEC:
-		return 1;
-	}
-	return v->n > 0;
-}
 
 /* the sign of a long int text compared with another (long_compare) */
 static int Native_LongCompare(const char *a, const char *b) {
@@ -1312,7 +1263,13 @@ int Native_Compare(const nativeVal_t *a, const nativeVal_t *b) {
 		return a->i < b->i ? -1 : a->i > b->i;
 	}
 	byte ta = Native_SeqType(a), tb = Native_SeqType(b);
-	if (ta != tb) {
+	if (ta == NV_OBJ && tb == NV_OBJ) {
+		/* OBJLIB 7: two Python values of other types compare as Python compares them */
+		int c = PyObject_Compare(a->obj, b->obj);
+		PyErr_Clear();
+		return c < 0 ? -1 : c > 0;
+	}
+	if (ta != tb || ta == NV_OBJ) {
 		/* by the names of the types; the numbers are smaller than all others */
 		int c = strcmp(Native_IsNum(a) ? "" : Native_TypeName(a), Native_IsNum(b) ? "" : Native_TypeName(b));
 		return c < 0 ? -1 : c > 0;
@@ -1662,7 +1619,8 @@ int Native_ForCount(const nativeVal_t *seq) {
 	return Native_Count(seq);
 }
 
-int Native_Len(const nativeVal_t *v) {
+int Native_Size(const nativeVal_t *v) {
+	/* PyObject_Length: a dict too */
 	if (!Native_IsSeq(v) && v->type != NV_DICT) {
 		Native_Raise(NE_TYPE, "len() of unsized object");
 		return -1;
@@ -1671,27 +1629,20 @@ int Native_Len(const nativeVal_t *v) {
 }
 
 byte Native_SeqItem(const nativeVal_t *v, long i, nativeVal_t *out) {
-	if (!Native_IsSeq(v)) {
-		return Native_Raise(NE_TYPE, "unindexable object");
+	nativeVal_t tmp;
+	const nativeVal_t *x = Native_GetItem(v, i, 0, &tmp);
+	if (!x) {
+		return 0;
 	}
-	int n = Native_Count(v);
-	if (i < 0) {
-		i += n;
-	}
-	if (i < 0 || i >= n) {
-		byte t = Native_SeqType(v);
-		return Native_Raise(NE_INDEX, "%s index out of range", t == NV_STR ? "string" : t == NV_LIST ? "list" : "tuple");
-	}
-	if (v->type == NV_STR) {
-		Native_SetText(out, Native_Text(v) + i, 1);
+	if (x == &tmp) {
+		*out = tmp;
 	} else {
-		nativeVal_t tmp;
-		Native_Copy(out, Native_Item(v, (int)i, &tmp));
+		Native_Copy(out, x);
 	}
 	return 1;
 }
 
-byte Native_GetItem(const nativeVal_t *v, const nativeVal_t *key, nativeVal_t *out) {
+byte Native_Subscript(const nativeVal_t *v, const nativeVal_t *key, nativeVal_t *out) {
 	if (v->type == NV_DICT) {
 		long h;
 		if (!Native_Hash(key, &h)) {
@@ -1710,7 +1661,17 @@ byte Native_GetItem(const nativeVal_t *v, const nativeVal_t *key, nativeVal_t *o
 	if (key->type != NV_INT) {
 		return Native_Raise(NE_TYPE, "sequence index must be integer");
 	}
-	return Native_SeqItem(v, key->i, out);
+	nativeVal_t tmp;
+	const nativeVal_t *x = Native_GetItem(v, key->i, 1, &tmp);
+	if (!x) {
+		return 0;
+	}
+	if (x == &tmp) {
+		*out = tmp;
+	} else {
+		Native_Copy(out, x);
+	}
+	return 1;
 }
 
 byte Native_Slice(const nativeVal_t *v, long lo, long hi, nativeVal_t *out) {
@@ -1854,7 +1815,7 @@ byte Native_Format(const nativeVal_t *format, const nativeVal_t *args, nativeVal
 				Native_Free(&keyed);
 				keyedOwned = 0;
 			}
-			ok = Native_GetItem(dict, &key, &keyed);
+			ok = Native_Subscript(dict, &key, &keyed);
 			Native_Free(&key);
 			if (!ok) {
 				goto error;
@@ -2142,18 +2103,6 @@ static byte Native_ArgNum(const nativeVal_t *v, byte asDouble, double *d, int *i
 	return 0;
 }
 
-byte Native_ArgInt(const nativeVal_t *v, long *out) {
-	/* PyInt_AsLong: the int of the number methods (a float rounds toward 0, a long must fit) */
-	nativeVal_t i;
-	if (v->type != NV_INT && v->type != NV_FLOAT && v->type != NV_LONG) {
-		return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
-	}
-	if (!Native_ToInt(v, &i)) {
-		return 0;
-	}
-	*out = i.i;
-	return 1;
-}
 
 byte Native_ArgDouble(const nativeVal_t *v, double *out) {
 	int i;
