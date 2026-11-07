@@ -369,4 +369,37 @@ byte Mode_SetLockAlarm(const nativeVal_t *lock);
  * function, an instance or a handle in the attribute is an NV_OBJ, OBJLIB 7); the errors of the attribute */
 byte Mode_VObj(const nativeVal_t *o, const char *var, nativeVal_t *out);
 
+/* (a, b, c) of three ints */
+void Mode_Ints3(nativeVal_t *out, long a, long b, long c);
+/* a list of n texts (n < 0: the texts up to the NULL that ends them) */
+void Mode_Texts(nativeVal_t *out, const char *const *texts, int n);
+/* Scrap.GetLangStr(key) % SInput.GetDefinedEntry(0, "Walk", action, "Mouse") (None for a key without an entry) */
+byte Mode_KeyText(const char *key, const char *action, nativeVal_t *out);
+/* CharsNPC.CharRes[key] (OBJLIB 5: the character objects of CharsNPC): a new reference, NULL with the error */
+PyObject *Mode_CharRes(const nativeVal_t *key);
+/* Scrap.SetSaveVar(name, value) of each pair of texts (a NULL name ends them) */
+void Mode_Saves(const char *const *pairs);
+/* int(Scrap.GetSaveVar(name)) into out (its ValueError) */
+byte Mode_SaveInt(const char *name, nativeVal_t *out);
+/* a op b of the script (op "==", "!=", "<", "<=", ">", ">="), a op i: 1, 0, -1 with the error of a compare that
+ * failed */
+int Mode_Cmp(const nativeVal_t *a, const char *op, const nativeVal_t *b);
+int Mode_CmpI(const nativeVal_t *a, const char *op, long i);
+/* Scrap.UsrEntity(0).ActCtrl == ctrl: 1, 0, -1 with the error */
+int Mode_UsrIs(const char *ctrl);
+/* Speech.OnSpch(msg, ans[, how]) (how NULL: two arguments) and Speech.StdAnsLst([texts]) of n texts (n < 0: up to
+ * the NULL), OBJLIB 3 */
+byte Mode_Spch(const char *msg, const char *ans, const char *how);
+byte Mode_AnsLst(const char *const *texts, int n);
+/* SaveGame.MMDesc(desc, flag), SaveGame.QWayPoint(), MissionsFuncs.SetMissionTarget(name) (None for NULL), OBJLIB 3 */
+byte Mode_MMDesc(const char *desc, long flag);
+byte Mode_WayPoint(void);
+byte Mode_Target(const char *name);
+/* Elevator.ConnectElevators([a], [b]), or Elevator.ConnectElevators([a, b], [], 0) for pair (OBJLIB 3) */
+byte Mode_Connect(const char *a, const char *b, byte pair);
+/* var.attr = "text" of the global var of module (a handle) */
+byte Mode_GSetS(const char *module, const char *var, const char *attr, const char *s);
+/* Scrap.AddScheduledFunc(time, func, args) with time a value and func the global of module (its NameError; OBJLIB 4) */
+byte Mode_AtG(const nativeVal_t *time, const char *module, const char *func, const nativeVal_t *args, int n);
+
 #endif
