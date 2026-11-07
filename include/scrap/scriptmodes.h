@@ -558,4 +558,65 @@ byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time
 #define MODE_PRINT_MAX 12
 byte Mode_PrintN(const nativeVal_t *const *items, int n);
 
+/* ---- the hubs of batch K (CharAct, Alarm, NewsPanel, Scene, Speech) ---- */
+
+/* x in seq of the script (Native_Contains; a list held as one NV_OBJ or an NV_OBJ x the Python way): 1 or 0, -1 with
+ * the error */
+int Mode_In(const nativeVal_t *seq, const nativeVal_t *x);
+/* h.SetFX(type) of a value of the script (an entity handle in C, None and a handle whose entity is gone with the errors
+ * of the script, another object the Python way) */
+byte Mode_VSetFX(const nativeVal_t *h, const char *type);
+
+/* SAct.<fn>(name) with the name a value of the script, through the seam: fn GetClass, CreateClass, CreateAction, GetAct
+ * or DelClass, the result into out (the TypeError of "s" for a name that is no text) */
+byte Mode_SActV(const char *fn, const nativeVal_t *name, nativeVal_t *out);
+/* SInput.SetActionSet(name) of a value through its seam; SInput.GetActionSet() as a text value */
+byte Mode_ActionSetV(const nativeVal_t *name);
+void Mode_ActionSetName(nativeVal_t *out);
+/* Scrap.OpenPack(path), and Scrap.ClosePack() for path NULL, through their seams (fr7b.py records them) */
+byte Mode_Pack(const nativeVal_t *path);
+/* SScorer.SetMsgText(text, time) and SetLabelText(text, time) with the time a value of the script, through the seams */
+byte Mode_MsgTextV(const nativeVal_t *text, const nativeVal_t *time);
+byte Mode_LabelTextV(const nativeVal_t *text, const nativeVal_t *time);
+/* SScorer.SetSpeechText(text, time, r, g, b), SetSpeechCallback(func), CancelSpeech() and SetHeadMonitor(a, b, c)
+ * through their seams (the cases record them) */
+byte Mode_SpeechText(const nativeVal_t *text, const nativeVal_t *time, const nativeVal_t *r, const nativeVal_t *g,
+	const nativeVal_t *b);
+byte Mode_SpeechCallback(const char *func);
+/* SScorer.SetSpeechCallback(func) with the function name a value of the script (the TypeError of "s") */
+byte Mode_SpeechCallbackV(const nativeVal_t *func);
+byte Mode_CancelSpeech(void);
+byte Mode_HeadMonitor(const nativeVal_t *a, const nativeVal_t *b, const nativeVal_t *c);
+/* the voice channels through their seams: SSound.StopVoice(ch), PlayVoice(ch[, text]) (text NULL: not given),
+ * OpenVoice(file, ch[, arg]), VoiceRemain(ch, default) into out, SetVoiceVolume(ch, vol) and StopAllSounds() */
+byte Mode_StopVoice(const nativeVal_t *ch);
+byte Mode_PlayVoice(const nativeVal_t *ch, const nativeVal_t *text);
+byte Mode_OpenVoice(const nativeVal_t *file, const nativeVal_t *ch, const nativeVal_t *arg);
+byte Mode_VoiceRemain(const nativeVal_t *ch, const nativeVal_t *def, nativeVal_t *out);
+byte Mode_VoiceVolume(const nativeVal_t *ch, const nativeVal_t *vol);
+byte Mode_StopAllSounds(void);
+/* Scrap.GetFirst(): the handle value of the first entity, None when there is none */
+byte Mode_First(nativeVal_t *out);
+
+/* dict[key] of a dict variable of the module as the object it is (OBJLIB 5: a list in it changed in place): a new
+ * reference, NULL with the error (the NameError of the global, the errors of the subscript) */
+PyObject *Mode_AtPy(const char *module, const char *dict, const nativeVal_t *key);
+/* the arguments of a keyword function (fmt and names of PyArg_ParseTupleAndKeywords, n of them, up to 8) as native
+ * values into a (None when not given, given[i] 0 then; given may be NULL) */
+byte Mode_Kw(PyObject *args, PyObject *kw, const char *fmt, char **names, int n, nativeVal_t *a, byte *given);
+/* the n arguments of a keyword function freed and the result as the adapter returns it (out NULL or None: None; out
+ * freed) */
+PyObject *Mode_KwOut(nativeVal_t *a, int n, byte ok, nativeVal_t *out);
+
+/* SScorer.PreloadTexture(name) through its seam */
+byte Mode_PreloadTexture(const nativeVal_t *name);
+
+/* apply(f, args) of the script on values (OBJLIB 3, 4: the objects called the Python way): the result into out (NULL:
+ * dropped) */
+byte Mode_Apply(const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out);
+/* the list of a global of the module changed in place as the C ports change it: v appended (first: inserted at 0), and
+ * item i deleted (OBJLIB 5: other modules and the cases hold the list) */
+byte Mode_ListAddG(const char *module, const char *var, const nativeVal_t *v, byte first);
+byte Mode_DelItemG(const char *module, const char *var, int i);
+
 #endif
