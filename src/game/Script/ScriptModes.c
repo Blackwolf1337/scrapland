@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "scrap/collisiongrid.h"
 #include "scrap/console.h"
 #include "scrap/input.h"
 #include "scrap/logic.h"
@@ -2512,4 +2513,116 @@ void Mode_Elems(nativeVal_t *v) {
 int Mode_Loop(nativeVal_t *v) {
 	Mode_Elems(v);
 	return Native_ForCount(v);
+}
+
+/* ---- the hubs of batch J (Traffic, OutMap, Challenge, CharConversor, RaceMaker, Doors) ---- */
+
+int Mode_Len(nativeVal_t *v) {
+	Mode_Elems(v);
+	return Native_Size(v);
+}
+
+byte Mode_Sub(const nativeVal_t *v, const nativeVal_t *key, nativeVal_t *out) {
+	Native_SetNone(out);
+	if (v->type != NV_OBJ) {
+		return Native_Subscript(v, key, out);
+	}
+	/* OBJLIB 7: PyObject_GetItem of the object, the item as Native_Arg makes it */
+	PyObject *k = Native_ToPy(key), *r = k ? PyObject_GetItem(v->obj, k) : NULL;
+	Py_XDECREF(k);
+	if (!r) {
+		return 0;
+	}
+	Native_Arg(r, out);
+	Py_DECREF(r);
+	return 1;
+}
+
+byte Mode_RacePoint(const nativeVal_t *pos, long minDist, long maxDist, nativeVal_t *out) {
+	double x[3];
+	MODE_SEAM("SAI", "GetNextRacePoint");
+	if (seam) {
+		return Native_HookCall(hook, out, "vii", pos, minDist, maxDist);
+	}
+	if (!Mode_VecOf(pos, x)) {
+		return Native_CallMod("SAI", "GetNextRacePoint", out, "vii", pos, minDist, maxDist);
+	}
+	vec3_t at = { (float)x[0], (float)x[1], (float)x[2] }, p;
+	if (!AI_NextRacePoint(&at, (float)minDist, (float)maxDist, &p)) {
+		Native_SetNone(out);
+	} else {
+		Native_SetVec(out, (double)p.x, (double)p.y, (double)p.z);
+	}
+	return 1;
+}
+
+byte Mode_TestSpherePos(const nativeVal_t *pos, long r, const char *list, nativeVal_t *out) {
+	nativeVal_t c[3], rad, l;
+	int n = 0;
+	byte ok = 1;
+	Native_SetNone(out);
+	for (; ok && n < 3; n++) {
+		ok = LvN_Item(pos, n, &c[n]);
+	}
+	if (!ok) {
+		Native_Free(&c[--n]);
+	}
+	if (ok) {
+		PyObject *hook;
+		int seam = Native_Seam("Scrap", "TestSphere", &hook);
+		Native_SetInt(&rad, r);
+		Native_SetStr(&l, list);
+		ok = seam < 0 ? 0 : seam ? Native_HookCall(hook, out, "vvvis", &c[0], &c[1], &c[2], r, list) :
+			Mode_TestSphere(&c[0], &c[1], &c[2], &rad, &l, NULL, out);
+	}
+	while (n-- > 0) {
+		Native_Free(&c[n]);
+	}
+	return ok;
+}
+
+byte Mode_DummyStartSeam(const char *name, long flag) {
+	MODE_SEAM("Scrap", "StartDummySearch");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "si", name, flag);
+	}
+	Mode_DummyStart(name, (int)flag);
+	return 1;
+}
+
+byte Mode_DummyNextSeam(nativeVal_t *out) {
+	MODE_SEAM("Scrap", "NextDummySearch");
+	if (seam) {
+		return Native_HookCall(hook, out, "");
+	}
+	Mode_DummyNext(out);
+	return 1;
+}
+
+byte Mode_SetGrid(double x, double y, double z) {
+	MODE_SEAM("Scrap", "SetGrid");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "ddd", x, y, z);
+	}
+	vec3_t size = { (float)x, (float)y, (float)z };
+	Grid_Set(&g_pWorld->grid, &size);
+	return 1;
+}
+
+byte Mode_EntitySeam(const nativeVal_t *name, nativeVal_t *out) {
+	Native_SetNone(out);
+	MODE_SEAM("Scrap", "GetEntity");
+	if (seam) {
+		return Native_HookCall(hook, out, "v", name);
+	}
+	return Mode_EntityH(name, out);
+}
+
+byte Mode_ActionSet(const char *name) {
+	MODE_SEAM("SInput", "SetActionSet");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "s", name);
+	}
+	Mode_SetActionSet(name);
+	return 1;
 }
