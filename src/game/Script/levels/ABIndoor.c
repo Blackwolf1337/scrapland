@@ -40,14 +40,6 @@ static byte Abi_ScF(const nativeVal_t *id, const char *item, const char *var, do
 	return LvN_ScorerSet(id, item, var, &v);
 }
 
-static byte Abi_ScS(const nativeVal_t *id, const char *item, const char *var, const char *s) {
-	nativeVal_t v;
-	LvN_Str(&v, s);
-	byte ok = LvN_ScorerSet(id, item, var, &v);
-	Native_Free(&v);
-	return ok;
-}
-
 /* SScorer.Add(id, item, type) */
 static byte Abi_Add(const nativeVal_t *id, const char *item, const char *type) {
 	nativeVal_t it;
@@ -280,7 +272,7 @@ static byte Abi_ShowEndTitle(const nativeVal_t *a, nativeVal_t *out) {
 		}
 	}
 	if (!Abi_Add(id, "EndTitle", "TextTyping") || !Abi_ScI(id, "EndTitle", "X", 320) || !Abi_ScI(id, "EndTitle", "Y", 240) ||
-		!Abi_ScS(id, "EndTitle", "Font", "ScrapBig") || !Abi_ScS(id, "EndTitle", "Effect", "Outline")) {
+		!LvN_ScorerSetS(id, "EndTitle", "Font", "ScrapBig") || !LvN_ScorerSetS(id, "EndTitle", "Effect", "Outline")) {
 		return 0;
 	}
 	Mode_Lang("GameFinal", &text);
@@ -309,7 +301,7 @@ static byte Abi_MusicPlayer(const char *name, const char *cmd, double volume) {
 static byte Abi_FadeEndTitle(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
 	return Abi_MusicPlayer("", "fadeout", 1 / 5.0) && Mode_GVarSetN("FadeOutFinalTime", 3.0) &&
-		Abi_ScS(&a[0], "BlackSquare", "OnRender", "!ScorerSpriteFadeOutFinal");
+		LvN_ScorerSetS(&a[0], "BlackSquare", "OnRender", "!ScorerSpriteFadeOutFinal");
 }
 
 LV_FN(Abi, InitStatusPy, 1, Abi_InitStatus)

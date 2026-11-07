@@ -28,23 +28,10 @@
 
 /* ---- shared lines ---- */
 
-/* SScorer.Set(0, item, var, v) and the same with an int */
-static byte Gd_Set0(const char *item, const char *var, const nativeVal_t *v) {
-	nativeVal_t id;
-	Native_SetInt(&id, 0);
-	return LvN_ScorerSet(&id, item, var, v);
-}
-
-static byte Gd_Set0I(const char *item, const char *var, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return Gd_Set0(item, var, &v);
-}
-
 /* SScorer.Set(0, item, var, the global name of module) */
 static byte Gd_Set0G(const char *item, const char *var, const char *module, const char *name) {
 	nativeVal_t v;
-	byte ok = Mode_G(module, name, &v) && Gd_Set0(item, var, &v);
+	byte ok = Mode_G(module, name, &v) && LvN_Set0(item, var, &v);
 	Native_Free(&v);
 	return ok;
 }
@@ -113,7 +100,7 @@ static byte Gd_Range1(const nativeVal_t *n1, long *count) {
 
 /* the scan bar of IntoTheGDB blinks (lost: Blink 1, IsAutoUpdatable 0) or runs */
 static byte Gd_Blink(int lost) {
-	return Gd_Set0I("ScanRemainingTime", "Blink", lost) && Gd_Set0I("ScanRemainingTime", "IsAutoUpdatable", !lost);
+	return LvN_Set0I("ScanRemainingTime", "Blink", lost) && LvN_Set0I("ScanRemainingTime", "IsAutoUpdatable", !lost);
 }
 
 /* SVec.ModSqr(SVec.Sub(e.Pos, usr.Pos)) < (far 0) or > (far 1) MAX_SCANNING_DIST * MAX_SCANNING_DIST of IntoTheGDB:
@@ -668,9 +655,9 @@ static byte Into_ScanShip(void) {
 			Native_Free(&cur);
 			ok = ok && Mode_G(IG, "currentScannedShip", &cur) && Mode_GVarSet("CurrentWaypointName", &cur);
 			Native_Free(&cur);
-			ok = ok && Gd_Set0I("ScanStatusText", "Visible", 1) && Gd_Blink(0) &&
+			ok = ok && LvN_Set0I("ScanStatusText", "Visible", 1) && Gd_Blink(0) &&
 				Gd_Set0G("ScanRemainingTime", "MaxValue", IG, "MAX_SCANNING_TIME") &&
-				Gd_Set0G("ScanRemainingTime", "Value", IG, "MAX_SCANNING_TIME") && Gd_Set0I("ScanRemainingTime", "Visible", 1);
+				Gd_Set0G("ScanRemainingTime", "Value", IG, "MAX_SCANNING_TIME") && LvN_Set0I("ScanRemainingTime", "Visible", 1);
 			n = 0;
 		}
 		Native_Free(&s);
@@ -705,8 +692,8 @@ static byte Into_ResetScan(void) {
 		return 0;
 	}
 	int found = LvN_GTrue(IG, "traitorFound");
-	return found >= 0 && (found || Mode_GVarSetS("CurrentWaypointName", "")) && Gd_Set0I("ScanRemainingTime", "Visible", 0) &&
-		Gd_Set0I("ScanStatusText", "Visible", 0) && Mode_Later(0.25, IG, "ResetScan2", NULL, 0, NULL);
+	return found >= 0 && (found || Mode_GVarSetS("CurrentWaypointName", "")) && LvN_Set0I("ScanRemainingTime", "Visible", 0) &&
+		LvN_Set0I("ScanStatusText", "Visible", 0) && Mode_Later(0.25, IG, "ResetScan2", NULL, 0, NULL);
 }
 
 /* the bishops of the list (read as the loop starts) that are there, not the traitor (skip: the global traitor read for
@@ -745,7 +732,7 @@ static byte Gd_UntargetBishops(byte skipTraitor) {
 /* OnFinishScan(): the scan bar ran out: the traitor found (the others stop being targets), or one bishop fewer */
 static byte Into_OnFinishScan(void) {
 	nativeVal_t usr, cur, traitor, list, e;
-	if (!Gd_Set0I("ScanStatusText", "Visible", 0) || !Gd_Set0I("ScanRemainingTime", "Visible", 0)) {
+	if (!LvN_Set0I("ScanStatusText", "Visible", 0) || !LvN_Set0I("ScanRemainingTime", "Visible", 0)) {
 		return 0;
 	}
 	int there = Gd_UsrThere(&usr);

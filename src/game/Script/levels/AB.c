@@ -81,13 +81,6 @@ static byte Ab_SetAttrG(const nativeVal_t *e, const char *var, const char *modul
 	return ok;
 }
 
-/* module.var = i */
-static byte Ab_ModI(const char *module, const char *var, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return Mode_SetModVar(module, var, &v);
-}
-
 /* module.var = d */
 static byte Ab_ModF(const char *module, const char *var, double d) {
 	nativeVal_t v;
@@ -194,7 +187,7 @@ static byte Ff_Init(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	Ab_LockAlarm(1);
 	if (!Ab_Com("Mission_FinalFight_RemoteMessage1", "CrazyGambler") ||
-		!LvN_ModSetGlobal("Chars", "OnMainCharDeath", FF, "OnPlayerDeath") || !Ab_ModI("Vehicles", "DelPlayerShipOnDeath", 0) ||
+		!LvN_ModSetGlobal("Chars", "OnMainCharDeath", FF, "OnPlayerDeath") || !LvN_ModSetI("Vehicles", "DelPlayerShipOnDeath", 0) ||
 		!LvN_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", FF, "CreateBoss") ||
 		!LvN_ModSetGlobal("Parking", "SwitchCharMissionCallback", FF, "BossRelax") || !Mode_GVarSetI("InfernoTurnSpeed", 60)) {
 		return 0;
@@ -586,7 +579,7 @@ static byte Ff_OnBossRecoversEnd(const nativeVal_t *a, nativeVal_t *out) {
  * a way point, PreLoadFinal in 4 s */
 static byte Ff_OnBossDestroyed(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
-	if (!Mode_Import("Vehicles") || !Mode_Import("SaveGame") || !Ab_ModI("Vehicles", "ForceDeathTaunt", 1) ||
+	if (!Mode_Import("Vehicles") || !Mode_Import("SaveGame") || !LvN_ModSetI("Vehicles", "ForceDeathTaunt", 1) ||
 		!LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1]) || !Mode_DelSchedS("LaunchTaunt")) {
 		return 0;
 	}
@@ -691,15 +684,15 @@ static byte AbMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetEmpty(&v, NV_TUPLE);
 	Native_SetFloat(Native_Append(&v), 0.01);
 	Native_SetFloat(Native_Append(&v), 0.02);
-	byte ok = Mode_SetModVar("Vehicles", "HullLifeTimeDeath", &v) && Ab_ModI("Init", "Outdoor", 1) &&
-		Ab_ModI("OutPolice", "PoliceActive", 0) && Mode_GVarSetI("iTrafficNumber", 0);
+	byte ok = Mode_SetModVar("Vehicles", "HullLifeTimeDeath", &v) && LvN_ModSetI("Init", "Outdoor", 1) &&
+		LvN_ModSetI("OutPolice", "PoliceActive", 0) && Mode_GVarSetI("iTrafficNumber", 0);
 	Native_Free(&v);
 	Native_SetEmpty(&v, NV_LIST);
 	for (int i = 0; i < 3 && ok; i++) {
 		ok = Mode_SetModVar("Traffic", lists[i], &v);
 	}
 	for (int i = 0; i < 3 && ok; i++) {
-		ok = Ab_ModI("Traffic", nums[i], 0);
+		ok = LvN_ModSetI("Traffic", nums[i], 0);
 	}
 	return ok && LvN_ModSetGlobal("Traffic", "onTrackCreate", MAP, "onTrackCreate");
 }
@@ -882,9 +875,9 @@ static byte AbMap_RealOnDeath(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t *scale = Mode_V(&t), *e = Mode_V(&t), *pos = Mode_V(&t), *ast = Mode_V(&t), *r = Mode_V(&t);
 	nativeVal_t *v = Mode_V(&t), *vel = Mode_V(&t);
 	(void)out;
-	if (!Ab_ModI("Vehicles", "ShipExplosionForceInplace", 1) || !Mode_RandD(0.55, 0.65, scale) ||
+	if (!LvN_ModSetI("Vehicles", "ShipExplosionForceInplace", 1) || !Mode_RandD(0.55, 0.65, scale) ||
 		!Mode_SetModVar("Vehicles", "ShipExplosionScaleFactor", scale) || !LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1]) ||
-		!Ab_ModI("Vehicles", "ShipExplosionForceInplace", 0) || !Ab_ModF("Vehicles", "ShipExplosionScaleFactor", 1.0)) {
+		!LvN_ModSetI("Vehicles", "ShipExplosionForceInplace", 0) || !Ab_ModF("Vehicles", "ShipExplosionScaleFactor", 1.0)) {
 		return Mode_Done(&t, 0);
 	}
 	int dup = LvN_GTrue(MAP, "Duplicate");
