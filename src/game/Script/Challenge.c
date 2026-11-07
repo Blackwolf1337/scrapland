@@ -8,652 +8,639 @@
  * The module variables stay in the module (numChallengeEnemies, challengeType, foeType, playerWinsRevenge and the
  * tables groups, combatRewards and raceRewards), because the character talks and PhoneCab read and set them. The
  * code reads them as globals like the script (a missing one is a NameError).
+ *
+ * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the globals where the
+ * script reads them and write them back at once (OBJLIB 5). The save variables, the money and the language texts are
+ * C; Scrap.SetMoney, UsrEntity, GetEntity, DeleteScheduledFuncs and SInput.SetActionSet go through their seams and the
+ * characters and vehicles are handle values (OBJLIB 7). The other ports (RaceMaker, Speech, Menu, SaveGame,
+ * MissionsFuncs, PhoneCab, Chars), string.replace with its count and string.find, SInput.GetActionSet and
+ * SAI.SetStateVehicle stay by name, the keyword calls with Python keyword dicts (OBJLIB 3); the variables of other
+ * modules that a test or the game may set to any object (Init.Outdoor, Speech.ObjEntity, PhoneCab.audioComEntity,
+ * RaceMaker.Players) are read as values of any type.
  */
 #include <limits.h>
 #include <string.h>
 
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
+#include "game/Script/levels/Levels.h"
 
 #define CHAL_ERROR "ERROR: Par\xe1metro incorrecto pasado a 'OnChallenge'"
 
-/* a global of the module (a new reference) */
-static PyObject *Chal_Global(const char *name) {
-	return Script_Global("Challenge", name);
+/* a global of the module as its functions read it (out None before) */
+static byte Chal_G(const char *name, nativeVal_t *out) {
+	return Mode_G("Challenge", name, out);
 }
 
-/* groups[foe] (a new reference) */
-static PyObject *Chal_Group(PyObject *foe) {
-	PyObject *groups = Chal_Global("groups");
-	PyObject *g = groups && foe ? PyObject_GetItem(groups, foe) : NULL;
-	Py_XDECREF(groups);
-	return g;
-}
-
-/* Scrap.SetSaveVar(name, v): 0 with the error set */
-static byte Chal_SetSave(const char *name, PyObject *v) {
-	return v && Script_Try("Scrap", "SetSaveVar", "(sO)", name, v);
-}
-
-/* Scrap.SetSaveVar(name, `v`) */
-static byte Chal_SetSaveRepr(const char *name, PyObject *v) {
-	PyObject *r = Script_Repr(v);
-	byte ok = Chal_SetSave(name, r);
-	Py_XDECREF(r);
+/* groups[foe] */
+static byte Chal_Group(const nativeVal_t *foe, nativeVal_t *out) {
+	nativeVal_t groups = { 0 };
+	byte ok = Chal_G("groups", &groups) && Mode_Sub(&groups, foe, out);
+	Native_Free(&groups);
 	return ok;
 }
 
-/* int(Scrap.GetSaveVar(name)) (a new reference) */
-static PyObject *Chal_SaveInt(const char *name) {
-	PyObject *sv = Script_SaveVar(name);
-	PyObject *i = Script_Int(sv);
-	Py_XDECREF(sv);
-	return i;
+/* Scrap.SetSaveVar(name, `v`) */
+static byte Chal_SetSaveRepr(const char *name, const nativeVal_t *v) {
+	nativeVal_t r;
+	Mode_Repr(v, &r);
+	byte ok = Mode_SetSaveVar(name, &r);
+	Native_Free(&r);
+	return ok;
 }
 
-/* the number of challenges of a group so far, from the save variable name (0 when it is empty): 0 with the error
- * set */
-static byte Chal_Total(PyObject *name, long *total) {
-	PyObject *sv = name ? Script_Ask("Scrap", "GetSaveVar", "(O)", name) : NULL;
-	int t = Script_True(sv);
+/* the number of challenges of a group so far, from the save variable name (0 when it is empty) */
+static byte Chal_Total(const nativeVal_t *name, long *total) {
+	nativeVal_t sv = { 0 }, i = { 0 };
+	const char *s;
 	*total = 0;
-	if (t > 0) {
-		PyObject *i = Script_Int(sv);
-		t = i ? 1 : -1;
-		*total = i ? PyInt_AsLong(i) : 0;
-		Py_XDECREF(i);
+	if (!Native_ArgStr(name, 1, &s)) {
+		return 0;
 	}
-	Py_XDECREF(sv);
-	return t >= 0;
+	Mode_SaveVar(s, &sv);
+	byte ok = !Native_True(&sv) || Native_ToInt(&sv, &i);
+	if (ok && i.type == NV_INT) {
+		*total = i.i;
+	}
+	Native_Free(&sv);
+	Native_Free(&i);
+	return ok;
 }
 
 /* ComputeReward(_type, foe, numEnemies): the money a challenge costs (and pays), less after many of the group */
-static PyObject *Chal_Reward(PyObject *type, PyObject *foe, PyObject *num) {
-	scriptRefs_t r = { 0 };
-	PyObject *group = Script_Keep(&r, Chal_Group(foe));
-	byte combat = Script_Is(type, "Combat");
+static byte Chal_Reward(const nativeVal_t *type, const nativeVal_t *foe, const nativeVal_t *num, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *group = Mode_V(&t), *name = Mode_V(&t), *table = Mode_V(&t), *base = Mode_V(&t), *f = Mode_V(&t);
+	nativeVal_t *b2 = Mode_V(&t), *a = Mode_V(&t), *b = Mode_V(&t);
+	byte combat = Mode_IsText(type, "Combat");
 	long total;
-	PyObject *name = group ? Script_Keep(&r, Script_SPlus(combat ? "Stats.TotalCombats." : "Stats.TotalRaces.", group)) : NULL;
-	if (!name || !Chal_Total(name, &total)) {
-		return Script_Done(&r, NULL);
+	if (!Chal_Group(foe, group) || !Mode_Cat(&t, name, 2, Mode_S(&t, combat ? "Stats.TotalCombats." : "Stats.TotalRaces."),
+		group) || !Chal_Total(name, &total) || !Chal_G(combat ? "combatRewards" : "raceRewards", table) ||
+		!Mode_Sub(table, group, base)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *table = Script_Keep(&r, Chal_Global(combat ? "combatRewards" : "raceRewards"));
-	PyObject *base = table ? Script_Keep(&r, PyObject_GetItem(table, group)) : NULL;
-	if (base && total >= 5) {
-		PyObject *f = Script_Keep(&r, PyFloat_FromDouble(total < 8 ? 0.8 : total < 10 ? 0.6 : 0.4));
-		base = f ? Script_Keep(&r, PyNumber_Multiply(base, f)) : NULL;
-	}
-	if (!base) {
-		return Script_Done(&r, NULL);
-	}
-	int c = Script_NumCmp(num, 1);
-	if (c == -2) {
-		return Script_Done(&r, NULL);
-	}
-	if (c == 0) {
-		return Script_Done(&r, Script_Int(base));
-	}
-	PyObject *k = Script_Keep(&r, PyFloat_FromDouble(1.2));
-	PyObject *a = k ? Script_Keep(&r, PyNumber_Multiply(k, base)) : NULL;
-	PyObject *b = a ? Script_Keep(&r, PyNumber_Multiply(a, num)) : NULL;
-	return Script_Done(&r, Script_Int(b));
-}
-
-static PyObject *Challenge_ComputeReward(PyObject *self, PyObject *args) {
-	PyObject *type, *foe, *num;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &type, &foe, &num)) {
-		return NULL;
-	}
-	return Chal_Reward(type, foe, num);
-}
-
-static PyObject *Challenge_SetRevenge(PyObject *self, PyObject *args);
-
-/* Init(Revenge = 0): the race or the combat of the save variables Challenge.*, else the revenge pending */
-static PyObject *Challenge_Init(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "RaceMaker", NULL };
-	PyObject *revenge = NULL;
-	scriptRefs_t r = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "|O", &revenge) || !Script_Import(mods)) {
-		return NULL;
-	}
-	revenge = Script_Keep(&r, revenge ? Script_Ref(revenge) : PyInt_FromLong(0));
-	PyObject *type = Script_Keep(&r, Script_SaveVar("Challenge.Type"));
-	PyObject *foe = type ? Script_Keep(&r, Script_SaveVar("Challenge.Foe")) : NULL;
-	if (!foe) {
-		return Script_Done(&r, NULL);
-	}
-	PyObject *ok = NULL;
-	if (Script_Is(type, "Race")) {
-		PyObject *num = Script_Keep(&r, Script_SaveVar("Challenge.Money")) ? Script_Keep(&r, Chal_SaveInt("Challenge.NumEnemies")) : NULL;
-		int one = num ? Script_NumCmp(num, 1) : -2;
-		int three = one != -2 && one != 0 ? Script_NumCmp(num, 3) : 1;
-		if (one == -2 || three == -2) {
-			return Script_Done(&r, NULL);
+	if (total >= 5) {
+		Native_SetFloat(f, total < 8 ? 0.8 : total < 10 ? 0.6 : 0.4);
+		if (!Mode_Arith('*', base, f, b2)) {
+			return Mode_Done(&t, 0);
 		}
-		int nump = one == 0 ? 2 : three == 0 ? 3 : 4;
-		PyObject *kw = Py_BuildValue("{s:i,s:i,s:O,s:O}", "waypointlimit", 15, "numply", nump, "foeType", foe, "isRevenge", revenge);
-		ok = kw ? Script_Keep(&r, Script_AskKw("RaceMaker", "InitRace", PyTuple_New(0), kw)) : NULL;
-	} else if (Script_Is(type, "Combat")) {
-		PyObject *num = Script_Keep(&r, Chal_SaveInt("Challenge.NumEnemies"));
-		PyObject *kw = num ? Py_BuildValue("{s:O}", "numFoes", num) : NULL;
-		ok = kw ? Script_Keep(&r, Script_AskKw("RaceMaker", "InitCombat", Py_BuildValue("(OO)", foe, revenge), kw)) : NULL;
+		base = b2;
+	}
+	int c = Mode_CmpI(num, "==", 1);
+	if (c < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (c) {
+		return Mode_Done(&t, Native_ToInt(base, out));
+	}
+	Native_SetFloat(f, 1.2);
+	return Mode_Done(&t, Mode_Arith('*', f, base, a) && Mode_Arith('*', a, num, b) && Native_ToInt(b, out));
+}
+
+static byte Chal_SetRevenge(const nativeVal_t *looses);
+
+/* Init(Revenge = 0): the race or the combat of the save variables Challenge.*, else the revenge pending (OBJLIB 3:
+ * RaceMaker by name with its keywords) */
+static byte Chal_Init(const nativeVal_t *revengeArg) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *revenge = Mode_V(&t), *type = Mode_V(&t), *foe = Mode_V(&t), *money = Mode_V(&t), *num = Mode_V(&t);
+	if (!Mode_Import("RaceMaker")) {
+		return Mode_Done(&t, 0);
+	}
+	if (revengeArg) {
+		Native_Copy(revenge, revengeArg);
 	} else {
-		PyObject *rtype = Script_Keep(&r, Script_SaveVar("Revenge.Type"));
-		PyObject *rfoe = rtype ? Script_Keep(&r, Script_SaveVar("Revenge.Foe")) : NULL;
-		ok = rfoe;
-		if (rfoe && !Script_Is(rtype, "") && !Script_Is(rfoe, "")) {
-			PyObject *a = Script_Keep(&r, PyTuple_New(0));
-			ok = a ? Script_Keep(&r, Challenge_SetRevenge(NULL, a)) : NULL;
-		}
+		Native_SetInt(revenge, 0);
 	}
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+	Mode_SaveVar("Challenge.Type", type);
+	Mode_SaveVar("Challenge.Foe", foe);
+	if (Mode_IsText(type, "Race")) {
+		Mode_SaveVar("Challenge.Money", money);
+		if (!Mode_SaveInt("Challenge.NumEnemies", num)) {
+			return Mode_Done(&t, 0);
+		}
+		int one = Mode_CmpI(num, "==", 1), three = one == 0 ? Mode_CmpI(num, "==", 3) : 0;
+		if (one < 0 || three < 0) {
+			return Mode_Done(&t, 0);
+		}
+		PyObject *f = Native_ToPy(foe), *r = f ? Native_ToPy(revenge) : NULL;
+		PyObject *kw = r ? Py_BuildValue("{s:i,s:i,s:O,s:O}", "waypointlimit", 15, "numply", one ? 2 : three ? 3 : 4,
+			"foeType", f, "isRevenge", r) : NULL;
+		Py_XDECREF(f);
+		Py_XDECREF(r);
+		return Mode_Done(&t, kw && Mode_CallKw("RaceMaker", "InitRace", NULL, NULL, 0, kw));
+	}
+	if (Mode_IsText(type, "Combat")) {
+		if (!Mode_SaveInt("Challenge.NumEnemies", num)) {
+			return Mode_Done(&t, 0);
+		}
+		PyObject *n = Native_ToPy(num), *kw = n ? Py_BuildValue("{s:O}", "numFoes", n) : NULL;
+		Py_XDECREF(n);
+		nativeVal_t *args = Mode_V(&t);
+		Native_Copy(args, foe);
+		Native_Copy(Mode_V(&t), revenge);
+		return Mode_Done(&t, kw && Mode_CallKw("RaceMaker", "InitCombat", NULL, args, 2, kw));
+	}
+	Mode_SaveVar("Revenge.Type", money);
+	Mode_SaveVar("Revenge.Foe", num);
+	return Mode_Done(&t, Mode_IsText(money, "") || Mode_IsText(num, "") || Chal_SetRevenge(NULL));
 }
 
 /* the skill of the challengers by the number of challenges against the group: Race.Profile and Combat.Profile */
-static byte Chal_Skills(PyObject *type, PyObject *group) {
-	PyObject *name = Script_Plus(Script_PlusS(Script_SPlus("Stats.Total", type), "s."), group);
+static byte Chal_Skills(const nativeVal_t *type, const nativeVal_t *group) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *name = Mode_V(&t);
 	long total;
-	byte ok = Chal_Total(name, &total);
-	Py_XDECREF(name);
-	if (!ok) {
-		return 0;
+	if (!Mode_Cat(&t, name, 4, Mode_S(&t, "Stats.Total"), type, Mode_S(&t, "s."), group) || !Chal_Total(name, &total)) {
+		return Mode_Done(&t, 0);
 	}
 	const char *v = total < 5 ? "Pilot" : total < 8 ? "Veteran" : total < 10 ? "Elite" : "MegaAce";
 	char race[32];
 	Str_Printf(race, sizeof(race), "Race_%s", v);
-	return Script_Try("Scrap", "SetSaveVar", "(ss)", "Race.Profile", race) &&
-		Script_Try("Scrap", "SetSaveVar", "(ss)", "Combat.Profile", v);
-}
-
-static PyObject *Challenge_SetChallengerSkills(PyObject *self, PyObject *args) {
-	PyObject *type, *group;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &type, &group)) {
-		return NULL;
-	}
-	return Chal_Skills(type, group) ? Py_ReturnNone() : NULL;
+	return Mode_Done(&t, Mode_SetSaveVar("Race.Profile", Mode_S(&t, race)) && Mode_SetSaveVar("Combat.Profile", Mode_S(&t, v)));
 }
 
 /* the talk of the bet: Speech.OnChallengeSpch(cad, ans) indoors, Speech.OnChallengeObjSpch(Speech.ObjEntity, foe,
  * cad, ans) at a phone cab (obj), isMerc=1 for the mercenaries. ans is prefix + name + suffix (name NULL: prefix
- * only). 0 with the error set */
-static byte Chal_Spch(byte obj, PyObject *foe, PyObject *cad, const char *prefix, PyObject *name, const char *suffix, byte merc) {
-	PyObject *ent = obj ? Script_Attr("Speech", "ObjEntity") : NULL;
-	if (obj && !ent) {
-		return 0;
+ * only); OBJLIB 3: Speech by name */
+static byte Chal_Spch(byte obj, const nativeVal_t *foe, const nativeVal_t *cad, const char *prefix, const nativeVal_t *name,
+	const char *suffix, byte merc) {
+	modeVals_t t = { .n = 0 };
+	/* the arguments in a row: (ent, foe, cad, ans) at a phone cab, (cad, ans) indoors */
+	nativeVal_t *a = Mode_V(&t), *b = Mode_V(&t), *c = Mode_V(&t), *d = Mode_V(&t), *ans = obj ? d : b;
+	if (obj && !LvN_ModGet("Speech", "ObjEntity", a)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *ans = name ? Script_PlusS(Script_SPlus(prefix, name), suffix) : PyString_FromString(prefix);
-	PyObject *a = !ans ? NULL : obj ? Py_BuildValue("(OOOO)", ent, foe, cad, ans) : Py_BuildValue("(OO)", cad, ans);
-	PyObject *kw = a && merc ? Py_BuildValue("{s:i}", "isMerc", 1) : NULL;
-	PyObject *v = a ? Script_AskKw("Speech", obj ? "OnChallengeObjSpch" : "OnChallengeSpch", a, kw) : NULL;
-	Py_XDECREF(v);
-	Py_XDECREF(ans);
-	Py_XDECREF(ent);
-	return v != NULL;
+	if (name) {
+		if (!Mode_Cat(&t, ans, 3, Mode_S(&t, prefix), name, Mode_S(&t, suffix))) {
+			return Mode_Done(&t, 0);
+		}
+	} else {
+		Native_SetStr(ans, prefix);
+	}
+	if (obj) {
+		Native_Copy(b, foe);
+		Native_Copy(c, cad);
+	} else {
+		Native_Copy(a, cad);
+	}
+	const char *fn = obj ? "OnChallengeObjSpch" : "OnChallengeSpch";
+	if (!merc) {
+		return Mode_Done(&t, obj ? Native_CallMod("Speech", fn, NULL, "vvvv", a, b, c, d) :
+			Native_CallMod("Speech", fn, NULL, "vv", a, b));
+	}
+	return Mode_Done(&t, Mode_CallKw("Speech", fn, NULL, a, obj ? 4 : 2, Py_BuildValue("{s:i}", "isMerc", 1)));
 }
 
-/* Speech.OnEndOfSpeech = the function name of the module: 0 with the error set */
+/* Speech.OnEndOfSpeech = the function name of the module (OBJLIB 5: the function object itself) */
 static byte Chal_OnEnd(const char *name) {
-	PyObject *f = Chal_Global(name);
-	if (f) {
-		Script_SetVar("Speech", "OnEndOfSpeech", f);
-	}
-	return f != NULL;
-}
-
-/* Init.Outdoor == 1: 1, 0, -1 with the error set */
-static int Chal_Outdoor(void) {
-	PyObject *o = Script_Attr("Init", "Outdoor");
-	int c = o ? Script_NumCmp(o, 1) : -2;
-	Py_XDECREF(o);
-	return c == -2 ? -1 : c == 0;
-}
-
-/* print the error of a wrong option: 0 with the error set */
-static byte Chal_PrintError(void) {
-	PyObject *s = PyString_FromString(CHAL_ERROR);
-	byte ok = s && Script_Print(&s, 1);
-	Py_XDECREF(s);
+	PyObject *f = Mode_GlobalPy("Challenge", name);
+	byte ok = f && Mode_SetModPy("Speech", "OnEndOfSpeech", f);
+	Py_XDECREF(f);
 	return ok;
 }
 
-/* OnChallengeOpt(opt, ch, challengeLaunchedIndoor = 1): the bet of option 1, 2 or 3 (1, 3 or 5 foes; 1 or 3 for the
- * mercenaries, for 2 or 3 lives). With enough money (or lives) the talk ends in the challenge (indoors) or the
- * revenge (at a phone cab) and the bet is taken; else the foe laughs and the options start again */
-static PyObject *Challenge_OnChallengeOpt(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "Speech", "Menu", "string", NULL };
-	static const char *const initmod[] = { "Init", NULL };
-	PyObject *opt, *ch, *indoorArg = NULL;
-	scriptRefs_t r = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO|O", &opt, &ch, &indoorArg) || !Script_Import(mods)) {
-		return NULL;
+/* Init.Outdoor == 1: 1, 0, -1 with the error */
+static int Chal_Outdoor(void) {
+	nativeVal_t o;
+	int c = LvN_ModGet("Init", "Outdoor", &o) ? Mode_CmpI(&o, "==", 1) : -1;
+	Native_Free(&o);
+	return c;
+}
+
+/* print the error of a wrong option */
+static byte Chal_PrintError(void) {
+	nativeVal_t s;
+	const nativeVal_t *items[1] = { &s };
+	Native_SetStr(&s, CHAL_ERROR);
+	return Mode_Print(items, 1);
+}
+
+/* string.replace(cad, "<n>", n, 1) (OBJLIB 3: the string port by name, the count of the script) */
+static byte Chal_Replace1(const nativeVal_t *cad, const nativeVal_t *n, nativeVal_t *out) {
+	return Native_CallMod("string", "replace", out, "vsvi", cad, "<n>", n, 1L);
+}
+
+/* "DM_Player_Spawn_" + Init.Path[7:] */
+static byte Chal_Spawn(nativeVal_t *out) {
+	nativeVal_t path = { 0 }, tail = { 0 }, pre;
+	Native_SetStr(&pre, "DM_Player_Spawn_");
+	byte ok = LvN_ModGet("Init", "Path", &path) && Native_Slice(&path, 7, INT_MAX, &tail) && Native_Arith('+', &pre, &tail, out);
+	Native_Free(&path);
+	Native_Free(&tail);
+	return ok;
+}
+
+/* Menu.MovieScorer(0); SInput.SetActionSet("Inactive") (OBJLIB 3: Menu by name) */
+static byte Chal_Movie(void) {
+	return Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L) && Mode_ActionSet("Inactive");
+}
+
+/* the bet taken by a foe that is no mercenary (num 1, 3 or 5 foes) */
+static byte Chal_BetMoney(int num, int indoor, const nativeVal_t *ch, const nativeVal_t *type, const nativeVal_t *foe,
+	const nativeVal_t *money) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *n = Mode_V(&t), *taken = Mode_V(&t), *g = Mode_V(&t), *lang = Mode_V(&t), *rep = Mode_V(&t);
+	nativeVal_t *cad = Mode_V(&t), *newMoney = Mode_V(&t), *spawn = Mode_V(&t), *local = Mode_V(&t), *rfoe = Mode_V(&t);
+	nativeVal_t *rfoe2 = Mode_V(&t);
+	if (!LvN_PutI("Challenge", "numChallengeEnemies", num) || !Chal_G("numChallengeEnemies", n) ||
+		!Chal_Reward(type, foe, n, taken) || !Chal_Group(foe, g) || !Chal_Skills(type, g)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *money = Script_Keep(&r, Script_Ask("Scrap", "GetMoney", "()"));
-	int indoor = !money ? -1 : indoorArg ? Script_True(indoorArg) : 1;
-	PyObject *foe = NULL, *type = NULL;
-	if (indoor > 0) {
-		foe = Script_Keep(&r, Chal_Global("foeType"));
-		type = foe ? Script_Keep(&r, Chal_Global("challengeType")) : NULL;
-	} else if (indoor == 0) {
-		foe = Script_Keep(&r, Script_SaveVar("Challenge.Foe"));
-		if (Script_Is(foe, "")) {
-			foe = Script_Keep(&r, Script_SaveVar("Revenge.Foe"));
-		}
-		type = foe ? Script_Keep(&r, Script_SaveVar("Challenge.Type")) : NULL;
-		if (Script_Is(type, "")) {
-			type = Script_Keep(&r, Script_SaveVar("Revenge.Type"));
-		}
-	}
-	PyObject *group = type ? Script_Keep(&r, Chal_Group(foe)) : NULL;
-	if (!group) {
-		return Script_Done(&r, NULL);
+	Mode_Lang("ChallengeRaceStdOpt1", lang);
+	Mode_Repr(taken, rep);
+	int c = Chal_Replace1(lang, rep, cad) && Mode_Arith('-', money, taken, newMoney) ? Mode_CmpI(newMoney, ">=", 0) : -1;
+	if (c < 0) {
+		return Mode_Done(&t, 0);
 	}
 	byte ok;
-	int c1 = Script_NumCmp(opt, 1), c2 = c1 ? Script_NumCmp(opt, 2) : 1;
-	int c3 = c1 && c2 && !Script_Is(group, "Mercs") ? Script_NumCmp(opt, 3) : 1;
-	if (c1 == -2 || c2 == -2 || c3 == -2) {
-		return Script_Done(&r, NULL);
-	}
-	if (!Script_Is(group, "Mercs")) {
-		int num = c1 == 0 ? 1 : c2 == 0 ? 3 : c3 == 0 ? 5 : 0;
-		if (!num) {
-			return Script_Done(&r, Chal_PrintError() ? Py_ReturnNone() : NULL);
-		}
-		if (!Script_SetGlobal("Challenge", "numChallengeEnemies", PyInt_FromLong(num))) {
-			return Script_Done(&r, NULL);
-		}
-		PyObject *n = Script_Keep(&r, Chal_Global("numChallengeEnemies"));
-		PyObject *taken = n ? Script_Keep(&r, Chal_Reward(type, foe, n)) : NULL;
-		PyObject *g = taken ? Script_Keep(&r, Chal_Group(foe)) : NULL;
-		PyObject *lang = g && Chal_Skills(type, g) ? Script_Keep(&r, Script_Ask("Scrap", "GetLangStr", "(s)", "ChallengeRaceStdOpt1")) : NULL;
-		PyObject *rep = lang ? Script_Keep(&r, Script_Repr(taken)) : NULL;
-		PyObject *cad = rep ? Script_Keep(&r, Script_Ask("string", "replace", "(OsOi)", lang, "<n>", rep, 1)) : NULL;
-		PyObject *newMoney = cad ? Script_Keep(&r, PyNumber_Subtract(money, taken)) : NULL;
-		int c = newMoney ? Script_NumCmp(newMoney, 0) : -2;
-		if (c == -2) {
-			return Script_Done(&r, NULL);
-		}
-		if (c >= 0) {
-			if (!Script_Import(initmod)) {
-				return Script_Done(&r, NULL);
-			}
-			if (indoor) {
-				PyObject *path = Script_Keep(&r, Script_Attr("Init", "Path"));
-				PyObject *tail = path ? Script_Keep(&r, PySequence_GetSlice(path, 7, INT_MAX)) : NULL;
-				PyObject *spawn = tail ? Script_Keep(&r, Script_SPlus("DM_Player_Spawn_", tail)) : NULL;
-				PyObject *local = spawn && Chal_SetSave("Spawn", spawn) &&
-					Script_Try("Scrap", "SetSaveVar", "(ss)", "ComeFrom", "") && Script_Try("Menu", "MovieScorer", "(i)", 0) &&
-					Script_Try("SInput", "SetActionSet", "(s)", "Inactive") ? Script_Keep(&r, Chal_Global("foeType")) : NULL;
-				int out = local ? Chal_Outdoor() : -1;
-				ok = out >= 0 && Chal_Spch(0, NULL, cad, "ChallengeRace", local, out ? "Msg2_Filter" : "Msg2", 0) &&
-					Chal_OnEnd("LaunchChallenge");
-			} else {
-				PyObject *local = Script_Keep(&r, Script_SaveVar("Revenge.Foe"));
-				int out = local ? Chal_Outdoor() : -1;
-				ok = out >= 0 && Chal_Spch(1, local, cad, "ChallengeRace", local, out ? "Msg2_Filter" : "Msg2", 0) &&
-					Chal_OnEnd("LaunchRevenge");
-			}
-			ok = ok && Script_Try("Scrap", "SetMoney", "(O)", newMoney) && Chal_SetSaveRepr("Challenge.Money", taken);
-		} else {
-			if (indoor) {
-				ok = Chal_Spch(0, NULL, cad, "ChallengeRaceStdMsg", foe, "", 0);
-			} else {
-				PyObject *rfoe = Script_Keep(&r, Script_SaveVar("Revenge.Foe"));
-				PyObject *rfoe2 = rfoe ? Script_Keep(&r, Script_SaveVar("Revenge.Foe")) : NULL;
-				ok = rfoe2 && Chal_Spch(1, rfoe, cad, "ChallengeRaceStdMsg", rfoe2, "_Filter", 0);
-			}
-			ok = ok && Script_HSet(ch, "ArriOpt", PyInt_FromLong(0));
-		}
-		return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
-	}
-	/* the mercenaries take lives */
-	int num = c1 == 0 ? 1 : c2 == 0 ? 3 : 0;
-	if (!num) {
-		return Script_Done(&r, Chal_PrintError() ? Py_ReturnNone() : NULL);
-	}
-	long takenLives = num == 1 ? 2 : 3;
-	if (!Script_SetGlobal("Challenge", "numChallengeEnemies", PyInt_FromLong(num))) {
-		return Script_Done(&r, NULL);
-	}
-	PyObject *g = Script_Keep(&r, Chal_Group(foe));
-	PyObject *taken = g && Chal_Skills(type, g) ? Script_Keep(&r, PyInt_FromLong(takenLives)) : NULL;
-	PyObject *lang = taken ? Script_Keep(&r, Script_Ask("Scrap", "GetLangStr", "(s)", "ChallengeMercs")) : NULL;
-	PyObject *rep = lang ? Script_Keep(&r, Script_Repr(taken)) : NULL;
-	PyObject *cad = rep ? Script_Keep(&r, Script_Ask("string", "replace", "(OsOi)", lang, "<n>", rep, 1)) : NULL;
-	PyObject *lives = cad ? Script_Keep(&r, Chal_SaveInt("Player.NumLives")) : NULL;
-	PyObject *newLives = lives ? Script_Keep(&r, PyNumber_Subtract(lives, taken)) : NULL;
-	int c = newLives ? Script_NumCmp(newLives, 0) : -2;
-	if (c == -2) {
-		return Script_Done(&r, NULL);
-	}
-	if (c >= 0) {
-		if (!Script_Import(initmod)) {
-			return Script_Done(&r, NULL);
+	if (c) {
+		if (!Mode_Import("Init")) {
+			return Mode_Done(&t, 0);
 		}
 		if (indoor) {
-			PyObject *local = Script_Try("Menu", "MovieScorer", "(i)", 0) && Script_Try("SInput", "SetActionSet", "(s)", "Inactive") ?
-				Script_Keep(&r, Chal_Global("foeType")) : NULL;
-			PyObject *lg = local ? Script_Keep(&r, Chal_Group(local)) : NULL;
-			if (lg && Script_Is(lg, "Mercs")) {
-				local = Script_Keep(&r, PyString_FromString("Mercs"));
+			int out = Chal_Spawn(spawn) && Mode_SetSaveVar("Spawn", spawn) && Mode_SetSaveVar("ComeFrom", Mode_S(&t, "")) &&
+				Chal_Movie() && Chal_G("foeType", local) ? Chal_Outdoor() : -1;
+			ok = out >= 0 && Chal_Spch(0, NULL, cad, "ChallengeRace", local, out ? "Msg2_Filter" : "Msg2", 0) &&
+				Chal_OnEnd("LaunchChallenge");
+		} else {
+			Mode_SaveVar("Revenge.Foe", local);
+			int out = Chal_Outdoor();
+			ok = out >= 0 && Chal_Spch(1, local, cad, "ChallengeRace", local, out ? "Msg2_Filter" : "Msg2", 0) &&
+				Chal_OnEnd("LaunchRevenge");
+		}
+		return Mode_Done(&t, ok && Mode_SetMoneySeam(newMoney) && Chal_SetSaveRepr("Challenge.Money", taken));
+	}
+	if (indoor) {
+		ok = Chal_Spch(0, NULL, cad, "ChallengeRaceStdMsg", foe, "", 0);
+	} else {
+		Mode_SaveVar("Revenge.Foe", rfoe);
+		Mode_SaveVar("Revenge.Foe", rfoe2);
+		ok = Chal_Spch(1, rfoe, cad, "ChallengeRaceStdMsg", rfoe2, "_Filter", 0);
+	}
+	return Mode_Done(&t, ok && LvN_SetI(ch, "ArriOpt", 0));
+}
+
+/* the bet of the mercenaries: lives (num 1 or 3 foes for 2 or 3 lives) */
+static byte Chal_BetLives(int num, int indoor, const nativeVal_t *ch, const nativeVal_t *type, const nativeVal_t *foe) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *g = Mode_V(&t), *taken = Mode_V(&t), *lang = Mode_V(&t), *rep = Mode_V(&t), *cad = Mode_V(&t);
+	nativeVal_t *lives = Mode_V(&t), *newLives = Mode_V(&t), *local = Mode_V(&t), *lg = Mode_V(&t), *rfoe = Mode_V(&t);
+	if (!LvN_PutI("Challenge", "numChallengeEnemies", num) || !Chal_Group(foe, g) || !Chal_Skills(type, g)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetInt(taken, num == 1 ? 2 : 3);
+	Mode_Lang("ChallengeMercs", lang);
+	Mode_Repr(taken, rep);
+	int c = Chal_Replace1(lang, rep, cad) && Mode_SaveInt("Player.NumLives", lives) &&
+		Mode_Arith('-', lives, taken, newLives) ? Mode_CmpI(newLives, ">=", 0) : -1;
+	if (c < 0) {
+		return Mode_Done(&t, 0);
+	}
+	byte ok;
+	if (c) {
+		if (!Mode_Import("Init")) {
+			return Mode_Done(&t, 0);
+		}
+		if (indoor) {
+			int out = Chal_Movie() && Chal_G("foeType", local) && Chal_Group(local, lg) ? 1 : -1;
+			if (out > 0 && Mode_IsText(lg, "Mercs")) {
+				Native_Free(local);
+				Native_SetStr(local, "Mercs");
 			}
-			int out = lg ? Chal_Outdoor() : -1;
+			out = out > 0 ? Chal_Outdoor() : -1;
 			ok = out >= 0 && Chal_Spch(0, NULL, cad, "ChallengeRace", local, out ? "Msg2_Filter" : "Msg2", 1) &&
 				Chal_OnEnd("LaunchChallenge");
 		} else {
-			PyObject *local = Script_Keep(&r, Script_SaveVar("Revenge.Foe"));
-			PyObject *lg = local ? Script_Keep(&r, Chal_Group(local)) : NULL;
-			int out = lg ? Chal_Outdoor() : -1;
+			Mode_SaveVar("Revenge.Foe", local);
+			int out = Chal_Group(local, lg) ? Chal_Outdoor() : -1;
 			if (out < 0) {
 				ok = 0;
-			} else if (Script_Is(lg, "Mercs")) {
+			} else if (Mode_IsText(lg, "Mercs")) {
 				ok = Chal_Spch(1, local, cad, out ? "ChallengeRaceMercsMsg2_Filter" : "ChallengeRaceMercsMsg2", NULL, NULL, 1);
 			} else {
 				ok = Chal_Spch(1, local, cad, "ChallengeRace", local, out ? "Msg2_Filter" : "Msg2", 0);
 			}
 			ok = ok && Chal_OnEnd("LaunchRevenge");
 		}
-		ok = ok && Chal_SetSaveRepr("Player.NumLives", newLives) && Chal_SetSaveRepr("Challenge.Money", taken);
-	} else {
-		if (indoor) {
-			ok = Chal_Spch(0, NULL, cad, "ChallengeMercsMsg", NULL, NULL, 1);
-		} else {
-			PyObject *rfoe = Script_Keep(&r, Script_SaveVar("Revenge.Foe"));
-			ok = rfoe && Chal_Spch(1, rfoe, cad, "ChallengeMercsMsg_Filter", NULL, NULL, 1);
-		}
-		ok = ok && Script_HSet(ch, "ArriOpt", PyInt_FromLong(0));
+		return Mode_Done(&t, ok && Chal_SetSaveRepr("Player.NumLives", newLives) && Chal_SetSaveRepr("Challenge.Money", taken));
 	}
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+	if (indoor) {
+		ok = Chal_Spch(0, NULL, cad, "ChallengeMercsMsg", NULL, NULL, 1);
+	} else {
+		Mode_SaveVar("Revenge.Foe", rfoe);
+		ok = Chal_Spch(1, rfoe, cad, "ChallengeMercsMsg_Filter", NULL, NULL, 1);
+	}
+	return Mode_Done(&t, ok && LvN_SetI(ch, "ArriOpt", 0));
 }
 
-/* SetRevengeParams(RevengeType, RevengeFoe, NumEnemies): the revenge into the save variables, the game restarts */
-static PyObject *Challenge_SetRevengeParams(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "Init", "SaveGame", "string", NULL };
-	PyObject *type, *foe, *num;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &type, &foe, &num) || !Script_Import(mods)) {
-		return NULL;
+/* OnChallengeOpt(opt, ch, challengeLaunchedIndoor = 1): the bet of option 1, 2 or 3 (1, 3 or 5 foes; 1 or 3 for the
+ * mercenaries, for 2 or 3 lives). With enough money (or lives) the talk ends in the challenge (indoors) or the
+ * revenge (at a phone cab) and the bet is taken; else the foe laughs and the options start again */
+static byte Chal_OnChallengeOpt(const nativeVal_t *opt, const nativeVal_t *ch, const nativeVal_t *indoorArg) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *money = Mode_V(&t), *foe = Mode_V(&t), *type = Mode_V(&t), *group = Mode_V(&t);
+	if (!Mode_Import("Speech") || !Mode_Import("Menu") || !Mode_Import("string")) {
+		return Mode_Done(&t, 0);
 	}
-	if (!Chal_SetSave("Revenge.Type", type) || !Chal_SetSave("Revenge.Foe", foe) || !Chal_SetSave("Revenge.NumEnemies", num)) {
-		return NULL;
+	Native_SetInt(money, Mode_GetMoney());
+	int indoor = indoorArg ? Native_True(indoorArg) : 1;
+	if (indoor) {
+		if (!Chal_G("foeType", foe) || !Chal_G("challengeType", type)) {
+			return Mode_Done(&t, 0);
+		}
+	} else {
+		Mode_SaveVar("Challenge.Foe", foe);
+		if (Mode_IsText(foe, "")) {
+			Native_Free(foe);
+			Mode_SaveVar("Revenge.Foe", foe);
+		}
+		Mode_SaveVar("Challenge.Type", type);
+		if (Mode_IsText(type, "")) {
+			Native_Free(type);
+			Mode_SaveVar("Revenge.Type", type);
+		}
 	}
-	PyObject *v = Script_AskKw("SaveGame", "StartGame", PyTuple_New(0), Py_BuildValue("{s:i}", "CleanChallenge", 1));
-	Py_XDECREF(v);
-	return v ? Py_ReturnNone() : NULL;
+	if (!Chal_Group(foe, group)) {
+		return Mode_Done(&t, 0);
+	}
+	byte mercs = Mode_IsText(group, "Mercs");
+	int c1 = Mode_CmpI(opt, "==", 1), c2 = c1 ? 0 : Mode_CmpI(opt, "==", 2);
+	int c3 = !c1 && !c2 && !mercs ? Mode_CmpI(opt, "==", 3) : 0;
+	if (c1 < 0 || c2 < 0 || c3 < 0) {
+		return Mode_Done(&t, 0);
+	}
+	int num = c1 > 0 ? 1 : c2 > 0 ? 3 : c3 > 0 && !mercs ? 5 : 0;
+	if (!num) {
+		return Mode_Done(&t, Chal_PrintError());
+	}
+	return Mode_Done(&t, mercs ? Chal_BetLives(num, indoor, ch, type, foe) : Chal_BetMoney(num, indoor, ch, type, foe, money));
+}
+
+/* SetRevengeParams(RevengeType, RevengeFoe, NumEnemies): the revenge into the save variables, the game restarts
+ * (OBJLIB 3: SaveGame by name with its keyword) */
+static byte Chal_SetRevengeParams(const nativeVal_t *type, const nativeVal_t *foe, const nativeVal_t *num) {
+	return Mode_Import("Init") && Mode_Import("SaveGame") && Mode_Import("string") && Mode_SetSaveVar("Revenge.Type", type) &&
+		Mode_SetSaveVar("Revenge.Foe", foe) && Mode_SetSaveVar("Revenge.NumEnemies", num) &&
+		Mode_CallKw("SaveGame", "StartGame", NULL, NULL, 0, Py_BuildValue("{s:i}", "CleanChallenge", 1));
 }
 
 /* SetRevenge(playerLooses = 1): the nearest phone cab is marked and the foe calls (lost: unless in Humphrey's race
- * tutorial) */
-static PyObject *Challenge_SetRevenge(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "MissionsFuncs", "PhoneCab", "Speech", NULL };
-	PyObject *looses = NULL;
-	scriptRefs_t r = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "|O", &looses) || !Script_Import(mods)) {
-		return NULL;
+ * tutorial); OBJLIB 3: PhoneCab, MissionsFuncs and Speech by name */
+static byte Chal_SetRevenge(const nativeVal_t *looses) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *player = Mode_V(&t), *pos = Mode_V(&t), *cab = Mode_V(&t), *tut = Mode_V(&t), *foe = Mode_V(&t);
+	nativeVal_t *head = Mode_V(&t), *text = Mode_V(&t), *who = Mode_V(&t);
+	if (!Mode_Import("MissionsFuncs") || !Mode_Import("PhoneCab") || !Mode_Import("Speech")) {
+		return Mode_Done(&t, 0);
 	}
-	looses = Script_Keep(&r, looses ? Script_Ref(looses) : PyInt_FromLong(1));
-	int lost = Script_True(looses);
-	if (lost < 0 || !Script_SetGlobal("Challenge", "playerWinsRevenge", PyInt_FromLong(!lost))) {
-		return Script_Done(&r, NULL);
+	int lost = looses ? Native_True(looses) : 1;
+	if (!LvN_PutI("Challenge", "playerWinsRevenge", !lost) || !Mode_UsrHandle(player)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *player = Script_Keep(&r, Script_Usr());
-	int t = Script_True(player);
-	if (t <= 0) {
-		return Script_Done(&r, t < 0 ? NULL : Py_ReturnNone());
+	if (!Native_True(player)) {
+		return Mode_Done(&t, 1);
 	}
-	PyObject *pos = Script_Keep(&r, Script_GetAttr(player, "Pos"));
-	PyObject *cab = pos ? Script_Keep(&r, Script_Ask("PhoneCab", "GetNearestPhoneCab", "(O)", pos)) : NULL;
-	PyObject *tut = cab ? Script_Keep(&r, Script_SaveVar("HumphreyRaceTutorial")) : NULL;
-	PyObject *foe = tut && Script_Try("MissionsFuncs", "ActivateTarget", "(Oi)", cab, Script_Is(tut, "1") ? 1 : 2) &&
-		Script_Try("MissionsFuncs", "SetSecondary", "(i)", 1) ? Script_Keep(&r, Script_SaveVar("Revenge.Foe")) : NULL;
-	PyObject *head = foe ? Script_Keep(&r, PySequence_GetSlice(foe, 0, 4)) : NULL;
-	if (!head) {
-		return Script_Done(&r, NULL);
+	if (!Mode_VObj(player, "Pos", pos) || !Native_CallMod("PhoneCab", "GetNearestPhoneCab", cab, "v", pos)) {
+		return Mode_Done(&t, 0);
 	}
-	if (Script_Is(head, "Merc")) {
-		foe = Script_Keep(&r, PyString_FromString("Mercs"));
+	Mode_SaveVar("HumphreyRaceTutorial", tut);
+	if (!Native_CallMod("MissionsFuncs", "ActivateTarget", NULL, "vi", cab, Mode_IsText(tut, "1") ? 1L : 2L) ||
+		!Native_CallMod("MissionsFuncs", "SetSecondary", NULL, "i", 1L)) {
+		return Mode_Done(&t, 0);
 	}
-	byte ok = 1;
+	Mode_SaveVar("Revenge.Foe", foe);
+	if (!Native_Slice(foe, 0, 4, head)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Mode_IsText(head, "Merc")) {
+		Native_Free(foe);
+		Native_SetStr(foe, "Mercs");
+	}
 	if (lost) {
-		tut = Script_Keep(&r, Script_SaveVar("HumphreyRaceTutorial"));
-		if (!tut) {
-			return Script_Done(&r, NULL);
+		Native_Free(tut);
+		Mode_SaveVar("HumphreyRaceTutorial", tut);
+		if (Mode_IsText(tut, "1")) {
+			return Mode_Done(&t, 1);
 		}
-		if (!Script_Is(tut, "1")) {
-			PyObject *text = Script_Keep(&r, Script_SPlus("ChallengeLooseRevenge", foe));
-			PyObject *who = text ? Script_Keep(&r, Script_SaveVar("Revenge.Foe")) : NULL;
-			ok = who && Script_Try("Speech", "AddRemoteCom", "(OO)", text, who);
-		}
-	} else {
-		PyObject *text = Script_Keep(&r, Script_SPlus("ChallengeWinRevenge", foe));
-		PyObject *who = text ? Script_Keep(&r, Script_SaveVar("Revenge.Foe")) : NULL;
-		ok = who && Script_Try("Speech", "AddRemoteCom", "(OO)", text, who);
 	}
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+	if (!Mode_Cat(&t, text, 2, Mode_S(&t, lost ? "ChallengeLooseRevenge" : "ChallengeWinRevenge"), foe)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("Revenge.Foe", who);
+	return Mode_Done(&t, Native_CallMod("Speech", "AddRemoteCom", NULL, "vv", text, who));
 }
 
 /* LaunchRevenge(): the end of the revenge talk: the revenge becomes the challenge and starts here */
-static PyObject *Challenge_LaunchRevenge(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "PhoneCab", "MissionsFuncs", NULL };
-	scriptRefs_t r = { 0 };
-	(void)self;
-	(void)args;
-	if (!Script_Import(mods)) {
-		return NULL;
+static byte Chal_LaunchRevenge(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *type = Mode_V(&t), *foe = Mode_V(&t), *num = Mode_V(&t), *ac = Mode_V(&t);
+	if (!Mode_Import("PhoneCab") || !Mode_Import("MissionsFuncs")) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *type = Script_Keep(&r, Script_SaveVar("Revenge.Type"));
-	PyObject *foe = type && Chal_SetSave("Challenge.Type", type) ? Script_Keep(&r, Script_SaveVar("Revenge.Foe")) : NULL;
-	PyObject *num = foe && Chal_SetSave("Challenge.Foe", foe) ? Script_Keep(&r, Chal_Global("numChallengeEnemies")) : NULL;
-	PyObject *ac = num && Chal_SetSaveRepr("Challenge.NumEnemies", num) &&
-		Script_Try("Scrap", "SetSaveVar", "(ss)", "Revenge.Type", "") && Script_Try("Scrap", "SetSaveVar", "(ss)", "Revenge.Foe", "") &&
-		Script_Try("PhoneCab", "ForceResetPhoneCab", "()") ? Script_Keep(&r, Script_Attr("PhoneCab", "audioComEntity")) : NULL;
-	PyObject *a = ac && Script_Try("MissionsFuncs", "ActivateTarget", "(Oi)", ac, 0) ? Script_Keep(&r, Py_BuildValue("(i)", 1)) : NULL;
-	byte ok = a && Script_Keep(&r, Challenge_Init(NULL, a));
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+	Mode_SaveVar("Revenge.Type", type);
+	if (!Mode_SetSaveVar("Challenge.Type", type)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("Revenge.Foe", foe);
+	return Mode_Done(&t, Mode_SetSaveVar("Challenge.Foe", foe) && Chal_G("numChallengeEnemies", num) &&
+		Chal_SetSaveRepr("Challenge.NumEnemies", num) && Mode_SetSaveVar("Revenge.Type", Mode_S(&t, "")) &&
+		Mode_SetSaveVar("Revenge.Foe", Mode_S(&t, "")) && Native_CallMod("PhoneCab", "ForceResetPhoneCab", NULL, "") &&
+		LvN_ModGet("PhoneCab", "audioComEntity", ac) && Native_CallMod("MissionsFuncs", "ActivateTarget", NULL, "vi", ac, 0L) &&
+		Chal_Init(Mode_I(&t, 1)));
 }
 
 /* LaunchChallenge(): the end of the challenge talk: the challenge into the save variables and the game goes on in
  * the outdoor level of this area (when it is the mission's, the one next to it) */
-static PyObject *Challenge_LaunchChallenge(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "Init", "SaveGame", "MissionsFuncs", "string", NULL };
-	static const char *const phone[] = { "PhoneCab", NULL };
-	scriptRefs_t r = { 0 };
-	(void)self;
-	(void)args;
-	if (!Script_Import(mods)) {
-		return NULL;
+static byte Chal_LaunchChallenge(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *num = Mode_V(&t), *type = Mode_V(&t), *foe = Mode_V(&t), *out = Mode_V(&t), *area = Mode_V(&t);
+	nativeVal_t *sv = Mode_V(&t), *mm = Mode_V(&t), *oa = Mode_V(&t), *level = Mode_V(&t), *spawn = Mode_V(&t);
+	if (!Mode_Import("Init") || !Mode_Import("SaveGame") || !Mode_Import("MissionsFuncs") || !Mode_Import("string") ||
+		!Chal_G("numChallengeEnemies", num) || !Chal_SetSaveRepr("Challenge.NumEnemies", num) ||
+		!Chal_G("challengeType", type) || !Mode_SetSaveVar("Challenge.Type", type) || !Chal_G("foeType", foe) ||
+		!Mode_SetSaveVar("Challenge.Foe", foe) || !LvN_ModGet("Init", "Outdoor", out) ||
+		(Native_True(out) && (!Mode_Import("PhoneCab") || !Native_CallMod("PhoneCab", "ForceResetPhoneCab", NULL, ""))) ||
+		!Native_CallMod("MissionsFuncs", "SetSecondary", NULL, "i", 1L) || !LvN_ModGet("Init", "OutArea", area)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *num = Script_Keep(&r, Chal_Global("numChallengeEnemies"));
-	PyObject *type = num && Chal_SetSaveRepr("Challenge.NumEnemies", num) ? Script_Keep(&r, Chal_Global("challengeType")) : NULL;
-	PyObject *foe = type && Chal_SetSave("Challenge.Type", type) ? Script_Keep(&r, Chal_Global("foeType")) : NULL;
-	PyObject *out = foe && Chal_SetSave("Challenge.Foe", foe) ? Script_Keep(&r, Script_Attr("Init", "Outdoor")) : NULL;
-	int t = Script_True(out);
-	if (t > 0 && (!Script_Import(phone) || !Script_Try("PhoneCab", "ForceResetPhoneCab", "()"))) {
-		t = -1;
+	int empty = Mode_Cmp(area, "==", Mode_S(&t, ""));
+	if (empty) {
+		return Mode_Done(&t, empty > 0);
 	}
-	PyObject *area = t >= 0 && Script_Try("MissionsFuncs", "SetSecondary", "(i)", 1) ? Script_Keep(&r, Script_Attr("Init", "OutArea")) : NULL;
-	PyObject *empty = area ? Script_Keep(&r, PyString_FromString("")) : NULL;
-	t = empty ? Script_Eq(area, empty) : -1;
-	if (t != 0) {
-		return Script_Done(&r, t > 0 ? Py_ReturnNone() : NULL);
+	Mode_SaveVar("Mission.Map", sv);
+	Native_Free(area);
+	if (!Native_Upper(sv, mm) || !LvN_ModGet("Init", "OutArea", area) || !Native_Upper(area, oa)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *sv = Script_Keep(&r, Script_SaveVar("Mission.Map"));
-	PyObject *mm = sv ? Script_Keep(&r, Script_Ask("string", "upper", "(O)", sv)) : NULL;
-	area = mm ? Script_Keep(&r, Script_Attr("Init", "OutArea")) : NULL;
-	PyObject *oa = area ? Script_Keep(&r, Script_Ask("string", "upper", "(O)", area)) : NULL;
-	PyObject *items[2] = { mm, oa };
-	t = oa && Script_Print(items, 2) ? Script_Eq(mm, oa) : -1;
-	if (t > 0) {
-		mm = Script_Keep(&r, PyString_FromString(Script_Is(mm, "DOWNTOWN") ? "Commercial" : "DownTown"));
-	} else if (t == 0) {
-		mm = Script_Keep(&r, Script_Attr("Init", "OutArea"));
+	const nativeVal_t *items[2] = { mm, oa };
+	int same = Mode_Print(items, 2) ? Mode_Cmp(mm, "==", oa) : -1;
+	if (same < 0) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *level = t >= 0 && mm ? Script_Keep(&r, Script_SPlus("Levels/", mm)) : NULL;
-	PyObject *path = level ? Script_Keep(&r, Script_Attr("Init", "Path")) : NULL;
-	PyObject *tail = path ? Script_Keep(&r, PySequence_GetSlice(path, 7, INT_MAX)) : NULL;
-	PyObject *spawn = tail ? Script_Keep(&r, Script_SPlus("DM_Player_Spawn_", tail)) : NULL;
-	byte ok = spawn && Script_Try("SaveGame", "MarkWayPoint", "(OOs)", level, spawn, "") &&
-		Script_Keep(&r, Script_AskKw("SaveGame", "StartGame", PyTuple_New(0), Py_BuildValue("{s:i}", "CleanChallenge", 0)));
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+	if (same) {
+		const char *next = Mode_IsText(mm, "DOWNTOWN") ? "Commercial" : "DownTown";
+		Native_Free(mm);
+		Native_SetStr(mm, next);
+	} else {
+		Native_Free(mm);
+		if (!LvN_ModGet("Init", "OutArea", mm)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	return Mode_Done(&t, Mode_Cat(&t, level, 2, Mode_S(&t, "Levels/"), mm) && Chal_Spawn(spawn) &&
+		Native_CallMod("SaveGame", "MarkWayPoint", NULL, "vvs", level, spawn, "") &&
+		Mode_CallKw("SaveGame", "StartGame", NULL, NULL, 0, Py_BuildValue("{s:i}", "CleanChallenge", 0)));
 }
 
 /* the end of a challenge or revenge (prefix "Challenge" or "Revenge"): no secondary mission, and its save variables
  * empty */
-static PyObject *Chal_Clean(const char *prefix, byte revenge) {
-	static const char *const mf[] = { "MissionsFuncs", NULL };
-	static const char *const sg[] = { "SaveGame", NULL };
+static byte Chal_Clean(const char *prefix, byte revenge) {
 	static const char *const vars[] = { "Type", "Foe", "NumEnemies", "LastWinner" };
+	nativeVal_t type, empty;
 	char name[32];
 	Str_Printf(name, sizeof(name), "%s.Type", prefix);
-	PyObject *type = Script_SaveVar(name);
-	byte ok = type != NULL;
-	if (ok && !Script_Is(type, "")) {
-		ok = Script_Import(mf) && Script_Try("MissionsFuncs", "SetSecondary", "(i)", 0) && Script_Import(sg) &&
-			Script_Try("SaveGame", "SMDesc", "(si)", "", 1);
-	}
-	Py_XDECREF(type);
+	Mode_SaveVar(name, &type);
+	byte ok = Mode_IsText(&type, "") || (Mode_Import("MissionsFuncs") &&
+		Native_CallMod("MissionsFuncs", "SetSecondary", NULL, "i", 0L) && Mode_Import("SaveGame") &&
+		Native_CallMod("SaveGame", "SMDesc", NULL, "si", "", 1L));
+	Native_Free(&type);
+	Native_SetStr(&empty, "");
 	for (int i = 0; ok && i < (revenge ? 4 : 3); i++) {
 		Str_Printf(name, sizeof(name), "%s.%s", prefix, vars[i]);
-		ok = Script_Try("Scrap", "SetSaveVar", "(ss)", name, "");
+		ok = Mode_SetSaveVar(name, &empty);
 	}
-	return ok ? Py_ReturnNone() : NULL;
+	return ok;
 }
 
-static PyObject *Challenge_CleanChallenge(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Chal_Clean("Challenge", 0);
-}
-
-static PyObject *Challenge_CleanRevenge(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Chal_Clean("Revenge", 1);
-}
-
-/* the vehicles of a cancelled challenge (the names in seq) go back to the police or the traffic: 0 with the error
- * set */
-static byte Chal_Release(PyObject *seq) {
-	PyObject *name;
-	int more;
-	for (int i = 0; (more = Script_Next(seq, i, &name)) > 0; i++) {
-		scriptRefs_t r = { 0 };
-		Script_Keep(&r, name);
-		PyObject *veh = Script_Keep(&r, Script_Entity(name));
-		PyObject *model = veh && Script_HSet(veh, "MoveTime", PyFloat_FromDouble(0.0)) &&
-			Script_HSet(veh, "TgType", PyString_FromString("None")) ? Script_Keep(&r, Script_GetAttr(veh, "Model")) : NULL;
-		PyObject *at = model ? Script_Keep(&r, Script_Ask("string", "find", "(Os)", model, "SPoli")) : NULL;
-		int c = at ? Script_NumCmp(at, 0) : -2;
-		PyObject *vname = c != -2 && Script_HSet(veh, "EntityList", PyString_FromString(c >= 0 ? "OutCop" : "Traffic")) ?
-			Script_Keep(&r, Script_GetAttr(veh, "Name")) : NULL;
-		byte ok = vname && Script_Try("SAI", "SetStateVehicle", "(iO)", 3, vname);
-		Script_Done(&r, NULL);
-		if (!ok) {
+/* the vehicles of a cancelled challenge (the names in seq) go back to the police or the traffic (OBJLIB 3:
+ * string.find and SAI.SetStateVehicle by name) */
+static byte Chal_Release(nativeVal_t *seq) {
+	int n = Mode_Loop(seq);
+	for (int i = 0; i < n; i++) {
+		modeVals_t t = { .n = 0 };
+		nativeVal_t *name = Mode_V(&t), *veh = Mode_V(&t), *zero = Mode_V(&t), *model = Mode_V(&t), *at = Mode_V(&t);
+		nativeVal_t *vname = Mode_V(&t);
+		Native_SetFloat(zero, 0.0);
+		int c = Native_SeqItem(seq, i, name) && Mode_EntitySeam(name, veh) && Mode_VSet(veh, "MoveTime", zero) &&
+			LvN_SetS(veh, "TgType", "None") && Mode_VObj(veh, "Model", model) &&
+			Native_CallMod("string", "find", at, "vs", model, "SPoli") ? Mode_CmpI(at, ">=", 0) : -1;
+		byte ok = c >= 0 && LvN_SetS(veh, "EntityList", c ? "OutCop" : "Traffic") && Mode_VObj(veh, "Name", vname) &&
+			Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 3L, vname);
+		if (!Mode_Done(&t, ok)) {
 			return 0;
 		}
 	}
-	return more == 0;
+	return n >= 0;
 }
 
 /* CancelChallenge(challType): the player left the race or the combat: the bet is lost, the foes go back to their
- * lists and a revenge is pending */
-static PyObject *Challenge_CancelChallenge(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "Speech", "Menu", "Parking", "Alarm", "RaceMaker", "string", NULL };
-	PyObject *type;
-	scriptRefs_t r = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &type) || !Script_Import(mods)) {
-		return NULL;
+ * lists and a revenge is pending (OBJLIB 3: Speech, RaceMaker, Menu, string.replace and SInput.GetActionSet by name;
+ * OBJLIB 5: the callbacks of Parking and Alarm set to None in their modules) */
+static byte Chal_CancelChallenge(const nativeVal_t *type) {
+	static const char *const mods[] = { "Speech", "Menu", "Parking", "Alarm", "RaceMaker", "string" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *lang = Mode_V(&t), *money = Mode_V(&t), *text = Mode_V(&t), *foe = Mode_V(&t), *left = Mode_V(&t);
+	nativeVal_t *who = Mode_V(&t), *set = Mode_V(&t), *cp = Mode_V(&t), *list = Mode_V(&t), *cfoe = Mode_V(&t);
+	nativeVal_t *cnum = Mode_V(&t);
+	for (int i = 0; i < 6; i++) {
+		if (!Mode_Import(mods[i])) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	PyObject *lang = Script_Try("Speech", "CancelRemoteCom", "()") && Script_Try("Scrap", "DeleteScheduledFuncs", "(s)", "SF_Secondary") ?
-		Script_Keep(&r, Script_Ask("Scrap", "GetLangStr", "(s)", "RaceSystemCancel1")) : NULL;
-	PyObject *money = lang ? Script_Keep(&r, Script_SaveVar("Challenge.Money")) : NULL;
-	PyObject *text = money ? Script_Keep(&r, Script_Ask("string", "replace", "(OsO)", lang, "<n>", money)) : NULL;
-	PyObject *foe = text && Script_Try("RaceMaker", "ShowSystemMessage", "(O)", text) ?
-		Script_Keep(&r, Script_SaveVar("Challenge.Foe")) : NULL;
-	PyObject *left = foe ? Script_Keep(&r, Script_SPlus("RaceLeft", foe)) : NULL;
-	PyObject *who = left ? Script_Keep(&r, Script_SaveVar("Challenge.Foe")) : NULL;
-	PyObject *set = who && Script_Try("Speech", "AddRemoteCom", "(OO)", left, who) ? Script_Keep(&r, Script_Ask("SInput", "GetActionSet", "()")) : NULL;
-	if (!set) {
-		return Script_Done(&r, NULL);
+	if (!Native_CallMod("Speech", "CancelRemoteCom", NULL, "") || !Mode_DelSchedS("SF_Secondary")) {
+		return Mode_Done(&t, 0);
 	}
-	Script_SetVar("Menu", "MissionScorerCall", Script_Ref(Py_None));
-	if (!Script_Try("Menu", "DrawScorer", "(iO)", 0, set)) {
-		return Script_Done(&r, NULL);
+	Mode_Lang("RaceSystemCancel1", lang);
+	Mode_SaveVar("Challenge.Money", money);
+	if (!Native_CallMod("string", "replace", text, "vsv", lang, "<n>", money) ||
+		!Native_CallMod("RaceMaker", "ShowSystemMessage", NULL, "v", text)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("Challenge.Foe", foe);
+	if (!Mode_Cat(&t, left, 2, Mode_S(&t, "RaceLeft"), foe)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("Challenge.Foe", who);
+	if (!Native_CallMod("Speech", "AddRemoteCom", NULL, "vv", left, who) ||
+		!Native_CallMod("SInput", "GetActionSet", set, "") || !LvN_ModNone("Menu", "MissionScorerCall") ||
+		!Native_CallMod("Menu", "DrawScorer", NULL, "iv", 0L, set)) {
+		return Mode_Done(&t, 0);
 	}
 	byte ok = 1;
-	if (Script_Is(type, "Race")) {
-		PyObject *cp = Script_Keep(&r, Script_Ask("Scrap", "GetEntity", "(s)", "CheckPoint"));
-		int t = Script_True(cp);
-		if (t > 0) {
-			t = Script_HSet(cp, "OnTake", PyString_FromString("")) && Script_Keep(&r, Script_Method(cp, "Del", "()")) ? 1 : -1;
-		}
-		PyObject *players = t >= 0 ? Script_Keep(&r, Script_Attr("RaceMaker", "Players")) : NULL;
-		ok = players && Chal_Release(players);
-	} else if (Script_Is(type, "Combat")) {
-		PyObject *npcs = Script_Keep(&r, Script_Attr("RaceMaker", "challenged_NPCs_Names"));
-		ok = npcs && Chal_Release(npcs);
+	if (Mode_IsText(type, "Race")) {
+		ok = Mode_EntitySeam(Mode_S(&t, "CheckPoint"), cp) &&
+			(!Native_True(cp) || (LvN_SetS(cp, "OnTake", "") && Mode_VDel(cp))) &&
+			LvN_ModGet("RaceMaker", "Players", list) && Chal_Release(list);
+	} else if (Mode_IsText(type, "Combat")) {
+		ok = LvN_ModGet("RaceMaker", "challenged_NPCs_Names", list) && Chal_Release(list);
 	}
-	PyObject *cfoe = ok && Chal_SetSave("Revenge.Type", type) ? Script_Keep(&r, Script_SaveVar("Challenge.Foe")) : NULL;
-	PyObject *cnum = cfoe && Chal_SetSave("Revenge.Foe", cfoe) ? Script_Keep(&r, Script_SaveVar("Challenge.NumEnemies")) : NULL;
-	PyObject *a = cnum && Chal_SetSave("Revenge.NumEnemies", cnum) ? Script_Keep(&r, PyTuple_New(0)) : NULL;
-	if (!a || !Script_Keep(&r, Challenge_SetRevenge(NULL, a))) {
-		return Script_Done(&r, NULL);
+	if (!ok || !Mode_SetSaveVar("Revenge.Type", type)) {
+		return Mode_Done(&t, 0);
 	}
-	Script_SetVar("Parking", "SwitchCharMissionCallback", Script_Ref(Py_None));
-	Script_SetVar("Parking", "SwitchVehicleMissionCallback", Script_Ref(Py_None));
-	Script_SetVar("Alarm", "AbortMissionCallback", Script_Ref(Py_None));
-	return Script_Done(&r, Chal_Clean("Challenge", 0));
+	Mode_SaveVar("Challenge.Foe", cfoe);
+	if (!Mode_SetSaveVar("Revenge.Foe", cfoe)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("Challenge.NumEnemies", cnum);
+	return Mode_Done(&t, Mode_SetSaveVar("Revenge.NumEnemies", cnum) && Chal_SetRevenge(NULL) &&
+		LvN_ModNone("Parking", "SwitchCharMissionCallback") && LvN_ModNone("Parking", "SwitchVehicleMissionCallback") &&
+		LvN_ModNone("Alarm", "AbortMissionCallback") && Chal_Clean("Challenge", 0));
 }
 
-/* ch.var = prefix + string.replace(cad, "<n>", n, 1): 0 with the error set */
-static byte Chal_Option(PyObject *ch, const char *var, const char *prefix, PyObject *cad, PyObject *n) {
-	PyObject *s = n ? Script_Ask("string", "replace", "(OsOi)", cad, "<n>", n, 1) : NULL;
-	byte ok = s && Script_HSet(ch, var, Script_SPlus(prefix, s));
-	Py_XDECREF(s);
+/* ch.var = prefix + string.replace(cad, "<n>", n, 1) */
+static byte Chal_Option(const nativeVal_t *ch, const char *var, const char *prefix, const nativeVal_t *cad,
+	const nativeVal_t *n) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *s = Mode_V(&t), *v = Mode_V(&t);
+	return Mode_Done(&t, Chal_Replace1(cad, n, s) && Mode_Cat(&t, v, 2, Mode_S(&t, prefix), s) && Mode_VSet(ch, var, v));
+}
+
+/* ch.var = prefix + `ComputeReward(type, foe, num)` with the text cad */
+static byte Chal_RewardOption(const nativeVal_t *ch, const char *var, const char *prefix, const nativeVal_t *cad,
+	const nativeVal_t *type, const nativeVal_t *foe, long num) {
+	nativeVal_t n, v = { 0 }, rep = { 0 };
+	Native_SetInt(&n, num);
+	byte ok = Chal_Reward(type, foe, &n, &v);
+	if (ok) {
+		Mode_Repr(&v, &rep);
+		ok = Chal_Option(ch, var, prefix, cad, &rep);
+	}
+	Native_Free(&v);
+	Native_Free(&rep);
 	return ok;
 }
 
-/* ch.var = prefix + `ComputeReward(type, foe, num)` with the text cad: 0 with the error set */
-static byte Chal_RewardOption(PyObject *ch, const char *var, const char *prefix, PyObject *cad, PyObject *type, PyObject *foe,
-	int num) {
-	PyObject *n = PyInt_FromLong(num);
-	PyObject *v = n ? Chal_Reward(type, foe, n) : NULL;
-	PyObject *rep = Script_Repr(v);
-	byte ok = rep && Chal_Option(ch, var, prefix, cad, rep);
-	Py_XDECREF(rep);
-	Py_XDECREF(v);
-	Py_XDECREF(n);
-	return ok;
+/* ch.var = prefix + Scrap.GetLangStr(key) */
+static byte Chal_LangOption(const nativeVal_t *ch, const char *var, const char *prefix, const char *key) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *s = Mode_V(&t), *v = Mode_V(&t);
+	Mode_Lang(key, s);
+	return Mode_Done(&t, Mode_Cat(&t, v, 2, Mode_S(&t, prefix), s) && Mode_VSet(ch, var, v));
 }
 
-/* ch.var = prefix + Scrap.GetLangStr(key): 0 with the error set */
-static byte Chal_LangOption(PyObject *ch, const char *var, const char *prefix, const char *key) {
-	PyObject *s = Script_Ask("Scrap", "GetLangStr", "(s)", key);
-	byte ok = s && Script_HSet(ch, var, Script_SPlus(prefix, s));
-	Py_XDECREF(s);
-	return ok;
-}
-
-byte Challenge_SetOptions(PyObject *ch, PyObject *type, PyObject *foe) {
-	scriptRefs_t r = { 0 };
-	PyObject *group = Script_Keep(&r, Chal_Group(foe));
-	byte press = Script_Is(group, "Press"), mercs = 0;
-	if (group && !press) {
+/* the options of the challenge of type against foe on ch */
+static byte Chal_SetOptions(const nativeVal_t *ch, const nativeVal_t *type, const nativeVal_t *foe) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *group = Mode_V(&t), *cad = Mode_V(&t);
+	if (!Chal_Group(foe, group)) {
+		return Mode_Done(&t, 0);
+	}
+	byte press = Mode_IsText(group, "Press"), mercs = 0;
+	if (!press) {
 		/* the elif looks the group up again */
-		group = Script_Keep(&r, Chal_Group(foe));
-		mercs = Script_Is(group, "Mercs");
+		Native_Free(group);
+		if (!Chal_Group(foe, group)) {
+			return Mode_Done(&t, 0);
+		}
+		mercs = Mode_IsText(group, "Mercs");
 	}
-	PyObject *cad = group ? Script_Keep(&r, Script_Ask("Scrap", "GetLangStr", "(s)", mercs ? "ChallengeMercs" : "ChallengeRaceStdOpt1")) : NULL;
-	byte ok = cad && Script_HSet(ch, "ArrnOpt", PyInt_FromLong(0));
+	Mode_Lang(mercs ? "ChallengeMercs" : "ChallengeRaceStdOpt1", cad);
+	byte ok = LvN_SetI(ch, "ArrnOpt", 0);
 	if (ok && mercs) {
-		PyObject *two = Script_Keep(&r, PyString_FromString("2")), *three = Script_Keep(&r, PyString_FromString("3"));
-		ok = Chal_Option(ch, "ArrOpt0", "ChallengeRaceStdOpt1:", cad, two) && Chal_Option(ch, "ArrOpt1", "ChallengeRaceStdOpt2:", cad, three) &&
+		ok = Chal_Option(ch, "ArrOpt0", "ChallengeRaceStdOpt1:", cad, Mode_S(&t, "2")) &&
+			Chal_Option(ch, "ArrOpt1", "ChallengeRaceStdOpt2:", cad, Mode_S(&t, "3")) &&
 			Chal_LangOption(ch, "ArrOpt2", "ChallengeRaceStdOpt4:", "ChallengeRaceStdOpt2");
 	} else if (ok) {
 		ok = Chal_RewardOption(ch, "ArrOpt0", "ChallengeRaceStdOpt1:", cad, type, foe, 1) &&
@@ -662,72 +649,125 @@ byte Challenge_SetOptions(PyObject *ch, PyObject *type, PyObject *foe) {
 			Chal_RewardOption(ch, "ArrOpt2", "ChallengeRaceStdOpt3:", cad, type, foe, 5) &&
 			Chal_LangOption(ch, "ArrOpt3", "ChallengeRaceStdOpt4:", "ChallengeRaceStdOpt2"));
 	}
-	ok = ok && Script_HSet(ch, "ArriOpt", PyInt_FromLong(0));
-	Script_Done(&r, NULL);
+	return Mode_Done(&t, ok && LvN_SetI(ch, "ArriOpt", 0));
+}
+
+/* OBJLIB 3: PhoneCab's call on Python values until the ports call each other in C */
+byte Challenge_SetOptions(PyObject *ch, PyObject *type, PyObject *foe) {
+	nativeVal_t c, t, f;
+	Native_Arg(ch, &c);
+	Native_Arg(type, &t);
+	Native_Arg(foe, &f);
+	byte ok = Chal_SetOptions(&c, &t, &f);
+	Native_Free(&c);
+	Native_Free(&t);
+	Native_Free(&f);
 	return ok;
 }
 
 /* SetChallengeOptions(ch): the options of the challenge of challengeType against foeType */
-static PyObject *Challenge_SetChallengeOptions(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "string", "Challenge", NULL };
-	PyObject *ch;
-	scriptRefs_t r = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &ch) || !Script_Import(mods)) {
-		return NULL;
+static byte Chal_SetChallengeOptions(const nativeVal_t *ch) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *lang = Mode_V(&t), *foe = Mode_V(&t), *type = Mode_V(&t);
+	if (!Mode_Import("string") || !Mode_Import("Challenge")) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *foe = Script_Keep(&r, Script_Ask("Scrap", "GetLangStr", "(s)", "ChallengeRaceStdOpt1")) ?
-		Script_Keep(&r, Script_Attr("Challenge", "foeType")) : NULL;
-	PyObject *type = foe ? Script_Keep(&r, Script_Attr("Challenge", "challengeType")) : NULL;
-	byte ok = type && Challenge_SetOptions(ch, type, foe);
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+	Mode_Lang("ChallengeRaceStdOpt1", lang);
+	return Mode_Done(&t, LvN_ModGet("Challenge", "foeType", foe) && LvN_ModGet("Challenge", "challengeType", type) &&
+		Chal_SetOptions(ch, type, foe));
 }
 
 /* AddChallenge(ch, UsrName, iopt): the race and combat options at iopt and iopt + 1, when challenges are on and the
- * player and the character can drive (Humphrey always) */
-static PyObject *Challenge_AddChallenge(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "Chars", NULL };
-	PyObject *ch, *usr, *iopt;
-	scriptRefs_t r = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &ch, &usr, &iopt) || !Script_Import(mods)) {
-		return NULL;
+ * player and the character can drive (Humphrey always); OBJLIB 3: Chars by name */
+static byte Chal_AddChallenge(const nativeVal_t *ch, const nativeVal_t *usr, const nativeVal_t *iopt) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *on = Mode_V(&t), *u = Mode_V(&t), *can = Mode_V(&t), *act = Mode_V(&t);
+	if (!Mode_Import("Chars") || !Mode_SaveInt("Challenge", on)) {
+		return Mode_Done(&t, 0);
 	}
-	int t = Script_True(Script_Keep(&r, Chal_SaveInt("Challenge")));
-	if (t > 0) {
-		PyObject *u = Script_Keep(&r, Script_Entity(usr));
-		t = Script_True(u ? Script_Keep(&r, Script_Ask("Chars", "CanDrive", "(O)", u)) : NULL);
+	int ok = Native_True(on);
+	if (ok) {
+		ok = Mode_EntitySeam(usr, u) && Native_CallMod("Chars", "CanDrive", can, "v", u) ? Native_True(can) : -1;
 	}
-	if (t > 0) {
-		t = Script_True(Script_Keep(&r, Script_Ask("Chars", "CanDrive", "(O)", ch)));
-		if (t == 0) {
-			t = Script_HIs(ch, "ActCtrl", "Humphrey");
+	if (ok > 0) {
+		Native_Free(can);
+		ok = Native_CallMod("Chars", "CanDrive", can, "v", ch) ? Native_True(can) : -1;
+		if (ok == 0) {
+			ok = Mode_VObj(ch, "ActCtrl", act) ? Mode_IsText(act, "Humphrey") : -1;
 		}
 	}
-	for (int i = 0; t > 0 && i < 2; i++) {
+	for (int i = 0; ok > 0 && i < 2; i++) {
 		/* exec('ch.ArrOpt' + `iopt + i` + ' = ...') */
-		PyObject *n = Script_Keep(&r, PyInt_FromLong(i));
-		PyObject *sum = n ? Script_Keep(&r, PyNumber_Add(iopt, n)) : NULL;
-		PyObject *rep = sum ? Script_Keep(&r, Script_Repr(sum)) : NULL;
-		if (!rep) {
-			return Script_Done(&r, NULL);
+		nativeVal_t sum = { 0 }, rep = { 0 };
+		if (!Mode_Arith('+', iopt, Mode_I(&t, i), &sum)) {
+			return Mode_Done(&t, 0);
 		}
-		const char *s = PyString_AsString(rep);
-		byte digits = *s != 0;
+		Mode_Repr(&sum, &rep);
+		const char *s = Native_Text(&rep);
+		byte digits = rep.n > 0 && (int)strlen(s) == rep.n;
 		for (const char *p = s; *p; p++) {
 			digits &= *p >= '0' && *p <= '9';
 		}
-		if (!digits) {
-			PyErr_SetString(PyExc_SyntaxError, "invalid syntax");
-			return Script_Done(&r, NULL);
-		}
 		char var[48];
-		Str_Printf(var, sizeof(var), "ArrOpt%s", s);
-		t = Chal_LangOption(ch, var, i ? "ChallengeCombatStdOpt0:" : "ChallengeRaceStdOpt0:",
+		if (digits) {
+			Str_Printf(var, sizeof(var), "ArrOpt%s", s);
+		}
+		Native_Free(&sum);
+		Native_Free(&rep);
+		if (!digits) {
+			/* OBJLIB 7: the SyntaxError of the exec line */
+			PyErr_SetString(PyExc_SyntaxError, "invalid syntax");
+			return Mode_Done(&t, 0);
+		}
+		ok = Chal_LangOption(ch, var, i ? "ChallengeCombatStdOpt0:" : "ChallengeRaceStdOpt0:",
 			i ? "ChallengeCombatStdOpt0" : "ChallengeRaceStdOpt0") ? 1 : -1;
 	}
-	return Script_Done(&r, t >= 0 ? Py_ReturnNone() : NULL);
+	return Mode_Done(&t, ok >= 0);
 }
+
+/* the adapters (the arity errors of the script's functions) */
+#define CHAL_FN0(name, call) \
+	static PyObject *Challenge_##name(PyObject *self, PyObject *args) { \
+		(void)self; \
+		(void)args; \
+		return Mode_Result(call); \
+	}
+
+/* name(a[, b]) with the optional argument b NULL when it is not given */
+#define CHAL_FNOPT(name, fmt, n, call) \
+	static PyObject *Challenge_##name(PyObject *self, PyObject *args) { \
+		PyObject *o[3] = { NULL, NULL, NULL }; \
+		nativeVal_t a[3]; \
+		(void)self; \
+		if (!PyArg_ParseTuple(args, fmt, &o[0], &o[1], &o[2])) { \
+			return NULL; \
+		} \
+		for (int i = 0; i < n; i++) { \
+			Native_SetNone(&a[i]); \
+			if (o[i]) { \
+				Native_Arg(o[i], &a[i]); \
+			} \
+		} \
+		byte ok = call; \
+		for (int i = 0; i < n; i++) { \
+			Native_Free(&a[i]); \
+		} \
+		return Mode_Result(ok); \
+	}
+
+MODE_FN(Challenge, ComputeReward, 3, Chal_Reward(&a[0], &a[1], &a[2], out))
+CHAL_FNOPT(Init, "|O", 1, Chal_Init(o[0] ? &a[0] : NULL))
+MODE_FN(Challenge, SetChallengerSkills, 2, Chal_Skills(&a[0], &a[1]))
+CHAL_FNOPT(OnChallengeOpt, "OO|O", 3, Chal_OnChallengeOpt(&a[0], &a[1], o[2] ? &a[2] : NULL))
+MODE_FN(Challenge, SetRevengeParams, 3, Chal_SetRevengeParams(&a[0], &a[1], &a[2]))
+CHAL_FNOPT(SetRevenge, "|O", 1, Chal_SetRevenge(o[0] ? &a[0] : NULL))
+CHAL_FN0(LaunchRevenge, Chal_LaunchRevenge())
+CHAL_FN0(LaunchChallenge, Chal_LaunchChallenge())
+CHAL_FN0(CleanChallenge, Chal_Clean("Challenge", 0))
+CHAL_FN0(CleanRevenge, Chal_Clean("Revenge", 1))
+MODE_FN(Challenge, CancelChallenge, 1, Chal_CancelChallenge(&a[0]))
+MODE_FN(Challenge, SetChallengeOptions, 1, Chal_SetChallengeOptions(&a[0]))
+MODE_FN(Challenge, AddChallenge, 3, Chal_AddChallenge(&a[0], &a[1], &a[2]))
 
 PyMethodDef g_ChallengeMethods[] = {
 	{ "ComputeReward", Challenge_ComputeReward, 1, NULL },
