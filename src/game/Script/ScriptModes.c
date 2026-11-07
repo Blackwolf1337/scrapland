@@ -3615,3 +3615,118 @@ PyObject *Mode_DefVars(int n, ...) {
 	Native_Free(&d);
 	return vars;
 }
+
+/* ---- the menus of batch Q (MenuMain, MenuHud) ---- */
+
+int Mode_ModInt(const char *module, const char *var, int def) {
+	nativeVal_t v;
+	if (!Mode_ModGet(module, var, &v)) {
+		/* OBJLIB 7: the error of the lookup dropped */
+		PyErr_Clear();
+		return def;
+	}
+	int r = v.type == NV_INT ? (int)v.i : v.type == NV_FLOAT ? (int)v.f : def;
+	Native_Free(&v);
+	return r;
+}
+
+const char *Mode_ModText(const char *module, const char *var, char *out, int size) {
+	nativeVal_t v;
+	out[0] = 0;
+	if (!Mode_ModGet(module, var, &v)) {
+		PyErr_Clear();
+		return out;
+	}
+	if (v.type == NV_STR) {
+		Str_Copy(out, Native_Text(&v), size);
+	}
+	Native_Free(&v);
+	return out;
+}
+
+byte Mode_SetCinema(long id, long on, double time) {
+	MODE_SEAM("SScorer", "SetCinema");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "iid", id, on, time);
+	}
+	/* "iif" */
+	cScorer *sc = Scorer_Get((int)id);
+	if (sc) {
+		ScorerCinema_Set(&sc->cinema, (int)on != 0, (float)time);
+	}
+	return 1;
+}
+
+byte Mode_CamSeam(long i, nativeVal_t *out) {
+	Native_SetNone(out);
+	MODE_SEAM("Scrap", "GetCam");
+	if (seam) {
+		return Native_HookCall(hook, out, "i", i);
+	}
+	Mode_CamName((int)i, out);
+	return 1;
+}
+
+byte Mode_UsrSeam(long id, nativeVal_t *out) {
+	Native_SetNone(out);
+	MODE_SEAM("Scrap", "UsrEntity");
+	if (seam) {
+		return Native_HookCall(hook, out, "i", id);
+	}
+	/* "i" read as unsigned: a player above 3 (or below 0) is NULL without an exception, which the call reports */
+	if ((uint32_t)(int)id > 3) {
+		return Native_NullResult();
+	}
+	return Mode_EntHandle(cWorld_GetUsrEntity(g_pWorld, (int)id), out);
+}
+
+byte Mode_SchedAt(double time, const char *module, const char *func, const nativeVal_t *args, int n, const char *name) {
+	nativeVal_t t;
+	Native_SetEmpty(&t, NV_TUPLE);
+	for (int i = 0; i < n; i++) {
+		Native_Copy(Native_Append(&t), &args[i]);
+	}
+	PyObject *f = Script_Attr(module, func);
+	PyObject *a = f ? Native_ToPy(&t) : NULL;
+	Native_Free(&t);
+	if (f && a) {
+		Scheduler_Add(&g_pWorld->scheduler, (float)time, f, a, name ? name : "");
+	}
+	PyErr_Clear();
+	byte ok = f && a;
+	Py_XDECREF(a);
+	Py_XDECREF(f);
+	return ok;
+}
+
+void Mode_CallVarIf(const char *module, const char *var, long id) {
+	nativeVal_t f, a;
+	if (Mode_ModGet(module, var, &f) && Native_True(&f)) {
+		Native_SetInt(&a, id);
+		/* OBJLIB 3: the callback called the Python way */
+		if (!Mode_CallArgs(&f, NULL, &a, 1)) {
+			PyErr_Print();
+		}
+	}
+	PyErr_Clear();
+	Native_Free(&f);
+}
+
+byte Mode_CreateSeam(const char *type, long x, long y, long z, const char *name, nativeVal_t *out) {
+	Native_SetNone(out);
+	MODE_SEAM("Scrap", "CreateEntity");
+	if (seam) {
+		return Native_HookCall(hook, out, "siiis", type, x, y, z, name);
+	}
+	/* "sddds" */
+	return Mode_EntHandle(cWorld_CreateEntity(g_pWorld, type, (float)x, (float)y, (float)z, name), out);
+}
+
+byte Mode_Exit(void) {
+	MODE_SEAM("Scrap", "Exit");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "");
+	}
+	App_Exit(g_pApp);
+	return 1;
+}
