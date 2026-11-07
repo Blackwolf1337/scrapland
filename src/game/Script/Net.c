@@ -3,51 +3,93 @@
  * callbacks and the way back to single player. The map tables (NetMaps, ModesMap, Modes), TeamGame and the callback
  * variables ClientCreate, ClientAfterCreate and ClientJoin stay variables of the module: the game modes and the net
  * weapons replace the callbacks.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C on native values; the module has no
+ * state of its own in C. ModesMap is read from the module dict when the map list is purged (OBJLIB 5); IsClient,
+ * IsServer, Scrap.Set and Scrap.LoadLevel go through their seams (OBJLIB 7).
  */
+#include "scrap/app.h"
+#include "scrap/net.h"
+#include "scrap/scrap.h"
 #include "scrap/script.h"
-
-#define K(o) Script_Keep(&r, (o))
-#define FAIL() return Script_Done(&r, NULL)
-
-/* PurgeServerMapList(): only the maps of ServerMapList the server type has */
-static PyObject *Net_PurgeServerMapList(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	PyObject *keep = K(PyList_New(0)), *text = keep ? K(Script_Ask("Scrap", "Get", "(s)", "ServerMapList")) : NULL;
-	PyObject *prev = text ? K(Script_EvalIn("Net", text)) : NULL, *modes = prev ? K(Script_Global("Net", "ModesMap")) : NULL;
-	PyObject *type = modes ? K(Script_Ask("Scrap", "Get", "(s)", "ServerType")) : NULL;
-	PyObject *valid = type ? K(PyObject_GetItem(modes, type)) : NULL;
-	if (!valid) {
-		FAIL();
-	}
-	PyObject *a;
-	int more;
-	for (int i = 0; (more = Script_Next(prev, i, &a)) > 0; i++) {
-		int in = PySequence_Contains(valid, a);
-		int bad = in < 0 || (in && PyList_Append(keep, a) < 0);
-		Py_DECREF(a);
-		if (bad) {
-			FAIL();
-		}
-	}
-	PyObject *rep = more == 0 ? K(Script_Repr(keep)) : NULL;
-	return Script_Done(&r, rep && Script_Try("Scrap", "Set", "(sO)", "ServerMapList", rep) ? Py_ReturnNone() : NULL);
-}
+#include "scrap/scriptmodes.h"
 
 /* Spectate(id, value): the camera of player id flies free and its target stops, or back */
+static byte Net_SpectateC(const nativeVal_t *id, int on) {
+	int i;
+	nativeVal_t name, target;
+	cEntity *cam, *t;
+	if (!Native_ArgInt(id, &i)) {
+		return 0;
+	}
+	/* cam = Scrap.GetEntity(Scrap.GetCam(id)); Scrap.GetEntity(cam.MainTarget).Active = not value;
+	 * cam.FreeCam = value */
+	const char *cn = cWorld_GetCamName(g_pWorld, i);
+	if (cn) {
+		Native_SetStr(&name, cn);
+	} else {
+		Native_SetNone(&name);
+	}
+	if (!Mode_Ent(&name, &cam) || !Mode_Get(cam, cn, "MainTarget", &target)) {
+		return 0;
+	}
+	byte ok = Mode_Ent(&target, &t) && Mode_SetI(t, Native_Text(&target), "Active", !on) &&
+		Native_EntSet(World_FindEntity(cn), cn, "FreeCam", &(nativeVal_t){ .type = NV_INT, .i = on });
+	Native_Free(&target);
+	return ok;
+}
+
+/* LoadSinglePlayer(LevelPath): a client or a server closes the game into the level, else the level loads */
+static byte Net_LoadSinglePlayerC(const nativeVal_t *path) {
+	const char *p;
+	int c = Mode_IsClient(), s = c == 0 ? Mode_IsServer() : -1;
+	if (c < 0 || (c == 0 && s < 0)) {
+		return 0;
+	}
+	if (c == 0 && s == 0) {
+		/* Scrap.LoadLevel(path) (OBJLIB 7: through the seam, fc-weap records it) */
+		PyObject *hook;
+		int seam = Native_Seam("Scrap", "LoadLevel", &hook);
+		if (seam) {
+			return seam > 0 && Native_HookCall(hook, NULL, "v", path);
+		}
+	}
+	/* SNet.CloseClient(path), SNet.CloseServer(path), Scrap.LoadLevel(path): a text argument */
+	if (!Native_ArgStr(path, 1, &p)) {
+		return 0;
+	}
+	if (c > 0) {
+		Net_CloseClientMsg(p);
+	} else if (s > 0) {
+		Net_CloseServer(p);
+	} else {
+		CWinApp_LoadLevel(g_pApp, p);
+	}
+	return 1;
+}
+
+/* ---- the adapters of the module table (OBJLIB 7: arguments and the errors of the Python calls) ---- */
+
+static PyObject *Net_PurgeServerMapList(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	return Mode_Result(Mode_PurgeServerMapList("Net"));
+}
+
 static PyObject *Net_Spectate(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
 	PyObject *id, *value;
+	nativeVal_t i;
 	(void)self;
 	if (!PyArg_ParseTuple(args, "OO", &id, &value)) {
 		return NULL;
 	}
-	int on = Script_True(value);
-	PyObject *name = on >= 0 ? K(Script_Ask("Scrap", "GetCam", "(O)", id)) : NULL, *cam = name ? K(Script_Entity(name)) : NULL;
-	PyObject *target = cam ? K(Script_GetAttr(cam, "MainTarget")) : NULL, *t = target ? K(Script_Entity(target)) : NULL;
-	byte ok = t && Script_HSet(t, "Active", PyInt_FromLong(!on)) && Script_HSet(cam, "FreeCam", PyInt_FromLong(on));
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+	int on = PyObject_IsTrue(value);
+	if (on < 0 || !Native_Arg(id, &i)) {
+		return NULL;
+	}
+	byte ok = Net_SpectateC(&i, on);
+	Native_Free(&i);
+	return Mode_Result(ok);
 }
 
 static PyObject *Net_ClientCreateDef(PyObject *self, PyObject *args) {
@@ -63,24 +105,16 @@ static PyObject *Net_ClientJoinDef(PyObject *self, PyObject *args) {
 		&a[10]) ? Py_ReturnNone() : NULL;
 }
 
-/* LoadSinglePlayer(LevelPath): a client or a server closes the game into the level, else the level loads */
 static PyObject *Net_LoadSinglePlayer(PyObject *self, PyObject *args) {
 	PyObject *path;
+	nativeVal_t p;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
+	if (!PyArg_ParseTuple(args, "O", &path) || !Native_Arg(path, &p)) {
 		return NULL;
 	}
-	PyObject *client = Script_Ask("SNet", "IsClient", "()");
-	int c = client ? Script_True(client) : -1, s = -1;
-	Py_XDECREF(client);
-	if (c == 0) {
-		PyObject *server = Script_Ask("SNet", "IsServer", "()");
-		s = server ? Script_True(server) : -1;
-		Py_XDECREF(server);
-	}
-	byte ok = c > 0 ? Script_Try("SNet", "CloseClient", "(O)", path) : s > 0 ? Script_Try("SNet", "CloseServer", "(O)", path) :
-		s == 0 && Script_Try("Scrap", "LoadLevel", "(O)", path);
-	return ok ? Py_ReturnNone() : NULL;
+	byte ok = Net_LoadSinglePlayerC(&p);
+	Native_Free(&p);
+	return Mode_Result(ok);
 }
 
 PyMethodDef g_NetMethods[] = {

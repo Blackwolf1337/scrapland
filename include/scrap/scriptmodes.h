@@ -1,0 +1,231 @@
+/*
+ * Native C helpers of the game mode ports (src/game/Script/ScriptModes.c): Net, Ffa and the online modes
+ * (NetModes.c), the split screen (Split.c) and the single player super deals (SuperDeals.c). They call the engine in
+ * C on native values. The engine functions the case files of these modules record or swap go through a seam
+ * (OBJLIB 7, see Native_Seam): Scrap.AddScheduledFunc, Scrap.DeleteScheduledFuncs, Scrap.Set, Scrap.Rand,
+ * Scrap.ConsoleError, Scrap.Preload3DObject, SNet.SendUsrString, SNet.ModifyUsrData, SNet.IsClient, SNet.IsServer,
+ * SScorer.SetMsgText, SScorer.SetLabelText, SScorer.SetMPFunc, SScorer.Set, SScorer.Fade, SInput.Bind, SSound.Play and
+ * SAI.GetStateVehicle (Net seams Scrap.LoadLevel itself; SAI.SetStateVehicle and the odd values of SVec.Add and
+ * Rotate3D are called by name). Imports stay with the module objects (OBJLIB 6). Every function returns 1, or 0 with
+ * the error of the script raised.
+ */
+#ifndef SCRAP_SCRIPTMODES_H
+#define SCRAP_SCRIPTMODES_H
+
+#include "scrap/scriptnative.h"
+
+/* ---- the values of a function ---- */
+
+/* the native values one function works on: Mode_V takes one (None), Mode_Release frees those taken after a mark,
+ * Mode_Done frees all and passes ok on */
+#define MODE_VALS 48
+typedef struct {
+	nativeVal_t v[MODE_VALS];
+	int n;
+} modeVals_t;
+
+nativeVal_t *Mode_V(modeVals_t *t);
+void Mode_Release(modeVals_t *t, int mark);
+byte Mode_Done(modeVals_t *t, byte ok);
+/* a text value of t, an int (the ints in use stay in a table: an int owns nothing and never changes) */
+nativeVal_t *Mode_S(modeVals_t *t, const char *s);
+const nativeVal_t *Mode_I(modeVals_t *t, long i);
+/* "<module>.<func>", a callback set by name */
+nativeVal_t *Mode_Name(modeVals_t *t, const char *module, const char *func);
+/* a + b + ... (n values) of the script into *out */
+byte Mode_Cat(modeVals_t *t, nativeVal_t *out, int n, ...);
+
+/* ---- engine reads ---- */
+
+/* Scrap.GetTime() */
+double Mode_Time(void);
+/* Scrap.GetLangStr(key) into *out ("" and the console line of the engine when it is not there) */
+void Mode_Lang(const char *key, nativeVal_t *out);
+/* Scrap.GetLangStr(key) % args into *out (args NULL: the text alone) */
+byte Mode_LangFmt(const char *key, const nativeVal_t *args, nativeVal_t *out);
+/* Scrap.GetEntity(name) as a value: the entity, NULL for None (a name that is no text raises) */
+byte Mode_Ent(const nativeVal_t *name, cEntity **out);
+/* var of the handle of entity name; e NULL is the None that Scrap.GetEntity gave (its AttributeError) */
+byte Mode_Get(cEntity *e, const char *name, const char *var, nativeVal_t *out);
+/* var of the handle of entity name = v (e NULL: the TypeError of None) */
+byte Mode_Set(cEntity *e, const char *name, const char *var, const nativeVal_t *v);
+byte Mode_SetI(cEntity *e, const char *name, const char *var, long i);
+byte Mode_SetS(cEntity *e, const char *name, const char *var, const char *s);
+/* Scrap.GetEntity(name).var, the handle used at once */
+byte Mode_EntGet(const nativeVal_t *name, const char *var, nativeVal_t *out);
+byte Mode_EntSet(const nativeVal_t *name, const char *var, const nativeVal_t *v);
+/* SInput.GetActionSet() is the action set name */
+byte Mode_ActionSetIs(const char *name);
+
+/* Scrap.UsrEntity(0): the entity of player 0, NULL for None */
+cEntity *Mode_Usr(void);
+/* Scrap.CreateEntity(name, x, y, z, cls): the entity (NULL for None); the TypeError of a name that is no text or a
+ * coordinate that is no number */
+byte Mode_Create(const nativeVal_t *name, const nativeVal_t *x, const nativeVal_t *y, const nativeVal_t *z,
+	const char *cls, cEntity **out);
+/* the same at a position tuple pos (pos[0], pos[1], pos[2] as the script indexes it) */
+byte Mode_CreateAt(const nativeVal_t *name, const nativeVal_t *pos, const char *cls, cEntity **out);
+/* Scrap.StartDummySearch(name, flag), Scrap.NextDummySearch() (None at the end, else (name, (x, y, z), (a, b),
+ * flag)) */
+void Mode_DummyStart(const char *name, int flag);
+void Mode_DummyNext(nativeVal_t *out);
+/* Scrap.Preload3DObject(name) */
+byte Mode_Preload(const nativeVal_t *name);
+/* print a, b, ... (n values, up to 8) as the script's print statement (OBJLIB 7: through Python's sys.stdout until
+ * the console takes C texts) */
+byte Mode_Print(const nativeVal_t *const *items, int n);
+/* module.var = v of a Python object as it is (OBJLIB 5: a value passed between modules keeps its identity) */
+byte Mode_SetModPy(const char *module, const char *var, PyObject *v);
+/* e = Scrap.GetEntity(e.NextInSlot) of the loops over all entities (*e NULL at None) */
+byte Mode_NextInSlot(cEntity **e);
+/* the handle a script holds for the entity (OBJLIB 7: entities are Python handles in module variables and in the
+ * arguments of other ports until entities are native values): a new reference, None for NULL */
+PyObject *Mode_Handle(cEntity *e);
+/* handle-or-object helpers: o.var, o.var = v, o.SetModel(file) as the script does them on any value (an entity
+ * handle in C, any other object the Python way with its errors) */
+byte Mode_HGet(PyObject *o, const char *var, nativeVal_t *out);
+byte Mode_HSet(PyObject *o, const char *var, const nativeVal_t *v);
+byte Mode_HSetModel(PyObject *o, const char *module, const char *modelVar);
+/* o.SetModel(file) with the file given */
+byte Mode_HModel(PyObject *o, const nativeVal_t *file);
+/* the same on a value (an NV_OBJ handle, or a native value with the error of its getattr or setattr) */
+byte Mode_VGet(const nativeVal_t *o, const char *var, nativeVal_t *out);
+byte Mode_VSet(const nativeVal_t *o, const char *var, const nativeVal_t *v);
+/* the entity of a handle the script holds by the name it was made with: var of it (an entity that is gone: the
+ * console line and the SystemError of the handle) */
+byte Mode_NameGet(const char *name, const char *var, nativeVal_t *out);
+byte Mode_NameSet(const char *name, const char *var, const nativeVal_t *v);
+/* var of the object at key of a dict variable of the module (dict[key].var), and its set */
+byte Mode_AtGet(const char *module, const char *dict, const nativeVal_t *key, const char *var, nativeVal_t *out);
+byte Mode_AtSet(const char *module, const char *dict, const nativeVal_t *key, const char *var, const nativeVal_t *v);
+
+/* ---- engine calls through their seams (OBJLIB 7) ---- */
+
+/* SNet.IsClient(), SNet.IsServer(): 1 or 0, -1 with the error */
+int Mode_IsClient(void);
+int Mode_IsServer(void);
+/* SNet.SendUsrString(id, s) */
+byte Mode_Send(const nativeVal_t *id, const nativeVal_t *s);
+byte Mode_SendS(long id, const char *s);
+/* SNet.ModifyUsrData(id) */
+byte Mode_ModifyUsrData(const nativeVal_t *id);
+/* SScorer.SetMsgText(text, time), SScorer.SetLabelText(text, time) */
+byte Mode_MsgText(const nativeVal_t *text, double time);
+byte Mode_LabelText(const nativeVal_t *text, double time);
+/* SScorer.SetMPFunc(id, func) */
+byte Mode_MPFunc(long id, const char *func);
+/* SScorer.Set(id, item, var, v) */
+byte Mode_ScorerSet(const nativeVal_t *id, const nativeVal_t *item, const char *var, const nativeVal_t *v);
+/* SScorer.Fade(id, (r, g, b, a), (r, g, b, a), time) */
+byte Mode_Fade(long id, const int *from, const int *to, double time);
+/* SInput.Bind(id, set, action, func) */
+byte Mode_Bind(const nativeVal_t *id, const char *set, const char *action, const char *func);
+/* Scrap.DeleteScheduledFuncs(name) */
+byte Mode_DelSched(const nativeVal_t *name);
+byte Mode_DelSchedS(const char *name);
+/* Scrap.AddScheduledFunc(time, func, args[, name]): func a Python callable (OBJLIB 4: the scheduler keeps Python
+ * objects), args the tuple of the native values (n of them), name NULL for none */
+byte Mode_Schedule(const nativeVal_t *time, PyObject *func, const nativeVal_t *args, int n, const nativeVal_t *name);
+/* the same at Scrap.GetTime() + delay with func a global of the module (its NameError when it is gone) */
+byte Mode_Later(double delay, const char *module, const char *func, const nativeVal_t *args, int n, const char *name);
+/* the same with func the attribute of the module (Script_LaterIn of the ports) */
+byte Mode_LaterIn(double delay, const char *module, const char *func, const nativeVal_t *args, int n, const char *name);
+/* Scrap.Set(name, v) */
+byte Mode_GVarSet(const char *name, const nativeVal_t *v);
+byte Mode_GVarSetS(const char *name, const char *s);
+byte Mode_GVarSetN(const char *name, double d);
+/* Scrap.Rand(a, b), on values and on two floats */
+byte Mode_Rand(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
+byte Mode_RandD(double a, double b, nativeVal_t *out);
+/* Scrap.ConsoleError(text) */
+byte Mode_ConsoleError(const nativeVal_t *text);
+/* SSound.Play(Sound.<sound>, Sound.<volume>) (OBJLIB 5: the names are variables of the Sound module) */
+byte Mode_Sound(const char *sound, const char *volume);
+/* SSound.Play(sound, volume) on values */
+byte Mode_Play(const nativeVal_t *sound, const nativeVal_t *volume);
+/* SScorer.Clear(id), SScorer.Add(id, name, type) */
+byte Mode_ScorerClear(const nativeVal_t *id);
+byte Mode_ScorerAdd(const nativeVal_t *id, const nativeVal_t *name, const char *type);
+/* SInput.SetActionSet(name), Scrap.SetTimeSpeed(speed), SSound.LoadSound(file) */
+void Mode_SetActionSet(const char *name);
+void Mode_SetTimeSpeed(double speed);
+byte Mode_LoadSound(const nativeVal_t *file);
+/* SVec.Add(a, b) and SVec.Rotate3D(v, rot) of two vectors (three numbers each): a vector; other values go to the
+ * engine function by name for its error */
+byte Mode_VecAdd(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
+byte Mode_Rotate(const nativeVal_t *v, const nativeVal_t *rot, nativeVal_t *out);
+/* SAI.GetStateVehicle(name) */
+byte Mode_AIState(const nativeVal_t *name, nativeVal_t *out);
+
+/* SScorer.SetMsgText (msg 1) or SetLabelText of Scrap.GetLangStr(key) until Scrap.GetTime() + secs */
+byte Mode_Label(byte msg, const char *key, long secs);
+
+/* ---- module state ---- */
+
+/* `import name` in a function of a script (OBJLIB 6: module loading stays with the module objects) */
+byte Mode_Import(const char *name);
+/* the global name of the module into slot (freed first), as the functions read it */
+byte Mode_Read(const char *module, const char *name, nativeVal_t *slot);
+
+/* the PyObject of a module variable as its functions read it (a new reference; the NameError of a missing global) */
+PyObject *Mode_GlobalPy(const char *module, const char *name);
+/* module.var = v of another module (OBJLIB 5: its variables are still in its dict) */
+byte Mode_SetModVar(const char *module, const char *var, const nativeVal_t *v);
+/* module.var of another module into *out (any native value; a TypeError for other objects) */
+byte Mode_ModVar(const char *module, const char *var, nativeVal_t *out);
+/* var[key] = v and del var[key] of a dict variable of a module (the dict object changed in place, as the script
+ * does: the order of its keys stays Python's), the native copy in *d changed the same way; key and v stay the
+ * caller's */
+byte Mode_DictPut(const char *module, const char *var, nativeVal_t *d, const nativeVal_t *key, const nativeVal_t *v);
+byte Mode_DictDel(const char *module, const char *var, nativeVal_t *d, const nativeVal_t *key);
+/* var[key] = v and del var[key] of a dict variable of another module (read as its attribute) */
+byte Mode_ModDictPut(const char *module, const char *var, const nativeVal_t *key, const nativeVal_t *v);
+byte Mode_ModDictDel(const char *module, const char *var, const nativeVal_t *key);
+/* a variable of the module = v (a value given to the dict as a new object; plain values); slot (NULL for none) the C
+ * copy */
+byte Mode_Put(const char *module, const char *var, nativeVal_t *slot, const nativeVal_t *v);
+/* the value of a global of the module as its functions read it (the NameError of a missing one) */
+byte Mode_G(const char *module, const char *name, nativeVal_t *out);
+/* var.keys() and var.has_key(key) of a variable of a module (global: its own global, else its attribute), the Python
+ * methods of whatever value is there */
+byte Mode_Keys(const char *module, const char *var, byte global, nativeVal_t *out);
+int Mode_HasKey(const char *module, const char *var, byte global, const nativeVal_t *key);
+/* list.index(x) of the script (a value that is no list has no index method) */
+byte Mode_Index(const nativeVal_t *list, const nativeVal_t *x, nativeVal_t *out);
+/* var.append(v) of a list variable of the module, in place */
+byte Mode_Append(const char *module, const char *var, const nativeVal_t *v);
+/* a, b, ... = v: the n items of a sequence of n (the errors of unpacking) */
+byte Mode_Unpack(const nativeVal_t *v, int n, nativeVal_t *out);
+
+/* ---- shared functions of the modes ---- */
+
+/* PurgeServerMapList() of Net and Split: only the maps of ServerMapList the server type has (ModesMap of the
+ * module) */
+byte Mode_PurgeServerMapList(const char *module);
+
+/* ---- adapters ---- */
+
+/* the n arguments of an adapter (the arity error of PyArg_ParseTuple, up to 11) as native values of t, one after the
+ * other from *a (Native_Arg: other objects as NV_OBJ) */
+byte Mode_Args(PyObject *args, int n, modeVals_t *t, nativeVal_t **a);
+/* the result of an adapter: NULL for 0, None when out is None, else out as a Python value; t freed */
+PyObject *Mode_Out(modeVals_t *t, byte ok, const nativeVal_t *out);
+/* the entry of a function of module mod (prefix pre) with nargs arguments (a) and the core call; out is the result */
+#define MODE_FN(pre, name, nargs, call) \
+	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+		modeVals_t t = { .n = 0 }; \
+		nativeVal_t *a, *out = Mode_V(&t); \
+		(void)self; \
+		(void)out; \
+		if (!Mode_Args(args, nargs, &t, &a)) { \
+			return Mode_Done(&t, 0), NULL; \
+		} \
+		(void)a; \
+		return Mode_Out(&t, call, out); \
+	}
+/* Py_None for 1, NULL for 0 */
+PyObject *Mode_Result(byte ok);
+/* the value as the result of an adapter (freed), NULL for 0 */
+PyObject *Mode_Return(byte ok, nativeVal_t *v);
+
+#endif
