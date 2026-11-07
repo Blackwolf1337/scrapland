@@ -1797,6 +1797,12 @@ byte Mode_SetLockAlarm(const nativeVal_t *lock) {
 	return 1;
 }
 
+byte Mode_SetLockAlarmI(long lock) {
+	nativeVal_t v;
+	Native_SetInt(&v, lock);
+	return Mode_SetLockAlarm(&v);
+}
+
 byte Mode_VObj(const nativeVal_t *o, const char *var, nativeVal_t *out) {
 	PyObject *po = Native_ToPy(o);
 	if (!po) {

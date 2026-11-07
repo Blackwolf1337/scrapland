@@ -101,15 +101,6 @@ static byte Jy_NewList(const nativeVal_t *name) {
 
 /* ---- shared lines ---- */
 
-/* Scrap.GetEntity(name).var = i, = "text" */
-static byte Jy_EntSetI(const char *name, const char *var, long i) {
-	nativeVal_t e = { 0 };
-	Native_SetNone(&e);
-	byte ok = LvN_Entity(name, &e) && LvN_SetI(&e, var, i);
-	Native_Free(&e);
-	return ok;
-}
-
 /* Scrap.GetEntity(name).Del() */
 static byte Jy_EntDel(const char *name) {
 	nativeVal_t e = { 0 };
@@ -119,17 +110,10 @@ static byte Jy_EntDel(const char *name) {
 	return ok;
 }
 
-/* g.var = i, = "text" of a global g of the module (a handle) */
+/* g.var = i of a global g of the module (a handle) */
 static byte Jy_GSet(const char *module, const char *g, const char *var, long i) {
 	nativeVal_t h = { 0 };
 	byte ok = Mode_G(module, g, &h) && LvN_SetI(&h, var, i);
-	Native_Free(&h);
-	return ok;
-}
-
-static byte Jy_GSetS(const char *module, const char *g, const char *var, const char *s) {
-	nativeVal_t h = { 0 };
-	byte ok = Mode_G(module, g, &h) && LvN_SetS(&h, var, s);
 	Native_Free(&h);
 	return ok;
 }
@@ -165,18 +149,6 @@ static void Jy_Tuple(nativeVal_t *out, const nativeVal_t *a, int n) {
 	for (int i = 0; i < n; i++) {
 		Native_Copy(Native_Append(out), &a[i]);
 	}
-}
-
-/* Scrap.AddScheduledFunc(at, fn, args) with fn an object (the global func of the module, or module.func) and the n
- * args */
-static byte Jy_Sched(const nativeVal_t *at, const char *module, const char *func, byte global, const nativeVal_t *args, int n) {
-	PyObject *fn = global ? Mode_GlobalPy(module, func) : Script_Attr(module, func);
-	if (!fn) {
-		return 0;
-	}
-	byte ok = Mode_Schedule(at, fn, args, n, NULL);
-	Py_DECREF(fn);
-	return ok;
 }
 
 /* time + d into out (time a float of the script) */
@@ -323,7 +295,7 @@ static byte MapShipEdit_OnEndOfShipEdit(const nativeVal_t *a) {
 	Native_SetFloat(&now, Mode_Time());
 	Native_SetNone(&kb);
 	Native_SetNone(&state);
-	byte ok = Jy_At(&now, 0.25, &when) && LvN_Entity("DM_EditKeyboard", &kb) && Jy_Sched(&when, MSE, "SetInteract", 1, &kb, 1) &&
+	byte ok = Jy_At(&now, 0.25, &when) && LvN_Entity("DM_EditKeyboard", &kb) && Mode_AtG(&when, MSE, "SetInteract", &kb, 1) &&
 		Jy_GSet(MSE, "LastPlayer", "UsrControl", 0) && Mode_G(MSE, "ArrowMissionState", &state);
 	if (ok && state.type != NV_NONE) {
 		Native_Free(&kb);
@@ -528,7 +500,7 @@ static byte Rusty_Init(void) {
 	}
 	if (!LvN_SaveIs("ComeFrom", "")) {
 		ok = Jy_SetMoney(1100) && LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_TalkToRusty_MissionText1", 1L) &&
-			Jy_GSet(RF, "kb", "ArrowCanUse", 0) && Jy_GSetS(RF, "kb", "UseFunc", "") && LvN_GActivate(RF, "rusty", 1) &&
+			Jy_GSet(RF, "kb", "ArrowCanUse", 0) && Mode_GSetS(RF, "kb", "UseFunc", "") && LvN_GActivate(RF, "rusty", 1) &&
 			LvN_GActivate(RF, "kb", 0) && LvN_GObj(RF, "RustyFirstSpeech", &fn) && LvN_Routine("Rusty", &fn) &&
 			LV_OWN(RF, "CreateFakeBertoShip", NULL, "") && LV_OWN(RF, "LoadMecanicScene", NULL, "");
 	} else {
@@ -626,7 +598,7 @@ static byte Rusty_StartInitialScene(void) {
 	Native_Free(&usr);
 	return ok && LvN_ModSetGlobal("Scene", "EndOfSceneCallback", RF, "BertoGoHome") && LV_CALL("Scene", "Play", NULL, "s", "Mecanic") &&
 		Mode_Import("SputnikSound") && LV_CALL("SputnikSound", "InitLoops", NULL, "s", "MecanicSputnik") &&
-		LV_OWN(RF, "ShowExtras", NULL, "") && Jy_EntSetI("FakeBertoShip", "Active", 1);
+		LV_OWN(RF, "ShowExtras", NULL, "") && Mode_EntSetI("FakeBertoShip", "Active", 1);
 }
 
 static const char *const mecanic_final_actions[] = {
@@ -799,7 +771,7 @@ static byte Rusty_StartInitBuildShip(void) {
 
 /* InitBuildShip(): the keypad opens the editor the first time, with its own end */
 static byte Rusty_InitBuildShip(void) {
-	return Jy_GSetS(RF, "kb", "UseFunc", "Mission_RustyFirstContact.EnterEditShipFirstTime") &&
+	return Mode_GSetS(RF, "kb", "UseFunc", "Mission_RustyFirstContact.EnterEditShipFirstTime") &&
 		LvN_ModSetGlobal("ShipEdit", "EndShipEditCallBack", RF, "OnEndOfShipEditFirstTime") && LvN_GActivate(RF, "kb", 1);
 }
 
@@ -944,7 +916,7 @@ static byte Rusty_EnterEditShipTutorial(const nativeVal_t *a) {
 		Native_Copy(&args[0], &a[0]);
 		Native_Copy(&args[1], &a[1]);
 		Native_SetInt(&args[2], sell ? 0 : 1);
-		ok = Jy_At(&time, 1.0, &at) && Jy_Sched(&at, RF, "EditShipTutorial_Step", 1, args, 3);
+		ok = Jy_At(&time, 1.0, &at) && Mode_AtG(&at, RF, "EditShipTutorial_Step", args, 3);
 		for (int i = 0; i < 3; i++) {
 			Native_Free(&args[i]);
 		}
@@ -1019,7 +991,12 @@ static byte Jy_SchedItem(const nativeVal_t *time, double k, const char *module, 
 	nativeVal_t at = { 0 }, args[2] = { 0 };
 	Native_Copy(&args[0], id);
 	Native_Copy(&args[1], item);
-	byte ok = Jy_At(time, k, &at) && Jy_Sched(&at, module, func, 0, args, 2);
+	byte ok = Jy_At(time, k, &at);
+	if (ok) {
+		PyObject *fn = Script_Attr(module, func);
+		ok = fn && Mode_Schedule(&at, fn, args, 2, NULL);
+		Py_XDECREF(fn);
+	}
 	Native_Free(&at);
 	Native_Free(&args[0]);
 	Native_Free(&args[1]);
@@ -1104,7 +1081,7 @@ static byte Jy_Next(const nativeVal_t *a, const nativeVal_t *time, double k, lon
 	Native_Copy(&args[0], &a[0]);
 	Native_Copy(&args[1], &a[1]);
 	Native_SetInt(&args[2], step);
-	byte ok = Jy_At(time, k, &at) && Jy_Sched(&at, RF, "EditShipTutorial_Step", 1, args, 3);
+	byte ok = Jy_At(time, k, &at) && Mode_AtG(&at, RF, "EditShipTutorial_Step", args, 3);
 	Native_Free(&at);
 	for (int i = 0; i < 3; i++) {
 		Native_Free(&args[i]);

@@ -10,12 +10,13 @@
  * modules are read where the script reads them and written through at once; ShipMaker.StdShips is changed in place,
  * the function values put into ShipMaker, Chars, Parking, Traffic and Menu are the objects of the module (OBJLIB 5).
  * The boss, its shield and the asteroids are handle values (OBJLIB 7). The alarm, the save variables, the regeneration,
- * the ammo of the weapons, the cinema bars and the action set are C; Scrap.CreateEntity, Scrap.Set, Scrap.SetAlarm, Scrap.Rand,
- * Scrap.Preload3DObject, Scrap.DeleteScheduledFuncs, Scrap.AddScheduledFunc, Scrap.UsrEntity, SSound.SetMusic,
- * SScorer.Set and SScorer.Fade go through their seams (OBJLIB 7: cases record them). The engine call of the shield
- * (Scrap.SetCallFunc, AddParams, AddParami, Execute: no C entry with text and int parameters) and SAI.SetStateVehicle
- * (its state handlers take Python arguments) stay by name (OBJLIB 7); Speech, Vehicles, VehiclesNPC, ShipMaker,
- * Traffic, Elevator, Scorer, Menu, SaveGame and the functions of the modules go by name (OBJLIB 3).
+ * the ammo of the weapons, the cinema bars and the action set are C; Scrap.CreateEntity, Scrap.Set, Scrap.SetAlarm,
+ * Scrap.SetLockAlarm, Scrap.Rand, Scrap.Preload3DObject, Scrap.DeleteScheduledFuncs, Scrap.AddScheduledFunc,
+ * Scrap.UsrEntity, SSound.SetMusic, SScorer.Set and SScorer.Fade go through their seams (OBJLIB 7: cases record them).
+ * The engine call of the shield (Scrap.SetCallFunc, AddParams, AddParami, Execute: no C entry with text and int
+ * parameters) and SAI.SetStateVehicle (its state handlers take Python arguments) stay by name (OBJLIB 7); Speech,
+ * Vehicles, VehiclesNPC, ShipMaker, Traffic, Elevator, Scorer, Menu, SaveGame and the functions of the modules go by
+ * name (OBJLIB 3).
  */
 #include <string.h>
 
@@ -30,11 +31,6 @@
 #define FF "MapFinalFight"
 
 /* ---- shared lines ---- */
-
-/* Scrap.SetLockAlarm(lock) */
-static void Ab_LockAlarm(int lock) {
-	Alarm_SetLock(&g_pWorld->alarm, lock != 0);
-}
 
 /* Scrap.SetAlarm(0) through its seam */
 static byte Ab_AlarmOff(void) {
@@ -162,11 +158,9 @@ static byte Ff_Init(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_Put(FF, "time", NULL, &now)) {
 		return 0;
 	}
-	Ab_LockAlarm(0);
-	if (!Ab_AlarmOff()) {
+	if (!Mode_SetLockAlarmI(0) || !Ab_AlarmOff() || !Mode_SetLockAlarmI(1)) {
 		return 0;
 	}
-	Ab_LockAlarm(1);
 	if (!Ab_Com("Mission_FinalFight_RemoteMessage1", "CrazyGambler") ||
 		!LvN_ModSetGlobal("Chars", "OnMainCharDeath", FF, "OnPlayerDeath") || !LvN_ModSetI("Vehicles", "DelPlayerShipOnDeath", 0) ||
 		!LvN_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", FF, "CreateBoss") ||

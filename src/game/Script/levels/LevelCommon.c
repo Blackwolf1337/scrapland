@@ -1388,10 +1388,10 @@ byte LvN_Stay(const nativeVal_t *e, long state, const nativeVal_t *target) {
 }
 
 byte LvN_Callback(const char *name, const char *module, const char *func) {
-	/* OBJLIB 5: CharRes holds the character objects of CharsNPC */
-	PyObject *res = Script_Attr("CharsNPC", "CharRes");
-	PyObject *key = res ? PyString_FromString((char *)name) : NULL;
-	PyObject *ch = key ? PyObject_GetItem(res, key) : NULL;
+	nativeVal_t key;
+	LvN_Str(&key, name);
+	PyObject *ch = Mode_CharRes(&key);
+	Native_Free(&key);
 	PyObject *cb = ch ? PyObject_GetAttrString(ch, "CallbackFunc") : NULL;
 	PyObject *append = cb ? PyObject_GetAttrString(cb, "append") : NULL;
 	PyObject *fn = append ? Mode_GlobalPy(module, func) : NULL;
@@ -1403,8 +1403,6 @@ byte LvN_Callback(const char *name, const char *module, const char *func) {
 	Py_XDECREF(append);
 	Py_XDECREF(cb);
 	Py_XDECREF(ch);
-	Py_XDECREF(key);
-	Py_XDECREF(res);
 	return r != NULL;
 }
 
@@ -1526,26 +1524,7 @@ byte LvN_Value(const char *text, int len, nativeVal_t *out) {
 }
 
 byte LvN_Profile(const char *const *vars, nativeVal_t *out) {
-	if (!Mode_Import("VehiclesNPC") || !LV_CALL("VehiclesNPC", "cShipAI", out, "")) {
-		return 0;
-	}
-	for (; *vars; vars++) {
-		const char *eq = strchr(*vars, '=');
-		char name[0x40];
-		int len = eq ? (int)(eq - *vars) : 0;
-		if (!eq || len >= (int)sizeof(name)) {
-			return Native_Raise(NE_SYSTEM, "bad attribute in a table");
-		}
-		memcpy(name, *vars, len);
-		name[len] = 0;
-		nativeVal_t v;
-		byte ok = LvN_Value(eq + 1, -1, &v) && Mode_VSet(out, name, &v);
-		Native_Free(&v);
-		if (!ok) {
-			return 0;
-		}
-	}
-	return 1;
+	return Mode_Import("VehiclesNPC") && LV_CALL("VehiclesNPC", "cShipAI", out, "") && Mode_SetAttrs(out, vars);
 }
 
 byte LvN_StdAI(const nativeVal_t *e, const nativeVal_t *pd) {

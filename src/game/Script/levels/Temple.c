@@ -191,19 +191,6 @@ static byte Tp_Arrive(const char *dummyName) {
 	return ok;
 }
 
-/* Elevator.ConnectElevators of one door to one level */
-static byte Tp_Connect(const char *door, const char *level) {
-	nativeVal_t a, b;
-	Native_SetEmpty(&a, NV_LIST);
-	LvN_Str(Native_Append(&a), door);
-	Native_SetEmpty(&b, NV_LIST);
-	LvN_Str(Native_Append(&b), level);
-	byte ok = LV_CALL("Elevator", "ConnectElevators", NULL, "vv", &a, &b);
-	Native_Free(&a);
-	Native_Free(&b);
-	return ok;
-}
-
 /* ---- Map ---- */
 
 static byte TpMap_InitStatus(void) {
@@ -242,8 +229,8 @@ static byte TpMap_InitStatus(void) {
 
 static byte TpMap_Init(void) {
 	nativeVal_t a, b;
-	if (!Mode_Import("Metro") || !Mode_Import("Elevator") || !Tp_Connect("DM_Door_TempleTeleporter_GDB", "GDB") ||
-		!Tp_Connect("DM_Door_Elevator_Commercial", "Commercial")) {
+	if (!Mode_Import("Metro") || !Mode_Import("Elevator") || !Mode_Connect("DM_Door_TempleTeleporter_GDB", "GDB", 0) ||
+		!Mode_Connect("DM_Door_Elevator_Commercial", "Commercial", 0)) {
 		return 0;
 	}
 	Native_SetEmpty(&a, NV_LIST);
@@ -825,8 +812,7 @@ static byte Tp_DeepThroatSpeech(const char *module, const nativeVal_t *usr, cons
 	Tp_SetVar("Speech", "OnEndOfSpeech", &next);
 	Tp_SetVar("Speech", "OnEndOfSpeechParams", LvN_NoArgs());
 	Native_Free(&next);
-	return LV_CALL("Speech", "NISpeech", NULL, "s", "DeepThroat") && LV_CALL("Speech", "AutoAddNI", NULL, "s", ni) &&
-		LV_CALL("Speech", "RunNI", NULL, "");
+	return Mode_NISpeech("DeepThroat", ni);
 }
 
 /* l = eval(Scrap.GetSaveVar(var)); item added when missing, the list saved back */

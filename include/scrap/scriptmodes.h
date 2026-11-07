@@ -369,6 +369,8 @@ byte Mode_EntSetI(const char *name, const char *var, long i);
 /* Scrap.SetLockAlarm(lock) through its seam (fc-r6b-or2 records it): the TypeError of "i" for a value that is no
  * number */
 byte Mode_SetLockAlarm(const nativeVal_t *lock);
+/* the same with an int */
+byte Mode_SetLockAlarmI(long lock);
 /* o.var of a value as any value (Mode_VGet takes only native values from an object that is no entity handle: here a
  * function, an instance or a handle in the attribute is an NV_OBJ, OBJLIB 7); the errors of the attribute */
 byte Mode_VObj(const nativeVal_t *o, const char *var, nativeVal_t *out);

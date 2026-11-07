@@ -1157,13 +1157,6 @@ static byte ThSm_BlabliblaN(const nativeVal_t *name) {
 
 TH_KWFN(SheriffMayor_Blablibla, "EntityName", "Mayor_SheriffMayor", ThSm_BlabliblaN)
 
-/* Scrap.SetLockAlarm(lock) (through its seam) */
-static byte Th_LockAlarm(long lock) {
-	nativeVal_t v = { 0 };
-	Native_SetInt(&v, lock);
-	return Mode_SetLockAlarm(&v);
-}
-
 /* Speech.SpeechRoutines["PoliceBoss"](usr, ch, opt, full) (OBJLIB 5: the table of Speech as the objects it holds) */
 static byte Sm_Routine(const nativeVal_t *a) {
 	PyObject *routines = Script_Attr("Speech", "SpeechRoutines");
@@ -1207,7 +1200,7 @@ static byte ThSm_PoliceBossMissionSpeech(const nativeVal_t *a, nativeVal_t *out)
 		return 0;
 	}
 	if (mayor) {
-		return Th_LockAlarm(1) && LvN_OnEnd(SM, "SetNextMission", NULL) &&
+		return Mode_SetLockAlarmI(1) && LvN_OnEnd(SM, "SetNextMission", NULL) &&
 			Mode_Spch("Mission_GetInfoClues_PoliceBoss_InitMsg2", "Mission_GetInfoClues_PoliceBoss_InitAns2", NULL);
 	}
 	nativeVal_t money = { 0 }, reward = { 0 }, params = { 0 };
@@ -1224,7 +1217,7 @@ static byte ThSm_PoliceBossMissionSpeech(const nativeVal_t *a, nativeVal_t *out)
 	if (rich < 0) {
 		return Mode_Spch("Mission_GetInfoClues_PoliceBoss_InitMsg3", "Mission_GetInfoClues_PoliceBoss_InitAns3", NULL);
 	}
-	if (!Th_LockAlarm(1)) {
+	if (!Mode_SetLockAlarmI(1)) {
 		return 0;
 	}
 	Native_SetEmpty(&params, NV_TUPLE);
@@ -1254,7 +1247,7 @@ static byte ThSm_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t data = { 0 };
 	(void)a;
 	(void)out;
-	if (!LvN_PutI(SM, "alreadyTalked", 1) || !Th_LockAlarm(0)) {
+	if (!LvN_PutI(SM, "alreadyTalked", 1) || !Mode_SetLockAlarmI(0)) {
 		return 0;
 	}
 	SaveVar_Set("PoliceBossAtPolice", "0");

@@ -99,12 +99,6 @@ static byte Ba_DelSaves(const char *prefix) {
 	return 1;
 }
 
-/* Speech.NISpeech(who); Speech.AutoAddNI(key); Speech.RunNI() */
-static byte Ba_NI(const char *who, const char *key) {
-	return LV_CALL("Speech", "NISpeech", NULL, "s", who) && LV_CALL("Speech", "AutoAddNI", NULL, "s", key) &&
-		LV_CALL("Speech", "RunNI", NULL, "");
-}
-
 /* the core of a level function on its first argument */
 #define BA_CORE1(fn) static byte fn##_C(const nativeVal_t *a, nativeVal_t *out) { (void)out; return fn(&a[0]); }
 
@@ -834,7 +828,7 @@ static byte CatchRudolph_OnCatchRudolph(const nativeVal_t *a) {
 	byte ok = Mode_EntityH(&a[1], &e) && LvN_SetI(&e, "LLogicEscapeWithinRadius", 0) && LvN_Speakers(&a[0], &a[1]);
 	Native_Free(&e);
 	if (ok && LvN_EqS(&a[2], "Talk")) {
-		ok = LvN_OnEnd(CR, "SetNextMission", NULL) && Ba_NI("Functionary", "Mission_GetRudolph_Rudolph_NI_1Msg");
+		ok = LvN_OnEnd(CR, "SetNextMission", NULL) && Mode_NISpeech("Functionary", "Mission_GetRudolph_Rudolph_NI_1Msg");
 	}
 	return ok;
 }
@@ -980,7 +974,7 @@ static byte GetDataPart2_TalkToBoss(void) {
 static byte GetDataPart2_BossSpeech(const nativeVal_t *a) {
 	nativeVal_t dd = { 0 };
 	byte ok = Mode_G(GD, "dd", &dd) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &dd, 0L) &&
-		LvN_Speakers(&a[0], &a[1]) && LvN_OnEnd(GD, "PreInitMission", NULL) && Ba_NI("Boss", "Mission_TalkToBoss2__ComBoss_NI_1Msg");
+		LvN_Speakers(&a[0], &a[1]) && LvN_OnEnd(GD, "PreInitMission", NULL) && Mode_NISpeech("Boss", "Mission_TalkToBoss2__ComBoss_NI_1Msg");
 	Native_Free(&dd);
 	return ok;
 }
