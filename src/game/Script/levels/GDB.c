@@ -5,7 +5,19 @@
  * the plain functions of the missions are data (data/levels/gdb/). The module variables (the bishops, the traitor,
  * the scan state, constants, models) and the module code (Map.Libraries, the save variables) stay in the scripts; the
  * functions read and write them as their globals.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h) and call the engine in C
+ * (save variables, Scrap.Get, the alarm, the entity lists, the dummy search, the scorer items, the vector math). The
+ * variables of the modules are read where the script reads them and written through at once; the lists of bishops are
+ * changed in place on the objects of the modules (OBJLIB 5). The bishops, the restore point and the matrix are handle
+ * values (OBJLIB 7). The engine functions the cases record or swap go through their seams (OBJLIB 7):
+ * Scrap.AddScheduledFunc, Scrap.DeleteScheduledFuncs, Scrap.SetAlarm, Scrap.UsrEntity, Scrap.Rand (fc-r7d-gd2), Scrap.CreateEntity
+ * (fr6.py), Scrap.Set, SScorer.Set, SScorer.Fade, Scrap.Preload3DObject, Scrap.GetAlarm and SLogic.SetOnFloor;
+ * SAI.SetStateVehicle takes Python arguments in its state handlers and is called by name (OBJLIB 7). Speech,
+ * MissionsFuncs, RaceMaker, VehiclesNPC, Vehicles, OutPolice, Elevator, Items, Map, MapMatrix and the functions of the
+ * modules go by name (OBJLIB 3); the profiles of the bishops are VehiclesNPC.cShipAI instances (OBJLIB 7).
  */
+#include "scrap/scrap.h"
 #include "Levels.h"
 
 #define GM "Map"
@@ -14,213 +26,409 @@
 #define R1 "Mission_ReinsertOwnMatrix"
 #define R2 "Mission_ReinsertOwnMatrix2"
 
-#define USR() Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0)
-#define LANG(k) Sf_Lang(&f, Sf_Str(&f, k))
-#define SAVE(n) Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", n)
-#define G(m, n) Sf_Global(&f, m, n)
-#define NOARGS Sf_Build(&f, "()")
+/* ---- shared lines ---- */
 
-/* the scan bar of IntoTheGDB blinks (lost: Blink 1, IsAutoUpdatable 0) or runs */
-static byte Gd_Blink(scriptFrame_t *f, int lost) {
-	return Lv_Set0(f, "ScanRemainingTime", "Blink", Sf_Int(f, lost)) && Lv_Set0(f, "ScanRemainingTime", "IsAutoUpdatable", Sf_Int(f, !lost));
+/* SScorer.Set(0, item, var, v) and the same with an int */
+static byte Gd_Set0(const char *item, const char *var, const nativeVal_t *v) {
+	nativeVal_t id;
+	Native_SetInt(&id, 0);
+	return LvN_ScorerSet(&id, item, var, v);
 }
 
-/* SVec.ModSqr(SVec.Sub(e.Pos, usr.Pos)) < (or >) MAX_SCANNING_DIST * MAX_SCANNING_DIST of IntoTheGDB */
-static int Gd_Scan(scriptFrame_t *f, PyObject *e, PyObject *usr, const char *op) {
-	int mark = f->n;
-	PyObject *ep = Sf_Attr(f, e, "Pos");
-	PyObject *d = Sf_Ask(f, "SVec", "ModSqr", "(O)", Sf_Ask(f, "SVec", "Sub", "(OO)", ep, Sf_Attr(f, usr, "Pos")));
-	PyObject *m = Sf_Global(f, IG, "MAX_SCANNING_DIST");
-	int c = Sf_Compare(f, d, op, Sf_Op(f, m, '*', Sf_Global(f, IG, "MAX_SCANNING_DIST")));
-	Sf_Release(f, mark);
-	return c;
+static byte Gd_Set0I(const char *item, const char *var, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return Gd_Set0(item, var, &v);
+}
+
+/* SScorer.Set(0, item, var, the global name of module) */
+static byte Gd_Set0G(const char *item, const char *var, const char *module, const char *name) {
+	nativeVal_t v;
+	byte ok = Mode_G(module, name, &v) && Gd_Set0(item, var, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+/* Scrap.Set(name, i) and Scrap.Set(name, "text") */
+static byte Gd_GVarI(const char *name, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return Mode_GVarSet(name, &v);
+}
+
+/* Scrap.SetAlarm(level) through its seam */
+static byte Gd_Alarm(long level) {
+	nativeVal_t v;
+	Native_SetInt(&v, level);
+	return Mode_SetAlarm(&v);
+}
+
+/* e = Scrap.GetEntity(the global name of module) */
+static byte Gd_EntG(const char *module, const char *name, nativeVal_t *out) {
+	nativeVal_t n;
+	Native_SetNone(out);
+	byte ok = Mode_G(module, name, &n) && Mode_EntityH(&n, out);
+	Native_Free(&n);
+	return ok;
+}
+
+/* e = Scrap.GetEntity(Scrap.EntityListGet(list, "First")) */
+static byte Gd_ListFirst(const char *list, nativeVal_t *out) {
+	nativeVal_t n;
+	Native_SetNone(&n);
+	Native_SetNone(out);
+	byte ok = Mode_ListGet(list, "First", &n) && Mode_EntityH(&n, out);
+	Native_Free(&n);
+	return ok;
+}
+
+/* MissionsFuncs.ActivateTarget(e, on) */
+static byte Gd_Target(const nativeVal_t *e, long on) {
+	return LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, on);
+}
+
+/* print of one value */
+static byte Gd_Print(const nativeVal_t *v) {
+	const nativeVal_t *items[1] = { v };
+	return Mode_Print(items, 1);
+}
+
+/* Scrap.GetLangStr(key) % arg */
+static byte Gd_LangPct(const char *key, const nativeVal_t *arg, nativeVal_t *out) {
+	nativeVal_t t;
+	Mode_Lang(key, &t);
+	Native_SetNone(out);
+	byte ok = Native_Arith('%', &t, arg, out);
+	Native_Free(&t);
+	return ok;
+}
+
+/* the count of range(1, n + 1) (n + 1 already made): range by name for a value that is no int (its errors) */
+static byte Gd_Range1(const nativeVal_t *n1, long *count) {
+	if (n1->type == NV_INT) {
+		*count = n1->i > 1 ? n1->i - 1 : 0;
+		return 1;
+	}
+	nativeVal_t r;
+	Native_SetNone(&r);
+	byte ok = LV_CALL("__builtin__", "range", &r, "iv", 1L, n1);
+	int n = ok ? Native_ForCount(&r) : -1;
+	Native_Free(&r);
+	*count = n;
+	return n >= 0;
+}
+
+/* the scan bar of IntoTheGDB blinks (lost: Blink 1, IsAutoUpdatable 0) or runs */
+static byte Gd_Blink(int lost) {
+	return Gd_Set0I("ScanRemainingTime", "Blink", lost) && Gd_Set0I("ScanRemainingTime", "IsAutoUpdatable", !lost);
+}
+
+/* SVec.ModSqr(SVec.Sub(e.Pos, usr.Pos)) < (far 0) or > (far 1) MAX_SCANNING_DIST * MAX_SCANNING_DIST of IntoTheGDB:
+ * 1, 0, -1 */
+static int Gd_Scan(const nativeVal_t *e, const nativeVal_t *usr, byte far) {
+	nativeVal_t ep, up, d, sq, m, m2, mm;
+	Native_SetNone(&m);
+	Native_SetNone(&ep);
+	Native_SetNone(&up);
+	Native_SetNone(&d);
+	Native_SetNone(&sq);
+	Native_SetNone(&m2);
+	Native_SetNone(&mm);
+	int r = -1;
+	if (Mode_VGet(e, "Pos", &ep) && Mode_VGet(usr, "Pos", &up) && Mode_VecSub(&ep, &up, &d) && Mode_VecModSqr(&d, &sq) &&
+		Mode_G(IG, "MAX_SCANNING_DIST", &m) && Mode_G(IG, "MAX_SCANNING_DIST", &m2) && LvN_Arith('*', &m, &m2, &mm)) {
+		int c = Native_Compare(&sq, &mm);
+		r = far ? c > 0 : c < 0;
+	}
+	Native_Free(&ep);
+	Native_Free(&up);
+	Native_Free(&d);
+	Native_Free(&sq);
+	Native_Free(&m);
+	Native_Free(&m2);
+	Native_Free(&mm);
+	return r;
 }
 
 /* e = Scrap.GetEntity(Scrap.EntityListGet(list, "First")); while e: e.EntityList = ""; e.Del(); e = the next first */
-static byte Gd_ClearList(scriptFrame_t *f, const char *list) {
-	int mark = f->n;
-	PyObject *e = Sf_Entity(f, Sf_Ask(f, "Scrap", "EntityListGet", "(ss)", list, "First"));
-	while (Sf_True(f, e) > 0) {
-		Sf_SetAttrS(f, e, "EntityList", "");
-		Sf_Method(f, e, "Del", "()");
-		PyObject *next = Sf_Entity(f, Sf_Ask(f, "Scrap", "EntityListGet", "(ss)", list, "First"));
-		Sf_ReleaseKeep(f, mark, &next, 1);
-		e = next;
+static byte Gd_ClearList(const char *list) {
+	nativeVal_t e;
+	byte ok = Gd_ListFirst(list, &e);
+	while (ok && Native_True(&e)) {
+		ok = LvN_SetS(&e, "EntityList", "") && Mode_VDel(&e);
+		Native_Free(&e);
+		ok = ok && Gd_ListFirst(list, &e);
 	}
-	Sf_Release(f, mark);
-	return !f->failed;
+	Native_Free(&e);
+	return ok;
 }
 
 /* the last bishop dead: import Map; Map.GiveLife(); Map.InitPoliceBishops(); Scrap.SetAlarm(1) */
-static byte Gd_LastBishop(scriptFrame_t *f) {
-	Sf_Import(f, "Map");
-	Sf_Run(f, "Map", "GiveLife", "()");
-	Sf_Run(f, "Map", "InitPoliceBishops", "()");
-	return Sf_Run(f, "Scrap", "SetAlarm", "(i)", 1);
+static byte Gd_LastBishop(void) {
+	if (!Mode_Import("Map") || !LV_CALL("Map", "GiveLife", NULL, "") || !LV_CALL("Map", "InitPoliceBishops", NULL, "")) {
+		return 0;
+	}
+	return Gd_Alarm(1);
 }
 
 /* rm: the temporary entity at the dummy DM_Mission_RestoreMatrix where the matrix is reinserted (used with use), the
  * target; the global rm of module */
-static byte Gd_RestorePoint(scriptFrame_t *f, const char *module, const char *use) {
-	int mark = f->n;
-	Sf_Run(f, "Scrap", "StartDummySearch", "(si)", "DM_Mission_RestoreMatrix", 0);
-	PyObject *dummy = Sf_Ask(f, "Scrap", "NextDummySearch", "()");
-	PyObject *fn = Sf_Mod(f, "Scrap", "CreateEntity");
-	PyObject *p = Sf_Item(f, dummy, 1);
-	PyObject *x = Sf_Item(f, p, 0), *y = Sf_Item(f, p, 1), *z = Sf_Item(f, p, 2);
-	Sf_SetGlobal(f, module, "rm", Sf_Call(f, fn, "(sOOOs)", "DM_Mission_RestoreMatrix", x, y, z, "WithLife"));
-	PyObject *rm = Sf_Global(f, module, "rm");
-	PyObject *ay = Sf_OpI(f, Sf_Item(f, Sf_Item(f, dummy, 2), 1), '+', 180);
-	Sf_SetAttr(f, rm, "Ang", Sf_Build(f, "(iOi)", 0, ay, 0));
-	Sf_SetAttrI(f, rm, "VRadius", 60);
-	Sf_SetAttrI(f, rm, "ArrowCanUse", 1);
-	Sf_SetAttrI(f, rm, "Life", 0);
-	Sf_SetAttrI(f, rm, "ArrnOpt", 0);
-	Sf_SetAttrS(f, rm, "ArrOpt0", "RestoreMatrix:Restore Matrix");
-	Sf_SetAttrS(f, rm, "UseFunc", use);
-	Sf_SetAttrI(f, rm, "ActiveCMask", 0);
-	Sf_Run(f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(f, rm, "Name"));
-	Sf_Release(f, mark);
-	return !f->failed;
+static byte Gd_RestorePoint(const char *module, const char *use) {
+	nativeVal_t dummy, p, a, ay, ang, name, rm, n, k;
+	nativeVal_t c[3];
+	Native_SetNone(&p);
+	Native_SetNone(&a);
+	Native_SetNone(&ay);
+	Native_SetNone(&rm);
+	Native_SetNone(&n);
+	Native_SetEmpty(&ang, NV_TUPLE);
+	LvN_Dummy("DM_Mission_RestoreMatrix", 0, &dummy);
+	LvN_Str(&name, "DM_Mission_RestoreMatrix");
+	int got = 0;
+	byte ok = LvN_Item(&dummy, 1, &p);
+	for (; ok && got < 3; got++) {
+		ok = LvN_Item(&p, got, &c[got]);
+	}
+	if (!ok && got) {
+		Native_Free(&c[--got]);
+	}
+	ok = ok && LvN_Create(&name, &c[0], &c[1], &c[2], "WithLife", &rm) && Mode_Put(module, "rm", NULL, &rm);
+	while (got-- > 0) {
+		Native_Free(&c[got]);
+	}
+	Native_Free(&rm);
+	Native_SetInt(&k, 180);
+	ok = ok && LvN_GObj(module, "rm", &rm) && LvN_Item(&dummy, 2, &a) && LvN_Item(&a, 1, &n) && Native_Arith('+', &n, &k, &ay);
+	if (ok) {
+		Native_SetInt(Native_Append(&ang), 0);
+		Native_Copy(Native_Append(&ang), &ay);
+		Native_SetInt(Native_Append(&ang), 0);
+		ok = Mode_VSet(&rm, "Ang", &ang) && LvN_SetI(&rm, "VRadius", 60) && LvN_SetI(&rm, "ArrowCanUse", 1) &&
+			LvN_SetI(&rm, "Life", 0) && LvN_SetI(&rm, "ArrnOpt", 0) && LvN_SetS(&rm, "ArrOpt0", "RestoreMatrix:Restore Matrix") &&
+			LvN_SetS(&rm, "UseFunc", use) && LvN_SetI(&rm, "ActiveCMask", 0);
+	}
+	Native_Free(&n);
+	if (ok) {
+		ok = Mode_VGet(&rm, "Name", &n) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &n);
+	}
+	Native_Free(&dummy);
+	Native_Free(&p);
+	Native_Free(&a);
+	Native_Free(&ay);
+	Native_Free(&ang);
+	Native_Free(&name);
+	Native_Free(&rm);
+	Native_Free(&n);
+	return ok;
 }
 
-/* the restore point used: no target, no use, off (the global rm of module) */
-static byte Gd_RestoreUsed(scriptFrame_t *f, const char *module) {
-	int mark = f->n;
-	Sf_Run(f, "MissionsFuncs", "ActivateTarget", "(Oi)", Sf_Global(f, module, "rm"), 0);
-	Sf_SetAttrS(f, Sf_Global(f, module, "rm"), "UseFunc", "");
-	Sf_SetAttrI(f, Sf_Global(f, module, "rm"), "Active", 0);
-	Sf_Release(f, mark);
-	return !f->failed;
+/* the restore point used: no target, no use, off (the global rm of module, read at every line) */
+static byte Gd_RestoreUsed(const char *module) {
+	nativeVal_t rm;
+	byte ok = LvN_GObj(module, "rm", &rm) && Gd_Target(&rm, 0);
+	Native_Free(&rm);
+	ok = ok && LvN_GObj(module, "rm", &rm) && LvN_SetS(&rm, "UseFunc", "");
+	Native_Free(&rm);
+	ok = ok && LvN_GObj(module, "rm", &rm) && LvN_SetI(&rm, "Active", 0);
+	Native_Free(&rm);
+	return ok;
+}
+
+/* the profile function of a mission: no arguments, the cShipAI of the table */
+static byte Gd_Profile(PyObject *args, const char *const *vars, nativeVal_t *out) {
+	return PyArg_ParseTuple(args, "") && LvN_Profile(vars, out);
 }
 
 /* ---- Map ---- */
 
 /* InitStatus(LevelPath): outdoors without police and traffic, the player is the bishop, the teleporter to the temple */
-static PyObject *GDB_InitStatus(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "Init", "Chars", "Elevator", "OutPolice", NULL };
-	PyObject *path;
-	SF_ARGS("O", &path);
-	for (int i = 0; mods[i]; i++) {
-		Sf_Import(&f, mods[i]);
+static byte GDB_InitStatus(void) {
+	nativeVal_t v;
+	if (!Mode_Import("Init") || !Mode_Import("Chars") || !Mode_Import("Elevator") || !Mode_Import("OutPolice")) {
+		return 0;
 	}
-	Sf_SetMod(&f, "Init", "Outdoor", Sf_Int(&f, 1));
-	Sf_SetMod(&f, "OutPolice", "PoliceActive", Sf_Int(&f, 0));
-	Sf_Run(&f, "Scrap", "Set", "(si)", "iTrafficNumber", 0);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Char", "Bishop");
-	Sf_Run(&f, "Elevator", "SetDef", "(ss)", "TempleTeleporter", "DM_Door_TempleTeleporter_Temple");
-	return Sf_None(&f);
+	Native_SetInt(&v, 1);
+	byte ok = Mode_SetModVar("Init", "Outdoor", &v);
+	Native_SetInt(&v, 0);
+	ok = ok && Mode_SetModVar("OutPolice", "PoliceActive", &v) && Gd_GVarI("iTrafficNumber", 0);
+	if (ok) {
+		SaveVar_Set("Char", "Bishop");
+		ok = LV_CALL("Elevator", "SetDef", NULL, "ss", "TempleTeleporter", "DM_Door_TempleTeleporter_Temple");
+	}
+	return ok;
 }
 
 /* Init(LevelPath): the clouds; in single player the teleporter to the temple (the arrival places the player) and the
  * bishops as the police */
-static PyObject *GDB_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_Import(&f, "Init");
-	Sf_Run(&f, "Scrap", "Set", "(si)", "CameraCloudRed", 191);
-	Sf_Run(&f, "Scrap", "Set", "(si)", "CameraCloudGreen", 123);
-	Sf_Run(&f, "Scrap", "Set", "(si)", "CameraCloudBlue", 184);
-	Sf_Run(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "InitMercs");
-	if (Sf_True(&f, Sf_Mod(&f, "Init", "MultiPlayer")) == 0) {
-		Sf_Import(&f, "OutPolice");
-		Sf_Import(&f, "Elevator");
-		Sf_Run(&f, "Elevator", "ConnectElevators", "([s][s])", "DM_Door_TempleTeleporter_Temple", "Temple");
-		if (Sf_EqS(&f, SAVE("ComeFrom"), "DoorTempleTeleporter") > 0) {
-			Sf_SetMod(&f, "Elevator", "OnElevatorReachDown", G(GM, "EndOfAppears"));
-		}
-		if (Sf_True(&f, G(GM, "CreateBishops")) > 0) {
-			Sf_Own(&f, GM, "InitPoliceBishops", "()");
-		}
+static byte GDB_Init(void) {
+	nativeVal_t mp, from, to;
+	if (!Mode_Import("Init") || !Gd_GVarI("CameraCloudRed", 191) || !Gd_GVarI("CameraCloudGreen", 123) ||
+		!Gd_GVarI("CameraCloudBlue", 184) || !Mode_DelSchedS("InitMercs") || !LvN_ModGet("Init", "MultiPlayer", &mp)) {
+		return 0;
 	}
-	return Sf_None(&f);
+	int multi = Native_True(&mp);
+	Native_Free(&mp);
+	if (multi) {
+		return 1;
+	}
+	if (!Mode_Import("OutPolice") || !Mode_Import("Elevator")) {
+		return 0;
+	}
+	Native_SetEmpty(&from, NV_LIST);
+	LvN_Str(Native_Append(&from), "DM_Door_TempleTeleporter_Temple");
+	Native_SetEmpty(&to, NV_LIST);
+	LvN_Str(Native_Append(&to), "Temple");
+	byte ok = LV_CALL("Elevator", "ConnectElevators", NULL, "vv", &from, &to);
+	Native_Free(&from);
+	Native_Free(&to);
+	if (ok && LvN_SaveIs("ComeFrom", "DoorTempleTeleporter")) {
+		ok = LvN_ModSetGlobal("Elevator", "OnElevatorReachDown", GM, "EndOfAppears");
+	}
+	int bishops = ok ? LvN_GTrue(GM, "CreateBishops") : -1;
+	return bishops > 0 ? LV_OWN(GM, "InitPoliceBishops", NULL, "") : bishops == 0;
 }
 
 /* InitPoliceBishops(): the alarm meter, the four waves of bishops and archbishops, the first one */
-static PyObject *GDB_InitPoliceBishops(PyObject *self, PyObject *args) {
+static byte GDB_InitPoliceBishops(void) {
 	static const int waves[4] = { 3, 2, 1, 0 };
-	SF_ARGS("");
-	Sf_Import(&f, "OutPolice");
-	Sf_Run(&f, "Scrap", "Set", "(sd)", "AlarmFallDelta", -0.05);
-	Sf_Run(&f, "Scrap", "Set", "(sd)", "AlarmGrowDelta", 0.1);
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "PoliceTauntRace", "Bishop");
-	for (int i = 0; i < 4 && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *wave = Sf_Build(&f, "[]");
-		for (int k = 0; k < 6; k++) {
-			Sf_Method(&f, wave, "append", "(s)", k < waves[i] ? "SBishop1" : "SArchbishop1");
-		}
-		Sf_Method(&f, Sf_Mod(&f, "OutPolice", "PoliceWaves"), "append", "(O)", wave);
-		Sf_Release(&f, mark);
+	nativeVal_t v;
+	if (!Mode_Import("OutPolice")) {
+		return 0;
 	}
-	Sf_Run(&f, "OutPolice", "InitShips", "()");
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "PoliceWaveEliminated", "Map.NextWave");
-	return Sf_None(&f);
+	Native_SetFloat(&v, -0.05);
+	byte ok = Mode_GVarSet("AlarmFallDelta", &v);
+	Native_SetFloat(&v, 0.1);
+	ok = ok && Mode_GVarSet("AlarmGrowDelta", &v) && Mode_GVarSetS("PoliceTauntRace", "Bishop");
+	for (int i = 0; i < 4 && ok; i++) {
+		nativeVal_t wave;
+		Native_SetEmpty(&wave, NV_LIST);
+		for (int k = 0; k < 6; k++) {
+			LvN_Str(Native_Append(&wave), k < waves[i] ? "SBishop1" : "SArchbishop1");
+		}
+		ok = LvN_ModAppend("OutPolice", "PoliceWaves", &wave);
+		Native_Free(&wave);
+	}
+	return ok && LV_CALL("OutPolice", "InitShips", NULL, "") && Mode_GVarSetS("PoliceWaveEliminated", "Map.NextWave");
 }
 
 /* EndOfAppears(elv): the arrival by the teleporter: the player at the spawn point, the message of the waves (three
  * times) */
-static PyObject *GDB_EndOfAppears(PyObject *self, PyObject *args) {
-	PyObject *elv;
-	SF_ARGS("O", &elv);
-	Sf_Import(&f, "Elevator");
-	Sf_Import(&f, "RaceMaker");
-	Sf_SetMod(&f, "Elevator", "OnElevatorReachDown", Py_None);
-	PyObject *dummy = Lv_Dummy(&f, "DM_Player_Spawn_Temple", 0);
-	Sf_Print(&f, "O", dummy);
-	PyObject *v = USR();
-	Sf_SetAttr(&f, v, "Pos", Sf_Item(&f, dummy, 1));
-	Sf_Run(&f, "SLogic", "SetOnFloor", "(O)", Sf_Attr(&f, v, "Name"));
-	PyObject *doit = Sf_ToInt(&f, SAVE("GDB.BishopsMsg"));
-	if (Sf_True(&f, doit) > 0) {
-		Sf_Run(&f, "RaceMaker", "ShowSystemMessage", "(O)", Sf_Op(&f, LANG("OnBishopsWave3"), '%', Sf_Int(&f, 5)));
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "GDB.BishopsMsg", Sf_Repr(&f, Sf_OpI(&f, doit, '-', 1)));
+static byte GDB_EndOfAppears(void) {
+	nativeVal_t dummy, v, pos, name, msg, doit, five, text, one, left;
+	if (!Mode_Import("Elevator") || !Mode_Import("RaceMaker") || !LvN_ModNone("Elevator", "OnElevatorReachDown")) {
+		return 0;
 	}
-	return Sf_None(&f);
+	Native_SetNone(&v);
+	Native_SetNone(&pos);
+	Native_SetNone(&name);
+	Native_SetNone(&doit);
+	Native_SetNone(&text);
+	Native_SetNone(&left);
+	Native_SetNone(&msg);
+	LvN_Dummy("DM_Player_Spawn_Temple", 0, &dummy);
+	byte ok = Gd_Print(&dummy) && Mode_UsrHandle(&v) && LvN_Item(&dummy, 1, &pos) && Mode_VSet(&v, "Pos", &pos) &&
+		Mode_VGet(&v, "Name", &name) && LvN_SetOnFloor(&name);
+	if (ok) {
+		Mode_SaveVar("GDB.BishopsMsg", &msg);
+		ok = Native_ToInt(&msg, &doit);
+	}
+	if (ok && Native_True(&doit)) {
+		Native_SetInt(&five, 5);
+		Native_SetInt(&one, 1);
+		ok = Gd_LangPct("OnBishopsWave3", &five, &text) && LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text) &&
+			Native_Arith('-', &doit, &one, &left);
+		if (ok) {
+			LvN_SaveRepr("GDB.BishopsMsg", &left);
+		}
+	}
+	Native_Free(&dummy);
+	Native_Free(&v);
+	Native_Free(&pos);
+	Native_Free(&name);
+	Native_Free(&msg);
+	Native_Free(&doit);
+	Native_Free(&text);
+	Native_Free(&left);
+	return ok;
 }
 
 /* GiveLife(): a wave beaten with the alarm on: up to five lives, at most MaxPlayerLives */
-static PyObject *GDB_GiveLife(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "RaceMaker");
-	PyObject *lives = Sf_ToInt(&f, SAVE("Player.NumLives"));
-	int more = Sf_Compare(&f, lives, "<", Sf_Ask(&f, "Scrap", "Get", "(s)", "MaxPlayerLives"));
-	if (more > 0) {
-		PyObject *incl = NULL;
-		int top = Sf_Compare(&f, Sf_OpI(&f, lives, '+', 5), ">", Sf_Ask(&f, "Scrap", "Get", "(s)", "MaxPlayerLives"));
-		if (top > 0) {
-			incl = Sf_Op(&f, Sf_Ask(&f, "Scrap", "Get", "(s)", "MaxPlayerLives"), '-', lives);
-		} else if (top == 0) {
-			incl = Sf_Int(&f, 5);
-		}
-		Sf_Run(&f, "RaceMaker", "ShowSystemMessage", "(O)", Sf_Op(&f, LANG("OnBishopsWave"), '%', incl));
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "Player.NumLives", Sf_Repr(&f, Sf_Op(&f, lives, '+', incl)));
-	} else if (more == 0) {
-		Sf_Run(&f, "RaceMaker", "ShowSystemMessage", "(O)", LANG("OnBishopsWave2"));
+static byte GDB_GiveLife(void) {
+	nativeVal_t s, lives, max, five, sum, incl, text, total;
+	if (!Mode_Import("RaceMaker")) {
+		return 0;
 	}
-	Sf_Run(&f, "Scrap", "IncSaveVar", "(s)", "Stats.GDB");
-	return Sf_None(&f);
+	Native_SetNone(&lives);
+	Native_SetNone(&max);
+	Native_SetNone(&sum);
+	Native_SetNone(&incl);
+	Native_SetNone(&text);
+	Native_SetNone(&total);
+	Native_SetInt(&five, 5);
+	Mode_SaveVar("Player.NumLives", &s);
+	byte ok = Native_ToInt(&s, &lives) && Native_GVarGet("MaxPlayerLives", &max);
+	if (ok && Native_Compare(&lives, &max) < 0) {
+		Native_Free(&max);
+		ok = Native_Arith('+', &lives, &five, &sum) && Native_GVarGet("MaxPlayerLives", &max);
+		if (ok && Native_Compare(&sum, &max) > 0) {
+			Native_Free(&max);
+			ok = Native_GVarGet("MaxPlayerLives", &max) && Native_Arith('-', &max, &lives, &incl);
+		} else if (ok) {
+			Native_SetInt(&incl, 5);
+		}
+		ok = ok && Gd_LangPct("OnBishopsWave", &incl, &text) && LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text) &&
+			Native_Arith('+', &lives, &incl, &total);
+		if (ok) {
+			LvN_SaveRepr("Player.NumLives", &total);
+		}
+	} else if (ok) {
+		Mode_Lang("OnBishopsWave2", &text);
+		ok = LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
+	}
+	if (ok) {
+		SaveVar_Inc("Stats.GDB", 1);
+	}
+	Native_Free(&s);
+	Native_Free(&lives);
+	Native_Free(&max);
+	Native_Free(&sum);
+	Native_Free(&incl);
+	Native_Free(&text);
+	Native_Free(&total);
+	return ok;
 }
 
 /* NextWave(): the engine's callback of a wave eliminated: lives while the alarm is on, the next wave */
-static PyObject *GDB_NextWave(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "OutPolice");
-	if (Sf_True(&f, Sf_Item(&f, Sf_Ask(&f, "Scrap", "GetAlarm", "()"), 0)) > 0) {
-		Sf_Own(&f, GM, "GiveLife", "()");
+static byte GDB_NextWave(void) {
+	if (!Mode_Import("OutPolice")) {
+		return 0;
 	}
-	Sf_Run(&f, "OutPolice", "NextWave", "(i)", 0);
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "PoliceWaveEliminated", "Map.NextWave");
-	return Sf_None(&f);
+	int on = Mode_AlarmOn();
+	return on >= 0 && (!on || LV_OWN(GM, "GiveLife", NULL, "")) && LV_CALL("OutPolice", "NextWave", NULL, "i", 0L) &&
+		Mode_GVarSetS("PoliceWaveEliminated", "Map.NextWave");
 }
 
+LV_CORE0(GDB_InitStatus)
+LV_CORE0(GDB_Init)
+LV_CORE0(GDB_InitPoliceBishops)
+LV_CORE0(GDB_EndOfAppears)
+LV_CORE0(GDB_GiveLife)
+LV_CORE0(GDB_NextWave)
+
+LV_FN(GDB, InitStatusPy, 1, GDB_InitStatus_C)
+LV_FN(GDB, InitPy, 1, GDB_Init_C)
+LV_FN(GDB, InitPoliceBishopsPy, 0, GDB_InitPoliceBishops_C)
+LV_FN(GDB, EndOfAppearsPy, 1, GDB_EndOfAppears_C)
+LV_FN(GDB, GiveLifePy, 0, GDB_GiveLife_C)
+LV_FN(GDB, NextWavePy, 0, GDB_NextWave_C)
+
 PyMethodDef g_GDBMapMethods[] = {
-	{ "InitStatus", GDB_InitStatus, 1, NULL },
-	{ "Init", GDB_Init, 1, NULL },
-	{ "InitPoliceBishops", GDB_InitPoliceBishops, 1, NULL },
-	{ "EndOfAppears", GDB_EndOfAppears, 1, NULL },
-	{ "GiveLife", GDB_GiveLife, 1, NULL },
-	{ "NextWave", GDB_NextWave, 1, NULL },
+	{ "InitStatus", GDB_InitStatusPy, 1, NULL },
+	{ "Init", GDB_InitPy, 1, NULL },
+	{ "InitPoliceBishops", GDB_InitPoliceBishopsPy, 1, NULL },
+	{ "EndOfAppears", GDB_EndOfAppearsPy, 1, NULL },
+	{ "GiveLife", GDB_GiveLifePy, 1, NULL },
+	{ "NextWave", GDB_NextWavePy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
@@ -230,17 +438,16 @@ PyMethodDef g_GDBMapMethods[] = {
 static PyObject *Matrix_EndOFScene(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *kwlist[] = { "usr", NULL };
 	PyObject *usr = Py_None;
-	scriptFrame_t f = { 0 };
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", kwlist, &usr)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", kwlist, &usr) || !Mode_Fade(0, lv_black, lv_clear, 1.0)) {
 		return NULL;
 	}
-	Lv_Fade(&f, lv_black, lv_clear, 1.0);
-	PyObject *fn = G(MX, "EndFunc");
-	if (Sf_True(&f, fn) > 0) {
-		Sf_Call(&f, fn, "()");
-	}
-	return Sf_None(&f);
+	/* OBJLIB 4: EndFunc is the function object RestoreMatrix put into the module */
+	PyObject *fn = Mode_GlobalPy(MX, "EndFunc");
+	int t = fn ? PyObject_IsTrue(fn) : -1;
+	byte ok = t >= 0 && (!t || Native_Call(fn, NULL, ""));
+	Py_XDECREF(fn);
+	return Mode_Result(ok);
 }
 
 PyMethodDef g_GDBMapMatrixMethods[] = {
@@ -257,421 +464,682 @@ static const char *const ig_bishop_profile[] = { "Ship=SBISHOP1", "StupidPathFin
 	"ControlStrafeEvasion=1", "UsePercHookGetAway=3", "TimeMaxStrafe=6", "VelMaxStrafe=0.75", NULL };
 
 static PyObject *Into_GetBishopProfile(PyObject *self, PyObject *args) {
+	nativeVal_t sp;
 	(void)self;
-	return Lv_ProfileFunc(args, IG, ig_bishop_profile);
+	Native_SetNone(&sp);
+	return Mode_Return(Gd_Profile(args, ig_bishop_profile, &sp), &sp);
+}
+
+/* the bishop of a mission: VehiclesNPC.MakeAI, the profile of the mission, its life */
+static byte Gd_MakeBishop(const char *module, nativeVal_t *bishop) {
+	nativeVal_t pd;
+	Native_SetNone(&pd);
+	byte ok = LV_CALL("VehiclesNPC", "MakeAI", bishop, "ss", "SBishop1", "Bishop") && LV_OWN(module, "GetBishopProfile", &pd, "") &&
+		LV_CALL("VehiclesNPC", "ModAIProff", NULL, "vv", bishop, &pd);
+	Native_Free(&pd);
+	return ok;
+}
+
+/* bishops.append(bishop.Name) of the module, in place */
+static byte Gd_AppendName(const char *module, const nativeVal_t *bishop) {
+	nativeVal_t n;
+	Native_SetNone(&n);
+	byte ok = Mode_VGet(bishop, "Name", &n) && Mode_Append(module, "bishops", &n);
+	Native_Free(&n);
+	return ok;
+}
+
+/* `if not Scrap.UsrEntity(0): return` of the bishops: 1 with the player in *usr, 0 without one (*usr None), -1 */
+static int Gd_UsrThere(nativeVal_t *usr) {
+	if (!Mode_UsrHandle(usr)) {
+		Native_SetNone(usr);
+		return -1;
+	}
+	return Native_True(usr);
 }
 
 /* Init(LevelPath): the lists of the bishops, the eight bishops (identified when the matrix is already taken), the
  * restore point or the scan when the player boards */
-static PyObject *Into_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_Import(&f, "Parking");
-	Sf_Run(&f, "Scrap", "Preload3DObject", "(O)", G(IG, "MatrixModel"));
-	Sf_Run(&f, "Scrap", "CreateEntityList", "(s)", "Bishops");
-	Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "Bishops", "OnDeath", "Mission_IntoTheGDB.OnBishopsDeath");
-	Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "Bishops", "OnDamage", "Mission_IntoTheGDB.OnBishopsDamage");
-	Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "Enemies", "OnDeath", "Mission_IntoTheGDB.OnBishopsDeath");
-	Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "Enemies", "OnDamage", "Mission_IntoTheGDB.OnBishopsDamage");
-	PyObject *state = SAVE("MissionState");
-	int restore = Sf_EqS(&f, state, "RestoreMatrix");
-	Sf_Own(&f, IG, "CreateBishops", "(iO)", 8, restore < 0 ? NULL : Sf_Int(&f, restore));
-	restore = Sf_EqS(&f, state, "RestoreMatrix");
-	if (restore > 0) {
-		Sf_Own(&f, IG, "RestoreMatrix", "()");
-	} else if (restore == 0) {
-		Sf_Run(&f, "Speech", "AddRemoteCom", "(ss)", "Mission_IntoTheGDB_RemoteMessage1", "DeepThroat");
-		Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", G(IG, "InitMission"));
-		Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", G(IG, "StopMission"));
+static byte Into_Init(void) {
+	nativeVal_t model, state, ident;
+	if (!Mode_Import("Parking") || !Mode_G(IG, "MatrixModel", &model)) {
+		return 0;
 	}
-	return Sf_None(&f);
+	byte ok = Mode_Preload(&model);
+	Native_Free(&model);
+	if (ok) {
+		CHECK(cWorld_NewEntityList(g_pWorld, "Bishops"));
+		ok = Mode_ListSet("Bishops", "OnDeath", "Mission_IntoTheGDB.OnBishopsDeath") &&
+			Mode_ListSet("Bishops", "OnDamage", "Mission_IntoTheGDB.OnBishopsDamage") &&
+			Mode_ListSet("Enemies", "OnDeath", "Mission_IntoTheGDB.OnBishopsDeath") &&
+			Mode_ListSet("Enemies", "OnDamage", "Mission_IntoTheGDB.OnBishopsDamage");
+	}
+	if (!ok) {
+		return 0;
+	}
+	Mode_SaveVar("MissionState", &state);
+	Native_SetInt(&ident, LvN_EqS(&state, "RestoreMatrix"));
+	ok = LV_OWN(IG, "CreateBishops", NULL, "iv", 8L, &ident);
+	int restore = LvN_EqS(&state, "RestoreMatrix");
+	Native_Free(&state);
+	if (!ok) {
+		return 0;
+	}
+	if (restore) {
+		return LV_OWN(IG, "RestoreMatrix", NULL, "");
+	}
+	return LvN_Com("Mission_IntoTheGDB_RemoteMessage1", "DeepThroat", NULL, NULL, NULL) &&
+		LvN_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", IG, "InitMission") &&
+		LvN_ModSetGlobal("Parking", "SwitchCharMissionCallback", IG, "StopMission");
 }
 
 /* CreateBishop(bishopIdentified): a bishop with the player there: unidentified ones wait in the list Bishops as
  * targets, identified ones are enemies */
-static PyObject *Into_CreateBishop(PyObject *self, PyObject *args) {
-	PyObject *ident;
-	SF_ARGS("O", &ident);
-	Sf_Import(&f, "VehiclesNPC");
-	if (Sf_True(&f, USR()) != 1) {
-		return Sf_None(&f);
+static byte Into_CreateBishop(const nativeVal_t *ident, nativeVal_t *out) {
+	nativeVal_t usr, name;
+	if (!Mode_Import("VehiclesNPC")) {
+		return 0;
 	}
-	PyObject *bishop = Sf_Ask(&f, "VehiclesNPC", "MakeAI", "(ss)", "SBishop1", "Bishop");
-	PyObject *pd = Sf_Own(&f, IG, "GetBishopProfile", "()");
-	Sf_Run(&f, "VehiclesNPC", "ModAIProff", "(OO)", bishop, pd);
-	Lv_Life(&f, bishop, IG, "BISHOP_LIFE");
-	int t = Sf_True(&f, ident);
-	if (t == 0) {
-		Sf_SetAttrS(&f, bishop, "EntityList", "Bishops");
-		Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", bishop, 1);
-		Sf_Run(&f, "SAI", "SetStateVehicle", "(iOi)", 3, Sf_Attr(&f, bishop, "Name"), 0);
-	} else if (t > 0) {
-		Sf_SetAttrS(&f, bishop, "EntityList", "Enemies");
+	int there = Gd_UsrThere(&usr);
+	Native_Free(&usr);
+	if (there <= 0) {
+		return there == 0;
 	}
-	return Sf_Return(&f, bishop);
+	Native_SetNone(&name);
+	byte ok = Gd_MakeBishop(IG, out) && LvN_Life(out, IG, "BISHOP_LIFE");
+	if (ok && !Native_True(ident)) {
+		ok = LvN_SetS(out, "EntityList", "Bishops") && Gd_Target(out, 1) && Mode_VGet(out, "Name", &name) &&
+			LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, &name, 0L);
+	} else if (ok) {
+		ok = LvN_SetS(out, "EntityList", "Enemies");
+	}
+	Native_Free(&name);
+	return ok;
 }
 
 /* CreateBishops(numBishops, bishopIdentified): the bishops, one of them the traitor (who drops nothing) */
-static PyObject *Into_CreateBishops(PyObject *self, PyObject *args) {
-	PyObject *num, *ident;
-	SF_ARGS("OO", &num, &ident);
-	PyObject *range = Sf_Ask(&f, "__builtin__", "range", "(iO)", 1, Sf_OpI(&f, num, '+', 1));
-	int mark = f.n;
-	for (int k = 0; Sf_Next(&f, range, k) != NULL; k++) {
-		PyObject *bishop = Sf_Own(&f, IG, "CreateBishop", "(O)", ident);
-		Sf_Method(&f, G(IG, "bishops"), "append", "(O)", Sf_Attr(&f, bishop, "Name"));
-		Sf_Release(&f, mark);
+static byte Into_CreateBishops(const nativeVal_t *num, const nativeVal_t *ident) {
+	nativeVal_t one, n1, bishop, f, d, hi, zero, r, i, list, traitor, e;
+	long count = 0;
+	Native_SetInt(&one, 1);
+	Native_SetNone(&n1);
+	if (!Native_Arith('+', num, &one, &n1) || !Gd_Range1(&n1, &count)) {
+		Native_Free(&n1);
+		return 0;
 	}
-	if (Sf_True(&f, ident) == 0) {
-		PyObject *hi = Sf_Op(&f, Sf_ToFloat(&f, num), '-', Sf_Float(&f, 0.05));
-		PyObject *i = Sf_ToInt(&f, Sf_Ask(&f, "Scrap", "Rand", "(dO)", 0.0, hi));
-		Sf_SetGlobal(&f, IG, "traitor", Sf_GetItem(&f, G(IG, "bishops"), i));
-		PyObject *e = Sf_Entity(&f, G(IG, "traitor"));
-		if (Sf_True(&f, e) > 0) {
-			Sf_SetAttrI(&f, e, "Money", -1);
-		}
+	Native_Free(&n1);
+	byte ok = 1;
+	for (long k = 0; k < count && ok; k++) {
+		Native_SetNone(&bishop);
+		ok = LV_OWN(IG, "CreateBishop", &bishop, "v", ident) && Gd_AppendName(IG, &bishop);
+		Native_Free(&bishop);
 	}
-	return Sf_None(&f);
+	if (!ok || Native_True(ident)) {
+		return ok;
+	}
+	Native_SetNone(&f);
+	Native_SetNone(&hi);
+	Native_SetNone(&r);
+	Native_SetNone(&i);
+	Native_SetNone(&list);
+	Native_SetNone(&traitor);
+	Native_SetNone(&e);
+	Native_SetFloat(&d, 0.05);
+	Native_SetFloat(&zero, 0.0);
+	ok = Native_ToFloat(num, &f) && Native_Arith('-', &f, &d, &hi) && Mode_Rand(&zero, &hi, &r) && Native_ToInt(&r, &i) &&
+		LvN_GElems(IG, "bishops", &list) && Native_Subscript(&list, &i, &traitor) && Mode_Put(IG, "traitor", NULL, &traitor) &&
+		Gd_EntG(IG, "traitor", &e);
+	if (ok && Native_True(&e)) {
+		ok = LvN_SetI(&e, "Money", -1);
+	}
+	Native_Free(&f);
+	Native_Free(&hi);
+	Native_Free(&r);
+	Native_Free(&i);
+	Native_Free(&list);
+	Native_Free(&traitor);
+	Native_Free(&e);
+	return ok;
 }
 
 /* InitMission(): the bishops as targets, the scorer of the scan, the scan every second */
-static PyObject *Into_InitMission(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "Parking");
-	Sf_Run(&f, "MissionsFuncs", "SetMultipleMissionTargets", "(O)", G(IG, "bishops"));
-	Sf_SetMod(&f, "Menu", "MissionScorerCall", G(IG, "MissionScorer"));
-	Sf_DrawScorer(&f);
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "OnFinishAutoUpdate", "Mission_IntoTheGDB.OnFinishScan");
-	Sf_Later(&f, Sf_Float(&f, 1.0), G(IG, "ScanShip"), NOARGS, "ScanShip");
-	return Sf_None(&f);
+static byte Into_InitMission(void) {
+	if (!Mode_Import("Parking")) {
+		return 0;
+	}
+	/* OBJLIB 5: the list object of the module, as the script passes it */
+	PyObject *bishops = Mode_GlobalPy(IG, "bishops");
+	byte ok = bishops && LV_CALL("MissionsFuncs", "SetMultipleMissionTargets", NULL, "O", bishops);
+	Py_XDECREF(bishops);
+	return ok && LvN_ScorerCallG(IG, "MissionScorer") && LvN_Draw() &&
+		Mode_GVarSetS("OnFinishAutoUpdate", "Mission_IntoTheGDB.OnFinishScan") &&
+		Mode_Later(1.0, IG, "ScanShip", NULL, 0, "ScanShip");
+}
+
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func, ()) with delay and func globals of the mission */
+static byte Gd_LaterG(const char *delay, const char *func) {
+	nativeVal_t now, d, t;
+	Native_SetFloat(&now, Mode_Time());
+	Native_SetNone(&t);
+	if (!Mode_G(IG, delay, &d)) {
+		return 0;
+	}
+	PyObject *fn = Native_Arith('+', &now, &d, &t) ? Mode_GlobalPy(IG, func) : NULL;
+	byte ok = fn && Mode_Schedule(&t, fn, NULL, 0, NULL);
+	Py_XDECREF(fn);
+	Native_Free(&d);
+	Native_Free(&t);
+	return ok;
 }
 
 /* ScanShip(): every second: the bishop being scanned stays near, else the next bishop near the player is scanned */
-static PyObject *Into_ScanShip(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *usr = USR();
-	if (Sf_True(&f, usr) != 1) {
-		return Sf_None(&f);
+static byte Into_ScanShip(void) {
+	nativeVal_t usr, e, blink, list, cur;
+	Native_SetNone(&e);
+	Native_SetNone(&list);
+	int there = Gd_UsrThere(&usr);
+	if (there <= 0) {
+		Native_Free(&usr);
+		return there == 0;
 	}
-	Sf_Later(&f, Sf_Float(&f, 1.0), G(IG, "ScanShip"), NOARGS, "ScanShip");
-	PyObject *e = Sf_Entity(&f, G(IG, "currentScannedShip"));
-	int t = Sf_True(&f, e);
-	if (t > 0) {
-		int far = Gd_Scan(&f, e, usr, ">");
+	byte ok = Mode_Later(1.0, IG, "ScanShip", NULL, 0, "ScanShip") && Gd_EntG(IG, "currentScannedShip", &e);
+	if (ok && Native_True(&e)) {
+		int far = Gd_Scan(&e, &usr, 1);
 		if (far > 0) {
-			if (Sf_EqI(&f, Sf_Ask(&f, "SScorer", "Get", "(iss)", 0, "ScanRemainingTime", "Blink"), 0) > 0) {
-				Gd_Blink(&f, 1);
-				Sf_Later(&f, G(IG, "MAX_TIME_TARGET_LOST"), G(IG, "CheckContinueScanning"), NOARGS, NULL);
+			Mode_ScorerGet(0, "ScanRemainingTime", "Blink", &blink);
+			if (LvN_EqI(&blink, 0)) {
+				ok = Gd_Blink(1) && Gd_LaterG("MAX_TIME_TARGET_LOST", "CheckContinueScanning");
 			}
-		} else if (far == 0) {
-			Gd_Blink(&f, 0);
+			Native_Free(&blink);
+		} else {
+			ok = far == 0 && Gd_Blink(0);
 		}
-		return Sf_None(&f);
+		Native_Free(&e);
+		Native_Free(&usr);
+		return ok;
 	}
-	PyObject *s;
-	int mark = f.n;
-	for (int k = 0; (s = Sf_Next(&f, G(IG, "bishops"), k)) != NULL; k++) {
-		e = Sf_Entity(&f, s);
-		if (Sf_True(&f, e) > 0 && Gd_Scan(&f, e, usr, "<") > 0) {
-			Sf_SetGlobal(&f, IG, "currentScannedShip", Sf_Attr(&f, e, "Name"));
-			Sf_Run(&f, "Scrap", "Set", "(sO)", "CurrentWaypointName", G(IG, "currentScannedShip"));
-			Lv_Set0(&f, "ScanStatusText", "Visible", Sf_Int(&f, 1));
-			Gd_Blink(&f, 0);
-			Lv_Set0(&f, "ScanRemainingTime", "MaxValue", G(IG, "MAX_SCANNING_TIME"));
-			Lv_Set0(&f, "ScanRemainingTime", "Value", G(IG, "MAX_SCANNING_TIME"));
-			Lv_Set0(&f, "ScanRemainingTime", "Visible", Sf_Int(&f, 1));
-			break;
+	Native_Free(&e);
+	ok = ok && LvN_GElems(IG, "bishops", &list);
+	int n = ok ? Native_ForCount(&list) : 0;
+	ok = ok && n >= 0;
+	for (int k = 0; k < n && ok; k++) {
+		nativeVal_t s;
+		Native_SetNone(&s);
+		Native_SetNone(&e);
+		ok = Native_SeqItem(&list, k, &s) && Mode_EntityH(&s, &e);
+		int near = ok && Native_True(&e) ? Gd_Scan(&e, &usr, 0) : 0;
+		ok = ok && near >= 0;
+		if (near > 0) {
+			Native_SetNone(&cur);
+			ok = Mode_VGet(&e, "Name", &cur) && Mode_Put(IG, "currentScannedShip", NULL, &cur);
+			Native_Free(&cur);
+			ok = ok && Mode_G(IG, "currentScannedShip", &cur) && Mode_GVarSet("CurrentWaypointName", &cur);
+			Native_Free(&cur);
+			ok = ok && Gd_Set0I("ScanStatusText", "Visible", 1) && Gd_Blink(0) &&
+				Gd_Set0G("ScanRemainingTime", "MaxValue", IG, "MAX_SCANNING_TIME") &&
+				Gd_Set0G("ScanRemainingTime", "Value", IG, "MAX_SCANNING_TIME") && Gd_Set0I("ScanRemainingTime", "Visible", 1);
+			n = 0;
 		}
-		Sf_Release(&f, mark);
+		Native_Free(&s);
+		Native_Free(&e);
 	}
-	return Sf_None(&f);
+	Native_Free(&list);
+	Native_Free(&usr);
+	return ok;
+}
+
+/* `usr and e and the bishop near`: 1, 0, -1 */
+static int Gd_Scanning(const nativeVal_t *usr, const nativeVal_t *e) {
+	return Native_True(usr) && Native_True(e) ? Gd_Scan(e, usr, 0) : 0;
 }
 
 /* CheckContinueScanning(): the bishop came back near in time, or the scan starts again */
-static PyObject *Into_CheckContinueScanning(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *usr = USR();
-	PyObject *e = Sf_Entity(&f, G(IG, "currentScannedShip"));
-	int both = Sf_True(&f, usr);
-	if (both > 0) {
-		both = Sf_True(&f, e);
+static byte Into_CheckContinueScanning(void) {
+	nativeVal_t usr, e;
+	Native_SetNone(&e);
+	if (!Mode_UsrHandle(&usr)) {
+		return 0;
 	}
-	if (both > 0 && Gd_Scan(&f, e, usr, "<") > 0) {
-		Gd_Blink(&f, 0);
-		return Sf_None(&f);
-	}
-	Sf_Own(&f, IG, "ResetScan", "()");
-	return Sf_None(&f);
+	int near = Gd_EntG(IG, "currentScannedShip", &e) ? Gd_Scanning(&usr, &e) : -1;
+	Native_Free(&usr);
+	Native_Free(&e);
+	return near > 0 ? Gd_Blink(0) : near == 0 && LV_OWN(IG, "ResetScan", NULL, "");
 }
 
 /* ResetScan(): no bishop scanned, the scorer hidden (refilled a moment later) */
-static PyObject *Into_ResetScan(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_SetGlobal(&f, IG, "currentScannedShip", Sf_Str(&f, ""));
-	if (Sf_True(&f, G(IG, "traitorFound")) == 0) {
-		Sf_Run(&f, "Scrap", "Set", "(ss)", "CurrentWaypointName", "");
+static byte Into_ResetScan(void) {
+	if (!LvN_PutS(IG, "currentScannedShip", "")) {
+		return 0;
 	}
-	Lv_Set0(&f, "ScanRemainingTime", "Visible", Sf_Int(&f, 0));
-	Lv_Set0(&f, "ScanStatusText", "Visible", Sf_Int(&f, 0));
-	Sf_Later(&f, Sf_Float(&f, 0.25), G(IG, "ResetScan2"), NOARGS, NULL);
-	return Sf_None(&f);
+	int found = LvN_GTrue(IG, "traitorFound");
+	return found >= 0 && (found || Mode_GVarSetS("CurrentWaypointName", "")) && Gd_Set0I("ScanRemainingTime", "Visible", 0) &&
+		Gd_Set0I("ScanStatusText", "Visible", 0) && Mode_Later(0.25, IG, "ResetScan2", NULL, 0, NULL);
+}
+
+/* the bishops of the list (read as the loop starts) that are there, not the traitor (skip: the global traitor read for
+ * each), stop being targets */
+static byte Gd_UntargetBishops(byte skipTraitor) {
+	nativeVal_t list;
+	if (!LvN_GElems(IG, "bishops", &list)) {
+		return 0;
+	}
+	int n = Native_ForCount(&list);
+	byte ok = n >= 0;
+	for (int k = 0; k < n && ok; k++) {
+		nativeVal_t s, e, name, traitor;
+		Native_SetNone(&s);
+		Native_SetNone(&e);
+		Native_SetNone(&name);
+		Native_SetNone(&traitor);
+		ok = Native_SeqItem(&list, k, &s) && Mode_EntityH(&s, &e);
+		int t = ok && Native_True(&e);
+		if (t && skipTraitor) {
+			ok = Mode_VGet(&e, "Name", &name) && Mode_G(IG, "traitor", &traitor);
+			t = ok && Native_Compare(&name, &traitor) != 0;
+		}
+		if (t) {
+			ok = Gd_Target(&e, 0);
+		}
+		Native_Free(&s);
+		Native_Free(&e);
+		Native_Free(&name);
+		Native_Free(&traitor);
+	}
+	Native_Free(&list);
+	return ok;
 }
 
 /* OnFinishScan(): the scan bar ran out: the traitor found (the others stop being targets), or one bishop fewer */
-static PyObject *Into_OnFinishScan(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Lv_Set0(&f, "ScanStatusText", "Visible", Sf_Int(&f, 0));
-	Lv_Set0(&f, "ScanRemainingTime", "Visible", Sf_Int(&f, 0));
-	if (Sf_True(&f, USR()) != 1) {
-		return Sf_None(&f);
+static byte Into_OnFinishScan(void) {
+	nativeVal_t usr, cur, traitor, list, e;
+	if (!Gd_Set0I("ScanStatusText", "Visible", 0) || !Gd_Set0I("ScanRemainingTime", "Visible", 0)) {
+		return 0;
 	}
-	int found = Sf_Compare(&f, G(IG, "currentScannedShip"), "==", G(IG, "traitor"));
-	if (found > 0) {
-		Sf_SetGlobal(&f, IG, "traitorFound", Sf_Int(&f, 1));
-		Sf_Run(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "ScanShip");
-		Sf_Run(&f, "Speech", "AddRemoteCom", "(ss)", "Mission_IntoTheGDB_RemoteMessage4", "DeepThroat");
-		PyObject *s;
-		int mark = f.n;
-		for (int k = 0; (s = Sf_Next(&f, G(IG, "bishops"), k)) != NULL; k++) {
-			PyObject *e = Sf_Entity(&f, s);
-			if (Sf_True(&f, e) > 0 && Sf_Compare(&f, Sf_Attr(&f, e, "Name"), "!=", G(IG, "traitor")) > 0) {
-				Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", e, 0);
-			}
-			Sf_Release(&f, mark);
-		}
-	} else if (found == 0) {
-		Sf_Run(&f, "Scrap", "Set", "(ss)", "CurrentWaypointName", "");
-		Sf_Run(&f, "Speech", "AddRemoteCom", "(ss)", "Mission_IntoTheGDB_RemoteMessage3", "DeepThroat");
-		if (Sf_In(&f, G(IG, "currentScannedShip"), G(IG, "bishops")) > 0) {
-			Sf_Method(&f, G(IG, "bishops"), "remove", "(O)", G(IG, "currentScannedShip"));
-		}
-		PyObject *e = Sf_Entity(&f, G(IG, "currentScannedShip"));
-		if (Sf_True(&f, e) > 0) {
-			Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", e, 0);
-		}
+	int there = Gd_UsrThere(&usr);
+	Native_Free(&usr);
+	if (there <= 0) {
+		return there == 0;
 	}
-	Sf_Own(&f, IG, "ResetScan", "()");
-	return Sf_None(&f);
+	Native_SetNone(&traitor);
+	byte ok = Mode_G(IG, "currentScannedShip", &cur) && Mode_G(IG, "traitor", &traitor);
+	if (ok && !Native_Compare(&cur, &traitor)) {
+		ok = LvN_PutI(IG, "traitorFound", 1) && Mode_DelSchedS("ScanShip") &&
+			LvN_Com("Mission_IntoTheGDB_RemoteMessage4", "DeepThroat", NULL, NULL, NULL) && Gd_UntargetBishops(1);
+	} else if (ok) {
+		Native_Free(&cur);
+		Native_SetNone(&list);
+		ok = Mode_GVarSetS("CurrentWaypointName", "") && LvN_Com("Mission_IntoTheGDB_RemoteMessage3", "DeepThroat", NULL, NULL, NULL) &&
+			Mode_G(IG, "currentScannedShip", &cur) && LvN_GElems(IG, "bishops", &list);
+		int in = ok ? Native_Contains(&list, &cur) : -1;
+		ok = in >= 0;
+		if (in > 0) {
+			Native_Free(&cur);
+			ok = Mode_G(IG, "currentScannedShip", &cur) && Mode_Remove(IG, "bishops", &cur);
+		}
+		Native_Free(&list);
+		Native_SetNone(&e);
+		ok = ok && Gd_EntG(IG, "currentScannedShip", &e);
+		if (ok && Native_True(&e)) {
+			ok = Gd_Target(&e, 0);
+		}
+		Native_Free(&e);
+	}
+	Native_Free(&cur);
+	Native_Free(&traitor);
+	return ok && LV_OWN(IG, "ResetScan", NULL, "");
+}
+
+/* if x in bishops: bishops.remove(x) of the module, in place */
+static byte Gd_RemoveIn(const char *module, const nativeVal_t *x) {
+	nativeVal_t list;
+	if (!LvN_GElems(module, "bishops", &list)) {
+		return 0;
+	}
+	int in = Native_Contains(&list, x);
+	Native_Free(&list);
+	return in > 0 ? Mode_Remove(module, "bishops", x) : in == 0;
+}
+
+/* `if len(bishops) == 0:` the last bishop of the module */
+static byte Gd_IfLast(const char *module) {
+	nativeVal_t list;
+	if (!LvN_GElems(module, "bishops", &list)) {
+		return 0;
+	}
+	int n = Native_Size(&list);
+	Native_Free(&list);
+	return n < 0 ? 0 : n == 0 ? Gd_LastBishop() : 1;
 }
 
 /* OnBishopsDeath(LooserName, WinnerName): the player killed the traitor: the matrix drops; the last bishop dead: a
  * life and the bishops as the police */
-static PyObject *Into_OnBishopsDeath(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	SF_ARGS("OO", &looser, &winner);
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "Map");
-	if (Sf_In(&f, looser, G(IG, "bishops")) > 0) {
-		Sf_Method(&f, G(IG, "bishops"), "remove", "(O)", looser);
+static byte Into_OnBishopsDeath(const nativeVal_t *looser, const nativeVal_t *winner) {
+	nativeVal_t usr, name, traitor, e, pos, cur, msg;
+	if (!Mode_Import("Vehicles") || !Mode_Import("Map") || !Gd_RemoveIn(IG, looser) || !Mode_UsrHandle(&usr)) {
+		return 0;
 	}
-	PyObject *usr = USR();
-	int t = Sf_True(&f, usr);
-	if (t > 0) {
-		t = Sf_Compare(&f, Sf_Attr(&f, usr, "Name"), "==", winner);
+	Native_SetNone(&name);
+	Native_SetNone(&traitor);
+	Native_SetNone(&e);
+	Native_SetNone(&pos);
+	Native_SetNone(&cur);
+	byte ok = 1;
+	int t = Native_True(&usr);
+	if (t) {
+		ok = Mode_VGet(&usr, "Name", &name);
+		t = ok && !Native_Compare(&name, winner);
 	}
-	if (t > 0) {
-		t = Sf_Compare(&f, looser, "==", G(IG, "traitor"));
+	if (t) {
+		ok = Mode_G(IG, "traitor", &traitor);
+		t = ok && !Native_Compare(looser, &traitor);
 	}
-	if (t > 0) {
-		PyObject *e = Sf_Entity(&f, looser);
-		if (Sf_True(&f, e) > 0) {
-			Sf_Print(&f, "s", "Grabe ahora!");
-			Sf_Run(&f, "Scrap", "Set", "(ss)", "CurrentWaypointName", "");
-			Sf_Run(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "ScanShip");
-			Sf_SetGlobal(&f, IG, "traitor", Sf_Str(&f, ""));
-			Sf_Own(&f, IG, "DropMatrix", "(O)", Sf_Attr(&f, e, "Pos"));
+	if (t) {
+		ok = Mode_EntityH(looser, &e);
+		if (ok && Native_True(&e)) {
+			LvN_Str(&msg, "Grabe ahora!");
+			ok = Gd_Print(&msg) && Mode_GVarSetS("CurrentWaypointName", "") && Mode_DelSchedS("ScanShip") &&
+				LvN_PutS(IG, "traitor", "") && Mode_VGet(&e, "Pos", &pos) && LV_OWN(IG, "DropMatrix", NULL, "v", &pos);
+			Native_Free(&msg);
 		}
 	}
-	if (Sf_Compare(&f, G(IG, "currentScannedShip"), "==", looser) > 0) {
-		Sf_Own(&f, IG, "ResetScan", "()");
+	ok = ok && Mode_G(IG, "currentScannedShip", &cur);
+	if (ok && !Native_Compare(&cur, looser)) {
+		ok = LV_OWN(IG, "ResetScan", NULL, "");
 	}
-	if (Sf_Len(&f, G(IG, "bishops")) == 0) {
-		Gd_LastBishop(&f);
-	}
-	return Sf_None(&f);
+	Native_Free(&usr);
+	Native_Free(&name);
+	Native_Free(&traitor);
+	Native_Free(&e);
+	Native_Free(&pos);
+	Native_Free(&cur);
+	return ok && Gd_IfLast(IG);
 }
 
 /* OnBishopsDamage(LooserName, WinnerName, Damage): a bishop shot: all of them become enemies */
-static PyObject *Into_OnBishopsDamage(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner, *damage;
-	SF_ARGS("OOO", &looser, &winner, &damage);
-	Sf_Import(&f, "VehiclesNPC");
-	Sf_Run(&f, "Speech", "AddRemoteCom", "(ss)", "Mission_IntoTheGDB_RemoteMessage6", "Bishop");
-	PyObject *list = Sf_Build(&f, "[]");
-	PyObject *e = Sf_Entity(&f, Sf_Ask(&f, "Scrap", "EntityListGet", "(ss)", "Bishops", "First"));
-	int mark = f.n;
-	while (Sf_True(&f, e) > 0) {
-		Sf_Method(&f, list, "append", "(O)", Sf_Attr(&f, e, "Name"));
-		PyObject *next = Sf_Entity(&f, Sf_Attr(&f, e, "NextInList"));
-		Sf_ReleaseKeep(&f, mark, &next, 1);
-		e = next;
+static byte Into_OnBishopsDamage(void) {
+	nativeVal_t list, e, name;
+	if (!Mode_Import("VehiclesNPC") || !LvN_Com("Mission_IntoTheGDB_RemoteMessage6", "Bishop", NULL, NULL, NULL)) {
+		return 0;
 	}
-	PyObject *name;
-	mark = f.n;
-	for (int k = 0; (name = Sf_Next(&f, list, k)) != NULL; k++) {
-		e = Sf_Entity(&f, name);
-		if (Sf_True(&f, e) > 0) {
-			Sf_SetAttrS(&f, e, "EntityList", "Enemies");
+	Native_SetEmpty(&list, NV_LIST);
+	byte ok = Gd_ListFirst("Bishops", &e);
+	while (ok && Native_True(&e)) {
+		nativeVal_t next;
+		Native_SetNone(&name);
+		Native_SetNone(&next);
+		ok = Mode_VGet(&e, "Name", &name) && Mode_VGet(&e, "NextInList", &next);
+		if (ok) {
+			Native_Copy(Native_Append(&list), &name);
+			Native_Free(&e);
+			ok = Mode_EntityH(&next, &e);
 		}
-		Sf_Release(&f, mark);
+		Native_Free(&name);
+		Native_Free(&next);
 	}
-	Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "Bishops", "OnDamage", "");
-	Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "Enemies", "OnDamage", "");
-	return Sf_None(&f);
+	Native_Free(&e);
+	for (int k = 0; k < list.n && ok; k++) {
+		Native_SetNone(&e);
+		ok = Mode_EntityH(&list.items[k], &e) && (!Native_True(&e) || LvN_SetS(&e, "EntityList", "Enemies"));
+		Native_Free(&e);
+	}
+	Native_Free(&list);
+	return ok && Mode_ListSet("Bishops", "OnDamage", "") && Mode_ListSet("Enemies", "OnDamage", "");
+}
+
+/* Speech.ForceRemoteCom(key, who, AfterRemoteComFunc = func, Parameters = (param,)) (OBJLIB 3: a call with keywords;
+ * the keywords made before the function is read, as the C port did) */
+static byte Gd_ForceRemote(const char *key, const char *who, PyObject *func, const nativeVal_t *param) {
+	PyObject *p = Native_ToPy(param);
+	PyObject *kw = p ? Py_BuildValue("{s:O,s:(O)}", "AfterRemoteComFunc", func, "Parameters", p) : NULL;
+	PyObject *fn = kw ? Script_Attr("Speech", "ForceRemoteCom") : NULL;
+	PyObject *a = fn ? Py_BuildValue("(ss)", key, who) : NULL;
+	PyObject *r = a ? Script_CallObject(fn, a, kw) : NULL;
+	Py_XDECREF(r);
+	Py_XDECREF(a);
+	Py_XDECREF(fn);
+	Py_XDECREF(kw);
+	Py_XDECREF(p);
+	return r != NULL;
 }
 
 /* DropMatrix(pos): Gus' matrix (not takeable yet) and its arrow where the traitor died; Deep Throat's message makes it
  * takeable */
-static PyObject *Into_DropMatrix(PyObject *self, PyObject *args) {
-	PyObject *pos;
-	SF_ARGS("O", &pos);
-	PyObject *fn = Sf_Mod(&f, "Scrap", "CreateEntity");
-	PyObject *x = Sf_Item(&f, pos, 0), *y = Sf_Item(&f, pos, 1), *z = Sf_Item(&f, pos, 2);
-	PyObject *l = Sf_Call(&f, fn, "(sOOOs)", "GusMatrix", x, y, z, "Item");
-	Sf_Method(&f, l, "SetModel", "(O)", G(IG, "MatrixModel"));
-	Sf_SetAttrI(&f, l, "Radius", 3500);
-	Sf_SetAttrI(&f, l, "AppearsIfFree", 0);
-	Sf_SetAttrI(&f, l, "AutoFace", 0);
-	Sf_SetAttrI(&f, l, "OnlyUser", 1);
-	Sf_SetAttr(&f, l, "rTime", Sf_Float(&f, 0.25));
-	Sf_SetAttrS(&f, l, "OnTake", "");
-	Sf_Import(&f, "Items");
-	Sf_Run(&f, "Items", "SetSound", "(Os)", l, "TakeMatrixExt");
-	fn = Sf_Mod(&f, "Scrap", "CreateEntity");
-	x = Sf_Item(&f, pos, 0), y = Sf_Item(&f, pos, 1), z = Sf_Item(&f, pos, 2);
-	PyObject *l2 = Sf_Call(&f, fn, "(sOOOs)", "MissionCheckArrow", x, y, z, "WithLife");
-	Sf_SetAttr(&f, l2, "CamTgt", Sf_Build(&f, "(iii)", 0, 1000, 0));
-	PyObject *s;
-	int mark = f.n;
-	for (int k = 0; (s = Sf_Next(&f, G(IG, "bishops"), k)) != NULL; k++) {
-		PyObject *e = Sf_Entity(&f, s);
-		if (Sf_True(&f, e) > 0) {
-			Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", e, 0);
-		}
-		Sf_Release(&f, mark);
+static byte Into_DropMatrix(const nativeVal_t *pos) {
+	nativeVal_t name, l, model, l2, tgt, n, empty;
+	LvN_Str(&name, "GusMatrix");
+	Native_SetNone(&l);
+	Native_SetNone(&model);
+	Native_SetNone(&l2);
+	Native_SetNone(&n);
+	byte ok = LvN_CreateAt(&name, pos, "Item", &l) && Mode_G(IG, "MatrixModel", &model) && Mode_VModel(&l, &model) &&
+		LvN_SetI(&l, "Radius", 3500) && LvN_SetI(&l, "AppearsIfFree", 0) && LvN_SetI(&l, "AutoFace", 0) &&
+		LvN_SetI(&l, "OnlyUser", 1) && LvN_SetF(&l, "rTime", 0.25) && LvN_SetS(&l, "OnTake", "") && Mode_Import("Items") &&
+		LV_CALL("Items", "SetSound", NULL, "vs", &l, "TakeMatrixExt");
+	Native_Free(&name);
+	LvN_Str(&name, "MissionCheckArrow");
+	ok = ok && LvN_CreateAt(&name, pos, "WithLife", &l2);
+	if (ok) {
+		Native_SetEmpty(&tgt, NV_TUPLE);
+		Native_SetInt(Native_Append(&tgt), 0);
+		Native_SetInt(Native_Append(&tgt), 1000);
+		Native_SetInt(Native_Append(&tgt), 0);
+		ok = Mode_VSet(&l2, "CamTgt", &tgt);
+		Native_Free(&tgt);
 	}
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, l2, "Name"));
-	Sf_SetMod(&f, "Speech", "RemoteCom", Sf_Build(&f, "[]"));
-	PyObject *kw = Sf_Build(&f, "{s:O,s:(O)}", "AfterRemoteComFunc", G(IG, "ReinsertMatrix"), "Parameters", Sf_Attr(&f, l, "Name"));
-	Sf_CallKw(&f, Sf_Mod(&f, "Speech", "ForceRemoteCom"), Py_BuildValue("(ss)", "Mission_IntoTheGDB_RemoteMessage5", "DeepThroat"), kw);
-	return Sf_None(&f);
+	ok = ok && Gd_UntargetBishops(0) && Mode_VGet(&l2, "Name", &n) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &n);
+	Native_Free(&n);
+	if (ok) {
+		Native_SetEmpty(&empty, NV_LIST);
+		ok = Mode_SetModVar("Speech", "RemoteCom", &empty);
+		Native_Free(&empty);
+	}
+	if (ok) {
+		PyObject *fn = Mode_GlobalPy(IG, "ReinsertMatrix");
+		ok = fn && Mode_VGet(&l, "Name", &n) && Gd_ForceRemote("Mission_IntoTheGDB_RemoteMessage5", "DeepThroat", fn, &n);
+		Py_XDECREF(fn);
+	}
+	Native_Free(&name);
+	Native_Free(&l);
+	Native_Free(&model);
+	Native_Free(&l2);
+	Native_Free(&n);
+	return ok;
 }
 
 /* ActivateMatrix(name): the matrix can be taken */
-static PyObject *Into_ActivateMatrix(PyObject *self, PyObject *args) {
-	PyObject *name;
-	SF_ARGS("O", &name);
-	PyObject *e = Sf_Entity(&f, name);
-	if (Sf_True(&f, e) > 0) {
-		Sf_SetAttrS(&f, e, "OnTake", "Mission_IntoTheGDB.TakeMatrix");
-	}
-	return Sf_None(&f);
+static byte Into_ActivateMatrix(const nativeVal_t *name) {
+	nativeVal_t e;
+	Native_SetNone(&e);
+	byte ok = Mode_EntityH(name, &e) && (!Native_True(&e) || LvN_SetS(&e, "OnTake", "Mission_IntoTheGDB.TakeMatrix"));
+	Native_Free(&e);
+	return ok;
 }
 
 /* TakeMatrix(ItemName, CharName): the player took the matrix: to the restore point */
-static PyObject *Into_TakeMatrix(PyObject *self, PyObject *args) {
-	PyObject *item, *ch;
-	SF_ARGS("OO", &item, &ch);
-	if (Lv_UsrNameIs(&f, USR(), ch) <= 0) {
-		return Sf_None(&f);
+static byte Into_TakeMatrix(const nativeVal_t *ch) {
+	nativeVal_t usr, e, t;
+	if (!Mode_UsrHandle(&usr)) {
+		return 0;
 	}
-	PyObject *e = Sf_Ask(&f, "Scrap", "GetEntity", "(s)", "GusMatrix");
-	if (Sf_True(&f, e) > 0) {
-		Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", e, 0);
-		Sf_SetAttrI(&f, e, "rTime", 20);
-		Sf_Later(&f, Sf_Int(&f, 5), Sf_Attr(&f, e, "Del"), NOARGS, NULL);
+	int is = LvN_UsrNameIs(&usr, ch);
+	Native_Free(&usr);
+	if (is <= 0) {
+		return is == 0;
 	}
-	e = Sf_Ask(&f, "Scrap", "GetEntity", "(s)", "MissionCheckArrow");
-	if (Sf_True(&f, e) > 0) {
-		Sf_Method(&f, e, "Del", "()");
+	byte ok = LvN_Entity("GusMatrix", &e);
+	if (ok && Native_True(&e)) {
+		ok = Gd_Target(&e, 0) && LvN_SetI(&e, "rTime", 20);
+		/* OBJLIB 4: the scheduler keeps the bound method e.Del */
+		PyObject *del = ok ? Mode_VBound(&e, "Del") : NULL;
+		Native_SetFloat(&t, Mode_Time() + 5);
+		ok = del && Mode_Schedule(&t, del, NULL, 0, NULL);
+		Py_XDECREF(del);
 	}
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "MissionState", "RestoreMatrix");
-	Sf_Own(&f, IG, "RestoreMatrix", "()");
-	return Sf_None(&f);
+	Native_Free(&e);
+	ok = ok && LvN_Entity("MissionCheckArrow", &e) && (!Native_True(&e) || Mode_VDel(&e));
+	Native_Free(&e);
+	if (ok) {
+		SaveVar_Set("MissionState", "RestoreMatrix");
+	}
+	return ok && LV_OWN(IG, "RestoreMatrix", NULL, "");
 }
 
-static PyObject *Into_RestoreMatrix(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Gd_RestorePoint(&f, IG, "Mission_IntoTheGDB.LaunchRestoreMatrixAnim");
-	return Sf_None(&f);
+static byte Into_RestoreMatrix(void) {
+	return Gd_RestorePoint(IG, "Mission_IntoTheGDB.LaunchRestoreMatrixAnim");
 }
 
 /* LaunchRestoreMatrixAnim(UsrName, CharName, optId, FullOption): the bishops go, the scene of the matrix plays */
-static PyObject *Into_LaunchRestoreMatrixAnim(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	SF_ARGS("OOOO", &usr, &ch, &opt, &full);
-	Gd_RestoreUsed(&f, IG);
-	Sf_Own(&f, IG, "RelaxBishops", "()");
-	Sf_Own(&f, IG, "PreSetNextMission", "()");
-	Sf_Import(&f, "MapMatrix");
-	Sf_Run(&f, "MapMatrix", "RestoreMatrix", "()");
-	return Sf_None(&f);
+static byte Into_LaunchRestoreMatrixAnim(void) {
+	return Gd_RestoreUsed(IG) && LV_OWN(IG, "RelaxBishops", NULL, "") && LV_OWN(IG, "PreSetNextMission", NULL, "") &&
+		Mode_Import("MapMatrix") && LV_CALL("MapMatrix", "RestoreMatrix", NULL, "");
 }
 
 /* RelaxBishops(): the police, the bishops and the enemies go, no alarm, the bishops as the police again */
-static PyObject *Into_RelaxBishops(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "OutPolice");
-	Sf_Import(&f, "Map");
-	Gd_ClearList(&f, "OutCop");
-	Gd_ClearList(&f, "Bishops");
-	Gd_ClearList(&f, "Enemies");
-	Sf_Run(&f, "Scrap", "SetAlarm", "(i)", 0);
-	Sf_Run(&f, "Map", "InitPoliceBishops", "()");
-	return Sf_None(&f);
+static byte Into_RelaxBishops(void) {
+	if (!Mode_Import("OutPolice") || !Mode_Import("Map") || !Gd_ClearList("OutCop") || !Gd_ClearList("Bishops") ||
+		!Gd_ClearList("Enemies")) {
+		return 0;
+	}
+	return Gd_Alarm(0) && LV_CALL("Map", "InitPoliceBishops", NULL, "");
 }
 
 /* MissionScorer(id): the scan status and its bar, visible while a bishop near the player is scanned */
-static PyObject *Into_MissionScorer(PyObject *self, PyObject *args) {
-	PyObject *id;
-	SF_ARGS("O", &id);
-	PyObject *e = Sf_Entity(&f, G(IG, "currentScannedShip"));
-	PyObject *usr = USR();
-	int scanning = Sf_True(&f, usr);
-	if (scanning > 0) {
-		scanning = Sf_True(&f, e);
+static byte Into_MissionScorer(const nativeVal_t *id) {
+	nativeVal_t e, usr, vis, x, y, label, it, v, back, main, black, max;
+	if (!Gd_EntG(IG, "currentScannedShip", &e)) {
+		return 0;
 	}
-	if (scanning > 0) {
-		scanning = Gd_Scan(&f, e, usr, "<");
+	if (!Mode_UsrHandle(&usr)) {
+		Native_Free(&e);
+		return 0;
 	}
-	PyObject *vis = Sf_Int(&f, scanning > 0);
-	PyObject *x = Sf_Mod(&f, "Scorer", "MissionScorerText_X"), *y = Sf_Mod(&f, "Scorer", "MissionScorerText_Y");
-	Sf_MissionText(&f, id, "ScanStatusText", "Text", x, y, "Horatio", "Shadow", Sf_Cat(&f, "Os", LANG("Mission_IntoTheGDB_Scorer1"), ":"),
-		"Left", vis);
-	Sf_Run(&f, "SScorer", "Add", "(Oss)", id, "ScanRemainingTime", "Bar");
-	PyObject *fn = Sf_Mod(&f, "Scorer", "MissionScorerBar_SetDefaults");
-	PyObject *back = Sf_Mod(&f, "Scorer", "MissionScorerBar_ColorBack");
-	PyObject *main = Sf_Mod(&f, "Scorer", "MissionScorerBar_ColorMain");
-	PyObject *black = Sf_Mod(&f, "Scorer", "MissionScorerBar_ColorBlack");
-	Sf_Call(&f, fn, "(OsOOO)", id, "ScanRemainingTime", back, main, black);
-	Sf_Run(&f, "SScorer", "Set", "(Ossi)", id, "ScanRemainingTime", "IsAutoUpdatable", 1);
-	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, "ScanRemainingTime", "MaxValue", G(IG, "MAX_SCANNING_TIME"));
-	if (scanning == 0) {
-		Sf_Run(&f, "SScorer", "Set", "(OssO)", id, "ScanRemainingTime", "Value", G(IG, "MAX_SCANNING_TIME"));
+	int scanning = Gd_Scanning(&usr, &e);
+	Native_Free(&e);
+	Native_Free(&usr);
+	if (scanning < 0) {
+		return 0;
 	}
-	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, "ScanRemainingTime", "Visible", vis);
-	return Sf_None(&f);
+	Native_SetInt(&vis, scanning > 0);
+	Native_SetNone(&y);
+	Native_SetNone(&back);
+	Native_SetNone(&main);
+	Native_SetNone(&black);
+	Native_SetNone(&max);
+	LvN_Str(&it, "ScanRemainingTime");
+	byte ok = LvN_TextX(0, &x) && LvN_TextY(0, &y);
+	if (ok) {
+		LvN_Label("Mission_IntoTheGDB_Scorer1", &label);
+		ok = LvN_MissionText(id, "ScanStatusText", "Text", &x, &y, "Horatio", "Shadow", &label, "Left", &vis);
+		Native_Free(&label);
+	}
+	ok = ok && Mode_ScorerAdd(id, &it, "Bar");
+	if (ok) {
+		PyObject *fn = Script_Attr("Scorer", "MissionScorerBar_SetDefaults");
+		ok = fn && LvN_ModGet("Scorer", "MissionScorerBar_ColorBack", &back) && LvN_ModGet("Scorer", "MissionScorerBar_ColorMain", &main) &&
+			LvN_ModGet("Scorer", "MissionScorerBar_ColorBlack", &black) &&
+			Native_Call(fn, NULL, "vvvvv", id, &it, &back, &main, &black);
+		Py_XDECREF(fn);
+	}
+	Native_SetInt(&v, 1);
+	ok = ok && LvN_ScorerSet(id, "ScanRemainingTime", "IsAutoUpdatable", &v) && Mode_G(IG, "MAX_SCANNING_TIME", &max) &&
+		LvN_ScorerSet(id, "ScanRemainingTime", "MaxValue", &max);
+	if (ok && !scanning) {
+		Native_Free(&max);
+		ok = Mode_G(IG, "MAX_SCANNING_TIME", &max) && LvN_ScorerSet(id, "ScanRemainingTime", "Value", &max);
+	}
+	ok = ok && LvN_ScorerSet(id, "ScanRemainingTime", "Visible", &vis);
+	Native_Free(&x);
+	Native_Free(&y);
+	Native_Free(&it);
+	Native_Free(&back);
+	Native_Free(&main);
+	Native_Free(&black);
+	Native_Free(&max);
+	return ok;
 }
+
+LV_CORE0(Into_Init)
+LV_CORE0(Into_InitMission)
+LV_CORE0(Into_ScanShip)
+LV_CORE0(Into_CheckContinueScanning)
+LV_CORE0(Into_ResetScan)
+LV_CORE0(Into_OnFinishScan)
+LV_CORE0(Into_OnBishopsDamage)
+LV_CORE0(Into_RestoreMatrix)
+LV_CORE0(Into_LaunchRestoreMatrixAnim)
+LV_CORE0(Into_RelaxBishops)
+
+static byte Into_CreateBishop_C(const nativeVal_t *a, nativeVal_t *out) {
+	return Into_CreateBishop(&a[0], out);
+}
+
+static byte Into_CreateBishops_C(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Into_CreateBishops(&a[0], &a[1]);
+}
+
+static byte Into_OnBishopsDeath_C(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Into_OnBishopsDeath(&a[0], &a[1]);
+}
+
+static byte Into_DropMatrix_C(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Into_DropMatrix(&a[0]);
+}
+
+static byte Into_ActivateMatrix_C(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Into_ActivateMatrix(&a[0]);
+}
+
+static byte Into_TakeMatrix_C(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Into_TakeMatrix(&a[1]);
+}
+
+static byte Into_MissionScorer_C(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Into_MissionScorer(&a[0]);
+}
+
+LV_FN(Into, InitPy, 1, Into_Init_C)
+LV_FN(Into, CreateBishopPy, 1, Into_CreateBishop_C)
+LV_FN(Into, CreateBishopsPy, 2, Into_CreateBishops_C)
+LV_FN(Into, InitMissionPy, 0, Into_InitMission_C)
+LV_FN(Into, ScanShipPy, 0, Into_ScanShip_C)
+LV_FN(Into, CheckContinueScanningPy, 0, Into_CheckContinueScanning_C)
+LV_FN(Into, ResetScanPy, 0, Into_ResetScan_C)
+LV_FN(Into, OnFinishScanPy, 0, Into_OnFinishScan_C)
+LV_FN(Into, OnBishopsDeathPy, 2, Into_OnBishopsDeath_C)
+LV_FN(Into, OnBishopsDamagePy, 3, Into_OnBishopsDamage_C)
+LV_FN(Into, DropMatrixPy, 1, Into_DropMatrix_C)
+LV_FN(Into, ActivateMatrixPy, 1, Into_ActivateMatrix_C)
+LV_FN(Into, TakeMatrixPy, 2, Into_TakeMatrix_C)
+LV_FN(Into, RestoreMatrixPy, 0, Into_RestoreMatrix_C)
+LV_FN(Into, LaunchRestoreMatrixAnimPy, 4, Into_LaunchRestoreMatrixAnim_C)
+LV_FN(Into, RelaxBishopsPy, 0, Into_RelaxBishops_C)
+LV_FN(Into, MissionScorerPy, 1, Into_MissionScorer_C)
 
 PyMethodDef g_GDBIntoTheGDBMethods[] = {
 	{ "GetBishopProfile", Into_GetBishopProfile, 1, NULL },
-	{ "Init", Into_Init, 1, NULL },
-	{ "CreateBishop", Into_CreateBishop, 1, NULL },
-	{ "CreateBishops", Into_CreateBishops, 1, NULL },
-	{ "InitMission", Into_InitMission, 1, NULL },
-	{ "ScanShip", Into_ScanShip, 1, NULL },
-	{ "CheckContinueScanning", Into_CheckContinueScanning, 1, NULL },
-	{ "ResetScan", Into_ResetScan, 1, NULL },
-	{ "OnFinishScan", Into_OnFinishScan, 1, NULL },
-	{ "OnBishopsDeath", Into_OnBishopsDeath, 1, NULL },
-	{ "OnBishopsDamage", Into_OnBishopsDamage, 1, NULL },
-	{ "DropMatrix", Into_DropMatrix, 1, NULL },
-	{ "ActivateMatrix", Into_ActivateMatrix, 1, NULL },
-	{ "TakeMatrix", Into_TakeMatrix, 1, NULL },
-	{ "RestoreMatrix", Into_RestoreMatrix, 1, NULL },
-	{ "LaunchRestoreMatrixAnim", Into_LaunchRestoreMatrixAnim, 1, NULL },
-	{ "RelaxBishops", Into_RelaxBishops, 1, NULL },
-	{ "MissionScorer", Into_MissionScorer, 1, NULL },
+	{ "Init", Into_InitPy, 1, NULL },
+	{ "CreateBishop", Into_CreateBishopPy, 1, NULL },
+	{ "CreateBishops", Into_CreateBishopsPy, 1, NULL },
+	{ "InitMission", Into_InitMissionPy, 1, NULL },
+	{ "ScanShip", Into_ScanShipPy, 1, NULL },
+	{ "CheckContinueScanning", Into_CheckContinueScanningPy, 1, NULL },
+	{ "ResetScan", Into_ResetScanPy, 1, NULL },
+	{ "OnFinishScan", Into_OnFinishScanPy, 1, NULL },
+	{ "OnBishopsDeath", Into_OnBishopsDeathPy, 1, NULL },
+	{ "OnBishopsDamage", Into_OnBishopsDamagePy, 1, NULL },
+	{ "DropMatrix", Into_DropMatrixPy, 1, NULL },
+	{ "ActivateMatrix", Into_ActivateMatrixPy, 1, NULL },
+	{ "TakeMatrix", Into_TakeMatrixPy, 1, NULL },
+	{ "RestoreMatrix", Into_RestoreMatrixPy, 1, NULL },
+	{ "LaunchRestoreMatrixAnim", Into_LaunchRestoreMatrixAnimPy, 1, NULL },
+	{ "RelaxBishops", Into_RelaxBishopsPy, 1, NULL },
+	{ "MissionScorer", Into_MissionScorerPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
@@ -690,226 +1158,168 @@ static const char *const r2_bishop_profile[] = { "Ship=SBISHOP1", "StupidPathFin
 	"ControlStrafeEvasion=1", "UsePercHookGetAway=2", "TimeMaxStrafe=6", "VelMaxStrafe=0.75", NULL };
 
 static PyObject *Re1_GetBishopProfile(PyObject *self, PyObject *args) {
+	nativeVal_t sp;
 	(void)self;
-	return Lv_ProfileFunc(args, R1, r1_bishop_profile);
+	Native_SetNone(&sp);
+	return Mode_Return(Gd_Profile(args, r1_bishop_profile, &sp), &sp);
 }
 
 static PyObject *Re2_GetBishopProfile(PyObject *self, PyObject *args) {
+	nativeVal_t sp;
 	(void)self;
-	return Lv_ProfileFunc(args, R2, r2_bishop_profile);
+	Native_SetNone(&sp);
+	return Mode_Return(Gd_Profile(args, r2_bishop_profile, &sp), &sp);
 }
 
 /* InitMission(): the restore point and the eight bishops (the second mission: they attack when the player boards) */
-static PyObject *Re_InitMission(PyObject *args, const char *module, const char *use, byte second) {
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Gd_RestorePoint(&f, module, use);
-	Sf_Own(&f, module, "CreateBishops", "(i)", 8);
-	if (second) {
-		Sf_Import(&f, "Parking");
-		Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", G(module, "BishopsAttackPlayer"));
-	}
-	return Sf_None(&f);
-}
-
-static PyObject *Re1_InitMission(PyObject *self, PyObject *args) {
-	(void)self;
-	return Re_InitMission(args, R1, "Mission_ReinsertOwnMatrix.PreSetNextMission", 0);
-}
-
-static PyObject *Re2_InitMission(PyObject *self, PyObject *args) {
-	(void)self;
-	return Re_InitMission(args, R2, "Mission_ReinsertOwnMatrix2.PreSetNextMission", 1);
+static byte Re_InitMission(const char *module, const char *use, byte second) {
+	return Gd_RestorePoint(module, use) && LV_OWN(module, "CreateBishops", NULL, "i", 8L) &&
+		(!second || (Mode_Import("Parking") && LvN_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", module, "BishopsAttackPlayer")));
 }
 
 /* BishopsAttackPlayer(): on boarding the bishops attack the player (the first mission drops the callback only with a
  * player, the second always) */
-static PyObject *Re_BishopsAttackPlayer(PyObject *args, const char *module, byte second) {
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Re_BishopsAttackPlayer(const char *module, byte second) {
+	nativeVal_t usr, list;
+	Native_SetNone(&list);
+	if (!Mode_Import("Parking") || (second && !LvN_ModNone("Parking", "SwitchVehicleMissionCallback"))) {
+		return 0;
 	}
-	Sf_Import(&f, "Parking");
-	if (second) {
-		Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Py_None);
+	int there = Gd_UsrThere(&usr);
+	if (there <= 0) {
+		Native_Free(&usr);
+		return there == 0;
 	}
-	PyObject *usr = USR();
-	if (Sf_True(&f, usr) != 1) {
-		return Sf_None(&f);
-	}
-	if (!second) {
-		Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Py_None);
-	}
-	PyObject *name;
-	int mark = f.n;
-	for (int k = 0; (name = Sf_Next(&f, G(module, "bishops"), k)) != NULL; k++) {
-		PyObject *bishop = Sf_Entity(&f, name);
-		if (Sf_True(&f, bishop) > 0) {
-			PyObject *bn = Sf_Attr(&f, bishop, "Name");
-			Sf_Run(&f, "SAI", "SetStateVehicle", "(iOO)", 2, bn, Sf_Attr(&f, usr, "Name"));
+	byte ok = (second || LvN_ModNone("Parking", "SwitchVehicleMissionCallback")) && LvN_GElems(module, "bishops", &list);
+	int n = ok ? Native_ForCount(&list) : 0;
+	ok = ok && n >= 0;
+	for (int k = 0; k < n && ok; k++) {
+		nativeVal_t s, b, bn, un;
+		Native_SetNone(&s);
+		Native_SetNone(&b);
+		Native_SetNone(&bn);
+		Native_SetNone(&un);
+		ok = Native_SeqItem(&list, k, &s) && Mode_EntityH(&s, &b);
+		if (ok && Native_True(&b)) {
+			ok = Mode_VGet(&b, "Name", &bn) && Mode_VGet(&usr, "Name", &un) &&
+				LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, &bn, &un);
 		}
-		Sf_Release(&f, mark);
+		Native_Free(&s);
+		Native_Free(&b);
+		Native_Free(&bn);
+		Native_Free(&un);
 	}
-	return Sf_None(&f);
-}
-
-static PyObject *Re1_BishopsAttackPlayer(PyObject *self, PyObject *args) {
-	(void)self;
-	return Re_BishopsAttackPlayer(args, R1, 0);
-}
-
-static PyObject *Re2_BishopsAttackPlayer(PyObject *self, PyObject *args) {
-	(void)self;
-	return Re_BishopsAttackPlayer(args, R2, 1);
+	Native_Free(&list);
+	Native_Free(&usr);
+	return ok;
 }
 
 /* CreateBishop(): a bishop with the player there, in the enemies (red in the second mission) */
-static PyObject *Re_CreateBishop(PyObject *args, const char *module, byte red) {
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Re_CreateBishop(const char *module, byte red) {
+	nativeVal_t usr, bishop;
+	if (!Mode_Import("VehiclesNPC")) {
+		return 0;
 	}
-	Sf_Import(&f, "VehiclesNPC");
-	if (Sf_True(&f, USR()) != 1) {
-		return Sf_None(&f);
+	int there = Gd_UsrThere(&usr);
+	Native_Free(&usr);
+	if (there <= 0) {
+		return there == 0;
 	}
-	PyObject *bishop = Sf_Ask(&f, "VehiclesNPC", "MakeAI", "(ss)", "SBishop1", "Bishop");
-	PyObject *pd = Sf_Own(&f, module, "GetBishopProfile", "()");
-	Sf_Run(&f, "VehiclesNPC", "ModAIProff", "(OO)", bishop, pd);
-	if (red) {
-		Sf_SetAttrS(&f, bishop, "TgType", "red");
-	}
-	Sf_SetAttrS(&f, bishop, "EntityList", "Enemies");
-	Lv_Life(&f, bishop, module, "BISHOP_LIFE");
-	Sf_Method(&f, G(module, "bishops"), "append", "(O)", Sf_Attr(&f, bishop, "Name"));
-	return Sf_None(&f);
-}
-
-static PyObject *Re1_CreateBishop(PyObject *self, PyObject *args) {
-	(void)self;
-	return Re_CreateBishop(args, R1, 0);
-}
-
-static PyObject *Re2_CreateBishop(PyObject *self, PyObject *args) {
-	(void)self;
-	return Re_CreateBishop(args, R2, 1);
+	Native_SetNone(&bishop);
+	byte ok = Gd_MakeBishop(module, &bishop) && (!red || LvN_SetS(&bishop, "TgType", "red")) &&
+		LvN_SetS(&bishop, "EntityList", "Enemies") && LvN_Life(&bishop, module, "BISHOP_LIFE") && Gd_AppendName(module, &bishop);
+	Native_Free(&bishop);
+	return ok;
 }
 
 /* CreateBishops(numBishops) */
-static PyObject *Re_CreateBishops(PyObject *args, const char *module) {
-	PyObject *num;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "O", &num)) {
-		return NULL;
+static byte Re_CreateBishops(const char *module, const nativeVal_t *num) {
+	nativeVal_t one, n1;
+	long count = 0;
+	Native_SetInt(&one, 1);
+	Native_SetNone(&n1);
+	byte ok = Mode_Import("VehiclesNPC") && Native_Arith('+', num, &one, &n1) && Gd_Range1(&n1, &count);
+	Native_Free(&n1);
+	for (long k = 0; k < count && ok; k++) {
+		ok = LV_OWN(module, "CreateBishop", NULL, "");
 	}
-	Sf_Import(&f, "VehiclesNPC");
-	PyObject *range = Sf_Ask(&f, "__builtin__", "range", "(iO)", 1, Sf_OpI(&f, num, '+', 1));
-	int mark = f.n;
-	for (int k = 0; Sf_Next(&f, range, k) != NULL; k++) {
-		Sf_Own(&f, module, "CreateBishop", "()");
-		Sf_Release(&f, mark);
-	}
-	return Sf_None(&f);
-}
-
-static PyObject *Re1_CreateBishops(PyObject *self, PyObject *args) {
-	(void)self;
-	return Re_CreateBishops(args, R1);
-}
-
-static PyObject *Re2_CreateBishops(PyObject *self, PyObject *args) {
-	(void)self;
-	return Re_CreateBishops(args, R2);
+	return ok;
 }
 
 /* OnBishopsDeath(LooserName, WinnerName): the last bishop dead: a life and the bishops as the police */
-static PyObject *Re_OnBishopsDeath(PyObject *args, const char *module) {
-	PyObject *looser, *winner;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "OO", &looser, &winner)) {
-		return NULL;
-	}
-	Sf_Import(&f, "Vehicles");
-	Sf_Method(&f, G(module, "bishops"), "remove", "(O)", looser);
-	if (Sf_Len(&f, G(module, "bishops")) == 0) {
-		Gd_LastBishop(&f);
-	}
-	return Sf_None(&f);
-}
-
-static PyObject *Re1_OnBishopsDeath(PyObject *self, PyObject *args) {
-	(void)self;
-	return Re_OnBishopsDeath(args, R1);
-}
-
-static PyObject *Re2_OnBishopsDeath(PyObject *self, PyObject *args) {
-	(void)self;
-	return Re_OnBishopsDeath(args, R2);
+static byte Re_OnBishopsDeath(const char *module, const nativeVal_t *looser) {
+	return Mode_Import("Vehicles") && Mode_Remove(module, "bishops", looser) && Gd_IfLast(module);
 }
 
 /* PreSetNextMission(UsrName, CharName, optId, FullOption): Dtritus gets his matrix back, the bishops go, the scene of
  * the matrix plays (the first mission: Deep Throat's message now; the second: no more Bertos, the message after the
  * scene) */
-static PyObject *Re_PreSetNextMission(PyObject *args, const char *module, byte second) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+static byte Re_PreSetNextMission(const char *module, byte second) {
+	nativeVal_t chars, dt;
+	int rm = LvN_GTrue(module, "rm");
+	if (rm < 0 || (rm && !Gd_RestoreUsed(module)) || !LvN_SaveList("Conversor.AvailableChars", module, &chars)) {
+		return 0;
 	}
-	if (Sf_True(&f, G(module, "rm")) > 0) {
-		Gd_RestoreUsed(&f, module);
+	LvN_Str(&dt, "Dtritus");
+	byte ok = LvN_SaveAppend("Conversor.AvailableChars", &chars, &dt);
+	Native_Free(&chars);
+	Native_Free(&dt);
+	if (ok && second) {
+		SaveVar_Set("CreateBertos", "0");
+	} else if (ok) {
+		ok = LvN_Com("Mission_ReInsertOwnMatrix_RemoteMessage1", "DeepThroat", module, "SetNextMission", NULL);
 	}
-	PyObject *chars = Lv_SaveList(&f, "Conversor.AvailableChars", module);
-	Lv_SaveAppend(&f, "Conversor.AvailableChars", chars, Sf_Str(&f, "Dtritus"));
-	if (second) {
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "CreateBertos", "0");
-	} else {
-		Sf_Run(&f, "Speech", "AddRemoteCom", "(ssO)", "Mission_ReInsertOwnMatrix_RemoteMessage1", "DeepThroat", G(module, "SetNextMission"));
+	if (!ok || !Gd_ClearList("Enemies") || !Gd_ClearList("OutCop") || !Gd_Alarm(0)) {
+		return 0;
 	}
-	Gd_ClearList(&f, "Enemies");
-	Gd_ClearList(&f, "OutCop");
-	Sf_Run(&f, "Scrap", "SetAlarm", "(i)", 0);
-	Sf_Import(&f, "Map");
-	Sf_Run(&f, "Map", "InitPoliceBishops", "()");
-	Sf_Import(&f, "MapMatrix");
-	if (second) {
-		Sf_Run(&f, "MapMatrix", "RestoreMatrix", "(O)", G(module, "ShowDTMessage"));
-	} else {
-		Sf_Run(&f, "MapMatrix", "RestoreMatrix", "()");
+	if (!Mode_Import("Map") || !LV_CALL("Map", "InitPoliceBishops", NULL, "") || !Mode_Import("MapMatrix")) {
+		return 0;
 	}
-	return Sf_None(&f);
+	if (!second) {
+		return LV_CALL("MapMatrix", "RestoreMatrix", NULL, "");
+	}
+	PyObject *fn = Mode_GlobalPy(module, "ShowDTMessage");
+	ok = fn && LV_CALL("MapMatrix", "RestoreMatrix", NULL, "O", fn);
+	Py_XDECREF(fn);
+	return ok;
 }
 
-static PyObject *Re1_PreSetNextMission(PyObject *self, PyObject *args) {
-	(void)self;
-	return Re_PreSetNextMission(args, R1, 0);
-}
+/* the entries of the two missions: the same functions with the module and the differences */
+#define RE_FNS(n, mod, use, second) \
+	static byte Re##n##_InitMission_C(const nativeVal_t *a, nativeVal_t *out) { (void)a; (void)out; return Re_InitMission(mod, use, second); } \
+	static byte Re##n##_BishopsAttackPlayer_C(const nativeVal_t *a, nativeVal_t *out) { (void)a; (void)out; return Re_BishopsAttackPlayer(mod, second); } \
+	static byte Re##n##_CreateBishop_C(const nativeVal_t *a, nativeVal_t *out) { (void)a; (void)out; return Re_CreateBishop(mod, second); } \
+	static byte Re##n##_CreateBishops_C(const nativeVal_t *a, nativeVal_t *out) { (void)out; return Re_CreateBishops(mod, &a[0]); } \
+	static byte Re##n##_OnBishopsDeath_C(const nativeVal_t *a, nativeVal_t *out) { (void)out; return Re_OnBishopsDeath(mod, &a[0]); } \
+	static byte Re##n##_PreSetNextMission_C(const nativeVal_t *a, nativeVal_t *out) { (void)a; (void)out; return Re_PreSetNextMission(mod, second); } \
+	LV_FN(Re##n, InitMissionPy, 0, Re##n##_InitMission_C) \
+	LV_FN(Re##n, BishopsAttackPlayerPy, 0, Re##n##_BishopsAttackPlayer_C) \
+	LV_FN(Re##n, CreateBishopPy, 0, Re##n##_CreateBishop_C) \
+	LV_FN(Re##n, CreateBishopsPy, 1, Re##n##_CreateBishops_C) \
+	LV_FN(Re##n, OnBishopsDeathPy, 2, Re##n##_OnBishopsDeath_C) \
+	LV_FN(Re##n, PreSetNextMissionPy, 4, Re##n##_PreSetNextMission_C)
 
-static PyObject *Re2_PreSetNextMission(PyObject *self, PyObject *args) {
-	(void)self;
-	return Re_PreSetNextMission(args, R2, 1);
-}
+RE_FNS(1, R1, "Mission_ReinsertOwnMatrix.PreSetNextMission", 0)
+RE_FNS(2, R2, "Mission_ReinsertOwnMatrix2.PreSetNextMission", 1)
 
 PyMethodDef g_GDBReinsertOwnMatrixMethods[] = {
 	{ "GetBishopProfile", Re1_GetBishopProfile, 1, NULL },
-	{ "InitMission", Re1_InitMission, 1, NULL },
-	{ "BishopsAttackPlayer", Re1_BishopsAttackPlayer, 1, NULL },
-	{ "CreateBishop", Re1_CreateBishop, 1, NULL },
-	{ "CreateBishops", Re1_CreateBishops, 1, NULL },
-	{ "OnBishopsDeath", Re1_OnBishopsDeath, 1, NULL },
-	{ "PreSetNextMission", Re1_PreSetNextMission, 1, NULL },
+	{ "InitMission", Re1_InitMissionPy, 1, NULL },
+	{ "BishopsAttackPlayer", Re1_BishopsAttackPlayerPy, 1, NULL },
+	{ "CreateBishop", Re1_CreateBishopPy, 1, NULL },
+	{ "CreateBishops", Re1_CreateBishopsPy, 1, NULL },
+	{ "OnBishopsDeath", Re1_OnBishopsDeathPy, 1, NULL },
+	{ "PreSetNextMission", Re1_PreSetNextMissionPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
 PyMethodDef g_GDBReinsertOwnMatrix2Methods[] = {
 	{ "GetBishopProfile", Re2_GetBishopProfile, 1, NULL },
-	{ "InitMission", Re2_InitMission, 1, NULL },
-	{ "BishopsAttackPlayer", Re2_BishopsAttackPlayer, 1, NULL },
-	{ "CreateBishop", Re2_CreateBishop, 1, NULL },
-	{ "CreateBishops", Re2_CreateBishops, 1, NULL },
-	{ "OnBishopsDeath", Re2_OnBishopsDeath, 1, NULL },
-	{ "PreSetNextMission", Re2_PreSetNextMission, 1, NULL },
+	{ "InitMission", Re2_InitMissionPy, 1, NULL },
+	{ "BishopsAttackPlayer", Re2_BishopsAttackPlayerPy, 1, NULL },
+	{ "CreateBishop", Re2_CreateBishopPy, 1, NULL },
+	{ "CreateBishops", Re2_CreateBishopsPy, 1, NULL },
+	{ "OnBishopsDeath", Re2_OnBishopsDeathPy, 1, NULL },
+	{ "PreSetNextMission", Re2_PreSetNextMissionPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
