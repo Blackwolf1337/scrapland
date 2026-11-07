@@ -1165,6 +1165,40 @@ int Mode_AlarmOn(void) {
 	return t;
 }
 
+byte Mode_ScorerPut(int id, const char *item, const char *var, const nativeVal_t *v) {
+	if (v->type == NV_STR) {
+		/* the C text, up to its first 0 byte */
+		Script_SetStr(id, item, var, Native_Text(v));
+	} else if (v->type == NV_INT || v->type == NV_FLOAT) {
+		Script_SetNum(id, item, var, v->type == NV_INT ? (double)v->i : v->f);
+	} else {
+		return Native_CallMod("SScorer", "Set", NULL, "issv", (long)id, item, var, v);
+	}
+	return 1;
+}
+
+void Mode_ScorerGet(int id, const char *item, const char *var, nativeVal_t *out) {
+	char *s;
+	double d;
+	int i;
+	switch (Scorer_GetItemVar(id, item, var, &s, &d, &i)) {
+	case 1:
+		if (s) {
+			Native_SetText(out, s, (int)strlen(s));
+		} else {
+			Native_SetNone(out);
+		}
+		return;
+	case 2:
+		Native_SetFloat(out, d);
+		return;
+	case 3:
+		Native_SetInt(out, i);
+		return;
+	}
+	Native_SetNone(out);
+}
+
 int Mode_GetMoney(void) {
 	return g_pWorld->money;
 }

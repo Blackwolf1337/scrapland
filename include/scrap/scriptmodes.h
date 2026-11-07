@@ -213,6 +213,11 @@ byte Mode_ListGet(const char *list, const char *var, nativeVal_t *out);
 byte Mode_SetOnFloor(const nativeVal_t *name);
 /* Scrap.GetAlarm()[0] (the alarm is on) through its seam (fc-pk-dt swaps it): 1 or 0, -1 with the error */
 int Mode_AlarmOn(void);
+/* the SScorer.Set the C ports make on a text or number directly (Script_SetStr of the text up to its first 0 byte,
+ * Script_SetNum), other values through SScorer.Set by name (its errors) */
+byte Mode_ScorerPut(int id, const char *item, const char *var, const nativeVal_t *v);
+/* SScorer.Get(id, item, var): a text, float, int or None */
+void Mode_ScorerGet(int id, const char *item, const char *var, nativeVal_t *out);
 /* Scrap.GetMoney(), Scrap.SetMoney(money) (the TypeError of "i") */
 int Mode_GetMoney(void);
 byte Mode_SetMoney(const nativeVal_t *money);

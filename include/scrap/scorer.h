@@ -137,6 +137,9 @@ void *cScorer_AddModel(cScorer *scorer, const char *name, const char *model, con
 	float radius, float height, byte head);
 void ScorerFade_Start(ScorerFade *fade, uint32_t from, uint32_t to, float time);
 /* 0xAARRGGBB from the (r, g, b, a) values of the scripts (SScorer.Fade) */
+/* SScorer.Get(player, name, var): 1 a text in *s, 2 a float in *d, 3 an int in *i, 0 (None) without the item or
+ * variable */
+int Scorer_GetItemVar(int player, const char *name, const char *var, char **s, double *d, int *i);
 static inline uint32_t Scorer_PackColor(uint32_t r, uint32_t g, uint32_t b, uint32_t a) {
 	return ((a << 8 | r) << 8 | g) << 8 | b;
 }
