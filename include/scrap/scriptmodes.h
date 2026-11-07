@@ -369,6 +369,10 @@ byte Mode_EntSetI(const char *name, const char *var, long i);
  * number */
 byte Mode_SetLockAlarm(const nativeVal_t *lock);
 
+/* o.var of a value as any value (Mode_VGet takes only native values from an object that is no entity handle: here a
+ * function, an instance or a handle in the attribute is an NV_OBJ, OBJLIB 7); the errors of the attribute */
+byte Mode_VObj(const nativeVal_t *o, const char *var, nativeVal_t *out);
+
 /* ---- helpers of batch I (the super deals and the native level files of batch I) ---- */
 
 /* h.var = i, = "text", = d of a handle value */
