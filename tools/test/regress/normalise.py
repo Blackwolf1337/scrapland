@@ -53,6 +53,13 @@
 #                     Word.Word string.                                             -> "'Func'"
 #  R15 NPC answers    the answer line of an NPC (Speech NPCAnswer) is picked at random from its list.
 #                                                                                   -> "('NPCAnswer', ?)"
+#  R16 lambdas       a lambda of a case line (Speech.OnEndOfSpeech = lambda: ...) is a Python function in the pack and
+#                     python harness runs ("<function <lambda> at X>") and a C function of the test channel
+#                     (TestExpr.c) on the channel ("<built-in method <lambda> of tuple object at X>").
+#                                                                                   -> "<function <lambda> at X>"
+#  R11b entity numbers as R11 for engine names with digits or underscores before the counter ('Poli1_Fighter161',
+#                     'Func1_Fighter162': the enemy ships a mission makes): three or more digits at the end.
+#                                                                                   -> "'Poli1_Fighter#'"
 # Not normalised here on purpose: numbers (timers, positions, counters, random values). A number that differs
 # between the two pack runs becomes a wildcard in compare.py; a number that is the same in both pack runs must be the
 # same in the C run.
@@ -82,6 +89,8 @@ _R12 = re.compile(r"\('sched', 60\.0, 'fn:Del', \(\)\), \('sched', 1\.1, 'fn:Act
 _R14 = re.compile(r"'[A-Z]\w*\.([A-Za-z_]\w*)'")
 _R15 = re.compile(r"\('NPCAnswer', (\"(?:[^\"\\]|\\.)*\"|'(?:[^'\\]|\\.)*')\)")
 _R11 = re.compile(r"'((?:ent:)?[A-Za-z]+)\d{2,}'")
+_R11B = re.compile(r"'((?:ent:)?[A-Za-z][A-Za-z0-9_]*_[A-Za-z]+)\d{3,}'")
+_R16 = re.compile(r"<built-in method <lambda> of tuple object at X>")
 _R10 = re.compile(r"\{'[^'{}]*': [^{}\[\]()]*\}")
 _R10ITEM = re.compile(r"'[^']*': (?:'[^']*'|[^,']*)")
 
@@ -98,6 +107,7 @@ def norm(s):
 	s = s.replace('\r', '')
 	s = _R1.sub("T)", s)
 	s = _R2.sub(" at X>", s)
+	s = _R16.sub("<function <lambda> at X>", s)
 	s = _R3.sub("ARITY", s)
 	s = _R4.sub(lambda m: m.group(0).lower(), s)
 	s = _R5.sub(lambda m: '<function %s>' % (m.group(1) or m.group(2)), s)
@@ -108,6 +118,7 @@ def norm(s):
 	s = _R9.sub('', s).replace('[, ', '[')
 	s = _R10.sub(_sortdict, s)
 	s = _R11.sub(r"'\1#'", s)
+	s = _R11B.sub(r"'\1#'", s)
 	s = _R12.sub("('sched', DROP)", s)
 	s = _R14.sub(r"'\1'", s)
 	s = _R15.sub("('NPCAnswer', ?)", s)

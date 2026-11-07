@@ -53,7 +53,7 @@ _basv = [None]
 _bas = lambda: (tc_set(_basv, 0, SInput.GetActionSet()), 1)[1]
 _basr = lambda: (SInput.SetActionSet(_basv[0]), 1)[1]
 # Scrap.UsrEntity(0) as a functionary (the talks that check the player's character)
-_bfakeusr = tc_obj(__name__ + '._bfakeusr', {'ActCtrl': 'Functionary', 'Name': 'Player0'})
+_bfakeusr = tc_class(__name__ + '._bfakeusr', {'ActCtrl': 'Functionary', 'Name': 'Player0'})
 _BDEN = ('MayorAtGambinDen', 'FunctionaryTwinsAtGambinDen', 'BankersAtGambinDen', 'BishopsAtGambinDen', 'PolicesAtGambinDen', 'PoliceBossAtPolice')
 # the talk of an arranging mission through all its options (accept restores the action set)
 _barrange = lambda fn, prefix: (lambda u: (lambda r: (_bas(), r.append(_sd(fn, u, 'CrazyGambler_Default', prefix + '_1_1', 'x')),
