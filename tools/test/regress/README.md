@@ -69,7 +69,14 @@ first error of the helper commands, else the answer of the line.
 
 Pacing: on the channel every command file is sent with pace=0.1 in its header. The game runs it only after 0.1 s of
 game time since its previous answer, as mcpgame.py polled every 0.1 s of game time. The pack baselines saw that
-spacing; without it NPC talks were seen a step early.
+spacing; without it NPC talks were seen a step early. While the world clock runs, the game answers the channel in
+cWorld_Update right after the scheduled functions of the frame (where the old harness's script function ran as a
+scheduled function). It answers at the start of the frame only when the clock stands (menus) or before the first world
+update.
+
+Timing-sensitive lines (NPC actions, AI states, door and meteor timers, the menu cursor) can still differ between a
+channel run and a python run. Both harnesses show a few such flaky cases per full run, more under heavy machine load.
+Rerun failing cases before treating them as port differences.
 
 Other variables:
 
