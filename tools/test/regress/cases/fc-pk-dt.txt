@@ -1,0 +1,84 @@
+# DownTown: Parking (the state after the level start, the helpers, parked ships, the engine callbacks, the level link, boarding and parking in real time)
+exec(open('fpk.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); P = __import__('Parking'); S = __import__('Sputnik'); result = 1
+(I._pk(), I._spt(), I._usr())
+I._v(P.PlayerShip.Name, I._SHIPV + I._PARKV + ('Pos', 'Ang', 'MovePos'))
+I._v(P.DtritusPlate.Name, ('LinkModel', 'Active', 'OffModPos', 'DeltaOffMul', 'OffMul', 'UseLinkAng'))
+I._itemvars()
+result = map(lambda x: I._v(x, ('Ang', 'Radius', 'OnTake', 'OnlyUser', 'EntityList', 'AppearsIfFree', 'AutoFace')), I._its())
+result = map(lambda x: (x[0], x[1:3]), filter(lambda r: r[1][1] == 'P_None', map(lambda x: I._v(x, ('Model', 'MPil0')), I._vehs())))
+# the helpers
+u = Scrap.UsrEntity(0); result = (P.isValidToPark(None), P.isValidToPark(P.PlayerShip), P.isValidToPark(u), I._t(P.isValidToPark, 5))
+I._std('SPOLI3', 'PkTest'); v = Scrap.GetEntity('PkTest'); result = (v.WRadius, v.VRadius, P.SetShipRadius(v, 1), v.WRadius, v.VRadius, P.SetShipRadius(v, 1), v.WRadius, P.SetShipRadius(v, 0), v.WRadius, v.VRadius, P.SetShipRadius(v, 0), v.WRadius)
+v = Scrap.GetEntity('PkTest'); result = (P.SetOnFloor(v), P.SetShipAsParked('PkTest'), I._v('PkTest', I._PARKV + ('MPil0',)), P.isValidToPark(v), I._t(P.SetShipAsParked, 'NoShip'))
+v = Scrap.GetEntity('PkTest'); result = (P.CheckWeapons(v), I._v('PkTest', ('isWpn02', 'isWpn03', 'isWpn04', 'isWpn05')), Scrap.GetSaveVar('Hangar.availableWeaponsList'))
+I.w = Scrap.GetSaveVar('Hangar.availableWeaponsList'); Scrap.SetSaveVar('Hangar.availableWeaponsList', "['Vulcan', 'Tesla', 'Inferno']"); v = Scrap.GetEntity('PkTest'); v.isWpn02 = 1; v.isWpn03 = 1; v.isWpn04 = 1; v.isWpn05 = 1; r = (P.CheckWeapons(v), I._v('PkTest', ('isWpn02', 'isWpn03', 'isWpn04', 'isWpn05'))); Scrap.SetSaveVar('Hangar.availableWeaponsList', 'x'); r = r + (I._t(P.CheckWeapons, v),); Scrap.SetSaveVar('Hangar.availableWeaponsList', I.w); result = r
+p = P.PlayerShip.Pos; b = P.CreateBox('TestBox', p[0] + 2000, p[1], p[2]); result = (b.Name, I._v(b.Name, ('Pos', 'Radius', 'OnTake', 'OnlyUser', 'EntityList', 'AppearsIfFree', 'AutoFace')))
+result = (P.CreateBox('NoBox', 0.0, -10000000.0, 0.0), I._t(P.CreateBox, 'X', 1, 2))
+result = (P.SetDtritusPlate(P.PlayerShip, 0), P.DtritusPlate.Active, P.SetDtritusPlate(None, 1), P.DtritusPlate.Active, P.SetDtritusPlate(Scrap.GetEntity('PkTest'), 1), P.DtritusPlate.Active, P.SetDtritusPlate(P.PlayerShip, 1), P.DtritusPlate.Active)
+# parked ships
+p = P.PlayerShip.Pos; o = P.CreateParkedShip((p[0] + 4000, p[1], p[2]), 45, 'Bishop_01'); I.o1 = o.Name; result = I._v(o.Name, I._SHIPV + I._PARKV + ('Ang',))
+p = P.PlayerShip.Pos; o = P.CreateParkedShip((p[0] - 4000, p[1], p[2]), Angle = 10, Type = 'Mayor'); I.o2 = o.Name; result = I._v(o.Name, ('Model', 'MPil0', 'Ang', 'Descriptor'))
+p = P.PlayerShip.Pos; result = (I._t(P.CreateParkedShip, (p[0], p[1], p[2] + 4000), 10, 'Boss'), P.AllShips)
+p = P.PlayerShip.Pos; o = P.CreateParkedShip((p[0], p[1], p[2] - 4000), 0); I.o3 = o.Name; result = (o.Model in P.AllShips, P.AllShips, o.MPil0)
+P.AllShips[0] = 'spoli1'; p = P.PlayerShip.Pos; o = P.CreateParkedShip((p[0], p[1], p[2] - 6000), 0, 'NoGroup_05'); I.o4 = o.Name; result = (P.AllShips, o.Model in P.AllShips)
+result = (P.CreateLonelyMercParkings(), I._t(P.CreateParkedShip, (0, 0), 0))
+# the engine callbacks
+I._rec2('Parking', 'CreateParkedShip', I._FakeEnt('Fake')); p = Scrap.GetEntity(I.o1).Pos; r = (P.OnParkedOut(I.o1, p[0], p[1], p[2], '_05'), Scrap.GetEntity(I.o1), I._takecalls()); I._restore(); result = r
+P.ParkedOutCallback = I._recn('poc'); I._r = []; p = Scrap.GetEntity(I.o2).Pos; r = (P.OnParkedOut(I.o2, p[0], p[1], p[2], '_06'), I._r); P.ParkedOutCallback = None; result = r
+P.ParkedOutCallback = I._Rec('poc0', 0); r = (I._t(P.OnParkedOut, 'NoShip', 0.0, 0.0, 0.0, '_07'), I._takecalls()); P.ParkedOutCallback = None; result = r
+I._std('SPOLI1', 'PkTest2'); P.SetShipAsParked('PkTest2'); p = Scrap.GetEntity('PkTest2').Pos; result = (P.OnParkingOccupied('PkTest2', p[0], p[1], p[2], '_08'), Scrap.GetEntity('PkTest2'), filter(lambda x: x[:7] == 'Parking', I._its()))
+p = P.PlayerShip.Pos; result = (P.OnParkingOccupied('PkTest', p[0], p[1], p[2], '_09'), Scrap.GetEntity('PkTest') != None)
+Scrap.GetEntity('PkTest').MPil0 = 'P_Police'; p = P.PlayerShip.Pos; result = (P.OnParkingOccupied('PkTest', p[0], p[1], p[2], '_09'), Scrap.GetEntity('PkTest') != None, I._t(P.OnParkingOccupied, 'NoShip', 0, 0, 0, ''))
+I.op = __import__('OutPolice').PoliceActive; __import__('OutPolice').PoliceActive = 0; result = (P.ParkedDeat(Scrap.GetEntity(I.o3), 'nobody'), Scrap.GetEntity(I.o3), Scrap.GetSaveVar('Stats.Parking'), P.ParkedDeat(Scrap.GetEntity(I.o4), Scrap.UsrEntity(0).Name), Scrap.GetSaveVar('Stats.Parking'), Scrap.GetAlarm()[0])
+I._std('SPOLI1', 'PkTest3'); result = (P.ParkedDeat(Scrap.GetEntity('PkTest3'), 'x'), Scrap.GetEntity('PkTest3') != None, I._t(P.ParkedDeat, None, 'x'))
+p = P.PlayerShip.Pos; P.PlayerShip.Pos = (p[0] + 300, p[1], p[2]); r = (P.ParkedDeat(P.PlayerShip, 'x'), I._spt()); P.PlayerShip.Pos = p; result = r
+__import__('OutPolice').PoliceActive = I.op; result = I.op
+# the level link and the link door event
+I._rec2('SaveGame', 'MarkWayPoint'); I._rec2('SaveGame', 'StartGame'); r = (P.ChangeLevel('DM_OutLink_Outskirts', 'x'), I._takecalls(), map(Scrap.GetSaveVar, ('ComeFrom', 'usrShip.Ammo00', 'usrShip.Ammo01', 'usrShip.Ammo02', 'usrShip.AcWeap'))); I._restore(); result = r
+I._rec2('RaceMaker', 'ShowSystemMessage'); r = (P.ShowNextMap('DM_Door_Outmap_Outskirts', 'Open', 0.5), I._takecalls(), I._t(P.ShowNextMap, 'X', 'Open', 0)); I._restore(); result = r
+# the junkyard parking and its camera end
+I._rec2('Parking', 'OnPark', 0); r = (P.JunkerPark('x', 'NoShip'), P.JunkerPark('x', 'PkTest'), I._takecalls()); I._restore(); result = r
+I._seq('Parking', 'OnPark', [1]); I._seq('Scrap', 'GetAlarm', [(1, 0)]); P.LastCamera = None; m = Scrap.GetMoney(); r = (P.JunkerPark('x', 'PkTest3'), I._takecalls(), Scrap.GetMoney() - m, Scrap.GetSaveVar('Hangar.iHangarShip'), Scrap.GetSaveVar('InitialMessage')); I._restore(); result = r
+I.hs = Scrap.GetSaveVar('Hangar.iHangarShip'); I._seq('Parking', 'OnPark', [1]); P.LastCamera = Scrap.CreateEntity('CamPath', 0, 0, 0, 'CamPath'); r = (P.JunkerPark('x', P.PlayerShip.Name), I._takecalls()); P.LastCamera.Del(); P.LastCamera = None; I._restore(); result = r
+Scrap.SetSaveVar('Hangar.iHangarShip', I.hs); cp = Scrap.CreateEntity('CamPath', 0, 0, 0, 'CamPath'); cp.TgtCam03 = Scrap.GetCam(0); I._rec2('SaveGame', 'MarkWayPoint'); I._rec2('SaveGame', 'StartGame'); P.SwitchCharMissionCallback = I._Rec('scm', None); P.LocalShip = P.PlayerShip; r = (P.EndJunkerPathCam(cp.Name), I._takecalls(), Scrap.GetSaveVar('ComeFrom'), I._pk(), I._cam()); P.SwitchCharMissionCallback = None; I._restore(); result = r
+# the camera start, the voice, the callbacks
+cp = Scrap.CreateEntity('CamPath', 0, 0, 0, 'CamPath'); I.cp = cp.Name; v = P.PlayerShip; result = (P.SetCameraStart(cp, v, v.Pos), I._v(cp.Name, ('Time00', 'FadeIn00', 'FadeOut00', 'Pos00', 'Ang00', 'Pos01', 'Ang01', 'FOV01', 'Near01', 'Far01', 'Quake01', 'camPos', 'camAng')))
+cp = Scrap.GetEntity(I.cp); v = P.PlayerShip; result = (P.SetCameraStart(cp, v, v.Pos, 1, 0), I._v(cp.Name, ('Pos00', 'Ang00', 'FOV00', 'Near00', 'Far00', 'Quake00', 'camPos', 'camAng')), P.SetCameraStart(cp, v, (0.0, -10000000.0, 0.0), split = 1), I._v(cp.Name, ('Pos00', 'camPos')))
+Scrap.GetEntity(I.cp).Del(); I._rec2('SSound', 'PlayVoice'); I._rec2('SSound', 'VoiceRemain', 2.0); r = (P.PlayVoiceChannel(1), I._takecalls()); I._restore(); result = r
+P.SwitchVehicleMissionCallback = I._Rec('svm', None); P.SwitchVehicleMissionCallbackAux = I._Rec('svma', None); r = (P.ExecSwitchVehicleMissionCallback(), I._takecalls()); P.SwitchVehicleMissionCallback = None; P.SwitchVehicleMissionCallbackAux = None; result = (r, P.ExecSwitchVehicleMissionCallback())
+I._t(P.RestoreDeathPlayerShip)
+e = Scrap.GetEntity('PkTest3'); e.Life = 0; result = (P.SetInvunerable(e), P.LocalShip.Name, P.RestoreDeathPlayerShip(), P.__dict__.has_key('LocalShip'), e.Life, P.PlayerShip.Life, I._t(P.RestoreDeathPlayerShip), I._t(P.SetInvunerable, None), P.LocalShip)
+# boarding the player's own ship through Sputnik, then parking it again
+u = Scrap.UsrEntity(0); result = (u.Name, S.UseShip(u.Name, P.PlayerShip.Name, 'UseShip', 'x'), I._usr(), I._cam(), I._pk(), I._spt(), I._v(P.PlayerShip.Name, I._PARKV + ('MPil0', 'MovePos')), P.LastPark and I._v(P.LastPark.Name, ('Pos', 'rTime', 'OnTake')))
+!sleep 4
+(I._usr(), I._cam(), I._pk(), I._spt(), I._v(P.PlayerShip.Name, I._PARKV + ('MPil0', 'AcWeap')))
+I._rec2('SaveGame', 'MarkWayPoint'); I._rec2('SaveGame', 'StartGame'); r = (P.ChangeLevel('DM_OutLink_Scrapyard', 'x'), I._takecalls(), map(Scrap.GetSaveVar, ('ComeFrom', 'usrShip.Ammo00', 'usrShip.AcWeap'))); I._restore(); result = r
+result = (P.UseShip(Scrap.UsrEntity(0).Name, P.PlayerShip.Name, '', ''), P.OnPark('TestBox', 'NoShip'))
+v = P.PlayerShip; v.Vel = (0, 0, 0); r = P.OnPark(P.LastPark.Name, v.Name); result = (r, I._usr(), I._cam(), I._pk(), I._spt(), I._v(v.Name, I._PARKV + ('MPil0', 'MoveAng')), I._v('Player0', ('Pos', 'Active', 'UsrControl', 'TgType', 'Descriptor')))
+!sleep 5
+I._usr()
+I._cam()
+I._pk()
+I._spt()
+I._v(P.PlayerShip.Name, I._PARKV + ('MPil0',))
+filter(lambda x: x[:4] == 'Park', I._its())
+# boarding a parked ship: Sputnik sucks the player's ship in first, then Parking.UseShip with UseParams
+P.SwitchCharMissionCallback = None; p = P.PlayerShip.Pos; o = P.CreateParkedShip((p[0] + 1500, p[1], p[2] + 1500), 0, 'Bishop'); I.o5 = o.Name; result = I._v(o.Name, I._PARKV + ('Model', 'Pos'))
+result = (S.UseShip(Scrap.UsrEntity(0).Name, I.o5, 'UseShip', 'x'), I._usr(), I._cam(), I._spt(), I._v(P.PlayerShip.Name, I._PARKV + ('MPil0',)), P.DtritusPlate.Active, filter(lambda x: x[:4] == 'Park', I._its()))
+!sleep 9
+I._usr()
+I._cam()
+I._pk()
+I._spt()
+I._v(P.PlayerShip.Name, I._PARKV + ('MPil0',))
+I._v(I.o5, I._PARKV + ('MPil0',))
+I._rec2('SaveGame', 'MarkWayPoint'); I._rec2('SaveGame', 'StartGame'); r = (P.ChangeLevel('DM_OutLink_Outskirts', 'x'), I._takecalls(), map(Scrap.GetSaveVar, ('ComeFrom', 'usrShip.Ammo00', 'usrShip.Ammo01', 'usrShip.Ammo02', 'usrShip.AcWeap'))); I._restore(); result = r
+v = Scrap.GetEntity(I.o5); v.Vel = (0, 0, 0); result = (P.OnPark(P.LastPark.Name, v.Name), I._usr(), I._spt())
+!sleep 5
+I._usr()
+I._pk()
+I._spt()
+I._v(P.PlayerShip.Name, I._PARKV + ('MPil0', 'Pos', 'Ang'))
+I._v(I.o5, I._PARKV + ('MPil0',))
+filter(lambda x: x[:4] == 'Park', I._its())

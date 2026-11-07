@@ -1,0 +1,21 @@
+Scrap.SetSaveVar('Mission_PoliceBossCheats', 'AskCrazyGambler'); Scrap.SetSaveVar('Mission.Map', 'Police'); Scrap.SetSaveVar('Mission.Library', 'Mission_PoliceBossCheats'); Scrap.LoadLevel('Levels/Police'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6.py')
+(Scrap.GetLevelPath(), _r6fn('Mission_PoliceBossCheats'))
+_r6hooks()
+_r6res()
+_sdmod('Mission_PoliceBossCheats', ('NextMissionData', 'SpawnConversionPoint', 'PoliceBoss', 'Dumb1', 'Dumb2', 'PoliceBossc', 'Dumb1c', 'Dumb2c'))
+_r6ent(('DM_Mission_Police_Dumb', 'DM_Mission_Police_Dumber', 'DM_Mission_PoliceBoss_BossCheater', 'DM_Mission_Police_DumbCard', 'DM_Mission_Police_DumberCard', 'DM_Mission_PoliceBoss_BossCheaterCard'), ('ActCtrl', 'Ang', 'MoveTime', 'MovePos', 'MoveAng', 'Invulnerable', 'ForceAction', 'ForceDefLoop', 'DefLoop', 'ArrowCanUse', 'CanPhoto', 'Active'))
+_r6sv(('Mission_PoliceBossCheats',))
+Scrap.SetSaveVar('Mission_PoliceBossCheats', 'BossCheats'); Scrap.LoadLevel('Levels/Police'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6.py')
+(Scrap.GetLevelPath(), _r6fn('Mission_PoliceBossCheats'))
+_r6hooks()
+_r6res()
+_sdmod('Mission_PoliceBossCheats', ('NextMissionData', 'SpawnConversionPoint', 'PoliceBoss', 'Dumb1', 'Dumb2', 'PoliceBossc', 'Dumb1c', 'Dumb2c'))
+_r6ent(('DM_Mission_Police_Dumb', 'DM_Mission_Police_Dumber', 'DM_Mission_PoliceBoss_BossCheater', 'DM_Mission_Police_DumbCard', 'DM_Mission_Police_DumberCard', 'DM_Mission_PoliceBoss_BossCheaterCard'), ('ActCtrl', 'Ang', 'MoveTime', 'MovePos', 'MoveAng', 'Invulnerable', 'ForceAction', 'ForceDefLoop', 'DefLoop', 'ArrowCanUse', 'CanPhoto', 'Active'))
+_r6sv(('Mission_PoliceBossCheats',))
+Scrap.SetSaveVar('Mission.Map', 'Orbit'); Scrap.SetSaveVar('Mission.Library', 'MapDecont'); Scrap.Set('IsXbox', 0); result = Scrap.GetSaveVar('Mission.Library')

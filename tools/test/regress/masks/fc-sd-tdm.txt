@@ -1,0 +1,6 @@
+# line 7: random in C: the case recorder controls Scrap.Rand on the pack side only, the C port calls Scrap_RandRange directly (brief)
+ignore _sdent(('Enemy1', 'Enemy2', 'Enemy3', 'Enemy4', 'Enemy5', 'Friend1', 'Friend2', 'Friend3', 'Friend4', 'Friend5'))
+# line 19: random in C: the case recorder controls Scrap.Rand on the pack side only, the C port calls Scrap_RandRange directly (brief)
+ignore (setattr(T, 'friendsFrags', 1), _sd(T.CrazyGamblerStartCombat), setattr(T, 'friendsFrags', 0), _sdent(('Enemy1', 'Enemy5', 'Friend1', 'Friend4')), _sdn(__import__('Menu').MissionScorerCall), __import__('MissionsFuncs').SetInvulnerableShipsInList('Enemies'), __import__('MissionsFuncs').SetInvulnerableShipsInList('Friends'))
+# line 46: random in C: the case recorder controls Scrap.Rand on the pack side only, the C port calls Scrap_RandRange directly (brief)
+ignore (_sdent(('Enemy4', 'Friend4')), Scrap.SetSaveVar('CombatFinishPlayerWinsTextCad', ''), setattr(T, 'friendsFrags', 19), _sd(T.OnEnemyDeath, 'Nobody', 'Player0'))

@@ -1,0 +1,36 @@
+# helpers/fsd.py as channel statements: names instead of object reprs, recorders that keep the arguments, a call with
+# the scheduler recorded in the same line, state dumps
+import Scrap, sys
+_sdr = []
+_sdn = tc_sdn
+_sdrec = lambda n, ret=None: tc_obj(__name__ + '._sdrec', {'n': n, 'ret': ret},
+	lambda *a, **kw: (_sdr.append((n, _sdn(a), _sdn(kw))), ret)[1])
+_sdsch = lambda t, fn, args, name=None: _sdr.append(('sched', round(t - Scrap.GetTime(), 2), _sdn(fn), _sdn(args)))
+_sd = lambda f, *a, **kw: (lambda r: (r[1], _sdr))((tc_set(__globals__, '_sdr', []),
+	tc_swap(Scrap, 'AddScheduledFunc', _sdsch,
+		lambda: tc_catch(lambda: _sdn(apply(f, a, kw)), (), None, lambda t, v: 'error: %s: %s' % (t, v))),
+	Scrap.SetTimeSpeed(1)))
+_sdon = lambda: (map(__import__, ('Speech', 'MissionsFuncs', 'SaveGame', 'RaceMaker')), (setattr(Speech, 'AddRemoteCom', _sdrec('AddRemoteCom')),
+	setattr(Speech, 'ForceRemoteCom', _sdrec('ForceRemoteCom')),
+	setattr(MissionsFuncs, 'OnSuperDealFinish', _sdrec('OnSuperDealFinish')),
+	setattr(SaveGame, 'Restart', _sdrec('Restart')),
+	setattr(RaceMaker, 'ShowSystemMessage', _sdrec('ShowSystemMessage')), 1)[-1])[1]
+_sdmod = lambda m, vs: (lambda d: map(lambda v: (v, _sdn(d[v]) if d.has_key(v) else '-'), vs))(__import__(m).__dict__)
+_sdev = ('TgType', 'EntityList', 'Invulnerable', 'Active', 'LLogicIsLeader', 'RadarShow', 'OnTake', 'Money', 'LaunchTaunts', 'WeapList')
+_sdent = lambda names, vs=_sdev: map(lambda n: (lambda e:
+	tuple([n] + map(lambda v: tc_try(lambda: _sdn(getattr(e, v)), (), '?'), vs)) if e else (n, None))(Scrap.GetEntity(n)),
+	names)
+_sdhooks = lambda: (map(__import__, ('Parking', 'Chars', 'Vehicles', 'Menu', 'MissionsFuncs')), _sdn((Parking.SwitchVehicleMissionCallback, Parking.SwitchCharMissionCallback, Parking.OnCreatePlayerShip,
+	Chars.OnCreateMainChar, Chars.OnMainCharDeath, Vehicles.OnDeathCallback, Vehicles.DelPlayerShipOnDeath,
+	Menu.MissionScorerCall, MissionsFuncs.cameraData)))[1]
+_sdlist = lambda l: tc_sorted(map(lambda e: e.Name,
+	tc_walk(Scrap.GetEntity(Scrap.EntityListGet(l, 'First')), lambda e: Scrap.GetEntity(e.NextInList))))
+_sdcfn = lambda m: (lambda vals: (len(filter(lambda v: type(v) == type(len), vals)),
+	len(filter(lambda v: type(v).__name__ == 'function', vals))))(__import__(m).__dict__.values())
+# the ships static and invulnerable, so the AI takes no flags and kills nobody between the lines
+_sdfreeze = lambda names: (map(lambda n: (lambda e: e and (setattr(e, 'Invulnerable', 1), SAI.SetStateVehicle(0, n)))(Scrap.GetEntity(n)),
+	names), len(names))[1]
+_sdallitems = lambda: (map(__import__, ('Init',)), (lambda n: (setattr(__import__('Init'), '_sdcollect', lambda x: n.append(x)),
+	Scrap.SphereCall(0.0, 0.0, 0.0, 300000.0, 'i', 'Init._sdcollect'), n.sort(), n)[3])([]))[1]
+_sditems = lambda prefix: _sdent(filter(lambda n: n[:len(prefix)] == prefix, _sdallitems()),
+	('OnTake', 'RadarShow', 'Radius', 'rTime', 'BackTime', 'OnReset', 'Active'))

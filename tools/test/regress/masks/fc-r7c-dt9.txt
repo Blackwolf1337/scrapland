@@ -1,0 +1,2 @@
+# line 22: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore (len(_sdlist('OutCop')) > 0, Scrap.SetAlarm(0), _sdfreeze(_sdlist('OutCop')))

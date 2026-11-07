@@ -1,0 +1,47 @@
+# CreditsText by direct calls in the menu level (Menu), then the credits as the menu level runs them (Map.ShowCredits)
+Scrap.OpenPack('Scripts/Scorer'); Scrap.PreloadLibrary('CreditsText', 'CreditsText.pyc'); Scrap.ClosePack(); Scrap.SetTimeSpeed(1); result = type(__import__('CreditsText').ShowCredit)
+__import__('Init')._mod('CreditsText', ('MAX_TEXT_LINES','TextInfo','TextPos','TextFont','TextLines','EndOfCredits','ctr'))
+__import__('CreditsText').Init(); result = (SScorer.Items(0), __import__('Menu').MovieScorerCall.__name__)
+map(lambda v: SScorer.Get(0, 'Credits', v), ('X','Y','Visible','Text0','Text19','Text20'))
+SInput.SetActionSet('Inactive'); __import__('Menu').MovieScorer(0); Scrap.SetTimeSpeed(1); result = (SScorer.Items(0), SInput.GetActionSet())
+exec "import Init, CreditsText\nInit._rec = []\nCreditsText.EndOfCredits = lambda: Init._rec.append('end')"
+exec "import Init\ndef _cr():\n\timport CreditsText\n\treturn (Init._mod('CreditsText', ('TextInfo','TextPos','TextLines','ctr')), map(lambda v: SScorer.Get(0, 'Credits', v), ('Visible','Time','Text0','Text1','Text2','Text3','Text19')), Scrap.Get('R_CreditsX'), Scrap.Get('R_CreditsY'), Init._rec)\nInit._cr = _cr"
+__import__('CreditsText').ShowCredit(1); result = __import__('Init')._cr()
+!sleep 1.5
+__import__('Init')._cr()
+!sleep 8
+__import__('Init')._cr()
+__import__('CreditsText').ShowCredit(2); result = __import__('Init')._cr()
+__import__('CreditsText').ShowCredit(3); result = __import__('Init')._cr()
+__import__('CreditsText').ShowCredit(4); result = __import__('Init')._cr()
+__import__('CreditsText').ShowCredit(7); result = __import__('Init')._cr()
+__import__('CreditsText').ShowCredit(999); result = __import__('Init')._cr()
+__import__('CreditsText').ShowCredit(1.0); result = __import__('Init')._cr()
+setattr(__import__('CreditsText'), 'ctr', 9); __import__('CreditsText').ShowCredit(3); result = __import__('Init')._cr()
+setattr(__import__('CreditsText'), 'ctr', 1); setattr(Scrap, '_sx', Scrap.Get('R_CreditsSizeX')); result = Scrap._sx
+__import__('CreditsText').ShowCredit(5); result = __import__('Init')._cr()
+!sleep 10
+__import__('Init')._cr()
+__import__('CreditsText').PrintDataGuay(0); result = __import__('Init')._cr()
+__import__('CreditsText').PrintDataGuay(2); result = __import__('Init')._cr()
+__import__('CreditsText').PrintDataGuay(1); result = map(lambda i: len(SScorer.Get(0, 'Credits', 'Text' + `i`)), range(20))
+__import__('CreditsText').PrintData('x'); result = __import__('Init')._cr()
+__import__('CreditsText').CleanCredits(); result = __import__('Init')._cr()
+__import__('CreditsText').ShowCredit(6); SInput.SetActionSet('Menu'); result = __import__('Init')._cr()
+!sleep 1
+__import__('Init')._cr()
+__import__('CreditsText').PrintData(0); result = __import__('Init')._cr()
+__import__('CreditsText').ShowUp(); result = __import__('Init')._cr()
+__import__('CreditsText').PrintData(0); __import__('CreditsText').ShowDown(); result = __import__('Init')._cr()
+SInput.SetActionSet('Inactive'); __import__('CreditsText').ShowDown(0.5); __import__('CreditsText').ShowDown(7); result = __import__('Init')._cr()
+setattr(__import__('CreditsText'), 'EndOfCredits', None); __import__('CreditsText').ShowDown(0.5); result = __import__('Init')._cr()
+setattr(__import__('CreditsText'), 'EndOfCredits', 5); __import__('CreditsText').ShowDown(0.5)
+setattr(__import__('CreditsText'), 'TextInfo', ['a', 3]); __import__('CreditsText').PrintData(0)
+__import__('CreditsText').PrintDataGuay(0)
+__import__('Init')._cr()
+setattr(__import__('CreditsText'), 'TextInfo', []); setattr(__import__('CreditsText'), 'ctr', 0); __import__('CreditsText').CleanCredits(); __import__('Map').ShowCredits(); result = (__import__('Map').CreditsCtr, __import__('CreditsText').EndOfCredits.__name__, Scrap.Get('EscapeEvent'), __import__('Init')._cr())
+!sleep 12
+(__import__('Map').CreditsCtr, __import__('Init')._cr())
+__import__('Map').EndCredits(); Scrap.SetTimeSpeed(1); result = (Scrap.Get('EscapeEvent'), SInput.GetActionSet())
+!sleep 2
+__import__('Init')._cr()

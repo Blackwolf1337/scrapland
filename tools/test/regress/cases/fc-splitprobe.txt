@@ -1,0 +1,7 @@
+# FZ split screen probe: variables set, then Scrap.LoadLevel
+(Scrap.Set('r_SplitScreen', 1), Scrap.Set('SplitScreen', 1), Scrap.Set('ServerType', 'DeathMatch'), Scrap.Set('CameraDefViewAspect', 2.6666), Scrap.Set('R_SceneRTargetSwap', 0))
+Scrap.LoadLevel('Levels/FZ')
+!sleep 30
+(Scrap.Get('SplitScreen'), __import__('sys').modules.has_key('Split'), Scrap.GetEntity('Player0') != None, Scrap.GetEntity('Player1') != None, __import__('SInput').GetActionSet())
+__import__('Split').ModLib.__name__
+(__import__('Split').PlayersReady, __import__('Split').MortalProfiles, __import__('SScorer').GetDefault(0))

@@ -1,0 +1,76 @@
+# TeamDeathMatch (QF): the fourth super deal started the way the crazy gambler starts it, then every function
+# directly; the scheduler is recorded in the same line (_sd), the remote messages, the score table and the restart are
+# recorders; the ships stay invulnerable so the AI fights kill nobody
+Scrap.AddScheduledFunc(Scrap.GetTime() + 1.0, __import__('MissionsFuncs').StartSuperDeal, ('QF', 'SuperDeal_Fourth', 'TeamDeathMatch'))
+!sleep 40
+execfile('fsd.py')
+T = __import__('TeamDeathMatch')
+(Scrap.GetLevelPath(), __import__('Init').SuperDealModule.__name__, Scrap.GetSaveVar('Mission.Library'), Scrap.GetSaveVar('SuperDealType'), Scrap.GetSaveVar('CombatDeaths'), Scrap.GetSaveVar('CombatNumEnemies'), Scrap.GetSaveVar('CombatNumFriends'), Scrap.GetSaveVar('CombatFriendProfile'))
+_sdmod('TeamDeathMatch', ('enemiesFrags', 'friendsFrags', 'enemies', 'friends', 'KeepPlaying'))
+_sdhooks()
+_sdent(('Enemy1', 'Enemy2', 'Enemy3', 'Enemy4', 'Enemy5', 'Friend1', 'Friend2', 'Friend3', 'Friend4', 'Friend5'))
+T.GetMenuDescription()
+(_sdon(), setattr(Scrap.UsrEntity(0), 'Invulnerable', 1), __import__('Parking').PlayerShip.Name, Scrap.UsrEntity(0).Name)
+_sd(T.InitStatus, 'Levels/QF')
+_sd(T.SetInvulnerableStatus, __import__('Parking').PlayerShip)
+(_sd(T.SetInvulnerableStatus, None), __import__('Parking').PlayerShip.Invulnerable)
+(setattr(__import__('Speech'), 'RemoteCom', ['x']), _sd(T.AbortRemoteMessages), __import__('Speech').RemoteCom)
+_sd(T.SetEnemyProfile, Scrap.GetEntity('Enemy5'))
+_sd(T.SetFriendProfile, Scrap.GetEntity('Friend4'))
+# the player boards: the crazy gambler's message; boarding again (OnVehicle)
+_sd(__import__('Parking').ExecSwitchVehicleMissionCallback)
+(__import__('Parking').PlayerShip.Invulnerable, _sdhooks())
+(setattr(__import__('Parking').PlayerShip, 'Invulnerable', 1), _sd(__import__('Parking').ExecSwitchVehicleMissionCallback), __import__('Parking').PlayerShip.Invulnerable)
+# a later boarding starts at once (StartCombat), then the ships invulnerable again
+(setattr(T, 'friendsFrags', 1), _sd(T.CrazyGamblerStartCombat), setattr(T, 'friendsFrags', 0), _sdent(('Enemy1', 'Enemy5', 'Friend1', 'Friend4')), _sdn(__import__('Menu').MissionScorerCall), __import__('MissionsFuncs').SetInvulnerableShipsInList('Enemies'), __import__('MissionsFuncs').SetInvulnerableShipsInList('Friends'))
+(_sdlist('Enemies'), _sdlist('Friends'), _sdmod('RacerScorer', ('missionYou', 'missionBad', 'missionLimit')))
+(_sd(T.StartCombat), __import__('MissionsFuncs').SetInvulnerableShipsInList('Enemies'), __import__('MissionsFuncs').SetInvulnerableShipsInList('Friends'))
+# deaths of the enemies
+_sd(T.OnEnemyDeath, 'Player0', 'Enemy2')
+(_sd(T.OnEnemyDeath, 'Enemy1', 'Player0'), _sdmod('TeamDeathMatch', ('enemiesFrags', 'friendsFrags', 'enemies', 'friends')), _sdmod('RacerScorer', ('missionYou', 'missionBad')))
+(_sd(T.OnEnemyDeath, 'Enemy2', 'Friend1'), _sdmod('TeamDeathMatch', ('enemiesFrags', 'friendsFrags', 'enemies')))
+(_sd(T.OnEnemyDeath, 'Enemy3', 'Enemy4'), _sdmod('TeamDeathMatch', ('enemiesFrags', 'friendsFrags', 'enemies')))
+(_sd(T.OnEnemyDeath, 'Enemy5', ''), _sdmod('TeamDeathMatch', ('enemiesFrags', 'friendsFrags', 'enemies')), _sdlist('Enemies'))
+(_sd(T.OnEnemyDeath, 'Nobody', 'Missing'), _sdmod('TeamDeathMatch', ('enemies',)))
+# deaths of the friends
+(_sd(T.OnFriendDeath, 'Friend1', 'Enemy4'), _sdmod('TeamDeathMatch', ('enemiesFrags', 'friendsFrags', 'friends')), _sdmod('RacerScorer', ('missionYou', 'missionBad')))
+(_sd(T.OnFriendDeath, 'Friend2', 'Player0'), _sdmod('TeamDeathMatch', ('enemiesFrags', 'friendsFrags', 'friends')), _sdlist('Friends'))
+(_sd(T.OnFriendDeath, 'Friend3', ''), _sdmod('TeamDeathMatch', ('friends',)))
+# respawns: the enemies' list is short, the friends' list is full until a friend goes
+(_sd(T.RespawnEnemy, 'Enemy1'), _sdent(('Enemy1',)), _sdmod('TeamDeathMatch', ('enemies',)), __import__('MissionsFuncs').SetInvulnerableShipsInList('Enemies'))
+_sd(T.RespawnFriend, 'Friend1')
+Scrap.GetEntity('Friend1').Del()
+(_sd(T.RespawnFriend, 'Friend1'), _sdent(('Friend1',)), _sdmod('TeamDeathMatch', ('friends',)), _sdlist('Friends'), __import__('MissionsFuncs').SetInvulnerableShipsInList('Friends'))
+# after the end only the dead ship comes back
+(_sd(T.OnEnemyDeath2, 'Enemy1', 'Player0'), _sdmod('TeamDeathMatch', ('enemies',)))
+(_sd(T.OnFriendDeath2, 'Friend3', 'Enemy4'), _sdmod('TeamDeathMatch', ('friends',)))
+(_sd(T.OnFriendDeath2, 'Friend1', 'Enemy4'), _sdmod('TeamDeathMatch', ('friends',)))
+# the player's deaths and the respawn on an enemy ship
+(_sd(T.OnPlayerDeath, __import__('Parking').PlayerShip.Name, 'Enemy4'), _sdmod('TeamDeathMatch', ('enemiesFrags', 'friendsFrags')))
+_sd(T.OnPlayerDeath, __import__('Parking').PlayerShip.Name, 'Nobody')
+_sd(T.OnPlayerDeath2, __import__('Parking').PlayerShip.Name, 'Enemy4')
+(_sd(T.RespawnPlayer, 'Enemy4'), _sdent(('Enemy4',)))
+# a missing global stops like the script
+del T.friends
+_sd(T.OnFriendDeath, 'Friend4', 'Enemy4')
+T.friends = ['Friend4']
+# the end by a frag of the player's team: message, no message, the mission hook with and without a message
+(setattr(T, 'friendsFrags', 19), setattr(T, 'enemies', ['Enemy4']), _sd(T.OnEnemyDeath, 'Enemy4', 'Player0'), _sdhooks(), Scrap.GetSaveVar('PlayerWinsCombat'), _sdlist('Enemies'), _sdlist('Friends'), Scrap.UsrEntity(0).Invulnerable, _sdmod('TeamDeathMatch', ('enemiesFrags', 'friendsFrags', 'enemies')))
+(_sdent(('Enemy4', 'Friend4')), Scrap.SetSaveVar('CombatFinishPlayerWinsTextCad', ''), setattr(T, 'friendsFrags', 19), _sd(T.OnEnemyDeath, 'Nobody', 'Player0'))
+(setattr(T, 'KeepPlaying', _sdrec('keep')), setattr(T, 'friendsFrags', 19), _sd(T.OnEnemyDeath, 'Nobody', 'Player0'))
+(Scrap.SetSaveVar('CombatFinishPlayerWinsTextCad', 'SuperDeal_Fourth_RemoteMessage2'), setattr(T, 'friendsFrags', 19), _sd(T.OnEnemyDeath, 'Nobody', 'Player0'), setattr(T, 'KeepPlaying', None))
+# the end by a frag of the enemies on a friend (an enemy again first)
+(_sd(T.RespawnEnemy, 'Enemy4'), _sdmod('TeamDeathMatch', ('enemies', 'friends')), _sdlist('Enemies'), __import__('MissionsFuncs').SetInvulnerableShipsInList('Enemies'))
+(setattr(T, 'enemiesFrags', 19), _sd(T.OnFriendDeath, 'Friend4', 'Enemy4'), Scrap.GetSaveVar('PlayerWinsCombat'), _sdmod('TeamDeathMatch', ('enemiesFrags', 'friends')))
+(setattr(T, 'enemiesFrags', 19), setattr(T, 'KeepPlaying', _sdrec('keep')), _sd(T.OnFriendDeath, 'Nobody', 'Player0'), setattr(T, 'KeepPlaying', None))
+# the end by the player's death: the camera on the winner, no message, the mission hook
+(setattr(T, 'enemiesFrags', 19), _sd(T.OnPlayerDeath, __import__('Parking').PlayerShip.Name, 'Enemy4'), _sdhooks(), Scrap.GetSaveVar('PlayerWinsCombat'), Scrap.GetEntity(Scrap.GetCam(0)).Target)
+(Scrap.SetSaveVar('CombatFinishPlayerLoosesTextCad', ''), _sd(T.OnPlayerDeath, __import__('Parking').PlayerShip.Name, 'Enemy4'))
+(setattr(T, 'KeepPlaying', _sdrec('keep')), _sd(T.OnPlayerDeath, __import__('Parking').PlayerShip.Name, 'Enemy4'))
+(Scrap.SetSaveVar('CombatFinishPlayerLoosesTextCad', 'SuperDeal_Fourth_RemoteMessage3'), _sd(T.OnPlayerDeath, __import__('Parking').PlayerShip.Name, 'Enemy4'), setattr(T, 'KeepPlaying', None))
+# new teams after the old ships went, the restart
+(Scrap.GetEntity('Enemy4').Del(), Scrap.GetEntity('Friend4').Del(), Scrap.GetEntity('Friend1').Del())
+(setattr(T, 'enemies', []), setattr(T, 'friends', []), _sd(T.CreateFriends), _sd(T.CreateEnemies), _sdmod('TeamDeathMatch', ('enemiesFrags', 'friendsFrags', 'enemies', 'friends')), _sdent(('Enemy1', 'Enemy5', 'Friend1', 'Friend4')))
+(_sd(T.RestartCombat, 0, 0), _sdmod('TeamDeathMatch', ('enemiesFrags', 'friendsFrags')))
+# the one line that differs on purpose: the C functions are builtins
+(str(type(T.Init)), str(type(T.OnEnemyDeath)))

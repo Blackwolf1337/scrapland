@@ -1,0 +1,17 @@
+# Temple: Mission_ArchbishopDead started like the game (Mission.Map, Mission.Library, state), then its functions with recorders
+Scrap.SetSaveVar('Mission_ArchbishopDead.Status', 'Photo'); Scrap.SetSaveVar('Mission.Map', 'Temple'); Scrap.SetSaveVar('Mission.Library', 'Mission_ArchbishopDead'); Scrap.LoadLevel('Levels/Temple'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6.py')
+(Scrap.GetLevelPath(), _r6fn('Mission_ArchbishopDead'))
+_r6hooks()
+_sdmod('Mission_ArchbishopDead', ('NumProofsWithPhoto', 'NextMissionMarked', 'ProofsNames'))
+(_r6ent(('ViscProof1', 'ViscProof2', 'ViscProof3', 'DM_Door_Teleporter_01'), ('UseFunc', 'Pos', 'MovePos', 'Descriptor')), _r6hooks()[4:5], Scrap.Get('GuaranteedChars'))
+_r6on()
+(_sd(__import__('Mission_ArchbishopDead').TakeProofPhoto, 'Nurse_01'), _sd(__import__('Mission_ArchbishopDead').TakeProofPhoto, 'ViscProof1'), _sd(__import__('Mission_ArchbishopDead').TakeProofPhoto, 'ViscProof2'))
+(_sd(__import__('Mission_ArchbishopDead').TakeProofPhoto, 'ViscProof3'), _r6hooks()[4:5], Scrap.GetSaveVar('Mission_ArchbishopDead.Status'), _sdmod('Mission_ArchbishopDead', ('NumProofsWithPhoto',)))
+_sd(__import__('Mission_ArchbishopDead').ViewProof, 1, 2, 3, 4)
+(_sd(__import__('Mission_ArchbishopDead').AfterDeepThroatMessageShown), _r6sv(('Mission.Map', 'Mission.Library')), _sd(__import__('Mission_ArchbishopDead').AfterDeepThroatMessageShown))
+(_sd(__import__('Mission_ArchbishopDead').ForbiddenMsg)[1], _sd(__import__('Mission_ArchbishopDead').ShowDeepThroatMessage))
+(_r6ceon(), Scrap.StartDummySearch('X', 1), _sd(__import__('Mission_ArchbishopDead').CreateViscProofs), _r6ceoff())
+(Scrap.SetSaveVar('Mission_ArchbishopDead.Status', 'DeepThroat'), _sd(__import__('Mission_ArchbishopDead').Init, 'x'), Scrap.Get('GuaranteedChars'))

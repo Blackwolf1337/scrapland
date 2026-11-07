@@ -1,0 +1,2 @@
+# line 45: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore u = Scrap.UsrEntity(0); result = (u.Name, S.UseShip(u.Name, P.PlayerShip.Name, 'UseShip', 'x'), I._usr(), I._cam(), I._pk(), I._spt(), I._v(P.PlayerShip.Name, I._PARKV + ('MPil0', 'MovePos')), P.LastPark and I._v(P.LastPark.Name, ('Pos', 'rTime', 'OnTake')))

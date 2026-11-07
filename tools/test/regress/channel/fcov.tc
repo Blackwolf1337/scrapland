@@ -1,0 +1,11 @@
+# helpers/fcov.py as channel statements (round 8r coverage cases): menu dumps like the MCP menu_dump, a call that
+# returns the error text with the clock running again, a call with its scheduled calls recorded. Loaded into Init's dict.
+import Scrap, sys
+_md = lambda player=0: (SScorer.GetActual(player), map(lambda n: tuple([n] + map(lambda v: (lambda x: round(x, 1)
+	if type(x) == type(1.0) else x)(SScorer.Get(player, n, v)), ('Text', 'X', 'Y', 'W', 'H', 'Visible', 'OnAccept', 'Up', 'Down',
+	'Left', 'Right'))), SScorer.Items(player) or []))
+_ce = lambda f, *a, **kw: (lambda r: (Scrap.SetTimeSpeed(1), r)[1])(tc_catch(lambda: ('ok', apply(f, a, kw)), (), None,
+	lambda t, v: ('error', str(t), str(v))))
+_cs = lambda f, *a, **kw: (lambda rec, old: (lambda r: (r, map(lambda b: tuple(map(lambda x: getattr(x, '__name__', x), b)), rec)))(
+	tc_swap(Scrap, 'AddScheduledFunc', lambda *b: (rec.append(b[1:]), apply(old, b))[1], lambda: apply(_ce, (f,) + a, kw))))(
+	[], Scrap.AddScheduledFunc)

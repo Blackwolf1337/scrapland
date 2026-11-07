@@ -1,0 +1,15 @@
+# InMap and Bureaucracy after the level start (Police, Press: desks), and direct calls
+__import__('Init')._gv(('FileNameMap2D','GridUseTopLimit','Max_Rad_Obj','SoundAutoplayVolume','SoundDopplerLevel','SoundDistAttenuation','CameraCloudDistance','CharGrav','AtmosphereLimit','TopLimit','DesktopsFunctionaryListName'))
+map(Scrap.GetSaveVar, ('MercFriends.MercenaryA_Smartie','MercFriends.MercenaryC_Brutus','MercFriends.MercenaryB_Dumber'))
+(__import__('Init').UpperMap, Scrap.UsrEntity(0) is not None, len(__import__('CharsNPC').CharRes))
+exec "def _dm():\n\tScrap.StartDummySearch('DM_DesktopFunctionary_*',1)\n\tr = []\n\twhile 1:\n\t\td = Scrap.NextDummySearch()\n\t\tif d == None: return r\n\t\tr.append(d[0])\nimport Init\nInit._dm = _dm"
+__import__('Init')._dm()
+map(lambda n: __import__('Init')._ent(n, ('Pos','Ang','ActCtrl','ActiveCMask','MapCollision','EntityList')), __import__('Init')._dm())
+__import__('Init')._mod('Bureaucracy', ('BureaucracyTableFile',))
+map(lambda v: __import__('Init')._cls('BureaucracyDesktopFunctionary', v), ('ModelFilePath','DefAction','PretransformChan'))
+__import__('Bureaucracy').CreateBureaucracyClass('DesktopFunctionary', 'Nothing')
+map(lambda v: __import__('Init')._cls('BureaucracyDesktopFunctionary', v), ('ModelFilePath','DefAction','PretransformChan'))
+__import__('Bureaucracy').CreateBureaucracyClass('Test', __import__('Bureaucracy').BureaucracyTableFile)
+map(lambda v: __import__('Init')._cls('BureaucracyTest', v), ('ModelFilePath','DefAction','PretransformChan'))
+(SAct.GetClass('BureaucracyTest'), SAct.GetAction('Loop'), SAct.GetAct('AnmFilePath'), SAct.GetAct('isLoop'), SAct.GetAct('InterpTime'), SAct.GetAct('Chanel'), SAct.GetAction('Up'), SAct.GetAction('Close'))
+(SAct.GetClass('BureaucracyDesktopFunctionary'), SAct.GetAction('Close'), SAct.GetAct('AnmFilePath'), SAct.GetAct('isLoop'), SAct.GetAct('Chanel'), SAct.GetAct('AnmTotalTime'))

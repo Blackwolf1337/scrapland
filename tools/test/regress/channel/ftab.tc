@@ -1,0 +1,33 @@
+# helpers/ftab.py as channel statements (ship editor tab cases, round 5b): scorer items, module variables, the edited
+# ship, save variables
+_ta = ('Visible','X','Y','W','H','Up','Down','Left','Right','Hint','OnAccept','OnGainFocus','OnLooseFocus','OnRender','MaxHintLineWidth','Alpha','Red','Green','Blue','SpriteIndex','FocusSpriteIndex','Highlight','Text','ScaleX','PivotX','PivotY','Rotate','Mirror','File','Type','Value','MinValue','MaxValue','MaxValueForced','TextColorRed','TextColorGreen','TextColorBlue','MinX','MultiPress','Unit')
+_tfn = lambda v: v[11:] if type(v) == type('') and v[:11] in ('EnginesTab.', 'WeaponsTab.') else (v[8:]
+	if type(v) == type('') and v[:8] == 'HullTab.' else v)
+_tcmiss = tc_obj(__name__ + '._tcmiss', {})
+_tget = lambda n, a: (lambda v: '?' if v is _tcmiss else (_tfn(v) if a[:2] == 'On' else (round(v, 3) if type(v) == type(0.0)
+	else v)))(tc_try(SScorer.Get, (0, n, a), _tcmiss))
+_tpre = lambda n, ps: reduce(lambda r, p: r or n[:len(p)] == p, ps, 0) and 1 or 0
+_tsk = ('Tab_',)
+_ti = lambda ps, attrs=None: (lambda attrs: map(lambda n: tuple([n] + filter(lambda av: av[1] is not None, map(lambda a: (a,
+	_tget(n, a)), attrs))), filter(lambda n: _tpre(n, ps), SScorer.Items(0))))(attrs is None and _ta or attrs)
+_tE = ('Engine', 'IconEngine', 'Recycle', 'PrevEngine', 'NextEngine', 'SPoli', 'SMerc', 'SMayor', 'SBank', 'SBishop', 'SArch', 'SFunc', 'SBerto', 'SBetty', 'SHump', 'SBoss', 'SLife')
+_tW = ('Weapon', 'Vulcan', 'Devastator', 'Tesla', 'ATPC', 'Inferno', 'Swarm', 'Upgrade', 'Slot', 'SlotsBox', 'UpgradesBox')
+_tH = ('Hull',)
+_tC = ('MoneyPredict', 'Money', 'Weight', 'Boost', 'Speed', 'MaxSpeed', 'Exit', 'ShipEditTab')
+_tord = lambda: SScorer.Items(0)
+_tm = lambda: reduce(lambda r, mvs: r + (lambda mod: map(lambda v: (mvs[0], v, tc_try(getattr, (mod, v), '?')), mvs[1]))(
+	__import__(mvs[0])), (('EnginesTab', ('enginesList','canBeMounted','engineIndex','currentEngineGroup','nEngSlots')),
+	('WeaponsTab', ('controlsToLinkList','prevWeapon')), ('ShipEdit', ('prevTab',)), ('HangarTab', ('currentHangar','prevItem'))), [])
+_tsv = ['Name','Model','AcMass','MaxLife','MinLife','Life','nSlot00','nSlot01','nSlot02'] + reduce(lambda a, i: a + ['MEng%d' % i,
+	'nEng%d' % i, 'NEng%d' % i], range(4), []) + reduce(lambda a, w: a + ['Upgrd' + w, 'UAmmo' + w] + map(lambda s: 'Weap' + s + w,
+	'ABCD'), ('00', '01', '02', '03', '04', '05'), [])
+# the loop variables of ftab.py stay in its module too
+_i = 3
+_w = '05'
+_s = 'D'
+_tship = lambda: (map(__import__, ('HangarTab',)), (lambda s: None if s is None else map(lambda v: (v, tc_try(lambda: (lambda x: round(x, 3) if type(x) == type(0.0)
+	else x)(getattr(s, v)), (), '?')), _tsv))(HangarTab.prevShip))[1]
+_thv = lambda: [Scrap.GetMoney()] + map(lambda v: (v, Scrap.GetSaveVar(v)), ('Hangar.iHangarShip', 'Hangar.DestroyedShips',
+	'Hangar.availableEnginesList')) + map(lambda i: Scrap.GetSaveVar('Hangar.HangarShip%d' % i), range(1, 10)) + [
+	Scrap.GetSaveVar('Hangar.HangarShipAux')]
+_tall = lambda ps: (_tm(), _tship(), _thv(), _ti(ps), _ti(_tC))

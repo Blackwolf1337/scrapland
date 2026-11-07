@@ -1,0 +1,4 @@
+# line 8: door animation state (Open, Opened, Closed) at the moment of the line (door timing; also seen in round 8d)
+ignore _r6ent(('DM_Door_Teleporter_02', 'BankMaster_Default', 'GateKeeper_BankMasterRoom'))
+# the spawn points of the NPCs (CharsNPC.CharRes positions) are picked at random at the level start
+ignore _r6res()

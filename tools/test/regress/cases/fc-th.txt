@@ -1,0 +1,7 @@
+# Townhall: Gear and Police sirens
+__import__('Gear').StartSirenLoop('Gear_Mayor', 'x', 0.0)
+__import__('Init')._ent('Gear_Mayor', ('Action','ActChan1'))
+__import__('Gear').AbortSiren('Gear_Mayor', 'x', 0.0)
+__import__('Init')._ent('Gear_Mayor', ('Action','ActChan1'))
+__import__('Police').AbortSiren('Police_01', 'x', 0.0)
+__import__('Init')._ent('Police_01', ('Action','ActChan1'))

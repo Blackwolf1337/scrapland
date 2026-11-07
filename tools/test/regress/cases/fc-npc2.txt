@@ -1,0 +1,39 @@
+# Police: CharsNPC, repositioned characters
+exec "def _res():\n\timport CharsNPC\n\tk = CharsNPC.CharRes.keys()\n\tk.sort()\n\tr = []\n\tfor n in k:\n\t\tc = CharsNPC.CharRes[n]\n\t\tr.append((n, c.Name, c.ActCtrl, c.Pos, c.Ang, c.repos, len(c.CallbackFunc), c.__class__.__name__))\n\treturn r\nimport Init\nInit._res = _res"
+exec "def _npcs():\n\timport CharsNPC, Init\n\tk = CharsNPC.CharRes.keys()\n\tk.sort()\n\tr = []\n\tfor n in k:\n\t\tif Scrap.GetEntity(n): r.append((n, Init._ent(n, ('ActCtrl','Money','MoneyReward','Life','PrevLife','ArrOpt0','ArrnOpt','UseFunc','ViewFunc','AI_Repos','ArrowCanUse','ArrowCanView','EntityList','Descriptor','LLogicIdle','Invulnerable','MoveTime','MoveViewAng'))))\n\treturn r\nimport Init\nInit._npcs = _npcs"
+exec "def _sp(n):\n\timport Init\n\treturn (Init._mod('Speech', ('PlayerName','NPCName','AnsAnima','NPCAnswer','OnEndOfSpeech')), Init._mod('CharsNPC', ('optionsList','subOptionsList','ActualEntityName')), Init._ent(n, ('Action','ArrOpt0','ArrOpt1','ArrOpt2','ArrOpt3','ArrOpt4','ArrnOpt','ArriOpt','LLogicIdle','SelectedEntity')), Init._mod('Challenge', ('challengeType','foeType')))\nimport Init\nInit._sp = _sp"
+__import__('Init')._res()
+__import__('Init')._npcs()
+__import__('Init')._mod('CharsNPC', ('Repos','ActualEntityName')), hasattr(__import__('CharsNPC'), 'ReposChars')
+Scrap.SetSaveVar('Player.InfiniteLives', '0')
+__import__('CharsNPC').GenericNPCSpeech('Player0', 'Police_05', 'Talk', 'Talk')
+__import__('Init')._sp('Police_05')
+__import__('Speech').AbortSpeech()
+__import__('Police').PoliceSpeech('Player0', 'Police_06', 'Talk', 'Talk')
+__import__('Init')._sp('Police_06')
+__import__('Police').PoliceSpeech('Player0', 'Police_06', __import__('CharsNPC').optionsList[0], 'x')
+__import__('Init')._sp('Police_06')
+__import__('Speech').AbortSpeech()
+__import__('CharsNPC').GenericNPCSpeech('Player0', 'GateKeeper_07', 'Talk', 'Talk')
+__import__('Init')._sp('GateKeeper_07')
+__import__('Speech').AbortSpeech()
+__import__('CharsNPC').GenericNPCSpeech('Player0', 'PoliceBoss_Default', 'Talk', 'Talk')
+__import__('Init')._sp('PoliceBoss_Default')
+__import__('Speech').AbortSpeech()
+__import__('CharAct').OnDeath('Police_02', 'Player0')
+!sleep 9
+__import__('Init')._ent('Police_02', ('ActCtrl','LLogicIdle','Invulnerable','Money','EntityList','AI_Repos','Life'))
+!sleep 2
+__import__('Init')._ent('Police_02', ('ActCtrl','LLogicIdle','Invulnerable','Money','EntityList','AI_Repos','Life'))
+Scrap.GetEntity('Police_03').Del()
+!sleep 0.5
+__import__('CharsNPC').Respawn(__import__('CharsNPC').CharRes['Gear_03'])
+__import__('Init')._ent('Police_03', ('ActCtrl','LLogicIdle','Invulnerable','Money','EntityList','AI_Repos')), Scrap.GetEntity('Gear_03') is None
+Scrap.GetEntity('Police_04').Del()
+Scrap.SetAlarm(1.0)
+!sleep 0.5
+Scrap.GetAlarm()[0]
+__import__('CharsNPC').Respawn(__import__('CharsNPC').CharRes['Gear_04'])
+__import__('Init')._ent('Gear_04', ('ActCtrl','LLogicIdle','Invulnerable','Money','EntityList','AI_Repos')), Scrap.GetEntity('Police_04') is None
+Scrap.SetAlarm(0.0)
+!sleep 0.5

@@ -1,0 +1,7 @@
+# Townhall: the possession alone, with the last Python error printed by the engine
+exec(open('fmis.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); CC = __import__('CharConversor'); I._rec('Scrap', 'ConsoleError'); I._rec('Menu', 'ShowWarning'); import sys; sys.last_value = None; result = 1
+exec "def _tb(t):\n\tr = []\n\twhile t:\n\t\tr.append((t.tb_frame.f_code.co_filename, t.tb_frame.f_code.co_name, t.tb_lineno))\n\t\tt = t.tb_next\n\treturn r\n" in I.__dict__; result = 1
+CC.Possession('Player0', 'Nurse_02'); result = I._takecalls()
+!sleep 4
+import sys; result = (I._takecalls(), getattr(sys, 'last_type', None), getattr(sys, 'last_value', None), I._tb(getattr(sys, 'last_traceback', None)), Scrap.GetAlarm())

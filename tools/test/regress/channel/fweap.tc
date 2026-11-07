@@ -1,0 +1,25 @@
+# helpers/fweap.py as channel statements (weapon cases): weapon tables, engine variables, recorders of one list
+_sv = lambda get, i, vs: map(lambda v: (v, tc_try(get, (i, v), '?')), vs)
+_wd = lambda: [SWeap.GetNWeap(), SWeap.GetNAmmo()] + map(lambda i: (i,
+	_sv(SWeap.GetSWeap, i, ('Name','OnPress','OnRelease','OnHit','OnFire','SetFX','OnEnd','OnStart')),
+	_sv(SWeap.GetFWeap, i, ('iAmmo','Upgrd01','Upgrd02','Upgrd03','Upgrd04','Upgrd05','Upgrd06','Upgrd07','Upgrd08','Upgrd09','Upgrd10','Upgrd11','Upgrd12','MinAmmo'))),
+	range(SWeap.GetNWeap())) + map(lambda i: (i, _sv(SWeap.GetSAmmo, i, ('Name','OnFire','OnPress','OnRelease')),
+	_sv(SWeap.GetFAmmo, i, ('Charger','Max'))), range(SWeap.GetNAmmo()))
+_wvars = ('ATPCAmmoCost','ATPCConvDist','ATPCDelay','ATPCExplosionRadius','ATPCExtraDamage','ATPCHitForce','ATPCIDAmmo','ATPCIDWeap','ATPCMainDamage','ATPCRange','ATPCShootFile','ATPCUpgradeDelay','CloudAmmoNeed','CloudFile','CloudIDAmmo','CloudLifeTime','CloudRechargeTime','CreateCloudFunc','CreateEMIFunc','CreateSonicFunc','DevastatorAmmoCost','DevastatorBulletFile','DevastatorDistLimit','DevastatorExplosionRadius','DevastatorExtraDamage','DevastatorHitFile','DevastatorHitForce','DevastatorIDAmmo','DevastatorIDWeap','DevastatorMinDamage','DevastatorRange','DevastatorRechargeTime','DevastatorShootFile','DevastatorSparksFile','DevastatorSpreadAngle','EMIAmmoNeed','EMIFile','EMIIDAmmo','EMILifeTime','EMILowRadiusFactor','EMIRadius','EMIRechargeTime','FXSonicRadius','FXSonicXpldeFile','HookAccel','HookPlugFunc','HookRange','InfernoExplosionFile','InfernoIDWeap','InfernoMissileFile','LaserAmmoCost','LaserDistLimit','LaserHitFile','LaserHitForce','LaserHookFile','LaserHookSparksFile','LaserIDAmmo','LaserIDWeap','LaserRange','LaserShootFile','LaserTimeDelay','SetUpCloudFunc','SetUpEMIFunc','SetUpSonicFunc','SonicAmmoNeed','SonicArmor','SonicIDAmmo','SonicLifeTime','SonicRechargeTime','SwarmBeeExplosionFile','SwarmExplosionFile','SwarmIDWeap','SwarmMissileFile','SwarmTurnSpeed','SwarmTurnSpeedUPG','TeslaAmmoCost','TeslaDistLimit','TeslaDownRangeTime','TeslaHitForce','TeslaIDAmmo','TeslaIDWeap','TeslaMaxAngRange','TeslaMinAngRange','TeslaMinAngRangeUpg','TeslaRange','TeslaShootFile','TeslaTrackForce','TeslaUpRangeTime','VulcanAmmoCost','VulcanBulletFile','VulcanDistLimit','VulcanDistLimitUPG','VulcanHitFile','VulcanHitForce','VulcanIDAmmo','VulcanIDWeap','VulcanRange','VulcanTimeDelay','VulcanTimeDelayUPG')
+_wv = lambda: map(lambda v: (v, tc_try(Scrap.Get, (v,), '?')), _wvars)
+_wm = lambda: map(lambda m: (lambda mod: (m, getattr(mod, 'IDWeap', '-'), getattr(mod, 'IDAmmo', '-'),
+	_fn(getattr(mod, 'LastClientCreate', '-')), _fn(getattr(mod, 'LastClientAfterCreate', '-'))))(__import__(m)),
+	('Vulcan','Devastator','Tesla','ATPC','Laser','Swarm','Inferno','Cloud','EMI','Sonic')) + [(lambda n: ('Net',
+	_fn(n.ClientCreate), _fn(n.ClientAfterCreate), _fn(n.ClientJoin)))(__import__('Net'))]
+_fn = lambda v: v.__name__ if hasattr(v, '__name__') else v
+_r = []
+_recn = lambda n: tc_obj(__name__ + '._recn', {'n': n}, lambda *a: (_r.append((n,) + a), 1)[1])
+_t = lambda f, *a: (lambda r: (Scrap.SetTimeSpeed(1), r)[1])(tc_catch(f, a, None, lambda t, v: 'error: %s: %s' % (t, v)))
+_sync = lambda f, *a: (lambda v: (v, map(lambda c: c[0], _r), _r))((tc_set(__globals__, '_r', []), apply(f, a))[1])
+_items = lambda id, names, attrs: map(lambda n: tuple([n] + map(lambda a: tc_try(SScorer.Get, (id, n, a), '?'), attrs)), names)
+_split = lambda: (map(__import__, ('Split',)), (Split.PlayersReady, Split.MortalProfiles, Split.Scorer, Split.FirstTime, Split.ModLib.__name__,
+	_fn(__import__('Vehicles').OnDeathCallback), _fn(Split.FuncGetSpawnPos), _fn(Split.FuncGetReSpawnPos), _fn(Split.OnDeathFunc),
+	Scrap.Get('EscapeEvent'), __import__('SInput').GetActionSet()))[1]
+_obj = lambda o: (lambda d: map(lambda k: (k, d[k]), tc_sorted(d.keys())))(o.__dict__)
+_std = lambda: (map(__import__, ('VehiclesNPC',)), (lambda d: map(lambda k: (k, d[k]), tc_sorted(d.keys())))(VehiclesNPC.StdShips))[1]
+_fakemake = lambda *a: (_r.append(('MakeAI',) + a), tc_obj(__name__ + '._Fake', {'args': a}))[1]

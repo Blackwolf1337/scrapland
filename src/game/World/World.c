@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "scrap/ai.h"
+#include "scrap/app.h"
 #include "scrap/camcontrol.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
@@ -1068,6 +1069,9 @@ void cWorld_Update(cWorld *self, float dt) {
 	if (cTimer_GetSpeed(timer) > 0.0f) {
 		cTimer_Advance(timer, dt);
 		Scheduler_Run(&self->scheduler, Timer_GetTime(timer));
+		/* not in the original: the test channel answers here while the clock runs, where the script function of the
+		 * old test harness ran (a scheduled function) */
+		TestChannel_WorldFrame();
 		for (n = self->entityList.next; n->data && n; n = n->next) {
 			cEntity *e = n->data;
 			if (e->active) {

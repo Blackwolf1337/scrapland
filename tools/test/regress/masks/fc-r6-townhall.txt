@@ -1,0 +1,2 @@
+# the spawn points of the NPCs (CharsNPC.CharRes positions) are picked at random at the level start
+ignore _r6res()

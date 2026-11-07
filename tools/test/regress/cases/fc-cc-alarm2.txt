@@ -1,0 +1,2 @@
+# Townhall: the alarm hooks at the level start
+A = __import__('Alarm'); result = (A.SetAlarmCallback, A.AbortMissionCallback, A.RestoreMissionCallback, A.TempAbortMissionCallback, A.TempRestoreMissionCallback, A.ActivateAlarm)

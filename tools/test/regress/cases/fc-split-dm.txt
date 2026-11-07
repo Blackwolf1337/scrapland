@@ -1,0 +1,63 @@
+# FZ: split screen DeathMatch (set by the case, then the level loaded): Split and SDeathMatch
+exec(open('fweap.py').read()) in __import__('Init').__dict__
+(Scrap.Set('r_SplitScreen', 1), Scrap.Set('SplitScreen', 1), Scrap.Set('ServerType', 'DeathMatch'), Scrap.Set('CameraDefViewAspect', 2.6666), Scrap.Set('R_SceneRTargetSwap', 0))
+Scrap.LoadLevel('Levels/FZ')
+!sleep 30
+execfile('fst.py')
+exec(open('fweap.py').read()) in __import__('Init').__dict__
+I = __import__('Init')
+S = __import__('Split')
+I._split()
+(I._ent('Player0', ('Model','TgType','Target','RadarShow','UsrControl','Active')), I._ent('Player1', ('Model','TgType','Target','RadarShow','UsrControl','Active')), I._ent('Cam0', ('camPos','MainTarget','OnSwitch')), I._ent('Cam1', ('MainTarget',)))
+(I._items(0, ('textorl0','textorl1','textorl2','BlackZoneUp'), ('Text','X','Y','Font','Align','Alpha','Visible')), I._items(1, ('textorl0','BlackZoneUp'), ('Text','Y')))
+setattr(__import__('SInput'), 'Bind', I._recn('Bind'))
+setattr(__import__('SaveGame'), 'QLoad', I._recn('QLoad'))
+I._sync(S.NextShip, 0)[2]
+I._sync(S.PrevShip, 1)[2]
+I._sync(S.ChangeShip, 0, 0)[2]
+(I._ent('Player0', ('Model',)), I._ent('Player1', ('Model',)), S.MortalProfiles)
+I._sync(S.SeleShip, 0)[2]
+(I._items(0, ('ReadyControl','PresToAbort','BlackZoneUp'), ('Text','Y')), S.PlayersReady)
+I._sync(S.InitChooseScorer, 0)[2]
+I._sync(S.SeleShip, 0)[2]
+I._sync(S.SeleShip, 1)[2]
+(I._split(), I._items(0, ('MissionBest','MissionLimit','MissionYou','MissionTab','SplitSeparator0'), ('Text','X','Y','Font','ScaleX','SizeX','Type','Alpha','Blue')), I._items(1, ('MissionBest','MissionTab','SplitSeparator1'), ('Text','Y')))
+(I._ent('Player0', ('TgType','Target','RadarShow','UsrControl')), I._ent('Player1', ('TgType','Target','RadarShow','UsrControl')))
+I._t(S.PauseGame, 0)
+(I._r[-12:], I._items(0, ('textorl0','textorl1','textorl2'), ('Text',)), I._split())
+I._sync(S.ConfirmRestartPause, 0)[2]
+I._items(0, ('textorl0','textorl1','textorl2'), ('Text',))
+I._sync(S.ConfirmAbortPause, 1)[2]
+I._sync(S.ConfirmAbort, 0, 'ev', TXT = 'question?')[2]
+I._items(0, ('textorl0',), ('Text',))
+I._sync(S.ConfirmAbortMain, 1)[2]
+I._t(S.StartGame, 1)
+I._split()
+I._sync(S.OnDeathCallback, 'Player1', 'Player0')[2]
+(S.Scorer, I._items(0, ('MissionBest',), ('Text',)), I._items(1, ('MissionBest',), ('Text',)))
+I._sync(S.OnDeathCallback, 'Player0', '')[2]
+I._sync(S.OnDeathCallback, 'Player0', 'Player0')[2]
+(S.Scorer, I._items(0, ('MissionBest',), ('Text',)))
+!sleep 6
+I._ent('Player1', ('Active','Upgrd00','Life'))
+I._sync(S.ReSpawnShip, 'Player0')[2]
+I._sync(S.LittleText, 1, 'TT', 'hello', 33)[2]
+(I._items(1, ('TT',), ('Text','X','Y','Font','Effect','Red','Alpha','Visible')), I._sync(S.BlackBack, 1)[2], I._items(1, ('BlackZoneUp',), ('Y','ScaleY')))
+S.GetSpawnPos(0) != None
+setattr(S, 'Scorer', [19, 3])
+I._sync(S.OnDeathCallback, 'Player1', 'Player0')[2]
+(S.Scorer, I._items(0, ('Pl0','BlackZoneUp'), ('Text','Y')), I._items(1, ('Pl1',), ('Text','Y')), I._split())
+!sleep 6
+I._r
+(Scrap.Set('ServerMapList', "['QF', 'FZ', 'GDB', 'XX']"), I._sync(S.ReloadNext)[2], Scrap.Get('ServerMapList'))
+(Scrap.Set('ServerMapList', "['GDB']"), I._sync(S.ReloadNext)[2])
+(Scrap.Set('ServerMapList', "[]"), I._sync(S.ReloadNext)[2])
+I._sync(S.Restart, 0)[2]
+I._sync(S.Abort, 0)[2]
+(Scrap.Get('SplitScreen'), Scrap.Get('r_SplitScreen'), Scrap.Get('CameraDefViewAspect'))
+S.ConfirmAbort(0, 'ev', TXT = 'question?', Execute = 'Split.Restart')
+I._items(0, ('textorl0','textorl1'), ('Text',))
+S.StartGame(id = 1)
+S.ChangeShip(1, Up = 0)
+S.ChangeShip(5)
+S.EndOfGame(0) == None

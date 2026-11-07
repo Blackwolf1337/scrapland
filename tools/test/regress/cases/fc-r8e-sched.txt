@@ -1,0 +1,19 @@
+# Townhall: functions scheduled for time 0 from inside a scheduled call (the case lines run in one, mcpPoll)
+# the elevator start without ComeFrom schedules TryToElevatorLaunchFirst for time 0 (crashed before the fix)
+Scrap.SetSaveVar('ComeFrom', ''); result = Scrap.GetSaveVar('ComeFrom')
+__import__('Elevator').PlayerCreatedElevator()
+!sleep 1
+(Scrap.UsrEntity(0).Name, Scrap.GetSaveVar('ComeFrom'))
+exec "import Init\nInit._r8 = []\ndef _r8rec(*a):\n\tInit._r8.append(a)\nInit._r8rec = _r8rec\ndef _r8sd(tag):\n\tInit._r8.append(('sd', tag, Scrap.DeleteScheduledFuncs('SD')))\nInit._r8sd = _r8sd\ndef _r8nest(tag):\n\tInit._r8.append(('nest', tag))\n\tScrap.AddScheduledFunc(0, Init._r8rec, ('fromnest', tag))\n\tScrap.AddScheduledFunc(0, Init._r8rec, ('fromnest2', tag))\nInit._r8nest = _r8nest"
+# order of due functions: a, b at time 0, x deleted in the same call, 'now' after them
+I = __import__('Init'); Scrap.AddScheduledFunc(0, I._r8rec, ('a',)); Scrap.AddScheduledFunc(0, I._r8rec, ('b',)); Scrap.AddScheduledFunc(0, I._r8rec, ('x',), 'X'); Scrap.DeleteScheduledFuncs('X'); Scrap.AddScheduledFunc(Scrap.GetTime(), I._r8rec, ('now',)); result = I._r8
+!sleep 1
+I = __import__('Init'); result = I._r8
+# a scheduled call deletes its own name: it runs to its end, the later one of that name goes; a nested time 0 call
+I = __import__('Init'); I._r8 = []; t = Scrap.GetTime(); Scrap.AddScheduledFunc(t + 0.5, I._r8sd, ('first',), 'SD'); Scrap.AddScheduledFunc(t + 1.0, I._r8sd, ('second',), 'SD'); Scrap.AddScheduledFunc(t + 0.6, I._r8nest, ('n',)); Scrap.AddScheduledFunc(t + 0.7, I._r8rec, ('after',)); result = 1
+!sleep 3
+I = __import__('Init'); result = I._r8
+# the elevator start once more, then the game still polls
+__import__('Elevator').PlayerCreatedElevator()
+!sleep 1
+Scrap.UsrEntity(0).Name

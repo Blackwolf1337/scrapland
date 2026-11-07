@@ -1,0 +1,23 @@
+# Townhall: door slot functions on an entity without an action class (crashed in ActCtrl_Radius(NULL) before the fix)
+Scrap.CreateEntity('R8eKB', Scrap.UsrEntity(0).Pos[0] + 300, Scrap.UsrEntity(0).Pos[1], Scrap.UsrEntity(0).Pos[2], 'WithLife').Name
+e = Scrap.GetEntity('R8eKB'); e.OnObjSlot = '!AutoDoorSlot'; result = e.OnObjSlot
+!sleep 2
+e = Scrap.GetEntity('R8eKB'); e.OnObjSlot = '!AutoDoorUsrSlot'; result = (e.Name, e.OnObjSlot)
+!sleep 1
+e = Scrap.GetEntity('R8eKB'); e.OnObjSlot = '!CloseDoorSlot'; result = (e.Name, e.OnObjSlot)
+!sleep 1
+e = Scrap.GetEntity('R8eKB'); e.OnObjSlot = '!FrontDoorSlot'; result = (e.Name, e.OnObjSlot)
+!sleep 1
+e = Scrap.GetEntity('R8eKB'); e.OnObjSlot = '!BackDoorSlot'; result = (e.Name, e.OnObjSlot)
+!sleep 1
+e = Scrap.GetEntity('R8eKB'); e.OnObjSlot = '!Usr0AutoDoorSlot'; result = (e.Name, e.OnObjSlot)
+!sleep 1
+e = Scrap.GetEntity('R8eKB'); e.OnObjSlot = ''; result = (e.Name, e.OnObjSlot)
+# a real door still opens and closes with the slot functions
+__import__('Init')._ent('DM_Door_Teleporter_04', ('OnObjSlot', 'Action', 'ActCtrl'))
+d = Scrap.GetEntity('DM_Door_Teleporter_04'); d.OnObjSlot = '!AutoDoorSlot'; result = d.OnObjSlot
+!sleep 2
+__import__('Init')._ent('DM_Door_Teleporter_04', ('OnObjSlot', 'Action'))
+d = Scrap.GetEntity('DM_Door_Teleporter_04'); d.OnObjSlot = '!Usr0AutoDoorSlot'; result = d.OnObjSlot
+!sleep 2
+__import__('Init')._ent('DM_Door_Teleporter_04', ('OnObjSlot', 'Action'))

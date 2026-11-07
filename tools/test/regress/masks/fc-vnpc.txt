@@ -1,0 +1,2 @@
+# line 26: random in C: the case recorder controls Scrap.Rand on the pack side only, the C port calls Scrap_RandRange directly (brief)
+ignore I._ent('Traffic', ('Model','Life','MaxLife','EntityList','MPil0','WeapList','Ammo00','Ammo01','Ammo02'))

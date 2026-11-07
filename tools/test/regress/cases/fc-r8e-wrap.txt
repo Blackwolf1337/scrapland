@@ -1,0 +1,13 @@
+# Townhall: the line wrap of a button whose last word does not fit (read past the end of the text before the fix)
+SScorer.Add(0, 'R8eBtn', 'Button'); map(lambda a: SScorer.Set(0, 'R8eBtn', a[0], a[1]), (('IsMultiSprite', 0), ('IsNameValuePair', 0), ('Visible', 0), ('ForceWidth', 420), ('ForceHeight', 84))); result = 1
+SScorer.Set(0, 'R8eBtn', 'MaxLineSize', 40); SScorer.Set(0, 'R8eBtn', 'Text', 'aa bb cc dd ee ff gg hh ii jj kk'); result = map(lambda v: SScorer.Get(0, 'R8eBtn', v), ('Text', 'W', 'H'))
+SScorer.Set(0, 'R8eBtn', 'Text', 'aa bb cc dd ee ff gg hh wwwwwwwwwwwwww'); result = map(lambda v: SScorer.Get(0, 'R8eBtn', v), ('Text', 'W', 'H'))
+SScorer.Set(0, 'R8eBtn', 'Text', 'aa bb cc dd ee ff gg hh wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww'); result = map(lambda v: SScorer.Get(0, 'R8eBtn', v), ('Text', 'W', 'H'))
+SScorer.Set(0, 'R8eBtn', 'Text', 'wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww'); result = map(lambda v: SScorer.Get(0, 'R8eBtn', v), ('Text', 'W', 'H'))
+SScorer.Set(0, 'R8eBtn', 'Text', 'wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww aa'); result = map(lambda v: SScorer.Get(0, 'R8eBtn', v), ('Text', 'W', 'H'))
+SScorer.Set(0, 'R8eBtn', 'Text', 'aa wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww aa'); result = map(lambda v: SScorer.Get(0, 'R8eBtn', v), ('Text', 'W', 'H'))
+SScorer.Set(0, 'R8eBtn', 'Text', ''); result = map(lambda v: SScorer.Get(0, 'R8eBtn', v), ('Text', 'W', 'H'))
+SScorer.Set(0, 'R8eBtn', 'MaxLineSize', 314); SScorer.Set(0, 'R8eBtn', 'Text', Scrap.GetLangStr('Char_Gear') % SInput.GetDefinedEntry(0, 'Walk', 'Action', 'Mouse')); result = map(lambda v: SScorer.Get(0, 'R8eBtn', v), ('Text', 'W', 'H'))
+SScorer.Set(0, 'R8eBtn', 'Visible', 1); result = 1
+!sleep 1
+map(lambda v: SScorer.Get(0, 'R8eBtn', v), ('Text', 'W', 'H', 'Visible'))

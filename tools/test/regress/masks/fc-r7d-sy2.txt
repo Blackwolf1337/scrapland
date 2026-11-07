@@ -1,0 +1,3 @@
+# accepted in round 7d: Speech.OnEndOfSpeech after Scrap.SetAlarm(1) differs only with the recorders on (the C
+# Speech calls its own functions directly, the script through the module the recorder replaced)
+ignore (Scrap.SetAlarm(1), _sd(AM.UsePhoneCab, _un(), PC, 'Talk', 'x'), _bhooks()[:4], Scrap.SetAlarm(0))

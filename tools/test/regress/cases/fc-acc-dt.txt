@@ -1,0 +1,9 @@
+# DownTown: Accelerator (the speed rings of the level start, CreateAccelerator, Init again with recorders)
+exec(open('fpk.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); A = __import__('Accelerator'); result = 1
+map(lambda x: I._v(x, ('Pos', 'Ang', 'Radius', 'OnTake')), filter(lambda x: x[:11] == 'Accelerator', I._its()))
+p = Scrap.UsrEntity(0).Pos; l = A.CreateAccelerator((p[0], p[1] + 5000, p[2]), 10, 20); result = I._v(l.Name, ('Pos', 'Ang', 'Radius', 'OnTake'))
+p = Scrap.UsrEntity(0).Pos; l = A.CreateAccelerator((p[0], p[1] + 6000, p[2]), 10.5, -20, Radius = 900); l2 = A.CreateAccelerator(Pos = (p[0], p[1] + 7000, p[2]), Angx = 0, Angy = 0, Radius = 1.5); result = (I._v(l.Name, ('Ang', 'Radius')), I._v(l2.Name, ('Radius',)), I._t(A.CreateAccelerator, (1, 2), 0, 0))
+I._seq('Scrap', 'NextDummySearch', [('DM_Accelerator_01', (1.0, 2.0, 3.0), (10.0, 20.0, 30.0), 1), ('DM_Accelerator=2500', (4.0, 5.0, 6.0), (0.0, 90.0, 0.0), 1), ('DM_AcceleratorOff', (7.0, 8.0, 9.0), (0.0, 0.0, 0.0), 0), None]); I._rec2('Scrap', 'StartDummySearch'); I._rec2('Accelerator', 'CreateAccelerator'); r = (A.Init(), I._takecalls()); I._restore(); result = r
+I._seq('Scrap', 'NextDummySearch', [('DM_Accelerator=x', (4.0, 5.0, 6.0), (0.0, 90.0, 0.0), 1), None]); I._rec2('Accelerator', 'CreateAccelerator'); r = (I._t(A.Init), I._takecalls()); I._restore(); result = r
+A.ACCELERATOR_RADIUS = 77; I._seq('Scrap', 'NextDummySearch', [('DM_Accelerator', (4.0, 5.0, 6.0), (0.0, 90.0, 0.0), 1), None]); I._rec2('Accelerator', 'CreateAccelerator'); r = (A.Init(), I._takecalls()); I._restore(); A.ACCELERATOR_RADIUS = 3500; result = r

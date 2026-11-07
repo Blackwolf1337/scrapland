@@ -1,0 +1,22 @@
+# Townhall: SaveGame level changes, the Xbox branch, the blueprint achievement
+Scrap.SetSaveVar('Hangar.shipsToEditList', `range(20)`)
+Scrap.SetSaveVar('Hangar.availableEnginesList', `range(18)`)
+__import__('SaveGame').CheckAllBlueprints()
+Scrap.Set('IsXbox', 1)
+__import__('SaveGame').SaveGame(5)
+(Scrap.Get('XboxSavingMsg'), Scrap.Get('XboxSavingMsgStr'))
+Scrap.Set('XboxSavePath', 'x')
+Scrap.Set('XboxProfileName', 'y')
+__import__('SaveGame').SaveGame(5)
+(Scrap.Get('XboxSavingMsg'), Scrap.Get('XboxSavingMsgStr'))
+!sleep 1
+Scrap.GetSaveVar('AutoSaveGameOnLoad')
+Scrap.Set('IsXbox', 0)
+Scrap.SetSaveVar('Challenge.Type', 'Race')
+Scrap.SetSaveVar('Revenge.Type', 'Combat')
+(__import__('SaveGame').StartGame(1, 1), map(Scrap.GetSaveVar, ('PrevMap', 'Map', 'Challenge.Type', 'Revenge.Type')), Scrap.Get('R_CreditsRTarget'))
+!sleep 45
+(Scrap.GetSaveVar('Map'), __import__('Init').Path)
+(__import__('SaveGame').Restart(), Scrap.GetSaveVar('GameplayTime') != '0')
+!sleep 45
+(Scrap.GetSaveVar('Map'), __import__('Init').Path)

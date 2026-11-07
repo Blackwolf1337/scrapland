@@ -1,0 +1,22 @@
+# FZ started as a real server of Postman (port 28123), round 8b: the mode after the level start, then its server functions with the real Ffa (SNet.SendUsrString recorded)
+Scrap.Set('ServerType', 'Postman'); Scrap.Set('ServerMapList', "['FZ']"); result = SNet.InitServer('Levels/FZ', 8, 28123)
+!sleep 70
+exec(open('fnm.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); F = __import__('Ffa'); M = F.ModLib; result = (Scrap.GetNetFlags(), Scrap.Get('ServerType'), M.__name__, I.OffLineGame)
+type(M.GetGameDescriptor).__name__
+(Scrap.Get('OnClientJoin'), Scrap.Get('OnUsrString'), Scrap.Get('CurrentWaypointName'), Scrap.Get('MainMissionEvent'), Scrap.Get('OnClientExit'), Scrap.Get('OnClientModify'))
+I._nmod(M.__name__, ('TeamGame', 'MultiplayerMenuOnGame', 'MultiplayerMenuSpectator', 'AcFlag', 'AcZone', 'FlagSpawnPos', 'AUTO_RESPAWN_FLAG_TIME'))
+(len(I._nmod(M.__name__, ('ZoneList',))[0][1]), hasattr(M, 'Flag') and M.Flag and I._nent(M.Flag.Name, ('Model', 'Radius', 'RadarShow', 'OnTake', 'LinkModel')))
+hasattr(M, 'Flag') and M.Flag and hasattr(M, 'AcFlag') and M.Flag.Pos == M.ZoneList[M.AcFlag]
+hasattr(M, 'Flag') and M.Flag and hasattr(M, 'FlagSpawnPos') and M.Flag.Pos == M.FlagSpawnPos
+I._nmod('Ffa', ('Scorer', 'TotalRed', 'TotalGreen', 'MasterFlag', 'GameStart', 'ScorerFraglimit', 'SpectatorMode'))
+I.un = F.Scorer.keys()[0]; I.e = Scrap.GetEntity(I.un); result = (I.un, I.e.TgType, I.e.Active, I.e.Descriptor, Scrap.UsrEntity(0))
+(I._nm(M.GetGameDescriptor), I._nm(M.CheckEndOfGame))
+I._non('SNet', 'SendUsrString'); I._non('Menu', 'ShowWarning'); result = (I._nm(M.ShowHelp, 0), I._nm(M.ServerHidePlayer, 'net999'))
+hasattr(M, 'ServerTakeFlag') and I._nm(M.ServerTakeFlag, M.Flag.Name, I.un)
+hasattr(M, 'ServerTakeFlag') and I._nm(M.ServerTakeFlag, M.Flag.Name, 'net999')
+F.Scorer[I.un] = 0; result = I._nm(M.DeathFunc, I.un, I.un, 1)
+I._nmod('Ffa', ('Scorer', 'TotalRed', 'TotalGreen'))
+F.GameStart = 1; result = hasattr(M, 'ServerTakeFlag') and (I._nm(M.ServerTakeFlag, M.Flag.Name, I.un), I._nmod('Ffa', ('Scorer', 'TotalRed', 'TotalGreen', 'MasterFlag')), I._nmod(M.__name__, ('AcFlag', 'AcZone')), I._nent(M.Flag.Name, ('OnTake', 'LinkModel', 'Model')))
+hasattr(M, 'ServerDropFlag') and (I._nm(M.ServerHidePlayer, I.un), F.MasterFlag, I._nent(M.Flag.Name, ('OnTake', 'LinkModel', 'Model')))
+I._noff()

@@ -1,0 +1,17 @@
+# Press, round 7b: the demo (isDemo 1): MapDemoClose and the demo branches of Map
+(Scrap.Get('isDemo'), Scrap.Set('isDemo', 1), Scrap.Get('isDemo'))
+Scrap.SetSaveVar('Mission.Map', 'Outskirts'); Scrap.SetSaveVar('Mission.Library', 'Mission_GoToOutskirts'); Scrap.SetSaveVar('Char', 'Dtritus'); Scrap.SetAlarm(0); Scrap.LoadLevel('Levels/Press'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6.py')
+execfile('fr6b.py')
+execfile('fr7b.py')
+(Scrap.GetLevelPath(), Scrap.Get('isDemo'), __import__('Init').isDemo, __import__('Map').Libraries, __import__('sys').modules.has_key('MapDemoClose') and _bfn('MapDemoClose'), _sdn(__import__('CharConversor').AvailableChars))
+_bent(('DM_Door_Metro_Press', 'DM_Door_Elevator_Press'), ('UseFunc', 'OnObjSlot'))
+_bon()
+_bon(('Elevator.UseElevator', 'Metro.SetUsrParams', 'Scrap.Set'))
+(_c('MapDemoClose', 'OnMetroUsed', 'Player0', 'DM_Door_Metro_Press', 'x', 'y'), _fuon('Police'), _c('MapDemoClose', 'OnMetroUsed', 'Player0', 'DM_Door_Metro_Press', 'x', 'y'), _fuoff())
+(_c('MapDemoClose', 'Init', 'x'), _c('MapDemoClose', 'InitStatus', 'x'), _c('MapDemoClose', 'Init'), _c('MapDemoClose', 'OnMetroUsed', 1))
+(lambda m, o=__import__('Chars').CanDriveList: (setattr(m, 'CanDriveList', None), _c('MapDemoClose', 'OnMetroUsed', 'Player0', 'DM_Door_Metro_Press', 'x', 'y'), setattr(m, 'CanDriveList', o)))(__import__('Chars'))
+_broff()
+(Scrap.Set('isDemo', 0), Scrap.Get('isDemo'))

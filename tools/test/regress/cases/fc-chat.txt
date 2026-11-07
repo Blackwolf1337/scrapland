@@ -1,0 +1,49 @@
+# Chat by direct calls in a single player level (Townhall); the network calls are recorded
+Scrap.OpenPack('Scripts/Scorer'); Scrap.PreloadLibrary('Chat', 'Chat.pyc'); Scrap.ClosePack(); result = type(__import__('Chat').GetID)
+exec "import Init, SNet, SScorer\nInit._rec = []\ndef _snd(*a):\n\tInit._rec.append(('Send',) + a)\ndef _msg(*a):\n\tInit._rec.append(('Msg',) + a)\n\tapply(Init._oldmsg, a)\nInit._oldmsg = SScorer.AddChatMsg\nInit._oldflags = Scrap.GetNetFlags\nSNet.SendChatString = _snd\nSScorer.AddChatMsg = _msg\nSNet.GetMyClientShip = lambda: 'net7'"
+__import__('Chat').SetChatProc()
+__import__('Init')._gv(('ChatEvent','OnChatString','FullScreenConsoleCallback','QChatEvent1','QChatEvent2','QChatEvent3','QChatEvent4','QChatEvent5','QChatEvent6'))
+__import__('Init')._mod('Chat', ('SendID','MyShip'))
+__import__('Chat').GetID(0)
+__import__('Chat').GetMyShip()
+__import__('Init')._mod('Chat', ('SendID','MyShip'))
+(Scrap.CreateEntity('net5', 100, 0, 0, 'WithLife') is not None, Scrap.CreateEntity('net7', 200, 0, 0, 'WithLife') is not None, Scrap.CreateEntity('net256', 300, 0, 0, 'WithLife') is not None)
+__import__('Chat').GetMyShip()
+__import__('Init')._mod('Chat', ('SendID','MyShip'))
+__import__('Chat').CycleUp(1); result = __import__('Chat').SendID
+__import__('Chat').CycleUp(1); result = __import__('Chat').SendID
+__import__('Chat').CycleUp(1); result = __import__('Chat').SendID
+__import__('Chat').CycleUp(1); result = __import__('Chat').SendID
+__import__('Chat').CycleDown(1); result = __import__('Chat').SendID
+__import__('Chat').CycleDown(1); result = __import__('Chat').SendID
+__import__('Chat').CycleDown(1); result = __import__('Chat').SendID
+__import__('Chat').CycleDown(1); result = __import__('Chat').SendID
+__import__('Chat').CycleDown(1); result = __import__('Chat').SendID
+setattr(__import__('Chat'), 'MyShip', 'net7'); __import__('Chat').CycleUp(2); __import__('Chat').CycleUp(2); result = __import__('Chat').SendID
+__import__('Chat').CycleDownAndSet(2); result = __import__('Chat').SendID
+__import__('Chat').GetID(2), __import__('Chat').SendID
+__import__('Chat').SendID[3] = 'net5x'; __import__('Chat').CycleUp(3)
+__import__('Chat').SendID[3] = 'nobody'; result = (__import__('Chat').GetID(3), __import__('Chat').SendID)
+__import__('Chat').GetID(4)
+Scrap.Set('PlayerName', 'Tester'); Scrap.Set('QuickMessageString1', 'quick one'); Scrap.Set('QuickMessageString6', 'quick six'); result = Scrap.Get('PlayerName')
+__import__('Chat').SendChatString(0, 'hello', 1); result = __import__('Init')._rec
+__import__('Chat').SendID[0] = 'net5'; __import__('Chat').SendChatString(0, 'private', 1); result = __import__('Init')._rec
+Scrap.GetNetFlags = lambda: (0, 1, 0); __import__('Chat').SendChatString(0, 'as server', 1); result = __import__('Init')._rec
+__import__('Chat').SendID[0] = 'ALL'; __import__('Chat').SendChatString(0, 'server to all', 1); result = __import__('Init')._rec
+__import__('Chat').PrintChatString(1, 'no tab'); result = __import__('Init')._rec
+__import__('Chat').PrintChatString(1, 'net7\tmsg\textra'); result = __import__('Init')._rec
+__import__('Chat').PrintChatString(1, 'xyz\tmsg'); result = __import__('Init')._rec
+__import__('Chat').PrintChatString(1, 'netab\tmsg')
+__import__('Chat').PrintChatString(1, 5)
+__import__('Chat').ServerReSendChat('ALL', 'direct'); __import__('Chat').ServerReSendChat('net300', 'big'); result = __import__('Init')._rec
+Scrap.GetNetFlags = lambda: (1, 0, 0); __import__('Chat').GetMyShip(); result = __import__('Chat').MyShip
+__import__('Chat').SendID[0] = 'net5'; __import__('Chat').SendChatString(0, 'as client', 1); result = __import__('Init')._rec
+__import__('Chat').qchat1(0); __import__('Chat').qchat6(0); __import__('Chat').ConsoleChatString('console'); result = __import__('Init')._rec
+Scrap.GetNetFlags = __import__('Init')._oldflags; __import__('Init')._rec[:] = []; result = Scrap.GetNetFlags()
+__import__('Chat').SendID[0] = 'ALL'; __import__('Chat').InitChat(0); Scrap.SetTimeSpeed(1); result = SScorer.Items(0)
+map(lambda v: SScorer.Get(0, 'ChatText', v), ('Text', 'X', 'Y', 'CentralText', 'OnAccept', 'MaxInput', 'Visible'))
+(map(lambda v: SScorer.Get(0, 'Chat', v), ('NumMsg', 'X')), map(lambda v: SScorer.Get(0, 'SendID', v), ('Text', 'X', 'Y')), SScorer.Get(0, 'Cursor', 'Visible'), SScorer.GetDefault(0), SInput.GetActionSet())
+__import__('Chat').CycleUpAndSet(0); result = (SScorer.Get(0, 'SendID', 'Text'), __import__('Chat').SendID)
+__import__('Chat').CycleDownAndSet(0); __import__('Chat').CycleDownAndSet(0); result = (SScorer.Get(0, 'SendID', 'Text'), __import__('Chat').SendID)
+__import__('Chat').SendChatString(0, 'bye'); Scrap.SetTimeSpeed(1); result = (__import__('Init')._rec, SInput.GetActionSet(), SScorer.Items(0))
+__import__('Chat').InitChat(0); Scrap.SetTimeSpeed(1); __import__('Chat').EndChat(0); Scrap.SetTimeSpeed(1); result = (SInput.GetActionSet(), SScorer.Items(0))

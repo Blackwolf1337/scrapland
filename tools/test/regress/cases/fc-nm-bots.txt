@@ -1,0 +1,31 @@
+# FZ offline, round 8b: NDeathMatchBots (no .pyc in the packs: compiled from its source to a file next to the game and loaded with PreloadLibrary), called directly; Ffa, the menu, the scorer and the AI calls recorded
+exec(open('fnm.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); result = I._nload(['Ffa'])
+I._nbots()
+F = __import__('Ffa'); B = __import__('NDeathMatchBots'); result = (B.TeamGame, B.MultiplayerMenuOnGame, B.MultiplayerMenuSpectator, B.BotsList, type(B.Reborn).__name__ == type(len).__name__)
+map(lambda n: I._non('Ffa', n), ('ServerEndOfGame', 'SetSpawnPos', 'ClientJoin', 'ActualizeGameScorer', 'ServerSendPlayerStatus', 'OnUsrClient')) + [I._non('Ffa', 'GetGameTeamDescriptor', 'teams 1 2'), I._non('Menu', 'ShowWarning'), I._non('SScorer', 'Set'), I._non('SAI', 'SetStateVehicle')]
+e1 = Scrap.CreateEntity('NmRed', 1000.0, 50000.0, 1000.0, 'Car'); e1.TgType = 'red'; e2 = Scrap.CreateEntity('NmGreen', 2000.0, 50000.0, 1000.0, 'Car'); e2.TgType = 'green'; I.e1 = e1; I.e2 = e2; result = (e1.Name, e1.TgType, e2.Name, e2.TgType, e1.Active, e1.isAI)
+F.ScorerFraglimit = 2; result = 1
+# NDeathMatchBots
+(I._nm(B.GetGameDescriptor), I._nm(B.ShowHelp, 2), I._nm(B.InitClientMod), I._nm(B.ServerHidePlayer, 'x'), I._nm(B.TryGarage, 0, 'Item'), I._nm(B.TryGarage, 'a', 'b'))
+F.Scorer = {'NmRed': 2, 'NmGreen': 0}; result = I._nm(B.CheckEndOfGame)
+I._nrand(0.0); result = I._nm(B.SetBotState, 'NmRed')
+I._nrand(0.999); result = I._nm(B.SetBotState, 'NmRed')
+e1.Active = 0; I._nrand(0.5); result = (I._nm(B.SetBotState, 'NmRed'), I._nm(B.SetBotState, 'NmGreen'), I._nm(B.SetBotState, 3))
+I._non('SAI', 'GetStateVehicle', seq=[0]); result = I._nm(B.CheckBotState, 'NmRed')
+I._non('SAI', 'GetStateVehicle', seq=[3]); result = I._nm(B.CheckBotState, 'NmGreen')
+I._non('SAI', 'GetStateVehicle', seq=[1]); result = I._nm(B.CheckBotState, 'NmGreen')
+I._non('SAI', 'GetStateVehicle', seq=[None]); result = I._nm(B.CheckBotState, 'NmGreen')
+I.cb = B.CheckBotState; del B.CheckBotState; I._non('SAI', 'GetStateVehicle', seq=[2]); r = I._nm(I.cb, 'NmGreen'); B.CheckBotState = I.cb; result = r
+I._nm(B.Reborn, 'NmRed', 77), e1.Life
+I._nm(B.Reborn, 'Nobody', 5)
+(I._nm(B.DeathFunc, 'NmGreen', 'NmRed', 1), F.Scorer, e1.Active)
+I._nm(B.DeathFunc, 'NmGreen', 'Nobody', 1)
+# the bots joining a server
+I._nrand(0.5); r = I._nm(B.InitServerMod); result = r
+I.bots = map(lambda c: c[1][0], filter(lambda c: c[0] == 'Ffa.ClientJoin', I._nr)); result = I.bots
+map(lambda n: I._nent(n, ('Active', 'Descriptor', 'Life', 'MinLife', 'MaxLife', 'WeapList', 'Model', 'isAI', 'TgType')), I.bots)
+(__import__('ShipEdit').EnterEditShipMenu.__name__, map(lambda k: (k, __import__('VehiclesNPC').AIProf[k].CadenceShootCM, round(__import__('VehiclesNPC').AIProf[k].AngAttack, 3)), ('MegaAce',)))
+F.Scorer[I.bots[0]] = 0; result = (I._nm(B.DeathFunc, 'NmGreen', I.bots[0], 1), F.Scorer, I._nent(I.bots[0], ('Active', 'isAI')))
+I._nrand(0.25); result = I._nm(B.SetBotState, I.bots[1])
+I._noff()

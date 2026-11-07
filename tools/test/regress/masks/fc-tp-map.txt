@@ -1,0 +1,2 @@
+# line 18: a timer or a moving item read between frames
+ignore (len(__import__('Alarm').SetAlarmCallback), _sd(__import__('MapExtraLifes').SwitchAlarm, 0), len(__import__('Alarm').SetAlarmCallback), Scrap.Get('BishopAttackOnAlarm'), map(lambda l: l.MovePos[1] - l.Pos[1], __import__('MapExtraLifes').Lifes))

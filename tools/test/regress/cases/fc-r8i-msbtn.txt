@@ -1,0 +1,20 @@
+# DownTown (round 8i): a Button with the default IsMultiSprite 1 and no File (the plain 2D/white.tga), drawn
+SScorer.Add(0, 'R8iBtn', 'Button'); result = map(lambda v: SScorer.Get(0, 'R8iBtn', v), ('IsMultiSprite', 'File', 'Visible', 'SpriteIndex', 'Complex', 'Marker', 'X', 'Y', 'W', 'H'))
+SScorer.Set(0, 'R8iBtn', 'Visible', 1); SScorer.Set(0, 'R8iBtn', 'X', 100); SScorer.Set(0, 'R8iBtn', 'Y', 100); result = 1
+!sleep 2
+(Scrap.UsrEntity(0).Name, SScorer.Get(0, 'R8iBtn', 'Visible'))
+# with a text: the box of nine frames (Complex 1), then one frame (Complex 0)
+SScorer.Set(0, 'R8iBtn', 'Text', 'Hello'); result = 1
+!sleep 1
+(Scrap.UsrEntity(0).Name, map(lambda v: SScorer.Get(0, 'R8iBtn', v), ('SizeX', 'SizeY', 'W', 'H')))
+SScorer.Set(0, 'R8iBtn', 'Complex', 0); result = 1
+!sleep 1
+(Scrap.UsrEntity(0).Name, SScorer.Get(0, 'R8iBtn', 'Complex'))
+# a marker (four corner frames)
+SScorer.Add(0, 'R8iMrk', 'Button'); map(lambda a: SScorer.Set(0, 'R8iMrk', a[0], a[1]), (('Marker', 1), ('Visible', 1), ('X', 200), ('Y', 200), ('W', 50), ('H', 50))); result = 1
+!sleep 1
+(Scrap.UsrEntity(0).Name, SScorer.Get(0, 'R8iMrk', 'Marker'))
+# a File set later loads the sheet with its sprite table as before
+SScorer.Set(0, 'R8iMrk', 'HighRes', 1); SScorer.Set(0, 'R8iMrk', 'File', '2D/HUD/Mission.alpha.tga'); result = map(lambda v: SScorer.Get(0, 'R8iMrk', v), ('File', 'IsMultiSprite'))
+!sleep 1
+(Scrap.UsrEntity(0).Name, SScorer.Get(0, 'R8iMrk', 'File'))

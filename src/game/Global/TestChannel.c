@@ -3,17 +3,21 @@
  * running game through two files in the game folder, with no Python code run in the game. Not in the original. Off in
  * normal play: on with the command line switch -TestChannel or the environment variable SCRAP_TEST_CHANNEL=1.
  *
- * Once a frame (at the start of CApp_FrameRun, also while the world clock stands or the window is in the background;
- * a command file that is there before the first frame runs while the clock is still at 0) the game reads the first
- * line of test_cmd.txt, a number. A number it has not seen runs the rest of the file and writes the answers to
+ * Once a frame (while the world clock runs in cWorld_Update right after the scheduled functions, where the script
+ * function of the old harness ran; else at the start of CApp_FrameRun, also while the window is in the background; a
+ * command file that is there before the first frame runs while the clock is still at 0) the game reads the first
+ * line of test_cmd.txt, a number (optionally followed by " pace=<seconds>": the file waits until that much game time
+ * has passed since the last answer, as the old harness polled every 0.1 s of game time). A number it has not seen runs the rest of the file and writes the answers to
  * test_reply.txt as "<number>\n<answers>\n.end\n" (written to test_reply.tmp, then renamed). The tool writes the
  * command file the same way, so neither side sees a file half written. Nothing waits: no file, the same number or a
  * file that cannot be read is a frame without work.
  *
  * Each line of the command file is one command, its answer one or more lines (none for "do" and "recorder"):
- *   <expr>                   the repr of the value of a channel expression (below)
- *   <target> = <expr>        sets an attribute or item (a module variable, an entity variable, a menu item): ok
- *   do <expr or target = expr>   the same without an answer (only an error answers)
+ *   <statements>             channel statements (TestExpr.c), answered as the game side of the MCP server answered a
+ *                            line of Python: a single expression its repr, statements the repr of the global "result"
+ *                            (or ok); several are separated by ";", the first error stops them
+ *   do <statements>          the same without an answer (only an error answers)
+ *   in <module> [do] <statements>   the statements in the globals of the module (helpers kept in a module)
  *   check <name>\t<expr>     golden: "<name> = <value>": floats with 17 digits, tuples walked, an exception as
  *                            "exception <type>: <value>" (the check() of tools/test/golden/sdlib.py)
  *   print <expr>             what the print statement writes for the value (tp_print of the object, else str)
@@ -33,11 +37,8 @@
  *   py <code>                (STAGE 7) Python: an expression gives its repr, statements the repr of the global
  *                            "result" or ok; "py" alone on the first line takes the rest of the file as the code
  *   native [str|check] <literal>, native py   native values without Python objects (TestNative.c)
- * An error answers "error: <type>: <value>". The channel expressions are a small part of Python's: literals (the
- * reader of the scripts' constants, Script_Literal), inf and nan, tuples and lists of expressions, names (the globals
- * of __main__, the builtins, then the modules by name, imported when needed), attributes, calls with positional and
- * keyword arguments, items and slices, unary minus, and "is None" or "is not None" at the end. No operators, no
- * statements, no code.
+ * An error answers "error: <type>: <value>". The channel statements and expressions (TestExpr.c) are a small part of
+ * Python's syntax read and run in C (operators, comparisons, lambdas, assignments, no Python code).
  */
 #include <math.h>
 #include <stdarg.h>
@@ -55,7 +56,9 @@
 #include "scrap/scorer.h"
 #include "scrap/script.h"
 #include "scrap/scriptnative.h"
+#include "scrap/timer.h"
 #include "scrap/world.h"
+#include "testchannel.h"
 
 #include <eval.h>
 
@@ -76,15 +79,14 @@
 static byte tc_on;
 static byte tc_started;
 static long tc_seq = -1;
+static double tc_answerTime;	/* game time of the last answer (pace=) */
+static double tc_paceLast;		/* game time of the frame before */
+static int tc_paceStill;		/* frames the game clock stood while a paced command waited */
+static byte tc_worldRan;		/* the world update looked in the frame before (TestChannel_WorldFrame) */
 
 /* ---- the answer: a growing text ---- */
 
-typedef struct tcBuf {
-	char *p;
-	int len, cap;
-} tcBuf;
-
-static void TC_Add(tcBuf *b, const char *s, int n) {
+void TC_Add(tcBuf *b, const char *s, int n) {
 	if (n < 0) {
 		n = (int)strlen(s);
 	}
@@ -101,8 +103,7 @@ static void TC_Add(tcBuf *b, const char *s, int n) {
 	b->p[b->len] = 0;
 }
 
-static void TC_Addf(tcBuf *b, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
-static void TC_Addf(tcBuf *b, const char *fmt, ...) {
+void TC_Addf(tcBuf *b, const char *fmt, ...) {
 	char tmp[0x800];
 	va_list ap;
 
@@ -113,7 +114,7 @@ static void TC_Addf(tcBuf *b, const char *fmt, ...) {
 }
 
 /* str() or repr() of o; a failing one gives "?" and clears the error */
-static void TC_AddObj(tcBuf *b, PyObject *o, byte repr) {
+void TC_AddObj(tcBuf *b, PyObject *o, byte repr) {
 	PyObject *s = o ? (repr ? PyObject_Repr(o) : PyObject_Str(o)) : NULL;
 
 	if (s && PyString_Check(s)) {
@@ -127,7 +128,7 @@ static void TC_AddObj(tcBuf *b, PyObject *o, byte repr) {
 
 /* the pending Python error as "<type>: <value>" (normalized, as sys.exc_type and sys.exc_value in an except clause
  * show it), then cleared */
-static void TC_AddError(tcBuf *b) {
+void TC_AddError(tcBuf *b) {
 	PyObject *t, *v, *tb;
 
 	PyErr_Fetch(&t, &v, &tb);
@@ -155,13 +156,6 @@ static void TC_AddFloat(tcBuf *b, double d) {
 	TC_Add(b, tmp, -1);
 }
 
-/* ---- channel expressions ---- */
-
-static PyObject *TC_Main(void) {
-	PyObject *m = PyImport_AddModule("__main__");
-	return m ? PyModule_GetDict(m) : NULL;
-}
-
 static void TC_Blanks(const char **pp) {
 	while (**pp == ' ' || **pp == '\t') {
 		(*pp)++;
@@ -172,554 +166,11 @@ static byte TC_NameChar(char c, byte first) {
 	return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_' || (!first && c >= '0' && c <= '9');
 }
 
-static PyObject *TC_Syntax(const char *at) {
+static void TC_Syntax(const char *at) {
 	char msg[0x100];
 
 	snprintf(msg, sizeof(msg), "channel expression: cannot read at '%.60s'", at);
 	PyErr_SetString(PyExc_SyntaxError, msg);
-	return NULL;
-}
-
-/* p at a quote: the closing quote (backslash escapes skipped), NULL when it is open */
-static const char *TC_StrEnd(const char *p) {
-	char q = *p++;
-
-	for (; *p && *p != q; p++) {
-		if (*p == '\\' && p[1]) {
-			p++;
-		}
-	}
-	return *p ? p : NULL;
-}
-
-/* p after an opening bracket: the matching close at the same depth (quotes skipped), NULL when there is none */
-static const char *TC_Close(const char *p, char close) {
-	char stack[TC_DEPTH];
-	int depth = 0;
-
-	stack[0] = close;
-	for (; *p; p++) {
-		if (*p == '"' || *p == '\'') {
-			p = TC_StrEnd(p);
-			if (!p) {
-				return NULL;
-			}
-		} else if (*p == '(' || *p == '[' || *p == '{') {
-			if (++depth >= TC_DEPTH) {
-				return NULL;
-			}
-			stack[depth] = *p == '(' ? ')' : *p == '[' ? ']' : '}';
-		} else if (*p == ')' || *p == ']' || *p == '}') {
-			if (*p != stack[depth]) {
-				return NULL;
-			}
-			if (!depth--) {
-				return p;
-			}
-		}
-	}
-	return NULL;
-}
-
-/* the first top level "=" of s that is no "==" (a keyword or an assignment), NULL when there is none */
-static const char *TC_TopEquals(const char *s) {
-	for (const char *p = s; *p; p++) {
-		if (*p == '"' || *p == '\'') {
-			p = TC_StrEnd(p);
-			if (!p) {
-				return NULL;
-			}
-		} else if (*p == '(' || *p == '[' || *p == '{') {
-			p = TC_Close(p + 1, *p == '(' ? ')' : *p == '[' ? ']' : '}');
-			if (!p) {
-				return NULL;
-			}
-		} else if (*p == '=') {
-			if (p[1] == '=' || (p > s && (p[-1] == '!' || p[-1] == '<' || p[-1] == '>' || p[-1] == '='))) {
-				p++;
-				continue;
-			}
-			return p;
-		}
-	}
-	return NULL;
-}
-
-/* s[0:n] through the reader of the scripts' literals; NULL without an error when it is no literal */
-static PyObject *TC_Literal(const char *s, int n) {
-	char small[0x400];
-	char *buf = n < (int)sizeof(small) ? small : Mem_Alloc((uint32_t)n + 1);
-
-	memcpy(buf, s, (size_t)n);
-	buf[n] = 0;
-	PyObject *v = Script_Literal(TC_Main(), buf);
-	if (buf != small) {
-		Mem_Free(buf);
-	}
-	return v;
-}
-
-/* a name: the globals of __main__, the builtins, the loaded modules, else the module imported */
-static PyObject *TC_Name(const char *name) {
-	PyObject *v = PyDict_GetItemString(TC_Main(), (char *)name);
-
-	if (!v) {
-		PyObject *b = PyImport_AddModule("__builtin__");
-		v = b ? PyDict_GetItemString(PyModule_GetDict(b), (char *)name) : NULL;
-	}
-	if (!v) {
-		v = PyDict_GetItemString(PyImport_GetModuleDict(), (char *)name);
-	}
-	if (v) {
-		Py_INCREF(v);
-		return v;
-	}
-	return PyImport_ImportModule((char *)name);
-}
-
-/* getattr(o, name): an object that gives NULL without an error raises what the getattr builtin raises then */
-static PyObject *TC_GetAttr(PyObject *o, const char *name) {
-	PyObject *v = PyObject_GetAttrString(o, (char *)name);
-
-	if (!v && !PyErr_Occurred()) {
-		PyErr_SetString(PyExc_SystemError, "NULL result without error in call_object");
-	}
-	return v;
-}
-
-static PyObject *TC_Expr(const char **pp, int depth);
-
-/* the items of a tuple or list up to close: a new list, *comma set when a comma came */
-static PyObject *TC_Items(const char **pp, char close, int depth, byte *comma) {
-	PyObject *list = PyList_New(0);
-
-	*comma = 0;
-	TC_Blanks(pp);
-	while (list && **pp != close) {
-		PyObject *v = TC_Expr(pp, depth + 1);
-		if (!v || PyList_Append(list, v) != 0) {
-			Py_XDECREF(v);
-			Py_DECREF(list);
-			return NULL;
-		}
-		Py_DECREF(v);
-		TC_Blanks(pp);
-		if (**pp == ',') {
-			*comma = 1;
-			(*pp)++;
-			TC_Blanks(pp);
-		} else if (**pp != close) {
-			Py_DECREF(list);
-			return TC_Syntax(*pp);
-		}
-	}
-	if (list) {
-		(*pp)++;
-	}
-	return list;
-}
-
-/* the extent of a number token at p */
-static const char *TC_NumberEnd(const char *p) {
-	while ((*p >= '0' && *p <= '9') || *p == '.' || *p == 'x' || *p == 'X' || *p == 'l' || *p == 'L'
-		|| (*p >= 'a' && *p <= 'f') || (*p >= 'A' && *p <= 'F')
-		|| ((*p == '+' || *p == '-') && (p[-1] == 'e' || p[-1] == 'E'))) {
-		p++;
-	}
-	return p;
-}
-
-static PyObject *TC_Atom(const char **pp, int depth) {
-	const char *p = *pp;
-	char name[0x80];
-	int n = 0;
-
-	if (depth > TC_DEPTH) {
-		return TC_Syntax(p);
-	}
-	if (*p == '"' || *p == '\'') {
-		const char *e = TC_StrEnd(p);
-		PyObject *v = e ? TC_Literal(p, (int)(e - p) + 1) : NULL;
-		if (!v) {
-			return TC_Syntax(p);
-		}
-		*pp = e + 1;
-		return v;
-	}
-	if ((*p >= '0' && *p <= '9') || (*p == '.' && p[1] >= '0' && p[1] <= '9')) {
-		const char *e = TC_NumberEnd(p + 1);
-		PyObject *v = TC_Literal(p, (int)(e - p));
-		if (!v) {
-			return TC_Syntax(p);
-		}
-		*pp = e;
-		return v;
-	}
-	if (*p == '-') {
-		*pp = p + 1;
-		TC_Blanks(pp);
-		PyObject *a = TC_Atom(pp, depth + 1);
-		PyObject *v = a ? PyNumber_Negative(a) : NULL;
-		Py_XDECREF(a);
-		return v;
-	}
-	if (*p == '(' || *p == '[') {
-		char close = *p == '(' ? ')' : ']';
-		const char *e = TC_Close(p + 1, close);
-		byte comma;
-		/* a plain literal is made as the compiler makes its constants */
-		PyObject *v = e ? TC_Literal(p, (int)(e - p) + 1) : NULL;
-		if (v) {
-			*pp = e + 1;
-			return v;
-		}
-		*pp = p + 1;
-		PyObject *list = TC_Items(pp, close, depth, &comma);
-		if (!list || close == ']') {
-			return list;
-		}
-		v = PyList_Size(list) == 1 && !comma ? PyList_GetItem(list, 0) : NULL;
-		if (v) {
-			Py_INCREF(v);
-		} else {
-			v = PyList_AsTuple(list);
-		}
-		Py_DECREF(list);
-		return v;
-	}
-	if (*p == '{') {
-		const char *e = TC_Close(p + 1, '}');
-		PyObject *v = e ? TC_Literal(p, (int)(e - p) + 1) : NULL;
-		if (!v) {
-			return TC_Syntax(p);
-		}
-		*pp = e + 1;
-		return v;
-	}
-	if (!TC_NameChar(*p, 1)) {
-		return TC_Syntax(p);
-	}
-	while (TC_NameChar(*p, 0)) {
-		if (n < (int)sizeof(name) - 1) {
-			name[n++] = *p;
-		}
-		p++;
-	}
-	name[n] = 0;
-	*pp = p;
-	if (!strcmp(name, "inf")) {
-		return PyFloat_FromDouble(HUGE_VAL);
-	}
-	if (!strcmp(name, "nan")) {
-		return PyFloat_FromDouble(nan(""));
-	}
-	return TC_Name(name);
-}
-
-/* the arguments of a call up to ")": the tuple, the keywords into *kw (a new dict or NULL) */
-static PyObject *TC_Args(const char **pp, int depth, PyObject **kw) {
-	const char *p = *pp, *e = TC_Close(p, ')');
-	PyObject *list, *args;
-
-	*kw = NULL;
-	if (!e) {
-		return TC_Syntax(p - 1);
-	}
-	/* all plain literals: the whole tuple made as the compiler makes its constants */
-	if (p < e) {
-		int n = (int)(e - p);
-		const char *last = e - 1;
-		while (last > p && (*last == ' ' || *last == '\t')) {
-			last--;
-		}
-		char *buf = Mem_Alloc((uint32_t)n + 4);
-		buf[0] = '(';
-		memcpy(buf + 1, p, (size_t)n);
-		Str_Copy(buf + 1 + n, *last == ',' ? ")" : ",)", 3);
-		args = Script_Literal(TC_Main(), buf);
-		Mem_Free(buf);
-		if (args && PyTuple_Check(args)) {
-			*pp = e + 1;
-			return args;
-		}
-		Py_XDECREF(args);
-	}
-	list = PyList_New(0);
-	TC_Blanks(&p);
-	while (list && *p != ')') {
-		const char *k = p, *key = NULL;
-		int klen = 0;
-		while (TC_NameChar(*k, k == p)) {
-			k++;
-		}
-		const char *after = k;
-		TC_Blanks(&after);
-		if (k > p && *after == '=' && after[1] != '=') {
-			key = p;
-			klen = (int)(k - p);
-			p = after + 1;
-			TC_Blanks(&p);
-		}
-		PyObject *v = TC_Expr(&p, depth + 1);
-		int bad = !v;
-		if (v && key) {
-			char kname[0x80];
-			snprintf(kname, sizeof(kname), "%.*s", klen, key);
-			if (!*kw) {
-				*kw = PyDict_New();
-			}
-			bad = !*kw || PyDict_SetItemString(*kw, kname, v) != 0;
-		} else if (v) {
-			bad = PyList_Append(list, v) != 0;
-		}
-		Py_XDECREF(v);
-		if (!bad) {
-			TC_Blanks(&p);
-			if (*p == ',') {
-				p++;
-				TC_Blanks(&p);
-			} else if (*p != ')') {
-				TC_Syntax(p);
-				bad = 1;
-			}
-		}
-		if (bad) {
-			Py_DECREF(list);
-			list = NULL;
-		}
-	}
-	if (!list) {
-		Py_XDECREF(*kw);
-		*kw = NULL;
-		return NULL;
-	}
-	*pp = p + 1;
-	args = PyList_AsTuple(list);
-	Py_DECREF(list);
-	return args;
-}
-
-/* a slice bound or index inside [ ]: an expression or nothing (*v NULL) */
-static byte TC_Bound(const char **pp, int depth, PyObject **v) {
-	TC_Blanks(pp);
-	*v = NULL;
-	if (**pp == ':' || **pp == ']') {
-		return 1;
-	}
-	*v = TC_Expr(pp, depth + 1);
-	TC_Blanks(pp);
-	return *v != NULL;
-}
-
-/* the int of a slice bound as SLICE+n takes it: none is lo or hi */
-static byte TC_Index(PyObject *v, int none, int *out) {
-	if (!v) {
-		*out = none;
-		return 1;
-	}
-	if (!PyInt_Check(v)) {
-		PyErr_SetString(PyExc_TypeError, "slice index must be int");
-		return 0;
-	}
-	*out = (int)PyInt_AsLong(v);
-	return 1;
-}
-
-/* one postfix operation at *pp on o (a new reference given away): .name, (args) or [index] / [lo:hi]; target set:
- * the last .name or [index] of the line is not done but handed out (*attr or *key) for an assignment */
-static PyObject *TC_Postfix(const char **pp, int depth, PyObject *o, char *attr, int attrSize, PyObject **key,
-	byte *last) {
-	const char *p = *pp;
-	PyObject *v = NULL;
-
-	*last = 0;
-	if (*p == '.') {
-		char name[0x80];
-		int n = 0;
-		p++;
-		TC_Blanks(&p);
-		if (!TC_NameChar(*p, 1)) {
-			Py_DECREF(o);
-			return TC_Syntax(p);
-		}
-		while (TC_NameChar(*p, 0)) {
-			if (n < (int)sizeof(name) - 1) {
-				name[n++] = *p;
-			}
-			p++;
-		}
-		name[n] = 0;
-		*pp = p;
-		TC_Blanks(&p);
-		if (attr && !*p) {
-			Str_Copy(attr, name, attrSize);
-			*last = 1;
-			return o;
-		}
-		v = TC_GetAttr(o, name);
-	} else if (*p == '(') {
-		PyObject *kw;
-		p++;
-		PyObject *args = TC_Args(&p, depth, &kw);
-		*pp = p;
-		if (args) {
-			v = PyEval_CallObjectWithKeywords(o, args, kw);
-			/* a value with an error left set is the error (as the next check of the interpreter raises it) */
-			if (v && PyErr_Occurred()) {
-				Py_DECREF(v);
-				v = NULL;
-			}
-		}
-		Py_XDECREF(args);
-		Py_XDECREF(kw);
-	} else {
-		PyObject *a, *b = NULL;
-		p++;
-		if (!TC_Bound(&p, depth, &a)) {
-			Py_DECREF(o);
-			return NULL;
-		}
-		byte slice = *p == ':';
-		if (slice) {
-			p++;
-			if (!TC_Bound(&p, depth, &b)) {
-				Py_XDECREF(a);
-				Py_DECREF(o);
-				return NULL;
-			}
-		}
-		if (*p != ']' || (!slice && !a)) {
-			Py_XDECREF(a);
-			Py_XDECREF(b);
-			Py_DECREF(o);
-			return TC_Syntax(p);
-		}
-		p++;
-		*pp = p;
-		TC_Blanks(&p);
-		if (key && !slice && !*p) {
-			*key = a;
-			*last = 1;
-			return o;
-		}
-		int lo, hi;
-		if (!slice) {
-			v = PyObject_GetItem(o, a);
-		} else if (TC_Index(a, 0, &lo) && TC_Index(b, 0x7fffffff, &hi)) {
-			v = PySequence_GetSlice(o, lo, hi);
-		}
-		Py_XDECREF(a);
-		Py_XDECREF(b);
-	}
-	Py_DECREF(o);
-	return v;
-}
-
-/* an atom and its postfix operations; with attr/key the last operation is handed out for an assignment */
-static PyObject *TC_Chain(const char **pp, int depth, char *attr, int attrSize, PyObject **key) {
-	PyObject *o = TC_Atom(pp, depth);
-
-	for (;;) {
-		if (!o) {
-			return NULL;
-		}
-		TC_Blanks(pp);
-		if (**pp != '.' && **pp != '(' && **pp != '[') {
-			return o;
-		}
-		byte last;
-		o = TC_Postfix(pp, depth, o, attr, attrSize, key, &last);
-		if (last) {
-			return o;
-		}
-	}
-}
-
-static PyObject *TC_Expr(const char **pp, int depth) {
-	PyObject *v = TC_Chain(pp, depth, NULL, 0, NULL);
-	const char *p = *pp;
-
-	if (!v) {
-		return NULL;
-	}
-	TC_Blanks(&p);
-	if (!strncmp(p, "is", 2) && (p[2] == ' ' || p[2] == '\t')) {
-		p += 2;
-		TC_Blanks(&p);
-		byte neg = !strncmp(p, "not", 3) && (p[3] == ' ' || p[3] == '\t');
-		if (neg) {
-			p += 3;
-			TC_Blanks(&p);
-		}
-		if (strncmp(p, "None", 4) || TC_NameChar(p[4], 0)) {
-			Py_DECREF(v);
-			return TC_Syntax(p);
-		}
-		*pp = p + 4;
-		byte is = v == Py_None;
-		Py_DECREF(v);
-		return PyInt_FromLong(is != neg);
-	}
-	return v;
-}
-
-/* a whole line as an expression: the value, NULL with the error set (text left over is a syntax error) */
-static PyObject *TC_Eval(const char *line) {
-	const char *p = line;
-
-	TC_Blanks(&p);
-	PyObject *v = TC_Expr(&p, 0);
-	TC_Blanks(&p);
-	if (v && *p) {
-		Py_DECREF(v);
-		return TC_Syntax(p);
-	}
-	return v;
-}
-
-/* "target = expr" (eq at the "="): setattr or setitem; 0 with the error set */
-static byte TC_Assign(const char *line, const char *eq) {
-	char attr[0x80], lhs[0x400];
-	PyObject *key = NULL;
-	byte ok = 0;
-
-	snprintf(lhs, sizeof(lhs), "%.*s", (int)(eq - line), line);
-	Str_TrimBlanks(lhs);
-	const char *p = lhs;
-	attr[0] = 0;
-	PyObject *owner = TC_Chain(&p, 0, attr, sizeof(attr), &key);
-	TC_Blanks(&p);
-	if (owner && (*p || (!attr[0] && !key))) {
-		TC_Syntax(lhs);
-	} else if (owner) {
-		PyObject *v = TC_Eval(eq + 1);
-		if (v) {
-			int r = key ? PyObject_SetItem(owner, key, v) : PyObject_SetAttrString(owner, attr, v);
-			if (r != 0 && !PyErr_Occurred()) {
-				/* what the setattr builtin raises then */
-				PyErr_SetString(PyExc_SystemError, "NULL result without error in call_object");
-			}
-			ok = r == 0;
-		}
-		Py_XDECREF(v);
-	}
-	Py_XDECREF(key);
-	Py_XDECREF(owner);
-	return ok;
-}
-
-/* an expression or an assignment line: the value (None for an assignment), NULL with the error set */
-static PyObject *TC_Statement(const char *line) {
-	const char *eq = TC_TopEquals(line);
-
-	if (!eq) {
-		return TC_Eval(line);
-	}
-	if (!TC_Assign(line, eq)) {
-		return NULL;
-	}
-	Py_INCREF(Py_None);
-	return Py_None;
 }
 
 /* ---- golden: the value as check() of sdlib.py writes it ---- */
@@ -752,7 +203,7 @@ static void TC_Check(tcBuf *b, const char *arg) {
 	}
 	TC_Add(b, arg, (int)(tab - arg));
 	TC_Add(b, " = ", 3);
-	PyObject *v = TC_Statement(tab + 1);
+	PyObject *v = TcX_Statement(tab + 1);
 	if (v) {
 		TC_Fmt(b, v);
 		Py_DECREF(v);
@@ -765,7 +216,7 @@ static void TC_Check(tcBuf *b, const char *arg) {
 
 /* print <expr>: the print statement (tp_print of the object, else str) through a temporary file */
 static void TC_Print(tcBuf *b, const char *arg) {
-	PyObject *v = TC_Eval(arg);
+	PyObject *v = TcX_Eval(arg);
 
 	if (!v) {
 		TC_Add(b, "error: ", -1);
@@ -846,22 +297,24 @@ static byte TC_Recorder(const char *arg) {
 		}
 		name[n] = 0;
 		TC_Blanks(&p);
-		exc = TC_Name(name);
+		exc = TcX_Name(name);
 		text = exc ? PyString_FromString(p) : NULL;
 	} else {
-		value = *p ? TC_Eval(p) : (Py_INCREF(Py_None), Py_None);
+		value = *p ? TcX_Eval(p) : (Py_INCREF(Py_None), Py_None);
 	}
 	PyObject *calls = PyList_New(0);
 	PyObject *self = (value || text) && calls ? Py_BuildValue("(OOOO)", calls, value ? value : Py_None,
 		exc ? exc : Py_None, text ? text : Py_None) : NULL;
 	PyObject *f = self ? PyCFunction_New(&tc_recorderDef, self) : NULL;
 	byte ok = 0;
-	if (f && (strcmp(list, "-") == 0 || PyDict_SetItemString(TC_Main(), list, calls) == 0)) {
+	if (f && (strcmp(list, "-") == 0 || PyDict_SetItemString(TcX_Main(), list, calls) == 0)) {
 		/* the function goes to the target as an assignment would put it there */
-		PyObject *main = TC_Main();
+		PyObject *main = TcX_Main();
 		snprintf(line, sizeof(line), "%s = __tc_recorder", target);
 		if (PyDict_SetItemString(main, "__tc_recorder", f) == 0) {
-			ok = TC_Assign(line, strchr(line, '='));
+			PyObject *r = TcX_Statement(line);
+			ok = r != NULL;
+			Py_XDECREF(r);
 			PyDict_DelItemString(main, "__tc_recorder");
 		}
 	}
@@ -1365,7 +818,7 @@ static void TC_Con(tcBuf *b, const char *arg) {
 /* the code as the game side of the MCP server ran it (tools/mcp/mcpgame.py): an expression gives its repr,
  * statements the repr of the global "result" (or ok), in the globals of __main__ */
 static void TC_Python(tcBuf *b, const char *code) {
-	PyObject *g = TC_Main();
+	PyObject *g = TcX_Main();
 	PyObject *v = NULL;
 
 	for (const char *const *m = (const char *const[]){ "string", "sys", NULL }; *m; m++) {
@@ -1422,6 +875,37 @@ static void TC_Native(tcBuf *b, const char *arg) {
 	TestNative_Command(&out, arg);
 	TC_Add(b, out.p, out.len);
 	Native_BufFree(&out);
+}
+
+/* in <module> <statements>: the statements in the globals of the module (imported when needed), answered as a line */
+static void TC_In(tcBuf *b, const char *arg) {
+	char name[0x80];
+	int n = 0;
+
+	TC_Blanks(&arg);
+	while (TC_NameChar(*arg, 0) && n < (int)sizeof(name) - 1) {
+		name[n++] = *arg++;
+	}
+	name[n] = 0;
+	PyObject *m = n ? PyImport_ImportModule(name) : NULL;
+	if (!m || !PyModule_Check(m)) {
+		if (!PyErr_Occurred()) {
+			TC_Syntax(arg);
+		}
+		Py_XDECREF(m);
+		TC_Add(b, "error: ", -1);
+		TC_AddError(b);
+		TC_Add(b, "\n", 1);
+		return;
+	}
+	byte quiet = 0;
+	TC_Blanks(&arg);
+	if (!strncmp(arg, "do ", 3)) {
+		quiet = 1;
+		arg += 3;
+	}
+	TcX_Run(b, arg, PyModule_GetDict(m), quiet);
+	Py_DECREF(m);
 }
 
 /* the verb of a line ("word " or the word alone); else 0 */
@@ -1488,22 +972,11 @@ static void TC_Line(tcBuf *b, const char *line) {
 #else
 		TC_Add(b, TC_NOPYTHON, -1);
 #endif
+	} else if (TC_Verb(line, "in", &arg)) {
+		TC_In(b, arg);
 	} else {
 		byte quiet = TC_Verb(line, "do", &arg);
-		PyObject *v = TC_Statement(quiet ? arg : line);
-		if (!v) {
-			TC_Add(b, "error: ", -1);
-			TC_AddError(b);
-			TC_Add(b, "\n", 1);
-		} else if (!quiet) {
-			if (TC_TopEquals(line)) {
-				TC_Add(b, "ok", 2);
-			} else {
-				TC_AddObj(b, v, 1);
-			}
-			TC_Add(b, "\n", 1);
-		}
-		Py_XDECREF(v);
+		TcX_Run(b, quiet ? arg : line, TcX_Main(), quiet);
 	}
 	/* nothing is left pending for the game */
 	PyErr_Clear();
@@ -1539,10 +1012,15 @@ static void TC_Run(tcBuf *b, char *body) {
 /* ---- the files ---- */
 
 /* the number on the first line of a file; -1 when there is none */
-static long TC_FileSeq(const char *name) {
-	char head[0x20];
+/* the number on the first line of a file; -1 when there is none. pace (may be NULL): the seconds of "pace=<s>" after
+ * the number, else 0 */
+static long TC_FileSeq(const char *name, double *pace) {
+	char head[0x40];
 	void *f = crt_fopen(name, "rb");
 
+	if (pace) {
+		*pace = 0.0;
+	}
 	if (!f) {
 		return -1;
 	}
@@ -1551,6 +1029,9 @@ static long TC_FileSeq(const char *name) {
 	head[n] = 0;
 	char *end;
 	long seq = strtol(head, &end, 10);
+	if (end > head && pace && !strncmp(end, " pace=", 6)) {
+		*pace = strtod(end + 6, &end);
+	}
 	return end > head && (*end == '\n' || *end == '\r') ? seq : -1;
 }
 
@@ -1607,6 +1088,39 @@ void TestChannel_Enable(void) {
 	tc_on = 1;
 }
 
+/* a new command file runs (paced) and is answered */
+static void TC_Poll(void) {
+	double pace;
+	long seq = TC_FileSeq(TC_CMD, &pace);
+	if (seq < 0 || seq == tc_seq) {
+		return;
+	}
+	/* "pace=<s>": not before s seconds of game time after the last answer, as the polling script function of the old
+	 * harness answered (mcpgame.py looked every 0.1 s of game time); at once after a level load (the clock starts
+	 * over) or when the clock stood for 60 frames */
+	double gt = g_pWorld ? (double)Timer_GetTime(&g_pWorld->timer) : 0.0;
+	if (gt != tc_paceLast) {
+		tc_paceStill = 0;
+	}
+	tc_paceLast = gt;
+	if (pace > 0.0 && gt >= tc_answerTime && gt < tc_answerTime + pace && ++tc_paceStill < 60) {
+		return;
+	}
+	char *text = TC_ReadFile(TC_CMD);
+	char *nl = text ? strchr(text, '\n') : NULL;
+	if (!nl || strtol(text, NULL, 10) != seq) {
+		Mem_Free(text);
+		return;
+	}
+	tcBuf b = { 0 };
+	tc_seq = seq;
+	TC_Run(&b, nl + 1);
+	TC_WriteReply(seq, &b);
+	tc_answerTime = g_pWorld ? (double)Timer_GetTime(&g_pWorld->timer) : 0.0;
+	Mem_Free(b.p);
+	Mem_Free(text);
+}
+
 void TestChannel_Frame(double now) {
 	static double last;
 
@@ -1622,26 +1136,21 @@ void TestChannel_Frame(double now) {
 			return;
 		}
 		/* the answer of a run before this start (the same game folder) is not run again */
-		tc_seq = TC_FileSeq(TC_REPLY);
+		tc_seq = TC_FileSeq(TC_REPLY, NULL);
 		Con_Printf("Test channel on: %s\n", TC_CMD);
 	}
+	/* the world update of the frame before looked already (the clock runs): it looks again in this frame */
+	if (!tc_on || tc_worldRan) {
+		tc_worldRan = 0;
+		return;
+	}
+	TC_Poll();
+}
+
+void TestChannel_WorldFrame(void) {
 	if (!tc_on) {
 		return;
 	}
-	long seq = TC_FileSeq(TC_CMD);
-	if (seq < 0 || seq == tc_seq) {
-		return;
-	}
-	char *text = TC_ReadFile(TC_CMD);
-	char *nl = text ? strchr(text, '\n') : NULL;
-	if (!nl || strtol(text, NULL, 10) != seq) {
-		Mem_Free(text);
-		return;
-	}
-	tcBuf b = { 0 };
-	tc_seq = seq;
-	TC_Run(&b, nl + 1);
-	TC_WriteReply(seq, &b);
-	Mem_Free(b.p);
-	Mem_Free(text);
+	tc_worldRan = 1;
+	TC_Poll();
 }

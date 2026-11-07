@@ -1,0 +1,77 @@
+# Townhall: Speech part 2
+setattr(__import__('Speech'), 'PlayerName', 'Player0')
+setattr(__import__('Speech'), 'NPCName', 'Nurse_01')
+setattr(__import__('Speech'), 'OnEndOfSpeech', lambda: setattr(__import__('Init'), '_niend', 1))
+__import__('Speech').NISpeech()
+__import__('Speech').AddNI('TalkMsg', 'StdAnsw1')
+__import__('Speech').AddNI('TalkMsg', 'StdAnsw2', 'TalkNPC', 'Nurse')
+__import__('Speech').AutoAddNI('Generics_Police_Init')
+__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange'))
+__import__('Speech').RunNI()
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._ent('Nurse_01', ('Action','Invulnerable')), __import__('Init')._ent('Player0', ('Action','AutoSelect','SelectedEntity','OutSelectFunc')))
+!sleep 11
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._ent('Nurse_01', ('Action','Invulnerable')), __import__('Init')._ent('Player0', ('Action','AutoSelect','SelectedEntity','OutSelectFunc')))
+!sleep 11
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._ent('Nurse_01', ('Action','Invulnerable')), __import__('Init')._ent('Player0', ('Action','AutoSelect','SelectedEntity','OutSelectFunc')), getattr(__import__('Init'), '_niend', None))
+__import__('Speech').AbortSpeech()
+setattr(__import__('Speech'), 'NPCName', 'HumphreyDesktop')
+__import__('Speech').NISpeech('Humphrey')
+__import__('Speech').AddNI('TalkMsg', 'StdAnsw1')
+__import__('Speech').AddNI('TalkMsg', 'StdAnsw2', 'TalkNPC', 'Mayor')
+__import__('Speech').RunNI()
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._ent('HumphreyDesktop', ('Action','DefLoop','HeadModel','HeadAnimIndex')), __import__('Init')._ent('Player0', ('Action','AutoSelect','SelectedEntity','OutSelectFunc')))
+!sleep 12
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._ent('HumphreyDesktop', ('Action','DefLoop','HeadModel','HeadAnimIndex')), __import__('Init')._ent('Player0', ('Action','AutoSelect','SelectedEntity','OutSelectFunc')))
+!sleep 12
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._ent('HumphreyDesktop', ('Action','DefLoop','HeadModel','HeadAnimIndex')), __import__('Init')._ent('Player0', ('Action','AutoSelect','SelectedEntity','OutSelectFunc')))
+__import__('Speech').AbortSpeech()
+!sleep 1
+__import__('Speech').DoRemote()
+__import__('Speech').RemoteComunication('Generics_PoliceTaunt_1', 'Police')
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._ent('Player0', ('Action','AutoSelect','SelectedEntity','OutSelectFunc')), __import__('Init')._gv(('RemainTalkTime','FullTalkTime')))
+!sleep 6
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._ent('Player0', ('Action','AutoSelect','SelectedEntity','OutSelectFunc')), __import__('Init')._gv(('RemainTalkTime','FullTalkTime')))
+__import__('Speech').LaunchTaunt('Police_01', 'Police', 2)
+__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange'))
+__import__('Speech').LaunchTaunt('Police_01', 'Police', 2)
+__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange'))
+__import__('Speech').LaunchTaunt('Merc_01', 'MercenaryB', 1)
+__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange'))
+!sleep 6
+__import__('Speech').AddRemoteCom('Generics_PoliceTaunt_3', 'Ficus', None, (), 1, 0)
+__import__('Speech').AddRemoteCom('Generics_PoliceTaunt_4', 'Trurl')
+__import__('Speech').AddRemoteCom('Generics_PoliceTaunt_3', 'Ficus')
+__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange'))
+!sleep 1
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._gv(('RemainTalkTime','FullTalkTime')))
+__import__('Speech').ForceRemoteCom('Generics_PoliceTaunt_5', 'Police')
+__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange'))
+__import__('Speech').CancelRemoteCom()
+!sleep 1
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._gv(('RemainTalkTime','FullTalkTime')))
+__import__('Speech').OffVoice('Generics_PoliceTaunt_6')
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._gv(('RemainTalkTime','FullTalkTime')))
+setattr(__import__('Speech'), 'RemoteCom', [])
+__import__('Speech').AbortSpeech()
+!sleep 6
+__import__('Speech').OnObjSpch(Scrap.GetEntity('HumphreyDesktop'), 'Humphrey', 'TalkMsg', 'StdAnsw1')
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._ent('HumphreyDesktop', ('Action','DefLoop','HeadModel','HeadAnimIndex')), __import__('Init')._ent('Player0', ('Action','AutoSelect','SelectedEntity','OutSelectFunc')))
+!sleep 4
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._ent('HumphreyDesktop', ('Action','DefLoop','HeadModel','HeadAnimIndex')), __import__('Init')._ent('Player0', ('Action','AutoSelect','SelectedEntity','OutSelectFunc')))
+!sleep 2
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._ent('HumphreyDesktop', ('Action','DefLoop','HeadModel','HeadAnimIndex')), __import__('Init')._ent('Player0', ('Action','AutoSelect','SelectedEntity','OutSelectFunc')))
+!sleep 7
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._ent('HumphreyDesktop', ('Action','DefLoop','HeadModel','HeadAnimIndex')), __import__('Init')._ent('Player0', ('Action','AutoSelect','SelectedEntity','OutSelectFunc')))
+__import__('Speech').AbortSpeech()
+__import__('Speech').StdObjSpch(Scrap.GetEntity('HumphreyDesktop'), 'Trurl', 'Talk', 'Talk', 'Relax')
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._ent('HumphreyDesktop', ('Action','DefLoop','HeadModel','HeadAnimIndex')))
+__import__('Speech').AbortSpeech()
+__import__('Speech').OnChallengeObjSpch(Scrap.GetEntity('HumphreyDesktop'), 'Igor', 'My challenge text', 'StdAnsw1', 'Talk', 'Talk', 1)
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._ent('HumphreyDesktop', ('Action','DefLoop','HeadModel','HeadAnimIndex')))
+__import__('Speech').AbortSpeech()
+__import__('Speech').StartObjSpch(Scrap.GetEntity('HumphreyDesktop'), 'StdAnsw2', 'Humphrey')
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), __import__('Init')._ent('HumphreyDesktop', ('Action','DefLoop','HeadModel','HeadAnimIndex')))
+setattr(__import__('Speech'), 'OnOutOfRange', lambda: setattr(__import__('Init'), '_outrange', 1))
+__import__('Speech').TestInRange()
+(__import__('Init')._mod('Speech', ('PlayerName','NPCName','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','TalkListen','TalkNI','CurrNI','NISpeechHeadName','OnEndOfSpeechNI','OnEndOfSpeechParamsNI','prevTaunt','LaunchedTauntEntityName','RemoteCom','CurrentRemoteCom','CanLaunchRemote','ObjEntity','ObjAnswer','ObjCharType','ObjAutoAnswerAction','ObjAutoAnswerDefLoop','OnOutOfRange')), getattr(__import__('Init'), '_outrange', None))
+__import__('Speech').AbortSpeech()

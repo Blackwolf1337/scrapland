@@ -1,0 +1,320 @@
+# Regression cases: <Level> <case file in cases/> [port]   (README.md). Level = the level the game starts in.
+# From rd/grp-all-items.txt (the stored group of rounds 1 to 8):
+AB fc-ab-ff.txt
+ABIndoor fc-abi.txt
+DownTown fc-acc-dt.txt
+Townhall fc-act.txt
+Bank fc-bank.txt
+# DownTown fc-bc-dt.txt   (left out: a pack only check, the .py sources against the shipped .pyc)
+# Police fc-bc-po.txt   (left out: a pack only check, the .py sources against the shipped .pyc)
+Townhall fc-cc-alarm2.txt
+Townhall fc-cc-alarm3.txt
+Townhall fc-cc-alarm.txt
+# Townhall fc-cc-cmp.txt   (left out: a pack only check, the .py sources against the shipped .pyc)
+Townhall fc-cc-conv.txt
+ABIndoor fc-cc-lvl-ABIndoor.txt
+Bank fc-cc-lvl-Bank.txt
+GamblinDen fc-cc-lvl-GamblinDen.txt
+Junkyard fc-cc-lvl-Junkyard.txt
+Orbit fc-cc-lvl-Orbit.txt
+Police fc-cc-lvl-Police.txt
+Press fc-cc-lvl-Press.txt
+Temple fc-cc-lvl-Temple.txt
+Townhall fc-cc-pos.txt
+Townhall fc-chat.txt
+Menu fc-credits2.txt
+Menu fc-credits.txt
+Menu fc-credmenu2.txt
+Townhall fc-credmenu.txt
+Fake fc-fake.txt
+DownTown fc-fx2.txt
+Bank fc-fx-bank.txt
+DownTown fc-fx-downtown.txt
+Junkyard fc-fx-junk.txt
+GamblinDen fc-gd2.txt
+GamblinDen fc-gd.txt
+Police fc-gk-po.txt
+Townhall fc-init.txt
+GamblinDen fc-inmap2.txt
+Police fc-inmap.txt
+DownTown fc-items-dt.txt
+Townhall fc-items-th.txt
+Junkyard fc-junk.txt
+Townhall fc-kw.txt
+Menu fc-lvl-menu.txt
+Police fc-lvl-po.txt
+DownTown fc-mis1.txt
+DownTown fc-mis2.txt
+DownTown fc-mis3.txt
+Police fc-mis4.txt
+GamblinDen fc-mis5.txt
+# Police fc-miscmp2.txt   (left out: a pack only check (rd/fcmp.py), the .py sources against the shipped .pyc)
+# Police fc-miscmp.txt   (left out: a pack only check (rd/fcmp.py), the .py sources against the shipped .pyc)
+DownTown fc-misdt.txt
+ABIndoor fc-mislvl-ABIndoor.txt
+Bank fc-mislvl-Bank.txt
+Commercial fc-mislvl-Commercial.txt
+DownTown fc-mislvl-DownTown.txt
+GamblinDen fc-mislvl-GamblinDen.txt
+GDB fc-mislvl-GDB.txt
+Junkyard fc-mislvl-Junkyard.txt
+Orbit fc-mislvl-Orbit.txt
+Outskirts fc-mislvl-Outskirts.txt
+Police fc-mislvl-Police.txt
+Press fc-mislvl-Press.txt
+Scrapyard fc-mislvl-Scrapyard.txt
+Temple fc-mislvl-Temple.txt
+Townhall fc-mislvl-Townhall.txt
+Police fc-misprobe.txt
+Temple fc-miste.txt
+Townhall fc-misth1.txt
+Townhall fc-misth2.txt
+Townhall fc-misth3.txt
+Townhall fc-misth4.txt
+Police fc-npc2.txt
+GamblinDen fc-npc3.txt
+Bank fc-npc4.txt
+Townhall fc-npc.txt
+DownTown fc-om-dt.txt
+DownTown fc-pk-arr.txt
+DownTown fc-pk-dt.txt
+Press fc-press.txt
+QF fc-qf-bc.txt
+Townhall fc-r6-am2.txt
+Townhall fc-r6-am.txt
+Bank fc-r6-bank.txt
+Commercial fc-r6b-cm1a.txt
+Commercial fc-r6b-cm1b.txt
+Commercial fc-r6b-cm1.txt
+Commercial fc-r6b-cm2a.txt
+Commercial fc-r6b-cm2b.txt
+Commercial fc-r6b-cm2c.txt
+Commercial fc-r6b-cm2.txt
+Commercial fc-r6b-cm3.txt
+Commercial fc-r6b-cm4.txt
+Commercial fc-r6b-dbg.txt
+GamblinDen fc-r6b-gd1.txt
+GamblinDen fc-r6b-gd2.txt
+GamblinDen fc-r6b-gd3.txt
+GamblinDen fc-r6b-gd4.txt
+GamblinDen fc-r6b-gd5.txt
+Orbit fc-r6b-or1.txt
+Orbit fc-r6b-or2.txt
+Police fc-r6-bp1.txt
+Police fc-r6-bp2.txt
+Bank fc-r6-cr.txt
+Townhall fc-r6-ct.txt
+Police fc-r6-fd.txt
+Police fc-r6-ga.txt
+Bank fc-r6-gd.txt
+Bank fc-r6-ib.txt
+Police fc-r6-ie.txt
+Police fc-r6-jb.txt
+Police fc-r6-pc2.txt
+Police fc-r6-pc.txt
+Police fc-r6-police.txt
+Bank fc-r6probe.txt
+# Bank fc-r6-pyc.txt   (left out: a pack only check, the .py sources of the extracted packs against the shipped .pyc; needs game data)
+Townhall fc-r6-sm.txt
+Townhall fc-r6-tm.txt
+Townhall fc-r6-townhall.txt
+FZ fc-reloadprobe.txt
+DownTown fc-rm-dt1.txt
+DownTown fc-rm-dt2.txt
+Orbit fc-sc-orbit.txt
+CA fc-sd-ca.txt
+# CA fc-sd-cmp.txt   (left out: a pack only check, the .py sources against the shipped .pyc; C functions differ by design)
+FZ fc-sd-ctf.txt
+CA fc-sd-dm.txt
+OM fc-sd-dom.txt
+FZ fc-sd-fz.txt
+QF fc-sd-mis.txt
+FZ fc-sd-mr.txt
+OM fc-sd-om.txt
+CA fc-sdprobe.txt
+QF fc-sd-qf.txt
+QF fc-sd-tdm.txt
+CA fc-sd-vs.txt
+Junkyard fc-se-dc1.txt
+Junkyard fc-se-dc2.txt
+Junkyard fc-se-jy1.txt
+Junkyard fc-se-jy2.txt
+Junkyard fc-se-jy3.txt
+ShipEdit fc-se-probe.txt
+ShipEdit fc-se-sh1.txt
+ShipEdit fc-se-sh2.txt
+ShipEdit fc-se-sh3.txt
+ShipEdit fc-se-sh4.txt
+DownTown fc-se-sp.txt
+Townhall fc-sg2.txt
+Townhall fc-sg.txt
+DownTown fc-sm-dt.txt
+Outskirts fc-sm-os.txt
+DownTown fc-snd-dt.txt
+ABIndoor fc-sndstart-ABIndoor.txt
+AB fc-sndstart-AB.txt
+Bank fc-sndstart-Bank.txt
+Commercial fc-sndstart-Commercial.txt
+DownTown fc-sndstart-DownTown.txt
+GamblinDen fc-sndstart-GamblinDen.txt
+GDB fc-sndstart-GDB.txt
+Junkyard fc-sndstart-Junkyard.txt
+Menu fc-sndstart-Menu.txt
+OM fc-sndstart-OM.txt
+Orbit fc-sndstart-Orbit.txt
+Outskirts fc-sndstart-Outskirts.txt
+Police fc-sndstart-Police.txt
+Press fc-sndstart-Press.txt
+QF fc-sndstart-QF.txt
+Scrapyard fc-sndstart-Scrapyard.txt
+ShipEdit fc-sndstart-ShipEdit.txt
+Temple fc-sndstart-Temple.txt
+Townhall fc-sndstart-Townhall.txt
+Townhall fc-snd-th.txt
+Townhall fc-sp2.txt
+FZ fc-split-dm.txt
+FZ fc-split-fl.txt
+FZ fc-split-po.txt
+FZ fc-splitprobe.txt
+FZ fc-split-ra.txt
+DownTown fc-spt-dt.txt
+Townhall fc-sp.txt
+DownTown fc-sput.txt
+ShipEdit fc-tab1.txt
+ShipEdit fc-tab2.txt
+Junkyard fc-tab3.txt
+ShipEdit fc-tab4.txt
+ShipEdit fc-tab5.txt
+# ShipEdit fc-tabpyc.txt   (left out: a pack only check (_cmpsrc), the .py sources against the shipped .pyc)
+ShipEdit fc-tabx.txt
+Townhall fc-th.txt
+Temple fc-tp-ad.txt
+Temple fc-tp-ag.txt
+Temple fc-tp-map.txt
+Temple fc-tp-ma.txt
+Temple fc-tp-td.txt
+DownTown fc-veh.txt
+DownTown fc-vnpc.txt
+DownTown fc-weap-rg.txt   # rd/fc-weap.txt without the real weapon re-inits (regress/cases/)
+# Round 8:
+Outskirts fc-r8c-boost.txt
+Outskirts fc-r8c-nocam.txt
+Townhall fc-r8e-door.txt
+DownTown fc-r8e-init.txt
+DownTown fc-r8e-init-nochk.txt
+Townhall fc-r8e-sched.txt
+DownTown fc-r8e-siren.txt
+Townhall fc-r8e-wrap.txt
+DownTown fc-r8i-msbtn.txt
+ABIndoor fc-r8j-hold-ABIndoor.txt
+Bank fc-r8j-hold-Bank.txt
+DownTown fc-r8j-hold-DownTown.txt
+Junkyard fc-r8j-hold-Junkyard.txt
+Orbit fc-r8j-hold-Orbit.txt
+Townhall fc-r8j-hold-Townhall.txt
+ABIndoor fc-r8j-snd-ABIndoor.txt
+Bank fc-r8j-snd-Bank.txt
+DownTown fc-r8j-snd-DownTown.txt
+GamblinDen fc-r8j-snd-GamblinDen.txt
+Junkyard fc-r8j-snd-Junkyard.txt
+Orbit fc-r8j-snd-Orbit.txt
+Police fc-r8j-snd-Police.txt
+Press fc-r8j-snd-Press.txt
+Temple fc-r8j-snd-Temple.txt
+Townhall fc-r8j-snd-Townhall.txt
+# Round 7 level scripts (Press, Junkyard, DownTown, GDB, Scrapyard, Outskirts):
+Press fc-r7b-pr1.txt
+Press fc-r7b-fb.txt
+Press fc-r7b-gc.txt
+Press fc-r7b-gw.txt
+Press fc-r7b-mb.txt
+Press fc-r7b-sm1.txt
+Press fc-r7b-sm2.txt
+Press fc-r7b-tb.txt
+Press fc-r7b-wb.txt
+Press fc-r7b-demo.txt
+Junkyard fc-r7b-jy.txt
+DownTown fc-r7c-dt1.txt
+DownTown fc-r7c-dt2.txt
+DownTown fc-r7c-dt3.txt
+DownTown fc-r7c-dt4.txt
+DownTown fc-r7c-dt5.txt
+DownTown fc-r7c-dt6.txt
+DownTown fc-r7c-dt7.txt
+DownTown fc-r7c-dt8.txt
+DownTown fc-r7c-dt9.txt
+GDB fc-r7d-gd1.txt
+GDB fc-r7d-gd2.txt
+GDB fc-r7d-gd3.txt
+GDB fc-r7d-gd4.txt
+Scrapyard fc-r7d-sy1.txt
+Scrapyard fc-r7d-sy2.txt
+Scrapyard fc-r7d-sy3.txt
+Scrapyard fc-r7d-sy4.txt
+Scrapyard fc-r7d-sy5.txt
+Scrapyard fc-r7d-sy6.txt
+Scrapyard fc-r7d-sy7.txt
+Scrapyard fc-r7d-sy8.txt
+Outskirts fc-oa1.txt
+Outskirts fc-oa2.txt
+Outskirts fc-oa3.txt
+Outskirts fc-oa4.txt
+Outskirts fc-oa5.txt
+Outskirts fc-oa6.txt
+# Levels without a case of their own above:
+# Menu fc-nano.txt   (left out: Levels/Nano has no Map3D.m3d in the shipped data, the load ends at a fatal error)
+# Menu fc-tuc.txt   (left out: Levels/TucZone has no Map3D.m3d in the shipped data, the load ends at a fatal error)
+Menu fc-ab-map.txt
+Townhall fc-sp1.txt
+# Online modes offline (round 8a/8b): recorders, and real server starts on a local port (one at a time):
+FZ fc-nm-dm.txt
+FZ fc-nm-bots.txt
+FZ fc-nm-fl.txt
+FZ fc-nm-po.txt
+FZ fc-ffa1.txt port
+FZ fc-ffa2.txt port
+FZ fc-ffa3.txt port
+FZ fc-nm-srv-DeathMatch.txt port
+FZ fc-nm-srv-TeamDM.txt port
+FZ fc-nm-srv-FlagHunt.txt port
+FZ fc-nm-srv-TeamFlag.txt port
+FZ fc-nm-srv-Postman.txt port
+FZ fc-nm-srv-TeamPost.txt port
+# Menus (round 8r coverage cases; menu dumps, callbacks compared without the Menu./PCMenu. prefix, rule R14):
+Townhall fc-r8r-games.txt
+Townhall fc-r8r-mi.txt
+Townhall fc-r8r-ctrl.txt
+Townhall fc-r8r-video.txt
+Townhall fc-r8r-net.txt
+Townhall fc-r8r-sg.txt
+# Deleted entity handles passed to every C function of the loaded modules (round 8n):
+DownTown fc-nc-el.txt
+DownTown fc-nc-pb1.txt
+DownTown fc-nc-pb2.txt
+DownTown fc-nc-pb3.txt
+DownTown fc-nc-pb4.txt
+DownTown fc-nc-pb5.txt
+DownTown fc-nc-pb6.txt
+DownTown fc-nc-pb7.txt
+DownTown fc-nc-pb8.txt
+DownTown fc-nc-pc1.txt
+DownTown fc-nc-pc1b.txt
+DownTown fc-nc-pc2.txt
+DownTown fc-nc-pc3.txt
+DownTown fc-nc-pc4.txt
+DownTown fc-nc-pc5.txt
+DownTown fc-nc-pk.txt
+Townhall fc-nc-pt1.txt
+Townhall fc-nc-pt2.txt
+Townhall fc-nc-pt3.txt
+Townhall fc-nc-pu1.txt
+Townhall fc-nc-pu2.txt
+Townhall fc-nc-pu3.txt
+# Left out:
+# fc-r8g.txt, fc-r8g-mod.txt: two games joined over a real network (own runner rd/r8g.py, 3.5 h for the matrix); the
+#   modify and position races of the original design show both outcomes in pack and C runs.
+# ASan twins of listed cases: fc-tab1x/2x/3x, fc-snd-dtx, fc-cc-conv-asan, fc-cc-wrap, fc-ffa1x/2x/3x.
+# Probes and debug variants of listed cases: fc-r8cprobe, fc-r8ccam, fc-r8c-nocamdbg, fc-oa4dbg*, fc-oa4b, fc-oa6b,
+#   fc-oa6c, fc-r7d-dbg*, fc-r8r-vprobe, fc-r8r-vprobe2, fc-covffa1-3 and fc-covsrv-* (the ffa and nm-srv cases on other ports), fc-r7c-dt4x/y/z, fc-r7b-mbs, fc-nm-probe, fc-ffa0, fc-sdprobe2, fc-sndprobe, fc-r8j-hold.
+# fc-qload-cm.txt: quick-loads a save game (slots have no saves); fc-winlvl, fc-refs, fc-types-cm: one-off checks of
+#   another build (Windows level pass, reference identities, types) without a level of their own.

@@ -1,0 +1,6 @@
+# TimeToExtraRelax counts down in game time between the case lines (engine timer of the idle animation)
+sub \('TimeToExtraRelax', [-\d.e+]+\) => ('TimeToExtraRelax', TIMER)
+# line 17: NPC walk, idle and talk state and spawn position change from run to run (CharsNPC timing)
+ignore ((__import__('Init')._mod('Speech', ('PlayerName','NPCName','AnsAnima','NPCAnswer','NPCAnswerTime','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','ArrowCanMission','TalkListen','TextColor','CurrentRemoteCom','CanLaunchRemote')), __import__('Init')._ent('Player0', ('Action','DefLoop','AutoSelect','SelectedEntity','OutSelectFunc','DisplAng','MoveTime','MoveViewAng')), __import__('Init')._gv(('EscapeEvent','MainMissionEvent'))), __import__('Init')._ent('Nurse_01', ('Action','DefLoop','SelectedEntity','ArrOpt0','ArrOpt1','ArrnOpt','ArriOpt','LLogicIdle','AbortSelectFunc','ArrowCanMission','DisplAng','TimeToExtraRelax')))
+# line 20: NPC walk, idle and talk state and spawn position change from run to run (CharsNPC timing)
+ignore __import__('Init')._ent('Nurse_01', ('Action','DefLoop','SelectedEntity','ArrOpt0','ArrOpt1','ArrnOpt','ArriOpt','LLogicIdle','AbortSelectFunc','ArrowCanMission','DisplAng','TimeToExtraRelax'))

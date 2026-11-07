@@ -1,0 +1,7 @@
+# The credits from the menu (Menu.CreditsMenu in Townhall loads the menu level with ShowCredits)
+Scrap.GetLevelPath()
+__import__('Menu').CreditsMenu(0, '')
+!sleep 25
+(Scrap.GetLevelPath(), Scrap.Get('ShowCredits'), SInput.GetActionSet(), __import__('Map').CreditsCtr, type(__import__('CreditsText').ShowCredit), __import__('CreditsText').EndOfCredits.__name__, SScorer.Items(0))
+__import__('Init')._mod('CreditsText', ('TextInfo','TextPos','TextLines','ctr'))
+(Scrap.Get('R_CreditsX'), Scrap.Get('R_CreditsY'), SScorer.Get(0, 'Credits', 'Visible'), Scrap.Get('EscapeEvent'))

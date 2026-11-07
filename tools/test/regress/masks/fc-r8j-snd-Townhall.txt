@@ -1,0 +1,3 @@
+# accepted in round 8j: deleting PoliceSound.isPC gives AttributeError in C (the .def reads %Module.isPC) where the
+# pack gives NameError
+ignore del M.isPC

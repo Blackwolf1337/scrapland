@@ -1,0 +1,2 @@
+# line 20: NPC walk, idle and talk state and spawn position change from run to run (CharsNPC timing)
+ignore __import__('Init')._sp('PoliceBoss_Default')

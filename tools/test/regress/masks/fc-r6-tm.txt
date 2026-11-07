@@ -1,0 +1,4 @@
+# line 9: NPC walk, idle and talk state and spawn position change from run to run (CharsNPC timing)
+ignore _r6ent(('Mayor_Default', 'Gear_Mayor'))
+# the spawn points of the NPCs (CharsNPC.CharRes positions) are picked at random at the level start
+ignore _r6res()

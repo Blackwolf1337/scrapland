@@ -1,0 +1,66 @@
+# Townhall: the sound state of an indoor level start, DoorSound and InTraffic called directly, Sound indoors
+exec(open('fsnd.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); S = __import__('Sound'); D = __import__('DoorSound'); IT = __import__('InTraffic'); result = (I.UpperMap, I.Outdoor, I.isJunkYard, I.isShipEdit, I.inMainMenu, I.InMapSkip, I.OffLineGame, I.isDemo)
+I._gvq(I._SNDG)
+I._mod('Sound', I._SNDM)
+I._take()
+result = (D.SoundList['TOWNHALL'], D.SoundList['BANK'], D.AllSounds)
+I._mod('InTraffic', ('N_TrafficList', 'N_NumTraffic', 'M_TrafficList', 'M_NumTraffic', 'H_TrafficList', 'H_NumTraffic', 'Path'))
+result = (Scrap.Get('ShipPathFmt'), map(lambda i: I._ent('FakeTraffic' + `i`, ('Traf_Type', 'Traf_Active', 'snd_n', 'snd00_name', 'snd00_loop', 'snd00_ini', 'snd00_end', 'snd00_dopp', 'ShipMotorScale')), range(21)))
+result = map(lambda c: (c, I._acts(c, None)), ('DoorTownhallDoorA', 'DoorTownhallDoorB', 'DoorTownhallDoorC', 'DoorTownhallDoorD', 'DoorTeleporter', 'DoorMetro', 'DoorElevatorOrbit', 'DoorDataTMaker', 'DoorElevator'))
+# SetSlide of every class of the script and others, recorded without effect
+I.names = ('DoorElevatorOrbit', 'DoorElevatorOrbitB', 'DoorElevatorOrbitC', 'DoorTeleporter', 'DoorTempleTeleporter', 'DoorTownhallDoorA', 'DoorTownhallDoorB', 'DoorTownhallDoorC', 'DoorTownhallDoorD', 'DoorPressDoorEmero', 'DoorPressSegurityDoor', 'DoorMetro', 'DoorPressSlidingDoor', 'DoorPressStairsDoor', 'DoorPressIndustrialDoor', 'DoorPressDefaultDoor', 'DoorPressDoor', 'DoorTempleStairsA', 'DoorTempleStairsB', 'DoorTempleFloorA', 'DoorTempleFloor', 'DoorTempleStairsGBD', 'DoorTempleStairsLife', 'DoorTempleGBD', 'DoorBankinquad', 'DoorBankinquadsmall', 'DoorBankcajacon', 'DoorBankcajasin', 'DoorBureau', 'DoorMetroExt', 'DoorPoliceGlass', 'DoorPoliceDMetro', 'DoorPoliceHeavy', 'DoorPoliceJail', 'DoorPoliceSegurity', 'DoorPoliceTunel', 'DoorPolicePersiana', 'DoorPolicePersiana0', 'DoorPoliceLight', 'DoorDataTMaker', 'DoorGamblinDenCrazy', 'DoorEditShip', 'DoorCityDoorA', 'DoorElevator', 'DoorUnknown', 'doormetro', 'Door'); result = len(I.names)
+map(lambda n: I._rec2(n[0], n[1]), (('Chars','ActSound'),('SAct','GetAction'),('SAct','GetClass'),('SAct','SetAct'),('Scene','AddSound'),('Scrap','Set'))); I._takecalls(); result = map(lambda n: (n, D.SetSlide(n), I._takecalls()), I.names[0:12])
+map(lambda n: (n, D.SetSlide(n), I._takecalls()), I.names[12:24])
+map(lambda n: (n, D.SetSlide(n), I._takecalls()), I.names[24:36])
+map(lambda n: (n, D.SetSlide(n), I._takecalls()), I.names[36:])
+I._takecalls(); result = (D.ConversorSetSounds('Conversor'), D.ConversorSetSounds('X'), I._takecalls())
+I._takecalls(); result = (D.SetInitDoorSound('DoorX', 'Open', 'snd1'), D.SetInitDoorSound('DoorX', 'Close', 'snd2', 0.5), D.SetInitDoorSound('DoorX', 'Up', 'snd3', Pitch=3), D.SetInitDoorSound(DoorClass='DoorY', ActionName='Down', SoundName='snd4', Vol=2, Pitch=-1.5), I._takecalls())
+I._takecalls(); r = (I._t(D.SetInitDoorSound, 'DoorX', 'Open', 5), I._takecalls()); result = r
+I._restore(); result = I._takecalls()
+map(lambda n: I._keep(n[0], n[1]), (('Chars','ActSound'),('Scene','AddSound'))); I._takecalls(); I.x = __import__('Scene').AddSound; setattr(__import__('Scene'), 'AddSound', None); r = (I._t(D.SetSlide, 'DoorMetro'), I._takecalls()); setattr(__import__('Scene'), 'AddSound', I.x); result = r
+I._takecalls(); I.x = __import__('Chars').ActSound; setattr(__import__('Chars'), 'ActSound', lambda *a: 1/0); r = (I._t(D.SetSlide, 'DoorTeleporter'), I._takecalls()); setattr(__import__('Chars'), 'ActSound', I.x); result = r
+I._takecalls(); I.x = D.SetInitDoorSound; del D.SetInitDoorSound; r = (I._t(D.SetSlide, 'DoorUnknown'), I._takecalls()); D.SetInitDoorSound = I.x; result = r
+map(lambda n: I._unkeep(n[0], n[1]), (('Chars','ActSound'),('Scene','AddSound')))
+# SetSlide with effect: the events of two classes after it adds them again
+D.SetSlide('DoorTownhallDoorC'); D.SetSlide('DoorDataTMaker'); result = map(lambda c: (c, I._acts(c, None)), ('DoorTownhallDoorC', 'DoorDataTMaker'))
+D.SetInitDoorSound('DoorTownhallDoorB', 'Close', 'gas2', 0.25, 3); result = I._acts('DoorTownhallDoorB', None)
+# the door sound lists
+I._keep('SSound', 'LoadSound'); I._keep('Scrap', 'ConsoleError'); I._takecalls(); D.SoundList['TOWNHALL'] = ['puerta1', 'apertura2', 'CloseMechDoor']; r = I._pk('Sounds/Generic', D.LoadSounds); result = (r, D.SoundList['TOWNHALL'])
+I.UpperMap = 'NOWHERE'; I.x = D.AllSounds; D.AllSounds = ['puerta3', 'apertura4', 'OpenMechDoor']; r = I._pk('Sounds/Generic', D.LoadSounds); I.UpperMap = 'TOWNHALL'; result = (r, D.AllSounds); D.AllSounds = I.x
+I.l = ['puerta4', 'gas2', 'baldosa7', 'Z']; r = I._pk('Sounds/Generic', D.LoadSndList, I.l[0:3]); result = (r, I.l)
+I.l = ['gas2', 'puerta4']; r = (I._pk('Sounds/Generic', D.LoadSndList, I.l), I.l); result = r
+r = (I._pk('Sounds/Generic', D.LoadSndList, 5), I._pk('Sounds/Generic', D.LoadSndList, ['gas2', 5]), I._pk('Sounds/Generic', D.LoadSndList, ('a', 'b'))); result = r
+I.x = D.SoundList; del D.SoundList; r = I._t(D.LoadSounds); D.SoundList = I.x; result = r
+I.x = D.LoadSndList; del D.LoadSndList; r = I._t(D.LoadSounds); D.LoadSndList = I.x; result = r
+del I.UpperMap; r = I._t(D.LoadSounds); I.UpperMap = 'TOWNHALL'; result = r
+map(lambda n: I._unkeep(n[0], n[1]), (('SSound','LoadSound'),('Scrap','ConsoleError')))
+# Sound in an indoor level
+map(lambda n: I._keep(n[0], n[1]), (('SSound','LoadSound'),('Scrap','Set'),('Scrap','OpenPack'),('Scrap','ClosePack')))
+I._pk('Sounds/Generic', S.Init)
+I._pk('Sounds/Generic', S.SetOutMusic)
+I._pk('Sounds/Generic', S.WayPoints)
+I._pk('Sounds/Generic', S.LoadDamageSounds)
+I._pk('Sounds/Generic', S.SetStdDamageSounds, 'Player0')
+I.UpperMap = 'GAMBLINDEN'; r = I._pk('Sounds/Generic', S.SetOutMusic); I.UpperMap = 'TOWNHALL'; result = r
+map(lambda n: I._unkeep(n[0], n[1]), (('SSound','LoadSound'),('Scrap','Set'),('Scrap','OpenPack'),('Scrap','ClosePack')))
+# InTraffic
+IT.GetNam('TLight1B')
+I.x = IT.Path; IT.Path = 'P/'; r = (IT.GetNam('x'), I._t(IT.GetNam, 5)); IT.Path = I.x; result = r
+I.x = IT.Path; del IT.Path; r = I._t(IT.GetNam, 'x'); IT.Path = I.x; result = r
+map(lambda n: I._rec2(n[0], n[1]), (('SWeap','InitAmmo'),('SWeap','InitWeap'),('SWeap','SetFWeap'),('SSound','LoadSound'),('Scrap','Preload3DObject'))); I._takecalls(); r = (IT.FakeWeap(), IT.LoadFakeTraffic(), I._takecalls()); result = r
+IT.H_TrafficList = ['THeavy1B']; I._takecalls(); r = (IT.LoadFakeTraffic(), I._takecalls()); IT.H_TrafficList = []; result = r
+I.x = IT.M_TrafficList; IT.M_TrafficList = None; r = (I._t(IT.LoadFakeTraffic), I._takecalls()); IT.M_TrafficList = I.x; result = r
+I.x = IT.FakeWeap; del IT.FakeWeap; r = (I._t(IT.LoadFakeTraffic), I._takecalls()); IT.FakeWeap = I.x; I._restore(); result = r
+Scrap.CreateEntity('SndTraf', 0.0, 0.0, 0.0, 'Car'); result = (IT.SetSound(Scrap.GetEntity('SndTraf')), I._sndvars('SndTraf', 'snd', 2, I._SNDVV))
+I._t(IT.SetSound, None)
+I._t(IT.SetSound, Scrap.GetEntity('Nobody'))
+I.v = IT.SetSound; IT.SetSound = I._Rec('InTraffic.SetSound', None); Scrap.Set('ShipPathFmt', IT.Path + '%s.m3d'); I._takecalls(); r = (IT.CreateList(['TLight1B'], 2, 'Light'), I._takecalls(), map(lambda n: I._ent(n, ('Model', 'Traf_Type', 'Traf_Active', 'ShipMotorScale', 'snd00_name')), ('FakeTraffic0', 'FakeTraffic1'))); IT.SetSound = I.v; result = r
+Scrap.Set('ShipPathFmt', IT.Path + '%s.m3d'); r = (IT.CreateList(['TMed1B'], 1.0, 'Medium'), map(lambda n: (I._ent(n, ('Model', 'Traf_Type', 'Traf_Active')), I._sndvars(n, 'snd', 1, I._SNDVV)), ('FakeTraffic0',))); result = r
+I._t(IT.CreateList, [], 1, 'Light')
+I._t(IT.CreateList, ['TLight1B'], 'x', 'Light')
+I._t(IT.CreateList, ['TLight1B'], 0, 'Light')
+I.x = __import__('Fx').SetUpShipMotors; setattr(__import__('Fx'), 'SetUpShipMotors', None); r = (I._t(IT.CreateList, ['TLight2B'], 1, 'Heavy'), I._ent('FakeTraffic0', ('Model', 'Traf_Type', 'Traf_Active'))); setattr(__import__('Fx'), 'SetUpShipMotors', I.x); result = r
+Scrap.Set('ShipPathFmt', 'Models/Vehicles/Ships/%s/%s.m3d'); I._rec2('InTraffic', 'CreateList'); I._takecalls(); r = (IT.FakeTraffic(), I._takecalls(), Scrap.Get('ShipPathFmt')); I._restore(); result = r
+I._rec2('InTraffic', 'CreateList'); I.x = IT.M_NumTraffic; del IT.M_NumTraffic; I._takecalls(); r = (I._t(IT.FakeTraffic), I._takecalls(), Scrap.Get('ShipPathFmt')); IT.M_NumTraffic = I.x; I._restore(); Scrap.Set('ShipPathFmt', 'Models/Vehicles/Ships/%s/%s.m3d'); result = r
+IT.N_TrafficList = ['TLight3B']; IT.N_NumTraffic = 1; IT.M_NumTraffic = 0; IT.H_NumTraffic = 0; r = (IT.FakeTraffic(), Scrap.Get('ShipPathFmt'), I._ent('FakeTraffic0', ('Model', 'Traf_Type', 'Traf_Active', 'snd00_name'))); result = r

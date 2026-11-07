@@ -1,0 +1,12 @@
+# Init functions besides Init
+str(type(__import__('Init').Init))
+(__import__('Init').isMission(), __import__('Init').Path, __import__('Init').Outdoor, __import__('Init').inMainMenu, __import__('Init').isShipEdit, __import__('Init').isJunkYard, len(__import__('Init').MapLibs))
+__import__('Init').Close()
+Scrap.Get('ProgressBar')
+__import__('Init').SetMapLabelText()
+Scrap.SetSaveVar('Mission.Map', 'Townhall')
+__import__('Init').isMission()
+__import__('Init').SetArrowSize()
+__import__('Init').LoadCharLib('Nurse')
+__import__('Init').AddMLib(__import__('string'))
+len(__import__('Init').MapLibs)

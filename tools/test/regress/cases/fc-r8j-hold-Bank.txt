@@ -1,0 +1,5 @@
+# r8j: the Python functions still held while their module global is C (holders.py), Doors.DefDoorInfo
+exec(open('holders.py').read()) in __import__('Init').__dict__
+result = __import__('Init')._holders()
+D = __import__('Doors'); result = (D.DefDoorInfo[0], D.DefDoorInfo[1] is D.StdInitializator, D.DefDoorInfo[2] is D.StdObjInitializator, D.DefDoorInfo[3:], type(D.DefDoorInfo))
+D = __import__('Doors'); result = map(lambda k, D=D: (k, D.DoorInfo[k][0], D.DoorInfo[k][3:], map(lambda f: getattr(f, '__name__', f), D.DoorInfo[k][1:3])), D.DoorInfo.keys())

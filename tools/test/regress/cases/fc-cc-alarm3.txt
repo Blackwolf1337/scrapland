@@ -1,0 +1,6 @@
+# Townhall: which call of the alarm raises in C
+__import__('NewsPanel').SwitchAlarm(1)
+__import__('Alarm').SetAlarm(1)
+__import__('Alarm').SetAlarmCallback
+Scrap.SetAlarm(0)
+Scrap.SetAlarm(1)

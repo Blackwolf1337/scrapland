@@ -54,9 +54,11 @@ void Console_ReprFloat(char *buf, int size, double d);
 void Console_ReprString(char *buf, int size, const char *s);
 byte Console_ReprVar(const char *name, char *buf, int size);
 /* the test channel (TestChannel.c): on by -TestChannel or SCRAP_TEST_CHANNEL=1; the check once a frame (now: the
- * real time in seconds, at most one check in 5 ms) */
+ * real time in seconds, at most one check in 5 ms); while the world clock runs the check is TestChannel_WorldFrame,
+ * called by cWorld_Update right after the scheduled functions */
 void TestChannel_Enable(void);
 void TestChannel_Frame(double now);
+void TestChannel_WorldFrame(void);
 void CWinApp_LoadLevel(CApp *app, const char *level);
 void Loading_Init(void);
 void Loading_End(void);

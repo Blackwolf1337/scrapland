@@ -1,0 +1,5 @@
+# an indoor level start: the conversion points CharConversor.Init placed, the module state and the conversor class
+CC = __import__('CharConversor'); result = map(lambda e: __import__('Init')._ent(e.Name, ('Pos','Ang','ActCtrl','VRadius','ArrowCanUse','Life','ActiveCMask','MapCollision','AlwaysUse','ArrOpt0','UseFunc','Action')), CC.ConversionPoints)
+__import__('Init')._mod('CharConversor', ('ConversionChars','AvailableChars','prevChar','newChar','PrevConv','_usrName','_charName','_optId','_fullOption','CheckConversor','afterExitConversor','OnPossession','PossessionTime'))
+map(lambda n: (n, Scrap.GetSaveVar(n)), ('Conversor.ActiveConversors','Conversor.FirstConversion','Conversor.FirstPossession'))
+__import__('Init')._mod('Scene', ('Actors','LocalActors','SceneName','EndOfSceneCallback','VoiceChannel'))

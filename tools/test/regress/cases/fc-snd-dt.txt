@@ -1,0 +1,84 @@
+# DownTown: the sound state of the level start, then Sound and OutSound called directly with recorders
+exec(open('fsnd.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); S = __import__('Sound'); OS = __import__('OutSound'); D = __import__('DoorSound'); T = __import__('Traffic'); result = (I.UpperMap, I.Outdoor, I.isJunkYard, I.isShipEdit, I.inMainMenu, I.InMapSkip, I.OffLineGame, I.isDemo)
+I._gvq(I._SNDG)
+I._gvq(I._MAPG)
+I._mod('Sound', I._SNDM)
+I._take()
+I._mod('OutSound', ('isPC', 'OnLandSound', 'OnTakeOffSound'))
+result = D.SoundList['DOWNTOWN']
+I._vehbymodel()
+result = (__import__('MapSnd').cntr, I._psall(('DownTFarola', 'HoloMonument', 'GdbAcelerador'), __import__('MapSnd').cntr))
+# the loads and engine variables of each function, recorded (and done)
+map(lambda n: I._keep(n[0], n[1]), (('SSound','LoadSound'),('Scrap','Set'),('Scrap','OpenPack'),('Scrap','ClosePack'),('Scrap','ConsoleError'),('SSound','CreatePS'),('SSound','SetPS')))
+I._pk('Sounds/Generic', S.Init)
+I._pk('Sounds/Generic', S.LoadDamageSounds)
+I._pk('Sounds/Generic', S.LoadMenuSounds)
+S.DeathSound = None; S.TVOffSound = None; result = (I._pk('Sounds/Generic', S.ScorerSounds), I._mod('Sound', I._SNDM))
+S.ItemTake = {}; S.WaySound = ''; result = (I._pk('Sounds/Generic', S.WayPoints), I._take(), I._mod('Sound', I._SNDM))
+S.PhotoSound = ''; result = (I._pk('Sounds/Generic', S.PhotoSounds), I._mod('Sound', ('PhotoSound', 'PhotoVolume')))
+I._pk('Sounds/Generic', S.CharConversionSounds)
+S.RotateShipSound = ''; result = (I._pk('Sounds/Generic', S.LoadShipEditInterfaceSounds), I._mod('Sound', I._SNDM))
+I._pk('Sounds/Generic', S.SetOutMusic)
+# the tests of the functions with other level flags
+I.isJunkYard = 1; r = I._pk('Sounds/Generic', S.LoadDamageSounds); I.isJunkYard = 0; result = r
+I.isShipEdit = 1; r = I._pk('Sounds/Generic', S.LoadDamageSounds); I.isShipEdit = 0; result = r
+I.Outdoor = 0; r = (I._pk('Sounds/Generic', S.LoadDamageSounds), I._pk('Sounds/Generic', S.WayPoints), I._take()); I.Outdoor = 1; result = r
+I.Outdoor = 0; I.UpperMap = 'BANK'; I.isDemo = 1; r = I._pk('Sounds/Generic', S.SetOutMusic); I.Outdoor = 1; I.UpperMap = 'DOWNTOWN'; I.isDemo = 0; result = r
+I.Outdoor = 0; I.UpperMap = 'GAMBLINDEN'; r = I._pk('Sounds/Generic', S.SetOutMusic); I.Outdoor = 1; I.UpperMap = 'DOWNTOWN'; result = r
+I.inMainMenu = 1; r = I._pk('Sounds/Generic', S.Init); I.inMainMenu = 0; result = r
+I.inMainMenu = 1; I.isShipEdit = 1; r = I._pk('Sounds/Generic', S.Init); I.inMainMenu = 0; I.isShipEdit = 0; result = r
+I.InMapSkip = 1; I.OffLineGame = 0; r = I._pk('Sounds/Generic', S.Init); I.InMapSkip = 0; I.OffLineGame = 1; result = r
+I.isJunkYard = 1; r = I._pk('Sounds/Generic', S.Init); I.isJunkYard = 0; result = r
+del I.isDemo; r = I._t(S.SetOutMusic); I.isDemo = 0; result = r
+I.x = S.ItemTake; del S.ItemTake; r = I._pk('Sounds/Generic', S.WayPoints); S.ItemTake = I.x; result = r
+I.x = S.LoadMenuSounds; del S.LoadMenuSounds; r = I._pk('Sounds/Generic', S.Init); S.LoadMenuSounds = I.x; result = r
+# the point sounds
+I._takecalls(); result = (S.SetPSLoop('SndPS1', (10.0, 20.0, 30.0), 'light1'), I._takecalls(), I._ps(('SndPS1',)))
+I._takecalls(); result = (S.SetPSLoop('SndPS2', [1, 2, 3], 'tunel334', 0.5, -2.0, 100.0, 2000.0, 0.25), I._takecalls(), I._ps(('SndPS2',)))
+I._takecalls(); result = (S.SetPSLoop('SndPS3', (1.5, 2.5, 3.5), 'holograma2', Volume=0.3, Pitch=0.0, AttenIni=12800.0, AttenEnd=25504.0, Doppler=1.0), I._takecalls(), I._ps(('SndPS3',)))
+I._takecalls(); result = (S.SetPSLoop('SndPS4', (0, 0, 0), 'light1', 0.07, Doppler=0.2), I._takecalls(), I._ps(('SndPS4',)))
+I._takecalls(); result = (S.SetPSInterval('SndPS5', (35428.4, 507.1, -3615.7), 'celestial', 1, 3, 0.2), I._takecalls(), I._ps(('SndPS5',)))
+I._takecalls(); result = (S.SetPSInterval('SndPS6', (1, 2, 3), 'HologramBuzz2', 0, 2, Volume=0.15, Pitch=0.0, AttenIni=12800.0, AttenEnd=25504.0, Doppler=0.0), I._takecalls(), I._ps(('SndPS6',)))
+I._takecalls(); result = (S.SetPSInterval('SndPS7', (1, 2, 3), 'x', MaxInterval=9, MinInterval=4), I._takecalls(), I._ps(('SndPS7',)))
+I._takecalls(); r = (S.SetPSLoop('SndPS8', 5, 'light1'),); result = I._takecalls()
+I._takecalls(); r = (S.SetPSLoop('SndPS9', (1, 2), 'light1'),); result = I._takecalls()
+I._takecalls(); r = (S.SetPSLoop(5, (1, 2, 3), 'light1'),); result = I._takecalls()
+S.SetPSLoop('SndPS10', (1, 2, 3))
+S.SetPSInterval('SndPS11', (1, 2, 3), 'x', Volume=1)
+map(lambda n: I._unkeep(n[0], n[1]), (('SSound','LoadSound'),('Scrap','Set'),('Scrap','OpenPack'),('Scrap','ClosePack'),('Scrap','ConsoleError'),('SSound','CreatePS'),('SSound','SetPS')))
+# the damage sounds of a ship
+I._model('SndDmg1', 'SMerc1'); result = (S.SetStdDamageSounds('SndDmg1'), I._allsnd('SndDmg1'))
+I._model('SndDmg2', 'SMerc2'); result = (S.SetStdDamageSoundLoops(Scrap.GetEntity('SndDmg2')), I._allsnd('SndDmg2'))
+I._model('SndDmg3', 'SMerc3'); I.Outdoor = 0; r = (S.SetStdDamageSounds('SndDmg3'), I._allsnd('SndDmg3')); I.Outdoor = 1; result = r
+I._model('SndDmg4', 'SMerc3'); I.isShipEdit = 1; r = (S.SetStdDamageSounds('SndDmg4'), I._allsnd('SndDmg4')); I.isShipEdit = 0; result = r
+S.SetStdDamageSounds('Nobody')
+S.SetStdDamageSounds(5)
+S.SetStdDamageSoundLoops(None)
+S.SetStdDamageSoundLoops(Scrap.GetEntity('Nobody'))
+I._model('SndDmg5', 'SMerc1'); I.x = S.SetStdDamageSoundLoops; del S.SetStdDamageSoundLoops; r = I._t(S.SetStdDamageSounds, 'SndDmg5'); S.SetStdDamageSoundLoops = I.x; result = (r, I._allsnd('SndDmg5'))
+# the ship sounds by model, PC
+map(lambda m: I._vs(m), ('SPoli2', 'SPoli3', 'SMerc3', 'SPoli5', 'SBankMaster1', 'SBetty1'))
+map(lambda m: I._vs(m), ('SBanker1', 'SMerc1', 'SPoliBoss1', 'SBerto1', 'SHump1', 'SMosquito', 'SLifeBoat'))
+map(lambda m: I._vs(m), ('SMayor1', 'SMerc2', 'SPoli4', 'SFunc1', 'SBishop1', 'SArchbishop1', 'SBoss1', 'SPoli1'))
+map(lambda m: I._vs(m, 1), ('TLight1', 'TLight2', 'TLight3', 'TMed1', 'TMed2', 'TMed3', 'THeavy1', 'THeavy2', 'THeavy3'))
+# Xbox, the traffic path set, the module variable gone, an indoor level, a missing entity
+OS.isPC = 0; r = map(lambda m: I._vs(m, 0, 'X'), ('SMosquito', 'SLifeBoat', 'SMerc1', 'SPoli3')); OS.isPC = 1; result = r
+OS.isPC = 0; r = map(lambda m: I._vs(m, 1, 'X'), ('TLight1', 'TMed2', 'THeavy3')); OS.isPC = 1; result = r
+T.PrevVal = 'x'; r = map(lambda m: I._vs(m, 0, 'P'), ('SMosquito', 'SLifeBoat')); T.PrevVal = None; result = r
+I.x = OS.isPC; del OS.isPC; r = I._t(I._vs, 'SBoss1', 0, 'N'); OS.isPC = I.x; result = (r, I._allsnd('SndTNSBoss1'))
+I.Outdoor = 0; r = (I._vs('SBoss1', 0, 'I'),); I.Outdoor = 1; result = r
+I.isJunkYard = 1; r = (I._vs('SBoss1', 0, 'J'),); I.isJunkYard = 0; result = r
+OS.SetVehicleSounds('Nobody')
+I.x = T.PrevVal; del T.PrevVal; r = I._t(I._vs, 'SBoss1', 0, 'T'); T.PrevVal = I.x; result = (r, I._allsnd('SndTTSBoss1'))
+I.x = __import__('Sound').SetStdDamageSounds; S.SetStdDamageSounds = I._Rec('Sound.SetStdDamageSounds', 7); I._takecalls(); r = (I._vs('SBoss1', 0, 'D'), I._takecalls()); S.SetStdDamageSounds = I.x; result = r
+# the load functions, recorded
+map(lambda n: I._keep(n[0], n[1]), (('SSound','LoadSound'),('Scrap','Set'),('Scrap','OpenPack'),('Scrap','ClosePack')))
+I._pk('Sounds/Vehicles', OS.Init)
+map(lambda f: I._pk('Sounds/Vehicles', f), (OS.LoadEngines, OS.LoadWeapons, OS.LoadScorer, OS.LoadMisc, OS.LoadCrash))
+OS.isPC = 0; r = (I._pk('Sounds/Vehicles', OS.LoadEngines), I._pk('Sounds/Vehicles', OS.LoadWeapons)); OS.isPC = 1; result = r
+I.Outdoor = 0; r = I._pk('Sounds/Vehicles', OS.LoadVehicles); I.Outdoor = 1; result = r
+I.isShipEdit = 1; r = I._pk('Sounds/Vehicles', OS.Init); I.isShipEdit = 0; result = r
+I.x = OS.LoadMisc; del OS.LoadMisc; r = I._pk('Sounds/Vehicles', OS.LoadVehicles); OS.LoadMisc = I.x; result = r
+map(lambda n: I._unkeep(n[0], n[1]), (('SSound','LoadSound'),('Scrap','Set'),('Scrap','OpenPack'),('Scrap','ClosePack')))
+I._gvq(I._SNDG)

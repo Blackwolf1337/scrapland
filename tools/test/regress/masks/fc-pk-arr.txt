@@ -1,0 +1,8 @@
+# line 7: random in C: the case recorder controls Scrap.Rand on the pack side only, the C port calls Scrap_RandRange directly (brief)
+ignore I._ships()
+# line 12: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore I = __import__('Init'); P = __import__('Parking'); result = (I.Path, I._usr(), I._pk(), I._spt())
+# line 13: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore I._v(Scrap.UsrEntity(0).Name, I._PARKV + ('Ammo00', 'Ammo01', 'Ammo02', 'AcWeap', 'Pos', 'Ang', 'MPil0'))
+# line 15: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore (I._usr(), I._cam(), I._pk(), I._v(Scrap.UsrEntity(0).Name, ('AcWeap', 'UsrControl')))
