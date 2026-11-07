@@ -2487,24 +2487,29 @@ byte Mode_LoadSoundSeam(const nativeVal_t *file) {
 	return Mode_LoadSound(file);
 }
 
-int Mode_Loop(nativeVal_t *v) {
+void Mode_Elems(nativeVal_t *v) {
 	PyObject *o = v->type == NV_OBJ ? v->obj : NULL;
-	if (o && (PyList_Check(o) || PyTuple_Check(o))) {
-		/* OBJLIB 7: the items of a list held as one NV_OBJ (it holds handles) as Native_Arg makes them */
-		nativeVal_t items;
-		int n = PyObject_Length(o);
-		Native_SetEmpty(&items, PyList_Check(o) ? NV_LIST : NV_TUPLE);
-		for (int i = 0; i < n; i++) {
-			PyObject *x = PySequence_GetItem(o, i);
-			if (!x) {
-				PyErr_Clear();
-				break;
-			}
-			Native_Arg(x, Native_Append(&items));
-			Py_DECREF(x);
-		}
-		Native_Free(v);
-		*v = items;
+	if (!o || (!PyList_Check(o) && !PyTuple_Check(o))) {
+		return;
 	}
+	/* OBJLIB 7: the items of a list held as one NV_OBJ (it holds handles) as Native_Arg makes them */
+	nativeVal_t items;
+	int n = PyObject_Length(o);
+	Native_SetEmpty(&items, PyList_Check(o) ? NV_LIST : NV_TUPLE);
+	for (int i = 0; i < n; i++) {
+		PyObject *x = PySequence_GetItem(o, i);
+		if (!x) {
+			PyErr_Clear();
+			break;
+		}
+		Native_Arg(x, Native_Append(&items));
+		Py_DECREF(x);
+	}
+	Native_Free(v);
+	*v = items;
+}
+
+int Mode_Loop(nativeVal_t *v) {
+	Mode_Elems(v);
 	return Native_ForCount(v);
 }
