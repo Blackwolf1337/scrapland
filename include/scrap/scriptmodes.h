@@ -71,7 +71,7 @@ void Mode_DummyStart(const char *name, int flag);
 void Mode_DummyNext(nativeVal_t *out);
 /* Scrap.Preload3DObject(name) */
 byte Mode_Preload(const nativeVal_t *name);
-/* print a, b, ... (n values, up to 8) as the script's print statement (OBJLIB 7: through Python's sys.stdout until
+/* print a, b, ... (n values, up to 12) as the script's print statement (OBJLIB 7: through Python's sys.stdout until
  * the console takes C texts) */
 byte Mode_Print(const nativeVal_t *const *items, int n);
 /* module.var = v of a Python object as it is (OBJLIB 5: a value passed between modules keeps its identity) */
@@ -543,5 +543,8 @@ void Mode_CamName(int i, nativeVal_t *out);
 byte Mode_Floor(const nativeVal_t *y, nativeVal_t *out);
 /* abs(v) of the script (PyNumber_Absolute: ints, long ints, floats; the errors of 1.5.2) */
 byte Mode_Abs(const nativeVal_t *v, nativeVal_t *out);
+/* f(args...) of the script on a value f (a function or method held as NV_OBJ, or the TypeError of a value that is no
+ * callable) with the n values of args: the result into out (NULL: dropped) */
+byte Mode_CallArgs(const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *args, int n);
 
 #endif
