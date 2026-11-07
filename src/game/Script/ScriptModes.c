@@ -2740,3 +2740,45 @@ byte Mode_CallArgs(const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *ar
 	Py_DECREF(r);
 	return 1;
 }
+
+byte Mode_Neg(const nativeVal_t *v, nativeVal_t *out) {
+	Native_SetNone(out);
+	switch (v->type) {
+	case NV_INT:
+		if (v->i == LONG_MIN) {
+			return Native_Raise(NE_OVERFLOW, "integer negation");
+		}
+		Native_SetInt(out, -v->i);
+		return 1;
+	case NV_FLOAT:
+		Native_SetFloat(out, -v->f);
+		return 1;
+	case NV_LONG: {
+		const char *d = Native_Text(v);
+		if (*d == '-') {
+			Native_SetLong(out, d + 1, (int)strlen(d + 1));
+		} else if (!strcmp(d, "0")) {
+			Native_SetLong(out, d, 1);
+		} else {
+			nativeBuf_t b;
+			Native_BufInit(&b);
+			Native_BufAdd(&b, "-", 1);
+			Native_BufAdd(&b, d, -1);
+			Native_SetLong(out, b.p, b.len);
+			Native_BufFree(&b);
+		}
+		return 1;
+	}
+	case NV_OBJ: {
+		/* OBJLIB 7: an object with its own negation */
+		PyObject *r = PyNumber_Negative(v->obj);
+		if (!r) {
+			return 0;
+		}
+		Native_Arg(r, out);
+		Py_DECREF(r);
+		return 1;
+	}
+	}
+	return Native_Raise(NE_TYPE, "bad operand type for unary -");
+}
