@@ -485,5 +485,59 @@ byte Mode_Item(const nativeVal_t *x, long i, nativeVal_t *out);
 byte Mode_ModGet(const char *module, const char *var, nativeVal_t *out);
 /* module.var = None */
 byte Mode_ModNone(const char *module, const char *var);
+/* SScorer.Add(id, item, type) */
+byte Mode_ScorerAddS(const nativeVal_t *id, const char *item, const char *type);
+/* SScorer.Set(id, item, var, i) */
+byte Mode_ScorerSetI(const nativeVal_t *id, const char *item, const char *var, long i);
+/* SScorer.Get(id, item, var) (the TypeError of "i" for an id that is no number) */
+byte Mode_ScorerGetV(const nativeVal_t *id, const char *item, const char *var, nativeVal_t *out);
+/* the text item of a mission scorer in Horatio with a shadow at the left (Lv_Text): X, y, text, visible (NULL: not
+ * set) */
+byte Mode_LvText(const nativeVal_t *id, const char *item, const nativeVal_t *y, const nativeVal_t *text, const nativeVal_t *visible);
+/* Mode_LvText at Scorer.MissionScorerText_Y + dy with Scrap.GetLangStr(key) + ":" (visible: Visible 1) */
+byte Mode_LvLabel(const nativeVal_t *id, const char *item, long dy, const char *key, byte visible);
+/* Scrap.SetSaveVar(name, text) */
+byte Mode_SaveS(const char *name, const char *text);
+/* module.var = [] */
+byte Mode_ModEmpty(const char *module, const char *var);
+/* module.var = src.name of another module as the object it is (a function of that module) */
+byte Mode_ModTo(const char *module, const char *var, const char *src, const char *name);
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, Speech.<func>, args[, name]) of n values (name NULL: none) */
+byte Mode_LaterSpeech(const char *func, const nativeVal_t *delay, const nativeVal_t *args, int n, const char *name);
+/* the same with Speech.AddRemoteCom and a float delay (no name) */
+byte Mode_LaterComF(double delay, const nativeVal_t *args, int n);
+/* `num` + "/" + `max` of two globals of module (num read first) */
+byte Mode_CountText(const char *module, const char *num, const char *max, nativeVal_t *out);
+/* the timer of a mission scorer counting TimeSpecialUse, with the function of its end (visible: Visible 1) */
+byte Mode_LvTimer(const nativeVal_t *id, const char *item, const nativeVal_t *x, const nativeVal_t *y, const char *expired, byte visible);
+/* bp = eval(Scrap.GetSaveVar(var)); bp = bp + [a, b]; Scrap.SetSaveVar(var, `bp`) (eval in the globals of module) */
+byte Mode_SaveCat2(const char *module, const char *var, const char *a, const char *b);
+/* `e and e.Active`: 1, 0, -1 */
+int Mode_Active(const nativeVal_t *e);
+/* `for name in names: e = Scrap.GetEntity(name); if e: e.Del()` */
+byte Mode_DelNames(const nativeVal_t *names);
+/* Scrap.SetSaveVar(name, the global var of module) */
+byte Mode_SaveG(const char *name, const char *module, const char *var);
+/* module.var = [src.name] of a function of another module */
+byte Mode_ModList1(const char *module, const char *var, const char *src, const char *name);
+/* CGCalls() of the missions: the crazy gambler's message by the number of crazy deals done (none during the twelfth) */
+byte Mode_CGCalls(const char *const *keys, int n);
+/* module.var = [the global name of module] */
+byte Mode_ModListG(const char *module, const char *var, const char *src, const char *name);
+/* `if fn: fn()` of the global function fn of module (*called: it was set) */
+byte Mode_CallIf(const char *module, const char *name, byte *called);
+/* apply(MissionsFuncs.SetNextMission, NextMissionData) of the module */
+byte Mode_ApplyNext(const char *module);
+/* a op the global name of the module: 1, 0, -1 */
+int Mode_CmpG(const nativeVal_t *a, const char *op, const char *module, const char *name);
+/* `usr and usr.IsType("Car")`: 1, 0, -1 */
+int Mode_UsrInCar(const nativeVal_t *usr);
+/* `x in` the global list name: 1, 0, -1 */
+int Mode_InG(const nativeVal_t *x, const char *module, const char *name);
+/* if x in list: list.remove(x) of a global list of the module */
+byte Mode_RemoveIn(const nativeVal_t *x, const char *module, const char *name);
+/* e = Scrap.GetEntity(Scrap.EntityListGet(list, "First")) as the handle value (the start of the loops over an entity
+ * list) */
+byte Mode_FirstOf(const char *list, nativeVal_t *e);
 
 #endif

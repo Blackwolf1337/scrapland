@@ -2029,14 +2029,14 @@ static byte Mode_ScorerSetS(const nativeVal_t *id, const char *item, const char 
 	return ok;
 }
 
-static byte Mode_ScorerSetI(const nativeVal_t *id, const char *item, const char *var, long i) {
+byte Mode_ScorerSetI(const nativeVal_t *id, const char *item, const char *var, long i) {
 	nativeVal_t v;
 	Native_SetInt(&v, i);
 	return LvN_ScorerSet(id, item, var, &v);
 }
 
 /* SScorer.Add(id, item, type) with a C item name */
-static byte Mode_ScorerAddS(const nativeVal_t *id, const char *item, const char *type) {
+byte Mode_ScorerAddS(const nativeVal_t *id, const char *item, const char *type) {
 	nativeVal_t it;
 	Native_SetText(&it, item, (int)strlen(item));
 	byte ok = Mode_ScorerAdd(id, &it, type);
@@ -2188,7 +2188,7 @@ static byte Mode_ModInt(const char *module, const char *var, long i) {
 	return Mode_SetModVar(module, var, &v);
 }
 
-static byte Mode_ModEmpty(const char *module, const char *var) {
+byte Mode_ModEmpty(const char *module, const char *var) {
 	nativeVal_t v;
 	Native_SetEmpty(&v, NV_LIST);
 	byte ok = Mode_SetModVar(module, var, &v);
@@ -2407,4 +2407,258 @@ byte Mode_ModGet(const char *module, const char *var, nativeVal_t *out) {
 
 byte Mode_ModNone(const char *module, const char *var) {
 	return Mode_SetModPy(module, var, Py_None);
+}
+
+/* SScorer.Get(id, item, var) (the TypeError of "i" for an id that is no number) */
+byte Mode_ScorerGetV(const nativeVal_t *id, const char *item, const char *var, nativeVal_t *out) {
+	int i;
+	Native_SetNone(out);
+	if (!Native_ArgInt(id, &i)) {
+		return 0;
+	}
+	Mode_ScorerGet(i, item, var, out);
+	return 1;
+}
+
+/* the text item of a mission scorer in Horatio with a shadow at the left (Lv_Text): X, y, text, visible (NULL: not
+ * set) */
+byte Mode_LvText(const nativeVal_t *id, const char *item, const nativeVal_t *y, const nativeVal_t *text, const nativeVal_t *visible) {
+	nativeVal_t x = { 0 };
+	Native_SetNone(&x);
+	byte ok = LvN_TextX(0, &x) && LvN_MissionText(id, item, "Text", &x, y, "Horatio", "Shadow", text, "Left", visible);
+	Native_Free(&x);
+	return ok;
+}
+
+/* Mode_LvText at Scorer.MissionScorerText_Y + dy with Scrap.GetLangStr(key) + ":" (visible: Visible 1) */
+byte Mode_LvLabel(const nativeVal_t *id, const char *item, long dy, const char *key, byte visible) {
+	nativeVal_t y = { 0 }, text = { 0 }, one = { 0 };
+	Native_SetNone(&y);
+	Native_SetInt(&one, 1);
+	byte ok = LvN_TextY(dy, &y);
+	if (ok) {
+		LvN_Label(key, &text);
+		ok = Mode_LvText(id, item, &y, &text, visible ? &one : NULL);
+		Native_Free(&text);
+	}
+	Native_Free(&y);
+	return ok;
+}
+
+/* Scrap.SetSaveVar(name, text) */
+byte Mode_SaveS(const char *name, const char *text) {
+	const char *const pairs[] = { name, text, NULL };
+	Mode_Saves(pairs);
+	return 1;
+}
+
+/* module.var = src.name of another module as the object it is (a function of that module) */
+byte Mode_ModTo(const char *module, const char *var, const char *src, const char *name) {
+	PyObject *o = Script_Attr(src, name);
+	byte ok = o && Mode_SetModPy(module, var, o);
+	Py_XDECREF(o);
+	return ok;
+}
+
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, Speech.<func>, args[, name]) of n values (name NULL: none) */
+byte Mode_LaterSpeech(const char *func, const nativeVal_t *delay, const nativeVal_t *args, int n, const char *name) {
+	nativeVal_t now = { 0 }, at = { 0 }, nm = { 0 };
+	PyObject *fn = Script_Attr("Speech", func);
+	if (!fn) {
+		return 0;
+	}
+	Native_SetFloat(&now, Mode_Time());
+	Native_SetNone(&at);
+	if (name) {
+		LvN_Str(&nm, name);
+	}
+	byte ok = Native_Arith('+', &now, delay, &at) && Mode_Schedule(&at, fn, args, n, name ? &nm : NULL);
+	if (name) {
+		Native_Free(&nm);
+	}
+	Native_Free(&at);
+	Py_DECREF(fn);
+	return ok;
+}
+
+byte Mode_LaterComF(double delay, const nativeVal_t *args, int n) {
+	nativeVal_t d = { 0 };
+	Native_SetFloat(&d, delay);
+	return Mode_LaterSpeech("AddRemoteCom", &d, args, n, NULL);
+}
+
+/* `num` + "/" + `max` of two globals of module (num read first) */
+byte Mode_CountText(const char *module, const char *num, const char *max, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *n = Mode_V(&t), *m = Mode_V(&t), *rn = Mode_V(&t), *rm = Mode_V(&t);
+	byte ok = Mode_G(module, num, n) && Mode_G(module, max, m);
+	if (ok) {
+		Mode_Repr(n, rn);
+		Mode_Repr(m, rm);
+		ok = Mode_Cat(&t, out, 3, rn, Mode_S(&t, "/"), rm);
+	}
+	return Mode_Done(&t, ok);
+}
+
+/* the timer of a mission scorer counting TimeSpecialUse, with the function of its end (visible: Visible 1) */
+byte Mode_LvTimer(const nativeVal_t *id, const char *item, const nativeVal_t *x, const nativeVal_t *y, const char *expired, byte visible) {
+	return Mode_ScorerAddS(id, item, "Timer") && LvN_ScorerSet(id, item, "X", x) && LvN_ScorerSet(id, item, "Y", y) &&
+		LvN_ScorerSetS(id, item, "Align", "Left") && LvN_ScorerSetS(id, item, "TimerType", "TimeSpecialUse") &&
+		LvN_ScorerSetS(id, item, "OnTimeExpired", expired) && Mode_TextColour(id, item) && (!visible || Mode_ScorerSetI(id, item, "Visible", 1));
+}
+
+/* bp = eval(Scrap.GetSaveVar(var)); bp = bp + [a, b]; Scrap.SetSaveVar(var, `bp`) (eval in the globals of module) */
+byte Mode_SaveCat2(const char *module, const char *var, const char *a, const char *b) {
+	nativeVal_t bp = { 0 }, add = { 0 }, r = { 0 };
+	Native_SetNone(&r);
+	Native_SetEmpty(&add, NV_LIST);
+	LvN_Str(Native_Append(&add), a);
+	LvN_Str(Native_Append(&add), b);
+	byte ok = LvN_SaveList(var, module, &bp) && Native_Arith('+', &bp, &add, &r);
+	if (ok) {
+		LvN_SaveRepr(var, &r);
+	}
+	Native_Free(&bp);
+	Native_Free(&add);
+	Native_Free(&r);
+	return ok;
+}
+
+/* `e and e.Active`: 1, 0, -1 */
+int Mode_Active(const nativeVal_t *e) {
+	nativeVal_t v = { 0 };
+	if (!Native_True(e)) {
+		return 0;
+	}
+	Native_SetNone(&v);
+	int r = Mode_VGet(e, "Active", &v) ? Native_True(&v) : -1;
+	Native_Free(&v);
+	return r;
+}
+
+/* `for name in names: e = Scrap.GetEntity(name); if e: e.Del()` */
+byte Mode_DelNames(const nativeVal_t *names) {
+	nativeVal_t lst = { 0 };
+	LvN_Elems(names, &lst);
+	int cnt = Native_ForCount(&lst);
+	byte ok = cnt >= 0;
+	for (int k = 0; ok && k < cnt; k++) {
+		nativeVal_t it = { 0 }, e = { 0 };
+		Native_SetNone(&e);
+		ok = Native_SeqItem(&lst, k, &it) && Mode_EntityH(&it, &e) && (!Native_True(&e) || Mode_VDel(&e));
+		Native_Free(&it);
+		Native_Free(&e);
+	}
+	Native_Free(&lst);
+	return ok;
+}
+
+/* Scrap.SetSaveVar(name, the global var of module) */
+byte Mode_SaveG(const char *name, const char *module, const char *var) {
+	nativeVal_t v = { 0 };
+	byte ok = Mode_G(module, var, &v) && Mode_SetSaveVar(name, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+/* module.var = [src.name] of a function of another module */
+byte Mode_ModList1(const char *module, const char *var, const char *src, const char *name) {
+	nativeVal_t l = { 0 };
+	Native_SetEmpty(&l, NV_LIST);
+	byte ok = LvN_ModGet(src, name, Native_Append(&l)) && Mode_SetModVar(module, var, &l);
+	Native_Free(&l);
+	return ok;
+}
+
+/* CGCalls() of the missions: the crazy gambler's message by the number of crazy deals done (none during the twelfth) */
+byte Mode_CGCalls(const char *const *keys, int n) {
+	nativeVal_t num = { 0 };
+	if (LvN_SaveIs("SuperDeal.Library", "SuperDeal_Twelfth")) {
+		return 1;
+	}
+	Native_SetNone(&num);
+	byte ok = LV_CALL("MissionsFuncs", "GetNumCrazyDealCompleted", &num, "");
+	for (int i = 0; ok && i < n; i++) {
+		if (LvN_EqI(&num, i)) {
+			ok = LvN_Com(keys[i], "CrazyGambler", NULL, NULL, NULL);
+			break;
+		}
+	}
+	Native_Free(&num);
+	return ok;
+}
+
+/* module.var = [the global name of module] */
+byte Mode_ModListG(const char *module, const char *var, const char *src, const char *name) {
+	nativeVal_t l = { 0 };
+	Native_SetEmpty(&l, NV_LIST);
+	byte ok = LvN_GObj(src, name, Native_Append(&l)) && Mode_SetModVar(module, var, &l);
+	Native_Free(&l);
+	return ok;
+}
+
+/* the result of the global function of module called, when it is set (`if fn: fn()`) */
+byte Mode_CallIf(const char *module, const char *name, byte *called) {
+	nativeVal_t fn = { 0 };
+	*called = 0;
+	if (!Mode_G(module, name, &fn)) {
+		return 0;
+	}
+	byte ok = 1;
+	if (Native_True(&fn)) {
+		PyObject *o = Native_ToPy(&fn);
+		ok = o && Native_Call(o, NULL, "");
+		Py_XDECREF(o);
+		*called = 1;
+	}
+	Native_Free(&fn);
+	return ok;
+}
+
+/* apply(MissionsFuncs.SetNextMission, NextMissionData) of the module */
+byte Mode_ApplyNext(const char *module) {
+	nativeVal_t data = { 0 };
+	PyObject *fn = Script_Attr("MissionsFuncs", "SetNextMission");
+	byte ok = fn && Mode_G(module, "NextMissionData", &data) && LV_CALL("__builtin__", "apply", NULL, "Ov", fn, &data);
+	Py_XDECREF(fn);
+	if (fn) {
+		Native_Free(&data);
+	}
+	return ok;
+}
+
+/* a op the global name of the module: 1, 0, -1 */
+int Mode_CmpG(const nativeVal_t *a, const char *op, const char *module, const char *name) {
+	nativeVal_t g = { 0 };
+	int r = Mode_G(module, name, &g) ? Mode_Cmp(a, op, &g) : -1;
+	Native_Free(&g);
+	return r;
+}
+
+/* `usr and usr.IsType("Car")` */
+int Mode_UsrInCar(const nativeVal_t *usr) {
+	return Native_True(usr) ? Mode_VIsType(usr, "Car") : 0;
+}
+
+/* `x in` the global list name: 1, 0, -1 */
+int Mode_InG(const nativeVal_t *x, const char *module, const char *name) {
+	nativeVal_t l = { 0 };
+	int r = Mode_G(module, name, &l) ? Native_Contains(&l, x) : -1;
+	Native_Free(&l);
+	return r;
+}
+
+/* if x in list: list.remove(x) of a global list of the module */
+byte Mode_RemoveIn(const nativeVal_t *x, const char *module, const char *name) {
+	int in = Mode_InG(x, module, name);
+	return in >= 0 && (!in || Mode_Remove(module, name, x));
+}
+
+byte Mode_FirstOf(const char *list, nativeVal_t *e) {
+	nativeVal_t name;
+	Native_SetNone(&name);
+	Native_SetNone(e);
+	byte ok = Mode_ListGet(list, "First", &name) && Mode_EntityH(&name, e);
+	Native_Free(&name);
+	return ok;
 }
