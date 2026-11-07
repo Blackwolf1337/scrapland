@@ -87,12 +87,13 @@ byte Native_Equal(const nativeVal_t *a, const nativeVal_t *b);
  * 1 with *out, 0 for a list or dict (unhashable, in a tuple too) and a long int of 3840 bits or more */
 byte Native_Hash(const nativeVal_t *v, long *out);
 /* d[key] = value as PyDict_SetItem does it (the table grows at the same moment, an equal key keeps the old key and
- * gets the new value): key and value are taken over (moved into the dict, or freed); 0 when the key has no hash.
- * There is no delete yet (a dict of Python with deleted keys keeps its order through Native_FromPyAny, but grows
- * from fewer used slots than Python's) */
+ * gets the new value): key and value are taken over (moved into the dict, or freed); 0 when the key has no hash */
 byte Native_DictSet(nativeVal_t *d, nativeVal_t *key, nativeVal_t *value);
 /* the value of the key in the dict, NULL when it has none */
 nativeVal_t *Native_DictGet(const nativeVal_t *d, const nativeVal_t *key);
+/* del d[key] as PyDict_DelItem does it (the slot stays as a deleted one, the order of the others stays): 0 when the
+ * dict has no such key (no error set) */
+byte Native_DictDel(nativeVal_t *d, const nativeVal_t *key);
 /* the next key and value of the dict in the order of 1.5.2 from *pos (0 at the start), as PyDict_Next: 0 at the end */
 byte Native_DictNext(const nativeVal_t *d, int *pos, const nativeVal_t **key, const nativeVal_t **value);
 
@@ -130,6 +131,45 @@ void Native_Repr(nativeBuf_t *b, const nativeVal_t *v, nativeRepr_t mode);
  * leading blank). None is the constant: no script binds the name None */
 byte Native_Literal(const char *s, nativeVal_t *out);
 
+/* ---- operations of the scripts ---- */
+
+/*
+ * The operators and built-in conversions of Python 1.5.2 on native values, with the errors of Objects/ (the TypeError
+ * of a type that does not take the operation, OverflowError, ZeroDivisionError, IndexError, KeyError). Each returns
+ * 1 with *out made (Native_Free it), else 0 with the error raised. A vector is a tuple of three floats in all of
+ * them. Long ints compare, convert and format, but take no arithmetic (a TypeError of its own: no script makes them).
+ */
+
+/* a deep copy of v into *out (a dict keeps its slots: the same order) */
+void Native_Copy(nativeVal_t *out, const nativeVal_t *v);
+/* the truth of v (PyObject_IsTrue) */
+byte Native_Truth(const nativeVal_t *v);
+/* cmp(a, b) of 1.5.2 as -1, 0 or 1 (PyObject_Compare: numbers coerced, other types of one kind by their values,
+ * different types by the names of the types with the numbers below all others). Two different dicts of the same
+ * length are only told apart (1, not the order of 1.5.2) */
+int Native_Compare(const nativeVal_t *a, const nativeVal_t *b);
+/* a op b for op '+', '-', '*', '/', '%' (PyNumber_Add and the others, the concatenation and repetition of texts,
+ * lists and tuples, the division and modulo rounding down; '%' on a text is Native_Format) */
+byte Native_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
+/* format % args (PyString_Format: flags, width, precision, the conversions s d i u o x X e E f g G c %, "%(key)"
+ * with a dict) */
+byte Native_Format(const nativeVal_t *format, const nativeVal_t *args, nativeVal_t *out);
+/* int(v) and float(v) (PyNumber_Int, PyNumber_Float: numbers and texts) */
+byte Native_ToInt(const nativeVal_t *v, nativeVal_t *out);
+byte Native_ToFloat(const nativeVal_t *v, nativeVal_t *out);
+/* len(v): -1 with the TypeError of a value without length */
+int Native_Len(const nativeVal_t *v);
+/* v[i] of a text, list or tuple (PySequence_GetItem: a negative i counts from the end) */
+byte Native_SeqItem(const nativeVal_t *v, long i, nativeVal_t *out);
+/* v[key] (PyObject_GetItem: a dict by its key, a sequence by an int) */
+byte Native_GetItem(const nativeVal_t *v, const nativeVal_t *key, nativeVal_t *out);
+/* v[lo:hi] of a text, list or tuple (PySequence_GetSlice) */
+byte Native_Slice(const nativeVal_t *v, long lo, long hi, nativeVal_t *out);
+/* x in seq (PySequence_Contains): 1 or 0, -1 with the error */
+int Native_Contains(const nativeVal_t *seq, const nativeVal_t *x);
+/* the items a for loop over seq takes (Native_SeqItem each): -1 with the TypeError of a value that is no sequence */
+int Native_ForCount(const nativeVal_t *seq);
+
 /* ---- errors ---- */
 
 /* the kinds of error a native function raises; while Python is linked each is the Python exception of that name */
@@ -139,6 +179,9 @@ typedef enum {
 	NE_TYPE,
 	NE_ATTRIBUTE,
 	NE_SYSTEM,
+	NE_OVERFLOW,
+	NE_ZERODIV,			/* ZeroDivisionError */
+	NE_NAME,
 } nativeError_t;
 
 /* raises the error kind with the text (printf form); 0, for `return Native_Raise(...)` in a function that returns
@@ -157,6 +200,9 @@ byte Native_Upper(const nativeVal_t *in, nativeVal_t *out);
 /* the number of argument v of an engine function as its "d" or "f" reads it: 1 with *out, else 0 with the TypeError
  * of PyFloat_AsDouble ("illegal argument type for built-in operation") */
 byte Native_ArgDouble(const nativeVal_t *v, double *out);
+/* the number of argument v of an engine function as its "i" or "l" reads it (PyInt_AsLong: a float rounds toward 0):
+ * 1 with *out (an "i" takes the low bits), else 0 with its TypeError or OverflowError */
+byte Native_ArgInt(const nativeVal_t *v, long *out);
 /* eval(text) of a value the game wrote, as Script_EvalIn(module, text) reads it: the checks of builtin eval (a text
  * without 0 bytes), then Native_Literal of the text after its leading blanks; 1 with *out (Native_Free it), else 0
  * with the error (SyntaxError of Script_NotRead for a text no reader takes) */
@@ -190,6 +236,19 @@ byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVa
  * the lookup set
  */
 int Native_Seam(const char *module, const char *name, PyObject **hook);
+/*
+ * OBJLIB 3, 4 and 7: calls of Python callables with native arguments, for the calls between ports by name, the
+ * callbacks and the seams. fmt has one letter per argument: v a const nativeVal_t *, i a long, d a double, s a text,
+ * O a PyObject * (borrowed). The result goes into *out (Native_Free it; NULL drops it): any native value, else a
+ * TypeError. 0 with the error of the call.
+ */
+byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...);
+/* the same with a new reference (a hook of Native_Seam) that the call takes over */
+byte Native_HookCall(PyObject *hook, nativeVal_t *out, const char *fmt, ...);
+/* module.name(...) through the module attribute (an AttributeError when it is not there) */
+byte Native_CallMod(const char *module, const char *name, nativeVal_t *out, const char *fmt, ...);
+/* name(...) as a function of the module calls a global of its own (the NameError of the script when it is gone) */
+byte Native_CallGlobal(const char *module, const char *name, nativeVal_t *out, const char *fmt, ...);
 /* Scrap.GetEntity(name): 1 with the entity in *out (NULL when there is none: the script gets None), 0 with the
  * TypeError of its argument for a value that is no text */
 byte Native_GetEntity(const nativeVal_t *name, cEntity **out);
