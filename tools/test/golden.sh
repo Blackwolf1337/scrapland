@@ -9,6 +9,9 @@
 # GOLDEN_MODE=python: the old way, golden/sdtest.py through -PythonExecute (the API checks and sdpy.py in Python).
 # GOLDEN_MODE=record: sdtest.py with the recorder golden/sdrec.py through -PythonExecute, then golden/mkcmd.py makes
 #   golden/sdtest.cmd again from it (review the difference before committing it).
+# A build without the interpreter (cmake -DSCRAP_NO_PYTHON=ON) runs only the channel mode and only the API checks:
+#   the interpreter checks of sdpy.py are skipped (they test what that build does not have) and the output is
+#   compared with the API part of the stored one.
 #
 # usage: tools/test/golden.sh            (builds nothing: run cmake first)
 #        GOLDEN_UPDATE=1                 stores the output as the new expected one (after reviewing the difference)
@@ -20,10 +23,17 @@ game=$build/golden
 dir=$root/tools/test/golden
 mode=${GOLDEN_MODE:-channel}
 timeout=${GOLDEN_TIMEOUT:-240}
+nopy=0
+grep -qx 'SCRAP_NO_PYTHON:BOOL=ON' "$build/CMakeCache.txt" 2> /dev/null && nopy=1
+if [ $nopy = 1 ] && [ "$mode" != channel ]; then
+	echo "golden: $build has no Python interpreter, only GOLDEN_MODE=channel runs there" >&2
+	exit 1
+fi
 [ -d "$game/Bin" ] || "$root/tools/test/mkgame.sh" --native "$game" || exit 1
 cp "$dir"/*.py "$game/" || exit 1
-rm -f "$game/sdtest.out" "$game/sdrec.out" "$game"/test_*.txt
+rm -f "$game/sdtest.out" "$game/sdtest.expected" "$game/sdrec.out" "$game"/test_*.txt
 out=$game/sdtest.out
+expected=$dir/sdtest.out
 
 # kills the game of this folder (a clean exit would save the config)
 endgame() {
@@ -37,8 +47,13 @@ if [ "$mode" = channel ]; then
 	SCRAP_TEST_CHANNEL=1 SCRAP_BUILD=$build SCRAP_GAME_DIR=$game HEADLESS_TIMEOUT=$timeout NATIVE_LOG=$build/golden.log \
 		"$root/tools/test/native.sh" -fullscreen:0 &
 	pid=$!
-	python3 "$dir/run.py" collect "$game" "$timeout"
+	GOLDEN_NOPY=$nopy python3 "$dir/run.py" collect "$game" "$timeout"
 	endgame
+	if [ $nopy = 1 ]; then
+		expected=$game/sdtest.expected
+		echo "golden: no Python interpreter in $build, the $(($(grep -c ' = ' "$dir/sdtest.out") - \
+			$(grep -c ' = ' "$expected"))) interpreter checks of sdpy.py are skipped"
+	fi
 else
 	script=sdtest.py
 	if [ "$mode" = record ]; then
@@ -77,12 +92,13 @@ if [ "$mode" = record ]; then
 	exit 0
 fi
 if [ "${GOLDEN_UPDATE:-0}" = 1 ]; then
+	[ $nopy = 1 ] && { echo "golden: GOLDEN_UPDATE needs a build with the interpreter" >&2; exit 1; }
 	cp "$out" "$dir/sdtest.out"
 	echo "golden: $(grep -c ' = ' "$dir/sdtest.out") checks stored"
 	exit 0
 fi
-if diff -u "$dir/sdtest.out" "$out" > "$build/golden.diff"; then
-	echo "golden: $(grep -c ' = ' "$out") checks match ($mode)"
+if diff -u "$expected" "$out" > "$build/golden.diff"; then
+	echo "golden: $(grep -c ' = ' "$out") checks match ($mode$([ $nopy = 1 ] && echo ', no Python'))"
 	exit 0
 fi
 echo "golden: outputs differ, see $build/golden.diff" >&2
