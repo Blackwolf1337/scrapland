@@ -109,22 +109,6 @@ static byte Npc_StdTraffic(const char *list, long life) {
 	return Mode_Done(&t, n >= 0);
 }
 
-/* the truth of module.var of another module (any object): 1, 0, -1 with the error */
-static int Npc_ModTrue(const char *module, const char *var) {
-	nativeVal_t v;
-	int r = LvN_ModGet(module, var, &v) ? Native_True(&v) : -1;
-	Native_Free(&v);
-	return r;
-}
-
-/* the truth of a global of the module: 1, 0, -1 with the error */
-static int Npc_GTrue(const char *name) {
-	nativeVal_t v;
-	int r = Mode_G(NPC, name, &v) ? Native_True(&v) : -1;
-	Native_Free(&v);
-	return r;
-}
-
 /* InitStdShips(): the ships of the characters (model and pilot), the scrapyard's and the traffic's (all the data) */
 static byte Npc_InitStdShipsN(void) {
 	static const char *const std[][3] = {
@@ -147,7 +131,7 @@ static byte Npc_InitStdShipsN(void) {
 			return 0;
 		}
 	}
-	int lonely = Npc_GTrue("lmigd");
+	int lonely = LvN_GTrue(NPC, "lmigd");
 	if (lonely < 0) {
 		return 0;
 	}
@@ -160,7 +144,7 @@ static byte Npc_InitStdShipsN(void) {
 			return 0;
 		}
 	}
-	int y = Npc_ModTrue("Init", "isScrapYard");
+	int y = Mode_ModTrue("Init", "isScrapYard");
 	if (y < 0 || (y && (!Npc_Std("MADHUNT", "ssssssis", "MadHunt", "", "", "", "", "7,0,0,7,0,0", 75L, "") ||
 		!Npc_Std("SMOSQUITO", "ssssssis", "SMosquito", "", "", "", "", "3,0,0,0,0,0", 25L, "")))) {
 		return 0;
@@ -410,7 +394,7 @@ static byte Npc_Merc(const nativeVal_t *mercs, const nativeVal_t *key) {
 	if (!Mode_Cat(&t, usr, 2, key, Mode_S(&t, "_usr")) || !NPC_OWN("GetIAProf", sp, "v", usr)) {
 		return Mode_Done(&t, 0);
 	}
-	int lonely = Npc_GTrue("lmigd");
+	int lonely = LvN_GTrue(NPC, "lmigd");
 	if (lonely < 0 || !Mode_VSet(sp, "Ship", lonely && Mode_IsText(key, "SMERC2") ? Mode_S(&t, "SMERC3") : key) ||
 		!Npc_Run("MercBase", (const char *const[]){ "sp" }, (const nativeVal_t *const[]){ sp }, 1)) {
 		return Mode_Done(&t, 0);
@@ -461,13 +445,13 @@ static byte Npc_InitN(void) {
 	if (!Mode_Import("ShipMaker") || !Mode_Import("Traffic") || !Mode_Import("Init") || !Mode_Import("string")) {
 		return 0;
 	}
-	int y = Npc_ModTrue("Init", "isScrapYard");
+	int y = Mode_ModTrue("Init", "isScrapYard");
 	if (y < 0 || (y && !Npc_Run("ScrapYard", NULL, NULL, 0)) || !Native_CallMod("Traffic", "SetPath", NULL, "") ||
 		!Npc_Classes("AcNormalShips", "Normal") || !Npc_Classes("AcMediumShips", "Medium") || !Npc_Classes("AcHeavyShips", "Heavy") ||
 		!Native_CallMod("Traffic", "ResetPath", NULL, "") || !NPC_OWN("InitStdShips", NULL, "")) {
 		return 0;
 	}
-	int u = Npc_GTrue("UseMercs");
+	int u = LvN_GTrue(NPC, "UseMercs");
 	if (u <= 0) {
 		return u == 0;
 	}

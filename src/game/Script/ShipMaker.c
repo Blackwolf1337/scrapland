@@ -540,14 +540,6 @@ static byte Sm_CreateStdShipsN(void) {
 	return Script_RunFileTry(0, SHIPMAKER_FILE, "StdShips", shipmaker_def, shipmaker_steps, NULL);
 }
 
-/* the truth of module.var of another module (any object): 1, 0, -1 with the error */
-static int Sm_ModTrue(const char *module, const char *var) {
-	nativeVal_t v;
-	int r = LvN_ModGet(module, var, &v) ? Native_True(&v) : -1;
-	Native_Free(&v);
-	return r;
-}
-
 /* text in module.var of another module: 1, 0, -1 with the error */
 static int Sm_ModIn(const char *text, const char *module, const char *var) {
 	nativeVal_t v, x;
@@ -573,7 +565,7 @@ static int Sm_SaveIn(const char *text, const char *save) {
  * at the first true one) */
 static int Sm_IsBoss(void) {
 	int r;
-	if ((r = Sm_ModTrue("Init", "isShipEdit")) != 0 || (r = Sm_ModTrue("Init", "MultiPlayer")) != 0 ||
+	if ((r = Mode_ModTrue("Init", "isShipEdit")) != 0 || (r = Mode_ModTrue("Init", "MultiPlayer")) != 0 ||
 		(r = Sm_ModIn("SBOSS1", "Parking", "AllShips")) != 0 || (r = Sm_ModIn("SBoss1", "Traffic", "AcShips")) != 0) {
 		return r;
 	}
@@ -598,10 +590,10 @@ static byte Sm_InitN(void) {
 		return 0;
 	}
 	int boss = Sm_IsBoss();
-	int demo = boss < 0 ? -1 : Sm_ModTrue("Init", "isDemo");
-	int online = demo < 0 ? -1 : Sm_ModTrue("Init", "MultiPlayer");
+	int demo = boss < 0 ? -1 : Mode_ModTrue("Init", "isDemo");
+	int online = demo < 0 ? -1 : Mode_ModTrue("Init", "MultiPlayer");
 	if (online == 0) {
-		online = Sm_ModTrue("Init", "isShipEdit");
+		online = Mode_ModTrue("Init", "isShipEdit");
 	}
 	if (online < 0) {
 		return 0;
@@ -615,9 +607,9 @@ static byte Sm_InitN(void) {
 		return 0;
 	}
 	/* the pilots */
-	int edit = Sm_ModTrue("Init", "isShipEdit");
+	int edit = Mode_ModTrue("Init", "isShipEdit");
 	if (edit == 0) {
-		edit = Sm_ModTrue("Init", "MultiPlayer");
+		edit = Mode_ModTrue("Init", "MultiPlayer");
 	}
 	if (edit < 0) {
 		return 0;
