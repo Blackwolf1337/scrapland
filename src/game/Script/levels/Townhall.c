@@ -1361,7 +1361,7 @@ static byte Tm_Rich(const nativeVal_t *e, const char *key, const char *money, lo
 	nativeVal_t *desc = Mode_V(&t), *m = Mode_V(&t), *m2 = Mode_V(&t), *r = Mode_V(&t);
 	Mode_Lang(key, desc);
 	if (!Mode_VSet(e, "Descriptor", desc) || !Mode_G(TM, money, m) || !Mode_VSet(e, "Money", m) || !Mode_G(TM, money, m2) ||
-		!Native_Arith('/', m2, Mode_I(&t, slaps), r) || !Mode_VSet(e, "MoneyReward", r)) {
+		!Mode_Arith('/', m2, Mode_I(&t, slaps), r) || !Mode_VSet(e, "MoneyReward", r)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!nameVar) {

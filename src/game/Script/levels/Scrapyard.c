@@ -853,7 +853,7 @@ static byte Ambush_CreateMadHuntersN(void) {
 	Native_SetInt(&two, 2);
 	Native_SetNone(&r);
 	byte ok = Mode_Import("VehiclesNPC") && Mode_ListSet("Enemies", "OnDeath", "Mission_Ambush.OnMadHunterDeath") &&
-		Mode_G(AM, "numProbes", &n) && Native_Arith('*', &n, &two, &r) && Mode_Range(&r, &count);
+		Mode_G(AM, "numProbes", &n) && Mode_Arith('*', &n, &two, &r) && Mode_Range(&r, &count);
 	Native_Free(&n);
 	Native_Free(&r);
 	for (long k = 0; ok && k < count; k++) {
@@ -1011,7 +1011,7 @@ static byte Gambler_LaunchTauntsN(void) {
 			Mode_Repr(s, r);
 			Native_Free(n);
 			ok = Native_Arith('+', pre, r, key) && LV_CALL("Speech", "RemoteComunication", NULL, "vs", key, "EvilGambler") &&
-				Mode_G(CG, "numTaunt", n) && Native_Arith('+', n, Mode_I(&t, 1), n1) && Native_Arith('%', n1, Mode_I(&t, 5), m) &&
+				Mode_G(CG, "numTaunt", n) && Native_Arith('+', n, Mode_I(&t, 1), n1) && Mode_Arith('%', n1, Mode_I(&t, 5), m) &&
 				Mode_Put(CG, "numTaunt", NULL, m);
 		}
 		if (!ok) {
@@ -1055,7 +1055,7 @@ static byte Gambler_CreateMosquitosN(void) {
 		Native_SetFloat(now, Mode_Time());
 		Native_SetNone(&d);
 		Native_SetNone(&time);
-		ok = Native_Arith('*', &i, step, &d) && Native_Arith('+', now, &d, &time) && Mode_AtG(&time, CG, "CreateMosquito", NULL, 0);
+		ok = Mode_Arith('*', &i, step, &d) && Native_Arith('+', now, &d, &time) && Mode_AtG(&time, CG, "CreateMosquito", NULL, 0);
 		Native_Free(&d);
 		Native_Free(&time);
 	}
@@ -1832,7 +1832,7 @@ static byte Clue_InitMosquitoN(const nativeVal_t *a) {
 			Native_SetFloat(&now, Mode_Time());
 			Native_Copy(&args[0], pos);
 			Native_SetInt(&args[1], last);
-			ok = Native_Arith('*', half, &i, &d) && Native_Arith('+', &now, &d, &time) && Mode_AtG(&time, MC, "CreateMosquito", args, 2);
+			ok = Mode_Arith('*', half, &i, &d) && Native_Arith('+', &now, &d, &time) && Mode_AtG(&time, MC, "CreateMosquito", args, 2);
 			Native_Free(&args[0]);
 		} else {
 			ok = 0;
@@ -2282,7 +2282,7 @@ static byte Merc_OnStupidMercDamageN(const nativeVal_t *a) {
 	}
 	if (go > 0) {
 		go = Mode_VGet(e, "Life", life) && Mode_G(SM, "percStupidMercGoesForLife", perc) && Mode_VGet(e, "MaxLife", max) &&
-			Native_Arith('*', perc, max, lim) ? Mode_Cmp(life, "<", lim) : -1;
+			Mode_Arith('*', perc, max, lim) ? Mode_Cmp(life, "<", lim) : -1;
 	}
 	if (go > 0) {
 		go = Sm_GoForLife(NULL, &a[0], item);

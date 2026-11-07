@@ -745,7 +745,7 @@ static byte Den_CharUsrDanceC(const nativeVal_t *a, nativeVal_t *out) {
 		return Mode_Done(&t, 0);
 	}
 	if (dance) {
-		if (!Native_Arith('%', &a[1], Mode_I(&t, 2), rem)) {
+		if (!Mode_Arith('%', &a[1], Mode_I(&t, 2), rem)) {
 			return Mode_Done(&t, 0);
 		}
 		const char *anm = LvN_EqI(rem, 0) ? "Dance" : "Dance0";
