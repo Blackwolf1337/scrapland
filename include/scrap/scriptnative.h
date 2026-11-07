@@ -173,6 +173,23 @@ byte Native_IntOfText(const char *text, long *out);
 /* the error of an engine function that gives NULL without an exception, as a call from C reports it
  * (PyEval_CallObjectWithKeywords, "NULL result without error in call_object"): 0 */
 byte Native_NullResult(void);
+/* the number of argument v of an engine function as its "i" reads it (no range check, a float cut): 1 with *out,
+ * else 0 with the TypeError of PyInt_AsLong ("illegal argument type for built-in operation") */
+byte Native_ArgInt(const nativeVal_t *v, int *out);
+/* `if v:` of a script: 0, 0.0, "", None and empty lists, tuples and dicts are false */
+byte Native_True(const nativeVal_t *v);
+/* SAct.GetClass(name): the class becomes the current one (1), or there is none (0) */
+byte Native_ActClass(const char *name);
+/* SAct.GetAction(name): the action of the current class becomes the current one (a debug line without a class) */
+void Native_ActAction(const char *name);
+/* SAct.GetAct(name): the variable of the current action (None and a debug line when there is no action or no such
+ * variable) */
+void Native_ActVar(const char *name, nativeVal_t *out);
+/* SAct.SetAct(name, v) with a text or a number (a debug line when there is no action or v is neither, no error) */
+void Native_ActSet(const char *name, const nativeVal_t *v);
+/* SAct.SetCls(name, v) with a text or a number: 0 with Native_NullResult when there is no current class (and the
+ * console line), with the TypeError of its arguments when v is neither */
+byte Native_ClsSet(const char *name, const nativeVal_t *v);
 /* entity.name as the script handle reads it: an int, float, vector or text variable (a text variable without a text
  * is None). 0 when the entity has no such variable: the console line of the handle and its AttributeError; e NULL is
  * the handle of an entity that is gone (its console line and ceval's SystemError) */

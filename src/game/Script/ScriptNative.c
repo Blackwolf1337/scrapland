@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/actions.h"
 #include "scrap/console.h"
 #include "scrap/global.h"
 #include "scrap/scrap.h"
@@ -1135,6 +1136,35 @@ byte Native_ArgDouble(const nativeVal_t *v, double *out) {
 	return 1;
 }
 
+byte Native_ArgInt(const nativeVal_t *v, int *out) {
+	double d;
+	if (!Native_ArgNum(v, 0, &d, out)) {
+		/* PyInt_AsLong of a value without number methods (a float too large for a long: its OverflowError, not
+		 * reached by the ports) */
+		return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
+	}
+	return 1;
+}
+
+byte Native_True(const nativeVal_t *v) {
+	switch (v->type) {
+	case NV_INT:
+		return v->i != 0;
+	case NV_FLOAT:
+		return v->f != 0.0;
+	case NV_STR:
+	case NV_LIST:
+	case NV_TUPLE:
+	case NV_DICT:
+		return v->n != 0;
+	case NV_LONG:
+		return strcmp(Native_Text(v), "0") != 0;
+	case NV_VEC:
+		return 1;
+	}
+	return 0;
+}
+
 byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVal_t *v) {
 	/* PyEntity_SetVar: the value is tried as int, float, vector and text, each form that parses goes to the
 	 * variable of that type until one takes it */
@@ -1195,6 +1225,80 @@ byte Native_GetEntity(const nativeVal_t *name, cEntity **out) {
 	}
 	*out = World_FindEntity(s);
 	return 1;
+}
+
+byte Native_ActClass(const char *name) {
+	CHECK(g_pActClassList);
+	g_pAuxActClass = cActClassList_Get(g_pActClassList, name);
+	return g_pAuxActClass != NULL;
+}
+
+void Native_ActAction(const char *name) {
+	if (!g_pAuxActClass) {
+		Con_Debugf("Caution: SAct.GetAction(): AuxActClass not defined.\n");
+		return;
+	}
+	g_pAuxAction = cActClass_GetAction(g_pAuxActClass, name);
+}
+
+void Native_ActVar(const char *name, nativeVal_t *out) {
+	/* GetVar of SActPy.c on the current action */
+	char *s = NULL;
+	double d = 0.0;
+	int i = 0;
+	Native_SetNone(out);
+	if (!g_pAuxAction) {
+		Con_Debugf("Caution: SAct.GetAct('%s'): AuxActClass not defined.\n", name);
+		return;
+	}
+	switch (cAction_Var(g_pAuxAction, name, 0, &s, &d, &i)) {
+	case ACTVAR_STRING:
+		if (s) {
+			Native_SetText(out, s, (int)strlen(s));
+		}
+		return;
+	case ACTVAR_DOUBLE:
+		Native_SetFloat(out, d);
+		return;
+	case ACTVAR_INT:
+		Native_SetInt(out, i);
+		return;
+	}
+	Con_Debugf("Caution: SAct.GetAct('%s'): element not found.\n", name);
+}
+
+/* SetVar of SActPy.c: "ss", else "sd" (the int cut from the number); 0 when the value is neither (no error set) */
+static byte Native_ActSetVar(int (*var)(void *obj, const char *name, int set, char **s, double *d, int *i), void *obj,
+	const char *name, const nativeVal_t *v) {
+	double d;
+	int i;
+	if (v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n) {
+		char *s = (char *)Native_Text(v);
+		var(obj, name, 1, &s, NULL, NULL);
+		return 1;
+	}
+	if (!Native_ArgNum(v, 1, &d, &i)) {
+		return 0;
+	}
+	i = (int)d;
+	var(obj, name, 1, NULL, &d, &i);
+	return 1;
+}
+
+void Native_ActSet(const char *name, const nativeVal_t *v) {
+	if (!g_pAuxAction || !Native_ActSetVar((int (*)(void *, const char *, int, char **, double *, int *))cAction_Var,
+		g_pAuxAction, name, v)) {
+		Con_Debugf("Caution: SAct.SetAct(): AuxActClass not defined.\n");
+	}
+}
+
+byte Native_ClsSet(const char *name, const nativeVal_t *v) {
+	if (!g_pAuxActClass) {
+		Con_Print(CON_COLOR_ERROR, "ERROR SAct.SetCls(): AuxActClass not defined.\n", 0);
+		return Native_NullResult();
+	}
+	return Native_ActSetVar((int (*)(void *, const char *, int, char **, double *, int *))cActClass_Var, g_pAuxActClass,
+		name, v) || Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
 }
 
 int Native_Seam(const char *module, const char *name, PyObject **hook) {
