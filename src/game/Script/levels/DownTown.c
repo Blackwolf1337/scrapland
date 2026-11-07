@@ -66,12 +66,9 @@ static byte Dt_RustyLater(const char *key) {
  */
 static byte Dt_UsePhone(const nativeVal_t *a, const char *module, const char *police, const char *who, const char *key, const char *end,
 	byte reset) {
-	nativeVal_t e = { 0 }, pc = { 0 };
-	Native_SetNone(&e);
+	nativeVal_t pc = { 0 };
 	Native_SetNone(&pc);
-	int alarm = Mode_Import("PhoneCab") && Mode_SetModVar("Speech", "NPCName", &a[1]) && Mode_SetModVar("Speech", "PlayerName", &a[0]) &&
-		LV_CALL("PhoneCab", "UseAudioCom", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]) && Mode_EntityH(&a[1], &e) && Mode_Put(module, "pc", NULL, &e) ?
-		Mode_AlarmOn() : -1;
+	int alarm = Mode_PhoneUse(module, a);
 	byte ok = alarm >= 0;
 	if (alarm > 0) {
 		ok = Mode_G(module, "pc", &pc) && LV_CALL("Speech", "StartObjSpch", NULL, "vss", &pc, police, who);
@@ -79,7 +76,6 @@ static byte Dt_UsePhone(const nativeVal_t *a, const char *module, const char *po
 		ok = (!reset || (Mode_G(module, "pc", &pc) && LvN_SetS(&pc, "UseFunc", "PhoneCab.DefUseAudioCom"))) && Mode_Read(module, "pc", &pc) &&
 			LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &pc, 0L) && LvN_OnEnd(module, end, NULL) && Mode_NISpeech(who, key);
 	}
-	Native_Free(&e);
 	Native_Free(&pc);
 	return ok;
 }

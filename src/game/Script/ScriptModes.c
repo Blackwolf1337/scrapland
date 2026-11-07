@@ -2160,23 +2160,11 @@ byte Mode_Drop(const char *module, const nativeVal_t *pos, const char *name, con
 }
 
 byte Mode_Taken(const nativeVal_t *item, const nativeVal_t *arrow) {
-	nativeVal_t itm, a, time;
+	nativeVal_t itm, a;
 	Native_SetNone(&itm);
 	Native_SetNone(&a);
-	if (!Mode_EntityH(item, &itm) || !LvN_SetI(&itm, "rTime", 20)) {
-		Native_Free(&itm);
-		return 0;
-	}
-	/* OBJLIB 4: the scheduler keeps the bound method */
-	PyObject *del = Mode_VBound(&itm, "Del");
+	byte ok = Mode_EntityH(item, &itm) && Mode_DelLater(&itm) && Mode_EntityH(arrow, &a) && Mode_VDel(&a);
 	Native_Free(&itm);
-	if (!del) {
-		return 0;
-	}
-	Native_SetFloat(&time, Mode_Time() + 5);
-	byte ok = Mode_Schedule(&time, del, NULL, 0, NULL);
-	Py_DECREF(del);
-	ok = ok && Mode_EntityH(arrow, &a) && Mode_VDel(&a);
 	Native_Free(&a);
 	return ok;
 }
@@ -2508,12 +2496,10 @@ byte Mode_LvTimer(const nativeVal_t *id, const char *item, const nativeVal_t *x,
 }
 
 /* bp = eval(Scrap.GetSaveVar(var)); bp = bp + [a, b]; Scrap.SetSaveVar(var, `bp`) (eval in the globals of module) */
-byte Mode_SaveCat2(const char *module, const char *var, const char *a, const char *b) {
+byte Mode_SaveCat(const char *module, const char *var, const char *const *texts, int n) {
 	nativeVal_t bp = { 0 }, add = { 0 }, r = { 0 };
 	Native_SetNone(&r);
-	Native_SetEmpty(&add, NV_LIST);
-	LvN_Str(Native_Append(&add), a);
-	LvN_Str(Native_Append(&add), b);
+	Mode_Texts(&add, texts, n);
 	byte ok = LvN_SaveList(var, module, &bp) && Native_Arith('+', &bp, &add, &r);
 	if (ok) {
 		LvN_SaveRepr(var, &r);
@@ -2522,6 +2508,11 @@ byte Mode_SaveCat2(const char *module, const char *var, const char *a, const cha
 	Native_Free(&add);
 	Native_Free(&r);
 	return ok;
+}
+
+byte Mode_SaveCat2(const char *module, const char *var, const char *a, const char *b) {
+	const char *const texts[] = { a, b };
+	return Mode_SaveCat(module, var, texts, 2);
 }
 
 /* `e and e.Active`: 1, 0, -1 */
@@ -2660,5 +2651,40 @@ byte Mode_FirstOf(const char *list, nativeVal_t *e) {
 	Native_SetNone(e);
 	byte ok = Mode_ListGet(list, "First", &name) && Mode_EntityH(&name, e);
 	Native_Free(&name);
+	return ok;
+}
+
+/* itm.rTime = 20 and its Del 5 s later (OBJLIB 4: the scheduler keeps the bound method) */
+byte Mode_DelLater(const nativeVal_t *itm) {
+	nativeVal_t time;
+	if (!LvN_SetI(itm, "rTime", 20)) {
+		return 0;
+	}
+	PyObject *del = Mode_VBound(itm, "Del");
+	if (!del) {
+		return 0;
+	}
+	Native_SetFloat(&time, Mode_Time() + 5);
+	byte ok = Mode_Schedule(&time, del, NULL, 0, NULL);
+	Py_DECREF(del);
+	return ok;
+}
+
+int Mode_PhoneUse(const char *module, const nativeVal_t *a) {
+	nativeVal_t e = { 0 };
+	int r = Mode_Import("PhoneCab") && Mode_SetModVar("Speech", "NPCName", &a[1]) && Mode_SetModVar("Speech", "PlayerName", &a[0]) &&
+		LV_CALL("PhoneCab", "UseAudioCom", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]) && Mode_EntityH(&a[1], &e) && Mode_Put(module, "pc", NULL, &e) ?
+		Mode_AlarmOn() : -1;
+	Native_Free(&e);
+	return r;
+}
+
+byte Mode_ForceMap(const char *map) {
+	nativeVal_t zero = { 0 }, name = { 0 }, m = { 0 };
+	Native_SetInt(&zero, 0);
+	LvN_Str(&m, map);
+	byte ok = Native_GVarGet("MissionScorerName", &name) && Mode_ScorerSet(&zero, &name, "ForceMap", &m);
+	Native_Free(&name);
+	Native_Free(&m);
 	return ok;
 }

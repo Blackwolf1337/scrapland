@@ -512,6 +512,8 @@ byte Mode_CountText(const char *module, const char *num, const char *max, native
 byte Mode_LvTimer(const nativeVal_t *id, const char *item, const nativeVal_t *x, const nativeVal_t *y, const char *expired, byte visible);
 /* bp = eval(Scrap.GetSaveVar(var)); bp = bp + [a, b]; Scrap.SetSaveVar(var, `bp`) (eval in the globals of module) */
 byte Mode_SaveCat2(const char *module, const char *var, const char *a, const char *b);
+/* the same with the n texts of texts */
+byte Mode_SaveCat(const char *module, const char *var, const char *const *texts, int n);
 /* `e and e.Active`: 1, 0, -1 */
 int Mode_Active(const nativeVal_t *e);
 /* `for name in names: e = Scrap.GetEntity(name); if e: e.Del()` */
@@ -539,5 +541,12 @@ byte Mode_RemoveIn(const nativeVal_t *x, const char *module, const char *name);
 /* e = Scrap.GetEntity(Scrap.EntityListGet(list, "First")) as the handle value (the start of the loops over an entity
  * list) */
 byte Mode_FirstOf(const char *list, nativeVal_t *e);
+/* itm.rTime = 20 and its Del 5 s later (a mission item taken) */
+byte Mode_DelLater(const nativeVal_t *itm);
+/* the start of UsePhoneCab(UsrName, CharName, optId, FullOption) of the missions (a): Speech.NPCName and PlayerName,
+ * the audio com of the cab, the global pc of module the cab; the alarm state (1, 0, -1 after an error) */
+int Mode_PhoneUse(const char *module, const nativeVal_t *a);
+/* SScorer.Set(0, Scrap.Get("MissionScorerName"), "ForceMap", map) (the map of the mission scorer) */
+byte Mode_ForceMap(const char *map);
 
 #endif
