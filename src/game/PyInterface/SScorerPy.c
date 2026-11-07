@@ -8,11 +8,6 @@
 #include "scrap/input.h"
 #include "scrap/scorer.h"
 
-/* 0xAARRGGBB from the (r, g, b, a) values of the script */
-static uint32_t PackColor(uint32_t r, uint32_t g, uint32_t b, uint32_t a) {
-	return ((a << 8 | r) << 8 | g) << 8 | b;
-}
-
 /* AddChatMsg(string,red,green,blue) : Agrega un mensaje a la list de chat. */
 static PyObject *SScorer_AddChatMsg(PyObject *self, PyObject *args) {
 	char *text;
@@ -100,7 +95,7 @@ static PyObject *SScorer_Fade(PyObject *self, PyObject *args) {
 	}
 	cScorer *sc = Scorer_Get(player);
 	if (sc) {
-		ScorerFade_Start(&sc->fade, PackColor(r1, g1, b1, a1), PackColor(r2, g2, b2, a2), time);
+		ScorerFade_Start(&sc->fade, Scorer_PackColor(r1, g1, b1, a1), Scorer_PackColor(r2, g2, b2, a2), time);
 	}
 	return Py_ReturnNone();
 }

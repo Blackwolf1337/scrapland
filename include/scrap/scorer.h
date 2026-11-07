@@ -136,6 +136,10 @@ void cScorer_SetMarkerSprite(cScorer *scorer, const char *sprite);
 void *cScorer_AddModel(cScorer *scorer, const char *name, const char *model, const char *anim, int numAnim,
 	float radius, float height, byte head);
 void ScorerFade_Start(ScorerFade *fade, uint32_t from, uint32_t to, float time);
+/* 0xAARRGGBB from the (r, g, b, a) values of the scripts (SScorer.Fade) */
+static inline uint32_t Scorer_PackColor(uint32_t r, uint32_t g, uint32_t b, uint32_t a) {
+	return ((a << 8 | r) << 8 | g) << 8 | b;
+}
 void ScorerCinema_Set(ScorerCinema *cinema, byte on, float time);
 /* cPyMenuEntity (type object): Python handle of a scorer item by player and item name */
 typedef struct cPyMenuEntity {
