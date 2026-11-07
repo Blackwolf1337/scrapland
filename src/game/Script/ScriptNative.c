@@ -1437,9 +1437,11 @@ static byte Native_Take(PyObject *o, unsigned types, nativeVal_t *v) {
 	return 0;
 }
 
-byte Native_Import(const char *module, const nativeVar_t *vars) {
+/* the variables from the dict of module: a missing one is the AttributeError of a module attribute (global 0) or the
+ * NameError of a global the script reads (global 1) */
+static byte Native_ImportBy(const char *module, const nativeVar_t *vars, byte global) {
 	for (const nativeVar_t *var = vars; var->name; var++) {
-		PyObject *o = Script_Attr(module, var->name);
+		PyObject *o = global ? Script_Global(module, var->name) : Script_Attr(module, var->name);
 		if (!o) {
 			return 0;
 		}
@@ -1461,6 +1463,14 @@ byte Native_Import(const char *module, const nativeVar_t *vars) {
 		}
 	}
 	return 1;
+}
+
+byte Native_Import(const char *module, const nativeVar_t *vars) {
+	return Native_ImportBy(module, vars, 0);
+}
+
+byte Native_ImportGlobals(const char *module, const nativeVar_t *vars) {
+	return Native_ImportBy(module, vars, 1);
 }
 
 byte Native_Put(const char *module, const nativeVar_t *var, int index) {
