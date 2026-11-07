@@ -7,11 +7,19 @@
  * stay variables of the module; the script builds the ship variables from the tables (Weap<slot><weapon>,
  * Upgrd<weapon>), so the C reads the tables too. ShipEdit, HangarTab, ShipMaker and Sound are used through their
  * modules.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values and set the scorer items in C; the
+ * PyMethodDef entries are adapters. The module's variables are read where the script reads them (OBJLIB 5), the ship
+ * being edited is HangarTab.prevShip as a handle value (OBJLIB 5 and 7), the tables of ShipMaker and the lists of
+ * ShipEdit are read as their attributes. The calls of HangarTab, ShipEdit and ShipMaker, the link functions of Menu
+ * and the module's own functions the script calls as its globals stay by name (OBJLIB 3); the .def runner takes
+ * Python values (OBJLIB 6).
  */
 #include <string.h>
 
 #include "scrap/global.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 
 static const char weaponstab_def[] = {
 #embed "../../../data/menus/weaponstab.def"
@@ -19,6 +27,7 @@ static const char weaponstab_def[] = {
 
 #define WEAPONSTAB_FILE "menus/weaponstab.def"
 #define MOD "WeaponsTab"
+#define WT_NAME 0x40
 
 /* WeaponsTab.NormalColor*, SelectedColor*, NotAvailableColor* (red, green, blue) */
 static const int wt_normal[3] = { 115, 150, 255 };
@@ -32,16 +41,20 @@ static const char *const wt_shown[6] = { "Vulcan", "Devastator", "Tesla", "ATPC"
 static const char *const wt_unlink[6] = { "Devastator", "Tesla", "ATPC", "Inferno", "Swarm", "Vulcan" };
 static const char *const wt_linked[6] = { "Vulcan", "Devastator", "Tesla", "ATPC", "Inferno", "Swarm" };
 
-static PyObject *WT_WeaponHint(scriptFrame_t *f, const char *key, byte use, PyObject *weapon);
+static byte WT_WeaponHint(const char *key, byte use, const nativeVal_t *weapon, nativeVal_t *out);
 
 /* the step weaponhint <key>: the Hint of a weapon button, string.replace(Scrap.GetLangStr(key) % UseTxt, "<n>",
  * Scrap.GetLangStr("ShipEdit_" + name + "Name")) (the error left set stops the file) */
 static void WT_StepHint(int id, PyObject *args) {
-	scriptFrame_t f = { .n = 0 };
-	const char *item = Script_CurrentItem();
-	PyObject *hint = WT_WeaponHint(&f, Sf_Text(&f, Sf_Item(&f, args, 0)), 1, Sf_Str(&f, item));
-	Sf_ScorerSet(&f, id, item, "Hint", hint);
-	Sf_Done(&f, NULL);
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *key = Mode_V(&t), *hint = Mode_V(&t);
+	const char *item = Script_CurrentItem(), *k;
+	/* OBJLIB 6: the step takes the arguments of the line as a tuple */
+	PyObject *o = Script_Index(args, 0);
+	byte ok = o && Native_Arg(o, key) && Mode_ItemText(key, &k);
+	Py_XDECREF(o);
+	ok = ok && WT_WeaponHint(k, 1, Mode_S(&t, item), hint) && Mode_ScorerPut(id, item, "Hint", hint);
+	Mode_Done(&t, ok);
 }
 
 static const scriptStep_t weaponstab_steps[] = {
@@ -49,165 +62,301 @@ static const scriptStep_t weaponstab_steps[] = {
 	{ NULL, NULL },
 };
 
-static void WT_Run(scriptFrame_t *f, int id, const char *section, PyObject *vars) {
-	if (!f->failed) {
-		Sf_Check(f, Script_RunFileTry(id, WEAPONSTAB_FILE, section, weaponstab_def, weaponstab_steps, vars));
+/* a section of weaponstab.def (vars: the $names, NULL for none): 0 with the error of the file */
+static byte WT_Run(int id, const char *section, PyObject *vars) {
+	return Script_RunFileTry(id, WEAPONSTAB_FILE, section, weaponstab_def, weaponstab_steps, vars);
+}
+
+/* a global of the module as its functions read it (out None before) */
+static byte WT_G(const char *name, nativeVal_t *out) {
+	return Mode_G(MOD, name, out);
+}
+
+/* the C name prefix + text (a text of the script: the TypeError of another value), cut to WT_NAME */
+static byte WT_Cat(char *out, const char *prefix, const nativeVal_t *text, const char *suffix) {
+	const char *s;
+	if (!Mode_ItemText(text, &s)) {
+		return 0;
 	}
-}
-
-static PyObject *WT_Global(scriptFrame_t *f, const char *name) {
-	return Sf_Global(f, MOD, name);
-}
-
-static PyObject *WT_Ship(scriptFrame_t *f, const char *var) {
-	return Sf_Attr(f, Sf_Mod(f, "HangarTab", "prevShip"), var);
+	Str_Printf(out, WT_NAME, "%s%s%s", prefix, s, suffix);
+	return 1;
 }
 
 /* HangarTab.prevShip.<prefix + text> */
-static PyObject *WT_ShipS(scriptFrame_t *f, const char *prefix, PyObject *text) {
-	char var[0x40];
-	const char *s = Sf_Text(f, text);
-	if (!s) {
-		return NULL;
+static byte WT_ShipS(const char *prefix, const nativeVal_t *text, nativeVal_t *out) {
+	char var[WT_NAME];
+	return WT_Cat(var, prefix, text, "") && Mode_ShipGet(var, out);
+}
+
+/* Scrap.GetLangStr(key) of a key value (the TypeError of "s") */
+static byte WT_LangV(const nativeVal_t *key, nativeVal_t *out) {
+	const char *s;
+	if (!Native_ArgStr(key, 1, &s)) {
+		return 0;
 	}
-	Str_Printf(var, sizeof(var), "%s%s", prefix, s);
-	return WT_Ship(f, var);
-}
-
-static PyObject *WT_Upper(scriptFrame_t *f, PyObject *o) {
-	return Sf_Ask(f, "string", "upper", "(O)", o);
-}
-
-static PyObject *WT_Lang(scriptFrame_t *f, const char *key) {
-	return key ? Sf_Lang(f, Sf_Str(f, key)) : NULL;
+	Mode_Lang(s, out);
+	return 1;
 }
 
 /* Scrap.GetLangStr(key) % UseTxt */
-static PyObject *WT_Use(scriptFrame_t *f, const char *key) {
-	return Sf_Op(f, WT_Lang(f, key), '%', WT_Global(f, "UseTxt"));
+static byte WT_Use(const char *key, nativeVal_t *out) {
+	nativeVal_t lang, use;
+	Mode_Lang(key, &lang);
+	byte ok = WT_G("UseTxt", &use) && Native_Arith('%', &lang, &use, out);
+	Native_Free(&lang);
+	Native_Free(&use);
+	return ok;
 }
 
 /* string.replace(text, "<n>", Scrap.GetLangStr(prefix + name + suffix)): a hint with a name in it */
-static PyObject *WT_Named(scriptFrame_t *f, PyObject *text, const char *prefix, PyObject *name, const char *suffix) {
-	PyObject *n = Sf_Lang(f, Sf_Cat(f, "sOs", prefix, name, suffix));
-	return Sf_Ask(f, "string", "replace", "(OsO)", text, "<n>", n);
+static byte WT_Named(const nativeVal_t *text, const char *prefix, const nativeVal_t *name, const char *suffix,
+	nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *key = Mode_V(&t), *n = Mode_V(&t);
+	if (!Mode_Cat(&t, key, 3, Mode_S(&t, prefix), name, Mode_S(&t, suffix)) || !WT_LangV(key, n)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_Replace(text, "<n>", n, out);
+	return Mode_Done(&t, 1);
 }
 
 /* the hint of a weapon (ShipEdit_<weapon>Name in it) from key, with UseTxt when use */
-static PyObject *WT_WeaponHint(scriptFrame_t *f, const char *key, byte use, PyObject *weapon) {
-	return WT_Named(f, use ? WT_Use(f, key) : WT_Lang(f, key), "ShipEdit_", weapon, "Name");
+static byte WT_WeaponHint(const char *key, byte use, const nativeVal_t *weapon, nativeVal_t *out) {
+	nativeVal_t text;
+	if (use) {
+		if (!WT_Use(key, &text)) {
+			return 0;
+		}
+	} else {
+		Mode_Lang(key, &text);
+	}
+	byte ok = WT_Named(&text, "ShipEdit_", weapon, "Name", out);
+	Native_Free(&text);
+	return ok;
 }
 
 /* the hint of an upgrade: HINT_UpgradeName_<upgradeId[upgrade]> into key % UseTxt */
-static PyObject *WT_UpgradeHint(scriptFrame_t *f, const char *key, PyObject *upgrade) {
-	PyObject *text = WT_Use(f, key);
-	return WT_Named(f, text, "HINT_UpgradeName_", Sf_GetItem(f, WT_Global(f, "upgradeId"), upgrade), "");
+static byte WT_UpgradeHint(const char *key, const nativeVal_t *upgrade, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *text = Mode_V(&t), *ids = Mode_V(&t), *name = Mode_V(&t);
+	byte ok = WT_Use(key, text) && WT_G("upgradeId", ids) && Native_Subscript(ids, upgrade, name) &&
+		WT_Named(text, "HINT_UpgradeName_", name, "", out);
+	return Mode_Done(&t, ok);
 }
 
-static void WT_Color(scriptFrame_t *f, int id, const char *item, const int *c) {
-	Sf_ScorerNum(f, id, item, "Red", c[0]);
-	Sf_ScorerNum(f, id, item, "Green", c[1]);
-	Sf_ScorerNum(f, id, item, "Blue", c[2]);
-}
-
-static void WT_Visible(scriptFrame_t *f, int id, const char *item, int v) {
-	Sf_ScorerNum(f, id, item, "Visible", v);
-}
-
-/* the C text of a + b (texts of the script) into out */
-static const char *WT_Join(scriptFrame_t *f, char *out, int size, PyObject *a, const char *b) {
-	const char *s = Sf_Text(f, a);
-	if (!s) {
-		return NULL;
+/* a hint into the item and its MaxHintLineWidth */
+static byte WT_SetHint(int id, const char *item, const nativeVal_t *hint) {
+	if (!Mode_ScorerPut(id, item, "Hint", hint)) {
+		return 0;
 	}
-	Str_Printf(out, size, "%s%s", s, b);
-	return out;
+	Script_SetNum(id, item, "MaxHintLineWidth", 550);
+	return 1;
+}
+
+/* the hint of a weapon into the item, with its MaxHintLineWidth */
+static byte WT_PutWeaponHint(int id, const char *item, const char *key, byte use, const nativeVal_t *weapon) {
+	nativeVal_t hint = { 0 };
+	byte ok = WT_WeaponHint(key, use, weapon, &hint) && WT_SetHint(id, item, &hint);
+	Native_Free(&hint);
+	return ok;
+}
+
+static void WT_Color(int id, const char *item, const int *c) {
+	Script_SetNum(id, item, "Red", c[0]);
+	Script_SetNum(id, item, "Green", c[1]);
+	Script_SetNum(id, item, "Blue", c[2]);
+}
+
+static void WT_Visible(int id, const char *item, int v) {
+	Script_SetNum(id, item, "Visible", v);
 }
 
 /* control + "Slot" + `i` */
-static const char *WT_Slot(scriptFrame_t *f, char *out, int size, PyObject *control, long i) {
+static byte WT_Slot(char *out, const nativeVal_t *control, long i) {
 	char suffix[0x20];
 	Str_Printf(suffix, sizeof(suffix), "Slot%ld", i);
-	return WT_Join(f, out, size, control, suffix);
+	return WT_Cat(out, "", control, suffix);
 }
 
 /* slotId[num] + weapId[weapon]: the name of a slot in the ship variables */
-static PyObject *WT_NameId(scriptFrame_t *f, PyObject *num, PyObject *weapon) {
-	PyObject *slot = Sf_GetItem(f, WT_Global(f, "slotId"), num);
-	return Sf_Op(f, slot, '+', Sf_GetItem(f, WT_Global(f, "weapId"), weapon));
+static byte WT_NameId(const nativeVal_t *num, const nativeVal_t *weapon, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ids = Mode_V(&t), *slot = Mode_V(&t), *wids = Mode_V(&t), *wid = Mode_V(&t);
+	byte ok = WT_G("slotId", ids) && Native_Subscript(ids, num, slot) && WT_G("weapId", wids) &&
+		Native_Subscript(wids, weapon, wid) && Native_Arith('+', slot, wid, out);
+	return Mode_Done(&t, ok);
+}
+
+/* HangarTab.prevShip.Weap<slotId[num] + weapId[weapon]> */
+static byte WT_Loaded(const nativeVal_t *num, const nativeVal_t *weapon, nativeVal_t *out) {
+	nativeVal_t id = { 0 };
+	byte ok = WT_NameId(num, weapon, &id) && WT_ShipS("Weap", &id, out);
+	Native_Free(&id);
+	return ok;
+}
+
+/* the same for slot i */
+static byte WT_LoadedI(long i, const nativeVal_t *weapon, nativeVal_t *out) {
+	nativeVal_t n;
+	Native_SetInt(&n, i);
+	return WT_Loaded(&n, weapon, out);
 }
 
 /* the slots of the kind of weapon (0 for another name) */
-static PyObject *WT_NumSlots(scriptFrame_t *f, PyObject *weapon) {
+static byte WT_NumSlots(const nativeVal_t *weapon, nativeVal_t *out) {
 	static const char *const kinds[3][3] = { { "Vulcan", "Devastator", "nSlot00" }, { "Tesla", "ATPC", "nSlot02" },
 		{ "Inferno", "Swarm", "nSlot01" } };
-	for (int k = 0; k < 3 && !f->failed; k++) {
-		int is = Sf_EqS(f, weapon, kinds[k][0]);
-		if (is == 0) {
-			is = Sf_EqS(f, weapon, kinds[k][1]);
+	for (int k = 0; k < 3; k++) {
+		nativeVal_t a, b;
+		Native_SetStr(&a, kinds[k][0]);
+		Native_SetStr(&b, kinds[k][1]);
+		if (!Native_Compare(weapon, &a) || !Native_Compare(weapon, &b)) {
+			return Mode_ShipGet(kinds[k][2], out);
 		}
-		if (is > 0) {
-			return WT_Ship(f, kinds[k][2]);
+		if (PyErr_Occurred()) {
+			return 0;
 		}
 	}
-	return Sf_Int(f, 0);
+	Native_SetInt(out, 0);
+	return 1;
 }
 
-/* control[0:len(control) - cut] and int(control[len(control) - 1]) */
-static PyObject *WT_Head(scriptFrame_t *f, PyObject *control, int cut) {
-	int len = Sf_Len(f, control);
-	return len < 0 ? NULL : Sf_Slice(f, control, 0, len - cut);
+/* range(n) of the slots of the kind of weapon */
+static byte WT_SlotCount(const nativeVal_t *weapon, long *count) {
+	nativeVal_t n = { 0 };
+	byte ok = WT_NumSlots(weapon, &n) && Mode_Range(&n, count);
+	Native_Free(&n);
+	return ok;
 }
 
-static PyObject *WT_Last(scriptFrame_t *f, PyObject *control) {
-	int len = Sf_Len(f, control);
-	return Sf_ToInt(f, len < 0 ? NULL : Sf_Item(f, control, len - 1));
+/* control[0:len(control) - cut] */
+static byte WT_Head(const nativeVal_t *control, int cut, nativeVal_t *out) {
+	int len = Native_Size(control);
+	return len >= 0 && Native_Slice(control, 0, len - cut, out);
 }
 
-/* exec(code) in a function of the module that imported HangarTab; the lines "HangarTab.prevShip.<name> = <literal>"
- * and "HangarTab.prevShip.<name> = 1 - HangarTab.prevShip.<name>" made directly */
-static void WT_Exec(scriptFrame_t *f, PyObject *code) {
+/* control[len(control) - back] as a copy */
+static byte WT_Char(const nativeVal_t *control, int back, nativeVal_t *out) {
+	nativeVal_t tmp;
+	int len = Native_Size(control);
+	const nativeVal_t *c = len >= 0 ? Native_GetItem(control, len - back, 1, &tmp) : NULL;
+	if (!c) {
+		return 0;
+	}
+	Native_Copy(out, c);
+	if (c == &tmp) {
+		Native_Free(&tmp);
+	}
+	return 1;
+}
+
+/* int(control[len(control) - 1]) */
+static byte WT_Last(const nativeVal_t *control, nativeVal_t *out) {
+	nativeVal_t c = { 0 };
+	byte ok = WT_Char(control, 1, &c) && Native_ToInt(&c, out);
+	Native_Free(&c);
+	return ok;
+}
+
+/* a == b, a > b, a < b of the script: 1 or 0, -1 with the error */
+static int WT_Cmp(const nativeVal_t *a, const nativeVal_t *b, char op) {
+	int c = Native_Compare(a, b);
+	if (PyErr_Occurred()) {
+		return -1;
+	}
+	return op == '=' ? c == 0 : op == '!' ? c != 0 : op == '>' ? c > 0 : c < 0;
+}
+
+static int WT_CmpI(const nativeVal_t *a, long i, char op) {
+	nativeVal_t b;
+	Native_SetInt(&b, i);
+	return WT_Cmp(a, &b, op);
+}
+
+/*
+ * exec(code) in a function of the module that imported HangarTab: the lines "HangarTab.prevShip.<name> = <literal>"
+ * and "HangarTab.prevShip.<name> = 1 - HangarTab.prevShip.<name>" made directly; a text in another form (made of
+ * table values a test changed) goes to the exec line reader with its errors (OBJLIB 6, STAGE 7)
+ */
+static byte WT_Exec(const nativeVal_t *code) {
 	static const char ship[] = "HangarTab.prevShip.";
 	const int sl = (int)sizeof(ship) - 1;
-	PyObject *hangar = Sf_Keep(f, f->failed ? NULL : PyImport_ImportModule("HangarTab"));
-	PyObject *mod = hangar ? Sf_Keep(f, PyImport_ImportModule(MOD)) : NULL;
-	const char *s = mod && code && PyString_Check(code) ? PyString_AsString(code) : NULL;
-	const char *eq = s && (int)strlen(s) == PyString_Size(code) && !strncmp(s, ship, sl) ? strstr(s, " = ") : NULL;
-	char attr[0x40];
+	if (!Mode_Import("HangarTab") || !Mode_Import(MOD)) {
+		return 0;
+	}
+	const char *s = Native_Text(code);
+	const char *eq = (int)strlen(s) == code->n && !strncmp(s, ship, sl) ? strstr(s, " = ") : NULL;
+	char attr[WT_NAME];
 	int len = eq ? (int)(eq - s) - sl : 0;
 	if (eq && len < (int)sizeof(attr) && Script_IsName(s + sl, len)) {
 		const char *rhs = eq + 3;
-		PyObject *v;
+		nativeVal_t v = { 0 }, cur = { 0 }, one;
+		byte ok = 1, taken = 1;
 		memcpy(attr, s + sl, len);
 		attr[len] = '\0';
 		if (!strncmp(rhs, "1 - ", 4) && !strncmp(rhs + 4, ship, sl) && !strcmp(rhs + 4 + sl, attr)) {
-			v = Sf_Op(f, Sf_Int(f, 1), '-', Sf_Attr(f, Sf_Attr(f, hangar, "prevShip"), attr));
+			Native_SetInt(&one, 1);
+			ok = Mode_ShipGet(attr, &cur) && Native_Arith('-', &one, &cur, &v);
 		} else {
-			v = Script_Literal(PyModule_GetDict(mod), rhs);
-			v = v ? Sf_Keep(f, v) : NULL;
+			taken = Native_Literal(rhs, &v);
 		}
-		if (v || f->failed) {
-			Sf_SetAttr(f, Sf_Attr(f, hangar, "prevShip"), attr, v);
-			return;
+		if (taken) {
+			ok = ok && Mode_ShipSet(attr, &v);
+			Native_Free(&v);
+			Native_Free(&cur);
+			return ok;
 		}
 	}
-	Sf_Exec(f, code, MOD, Sf_Build(f, "{s:O}", "HangarTab", hangar));
+	scriptFrame_t f = { .n = 0 };
+	PyObject *hangar = Sf_Keep(&f, PyImport_ImportModule("HangarTab"));
+	PyObject *text = Sf_Keep(&f, hangar ? PyString_FromStringAndSize(s, code->n) : NULL);
+	Sf_Exec(&f, text, MOD, Sf_Build(&f, "{s:O}", "HangarTab", hangar));
+	return Sf_Done(&f, NULL), !f.failed;
+}
+
+/* the exec text prefix + a + middle + b of the script (a and b texts or other values, as + takes them) */
+static byte WT_ExecCat(const char *prefix, const nativeVal_t *a, const char *middle, const nativeVal_t *b) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *code = Mode_V(&t);
+	byte ok = b ? Mode_Cat(&t, code, 4, Mode_S(&t, prefix), a, Mode_S(&t, middle), b) :
+		Mode_Cat(&t, code, 3, Mode_S(&t, prefix), a, Mode_S(&t, middle));
+	return Mode_Done(&t, ok && WT_Exec(code));
 }
 
 /* a sound of the Sound module played: SSound.Play(Sound.<name>Sound, Sound.<name>Volume) */
-static void WT_Sound(scriptFrame_t *f, const char *name) {
+static byte WT_Sound(const char *name) {
 	char snd[0x40], vol[0x40];
 	Str_Printf(snd, sizeof(snd), "%sSound", name);
 	Str_Printf(vol, sizeof(vol), "%sVolume", name);
-	PyObject *s = Sf_Mod(f, "Sound", snd);
-	Sf_Ask(f, "SSound", "Play", "(OO)", s, Sf_Mod(f, "Sound", vol));
+	return Mode_Sound(snd, vol);
 }
 
-/* the range of a count of the script */
-static long WT_Range(scriptFrame_t *f, PyObject *n) {
-	long count = 0;
-	Sf_Check(f, !f->failed && Script_Range(n, &count));
-	return f->failed ? 0 : count;
+/* ShipEdit.IsEditingMultiplayer() into *out */
+static byte WT_Multi(nativeVal_t *out) {
+	/* OBJLIB 3 */
+	return Native_CallMod("ShipEdit", "IsEditingMultiplayer", out, "");
+}
+
+/* ShipEdit.IsEditingMultiplayer() != 1 (the single player money): 1 or 0, -1 with the error */
+static int WT_Single(void) {
+	nativeVal_t v = { 0 };
+	int r = WT_Multi(&v) ? WT_CmpI(&v, 1, '!') : -1;
+	Native_Free(&v);
+	return r;
+}
+
+/* the truth of ShipEdit.IsEditingMultiplayer(): 1 or 0, -1 with the error */
+static int WT_IsMulti(void) {
+	nativeVal_t v = { 0 };
+	int r = WT_Multi(&v) ? Native_True(&v) : -1;
+	Native_Free(&v);
+	return r;
+}
+
+/* `import a, b, ...` of a function of the script (the names end with NULL; OBJLIB 6: module loading stays with the
+ * module objects until then) */
+static byte WT_Import(const char *const *names) {
+	return Script_Import(names);
 }
 
 /* DoNothing(id, control) */
@@ -222,90 +371,139 @@ static PyObject *WT_DoNothing(PyObject *self, PyObject *args) {
 
 /* ShowWeightPrediction(id, control, lostfocus): the mass and boost after loading or unloading the slot; whether the
  * slot was loaded */
-static PyObject *WT_ShowWeightPrediction(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { .n = 0 };
-	int id;
-	PyObject *control, *lost;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOO", &id, &control, &lost)) {
-		return NULL;
+static byte WT_WeightPrediction(int id, const nativeVal_t *control, nativeVal_t *out) {
+	static const char *const mods[] = { "HangarTab", "ShipMaker", NULL };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *weapon = Mode_V(&t), *num = Mode_V(&t), *loaded = Mode_V(&t), *w = Mode_V(&t), *am = Mode_V(&t);
+	nativeVal_t *mass = Mode_V(&t), *weight = Mode_V(&t);
+	if (!WT_Import(mods) || !WT_Head(control, 5, weapon) || !WT_Last(control, num) || !WT_Loaded(num, weapon, loaded)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "HangarTab");
-	Sf_Import(&f, "ShipMaker");
-	PyObject *weapon = WT_Head(&f, control, 5);
-	PyObject *num = WT_Last(&f, control);
-	PyObject *loaded = WT_ShipS(&f, "Weap", WT_NameId(&f, num, weapon));
-	int on = Sf_True(&f, loaded);
-	if (on >= 0) {
-		WT_Visible(&f, id, on ? "WeightDown" : "WeightUp", 1);
-		WT_Visible(&f, id, "WeightBack", 1);
-		WT_Visible(&f, id, on ? "BoostDown" : "BoostUp", 1);
-		WT_Visible(&f, id, "BoostBack", 1);
+	byte on = Native_True(loaded);
+	WT_Visible(id, on ? "WeightDown" : "WeightUp", 1);
+	WT_Visible(id, "WeightBack", 1);
+	WT_Visible(id, on ? "BoostDown" : "BoostUp", 1);
+	WT_Visible(id, "BoostBack", 1);
+	/* OBJLIB 3 */
+	if (!Native_CallMod("ShipMaker", "GetWeapon", w, "v", weapon) || !Mode_ShipGet("AcMass", am) || !Native_ToInt(am, mass) ||
+		!Native_Arith(Native_True(loaded) ? '-' : '+', mass, w, weight) ||
+		!Native_CallMod("HangarTab", "ShowBoostPrediction", NULL, "iv", (long)id, weight)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *w = Sf_Ask(&f, "ShipMaker", "GetWeapon", "(O)", weapon);
-	PyObject *weight = Sf_ToInt(&f, WT_Ship(&f, "AcMass"));
-	on = Sf_True(&f, loaded);
-	weight = Sf_Op(&f, weight, on ? '-' : '+', w);
-	Sf_Ask(&f, "HangarTab", "ShowBoostPrediction", "(iO)", id, weight);
-	return Sf_Return(&f, loaded);
+	Native_Copy(out, loaded);
+	return Mode_Done(&t, 1);
 }
 
-/* HideWeightPrediction(id, control, lostfocus) */
-static PyObject *WT_HideWeightPrediction(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { .n = 0 };
-	int id;
-	PyObject *control, *lost;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOO", &id, &control, &lost)) {
-		return NULL;
+/* the adapters of the functions (id, control, lostfocus) and (id, control) */
+#define WT_ICO(fn, call) \
+	static PyObject *fn(PyObject *self, PyObject *args) { \
+		int id; \
+		PyObject *co, *lo; \
+		nativeVal_t control, lost, out = { 0 }; \
+		(void)self; \
+		if (!PyArg_ParseTuple(args, "iOO", &id, &co, &lo)) { \
+			return NULL; \
+		} \
+		Native_Arg(co, &control); \
+		Native_Arg(lo, &lost); \
+		byte ok = (call); \
+		Native_Free(&control); \
+		Native_Free(&lost); \
+		return Mode_Return(ok, &out); \
 	}
-	WT_Run(&f, id, "hideweight", NULL);
-	return Sf_None(&f);
-}
+
+#define WT_IC(fn, call) \
+	static PyObject *fn(PyObject *self, PyObject *args) { \
+		int id; \
+		PyObject *co; \
+		nativeVal_t control; \
+		(void)self; \
+		if (!PyArg_ParseTuple(args, "iO", &id, &co)) { \
+			return NULL; \
+		} \
+		Native_Arg(co, &control); \
+		byte ok = (call); \
+		Native_Free(&control); \
+		return Mode_Result(ok); \
+	}
+
+#define WT_I(fn, call) \
+	static PyObject *fn(PyObject *self, PyObject *args) { \
+		int id; \
+		(void)self; \
+		return PyArg_ParseTuple(args, "i", &id) ? Mode_Result(call) : NULL; \
+	}
+
+WT_ICO(WT_ShowWeightPrediction, ((void)lost, WT_WeightPrediction(id, &control, &out)))
+WT_ICO(WT_HideWeightPrediction, ((void)control, (void)lost, WT_Run(id, "hideweight", NULL)))
 
 /* the tab behind a description as wide as its text */
-static void WT_FitTab(scriptFrame_t *f, int id, const char *text, const char *tab, int margin) {
-	double size = margin + Sf_ScorerGet(f, id, text, "SizeX");
+static void WT_FitTab(int id, const char *text, const char *tab, int margin) {
+	double size = margin + Script_GetNum(id, text, "SizeX");
 	if (margin == 40) {
-		Sf_ScorerNum(f, id, text, "MinX", 590 - size + 10);
+		Script_SetNum(id, text, "MinX", 590 - size + 10);
 	}
-	Sf_ScorerNum(f, id, tab, "SizeX", size - 2);
-	Sf_ScorerNum(f, id, tab, "X", 590 - size);
+	Script_SetNum(id, tab, "SizeX", size - 2);
+	Script_SetNum(id, tab, "X", 590 - size);
+}
+
+/* the text of the value added to b (a text as it is, another value as its repr) */
+static void WT_Add(nativeBuf_t *b, const nativeVal_t *v) {
+	Native_Repr(b, v, NR_STR);
 }
 
 /* ShowWeaponDesc(id, control, lostfocus): name, ammo, countermeasure, mass and cost of the weapon */
-static PyObject *WT_ShowWeaponDesc(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { .n = 0 };
-	int id;
-	PyObject *control, *lost;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOO", &id, &control, &lost)) {
-		return NULL;
+static byte WT_ShowWeaponDesc(int id, const nativeVal_t *control) {
+	static const char *const mods[] = { "ShipEdit", "ShipMaker", "string", NULL };
+	static const char *const labels[5] = { "ShipEdit_Weapon", "ShipEdit_Ammo", "ShipEdit_Countermeasure", "ShipEdit_Weight",
+		"ShipEdit_Cost" };
+	static const char *const parts[3] = { "Name", "Ammo", "Countermeasure" };
+	static const char *const tables[2] = { "WeaponValues", "WeaponCosts" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *base = Mode_V(&t), *v[10];
+	if (!WT_Import(mods) || !Native_Arith('+', Mode_S(&t, "ShipEdit_"), control, base)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "ShipEdit");
-	Sf_Import(&f, "ShipMaker");
-	Sf_Import(&f, "string");
-	PyObject *base = Sf_Cat(&f, "sO", "ShipEdit_", control);
-	PyObject *t[10];
-	t[0] = WT_Lang(&f, "ShipEdit_Weapon");
-	t[1] = Sf_Lang(&f, Sf_Cat(&f, "Os", base, "Name"));
-	t[2] = WT_Lang(&f, "ShipEdit_Ammo");
-	t[3] = Sf_Lang(&f, Sf_Cat(&f, "Os", base, "Ammo"));
-	t[4] = WT_Lang(&f, "ShipEdit_Countermeasure");
-	t[5] = Sf_Lang(&f, Sf_Cat(&f, "Os", base, "Countermeasure"));
-	t[6] = WT_Lang(&f, "ShipEdit_Weight");
-	t[7] = Sf_Repr(&f, Sf_GetItem(&f, Sf_Mod(&f, "ShipMaker", "WeaponValues"), WT_Upper(&f, control)));
-	t[8] = WT_Lang(&f, "ShipEdit_Cost");
-	t[9] = Sf_Repr(&f, Sf_GetItem(&f, Sf_Mod(&f, "ShipMaker", "WeaponCosts"), WT_Upper(&f, control)));
-	PyObject *desc = Sf_Cat(&f, "OsOsOsOsOsOsOsOsOsO", t[0], ": ", t[1], "\n", t[2], ": ", t[3], "\n", t[4], ": ", t[5],
-		"\n", t[6], ": ", t[7], "\n", t[8], ": ", t[9]);
-	Sf_ScorerSet(&f, id, "WeaponDesc", "Text", desc);
-	Sf_ScorerNum(&f, id, "WeaponDesc", "XAlignRight", 580);
-	WT_FitTab(&f, id, "WeaponDesc", "WeaponDescTab", 40);
-	WT_Visible(&f, id, "WeaponDesc", 1);
-	WT_Visible(&f, id, "WeaponDescTab", 1);
-	return Sf_None(&f);
+	for (int i = 0; i < 10; i++) {
+		v[i] = Mode_V(&t);
+		if (i % 2 == 0) {
+			Mode_Lang(labels[i / 2], v[i]);
+			continue;
+		}
+		int mark = t.n;
+		nativeVal_t *key = Mode_V(&t), *tab = Mode_V(&t), *up = Mode_V(&t), *x = Mode_V(&t);
+		byte ok = i < 6 ? Native_Arith('+', base, Mode_S(&t, parts[i / 2]), key) && WT_LangV(key, v[i]) :
+			Mode_ModVar("ShipMaker", tables[i / 2 - 3], tab) && Native_Upper(control, up) && Native_Subscript(tab, up, x);
+		if (ok && i >= 6) {
+			Mode_Repr(x, v[i]);
+		}
+		Mode_Release(&t, mark);
+		if (!ok) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	nativeBuf_t b;
+	Native_BufInit(&b);
+	for (int i = 0; i < 10; i += 2) {
+		if (i) {
+			Native_BufAdd(&b, "\n", 1);
+		}
+		WT_Add(&b, v[i]);
+		Native_BufAdd(&b, ": ", 2);
+		WT_Add(&b, v[i + 1]);
+	}
+	nativeVal_t *desc = Mode_V(&t);
+	Native_SetText(desc, b.p, b.len);
+	Native_BufFree(&b);
+	Script_SetStr(id, "WeaponDesc", "Text", Native_Text(desc));
+	Script_SetNum(id, "WeaponDesc", "XAlignRight", 580);
+	WT_FitTab(id, "WeaponDesc", "WeaponDescTab", 40);
+	WT_Visible(id, "WeaponDesc", 1);
+	WT_Visible(id, "WeaponDescTab", 1);
+	return Mode_Done(&t, 1);
 }
+
+WT_ICO(WT_ShowWeaponDescPy, ((void)lost, WT_ShowWeaponDesc(id, &control)))
 
 /* HideWeaponDesc(id, control, gainfocus) and HideWeaponUpgradeDesc(id, control, gainfocus) */
 static PyObject *WT_HideTwo(PyObject *args, const char *a, const char *b) {
@@ -330,775 +528,1050 @@ static PyObject *WT_HideWeaponUpgradeDesc(PyObject *self, PyObject *args) {
 }
 
 /* ShowWeaponUpgradeDesc(id, control, lostfocus): the text of the upgrade of the tile */
-static PyObject *WT_ShowWeaponUpgradeDesc(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { .n = 0 };
-	int id;
-	PyObject *control, *lost;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOO", &id, &control, &lost)) {
-		return NULL;
+static byte WT_ShowWeaponUpgradeDesc(int id, const nativeVal_t *control) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *prev = Mode_V(&t), *head = Mode_V(&t), *name = Mode_V(&t), *key = Mode_V(&t), *text = Mode_V(&t);
+	if (!Mode_Import("ShipEdit") || !WT_G("prevWeapon", prev) || !WT_Head(control, 4, head) ||
+		!Native_Arith('+', prev, head, name)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "ShipEdit");
-	PyObject *name = Sf_Op(&f, WT_Global(&f, "prevWeapon"), '+', WT_Head(&f, control, 4));
-	Sf_ScorerNum(&f, id, "WeaponUpgradeDesc", "IsNameValuePair", 0);
-	Sf_ScorerSet(&f, id, "WeaponUpgradeDesc", "Text", Sf_Lang(&f, Sf_Cat(&f, "sO", "ShipEdit_", name)));
-	Sf_ScorerNum(&f, id, "WeaponUpgradeDesc", "XAlignRight", 583);
-	WT_Visible(&f, id, "WeaponUpgradeDesc", 1);
-	double sizeY = Sf_ScorerGet(&f, id, "WeaponUpgradeDesc", "SizeY");
-	WT_FitTab(&f, id, "WeaponUpgradeDesc", "WeaponUpgradeDescTab", 30);
+	Script_SetNum(id, "WeaponUpgradeDesc", "IsNameValuePair", 0);
+	if (!Native_Arith('+', Mode_S(&t, "ShipEdit_"), name, key) || !WT_LangV(key, text)) {
+		return Mode_Done(&t, 0);
+	}
+	Script_SetStr(id, "WeaponUpgradeDesc", "Text", Native_Text(text));
+	Script_SetNum(id, "WeaponUpgradeDesc", "XAlignRight", 583);
+	WT_Visible(id, "WeaponUpgradeDesc", 1);
+	double sizeY = Script_GetNum(id, "WeaponUpgradeDesc", "SizeY");
+	WT_FitTab(id, "WeaponUpgradeDesc", "WeaponUpgradeDescTab", 30);
 	/* TabQuadSize + TabQuadSize / 2 */
-	Sf_ScorerNum(&f, id, "WeaponUpgradeDescTab", "SizeY", sizeY + 14 + 7);
-	WT_Visible(&f, id, "WeaponUpgradeDescTab", 1);
-	return Sf_None(&f);
+	Script_SetNum(id, "WeaponUpgradeDescTab", "SizeY", sizeY + 14 + 7);
+	WT_Visible(id, "WeaponUpgradeDescTab", 1);
+	return Mode_Done(&t, 1);
 }
+
+WT_ICO(WT_ShowWeaponUpgradeDescPy, ((void)lost, WT_ShowWeaponUpgradeDesc(id, &control)))
 
 /* ShowSlotMarker(id, control, gainfocus): the marker on the slot of the ship, the mass and cost predictions */
-static PyObject *WT_ShowSlotMarker(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { .n = 0 };
-	int id;
-	PyObject *control, *lost;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOO", &id, &control, &lost)) {
-		return NULL;
+static byte WT_ShowSlotMarker(int id, const nativeVal_t *control, const nativeVal_t *lost) {
+	static const char *const mods[] = { "HangarTab", "ShipMaker", "string", NULL };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *sprite = Mode_V(&t), *focus = Mode_V(&t), *num = Mode_V(&t), *prev = Mode_V(&t), *nameId = Mode_V(&t);
+	nativeVal_t *pos = Mode_V(&t), *uv = Mode_V(&t), *loaded = Mode_V(&t), *head = Mode_V(&t), *up = Mode_V(&t);
+	nativeVal_t *costs = Mode_V(&t), *c = Mode_V(&t), *cost = Mode_V(&t), *text = Mode_V(&t), *ci = Mode_V(&t);
+	nativeVal_t *money = Mode_V(&t);
+	nativeVal_t *u = Mode_V(&t), *v = Mode_V(&t);
+	const char *item;
+	if (!WT_Import(mods) || !Mode_ItemText(control, &item)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "HangarTab");
-	Sf_Import(&f, "ShipMaker");
-	Sf_Import(&f, "string");
-	const char *item = Sf_Text(&f, control);
-	WT_Visible(&f, id, "SlotMarker", 1);
-	PyObject *sprite = Sf_Ask(&f, "SScorer", "Get", "(iss)", id, item, "SpriteIndex");
-	int blocked = Sf_EqI(&f, sprite, 16);
-	if (blocked >= 0) {
-		PyObject *v = Sf_Ask(&f, "SScorer", "Get", "(iss)", id, item, blocked ? "SpriteIndex" : "FocusSpriteIndex");
-		Sf_ScorerSet(&f, id, "SlotMarker", "FocusSpriteIndex", v);
+	WT_Visible(id, "SlotMarker", 1);
+	Mode_ScorerGet(id, item, "SpriteIndex", sprite);
+	int blocked = WT_CmpI(sprite, 16, '=');
+	if (blocked < 0) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *num = WT_Last(&f, control);
-	PyObject *nameId = WT_NameId(&f, num, WT_Global(&f, "prevWeapon"));
-	PyObject *uv[2];
-	if (Sf_Unpack(&f, Sf_Ask(&f, "SScorer", "Get2DPos", "(O)", WT_ShipS(&f, "WPos", nameId)), 2, uv)) {
-		Sf_ScorerSet(&f, id, "SlotMarker", "X", uv[0]);
-		Sf_ScorerSet(&f, id, "SlotMarker", "Y", uv[1]);
+	Mode_ScorerGet(id, item, blocked ? "SpriteIndex" : "FocusSpriteIndex", focus);
+	if (!Mode_ScorerPut(id, "SlotMarker", "FocusSpriteIndex", focus) || !WT_Last(control, num) || !WT_G("prevWeapon", prev) ||
+		!WT_NameId(num, prev, nameId) || !WT_ShipS("WPos", nameId, pos) || !Mode_Get2DPos(pos, uv)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *loaded = Sf_Own(&f, MOD, "ShowWeightPrediction", "(iOO)", id, control, lost);
-	PyObject *name = WT_Upper(&f, WT_Head(&f, control, 5));
-	PyObject *cost = Sf_Repr(&f, Sf_GetItem(&f, Sf_Mod(&f, "ShipMaker", "WeaponCosts"), name));
-	int on = Sf_True(&f, loaded);
-	if (on > 0) {
-		Sf_ScorerNum(&f, id, "MoneyPredict", "Green", 255);
-		Sf_ScorerSet(&f, id, "MoneyPredict", "Text", Sf_Cat(&f, "sO", "+", cost));
-	} else if (on == 0) {
-		PyObject *money = Sf_Ask(&f, "Scrap", "GetMoney", "()");
-		int poor = Sf_Compare(&f, money, "<", Sf_ToInt(&f, cost));
-		if (poor >= 0) {
-			Sf_ScorerNum(&f, id, "MoneyPredict", "Green", poor ? 0 : 255);
+	nativeVal_t pair[2];
+	if (!Mode_Unpack(uv, 2, pair)) {
+		return Mode_Done(&t, 0);
+	}
+	*u = pair[0];
+	*v = pair[1];
+	/* OBJLIB 3: the module's ShowWeightPrediction as its global */
+	if (!Mode_ScorerPut(id, "SlotMarker", "X", u) || !Mode_ScorerPut(id, "SlotMarker", "Y", v) ||
+		!Native_CallGlobal(MOD, "ShowWeightPrediction", loaded, "ivv", (long)id, control, lost) ||
+		!WT_Head(control, 5, head) || !Native_Upper(head, up) || !Mode_ModVar("ShipMaker", "WeaponCosts", costs) ||
+		!Native_Subscript(costs, up, c)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_Repr(c, cost);
+	if (Native_True(loaded)) {
+		Script_SetNum(id, "MoneyPredict", "Green", 255);
+		if (!Native_Arith('+', Mode_S(&t, "+"), cost, text)) {
+			return Mode_Done(&t, 0);
 		}
-		Sf_ScorerSet(&f, id, "MoneyPredict", "Text", Sf_Cat(&f, "sO", "-", cost));
+	} else {
+		Native_SetInt(money, Mode_GetMoney());
+		if (!Native_ToInt(cost, ci)) {
+			return Mode_Done(&t, 0);
+		}
+		int poor = WT_Cmp(money, ci, '<');
+		if (poor < 0) {
+			return Mode_Done(&t, 0);
+		}
+		Script_SetNum(id, "MoneyPredict", "Green", poor ? 0 : 255);
+		if (!Native_Arith('+', Mode_S(&t, "-"), cost, text)) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	WT_Visible(&f, id, "MoneyPredict", 1);
-	return Sf_None(&f);
+	Script_SetStr(id, "MoneyPredict", "Text", Native_Text(text));
+	WT_Visible(id, "MoneyPredict", 1);
+	return Mode_Done(&t, 1);
 }
+
+WT_ICO(WT_ShowSlotMarkerPy, WT_ShowSlotMarker(id, &control, &lost))
 
 /* HideSlotMarker(id, control, gainfocus) */
-static PyObject *WT_HideSlotMarker(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { .n = 0 };
-	int id;
-	PyObject *control, *gain;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOO", &id, &control, &gain)) {
-		return NULL;
-	}
-	WT_Visible(&f, id, "SlotMarker", 0);
-	WT_Visible(&f, id, "MoneyPredict", 0);
-	Sf_Own(&f, MOD, "HideWeightPrediction", "(iOO)", id, control, gain);
-	return Sf_None(&f);
+static byte WT_HideSlotMarker(int id, const nativeVal_t *control, const nativeVal_t *gain) {
+	WT_Visible(id, "SlotMarker", 0);
+	WT_Visible(id, "MoneyPredict", 0);
+	/* OBJLIB 3 */
+	return Native_CallGlobal(MOD, "HideWeightPrediction", NULL, "ivv", (long)id, control, gain);
 }
 
+WT_ICO(WT_HideSlotMarkerPy, WT_HideSlotMarker(id, &control, &lost))
+
 /* a free slot of the weapon: blocked (DoNothing) when the weapon would make the ship too heavy, else loadable */
-static void WT_FreeSlot(scriptFrame_t *f, int id, const char *name, PyObject *weapon, int heavy, const char *highlight) {
-	if (heavy > 0) {
-		Sf_ScorerNum(f, id, name, "SpriteIndex", 16);
-		Sf_ScorerNum(f, id, name, "FocusSpriteIndex", 18);
-		Sf_ScorerNum(f, id, name, "HighLight", 1);
-		Sf_ScorerStr(f, id, name, "OnAccept", "WeaponsTab.DoNothing");
-		Sf_ScorerSet(f, id, name, "Hint", WT_WeaponHint(f, "HINT_Weapons5", 0, weapon));
-		Sf_ScorerNum(f, id, name, "MaxHintLineWidth", 550);
-	} else if (heavy == 0) {
-		Sf_ScorerNum(f, id, name, "SpriteIndex", 17);
-		Sf_ScorerNum(f, id, name, "FocusSpriteIndex", 18);
-		Sf_ScorerNum(f, id, name, highlight, 1);
-		Sf_ScorerStr(f, id, name, "OnAccept", "WeaponsTab.LoadWeapon");
+static byte WT_FreeSlot(int id, const char *name, const nativeVal_t *weapon, int heavy, const char *highlight) {
+	if (heavy) {
+		Script_SetNum(id, name, "SpriteIndex", 16);
+		Script_SetNum(id, name, "FocusSpriteIndex", 18);
+		Script_SetNum(id, name, "HighLight", 1);
+		Script_SetStr(id, name, "OnAccept", "WeaponsTab.DoNothing");
+		return WT_PutWeaponHint(id, name, "HINT_Weapons5", 0, weapon);
 	}
+	Script_SetNum(id, name, "SpriteIndex", 17);
+	Script_SetNum(id, name, "FocusSpriteIndex", 18);
+	Script_SetNum(id, name, highlight, 1);
+	Script_SetStr(id, name, "OnAccept", "WeaponsTab.LoadWeapon");
+	return 1;
+}
+
+/* int(HangarTab.prevShip.AcMass) and the mass limit int(ShipMaker.ShipTon[string.upper(Model)][2]) */
+static byte WT_Masses(nativeVal_t *weight, nativeVal_t *max) {
+	nativeVal_t am = { 0 }, top = { 0 };
+	byte ok = Mode_ShipGet("AcMass", &am) && Native_ToInt(&am, weight) && Mode_ShipTable("ShipTon", 2, &top) &&
+		Native_ToInt(&top, max);
+	Native_Free(&am);
+	Native_Free(&top);
+	return ok;
+}
+
+/* weight + ShipMaker.WeaponValues[string.upper(weapon)] > max: 1 or 0, -1 with the error */
+static int WT_Over(const nativeVal_t *weight, const nativeVal_t *max, const nativeVal_t *weapon) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *values = Mode_V(&t), *up = Mode_V(&t), *w = Mode_V(&t), *sum = Mode_V(&t);
+	int r = Mode_ModVar("ShipMaker", "WeaponValues", values) && Native_Upper(weapon, up) && Native_Subscript(values, up, w) &&
+		Native_Arith('+', weight, w, sum) ? WT_Cmp(sum, max, '>') : -1;
+	Mode_Done(&t, 1);
+	return r;
 }
 
 /* int(HangarTab.prevShip.AcMass) + ShipMaker.WeaponValues[string.upper(weapon)] > the mass limit of the ship */
-static int WT_TooHeavy(scriptFrame_t *f, PyObject *weapon) {
-	PyObject *weight = Sf_ToInt(f, WT_Ship(f, "AcMass"));
-	PyObject *model = WT_Upper(f, WT_Ship(f, "Model"));
-	PyObject *max = Sf_ToInt(f, Sf_Item(f, Sf_GetItem(f, Sf_Mod(f, "ShipMaker", "ShipTon"), model), 2));
-	PyObject *w = Sf_GetItem(f, Sf_Mod(f, "ShipMaker", "WeaponValues"), WT_Upper(f, weapon));
-	return Sf_Compare(f, Sf_Op(f, weight, '+', w), ">", max);
+static int WT_TooHeavy(const nativeVal_t *weapon) {
+	nativeVal_t weight = { 0 }, max = { 0 };
+	int r = WT_Masses(&weight, &max) ? WT_Over(&weight, &max, weapon) : -1;
+	Native_Free(&weight);
+	Native_Free(&max);
+	return r;
 }
 
-/* the int(HangarTab.prevShip.AcMass) and mass limit FillSlots reads before its test, then the test */
-static int WT_TooHeavyFill(scriptFrame_t *f, PyObject *loaded, PyObject *weapon) {
-	PyObject *weight = Sf_ToInt(f, WT_Ship(f, "AcMass"));
-	PyObject *model = WT_Upper(f, WT_Ship(f, "Model"));
-	PyObject *max = Sf_ToInt(f, Sf_Item(f, Sf_GetItem(f, Sf_Mod(f, "ShipMaker", "ShipTon"), model), 2));
-	int empty = Sf_EqI(f, loaded, 0);
-	if (empty <= 0) {
-		return empty;
+/* the mass and limit FillSlots reads before its test, then the test of an empty slot (0 for a loaded one) */
+static int WT_TooHeavyFill(const nativeVal_t *loaded, const nativeVal_t *weapon) {
+	nativeVal_t weight = { 0 }, max = { 0 };
+	int r = WT_Masses(&weight, &max) ? WT_CmpI(loaded, 0, '=') : -1;
+	if (r > 0) {
+		r = WT_Over(&weight, &max, weapon);
 	}
-	PyObject *w = Sf_GetItem(f, Sf_Mod(f, "ShipMaker", "WeaponValues"), WT_Upper(f, weapon));
-	return Sf_Compare(f, Sf_Op(f, weight, '+', w), ">", max);
+	Native_Free(&weight);
+	Native_Free(&max);
+	return r;
+}
+
+/* the hint HINT_Weapons4 (loaded > 0) or HINT_Weapons3 of a slot: 0 with the error */
+static byte WT_SlotHint(int id, const char *name, const nativeVal_t *loaded, const nativeVal_t *weapon) {
+	int full = WT_CmpI(loaded, 0, '>');
+	return full >= 0 && WT_PutWeaponHint(id, name, full ? "HINT_Weapons4" : "HINT_Weapons3", 1, weapon);
 }
 
 /* LoadWeapon(id, control): the slot loaded or unloaded, paid for; the other free slots checked against the mass */
-static PyObject *WT_LoadWeapon(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { .n = 0 };
-	int id;
-	PyObject *control;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO", &id, &control)) {
-		return NULL;
+static byte WT_LoadWeapon(int id, const nativeVal_t *control) {
+	static const char *const mods[] = { "HangarTab", "ShipMaker", "ShipEdit", "string", "Sound", NULL };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *weapon = Mode_V(&t), *num = Mode_V(&t), *nameId = Mode_V(&t), *costs = Mode_V(&t), *up = Mode_V(&t);
+	nativeVal_t *c = Mode_V(&t), *cost = Mode_V(&t), *had = Mode_V(&t), *money = Mode_V(&t), *ci = Mode_V(&t);
+	nativeVal_t *left = Mode_V(&t), *rep = Mode_V(&t), *name = Mode_V(&t), *isLoaded = Mode_V(&t);
+	const char *item;
+	if (!WT_Import(mods) || !WT_Head(control, 5, weapon) || !WT_Last(control, num) || !WT_NameId(num, weapon, nameId) ||
+		!Mode_ModVar("ShipMaker", "WeaponCosts", costs) || !Native_Upper(weapon, up) || !Native_Subscript(costs, up, c)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "HangarTab");
-	Sf_Import(&f, "ShipMaker");
-	Sf_Import(&f, "ShipEdit");
-	Sf_Import(&f, "string");
-	Sf_Import(&f, "Sound");
-	PyObject *weapon = WT_Head(&f, control, 5);
-	PyObject *num = WT_Last(&f, control);
-	PyObject *nameId = WT_NameId(&f, num, weapon);
-	PyObject *cost = Sf_Repr(&f, Sf_GetItem(&f, Sf_Mod(&f, "ShipMaker", "WeaponCosts"), WT_Upper(&f, weapon)));
-	int buy = Sf_True(&f, WT_ShipS(&f, "Weap", nameId));
-	buy = buy < 0 ? -1 : !buy;
-	PyObject *money = Sf_Ask(&f, "Scrap", "GetMoney", "()");
-	PyObject *left = Sf_Op(&f, money, buy ? '-' : '+', Sf_ToInt(&f, cost));
-	if (Sf_Compare(&f, Sf_Ask(&f, "ShipEdit", "IsEditingMultiplayer", "()"), "!=", Sf_Int(&f, 1)) > 0) {
-		if (Sf_Compare(&f, left, "<", Sf_Int(&f, 0)) != 0) {
-			return Sf_None(&f);
+	Mode_Repr(c, cost);
+	if (!WT_ShipS("Weap", nameId, had)) {
+		return Mode_Done(&t, 0);
+	}
+	byte buy = !Native_True(had);
+	Native_SetInt(money, Mode_GetMoney());
+	if (!Native_ToInt(cost, ci) || !Native_Arith(buy ? '-' : '+', money, ci, left)) {
+		return Mode_Done(&t, 0);
+	}
+	int single = WT_Single();
+	if (single < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (single) {
+		int poor = WT_CmpI(left, 0, '<');
+		if (poor) {
+			return Mode_Done(&t, poor == 1);
 		}
-		Sf_ScorerSet(&f, id, "Money", "Text", Sf_Repr(&f, left));
-		Sf_Ask(&f, "Scrap", "SetMoney", "(O)", left);
+		Mode_Repr(left, rep);
+		Script_SetStr(id, "Money", "Text", Native_Text(rep));
+		if (!Mode_SetMoney(left)) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	WT_Exec(&f, Sf_Cat(&f, "sOsO", "HangarTab.prevShip.Weap", nameId, " = 1 - HangarTab.prevShip.Weap", nameId));
-	Sf_Ask(&f, "ShipMaker", "SetShipParams", "(O)", WT_Ship(&f, "Name"));
-	Sf_Ask(&f, "HangarTab", "ShowShipInfo", "(i)", id);
-	PyObject *isLoaded = WT_ShipS(&f, "Weap", nameId);
-	const char *item = Sf_Text(&f, control);
-	int on = Sf_True(&f, isLoaded);
-	if (on >= 0) {
-		Sf_ScorerNum(&f, id, item, "SpriteIndex", on ? 19 : 17);
-		Sf_ScorerNum(&f, id, item, "FocusSpriteIndex", on ? 20 : 18);
-		WT_Sound(&f, on ? "ShipEditLoadWeapon" : "ShipEditUnLoad");
+	if (!WT_ExecCat("HangarTab.prevShip.Weap", nameId, " = 1 - HangarTab.prevShip.Weap", nameId) ||
+		!Mode_ShipGet("Name", name) || !Native_CallMod("ShipMaker", "SetShipParams", NULL, "v", name) ||
+		!Native_CallMod("HangarTab", "ShowShipInfo", NULL, "i", (long)id) || !WT_ShipS("Weap", nameId, isLoaded) ||
+		!Mode_ItemText(control, &item)) {
+		return Mode_Done(&t, 0);
 	}
-	long slots = WT_Range(&f, WT_NumSlots(&f, weapon));
-	for (long i = 0; i < slots && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *idx = Sf_Int(&f, i);
-		PyObject *has = WT_ShipS(&f, "Weap", WT_NameId(&f, idx, weapon));
-		int other = Sf_Compare(&f, idx, "!=", num);
+	byte on = Native_True(isLoaded);
+	Script_SetNum(id, item, "SpriteIndex", on ? 19 : 17);
+	Script_SetNum(id, item, "FocusSpriteIndex", on ? 20 : 18);
+	long slots;
+	if (!WT_Sound(on ? "ShipEditLoadWeapon" : "ShipEditUnLoad") || !WT_SlotCount(weapon, &slots)) {
+		return Mode_Done(&t, 0);
+	}
+	for (long i = 0; i < slots; i++) {
+		int mark = t.n;
+		nativeVal_t *idx = Mode_V(&t), *has = Mode_V(&t);
+		char slot[WT_NAME];
+		Native_SetInt(idx, i);
+		int other = WT_Loaded(idx, weapon, has) ? WT_Cmp(idx, num, '!') : -1;
 		if (other > 0) {
-			other = Sf_EqI(&f, has, 0);
+			other = WT_CmpI(has, 0, '=');
 		}
 		if (other > 0) {
-			char name[0x40];
-			WT_Slot(&f, name, sizeof(name), weapon, i);
-			int heavy = WT_TooHeavy(&f, weapon);
-			WT_FreeSlot(&f, id, name, weapon, heavy, "HighLight");
-			if (heavy == 0) {
-				Sf_ScorerSet(&f, id, name, "Hint", WT_WeaponHint(&f, "HINT_Weapons3", 1, weapon));
-				Sf_ScorerNum(&f, id, name, "MaxHintLineWidth", 550);
-			}
+			int heavy = WT_Slot(slot, weapon, i) ? WT_TooHeavy(weapon) : -1;
+			other = heavy < 0 ? -1 : (WT_FreeSlot(id, slot, weapon, heavy, "HighLight") &&
+				(heavy || WT_PutWeaponHint(id, slot, "HINT_Weapons3", 1, weapon))) ? 1 : -1;
 		}
-		Sf_Release(&f, mark);
+		Mode_Release(&t, mark);
+		if (other < 0) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	char name[0x40];
-	WT_Slot(&f, name, sizeof(name), weapon, PyInt_Check(num) ? PyInt_AsLong(num) : 0);
-	int full = Sf_Compare(&f, isLoaded, ">", Sf_Int(&f, 0));
-	if (full >= 0) {
-		Sf_ScorerSet(&f, id, name, "Hint", WT_WeaponHint(&f, full ? "HINT_Weapons4" : "HINT_Weapons3", 1, weapon));
-		Sf_ScorerNum(&f, id, name, "MaxHintLineWidth", 550);
+	char slot[WT_NAME];
+	byte ok = WT_Slot(slot, weapon, num->type == NV_INT ? num->i : 0) && WT_SlotHint(id, slot, isLoaded, weapon);
+	if (ok) {
+		Script_SetDefault(id, slot);
 	}
-	Sf_ScorerDefault(&f, id, name);
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
+WT_IC(WT_LoadWeaponPy, WT_LoadWeapon(id, &control))
+
 /* HideSlots(id, control): the slots and upgrades of the weapon hidden */
-static PyObject *WT_HideSlots(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { .n = 0 };
-	int id;
-	PyObject *control;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO", &id, &control)) {
-		return NULL;
+static byte WT_HideSlots(int id, const nativeVal_t *control) {
+	static const char *const rest[] = { "WeaponSlotText", "UpgradeText", "Upgrade1Tile", "Upgrade2Tile", "SlotMarker" };
+	nativeVal_t ship = { 0 }, none;
+	char name[WT_NAME];
+	Native_SetNone(&none);
+	if (!Mode_Import("HangarTab") || !Mode_PrevShip(&ship)) {
+		return 0;
 	}
-	Sf_Import(&f, "HangarTab");
-	char name[0x40];
-	if (Sf_Compare(&f, Sf_Mod(&f, "HangarTab", "prevShip"), "!=", Py_None) > 0) {
-		long slots = WT_Range(&f, WT_NumSlots(&f, control));
-		for (long i = 0; i < slots && !f.failed; i++) {
-			WT_Visible(&f, id, WT_Slot(&f, name, sizeof(name), control, i), 0);
+	int some = WT_Cmp(&ship, &none, '!');
+	Native_Free(&ship);
+	if (some > 0) {
+		long slots;
+		if (!WT_SlotCount(control, &slots)) {
+			return 0;
+		}
+		for (long i = 0; i < slots; i++) {
+			if (!WT_Slot(name, control, i)) {
+				return 0;
+			}
+			WT_Visible(id, name, 0);
 		}
 	}
-	WT_Visible(&f, id, WT_Join(&f, name, sizeof(name), control, "Upgrade1"), 0);
-	WT_Visible(&f, id, WT_Join(&f, name, sizeof(name), control, "Upgrade2"), 0);
-	static const char *const rest[] = { "WeaponSlotText", "UpgradeText", "Upgrade1Tile", "Upgrade2Tile", "SlotMarker" };
-	for (int i = 0; i < 5; i++) {
-		WT_Visible(&f, id, rest[i], 0);
+	if (some < 0 || !WT_Cat(name, "", control, "Upgrade1")) {
+		return 0;
 	}
-	return Sf_None(&f);
+	WT_Visible(id, name, 0);
+	if (!WT_Cat(name, "", control, "Upgrade2")) {
+		return 0;
+	}
+	WT_Visible(id, name, 0);
+	for (int i = 0; i < 5; i++) {
+		WT_Visible(id, rest[i], 0);
+	}
+	return 1;
+}
+
+WT_IC(WT_HideSlotsPy, WT_HideSlots(id, &control))
+
+/* fn(id, a, b) of a link function of Menu on texts of C */
+static byte WT_Link(PyObject *fn, int id, const char *a, const char *b) {
+	return Native_Call(fn, NULL, "iss", (long)id, a, b);
+}
+
+/* SScorer.Get(id, item, "HighLight") == 1: 1 or 0, -1 with the error */
+static int WT_Lit(int id, const char *item) {
+	nativeVal_t v;
+	Mode_ScorerGet(id, item, "HighLight", &v);
+	int r = WT_CmpI(&v, 1, '=');
+	Native_Free(&v);
+	return r;
 }
 
 /* the links of the upgrade tiles after FillSlots (single player) */
-static void WT_UpgradeLinks(scriptFrame_t *f, int id, PyObject *control, long slots, PyObject *linkLR, PyObject *linkUD,
+static byte WT_UpgradeLinks(int id, const nativeVal_t *control, long slots, PyObject *linkLR, PyObject *linkUD,
 	PyObject *unlinkLR) {
-	char last[0x40], first[0x40];
-	int has1 = Sf_EqI(f, Sf_Ask(f, "SScorer", "Get", "(iss)", id, "Upgrade1Tile", "HighLight"), 1);
-	int has2 = Sf_EqI(f, Sf_Ask(f, "SScorer", "Get", "(iss)", id, "Upgrade2Tile", "HighLight"), 1);
-	if (f->failed) {
-		return;
+	char last[WT_NAME], first[WT_NAME];
+	const char *c;
+	int has1 = WT_Lit(id, "Upgrade1Tile"), has2 = has1 < 0 ? -1 : WT_Lit(id, "Upgrade2Tile");
+	if (has2 < 0 || !Mode_ItemText(control, &c)) {
+		return 0;
 	}
-	const char *c = Sf_Text(f, control);
 	if (has1 || has2) {
-		Sf_Line(f, linkUD, "(iss)", id, "Upgrade1Tile", "Exit");
-		Sf_Line(f, linkUD, "(iss)", id, "Upgrade2Tile", "Exit");
-		Sf_ScorerStr(f, id, "Upgrade1Tile", "Up", c);
-		Sf_ScorerStr(f, id, "Upgrade2Tile", "Up", c);
+		if (!WT_Link(linkUD, id, "Upgrade1Tile", "Exit") || !WT_Link(linkUD, id, "Upgrade2Tile", "Exit")) {
+			return 0;
+		}
+		Script_SetStr(id, "Upgrade1Tile", "Up", c);
+		Script_SetStr(id, "Upgrade2Tile", "Up", c);
 	}
-	WT_Slot(f, last, sizeof(last), control, slots - 1);
-	WT_Slot(f, first, sizeof(first), control, 0);
+	if (!WT_Slot(last, control, slots - 1) || !WT_Slot(first, control, 0)) {
+		return 0;
+	}
 	if (has1 && has2) {
-		Sf_Line(f, linkLR, "(iss)", id, "Upgrade1Tile", "Upgrade2Tile");
-		Sf_Line(f, linkLR, "(iss)", id, last, "Upgrade1Tile");
-		Sf_Line(f, linkLR, "(iss)", id, "Upgrade2Tile", first);
-	} else if (has1 || has2) {
-		const char *tile = has1 ? "Upgrade1Tile" : "Upgrade2Tile";
-		Sf_Line(f, unlinkLR, "(iss)", id, "Upgrade1Tile", "Upgrade2Tile");
-		Sf_Line(f, linkLR, "(iss)", id, last, tile);
-		Sf_Line(f, linkLR, "(iss)", id, tile, first);
+		return WT_Link(linkLR, id, "Upgrade1Tile", "Upgrade2Tile") && WT_Link(linkLR, id, last, "Upgrade1Tile") &&
+			WT_Link(linkLR, id, "Upgrade2Tile", first);
 	}
+	if (has1 || has2) {
+		const char *tile = has1 ? "Upgrade1Tile" : "Upgrade2Tile";
+		return WT_Link(unlinkLR, id, "Upgrade1Tile", "Upgrade2Tile") && WT_Link(linkLR, id, last, tile) &&
+			WT_Link(linkLR, id, tile, first);
+	}
+	return 1;
+}
+
+/* the slots of FillSlots from x on: placed, shown, free ones checked against the mass, their hints */
+static byte WT_PlaceSlots(int id, const nativeVal_t *control, long slots, double x, double y) {
+	for (long i = 0; i < slots; i++) {
+		char name[WT_NAME];
+		nativeVal_t loaded = { 0 };
+		if (!WT_Slot(name, control, i)) {
+			return 0;
+		}
+		Script_SetNum(id, name, "X", x + i * 26);
+		Script_SetNum(id, name, "Y", y);
+		WT_Visible(id, name, 1);
+		int heavy = WT_LoadedI(i, control, &loaded) ? WT_TooHeavyFill(&loaded, control) : -1;
+		byte ok = heavy >= 0 && WT_FreeSlot(id, name, control, heavy, "Highlight");
+		if (ok && !heavy) {
+			int full = WT_CmpI(&loaded, 0, '>');
+			nativeVal_t hint = { 0 };
+			ok = full >= 0 && WT_WeaponHint(full ? "HINT_Weapons4" : "HINT_Weapons3", 1, control, &hint) &&
+				Mode_ScorerPut(id, name, "Hint", &hint);
+			Native_Free(&hint);
+			if (ok) {
+				Script_SetNum(id, name, "MaxHintLineWidth", 550);
+			}
+		}
+		Native_Free(&loaded);
+		if (!ok) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+/* the sprites of the slots by their load, and the hint of the weapon button when one is loaded */
+static byte WT_SlotSprites(int id, const nativeVal_t *control, long slots) {
+	for (long i = 0; i < slots; i++) {
+		char name[WT_NAME];
+		nativeVal_t loaded = { 0 };
+		byte ok = WT_Slot(name, control, i) && WT_LoadedI(i, control, &loaded);
+		if (ok && Script_GetNum(id, name, "SpriteIndex") != 16) {
+			byte on = Native_True(&loaded);
+			Script_SetNum(id, name, "SpriteIndex", on ? 19 : 17);
+			Script_SetNum(id, name, "FocusSpriteIndex", on ? 20 : 18);
+		}
+		int full = ok ? WT_CmpI(&loaded, 0, '>') : -1;
+		if (full > 0) {
+			/* name[0:len(name) - 5]: the weapon button itself gets the hint */
+			name[strlen(name) >= 5 ? strlen(name) - 5 : 0] = 0;
+			full = WT_PutWeaponHint(id, name, "HINT_Weapons4", 1, control) ? 1 : -1;
+		}
+		Native_Free(&loaded);
+		if (full < 0) {
+			return 0;
+		}
+	}
+	return 1;
 }
 
 /* FillSlots(id, control): the bar with the slots of the weapon, the loaded ones lit, and its links */
-static PyObject *WT_FillSlots(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { .n = 0 };
-	int id;
-	PyObject *control;
-	char name[0x40], other[0x40];
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO", &id, &control)) {
-		return NULL;
-	}
-	PyObject *linkLR = Sf_From(&f, "Menu", "LinkLR");
-	PyObject *linkUD = Sf_From(&f, "Menu", "LinkUD");
-	PyObject *unlinkLR = Sf_From(&f, "Menu", "UnLinkLR");
-	Sf_Import(&f, "ShipEdit");
-	Sf_Import(&f, "HangarTab");
-	Sf_Import(&f, "ShipMaker");
-	Sf_Import(&f, "string");
-	PyObject *numSlots = WT_NumSlots(&f, control);
-	WT_Visible(&f, id, "WeaponSlotText", 1);
-	PyObject *area[2];
+static byte WT_FillSlots(int id, const nativeVal_t *control) {
+	static const char *const mods[] = { "ShipEdit", "HangarTab", "ShipMaker", "string", NULL };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *numSlots = Mode_V(&t), *label = Mode_V(&t), *area = Mode_V(&t);
+	char name[WT_NAME], other[WT_NAME];
+	PyObject *linkLR = Mode_From("Menu", "LinkLR"), *linkUD = linkLR ? Mode_From("Menu", "LinkUD") : NULL;
+	PyObject *unlinkLR = linkUD ? Mode_From("Menu", "UnLinkLR") : NULL;
+	byte ok = unlinkLR && WT_Import(mods) && WT_NumSlots(control, numSlots);
 	double textWidth = 0, x = 84, y = 151;
-	if (Sf_Unpack(&f, Sf_Ask(&f, "SScorer", "GetTextArea", "(sO)", "Horatio", WT_Lang(&f, "ShipEdit_WeaponsMounted")), 2,
-		area)) {
-		textWidth = PyFloat_AsDouble(area[0]);
-	}
 	long slots = 0;
-	if (Sf_True(&f, Sf_Ask(&f, "ShipEdit", "IsEditingMultiplayer", "()")) > 0) {
-		slots = WT_Range(&f, numSlots);
+	if (ok) {
+		WT_Visible(id, "WeaponSlotText", 1);
+		Mode_Lang("ShipEdit_WeaponsMounted", label);
+		nativeVal_t pair[2] = { { 0 }, { 0 } };
+		ok = Mode_TextArea("Horatio", label, area) && Mode_Unpack(area, 2, pair);
+		textWidth = ok ? pair[0].f : 0;
+		Native_Free(&pair[0]);
+		Native_Free(&pair[1]);
+	}
+	int multi = ok ? WT_IsMulti() : -1;
+	if (multi > 0) {
+		ok = Mode_Range(numSlots, &slots);
 		x = (640 - (slots * 26 + (slots - 1) * 4) - textWidth - 4) / 2;
 	}
-	Sf_ScorerNum(&f, id, "WeaponSlotText", "W", 0);
-	Sf_ScorerNum(&f, id, "WeaponSlotText", "H", 0);
-	Sf_ScorerNum(&f, id, "WeaponSlotText", "X", x);
-	Sf_ScorerNum(&f, id, "WeaponSlotText", "Y", y);
-	x = x + textWidth + 8;
-	WT_Visible(&f, id, "SlotsBox", 1);
-	if (Sf_True(&f, Sf_Ask(&f, "ShipEdit", "IsEditingMultiplayer", "()")) == 0) {
-		WT_Visible(&f, id, "UpgradesBox", 1);
+	ok = ok && multi >= 0;
+	if (ok) {
+		Script_SetNum(id, "WeaponSlotText", "W", 0);
+		Script_SetNum(id, "WeaponSlotText", "H", 0);
+		Script_SetNum(id, "WeaponSlotText", "X", x);
+		Script_SetNum(id, "WeaponSlotText", "Y", y);
+		x = x + textWidth + 8;
+		WT_Visible(id, "SlotsBox", 1);
+		multi = WT_IsMulti();
+		ok = multi >= 0;
 	}
-	WT_Visible(&f, id, "SlotsAndUpgradesBox", 1);
-	slots = WT_Range(&f, numSlots);
-	for (long i = 0; i < slots && !f.failed; i++) {
-		int mark = f.n;
-		WT_Slot(&f, name, sizeof(name), control, i);
-		Sf_ScorerNum(&f, id, name, "X", x + i * 26);
-		Sf_ScorerNum(&f, id, name, "Y", y);
-		WT_Visible(&f, id, name, 1);
-		PyObject *loaded = WT_ShipS(&f, "Weap", WT_NameId(&f, Sf_Int(&f, i), control));
-		int heavy = WT_TooHeavyFill(&f, loaded, control);
-		WT_FreeSlot(&f, id, name, control, heavy, "Highlight");
-		if (heavy == 0) {
-			int full = Sf_Compare(&f, loaded, ">", Sf_Int(&f, 0));
-			if (full >= 0) {
-				Sf_ScorerSet(&f, id, name, "Hint", WT_WeaponHint(&f, full ? "HINT_Weapons4" : "HINT_Weapons3", 1, control));
-			}
-			Sf_ScorerNum(&f, id, name, "MaxHintLineWidth", 550);
+	if (ok) {
+		if (!multi) {
+			WT_Visible(id, "UpgradesBox", 1);
 		}
-		Sf_Release(&f, mark);
+		WT_Visible(id, "SlotsAndUpgradesBox", 1);
+		ok = Mode_Range(numSlots, &slots) && WT_PlaceSlots(id, control, slots, x, y);
 	}
-	for (long i = 0; i < slots - 1 && !f.failed; i++) {
-		WT_Slot(&f, name, sizeof(name), control, i);
-		WT_Slot(&f, other, sizeof(other), control, i + 1);
-		Sf_Line(&f, linkLR, "(iss)", id, name, other);
+	for (long i = 0; ok && i < slots - 1; i++) {
+		ok = WT_Slot(name, control, i) && WT_Slot(other, control, i + 1) && WT_Link(linkLR, id, name, other);
 	}
-	for (long i = 0; i < slots && !f.failed; i++) {
-		WT_Slot(&f, name, sizeof(name), control, i);
-		Sf_Line(&f, linkUD, "(iOs)", id, control, name);
-		Sf_Line(&f, linkUD, "(iss)", id, name, "Exit");
+	for (long i = 0; ok && i < slots; i++) {
+		ok = WT_Slot(name, control, i) && Native_Call(linkUD, NULL, "ivs", (long)id, control, name) &&
+			WT_Link(linkUD, id, name, "Exit");
 	}
-	PyObject *list = Sf_Build(&f, "[ssssss]", wt_linked[0], wt_linked[1], wt_linked[2], wt_linked[3], wt_linked[4],
-		wt_linked[5]);
-	Sf_Method(&f, list, "remove", "(O)", control);
-	WT_Slot(&f, other, sizeof(other), control, 0);
-	for (int i = 0; !f.failed; i++) {
-		int mark = f.n;
-		PyObject *w = Sf_Next(&f, list, i);
-		if (!w) {
-			break;
+	/* list.remove(control) of the six weapons: the others */
+	int skip = -1;
+	for (int i = 0; ok && skip < 0 && i < 6; i++) {
+		nativeVal_t w;
+		Native_SetStr(&w, wt_linked[i]);
+		if (!Native_Compare(&w, control)) {
+			skip = i;
 		}
-		Sf_Line(&f, linkUD, "(iOs)", id, w, other);
-		Sf_Release(&f, mark);
 	}
-	Sf_Line(&f, linkUD, "(iOs)", id, control, other);
-	Sf_Line(&f, linkUD, "(iss)", id, other, "Exit");
-	for (long i = 0; i < slots && !f.failed; i++) {
-		int mark = f.n;
-		WT_Slot(&f, name, sizeof(name), control, i);
-		PyObject *loaded = WT_ShipS(&f, "Weap", WT_NameId(&f, Sf_Int(&f, i), control));
-		if (Sf_ScorerGet(&f, id, name, "SpriteIndex") != 16) {
-			int on = Sf_True(&f, loaded);
-			if (on >= 0) {
-				Sf_ScorerNum(&f, id, name, "SpriteIndex", on ? 19 : 17);
-				Sf_ScorerNum(&f, id, name, "FocusSpriteIndex", on ? 20 : 18);
-			}
-		}
-		if (Sf_Compare(&f, loaded, ">", Sf_Int(&f, 0)) > 0) {
-			/* name[0:len(name) - 5]: the weapon button itself gets the hint */
-			name[strlen(name) >= 5 ? strlen(name) - 5 : 0] = 0;
-			Sf_ScorerSet(&f, id, name, "Hint", WT_WeaponHint(&f, "HINT_Weapons4", 1, control));
-			Sf_ScorerNum(&f, id, name, "MaxHintLineWidth", 550);
-		}
-		Sf_Release(&f, mark);
+	ok = ok && (skip >= 0 || Native_Raise(NE_VALUE, "list.remove(x): x not in list")) && WT_Slot(other, control, 0);
+	for (int i = 0; ok && i < 6; i++) {
+		ok = i == skip || WT_Link(linkUD, id, wt_linked[i], other);
 	}
-	if (Sf_True(&f, Sf_Ask(&f, "ShipEdit", "IsEditingMultiplayer", "()")) == 0) {
-		Sf_Own(&f, MOD, "UpdateUpgrades", "(iO)", id, control);
-		WT_UpgradeLinks(&f, id, control, slots, linkLR, linkUD, unlinkLR);
-	} else if (!f.failed) {
-		WT_Slot(&f, name, sizeof(name), control, slots - 1);
-		Sf_Line(&f, linkLR, "(iss)", id, name, other);
+	ok = ok && Native_Call(linkUD, NULL, "ivs", (long)id, control, other) && WT_Link(linkUD, id, other, "Exit") &&
+		WT_SlotSprites(id, control, slots);
+	multi = ok ? WT_IsMulti() : -1;
+	if (multi == 0) {
+		/* OBJLIB 3 */
+		ok = Native_CallGlobal(MOD, "UpdateUpgrades", NULL, "iv", (long)id, control) &&
+			WT_UpgradeLinks(id, control, slots, linkLR, linkUD, unlinkLR);
+	} else if (multi > 0) {
+		ok = WT_Slot(name, control, slots - 1) && WT_Link(linkLR, id, name, other);
 	}
-	Sf_ScorerStr(&f, id, "Exit", "Up", other);
-	return Sf_None(&f);
+	ok = ok && multi >= 0;
+	if (ok) {
+		Script_SetStr(id, "Exit", "Up", other);
+	}
+	Py_XDECREF(linkLR);
+	Py_XDECREF(linkUD);
+	Py_XDECREF(unlinkLR);
+	return Mode_Done(&t, ok);
 }
 
-/* the names of upgradeId whose values are `a` and `b` (the first by value, "" when none), in its key order */
-static void WT_FindUpgrades(scriptFrame_t *f, PyObject *a, PyObject *b, PyObject **na, PyObject **nb) {
-	PyObject *keys = Sf_Method(f, WT_Global(f, "upgradeId"), "keys", "()");
-	for (int i = 0; !f->failed; i++) {
-		PyObject *n = Sf_Next(f, keys, i);
-		if (!n) {
-			break;
-		}
-		PyObject *v = Sf_GetItem(f, WT_Global(f, "upgradeId"), n);
-		int is = Sf_Compare(f, v, "==", a);
-		if (is > 0) {
-			*na = n;
-		} else if (is == 0 && Sf_Compare(f, Sf_GetItem(f, WT_Global(f, "upgradeId"), n), "==", b) > 0) {
-			*nb = n;
-		}
+WT_IC(WT_FillSlotsPy, WT_FillSlots(id, &control))
+
+/* the names of upgradeId whose values are a and b (the first by value, "" when none), in its key order: *na and *nb
+ * copies (freed first) */
+static byte WT_FindUpgrades(const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *na, nativeVal_t *nb) {
+	nativeVal_t keys = { 0 };
+	if (!Mode_Keys(MOD, "upgradeId", 1, &keys)) {
+		return 0;
 	}
+	int n = Native_ForCount(&keys);
+	byte ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		nativeVal_t k = { 0 }, ids = { 0 }, v = { 0 };
+		ok = Native_SeqItem(&keys, i, &k) && WT_G("upgradeId", &ids) && Native_Subscript(&ids, &k, &v);
+		int is = ok ? WT_Cmp(&v, a, '=') : -1;
+		if (is > 0) {
+			Native_Free(na);
+			Native_Copy(na, &k);
+		} else if (is == 0) {
+			Native_Free(&v);
+			is = Native_Subscript(&ids, &k, &v) ? WT_Cmp(&v, b, '=') : -1;
+			if (is > 0) {
+				Native_Free(nb);
+				Native_Copy(nb, &k);
+			}
+		}
+		ok = is >= 0;
+		Native_Free(&k);
+		Native_Free(&ids);
+		Native_Free(&v);
+	}
+	Native_Free(&keys);
+	return ok;
 }
 
 /* the upgrade tile of a weapon in the selected colours, its icon white */
-static void WT_UpgradeOn(scriptFrame_t *f, int id, PyObject *control, int k) {
-	char name[0x40], tile[0x20];
+static byte WT_UpgradeOn(int id, const nativeVal_t *control, int k) {
+	char name[WT_NAME], tile[0x20];
 	Str_Printf(tile, sizeof(tile), "Upgrade%d", k);
-	WT_Join(f, name, sizeof(name), control, tile);
-	Sf_ScorerNum(f, id, name, "Alpha", 255);
-	WT_Color(f, id, name, wt_white);
+	if (!WT_Cat(name, "", control, tile)) {
+		return 0;
+	}
+	Script_SetNum(id, name, "Alpha", 255);
+	WT_Color(id, name, wt_white);
 	Str_Printf(tile, sizeof(tile), "Upgrade%dTile", k);
-	Sf_ScorerNum(f, id, tile, "Alpha", 255);
-	WT_Color(f, id, tile, wt_selected);
+	Script_SetNum(id, tile, "Alpha", 255);
+	WT_Color(id, tile, wt_selected);
+	return 1;
+}
+
+/* the hint of an upgrade into the item (HINT_Weapons7 of the one mounted, HINT_Weapons6 of the other) */
+static byte WT_PutUpgradeHint(int id, const char *item, const char *key, const nativeVal_t *upgrade) {
+	nativeVal_t hint = { 0 };
+	byte ok = WT_UpgradeHint(key, upgrade, &hint) && Mode_ScorerPut(id, item, "Hint", &hint);
+	Native_Free(&hint);
+	return ok;
 }
 
 /* the hint of an upgrade tile the weapon does not use: HINT_Weapons6 with the upgrade when the player has it, else
  * HINT_Weapons9 */
-static void WT_UpgradeOff(scriptFrame_t *f, int id, const char *tile, int has, PyObject *upgrade) {
+static byte WT_UpgradeOff(int id, const char *tile, int has, const nativeVal_t *upgrade) {
 	if (has) {
-		Sf_ScorerSet(f, id, tile, "Hint", WT_UpgradeHint(f, "HINT_Weapons6", upgrade));
+		if (!WT_PutUpgradeHint(id, tile, "HINT_Weapons6", upgrade)) {
+			return 0;
+		}
 	} else {
-		Sf_ScorerSet(f, id, tile, "Hint", WT_Lang(f, "HINT_Weapons9"));
+		nativeVal_t text;
+		Mode_Lang("HINT_Weapons9", &text);
+		Script_SetStr(id, tile, "Hint", Native_Text(&text));
+		Native_Free(&text);
 	}
-	Sf_ScorerNum(f, id, tile, "MaxHintLineWidth", 550);
+	Script_SetNum(id, tile, "MaxHintLineWidth", 550);
+	return 1;
+}
+
+/* upgrade > 0 and odd (1), > 0 and even (2), else 0; -1 with the error (the tests of the script in its order) */
+static int WT_Parity(const nativeVal_t *upgrade) {
+	nativeVal_t r = { 0 }, two;
+	Native_SetInt(&two, 2);
+	int pos = WT_CmpI(upgrade, 0, '>');
+	if (pos <= 0) {
+		return pos;
+	}
+	int odd = Native_Arith('%', upgrade, &two, &r) ? WT_CmpI(&r, 0, '!') : -1;
+	Native_Free(&r);
+	if (odd) {
+		return odd;
+	}
+	pos = WT_CmpI(upgrade, 0, '>');
+	if (pos <= 0) {
+		return pos;
+	}
+	int even = Native_Arith('%', upgrade, &two, &r) ? WT_CmpI(&r, 0, '=') : -1;
+	Native_Free(&r);
+	return even > 0 ? 2 : even;
+}
+
+/* `upgrade + d` of the script into *out (`upgrade` for 0) */
+static byte WT_ReprPlus(const nativeVal_t *upgrade, long d, nativeVal_t *out) {
+	nativeVal_t n, s = { 0 };
+	if (!d) {
+		Mode_Repr(upgrade, out);
+		return 1;
+	}
+	Native_SetInt(&n, d < 0 ? -d : d);
+	if (!Native_Arith(d < 0 ? '-' : '+', upgrade, &n, &s)) {
+		return 0;
+	}
+	Mode_Repr(&s, out);
+	Native_Free(&s);
+	return 1;
+}
+
+/* HangarTab.prevShip.Upgrd<weapId[weapon]> */
+static byte WT_Upgrade(const nativeVal_t *weapon, nativeVal_t *out) {
+	nativeVal_t wids = { 0 }, wid = { 0 };
+	byte ok = WT_G("weapId", &wids) && Native_Subscript(&wids, weapon, &wid) && WT_ShipS("Upgrd", &wid, out);
+	Native_Free(&wids);
+	Native_Free(&wid);
+	return ok;
 }
 
 /* UpdateUpgrades(id, control): the two upgrade tiles of the weapon: available or not, the one mounted lit */
-static PyObject *WT_UpdateUpgrades(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { .n = 0 };
-	int id;
-	PyObject *control;
-	char name1[0x40], name2[0x40], ct[0x40];
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO", &id, &control)) {
-		return NULL;
+static byte WT_UpdateUpgrades(int id, const nativeVal_t *control) {
+	static const char *const mods[] = { "ShipEdit", "HangarTab", "string", NULL };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *upgrade = Mode_V(&t), *u1 = Mode_S(&t, ""), *u2 = Mode_S(&t, ""), *a = Mode_V(&t), *b = Mode_V(&t);
+	nativeVal_t *auxs = Mode_V(&t), *aux = Mode_V(&t), *ai = Mode_V(&t);
+	char name1[WT_NAME], name2[WT_NAME];
+	PyObject *l1 = WT_Import(mods) ? Mode_From("Menu", "LinkLR") : NULL, *l2 = l1 ? Mode_From("Menu", "LinkUD") : NULL;
+	byte ok = l2 && WT_Cat(name1, "", control, "Upgrade1") && WT_Cat(name2, "", control, "Upgrade2");
+	Py_XDECREF(l1);
+	Py_XDECREF(l2);
+	if (!ok) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "ShipEdit");
-	Sf_Import(&f, "HangarTab");
-	Sf_Import(&f, "string");
-	Sf_From(&f, "Menu", "LinkLR");
-	Sf_From(&f, "Menu", "LinkUD");
-	WT_Join(&f, name1, sizeof(name1), control, "Upgrade1");
-	WT_Join(&f, name2, sizeof(name2), control, "Upgrade2");
-	WT_Visible(&f, id, name1, 1);
-	WT_Visible(&f, id, name2, 1);
-	WT_Visible(&f, id, "UpgradeText", 1);
-	WT_Visible(&f, id, "Upgrade1Tile", 1);
-	WT_Visible(&f, id, "Upgrade2Tile", 1);
+	WT_Visible(id, name1, 1);
+	WT_Visible(id, name2, 1);
+	WT_Visible(id, "UpgradeText", 1);
+	WT_Visible(id, "Upgrade1Tile", 1);
+	WT_Visible(id, "Upgrade2Tile", 1);
 	int has[2] = { 0, 0 };
-	for (int k = 0; k < 2 && !f.failed; k++) {
-		const char *tile = k ? "Upgrade2Tile" : "Upgrade1Tile";
-		int got = Sf_In(&f, Sf_Str(&f, k ? name2 : name1), Sf_Mod(&f, "ShipEdit", "availableUpgradesList"));
+	for (int k = 0; k < 2; k++) {
+		const char *tile = k ? "Upgrade2Tile" : "Upgrade1Tile", *ct = k ? name2 : name1;
+		nativeVal_t name, list = { 0 };
+		Native_SetStr(&name, ct);
+		int got = Mode_ModVar("ShipEdit", "availableUpgradesList", &list) ? Native_Contains(&list, &name) : -1;
+		Native_Free(&list);
 		if (got < 0) {
-			break;
+			return Mode_Done(&t, 0);
 		}
-		Str_Printf(ct, sizeof(ct), "%s", k ? name2 : name1);
 		if (!got) {
-			Sf_ScorerStr(&f, id, ct, "File", "2D/ShipEditor/FullEditor.alpha.tga");
-			Sf_ScorerNum(&f, id, ct, "SpriteIndex", 32);
+			Script_SetStr(id, ct, "File", "2D/ShipEditor/FullEditor.alpha.tga");
+			Script_SetNum(id, ct, "SpriteIndex", 32);
 		}
-		Sf_ScorerNum(&f, id, ct, "Alpha", 255);
-		WT_Color(&f, id, ct, wt_grey);
-		Sf_ScorerNum(&f, id, tile, "Alpha", 255);
-		WT_Color(&f, id, tile, wt_normal);
-		Sf_ScorerNum(&f, id, tile, "W", got ? 34 : 0);
-		Sf_ScorerNum(&f, id, tile, "H", got ? 34 : 0);
-		Sf_ScorerNum(&f, id, tile, "HighLight", got);
-		Sf_ScorerStr(&f, id, tile, "OnAccept", got ? "WeaponsTab.SelectUpgrade" : "WeaponsTab.DoNothing");
+		Script_SetNum(id, ct, "Alpha", 255);
+		WT_Color(id, ct, wt_grey);
+		Script_SetNum(id, tile, "Alpha", 255);
+		WT_Color(id, tile, wt_normal);
+		Script_SetNum(id, tile, "W", got ? 34 : 0);
+		Script_SetNum(id, tile, "H", got ? 34 : 0);
+		Script_SetNum(id, tile, "HighLight", got);
+		Script_SetStr(id, tile, "OnAccept", got ? "WeaponsTab.SelectUpgrade" : "WeaponsTab.DoNothing");
 		has[k] = got;
 	}
-	PyObject *upgrade = WT_ShipS(&f, "Upgrd", Sf_GetItem(&f, WT_Global(&f, "weapId"), control));
-	PyObject *u1 = Sf_Str(&f, ""), *u2 = u1;
-	PyObject *zero = Sf_Int(&f, 0);
-	int pos = Sf_Compare(&f, upgrade, ">", zero), odd = 0, even = 0;
-	if (pos > 0) {
-		odd = Sf_Compare(&f, Sf_OpI(&f, upgrade, '%', 2), "!=", zero);
-		if (odd == 0 && Sf_Compare(&f, upgrade, ">", zero) > 0) {
-			even = Sf_EqI(&f, Sf_OpI(&f, upgrade, '%', 2), 0);
+	int kind = WT_Upgrade(control, upgrade) ? WT_Parity(upgrade) : -1;
+	if (kind == 1) {
+		ok = WT_ReprPlus(upgrade, 0, a) && WT_ReprPlus(upgrade, 1, b) && WT_FindUpgrades(a, b, u1, u2) &&
+			WT_UpgradeOn(id, control, 1) && WT_PutUpgradeHint(id, "Upgrade1Tile", "HINT_Weapons7", u1) &&
+			WT_UpgradeOff(id, "Upgrade2Tile", has[1], u2);
+	} else if (kind == 2) {
+		ok = WT_ReprPlus(upgrade, -1, a) && WT_ReprPlus(upgrade, 0, b) && WT_FindUpgrades(a, b, u1, u2) &&
+			WT_UpgradeOn(id, control, 2) && WT_PutUpgradeHint(id, "Upgrade2Tile", "HINT_Weapons7", u2) &&
+			WT_UpgradeOff(id, "Upgrade1Tile", has[0], u1);
+	} else if (kind == 0) {
+		int none = WT_CmpI(upgrade, 0, '=');
+		ok = none >= 0;
+		if (none > 0) {
+			ok = WT_G("auxUpgradeId", auxs) && Native_Subscript(auxs, control, aux) && Native_ToInt(aux, ai) &&
+				WT_ReprPlus(ai, 1, b) && WT_FindUpgrades(aux, b, u1, u2) && WT_UpgradeOff(id, "Upgrade1Tile", has[0], u1) &&
+				WT_UpgradeOff(id, "Upgrade2Tile", has[1], u2);
 		}
+	} else {
+		ok = 0;
 	}
-	if (odd > 0) {
-		WT_FindUpgrades(&f, Sf_Repr(&f, upgrade), Sf_Repr(&f, Sf_OpI(&f, upgrade, '+', 1)), &u1, &u2);
-		WT_UpgradeOn(&f, id, control, 1);
-		Sf_ScorerSet(&f, id, "Upgrade1Tile", "Hint", WT_UpgradeHint(&f, "HINT_Weapons7", u1));
-		WT_UpgradeOff(&f, id, "Upgrade2Tile", has[1], u2);
-	} else if (even > 0) {
-		WT_FindUpgrades(&f, Sf_Repr(&f, Sf_OpI(&f, upgrade, '-', 1)), Sf_Repr(&f, upgrade), &u1, &u2);
-		WT_UpgradeOn(&f, id, control, 2);
-		Sf_ScorerSet(&f, id, "Upgrade2Tile", "Hint", WT_UpgradeHint(&f, "HINT_Weapons7", u2));
-		WT_UpgradeOff(&f, id, "Upgrade1Tile", has[0], u1);
-	} else if (!f.failed && Sf_EqI(&f, upgrade, 0) > 0) {
-		PyObject *aux = Sf_GetItem(&f, WT_Global(&f, "auxUpgradeId"), control);
-		WT_FindUpgrades(&f, aux, Sf_Repr(&f, Sf_OpI(&f, Sf_ToInt(&f, aux), '+', 1)), &u1, &u2);
-		WT_UpgradeOff(&f, id, "Upgrade1Tile", has[0], u1);
-		WT_UpgradeOff(&f, id, "Upgrade2Tile", has[1], u2);
+	return Mode_Done(&t, ok);
+}
+
+WT_IC(WT_UpdateUpgradesPy, WT_UpdateUpgrades(id, &control))
+
+/* the button, tile, icon and frame of a weapon in the colours of the state (selected 1) */
+static byte WT_WeaponColors(int id, const nativeVal_t *w, byte selected) {
+	char name[WT_NAME];
+	const int *c = selected ? wt_selected : wt_normal;
+	if (!WT_Cat(name, "", w, "Tile")) {
+		return 0;
 	}
-	return Sf_None(&f);
+	WT_Color(id, name, c);
+	if (!WT_Cat(name, "", w, "Icon")) {
+		return 0;
+	}
+	WT_Color(id, name, selected ? wt_white : wt_grey);
+	if (!WT_Cat(name, "", w, "Rect")) {
+		return 0;
+	}
+	Script_SetNum(id, name, "Alpha", 255);
+	WT_Color(id, name, c);
+	return 1;
 }
 
 /* SelectWeapon(id, control): the weapon picked, the previous one back to normal, its slots shown */
-static PyObject *WT_SelectWeapon(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { .n = 0 };
-	int id;
-	PyObject *control;
-	char name[0x40];
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO", &id, &control)) {
-		return NULL;
+static byte WT_SelectWeapon(int id, const nativeVal_t *control) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *prev = Mode_V(&t);
+	const char *p, *c;
+	if (!Mode_Import("string") || !WT_G("prevWeapon", prev)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "string");
-	if (Sf_Compare(&f, WT_Global(&f, "prevWeapon"), "!=", Sf_Str(&f, "")) > 0) {
-		PyObject *prev = WT_Global(&f, "prevWeapon");
-		const char *p = Sf_Text(&f, prev);
-		Sf_ScorerNum(&f, id, p, "Alpha", 255);
-		WT_Color(&f, id, p, wt_normal);
-		Sf_ScorerSet(&f, id, p, "Hint", WT_WeaponHint(&f, "HINT_Weapons1", 1, prev));
-		Sf_ScorerNum(&f, id, p, "MaxHintLineWidth", 550);
-		WT_Color(&f, id, WT_Join(&f, name, sizeof(name), WT_Global(&f, "prevWeapon"), "Tile"), wt_normal);
-		WT_Color(&f, id, WT_Join(&f, name, sizeof(name), WT_Global(&f, "prevWeapon"), "Icon"), wt_grey);
-		WT_Join(&f, name, sizeof(name), WT_Global(&f, "prevWeapon"), "Rect");
-		Sf_ScorerNum(&f, id, name, "Alpha", 255);
-		WT_Color(&f, id, name, wt_normal);
-		Sf_Own(&f, MOD, "HideSlots", "(iO)", id, WT_Global(&f, "prevWeapon"));
+	int some = WT_Cmp(prev, Mode_S(&t, ""), '!');
+	if (some < 0) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_SetGlobal(&f, MOD, "prevWeapon", control);
-	const char *c = Sf_Text(&f, control);
-	Sf_ScorerNum(&f, id, c, "Alpha", 255);
-	WT_Color(&f, id, c, wt_selected);
-	Sf_ScorerSet(&f, id, c, "Hint", WT_WeaponHint(&f, "HINT_Weapons2", 0, control));
-	Sf_ScorerNum(&f, id, c, "MaxHintLineWidth", 550);
-	Sf_ScorerDefault(&f, id, c);
-	WT_Color(&f, id, WT_Join(&f, name, sizeof(name), control, "Tile"), wt_selected);
-	WT_Color(&f, id, WT_Join(&f, name, sizeof(name), control, "Icon"), wt_white);
-	WT_Join(&f, name, sizeof(name), control, "Rect");
-	Sf_ScorerNum(&f, id, name, "Alpha", 255);
-	WT_Color(&f, id, name, wt_selected);
-	PyObject *unlinkUD = Sf_From(&f, "Menu", "UnLinkUD");
-	for (int i = 0; i < 6; i++) {
-		Sf_Line(&f, unlinkUD, "(iss)", id, wt_unlink[i], "Exit");
+	if (some) {
+		if (!Mode_ItemText(prev, &p)) {
+			return Mode_Done(&t, 0);
+		}
+		Script_SetNum(id, p, "Alpha", 255);
+		WT_Color(id, p, wt_normal);
+		/* OBJLIB 3 */
+		if (!WT_PutWeaponHint(id, p, "HINT_Weapons1", 1, prev) || !WT_WeaponColors(id, prev, 0) ||
+			!Native_CallGlobal(MOD, "HideSlots", NULL, "iv", (long)id, prev)) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	Sf_ScorerStr(&f, id, "ShipEditTabWeapons", "Down", c);
-	Sf_ScorerStr(&f, id, c, "Up", "ShipEditTabWeapons");
-	Sf_Own(&f, MOD, "FillSlots", "(iO)", id, control);
-	return Sf_None(&f);
+	if (!Mode_Put(MOD, "prevWeapon", NULL, control) || !Mode_ItemText(control, &c)) {
+		return Mode_Done(&t, 0);
+	}
+	Script_SetNum(id, c, "Alpha", 255);
+	WT_Color(id, c, wt_selected);
+	if (!WT_PutWeaponHint(id, c, "HINT_Weapons2", 0, control)) {
+		return Mode_Done(&t, 0);
+	}
+	Script_SetDefault(id, c);
+	PyObject *unlinkUD = WT_WeaponColors(id, control, 1) ? Mode_From("Menu", "UnLinkUD") : NULL;
+	byte ok = unlinkUD != NULL;
+	for (int i = 0; ok && i < 6; i++) {
+		ok = WT_Link(unlinkUD, id, wt_unlink[i], "Exit");
+	}
+	Py_XDECREF(unlinkUD);
+	if (ok) {
+		Script_SetStr(id, "ShipEditTabWeapons", "Down", c);
+		Script_SetStr(id, c, "Up", "ShipEditTabWeapons");
+		ok = Native_CallGlobal(MOD, "FillSlots", NULL, "iv", (long)id, control);
+	}
+	return Mode_Done(&t, ok);
 }
+
+WT_IC(WT_SelectWeaponPy, WT_SelectWeapon(id, &control))
 
 /* HangarTab.prevShip.Upgrd<weapId[prevWeapon]> = <upgradeId[auxUpgradeId2[prevWeapon + "Upgrade" + k]]> and its
  * UAmmo = 200, as the exec lines of the script */
-static void WT_PutUpgrade(scriptFrame_t *f, PyObject *k) {
-	PyObject *upg = Sf_Cat(f, "OsO", WT_Global(f, "prevWeapon"), "Upgrade", k);
-	upg = Sf_GetItem(f, WT_Global(f, "auxUpgradeId2"), upg);
-	PyObject *wid = Sf_GetItem(f, WT_Global(f, "weapId"), WT_Global(f, "prevWeapon"));
-	WT_Exec(f, Sf_Cat(f, "sOsO", "HangarTab.prevShip.Upgrd", wid, " = ", Sf_GetItem(f, WT_Global(f, "upgradeId"), upg)));
-	wid = Sf_GetItem(f, WT_Global(f, "weapId"), WT_Global(f, "prevWeapon"));
-	WT_Exec(f, Sf_Cat(f, "sOs", "HangarTab.prevShip.UAmmo", wid, " = 200"));
+static byte WT_PutUpgrade(const nativeVal_t *k) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *prev = Mode_V(&t), *key = Mode_V(&t), *aux2 = Mode_V(&t), *upg = Mode_V(&t), *wids = Mode_V(&t);
+	nativeVal_t *wid = Mode_V(&t), *ids = Mode_V(&t), *value = Mode_V(&t);
+	byte ok = WT_G("prevWeapon", prev) && Mode_Cat(&t, key, 3, prev, Mode_S(&t, "Upgrade"), k) &&
+		WT_G("auxUpgradeId2", aux2) && Native_Subscript(aux2, key, upg) && WT_G("weapId", wids) &&
+		(Native_Free(prev), WT_G("prevWeapon", prev)) && Native_Subscript(wids, prev, wid) && WT_G("upgradeId", ids) &&
+		Native_Subscript(ids, upg, value) && WT_ExecCat("HangarTab.prevShip.Upgrd", wid, " = ", value);
+	Mode_Release(&t, 0);
+	prev = Mode_V(&t);
+	wids = Mode_V(&t);
+	wid = Mode_V(&t);
+	ok = ok && WT_G("weapId", wids) && WT_G("prevWeapon", prev) && Native_Subscript(wids, prev, wid) &&
+		WT_ExecCat("HangarTab.prevShip.UAmmo", wid, " = 200", NULL);
+	return Mode_Done(&t, ok);
 }
 
 /* SelectUpgrade(id, control): the upgrade of the tile put on the weapon, swapped for the other one or taken off */
-static PyObject *WT_SelectUpgrade(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { .n = 0 };
-	int id;
-	PyObject *control;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO", &id, &control)) {
-		return NULL;
+static byte WT_SelectUpgrade(int id, const nativeVal_t *control) {
+	static const char *const mods[] = { "HangarTab", "string", "Sound", NULL };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *prev = Mode_V(&t), *upgrade = Mode_V(&t), *un = Mode_S(&t, ""), *pn = Mode_S(&t, ""), *a = Mode_V(&t);
+	nativeVal_t *b = Mode_V(&t), *k = Mode_V(&t), *wids = Mode_V(&t), *wid = Mode_V(&t), *auxs = Mode_V(&t);
+	nativeVal_t *up = Mode_V(&t), *ui = Mode_V(&t), *keys = Mode_V(&t), *hint = Mode_V(&t);
+	const char *name = "", *c;
+	if (!WT_Import(mods) || !WT_G("prevWeapon", prev)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "HangarTab");
-	Sf_Import(&f, "string");
-	Sf_Import(&f, "Sound");
-	PyObject *upgrade = WT_ShipS(&f, "Upgrd", Sf_GetItem(&f, WT_Global(&f, "weapId"), WT_Global(&f, "prevWeapon")));
-	PyObject *zero = Sf_Int(&f, 0);
-	const char *name = "";
-	PyObject *un = Sf_Str(&f, ""), *pn = un;
-	int pos = Sf_Compare(&f, upgrade, ">", zero), odd = 0, even = 0;
-	if (pos > 0) {
-		odd = Sf_Compare(&f, Sf_OpI(&f, upgrade, '%', 2), "!=", zero);
-		if (odd == 0 && Sf_Compare(&f, upgrade, ">", zero) > 0) {
-			even = Sf_EqI(&f, Sf_OpI(&f, upgrade, '%', 2), 0);
+	int kind = WT_Upgrade(prev, upgrade) ? WT_Parity(upgrade) : -1;
+	if (kind < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (kind) {
+		name = kind == 1 ? "Upgrade1Tile" : "Upgrade2Tile";
+		if (!WT_ReprPlus(upgrade, 0, a) || !WT_ReprPlus(upgrade, kind == 1 ? 1 : -1, b) || !WT_FindUpgrades(a, b, un, pn)) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	if (odd > 0) {
-		name = "Upgrade1Tile";
-		WT_FindUpgrades(&f, Sf_Repr(&f, upgrade), Sf_Repr(&f, Sf_OpI(&f, upgrade, '+', 1)), &un, &pn);
-	} else if (even > 0) {
-		name = "Upgrade2Tile";
-		WT_FindUpgrades(&f, Sf_Repr(&f, upgrade), Sf_Repr(&f, Sf_OpI(&f, upgrade, '-', 1)), &un, &pn);
+	int len = Native_Size(control);
+	if (len < 0) {
+		return Mode_Done(&t, 0);
 	}
-	int len = Sf_Len(&f, control);
 	if (name[0]) {
-		const char *c = Sf_Text(&f, control);
-		int same = Sf_EqS(&f, control, name);
+		if (!Mode_ItemText(control, &c)) {
+			return Mode_Done(&t, 0);
+		}
+		int same = WT_Cmp(control, Mode_S(&t, name), '=');
 		if (same > 0) {
-			PyObject *wid = Sf_GetItem(&f, WT_Global(&f, "weapId"), WT_Global(&f, "prevWeapon"));
-			WT_Exec(&f, Sf_Cat(&f, "sOs", "HangarTab.prevShip.Upgrd", wid, " = 0"));
-			Sf_ScorerDefault(&f, id, c);
-			WT_Sound(&f, "ShipEditUnLoad");
+			Native_Free(prev);
+			if (!WT_G("weapId", wids) || !WT_G("prevWeapon", prev) || !Native_Subscript(wids, prev, wid) ||
+				!WT_ExecCat("HangarTab.prevShip.Upgrd", wid, " = 0", NULL)) {
+				return Mode_Done(&t, 0);
+			}
+			Script_SetDefault(id, c);
+			if (!WT_Sound("ShipEditUnLoad")) {
+				return Mode_Done(&t, 0);
+			}
 		} else if (same == 0) {
-			Sf_ScorerDefault(&f, id, c);
-			WT_PutUpgrade(&f, len < 0 ? NULL : Sf_Item(&f, control, len - 5));
-			WT_Sound(&f, "ShipEditLoadWeapon");
-		}
-	} else if (!f.failed) {
-		WT_PutUpgrade(&f, len < 0 ? NULL : Sf_Item(&f, control, len - 5));
-		PyObject *up = Sf_GetItem(&f, WT_Global(&f, "auxUpgradeId"), WT_Global(&f, "prevWeapon"));
-		if (Sf_EqS(&f, Sf_Item(&f, control, len - 5), "2") > 0) {
-			up = Sf_Repr(&f, Sf_OpI(&f, Sf_ToInt(&f, up), '+', 1));
-		}
-		PyObject *keys = Sf_Method(&f, WT_Global(&f, "upgradeId"), "keys", "()");
-		for (int i = 0; !f.failed; i++) {
-			PyObject *n = Sf_Next(&f, keys, i);
-			if (!n) {
-				break;
+			Script_SetDefault(id, c);
+			if (!WT_Char(control, 5, k) || !WT_PutUpgrade(k) || !WT_Sound("ShipEditLoadWeapon")) {
+				return Mode_Done(&t, 0);
 			}
-			if (Sf_Compare(&f, Sf_GetItem(&f, WT_Global(&f, "upgradeId"), n), "==", up) > 0) {
-				un = n;
-				break;
-			}
+		} else {
+			return Mode_Done(&t, 0);
 		}
-		const char *c = Sf_Text(&f, control);
-		Sf_ScorerSet(&f, id, c, "Hint", WT_UpgradeHint(&f, "HINT_Weapons7", un));
-		Sf_ScorerNum(&f, id, c, "MaxHintLineWidth", 550);
-		Sf_ScorerDefault(&f, id, c);
-		WT_Sound(&f, "ShipEditLoadWeapon");
+	} else {
+		Native_Free(prev);
+		if (!WT_Char(control, 5, k) || !WT_PutUpgrade(k) || !WT_G("auxUpgradeId", auxs) || !WT_G("prevWeapon", prev) ||
+			!Native_Subscript(auxs, prev, up)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_Free(k);
+		int two = WT_Char(control, 5, k) ? WT_Cmp(k, Mode_S(&t, "2"), '=') : -1;
+		if (two < 0) {
+			return Mode_Done(&t, 0);
+		}
+		if (two) {
+			nativeVal_t *r = Mode_V(&t);
+			if (!Native_ToInt(up, ui) || !WT_ReprPlus(ui, 1, r)) {
+				return Mode_Done(&t, 0);
+			}
+			up = r;
+		}
+		if (!Mode_Keys(MOD, "upgradeId", 1, keys)) {
+			return Mode_Done(&t, 0);
+		}
+		int n = Native_ForCount(keys);
+		byte ok = n >= 0;
+		for (int i = 0; ok && i < n; i++) {
+			nativeVal_t key = { 0 }, ids = { 0 }, v = { 0 };
+			ok = Native_SeqItem(keys, i, &key) && WT_G("upgradeId", &ids) && Native_Subscript(&ids, &key, &v);
+			int is = ok ? WT_Cmp(&v, up, '=') : -1;
+			if (is > 0) {
+				Native_Free(un);
+				Native_Copy(un, &key);
+				n = 0;
+			}
+			ok = is >= 0;
+			Native_Free(&key);
+			Native_Free(&ids);
+			Native_Free(&v);
+		}
+		if (!ok || !Mode_ItemText(control, &c) || !WT_UpgradeHint("HINT_Weapons7", un, hint) || !WT_SetHint(id, c, hint)) {
+			return Mode_Done(&t, 0);
+		}
+		Script_SetDefault(id, c);
+		if (!WT_Sound("ShipEditLoadWeapon")) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	Sf_Own(&f, MOD, "UpdateUpgrades", "(iO)", id, WT_Global(&f, "prevWeapon"));
-	return Sf_None(&f);
+	Native_Free(prev);
+	/* OBJLIB 3 */
+	byte ok = WT_G("prevWeapon", prev) && Native_CallGlobal(MOD, "UpdateUpgrades", NULL, "iv", (long)id, prev);
+	return Mode_Done(&t, ok);
 }
 
+WT_IC(WT_SelectUpgradePy, WT_SelectUpgrade(id, &control))
+
 /* SetWeaponsPanel(id): the items of the tab, hidden */
-static PyObject *WT_SetWeaponsPanel(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { .n = 0 };
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
+static byte WT_SetWeaponsPanel(int id) {
+	static const char *const mods[] = { "Menu", "ShipEdit", "string", NULL };
+	if (!WT_Import(mods)) {
+		return 0;
 	}
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "ShipEdit");
-	Sf_Import(&f, "string");
-	PyObject *vars = Sf_Keep(&f, f.failed ? NULL : PyDict_New());
-	PyObject *flags = Sf_Ask(&f, "Scrap", "GetNetFlags", "()");
-	int single = Sf_Compare(&f, flags, "==", Sf_Build(&f, "(iii)", 0, 0, 0));
-	Sf_Check(&f, single < 0 || PyDict_SetItemString(vars, "single", Sf_Int(&f, single)) == 0);
-	WT_Run(&f, id, "panel", vars);
-	PyObject *keys = Sf_Method(&f, WT_Global(&f, "auxUpgradeId"), "keys", "()");
-	for (int i = 0; !f.failed; i++) {
-		int mark = f.n;
-		PyObject *w = Sf_Next(&f, keys, i);
-		if (!w) {
-			break;
+	/* OBJLIB 6: the .def runner takes its $names as a dict until it takes C values */
+	int single = Native_NetOff();
+	PyObject *vars = single >= 0 ? Py_BuildValue("{s:i}", "single", single) : NULL;
+	byte ok = vars && WT_Run(id, "panel", vars);
+	Py_XDECREF(vars);
+	nativeVal_t keys = { 0 };
+	ok = ok && Mode_Keys(MOD, "auxUpgradeId", 1, &keys);
+	int n = ok ? Native_ForCount(&keys) : -1;
+	ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		nativeVal_t w = { 0 };
+		ok = Native_SeqItem(&keys, i, &w);
+		for (int j = 0; ok && j < 6; j++) {
+			char slot[0x20];
+			nativeVal_t name = { 0 }, s;
+			const char *text;
+			Str_Printf(slot, sizeof(slot), "Slot%d", j);
+			Native_SetStr(&s, slot);
+			ok = Native_Arith('+', &w, &s, &name) && Mode_ItemText(&name, &text);
+			PyObject *o = ok ? Native_ToPy(&name) : NULL;
+			vars = o ? Py_BuildValue("{s:O}", "name", o) : NULL;
+			ok = vars && WT_Run(id, "slot", vars);
+			Py_XDECREF(vars);
+			Py_XDECREF(o);
+			Native_Free(&name);
 		}
-		for (int j = 0; j < 6 && !f.failed; j++) {
-			PyObject *name = Sf_Cat(&f, "OsO", w, "Slot", Sf_ReprI(&f, j));
-			Sf_Text(&f, name);
-			WT_Run(&f, id, "slot", Sf_Build(&f, "{s:O}", "name", name));
-		}
-		Sf_Release(&f, mark);
+		Native_Free(&w);
 	}
-	int multi = Sf_True(&f, Sf_Ask(&f, "ShipEdit", "IsEditingMultiplayer", "()"));
-	WT_Run(&f, id, "boxes", Sf_Build(&f, "{s:i}", "multi", multi));
-	return Sf_None(&f);
+	Native_Free(&keys);
+	int multi = ok ? WT_IsMulti() : -1;
+	vars = multi >= 0 ? Py_BuildValue("{s:i}", "multi", multi) : NULL;
+	ok = vars && WT_Run(id, "boxes", vars);
+	Py_XDECREF(vars);
+	return ok;
+}
+
+WT_I(WT_SetWeaponsPanelPy, WT_SetWeaponsPanel(id))
+
+/* the six weapon buttons as ShowWeaponsPanel shows them; the ones the player has are appended to controlsToLinkList */
+static byte WT_ShowWeapon(int id, const char *w) {
+	char name[WT_NAME];
+	WT_Visible(id, w, 1);
+	Script_SetNum(id, w, "Alpha", 255);
+	WT_Color(id, w, wt_normal);
+	Str_Printf(name, sizeof(name), "%sTile", w);
+	WT_Visible(id, name, 1);
+	WT_Color(id, name, wt_normal);
+	Str_Printf(name, sizeof(name), "%sIcon", w);
+	WT_Visible(id, name, 1);
+	WT_Color(id, name, wt_grey);
+	Str_Printf(name, sizeof(name), "%sRect", w);
+	WT_Visible(id, name, 1);
+	Script_SetNum(id, name, "Alpha", 255);
+	WT_Color(id, name, wt_normal);
+	nativeVal_t v, list = { 0 };
+	Native_SetStr(&v, w);
+	int have = Mode_ModVar("ShipEdit", "availableWeaponsList", &list) ? Native_Contains(&list, &v) : -1;
+	Native_Free(&list);
+	if (have > 0) {
+		return Mode_Append(MOD, "controlsToLinkList", &v);
+	}
+	if (have < 0) {
+		return 0;
+	}
+	nativeVal_t text;
+	Script_SetStr(id, w, "OnAccept", "");
+	Script_SetStr(id, w, "OnGainFocus", "");
+	Script_SetStr(id, w, "OnLooseFocus", "");
+	Script_SetNum(id, w, "W", 0);
+	Script_SetNum(id, w, "H", 0);
+	Mode_Lang("HINT_Weapons8", &text);
+	Script_SetStr(id, w, "Hint", Native_Text(&text));
+	Native_Free(&text);
+	Script_SetNum(id, w, "MaxHintLineWidth", 550);
+	Str_Printf(name, sizeof(name), "%sTile", w);
+	Script_SetNum(id, name, "Alpha", 222);
+	WT_Color(id, name, wt_missing);
+	Str_Printf(name, sizeof(name), "%sIcon", w);
+	Script_SetStr(id, name, "File", "2D/ShipEditor/FullEditor.alpha.tga");
+	Script_SetNum(id, name, "SpriteIndex", 32);
+	Script_SetNum(id, name, "Alpha", 255);
+	WT_Color(id, name, wt_grey);
+	return 1;
+}
+
+/* controlsToLinkList[i] as the script reads it (the global each time) */
+static byte WT_LinkItem(long i, nativeVal_t *out) {
+	nativeVal_t list = { 0 }, tmp;
+	const nativeVal_t *v = WT_G("controlsToLinkList", &list) ? Native_GetItem(&list, i, 1, &tmp) : NULL;
+	if (v) {
+		Native_Copy(out, v);
+		if (v == &tmp) {
+			Native_Free(&tmp);
+		}
+	}
+	Native_Free(&list);
+	return v != NULL;
+}
+
+/* fn(id, controlsToLinkList[i], controlsToLinkList[j]) (j -1: "Exit") */
+static byte WT_LinkItems(PyObject *fn, int id, long i, long j) {
+	nativeVal_t a = { 0 }, b = { 0 };
+	byte ok = WT_LinkItem(i, &a) && (j < 0 ? (Native_SetStr(&b, "Exit"), 1) : WT_LinkItem(j, &b)) &&
+		Native_Call(fn, NULL, "ivv", (long)id, &a, &b);
+	Native_Free(&a);
+	Native_Free(&b);
+	return ok;
 }
 
 /* ShowWeaponsPanel(id): the six weapons, those the player does not have dark; the ones he has linked */
-static PyObject *WT_ShowWeaponsPanel(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { .n = 0 };
-	int id;
-	char name[0x40];
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
+static byte WT_ShowWeaponsPanel(int id) {
+	static const char *const mods[] = { "ShipEdit", "string", NULL };
+	PyObject *linkLR = Mode_From("Menu", "LinkLR"), *linkUD = linkLR ? Mode_From("Menu", "LinkUD") : NULL;
+	nativeVal_t empty, list = { 0 };
+	Native_SetEmpty(&empty, NV_LIST);
+	byte ok = linkUD && WT_Import(mods) && Mode_Put(MOD, "controlsToLinkList", NULL, &empty);
+	for (int i = 0; ok && i < 6; i++) {
+		ok = WT_ShowWeapon(id, wt_shown[i]);
 	}
-	PyObject *linkLR = Sf_From(&f, "Menu", "LinkLR");
-	PyObject *linkUD = Sf_From(&f, "Menu", "LinkUD");
-	Sf_Import(&f, "ShipEdit");
-	Sf_Import(&f, "string");
-	Sf_SetGlobal(&f, MOD, "controlsToLinkList", Sf_Keep(&f, f.failed ? NULL : PyList_New(0)));
-	for (int i = 0; i < 6 && !f.failed; i++) {
-		int mark = f.n;
-		const char *w = wt_shown[i];
-		WT_Visible(&f, id, w, 1);
-		Sf_ScorerNum(&f, id, w, "Alpha", 255);
-		WT_Color(&f, id, w, wt_normal);
-		Str_Printf(name, sizeof(name), "%sTile", w);
-		WT_Visible(&f, id, name, 1);
-		WT_Color(&f, id, name, wt_normal);
-		Str_Printf(name, sizeof(name), "%sIcon", w);
-		WT_Visible(&f, id, name, 1);
-		WT_Color(&f, id, name, wt_grey);
-		Str_Printf(name, sizeof(name), "%sRect", w);
-		WT_Visible(&f, id, name, 1);
-		Sf_ScorerNum(&f, id, name, "Alpha", 255);
-		WT_Color(&f, id, name, wt_normal);
-		int have = Sf_In(&f, Sf_Str(&f, w), Sf_Mod(&f, "ShipEdit", "availableWeaponsList"));
-		if (have == 0) {
-			Sf_ScorerStr(&f, id, w, "OnAccept", "");
-			Sf_ScorerStr(&f, id, w, "OnGainFocus", "");
-			Sf_ScorerStr(&f, id, w, "OnLooseFocus", "");
-			Sf_ScorerNum(&f, id, w, "W", 0);
-			Sf_ScorerNum(&f, id, w, "H", 0);
-			Sf_ScorerSet(&f, id, w, "Hint", WT_Lang(&f, "HINT_Weapons8"));
-			Sf_ScorerNum(&f, id, w, "MaxHintLineWidth", 550);
-			Str_Printf(name, sizeof(name), "%sTile", w);
-			Sf_ScorerNum(&f, id, name, "Alpha", 222);
-			WT_Color(&f, id, name, wt_missing);
-			Str_Printf(name, sizeof(name), "%sIcon", w);
-			Sf_ScorerStr(&f, id, name, "File", "2D/ShipEditor/FullEditor.alpha.tga");
-			Sf_ScorerNum(&f, id, name, "SpriteIndex", 32);
-			Sf_ScorerNum(&f, id, name, "Alpha", 255);
-			WT_Color(&f, id, name, wt_grey);
-		} else if (have > 0) {
-			Sf_Method(&f, WT_Global(&f, "controlsToLinkList"), "append", "(s)", w);
-		}
-		Sf_Release(&f, mark);
+	int last = ok && WT_G("controlsToLinkList", &list) ? Native_Size(&list) - 1 : -2;
+	Native_Free(&list);
+	ok = last >= -1;
+	for (int i = 0; ok && i < last; i++) {
+		ok = WT_LinkItems(linkLR, id, i, i + 1) && WT_LinkItems(linkUD, id, i, -1);
 	}
-	int last = Sf_Len(&f, WT_Global(&f, "controlsToLinkList")) - 1;
-	for (int i = 0; i < last && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *a = Sf_Item(&f, WT_Global(&f, "controlsToLinkList"), i);
-		PyObject *b = Sf_Item(&f, WT_Global(&f, "controlsToLinkList"), i + 1);
-		Sf_Line(&f, linkLR, "(iOO)", id, a, b);
-		Sf_Line(&f, linkUD, "(iOs)", id, Sf_Item(&f, WT_Global(&f, "controlsToLinkList"), i), "Exit");
-		Sf_Release(&f, mark);
-	}
-	PyObject *a = Sf_Item(&f, WT_Global(&f, "controlsToLinkList"), last);
-	Sf_Line(&f, linkLR, "(iOO)", id, a, Sf_Item(&f, WT_Global(&f, "controlsToLinkList"), 0));
-	Sf_Line(&f, linkUD, "(iOs)", id, Sf_Item(&f, WT_Global(&f, "controlsToLinkList"), last), "Exit");
-	Sf_Line(&f, linkUD, "(iOs)", id, Sf_Item(&f, WT_Global(&f, "controlsToLinkList"), 0), "Exit");
-	return Sf_None(&f);
+	ok = ok && WT_LinkItems(linkLR, id, last, 0) && WT_LinkItems(linkUD, id, last, -1) && WT_LinkItems(linkUD, id, 0, -1);
+	Py_XDECREF(linkLR);
+	Py_XDECREF(linkUD);
+	return ok;
 }
 
+WT_I(WT_ShowWeaponsPanelPy, WT_ShowWeaponsPanel(id))
+
 /* HideWeaponsPanel(id) */
-static PyObject *WT_HideWeaponsPanel(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { .n = 0 };
-	int id;
-	char name[0x40];
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	Sf_SetGlobal(&f, MOD, "prevWeapon", Sf_Str(&f, ""));
-	PyObject *keys = Sf_Method(&f, WT_Global(&f, "weapId"), "keys", "()");
-	for (int i = 0; !f.failed; i++) {
-		int mark = f.n;
-		PyObject *w = Sf_Next(&f, keys, i);
-		if (!w) {
-			break;
+static byte WT_HideWeaponsPanel(int id) {
+	static const char *const parts[4] = { "", "Tile", "Icon", "Rect" };
+	nativeVal_t empty, keys = { 0 }, list = { 0 };
+	Native_SetStr(&empty, "");
+	byte ok = Mode_Put(MOD, "prevWeapon", NULL, &empty) && Mode_Keys(MOD, "weapId", 1, &keys);
+	int n = ok ? Native_ForCount(&keys) : -1;
+	ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		nativeVal_t w = { 0 };
+		ok = Native_SeqItem(&keys, i, &w);
+		for (int k = 0; ok && k < 4; k++) {
+			char name[WT_NAME];
+			ok = WT_Cat(name, "", &w, parts[k]);
+			if (ok) {
+				WT_Visible(id, name, 0);
+			}
 		}
-		static const char *const parts[4] = { "", "Tile", "Icon", "Rect" };
-		for (int k = 0; k < 4; k++) {
-			WT_Visible(&f, id, WT_Join(&f, name, sizeof(name), w, parts[k]), 0);
-		}
-		Sf_Release(&f, mark);
+		Native_Free(&w);
 	}
-	WT_Visible(&f, id, "SlotsBox", 0);
-	WT_Visible(&f, id, "UpgradesBox", 0);
-	WT_Visible(&f, id, "SlotsAndUpgradesBox", 0);
-	for (int i = 0; i < 6; i++) {
-		Sf_Own(&f, MOD, "HideSlots", "(is)", id, wt_linked[i]);
+	Native_Free(&keys);
+	if (!ok) {
+		return 0;
 	}
-	PyObject *unlinkUD = Sf_From(&f, "Menu", "UnLinkUD");
-	PyObject *unlinkLR = Sf_From(&f, "Menu", "UnLinkLR");
-	for (int i = 0; i < 6; i++) {
-		Sf_Line(&f, unlinkUD, "(iss)", id, wt_unlink[i], "Exit");
+	WT_Visible(id, "SlotsBox", 0);
+	WT_Visible(id, "UpgradesBox", 0);
+	WT_Visible(id, "SlotsAndUpgradesBox", 0);
+	for (int i = 0; ok && i < 6; i++) {
+		/* OBJLIB 3 */
+		ok = Native_CallGlobal(MOD, "HideSlots", NULL, "is", (long)id, wt_linked[i]);
 	}
-	int last = Sf_Len(&f, WT_Global(&f, "controlsToLinkList"));
-	if (last > 0) {
-		Sf_Line(&f, unlinkLR, "(iOs)", id, Sf_Item(&f, WT_Global(&f, "controlsToLinkList"), last - 1), "Exit");
+	PyObject *unlinkUD = ok ? Mode_From("Menu", "UnLinkUD") : NULL, *unlinkLR = unlinkUD ? Mode_From("Menu", "UnLinkLR") : NULL;
+	ok = unlinkLR != NULL;
+	for (int i = 0; ok && i < 6; i++) {
+		ok = WT_Link(unlinkUD, id, wt_unlink[i], "Exit");
 	}
-	return Sf_None(&f);
+	int last = ok && WT_G("controlsToLinkList", &list) ? Native_Size(&list) : -1;
+	Native_Free(&list);
+	ok = last >= 0 && (last == 0 || WT_LinkItems(unlinkLR, id, last - 1, -1));
+	Py_XDECREF(unlinkUD);
+	Py_XDECREF(unlinkLR);
+	return ok;
 }
+
+WT_I(WT_HideWeaponsPanelPy, WT_HideWeaponsPanel(id))
 
 PyMethodDef g_WeaponsTabMethods[] = {
 	{ "DoNothing", WT_DoNothing, 1, NULL },
 	{ "ShowWeightPrediction", WT_ShowWeightPrediction, 1, NULL },
 	{ "HideWeightPrediction", WT_HideWeightPrediction, 1, NULL },
-	{ "ShowWeaponDesc", WT_ShowWeaponDesc, 1, NULL },
+	{ "ShowWeaponDesc", WT_ShowWeaponDescPy, 1, NULL },
 	{ "HideWeaponDesc", WT_HideWeaponDesc, 1, NULL },
-	{ "ShowWeaponUpgradeDesc", WT_ShowWeaponUpgradeDesc, 1, NULL },
+	{ "ShowWeaponUpgradeDesc", WT_ShowWeaponUpgradeDescPy, 1, NULL },
 	{ "HideWeaponUpgradeDesc", WT_HideWeaponUpgradeDesc, 1, NULL },
-	{ "ShowSlotMarker", WT_ShowSlotMarker, 1, NULL },
-	{ "HideSlotMarker", WT_HideSlotMarker, 1, NULL },
-	{ "LoadWeapon", WT_LoadWeapon, 1, NULL },
-	{ "HideSlots", WT_HideSlots, 1, NULL },
-	{ "FillSlots", WT_FillSlots, 1, NULL },
-	{ "UpdateUpgrades", WT_UpdateUpgrades, 1, NULL },
-	{ "SelectWeapon", WT_SelectWeapon, 1, NULL },
-	{ "SelectUpgrade", WT_SelectUpgrade, 1, NULL },
-	{ "SetWeaponsPanel", WT_SetWeaponsPanel, 1, NULL },
-	{ "ShowWeaponsPanel", WT_ShowWeaponsPanel, 1, NULL },
-	{ "HideWeaponsPanel", WT_HideWeaponsPanel, 1, NULL },
+	{ "ShowSlotMarker", WT_ShowSlotMarkerPy, 1, NULL },
+	{ "HideSlotMarker", WT_HideSlotMarkerPy, 1, NULL },
+	{ "LoadWeapon", WT_LoadWeaponPy, 1, NULL },
+	{ "HideSlots", WT_HideSlotsPy, 1, NULL },
+	{ "FillSlots", WT_FillSlotsPy, 1, NULL },
+	{ "UpdateUpgrades", WT_UpdateUpgradesPy, 1, NULL },
+	{ "SelectWeapon", WT_SelectWeaponPy, 1, NULL },
+	{ "SelectUpgrade", WT_SelectUpgradePy, 1, NULL },
+	{ "SetWeaponsPanel", WT_SetWeaponsPanelPy, 1, NULL },
+	{ "ShowWeaponsPanel", WT_ShowWeaponsPanelPy, 1, NULL },
+	{ "HideWeaponsPanel", WT_HideWeaponsPanelPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
