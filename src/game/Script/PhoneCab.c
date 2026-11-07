@@ -8,11 +8,19 @@
  * The module variables stay in the modules: PhoneCab.audioComEntity (the communicator in use, Challenge reads it),
  * DTritusDesktop.DTritusDesktop and DialogController (the missions set the talk there). The action classes are
  * data/missions/phonecab.def.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
+ * entries are adapters. The variables are read and written where the script does it (OBJLIB 5): the module globals
+ * above, Init.Path, the Challenge and Speech variables (set as Script_SetVar does, an error is dropped). The calls of
+ * SaveGame, Speech, Challenge, Chars, CharsNPC and the mission's DialogController stay by name (OBJLIB 3), Challenge's
+ * options through its C function on Python values. The cabs, communicators and desktops are entity handle values
+ * (OBJLIB 7): the module variables keep them and the scripts pass them in.
  */
 #include <string.h>
 
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 
 static const char phonecab_def[] = {
 #embed "../../../data/missions/phonecab.def"
@@ -31,22 +39,35 @@ typedef struct {
 	int v[3];
 } phoneAttr_t;
 
-/* e.var = value for the attributes up to the one with a NULL var: 0 with the error set */
-static byte Phone_Set(PyObject *e, const phoneAttr_t *a) {
+/* v is the text as the script's == compares it with a literal in C (up to its first 0 byte) */
+static byte Phone_Is(const nativeVal_t *v, const char *text) {
+	return v->type == NV_STR && !strcmp(Native_Text(v), text);
+}
+
+/* e.var = value for the attributes up to the one with a NULL var (e an entity handle value): 0 with the error set */
+static byte Phone_Set(const nativeVal_t *e, const phoneAttr_t *a) {
 	for (; a->var; a++) {
-		PyObject *v;
+		nativeVal_t v = { 0 }, lang;
+		byte ok = 1;
 		if (a->kind == 'i') {
-			v = PyInt_FromLong(a->i);
+			Native_SetInt(&v, a->i);
 		} else if (a->kind == 's') {
-			v = PyString_FromString(a->s);
+			Native_SetStr(&v, a->s);
 		} else if (a->kind == 't') {
-			PyObject *lang = Script_Ask("Scrap", "GetLangStr", "(s)", a->s);
-			v = lang ? Script_SPlus("Talk:", lang) : NULL;
-			Py_XDECREF(lang);
+			nativeVal_t talk;
+			Mode_Lang(a->s, &lang);
+			Native_SetStr(&talk, "Talk:");
+			ok = Native_Arith('+', &talk, &lang, &v);
+			Native_Free(&lang);
 		} else {
-			v = Py_BuildValue("(iii)", a->v[0], a->v[1], a->v[2]);
+			Native_SetEmpty(&v, NV_TUPLE);
+			for (int k = 0; k < 3; k++) {
+				Native_SetInt(Native_Append(&v), a->v[k]);
+			}
 		}
-		if (!Script_HSet(e, a->var, v)) {
+		ok = ok && Mode_VSet(e, a->var, &v);
+		Native_Free(&v);
+		if (!ok) {
 			return 0;
 		}
 	}
@@ -55,7 +76,7 @@ static byte Phone_Set(PyObject *e, const phoneAttr_t *a) {
 
 /* the reset of the object in the module variable var of module when the player walks away (Speech.OnOutOfRange):
  * no options but the talk (language text talk), the relax loop, no head */
-static PyObject *Phone_Reset(const char *module, const char *var, const char *talk) {
+static byte Phone_Reset(const char *module, const char *var, const char *talk) {
 	const phoneAttr_t attrs[] = {
 		{ "ArrnOpt", 'i', 0, NULL, { 0 } },
 		{ "ArrOpt0", 't', 0, talk, { 0 } },
@@ -65,298 +86,369 @@ static PyObject *Phone_Reset(const char *module, const char *var, const char *ta
 		{ "HeadModel", 's', 0, "", { 0 } },
 		{ NULL, 0, 0, NULL, { 0 } },
 	};
-	PyObject *e = Script_Global(module, var);
-	int t = Script_True(e);
-	byte ok = t >= 0 && (!t || Phone_Set(e, attrs));
-	Py_XDECREF(e);
-	return ok ? Py_ReturnNone() : NULL;
+	nativeVal_t e;
+	byte ok = Mode_G(module, var, &e) && (!Native_True(&e) || Phone_Set(&e, attrs));
+	Native_Free(&e);
+	return ok;
+}
+
+/* e.RadarShow is 1 or 2 (the mark of the radar, read again for the second compare): 1 or 0, -1 with the error */
+static int Phone_Marked(const nativeVal_t *e) {
+	nativeVal_t radar;
+	for (long k = 1; k <= 2; k++) {
+		nativeVal_t n;
+		Native_SetInt(&n, k);
+		if (!Mode_VGet(e, "RadarShow", &radar)) {
+			return -1;
+		}
+		int c = Native_Compare(&radar, &n);
+		Native_Free(&radar);
+		if (PyErr_Occurred()) {
+			return -1;
+		}
+		if (!c) {
+			return 1;
+		}
+	}
+	return 0;
 }
 
 /* the use function of a communicator: without the radar mark (RadarShow 1 or 2) the message that it does not work
  * now, then use(UsrName, CharName, optId, FullOption) */
-static PyObject *Phone_DefUse(PyObject *args, PyObject *(*use)(PyObject *, PyObject *)) {
-	PyObject *usr, *chname, *opt, *full;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &chname, &opt, &full)) {
-		return NULL;
+static byte Phone_DefUse(const nativeVal_t *a, byte (*use)(const nativeVal_t *)) {
+	nativeVal_t e = { 0 }, msg;
+	int marked = Mode_EntityH(&a[1], &e) ? Phone_Marked(&e) : -1;
+	Native_Free(&e);
+	if (marked < 0) {
+		return 0;
 	}
-	PyObject *e = Script_Entity(chname);
-	PyObject *radar = e ? Script_GetAttr(e, "RadarShow") : NULL;
-	int c = radar ? Script_NumCmp(radar, 1) : -2;
-	Py_XDECREF(radar);
-	if (c != 0 && c != -2) {
-		radar = Script_GetAttr(e, "RadarShow");
-		c = radar ? Script_NumCmp(radar, 2) : -2;
-		Py_XDECREF(radar);
-		if (c != 0 && c != -2) {
-			PyObject *msg = Script_Ask("Scrap", "GetLangStr", "(s)", "CantUsePhone");
-			PyObject *now = msg ? Script_Ask("Scrap", "GetTime", "()") : NULL;
-			PyObject *five = now ? PyInt_FromLong(5) : NULL;
-			PyObject *until = five ? PyNumber_Add(now, five) : NULL;
-			c = until && Script_Try("SScorer", "SetMsgText", "(OO)", msg, until) ? 1 : -2;
-			Py_XDECREF(until);
-			Py_XDECREF(five);
-			Py_XDECREF(now);
-			Py_XDECREF(msg);
+	if (!marked) {
+		/* SScorer.SetMsgText(Scrap.GetLangStr("CantUsePhone"), Scrap.GetTime() + 5) */
+		Mode_Lang("CantUsePhone", &msg);
+		byte ok = Mode_MsgText(&msg, Mode_Time() + 5);
+		Native_Free(&msg);
+		if (!ok) {
+			return 0;
 		}
 	}
-	Py_XDECREF(e);
-	return c == -2 ? NULL : use(NULL, args);
+	return use(a);
 }
 
 /* SaveGame.MarkWayPoint(Init.Path, CharName, CharName) and the next option of the entity: e.ArriOpt =
- * (e.ArriOpt + 1) % e.ArrnOpt. The entity (a new reference), NULL with the error set */
-static PyObject *Phone_Mark(PyObject *chname) {
-	static const char *const mods[] = { "SaveGame", "Init", "Speech", NULL };
-	if (!Script_Import(mods)) {
-		return NULL;
-	}
-	PyObject *path = Script_Attr("Init", "Path");
-	byte ok = path && Script_Try("SaveGame", "MarkWayPoint", "(OOO)", path, chname, chname);
-	Py_XDECREF(path);
-	PyObject *e = ok ? Script_Entity(chname) : NULL;
-	PyObject *cur = e ? Script_GetAttr(e, "ArriOpt") : NULL;
-	PyObject *one = cur ? PyInt_FromLong(1) : NULL;
-	PyObject *next = one ? PyNumber_Add(cur, one) : NULL;
-	PyObject *n = next ? Script_GetAttr(e, "ArrnOpt") : NULL;
-	ok = n && Script_HSet(e, "ArriOpt", PyNumber_Remainder(next, n));
-	Py_XDECREF(n);
-	Py_XDECREF(next);
-	Py_XDECREF(one);
-	Py_XDECREF(cur);
-	if (!ok) {
-		Py_XDECREF(e);
-		return NULL;
-	}
-	return e;
+ * (e.ArriOpt + 1) % e.ArrnOpt; the entity handle in *e */
+static byte Phone_Mark(const nativeVal_t *chname, nativeVal_t *e) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *path = Mode_V(&t), *cur = Mode_V(&t), *next = Mode_V(&t), *n = Mode_V(&t), *v = Mode_V(&t);
+	byte ok = Mode_Import("SaveGame") && Mode_Import("Init") && Mode_Import("Speech") && Mode_ModVar("Init", "Path", path) &&
+		Native_CallMod("SaveGame", "MarkWayPoint", NULL, "vvv", path, chname, chname) && Mode_EntityH(chname, e) &&
+		Mode_VGet(e, "ArriOpt", cur) && Native_Arith('+', cur, Mode_I(&t, 1), next) && Mode_VGet(e, "ArrnOpt", n) &&
+		Native_Arith('%', next, n, v) && Mode_VSet(e, "ArriOpt", v);
+	return Mode_Done(&t, ok);
 }
 
 /* c.Pos in front of an object at pos with the y angle ang (180 back), c.Ang = 0, ang + turn, 0, on the floor */
-static byte Phone_Spawn(PyObject *c, PyObject *pos, PyObject *ang, int turn) {
-	scriptRefs_t r = { 0 };
-	PyObject *rot = Script_Keep(&r, Script_Ask("SVec", "Rotate3D", "((iii)(iOi))", 0, 0, -180, 0, ang, 0));
-	PyObject *p = rot ? Script_Ask("SVec", "Add", "(OO)", pos, rot) : NULL;
-	PyObject *t = p && Script_HSet(c, "Pos", p) ? Script_Keep(&r, PyInt_FromLong(turn < 0 ? -turn : turn)) : NULL;
-	PyObject *a = t ? Script_Keep(&r, turn < 0 ? PyNumber_Subtract(ang, t) : PyNumber_Add(ang, t)) : NULL;
-	PyObject *name = a && Script_HSet(c, "Ang", Py_BuildValue("(iOi)", 0, a, 0)) ?
-		Script_Keep(&r, Script_GetAttr(c, "Name")) : NULL;
-	byte ok = name && Script_Try("SLogic", "SetOnFloor", "(O)", name);
-	Script_Done(&r, NULL);
+static byte Phone_Spawn(const nativeVal_t *c, const nativeVal_t *pos, const nativeVal_t *ang, int turn) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *v = Mode_V(&t), *r = Mode_V(&t), *rot = Mode_V(&t), *p = Mode_V(&t), *a = Mode_V(&t), *ca = Mode_V(&t);
+	nativeVal_t *name = Mode_V(&t);
+	/* SVec.Rotate3D((0, 0, -180), (0, ang, 0)) */
+	Native_SetEmpty(v, NV_TUPLE);
+	Native_SetInt(Native_Append(v), 0);
+	Native_SetInt(Native_Append(v), 0);
+	Native_SetInt(Native_Append(v), -180);
+	Native_SetEmpty(r, NV_TUPLE);
+	Native_SetInt(Native_Append(r), 0);
+	Native_Copy(Native_Append(r), ang);
+	Native_SetInt(Native_Append(r), 0);
+	byte ok = Mode_Rotate(v, r, rot) && Mode_VecAdd(pos, rot, p) && Mode_VSet(c, "Pos", p) &&
+		Native_Arith(turn < 0 ? '-' : '+', ang, Mode_I(&t, turn < 0 ? -turn : turn), a);
+	if (ok) {
+		Native_SetEmpty(ca, NV_TUPLE);
+		Native_SetInt(Native_Append(ca), 0);
+		Native_Copy(Native_Append(ca), a);
+		Native_SetInt(Native_Append(ca), 0);
+	}
+	ok = ok && Mode_VSet(c, "Ang", ca) && Mode_VGet(c, "Name", name) && Mode_SetOnFloor(name);
+	return Mode_Done(&t, ok);
+}
+
+/* Scrap.CreateEntity(name, pos[0], pos[1], pos[2], "WithLife") with Ang = 0, yAng + turn, 0; its handle in *out */
+static byte Phone_Create(const nativeVal_t *name, const nativeVal_t *pos, const nativeVal_t *yang, int turn, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *c[3], *a = Mode_V(&t), *ang = Mode_V(&t);
+	for (int k = 0; k < 3; k++) {
+		c[k] = Mode_V(&t);
+		if (!Native_Subscript(pos, Mode_I(&t, k), c[k])) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	cEntity *e;
+	if (!Mode_Create(name, c[0], c[1], c[2], "WithLife", &e) || !Mode_EntHandle(e, out)) {
+		return Mode_Done(&t, 0);
+	}
+	if (turn) {
+		if (!Native_Arith('+', yang, Mode_I(&t, turn), a)) {
+			return Mode_Done(&t, 0);
+		}
+	} else {
+		Native_Copy(a, yang);
+	}
+	Native_SetEmpty(ang, NV_TUPLE);
+	Native_SetInt(Native_Append(ang), 0);
+	Native_Copy(Native_Append(ang), a);
+	Native_SetInt(Native_Append(ang), 0);
+	return Mode_Done(&t, Mode_VSet(out, "Ang", ang));
+}
+
+/* Scrap.StartDummySearch(name, 1) and the first dummy in *out */
+static byte Phone_Dummy(const nativeVal_t *name, nativeVal_t *out) {
+	const char *s;
+	if (!Native_ArgStr(name, 1, &s)) {
+		return 0;
+	}
+	Mode_DummyStart(s, 1);
+	Mode_DummyNext(out);
+	return 1;
+}
+
+/* dummy[2][1]: the y angle of a dummy */
+static byte Phone_DummyAng(const nativeVal_t *dummy, nativeVal_t *out) {
+	nativeVal_t k, d2 = { 0 };
+	Native_SetInt(&k, 2);
+	byte ok = Native_Subscript(dummy, &k, &d2) && Native_Subscript(&d2, (Native_SetInt(&k, 1), &k), out);
+	Native_Free(&d2);
 	return ok;
 }
 
-/* Scrap.CreateEntity(name, pos[0], pos[1], pos[2], "WithLife") with Ang = 0, yAng + turn, 0 (a new reference) */
-static PyObject *Phone_Create(PyObject *name, PyObject *pos, PyObject *yang, int turn) {
-	scriptRefs_t r = { 0 };
-	PyObject *x = Script_Keep(&r, Script_Index(pos, 0));
-	PyObject *y = x ? Script_Keep(&r, Script_Index(pos, 1)) : NULL;
-	PyObject *z = y ? Script_Keep(&r, Script_Index(pos, 2)) : NULL;
-	PyObject *e = z ? Script_Ask("Scrap", "CreateEntity", "(OOOOs)", name, x, y, z, "WithLife") : NULL;
-	PyObject *t = e ? Script_Keep(&r, PyInt_FromLong(turn)) : NULL;
-	PyObject *a = t ? Script_Keep(&r, turn ? PyNumber_Add(yang, t) : Script_Ref(yang)) : NULL;
-	if (!a || !Script_HSet(e, "Ang", Py_BuildValue("(iOi)", 0, a, 0))) {
-		Py_XDECREF(e);
-		return Script_Done(&r, NULL);
-	}
-	return Script_Done(&r, e);
+/* the action classes (phonecab.def), $name for a press desktop */
+static byte Phone_Class(const char *section, const nativeVal_t *name) {
+	/* OBJLIB 6: the .def runner takes its $names as a dict until it takes C values */
+	PyObject *n = name ? Native_ToPy(name) : NULL, *vars = n ? Py_BuildValue("{s:O}", "name", n) : NULL;
+	Script_RunFile(0, PHONECAB_FILE, section, phonecab_def, NULL, vars);
+	Py_XDECREF(vars);
+	Py_XDECREF(n);
+	return 1;
 }
 
-/* Scrap.StartDummySearch(name, 1) and the first dummy (a new reference) */
-static PyObject *Phone_Dummy(PyObject *name) {
-	return name && Script_Try("Scrap", "StartDummySearch", "(Oi)", name, 1) ? Script_Ask("Scrap", "NextDummySearch", "()") : NULL;
+/* module.var = value of the script (Script_SetVar: an error is dropped) */
+static void Phone_SetVar(const char *module, const char *var, const nativeVal_t *value) {
+	Script_SetVar(module, var, Native_ToPy(value));
 }
+
+/* the adapters of the functions that do not look at their arguments */
+#define PHONE_NOARGS(fn, call) \
+	static PyObject *fn(PyObject *self, PyObject *args) { \
+		(void)self; \
+		(void)args; \
+		return Mode_Result(call); \
+	}
 
 /* ---- PhoneCab ---- */
 
-static PyObject *PhoneCab_ForceResetPhoneCab(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Phone_Reset("PhoneCab", "audioComEntity", "PhoneCab");
-}
+PHONE_NOARGS(PhoneCab_ForceResetPhoneCab, Phone_Reset("PhoneCab", "audioComEntity", "PhoneCab"))
 
 /* the options of the revenge on ch (save variables Revenge.Type and Revenge.Foe) */
-static PyObject *PhoneCab_SetRevengeOptions(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "string", "Challenge", NULL };
-	PyObject *ch;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &ch) || !Script_Import(mods)) {
-		return NULL;
+static byte PhoneCab_RevengeOptions(const nativeVal_t *ch) {
+	nativeVal_t type, foe;
+	if (!Mode_Import("string") || !Mode_Import("Challenge")) {
+		return 0;
 	}
-	PyObject *type = Script_SaveVar("Revenge.Type");
-	PyObject *foe = type ? Script_SaveVar("Revenge.Foe") : NULL;
-	byte ok = foe && Challenge_SetOptions(ch, type, foe);
-	Py_XDECREF(foe);
-	Py_XDECREF(type);
-	return ok ? Py_ReturnNone() : NULL;
-}
-
-/* print "Error RevengeSpeech(", UsrName, CharName, optId, FullOption, ")": 0 with the error set */
-static byte PhoneCab_PrintError(PyObject *usr, PyObject *chname, PyObject *opt, PyObject *full) {
-	PyObject *head = PyString_FromString("Error RevengeSpeech(");
-	PyObject *tail = head ? PyString_FromString(")") : NULL;
-	PyObject *items[6] = { head, usr, chname, opt, full, tail };
-	byte ok = tail && Script_Print(items, 6);
-	Py_XDECREF(tail);
-	Py_XDECREF(head);
+	Mode_SaveVar("Revenge.Type", &type);
+	Mode_SaveVar("Revenge.Foe", &foe);
+	/* OBJLIB 3: Challenge's C function on Python values until the ports call each other in C */
+	PyObject *c = Native_ToPy(ch), *t = c ? Native_ToPy(&type) : NULL, *f = t ? Native_ToPy(&foe) : NULL;
+	byte ok = f && Challenge_SetOptions(c, t, f);
+	Py_XDECREF(c);
+	Py_XDECREF(t);
+	Py_XDECREF(f);
+	Native_Free(&type);
+	Native_Free(&foe);
 	return ok;
 }
 
-/* the revenge talk: the foe tells the player the result (Talk), the bets of a new challenge, or the options again */
-static PyObject *PhoneCab_RevengeSpeech(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "Speech", "Challenge", NULL };
-	PyObject *usr, *chname, *opt, *full;
-	scriptRefs_t r = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &chname, &opt, &full) || !Script_Import(mods)) {
-		return NULL;
-	}
-	PyObject *ch = Script_Keep(&r, Script_Entity(chname));
-	if (!ch || !Script_SetGlobal("PhoneCab", "audioComEntity", Script_Ref(ch))) {
-		return Script_Done(&r, NULL);
-	}
-	Script_SetVar("Speech", "PlayerName", Script_Ref(usr));
-	Script_SetVar("Speech", "NPCName", Script_Ref(chname));
-	byte ok = 1;
-	if (Script_Is(opt, "Talk")) {
-		PyObject *player = Script_Keep(&r, Script_Usr());
-		int t = Script_True(player);
-		if (t <= 0) {
-			return Script_Done(&r, t < 0 ? NULL : Py_ReturnNone());
-		}
-		PyObject *wins = Script_Keep(&r, Script_Attr("Challenge", "playerWinsRevenge"));
-		t = Script_True(wins);
-		PyObject *foe = t >= 0 ? Script_Keep(&r, Script_SaveVar("Revenge.Foe")) : NULL;
-		PyObject *head = foe ? Script_Keep(&r, PySequence_GetSlice(foe, 0, 4)) : NULL;
-		if (!head) {
-			return Script_Done(&r, NULL);
-		}
-		if (Script_Is(head, "Merc")) {
-			foe = Script_Keep(&r, PyString_FromString("Mercs"));
-		}
-		const char *prefix = t ? "Win" : "Loose";
-		PyObject *type = Script_Keep(&r, Script_SaveVar("Revenge.Type"));
-		PyObject *msg = NULL, *ans = NULL;
-		char key[64];
-		if (!type) {
-			return Script_Done(&r, NULL);
-		}
-		if (Script_Is(type, "Race") || Script_Is(type, "Combat")) {
-			const char *kind = Script_Is(type, "Race") ? "Race" : "Combat";
-			Str_Printf(key, sizeof(key), "%sRevenge%sInitMsg", prefix, kind);
-			msg = Script_Keep(&r, PyString_FromString(key));
-			Str_Printf(key, sizeof(key), "%sRevenge%sInitAns", prefix, kind);
-			ans = Script_Keep(&r, Script_Plus(PyString_FromString(key), foe));
-			if (!ans) {
-				return Script_Done(&r, NULL);
-			}
-		} else if (!PhoneCab_PrintError(usr, chname, opt, full)) {
-			return Script_Done(&r, NULL);
-		}
-		Script_SetVar("Speech", "OnOutOfRange", Script_Global("PhoneCab", "ForceResetPhoneCab"));
-		wins = Script_Keep(&r, Script_Attr("Challenge", "playerWinsRevenge"));
-		t = Script_True(wins);
-		if (t == 0) {
-			PyObject *num = Script_Keep(&r, Script_Int(Script_Keep(&r, Script_SaveVar("Revenge.NumEnemies"))));
-			PyObject *launch = num ? Script_Attr("Challenge", "LaunchRevenge") : NULL;
-			if (!launch) {
-				return Script_Done(&r, NULL);
-			}
-			Script_SetVar("Challenge", "numChallengeEnemies", Script_Ref(num));
-			Script_SetVar("Speech", "OnEndOfSpeech", launch);
-			Script_SetVar("Speech", "OnEndOfSpeechParams", PyTuple_New(0));
-		} else if (t < 0) {
-			return Script_Done(&r, NULL);
-		}
-		PyObject *ac = Script_Keep(&r, Script_Global("PhoneCab", "audioComEntity"));
-		PyObject *rfoe = ac ? Script_Keep(&r, Script_SaveVar("Revenge.Foe")) : NULL;
-		if (rfoe && !msg) {
-			PyErr_SetString(PyExc_NameError, "initMsg");
-			return Script_Done(&r, NULL);
-		}
-		ok = rfoe && Script_Keep(&r, Script_Ask("Speech", "OnObjSpch", "(OOOO)", ac, rfoe, msg, ans));
-		wins = ok ? Script_Keep(&r, Script_Attr("Challenge", "playerWinsRevenge")) : NULL;
-		t = Script_True(wins);
-		ok = t >= 0;
-		if (t > 0) {
-			PyObject *a = Script_Keep(&r, Py_BuildValue("(O)", ch));
-			ok = a && Script_Keep(&r, PhoneCab_SetRevengeOptions(NULL, a));
-		}
-	} else if (Script_Is(opt, "ChallengeRaceStdOpt1") || Script_Is(opt, "ChallengeRaceStdOpt2") ||
-		Script_Is(opt, "ChallengeRaceStdOpt3")) {
-		ok = Script_Try("Challenge", "OnChallengeOpt", "(iOi)", PyString_AsString(opt)[19] - '0', ch, 0);
-	} else if (Script_Is(opt, "ChallengeRaceStdOpt4")) {
-		PyObject *foe = Script_Keep(&r, Script_SaveVar("Revenge.Foe"));
-		PyObject *groups = foe ? Script_Keep(&r, Script_Attr("Challenge", "groups")) : NULL;
-		PyObject *group = groups ? Script_Keep(&r, PyObject_GetItem(groups, foe)) : NULL;
-		if (!group) {
-			return Script_Done(&r, NULL);
-		}
-		if (Script_Is(group, "Mercs")) {
-			foe = Script_Keep(&r, PyString_FromString("Mercs"));
-		}
-		PyObject *ac = Script_Keep(&r, Script_Global("PhoneCab", "audioComEntity"));
-		PyObject *rfoe = ac ? Script_Keep(&r, Script_SaveVar("Revenge.Foe")) : NULL;
-		PyObject *ans = rfoe ? Script_Keep(&r, Script_PlusS(Script_SPlus("ChallengeRace", foe), "Msg3_Filter")) : NULL;
-		PyObject *v = ans ? Script_Keep(&r, Script_Ask("Speech", "OnObjSpch", "(OOsO)", ac, rfoe, "ChallengeRaceStdOpt2", ans)) : NULL;
-		int t = Script_True(v);
-		ok = t >= 0;
-		if (t > 0) {
-			PyObject *a = Script_Keep(&r, Py_BuildValue("(O)", ch));
-			ok = a && Script_Keep(&r, PhoneCab_SetRevengeOptions(NULL, a));
-		}
-	} else {
-		ok = PhoneCab_PrintError(usr, chname, opt, full);
-	}
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+MODE_FN(PhoneCab, SetRevengeOptions, 1, PhoneCab_RevengeOptions(&a[0]))
+
+/* print "Error RevengeSpeech(", UsrName, CharName, optId, FullOption, ")": 0 with the error set */
+static byte PhoneCab_PrintError(const nativeVal_t *a) {
+	nativeVal_t head, tail;
+	Native_SetStr(&head, "Error RevengeSpeech(");
+	Native_SetStr(&tail, ")");
+	const nativeVal_t *items[] = { &head, &a[0], &a[1], &a[2], &a[3], &tail };
+	return Mode_Print(items, 6);
 }
+
+/* Challenge.playerWinsRevenge (read again where the script reads it): 1 or 0, -1 with the error */
+static int PhoneCab_Wins(void) {
+	nativeVal_t w;
+	if (!Mode_ModVar("Challenge", "playerWinsRevenge", &w)) {
+		return -1;
+	}
+	int t = Native_True(&w);
+	Native_Free(&w);
+	return t;
+}
+
+/* Speech.OnObjSpch(audioComEntity, Revenge.Foe, msg, ans) (msg NULL: the script's NameError of initMsg); the
+ * revenge options again when *again (1, or the truth of the talk's result for again NULL) */
+static byte PhoneCab_ObjSpch(const nativeVal_t *ch, const nativeVal_t *msg, const nativeVal_t *ans, int *again) {
+	nativeVal_t ac = { 0 }, rfoe, v = { 0 };
+	if (!Mode_G("PhoneCab", "audioComEntity", &ac)) {
+		return 0;
+	}
+	Mode_SaveVar("Revenge.Foe", &rfoe);
+	byte ok = msg ? Native_CallMod("Speech", "OnObjSpch", &v, "vvvv", &ac, &rfoe, msg, ans) :
+		Native_Raise(NE_NAME, "initMsg");
+	int t = !ok ? -1 : again ? PhoneCab_Wins() : Native_True(&v);
+	ok = t >= 0 && (!t || PhoneCab_RevengeOptions(ch));
+	Native_Free(&ac);
+	Native_Free(&rfoe);
+	Native_Free(&v);
+	return ok;
+}
+
+/* the result talk of the revenge (opt "Talk") */
+static byte PhoneCab_ResultTalk(const nativeVal_t *a, const nativeVal_t *ch) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *player = Mode_V(&t), *foe = Mode_V(&t), *head = Mode_V(&t), *type = Mode_V(&t), *msg = Mode_V(&t);
+	nativeVal_t *ans = Mode_V(&t), *fr = Mode_V(&t), *num = Mode_V(&t), *n = Mode_V(&t), *empty = Mode_V(&t);
+	if (!Mode_UsrHandle(player)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Native_True(player)) {
+		return Mode_Done(&t, 1);
+	}
+	int wins = PhoneCab_Wins();
+	if (wins < 0) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("Revenge.Foe", foe);
+	if (!Native_Slice(foe, 0, 4, head)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Phone_Is(head, "Merc")) {
+		Native_Free(foe);
+		Native_SetStr(foe, "Mercs");
+	}
+	const char *prefix = wins ? "Win" : "Loose";
+	Mode_SaveVar("Revenge.Type", type);
+	byte race = Phone_Is(type, "Race");
+	byte known = race || Phone_Is(type, "Combat");
+	if (known) {
+		char key[64];
+		Str_Printf(key, sizeof(key), "%sRevenge%sInitMsg", prefix, race ? "Race" : "Combat");
+		Native_SetStr(msg, key);
+		Str_Printf(key, sizeof(key), "%sRevenge%sInitAns", prefix, race ? "Race" : "Combat");
+		if (!Native_Arith('+', Mode_S(&t, key), foe, ans)) {
+			return Mode_Done(&t, 0);
+		}
+	} else if (!PhoneCab_PrintError(a)) {
+		return Mode_Done(&t, 0);
+	}
+	/* Speech.OnOutOfRange = ForceResetPhoneCab (OBJLIB 3: the function of the module as a value) */
+	Script_SetVar("Speech", "OnOutOfRange", Script_Global("PhoneCab", "ForceResetPhoneCab"));
+	wins = PhoneCab_Wins();
+	if (wins < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (!wins) {
+		Mode_SaveVar("Revenge.NumEnemies", fr);
+		PyObject *launch = Native_ToInt(fr, num) ? Script_Attr("Challenge", "LaunchRevenge") : NULL;
+		if (!launch) {
+			return Mode_Done(&t, 0);
+		}
+		Phone_SetVar("Challenge", "numChallengeEnemies", num);
+		Script_SetVar("Speech", "OnEndOfSpeech", launch);
+		Native_SetEmpty(empty, NV_TUPLE);
+		Phone_SetVar("Speech", "OnEndOfSpeechParams", empty);
+	}
+	(void)n;
+	int again = 1;
+	return Mode_Done(&t, PhoneCab_ObjSpch(ch, known ? msg : NULL, ans, &again));
+}
+
+/* RevengeSpeech(UsrName, CharName, optId, FullOption): the revenge talk: the foe tells the player the result (Talk),
+ * the bets of a new challenge, or the options again */
+static byte PhoneCab_Revenge(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ch = Mode_V(&t), *foe = Mode_V(&t), *groups = Mode_V(&t), *group = Mode_V(&t), *ans = Mode_V(&t);
+	const nativeVal_t *opt = &a[2];
+	if (!Mode_Import("Speech") || !Mode_Import("Challenge") || !Mode_EntityH(&a[1], ch) ||
+		!Mode_Put("PhoneCab", "audioComEntity", NULL, ch)) {
+		return Mode_Done(&t, 0);
+	}
+	Phone_SetVar("Speech", "PlayerName", &a[0]);
+	Phone_SetVar("Speech", "NPCName", &a[1]);
+	byte ok;
+	if (Phone_Is(opt, "Talk")) {
+		ok = PhoneCab_ResultTalk(a, ch);
+	} else if (Phone_Is(opt, "ChallengeRaceStdOpt1") || Phone_Is(opt, "ChallengeRaceStdOpt2") ||
+		Phone_Is(opt, "ChallengeRaceStdOpt3")) {
+		ok = Native_CallMod("Challenge", "OnChallengeOpt", NULL, "ivi", (long)(Native_Text(opt)[19] - '0'), ch, 0L);
+	} else if (Phone_Is(opt, "ChallengeRaceStdOpt4")) {
+		Mode_SaveVar("Revenge.Foe", foe);
+		ok = Mode_ModVar("Challenge", "groups", groups) && Native_Subscript(groups, foe, group);
+		if (ok && Phone_Is(group, "Mercs")) {
+			Native_Free(foe);
+			Native_SetStr(foe, "Mercs");
+		}
+		/* audioComEntity and Revenge.Foe are read before the answer is made */
+		nativeVal_t *ac = Mode_V(&t), *rfoe = Mode_V(&t), *v = Mode_V(&t);
+		ok = ok && Mode_G("PhoneCab", "audioComEntity", ac);
+		if (ok) {
+			Mode_SaveVar("Revenge.Foe", rfoe);
+			ok = Mode_Cat(&t, ans, 3, Mode_S(&t, "ChallengeRace"), foe, Mode_S(&t, "Msg3_Filter")) &&
+				Native_CallMod("Speech", "OnObjSpch", v, "vvsv", ac, rfoe, "ChallengeRaceStdOpt2", ans);
+		}
+		ok = ok && (!Native_True(v) || PhoneCab_RevengeOptions(ch));
+	} else {
+		ok = PhoneCab_PrintError(a);
+	}
+	return Mode_Done(&t, ok);
+}
+
+MODE_FN(PhoneCab, RevengeSpeech, 4, PhoneCab_Revenge(a))
 
 /* GetNearestPhoneCab(usrPos): the communicator of PhoneCabs nearest to the position (None when there is none) */
-static PyObject *PhoneCab_GetNearestPhoneCab(PyObject *self, PyObject *args) {
-	PyObject *usrPos;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &usrPos)) {
-		return NULL;
+static byte PhoneCab_Nearest(const nativeVal_t *usrPos, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *dist = Mode_V(&t), *name = Mode_V(&t), *pc = Mode_V(&t);
+	Native_SetNone(out);
+	if (!Mode_ListGet("PhoneCabs", "First", name) || !Mode_EntityH(name, pc)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *res = Script_Ref(Py_None), *dist = Script_Ref(Py_None);
-	PyObject *name = Script_Ask("Scrap", "EntityListGet", "(ss)", "PhoneCabs", "First");
-	PyObject *pc = Script_Entity(name);
-	Py_XDECREF(name);
-	int t;
-	while ((t = Script_True(pc)) > 0) {
-		PyObject *pos = Script_GetAttr(pc, "Pos");
-		PyObject *d = pos ? Script_Ask("SVec", "Sub", "(OO)", pos, usrPos) : NULL;
-		PyObject *newdist = d ? Script_Ask("SVec", "ModSqr", "(O)", d) : NULL;
-		Py_XDECREF(d);
-		Py_XDECREF(pos);
-		int nearer = newdist ? Script_Eq(dist, Py_None) : -1;
-		if (nearer == 0) {
-			nearer = PyObject_Compare(newdist, dist) < 0;
-			if (PyErr_Occurred()) {
-				nearer = -1;
-			}
+	while (Native_True(pc)) {
+		int mark = t.n;
+		nativeVal_t *pos = Mode_V(&t), *d = Mode_V(&t), *nd = Mode_V(&t), *next = Mode_V(&t);
+		if (!Mode_VGet(pc, "Pos", pos) || !Mode_VecSub(pos, usrPos, d) || !Mode_VecModSqr(d, nd)) {
+			return Mode_Done(&t, 0);
 		}
-		if (nearer > 0) {
-			Py_DECREF(res);
-			Py_DECREF(dist);
-			res = Script_Ref(pc);
-			dist = Script_Ref(newdist);
+		int nearer = dist->type == NV_NONE || Native_Compare(nd, dist) < 0;
+		if (PyErr_Occurred()) {
+			return Mode_Done(&t, 0);
 		}
-		Py_XDECREF(newdist);
-		PyObject *next = nearer >= 0 ? Script_GetAttr(pc, "NextInList") : NULL;
-		Py_DECREF(pc);
-		pc = Script_Entity(next);
-		Py_XDECREF(next);
+		if (nearer) {
+			Native_Free(out);
+			Native_Copy(out, pc);
+			Native_Free(dist);
+			Native_Copy(dist, nd);
+		}
+		if (!Mode_VGet(pc, "NextInList", next)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_Free(pc);
+		byte ok = Mode_EntityH(next, pc);
+		Mode_Release(&t, mark);
+		if (!ok) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	Py_XDECREF(pc);
-	Py_DECREF(dist);
-	if (t < 0) {
-		Py_DECREF(res);
-		return NULL;
-	}
-	return res;
+	return Mode_Done(&t, 1);
 }
 
+MODE_FN(PhoneCab, GetNearestPhoneCab, 1, PhoneCab_Nearest(&a[0], out))
+
 /* CreatePhoneCab(name, pos, yAng): the cab */
-static PyObject *PhoneCab_CreatePhoneCab(PyObject *self, PyObject *args) {
+static byte PhoneCab_Cab(const nativeVal_t *a, nativeVal_t *out) {
 	static const phoneAttr_t attrs[] = {
 		{ "ActCtrl", 's', 0, "PhoneCab", { 0 } },
 		{ "ArrowCanUse", 'i', 0, NULL, { 0 } },
@@ -365,21 +457,13 @@ static PyObject *PhoneCab_CreatePhoneCab(PyObject *self, PyObject *args) {
 		{ "MapCollision", 'i', 1, NULL, { 0 } },
 		{ NULL, 0, 0, NULL, { 0 } },
 	};
-	PyObject *name, *pos, *yang;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &name, &pos, &yang)) {
-		return NULL;
-	}
-	PyObject *pc = Phone_Create(name, pos, yang, 180);
-	if (pc && !Phone_Set(pc, attrs)) {
-		Py_DECREF(pc);
-		return NULL;
-	}
-	return pc;
+	return Phone_Create(&a[0], &a[1], &a[2], 180, out) && Phone_Set(out, attrs);
 }
 
+MODE_FN(PhoneCab, CreatePhoneCab, 3, PhoneCab_Cab(a, out))
+
 /* CreateAudioCom(name, pos, yAng): the communicator the player uses */
-static PyObject *PhoneCab_CreateAudioCom(PyObject *self, PyObject *args) {
+static byte PhoneCab_AudioCom(const nativeVal_t *a, nativeVal_t *out) {
 	static const phoneAttr_t attrs[] = {
 		{ "ActCtrl", 's', 0, "AudioCom", { 0 } },
 		{ "VRadius", 'i', 60, NULL, { 0 } },
@@ -394,103 +478,59 @@ static PyObject *PhoneCab_CreateAudioCom(PyObject *self, PyObject *args) {
 		{ "UseFunc", 's', 0, "PhoneCab.DefUseAudioCom", { 0 } },
 		{ NULL, 0, 0, NULL, { 0 } },
 	};
-	PyObject *name, *pos, *yang;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &name, &pos, &yang)) {
-		return NULL;
-	}
-	PyObject *ac = Phone_Create(name, pos, yang, 180);
-	if (ac && !Phone_Set(ac, attrs)) {
-		Py_DECREF(ac);
-		return NULL;
-	}
-	return ac;
+	return Phone_Create(&a[0], &a[1], &a[2], 180, out) && Phone_Set(out, attrs);
 }
+
+MODE_FN(PhoneCab, CreateAudioCom, 3, PhoneCab_AudioCom(a, out))
 
 /* UseAudioCom(UsrName, CharName, optId, FullOption): using a communicator saves the game; with a revenge pending
  * the foe answers at the marked cab, or tells the player the police is still after him */
-static PyObject *PhoneCab_UseAudioCom(PyObject *self, PyObject *args) {
-	PyObject *usr, *chname, *opt, *full;
-	scriptRefs_t r = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &chname, &opt, &full)) {
-		return NULL;
-	}
-	PyObject *e = Script_Keep(&r, Phone_Mark(chname));
-	if (!e || !Script_SetGlobal("PhoneCab", "audioComEntity", Script_Ref(e))) {
-		return Script_Done(&r, NULL);
+static byte PhoneCab_Use(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *foe = Mode_V(&t), *type = Mode_V(&t), *text = Mode_V(&t);
+	if (!Phone_Mark(&a[1], e) || !Mode_Put("PhoneCab", "audioComEntity", NULL, e)) {
+		return Mode_Done(&t, 0);
 	}
 	Script_SetVar("Speech", "OnOutOfRange", Script_Global("PhoneCab", "ForceResetPhoneCab"));
-	PyObject *foe = Script_Keep(&r, Script_SaveVar("Revenge.Foe"));
-	PyObject *type = foe ? Script_Keep(&r, Script_SaveVar("Revenge.Type")) : NULL;
-	if (!type) {
-		return Script_Done(&r, NULL);
+	Mode_SaveVar("Revenge.Foe", foe);
+	Mode_SaveVar("Revenge.Type", type);
+	if (Phone_Is(type, "") || Phone_Is(foe, "")) {
+		return Mode_Done(&t, 1);
 	}
-	if (Script_Is(type, "") || Script_Is(foe, "")) {
-		return Script_Done(&r, Py_ReturnNone());
+	byte ok;
+	int alarm = Mode_AlarmOn();
+	if (alarm > 0) {
+		ok = Native_Arith('+', Mode_S(&t, "Generics_StillPolice1_"), foe, text) &&
+			Native_CallMod("Speech", "StartObjSpch", NULL, "vvv", e, text, foe);
+	} else {
+		int marked = alarm < 0 ? -1 : Phone_Marked(e);
+		ok = marked >= 0 && (!marked || PhoneCab_Revenge(a));
 	}
-	PyObject *alarm = Script_Keep(&r, Script_Ask("Scrap", "GetAlarm", "()"));
-	int t = Script_True(alarm ? Script_Keep(&r, Script_Index(alarm, 0)) : NULL);
-	byte ok = t >= 0;
-	if (t > 0) {
-		PyObject *text = Script_Keep(&r, Script_SPlus("Generics_StillPolice1_", foe));
-		ok = text && Script_Keep(&r, Script_Ask("Speech", "StartObjSpch", "(OOO)", e, text, foe));
-	} else if (t == 0) {
-		PyObject *radar = Script_Keep(&r, Script_GetAttr(e, "RadarShow"));
-		int c = radar ? Script_NumCmp(radar, 1) : -2;
-		if (c != 0 && c != -2) {
-			radar = Script_Keep(&r, Script_GetAttr(e, "RadarShow"));
-			c = radar ? Script_NumCmp(radar, 2) : -2;
-		}
-		ok = c != -2 && (c != 0 || Script_Keep(&r, PhoneCab_RevengeSpeech(NULL, args)));
-	}
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+	return Mode_Done(&t, ok);
 }
 
-static PyObject *PhoneCab_DefUseAudioCom(PyObject *self, PyObject *args) {
-	(void)self;
-	return Phone_DefUse(args, PhoneCab_UseAudioCom);
+MODE_FN(PhoneCab, UseAudioCom, 4, PhoneCab_Use(a))
+MODE_FN(PhoneCab, DefUseAudioCom, 4, Phone_DefUse(a, PhoneCab_Use))
+
+/* SpawnChar(c, Phone): the character in front of the cab (c.Ang reads Phone.Ang again) */
+static byte PhoneCab_Spawn(const nativeVal_t *c, const nativeVal_t *phone) {
+	nativeVal_t pos = { 0 }, ang = { 0 }, y = { 0 }, k;
+	Native_SetInt(&k, 1);
+	byte ok = Mode_Import("Chars") && Mode_VGet(phone, "Pos", &pos) && Mode_VGet(phone, "Ang", &ang) &&
+		Native_Subscript(&ang, &k, &y) && Phone_Spawn(c, &pos, &y, 180);
+	Native_Free(&pos);
+	Native_Free(&ang);
+	Native_Free(&y);
+	return ok;
 }
 
-/* SpawnChar(c, Phone): the character in front of the cab */
-static PyObject *PhoneCab_SpawnChar(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "Chars", NULL };
-	PyObject *c, *phone;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &c, &phone) || !Script_Import(mods)) {
-		return NULL;
-	}
-	scriptRefs_t r = { 0 };
-	PyObject *pos = Script_Keep(&r, Script_GetAttr(phone, "Pos"));
-	PyObject *ang = pos ? Script_Keep(&r, Script_GetAttr(phone, "Ang")) : NULL;
-	PyObject *y = ang ? Script_Keep(&r, Script_Index(ang, 1)) : NULL;
-	/* c.Ang reads Phone.Ang again */
-	byte ok = y && Phone_Spawn(c, pos, y, 180);
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
-}
+MODE_FN(PhoneCab, SpawnChar, 2, PhoneCab_Spawn(&a[0], &a[1]))
 
-/* the action classes (phonecab.def), $name for a press desktop */
-static PyObject *Phone_Class(const char *section, PyObject *name) {
-	PyObject *vars = name ? Py_BuildValue("{s:O}", "name", name) : NULL;
-	Script_RunFile(0, PHONECAB_FILE, section, phonecab_def, NULL, vars);
-	Py_XDECREF(vars);
-	return Py_ReturnNone();
-}
-
-static PyObject *PhoneCab_CreatePhoneCabClass(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Phone_Class("PhoneCab", NULL);
-}
-
-static PyObject *PhoneCab_CreateAudioComClass(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Phone_Class("AudioCom", NULL);
-}
+PHONE_NOARGS(PhoneCab_CreatePhoneCabClass, Phone_Class("PhoneCab", NULL))
+PHONE_NOARGS(PhoneCab_CreateAudioComClass, Phone_Class("AudioCom", NULL))
 
 /* Init(): a cab and its communicator (in PhoneCabs) at each DM_Phone_* dummy that is on */
-static PyObject *PhoneCab_Init(PyObject *self, PyObject *args) {
+static byte PhoneCab_InitCabs(void) {
 	static const phoneAttr_t link[] = {
 		{ "OffModPos", 'v', 0, NULL, { 0, 0, 0 } },
 		{ "DeltaOffMul", 'i', 1, NULL, { 0 } },
@@ -499,125 +539,150 @@ static PyObject *PhoneCab_Init(PyObject *self, PyObject *args) {
 		{ "EntityList", 's', 0, "PhoneCabs", { 0 } },
 		{ NULL, 0, 0, NULL, { 0 } },
 	};
-	(void)self;
-	(void)args;
-	if (!Script_Try("Scrap", "CreateEntityList", "(s)", "PhoneCabs") ||
-		!Script_Try("Scrap", "StartDummySearch", "(si)", "DM_Phone_*", 1)) {
-		return NULL;
-	}
+	/* Scrap.CreateEntityList("PhoneCabs") */
+	CHECK(cWorld_NewEntityList(g_pWorld, "PhoneCabs"));
+	Mode_DummyStart("DM_Phone_*", 1);
 	for (;;) {
-		scriptRefs_t r = { 0 };
-		PyObject *dummy = Script_Keep(&r, Script_Ask("Scrap", "NextDummySearch", "()"));
-		int none = dummy ? Script_Eq(dummy, Py_None) : -1;
-		if (none != 0) {
-			return Script_Done(&r, none > 0 ? Py_ReturnNone() : NULL);
+		modeVals_t t = { .n = 0 };
+		nativeVal_t *dummy = Mode_V(&t), *on = Mode_V(&t), *d0 = Mode_V(&t), *name = Mode_V(&t), *d1 = Mode_V(&t);
+		nativeVal_t *yang = Mode_V(&t), *a = Mode_V(&t), *pc = Mode_V(&t), *ac = Mode_V(&t), *pcname = Mode_V(&t);
+		nativeVal_t *lm = Mode_V(&t);
+		Mode_DummyNext(dummy);
+		if (dummy->type == NV_NONE) {
+			return Mode_Done(&t, 1);
 		}
-		int on = Script_True(Script_Keep(&r, Script_Index(dummy, 3)));
-		if (on < 0) {
-			return Script_Done(&r, NULL);
+		if (!Native_Subscript(dummy, Mode_I(&t, 3), on)) {
+			return Mode_Done(&t, 0);
 		}
-		if (!on) {
-			Script_Done(&r, NULL);
+		if (!Native_True(on)) {
+			Mode_Done(&t, 0);
 			continue;
 		}
-		PyObject *d0 = Script_Keep(&r, Script_Index(dummy, 0));
-		PyObject *name = d0 ? Script_Keep(&r, Script_PlusS(Script_Ref(d0), "_PhoneCab")) : NULL;
-		PyObject *d1 = name ? Script_Keep(&r, Script_Index(dummy, 1)) : NULL;
-		PyObject *d2 = d1 ? Script_Keep(&r, Script_Index(dummy, 2)) : NULL;
-		PyObject *yang = d2 ? Script_Keep(&r, Script_Index(d2, 1)) : NULL;
-		PyObject *a = yang ? Script_Keep(&r, Py_BuildValue("(OOO)", name, d1, yang)) : NULL;
-		PyObject *pc = a ? Script_Keep(&r, PhoneCab_CreatePhoneCab(NULL, a)) : NULL;
+		byte ok = Native_Subscript(dummy, Mode_I(&t, 0), d0) && Native_Arith('+', d0, Mode_S(&t, "_PhoneCab"), name) &&
+			Native_Subscript(dummy, Mode_I(&t, 1), d1) && Phone_DummyAng(dummy, yang);
+		if (ok) {
+			Native_SetEmpty(a, NV_TUPLE);
+			Native_Copy(Native_Append(a), name);
+			Native_Copy(Native_Append(a), d1);
+			Native_Copy(Native_Append(a), yang);
+			ok = PhoneCab_Cab(a->items, pc);
+		}
 		/* the communicator reads the dummy again */
-		d2 = pc ? Script_Keep(&r, Script_Index(dummy, 2)) : NULL;
-		yang = d2 ? Script_Keep(&r, Script_Index(d2, 1)) : NULL;
-		a = yang ? Script_Keep(&r, Py_BuildValue("(OOO)", d0, d1, yang)) : NULL;
-		PyObject *ac = a ? Script_Keep(&r, PhoneCab_CreateAudioCom(NULL, a)) : NULL;
-		PyObject *pcname = ac ? Script_Keep(&r, Script_GetAttr(pc, "Name")) : NULL;
-		byte ok = pcname && Script_HSet(ac, "LinkModel", Script_PlusS(Script_Ref(pcname), ",DC_JackCom")) && Phone_Set(ac, link);
-		Script_Done(&r, NULL);
+		Native_Free(yang);
+		ok = ok && Phone_DummyAng(dummy, yang);
+		if (ok) {
+			Native_Free(a);
+			Native_SetEmpty(a, NV_TUPLE);
+			Native_Copy(Native_Append(a), d0);
+			Native_Copy(Native_Append(a), d1);
+			Native_Copy(Native_Append(a), yang);
+			ok = PhoneCab_AudioCom(a->items, ac);
+		}
+		ok = ok && Mode_VGet(pc, "Name", pcname) && Native_Arith('+', pcname, Mode_S(&t, ",DC_JackCom"), lm) &&
+			Mode_VSet(ac, "LinkModel", lm) && Phone_Set(ac, link);
+		Mode_Done(&t, 0);
 		if (!ok) {
-			return NULL;
+			return 0;
 		}
 	}
 }
 
+PHONE_NOARGS(PhoneCab_Init, PhoneCab_InitCabs())
+
+/* res.RadarShow == 0 (a free cab): 1 or 0, -1 with the error */
+static int PhoneCab_IsFree(const nativeVal_t *res) {
+	nativeVal_t radar, zero;
+	if (!Mode_VGet(res, "RadarShow", &radar)) {
+		return -1;
+	}
+	Native_SetInt(&zero, 0);
+	int c = Native_Compare(&radar, &zero);
+	Native_Free(&radar);
+	return PyErr_Occurred() ? -1 : !c;
+}
+
+/* res = Scrap.GetEntity(res.NextInList) */
+static byte PhoneCab_Next(nativeVal_t *res) {
+	nativeVal_t next;
+	if (!Mode_VGet(res, "NextInList", &next)) {
+		return 0;
+	}
+	Native_Free(res);
+	byte ok = Mode_EntityH(&next, res);
+	Native_Free(&next);
+	return ok;
+}
+
 /* GetFree(): the cab nearest to the player; without a player a random free one (no radar mark) */
-static PyObject *PhoneCab_GetFree(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { 0 };
-	(void)self;
-	(void)args;
-	PyObject *usr = Script_Keep(&r, Script_Usr());
-	int t = Script_True(usr);
-	if (t < 0) {
-		return Script_Done(&r, NULL);
+static byte PhoneCab_Free(nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *pos = Mode_V(&t), *len = Mode_V(&t), *top = Mode_V(&t), *topf = Mode_V(&t);
+	nativeVal_t *rnd = Mode_V(&t), *index = Mode_V(&t), *name = Mode_V(&t), *tenth = Mode_V(&t);
+	if (!Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
 	}
-	if (t) {
-		PyObject *pos = Script_Keep(&r, Script_GetAttr(usr, "Pos"));
-		PyObject *a = pos ? Script_Keep(&r, Py_BuildValue("(O)", pos)) : NULL;
-		return Script_Done(&r, a ? PhoneCab_GetNearestPhoneCab(NULL, a) : NULL);
+	if (Native_True(usr)) {
+		return Mode_Done(&t, Mode_VGet(usr, "Pos", pos) && PhoneCab_Nearest(pos, out));
 	}
-	PyObject *len = Script_Keep(&r, Script_Ask("Scrap", "EntityListGet", "(ss)", "PhoneCabs", "Num"));
-	PyObject *tenth = len ? Script_Keep(&r, PyFloat_FromDouble(0.1)) : NULL;
-	PyObject *top = tenth ? Script_Keep(&r, PyNumber_Subtract(len, tenth)) : NULL;
-	PyObject *topf = top ? Script_Keep(&r, PyNumber_Float(top)) : NULL;
-	PyObject *rnd = topf ? Script_Keep(&r, PyFloat_FromDouble(Scrap_RandRange(0.0, PyFloat_AsDouble(topf)))) : NULL;
-	PyObject *index = rnd ? Script_Keep(&r, Script_Int(rnd)) : NULL;
-	if (!index) {
-		return Script_Done(&r, NULL);
+	Native_SetFloat(tenth, 0.1);
+	if (!Mode_ListGet("PhoneCabs", "Num", len) || !Native_Arith('-', len, tenth, top) || !Native_ToFloat(top, topf)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetFloat(rnd, Scrap_RandRange(0.0, topf->f));
+	if (!Native_ToInt(rnd, index)) {
+		return Mode_Done(&t, 0);
 	}
 	for (int pass = 0; pass < 2; pass++) {
-		PyObject *name = Script_Ask("Scrap", "EntityListGet", "(ss)", "PhoneCabs", "First");
-		PyObject *res = Script_Keep(&r, Script_Entity(name));
-		Py_XDECREF(name);
+		if (!Mode_ListGet("PhoneCabs", "First", name) || !Mode_EntityH(name, out)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_Free(name);
 		long i = 0;
-		while ((t = Script_True(res)) > 0) {
+		while (Native_True(out)) {
 			if (!pass) {
-				PyObject *n = PyInt_FromLong(i);
-				int same = Script_Eq(n, index);
-				Py_XDECREF(n);
-				if (same < 0) {
-					return Script_Done(&r, NULL);
+				nativeVal_t n;
+				Native_SetInt(&n, i);
+				int same = !Native_Compare(&n, index);
+				if (PyErr_Occurred()) {
+					return Mode_Done(&t, 0);
 				}
 				if (same) {
 					break;
 				}
 				i++;
-			} else {
-				PyObject *radar = Script_Keep(&r, Script_GetAttr(res, "RadarShow"));
-				int c = radar ? Script_NumCmp(radar, 0) : -2;
-				if (c == -2) {
-					return Script_Done(&r, NULL);
-				}
-				if (c == 0) {
-					return Script_Done(&r, Script_Ref(res));
-				}
 			}
-			PyObject *next = Script_Keep(&r, Script_GetAttr(res, "NextInList"));
-			res = next ? Script_Keep(&r, Script_Entity(next)) : NULL;
-		}
-		if (t < 0) {
-			return Script_Done(&r, NULL);
+			int k = pass ? PhoneCab_IsFree(out) : 0;
+			if (k) {
+				return Mode_Done(&t, k > 0);
+			}
+			if (!PhoneCab_Next(out)) {
+				return Mode_Done(&t, 0);
+			}
 		}
 		if (!pass) {
-			if (!t) {
+			if (!Native_True(out)) {
 				break;
 			}
-			PyObject *radar = Script_Keep(&r, Script_GetAttr(res, "RadarShow"));
-			int c = radar ? Script_NumCmp(radar, 0) : -2;
-			if (c == -2) {
-				return Script_Done(&r, NULL);
-			}
-			if (c == 0) {
-				return Script_Done(&r, Script_Ref(res));
+			int k = PhoneCab_IsFree(out);
+			if (k) {
+				return Mode_Done(&t, k > 0);
 			}
 		}
 	}
+	/* OBJLIB 7: the string exception of the script (raise "Aqui ...") */
 	PyObject *text = PyString_FromString("Aqui no se debe de llegar nunca, siempre se ha de devolver una cabina (res != None)");
 	if (text) {
 		PyErr_SetObject(text, Py_None);
 		Py_DECREF(text);
 	}
-	return Script_Done(&r, NULL);
+	return Mode_Done(&t, 0);
+}
+
+static PyObject *PhoneCab_GetFree(PyObject *self, PyObject *args) {
+	nativeVal_t out = { 0 };
+	(void)self;
+	(void)args;
+	return Mode_Return(PhoneCab_Free(&out), &out);
 }
 
 PyMethodDef g_PhoneCabMethods[] = {
@@ -639,38 +704,27 @@ PyMethodDef g_PhoneCabMethods[] = {
 
 /* ---- DTritusDesktop ---- */
 
-static PyObject *DTritus_ForceResetDTritusDesktop(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Phone_Reset("DTritusDesktop", "DTritusDesktop", "DtritusDesktop");
-}
+PHONE_NOARGS(DTritus_ForceResetDTritusDesktop, Phone_Reset("DTritusDesktop", "DTritusDesktop", "DtritusDesktop"))
 
 /* SpawnChar(c): the character in front of the desktop (DM_DTritusDesktop) */
-static PyObject *DTritus_SpawnChar(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "Chars", NULL };
-	PyObject *c;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &c) || !Script_Import(mods)) {
-		return NULL;
-	}
-	scriptRefs_t r = { 0 };
-	PyObject *name = Script_Keep(&r, PyString_FromString("DM_DTritusDesktop"));
-	PyObject *dummy = Script_Keep(&r, Phone_Dummy(name));
-	PyObject *pos = dummy ? Script_Keep(&r, Script_Index(dummy, 1)) : NULL;
-	PyObject *d2 = pos ? Script_Keep(&r, Script_Index(dummy, 2)) : NULL;
-	PyObject *y = d2 ? Script_Keep(&r, Script_Index(d2, 1)) : NULL;
-	byte ok = y && Phone_Spawn(c, pos, y, -180);
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+static byte DTritus_Spawn(const nativeVal_t *c) {
+	nativeVal_t name, dummy = { 0 }, pos = { 0 }, y = { 0 }, k;
+	Native_SetStr(&name, "DM_DTritusDesktop");
+	Native_SetInt(&k, 1);
+	byte ok = Mode_Import("Chars") && Phone_Dummy(&name, &dummy) && Native_Subscript(&dummy, &k, &pos) &&
+		Phone_DummyAng(&dummy, &y) && Phone_Spawn(c, &pos, &y, -180);
+	Native_Free(&dummy);
+	Native_Free(&pos);
+	Native_Free(&y);
+	return ok;
 }
 
-static PyObject *DTritus_CreateDTritusDesktopClass(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Phone_Class("DTritusDesktop", NULL);
-}
+MODE_FN(DTritus, SpawnChar, 1, DTritus_Spawn(&a[0]))
+
+PHONE_NOARGS(DTritus_CreateDTritusDesktopClass, Phone_Class("DTritusDesktop", NULL))
 
 /* CreateDTritusDesktop(name, pos, yAng): the desktop the player talks to */
-static PyObject *DTritus_CreateDTritusDesktop(PyObject *self, PyObject *args) {
+static byte DTritus_Desktop(const nativeVal_t *a, nativeVal_t *out) {
 	static const phoneAttr_t attrs[] = {
 		{ "ActCtrl", 's', 0, "DTritusDesktop", { 0 } },
 		{ "VRadius", 'i', 60, NULL, { 0 } },
@@ -684,157 +738,131 @@ static PyObject *DTritus_CreateDTritusDesktop(PyObject *self, PyObject *args) {
 		{ "UseFunc", 's', 0, "DTritusDesktop.DefUseDTritusDesktop", { 0 } },
 		{ NULL, 0, 0, NULL, { 0 } },
 	};
-	PyObject *name, *pos, *yang;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &name, &pos, &yang)) {
-		return NULL;
-	}
-	PyObject *ac = Phone_Create(name, pos, yang, 0);
-	if (ac && !Phone_Set(ac, attrs)) {
-		Py_DECREF(ac);
-		return NULL;
-	}
-	return ac;
+	return Phone_Create(&a[0], &a[1], &a[2], 0, out) && Phone_Set(out, attrs);
 }
+
+MODE_FN(DTritus, CreateDTritusDesktop, 3, DTritus_Desktop(a, out))
 
 /* UseDTritusDesktop(UsrName, CharName, optId, FullOption): using it saves the game; the talk of the mission
  * (DialogController), or Deep Throat's taunt while the alarm is on */
-static PyObject *DTritus_UseDTritusDesktop(PyObject *self, PyObject *args) {
-	PyObject *usr, *chname, *opt, *full;
-	scriptRefs_t r = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &chname, &opt, &full)) {
-		return NULL;
-	}
-	PyObject *e = Script_Keep(&r, Phone_Mark(chname));
-	if (!e || !Script_SetGlobal("DTritusDesktop", "DTritusDesktop", Script_Ref(e))) {
-		return Script_Done(&r, NULL);
+static byte DTritus_Use(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *dc = Mode_V(&t);
+	if (!Phone_Mark(&a[1], e) || !Mode_Put("DTritusDesktop", "DTritusDesktop", NULL, e)) {
+		return Mode_Done(&t, 0);
 	}
 	Script_SetVar("Speech", "OnOutOfRange", Script_Global("DTritusDesktop", "ForceResetDTritusDesktop"));
-	PyObject *dc = Script_Keep(&r, Script_Global("DTritusDesktop", "DialogController"));
-	int t = Script_True(dc);
-	if (t <= 0) {
-		return Script_Done(&r, t < 0 ? NULL : Py_ReturnNone());
+	if (!Mode_G("DTritusDesktop", "DialogController", dc)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *alarm = Script_Keep(&r, Script_Ask("Scrap", "GetAlarm", "()"));
-	t = Script_True(alarm ? Script_Keep(&r, Script_Index(alarm, 0)) : NULL);
-	byte ok = t >= 0;
-	if (t > 0) {
-		ok = Script_Try("Speech", "AddRemoteCom", "(ss)", "Generics_DeepThroatTaunt_1", "DeepThroat");
-	} else if (t == 0) {
-		dc = Script_Keep(&r, Script_Global("DTritusDesktop", "DialogController"));
-		ok = dc && Script_Keep(&r, Script_Invoke(dc, Py_BuildValue("(OOOO)", usr, chname, opt, full)));
+	if (!Native_True(dc)) {
+		return Mode_Done(&t, 1);
 	}
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+	int alarm = Mode_AlarmOn();
+	if (alarm) {
+		return Mode_Done(&t, alarm > 0 && Native_CallMod("Speech", "AddRemoteCom", NULL, "ss", "Generics_DeepThroatTaunt_1", "DeepThroat"));
+	}
+	/* OBJLIB 3: the mission's talk function, read again */
+	return Mode_Done(&t, Native_CallGlobal("DTritusDesktop", "DialogController", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]));
 }
 
-static PyObject *DTritus_DefUseDTritusDesktop(PyObject *self, PyObject *args) {
-	(void)self;
-	return Phone_DefUse(args, DTritus_UseDTritusDesktop);
-}
+MODE_FN(DTritus, UseDTritusDesktop, 4, DTritus_Use(a))
+MODE_FN(DTritus, DefUseDTritusDesktop, 4, Phone_DefUse(a, DTritus_Use))
 
 /* CreatePressDesktopClass(DesktopName): the class of a journalist's desktop */
-static PyObject *DTritus_CreatePressDesktopClass(PyObject *self, PyObject *args) {
-	PyObject *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
-	}
-	if (!PyString_Check(name)) {
-		/* the script's SAct.CreateClass raises its TypeError */
-		PyObject *v = Script_Ask("SAct", "CreateClass", "(O)", name);
-		Py_XDECREF(v);
-		if (!v) {
-			return NULL;
-		}
-		v = Script_SPlus("Models/Misc/DesktopPress/", name);
-		Py_XDECREF(v);
-		return NULL;
+static byte DTritus_PressClass(const nativeVal_t *name) {
+	if (name->type != NV_STR) {
+		/* the script's SAct.CreateClass raises its TypeError (and the model name its own after it) */
+		nativeVal_t head, v = { 0 };
+		Native_SetStr(&head, "Models/Misc/DesktopPress/");
+		byte ok = Native_CallMod("SAct", "CreateClass", NULL, "v", name) && Native_Arith('+', &head, name, &v);
+		Native_Free(&v);
+		/* a value both take gives no result and no error, as the script's C did */
+		return ok && 0;
 	}
 	return Phone_Class("PressDesktop", name);
 }
 
+MODE_FN(DTritus, CreatePressDesktopClass, 1, DTritus_PressClass(&a[0]))
+
 /* CreatePressDesktop(DesktopName): the desktop at its dummy DM_<DesktopName>, when there is one */
-static PyObject *DTritus_CreatePressDesktop(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptRefs_t r = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+static byte DTritus_Press(const nativeVal_t *name) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *pat = Mode_V(&t), *dummy = Mode_V(&t), *pos = Mode_V(&t), *y = Mode_V(&t), *ac = Mode_V(&t);
+	if (!Native_Arith('+', Mode_S(&t, "DM_"), name, pat) || !Phone_Dummy(pat, dummy)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *dummy = Script_Keep(&r, Phone_Dummy(Script_Keep(&r, Script_SPlus("DM_", name))));
-	int t = Script_True(dummy);
-	if (t <= 0) {
-		return Script_Done(&r, t < 0 ? NULL : Py_ReturnNone());
+	if (!Native_True(dummy)) {
+		return Mode_Done(&t, 1);
 	}
-	PyObject *a = Script_Keep(&r, Py_BuildValue("(O)", name));
-	PyObject *pos = a && Script_Keep(&r, DTritus_CreatePressDesktopClass(NULL, a)) ? Script_Keep(&r, Script_Index(dummy, 1)) : NULL;
-	PyObject *d2 = pos ? Script_Keep(&r, Script_Index(dummy, 2)) : NULL;
-	PyObject *y = d2 ? Script_Keep(&r, Script_Index(d2, 1)) : NULL;
-	PyObject *ac = y ? Script_Keep(&r, Phone_Create(name, pos, y, 0)) : NULL;
-	byte ok = ac && Script_HSet(ac, "ActCtrl", Script_Ref(name)) && Script_HSet(ac, "MapCollision", PyInt_FromLong(1)) &&
-		Script_HSet(ac, "VRadius", PyInt_FromLong(60));
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+	byte ok = DTritus_PressClass(name) && Native_Subscript(dummy, Mode_I(&t, 1), pos) && Phone_DummyAng(dummy, y) &&
+		Phone_Create(name, pos, y, 0, ac) && Mode_VSet(ac, "ActCtrl", name) && Mode_VSet(ac, "MapCollision", Mode_I(&t, 1)) &&
+		Mode_VSet(ac, "VRadius", Mode_I(&t, 60));
+	return Mode_Done(&t, ok);
 }
+
+MODE_FN(DTritus, CreatePressDesktop, 1, DTritus_Press(&a[0]))
 
 /* Init(): Dtritus' desktop at DM_DTritusDesktop (when the dummy is on) and the three desktops of the journalists */
-static PyObject *DTritus_Init(PyObject *self, PyObject *args) {
+static byte DTritus_InitDesks(void) {
 	static const char *const desks[] = { "BertoDesktop", "BettyDesktop", "HumphreyDesktop" };
-	scriptRefs_t r = { 0 };
-	(void)self;
-	(void)args;
-	PyObject *dummy = Script_Keep(&r, Phone_Dummy(Script_Keep(&r, PyString_FromString("DM_DTritusDesktop"))));
-	int t = Script_True(dummy);
-	if (t > 0) {
-		t = Script_True(Script_Keep(&r, Script_Index(dummy, 3)));
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *dummy = Mode_V(&t), *on = Mode_V(&t), *a = Mode_V(&t), *desk = Mode_V(&t), *d[3];
+	for (int k = 0; k < 3; k++) {
+		d[k] = Mode_V(&t);
 	}
-	if (t > 0) {
-		PyObject *d0 = Script_Keep(&r, Script_Index(dummy, 0));
-		PyObject *d1 = d0 ? Script_Keep(&r, Script_Index(dummy, 1)) : NULL;
-		PyObject *d2 = d1 ? Script_Keep(&r, Script_Index(dummy, 2)) : NULL;
-		PyObject *y = d2 ? Script_Keep(&r, Script_Index(d2, 1)) : NULL;
-		PyObject *a = y && Script_Keep(&r, DTritus_CreateDTritusDesktopClass(NULL, NULL)) ?
-			Script_Keep(&r, Py_BuildValue("(OOO)", d0, d1, y)) : NULL;
-		PyObject *desk = a ? DTritus_CreateDTritusDesktop(NULL, a) : NULL;
-		t = desk && Script_SetGlobal("DTritusDesktop", "DTritusDesktop", desk) ? 1 : -1;
+	if (!Phone_Dummy(Mode_S(&t, "DM_DTritusDesktop"), dummy)) {
+		return Mode_Done(&t, 0);
 	}
-	for (int i = 0; t >= 0 && i < 3; i++) {
-		PyObject *a = Script_Keep(&r, Py_BuildValue("(s)", desks[i]));
-		t = a && Script_Keep(&r, DTritus_CreatePressDesktop(NULL, a)) ? t : -1;
+	byte ok = 1;
+	if (Native_True(dummy)) {
+		ok = Native_Subscript(dummy, Mode_I(&t, 3), on);
+		if (ok && Native_True(on)) {
+			ok = Native_Subscript(dummy, Mode_I(&t, 0), d[0]) && Native_Subscript(dummy, Mode_I(&t, 1), d[1]) &&
+				Phone_DummyAng(dummy, d[2]) && Phone_Class("DTritusDesktop", NULL);
+			if (ok) {
+				Native_SetEmpty(a, NV_TUPLE);
+				for (int k = 0; k < 3; k++) {
+					Native_Copy(Native_Append(a), d[k]);
+				}
+				ok = DTritus_Desktop(a->items, desk) && Mode_Put("DTritusDesktop", "DTritusDesktop", NULL, desk);
+			}
+		}
 	}
-	return Script_Done(&r, t >= 0 ? Py_ReturnNone() : NULL);
+	for (int i = 0; ok && i < 3; i++) {
+		ok = DTritus_Press(Mode_S(&t, desks[i]));
+	}
+	return Mode_Done(&t, ok);
 }
 
+PHONE_NOARGS(DTritus_Init, DTritus_InitDesks())
+
 /* InitNPCS(): the journalists whose default map (save variable Journalist.<name>_Defaut) is this one */
-static PyObject *DTritus_InitNPCS(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "CharsNPC", "string", "Init", NULL };
+static byte DTritus_NPCs(void) {
 	static const char *const names[] = { "Humphrey", "Betty", "Berto" };
-	(void)self;
-	(void)args;
-	if (!Script_Import(mods)) {
-		return NULL;
+	if (!Mode_Import("CharsNPC") || !Mode_Import("string") || !Mode_Import("Init")) {
+		return 0;
 	}
 	for (int i = 0; i < 3; i++) {
-		scriptRefs_t r = { 0 };
+		modeVals_t t = { .n = 0 };
+		nativeVal_t *sv = Mode_V(&t), *map = Mode_V(&t), *path = Mode_V(&t), *tail = Mode_V(&t), *here = Mode_V(&t);
 		char var[64];
 		Str_Printf(var, sizeof(var), "Journalist.%s_Defaut", names[i]);
-		PyObject *sv = Script_Keep(&r, Script_SaveVar(var));
-		PyObject *map = sv ? Script_Keep(&r, Script_Ask("string", "upper", "(O)", sv)) : NULL;
-		PyObject *path = map ? Script_Keep(&r, Script_Attr("Init", "Path")) : NULL;
-		PyObject *tail = path ? Script_Keep(&r, PySequence_GetSlice(path, 7, 0x7fffffff)) : NULL;
-		PyObject *here = tail ? Script_Keep(&r, Script_Ask("string", "upper", "(O)", tail)) : NULL;
-		int t = here ? Script_Eq(map, here) : -1;
-		if (t > 0) {
+		Mode_SaveVar(var, sv);
+		byte ok = Native_Upper(sv, map) && Mode_ModVar("Init", "Path", path) && Native_Slice(path, 7, 0x7fffffff, tail) &&
+			Native_Upper(tail, here);
+		if (ok && Native_Equal(map, here)) {
 			Str_Printf(var, sizeof(var), "%s_Default", names[i]);
-			t = Script_Try("CharsNPC", "CreateMissionChar", "(s)", var) ? 1 : -1;
+			ok = Native_CallMod("CharsNPC", "CreateMissionChar", NULL, "s", var);
 		}
-		Script_Done(&r, NULL);
-		if (t < 0) {
-			return NULL;
+		if (!Mode_Done(&t, ok)) {
+			return 0;
 		}
 	}
-	return Py_ReturnNone();
+	return 1;
 }
+
+PHONE_NOARGS(DTritus_InitNPCS, DTritus_NPCs())
 
 PyMethodDef g_DTritusDesktopMethods[] = {
 	{ "ForceResetDTritusDesktop", DTritus_ForceResetDTritusDesktop, 1, NULL },
