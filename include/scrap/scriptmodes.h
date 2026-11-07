@@ -714,7 +714,7 @@ byte Mode_Printed(byte ok, const char *module, const char *func);
 byte Mode_GVarGetV(const nativeVal_t *name, nativeVal_t *out);
 /* SScorer.Get(id, item, var) and SScorer.Add(id, name, type) with the id and the name values of the script, through
  * their seams (the TypeErrors of "iss") */
-byte Mode_ScorerGetV(const nativeVal_t *id, const nativeVal_t *item, const char *var, nativeVal_t *out);
+byte Mode_ScorerGetVal(const nativeVal_t *id, const nativeVal_t *item, const char *var, nativeVal_t *out);
 byte Mode_ScorerAddV(const nativeVal_t *id, const nativeVal_t *name, const char *type);
 /* SInput.ResetToDefault() through its seam */
 byte Mode_ResetKeys(void);

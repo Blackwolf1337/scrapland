@@ -3499,7 +3499,7 @@ byte Mode_GVarGetV(const nativeVal_t *name, nativeVal_t *out) {
 	return Native_ArgStr(name, 1, &s) && Native_GVarGet(s, out);
 }
 
-byte Mode_ScorerGetV(const nativeVal_t *id, const nativeVal_t *item, const char *var, nativeVal_t *out) {
+byte Mode_ScorerGetVal(const nativeVal_t *id, const nativeVal_t *item, const char *var, nativeVal_t *out) {
 	int i;
 	const char *s;
 	MODE_SEAM("SScorer", "Get");
