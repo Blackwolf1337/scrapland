@@ -5,239 +5,205 @@
  * the progress bar of the next level (Close). The module code (the preloads, the flags of the level such as Outdoor,
  * MultiPlayer, UpperMap, the tables) is data/modules/init.mod; its two for loops are the C hooks at the end of this
  * file. The map scripts change the flags while Init runs, so they are read where the script reads them.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters (Init,
+ * LoadCharLib, AddMLib, MLibInitStatus, MLibInit and PreloadMlibs parse their one argument, isMission, SetArrowSize,
+ * SetMapLabelText and Close take any arguments, as before). The flags and tables of the module are read as its globals
+ * where the script reads them (OBJLIB 5); Path is written at once and MapLibs changed in place (the map libraries are
+ * module objects, OBJLIB 7, as are Init.SuperDealModule and the libraries of Map). The functions of the module the
+ * script calls as its globals stay so, the other ports, the map modules and the super deal module by name (OBJLIB 3),
+ * as do Scrap.PreloadLibrary, PreloadAnm, CreateElements, CreateSaveVar, GetLevelPath, GetNewLevelPath, SAI.IniAI,
+ * string.find, string.replace with its count, dir and __import__ (OBJLIB 6, 7). Scrap.Set, OpenPack, ClosePack,
+ * Preload3DObject, GetNetFlags, SetAlarm, ConsoleError, AddScheduledFunc, SScorer.Get and SetLabelText go through their
+ * seams (OBJLIB 7). The evals of the save texts stay Script_EvalIn (Mode_EvalIn, OBJLIB 6), and the C hooks of the
+ * module code keep working on the module's dict (OBJLIB 6).
  */
-#include <stdarg.h>
 #include <string.h>
 
 #include "scrap/scrap.h"
 #include "scrap/script.h"
-#include "scrap/timer.h"
+#include "scrap/scriptmodes.h"
+#include "game/Script/levels/Levels.h"
 
-#define K(o) Script_Keep(&r, (o))
-#define FAIL() return Script_Done(&r, NULL)
+#define IN "Init"
 
 /* `if <Init variable>:` (-1 with the error set) */
 static int In_Flag(const char *name) {
-	PyObject *v = Script_Global("Init", name);
-	int t = v ? Script_True(v) : -1;
-	Py_XDECREF(v);
-	return t;
+	return LvN_GTrue(IN, name);
 }
 
-/* a function of this module through its global, as the script calls it */
-static byte In_Self(const char *func, const char *fmt, ...) {
-	va_list va;
-	va_start(va, fmt);
-	PyObject *a = Py_VaBuildValue((char *)fmt, va);
-	va_end(va);
-	PyObject *f = Script_Global("Init", func);
-	PyObject *res = Script_Invoke(f, a);
-	Py_XDECREF(f);
-	Py_XDECREF(res);
-	return res != NULL;
+/* import module; module.func() (arg NULL) or module.func(arg) */
+static byte In_Call(const char *module, const char *func, const nativeVal_t *arg) {
+	return Mode_Import(module) && (arg ? Native_CallMod(module, func, NULL, "v", arg) : Native_CallMod(module, func, NULL, ""));
 }
 
-/* import module; module.func(args) */
-static byte In_Call(const char *module, const char *func, const char *fmt, PyObject *arg) {
-	const char *const names[] = { module, NULL };
-	return Script_Import(names) && (arg ? Script_Try(module, func, fmt, arg) : Script_Try(module, func, "()"));
+/* o.func(arg) of a module object */
+static byte In_Method(const nativeVal_t *o, const char *func, const nativeVal_t *arg) {
+	PyObject *m = Mode_VBound(o, func);
+	byte ok = m && Native_Call(m, NULL, "v", arg);
+	Py_XDECREF(m);
+	return ok;
 }
 
-/* Scrap.GetLevelPath()[7:] (a new reference) */
-static PyObject *In_LevelName(const char *getter) {
-	PyObject *p = Script_Ask("Scrap", getter, "()");
-	PyObject *s = p ? PySequence_GetSlice(p, 7, PySequence_Length(p)) : NULL;
-	Py_XDECREF(p);
-	return s;
+/* Scrap.<getter>()[7:] (GetLevelPath, GetNewLevelPath: the name of the level) */
+static byte In_LevelName(const char *getter, nativeVal_t *out) {
+	nativeVal_t p = { 0 };
+	Native_Free(out);
+	byte ok = Native_CallMod("Scrap", getter, &p, "") && Native_Slice(&p, 7, 0x7fffffff, out);
+	Native_Free(&p);
+	return ok;
 }
 
 /* LoadCharLib(filename): the script of a character and its sound script */
-static PyObject *Init_LoadCharLib(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
-	}
-	PyObject *f = K(Script_PlusS(Script_SPlus("Chars/", name), ".pyc"));
-	PyObject *snd = f && Script_Try("Scrap", "PreloadLibrary", "(OO)", name, f) ? K(Script_PlusS(Script_Ref(name), "Sound")) : NULL;
-	PyObject *sf = snd ? K(Script_PlusS(Script_SPlus("Sound/", snd), ".pyc")) : NULL;
-	if (!sf || !Script_Try("Scrap", "PreloadLibrary", "(OO)", snd, sf)) {
-		FAIL();
-	}
-	return Script_Done(&r, Py_ReturnNone());
+static byte In_LoadCharLibN(const nativeVal_t *name) {
+	nativeVal_t a = { 0 }, f = { 0 }, snd = { 0 }, b = { 0 }, sf = { 0 }, pyc, sound;
+	LvN_Str(&pyc, ".pyc");
+	LvN_Str(&sound, "Sound");
+	byte ok = LvN_Cat("Chars/", name, &a) && Native_Arith('+', &a, &pyc, &f) &&
+		Native_CallMod("Scrap", "PreloadLibrary", NULL, "vv", name, &f) && Native_Arith('+', name, &sound, &snd) &&
+		LvN_Cat("Sound/", &snd, &b) && Native_Arith('+', &b, &pyc, &sf) &&
+		Native_CallMod("Scrap", "PreloadLibrary", NULL, "vv", &snd, &sf);
+	Native_Free(&a);
+	Native_Free(&f);
+	Native_Free(&snd);
+	Native_Free(&b);
+	Native_Free(&sf);
+	return ok;
 }
 
-/* AddMLib(library): a library of the map (MapLibs) */
-static PyObject *Init_AddMLib(PyObject *self, PyObject *args) {
-	PyObject *lib;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &lib)) {
-		return NULL;
+/* MLibInitStatus(LevelPath), MLibInit(LevelPath): the same function of every library of the map (MapLibs) */
+static byte In_ForLibs(const nativeVal_t *path, const char *func) {
+	nativeVal_t libs = { 0 }, lib = { 0 };
+	int n = Mode_G(IN, "MapLibs", &libs) ? Mode_Loop(&libs) : -1;
+	byte ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		Native_Free(&lib);
+		ok = Mode_Item(&libs, i, &lib) && In_Method(&lib, func, path);
 	}
-	PyObject *libs = Script_Global("Init", "MapLibs");
-	PyObject *v = libs ? Script_Method(libs, "append", "(O)", lib) : NULL;
-	Py_XDECREF(libs);
-	Py_XDECREF(v);
-	return v ? Py_ReturnNone() : NULL;
+	Native_Free(&libs);
+	Native_Free(&lib);
+	return ok;
 }
 
-/* MLibInitStatus(LevelPath), MLibInit(LevelPath): the same function of every library of the map */
-static PyObject *In_ForLibs(PyObject *args, const char *func) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *path;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	PyObject *libs = K(Script_Global("Init", "MapLibs")), *lib;
-	int st = libs ? 1 : -1;
-	for (int i = 0; libs && (st = Script_Next(libs, i, &lib)) > 0; i++) {
-		PyObject *v = Script_Method(lib, func, "(O)", path);
-		Py_DECREF(lib);
-		if (!v) {
-			FAIL();
-		}
-		Py_DECREF(v);
-	}
-	return st < 0 ? Script_Done(&r, NULL) : Script_Done(&r, Py_ReturnNone());
-}
-
-static PyObject *Init_MLibInitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	return In_ForLibs(args, "InitStatus");
-}
-
-static PyObject *Init_MLibInit(PyObject *self, PyObject *args) {
-	(void)self;
-	return In_ForLibs(args, "Init");
-}
-
-/* isMission(): the level is the map of the current mission */
+/* isMission(): the level is the map of the current mission (1, 0, -1 with the error) */
 static int In_IsMission(void) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *mm = Script_Import((const char *const[]){ "string", NULL }) ? K(Script_SaveVar("Mission.Map")) : NULL;
-	PyObject *a = mm ? K(Script_Ask("string", "upper", "(O)", mm)) : NULL;
-	PyObject *lv = a ? K(In_LevelName("GetLevelPath")) : NULL, *b = lv ? K(Script_Ask("string", "upper", "(O)", lv)) : NULL;
-	int eq = b ? Script_Eq(a, b) : -1;
-	Script_Done(&r, NULL);
+	nativeVal_t mm = { 0 }, a = { 0 }, lv = { 0 }, b = { 0 };
+	if (!Mode_Import("string")) {
+		return -1;
+	}
+	Mode_SaveVar("Mission.Map", &mm);
+	int eq = Native_Upper(&mm, &a) && In_LevelName("GetLevelPath", &lv) && Native_Upper(&lv, &b) ? Mode_Cmp(&a, "==", &b) : -1;
+	Native_Free(&mm);
+	Native_Free(&a);
+	Native_Free(&lv);
+	Native_Free(&b);
 	return eq;
 }
 
-static PyObject *Init_isMission(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	int m = In_IsMission();
-	return m < 0 ? NULL : PyInt_FromLong(m);
-}
-
 /* PreloadMlibs(LevelPath): the libraries of the map script (Map.Libraries, with the mission's in its map) */
-static PyObject *Init_PreloadMlibs(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *path;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path) || !Script_Import((const char *const[]){ "Map", NULL })) {
-		return NULL;
+static byte In_PreloadMlibsN(void) {
+	nativeVal_t lib = { 0 }, names = { 0 }, key, libs = { 0 }, name = { 0 }, f = { 0 }, mod = { 0 }, pyc;
+	if (!Mode_Import("Map")) {
+		return 0;
 	}
-	PyObject *map = K(PyImport_ImportModule("Map"));
+	/* OBJLIB 6: the module object itself for dir() */
+	PyObject *map = PyImport_ImportModule("Map");
 	int m = map ? In_IsMission() : -1;
-	if (m < 0) {
-		FAIL();
+	byte ok = m >= 0;
+	if (ok && m) {
+		Mode_SaveVar("Mission.Library", &lib);
+		ok = LvN_ModAppend("Map", "Libraries", &lib);
 	}
-	if (m) {
-		PyObject *libs = K(PyObject_GetAttrString(map, "Libraries")), *lib = libs ? K(Script_SaveVar("Mission.Library")) : NULL;
-		if (!lib || !K(Script_Method(libs, "append", "(O)", lib))) {
-			FAIL();
+	int has = -1;
+	if (ok && Native_CallMod("__builtin__", "dir", &names, "O", map)) {
+		LvN_Str(&key, "Libraries");
+		has = Native_Contains(&names, &key);
+	}
+	ok = has >= 0;
+	if (ok && has) {
+		int n = Mode_ModGet("Map", "Libraries", &libs) ? Mode_Loop(&libs) : -1;
+		LvN_Str(&pyc, ".pyc");
+		ok = n >= 0;
+		for (int i = 0; ok && i < n; i++) {
+			Native_Free(&name);
+			Native_Free(&f);
+			Native_Free(&mod);
+			ok = Mode_Item(&libs, i, &name) && Native_Arith('+', &name, &pyc, &f) &&
+				Native_CallMod("Scrap", "PreloadLibrary", NULL, "vv", &name, &f) &&
+				Native_CallMod("__builtin__", "__import__", &mod, "v", &name) && Native_CallGlobal(IN, "AddMLib", NULL, "v", &mod);
 		}
 	}
-	PyObject *names = K(Script_Ask("__builtin__", "dir", "(O)", map)), *key = names ? K(PyString_FromString("Libraries")) : NULL;
-	int has = key ? PySequence_Contains(names, key) : -1;
-	if (has < 0) {
-		FAIL();
-	}
-	if (has) {
-		PyObject *libs = K(PyObject_GetAttrString(map, "Libraries")), *name;
-		int st = libs ? 1 : -1;
-		for (int i = 0; libs && (st = Script_Next(libs, i, &name)) > 0; i++) {
-			scriptRefs_t t = { .n = 0 };
-			Script_Keep(&t, name);
-			PyObject *f = Script_Keep(&t, Script_PlusS(Script_Ref(name), ".pyc"));
-			PyObject *mod = f && Script_Try("Scrap", "PreloadLibrary", "(OO)", name, f) ?
-				Script_Keep(&t, Script_Ask("__builtin__", "__import__", "(O)", name)) : NULL;
-			byte ok = mod && In_Self("AddMLib", "(O)", mod);
-			Script_Done(&t, NULL);
-			if (!ok) {
-				FAIL();
-			}
-		}
-		if (st < 0) {
-			FAIL();
-		}
-	}
-	return Script_Done(&r, Py_ReturnNone());
+	Py_XDECREF(map);
+	Native_Free(&lib);
+	Native_Free(&names);
+	Native_Free(&libs);
+	Native_Free(&name);
+	Native_Free(&f);
+	Native_Free(&mod);
+	return ok;
 }
 
 /* SetArrowSize(): the models and animations of the action and mission arrows */
-static PyObject *Init_SetArrowSize(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	PyObject *arrows = K(Script_Global("Init", "Arrows")), *nam;
-	int st = arrows ? 1 : -1;
-	for (int i = 0; arrows && (st = Script_Next(arrows, i, &nam)) > 0; i++) {
-		scriptRefs_t t = { .n = 0 };
-		Script_Keep(&t, nam);
-		PyObject *m3d = Script_Keep(&t, Script_PlusS(Script_Ref(nam), ".M3D"));
-		PyObject *anm = m3d ? Script_Keep(&t, Script_PlusS(Script_Ref(nam), ".anim.M3D")) : NULL;
-		byte ok = anm && Script_Try("Scrap", "Preload3DObject", "(Oiii)", m3d, 1, 1, 1) && Script_Try("Scrap", "PreloadAnm", "(OO)", m3d, anm);
-		Script_Done(&t, NULL);
-		if (!ok) {
-			FAIL();
-		}
+static byte In_SetArrowSizeN(void) {
+	nativeVal_t arrows = { 0 }, nam = { 0 }, m3d = { 0 }, anm = { 0 }, s1, s2;
+	LvN_Str(&s1, ".M3D");
+	LvN_Str(&s2, ".anim.M3D");
+	int n = Mode_G(IN, "Arrows", &arrows) ? Mode_Loop(&arrows) : -1;
+	byte ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		Native_Free(&nam);
+		Native_Free(&m3d);
+		Native_Free(&anm);
+		ok = Mode_Item(&arrows, i, &nam) && Native_Arith('+', &nam, &s1, &m3d) && Native_Arith('+', &nam, &s2, &anm) &&
+			Mode_PreloadOnes(&m3d) && Native_CallMod("Scrap", "PreloadAnm", NULL, "vv", &m3d, &anm);
 	}
-	return st < 0 ? Script_Done(&r, NULL) : Script_Done(&r, Py_ReturnNone());
+	Native_Free(&arrows);
+	Native_Free(&nam);
+	Native_Free(&m3d);
+	Native_Free(&anm);
+	return ok;
 }
 
 /* the police boss' ship is dead after the prologue and the first murder: SPoli6 instead in the traffic */
 static byte In_BossShip(void) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *ga = K(Script_SaveVar("GameAct"));
-	if (!ga) {
-		return Script_Done(&r, NULL) != NULL;
-	}
+	nativeVal_t ga = { 0 }, cad = { 0 }, at = { 0 }, rep = { 0 }, ships = { 0 };
+	Mode_SaveVar("GameAct", &ga);
 	byte ok = 1;
-	if (!Script_Is(ga, "Prologue") && !Script_Is(ga, "1stMurder")) {
-		PyObject *cad = Script_Import((const char *const[]){ "string", NULL }) ? K(Script_SaveVar("Traffic.AcShips")) : NULL;
-		int has = cad ? Script_True(cad) : -1;
-		if (has > 0) {
-			PyObject *at = K(Script_Ask("string", "find", "(Os)", cad, "SPoliBoss1"));
-			has = at ? Script_NumCmp(at, -1) != 0 : -1;
+	if (!Native_IsStr(&ga, "Prologue") && !Native_IsStr(&ga, "1stMurder")) {
+		int has = -1;
+		if (Mode_Import("string")) {
+			Mode_SaveVar("Traffic.AcShips", &cad);
+			has = Native_True(&cad);
 		}
-		ok = has >= 0;
 		if (has > 0) {
-			PyObject *rep = Script_Import((const char *const[]){ "Traffic", NULL }) ?
-				K(Script_Ask("string", "replace", "(Ossi)", cad, "SPoliBoss1", "SPoli6", 1)) : NULL;
-			PyObject *mod = rep && Script_Try("Scrap", "SetSaveVar", "(sO)", "Traffic.AcShips", rep) ? K(PyImport_ImportModule("Init")) : NULL;
-			PyObject *ships = mod ? K(Script_EvalIn("Init", rep)) : NULL;
-			ok = ships && Script_SetGlobal("Traffic", "AcShips", Script_Ref(ships));
+			has = Native_CallMod("string", "find", &at, "vs", &cad, "SPoliBoss1") ? !Mode_EqI(&at, -1) : -1;
 		}
+		ok = has >= 0 && (!has || (Mode_Import("Traffic") &&
+			Native_CallMod("string", "replace", &rep, "vssi", &cad, "SPoliBoss1", "SPoli6", 1L) &&
+			Mode_SetSaveVar("Traffic.AcShips", &rep) && Mode_Import(IN) && Mode_EvalIn(IN, &rep, &ships) &&
+			Mode_SetModVar("Traffic", "AcShips", &ships)));
 	}
-	Script_Done(&r, NULL);
+	Native_Free(&ga);
+	Native_Free(&cad);
+	Native_Free(&at);
+	Native_Free(&rep);
+	Native_Free(&ships);
 	return ok;
 }
 
 /* the part of Init that a map menu does not have: the characters, vehicles, weapons, effects, doors, the map and the
  * save game values */
-static byte In_Game(PyObject *path) {
+static byte In_Game(const nativeVal_t *path) {
 	int outdoor = In_Flag("Outdoor");
-	if (outdoor < 0 || (!outdoor && !In_Call("Bureaucracy", "Init", "()", NULL))) {
+	if (outdoor < 0 || (!outdoor && !In_Call("Bureaucracy", "Init", NULL))) {
 		return 0;
 	}
-	PyObject *upper = Script_Global("Init", "UpperMap"), *deals = upper ? Script_Global("Init", "SUPERDEALSMAPS") : NULL;
-	int dealMap = deals ? PySequence_Contains(deals, upper) : -1;
-	Py_XDECREF(upper);
-	Py_XDECREF(deals);
-	int multi = dealMap > 0 ? 0 : In_Flag("MultiPlayer");
-	if (dealMap < 0 || multi < 0 || ((dealMap > 0 || multi) && !Script_Try("Scrap", "Set", "(si)", "isActionMusic", 1))) {
+	nativeVal_t upper = { 0 }, deals = { 0 };
+	int dealMap = Mode_G(IN, "UpperMap", &upper) && Mode_G(IN, "SUPERDEALSMAPS", &deals) ? Mode_In(&deals, &upper) : -1;
+	Native_Free(&upper);
+	Native_Free(&deals);
+	int multi = dealMap ? 0 : In_Flag("MultiPlayer");
+	if (dealMap < 0 || multi < 0 || ((dealMap > 0 || multi) && !Mode_GVarSetI("isActionMusic", 1))) {
 		return 0;
 	}
 	int edit = In_Flag("isShipEdit"), multi2 = edit == 0 ? In_Flag("MultiPlayer") : 0;
@@ -245,23 +211,23 @@ static byte In_Game(PyObject *path) {
 		return 0;
 	}
 	if (!edit && !multi2) {
-		int junk = In_Call("Chars", "Init", "()", NULL) ? In_Flag("isJunkYard") : -1;
+		int junk = In_Call("Chars", "Init", NULL) ? In_Flag("isJunkYard") : -1;
 		int out = junk == 0 ? In_Flag("Outdoor") : 0;
-		if (junk < 0 || out < 0 || (out && (!In_Call("PhoneCab", "CreatePhoneCabClass", "()", NULL) ||
-			!Script_Try("PhoneCab", "CreateAudioComClass", "()")))) {
+		if (junk < 0 || out < 0 || (out && (!In_Call("PhoneCab", "CreatePhoneCabClass", NULL) ||
+			!Native_CallMod("PhoneCab", "CreateAudioComClass", NULL, "")))) {
 			return 0;
 		}
 	}
 	int out = In_Flag("Outdoor"), junk = out == 0 ? In_Flag("isJunkYard") : 0;
-	if (out < 0 || junk < 0 || ((out || junk) && (!In_Call("Vehicles", "Init", "()", NULL) || !In_Call("Weapons", "Init", "()", NULL)))) {
+	if (out < 0 || junk < 0 || ((out || junk) && (!In_Call("Vehicles", "Init", NULL) || !In_Call("Weapons", "Init", NULL)))) {
 		return 0;
 	}
-	if (!In_Call("Fx", "Init", "()", NULL)) {
+	if (!In_Call("Fx", "Init", NULL)) {
 		return 0;
 	}
 	edit = In_Flag("isShipEdit");
-	if (edit < 0 || (!edit && (!In_Call("Alarm", "Init", "()", NULL) || !In_Call("MisItems", "Init", "()", NULL))) ||
-		!In_Call("Doors", "Init", "()", NULL)) {
+	if (edit < 0 || (!edit && (!In_Call("Alarm", "Init", NULL) || !In_Call("MisItems", "Init", NULL))) ||
+		!In_Call("Doors", "Init", NULL)) {
 		return 0;
 	}
 	edit = In_Flag("isShipEdit");
@@ -270,11 +236,11 @@ static byte In_Game(PyObject *path) {
 	}
 	if (!edit) {
 		out = In_Flag("Outdoor");
-		if (out < 0 || !(out ? In_Call("OutMap", "Init", "(O)", path) : In_Call("InMap", "Init", "(O)", path))) {
+		if (out < 0 || !(out ? In_Call("OutMap", "Init", path) : In_Call("InMap", "Init", path))) {
 			return 0;
 		}
 		multi = In_Flag("MultiPlayer");
-		if (multi < 0 || (!multi && (!In_Call("SaveGame", "InitVars", "()", NULL) || !In_Call("MissionsFuncs", "Init", "()", NULL)))) {
+		if (multi < 0 || (!multi && (!In_Call("SaveGame", "InitVars", NULL) || !In_Call("MissionsFuncs", "Init", NULL)))) {
 			return 0;
 		}
 	}
@@ -283,232 +249,238 @@ static byte In_Game(PyObject *path) {
 
 /* the robots of the boss: the mercenaries help Dtritus; the alarm off in the maps whose com sat is done */
 static byte In_BossRobots(void) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *robots = K(Script_SaveVar("RobotsControlledByBoss"));
-	if (!robots) {
-		return Script_Done(&r, NULL) != NULL;
+	nativeVal_t robots = { 0 }, help = { 0 }, upper = { 0 }, done = { 0 }, list = { 0 }, lv;
+	Mode_SaveVar("RobotsControlledByBoss", &robots);
+	byte ok = 1;
+	if (Native_IsStr(&robots, "1")) {
+		Mode_SaveVar("MercsHelpDtritus", &help);
+		if (Native_IsStr(&help, "1")) {
+			static const char *const friends[] = { "MercFriends.MercenaryA_Smartie", "1", "MercFriends.MercenaryC_Brutus", "1",
+				"MercFriends.MercenaryB_Dumber", "1", NULL };
+			Mode_Saves(friends);
+		}
+		int in = -1;
+		if (Mode_G(IN, "UpperMap", &upper)) {
+			Mode_SaveVar("ComSatsMissionsMapsFinished", &done);
+			in = Mode_Import(IN) && Mode_EvalIn(IN, &done, &list) ? Mode_In(&list, &upper) : -1;
+		}
+		Native_SetInt(&lv, !in);
+		ok = in >= 0 && (in ? Mode_GVarSetN("AlarmFallDelta", -0.05) && Mode_SetAlarm(&lv) :
+			Mode_SetAlarm(&lv) && Mode_GVarSetI("AlarmFallDelta", 0));
 	}
-	if (!Script_Is(robots, "1")) {
-		Script_Done(&r, NULL);
-		return 1;
-	}
-	PyObject *help = K(Script_SaveVar("MercsHelpDtritus"));
-	if (!help || (Script_Is(help, "1") && (!Script_Try("Scrap", "SetSaveVar", "(ss)", "MercFriends.MercenaryA_Smartie", "1") ||
-		!Script_Try("Scrap", "SetSaveVar", "(ss)", "MercFriends.MercenaryC_Brutus", "1") ||
-		!Script_Try("Scrap", "SetSaveVar", "(ss)", "MercFriends.MercenaryB_Dumber", "1")))) {
-		return Script_Done(&r, NULL) != NULL;
-	}
-	PyObject *upper = K(Script_Global("Init", "UpperMap")), *done = upper ? K(Script_SaveVar("ComSatsMissionsMapsFinished")) : NULL;
-	PyObject *mod = done ? K(PyImport_ImportModule("Init")) : NULL;
-	PyObject *list = mod ? K(Script_EvalIn("Init", done)) : NULL;
-	int in = list ? PySequence_Contains(list, upper) : -1;
-	byte ok = in >= 0 && (in ? Script_Try("Scrap", "Set", "(sd)", "AlarmFallDelta", -0.05) && Script_Try("Scrap", "SetAlarm", "(i)", 0) :
-		Script_Try("Scrap", "SetAlarm", "(i)", 1) && Script_Try("Scrap", "Set", "(si)", "AlarmFallDelta", 0));
-	Script_Done(&r, NULL);
+	Native_Free(&robots);
+	Native_Free(&help);
+	Native_Free(&upper);
+	Native_Free(&done);
+	Native_Free(&list);
 	return ok;
 }
 
 /* Init(LevelPath): the start of a level */
-static PyObject *Init_Init(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *path;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path) || !Script_SetGlobal("Init", "Path", Script_Ref(path)) ||
-		!Script_Import((const char *const[]){ "sys", NULL })) {
-		return NULL;
+static byte In_InitN(const nativeVal_t *path) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *dir = Mode_V(&t), *x = Mode_V(&t), *c = Mode_V(&t), *upper = Mode_V(&t), *menuMod = Mode_V(&t);
+	nativeVal_t *deal = Mode_V(&t), *out = Mode_V(&t), *bertos = Mode_V(&t), *lives = Mode_V(&t), *skill = Mode_V(&t);
+	nativeVal_t *n = Mode_V(&t), *label = Mode_V(&t);
+	if (!Mode_Put(IN, "Path", NULL, path) || !Mode_Import("sys")) {
+		return Mode_Done(&t, 0);
 	}
 	/* the map scripts of the level and its libraries */
-	PyObject *sp = K(Script_Global("sys", "path")), *dir = sp ? K(Script_PlusS(Script_Ref(path), "/Scripts")) : NULL;
-	if (!dir || !K(Script_Method(sp, "append", "(O)", dir)) || !Script_Try("Scrap", "OpenPack", "(O)", dir) ||
-		!Script_Try("Scrap", "PreloadLibrary", "(ss)", "Map", "Map.pyc") ||
-		!Script_Try("Scrap", "PreloadLibrary", "(ss)", "MapSnd", "MapSnd.pyc") || !In_Self("PreloadMlibs", "(O)", path) ||
-		!Script_Try("Scrap", "ClosePack", "()")) {
-		FAIL();
+	if (!Native_Arith('+', path, Mode_S(&t, "/Scripts"), dir) || !Mode_Append("sys", "path", dir) || !Mode_Pack(dir) ||
+		!Native_CallMod("Scrap", "PreloadLibrary", NULL, "ss", "Map", "Map.pyc") ||
+		!Native_CallMod("Scrap", "PreloadLibrary", NULL, "ss", "MapSnd", "MapSnd.pyc") ||
+		!Native_CallGlobal(IN, "PreloadMlibs", NULL, "v", path) || !Mode_Pack(NULL) || !Native_GVarGet("IsXbox", x)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *xbox = K(Script_Ask("Scrap", "Get", "(s)", "IsXbox"));
-	int x = xbox ? Script_True(xbox) : -1;
-	if (x > 0) {
-		PyObject *credits = K(Script_Ask("Scrap", "Get", "(s)", "ShowCredits"));
-		int c = credits ? Script_True(credits) : -1;
-		PyObject *upper = c == 0 ? K(Script_Global("Init", "UpperMap")) : NULL;
-		x = c < 0 ? -1 : c ? 0 : upper ? Script_In(upper, (const char *const[]){ "SHIPEDIT", "MENU", NULL }) : -1;
-		if (x > 0) {
-			PyObject *menu = Script_Try("Scrap", "PreloadLibrary", "(ss)", "XboxMenu", "Scripts/Scorer/XboxMenu.pyc") ?
-				K(Script_Ask("__builtin__", "__import__", "(s)", "XboxMenu")) : NULL;
-			if (!menu || !In_Self("AddMLib", "(O)", menu)) {
-				FAIL();
-			}
+	int xb = Native_True(x);
+	if (xb) {
+		if (!Native_GVarGet("ShowCredits", c)) {
+			return Mode_Done(&t, 0);
+		}
+		xb = Native_True(c) ? 0 : Mode_G(IN, "UpperMap", upper) ? Native_IsStr(upper, "SHIPEDIT") || Native_IsStr(upper, "MENU") : -1;
+		if (xb > 0 && (!Native_CallMod("Scrap", "PreloadLibrary", NULL, "ss", "XboxMenu", "Scripts/Scorer/XboxMenu.pyc") ||
+			!Native_CallMod("__builtin__", "__import__", menuMod, "s", "XboxMenu") ||
+			!Native_CallGlobal(IN, "AddMLib", NULL, "v", menuMod))) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	if (x < 0 || !Script_Import((const char *const[]){ "Map", "MapSnd", NULL }) || !Script_Try("Map", "InitStatus", "(O)", path) ||
-		!In_Self("MLibInitStatus", "(O)", path) || !In_BossShip()) {
-		FAIL();
-	}
-	PyObject *deal = K(Script_Global("Init", "SuperDealModule"));
-	int d = deal ? Script_True(deal) : -1;
-	if (d < 0 || (d && !K(Script_Method(deal, "InitStatus", "(O)", path)))) {
-		FAIL();
+	if (xb < 0 || !Mode_Import("Map") || !Mode_Import("MapSnd") || !Native_CallMod("Map", "InitStatus", NULL, "v", path) ||
+		!Native_CallGlobal(IN, "MLibInitStatus", NULL, "v", path) || !In_BossShip() || !Mode_G(IN, "SuperDealModule", deal) ||
+		(Native_True(deal) && !In_Method(deal, "InitStatus", path))) {
+		return Mode_Done(&t, 0);
 	}
 	/* the size of the mission arrows, the AI */
 	int menu = In_Flag("inMainMenu"), edit = menu == 0 ? In_Flag("isShipEdit") : 0;
-	PyObject *out = menu >= 0 && edit >= 0 && (menu || edit || In_Self("SetArrowSize", "()")) ? K(Script_Global("Init", "Outdoor")) : NULL;
-	if (!out || !Script_Try("SAI", "IniAI", "(OO)", path, out)) {
-		FAIL();
+	if (menu < 0 || edit < 0 || (!menu && !edit && !Native_CallGlobal(IN, "SetArrowSize", NULL, "")) ||
+		!Mode_G(IN, "Outdoor", out) || !Native_CallMod("SAI", "IniAI", NULL, "vv", path, out)) {
+		return Mode_Done(&t, 0);
 	}
 	/* the menus, the mission info, the chat, the sound, the decoration */
-	PyObject *flags = Script_Try("Scrap", "Set", "(ss)", "EscapeEvent", "Menu.Init") && In_Call("Menu", "Initialize", "()", NULL) ?
-		K(Script_Ask("Scrap", "GetNetFlags", "()")) : NULL;
-	PyObject *off = flags ? K(Py_BuildValue("(iii)", 0, 0, 0)) : NULL;
-	int single = off ? Script_Eq(flags, off) : -1;
-	if (single < 0 || !Script_Try("Scrap", "Set", "(ss)", "MainMissionEvent", single ? "MissionsFuncs.ShowMissionInfo" : "Ffa.ShowHelp")) {
-		FAIL();
+	if (!Mode_GVarSetS("EscapeEvent", "Menu.Init") || !In_Call("Menu", "Initialize", NULL)) {
+		return Mode_Done(&t, 0);
+	}
+	int single = Native_NetOff();
+	if (single < 0 || !Mode_GVarSetS("MainMissionEvent", single ? "MissionsFuncs.ShowMissionInfo" : "Ffa.ShowHelp")) {
+		return Mode_Done(&t, 0);
 	}
 	int offline = In_Flag("OffLineGame");
-	if (offline < 0 || (!offline && !In_Call("Chat", "SetChatProc", "()", NULL)) || !In_Call("Sound", "Init", "()", NULL) ||
-		!Script_Try("Scrap", "CreateElements", "()")) {
-		FAIL();
+	if (offline < 0 || (!offline && !In_Call("Chat", "SetChatProc", NULL)) || !In_Call("Sound", "Init", NULL) ||
+		!Native_CallMod("Scrap", "CreateElements", NULL, "")) {
+		return Mode_Done(&t, 0);
 	}
 	menu = In_Flag("inMainMenu");
 	if (menu < 0 || (!menu && !In_Game(path))) {
-		FAIL();
+		return Mode_Done(&t, 0);
 	}
 	/* the Bertos hunting the player outdoors */
 	int outdoor = In_Flag("Outdoor");
 	if (outdoor < 0) {
-		FAIL();
+		return Mode_Done(&t, 0);
 	}
 	if (outdoor) {
-		PyObject *bertos = K(Script_SaveVar("CreateBertos")), *upper = bertos ? K(Script_Global("Init", "UpperMap")) : NULL;
-		int has = upper ? In_Flag("HasSuperDeal") : -1;
+		Mode_SaveVar("CreateBertos", bertos);
+		int has = Mode_Read(IN, "UpperMap", upper) ? In_Flag("HasSuperDeal") : -1;
 		if (has < 0) {
-			FAIL();
+			return Mode_Done(&t, 0);
 		}
-		if (Script_Is(bertos, "1") && !Script_Is(upper, "GDB") && !has) {
-			PyObject *f = Script_Import((const char *const[]){ "MissionsFuncs", "Parking", NULL }) &&
-				Script_Try("MissionsFuncs", "CreateBertos", "()") ? K(Script_Global("MissionsFuncs", "ReassignBertosPlayerTarget")) : NULL;
-			if (!f || !Script_SetGlobal("Parking", "SwitchVehicleMissionCallbackAux", Script_Ref(f)) ||
-				!Script_SetGlobal("Parking", "SwitchCharMissionCallbackAux", Script_Ref(f))) {
-				FAIL();
-			}
+		if (Native_IsStr(bertos, "1") && !Native_IsStr(upper, "GDB") && !has && (!Mode_Import("MissionsFuncs") ||
+			!Mode_Import("Parking") || !Native_CallMod("MissionsFuncs", "CreateBertos", NULL, "") ||
+			!Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallbackAux", "MissionsFuncs", "ReassignBertosPlayerTarget") ||
+			!Mode_ModSetGlobal("Parking", "SwitchCharMissionCallbackAux", "MissionsFuncs", "ReassignBertosPlayerTarget"))) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	if (!In_BossRobots() || !Script_Try("Scrap", "Set", "(ss)", "OnCrazyDealFinished", "MissionsFuncs.OnCrazyDealFinishedMessage") ||
-		!Script_Try("Scrap", "Set", "(ss)", "OnCrazyDealTarget", "MissionsFuncs.OnCrazyDealTarget")) {
-		FAIL();
+	if (!In_BossRobots() || !Mode_GVarSetS("OnCrazyDealFinished", "MissionsFuncs.OnCrazyDealFinishedMessage") ||
+		!Mode_GVarSetS("OnCrazyDealTarget", "MissionsFuncs.OnCrazyDealTarget")) {
+		return Mode_Done(&t, 0);
 	}
 	/* the map */
-	if (!Script_Try("Map", "Init", "(O)", path) || !Script_Try("MapSnd", "Init", "(O)", path) || !In_Self("MLibInit", "(O)", path)) {
-		FAIL();
-	}
-	deal = K(Script_Global("Init", "SuperDealModule"));
-	d = deal ? Script_True(deal) : -1;
-	if (d < 0 || (d && !K(Script_Method(deal, "Init", "(O)", path))) ||
-		!Script_LaterIn(0.5, "Init", "SetMapLabelText", PyTuple_New(0), NULL)) {
-		FAIL();
+	if (!Native_CallMod("Map", "Init", NULL, "v", path) || !Native_CallMod("MapSnd", "Init", NULL, "v", path) ||
+		!Native_CallGlobal(IN, "MLibInit", NULL, "v", path) || !Mode_Read(IN, "SuperDealModule", deal) ||
+		(Native_True(deal) && !In_Method(deal, "Init", path)) || !Mode_LaterIn(0.5, IN, "SetMapLabelText", NULL, 0, NULL)) {
+		return Mode_Done(&t, 0);
 	}
 	int demo = In_Flag("isDemo");
-	PyObject *lives = demo > 0 ? K(Script_SaveVar("Player.NumLives")) : NULL;
-	if (demo < 0 || (demo && (!lives || (Script_Is(lives, "-1") && !Script_Try("Scrap", "SetSaveVar", "(ss)", "Player.NumLives", "0")))) ||
-		!Script_Try("Scrap", "Set", "(si)", "R_SceneBlurValue", 0)) {
-		FAIL();
+	if (demo < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (demo) {
+		Mode_SaveVar("Player.NumLives", lives);
+		if (Native_IsStr(lives, "-1")) {
+			Mode_SaveS("Player.NumLives", "0");
+		}
+	}
+	if (!Mode_GVarSetI("R_SceneBlurValue", 0)) {
+		return Mode_Done(&t, 0);
 	}
 	/* the skill of a single player game */
 	offline = In_Flag("OffLineGame");
 	menu = offline > 0 ? In_Flag("inMainMenu") : 0;
 	edit = offline > 0 && menu == 0 ? In_Flag("isShipEdit") : 0;
 	if (offline < 0 || menu < 0 || edit < 0) {
-		FAIL();
+		return Mode_Done(&t, 0);
 	}
 	if (offline && !menu && !edit) {
-		PyObject *skill = Script_Try("Scrap", "CreateSaveVar", "(ss)", "GameSkill", "1") ? K(Script_SaveVar("GameSkill")) : NULL;
-		PyObject *n = skill ? K(Script_Int(skill)) : NULL;
-		if (!n || !Script_Try("Scrap", "Set", "(sO)", "GameSkill", n)) {
-			FAIL();
+		if (!Native_CallMod("Scrap", "CreateSaveVar", NULL, "ss", "GameSkill", "1")) {
+			return Mode_Done(&t, 0);
+		}
+		Mode_SaveVar("GameSkill", skill);
+		if (!Native_ToInt(skill, n) || !Native_GVarSet("GameSkill", n)) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	PyObject *items[2] = { K(PyString_FromString("Actual Level at : ")), path };
-	if (!items[0] || !Script_Print(items, 2)) {
-		FAIL();
-	}
-	return Script_Done(&r, Py_ReturnNone());
+	LvN_Str(label, "Actual Level at : ");
+	const nativeVal_t *items[2] = { label, path };
+	return Mode_Done(&t, Mode_Print(items, 2));
 }
 
 /* SetMapLabelText(): the name of the station on the screen, unless the mission scorer shows another map's mission */
-static PyObject *Init_SetMapLabelText(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	PyObject *name = Script_Import((const char *const[]){ "Scorer", NULL }) ? K(Script_Global("Scorer", "MissionScorerName")) : NULL;
-	PyObject *vis = name ? K(Script_Ask("SScorer", "Get", "(iOs)", 0, name, "Visible")) : NULL;
-	int v = vis ? Script_True(vis) : -1;
-	if (v > 0) {
-		v = Script_NumCmp(vis, 1) == 0;
+static byte In_SetMapLabelTextN(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *name = Mode_V(&t), *vis = Mode_V(&t), *status = Mode_V(&t), *mm = Mode_V(&t), *lv = Mode_V(&t);
+	nativeVal_t *key = Mode_V(&t), *text = Mode_V(&t), *zero = Mode_V(&t);
+	Native_SetInt(zero, 0);
+	if (!Mode_Import("Scorer") || !Mode_G("Scorer", "MissionScorerName", name) || !Mode_ScorerGetVal(zero, name, "Visible", vis)) {
+		return Mode_Done(&t, 0);
 	}
-	if (v < 0) {
-		FAIL();
+	if (!Native_True(vis) || !Mode_EqI(vis, 1)) {
+		return Mode_Done(&t, 1);
 	}
-	if (!v) {
-		return Script_Done(&r, Py_ReturnNone());
+	if (!Mode_ScorerGetVal(zero, name, "Status0", status)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *status = K(Script_Ask("SScorer", "Get", "(iOs)", 0, name, "Status0"));
-	if (!status) {
-		FAIL();
-	}
-	int show = Script_NumCmp(status, 1) != 0;
+	int show = !Mode_EqI(status, 1);
 	if (!show) {
-		PyObject *mm = K(Script_SaveVar("Mission.Map")), *lv = mm ? K(In_LevelName("GetLevelPath")) : NULL;
-		show = lv ? Script_Eq(mm, lv) : -1;
+		Mode_SaveVar("Mission.Map", mm);
+		show = In_LevelName("GetLevelPath", lv) ? Mode_Cmp(mm, "==", lv) : -1;
 	}
-	if (show < 0) {
-		FAIL();
-	}
-	if (show) {
-		PyObject *lv = K(In_LevelName("GetLevelPath")), *key = lv ? K(Script_SPlus("Station_", lv)) : NULL;
-		PyObject *text = key ? K(Script_LangOf(Script_Ref(key))) : NULL;
-		if (!text || !Script_Try("SScorer", "SetLabelText", "(Od)", text, (double)Timer_GetTime(&g_pWorld->timer) + 10)) {
-			FAIL();
-		}
-	}
-	return Script_Done(&r, Py_ReturnNone());
+	return Mode_Done(&t, show >= 0 && (!show || (In_LevelName("GetLevelPath", lv) && LvN_Cat("Station_", lv, key) &&
+		Mode_LangV(key, text) && Mode_LabelText(text, Mode_Time() + 10))));
 }
 
 /* Close(): the progress bar of the next level (the files it loads, from the tables of the module) */
-static PyObject *Init_Close(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	PyObject *lv = K(In_LevelName("GetNewLevelPath")), *upper = lv ? K(Script_Ask("string", "upper", "(O)", lv)) : NULL;
-	PyObject *line = upper ? K(Script_Mod(K(PyString_FromString("Next level: %s")), upper)) : NULL;
-	if (!line || !Script_Print(&line, 1)) {
-		FAIL();
+static byte In_CloseN(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *lv = Mode_V(&t), *upper = Mode_V(&t), *line = Mode_V(&t), *xbox = Mode_V(&t), *bars = Mode_V(&t);
+	nativeVal_t *n = Mode_V(&t), *msg = Mode_V(&t);
+	const nativeVal_t *items[1] = { line };
+	if (!In_LevelName("GetNewLevelPath", lv) || !Native_Upper(lv, upper) || !Native_Arith('%', Mode_S(&t, "Next level: %s"), upper,
+		line) || !Mode_Print(items, 1) || !Native_GVarGet("IsXbox", xbox) ||
+		!Mode_G(IN, Mode_EqI(xbox, 1) ? "PROGRESSBAR_XBOX" : "PROGRESSBAR_PC", bars)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *xbox = K(Script_Ask("Scrap", "Get", "(s)", "IsXbox"));
-	PyObject *bars = xbox ? K(Script_Global("Init", Script_NumCmp(xbox, 1) == 0 ? "PROGRESSBAR_XBOX" : "PROGRESSBAR_PC")) : NULL;
-	int has = bars ? PyMapping_HasKey(bars, upper) : -1;
-	if (has < 0) {
-		FAIL();
+	/* PyMapping_HasKey: any error of the lookup is no key */
+	if (Mode_Sub(bars, upper, n)) {
+		return Mode_Done(&t, Native_GVarSet("ProgressBar", n));
 	}
-	if (has) {
-		PyObject *n = K(PyObject_GetItem(bars, upper));
-		if (!n || !Script_Try("Scrap", "Set", "(sO)", "ProgressBar", n)) {
-			FAIL();
-		}
-	} else {
-		PyObject *msg = K(Script_Mod(K(PyString_FromString("ERROR: '%s' progress bar info not found \n")), upper));
-		PyObject *def = msg && Script_Try("Scrap", "ConsoleError", "(O)", msg) ? K(Script_Ask("Scrap", "Def", "(s)", "ProgressBar")) : NULL;
-		if (!def || !Script_Try("Scrap", "Set", "(sO)", "ProgressBar", def)) {
-			FAIL();
-		}
-	}
-	return Script_Done(&r, Py_ReturnNone());
+	Mode_DropError();
+	return Mode_Done(&t, Native_Arith('%', Mode_S(&t, "ERROR: '%s' progress bar info not found \n"), upper, msg) &&
+		Mode_ConsoleError(msg) && Mode_GVarSetDef("ProgressBar"));
 }
 
-/* ---- the loops of the module code (data/modules/init.mod) ---- */
+/* the adapters: the argument formats of the C port */
+MODE_FN(Init, LoadCharLib, 1, In_LoadCharLibN(&a[0]))
+MODE_FN(Init, AddMLib, 1, Mode_Append(IN, "MapLibs", &a[0]))
+MODE_FN(Init, MLibInitStatus, 1, In_ForLibs(&a[0], "InitStatus"))
+MODE_FN(Init, MLibInit, 1, In_ForLibs(&a[0], "Init"))
+MODE_FN(Init, PreloadMlibs, 1, In_PreloadMlibsN())
+MODE_FN(Init, Init, 1, In_InitN(&a[0]))
+
+static PyObject *Init_isMission(PyObject *self, PyObject *args) {
+	nativeVal_t v;
+	(void)self;
+	(void)args;
+	int m = In_IsMission();
+	Native_SetInt(&v, m);
+	return Mode_Return(m >= 0, &v);
+}
+
+static PyObject *Init_SetArrowSize(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	return Mode_Result(In_SetArrowSizeN());
+}
+
+static PyObject *Init_SetMapLabelText(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	return Mode_Result(In_SetMapLabelTextN());
+}
+
+static PyObject *Init_Close(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	return Mode_Result(In_CloseN());
+}
+
+/* ---- the loops of the module code (data/modules/init.mod; OBJLIB 6: they work on the dict of the module code) ---- */
 
 static byte In_LoadCharBody(PyObject *locals, PyObject *fn, void *ctx) {
 	(void)ctx;
 	PyObject *f = Script_ModuleName(locals, "LoadCharLib");
-	PyObject *res = f ? Script_CallObject(f, Py_BuildValue("(O)", fn), NULL) : NULL;
+	PyObject *args = f ? Py_BuildValue("(O)", fn) : NULL;
+	PyObject *res = args ? Script_CallObject(f, args, NULL) : NULL;
+	Py_XDECREF(args);
 	Py_XDECREF(f);
 	Py_XDECREF(res);
 	return res != NULL;

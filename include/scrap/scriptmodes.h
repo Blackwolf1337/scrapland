@@ -767,6 +767,15 @@ byte Mode_Exit(void);
  * variable or module is "" too); out */
 const char *Mode_ModGetS(const char *module, const char *var, char *out, int size);
 
+/* ---- the hubs of batch S (Parking, Accelerator, InitLevel) ---- */
+
+/* eval(text) in the globals of module as the ports read the game's texts (a literal, or a bare name looked up in the
+ * module; OBJLIB 6: Script_EvalIn): the value into out (any object as Native_Arg makes it) */
+byte Mode_EvalIn(const char *module, const nativeVal_t *text, nativeVal_t *out);
+
+/* Scrap.EntityListSet(list, var, value) on texts through its seam, else Mode_ListSet */
+byte Mode_ListSetSeam(const char *list, const char *var, const char *value);
+
 /* ---- shared after stage 2 (the copies the batches wrote, joined) ---- */
 
 /* print v, print text: Mode_Print of one value (the text of any length) */

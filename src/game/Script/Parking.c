@@ -12,1193 +12,1519 @@
  * LastParkingZone, the constants (ParkingDist, MinParkingVel, ParkingDepth, P_None, PL_Junk, PR_Junk, PR_Lst,
  * PR_ComeFrom, PR_Spawn, DtritusPlateModel, DtritusPlateNode, AlarmProbOnParkedShipDeath) and
  * Accelerator.ACCELERATOR_RADIUS. The module code (the save variables, the engine callbacks) stays in the scripts.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values; the PyMethodDef entries are adapters with
+ * the argument formats of the C port. The variables of the module are read where the script reads them as its globals
+ * and written at once (OBJLIB 5: the missions, Doors, the levels and the cases read and set them); AllShips is changed
+ * in place. The ships, cameras, boxes and the plate are handle values (OBJLIB 7). The module's own functions the script
+ * calls as its globals stay so (a mission or a case may replace one), the other ports (ShipMaker, Sputnik, Menu,
+ * RacerScorer, CharScorer, Chars, ShipEdit, Vehicles, SaveGame, Speech, RaceMaker) by name (OBJLIB 3), as do
+ * Scrap.SetCam, SwitchMissionArrows, AddParkingZone, CreateEntityList, EntityListGet and string.split of other values
+ * than texts (OBJLIB 7). Scrap.GetEntity, CreateEntity, UsrEntity, GetNetFlags, Set, TestLine, StartDummySearch,
+ * NextDummySearch, GetAlarm, SetAlarm, SetMoney, IncSaveVar, ConsoleError, EntityListSet, AddScheduledFunc,
+ * SInput.SetActionSet, SScorer.SetLabelText, SSound.OpenVoice, PlayVoice, VoiceRemain, SLogic.SetOnFloor, SAct.GetAction
+ * and SetAct go through their seams (OBJLIB 7: the cases record or swap them). The evals of the save texts stay
+ * Script_EvalIn (Mode_EvalIn, OBJLIB 6: a bare name is looked up in the module).
  */
+#include <string.h>
+
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
+#include "game/Script/levels/Levels.h"
 
 #define PK "Parking"
 
-/* a global of Parking as its functions read it */
-#define G(name) Sf_Global(&f, PK, name)
+/* a function of the module through its global (a mission or a case may replace it) */
+#define PK_OWN(name, out, ...) Native_CallGlobal(PK, name, out, __VA_ARGS__)
 
-/* the five motion blur variables off */
-static void Pk_NoBlur(scriptFrame_t *f) {
+/* the slot freed, then o.var (any value: a handle's variable, another object's attribute) into it */
+static byte Pk_Get(const nativeVal_t *o, const char *var, nativeVal_t *slot) {
+	Native_Free(slot);
+	return Mode_VObj(o, var, slot);
+}
+
+/* the slot freed, then x[i] into it */
+static byte Pk_Item(const nativeVal_t *x, long i, nativeVal_t *slot) {
+	Native_Free(slot);
+	return Mode_Item(x, i, slot);
+}
+
+/* the slot freed, then the global name of the module into it */
+static byte Pk_G(const char *name, nativeVal_t *slot) {
+	return Mode_Read(PK, name, slot);
+}
+
+/* Scrap.GetEntity(name) through its seam, the handle value (None for no entity) */
+static byte Pk_Ent(const nativeVal_t *name, nativeVal_t *slot) {
+	Native_Free(slot);
+	return Mode_EntitySeam(name, slot);
+}
+
+/* (a, b, c) of copies of the three values */
+static void Pk_Tuple3(nativeVal_t *out, const nativeVal_t *a, const nativeVal_t *b, const nativeVal_t *c) {
+	Native_Free(out);
+	Native_SetEmpty(out, NV_TUPLE);
+	Native_Copy(Native_Append(out), a);
+	Native_Copy(Native_Append(out), b);
+	Native_Copy(Native_Append(out), c);
+}
+
+/* (0, ang[1] op add, 0), the plain ang[1] for add NULL */
+static byte Pk_Yaw(const nativeVal_t *ang, char op, const nativeVal_t *add, nativeVal_t *out) {
+	nativeVal_t y = { 0 }, s = { 0 }, z;
+	Native_SetInt(&z, 0);
+	byte ok = Mode_Item(ang, 1, &y) && (!add || Native_Arith(op, &y, add, &s));
+	if (ok) {
+		Pk_Tuple3(out, &z, add ? &s : &y, &z);
+	}
+	Native_Free(&y);
+	Native_Free(&s);
+	return ok;
+}
+
+/* the x, y and z of a point (p[0], p[1], p[2]) */
+static byte Pk_XYZ(const nativeVal_t *p, nativeVal_t *xyz) {
+	return Pk_Item(p, 0, &xyz[0]) && Pk_Item(p, 1, &xyz[1]) && Pk_Item(p, 2, &xyz[2]);
+}
+
+/* Scrap.Set(var, 0.0) of the five motion blur variables */
+static byte Pk_NoBlur(void) {
 	static const char *const vars[] = { "MotionBlurFactorBegin", "MotionBlurFactorEnd", "MotionBlurTime",
 		"MotionBlurEndTime", "MotionBlurOffVar" };
 	for (int i = 0; i < 5; i++) {
-		Sf_Ask(f, "Scrap", "Set", "(sd)", vars[i], 0.0);
+		if (!Mode_GVarSetN(vars[i], 0.0)) {
+			return 0;
+		}
 	}
+	return 1;
 }
 
 /* Scrap.TestLine(p, (p[0], p[1] - 10000, p[2]), "") */
-static PyObject *Pk_Down(scriptFrame_t *f, PyObject *p) {
-	PyObject *to = Sf_Build(f, "(OOO)", Sf_Item(f, p, 0), Sf_OpI(f, Sf_Item(f, p, 1), '-', 10000), Sf_Item(f, p, 2));
-	return Sf_Ask(f, "Scrap", "TestLine", "(OOs)", p, to, "");
-}
-
-/* -o */
-static PyObject *Pk_Neg(scriptFrame_t *f, PyObject *o) {
-	return f->failed || !o ? NULL : Sf_Keep(f, PyNumber_Negative(o));
-}
-
-/* if callback: callback() (the global read again for the call, like the script) */
-static void Pk_Callback(scriptFrame_t *f, const char *name) {
-	if (Sf_True(f, Sf_Global(f, PK, name)) > 0) {
-		Sf_Call(f, Sf_Global(f, PK, name), "()");
+static byte Pk_Down(const nativeVal_t *p, nativeVal_t *out) {
+	nativeVal_t xyz[3] = { { 0 }, { 0 }, { 0 } }, y = { 0 }, k, to = { 0 };
+	Native_SetInt(&k, 10000);
+	Native_Free(out);
+	byte ok = Pk_XYZ(p, xyz) && Native_Arith('-', &xyz[1], &k, &y);
+	if (ok) {
+		Pk_Tuple3(&to, &xyz[0], &y, &xyz[2]);
+		ok = Mode_TestLineSeam(p, &to, LvN_Empty(), out);
 	}
+	for (int i = 0; i < 3; i++) {
+		Native_Free(&xyz[i]);
+	}
+	Native_Free(&y);
+	Native_Free(&to);
+	return ok;
+}
+
+/* Scrap.TestLine(...)[0] of Pk_Down */
+static byte Pk_Ground(const nativeVal_t *p, nativeVal_t *out) {
+	nativeVal_t res = { 0 };
+	byte ok = Pk_Down(p, &res) && Pk_Item(&res, 0, out);
+	Native_Free(&res);
+	return ok;
+}
+
+/* Scrap.SetCam(0, name) (OBJLIB 7: by name, as the C port called it) */
+static byte Pk_SetCam(const nativeVal_t *name) {
+	return Native_CallMod("Scrap", "SetCam", NULL, "iv", 0L, name);
+}
+
+/* Scrap.SwitchMissionArrows(Init.Arrows[a], Init.Arrows[b]) */
+static byte Pk_Arrows(long a, long b) {
+	nativeVal_t arrows = { 0 }, x = { 0 }, y = { 0 };
+	byte ok = Mode_ModGet("Init", "Arrows", &arrows) && Mode_Item(&arrows, a, &x) && Mode_Item(&arrows, b, &y) &&
+		Native_CallMod("Scrap", "SwitchMissionArrows", NULL, "vv", &x, &y);
+	Native_Free(&arrows);
+	Native_Free(&x);
+	Native_Free(&y);
+	return ok;
+}
+
+/* Scrap.AddParkingZone(flag, pos, name) */
+static byte Pk_Zone(long flag, const nativeVal_t *pos, const nativeVal_t *name) {
+	return Native_CallMod("Scrap", "AddParkingZone", NULL, "ivv", flag, pos, name);
+}
+
+/* CreateBox(name, pos[0], pos[1], pos[2]) through the global */
+static byte Pk_BoxAt(const nativeVal_t *name, const nativeVal_t *pos, nativeVal_t *out) {
+	nativeVal_t xyz[3] = { { 0 }, { 0 }, { 0 } };
+	Native_Free(out);
+	byte ok = Pk_XYZ(pos, xyz) && PK_OWN("CreateBox", out, "vvvv", name, &xyz[0], &xyz[1], &xyz[2]);
+	for (int i = 0; i < 3; i++) {
+		Native_Free(&xyz[i]);
+	}
+	return ok;
+}
+
+/* the use arrow of a parked ship: ArrowCanUse 1, ArrnOpt 0, ArrOpt0 "UseShip:" + Scrap.GetLangStr("UseShip"), UseFunc */
+static byte Pk_UseArrow(const nativeVal_t *v) {
+	nativeVal_t lang = { 0 }, opt = { 0 };
+	Mode_Lang("UseShip", &lang);
+	byte ok = LvN_SetI(v, "ArrowCanUse", 1) && LvN_SetI(v, "ArrnOpt", 0) && LvN_Cat("UseShip:", &lang, &opt) &&
+		Mode_VSet(v, "ArrOpt0", &opt) && LvN_SetS(v, "UseFunc", "Sputnik.UseShip");
+	Native_Free(&lang);
+	Native_Free(&opt);
+	return ok;
+}
+
+/* `if callback: callback()` of a global of the module */
+static byte Pk_Callback(const char *name) {
+	byte called;
+	return Mode_CallIf(PK, name, &called);
 }
 
 /* SSound.OpenVoice(Scrap.Get("StreamPath") + OutSound.<sound>, 1) and PlayVoiceChannel(1) 0.3 s later */
-static void Pk_Voice(scriptFrame_t *f, const char *sound) {
-	Sf_Import(f, "OutSound");
-	PyObject *file = Sf_Op(f, Sf_Ask(f, "Scrap", "Get", "(s)", "StreamPath"), '+', Sf_Mod(f, "OutSound", sound));
-	Sf_Ask(f, "SSound", "OpenVoice", "(Oi)", file, 1);
-	Sf_Later(f, Sf_Float(f, 0.3), Sf_Global(f, PK, "PlayVoiceChannel"), Sf_Build(f, "(i)", 1), NULL);
+static byte Pk_Voice(const char *sound) {
+	nativeVal_t path = { 0 }, snd = { 0 }, file = { 0 }, one;
+	Native_SetInt(&one, 1);
+	byte ok = Mode_Import("OutSound") && Native_GVarGet("StreamPath", &path) && Mode_ModGet("OutSound", sound, &snd) &&
+		Native_Arith('+', &path, &snd, &file) && Mode_OpenVoice(&file, &one, NULL) && Mode_Later(0.3, PK, "PlayVoiceChannel",
+		&one, 1, NULL);
+	Native_Free(&path);
+	Native_Free(&snd);
+	Native_Free(&file);
+	return ok;
 }
 
-/* SaveGame.StartGame(CleanRevenge = 1) */
-static void Pk_StartGame(scriptFrame_t *f) {
-	PyObject *fn = Sf_Mod(f, "SaveGame", "StartGame");
-	PyObject *kw = Sf_Build(f, "{s:i}", "CleanRevenge", 1);
-	Sf_CallKw(f, fn, kw ? PyTuple_New(0) : NULL, kw);
+/* SaveGame.StartGame(CleanRevenge = 1) (OBJLIB 3: the keyword call by name) */
+static byte Pk_StartGame(void) {
+	return Mode_CallKw("SaveGame", "StartGame", NULL, NULL, 0, Py_BuildValue("{s:i}", "CleanRevenge", 1));
 }
 
 /* RestoreDeathPlayerShip(): the ships of the player can die again; LocalShip is deleted */
-static PyObject *Parking_RestoreDeathPlayerShip(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
+static byte Pk_RestoreDeathPlayerShipN(void) {
 	static const char *const ships[] = { "LocalShip", "PlayerShip" };
-	for (int i = 0; i < 2 && !f.failed; i++) {
-		Sf_SetAttrS(&f, G(ships[i]), "OnDeath", "Vehicles.OnDeath");
-		if (Sf_Compare(&f, Sf_Attr(&f, G(ships[i]), "Life"), "<=", Sf_Int(&f, 0)) > 0) {
-			Sf_SetAttrI(&f, G(ships[i]), "Life", 1);
-		}
-		if (i == 0) {
-			Sf_DelGlobal(&f, PK, "LocalShip");
-		}
+	nativeVal_t h = { 0 }, life = { 0 };
+	byte ok = 1;
+	for (int i = 0; ok && i < 2; i++) {
+		int dead;
+		ok = Pk_G(ships[i], &h) && LvN_SetS(&h, "OnDeath", "Vehicles.OnDeath") && Pk_Get(&h, "Life", &life) &&
+			(dead = Mode_CmpI(&life, "<=", 0)) >= 0 && (!dead || LvN_SetI(&h, "Life", 1)) && (i || Mode_DelGlobal(PK, ships[i]));
 	}
-	Sf_Ask(&f, "Scrap", "EntityListSet", "(sss)", "Players", "OnDeath", "Chars.MainCharDeath");
-	return Sf_None(&f);
+	Native_Free(&h);
+	Native_Free(&life);
+	return ok && Mode_ListSetSeam("Players", "OnDeath", "Chars.MainCharDeath");
 }
 
 /* SetInvunerable(v): the players and the ships do not die while the camera moves; LocalShip = v */
-static PyObject *Parking_SetInvunerable(PyObject *self, PyObject *args) {
-	PyObject *v;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &v)) {
-		return NULL;
-	}
-	Sf_Ask(&f, "Scrap", "EntityListSet", "(sss)", "Players", "OnDeath", "");
-	Sf_SetGlobal(&f, PK, "LocalShip", v);
-	Sf_SetAttrS(&f, G("LocalShip"), "OnDeath", "");
-	Sf_SetAttrS(&f, G("PlayerShip"), "OnDeath", "");
-	return Sf_None(&f);
+static byte Pk_SetInvunerableN(const nativeVal_t *v) {
+	nativeVal_t h = { 0 };
+	byte ok = Mode_ListSetSeam("Players", "OnDeath", "") && Mode_Put(PK, "LocalShip", NULL, v) && Pk_G("LocalShip", &h) &&
+		LvN_SetS(&h, "OnDeath", "") && Pk_G("PlayerShip", &h) && LvN_SetS(&h, "OnDeath", "");
+	Native_Free(&h);
+	return ok;
 }
 
 /* CharOnShip(PathCam): the end of the boarding camera: the ship under control, the ship HUD, its name */
-static PyObject *Parking_CharOnShip(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte Pk_CharOnShipN(const nativeVal_t *path) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cp = Mode_V(&t), *x = Mode_V(&t), *cam = Mode_V(&t), *v = Mode_V(&t), *solid = Mode_V(&t);
+	nativeVal_t *now = Mode_V(&t), *at = Mode_V(&t);
+	if (!Mode_Import("RacerScorer") || !Pk_Ent(path, cp) || !Pk_Get(cp, "TgtCam01", x) || !Pk_SetCam(x) || !Mode_VDel(cp)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "RacerScorer");
-	PyObject *cp = Sf_Entity(&f, path);
-	Sf_Ask(&f, "Scrap", "SetCam", "(iO)", 0, Sf_Attr(&f, cp, "TgtCam01"));
-	Sf_Method(&f, cp, "Del", "()");
-	PyObject *cam = Sf_Entity(&f, Sf_Ask(&f, "Scrap", "GetCam", "(i)", 0));
-	PyObject *v = Sf_Entity(&f, Sf_Attr(&f, cam, "Target"));
-	Sf_SetAttrI(&f, v, "UsrControl", 0);
-	Sf_SetAttrI(&f, v, "MoveTime", 0);
-	Sf_SetAttr(&f, v, "Vel", Sf_Build(&f, "(iii)", 0, 0, 0));
-	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Racer");
-	Sf_Ask(&f, "RacerScorer", "Create", "(i)", 0);
-	PyObject *solid = Sf_Ask(&f, "SScorer", "Get", "(iss)", 0, "Mission", "SolidTime");
-	int show = Sf_Compare(&f, Sf_Time(&f), ">", Sf_Float(&f, 4.0));
-	if (show > 0) {
-		show = Sf_Compare(&f, solid, "==", Py_None);
-		if (show == 0) {
-			show = Sf_Compare(&f, solid, "!=", Py_None);
-			if (show > 0) {
-				show = Sf_Compare(&f, solid, "<=", Sf_Int(&f, 0));
-			}
+	Native_Free(x);
+	Mode_CamName(0, x);
+	if (!Pk_Ent(x, cam) || !Pk_Get(cam, "Target", x) || !Pk_Ent(x, v) || !LvN_SetI(v, "UsrControl", 0) ||
+		!LvN_SetI(v, "MoveTime", 0) || !LvN_SetInts3(v, "Vel", 0, 0, 0) || !Mode_ActionSet("Racer") ||
+		!Native_CallMod("RacerScorer", "Create", NULL, "i", 0L)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_ScorerGet(0, "Mission", "SolidTime", solid);
+	int show = Mode_Time() > 4.0;
+	if (show) {
+		show = solid->type == NV_NONE || Mode_CmpI(solid, "<=", 0) > 0;
+	}
+	if (show) {
+		Native_SetFloat(now, Mode_Time());
+		if (!Pk_Get(v, "Descriptor", x) || !Native_Arith('+', now, Mode_I(&t, 5), at) || !Mode_LabelTextV(x, at)) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	if (show > 0) {
-		Sf_Ask(&f, "SScorer", "SetLabelText", "(OO)", Sf_Attr(&f, v, "Descriptor"), Sf_OpI(&f, Sf_Time(&f), '+', 5));
+	if (!LvN_PutNone(PK, "LastCamera") || !PK_OWN("RestoreDeathPlayerShip", NULL, "")) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_SetGlobal(&f, PK, "LastCamera", Py_None);
-	Sf_Own(&f, PK, "RestoreDeathPlayerShip", "()");
-	if (Sf_True(&f, G("SetWeaponOnShip")) > 0) {
-		Sf_SetGlobal(&f, PK, "SetWeaponOnShip", Sf_Int(&f, 0));
-		Sf_SetAttr(&f, v, "AcWeap", Sf_ToInt(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "usrShip.AcWeap")));
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "usrShip.AcWeap", "6");
+	int set = LvN_GTrue(PK, "SetWeaponOnShip");
+	if (set > 0) {
+		Native_Free(x);
+		Mode_SaveVar("usrShip.AcWeap", x);
+		set = LvN_PutI(PK, "SetWeaponOnShip", 0) && Native_ToInt(x, at) && Mode_VSet(v, "AcWeap", at) &&
+			Mode_SaveS("usrShip.AcWeap", "6") ? 0 : -1;
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, set >= 0);
 }
 
 /* UseShip(UsrName, CharName, optId, FullOption, BoxName="Parking"): the character boards the parked ship CharName:
  * the camera path to the ship, the pilot, the ship rises, a parking box where it stood (none for BoxName None) */
-static PyObject *Parking_UseShip(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "UsrName", "CharName", "optId", "FullOption", "BoxName", NULL };
-	PyObject *usrName, *charName, *optId, *full, *box = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOOO|O", names, &usrName, &charName, &optId, &full, &box)) {
-		return NULL;
+static byte Pk_UseShipN(const nativeVal_t *a) {
+	static const char *const imports[] = { "ShipMaker", "Menu", "Sputnik", "Init" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *w = Mode_V(&t), *v = Mode_V(&t), *x = Mode_V(&t), *lastCam = Mode_V(&t), *cp = Mode_V(&t);
+	nativeVal_t *lcam = Mode_V(&t), *vPos = Mode_V(&t), *y = Mode_V(&t), *box = Mode_V(&t), *now = Mode_V(&t);
+	const nativeVal_t *boxName = &a[4];
+	for (int i = 0; i < 4; i++) {
+		if (!Mode_Import(imports[i])) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	box = box ? Sf_Ref(&f, box) : Sf_Str(&f, "Parking");
-	Sf_Import(&f, "ShipMaker");
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "Sputnik");
-	Sf_Import(&f, "Init");
-	PyObject *w = Sf_Entity(&f, usrName);
-	PyObject *v = Sf_Entity(&f, charName);
-	if (Sf_Compare(&f, Sf_Attr(&f, w, "UsrControl"), "!=", Sf_Int(&f, 0)) != 0) {
-		return Sf_None(&f);
+	if (!Pk_Ent(&a[0], w) || !Pk_Ent(&a[1], v) || !Pk_Get(w, "UsrControl", x)) {
+		return Mode_Done(&t, 0);
 	}
-	if (Sf_Compare(&f, Sf_Attr(&f, v, "MPil0"), "!=", G("P_None")) != 0) {
-		return Sf_None(&f);
+	int c = Mode_CmpI(x, "!=", 0);
+	if (c) {
+		return Mode_Done(&t, c > 0);
 	}
-	Sf_Own(&f, PK, "SetShipRadius", "(Oi)", v, 0);
-	Pk_NoBlur(&f);
+	if (!Pk_Get(v, "MPil0", x) || (c = Mode_CmpG(x, "!=", PK, "P_None")) < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (c) {
+		return Mode_Done(&t, 1);
+	}
+	if (!PK_OWN("SetShipRadius", NULL, "vi", v, 0L) || !Pk_NoBlur()) {
+		return Mode_Done(&t, 0);
+	}
 	/* the camera from the character to the ship */
-	PyObject *lastCam = Sf_Ask(&f, "Scrap", "GetCam", "(i)", 0);
-	PyObject *cp = Sf_Ask(&f, "Scrap", "CreateEntity", "(siiis)", "CamPath", 0, 0, 0, "CamPath");
-	Sf_SetAttrI(&f, cp, "nWayPoint", 2);
-	Sf_SetAttr(&f, cp, "TgtCam01", lastCam);
-	int boxed = Sf_Compare(&f, box, "!=", Py_None);
-	Sf_Own(&f, PK, "SetCameraStart", "(OOOiO)", cp, v, Sf_Attr(&f, v, "Pos"), 1, boxed >= 0 ? Sf_Int(&f, boxed) : NULL);
-	Sf_SetAttrS(&f, cp, "OnEnd", "Parking.CharOnShip");
-	PyObject *lcam = Sf_Entity(&f, lastCam);
-	Sf_SetAttr(&f, cp, "Time00", Sf_Float(&f, 1.0));
-	Sf_SetAttrI(&f, cp, "FadeIn00", 1);
-	Sf_SetAttrI(&f, cp, "FadeOut00", 0);
-	Sf_Ask(&f, "Scrap", "SetCam", "(iO)", 0, Sf_Attr(&f, cp, "Name"));
-	/* the exchange */
-	PyObject *vPos = Sf_Attr(&f, v, "MovePos");
-	Sf_SetAttr(&f, v, "MPil0", Sf_Cat(&f, "sO", "P_", Sf_Attr(&f, w, "ActCtrl")));
-	Sf_Ask(&f, "ShipMaker", "SetUpChars", "(O)", Sf_Attr(&f, v, "Name"));
-	Sf_SetAttrI(&f, v, "ArrowCanUse", 0);
-	Sf_SetAttrS(&f, v, "UseFunc", "");
-	int mark = f.n;
-	Sf_SetAttr(&f, v, "MovePos", Sf_Ask(&f, "SVec", "Add", "(O(iOi))", Sf_Attr(&f, v, "Pos"), 0, G("ParkingDepth"), 0));
-	Sf_SetAttr(&f, v, "MoveAng", Sf_Attr(&f, v, "Ang"));
-	Sf_SetAttr(&f, v, "MoveTime", Sf_Float(&f, 0.9));
-	Sf_SetAttr(&f, v, "TgType", Sf_Attr(&f, w, "TgType"));
-	Sf_SetAttrS(&f, v, "EntityList", "Players");
-	Sf_SetAttrI(&f, v, "UsrControl", 0);
-	Sf_Own(&f, PK, "SetInvunerable", "(O)", v);
-	Sf_Release(&f, mark);
-	if (Sf_Compare(&f, box, "!=", Py_None) > 0) {
-		Sf_SetGlobal(&f, PK, "LastPark", Sf_Own(&f, PK, "CreateBox", "(OOOO)", box, Sf_Item(&f, vPos, 0),
-			Sf_Item(&f, vPos, 1), Sf_Item(&f, vPos, 2)));
-		Sf_SetAttr(&f, G("LastPark"), "rTime", Sf_Float(&f, 0.5));
+	Mode_CamName(0, lastCam);
+	int boxed = Mode_Cmp(boxName, "!=", Mode_V(&t));
+	if (!LvN_Create(Mode_S(&t, "CamPath"), Mode_I(&t, 0), Mode_I(&t, 0), Mode_I(&t, 0), "CamPath", cp) ||
+		!LvN_SetI(cp, "nWayPoint", 2) || !Mode_VSet(cp, "TgtCam01", lastCam) || !Pk_Get(v, "Pos", x) || boxed < 0 ||
+		!PK_OWN("SetCameraStart", NULL, "vvvii", cp, v, x, 1L, (long)boxed) || !LvN_SetS(cp, "OnEnd", "Parking.CharOnShip") ||
+		!Pk_Ent(lastCam, lcam) || !LvN_SetF(cp, "Time00", 1.0) || !LvN_SetI(cp, "FadeIn00", 1) || !LvN_SetI(cp, "FadeOut00", 0) ||
+		!Pk_Get(cp, "Name", x) || !Pk_SetCam(x)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *vName = Sf_Attr(&f, v, "Name");
-	Sf_SetAttr(&f, lcam, "MainTarget", vName);
-	Sf_SetAttr(&f, lcam, "Target", vName);
-	Sf_SetAttr(&f, lcam, "CamDist", Sf_Ask(&f, "Scrap", "Get", "(s)", "VehicleCamDist"));
-	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Inactive");
-	Sf_Ask(&f, "Menu", "MovieScorer", "(i)", 0);
-	Sf_SetAttrI(&f, w, "AutoSelect", 0);
-	Sf_Method(&f, w, "Del", "()");
-	Sf_Schedule(&f, Sf_Time(&f), G("ExecSwitchVehicleMissionCallback"), Sf_Build(&f, "()"), NULL);
+	/* the exchange */
+	if (!Pk_Get(v, "MovePos", vPos) || !Pk_Get(w, "ActCtrl", x) || !LvN_Cat("P_", x, y) || !Mode_VSet(v, "MPil0", y) ||
+		!Pk_Get(v, "Name", x) || !Native_CallMod("ShipMaker", "SetUpChars", NULL, "v", x) || !LvN_SetI(v, "ArrowCanUse", 0) ||
+		!LvN_SetS(v, "UseFunc", "")) {
+		return Mode_Done(&t, 0);
+	}
+	int mark = t.n;
+	nativeVal_t *pos = Mode_V(&t), *depth = Mode_V(&t), *off = Mode_V(&t);
+	if (!Pk_Get(v, "Pos", pos) || !Pk_G("ParkingDepth", depth)) {
+		return Mode_Done(&t, 0);
+	}
+	Pk_Tuple3(off, Mode_I(&t, 0), depth, Mode_I(&t, 0));
+	if (!Mode_VecAdd(pos, off, x) || !Mode_VSet(v, "MovePos", x) || !Pk_Get(v, "Ang", x) || !Mode_VSet(v, "MoveAng", x) ||
+		!LvN_SetF(v, "MoveTime", 0.9) || !Pk_Get(w, "TgType", x) || !Mode_VSet(v, "TgType", x) ||
+		!LvN_SetS(v, "EntityList", "Players") || !LvN_SetI(v, "UsrControl", 0) || !PK_OWN("SetInvunerable", NULL, "v", v)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_Release(&t, mark);
+	if (boxed) {
+		if (!Pk_BoxAt(boxName, vPos, box) || !Mode_Put(PK, "LastPark", NULL, box) || !Pk_G("LastPark", box) ||
+			!LvN_SetF(box, "rTime", 0.5)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	if (!Pk_Get(v, "Name", x) || !Mode_VSet(lcam, "MainTarget", x) || !Mode_VSet(lcam, "Target", x) ||
+		!Native_GVarGet("VehicleCamDist", y) || !Mode_VSet(lcam, "CamDist", y) || !Mode_ActionSet("Inactive") ||
+		!Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L) || !LvN_SetI(w, "AutoSelect", 0) || !Mode_VDel(w)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetFloat(now, Mode_Time());
+	if (!Mode_AtG(now, PK, "ExecSwitchVehicleMissionCallback", NULL, 0)) {
+		return Mode_Done(&t, 0);
+	}
 	/* Sputnik says goodbye */
-	Sf_Ask(&f, "Sputnik", "SetSptAt", "(OOs)", Sf_Attr(&f, v, "MovePos"), Sf_Attr(&f, v, "Ang"), "Bye");
-	PyObject *arrows = Sf_Mod(&f, "Init", "Arrows");
-	Sf_Ask(&f, "Scrap", "SwitchMissionArrows", "(OO)", Sf_Item(&f, arrows, 3), Sf_Item(&f, arrows, 4));
-	Pk_Voice(&f, "OnTakeOffSound");
-	return Sf_None(&f);
+	return Mode_Done(&t, Pk_Get(v, "MovePos", x) && Pk_Get(v, "Ang", y) &&
+		Native_CallMod("Sputnik", "SetSptAt", NULL, "vvs", x, y, "Bye") && Pk_Arrows(3, 4) && Pk_Voice("OnTakeOffSound"));
 }
 
 /* PlayVoiceChannel(channel): plays the voice and stops it when it ends */
-static PyObject *Parking_PlayVoiceChannel(PyObject *self, PyObject *args) {
-	PyObject *channel;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &channel)) {
-		return NULL;
+static byte Pk_PlayVoiceChannelN(const nativeVal_t *channel) {
+	nativeVal_t timy = { 0 }, now, def, sum = { 0 }, at = { 0 };
+	Native_SetFloat(&def, 0.1);
+	if (!Mode_PlayVoice(channel, NULL) || !Mode_VoiceRemain(channel, &def, &timy)) {
+		Native_Free(&timy);
+		return 0;
 	}
-	Sf_Ask(&f, "SSound", "PlayVoice", "(O)", channel);
-	PyObject *timy = Sf_Ask(&f, "SSound", "VoiceRemain", "(Od)", channel, 0.1);
-	PyObject *at = Sf_Op(&f, Sf_Op(&f, Sf_Time(&f), '+', timy), '+', Sf_Float(&f, 0.1));
-	Sf_Schedule(&f, at, Sf_Mod(&f, "SSound", "StopVoice"), Sf_Build(&f, "(O)", channel), NULL);
-	return Sf_None(&f);
+	Native_SetFloat(&now, Mode_Time());
+	/* OBJLIB 4: the scheduler keeps SSound.StopVoice itself */
+	PyObject *stop = NULL;
+	byte ok = Native_Arith('+', &now, &timy, &sum) && Native_Arith('+', &sum, &def, &at) &&
+		(stop = Script_Attr("SSound", "StopVoice")) != NULL && Mode_Schedule(&at, stop, channel, 1, NULL);
+	Py_XDECREF(stop);
+	Native_Free(&timy);
+	Native_Free(&sum);
+	Native_Free(&at);
+	return ok;
 }
 
 /* ExecSwitchVehicleMissionCallback(): the mission callbacks of boarding */
-static PyObject *Parking_ExecSwitchVehicleMissionCallback(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Pk_Callback(&f, "SwitchVehicleMissionCallback");
-	Pk_Callback(&f, "SwitchVehicleMissionCallbackAux");
-	return Sf_None(&f);
+static byte Pk_ExecSwitchVehicleMissionCallbackN(void) {
+	return Pk_Callback("SwitchVehicleMissionCallback") && Pk_Callback("SwitchVehicleMissionCallbackAux");
 }
 
 /* EndPathCam(PathCam): the end of the parking camera: the character under control, the walk HUD */
-static PyObject *Parking_EndPathCam(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte Pk_EndPathCamN(const nativeVal_t *path) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cp = Mode_V(&t), *x = Mode_V(&t), *lcam = Mode_V(&t), *v = Mode_V(&t);
+	if (!Mode_Import("CharScorer") || !Pk_Ent(path, cp) || !Pk_Get(cp, "TgtCam03", x) || !Pk_SetCam(x) || !Mode_VDel(cp)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "CharScorer");
-	PyObject *cp = Sf_Entity(&f, path);
-	Sf_Ask(&f, "Scrap", "SetCam", "(iO)", 0, Sf_Attr(&f, cp, "TgtCam03"));
-	Sf_Method(&f, cp, "Del", "()");
-	PyObject *lcam = Sf_Entity(&f, Sf_Ask(&f, "Scrap", "GetCam", "(i)", 0));
-	PyObject *v = Sf_Entity(&f, Sf_Attr(&f, lcam, "Target"));
-	Sf_SetAttrI(&f, v, "UsrControl", 0);
-	Pk_Callback(&f, "SwitchCharMissionCallback");
-	Pk_Callback(&f, "SwitchCharMissionCallbackAux");
-	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Walk");
-	Sf_Ask(&f, "CharScorer", "Create", "(i)", 0);
-	Sf_SetGlobal(&f, PK, "LastCamera", Py_None);
-	Sf_Own(&f, PK, "RestoreDeathPlayerShip", "()");
-	return Sf_None(&f);
+	Native_Free(x);
+	Mode_CamName(0, x);
+	return Mode_Done(&t, Pk_Ent(x, lcam) && Pk_Get(lcam, "Target", x) && Pk_Ent(x, v) && LvN_SetI(v, "UsrControl", 0) &&
+		Pk_Callback("SwitchCharMissionCallback") && Pk_Callback("SwitchCharMissionCallbackAux") && Mode_ActionSet("Walk") &&
+		Native_CallMod("CharScorer", "Create", NULL, "i", 0L) && LvN_PutNone(PK, "LastCamera") &&
+		PK_OWN("RestoreDeathPlayerShip", NULL, ""));
 }
 
 /* SetCameraStart(cp, v, iPos, split=0, testline=1): the camera point beside the ship at the height of the ground
  * (point 0 for split, else point 1) */
-static PyObject *Parking_SetCameraStart(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "cp", "v", "iPos", "split", "testline", NULL };
+static byte Pk_SetCameraStartN(const nativeVal_t *a) {
 	static const char *const vars[2][6] = { { "Pos00", "Ang00", "FOV00", "Near00", "Far00", "Quake00" },
 		{ "Pos01", "Ang01", "FOV01", "Near01", "Far01", "Quake01" } };
-	PyObject *cp, *v, *iPos, *split = NULL, *testline = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOO|OO", names, &cp, &v, &iPos, &split, &testline)) {
-		return NULL;
+	const nativeVal_t *cp = &a[0], *v = &a[1], *split = &a[3], *testline = &a[4];
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ang = Mode_V(&t), *ang1 = Mode_V(&t), *wr = Mode_V(&t), *r = Mode_V(&t), *off = Mode_V(&t), *rv = Mode_V(&t);
+	nativeVal_t *rot = Mode_V(&t), *acPos = Mode_V(&t), *res = Mode_V(&t), *newPos = Mode_V(&t), *y = Mode_V(&t);
+	nativeVal_t *y2 = Mode_V(&t), *pos = Mode_V(&t), *a180 = Mode_V(&t), *x0 = Mode_V(&t), *x2 = Mode_V(&t);
+	if (!Pk_Get(v, "Ang", ang) || !Pk_Item(ang, 1, ang1) || !Pk_Get(v, "WRadius", wr) || !Native_Arith('+', wr, Mode_I(&t, 50), r)) {
+		return Mode_Done(&t, 0);
 	}
-	split = split ? Sf_Ref(&f, split) : Sf_Int(&f, 0);
-	testline = testline ? Sf_Ref(&f, testline) : Sf_Int(&f, 1);
-	PyObject *ang1 = Sf_Item(&f, Sf_Attr(&f, v, "Ang"), 1);
-	PyObject *rot = Sf_Ask(&f, "SVec", "Rotate3D", "((iiO)(iOi))", 0, 0, Sf_OpI(&f, Sf_Attr(&f, v, "WRadius"), '+', 50), 0,
-		ang1, 0);
-	PyObject *acPos = Sf_Ask(&f, "SVec", "Add", "(OO)", iPos, rot);
-	PyObject *newPos = acPos;
-	if (Sf_True(&f, testline) > 0) {
-		PyObject *res = Pk_Down(&f, acPos);
-		if (Sf_True(&f, res) > 0) {
-			newPos = Sf_Item(&f, res, 0);
+	Pk_Tuple3(off, Mode_I(&t, 0), Mode_I(&t, 0), r);
+	Pk_Tuple3(rv, Mode_I(&t, 0), ang1, Mode_I(&t, 0));
+	if (!Mode_Rotate(off, rv, rot) || !Mode_VecAdd(&a[2], rot, acPos)) {
+		return Mode_Done(&t, 0);
+	}
+	const nativeVal_t *np = acPos;
+	if (Native_True(testline)) {
+		if (!Pk_Down(acPos, res)) {
+			return Mode_Done(&t, 0);
+		}
+		if (Native_True(res)) {
+			if (!Pk_Item(res, 0, newPos)) {
+				return Mode_Done(&t, 0);
+			}
+			np = newPos;
 		}
 	}
-	PyObject *y = Sf_OpI(&f, Sf_Op(&f, Sf_Item(&f, newPos, 1), '+', Sf_Attr(&f, v, "WRadius")), '+', 50);
-	PyObject *pos = Sf_Build(&f, "(OOO)", Sf_Item(&f, newPos, 0), y, Sf_Item(&f, newPos, 2));
-	PyObject *ang = Sf_Build(&f, "(iOi)", 0, Sf_OpI(&f, Sf_Item(&f, Sf_Attr(&f, v, "Ang"), 1), '+', 180), 0);
-	Sf_SetAttr(&f, cp, "Time00", Sf_Float(&f, 2.5));
-	Sf_SetAttrI(&f, cp, "FadeIn00", 1);
-	Sf_SetAttrI(&f, cp, "FadeOut00", 1);
-	int t = Sf_True(&f, split);
-	if (t >= 0) {
-		const char *const *n = vars[t ? 0 : 1];
-		Sf_SetAttr(&f, cp, n[0], pos);
-		Sf_SetAttr(&f, cp, n[1], ang);
-		Sf_SetAttrI(&f, cp, n[2], 80);
-		Sf_SetAttrI(&f, cp, n[3], 50);
-		Sf_SetAttrI(&f, cp, n[4], 500000);
-		Sf_SetAttr(&f, cp, n[5], Sf_Float(&f, 0.5));
+	if (!Pk_Item(np, 1, y) || !Pk_Get(v, "WRadius", wr) || !Native_Arith('+', y, wr, y2) ||
+		!Native_Arith('+', y2, Mode_I(&t, 50), r) || !Pk_Item(np, 0, x0) || !Pk_Item(np, 2, x2)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_SetAttr(&f, cp, "camPos", Sf_Attr(&f, cp, "Pos00"));
-	Sf_SetAttr(&f, cp, "camAng", Sf_Attr(&f, cp, "Ang00"));
-	return Sf_None(&f);
+	Pk_Tuple3(pos, x0, r, x2);
+	if (!Pk_Get(v, "Ang", ang) || !Pk_Yaw(ang, '+', Mode_I(&t, 180), a180) || !LvN_SetF(cp, "Time00", 2.5) ||
+		!LvN_SetI(cp, "FadeIn00", 1) || !LvN_SetI(cp, "FadeOut00", 1)) {
+		return Mode_Done(&t, 0);
+	}
+	const char *const *n = vars[Native_True(split) ? 0 : 1];
+	return Mode_Done(&t, Mode_VSet(cp, n[0], pos) && Mode_VSet(cp, n[1], a180) && LvN_SetI(cp, n[2], 80) &&
+		LvN_SetI(cp, n[3], 50) && LvN_SetI(cp, n[4], 500000) && LvN_SetF(cp, n[5], 0.5) && Pk_Get(cp, "Pos00", y) &&
+		Mode_VSet(cp, "camPos", y) && Pk_Get(cp, "Ang00", y) && Mode_VSet(cp, "camAng", y));
+}
+
+/* v.IsType("Car") as the script calls it (the value of the method of another object) */
+static byte Pk_IsCar(const nativeVal_t *v, nativeVal_t *out) {
+	if (v->type == NV_OBJ && PyEntity_Check(v->obj)) {
+		int k = Mode_VIsType(v, "Car");
+		if (k >= 0) {
+			Native_SetInt(out, k);
+		}
+		return k >= 0;
+	}
+	PyObject *m = Mode_VBound(v, "IsType");
+	byte ok = m && Native_Call(m, out, "s", "Car");
+	Py_XDECREF(m);
+	return ok;
 }
 
 /* isValidToPark(v): v and v.IsType("Car") and (v.UsrControl == 0), the value of the and */
-static PyObject *Parking_isValidToPark(PyObject *self, PyObject *args) {
-	PyObject *v;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &v)) {
-		return NULL;
+static byte Pk_isValidToParkN(const nativeVal_t *v, nativeVal_t *out) {
+	if (!Native_True(v)) {
+		Native_Copy(out, v);
+		return 1;
 	}
-	if (Sf_True(&f, v) <= 0) {
-		return Sf_Return(&f, v);
+	nativeVal_t uc = { 0 };
+	if (!Pk_IsCar(v, out)) {
+		return 0;
 	}
-	PyObject *car = Sf_Method(&f, v, "IsType", "(s)", "Car");
-	if (Sf_True(&f, car) <= 0) {
-		return Sf_Return(&f, car);
+	if (!Native_True(out)) {
+		return 1;
 	}
-	int eq = Sf_EqI(&f, Sf_Attr(&f, v, "UsrControl"), 0);
-	return Sf_Return(&f, eq >= 0 ? Sf_Int(&f, eq) : NULL);
+	byte ok = Pk_Get(v, "UsrControl", &uc);
+	if (ok) {
+		Native_Free(out);
+		Native_SetInt(out, Mode_EqI(&uc, 0));
+	}
+	Native_Free(&uc);
+	return ok;
+}
+
+/* isValidToPark(v) through the global: 1, 0, -1 with the error */
+static int Pk_Valid(const nativeVal_t *v) {
+	nativeVal_t r = { 0 };
+	int ok = PK_OWN("isValidToPark", &r, "v", v) ? Native_True(&r) : -1;
+	Native_Free(&r);
+	return ok;
 }
 
 /* OnPark(ItemName, VehicleName): a ship slow enough on a parking box parks there: the pilot gets out, the camera
  * path shows it; 1 when it parked */
-static PyObject *Parking_OnPark(PyObject *self, PyObject *args) {
-	PyObject *itemName, *vehName;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &itemName, &vehName)) {
-		return NULL;
+static byte Pk_OnParkN(const nativeVal_t *itemName, const nativeVal_t *vehName, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *v = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t), *pilot = Mode_V(&t), *descriptor = Mode_V(&t);
+	nativeVal_t *i = Mode_V(&t), *iPos = Mode_V(&t), *newPos = Mode_V(&t), *ang = Mode_V(&t), *vAng = Mode_V(&t);
+	nativeVal_t *lastCam = Mode_V(&t), *cp = Mode_V(&t), *c = Mode_V(&t), *rot = Mode_V(&t), *off = Mode_V(&t);
+	nativeVal_t *dist = Mode_V(&t), *neg = Mode_V(&t), *rv = Mode_V(&t), *a90 = Mode_V(&t), *x0 = Mode_V(&t), *x2 = Mode_V(&t);
+	nativeVal_t *p3 = Mode_V(&t), *args = Mode_V(&t);
+	Native_SetInt(out, 0);
+	if (!Mode_Import("Chars") || !Pk_Ent(vehName, v)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Chars");
-	PyObject *v = Sf_Entity(&f, vehName);
-	if (Sf_True(&f, Sf_Own(&f, PK, "isValidToPark", "(O)", v)) == 0) {
-		return Sf_Return(&f, Sf_Int(&f, 0));
+	int valid = Pk_Valid(v);
+	if (valid <= 0) {
+		return Mode_Done(&t, valid == 0);
 	}
-	if (Sf_Compare(&f, Sf_Attr(&f, v, "Speed"), ">", G("MinParkingVel")) > 0) {
-		Sf_SetAttr(&f, v, "Vel", Sf_Ask(&f, "SVec", "Prod", "(Od)", Sf_Attr(&f, v, "Vel"), 0.6));
-		return Sf_Return(&f, Sf_Int(&f, 0));
+	if (!Pk_Get(v, "Speed", x)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *pilot = Sf_Attr(&f, v, "MPil0");
-	int bad = Sf_Compare(&f, Sf_Slice(&f, pilot, 0, 2), "!=", Sf_Str(&f, "P_"));
-	if (bad == 0) {
-		bad = Sf_EqS(&f, Sf_Slice(&f, pilot, 2, 0x7fffffff), "None");
+	int fast = Mode_CmpG(x, ">", PK, "MinParkingVel");
+	if (fast) {
+		Native_SetFloat(rv, 0.6);
+		return Mode_Done(&t, fast > 0 && Pk_Get(v, "Vel", x) && Mode_VecProd(x, rv, y) && Mode_VSet(v, "Vel", y));
 	}
-	if (bad > 0) {
-		return Sf_Return(&f, Sf_Int(&f, 0));
+	if (!Pk_Get(v, "MPil0", pilot) || !Native_Slice(pilot, 0, 2, x)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Attr(&f, v, "UsrControl");
-	PyObject *descriptor = Sf_Attr(&f, v, "Descriptor");
-	PyObject *i = Sf_Entity(&f, itemName);
-	Sf_SetAttr(&f, i, "rTime", Sf_Float(&f, 0.1));
-	Sf_Method(&f, i, "Del", "()");
-	PyObject *iPos = Sf_Attr(&f, i, "Pos");
+	int bad = !Native_IsStr(x, "P_");
+	if (!bad) {
+		Native_Free(x);
+		if (!Native_Slice(pilot, 2, 0x7fffffff, x)) {
+			return Mode_Done(&t, 0);
+		}
+		bad = LvN_EqS(x, "None");
+	}
+	if (bad) {
+		return Mode_Done(&t, 1);
+	}
+	if (!Pk_Get(v, "UsrControl", x) || !Pk_Get(v, "Descriptor", descriptor) || !Pk_Ent(itemName, i) ||
+		!LvN_SetF(i, "rTime", 0.1) || !Mode_VDel(i) || !Pk_Get(i, "Pos", iPos)) {
+		return Mode_Done(&t, 0);
+	}
 	/* the ship stops and parks */
-	Sf_SetAttrI(&f, v, "UsrControl", -1);
-	Sf_SetAttr(&f, v, "Vel", Sf_Build(&f, "(iii)", 0, 0, 0));
-	PyObject *newPos = Sf_Item(&f, Pk_Down(&f, iPos), 0);
-	PyObject *vAng = Sf_Build(&f, "(iOi)", 0, Sf_Item(&f, Sf_Attr(&f, v, "Ang"), 1), 0);
-	int mark = f.n;
-	Sf_SetAttr(&f, v, "MovePos", Sf_Build(&f, "(OOO)", Sf_Item(&f, newPos, 0),
-		Sf_Op(&f, Sf_Item(&f, newPos, 1), '+', Sf_Attr(&f, v, "WRadius")), Sf_Item(&f, newPos, 2)));
-	Sf_SetAttr(&f, v, "MoveAng", vAng);
-	Sf_SetAttr(&f, v, "MoveTime", Sf_Float(&f, 2.5));
-	Sf_SetAttrI(&f, v, "ArrowCanUse", 1);
-	Sf_SetAttrI(&f, v, "ArrnOpt", 0);
-	Sf_SetAttr(&f, v, "ArrOpt0", Sf_Cat(&f, "sO", "UseShip:", Sf_Lang(&f, Sf_Str(&f, "UseShip"))));
-	Sf_SetAttrS(&f, v, "UseFunc", "Sputnik.UseShip");
-	Sf_Own(&f, PK, "SetInvunerable", "(O)", v);
-	Pk_NoBlur(&f);
-	Sf_Release(&f, mark);
+	if (!LvN_SetI(v, "UsrControl", -1) || !LvN_SetInts3(v, "Vel", 0, 0, 0) || !Pk_Ground(iPos, newPos) ||
+		!Pk_Get(v, "Ang", ang) || !Pk_Yaw(ang, '+', NULL, vAng) || !Pk_Item(newPos, 1, x) || !Pk_Get(v, "WRadius", y) ||
+		!Native_Arith('+', x, y, rot) || !Pk_Item(newPos, 0, x0) || !Pk_Item(newPos, 2, x2)) {
+		return Mode_Done(&t, 0);
+	}
+	Pk_Tuple3(p3, x0, rot, x2);
+	if (!Mode_VSet(v, "MovePos", p3) || !Mode_VSet(v, "MoveAng", vAng) || !LvN_SetF(v, "MoveTime", 2.5) || !Pk_UseArrow(v) ||
+		!PK_OWN("SetInvunerable", NULL, "v", v) || !Pk_NoBlur()) {
+		return Mode_Done(&t, 0);
+	}
 	/* the camera of the change */
-	PyObject *lastCam = Sf_Ask(&f, "Scrap", "GetCam", "(i)", 0);
-	PyObject *cp = Sf_Ask(&f, "Scrap", "CreateEntity", "(siiis)", "CamPath", 0, 0, 0, "CamPath");
-	Sf_SetGlobal(&f, PK, "LastCamera", cp);
-	mark = f.n;
-	Sf_SetAttrI(&f, cp, "nWayPoint", 4);
-	Sf_SetAttrS(&f, cp, "OnEnd", "Parking.EndPathCam");
-	Sf_SetAttr(&f, cp, "TgtCam00", lastCam);
-	Sf_SetAttrS(&f, cp, "TgtCam00", "");
-	Sf_Own(&f, PK, "SetCameraStart", "(OOO)", cp, v, iPos);
-	PyObject *a90 = Sf_OpI(&f, Sf_Item(&f, vAng, 1), '+', 90);
-	PyObject *rot = Sf_Ask(&f, "SVec", "Rotate3D", "((iiO)(iOi))", 0, 0, Pk_Neg(&f, G("ParkingDist")), 0, a90, 0);
-	Sf_SetAttr(&f, cp, "Pos02", Sf_Ask(&f, "SVec", "Add", "(OO)", iPos, rot));
-	Sf_SetAttr(&f, cp, "Ang02", Sf_Build(&f, "(iOi)", 0, Sf_OpI(&f, Sf_Item(&f, vAng, 1), '+', 90), 0));
-	Sf_SetAttrI(&f, cp, "FOV02", 70);
-	Sf_SetAttrI(&f, cp, "Near02", 50);
-	Sf_SetAttrI(&f, cp, "Far02", 500000);
-	Sf_SetAttr(&f, cp, "Time01", Sf_Float(&f, 0.0));
-	Sf_SetAttr(&f, cp, "TgtCam03", lastCam);
-	Sf_SetAttr(&f, cp, "Time02", Sf_Float(&f, 1.0));
-	Sf_SetAttrI(&f, cp, "FadeIn02", 0);
-	Sf_SetAttrI(&f, cp, "FadeOut02", 1);
-	Sf_SetAttr(&f, cp, "Time", Sf_Float(&f, 0.0));
-	Sf_Release(&f, mark);
+	Mode_CamName(0, lastCam);
+	if (!LvN_Create(Mode_S(&t, "CamPath"), Mode_I(&t, 0), Mode_I(&t, 0), Mode_I(&t, 0), "CamPath", cp) ||
+		!Mode_Put(PK, "LastCamera", NULL, cp) || !LvN_SetI(cp, "nWayPoint", 4) || !LvN_SetS(cp, "OnEnd", "Parking.EndPathCam") ||
+		!Mode_VSet(cp, "TgtCam00", lastCam) || !LvN_SetS(cp, "TgtCam00", "") || !PK_OWN("SetCameraStart", NULL, "vvv", cp, v, iPos)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Pk_Item(vAng, 1, x) || !Native_Arith('+', x, Mode_I(&t, 90), a90) || !Pk_G("ParkingDist", dist) || !Mode_Neg(dist, neg)) {
+		return Mode_Done(&t, 0);
+	}
+	Pk_Tuple3(off, Mode_I(&t, 0), Mode_I(&t, 0), neg);
+	Pk_Tuple3(rv, Mode_I(&t, 0), a90, Mode_I(&t, 0));
+	if (!Mode_Rotate(off, rv, rot) || !Mode_VecAdd(iPos, rot, x) || !Mode_VSet(cp, "Pos02", x) ||
+		!Pk_Yaw(vAng, '+', Mode_I(&t, 90), y) || !Mode_VSet(cp, "Ang02", y) || !LvN_SetI(cp, "FOV02", 70) ||
+		!LvN_SetI(cp, "Near02", 50) || !LvN_SetI(cp, "Far02", 500000) || !LvN_SetF(cp, "Time01", 0.0) ||
+		!Mode_VSet(cp, "TgtCam03", lastCam) || !LvN_SetF(cp, "Time02", 1.0) || !LvN_SetI(cp, "FadeIn02", 0) ||
+		!LvN_SetI(cp, "FadeOut02", 1) || !LvN_SetF(cp, "Time", 0.0)) {
+		return Mode_Done(&t, 0);
+	}
 	/* the character of the player */
-	vAng = Sf_Build(&f, "(iOi)", 0, Sf_OpI(&f, Sf_Item(&f, vAng, 1), '+', 90), 0);
-	PyObject *c = Sf_Ask(&f, "Chars", "CreateMainChar", "(sOO(iOi))", "Player0", Sf_Slice(&f, pilot, 2, 0x7fffffff),
-		Sf_Attr(&f, v, "Pos"), 0, Sf_OpI(&f, Sf_Item(&f, Sf_Attr(&f, v, "Ang"), 1), '-', 90), 0);
-	rot = Sf_Ask(&f, "SVec", "Rotate3D", "((iiO)O)", 0, 0, Pk_Neg(&f, G("ParkingDist")), vAng);
-	iPos = Sf_Ask(&f, "SVec", "Add", "(OO)", iPos, rot);
-	newPos = Sf_Item(&f, Pk_Down(&f, iPos), 0);
-	mark = f.n;
-	Sf_SetAttr(&f, c, "Pos", Sf_Build(&f, "(OOO)", Sf_Item(&f, newPos, 0),
-		Sf_Op(&f, Sf_Item(&f, newPos, 1), '+', Sf_Attr(&f, c, "FloorDist")), Sf_Item(&f, newPos, 2)));
-	Sf_SetAttr(&f, c, "Descriptor", descriptor);
-	Sf_SetAttrI(&f, c, "Active", 0);
-	Sf_SetAttrI(&f, c, "UsrControl", -1);
-	Sf_SetAttr(&f, c, "TgType", Sf_Attr(&f, v, "TgType"));
-	Sf_SetAttrS(&f, v, "EntityList", "");
-	Sf_SetAttrS(&f, v, "TgType", "None");
-	Sf_Entity(&f, lastCam);
-	Sf_Ask(&f, "Scrap", "SetCam", "(iO)", 0, Sf_Attr(&f, cp, "Name"));
-	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Inactive");
-	Sf_Import(&f, "Menu");
-	Sf_Ask(&f, "Menu", "MovieScorer", "(i)", 0);
-	Sf_Release(&f, mark);
-	Sf_Later(&f, Sf_Float(&f, 2.5), G("ShowChar"), Sf_Build(&f, "(OO)", Sf_Attr(&f, c, "Name"), Sf_Attr(&f, v, "Name")),
-		NULL);
-	Sf_Own(&f, PK, "SetShipRadius", "(Oi)", v, 1);
-	Sf_Import(&f, "Sputnik");
-	Sf_Ask(&f, "Sputnik", "SetSptAt", "(OOs)", Sf_Attr(&f, v, "Pos"), Sf_Attr(&f, v, "Ang"), "Hello");
-	Pk_Voice(&f, "OnLandSound");
-	return Sf_Return(&f, Sf_Int(&f, 1));
+	if (!Pk_Yaw(vAng, '+', Mode_I(&t, 90), y)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(vAng);
+	*vAng = *y;
+	Native_SetNone(y);
+	if (!Native_Slice(pilot, 2, 0x7fffffff, x) || !Pk_Get(v, "Pos", y) || !Pk_Get(v, "Ang", ang) ||
+		!Pk_Yaw(ang, '-', Mode_I(&t, 90), rv) || !Native_CallMod("Chars", "CreateMainChar", c, "svvv", "Player0", x, y, rv)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Pk_G("ParkingDist", dist) || !Mode_Neg(dist, neg)) {
+		return Mode_Done(&t, 0);
+	}
+	Pk_Tuple3(off, Mode_I(&t, 0), Mode_I(&t, 0), neg);
+	if (!Mode_Rotate(off, vAng, rot) || !Mode_VecAdd(iPos, rot, x)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(iPos);
+	*iPos = *x;
+	Native_SetNone(x);
+	if (!Pk_Ground(iPos, newPos) || !Pk_Item(newPos, 1, x) || !Pk_Get(c, "FloorDist", y) || !Native_Arith('+', x, y, rot) ||
+		!Pk_Item(newPos, 0, x0) || !Pk_Item(newPos, 2, x2)) {
+		return Mode_Done(&t, 0);
+	}
+	Pk_Tuple3(p3, x0, rot, x2);
+	if (!Mode_VSet(c, "Pos", p3) || !Mode_VSet(c, "Descriptor", descriptor) || !LvN_SetI(c, "Active", 0) ||
+		!LvN_SetI(c, "UsrControl", -1) || !Pk_Get(v, "TgType", x) || !Mode_VSet(c, "TgType", x) ||
+		!LvN_SetS(v, "EntityList", "") || !LvN_SetS(v, "TgType", "None") || !Pk_Ent(lastCam, x) || !Pk_Get(cp, "Name", x) ||
+		!Pk_SetCam(x) || !Mode_ActionSet("Inactive") || !Mode_Import("Menu") ||
+		!Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Pk_Get(c, "Name", x) || !Pk_Get(v, "Name", y)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetEmpty(args, NV_TUPLE);
+	Native_Copy(Native_Append(args), x);
+	Native_Copy(Native_Append(args), y);
+	if (!Mode_Later(2.5, PK, "ShowChar", args->items, 2, NULL) || !PK_OWN("SetShipRadius", NULL, "vi", v, 1L) ||
+		!Mode_Import("Sputnik") || !Pk_Get(v, "Pos", x) || !Pk_Get(v, "Ang", y) ||
+		!Native_CallMod("Sputnik", "SetSptAt", NULL, "vvs", x, y, "Hello") || !Pk_Voice("OnLandSound")) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetInt(out, 1);
+	return Mode_Done(&t, 1);
 }
 
 /* SetDtritusPlate(v, Active): the plate shows on the player's ship (single player) */
-static PyObject *Parking_SetDtritusPlate(PyObject *self, PyObject *args) {
-	PyObject *v, *active;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &v, &active)) {
-		return NULL;
+static byte Pk_SetDtritusPlateN(const nativeVal_t *v, const nativeVal_t *active) {
+	nativeVal_t a = { 0 }, b = { 0 }, plate = { 0 };
+	if (!Mode_Import("Init")) {
+		return 0;
 	}
-	Sf_Import(&f, "Init");
-	int t = Sf_True(&f, Sf_Mod(&f, "Init", "MultiPlayer"));
+	int t = Mode_ModTrue("Init", "MultiPlayer");
 	t = t < 0 ? -1 : !t;
 	if (t > 0) {
-		t = Sf_True(&f, G("DtritusPlate"));
+		t = LvN_GTrue(PK, "DtritusPlate");
 	}
 	if (t > 0) {
-		t = Sf_True(&f, G("PlayerShip"));
+		t = LvN_GTrue(PK, "PlayerShip");
 	}
 	if (t > 0) {
-		t = Sf_True(&f, v);
+		t = Native_True(v);
 	}
 	if (t > 0) {
-		t = Sf_Compare(&f, Sf_Attr(&f, G("PlayerShip"), "Name"), "==", Sf_Attr(&f, v, "Name"));
+		t = Pk_G("PlayerShip", &plate) && Pk_Get(&plate, "Name", &a) && Pk_Get(v, "Name", &b) ? Mode_Cmp(&a, "==", &b) : -1;
 	}
 	if (t > 0) {
-		Sf_SetAttr(&f, G("DtritusPlate"), "Active", active);
+		t = Pk_G("DtritusPlate", &plate) && Mode_VSet(&plate, "Active", active) ? 1 : -1;
 	}
-	return Sf_None(&f);
+	Native_Free(&a);
+	Native_Free(&b);
+	Native_Free(&plate);
+	return t >= 0;
 }
 
 /* CreateDtritusPlate(): the plate of Dtritus, hidden until it is linked to the player's ship */
-static PyObject *Parking_CreateDtritusPlate(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_SetGlobal(&f, PK, "DtritusPlate", Sf_Ask(&f, "Scrap", "CreateEntity", "(siiis)", "DtritusPlate", 0, 0, 0,
-		"WithLife"));
-	Sf_Method(&f, G("DtritusPlate"), "SetModel", "(O)", G("DtritusPlateModel"));
-	Sf_SetAttrI(&f, G("DtritusPlate"), "Active", 0);
-	Sf_SetAttr(&f, G("DtritusPlate"), "OffModPos", Sf_Build(&f, "(iii)", 0, 0, 0));
-	Sf_SetAttrI(&f, G("DtritusPlate"), "DeltaOffMul", 4);
-	Sf_SetAttrI(&f, G("DtritusPlate"), "OffMul", 0);
-	Sf_SetAttrI(&f, G("DtritusPlate"), "UseLinkAng", 1);
-	return Sf_None(&f);
+static byte Pk_CreateDtritusPlateN(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *plate = Mode_V(&t), *model = Mode_V(&t);
+	return Mode_Done(&t, LvN_Create(Mode_S(&t, "DtritusPlate"), Mode_I(&t, 0), Mode_I(&t, 0), Mode_I(&t, 0), "WithLife", plate) &&
+		Mode_Put(PK, "DtritusPlate", NULL, plate) && Pk_G("DtritusPlate", plate) && Pk_G("DtritusPlateModel", model) &&
+		Mode_VModel(plate, model) && LvN_SetI(plate, "Active", 0) && LvN_SetInts3(plate, "OffModPos", 0, 0, 0) &&
+		LvN_SetI(plate, "DeltaOffMul", 4) && LvN_SetI(plate, "OffMul", 0) && LvN_SetI(plate, "UseLinkAng", 1));
 }
 
 /* CreatePlayerShip(Pos): the ship of the hangar the save game flies (the aux hangar for 9) at Pos, with the plate */
-static PyObject *Parking_CreatePlayerShip(PyObject *self, PyObject *args) {
-	PyObject *pos;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &pos)) {
-		return NULL;
+static byte Pk_CreatePlayerShipN(const nativeVal_t *pos) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ship = Mode_V(&t), *x = Mode_V(&t), *hangar = Mode_V(&t), *var = Mode_V(&t), *plate = Mode_V(&t);
+	nativeVal_t *y = Mode_V(&t), *hook = Mode_V(&t);
+	if (!Mode_Import("ShipEdit") || !Pk_G("PlayerShip", ship)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "ShipEdit");
-	if (Sf_Compare(&f, G("PlayerShip"), "!=", Py_None) > 0) {
-		Sf_Method(&f, G("PlayerShip"), "Del", "()");
-		Sf_SetGlobal(&f, PK, "PlayerShip", Py_None);
+	if (ship->type != NV_NONE && (!Mode_VDel(ship) || !LvN_PutNone(PK, "PlayerShip"))) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *hangar = Sf_Eval(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Hangar.iHangarShip"), PK);
-	PyObject *var;
-	int aux = Sf_EqI(&f, hangar, 9);
-	if (aux > 0) {
-		var = Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Hangar.HangarShipAux");
+	Mode_SaveVar("Hangar.iHangarShip", x);
+	if (!Mode_EvalIn(PK, x, hangar)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Mode_EqI(hangar, 9)) {
+		Mode_SaveVar("Hangar.HangarShipAux", var);
 	} else {
-		var = Sf_Ask(&f, "Scrap", "GetSaveVar", "(O)", Sf_Cat(&f, "sO", "Hangar.HangarShip", Sf_Repr(&f,
-			Sf_OpI(&f, hangar, '+', 1))));
+		if (!Native_Arith('+', hangar, Mode_I(&t, 1), x)) {
+			return Mode_Done(&t, 0);
+		}
+		Mode_Repr(x, y);
+		if (!LvN_Cat("Hangar.HangarShip", y, x)) {
+			return Mode_Done(&t, 0);
+		}
+		Mode_SaveVar(Native_Text(x), var);
 	}
-	Sf_SetGlobal(&f, PK, "PlayerShip", Sf_Ask(&f, "ShipEdit", "CreateShipFromSaveVar", "(OOs)", var, pos, "PlayerShip"));
-	Sf_SetAttrI(&f, G("PlayerShip"), "Active", 1);
-	Sf_SetAttrI(&f, G("PlayerShip"), "ActiveCMask", 1);
-	Sf_SetAttrI(&f, G("DtritusPlate"), "Active", 1);
-	Sf_SetAttrS(&f, G("DtritusPlate"), "LinkModel", ",");
-	Sf_SetAttr(&f, G("DtritusPlate"), "LinkModel", Sf_Cat(&f, "OsO", Sf_Attr(&f, G("PlayerShip"), "Name"), ",",
-		G("DtritusPlateNode")));
-	if (Sf_True(&f, G("OnCreatePlayerShip")) > 0) {
-		Sf_Call(&f, G("OnCreatePlayerShip"), "(O)", G("PlayerShip"));
+	if (!Native_CallMod("ShipEdit", "CreateShipFromSaveVar", ship, "vvs", var, pos, "PlayerShip") ||
+		!Mode_Put(PK, "PlayerShip", NULL, ship) || !Pk_G("PlayerShip", ship) || !LvN_SetI(ship, "Active", 1) ||
+		!LvN_SetI(ship, "ActiveCMask", 1) || !Pk_G("DtritusPlate", plate) || !LvN_SetI(plate, "Active", 1) ||
+		!LvN_SetS(plate, "LinkModel", ",") || !Pk_G("PlayerShip", ship) || !Pk_Get(ship, "Name", x) ||
+		!Native_Arith('+', x, Mode_S(&t, ","), y) || !Pk_G("DtritusPlateNode", x) || !Native_Arith('+', y, x, hook) ||
+		!Mode_VSet(plate, "LinkModel", hook)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	if (!Pk_G("OnCreatePlayerShip", hook)) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, !Native_True(hook) || (Pk_G("OnCreatePlayerShip", hook) && Pk_G("PlayerShip", ship) &&
+		Mode_CallArgs(hook, NULL, ship, 1)));
 }
 
 /* ShowChar(charname, shipname): the character appears beside the parked ship, Sputnik at the player's ship (moved to
  * the nearest parking box when the player parked another ship) */
-static PyObject *Parking_ShowChar(PyObject *self, PyObject *args) {
-	PyObject *charName, *shipName;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &charName, &shipName)) {
-		return NULL;
+static byte Pk_ShowCharN(const nativeVal_t *charName, const nativeVal_t *shipName) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *x = Mode_V(&t), *v = Mode_V(&t), *a = Mode_V(&t), *b = Mode_V(&t), *ship = Mode_V(&t), *near = Mode_V(&t);
+	nativeVal_t *nearest = Mode_V(&t);
+	if (!Mode_Import("Sputnik") || !Mode_Import("Init") || !Pk_Ent(charName, x) || !LvN_SetI(x, "Active", 1) ||
+		!Pk_Ent(shipName, v)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Sputnik");
-	Sf_Import(&f, "Init");
-	Sf_SetAttrI(&f, Sf_Entity(&f, charName), "Active", 1);
-	PyObject *v = Sf_Entity(&f, shipName);
-	if (Sf_True(&f, v) > 0 && Sf_True(&f, Sf_Attr(&f, v, "Active")) > 0) {
-		Sf_SetAttr(&f, v, "MPil0", G("P_None"));
+	int act = Mode_Active(v);
+	if (act < 0 || (act && !LvN_SetG(v, "MPil0", PK, "P_None")) || !Pk_Arrows(1, 2) || !Pk_Get(v, "Name", a) ||
+		!Pk_G("PlayerShip", ship) || !Pk_Get(ship, "Name", b)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *arrows = Sf_Mod(&f, "Init", "Arrows");
-	Sf_Ask(&f, "Scrap", "SwitchMissionArrows", "(OO)", Sf_Item(&f, arrows, 1), Sf_Item(&f, arrows, 2));
-	int own = Sf_Compare(&f, Sf_Attr(&f, v, "Name"), "==", Sf_Attr(&f, G("PlayerShip"), "Name"));
-	if (own > 0) {
-		Sf_Ask(&f, "Sputnik", "Assign", "(O)", v);
-	} else if (own == 0) {
-		PyObject *near = Sf_Ask(&f, "Scrap", "EntityListGet", "(OO)", G("PR_Lst"), Sf_Cat(&f, "sO", "Near",
-			Sf_Attr(&f, v, "Name")));
-		PyObject *nearest = Sf_Entity(&f, near);
-		if (Sf_True(&f, nearest) > 0) {
-			Sf_SetAttr(&f, G("PlayerShip"), "Pos", Sf_Attr(&f, nearest, "Pos"));
-			Sf_SetAttr(&f, G("PlayerShip"), "Ang", Sf_Build(&f, "(iii)", 0, 0, 0));
-			Sf_Ask(&f, "Sputnik", "Assign", "(O)", nearest);
-			Sf_Method(&f, nearest, "Del", "()");
-		}
+	int own = Mode_Cmp(a, "==", b);
+	if (own) {
+		return Mode_Done(&t, own > 0 && Native_CallMod("Sputnik", "Assign", NULL, "v", v));
 	}
-	return Sf_None(&f);
+	if (!Pk_G("PR_Lst", x) || !Pk_Get(v, "Name", a) || !LvN_Cat("Near", a, b) ||
+		!Native_CallMod("Scrap", "EntityListGet", near, "vv", x, b) || !Pk_Ent(near, nearest)) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, !Native_True(nearest) || (Pk_G("PlayerShip", ship) && Pk_Get(nearest, "Pos", x) &&
+		Mode_VSet(ship, "Pos", x) && Pk_G("PlayerShip", ship) && LvN_SetInts3(ship, "Ang", 0, 0, 0) &&
+		Native_CallMod("Sputnik", "Assign", NULL, "v", nearest) && Mode_VDel(nearest)));
 }
 
 /* EndJunkerPathCam(PathCam): parked in the junkyard: the level of Rusty's junkyard starts */
-static PyObject *Parking_EndJunkerPathCam(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Sf_Own(&f, PK, "EndPathCam", "(O)", path);
-	Sf_Import(&f, "SaveGame");
-	Sf_Import(&f, "Init");
-	PyObject *spawn = Sf_Cat(&f, "sO", "DM_Player_Spawn_", Sf_Slice(&f, Sf_Mod(&f, "Init", "Path"), 7, 0x7fffffff));
-	Sf_Ask(&f, "SaveGame", "MarkWayPoint", "(sOO)", "Levels/Junkyard", spawn, Sf_Attr(&f, Sf_Ask(&f, "Scrap",
-		"UsrEntity", "(i)", 0), "ActCtrl"));
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "ComeFrom", "DoorEditShip");
-	Pk_StartGame(&f);
-	return Sf_None(&f);
+static byte Pk_EndJunkerPathCamN(const nativeVal_t *path) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *p = Mode_V(&t), *x = Mode_V(&t), *spawn = Mode_V(&t), *usr = Mode_V(&t);
+	return Mode_Done(&t, PK_OWN("EndPathCam", NULL, "v", path) && Mode_Import("SaveGame") && Mode_Import("Init") &&
+		Mode_ModGet("Init", "Path", p) && Native_Slice(p, 7, 0x7fffffff, x) && LvN_Cat("DM_Player_Spawn_", x, spawn) &&
+		Mode_UsrHandle(usr) && Pk_Get(usr, "ActCtrl", x) &&
+		Native_CallMod("SaveGame", "MarkWayPoint", NULL, "svv", "Levels/Junkyard", spawn, x) &&
+		Mode_SaveS("ComeFrom", "DoorEditShip") && Pk_StartGame());
 }
 
 /* JunkerPark(ItemName, VehicleName): the junkyard parking; a stolen ship is recycled for a quarter of its price */
-static PyObject *Parking_JunkerPark(PyObject *self, PyObject *args) {
-	PyObject *itemName, *vehName;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &itemName, &vehName)) {
-		return NULL;
+static byte Pk_JunkerParkN(const nativeVal_t *itemName, const nativeVal_t *vehName) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *v = Mode_V(&t), *a = Mode_V(&t), *b = Mode_V(&t), *ship = Mode_V(&t), *x = Mode_V(&t), *price = Mode_V(&t);
+	nativeVal_t *res = Mode_V(&t), *money = Mode_V(&t), *lang = Mode_V(&t);
+	if (!Mode_Import("ShipMaker") || !Pk_Ent(vehName, v)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "ShipMaker");
-	PyObject *v = Sf_Entity(&f, vehName);
-	if (Sf_True(&f, Sf_Own(&f, PK, "isValidToPark", "(O)", v)) == 0) {
-		return Sf_None(&f);
+	int valid = Pk_Valid(v);
+	if (valid <= 0) {
+		return Mode_Done(&t, valid == 0);
 	}
-	Sf_Import(&f, "Speech");
-	if (Sf_True(&f, Sf_Item(&f, Sf_Ask(&f, "Scrap", "GetAlarm", "()"), 0)) > 0) {
-		Sf_Ask(&f, "Scrap", "SetAlarm", "(i)", 0);
+	if (!Mode_Import("Speech")) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *price = NULL;
-	int stolen = Sf_Compare(&f, Sf_Attr(&f, v, "Name"), "!=", Sf_Attr(&f, G("PlayerShip"), "Name"));
-	if (stolen > 0) {
-		PyObject *cost = Sf_Ask(&f, "ShipMaker", "GetShipPrice", "(O)", Sf_Attr(&f, v, "Model"));
-		price = Sf_OpI(&f, Sf_ToInt(&f, cost), '/', 4);
-	} else if (stolen == 0) {
-		price = Sf_Int(&f, 0);
+	int alarm = Mode_AlarmOn();
+	if (alarm < 0 || (alarm && !Mode_SetAlarm(Mode_I(&t, 0))) || !Pk_Get(v, "Name", a) || !Pk_G("PlayerShip", ship) ||
+		!Pk_Get(ship, "Name", b)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *res = Sf_Own(&f, PK, "OnPark", "(OO)", itemName, vehName);
-	int t = Sf_True(&f, res);
-	if (t > 0) {
-		t = Sf_True(&f, price);
+	int stolen = Mode_Cmp(a, "!=", b);
+	if (stolen < 0) {
+		return Mode_Done(&t, 0);
 	}
-	if (t > 0) {
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "Hangar.iHangarShip", "-1");
-		Sf_Ask(&f, "Scrap", "SetMoney", "(O)", Sf_Op(&f, Sf_Ask(&f, "Scrap", "GetMoney", "()"), '+', price));
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "InitialMessage", Sf_Op(&f, Sf_Lang(&f, Sf_Str(&f,
-			"OnRecicledAtRusty")), '%', price));
+	if (stolen) {
+		if (!Pk_Get(v, "Model", a) || !Native_CallMod("ShipMaker", "GetShipPrice", x, "v", a) || !Native_ToInt(x, b) ||
+			!Mode_Arith('/', b, Mode_I(&t, 4), price)) {
+			return Mode_Done(&t, 0);
+		}
+	} else {
+		Native_SetInt(price, 0);
 	}
-	if (Sf_True(&f, G("LastCamera")) > 0) {
-		Sf_SetAttrS(&f, G("LastCamera"), "OnEnd", "Parking.EndJunkerPathCam");
+	if (!PK_OWN("OnPark", res, "vv", itemName, vehName)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	if (Native_True(res) && Native_True(price)) {
+		Mode_SaveS("Hangar.iHangarShip", "-1");
+		Native_SetInt(x, Mode_GetMoney());
+		if (!Native_Arith('+', x, price, money) || !Mode_SetMoneySeam(money)) {
+			return Mode_Done(&t, 0);
+		}
+		Mode_Lang("OnRecicledAtRusty", lang);
+		if (!Native_Arith('%', lang, price, x) || !Mode_SetSaveVar("InitialMessage", x)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	if (!Pk_G("LastCamera", x)) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, !Native_True(x) || (Pk_G("LastCamera", x) && LvN_SetS(x, "OnEnd", "Parking.EndJunkerPathCam")));
+}
+
+/* print a, text, b, text as the two engine callbacks print their line */
+static byte Pk_Line(const char *a, const nativeVal_t *ent, const char *b, const nativeVal_t *box) {
+	nativeVal_t sa, sb, name = { 0 };
+	LvN_Str(&sa, a);
+	LvN_Str(&sb, b);
+	const nativeVal_t *items[4] = { &sa, ent, &sb, &name };
+	byte ok = Mode_VObj(box, "Name", &name) && Mode_Print(items, 4);
+	Native_Free(&name);
+	return ok;
 }
 
 /* OnParkingOccupied(EntityNane, x, y, z, name): the engine: a ship stands on a parking place; a parked one gives way
  * to a parking box */
-static PyObject *Parking_OnParkingOccupied(PyObject *self, PyObject *args) {
-	PyObject *ent, *x, *y, *z, *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOOO", &ent, &x, &y, &z, &name)) {
-		return NULL;
+static byte Pk_OnParkingOccupiedN(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *x = Mode_V(&t), *ship = Mode_V(&t), *l = Mode_V(&t);
+	if (!Pk_Ent(&a[0], e) || !Pk_Get(e, "MPil0", x)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *e = Sf_Entity(&f, ent);
-	if (Sf_Compare(&f, Sf_Attr(&f, e, "MPil0"), "==", G("P_None")) > 0) {
-		int own = Sf_Compare(&f, ent, "==", Sf_Attr(&f, G("PlayerShip"), "Name"));
-		if (own > 0) {
-			Sf_SetAttrI(&f, Sf_Entity(&f, ent), "Active", 0);
-		} else if (own == 0) {
-			Sf_Method(&f, Sf_Entity(&f, ent), "Del", "()");
-		}
-		PyObject *l = Sf_Own(&f, PK, "CreateBox", "(sOOO)", "Parking", x, y, z);
-		Sf_SetAttr(&f, l, "rTime", Sf_Float(&f, 0.1));
-		Sf_Print(&f, "sOsO", "Parking Occupied by", ent, " replaced by ", Sf_Attr(&f, l, "Name"));
+	int park = Mode_CmpG(x, "==", PK, "P_None");
+	if (park <= 0) {
+		return Mode_Done(&t, park == 0);
 	}
-	return Sf_None(&f);
+	if (!Pk_G("PlayerShip", ship) || !Pk_Get(ship, "Name", x) || !Pk_Ent(&a[0], e)) {
+		return Mode_Done(&t, 0);
+	}
+	int own = Mode_Cmp(&a[0], "==", x);
+	if (own < 0 || (own ? !LvN_SetI(e, "Active", 0) : !Mode_VDel(e))) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, PK_OWN("CreateBox", l, "svvv", "Parking", &a[1], &a[2], &a[3]) && LvN_SetF(l, "rTime", 0.1) &&
+		Pk_Line("Parking Occupied by", &a[0], " replaced by ", l));
 }
 
 /* OnParkedOut(EntityNane, x, y, z, name): the engine: a parking place is free again; a new parked ship there (unless
  * ParkedOutCallback made one) */
-static PyObject *Parking_OnParkedOut(PyObject *self, PyObject *args) {
-	PyObject *ent, *x, *y, *z, *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOOO", &ent, &x, &y, &z, &name)) {
-		return NULL;
+static byte Pk_OnParkedOutN(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *hook = Mode_V(&t), *pos = Mode_V(&t), *res = Mode_V(&t), *angle = Mode_V(&t), *l = Mode_V(&t);
+	if (!Pk_Ent(&a[0], e) || !Mode_VDel(e) || !Pk_G("ParkedOutCallback", hook)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Method(&f, Sf_Entity(&f, ent), "Del", "()");
-	if (Sf_True(&f, G("ParkedOutCallback")) > 0) {
-		if (Sf_True(&f, Sf_Call(&f, G("ParkedOutCallback"), "((OOO)O)", x, y, z, name)) > 0) {
-			return Sf_None(&f);
+	Pk_Tuple3(pos, &a[1], &a[2], &a[3]);
+	if (Native_True(hook)) {
+		nativeVal_t *args = Mode_V(&t);
+		Native_SetEmpty(args, NV_TUPLE);
+		Native_Copy(Native_Append(args), pos);
+		Native_Copy(Native_Append(args), &a[4]);
+		if (!Pk_G("ParkedOutCallback", hook) || !Mode_CallArgs(hook, res, args->items, 2)) {
+			return Mode_Done(&t, 0);
+		}
+		if (Native_True(res)) {
+			return Mode_Done(&t, 1);
 		}
 	}
-	PyObject *angle = f.failed ? NULL : Sf_Float(&f, Scrap_RandRange(0, 360));
-	PyObject *l = Sf_Own(&f, PK, "CreateParkedShip", "((OOO)OO)", x, y, z, angle, name);
-	Sf_Print(&f, "sOsO", "Parking free by ", ent, " filled by ", Sf_Attr(&f, l, "Name"));
-	return Sf_None(&f);
+	Native_SetFloat(angle, Scrap_RandRange(0, 360));
+	return Mode_Done(&t, PK_OWN("CreateParkedShip", l, "vvv", pos, angle, &a[4]) &&
+		Pk_Line("Parking free by ", &a[0], " filled by ", l));
 }
 
 /* CreateBox(Name, x, y, z): a parking box ParkingDist over the ground below the point (None and an error on the
  * console when there is no ground) */
-static PyObject *Parking_CreateBox(PyObject *self, PyObject *args) {
-	PyObject *name, *x, *y, *z;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &name, &x, &y, &z)) {
-		return NULL;
+static byte Pk_CreateBoxN(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *iPos = Mode_V(&t), *res = Mode_V(&t), *p = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t), *dist = Mode_V(&t);
+	nativeVal_t *z = Mode_V(&t);
+	Pk_Tuple3(iPos, &a[1], &a[2], &a[3]);
+	if (!Pk_Down(iPos, res)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *iPos = Sf_Build(&f, "(OOO)", x, y, z);
-	PyObject *res = Pk_Down(&f, iPos);
-	if (Sf_True(&f, res) == 0) {
-		Sf_Ask(&f, "Scrap", "ConsoleError", "(O)", Sf_Cat(&f, "sOs", "A T R O C I O U S    E R R O R : Parking box ", name,
-			" was created in an invalid position.\n"));
-		return Sf_None(&f);
+	if (!Native_True(res)) {
+		return Mode_Done(&t, LvN_Cat("A T R O C I O U S    E R R O R : Parking box ", &a[0], x) &&
+			Native_Arith('+', x, Mode_S(&t, " was created in an invalid position.\n"), y) && Mode_ConsoleError(y));
 	}
-	PyObject *p = Sf_Item(&f, res, 0);
-	PyObject *py = Sf_Op(&f, Sf_Item(&f, p, 1), '+', G("ParkingDist"));
-	PyObject *l = Sf_Ask(&f, "Scrap", "CreateEntity", "(OOOOs)", name, Sf_Item(&f, p, 0), py, Sf_Item(&f, p, 2), "Item");
-	Sf_Method(&f, l, "SetModel", "(s)", "models/Misc/Parking/Parking.m3d");
-	Sf_SetAttrI(&f, l, "Radius", 1000);
-	Sf_SetAttrI(&f, l, "AppearsIfFree", 1);
-	Sf_SetAttrI(&f, l, "AutoFace", 1);
-	Sf_SetAttrS(&f, l, "OnTake", "Parking.OnPark");
-	Sf_SetAttrI(&f, l, "OnlyUser", 1);
-	Sf_SetAttr(&f, l, "EntityList", G("PR_Lst"));
-	return Sf_Return(&f, l);
+	if (!Pk_Item(res, 0, p) || !Pk_Item(p, 1, x) || !Pk_G("ParkingDist", dist) || !Native_Arith('+', x, dist, y) ||
+		!Pk_Item(p, 0, x) || !Pk_Item(p, 2, z) || !LvN_Create(&a[0], x, y, z, "Item", out) ||
+		!Mode_VModel(out, Mode_S(&t, "models/Misc/Parking/Parking.m3d")) || !LvN_SetI(out, "Radius", 1000) ||
+		!LvN_SetI(out, "AppearsIfFree", 1) || !LvN_SetI(out, "AutoFace", 1) || !LvN_SetS(out, "OnTake", "Parking.OnPark") ||
+		!LvN_SetI(out, "OnlyUser", 1) || !LvN_SetG(out, "EntityList", PK, "PR_Lst")) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, 1);
 }
 
 /* SetShipRadius(v, parked): a parked ship takes the smaller of its two radii for the world */
-static PyObject *Parking_SetShipRadius(PyObject *self, PyObject *args) {
-	PyObject *v, *parked;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &v, &parked)) {
-		return NULL;
-	}
-	PyObject *wr = Sf_Attr(&f, v, "WRadius");
-	PyObject *vr = Sf_Attr(&f, v, "VRadius");
-	int t = Sf_True(&f, parked);
-	int swap = t > 0 ? Sf_Compare(&f, wr, ">", vr) : t;
-	if (swap == 0) {
-		t = Sf_True(&f, parked);
-		swap = t == 0 ? Sf_Compare(&f, wr, "<", vr) : t < 0 ? -1 : 0;
-	}
-	if (swap > 0) {
-		Sf_SetAttr(&f, v, "WRadius", vr);
-		Sf_SetAttr(&f, v, "VRadius", wr);
-	}
-	return Sf_None(&f);
+static byte Pk_SetShipRadiusN(const nativeVal_t *v, const nativeVal_t *parked) {
+	nativeVal_t wr = { 0 }, vr = { 0 };
+	byte ok = Pk_Get(v, "WRadius", &wr) && Pk_Get(v, "VRadius", &vr);
+	int swap = !ok ? -1 : Native_True(parked) ? Mode_Cmp(&wr, ">", &vr) : Mode_Cmp(&wr, "<", &vr);
+	ok = swap >= 0 && (!swap || (Mode_VSet(v, "WRadius", &vr) && Mode_VSet(v, "VRadius", &wr)));
+	Native_Free(&wr);
+	Native_Free(&vr);
+	return ok;
 }
 
 /* SetOnFloor(v) */
-static PyObject *Parking_SetOnFloor(PyObject *self, PyObject *args) {
-	PyObject *v;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &v)) {
-		return NULL;
-	}
-	Sf_Ask(&f, "SLogic", "SetOnFloor", "(O)", Sf_Attr(&f, v, "Name"));
-	return Sf_None(&f);
+static byte Pk_SetOnFloorN(const nativeVal_t *v) {
+	nativeVal_t name = { 0 };
+	byte ok = Pk_Get(v, "Name", &name) && LvN_SetOnFloor(&name);
+	Native_Free(&name);
+	return ok;
 }
 
 /* SetShipAsParked(ShipName): no pilot, the use arrow, on the ground */
-static PyObject *Parking_SetShipAsParked(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
-	}
-	PyObject *v = Sf_Entity(&f, name);
-	Sf_SetAttr(&f, v, "MPil0", G("P_None"));
-	Sf_SetAttrI(&f, v, "ArrowCanUse", 1);
-	Sf_SetAttrI(&f, v, "ArrnOpt", 0);
-	Sf_SetAttr(&f, v, "ArrOpt0", Sf_Cat(&f, "sO", "UseShip:", Sf_Lang(&f, Sf_Str(&f, "UseShip"))));
-	Sf_SetAttrS(&f, v, "UseFunc", "Sputnik.UseShip");
-	Sf_SetAttrI(&f, v, "UsrControl", -1);
-	Sf_SetAttrS(&f, v, "TgType", "None");
-	Sf_Ask(&f, "SLogic", "SetOnFloor", "(O)", Sf_Attr(&f, v, "Name"));
-	Sf_SetAttr(&f, v, "MovePos", Sf_Attr(&f, v, "Pos"));
-	Sf_SetAttr(&f, v, "MoveAng", Sf_Attr(&f, v, "Ang"));
-	Sf_SetAttr(&f, v, "MoveTime", Sf_Float(&f, 0.001));
-	Sf_Own(&f, PK, "SetShipRadius", "(Oi)", v, 1);
-	return Sf_None(&f);
+static byte Pk_SetShipAsParkedN(const nativeVal_t *name) {
+	nativeVal_t v = { 0 }, x = { 0 };
+	byte ok = Pk_Ent(name, &v) && LvN_SetG(&v, "MPil0", PK, "P_None") && Pk_UseArrow(&v) && LvN_SetI(&v, "UsrControl", -1) &&
+		LvN_SetS(&v, "TgType", "None") && Pk_SetOnFloorN(&v) && Pk_Get(&v, "Pos", &x) && Mode_VSet(&v, "MovePos", &x) &&
+		Pk_Get(&v, "Ang", &x) && Mode_VSet(&v, "MoveAng", &x) && LvN_SetF(&v, "MoveTime", 0.001) &&
+		PK_OWN("SetShipRadius", NULL, "vi", &v, 1L);
+	Native_Free(&v);
+	Native_Free(&x);
+	return ok;
 }
 
 /* ParkedDeat(v, attacker): a parked ship explodes: a parking box in its place (the player who did it may set off the
  * alarm), or Sputnik stays where the player's ship was; 1 for a parked ship */
-static PyObject *Parking_ParkedDeat(PyObject *self, PyObject *args) {
-	PyObject *v, *attacker;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &v, &attacker)) {
-		return NULL;
+static byte Pk_ParkedDeatN(const nativeVal_t *v, const nativeVal_t *attacker, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *x = Mode_V(&t), *ship = Mode_V(&t), *a = Mode_V(&t), *vPos = Mode_V(&t), *l = Mode_V(&t), *usr = Mode_V(&t);
+	nativeVal_t *spt = Mode_V(&t), *rnd = Mode_V(&t);
+	Native_SetInt(out, 0);
+	if (!Mode_Import("OutPolice") || !Pk_Get(v, "ArrowCanUse", x)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "OutPolice");
-	if (Sf_EqI(&f, Sf_Attr(&f, v, "ArrowCanUse"), 1) <= 0) {
-		return Sf_Return(&f, f.failed ? NULL : Sf_Int(&f, 0));
+	if (!Mode_EqI(x, 1)) {
+		return Mode_Done(&t, 1);
 	}
-	int other = Sf_Compare(&f, Sf_Attr(&f, G("PlayerShip"), "Name"), "!=", Sf_Attr(&f, v, "Name"));
-	if (other > 0) {
-		Sf_Ask(&f, "Scrap", "IncSaveVar", "(s)", "Stats.Parking");
-		PyObject *vPos = Sf_Attr(&f, v, "MovePos");
-		PyObject *l = Sf_Own(&f, PK, "CreateBox", "(sOOO)", "Parking", Sf_Item(&f, vPos, 0), Sf_Item(&f, vPos, 1),
-			Sf_Item(&f, vPos, 2));
-		Sf_SetAttr(&f, l, "rTime", Sf_Float(&f, 0.1));
-		Sf_Method(&f, v, "Del", "()");
-		PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-		int by = Sf_True(&f, usr);
-		if (by > 0) {
-			by = Sf_Compare(&f, Sf_Attr(&f, usr, "Name"), "==", attacker);
+	if (!Pk_G("PlayerShip", ship) || !Pk_Get(ship, "Name", a) || !Pk_Get(v, "Name", x)) {
+		return Mode_Done(&t, 0);
+	}
+	int other = Mode_Cmp(a, "!=", x);
+	if (other < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (other) {
+		if (!Mode_IncSaveVar("Stats.Parking") || !Pk_Get(v, "MovePos", vPos) || !Pk_BoxAt(Mode_S(&t, "Parking"), vPos, l) ||
+			!LvN_SetF(l, "rTime", 0.1) || !Mode_VDel(v) || !Mode_UsrHandle(usr)) {
+			return Mode_Done(&t, 0);
+		}
+		int by = Native_True(usr);
+		if (by) {
+			by = Pk_Get(usr, "Name", x) ? Mode_Cmp(x, "==", attacker) : -1;
 		}
 		if (by > 0) {
-			int alarm = Sf_True(&f, Sf_Mod(&f, "OutPolice", "PoliceActive"));
-			if (alarm > 0) {
-				alarm = Sf_Compare(&f, Sf_Float(&f, Scrap_RandRange(0.0, 1.0)), "<", G("AlarmProbOnParkedShipDeath"));
+			by = Mode_ModTrue("OutPolice", "PoliceActive");
+			if (by > 0) {
+				Native_SetFloat(rnd, Scrap_RandRange(0.0, 1.0));
+				by = Mode_CmpG(rnd, "<", PK, "AlarmProbOnParkedShipDeath");
 			}
-			if (alarm > 0) {
-				Sf_Import(&f, "Speech");
-				Sf_Ask(&f, "Speech", "AddRemoteCom", "(ss)", "Generics_PoliceTaunt_16", "Police");
-				Sf_Ask(&f, "Scrap", "SetAlarm", "(i)", 1);
+			if (by > 0) {
+				by = Mode_Import("Speech") && Native_CallMod("Speech", "AddRemoteCom", NULL, "ss", "Generics_PoliceTaunt_16",
+					"Police") && Mode_SetAlarm(Mode_I(&t, 1)) ? 1 : -1;
 			}
 		}
-	} else if (other == 0) {
-		Sf_Import(&f, "Sputnik");
-		Sf_Import(&f, "Chars");
-		Sf_SetAttr(&f, Sf_Mod(&f, "Sputnik", "spt"), "Pos", Sf_Attr(&f, v, "Pos"));
-		Sf_Ask(&f, "SLogic", "SetOnFloor", "(O)", Sf_Attr(&f, Sf_Mod(&f, "Sputnik", "spt"), "Name"));
-		Sf_SetAttr(&f, Sf_Mod(&f, "Sputnik", "spt"), "MovePos", Sf_Attr(&f, Sf_Mod(&f, "Sputnik", "spt"), "Pos"));
-		Sf_SetAttr(&f, Sf_Mod(&f, "Sputnik", "spt"), "MoveAng", Sf_Attr(&f, Sf_Mod(&f, "Sputnik", "spt"), "Ang"));
-		Sf_SetAttr(&f, Sf_Mod(&f, "Sputnik", "spt"), "MoveTime", Sf_Float(&f, 0.0001));
+		if (by < 0) {
+			return Mode_Done(&t, 0);
+		}
+	} else if (!Mode_Import("Sputnik") || !Mode_Import("Chars") || !Mode_ModGet("Sputnik", "spt", spt) || !Pk_Get(v, "Pos", x) ||
+		!Mode_VSet(spt, "Pos", x) || !Pk_Get(spt, "Name", x) || !LvN_SetOnFloor(x) || !Pk_Get(spt, "Pos", x) ||
+		!Mode_VSet(spt, "MovePos", x) || !Pk_Get(spt, "Ang", x) || !Mode_VSet(spt, "MoveAng", x) ||
+		!LvN_SetF(spt, "MoveTime", 0.0001)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_Return(&f, Sf_Int(&f, 1));
+	Native_SetInt(out, 1);
+	return Mode_Done(&t, 1);
+}
+
+/* "Park" + dname[3:] and dname[10:] of a parking dummy's name */
+static byte Pk_ParkNames(const nativeVal_t *dname, nativeVal_t *box, nativeVal_t *zone) {
+	nativeVal_t s = { 0 };
+	Native_Free(box);
+	Native_Free(zone);
+	byte ok = Native_Slice(dname, 3, 0x7fffffff, &s) && LvN_Cat("Park", &s, box) && Native_Slice(dname, 10, 0x7fffffff, zone);
+	Native_Free(&s);
+	return ok;
 }
 
 /* BrowseItemPos(): the parking boxes of the DM_Parking dummies; the player's ship on the one nearest to the player
  * (the junkyard's only when the player comes from there), Sputnik beside it */
-static PyObject *Parking_BrowseItemPos(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Pk_BrowseItemPosN(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *myPos = Mode_V(&t), *nearest = Mode_V(&t), *nearestDist = Mode_V(&t), *x = Mode_V(&t);
+	nativeVal_t *dummy = Mode_V(&t), *dist = Mode_V(&t), *dname = Mode_V(&t), *dpos = Mode_V(&t), *l = Mode_V(&t);
+	nativeVal_t *box = Mode_V(&t), *zone = Mode_V(&t), *ship = Mode_V(&t), *ang = Mode_V(&t);
+	if (!Mode_DummyStartSeam("DM_Parking*", 1) || !Mode_UsrHandle(usr) || !Pk_Get(usr, "Pos", myPos)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Ask(&f, "Scrap", "StartDummySearch", "(si)", "DM_Parking*", 1);
-	PyObject *myPos = Sf_Attr(&f, Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0), "Pos");
-	PyObject *nearest = Sf_Ref(&f, Py_None);
-	PyObject *nearestDist = Sf_Float(&f, 10000000.0);
-	int fromJY = Sf_Compare(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Spawn"), "==", G("PL_Junk"));
-	while (!f.failed) {
-		int mark = f.n;
-		PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-		if (Sf_Compare(&f, dummy, "!=", Py_None) <= 0) {
+	Native_SetFloat(nearestDist, 10000000.0);
+	Mode_SaveVar("Spawn", x);
+	int fromJY = Mode_CmpG(x, "==", PK, "PL_Junk");
+	if (fromJY < 0) {
+		return Mode_Done(&t, 0);
+	}
+	for (;;) {
+		Native_Free(dummy);
+		if (!Mode_DummyNextSeam(dummy)) {
+			return Mode_Done(&t, 0);
+		}
+		if (dummy->type == NV_NONE) {
 			break;
 		}
-		if (Sf_True(&f, Sf_Item(&f, dummy, 3)) > 0) {
-			PyObject *dist = Sf_Ask(&f, "SVec", "Mod", "(O)", Sf_Ask(&f, "SVec", "Sub", "(OO)", myPos, Sf_Item(&f, dummy, 1)));
-			int closer = Sf_Compare(&f, nearestDist, ">", dist);
-			if (closer > 0) {
-				closer = fromJY < 0 ? -1 : fromJY ? 1 : Sf_Compare(&f, Sf_Item(&f, dummy, 0), "!=", G("PR_Junk"));
+		if (!Pk_Item(dummy, 3, x)) {
+			return Mode_Done(&t, 0);
+		}
+		if (!Native_True(x)) {
+			continue;
+		}
+		Native_Free(dist);
+		Native_Free(l);
+		if (!Pk_Item(dummy, 1, x) || !Mode_VecSub(myPos, x, l) || !Mode_VecMod(l, dist)) {
+			return Mode_Done(&t, 0);
+		}
+		int closer = Mode_Cmp(nearestDist, ">", dist);
+		if (closer && !fromJY) {
+			closer = Pk_Item(dummy, 0, x) ? Mode_CmpG(x, "!=", PK, "PR_Junk") : -1;
+		}
+		if (closer < 0) {
+			return Mode_Done(&t, 0);
+		}
+		if (closer) {
+			nativeVal_t aux = *nearest;
+			*nearest = *dummy;
+			*dummy = aux;
+			Native_Free(nearestDist);
+			*nearestDist = *dist;
+			Native_SetNone(dist);
+		}
+		if (Native_True(dummy)) {
+			if (!Pk_Item(dummy, 0, dname) || !Pk_Item(dummy, 1, dpos) || !Pk_ParkNames(dname, box, zone) ||
+				!Pk_BoxAt(box, dpos, l) || !Pk_Get(l, "Pos", x) || !Pk_Zone(0, x, zone)) {
+				return Mode_Done(&t, 0);
 			}
-			if (closer > 0) {
-				PyObject *aux = nearest;
-				nearest = dummy;
-				dummy = aux;
-				nearestDist = dist;
-			}
-			if (Sf_True(&f, dummy) > 0) {
-				PyObject *dname = Sf_Item(&f, dummy, 0);
-				PyObject *dpos = Sf_Item(&f, dummy, 1);
-				PyObject *l = Sf_Own(&f, PK, "CreateBox", "(OOOO)", Sf_Cat(&f, "sO", "Park", Sf_Slice(&f, dname, 3,
-					0x7fffffff)), Sf_Item(&f, dpos, 0), Sf_Item(&f, dpos, 1), Sf_Item(&f, dpos, 2));
-				Sf_Ask(&f, "Scrap", "AddParkingZone", "(iOO)", 0, Sf_Attr(&f, l, "Pos"), Sf_Slice(&f, dname, 10, 0x7fffffff));
-				if (Sf_Compare(&f, dname, "==", G("PR_Junk")) > 0) {
-					Sf_SetAttrS(&f, l, "OnTake", "Parking.JunkerPark");
-				}
+			int junk = Mode_CmpG(dname, "==", PK, "PR_Junk");
+			if (junk < 0 || (junk && !LvN_SetS(l, "OnTake", "Parking.JunkerPark"))) {
+				return Mode_Done(&t, 0);
 			}
 		}
-		PyObject *keep[2] = { nearest, nearestDist };
-		Sf_ReleaseKeep(&f, mark, keep, 2);
 	}
-	if (Sf_True(&f, nearest) > 0) {
-		Sf_Import(&f, "ShipEdit");
-		Sf_SetMod(&f, "ShipEdit", "editShipPosDummy", nearest);
-		Sf_Own(&f, PK, "CreatePlayerShip", "(O)", Sf_Item(&f, nearest, 1));
-		PyObject *o1 = G("PlayerShip");
-		Sf_SetAttr(&f, o1, "Ang", Sf_Build(&f, "(iOi)", 0, Sf_Item(&f, Sf_Item(&f, nearest, 2), 1), 0));
-		Sf_Own(&f, PK, "SetShipAsParked", "(O)", Sf_Attr(&f, o1, "Name"));
-		Sf_Ask(&f, "Scrap", "AddParkingZone", "(iOO)", 0, Sf_Attr(&f, o1, "Pos"), Sf_Slice(&f, Sf_Item(&f, nearest, 0), 10,
-			0x7fffffff));
-		Sf_Import(&f, "Sputnik");
-		Sf_Ask(&f, "Sputnik", "Assign", "(O)", G("PlayerShip"));
+	if (!Native_True(nearest)) {
+		return Mode_Done(&t, 1);
 	}
-	return Sf_None(&f);
+	if (!Mode_Import("ShipEdit") || !Mode_SetModVar("ShipEdit", "editShipPosDummy", nearest) || !Pk_Item(nearest, 1, x) ||
+		!PK_OWN("CreatePlayerShip", NULL, "v", x) || !Pk_G("PlayerShip", ship) || !Pk_Item(nearest, 2, x) ||
+		!Pk_Yaw(x, '+', NULL, ang) || !Mode_VSet(ship, "Ang", ang) || !Pk_Get(ship, "Name", x) ||
+		!PK_OWN("SetShipAsParked", NULL, "v", x) || !Pk_Get(ship, "Pos", dpos) || !Pk_Item(nearest, 0, dname) ||
+		!Native_Slice(dname, 10, 0x7fffffff, (Native_Free(zone), zone)) || !Pk_Zone(0, dpos, zone) || !Mode_Import("Sputnik") ||
+		!Pk_G("PlayerShip", ship)) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, Native_CallMod("Sputnik", "Assign", NULL, "v", ship));
 }
 
 /* CreateLonelyMercParkings(): the parking boxes of the lonely mercenary mission, their names */
-static PyObject *Parking_CreateLonelyMercParkings(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Pk_CreateLonelyMercParkingsN(nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *dummy = Mode_V(&t), *dname = Mode_V(&t), *dpos = Mode_V(&t), *box = Mode_V(&t), *zone = Mode_V(&t);
+	nativeVal_t *l = Mode_V(&t), *x = Mode_V(&t);
+	Native_SetEmpty(out, NV_LIST);
+	if (!Mode_DummyStartSeam("DM_LonelyMerc_Parking*", 1) || !Mode_DummyNextSeam(dummy)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *parkings = Sf_Keep(&f, PyList_New(0));
-	Sf_Ask(&f, "Scrap", "StartDummySearch", "(si)", "DM_LonelyMerc_Parking*", 1);
-	PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-	while (Sf_True(&f, dummy) > 0) {
-		int mark = f.n;
-		PyObject *dname = Sf_Item(&f, dummy, 0);
-		PyObject *dpos = Sf_Item(&f, dummy, 1);
-		PyObject *l = Sf_Own(&f, PK, "CreateBox", "(OOOO)", Sf_Cat(&f, "sO", "Park", Sf_Slice(&f, dname, 3, 0x7fffffff)),
-			Sf_Item(&f, dpos, 0), Sf_Item(&f, dpos, 1), Sf_Item(&f, dpos, 2));
-		Sf_Method(&f, parkings, "append", "(O)", Sf_Attr(&f, l, "Name"));
-		Sf_Ask(&f, "Scrap", "AddParkingZone", "(iOO)", 0, Sf_Attr(&f, l, "Pos"), Sf_Slice(&f, dname, 10, 0x7fffffff));
-		dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-		Sf_ReleaseKeep(&f, mark, &dummy, 1);
+	while (Native_True(dummy)) {
+		if (!Pk_Item(dummy, 0, dname) || !Pk_Item(dummy, 1, dpos) || !Pk_ParkNames(dname, box, zone) || !Pk_BoxAt(box, dpos, l) ||
+			!Pk_Get(l, "Name", x)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_Copy(Native_Append(out), x);
+		Native_Free(dummy);
+		if (!Pk_Get(l, "Pos", x) || !Pk_Zone(0, x, zone) || !Mode_DummyNextSeam(dummy)) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	return Sf_Return(&f, parkings);
+	return Mode_Done(&t, 1);
+}
+
+/* string.split(s, sep) (strop's split in C for a text, other values by name for their error; OBJLIB 7) */
+static byte Pk_Split(const nativeVal_t *s, const char *sep, nativeVal_t *out) {
+	Native_Free(out);
+	return s->type == NV_STR ? Native_Split(s, sep, out) : Native_CallMod("string", "split", out, "vs", s, sep);
+}
+
+/* d.has_key(key) of a value of the script (the method of whatever value it is; OBJLIB 7): 1, 0, -1 with the error */
+static int Pk_HasKey(const nativeVal_t *d, const nativeVal_t *key) {
+	PyObject *o = Native_ToPy(d), *k = o ? Native_ToPy(key) : NULL;
+	PyObject *r = k ? Script_Method(o, "has_key", "(O)", k) : NULL;
+	int t = r ? PyObject_IsTrue(r) : -1;
+	Py_XDECREF(r);
+	Py_XDECREF(k);
+	Py_XDECREF(o);
+	return t;
+}
+
+/* AllShips in upper case without the mercenaries' ships, the list changed in place (OBJLIB 5: other modules and the
+ * cases hold it) */
+static byte Pk_AllShips(void) {
+	static const char *const mercs[] = { "SMERC1", "SMERC2", "SMERC3" };
+	nativeVal_t keys = { 0 }, it = { 0 }, up = { 0 }, k, s;
+	if (!Pk_G("AllShips", &keys)) {
+		return 0;
+	}
+	int n = Mode_Len(&keys);
+	byte ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		Native_SetInt(&k, i);
+		Native_Free(&up);
+		ok = Pk_Item(&keys, i, &it) && Native_Upper(&it, &up) && Mode_DictPut(PK, "AllShips", NULL, &k, &up);
+	}
+	for (int i = 0; ok && i < 3; i++) {
+		LvN_Str(&s, mercs[i]);
+		ok = Mode_RemoveIn(&s, PK, "AllShips");
+	}
+	Native_Free(&keys);
+	Native_Free(&it);
+	Native_Free(&up);
+	return ok;
 }
 
 /* CreateParkedShip(Pos, Angle, Type=None): a parked standard ship of the group Type names (ShipTypes), else any but
  * the mercenaries' (the script makes AllShips upper case and removes them from it) */
-static PyObject *Parking_CreateParkedShip(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "Pos", "Angle", "Type", NULL };
-	static const char *const mercs[] = { "SMERC1", "SMERC2", "SMERC3" };
-	PyObject *pos, *angle, *type = Py_None;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|O", names, &pos, &angle, &type)) {
-		return NULL;
+static byte Pk_CreateParkedShipN(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const imports[] = { "Vehicles", "ShipMaker", "string" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *xyz = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t), *ang = Mode_V(&t), *nam = Mode_V(&t), *types = Mode_V(&t);
+	nativeVal_t *key = Mode_V(&t), *keys = Mode_V(&t), *pick = Mode_V(&t), *x = Mode_V(&t), *name = Mode_V(&t);
+	for (int i = 0; i < 3; i++) {
+		if (!Mode_Import(imports[i])) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "ShipMaker");
-	Sf_Import(&f, "string");
-	PyObject *o1 = Sf_Ask(&f, "Scrap", "CreateEntity", "(sOOOs)", "Parked", Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1),
-		Sf_Item(&f, pos, 2), "Car");
-	Sf_SetAttrS(&f, o1, "Descriptor", "MegaShip");
-	Sf_SetAttr(&f, o1, "Ang", Sf_Build(&f, "(iOi)", 0, angle, 0));
-	PyObject *keys = NULL;
-	int skip = 1;
-	if (Sf_True(&f, type) > 0) {
-		PyObject *nam = Sf_Ask(&f, "string", "split", "(Os)", type, "_");
-		PyObject *types = G("ShipTypes");
-		if (Sf_True(&f, Sf_Method(&f, types, "has_key", "(O)", Sf_Item(&f, nam, 0))) > 0) {
-			keys = Sf_GetItem(&f, types, Sf_Item(&f, nam, 0));
+	if (!Pk_Item(&a[0], 0, xyz) || !Pk_Item(&a[0], 1, y) || !Pk_Item(&a[0], 2, z) ||
+		!LvN_Create(Mode_S(&t, "Parked"), xyz, y, z, "Car", out) || !LvN_SetS(out, "Descriptor", "MegaShip")) {
+		return Mode_Done(&t, 0);
+	}
+	Pk_Tuple3(ang, Mode_I(&t, 0), &a[1], Mode_I(&t, 0));
+	if (!Mode_VSet(out, "Ang", ang)) {
+		return Mode_Done(&t, 0);
+	}
+	byte skip = 1;
+	if (Native_True(&a[2])) {
+		int has;
+		if (!Pk_Split(&a[2], "_", nam) || !Pk_G("ShipTypes", types) || !Pk_Item(nam, 0, key) || (has = Pk_HasKey(types, key)) < 0) {
+			return Mode_Done(&t, 0);
+		}
+		if (has) {
+			if (!Mode_Sub(types, key, keys)) {
+				return Mode_Done(&t, 0);
+			}
 			skip = 0;
 		}
 	}
-	if (skip) {
-		keys = G("AllShips");
-		long count = 0;
-		int n = Sf_Len(&f, keys);
-		Sf_Check(&f, n < 0 || Script_Range(Sf_Int(&f, n), &count));
-		for (long i = 0; i < count && !f.failed; i++) {
-			int mark = f.n;
-			PyObject *k = Sf_Int(&f, i);
-			Sf_SetItem(&f, keys, k, Sf_Ask(&f, "string", "upper", "(O)", Sf_GetItem(&f, keys, k)));
-			Sf_Release(&f, mark);
-		}
-		for (int i = 0; i < 3 && !f.failed; i++) {
-			PyObject *s = Sf_Str(&f, mercs[i]);
-			if (Sf_In(&f, s, keys) > 0) {
-				Sf_Method(&f, keys, "remove", "(O)", s);
-			}
-		}
+	if (skip && (!Pk_AllShips() || !Pk_G("AllShips", keys))) {
+		return Mode_Done(&t, 0);
 	}
-	int n = Sf_Len(&f, keys);
-	PyObject *pick = n < 0 ? NULL : Sf_ToInt(&f, Sf_Float(&f, Scrap_RandRange(0, n - 0.1)));
-	Sf_Ask(&f, "Vehicles", "SetStdProperties", "(OOs)", Sf_Attr(&f, o1, "Name"), Sf_GetItem(&f, keys, pick), "P_None");
-	Sf_Own(&f, PK, "SetShipAsParked", "(O)", Sf_Attr(&f, o1, "Name"));
-	Sf_Own(&f, PK, "CheckWeapons", "(O)", o1);
-	return Sf_Return(&f, o1);
+	int n = Mode_Len(keys);
+	if (n < 0) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetFloat(x, Scrap_RandRange(0, n - 0.1));
+	return Mode_Done(&t, Native_ToInt(x, pick) && Pk_Get(out, "Name", name) && Mode_Sub(keys, pick, x) &&
+		Native_CallMod("Vehicles", "SetStdProperties", NULL, "vvs", name, x, "P_None") &&
+		PK_OWN("SetShipAsParked", NULL, "v", name) && PK_OWN("CheckWeapons", NULL, "v", out));
 }
 
 /* CheckWeapons(v): the parked ship carries only the weapons the player may have */
-static PyObject *Parking_CheckWeapons(PyObject *self, PyObject *args) {
+static byte Pk_CheckWeaponsN(const nativeVal_t *v) {
 	static const char *const weap[] = { "Tesla", "Devastator", "ATPC", "Inferno" };
 	static const char *const vars[] = { "isWpn02", "isWpn03", "isWpn04", "isWpn05" };
-	PyObject *v;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &v)) {
-		return NULL;
+	nativeVal_t text = { 0 }, list = { 0 }, w;
+	Mode_SaveVar("Hangar.availableWeaponsList", &text);
+	byte ok = Mode_EvalIn(PK, &text, &list);
+	for (int i = 0; ok && i < 4; i++) {
+		LvN_Str(&w, weap[i]);
+		int in = Mode_In(&list, &w);
+		ok = in >= 0 && (in || LvN_SetI(v, vars[i], 0));
 	}
-	PyObject *list = Sf_Eval(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Hangar.availableWeaponsList"), PK);
-	for (int i = 0; i < 4 && !f.failed; i++) {
-		if (Sf_In(&f, Sf_Str(&f, weap[i]), list) == 0) {
-			Sf_SetAttrI(&f, v, vars[i], 0);
-		}
-	}
-	return Sf_None(&f);
+	Native_Free(&text);
+	Native_Free(&list);
+	return ok;
 }
 
 /* BrowseParkedPos(): a parked ship on every active DM_Parked dummy (unless ParkedOutCallback made one) */
-static PyObject *Parking_BrowseParkedPos(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Pk_BrowseParkedPosN(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *dummy = Mode_V(&t), *x = Mode_V(&t), *name = Mode_V(&t), *dpos = Mode_V(&t), *hook = Mode_V(&t);
+	nativeVal_t *res = Mode_V(&t), *args = Mode_V(&t);
+	if (!Mode_Import("Vehicles") || !Mode_Import("ShipMaker") || !Mode_DummyStartSeam("DM_Parked*", 1)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "ShipMaker");
-	Sf_Ask(&f, "Scrap", "StartDummySearch", "(si)", "DM_Parked*", 1);
-	while (!f.failed) {
-		int mark = f.n;
-		PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-		if (Sf_Compare(&f, dummy, "!=", Py_None) <= 0) {
-			break;
+	for (;;) {
+		Native_Free(dummy);
+		if (!Mode_DummyNextSeam(dummy)) {
+			return Mode_Done(&t, 0);
 		}
-		if (Sf_True(&f, Sf_Item(&f, dummy, 3)) > 0) {
-			PyObject *name = Sf_Slice(&f, Sf_Item(&f, dummy, 0), 10, 0x7fffffff);
-			PyObject *dpos = Sf_Item(&f, dummy, 1);
-			int create = Sf_True(&f, G("ParkedOutCallback"));
-			if (create > 0) {
-				create = Sf_True(&f, Sf_Call(&f, G("ParkedOutCallback"), "(OO)", dpos, name));
-				create = create < 0 ? -1 : !create;
-			} else if (create == 0) {
-				create = 1;
-			}
-			if (create > 0) {
-				Sf_Own(&f, PK, "CreateParkedShip", "(OOO)", dpos, Sf_Item(&f, Sf_Item(&f, dummy, 2), 1), name);
-			}
-			Sf_Ask(&f, "Scrap", "AddParkingZone", "(iOO)", 1, dpos, name);
+		if (dummy->type == NV_NONE) {
+			return Mode_Done(&t, 1);
 		}
-		Sf_Release(&f, mark);
+		if (!Pk_Item(dummy, 3, x)) {
+			return Mode_Done(&t, 0);
+		}
+		if (!Native_True(x)) {
+			continue;
+		}
+		Native_Free(name);
+		if (!Pk_Item(dummy, 0, x) || !Native_Slice(x, 10, 0x7fffffff, name) || !Pk_Item(dummy, 1, dpos) ||
+			!Pk_G("ParkedOutCallback", hook)) {
+			return Mode_Done(&t, 0);
+		}
+		byte create = 1;
+		if (Native_True(hook)) {
+			Native_Free(args);
+			Native_SetEmpty(args, NV_TUPLE);
+			Native_Copy(Native_Append(args), dpos);
+			Native_Copy(Native_Append(args), name);
+			Native_Free(res);
+			if (!Pk_G("ParkedOutCallback", hook) || !Mode_CallArgs(hook, res, args->items, 2)) {
+				return Mode_Done(&t, 0);
+			}
+			create = !Native_True(res);
+		}
+		if (create && (!Pk_Item(dummy, 2, x) || !Pk_Item(x, 1, res) || !PK_OWN("CreateParkedShip", NULL, "vvv", dpos, res, name))) {
+			return Mode_Done(&t, 0);
+		}
+		if (!Pk_Zone(1, dpos, name)) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	return Sf_None(&f);
 }
 
 /* ChangeLevel(ItemName, VehicleName): the player flies through a link to the next level: the way point, the ship
  * (its parts when it is not the player's own) and its ammunition for the next level */
-static PyObject *Parking_ChangeLevel(PyObject *self, PyObject *args) {
+static byte Pk_ChangeLevelN(const nativeVal_t *itemName) {
 	static const char *const ammo[][2] = { { "usrShip.Ammo00", "Ammo00" }, { "usrShip.Ammo01", "Ammo01" },
 		{ "usrShip.Ammo02", "Ammo02" }, { "usrShip.AcWeap", "AcWeap" } };
-	PyObject *itemName, *vehName;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &itemName, &vehName)) {
-		return NULL;
+	static const char *const parts[] = { "\"", "Model", "\",\"", "MEng0", "\",\"", "MEng1", "\",\"", "MEng2", "\",\"", "MEng3",
+		"\",\"", "WeapList", "\"," };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *x = Mode_V(&t), *level = Mode_V(&t), *spawn = Mode_V(&t), *y = Mode_V(&t);
+	nativeVal_t *ship = Mode_V(&t), *s = Mode_V(&t), *r = Mode_V(&t);
+	if (!Mode_Import("SaveGame") || !Mode_Import("Init") || !Mode_UsrHandle(usr) || !Native_Slice(itemName, 11, 0x7fffffff, x) ||
+		!LvN_Cat("Levels/", x, level) || !Pk_G("PR_Spawn", x) || !Mode_ModGet("Init", "Path", y) ||
+		!Native_Slice(y, 7, 0x7fffffff, r) || !Native_Arith('+', x, r, spawn) || !Pk_Get(usr, "MPil0", x) ||
+		!Native_Slice(x, 2, 0x7fffffff, (Native_Free(y), y)) ||
+		!Native_CallMod("SaveGame", "MarkWayPoint", NULL, "vvv", level, spawn, y)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "SaveGame");
-	Sf_Import(&f, "Init");
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	PyObject *level = Sf_Cat(&f, "sO", "Levels/", Sf_Slice(&f, itemName, 11, 0x7fffffff));
-	PyObject *spawn = Sf_Op(&f, G("PR_Spawn"), '+', Sf_Slice(&f, Sf_Mod(&f, "Init", "Path"), 7, 0x7fffffff));
-	Sf_Ask(&f, "SaveGame", "MarkWayPoint", "(OOO)", level, spawn, Sf_Slice(&f, Sf_Attr(&f, usr, "MPil0"), 2, 0x7fffffff));
-	int own = Sf_True(&f, G("PlayerShip"));
+	int own = LvN_GTrue(PK, "PlayerShip");
 	if (own > 0) {
-		own = Sf_Compare(&f, Sf_Attr(&f, usr, "Name"), "==", Sf_Attr(&f, G("PlayerShip"), "Name"));
+		own = Pk_Get(usr, "Name", x) && Pk_G("PlayerShip", ship) && Pk_Get(ship, "Name", y) ? Mode_Cmp(x, "==", y) : -1;
 	}
-	if (own > 0) {
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "ComeFrom", G("PR_ComeFrom"));
-	} else if (own == 0) {
-		PyObject *s = Sf_Cat(&f, "OsOsOsOsOsOsOs", G("PR_ComeFrom"), "\"", Sf_Attr(&f, usr, "Model"), "\",\"",
-			Sf_Attr(&f, usr, "MEng0"), "\",\"", Sf_Attr(&f, usr, "MEng1"), "\",\"", Sf_Attr(&f, usr, "MEng2"), "\",\"",
-			Sf_Attr(&f, usr, "MEng3"), "\",\"", Sf_Attr(&f, usr, "WeapList"), "\",");
-		s = Sf_Cat(&f, "OOsOs", s, Sf_Repr(&f, Sf_Attr(&f, usr, "MaxLife")), ",\"", Sf_Attr(&f, usr, "Descriptor"), "\"");
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "ComeFrom", s);
+	if (own < 0) {
+		return Mode_Done(&t, 0);
 	}
-	for (int i = 0; i < 4 && !f.failed; i++) {
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", ammo[i][0], Sf_Repr(&f, Sf_Attr(&f, usr, ammo[i][1])));
+	if (own) {
+		if (!Pk_G("PR_ComeFrom", x) || !Mode_SetSaveVar("ComeFrom", x)) {
+			return Mode_Done(&t, 0);
+		}
+	} else {
+		if (!Pk_G("PR_ComeFrom", s)) {
+			return Mode_Done(&t, 0);
+		}
+		for (int i = 0; i < 13; i++) {
+			if (i & 1) {
+				if (!Pk_Get(usr, parts[i], x)) {
+					return Mode_Done(&t, 0);
+				}
+			} else {
+				Native_Free(x);
+				LvN_Str(x, parts[i]);
+			}
+			Native_Free(r);
+			if (!Native_Arith('+', s, x, r)) {
+				return Mode_Done(&t, 0);
+			}
+			Native_Free(s);
+			*s = *r;
+			Native_SetNone(r);
+		}
+		if (!Pk_Get(usr, "MaxLife", x)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_Free(y);
+		Mode_Repr(x, y);
+		if (!Native_Arith('+', s, y, r) || !Native_Arith('+', r, Mode_S(&t, ",\""), (Native_Free(s), s)) ||
+			!Pk_Get(usr, "Descriptor", x) || !Native_Arith('+', s, x, (Native_Free(r), r)) ||
+			!Native_Arith('+', r, Mode_S(&t, "\""), (Native_Free(s), s)) || !Mode_SetSaveVar("ComeFrom", s)) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	Pk_StartGame(&f);
-	return Sf_None(&f);
+	for (int i = 0; i < 4; i++) {
+		if (!Pk_Get(usr, ammo[i][1], x)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_Free(y);
+		Mode_Repr(x, y);
+		if (!Mode_SetSaveVar(ammo[i][0], y)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	return Mode_Done(&t, Pk_StartGame());
+}
+
+/* the loops over the dummies of a pattern: an entity of the class for each (DM_AreaToPark_ and DM_OutLink_) */
+static byte Pk_Browse(const char *pattern, const char *cls, byte link) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *dummy = Mode_V(&t), *name = Mode_V(&t), *p = Mode_V(&t), *xyz = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t);
+	nativeVal_t *l = Mode_V(&t), *ang = Mode_V(&t), *a = Mode_V(&t);
+	if (!Mode_DummyStartSeam(pattern, 1)) {
+		return Mode_Done(&t, 0);
+	}
+	for (;;) {
+		Native_Free(dummy);
+		if (!Mode_DummyNextSeam(dummy)) {
+			return Mode_Done(&t, 0);
+		}
+		if (dummy->type == NV_NONE) {
+			return Mode_Done(&t, 1);
+		}
+		Native_Free(l);
+		if (!Pk_Item(dummy, 1, p) || !Pk_Item(dummy, 0, name) || !Pk_Item(p, 0, xyz) || !Pk_Item(p, 1, y) || !Pk_Item(p, 2, z) ||
+			!LvN_Create(name, xyz, y, z, cls, l)) {
+			return Mode_Done(&t, 0);
+		}
+		if (link && (!Pk_Item(dummy, 2, a) || !Pk_Yaw(a, '+', Mode_I(&t, 180), (Native_Free(ang), ang)) || !Mode_VSet(l, "Ang", ang) ||
+			!LvN_SetI(l, "Radius", 20000) || !LvN_SetS(l, "OnTake", "Parking.ChangeLevel") || !LvN_SetI(l, "OnlyUser", 1))) {
+			return Mode_Done(&t, 0);
+		}
+	}
 }
 
 /* BrowseParkingAreas(): an object for every DM_AreaToPark_ dummy */
-static PyObject *Parking_BrowseParkingAreas(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Ask(&f, "Scrap", "StartDummySearch", "(si)", "DM_AreaToPark_*", 1);
-	while (!f.failed) {
-		int mark = f.n;
-		PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-		if (Sf_Compare(&f, dummy, "!=", Py_None) <= 0) {
-			break;
-		}
-		PyObject *p = Sf_Item(&f, dummy, 1);
-		Sf_Ask(&f, "Scrap", "CreateEntity", "(OOOOs)", Sf_Item(&f, dummy, 0), Sf_Item(&f, p, 0), Sf_Item(&f, p, 1),
-			Sf_Item(&f, p, 2), "Obj");
-		Sf_Release(&f, mark);
-	}
-	return Sf_None(&f);
+static byte Pk_BrowseParkingAreasN(void) {
+	return Pk_Browse("DM_AreaToPark_*", "Obj", 0);
 }
 
 /* BrowseSwitchLevel(): the links to the next levels (DM_OutLink_ dummies) */
-static PyObject *Parking_BrowseSwitchLevel(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "ShipMaker");
-	Sf_Ask(&f, "Scrap", "StartDummySearch", "(si)", "DM_OutLink_*", 1);
-	while (!f.failed) {
-		int mark = f.n;
-		PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-		if (Sf_Compare(&f, dummy, "!=", Py_None) <= 0) {
-			break;
-		}
-		PyObject *p = Sf_Item(&f, dummy, 1);
-		PyObject *l = Sf_Ask(&f, "Scrap", "CreateEntity", "(OOOOs)", Sf_Item(&f, dummy, 0), Sf_Item(&f, p, 0),
-			Sf_Item(&f, p, 1), Sf_Item(&f, p, 2), "Item");
-		Sf_SetAttr(&f, l, "Ang", Sf_Build(&f, "(iOi)", 0, Sf_OpI(&f, Sf_Item(&f, Sf_Item(&f, dummy, 2), 1), '+', 180), 0));
-		Sf_SetAttrI(&f, l, "Radius", 20000);
-		Sf_SetAttrS(&f, l, "OnTake", "Parking.ChangeLevel");
-		Sf_SetAttrI(&f, l, "OnlyUser", 1);
-		Sf_Release(&f, mark);
-	}
-	return Sf_None(&f);
+static byte Pk_BrowseSwitchLevelN(void) {
+	return Mode_Import("Vehicles") && Mode_Import("ShipMaker") && Pk_Browse("DM_OutLink_*", "Item", 1);
 }
 
 /* ShowNextMap(EntityName, EventName, Time): the event of a link door: the name of the next station */
-static PyObject *Parking_ShowNextMap(PyObject *self, PyObject *args) {
-	PyObject *ent, *event, *time;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &ent, &event, &time)) {
-		return NULL;
+static byte Pk_ShowNextMapN(const nativeVal_t *ent) {
+	nativeVal_t msg = { 0 }, s = { 0 }, key = { 0 }, station = { 0 }, text = { 0 };
+	byte ok = Mode_Import("RaceMaker") && Mode_Import("string");
+	if (ok) {
+		Mode_Lang("Generics_Outlink_SystemMessage", &msg);
+		ok = Native_Slice(ent, 15, 0x7fffffff, &s) && LvN_Cat("Station_", &s, &key) && Mode_LangV(&key, &station);
 	}
-	Sf_Import(&f, "RaceMaker");
-	Sf_Import(&f, "string");
-	PyObject *msg = Sf_Lang(&f, Sf_Str(&f, "Generics_Outlink_SystemMessage"));
-	PyObject *station = Sf_Lang(&f, Sf_Cat(&f, "sO", "Station_", Sf_Slice(&f, ent, 15, 0x7fffffff)));
-	Sf_Ask(&f, "RaceMaker", "ShowSystemMessage", "(O)", Sf_Ask(&f, "string", "replace", "(OsO)", msg, "<n1>", station));
-	return Sf_None(&f);
+	if (ok) {
+		Mode_Replace(&msg, "<n1>", &station, &text);
+		ok = Native_CallMod("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
+	}
+	Native_Free(&msg);
+	Native_Free(&s);
+	Native_Free(&key);
+	Native_Free(&station);
+	Native_Free(&text);
+	return ok;
 }
 
 /* DoorInitializator(Class): the event of the Open action of a link door */
-static PyObject *Parking_DoorInitializator(PyObject *self, PyObject *args) {
-	PyObject *cls;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &cls)) {
-		return NULL;
+static byte Pk_DoorInitializatorN(void) {
+	nativeVal_t r = { 0 }, v;
+	byte ok = LvN_GetAction("Open", &r);
+	Native_Free(&r);
+	Native_SetInt(&v, 0);
+	if (!ok || !LvN_SetAct("AddEventAtTime", &v)) {
+		return 0;
 	}
-	Sf_Ask(&f, "SAct", "GetAction", "(s)", "Open");
-	Sf_Ask(&f, "SAct", "SetAct", "(si)", "AddEventAtTime", 0);
-	Sf_Ask(&f, "SAct", "SetAct", "(ss)", "EventName", "Open");
-	Sf_Ask(&f, "SAct", "SetAct", "(ss)", "EventFunc", "Parking.ShowNextMap");
-	return Sf_None(&f);
+	LvN_Str(&v, "Open");
+	ok = LvN_SetAct("EventName", &v);
+	Native_Free(&v);
+	LvN_Str(&v, "Parking.ShowNextMap");
+	ok = ok && LvN_SetAct("EventFunc", &v);
+	Native_Free(&v);
+	return ok;
 }
 
 /* the arrival from another outdoor level (Init): on the player's own ship or on the stolen ship the save variable
  * ComeFrom describes, at the spawn dummy, with its ammunition */
-static void Pk_Arrive(scriptFrame_t *f, PyObject *comeFrom, PyObject *spawn) {
-	PyObject *usrPlay = Sf_Ask(f, "Scrap", "UsrEntity", "(i)", 0);
-	Sf_SetAttrI(f, usrPlay, "Active", 0);
-	Sf_Ask(f, "Scrap", "StartDummySearch", "(Oi)", spawn, 0);
-	PyObject *dummy = Sf_Ask(f, "Scrap", "NextDummySearch", "()");
-	int found = Sf_True(f, dummy);
-	if (found == 0) {
-		Sf_Ask(f, "Scrap", "ConsoleError", "(O)", Sf_Cat(f, "sOs", "E R R O R : ", spawn, " not found.\n"));
-		return;
-	}
-	if (found < 0) {
-		return;
-	}
-	PyObject *usrShip = NULL;
-	int own = Sf_Compare(f, comeFrom, "==", Sf_Global(f, PK, "PR_ComeFrom"));
-	if (own > 0) {
-		usrShip = Sf_Global(f, PK, "PlayerShip");
-		PyObject *pos = Sf_Attr(f, Sf_Global(f, PK, "PlayerShip"), "Pos");
-		PyObject *l = Sf_Own(f, PK, "CreateBox", "(sOOO)", "ParkingPlayerShip", Sf_Item(f, pos, 0), Sf_Item(f, pos, 1),
-			Sf_Item(f, pos, 2));
-		Sf_SetAttr(f, l, "rTime", Sf_Float(f, 0.1));
-	} else if (own == 0) {
-		PyObject *p = Sf_Item(f, dummy, 1);
-		PyObject *o1 = Sf_Ask(f, "Scrap", "CreateEntity", "(sOOOs)", "StolenShip", Sf_Item(f, p, 0), Sf_Item(f, p, 1),
-			Sf_Item(f, p, 2), "Car");
-		PyObject *a = Sf_Eval(f, Sf_Slice(f, comeFrom, 8, 0x7fffffff), PK);
-		Sf_Ask(f, "Vehicles", "SetProperties", "(OOOsOOOOOO)", Sf_Attr(f, o1, "Name"), Sf_Item(f, a, 0), Sf_Item(f, a, 6),
-			"P_None", Sf_Item(f, a, 1), Sf_Item(f, a, 2), Sf_Item(f, a, 3), Sf_Item(f, a, 4), Sf_Item(f, a, 5),
-			Sf_Item(f, a, 7));
-		usrShip = o1;
-		PyObject *pos = Sf_Attr(f, Sf_Global(f, PK, "PlayerShip"), "Pos");
-		Sf_Own(f, PK, "OnParkingOccupied", "(sOOOs)", "PlayerShip", Sf_Item(f, pos, 0), Sf_Item(f, pos, 1),
-			Sf_Item(f, pos, 2), "_05");
-		Sf_SetAttrI(f, Sf_Global(f, PK, "DtritusPlate"), "Active", 0);
-	}
-	PyObject *at = Sf_Item(f, dummy, 1);
-	Sf_SetAttr(f, usrShip, "MovePos", at);
-	Sf_SetAttr(f, usrShip, "Pos", at);
-	PyObject *ang = Sf_Build(f, "(iOi)", 0, Sf_OpI(f, Sf_Item(f, Sf_Item(f, dummy, 2), 1), '+', 180), 0);
-	Sf_SetAttr(f, usrShip, "MoveAng", ang);
-	Sf_SetAttr(f, usrShip, "Ang", ang);
+static byte Pk_Arrive(const nativeVal_t *comeFrom, const nativeVal_t *spawn) {
 	static const char *const ammo[][2] = { { "Ammo00", "usrShip.Ammo00" }, { "Ammo01", "usrShip.Ammo01" },
 		{ "Ammo02", "usrShip.Ammo02" } };
-	for (int i = 0; i < 3 && !f->failed; i++) {
-		PyObject *s = Sf_Ask(f, "Scrap", "GetSaveVar", "(s)", ammo[i][1]);
-		Sf_SetAttr(f, usrShip, ammo[i][0], f->failed || !s ? NULL : Sf_Keep(f, PyNumber_Float(s)));
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usrPlay = Mode_V(&t), *dummy = Mode_V(&t), *x = Mode_V(&t), *usrShip = Mode_V(&t), *ship = Mode_V(&t);
+	nativeVal_t *pos = Mode_V(&t), *l = Mode_V(&t), *p = Mode_V(&t), *xyz = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t);
+	nativeVal_t *ca = Mode_V(&t), *at = Mode_V(&t), *ang = Mode_V(&t), *name = Mode_V(&t);
+	const char *s;
+	if (!Mode_UsrHandle(usrPlay) || !LvN_SetI(usrPlay, "Active", 0) || !Native_ArgStr(spawn, 1, &s) ||
+		!Mode_DummyStartSeam(s, 0) || !Mode_DummyNextSeam(dummy)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_SetGlobal(f, PK, "SetWeaponOnShip", Sf_Int(f, 1));
-	Sf_Own(f, PK, "UseShip", "(OOssO)", Sf_Attr(f, usrPlay, "Name"), Sf_Attr(f, usrShip, "Name"), "", "", Py_None);
+	if (!Native_True(dummy)) {
+		return Mode_Done(&t, LvN_Cat("E R R O R : ", spawn, x) && Native_Arith('+', x, Mode_S(&t, " not found.\n"), y) &&
+			Mode_ConsoleError(y));
+	}
+	int own = Mode_CmpG(comeFrom, "==", PK, "PR_ComeFrom");
+	if (own < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (own) {
+		if (!Pk_G("PlayerShip", usrShip) || !Pk_G("PlayerShip", ship) || !Pk_Get(ship, "Pos", pos) ||
+			!Pk_BoxAt(Mode_S(&t, "ParkingPlayerShip"), pos, l) || !LvN_SetF(l, "rTime", 0.1)) {
+			return Mode_Done(&t, 0);
+		}
+	} else {
+		if (!Pk_Item(dummy, 1, p) || !Pk_Item(p, 0, xyz) || !Pk_Item(p, 1, y) || !Pk_Item(p, 2, z) ||
+			!LvN_Create(Mode_S(&t, "StolenShip"), xyz, y, z, "Car", usrShip) || !Native_Slice(comeFrom, 8, 0x7fffffff, x) ||
+			!Mode_EvalIn(PK, x, ca) || !Pk_Get(usrShip, "Name", name)) {
+			return Mode_Done(&t, 0);
+		}
+		/* Vehicles.SetProperties(o1.Name, a[0], a[6], "P_None", a[1], a[2], a[3], a[4], a[5], a[7]) */
+		static const signed char order[] = { 0, 6, -1, 1, 2, 3, 4, 5, 7 };
+		nativeVal_t *items = Mode_V(&t);
+		Native_SetEmpty(items, NV_TUPLE);
+		Native_Copy(Native_Append(items), name);
+		for (int i = 0; i < 9; i++) {
+			nativeVal_t *it = Native_Append(items);
+			if (order[i] < 0) {
+				LvN_Str(it, "P_None");
+			} else if (!Mode_Item(ca, order[i], it)) {
+				return Mode_Done(&t, 0);
+			}
+		}
+		if (!Native_CallMod("Vehicles", "SetProperties", NULL, "vvvvvvvvvv", &items->items[0], &items->items[1], &items->items[2],
+			&items->items[3], &items->items[4], &items->items[5], &items->items[6], &items->items[7], &items->items[8],
+			&items->items[9]) || !Pk_G("PlayerShip", ship) || !Pk_Get(ship, "Pos", pos) || !Pk_Item(pos, 0, xyz) ||
+			!Pk_Item(pos, 1, y) || !Pk_Item(pos, 2, z) || !PK_OWN("OnParkingOccupied", NULL, "svvvs", "PlayerShip", xyz, y, z,
+			"_05") || !Pk_G("DtritusPlate", ship) || !LvN_SetI(ship, "Active", 0)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	if (!Pk_Item(dummy, 1, at) || !Mode_VSet(usrShip, "MovePos", at) || !Mode_VSet(usrShip, "Pos", at) ||
+		!Pk_Item(dummy, 2, x) || !Pk_Yaw(x, '+', Mode_I(&t, 180), ang) || !Mode_VSet(usrShip, "MoveAng", ang) ||
+		!Mode_VSet(usrShip, "Ang", ang)) {
+		return Mode_Done(&t, 0);
+	}
+	for (int i = 0; i < 3; i++) {
+		Native_Free(x);
+		Native_Free(y);
+		Mode_SaveVar(ammo[i][1], x);
+		if (!Native_ToFloat(x, y) || !Mode_VSet(usrShip, ammo[i][0], y)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	return Mode_Done(&t, LvN_PutI(PK, "SetWeaponOnShip", 1) && Pk_Get(usrPlay, "Name", x) && Pk_Get(usrShip, "Name", y) &&
+		PK_OWN("UseShip", NULL, "vvssv", x, y, "", "", Mode_V(&t)));
 }
 
 /* Init(): offline: the plate, the parking boxes and the player's ship, the parked ships (unless the save game says
  * the level is desolate), the links and parking areas; the player starts in the junkyard parking or arrives from
  * another outdoor level on a ship */
-static PyObject *Parking_Init(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
+static byte Pk_InitN(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *x = Mode_V(&t), *comeFrom = Mode_V(&t), *spawn = Mode_V(&t), *n = Mode_V(&t), *usr = Mode_V(&t);
+	nativeVal_t *ship = Mode_V(&t), *y = Mode_V(&t);
+	if (!Mode_Import("Vehicles")) {
+		return Mode_Done(&t, 0);
+	}
+	int off = Native_NetOff();
+	if (off <= 0) {
+		return Mode_Done(&t, off == 0);
+	}
+	if (!PK_OWN("CreateDtritusPlate", NULL, "") || !Pk_G("PR_Lst", x) ||
+		!Native_CallMod("Scrap", "CreateEntityList", NULL, "v", x) || !PK_OWN("BrowseItemPos", NULL, "")) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("ComeFrom", comeFrom);
+	Mode_SaveVar("Spawn", spawn);
+	Native_Free(x);
+	Mode_SaveVar("Parking.Desolate", x);
+	if (!Native_ToInt(x, n) || (!Native_True(n) && !PK_OWN("BrowseParkedPos", NULL, "")) ||
+		!PK_OWN("BrowseSwitchLevel", NULL, "") || !PK_OWN("BrowseParkingAreas", NULL, "")) {
+		return Mode_Done(&t, 0);
+	}
+	int junk = Mode_CmpG(spawn, "==", PK, "PL_Junk");
+	if (junk < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (junk) {
+		return Mode_Done(&t, Mode_UsrHandle(usr) && Pk_Get(usr, "Name", x) && Pk_G("PlayerShip", ship) &&
+			Pk_Get(ship, "Name", y) && PK_OWN("UseShip", NULL, "vvsss", x, y, "", "", "ParkParking_Junkyard") &&
+			Pk_G("LastPark", ship) && LvN_SetS(ship, "OnTake", "Parking.JunkerPark"));
+	}
+	Native_Free(x);
+	if (!Native_Slice(comeFrom, 0, 8, x)) {
+		return Mode_Done(&t, 0);
+	}
+	int arrive = Mode_CmpG(x, "==", PK, "PR_ComeFrom");
+	if (arrive > 0) {
+		Native_Free(x);
+		arrive = Native_Slice(spawn, 0, 14, x) ? Mode_CmpG(x, "==", PK, "PR_Spawn") : -1;
+	}
+	return Mode_Done(&t, arrive >= 0 && (!arrive || Pk_Arrive(comeFrom, spawn)));
+}
+
+/* the adapters (the argument formats of the C port: the arity errors of PyArg_ParseTuple, the keyword functions with
+ * the names of the script) */
+MODE_FN(Parking, RestoreDeathPlayerShip, 0, Pk_RestoreDeathPlayerShipN())
+MODE_FN(Parking, SetInvunerable, 1, Pk_SetInvunerableN(&a[0]))
+MODE_FN(Parking, CharOnShip, 1, Pk_CharOnShipN(&a[0]))
+MODE_FN(Parking, PlayVoiceChannel, 1, Pk_PlayVoiceChannelN(&a[0]))
+MODE_FN(Parking, ExecSwitchVehicleMissionCallback, 0, Pk_ExecSwitchVehicleMissionCallbackN())
+MODE_FN(Parking, EndPathCam, 1, Pk_EndPathCamN(&a[0]))
+MODE_FN(Parking, isValidToPark, 1, Pk_isValidToParkN(&a[0], out))
+MODE_FN(Parking, OnPark, 2, Pk_OnParkN(&a[0], &a[1], out))
+MODE_FN(Parking, SetDtritusPlate, 2, Pk_SetDtritusPlateN(&a[0], &a[1]))
+MODE_FN(Parking, CreateDtritusPlate, 0, Pk_CreateDtritusPlateN())
+MODE_FN(Parking, CreatePlayerShip, 1, Pk_CreatePlayerShipN(&a[0]))
+MODE_FN(Parking, ShowChar, 2, Pk_ShowCharN(&a[0], &a[1]))
+MODE_FN(Parking, EndJunkerPathCam, 1, Pk_EndJunkerPathCamN(&a[0]))
+MODE_FN(Parking, JunkerPark, 2, Pk_JunkerParkN(&a[0], &a[1]))
+MODE_FN(Parking, OnParkingOccupied, 5, Pk_OnParkingOccupiedN(a))
+MODE_FN(Parking, OnParkedOut, 5, Pk_OnParkedOutN(a))
+MODE_FN(Parking, CreateBox, 4, Pk_CreateBoxN(a, out))
+MODE_FN(Parking, SetShipRadius, 2, Pk_SetShipRadiusN(&a[0], &a[1]))
+MODE_FN(Parking, SetOnFloor, 1, Pk_SetOnFloorN(&a[0]))
+MODE_FN(Parking, SetShipAsParked, 1, Pk_SetShipAsParkedN(&a[0]))
+MODE_FN(Parking, ParkedDeat, 2, Pk_ParkedDeatN(&a[0], &a[1], out))
+MODE_FN(Parking, BrowseItemPos, 0, Pk_BrowseItemPosN())
+MODE_FN(Parking, CreateLonelyMercParkings, 0, Pk_CreateLonelyMercParkingsN(out))
+MODE_FN(Parking, CheckWeapons, 1, Pk_CheckWeaponsN(&a[0]))
+MODE_FN(Parking, BrowseParkedPos, 0, Pk_BrowseParkedPosN())
+MODE_FN(Parking, ChangeLevel, 2, Pk_ChangeLevelN(&a[0]))
+MODE_FN(Parking, BrowseParkingAreas, 0, Pk_BrowseParkingAreasN())
+MODE_FN(Parking, BrowseSwitchLevel, 0, Pk_BrowseSwitchLevelN())
+MODE_FN(Parking, ShowNextMap, 3, Pk_ShowNextMapN(&a[0]))
+MODE_FN(Parking, DoorInitializator, 1, Pk_DoorInitializatorN())
+MODE_FN(Parking, Init, 0, Pk_InitN())
+
+static PyObject *Parking_UseShip(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "UsrName", "CharName", "optId", "FullOption", "BoxName", NULL };
+	nativeVal_t a[5];
+	byte given[5];
 	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+	if (!Mode_Kw(args, kw, "OOOO|O", names, 5, a, given)) {
+		return Mode_KwOut(a, 5, 0, NULL);
 	}
-	Sf_Import(&f, "Vehicles");
-	if (Sf_Compare(&f, Sf_Ask(&f, "Scrap", "GetNetFlags", "()"), "==", Sf_Build(&f, "(iii)", 0, 0, 0)) <= 0) {
-		return Sf_None(&f);
+	if (!given[4]) {
+		LvN_Str(&a[4], "Parking");
 	}
-	Sf_Own(&f, PK, "CreateDtritusPlate", "()");
-	Sf_Ask(&f, "Scrap", "CreateEntityList", "(O)", G("PR_Lst"));
-	Sf_Own(&f, PK, "BrowseItemPos", "()");
-	PyObject *comeFrom = Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "ComeFrom");
-	PyObject *spawn = Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Spawn");
-	if (Sf_True(&f, Sf_ToInt(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Parking.Desolate"))) == 0) {
-		Sf_Own(&f, PK, "BrowseParkedPos", "()");
+	return Mode_KwOut(a, 5, Pk_UseShipN(a), NULL);
+}
+
+static PyObject *Parking_SetCameraStart(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "cp", "v", "iPos", "split", "testline", NULL };
+	nativeVal_t a[5];
+	byte given[5];
+	(void)self;
+	if (!Mode_Kw(args, kw, "OOO|OO", names, 5, a, given)) {
+		return Mode_KwOut(a, 5, 0, NULL);
 	}
-	Sf_Own(&f, PK, "BrowseSwitchLevel", "()");
-	Sf_Own(&f, PK, "BrowseParkingAreas", "()");
-	int junk = Sf_Compare(&f, spawn, "==", G("PL_Junk"));
-	if (junk > 0) {
-		Sf_Own(&f, PK, "UseShip", "(OOsss)", Sf_Attr(&f, Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0), "Name"),
-			Sf_Attr(&f, G("PlayerShip"), "Name"), "", "", "ParkParking_Junkyard");
-		Sf_SetAttrS(&f, G("LastPark"), "OnTake", "Parking.JunkerPark");
-	} else if (junk == 0) {
-		int arrive = Sf_Compare(&f, Sf_Slice(&f, comeFrom, 0, 8), "==", G("PR_ComeFrom"));
-		if (arrive > 0) {
-			arrive = Sf_Compare(&f, Sf_Slice(&f, spawn, 0, 14), "==", G("PR_Spawn"));
-		}
-		if (arrive > 0) {
-			Pk_Arrive(&f, comeFrom, spawn);
-		}
+	if (!given[3]) {
+		Native_SetInt(&a[3], 0);
 	}
-	return Sf_None(&f);
+	if (!given[4]) {
+		Native_SetInt(&a[4], 1);
+	}
+	return Mode_KwOut(a, 5, Pk_SetCameraStartN(a), NULL);
+}
+
+static PyObject *Parking_CreateParkedShip(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "Pos", "Angle", "Type", NULL };
+	nativeVal_t a[3], out = { 0 };
+	(void)self;
+	if (!Mode_Kw(args, kw, "OO|O", names, 3, a, NULL)) {
+		return Mode_KwOut(a, 3, 0, NULL);
+	}
+	return Mode_KwOut(a, 3, Pk_CreateParkedShipN(a, &out), &out);
 }
 
 PyMethodDef g_ParkingMethods[] = {
@@ -1241,57 +1567,78 @@ PyMethodDef g_ParkingMethods[] = {
 
 /* ---- Accelerator ---- */
 
+#define ACC "Accelerator"
+
 /* CreateAccelerator(Pos, Angx, Angy, Radius=ACCELERATOR_RADIUS): the item of a speed ring */
-static PyObject *Accelerator_CreateAccelerator(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "Pos", "Angx", "Angy", "Radius", NULL };
-	PyObject *pos, *ax, *ay, *radius = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOO|O", names, &pos, &ax, &ay, &radius)) {
-		return NULL;
+static byte Acc_CreateAcceleratorN(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t xyz[3] = { { 0 }, { 0 }, { 0 } }, name, ang = { 0 }, z;
+	LvN_Str(&name, "Accelerator");
+	Native_SetInt(&z, 0);
+	byte ok = Pk_XYZ(&a[0], xyz) && LvN_Create(&name, &xyz[0], &xyz[1], &xyz[2], "Item", out) && Mode_VSet(out, "Radius", &a[3]) &&
+		LvN_SetS(out, "OnTake", "!AcceleratorOnEnter");
+	if (ok) {
+		Pk_Tuple3(&ang, &a[1], &a[2], &z);
+		ok = Mode_VSet(out, "Ang", &ang);
 	}
-	/* the default of the def line, bound when the script loaded */
-	radius = radius ? Sf_Ref(&f, radius) : Sf_Int(&f, 3500);
-	PyObject *l = Sf_Ask(&f, "Scrap", "CreateEntity", "(sOOOs)", "Accelerator", Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1),
-		Sf_Item(&f, pos, 2), "Item");
-	Sf_SetAttr(&f, l, "Radius", radius);
-	Sf_SetAttrS(&f, l, "OnTake", "!AcceleratorOnEnter");
-	Sf_SetAttr(&f, l, "Ang", Sf_Build(&f, "(OOi)", ax, ay, 0));
-	return Sf_Return(&f, l);
+	for (int i = 0; i < 3; i++) {
+		Native_Free(&xyz[i]);
+	}
+	Native_Free(&name);
+	Native_Free(&ang);
+	return ok;
 }
 
 /* Init(): a speed ring on every active DM_Accelerator dummy ("=<radius>" in the name gives its radius) */
-static PyObject *Accelerator_Init(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Acc_InitN(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *dummy = Mode_V(&t), *x = Mode_V(&t), *s = Mode_V(&t), *radius = Mode_V(&t), *ang = Mode_V(&t);
+	nativeVal_t *pos = Mode_V(&t), *ax = Mode_V(&t), *ay = Mode_V(&t);
+	if (!Mode_Import("string") || !Mode_DummyStartSeam("DM_Accelerator*", 1)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "string");
-	Sf_Ask(&f, "Scrap", "StartDummySearch", "(si)", "DM_Accelerator*", 1);
-	while (!f.failed) {
-		int mark = f.n;
-		PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-		if (Sf_Compare(&f, dummy, "!=", Py_None) <= 0) {
-			break;
+	for (;;) {
+		Native_Free(dummy);
+		if (!Mode_DummyNextSeam(dummy)) {
+			return Mode_Done(&t, 0);
 		}
-		if (Sf_True(&f, Sf_Item(&f, dummy, 3)) > 0) {
-			PyObject *s = Sf_Ask(&f, "string", "split", "(Os)", Sf_Item(&f, dummy, 0), "=");
-			PyObject *radius;
-			int n = Sf_Len(&f, s);
-			if (n > 1) {
-				radius = Sf_ToInt(&f, Sf_Item(&f, s, 1));
-			} else {
-				radius = Sf_Global(&f, "Accelerator", "ACCELERATOR_RADIUS");
-			}
-			PyObject *ang = Sf_Item(&f, dummy, 2);
-			Sf_Own(&f, "Accelerator", "CreateAccelerator", "(OOOO)", Sf_Item(&f, dummy, 1), Sf_Item(&f, ang, 0),
-				Sf_Item(&f, ang, 1), radius);
+		if (dummy->type == NV_NONE) {
+			return Mode_Done(&t, 1);
 		}
-		Sf_Release(&f, mark);
+		if (!Pk_Item(dummy, 3, x)) {
+			return Mode_Done(&t, 0);
+		}
+		if (!Native_True(x)) {
+			continue;
+		}
+		if (!Pk_Item(dummy, 0, x) || !Pk_Split(x, "=", s)) {
+			return Mode_Done(&t, 0);
+		}
+		int n = Mode_Len(s);
+		Native_Free(radius);
+		if (n < 0 || !(n > 1 ? Pk_Item(s, 1, x) && Native_ToInt(x, radius) : Mode_G(ACC, "ACCELERATOR_RADIUS", radius)) ||
+			!Pk_Item(dummy, 2, ang) || !Pk_Item(dummy, 1, pos) || !Pk_Item(ang, 0, ax) || !Pk_Item(ang, 1, ay) ||
+			!Native_CallGlobal(ACC, "CreateAccelerator", NULL, "vvvv", pos, ax, ay, radius)) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	return Sf_None(&f);
 }
+
+static PyObject *Accelerator_CreateAccelerator(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "Pos", "Angx", "Angy", "Radius", NULL };
+	nativeVal_t a[4], out = { 0 };
+	byte given[4];
+	(void)self;
+	if (!Mode_Kw(args, kw, "OOO|O", names, 4, a, given)) {
+		return Mode_KwOut(a, 4, 0, NULL);
+	}
+	/* the default of the def line, bound when the script loaded */
+	if (!given[3]) {
+		Native_SetInt(&a[3], 3500);
+	}
+	return Mode_KwOut(a, 4, Acc_CreateAcceleratorN(a, &out), &out);
+}
+
+MODE_FN(Accelerator, Init, 0, Acc_InitN())
 
 PyMethodDef g_AcceleratorMethods[] = {
 	{ "CreateAccelerator", (PyCFunction)(void (*)(void))Accelerator_CreateAccelerator, 3, NULL },
