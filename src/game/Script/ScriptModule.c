@@ -111,7 +111,7 @@ typedef struct {
 	int skip;			/* > 0: parse only (the branch not taken, the right side of and/or) */
 	int nest;			/* expressions inside each other */
 	byte syntax;			/* the error is one of the text, not of a value */
-	char lastDef[MOD_NAME];		/* the last function the module code defined (the touch after the code) */
+	PyObject *defs;			/* the functions the module code defined, by name (Script_ModuleExtras) */
 } modParse_t;
 
 /* ---- errors ---- */
@@ -961,8 +961,9 @@ static byte Mod_Def(modParse_t *m) {
 		if (!Mod_Store(m, name, m->skip ? Mod_Skipped() : Mod_Function(m, name))) {
 			return 0;
 		}
-		if (!m->skip && m->locals == m->globals) {
-			Str_Copy(m->lastDef, name, sizeof(m->lastDef));
+		if (!m->skip && m->locals == m->globals &&
+			PyDict_SetItemString(m->defs, name, PyDict_GetItemString(m->locals, name)) != 0) {
+			return 0;
 		}
 	}
 	return Mod_EndLine(m);
@@ -1271,8 +1272,8 @@ int Script_ModuleMake(const char *name, const char *file, PyObject **module) {
 	PyObject *m = PyImport_AddModule((char *)name);
 	PyObject *d = m ? PyModule_GetDict(m) : NULL;
 	modParse_t mp = { .p = text, .text = text, .file = mf->name, .module = name, .mod = m, .globals = d, .locals = d,
-		.consts = PyList_New(0) };
-	int ok = d && mp.consts;
+		.consts = PyList_New(0), .defs = PyDict_New() };
+	int ok = d && mp.consts && mp.defs;
 	/* as PyImport_ExecCodeModuleEx: the builtins and __file__ before the module code */
 	if (ok && !PyDict_GetItemString(d, "__builtins__")) {
 		ok = PyDict_SetItemString(d, "__builtins__", PyEval_GetBuiltins()) == 0;
@@ -1296,25 +1297,14 @@ int Script_ModuleMake(const char *name, const char *file, PyObject **module) {
 	}
 	Py_XDECREF(mp.consts);
 	free(own);
+	if (ok) {
+		/* the writes the loader makes after the module code (the functions of the C tables the script does not have,
+		 * the sets that may resize the dict), as after the .pyc */
+		Script_ModuleExtras(name, m, mp.defs);
+	}
+	Py_XDECREF(mp.defs);
 	if (!ok) {
 		return -1;
-	}
-	/* the writes the loader makes after the module code (the functions of the C tables the script does not have, the
-	 * sets that may resize the dict), as after the .pyc */
-	Script_ModuleExtras(name, m);
-	/*
-	 * after the .pyc the loader sets every function of the module again (its C or data version); a dict whose fill
-	 * reached 2/3 grows at that first store, which changes the order of its keys: one store of a function the code
-	 * defined does the same (Mission_StupidMerc and Mission_DefeatCrazyGambler3 have 43 keys in a table of 64)
-	 */
-	if (mp.lastDef[0]) {
-		PyObject *f = PyDict_GetItemString(d, mp.lastDef);
-		if (f) {
-			Py_INCREF(f);
-			PyDict_SetItemString(d, mp.lastDef, f);
-			Py_DECREF(f);
-		}
-		PyErr_Clear();
 	}
 	Py_INCREF(m);
 	*module = m;

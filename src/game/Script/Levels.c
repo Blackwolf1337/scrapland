@@ -488,8 +488,13 @@ static PyObject *Level_SectionFunction(int i, levelPool_t *pool, int n, char *to
 	return f;
 }
 
-/* the sections of file i into functions of the module (only those the script has, under their names) */
-static void Level_Install(int i, PyObject *module, levelPool_t *pool, PyObject *kept) {
+/*
+ * the sections of file i into functions of the module (only those the script has, under their names); with defs (a
+ * module made in C, Script_ModuleExtras) the same dict writes with the values in place, for the sections whose name
+ * the module code defined and no table of script_modules took before (after the .pyc that name is still the Python
+ * function here)
+ */
+static void Level_Install(int i, PyObject *module, levelPool_t *pool, PyObject *kept, PyObject *defs) {
 	const char *p = level_files[i].text;
 	PyObject *dict = PyModule_GetDict(module);
 	int n = 0;
@@ -500,7 +505,13 @@ static void Level_Install(int i, PyObject *module, levelPool_t *pool, PyObject *
 			char line[0x200], *tok[24];
 			int nt = Level_SectionWords(p + 8, len - 8, line, tok);
 			PyObject *old = nt ? PyDict_GetItemString(dict, tok[0]) : NULL;
-			if (old && PyFunction_Check(old)) {
+			if (defs) {
+				if (old && PyDict_GetItemString(defs, tok[0]) == old &&
+					!Script_TableHas(level_files[i].module, tok[0])) {
+					Script_ReplaySet(dict, tok[0], old);
+					n++;
+				}
+			} else if (old && PyFunction_Check(old)) {
 				PyObject *f = Level_SectionFunction(i, pool, n, tok, nt);
 				if (f) {
 					if (kept) {
@@ -609,7 +620,7 @@ void Script_LevelModuleLoaded(const char *name, PyObject *module, PyObject *kept
 		if (!strcmp(level_files[i].level, level) && !strcmp(level_files[i].module, name)) {
 			levelPool_t *pool = Level_Pool(name);
 			if (pool) {
-				Level_Install((int)i, module, pool, kept);
+				Level_Install((int)i, module, pool, kept, NULL);
 			}
 			break;
 		}
@@ -621,14 +632,18 @@ void Script_LevelModuleLoaded(const char *name, PyObject *module, PyObject *kept
 	}
 }
 
-void Script_LevelModuleExtras(const char *name, PyObject *module) {
+void Script_LevelModuleExtras(const char *name, PyObject *module, PyObject *defs) {
 	char level[LEVEL_NAME];
 	if (!Level_Current(level, sizeof(level))) {
 		return;
 	}
+	int i = Level_File(name);
+	if (i >= 0) {
+		Level_Install(i, module, NULL, NULL, defs);
+	}
 	for (const levelModule_t *lm = level_modules; lm->level; lm++) {
 		if (!strcmp(lm->level, level) && !strcmp(lm->module, name)) {
-			Script_TableExtras(module, lm->methods);
+			Script_TableReplay(module, lm->methods);
 		}
 	}
 }

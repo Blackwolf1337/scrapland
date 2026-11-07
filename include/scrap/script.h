@@ -67,11 +67,20 @@ int CharsNPC_ModSpawnPosClass(PyObject *module, PyObject *locals);
 /* the function name of module from the C tables (script_modules, the last table that has it), a new reference; NULL
  * without an error when no table has it */
 PyObject *Script_TableFunction(const char *module, const char *name);
-/* the functions of a table the module does not have yet into it (a table may have more than the script) */
-void Script_TableExtras(PyObject *module, PyMethodDef *methods);
-/* after a module made in C: the writes of Script_Install for every table of script_modules (the functions the script
- * lacks, the sets that resize the dict as after the .pyc), then the extras of level_modules */
-void Script_ModuleExtras(const char *name, PyObject *module);
+/* whether a table of script_modules has the function name of module */
+byte Script_TableHas(const char *module, const char *name);
+/* the dict writes of Script_Install of a table on a module made in C, with the values in place (the functions the
+ * script lacks are added) */
+void Script_TableReplay(PyObject *module, PyMethodDef *methods);
+/* the dict writes of a replaced function on a module made in C: the other names, tuples and dict values that hold
+ * cur (Script_ReplaceRefs) and name itself, with the values in place */
+void Script_ReplaySet(PyObject *dict, const char *name, PyObject *cur);
+/*
+ * after a module made in C: the dict writes Script_ModuleLoaded makes after the .pyc, with the values in place, for
+ * every table of script_modules, the level data and the level tables (the functions the script lacks, and the sets
+ * that resize a 1.5.2 dict, which decide its key order); defs holds the functions the module code defined, by name
+ */
+void Script_ModuleExtras(const char *name, PyObject *module, PyObject *defs);
 /* the level that loads, lower case ("police"); 0 when Init.Path is not set yet */
 byte Script_LevelName(char *out, int size);
 /* for a module of the level made in C (src/game/Script/Levels.c): its data functions start over in their pool */
@@ -80,8 +89,8 @@ void Script_LevelModuleStart(const char *module);
 PyObject *Script_LevelTableFunction(const char *module, const char *name);
 /* the data function name of the level file of module in this level, NULL without an error if none */
 PyObject *Script_LevelDataFunction(const char *module, const char *name);
-/* the extras of the level tables of the module (Script_TableExtras) */
-void Script_LevelModuleExtras(const char *name, PyObject *module);
+/* the part of Script_ModuleExtras for the level data and the level tables of the module (defs as there) */
+void Script_LevelModuleExtras(const char *name, PyObject *module, PyObject *defs);
 
 /* CreateFixedInit(e) of the level scripts: the character e stands where it is (src/game/Script/levels/Orbit.c) */
 PyObject *Level_FixedInit(PyObject *self, PyObject *args);

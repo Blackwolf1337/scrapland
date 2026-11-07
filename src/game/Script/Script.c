@@ -314,31 +314,34 @@ void Script_ReplaceRefs(PyObject *dict, PyObject *key, PyObject *old, PyObject *
 	/*
 	 * other names, the list items, the tuple items (Doors.DefDoorInfo = 800, StdInitializator, StdObjInitializator,
 	 * 0, 0: a new tuple under the same name) and the dict values of the module that hold the replaced function
-	 * (MapRace.Races = [EasyRace1, ...]); only items that are old itself, one level deep (not __builtins__)
+	 * (MapRace.Races = [EasyRace1, ...]); only items that are old itself, one level deep (not __builtins__). f == old
+	 * replays the dict writes on a module made in C, whose values are in place (a tuple stays the same object).
 	 */
 	PyObject *k, *v, *later = NULL;
 	int pos = 0;
 	if (!old) {
 		return;
 	}
-	/* a name replaced twice before the rebind (a second table): the bindings go to the last function */
-	for (int i = 0; i < script_rebinds; i++) {
-		if (script_rebindNew[i] == old) {
-			script_rebindNew[i] = f;
+	if (f != old) {
+		/* a name replaced twice before the rebind (a second table): the bindings go to the last function */
+		for (int i = 0; i < script_rebinds; i++) {
+			if (script_rebindNew[i] == old) {
+				script_rebindNew[i] = f;
+			}
 		}
+		if (script_rebinds == SCRIPT_REBIND) {
+			Script_Rebind();
+		}
+		script_rebindOld[script_rebinds] = old;
+		script_rebindNew[script_rebinds++] = f;
 	}
-	if (script_rebinds == SCRIPT_REBIND) {
-		Script_Rebind();
-	}
-	script_rebindOld[script_rebinds] = old;
-	script_rebindNew[script_rebinds++] = f;
 	while (PyDict_Next(dict, &pos, &k, &v)) {
 		if (v == old) {
 			if (PyObject_Compare(k, key) != 0) {
 				Script_Defer(&later, k, f);
 			}
 		} else if (PyList_Check(v)) {
-			for (int i = 0; i < PyList_GET_SIZE(v); i++) {
+			for (int i = 0; f != old && i < PyList_GET_SIZE(v); i++) {
 				if (PyList_GET_ITEM(v, i) == old) {
 					Py_INCREF(f);
 					PyList_SetItem(v, i, f);
@@ -347,7 +350,7 @@ void Script_ReplaceRefs(PyObject *dict, PyObject *key, PyObject *old, PyObject *
 		} else if (PyTuple_Check(v)) {
 			PyObject *t = Script_TupleWith(v, old, f);
 			if (t) {
-				Script_Defer(&later, k, t);
+				Script_Defer(&later, k, f != old ? t : v);
 				Py_DECREF(t);
 			}
 		} else if (PyDict_Check(v) && v != dict && !(PyString_Check(k) && !strcmp(PyString_AS_STRING(k), "__builtins__"))) {
@@ -599,8 +602,8 @@ void Script_Install(PyObject *module, PyMethodDef *methods, PyObject *kept) {
 	}
 }
 
-PyObject *Script_TableFunction(const char *module, const char *name) {
-	/* the last table that has the name wins (as Script_Install puts them in) */
+/* the last table of module that has name (as Script_Install puts them in), NULL if none */
+static PyMethodDef *Script_TableDef(const char *module, const char *name) {
 	PyMethodDef *found = NULL;
 	for (size_t i = 0; i < sizeof(script_modules) / sizeof(script_modules[0]); i++) {
 		if (!strcmp(script_modules[i].name, module)) {
@@ -611,72 +614,59 @@ PyObject *Script_TableFunction(const char *module, const char *name) {
 			}
 		}
 	}
+	return found;
+}
+
+PyObject *Script_TableFunction(const char *module, const char *name) {
+	PyMethodDef *found = Script_TableDef(module, name);
 	return found ? Script_CheckFunction(found, NULL, module) : NULL;
 }
 
-void Script_TableExtras(PyObject *module, PyMethodDef *methods) {
-	PyObject *dict = PyModule_GetDict(module);
-	for (PyMethodDef *m = methods; m->ml_name; m++) {
-		if (!PyDict_GetItemString(dict, m->ml_name)) {
-			PyObject *f = Script_CheckFunction(m, NULL, PyModule_GetName(module));
-			if (f) {
-				PyDict_SetItemString(dict, m->ml_name, f);
-				Py_DECREF(f);
-			}
-		}
-	}
+byte Script_TableHas(const char *module, const char *name) {
+	return Script_TableDef(module, name) != NULL;
 }
 
 /*
  * The dict writes of Script_Install on a module made in C, with the values in place: per function of the table the
- * other names that hold it (the aliases), the tuples that hold it (Script_ReplaceRefs) and the name itself, which a
- * function the script lacks gets here as Script_Install gives it. PyDict_SetItem doubles a dict that is 2/3 full
- * before the write, also for a key that is in it, so these writes decide the key order of the module dict as they
- * do after the .pyc (Sound modules of 21 keys).
+ * other names, list and tuple items and dict values that hold it (Script_ReplaceRefs with f == old) and the name
+ * itself, which a function the script lacks gets here as Script_Install gives it. PyDict_SetItem doubles a dict that
+ * is 2/3 full before the write, also for a key that is in it, so these writes decide the key order of the module dict
+ * as they do after the .pyc (Sound modules of 21 keys).
  */
-static void Script_TableReplay(PyObject *module, PyMethodDef *methods) {
+void Script_TableReplay(PyObject *module, PyMethodDef *methods) {
 	PyObject *dict = PyModule_GetDict(module);
 	for (PyMethodDef *m = methods; m->ml_name; m++) {
-		PyObject *f = Script_CheckFunction(m, NULL, PyModule_GetName(module));
-		if (!f) {
-			continue;
-		}
 		PyObject *cur = PyDict_GetItemString(dict, m->ml_name);
 		if (cur) {
-			PyObject *key, *value, *later = NULL;
-			int pos = 0;
-			while (PyDict_Next(dict, &pos, &key, &value)) {
-				if (value == cur && PyString_Check(key) && strcmp(PyString_AsString(key), m->ml_name)) {
-					Script_Defer(&later, key, value);
-				}
-			}
-			pos = 0;
-			while (PyDict_Next(dict, &pos, &key, &value)) {
-				if (PyTuple_Check(value)) {
-					int i, n = PyTuple_GET_SIZE(value);
-					for (i = 0; i < n && PyTuple_GET_ITEM(value, i) != cur; i++) {
-					}
-					if (i < n) {
-						Script_Defer(&later, key, value);
-					}
-				}
-			}
-			Script_SetDeferred(dict, later);
-			PyDict_SetItemString(dict, m->ml_name, cur);
-		} else {
-			PyDict_SetItemString(dict, m->ml_name, f);
+			Script_ReplaySet(dict, m->ml_name, cur);
+			continue;
 		}
-		Py_DECREF(f);
+		PyObject *f = Script_CheckFunction(m, NULL, PyModule_GetName(module));
+		if (f) {
+			PyDict_SetItemString(dict, m->ml_name, f);
+			Py_DECREF(f);
+		}
 	}
 }
 
-void Script_ModuleExtras(const char *name, PyObject *module) {
+void Script_ReplaySet(PyObject *dict, const char *name, PyObject *cur) {
+	PyObject *key = PyString_FromString(name);
+	Py_INCREF(cur);
+	if (key) {
+		Script_ReplaceRefs(dict, key, cur, cur);
+		Py_DECREF(key);
+	}
+	PyDict_SetItemString(dict, (char *)name, cur);
+	Py_DECREF(cur);
+}
+
+void Script_ModuleExtras(const char *name, PyObject *module, PyObject *defs) {
 	for (size_t i = 0; i < sizeof(script_modules) / sizeof(script_modules[0]); i++) {
 		if (!strcmp(script_modules[i].name, name)) {
 			Script_TableReplay(module, script_modules[i].methods);
 		}
 	}
-	Script_LevelModuleExtras(name, module);
+	Script_LevelModuleExtras(name, module, defs);
 }
 
 void Script_ModuleLoaded(const char *name, PyObject *module) {
