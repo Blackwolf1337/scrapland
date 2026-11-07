@@ -43,7 +43,7 @@ _SNDM = ('WaySound', 'WayVolume', 'EneWaySound', 'EneWayVolume', 'PhotoSound', '
 	'HologramLoopVolume', 'ShipEditLoadShipSound', 'ShipEditLoadShipVolume', 'ShipEditLoadWeaponSound', 'ShipEditLoadWeaponVolume',
 	'ShipEditLoadEngineSound', 'ShipEditLoadEngineVolume', 'ShipEditUnLoadSound', 'ShipEditUnLoadVolume', 'FlashSound')
 _gvq = lambda vs: map(lambda v: (v, tc_try(lambda: _tcr(Scrap.Get(v), 4), (), '?')), vs)
-_take = lambda: tc_sorted(Sound.ItemTake.items())
+_take = lambda: (map(__import__, ('Sound',)), tc_sorted(Sound.ItemTake.items()))[1]
 _recall = lambda calls: (map(lambda n: _rec(n[0], n[1]), calls), None)[1]
 # a recorder that also runs the real function (for calls whose effect the case reads back)
 _Keep = lambda name, fn: tc_obj(__name__ + '._Keep', {'name': name, 'fn': fn},
@@ -69,11 +69,11 @@ _FakeEnt = lambda name: (lambda o: (setattr(o, '__repr__', lambda: 'Ent' + `filt
 _MakeEnt = lambda name: (lambda made: tc_obj(__name__ + '._MakeEnt', {'name': name, 'made': made},
 	lambda *a: (_calls.append((name, a)), (lambda e: (made.append(e), e)[1])(_FakeEnt(a[0])))[1]))([])
 # a ship with the model (OutTraffic models with out=1)
-_model = lambda name, model, out=0: (lambda prev: (lambda v: (v.SetModel(model), out and Scrap.Set('ShipPathFmt', prev), v.Model)[2])(
+_model = lambda name, model, out=0: (map(__import__, ('Traffic',)), (lambda prev: (lambda v: (v.SetModel(model), out and Scrap.Set('ShipPathFmt', prev), v.Model)[2])(
 	Scrap.GetEntity(name) or Scrap.CreateEntity(name, 1000.0, 50000.0, 1000.0, 'Car')))(
-	out and (lambda p: (Scrap.Set('ShipPathFmt', Traffic.Path + '%s.m3d'), p)[1])(Scrap.Get('ShipPathFmt')) or None)
-_vs = lambda model, out=0, tag='': (lambda n: (_model(n, model, out), (lambda r: (model, r, _allsnd(n)))(OutSound.SetVehicleSounds(n)))[1])(
-	'SndT' + tag + model)
+	out and (lambda p: (Scrap.Set('ShipPathFmt', Traffic.Path + '%s.m3d'), p)[1])(Scrap.Get('ShipPathFmt')) or None))[1]
+_vs = lambda model, out=0, tag='': (map(__import__, ('OutSound',)), (lambda n: (_model(n, model, out), (lambda r: (model, r, _allsnd(n)))(OutSound.SetVehicleSounds(n)))[1])(
+	'SndT' + tag + model))[1]
 # f(*a, **kw), or the exception it raised
 _t = lambda f, *a, **kw: tc_catch(f, a, kw, lambda t, v: ('raised', str(t), str(v)))
 # f(*a, **kw) with the sound pack open (as the loading function that calls it has it): (result, calls)

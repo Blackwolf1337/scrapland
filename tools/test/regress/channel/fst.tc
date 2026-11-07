@@ -10,7 +10,7 @@ Init._gv = _gv
 Init._mod = _mod
 Init._cls = _cls
 # the names of an entity list in a sphere, sorted, through Scrap.SphereCall and a collector function Init.<hook>
-_tccoll = lambda hook, lst, r=300000.0: (lambda n: (setattr(Init, hook, lambda x: n.append(x)),
+_tccoll = lambda hook, lst, r=300000.0: (lambda n: (setattr(__import__('Init'), hook, lambda x: n.append(x)),
 	Scrap.SphereCall(0.0, 0.0, 0.0, r, lst, 'Init.' + hook), n.sort(), n)[3])([])
 _items = lambda: _tccoll('_itemcollect', 'i')
 Init._items = _items

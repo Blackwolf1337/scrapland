@@ -36,4 +36,4 @@ _fent = lambda names: map(lambda n: (lambda e: [n] + map(lambda v: tc_try(lambda
 	'TgType', 'Descriptor', 'UsrControl', 'Model', 'ActCtrl')) if e else (n, None))(Scrap.GetEntity(n)), names)
 _fcfg = lambda name: (Scrap.Get('PlayerModel'), Scrap.Get('PlayerMaxLife'), name, Scrap.Get('PilotModel'), Scrap.Get('Motor0Model'),
 	Scrap.Get('Motor1Model'), Scrap.Get('Motor2Model'), Scrap.Get('Motor3Model'), Scrap.Get('WeaponBayList'), 0)
-_fgfs = lambda: (setattr(__import__('OutMap'), 'SpawRes', 'net256'), ((100.0, 200.0, 300.0), 45.0))[1]
+_fgfs = lambda: (map(__import__, ('OutMap',)), (setattr(__import__('OutMap'), 'SpawRes', 'net256'), ((100.0, 200.0, 300.0), 45.0))[1])[1]

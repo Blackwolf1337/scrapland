@@ -29,12 +29,13 @@ def next_seq(game):
         return int(time.time()) % 100000
 
 
-def write(game, body, seq=None):
-    """writes the command file (through a temporary file and a rename); its number"""
+def write(game, body, seq=None, pace=None):
+    """writes the command file (through a temporary file and a rename); its number. pace: the game runs it only after
+    that many seconds of game time since its last answer (as the old harness answered every 0.1 s of game time)"""
     seq = next_seq(game) if seq is None else seq
     tmp = os.path.join(game, TMP)
     with open(tmp, 'w', newline='\n') as f:
-        f.write('%d\n%s\n' % (seq, body))
+        f.write('%d%s\n%s\n' % (seq, ' pace=%g' % pace if pace else '', body))
     os.replace(tmp, os.path.join(game, CMD))
     return seq
 
@@ -59,9 +60,9 @@ def answer(game, seq, timeout=10.0, alive=None, poll=0.01):
     raise NoAnswer('no answer from the game in %s in %.0f s' % (game, timeout))
 
 
-def send(game, body, timeout=10.0, seq=None, alive=None, poll=0.01):
+def send(game, body, timeout=10.0, seq=None, alive=None, poll=0.01, pace=None):
     """runs body (one or more command lines, or "py\\n<code>") in the game; the answers"""
-    return answer(game, write(game, body, seq), timeout, alive, poll)
+    return answer(game, write(game, body, seq, pace), timeout, alive, poll)
 
 
 def wait_ready(game, timeout=120.0, alive=None):

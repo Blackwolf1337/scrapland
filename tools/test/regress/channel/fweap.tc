@@ -17,9 +17,9 @@ _recn = lambda n: tc_obj(__name__ + '._recn', {'n': n}, lambda *a: (_r.append((n
 _t = lambda f, *a: (lambda r: (Scrap.SetTimeSpeed(1), r)[1])(tc_catch(f, a, None, lambda t, v: 'error: %s: %s' % (t, v)))
 _sync = lambda f, *a: (lambda v: (v, map(lambda c: c[0], _r), _r))((tc_set(__globals__, '_r', []), apply(f, a))[1])
 _items = lambda id, names, attrs: map(lambda n: tuple([n] + map(lambda a: tc_try(SScorer.Get, (id, n, a), '?'), attrs)), names)
-_split = lambda: (Split.PlayersReady, Split.MortalProfiles, Split.Scorer, Split.FirstTime, Split.ModLib.__name__,
+_split = lambda: (map(__import__, ('Split',)), (Split.PlayersReady, Split.MortalProfiles, Split.Scorer, Split.FirstTime, Split.ModLib.__name__,
 	_fn(__import__('Vehicles').OnDeathCallback), _fn(Split.FuncGetSpawnPos), _fn(Split.FuncGetReSpawnPos), _fn(Split.OnDeathFunc),
-	Scrap.Get('EscapeEvent'), __import__('SInput').GetActionSet())
+	Scrap.Get('EscapeEvent'), __import__('SInput').GetActionSet()))[1]
 _obj = lambda o: (lambda d: map(lambda k: (k, d[k]), tc_sorted(d.keys())))(o.__dict__)
-_std = lambda: (lambda d: map(lambda k: (k, d[k]), tc_sorted(d.keys())))(VehiclesNPC.StdShips)
+_std = lambda: (map(__import__, ('VehiclesNPC',)), (lambda d: map(lambda k: (k, d[k]), tc_sorted(d.keys())))(VehiclesNPC.StdShips))[1]
 _fakemake = lambda *a: (_r.append(('MakeAI',) + a), tc_obj(__name__ + '._Fake', {'args': a}))[1]

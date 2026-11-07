@@ -30,8 +30,8 @@ _usr = lambda: (lambda u: u and _v(u.Name, ('ActCtrl', 'Model', 'MPil0', 'UsrCon
 # a function that stops the game clock (Menu.InitMenuSys(0)), with the clock running again after it
 _wrapT = lambda f: tc_obj(__name__ + '._wrapT', {'f': f}, lambda *a: tc_finally(f, a, lambda: Scrap.SetTimeSpeed(1)))
 # a ship with the standard parts of key (Vehicles.SetStdProperties, which calls ShipMaker.SetShipParams)
-_std = lambda key, name: (lambda v: (Vehicles.SetStdProperties(v.Name, key, 'P_Police'), _v(v.Name, _SHIPV + ('AnmP0',)))[1])(
-	Scrap.GetEntity(name) or (lambda p: Scrap.CreateEntity(name, p[0] + 3000.0, p[1] + 3000.0, p[2], 'Car'))(Scrap.UsrEntity(0).Pos))
+_std = lambda key, name: (map(__import__, ('Vehicles',)), (lambda v: (Vehicles.SetStdProperties(v.Name, key, 'P_Police'), _v(v.Name, _SHIPV + ('AnmP0',)))[1])(
+	Scrap.GetEntity(name) or (lambda p: Scrap.CreateEntity(name, p[0] + 3000.0, p[1] + 3000.0, p[2], 'Car'))(Scrap.UsrEntity(0).Pos)))[1]
 # the items of the level by name (fweap replaces _items)
 _its = lambda: (lambda n: (setattr(__import__('Init'), '_itemcollect', lambda x: n.append(x)),
 	Scrap.SphereCall(0.0, 0.0, 0.0, 300000.0, 'i', 'Init._itemcollect'), n.sort(), n)[3])([])

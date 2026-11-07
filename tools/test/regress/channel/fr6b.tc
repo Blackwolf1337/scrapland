@@ -10,8 +10,8 @@ _BEV = ('ActCtrl', 'UseFunc', 'Descriptor', 'LLogicDefaultState', 'LLogicDefault
 	'LLogicIdle', 'LLogicProbTalkWhenWalking', 'LLogicKeepWorking', 'ArrowCanUse', 'ArrowCanMission', 'RadarShow', 'Money',
 	'OnObjSlot', 'Active', 'TgType', 'EntityList', 'OnDeath', 'OnDamage', 'Life', 'MaxLife', 'ArrnOpt', 'ArrOpt0', 'DefLoop')
 _bent = lambda names, vs=_BEV: _sdent(names, vs)
-_bres = lambda: (lambda r: map(lambda k: (k, r[k].ActCtrl, _sdn(getattr(r[k], 'CallbackFunc', '-')),
-	_sdn(getattr(r[k], 'DancePos', '-'))), tc_sorted(r.keys())))(CharsNPC.CharRes)
+_bres = lambda: (map(__import__, ('CharsNPC',)), (lambda r: map(lambda k: (k, r[k].ActCtrl, _sdn(getattr(r[k], 'CallbackFunc', '-')),
+	_sdn(getattr(r[k], 'DancePos', '-'))), tc_sorted(r.keys())))(CharsNPC.CharRes))[1]
 _BHOOKS = (('Speech', 'OnEndOfSpeech'), ('Speech', 'OnEndOfSpeechParams'), ('Speech', 'PlayerName'), ('Speech', 'NPCName'),
 	('Speech', 'OnOutOfRange'), ('Alarm', 'TempAbortMissionCallback'), ('Alarm', 'TempRestoreMissionCallback'),
 	('DTritusDesktop', 'DialogController'), ('Menu', 'MissionScorerCall'), ('Scene', 'EndOfSceneCallback'),
@@ -21,7 +21,7 @@ _BHOOKS = (('Speech', 'OnEndOfSpeech'), ('Speech', 'OnEndOfSpeechParams'), ('Spe
 _tchooks = lambda pairs: map(lambda p: (p[0], p[1], _sdn(getattr(sys.modules[p[0]], p[1], '-')))
 	if sys.modules.has_key(p[0]) else (p[0], p[1], '-'), pairs)
 _bhooks = lambda: _tchooks(_BHOOKS)
-_broutines = lambda: (lambda r: map(lambda k: (k, _sdn(r[k])), tc_sorted(r.keys())))(Speech.SpeechRoutines)
+_broutines = lambda: (map(__import__, ('Speech',)), (lambda r: map(lambda k: (k, _sdn(r[k])), tc_sorted(r.keys())))(Speech.SpeechRoutines))[1]
 # recorders for the calls with effects that need AI timing, load levels or play scenes; the originals come back with
 # _broff() before a level load
 _BREC = ('Speech.AddRemoteCom', ('Speech.OnSpch', 1), 'Speech.NISpeech', 'Speech.AutoAddNI', 'Speech.RunNI', 'Speech.StdAnsLst',
@@ -45,7 +45,7 @@ _BSCEN = ('Scene.Load', 'Scene.AddGeneric', 'Scene.AddText', 'Scene.ActorAction'
 	'Scene.AddCharActor', 'Scene.AddLocalActor', 'Scene.CreateLocalAction', 'Scene.SetDefSounds', 'MakeChar.CreateRelaxAction',
 	'SAct.SetCls', 'SAct.SetAct', ('SAct.GetAct', 1.5), 'SAct.GetClass', 'SAct.CreateAction', 'Scrap.SetDebrisSys')
 # the name of the current mission target
-_btarget = lambda: (lambda t: t if type(t) == type('') else getattr(t, 'Name', t))(MissionsFuncs.currentTarget)
+_btarget = lambda: (map(__import__, ('MissionsFuncs',)), (lambda t: t if type(t) == type('') else getattr(t, 'Name', t))(MissionsFuncs.currentTarget))[1]
 _bposv = [None]
 _bsave = lambda: (tc_set(_bposv, 0, Scrap.UsrEntity(0).Pos), 1)[1]
 _bback = lambda: (setattr(Scrap.UsrEntity(0), 'Pos', _bposv[0]), 1)[1]

@@ -133,7 +133,8 @@ def _python(self, code, timeout=10.0):
 		raise RuntimeError('game %s does not run' % self.name)
 	if self.opts.get('harness') == 'channel':
 		try:
-			return scrap_mcp.channel.send(self.game, code, timeout=timeout, alive=self.running)
+			# paced as the old harness answered: every line at least 0.1 s of game time after the one before
+			return scrap_mcp.channel.send(self.game, code, timeout=timeout, alive=self.running, pace=0.1)
 		except scrap_mcp.channel.NoAnswer:
 			raise RuntimeError('no answer from game %s in %.0f s' % (self.name, timeout))
 	self.seq += 1
@@ -299,8 +300,8 @@ class Lane:
 			   'hash': case_hash(case), 'date': time.strftime('%Y-%m-%d %H:%M:%S'), 'blocks': [], 'status': 'ok'}
 		try:
 			opts = {'name': self.tag, 'exe': self.exe, 'map': 'Levels/' + level, 'env': env, 'timeout': 2400}
-			if HARNESS != 'python':
-				opts['harness'] = HARNESS
+			# scrap_mcp picks the channel for a build that has it: the harness is always named
+			opts['harness'] = HARNESS
 			g.start(opts)
 			if HARNESS == 'python':
 				copy_helpers(g.game)

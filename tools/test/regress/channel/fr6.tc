@@ -14,8 +14,8 @@ _R6HOOKS = (('Speech', 'OnEndOfSpeech'), ('Speech', 'OnEndOfSpeechParams'), ('Sp
 _tchooks = lambda pairs: map(lambda p: (p[0], p[1], _sdn(getattr(sys.modules[p[0]], p[1], '-')))
 	if sys.modules.has_key(p[0]) else (p[0], p[1], '-'), pairs)
 _r6hooks = lambda: _tchooks(_R6HOOKS)
-_r6res = lambda: (lambda r: map(lambda k: (k, r[k].ActCtrl, _sdn(getattr(r[k], 'CallbackFunc', '-')),
-	_sdn(getattr(r[k], 'Pos', '-'))), tc_sorted(r.keys())))(CharsNPC.CharRes)
+_r6res = lambda: (map(__import__, ('CharsNPC',)), (lambda r: map(lambda k: (k, r[k].ActCtrl, _sdn(getattr(r[k], 'CallbackFunc', '-')),
+	_sdn(getattr(r[k], 'Pos', '-'))), tc_sorted(r.keys())))(CharsNPC.CharRes))[1]
 _r6sv = lambda names: map(lambda n: (n, Scrap.GetSaveVar(n)), names)
 _r6gv = lambda names: map(lambda n: (n, tc_try(Scrap.Get, (n,), '?')), names)
 _R6EV = ('ActCtrl', 'UseFunc', 'Descriptor', 'LLogicDefaultState', 'LLogicDefaultTarget', 'LLogicState', 'LLogicTarget',
@@ -26,7 +26,7 @@ _r6ent = lambda names, vs=_R6EV: _sdent(names, vs)
 _tcfn = lambda m: (lambda d: map(lambda n: (n, 'C' if type(d[n]) == type(len) else 'py'),
 	filter(lambda n: type(d[n]) == type(len) or type(d[n]).__name__ == 'function', tc_sorted(d.keys()))))(sys.modules[m].__dict__)
 _r6fn = _tcfn
-_r6on = lambda: (map(lambda n: setattr(Speech, n, _sdrec(n)), ('AddRemoteCom', 'OnSpch', 'NISpeech', 'AutoAddNI', 'AddNI',
+_r6on = lambda: (map(__import__, ('Speech', 'SaveGame', 'RaceMaker', 'CharsNPC', 'Scene', 'Menu', 'MissionsFuncs', 'Elevator', 'CharConversor')), (map(lambda n: setattr(Speech, n, _sdrec(n)), ('AddRemoteCom', 'OnSpch', 'NISpeech', 'AutoAddNI', 'AddNI',
 		'RunNI', 'StdAnsLst', 'RestoreState', 'OnObjSpch', 'AutoSpeech', 'ForceRemoteCom')),
 	setattr(Speech, 'RemoteComunication', _sdrec('RemoteComunication', 1)),
 	setattr(Speech, 'SpeechRoutines', {'Police': _sdrec('Routine.Police'), 'PoliceBoss': _sdrec('Routine.PoliceBoss')}),
@@ -38,7 +38,7 @@ _r6on = lambda: (map(lambda n: setattr(Speech, n, _sdrec(n)), ('AddRemoteCom', '
 	setattr(Menu, 'ShowWarning', _sdrec('ShowWarning')),
 	setattr(Elevator, 'UseElevator', _sdrec('UseElevator')),
 	setattr(CharConversor, 'ConvertChar', _sdrec('ConvertChar')),
-	setattr(MissionsFuncs, 'FinishGame', _sdrec('FinishGame')), 1)[-1]
+	setattr(MissionsFuncs, 'FinishGame', _sdrec('FinishGame')), 1)[-1])[1]
 # Scrap.CreateEntity recorded; the entity is made under a new name R6_<n>_<name>
 _r6ce = lambda real: (lambda c: tc_obj(__name__ + '._r6ce', {'n': 0, 'real': real},
 	lambda *a: (_sdr.append(('CreateEntity',) + _sdn(a)), tc_set(c, 0, c[0] + 1),

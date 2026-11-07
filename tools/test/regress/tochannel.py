@@ -123,16 +123,16 @@ EXEC = {
 	"\t\tc = CharsNPC.CharRes[n]\n\t\tr.append((n, c.Name, c.ActCtrl, c.Pos, c.Ang, c.repos, len(c.CallbackFunc), "
 	"c.__class__.__name__))\n\treturn r\nimport Init\nInit._res = _res": [
 		"_res = lambda: (lambda R: map(lambda n: (lambda c: (n, c.Name, c.ActCtrl, c.Pos, c.Ang, c.repos, len(c.CallbackFunc), "
-		"c.__class__.__name__))(R[n]), tc_sorted(R.keys())))(CharsNPC.CharRes)",
+		"c.__class__.__name__))(R[n]), tc_sorted(R.keys())))(__import__('CharsNPC').CharRes)",
 		"import Init",
 		"Init._res = _res"],
 	"def _npcs():\n\timport CharsNPC, Init\n\tk = CharsNPC.CharRes.keys()\n\tk.sort()\n\tr = []\n\tfor n in k:\n"
 	"\t\tif Scrap.GetEntity(n): r.append((n, Init._ent(n, ('ActCtrl','Money','MoneyReward','Life','PrevLife','ArrOpt0',"
 	"'ArrnOpt','UseFunc','ViewFunc','AI_Repos','ArrowCanUse','ArrowCanView','EntityList','Descriptor','LLogicIdle',"
 	"'Invulnerable','MoveTime','MoveViewAng'))))\n\treturn r\nimport Init\nInit._npcs = _npcs": [
-		"_npcs = lambda: map(lambda n: (n, Init._ent(n, ('ActCtrl','Money','MoneyReward','Life','PrevLife','ArrOpt0','ArrnOpt',"
+		"_npcs = lambda: (map(__import__, ('CharsNPC', 'Init')), map(lambda n: (n, Init._ent(n, ('ActCtrl','Money','MoneyReward','Life','PrevLife','ArrOpt0','ArrnOpt',"
 		"'UseFunc','ViewFunc','AI_Repos','ArrowCanUse','ArrowCanView','EntityList','Descriptor','LLogicIdle','Invulnerable',"
-		"'MoveTime','MoveViewAng'))), filter(lambda n: Scrap.GetEntity(n), tc_sorted(CharsNPC.CharRes.keys())))",
+		"'MoveTime','MoveViewAng'))), filter(lambda n: Scrap.GetEntity(n), tc_sorted(CharsNPC.CharRes.keys()))))[1]",
 		"import Init",
 		"Init._npcs = _npcs"],
 	"def _sp(n):\n\timport Init\n\treturn (Init._mod('Speech', ('PlayerName','NPCName','AnsAnima','NPCAnswer','OnEndOfSpeech')), "
@@ -162,7 +162,8 @@ EXEC = {
 	# fc-r8r-sg (in I.__dict__)
 	"def _set(n, v):\n\timport Init\n\tif n in ('PlayVideo', 'ForceReload'):\n\t\tInit._rec.append(('Set', n, v))\n\telse:\n"
 	"\t\tInit._os(n, v)\n": [
-		"_set = lambda n, v: (Init._rec.append(('Set', n, v)) if n in ('PlayVideo', 'ForceReload') else Init._os(n, v), None)[1]"],
+		"_set = lambda n, v: (lambda Init: (Init._rec.append(('Set', n, v)) if n in ('PlayVideo', 'ForceReload') else "
+		"Init._os(n, v), None)[1])(__import__('Init'))"],
 	"class _R:\n\ta = 1\n\tb = 'x'\n\tc = [1, 2.5, None]\n": [
 		"_R = tc_class(__name__ + '._R', {'a': 1, 'b': 'x', 'c': [1, 2.5, None]})"],
 }

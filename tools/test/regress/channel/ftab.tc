@@ -25,8 +25,8 @@ _tsv = ['Name','Model','AcMass','MaxLife','MinLife','Life','nSlot00','nSlot01','
 _i = 3
 _w = '05'
 _s = 'D'
-_tship = lambda: (lambda s: None if s is None else map(lambda v: (v, tc_try(lambda: (lambda x: round(x, 3) if type(x) == type(0.0)
-	else x)(getattr(s, v)), (), '?')), _tsv))(HangarTab.prevShip)
+_tship = lambda: (map(__import__, ('HangarTab',)), (lambda s: None if s is None else map(lambda v: (v, tc_try(lambda: (lambda x: round(x, 3) if type(x) == type(0.0)
+	else x)(getattr(s, v)), (), '?')), _tsv))(HangarTab.prevShip))[1]
 _thv = lambda: [Scrap.GetMoney()] + map(lambda v: (v, Scrap.GetSaveVar(v)), ('Hangar.iHangarShip', 'Hangar.DestroyedShips',
 	'Hangar.availableEnginesList')) + map(lambda i: Scrap.GetSaveVar('Hangar.HangarShip%d' % i), range(1, 10)) + [
 	Scrap.GetSaveVar('Hangar.HangarShipAux')]

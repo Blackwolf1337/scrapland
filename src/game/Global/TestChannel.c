@@ -5,7 +5,8 @@
  *
  * Once a frame (at the start of CApp_FrameRun, also while the world clock stands or the window is in the background;
  * a command file that is there before the first frame runs while the clock is still at 0) the game reads the first
- * line of test_cmd.txt, a number. A number it has not seen runs the rest of the file and writes the answers to
+ * line of test_cmd.txt, a number (optionally followed by " pace=<seconds>": the file waits until that much game time
+ * has passed since the last answer, as the old harness polled every 0.1 s of game time). A number it has not seen runs the rest of the file and writes the answers to
  * test_reply.txt as "<number>\n<answers>\n.end\n" (written to test_reply.tmp, then renamed). The tool writes the
  * command file the same way, so neither side sees a file half written. Nothing waits: no file, the same number or a
  * file that cannot be read is a frame without work.
@@ -52,6 +53,7 @@
 #include "scrap/pyfunction.h"
 #include "scrap/scorer.h"
 #include "scrap/script.h"
+#include "scrap/timer.h"
 #include "scrap/world.h"
 #include "testchannel.h"
 
@@ -68,6 +70,9 @@
 static byte tc_on;
 static byte tc_started;
 static long tc_seq = -1;
+static double tc_answerTime;	/* game time of the last answer (pace=) */
+static double tc_paceLast;		/* game time of the frame before */
+static int tc_paceStill;		/* frames the game clock stood while a paced command waited */
 
 /* ---- the answer: a growing text ---- */
 
@@ -979,10 +984,15 @@ static void TC_Run(tcBuf *b, char *body) {
 /* ---- the files ---- */
 
 /* the number on the first line of a file; -1 when there is none */
-static long TC_FileSeq(const char *name) {
-	char head[0x20];
+/* the number on the first line of a file; -1 when there is none. pace (may be NULL): the seconds of "pace=<s>" after
+ * the number, else 0 */
+static long TC_FileSeq(const char *name, double *pace) {
+	char head[0x40];
 	void *f = crt_fopen(name, "rb");
 
+	if (pace) {
+		*pace = 0.0;
+	}
 	if (!f) {
 		return -1;
 	}
@@ -991,6 +1001,9 @@ static long TC_FileSeq(const char *name) {
 	head[n] = 0;
 	char *end;
 	long seq = strtol(head, &end, 10);
+	if (end > head && pace && !strncmp(end, " pace=", 6)) {
+		*pace = strtod(end + 6, &end);
+	}
 	return end > head && (*end == '\n' || *end == '\r') ? seq : -1;
 }
 
@@ -1062,14 +1075,26 @@ void TestChannel_Frame(double now) {
 			return;
 		}
 		/* the answer of a run before this start (the same game folder) is not run again */
-		tc_seq = TC_FileSeq(TC_REPLY);
+		tc_seq = TC_FileSeq(TC_REPLY, NULL);
 		Con_Printf("Test channel on: %s\n", TC_CMD);
 	}
 	if (!tc_on) {
 		return;
 	}
-	long seq = TC_FileSeq(TC_CMD);
+	double pace;
+	long seq = TC_FileSeq(TC_CMD, &pace);
 	if (seq < 0 || seq == tc_seq) {
+		return;
+	}
+	/* "pace=<s>": not before s seconds of game time after the last answer, as the polling script function of the old
+	 * harness answered (mcpgame.py looked every 0.1 s of game time); at once after a level load (the clock starts
+	 * over) or when the clock stood for 60 frames */
+	double gt = g_pWorld ? (double)Timer_GetTime(&g_pWorld->timer) : 0.0;
+	if (gt != tc_paceLast) {
+		tc_paceStill = 0;
+	}
+	tc_paceLast = gt;
+	if (pace > 0.0 && gt >= tc_answerTime && gt < tc_answerTime + pace && ++tc_paceStill < 60) {
 		return;
 	}
 	char *text = TC_ReadFile(TC_CMD);
@@ -1082,6 +1107,7 @@ void TestChannel_Frame(double now) {
 	tc_seq = seq;
 	TC_Run(&b, nl + 1);
 	TC_WriteReply(seq, &b);
+	tc_answerTime = g_pWorld ? (double)Timer_GetTime(&g_pWorld->timer) : 0.0;
 	Mem_Free(b.p);
 	Mem_Free(text);
 }
