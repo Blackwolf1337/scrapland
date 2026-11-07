@@ -1052,6 +1052,49 @@ byte Native_Upper(const nativeVal_t *in, nativeVal_t *out) {
 	return 1;
 }
 
+byte Native_Split(const nativeVal_t *s, const char *sep, nativeVal_t *out) {
+	/* strop.split ("t#|z#i": any text, 0 bytes too; maxsplit 0) */
+	if (s->type != NV_STR) {
+		return Native_Raise(NE_TYPE, "argument 1: expected read-only character buffer, %s found", Native_TypeName(s));
+	}
+	const char *t = Native_Text(s);
+	int len = s->n, i = 0, j = 0;
+	nativeVal_t list;
+	Native_SetEmpty(&list, NV_LIST);
+	if (!sep) {
+		/* split_whitespace */
+		while (i < len) {
+			while (i < len && isspace((unsigned char)t[i])) {
+				i++;
+			}
+			j = i;
+			while (i < len && !isspace((unsigned char)t[i])) {
+				i++;
+			}
+			if (j < i) {
+				Native_SetText(Native_Append(&list), t + j, i - j);
+			}
+		}
+		*out = list;
+		return 1;
+	}
+	int n = (int)strlen(sep);
+	if (!n) {
+		return Native_Raise(NE_VALUE, "empty separator");
+	}
+	while (i + n <= len) {
+		if (t[i] == sep[0] && (n == 1 || !memcmp(t + i, sep, (size_t)n))) {
+			Native_SetText(Native_Append(&list), t + j, i - j);
+			i = j = i + n;
+		} else {
+			i++;
+		}
+	}
+	Native_SetText(Native_Append(&list), t + j, len - j);
+	*out = list;
+	return 1;
+}
+
 byte Native_EvalText(const char *module, const nativeVal_t *text, nativeVal_t *out) {
 	/* Script_EvalValue: the checks of builtin eval, then the literal after the leading blanks */
 	if (text->type != NV_STR) {
@@ -1404,6 +1447,50 @@ static void Native_Join(nativeType_t type, const nativeVal_t *a, const nativeVal
 	*out = r;
 }
 
+/* |x| + |y| or |x| - |y| (|x| >= |y|) of decimal digit texts into r (the digits reversed, their count back) */
+static int Native_DigitsOp(const char *x, int nx, const char *y, int ny, byte sub, char *r) {
+	int carry = 0, n = 0;
+	for (int i = 0; i < nx || i < ny || carry; i++) {
+		int d = (i < nx ? x[nx - 1 - i] - '0' : 0) + (sub ? -1 : 1) * (i < ny ? y[ny - 1 - i] - '0' : 0) + carry;
+		carry = d < 0 ? -1 : d > 9;
+		r[n++] = (char)('0' + (d < 0 ? d + 10 : d % 10));
+	}
+	while (n > 1 && r[n - 1] == '0') {
+		n--;
+	}
+	return n;
+}
+
+/* a + b or a - b of two long int texts into a long int (long_add, long_sub) */
+static void Native_LongAdd(const char *a, const char *b, byte sub, nativeVal_t *out) {
+	byte na = *a == '-', nb = (*b == '-') != sub;
+	a += *a == '-';
+	b += *b == '-';
+	int la = (int)strlen(a), lb = (int)strlen(b);
+	char *r = Mem_Alloc((uint32_t)(la + lb + 3)), *t = Mem_Alloc((uint32_t)(la + lb + 3));
+	int n;
+	byte neg;
+	if (na == nb) {
+		n = Native_DigitsOp(a, la, b, lb, 0, r);
+		neg = na;
+	} else {
+		/* the larger magnitude minus the smaller, with its sign */
+		int c = la != lb ? (la < lb ? -1 : 1) : strcmp(a, b);
+		n = c >= 0 ? Native_DigitsOp(a, la, b, lb, 1, r) : Native_DigitsOp(b, lb, a, la, 1, r);
+		neg = c >= 0 ? na : nb;
+	}
+	int k = 0;
+	if (neg && !(n == 1 && r[0] == '0')) {
+		t[k++] = '-';
+	}
+	while (n > 0) {
+		t[k++] = r[--n];
+	}
+	Native_SetLong(out, t, k);
+	Mem_Free(r);
+	Mem_Free(t);
+}
+
 byte Native_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
 	byte sa = Native_SeqType(a);
 	if (op == '%' && a->type == NV_STR) {
@@ -1465,7 +1552,14 @@ byte Native_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal
 		return Native_FloatOp(op, x, y, out);
 	}
 	if (a->type == NV_LONG || b->type == NV_LONG) {
-		/* the native values have no long int arithmetic (no script makes long ints) */
+		if (op == '+' || op == '-') {
+			char ta[0x20], tb[0x20];
+			snprintf(ta, sizeof(ta), "%ld", a->i);
+			snprintf(tb, sizeof(tb), "%ld", b->i);
+			Native_LongAdd(a->type == NV_LONG ? Native_Text(a) : ta, b->type == NV_LONG ? Native_Text(b) : tb, op == '-', out);
+			return 1;
+		}
+		/* the native values multiply and divide no long ints (no script makes long ints) */
 		return Native_Raise(NE_TYPE, "long int %s: not done on native values", Native_OpName(op));
 	}
 	return Native_IntOp(op, a->i, b->i, out);
@@ -2203,6 +2297,14 @@ static byte Native_CallV(PyObject *callable, nativeVal_t *out, const char *fmt, 
 		Native_Raise(NE_TYPE, "%s returned a value native C does not take", r->ob_type->tp_name);
 	Py_DECREF(r);
 	return ok;
+}
+
+PyObject *Native_CallObj(PyObject *callable, const char *fmt, ...) {
+	va_list va;
+	va_start(va, fmt);
+	PyObject *args = Native_Args(fmt, va);
+	va_end(va);
+	return args ? Script_Invoke(callable, args) : NULL;
 }
 
 byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...) {

@@ -143,7 +143,8 @@ byte Native_Literal(const char *s, nativeVal_t *out);
  * The operators and built-in conversions of Python 1.5.2 on native values, with the errors of Objects/ (the TypeError
  * of a type that does not take the operation, OverflowError, ZeroDivisionError, IndexError, KeyError). Each returns
  * 1 with *out made (Native_Free it), else 0 with the error raised. A vector is a tuple of three floats in all of
- * them. Long ints compare, convert and format, but take no arithmetic (a TypeError of its own: no script makes them).
+ * them. Long ints compare, convert, format, add and subtract, but do not multiply or divide (a TypeError of its own:
+ * no script makes them).
  */
 
 /* a deep copy of v into *out (a dict keeps its slots: the same order) */
@@ -211,6 +212,9 @@ byte Native_ArgStr(const nativeVal_t *v, int arg, const char **out);
 /* string.upper(v) (strop.upper: islower and toupper on every byte): 1 with *out (Native_Free it), else 0 with the
  * TypeError of a value that is no text ("read-only character buffer, int") */
 byte Native_Upper(const nativeVal_t *in, nativeVal_t *out);
+/* string.split(s, sep) (strop.split: sep NULL splits at blanks): 1 with the list in *out (Native_Free it), else 0 with
+ * the TypeError of a value that is no text or the ValueError of an empty sep */
+byte Native_Split(const nativeVal_t *s, const char *sep, nativeVal_t *out);
 /* the number of argument v of an engine function as its "d" or "f" reads it: 1 with *out, else 0 with the TypeError
  * of PyFloat_AsDouble ("illegal argument type for built-in operation") */
 byte Native_ArgDouble(const nativeVal_t *v, double *out);
@@ -274,6 +278,8 @@ int Native_Seam(const char *module, const char *name, PyObject **hook);
  * TypeError. 0 with the error of the call.
  */
 byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...);
+/* the same with the result as it is (a new reference, NULL with the error): an entity handle or another object */
+PyObject *Native_CallObj(PyObject *callable, const char *fmt, ...);
 /* the same with a new reference (a hook of Native_Seam) that the call takes over */
 byte Native_HookCall(PyObject *hook, nativeVal_t *out, const char *fmt, ...);
 /* module.name(...) through the module attribute (an AttributeError when it is not there) */
