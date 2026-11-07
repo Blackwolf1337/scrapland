@@ -695,16 +695,6 @@ byte LvN_ModAppend(const char *module, const char *var, const nativeVal_t *v) {
 	return LvN_ModMethod(module, var, "append", v);
 }
 
-byte LvN_ModAppendG(const char *module, const char *var, const char *gmod, const char *name) {
-	PyObject *o = Script_Attr(module, var);
-	PyObject *fn = o ? Mode_GlobalPy(gmod, name) : NULL;
-	PyObject *r = fn ? Script_Method(o, "append", "(O)", fn) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(fn);
-	Py_XDECREF(o);
-	return r != NULL;
-}
-
 byte LvN_GObj(const char *module, const char *name, nativeVal_t *out) {
 	PyObject *o = Mode_GlobalPy(module, name);
 	Native_SetNone(out);
@@ -1295,18 +1285,6 @@ byte LvN_ModSetI(const char *module, const char *var, long i) {
 	nativeVal_t v;
 	Native_SetInt(&v, i);
 	return Mode_SetModVar(module, var, &v);
-}
-
-byte LvN_Set0(const char *item, const char *var, const nativeVal_t *v) {
-	nativeVal_t id;
-	Native_SetInt(&id, 0);
-	return LvN_ScorerSet(&id, item, var, v);
-}
-
-byte LvN_Set0I(const char *item, const char *var, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return LvN_Set0(item, var, &v);
 }
 
 /* ---- helpers both halves of the levels had (batch F and G files) ---- */

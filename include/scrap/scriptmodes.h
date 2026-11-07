@@ -697,4 +697,11 @@ byte Mode_DelItemG(const char *module, const char *var, int i);
 /* `if module.var:` of a variable of another module (any object, read as its attribute): 1, 0, -1 with the error */
 int Mode_ModTrue(const char *module, const char *var);
 
+/* module.var.append(gmod.name), the list changed in place */
+byte Mode_AppendG(const char *module, const char *var, const char *gmod, const char *name);
+
+/* SScorer.Set(0, item, var, v), and with an int */
+byte Mode_Set0(const char *item, const char *var, const nativeVal_t *v);
+byte Mode_Set0I(const char *item, const char *var, long i);
+
 #endif

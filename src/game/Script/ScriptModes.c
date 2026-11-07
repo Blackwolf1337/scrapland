@@ -3451,3 +3451,32 @@ int Mode_ModTrue(const char *module, const char *var) {
 	Native_Free(&v);
 	return r;
 }
+
+/* ---- shared after the merge of the level batches with batch K ---- */
+
+/* module.var.append(gmod.name): a function appended to the list of another module in place */
+byte Mode_AppendG(const char *module, const char *var, const char *gmod, const char *name) {
+	PyObject *o = Script_Attr(module, var);
+	PyObject *fn = o ? Mode_GlobalPy(gmod, name) : NULL;
+	PyObject *r = fn ? Script_Method(o, "append", "(O)", fn) : NULL;
+	Py_XDECREF(r);
+	Py_XDECREF(fn);
+	Py_XDECREF(o);
+	return r != NULL;
+}
+
+/* SScorer.Set(0, item, var, v) */
+byte Mode_Set0(const char *item, const char *var, const nativeVal_t *v) {
+	nativeVal_t id, it;
+	Native_SetInt(&id, 0);
+	Native_SetText(&it, item, (int)strlen(item));
+	byte ok = Mode_ScorerSet(&id, &it, var, v);
+	Native_Free(&it);
+	return ok;
+}
+
+byte Mode_Set0I(const char *item, const char *var, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return Mode_Set0(item, var, &v);
+}

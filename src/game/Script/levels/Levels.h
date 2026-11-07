@@ -129,7 +129,7 @@ byte LvN_ModMethod(const char *module, const char *var, const char *method, cons
 byte LvN_ModAppend(const char *module, const char *var, const nativeVal_t *v);
 /* module.var.append(name) with name the global of gmod (a function): the variable, then the global, then the append
  * method of whatever value is there (OBJLIB 5: the list of another module in place) */
-byte LvN_ModAppendG(const char *module, const char *var, const char *gmod, const char *name);
+#define LvN_ModAppendG Mode_AppendG
 /* the global name of module (a function, a list: any object) as a value */
 byte LvN_GObj(const char *module, const char *name, nativeVal_t *out);
 /* global name = name + add of the module; the new value into out (NULL: dropped) */
@@ -196,8 +196,8 @@ byte LvN_ScorerTextEnd(const nativeVal_t *id, const char *item);
 byte LvN_ScorerSet(const nativeVal_t *id, const char *item, const char *var, const nativeVal_t *v);
 byte LvN_ScorerSetS(const nativeVal_t *id, const char *item, const char *var, const char *s);
 /* SScorer.Set(0, item, var, v) and the same with an int */
-byte LvN_Set0(const char *item, const char *var, const nativeVal_t *v);
-byte LvN_Set0I(const char *item, const char *var, long i);
+#define LvN_Set0 Mode_Set0
+#define LvN_Set0I Mode_Set0I
 /* module.var = i of another module */
 byte LvN_ModSetI(const char *module, const char *var, long i);
 /* e.Life = e.MaxLife = the global life of module */
