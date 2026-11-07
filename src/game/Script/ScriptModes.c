@@ -26,6 +26,7 @@
 #include "scrap/scriptmodes.h"
 #include "scrap/sound.h"
 #include "scrap/timer.h"
+#include "game/Script/levels/Levels.h"
 
 /* ---- the values of a function ---- */
 
@@ -1682,6 +1683,100 @@ byte Mode_GVarSetI(const char *name, long i) {
 	nativeVal_t v;
 	Native_SetInt(&v, i);
 	return Mode_GVarSet(name, &v);
+}
+
+/* ---- the native level files of batch G ---- */
+
+byte Mode_Calls(const char *module, const char *const *lines) {
+	static const char fmts[] = "vvvvvvvv";
+	for (; *lines; lines++) {
+		const char *p = *lines, *bar = strchr(p, '|');
+		char name[0x80];
+		int len = bar ? (int)(bar - p) : (int)strlen(p);
+		if (len >= (int)sizeof(name)) {
+			return Native_Raise(NE_SYSTEM, "bad call in a call table");
+		}
+		memcpy(name, p, len);
+		name[len] = 0;
+		PyObject *fn;
+		if (name[0] == '@') {
+			fn = Script_Global(module, name + 1);
+		} else {
+			char *dot = strchr(name, '.');
+			if (!dot) {
+				return Native_Raise(NE_SYSTEM, "bad call in a call table");
+			}
+			*dot = 0;
+			fn = Script_Attr(name, dot + 1);
+		}
+		if (!fn) {
+			return 0;
+		}
+		nativeVal_t v[8];
+		int n = 0;
+		byte ok = 1;
+		for (p = bar; p && n < 8 && ok; n++) {
+			const char *next = strchr(p + 1, '|');
+			ok = LvN_Value(p + 1, next ? (int)(next - p - 1) : -1, &v[n]);
+			p = next;
+		}
+		if (ok) {
+			ok = Native_HookCall(fn, NULL, fmts + 8 - n, &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7]);
+		} else {
+			Py_DECREF(fn);
+		}
+		while (n-- > 0) {
+			Native_Free(&v[n]);
+		}
+		if (!ok) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+byte Mode_SetAttrs(const nativeVal_t *o, const char *const *pairs) {
+	for (; *pairs; pairs++) {
+		const char *eq = strchr(*pairs, '=');
+		char name[0x40];
+		int len = eq ? (int)(eq - *pairs) : 0;
+		if (!eq || len >= (int)sizeof(name)) {
+			return Native_Raise(NE_SYSTEM, "bad attribute in a table");
+		}
+		memcpy(name, *pairs, len);
+		name[len] = 0;
+		nativeVal_t v;
+		byte ok = LvN_Value(eq + 1, -1, &v) && Mode_VSet(o, name, &v);
+		Native_Free(&v);
+		if (!ok) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+byte Mode_NISpeech(const char *who, const char *key) {
+	return (who ? Native_CallMod("Speech", "NISpeech", NULL, "s", who) : Native_CallMod("Speech", "NISpeech", NULL, "")) &&
+		Native_CallMod("Speech", "AutoAddNI", NULL, "s", key) && Native_CallMod("Speech", "RunNI", NULL, "");
+}
+
+byte Mode_EntSetS(const char *name, const char *var, const char *s) {
+	nativeVal_t n, v;
+	Native_SetText(&n, name, (int)strlen(name));
+	Native_SetText(&v, s, (int)strlen(s));
+	byte ok = Mode_EntSet(&n, var, &v);
+	Native_Free(&n);
+	Native_Free(&v);
+	return ok;
+}
+
+byte Mode_EntSetI(const char *name, const char *var, long i) {
+	nativeVal_t n, v;
+	Native_SetText(&n, name, (int)strlen(name));
+	Native_SetInt(&v, i);
+	byte ok = Mode_EntSet(&n, var, &v);
+	Native_Free(&n);
+	return ok;
 }
 
 /* ---- helpers of batch I (the super deals and the native level files of batch I) ---- */
