@@ -1746,7 +1746,9 @@ static byte Native_FmtNum(const nativeVal_t *v, byte asLong, long *l, double *d)
 		*d = Native_LongDouble(Native_Text(v));
 		return 1;
 	}
-	return Native_Raise(NE_TYPE, asLong ? "int argument required" : "float argument required");
+	/* PyArg_Parse "l;int argument required": PyInt_AsLong (PyFloat_AsDouble) set its own error first */
+	(void)asLong;
+	return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
 }
 
 byte Native_Format(const nativeVal_t *format, const nativeVal_t *args, nativeVal_t *out) {
