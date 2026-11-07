@@ -1,0 +1,50 @@
+# DownTown: OutMap called directly; the spawn searches with recorded TestSphere, race points, TestLine and the player
+exec(open('fsnd.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); OM = __import__('OutMap'); result = (len(OM.StartPos), OM.StartPos, OM.iStartPos, OM.__dict__.has_key('SpawRes'))
+I._gvq(I._MAPG)
+result = map(lambda i: OM.GetSpawnPos(), range(3)) + [OM.iStartPos]
+OM.iStartPos = len(OM.StartPos) - 1; result = (OM.GetSpawnPos(), OM.iStartPos)
+I.sp = OM.StartPos; OM.StartPos = []; r = I._t(OM.GetSpawnPos); OM.StartPos = I.sp; result = (r, OM.iStartPos)
+I.sp = OM.StartPos; OM.StartPos = [((1.0, 2.0, 3.0), 90)]; r = (OM.GetSpawnPos(), OM.iStartPos); OM.StartPos = I.sp; result = r
+I.x = OM.iStartPos; del OM.iStartPos; r = I._t(OM.GetSpawnPos); OM.iStartPos = I.x; result = r
+# the searches with fake engine answers: race points, sphere tests (None is free), line tests, the player
+OM.iStartPos = 0; OM.StartPos = OM.StartPos[0:4]; I._seq('SAI', 'GetNextRacePoint', [(1.0, 2.0, 3.0), None, (4.0, 5.0, 6.0)]); I._seq('Scrap', 'TestSphere', ['Traffic3', None]); I._takecalls(); r = (OM.GetFreeSpawnPosReal(), I._takecalls(), OM.iStartPos); I._restore(); result = r
+OM.iStartPos = 0; I._seq('SAI', 'GetNextRacePoint', [None]); I._seq('Scrap', 'TestSphere', ['A', 'B', None]); I._takecalls(); r = (OM.GetFreeSpawnPosReal(), I._takecalls(), OM.iStartPos, OM.SpawRes); I._restore(); result = r
+OM.iStartPos = 0; I._seq('SAI', 'GetNextRacePoint', [None]); I._seq('Scrap', 'TestSphere', ['A']); I._takecalls(); r = (OM.GetFreeSpawnPosReal(), I._takecalls(), OM.iStartPos, OM.SpawRes); I._restore(); result = r
+OM.iStartPos = 0; I._seq('Scrap', 'TestSphere', ['A', None]); I._takecalls(); r = (OM.GetFreeSpawn(), I._takecalls(), OM.iStartPos, OM.SpawRes); I._restore(); result = r
+I._seq('SAI', 'GetNextRacePoint', [0, (7.0, 8.0, 9.0)]); I._seq('Scrap', 'TestSphere', ['A', None]); I._takecalls(); r = (OM.GetNearestFreeSpawnPosReal((1.0, 1.0, 1.0)), I._takecalls()); I._restore(); result = r
+OM.iStartPos = 0; I._seq('SAI', 'GetNextRacePoint', [None]); I._seq('Scrap', 'TestSphere', ['A', 'B', 'C', 'D', None]); I._takecalls(); r = (OM.GetNearestFreeSpawnPosReal((1.0, 1.0, 1.0)), I._takecalls(), OM.iStartPos); I._restore(); result = r
+I.u = I._FakeEnt('Usr'); I.u.Pos = (0.0, 0.0, 0.0); I._seq('Scrap', 'UsrEntity', [I.u]); I._seq('SAI', 'GetNextRacePoint', [(100.0, 0.0, 0.0), (50.0, 0.0, 0.0), (10.0, 0.0, 0.0), (500.0, 0.0, 0.0)]); I._seq('Scrap', 'TestSphere', [None, None, 'X', None]); I._seq('Scrap', 'TestLine', [(1, ''), (1, 'Wall'), (1, '')]); I._takecalls(); r = (OM.GetNearestFreeSpawnPos(), I._takecalls()); I._restore(); result = r
+I.u = I._FakeEnt('Usr'); I.u.Pos = (0.0, 0.0, 0.0); I._seq('Scrap', 'UsrEntity', [I.u]); I._seq('SAI', 'GetNextRacePoint', [(100.0, 0.0, 0.0), (50.0, 0.0, 0.0), (10.0, 0.0, 0.0), (500.0, 0.0, 0.0)]); I._seq('Scrap', 'TestSphere', [None]); I._seq('Scrap', 'TestLine', [None, (1, ''), 0, (1, '')]); I._takecalls(); r = (OM.GetNearestFreeSpawnPos(initialPos = (400.0, 0.0, 0.0)), I._takecalls()); I._restore(); result = r
+I.u = I._FakeEnt('Usr'); I.u.Pos = (0.0, 0.0, 0.0); I._seq('Scrap', 'UsrEntity', [I.u]); I._seq('SAI', 'GetNextRacePoint', [(100.0, 0.0, 0.0)]); I._seq('Scrap', 'TestSphere', [None]); I._seq('Scrap', 'TestLine', [(1, 'Wall')]); I._takecalls(); r = (OM.GetNearestFreeSpawnPos((5.0, 5.0, 5.0)), I._takecalls()); I._restore(); result = r
+I._seq('Scrap', 'UsrEntity', [None]); I._seq('SAI', 'GetNextRacePoint', [(3.0, 2.0, 1.0)]); I._seq('Scrap', 'TestSphere', [None]); I._takecalls(); r = (OM.GetNearestFreeSpawnPos(), OM.GetFarthestFreeSpawnPos(), OM.GetFreeSpawnPos(), I._takecalls()); I._restore(); result = r
+I.u = I._FakeEnt('Usr'); I.u.Pos = (0.0, 0.0, 0.0); I._seq('Scrap', 'UsrEntity', [I.u]); I._seq('SAI', 'GetNextRacePoint', [(100.0, 0.0, 0.0), (50.0, 0.0, 0.0), (10.0, 0.0, 0.0), (500.0, 0.0, 0.0)]); I._seq('Scrap', 'TestSphere', [None, None, None, 'X']); I._takecalls(); r = (OM.GetFarthestFreeSpawnPos(), I._takecalls()); I._restore(); result = r
+I.u = I._FakeEnt('Usr'); I.u.Pos = (0.0, 0.0, 0.0); I._seq('Scrap', 'UsrEntity', [I.u]); I._seq('SAI', 'GetNextRacePoint', [(100.0, 0.0, 0.0)]); I._seq('Scrap', 'TestSphere', ['X']); I._takecalls(); r = (OM.GetFarthestFreeSpawnPos(initialPos = (9.0, 9.0, 9.0)), I._takecalls()); I._restore(); result = r
+I.u = I._FakeEnt('Usr'); I.u.Pos = (0.0, 0.0, 0.0); I._seq('Scrap', 'UsrEntity', [I.u]); I._seq('SAI', 'GetNextRacePoint', [(100.0, 0.0, 0.0), (50.0, 0.0, 0.0), (10.0, 0.0, 0.0), (500.0, 0.0, 0.0)]); I._seq('Scrap', 'TestSphere', [None]); I._seq('Scrap', 'TestLine', [(1, '')]); I._takecalls(); r = (OM.GetFreeSpawnPos(), I._takecalls()); I._restore(); result = r
+I.u = I._FakeEnt('Usr'); I.u.Pos = (0.0, 0.0, 0.0); I._seq('Scrap', 'UsrEntity', [I.u]); I._seq('SAI', 'GetNextRacePoint', [None]); I._seq('Scrap', 'TestSphere', [None]); r = I._t(OM.GetNearestFreeSpawnPos); I._restore(); result = r
+I.u = I._FakeEnt('Usr'); I._seq('Scrap', 'UsrEntity', [I.u]); r = I._t(OM.GetFarthestFreeSpawnPos); I._restore(); result = r
+r = I._t(OM.GetNearestFreeSpawnPos, (1, 2, 3), 5); result = r
+# the real searches (they depend on where the traffic flies)
+OM.StartPos = I.sp; result = (len(OM.StartPos), type(OM.GetFreeSpawnPos()), type(OM.GetFreeSpawnPosReal()), type(OM.GetFreeSpawn()), type(OM.GetNearestFreeSpawnPos()), type(OM.GetFarthestFreeSpawnPos()), type(OM.GetNearestFreeSpawnPosReal(OM.StartPos[0][0])))
+# the spawn points and the map limits again
+OM.StartPos = []; result = (OM.BrowseSpawnPos(), OM.StartPos == I.sp, len(OM.StartPos))
+OM.StartPos = I.sp; Scrap.Set('AtmosphereLimit', 0); Scrap.Set('TopLimit', 0); result = (OM.BrowseAtmospherePos(), I._gvq(('AtmosphereLimit', 'TopLimit')))
+I._seq('Scrap', 'NextDummySearch', [None]); I._takecalls(); Scrap.Set('AtmosphereLimit', 1000); r = (OM.BrowseAtmospherePos(), I._takecalls(), I._gvq(('AtmosphereLimit', 'TopLimit'))); I._restore(); result = r
+I._seq('Scrap', 'NextDummySearch', [('DM_Spawn01', (1.0, 2.0, 3.0), (0.0, 45.0, 0.0), 1), ('DM_Spawn02', (4.0, 5.0, 6.0), (0.0, 10.0, 0.0), 0), ('DM_Spawn03', (7.0, 8.0, 9.0), (0.0, -30.5, 0.0), 2), None]); OM.StartPos = []; r = (OM.BrowseSpawnPos(), OM.StartPos); OM.StartPos = I.sp; I._restore(); result = r
+I._seq('Scrap', 'NextDummySearch', [('DM_Spawn01', (1.0, 2.0, 3.0), (0.0, 45.0, 0.0))]); OM.StartPos = []; r = I._t(OM.BrowseSpawnPos); OM.StartPos = I.sp; I._restore(); result = r
+# InitOutMap with recorders for what it starts
+map(lambda n: I._rec2(n[0], n[1]), (('Accelerator','Init'),('Chars','CreateStartupPlayer'),('OutPolice','Init'),('Traffic','Init'),('PhoneCab','Init'),('Elevator','PlayerCreatedElevator'),('Parking','Init'))); I._keep('Scrap', 'Set'); I._takecalls(); Scrap.SetSaveVar('JackInTheBox.Active', '0'); r = (OM.InitOutMap(), I._takecalls()); result = r
+I._seq('MissionsFuncs', 'CrazyDealStatus', [(0, 3, 3), (0, 5, 4), (0, 1, 1)]); Scrap.SetSaveVar('JackInTheBox.Active', '1'); I._takecalls(); r = (OM.InitOutMap(), I._takecalls()); result = r
+I._seq('MissionsFuncs', 'CrazyDealStatus', [(0, 3, 3), (0, 1, 4), (0, 1, 1)]); I._takecalls(); r = (OM.InitOutMap(), I._takecalls()); result = r
+I._seq('MissionsFuncs', 'CrazyDealStatus', [(0, 3)]); I._takecalls(); r = (I._t(OM.InitOutMap), I._takecalls()); Scrap.SetSaveVar('JackInTheBox.Active', '0'); result = r
+import imp, sys; I.ffa = imp.new_module('Ffa'); I.ffa.InitClient = I._Rec('Ffa.InitClient', None); I.ffa.InitServer = I._Rec('Ffa.InitServer', None); sys.modules['Ffa'] = I.ffa; I._seq('Scrap', 'GetNetFlags', [(0, 1, 5)]); I._takecalls(); r = (I._t(OM.InitOutMap), I._takecalls()); result = r
+I._seq('Scrap', 'GetNetFlags', [(1, 0, 0)]); I._takecalls(); r = (I._t(OM.InitOutMap), I._takecalls()); del sys.modules['Ffa']; result = r
+I._seq('Scrap', 'GetNetFlags', [(0, 0, 0)]); I._rec2('PhoneCab', 'Init'); setattr(__import__('PhoneCab'), 'Init', None); I._takecalls(); r = (I._t(OM.InitOutMap), I._takecalls()); I._restore(); I._unkeep('Scrap', 'Set'); result = r
+I._gvq(I._MAPG)
+# Init with recorders for InitOutMap, Items.Init and SetGrid
+I._rec2('OutMap', 'InitOutMap'); I._rec2('Items', 'Init'); I._rec2('Scrap', 'SetGrid'); I._keep('Scrap', 'Set'); I._takecalls(); OM.StartPos = []; r = (OM.Init('Levels/DownTown'), I._takecalls(), OM.StartPos == I.sp); I._restore(); I._unkeep('Scrap', 'Set'); OM.StartPos = I.sp; result = r
+I._rec2('OutMap', 'InitOutMap'); I._rec2('Items', 'Init'); I._rec2('Scrap', 'SetGrid'); r = I._t(OM.Init, 5); I._restore(); OM.StartPos = I.sp; result = r
+I._gvq(I._MAPG)
+# CreatePlayers with fake entities
+I.mk = I._MakeEnt('Scrap.CreateEntity'); I._saved[('Scrap', 'CreateEntity')] = Scrap.CreateEntity; Scrap.CreateEntity = I.mk; I._seq('Scrap', 'GetEntity', [I._FakeEnt('Player1')]); map(lambda n: I._rec2(n[0], n[1]), (('Vehicles','SetProperties'),('Vehicles','SetActiveCam'),('SInput','SetActionSet'))); I._takecalls(); r = (OM.CreatePlayers(), I._takecalls(), I.mk.made); I._restore(); result = r
+I.mk = I._MakeEnt('Scrap.CreateEntity'); I._saved[('Scrap', 'CreateEntity')] = Scrap.CreateEntity; Scrap.CreateEntity = I.mk; I._seq('Scrap', 'NextDummySearch', [('A', (1.0, 2.0, 3.0), (0.0, 5.0, 0.0), 1), ('B', (1.0, 2.0, 3.0), (0.0, 5.0, 0.0), 1), ('C', (1.0, 2.0, 3.0), (0.0, 5.0, 0.0), 0), ('D', (1.0, 2.0, 3.0), (0.0, 5.0, 0.0), 1), None]); I._seq('Scrap', 'GetEntity', [None]); map(lambda n: I._rec2(n[0], n[1]), (('Vehicles','SetProperties'),('Vehicles','SetActiveCam'),('SInput','SetActionSet'))); I._takecalls(); r = (I._t(OM.CreatePlayers), I._takecalls(), I.mk.made); I._restore(); result = r

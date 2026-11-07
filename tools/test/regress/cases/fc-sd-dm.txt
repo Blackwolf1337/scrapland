@@ -1,0 +1,76 @@
+# DeathMatch (CA): the third super deal started the way the crazy gambler starts it (MissionsFuncs.StartSuperDeal
+# loads the level, init.py preloads DeathMatch, Init.Init calls InitStatus and Init), then every function directly;
+# the scheduler is recorded in the same line (_sd), the remote messages, the score table and the restart are recorders
+Scrap.AddScheduledFunc(Scrap.GetTime() + 1.0, __import__('MissionsFuncs').StartSuperDeal, ('CA', 'SuperDeal_Third', 'DeathMatch'))
+!sleep 40
+execfile('fsd.py')
+D = __import__('DeathMatch')
+(Scrap.GetLevelPath(), __import__('Init').SuperDealModule.__name__, Scrap.GetSaveVar('Mission.Library'), Scrap.GetSaveVar('SuperDealType'), Scrap.GetSaveVar('CombatNumEnemies'), Scrap.GetSaveVar('CombatDeaths'), Scrap.GetSaveVar('CombatEnemyProfile'))
+_sdmod('DeathMatch', ('enemiesFrags', 'playerFrags', 'KeepPlaying'))
+_sdhooks()
+_sdent(('Enemy1', 'Enemy2', 'Enemy3', 'Enemy4', 'Enemy5', 'Enemy6'))
+map(__import__('SAI').GetStateVehicle, ('Enemy1', 'Enemy2', 'Enemy3', 'Enemy4', 'Enemy5'))
+D.GetMenuDescription()
+(_sdon(), setattr(Scrap.UsrEntity(0), 'Invulnerable', 1), __import__('Parking').PlayerShip.Name, Scrap.UsrEntity(0).Name)
+# the hooks of the start called again
+_sd(D.InitStatus, 'Levels/CA')
+_sd(D.SetInvulnerableStatus, __import__('Parking').PlayerShip)
+(__import__('Parking').PlayerShip.Invulnerable, Scrap.UsrEntity(0).Invulnerable)
+_sd(D.SetInvulnerableStatus, None)
+(setattr(__import__('Speech'), 'RemoteCom', ['x']), _sd(D.AbortRemoteMessages), __import__('Speech').RemoteCom)
+# the player boards (Parking.ExecSwitchVehicleMissionCallback): the crazy gambler's message, then boarding again
+_sd(__import__('Parking').ExecSwitchVehicleMissionCallback)
+(__import__('Parking').PlayerShip.Invulnerable, _sdhooks())
+(setattr(__import__('Parking').PlayerShip, 'Invulnerable', 1), _sd(__import__('Parking').ExecSwitchVehicleMissionCallback), __import__('Parking').PlayerShip.Invulnerable, Scrap.UsrEntity(0).Invulnerable)
+# the start; then the ships invulnerable and the engine's deaths to a recorder, so the AI fights change nothing
+(_sd(D.StartCombat), _sdn(__import__('Vehicles').OnDeathCallback), _sdn(__import__('Menu').MissionScorerCall), __import__('MissionsFuncs').SetInvulnerableShipsInList('DeathMatch'), setattr(__import__('Vehicles'), 'OnDeathCallback', _sdrec('death')))
+(_sdlist('DeathMatch'), _sdmod('RacerScorer', ('missionYou', 'missionBad', 'missionLimit')))
+_sdent(('Enemy1', 'Enemy2', 'Enemy3', 'Enemy4', 'Enemy5'))
+_sd(D.GetMaxFragsEnemies)
+# frags
+_sd(D.OnEnemyDeath, 'Enemy1', 'Player0')
+(_sdmod('DeathMatch', ('enemiesFrags', 'playerFrags')), _sdent(('Enemy1',)), _sdmod('RacerScorer', ('missionYou', 'missionBad')))
+_sd(D.OnEnemyDeath, 'Player0', 'Enemy2')
+_sd(D.OnEnemyDeath, 'Enemy3', 'Enemy2')
+_sd(D.OnEnemyDeath, 'Enemy4', 'Enemy2')
+_sd(D.OnEnemyDeath, 'Enemy4', '')
+_sd(D.OnEnemyDeath, 'Enemy4', 'Nobody')
+(_sd(D.GetMaxFragsEnemies), _sdmod('DeathMatch', ('enemiesFrags', 'playerFrags')), _sdent(('Enemy1', 'Enemy3', 'Enemy4')), _sdmod('RacerScorer', ('missionYou', 'missionBad')))
+# respawn: the list is full, then after a delete
+_sd(D.RespawnEnemy, 'Enemy1')
+Scrap.GetEntity('Enemy4').Del()
+(_sd(D.RespawnEnemy, 'Enemy4'), _sdent(('Enemy4',)), _sdlist('DeathMatch'), __import__('MissionsFuncs').SetInvulnerableShipsInList('DeathMatch'))
+_sd(D.SetProfile, Scrap.GetEntity('Enemy4'))
+_sd(D.SetProfile, None)
+# the player's deaths (his ship), its respawn on an enemy ship
+(_sd(D.OnPlayerDeath, __import__('Parking').PlayerShip.Name, 'Enemy5'), __import__('Parking').PlayerShip.Active, setattr(__import__('Parking').PlayerShip, 'Active', 1))
+(_sd(D.OnPlayerDeath, __import__('Parking').PlayerShip.Name, 'Nobody'), setattr(__import__('Parking').PlayerShip, 'Active', 1), _sdmod('DeathMatch', ('enemiesFrags', 'playerFrags')))
+(_sd(D.RespawnPlayer, 'Enemy5'), _sdent(('Enemy5',)))
+# a missing global stops like the script
+del D.playerFrags
+_sd(D.OnEnemyDeath, 'Enemy1', 'Player0')
+D.playerFrags = 0
+# the end by an enemy's frag (message), the player's frag without a message, then the mission hook with and without
+D.enemiesFrags['Enemy2'] = 9
+(_sd(D.OnEnemyDeath, 'Enemy3', 'Enemy2'), _sdhooks(), Scrap.GetSaveVar('PlayerWinsCombat'), _sdlist('DeathMatch'), _sdent(('Enemy1', 'Enemy2', 'Enemy3', 'Enemy4', 'Enemy5')), Scrap.UsrEntity(0).Invulnerable)
+(map(lambda n: setattr(Scrap.GetEntity(n), 'EntityList', 'DeathMatch'), ('Enemy1', 'Enemy2', 'Enemy3', 'Enemy4', 'Enemy5')), setattr(D, 'playerFrags', 9), Scrap.SetSaveVar('CombatFinishPlayerWinsTextCad', ''))
+(_sd(D.OnEnemyDeath, 'Enemy1', 'Player0'), _sdhooks(), Scrap.GetSaveVar('PlayerWinsCombat'), _sdlist('DeathMatch'), _sdmod('DeathMatch', ('enemiesFrags', 'playerFrags')))
+(setattr(D, 'KeepPlaying', _sdrec('keep')), map(lambda n: setattr(Scrap.GetEntity(n), 'EntityList', 'DeathMatch'), ('Enemy1', 'Enemy2', 'Enemy3')))
+D.enemiesFrags['Enemy2'] = 9
+(_sd(D.OnEnemyDeath, 'Enemy3', 'Enemy2'), _sdlist('DeathMatch'))
+(setattr(D, 'playerFrags', 9), _sd(D.OnEnemyDeath, 'Enemy1', 'Player0'))
+# the end by the player's death: the camera on the winner and the message, without a message, the mission hook
+(setattr(D, 'KeepPlaying', None), map(lambda n: setattr(Scrap.GetEntity(n), 'EntityList', 'DeathMatch'), ('Enemy1', 'Enemy2', 'Enemy3', 'Enemy4', 'Enemy5')))
+D.enemiesFrags['Enemy5'] = 9
+(_sd(D.OnPlayerDeath, __import__('Parking').PlayerShip.Name, 'Enemy5'), _sdhooks(), Scrap.GetSaveVar('PlayerWinsCombat'), Scrap.GetEntity(Scrap.GetCam(0)).Target, _sdlist('DeathMatch'))
+(Scrap.SetSaveVar('CombatFinishPlayerLoosesTextCad', ''), _sd(D.OnPlayerDeath, __import__('Parking').PlayerShip.Name, 'Enemy5'))
+(setattr(D, 'KeepPlaying', _sdrec('keep')), _sd(D.OnPlayerDeath, __import__('Parking').PlayerShip.Name, 'Enemy5'))
+(Scrap.SetSaveVar('CombatFinishPlayerLoosesTextCad', 'SuperDeal_Third_RemoteMessage3'), _sd(D.OnPlayerDeath, __import__('Parking').PlayerShip.Name, 'Enemy5'), setattr(D, 'KeepPlaying', None))
+# a new set of enemies after the old ones went, the restart
+(Scrap.GetEntity('Enemy1').Del(), Scrap.GetEntity('Enemy2').Del(), Scrap.GetEntity('Enemy3').Del(), Scrap.GetEntity('Enemy4').Del(), Scrap.GetEntity('Enemy5').Del())
+(_sd(D.CreateEnemies), _sdent(('Enemy1', 'Enemy2', 'Enemy3', 'Enemy4', 'Enemy5')), _sdmod('DeathMatch', ('enemiesFrags',)), __import__('MissionsFuncs').SetInvulnerableShipsInList('DeathMatch'))
+(_sd(D.RestartCombat, 0, 0), _sdmod('DeathMatch', ('enemiesFrags', 'playerFrags')))
+(Scrap.GetEntity('Enemy1').Del(), Scrap.GetEntity('Enemy2').Del(), Scrap.GetEntity('Enemy3').Del(), Scrap.GetEntity('Enemy4').Del(), Scrap.GetEntity('Enemy5').Del())
+(_sd(D.CreateEnemies), _sdmod('DeathMatch', ('enemiesFrags',)), _sdent(('Enemy1', 'Enemy5')))
+# the one line that differs on purpose: the C functions are builtins
+(str(type(D.Init)), str(type(D.OnEnemyDeath)))

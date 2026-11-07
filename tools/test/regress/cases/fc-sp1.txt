@@ -1,0 +1,9 @@
+# Townhall: Speech part 1
+__import__('Speech').CalculateSpeechTime('a b  c'), __import__('Speech').CalculateSpeechTime(''), __import__('Speech').CalculateSpeechTime(' one\ttwo\nthree ')
+setattr(__import__('Speech'), 'PlayerName', 'Player0')
+setattr(__import__('Speech'), 'NPCName', 'Nurse_01')
+__import__('Speech').StdAnsLst(['TalkMsg', 'StdAnsw1', 'NoSuchKey'])
+__import__('Init')._ent('Nurse_01', ('Action','DefLoop','SelectedEntity','ArrOpt0','ArrOpt1','ArrnOpt','ArriOpt','LLogicIdle','AbortSelectFunc','ArrowCanMission','DisplAng','TimeToExtraRelax'))
+__import__('Speech').OnSpch('TalkMsg', 'StdAnsw1')
+((__import__('Init')._mod('Speech', ('PlayerName','NPCName','AnsAnima','NPCAnswer','NPCAnswerTime','OnEndOfSpeech','OnEndOfSpeechParams','LockAlarm','ArrowCanMission','TalkListen','TextColor','CurrentRemoteCom','CanLaunchRemote')), __import__('Init')._ent('Player0', ('Action','DefLoop','AutoSelect','SelectedEntity','OutSelectFunc','DisplAng','MoveTime','MoveViewAng')), __import__('Init')._gv(('EscapeEvent','MainMissionEvent'))), __import__('Init')._ent('Nurse_01', ('Action','DefLoop','SelectedEntity','ArrOpt0','ArrOpt1','ArrnOpt','ArriOpt','LLogicIdle','AbortSelectFunc','ArrowCanMission','DisplAng','TimeToExtraRelax')))
+!sleep 4

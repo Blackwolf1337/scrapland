@@ -1,0 +1,10 @@
+# InMap and Bureaucracy in a level without desks (GamblinDen: the mercenaries stay), Init from the viewer
+__import__('Init')._gv(('FileNameMap2D','GridUseTopLimit','Max_Rad_Obj','SoundAutoplayVolume','SoundDopplerLevel','SoundDistAttenuation','CameraCloudDistance','CharGrav','AtmosphereLimit','TopLimit','DesktopsFunctionaryListName'))
+map(Scrap.GetSaveVar, ('MercFriends.MercenaryA_Smartie','MercFriends.MercenaryC_Brutus','MercFriends.MercenaryB_Dumber'))
+(__import__('Init').UpperMap, Scrap.UsrEntity(0) is not None, len(__import__('CharsNPC').CharRes))
+exec "def _dm():\n\tScrap.StartDummySearch('DM_DesktopFunctionary_*',1)\n\tr = []\n\twhile 1:\n\t\td = Scrap.NextDummySearch()\n\t\tif d == None: return r\n\t\tr.append(d[0])\nimport Init\nInit._dm = _dm"
+__import__('Init')._dm()
+map(lambda n: __import__('Init')._ent(n, ('Pos','Ang','ActCtrl','ActiveCMask','MapCollision','EntityList')), __import__('Init')._dm())
+__import__('Init')._mod('Bureaucracy', ('BureaucracyTableFile',))
+__import__('Bureaucracy').Init(1)
+__import__('Init')._dm()

@@ -1,0 +1,36 @@
+# DownTown: Sputnik (Assign, SetSptAt, the animation events, ChangeShip through the hangar screen SputnikInterface in real time)
+exec(open('fpk.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); P = __import__('Parking'); S = __import__('Sputnik'); SI = __import__('SputnikInterface'); result = 1
+(I._spt(), I._usr(), map(lambda v: (v, Scrap.GetSaveVar(v)), ('Hangar.HangarShip1', 'Hangar.HangarShip2', 'Hangar.HangarShipAux', 'Hangar.iHangarShip', 'Hangar.DestroyedShips')))
+result = (S.Assign(P.PlayerShip), I._spt())
+u = Scrap.UsrEntity(0); result = (S.Assign(P.PlayerShip, u), I._spt(), I._v(u.Name, ('Pos', 'Ang')))
+u = Scrap.UsrEntity(0); result = (S.Assign(u, Player = None), I._spt(), S.Assign(Entity = P.PlayerShip, Player = u), I._spt(), I._t(S.Assign, None))
+p = P.PlayerShip.Pos; result = (S.SetSptAt((p[0], p[1], p[2] + 500), (10, 20, 30), 'Relax'), I._spt(), I._t(S.SetSptAt, p, 5, 'Relax'))
+result = (S.ByeBye('Sputnik', 'BackCamera', 1.0), S.spt.Active, S.Assign(P.PlayerShip), S.spt.Active)
+r = S.ChangeRelax('Sputnik', 'ChangeRelax', 0.0); result = (r, I._t(S.ChangeRelax, 'NoOne', 'x', 0))
+result = (S.InitSuck('Sputnik', 'x', 0), S.InitMake('Sputnik', 'x', 0), S.InitHello('Sputnik', 'x', 0), S.InitBye('Sputnik', 'x', 0), S.InitInterface('Sputnik', 'x', 0), I._t(S.InitBye, 'Sputnik'))
+result = (S.ShowInterface('Sputnik', 'x', 0), I._t(S.BackCamera, 'Sputnik', 'x', 0), I._t(S.EndOfSelection))
+result = (S.BackControl('Sputnik', 'x', 0), P.DtritusPlate.Active, I._t(S.BackControl, 'Sputnik', 'x'))
+P.PlayerShip.Active = 0; result = (S.CreateShip('Sputnik', 'x', 0), S.LastHangar, P.PlayerShip.Active, P.DtritusPlate.Active, I._v(P.PlayerShip.Name, I._PARKV), I._spt())
+result = (S.CreateShip('Sputnik', 'x', 0), S.LastHangar)
+# ChangeShip: the interface animation, the hangar screen (its clock stop undone after it), the same hangar again
+SI.EnterSputnikInterface = I._wrapT(SI.EnterSputnikInterface); u = Scrap.UsrEntity(0); result = (S.ChangeShip(u.Name, 'Sputnik', 'ChangeShip', 'x'), I._spt(), I._usr(), I._cam(), I._v(P.PlayerShip.Name, ('Active', 'OnDeath', 'Pos')))
+!sleep 8
+(I._spt(), I._usr(), SI.EndSputnikCallBack.__name__, __import__('SScorer').GetDefault(0), Scrap.GetSaveVar('Hangar.iHangarShip'), I._v(P.PlayerShip.Name, ('Active', 'Life')))
+I._t(SI.SelectShip, 0, 'HangarAux')
+(I._spt(), I._usr(), SI.EndSputnikCallBack, Scrap.GetSaveVar('Hangar.iHangarShip'), I._v(P.PlayerShip.Name, I._SHIPV + I._PARKV + ('RenderEffect', 'RenderEffectParam0', 'Ang')), P.DtritusPlate.Active)
+!sleep 3
+(I._spt(), I._usr(), P.DtritusPlate.Active)
+# again, this time hangar 2 (a copy of the aux ship): a new ship is made (Make, transparent)
+Scrap.SetSaveVar('Hangar.HangarShip2', Scrap.GetSaveVar('Hangar.HangarShipAux')); result = (S.ChangeShip('Player0', 'Sputnik', 'ChangeShip', 'x'), I._spt())
+!sleep 8
+(I._spt(), SI.EndSputnikCallBack.__name__, S.LastHangar)
+I._t(SI.SelectShip, 0, 'Hangar2')
+(I._spt(), I._usr(), Scrap.GetSaveVar('Hangar.iHangarShip'), I._v(P.PlayerShip.Name, I._SHIPV + I._PARKV + ('RenderEffect', 'RenderEffectParam0', 'Ang')), P.DtritusPlate.Active)
+!sleep 6
+(I._spt(), I._usr(), P.DtritusPlate.Active, I._v(P.PlayerShip.Name, ('RenderEffect', 'Active')))
+# EndOfSelection and EnterInterface directly
+I._rec2('SputnikInterface', 'EnterSputnikInterface'); r = (S.EnterInterface('Sputnik', 'x', 0), I._takecalls(), SI.EndSputnikCallBack.__name__, I._spt(), I._gvq(('NoiseFactorBegin', 'NoiseFactor', 'NoiseTime', 'NoiseEndTime'))); I._restore(); SI.EndSputnikCallBack = None; result = r
+S.LastHangar = 'x'; result = (S.EndOfSelection(), I._spt(), I._v(P.PlayerShip.Name, ('RenderEffect', 'Active', 'Pos')), P.DtritusPlate.Active, I._gvq(('NoiseFactor',)))
+!sleep 6
+(I._spt(), I._usr())

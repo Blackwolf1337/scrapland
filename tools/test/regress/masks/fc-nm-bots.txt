@@ -1,0 +1,3 @@
+# the last item asks whether NDeathMatchBots.Reborn is a built-in: 0 for the pack script, 1 for the C port (the
+# function type line of the case)
+ignore type(B.Reborn).__name__ == type(len).__name__

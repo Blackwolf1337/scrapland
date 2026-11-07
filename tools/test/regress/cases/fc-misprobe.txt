@@ -1,0 +1,11 @@
+filter(lambda k: k in ('Traffic','InPolice','OutPolice','PhoneCab','Metro','Challenge','DTritusDesktop','MissionsFuncs','VehiclesNPC','RaceMaker','CharConversor'), __import__('sys').modules.keys())
+map(lambda k: (k, getattr(__import__('sys').modules[k], '__file__', '?')), filter(lambda k: k in ('Traffic','InPolice','OutPolice','PhoneCab','Metro','Challenge','DTritusDesktop'), __import__('sys').modules.keys()))
+__import__('Init').Outdoor
+__import__('Init').Path
+__import__('Init').OutArea
+__import__('Init')._mod('OutPolice', ('PoliceWaves','iPoliceWave','PoliceActive','skipPrice'))
+__import__('Init')._mod('Traffic', ('AcShips','NumNormal','NumMedium','NumHeavy','PrevVal'))
+Scrap.EntityListGet('PhoneCabs', 'Num')
+Scrap.EntityListGet('PhoneCabs', 'First')
+Scrap.GetSaveVar('BadReputation')
+Scrap.UsrEntity(0).Name

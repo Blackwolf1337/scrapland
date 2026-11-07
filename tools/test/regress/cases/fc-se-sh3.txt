@@ -1,0 +1,28 @@
+# ShipEdit level: prices of the network ships, the engine tab with engines, Hull to Engines, the plan list wrapping, a default ship on exit
+exec(open('fse.py').read()) in __import__('Init').__dict__
+I = __import__('Init')
+(I.S, I.H) = (__import__('ShipEdit'), __import__('HangarTab'))
+(I._gvs(), I._se())
+map(lambda i, I=I: I.S.editedShips[i] and (I.H.ComputeShipTotalCost('ShipEdit.editedShips[%d]' % i), I.H.IsShipValid(I.S.editedShips[i]), I._rnd(I.H.GetSpeedRampOffsets(I.S.editedShips[i]))), range(9))
+I.S.ChangeTab(0, 'x', direction = 'Right')
+!sleep 2
+(I._se(), I._sc('EngineGroup'), I._sc('ShipEditTab'))
+I._t(I.S.ChangeTab, 0, 'ShipEditTabHull')
+!sleep 2
+I._t(I.S.ChangeTab, 0, 'ShipEditTabEngines')
+!sleep 2
+(I._se(), I._sc('EngineGroup'), I._sc('ShipEditTab'))
+I._t(I.S.ChangeTab, 0, 'ShipEditTabHangar')
+I._t(I.H.SellShip, 0, 'Sell')
+!sleep 6
+(I._se(), I._ships())
+(setattr(I.H, 'currentShipToEdit', 0), I._t(I.H.PrevShipToEdit, 0, 'PrevShip'), I._se(), I._ships())
+(setattr(I.H, 'currentShipToEdit', len(I.S.auxShipsToEditList) - 1), I._t(I.H.NextShipToEdit, 0, 'NextShip'), I._se(), I._ships())
+I._sc()
+map(lambda i: Scrap.Set('HangarShip%d' % i, ''), range(1, 10))
+Scrap.Set('HangarShip1', 'SPoli2<-<-<-<-<-0,0,0,0,0,0,1<-60<-0,0,0,0,0,0')
+Scrap.Set('iHangarShip', 0)
+I._t(I.S.EnterEditShipMenu, 0, '')
+(I._se(), I._ships(), I._gvs())
+I._t(I.S.ExitEditShipMenu, 0, 'Exit')
+(I._se(), I._ships(), I._gvs())

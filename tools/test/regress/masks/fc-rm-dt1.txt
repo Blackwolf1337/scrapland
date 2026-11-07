@@ -1,0 +1,2 @@
+# line 38: AI and traffic state at the moment of the line (which racer is ahead depends on the race AI)
+ignore RM.NameOponGoItem('CheckPoint')

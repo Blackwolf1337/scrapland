@@ -1,0 +1,7 @@
+# probe: start the third super deal (DeathMatch in CA) the way the crazy gambler does
+(Scrap.GetLevelPath(), Scrap.GetSaveVar('SuperDealType'), __import__('Init').SuperDealModule, Scrap.GetSaveVar('BadReputation'))
+Scrap.AddScheduledFunc(Scrap.GetTime() + 1.0, __import__('MissionsFuncs').StartSuperDeal, ('CA', 'SuperDeal_Third', 'DeathMatch'))
+!sleep 40
+(Scrap.GetLevelPath(), Scrap.GetSaveVar('SuperDealType'), __import__('Init').SuperDealModule, __import__('Init').HasSuperDeal, Scrap.GetSaveVar('Mission.Library'))
+__import__('sys').modules.keys()
+(__import__('DeathMatch').enemiesFrags, __import__('DeathMatch').Init, __import__('Parking').SwitchVehicleMissionCallback, Scrap.UsrEntity(0).Name, Scrap.UsrEntity(0).IsType('Car'))

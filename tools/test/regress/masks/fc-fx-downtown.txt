@@ -1,0 +1,2 @@
+# line 5: random in C: the case recorder controls Scrap.Rand on the pack side only, the C port calls Scrap_RandRange directly (brief)
+ignore map(lambda n: (__import__('Fx').SetUpShipMotors(Scrap.GetEntity(n)), __import__('Init')._veh()), map(lambda r: r[0], __import__('Init')._veh())[:3])

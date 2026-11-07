@@ -1,0 +1,2 @@
+# line 12: random in C: the case recorder controls Scrap.Rand on the pack side only, the C port calls Scrap_RandRange directly (brief)
+ignore result = map(lambda i: I._ent('FakeTraffic' + `i`, ('Traf_Type', 'Traf_Active', 'snd_n', 'snd00_name', 'snd00_loop', 'snd00_ini', 'snd00_end', 'snd00_dopp', 'ShipMotorScale')), range(31))

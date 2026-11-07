@@ -1,0 +1,45 @@
+# DownTown: ShipMaker (the tables after the level start, the ships of the level, SetShipParams of every standard ship, the table functions)
+exec(open('fpk.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); SM = __import__('ShipMaker'); P = __import__('Parking'); result = 1
+d = SM.ShipValues.items(); d.sort(); result = d
+d = SM.ShipTon.items(); d.sort(); result = d
+d = SM.ShipBalance.items(); d.sort(); result = d
+d = SM.MotorValues.items(); d.sort(); result = d
+d = (SM.WeaponValues.items(), SM.WeaponCosts.items(), SM.shipsCosts.items(), SM.enginesCosts.items()); map(lambda x: x.sort(), d); result = d
+d = SM.StdShips.items(); d.sort(); result = d
+d = SM.Chars.items(); d.sort(); result = (d, SM.PilotsList)
+d = map(lambda x: (x[0], x[1][1:], x[1][0].__name__), SM.ShipCallback.items()); d.sort(); result = d
+I._v(P.PlayerShip.Name, I._SHIPV + I._PARKV)
+I._ships()
+# SetShipParams of the standard ships
+result = map(lambda k: I._std(k, 'StdTest'), ('SPOLI1', 'SPOLI2', 'SPOLI3', 'SPOLI4', 'SPOLI5', 'SPOLIBOSS1', 'SMERC1', 'SMERC2', 'SMERC3'))
+result = map(lambda k: I._std(k, 'StdTest'), ('SMAYOR1', 'SFUNC1', 'SBANKER1', 'SBANKMASTER1', 'SBISHOP1', 'SARCHBISHOP1', 'SBERTO1', 'SHUMP1', 'SBETTY1'))
+I._t(I._std, 'SBOSS1', 'StdTest')
+result = (SM.SetShipParams('StdTest'), SM.SetShipParams(P.PlayerShip.Name), I._v(P.PlayerShip.Name))
+e = Scrap.GetEntity('StdTest'); e.MaxLife = 1000; result = (SM.SetShipParams('StdTest'), I._v('StdTest', ('MaxLife', 'MinLife', 'Mass', 'BoostTime')))
+e = Scrap.GetEntity('StdTest'); e.MaxLife = 1; result = (SM.SetShipParams('StdTest'), I._v('StdTest', ('MaxLife', 'MinLife', 'Mass', 'BoostTime')))
+e = Scrap.GetEntity('StdTest'); e.WeapA01 = 1; e.WeapB01 = 1; e.WeapC03 = 1; result = (SM.SetShipParams('StdTest'), I._v('StdTest', ('Mass', 'BoostTime', 'WeapA01', 'WeapB01', 'WeapC03')))
+I._t(SM.SetShipParams, 'NoShip')
+# the table functions
+result = (SM.GetShip('SPoli1'), SM.GetShip('spoli2'), I._t(SM.GetShip, 'SNone'), I._t(SM.GetShip, 5))
+result = (SM.GetShipTon('SMerc1'), SM.GetShipBalance('SMerc2'), I._t(SM.GetShipTon, 'X'), I._t(SM.GetShipBalance, 'X'))
+result = (SM.GetMotor(''), SM.GetMotor('MPoli1'), SM.GetMotor('mmerc2'), I._t(SM.GetMotor, 'MNone'), I._t(SM.GetMotor, None))
+result = (SM.GetWeapon('vulcan'), SM.GetWeapon('Swarm'), SM.GetWeapon('Laser'), I._t(SM.GetWeapon, 3))
+result = (SM.GetShipPrice('spoli1'), SM.GetEnginePrice('MPOLI2'), I._t(SM.GetShipPrice, 'X'), I._t(SM.GetEnginePrice, 'X'))
+result = (SM.GetBoostFactor('SPoli1', 1000), SM.GetBoostFactor('SPoli1', 400), SM.GetBoostFactor('SLifeBoat', 900), SM.GetBoostFactor('SPoli3', 2000.5), I._t(SM.GetBoostFactor, 'X', 1))
+result = (SM.SetShipPrice('TestShip', 123), SM.SetShipPrice('TestShip2', 1.5), SM.GetShipPrice('testship'), SM.shipsCosts['TESTSHIP2'], SM.SetEnginePrice('TestEng', 7), SM.GetEnginePrice('TESTENG'))
+result = (SM.AddShip('TestShip', 1, 2, 3), SM.AddShip('TestShip2', 1, 2, 3, 4), SM.AddShip('TestShip3', 1, 2, 3, TopBoostTime = 9), SM.AddShip(name = 'TestShip4', Mass = 5, Style = 6, Engine = 7, BoostTime = 8.5), SM.GetShip('TESTSHIP'), SM.GetShip('TestShip2'), SM.GetShip('TestShip3'), SM.GetShip('TestShip4'))
+result = (SM.AddShipTon('TestShip', 10, 20, 30), SM.AddShipBalance('TestShip', (1, 2, 3, 4)), SM.AddWeapon('TestW', 11, 22), SM.GetShipTon('TESTSHIP'), SM.GetShipBalance('testship'), SM.GetWeapon('testw'), SM.WeaponCosts['TESTW'], I._t(SM.AddShip, 'X', 1))
+result = (SM.GetBoostFactor('TestShip', 2), SM.GetBoostFactor('TestShip', 25), SM.AddShipTon('TestShip', 10, 20, 0), SM.GetBoostFactor('TestShip', 25))
+result = (SM.AddMotor('MPoli1', 100, 500, 200, 3), SM.GetMotor('MPOLI1'), SM.AddMotor('MBerto1', 1, 2, 3, 0), SM.GetMotor('MBerto1'), SM.AddMotor('MPoli2', 125, 800, 400, 2), SM.MotorValues['MPOLI2'], I._t(SM.AddMotor, 'MPoli3', 1, 2, 3, 'x'))
+result = (SM.AddMotor('MBerto1', 340, 1200, 750, 3), SM.AddMotor('MPoli2', 125, 800, 400, 3), SM.AddMotor('MPoli3', 225, 1000, 600, 3))
+I._std('SPOLI3', 'StdTest'); e = Scrap.GetEntity('StdTest'); result = (SM.IncludeMotor(e, 0, 'MPoli3', 2, 10, 20, 30), SM.IncludeMotor(e, 3, '', 4, 10, 20.5, 30), SM.IncludeMotor(e, 1, 'MPoli3', 1.5, 0, 0, 0), I._v('StdTest', ('EngAnmF0', 'EngAnmM0', 'EngFxClass0', 'EngAnmF1', 'EngAnmM1', 'EngFxClass1')))
+e = Scrap.GetEntity('StdTest'); result = (I._t(SM.IncludeMotor, e, 0, 'MNone', 1, 0, 0, 0), I._t(SM.IncludeMotor, None, 0, 'MPoli1', 1, 0, 0, 0))
+e = Scrap.GetEntity('StdTest'); result = (SM.CalculateVerticalBalance(e), e.VerticalBalance, SM.CalculateVerticalBalance(P.PlayerShip), P.PlayerShip.VerticalBalance)
+e = Scrap.GetEntity('StdTest'); e.MEng0 = ''; e.MEng1 = ''; e.MEng2 = ''; e.MEng3 = ''; result = (SM.CalculateVerticalBalance(e), e.VerticalBalance, I._t(SM.CalculateVerticalBalance, None))
+e = Scrap.GetEntity('StdTest'); e.MPil0 = 'P_Dtritus'; result = (SM.SetUpChars('StdTest'), e.MPil0, SM.Chars['P_Dtritus'], I._t(SM.SetUpChars, 'NoShip'))
+result = (SM.AddChar('P_Police', (0, 1)), SM.Chars['P_Police'], SM.AddChar('P_Police', ()), SM.Chars['P_Police'], SM.AddChar('P_Police', (0, 1, 2, 3, 4)), I._t(SM.AddChar, 'P_Police', (9,)))
+# the animated ship classes
+v = Scrap.GetEntity('StdTest'); result = (SM.SetAnmShip(v, 'SPoli1'), I._v('StdTest', ('ActCtrl', 'Action')), I._t(SM.SetAnmShip, v, 'SPoli3'))
+result = (SM.InitAnmShip('SPoli3'), SM.InitAnmShip(model = 'SMerc1', ch0 = None), SM.ShipCallback.has_key('SPoli3'), SM.InitAnmShip('SBetty1', None, None, None, None))
+result = SM.StdShips.clear(); SM.CreateStdShips(); d = SM.StdShips.items(); d.sort(); result = d

@@ -1,0 +1,16 @@
+# Outskirts, round 8c: the world clock while the camera follows an AI ship under the HUD on foot (Mission_IdentifyMerc scene). The Status item drew boost segments from never set BoostStatus/BoostRemaining (heap garbage): up to millions of draws a frame, the clock crawled at 0.2 s a frame
+Scrap.SetSaveVar('Mission.Map', 'Outskirts'); Scrap.SetSaveVar('Mission.Library', 'Mission_IdentifyMerc'); Scrap.SetSaveVar('MissionState', 'IdentifyMerc2'); Scrap.SetAlarm(0); Scrap.LoadLevel('Levels/Outskirts'); result = 1
+!sleep 55
+S = __import__('SScorer'); U = Scrap.UsrEntity(0).Name; result = (Scrap.UsrEntity(0).Type, S.Get(0, 'Status', 'BoostStatus'), S.Get(0, 'Status', 'BoostRemaining'), S.Get(0, 'Status', 'LifeIconIndex'))
+cam = Scrap.GetEntity(Scrap.GetCam(0)); cam.CamDist = 1000; cam.CamRot = 20; cam.CamAng = -20; cam.AddTurn = 0; result = 1
+t = __import__('VehiclesNPC').MakeAI('SFunc1', 'Traitorius'); t.Pos = (-252843.578125, 67933.2734375, -187826.109375); __import__('SAI').SetStateVehicle(0, t.Name); result = t.Type
+cam.Target = t.Name; T0 = Scrap.GetTime(); result = cam.Target
+!sleep 8
+Scrap.GetTime() - T0 > 2.5
+# a value below 0 from a script: the bar stops at its 7 segments
+S.Set(0, 'Status', 'BoostRemaining', -100000.0); S.Set(0, 'Status', 'BoostStatus', 0); T0 = Scrap.GetTime(); result = S.Get(0, 'Status', 'BoostRemaining')
+!sleep 8
+Scrap.GetTime() - T0 > 2.5
+cam.Target = U; T0 = Scrap.GetTime(); result = cam.Target
+!sleep 5
+Scrap.GetTime() - T0 > 1.5

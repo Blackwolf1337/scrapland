@@ -1,0 +1,69 @@
+# FZ offline, round 8b: NPostman and NTeamPost loaded by hand and called directly; Ffa, the net, the sounds, the scorer texts, the menu and DeleteScheduledFuncs recorded, Scrap.Set and Preload3DObject recorded and run
+exec(open('fnm.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); result = I._nload(['Ffa', 'NPostman', 'NTeamPost'])
+F = __import__('Ffa'); PO = __import__('NPostman'); TP = __import__('NTeamPost'); result = (PO.TeamGame, TP.TeamGame, PO.MultiplayerMenuOnGame, PO.MultiplayerMenuSpectator, TP.MultiplayerMenuOnGame, TP.MultiplayerMenuSpectator, PO.AUTO_RESPAWN_FLAG_TIME, PO.FlagModel, PO.FlagPilotModel, PO.FlagNoUsrModel, PO.Flag.Name, TP.Flag.Name, PO.FlagSpawnPos, PO.ZoneList, PO.AcZone)
+map(lambda n: I._non('Ffa', n), ('ServerEndOfGame', 'ClientJoin', 'ActualizeGameScorer', 'ServerSendPlayerStatus', 'OnUsrClient')) + [I._non('Ffa', 'GetGameTeamDescriptor', 'teams 5 6'), I._non('Menu', 'ShowWarning'), I._non('SNet', 'SendUsrString'), I._non('SSound', 'Play'), I._non('SScorer', 'SetLabelText'), I._non('SScorer', 'SetMsgText'), I._non('Scrap', 'DeleteScheduledFuncs'), I._non('Scrap', 'Set', run=1), I._non('Scrap', 'Preload3DObject', run=1)]
+e1 = Scrap.CreateEntity('NmRed', 1000.0, 50000.0, 1000.0, 'Car'); e1.TgType = 'red'; e2 = Scrap.CreateEntity('NmGreen', 2000.0, 50000.0, 1000.0, 'Car'); e2.TgType = 'green'; I.e1 = e1; I.e2 = e2; I.u = Scrap.UsrEntity(0); I.u.TgType = 'red'; result = (e1.Name, e2.Name, I.u.Name, I.u.TgType, I.u.UsrControl, e1.UsrControl, I.u.Model)
+# the zones
+I._nm(PO.BrowseAreas)
+r = map(lambda k: (k, I._nent(PO.ZoneList[k].Name, ('Pos', 'Radius', 'RadarShow', 'OnTake'))), PO.ZoneList.keys()); result = (PO.FlagSpawnPos, r)
+(I._nm(TP.BrowseAreas), TP.FlagSpawnPos == PO.FlagSpawnPos, map(lambda k: TP.ZoneList[k].Name, TP.ZoneList.keys()))
+I._nrand(0.0); result = (I._nm(PO.GetRndZone), PO.AcZone, I._nm(PO.GetRndZone), PO.AcZone, I._nm(PO.GetRndZone), PO.AcZone)
+I._nrand(0.6); result = (I._nm(PO.GetRndZone), PO.AcZone, I._nm(TP.GetRndZone), TP.AcZone, I._nm(TP.GetRndZone), TP.AcZone)
+I.z = PO.ZoneList; PO.ZoneList = {'a': 1}; PO.AcZone = 'a'; I._nrand(0.0); r = (I._nm(PO.GetRndZone), PO.AcZone); PO.ZoneList = {}; r = r + (I._nm(PO.GetRndZone), PO.AcZone); PO.ZoneList = I.z; result = r
+del PO.AcZone; r = I._nm(PO.GetRndZone); PO.AcZone = ''; result = r
+# the flag of a client and of the server
+(I._nm(PO.CreateFlag, 0), I._nent(PO.Flag.Name, ('Model', 'Radius', 'RadarShow', 'OnTake', 'Pos')))
+(I._nm(PO.CreateFlag, 1), I._nent(PO.Flag.Name, ('Model', 'Radius', 'RadarShow', 'OnTake', 'Pos')), PO.Flag.Pos == PO.FlagSpawnPos)
+(I._nm(TP.CreateFlag, 1), I._nent(TP.Flag.Name, ('Model', 'Radius', 'RadarShow', 'OnTake', 'Pos')), I._nm(TP.CreateFlag, None))
+I.fs = PO.FlagSpawnPos; PO.FlagSpawnPos = None; r = (I._nm(PO.CreateFlag, 1), I._nent(PO.Flag.Name, ('OnTake', 'Pos'))); PO.FlagSpawnPos = I.fs; result = r
+(I._nm(PO.InitClientMod), I._nm(TP.InitServerMod), I._nent(TP.Flag.Name, ('OnTake', 'Pos')), len(TP.ZoneList), I._nm(PO.InitServerMod), len(PO.ZoneList))
+# linking the flag to a ship
+(I._nm(PO.TryLinkFlagTo, I.u.Name, 'DC_Flag_Player'), I._nent(PO.Flag.Name, ('LinkModel',)))
+(I._nm(PO.TryLinkFlagTo, 'NmRed', 'DC_Flag_Player'), I._nm(PO.TryLinkFlagTo, 'Nobody', 'N'), I._nm(PO.TryLinkFlagTo, I.u.Name, 5))
+(I._nm(TP.LinkFlagTo, I.u.Name, 'DC_Flag_Player'), I._nm(TP.LinkFlagTo, 'NmGreen', 'X'), I._nent(TP.Flag.Name, ('LinkModel',)))
+# taking the flag: the player, another ship, nobody
+F.MasterFlag = None; PO.AcZone = PO.ZoneList.keys()[0]; result = (I._nm(PO.TakeFlag, I.u.Name), F.MasterFlag, I._nent(PO.Flag.Name, ('Model', 'LinkModel', 'OffModPos', 'DeltaOffMul', 'OffMul', 'UseLinkAng')), map(lambda k: (k, PO.ZoneList[k].RadarShow, PO.ZoneList[k].OnTake), PO.ZoneList.keys()))
+(I._nm(PO.TakeFlag, I.u.Name), F.MasterFlag)
+(I._nm(PO.TakeFlag, 'NmRed'), F.MasterFlag, I._nent(PO.Flag.Name, ('Model',)), I._nm(PO.TakeFlag, 'NmRed'))
+(I._nm(PO.TakeFlag, ''), I._nm(PO.TakeFlag, 'Nobody'), I._nm(PO.TakeFlag, 5), F.MasterFlag)
+F.MasterFlag = None; TP.AcZone = TP.ZoneList.keys()[1]; result = (I._nm(TP.TakeFlag, I.u.Name), I._nm(TP.TakeFlag, I.u.Name), I._nm(TP.TakeFlag, 'NmRed'), I._nm(TP.TakeFlag, 'NmRed'), I._nm(TP.TakeFlag, 'NmGreen'), I._nm(TP.TakeFlag, 'NmGreen'), F.MasterFlag, I._nent(TP.Flag.Name, ('Model', 'LinkModel')))
+I.ac = PO.AcZone; PO.AcZone = 'nozone'; r = I._nm(PO.TakeFlag, 'NmGreen'); PO.AcZone = I.ac; result = (r, F.MasterFlag)
+del F.MasterFlag; r = I._nm(PO.TakeFlag, 'NmGreen'); F.MasterFlag = None; result = r
+I.tc = e1.UsrControl; e1.UsrControl = 'x'; r = I._nm(PO.TakeFlag, 'NmRed'); e1.UsrControl = I.tc; result = (r, I._nent(PO.Flag.Name, ('Model',)))
+# dropping the flag
+(I._nm(PO.DropFlag, (1.0, 2.0, 3.0)), F.MasterFlag, I._nent(PO.Flag.Name, ('Model', 'LinkModel', 'Pos', 'rTime')), map(lambda k: (k, PO.ZoneList[k].RadarShow, PO.ZoneList[k].OnTake), PO.ZoneList.keys()))
+(I._nm(TP.DropFlag, TP.FlagSpawnPos), F.MasterFlag, I._nent(TP.Flag.Name, ('Model', 'LinkModel', 'Pos', 'rTime')), I._nm(TP.DropFlag, 5))
+I._nm(PO.AbortZoneKeys)
+I.z = PO.ZoneList; PO.ZoneList = {'a': 1}; r = I._nm(PO.AbortZoneKeys); PO.ZoneList = I.z; result = r
+# the messages of the server to a client
+F.MasterFlag = None; result = (I._nm(PO.OnUsrClient, 0, "F'" + PO.ZoneList.keys()[1] + "','NmRed'"), PO.AcZone, F.MasterFlag)
+(I._nm(PO.OnUsrClient, 0, 'D(10, 20, 30)'), F.MasterFlag, I._nent(PO.Flag.Name, ('Pos', 'LinkModel')))
+(I._nm(PO.OnUsrClient, 0, 'S=abc'), I._nm(PO.OnUsrClient, 0, ''), I._nm(PO.OnUsrClient, 0, 'D'), I._nm(PO.OnUsrClient, 0, 'Dxyz'), I._nm(PO.OnUsrClient, 0, "F'a'"), I._nm(TP.OnUsrClient, 2, "F'" + TP.ZoneList.keys()[0] + "','NmGreen'"), TP.AcZone)
+# a client joins the server
+F.MasterFlag = None; PO.Flag.Pos = (100.7, -200.2, 300.0); result = (I._nm(PO.ClientJoin, 'net5', 'SMerc3', 100, 'Usr', 'P_Dtritus', 'm0', 'm1', 'm2', 'm3', 'w', 0))
+F.MasterFlag = 'NmRed'; PO.AcZone = PO.ZoneList.keys()[0]; result = (I._nm(PO.ClientJoin, 'net9', 'M', 1, 'U', 'P', 'a', 'b', 'c', 'd', 'e', 1), I._nm(TP.ClientJoin, 'net10', 'M', 1, 'U', 'P', 'a', 'b', 'c', 'd', 'e', 1))
+(I._nm(PO.ClientJoin, 'netY', 'M', 1, 'U', 'P', 'a', 'b', 'c', 'd', 'e', 0), I._nm(PO.ClientJoin, 'net1', 'M', 1, 'U'))
+F.MasterFlag = 5; r = I._nm(PO.ClientJoin, 'net3', 'M', 1, 'U', 'P', 'a', 'b', 'c', 'd', 'e', 0); F.MasterFlag = None; result = r
+# the server: taking the flag, the zone, dropping and respawning it
+F.Scorer = {'NmRed': 0, 'NmGreen': 0, I.u.Name: 0}; F.TotalRed = 0; F.TotalGreen = 0; F.ScorerFraglimit = 2; F.MasterFlag = None; I._non('Ffa', 'CheckGameStart', seq=[1]); I._nrand(0.5); result = (I._nm(PO.ServerTakeFlag, PO.Flag.Name, 'NmRed'), F.MasterFlag, PO.AcZone, I._nent(PO.Flag.Name, ('OnTake',)), map(lambda k: (k, PO.ZoneList[k].RadarShow, PO.ZoneList[k].OnTake), PO.ZoneList.keys()))
+I._nrand(0.3); result = (I._nm(PO.ServerTakeBase, PO.ZoneList[PO.AcZone].Name, 'NmRed'), F.Scorer, F.MasterFlag, PO.AcZone, map(lambda k: (k, PO.ZoneList[k].RadarShow, PO.ZoneList[k].OnTake), PO.ZoneList.keys()))
+I._nrand(0.9); result = (I._nm(PO.ServerTakeBase, 'z', 'NmRed'), F.Scorer, I._nm(PO.ServerTakeBase, 'z', 'NmGreen'), F.Scorer)
+(I._nm(PO.ServerHidePlayer, 'NmGreen'), F.MasterFlag, I._nm(PO.ServerHidePlayer, 'NmRed'), F.MasterFlag, I._nent(PO.Flag.Name, ('OnTake', 'Pos', 'LinkModel')), PO.Flag.Pos == e1.Pos)
+(I._nm(PO.ServerDropFlag), F.MasterFlag, PO.Flag.Pos == PO.FlagSpawnPos, I._nm(PO.RespawnFlag), F.MasterFlag)
+(I._nm(PO.ServerTakeFlag, 'x', 'Nobody'), I._nm(PO.ServerTakeFlag, 'x', 3))
+I._non('Ffa', 'CheckGameStart', seq=[0]); result = (I._nm(PO.ServerTakeFlag, 'x', 'NmGreen'), I._nm(TP.ServerTakeFlag, 'x', 'NmGreen'), F.MasterFlag)
+I._non('Ffa', 'CheckGameStart', seq=[1]); F.Scorer = {'NmRed': 0, 'NmGreen': 0, I.u.Name: 0}; F.MasterFlag = None; I._nrand(0.4); result = (I._nm(TP.ServerTakeFlag, TP.Flag.Name, 'NmGreen'), F.MasterFlag, TP.AcZone, I._nm(TP.ServerTakeBase, 'z', 'NmGreen'), F.Scorer, F.TotalRed, F.TotalGreen, TP.AcZone)
+I._nrand(0.7); result = (I._nm(TP.ServerTakeBase, 'z', 'NmGreen'), F.Scorer, F.TotalRed, F.TotalGreen, I._nent(TP.Flag.Name, ('OnTake',)))
+F.MasterFlag = 'NmRed'; I._nrand(0.2); result = (I._nm(TP.ServerTakeBase, 'z', 'NmRed'), I._nm(TP.ServerTakeBase, 'z', 'NmRed'), F.Scorer, F.TotalRed, F.TotalGreen)
+F.MasterFlag = I.u.Name; F.Scorer = {'NmRed': 0, 'NmGreen': 0, I.u.Name: 0}; result = (I._nm(PO.ServerTakeBase, 'z', I.u.Name), I._nm(PO.ServerTakeBase, 'z', I.u.Name), F.Scorer)
+F.Scorer['Nobody'] = 0; F.MasterFlag = 'Nobody'; result = (I._nm(TP.ServerTakeBase, 'z', 'Nobody'), F.Scorer, I._nm(TP.ServerDropFlag), F.MasterFlag)
+F.MasterFlag = 'NmGreen'; I.at = TP.AUTO_RESPAWN_FLAG_TIME; del TP.AUTO_RESPAWN_FLAG_TIME; r = I._nm(TP.ServerDropFlag); TP.AUTO_RESPAWN_FLAG_TIME = I.at; result = (r, I._nm(TP.ServerHidePlayer, 'NmGreen'), F.MasterFlag)
+I._nm(TP.RespawnFlag), F.MasterFlag
+del F.Scorer; r = I._nm(PO.ServerTakeFlag, 'x', 'NmRed'); F.Scorer = {'NmRed': 1}; result = r
+# deaths and the end of the game
+F.Scorer = {'NmRed': 1, 'NmGreen': 0}; F.TotalRed = 0; F.TotalGreen = 0; result = (I._nm(PO.DeathFunc, 'NmRed', 'NmGreen', 1), F.Scorer, I._nm(TP.DeathFunc, 'NmRed', 'NmGreen', 1), F.Scorer, I._nm(TP.DeathFunc, 'Zz', 'x', 1), I._nm(PO.DeathFunc, 'Zz', 'x', 1))
+F.ScorerFraglimit = 2; result = (I._nm(PO.CheckEndOfGame), I._nm(TP.CheckEndOfGame), F.Scorer)
+F.TotalGreen = 2; result = (I._nm(PO.CheckEndOfGame), I._nm(TP.CheckEndOfGame))
+(I._nm(PO.GetGameDescriptor), I._nm(TP.GetGameDescriptor), I._nm(PO.ShowHelp, 0), I._nm(TP.ShowHelp, 1))
+I._noff()

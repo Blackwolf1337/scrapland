@@ -1,0 +1,15 @@
+# CreditsText in the menu level (Menu): the texts the lines get (SScorer.Set of the Text<i> recorded)
+Scrap.OpenPack('Scripts/Scorer'); Scrap.PreloadLibrary('CreditsText', 'CreditsText.pyc'); Scrap.ClosePack(); Scrap.SetTimeSpeed(1); result = type(__import__('CreditsText').ShowCredit)
+exec "import Init, SScorer\nInit._rec = []\nInit._oldset = SScorer.Set\ndef _set(id, item, var, val):\n\tif var[:4] == 'Text': Init._rec.append((id, item, var, val))\n\treturn Init._oldset(id, item, var, val)\nSScorer.Set = _set"
+__import__('CreditsText').Init(); result = __import__('Init')._rec
+SInput.SetActionSet('Inactive'); __import__('Menu').MovieScorer(0); Scrap.SetTimeSpeed(1); __import__('Init')._rec[:] = []; result = SScorer.Items(0)
+__import__('CreditsText').ShowCredit(3); result = __import__('Init')._rec
+!sleep 1.5
+__import__('Init')._rec[-8:], map(lambda v: SScorer.Get(0, 'Credits', v), ('Visible', 'Life', 'FadeIn', 'FadeOut'))
+__import__('Init')._rec[:] = []; __import__('CreditsText').PrintDataGuay(0); result = __import__('Init')._rec
+__import__('Init')._rec[:] = []; __import__('CreditsText').PrintDataGuay(2.5); result = __import__('Init')._rec
+__import__('Init')._rec[:] = []; __import__('CreditsText').PrintDataGuay(1); result = map(lambda r: (r[2], len(r[3])), __import__('Init')._rec)
+__import__('Init')._rec[:] = []; __import__('CreditsText').CleanCredits(); result = __import__('Init')._rec
+__import__('Init')._rec[:] = []; setattr(__import__('CreditsText'), 'MAX_TEXT_LINES', 3); __import__('CreditsText').CleanCredits(); __import__('CreditsText').CreditsScorer(0); result = __import__('Init')._rec
+setattr(__import__('CreditsText'), 'TextLines', 9); setattr(__import__('CreditsText'), 'EndOfCredits', None); __import__('CreditsText').ShowUp(0); result = map(lambda v: SScorer.Get(0, 'Credits', v), ('Visible', 'Life', 'FadeIn', 'FadeOut'))
+setattr(__import__('CreditsText'), 'TextLines', 4); __import__('CreditsText').ShowUp(-1); result = map(lambda v: SScorer.Get(0, 'Credits', v), ('Visible', 'Life', 'FadeIn', 'FadeOut'))

@@ -1,0 +1,4 @@
+# line 13: a timer or a moving item read between frames
+ignore (I._ent('DM_Scene_Decontamination', ('Pos','Ang','ActCtrl','Action')), I._ent('DecontaminationDtritus', ('ActCtrl','LinkModel','OffModPos','DeltaOffMul','OffMul','UseLinkAng','Action')), map(lambda n: I._ent(n, ('Active','TimeSpeed')), S.HidenChars))
+# line 15: the C Speech/Scene runs the scheduled voice itself (SSound.PlayVoice recorded); the pack recorder replaced Speech.PlayVoiceScheduled, so nothing plays (C-internal call, as R9)
+ignore (I._takecalls(), I._mod('Scene', I.SV), SInput.GetActionSet(), Scrap.GetEntity(Scrap.GetCam(0)).EntityLink, Scrap.GetEntity('DM_Scene_Decontamination') is None, Scrap.GetEntity('DecontaminationDtritus') is None, map(lambda n: I._ent(n, ('Active','TimeSpeed')), S.HidenChars))

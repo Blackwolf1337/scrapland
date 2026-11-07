@@ -1,0 +1,31 @@
+# the missions of the crazy gambler that run on the super deal modules, each started like a super deal in its level:
+# Mission_BankersCombat (TeamDeathMatch with the mission's KeepPlaying hook), Mission_IgorCombat (Versus),
+# Mission_BankersCTF (CTF in the OM), Mission_MortalRace (MortalRace)
+Scrap.AddScheduledFunc(Scrap.GetTime() + 1.0, __import__('MissionsFuncs').StartSuperDeal, ('QF', 'Mission_BankersCombat', 'TeamDeathMatch'))
+!sleep 40
+execfile('fsd.py')
+(Scrap.GetLevelPath(), __import__('Init').SuperDealModule.__name__, Scrap.GetSaveVar('Mission.Library'), _sdhooks(), _sdmod('TeamDeathMatch', ('enemiesFrags', 'friendsFrags', 'enemies', 'friends', 'KeepPlaying')))
+(_sdon(), setattr(Scrap.UsrEntity(0), 'Invulnerable', 1), _sd(__import__('Parking').ExecSwitchVehicleMissionCallback))
+(_sd(__import__('TeamDeathMatch').StartCombat), _sdfreeze(__import__('TeamDeathMatch').enemies + __import__('TeamDeathMatch').friends), _sdlist('Enemies'), _sdlist('Friends'))
+(setattr(__import__('TeamDeathMatch'), 'friendsFrags', 19), _sd(__import__('TeamDeathMatch').OnEnemyDeath, 'Enemy1', 'Player0'), _sdhooks(), _sdent(('Enemy2', 'Friend1'), ('Invulnerable', 'EntityList')))
+_sd(__import__('TeamDeathMatch').SetInvulnerableStatus, Scrap.UsrEntity(0))
+Scrap.AddScheduledFunc(Scrap.GetTime() + 1.0, __import__('MissionsFuncs').StartSuperDeal, ('CA', 'Mission_IgorCombat', 'Versus'))
+!sleep 40
+execfile('fsd.py')
+(Scrap.GetLevelPath(), __import__('Init').SuperDealModule.__name__, Scrap.GetSaveVar('Mission.Library'), _sdhooks(), _sdmod('Versus', ('combatDeaths', 'enemyName', 'combatEnemyType', 'combatEnemyProfile')), _sdent(('Enemy',)))
+(_sdon(), setattr(Scrap.UsrEntity(0), 'Invulnerable', 1), _sd(__import__('Parking').ExecSwitchVehicleMissionCallback))
+(_sd(__import__('Versus').StartCombat), setattr(Scrap.GetEntity('Enemy'), 'Invulnerable', 1), _sdent(('Enemy',)))
+Scrap.AddScheduledFunc(Scrap.GetTime() + 1.0, __import__('MissionsFuncs').StartSuperDeal, ('OM', 'Mission_BankersCTF', 'CTF'))
+!sleep 40
+execfile('fsd.py')
+(Scrap.GetLevelPath(), __import__('Init').SuperDealModule.__name__, Scrap.GetSaveVar('Mission.Library'), _sdhooks(), _sdmod('CTF', ('enemies', 'friends', 'flags', 'maxFlags', 'onDeathSpawnTime')))
+(_sdon(), setattr(Scrap.UsrEntity(0), 'Invulnerable', 1), _sdfreeze(__import__('CTF').enemies + __import__('CTF').friends), _sd(__import__('Parking').ExecSwitchVehicleMissionCallback))
+(_sd(__import__('CTF').StartCTF), _sdfreeze(__import__('CTF').enemies + __import__('CTF').friends), _sdmod('CTF', ('flagsActive',)), _sdlist('CTFEnemies'), _sdlist('CTFFriends'))
+(_sd(__import__('CTF').PreRestartMenu), _sd(__import__('CTF').PreOnVictory))
+Scrap.AddScheduledFunc(Scrap.GetTime() + 1.0, __import__('MissionsFuncs').StartSuperDeal, ('FZ', 'Mission_MortalRace', 'MortalRace'))
+!sleep 40
+execfile('fsd.py')
+(Scrap.GetLevelPath(), __import__('Init').SuperDealModule.__name__, Scrap.GetSaveVar('Mission.Library'), _sdhooks(), _sdmod('MortalRace', ('numWaypoints', 'respawnTime', 'profileType', 'FightingFreezeControlAim')), len(__import__('RaceMaker').StartPos))
+(_sdon(), setattr(Scrap.UsrEntity(0), 'Invulnerable', 1), _sd(__import__('Parking').ExecSwitchVehicleMissionCallback), _sdfreeze(__import__('MortalRace').racers), _sdmod('MortalRace', ('racers', 'YourScore')))
+# the one line that differs on purpose: the C functions are builtins
+str(type(__import__('MortalRace').Init))

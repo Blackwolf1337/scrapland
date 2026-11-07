@@ -1,0 +1,4 @@
+# line 15: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore (setattr(SM, 'FirstAppereance', 1), _sd(SM.CreateMerc), SM.MercName != M0, SM.iWaypoint, SM.FirstAppereance, _ye((SM.MercName,), ('Money', 'TgType', 'OnDeath', 'OnDamage', 'Life', 'MaxLife')), _sdmod('MapTriggers', ('shipsAllowedToLaunchMadHunters',)) == [('shipsAllowedToLaunchMadHunters', [SM.MercName])], _btarget() == SM.MercName, SAI.GetStateVehicle(SM.MercName))
+# line 24: random in C: the case recorder controls Scrap.Rand on the pack side only, the C port calls Scrap_RandRange directly (brief)
+ignore (_sd(SM.OnStupidMercDeath, M1, 'Nobody'), _sd(SM.OnStupidMercDeath, M1, _un()), _sd(SM.OnStupidMercDeath, M1))

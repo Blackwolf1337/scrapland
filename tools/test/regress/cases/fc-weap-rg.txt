@@ -1,0 +1,71 @@
+# regress: rd/fc-weap.txt without its lines 58-65 (Vulcan, Swarm, EMI, Laser Init with other ids for real: a traffic ship
+# firing the Vulcan afterwards hits the fatal check Model.c:48 in pack and C runs at random, see handback-r8i). The recorded
+# Init calls of its lines 66-75 stay.
+# DownTown: the weapons after the level start (SWeap tables, engine variables, module variables, net hooks); direct calls of the countermeasure missiles and of Net
+exec(open('fmis.py').read()) in __import__('Init').__dict__
+exec(open('fweap.py').read()) in __import__('Init').__dict__
+I = __import__('Init')
+I._wd()
+I._wv()
+I._wm()
+__import__('EMI').ClientCreate('NetX', 'Other')
+__import__('EMI').ClientAfterCreate('NetX', 'Other')
+__import__('Cloud').ClientCreate('NetCloud1', 'Cloud')
+I._ent('NetCloud1', ('HitType','Ang','LifeTime','SwarmSpeed','HiddenSwarm','HideMain','NoWorldHit','Type','SwDthTime','NetRes','snd00_name','snd00_loop','snd00_vol0','snd00_time0','Parent','NetnSwarm'))
+__import__('Cloud').ClientAfterCreate('NetCloud1', 'Cloud')
+__import__('Swarm').ClientCreate('NetSwarm1', 'Swarm')
+p = Scrap.UsrEntity(0).Pos
+__import__('Cloud').CreateCloud('TCloud', p[0], p[1] + 500, p[2], 0.1, 0.2, 0.3)
+__import__('EMI').CreateEMI('TEMI', p[0] + 300, p[1] + 500, p[2], 1, 2, 3)
+__import__('Sonic').CreateSonic('TSonic', p[0], p[1] + 800, p[2] + 300, 0, 0, 0)
+(I._ent('TCloud', ('HitType','Ang','LifeTime','SwDthTime','NetRes','Type','snd00_name','snd00_vol0')), I._ent('TEMI', ('HitType','Ang','LifeTime','SwDthTime','NetRes','Type','snd00_name','snd00_vol0','HiddenSwarm','HideMain')), I._ent('TSonic', ('HitType','Ang','LifeTime','Type','NetRes','VRadius','snd00_name','snd00_vol0')))
+!sleep 1
+(I._ent('TCloud', ('HitType',)), I._ent('TEMI', ('HitType',)), I._ent('TSonic', ('HitType','VRadius')))
+setattr(Scrap.GetEntity('TEMI'), 'NetnSwarm', 3)
+__import__('Cloud').SetUpCloud('TCloud').Name
+__import__('EMI').SetUpEMI('TEMI').Name
+__import__('Sonic').SetUpSonic('TSonic').Name
+(I._ent('TCloud', ('nSwarm','Radius','TopRadius','RadiusGrow')), I._ent('TEMI', ('nSwarm','Radius','TopRadius','RadiusGrow')), I._ent('TSonic', ('nSwarm','Radius','TopRadius','RadiusGrow','OnHit','Mass')))
+__import__('Cloud').SetUpCloud('NoSuchMissile')
+__import__('Cloud').ActivateHitType(Scrap.GetEntity('TCloud'), 'Hit')
+I._ent('TCloud', ('HitType',))
+__import__('Sonic').OnServerHit('NoSuchMine', 'w', 'l')
+__import__('Sonic').SonicHit('NoSuchCar')
+__import__('Sonic').SonicHit(Scrap.UsrEntity(0).Name)
+__import__('Sonic').OnServerHit('TSonic', 'w', 'l')
+(I._mod('Sonic', ('SwarmPos',)), Scrap.UsrEntity(0).Vel, Scrap.UsrEntity(0).ForceVel)
+__import__('Sonic').SonicHit(Scrap.UsrEntity(0).Name)
+(Scrap.UsrEntity(0).Vel, Scrap.UsrEntity(0).ForceVel)
+__import__('Sonic').CreateSonic('TSonic2', p[0], p[1] + 900, p[2], 0, 0, 0).Name
+__import__('Sonic').OnDeath('TSonic2', 'w')
+(I._ent('TSonic2', ('Active',)), I._mod('Sonic', ('SwarmPos',)))
+__import__('Sonic').OnDeath('TSonic2', 'w')
+__import__('Sonic').OnHit('NoSuchMine', 'w', 'l')
+__import__('Net').ClientCreateDef('a', 'b')
+__import__('Net').ClientJoinDef(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
+(Scrap.Get('ServerType'), Scrap.Get('ServerMapList'))
+__import__('Net').PurgeServerMapList()
+Scrap.Set('ServerType', 'Postman')
+Scrap.Set('ServerMapList', "['QF', 'FZ', 'OM', 'XX', 'OM']")
+__import__('Net').PurgeServerMapList()
+Scrap.Get('ServerMapList')
+Scrap.Set('ServerType', 'NoMode')
+__import__('Net').PurgeServerMapList()
+__import__('Net').Spectate(0, 1)
+(Scrap.GetEntity(Scrap.GetCam(0)).FreeCam, Scrap.GetEntity(Scrap.GetEntity(Scrap.GetCam(0)).MainTarget).Active)
+__import__('Net').Spectate(0, 0)
+(Scrap.GetEntity(Scrap.GetCam(0)).FreeCam, Scrap.GetEntity(Scrap.GetEntity(Scrap.GetCam(0)).MainTarget).Active)
+setattr(Scrap, 'LoadLevel', I._recn('LoadLevel'))
+__import__('Net').LoadSinglePlayer('Levels/Bank')
+I._r
+I._wm()
+setattr(Scrap, 'GetNetFlags', lambda: (1, 0, 0))
+setattr(I, '_r', [])
+(setattr(__import__('SWeap'), 'SetSWeap', I._recn('SetSWeap')), setattr(__import__('SWeap'), 'SetFWeap', I._recn('SetFWeap')), setattr(__import__('SWeap'), 'SetSAmmo', I._recn('SetSAmmo')))
+__import__('Swarm').Init(1, 1)
+__import__('Inferno').Init(5, 1)
+setattr(Scrap, 'GetNetFlags', lambda: (0, 0, 0))
+__import__('Swarm').Init(1, 1)
+__import__('Laser').Init(6, 3)
+__import__('Cloud').Init(0)
+I._r

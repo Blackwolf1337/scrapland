@@ -1,0 +1,67 @@
+# DownTown: Vehicles (lost engines, hulls, explosions recorded, OnDeath of a traffic ship, respawn, set up, cameras)
+exec(open('fweap.py').read()) in __import__('Init').__dict__
+I = __import__('Init')
+V = __import__('Vehicles')
+P = __import__('Parking')
+(P.PlayerShip.Name, P.PlayerShip.Model, I.M, P.PlayerShip.NEng0, P.PlayerShip.NEng1, P.PlayerShip.NEng2, P.PlayerShip.NEng3, P.PlayerShip.MPil0, P.PlayerShip.WRadius)
+setattr(I, 'T1', Scrap.EntityListGet('Traffic', 'First'))
+setattr(I, 'T2', Scrap.GetEntity(I.T1).NextInList)
+setattr(I, 'T3', Scrap.GetEntity(I.T2).NextInList)
+setattr(I, 'T4', Scrap.GetEntity(I.T3).NextInList)
+setattr(I, 'T5', Scrap.GetEntity(I.T4).NextInList)
+(I.T1, I.T2, Scrap.GetEntity(I.T1).Model, Scrap.GetEntity(I.T1).Speed > 2000, Scrap.GetEntity(I.T1).EntityList)
+setattr(I, 'M', Scrap.GetEntity(I.T1).MEng0)
+(I.M, Scrap.GetEntity(I.T1).NEng0, Scrap.GetEntity(I.T1).NEng1, Scrap.GetEntity(I.T1).MPil0)
+(setattr(__import__('SFX'), 'ShipExplosion', I._recn('ShipExplosion')), setattr(__import__('SSound'), 'PlaySound', I._recn('PlaySound')))
+V.GetRandomMercenaryHead() in ('MercenaryA', 'MercenaryB', 'MercenaryC')
+p = P.PlayerShip.Pos
+V.CreateDumbMotor('DM1', (p[0], p[1] + 2000, p[2]), (0, 0, 0), I.M).Name
+I._ent('DM1', ('LifeTime','Speed','Type','NetRes','HitType'))
+V.SetUpDumbMotor('DM1', I.M).Name
+I._ent('DM1', ('Radius','TopRadius','RadiusGrow','snd00_name','snd00_loop','snd00_vol0'))
+V.ClientCreate('NetM1', 'DmM:' + I.M)
+V.ClientAfterCreate('NetM1', 'DmM:' + I.M)
+I._ent('NetM1', ('Ang','NetRes','OnHit','Radius','snd00_name'))
+V.ClientCreate('NetX', 'Other')
+V.ClientAfterCreate('NetX', 'Other')
+V.ClientCreate('NetX', 'Dm')
+V.MotorHit('DM1', '', '').Name
+V.MotorHit('DM1', 'w', I.T1).Name
+I._ent(I.T1, ('Vel',))
+V.ServerMotorHit('NetM1', '', I.T1)
+I._ent(I.T1, ('Life','Hit_Target'))
+V.ServerMotorHit('NetM1', 'w', '')
+V.DumbShipHit('DM1', 'a', 'b').Name
+map(lambda c: (c[0], len(c)), I._r)
+setattr(I, '_r', [])
+V.ActivateHitType(Scrap.GetEntity('DM1'), 'None')
+I._ent('DM1', ('HitType',))
+V.GetCoin('NoShip', (0, 0, 0))
+V.GetCoin(I.T2, (p[0], p[1], p[2]))
+I._ent(I.T2, ('AI_State', 'EntityList'))
+setattr(V, 'OnDeathCallback', I._recn('cb'))
+setattr(V, 'ForceDeathTaunt', 1)
+setattr(V, 'ShipExplosionForceInplace', 1)
+I._sync(V.OnClientDeath, I.T2, 'nobody')[1]
+(I._ent(I.T2, ('Active','Vel')), Scrap.GetEntity(Scrap.GetEntity(I.T2).Model + I.T2) != None)
+setattr(V, 'ShipExplosionForceInplace', 0)
+I._sync(V.OnDeath, I.T3, Scrap.UsrEntity(0).Name)[1]
+(I._ent(I.T3, ('Active','Vel')), I._mod('Speech', ('RemoteCom', 'CurrentRemoteCom')))
+setattr(I, 'FT', Scrap.EntityListGet('FightingTraffic', 'First'))
+(I.FT, I.FT and Scrap.GetEntity(I.FT).AI_Target)
+I._sync(V.OnDeath, I.T4, 'nobody')[1]
+I._sync(V.OnDeath, P.PlayerShip.Name, I.T2)[1]
+(Scrap.GetSaveVar('Hangar.DestroyedShips'), Scrap.GetSaveVar('Hangar.iHangarShip'), P.PlayerShip and P.PlayerShip.Name, P.PlayerShip and P.PlayerShip.Active)
+V.ReSpawnShip(P.PlayerShip.Name)
+I._ent(P.PlayerShip.Name, ('OnDeath','Active','Life','MaxLife','Vel','ForceAll','Ammo00','Ammo01','Ammo02','Ammo03','Upgrd00','isBoost','BoostDeact','MotorDCnt','EMICounter','FireRemainTime','FireDelayTime','CMStamp','WeapA06','AcWeap'))
+e = Scrap.GetEntity(I.T5)
+(e.Model, e.MaxLife, e.MPil0, e.MEng0, e.MEng1, e.MEng2, e.MEng3, e.WeapList)
+V.SetProperties(e.Name, e.Model, e.MaxLife, e.MPil0, e.MEng0, e.MEng1, e.MEng2, e.MEng3, e.WeapList, 'Me', localedit = 1).Name
+I._ent(I.T5, ('isInit','FxEngineTime','FxBoostEngineTime','Model','WeapList','MEng0','Descriptor','MPil0','MaxLife'))
+V.SetStdProperties(P.PlayerShip.Name, 'NoShip', 'Dtritus')
+V.SetActiveCam(Scrap.UsrEntity(0).Name, Scrap.GetCam(0), 0)
+I._ent(Scrap.GetCam(0), ('OnSwitch','MainTarget','Target','FreeCam'))
+V.SwitchView(Scrap.GetCam(0), 0)
+V.SwitchView(Scrap.GetCam(0), -1)
+I._ent(Scrap.UsrEntity(0).Name, ('UsrControl',))
+I._sync(V.OnDeath, P.PlayerShip.Name, 'nobody')[1]

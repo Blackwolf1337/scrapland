@@ -1,0 +1,3 @@
+# ShipEdit level: the exact places of the engine bay buttons (the ratio constant of SetEnginesPanel), round 5b
+map(lambda n: (n, `__import__('SScorer').Get(0, n, 'X')`, `__import__('SScorer').Get(0, n, 'W')`), filter(lambda n: n[-12:-1] == 'EngineGroup', __import__('SScorer').Items(0)))
+(Scrap.Get('PhysicalAspectRatio'), `1.3333333333333 / Scrap.Get('PhysicalAspectRatio')`)

@@ -1,0 +1,6 @@
+# line 38: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore (setattr(SA, 'SmartMercName', 'Nobody'), _bsave(), _bnear(SA.MedMercName, 100000), setattr(SA, 'EvasionTime', Scrap.GetTime() - 5), _sd(SA.CheckEvasion), _bback())
+# line 40: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore (setattr(SA, 'SmartMercName', 'A'), setattr(SA, 'MedMercName', 'B'), _sd(SA.StartEvasion), SA.SmartMercName[:12], SA.MedMercName[:12])
+# line 41: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore _sdfreeze(_sdlist('Enemies'))

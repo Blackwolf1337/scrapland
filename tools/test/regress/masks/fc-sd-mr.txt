@@ -1,0 +1,8 @@
+# line 36: random in C: the case recorder controls Scrap.Rand on the pack side only, the C port calls Scrap_RandRange directly (brief)
+ignore (_sd(M.RespawnPlayer, 'PlayerShip', M.baton.Pos, (0.0, 1.0, 0.0)), _sdn(__import__('Parking').PlayerShip.Ang))
+# line 38: random in C: the case recorder controls Scrap.Rand on the pack side only, the C port calls Scrap_RandRange directly (brief)
+ignore (setattr(Scrap.GetEntity(M.racers[1]), 'RadarShow', 1), _sd(M.RacerKilled, M.racers[1], 'Player0'), _sdmod('MortalRace', ('racers', 'nameProfileDict', 'shipWithBaton')), _sdlist('Race'))
+# line 47: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore (map(lambda n: setattr(Scrap.GetEntity(n), 'EntityList', 'Race'), M.racers), _sd(M.CreateFirstWaypoint), setattr(M, 'YourScore', 49), setattr(M, 'shipWithBaton', 'Player0'), _sd(M.OnCheckPoint, M.waypointName, 'Player0'), _sdhooks(), _sdmod('MortalRace', ('YourScore', 'waypointName')), Scrap.UsrEntity(0).Invulnerable, _sdlist('Race'))
+# line 53: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore (map(lambda n: Scrap.GetEntity(n) and Scrap.GetEntity(n).Del(), M.racers), setattr(M, 'racers', []))

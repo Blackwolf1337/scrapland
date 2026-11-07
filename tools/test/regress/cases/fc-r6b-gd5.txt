@@ -1,0 +1,38 @@
+# GamblinDen, round 6b: Mission_ArrangeMortalRace, Mission_ThreeStooges
+Scrap.SetSaveVar('Mission.Map', 'GamblinDen'); Scrap.SetAlarm(0); map(lambda v: Scrap.SetSaveVar(v, '1'), ('MayorAtGambinDen', 'MayorAtTownHall', 'PoliceBossAtPolice', 'CrazyGamblerAtGambinDen', 'FunctionaryTwinsAtGambinDen', 'BankersAtGambinDen', 'BishopsAtGambinDen', 'PolicesAtGambinDen')); map(lambda v: Scrap.SetSaveVar(v, '0'), ('LonelyMercInGamblinDen', 'RobotsControlledByBoss', 'GamblinMusic', 'Player.InfiniteLives')); Scrap.SetSaveVar('Char', 'Dtritus'); Scrap.SetSaveVar('Mission.Library', 'Mission_ArrangeMortalRace'); Scrap.LoadLevel('Levels/GamblinDen'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6b.py')
+(Scrap.GetLevelPath(), _bfn('Mission_ArrangeMortalRace'), __import__('Mission_ArrangeMortalRace').cg.Name, _bent(('CrazyGambler_Default',), ('UseFunc', 'RadarShow')), _bsv(_BDEN))
+_bon()
+(_sd(__import__('Mission_ArrangeMortalRace').InitStatus, 'x'), _bsv(_BDEN))
+_barrange(__import__('Mission_ArrangeMortalRace').CrazyGamblerSpeech, 'Mission_ArrangeMortalRace_CrazyGambler')
+_sd(__import__('Mission_ArrangeMortalRace').LaunchMortalRace)
+(_sd(__import__('Mission_ArrangeMortalRace').Init, 'x'), _bent(('CrazyGambler_Default',), ('UseFunc', 'RadarShow')))
+_sd(__import__('Mission_ArrangeMortalRace').LaunchMortalRace, 1)
+_sd(__import__('Mission_ArrangeMortalRace').CrazyGamblerSpeech, Scrap.UsrEntity(0).Name, 'CrazyGambler_Default', 'Talk')
+del __import__('Mission_ArrangeMortalRace').cg
+_sd(__import__('Mission_ArrangeMortalRace').Init, 'x')
+_broff()
+Scrap.SetSaveVar('Mission.Map', 'GamblinDen'); Scrap.SetAlarm(0); map(lambda v: Scrap.SetSaveVar(v, '1'), ('MayorAtGambinDen', 'MayorAtTownHall', 'PoliceBossAtPolice', 'CrazyGamblerAtGambinDen', 'FunctionaryTwinsAtGambinDen', 'BankersAtGambinDen', 'BishopsAtGambinDen', 'PolicesAtGambinDen')); map(lambda v: Scrap.SetSaveVar(v, '0'), ('LonelyMercInGamblinDen', 'RobotsControlledByBoss', 'GamblinMusic', 'Player.InfiniteLives')); Scrap.SetSaveVar('Char', 'Dtritus'); Scrap.SetSaveVar('Mission.Library', 'Mission_ThreeStooges'); Scrap.LoadLevel('Levels/GamblinDen'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6b.py')
+(Scrap.GetLevelPath(), _bfn('Mission_ThreeStooges'), _sdmod('Mission_ThreeStooges', ('alreadyConvinced', 'NextMissionData')), _sdn(__import__('MissionsFuncs').targetsList), _bent(('MercenaryA_Smartie', 'MercenaryB_Dumber', 'MercenaryC_Brutus'), ('UseFunc', 'RadarShow')))
+_bres()
+_bon()
+(_sd(__import__('Mission_ThreeStooges').InitStatus, 'x'), _sdn(__import__('CharsNPC').AfterBrowseNPC[-1:]))
+(_sd(__import__('Mission_ThreeStooges').AfterBrowseNPC), _bres())
+(_sd(__import__('Mission_ThreeStooges').CreateMercenaryAInit, Scrap.GetEntity('MercenaryA_Smartie')), _sd(__import__('Mission_ThreeStooges').CreateMercenaryBInit, Scrap.GetEntity('MercenaryB_Dumber')), _sd(__import__('Mission_ThreeStooges').CreateMercenaryCInit, Scrap.GetEntity('MercenaryC_Brutus')), _bent(('MercenaryA_Smartie', 'MercenaryB_Dumber', 'MercenaryC_Brutus'), ('UseFunc',)))
+_bmerc(__import__('Mission_ThreeStooges').MercenaryASpeech, 'MercenaryA_Smartie', 'Mission_FirstContactMercs_SmartMerc')
+_bmerc(__import__('Mission_ThreeStooges').MercenaryCSpeech, 'MercenaryC_Brutus', 'Mission_FirstContactMercs_AverageMerc')
+_bmerc(__import__('Mission_ThreeStooges').MercenaryBSpeech, 'MercenaryB_Dumber', 'Mission_FirstContactMercs_StupidMerc')
+(setattr(__import__('Mission_ThreeStooges'), 'alreadyConvinced', 1), _sd(__import__('Mission_ThreeStooges').MercenaryBSpeech, Scrap.UsrEntity(0).Name, 'MercenaryB_Dumber', 'Talk', 'x'), setattr(__import__('Mission_ThreeStooges'), 'alreadyConvinced', 0))
+(Scrap.SetSaveVar('Mission.Library', 'x'), _sd(__import__('Mission_ThreeStooges').MercenaryASpeech, Scrap.UsrEntity(0).Name, 'MercenaryA_Smartie', 'Talk', 'x'), _sd(__import__('Mission_ThreeStooges').MercenaryBSpeech, Scrap.UsrEntity(0).Name, 'MercenaryB_Dumber', 'Talk', 'x'), _sd(__import__('Mission_ThreeStooges').MercenaryCSpeech, Scrap.UsrEntity(0).Name, 'MercenaryC_Brutus', 'Talk', 'x'), Scrap.SetSaveVar('Mission.Library', 'Mission_ThreeStooges'))
+(_sd(__import__('Mission_ThreeStooges').SetNextMission, 'MercenaryB_Dumber'), __import__('Mission_ThreeStooges').alreadyConvinced, _sdn(__import__('MissionsFuncs').targetsList), _bsv(('Mission.Map', 'Mission.Library')))
+(setattr(__import__('Mission_ThreeStooges'), 'NextMissionData', ('x',)), _sd(__import__('Mission_ThreeStooges').SetNextMission, 'x'))
+(_sd(__import__('Mission_ThreeStooges').Init, 'x'), _sdn(__import__('MissionsFuncs').targetsList))
+_sd(__import__('Mission_ThreeStooges').CreateMercenaryAInit, None)
+del __import__('Mission_ThreeStooges').alreadyConvinced
+_sd(__import__('Mission_ThreeStooges').MercenaryBSpeech, Scrap.UsrEntity(0).Name, 'MercenaryB_Dumber', 'Talk', 'x')
+_broff()

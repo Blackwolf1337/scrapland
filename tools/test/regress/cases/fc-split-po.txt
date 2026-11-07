@@ -1,0 +1,34 @@
+# FZ: split screen Postman (set by the case, then the level loaded): Split and SDeathMatch
+exec(open('fweap.py').read()) in __import__('Init').__dict__
+(Scrap.Set('r_SplitScreen', 1), Scrap.Set('SplitScreen', 1), Scrap.Set('ServerType', 'Postman'), Scrap.Set('CameraDefViewAspect', 2.6666), Scrap.Set('R_SceneRTargetSwap', 0))
+Scrap.LoadLevel('Levels/FZ')
+!sleep 30
+execfile('fst.py')
+exec(open('fweap.py').read()) in __import__('Init').__dict__
+I = __import__('Init')
+S = __import__('Split')
+I._split()
+(I._ent('Player0', ('Model','TgType','Target','RadarShow','UsrControl','Active')), I._ent('Player1', ('Model','TgType','Target','RadarShow','UsrControl','Active')), I._ent('Cam0', ('camPos','MainTarget','OnSwitch')), I._ent('Cam1', ('MainTarget',)))
+(I._items(0, ('textorl0','textorl1','textorl2','BlackZoneUp'), ('Text','X','Y','Font','Align','Alpha','Visible')), I._items(1, ('textorl0','BlackZoneUp'), ('Text','Y')))
+setattr(__import__('SInput'), 'Bind', I._recn('Bind'))
+setattr(__import__('SaveGame'), 'QLoad', I._recn('QLoad'))
+M = __import__('SPostman')
+(len(M.ZoneList), M.AcFlag, M.FlagInitPos, M.Flag.Name, M.Flag.Pos, M.Flag.OnTake, M.BattonOwner, Scrap.Get('CurrentWaypointName'))
+I._t(S.StartGame)
+(I._split(), I._ent('Player0', ('TgType','RadarShow')), I._ent('Player1', ('TgType','RadarShow')))
+I._sync(M.TakeArea, 'f', 'Player1')[1]
+I._sync(M.TakeFlag, 'f', 'Player1')[1]
+(M.BattonOwner, M.Flag.OnTake, M.Flag.Pos == M.ZoneList[M.AcFlag], Scrap.Get('CurrentWaypointName'), Scrap.Get('CurrentWaypointName2'))
+I._sync(M.TakeArea, 'f', 'Player0')[1]
+I._sync(M.TakeArea, 'f', 'Player1')[1]
+(S.Scorer, M.BattonOwner, I._items(1, ('MissionBest',), ('Text',)))
+I._sync(M.TakeFlag, 'f', 'Player0')[1]
+(Scrap.Get('CurrentWaypointName'), Scrap.Get('CurrentWaypointName2'))
+I._sync(M.OnDeathFunc, 'Player1', 'x')[1]
+I._sync(M.OnDeathFunc, 'Player0', 'x')[1]
+(M.BattonOwner, M.Flag.OnTake, M.Flag.Pos == Scrap.GetEntity('Player0').Pos, Scrap.Get('CurrentWaypointName'), Scrap.Get('CurrentWaypointName2'))
+I._sync(M.BattonRepos)[1]
+M.Flag.Pos == M.FlagInitPos
+I._sync(M.TakeFlag, 'f', 'Nobody')[1]
+setattr(M, 'BattonOwner', 'PlayerX')
+M.TakeArea('f', 'PlayerX')

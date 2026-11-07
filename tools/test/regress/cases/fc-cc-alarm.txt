@@ -1,0 +1,9 @@
+# Townhall: the alarm alone (is the TypeError of the possession test from the alarm?)
+exec(open('fmis.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); I._rec('Scrap', 'ConsoleError'); result = 1
+Scrap.SetAlarm(1); result = I._takecalls()
+!sleep 3
+(I._takecalls(), Scrap.GetAlarm()[0])
+__import__('CharAct').NoFXDeath(Scrap.GetEntity('Nurse_03'), 'Player0', 0); result = I._takecalls()
+!sleep 3
+I._takecalls()

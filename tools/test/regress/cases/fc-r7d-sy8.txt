@@ -1,0 +1,35 @@
+# Scrapyard, round 7d: Mission_MeetBerto, then Mission_TalkToDeepThroat
+Scrap.SetSaveVar('Mission.Map', 'Scrapyard'); Scrap.SetSaveVar('Mission.Library', 'Mission_MeetBerto'); Scrap.SetSaveVar('RobotsControlledByBoss', '0'); Scrap.SetSaveVar('CreateBertos', '0'); Scrap.LoadLevel('Levels/Scrapyard'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6b.py')
+execfile('fr7d.py')
+MB = _m('Mission_MeetBerto'); PC = MB.pc.Name; result = 1
+(Scrap.GetLevelPath(), _bfn('Mission_MeetBerto'), _ye((PC,), ('UseFunc',)), _btarget() == PC, _bsv(('Traffic.AcShips',)), __import__('Traffic').AcShips)
+_bon()
+(setattr(__import__('Traffic'), 'AcShips', []), _sd(MB.InitStatus, 'x'), __import__('Traffic').AcShips, _sd(MB.InitStatus))
+(_sd(MB.Init, 'x'), _ye((MB.pc.Name,), ('UseFunc',)), _btarget() == MB.pc.Name)
+PC = MB.pc.Name; result = 1
+(Scrap.SetAlarm(1), _sd(MB.UsePhoneCab, _un(), PC, 'Talk', 'x'), _bhooks()[:4], Scrap.SetAlarm(0))
+(_sd(MB.UsePhoneCab, _un(), PC, 'Talk', 'x'), _bhooks()[:4], _bhooks()[12:14], _sd(MB.UsePhoneCab, _un(), PC))
+(Scrap.SetSaveVar('Conversor.AvailableChars', "['Dtritus', 'Gear']"), _sd(MB.SetNextMission), _ye((PC,), ('UseFunc',)), _bsv(('CreateBertos', 'BertosProfile', 'BertosLife', 'Mission.Map', 'Mission.Library', 'Conversor.AvailableChars')), _sdn(__import__('Parking').SwitchVehicleMissionCallback), _sdn(__import__('Parking').SwitchCharMissionCallback))
+(_sd(MB.SetNextMission), _bsv(('Conversor.AvailableChars',)))
+(setattr(MB, 'pc', None), _sd(MB.SetNextMission), _sd(MB.UsePhoneCab, _un(), 'Nobody', 'Talk', 'x'))
+_broff()
+Scrap.SetSaveVar('Mission.Map', 'Scrapyard'); Scrap.SetSaveVar('Mission.Library', 'Mission_TalkToDeepThroat'); Scrap.SetSaveVar('CreateBertos', '0'); Scrap.LoadLevel('Levels/Scrapyard'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6b.py')
+execfile('fr7d.py')
+TD = _m('Mission_TalkToDeepThroat'); PC = TD.pc.Name; result = 1
+(Scrap.GetLevelPath(), _bfn('Mission_TalkToDeepThroat'), _ye((PC,), ('UseFunc',)), _btarget() == PC, __import__('Traffic').AcShips)
+_bon()
+(setattr(__import__('Traffic'), 'AcShips', []), _sd(TD.InitStatus, 'x'), __import__('Traffic').AcShips)
+(_sd(TD.Init, 'x'), _ye((TD.pc.Name,), ('UseFunc',)), _btarget() == TD.pc.Name, _sd(TD.Init))
+PC = TD.pc.Name; result = 1
+(Scrap.SetAlarm(1), _sd(TD.UsePhoneCab, _un(), PC, 'Talk', 'x'), _bhooks()[:4], Scrap.SetAlarm(0))
+(_sd(TD.UsePhoneCab, _un(), PC, 'Talk', 'x'), _bhooks()[:4], _bhooks()[12:14])
+(_sd(TD.SetNextMission), _ye((PC,), ('UseFunc',)), _bsv(('Mission.Map', 'Mission.Library')), _sd(TD.SetNextMission, 1))
+del TD.pc
+(_sd(TD.SetNextMission), _sd(TD.UsePhoneCab, _un(), PC, 'Talk', 'x'))
+_broff()

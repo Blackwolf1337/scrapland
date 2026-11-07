@@ -1,0 +1,2 @@
+# line 3: door animation state (Open, Opened, Closed) at the moment of the line (door timing; also seen in round 8d)
+ignore map(lambda n: __import__('Init')._ent(n, ('ActCtrl','Action','DefLoop','Ang','OnObjSlot','ActiveCMask','MapCollision','UseRealTime','AlwaysUse','UseAngSel','UseAbsAngSel','CamTgt','ArrowCanUse','ArrnOpt','UseFunc','ArrOpt0','ArrOpt1','ArrOpt2','ArrOpt3','VRadius','RadarShow','ArrowCanMission')), __import__('Init')._dd('DM_Door_*'))

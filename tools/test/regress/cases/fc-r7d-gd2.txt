@@ -1,0 +1,52 @@
+# GDB, round 7d: Mission_IntoTheGDB and MapMatrix
+Scrap.SetSaveVar('Mission.Map', 'GDB'); Scrap.SetSaveVar('Mission.Library', 'Mission_IntoTheGDB'); Scrap.SetSaveVar('MissionState', 'KillTraitorBishop'); Scrap.SetSaveVar('ComeFrom', ''); Scrap.LoadLevel('Levels/GDB'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6b.py')
+execfile('fr7d.py')
+IG = _m('Mission_IntoTheGDB'); MX = _m('MapMatrix'); import Parking, SAI; _sdfreeze(_sdlist('Bishops') + _sdlist('Enemies')); result = 1
+(Scrap.GetLevelPath(), _bfn('Mission_IntoTheGDB'), _bfn('MapMatrix'), _bfn('Map'), _m('Map').CreateBishops, _bsv(('MissionState',)), _sdmod('Mission_IntoTheGDB', ('currentScannedShip', 'rm', 'traitorFound')), len(IG.bishops), IG.traitor in IG.bishops)
+(_sdn((Parking.SwitchVehicleMissionCallback, Parking.SwitchCharMissionCallback)), len(_sdlist('Bishops')), _ye(IG.bishops[:2], ('EntityList', 'Life', 'MaxLife', 'RadarShow', 'TgType')), _ye((IG.traitor,), ('Money',)), Scrap.EntityListGet('Bishops', 'OnDeath'), Scrap.EntityListGet('Enemies', 'OnDamage'), len(__import__('MissionsFuncs').targetsList))
+_bon()
+_brandon(0.5)
+(setattr(_m('Map'), 'CreateBishops', 1), _sd(IG.InitStatus, 'x'), _m('Map').CreateBishops)
+(_bprof(IG.GetBishopProfile()), _sd(IG.GetBishopProfile, 1))
+(_sd(IG.InitMission), _bhooks()[8:9], len(__import__('MissionsFuncs').targetsList), _bgv(('OnFinishAutoUpdate',)), _sd(IG.InitMission, 1))
+(_sd(IG.MissionScorer, 0), _bitems(0, ('ScanStatusText', 'ScanRemainingTime'), _BTEXT + ('MaxValue', 'Value', 'IsAutoUpdatable', 'Blink')))
+B = IG.bishops[:]; T = IG.traitor; O = filter(lambda b, t=T: b != t, B); result = 1
+(_bsave(), _bnear(O[0], 1000), setattr(IG, 'currentScannedShip', ''), _sd(IG.ScanShip), IG.currentScannedShip in B, Scrap.Get('CurrentWaypointName') == IG.currentScannedShip, _bitems(0, ('ScanStatusText', 'ScanRemainingTime'), ('Visible', 'Blink', 'IsAutoUpdatable', 'MaxValue', 'Value')), _bback())
+(setattr(IG, 'currentScannedShip', O[0]), _bnear(O[0], 1000), _sd(IG.ScanShip), _bitems(0, ('ScanRemainingTime',), ('Blink', 'IsAutoUpdatable')), _bback())
+(_bnear(O[0], 9000), _sd(IG.ScanShip), _bitems(0, ('ScanRemainingTime',), ('Blink', 'IsAutoUpdatable')), _sd(IG.ScanShip), _bback())
+(_bnear(O[0], 9000), _sd(IG.MissionScorer, 0), _bitems(0, ('ScanStatusText', 'ScanRemainingTime'), ('Visible', 'Value', 'IsAutoUpdatable')), _bnear(O[0], 1000), _sd(IG.MissionScorer, 0), _bitems(0, ('ScanStatusText', 'ScanRemainingTime'), ('Visible', 'Value')), _bback())
+(_bnear(O[0], 1000), _sd(IG.CheckContinueScanning), _bitems(0, ('ScanRemainingTime',), ('Blink', 'IsAutoUpdatable')), _bback())
+(_bnear(O[0], 9000), setattr(IG, 'traitorFound', 1), Scrap.Set('CurrentWaypointName', 'w'), _sd(IG.CheckContinueScanning), IG.currentScannedShip, Scrap.Get('CurrentWaypointName'), _bitems(0, ('ScanStatusText', 'ScanRemainingTime'), ('Visible',)), _bback(), setattr(IG, 'traitorFound', 0))
+(_sd(IG.ResetScan), Scrap.Get('CurrentWaypointName'), _sd(IG.ResetScan, 1), _sd(IG.ResetScan2), _bitems(0, ('ScanRemainingTime',), ('Blink', 'IsAutoUpdatable', 'MaxValue', 'Value')))
+(setattr(IG, 'currentScannedShip', O[1]), _sd(IG.OnFinishScan), O[1] in IG.bishops, len(IG.bishops), IG.currentScannedShip, _ye((O[1],), ('RadarShow',)), IG.traitorFound)
+(setattr(IG, 'currentScannedShip', 'Nobody'), _sd(IG.OnFinishScan), len(IG.bishops))
+(setattr(IG, 'currentScannedShip', T), _sd(IG.OnFinishScan), IG.traitorFound, _ye(O[2:4] + [T], ('RadarShow',)), Scrap.Get('CurrentWaypointName'))
+(_sd(IG.OnBishopsDamage, O[2], 'x', 1), len(_sdlist('Bishops')), len(_sdlist('Enemies')), Scrap.EntityListGet('Bishops', 'OnDamage'), Scrap.EntityListGet('Enemies', 'OnDamage'), _sd(IG.OnBishopsDamage, O[2], 'x'))
+(_sd(IG.OnBishopsDeath, O[2], 'Nobody'), O[2] in IG.bishops, _sd(IG.OnBishopsDeath, 'Nobody', 'Nobody'), _sd(IG.OnBishopsDeath, T, 'Nobody'), IG.traitor == T)
+(setattr(IG, 'currentScannedShip', T), _sd(IG.OnBishopsDeath, T, _un()), IG.traitor, IG.currentScannedShip, _ye(('GusMatrix', 'MissionCheckArrow'), ('Radius', 'AppearsIfFree', 'AutoFace', 'OnlyUser', 'rTime', 'OnTake', 'CamTgt', 'RadarShow')), _btarget(), __import__('Speech').RemoteCom)
+(_sd(IG.ActivateMatrix, 'GusMatrix'), _ye(('GusMatrix',), ('OnTake',)), _sd(IG.ActivateMatrix, 'Nobody'), _sd(IG.ActivateMatrix))
+(_sd(IG.DropMatrix, (1000.0, 2000.0, 3000.0)), _ypos(('GusMatrix1', 'MissionCheckArrow1')), _sd(IG.DropMatrix, 5))
+(setattr(IG, 'bishops', ['X']), _sd(IG.OnBishopsDeath, 'X', 'Nobody'), _bsv(('Player.NumLives',)), Scrap.GetAlarm()[0] > 0, Scrap.SetAlarm(0), setattr(IG, 'bishops', B))
+(_sd(IG.TakeMatrix, 'GusMatrix', 'Nobody'), _sd(IG.TakeMatrix, 'GusMatrix', _un()), _ye(('GusMatrix',), ('rTime', 'RadarShow')), Scrap.GetEntity('MissionCheckArrow') == None, _bsv(('MissionState',)), _sdn(IG.rm), _btarget() == IG.rm.Name)
+(_sd(IG.RestoreMatrix), _ye((IG.rm.Name,), ('VRadius', 'ArrowCanUse', 'Life', 'ArrnOpt', 'ArrOpt0', 'UseFunc', 'ActiveCMask', 'RadarShow')), _sdn(IG.rm.Ang), _sd(IG.RestoreMatrix, 1))
+EN = len(_sdlist('Enemies')); result = 1
+(Scrap.SetAlarm(1), _sd(IG.RelaxBishops), len(_sdlist('Bishops')), len(_sdlist('Enemies')), len(_sdlist('OutCop')), Scrap.GetAlarm()[0] > 0)
+RM = IG.rm.Name; result = 1
+(_sd(IG.LaunchRestoreMatrixAnim, _un(), RM, 'x', 'y'), _ye((RM,), ('UseFunc', 'Active', 'RadarShow')), _sdn(MX.EndFunc), _bhooks()[9:10], _sd(IG.LaunchRestoreMatrixAnim, _un()))
+(Scrap.SetSaveVar('MissionState', 'x'), _sd(IG.SetNextMission), _bsv(('MissionState', 'Mission.Map', 'Mission.Library')))
+(_sd(MX.EndOFScene), setattr(MX, 'EndFunc', _sdrec('EndFunc')), _sd(MX.EndOFScene, 'u'), _sd(MX.EndOFScene, usr = 1), _sd(MX.EndOFScene, 1, 2), _sd(MX.EndOFScene, other = 1))
+(_sd(MX.RestoreMatrix, _sdrec('EndFunc2')), _sdn(MX.EndFunc), _bhooks()[9:10], _sd(MX.EndOFScene))
+(setattr(MX, 'EndFunc', 5), _sd(MX.EndOFScene))
+del MX.EndFunc
+_sd(MX.EndOFScene)
+(Scrap.SetSaveVar('MissionState', 'RestoreMatrix'), setattr(IG, 'bishops', []), _sd(IG.Init, 'x'), len(IG.bishops), _ye(IG.bishops[:1], ('EntityList',)), _sdn(IG.rm), _btarget() == IG.rm.Name)
+_sdfreeze(_sdlist('Enemies'))
+(Scrap.SetSaveVar('MissionState', 'KillTraitorBishop'), setattr(IG, 'bishops', []), _sd(IG.Init, 'x'), len(IG.bishops), IG.traitor in IG.bishops, _ye(IG.bishops[:1], ('EntityList', 'RadarShow')), _sdn((Parking.SwitchVehicleMissionCallback, Parking.SwitchCharMissionCallback)))
+_sdfreeze(_sdlist('Bishops'))
+(_sd(IG.CreateBishop, 0), _sd(IG.CreateBishop), _sd(IG.CreateBishops, 1, 1), _sd(IG.CreateBishops, 'x', 0))
+del IG.traitorFound
+(_sd(IG.ResetScan), _sd(IG.OnFinishScan))
+_broff()

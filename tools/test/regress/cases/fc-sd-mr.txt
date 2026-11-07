@@ -1,0 +1,72 @@
+# MortalRace (FZ): the second super deal started the way the crazy gambler starts it, then every function directly;
+# the scheduler is recorded in the same line (_sd), the remote messages, the score table, the restart and the camera
+# travel and count down of RaceMaker are recorders; the racers are made static and invulnerable after every call
+# that sets their AI, so they take nothing and kill nobody between the lines
+Scrap.AddScheduledFunc(Scrap.GetTime() + 1.0, __import__('MissionsFuncs').StartSuperDeal, ('FZ', 'SuperDeal_Second', 'MortalRace'))
+!sleep 40
+execfile('fsd.py')
+M = __import__('MortalRace')
+(Scrap.GetLevelPath(), __import__('Init').SuperDealModule.__name__, Scrap.GetSaveVar('Mission.Library'), Scrap.GetSaveVar('SuperDealType'), Scrap.GetSaveVar('MortalRaceWaypoints'), Scrap.GetSaveVar('MortalRaceRacers'), Scrap.GetSaveVar('MortalRaceRacersProfile'))
+_sdmod('MortalRace', ('CrazyGamblerStartMortalRaceFirst', 'BayScorer', 'BestScorer', 'YourScore', 'iStartPos', 'waypointName', 'userWithBaton', 'shipWithBaton', 'messageKillShipThrown', 'numWaypoints', 'profileType', 'respawnTime', 'numRacers', 'racers', 'nameProfileDict', 'baton', 'FightingFreezeCadenceShoot', 'FightingFreezeControlAim', 'prevCadenceShoot', 'prevControlAim', 'prof'))
+(_sdhooks(), Scrap.Get('iTrafficNumber'), Scrap.Get('MaxFightingTrafficSize'), Scrap.Get('OnItemTakenAI'), __import__('OutPolice').PoliceActive, len(__import__('RaceMaker').StartPos), __import__('RaceMaker').StartPos[0])
+M.GetMenuDescription()
+(_sdon(), setattr(Scrap.UsrEntity(0), 'Invulnerable', 1), __import__('Parking').PlayerShip.Name, Scrap.UsrEntity(0).Name)
+(setattr(__import__('RaceMaker'), 'StartCameraTravelling', _sdrec('StartCameraTravelling', 3.0)), setattr(__import__('RaceMaker'), 'CreateRaceCountDown', _sdrec('CreateRaceCountDown')), setattr(__import__('RaceMaker'), 'AbortCameraTravelling', _sdrec('AbortCameraTravelling')), setattr(__import__('RaceMaker'), 'DestroyRaceCountDown', _sdrec('DestroyRaceCountDown')))
+(_sd(M.InitStatus, 'Levels/FZ'), _sd(M.Init, 'Levels/FZ'), _sdhooks(), _sdmod('MortalRace', ('numWaypoints', 'respawnTime', 'profileType', 'FightingFreezeControlAim')))
+_sd(M.SetInvulnerableStatus, __import__('Parking').PlayerShip)
+(setattr(__import__('Speech'), 'RemoteCom', ['x']), _sd(M.AbortRemoteMessages), __import__('Speech').RemoteCom)
+# the player boards: the racers line up, the crazy gambler's message; boarding again
+(_sd(__import__('Parking').ExecSwitchVehicleMissionCallback), _sdfreeze(M.racers))
+(__import__('Parking').PlayerShip.Invulnerable, _sdhooks(), _sdmod('MortalRace', ('BayScorer', 'YourScore', 'iStartPos', 'racers', 'nameProfileDict', 'prevCadenceShoot', 'prevControlAim', 'prof')), _sdlist('Race'))
+_sdent(M.racers, ('TgType', 'EntityList', 'Money', 'LaunchTaunts', 'MoveTime', 'Ammo00', 'Ammo01', 'Ammo02', 'RadarShow'))
+(setattr(__import__('Parking').PlayerShip, 'Invulnerable', 1), _sd(__import__('Parking').ExecSwitchVehicleMissionCallback), __import__('Parking').PlayerShip.Invulnerable)
+# the first buoy, the start at it, the go: the baton at the next position, the racers go for it
+(_sd(M.CreateFirstWaypoint), _sd(M.CreateFirstWaypoint), _sdmod('MortalRace', ('waypointName',)), Scrap.Get('CurrentWaypointName'), _sditems('CheckPoint'))
+(_sd(M.OnRaceStart, 'CheckPoint', 'Nobody'), _sd(M.OnRaceStart, 'CheckPoint', 'Player0'))
+(_sd(M.RaceGo, 'CheckPoint', 'Player0'), _sdfreeze(M.racers), _sdmod('MortalRace', ('YourScore', 'iStartPos', 'baton', 'BestScorer')), _sdn(__import__('Menu').MissionScorerCall), _sdmod('RacerScorer', ('missionYou', 'missionBad', 'missionLimit')), Scrap.Get('CurrentWaypointName'), _sditems('CheckPoint'), _sditems('Baton'))
+_sd(M.CheckShipsState)
+# the baton: a racer takes it (the others hunt him), then the player
+(_sd(M.TakeBaton, 'Baton', M.racers[1]), _sdfreeze(M.racers), _sdmod('MortalRace', ('baton', 'shipWithBaton', 'userWithBaton', 'messageKillShipThrown', 'prof')), Scrap.Get('CurrentWaypointName'), _sditems('CheckPoint'), _sditems('Baton'), _sdent(M.racers, ('TgType', 'RadarShow')))
+_sd(M.TakeBaton, 'Baton', 'Player0')
+(_sd(M.CreateBaton, Scrap.GetEntity(M.racers[3]).Pos), M.baton.Name, Scrap.Get('CurrentWaypointName'))
+(_sd(M.TakeBaton, M.baton.Name, 'Player0'), _sdfreeze(M.racers), _sdmod('MortalRace', ('baton', 'shipWithBaton', 'userWithBaton', 'messageKillShipThrown')), Scrap.Get('CurrentWaypointName'))
+(_sd(M.RacersAttackShip, M.racers[2]), _sdfreeze(M.racers), _sd(M.RacersAttackShip, 'Player0'), _sdfreeze(M.racers), _sdmod('MortalRace', ('prof',)))
+# the hunters: two attackers far away, one waits ahead; a waiting one near the ship attacks again
+(setattr(M, 'shipWithBaton', M.racers[0]), __import__('SAI').SetStateVehicle(2, M.racers[1], M.racers[0]), __import__('SAI').SetStateVehicle(2, M.racers[2], M.racers[0]), __import__('SAI').SetStateVehicle(8, M.racers[3], M.racers[0]), _sd(M.CheckShipsState), map(__import__('SAI').GetStateVehicle, M.racers), _sdfreeze(M.racers))
+(__import__('SAI').SetStateVehicle(1, M.racers[4], 0.0, 0.0, 0.0, 1000), _sd(M.OnPositionReached, M.racers[4]), __import__('SAI').GetStateVehicle(M.racers[4]), _sd(M.OnPositionReached, M.racers[3]), _sdfreeze(M.racers), _sdmod('MortalRace', ('prof',)))
+# buoys: before the start another ship, the player without the baton, with it, a racer with the baton
+(setattr(M, 'YourScore', -1), _sd(M.OnCheckPoint, 'CheckPoint', M.racers[0]), _sdmod('MortalRace', ('YourScore',)))
+(setattr(M, 'shipWithBaton', M.racers[0]), _sd(M.OnCheckPoint, 'CheckPoint', 'Player0'), _sdmod('MortalRace', ('YourScore', 'iStartPos')))
+(setattr(M, 'shipWithBaton', 'Player0'), _sd(M.OnCheckPoint, 'CheckPoint', 'Player0'), _sdfreeze(M.racers), _sdmod('MortalRace', ('YourScore', 'iStartPos', 'BestScorer')), _sdmod('RacerScorer', ('missionYou', 'missionBad')), _sditems('CheckPoint'))
+(setattr(M, 'shipWithBaton', M.racers[2]), _sd(M.OnCheckPoint, 'CheckPoint', M.racers[2]), _sdfreeze(M.racers), _sdmod('MortalRace', ('BayScorer', 'BestScorer', 'iStartPos')), _sdmod('RacerScorer', ('missionYou', 'missionBad')))
+(_sd(M.OnCheckPoint, 'CheckPoint', M.racers[3]), _sd(M.OnCheckPoint, 'CheckPoint', 'Nobody'))
+(_sd(M.MoveWaypoint), _sdmod('MortalRace', ('iStartPos',)), _sditems('CheckPoint'))
+# deaths: the player with the baton, a racer with the baton marker, a racer
+(setattr(M, 'shipWithBaton', 'PlayerShip'), setattr(M, 'userWithBaton', 1), _sd(M.OnPlayerDeath, 'PlayerShip', M.racers[0]), _sdmod('MortalRace', ('shipWithBaton', 'userWithBaton', 'baton')))
+(_sd(M.RespawnPlayer, 'PlayerShip', (10.0, 20.0, 30.0), (0.0, 1.0, 0.0)), _sdn(__import__('Parking').PlayerShip.Pos))
+(_sd(M.RespawnPlayer, 'PlayerShip', M.baton.Pos, (0.0, 1.0, 0.0)), _sdn(__import__('Parking').PlayerShip.Ang))
+(setattr(M, 'userWithBaton', 1), _sd(M.ReleaseBaton), _sdmod('MortalRace', ('shipWithBaton', 'userWithBaton')), _sd(M.ReleaseBaton), _sd(M.LostBatonMessage))
+(setattr(Scrap.GetEntity(M.racers[1]), 'RadarShow', 1), _sd(M.RacerKilled, M.racers[1], 'Player0'), _sdmod('MortalRace', ('racers', 'nameProfileDict', 'shipWithBaton')), _sdlist('Race'))
+(_sd(M.RacerKilled, M.racers[1], 'Player0'), _sdmod('MortalRace', ('racers', 'nameProfileDict')))
+_sd(M.RacerKilled, 'Missing', 'Player0')
+# respawns of a racer: a red one to attack, the baton, the player, nothing
+(_sd(M.RespawnRacer, 'MortalRace_Racer_Again', 'BankDirector'), _sdfreeze(M.racers), _sdmod('MortalRace', ('racers', 'nameProfileDict')), _sdent(('MortalRace_Racer_Again',), ('TgType', 'EntityList', 'Money', 'LaunchTaunts', 'Ammo00')))
+(map(lambda n: setattr(Scrap.GetEntity(n), 'TgType', 'green'), M.racers), _sd(M.RespawnRacer, 'MortalRace_Racer_Again2', 'Functionary'), _sdfreeze(M.racers))
+(setattr(M, 'baton', None), _sd(M.RespawnRacer, 'MortalRace_Racer_Again3', 'Functionary'), _sdfreeze(M.racers), _sdmod('MortalRace', ('racers',)))
+# the player hits a racer before the start; the race restarts from the first buoy
+(setattr(M, 'YourScore', -1), _sd(M.RacerDamaged, M.racers[0], 'Player0', 10), _sdfreeze(M.racers), _sdmod('MortalRace', ('YourScore', 'iStartPos')), _sd(M.RacerDamaged, M.racers[0], M.racers[2], 10), _sd(M.RacerDamaged, M.racers[0], 'Player0', 10))
+_sd(M.Restart)
+# the end: a racer's last buoy (defeat), the player's last buoy (victory)
+(setattr(M, 'shipWithBaton', M.racers[2]), setattr(M, 'BayScorer', {M.racers[2]: 49}), _sd(M.OnCheckPoint, M.waypointName, M.racers[2]), _sdhooks(), _sdmod('MortalRace', ('YourScore', 'waypointName', 'iStartPos')), Scrap.Get('OnItemTakenAI'), _sdent(M.racers, ('TgType', 'EntityList', 'Invulnerable', 'MoveTime')), _sdlist('Race'), _sdlist('Traffic') != [])
+(map(lambda n: setattr(Scrap.GetEntity(n), 'EntityList', 'Race'), M.racers), _sd(M.CreateFirstWaypoint), setattr(M, 'YourScore', 49), setattr(M, 'shipWithBaton', 'Player0'), _sd(M.OnCheckPoint, M.waypointName, 'Player0'), _sdhooks(), _sdmod('MortalRace', ('YourScore', 'waypointName')), Scrap.UsrEntity(0).Invulnerable, _sdlist('Race'))
+(_sd(M.EndOfMortalRace), _sd(M.MoveRacersToTraffic), _sd(M.PreOnVictory), _sd(M.RestartRace, 0, 0))
+(_sd(M.RespawnRacer, 'MortalRace_Racer_Late', 'Functionary'), _sd(M.MoveRacersToPos, (0.0, 0.0, 0.0), 1000), _sdfreeze(M.racers))
+# a missing global stops like the script
+del M.prof
+_sd(M.RacersAttackShip, 'Player0')
+M.prof = None
+# the racers again with the first buoy (keyword)
+(map(lambda n: Scrap.GetEntity(n) and Scrap.GetEntity(n).Del(), M.racers), setattr(M, 'racers', []))
+(_sd(M.InitRace, createFirstWaypoint = 1), _sdfreeze(M.racers), _sdmod('MortalRace', ('racers', 'BayScorer', 'YourScore', 'waypointName', 'prevCadenceShoot', 'prevControlAim')))
+# the one line that differs on purpose: the C functions are builtins
+(str(type(M.Init)), str(type(M.OnCheckPoint)))

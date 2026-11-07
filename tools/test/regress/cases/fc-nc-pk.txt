@@ -1,0 +1,16 @@
+# round 8n: Parking functions on the handle of a deleted entity: the engine's attribute get and set fail without an
+# exception, the script stops with ceval's "SystemError: error return without exception set" (the C frame raised
+# "NULL result without error" before); the line of fc-pk-dt that raised it (P.LastPark.Name) is the same mechanism
+exec(open('fpk.py').read()) in __import__('Init').__dict__
+P = __import__('Parking'); I = __import__('Init'); I.cpn = Scrap.CreateEntity('CamPath', 0, 0, 0, 'CamPath'); result = I.cpn.Name
+I.cpn.Del(); result = 1
+I.cpn.Name
+P.SetShipRadius(I.cpn, 1)
+P.SetOnFloor(I.cpn)
+P.isValidToPark(I.cpn)
+I.ls = P.__dict__.get('LocalShip'); r = I._t(P.SetInvunerable, I.cpn); P.LocalShip = I.ls or P.PlayerShip; result = (r, P.PlayerShip.OnDeath)
+P.CheckWeapons(I.cpn)
+P.ParkedDeat(I.cpn, 'x')
+v = P.PlayerShip; result = (P.SetCameraStart(I.cpn, v, v.Pos), P.SetCameraStart(Scrap.CreateEntity('CamPath', 0, 0, 0, 'CamPath'), I.cpn, (0.0, 0.0, 0.0)))
+I._rec2('Parking', 'OnPark', 0); r = (I._t(P.OnPark, 'x', 'CamPath'), I._takecalls()); I._restore(); result = r
+result = (P.SetDtritusPlate(I.cpn, 1), P.DtritusPlate.Active, P.SetDtritusPlate(P.PlayerShip, 1), P.DtritusPlate.Active)

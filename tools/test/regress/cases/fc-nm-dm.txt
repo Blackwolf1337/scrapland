@@ -1,0 +1,30 @@
+# FZ offline, round 8b: NDeathMatch, NTeamDM and NDeathMatchBots loaded by hand and called directly; Ffa, the menu, the scorer and the AI calls recorded
+exec(open('fnm.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); result = I._nload(['Ffa', 'NDeathMatch', 'NTeamDM'])
+F = __import__('Ffa'); DM = __import__('NDeathMatch'); TD = __import__('NTeamDM'); result = (DM.TeamGame, TD.TeamGame, DM.MultiplayerMenuOnGame, DM.MultiplayerMenuSpectator, TD.MultiplayerMenuOnGame, TD.MultiplayerMenuSpectator)
+map(lambda n: I._non('Ffa', n), ('ServerEndOfGame', 'SetSpawnPos', 'ClientJoin', 'ActualizeGameScorer', 'ServerSendPlayerStatus', 'OnUsrClient')) + [I._non('Ffa', 'GetGameTeamDescriptor', 'teams 1 2'), I._non('Menu', 'ShowWarning'), I._non('SScorer', 'Set'), I._non('SAI', 'SetStateVehicle')]
+# NDeathMatch
+F.Scorer = {'a': 1, 'b': 2}; F.ScorerFraglimit = 3; result = (I._nm(DM.DeathFunc, 'a', 'b', 1), F.Scorer)
+I._nm(DM.CheckEndOfGame)
+(I._nm(DM.DeathFunc, 'b', 'a', 1), F.Scorer)
+I._nm(DM.CheckEndOfGame)
+(I._nm(DM.DeathFunc, 'zz', 'a', 1), I._nm(DM.DeathFunc, 'a', 'b', 'x'), I._nm(DM.DeathFunc, 'a', 'b', 2.5), F.Scorer)
+F.Scorer = {}; result = I._nm(DM.CheckEndOfGame)
+F.Scorer = {'a': 'x'}; result = I._nm(DM.CheckEndOfGame)
+F.Scorer = {'a': 1, 'b': 0}; F.ScorerFraglimit = 1; result = I._nm(DM.CheckEndOfGame)
+del F.Scorer; r = (I._nm(DM.CheckEndOfGame), I._nm(DM.DeathFunc, 'a', 'b', 1)); F.Scorer = {'a': 0}; result = r
+del F.ScorerFraglimit; r = I._nm(DM.CheckEndOfGame); F.ScorerFraglimit = 3; result = r
+(I._nm(DM.GetGameDescriptor), I._nm(DM.InitServerMod), I._nm(DM.InitClientMod), I._nm(DM.ServerHidePlayer, 'x'), I._nm(DM.ShowHelp, 0), I._nm(DM.ShowHelp, 'bad'))
+# NTeamDM on two ships of the teams
+e1 = Scrap.CreateEntity('NmRed', 1000.0, 50000.0, 1000.0, 'Car'); e1.TgType = 'red'; e2 = Scrap.CreateEntity('NmGreen', 2000.0, 50000.0, 1000.0, 'Car'); e2.TgType = 'green'; I.e1 = e1; I.e2 = e2; result = (e1.Name, e1.TgType, e2.Name, e2.TgType, e1.Active, e1.isAI)
+F.Scorer = {'NmRed': 0, 'NmGreen': 0}; F.TotalRed = 0; F.TotalGreen = 0; F.ScorerFraglimit = 2; result = (I._nm(TD.DeathFunc, 'NmRed', 'NmGreen', 1), F.Scorer, F.TotalRed, F.TotalGreen)
+(I._nm(TD.DeathFunc, 'NmGreen', 'NmRed', 1), F.Scorer, F.TotalRed, F.TotalGreen, I._nm(TD.CheckEndOfGame))
+(I._nm(TD.DeathFunc, 'NmGreen', 'NmRed', 1), F.Scorer, F.TotalRed, F.TotalGreen, I._nm(TD.CheckEndOfGame))
+F.TotalGreen = 0; F.TotalRed = 5; result = I._nm(TD.CheckEndOfGame)
+F.TotalRed = 0; del F.TotalGreen; r = I._nm(TD.CheckEndOfGame); F.TotalGreen = 0; result = r
+del F.TotalRed; r = (I._nm(TD.CheckEndOfGame), I._nm(TD.DeathFunc, 'NmRed', 'NmGreen', 1), F.Scorer); F.TotalRed = 0; result = r
+(I._nm(TD.DeathFunc, 'Nobody', 'x', 1), F.Scorer)
+F.Scorer['Nobody'] = 0; result = (I._nm(TD.DeathFunc, 'Nobody', 'x', 1), F.Scorer, F.TotalRed, F.TotalGreen)
+(I._nm(TD.DeathFunc, 'NmRed', 'x', 'a'), F.Scorer)
+(I._nm(TD.GetGameDescriptor), I._nm(TD.ShowHelp, 1), I._nm(TD.InitServerMod), I._nm(TD.InitClientMod), I._nm(TD.ServerHidePlayer, 'x'))
+I._noff()

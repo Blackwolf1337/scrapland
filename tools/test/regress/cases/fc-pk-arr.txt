@@ -1,0 +1,26 @@
+# DownTown, then Outskirts three times: Parking.Init at the arrival from another outdoor level (a stolen ship, the player's own ship) and from the junkyard
+exec(open('fpk.py').read()) in __import__('Init').__dict__
+__import__('SaveGame').MarkWayPoint('Levels/Outskirts', 'DM_Ship_Spawn_DownTown', 'Dtritus'); Scrap.SetSaveVar('ComeFrom', 'UseShip:"SPoli2","MPoli2","","","","1,1,3,0,0,0",60,"Police"'); Scrap.SetSaveVar('usrShip.Ammo00', '55.5'); Scrap.SetSaveVar('usrShip.AcWeap', '2'); result = (__import__('SaveGame').StartGame(CleanRevenge = 1), Scrap.GetSaveVar('Map'), Scrap.GetSaveVar('Spawn'))
+!sleep 45
+exec(open('fpk.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); P = __import__('Parking'); result = (I.Path, I._usr(), I._pk(), I._spt(), Scrap.GetSaveVar('usrShip.AcWeap'))
+I._v(Scrap.UsrEntity(0).Name, I._SHIPV + I._PARKV + ('Ammo00', 'Ammo01', 'Ammo02', 'AcWeap', 'Pos', 'Ang'))
+I._v(P.PlayerShip.Name, I._PARKV + ('MPil0', 'Model'))
+I._ships()
+filter(lambda x: x[:4] == 'Park', I._its())
+!sleep 4
+(I._usr(), I._cam(), I._pk(), Scrap.GetSaveVar('usrShip.AcWeap'), I._v(Scrap.UsrEntity(0).Name, ('AcWeap', 'UsrControl', 'MoveTime')))
+__import__('SaveGame').MarkWayPoint('Levels/Outskirts', 'DM_Ship_Spawn_Scrapyard', 'Dtritus'); Scrap.SetSaveVar('ComeFrom', 'UseShip:'); Scrap.SetSaveVar('usrShip.Ammo01', '12'); Scrap.SetSaveVar('usrShip.AcWeap', '3'); result = __import__('SaveGame').StartGame(CleanRevenge = 1)
+!sleep 45
+exec(open('fpk.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); P = __import__('Parking'); result = (I.Path, I._usr(), I._pk(), I._spt())
+I._v(Scrap.UsrEntity(0).Name, I._PARKV + ('Ammo00', 'Ammo01', 'Ammo02', 'AcWeap', 'Pos', 'Ang', 'MPil0'))
+filter(lambda x: x[:4] == 'Park', I._its())
+!sleep 4
+(I._usr(), I._cam(), I._pk(), I._v(Scrap.UsrEntity(0).Name, ('AcWeap', 'UsrControl')))
+__import__('SaveGame').MarkWayPoint('Levels/Outskirts', 'DM_Player_Spawn_Junkyard', 'Dtritus'); Scrap.SetSaveVar('ComeFrom', ''); result = __import__('SaveGame').StartGame(CleanRevenge = 1)
+!sleep 45
+exec(open('fpk.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); P = __import__('Parking'); result = (I.Path, I._usr(), I._pk(), I._spt(), P.LastPark and I._v(P.LastPark.Name, ('OnTake', 'rTime')))
+filter(lambda x: x[:4] == 'Park', I._its())
+map(lambda x: I._v(x, ('OnTake',)), filter(lambda x: x[:4] == 'Park', I._its()))

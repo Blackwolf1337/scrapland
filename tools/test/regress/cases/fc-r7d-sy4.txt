@@ -1,0 +1,58 @@
+# Scrapyard, round 7d: Mission_FindDtritusMatrix
+Scrap.SetSaveVar('Mission.Map', 'Scrapyard'); Scrap.SetSaveVar('Mission.Library', 'Mission_FindDtritusMatrix'); Scrap.SetSaveVar('RobotsControlledByBoss', '0'); Scrap.SetSaveVar('LonelyMercLairActive', '0'); Scrap.LoadLevel('Levels/Scrapyard'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6b.py')
+execfile('fr7d.py')
+FD = _m('Mission_FindDtritusMatrix'); import Parking, CharAct; result = 1
+def _fdh(): return _sdn((Parking.SwitchVehicleMissionCallback, Parking.SwitchCharMissionCallback, CharAct.TakenPhoto))
+(Scrap.GetLevelPath(), _bfn('Mission_FindDtritusMatrix'), _fdh(), _bsv(('LonelyMercLairActive', 'LonelyMercActive', 'Traffic.AcShips')))
+_sdmod('Mission_FindDtritusMatrix', ('dtritusMatrix', 'dtritusMatrixArrow', 'prevLonelyMercShipCameraPos', 'lonelyMercShipDestroyed', 'lastShipUsed', 'lonelyMercParkings', 'plansDictHelper', 'plans'))
+(FD.lonelyMercShipName[:10], _ye(FD.plans, ('Active', 'RadarShow', 'CanPhoto')), _ye((FD.dtritusMatrix.Name, FD.dtritusMatrixArrow.Name), ('Radius', 'AppearsIfFree', 'AutoFace', 'OnlyUser', 'rTime', 'OnTake', 'Active', 'CamTgt')))
+(_ye((FD.lonelyMercShipName,), ('OnDeath', 'Invulnerable', 'CamTgt', 'RadarShow')), _ye(FD.lonelyMercParkings, ('Active',)), _btarget() == FD.lonelyMercShipName)
+_bon()
+(_bprof(FD.SetLonelyMercProfile()), __import__('VehiclesNPC').AIProf['SLMERC'].CadenceShoot, _sd(FD.SetLonelyMercProfile, 1))
+(Scrap.SetSaveVar('LonelyMercActive', '1'), _sd(FD.InitStatus, 'x'), _bsv(('LonelyMercLairActive', 'LonelyMercActive')), __import__('Traffic').AcShips)
+_sd(FD.CheckLonelyMercShipExist)
+SHIP = FD.lonelyMercShipName; result = 1
+(setattr(FD, 'lonelyMercShipName', 'Nobody'), setattr(FD, 'lonelyMercShipDestroyed', 0), Scrap.SetSaveVar('LonelyMercActive', '1'), _sd(FD.CheckLonelyMercShipExist), FD.lonelyMercShipName)
+(Scrap.SetSaveVar('LonelyMercActive', '0'), _sd(FD.CheckLonelyMercShipExist), FD.lonelyMercShipName != 'Nobody', _ye((FD.lonelyMercShipName,), ('OnDeath', 'Invulnerable', 'CamTgt')), _sdn(FD.prevLonelyMercShipCameraPos))
+(setattr(FD, 'lonelyMercShipName', 'Nobody'), setattr(FD, 'lonelyMercShipDestroyed', 1), _sd(FD.CheckLonelyMercShipExist), FD.lonelyMercShipDestroyed, FD.lonelyMercShipName != 'Nobody')
+(setattr(FD, 'lastShipUsed', 'x'), _sd(FD.CreateLonelyMercShip), _btarget() == FD.lonelyMercShipName, setattr(FD, 'lastShipUsed', ''))
+(_sd(FD.OnLonelyMercShipDeath, 'x', 'y'), FD.lonelyMercShipDestroyed, Scrap.SetSaveVar('LonelyMercActive', '1'), _sd(FD.OnLonelyMercShipDeath, 'x', 'y'), Scrap.SetSaveVar('LonelyMercActive', '0'), setattr(FD, 'lonelyMercShipDestroyed', 0))
+SHIP = FD.lonelyMercShipName; result = 1
+(_sd(FD.TestForLonelyMercShip), FD.lastShipUsed == _un(), _ye(FD.lonelyMercParkings, ('Active',)))
+(map(lambda n: setattr(Scrap.GetEntity(n), 'Active', 1), FD.lonelyMercParkings), Scrap.SetSaveVar('LonelyMercLairActive', '1'), _sd(FD.TestForLonelyMercShip), _ye(FD.lonelyMercParkings, ('Active',)), Scrap.SetSaveVar('LonelyMercLairActive', '0'))
+(setattr(FD, 'lonelyMercShipName', _un()), setattr(FD, 'prevLonelyMercShipCameraPos', (0, 300, 0)), _sd(FD.TestForLonelyMercShip), _ye(FD.lonelyMercParkings, ('Active',)), _ye(FD.plans, ('Active',)), _ye((FD.dtritusMatrix.Name, FD.dtritusMatrixArrow.Name), ('Active',)), _bhooks()[12:14], setattr(FD, 'lonelyMercShipName', SHIP))
+(setattr(FD, 'lonelyMercShipName', _un()), setattr(FD, 'dtritusMatrixArrow', None), _sd(FD.TestForLonelyMercShip), _bhooks()[13:14], setattr(FD, 'dtritusMatrixArrow', Scrap.GetEntity('MissionCheckArrow')), setattr(FD, 'lonelyMercShipName', SHIP))
+_sd(FD.TestForLonelyMercShip, 1)
+_sd(FD.CheckCreateBadGuy)
+(_bsave(), _bnear('DM_Door_Elevator_GamblinDen', 100), _sd(FD.CheckCreateBadGuy), _bback())
+(_sd(FD.ActivateMissionObjects, 1), _ye(FD.plans, ('Active',)), _ye((FD.dtritusMatrix.Name, FD.dtritusMatrixArrow.Name), ('Active',)), _sd(FD.ActivateMissionObjects, 0), _ye(FD.plans, ('Active',)), _sd(FD.ActivateMissionObjects))
+(setattr(FD, 'lastShipUsed', FD.lonelyMercShipName), _bsave(), _bnear('DM_Door_Elevator_GamblinDen', 100), _sd(FD.OutOfLonelyMercShip), _bback(), _ye((FD.lonelyMercShipName,), ('Invulnerable', 'CamTgt')), _bsv(('LonelyMercLairActive',)), _btarget() == FD.lonelyMercShipName, _ye(FD.plans, ('Active',)))
+(_bsave(), _bnear(FD.dtritusMatrixArrow.Name, 100), _sd(FD.OutOfLonelyMercShip), _bback(), _ye((FD.lonelyMercShipName,), ('Invulnerable',)), _bsv(('LonelyMercLairActive',)), Scrap.SetSaveVar('LonelyMercLairActive', '0'))
+(setattr(FD, 'lastShipUsed', 'x'), _sd(FD.OutOfLonelyMercShip))
+(setattr(FD, 'lastShipUsed', FD.lonelyMercShipName), setattr(FD, 'dtritusMatrixArrow', None), _sd(FD.OutOfLonelyMercShip), setattr(FD, 'dtritusMatrixArrow', Scrap.GetEntity('MissionCheckArrow')))
+EN0 = _sdlist('Enemies'); result = 1
+(_sd(FD.CreateBadGuy), _ye(_ynew('Enemies', EN0), ('EntityList', 'Life', 'MaxLife', 'TgType', 'Money')), _sdfreeze(_ynew('Enemies', EN0)))
+(_sd(FD.OnBadGuyDeath, 'x', 'y'), _sd(FD.OnBadGuyDeath, 'x'))
+P0 = FD.plans[:]; result = 1
+(_sd(FD.CreatePlan, 'DM_Mission_TeslaPlan', 'err'), len(FD.plans), _ye(FD.plans[3:], ('Active', 'RadarShow', 'CanPhoto')), FD.plansDictHelper.get(FD.plans[-1]))
+(_sd(FD.CreatePlan, 'DM_NoSuchDummy', 'No dummy'), _sd(FD.CreatePlan, 'DM_NoSuchDummy', 5), _sd(FD.CreatePlan, 'DM_Mission_DtritusMatrix', 'x'), len(FD.plans), _sd(FD.CreatePlan, 'x'))
+(_sd(FD.CreateMissionPlans), len(FD.plans), _fdh())
+(setattr(FD, 'plans', P0), _sd(FD.CheckEndOfMission), _sd(FD.TakePlanPhoto, 'Nobody'), _sd(FD.CheckEndOfMission, 1))
+(Scrap.SetSaveVar('Hangar.availableWeaponsList', "['ATPC']"), Scrap.SetSaveVar('Hangar.shipsToEditList', "['SMerc3']"), Scrap.SetSaveVar('Hangar.availableEnginesList', '[]'), Scrap.SetSaveVar('NewBluePrintAvaliable', '0'), _sd(FD.TakePlanPhoto, P0[0]), FD.plans, _bsv(('Hangar.availableWeaponsList', 'NewBluePrintAvaliable')), _ye(P0[:1], ('CanPhoto', 'RadarShow')))
+(_sd(FD.TakePlanPhoto, P0[1]), _sd(FD.TakePlanPhoto, P0[2]), FD.plans, _bsv(('Hangar.availableWeaponsList', 'Hangar.shipsToEditList', 'Hangar.availableEnginesList', 'NewBluePrintAvaliable')), _fdh())
+(_sd(FD.TakeMatrix, 'DTritusMatrix', 'Nobody'), _sd(FD.TakeMatrix, 'DTritusMatrix', _un()), FD.dtritusMatrix != None)
+(setattr(FD.dtritusMatrixArrow, 'ArrowCanMission', 1), FD.dtritusMatrixArrow.ArrowCanMission, _sd(FD.TakeMatrix, 'DTritusMatrix', _un()), _sdn(FD.dtritusMatrix), _sdn(FD.dtritusMatrixArrow), _fdh(), _sd(FD.CheckEndOfMission))
+(setattr(FD, 'plansDictHelper', {'PX': 'DM_Mission_LonelyMercShipPlan'}), setattr(FD, 'plans', ['PX']), _sd(FD.TakePlanPhoto, 'PX'), FD.plans, _bsv(('Hangar.shipsToEditList', 'NewBluePrintAvaliable')), _fdh())
+(setattr(FD, 'plans', ['PY']), _sd(FD.TakePlanPhoto, 'PY'), FD.plans)
+(setattr(FD, 'plansDictHelper', {'PZ': 'other'}), setattr(FD, 'plans', ['PZ']), _sd(FD.TakePlanPhoto, 'PZ'))
+(_sd(FD.TakeMatrix, 'DTritusMatrix', _un()), _sd(FD.CreateDtritusMatrix), _ye((FD.dtritusMatrix.Name, FD.dtritusMatrixArrow.Name), ('Radius', 'OnTake', 'Active', 'CamTgt')))
+(_sd(FD.CheckEndOfMission), setattr(FD, 'plans', 5), _sd(FD.CheckEndOfMission), setattr(FD, 'plans', []))
+(setattr(FD, 'lonelyMercParkings', []), _sd(FD.Init, 'x'), len(FD.plans), _fdh(), FD.lonelyMercShipName[:10], len(FD.lonelyMercParkings))
+del FD.lastShipUsed
+(_sd(FD.CreateLonelyMercShip), _sd(FD.TestForLonelyMercShip))
+del FD.MatrixModel
+(_sd(FD.CreateDtritusMatrix), _sd(FD.Init, 'x'))
+_broff()

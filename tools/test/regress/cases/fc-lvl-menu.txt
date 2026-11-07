@@ -1,0 +1,39 @@
+# Menu: the Map module of the menu level (scene, asteroids, credits) against the pack
+exec(open('fweap.py').read()) in __import__('Init').__dict__
+I = __import__('Init')
+M = __import__('Map')
+(type(M.Init).__name__, type(M.StartMenu).__name__, M.InitMenu, I.inMainMenu)
+(I._ent('DemoCam', ('Pos','Ang','ActCtrl','Life')), I._ent('MenuCamara', ('Fov','clipNear','clipFar','EntityLink')), Scrap.GetCam(0), Scrap.Get('IsMapOutDoor'), Scrap.Get('EscapeEvent'), __import__('SInput').GetActionSet())
+(len(M.AstList), len(M.initpos), M.globctr >= 0, M.mmr > 0)
+(setattr(Scrap, 'SetDebrisValue', I._recn('SetDebrisValue')), setattr(Scrap, 'DropDebris', I._recn('DropDebris')))
+map(lambda c: (c[0], c[1], len(c)), I._sync(M.cremeteoro, (1, 2, 3), 5)[2])
+(I._sync(M.cremeteoro, (4, 5, 6))[2][-1], M.globctr)
+(setattr(M, 'globctr', 4), M.cremeteoro((0, 0, 0)), M.globctr)
+(setattr(M, 'xctr', 0), setattr(M, 'rrr', 0), setattr(M, 'mmr', 0))
+map(lambda i: (I._sync(M.drotorito)[1], M.xctr, M.rrr, M.mmr, M.globctr), range(9))
+(setattr(M, 'xctr', 7), setattr(M, 'rrr', 5), M.drotorito(), M.xctr, M.rrr)
+M.cremeteoro()
+M.cremeteoro((1, 2))
+M.cremeteoro((1, 2, 3), tim = 9, x = 1)
+M.drotorito(1)
+I._sync(M.InitStatus, 'Levels/Menu')[1]
+(I.inMainMenu, M.InitMenu)
+exec "import imp, sys\nct = imp.new_module('CreditsText')\nct.ShowCredit = __import__('Init')._recn('ShowCredit')\nsys.modules['CreditsText'] = ct\n__import__('Init')._ct = ct"
+setattr(Scrap, 'MusicPlayer', I._recn('MusicPlayer'))
+I._sync(M.ShowCredits)[2]
+(M.CreditsCtr, Scrap.Get('EscapeEvent'), I._ct.EndOfCredits.__name__)
+I._sync(M.NextCredit)[2]
+(setattr(M, 'CreditsCtr', 400), I._sync(M.NextCredit)[2])
+M.CreditsCtr
+(__import__('SInput').SetActionSet('Inactive'), M.SetMotionBlur(), Scrap.Get('MotionBlurEndTime'), Scrap.Get('MotionBlurFactorEnd'))
+(__import__('SInput').SetActionSet('Menu'), Scrap.Set('MotionBlurFactorEnd', 0), M.SetMotionBlur(), Scrap.Get('MotionBlurFactorEnd'))
+I._sync(M.FadeOutCreditsEnd)[2]
+(Scrap.Set('MotionBlurFactorEnd', 0.5), I._sync(M.FadeOutCreditsEnd)[2], __import__('SInput').GetActionSet(), Scrap.Get('EscapeEvent'))
+I._sync(M.EndCredits, 0)[2]
+M.EndCredits(id = 0)
+M.EndCredits(1, 2)
+I._sync(M.FadeOutCredits)[2]
+!sleep 5
+(I._r[-2:], __import__('SInput').GetActionSet())
+del M.CreditsCtr
+M.NextCredit()

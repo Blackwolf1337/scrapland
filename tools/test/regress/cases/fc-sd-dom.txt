@@ -1,0 +1,65 @@
+# Domination (OM): the sixth super deal started the way the crazy gambler starts it, then every function directly;
+# the scheduler is recorded in the same line (_sd), the remote messages, the score table and the restart are
+# recorders; the ships are made static and invulnerable after each start (the baton lies at a random point)
+Scrap.AddScheduledFunc(Scrap.GetTime() + 1.0, __import__('MissionsFuncs').StartSuperDeal, ('OM', 'SuperDeal_Sixth', 'Domination'))
+!sleep 40
+execfile('fsd.py')
+O = __import__('Domination')
+(Scrap.GetLevelPath(), __import__('Init').SuperDealModule.__name__, Scrap.GetSaveVar('Mission.Library'), Scrap.GetSaveVar('SuperDealType'), Scrap.GetSaveVar('DominationRounds'), Scrap.GetSaveVar('DominationNumEnemies'), Scrap.GetSaveVar('DominationNumFriends'), Scrap.GetSaveVar('PlayerRounds'), Scrap.GetSaveVar('EnemyRounds'))
+_sdmod('Domination', ('zonesCanBeTaken', 'playerZones', 'enemyZones', 'zones', 'enemies', 'friends', 'zonesStates', 'userWithBaton', 'shipWithBaton', 'onDeathSpawnTime', 'CrazyGamblerStartDominationFirst', 'msgTime', 'BatonRadius'))
+(_sdhooks(), Scrap.Get('LeaderName'), Scrap.Get('OnDominFriendDeath'), Scrap.Get('OnDominEnemyDeath'))
+_sdent(('Enemy0', 'Enemy1', 'Enemy2', 'Enemy3', 'Enemy4', 'Friend0', 'Friend1', 'Friend2', 'Friend3'))
+map(__import__('SAI').GetStateVehicle, O.enemies + O.friends)
+O.GetMenuDescription()
+(_sdon(), setattr(Scrap.UsrEntity(0), 'Invulnerable', 1), __import__('Parking').PlayerShip.Name, Scrap.UsrEntity(0).Name, _sdfreeze(O.enemies + O.friends))
+_sd(O.InitStatus, 'Levels/OM')
+_sd(O.SetInvulnerableStatus, __import__('Parking').PlayerShip)
+(setattr(__import__('Speech'), 'RemoteCom', ['x']), _sd(O.AbortRemoteMessages), __import__('Speech').RemoteCom)
+(_sd(O.SetProfile, Scrap.GetEntity('Enemy1'), 1), _sd(O.SetProfile, Scrap.GetEntity('Friend0'), 0), _sdfreeze(O.enemies + O.friends))
+# Init with too short a respawn time raises before it creates anything
+(Scrap.SetSaveVar('DominationOnDeathSpawnTime', '0.5'), _sd(O.Init, 'Levels/OM'), _sdmod('Domination', ('onDeathSpawnTime', 'zonesCanBeTaken')), _sdhooks(), Scrap.SetSaveVar('DominationOnDeathSpawnTime', '5.0'), setattr(O, 'onDeathSpawnTime', 5.0))
+# the player boards: the crazy gambler's message (once), boarding again
+_sd(__import__('Parking').ExecSwitchVehicleMissionCallback)
+(__import__('Parking').PlayerShip.Invulnerable, _sdhooks(), _sdmod('Domination', ('CrazyGamblerStartDominationFirst',)))
+(setattr(__import__('Parking').PlayerShip, 'Invulnerable', 1), _sd(__import__('Parking').ExecSwitchVehicleMissionCallback), __import__('Parking').PlayerShip.Invulnerable)
+# a later start goes at once: the zones, the baton; then the ships static again
+(_sd(O.CrazyGamblerStartDomination), _sdn(__import__('Menu').MissionScorerCall), _sdfreeze(O.enemies + O.friends))
+(_sdmod('Domination', ('playerZones', 'enemyZones', 'zones', 'zonesStates')), _sdmod('RacerScorer', ('missionYou', 'missionBad', 'missionLimit')), Scrap.Get('CurrentWaypointName'), _sditems('Zone'), _sditems('Baton'))
+(map(lambda n: Scrap.GetEntity(n) != None, O.zones), _sd(O.MissionScorer, 0), __import__('SScorer').Get(0, 'PlayerZonesText', 'Text'), __import__('SScorer').Get(0, 'EnemyZonesText', 'Text'))
+# the baton: the leader takes it, a new one at a place, the player takes it
+(_sd(O.TakeBaton, 'Baton', Scrap.Get('LeaderName')), _sdmod('Domination', ('userWithBaton', 'shipWithBaton')), Scrap.Get('CurrentWaypointName'), _sditems('Baton'))
+(_sd(O.CreateBaton, Scrap.GetEntity('Friend1').Pos), _sditems('Baton'), _sditems('Zone'), Scrap.Get('CurrentWaypointName'))
+(_sd(O.TakeBaton, 'Baton', 'Player0'), _sdmod('Domination', ('userWithBaton', 'shipWithBaton')), _sditems('Zone'), _sditems('Baton'))
+(_sd(O.TakeBaton, 'Baton', 'Nobody'), _sd(O.ReleaseBaton), _sdmod('Domination', ('userWithBaton', 'shipWithBaton')))
+(setattr(O, 'userWithBaton', 1), setattr(O, 'shipWithBaton', 'Player0'), _sd(O.ReleaseBaton), _sdmod('Domination', ('userWithBaton', 'shipWithBaton')), _sditems('Baton'), _sd(O.LostBatonMessage))
+# zones: without the baton (the message), with it, again, taken by an enemy with the marker
+(setattr(O, 'msgTime', 0), _sd(O.TakeZone, 'Zone0', 'Player0'), O.msgTime > 0, _sdmod('Domination', ('playerZones', 'enemyZones', 'zonesStates')))
+(setattr(O, 'shipWithBaton', 'Player0'), _sd(O.TakeZone, 'Zone0', 'Player0'), _sdmod('Domination', ('playerZones', 'enemyZones', 'zonesStates')), _sditems('Zone0'), __import__('SScorer').Get(0, 'PlayerZonesText', 'Text'))
+(_sd(O.TakeZone, 'Zone0', 'Player0'), _sd(O.ActivateZone, 'Zone0'), _sditems('Zone0'))
+(setattr(Scrap.GetEntity('Enemy0'), 'RadarShow', 1), _sd(O.TakeZone, 'Zone0', 'Enemy0'), _sdmod('Domination', ('playerZones', 'enemyZones', 'zonesStates')), __import__('SScorer').Get(0, 'PlayerZonesText', 'Text'), __import__('SScorer').Get(0, 'EnemyZonesText', 'Text'))
+(_sd(O.TakeZone, 'Zone0', 'Enemy0'), _sd(O.TakeZone, 'Zone1', 'Enemy2'), _sd(O.TakeZone, 'Zone1', 'Missing'))
+(_sd(O.TakeZone, 'Zone0', 'Player0'), _sdmod('Domination', ('playerZones', 'enemyZones', 'zonesStates')), __import__('SScorer').Get(0, 'EnemyZonesText', 'Text'))
+# rounds: the player takes the last zone (round, then the deal), the enemies take the last zone (round, then the deal)
+(setattr(O, 'playerZones', len(O.zones) - 1), _sd(O.TakeZone, 'Zone1', 'Player0'), _sdmod('Domination', ('playerZones', 'zonesCanBeTaken', 'zonesStates')), Scrap.GetSaveVar('PlayerRounds'), __import__('SScorer').Get(0, 'ZonesText', 'Text'), Scrap.UsrEntity(0).Invulnerable)
+(_sd(O.TakeZone, 'Zone2', 'Player0'), setattr(O, 'zonesCanBeTaken', 1))
+(Scrap.SetSaveVar('PlayerRounds', '1'), setattr(O, 'playerZones', len(O.zones) - 1), _sd(O.TakeZone, 'Zone2', 'Player0'), _sdhooks(), Scrap.GetSaveVar('PlayerRounds'), _sdent(O.enemies + O.friends, ('EntityList', 'Invulnerable')), setattr(O, 'zonesCanBeTaken', 1))
+(setattr(O, 'enemyZones', len(O.zones) - 1), _sd(O.TakeZone, 'Zone1', 'Enemy0'), Scrap.GetSaveVar('EnemyRounds'), _sdmod('Domination', ('enemyZones', 'zonesCanBeTaken', 'zonesStates')), setattr(O, 'zonesCanBeTaken', 1))
+(Scrap.SetSaveVar('EnemyRounds', '1'), setattr(O, 'enemyZones', len(O.zones) - 1), _sd(O.TakeZone, 'Zone2', 'Enemy0'), Scrap.GetSaveVar('EnemyRounds'), setattr(O, 'zonesCanBeTaken', 1))
+(_sd(O.EndOfDomination, 0), _sd(O.EndOfDomination, 1), _sd(O.PreRestartMenu), _sd(O.PreOnVictory), _sd(O.RestartDomination), _sd(O.RestartDomin, 0, 0), Scrap.GetSaveVar('PlayerRounds'), Scrap.GetSaveVar('EnemyRounds'))
+# deaths: the player with the baton, the leader with the baton, an enemy, a friend
+(map(lambda n: setattr(Scrap.GetEntity(n), 'EntityList', 'DominationEnemies'), O.enemies), map(lambda n: setattr(Scrap.GetEntity(n), 'EntityList', 'DominationFriends'), O.friends), setattr(O, 'shipWithBaton', 'PlayerShip'), setattr(O, 'userWithBaton', 1))
+(_sd(O.OnPlayerDeath, 'PlayerShip', 'Enemy1'), _sdmod('Domination', ('userWithBaton', 'shipWithBaton')), _sditems('Baton'))
+(_sd(O.OnPlayerDeath, 'PlayerShip', 'Enemy1'), _sd(O.RespawnPlayer, 'Friend1'), _sdent(('Friend1',), ('Target', 'Active')))
+(setattr(O, 'shipWithBaton', Scrap.Get('LeaderName')), _sd(O.OnEnemyDeath, Scrap.Get('LeaderName'), 'Player0'), _sdmod('Domination', ('enemies', 'shipWithBaton')), Scrap.Get('LeaderName'), Scrap.Get('CurrentWaypointName'), _sditems('Baton'))
+(_sd(O.OnEnemyDeath, 'Enemy1', 'Friend1'), _sd(O.OnFriendDeath, 'Friend0', 'Enemy2'), _sdmod('Domination', ('enemies', 'friends')), Scrap.Get('LeaderName'))
+_sd(O.OnFriendDeath, 'Missing', 'Enemy2')
+# respawns: a leader, an enemy, a friend
+(_sd(O.RespawnEnemy, 1), _sdent(('Enemy',)), Scrap.Get('LeaderName'), _sdmod('Domination', ('enemies',)), _sdfreeze(O.enemies))
+(Scrap.GetEntity('Enemy').Del(), _sd(O.RespawnFriend), _sdent(('Friend',)), _sdmod('Domination', ('friends',)), _sdfreeze(O.friends))
+(_sd(O.RespawnEnemy, 0), _sdent(('Enemy',)), Scrap.Get('LeaderName'), _sdfreeze(O.enemies))
+# a missing global stops like the script
+del O.zonesStates
+_sd(O.ReleaseBaton)
+O.zonesStates = {}
+# the one line that differs on purpose: the C functions are builtins
+(str(type(O.Init)), str(type(O.TakeZone)))

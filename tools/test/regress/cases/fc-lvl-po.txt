@@ -1,0 +1,24 @@
+# Police: the level functions that are data (MapSnd, Map), called with recorders
+exec(open('fweap.py').read()) in __import__('Init').__dict__
+I = __import__('Init')
+M = __import__('MapSnd')
+(M.LoadSounds.__name__, M.SndElements.__name__, M.BeatingPoliceMaton.__name__)
+setattr(__import__('Chars'), 'ActSound', I._recn('ActSound'))
+setattr(__import__('Scene'), 'AddSound', I._recn('AddSound'))
+setattr(__import__('SSound'), 'LoadSound', I._recn('LoadSound'))
+I._sync(M.BeatingDtritus)[2]
+I._sync(M.BeatingPoliceMaton, '3')[2]
+I._sync(M.BeatingPoliceMaton1)[2]
+I._sync(M.PoliFight)[2]
+I._sync(M.MeetHumanHuman)[2]
+I._sync(M.LoadSounds)[2]
+M.LoadSounds(1)
+M.BeatingPoliceMaton()
+M.BeatingPoliceMaton('1', '2')
+M.BeatingPoliceMaton(extra = '4')
+M.BeatingPoliceMaton('4', extra = '4')
+M.BeatingPoliceMaton(nope = 1)
+setattr(M, 'isPC', 0)
+I._sync(M.LoadSounds)[2]
+del M.isPC
+M.LoadSounds()

@@ -1,0 +1,4 @@
+# line 10: a timer or a moving item read between frames
+ignore RM.ChallengeFoeType = 'Police'; RM.challenged_NPCs_Names = list(RM.Players); RM.EndOfRace('CheckPoint', 'Left'); result = (I._takecalls(), map(I.E, RM.Players))
+# line 37: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore I.S.HideVehiclesToo(); result = (len(I.S.HidenChars), I.S.HidenChars[:5])

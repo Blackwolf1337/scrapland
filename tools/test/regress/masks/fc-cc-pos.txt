@@ -1,0 +1,2 @@
+# line 5: a timer or a moving item read between frames
+ignore import sys; result = (I._takecalls(), getattr(sys, 'last_type', None), getattr(sys, 'last_value', None), I._tb(getattr(sys, 'last_traceback', None)), Scrap.GetAlarm())

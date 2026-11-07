@@ -1,0 +1,2 @@
+# line 59: random in C: the traffic ship model of the vehicle maker (random, noted in round 8i)
+ignore I._ent(I.T5, ('isInit','FxEngineTime','FxBoostEngineTime','Model','WeapList','MEng0','Descriptor','MPil0','MaxLife'))

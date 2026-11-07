@@ -1,0 +1,54 @@
+# Scrapyard, round 7d: Mission_Ambush (call Traitorius at the start), then a start in the ambush
+Scrap.SetSaveVar('Mission.Map', 'Scrapyard'); Scrap.SetSaveVar('Mission.Library', 'Mission_Ambush'); Scrap.SetSaveVar('NumProbes', '-1'); Scrap.SetSaveVar('RobotsControlledByBoss', '0'); Scrap.LoadLevel('Levels/Scrapyard'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6b.py')
+execfile('fr7d.py')
+AM = _m('Mission_Ambush'); PC = _btarget(); result = 1
+(Scrap.GetLevelPath(), _bfn('Mission_Ambush'), _sdmod('Mission_Ambush', ('numProbes', 'pc', 'minPlayerDist')), _bsv(('NumProbes', 'Traffic.AcShips')))
+(_sdmod('MapTriggers', ('WithScrapyardInhabitants',)), _sdmod('Traffic', ('AcHeavyShips', 'NumHeavy', 'AcShips')), _bhooks()[12:14], _ye((PC,), ('UseFunc',)))
+_bon()
+(setattr(__import__('Traffic'), 'NumHeavy', 3), setattr(__import__('MapTriggers'), 'WithScrapyardInhabitants', 1), _sd(AM.InitStatus, 'x'), _sdmod('Traffic', ('AcHeavyShips', 'NumHeavy', 'AcShips')), _sdmod('MapTriggers', ('WithScrapyardInhabitants',)))
+(_bprof(AM.GetMadHuntersProfile()), _sd(AM.GetMadHuntersProfile, 1), _sd(AM.InitStatus))
+(Scrap.SetAlarm(0), _sd(AM.UsePhoneCab, _un(), PC, 'Talk', 'x'), _bhooks()[:5], _bhooks()[12:14], _sdmod('Mission_Ambush', ('pc',)))
+(Scrap.SetAlarm(1), _sd(AM.UsePhoneCab, _un(), PC, 'Talk', 'x'), _bhooks()[:4], Scrap.SetAlarm(0))
+_sd(AM.UsePhoneCab, _un(), 'Nobody', 'Talk', 'x')
+(setattr(__import__('Speech'), 'OnOutOfRange', 1), _sd(AM.DeepThroatCom), _ye((PC,), ('UseFunc',)), _bhooks()[4:5])
+(_sd(AM.IsValidPos, (0.0, 0.0, 0.0), (100.0, 0.0, 0.0)), _sd(AM.IsValidPos, (0.0, 0.0, 0.0), (0.0, 100000.0, 0.0)), _sd(AM.IsValidPos, (0, 0, 0)), _sd(AM.IsValidPos, 1, 2))
+(_sd(AM.CallTraitorius), _bhooks()[12:13], _ye((_btarget(),), ('UseFunc',)))
+(_sd(AM.CallDeepThroat), _bhooks()[12:13], _ye((_btarget(),), ('UseFunc',)))
+EN0 = _sdlist('Enemies'); result = 1
+(_sd(AM.PreLaunchAmbush), AM.numProbes, _bsv(('NumProbes',)), len(_ynew('Enemies', EN0)), _bhooks()[12:14], Scrap.EntityListGet('Enemies', 'OnDeath'))
+PRB = _btarget(); EN1 = _sdlist('Enemies'); _sdfreeze(EN1 + [PRB]); result = 1
+(_ye((PRB,), ('TgType', 'EntityList', 'Life', 'MaxLife', 'MinLife', 'OnDeath', 'MoveTime', 'RadarShow')), _sdn(Scrap.GetEntity(PRB).MoveAng), _sdn(Scrap.GetEntity(PRB).Ang), _sdn(Scrap.GetEntity(PRB).Pos) == _sdn(Scrap.GetEntity(PRB).MovePos))
+(_sd(AM.CreateMadHunter), _ye(_ynew('Enemies', EN1), ('TgType', 'EntityList', 'Life', 'MaxLife', 'Money')), _sdfreeze(_ynew('Enemies', EN1)))
+(setattr(AM, 'numProbes', 1), _sd(AM.CreateMadHunters), len(_ynew('Enemies', EN1)), _sd(AM.CreateMadHunters, 1))
+EN2 = _sdlist('Enemies'); _sdfreeze(EN2); result = 1
+(setattr(AM, 'numProbes', 4), _sd(AM.OnProbeDeath, PRB, 'Nobody'), AM.numProbes, _bsv(('NumProbes',)), len(_sdlist('Enemies')), _ye(EN2[:2], ('EntityList', 'Life')), _btarget() == PRB)
+PRB2 = _btarget(); _sdfreeze(_sdlist('Enemies') + [PRB2]); result = 1
+(setattr(AM, 'numProbes', 1), _sd(AM.OnProbeDeath, PRB2, _un()), AM.numProbes, _bsv(('NumProbes',)))
+(_sd(AM.OnProbeDeath, 'NoProbe'), _sd(AM.OnProbeDeath, 'NoProbe', 'Nobody'))
+(_sd(AM.PreCallDeepThroat), AM.numProbes, _bsv(('NumProbes',)), _bhooks()[12:13], _ye((_btarget(),), ('UseFunc',)))
+PC2 = _btarget(); result = 1
+(Scrap.SetAlarm(0), _sd(AM.UsePhoneCab2, _un(), PC2, 'Talk', 'x'), _bhooks()[:4], _ye((PC2,), ('UseFunc',)), _sdmod('Mission_Ambush', ('pc',)))
+(Scrap.SetAlarm(1), setattr(Scrap.GetEntity(PC2), 'UseFunc', 'Mission_Ambush.UsePhoneCab2'), _sd(AM.UsePhoneCab2, _un(), PC2, 'Talk', 'x'), _ye((PC2,), ('UseFunc',)), Scrap.SetAlarm(0))
+(_sd(AM.SetNextMission), _ye((PC2,), ('UseFunc',)), _bsv(('NumProbes', 'Mission.Map', 'Mission.Library')), _bhooks()[12:13])
+(Scrap.SetSaveVar('NumProbes', '-2'), _sd(AM.Init, 'x'), AM.numProbes, _bhooks()[12:13])
+(Scrap.SetSaveVar('NumProbes', '-1'), _sd(AM.Init, 'x'), AM.numProbes, _ye((_btarget(),), ('UseFunc',)))
+(Scrap.SetSaveVar('NumProbes', 'x'), _sd(AM.Init, 'x'), AM.numProbes)
+_sd(AM.Init)
+(setattr(AM, 'pc', None), _sd(AM.DeepThroatCom), _sd(AM.SetNextMission))
+del AM.pc
+(_sd(AM.DeepThroatCom), _sd(AM.UsePhoneCab, _un(), PC, 'Talk', 'x'), _sdmod('Mission_Ambush', ('pc',)))
+del AM.minPlayerDist
+_sd(AM.IsValidPos, (0.0, 0.0, 0.0), (100.0, 0.0, 0.0))
+del AM.PROBE_LIFE
+(_sd(AM.CreateProbe), len(_sdlist('Enemies')))
+_broff()
+Scrap.SetSaveVar('Mission.Map', 'Scrapyard'); Scrap.SetSaveVar('Mission.Library', 'Mission_Ambush'); Scrap.SetSaveVar('NumProbes', '4'); Scrap.LoadLevel('Levels/Scrapyard'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6b.py')
+execfile('fr7d.py')
+AM = _m('Mission_Ambush'); result = 1
+(Scrap.GetLevelPath(), AM.numProbes, len(_sdlist('Enemies')), Scrap.EntityListGet('Enemies', 'OnDeath'), _bsv(('NumProbes',)), _ye((_btarget(),), ('TgType', 'Life', 'MaxLife', 'MinLife', 'OnDeath', 'RadarShow')))

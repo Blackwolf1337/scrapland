@@ -1,0 +1,31 @@
+Scrap.SetSaveVar('MissionState', 'GetFuncShipPlans'); Scrap.SetSaveVar('Mission.Map', 'Police'); Scrap.SetSaveVar('Mission.Library', 'Mission_BeatPickus'); Scrap.LoadLevel('Levels/Police'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6.py')
+(Scrap.GetLevelPath(), _r6fn('Mission_BeatPickus'))
+_r6hooks()
+_r6res()
+_sdmod('Mission_BeatPickus', ('followPlayerVel', 'thugsStopped', 'launcher', 'plansNames', 'numPlansWithPhoto', 'alreadyTalked', 'traitorius'))
+_r6ent(('Police_Thug1', 'Police_Thug2', 'Police_Thug3', 'Police_Thug4', 'Police_Thug5'), ('UseFunc', 'LLogicDefaultState', 'LLogicDefaultTarget', 'LLogicState', 'LLogicTarget'))
+_r6ent(('PlanoSFunc1', 'PlanoMFunc1', 'Functionary_Traitorius', 'Functionary_Pickus'))
+_r6gv(('LittlePoliceAsksForMoney', 'NotCleanableByGear'))
+Scrap.SetSaveVar('MissionState', 'TalkToTraitoriusAgain'); Scrap.LoadLevel('Levels/Police'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6.py')
+(Scrap.GetLevelPath(), _r6fn('Mission_BeatPickus'))
+_r6hooks()
+_r6res()
+_sdmod('Mission_BeatPickus', ('followPlayerVel', 'thugsStopped', 'launcher', 'plansNames', 'numPlansWithPhoto', 'alreadyTalked', 'traitorius'))
+_r6ent(('Police_Thug1', 'Police_Thug2', 'Police_Thug3', 'Police_Thug4', 'Police_Thug5'), ('UseFunc', 'LLogicDefaultState', 'LLogicDefaultTarget', 'LLogicState', 'LLogicTarget'))
+_r6ent(('Functionary_Traitorius', 'Functionary_Pickus'))
+Scrap.SetSaveVar('MissionState', 'HireThugs'); Scrap.LoadLevel('Levels/Police'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6.py')
+(Scrap.GetLevelPath(), _r6fn('Mission_BeatPickus'))
+_r6hooks()
+_r6res()
+_sdmod('Mission_BeatPickus', ('followPlayerVel', 'thugsStopped', 'launcher', 'plansNames', 'numPlansWithPhoto', 'alreadyTalked', 'traitorius'))
+_r6ent(('Police_Thug1', 'Police_Thug2', 'Police_Thug3', 'Police_Thug4', 'Police_Thug5'), ('UseFunc', 'LLogicDefaultState', 'LLogicDefaultTarget', 'LLogicState', 'LLogicTarget'))
+Scrap.SetSaveVar('Mission.Map', 'Orbit'); Scrap.SetSaveVar('Mission.Library', 'MapDecont'); Scrap.Set('IsXbox', 0); result = Scrap.GetSaveVar('Mission.Library')

@@ -1,0 +1,2 @@
+# line 30: random in C: the case recorder controls Scrap.Rand on the pack side only, the C port calls Scrap_RandRange directly (brief)
+ignore (setattr(IG, 'bishops', ['X']), _sd(IG.OnBishopsDeath, 'X', 'Nobody'), _bsv(('Player.NumLives',)), Scrap.GetAlarm()[0] > 0, Scrap.SetAlarm(0), setattr(IG, 'bishops', B))

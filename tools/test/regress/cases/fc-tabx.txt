@@ -1,0 +1,8 @@
+# exploration of the Junkyard for the tabs
+import sys
+exec(open('fweap.py').read()) in __import__('Init').__dict__
+exec(open('ftab.py').read()) in __import__('Init').__dict__
+I = __import__('Init')
+(Scrap.GetLevelPath(), Scrap.GetMoney(), I._thv(), map(lambda i: Scrap.Get('HangarShip%d' % i), range(1, 10)))
+(__import__('ShipEdit').IsEditingMultiplayer(), I._tm(), sys.modules.has_key('MapShipEdit'), sys.modules.has_key('EnginesTab'))
+Scrap.GetEntity('DM_EditKeyboard').Name

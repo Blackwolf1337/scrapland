@@ -1,0 +1,2 @@
+# line 30: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore (_sd(D.GetMaxFragsEnemies), _sdmod('DeathMatch', ('enemiesFrags', 'playerFrags')), _sdent(('Enemy1', 'Enemy3', 'Enemy4')), _sdmod('RacerScorer', ('missionYou', 'missionBad')))

@@ -1,0 +1,20 @@
+# round 8n: the C functions of the modules loaded in DownTown called with the handle of a deleted entity for every
+# parameter: the errors of the pack scripts against the C (a NULL without an error, the SystemError texts)
+exec "def _pb(m, f, n):\n\timport Scrap, sys, Init\n\ttry:\n\t\tr = apply(getattr(__import__(m), f), (Init._dh,) * n)\n\t\tr = ('ok', type(r).__name__)\n\texcept:\n\t\tr = ('error', str(sys.exc_type), str(sys.exc_value))\n\tScrap.SetTimeSpeed(1)\n\treturn r\nimport Init\nInit._pb = _pb"
+I = __import__('Init'); I._dh = Scrap.CreateEntity('CamPath', 0, 0, 0, 'CamPath'); I._dh.Del(); result = 1
+__import__('Init')._pb('Elevator', 'ConnectElevators', 3)
+__import__('Init')._pb('Elevator', 'DoorInitializator', 2)
+__import__('Init')._pb('Elevator', 'ElevatorActiveToGet', 1)
+__import__('Init')._pb('Elevator', 'ElevatorCamera', 1)
+__import__('Init')._pb('Elevator', 'ElevatorCloseToGo', 1)
+__import__('Init')._pb('Elevator', 'ElevatorHaveClose', 3)
+__import__('Init')._pb('Elevator', 'ElevatorHaveOpen', 3)
+__import__('Init')._pb('Elevator', 'ElevatorReachDown', 3)
+__import__('Init')._pb('Elevator', 'ElevatorReachUp', 3)
+__import__('Init')._pb('Elevator', 'LinkToElevator', 4)
+__import__('Init')._pb('Elevator', 'ObjInitializator', 2)
+__import__('Init')._pb('Elevator', 'ObjInitializatorNang', 2)
+__import__('Init')._pb('Elevator', 'SetDef', 2)
+__import__('Init')._pb('Elevator', 'UnlinkFromElevator', 1)
+__import__('Init')._pb('Elevator', 'UseElevator', 4)
+__import__('Init')._pb('Elevator', 'isOutMap', 1)

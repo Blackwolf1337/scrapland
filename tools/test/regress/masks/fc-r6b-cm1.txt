@@ -1,0 +1,8 @@
+# line 33: random in C: the case recorder controls Scrap.Rand on the pack side only, the C port calls Scrap_RandRange directly (brief)
+ignore (_bent(__import__('Mission_DestroyMickus').transports[:2], ('EntityList', 'OnDamage', 'Money', 'TgType', 'RadarShow')), _bent((__import__('Mission_DestroyMickus').mickus,), ('OnDamage', 'Life', 'MaxLife', 'Money')))
+# line 63: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore (_bon((('Scrap.TestLine', (1, '')),)), _bsave(), _bnear(__import__('Mission_DestroyMickus').mickus, 2000000), _sd(__import__('Mission_DestroyMickus').CheckMickusVisibility), _bback(), len(__import__('Mission_DestroyMickus').transports), __import__('Mission_DestroyMickus').mickus in __import__('Mission_DestroyMickus').transports, _bent(_sdlist('FuncEnemies'), ('EntityList', 'TgType')), _bhooks()[8:11], _bsv(('NumTransports',)))
+# line 64: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore (_sd(__import__('Mission_DestroyMickus').CreateTransports, 3), _sdfreeze(__import__('Mission_DestroyMickus').transports), __import__('Mission_DestroyMickus').transports)
+# line 69: AI and traffic state at the moment of the line (timing of the engine AI between case lines)
+ignore (_sd(__import__('Mission_DestroyMickus').CreateFuncEnemies, 1), len(_sdlist('FuncEnemies')))

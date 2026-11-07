@@ -1,0 +1,4 @@
+# line 14: random in C: the case recorder controls Scrap.Rand on the pack side only, the C port calls Scrap_RandRange directly (brief)
+ignore (setattr(__import__('Map'), 'LastTime', -1), _sd(__import__('Map').OnDeath, 'R6_1_TestRock', 'Player0'), _sdmod('Map', ('Duplicate', 'ctrTimer', 'idctr')), __import__('Vehicles').ShipExplosionScaleFactor)
+# line 16: random in C: the case recorder controls Scrap.Rand on the pack side only, the C port calls Scrap_RandRange directly (brief)
+ignore (setattr(__import__('Map'), 'Duplicate', 0), _sd(__import__('Map').RealOnDeath, 'R6_1_TestRock', 'Player0'), _sdmod('Map', ('Duplicate', 'idctr')), _sdent(('R6_2_Asteroids', 'R6_3_Asteroids'), ('Vel', 'Model', 'Ang')))

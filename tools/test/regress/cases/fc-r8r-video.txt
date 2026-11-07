@@ -1,0 +1,23 @@
+# Townhall, round 8r (coverage): the video menu of PCMenu (MenuVideo.c: Video_Fill, Video_Values, ApplyChanges,
+# VideoDefaults, the change buttons): applied only with settings that need no engine reset (the filter, fog, lock and
+# gamma), then VideoMenuBack restores them. The settings are set first (both slots keep them in Scrap.cfg); the menu
+# is opened again before Defaults (after ApplyChanges the Gamma slider is gone and the script raises in GammaFormula).
+# Expected: the Display entry of the C menu (intended, docs/scripts.md)
+exec(open('fcov.py').read()) in __import__('Init').__dict__; result = 1
+Scrap.Set('R_TexFilter', 2); Scrap.Set('R_MipFilter', 1); Scrap.Set('R_Anisotropy', 8); Scrap.Set('R_FogEnable', 1); Scrap.Set('R_VideoLockMode', 2); Scrap.Set('R_VideoLockBuf', 1); Scrap.Set('VideoGammaRGB', 1.0); result = (Scrap.Get('R_TexFilter'), Scrap.Get('R_MipFilter'), Scrap.Get('R_Anisotropy'), Scrap.Get('R_FogEnable'), Scrap.Get('R_VideoLockMode'), Scrap.Get('R_VideoLockBuf'), Scrap.Get('VideoGammaRGB'), Scrap.Get('TextureLOD'), Scrap.Get('R_StencilShadows'), Scrap.Get('VSync'))
+I = __import__('Init'); P = __import__('PCMenu'); result = I._ce(P.VideoMenu, 0, 'x')
+result = __import__('Init')._md(0)
+I = __import__('Init'); P = __import__('PCMenu'); result = (I._ce(P.ApplyChanges, 0, 'Apply'), Scrap.Get('R_TexFilter'), Scrap.Get('R_MipFilter'), Scrap.Get('R_Anisotropy'), Scrap.Get('R_FogEnable'), Scrap.Get('R_VideoLockMode'), Scrap.Get('R_VideoLockBuf'), Scrap.Get('VideoGammaRGB'), Scrap.Get('TextureLOD'), Scrap.Get('R_StencilShadows'), Scrap.Get('VSync'))
+result = __import__('Init')._md(0)
+I = __import__('Init'); P = __import__('PCMenu'); result = I._ce(P.VideoMenu, 0, 'x')
+I = __import__('Init'); P = __import__('PCMenu'); result = (I._ce(P.ChangeTextureFilter, 0, 'TextureFilter'), I._ce(P.ChangeFog, 0, 'Fog'), I._ce(P.ChangeLock, 0, 'Lock'), I._ce(P.GammaSliderFocus_Add, 0, 'Gamma', 'Fog'), I._ce(P.ChangeGamma, 0, 'Gamma'))
+result = __import__('Init')._md(0)
+I = __import__('Init'); P = __import__('PCMenu'); result = (I._ce(P.ApplyChanges, 0, 'Apply'), Scrap.Get('R_TexFilter'), Scrap.Get('R_MipFilter'), Scrap.Get('R_Anisotropy'), Scrap.Get('R_FogEnable'), Scrap.Get('R_VideoLockMode'), Scrap.Get('R_VideoLockBuf'), Scrap.Get('VideoGammaRGB'), Scrap.Get('TextureLOD'), Scrap.Get('R_StencilShadows'), Scrap.Get('VSync'))
+result = __import__('Init')._md(0)
+I = __import__('Init'); P = __import__('PCMenu'); result = I._ce(P.VideoMenu, 0, 'x')
+I = __import__('Init'); P = __import__('PCMenu'); result = (I._ce(P.VideoDefaults, 0, 'Defaults'), Scrap.Get('R_TexFilter'), Scrap.Get('R_MipFilter'), Scrap.Get('R_Anisotropy'), Scrap.Get('R_FogEnable'), Scrap.Get('R_VideoLockMode'), Scrap.Get('R_VideoLockBuf'), Scrap.Get('VideoGammaRGB'), Scrap.Get('TextureLOD'), Scrap.Get('R_StencilShadows'), Scrap.Get('VSync'))
+result = __import__('Init')._md(0)
+I = __import__('Init'); P = __import__('PCMenu'); result = (I._ce(P.ChangeTextureFilter, 0, 'TextureFilter'), I._ce(P.ChangeTextureFilter, 0, 'TextureFilter'), I._ce(P.ChangeTextureFilter, 0, 'TextureFilter'), I._ce(P.ChangeTextureFilter, 0, 'TextureFilter'), I._ce(P.ChangeTextureDetail, 0, 'TextureDetail'), I._ce(P.ChangeShadowsDetail, 0, 'ShadowsDetail'), I._ce(P.ChangeVSync, 0, 'VSync'), I._ce(P.ChangeBloom, 0, 'Bloom'), I._ce(P.ChangeMotionBlur, 0, 'MotionBlur'), I._ce(P.ChangeDuDv, 0, 'DuDv'), I._ce(P.GammaSliderFocus_Sub, 0, 'Gamma', 'Fog'))
+result = __import__('Init')._md(0)
+I = __import__('Init'); P = __import__('PCMenu'); result = (I._ce(P.VideoMenuBack, 0, 'Back'), Scrap.Get('R_TexFilter'), Scrap.Get('R_MipFilter'), Scrap.Get('R_Anisotropy'), Scrap.Get('R_FogEnable'), Scrap.Get('R_VideoLockMode'), Scrap.Get('R_VideoLockBuf'), Scrap.Get('VideoGammaRGB'), Scrap.Get('TextureLOD'), Scrap.Get('R_StencilShadows'), Scrap.Get('VSync'))
+result = __import__('Init')._md(0)

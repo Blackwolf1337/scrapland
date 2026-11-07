@@ -1,0 +1,33 @@
+# Police: GateKeeper (the gatekeepers after the level start, doors and foes, UseDoor, the talk, EndOfSpeech, RestoreState) and the siren functions of Gear and Police
+exec(open('fpk.py').read()) in __import__('Init').__dict__
+I = __import__('Init'); GK = __import__('GateKeeper'); result = 1
+def _gk(): d = map(lambda x: (x[0], x[1].__class__.__name__, x[1].__dict__.items()), GK.GateKeepers.items()); d.sort(); return (d, GK.GKDoors, GK.LocalCallFunc, GK.LocalParams, GK.AfterGateKeeperSpeech)
+I._gk = _gk; result = I._gk()
+result = (I._ent('GateKeeper_07', ('Invulnerable', 'Action', 'ActCtrl', 'ArrnOpt', 'ArrOpt0', 'AbortSelectFunc', 'LLogicIdle')), I._ent('GateKeeper_08', ('Invulnerable', 'Action', 'ArrnOpt', 'ArrOpt0')))
+# OnCreate, DoorFoe, SetDoor with the door callbacks
+result = (GK.OnCreate('GateKeeper_08'), I._gk(), I._ent('GateKeeper_08', ('Invulnerable', 'Action')), I._t(GK.OnCreate, 'NoOne'))
+result = (GK.DoorFoe('GateKeeper_08', GK.PoliceGroupGateKeeper), I._gk(), I._t(GK.DoorFoe, 'NoOne', ()))
+I.cl = I._Rec('closed', None); I.cp = I._Rec('canpass', None); result = (GK.SetDoor('GateKeeper_08', 'DM_Door_PoliceSegurity_00', I.cp, I.cl), I._takecalls(), I._gk()[1])
+I.cl2 = I._Rec('closed2', None); result = (GK.SetDoor('GateKeeper_08', 'DM_Door_PoliceSegurity_00', ClosedFunc = I.cl2), I._takecalls(), I._gk()[0][1][2], I._t(GK.SetDoor, 'NoOne', 'X'))
+result = (GK.SetDoor('GateKeeper_08', 'DM_Door_PoliceSegurity_00', I.cp, I.cl), I._takecalls(), GK.DoNothingFunc(1, 2), I._t(GK.DoNothingFunc, 1), I._t(GK.GetGateKeeperId, 'GateKeeper_07'))
+# UseDoor: no alarm and a matching foe, a foe that does not match, the alarm, a door no gatekeeper guards
+I._rec2('Elevator', 'UseElevator'); u = Scrap.UsrEntity(0); r = (u.ActCtrl, GK.UseDoor(u.Name, 'DM_Door_PoliceSegurity_00', 'Use', 'x'), I._takecalls()); I._restore(); result = r
+I._rec2('Elevator', 'UseElevator'); u = Scrap.UsrEntity(0); GK.DoorFoe('GateKeeper_08', ('Dtritus',)); r = (GK.UseDoor(u.Name, 'DM_Door_PoliceSegurity_00', 'Use', 'x'), I._takecalls(), __import__('SScorer').Get(0, 'Messages', 'Text')); I._restore(); result = r
+I._rec2('Elevator', 'UseElevator'); I._rec2('SScorer', 'SetMsgText'); u = Scrap.UsrEntity(0); GK.DoorFoe('GateKeeper_08', ('Police',)); r = (GK.UseDoor(u.Name, 'DM_Door_PoliceSegurity_00', 'Use', 'x'), I._takecalls()); I._restore(); result = r
+I._rec2('Elevator', 'UseElevator'); I._rec2('SScorer', 'SetMsgText'); I._seq('Scrap', 'GetAlarm', [(1, 0)]); u = Scrap.UsrEntity(0); r = (GK.UseDoor(u.Name, 'DM_Door_PoliceSegurity_00', 'Use', 'x'), I._takecalls()); I._restore(); result = r
+I._rec2('Elevator', 'UseElevator'); I._rec2('SScorer', 'SetMsgText'); u = Scrap.UsrEntity(0); GK.DoorFoe('GateKeeper_08', ()); r = (GK.UseDoor(u.Name, 'DM_Door_PoliceSegurity_00', 'Use', 'x'), GK.UseDoor(u.Name, 'DM_Door_Nothing', 'Use', 'x'), I._takecalls(), I._t(GK.UseDoor, 'NoOne', 'DM_Door_PoliceSegurity_00', 'Use', 'x')); I._restore(); result = r
+# the talk: the door opens (foe type () or matching), the group names, an invalid foe type, AllreadyOpen, another option
+I._rec2('Speech', 'OnSpch', 1); u = Scrap.UsrEntity(0); GK.AfterGateKeeperSpeech = I._Rec('after', None); r = (GK.GateKeeperSpeech(u.Name, 'GateKeeper_08', 'Talk', 'x'), I._takecalls(), I._gk(), __import__('Speech').OnEndOfSpeech.__name__, I._mod('Speech', ('PlayerName', 'NPCName')), I._ent('GateKeeper_08', ('ArrnOpt', 'ArrOpt0', 'AbortSelectFunc'))); I._restore(); result = r
+I._rec2('Speech', 'OnSpch', 1); u = Scrap.UsrEntity(0); GK.DoorFoe('GateKeeper_08', GK.DtritusGroupGateKeeper); r = (GK.GateKeeperSpeech(u.Name, 'GateKeeper_08', 'Talk', 'x'), I._takecalls(), I._gk()[2:]); I._restore(); result = r
+I._rec2('Speech', 'OnSpch', 1); u = Scrap.UsrEntity(0); GK.DoorFoe('GateKeeper_08', GK.BankDirectorGroupGateKeeper); r = (GK.GateKeeperSpeech(u.Name, 'GateKeeper_08', 'Talk', 'x'), I._takecalls()); I._restore(); result = r
+I._rec2('Speech', 'OnSpch', 1); I._rec2('Scrap', 'ConsoleError'); u = Scrap.UsrEntity(0); GK.DoorFoe('GateKeeper_08', ('Nobody', 'Else')); GK.AfterGateKeeperSpeech = None; r = (GK.GateKeeperSpeech(u.Name, 'GateKeeper_08', 'Talk', 'x'), I._takecalls()); I._restore(); result = r
+I._rec2('Speech', 'OnSpch', 1); u = Scrap.UsrEntity(0); r = (GK.GateKeeperSpeech(u.Name, 'GateKeeper_08', 'AllreadyOpen', 'x'), I._takecalls(), I._gk()[2:], GK.GateKeeperSpeech(u.Name, 'GateKeeper_08', 'Other', 'x'), I._takecalls(), I._gk()[2:]); I._restore(); result = r
+I._rec2('Speech', 'OnSpch', 1); u = Scrap.UsrEntity(0); r = (I._t(GK.GateKeeperSpeech, u.Name, 'NoOne', 'Talk', 'x'), I._t(GK.GateKeeperSpeech, u.Name, 'GateKeeper_07', 'Talk'), I._takecalls()); I._restore(); result = r
+# EndOfSpeech with and without the door callback, RestoreState
+__import__('Speech').NPCName = 'GateKeeper_08'; GK.LocalCallFunc = I._Rec('local', 7); GK.LocalParams = (1, 'b'); result = (GK.EndOfSpeech(), I._takecalls(), I._gk()[2:], I._ent('GateKeeper_08', ('LLogicIdle',)), GK.EndOfSpeech())
+__import__('Speech').NPCName = 'NoOne'; GK.LocalCallFunc = I._Rec('local', 7); GK.LocalParams = 5; result = (I._t(GK.EndOfSpeech), I._takecalls(), I._gk()[2:])
+GK.LocalCallFunc = None; I._rec2('Speech', 'RestoreState'); r = (GK.RestoreState('GateKeeper_08'), I._takecalls(), I._t(GK.RestoreState, 'NoOne')); I._restore(); result = r
+del GK.LocalParams; GK.LocalCallFunc = I._Rec('local', 7); r = I._t(GK.EndOfSpeech); GK.LocalParams = None; result = (r, I._takecalls())
+# the siren actions and the missile events on new classes
+__import__('MakeChar').InitChar('Betty'); result = (__import__('Gear').LoadSirenActs(), __import__('Gear').DropMissileEvent('6', '10'), I._cldump(['Betty']), I._t(__import__('Gear').DropMissileEvent, 6, 10))
+__import__('MakeChar').InitChar('Rusty'); result = (__import__('Police').LoadSirenActs(), I._cldump(['Rusty']))

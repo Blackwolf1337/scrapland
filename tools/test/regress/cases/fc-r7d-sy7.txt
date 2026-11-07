@@ -1,0 +1,51 @@
+# Scrapyard, round 7d: Mission_StupidMercAgain (started in the call to the bishop, the rest called directly)
+Scrap.SetSaveVar('Mission.Map', 'Scrapyard'); Scrap.SetSaveVar('Mission.Library', 'Mission_StupidMercAgain'); Scrap.SetSaveVar('Mission_StupidMercAgain', 'TalkBishop'); Scrap.SetSaveVar('RobotsControlledByBoss', '0'); Scrap.LoadLevel('Levels/Scrapyard'); result = 1
+!sleep 55
+execfile('fsd.py')
+execfile('fr6b.py')
+execfile('fr7d.py')
+import SAI; SA = _m('Mission_StupidMercAgain'); result = 1
+(Scrap.GetLevelPath(), _bfn('Mission_StupidMercAgain'), _sdmod('Mission_StupidMercAgain', ('FirstAppereance', 'FirstHint', 'rmmess', 'SmartMercName', 'MedMercName', 'EvasionTime')), _bsv(('Mission_StupidMercAgain', 'Traffic.AcShips')), Scrap.EntityListGet('Enemies', 'OnDeath'), __import__('VehiclesNPC').GetIAProf('SMosquito').ControlBoost, __import__('VehiclesNPC').UseMercs)
+(_sdn(SA.pc), _ye((SA.pc.Name,), ('UseFunc',)), _btarget() == SA.pc.Name)
+_bon()
+(setattr(__import__('VehiclesNPC'), 'UseMercs', 1), _sd(SA.InitStatus, 'x'), __import__('VehiclesNPC').UseMercs, __import__('Traffic').AcShips)
+(_bprof(SA.GetMercsEnemiesProfile('SMerc2')), _sd(SA.GetMercsEnemiesProfile), _sd(SA.GetMercsEnemiesProfile, 5))
+(Scrap.SetSaveVar('Mission_StupidMercAgain', 'Follow'), setattr(__import__('VehiclesNPC').GetIAProf('SMosquito'), 'ControlBoost', 0), _sd(SA.Init, 'x'), __import__('VehiclesNPC').GetIAProf('SMosquito').ControlBoost)
+(Scrap.SetSaveVar('Mission_StupidMercAgain', 'Evasion'), _sd(SA.Init, 'x'), Scrap.SetSaveVar('Mission_StupidMercAgain', 'Other'), _sd(SA.Init, 'x'), Scrap.SetSaveVar('Mission_StupidMercAgain', 'TalkBishop'), _sd(SA.Init, 'x'), _ye((SA.pc.Name,), ('UseFunc',)), _bsv(('Mission_StupidMercAgain',)))
+(_sd(SA.InitFollow), _sd(SA.InitFollow, 1))
+(_sd(SA.CreateMerc), SA.FirstAppereance, SA.iWaypoint, _ye((SA.MercName,), ('Money', 'TgType', 'EntityList', 'Life')), Scrap.Get('CurrentWaypointName') == SA.MercName, _btarget() == SA.MercName, _ypos((SA.MercName,)))
+_sdfreeze([SA.MercName])
+(_sd(SA.CreateMerc), SA.FirstAppereance, SA.iWaypoint, _sd(SA.CreateMerc, 1))
+M1 = SA.MercName; _sdfreeze([M1]); result = 1
+(setattr(SA, 'iWaypoint', 2), apply(SAI.SetStateVehicle, (1, M1) + SA.MercWaypoints[3] + (3000, 1)), _bsave(), _bnear(M1, 50000), _sd(SA.GotoNext), _bback(), SA.iWaypoint, SA.FirstHint)
+(SAI.SetStateVehicle(0, M1), _bsave(), _bnear(M1, 50000), _sd(SA.GotoNext), _bback(), SA.iWaypoint, SA.FirstHint)
+(SAI.SetStateVehicle(0, M1), setattr(SA, 'rmmess', 1), _bsave(), _bnear(M1, 1000), _sd(SA.GotoNext), _bback(), SA.iWaypoint, SA.rmmess)
+EN0 = _sdlist('Enemies'); result = 1
+(SAI.SetStateVehicle(0, M1), setattr(SA, 'iWaypoint', 3), _bsave(), _bnear(M1, 1000), _sd(SA.GotoNext), _bback(), SA.iWaypoint, SA.rmmess, len(_ynew('Enemies', EN0)), SA.SmartMercName[:12], SA.MedMercName[:12])
+_sdfreeze(_sdlist('Enemies'))
+(_ye((SA.SmartMercName, SA.MedMercName), ('EntityList', 'Life', 'MaxLife', 'TgType', 'Money')), _sd(SA.CreateMercs), len(_ynew('Enemies', EN0)))
+(SAI.SetStateVehicle(0, M1), setattr(SA, 'iWaypoint', 9), _bsave(), _bnear(M1, 1000), _sd(SA.GotoNext), _bback(), SA.iWaypoint, _ye((M1,), ('TgType', 'EntityList', 'OnDeath')))
+(setattr(SA, 'MercName', 'Nobody'), _sd(SA.GotoNext), SA.MercName != 'Nobody', SA.iWaypoint, _sd(SA.GotoNext, 1))
+_sdfreeze([SA.MercName])
+(Scrap.SetSaveVar('Mission_StupidMercAgain', 'Follow'), _sd(SA.SmartMerDeath, 'x', 'y'), Scrap.SetSaveVar('Mission_StupidMercAgain', 'Evasion'), _sd(SA.SmartMerDeath, 'x', 'y'), _sd(SA.SmartMerDeath, 'x'))
+(_sd(SA.CreateMercPlans), _sdn(__import__('CharAct').TakenPhoto), _bhooks()[12:14], Scrap.Get('CurrentWaypointName'))
+PL = __import__('MissionsFuncs').targetsList[:]; result = 1
+(Scrap.SetSaveVar('Hangar.shipsToEditList', "['SMerc2']"), Scrap.SetSaveVar('Hangar.availableEnginesList', '[]'), Scrap.SetSaveVar('NewBluePrintAvaliable', '0'), Scrap.SetSaveVar('Mission_StupidMercAgain', 'Follow'), _sd(SA.AddMercPlans, 'Nobody'), _sd(SA.AddMercPlans, PL[0]), _bsv(('Hangar.shipsToEditList', 'Hangar.availableEnginesList', 'NewBluePrintAvaliable', 'Mission_StupidMercAgain')), _ye(PL[:1], ('CanPhoto',)), _sdn(__import__('CharAct').TakenPhoto), _bhooks()[13:14])
+(Scrap.SetSaveVar('Hangar.shipsToEditList', '[]'), _sd(SA.AddMercPlans, PL[1]), _bsv(('Hangar.shipsToEditList', 'Hangar.availableEnginesList', 'NewBluePrintAvaliable')), _sd(SA.AddMercPlans, PL[1]))
+(setattr(SA, 'SmartMercName', ''), setattr(SA, 'MedMercName', ''), _sd(SA.StartEvasion), SA.SmartMercName[:12], SA.MedMercName[:12], _bsv(('BadReputation', 'StdShipAIProfile')))
+_sdfreeze(_sdlist('Enemies'))
+(_bsave(), _bnear(SA.SmartMercName, 1000), setattr(Scrap.GetEntity(SA.MedMercName), 'Pos', Scrap.GetEntity(SA.SmartMercName).Pos), _sd(SA.CheckEvasion), _bback(), SA.EvasionTime == Scrap.GetTime())
+(_bsave(), _bnear(SA.SmartMercName, 100000), setattr(SA, 'EvasionTime', 0.0), _sd(SA.CheckEvasion), _bback(), SA.EvasionTime == Scrap.GetTime())
+(_bsave(), _bnear(SA.SmartMercName, 100000), setattr(SA, 'EvasionTime', Scrap.GetTime() - 30), _sd(SA.CheckEvasion), _bback(), _ye((SA.SmartMercName, SA.MedMercName), ('EntityList', 'TgType')), SAI.GetStateVehicle(SA.SmartMercName))
+(setattr(SA, 'SmartMercName', 'Nobody'), _bsave(), _bnear(SA.MedMercName, 100000), setattr(SA, 'EvasionTime', Scrap.GetTime() - 5), _sd(SA.CheckEvasion), _bback())
+(setattr(SA, 'MedMercName', 'Nobody2'), _sd(SA.CheckEvasion), _bsv(('Mission_StupidMercAgain',)), _ye((SA.pc.Name,), ('UseFunc',)), _sd(SA.CheckEvasion, 1))
+(setattr(SA, 'SmartMercName', 'A'), setattr(SA, 'MedMercName', 'B'), _sd(SA.StartEvasion), SA.SmartMercName[:12], SA.MedMercName[:12])
+_sdfreeze(_sdlist('Enemies'))
+(_sd(SA.InitTalkBishop), _bsv(('Mission_StupidMercAgain',)), _ye((SA.pc.Name,), ('UseFunc',)), _btarget() == SA.pc.Name)
+PC = SA.pc.Name; result = 1
+(_sd(SA.SetNextMission), _ye((PC,), ('UseFunc',)), _btarget(), _bsv(('Mission.Map', 'Mission.Library', 'Mission_StupidMercAgain', 'Parked.Police', 'Parked.Mercs', 'Parked.TownHall', 'Parked.Bank', 'Parked.Temple')))
+del SA.EVASION_TIME
+(_sd(SA.CheckEvasion), _sd(SA.InitTalkBishop, 1))
+del SA.MercWaypoints
+(_sd(SA.CreateMerc), _sd(SA.GotoNext))
+_broff()
