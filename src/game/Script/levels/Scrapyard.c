@@ -344,9 +344,9 @@ static byte Sy_BossTraffic(byte comSats) {
 		LvN_ModTexts("Traffic", "AcHeavyShips", none) && LvN_ModSetI("Traffic", "NumHeavy", 0);
 }
 
-/* raise v of the script after import module (Lv_RaiseValue, the do_raise of ceval without value and traceback): a
- * text is a string exception, a tuple raises its first item, a class or an instance (OBJLIB 7: Python objects) as
- * Python raises them, any other value the TypeError; 0 */
+/* raise v of the script after import module (the do_raise of ceval without value and traceback): a text is a string
+ * exception, a tuple raises its first item, a class or an instance (OBJLIB 7: Python objects) as Python raises them,
+ * any other value the TypeError; 0 */
 static byte Sy_RaiseValue(const char *module, const nativeVal_t *v) {
 	if (!Mode_Import(module)) {
 		return 0;

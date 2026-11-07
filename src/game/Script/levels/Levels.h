@@ -71,11 +71,8 @@ void Lv_OnEnd(scriptFrame_t *f, const char *module, const char *func, PyObject *
 /* a character stays where it is: LLogicDefaultState, LLogicDefaultTarget, LLogicState, LLogicTarget, then
  * LLogicIdle 1 and 0 (the lines the scripts repeat for every mission character) */
 void Lv_Stay(scriptFrame_t *f, PyObject *e, long state, PyObject *target);
-/* SScorer.Set(id, item, var, v); the text item of a mission scorer in two parts around the line of its Text: Add, X
- * (Scorer.MissionScorerText_X), Y (MissionScorerText_Y + dy), Font, Effect, then Align and the colour */
+/* SScorer.Set(id, item, var, v) */
 void Lv_ScorerSet(scriptFrame_t *f, PyObject *id, const char *item, const char *var, PyObject *v);
-void Lv_ScorerTextBegin(scriptFrame_t *f, PyObject *id, const char *item, long dy);
-void Lv_ScorerTextEnd(scriptFrame_t *f, PyObject *id, const char *item);
 /* lst = eval(Scrap.GetSaveVar(var)) (in the globals of module): the list (borrowed, kept by the frame) */
 PyObject *Lv_SaveList(scriptFrame_t *f, const char *var, const char *module);
 /* lst.append(item); Scrap.SetSaveVar(var, `lst`) */
@@ -93,8 +90,6 @@ PyObject *Lv_Dummy(scriptFrame_t *f, const char *pattern, int flag);
 byte Lv_AcShips(scriptFrame_t *f, const char *module, const char *ships);
 /* import VehiclesNPC; sp = VehiclesNPC.cShipAI() with the "name=value" attributes of vars (Sf_SetAttrs): sp */
 PyObject *Lv_Profile(scriptFrame_t *f, const char *module, const char *const *vars);
-/* `usr and usr.Name == name`: 1, 0, -1 */
-int Lv_UsrIs(scriptFrame_t *f, PyObject *usr, PyObject *name);
 /* a ship at a free spawn point: SpwPos = OutMap.GetFreeSpawnPos(); Scrap.CreateEntity(name, SpwPos[0][0],
  * SpwPos[0][1], SpwPos[0][2], "Car"), or with nearest OutMap.GetNearestFreeSpawnPos() and SpwPos[0], [1], [2] */
 PyObject *Lv_SpawnCar(scriptFrame_t *f, const char *name, byte nearest);
@@ -110,10 +105,6 @@ byte Lv_Life(scriptFrame_t *f, PyObject *e, const char *module, const char *life
  * target is set before the UseFunc, as most missions do; pcModule: the global pc of that module is the cab right after
  * GetFree, NULL: a local): pc */
 PyObject *Lv_PhoneCab(scriptFrame_t *f, const char *use, byte targetFirst, const char *pcModule);
-/* (dummy[1][0], dummy[1][1], dummy[1][2]) and (dummy[2][0], dummy[2][1], 0) of a dummy search */
-byte Lv_DummyPosAng(scriptFrame_t *f, PyObject *dummy, PyObject **pos, PyObject **ang);
-/* raise o of a function of module (`raise exceptString`, the rules of Python's raise for any value) */
-byte Lv_RaiseValue(scriptFrame_t *f, const char *module, PyObject *o);
 /* InitStatus(LevelPath) of a mission with only the lines of Lv_AcShips */
 PyObject *Lv_AcShipsStatus(PyObject *args, const char *module, const char *ships);
 /* the profile function itself (no arguments, returns the Lv_Profile of vars) */
@@ -128,7 +119,7 @@ void Lv_Colour(scriptFrame_t *f, PyObject *id, const char *item);
 /* Scorer.MissionScorerBar_SetDefaults(id, item, the back colour of Scorer, main, black); NULL main or black: the colours
  * of Scorer */
 void Lv_BarDefaults(scriptFrame_t *f, PyObject *id, const char *item, PyObject *main, PyObject *black);
-/* `usr and usr.Name == name` (the order of most missions; Lv_UsrIs compares the other way round): 1, 0, -1 */
+/* `usr and usr.Name == name`: 1, 0, -1 */
 int Lv_UsrNameIs(scriptFrame_t *f, PyObject *usr, PyObject *name);
 /* `a and b` of two values already there: 1, 0, -1 */
 int Lv_And(scriptFrame_t *f, PyObject *a, PyObject *b);
@@ -302,7 +293,8 @@ byte LvN_Callback(const char *name, const char *module, const char *func);
 byte LvN_MissionChar(const char *name, const char *module, const char *func);
 /* `not Scrap.Get("IsXbox") or name` with name a global of module */
 int LvN_PcOr(const char *module, const char *name);
-/* the text item of a mission scorer in two parts (Lv_ScorerTextBegin, Lv_ScorerTextEnd) on values */
+/* the text item of a mission scorer in two parts around the line of its Text: Add, X (Scorer.MissionScorerText_X), Y
+ * (MissionScorerText_Y + dy), Font, Effect, then Align and the colour */
 byte LvN_ScorerTextBegin(const nativeVal_t *id, const char *item, long dy);
 byte LvN_ScorerTextEnd(const nativeVal_t *id, const char *item);
 /* SScorer.Set(id, item, var, v) with a C item name, and with a C text v */

@@ -66,27 +66,6 @@ void Lv_ScorerSet(scriptFrame_t *f, PyObject *id, const char *item, const char *
 	}
 }
 
-void Lv_ScorerTextBegin(scriptFrame_t *f, PyObject *id, const char *item, long dy) {
-	int mark = f->n;
-	Sf_Ask(f, "SScorer", "Add", "(Oss)", id, item, "Text");
-	Lv_ScorerSet(f, id, item, "X", Sf_Mod(f, "Scorer", "MissionScorerText_X"));
-	PyObject *y = Sf_Mod(f, "Scorer", "MissionScorerText_Y");
-	Lv_ScorerSet(f, id, item, "Y", dy ? Sf_OpI(f, y, '+', dy) : y);
-	Lv_ScorerSet(f, id, item, "Font", Sf_Str(f, "Horatio"));
-	Lv_ScorerSet(f, id, item, "Effect", Sf_Str(f, "Shadow"));
-	Sf_Release(f, mark);
-}
-
-void Lv_ScorerTextEnd(scriptFrame_t *f, PyObject *id, const char *item) {
-	int mark = f->n;
-	Lv_ScorerSet(f, id, item, "Align", Sf_Str(f, "Left"));
-	static const char *const rgba[] = { "Red", "Green", "Blue", "Alpha" };
-	for (int i = 0; i < 4; i++) {
-		Lv_ScorerSet(f, id, item, rgba[i], Sf_Item(f, Sf_Mod(f, "Scorer", "MissionScorerText_Color"), i));
-	}
-	Sf_Release(f, mark);
-}
-
 PyObject *Lv_SaveList(scriptFrame_t *f, const char *var, const char *module) {
 	return Sf_Eval(f, Sf_Ask(f, "Scrap", "GetSaveVar", "(s)", var), module);
 }
@@ -122,11 +101,6 @@ PyObject *Lv_Profile(scriptFrame_t *f, const char *module, const char *const *va
 	PyObject *sp = Sf_Ask(f, "VehiclesNPC", "cShipAI", "()");
 	Sf_SetAttrs(f, sp, module, vars);
 	return sp;
-}
-
-int Lv_UsrIs(scriptFrame_t *f, PyObject *usr, PyObject *name) {
-	int t = Sf_True(f, usr);
-	return t > 0 ? Sf_Compare(f, name, "==", Sf_Attr(f, usr, "Name")) : t;
 }
 
 PyObject *Lv_SpawnCarAt(scriptFrame_t *f, const char *name, byte nearest, PyObject **spw) {
@@ -174,21 +148,6 @@ PyObject *Lv_PhoneCab(scriptFrame_t *f, const char *use, byte targetFirst, const
 		Sf_SetAttrS(f, pc, "UseFunc", use);
 	}
 	return pc;
-}
-
-byte Lv_DummyPosAng(scriptFrame_t *f, PyObject *dummy, PyObject **pos, PyObject **ang) {
-	PyObject *p = Sf_Item(f, dummy, 1);
-	PyObject *x = Sf_Item(f, p, 0), *y = Sf_Item(f, p, 1), *z = Sf_Item(f, p, 2);
-	*pos = Sf_Build(f, "(OOO)", x, y, z);
-	PyObject *a = Sf_Item(f, dummy, 2);
-	PyObject *ax = Sf_Item(f, a, 0), *ay = Sf_Item(f, a, 1);
-	*ang = Sf_Build(f, "(OOi)", ax, ay, 0);
-	return !f->failed;
-}
-
-byte Lv_RaiseValue(scriptFrame_t *f, const char *module, PyObject *o) {
-	Sf_Import(f, module);
-	return Sf_RaiseValue(f, o);
 }
 
 /* ---- whole functions the level tables share (native: docs/objlib-plan.md, stage 2) ---- */
@@ -1786,8 +1745,6 @@ byte LvN_MissionText(const nativeVal_t *id, const char *item, const char *type, 
 	}
 	return !visible || LvN_ScorerSet(id, item, "Visible", visible);
 }
-
-
 
 byte LvN_SetOnFloor(const nativeVal_t *name) {
 	LV_SEAM("SLogic", "SetOnFloor");
