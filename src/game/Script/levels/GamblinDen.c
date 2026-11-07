@@ -1,12 +1,27 @@
 /*
  * The scripts of the level GamblinDen in C (levels/gamblinden/scripts, issue #2): the Map module (the characters of
  * the den by the save variables, the drinking and dancing mercenaries, the talking NPCs, the music and the hire of
- * the mercenaries) and the twelve missions of the level. The scenes are call tables (Sf_Calls). MapSnd is data
+ * the mercenaries) and the twelve missions of the level. The scenes are call tables (Mode_Calls). MapSnd is data
  * (data/levels/gamblinden/mapsnd.def). The module variables (Borrachera, Cheer, the flags MayorAndBanker, Twins,
  * Bankers, Bishops, Polices, BandH, BandB, the characters the missions keep, their counters) and the module code (the
  * save variables, the alarm off) stay in the scripts.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, read the globals of their module where the
+ * script reads them and write them through at once (OBJLIB 5), and call the engine in C: the save variables, the
+ * language texts, the entities and their variables, the dummy search, the time. The engine functions the cases record
+ * or swap go through their seams (OBJLIB 7): Scrap.AddScheduledFunc, Scrap.Rand, Scrap.UsrEntity, Scrap.Set,
+ * SScorer.SetMsgText, SScorer.Set, SScorer.Fade, SSound.SetMusic, SSound.SetMusicVolume. Entities the script holds are
+ * handle values (OBJLIB 7). The other ports (Speech, CharsNPC, Chars, Elevator, MissionsFuncs, SaveGame, Scene,
+ * RaceMaker, Menu, the string port) and the module's own functions are called by name (OBJLIB 3), the scenes with the
+ * engine and port functions of their tables by name too; CharsNPC.CharRes and the other variables of other modules that
+ * hold objects are read as objects (OBJLIB 5).
  */
+#include <string.h>
+
+#include "scrap/input.h"
+#include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/sound.h"
 #include "Levels.h"
 
 #define BF "Mission_BeforeFinalFight"
@@ -22,56 +37,161 @@
 #define AM "Mission_ArrangeMortalRace"
 #define TS "Mission_ThreeStooges"
 
-#define ENT(n) Sf_Ask(&f, "Scrap", "GetEntity", "(s)", n)
-#define USR() Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0)
-#define LANG(k) Sf_Lang(&f, Sf_Str(&f, k))
-#define SAVE(n) Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", n)
-#define G(m, n) Sf_Global(&f, m, n)
-#define NOARGS Sf_Build(&f, "()")
+/* ---- native helpers of this file ---- */
 
-/* CharsNPC.CharRes[name].CallbackFunc.append(fn) */
-static byte Gd_Callback(scriptFrame_t *f, const char *name, PyObject *fn) {
-	int mark = f->n;
-	PyObject *res = Sf_GetItem(f, Sf_Mod(f, "CharsNPC", "CharRes"), Sf_Str(f, name));
-	Sf_Method(f, Sf_Attr(f, res, "CallbackFunc"), "append", "(O)", fn);
-	Sf_Release(f, mark);
-	return !f->failed;
+/* SSound.SetMusicVolume(volume) through its seam (fr6b.py records it) */
+static byte Gd_MusicVolume(double volume) {
+	PyObject *hook;
+	int seam = Native_Seam("SSound", "SetMusicVolume", &hook);
+	if (seam) {
+		return seam > 0 && Native_HookCall(hook, NULL, "d", volume);
+	}
+	SoundSys_SetMusicVolume(g_pSound, (float)volume);
+	return 1;
 }
 
-/* CharsNPC.CreateMissionChar(name) with the callback fn */
-static byte Gd_MissionChar(scriptFrame_t *f, const char *name, PyObject *fn) {
-	return Sf_Run(f, "CharsNPC", "CreateMissionChar", "(s)", name) && Gd_Callback(f, name, fn);
+/* CharsNPC.CharRes[name].var into *out (any value: an object as NV_OBJ), and its set */
+static byte Gd_ResGet(const nativeVal_t *name, const char *var, nativeVal_t *out) {
+	PyObject *ch = Mode_CharRes(name);
+	PyObject *v = ch ? Script_GetAttr(ch, var) : NULL;
+	if (v) {
+		Native_Arg(v, out);
+	}
+	Py_XDECREF(v);
+	Py_XDECREF(ch);
+	return v != NULL;
+}
+
+static byte Gd_ResSet(const nativeVal_t *name, const char *var, const nativeVal_t *v) {
+	PyObject *ch = Mode_CharRes(name);
+	byte ok = ch && Mode_HSet(ch, var, v);
+	Py_XDECREF(ch);
+	return ok;
+}
+
+/* del CharsNPC.CharRes[name] */
+static byte Gd_ResDel(const char *name) {
+	nativeVal_t key = { 0 };
+	LvN_Str(&key, name);
+	byte ok = Mode_ModDictDel("CharsNPC", "CharRes", &key);
+	Native_Free(&key);
+	return ok;
+}
+
+/* module.var.method(v) of a variable of another module, the method of whatever value is there (OBJLIB 5) */
+static byte Gd_ModMethod(const char *module, const char *var, const char *method, const nativeVal_t *v) {
+	PyObject *o = Script_Attr(module, var);
+	PyObject *x = o ? Native_ToPy(v) : NULL;
+	PyObject *r = x ? Script_Method(o, method, "(O)", x) : NULL;
+	Py_XDECREF(r);
+	Py_XDECREF(x);
+	Py_XDECREF(o);
+	return r != NULL;
+}
+
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func, args) with delay a value (the time added first, as the script
+ * does) and func the global of module (OBJLIB 4) */
+static byte Gd_LaterV(const nativeVal_t *delay, const char *module, const char *func, const nativeVal_t *args, int n) {
+	nativeVal_t now = { 0 }, t = { 0 };
+	Native_SetFloat(&now, Mode_Time());
+	Native_SetNone(&t);
+	byte ok = Native_Arith('+', &now, delay, &t) && Mode_AtG(&t, module, func, args, n);
+	Native_Free(&t);
+	return ok;
+}
+
+/* the arguments of a keyword function (PyArg_ParseTupleAndKeywords of fmt, "O|O" or "|O", with the Python names): the
+ * objects as values into a, a missing one None with given 0 */
+static byte Gd_Kw(PyObject *args, PyObject *kw, const char *fmt, char **names, nativeVal_t *a, byte *given) {
+	PyObject *o[2] = { NULL, NULL };
+	if (!PyArg_ParseTupleAndKeywords(args, kw, (char *)fmt, names, &o[0], &o[1])) {
+		return 0;
+	}
+	for (int i = 0; i < 2 && names[i]; i++) {
+		given[i] = o[i] != NULL;
+		if (o[i]) {
+			Native_Arg(o[i], &a[i]);
+		} else {
+			Native_SetNone(&a[i]);
+		}
+	}
+	return 1;
+}
+
+/* a keyword function with the one optional argument kwname that the core does not read (usr=None, char=None) */
+#define GD_KW1(pre, name, kwname, call) \
+	static PyObject *pre##_##name(PyObject *self, PyObject *args, PyObject *kw) { \
+		static char *names[] = { kwname, NULL }; \
+		nativeVal_t a[2] = { 0 }; \
+		byte given[2]; \
+		(void)self; \
+		if (!Gd_Kw(args, kw, "|O", names, a, given)) { \
+			return NULL; \
+		} \
+		Native_Free(&a[0]); \
+		return Mode_Result(call); \
+	}
+
+/* ---- the lines the missions share ---- */
+
+/* CharsNPC.CharRes[name].CallbackFunc.append(fn) with fn the function already read (a global or Map.X, its NameError or
+ * AttributeError before the lookup of the character, as the script's lines were ported) */
+static byte Gd_Callback(const char *name, const nativeVal_t *fn) {
+	nativeVal_t k = { 0 };
+	LvN_Str(&k, name);
+	PyObject *ch = Mode_CharRes(&k);
+	PyObject *cb = ch ? PyObject_GetAttrString(ch, "CallbackFunc") : NULL;
+	PyObject *x = cb ? Native_ToPy(fn) : NULL;
+	PyObject *r = x ? Script_Method(cb, "append", "(O)", x) : NULL;
+	Py_XDECREF(r);
+	Py_XDECREF(x);
+	Py_XDECREF(cb);
+	Py_XDECREF(ch);
+	Native_Free(&k);
+	return r != NULL;
+}
+
+/* the same with fn the global func of module */
+static byte Gd_CallbackG(const char *name, const char *module, const char *func) {
+	nativeVal_t fn = { 0 };
+	byte ok = LvN_GObj(module, func, &fn) && Gd_Callback(name, &fn);
+	Native_Free(&fn);
+	return ok;
+}
+
+/* CharsNPC.CreateMissionChar(name) with the callback fn (read before) */
+static byte Gd_MissionChar(const char *name, const nativeVal_t *fn) {
+	return LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", name) && Gd_Callback(name, fn);
+}
+
+/* the same with the global func of module */
+static byte Gd_MissionCharG(const char *name, const char *module, const char *func) {
+	nativeVal_t fn = { 0 };
+	byte ok = LvN_GObj(module, func, &fn) && Gd_MissionChar(name, &fn);
+	Native_Free(&fn);
+	return ok;
 }
 
 /* the characters of the den the mission wants: MayorAtGambinDen, FunctionaryTwins..., Bankers..., Bishops...,
  * Polices... (NULL keeps a variable) */
-static byte Gd_Den(scriptFrame_t *f, const char *mayor, const char *twins, const char *bankers, const char *bishops, const char *polices) {
+static void Gd_Den(const char *mayor, const char *twins, const char *bankers, const char *bishops, const char *polices) {
 	static const char *const names[] = { "MayorAtGambinDen", "FunctionaryTwinsAtGambinDen", "BankersAtGambinDen", "BishopsAtGambinDen",
 		"PolicesAtGambinDen" };
 	const char *vals[] = { mayor, twins, bankers, bishops, polices };
-	for (int i = 0; i < 5 && !f->failed; i++) {
+	for (int i = 0; i < 5; i++) {
 		if (vals[i]) {
-			Sf_Run(f, "Scrap", "SetSaveVar", "(ss)", names[i], vals[i]);
+			SaveVar_Set(names[i], vals[i]);
 		}
 	}
-	return !f->failed;
 }
 
-/* `if optId == "Talk": Speech.OnSpch(msg, ans)` with the names of the talk set first (names 0: not set) */
-static PyObject *Gd_Talk(PyObject *args, int names, const char *msg, const char *ans) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+/* `if optId == "Talk": Speech.OnSpch(msg, ans)` with the names of the talk set first (names 0: not set); a = the four
+ * arguments of a talk (UsrName, CharName, optId, FullOption) */
+static byte Gd_Talk(const nativeVal_t *a, int names, const char *msg, const char *ans) {
+	if (names && (!Mode_Import("Speech") || !LvN_Speakers(&a[0], &a[1]))) {
+		return 0;
 	}
-	if (names) {
-		Sf_Import(&f, "Speech");
-		Sf_SpeechNames(&f, usr, ch);
-	}
-	if (Sf_EqS(&f, opt, "Talk") > 0) {
-		Sf_Run(&f, "Speech", "OnSpch", "(ss)", msg, ans);
-	}
-	return Sf_None(&f);
+	return !LvN_EqS(&a[2], "Talk") || Mode_Spch(msg, ans, NULL);
 }
 
 /* prefix + suffix into buf */
@@ -84,30 +204,31 @@ static const char *Gd_Key(char *buf, int size, const char *prefix, const char *s
  * CrazyGamblerSpeech of the missions that arrange a deal with the crazy gambler: the first line and option _1, then
  * _1_1 (accept: the movie scorer, no input, the launch function of module at the end of the talk) or _1_2
  */
-static PyObject *Gd_Arrange(PyObject *args, const char *module, const char *prefix, const char *launch) {
-	PyObject *usr, *ch, *opt, *full;
+static byte Gd_Arrange(const nativeVal_t *a, const char *module, const char *prefix, const char *launch) {
 	char k1[0x80], k2[0x80], k3[0x80];
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+	if (!LvN_Speakers(&a[0], &a[1])) {
+		return 0;
 	}
-	Sf_SpeechNames(&f, usr, ch);
-	int talk = Sf_EqS(&f, opt, "Talk");
-	if (talk > 0) {
-		Sf_Run(&f, "Speech", "OnSpch", "(ss)", Gd_Key(k1, sizeof(k1), prefix, "_InitMsg1"), Gd_Key(k2, sizeof(k2), prefix, "_InitAns1"));
-		Sf_Run(&f, "Speech", "StdAnsLst", "([s])", Gd_Key(k1, sizeof(k1), prefix, "_1"));
-	} else if (talk == 0) {
-		Sf_Run(&f, "Speech", "StdOnSpch", "(O)", opt);
-		if (Sf_EqS(&f, opt, Gd_Key(k1, sizeof(k1), prefix, "_1")) > 0) {
-			Sf_Run(&f, "Speech", "StdAnsLst", "([ss])", Gd_Key(k2, sizeof(k2), prefix, "_1_1"), Gd_Key(k3, sizeof(k3), prefix, "_1_2"));
-		} else if (!f.failed && Sf_EqS(&f, opt, Gd_Key(k2, sizeof(k2), prefix, "_1_1")) > 0) {
-			Sf_Import(&f, "Menu");
-			Sf_Run(&f, "Menu", "MovieScorer", "(i)", 0);
-			Sf_Run(&f, "SInput", "SetActionSet", "(s)", "Inactive");
-			Sf_SpeechEnd(&f, G(module, launch), NULL);
+	if (LvN_EqS(&a[2], "Talk")) {
+		const char *const ans[] = { Gd_Key(k3, sizeof(k3), prefix, "_1"), NULL };
+		return Mode_Spch(Gd_Key(k1, sizeof(k1), prefix, "_InitMsg1"), Gd_Key(k2, sizeof(k2), prefix, "_InitAns1"),
+			NULL) && Mode_AnsLst(ans, -1);
+	}
+	if (!LV_CALL("Speech", "StdOnSpch", NULL, "v", &a[2])) {
+		return 0;
+	}
+	if (LvN_EqS(&a[2], Gd_Key(k1, sizeof(k1), prefix, "_1"))) {
+		const char *const ans[] = { Gd_Key(k2, sizeof(k2), prefix, "_1_1"), Gd_Key(k3, sizeof(k3), prefix, "_1_2"), NULL };
+		return Mode_AnsLst(ans, -1);
+	}
+	if (LvN_EqS(&a[2], Gd_Key(k2, sizeof(k2), prefix, "_1_1"))) {
+		if (!Mode_Import("Menu") || !LV_CALL("Menu", "MovieScorer", NULL, "i", 0L)) {
+			return 0;
 		}
+		Mode_SetActionSet("Inactive");
+		return LvN_OnEnd(module, launch, NULL);
 	}
-	return Sf_None(&f);
+	return 1;
 }
 
 /*
@@ -120,180 +241,263 @@ typedef struct {
 	byte withChar;
 } gdMerc_t;
 
-static PyObject *Gd_Merc(PyObject *args, const char *module, const gdMerc_t *m) {
-	PyObject *usr, *ch, *opt, *full;
+static byte Gd_Merc(const nativeVal_t *a, const char *module, const gdMerc_t *m) {
 	char k1[0x80], k2[0x80], k3[0x80];
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+	if (!LvN_Speakers(&a[0], &a[1])) {
+		return 0;
 	}
-	Sf_SpeechNames(&f, usr, ch);
-	int own = Sf_EqS(&f, SAVE("Mission.Library"), m->library);
-	if (own > 0) {
-		int talk = Sf_EqS(&f, opt, "Talk");
-		if (talk > 0) {
-			int first = 1;
-			if (m->convinced) {
-				first = Sf_True(&f, G(module, m->convinced));
-				first = first < 0 ? -1 : !first;
+	if (!LvN_SaveIs("Mission.Library", m->library)) {
+		return Mode_Spch(m->otherMsg, m->otherAns, NULL);
+	}
+	if (LvN_EqS(&a[2], "Talk")) {
+		int first = 1;
+		if (m->convinced) {
+			first = LvN_GTrue(module, m->convinced);
+			if (first < 0) {
+				return 0;
 			}
-			if (first > 0) {
-				Sf_Run(&f, "Speech", "OnSpch", "(ss)", Gd_Key(k1, sizeof(k1), m->prefix, "_InitMsg1"), Gd_Key(k2, sizeof(k2), m->prefix, "_InitAns1"));
-				Sf_Run(&f, "Speech", "StdAnsLst", "([s])", Gd_Key(k1, sizeof(k1), m->prefix, "_1"));
-			} else if (first == 0) {
-				Sf_Run(&f, "Speech", "OnSpch", "(ss)", Gd_Key(k1, sizeof(k1), m->prefix, "_InitMsg2"), Gd_Key(k2, sizeof(k2), m->prefix, "_InitAns2"));
-			}
-		} else if (talk == 0) {
-			Sf_Run(&f, "Speech", "StdOnSpch", "(O)", opt);
-			Gd_Key(k1, sizeof(k1), m->prefix, "_1");
-			Gd_Key(k2, sizeof(k2), m->prefix, "_1_1");
-			Gd_Key(k3, sizeof(k3), m->prefix, "_1_1_1");
-			if (Sf_EqS(&f, opt, k1) > 0) {
-				Sf_Run(&f, "Speech", "StdAnsLst", "([ss])", k2, k1);
-			} else if (!f.failed && Sf_EqS(&f, opt, k2) > 0) {
-				Sf_Run(&f, "Speech", "StdAnsLst", "([sss])", k3, k1, k2);
-			} else if (!f.failed && Sf_EqS(&f, opt, k3) > 0) {
-				Sf_Run(&f, "Speech", "StdAnsLst", "([s])", k3);
-				if (m->end) {
-					Sf_SpeechEnd(&f, G(module, m->end), m->withChar ? Sf_Build(&f, "(O)", ch) : NULL);
-				}
-			}
+			first = !first;
 		}
-	} else if (own == 0) {
-		Sf_Run(&f, "Speech", "OnSpch", "(ss)", m->otherMsg, m->otherAns);
+		if (first) {
+			const char *const ans[] = { Gd_Key(k3, sizeof(k3), m->prefix, "_1"), NULL };
+			return Mode_Spch(Gd_Key(k1, sizeof(k1), m->prefix, "_InitMsg1"),
+				Gd_Key(k2, sizeof(k2), m->prefix, "_InitAns1"), NULL) && Mode_AnsLst(ans, -1);
+		}
+		return Mode_Spch(Gd_Key(k1, sizeof(k1), m->prefix, "_InitMsg2"),
+			Gd_Key(k2, sizeof(k2), m->prefix, "_InitAns2"), NULL);
 	}
-	return Sf_None(&f);
+	if (!LV_CALL("Speech", "StdOnSpch", NULL, "v", &a[2])) {
+		return 0;
+	}
+	Gd_Key(k1, sizeof(k1), m->prefix, "_1");
+	Gd_Key(k2, sizeof(k2), m->prefix, "_1_1");
+	Gd_Key(k3, sizeof(k3), m->prefix, "_1_1_1");
+	if (LvN_EqS(&a[2], k1)) {
+		const char *const ans[] = { k2, k1, NULL };
+		return Mode_AnsLst(ans, -1);
+	}
+	if (LvN_EqS(&a[2], k2)) {
+		const char *const ans[] = { k3, k1, k2, NULL };
+		return Mode_AnsLst(ans, -1);
+	}
+	if (LvN_EqS(&a[2], k3)) {
+		const char *const ans[] = { k3, NULL };
+		if (!Mode_AnsLst(ans, -1)) {
+			return 0;
+		}
+		if (m->end) {
+			nativeVal_t p = { 0 };
+			Native_SetEmpty(&p, NV_TUPLE);
+			Native_Copy(Native_Append(&p), &a[1]);
+			byte ok = LvN_OnEnd(module, m->end, m->withChar ? &p : NULL);
+			Native_Free(&p);
+			return ok;
+		}
+	}
+	return 1;
 }
 
-/* target in front of ref, facing it (the talks that start right after a level load) */
-static byte Gd_Face(scriptFrame_t *f, PyObject *target, PyObject *ref) {
-	int mark = f->n;
-	PyObject *dir = Sf_Ask(f, "SVec", "Rotate3D", "((ddd)O)", 0.0, 0.0, -1.0, Sf_Attr(f, ref, "Ang"));
-	PyObject *pos = Sf_Attr(f, ref, "Pos");
-	PyObject *d = Sf_OpI(f, Sf_Op(f, Sf_Attr(f, ref, "VRadius"), '+', Sf_Attr(f, target, "VRadius")), '+', 50);
-	Sf_SetAttr(f, target, "Pos", Sf_Ask(f, "SVec", "Add", "(OO)", pos, Sf_Ask(f, "SVec", "Prod", "(OO)", dir, d)));
-	PyObject *a0 = Sf_Item(f, Sf_Attr(f, ref, "Ang"), 0);
-	PyObject *a1 = Sf_OpI(f, Sf_Item(f, Sf_Attr(f, ref, "Ang"), 1), '+', 180);
-	PyObject *a2 = Sf_Item(f, Sf_Attr(f, ref, "Ang"), 2);
-	Sf_SetAttr(f, target, "Ang", Sf_Build(f, "(OOO)", a0, a1, a2));
-	Sf_Release(f, mark);
-	return !f->failed;
+/* target in front of ref, facing it (the talks that start right after a level load): target.Pos = SVec.Add(ref.Pos,
+ * SVec.Prod(SVec.Rotate3D((0.0, 0.0, -1.0), ref.Ang), ref.VRadius + target.VRadius + 50)); target.Ang = (ref.Ang[0],
+ * ref.Ang[1] + 180, ref.Ang[2]) */
+static byte Gd_Face(const nativeVal_t *target, const nativeVal_t *ref) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ang = Mode_V(&t), *dir = Mode_V(&t), *pos = Mode_V(&t), *r1 = Mode_V(&t), *r2 = Mode_V(&t);
+	nativeVal_t *sum = Mode_V(&t), *d = Mode_V(&t), *prod = Mode_V(&t), *np = Mode_V(&t), *na = Mode_V(&t);
+	nativeVal_t *front = Mode_V(&t);
+	Native_SetVec(front, 0.0, 0.0, -1.0);
+	if (!Mode_VObj(ref, "Ang", ang) || !Mode_Rotate(front, ang, dir) || !Mode_VObj(ref, "Pos", pos) ||
+		!Mode_VObj(ref, "VRadius", r1) || !Mode_VObj(target, "VRadius", r2) || !Native_Arith('+', r1, r2, sum) ||
+		!Native_Arith('+', sum, Mode_I(&t, 50), d) || !Mode_VecProd(dir, d, prod) || !Mode_VecAdd(pos, prod, np) ||
+		!Mode_VSet(target, "Pos", np)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetEmpty(na, NV_TUPLE);
+	for (int i = 0; i < 3; i++) {
+		nativeVal_t *x = Mode_V(&t), *y = Mode_V(&t);
+		Native_Free(ang);
+		if (!Mode_VObj(ref, "Ang", ang) || !LvN_Item(ang, i, x)) {
+			return Mode_Done(&t, 0);
+		}
+		if (i == 1 && !Native_Arith('+', x, Mode_I(&t, 180), y)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_Copy(Native_Append(na), i == 1 ? y : x);
+	}
+	return Mode_Done(&t, Mode_VSet(target, "Ang", na));
+}
+
+/* Speech.PlayerName = usr.Name; Speech.NPCName = npc.Name (in the order of the script) */
+static byte Gd_SpeakersOf(const nativeVal_t *usr, const nativeVal_t *npc) {
+	nativeVal_t n = { 0 };
+	Native_SetNone(&n);
+	byte ok = Mode_VObj(usr, "Name", &n) && Mode_SetModVar("Speech", "PlayerName", &n);
+	Native_Free(&n);
+	ok = ok && Mode_VObj(npc, "Name", &n) && Mode_SetModVar("Speech", "NPCName", &n);
+	Native_Free(&n);
+	return ok;
 }
 
 /* MissionsFuncs.StartSuperDeal(map, library, mode) after the description desc */
-static PyObject *Gd_Launch(PyObject *args, const char *desc, const char *map, const char *library, const char *mode) {
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "MissionsFuncs");
-	Sf_Import(&f, "SaveGame");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", desc, 1);
-	Sf_Run(&f, "MissionsFuncs", "StartSuperDeal", "(sss)", map, library, mode);
-	return Sf_None(&f);
+static byte Gd_Launch(const char *desc, const char *map, const char *library, const char *mode) {
+	return Mode_Import("MissionsFuncs") && Mode_Import("SaveGame") && Mode_MMDesc(desc, 1L) &&
+		LV_CALL("MissionsFuncs", "StartSuperDeal", NULL, "sss", map, library, mode);
+}
+
+/* var = Scrap.GetEntity(name) of the module (the handle) */
+static byte Gd_PutEnt(const char *module, const char *var, const char *name) {
+	nativeVal_t h = { 0 };
+	byte ok = LvN_Entity(name, &h) && Mode_Put(module, var, NULL, &h);
+	Native_Free(&h);
+	return ok;
+}
+
+/* var.Descriptor = Scrap.GetLangStr(key) of a global var of the module (the text first, as the script) */
+static byte Gd_GDescriptor(const char *module, const char *var, const char *key) {
+	nativeVal_t h = { 0 }, s = { 0 };
+	Mode_Lang(key, &s);
+	byte ok = Mode_G(module, var, &h) && Mode_VSet(&h, "Descriptor", &s);
+	Native_Free(&h);
+	Native_Free(&s);
+	return ok;
+}
+
+/* MissionsFuncs.SetMissionTarget(var.Name) of a global var of the module */
+static byte Gd_GTarget(const char *module, const char *var) {
+	nativeVal_t h = { 0 }, n = { 0 };
+	Native_SetNone(&n);
+	byte ok = Mode_G(module, var, &h) && Mode_VObj(&h, "Name", &n) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &n);
+	Native_Free(&h);
+	Native_Free(&n);
+	return ok;
+}
+
+/* MissionsFuncs.ActivateTarget(var, on) of a global var of the module */
+static byte Gd_GActivate(const char *module, const char *var, long on) {
+	nativeVal_t h = { 0 };
+	byte ok = Mode_G(module, var, &h) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &h, on);
+	Native_Free(&h);
+	return ok;
+}
+
+/* Speech.SpeechRoutines["CrazyGambler"] = fn (the value first, as the script) */
+static byte Gd_Routine(const nativeVal_t *fn) {
+	nativeVal_t k = { 0 };
+	LvN_Str(&k, "CrazyGambler");
+	byte ok = Mode_ModDictPut("Speech", "SpeechRoutines", &k, fn);
+	Native_Free(&k);
+	return ok;
+}
+
+/* Speech.SpeechRoutines["CrazyGambler"] = the global func of module */
+static byte Gd_RoutineG(const char *module, const char *func) {
+	nativeVal_t fn = { 0 };
+	byte ok = LvN_GObj(module, func, &fn) && Gd_Routine(&fn);
+	Native_Free(&fn);
+	return ok;
+}
+
+/* DTritusDesktop.DialogController = the global func of module */
+static byte Gd_Dialog(const char *module, const char *func) {
+	return Mode_Import("DTritusDesktop") && LvN_ModSetGlobal("DTritusDesktop", "DialogController", module, func);
 }
 
 /* ---- Map ---- */
 
+/* if vl in CharConversor.AvailableChars: CharConversor.AvailableChars.remove(vl) */
+static byte Den_NotAvailable(const char *name) {
+	nativeVal_t vl = { 0 }, av = { 0 };
+	LvN_Str(&vl, name);
+	int in = LvN_ModGet("CharConversor", "AvailableChars", &av) ? Native_Contains(&av, &vl) : -1;
+	byte ok = in >= 0 && (!in || Gd_ModMethod("CharConversor", "AvailableChars", "remove", &vl));
+	Native_Free(&vl);
+	Native_Free(&av);
+	return ok;
+}
+
 /* InitStatus(LevelPath): the characters that cannot be possessed here, indoors, the mission characters, the elevator
  * the player came by */
-static PyObject *Den_InitStatus(PyObject *self, PyObject *args) {
+static byte Den_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const mods[] = { "Init", "CharsNPC", "Elevator", "string", "CharConversor", "Chars", NULL };
-	static const char *const out[] = { "Nurse", "Desktop", "Sentinel", "Gear", "Messenger", "Betty", "Mayor", "Berto", "PoliceBoss", NULL };
-	PyObject *path;
-	SF_ARGS("O", &path);
+	static const char *const outs[] = { "Nurse", "Desktop", "Sentinel", "Gear", "Messenger", "Betty", "Mayor", "Berto", "PoliceBoss", NULL };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *v = Mode_V(&t), *fn = Mode_V(&t), *pv = Mode_V(&t), *sl = Mode_V(&t), *pm = Mode_V(&t);
+	(void)a;
+	(void)out;
 	for (int i = 0; mods[i]; i++) {
-		Sf_Import(&f, mods[i]);
-	}
-	for (int i = 0; out[i] && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *vl = Sf_Str(&f, out[i]);
-		if (Sf_In(&f, vl, Sf_Mod(&f, "CharConversor", "AvailableChars")) > 0) {
-			Sf_Method(&f, Sf_Mod(&f, "CharConversor", "AvailableChars"), "remove", "(O)", vl);
-		}
-		Sf_Release(&f, mark);
-	}
-	if (Sf_True(&f, Sf_Mod(&f, "Init", "isDemo")) > 0) {
-		if (Sf_In(&f, Sf_Str(&f, "BankMaster"), Sf_Mod(&f, "CharConversor", "AvailableChars")) > 0) {
-			Sf_Method(&f, Sf_Mod(&f, "CharConversor", "AvailableChars"), "remove", "(s)", "BankMaster");
+		if (!Mode_Import(mods[i])) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	Sf_SetMod(&f, "Init", "Outdoor", Sf_Int(&f, 0));
-	Sf_SetMod(&f, "Init", "OutArea", Sf_Str(&f, "Outskirts"));
-	Sf_Method(&f, Sf_Mod(&f, "CharsNPC", "AfterBrowseNPC"), "append", "(O)", G("Map", "AfterBrowseNPC"));
-	if (Sf_EqS(&f, SAVE("LonelyMercInGamblinDen"), "1") > 0) {
-		Sf_Run(&f, "CharsNPC", "CreateMissionChar", "(s)", "MercenaryA_LonelyMerc");
-		Sf_Run(&f, "Chars", "AddNewCharRes", "(s)", "MercenaryL");
-		PyObject *res = Sf_GetItem(&f, Sf_Mod(&f, "CharsNPC", "CharRes"), Sf_Str(&f, "MercenaryA_LonelyMerc"));
-		Sf_SetAttrS(&f, res, "ActCtrl", "MercenaryL");
-		Gd_Callback(&f, "MercenaryA_LonelyMerc", G("Map", "CreateLonelyMerc"));
+	for (int i = 0; outs[i]; i++) {
+		if (!Den_NotAvailable(outs[i])) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	if (Sf_EqS(&f, SAVE("PoliceBossAtPolice"), "1") > 0) {
-		Gd_MissionChar(&f, "PoliceBoss_Default", G("Map", "CreateFixedInit"));
+	if (!LvN_ModGet("Init", "isDemo", v) || (Native_True(v) && !Den_NotAvailable("BankMaster"))) {
+		return Mode_Done(&t, 0);
 	}
-	if (Sf_EqS(&f, SAVE("CrazyGamblerAtGambinDen"), "1") > 0) {
-		Gd_MissionChar(&f, "CrazyGambler_Default", G("Map", "CreateFixedInit"));
+	if (!Mode_SetModVar("Init", "Outdoor", Mode_I(&t, 0)) || !Mode_SetModVar("Init", "OutArea", Mode_S(&t, "Outskirts")) ||
+		!LvN_GObj("Map", "AfterBrowseNPC", fn) || !LvN_ModAppend("CharsNPC", "AfterBrowseNPC", fn)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *pm = Sf_Ask(&f, "string", "upper", "(O)", Sf_Slice(&f, SAVE("PrevMap"), 7, 0x7fffffff));
-	int yard = Sf_EqS(&f, pm, "SCRAPYARD");
-	if (yard >= 0) {
-		Sf_Run(&f, "Elevator", "SetDef", "(ss)", "Elevator", yard ? "DM_Door_Elevator_Scrapyard" : "DM_Door_Elevator_Outskirts");
+	if (LvN_SaveIs("LonelyMercInGamblinDen", "1")) {
+		if (!LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", "MercenaryA_LonelyMerc") ||
+			!LV_CALL("Chars", "AddNewCharRes", NULL, "s", "MercenaryL") ||
+			!Gd_ResSet(Mode_S(&t, "MercenaryA_LonelyMerc"), "ActCtrl", Mode_S(&t, "MercenaryL")) ||
+			!Gd_CallbackG("MercenaryA_LonelyMerc", "Map", "CreateLonelyMerc")) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	return Sf_None(&f);
+	if (LvN_SaveIs("PoliceBossAtPolice", "1") && !Gd_MissionCharG("PoliceBoss_Default", "Map", "CreateFixedInit")) {
+		return Mode_Done(&t, 0);
+	}
+	if (LvN_SaveIs("CrazyGamblerAtGambinDen", "1") && !Gd_MissionCharG("CrazyGambler_Default", "Map", "CreateFixedInit")) {
+		return Mode_Done(&t, 0);
+	}
+	/* pm = string.upper(Scrap.GetSaveVar("PrevMap")[7:]) */
+	Mode_SaveVar("PrevMap", pv);
+	if (!Native_Slice(pv, 7, 0x7fffffff, sl) || !Native_Upper(sl, pm)) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, LV_CALL("Elevator", "SetDef", NULL, "ss", "Elevator",
+		LvN_EqS(pm, "SCRAPYARD") ? "DM_Door_Elevator_Scrapyard" : "DM_Door_Elevator_Outskirts"));
 }
 
-/* global name = (save var a == "1"), and when b: and save var b (== "1", or != "1" when notB) */
-static int Den_Flag(scriptFrame_t *f, const char *name, const char *a, const char *b, int notB) {
-	int mark = f->n;
-	int v = Sf_EqS(f, Sf_Ask(f, "Scrap", "GetSaveVar", "(s)", a), "1");
-	if (v > 0 && b) {
-		PyObject *s = Sf_Ask(f, "Scrap", "GetSaveVar", "(s)", b);
-		v = notB ? Sf_Compare(f, s, "!=", Sf_Str(f, "1")) : Sf_EqS(f, s, "1");
+/* global name = (save var a == "1"), and when b: and save var b (== "1", or != "1" when notB): the value */
+static int Den_Flag(const char *name, const char *a, const char *b, int notB) {
+	int v = LvN_SaveIs(a, "1");
+	if (v && b) {
+		v = notB ? !LvN_SaveIs(b, "1") : LvN_SaveIs(b, "1");
 	}
-	if (v >= 0) {
-		Sf_SetGlobal(f, "Map", name, Sf_Int(f, v));
-	}
-	Sf_Release(f, mark);
-	return v;
+	return LvN_PutI("Map", name, v) ? v : -1;
 }
 
-/* global name = (a in CharsNPC.CharRes.keys()) and (b in ...) */
-static int Den_Pair(scriptFrame_t *f, const char *name, const char *a, const char *b) {
-	int mark = f->n;
-	int v = Sf_In(f, Sf_Str(f, a), Sf_Method(f, Sf_Mod(f, "CharsNPC", "CharRes"), "keys", "()"));
+/* key in CharsNPC.CharRes.keys(): 1 or 0, -1 with the error */
+static int Den_HasChar(const char *key) {
+	nativeVal_t k = { 0 }, x = { 0 };
+	LvN_Str(&x, key);
+	Native_SetNone(&k);
+	int r = Mode_Keys("CharsNPC", "CharRes", 0, &k) ? Native_Contains(&k, &x) : -1;
+	Native_Free(&k);
+	Native_Free(&x);
+	return r;
+}
+
+/* global name = (a in CharsNPC.CharRes.keys()) and (b in ...): the value */
+static int Den_Pair(const char *name, const char *a, const char *b) {
+	int v = Den_HasChar(a);
 	if (v > 0) {
-		v = Sf_In(f, Sf_Str(f, b), Sf_Method(f, Sf_Mod(f, "CharsNPC", "CharRes"), "keys", "()"));
+		v = Den_HasChar(b);
 	}
-	if (v >= 0) {
-		Sf_SetGlobal(f, "Map", name, Sf_Int(f, v));
-	}
-	Sf_Release(f, mark);
-	return v;
+	return v >= 0 && LvN_PutI("Map", name, v) ? v : -1;
 }
 
 /* AfterBrowseNPC(): the mercenaries at the bar with their dance places, the friendly bishop and functionary, the pairs
  * of characters the save variables put in the den */
-static PyObject *Den_AfterBrowseNPC(PyObject *self, PyObject *args) {
+static byte Den_AfterBrowseNPCC(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const mercs[][2] = { { "MercenaryA_Smartie", "DM_DancingZone_MercenaryA" },
 		{ "MercenaryB_Dumber", "DM_DancingZone_MercenaryB_Dumber" }, { "MercenaryC_Brutus", "DM_DancingZone_MercenaryC_Brutus" } };
-	SF_ARGS("");
-	Sf_Import(&f, "CharsNPC");
-	for (int i = 0; i < 3 && !f.failed; i++) {
-		int mark = f.n;
-		Gd_Callback(&f, mercs[i][0], G("Map", "CreateFixedMercInit"));
-		Sf_Run(&f, "Scrap", "StartDummySearch", "(si)", mercs[i][1], 0);
-		PyObject *res = Sf_GetItem(&f, Sf_Mod(&f, "CharsNPC", "CharRes"), Sf_Str(&f, mercs[i][0]));
-		Sf_SetAttr(&f, res, "DancePos", Sf_Item(&f, Sf_Ask(&f, "Scrap", "NextDummySearch", "()"), 1));
-		Sf_Release(&f, mark);
-	}
-	int boss = Sf_EqS(&f, SAVE("RobotsControlledByBoss"), "1");
-	if (boss > 0) {
-		Sf_DelItem(&f, Sf_Mod(&f, "CharsNPC", "CharRes"), Sf_Str(&f, "Bishop_Friendly35"));
-		Sf_DelItem(&f, Sf_Mod(&f, "CharsNPC", "CharRes"), Sf_Str(&f, "Functionary_Friendly00"));
-	} else if (boss == 0) {
-		Gd_Callback(&f, "Bishop_Friendly35", G("Map", "CreateFixedInit"));
-		Gd_Callback(&f, "Functionary_Friendly00", G("Map", "CreateFixedInit"));
-	}
 	static const struct {
 		const char *flag, *a, *b;
 		int notB;
@@ -305,347 +509,594 @@ static PyObject *Den_AfterBrowseNPC(PyObject *self, PyObject *args) {
 		{ "Bishops", "BishopsAtGambinDen", NULL, 0, { "Bishop_00", "Bishop_01" } },
 		{ "Polices", "PolicesAtGambinDen", "LonelyMercInGamblinDen", 1, { "Police_00", "Police_01" } },
 	};
-	for (int i = 0; i < 5 && !f.failed; i++) {
-		if (Den_Flag(&f, pairs[i].flag, pairs[i].a, pairs[i].b, pairs[i].notB) > 0) {
-			Gd_MissionChar(&f, pairs[i].chars[0], G("Map", "CreateFixedInit"));
-			Gd_MissionChar(&f, pairs[i].chars[1], G("Map", "CreateFixedInit"));
+	(void)a;
+	(void)out;
+	if (!Mode_Import("CharsNPC")) {
+		return 0;
+	}
+	for (int i = 0; i < 3; i++) {
+		nativeVal_t name = { 0 }, d = { 0 }, p = { 0 };
+		if (!Gd_CallbackG(mercs[i][0], "Map", "CreateFixedMercInit")) {
+			return 0;
+		}
+		Mode_DummyStart(mercs[i][1], 0);
+		LvN_Str(&name, mercs[i][0]);
+		PyObject *res = Mode_CharRes(&name);
+		Native_Free(&name);
+		if (!res) {
+			return 0;
+		}
+		Mode_DummyNext(&d);
+		byte ok = LvN_Item(&d, 1, &p) && Mode_HSet(res, "DancePos", &p);
+		Py_DECREF(res);
+		Native_Free(&d);
+		Native_Free(&p);
+		if (!ok) {
+			return 0;
 		}
 	}
-	if (Den_Pair(&f, "BandH", "Humphrey_Default", "Berto_Default") > 0) {
-		Gd_Callback(&f, "Humphrey_Default", G("Map", "CreateFixedInit"));
-		Gd_Callback(&f, "Berto_Default", G("Map", "CreateFixedInit"));
+	if (LvN_SaveIs("RobotsControlledByBoss", "1")) {
+		if (!Gd_ResDel("Bishop_Friendly35") || !Gd_ResDel("Functionary_Friendly00")) {
+			return 0;
+		}
+	} else if (!Gd_CallbackG("Bishop_Friendly35", "Map", "CreateFixedInit") ||
+		!Gd_CallbackG("Functionary_Friendly00", "Map", "CreateFixedInit")) {
+		return 0;
 	}
-	if (Den_Pair(&f, "BandB", "Betty_Default", "Berto_Default") > 0) {
-		Gd_Callback(&f, "Betty_Default", G("Map", "CreateFixedInit"));
-		Gd_Callback(&f, "Berto_Default", G("Map", "CreateFixedInit"));
+	for (int i = 0; i < 5; i++) {
+		int v = Den_Flag(pairs[i].flag, pairs[i].a, pairs[i].b, pairs[i].notB);
+		if (v < 0 || (v && (!Gd_MissionCharG(pairs[i].chars[0], "Map", "CreateFixedInit") ||
+			!Gd_MissionCharG(pairs[i].chars[1], "Map", "CreateFixedInit")))) {
+			return 0;
+		}
 	}
-	return Sf_None(&f);
+	int v = Den_Pair("BandH", "Humphrey_Default", "Berto_Default");
+	if (v < 0 || (v && (!Gd_CallbackG("Humphrey_Default", "Map", "CreateFixedInit") ||
+		!Gd_CallbackG("Berto_Default", "Map", "CreateFixedInit")))) {
+		return 0;
+	}
+	v = Den_Pair("BandB", "Betty_Default", "Berto_Default");
+	return v >= 0 && (!v || (Gd_CallbackG("Betty_Default", "Map", "CreateFixedInit") &&
+		Gd_CallbackG("Berto_Default", "Map", "CreateFixedInit")));
 }
 
 /* CreateFixedMercInit(e): fixed, the hire talk */
-static PyObject *Den_CreateFixedMercInit(PyObject *self, PyObject *args) {
-	PyObject *e;
-	SF_ARGS("O", &e);
-	Sf_Own(&f, "Map", "CreateFixedInit", "(O)", e);
-	Sf_SetAttrS(&f, e, "UseFunc", "Map.MercenarySpeech");
-	Sf_Print(&f, "s", "---------------");
-	return Sf_None(&f);
+static byte Den_CreateFixedMercInitC(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t line = { 0 };
+	(void)out;
+	if (!LV_OWN("Map", "CreateFixedInit", NULL, "v", &a[0]) || !LvN_SetS(&a[0], "UseFunc", "Map.MercenarySpeech")) {
+		return 0;
+	}
+	LvN_Str(&line, "---------------");
+	const nativeVal_t *items[] = { &line };
+	byte ok = Mode_Print(items, 1);
+	Native_Free(&line);
+	return ok;
 }
 
 /* CreateLonelyMerc(e): fixed, his own talk */
-static PyObject *Den_CreateLonelyMerc(PyObject *self, PyObject *args) {
-	PyObject *e;
-	SF_ARGS("O", &e);
-	Sf_Own(&f, "Map", "CreateFixedInit", "(O)", e);
-	Sf_SetAttrS(&f, e, "UseFunc", "Map.LonelyMercSpeech");
-	return Sf_None(&f);
+static byte Den_CreateLonelyMercC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return LV_OWN("Map", "CreateFixedInit", NULL, "v", &a[0]) && LvN_SetS(&a[0], "UseFunc", "Map.LonelyMercSpeech");
+}
+
+/* Scrap.Rand(lo, hi) > 0 on two ints: 1 or 0, -1 with the error */
+static int Den_RandUp(long lo, long hi) {
+	nativeVal_t a = { 0 }, b = { 0 }, r = { 0 }, z = { 0 };
+	LvN_Int(&a, lo);
+	LvN_Int(&b, hi);
+	LvN_Int(&z, 0);
+	Native_SetNone(&r);
+	int up = -1;
+	if (Mode_Rand(&a, &b, &r)) {
+		up = Native_Compare(&r, &z) > 0;
+		if (PyErr_Occurred()) {
+			up = -1;
+		}
+	}
+	Native_Free(&r);
+	return up;
+}
+
+/* ChatNPCs(a, (a, b)) */
+static byte Den_Chat(const char *a, const char *b) {
+	nativeVal_t vals = { 0 };
+	Native_SetEmpty(&vals, NV_TUPLE);
+	LvN_Str(Native_Append(&vals), a);
+	LvN_Str(Native_Append(&vals), b);
+	byte ok = LV_OWN("Map", "ChatNPCs", NULL, "sv", a, &vals);
+	Native_Free(&vals);
+	return ok;
 }
 
 /* `if Scrap.Rand(-1, 1) > 0: ChatNPCs(a, (a, b)) else: CharDance(a); CharDance(b)` */
-static void Den_ChatOrDance(scriptFrame_t *f, const char *a, const char *b) {
-	int chat = Sf_Compare(f, Sf_Ask(f, "Scrap", "Rand", "(ii)", -1, 1), ">", Sf_Int(f, 0));
-	if (chat > 0) {
-		Sf_Own(f, "Map", "ChatNPCs", "(s(ss))", a, a, b);
-	} else if (chat == 0) {
-		Sf_Own(f, "Map", "CharDance", "(s)", a);
-		Sf_Own(f, "Map", "CharDance", "(s)", b);
+static byte Den_ChatOrDance(const char *a, const char *b) {
+	int chat = Den_RandUp(-1, 1);
+	if (chat < 0) {
+		return 0;
 	}
+	if (chat) {
+		return Den_Chat(a, b);
+	}
+	return LV_OWN("Map", "CharDance", NULL, "s", a) && LV_OWN("Map", "CharDance", NULL, "s", b);
 }
 
 /* Init(LevelPath): the elevators, the life in the den, the music (another track each visit) */
-static PyObject *Den_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_Import(&f, "Elevator");
-	Sf_Run(&f, "Elevator", "ConnectElevators", "([s][s])", "DM_Door_Elevator_Outskirts", "Outskirts");
-	Sf_Run(&f, "Elevator", "ConnectElevators", "([s][s])", "DM_Door_Elevator_Scrapyard", "Scrapyard");
-	Sf_Own(&f, "Map", "MercDrink", "(s)", "MercenaryA_Smartie");
-	Sf_Own(&f, "Map", "MercDrink", "(s)", "MercenaryB_Dumber");
-	Sf_Own(&f, "Map", "MercDrink", "(s)", "MercenaryC_Brutus");
-	if (Sf_EqS(&f, SAVE("LonelyMercInGamblinDen"), "1") > 0) {
-		Sf_Own(&f, "Map", "MercDrink", "(s)", "MercenaryA_LonelyMerc");
+static byte Den_InitC(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const flags[] = { "MayorAndBanker", "Twins", "Bankers", "Bishops", "Polices", "BandH", "BandB" };
+	static const char *const two[][2] = { { "BankDirector_Barman", "Mayor_Drunk" }, { "Functionary_Twins_01", "Functionary_Twins_02" },
+		{ "BankDirector_00", "BankDirector_01" }, { "Bishop_00", "Bishop_01" }, { "Police_00", "Police_01" },
+		{ "Berto_Default", "Humphrey_Default" }, { "Berto_Default", "Betty_Default" } };
+	(void)a;
+	(void)out;
+	if (!Mode_Import("Elevator") || !Mode_Connect("DM_Door_Elevator_Outskirts", "Outskirts", 0) ||
+		!Mode_Connect("DM_Door_Elevator_Scrapyard", "Scrapyard", 0) || !LV_OWN("Map", "MercDrink", NULL, "s", "MercenaryA_Smartie") ||
+		!LV_OWN("Map", "MercDrink", NULL, "s", "MercenaryB_Dumber") || !LV_OWN("Map", "MercDrink", NULL, "s", "MercenaryC_Brutus")) {
+		return 0;
 	}
-	Sf_Own(&f, "Map", "ChatNPCs", "(s)", "PoliceBoss_Default");
-	if (Sf_EqS(&f, SAVE("RobotsControlledByBoss"), "0") > 0) {
-		Sf_Own(&f, "Map", "CharDance", "(s)", "Bishop_Friendly35");
-		Sf_Own(&f, "Map", "CharDance", "(s)", "Functionary_Friendly00");
+	if (LvN_SaveIs("LonelyMercInGamblinDen", "1") && !LV_OWN("Map", "MercDrink", NULL, "s", "MercenaryA_LonelyMerc")) {
+		return 0;
 	}
-	Sf_EntSetS(&f, "DM_Door_GamblinDenChupito_00", "OnObjSlot", "");
-	Sf_EntSetI(&f, "DM_Door_Teleporter_00", "Active", 0);
-	int mark = f.n;
-	if (Sf_True(&f, G("Map", "MayorAndBanker")) > 0) {
-		Sf_Own(&f, "Map", "ChatNPCs", "(s(ss))", "BankDirector_Barman", "BankDirector_Barman", "Mayor_Drunk");
+	if (!LV_OWN("Map", "ChatNPCs", NULL, "s", "PoliceBoss_Default")) {
+		return 0;
 	}
-	if (Sf_True(&f, G("Map", "Twins")) > 0) {
-		Den_ChatOrDance(&f, "Functionary_Twins_01", "Functionary_Twins_02");
+	if (LvN_SaveIs("RobotsControlledByBoss", "0") && (!LV_OWN("Map", "CharDance", NULL, "s", "Bishop_Friendly35") ||
+		!LV_OWN("Map", "CharDance", NULL, "s", "Functionary_Friendly00"))) {
+		return 0;
 	}
-	if (Sf_True(&f, G("Map", "Bankers")) > 0) {
-		Den_ChatOrDance(&f, "BankDirector_00", "BankDirector_01");
+	if (!Mode_EntSetS("DM_Door_GamblinDenChupito_00", "OnObjSlot", "") || !Mode_EntSetI("DM_Door_Teleporter_00", "Active", 0)) {
+		return 0;
 	}
-	if (Sf_True(&f, G("Map", "Bishops")) > 0) {
-		Den_ChatOrDance(&f, "Bishop_00", "Bishop_01");
-	}
-	if (Sf_True(&f, G("Map", "Polices")) > 0) {
-		Den_ChatOrDance(&f, "Police_00", "Police_01");
-	}
-	if (Sf_True(&f, G("Map", "BandH")) > 0) {
-		Sf_Own(&f, "Map", "ChatNPCs", "(s(ss))", "Berto_Default", "Berto_Default", "Humphrey_Default");
-	}
-	if (Sf_True(&f, G("Map", "BandB")) > 0) {
-		Sf_Own(&f, "Map", "ChatNPCs", "(s(ss))", "Berto_Default", "Berto_Default", "Betty_Default");
-	}
-	Sf_Release(&f, mark);
-	if (Sf_EqS(&f, SAVE("Player.InfiniteLives"), "1") > 0) {
-		Sf_EntSetS(&f, "DM_Door_Elevator_Scrapyard", "OnObjSlot", "!CloseDoorSlot");
-	}
-	if (Sf_Compare(&f, SAVE("Mission.Library"), "!=", Sf_Str(&f, "Mission_CrazyGamblerFirstContact")) > 0) {
-		int gm = Sf_True(&f, Sf_ToInt(&f, SAVE("GamblinMusic")));
-		if (gm >= 0) {
-			gm = !gm;
-			Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "GamblinMusic", Sf_ReprI(&f, gm));
-			if (gm) {
-				int human = Sf_Compare(&f, Sf_Ask(&f, "Scrap", "Rand", "(ii)", -1, 1), ">", Sf_Int(&f, 0));
-				if (human >= 0) {
-					Sf_Run(&f, "SSound", "SetMusic", "(sd)", human ? "Music/HumanGD.ogg" : "Music/GDloop1.ogg", 0.75);
-				}
-			} else {
-				Sf_Run(&f, "SSound", "SetMusic", "(sd)", "Music/GDloop2.ogg", 0.75);
-			}
+	for (int i = 0; i < 7; i++) {
+		int on = LvN_GTrue("Map", flags[i]);
+		if (on < 0 || (on && !(i == 0 || i >= 5 ? Den_Chat(two[i][0], two[i][1]) : Den_ChatOrDance(two[i][0], two[i][1])))) {
+			return 0;
 		}
 	}
-	return Sf_None(&f);
+	if (LvN_SaveIs("Player.InfiniteLives", "1") && !Mode_EntSetS("DM_Door_Elevator_Scrapyard", "OnObjSlot", "!CloseDoorSlot")) {
+		return 0;
+	}
+	if (LvN_SaveIs("Mission.Library", "Mission_CrazyGamblerFirstContact")) {
+		return 1;
+	}
+	/* gm = not int(Scrap.GetSaveVar("GamblinMusic")) */
+	nativeVal_t s = { 0 }, i = { 0 };
+	Mode_SaveVar("GamblinMusic", &s);
+	Native_SetNone(&i);
+	byte ok = Native_ToInt(&s, &i);
+	int gm = ok && !Native_True(&i);
+	Native_Free(&s);
+	Native_Free(&i);
+	if (!ok) {
+		return 0;
+	}
+	SaveVar_Set("GamblinMusic", gm ? "1" : "0");
+	if (!gm) {
+		return LvN_SetMusic("Music/GDloop2.ogg", 0.75);
+	}
+	int human = Den_RandUp(-1, 1);
+	return human >= 0 && LvN_SetMusic(human ? "Music/HumanGD.ogg" : "Music/GDloop1.ogg", 0.75);
 }
 
 /* LonelyMercSpeech(UsrName, CharName, optId, FullOption): the lonely mercenary of the matrix mission */
-static PyObject *Den_LonelyMercSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	SF_ARGS("OOOO", &usr, &ch, &opt, &full);
-	Sf_Import(&f, "Speech");
-	Sf_SpeechNames(&f, usr, ch);
-	int talk = Sf_EqS(&f, opt, "Talk");
-	if (talk > 0) {
-		PyObject *r = Sf_Ask(&f, "Speech", "OnSpch", "(ss)", "Mission_FindDtritusMatrix1_Mercenary_InitMsg1",
-			"Mission_FindDtritusMatrix1_Mercenary_InitAns1");
-		if (Sf_True(&f, r) > 0) {
-			Sf_Run(&f, "Speech", "StdAnsLst", "([s])", "Mission_FindDtritusMatrix1_Mercenary_1");
-		}
-	} else if (talk == 0) {
-		Sf_Run(&f, "Speech", "OnSpch", "(OO)", Sf_Cat(&f, "Os", opt, "Msg"), Sf_Cat(&f, "Os", opt, "Ans"));
+static byte Den_LonelyMercSpeechC(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const ans[] = { "Mission_FindDtritusMatrix1_Mercenary_1", NULL };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *r = Mode_V(&t), *msg = Mode_V(&t), *an = Mode_V(&t);
+	(void)out;
+	if (!Mode_Import("Speech") || !LvN_Speakers(&a[0], &a[1])) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	if (LvN_EqS(&a[2], "Talk")) {
+		return Mode_Done(&t, LV_CALL("Speech", "OnSpch", r, "ss", "Mission_FindDtritusMatrix1_Mercenary_InitMsg1",
+			"Mission_FindDtritusMatrix1_Mercenary_InitAns1") && (!Native_True(r) || Mode_AnsLst(ans, -1)));
+	}
+	return Mode_Done(&t, Native_Arith('+', &a[2], Mode_S(&t, "Msg"), msg) && Native_Arith('+', &a[2], Mode_S(&t, "Ans"), an) &&
+		LV_CALL("Speech", "OnSpch", NULL, "vv", msg, an));
 }
 
 /* CharUsrAct(charname, ActName): an idle relaxing character plays the action: 1, else 0 */
-static PyObject *Den_CharUsrAct(PyObject *self, PyObject *args) {
-	PyObject *name, *act;
-	SF_ARGS("OO", &name, &act);
-	PyObject *ch = Sf_Entity(&f, name);
-	int go = Sf_EqI(&f, Sf_Attr(&f, ch, "LLogicIdle"), 0);
-	if (go > 0) {
-		go = Sf_EqS(&f, Sf_Slice(&f, Sf_Attr(&f, ch, "Action"), 0, 5), "Relax");
+static byte Den_CharUsrActC(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ch = Mode_V(&t), *idle = Mode_V(&t), *act = Mode_V(&t), *sl = Mode_V(&t);
+	if (!Mode_EntityH(&a[0], ch) || !Mode_VObj(ch, "LLogicIdle", idle)) {
+		return Mode_Done(&t, 0);
 	}
-	if (go > 0) {
-		Sf_SetAttr(&f, ch, "Action", act);
-		return Sf_Return(&f, Sf_Int(&f, 1));
+	int go = LvN_EqI(idle, 0);
+	if (go && (!Mode_VObj(ch, "Action", act) || !Native_Slice(act, 0, 5, sl))) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_Return(&f, go == 0 ? Sf_Int(&f, 0) : NULL);
+	go = go && LvN_EqS(sl, "Relax");
+	if (go && !Mode_VSet(ch, "Action", &a[1])) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetInt(out, go);
+	return Mode_Done(&t, 1);
+}
+
+/* name in Map.Cheer, else appended to it: 0 with the error */
+static byte Den_Cheer(const nativeVal_t *x, const nativeVal_t *name, int *was) {
+	nativeVal_t cheer = { 0 };
+	int in = Mode_G("Map", "Cheer", &cheer) ? Native_Contains(&cheer, x) : -1;
+	Native_Free(&cheer);
+	if (in < 0) {
+		return 0;
+	}
+	*was = in;
+	return in || Mode_Append("Map", "Cheer", name);
 }
 
 /* CharUsrDance(charname, state): a mercenary dances for state rounds of 5 s, then back to the bar */
-static PyObject *Den_CharUsrDance(PyObject *self, PyObject *args) {
-	PyObject *name, *state;
-	SF_ARGS("OO", &name, &state);
-	Sf_Import(&f, "CharsNPC");
-	PyObject *ch = Sf_Entity(&f, name);
-	int good = Sf_EqI(&f, Sf_Attr(&f, ch, "LLogicIdle"), 0);
-	int cheer = Sf_In(&f, Sf_Attr(&f, ch, "Name"), G("Map", "Cheer"));
-	if (cheer == 0) {
-		Sf_Method(&f, G("Map", "Cheer"), "append", "(O)", name);
+static byte Den_CharUsrDanceC(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ch = Mode_V(&t), *idle = Mode_V(&t), *nm = Mode_V(&t), *rem = Mode_V(&t), *act = Mode_V(&t);
+	nativeVal_t *next = Mode_V(&t), *pos = Mode_V(&t), *init = Mode_V(&t);
+	int was;
+	(void)out;
+	if (!Mode_Import("CharsNPC") || !Mode_EntityH(&a[0], ch) || !Mode_VObj(ch, "LLogicIdle", idle)) {
+		return Mode_Done(&t, 0);
 	}
-	int dance = Sf_Compare(&f, state, ">", Sf_Int(&f, 0));
-	if (dance > 0) {
-		int even = Sf_EqI(&f, Sf_OpI(&f, state, '%', 2), 0);
-		const char *anm = even > 0 ? "Dance" : "Dance0";
-		int go = even >= 0 ? good : -1;
-		if (go > 0) {
-			go = Sf_Compare(&f, Sf_Attr(&f, ch, "Action"), "!=", Sf_Str(&f, anm));
-		}
-		if (go > 0) {
-			Sf_SetAttr(&f, ch, "Action", Sf_Cat(&f, "ss", anm, "Init"));
-			Sf_SetAttrS(&f, ch, "DefLoop", anm);
-		}
-		Sf_Later(&f, Sf_Float(&f, 5.0), G("Map", "CharUsrDance"), Sf_Build(&f, "(OO)", name, Sf_OpI(&f, state, '-', 1)), NULL);
-	} else if (dance == 0) {
-		Sf_Own(&f, "Map", "MercDrink", "(Oi)", name, 0);
-		Sf_SetAttr(&f, ch, "LLogicOrigin", Sf_Attr(&f, Sf_GetItem(&f, Sf_Mod(&f, "CharsNPC", "CharRes"), name), "Pos"));
+	int good = LvN_EqI(idle, 0);
+	if (!Mode_VObj(ch, "Name", nm) || !Den_Cheer(nm, &a[0], &was)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	int dance = Native_Compare(&a[1], Mode_I(&t, 0)) > 0;
+	if (PyErr_Occurred()) {
+		return Mode_Done(&t, 0);
+	}
+	if (dance) {
+		if (!Native_Arith('%', &a[1], Mode_I(&t, 2), rem)) {
+			return Mode_Done(&t, 0);
+		}
+		const char *anm = LvN_EqI(rem, 0) ? "Dance" : "Dance0";
+		int go = good;
+		if (go) {
+			if (!Mode_VObj(ch, "Action", act)) {
+				return Mode_Done(&t, 0);
+			}
+			go = !LvN_EqS(act, anm);
+		}
+		if (go && (!Mode_Cat(&t, init, 2, Mode_S(&t, anm), Mode_S(&t, "Init")) || !Mode_VSet(ch, "Action", init) ||
+			!LvN_SetS(ch, "DefLoop", anm))) {
+			return Mode_Done(&t, 0);
+		}
+		nativeVal_t args[2] = { 0 };
+		if (!Native_Arith('-', &a[1], Mode_I(&t, 1), next)) {
+			return Mode_Done(&t, 0);
+		}
+		args[0] = a[0];
+		args[1] = *next;
+		return Mode_Done(&t, Mode_Later(5.0, "Map", "CharUsrDance", args, 2, NULL));
+	}
+	return Mode_Done(&t, LV_OWN("Map", "MercDrink", NULL, "vi", &a[0], 0L) && Gd_ResGet(&a[0], "Pos", pos) &&
+		Mode_VSet(ch, "LLogicOrigin", pos));
+}
+
+/* Scrap.Rand(lo, hi) of two numbers (ints or floats as the script writes them) into *out */
+static byte Den_Rand(const nativeVal_t *lo, const nativeVal_t *hi, nativeVal_t *out) {
+	return Mode_Rand(lo, hi, out);
+}
+
+/* int(Scrap.Rand(lo, hi)) into *out */
+static byte Den_RandInt(const nativeVal_t *lo, const nativeVal_t *hi, nativeVal_t *out) {
+	nativeVal_t r = { 0 };
+	Native_SetNone(&r);
+	byte ok = Den_Rand(lo, hi, &r) && Native_ToInt(&r, out);
+	Native_Free(&r);
+	return ok;
 }
 
 /* MercDrink(merc, ctr=0): the drinkers of the bar: cheer, drink, talk, now and then one goes dancing */
+static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
+	static const char *const xtracts[] = { "Talk1", "Talk0", "Talk1", "Talk0", "Talk1", "Talk0", "Relax0", "Relax1", NULL };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *mc = Mode_V(&t), *ac = Mode_V(&t), *ctr = Mode_V(&t), *r = Mode_V(&t), *b = Mode_V(&t), *res = Mode_V(&t);
+	nativeVal_t *n = Mode_V(&t), *x = Mode_V(&t), *tbl = Mode_V(&t), *delay = Mode_V(&t);
+	int was;
+	Native_Copy(ctr, ctr0);
+	if (!Mode_Import("CharsNPC") || !Mode_EntityH(merc, mc) || !Mode_VObj(mc, "ActCtrl", ac)) {
+		return Mode_Done(&t, 0);
+	}
+	int islm = LvN_EqS(ac, "MercenaryL");
+	if (!Den_Cheer(merc, merc, &was)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!was) {
+		if (!LV_OWN("Map", "CharUsrAct", NULL, "vs", merc, "Cheer")) {
+			return Mode_Done(&t, 0);
+		}
+	} else {
+		/* Scrap.Rand(-1.5, 1) > 0 or islm */
+		Native_SetFloat(x, -1.5);
+		if (!Den_Rand(x, Mode_I(&t, 1), r)) {
+			return Mode_Done(&t, 0);
+		}
+		int busy = Native_Compare(r, Mode_I(&t, 0)) > 0;
+		if (PyErr_Occurred()) {
+			return Mode_Done(&t, 0);
+		}
+		busy = busy || islm;
+		Native_Free(r);
+		if (busy) {
+			int tired = Native_Compare(ctr, Mode_I(&t, 3)) >= 0;
+			if (PyErr_Occurred()) {
+				return Mode_Done(&t, 0);
+			}
+			if (tired && !islm) {
+				if (!Mode_G("Map", "Borrachera", b)) {
+					return Mode_Done(&t, 0);
+				}
+				int drunk = Native_Compare(b, Mode_I(&t, 0)) > 0;
+				if (PyErr_Occurred()) {
+					return Mode_Done(&t, 0);
+				}
+				Native_Free(b);
+				if (drunk) {
+					if (!Mode_G("Map", "Borrachera", b) || !Native_Arith('-', b, Mode_I(&t, 1), n) ||
+						!Mode_Put("Map", "Borrachera", NULL, n)) {
+						return Mode_Done(&t, 0);
+					}
+				} else {
+					if (!Gd_ResGet(merc, "DancePos", res) || !Mode_VSet(mc, "LLogicOrigin", res) ||
+						!Den_RandInt(Mode_I(&t, 10), Mode_I(&t, 20), n) ||
+						!LV_OWN("Map", "CharUsrDance", NULL, "vv", merc, n)) {
+						return Mode_Done(&t, 0);
+					}
+					return Mode_Done(&t, LvN_PutI("Map", "Borrachera", 5));
+				}
+				Native_Free(ctr);
+				if (!Den_RandInt(Mode_I(&t, 0), Mode_I(&t, 3), ctr)) {
+					return Mode_Done(&t, 0);
+				}
+			} else {
+				if (!LV_OWN("Map", "CharUsrAct", NULL, "vs", merc, "Drink") || !Den_Rand(Mode_I(&t, -1), Mode_I(&t, 4), r)) {
+					return Mode_Done(&t, 0);
+				}
+				int empty = Native_Compare(r, Mode_I(&t, 0)) < 0;
+				if (PyErr_Occurred()) {
+					return Mode_Done(&t, 0);
+				}
+				if (empty) {
+					nativeVal_t l = { 0 };
+					Native_SetEmpty(&l, NV_LIST);
+					byte ok = Mode_Put("Map", "Cheer", NULL, &l);
+					Native_Free(&l);
+					if (!ok) {
+						return Mode_Done(&t, 0);
+					}
+				}
+				Native_Free(n);
+				if (!Native_Arith('+', ctr, Mode_I(&t, 1), n)) {
+					return Mode_Done(&t, 0);
+				}
+				Native_Free(ctr);
+				Native_Copy(ctr, n);
+			}
+		} else {
+			/* CharUsrAct(merc, xtracts[int(Scrap.Rand(0, 7.9))]) */
+			Native_SetEmpty(tbl, NV_TUPLE);
+			for (int i = 0; xtracts[i]; i++) {
+				LvN_Str(Native_Append(tbl), xtracts[i]);
+			}
+			Native_SetFloat(x, 7.9);
+			if (!Den_RandInt(Mode_I(&t, 0), x, n) || !Native_Subscript(tbl, n, res) ||
+				!LV_OWN("Map", "CharUsrAct", NULL, "vv", merc, res)) {
+				return Mode_Done(&t, 0);
+			}
+		}
+	}
+	nativeVal_t args[2] = { 0 };
+	Native_SetFloat(x, 3.5);
+	if (!Den_Rand(x, Mode_I(&t, 5), delay)) {
+		return Mode_Done(&t, 0);
+	}
+	args[0] = *merc;
+	args[1] = *ctr;
+	return Mode_Done(&t, Gd_LaterV(delay, "Map", "MercDrink", args, 2));
+}
+
 static PyObject *Den_MercDrink(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "merc", "ctr", NULL };
-	static const char *const xtracts[] = { "Talk1", "Talk0", "Talk1", "Talk0", "Talk1", "Talk0", "Relax0", "Relax1" };
-	PyObject *merc, *ctr = NULL;
-	scriptFrame_t f = { 0 };
+	nativeVal_t a[2] = { 0 };
+	byte given[2];
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O", names, &merc, &ctr)) {
+	if (!Gd_Kw(args, kw, "O|O", names, a, given)) {
 		return NULL;
 	}
-	if (!ctr) {
-		ctr = Sf_Int(&f, 0);
+	if (!given[1]) {
+		Native_SetInt(&a[1], 0);
 	}
-	Sf_Import(&f, "CharsNPC");
-	PyObject *mc = Sf_Entity(&f, merc);
-	int islm = Sf_EqS(&f, Sf_Attr(&f, mc, "ActCtrl"), "MercenaryL");
-	int cheered = Sf_In(&f, merc, G("Map", "Cheer"));
-	if (cheered == 0) {
-		Sf_Method(&f, G("Map", "Cheer"), "append", "(O)", merc);
-		Sf_Own(&f, "Map", "CharUsrAct", "(Os)", merc, "Cheer");
-	} else if (cheered > 0) {
-		int busy = Sf_Compare(&f, Sf_Ask(&f, "Scrap", "Rand", "(di)", -1.5, 1), ">", Sf_Int(&f, 0));
-		if (busy == 0) {
-			busy = islm;
-		}
-		if (busy > 0) {
-			int tired = Sf_Compare(&f, ctr, ">=", Sf_Int(&f, 3));
-			if (tired > 0) {
-				tired = islm < 0 ? -1 : !islm;
-			}
-			if (tired > 0) {
-				int drunk = Sf_Compare(&f, G("Map", "Borrachera"), ">", Sf_Int(&f, 0));
-				if (drunk > 0) {
-					Sf_SetGlobal(&f, "Map", "Borrachera", Sf_OpI(&f, G("Map", "Borrachera"), '-', 1));
-				} else if (drunk == 0) {
-					PyObject *res = Sf_GetItem(&f, Sf_Mod(&f, "CharsNPC", "CharRes"), merc);
-					Sf_SetAttr(&f, mc, "LLogicOrigin", Sf_Attr(&f, res, "DancePos"));
-					Sf_Own(&f, "Map", "CharUsrDance", "(OO)", merc, Sf_ToInt(&f, Sf_Ask(&f, "Scrap", "Rand", "(ii)", 10, 20)));
-					Sf_SetGlobal(&f, "Map", "Borrachera", Sf_Int(&f, 5));
-					return Sf_None(&f);
-				}
-				ctr = Sf_ToInt(&f, Sf_Ask(&f, "Scrap", "Rand", "(ii)", 0, 3));
-			} else if (tired == 0) {
-				Sf_Own(&f, "Map", "CharUsrAct", "(Os)", merc, "Drink");
-				if (Sf_Compare(&f, Sf_Ask(&f, "Scrap", "Rand", "(ii)", -1, 4), "<", Sf_Int(&f, 0)) > 0) {
-					Sf_SetGlobal(&f, "Map", "Cheer", Sf_Build(&f, "[]"));
-				}
-				ctr = Sf_OpI(&f, ctr, '+', 1);
-			}
-		} else if (busy == 0) {
-			PyObject *i = Sf_ToInt(&f, Sf_Ask(&f, "Scrap", "Rand", "(id)", 0, 7.9));
-			if (i) {
-				PyObject *t = Sf_Build(&f, "(ssssssss)", xtracts[0], xtracts[1], xtracts[2], xtracts[3], xtracts[4], xtracts[5], xtracts[6], xtracts[7]);
-				Sf_Own(&f, "Map", "CharUsrAct", "(OO)", merc, Sf_GetItem(&f, t, i));
-			}
-		}
-	}
-	Sf_Later(&f, Sf_Ask(&f, "Scrap", "Rand", "(di)", 3.5, 5), G("Map", "MercDrink"), Sf_Build(&f, "(OO)", merc, ctr), NULL);
-	return Sf_None(&f);
+	byte ok = Den_MercDrinkC(&a[0], &a[1]);
+	Native_Free(&a[0]);
+	Native_Free(&a[1]);
+	return Mode_Result(ok);
 }
 
 /* ChatNPCs(Name, Vals=("PoliceBoss_Default", "CrazyGambler_Default")): two characters talk in turn every 2.5 s */
+static byte Den_ChatNPCsC(const nativeVal_t *name0, const nativeVal_t *vals) {
+	static const char *const xtracts[] = { "Talk0", "Talk1", "Talk2" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *tbl = Mode_V(&t), *x = Mode_V(&t), *i = Mode_V(&t), *act = Mode_V(&t), *done = Mode_V(&t);
+	nativeVal_t *v1 = Mode_V(&t), *name = Mode_V(&t);
+	if (!Mode_EntityH(name0, e)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Native_True(e)) {
+		return Mode_Done(&t, 1);
+	}
+	Native_Copy(name, name0);
+	Native_SetEmpty(tbl, NV_TUPLE);
+	for (int k = 0; k < 3; k++) {
+		LvN_Str(Native_Append(tbl), xtracts[k]);
+	}
+	Native_SetFloat(x, 2.9);
+	if (!Den_RandInt(Mode_I(&t, 0), x, i) || !Native_Subscript(tbl, i, act) || !LV_OWN("Map", "CharUsrAct", done, "vv", name, act)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_True(done)) {
+		if (!LvN_Item(vals, 1, v1)) {
+			return Mode_Done(&t, 0);
+		}
+		int second = !Native_Compare(v1, name);
+		if (PyErr_Occurred()) {
+			return Mode_Done(&t, 0);
+		}
+		Native_Free(name);
+		if (!LvN_Item(vals, second ? 0 : 1, name)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	nativeVal_t args[2] = { 0 };
+	args[0] = *name;
+	args[1] = *vals;
+	return Mode_Done(&t, Mode_Later(2.5, "Map", "ChatNPCs", args, 2, NULL));
+}
+
 static PyObject *Den_ChatNPCs(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "Name", "Vals", NULL };
-	PyObject *name, *vals = NULL;
-	scriptFrame_t f = { 0 };
+	nativeVal_t a[2] = { 0 };
+	byte given[2];
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O", names, &name, &vals)) {
+	if (!Gd_Kw(args, kw, "O|O", names, a, given)) {
 		return NULL;
 	}
-	if (!vals) {
-		vals = Sf_Build(&f, "(ss)", "PoliceBoss_Default", "CrazyGambler_Default");
+	if (!given[1]) {
+		Native_SetEmpty(&a[1], NV_TUPLE);
+		LvN_Str(Native_Append(&a[1]), "PoliceBoss_Default");
+		LvN_Str(Native_Append(&a[1]), "CrazyGambler_Default");
 	}
-	if (Sf_True(&f, Sf_Entity(&f, name)) > 0) {
-		PyObject *xtracts = Sf_Build(&f, "(sss)", "Talk0", "Talk1", "Talk2");
-		PyObject *act = Sf_GetItem(&f, xtracts, Sf_ToInt(&f, Sf_Ask(&f, "Scrap", "Rand", "(id)", 0, 2.9)));
-		if (Sf_True(&f, Sf_Own(&f, "Map", "CharUsrAct", "(OO)", name, act)) > 0) {
-			int second = Sf_Compare(&f, Sf_Item(&f, vals, 1), "==", name);
-			if (second >= 0) {
-				name = Sf_Item(&f, vals, second ? 0 : 1);
-			}
-		}
-		Sf_Later(&f, Sf_Float(&f, 2.5), G("Map", "ChatNPCs"), Sf_Build(&f, "(OO)", name, vals), NULL);
-	}
-	return Sf_None(&f);
+	byte ok = Den_ChatNPCsC(&a[0], &a[1]);
+	Native_Free(&a[0]);
+	Native_Free(&a[1]);
+	return Mode_Result(ok);
 }
 
 /* CharDance(Name): a dancer between its two dances, every 5 to 10 s */
-static PyObject *Den_CharDance(PyObject *self, PyObject *args) {
-	PyObject *name;
-	SF_ARGS("O", &name);
-	PyObject *ch = Sf_Entity(&f, name);
-	int dance = Sf_EqS(&f, Sf_Attr(&f, ch, "Action"), "Dance");
-	if (dance > 0) {
-		Sf_SetAttrS(&f, ch, "Action", "Dance0");
-		Sf_SetAttrS(&f, ch, "DefLoop", "Dance");
-	} else if (dance == 0) {
-		Sf_Own(&f, "Map", "CharUsrAct", "(Os)", name, "Dance");
+static byte Den_CharDanceC(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ch = Mode_V(&t), *act = Mode_V(&t), *delay = Mode_V(&t);
+	(void)out;
+	if (!Mode_EntityH(&a[0], ch) || !Mode_VObj(ch, "Action", act)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Later(&f, Sf_Ask(&f, "Scrap", "Rand", "(ii)", 5, 10), G("Map", "CharDance"), Sf_Build(&f, "(O)", name), NULL);
-	return Sf_None(&f);
+	if (LvN_EqS(act, "Dance")) {
+		if (!LvN_SetS(ch, "Action", "Dance0") || !LvN_SetS(ch, "DefLoop", "Dance")) {
+			return Mode_Done(&t, 0);
+		}
+	} else if (!LV_OWN("Map", "CharUsrAct", NULL, "vs", &a[0], "Dance")) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, Den_Rand(Mode_I(&t, 5), Mode_I(&t, 10), delay) && Gd_LaterV(delay, "Map", "CharDance", &a[0], 1));
 }
 
 /* MercenarySpeech(UsrName, CharName, optId, FullOption): hire a mercenary for three lives */
-static PyObject *Den_MercenarySpeech(PyObject *self, PyObject *args) {
+static byte Den_MercenarySpeechC(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const mods[] = { "Speech", "Chars", "CharsNPC", "Challenge", "Menu", "string", NULL };
-	PyObject *usrName, *chName, *opt, *full;
-	SF_ARGS("OOOO", &usrName, &chName, &opt, &full);
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ch = Mode_V(&t), *usr = Mode_V(&t), *sv = Mode_V(&t), *lives = Mode_V(&t), *fv = Mode_V(&t), *rest = Mode_V(&t);
+	nativeVal_t *msg = Mode_V(&t), *opt = Mode_V(&t), *sl = Mode_V(&t), *price = Mode_V(&t), *pr = Mode_V(&t), *rep = Mode_V(&t);
+	nativeVal_t *params = Mode_V(&t);
+	(void)out;
 	for (int i = 0; mods[i]; i++) {
-		Sf_Import(&f, mods[i]);
+		if (!Mode_Import(mods[i])) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	PyObject *ch = Sf_Entity(&f, chName);
-	Sf_SpeechNames(&f, usrName, chName);
-	int hire = Sf_EqS(&f, opt, "Generics_SpecialMercs_1");
-	if (hire > 0) {
+	if (!Mode_EntityH(&a[1], ch) || !LvN_Speakers(&a[0], &a[1])) {
+		return Mode_Done(&t, 0);
+	}
+	if (LvN_EqS(&a[2], "Generics_SpecialMercs_1")) {
 		int direct = 0;
-		PyObject *ans = NULL;
-		PyObject *usr = USR();
-		if (Sf_True(&f, usr) > 0) {
-			PyObject *lives = Sf_ToInt(&f, SAVE("Player.NumLives"));
-			PyObject *friendVar = Sf_Cat(&f, "sO", "MercFriends.", chName);
-			int friend = Sf_EqS(&f, f.failed ? NULL : Sf_Ask(&f, "Scrap", "GetSaveVar", "(O)", friendVar), "1");
-			if (friend > 0) {
-				ans = Sf_Str(&f, "Generics_SpecialMercs_2Ans");
+		const char *ans = NULL;
+		if (!Mode_UsrHandle(usr)) {
+			return Mode_Done(&t, 0);
+		}
+		if (Native_True(usr)) {
+			const char *s;
+			Mode_SaveVar("Player.NumLives", sv);
+			if (!Native_ToInt(sv, lives) || !Mode_Cat(&t, fv, 2, Mode_S(&t, "MercFriends."), &a[1]) || !Native_ArgStr(fv, 1, &s)) {
+				return Mode_Done(&t, 0);
+			}
+			if (LvN_SaveIs(s, "1")) {
+				ans = "Generics_SpecialMercs_2Ans";
 				direct = 1;
-			} else if (friend == 0 && Sf_Compare(&f, lives, "<", Sf_Int(&f, 3)) > 0) {
-				ans = Sf_Str(&f, "Generics_SpecialMercs_3Ans");
-			} else if (!f.failed) {
-				ans = Sf_Str(&f, "Generics_SpecialMercs_1Ans");
-				lives = Sf_OpI(&f, lives, '-', 3);
-				Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "Player.NumLives", Sf_Repr(&f, lives));
-				Sf_Run(&f, "Scrap", "SetSaveVar", "(Os)", Sf_Cat(&f, "sO", "MercFriends.", chName), "1");
-				Sf_SpeechEnd(&f, G("Map", "StartContract"), Sf_Build(&f, "(O)", ch));
+			} else {
+				int few = Native_Compare(lives, Mode_I(&t, 3)) < 0;
+				if (PyErr_Occurred()) {
+					return Mode_Done(&t, 0);
+				}
+				if (few) {
+					ans = "Generics_SpecialMercs_3Ans";
+				} else {
+					ans = "Generics_SpecialMercs_1Ans";
+					Native_Free(fv);
+					Native_SetEmpty(params, NV_TUPLE);
+					Native_Copy(Native_Append(params), ch);
+					if (!Native_Arith('-', lives, Mode_I(&t, 3), rest) || (Mode_Repr(rest, rep), !Mode_SetSaveVar("Player.NumLives", rep)) ||
+						!Mode_Cat(&t, fv, 2, Mode_S(&t, "MercFriends."), &a[1]) || !Native_ArgStr(fv, 1, &s)) {
+						return Mode_Done(&t, 0);
+					}
+					SaveVar_Set(s, "1");
+					if (!LvN_OnEnd("Map", "StartContract", params)) {
+						return Mode_Done(&t, 0);
+					}
+				}
 			}
 		}
-		if (!f.failed && !ans) {
-			Sf_Raise(&f, PyExc_NameError, "ans");
+		if (!ans) {
+			Native_Raise(NE_NAME, "ans");
+			return Mode_Done(&t, 0);
 		}
-		PyObject *msg = Sf_Cat(&f, "Os", opt, "Msg");
-		if (direct) {
-			Sf_Run(&f, "Speech", "OnSpch", "(OO)", msg, ans);
-		} else {
-			Sf_Run(&f, "CharsNPC", "PlayOption", "(OOOOO)", opt, msg, ans, usrName, ch);
+		LvN_Str(opt, ans);
+		if (!Mode_Cat(&t, msg, 2, &a[2], Mode_S(&t, "Msg")) || !(direct ? LV_CALL("Speech", "OnSpch", NULL, "vv", msg, opt) :
+			LV_CALL("CharsNPC", "PlayOption", NULL, "vvvvv", &a[2], msg, opt, &a[0], ch))) {
+			return Mode_Done(&t, 0);
 		}
-	} else if (hire == 0) {
-		Sf_Run(&f, "CharsNPC", "GenericNPCSpeech", "(OOOO)", usrName, chName, opt, full);
+	} else if (!LV_CALL("CharsNPC", "GenericNPCSpeech", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3])) {
+		return Mode_Done(&t, 0);
 	}
-	if (Sf_EqS(&f, Sf_Slice(&f, Sf_Attr(&f, ch, "ArrOpt00"), 0, 25), "Generics_SpecialBishop_1:") > 0) {
-		PyObject *price = Sf_Repr(&f, Sf_Ask(&f, "Scrap", "Get", "(s)", "BishopLivePrice"));
-		Sf_SetAttr(&f, ch, "ArrOpt00", Sf_Ask(&f, "string", "replace", "(OsO)", Sf_Attr(&f, ch, "ArrOpt00"), "<n1>", price));
+	/* if ch.ArrOpt00[0:25] == "Generics_SpecialBishop_1:": the price of a life into the option */
+	Native_Free(opt);
+	if (!Mode_VObj(ch, "ArrOpt00", opt) || !Native_Slice(opt, 0, 25, sl)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	if (!LvN_EqS(sl, "Generics_SpecialBishop_1:")) {
+		return Mode_Done(&t, 1);
+	}
+	if (!Native_GVarGet("BishopLivePrice", price)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_Repr(price, pr);
+	Native_Free(opt);
+	if (!Mode_VObj(ch, "ArrOpt00", opt)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_Replace(opt, "<n1>", pr, rep);
+	return Mode_Done(&t, Mode_VSet(ch, "ArrOpt00", rep));
 }
 
 /* StartContract(ch): the hired mercenary celebrates */
-static PyObject *Den_StartContract(PyObject *self, PyObject *args) {
-	PyObject *ch;
-	SF_ARGS("O", &ch);
-	Sf_Import(&f, "Speech");
-	Sf_SetAttrS(&f, ch, "Action", "Drink");
-	Sf_SetAttrS(&f, ch, "DefLoop", "Dance");
-	Sf_Run(&f, "Speech", "RestoreState", "(O)", Sf_Attr(&f, ch, "Name"));
-	return Sf_None(&f);
+static byte Den_StartContractC(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t n = { 0 };
+	(void)out;
+	Native_SetNone(&n);
+	byte ok = Mode_Import("Speech") && LvN_SetS(&a[0], "Action", "Drink") && LvN_SetS(&a[0], "DefLoop", "Dance") &&
+		Mode_VObj(&a[0], "Name", &n) && LV_CALL("Speech", "RestoreState", NULL, "v", &n);
+	Native_Free(&n);
+	return ok;
 }
+
+LV_FN(Den, InitStatus, 1, Den_InitStatusC)
+LV_FN(Den, AfterBrowseNPC, 0, Den_AfterBrowseNPCC)
+LV_FN(Den, CreateFixedMercInit, 1, Den_CreateFixedMercInitC)
+LV_FN(Den, CreateLonelyMerc, 1, Den_CreateLonelyMercC)
+LV_FN(Den, Init, 1, Den_InitC)
+LV_FN(Den, LonelyMercSpeech, 4, Den_LonelyMercSpeechC)
+LV_FN(Den, CharUsrAct, 2, Den_CharUsrActC)
+LV_FN(Den, CharUsrDance, 2, Den_CharUsrDanceC)
+LV_FN(Den, CharDance, 1, Den_CharDanceC)
+LV_FN(Den, MercenarySpeech, 4, Den_MercenarySpeechC)
+LV_FN(Den, StartContract, 1, Den_StartContractC)
 
 PyMethodDef g_GamblinDenMapMethods[] = {
 	{ "InitStatus", Den_InitStatus, 1, NULL },
@@ -667,69 +1118,66 @@ PyMethodDef g_GamblinDenMapMethods[] = {
 
 /* ---- Mission_BeforeFinalFight: the crazy gambler's plan for the final fight ---- */
 
-static PyObject *Before_InitStatus(PyObject *self, PyObject *args) {
+static byte Before_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const start[] = { "Spawn", "DM_Player_Spawn_Meeting_Room", "ComeFrom", "", "Char", "Dtritus", NULL };
-	PyObject *path;
-	SF_ARGS("O", &path);
-	if (Sf_EqS(&f, SAVE("BeforeFinalFightPlayed"), "0") > 0) {
-		Lv_Saves(&f, start);
+	(void)a;
+	(void)out;
+	if (LvN_SaveIs("BeforeFinalFightPlayed", "0")) {
+		Mode_Saves(start);
 	}
-	Gd_Den(&f, "0", "0", "0", "0", "0");
-	return Sf_None(&f);
+	Gd_Den("0", "0", "0", "0", "0");
+	return 1;
+}
+
+/* the UseFunc of the crazy gambler and the mercenaries in the talks of the final fight */
+static byte Before_Uses(void) {
+	return Mode_EntSetS("CrazyGambler_Default", "UseFunc", "Mission_BeforeFinalFight.CrazyGamblerSpeech") &&
+		Mode_EntSetS("MercenaryA_Smartie", "UseFunc", "Mission_BeforeFinalFight.MercenariesSpeech") &&
+		Mode_EntSetS("MercenaryB_Dumber", "UseFunc", "Mission_BeforeFinalFight.MercenariesSpeech") &&
+		Mode_EntSetS("MercenaryC_Brutus", "UseFunc", "Mission_BeforeFinalFight.MercenariesSpeech");
 }
 
 /* Init(LevelPath): the scene of the plan the first time, the teleporter to the AB, the talks */
-static PyObject *Before_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	int first = Sf_EqS(&f, SAVE("BeforeFinalFightPlayed"), "0");
-	if (first > 0) {
-		Sf_Own(&f, BF, "LoadScene", "()");
-		Sf_Run(&f, "Scene", "Play", "(s)", "Plan2");
-		Sf_SetMod(&f, "Scene", "EndOfSceneCallback", G(BF, "SetNextMission"));
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "BeforeFinalFightPlayed", "1");
-		Sf_EntSetS(&f, "DM_Door_GamblinDenChupito_00", "OnObjSlot", "");
-		Sf_Run(&f, "SSound", "SetMusicVolume", "(d)", 0.7);
-		Sf_Print(&f, "s", "SSound.SetMusicVolume(0)");
-	} else if (first == 0) {
-		Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_FinalFight_MissionText1", 1);
-		Sf_EntSetS(&f, "DM_Door_GamblinDenChupito_00", "OnObjSlot", "!AutoDoorSlot");
+static byte Before_InitC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	if (LvN_SaveIs("BeforeFinalFightPlayed", "0")) {
+		nativeVal_t line = { 0 };
+		if (!LV_OWN(BF, "LoadScene", NULL, "") || !LV_CALL("Scene", "Play", NULL, "s", "Plan2") ||
+			!LvN_ModSetGlobal("Scene", "EndOfSceneCallback", BF, "SetNextMission")) {
+			return 0;
+		}
+		SaveVar_Set("BeforeFinalFightPlayed", "1");
+		if (!Mode_EntSetS("DM_Door_GamblinDenChupito_00", "OnObjSlot", "") || !Gd_MusicVolume(0.7)) {
+			return 0;
+		}
+		LvN_Str(&line, "SSound.SetMusicVolume(0)");
+		const nativeVal_t *items[] = { &line };
+		byte ok = Mode_Print(items, 1);
+		Native_Free(&line);
+		if (!ok) {
+			return 0;
+		}
+	} else if (!Mode_MMDesc("Mission_FinalFight_MissionText1", 1) || !Mode_EntSetS("DM_Door_GamblinDenChupito_00", "OnObjSlot", "!AutoDoorSlot")) {
+		return 0;
 	}
-	Sf_EntSetI(&f, "DM_Door_Teleporter_00", "Active", 1);
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "DM_Door_Teleporter_00");
-	Sf_Run(&f, "Elevator", "ConnectElevators", "([s][s])", "DM_Door_Teleporter_00", "AB");
-	Sf_EntSetS(&f, "CrazyGambler_Default", "UseFunc", "Mission_BeforeFinalFight.CrazyGamblerSpeech");
-	Sf_EntSetS(&f, "MercenaryA_Smartie", "UseFunc", "Mission_BeforeFinalFight.MercenariesSpeech");
-	Sf_EntSetS(&f, "MercenaryB_Dumber", "UseFunc", "Mission_BeforeFinalFight.MercenariesSpeech");
-	Sf_EntSetS(&f, "MercenaryC_Brutus", "UseFunc", "Mission_BeforeFinalFight.MercenariesSpeech");
-	return Sf_None(&f);
-}
-
-static PyObject *Before_CrazyGamblerSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	return Gd_Talk(args, 1, "Mission_FinalFight_InitMsg1", "Mission_FinalFight_InitAns1");
-}
-
-static PyObject *Before_MercenariesSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	return Gd_Talk(args, 1, "Mission_FinalFight_InitMsg2", "Mission_FinalFight_InitAns2");
+	return Mode_EntSetI("DM_Door_Teleporter_00", "Active", 1) && Mode_Target("DM_Door_Teleporter_00") &&
+		Mode_Connect("DM_Door_Teleporter_00", "AB", 0) && Before_Uses();
 }
 
 /* SetNextMission(usr=None): after the scene: the map of the mission scorer shows the AB */
-static PyObject *Before_SetNextMission(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "usr", NULL };
-	PyObject *usr = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &usr)) {
-		return NULL;
-	}
-	Sf_Run(&f, "SScorer", "Fade", "(i(iiii)(iiii)d)", 0, 0, 0, 0, 255, 0, 0, 0, 0, 1.0);
-	Sf_Run(&f, "SScorer", "Set", "(iOss)", 0, Sf_Ask(&f, "Scrap", "Get", "(s)", "MissionScorerName"), "ForceMap", "AB");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_FinalFight_MissionText1", 1);
-	Sf_EntSetS(&f, "DM_Door_GamblinDenChupito_00", "OnObjSlot", "!AutoDoorSlot");
-	Sf_Run(&f, "SSound", "SetMusicVolume", "(d)", 1.0);
-	return Sf_None(&f);
+static byte Before_SetNextMissionC(void) {
+	static const int from[] = { 0, 0, 0, 255 }, to[] = { 0, 0, 0, 0 };
+	nativeVal_t id = { 0 }, item = { 0 }, v = { 0 };
+	Native_SetInt(&id, 0);
+	Native_SetNone(&item);
+	LvN_Str(&v, "AB");
+	byte ok = Mode_Fade(0, from, to, 1.0) && Native_GVarGet("MissionScorerName", &item) && Mode_ScorerSet(&id, &item, "ForceMap", &v) &&
+		Mode_MMDesc("Mission_FinalFight_MissionText1", 1) && Mode_EntSetS("DM_Door_GamblinDenChupito_00", "OnObjSlot", "!AutoDoorSlot") &&
+		Gd_MusicVolume(1.0);
+	Native_Free(&item);
+	Native_Free(&v);
+	return ok;
 }
 
 static const char *const plan2_scene[] = {
@@ -811,11 +1259,18 @@ static const char *const plan2_scene[] = {
 	NULL,
 };
 
-static PyObject *Before_LoadScene(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Calls(&f, BF, plan2_scene);
-	return Sf_None(&f);
+static byte Before_LoadSceneC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_Calls(BF, plan2_scene);
 }
+
+LV_FN(Before, InitStatus, 1, Before_InitStatusC)
+LV_FN(Before, Init, 1, Before_InitC)
+MODE_FN(Before, CrazyGamblerSpeech, 4, Gd_Talk(a, 1, "Mission_FinalFight_InitMsg1", "Mission_FinalFight_InitAns1"))
+MODE_FN(Before, MercenariesSpeech, 4, Gd_Talk(a, 1, "Mission_FinalFight_InitMsg2", "Mission_FinalFight_InitAns2"))
+GD_KW1(Before, SetNextMission, "usr", Before_SetNextMissionC())
+LV_FN(Before, LoadScene, 0, Before_LoadSceneC)
 
 PyMethodDef g_GamblinDenBeforeFinalFightMethods[] = {
 	{ "InitStatus", Before_InitStatus, 1, NULL },
@@ -829,26 +1284,26 @@ PyMethodDef g_GamblinDenBeforeFinalFightMethods[] = {
 
 /* ---- Mission_AfterFinalFight: the teleporter to the AB indoors ---- */
 
-static PyObject *After_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Gd_Den(&f, "0", "1", "1", "1", "1");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "PoliceBossAtPolice", "0");
-	if (Sf_EqS(&f, SAVE("ComeFrom"), "DoorTeleporter") > 0) {
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Spawn", "DM_Player_Spawn_Meeting_Room");
+static byte After_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	Gd_Den("0", "1", "1", "1", "1");
+	SaveVar_Set("PoliceBossAtPolice", "0");
+	if (LvN_SaveIs("ComeFrom", "DoorTeleporter")) {
+		SaveVar_Set("Spawn", "DM_Player_Spawn_Meeting_Room");
 	}
-	return Sf_None(&f);
+	return 1;
 }
 
-static PyObject *After_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_EntSetS(&f, "DM_Door_GamblinDenChupito_00", "OnObjSlot", "!AutoDoorSlot");
-	Sf_EntSetI(&f, "DM_Door_Teleporter_00", "Active", 1);
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "DM_Door_Teleporter_00");
-	Sf_Run(&f, "Elevator", "ConnectElevators", "([s][s])", "DM_Door_Teleporter_00", "ABIndoor");
-	return Sf_None(&f);
+static byte After_InitC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_EntSetS("DM_Door_GamblinDenChupito_00", "OnObjSlot", "!AutoDoorSlot") && Mode_EntSetI("DM_Door_Teleporter_00", "Active", 1) &&
+		Mode_Target("DM_Door_Teleporter_00") && Mode_Connect("DM_Door_Teleporter_00", "ABIndoor", 0);
 }
+
+LV_FN(After, InitStatus, 1, After_InitStatusC)
+LV_FN(After, Init, 1, After_InitC)
 
 PyMethodDef g_GamblinDenAfterFinalFightMethods[] = {
 	{ "InitStatus", After_InitStatus, 1, NULL },
@@ -858,74 +1313,81 @@ PyMethodDef g_GamblinDenAfterFinalFightMethods[] = {
 
 /* ---- Mission_ArrangeIgorCombat: the versus against the bishop Igor ---- */
 
-static PyObject *Igor_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "PoliceBossAtPolice", "0");
-	Gd_Den(&f, "1", "0", "1", "1", "0");
-	return Sf_None(&f);
+static byte Igor_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	SaveVar_Set("PoliceBossAtPolice", "0");
+	Gd_Den("1", "0", "1", "1", "0");
+	return 1;
 }
 
 /* Igor gets his name, the crazy gambler is the target (both branches of the script do the same) */
-static PyObject *Igor_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_SetGlobal(&f, AI, "igor", ENT("Bishop_Friendly35"));
-	Sf_SetAttr(&f, G(AI, "igor"), "Descriptor", LANG("CharName_Igor"));
-	if (Sf_True(&f, SAVE("DtritusBeatsIgor")) >= 0) {
-		Sf_Own(&f, AI, "TalkToCrazyGambler", "()");
-	}
-	return Sf_None(&f);
+static byte Igor_InitC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Gd_PutEnt(AI, "igor", "Bishop_Friendly35") && Gd_GDescriptor(AI, "igor", "CharName_Igor") &&
+		LV_OWN(AI, "TalkToCrazyGambler", NULL, "");
 }
 
-static PyObject *Igor_TalkToIgor(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_SetAttrS(&f, G(AI, "igor"), "UseFunc", "Mission_ArrangeIgorCombat.IgorSpeech");
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, G(AI, "igor"), "Name"));
-	return Sf_None(&f);
+static byte Igor_TalkToIgorC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_GSetS(AI, "igor", "UseFunc", "Mission_ArrangeIgorCombat.IgorSpeech") && Gd_GTarget(AI, "igor");
 }
 
-static PyObject *Igor_IgorSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	SF_ARGS("OOOO", &usr, &ch, &opt, &full);
-	Sf_SpeechNames(&f, usr, ch);
-	if (Sf_EqS(&f, opt, "Talk") > 0) {
-		if (Sf_EqI(&f, Sf_Attr(&f, G(AI, "igor"), "RadarShow"), 1) > 0) {
-			Sf_SpeechEnd(&f, G(AI, "TalkToCrazyGambler"), NULL);
-		}
-		Sf_NISpeech(&f, "Bishop", "Mission_TalkToIgor3_Igor_NI_1Msg");
+static byte Igor_IgorSpeechC(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t igor = { 0 }, r = { 0 };
+	(void)out;
+	if (!LvN_Speakers(&a[0], &a[1])) {
+		return 0;
 	}
-	return Sf_None(&f);
+	if (!LvN_EqS(&a[2], "Talk")) {
+		return 1;
+	}
+	Native_SetNone(&r);
+	byte ok = Mode_G(AI, "igor", &igor) && Mode_VObj(&igor, "RadarShow", &r) && (!LvN_EqI(&r, 1) || LvN_OnEnd(AI, "TalkToCrazyGambler", NULL)) &&
+		Mode_NISpeech("Bishop", "Mission_TalkToIgor3_Igor_NI_1Msg");
+	Native_Free(&igor);
+	Native_Free(&r);
+	return ok;
 }
 
 /* TalkToCrazyGambler(): the description, a way point, the crazy gambler's talk */
-static PyObject *Igor_TalkToCrazyGambler(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_ArrangeIgorCombat_MissionText1", 1);
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	PyObject *cg = ENT("CrazyGambler_Default");
-	Sf_SetAttrS(&f, cg, "UseFunc", "Mission_ArrangeIgorCombat.CrazyGamblerSpeech");
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, cg, "Name"));
-	return Sf_None(&f);
-}
-
-static PyObject *Igor_CrazyGamblerSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	return Gd_Arrange(args, AI, "Mission_ArrangeIgorCombat_CrazyGambler", "LaunchIgorCombat");
+static byte Igor_TalkToCrazyGamblerC(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t cg = { 0 }, n = { 0 };
+	(void)a;
+	(void)out;
+	if (!Mode_MMDesc("Mission_ArrangeIgorCombat_MissionText1", 1) || !Mode_WayPoint()) {
+		return 0;
+	}
+	Native_SetNone(&n);
+	byte ok = LvN_Entity("CrazyGambler_Default", &cg) && LvN_SetS(&cg, "UseFunc", "Mission_ArrangeIgorCombat.CrazyGamblerSpeech") &&
+		Mode_VObj(&cg, "Name", &n) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &n);
+	Native_Free(&cg);
+	Native_Free(&n);
+	return ok;
 }
 
 /* LaunchIgorCombat(): the places of the characters, the versus in the CA */
-static PyObject *Igor_LaunchIgorCombat(PyObject *self, PyObject *args) {
+static byte Igor_LaunchIgorCombatC(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const places[] = { "MayorAtTownHall", "1", "PoliceBossAtPolice", "1", "BankMasterAtBank", "1",
 		"Journalist.Humphrey_Defaut", "Temple", "Journalist.Betty_Defaut", "Temple", "Journalist.Berto_Defaut", "Press", NULL };
-	SF_ARGS("");
-	Sf_Import(&f, "SaveGame");
-	Sf_Import(&f, "MissionsFuncs");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_VersusAgainstIgor_MissionText1", 1);
-	Lv_Saves(&f, places);
-	Sf_Run(&f, "MissionsFuncs", "StartSuperDeal", "(sss)", "CA", "Mission_IgorCombat", "Versus");
-	return Sf_None(&f);
+	(void)a;
+	(void)out;
+	if (!Mode_Import("SaveGame") || !Mode_Import("MissionsFuncs") || !Mode_MMDesc("Mission_VersusAgainstIgor_MissionText1", 1)) {
+		return 0;
+	}
+	Mode_Saves(places);
+	return LV_CALL("MissionsFuncs", "StartSuperDeal", NULL, "sss", "CA", "Mission_IgorCombat", "Versus");
 }
+
+LV_FN(Igor, InitStatus, 1, Igor_InitStatusC)
+LV_FN(Igor, Init, 1, Igor_InitC)
+LV_FN(Igor, TalkToIgor, 0, Igor_TalkToIgorC)
+LV_FN(Igor, IgorSpeech, 4, Igor_IgorSpeechC)
+LV_FN(Igor, TalkToCrazyGambler, 0, Igor_TalkToCrazyGamblerC)
+MODE_FN(Igor, CrazyGamblerSpeech, 4, Gd_Arrange(a, AI, "Mission_ArrangeIgorCombat_CrazyGambler", "LaunchIgorCombat"))
+LV_FN(Igor, LaunchIgorCombat, 0, Igor_LaunchIgorCombatC)
 
 PyMethodDef g_GamblinDenArrangeIgorCombatMethods[] = {
 	{ "InitStatus", Igor_InitStatus, 1, NULL },
@@ -944,76 +1406,80 @@ static const char *const traitorius_vars[] = { "LLogicDefaultState=6", "LLogicDe
 	"LLogicProbTalkWhenWalking=1.0", "LLogicIdle=1", "LLogicIdle=0", NULL };
 
 /* Traitorius stands in the den with his name */
-static byte Gd_Traitorius(scriptFrame_t *f, PyObject *e, const char *module) {
-	Sf_SetAttrs(f, e, module, traitorius_vars);
-	return Sf_SetAttr(f, e, "Descriptor", Sf_Lang(f, Sf_Str(f, "CharName_Traitorius")));
+static byte Gd_Traitorius(const nativeVal_t *e) {
+	nativeVal_t s = { 0 };
+	if (!Mode_SetAttrs(e, traitorius_vars)) {
+		return 0;
+	}
+	Mode_Lang("CharName_Traitorius", &s);
+	byte ok = Mode_VSet(e, "Descriptor", &s);
+	Native_Free(&s);
+	return ok;
 }
 
-static PyObject *Ctf_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Gd_MissionChar(&f, "Functionary_Traitorius", G(BC, "CreateTraitoriusInit"));
-	Gd_Den(&f, "1", "0", "0", "1", "1");
-	return Sf_None(&f);
+static byte Ctf_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	if (!Gd_MissionCharG("Functionary_Traitorius", BC, "CreateTraitoriusInit")) {
+		return 0;
+	}
+	Gd_Den("1", "0", "0", "1", "1");
+	return 1;
 }
 
-static PyObject *Ctf_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_Import(&f, "Map");
-	Sf_SetGlobal(&f, BC, "cg", ENT("CrazyGambler_Default"));
-	Sf_SetGlobal(&f, BC, "traitorius", ENT("Functionary_Traitorius"));
-	Sf_SetAttrS(&f, G(BC, "traitorius"), "UseFunc", "Mission_ArrangeBankersCTF.TraitoriusSpeech");
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, G(BC, "traitorius"), "Name"));
-	Sf_Run(&f, "Map", "CharDance", "(s)", "Functionary_Traitorius");
-	return Sf_None(&f);
+static byte Ctf_InitC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_Import("Map") && Gd_PutEnt(BC, "cg", "CrazyGambler_Default") && Gd_PutEnt(BC, "traitorius", "Functionary_Traitorius") &&
+		Mode_GSetS(BC, "traitorius", "UseFunc", "Mission_ArrangeBankersCTF.TraitoriusSpeech") && Gd_GTarget(BC, "traitorius") &&
+		LV_CALL("Map", "CharDance", NULL, "s", "Functionary_Traitorius");
 }
 
-static PyObject *Ctf_CreateTraitoriusInit(PyObject *self, PyObject *args) {
-	PyObject *e;
-	SF_ARGS("O", &e);
-	Gd_Traitorius(&f, e, BC);
-	return Sf_None(&f);
+static byte Ctf_CreateTraitoriusInitC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Gd_Traitorius(&a[0]);
 }
 
 /* TraitoriusSpeech(UsrName, CharName, optId, FullOption): he talks only to a functionary; the first time the crazy
  * gambler is next */
-static PyObject *Ctf_TraitoriusSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	SF_ARGS("OOOO", &usr, &ch, &opt, &full);
-	Sf_SpeechNames(&f, usr, ch);
-	if (Sf_EqS(&f, opt, "Talk") > 0) {
-		int func = Sf_EqS(&f, Sf_Attr(&f, USR(), "ActCtrl"), "Functionary");
-		if (func > 0) {
-			if (Sf_EqI(&f, G(BC, "HasTalkedToTraitorius"), 0) > 0) {
-				Sf_SetGlobal(&f, BC, "HasTalkedToTraitorius", Sf_Int(&f, 1));
-				Sf_SpeechEnd(&f, G(BC, "TalkToCrazyGambler"), NULL);
-			}
-			Sf_Run(&f, "Speech", "OnSpch", "(ss)", "Mission_TalkToTraitorius3_Traitorius_InitMsg1", "Mission_TalkToTraitorius3_Traitorius_InitAns1");
-		} else if (func == 0) {
-			Sf_Run(&f, "Speech", "OnSpch", "(ss)", "Mission_TalkToTraitorius3_Traitorius_InitMsg2", "Mission_TalkToTraitorius3_Traitorius_InitAns2");
-		}
+static byte Ctf_TraitoriusSpeechC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	if (!LvN_Speakers(&a[0], &a[1])) {
+		return 0;
 	}
-	return Sf_None(&f);
+	if (!LvN_EqS(&a[2], "Talk")) {
+		return 1;
+	}
+	int func = Mode_UsrIs("Functionary");
+	if (func < 0) {
+		return 0;
+	}
+	if (!func) {
+		return Mode_Spch("Mission_TalkToTraitorius3_Traitorius_InitMsg2", "Mission_TalkToTraitorius3_Traitorius_InitAns2",
+			NULL);
+	}
+	int first = LvN_GEqI(BC, "HasTalkedToTraitorius", 0);
+	if (first < 0 || (first && (!LvN_PutI(BC, "HasTalkedToTraitorius", 1) || !LvN_OnEnd(BC, "TalkToCrazyGambler", NULL)))) {
+		return 0;
+	}
+	return Mode_Spch("Mission_TalkToTraitorius3_Traitorius_InitMsg1", "Mission_TalkToTraitorius3_Traitorius_InitAns1",
+		NULL);
 }
 
-static PyObject *Ctf_TalkToCrazyGambler(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_SetAttrS(&f, G(BC, "cg"), "UseFunc", "Mission_ArrangeBankersCTF.CrazyGamblerSpeech");
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, G(BC, "cg"), "Name"));
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_ArrangeTraitoriusCombat_MissionText1", 0);
-	return Sf_None(&f);
+static byte Ctf_TalkToCrazyGamblerC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_GSetS(BC, "cg", "UseFunc", "Mission_ArrangeBankersCTF.CrazyGamblerSpeech") && Gd_GTarget(BC, "cg") &&
+		Mode_MMDesc("Mission_ArrangeTraitoriusCombat_MissionText1", 0);
 }
 
-static PyObject *Ctf_CrazyGamblerSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	return Gd_Arrange(args, BC, "Mission_ArrangeTraitoriusCombat_CrazyGambler", "LaunchBankersCTF");
-}
-
-static PyObject *Ctf_LaunchBankersCTF(PyObject *self, PyObject *args) {
-	(void)self;
-	return Gd_Launch(args, "Mission_CTFAgainstBankers_MissionText1", "OM", "Mission_BankersCTF", "CTF");
-}
+LV_FN(Ctf, InitStatus, 1, Ctf_InitStatusC)
+LV_FN(Ctf, Init, 1, Ctf_InitC)
+LV_FN(Ctf, CreateTraitoriusInit, 1, Ctf_CreateTraitoriusInitC)
+LV_FN(Ctf, TraitoriusSpeech, 4, Ctf_TraitoriusSpeechC)
+LV_FN(Ctf, TalkToCrazyGambler, 0, Ctf_TalkToCrazyGamblerC)
+MODE_FN(Ctf, CrazyGamblerSpeech, 4, Gd_Arrange(a, BC, "Mission_ArrangeTraitoriusCombat_CrazyGambler", "LaunchBankersCTF"))
+MODE_FN(Ctf, LaunchBankersCTF, 0, Gd_Launch("Mission_CTFAgainstBankers_MissionText1", "OM", "Mission_BankersCTF", "CTF"))
 
 PyMethodDef g_GamblinDenArrangeBankersCTFMethods[] = {
 	{ "InitStatus", Ctf_InitStatus, 1, NULL },
@@ -1028,144 +1494,160 @@ PyMethodDef g_GamblinDenArrangeBankersCTFMethods[] = {
 
 /* ---- Mission_ArrangeBankersCombat: after the versus: Igor, DeepThroat, the police boss, the crazy gambler ---- */
 
-static PyObject *Bankers_InitStatus(PyObject *self, PyObject *args) {
+static byte Bankers_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const start[] = { "ComeFrom", "", "Char", "Dtritus", "Spawn", "DM_Player_Spawn_Outskirts", NULL };
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_Import(&f, "CharsNPC");
-	Sf_Import(&f, "Map");
-	if (Sf_EqS(&f, SAVE("Mission_ArrangeBankersCombat"), "Igor") > 0) {
-		Lv_Saves(&f, start);
+	nativeVal_t fn = { 0 };
+	(void)a;
+	(void)out;
+	if (!Mode_Import("CharsNPC") || !Mode_Import("Map")) {
+		return 0;
 	}
-	Gd_MissionChar(&f, "PoliceBoss_BankersCombat", Sf_Mod(&f, "Map", "CreateFixedInit"));
-	Gd_Den(&f, "1", "1", "1", "0", "0");
-	return Sf_None(&f);
+	if (LvN_SaveIs("Mission_ArrangeBankersCombat", "Igor")) {
+		Mode_Saves(start);
+	}
+	/* Map.CreateFixedInit: the attribute of Map (its AttributeError) */
+	byte ok = LvN_ModGet("Map", "CreateFixedInit", &fn) && Gd_MissionChar("PoliceBoss_BankersCombat", &fn);
+	Native_Free(&fn);
+	if (ok) {
+		Gd_Den("1", "1", "1", "0", "0");
+	}
+	return ok;
 }
 
 /* Init(LevelPath): the characters of the mission, the step of the save state */
-static PyObject *Bankers_Init(PyObject *self, PyObject *args) {
+static byte Bankers_InitC(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const steps[][2] = { { "Igor", "LaunchIgorDefeatedSpeech" }, { "Deep", "LaunchDeepThroatMessage" },
 		{ "Police", "TalkToPoliceBoss" }, { "Crazy", "TalkToCrazyGambler" } };
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_SetGlobal(&f, BK, "igor", ENT("Bishop_Friendly35"));
-	Sf_SetAttr(&f, G(BK, "igor"), "Descriptor", LANG("CharName_Igor"));
-	Sf_SetGlobal(&f, BK, "dd", ENT("DM_DTritusDesktop"));
-	Sf_SetGlobal(&f, BK, "cg", ENT("CrazyGambler_Default"));
-	Sf_SetGlobal(&f, BK, "policeBoss", ENT("PoliceBoss_BankersCombat"));
-	PyObject *val = SAVE("Mission_ArrangeBankersCombat");
-	for (int i = 0; i < 4 && !f.failed; i++) {
-		if (Sf_EqS(&f, val, steps[i][0]) > 0) {
-			Sf_Own(&f, BK, steps[i][1], "()");
-			break;
+	(void)a;
+	(void)out;
+	if (!Gd_PutEnt(BK, "igor", "Bishop_Friendly35") || !Gd_GDescriptor(BK, "igor", "CharName_Igor") || !Gd_PutEnt(BK, "dd", "DM_DTritusDesktop") ||
+		!Gd_PutEnt(BK, "cg", "CrazyGambler_Default") || !Gd_PutEnt(BK, "policeBoss", "PoliceBoss_BankersCombat")) {
+		return 0;
+	}
+	for (int i = 0; i < 4; i++) {
+		if (LvN_SaveIs("Mission_ArrangeBankersCombat", steps[i][0])) {
+			return LV_OWN(BK, steps[i][1], NULL, "");
 		}
 	}
-	return Sf_None(&f);
+	return 1;
 }
 
 /* LaunchIgorDefeatedSpeech(): beaten Igor in front of the player, his talk */
-static PyObject *Bankers_LaunchIgorDefeatedSpeech(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Mission_ArrangeBankersCombat", "Deep");
-	PyObject *usr = USR();
-	int go = Sf_True(&f, usr);
+static byte Bankers_LaunchIgorDefeatedSpeechC(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t usr = { 0 }, igor = { 0 };
+	(void)a;
+	(void)out;
+	SaveVar_Set("Mission_ArrangeBankersCombat", "Deep");
+	Native_SetNone(&usr);
+	Native_SetNone(&igor);
+	int go = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
 	if (go > 0) {
-		go = Sf_True(&f, G(BK, "igor"));
+		go = LvN_GTrue(BK, "igor");
 	}
-	if (go > 0) {
-		Gd_Face(&f, G(BK, "igor"), usr);
-		Sf_SpeechEnd(&f, G(BK, "LaunchDeepThroatMessage"), NULL);
-		Sf_SpeechNames(&f, Sf_Attr(&f, usr, "Name"), Sf_Attr(&f, G(BK, "igor"), "Name"));
-		Sf_NISpeech(&f, "Bishop", "Mission_VersusAgainstIgor_Igor_NI_1Msg");
-	}
-	return Sf_None(&f);
+	byte ok = go >= 0 && (!go || (Mode_G(BK, "igor", &igor) && Gd_Face(&igor, &usr) && LvN_OnEnd(BK, "LaunchDeepThroatMessage", NULL) &&
+		Gd_SpeakersOf(&usr, &igor) && Mode_NISpeech("Bishop", "Mission_VersusAgainstIgor_Igor_NI_1Msg")));
+	Native_Free(&usr);
+	Native_Free(&igor);
+	return ok;
 }
 
-static PyObject *Bankers_LaunchDeepThroatMessage(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *t = Sf_Op(&f, Sf_Time(&f), '+', Sf_Float(&f, 3.0));
-	PyObject *fn = Sf_Mod(&f, "Speech", "AddRemoteCom");
-	Sf_Schedule(&f, t, fn, Sf_Build(&f, "(ssO)", "Mission_VersusAgainstIgor_RemoteMessage4", "DeepThroat", G(BK, "TalkToDeepThroat")), NULL);
-	return Sf_None(&f);
+/* LaunchDeepThroatMessage(): Speech.AddRemoteCom in 3 s with TalkToDeepThroat after it */
+static byte Bankers_LaunchDeepThroatMessageC(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t t = { 0 }, args[3] = { 0 };
+	(void)a;
+	(void)out;
+	/* Scrap.GetTime() + 3.0, Speech.AddRemoteCom, (key, who, TalkToDeepThroat) in the order of the script */
+	Native_SetFloat(&t, Mode_Time() + 3.0);
+	PyObject *fn = Script_Attr("Speech", "AddRemoteCom");
+	if (!fn) {
+		return 0;
+	}
+	LvN_Str(&args[0], "Mission_VersusAgainstIgor_RemoteMessage4");
+	LvN_Str(&args[1], "DeepThroat");
+	byte ok = LvN_GObj(BK, "TalkToDeepThroat", &args[2]) && Mode_Schedule(&t, fn, args, 3, NULL);
+	Py_DECREF(fn);
+	for (int i = 0; i < 3; i++) {
+		Native_Free(&args[i]);
+	}
+	return ok;
 }
 
 /* TalkToDeepThroat(): Dtritus' desktop for the call */
-static PyObject *Bankers_TalkToDeepThroat(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "DTritusDesktop");
-	Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(BK, "dd"), 1);
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_CallDeepThroat2_MissionText1", 1);
-	Sf_SetMod(&f, "DTritusDesktop", "DialogController", G(BK, "DeepThroatSpeech"));
-	return Sf_None(&f);
+static byte Bankers_TalkToDeepThroatC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_Import("DTritusDesktop") && Gd_GActivate(BK, "dd", 1) && Mode_WayPoint() && Mode_MMDesc("Mission_CallDeepThroat2_MissionText1", 1) &&
+		Gd_Dialog(BK, "DeepThroatSpeech");
 }
 
-static PyObject *Bankers_DeepThroatSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	SF_ARGS("OOOO", &usr, &ch, &opt, &full);
-	Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(BK, "dd"), 0);
-	Sf_SpeechNames(&f, usr, ch);
-	Sf_SpeechEnd(&f, G(BK, "TalkToPoliceBoss"), NULL);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Mission_ArrangeBankersCombat", "Police");
-	Sf_NISpeech(&f, "DeepThroat", "Mission_CallDeepThroat2_ComDeepThroat_NI_1Msg");
-	return Sf_None(&f);
-}
-
-static PyObject *Bankers_TalkToPoliceBoss(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "DTritusDesktop");
-	Sf_SetMod(&f, "DTritusDesktop", "DialogController", Sf_Str(&f, ""));
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, G(BK, "policeBoss"), "Name"));
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_SpyPoliceBoss_MissionText1", 0);
-	Sf_SetAttrS(&f, G(BK, "policeBoss"), "UseFunc", "Mission_ArrangeBankersCombat.PoliceBossSpeech");
-	return Sf_None(&f);
-}
-
-static PyObject *Bankers_PoliceBossSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	SF_ARGS("OOOO", &usr, &ch, &opt, &full);
-	Sf_SpeechNames(&f, usr, ch);
-	int talk = Sf_EqS(&f, opt, "Talk");
-	if (talk > 0) {
-		Sf_SpeechEnd(&f, G(BK, "TalkToCrazyGambler"), NULL);
-		Sf_NISpeech(&f, "PoliceBoss", "Mission_SpyPoliceBoss_PoliceBoss_NI_1Msg");
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Mission_ArrangeBankersCombat", "Crazy");
-	} else if (talk == 0) {
-		Sf_Run(&f, "Speech", "StdOnSpch", "(O)", opt);
+static byte Bankers_DeepThroatSpeechC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	if (!Gd_GActivate(BK, "dd", 0) || !LvN_Speakers(&a[0], &a[1]) || !LvN_OnEnd(BK, "TalkToPoliceBoss", NULL)) {
+		return 0;
 	}
-	return Sf_None(&f);
+	SaveVar_Set("Mission_ArrangeBankersCombat", "Police");
+	return Mode_NISpeech("DeepThroat", "Mission_CallDeepThroat2_ComDeepThroat_NI_1Msg");
 }
 
-static PyObject *Bankers_PoliceBossSpeech2(PyObject *self, PyObject *args) {
-	(void)self;
-	return Gd_Talk(args, 1, "Mission_ArrangeBankersCombat_PoliceBoss_InitMsg1", "Mission_ArrangeBankersCombat_PoliceBoss_InitAns1");
+static byte Bankers_TalkToPoliceBossC(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t e = { 0 };
+	(void)a;
+	(void)out;
+	LvN_Str(&e, "");
+	byte ok = Mode_Import("DTritusDesktop") && Mode_SetModVar("DTritusDesktop", "DialogController", &e) && Gd_GTarget(BK, "policeBoss") &&
+		Mode_WayPoint() && Mode_MMDesc("Mission_SpyPoliceBoss_MissionText1", 0) &&
+		Mode_GSetS(BK, "policeBoss", "UseFunc", "Mission_ArrangeBankersCombat.PoliceBossSpeech");
+	Native_Free(&e);
+	return ok;
 }
 
-static PyObject *Bankers_TalkToCrazyGambler(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_SetAttrS(&f, G(BK, "policeBoss"), "UseFunc", "Mission_ArrangeBankersCombat.PoliceBossSpeech2");
-	Sf_SetAttrS(&f, G(BK, "cg"), "UseFunc", "Mission_ArrangeBankersCombat.CrazyGamblerSpeech");
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, G(BK, "cg"), "Name"));
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_ArrangeBankersCombat_MissionText1", 0);
-	return Sf_None(&f);
+static byte Bankers_PoliceBossSpeechC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	if (!LvN_Speakers(&a[0], &a[1])) {
+		return 0;
+	}
+	if (!LvN_EqS(&a[2], "Talk")) {
+		return LV_CALL("Speech", "StdOnSpch", NULL, "v", &a[2]);
+	}
+	if (!LvN_OnEnd(BK, "TalkToCrazyGambler", NULL) || !Mode_NISpeech("PoliceBoss", "Mission_SpyPoliceBoss_PoliceBoss_NI_1Msg")) {
+		return 0;
+	}
+	SaveVar_Set("Mission_ArrangeBankersCombat", "Crazy");
+	return 1;
 }
 
-static PyObject *Bankers_CrazyGamblerSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	return Gd_Arrange(args, BK, "Mission_ArrangeBankersCombat_CrazyGambler", "LaunchBankersCombat");
+static byte Bankers_TalkToCrazyGamblerC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_GSetS(BK, "policeBoss", "UseFunc", "Mission_ArrangeBankersCombat.PoliceBossSpeech2") &&
+		Mode_GSetS(BK, "cg", "UseFunc", "Mission_ArrangeBankersCombat.CrazyGamblerSpeech") && Gd_GTarget(BK, "cg") && Mode_WayPoint() &&
+		Mode_MMDesc("Mission_ArrangeBankersCombat_MissionText1", 0);
 }
 
-static PyObject *Bankers_LaunchBankersCombat(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "MissionsFuncs");
-	Sf_Import(&f, "SaveGame");
-	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "Mission_ArrangeBankersCombat");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_GetBankerShipPlans_MissionText1", 1);
-	Sf_Run(&f, "MissionsFuncs", "StartSuperDeal", "(sss)", "QF", "Mission_BankersCombat", "TeamDeathMatch");
-	return Sf_None(&f);
+static byte Bankers_LaunchBankersCombatC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	if (!Mode_Import("MissionsFuncs") || !Mode_Import("SaveGame")) {
+		return 0;
+	}
+	SaveVars_Delete("Mission_ArrangeBankersCombat");
+	return Mode_MMDesc("Mission_GetBankerShipPlans_MissionText1", 1) &&
+		LV_CALL("MissionsFuncs", "StartSuperDeal", NULL, "sss", "QF", "Mission_BankersCombat", "TeamDeathMatch");
 }
+
+LV_FN(Bankers, InitStatus, 1, Bankers_InitStatusC)
+LV_FN(Bankers, Init, 1, Bankers_InitC)
+LV_FN(Bankers, LaunchIgorDefeatedSpeech, 0, Bankers_LaunchIgorDefeatedSpeechC)
+LV_FN(Bankers, LaunchDeepThroatMessage, 0, Bankers_LaunchDeepThroatMessageC)
+LV_FN(Bankers, TalkToDeepThroat, 0, Bankers_TalkToDeepThroatC)
+LV_FN(Bankers, DeepThroatSpeech, 4, Bankers_DeepThroatSpeechC)
+LV_FN(Bankers, TalkToPoliceBoss, 0, Bankers_TalkToPoliceBossC)
+LV_FN(Bankers, PoliceBossSpeech, 4, Bankers_PoliceBossSpeechC)
+MODE_FN(Bankers, PoliceBossSpeech2, 4, Gd_Talk(a, 1, "Mission_ArrangeBankersCombat_PoliceBoss_InitMsg1",
+	"Mission_ArrangeBankersCombat_PoliceBoss_InitAns1"))
+LV_FN(Bankers, TalkToCrazyGambler, 0, Bankers_TalkToCrazyGamblerC)
+MODE_FN(Bankers, CrazyGamblerSpeech, 4, Gd_Arrange(a, BK, "Mission_ArrangeBankersCombat_CrazyGambler", "LaunchBankersCombat"))
+LV_FN(Bankers, LaunchBankersCombat, 0, Bankers_LaunchBankersCombatC)
 
 PyMethodDef g_GamblinDenArrangeBankersCombatMethods[] = {
 	{ "InitStatus", Bankers_InitStatus, 1, NULL },
@@ -1185,142 +1667,141 @@ PyMethodDef g_GamblinDenArrangeBankersCombatMethods[] = {
 
 /* ---- Mission_IgorFirstContact: the crazy gambler, Igor, then the three mercenaries ---- */
 
-static PyObject *First_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	return Sf_None(&f);
+static byte First_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return 1;
 }
 
-static PyObject *First_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	PyObject *state = SAVE("IgorFirstContactMissionState");
-	if (Sf_EqS(&f, state, "TalkToCrazyGambler") > 0) {
-		Sf_Own(&f, IF, "TalkToCrazyGambler", "()");
-	} else if (!f.failed && Sf_EqS(&f, state, "TalkToIgor") > 0) {
-		Sf_Own(&f, IF, "TalkToIgor", "()");
-	} else if (!f.failed) {
-		Sf_Own(&f, IF, "TalkToMercenaries", "()");
+static byte First_InitC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	if (LvN_SaveIs("IgorFirstContactMissionState", "TalkToCrazyGambler")) {
+		return LV_OWN(IF, "TalkToCrazyGambler", NULL, "");
 	}
-	return Sf_None(&f);
+	if (LvN_SaveIs("IgorFirstContactMissionState", "TalkToIgor")) {
+		return LV_OWN(IF, "TalkToIgor", NULL, "");
+	}
+	return LV_OWN(IF, "TalkToMercenaries", NULL, "");
 }
 
-static PyObject *First_TalkToCrazyGambler(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_SetGlobal(&f, IF, "cg", ENT("CrazyGambler_Default"));
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, G(IF, "cg"), "Name"));
-	Sf_SetItem(&f, Sf_Mod(&f, "Speech", "SpeechRoutines"), Sf_Str(&f, "CrazyGambler"), G(IF, "CrazyGamblerSpeech"));
-	return Sf_None(&f);
+static byte First_TalkToCrazyGamblerC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Gd_PutEnt(IF, "cg", "CrazyGambler_Default") && Gd_GTarget(IF, "cg") && Gd_RoutineG(IF, "CrazyGamblerSpeech");
 }
 
 /* CrazyGamblerSpeech(UsrName, CharName, optId, FullOption): his own talk again, Igor is next */
-static PyObject *First_CrazyGamblerSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	SF_ARGS("OOOO", &usr, &ch, &opt, &full);
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "CharsNPC");
-	Sf_Import(&f, "CrazyGambler");
-	if (Sf_EqS(&f, opt, "Talk") > 0) {
-		Sf_SetItem(&f, Sf_Mod(&f, "Speech", "SpeechRoutines"), Sf_Str(&f, "CrazyGambler"), Sf_Mod(&f, "CrazyGambler", "CrazyGamblerSpeech"));
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "IgorFirstContactMissionState", "TalkToIgor");
-		Sf_SpeechEnd(&f, G(IF, "TalkToIgor"), NULL);
-		Sf_NISpeech(&f, "CrazyGambler", "Mission_GetReputation_CrazyGambler_NI_1Msg");
+static byte First_CrazyGamblerSpeechC(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t fn = { 0 };
+	(void)out;
+	if (!Mode_Import("Menu") || !Mode_Import("CharsNPC") || !Mode_Import("CrazyGambler")) {
+		return 0;
 	}
-	return Sf_None(&f);
+	if (!LvN_EqS(&a[2], "Talk")) {
+		return 1;
+	}
+	byte ok = LvN_ModGet("CrazyGambler", "CrazyGamblerSpeech", &fn) && Gd_Routine(&fn);
+	Native_Free(&fn);
+	if (!ok) {
+		return 0;
+	}
+	SaveVar_Set("IgorFirstContactMissionState", "TalkToIgor");
+	return LvN_OnEnd(IF, "TalkToIgor", NULL) && Mode_NISpeech("CrazyGambler", "Mission_GetReputation_CrazyGambler_NI_1Msg");
 }
 
-static PyObject *First_TalkToIgor(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_TalkToIgor_MissionText1", 1);
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Sf_SetGlobal(&f, IF, "igor", ENT("Bishop_Friendly35"));
-	Sf_SetAttr(&f, G(IF, "igor"), "Descriptor", LANG("CharName_Igor"));
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, G(IF, "igor"), "Name"));
-	Sf_SetAttrS(&f, G(IF, "igor"), "UseFunc", "Mission_IgorFirstContact.IgorSpeech");
-	return Sf_None(&f);
+static byte First_TalkToIgorC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_MMDesc("Mission_TalkToIgor_MissionText1", 1) && Mode_WayPoint() && Gd_PutEnt(IF, "igor", "Bishop_Friendly35") &&
+		Gd_GDescriptor(IF, "igor", "CharName_Igor") && Gd_GTarget(IF, "igor") &&
+		Mode_GSetS(IF, "igor", "UseFunc", "Mission_IgorFirstContact.IgorSpeech");
 }
 
 /* IgorSpeech(UsrName, CharName, optId, FullOption): Igor talks to Dtritus only; his answer sends him to the
  * mercenaries */
-static PyObject *First_IgorSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	SF_ARGS("OOOO", &usr, &ch, &opt, &full);
-	Sf_SpeechNames(&f, usr, ch);
-	int talk = Sf_EqS(&f, opt, "Talk");
-	if (talk > 0) {
-		int dtritus = Sf_EqS(&f, Sf_Attr(&f, USR(), "ActCtrl"), "Dtritus");
-		if (dtritus > 0) {
-			int talked = Sf_True(&f, G(IF, "alreadyTalked"));
-			if (talked == 0) {
-				Sf_Run(&f, "Speech", "OnSpch", "(ss)", "Mission_TalkToIgor_Igor_InitMsg1", "Mission_TalkToIgor_Igor_InitAns1");
-				Sf_Run(&f, "Speech", "StdAnsLst", "([s])", "Mission_TalkToIgor_Igor_1");
-			} else if (talked > 0) {
-				Sf_Run(&f, "Speech", "OnSpch", "(ss)", "Mission_GetMercShipPlans_Igor_1Msg", "Mission_GetMercShipPlans_Igor_1Ans");
-			}
-		} else if (dtritus == 0) {
-			Sf_Run(&f, "Speech", "OnSpch", "(ss)", "Mission_TalkToIgor_Igor_InitMsg2", "Mission_TalkToIgor_Igor_InitAns2");
-		}
-	} else if (talk == 0) {
-		Sf_Run(&f, "Speech", "StdOnSpch", "(O)", opt);
-		if (Sf_EqS(&f, SAVE("IgorFirstContactMissionState"), "TalkToIgor") > 0) {
-			Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "IgorFirstContactMissionState", "TalkToMercenaries");
-			Sf_SpeechEnd(&f, G(IF, "TalkToMercenaries"), NULL);
-		}
+static byte First_IgorSpeechC(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const ans[] = { "Mission_TalkToIgor_Igor_1", NULL };
+	(void)out;
+	if (!LvN_Speakers(&a[0], &a[1])) {
+		return 0;
 	}
-	return Sf_None(&f);
+	if (LvN_EqS(&a[2], "Talk")) {
+		int dtritus = Mode_UsrIs("Dtritus");
+		if (dtritus < 0) {
+			return 0;
+		}
+		if (!dtritus) {
+			return Mode_Spch("Mission_TalkToIgor_Igor_InitMsg2", "Mission_TalkToIgor_Igor_InitAns2", NULL);
+		}
+		int talked = LvN_GTrue(IF, "alreadyTalked");
+		if (talked < 0) {
+			return 0;
+		}
+		if (!talked) {
+			return Mode_Spch("Mission_TalkToIgor_Igor_InitMsg1", "Mission_TalkToIgor_Igor_InitAns1", NULL) &&
+				Mode_AnsLst(ans, -1);
+		}
+		return Mode_Spch("Mission_GetMercShipPlans_Igor_1Msg", "Mission_GetMercShipPlans_Igor_1Ans", NULL);
+	}
+	if (!LV_CALL("Speech", "StdOnSpch", NULL, "v", &a[2])) {
+		return 0;
+	}
+	if (!LvN_SaveIs("IgorFirstContactMissionState", "TalkToIgor")) {
+		return 1;
+	}
+	SaveVar_Set("IgorFirstContactMissionState", "TalkToMercenaries");
+	return LvN_OnEnd(IF, "TalkToMercenaries", NULL);
 }
 
 /* TalkToMercenaries(): the three mercenaries as targets with their talks */
-static PyObject *First_TalkToMercenaries(PyObject *self, PyObject *args) {
+static byte First_TalkToMercenariesC(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const mercs[][3] = { { "mercA", "MercenaryA_Smartie", "Mission_IgorFirstContact.MercenaryASpeech" },
 		{ "mercB", "MercenaryB_Dumber", "Mission_IgorFirstContact.MercenaryBSpeech" },
 		{ "mercC", "MercenaryC_Brutus", "Mission_IgorFirstContact.MercenaryCSpeech" } };
-	SF_ARGS("");
-	Sf_SetGlobal(&f, IF, "alreadyTalked", Sf_Int(&f, 1));
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_GetMercShipPlans_MissionText1", 1);
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Run(&f, "MissionsFuncs", "SetMultipleMissionTargets", "([sss])", "MercenaryA_Smartie", "MercenaryB_Dumber", "MercenaryC_Brutus");
-	for (int i = 0; i < 3; i++) {
-		Sf_SetGlobal(&f, IF, mercs[i][0], ENT(mercs[i][1]));
+	static const char *const names[] = { "MercenaryA_Smartie", "MercenaryB_Dumber", "MercenaryC_Brutus", NULL };
+	nativeVal_t l = { 0 };
+	(void)a;
+	(void)out;
+	Mode_Texts(&l, names, -1);
+	byte ok = LvN_PutI(IF, "alreadyTalked", 1) && Mode_MMDesc("Mission_GetMercShipPlans_MissionText1", 1) && Mode_WayPoint() &&
+		LV_CALL("MissionsFuncs", "SetMultipleMissionTargets", NULL, "v", &l);
+	Native_Free(&l);
+	for (int i = 0; i < 3 && ok; i++) {
+		ok = Gd_PutEnt(IF, mercs[i][0], mercs[i][1]);
 	}
-	for (int i = 0; i < 3; i++) {
-		Sf_SetAttrS(&f, G(IF, mercs[i][0]), "UseFunc", mercs[i][2]);
+	for (int i = 0; i < 3 && ok; i++) {
+		ok = Mode_GSetS(IF, mercs[i][0], "UseFunc", mercs[i][2]);
 	}
-	return Sf_None(&f);
+	return ok;
 }
 
-static PyObject *First_MercenaryASpeech(PyObject *self, PyObject *args) {
-	static const gdMerc_t m = { "Mission_IgorFirstContact", "Mission_GetMercShipPlans_SmartMerc", "Mission_GetMercShipPlans_SmartMerc_InitMsg1",
-		"Mission_GetMercShipPlans_SmartMerc_InitAns1", NULL, NULL, 0 };
-	(void)self;
-	return Gd_Merc(args, IF, &m);
-}
-
-static PyObject *First_MercenaryCSpeech(PyObject *self, PyObject *args) {
-	static const gdMerc_t m = { "Mission_IgorFirstContact", "Mission_GetMercShipPlans_AverageMerc",
-		"Mission_GetMercShipPlans_AverageMerc_InitMsg1", "Mission_GetMercShipPlans_AverageMerc_InitAns1", NULL, NULL, 0 };
-	(void)self;
-	return Gd_Merc(args, IF, &m);
-}
-
-static PyObject *First_MercenaryBSpeech(PyObject *self, PyObject *args) {
-	static const gdMerc_t m = { "Mission_IgorFirstContact", "Mission_GetMercShipPlans_StupidMerc",
-		"Mission_FirstContactMercs_StupidMerc_InitMsg2", "Mission_FirstContactMercs_StupidMerc_InitAns2", "SetNextMission", NULL, 0 };
-	(void)self;
-	return Gd_Merc(args, IF, &m);
-}
+static const gdMerc_t first_mercA = { "Mission_IgorFirstContact", "Mission_GetMercShipPlans_SmartMerc",
+	"Mission_GetMercShipPlans_SmartMerc_InitMsg1", "Mission_GetMercShipPlans_SmartMerc_InitAns1", NULL, NULL, 0 };
+static const gdMerc_t first_mercC = { "Mission_IgorFirstContact", "Mission_GetMercShipPlans_AverageMerc",
+	"Mission_GetMercShipPlans_AverageMerc_InitMsg1", "Mission_GetMercShipPlans_AverageMerc_InitAns1", NULL, NULL, 0 };
+static const gdMerc_t first_mercB = { "Mission_IgorFirstContact", "Mission_GetMercShipPlans_StupidMerc",
+	"Mission_FirstContactMercs_StupidMerc_InitMsg2", "Mission_FirstContactMercs_StupidMerc_InitAns2", "SetNextMission", NULL, 0 };
 
 /* SetNextMission(): the mercenaries no longer targets, on to Mission_StupidMercAgain in the scrapyard */
-static PyObject *First_SetNextMission(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(IF, "mercA"), 0);
-	Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(IF, "mercB"), 0);
-	Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(IF, "mercC"), 0);
-	Sf_Run(&f, "MissionsFuncs", "SetNextMission", "(ss)", "Mission_StupidMercAgain", "Scrapyard");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_GetMercShipPlans_MissionText2", 1);
-	return Sf_None(&f);
+static byte First_SetNextMissionC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_WayPoint() && Gd_GActivate(IF, "mercA", 0) && Gd_GActivate(IF, "mercB", 0) && Gd_GActivate(IF, "mercC", 0) &&
+		LvN_Next("Mission_StupidMercAgain", "Scrapyard", "Mission_GetMercShipPlans_MissionText2");
 }
+
+LV_FN(First, InitStatus, 1, First_InitStatusC)
+LV_FN(First, Init, 1, First_InitC)
+LV_FN(First, TalkToCrazyGambler, 0, First_TalkToCrazyGamblerC)
+LV_FN(First, CrazyGamblerSpeech, 4, First_CrazyGamblerSpeechC)
+LV_FN(First, TalkToIgor, 0, First_TalkToIgorC)
+LV_FN(First, IgorSpeech, 4, First_IgorSpeechC)
+LV_FN(First, TalkToMercenaries, 0, First_TalkToMercenariesC)
+MODE_FN(First, MercenaryASpeech, 4, Gd_Merc(a, IF, &first_mercA))
+MODE_FN(First, MercenaryCSpeech, 4, Gd_Merc(a, IF, &first_mercC))
+MODE_FN(First, MercenaryBSpeech, 4, Gd_Merc(a, IF, &first_mercB))
+LV_FN(First, SetNextMission, 0, First_SetNextMissionC)
 
 PyMethodDef g_GamblinDenIgorFirstContactMethods[] = {
 	{ "InitStatus", First_InitStatus, 1, NULL },
@@ -1339,58 +1820,39 @@ PyMethodDef g_GamblinDenIgorFirstContactMethods[] = {
 
 /* ---- Mission_GoToGamblinDen: the scene of Bill's plan in the den ---- */
 
-static PyObject *Go_InitStatus(PyObject *self, PyObject *args) {
+static byte Go_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const start[] = { "Spawn", "DM_Player_Spawn_Meeting_Room", "ComeFrom", "", "Char", "Dtritus", NULL };
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Lv_Saves(&f, start);
-	Sf_Run(&f, "Chars", "AddNewCharRes", "(s)", "Human");
-	Sf_Method(&f, Sf_Mod(&f, "CharsNPC", "AfterBrowseNPC"), "append", "(O)", G(GG, "AfterBrowseNPC"));
-	return Sf_None(&f);
+	nativeVal_t fn = { 0 };
+	(void)a;
+	(void)out;
+	Mode_Saves(start);
+	if (!LV_CALL("Chars", "AddNewCharRes", NULL, "s", "Human")) {
+		return 0;
+	}
+	byte ok = LvN_GObj(GG, "AfterBrowseNPC", &fn) && LvN_ModAppend("CharsNPC", "AfterBrowseNPC", &fn);
+	Native_Free(&fn);
+	return ok;
 }
 
-static PyObject *Go_AfterBrowseNPC(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "CharsNPC");
-	Gd_Callback(&f, "MercenaryA_Smartie", G(GG, "CreateMercenaryInit"));
-	Gd_Callback(&f, "MercenaryB_Dumber", G(GG, "CreateMercenaryInit"));
-	Gd_Callback(&f, "MercenaryC_Brutus", G(GG, "CreateMercenaryInit"));
-	Sf_Run(&f, "CharsNPC", "CreateMissionChar", "(s)", "Human_Default");
-	return Sf_None(&f);
+static byte Go_AfterBrowseNPCC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_Import("CharsNPC") && Gd_CallbackG("MercenaryA_Smartie", GG, "CreateMercenaryInit") &&
+		Gd_CallbackG("MercenaryB_Dumber", GG, "CreateMercenaryInit") && Gd_CallbackG("MercenaryC_Brutus", GG, "CreateMercenaryInit") &&
+		LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", "Human_Default");
 }
 
-static PyObject *Go_CreateMercenaryInit(PyObject *self, PyObject *args) {
-	PyObject *e;
-	SF_ARGS("O", &e);
-	Sf_SetAttrS(&f, e, "UseFunc", "Mission_GoToGamblinDen.MercenarySpeech");
-	return Sf_None(&f);
+static byte Go_CreateMercenaryInitC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return LvN_SetS(&a[0], "UseFunc", "Mission_GoToGamblinDen.MercenarySpeech");
 }
 
-static PyObject *Go_MercenarySpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	return Gd_Talk(args, 1, "Mission_DestroyCommSats1_Merc_InitMsg1", "Mission_DestroyCommSats1_Merc_InitAns1");
-}
-
-static PyObject *Go_HumanSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	return Gd_Talk(args, 1, "Mission_DestroyCommSats1_Human_InitMsg1", "Mission_DestroyCommSats1_Human_InitAns1");
-}
-
-static PyObject *Go_CrazyGamblerSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	return Gd_Talk(args, 1, "Mission_DestroyCommSats1_CrazyGambler_InitMsg1", "Mission_DestroyCommSats1_CrazyGambler_InitAns1");
-}
-
-static PyObject *Go_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_Own(&f, GG, "LoadScene", "()");
-	Sf_EntSetS(&f, "CrazyGambler_Default", "UseFunc", "Mission_GoToGamblinDen.CrazyGamblerSpeech");
-	Sf_EntSetS(&f, "Human_Default", "UseFunc", "Mission_GoToGamblinDen.HumanSpeech");
-	Sf_Run(&f, "Scene", "Play", "(s)", "Plan");
-	Sf_SetMod(&f, "Scene", "EndOfSceneCallback", G(GG, "SetNextMission"));
-	Sf_Run(&f, "SSound", "SetMusicVolume", "(d)", 0.5);
-	return Sf_None(&f);
+static byte Go_InitC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return LV_OWN(GG, "LoadScene", NULL, "") && Mode_EntSetS("CrazyGambler_Default", "UseFunc", "Mission_GoToGamblinDen.CrazyGamblerSpeech") &&
+		Mode_EntSetS("Human_Default", "UseFunc", "Mission_GoToGamblinDen.HumanSpeech") && LV_CALL("Scene", "Play", NULL, "s", "Plan") &&
+		LvN_ModSetGlobal("Scene", "EndOfSceneCallback", GG, "SetNextMission") && Gd_MusicVolume(0.5);
 }
 
 static const char *const plan_scene[] = {
@@ -1575,31 +2037,32 @@ static const char *const plan_scene[] = {
 	NULL,
 };
 
-static PyObject *Go_LoadScene(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Calls(&f, GG, plan_scene);
-	return Sf_None(&f);
+static byte Go_LoadSceneC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_Calls(GG, plan_scene);
 }
 
 /* SetNextMission(usr=None): the mercenaries help Dtritus, on to Mission_DestroyCommSats1 */
-static PyObject *Go_SetNextMission(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "usr", NULL };
-	PyObject *usr = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &usr)) {
-		return NULL;
+static byte Go_SetNextMissionC(void) {
+	static const int from[] = { 0, 0, 0, 255 }, to[] = { 0, 0, 0, 0 };
+	if (!Mode_Import("MissionsFuncs") || !Mode_Import("SaveGame") || !Mode_Fade(0, from, to, 1.0)) {
+		return 0;
 	}
-	Sf_Import(&f, "MissionsFuncs");
-	Sf_Import(&f, "SaveGame");
-	Sf_Run(&f, "SScorer", "Fade", "(i(iiii)(iiii)d)", 0, 0, 0, 0, 255, 0, 0, 0, 0, 1.0);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "MercsHelpDtritus", "1");
-	Sf_Run(&f, "MissionsFuncs", "SetNextMission", "(ss)", "Mission_DestroyCommSats1", "Outskirts");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_DestroyCommSats1_MissionText1", 1);
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Run(&f, "SSound", "SetMusicVolume", "(d)", 1.0);
-	return Sf_None(&f);
+	SaveVar_Set("MercsHelpDtritus", "1");
+	return LvN_Next("Mission_DestroyCommSats1", "Outskirts", "Mission_DestroyCommSats1_MissionText1") && Mode_WayPoint() && Gd_MusicVolume(1.0);
 }
+
+LV_FN(Go, InitStatus, 1, Go_InitStatusC)
+LV_FN(Go, AfterBrowseNPC, 0, Go_AfterBrowseNPCC)
+LV_FN(Go, CreateMercenaryInit, 1, Go_CreateMercenaryInitC)
+MODE_FN(Go, MercenarySpeech, 4, Gd_Talk(a, 1, "Mission_DestroyCommSats1_Merc_InitMsg1", "Mission_DestroyCommSats1_Merc_InitAns1"))
+MODE_FN(Go, HumanSpeech, 4, Gd_Talk(a, 1, "Mission_DestroyCommSats1_Human_InitMsg1", "Mission_DestroyCommSats1_Human_InitAns1"))
+MODE_FN(Go, CrazyGamblerSpeech, 4, Gd_Talk(a, 1, "Mission_DestroyCommSats1_CrazyGambler_InitMsg1",
+	"Mission_DestroyCommSats1_CrazyGambler_InitAns1"))
+LV_FN(Go, Init, 1, Go_InitC)
+LV_FN(Go, LoadScene, 0, Go_LoadSceneC)
+GD_KW1(Go, SetNextMission, "usr", Go_SetNextMissionC())
 
 PyMethodDef g_GamblinDenGoToGamblinDenMethods[] = {
 	{ "InitStatus", Go_InitStatus, 1, NULL },
@@ -1616,65 +2079,65 @@ PyMethodDef g_GamblinDenGoToGamblinDenMethods[] = {
 
 /* ---- Mission_TalkToTraitoriusAfterCTF: Traitorius sends Dtritus to the meeting with Mr X ---- */
 
-static PyObject *Traitor_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Player.InfiniteLives", "1");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Char", "Functionary");
-	Gd_MissionChar(&f, "Functionary_Traitorius", G(TT, "CreateTraitoriusInit"));
-	return Sf_None(&f);
+static byte Traitor_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	SaveVar_Set("Player.InfiniteLives", "1");
+	SaveVar_Set("Char", "Functionary");
+	return Gd_MissionCharG("Functionary_Traitorius", TT, "CreateTraitoriusInit");
 }
 
-static PyObject *Traitor_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_EntSetS(&f, "DM_Door_Elevator_Scrapyard", "OnObjSlot", "!CloseDoorSlot");
-	Sf_Own(&f, TT, "LaunchTraitoriusSpeech", "()");
-	return Sf_None(&f);
+static byte Traitor_InitC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_EntSetS("DM_Door_Elevator_Scrapyard", "OnObjSlot", "!CloseDoorSlot") && LV_OWN(TT, "LaunchTraitoriusSpeech", NULL, "");
 }
 
-static PyObject *Traitor_CreateTraitoriusInit(PyObject *self, PyObject *args) {
-	PyObject *e;
-	SF_ARGS("O", &e);
-	Gd_Traitorius(&f, e, TT);
-	Sf_SetGlobal(&f, TT, "traitorius", e);
-	return Sf_None(&f);
+static byte Traitor_CreateTraitoriusInitC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Gd_Traitorius(&a[0]) && Mode_Put(TT, "traitorius", NULL, &a[0]);
 }
 
 /* LaunchTraitoriusSpeech(): the player in front of Traitorius, his talk */
-static PyObject *Traitor_LaunchTraitoriusSpeech(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *usr = USR();
-	int go = Sf_True(&f, usr);
+static byte Traitor_LaunchTraitoriusSpeechC(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t usr = { 0 }, tr = { 0 };
+	(void)a;
+	(void)out;
+	Native_SetNone(&usr);
+	Native_SetNone(&tr);
+	int go = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
 	if (go > 0) {
-		go = Sf_True(&f, G(TT, "traitorius"));
+		go = LvN_GTrue(TT, "traitorius");
 	}
-	if (go > 0) {
-		Gd_Face(&f, usr, G(TT, "traitorius"));
-		Sf_SpeechEnd(&f, G(TT, "SetNextMission"), NULL);
-		Sf_SpeechNames(&f, Sf_Attr(&f, usr, "Name"), Sf_Attr(&f, G(TT, "traitorius"), "Name"));
-		Sf_NISpeech(&f, "Functionary", "Mission_CTFAgainstBankers_Traitorius_NI_1Msg");
-	}
-	return Sf_None(&f);
-}
-
-static PyObject *Traitor_TraitoriusSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	return Gd_Talk(args, 1, "Mission_CTFAgainstBankers_Traitorius_InitMsg1", "Mission_CTFAgainstBankers_Traitorius_InitAns1");
+	byte ok = go >= 0 && (!go || (Mode_G(TT, "traitorius", &tr) && Gd_Face(&usr, &tr) && LvN_OnEnd(TT, "SetNextMission", NULL) &&
+		Gd_SpeakersOf(&usr, &tr) && Mode_NISpeech("Functionary", "Mission_CTFAgainstBankers_Traitorius_NI_1Msg")));
+	Native_Free(&usr);
+	Native_Free(&tr);
+	return ok;
 }
 
 /* SetNextMission(): on to Mission_IdentifyMerc in the outskirts, the lonely mercenary waits there */
-static PyObject *Traitor_SetNextMission(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "Init");
-	Sf_SetAttrS(&f, G(TT, "traitorius"), "UseFunc", "Mission_TalkToTraitoriusAfterCTF.TraitoriusSpeech");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "ComeFrom", "GamblinDen");
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Run(&f, "MissionsFuncs", "SetNextMission", "(ss)", "Mission_IdentifyMerc", "Outskirts");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_MeetingWithMrX_MissionText1", 1);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "LonelyMercDataActive", "1");
-	return Sf_None(&f);
+static byte Traitor_SetNextMissionC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	if (!Mode_Import("Init") || !Mode_GSetS(TT, "traitorius", "UseFunc", "Mission_TalkToTraitoriusAfterCTF.TraitoriusSpeech")) {
+		return 0;
+	}
+	SaveVar_Set("ComeFrom", "GamblinDen");
+	if (!Mode_WayPoint() || !LvN_Next("Mission_IdentifyMerc", "Outskirts", "Mission_MeetingWithMrX_MissionText1")) {
+		return 0;
+	}
+	SaveVar_Set("LonelyMercDataActive", "1");
+	return 1;
 }
+
+LV_FN(Traitor, InitStatus, 1, Traitor_InitStatusC)
+LV_FN(Traitor, Init, 1, Traitor_InitC)
+LV_FN(Traitor, CreateTraitoriusInit, 1, Traitor_CreateTraitoriusInitC)
+LV_FN(Traitor, LaunchTraitoriusSpeech, 0, Traitor_LaunchTraitoriusSpeechC)
+MODE_FN(Traitor, TraitoriusSpeech, 4, Gd_Talk(a, 1, "Mission_CTFAgainstBankers_Traitorius_InitMsg1",
+	"Mission_CTFAgainstBankers_Traitorius_InitAns1"))
+LV_FN(Traitor, SetNextMission, 0, Traitor_SetNextMissionC)
 
 PyMethodDef g_GamblinDenTalkToTraitoriusAfterCTFMethods[] = {
 	{ "InitStatus", Traitor_InitStatus, 1, NULL },
@@ -1688,64 +2151,68 @@ PyMethodDef g_GamblinDenTalkToTraitoriusAfterCTFMethods[] = {
 
 /* ---- Mission_BackFromMortalRace: the inferno plans, DeepThroat on the desktop ---- */
 
-static PyObject *Back_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Gd_Den(&f, NULL, "1", "0", "0", "1");
-	return Sf_None(&f);
+static byte Back_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	Gd_Den(NULL, "1", "0", "0", "1");
+	return 1;
 }
 
 /* Init(LevelPath): the crazy gambler gives the plans of the inferno, DeepThroat after the message */
-static PyObject *Back_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_Import(&f, "RaceMaker");
-	PyObject *l = Sf_Eval(&f, SAVE("Hangar.availableWeaponsList"), BM);
-	if (Sf_In(&f, Sf_Str(&f, "Inferno"), l) == 0) {
-		Sf_Run(&f, "RaceMaker", "ShowSystemMessage", "(O)", LANG("Mission_WinMortalRace_SystemMessage3"));
-		Sf_Method(&f, l, "append", "(s)", "Inferno");
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "Hangar.availableWeaponsList", Sf_Repr(&f, l));
-		Sf_Run(&f, "Scrap", "IncSaveVar", "(s)", "NewBluePrintAvaliable");
+static byte Back_InitC(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *l = Mode_V(&t), *msg = Mode_V(&t);
+	(void)a;
+	(void)out;
+	if (!Mode_Import("RaceMaker") || !LvN_SaveList("Hangar.availableWeaponsList", BM, l)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Later(&f, Sf_Float(&f, 0.1), G(BM, "TalkToDeepThroat"), NOARGS, NULL);
-	return Sf_None(&f);
+	int in = Native_Contains(l, Mode_S(&t, "Inferno"));
+	if (in < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (!in) {
+		Mode_Lang("Mission_WinMortalRace_SystemMessage3", msg);
+		if (!LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", msg) || !LvN_SaveAppend("Hangar.availableWeaponsList", l, Mode_S(&t, "Inferno"))) {
+			return Mode_Done(&t, 0);
+		}
+		SaveVar_Inc("NewBluePrintAvaliable", 1);
+	}
+	return Mode_Done(&t, Mode_Later(0.1, BM, "TalkToDeepThroat", NULL, 0, NULL));
 }
 
-static PyObject *Back_TalkToDeepThroat(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Run(&f, "Speech", "AddRemoteCom", "(ssO)", "Mission_WinMortalRace_RemoteMessage4", "DeepThroat", G(BM, "AfterDeepThroatMessageShown"));
-	return Sf_None(&f);
+static byte Back_TalkToDeepThroatC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return LvN_Com("Mission_WinMortalRace_RemoteMessage4", "DeepThroat", BM, "AfterDeepThroatMessageShown", NULL);
 }
 
-static PyObject *Back_AfterDeepThroatMessageShown(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "DTritusDesktop");
-	Sf_SetGlobal(&f, BM, "dd", ENT("DM_DTritusDesktop"));
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, G(BM, "dd"), "Name"));
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_TalkToDeepThroat10_MissionText1", 1);
-	Sf_SetMod(&f, "DTritusDesktop", "DialogController", G(BM, "DeepThroatSpeech"));
-	return Sf_None(&f);
+static byte Back_AfterDeepThroatMessageShownC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_Import("DTritusDesktop") && Gd_PutEnt(BM, "dd", "DM_DTritusDesktop") && Gd_GTarget(BM, "dd") &&
+		Mode_MMDesc("Mission_TalkToDeepThroat10_MissionText1", 1) && Gd_Dialog(BM, "DeepThroatSpeech");
 }
 
-static PyObject *Back_DeepThroatSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	SF_ARGS("OOOO", &usr, &ch, &opt, &full);
-	Sf_SpeechNames(&f, usr, ch);
-	Sf_SpeechEnd(&f, G(BM, "SetNextMission"), NULL);
-	Sf_NISpeech(&f, "DeepThroat", "Mission_TalkToDeepThroat10_ComDeepThroat_NI_1Msg");
-	return Sf_None(&f);
+static byte Back_DeepThroatSpeechC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return LvN_Speakers(&a[0], &a[1]) && LvN_OnEnd(BM, "SetNextMission", NULL) &&
+		Mode_NISpeech("DeepThroat", "Mission_TalkToDeepThroat10_ComDeepThroat_NI_1Msg");
 }
 
-static PyObject *Back_SetNextMission(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "DTritusDesktop");
-	Sf_SetMod(&f, "DTritusDesktop", "DialogController", Py_None);
-	Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(BM, "dd"), 0);
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Run(&f, "MissionsFuncs", "SetNextMission", "(ss)", "Mission_DestroyBadDebtors", "Outskirts");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_MeetBankMaster_MissionText1", 1);
-	return Sf_None(&f);
+static byte Back_SetNextMissionC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_Import("DTritusDesktop") && LvN_ModNone("DTritusDesktop", "DialogController") && Gd_GActivate(BM, "dd", 0) && Mode_WayPoint() &&
+		LvN_Next("Mission_DestroyBadDebtors", "Outskirts", "Mission_MeetBankMaster_MissionText1");
 }
+
+LV_FN(Back, InitStatus, 1, Back_InitStatusC)
+LV_FN(Back, Init, 1, Back_InitC)
+LV_FN(Back, TalkToDeepThroat, 0, Back_TalkToDeepThroatC)
+LV_FN(Back, AfterDeepThroatMessageShown, 0, Back_AfterDeepThroatMessageShownC)
+LV_FN(Back, DeepThroatSpeech, 4, Back_DeepThroatSpeechC)
+LV_FN(Back, SetNextMission, 0, Back_SetNextMissionC)
 
 PyMethodDef g_GamblinDenBackFromMortalRaceMethods[] = {
 	{ "InitStatus", Back_InitStatus, 1, NULL },
@@ -1759,107 +2226,79 @@ PyMethodDef g_GamblinDenBackFromMortalRaceMethods[] = {
 
 /* ---- Mission_CrazyGamblerFirstContact: the scene of the crazy gambler and his first talk ---- */
 
-static PyObject *Meet_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "ComeFrom", "");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Spawn", "DM_Player_Spawn_Meeting_Room");
-	return Sf_None(&f);
+static byte Meet_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	SaveVar_Set("ComeFrom", "");
+	SaveVar_Set("Spawn", "DM_Player_Spawn_Meeting_Room");
+	return 1;
 }
 
 /* Init(LevelPath): the elevator unused, the crazy gambler the target, the scene the first time */
-static PyObject *Meet_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_EntSetI(&f, "DM_Door_Elevator_Outskirts", "ArrowCanUse", 0);
-	Sf_SetGlobal(&f, CF, "cg", ENT("CrazyGambler_Default"));
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, G(CF, "cg"), "Name"));
-	Sf_SetItem(&f, Sf_Mod(&f, "Speech", "SpeechRoutines"), Sf_Str(&f, "CrazyGambler"), G(CF, "CrazyGamblerFirstSpeech"));
-	int scene = Sf_EqS(&f, SAVE("LaunchScene"), "1");
-	if (scene > 0) {
-		Sf_Own(&f, CF, "LoadScene", "()");
-		Sf_Run(&f, "Scene", "Play", "(s)", "MeetGambler");
-		Sf_SetMod(&f, "Scene", "EndOfSceneCallback", G(CF, "OnEndOfScene"));
-	} else if (scene == 0) {
-		Sf_Run(&f, "SSound", "SetMusic", "(sd)", "Music/GDloop1.ogg", 1.0);
+static byte Meet_InitC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	if (!Mode_EntSetI("DM_Door_Elevator_Outskirts", "ArrowCanUse", 0) || !Gd_PutEnt(CF, "cg", "CrazyGambler_Default") || !Gd_GTarget(CF, "cg") ||
+		!Gd_RoutineG(CF, "CrazyGamblerFirstSpeech")) {
+		return 0;
 	}
-	return Sf_None(&f);
+	if (LvN_SaveIs("LaunchScene", "1")) {
+		return LV_OWN(CF, "LoadScene", NULL, "") && LV_CALL("Scene", "Play", NULL, "s", "MeetGambler") &&
+			LvN_ModSetGlobal("Scene", "EndOfSceneCallback", CF, "OnEndOfScene");
+	}
+	return LvN_SetMusic("Music/GDloop1.ogg", 1.0);
 }
 
 /* in the demo: how to use, for secs */
-static void Cf_DemoHint(scriptFrame_t *f, const char *key, long secs) {
-	if (Sf_True(f, Sf_Mod(f, "Init", "isDemo")) > 0) {
-		int mark = f->n;
-		PyObject *fn = Sf_Mod(f, "SScorer", "SetMsgText");
-		PyObject *t = Sf_Lang(f, Sf_Str(f, key));
-		t = Sf_Op(f, t, '%', Sf_Ask(f, "SInput", "GetDefinedEntry", "(isss)", 0, "Walk", "Use", "Mouse"));
-		Sf_Call(f, fn, "(OO)", t, Sf_OpI(f, Sf_Time(f), '+', secs));
-		Sf_Release(f, mark);
+static byte Cf_DemoHint(const char *key, long secs) {
+	nativeVal_t demo = { 0 }, text = { 0 };
+	Native_SetNone(&text);
+	if (!LvN_ModGet("Init", "isDemo", &demo)) {
+		return 0;
 	}
+	byte ok = !Native_True(&demo) || (Mode_KeyText(key, "Use", &text) && Mode_MsgText(&text, Mode_Time() + (double)secs));
+	Native_Free(&demo);
+	Native_Free(&text);
+	return ok;
 }
 
-static PyObject *Meet_OnEndOfScene(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "usr", NULL };
-	PyObject *usr = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &usr)) {
-		return NULL;
+static byte Meet_OnEndOfSceneC(void) {
+	if (!Mode_Import("Init")) {
+		return 0;
 	}
-	Sf_Import(&f, "Init");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "LaunchScene", "0");
-	Sf_Run(&f, "SSound", "SetMusic", "(sd)", "Music/GDloop1.ogg", 1.0);
-	Cf_DemoHint(&f, "Mission_Decontamination_SystemMessage9", 10);
-	return Sf_None(&f);
+	SaveVar_Set("LaunchScene", "0");
+	return LvN_SetMusic("Music/GDloop1.ogg", 1.0) && Cf_DemoHint("Mission_Decontamination_SystemMessage9", 10);
 }
 
-static PyObject *Meet_CrazyGamblerFirstSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	SF_ARGS("OOOO", &usr, &ch, &opt, &full);
-	Sf_Import(&f, "Init");
-	if (Sf_EqS(&f, opt, "Talk") > 0) {
-		Sf_SpeechEnd(&f, G(CF, "EndOfTalk"), NULL);
-		Sf_NISpeech(&f, NULL, "Mission_FirstMeetCrazyGambler_CrazyGambler_NI_1Msg");
-		Cf_DemoHint(&f, "Mission_Decontamination_SystemMessage8", 7);
+static byte Meet_CrazyGamblerFirstSpeechC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	if (!Mode_Import("Init")) {
+		return 0;
 	}
-	return Sf_None(&f);
-}
-
-static PyObject *Meet_CrazyGamblerSecondSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	return Gd_Talk(args, 0, "Mission_DestroyPolice_CrazyGambler_InitMsg1", "Mission_DestroyPolice_CrazyGambler_InitAns1");
+	return !LvN_EqS(&a[2], "Talk") || (LvN_OnEnd(CF, "EndOfTalk", NULL) &&
+		Mode_NISpeech(NULL, "Mission_FirstMeetCrazyGambler_CrazyGambler_NI_1Msg") && Cf_DemoHint("Mission_Decontamination_SystemMessage8", 7));
 }
 
 /* EndOfTalk(char=None): his second talk from now on, the elevator back, the next mission */
-static PyObject *Meet_EndOfTalk(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "char", NULL };
-	PyObject *ch = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &ch)) {
-		return NULL;
-	}
-	Sf_Import(&f, "CrazyGambler");
-	Sf_SetItem(&f, Sf_Mod(&f, "Speech", "SpeechRoutines"), Sf_Str(&f, "CrazyGambler"), G(CF, "CrazyGamblerSecondSpeech"));
-	Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(CF, "cg"), 0);
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Sf_EntSetI(&f, "DM_Door_Elevator_Outskirts", "ArrowCanUse", 1);
-	Sf_Own(&f, CF, "SetNextMission", "()");
-	return Sf_None(&f);
+static byte Meet_EndOfTalkC(void) {
+	return Mode_Import("CrazyGambler") && Gd_RoutineG(CF, "CrazyGamblerSecondSpeech") && Gd_GActivate(CF, "cg", 0) && Mode_WayPoint() &&
+		Mode_EntSetI("DM_Door_Elevator_Outskirts", "ArrowCanUse", 1) && LV_OWN(CF, "SetNextMission", NULL, "");
 }
 
-static PyObject *Meet_SetNextMission(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "Init");
-	if (Sf_True(&f, Sf_Mod(&f, "Init", "isDemo")) == 0) {
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "PoliceBossAtPolice", "1");
+static byte Meet_SetNextMissionC(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t demo = { 0 };
+	(void)a;
+	(void)out;
+	if (!Mode_Import("Init") || !LvN_ModGet("Init", "isDemo", &demo)) {
+		return 0;
 	}
-	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "LaunchScene");
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "");
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Run(&f, "MissionsFuncs", "SetNextMission", "(ss)", "Mission_KillPolice", "Outskirts");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_DestroyPolice_MissionText1", 1);
-	return Sf_None(&f);
+	if (!Native_True(&demo)) {
+		SaveVar_Set("PoliceBossAtPolice", "1");
+	}
+	Native_Free(&demo);
+	SaveVars_Delete("LaunchScene");
+	return Mode_Target("") && Mode_WayPoint() &&
+		LvN_Next("Mission_KillPolice", "Outskirts", "Mission_DestroyPolice_MissionText1");
 }
 
 static const char *const meet_scene[] = {
@@ -1935,11 +2374,21 @@ static const char *const meet_scene[] = {
 	NULL,
 };
 
-static PyObject *Meet_LoadScene(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Calls(&f, CF, meet_scene);
-	return Sf_None(&f);
+static byte Meet_LoadSceneC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_Calls(CF, meet_scene);
 }
+
+LV_FN(Meet, InitStatus, 1, Meet_InitStatusC)
+LV_FN(Meet, Init, 1, Meet_InitC)
+GD_KW1(Meet, OnEndOfScene, "usr", Meet_OnEndOfSceneC())
+LV_FN(Meet, CrazyGamblerFirstSpeech, 4, Meet_CrazyGamblerFirstSpeechC)
+MODE_FN(Meet, CrazyGamblerSecondSpeech, 4, Gd_Talk(a, 0, "Mission_DestroyPolice_CrazyGambler_InitMsg1",
+	"Mission_DestroyPolice_CrazyGambler_InitAns1"))
+GD_KW1(Meet, EndOfTalk, "char", Meet_EndOfTalkC())
+LV_FN(Meet, SetNextMission, 0, Meet_SetNextMissionC)
+LV_FN(Meet, LoadScene, 0, Meet_LoadSceneC)
 
 PyMethodDef g_GamblinDenCrazyGamblerFirstContactMethods[] = {
 	{ "InitStatus", Meet_InitStatus, 1, NULL },
@@ -1955,31 +2404,24 @@ PyMethodDef g_GamblinDenCrazyGamblerFirstContactMethods[] = {
 
 /* ---- Mission_ArrangeMortalRace: the mortal race in the FZ ---- */
 
-static PyObject *Mortal_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Gd_Den(&f, NULL, "0", "0", "1", "1");
-	return Sf_None(&f);
+static byte Mortal_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	Gd_Den(NULL, "0", "0", "1", "1");
+	return 1;
 }
 
-static PyObject *Mortal_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_SetGlobal(&f, AM, "cg", ENT("CrazyGambler_Default"));
-	Sf_SetAttrS(&f, G(AM, "cg"), "UseFunc", "Mission_ArrangeMortalRace.CrazyGamblerSpeech");
-	Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(AM, "cg"), 1);
-	return Sf_None(&f);
+static byte Mortal_InitC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Gd_PutEnt(AM, "cg", "CrazyGambler_Default") && Mode_GSetS(AM, "cg", "UseFunc", "Mission_ArrangeMortalRace.CrazyGamblerSpeech") &&
+		Gd_GActivate(AM, "cg", 1);
 }
 
-static PyObject *Mortal_CrazyGamblerSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	return Gd_Arrange(args, AM, "Mission_ArrangeMortalRace_CrazyGambler", "LaunchMortalRace");
-}
-
-static PyObject *Mortal_LaunchMortalRace(PyObject *self, PyObject *args) {
-	(void)self;
-	return Gd_Launch(args, "Mission_WinMortalRace_MissionText1", "FZ", "Mission_MortalRace", "MortalRace");
-}
+LV_FN(Mortal, InitStatus, 1, Mortal_InitStatusC)
+LV_FN(Mortal, Init, 1, Mortal_InitC)
+MODE_FN(Mortal, CrazyGamblerSpeech, 4, Gd_Arrange(a, AM, "Mission_ArrangeMortalRace_CrazyGambler", "LaunchMortalRace"))
+MODE_FN(Mortal, LaunchMortalRace, 0, Gd_Launch("Mission_WinMortalRace_MissionText1", "FZ", "Mission_MortalRace", "MortalRace"))
 
 PyMethodDef g_GamblinDenArrangeMortalRaceMethods[] = {
 	{ "InitStatus", Mortal_InitStatus, 1, NULL },
@@ -1991,90 +2433,77 @@ PyMethodDef g_GamblinDenArrangeMortalRaceMethods[] = {
 
 /* ---- Mission_ThreeStooges: the first contact with the three mercenaries ---- */
 
-static PyObject *Stooges_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_Method(&f, Sf_Mod(&f, "CharsNPC", "AfterBrowseNPC"), "append", "(O)", G(TS, "AfterBrowseNPC"));
-	return Sf_None(&f);
+static byte Stooges_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t fn = { 0 };
+	(void)a;
+	(void)out;
+	byte ok = LvN_GObj(TS, "AfterBrowseNPC", &fn) && LvN_ModAppend("CharsNPC", "AfterBrowseNPC", &fn);
+	Native_Free(&fn);
+	return ok;
 }
 
-static PyObject *Stooges_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	SF_ARGS("O", &path);
-	Sf_Run(&f, "MissionsFuncs", "SetMultipleMissionTargets", "([sss])", "MercenaryA_Smartie", "MercenaryB_Dumber", "MercenaryC_Brutus");
-	return Sf_None(&f);
+static byte Stooges_InitC(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const names[] = { "MercenaryA_Smartie", "MercenaryB_Dumber", "MercenaryC_Brutus", NULL };
+	nativeVal_t l = { 0 };
+	(void)a;
+	(void)out;
+	Mode_Texts(&l, names, -1);
+	byte ok = LV_CALL("MissionsFuncs", "SetMultipleMissionTargets", NULL, "v", &l);
+	Native_Free(&l);
+	return ok;
 }
 
-static PyObject *Stooges_AfterBrowseNPC(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "CharsNPC");
-	Gd_Callback(&f, "MercenaryA_Smartie", G(TS, "CreateMercenaryAInit"));
-	Gd_Callback(&f, "MercenaryB_Dumber", G(TS, "CreateMercenaryBInit"));
-	Gd_Callback(&f, "MercenaryC_Brutus", G(TS, "CreateMercenaryCInit"));
-	return Sf_None(&f);
+static byte Stooges_AfterBrowseNPCC(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_Import("CharsNPC") && Gd_CallbackG("MercenaryA_Smartie", TS, "CreateMercenaryAInit") &&
+		Gd_CallbackG("MercenaryB_Dumber", TS, "CreateMercenaryBInit") && Gd_CallbackG("MercenaryC_Brutus", TS, "CreateMercenaryCInit");
 }
 
-static PyObject *Stooges_UseFunc(PyObject *args, const char *use) {
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
-	}
-	Sf_SetAttrS(&f, e, "UseFunc", use);
-	return Sf_None(&f);
-}
-
-static PyObject *Stooges_CreateMercenaryAInit(PyObject *self, PyObject *args) {
-	(void)self;
-	return Stooges_UseFunc(args, "Mission_ThreeStooges.MercenaryASpeech");
-}
-
-static PyObject *Stooges_CreateMercenaryBInit(PyObject *self, PyObject *args) {
-	(void)self;
-	return Stooges_UseFunc(args, "Mission_ThreeStooges.MercenaryBSpeech");
-}
-
-static PyObject *Stooges_CreateMercenaryCInit(PyObject *self, PyObject *args) {
-	(void)self;
-	return Stooges_UseFunc(args, "Mission_ThreeStooges.MercenaryCSpeech");
-}
-
-static PyObject *Stooges_MercenaryASpeech(PyObject *self, PyObject *args) {
-	static const gdMerc_t m = { "Mission_ThreeStooges", "Mission_FirstContactMercs_SmartMerc", "Mission_FirstContactMercs_SmartMerc_InitMsg1",
-		"Mission_FirstContactMercs_SmartMerc_InitAns1", NULL, NULL, 0 };
-	(void)self;
-	return Gd_Merc(args, TS, &m);
-}
-
-static PyObject *Stooges_MercenaryCSpeech(PyObject *self, PyObject *args) {
-	static const gdMerc_t m = { "Mission_ThreeStooges", "Mission_FirstContactMercs_AverageMerc",
-		"Mission_FirstContactMercs_AverageMerc_InitMsg1", "Mission_FirstContactMercs_AverageMerc_InitAns1", NULL, NULL, 0 };
-	(void)self;
-	return Gd_Merc(args, TS, &m);
-}
-
-static PyObject *Stooges_MercenaryBSpeech(PyObject *self, PyObject *args) {
-	static const gdMerc_t m = { "Mission_ThreeStooges", "Mission_FirstContactMercs_StupidMerc", "Mission_FirstContactMercs_StupidMerc_InitMsg2",
-		"Mission_FirstContactMercs_StupidMerc_InitAns2", "SetNextMission", "alreadyConvinced", 1 };
-	(void)self;
-	return Gd_Merc(args, TS, &m);
-}
+static const gdMerc_t stooges_mercA = { "Mission_ThreeStooges", "Mission_FirstContactMercs_SmartMerc",
+	"Mission_FirstContactMercs_SmartMerc_InitMsg1", "Mission_FirstContactMercs_SmartMerc_InitAns1", NULL, NULL, 0 };
+static const gdMerc_t stooges_mercC = { "Mission_ThreeStooges", "Mission_FirstContactMercs_AverageMerc",
+	"Mission_FirstContactMercs_AverageMerc_InitMsg1", "Mission_FirstContactMercs_AverageMerc_InitAns1", NULL, NULL, 0 };
+static const gdMerc_t stooges_mercB = { "Mission_ThreeStooges", "Mission_FirstContactMercs_StupidMerc",
+	"Mission_FirstContactMercs_StupidMerc_InitMsg2", "Mission_FirstContactMercs_StupidMerc_InitAns2", "SetNextMission", "alreadyConvinced", 1 };
 
 /* SetNextMission(CharName): convinced; the mercenaries no targets, the next mission of NextMissionData */
-static PyObject *Stooges_SetNextMission(PyObject *self, PyObject *args) {
-	PyObject *ch;
-	SF_ARGS("O", &ch);
-	Sf_Import(&f, "Speech");
-	Sf_SetGlobal(&f, TS, "alreadyConvinced", Sf_Int(&f, 1));
-	Sf_Run(&f, "Speech", "RestoreState", "(O)", ch);
-	Sf_Run(&f, "MissionsFuncs", "DelMissionTarget", "(s)", "MercenaryA_Smartie");
-	Sf_Run(&f, "MissionsFuncs", "DelMissionTarget", "(s)", "MercenaryB_Dumber");
-	Sf_Run(&f, "MissionsFuncs", "DelMissionTarget", "(s)", "MercenaryC_Brutus");
-	PyObject *fn = Sf_Mod(&f, "MissionsFuncs", "SetNextMission");
-	Sf_Run(&f, "__builtin__", "apply", "(OO)", fn, G(TS, "NextMissionData"));
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_FollowStupidMerc_MissionText1", 1);
-	return Sf_None(&f);
+static byte Stooges_SetNextMissionC(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const mercs[] = { "MercenaryA_Smartie", "MercenaryB_Dumber", "MercenaryC_Brutus" };
+	nativeVal_t fn = { 0 }, data = { 0 };
+	(void)out;
+	if (!Mode_Import("Speech") || !LvN_PutI(TS, "alreadyConvinced", 1) || !LV_CALL("Speech", "RestoreState", NULL, "v", &a[0])) {
+		return 0;
+	}
+	for (int i = 0; i < 3; i++) {
+		if (!LV_CALL("MissionsFuncs", "DelMissionTarget", NULL, "s", mercs[i])) {
+			return 0;
+		}
+	}
+	/* apply(MissionsFuncs.SetNextMission, NextMissionData) through __builtin__.apply (OBJLIB 3) */
+	Native_SetNone(&data);
+	byte ok = LvN_ModGet("MissionsFuncs", "SetNextMission", &fn) && Mode_G(TS, "NextMissionData", &data) &&
+		LV_CALL("__builtin__", "apply", NULL, "vv", &fn, &data);
+	Native_Free(&fn);
+	Native_Free(&data);
+	return ok && Mode_MMDesc("Mission_FollowStupidMerc_MissionText1", 1);
 }
+
+/* CreateMercenary?Init(e): the talk of the mercenary in this mission */
+static byte Stooges_UseFunc(const nativeVal_t *a, const char *use) {
+	return LvN_SetS(&a[0], "UseFunc", use);
+}
+
+LV_FN(Stooges, InitStatus, 1, Stooges_InitStatusC)
+LV_FN(Stooges, Init, 1, Stooges_InitC)
+LV_FN(Stooges, AfterBrowseNPC, 0, Stooges_AfterBrowseNPCC)
+MODE_FN(Stooges, CreateMercenaryAInit, 1, Stooges_UseFunc(a, "Mission_ThreeStooges.MercenaryASpeech"))
+MODE_FN(Stooges, CreateMercenaryBInit, 1, Stooges_UseFunc(a, "Mission_ThreeStooges.MercenaryBSpeech"))
+MODE_FN(Stooges, CreateMercenaryCInit, 1, Stooges_UseFunc(a, "Mission_ThreeStooges.MercenaryCSpeech"))
+MODE_FN(Stooges, MercenaryASpeech, 4, Gd_Merc(a, TS, &stooges_mercA))
+MODE_FN(Stooges, MercenaryCSpeech, 4, Gd_Merc(a, TS, &stooges_mercC))
+MODE_FN(Stooges, MercenaryBSpeech, 4, Gd_Merc(a, TS, &stooges_mercB))
+LV_FN(Stooges, SetNextMission, 1, Stooges_SetNextMissionC)
 
 PyMethodDef g_GamblinDenThreeStoogesMethods[] = {
 	{ "InitStatus", Stooges_InitStatus, 1, NULL },
