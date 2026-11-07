@@ -12,7 +12,7 @@
 #                         without the interpreter (SCRAP_NO_PYTHON: there is no Python to compare with)
 #        LITFUZZ_TIMEOUT  seconds for the whole run, default 1200
 root=$(cd "$(dirname "$0")/../.." && pwd)
-build=${SCRAP_BUILD:-$root/build-linux64}
+build=$(cd "${SCRAP_BUILD:-$root/build-linux64}" && pwd) || exit 1
 game=$build/litfuzz
 timeout=${LITFUZZ_TIMEOUT:-1200}
 count=${1:-3200}

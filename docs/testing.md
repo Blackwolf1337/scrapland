@@ -17,7 +17,9 @@ Runs 9961 checks in the main menu and compares the output with `tools/test/golde
 
 `src/game/Global/TestChannel.c` lets a test tool ask the game things without running Python in it. It is off unless the game starts with `-TestChannel` or `SCRAP_TEST_CHANNEL=1`. At the start of each frame (at most every 5 ms, also while the world clock stands) the game reads `test_cmd.txt` in the game folder. A new number on line 1 runs the commands below it, and the answers go to `test_reply.txt` through a temp file and a rename. It never sleeps or blocks, a missing or unchanged file does nothing. It does not answer during a level load.
 
-The commands are expressions and assignments, `do`, `check`, `print`, `con`, `get`, `ent`, `ents`, `dump`, `menu`, `click`, `recorder` and `py`. `py` still runs Python and goes with the interpreter at stage 7. The tool side is `tools/test/channel.py`, the scrap MCP server uses it (see `tools/mcp/README.md`).
+The commands are expressions and assignments, `do`, `check`, `print`, `con`, `get`, `ent`, `ents`, `dump`, `menu`, `click`, `recorder`, `native` and `py`. `py` still runs Python and goes with the interpreter at stage 7. The tool side is `tools/test/channel.py`, the scrap MCP server uses it (see `tools/mcp/README.md`).
+
+`native <literal>` answers the repr of what the native literal reader of the script ports (`src/game/Script/ScriptNative.c`) makes of the text, `native str <literal>` its str, `native check <literal>` the text the golden `check()` writes (floats with 17 digits). A text the reader does not take answers an error. `native py` puts two functions into `__main__` for Python run by the `py` command (used by `litfuzz.sh`, STAGE 7 like `py`). The command lives in `src/game/Global/TestNative.c`.
 
 The stored output was checked against the frozen i686 reference before it was stored. It equals the reference except where 64 bit differs on purpose: Python ints are 64 bits on Linux x86_64 (overflows, `%x` of negative numbers, literal sizes, string hashes), the text of NaN, and there is no SDTest module.
 
@@ -32,6 +34,16 @@ The levels run in parallel, `LEVELS_JOBS` at the same time (default 4). Worker n
 ## native.sh
 
 `tools/test/native.sh` runs the Linux build headless (`SCRAP_BUILD=build-linux64`, the default).
+
+## litfuzz.sh
+
+`tools/test/litfuzz.sh [texts per seed] [seeds]` (defaults 3200 and seeds 1 to 5) checks the native values of the script ports against the linked Python 1.5.2. The game runs in the main menu, hidden and muted, in the game folder `<build>/litfuzz` with the test channel. `tools/test/litfuzz.py` runs in the game through the `py` command of the channel. It needs a build with the interpreter.
+
+For each seed it makes random literal texts twice, once with the atoms of the nopy-4 fuzz of `Script_Literal` (the same corpus) and once with more atoms (dicts that grow and collide, keys of every hashable type, long ints, nesting at the limit of 32, long texts). For every text the native reader must take it exactly when `Script_Literal` takes it. A taken text must eval to the same value and type, and the native repr, str and `check()` texts must equal repr, str and the `fmt` of `tools/test/golden/sdlib.py` of that value. The repr of every taken value is checked again as a text.
+
+The repr cases (77 values of every type: None, ints at the limits, long ints, floats with negative zero, inf and nan, texts with every byte and both quotes, nested containers, dicts with collisions and with deleted keys) are copied into native values and back and must give the same value and the same texts.
+
+`SCRAP_BUILD=build-linux64-asan` runs it under ASan, and it then also fails on an AddressSanitizer report in `<build>/litfuzz.log`. `LITFUZZ_TIMEOUT` sets the time limit (default 1200 seconds). The exit code is 0 when there are no differences. A full run of 5 seeds takes about 15 minutes, under ASan about the same.
 
 ## Ported scripts
 
