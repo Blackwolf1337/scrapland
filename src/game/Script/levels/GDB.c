@@ -116,7 +116,7 @@ static int Gd_Scan(const nativeVal_t *e, const nativeVal_t *usr, byte far) {
 	Native_SetNone(&mm);
 	int r = -1;
 	if (Mode_VGet(e, "Pos", &ep) && Mode_VGet(usr, "Pos", &up) && Mode_VecSub(&ep, &up, &d) && Mode_VecModSqr(&d, &sq) &&
-		Mode_G(IG, "MAX_SCANNING_DIST", &m) && Mode_G(IG, "MAX_SCANNING_DIST", &m2) && LvN_Arith('*', &m, &m2, &mm)) {
+		Mode_G(IG, "MAX_SCANNING_DIST", &m) && Mode_G(IG, "MAX_SCANNING_DIST", &m2) && Mode_Arith('*', &m, &m2, &mm)) {
 		int c = Native_Compare(&sq, &mm);
 		r = far ? c > 0 : c < 0;
 	}

@@ -106,7 +106,7 @@ static byte Ab_LaterG(const char *module, const char *delay, double d, const cha
 	} else {
 		Native_SetFloat(dv, d);
 	}
-	PyObject *fn = LvN_Arith('+', now, dv, at) ? Mode_GlobalPy(module, func) : NULL;
+	PyObject *fn = Mode_Arith('+', now, dv, at) ? Mode_GlobalPy(module, func) : NULL;
 	byte ok = fn && Mode_Schedule(at, fn, args, n, NULL);
 	Py_XDECREF(fn);
 	return Mode_Done(&t, ok);
@@ -334,7 +334,7 @@ static byte Ff_SetFase(const nativeVal_t *a, nativeVal_t *out) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Lang(Native_Text(key), lang);
-	if (!LvN_Arith('+', lang, Mode_S(&t, ":"), text) || !LvN_ScorerSet(id, "BossText", "Text", text)) {
+	if (!Mode_Arith('+', lang, Mode_S(&t, ":"), text) || !LvN_ScorerSet(id, "BossText", "Text", text)) {
 		return Mode_Done(&t, 0);
 	}
 	int is = LvN_GEqI(FF, "FASE", 1), p = 0;
@@ -403,12 +403,12 @@ static byte Ff_OnPlayerDeath(const nativeVal_t *a, nativeVal_t *out) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(now, Mode_Time());
-	if (!Mode_G(FF, "time", start) || !LvN_Arith('-', now, start, d) || !LvN_Arith('+', hints, d, sum)) {
+	if (!Mode_G(FF, "time", start) || !Mode_Arith('-', now, start, d) || !Mode_Arith('+', hints, d, sum)) {
 		return Mode_Done(&t, 0);
 	}
 	LvN_SaveRepr("FinalBossHintsTime", sum);
 	Native_SetFloat(now, Mode_Time());
-	if (!Mode_EntityH(looser, e) || !Mode_G(FF, "respawnTime", rt) || !LvN_Arith('+', now, rt, at)) {
+	if (!Mode_EntityH(looser, e) || !Mode_G(FF, "respawnTime", rt) || !Mode_Arith('+', now, rt, at)) {
 		return Mode_Done(&t, 0);
 	}
 	PyObject *fn = Mode_GlobalPy(FF, "RespawnPlayer");
@@ -441,7 +441,7 @@ static byte Ff_RespawnPlayer(const nativeVal_t *a, nativeVal_t *out) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetInt(five, 5);
-	if (!LvN_Arith('%', count, five, m)) {
+	if (!Mode_Arith('%', count, five, m)) {
 		return Mode_Done(&t, 0);
 	}
 	if (LvN_EqI(m, 4)) {
@@ -465,8 +465,8 @@ static byte Ff_RespawnPlayer(const nativeVal_t *a, nativeVal_t *out) {
 static byte Ff_Taunt(long base, long mul, long mod) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *n = Mode_V(&t), *m = Mode_V(&t), *p = Mode_V(&t), *k = Mode_V(&t), *rep = Mode_V(&t), *key = Mode_V(&t);
-	byte ok = Mode_G(FF, "numTaunt", n) && LvN_Arith('%', n, Mode_I(&t, mod), m) &&
-		(mul == 1 || LvN_Arith('*', Mode_I(&t, mul), m, p)) && LvN_Arith('+', Mode_I(&t, base), mul == 1 ? m : p, k);
+	byte ok = Mode_G(FF, "numTaunt", n) && Mode_Arith('%', n, Mode_I(&t, mod), m) &&
+		(mul == 1 || Mode_Arith('*', Mode_I(&t, mul), m, p)) && Mode_Arith('+', Mode_I(&t, base), mul == 1 ? m : p, k);
 	if (ok) {
 		Mode_Repr(k, rep);
 		ok = Mode_Cat(&t, key, 2, Mode_S(&t, "Mission_FinalFight_RemoteMessage"), rep) &&
@@ -780,7 +780,7 @@ static byte AbMap_CreateAsteroid(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t *r = Mode_V(&t), *ang = Mode_V(&t), *now = Mode_V(&t), *at = Mode_V(&t);
 	int len;
 	if (!LV_CALL("Traffic", "SetPath", NULL, "") || !LvN_CreateAt(&a[0], &a[1], "Car", out) || !Mode_G(MAP, "asttype", types) ||
-		!Mode_G(MAP, "idctr", id) || (len = Native_Size(types)) < 0 || !LvN_Arith('%', id, Mode_I(&t, len), k) ||
+		!Mode_G(MAP, "idctr", id) || (len = Native_Size(types)) < 0 || !Mode_Arith('%', id, Mode_I(&t, len), k) ||
 		!Native_Subscript(types, k, type) || !Mode_VGet(out, "Name", name) ||
 		!LV_CALL("Vehicles", "SetStdProperties", NULL, "vvs", name, type, "")) {
 		return Mode_Done(&t, 0);
@@ -802,7 +802,7 @@ static byte AbMap_CreateAsteroid(const nativeVal_t *a, nativeVal_t *out) {
 		Native_SetFloat(now, Mode_Time());
 		nativeVal_t half;
 		Native_SetFloat(&half, 0.5);
-		ok = Mode_Rand(&half, Mode_I(&t, 2), r) && LvN_Arith('+', now, r, at);
+		ok = Mode_Rand(&half, Mode_I(&t, 2), r) && Mode_Arith('+', now, r, at);
 		PyObject *fn = ok ? Mode_GlobalPy(MAP, "detraffic") : NULL;
 		/* p.Name read again where the script reads it */
 		Native_Free(name);
@@ -843,7 +843,7 @@ static byte AbMap_OnDeath(const nativeVal_t *a, nativeVal_t *out) {
 	byte ok;
 	if (!Native_Compare(now, last)) {
 		ok = Ab_LaterG(MAP, "ctrTimer", 0, "RealOnDeath", a, 2) && Mode_G(MAP, "ctrTimer", timer) &&
-			LvN_Arith('+', timer, &step, sum) && Mode_Put(MAP, "ctrTimer", NULL, sum);
+			Mode_Arith('+', timer, &step, sum) && Mode_Put(MAP, "ctrTimer", NULL, sum);
 	} else {
 		ok = Mode_Put(MAP, "LastTime", NULL, now) && LV_OWN(MAP, "RealOnDeath", NULL, "vv", &a[0], &a[1]) &&
 			Mode_Put(MAP, "ctrTimer", NULL, &step);

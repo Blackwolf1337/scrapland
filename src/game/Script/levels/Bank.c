@@ -86,7 +86,7 @@ static byte Ba_Cat(const char *prefix, const nativeVal_t *v, nativeVal_t *out) {
 	nativeVal_t p = { 0 };
 	LvN_Str(&p, prefix);
 	Native_SetNone(out);
-	byte ok = LvN_Arith('+', &p, v, out);
+	byte ok = Mode_Arith('+', &p, v, out);
 	Native_Free(&p);
 	return ok;
 }
@@ -226,7 +226,7 @@ static byte Mt_AddMoney(const nativeVal_t *add) {
 	nativeVal_t m = { 0 }, r = { 0 };
 	Native_SetInt(&m, Mode_GetMoney());
 	Native_SetNone(&r);
-	byte ok = LvN_Arith('+', &m, add, &r) && Mode_SetMoney(&r);
+	byte ok = Mode_Arith('+', &m, add, &r) && Mode_SetMoney(&r);
 	Native_Free(&r);
 	return ok;
 }
@@ -288,7 +288,7 @@ static byte Mt_SchedG(const nativeVal_t *time, long delay, const char *func, con
 	Native_SetInt(&d, delay);
 	Native_SetNone(&at);
 	LvN_Str(&name, "DeleteShent");
-	byte ok = LvN_Arith('+', time, &d, &at) && Mode_Schedule(&at, fn, arg, arg ? 1 : 0, &name);
+	byte ok = Mode_Arith('+', time, &d, &at) && Mode_Schedule(&at, fn, arg, arg ? 1 : 0, &name);
 	Native_Free(&at);
 	Native_Free(&name);
 	Py_DECREF(fn);
@@ -343,10 +343,10 @@ static byte MapTreasure_InitDeal(const nativeVal_t *item) {
 		/* l.rTime = 0.1 * counter + 0.1 */
 		Native_Free(&ctr);
 		Native_SetFloat(&f, 0.1);
-		ok = ok && Mode_G(MT, "counter", &ctr) && LvN_Arith('*', &f, &ctr, &t);
+		ok = ok && Mode_G(MT, "counter", &ctr) && Mode_Arith('*', &f, &ctr, &t);
 		Native_Free(&ctr);
 		if (ok) {
-			ok = LvN_Arith('+', &t, &f, &ctr) && Mode_VSet(&l, "rTime", &ctr) &&
+			ok = Mode_Arith('+', &t, &f, &ctr) && Mode_VSet(&l, "rTime", &ctr) &&
 				LvN_SetS(&l, "OnTake", "MapTreasure.TakeMiniDeal") && Mode_Append(MT, "shent", &l) &&
 				LvN_GAdd(MT, "counter", 1, NULL);
 		}
@@ -391,7 +391,7 @@ static byte Mt_Prize(const nativeVal_t *time) {
 	if (ok) {
 		PyObject *del = Mode_VBound(&l, "Del");
 		LvN_Int(&d, 60);
-		ok = del && LvN_Arith('+', time, &d, &at);
+		ok = del && Mode_Arith('+', time, &d, &at);
 		if (ok) {
 			nativeVal_t nm = { 0 };
 			LvN_Str(&nm, "DeleteShent");
@@ -427,16 +427,16 @@ static byte Mt_Ticks(const nativeVal_t *time) {
 	Native_SetFloat(&step, 0.05);
 	Native_SetInt(&zero, 0);
 	PyObject *fn = Mode_GlobalPy(MT, "DeleteShent");
-	byte ok = fn && Mt_Chain(0, &t0) && LvN_Arith('+', time, &t0, &at) && Mt_Sched(&at, fn, LvN_NoArgs());
+	byte ok = fn && Mt_Chain(0, &t0) && Mode_Arith('+', time, &t0, &at) && Mt_Sched(&at, fn, LvN_NoArgs());
 	Py_XDECREF(fn);
 	Native_Free(&t0);
 	Native_Free(&at);
-	ok = ok && LvN_ModGet("MapSnd", "TickInit", &deltimy) && Mt_Chain(0, &t0) && LvN_Arith('-', &t0, &deltimy, &timy) &&
-		LvN_ModGet("MapSnd", "BadCoin", &bad) && LvN_Arith('+', time, &timy, &x) && LvN_ModGet("MapSnd", "TickAcc", &acc) &&
-		LvN_Arith('+', &x, &acc, &at) && (play = Script_Attr("SSound", "Play")) != NULL && Mt_Sched(&at, play, &bad);
+	ok = ok && LvN_ModGet("MapSnd", "TickInit", &deltimy) && Mt_Chain(0, &t0) && Mode_Arith('-', &t0, &deltimy, &timy) &&
+		LvN_ModGet("MapSnd", "BadCoin", &bad) && Mode_Arith('+', time, &timy, &x) && LvN_ModGet("MapSnd", "TickAcc", &acc) &&
+		Mode_Arith('+', &x, &acc, &at) && (play = Script_Attr("SSound", "Play")) != NULL && Mt_Sched(&at, play, &bad);
 	for (int boly = 0; ok;) {
 		Native_Free(&x);
-		ok = LvN_Arith('-', &timy, &deltimy, &x);
+		ok = Mode_Arith('-', &timy, &deltimy, &x);
 		if (!ok || Native_Compare(&x, &zero) <= 0) {
 			break;
 		}
@@ -444,11 +444,11 @@ static byte Mt_Ticks(const nativeVal_t *time) {
 		Native_SetNone(&d2);
 		Native_SetNone(&t2);
 		Native_SetNone(&tt);
-		ok = LvN_Arith('+', &deltimy, &step, &d2);
+		ok = Mode_Arith('+', &deltimy, &step, &d2);
 		if (ok) {
 			Native_Free(&deltimy);
 			deltimy = d2;
-			ok = LvN_Arith('-', &timy, &deltimy, &t2);
+			ok = Mode_Arith('-', &timy, &deltimy, &t2);
 		}
 		if (ok) {
 			Native_Free(&timy);
@@ -460,7 +460,7 @@ static byte Mt_Ticks(const nativeVal_t *time) {
 		Native_SetNone(&at);
 		Py_XDECREF(play);
 		play = NULL;
-		ok = ok && LvN_Arith('+', time, &timy, &at) && (play = Script_Attr("SSound", "Play")) != NULL && Mt_Sched(&at, play, &tt);
+		ok = ok && Mode_Arith('+', time, &timy, &at) && (play = Script_Attr("SSound", "Play")) != NULL && Mt_Sched(&at, play, &tt);
 		Native_Free(&tt);
 	}
 	Py_XDECREF(play);
@@ -548,7 +548,7 @@ static byte MapTreasure_BigPrize(const nativeVal_t *item) {
 	if (ok) {
 		Mode_SaveVar(Native_Text(&varname), &sv);
 		Native_Free(&rep);
-		ok = Native_ToInt(&sv, &rep) && LvN_Arith('+', &rep, &one, &ac);
+		ok = Native_ToInt(&sv, &rep) && Mode_Arith('+', &rep, &one, &ac);
 	}
 	/* n = len(Circuit[idx]) */
 	Native_Free(&idx);
@@ -651,7 +651,7 @@ static byte MapTreasure_RestartShents(void) {
 			ok = Mode_G(MT, "Coins", &coins) && LvN_Item(&coins, i, &c) && LvN_Item(&c, 2, &pos) && Mode_VSet(&l, "Pos", &pos) &&
 				Mode_VSet(&l, "rTime", &ctr);
 		}
-		ok = ok && LvN_Arith('+', &ctr, &step, &next);
+		ok = ok && Mode_Arith('+', &ctr, &step, &next);
 		if (ok) {
 			Native_Free(&ctr);
 			ctr = next;
@@ -907,13 +907,13 @@ static byte Gd_StopValue(nativeVal_t *out) {
 	}
 	Native_SetFloat(&one, 1.0);
 	byte ok = Mode_G(GD, "speedFactor", &sf) && Mode_G(GD, "maxDataDownloaded", &max) && Mode_G(GD, "dataDownloaded", &dd) &&
-		LvN_Arith('*', &max, &dd, &p);
+		Mode_Arith('*', &max, &dd, &p);
 	Native_Free(&max);
-	ok = ok && Mode_G(GD, "maxDataDownloaded", &max) && Native_ToFloat(&max, &mf) && LvN_Arith('/', &one, &mf, &inv) &&
-		LvN_Arith('*', &p, &inv, &q);
+	ok = ok && Mode_G(GD, "maxDataDownloaded", &max) && Native_ToFloat(&max, &mf) && Mode_Arith('/', &one, &mf, &inv) &&
+		Mode_Arith('*', &p, &inv, &q);
 	Native_Free(&max);
 	Native_Free(&p);
-	ok = ok && Mode_G(GD, "maxDataDownloaded", &max) && LvN_Arith('-', &max, &q, &r) && LvN_Arith('*', &sf, &r, out);
+	ok = ok && Mode_G(GD, "maxDataDownloaded", &max) && Mode_Arith('-', &max, &q, &r) && Mode_Arith('*', &sf, &r, out);
 	for (unsigned i = 0; i < sizeof(vals) / sizeof(*vals); i++) {
 		Native_Free((nativeVal_t *)vals[i]);
 	}
@@ -1024,7 +1024,7 @@ static byte GetDataPart2_SetDesktopState(const nativeVal_t *name, const nativeVa
 	byte ok;
 	if (e.type == NV_NONE) {
 		LvN_Str(&v, " Not found!");
-		ok = LvN_Arith('+', name, &v, &t) && Mode_ConsoleError(&t);
+		ok = Mode_Arith('+', name, &v, &t) && Mode_ConsoleError(&t);
 	} else if (Native_True(active)) {
 		ok = LvN_SetI(&e, "VRadius", 60) && LvN_SetI(&e, "UseMapCheck", 0) && Native_GVarGet("ArrowMissionFile", &v) &&
 			Mode_VSet(&e, "ArrowModMission", &v) && LvN_SetI(&e, "ArrowCanMission", 1) && LvN_SetI(&e, "ArrowCanUse", 1) &&
@@ -1291,7 +1291,7 @@ static byte GetDataPart2_OnFuncStartsWorking(const nativeVal_t *name) {
 	ok = ok && LvN_GetAction("SitDown", &r) && LvN_GetAct("AnmTotalTime", &time);
 	if (ok) {
 		Native_SetFloat(&now, Mode_Time());
-		ok = LvN_Arith('+', &now, &time, &x) && LvN_Arith('+', &x, &one, &at);
+		ok = Mode_Arith('+', &now, &time, &x) && Mode_Arith('+', &x, &one, &at);
 	}
 	if (ok) {
 		PyObject *fn = Mode_GlobalPy(GD, "OnDownloadAborted");
@@ -1360,11 +1360,11 @@ static byte Gd_Place(const nativeVal_t *id, const char *item, const nativeVal_t 
 	Native_SetInt(&vis, 1);
 	Native_SetNone(&p);
 	Native_SetNone(&q);
-	byte ok = LvN_Arith('*', w, &f, &p) && LvN_Arith('+', x, &p, &q) && LvN_ScorerSet(id, item, "X", &q) &&
+	byte ok = Mode_Arith('*', w, &f, &p) && Mode_Arith('+', x, &p, &q) && LvN_ScorerSet(id, item, "X", &q) &&
 		LvN_ScorerSet(id, item, "Y", y);
 	Native_Free(&p);
 	Native_Free(&q);
-	ok = ok && LvN_Arith('/', &one, &two, &p) && LvN_ScorerSet(id, item, "ScaleX", &p) && LvN_Arith('/', h, &four, &q) &&
+	ok = ok && Mode_Arith('/', &one, &two, &p) && LvN_ScorerSet(id, item, "ScaleX", &p) && Mode_Arith('/', h, &four, &q) &&
 		LvN_ScorerSet(id, item, "ScaleY", &q) && LvN_ScorerSet(id, item, "Visible", &vis);
 	Native_Free(&p);
 	Native_Free(&q);
@@ -1390,7 +1390,7 @@ static byte GetDataPart2_MissionScorer(const nativeVal_t *id) {
 	LvN_Label("Mission_GetDataPart2_Scorer_1", &t);
 	byte ok = LvN_ScorerTextBegin(id, "DataStatusText", 0) && LvN_ScorerSet(id, "DataStatusText", "Text", &t) &&
 		LvN_ScorerTextEnd(id, "DataStatusText") && Gd_Marker(id, "DataMarker1") && Gd_Marker(id, "DataMarker2") &&
-		Mode_G(GD, "maxDataDownloaded", &max) && Mode_G(GD, "speedFactor", &sf) && LvN_Arith('*', &max, &sf, &v) &&
+		Mode_G(GD, "maxDataDownloaded", &max) && Mode_G(GD, "speedFactor", &sf) && Mode_Arith('*', &max, &sf, &v) &&
 		Mode_ScorerAdd(id, &it, "Bar") && LvN_ModGet("Scorer", "MissionScorerBar_ColorBack", &back) &&
 		LvN_ModGet("Scorer", "MissionScorerBar_ColorMain", &main) && LvN_ModGet("Scorer", "MissionScorerBar_ColorBlack", &black) &&
 		LV_CALL("Scorer", "MissionScorerBar_SetDefaults", NULL, "vsvvv", id, "DataStatus", &back, &main, &black) &&

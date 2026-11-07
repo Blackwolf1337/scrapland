@@ -148,7 +148,7 @@ static byte Jy_KeyOption(const nativeVal_t *h) {
 	LvN_Str(&p, "EditShip:");
 	Mode_Lang("HINT_Junkyard_ShipEdit", &t);
 	Native_SetNone(&r);
-	byte ok = LvN_Arith('+', &p, &t, &r) && Mode_VSet(h, "ArrOpt0", &r);
+	byte ok = Mode_Arith('+', &p, &t, &r) && Mode_VSet(h, "ArrOpt0", &r);
 	Native_Free(&p);
 	Native_Free(&t);
 	Native_Free(&r);
@@ -214,7 +214,7 @@ static byte Jy_At(const nativeVal_t *time, double d, nativeVal_t *out) {
 	nativeVal_t x = { 0 };
 	Native_SetFloat(&x, d);
 	Native_SetNone(out);
-	return LvN_Arith('+', time, &x, out);
+	return Mode_Arith('+', time, &x, out);
 }
 
 /* ---- Map ---- */
@@ -436,7 +436,7 @@ static byte MapShipEdit_Init(void) {
 		Native_SetInt(&k, 180);
 		Native_SetEmpty(&a, NV_TUPLE);
 		Native_SetInt(Native_Append(&a), 0);
-		ok = LvN_Arith('+', &ay, &k, Native_Append(&a));
+		ok = Mode_Arith('+', &ay, &k, Native_Append(&a));
 		if (ok) {
 			Native_SetInt(Native_Append(&a), 0);
 			ok = Mode_VSet(&kb, "Ang", &a);
@@ -581,7 +581,7 @@ static byte Rusty_CreateFakeBertoShip(void) {
 	byte ok = LvN_Entity("DM_Door_EditShip_00", &epl) && Mode_VGet(&epl, "Pos", &pos) && LvN_Item(&pos, 0, &c[0]) &&
 		LvN_Item(&pos, 1, &c[1]) && LvN_Item(&pos, 2, &c[2]) && LvN_Create(&name, &c[0], &c[1], &c[2], "Car", &v) &&
 		Mode_VModel(&v, &model) && LvN_SetS(&v, "MEng0", "MBerto1") && LvN_SetS(&v, "MEng1", "MBerto1") &&
-		LvN_SetS(&v, "MEng2", "MBerto1") && Mode_VGet(&epl, "Name", &en) && LvN_Arith('+', &en, &sfx, &link) &&
+		LvN_SetS(&v, "MEng2", "MBerto1") && Mode_VGet(&epl, "Name", &en) && Mode_Arith('+', &en, &sfx, &link) &&
 		Mode_VSet(&v, "LinkModel", &link) && LvN_SetI(&v, "OffMul", 1) && LvN_SetI(&v, "UseLinkAng", 1);
 	for (int i = 0; i < 3; i++) {
 		Native_Free(&c[i]);
@@ -597,10 +597,10 @@ static byte Rusty_CreateFakeBertoShip(void) {
 		nativeVal_t t = { 0 };
 		LvN_Str(&sfx, ",");
 		Native_SetNone(&t);
-		ok = LvN_Arith('+', &en, &sfx, &t);
+		ok = Mode_Arith('+', &en, &sfx, &t);
 		Native_Free(&sfx);
 		LvN_Str(&sfx, "DC_Platform");
-		ok = ok && LvN_Arith('+', &t, &sfx, &link) && Mode_VSet(&ch, "LinkModel", &link) && Mode_VGet(&ch, "FloorDist", &floor);
+		ok = ok && Mode_Arith('+', &t, &sfx, &link) && Mode_VSet(&ch, "LinkModel", &link) && Mode_VGet(&ch, "FloorDist", &floor);
 		Native_Free(&t);
 		Native_Free(&sfx);
 	}
@@ -1022,7 +1022,7 @@ static byte Rusty_TutorialMsgInit(const nativeVal_t *a) {
 	Native_SetNone(&use);
 	Native_SetNone(&text);
 	Mode_Lang("Mission_BuildFirstShip_Tut_Continue", &t);
-	ok = ok && LvN_ModGet("ShipEdit", "UseTxt", &use) && LvN_Arith('%', &t, &use, &text) &&
+	ok = ok && LvN_ModGet("ShipEdit", "UseTxt", &use) && Mode_Arith('%', &t, &use, &text) &&
 		Jy_TypingText(id, "TutorialMsgContinue", &text, 215 + 30);
 	Native_Free(&t);
 	Native_Free(&use);
@@ -1156,12 +1156,12 @@ static byte Jy_Recycle(const nativeVal_t *a, nativeVal_t *time, double tf) {
 			Native_SetInt(&num, n + 1);
 			Mode_Repr(&num, &rep);
 			LvN_Str(&p, "Recycle Hangar");
-			ok = LvN_Arith('+', &p, &rep, &line);
+			ok = Mode_Arith('+', &p, &rep, &line);
 			Native_Free(&p);
 			if (ok) {
 				const nativeVal_t *items[1] = { &line };
 				LvN_Str(&p, "Hangar");
-				ok = Mode_Print(items, 1) && LvN_Arith('+', &p, &rep, &hangar) &&
+				ok = Mode_Print(items, 1) && Mode_Arith('+', &p, &rep, &hangar) &&
 					Jy_SchedItem(time, 0.0 * tf, "SScorer", "SetDefault", &a[0], &hangar) &&
 					Jy_SchedItem(time, 1.0 * tf, "HangarTab", "SelectItem", &a[0], &hangar) &&
 					Jy_SchedItemS(time, 3.5 * tf, "SScorer", "SetDefault", &a[0], "Sell") &&
