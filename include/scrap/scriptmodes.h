@@ -364,5 +364,8 @@ byte Mode_NISpeech(const char *who, const char *key);
 /* Scrap.GetEntity(name).var = "text", = i (the TypeError of None when there is no such entity) */
 byte Mode_EntSetS(const char *name, const char *var, const char *s);
 byte Mode_EntSetI(const char *name, const char *var, long i);
+/* Scrap.SetLockAlarm(lock) through its seam (fc-r6b-or2 records it): the TypeError of "i" for a value that is no
+ * number */
+byte Mode_SetLockAlarm(const nativeVal_t *lock);
 
 #endif

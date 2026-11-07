@@ -344,4 +344,9 @@ byte Native_FromPyAny(PyObject *o, nativeVal_t *v);
 /* the answer of the channel's command "native <arg>" (src/game/Global/TestNative.c) added to out */
 void TestNative_Command(nativeBuf_t *out, const char *arg);
 
+/* ---- the native level files of batch G ---- */
+
+/* Scrap.Def(name): the default value of the engine variable, as Native_GVarGet gives the value */
+byte Native_GVarDef(const char *name, nativeVal_t *out);
+
 #endif
