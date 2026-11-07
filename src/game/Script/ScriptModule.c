@@ -28,8 +28,8 @@
  * builtins), attributes, calls with keywords, subscripts and slices, + - * / %, comparisons, not, and, or. Equal
  * constants of one code object (the module, a class body, an eval) are one object and a constant that looks like a
  * name is interned (com_addconst, PyCode_New). eval(s) of the definitions (the save variables) is read by the same
- * parser in the namespace of the module; what it cannot read goes to the eval of Python (logged as "evalpy" by the
- * gate, SCRAP_PY_GATE).
+ * parser in the namespace of the module; what it cannot read goes to Script_EvalValue (the literals of builtin eval,
+ * else its SyntaxError, logged as "notread" by the gate, SCRAP_PY_GATE). No Python runs.
  *
  * Off (the .pyc runs as before) with SCRAP_PACK_SCRIPTS=1 or SCRAP_CMOD=0.
  */
@@ -64,6 +64,7 @@ static const struct {
 	{ "NewsPanel", "Settings", NewsPanel_ModSettings },
 	{ "CharsNPC", "SpawnPosInit", CharsNPC_ModSpawnPosInit },
 	{ "CharsNPC", "SpawnPosClass", CharsNPC_ModSpawnPosClass },
+	{ "MapTreasure", "Coins", MapTreasure_ModCoins },
 	{ NULL, NULL, NULL },
 };
 
@@ -111,6 +112,7 @@ typedef struct {
 	int skip;			/* > 0: parse only (the branch not taken, the right side of and/or) */
 	int nest;			/* expressions inside each other */
 	byte syntax;			/* the error is one of the text, not of a value */
+	PyObject *defs;			/* the functions the module code defined, by name (Script_ModuleExtras) */
 } modParse_t;
 
 /* ---- errors ---- */
@@ -837,6 +839,9 @@ static PyObject *Mod_Expr(modParse_t *m) {
 /* eval(text) in the namespace of the module (the save variables): this parser, else the eval of Python */
 static PyObject *Mod_Eval(modParse_t *outer, PyObject *text) {
 	const char *s = PyString_AsString(text);
+	if ((int)strlen(s) != PyString_Size(text)) {
+		return Script_EvalValue(outer->globals, text);	/* the ValueError of builtin eval */
+	}
 	modParse_t m = { .p = s, .text = s, .file = "eval", .module = outer->module, .mod = outer->mod,
 		.globals = outer->globals, .locals = outer->locals, .consts = PyList_New(0) };
 	if (!m.consts) {
@@ -852,8 +857,7 @@ static PyObject *Mod_Eval(modParse_t *outer, PyObject *text) {
 	Py_DECREF(m.consts);
 	if (!v && m.syntax) {
 		PyErr_Clear();
-		Py_GateNote("evalpy", outer->module, s);
-		v = PyRun_String((char *)s, Py_eval_input, outer->globals, outer->locals);
+		v = Script_EvalValue(outer->globals, text);
 	}
 	return v;
 }
@@ -958,6 +962,10 @@ static byte Mod_Def(modParse_t *m) {
 	char name[MOD_NAME];
 	while (Mod_Word(m, name, sizeof(name))) {
 		if (!Mod_Store(m, name, m->skip ? Mod_Skipped() : Mod_Function(m, name))) {
+			return 0;
+		}
+		if (!m->skip && m->locals == m->globals &&
+			PyDict_SetItemString(m->defs, name, PyDict_GetItemString(m->locals, name)) != 0) {
 			return 0;
 		}
 	}
@@ -1267,8 +1275,8 @@ int Script_ModuleMake(const char *name, const char *file, PyObject **module) {
 	PyObject *m = PyImport_AddModule((char *)name);
 	PyObject *d = m ? PyModule_GetDict(m) : NULL;
 	modParse_t mp = { .p = text, .text = text, .file = mf->name, .module = name, .mod = m, .globals = d, .locals = d,
-		.consts = PyList_New(0) };
-	int ok = d && mp.consts;
+		.consts = PyList_New(0), .defs = PyDict_New() };
+	int ok = d && mp.consts && mp.defs;
 	/* as PyImport_ExecCodeModuleEx: the builtins and __file__ before the module code */
 	if (ok && !PyDict_GetItemString(d, "__builtins__")) {
 		ok = PyDict_SetItemString(d, "__builtins__", PyEval_GetBuiltins()) == 0;
@@ -1292,12 +1300,15 @@ int Script_ModuleMake(const char *name, const char *file, PyObject **module) {
 	}
 	Py_XDECREF(mp.consts);
 	free(own);
+	if (ok) {
+		/* the writes the loader makes after the module code (the functions of the C tables the script does not have,
+		 * the sets that may resize the dict), as after the .pyc */
+		Script_ModuleExtras(name, m, mp.defs);
+	}
+	Py_XDECREF(mp.defs);
 	if (!ok) {
 		return -1;
 	}
-	/* the writes the loader makes after the module code (the functions of the C tables the script does not have, the
-	 * sets that may resize the dict), as after the .pyc */
-	Script_ModuleExtras(name, m);
 	Py_INCREF(m);
 	*module = m;
 	Con_Verbosef("Script: %s made in C from %s\n", name, mf->name);

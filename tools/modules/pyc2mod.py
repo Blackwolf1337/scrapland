@@ -31,7 +31,7 @@ BINOP = {'BINARY_ADD': '+', 'BINARY_SUBTRACT': '-', 'BINARY_MULTIPLY': '*', 'BIN
 # statements the .mod lines cannot say, made by a C hook (module_hooks of src/game/Script/ScriptModule.c) instead:
 # (module, line of the statement) -> the hook. A loop or a def (a method in a class body) there becomes "c <hook>".
 HOOKS = {('Init', 205): 'LoadChars', ('Init', 251): 'ExtraExecs', ('NewsPanel', 7): 'Settings',
-    ('CharsNPC', 20): 'SpawnPosInit'}
+    ('CharsNPC', 20): 'SpawnPosInit', ('MapTreasure', 2836): 'Coins'}
 # (module, class) -> the hook on the line after the end of the class statement (a method made in the body gets its
 # class there)
 CLASS_HOOKS = {('CharsNPC', 'CharSpawnPos'): 'SpawnPosClass'}
