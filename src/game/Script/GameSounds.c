@@ -9,10 +9,19 @@
  * EneWaySound, EneWayVolume, PhotoSound, PhotoVolume, DeathSound, TVOffSound and the ship editor sounds, OutSound.isPC,
  * OnLandSound and OnTakeOffSound, DoorSound.SoundList and AllSounds (LoadSndList sorts the lists in place like the
  * script). The functions call the others of their module through the module's globals.
+ *
+ * The modules are native C (docs/objlib-plan.md, stage 2): the functions work on C values and read the variables of
+ * Init and of their module where the scripts read them (OBJLIB 5: ItemTake changed in place, the door lists sorted as
+ * the objects they are). Scrap.GetEntity, Set, OpenPack, ClosePack, ConsoleError, SSound.LoadSound and the SAct
+ * functions go through their seams (OBJLIB 7); string.upper is C. SSound.CreatePS and SetPS, SAct.GetAction of a
+ * value that is no text, DoorSound.LoadSounds from Sound and Sound.SetStdDamageSounds from OutSound stay by name
+ * (OBJLIB 3, 7). The .def runner takes its $names as a dict and gives its steps Python arguments (OBJLIB 6).
  */
-#include <stdarg.h>
+#include <string.h>
 
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
+#include "game/Script/levels/Levels.h"
 
 static const char sound_def[] = {
 #embed "../../../data/sound/sound.def"
@@ -35,266 +44,266 @@ static const scriptStep_t gsound_steps[] = {
 	{ NULL, NULL },
 };
 
-/* a function of the module as its script calls it (a global of the module) */
-static PyObject *Snd_Own(scriptFrame_t *f, const char *module, const char *func, const char *fmt, ...) {
-	PyObject *fn = Sf_Global(f, module, func);
-	if (!fn) {
-		return NULL;
-	}
-	va_list va;
-	va_start(va, fmt);
-	PyObject *args = Py_VaBuildValue((char *)fmt, va);
-	va_end(va);
-	return Sf_CallArgs(f, fn, Sf_Check(f, args != NULL) ? args : NULL);
+/* a section of one of the files with the $names of vars (Mode_DefVars, given away; NULL: none): an error in the file
+ * (a call that raises, an entity that refuses a variable) stops it like the script */
+static byte Gs_Run(const char *file, const char *builtin, const char *section, PyObject *vars) {
+	byte ok = Script_RunFileTry(0, file, section, builtin, gsound_steps, vars);
+	Py_XDECREF(vars);
+	return ok;
 }
 
-/* a section of one of the files with the values of vars (a dict, or NULL), unless the frame failed; an error in the
- * file (a call that raises, an entity that refuses a variable) stops it and the frame like the script */
-static void Snd_Run(scriptFrame_t *f, const char *file, const char *builtin, const char *section, PyObject *vars) {
-	if (!f->failed) {
-		Sf_Check(f, Script_RunFileTry(0, file, section, builtin, gsound_steps, vars));
-	}
-}
+#define Gs_RunSound(section, vars) Gs_Run("sound/sound.def", sound_def, section, vars)
+#define Gs_RunOut(section, vars) Gs_Run("sound/outsound.def", outsound_def, section, vars)
+#define Gs_RunDoor(section, vars) Gs_Run("sound/doorsound.def", doorsound_def, section, vars)
 
-static void Snd_RunSound(scriptFrame_t *f, const char *section, PyObject *vars) {
-	Snd_Run(f, "sound/sound.def", sound_def, section, vars);
-}
-
-static void Snd_RunOut(scriptFrame_t *f, const char *section, PyObject *vars) {
-	Snd_Run(f, "sound/outsound.def", outsound_def, section, vars);
+/* `if Init.<var>:`: 1, 0, -1 with the error */
+static int Gs_Init(const char *var) {
+	return Mode_ModTrue("Init", var);
 }
 
 /* `if not Init.Outdoor or Init.isJunkYard or Init.isShipEdit:` of the vehicle sounds: 1, 0, -1 after an error */
-static int Snd_NotOutdoor(scriptFrame_t *f) {
-	int t = Sf_True(f, Sf_Mod(f, "Init", "Outdoor"));
+static int Gs_NotOutdoor(void) {
+	int t = Gs_Init("Outdoor");
 	if (t == 0) {
 		return 1;
 	}
 	if (t > 0) {
-		t = Sf_True(f, Sf_Mod(f, "Init", "isJunkYard"));
+		t = Gs_Init("isJunkYard");
 	}
 	if (t == 0) {
-		t = Sf_True(f, Sf_Mod(f, "Init", "isShipEdit"));
+		t = Gs_Init("isShipEdit");
 	}
 	return t;
 }
 
+/* print text */
+static byte Gs_Print(const char *text) {
+	nativeVal_t v;
+	Native_SetStr(&v, text);
+	const nativeVal_t *items[1] = { &v };
+	return Mode_Print(items, 1);
+}
+
+/* an int as a value */
+static const nativeVal_t *Gs_Int(nativeVal_t *v, long i) {
+	Native_SetInt(v, i);
+	return v;
+}
+
 /* ---- Sound ---- */
+
+#define SND "Sound"
 
 /* run take <key> <sound> <volume>: ItemTake[key] = (sound, volume) and the sound file Missions/<sound>.wav (an error
  * is left set, it stops the file) */
 static void Sound_StepTake(int id, PyObject *args) {
-	PyObject *key, *snd, *vol;
-	scriptFrame_t f = { 0 };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *a, *pair, *file;
 	(void)id;
-	if (!PyArg_ParseTuple(args, "OOO", &key, &snd, &vol)) {
+	if (!Mode_Args(args, 3, &t, &a)) {
+		Mode_Done(&t, 0);
 		return;
 	}
-	PyObject *take = Sf_Global(&f, "Sound", "ItemTake");
-	Sf_SetItem(&f, take, key, Sf_Build(&f, "(OO)", snd, vol));
-	Sf_Ask(&f, "SSound", "LoadSound", "(O)", Sf_Cat(&f, "sOs", "Missions/", snd, ".wav"));
-	Py_XDECREF(Sf_None(&f));
+	pair = Mode_V(&t);
+	file = Mode_V(&t);
+	Native_SetEmpty(pair, NV_TUPLE);
+	Native_Copy(Native_Append(pair), &a[1]);
+	Native_Copy(Native_Append(pair), &a[2]);
+	Mode_Done(&t, Mode_DictPut(SND, "ItemTake", NULL, &a[0], pair) &&
+		Mode_Cat(&t, file, 3, Mode_S(&t, "Missions/"), &a[1], Mode_S(&t, ".wav")) && Mode_LoadSoundSeam(file));
 }
 
 /* SetStdDamageSounds(EntityName): the damage sounds of a ship in a level with ships */
-static PyObject *Sound_SetStdDamageSounds(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+static byte Gs_SetStdDamageSounds(const nativeVal_t *name) {
+	nativeVal_t v = { 0 };
+	int no = Mode_Import("Init") ? Gs_NotOutdoor() : -1;
+	if (no) {
+		return no > 0;
 	}
-	Sf_Import(&f, "Init");
-	if (Snd_NotOutdoor(&f) != 0) {
-		return Sf_None(&f);
-	}
-	PyObject *v = Sf_Entity(&f, name);
-	Sf_Method(&f, v, "IsType", "(s)", "WithLife");
 	/* the first set through the handle: the error of the script for a handle of no entity (None) */
-	Sf_SetAttrI(&f, v, "sdd_n", 9);
-	Snd_RunSound(&f, "SetStdDamageSounds", Sf_Build(&f, "{s:O}", "name", name));
-	Snd_Own(&f, "Sound", "SetStdDamageSoundLoops", "(O)", v);
-	return Sf_None(&f);
+	byte ok = Mode_EntitySeam(name, &v) && Mode_VIsType(&v, "WithLife") >= 0 && LvN_SetI(&v, "sdd_n", 9) &&
+		Gs_RunSound("SetStdDamageSounds", Mode_DefVars(1, "name", name)) && Native_CallGlobal(SND, "SetStdDamageSoundLoops", NULL, "v", &v);
+	Native_Free(&v);
+	return ok;
 }
 
 /* SetStdDamageSoundLoops(v): the damage loops of the entity of the handle v */
-static PyObject *Sound_SetStdDamageSoundLoops(PyObject *self, PyObject *args) {
-	PyObject *v;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &v)) {
-		return NULL;
-	}
-	Sf_SetAttrI(&f, v, "sdl_n", 5);
-	Snd_RunSound(&f, "SetStdDamageSoundLoops", Sf_Build(&f, "{s:O}", "name", Sf_Attr(&f, v, "Name")));
-	return Sf_None(&f);
+static byte Gs_SetStdDamageSoundLoops(const nativeVal_t *v) {
+	nativeVal_t name = { 0 };
+	byte ok = LvN_SetI(v, "sdl_n", 5) && Mode_VObj(v, "Name", &name) && Gs_RunSound("SetStdDamageSoundLoops", Mode_DefVars(1, "name", &name));
+	Native_Free(&name);
+	return ok;
 }
 
 /* LoadDamageSounds(): the hits, loops and fire of the ships ($out), and the death of the characters */
-static PyObject *Sound_LoadDamageSounds(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
+static byte Gs_LoadDamageSounds(void) {
+	nativeVal_t v;
+	int out = Mode_Import("Init") ? Gs_Init("Outdoor") : -1;
+	if (out > 0) {
+		out = Gs_Init("isJunkYard");
+		out = out < 0 ? -1 : !out;
+	}
+	if (out > 0) {
+		out = Gs_Init("isShipEdit");
+		out = out < 0 ? -1 : !out;
+	}
+	return out >= 0 && Gs_RunSound("LoadDamageSounds", Mode_DefVars(1, "out", Gs_Int(&v, out)));
+}
+
+/* WayPoints(): the money, the check points and the items of the outdoor levels ($out), or the battery and the extra
+ * life indoors */
+static byte Gs_WayPoints(void) {
+	nativeVal_t v;
+	int out = Mode_Import("Init") ? Gs_Init("Outdoor") : -1;
+	return out >= 0 && Gs_RunSound("WayPoints", Mode_DefVars(1, "out", Gs_Int(&v, out)));
+}
+
+/* SetOutMusic(): the relax and action music of the level */
+static byte Gs_SetOutMusic(void) {
+	static const char *const action[] = { "BANK", "TEMPLE", "PRESS", "POLICE", "TOWNHALL", NULL };
+	nativeVal_t a, b, c, map = { 0 };
+	int out = Mode_Import("Init") ? Gs_Init("Outdoor") : -1;
+	int act = 0;
+	if (out == 0) {
+		act = Mode_ModGet("Init", "UpperMap", &map) ? 0 : -1;
+		for (int i = 0; !act && action[i]; i++) {
+			act = LvN_EqS(&map, action[i]);
+		}
+		Native_Free(&map);
+	}
+	int demo = out >= 0 && act >= 0 ? Gs_Init("isDemo") : -1;
+	return demo >= 0 && Gs_RunSound("SetOutMusic", Mode_DefVars(3, "out", Gs_Int(&a, out), "action", Gs_Int(&b, act), "demo",
+		Gs_Int(&c, demo)));
+}
+
+/* Init(): the generic sounds of every level, then the music */
+static byte Gs_SoundInit(void) {
+	nativeVal_t pack;
+	if (!Gs_Print("Loading default sounds...") || !Mode_Import("DoorSound") || !Mode_Import("Init") ||
+		!Mode_GVarSetN("SndLoopCharNPCMul", 2.5)) {
+		return 0;
+	}
+	Native_SetStr(&pack, "Sounds/Generic");
+	if (!Mode_Pack(&pack) || !Native_CallGlobal(SND, "LoadMenuSounds", NULL, "")) {
+		return 0;
+	}
+	/* not Init.inMainMenu or Init.isShipEdit */
+	int t = Gs_Init("inMainMenu");
+	t = t == 0 ? 1 : t > 0 ? Gs_Init("isShipEdit") : -1;
+	if (t > 0) {
+		int skip = Native_CallGlobal(SND, "LoadDamageSounds", NULL, "") && Native_CallMod("DoorSound", "LoadSounds", NULL, "") &&
+			Native_CallGlobal(SND, "WayPoints", NULL, "") && Native_CallGlobal(SND, "PhotoSounds", NULL, "") &&
+			Native_CallGlobal(SND, "ScorerSounds", NULL, "") ? Gs_Init("InMapSkip") : -1;
+		t = skip > 0 ? (Native_CallGlobal(SND, "CharConversionSounds", NULL, "") ? 0 : -1) : skip;
+	}
+	if (t < 0) {
+		return 0;
+	}
+	/* not Init.inMainMenu and (Init.isShipEdit or Init.isJunkYard or not Init.OffLineGame) */
+	t = Gs_Init("inMainMenu");
+	if (t == 0) {
+		t = Gs_Init("isShipEdit");
+		if (t == 0) {
+			t = Gs_Init("isJunkYard");
+		}
+		if (t == 0) {
+			t = Gs_Init("OffLineGame");
+			t = t < 0 ? -1 : !t;
+		}
+		if (t > 0) {
+			t = Native_CallGlobal(SND, "LoadShipEditInterfaceSounds", NULL, "") ? 0 : -1;
+		}
+	}
+	return t >= 0 && Mode_Pack(NULL) && Native_CallGlobal(SND, "SetOutMusic", NULL, "");
+}
+
+/*
+ * SetPSLoop(Name, Pos, Snd, Volume=1, Pitch=0, AttenIni=0, AttenEnd=0, Doppler=1.0) and SetPSInterval(Name, Pos, Snd,
+ * MinInterval, MaxInterval, Volume=1, ...): a point sound of the map, looping or played at random intervals (a: the
+ * arguments in the order of SetPSInterval, the minimum and maximum None for a loop; the defaults put in)
+ */
+static byte Gs_SetPS(const nativeVal_t *a, byte interval) {
+	static const char *const vars[] = { "Volume", "Pitch", "AttenIni", "AttenEnd", "Doppler" };
+	const nativeVal_t *name = &a[0];
+	nativeVal_t c = { 0 };
+	byte ok = Native_CallMod("SSound", "CreatePS", NULL, "v", name) && Native_CallMod("SSound", "SetPS", NULL, "vsv", name, "Sound",
+		&a[2]);
+	for (int i = 0; ok && i < 3; i++) {
+		static const char *const axes[3] = { "X", "Y", "Z" };
+		ok = Mode_Item(&a[1], i, &c) && Native_CallMod("SSound", "SetPS", NULL, "vsv", name, axes[i], &c);
+		Native_Free(&c);
+	}
+	for (int i = 0; ok && i < 5; i++) {
+		ok = Native_CallMod("SSound", "SetPS", NULL, "vsv", name, vars[i], &a[5 + i]);
+		if (ok && i == 1) {
+			ok = Native_CallMod("SSound", "SetPS", NULL, "vsi", name, "Loop", interval ? 0L : 1L);
+		}
+	}
+	return ok && (!interval || (Native_CallMod("SSound", "SetPS", NULL, "vsv", name, "MaxInterval", &a[4]) &&
+		Native_CallMod("SSound", "SetPS", NULL, "vsv", name, "MinInterval", &a[3])));
+}
+
+static PyObject *Sound_SetPSArgs(PyObject *args, PyObject *kw, byte interval) {
+	static char *loopNames[] = { "Name", "Pos", "Snd", "Volume", "Pitch", "AttenIni", "AttenEnd", "Doppler", NULL };
+	static char *intNames[] = { "Name", "Pos", "Snd", "MinInterval", "MaxInterval", "Volume", "Pitch", "AttenIni",
+		"AttenEnd", "Doppler", NULL };
+	PyObject *o[10] = { NULL };
+	nativeVal_t a[10];
+	if (interval ? !PyArg_ParseTupleAndKeywords(args, kw, "OOOOO|OOOOO", intNames, &o[0], &o[1], &o[2], &o[3], &o[4],
+			&o[5], &o[6], &o[7], &o[8], &o[9]) :
+		!PyArg_ParseTupleAndKeywords(args, kw, "OOO|OOOOO", loopNames, &o[0], &o[1], &o[2], &o[5], &o[6], &o[7], &o[8],
+			&o[9])) {
 		return NULL;
 	}
-	Sf_Import(&f, "Init");
-	int out = Sf_True(&f, Sf_Mod(&f, "Init", "Outdoor"));
-	if (out > 0) {
-		out = Sf_True(&f, Sf_Mod(&f, "Init", "isJunkYard"));
-		out = out < 0 ? -1 : !out;
+	for (int i = 0; i < 10; i++) {
+		Native_SetNone(&a[i]);
+		if (o[i]) {
+			Native_Arg(o[i], &a[i]);
+		}
 	}
-	if (out > 0) {
-		out = Sf_True(&f, Sf_Mod(&f, "Init", "isShipEdit"));
-		out = out < 0 ? -1 : !out;
+	if (!o[5]) {
+		Native_SetInt(&a[5], 1);
 	}
-	Snd_RunSound(&f, "LoadDamageSounds", Sf_Build(&f, "{s:i}", "out", out));
-	return Sf_None(&f);
+	for (int i = 6; i < 9; i++) {
+		if (!o[i]) {
+			Native_SetInt(&a[i], 0);
+		}
+	}
+	if (!o[9]) {
+		Native_SetFloat(&a[9], 1.0);
+	}
+	byte ok = Gs_SetPS(a, interval);
+	for (int i = 0; i < 10; i++) {
+		Native_Free(&a[i]);
+	}
+	return Mode_Result(ok);
+}
+
+static PyObject *Sound_SetPSLoop(PyObject *self, PyObject *args, PyObject *kw) {
+	(void)self;
+	return Sound_SetPSArgs(args, kw, 0);
+}
+
+static PyObject *Sound_SetPSInterval(PyObject *self, PyObject *args, PyObject *kw) {
+	(void)self;
+	return Sound_SetPSArgs(args, kw, 1);
 }
 
 /* the sections without tests: LoadMenuSounds, ScorerSounds, PhotoSounds, CharConversionSounds,
  * LoadShipEditInterfaceSounds */
-#define SOUND_SECTION(fn) \
-	static PyObject *Sound_##fn(PyObject *self, PyObject *args) { \
-		scriptFrame_t f = { 0 }; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, "")) { \
-			return NULL; \
-		} \
-		Snd_RunSound(&f, #fn, NULL); \
-		return Sf_None(&f); \
-	}
+#define SOUND_SECTION(fn) MODE_FN(Sound, fn, 0, Gs_RunSound(#fn, NULL))
 
 SOUND_SECTION(LoadMenuSounds)
 SOUND_SECTION(ScorerSounds)
 SOUND_SECTION(PhotoSounds)
 SOUND_SECTION(CharConversionSounds)
 SOUND_SECTION(LoadShipEditInterfaceSounds)
-
-/* WayPoints(): the money, the check points and the items of the outdoor levels ($out), or the battery and the
- * extra life indoors */
-static PyObject *Sound_WayPoints(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "Init");
-	int out = Sf_True(&f, Sf_Mod(&f, "Init", "Outdoor"));
-	Snd_RunSound(&f, "WayPoints", Sf_Build(&f, "{s:i}", "out", out));
-	return Sf_None(&f);
-}
-
-/* SetOutMusic(): the relax and action music of the level */
-static PyObject *Sound_SetOutMusic(PyObject *self, PyObject *args) {
-	static const char *const action[] = { "BANK", "TEMPLE", "PRESS", "POLICE", "TOWNHALL", NULL };
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "Init");
-	int out = Sf_True(&f, Sf_Mod(&f, "Init", "Outdoor"));
-	int act = out == 0 ? Sf_InS(&f, Sf_Mod(&f, "Init", "UpperMap"), action) : 0;
-	int demo = Sf_True(&f, Sf_Mod(&f, "Init", "isDemo"));
-	Snd_RunSound(&f, "SetOutMusic", Sf_Build(&f, "{s:i,s:i,s:i}", "out", out, "action", act, "demo", demo));
-	return Sf_None(&f);
-}
-
-/* Init(): the generic sounds of every level, then the music */
-static PyObject *Sound_Init(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Print(&f, "s", "Loading default sounds...");
-	Sf_Import(&f, "DoorSound");
-	Sf_Import(&f, "Init");
-	Sf_Ask(&f, "Scrap", "Set", "(sd)", "SndLoopCharNPCMul", 2.5);
-	Sf_Ask(&f, "Scrap", "OpenPack", "(s)", "Sounds/Generic");
-	Snd_Own(&f, "Sound", "LoadMenuSounds", "()");
-	/* not Init.inMainMenu or Init.isShipEdit */
-	int t = Sf_True(&f, Sf_Mod(&f, "Init", "inMainMenu"));
-	t = t == 0 ? 1 : t > 0 ? Sf_True(&f, Sf_Mod(&f, "Init", "isShipEdit")) : -1;
-	if (t > 0) {
-		Snd_Own(&f, "Sound", "LoadDamageSounds", "()");
-		Sf_Ask(&f, "DoorSound", "LoadSounds", "()");
-		Snd_Own(&f, "Sound", "WayPoints", "()");
-		Snd_Own(&f, "Sound", "PhotoSounds", "()");
-		Snd_Own(&f, "Sound", "ScorerSounds", "()");
-		if (Sf_True(&f, Sf_Mod(&f, "Init", "InMapSkip")) > 0) {
-			Snd_Own(&f, "Sound", "CharConversionSounds", "()");
-		}
-	}
-	/* not Init.inMainMenu and (Init.isShipEdit or Init.isJunkYard or not Init.OffLineGame) */
-	t = Sf_True(&f, Sf_Mod(&f, "Init", "inMainMenu"));
-	if (t == 0) {
-		t = Sf_True(&f, Sf_Mod(&f, "Init", "isShipEdit"));
-		if (t == 0) {
-			t = Sf_True(&f, Sf_Mod(&f, "Init", "isJunkYard"));
-		}
-		if (t == 0) {
-			t = Sf_True(&f, Sf_Mod(&f, "Init", "OffLineGame"));
-			t = t < 0 ? -1 : !t;
-		}
-		if (t > 0) {
-			Snd_Own(&f, "Sound", "LoadShipEditInterfaceSounds", "()");
-		}
-	}
-	Sf_Ask(&f, "Scrap", "ClosePack", "()");
-	Snd_Own(&f, "Sound", "SetOutMusic", "()");
-	return Sf_None(&f);
-}
-
-/*
- * SetPSLoop(Name, Pos, Snd, Volume=1, Pitch=0, AttenIni=0, AttenEnd=0, Doppler=1.0) and SetPSInterval(Name, Pos, Snd,
- * MinInterval, MaxInterval, Volume=1, ...): a point sound of the map, looping or played at random intervals
- */
-static PyObject *Sound_SetPS(PyObject *args, PyObject *kw, byte interval) {
-	static char *loopNames[] = { "Name", "Pos", "Snd", "Volume", "Pitch", "AttenIni", "AttenEnd", "Doppler", NULL };
-	static char *intNames[] = { "Name", "Pos", "Snd", "MinInterval", "MaxInterval", "Volume", "Pitch", "AttenIni",
-		"AttenEnd", "Doppler", NULL };
-	PyObject *name, *pos, *snd, *minI = NULL, *maxI = NULL, *vol = NULL, *pitch = NULL, *ini = NULL, *end = NULL;
-	PyObject *dopp = NULL;
-	scriptFrame_t f = { 0 };
-	if (interval ? !PyArg_ParseTupleAndKeywords(args, kw, "OOOOO|OOOOO", intNames, &name, &pos, &snd, &minI, &maxI,
-			&vol, &pitch, &ini, &end, &dopp) :
-		!PyArg_ParseTupleAndKeywords(args, kw, "OOO|OOOOO", loopNames, &name, &pos, &snd, &vol, &pitch, &ini, &end,
-			&dopp)) {
-		return NULL;
-	}
-	vol = vol ? vol : Sf_Int(&f, 1);
-	pitch = pitch ? pitch : Sf_Int(&f, 0);
-	ini = ini ? ini : Sf_Int(&f, 0);
-	end = end ? end : Sf_Int(&f, 0);
-	dopp = dopp ? dopp : Sf_Float(&f, 1.0);
-	Sf_Ask(&f, "SSound", "CreatePS", "(O)", name);
-	Sf_Ask(&f, "SSound", "SetPS", "(OsO)", name, "Sound", snd);
-	Sf_Ask(&f, "SSound", "SetPS", "(OsO)", name, "X", Sf_Item(&f, pos, 0));
-	Sf_Ask(&f, "SSound", "SetPS", "(OsO)", name, "Y", Sf_Item(&f, pos, 1));
-	Sf_Ask(&f, "SSound", "SetPS", "(OsO)", name, "Z", Sf_Item(&f, pos, 2));
-	Sf_Ask(&f, "SSound", "SetPS", "(OsO)", name, "Volume", vol);
-	Sf_Ask(&f, "SSound", "SetPS", "(OsO)", name, "Pitch", pitch);
-	Sf_Ask(&f, "SSound", "SetPS", "(Osi)", name, "Loop", interval ? 0 : 1);
-	Sf_Ask(&f, "SSound", "SetPS", "(OsO)", name, "AttenIni", ini);
-	Sf_Ask(&f, "SSound", "SetPS", "(OsO)", name, "AttenEnd", end);
-	Sf_Ask(&f, "SSound", "SetPS", "(OsO)", name, "Doppler", dopp);
-	if (interval) {
-		Sf_Ask(&f, "SSound", "SetPS", "(OsO)", name, "MaxInterval", maxI);
-		Sf_Ask(&f, "SSound", "SetPS", "(OsO)", name, "MinInterval", minI);
-	}
-	return Sf_None(&f);
-}
-
-static PyObject *Sound_SetPSLoop(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Sound_SetPS(args, kw, 0);
-}
-
-static PyObject *Sound_SetPSInterval(PyObject *self, PyObject *args, PyObject *kw) {
-	(void)self;
-	return Sound_SetPS(args, kw, 1);
-}
+MODE_FN(Sound, SetStdDamageSounds, 1, Gs_SetStdDamageSounds(&a[0]))
+MODE_FN(Sound, SetStdDamageSoundLoops, 1, Gs_SetStdDamageSoundLoops(&a[0]))
+MODE_FN(Sound, LoadDamageSounds, 0, Gs_LoadDamageSounds())
+MODE_FN(Sound, WayPoints, 0, Gs_WayPoints())
+MODE_FN(Sound, SetOutMusic, 0, Gs_SetOutMusic())
+MODE_FN(Sound, Init, 0, Gs_SoundInit())
 
 PyMethodDef g_SoundMethods[] = {
 	{ "SetStdDamageSounds", Sound_SetStdDamageSounds, 1, NULL },
@@ -315,89 +324,75 @@ PyMethodDef g_SoundMethods[] = {
 
 /* ---- OutSound ---- */
 
-/* `if isPC:` of the script (NameError when the module lost it), 1, 0 or -1 */
-static int Snd_IsPC(scriptFrame_t *f) {
-	return Sf_True(f, Sf_Global(f, "OutSound", "isPC"));
+#define OUT "OutSound"
+
+/* `if isPC:` of the script (the NameError when the module lost it): 1, 0, -1 */
+static int Gs_IsPC(void) {
+	return LvN_GTrue(OUT, "isPC");
 }
 
 /* SetVehicleSounds(EntityName): the sound variables of a ship by its model, then the damage sounds of Sound */
-static PyObject *OutSound_SetVehicleSounds(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+static byte Gs_SetVehicleSounds(const nativeVal_t *name) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *v = Mode_V(&t), *m = Mode_V(&t), *model = Mode_V(&t), *prev = Mode_V(&t), *pcv = Mode_V(&t);
+	nativeVal_t *armedv = Mode_V(&t), *none = Mode_V(&t);
+	int no = Mode_Import("Init") && Mode_Import("string") && Mode_Import("Traffic") ? Gs_NotOutdoor() : -1;
+	if (no) {
+		return Mode_Done(&t, no > 0);
 	}
-	Sf_Import(&f, "Init");
-	Sf_Import(&f, "string");
-	Sf_Import(&f, "Traffic");
-	if (Snd_NotOutdoor(&f) != 0) {
-		return Sf_None(&f);
+	int pc = Mode_EntitySeam(name, v) && LvN_SetI(v, "snd_n", 32) ? Gs_IsPC() : -1;
+	int armed = pc >= 0 && Mode_VObj(v, "Model", m) && Native_Upper(m, model) && Mode_ModGet("Traffic", "PrevVal", prev) ?
+		Mode_Cmp(prev, "==", none) : -1;
+	if (armed < 0) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *v = Sf_Entity(&f, name);
-	Sf_SetAttrI(&f, v, "snd_n", 32);
-	int pc = Snd_IsPC(&f);
-	PyObject *model = Sf_Ask(&f, "string", "upper", "(O)", Sf_Attr(&f, v, "Model"));
-	int armed = Sf_Compare(&f, Sf_Mod(&f, "Traffic", "PrevVal"), "==", Py_None);
-	Snd_RunOut(&f, "SetVehicleSounds", Sf_Build(&f, "{s:O,s:O,s:i,s:i}", "name", name, "model", model, "pc", pc, "armed",
-		armed));
-	Sf_Import(&f, "Sound");
-	Sf_Ask(&f, "Sound", "SetStdDamageSounds", "(O)", name);
-	return Sf_None(&f);
+	return Mode_Done(&t, Gs_RunOut("SetVehicleSounds", Mode_DefVars(4, "name", name, "model", model, "pc", Gs_Int(pcv, pc), "armed",
+		Gs_Int(armedv, armed))) && Mode_Import(SND) && Native_CallMod(SND, "SetStdDamageSounds", NULL, "v", name));
 }
 
 /* the load sections, LoadEngines and LoadWeapons with $pc */
-#define OUTSOUND_SECTION(fn, pcTest) \
-	static PyObject *OutSound_##fn(PyObject *self, PyObject *args) { \
-		scriptFrame_t f = { 0 }; \
-		(void)self; \
-		if (!PyArg_ParseTuple(args, "")) { \
-			return NULL; \
-		} \
-		Snd_RunOut(&f, #fn, pcTest ? Sf_Build(&f, "{s:i}", "pc", Snd_IsPC(&f)) : NULL); \
-		return Sf_None(&f); \
+static byte Gs_OutSection(const char *section, byte pcTest) {
+	nativeVal_t v;
+	if (!pcTest) {
+		return Gs_RunOut(section, NULL);
 	}
-
-OUTSOUND_SECTION(LoadEngines, 1)
-OUTSOUND_SECTION(LoadWeapons, 1)
-OUTSOUND_SECTION(LoadScorer, 0)
-OUTSOUND_SECTION(LoadMisc, 0)
-OUTSOUND_SECTION(LoadCrash, 0)
+	int pc = Gs_IsPC();
+	return pc >= 0 && Gs_RunOut(section, Mode_DefVars(1, "pc", Gs_Int(&v, pc)));
+}
 
 /* LoadVehicles(): the vehicle sounds of an outdoor level, from the pack Sounds/Vehicles */
-static PyObject *OutSound_LoadVehicles(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Gs_LoadVehicles(void) {
+	static const char *const loads[] = { "LoadEngines", "LoadWeapons", "LoadScorer", "LoadMisc", "LoadCrash", NULL };
+	nativeVal_t pack;
+	int no = Mode_Import("Init") ? Gs_NotOutdoor() : -1;
+	if (no) {
+		return no > 0;
 	}
-	Sf_Import(&f, "Init");
-	if (Snd_NotOutdoor(&f) != 0) {
-		return Sf_None(&f);
+	Native_SetStr(&pack, "Sounds/Vehicles");
+	if (!Gs_Print("Loading vehicle sounds...") || !Mode_Pack(&pack)) {
+		return 0;
 	}
-	Sf_Print(&f, "s", "Loading vehicle sounds...");
-	Sf_Ask(&f, "Scrap", "OpenPack", "(s)", "Sounds/Vehicles");
-	Snd_Own(&f, "OutSound", "LoadEngines", "()");
-	Snd_Own(&f, "OutSound", "LoadWeapons", "()");
-	Snd_Own(&f, "OutSound", "LoadScorer", "()");
-	Snd_Own(&f, "OutSound", "LoadMisc", "()");
-	Snd_Own(&f, "OutSound", "LoadCrash", "()");
-	Sf_Ask(&f, "Scrap", "ClosePack", "()");
-	return Sf_None(&f);
+	for (int i = 0; loads[i]; i++) {
+		if (!Native_CallGlobal(OUT, loads[i], NULL, "")) {
+			return 0;
+		}
+	}
+	return Mode_Pack(NULL);
 }
 
 /* Init(): the sound engine settings of the outdoor levels, then the vehicle sounds */
-static PyObject *OutSound_Init(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Print(&f, "s", "Loading outdor sounds...");
-	Snd_RunOut(&f, "Init", NULL);
-	Snd_Own(&f, "OutSound", "LoadVehicles", "()");
-	return Sf_None(&f);
+static byte Gs_OutInit(void) {
+	return Gs_Print("Loading outdor sounds...") && Gs_RunOut("Init", NULL) && Native_CallGlobal(OUT, "LoadVehicles", NULL, "");
 }
+
+MODE_FN(OutSound, SetVehicleSounds, 1, Gs_SetVehicleSounds(&a[0]))
+MODE_FN(OutSound, LoadEngines, 0, Gs_OutSection("LoadEngines", 1))
+MODE_FN(OutSound, LoadWeapons, 0, Gs_OutSection("LoadWeapons", 1))
+MODE_FN(OutSound, LoadScorer, 0, Gs_OutSection("LoadScorer", 0))
+MODE_FN(OutSound, LoadMisc, 0, Gs_OutSection("LoadMisc", 0))
+MODE_FN(OutSound, LoadCrash, 0, Gs_OutSection("LoadCrash", 0))
+MODE_FN(OutSound, LoadVehicles, 0, Gs_LoadVehicles())
+MODE_FN(OutSound, Init, 0, Gs_OutInit())
 
 PyMethodDef g_OutSoundMethods[] = {
 	{ "SetVehicleSounds", OutSound_SetVehicleSounds, 1, NULL },
@@ -413,109 +408,133 @@ PyMethodDef g_OutSoundMethods[] = {
 
 /* ---- DoorSound ---- */
 
-/* LoadSounds(): the door sounds of the level from SoundList, all of them (with an error) for a level not listed */
-static PyObject *DoorSound_LoadSounds(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "Init");
-	PyObject *list = Sf_Global(&f, "DoorSound", "SoundList");
-	PyObject *has = Sf_Attr(&f, list, "has_key");
-	PyObject *map = Sf_Mod(&f, "Init", "UpperMap");
-	int known = Sf_True(&f, Sf_Call(&f, has, "(O)", map));
-	if (known > 0) {
-		Snd_Own(&f, "DoorSound", "LoadSndList", "(O)", Sf_GetItem(&f, Sf_Global(&f, "DoorSound", "SoundList"),
-			Sf_Mod(&f, "Init", "UpperMap")));
-	} else if (known == 0) {
-		Snd_Own(&f, "DoorSound", "LoadSndList", "(O)", Sf_Global(&f, "DoorSound", "AllSounds"));
-		Sf_Ask(&f, "Scrap", "ConsoleError", "(O)", Sf_Cat(&f, "sOs", "S O N O R U S    E R R O R : ",
-			Sf_Mod(&f, "Init", "UpperMap"), " not in DoorSound.py.\n"));
-	}
-	return Sf_None(&f);
+#define DOOR "DoorSound"
+
+/* LoadSndList(list) of the module's global with a list as the object it is (OBJLIB 5: the lists of the module are
+ * sorted in place) */
+static byte Gs_LoadSndListOf(PyObject *list) {
+	byte ok = list && Native_CallGlobal(DOOR, "LoadSndList", NULL, "O", list);
+	Py_XDECREF(list);
+	return ok;
 }
 
-/* LoadSndList(SndList): sorts the list in place and loads Doors/<name>.wav of each */
+/* LoadSounds(): the door sounds of the level from SoundList, all of them (with an error) for a level not listed */
+static byte Gs_LoadSounds(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *list = Mode_V(&t), *has = Mode_V(&t), *map = Mode_V(&t), *r = Mode_V(&t), *msg = Mode_V(&t);
+	if (!Mode_Import("Init") || !Mode_G(DOOR, "SoundList", list) || !Mode_VObj(list, "has_key", has) ||
+		!Mode_ModGet("Init", "UpperMap", map) || !Mode_CallArgs(has, r, map, 1)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_True(r)) {
+		Native_Free(map);
+		return Mode_Done(&t, Mode_ModGet("Init", "UpperMap", map) && Gs_LoadSndListOf(Mode_AtPy(DOOR, "SoundList", map)));
+	}
+	Native_Free(map);
+	return Mode_Done(&t, Gs_LoadSndListOf(Mode_GlobalPy(DOOR, "AllSounds")) && Mode_ModGet("Init", "UpperMap", map) &&
+		Mode_Cat(&t, msg, 3, Mode_S(&t, "S O N O R U S    E R R O R : "), map, Mode_S(&t, " not in DoorSound.py.\n")) &&
+		Mode_ConsoleError(msg));
+}
+
+/* LoadSndList(SndList) after the sort: loads Doors/<name>.wav of each */
+static byte Gs_LoadSndList(nativeVal_t *list) {
+	int n = Mode_Loop(list);
+	for (int i = 0; i < n; i++) {
+		nativeVal_t snd = { 0 }, pre, post, a = { 0 }, file = { 0 };
+		Native_SetStr(&pre, "Doors/");
+		Native_SetStr(&post, ".wav");
+		byte ok = Native_SeqItem(list, i, &snd) && Native_Arith('+', &pre, &snd, &a) && Native_Arith('+', &a, &post, &file) &&
+			Mode_LoadSoundSeam(&file);
+		Native_Free(&snd);
+		Native_Free(&a);
+		Native_Free(&file);
+		if (!ok) {
+			return 0;
+		}
+	}
+	return n >= 0;
+}
+
+/* the adapter of LoadSndList: the list sorted in place as the object it is (OBJLIB 5), then the loads */
 static PyObject *DoorSound_LoadSndList(PyObject *self, PyObject *args) {
 	PyObject *list;
-	scriptFrame_t f = { 0 };
 	(void)self;
 	if (!PyArg_ParseTuple(args, "O", &list)) {
 		return NULL;
 	}
-	Sf_Method(&f, list, "sort", "()");
-	for (int i = 0;; i++) {
-		int mark = f.n;
-		PyObject *snd = Sf_Next(&f, list, i);
-		if (!snd) {
-			break;
-		}
-		Sf_Ask(&f, "SSound", "LoadSound", "(O)", Sf_Cat(&f, "sOs", "Doors/", snd, ".wav"));
-		if (f.failed) {
-			break;
-		}
-		Sf_Release(&f, mark);
+	PyObject *r = Script_Method(list, "sort", "()");
+	if (!r) {
+		return NULL;
 	}
-	return Sf_None(&f);
+	Py_DECREF(r);
+	nativeVal_t v;
+	Native_Arg(list, &v);
+	byte ok = Gs_LoadSndList(&v);
+	Native_Free(&v);
+	return Mode_Result(ok);
 }
 
 /* run initsound <args>: SetInitDoorSound(args) through the module's globals, as SetSlide calls it (an error is left
  * set, it stops the file) */
 static void DoorSound_StepInitSound(int id, PyObject *args) {
-	scriptFrame_t f = { 0 };
+	nativeVal_t f = { 0 }, a;
 	(void)id;
-	Py_INCREF(args);
-	Sf_CallArgs(&f, Sf_Global(&f, "DoorSound", "SetInitDoorSound"), args);
-	Py_XDECREF(Sf_None(&f));
+	Native_Arg(args, &a);
+	if (LvN_GObj(DOOR, "SetInitDoorSound", &f)) {
+		Mode_Apply(&f, &a, NULL);
+	}
+	Native_Free(&f);
+	Native_Free(&a);
 }
 
 /* SetSlide(DoorClass): the sound events of a door class (the default open and close sounds for a class not listed) */
-static PyObject *DoorSound_SetSlide(PyObject *self, PyObject *args) {
-	PyObject *cls;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &cls)) {
-		return NULL;
-	}
-	Sf_Import(&f, "Scene");
-	Sf_Import(&f, "Chars");
-	Snd_Run(&f, "sound/doorsound.def", doorsound_def, "SetSlide", Sf_Build(&f, "{s:O}", "class", cls));
-	return Sf_None(&f);
+static byte Gs_SetSlide(const nativeVal_t *cls) {
+	return Mode_Import("Scene") && Mode_Import("Chars") && Gs_RunDoor("SetSlide", Mode_DefVars(1, "class", cls));
 }
 
 /* SetInitDoorSound(DoorClass, ActionName, SoundName, Vol=1, Pitch=0): a sound at the start of an action */
+static byte Gs_SetInitDoorSound(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *r = Mode_V(&t), *rv = Mode_V(&t), *rp = Mode_V(&t), *name = Mode_V(&t);
+	if (!Mode_SActV("GetClass", &a[0], r)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(r);
+	/* SAct.GetAction through its seam with a text, by name for any other value (its TypeError) */
+	byte ok = a[1].type == NV_STR && !memchr(Native_Text(&a[1]), 0, (size_t)a[1].n) ? LvN_GetAction(Native_Text(&a[1]), r) :
+		Native_CallMod("SAct", "GetAction", NULL, "v", &a[1]);
+	Mode_Repr(&a[3], rv);
+	Mode_Repr(&a[4], rp);
+	return Mode_Done(&t, ok && LvN_SetAct("AddEventAtTime", Mode_I(&t, 0)) &&
+		Mode_Cat(&t, name, 5, &a[2], Mode_S(&t, ":"), rv, Mode_S(&t, ":"), rp) && LvN_SetAct("EventName", name) &&
+		LvN_SetAct("EventFunc", Mode_S(&t, "!AnmSoundEvent")));
+}
+
 static PyObject *DoorSound_SetInitDoorSound(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "DoorClass", "ActionName", "SoundName", "Vol", "Pitch", NULL };
-	PyObject *cls, *act, *snd, *vol = NULL, *pitch = NULL;
-	scriptFrame_t f = { 0 };
+	nativeVal_t a[5];
+	byte given[5];
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOO|OO", names, &cls, &act, &snd, &vol, &pitch)) {
+	if (!Mode_Kw(args, kw, "OOO|OO", names, 5, a, given)) {
 		return NULL;
 	}
-	vol = vol ? vol : Sf_Int(&f, 1);
-	pitch = pitch ? pitch : Sf_Int(&f, 0);
-	Sf_Ask(&f, "SAct", "GetClass", "(O)", cls);
-	Sf_Ask(&f, "SAct", "GetAction", "(O)", act);
-	Sf_Ask(&f, "SAct", "SetAct", "(si)", "AddEventAtTime", 0);
-	Sf_Ask(&f, "SAct", "SetAct", "(sO)", "EventName", Sf_Cat(&f, "OsOsO", snd, ":", Sf_Repr(&f, vol), ":",
-		Sf_Repr(&f, pitch)));
-	Sf_Ask(&f, "SAct", "SetAct", "(ss)", "EventFunc", "!AnmSoundEvent");
-	return Sf_None(&f);
+	if (!given[3]) {
+		Native_SetInt(&a[3], 1);
+	}
+	if (!given[4]) {
+		Native_SetInt(&a[4], 0);
+	}
+	return Mode_KwOut(a, 5, Gs_SetInitDoorSound(a), NULL);
 }
 
 /* ConversorSetSounds(CharName): the sounds of the conversion point's action */
-static PyObject *DoorSound_ConversorSetSounds(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
-	}
-	Sf_Import(&f, "Chars");
-	Snd_Run(&f, "sound/doorsound.def", doorsound_def, "ConversorSetSounds", Sf_Build(&f, "{s:O}", "char", name));
-	return Sf_None(&f);
+static byte Gs_ConversorSetSounds(const nativeVal_t *name) {
+	return Mode_Import("Chars") && Gs_RunDoor("ConversorSetSounds", Mode_DefVars(1, "char", name));
 }
+
+MODE_FN(DoorSound, LoadSounds, 0, Gs_LoadSounds())
+MODE_FN(DoorSound, SetSlide, 1, Gs_SetSlide(&a[0]))
+MODE_FN(DoorSound, ConversorSetSounds, 1, Gs_ConversorSetSounds(&a[0]))
 
 PyMethodDef g_DoorSoundMethods[] = {
 	{ "LoadSounds", DoorSound_LoadSounds, 1, NULL },
