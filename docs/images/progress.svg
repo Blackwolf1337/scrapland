@@ -2,8 +2,8 @@
 <title>ScrapC progress</title>
 <rect width="920" height="1178" rx="14" fill="#1b1814"/>
 <circle cx="130" cy="125" r="78" fill="none" stroke="#3a342b" stroke-width="16"/>
-<path d="M130.0,47.0 A78,78 0 1 1 52.0,126.2" fill="none" stroke="#e7b85a" stroke-width="16" stroke-linecap="round"/>
-<text x="130" y="137" text-anchor="middle" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="44" fill="#f1e9d8">75%</text>
+<path d="M130.0,47.0 A78,78 0 1 1 52.0,122.5" fill="none" stroke="#e7b85a" stroke-width="16" stroke-linecap="round"/>
+<text x="130" y="137" text-anchor="middle" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="44" fill="#f1e9d8">76%</text>
 <text x="130" y="161" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#a89c86">of the whole project</text>
 <text x="260" y="44" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="18" font-weight="600" fill="#f1e9d8">Progress</text>
 <text x="260" y="64" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#a89c86">State of 2026-11-07. Percentages are estimates, steps weighted by their share of the work.</text>
@@ -24,9 +24,9 @@
 <rect x="260" y="247" width="620" height="10" rx="5" fill="#3a342b"/>
 <rect x="260" y="247" width="620.0" height="10" rx="5" fill="#e7b85a"/>
 <text x="260" y="284" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="600" fill="#f1e9d8">5. Python scripts in C (issue #2)<tspan dx="10" font-weight="400" fill="#a89c86" font-size="12">The game's Python 1.5.2 scripts as C and data files, weight 25</tspan></text>
-<text x="880" y="284" text-anchor="end" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="18" fill="#f1e9d8">66%</text>
+<text x="880" y="284" text-anchor="end" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="18" fill="#f1e9d8">69%</text>
 <rect x="260" y="293" width="620" height="10" rx="5" fill="#3a342b"/>
-<rect x="260" y="293" width="407.1" height="10" rx="5" fill="#d9603f"/>
+<rect x="260" y="293" width="425.7" height="10" rx="5" fill="#d9603f"/>
 <text x="260" y="330" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="600" fill="#f1e9d8">6. Free-roam multiplayer (issue #1)<tspan dx="10" font-weight="400" fill="#a89c86" font-size="12">Players meet on the open map, weight 15</tspan></text>
 <text x="880" y="330" text-anchor="end" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif" font-size="18" fill="#f1e9d8">0%</text>
 <rect x="260" y="339" width="620" height="10" rx="5" fill="#3a342b"/>
@@ -154,9 +154,9 @@
 <rect x="290" y="1025" width="84" height="18" rx="9" fill="none" stroke="#e7b85a"/>
 <text x="332" y="1038" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#e7b85a">in progress</text>
 <rect x="385" y="1030" width="90" height="6" rx="3" fill="#3a342b"/>
-<rect x="385" y="1030" width="31.5" height="6" rx="3" fill="#d9603f"/>
-<text x="511" y="1038" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">35%</text>
-<text x="520" y="1038" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">global modules, save strings and console done; level modules and the rest running</text>
+<rect x="385" y="1030" width="45.0" height="6" rx="3" fill="#d9603f"/>
+<text x="511" y="1038" text-anchor="end" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#f1e9d8">50%</text>
+<text x="520" y="1038" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#a89c86">global modules, code strings, console and test channel done; level modules running</text>
 <text x="30" y="1064" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#f1e9d8">Python object library removed</text>
 <rect x="290" y="1051" width="84" height="18" rx="9" fill="none" stroke="#8a7f6c"/>
 <text x="332" y="1064" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#8a7f6c">not started</text>
