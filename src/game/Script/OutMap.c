@@ -7,224 +7,503 @@
  * The module variables stay in the scripts, others read and set them: OutMap.StartPos (the spawn points, a list of
  * (position, angle)), iStartPos and SpawRes; InTraffic.N_TrafficList, M_TrafficList, H_TrafficList, their counts
  * N_NumTraffic, M_NumTraffic, H_NumTraffic and Path (the map scripts set them before LoadFakeTraffic and FakeTraffic).
+ * Both modules are native C (docs/objlib-plan.md, stage 2, see their sections).
  */
-#include <stdarg.h>
-
 #include "scrap/scrap.h"
 #include "scrap/game.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/world.h"
-
-/* a function of the module as its script calls it (a global of the module) */
-static PyObject *Om_Own(scriptFrame_t *f, const char *module, const char *func, const char *fmt, ...) {
-	PyObject *fn = Sf_Global(f, module, func);
-	if (!fn) {
-		return NULL;
-	}
-	va_list va;
-	va_start(va, fmt);
-	PyObject *args = Py_VaBuildValue((char *)fmt, va);
-	va_end(va);
-	return Sf_CallArgs(f, fn, Sf_Check(f, args != NULL) ? args : NULL);
-}
-
-/* x == None */
-static int Om_IsNone(scriptFrame_t *f, PyObject *x) {
-	return Sf_Compare(f, x, "==", Py_None);
-}
-
-/* `pos and Scrap.TestSphere(pos[0], pos[1], pos[2], 1200, "vr") == None`: no ship or racer near the point */
-static int Om_FreePos(scriptFrame_t *f, PyObject *pos) {
-	int t = Sf_True(f, pos);
-	if (t <= 0) {
-		return t;
-	}
-	return Om_IsNone(f, Sf_Ask(f, "Scrap", "TestSphere", "(OOOis)", Sf_Item(f, pos, 0), Sf_Item(f, pos, 1),
-		Sf_Item(f, pos, 2), 1200, "vr"));
-}
+#include "game/Script/levels/Levels.h"
 
 /* ---- OutMap ---- */
 
+/*
+ * OutMap is native C (docs/objlib-plan.md, stage 2): its functions work on C values and read StartPos, iStartPos and
+ * SpawRes where the script reads them and write them back at once (OBJLIB 5: Ffa and the cases read and set them).
+ * The engine calls the cases record or swap go through their seams (OBJLIB 7: SAI.GetNextRacePoint, Scrap.TestSphere,
+ * TestLine, UsrEntity, StartDummySearch, NextDummySearch, CreateEntity, GetEntity, Set, SetGrid, GetNetFlags and
+ * SInput.SetActionSet); the player and the entities are handle values (OBJLIB 7). The other ports (Ffa, Split,
+ * Accelerator, Chars, OutPolice, Traffic, PhoneCab, Elevator, Parking, MissionsFuncs, Items, Vehicles) stay by name
+ * (OBJLIB 3) and the module's own functions are called through its globals as the script calls them (a mission or a
+ * case may replace them).
+ */
+
+/* a global of the module as its functions read it (out None before) */
+static byte Om_G(const char *name, nativeVal_t *out) {
+	return Mode_G("OutMap", name, out);
+}
+
+/* x == None: 1, 0, -1 with the error */
+static int Om_IsNone(const nativeVal_t *x) {
+	nativeVal_t none;
+	Native_SetNone(&none);
+	return Mode_Cmp(x, "==", &none);
+}
+
+/* `pos and Scrap.TestSphere(pos[0], pos[1], pos[2], 1200, "vr") == None` (test 0: the sphere test only): no ship or
+ * racer near the point. 1, 0, -1 with the error */
+static int Om_FreePos(const nativeVal_t *pos, byte test) {
+	nativeVal_t hit = { 0 };
+	if (test && !Native_True(pos)) {
+		return 0;
+	}
+	int r = Mode_TestSpherePos(pos, 1200, "vr", &hit) ? Om_IsNone(&hit) : -1;
+	Native_Free(&hit);
+	return r;
+}
+
+/* (v, 0) into out (v taken over) */
+static void Om_Pair(nativeVal_t *v, nativeVal_t *out) {
+	Native_SetEmpty(out, NV_TUPLE);
+	*Native_Append(out) = *v;
+	Native_SetNone(v);
+	Native_SetInt(Native_Append(out), 0);
+}
+
+/* the item 0 of the result of the module's own function func() */
+static byte Om_Own0(const char *func, nativeVal_t *out) {
+	nativeVal_t r = { 0 };
+	byte ok = Native_CallGlobal("OutMap", func, &r, "") && LvN_Item(&r, 0, out);
+	Native_Free(&r);
+	return ok;
+}
+
 /* BrowseSpawnPos(): the active DM_Spawn dummies into StartPos as (position, angle + 180) */
-static PyObject *OutMap_BrowseSpawnPos(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Om_BrowseSpawnPos(void) {
+	if (!Mode_DummyStartSeam("DM_Spawn*", 1)) {
+		return 0;
 	}
-	Sf_Ask(&f, "Scrap", "StartDummySearch", "(si)", "DM_Spawn*", 1);
-	while (!f.failed) {
-		int mark = f.n;
-		PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-		int some = Sf_Compare(&f, dummy, "!=", Py_None);
-		if (some <= 0) {
-			break;
+	for (;;) {
+		modeVals_t t = { .n = 0 };
+		nativeVal_t *dummy = Mode_V(&t), *on = Mode_V(&t), *pos = Mode_V(&t), *ang = Mode_V(&t), *y = Mode_V(&t);
+		nativeVal_t *e = Mode_V(&t), *item = Mode_V(&t);
+		if (!Mode_DummyNextSeam(dummy)) {
+			return Mode_Done(&t, 0);
 		}
-		if (Sf_True(&f, Sf_Item(&f, dummy, 3)) > 0) {
-			/* list.append with two arguments appends the tuple in Python 1.5.2 */
-			Sf_Method(&f, Sf_Global(&f, "OutMap", "StartPos"), "append", "(OO)", Sf_Item(&f, dummy, 1),
-				Sf_OpI(&f, Sf_Item(&f, Sf_Item(&f, dummy, 2), 1), '+', 180));
+		int some = Om_IsNone(dummy);
+		if (some != 0) {
+			return Mode_Done(&t, some > 0);
 		}
-		Sf_Release(&f, mark);
+		if (!LvN_Item(dummy, 3, on)) {
+			return Mode_Done(&t, 0);
+		}
+		/* list.append with two arguments appends the tuple in Python 1.5.2 */
+		if (Native_True(on)) {
+			if (!LvN_Item(dummy, 1, pos) || !LvN_Item(dummy, 2, ang) || !LvN_Item(ang, 1, y) ||
+				!Mode_Arith('+', y, Mode_I(&t, 180), e)) {
+				return Mode_Done(&t, 0);
+			}
+			Native_SetEmpty(item, NV_TUPLE);
+			Native_Copy(Native_Append(item), pos);
+			Native_Copy(Native_Append(item), e);
+			if (!Mode_Append("OutMap", "StartPos", item)) {
+				return Mode_Done(&t, 0);
+			}
+		}
+		Mode_Done(&t, 1);
 	}
-	return Sf_None(&f);
 }
 
 /* GetSpawnPos(): the next spawn point of StartPos, round */
-static PyObject *OutMap_GetSpawnPos(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Om_GetSpawnPos(nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *i = Mode_V(&t), *next = Mode_V(&t), *sp = Mode_V(&t), *n = Mode_V(&t), *r = Mode_V(&t);
+	int len = -1;
+	byte ok = Om_G("iStartPos", i) && Mode_Arith('+', i, Mode_I(&t, 1), next) && Om_G("StartPos", sp) &&
+		(len = Mode_Len(sp)) >= 0;
+	if (ok) {
+		Native_SetInt(n, len);
+		Native_Free(sp);
+		Native_Free(i);
+		ok = Mode_Arith('%', next, n, r) && Mode_Put("OutMap", "iStartPos", NULL, r) && Om_G("StartPos", sp) &&
+			Om_G("iStartPos", i) && Mode_Sub(sp, i, out);
 	}
-	PyObject *next = Sf_OpI(&f, Sf_Global(&f, "OutMap", "iStartPos"), '+', 1);
-	int n = Sf_Len(&f, Sf_Global(&f, "OutMap", "StartPos"));
-	Sf_SetGlobal(&f, "OutMap", "iStartPos", Sf_Op(&f, next, '%', n >= 0 ? Sf_Int(&f, n) : NULL));
-	return Sf_Return(&f, Sf_GetItem(&f, Sf_Global(&f, "OutMap", "StartPos"), Sf_Global(&f, "OutMap", "iStartPos")));
+	return Mode_Done(&t, ok);
 }
 
 /* GetFreeSpawnPos(): (position, 0), the free point nearest to the player that the player does not see */
-static PyObject *OutMap_GetFreeSpawnPos(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Om_GetFreeSpawnPos(nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *pos = Mode_V(&t), *p = Mode_V(&t);
+	if (!Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	int t = Sf_True(&f, usr);
-	if (t == 0) {
-		return Sf_Return(&f, Om_Own(&f, "OutMap", "GetFreeSpawnPosReal", "()"));
+	if (!Native_True(usr)) {
+		return Mode_Done(&t, Native_CallGlobal("OutMap", "GetFreeSpawnPosReal", out, ""));
 	}
-	PyObject *pos = Om_Own(&f, "OutMap", "GetNearestFreeSpawnPos", "(O)", Sf_Attr(&f, usr, "Pos"));
-	return Sf_Return(&f, Sf_Build(&f, "(Oi)", pos, 0));
+	if (!Mode_VObj(usr, "Pos", pos) || !Native_CallGlobal("OutMap", "GetNearestFreeSpawnPos", p, "v", pos)) {
+		return Mode_Done(&t, 0);
+	}
+	Om_Pair(p, out);
+	return Mode_Done(&t, 1);
 }
 
 /* GetFreeSpawnPosReal(): (position, 0), a free race point after one of the next three spawn points */
-static PyObject *OutMap_GetFreeSpawnPosReal(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	for (int i = 0; i < 3 && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *sp = Sf_Item(&f, Om_Own(&f, "OutMap", "GetSpawnPos", "()"), 0);
-		PyObject *pos = Sf_Ask(&f, "SAI", "GetNextRacePoint", "(Oii)", sp, 0, 2000000);
-		if (Om_FreePos(&f, pos) > 0) {
-			return Sf_Return(&f, Sf_Build(&f, "(Oi)", pos, 0));
+static byte Om_GetFreeSpawnPosReal(nativeVal_t *out) {
+	for (int i = 0; i < 3; i++) {
+		nativeVal_t sp = { 0 }, at = { 0 }, pos = { 0 };
+		int ok = Native_CallGlobal("OutMap", "GetSpawnPos", &sp, "") && LvN_Item(&sp, 0, &at) &&
+			Mode_RacePoint(&at, 0, 2000000, &pos) ? Om_FreePos(&pos, 1) : -1;
+		Native_Free(&sp);
+		Native_Free(&at);
+		if (ok > 0) {
+			Om_Pair(&pos, out);
 		}
-		Sf_Release(&f, mark);
+		Native_Free(&pos);
+		if (ok) {
+			return ok > 0;
+		}
 	}
-	return Sf_Return(&f, Om_Own(&f, "OutMap", "GetFreeSpawn", "()"));
+	return Native_CallGlobal("OutMap", "GetFreeSpawn", out, "");
 }
 
 /* GetNearestFreeSpawnPosReal(initialPos): a free race point after initialPos (seven tries) */
-static PyObject *OutMap_GetNearestFreeSpawnPosReal(PyObject *self, PyObject *args) {
-	PyObject *initial;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &initial)) {
-		return NULL;
-	}
-	for (int i = 0; i < 7 && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *pos = Sf_Ask(&f, "SAI", "GetNextRacePoint", "(Oii)", initial, 0, 2000000);
-		if (Om_FreePos(&f, pos) > 0) {
-			return Sf_Return(&f, pos);
+static byte Om_GetNearestFreeSpawnPosReal(const nativeVal_t *initial, nativeVal_t *out) {
+	for (int i = 0; i < 7; i++) {
+		nativeVal_t pos = { 0 };
+		int ok = Mode_RacePoint(initial, 0, 2000000, &pos) ? Om_FreePos(&pos, 1) : -1;
+		if (ok > 0) {
+			*out = pos;
+			return 1;
 		}
-		Sf_Release(&f, mark);
+		Native_Free(&pos);
+		if (ok < 0) {
+			return 0;
+		}
 	}
-	return Sf_Return(&f, Sf_Item(&f, Om_Own(&f, "OutMap", "GetFreeSpawn", "()"), 0));
+	return Om_Own0("GetFreeSpawn", out);
 }
 
 /* GetFreeSpawn(): the first free spawn point (the next one when none is free); SpawRes the last TestSphere */
-static PyObject *OutMap_GetFreeSpawn(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
+static byte Om_GetFreeSpawn(nativeVal_t *out) {
+	nativeVal_t sp = { 0 };
 	long count = 0;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+	int n = Om_G("StartPos", &sp) ? Mode_Len(&sp) : -1;
+	Native_Free(&sp);
+	if (n < 0) {
+		return 0;
 	}
-	int n = Sf_Len(&f, Sf_Global(&f, "OutMap", "StartPos"));
-	if (n >= 0) {
-		Sf_Check(&f, Script_Range(Sf_Int(&f, n), &count));
+	Native_SetInt(&sp, n);
+	if (!Mode_Range(&sp, &count)) {
+		return 0;
 	}
-	for (long i = 0; i < count && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *pos = Om_Own(&f, "OutMap", "GetSpawnPos", "()");
-		PyObject *at = Sf_Item(&f, pos, 0);
-		Sf_SetGlobal(&f, "OutMap", "SpawRes", Sf_Ask(&f, "Scrap", "TestSphere", "(OOOis)", Sf_Item(&f, at, 0),
-			Sf_Item(&f, at, 1), Sf_Item(&f, at, 2), 1200, "vr"));
-		if (Om_IsNone(&f, Sf_Global(&f, "OutMap", "SpawRes")) > 0) {
-			return Sf_Return(&f, pos);
+	for (long i = 0; i < count; i++) {
+		nativeVal_t pos = { 0 }, at = { 0 }, res = { 0 };
+		int ok = Native_CallGlobal("OutMap", "GetSpawnPos", &pos, "") && LvN_Item(&pos, 0, &at) &&
+			Mode_TestSpherePos(&at, 1200, "vr", &res) && Mode_Put("OutMap", "SpawRes", NULL, &res) &&
+			(Native_Free(&res), Om_G("SpawRes", &res)) ? Om_IsNone(&res) : -1;
+		Native_Free(&at);
+		Native_Free(&res);
+		if (ok > 0) {
+			*out = pos;
+			return 1;
 		}
-		Sf_Release(&f, mark);
+		Native_Free(&pos);
+		if (ok < 0) {
+			return 0;
+		}
 	}
-	return Sf_Return(&f, Om_Own(&f, "OutMap", "GetSpawnPos", "()"));
+	return Native_CallGlobal("OutMap", "GetSpawnPos", out, "");
 }
 
 /*
  * GetNearestFreeSpawnPos(initialPos=None) and GetFarthestFreeSpawnPos(initialPos=None): the free race point after a
  * spawn point nearest to (the player sees it) or farthest from initialPos, the player's position by default
  */
-static PyObject *OutMap_SpawnPosBy(PyObject *args, PyObject *kw, byte nearest) {
-	static char *names[] = { "initialPos", NULL };
-	PyObject *initial = NULL;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &initial)) {
-		return NULL;
+static byte Om_SpawnPosBy(const nativeVal_t *initialArg, byte nearest, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *initial = Mode_V(&t), *best = Mode_V(&t), *bestPos = Mode_V(&t), *list = Mode_V(&t);
+	if (!Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
 	}
-	initial = initial ? initial : Py_None;
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	int t = Sf_True(&f, usr);
-	if (t == 0) {
-		PyObject *real = Om_Own(&f, "OutMap", "GetFreeSpawnPosReal", "()");
-		return Sf_Return(&f, nearest ? Sf_Item(&f, real, 0) : real);
+	if (!Native_True(usr)) {
+		return Mode_Done(&t, nearest ? Om_Own0("GetFreeSpawnPosReal", out) :
+			Native_CallGlobal("OutMap", "GetFreeSpawnPosReal", out, ""));
 	}
-	/* the best distance and point so far are held outside the frame, which drops each turn's values */
-	PyObject *best = PyFloat_FromDouble(nearest ? 2000000.0 : 0.0);
-	PyObject *bestPos = Script_Ref(Py_None);
-	if (Sf_True(&f, initial) == 0) {
-		initial = Sf_Attr(&f, usr, "Pos");
+	Native_SetFloat(best, nearest ? 2000000.0 : 0.0);
+	if (initialArg && Native_True(initialArg)) {
+		Native_Copy(initial, initialArg);
+	} else if (!Mode_VObj(usr, "Pos", initial)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *list = Sf_Global(&f, "OutMap", "StartPos");
-	for (int i = 0; !f.failed; i++) {
-		int mark = f.n;
-		PyObject *elem = Sf_Next(&f, list, i);
-		if (!elem) {
-			break;
-		}
-		PyObject *pos = Sf_Ask(&f, "SAI", "GetNextRacePoint", "(Oii)", Sf_Item(&f, elem, 0), 0, 2000000);
-		PyObject *hit = Sf_Ask(&f, "Scrap", "TestSphere", "(OOOis)", Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1),
-			Sf_Item(&f, pos, 2), 1200, "vr");
-		int ok = Om_IsNone(&f, hit);
+	int n = Om_G("StartPos", list) ? Mode_Loop(list) : -1;
+	if (n < 0) {
+		return Mode_Done(&t, 0);
+	}
+	for (int i = 0; i < n; i++) {
+		int mark = t.n;
+		nativeVal_t *elem = Mode_V(&t), *at = Mode_V(&t), *pos = Mode_V(&t), *upos = Mode_V(&t);
+		nativeVal_t *res = Mode_V(&t), *name = Mode_V(&t), *d = Mode_V(&t), *dist = Mode_V(&t), *list2 = Mode_V(&t);
+		int ok = Native_SeqItem(list, i, elem) && LvN_Item(elem, 0, at) && Mode_RacePoint(at, 0, 2000000, pos) ?
+			Om_FreePos(pos, 0) : -1;
 		if (ok > 0 && nearest) {
-			PyObject *res = Sf_Ask(&f, "Scrap", "TestLine", "(OOs)", Sf_Attr(&f, usr, "Pos"), pos, "");
-			ok = Sf_True(&f, res);
+			Native_SetStr(list2, "");
+			ok = Mode_VObj(usr, "Pos", upos) && Mode_TestLineSeam(upos, pos, list2, res) ? Native_True(res) : -1;
 			if (ok > 0) {
-				ok = Sf_EqS(&f, Sf_Item(&f, res, 1), "");
+				ok = LvN_Item(res, 1, name) ? LvN_EqS(name, "") : -1;
 			}
 		}
 		if (ok > 0) {
-			PyObject *dist = Sf_Ask(&f, "SVec", "Mod", "(O)", Sf_Ask(&f, "SVec", "Sub", "(OO)", initial, pos));
-			if (Sf_Compare(&f, dist, nearest ? "<" : ">", best) > 0) {
-				Py_DECREF(best);
-				Py_DECREF(bestPos);
-				best = Script_Ref(dist);
-				bestPos = Script_Ref(pos);
+			ok = Mode_VecSub(initial, pos, d) && Mode_VecMod(d, dist) ? Mode_Cmp(dist, nearest ? "<" : ">", best) : -1;
+			if (ok > 0) {
+				Native_Free(best);
+				Native_Free(bestPos);
+				Native_Copy(best, dist);
+				Native_Copy(bestPos, pos);
 			}
 		}
-		if (!f.failed) {
-			Sf_Release(&f, mark);
+		if (ok < 0) {
+			return Mode_Done(&t, 0);
+		}
+		Mode_Release(&t, mark);
+	}
+	int none = Om_IsNone(bestPos);
+	if (none < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (none) {
+		return Mode_Done(&t, Om_Own0("GetFreeSpawnPosReal", out));
+	}
+	Native_Copy(out, bestPos);
+	return Mode_Done(&t, 1);
+}
+
+/* the end of CreatePlayers: the camera of Player1 and the action set of the racer */
+static byte Om_PlayersCam(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cam = Mode_V(&t), *ply = Mode_V(&t), *pn = Mode_V(&t), *cn = Mode_V(&t), *z = Mode_V(&t);
+	Native_SetFloat(z, 0.0);
+	/* OBJLIB 3: Vehicles by name */
+	byte ok = LvN_Create(Mode_S(&t, "Player1Cam"), z, z, z, "FCam", cam) && Mode_EntitySeam(Mode_S(&t, "Player1"), ply) &&
+		Mode_VGet(ply, "Name", pn) && Mode_VGet(cam, "Name", cn) &&
+		Native_CallMod("Vehicles", "SetActiveCam", NULL, "vvi", pn, cn, 0L) && Mode_ActionSet("Racer");
+	return Mode_Done(&t, ok);
+}
+
+/* CreatePlayers(): a test of the developers, a ship at each active DM_Spawn (the second one with AI) and the camera */
+static byte Om_CreatePlayers(void) {
+	static const char *const gvars[] = { "PlayerModel", "PlayerMaxLife", "PilotModel", "Motor0Model", "Motor1Model",
+		"Motor2Model", "Motor3Model", "WeaponBayList", "PlayerName" };
+	nativeVal_t ctr;
+	if (!Mode_Import("Vehicles") || !Mode_DummyStartSeam("DM_Spawn*", 1)) {
+		return 0;
+	}
+	Native_SetInt(&ctr, 1);
+	for (;;) {
+		modeVals_t t = { .n = 0 };
+		nativeVal_t *dummy = Mode_V(&t), *on = Mode_V(&t), *at = Mode_V(&t), *rep = Mode_V(&t), *name = Mode_V(&t);
+		nativeVal_t *x = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t), *o1 = Mode_V(&t), *desc = Mode_V(&t);
+		nativeVal_t *ang = Mode_V(&t), *a = Mode_V(&t), *a1 = Mode_V(&t), *oname = Mode_V(&t), *p = Mode_V(&t);
+		if (!Mode_DummyNextSeam(dummy)) {
+			Native_Free(&ctr);
+			return Mode_Done(&t, 0);
+		}
+		int some = Om_IsNone(dummy);
+		if (some != 0) {
+			Native_Free(&ctr);
+			return Mode_Done(&t, some < 0 ? 0 : Om_PlayersCam());
+		}
+		if (!LvN_Item(dummy, 3, on)) {
+			Native_Free(&ctr);
+			return Mode_Done(&t, 0);
+		}
+		if (!Native_True(on)) {
+			Mode_Done(&t, 1);
+			continue;
+		}
+		Mode_Repr(&ctr, rep);
+		byte ok = LvN_Item(dummy, 1, at) && Mode_Cat(&t, name, 2, Mode_S(&t, "Player"), rep) && LvN_Item(at, 0, x) &&
+			LvN_Item(at, 1, y) && LvN_Item(at, 2, z) && LvN_Create(name, x, y, z, "Car", o1) &&
+			LvN_SetS(o1, "TgType", "killer") && LvN_Item(dummy, 0, desc) && Mode_VSet(o1, "Descriptor", desc) &&
+			LvN_Item(dummy, 2, a) && LvN_Item(a, 1, a1) && Mode_Arith('+', a1, Mode_I(&t, 180), ang);
+		if (ok) {
+			Native_SetEmpty(a, NV_TUPLE);
+			Native_SetInt(Native_Append(a), 0);
+			Native_Copy(Native_Append(a), ang);
+			Native_SetInt(Native_Append(a), 0);
+			ok = Mode_VSet(o1, "Ang", a) && Mode_VGet(o1, "Name", oname);
+		}
+		nativeVal_t g[9];
+		int n = 0;
+		for (; ok && n < 9; n++) {
+			ok = Native_GVarGet(gvars[n], &g[n]);
+		}
+		if (!ok && n > 0) {
+			Native_Free(&g[--n]);
+		}
+		/* OBJLIB 3: Vehicles by name */
+		ok = ok && Native_CallMod("Vehicles", "SetProperties", NULL, "vvvvvvvvvv", oname, &g[0], &g[1], &g[2], &g[3],
+			&g[4], &g[5], &g[6], &g[7], &g[8]);
+		while (n-- > 0) {
+			Native_Free(&g[n]);
+		}
+		if (ok && LvN_EqI(&ctr, 2)) {
+			ok = LvN_SetI(o1, "EnableAI", 1) && LvN_SetS(o1, "Descriptor", "Bad boy");
+		}
+		ok = ok && Mode_Arith('+', &ctr, Mode_I(&t, 1), p);
+		if (ok) {
+			Native_Free(&ctr);
+			Native_Copy(&ctr, p);
+		}
+		Mode_Done(&t, 1);
+		if (!ok) {
+			Native_Free(&ctr);
+			return 0;
 		}
 	}
-	Sf_Keep(&f, best);
-	bestPos = Sf_Keep(&f, bestPos);
-	if (Om_IsNone(&f, bestPos) > 0) {
-		return Sf_Return(&f, Sf_Item(&f, Om_Own(&f, "OutMap", "GetFreeSpawnPosReal", "()"), 0));
+}
+
+/* the module and function of an InitOutMap step: import module; module.func() (OBJLIB 3, 6) */
+static byte Om_Start(const char *module, const char *func) {
+	return Mode_Import(module) && Native_CallMod(module, func, NULL, "");
+}
+
+/* InitOutMap(): the players, cameras and scorers of a network client or server, the split screen or the single
+ * player game with the police, the traffic, the phone cabs, the elevators and the parkings */
+static byte Om_InitOutMap(void) {
+	static const char *const inits[][2] = { { "Chars", "CreateStartupPlayer" }, { "OutPolice", "Init" },
+		{ "Traffic", "Init" }, { "PhoneCab", "Init" } };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *net = Mode_V(&t), *f = Mode_V(&t), *split = Mode_V(&t), *sv = Mode_V(&t), *stats = Mode_V(&t);
+	if (!Mode_NetFlags(net) || !LvN_Item(net, 0, f)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_Return(&f, bestPos);
+	if (Native_True(f)) {
+		return Mode_Done(&t, Om_Start("Ffa", "InitClient"));
+	}
+	int c = Om_Start("Accelerator", "Init") && Native_GVarGet("SplitScreen", split) ? Mode_CmpI(split, "!=", 0) : -1;
+	if (c) {
+		return Mode_Done(&t, c > 0 && Om_Start("Split", "Init"));
+	}
+	Native_Free(f);
+	if (!LvN_Item(net, 1, f)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_True(f)) {
+		Native_Free(f);
+		return Mode_Done(&t, Mode_Import("Ffa") && LvN_Item(net, 2, f) && Native_CallMod("Ffa", "InitServer", NULL, "v", f));
+	}
+	for (int i = 0; i < 4; i++) {
+		if (!Om_Start(inits[i][0], inits[i][1])) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	if (!Mode_GVarSetS("OnTaunt", "Speech.LaunchTaunt") || !Om_Start("Elevator", "PlayerCreatedElevator") ||
+		!Om_Start("Parking", "Init") || !Mode_Import("MissionsFuncs")) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("JackInTheBox.Active", sv);
+	if (!LvN_EqS(sv, "1")) {
+		return Mode_Done(&t, Mode_GVarSetI("SuperDealAvaliable", 0) && Mode_GVarSetI("EnergyBarActive", 0));
+	}
+	Native_SetInt(stats, 1);
+	for (long i = 1; i <= 3; i++) {
+		nativeVal_t res = { 0 }, a = { 0 }, b = { 0 };
+		/* OBJLIB 3: MissionsFuncs by name */
+		int lt = Native_CallMod("MissionsFuncs", "CrazyDealStatus", &res, "i", i) && LvN_Item(&res, 1, &a) &&
+			LvN_Item(&res, 2, &b) ? Mode_Cmp(&a, "<", &b) : -1;
+		Native_Free(&res);
+		Native_Free(&a);
+		Native_Free(&b);
+		if (lt < 0) {
+			return Mode_Done(&t, 0);
+		}
+		if (lt) {
+			Native_SetInt(stats, 0);
+		}
+	}
+	return Mode_Done(&t, Mode_GVarSet("SuperDealAvaliable", stats) && Mode_GVarSetI("EnergyBarActive", 0));
+}
+
+/* Scrap.Set(var, dummy[1][1]) */
+static byte Om_SetHeight(const char *var, const nativeVal_t *dummy) {
+	nativeVal_t p = { 0 }, y = { 0 };
+	byte ok = LvN_Item(dummy, 1, &p) && LvN_Item(&p, 1, &y) && Mode_GVarSet(var, &y);
+	Native_Free(&p);
+	Native_Free(&y);
+	return ok;
+}
+
+/* BrowseAtmospherePos(): the height of the atmosphere and the top of the map from their dummies */
+static byte Om_BrowseAtmospherePos(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *dummy = Mode_V(&t), *top = Mode_V(&t), *lim = Mode_V(&t), *v = Mode_V(&t);
+	if (!Mode_DummyStartSeam("DM_Atmosphere", 0) || !Mode_DummyNextSeam(dummy) ||
+		(Native_True(dummy) && !Om_SetHeight("AtmosphereLimit", dummy)) || !Mode_DummyStartSeam("DM_MapTop", 0) ||
+		!Mode_DummyNextSeam(top)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_True(top)) {
+		return Mode_Done(&t, Om_SetHeight("TopLimit", top));
+	}
+	return Mode_Done(&t, Native_GVarGet("AtmosphereLimit", lim) && Mode_Arith('+', lim, Mode_I(&t, 5000), v) &&
+		Mode_GVarSet("TopLimit", v));
+}
+
+/* Init(LevelPath): the start of an outdoor level */
+static byte Om_Init(const nativeVal_t *path) {
+	static const struct {
+		const char *var;
+		long value;
+	} clouds[] = { { "CameraCloudDistance", 2000 }, { "CameraCloudPlaneSize", 1000 }, { "CameraCloudThickness", 1000 },
+		{ "CameraCloudAlpha", 240 }, { "CameraCloudRed", 128 }, { "CameraCloudGreen", 128 }, { "CameraCloudBlue", 140 } };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *file = Mode_V(&t);
+	/* OBJLIB 3: the module's own functions through its globals */
+	if (!Mode_Import("Menu") || !Mode_Import("Init") || !Mode_Cat(&t, file, 2, path, Mode_S(&t, "/2D/Map2D.tga")) ||
+		!Mode_GVarSet("FileNameMap2D", file) || !Mode_GVarSetI("CharGrav", 3000) ||
+		!Native_CallGlobal("OutMap", "BrowseAtmospherePos", NULL, "") ||
+		!Native_CallGlobal("OutMap", "BrowseSpawnPos", NULL, "") || !Mode_GVarSetI("GridUseTopLimit", 1) ||
+		!Mode_SetGrid(50000, 50000, 50000) || !Mode_GVarSetI("Max_Rad_Obj", 10000)) {
+		return Mode_Done(&t, 0);
+	}
+	for (size_t i = 0; i < sizeof(clouds) / sizeof(clouds[0]); i++) {
+		if (!Mode_GVarSetI(clouds[i].var, clouds[i].value)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	const nativeVal_t *msg[1] = { Mode_S(&t, "Map initialized as Outdor") };
+	return Mode_Done(&t, Native_CallGlobal("OutMap", "InitOutMap", NULL, "") && Om_Start("Items", "Init") &&
+		Mode_Print(msg, 1));
+}
+
+/* the adapters (the arity errors of the script's functions) */
+#define OM_FN0(name, call) \
+	static PyObject *OutMap_##name(PyObject *self, PyObject *args) { \
+		modeVals_t t = { .n = 0 }; \
+		nativeVal_t *out = Mode_V(&t); \
+		(void)self; \
+		(void)out; \
+		if (!PyArg_ParseTuple(args, "")) { \
+			return Mode_Done(&t, 0), NULL; \
+		} \
+		return Mode_Out(&t, call, out); \
+	}
+
+OM_FN0(BrowseSpawnPos, Om_BrowseSpawnPos())
+OM_FN0(GetSpawnPos, Om_GetSpawnPos(out))
+OM_FN0(GetFreeSpawnPos, Om_GetFreeSpawnPos(out))
+OM_FN0(GetFreeSpawnPosReal, Om_GetFreeSpawnPosReal(out))
+MODE_FN(OutMap, GetNearestFreeSpawnPosReal, 1, Om_GetNearestFreeSpawnPosReal(&a[0], out))
+OM_FN0(GetFreeSpawn, Om_GetFreeSpawn(out))
+OM_FN0(CreatePlayers, Om_CreatePlayers())
+OM_FN0(InitOutMap, Om_InitOutMap())
+OM_FN0(BrowseAtmospherePos, Om_BrowseAtmospherePos())
+MODE_FN(OutMap, Init, 1, Om_Init(&a[0]))
+
+static PyObject *OutMap_SpawnPosBy(PyObject *args, PyObject *kw, byte nearest) {
+	static char *names[] = { "initialPos", NULL };
+	PyObject *o = NULL;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *initial = Mode_V(&t), *out = Mode_V(&t);
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &o)) {
+		return Mode_Done(&t, 0), NULL;
+	}
+	if (o) {
+		Native_Arg(o, initial);
+	}
+	return Mode_Out(&t, Om_SpawnPosBy(o ? initial : NULL, nearest, out), out);
 }
 
 static PyObject *OutMap_GetNearestFreeSpawnPos(PyObject *self, PyObject *args, PyObject *kw) {
@@ -235,175 +514,6 @@ static PyObject *OutMap_GetNearestFreeSpawnPos(PyObject *self, PyObject *args, P
 static PyObject *OutMap_GetFarthestFreeSpawnPos(PyObject *self, PyObject *args, PyObject *kw) {
 	(void)self;
 	return OutMap_SpawnPosBy(args, kw, 0);
-}
-
-/* CreatePlayers(): a test of the developers, a ship at each active DM_Spawn (the second one with AI) and the camera */
-static PyObject *OutMap_CreatePlayers(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "Vehicles");
-	Sf_Ask(&f, "Scrap", "StartDummySearch", "(si)", "DM_Spawn*", 1);
-	/* ctr is held outside the frame, which drops each turn's values */
-	PyObject *ctr = PyInt_FromLong(1);
-	while (!f.failed) {
-		int mark = f.n;
-		PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-		if (Sf_Compare(&f, dummy, "!=", Py_None) <= 0) {
-			break;
-		}
-		if (Sf_True(&f, Sf_Item(&f, dummy, 3)) > 0) {
-			PyObject *at = Sf_Item(&f, dummy, 1);
-			PyObject *o1 = Sf_Ask(&f, "Scrap", "CreateEntity", "(OOOOs)", Sf_Cat(&f, "sO", "Player", Sf_Repr(&f, ctr)),
-				Sf_Item(&f, at, 0), Sf_Item(&f, at, 1), Sf_Item(&f, at, 2), "Car");
-			Sf_SetAttrS(&f, o1, "TgType", "killer");
-			Sf_SetAttr(&f, o1, "Descriptor", Sf_Item(&f, dummy, 0));
-			Sf_SetAttr(&f, o1, "Ang", Sf_Build(&f, "(iOi)", 0, Sf_OpI(&f, Sf_Item(&f, Sf_Item(&f, dummy, 2), 1), '+', 180),
-				0));
-			static const char *const gvars[] = { "PlayerModel", "PlayerMaxLife", "PilotModel", "Motor0Model",
-				"Motor1Model", "Motor2Model", "Motor3Model", "WeaponBayList", "PlayerName" };
-			PyObject *p[9];
-			PyObject *name = Sf_Attr(&f, o1, "Name");
-			for (int i = 0; i < 9; i++) {
-				p[i] = Sf_Ask(&f, "Scrap", "Get", "(s)", gvars[i]);
-			}
-			if (!f.failed) {
-				Sf_Ask(&f, "Vehicles", "SetProperties", "(OOOOOOOOOO)", name, p[0], p[1], p[2], p[3], p[4], p[5], p[6],
-					p[7], p[8]);
-			}
-			if (Sf_EqI(&f, ctr, 2) > 0) {
-				Sf_SetAttrI(&f, o1, "EnableAI", 1);
-				Sf_SetAttrS(&f, o1, "Descriptor", "Bad boy");
-			}
-			PyObject *next = Sf_OpI(&f, ctr, '+', 1);
-			if (next) {
-				Py_DECREF(ctr);
-				ctr = Script_Ref(next);
-			}
-		}
-		if (!f.failed) {
-			Sf_Release(&f, mark);
-		}
-	}
-	Py_DECREF(ctr);
-	PyObject *cam = Sf_Ask(&f, "Scrap", "CreateEntity", "(sddds)", "Player1Cam", 0.0, 0.0, 0.0, "FCam");
-	PyObject *ply1 = Sf_Ask(&f, "Scrap", "GetEntity", "(s)", "Player1");
-	Sf_Ask(&f, "Vehicles", "SetActiveCam", "(OOi)", Sf_Attr(&f, ply1, "Name"), Sf_Attr(&f, cam, "Name"), 0);
-	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Racer");
-	return Sf_None(&f);
-}
-
-/* InitOutMap(): the players, cameras and scorers of a network client or server, the split screen or the single
- * player game with the police, the traffic, the phone cabs, the elevators and the parkings */
-static PyObject *OutMap_InitOutMap(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	PyObject *net = Sf_Ask(&f, "Scrap", "GetNetFlags", "()");
-	if (Sf_True(&f, Sf_Item(&f, net, 0)) > 0) {
-		Sf_Import(&f, "Ffa");
-		Sf_Ask(&f, "Ffa", "InitClient", "()");
-		return Sf_None(&f);
-	}
-	Sf_Import(&f, "Accelerator");
-	Sf_Ask(&f, "Accelerator", "Init", "()");
-	if (Sf_Compare(&f, Sf_Ask(&f, "Scrap", "Get", "(s)", "SplitScreen"), "!=", Sf_Int(&f, 0)) > 0) {
-		Sf_Import(&f, "Split");
-		Sf_Ask(&f, "Split", "Init", "()");
-		return Sf_None(&f);
-	}
-	if (Sf_True(&f, Sf_Item(&f, net, 1)) > 0) {
-		Sf_Import(&f, "Ffa");
-		Sf_Ask(&f, "Ffa", "InitServer", "(O)", Sf_Item(&f, net, 2));
-		return Sf_None(&f);
-	}
-	static const char *const inits[][2] = { { "Chars", "CreateStartupPlayer" }, { "OutPolice", "Init" },
-		{ "Traffic", "Init" }, { "PhoneCab", "Init" } };
-	for (int i = 0; i < 4; i++) {
-		Sf_Import(&f, inits[i][0]);
-		Sf_Ask(&f, inits[i][0], inits[i][1], "()");
-	}
-	Sf_Ask(&f, "Scrap", "Set", "(ss)", "OnTaunt", "Speech.LaunchTaunt");
-	Sf_Import(&f, "Elevator");
-	Sf_Ask(&f, "Elevator", "PlayerCreatedElevator", "()");
-	Sf_Import(&f, "Parking");
-	Sf_Ask(&f, "Parking", "Init", "()");
-	Sf_Import(&f, "MissionsFuncs");
-	int jack = Sf_EqS(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "JackInTheBox.Active"), "1");
-	if (jack > 0) {
-		PyObject *stats = Sf_Int(&f, 1);
-		for (int i = 1; i <= 3 && !f.failed; i++) {
-			PyObject *res = Sf_Ask(&f, "MissionsFuncs", "CrazyDealStatus", "(i)", i);
-			if (Sf_Compare(&f, Sf_Item(&f, res, 1), "<", Sf_Item(&f, res, 2)) > 0) {
-				stats = Sf_Int(&f, 0);
-			}
-		}
-		Sf_Ask(&f, "Scrap", "Set", "(sO)", "SuperDealAvaliable", stats);
-	} else if (jack == 0) {
-		Sf_Ask(&f, "Scrap", "Set", "(si)", "SuperDealAvaliable", 0);
-	}
-	Sf_Ask(&f, "Scrap", "Set", "(si)", "EnergyBarActive", 0);
-	return Sf_None(&f);
-}
-
-/* BrowseAtmospherePos(): the height of the atmosphere and the top of the map from their dummies */
-static PyObject *OutMap_BrowseAtmospherePos(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Ask(&f, "Scrap", "StartDummySearch", "(si)", "DM_Atmosphere", 0);
-	PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-	if (Sf_True(&f, dummy) > 0) {
-		Sf_Ask(&f, "Scrap", "Set", "(sO)", "AtmosphereLimit", Sf_Item(&f, Sf_Item(&f, dummy, 1), 1));
-	}
-	Sf_Ask(&f, "Scrap", "StartDummySearch", "(si)", "DM_MapTop", 0);
-	dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-	int top = Sf_True(&f, dummy);
-	if (top > 0) {
-		Sf_Ask(&f, "Scrap", "Set", "(sO)", "TopLimit", Sf_Item(&f, Sf_Item(&f, dummy, 1), 1));
-	} else if (top == 0) {
-		Sf_Ask(&f, "Scrap", "Set", "(sO)", "TopLimit", Sf_OpI(&f, Sf_Ask(&f, "Scrap", "Get", "(s)", "AtmosphereLimit"),
-			'+', 5000));
-	}
-	return Sf_None(&f);
-}
-
-/* Init(LevelPath): the start of an outdoor level */
-static PyObject *OutMap_Init(PyObject *self, PyObject *args) {
-	static const struct {
-		const char *var;
-		int value;
-	} clouds[] = { { "CameraCloudDistance", 2000 }, { "CameraCloudPlaneSize", 1000 }, { "CameraCloudThickness", 1000 },
-		{ "CameraCloudAlpha", 240 }, { "CameraCloudRed", 128 }, { "CameraCloudGreen", 128 }, { "CameraCloudBlue", 140 } };
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "Init");
-	Sf_Ask(&f, "Scrap", "Set", "(sO)", "FileNameMap2D", Sf_Cat(&f, "Os", path, "/2D/Map2D.tga"));
-	Sf_Ask(&f, "Scrap", "Set", "(si)", "CharGrav", 3000);
-	Om_Own(&f, "OutMap", "BrowseAtmospherePos", "()");
-	Om_Own(&f, "OutMap", "BrowseSpawnPos", "()");
-	Sf_Ask(&f, "Scrap", "Set", "(si)", "GridUseTopLimit", 1);
-	Sf_Ask(&f, "Scrap", "SetGrid", "(iii)", 50000, 50000, 50000);
-	Sf_Ask(&f, "Scrap", "Set", "(si)", "Max_Rad_Obj", 10000);
-	for (size_t i = 0; i < sizeof(clouds) / sizeof(clouds[0]); i++) {
-		Sf_Ask(&f, "Scrap", "Set", "(si)", clouds[i].var, clouds[i].value);
-	}
-	Om_Own(&f, "OutMap", "InitOutMap", "()");
-	Sf_Import(&f, "Items");
-	Sf_Ask(&f, "Items", "Init", "()");
-	Sf_Print(&f, "s", "Map initialized as Outdor");
-	return Sf_None(&f);
 }
 
 PyMethodDef g_OutMapMethods[] = {
