@@ -3479,6 +3479,8 @@ byte Mode_Set0I(const char *item, const char *var, long i) {
 	nativeVal_t v;
 	Native_SetInt(&v, i);
 	return Mode_Set0(item, var, &v);
+}
+
 /* ---- the menus of batch O (MenuBase, MenuControls, MenuVideo, MenuVideoVars) ---- */
 
 byte Mode_Printed(byte ok, const char *module, const char *func) {
