@@ -500,8 +500,10 @@ byte Mode_GOpI(const char *module, const char *name, char op, long i);
 
 /* SSound.LoadSound(file) through its seam (fc-r7b-pr1 records it), else Mode_LoadSound */
 byte Mode_LoadSoundSeam(const nativeVal_t *file);
-/* the count of items a loop of the script takes from *v (Native_ForCount), a list or tuple held as one NV_OBJ (it holds
- * handles) first turned into a native list or tuple of its items */
+/* a list or tuple held as one NV_OBJ (it holds handles) turned into a native list or tuple of its items in place (the
+ * items as Native_Arg makes them); any other value stays */
+void Mode_Elems(nativeVal_t *v);
+/* the count of items a loop of the script takes from *v (Native_ForCount) after Mode_Elems */
 int Mode_Loop(nativeVal_t *v);
 
 #endif
