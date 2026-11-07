@@ -3597,3 +3597,18 @@ void Mode_ModPutI(const char *module, const char *var, long i) {
 	Native_SetInt(&v, i);
 	Mode_ModPut(module, var, &v);
 }
+
+/* ---- the hubs of batch S (Parking, Accelerator, InitLevel) ---- */
+
+byte Mode_EvalIn(const char *module, const nativeVal_t *text, nativeVal_t *out) {
+	/* OBJLIB 6: Script_EvalIn, as the ports read the game's texts */
+	PyObject *s = Native_ToPy(text), *v = s ? Script_EvalIn(module, s) : NULL;
+	Py_XDECREF(s);
+	Native_SetNone(out);
+	if (!v) {
+		return 0;
+	}
+	Native_Arg(v, out);
+	Py_DECREF(v);
+	return 1;
+}

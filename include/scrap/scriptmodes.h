@@ -738,4 +738,10 @@ double Mode_ModGetN(const char *module, const char *var, double def);
 void Mode_ModPut(const char *module, const char *var, const nativeVal_t *v);
 void Mode_ModPutI(const char *module, const char *var, long i);
 
+/* ---- the hubs of batch S (Parking, Accelerator, InitLevel) ---- */
+
+/* eval(text) in the globals of module as the ports read the game's texts (a literal, or a bare name looked up in the
+ * module; OBJLIB 6: Script_EvalIn): the value into out (any object as Native_Arg makes it) */
+byte Mode_EvalIn(const char *module, const nativeVal_t *text, nativeVal_t *out);
+
 #endif
