@@ -9,6 +9,7 @@
 
 #include "scrap/global.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 
 /* Bank (Data.packed levels/bank) */
 extern PyMethodDef g_BankMapMethods[];
@@ -213,5 +214,176 @@ PyObject *Lv_PlanesPhoto(PyObject *args, const char *module, const char *ships, 
 
 /* SndElements(Name, x, y, z, angx, angy) of the MapSnd of a level with its table of elements (ends with a NULL name) */
 PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table);
+
+/*
+ * ---- native lines of the level scripts (docs/objlib-plan.md, stage 2) ----
+ *
+ * The same lines for the levels whose functions work on native values (scrap/scriptmodes.h). Each returns 1, or 0
+ * with the error of the script raised; conditions are 1, 0, or -1 with the error. Entities the script holds are
+ * handle values (NV_OBJ, OBJLIB 7). Calls of other ports go by name (OBJLIB 3), the functions of the level module
+ * through its globals (a mission may replace one), the variables of the level module are read where the script reads
+ * them and written through at once (OBJLIB 5). The frame helpers above stay for the levels still on Sf_ frames.
+ */
+
+/* a function of the module through its global (a mission may replace it); another port by name (OBJLIB 3) */
+#define LV_OWN(mod, name, out, ...) Native_CallGlobal(mod, name, out, __VA_ARGS__)
+#define LV_CALL(mod, name, out, ...) Native_CallMod(mod, name, out, __VA_ARGS__)
+
+/* module.var of another module as a value (any object: a handle, a function, a module as NV_OBJ) */
+byte LvN_ModGet(const char *module, const char *var, nativeVal_t *out);
+/* module.var = the global name of src as the object it is (a function: the one a mission put there; OBJLIB 5) */
+byte LvN_ModSetGlobal(const char *module, const char *var, const char *src, const char *name);
+/* module.var = None */
+byte LvN_ModNone(const char *module, const char *var);
+/* module.var.append(v) of a list variable of another module, in place (the method of whatever value is there) */
+byte LvN_ModAppend(const char *module, const char *var, const nativeVal_t *v);
+/* the global name of module (a function, a list: any object) as a value */
+byte LvN_GObj(const char *module, const char *name, nativeVal_t *out);
+/* global name = name + add of the module; the new value into out (NULL: dropped) */
+byte LvN_GAdd(const char *module, const char *name, long add, nativeVal_t *out);
+/* global name = i, = "text" of the module */
+byte LvN_PutI(const char *module, const char *name, long i);
+byte LvN_PutS(const char *module, const char *name, const char *s);
+/* `if name:` and `name == i` of a global of the module */
+int LvN_GTrue(const char *module, const char *name);
+int LvN_GEqI(const char *module, const char *name, long i);
+/* a == i, a == "text" of the script (Native_Compare can not fail on native values) */
+byte LvN_EqI(const nativeVal_t *a, long i);
+byte LvN_EqS(const nativeVal_t *a, const char *s);
+/* h.var = i, = "text", = d of a handle value */
+byte LvN_SetI(const nativeVal_t *h, const char *var, long i);
+byte LvN_SetS(const nativeVal_t *h, const char *var, const char *s);
+byte LvN_SetF(const nativeVal_t *h, const char *var, double d);
+/* x[i] of the script (a dict looks the int up; an NV_OBJ, e.g. a list that holds entity handles, the Python way, the
+ * item as Native_Arg makes it) */
+byte LvN_Item(const nativeVal_t *x, long i, nativeVal_t *out);
+/* a value whose items a loop takes one by one: a list or tuple held as one NV_OBJ (it holds handles) as a native list
+ * or tuple of its items as Native_Arg makes them, any other value copied; the global name of module the same way */
+void LvN_Elems(const nativeVal_t *v, nativeVal_t *out);
+byte LvN_GElems(const char *module, const char *name, nativeVal_t *out);
+/* raise "text" (a string exception of the script; OBJLIB 7: the Python exception until errors are a C state): 0 */
+byte LvN_RaiseText(const char *text);
+/* Scrap.StartDummySearch(pattern, flag); dummy = Scrap.NextDummySearch() */
+void LvN_Dummy(const char *pattern, int flag, nativeVal_t *dummy);
+/* (dummy[1][0], dummy[1][1], dummy[1][2]) and (dummy[2][0], dummy[2][1], 0) of a dummy search */
+byte LvN_DummyPosAng(const nativeVal_t *dummy, nativeVal_t *pos, nativeVal_t *ang);
+/* eval(Scrap.GetSaveVar(var)) in the globals of module */
+byte LvN_SaveList(const char *var, const char *module, nativeVal_t *out);
+/* lst.append(item); Scrap.SetSaveVar(var, `lst`) */
+byte LvN_SaveAppend(const char *var, nativeVal_t *lst, const nativeVal_t *item);
+/* lst.remove(x) of a value (a list in C: the ValueError of 1.5.2 when x is not in it; another value the Python way,
+ * its error) */
+byte LvN_ListRemove(nativeVal_t *lst, const nativeVal_t *x);
+/* Scrap.SetSaveVar(var, `v`) */
+void LvN_SaveRepr(const char *var, const nativeVal_t *v);
+/* Scrap.GetSaveVar(name) == text */
+byte LvN_SaveIs(const char *name, const char *text);
+/* Speech.AddRemoteCom(key, who[, then[, params]]) with then the global func of module (func NULL: two arguments,
+ * params NULL: three; the function Speech.AddRemoteCom read before then, as the script reads them) */
+byte LvN_Com(const char *key, const char *who, const char *module, const char *func, const nativeVal_t *params);
+/* the empty tuple () as the parameters of a callback */
+const nativeVal_t *LvN_NoArgs(void);
+/* Speech.PlayerName = usr; Speech.NPCName = ch */
+byte LvN_Speakers(const nativeVal_t *usr, const nativeVal_t *ch);
+/* Speech.OnEndOfSpeech = func (the global of module); Speech.OnEndOfSpeechParams = params (NULL for ()) */
+byte LvN_OnEnd(const char *module, const char *func, const nativeVal_t *params);
+/* the lines of Lv_Stay on a handle value */
+byte LvN_Stay(const nativeVal_t *e, long state, const nativeVal_t *target);
+/* CharsNPC.CharRes[name].CallbackFunc.append(func) with func the global of module, and the same after
+ * CharsNPC.CreateMissionChar(name) */
+byte LvN_Callback(const char *name, const char *module, const char *func);
+byte LvN_MissionChar(const char *name, const char *module, const char *func);
+/* `not Scrap.Get("IsXbox") or name` with name a global of module */
+int LvN_PcOr(const char *module, const char *name);
+/* the text item of a mission scorer in two parts (Lv_ScorerTextBegin, Lv_ScorerTextEnd) on values */
+byte LvN_ScorerTextBegin(const nativeVal_t *id, const char *item, long dy);
+byte LvN_ScorerTextEnd(const nativeVal_t *id, const char *item);
+/* SScorer.Set(id, item, var, v) with a C item name, and with a C text v */
+byte LvN_ScorerSet(const nativeVal_t *id, const char *item, const char *var, const nativeVal_t *v);
+byte LvN_ScorerSetS(const nativeVal_t *id, const char *item, const char *var, const char *s);
+/* SScorer.Set(0, item, var, v) and the same with an int */
+byte LvN_Set0(const char *item, const char *var, const nativeVal_t *v);
+byte LvN_Set0I(const char *item, const char *var, long i);
+/* module.var = i of another module */
+byte LvN_ModSetI(const char *module, const char *var, long i);
+/* e.Life = e.MaxLife = the global life of module */
+byte LvN_Life(const nativeVal_t *e, const char *module, const char *life);
+/* a value of a table of the level scripts as Sf_Value reads it (an int, a float, "%Module.name", "^Module.Func:text",
+ * "'text" or else a text) */
+byte LvN_Value(const char *text, int len, nativeVal_t *out);
+/* import VehiclesNPC; sp = VehiclesNPC.cShipAI() with the "name=value" attributes of vars: sp (an object) */
+byte LvN_Profile(const char *const *vars, nativeVal_t *out);
+/* VehiclesNPC.SetStdProperties(e.Name, pd.Ship); VehiclesNPC.ModAIProff(e, pd) */
+byte LvN_StdAI(const nativeVal_t *e, const nativeVal_t *pd);
+/* pd = profile() (a global of module) and LvN_StdAI(e, pd) */
+byte LvN_StdProfile(const char *module, const char *profile, const nativeVal_t *e, nativeVal_t *pd);
+/* `usr and usr.Name == name` */
+int LvN_UsrNameIs(const nativeVal_t *usr, const nativeVal_t *name);
+/* Menu.DrawScorer(0, SInput.GetActionSet()) */
+byte LvN_Draw(void);
+/* Menu.MissionScorerCall = None, = the global func of module */
+byte LvN_ScorerOff(void);
+byte LvN_ScorerCallG(const char *module, const char *func);
+/* MissionsFuncs.SetNextMission(lib, map); SaveGame.MMDesc(desc, 1) */
+byte LvN_Next(const char *lib, const char *map, const char *desc);
+/* Scrap.GetEntity(name) of a C name as the handle value */
+byte LvN_Entity(const char *name, nativeVal_t *out);
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func, args) with func an object */
+byte LvN_LaterObj(double delay, const nativeVal_t *func, const nativeVal_t *args, int n);
+/* Scrap.CreateEntity(name, x, y, z, cls) and the same at pos[0], pos[1], pos[2], through its seam (fr6.py swaps it):
+ * the handle value, None when the engine made none */
+byte LvN_Create(const nativeVal_t *name, const nativeVal_t *x, const nativeVal_t *y, const nativeVal_t *z, const char *cls,
+	nativeVal_t *out);
+byte LvN_CreateAt(const nativeVal_t *name, const nativeVal_t *pos, const char *cls, nativeVal_t *out);
+/* Scrap.GetLangStr(key) + ":" */
+void LvN_Label(const char *key, nativeVal_t *out);
+/* the SAct functions the scene cases record (fr6b.py _BSCEN), through their seams (OBJLIB 7), on the current class and
+ * action as SActPy.c: GetClass, CreateClass, GetAction and CreateAction give 1 or 0 (None for an action without a
+ * class), GetAct the variable (None when there is none) */
+byte LvN_GetClass(const char *name, nativeVal_t *out);
+byte LvN_CreateClass(const char *name, nativeVal_t *out);
+byte LvN_GetAction(const char *name, nativeVal_t *out);
+byte LvN_CreateAction(const char *name, nativeVal_t *out);
+byte LvN_GetAct(const char *name, nativeVal_t *out);
+byte LvN_SetAct(const char *name, const nativeVal_t *v);
+byte LvN_SetCls(const char *name, const nativeVal_t *v);
+/* SSound.SetMusic(name, volume) through its seam (fr6b.py _BREC records it) */
+byte LvN_SetMusic(const char *name, double volume);
+/* Scorer.MissionScorerText_X + d, Scorer.MissionScorerText_Y + d (d 0: the value itself) */
+byte LvN_TextX(long d, nativeVal_t *out);
+byte LvN_TextY(long d, nativeVal_t *out);
+/* a text of a mission scorer as the missions set it (Sf_MissionText on values): SScorer.Add(id, item, type) (type
+ * NULL: none), X, Y, Font, Effect (NULL: none), Text, Align, the colour Scorer.MissionScorerText_Color and Visible
+ * (NULL: none) */
+byte LvN_MissionText(const nativeVal_t *id, const char *item, const char *type, const nativeVal_t *x, const nativeVal_t *y,
+	const char *font, const char *effect, const nativeVal_t *text, const char *align, const nativeVal_t *visible);
+/* Sf_Calls on native values: the lines "Module.Func|value|..." of a call table ("@Func" a global of module) called in
+ * order as statements, the values as LvN_Value reads them (OBJLIB 3: the functions by name, the recorders of the
+ * scene cases see them) */
+byte LvN_Calls(const char *module, const char *const *lines);
+/* the core of a level function (the LV_FN form) that reads none of its arguments, and one on its arguments */
+#define LV_CORE0(fn) \
+	static byte fn##_C(const nativeVal_t *a, nativeVal_t *out) { \
+		(void)a; \
+		(void)out; \
+		return fn(); \
+	}
+#define LV_COREA(fn) \
+	static byte fn##_C(const nativeVal_t *a, nativeVal_t *out) { \
+		(void)out; \
+		return fn(a); \
+	}
+/* a op b of the script as Native_Arith, with the long ints of 1.5.2 for * / % too (a test can put a long int into a
+ * module variable; OBJLIB 9: those go through the Python number functions) */
+byte LvN_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
+/* SLogic.SetOnFloor(name) and SSound.PlaySound(pos, name, volume) through their seams (fc-tp-map swaps them) */
+byte LvN_SetOnFloor(const nativeVal_t *name);
+byte LvN_PlaySound(const nativeVal_t *pos, const nativeVal_t *name, const nativeVal_t *volume);
+/* the parameters of the native helpers: an int, a text */
+void LvN_Int(nativeVal_t *v, long i);
+void LvN_Str(nativeVal_t *v, const char *s);
+/* the adapter of a level function: parses the n arguments, runs core(a, out), the result as Python (None for a core
+ * that leaves out None) */
+#define LV_FN(pre, name, nargs, core) MODE_FN(pre, name, nargs, core(a, out))
 
 #endif

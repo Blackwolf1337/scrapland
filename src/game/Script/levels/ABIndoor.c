@@ -3,195 +3,319 @@
  * end of the game (the friends after the final fight, Dtritus' ship, the last scene, the end title). The scenes, the
  * character callbacks, the speeches, PlaySceneA and Credits are data (the files in data/levels/abindoor). The module
  * variable FXSceneTheEndBFile and the module code (the save variable ABIndoor.Scene) stay in the script.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h). The save and engine
+ * variables, the scorer items, the action set, the camera and the music are C; Scrap.Set, SScorer.Set, SScorer.Fade,
+ * SSound.SetMusic, Scrap.MusicPlayer, Scrap.CreateEntity, Scrap.AddScheduledFunc and the dummy search (fc-abi swaps
+ * Scrap.StartDummySearch and NextDummySearch) go through their seams (OBJLIB 7); the ship and the camera are handle
+ * values (OBJLIB 7); Init.Outdoor and Scene.EndOfSceneCallback are variables of other modules (OBJLIB 5); SaveGame,
+ * Elevator, Chars, CharsNPC, Menu, MissionsFuncs, Scene and the functions of the map go by name (OBJLIB 3).
  */
-#include "scrap/script.h"
+#include <string.h>
+
+#include "scrap/scrap.h"
+#include "scrap/world.h"
 #include "Levels.h"
 
 #define MAP "Map"
 
+/* the hook of module.name when a case replaced the engine function (1), 0 for the engine's own, -1 with the error */
+#define ABI_SEAM(module, name) \
+	PyObject *hook; \
+	int seam = Native_Seam(module, name, &hook); \
+	if (seam < 0) { \
+		return 0; \
+	}
+
+/* SScorer.Set(id, item, var, i), = d, = "text" */
+static byte Abi_ScI(const nativeVal_t *id, const char *item, const char *var, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return LvN_ScorerSet(id, item, var, &v);
+}
+
+static byte Abi_ScF(const nativeVal_t *id, const char *item, const char *var, double d) {
+	nativeVal_t v;
+	Native_SetFloat(&v, d);
+	return LvN_ScorerSet(id, item, var, &v);
+}
+
+/* SScorer.Add(id, item, type) */
+static byte Abi_Add(const nativeVal_t *id, const char *item, const char *type) {
+	nativeVal_t it;
+	LvN_Str(&it, item);
+	byte ok = Mode_ScorerAdd(id, &it, type);
+	Native_Free(&it);
+	return ok;
+}
+
+/* Scrap.StartDummySearch(pattern, 1); dummy = Scrap.NextDummySearch(), through their seams (fc-abi swaps both) */
+static byte Abi_Dummy(const char *pattern, nativeVal_t *dummy) {
+	Native_SetNone(dummy);
+	{
+		ABI_SEAM("Scrap", "StartDummySearch");
+		if (seam) {
+			if (!Native_HookCall(hook, NULL, "si", pattern, 1L)) {
+				return 0;
+			}
+		} else {
+			Mode_DummyStart(pattern, 1);
+		}
+	}
+	ABI_SEAM("Scrap", "NextDummySearch");
+	if (seam) {
+		return Native_HookCall(hook, dummy, "");
+	}
+	Mode_DummyNext(dummy);
+	return 1;
+}
+
 /* InitStatus(LevelPath): an indoor map; the four friends of Dtritus, the mission after the final fight */
-static PyObject *Abi_InitStatus(PyObject *self, PyObject *args) {
+static byte Abi_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const res[] = { "Human", "Betty", "CrazyGambler", "Berto" };
 	static const char *const chars[][2] = { { "Human_Default", "CreateHuman" }, { "Betty_Default", "CreateBetty" },
 		{ "Berto_Default", "CreateBerto" }, { "CrazyGambler_Default", "CreateCrazyGambler" } };
 	static const char *const vars[][2] = { { "Mission.Map", "GamblinDen" }, { "Mission.Library", "Mission_AfterFinalFight" },
 		{ "Journalist.Berto_Defaut", "noplace" }, { "Journalist.Betty_Defaut", "noplace" },
 		{ "Journalist.Humprey_Defaut", "noplace" }, { "PoliceBossAtPolice", "0" }, { "CrazyGamblerAtGambinDen", "1" } };
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+	nativeVal_t zero;
+	(void)a;
+	(void)out;
+	Native_SetInt(&zero, 0);
+	if (!Mode_Import("Init") || !Mode_Import("SaveGame") || !Mode_SetModVar("Init", "Outdoor", &zero) ||
+		!LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_TheEnd_MissionText1", 1L) ||
+		!LV_CALL("Elevator", "SetDef", NULL, "ss", "Teleporter", "DM_Door_Teleporter_GamblinDen")) {
+		return 0;
 	}
-	Sf_Import(&f, "Init");
-	Sf_Import(&f, "SaveGame");
-	Sf_SetMod(&f, "Init", "Outdoor", Sf_Int(&f, 0));
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_TheEnd_MissionText1", 1);
-	Sf_Run(&f, "Elevator", "SetDef", "(ss)", "Teleporter", "DM_Door_Teleporter_GamblinDen");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "ComeFrom", "");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Spawn", "DM_Player_Spawn");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Char", "Dtritus");
+	SaveVar_Set("ComeFrom", "");
+	SaveVar_Set("Spawn", "DM_Player_Spawn");
+	SaveVar_Set("Char", "Dtritus");
 	for (int i = 0; i < 4; i++) {
-		Sf_Run(&f, "Chars", "AddNewCharRes", "(s)", res[i]);
+		if (!LV_CALL("Chars", "AddNewCharRes", NULL, "s", res[i])) {
+			return 0;
+		}
 	}
 	for (int i = 0; i < 4; i++) {
-		int mark = f.n;
-		Lv_MissionChar(&f, chars[i][0], MAP, chars[i][1]);
-		Sf_Release(&f, mark);
+		if (!LvN_MissionChar(chars[i][0], MAP, chars[i][1])) {
+			return 0;
+		}
 	}
 	for (int i = 0; i < 7; i++) {
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", vars[i][0], vars[i][1]);
+		SaveVar_Set(vars[i][0], vars[i][1]);
 	}
-	return Sf_None(&f);
+	return 1;
 }
 
 /* Init(LevelPath): the first time the scene with the friends (1 s after the start, in black), else the ship at once;
  * the teleporter back to GamblinDen */
-static PyObject *Abi_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte Abi_Init(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	if (!Mode_Import("Menu") || !Mode_GVarSetI("isActionIndoor", 0) || !LvN_SetMusic("Music/AfterFinalFight.ogg", 1.0)) {
+		return 0;
 	}
-	Sf_Import(&f, "Menu");
-	Sf_Run(&f, "Scrap", "Set", "(si)", "isActionIndoor", 0);
-	Sf_Run(&f, "SSound", "SetMusic", "(sd)", "Music/AfterFinalFight.ogg", 1.0);
-	int first = Lv_SaveIs(&f, "ABIndoor.Scene", "0");
-	if (first > 0) {
-		Sf_Call(&f, Sf_Global(&f, MAP, "LoadSceneA"), "()");
-		Sf_Call(&f, Sf_Global(&f, MAP, "LoadSceneB"), "()");
-		Sf_Run(&f, "SInput", "SetActionSet", "(s)", "Inactive");
-		Sf_Run(&f, "Menu", "DrawScorer", "(is)", 0, "Inactive");
-		Sf_Later(&f, Sf_Float(&f, 1.0), Sf_Global(&f, MAP, "PlaySceneA"), Sf_Build(&f, "()"), NULL);
-		Lv_Fade(&f, lv_black, lv_black, 4.0);
-	} else if (first == 0) {
-		Sf_Call(&f, Sf_Global(&f, MAP, "LoadSceneB"), "()");
-		Sf_Call(&f, Sf_Global(&f, MAP, "Goodbye"), "()");
+	byte ok;
+	if (LvN_SaveIs("ABIndoor.Scene", "0")) {
+		ok = LV_OWN(MAP, "LoadSceneA", NULL, "") && LV_OWN(MAP, "LoadSceneB", NULL, "");
+		if (ok) {
+			Mode_SetActionSet("Inactive");
+			ok = LV_CALL("Menu", "DrawScorer", NULL, "is", 0L, "Inactive") && Mode_Later(1.0, MAP, "PlaySceneA", NULL, 0, NULL) &&
+				Mode_Fade(0, lv_black, lv_black, 4.0);
+		}
+	} else {
+		ok = LV_OWN(MAP, "LoadSceneB", NULL, "") && LV_OWN(MAP, "Goodbye", NULL, "");
 	}
-	Sf_Run(&f, "Elevator", "ConnectElevators", "([s][s])", "DM_Door_Teleporter_GamblinDen", "GamblinDen");
-	return Sf_None(&f);
+	if (!ok) {
+		return 0;
+	}
+	nativeVal_t doors, maps;
+	Native_SetEmpty(&doors, NV_LIST);
+	LvN_Str(Native_Append(&doors), "DM_Door_Teleporter_GamblinDen");
+	Native_SetEmpty(&maps, NV_LIST);
+	LvN_Str(Native_Append(&maps), "GamblinDen");
+	ok = LV_CALL("Elevator", "ConnectElevators", NULL, "vv", &doors, &maps);
+	Native_Free(&doors);
+	Native_Free(&maps);
+	return ok;
+}
+
+/* the ship of Goodbye at pos: its model, use, texts and camera target, the mission target */
+static byte Abi_Ship(const nativeVal_t *pos, nativeVal_t *e) {
+	nativeVal_t name, v, t, n;
+	LvN_Str(&name, "CheckArrow");
+	Native_SetNone(&v);
+	Native_SetNone(&t);
+	Native_SetNone(&n);
+	byte ok = LvN_CreateAt(&name, pos, "WithLife", e) && LvN_SetI(e, "ArrowCanUse", 1);
+	if (ok) {
+		LvN_Str(&v, "Levels/ABIndoor/Map/TheEndA/Moto.m3d");
+		ok = Mode_VModel(e, &v);
+		Native_Free(&v);
+	}
+	ok = ok && LvN_SetI(e, "MapCollision", 1) && LvN_SetI(e, "UseAngSel", 0) && LvN_SetI(e, "UseMapCheck", 0) &&
+		LvN_SetI(e, "VRadius", 200) && LvN_SetI(e, "ArrnOpt", 0);
+	if (ok) {
+		Mode_Lang("SHIP_DTRITUSSHIP", &v);
+		ok = Mode_VSet(e, "Descriptor", &v);
+		Native_Free(&v);
+	}
+	if (ok) {
+		/* "Use:" + Scrap.GetLangStr("USE_DtritusShip") */
+		LvN_Str(&t, "Use:");
+		Mode_Lang("USE_DtritusShip", &v);
+		ok = Native_Arith('+', &t, &v, &n) && Mode_VSet(e, "ArrOpt0", &n);
+		Native_Free(&t);
+		Native_Free(&v);
+		Native_Free(&n);
+	}
+	if (ok) {
+		Native_SetEmpty(&t, NV_TUPLE);
+		Native_SetInt(Native_Append(&t), 0);
+		Native_SetInt(Native_Append(&t), 300);
+		Native_SetInt(Native_Append(&t), 0);
+		ok = Mode_VSet(e, "CamTgt", &t) && LvN_SetS(e, "UseFunc", "Map.LaunchCinematic") && Mode_VGet(e, "Name", &n) &&
+			LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &n);
+	}
+	Native_Free(&name);
+	Native_Free(&t);
+	Native_Free(&n);
+	return ok;
 }
 
 /* Goodbye(usr=None): the end of the first scene: Dtritus' ship at its dummy as the mission target; the first time a
  * fade in and a save; the far plane of the camera */
-static PyObject *Abi_Goodbye(PyObject *self, PyObject *args, PyObject *kw) {
+static byte Abi_Goodbye(void) {
+	nativeVal_t dummy, pos, e, t, zero, name, cam;
+	if (!Mode_Import("MissionsFuncs")) {
+		return 0;
+	}
+	Mode_SetActionSet("Walk");
+	if (!Abi_Dummy("DM_DtritusShip", &dummy)) {
+		return 0;
+	}
+	Native_SetNone(&pos);
+	Native_SetNone(&e);
+	byte ok = Native_True(&dummy) || LvN_RaiseText("No se encuentra el dummy: 'DM_DtritusShip'");
+	ok = ok && LvN_Item(&dummy, 1, &pos) && Abi_Ship(&pos, &e);
+	Native_Free(&dummy);
+	Native_Free(&pos);
+	Native_Free(&e);
+	if (ok && LvN_SaveIs("ABIndoor.Scene", "0")) {
+		/* Scrap.AddScheduledFunc(0, SaveGame.SaveGame, (0,)) */
+		PyObject *fn;
+		ok = Mode_Fade(0, lv_black, lv_clear, 1.0);
+		if (ok) {
+			SaveVar_Set("ABIndoor.Scene", "1");
+			fn = Script_Attr("SaveGame", "SaveGame");
+			Native_SetInt(&t, 0);
+			Native_SetInt(&zero, 0);
+			ok = fn && Mode_Schedule(&t, fn, &zero, 1, NULL);
+			Py_XDECREF(fn);
+		}
+	}
+	if (!ok) {
+		return 0;
+	}
+	/* cam = Scrap.GetEntity(Scrap.GetCam(0)); if cam: cam.clipFar = 150000.0 */
+	const char *c = cWorld_GetCamName(g_pWorld, 0);
+	if (c) {
+		LvN_Str(&name, c);
+	} else {
+		Native_SetNone(&name);
+	}
+	Native_SetNone(&cam);
+	ok = Mode_EntityH(&name, &cam) && (!Native_True(&cam) || LvN_SetF(&cam, "clipFar", 150000.0));
+	Native_Free(&name);
+	Native_Free(&cam);
+	return ok;
+}
+
+static PyObject *Abi_GoodbyePy(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "usr", NULL };
 	PyObject *usr = Py_None;
-	scriptFrame_t f = { 0 };
 	(void)self;
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &usr)) {
 		return NULL;
 	}
-	Sf_Import(&f, "MissionsFuncs");
-	Sf_Run(&f, "SInput", "SetActionSet", "(s)", "Walk");
-	PyObject *dummy = Lv_Dummy(&f, "DM_DtritusShip", 1);
-	if (Sf_True(&f, dummy) == 0) {
-		Sf_RaiseText(&f, "No se encuentra el dummy: 'DM_DtritusShip'");
-	}
-	PyObject *pos = Sf_Item(&f, dummy, 1);
-	PyObject *e = Sf_Ask(&f, "Scrap", "CreateEntity", "(sOOOs)", "CheckArrow", Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1),
-		Sf_Item(&f, pos, 2), "WithLife");
-	Sf_SetAttrI(&f, e, "ArrowCanUse", 1);
-	Sf_Method(&f, e, "SetModel", "(s)", "Levels/ABIndoor/Map/TheEndA/Moto.m3d");
-	Sf_SetAttrI(&f, e, "MapCollision", 1);
-	Sf_SetAttrI(&f, e, "UseAngSel", 0);
-	Sf_SetAttrI(&f, e, "UseMapCheck", 0);
-	Sf_SetAttrI(&f, e, "VRadius", 200);
-	Sf_SetAttrI(&f, e, "ArrnOpt", 0);
-	Sf_SetAttr(&f, e, "Descriptor", Sf_Lang(&f, Sf_Str(&f, "SHIP_DTRITUSSHIP")));
-	Sf_SetAttr(&f, e, "ArrOpt0", Sf_Cat(&f, "sO", "Use:", Sf_Lang(&f, Sf_Str(&f, "USE_DtritusShip"))));
-	Sf_SetAttr(&f, e, "CamTgt", Sf_Build(&f, "(iii)", 0, 300, 0));
-	Sf_SetAttrS(&f, e, "UseFunc", "Map.LaunchCinematic");
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, e, "Name"));
-	int first = Lv_SaveIs(&f, "ABIndoor.Scene", "0");
-	if (first > 0) {
-		Lv_Fade(&f, lv_black, lv_clear, 1.0);
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "ABIndoor.Scene", "1");
-		Sf_Schedule(&f, Sf_Int(&f, 0), Sf_Mod(&f, "SaveGame", "SaveGame"), Sf_Build(&f, "(i)", 0), NULL);
-	}
-	PyObject *cam = Sf_Entity(&f, Sf_Ask(&f, "Scrap", "GetCam", "(i)", 0));
-	if (Sf_True(&f, cam) > 0) {
-		Sf_SetAttr(&f, cam, "clipFar", Sf_Float(&f, 150000.0));
-	}
-	return Sf_None(&f);
+	return Mode_Result(Abi_Goodbye());
 }
 
 /* LaunchCinematic(UsrName, CharName, optId, FullOption): the use of the ship: the last scene, then the credits */
-static PyObject *Abi_LaunchCinematic(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+static byte Abi_LaunchCinematic(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t name, zero;
+	(void)a;
+	(void)out;
+	if (!Mode_Import("Menu") || !Mode_GVarSetI("isActionIndoor", 0) || !LvN_SetMusic("Music/Mantrap.ogg", 1.0)) {
+		return 0;
 	}
-	Sf_Import(&f, "Menu");
-	Sf_Run(&f, "Scrap", "Set", "(si)", "isActionIndoor", 0);
-	Sf_Run(&f, "SSound", "SetMusic", "(sd)", "Music/Mantrap.ogg", 1.0);
-	Sf_EntSetI(&f, "CheckArrow", "Active", 0);
-	Sf_Run(&f, "Scene", "Play", "(s)", "TheEndB");
-	Sf_SetMod(&f, "Scene", "EndOfSceneCallback", Sf_Global(&f, MAP, "Credits"));
-	return Sf_None(&f);
+	LvN_Str(&name, "CheckArrow");
+	Native_SetInt(&zero, 0);
+	byte ok = Mode_EntSet(&name, "Active", &zero) && LV_CALL("Scene", "Play", NULL, "s", "TheEndB") &&
+		LvN_ModSetGlobal("Scene", "EndOfSceneCallback", MAP, "Credits");
+	Native_Free(&name);
+	return ok;
 }
 
 /* ShowEndTitle(id): a black square (clear) and the typed end title; the motion blur */
-static PyObject *Abi_ShowEndTitle(PyObject *self, PyObject *args) {
-	PyObject *id;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id)) {
-		return NULL;
-	}
-	Sf_Run(&f, "SScorer", "Add", "(Oss)", id, "BlackSquare", "Sprite");
+static byte Abi_ShowEndTitle(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const square[] = { "X", "Y", "ScaleX", "ScaleY", "Red", "Green", "Blue", "Alpha" };
 	static const int squareV[] = { 0, 0, 640, 480, 0, 0, 0, 0 };
-	for (int i = 0; i < 8; i++) {
-		Lv_ScorerSet(&f, id, "BlackSquare", square[i], Sf_Int(&f, squareV[i]));
+	const nativeVal_t *id = &a[0];
+	nativeVal_t text;
+	(void)out;
+	if (!Abi_Add(id, "BlackSquare", "Sprite")) {
+		return 0;
 	}
-	Sf_Run(&f, "SScorer", "Add", "(Oss)", id, "EndTitle", "TextTyping");
-	Lv_ScorerSet(&f, id, "EndTitle", "X", Sf_Int(&f, 320));
-	Lv_ScorerSet(&f, id, "EndTitle", "Y", Sf_Int(&f, 240));
-	Lv_ScorerSet(&f, id, "EndTitle", "Font", Sf_Str(&f, "ScrapBig"));
-	Lv_ScorerSet(&f, id, "EndTitle", "Effect", Sf_Str(&f, "Outline"));
-	Lv_ScorerSet(&f, id, "EndTitle", "Text", Sf_Lang(&f, Sf_Str(&f, "GameFinal")));
-	Lv_ScorerSet(&f, id, "EndTitle", "CentralText", Sf_Int(&f, 1));
-	Lv_ScorerSet(&f, id, "EndTitle", "Red", Sf_Int(&f, 70));
-	Lv_ScorerSet(&f, id, "EndTitle", "Green", Sf_Int(&f, 173));
-	Lv_ScorerSet(&f, id, "EndTitle", "Blue", Sf_Int(&f, 255));
-	Lv_ScorerSet(&f, id, "EndTitle", "Alpha", Sf_Int(&f, 255));
-	Lv_ScorerSet(&f, id, "EndTitle", "TypingTime", Sf_Float(&f, -1.0));
-	Lv_ScorerSet(&f, id, "EndTitle", "TypingSpeed", Sf_Float(&f, 0.15));
-	Lv_ScorerSet(&f, id, "EndTitle", "CursorAtInit", Sf_Int(&f, 1));
-	Lv_ScorerSet(&f, id, "EndTitle", "CursorAtEnd", Sf_Int(&f, 0));
-	Lv_ScorerSet(&f, id, "EndTitle", "TypingSound", Sf_Int(&f, 0));
-	Sf_Run(&f, "Scrap", "Set", "(si)", "MotionBlurFactorBegin", 0);
-	Sf_Run(&f, "Scrap", "Set", "(sd)", "MotionBlurFactorEnd", 0.75);
-	Sf_Run(&f, "Scrap", "Set", "(sd)", "MotionBlurTime", 0.0);
-	Sf_Run(&f, "Scrap", "Set", "(sd)", "MotionBlurEndTime", 3.0);
-	Sf_Run(&f, "Scrap", "Set", "(si)", "MotionBlurOffVar", 0);
-	return Sf_None(&f);
+	for (int i = 0; i < 8; i++) {
+		if (!Abi_ScI(id, "BlackSquare", square[i], squareV[i])) {
+			return 0;
+		}
+	}
+	if (!Abi_Add(id, "EndTitle", "TextTyping") || !Abi_ScI(id, "EndTitle", "X", 320) || !Abi_ScI(id, "EndTitle", "Y", 240) ||
+		!LvN_ScorerSetS(id, "EndTitle", "Font", "ScrapBig") || !LvN_ScorerSetS(id, "EndTitle", "Effect", "Outline")) {
+		return 0;
+	}
+	Mode_Lang("GameFinal", &text);
+	byte ok = LvN_ScorerSet(id, "EndTitle", "Text", &text);
+	Native_Free(&text);
+	return ok && Abi_ScI(id, "EndTitle", "CentralText", 1) && Abi_ScI(id, "EndTitle", "Red", 70) &&
+		Abi_ScI(id, "EndTitle", "Green", 173) && Abi_ScI(id, "EndTitle", "Blue", 255) && Abi_ScI(id, "EndTitle", "Alpha", 255) &&
+		Abi_ScF(id, "EndTitle", "TypingTime", -1.0) && Abi_ScF(id, "EndTitle", "TypingSpeed", 0.15) &&
+		Abi_ScI(id, "EndTitle", "CursorAtInit", 1) && Abi_ScI(id, "EndTitle", "CursorAtEnd", 0) &&
+		Abi_ScI(id, "EndTitle", "TypingSound", 0) && Mode_GVarSetI("MotionBlurFactorBegin", 0) &&
+		Mode_GVarSetN("MotionBlurFactorEnd", 0.75) && Mode_GVarSetN("MotionBlurTime", 0.0) && Mode_GVarSetN("MotionBlurEndTime", 3.0) &&
+		Mode_GVarSetI("MotionBlurOffVar", 0);
+}
+
+/* Scrap.MusicPlayer(name, cmd, volume) through its seam (fc-lvl-menu swaps it) */
+static byte Abi_MusicPlayer(const char *name, const char *cmd, double volume) {
+	ABI_SEAM("Scrap", "MusicPlayer");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "ssd", name, cmd, volume);
+	}
+	Music_Play(name, cmd, (float)volume);
+	return 1;
 }
 
 /* FadeEndTitle(id): the music fades out in 5 s, the black square fades in over the end title */
-static PyObject *Abi_FadeEndTitle(PyObject *self, PyObject *args) {
-	PyObject *id;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id)) {
-		return NULL;
-	}
-	Sf_Run(&f, "Scrap", "MusicPlayer", "(ssd)", "", "fadeout", 1 / 5.0);
-	Sf_Run(&f, "Scrap", "Set", "(sd)", "FadeOutFinalTime", 3.0);
-	Lv_ScorerSet(&f, id, "BlackSquare", "OnRender", Sf_Str(&f, "!ScorerSpriteFadeOutFinal"));
-	return Sf_None(&f);
+static byte Abi_FadeEndTitle(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Abi_MusicPlayer("", "fadeout", 1 / 5.0) && Mode_GVarSetN("FadeOutFinalTime", 3.0) &&
+		LvN_ScorerSetS(&a[0], "BlackSquare", "OnRender", "!ScorerSpriteFadeOutFinal");
 }
 
+LV_FN(Abi, InitStatusPy, 1, Abi_InitStatus)
+LV_FN(Abi, InitPy, 1, Abi_Init)
+LV_FN(Abi, LaunchCinematicPy, 4, Abi_LaunchCinematic)
+LV_FN(Abi, ShowEndTitlePy, 1, Abi_ShowEndTitle)
+LV_FN(Abi, FadeEndTitlePy, 1, Abi_FadeEndTitle)
+
 PyMethodDef g_ABIndoorMapMethods[] = {
-	{ "InitStatus", Abi_InitStatus, 1, NULL },
-	{ "Init", Abi_Init, 1, NULL },
-	{ "Goodbye", (PyCFunction)(void (*)(void))Abi_Goodbye, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "LaunchCinematic", Abi_LaunchCinematic, 1, NULL },
-	{ "ShowEndTitle", Abi_ShowEndTitle, 1, NULL },
-	{ "FadeEndTitle", Abi_FadeEndTitle, 1, NULL },
+	{ "InitStatus", Abi_InitStatusPy, 1, NULL },
+	{ "Init", Abi_InitPy, 1, NULL },
+	{ "Goodbye", (PyCFunction)(void (*)(void))Abi_GoodbyePy, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "LaunchCinematic", Abi_LaunchCinematicPy, 1, NULL },
+	{ "ShowEndTitle", Abi_ShowEndTitlePy, 1, NULL },
+	{ "FadeEndTitle", Abi_FadeEndTitlePy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };

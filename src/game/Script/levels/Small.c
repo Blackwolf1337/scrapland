@@ -2,8 +2,14 @@
  * The levels whose scripts are a few lines, in C (issue #2): TucZone (data02.packed, the keypad to Nano), Nano
  * (Data.packed, the test map of the police boss) and ShipEdit (data02.packed, the ship editor map). Their other
  * functions are data (the files in data/levels/tuczone, nano, shipedit).
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the dummy search, the entities (Scrap.CreateEntity through its seam, the
+ * handles as values, OBJLIB 7), the camera and the engine variables (Scrap.Set through its seam) in C; Init.Outdoor
+ * and CharsNPC.AfterBrowseNPC are variables of other modules, set and changed in place (OBJLIB 5); Elevator and
+ * ShipEdit by name (OBJLIB 3).
  */
-#include "scrap/script.h"
+#include "scrap/scrap.h"
+#include "scrap/world.h"
 #include "Levels.h"
 
 #define MAP "Map"
@@ -11,110 +17,157 @@
 /* ---- TucZone ---- */
 
 /* Init(LevelPath): the keypad at its dummy that takes the player to Nano */
-static PyObject *Tuc_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte Tuc_Init(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t dummy, p, name, x, y, z, kb, ang, ay, off, sum;
+	(void)a;
+	(void)out;
+	Native_SetNone(&p);
+	Native_SetNone(&x);
+	Native_SetNone(&y);
+	Native_SetNone(&z);
+	Native_SetNone(&kb);
+	Native_SetNone(&ang);
+	Native_SetNone(&ay);
+	Native_SetNone(&sum);
+	LvN_Str(&name, "Elevator");
+	Native_SetInt(&off, 180);
+	LvN_Dummy("DM_Keypad_In", 1, &dummy);
+	byte ok = LvN_Item(&dummy, 1, &p) && LvN_Item(&p, 0, &x) && LvN_Item(&p, 1, &y) && LvN_Item(&p, 2, &z) &&
+		LvN_Create(&name, &x, &y, &z, "WithLife", &kb);
+	/* kb.Ang = (0, dummy[2][1] + 180, 0) */
+	Native_Free(&p);
+	ok = ok && LvN_Item(&dummy, 2, &p) && LvN_Item(&p, 1, &ay) && Native_Arith('+', &ay, &off, &sum);
+	if (ok) {
+		Native_SetEmpty(&ang, NV_TUPLE);
+		Native_SetInt(Native_Append(&ang), 0);
+		Native_Copy(Native_Append(&ang), &sum);
+		Native_SetInt(Native_Append(&ang), 0);
+		ok = Mode_VSet(&kb, "Ang", &ang) && LvN_SetI(&kb, "VRadius", 60) && LvN_SetI(&kb, "ArrowCanUse", 1) &&
+			LvN_SetI(&kb, "Life", 0) && LvN_SetI(&kb, "ArrnOpt", 0) && LvN_SetS(&kb, "ArrOpt0", "TucZone:Go to Nano") &&
+			LvN_SetS(&kb, "UseFunc", "Map.LoadNano") && LvN_SetI(&kb, "ActiveCMask", 0);
 	}
-	PyObject *dummy = Lv_Dummy(&f, "DM_Keypad_In", 1);
-	PyObject *p = Sf_Item(&f, dummy, 1);
-	PyObject *kb = Sf_Ask(&f, "Scrap", "CreateEntity", "(sOOOs)", "Elevator", Sf_Item(&f, p, 0), Sf_Item(&f, p, 1),
-		Sf_Item(&f, p, 2), "WithLife");
-	Sf_SetAttr(&f, kb, "Ang", Sf_Build(&f, "(iOi)", 0, Sf_OpI(&f, Sf_Item(&f, Sf_Item(&f, dummy, 2), 1), '+', 180), 0));
-	Sf_SetAttrI(&f, kb, "VRadius", 60);
-	Sf_SetAttrI(&f, kb, "ArrowCanUse", 1);
-	Sf_SetAttrI(&f, kb, "Life", 0);
-	Sf_SetAttrI(&f, kb, "ArrnOpt", 0);
-	Sf_SetAttrS(&f, kb, "ArrOpt0", "TucZone:Go to Nano");
-	Sf_SetAttrS(&f, kb, "UseFunc", "Map.LoadNano");
-	Sf_SetAttrI(&f, kb, "ActiveCMask", 0);
-	return Sf_None(&f);
+	Native_Free(&dummy);
+	Native_Free(&p);
+	Native_Free(&name);
+	Native_Free(&x);
+	Native_Free(&y);
+	Native_Free(&z);
+	Native_Free(&kb);
+	Native_Free(&ang);
+	Native_Free(&ay);
+	Native_Free(&sum);
+	return ok;
 }
 
+LV_FN(Tuc, InitPy, 1, Tuc_Init)
+
 PyMethodDef g_TucZoneMapMethods[] = {
-	{ "Init", Tuc_Init, 1, NULL },
+	{ "Init", Tuc_InitPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
 /* ---- Nano ---- */
 
 /* InitStatus(LevelPath): an indoor map; AfterBrowseNPC after the NPCs are browsed, the work place of the boss */
-static PyObject *Nano_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte Nano_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t zero, fn;
+	(void)a;
+	(void)out;
+	Native_SetInt(&zero, 0);
+	if (!Mode_Import("Init") || !Mode_Import("Chars") || !Mode_Import("CharsNPC") || !Mode_SetModVar("Init", "Outdoor", &zero) ||
+		!LvN_GObj(MAP, "AfterBrowseNPC", &fn)) {
+		return 0;
 	}
-	Sf_Import(&f, "Init");
-	Sf_Import(&f, "Chars");
-	Sf_Import(&f, "CharsNPC");
-	Sf_SetMod(&f, "Init", "Outdoor", Sf_Int(&f, 0));
-	Sf_Method(&f, Sf_Mod(&f, "CharsNPC", "AfterBrowseNPC"), "append", "(O)", Sf_Global(&f, MAP, "AfterBrowseNPC"));
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "BossWorkPlace", "DM_Prueba_Boss");
-	return Sf_None(&f);
+	byte ok = LvN_ModAppend("CharsNPC", "AfterBrowseNPC", &fn) && Mode_GVarSetS("BossWorkPlace", "DM_Prueba_Boss");
+	Native_Free(&fn);
+	return ok;
 }
 
 /* Init(LevelPath): the two elevators */
-static PyObject *Nano_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Sf_Import(&f, "Elevator");
-	Sf_Run(&f, "Elevator", "ConnectElevators", "([ss][])", "DM_Door_Elevator_00", "DM_Door_Elevator_03");
-	return Sf_None(&f);
+static byte Nano_Init(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t doors, none;
+	(void)a;
+	(void)out;
+	Native_SetEmpty(&doors, NV_LIST);
+	LvN_Str(Native_Append(&doors), "DM_Door_Elevator_00");
+	LvN_Str(Native_Append(&doors), "DM_Door_Elevator_03");
+	Native_SetEmpty(&none, NV_LIST);
+	byte ok = Mode_Import("Elevator") && LV_CALL("Elevator", "ConnectElevators", NULL, "vv", &doors, &none);
+	Native_Free(&doors);
+	Native_Free(&none);
+	return ok;
 }
 
+LV_FN(Nano, InitStatusPy, 1, Nano_InitStatus)
+LV_FN(Nano, InitPy, 1, Nano_Init)
+
 PyMethodDef g_NanoMapMethods[] = {
-	{ "InitStatus", Nano_InitStatus, 1, NULL },
-	{ "Init", Nano_Init, 1, NULL },
+	{ "InitStatus", Nano_InitStatusPy, 1, NULL },
+	{ "Init", Nano_InitPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
 /* ---- ShipEdit ---- */
 
+/* cam.var = (x, y, z) of three ints */
+static byte Se_SetTriple(const nativeVal_t *cam, const char *var, long x, long y, long z) {
+	nativeVal_t t;
+	Native_SetEmpty(&t, NV_TUPLE);
+	Native_SetInt(Native_Append(&t), x);
+	Native_SetInt(Native_Append(&t), y);
+	Native_SetInt(Native_Append(&t), z);
+	byte ok = Mode_VSet(cam, var, &t);
+	Native_Free(&t);
+	return ok;
+}
+
 /* Init(LevelPath): the camera of the editor, the ship editor menu */
-static PyObject *Se_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte Se_Init(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t name, zero, cam, n;
+	const char *s;
+	(void)a;
+	(void)out;
+	if (!Mode_Import("ShipEdit")) {
+		return 0;
 	}
-	Sf_Import(&f, "ShipEdit");
-	PyObject *cam = Sf_Ask(&f, "Scrap", "CreateEntity", "(siiis)", "Camerita", 0, 0, 0, "Cam");
-	Sf_Run(&f, "Scrap", "SetCam", "(iO)", 0, Sf_Attr(&f, cam, "Name"));
-	Sf_SetAttr(&f, cam, "camPos", Sf_Build(&f, "(iii)", -6, -1243, 1451));
-	Sf_SetAttr(&f, cam, "camAng", Sf_Build(&f, "(iii)", 15, -180, 0));
-	Sf_SetAttrI(&f, cam, "Fov", 70);
-	Sf_Run(&f, "Scrap", "Set", "(si)", "CameraCloudAlpha", 0);
-	Sf_Run(&f, "ShipEdit", "EnterEditShipMenu", "(is)", 0, "");
-	Sf_Run(&f, "Scrap", "SetTimeSpeed", "(i)", 1);
-	Sf_Run(&f, "Scrap", "Set", "(si)", "IsMapOutDoor", 0);
-	return Sf_None(&f);
+	LvN_Str(&name, "Camerita");
+	Native_SetInt(&zero, 0);
+	Native_SetNone(&n);
+	byte ok = LvN_Create(&name, &zero, &zero, &zero, "Cam", &cam) && Mode_VGet(&cam, "Name", &n);
+	/* Scrap.SetCam(0, cam.Name) ("is") */
+	if (ok && Native_ArgStr(&n, 2, &s)) {
+		cWorld_SetCam(g_pWorld, 0, s);
+	} else {
+		ok = 0;
+	}
+	ok = ok && Se_SetTriple(&cam, "camPos", -6, -1243, 1451) && Se_SetTriple(&cam, "camAng", 15, -180, 0) &&
+		LvN_SetI(&cam, "Fov", 70) && Mode_GVarSetI("CameraCloudAlpha", 0) && LV_CALL("ShipEdit", "EnterEditShipMenu", NULL, "is", 0L, "");
+	if (ok) {
+		Mode_SetTimeSpeed(1);
+		ok = Mode_GVarSetI("IsMapOutDoor", 0);
+	}
+	Native_Free(&name);
+	Native_Free(&cam);
+	Native_Free(&n);
+	return ok;
 }
 
 /* MapSnd.Init(LevelPath): returns at once (the editor has no map sounds) */
-static PyObject *Se_SndInit(PyObject *self, PyObject *args) {
-	PyObject *path;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	return Py_ReturnNone();
+static byte Se_SndInit(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return 1;
 }
 
+LV_FN(Se, InitPy, 1, Se_Init)
+LV_FN(Se, SndInitPy, 1, Se_SndInit)
+
 PyMethodDef g_ShipEditMapMethods[] = {
-	{ "Init", Se_Init, 1, NULL },
+	{ "Init", Se_InitPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
 PyMethodDef g_ShipEditMapSndMethods[] = {
-	{ "Init", Se_SndInit, 1, NULL },
+	{ "Init", Se_SndInitPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };

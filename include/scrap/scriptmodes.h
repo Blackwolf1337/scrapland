@@ -339,4 +339,15 @@ byte Mode_Get2DPos(const nativeVal_t *pos, nativeVal_t *out);
  * text) */
 byte Mode_TextArea(const char *font, const nativeVal_t *text, nativeVal_t *out);
 
+/* ---- helpers of the native level scripts (src/game/Script/levels) ---- */
+
+/* SAI.GetRandomVisibilityPoint(): a random point of the AI graph (crt_rand as the engine function), None without
+ * points */
+void Mode_RandomVisPoint(nativeVal_t *out);
+/* Scrap.SetAlarm(level) through its seam (cases record it with _bon): the TypeError of "f" for a value that is no
+ * number */
+byte Mode_SetAlarm(const nativeVal_t *level);
+/* Scrap.Set(name, i) with an int, as the scripts set it (Mode_GVarSetN sets a float) */
+byte Mode_GVarSetI(const char *name, long i);
+
 #endif

@@ -3,844 +3,1174 @@
  * ArchbishopDead, AskGus, MeetArchbishop and TalkToDeepThroat that are logic; their plain functions are data
  * (the files in data/levels/temple). The module variables (the discardable characters of Map, Lifes and TimeToSpawn,
  * the proofs of ArchbishopDead, FXSceneYakuzziFile) stay in the scripts.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h) and call the engine in C
+ * (save variables, Scrap.Get and Scrap.Set, the dummy search, the time, the language texts, the action set, the
+ * vector math, the textures). The variables of the modules are read where the script reads them and written through
+ * at once (OBJLIB 5); MapExtraLifes.Lifes holds the handles of the lives and stays the list object of the module,
+ * CharConversor.AvailableChars, Alarm.SetAlarmCallback, CharsNPC.AfterBrowseNPC and the callbacks of the characters are
+ * changed in place on their objects, the gatekeeper groups are passed as the objects of GateKeeper (OBJLIB 5); a
+ * variable of another module that the script set with Script_SetVar keeps dropping its error. Entities are handle
+ * values (OBJLIB 7). The engine functions the cases record or swap go through their seams (OBJLIB 7):
+ * Scrap.AddScheduledFunc, Scrap.UsrEntity, Scrap.CreateEntity (fr6.py), Scrap.Set, Scrap.SetAlarm, Scrap.GetAlarm,
+ * SScorer.SetMsgText, SScorer.SetLabelText, SFX.BishopSellLife, SSound.PlaySound and SLogic.SetOnFloor (fc-tp-map), the
+ * SAct functions of the fake speech and SSound.SetMusic (fr6b.py). Speech, MissionsFuncs, SaveGame, GateKeeper,
+ * Elevator, Metro, CharsNPC, MisItems, Scene and the functions of the modules go by name (OBJLIB 3).
  */
-#include "scrap/script.h"
+#include <limits.h>
+#include <string.h>
 
-#define K(o) Script_Keep(&r, (o))
-#define FAIL() return Script_Done(&r, NULL)
-#define BAD() return (Script_Done(&r, NULL), 0)
+#include "scrap/fx.h"
+#include "scrap/input.h"
+#include "scrap/scorer.h"
+#include "scrap/scrap.h"
+#include "Levels.h"
 
-/* fn(args) through the globals of module (args given away), the result dropped */
-static byte Tp_Do(const char *module, const char *fn, PyObject *args) {
-	PyObject *f = Script_Global(module, fn), *v = f ? Script_Invoke(f, args) : NULL;
-	if (!f) {
-		Py_XDECREF(args);
+#define GM "Map"
+#define XL "MapExtraLifes"
+#define AD "Mission_ArchbishopDead"
+#define AG "Mission_AskGus"
+#define TD "Mission_TalkToDeepThroat"
+#define MA "Mission_MeetArchbishop"
+
+/* ---- shared lines ---- */
+
+/* module.var = v of another module as Script_SetVar sets it: an error is dropped (OBJLIB 5) */
+static void Tp_SetVar(const char *module, const char *var, const nativeVal_t *v) {
+	if (!Mode_SetModVar(module, var, v)) {
+		PyErr_Clear();
 	}
+}
+
+/* the same with the global name of src (a function) */
+static byte Tp_SetVarG(const char *module, const char *var, const char *src, const char *name) {
+	nativeVal_t f;
+	if (!LvN_GObj(src, name, &f)) {
+		return 0;
+	}
+	Tp_SetVar(module, var, &f);
+	Native_Free(&f);
+	return 1;
+}
+
+/* fn() through the globals of module, the result dropped */
+static byte Tp_Do(const char *module, const char *fn) {
+	return LV_OWN(module, fn, NULL, "");
+}
+
+/* the text of an argument of an engine function ("s" of argument arg) */
+static byte Tp_Str(const nativeVal_t *v, int arg, const char **s) {
+	return Native_ArgStr(v, arg, s);
+}
+
+/* var.append(the global name of module) of a list variable of another module: the variable, then the global, then
+ * the append method of whatever value is there (OBJLIB 5: in place) */
+static byte Tp_AppendG(const char *target, const char *var, const char *module, const char *name) {
+	PyObject *list = Script_Attr(target, var), *f = list ? Mode_GlobalPy(module, name) : NULL;
+	PyObject *v = f ? Script_Method(list, "append", "(O)", f) : NULL;
 	Py_XDECREF(v);
 	Py_XDECREF(f);
+	Py_XDECREF(list);
 	return v != NULL;
 }
 
-/* e.UseFunc = func of the entity called name */
-static byte Tp_UseFunc(const char *name, const char *func) {
-	PyObject *e = Script_Ask("Scrap", "GetEntity", "(s)", name);
-	byte ok = e && Script_HSet(e, "UseFunc", PyString_FromString((char *)func));
-	Py_XDECREF(e);
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, fn, args) with fn an object */
+static byte Tp_At(double delay, PyObject *fn, const nativeVal_t *args, int n, const char *name) {
+	nativeVal_t t, nm;
+	Native_SetFloat(&t, Mode_Time() + delay);
+	if (name) {
+		LvN_Str(&nm, name);
+	}
+	byte ok = Mode_Schedule(&t, fn, args, n, name ? &nm : NULL);
+	if (name) {
+		Native_Free(&nm);
+	}
 	return ok;
 }
 
-/* a gatekeeper on its door against a foe group of GateKeeper, the door used through UseDoor */
-static byte Tp_Gate(const char *keeper, const char *door, const char *group, const char *use) {
-	PyObject *g = Script_Import((const char *const[]){ "GateKeeper", NULL }) ? Script_Attr("GateKeeper", group) : NULL;
-	byte ok = g && (!door || Script_Try("GateKeeper", "SetDoor", "(ss)", keeper, door)) &&
-		Script_Try("GateKeeper", "DoorFoe", "(sO)", keeper, g) && Tp_UseFunc(door ? door : "DM_Door_Teleporter_01", use);
-	Py_XDECREF(g);
-	return ok;
-}
-
-/* ---- Map ---- */
-
-static PyObject *TpMap_InitStatus(PyObject *self, PyObject *args) {
-	static const struct {
-		const char *who, *flag;
-		int n;
-	} repos[] = { { "BankDirector", "_BankDirector", 3 }, { "Bishop", "_Bishop", 5 }, { "Functionary", "_Functionary", 3 } };
-	PyObject *path;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path) || !Script_Import((const char *const[]){ "Init", "Elevator", "CharsNPC", "Messenger", NULL })) {
-		return NULL;
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, Speech.AddRemoteCom, (key, who, the global then of module)) */
+static byte Tp_ComAt(double delay, const char *key, const char *who, const char *module, const char *then) {
+	nativeVal_t a[3];
+	PyObject *add = Script_Attr("Speech", "AddRemoteCom");
+	if (!add) {
+		return 0;
 	}
-	Script_SetVar("Init", "Outdoor", PyInt_FromLong(0));
-	Script_SetVar("Init", "OutArea", PyString_FromString("Commercial"));
-	Script_SetVar("Messenger", "MakeMDP", PyInt_FromLong(0));
-	if (!Script_Try("Elevator", "SetDef", "(ss)", "Metro", "DM_Door_Metro_Templo00") ||
-		!Script_Try("Elevator", "SetDef", "(ss)", "MetroExt", "DM_Door_Metro_Templo00") ||
-		!Script_Try("Elevator", "SetDef", "(ss)", "Elevator", "DM_Door_Elevator_Commercial") ||
-		!Script_Try("Elevator", "SetDef", "(ss)", "TempleTeleporter", "DM_Door_TempleTeleporter_GDB") ||
-		!Script_Try("CharsNPC", "SetReposChars", "(si)", "Sentinel", 3) || !Script_Try("CharsNPC", "SetReposChars", "(si)", "Police", 3) ||
-		!Script_Try("CharsNPC", "SetReposChars", "(si)", "Nurse", 3)) {
-		return NULL;
-	}
-	/* if not Scrap.Get("IsXbox") or _<Char>: */
+	LvN_Str(&a[0], key);
+	LvN_Str(&a[1], who);
+	byte ok = LvN_GObj(module, then, &a[2]) && Tp_At(delay, add, a, 3, NULL);
 	for (int i = 0; i < 3; i++) {
-		PyObject *x = Script_Ask("Scrap", "Get", "(s)", "IsXbox");
-		int on = x ? Script_True(x) : -1;
-		Py_XDECREF(x);
-		on = on < 0 ? -1 : !on;
-		if (on == 0) {
-			PyObject *f = Script_Global("Map", repos[i].flag);
-			on = f ? Script_True(f) : -1;
-			Py_XDECREF(f);
-		}
-		if (on < 0 || (on && !Script_Try("CharsNPC", "SetReposChars", "(si)", repos[i].who, repos[i].n))) {
-			return NULL;
-		}
+		Native_Free(&a[i]);
 	}
-	return Py_ReturnNone();
-}
-
-static PyObject *TpMap_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path) || !Script_Import((const char *const[]){ "Metro", "Elevator", NULL }) ||
-		!Script_Try("Elevator", "ConnectElevators", "([s][s])", "DM_Door_TempleTeleporter_GDB", "GDB") ||
-		!Script_Try("Elevator", "ConnectElevators", "([s][s])", "DM_Door_Elevator_Commercial", "Commercial") ||
-		!Script_Try("Elevator", "ConnectElevators", "([ss][]i)", "DM_Door_Teleporter_01", "DM_Door_Teleporter_06", 0) ||
-		!Script_Try("Metro", "SetAsMetro", "(s)", "DM_Door_Metro_Templo00") ||
-		!Tp_Gate("GateKeeper_Portalis", "DM_Door_Teleporter_01", "BishopGroupGateKeeper", "GateKeeper.UseDoor")) {
-		return NULL;
-	}
-	PyObject *from = Script_SaveVar("ComeFrom");
-	if (!from) {
-		return NULL;
-	}
-	byte arrive = Script_Is(from, "DoorTempleTeleporter");
-	Py_DECREF(from);
-	if (arrive) {
-		PyObject *f = Script_Global("Map", "EndOfAppears");
-		if (!f) {
-			return NULL;
-		}
-		Script_SetVar("Elevator", "OnElevatorReachDown", f);
-	}
-	if (!Tp_Gate("GateKeeper_GDB", "DM_Door_TempleTeleporter_GDB", "BishopGroupGateKeeper", "GateKeeper.UseDoor")) {
-		return NULL;
-	}
-	PyObject *lib = Script_SaveVar("Mission.Library");
-	if (!lib) {
-		return NULL;
-	}
-	byte meet = Script_Is(lib, "Mission_MeetArchbishop");
-	Py_DECREF(lib);
-	return !meet || Script_Try("Scrap", "Set", "(si)", "isActionIndoor", 0) ? Py_ReturnNone() : NULL;
-}
-
-/* EndOfAppears(elv): the arrival by the teleporter from GDB, the player on the floor at its spawn */
-static PyObject *TpMap_EndOfAppears(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *elv;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &elv) || !Script_Import((const char *const[]){ "Elevator", NULL })) {
-		return NULL;
-	}
-	Script_SetVar("Elevator", "OnElevatorReachDown", Script_Ref(Py_None));
-	PyObject *dummy = Script_Try("Scrap", "StartDummySearch", "(si)", "DM_Player_Spawn_GDB", 0) ? K(Script_Ask("Scrap", "NextDummySearch", "()")) : NULL;
-	PyObject *v = dummy ? K(Script_Usr()) : NULL, *name = v && Script_HSet(v, "Pos", Script_Index(dummy, 1)) ? K(Script_GetAttr(v, "Name")) : NULL;
-	return Script_Done(&r, name && Script_Try("SLogic", "SetOnFloor", "(O)", name) ? Py_ReturnNone() : NULL);
-}
-
-PyMethodDef g_TempleMapMethods[] = {
-	{ "InitStatus", TpMap_InitStatus, 1, NULL },
-	{ "Init", TpMap_Init, 1, NULL },
-	{ "EndOfAppears", TpMap_EndOfAppears, 1, NULL },
-	{ NULL, NULL, 0, NULL },
-};
-
-/* ---- MapExtraLifes: the extra lives of the temple, back after TimeToSpawn; raised while the alarm is on ---- */
-
-#define XL "MapExtraLifes"
-
-/* float(Scrap.GetSaveVar(name)) (a new reference) */
-static PyObject *Tp_SaveFloat(PyObject *name) {
-	PyObject *s = PyString_Check(name) ? Script_SaveVar(PyString_AsString(name)) : Script_Ask("Scrap", "GetSaveVar", "(O)", name);
-	PyObject *f = s ? PyNumber_Float(s) : NULL;
-	Py_XDECREF(s);
-	return f;
-}
-
-/* TakeExtraLife(ItemName, UsrName): a life (up to the most), the life away for TimeToSpawn, the alarm */
-static PyObject *Xl_TakeExtraLife(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *item, *usr;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &item, &usr) || !Script_Import((const char *const[]){ "Sound", "Speech", NULL })) {
-		return NULL;
-	}
-	PyObject *l = K(Script_Entity(item)), *nl = l && Script_Try("Scrap", "IncSaveVar", "(s)", "Stats.TempleLife") ? K(Script_SaveVar("Player.NumLives")) : NULL;
-	PyObject *lives = nl ? K(Script_Int(nl)) : NULL, *gt = lives ? K(Tp_SaveFloat(K(PyString_FromString("GameplayTime")))) : NULL;
-	PyObject *now = gt ? K(Script_Ask("Scrap", "GetTime", "()")) : NULL, *t = now ? K(PyNumber_Add(gt, now)) : NULL;
-	PyObject *rep = t ? K(Script_Repr(t)) : NULL, *max = rep && Script_Try("Scrap", "SetSaveVar", "(OO)", item, rep) ? K(Script_Ask("Scrap", "Get", "(s)", "MaxPlayerLives")) : NULL;
-	int c = max ? PyObject_Compare(lives, max) : 0;
-	if (!max || PyErr_Occurred()) {
-		FAIL();
-	}
-	if (c < 0) {
-		PyObject *one = K(PyInt_FromLong(1)), *more = one ? K(PyNumber_Add(lives, one)) : NULL, *mr = more ? K(Script_Repr(more)) : NULL;
-		PyObject *cad = mr && Script_Try("Scrap", "SetSaveVar", "(sO)", "Player.NumLives", mr) ? K(Script_LangOf(PyString_FromString("StealLife_SystemMessage"))) : NULL;
-		PyObject *t2 = cad ? K(Script_Ask("Scrap", "GetTime", "()")) : NULL, *dur = t2 ? K(Script_Ask("Speech", "CalculateSpeechTime", "(O)", cad)) : NULL;
-		PyObject *until = dur ? K(PyNumber_Add(t2, dur)) : NULL;
-		if (!until || !Script_Try("SScorer", "SetMsgText", "(OO)", cad, until) || !Script_Try("SFX", "BishopSellLife", "(sO)", "", usr)) {
-			FAIL();
-		}
-	}
-	PyObject *spawn = K(Script_Global(XL, "TimeToSpawn")), *take = spawn && Script_HSet(l, "rTime", Script_Ref(spawn)) ? K(Script_Attr("Sound", "ItemTake")) : NULL;
-	PyObject *a = take ? K(PyObject_GetItem(take, K(PyString_FromString("TakeExtraLife")))) : NULL;
-	PyObject *a0 = a ? K(Script_Index(a, 0)) : NULL, *a1 = a0 ? K(Script_Index(a, 1)) : NULL, *pos = a1 ? K(Script_GetAttr(l, "Pos")) : NULL;
-	byte ok = pos && Script_Try("SSound", "PlaySound", "(OOO)", pos, a0, a1) && Script_Try("Scrap", "SetAlarm", "(i)", 1) &&
-		Script_Try("Scrap", "Set", "(si)", "BishopAttackOnAlarm", 1);
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
-}
-
-/* SetRespawnTime(l): the life comes back TimeToSpawn after it was taken (at least 0.1 s from now) */
-static PyObject *Xl_SetRespawnTime(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *l;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &l)) {
-		return NULL;
-	}
-	PyObject *name = K(Script_GetAttr(l, "Name")), *taken = name ? K(Tp_SaveFloat(name)) : NULL;
-	PyObject *gt = taken ? K(Tp_SaveFloat(K(PyString_FromString("GameplayTime")))) : NULL, *a = gt ? K(PyNumber_Subtract(taken, gt)) : NULL;
-	PyObject *spawn = a ? K(Script_Global(XL, "TimeToSpawn")) : NULL, *b = spawn ? K(PyNumber_Add(a, spawn)) : NULL;
-	PyObject *now = b ? K(Script_Ask("Scrap", "GetTime", "()")) : NULL, *rt = now ? K(PyNumber_Subtract(b, now)) : NULL;
-	PyObject *lim = rt ? K(PyFloat_FromDouble(0.1)) : NULL;
-	int c = lim ? PyObject_Compare(rt, lim) : 0;
-	if (!lim || PyErr_Occurred()) {
-		FAIL();
-	}
-	return Script_Done(&r, Script_HSet(l, "rTime", Script_Ref(c < 0 ? lim : rt)) ? Py_ReturnNone() : NULL);
-}
-
-/* MoveLifes(dist): the lives up or down by dist; one that is there glides, a taken one jumps */
-static PyObject *Xl_MoveLifes(PyObject *self, PyObject *args) {
-	PyObject *dist;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &dist)) {
-		return NULL;
-	}
-	PyObject *lifes = Script_Global(XL, "Lifes"), *l;
-	int more = lifes ? 1 : -1;
-	for (int i = 0; lifes && (more = Script_Next(lifes, i, &l)) > 0; i++) {
-		scriptRefs_t r = { .n = 0 };
-		K(l);
-		PyObject *mp = K(Script_GetAttr(l, "MovePos"));
-		PyObject *to = mp ? K(Script_Ask("SVec", "Add", "(O(iOi))", mp, 0, dist, 0)) : NULL;
-		PyObject *rt = to && Script_HSet(l, "MovePos", Script_Ref(to)) && Script_HSet(l, "MoveAng", Script_GetAttr(l, "Ang")) ?
-			K(Script_GetAttr(l, "rTime")) : NULL;
-		PyObject *zero = rt ? K(PyFloat_FromDouble(0.0)) : NULL;
-		int there = zero ? PyObject_Compare(rt, zero) == 0 : -1;
-		byte ok = there >= 0 && !PyErr_Occurred() && (there ? Tp_Do(XL, "SetRespawnTime", Py_BuildValue("(O)", l)) &&
-			Script_HSet(l, "MoveTime", PyFloat_FromDouble(0.3)) : Script_HSet(l, "MoveTime", PyFloat_FromDouble(0.0)) &&
-			Script_HSet(l, "Pos", Script_GetAttr(l, "MovePos")));
-		Script_Done(&r, NULL);
-		if (!ok) {
-			more = -1;
-			break;
-		}
-	}
-	Py_XDECREF(lifes);
-	return more == 0 ? Py_ReturnNone() : NULL;
-}
-
-/* SwitchAlarm(status): called again on the next alarm change; the lives up with the alarm, down after it */
-static PyObject *Xl_SwitchAlarm(PyObject *self, PyObject *args) {
-	PyObject *status;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &status) || !Script_Import((const char *const[]){ "Alarm", NULL })) {
-		return NULL;
-	}
-	PyObject *cbs = Script_Attr("Alarm", "SetAlarmCallback"), *me = cbs ? Script_Global(XL, "SwitchAlarm") : NULL;
-	PyObject *v = me ? Script_Method(cbs, "append", "(O)", me) : NULL;
-	Py_XDECREF(v);
-	Py_XDECREF(me);
-	Py_XDECREF(cbs);
-	int on = v ? Script_True(status) : -1;
-	if (on < 0) {
-		return NULL;
-	}
-	if (on) {
-		return Tp_Do(XL, "MoveLifes", Py_BuildValue("(i)", 600)) ? Py_ReturnNone() : NULL;
-	}
-	return Script_Try("Scrap", "Set", "(si)", "BishopAttackOnAlarm", 0) && Tp_Do(XL, "MoveLifes", Py_BuildValue("(i)", -600)) ?
-		Py_ReturnNone() : NULL;
-}
-
-/* the life item of a dummy (name, pos, ang): its save variable, the item, its respawn time, into Lifes */
-static byte Xl_Life(PyObject *dummy) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *name = K(Script_Index(dummy, 0)), *spawn = name ? K(Script_Global(XL, "TimeToSpawn")) : NULL;
-	PyObject *neg = spawn ? K(PyNumber_Negative(spawn)) : NULL, *rep = neg ? K(Script_Repr(neg)) : NULL;
-	if (!rep || !Script_Try("Scrap", "CreateSaveVar", "(OO)", name, rep) || !Tp_Do(XL, "GetMoney", Py_BuildValue("(O)", name))) {
-		BAD();
-	}
-	PyObject *pos = K(Script_Index(dummy, 1)), *x = pos ? K(Script_Index(pos, 0)) : NULL;
-	PyObject *y = x ? K(Script_Index(pos, 1)) : NULL, *z = y ? K(Script_Index(pos, 2)) : NULL;
-	PyObject *l = z ? K(Script_Ask("Scrap", "CreateEntity", "(OOOOs)", name, x, y, z, "Item")) : NULL;
-	PyObject *model = l ? K(Script_Ask("MisItems", "GetObjModel", "(s)", "ExtraLife")) : NULL;
-	if (!model || !K(Script_Method(l, "SetModel", "(O)", model)) || !Tp_Do(XL, "SetRespawnTime", Py_BuildValue("(O)", l)) ||
-		!Script_HSet(l, "OnlyUser", PyInt_FromLong(1)) || !Script_HSet(l, "Radius", Script_Attr("MisItems", "COIN_RADIUS_INDOOR")) ||
-		!Script_HSet(l, "OnTake", PyString_FromString("MapExtraLifes.TakeExtraLife")) ||
-		!Script_HSet(l, "MovePos", Script_GetAttr(l, "Pos")) || !Script_HSet(l, "MoveAng", Script_GetAttr(l, "Ang"))) {
-		BAD();
-	}
-	PyObject *lifes = K(Script_Global(XL, "Lifes"));
-	byte ok = lifes && PyList_Check(lifes) ? PyList_Append(lifes, l) == 0 : lifes && K(Script_Method(lifes, "append", "(O)", l));
-	Script_Done(&r, NULL);
+	Py_DECREF(add);
 	return ok;
 }
 
-/* Init(LevelPath): a life at every DM_ExtraLife dummy; up at once when the alarm is on, else when it comes */
-static PyObject *Xl_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path) || !Script_Import((const char *const[]){ "MisItems", "Alarm", NULL }) ||
-		!Script_Try("Scrap", "StartDummySearch", "(si)", "DM_ExtraLife_*", 1)) {
-		return NULL;
-	}
-	PyObject *key = PyString_FromString("GameplayTime"), *gt = key ? Tp_SaveFloat(key) : NULL;
-	Py_XDECREF(key);
-	if (!gt) {
-		return NULL;
-	}
-	Py_DECREF(gt);
-	for (;;) {
-		PyObject *d = Script_Ask("Scrap", "NextDummySearch", "()");
-		int end = d ? Script_Eq(d, Py_None) : -1;
-		byte ok = end == 0 ? Xl_Life(d) : end > 0;
-		Py_XDECREF(d);
-		if (!ok) {
-			return NULL;
-		}
-		if (end) {
-			break;
-		}
-	}
-	PyObject *alarm = Script_Ask("Scrap", "GetAlarm", "()"), *a0 = alarm ? Script_Index(alarm, 0) : NULL;
-	int on = a0 ? Script_True(a0) : -1;
-	Py_XDECREF(a0);
-	Py_XDECREF(alarm);
-	if (on < 0) {
-		return NULL;
-	}
-	if (on) {
-		return Tp_Do(XL, "SwitchAlarm", Py_BuildValue("(i)", 1)) ? Py_ReturnNone() : NULL;
-	}
-	PyObject *cbs = Script_Attr("Alarm", "SetAlarmCallback"), *me = cbs ? Script_Global(XL, "SwitchAlarm") : NULL;
-	PyObject *v = me ? Script_Method(cbs, "append", "(O)", me) : NULL;
-	Py_XDECREF(v);
-	Py_XDECREF(me);
-	Py_XDECREF(cbs);
-	return v ? Py_ReturnNone() : NULL;
-}
-
-/* GetMoney(name): the number after the second "_" of the name */
-static PyObject *Xl_GetMoney(PyObject *self, PyObject *args) {
-	PyObject *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name) || !Script_Import((const char *const[]){ "string", NULL })) {
-		return NULL;
-	}
-	PyObject *parts = Script_Ask("string", "splitfields", "(Os)", name, "_"), *p = parts ? Script_Index(parts, 2) : NULL;
-	PyObject *f = p ? PyNumber_Float(p) : NULL;
-	Py_XDECREF(p);
-	Py_XDECREF(parts);
-	return f;
-}
-
-PyMethodDef g_TempleXlMethods[] = {
-	{ "TakeExtraLife", Xl_TakeExtraLife, 1, NULL },
-	{ "SetRespawnTime", Xl_SetRespawnTime, 1, NULL },
-	{ "MoveLifes", Xl_MoveLifes, 1, NULL },
-	{ "SwitchAlarm", Xl_SwitchAlarm, 1, NULL },
-	{ "Init", Xl_Init, 1, NULL },
-	{ "GetMoney", Xl_GetMoney, 1, NULL },
-	{ NULL, NULL, 0, NULL },
-};
-
-/* ---- the missions ---- */
-
-/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, fn, args[, name]) with the time of the script (args given away) */
-static byte Tp_At(double delay, PyObject *fn, PyObject *args, const char *name) {
-	PyObject *now = fn && args ? Script_Ask("Scrap", "GetTime", "()") : NULL, *d = now ? PyFloat_FromDouble(delay) : NULL;
-	PyObject *t = d ? PyNumber_Add(now, d) : NULL;
-	byte ok = t && (name ? Script_Try("Scrap", "AddScheduledFunc", "(OOOs)", t, fn, args, name) : Script_Try("Scrap", "AddScheduledFunc", "(OOO)", t, fn, args));
-	Py_XDECREF(t);
-	Py_XDECREF(d);
-	Py_XDECREF(now);
-	Py_XDECREF(args);
+/* SScorer.SetMsgText(cad, Scrap.GetTime() + Speech.CalculateSpeechTime(cad)) */
+static byte Tp_MsgFor(const nativeVal_t *cad) {
+	nativeVal_t now, dur, t;
+	double d;
+	Native_SetFloat(&now, Mode_Time());
+	Native_SetNone(&dur);
+	Native_SetNone(&t);
+	byte ok = LV_CALL("Speech", "CalculateSpeechTime", &dur, "v", cad) && Native_Arith('+', &now, &dur, &t) &&
+		Native_ArgDouble(&t, &d) && Mode_MsgText(cad, d);
+	Native_Free(&dur);
+	Native_Free(&t);
 	return ok;
 }
 
 /* the hint text of key for its speech time */
 static byte Tp_Hint(const char *key) {
-	PyObject *cad = Script_LangOf(PyString_FromString((char *)key)), *now = cad ? Script_Ask("Scrap", "GetTime", "()") : NULL;
-	PyObject *dur = now ? Script_Ask("Speech", "CalculateSpeechTime", "(O)", cad) : NULL, *t = dur ? PyNumber_Add(now, dur) : NULL;
-	byte ok = t && Script_Try("SScorer", "SetMsgText", "(OO)", cad, t);
-	Py_XDECREF(t);
-	Py_XDECREF(dur);
-	Py_XDECREF(now);
-	Py_XDECREF(cad);
+	nativeVal_t cad;
+	Mode_Lang(key, &cad);
+	byte ok = Tp_MsgFor(&cad);
+	Native_Free(&cad);
 	return ok;
 }
 
-#define AD "Mission_ArchbishopDead"
+/* e.UseFunc = func of the entity called name */
+static byte Tp_UseFunc(const char *name, const char *func) {
+	nativeVal_t e;
+	byte ok = LvN_Entity(name, &e) && LvN_SetS(&e, "UseFunc", func);
+	Native_Free(&e);
+	return ok;
+}
+
+/* a gatekeeper on its door against a foe group of GateKeeper, the door used through UseDoor */
+static byte Tp_Gate(const char *keeper, const char *door, const char *group, const char *use) {
+	/* OBJLIB 5: the group is the object of GateKeeper, as the script passes it */
+	PyObject *g = Mode_Import("GateKeeper") ? Script_Attr("GateKeeper", group) : NULL;
+	byte ok = g && (!door || LV_CALL("GateKeeper", "SetDoor", NULL, "ss", keeper, door)) &&
+		LV_CALL("GateKeeper", "DoorFoe", NULL, "sO", keeper, g) && Tp_UseFunc(door ? door : "DM_Door_Teleporter_01", use);
+	Py_XDECREF(g);
+	return ok;
+}
+
+/* SFX.BishopSellLife(attacker, attacked) through its seam (fc-tp-map swaps it), the CHECKs of the engine function */
+static byte Tp_SellLife(const char *attacker, const nativeVal_t *attacked) {
+	PyObject *hook;
+	const char *s;
+	int seam = Native_Seam("SFX", "BishopSellLife", &hook);
+	if (seam) {
+		return seam > 0 && Native_HookCall(hook, NULL, "sv", attacker, attacked);
+	}
+	if (!Tp_Str(attacked, 2, &s)) {
+		return 0;
+	}
+	cEntity *a = World_FindEntity(attacker);
+	if (a) {
+		CHECK(Entity_IsType(a, TYEN_WITH_LIFE));
+	}
+	cEntity *b = World_FindEntity(s);
+	CHECK(b);
+	CHECK(Entity_IsType(b, TYEN_WITH_LIFE));
+	FX_BishopSellLife(a, b);
+	return 1;
+}
+
+/* float(Scrap.GetSaveVar(name)) */
+static byte Tp_SaveFloat(const nativeVal_t *name, nativeVal_t *out) {
+	const char *s;
+	nativeVal_t v;
+	Native_SetNone(out);
+	if (!Tp_Str(name, 1, &s)) {
+		return 0;
+	}
+	Mode_SaveVar(s, &v);
+	byte ok = Native_ToFloat(&v, out);
+	Native_Free(&v);
+	return ok;
+}
+
+static byte Tp_SaveFloatS(const char *name, nativeVal_t *out) {
+	nativeVal_t n;
+	LvN_Str(&n, name);
+	byte ok = Tp_SaveFloat(&n, out);
+	Native_Free(&n);
+	return ok;
+}
+
+/* Scrap.SetSaveVar(name, `v`) with name a value ("ss": the TypeError of a name that is no text) */
+static byte Tp_SaveReprAt(const nativeVal_t *name, const nativeVal_t *v) {
+	const char *s;
+	if (!Tp_Str(name, 1, &s)) {
+		return 0;
+	}
+	LvN_SaveRepr(s, v);
+	return 1;
+}
+
+/* the dummy search of the player's arrival, the player there and on the floor */
+static byte Tp_Arrive(const char *dummyName) {
+	nativeVal_t dummy, v, pos, name;
+	Native_SetNone(&v);
+	Native_SetNone(&pos);
+	Native_SetNone(&name);
+	LvN_Dummy(dummyName, 0, &dummy);
+	byte ok = Mode_UsrHandle(&v) && LvN_Item(&dummy, 1, &pos) && Mode_VSet(&v, "Pos", &pos) && Mode_VGet(&v, "Name", &name) &&
+		LvN_SetOnFloor(&name);
+	Native_Free(&dummy);
+	Native_Free(&v);
+	Native_Free(&pos);
+	Native_Free(&name);
+	return ok;
+}
+
+/* Elevator.ConnectElevators of one door to one level */
+static byte Tp_Connect(const char *door, const char *level) {
+	nativeVal_t a, b;
+	Native_SetEmpty(&a, NV_LIST);
+	LvN_Str(Native_Append(&a), door);
+	Native_SetEmpty(&b, NV_LIST);
+	LvN_Str(Native_Append(&b), level);
+	byte ok = LV_CALL("Elevator", "ConnectElevators", NULL, "vv", &a, &b);
+	Native_Free(&a);
+	Native_Free(&b);
+	return ok;
+}
+
+/* ---- Map ---- */
+
+static byte TpMap_InitStatus(void) {
+	static const struct {
+		const char *who, *flag;
+		long n;
+	} repos[] = { { "BankDirector", "_BankDirector", 3 }, { "Bishop", "_Bishop", 5 }, { "Functionary", "_Functionary", 3 } };
+	nativeVal_t v;
+	if (!Mode_Import("Init") || !Mode_Import("Elevator") || !Mode_Import("CharsNPC") || !Mode_Import("Messenger")) {
+		return 0;
+	}
+	Native_SetInt(&v, 0);
+	Tp_SetVar("Init", "Outdoor", &v);
+	LvN_Str(&v, "Commercial");
+	Tp_SetVar("Init", "OutArea", &v);
+	Native_Free(&v);
+	Native_SetInt(&v, 0);
+	Tp_SetVar("Messenger", "MakeMDP", &v);
+	if (!LV_CALL("Elevator", "SetDef", NULL, "ss", "Metro", "DM_Door_Metro_Templo00") ||
+		!LV_CALL("Elevator", "SetDef", NULL, "ss", "MetroExt", "DM_Door_Metro_Templo00") ||
+		!LV_CALL("Elevator", "SetDef", NULL, "ss", "Elevator", "DM_Door_Elevator_Commercial") ||
+		!LV_CALL("Elevator", "SetDef", NULL, "ss", "TempleTeleporter", "DM_Door_TempleTeleporter_GDB") ||
+		!LV_CALL("CharsNPC", "SetReposChars", NULL, "si", "Sentinel", 3L) || !LV_CALL("CharsNPC", "SetReposChars", NULL, "si", "Police", 3L) ||
+		!LV_CALL("CharsNPC", "SetReposChars", NULL, "si", "Nurse", 3L)) {
+		return 0;
+	}
+	/* if not Scrap.Get("IsXbox") or _<Char>: */
+	for (int i = 0; i < 3; i++) {
+		int on = LvN_PcOr(GM, repos[i].flag);
+		if (on < 0 || (on && !LV_CALL("CharsNPC", "SetReposChars", NULL, "si", repos[i].who, repos[i].n))) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+static byte TpMap_Init(void) {
+	nativeVal_t a, b;
+	if (!Mode_Import("Metro") || !Mode_Import("Elevator") || !Tp_Connect("DM_Door_TempleTeleporter_GDB", "GDB") ||
+		!Tp_Connect("DM_Door_Elevator_Commercial", "Commercial")) {
+		return 0;
+	}
+	Native_SetEmpty(&a, NV_LIST);
+	LvN_Str(Native_Append(&a), "DM_Door_Teleporter_01");
+	LvN_Str(Native_Append(&a), "DM_Door_Teleporter_06");
+	Native_SetEmpty(&b, NV_LIST);
+	byte ok = LV_CALL("Elevator", "ConnectElevators", NULL, "vvi", &a, &b, 0L);
+	Native_Free(&a);
+	Native_Free(&b);
+	if (!ok || !LV_CALL("Metro", "SetAsMetro", NULL, "s", "DM_Door_Metro_Templo00") ||
+		!Tp_Gate("GateKeeper_Portalis", "DM_Door_Teleporter_01", "BishopGroupGateKeeper", "GateKeeper.UseDoor")) {
+		return 0;
+	}
+	if (LvN_SaveIs("ComeFrom", "DoorTempleTeleporter") && !Tp_SetVarG("Elevator", "OnElevatorReachDown", GM, "EndOfAppears")) {
+		return 0;
+	}
+	if (!Tp_Gate("GateKeeper_GDB", "DM_Door_TempleTeleporter_GDB", "BishopGroupGateKeeper", "GateKeeper.UseDoor")) {
+		return 0;
+	}
+	return !LvN_SaveIs("Mission.Library", "Mission_MeetArchbishop") || Mode_GVarSetI("isActionIndoor", 0);
+}
+
+/* EndOfAppears(elv): the arrival by the teleporter from GDB, the player on the floor at its spawn */
+static byte TpMap_EndOfAppears(void) {
+	nativeVal_t none;
+	if (!Mode_Import("Elevator")) {
+		return 0;
+	}
+	Native_SetNone(&none);
+	Tp_SetVar("Elevator", "OnElevatorReachDown", &none);
+	return Tp_Arrive("DM_Player_Spawn_GDB");
+}
+
+LV_CORE0(TpMap_InitStatus)
+LV_CORE0(TpMap_Init)
+LV_CORE0(TpMap_EndOfAppears)
+
+LV_FN(TpMap, InitStatusPy, 1, TpMap_InitStatus_C)
+LV_FN(TpMap, InitPy, 1, TpMap_Init_C)
+LV_FN(TpMap, EndOfAppearsPy, 1, TpMap_EndOfAppears_C)
+
+PyMethodDef g_TempleMapMethods[] = {
+	{ "InitStatus", TpMap_InitStatusPy, 1, NULL },
+	{ "Init", TpMap_InitPy, 1, NULL },
+	{ "EndOfAppears", TpMap_EndOfAppearsPy, 1, NULL },
+	{ NULL, NULL, 0, NULL },
+};
+
+/* ---- MapExtraLifes: the extra lives of the temple, back after TimeToSpawn; raised while the alarm is on ---- */
+
+/* TakeExtraLife(ItemName, UsrName): a life (up to the most), the life away for TimeToSpawn, the alarm */
+static byte Xl_TakeExtraLife(const nativeVal_t *item, const nativeVal_t *usr) {
+	nativeVal_t l, nl, lives, gt, now, t, max, spawn, take, key, a, a0, a1, pos, one, alarm;
+	if (!Mode_Import("Sound") || !Mode_Import("Speech")) {
+		return 0;
+	}
+	Native_SetNone(&l);
+	Native_SetNone(&lives);
+	Native_SetNone(&gt);
+	Native_SetNone(&t);
+	Native_SetNone(&max);
+	Native_SetNone(&spawn);
+	Native_SetNone(&take);
+	Native_SetNone(&a);
+	Native_SetNone(&a0);
+	Native_SetNone(&a1);
+	Native_SetNone(&pos);
+	Native_SetNone(&nl);
+	byte ok = Mode_EntityH(item, &l);
+	if (ok) {
+		SaveVar_Inc("Stats.TempleLife", 1);
+		Mode_SaveVar("Player.NumLives", &nl);
+		ok = Native_ToInt(&nl, &lives) && Tp_SaveFloatS("GameplayTime", &gt);
+	}
+	if (ok) {
+		Native_SetFloat(&now, Mode_Time());
+		ok = Native_Arith('+', &gt, &now, &t) && Tp_SaveReprAt(item, &t) && Native_GVarGet("MaxPlayerLives", &max);
+	}
+	if (ok && Native_Compare(&lives, &max) < 0) {
+		nativeVal_t more, cad;
+		Native_SetInt(&one, 1);
+		Native_SetNone(&more);
+		ok = Native_Arith('+', &lives, &one, &more);
+		if (ok) {
+			LvN_SaveRepr("Player.NumLives", &more);
+			Mode_Lang("StealLife_SystemMessage", &cad);
+			ok = Tp_MsgFor(&cad) && Tp_SellLife("", usr);
+			Native_Free(&cad);
+		}
+		Native_Free(&more);
+	}
+	ok = ok && Mode_G(XL, "TimeToSpawn", &spawn) && Mode_VSet(&l, "rTime", &spawn) && LvN_ModGet("Sound", "ItemTake", &take);
+	if (ok) {
+		LvN_Str(&key, "TakeExtraLife");
+		ok = Native_Subscript(&take, &key, &a) && LvN_Item(&a, 0, &a0) && LvN_Item(&a, 1, &a1) && Mode_VGet(&l, "Pos", &pos) &&
+			LvN_PlaySound(&pos, &a0, &a1);
+		Native_Free(&key);
+	}
+	if (ok) {
+		Native_SetInt(&alarm, 1);
+		ok = Mode_SetAlarm(&alarm) && Mode_GVarSetI("BishopAttackOnAlarm", 1);
+	}
+	Native_Free(&l);
+	Native_Free(&nl);
+	Native_Free(&lives);
+	Native_Free(&gt);
+	Native_Free(&t);
+	Native_Free(&max);
+	Native_Free(&spawn);
+	Native_Free(&take);
+	Native_Free(&a);
+	Native_Free(&a0);
+	Native_Free(&a1);
+	Native_Free(&pos);
+	return ok;
+}
+
+/* SetRespawnTime(l): the life comes back TimeToSpawn after it was taken (at least 0.1 s from now) */
+static byte Xl_SetRespawnTime(const nativeVal_t *l) {
+	nativeVal_t name, taken, gt, d, spawn, b, now, rt, lim;
+	Native_SetNone(&name);
+	Native_SetNone(&taken);
+	Native_SetNone(&gt);
+	Native_SetNone(&d);
+	Native_SetNone(&spawn);
+	Native_SetNone(&b);
+	Native_SetNone(&rt);
+	byte ok = Mode_VGet(l, "Name", &name) && Tp_SaveFloat(&name, &taken) && Tp_SaveFloatS("GameplayTime", &gt) &&
+		Native_Arith('-', &taken, &gt, &d) && Mode_G(XL, "TimeToSpawn", &spawn) && Native_Arith('+', &d, &spawn, &b);
+	if (ok) {
+		Native_SetFloat(&now, Mode_Time());
+		Native_SetFloat(&lim, 0.1);
+		ok = Native_Arith('-', &b, &now, &rt) && Mode_VSet(l, "rTime", Native_Compare(&rt, &lim) < 0 ? &lim : &rt);
+	}
+	Native_Free(&name);
+	Native_Free(&taken);
+	Native_Free(&gt);
+	Native_Free(&d);
+	Native_Free(&spawn);
+	Native_Free(&b);
+	Native_Free(&rt);
+	return ok;
+}
+
+/* one life of MoveLifes: up or down by dist; one that is there glides, a taken one jumps */
+static byte Xl_MoveLife(const nativeVal_t *l, const nativeVal_t *dist) {
+	nativeVal_t mp, off, to, ang, rt, zero, p;
+	Native_SetNone(&mp);
+	Native_SetNone(&to);
+	Native_SetNone(&ang);
+	Native_SetNone(&rt);
+	Native_SetNone(&p);
+	Native_SetEmpty(&off, NV_TUPLE);
+	Native_SetInt(Native_Append(&off), 0);
+	Native_Copy(Native_Append(&off), dist);
+	Native_SetInt(Native_Append(&off), 0);
+	byte ok = Mode_VGet(l, "MovePos", &mp) && Mode_VecAdd(&mp, &off, &to) && Mode_VSet(l, "MovePos", &to) &&
+		Mode_VGet(l, "Ang", &ang) && Mode_VSet(l, "MoveAng", &ang) && Mode_VGet(l, "rTime", &rt);
+	if (ok) {
+		Native_SetFloat(&zero, 0.0);
+		if (!Native_Compare(&rt, &zero)) {
+			ok = LV_OWN(XL, "SetRespawnTime", NULL, "v", l) && LvN_SetF(l, "MoveTime", 0.3);
+		} else {
+			ok = LvN_SetF(l, "MoveTime", 0.0) && Mode_VGet(l, "MovePos", &p) && Mode_VSet(l, "Pos", &p);
+		}
+	}
+	Native_Free(&mp);
+	Native_Free(&off);
+	Native_Free(&to);
+	Native_Free(&ang);
+	Native_Free(&rt);
+	Native_Free(&p);
+	return ok;
+}
+
+/* MoveLifes(dist): the lives of the list Lifes (the list object of the module: it holds the handles, OBJLIB 5 and 7) */
+static byte Xl_MoveLifes(const nativeVal_t *dist) {
+	PyObject *lifes = Mode_GlobalPy(XL, "Lifes");
+	if (!lifes) {
+		return 0;
+	}
+	byte ok = 1;
+	for (int i = 0; ok; i++) {
+		PyObject *o;
+		int more = Script_Next(lifes, i, &o);
+		if (more <= 0) {
+			ok = more == 0;
+			break;
+		}
+		nativeVal_t l;
+		Native_Arg(o, &l);
+		Py_DECREF(o);
+		ok = Xl_MoveLife(&l, dist);
+		Native_Free(&l);
+	}
+	Py_DECREF(lifes);
+	return ok;
+}
+
+/* MoveLifes(d) of the module through its global */
+static byte Xl_Move(long d) {
+	return LV_OWN(XL, "MoveLifes", NULL, "i", d);
+}
+
+/* SwitchAlarm(status): called again on the next alarm change; the lives up with the alarm, down after it */
+static byte Xl_SwitchAlarm(const nativeVal_t *status) {
+	if (!Mode_Import("Alarm") || !Tp_AppendG("Alarm", "SetAlarmCallback", XL, "SwitchAlarm")) {
+		return 0;
+	}
+	if (Native_True(status)) {
+		return Xl_Move(600);
+	}
+	return Mode_GVarSetI("BishopAttackOnAlarm", 0) && Xl_Move(-600);
+}
+
+/* -v of the script (PyNumber_Negative: -0.0 for 0.0, the OverflowError of the smallest int, others by Python) */
+static byte Xl_Neg(const nativeVal_t *v, nativeVal_t *out) {
+	Native_SetNone(out);
+	if (v->type == NV_INT && v->i != LONG_MIN) {
+		Native_SetInt(out, -v->i);
+		return 1;
+	}
+	if (v->type == NV_FLOAT) {
+		Native_SetFloat(out, -v->f);
+		return 1;
+	}
+	PyObject *o = Native_ToPy(v), *r = o ? PyNumber_Negative(o) : NULL;
+	if (r) {
+		Native_Arg(r, out);
+	}
+	Py_XDECREF(r);
+	Py_XDECREF(o);
+	return r != NULL;
+}
+
+/* the life item of a dummy (name, pos, ang): its save variable, the item, its respawn time, into Lifes */
+static byte Xl_Life(const nativeVal_t *dummy) {
+	nativeVal_t name, spawn, neg, pos, c[3], l, model, radius, v;
+	nativeBuf_t rep;
+	const char *s;
+	Native_SetNone(&name);
+	Native_SetNone(&spawn);
+	Native_SetNone(&neg);
+	Native_SetNone(&pos);
+	Native_SetNone(&l);
+	Native_SetNone(&model);
+	Native_SetNone(&radius);
+	Native_SetNone(&v);
+	byte ok = LvN_Item(dummy, 0, &name) && Mode_G(XL, "TimeToSpawn", &spawn) && Xl_Neg(&spawn, &neg) && Tp_Str(&name, 1, &s);
+	if (ok) {
+		Native_BufInit(&rep);
+		Native_Repr(&rep, &neg, NR_REPR);
+		SaveVar_Create(s, rep.p);
+		Native_BufFree(&rep);
+		ok = LV_OWN(XL, "GetMoney", NULL, "v", &name);
+	}
+	int got = 0;
+	ok = ok && LvN_Item(dummy, 1, &pos);
+	for (; ok && got < 3; got++) {
+		ok = LvN_Item(&pos, got, &c[got]);
+	}
+	if (!ok && got) {
+		Native_Free(&c[--got]);
+	}
+	ok = ok && LvN_Create(&name, &c[0], &c[1], &c[2], "Item", &l);
+	while (got-- > 0) {
+		Native_Free(&c[got]);
+	}
+	ok = ok && LV_CALL("MisItems", "GetObjModel", &model, "s", "ExtraLife") && Mode_VModel(&l, &model) &&
+		LV_OWN(XL, "SetRespawnTime", NULL, "v", &l) && LvN_SetI(&l, "OnlyUser", 1) &&
+		LvN_ModGet("MisItems", "COIN_RADIUS_INDOOR", &radius) && Mode_VSet(&l, "Radius", &radius) &&
+		LvN_SetS(&l, "OnTake", "MapExtraLifes.TakeExtraLife") && Mode_VGet(&l, "Pos", &v) && Mode_VSet(&l, "MovePos", &v);
+	Native_Free(&v);
+	ok = ok && Mode_VGet(&l, "Ang", &v) && Mode_VSet(&l, "MoveAng", &v) && Mode_Append(XL, "Lifes", &l);
+	Native_Free(&name);
+	Native_Free(&spawn);
+	Native_Free(&neg);
+	Native_Free(&pos);
+	Native_Free(&l);
+	Native_Free(&model);
+	Native_Free(&radius);
+	Native_Free(&v);
+	return ok;
+}
+
+/* Init(LevelPath): a life at every DM_ExtraLife dummy; up at once when the alarm is on, else when it comes */
+static byte Xl_Init(void) {
+	nativeVal_t gt;
+	if (!Mode_Import("MisItems") || !Mode_Import("Alarm")) {
+		return 0;
+	}
+	Mode_DummyStart("DM_ExtraLife_*", 1);
+	if (!Tp_SaveFloatS("GameplayTime", &gt)) {
+		return 0;
+	}
+	Native_Free(&gt);
+	for (;;) {
+		nativeVal_t d;
+		Mode_DummyNext(&d);
+		byte end = d.type == NV_NONE;
+		byte ok = end || Xl_Life(&d);
+		Native_Free(&d);
+		if (!ok) {
+			return 0;
+		}
+		if (end) {
+			break;
+		}
+	}
+	int on = Mode_AlarmOn();
+	if (on < 0) {
+		return 0;
+	}
+	if (on) {
+		return LV_OWN(XL, "SwitchAlarm", NULL, "i", 1L);
+	}
+	return Tp_AppendG("Alarm", "SetAlarmCallback", XL, "SwitchAlarm");
+}
+
+/* GetMoney(name): the number after the second "_" of the name */
+static byte Xl_GetMoney(const nativeVal_t *name, nativeVal_t *out) {
+	nativeVal_t parts, p;
+	if (!Mode_Import("string")) {
+		return 0;
+	}
+	Native_SetNone(&parts);
+	Native_SetNone(&p);
+	/* string.splitfields(name, "_") of the string port: a text in C, any other value by name (its error) */
+	byte ok = name->type == NV_STR ? Native_Split(name, "_", &parts) : LV_CALL("string", "splitfields", &parts, "vs", name, "_");
+	ok = ok && LvN_Item(&parts, 2, &p) && Native_ToFloat(&p, out);
+	Native_Free(&parts);
+	Native_Free(&p);
+	return ok;
+}
+
+static byte Xl_TakeExtraLife_C(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Xl_TakeExtraLife(&a[0], &a[1]);
+}
+
+static byte Xl_SetRespawnTime_C(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Xl_SetRespawnTime(&a[0]);
+}
+
+static byte Xl_MoveLifes_C(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Xl_MoveLifes(&a[0]);
+}
+
+static byte Xl_SwitchAlarm_C(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Xl_SwitchAlarm(&a[0]);
+}
+
+static byte Xl_GetMoney_C(const nativeVal_t *a, nativeVal_t *out) {
+	return Xl_GetMoney(&a[0], out);
+}
+
+LV_CORE0(Xl_Init)
+
+LV_FN(Xl, TakeExtraLifePy, 2, Xl_TakeExtraLife_C)
+LV_FN(Xl, SetRespawnTimePy, 1, Xl_SetRespawnTime_C)
+LV_FN(Xl, MoveLifesPy, 1, Xl_MoveLifes_C)
+LV_FN(Xl, SwitchAlarmPy, 1, Xl_SwitchAlarm_C)
+LV_FN(Xl, InitPy, 1, Xl_Init_C)
+LV_FN(Xl, GetMoneyPy, 1, Xl_GetMoney_C)
+
+PyMethodDef g_TempleXlMethods[] = {
+	{ "TakeExtraLife", Xl_TakeExtraLifePy, 1, NULL },
+	{ "SetRespawnTime", Xl_SetRespawnTimePy, 1, NULL },
+	{ "MoveLifes", Xl_MoveLifesPy, 1, NULL },
+	{ "SwitchAlarm", Xl_SwitchAlarmPy, 1, NULL },
+	{ "Init", Xl_InitPy, 1, NULL },
+	{ "GetMoney", Xl_GetMoneyPy, 1, NULL },
+	{ NULL, NULL, 0, NULL },
+};
+
+/* ---- the missions ---- */
 
 /* Init(LevelPath): the forbidden area, the gatekeeper against the police; the photos of the proofs or Deep Throat */
-static PyObject *Ad_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path) || !Script_Try("Scrap", "Set", "(ss)", "GuaranteedChars", ",Police,Gear,Sentinel,PoliceBoss,") ||
-		!Tp_Do(AD, "ForbiddenMsg", PyTuple_New(0)) ||
+static byte Ad_Init(void) {
+	if (!Mode_GVarSetS("GuaranteedChars", ",Police,Gear,Sentinel,PoliceBoss,") || !Tp_Do(AD, "ForbiddenMsg") ||
 		!Tp_Gate("GateKeeper_Portalis", "DM_Door_Teleporter_01", "PoliceGroupGateKeeper", "GateKeeper.UseDoor")) {
-		return NULL;
+		return 0;
 	}
-	PyObject *st = Script_SaveVar("Mission_ArchbishopDead.Status");
-	if (!st) {
-		return NULL;
+	if (!LvN_SaveIs("Mission_ArchbishopDead.Status", "Photo")) {
+		return Tp_Do(AD, "ShowDeepThroatMessage");
 	}
-	byte photo = Script_Is(st, "Photo");
-	Py_DECREF(st);
-	if (!photo) {
-		return Tp_Do(AD, "ShowDeepThroatMessage", PyTuple_New(0)) ? Py_ReturnNone() : NULL;
-	}
-	PyObject *f = Script_Try("Speech", "AddRemoteCom", "(ss)", "Mission_ArchbishopKilled_RemoteMessage7", "Humphrey") ? Script_Global(AD, "TakeProofPhoto") : NULL;
-	if (!f) {
-		return NULL;
-	}
-	Script_SetVar("CharAct", "TakenPhoto", f);
-	return Tp_Do(AD, "CreateViscProofs", PyTuple_New(0)) ? Py_ReturnNone() : NULL;
+	return LvN_Com("Mission_ArchbishopKilled_RemoteMessage7", "Humphrey", NULL, NULL, NULL) &&
+		Tp_SetVarG("CharAct", "TakenPhoto", AD, "TakeProofPhoto") && Tp_Do(AD, "CreateViscProofs");
 }
 
 /* ForbiddenMsg(): the forbidden area label, again each second */
-static PyObject *Ad_ForbiddenMsg(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Ad_ForbiddenMsg(void) {
+	nativeVal_t label;
+	double time = Mode_Time();
+	Mode_Lang("Generics_ForbiddenArea_Label", &label);
+	byte ok = Mode_LabelText(&label, time + 0.5);
+	Native_Free(&label);
+	if (!ok) {
+		return 0;
 	}
-	PyObject *time = K(Script_Ask("Scrap", "GetTime", "()")), *label = time ? K(Script_LangOf(PyString_FromString("Generics_ForbiddenArea_Label"))) : NULL;
-	PyObject *half = label ? K(PyFloat_FromDouble(0.5)) : NULL, *t1 = half ? K(PyNumber_Add(time, half)) : NULL;
-	PyObject *one = t1 && Script_Try("SScorer", "SetLabelText", "(OO)", label, t1) ? K(PyFloat_FromDouble(1.0)) : NULL;
-	PyObject *t2 = one ? K(PyNumber_Add(time, one)) : NULL, *f = t2 ? K(Script_Global(AD, "ForbiddenMsg")) : NULL;
-	return Script_Done(&r, f && Script_Try("Scrap", "AddScheduledFunc", "(OO()s)", t2, f, "ForbiddenMsg") ? Py_ReturnNone() : NULL);
+	nativeVal_t t, nm;
+	PyObject *f = Mode_GlobalPy(AD, "ForbiddenMsg");
+	Native_SetFloat(&t, time + 1.0);
+	LvN_Str(&nm, "ForbiddenMsg");
+	ok = f && Mode_Schedule(&t, f, NULL, 0, &nm);
+	Native_Free(&nm);
+	Py_XDECREF(f);
+	return ok;
 }
 
 /* CreateViscProofs(): the three proofs to photograph at the DM_ViscProof dummies */
-static PyObject *Ad_CreateViscProofs(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "") || !Script_Try("Scrap", "StartDummySearch", "(si)", "DM_ViscProof*", 1)) {
-		return NULL;
-	}
-	for (int i = 1; i < 4; i++) {
-		scriptRefs_t r = { .n = 0 };
-		PyObject *d = K(Script_Ask("Scrap", "NextDummySearch", "()"));
-		int has = d ? Script_True(d) : -1;
-		if (has == 0) {
-			PyObject *s = K(PyString_FromString("Uno de los dummies de las pruebas del viscoson no existe"));
-			if (s) {
-				PyErr_SetObject(s, Py_None);
-			}
-			FAIL();
+static byte Ad_CreateViscProofs(void) {
+	char name[0x20];
+	Mode_DummyStart("DM_ViscProof*", 1);
+	byte ok = 1;
+	for (int i = 1; i < 4 && ok; i++) {
+		nativeVal_t d, pos, ang, nm, use, prf, p, off, v, pn;
+		Native_SetNone(&pos);
+		Native_SetNone(&ang);
+		Native_SetNone(&prf);
+		Native_SetNone(&p);
+		Native_SetNone(&v);
+		Native_SetNone(&pn);
+		Mode_DummyNext(&d);
+		if (!Native_True(&d)) {
+			Native_Free(&d);
+			return LvN_RaiseText("Uno de los dummies de las pruebas del viscoson no existe");
 		}
-		PyObject *p = has > 0 ? K(Script_Index(d, 1)) : NULL, *a = p ? K(Script_Index(d, 2)) : NULL, *c[5] = { NULL };
-		for (int k = 0; a && k < 5; k++) {
-			c[k] = K(Script_Index(k < 3 ? p : a, k < 3 ? k : k - 3));
-			if (!c[k]) {
-				FAIL();
-			}
-		}
-		char name[0x20];
 		Str_Printf(name, sizeof(name), "ViscProof%d", i);
-		PyObject *prf = c[4] ? K(Script_Ask("MissionsFuncs", "CreatePhotoObject", "(s(OOO)(OOi)s)", name, c[0], c[1], c[2], c[3], c[4], 0,
-			"Mission_ArchbishopDead.ViewProof")) : NULL;
-		PyObject *pos = prf ? K(Script_GetAttr(prf, "Pos")) : NULL, *v = pos ? K(Script_Ask("SVec", "Add", "(O(iii))", pos, 0, -25, 0)) : NULL;
-		PyObject *names = v && Script_HSet(prf, "MovePos", Script_Ref(v)) && Script_HSet(prf, "Pos", Script_Ref(v)) ? K(Script_Global(AD, "ProofsNames")) : NULL;
-		PyObject *pn = names ? K(Script_GetAttr(prf, "Name")) : NULL;
-		if (!pn || !K(Script_Method(names, "append", "(O)", pn))) {
-			FAIL();
+		LvN_Str(&nm, name);
+		LvN_Str(&use, "Mission_ArchbishopDead.ViewProof");
+		Native_SetEmpty(&off, NV_TUPLE);
+		Native_SetInt(Native_Append(&off), 0);
+		Native_SetInt(Native_Append(&off), -25);
+		Native_SetInt(Native_Append(&off), 0);
+		ok = LvN_DummyPosAng(&d, &pos, &ang) && LV_CALL("MissionsFuncs", "CreatePhotoObject", &prf, "vvvv", &nm, &pos, &ang, &use) &&
+			Mode_VGet(&prf, "Pos", &p) && Mode_VecAdd(&p, &off, &v) && Mode_VSet(&prf, "MovePos", &v) && Mode_VSet(&prf, "Pos", &v);
+		if (ok) {
+			/* ProofsNames.append(prf.Name): the list read before the name, as the script reads them */
+			PyObject *names = Mode_GlobalPy(AD, "ProofsNames"), *x = NULL, *r = NULL;
+			ok = names && Mode_VGet(&prf, "Name", &pn) && (x = Native_ToPy(&pn)) != NULL &&
+				(r = Script_Method(names, "append", "(O)", x)) != NULL;
+			Py_XDECREF(r);
+			Py_XDECREF(x);
+			Py_XDECREF(names);
 		}
-		Script_Done(&r, NULL);
+		Native_Free(&d);
+		Native_Free(&pos);
+		Native_Free(&ang);
+		Native_Free(&nm);
+		Native_Free(&use);
+		Native_Free(&prf);
+		Native_Free(&p);
+		Native_Free(&off);
+		Native_Free(&v);
+		Native_Free(&pn);
 	}
-	return Py_ReturnNone();
+	return ok;
 }
 
-static PyObject *Ad_ViewProof(PyObject *self, PyObject *args) {
-	PyObject *a, *b, *c, *d;
-	(void)self;
-	return PyArg_ParseTuple(args, "OOOO", &a, &b, &c, &d) && Tp_Hint("Mission_ArchbishopDead_ViewProofHint") ? Py_ReturnNone() : NULL;
+static byte Ad_ViewProof(void) {
+	return Tp_Hint("Mission_ArchbishopDead_ViewProofHint");
 }
 
 /* TakeProofPhoto(proofName): a photo of a proof (1), the third ends the photos; 0 for another object */
-static PyObject *Ad_TakeProofPhoto(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *proof;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &proof)) {
-		return NULL;
+static byte Ad_TakeProofPhoto(const nativeVal_t *proof, nativeVal_t *out) {
+	nativeVal_t names, e, n, one, m, none;
+	if (!Mode_G(AD, "ProofsNames", &names)) {
+		return 0;
 	}
-	PyObject *names = K(Script_Global(AD, "ProofsNames"));
-	int in = names ? PySequence_Contains(names, proof) : -1;
+	int in = Native_Contains(&names, proof);
+	Native_Free(&names);
 	if (in <= 0) {
-		return Script_Done(&r, in < 0 ? NULL : PyInt_FromLong(0));
+		Native_SetInt(out, 0);
+		return in == 0;
 	}
-	PyObject *e = K(Script_Entity(proof)), *n = e && Script_Try("MissionsFuncs", "UnsetPhotoObject", "(O)", e) ? K(Script_Global(AD, "NumProofsWithPhoto")) : NULL;
-	PyObject *one = n ? K(PyInt_FromLong(1)) : NULL, *m = one ? PyNumber_Add(n, one) : NULL;
-	if (!m || !Script_SetGlobal(AD, "NumProofsWithPhoto", Script_Ref(m))) {
-		Py_XDECREF(m);
-		FAIL();
-	}
-	int three = Script_NumCmp(K(m), 3);
-	if (three == -2) {
-		FAIL();
-	}
-	if (three == 0) {
-		Script_SetVar("CharAct", "TakenPhoto", Script_Ref(Py_None));
-		PyObject *add = K(Script_Attr("Speech", "AddRemoteCom")), *show = add ? K(Script_Global(AD, "ShowDeepThroatMessage")) : NULL;
-		if (!show || !Tp_At(1.0, add, Py_BuildValue("(ssO)", "Mission_ArchbishopKilled_RemoteMessage2", "Humphrey", show), NULL) ||
-			!Script_Try("Scrap", "SetSaveVar", "(ss)", "Mission_ArchbishopDead.Status", "DeepThroat")) {
-			FAIL();
+	Native_SetNone(&e);
+	Native_SetNone(&n);
+	Native_SetNone(&m);
+	Native_SetInt(&one, 1);
+	byte ok = Mode_EntityH(proof, &e) && LV_CALL("MissionsFuncs", "UnsetPhotoObject", NULL, "v", &e) &&
+		Mode_G(AD, "NumProofsWithPhoto", &n) && Native_Arith('+', &n, &one, &m) && Mode_Put(AD, "NumProofsWithPhoto", NULL, &m);
+	if (ok && LvN_EqI(&m, 3)) {
+		Native_SetNone(&none);
+		Tp_SetVar("CharAct", "TakenPhoto", &none);
+		ok = Tp_ComAt(1.0, "Mission_ArchbishopKilled_RemoteMessage2", "Humphrey", AD, "ShowDeepThroatMessage");
+		if (ok) {
+			SaveVar_Set("Mission_ArchbishopDead.Status", "DeepThroat");
 		}
 	}
-	return Script_Done(&r, PyInt_FromLong(1));
+	Native_Free(&e);
+	Native_Free(&n);
+	Native_Free(&m);
+	Native_SetInt(out, 1);
+	return ok;
 }
 
 /* AfterDeepThroatMessageShown(): the first time the next mission, then Deep Throat calls again each minute */
-static PyObject *Ad_AfterDeepThroatMessageShown(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Ad_AfterDeepThroatMessageShown(void) {
+	nativeVal_t marked;
+	if (!Mode_G(AD, "NextMissionMarked", &marked)) {
+		return 0;
 	}
-	PyObject *marked = Script_Global(AD, "NextMissionMarked");
-	int first = marked ? Script_NumCmp(marked, 0) : -2;
-	Py_XDECREF(marked);
-	if (first == -2) {
-		return NULL;
-	}
+	byte first = LvN_EqI(&marked, 0);
+	Native_Free(&marked);
 	const char *msg = "Mission_FirstMeetDeepThroat_RemoteMessage5";
-	if (first == 0) {
+	if (first) {
 		msg = "Mission_FirstMeetDeepThroat_RemoteMessage4";
-		if (!Script_SetGlobal(AD, "NextMissionMarked", PyInt_FromLong(1)) || !Script_Import((const char *const[]){ "Init", NULL }) ||
-			!Script_Try("SaveGame", "QWayPoint", "()") ||
-			!Script_Try("MissionsFuncs", "SetNextMission", "(ss)", "Mission_FirstMeetDeepThroat", "Commercial") ||
-			!Script_Try("SaveGame", "MMDesc", "(si)", "Mission_FirstMeetDeepthroat_MissionText1", 1) ||
-			!Script_Try("Scrap", "DelSaveVars", "(s)", "Mission_ArchbishopDead")) {
-			return NULL;
+		if (!LvN_PutI(AD, "NextMissionMarked", 1) || !Mode_Import("Init") || !LV_CALL("SaveGame", "QWayPoint", NULL, "") ||
+			!LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_FirstMeetDeepThroat", "Commercial") ||
+			!LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_FirstMeetDeepthroat_MissionText1", 1L)) {
+			return 0;
 		}
+		SaveVars_Delete("Mission_ArchbishopDead");
 	}
-	PyObject *add = Script_Attr("Speech", "AddRemoteCom"), *me = add ? Script_Global(AD, "AfterDeepThroatMessageShown") : NULL;
-	byte ok = me && Tp_At(60.0, add, Py_BuildValue("(ssO)", msg, "DeepThroat", me), NULL);
-	Py_XDECREF(me);
-	Py_XDECREF(add);
-	return ok ? Py_ReturnNone() : NULL;
+	return Tp_ComAt(60.0, msg, "DeepThroat", AD, "AfterDeepThroatMessageShown");
 }
 
+LV_CORE0(Ad_Init)
+LV_CORE0(Ad_ForbiddenMsg)
+LV_CORE0(Ad_CreateViscProofs)
+LV_CORE0(Ad_ViewProof)
+LV_CORE0(Ad_AfterDeepThroatMessageShown)
+
+static byte Ad_TakeProofPhoto_C(const nativeVal_t *a, nativeVal_t *out) {
+	return Ad_TakeProofPhoto(&a[0], out);
+}
+
+LV_FN(Ad, InitPy, 1, Ad_Init_C)
+LV_FN(Ad, ForbiddenMsgPy, 0, Ad_ForbiddenMsg_C)
+LV_FN(Ad, CreateViscProofsPy, 0, Ad_CreateViscProofs_C)
+LV_FN(Ad, ViewProofPy, 4, Ad_ViewProof_C)
+LV_FN(Ad, TakeProofPhotoPy, 1, Ad_TakeProofPhoto_C)
+LV_FN(Ad, AfterDeepThroatMessageShownPy, 0, Ad_AfterDeepThroatMessageShown_C)
+
 PyMethodDef g_TempleArchbishopDeadMethods[] = {
-	{ "Init", Ad_Init, 1, NULL },
-	{ "ForbiddenMsg", Ad_ForbiddenMsg, 1, NULL },
-	{ "CreateViscProofs", Ad_CreateViscProofs, 1, NULL },
-	{ "ViewProof", Ad_ViewProof, 1, NULL },
-	{ "TakeProofPhoto", Ad_TakeProofPhoto, 1, NULL },
-	{ "AfterDeepThroatMessageShown", Ad_AfterDeepThroatMessageShown, 1, NULL },
+	{ "Init", Ad_InitPy, 1, NULL },
+	{ "ForbiddenMsg", Ad_ForbiddenMsgPy, 1, NULL },
+	{ "CreateViscProofs", Ad_CreateViscProofsPy, 1, NULL },
+	{ "ViewProof", Ad_ViewProofPy, 1, NULL },
+	{ "TakeProofPhoto", Ad_TakeProofPhotoPy, 1, NULL },
+	{ "AfterDeepThroatMessageShown", Ad_AfterDeepThroatMessageShownPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
 /* Deep Throat's desktop as the target, its dialog by module.DeepThroatSpeech (CallDeepThroat of AskGus, Init of
  * TalkToDeepThroat) */
 static byte Tp_CallDeepThroat(const char *module) {
-	PyObject *dd = Script_Import((const char *const[]){ "DTritusDesktop", NULL }) ? Script_Ask("Scrap", "GetEntity", "(s)", "DM_DTritusDesktop") : NULL;
-	PyObject *name = dd ? Script_GetAttr(dd, "Name") : NULL;
-	PyObject *f = name && Script_Try("MissionsFuncs", "SetMissionTarget", "(O)", name) ? Script_Global(module, "DeepThroatSpeech") : NULL;
-	Py_XDECREF(name);
-	Py_XDECREF(dd);
-	if (f) {
-		Script_SetVar("DTritusDesktop", "DialogController", f);
+	nativeVal_t dd, name;
+	if (!Mode_Import("DTritusDesktop")) {
+		return 0;
 	}
-	return f != NULL;
+	Native_SetNone(&name);
+	byte ok = LvN_Entity("DM_DTritusDesktop", &dd) && Mode_VGet(&dd, "Name", &name) &&
+		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &name) &&
+		Tp_SetVarG("DTritusDesktop", "DialogController", module, "DeepThroatSpeech");
+	Native_Free(&dd);
+	Native_Free(&name);
+	return ok;
 }
 
 /* DeepThroatSpeech(UsrName, CharName, optId, FullOption) of both missions: the talk at the desktop, then
  * module.SetNextMission */
-static PyObject *Tp_DeepThroatSpeech(const char *module, PyObject *args, const char *ni) {
-	PyObject *usr, *ch, *opt, *full;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+static byte Tp_DeepThroatSpeech(const char *module, const nativeVal_t *usr, const nativeVal_t *ch, const char *ni) {
+	nativeVal_t dd, next;
+	Native_SetNone(&next);
+	byte ok = LvN_Entity("DM_DTritusDesktop", &dd) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &dd, 0L) &&
+		LvN_GObj(module, "SetNextMission", &next);
+	Native_Free(&dd);
+	if (!ok) {
+		Native_Free(&next);
+		return 0;
 	}
-	PyObject *dd = Script_Ask("Scrap", "GetEntity", "(s)", "DM_DTritusDesktop");
-	PyObject *next = dd && Script_Try("MissionsFuncs", "ActivateTarget", "(Oi)", dd, 0) ? Script_Global(module, "SetNextMission") : NULL;
-	Py_XDECREF(dd);
-	if (!next) {
-		return NULL;
-	}
-	Script_SetVar("Speech", "PlayerName", Script_Ref(usr));
-	Script_SetVar("Speech", "NPCName", Script_Ref(ch));
-	Script_SetVar("Speech", "OnEndOfSpeech", next);
-	Script_SetVar("Speech", "OnEndOfSpeechParams", PyTuple_New(0));
-	return Script_Try("Speech", "NISpeech", "(s)", "DeepThroat") && Script_Try("Speech", "AutoAddNI", "(s)", ni) &&
-		Script_Try("Speech", "RunNI", "()") ? Py_ReturnNone() : NULL;
+	Tp_SetVar("Speech", "PlayerName", usr);
+	Tp_SetVar("Speech", "NPCName", ch);
+	Tp_SetVar("Speech", "OnEndOfSpeech", &next);
+	Tp_SetVar("Speech", "OnEndOfSpeechParams", LvN_NoArgs());
+	Native_Free(&next);
+	return LV_CALL("Speech", "NISpeech", NULL, "s", "DeepThroat") && LV_CALL("Speech", "AutoAddNI", NULL, "s", ni) &&
+		LV_CALL("Speech", "RunNI", NULL, "");
 }
-
-#define AG "Mission_AskGus"
 
 /* l = eval(Scrap.GetSaveVar(var)); item added when missing, the list saved back */
 static byte Ag_AddToList(const char *var, const char *item) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *text = K(Script_SaveVar(var)), *l = text ? K(Script_EvalIn(AG, text)) : NULL, *it = l ? K(PyString_FromString((char *)item)) : NULL;
-	int in = it ? PySequence_Contains(l, it) : -1;
-	byte ok = in > 0 || (in == 0 && K(Script_Method(l, "append", "(O)", it)) && Script_Try("Scrap", "SetSaveVar", "(sO)", var, K(Script_Repr(l))));
-	Script_Done(&r, NULL);
+	nativeVal_t l, it;
+	if (!LvN_SaveList(var, AG, &l)) {
+		return 0;
+	}
+	LvN_Str(&it, item);
+	int in = Native_Contains(&l, &it);
+	byte ok = in > 0 || (in == 0 && LvN_SaveAppend(var, &l, &it));
+	Native_Free(&l);
+	Native_Free(&it);
 	return ok;
 }
 
-static PyObject *Ag_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	PyObject *list = Script_Attr("CharsNPC", "AfterBrowseNPC"), *f = list ? Script_Global(AG, "AfterBrowseNPC") : NULL;
-	PyObject *v = f ? Script_Method(list, "append", "(O)", f) : NULL;
-	Py_XDECREF(v);
-	Py_XDECREF(f);
-	Py_XDECREF(list);
-	return v ? Py_ReturnNone() : NULL;
+static byte Ag_InitStatus(void) {
+	return Tp_AppendG("CharsNPC", "AfterBrowseNPC", AG, "AfterBrowseNPC");
 }
 
-static PyObject *Ag_AfterBrowseNPC(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	PyObject *res = K(Script_Attr("CharsNPC", "CharRes")), *gus = res ? K(PyObject_GetItem(res, K(PyString_FromString("Bishop_Gus")))) : NULL;
-	PyObject *cbs = gus ? K(Script_GetAttr(gus, "CallbackFunc")) : NULL, *f = cbs ? K(Script_Global(AG, "CreateGusInit")) : NULL;
-	return Script_Done(&r, f && K(Script_Method(cbs, "append", "(O)", f)) ? Py_ReturnNone() : NULL);
+static byte Ag_AfterBrowseNPC(void) {
+	return LvN_Callback("Bishop_Gus", AG, "CreateGusInit");
 }
 
 /* CreateGusInit(e): Gus talks about the mission while it is on */
-static PyObject *Ag_CreateGusInit(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *e;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
+static byte Ag_CreateGusInit(const nativeVal_t *e) {
+	nativeVal_t d, name;
+	if (!LvN_SaveIs("MissionState", "AskGus")) {
+		return 1;
 	}
-	PyObject *st = K(Script_SaveVar("MissionState"));
-	if (!st) {
-		FAIL();
-	}
-	if (!Script_Is(st, "AskGus")) {
-		return Script_Done(&r, Py_ReturnNone());
-	}
-	PyObject *name = Script_HSet(e, "UseFunc", PyString_FromString("Mission_AskGus.GusSpeech")) &&
-		Script_HSet(e, "Descriptor", Script_LangOf(PyString_FromString("CharName_Gus"))) ? K(Script_GetAttr(e, "Name")) : NULL;
-	return Script_Done(&r, name && Script_Try("MissionsFuncs", "SetMissionTarget", "(O)", name) ? Py_ReturnNone() : NULL);
+	Native_SetNone(&name);
+	Mode_Lang("CharName_Gus", &d);
+	byte ok = LvN_SetS(e, "UseFunc", "Mission_AskGus.GusSpeech") && Mode_VSet(e, "Descriptor", &d) && Mode_VGet(e, "Name", &name) &&
+		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", &name);
+	Native_Free(&d);
+	Native_Free(&name);
+	return ok;
 }
 
-static PyObject *Ag_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	PyObject *st = Script_SaveVar("MissionState");
-	if (!st) {
-		return NULL;
-	}
-	const char *fn = Script_Is(st, "DeepThroatCalls") ? "DeepThroatCalls" : Script_Is(st, "AfterDeepThroatCalls") ? "CallDeepThroat" : NULL;
-	Py_DECREF(st);
-	return !fn || Tp_Do(AG, fn, PyTuple_New(0)) ? Py_ReturnNone() : NULL;
+static byte Ag_Init(void) {
+	const char *fn = LvN_SaveIs("MissionState", "DeepThroatCalls") ? "DeepThroatCalls" :
+		LvN_SaveIs("MissionState", "AfterDeepThroatCalls") ? "CallDeepThroat" : NULL;
+	return !fn || Tp_Do(AG, fn);
 }
 
 /* DeepThroatAppears(CharName): Gus as before, the bishop's ship and engine as blueprints, Deep Throat calls */
-static PyObject *Ag_DeepThroatAppears(PyObject *self, PyObject *args) {
-	PyObject *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+static byte Ag_DeepThroatAppears(const nativeVal_t *name) {
+	nativeVal_t e;
+	if (!Mode_EntityH(name, &e)) {
+		return 0;
 	}
-	PyObject *e = Script_Entity(name);
-	int live = e ? Script_True(e) : -1;
-	byte ok = live >= 0 && (!live || Script_HSet(e, "UseFunc", PyString_FromString("Bishop.BishopSpeech")));
-	Py_XDECREF(e);
-	return ok && Script_Try("MissionsFuncs", "SetMissionTarget", "(O)", Py_None) && Ag_AddToList("Hangar.shipsToEditList", "SBishop1") &&
-		Ag_AddToList("Hangar.availableEnginesList", "MBISHOP1") && Script_Try("Scrap", "IncSaveVar", "(si)", "NewBluePrintAvaliable", 2) &&
-		Tp_Hint("Mission_TalkToGus_SystemMessage1") && Script_Try("Scrap", "SetSaveVar", "(ss)", "MissionState", "DeepThroatCalls") &&
-		Tp_Do(AG, "DeepThroatCalls", PyTuple_New(0)) ? Py_ReturnNone() : NULL;
+	byte ok = !Native_True(&e) || LvN_SetS(&e, "UseFunc", "Bishop.BishopSpeech");
+	Native_Free(&e);
+	ok = ok && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "O", Py_None) && Ag_AddToList("Hangar.shipsToEditList", "SBishop1") &&
+		Ag_AddToList("Hangar.availableEnginesList", "MBISHOP1");
+	if (ok) {
+		SaveVar_Inc("NewBluePrintAvaliable", 2);
+		ok = Tp_Hint("Mission_TalkToGus_SystemMessage1");
+	}
+	if (ok) {
+		SaveVar_Set("MissionState", "DeepThroatCalls");
+		ok = Tp_Do(AG, "DeepThroatCalls");
+	}
+	return ok;
 }
 
 /* PreCallDeepThroat(): Dtritus can no longer be converted to; the call to Deep Throat */
-static PyObject *Ag_PreCallDeepThroat(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "") || !Script_Import((const char *const[]){ "CharConversor", NULL })) {
-		return NULL;
+static byte Ag_PreCallDeepThroat(void) {
+	nativeVal_t chars, dt;
+	if (!Mode_Import("CharConversor") || !LvN_SaveList("Conversor.AvailableChars", AG, &chars)) {
+		return 0;
 	}
-	PyObject *text = K(Script_SaveVar("Conversor.AvailableChars")), *chars = text ? K(Script_EvalIn(AG, text)) : NULL;
-	PyObject *dt = chars ? K(PyString_FromString("Dtritus")) : NULL;
-	int in = dt ? PySequence_Contains(chars, dt) : -1;
-	if (in < 0 || (in && !K(Script_Method(chars, "remove", "(O)", dt))) ||
-		!Script_Try("Scrap", "SetSaveVar", "(sO)", "Conversor.AvailableChars", K(Script_Repr(chars)))) {
-		FAIL();
+	LvN_Str(&dt, "Dtritus");
+	int in = Native_Contains(&chars, &dt);
+	byte ok = in >= 0 && (!in || LvN_ListRemove(&chars, &dt));
+	if (ok) {
+		LvN_SaveRepr("Conversor.AvailableChars", &chars);
 	}
-	PyObject *av = K(Script_Attr("CharConversor", "AvailableChars"));
-	in = av ? PySequence_Contains(av, dt) : -1;
-	if (in < 0 || (in && !K(Script_Method(av, "remove", "(O)", dt))) ||
-		!Script_Try("SaveGame", "MMDesc", "(si)", "Mission_TalkToDeepThroat4_MissionText1", 1) ||
-		!Script_Try("Scrap", "SetSaveVar", "(ss)", "MissionState", "AfterDeepThroatCalls") || !Tp_Do(AG, "CallDeepThroat", PyTuple_New(0))) {
-		FAIL();
+	Native_Free(&chars);
+	if (ok) {
+		/* OBJLIB 5: the list object of CharConversor, changed in place */
+		PyObject *av = Script_Attr("CharConversor", "AvailableChars"), *x = av ? Native_ToPy(&dt) : NULL;
+		in = x ? PySequence_Contains(av, x) : -1;
+		PyObject *r = in > 0 ? Script_Method(av, "remove", "(O)", x) : NULL;
+		ok = in == 0 || r != NULL;
+		Py_XDECREF(r);
+		Py_XDECREF(x);
+		Py_XDECREF(av);
 	}
-	return Script_Done(&r, Py_ReturnNone());
+	Native_Free(&dt);
+	ok = ok && LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_TalkToDeepThroat4_MissionText1", 1L);
+	if (ok) {
+		SaveVar_Set("MissionState", "AfterDeepThroatCalls");
+		ok = Tp_Do(AG, "CallDeepThroat");
+	}
+	return ok;
 }
 
-static PyObject *Ag_CallDeepThroat(PyObject *self, PyObject *args) {
-	(void)self;
-	return PyArg_ParseTuple(args, "") && Tp_CallDeepThroat(AG) ? Py_ReturnNone() : NULL;
+static byte Ag_CallDeepThroat(void) {
+	return Tp_CallDeepThroat(AG);
 }
 
-static PyObject *Ag_DeepThroatSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	return Tp_DeepThroatSpeech(AG, args, "Mission_TalkToDeepThroat4__ComDeepThroat_NI_1Msg");
+LV_CORE0(Ag_InitStatus)
+LV_CORE0(Ag_AfterBrowseNPC)
+LV_CORE0(Ag_Init)
+LV_CORE0(Ag_PreCallDeepThroat)
+LV_CORE0(Ag_CallDeepThroat)
+
+static byte Ag_CreateGusInit_C(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Ag_CreateGusInit(&a[0]);
 }
+
+static byte Ag_DeepThroatAppears_C(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Ag_DeepThroatAppears(&a[0]);
+}
+
+static byte Ag_DeepThroatSpeech_C(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Tp_DeepThroatSpeech(AG, &a[0], &a[1], "Mission_TalkToDeepThroat4__ComDeepThroat_NI_1Msg");
+}
+
+LV_FN(Ag, InitStatusPy, 1, Ag_InitStatus_C)
+LV_FN(Ag, AfterBrowseNPCPy, 0, Ag_AfterBrowseNPC_C)
+LV_FN(Ag, CreateGusInitPy, 1, Ag_CreateGusInit_C)
+LV_FN(Ag, InitPy, 1, Ag_Init_C)
+LV_FN(Ag, DeepThroatAppearsPy, 1, Ag_DeepThroatAppears_C)
+LV_FN(Ag, PreCallDeepThroatPy, 0, Ag_PreCallDeepThroat_C)
+LV_FN(Ag, CallDeepThroatPy, 0, Ag_CallDeepThroat_C)
+LV_FN(Ag, DeepThroatSpeechPy, 4, Ag_DeepThroatSpeech_C)
 
 PyMethodDef g_TempleAskGusMethods[] = {
-	{ "InitStatus", Ag_InitStatus, 1, NULL },
-	{ "AfterBrowseNPC", Ag_AfterBrowseNPC, 1, NULL },
-	{ "CreateGusInit", Ag_CreateGusInit, 1, NULL },
-	{ "Init", Ag_Init, 1, NULL },
-	{ "DeepThroatAppears", Ag_DeepThroatAppears, 1, NULL },
-	{ "PreCallDeepThroat", Ag_PreCallDeepThroat, 1, NULL },
-	{ "CallDeepThroat", Ag_CallDeepThroat, 1, NULL },
-	{ "DeepThroatSpeech", Ag_DeepThroatSpeech, 1, NULL },
+	{ "InitStatus", Ag_InitStatusPy, 1, NULL },
+	{ "AfterBrowseNPC", Ag_AfterBrowseNPCPy, 1, NULL },
+	{ "CreateGusInit", Ag_CreateGusInitPy, 1, NULL },
+	{ "Init", Ag_InitPy, 1, NULL },
+	{ "DeepThroatAppears", Ag_DeepThroatAppearsPy, 1, NULL },
+	{ "PreCallDeepThroat", Ag_PreCallDeepThroatPy, 1, NULL },
+	{ "CallDeepThroat", Ag_CallDeepThroatPy, 1, NULL },
+	{ "DeepThroatSpeech", Ag_DeepThroatSpeechPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
-#define TD "Mission_TalkToDeepThroat"
-
-static PyObject *Td_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	(void)self;
-	return PyArg_ParseTuple(args, "O", &path) && Tp_CallDeepThroat(TD) ? Py_ReturnNone() : NULL;
+static byte Td_Init_C(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Tp_CallDeepThroat(TD);
 }
 
-static PyObject *Td_DeepThroatSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	return Tp_DeepThroatSpeech(TD, args, "Mission_TalkToDeepThroat5_DeepThroat_NI_1Msg");
+static byte Td_DeepThroatSpeech_C(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Tp_DeepThroatSpeech(TD, &a[0], &a[1], "Mission_TalkToDeepThroat5_DeepThroat_NI_1Msg");
 }
+
+LV_FN(Td, InitPy, 1, Td_Init_C)
+LV_FN(Td, DeepThroatSpeechPy, 4, Td_DeepThroatSpeech_C)
 
 PyMethodDef g_TempleTalkToDeepThroatMethods[] = {
-	{ "Init", Td_Init, 1, NULL },
-	{ "DeepThroatSpeech", Td_DeepThroatSpeech, 1, NULL },
+	{ "Init", Td_InitPy, 1, NULL },
+	{ "DeepThroatSpeech", Td_DeepThroatSpeechPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
-#define MA "Mission_MeetArchbishop"
+/* the global fn of the mission at Scrap.GetTime() + 0.1 */
+static byte Ma_Soon(const char *fn) {
+	PyObject *f = Mode_GlobalPy(MA, fn);
+	byte ok = f && Tp_At(0.1, f, NULL, 0, NULL);
+	Py_XDECREF(f);
+	return ok;
+}
 
 /* UseDoor(...): through the gatekeeper's door; the scene starts when the player walks again */
-static PyObject *Ma_UseDoor(PyObject *self, PyObject *args) {
-	PyObject *usr, *elv, *opt, *full;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &elv, &opt, &full)) {
-		return NULL;
+static byte Ma_UseDoor(const nativeVal_t *a) {
+	nativeVal_t used;
+	Native_SetNone(&used);
+	if (!LV_CALL("GateKeeper", "UseDoor", &used, "vvvv", &a[0], &a[1], &a[2], &a[3])) {
+		return 0;
 	}
-	PyObject *ok = Script_Ask("GateKeeper", "UseDoor", "(OOOO)", usr, elv, opt, full);
-	int used = ok ? Script_True(ok) : -1;
-	Py_XDECREF(ok);
-	if (used <= 0) {
-		return used < 0 ? NULL : Py_ReturnNone();
-	}
-	PyObject *f = Script_Try("MissionsFuncs", "SetMissionTarget", "(s)", "") ? Script_Global(MA, "TestEndOfElevator") : NULL;
-	byte done = f && Tp_At(0.1, f, PyTuple_New(0), NULL);
-	Py_XDECREF(f);
-	return done ? Py_ReturnNone() : NULL;
+	int t = Native_True(&used);
+	Native_Free(&used);
+	return !t || (LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "s", "") && Ma_Soon("TestEndOfElevator"));
 }
 
 /* TestEndOfElevator(): the Yakuzzi scene once the player walks out of the teleporter */
-static PyObject *Ma_TestEndOfElevator(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Ma_TestEndOfElevator(void) {
+	if (strcmp(TABLE_AT(g_ActionSets, Input_GetActionSet())->name, "Walk")) {
+		return Ma_Soon("TestEndOfElevator");
 	}
-	PyObject *set = Script_Ask("SInput", "GetActionSet", "()");
-	if (!set) {
-		return NULL;
+	nativeVal_t head, e;
+	if (!Tp_SetVarG("Scene", "EndOfSceneCallback", MA, "SetNextMission") || !LV_CALL("Scene", "Play", NULL, "s", "Yakuzzi") ||
+		!Native_GVarGet("NewsHead", &head)) {
+		return 0;
 	}
-	byte walk = Script_Is(set, "Walk");
-	Py_DECREF(set);
-	if (!walk) {
-		PyObject *f = Script_Global(MA, "TestEndOfElevator");
-		byte ok = f && Tp_At(0.1, f, PyTuple_New(0), NULL);
-		Py_XDECREF(f);
-		return ok ? Py_ReturnNone() : NULL;
+	Native_SetNone(&e);
+	byte ok = Mode_EntityH(&head, &e) && LvN_SetI(&e, "Active", 0);
+	Native_Free(&head);
+	Native_Free(&e);
+	return ok;
+}
+
+/* SScorer.PreloadTexture(Scrap.Get(var)) ("s|i": the TypeError of a value that is no text) */
+static byte Ma_Preload(const char *var) {
+	nativeVal_t v;
+	const char *s;
+	if (!Native_GVarGet(var, &v)) {
+		return 0;
 	}
-	PyObject *next = Script_Global(MA, "SetNextMission");
-	if (!next) {
-		return NULL;
+	byte ok = Tp_Str(&v, 1, &s);
+	if (ok) {
+		Scorer_PreloadTexture(s, 0);
 	}
-	Script_SetVar("Scene", "EndOfSceneCallback", next);
-	PyObject *head = Script_Try("Scene", "Play", "(s)", "Yakuzzi") ? Script_Ask("Scrap", "Get", "(s)", "NewsHead") : NULL;
-	PyObject *e = head ? Script_Entity(head) : NULL;
-	byte ok = e && Script_HSet(e, "Active", PyInt_FromLong(0));
-	Py_XDECREF(e);
-	Py_XDECREF(head);
-	return ok ? Py_ReturnNone() : NULL;
+	Native_Free(&v);
+	return ok;
 }
 
 /* CreateFakeSpeech(): the archbishop of the news panel in his yakuzzi, and the panel itself */
-static PyObject *Ma_CreateFakeSpeech(PyObject *self, PyObject *args) {
+static byte Ma_CreateFakeSpeech(void) {
 	static const struct {
 		const char *var;
-		int v;
+		long v;
 	} panel[] = { { "NewsPanelShowHead", 1 }, { "NewsPanelDistance", 300 }, { "NewsPanelDisplacement", 35 }, { "NewsPanelMove", -30 },
 		{ "NewsPanelX", 20 }, { "NewsPanelY", 20 }, { "NewsPanelW", 270 }, { "NewsPanelH", 180 } };
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "") || !Script_Try("SAct", "CreateClass", "(s)", "FakeSpeech") ||
-		!Script_Try("SAct", "SetCls", "(ss)", "ModelFilePath", "Levels/Temple/Map/Yakuzzi/ArchBishop.M3D") ||
-		!Script_Try("SAct", "CreateAction", "(s)", "Relax") ||
-		!Script_Try("SAct", "SetAct", "(ss)", "AnmFilePath", "Levels/Temple/Map/Yakuzzi/YakuzziAnm/ArchBishop_Speech.M3D") ||
-		!Script_Try("SAct", "SetAct", "(si)", "isLoop", 1) || !Script_Try("SAct", "SetCls", "(ss)", "DefAction", "Relax") ||
-		!Script_Try("Scrap", "StartDummySearch", "(si)", "DM_Scene_Yakuzzi", 0)) {
-		return NULL;
+	nativeVal_t r, v, d, kb, kn;
+	Native_SetNone(&r);
+	byte ok = LvN_CreateClass("FakeSpeech", &r);
+	Native_Free(&r);
+	if (ok) {
+		LvN_Str(&v, "Levels/Temple/Map/Yakuzzi/ArchBishop.M3D");
+		ok = LvN_SetCls("ModelFilePath", &v) && LvN_CreateAction("Relax", &r);
+		Native_Free(&v);
+		Native_Free(&r);
 	}
-	PyObject *d = K(Script_Ask("Scrap", "NextDummySearch", "()")), *kb = NULL;
-	int none = d ? Script_Eq(d, Py_None) : -1;
-	if (none < 0) {
-		FAIL();
+	if (ok) {
+		LvN_Str(&v, "Levels/Temple/Map/Yakuzzi/YakuzziAnm/ArchBishop_Speech.M3D");
+		ok = LvN_SetAct("AnmFilePath", &v);
+		Native_Free(&v);
 	}
-	if (!none) {
-		PyObject *p = K(Script_Index(d, 1)), *x = p ? K(Script_Index(p, 0)) : NULL, *y = x ? K(Script_Index(p, 1)) : NULL;
-		PyObject *z = y ? K(Script_Index(p, 2)) : NULL;
-		kb = z ? K(Script_Ask("Scrap", "CreateEntity", "(sOOOs)", "FakeSpeech", x, y, z, "WithLife")) : NULL;
-		if (!kb || !Script_HSet(kb, "Ang", Py_BuildValue("(iii)", 0, 0, 0)) || !Script_HSet(kb, "ActCtrl", PyString_FromString("FakeSpeech"))) {
-			FAIL();
+	if (ok) {
+		Native_SetInt(&v, 1);
+		ok = LvN_SetAct("isLoop", &v);
+	}
+	if (ok) {
+		LvN_Str(&v, "Relax");
+		ok = LvN_SetCls("DefAction", &v);
+		Native_Free(&v);
+	}
+	if (!ok) {
+		return 0;
+	}
+	LvN_Dummy("DM_Scene_Yakuzzi", 0, &d);
+	Native_SetNone(&kb);
+	byte have = d.type != NV_NONE;
+	if (have) {
+		nativeVal_t name, c[3], zero;
+		int got = 0;
+		LvN_Str(&name, "FakeSpeech");
+		ok = LvN_Item(&d, 1, &v);
+		for (; ok && got < 3; got++) {
+			ok = LvN_Item(&v, got, &c[got]);
+		}
+		if (!ok && got) {
+			Native_Free(&c[--got]);
+		}
+		ok = ok && LvN_Create(&name, &c[0], &c[1], &c[2], "WithLife", &kb);
+		while (got-- > 0) {
+			Native_Free(&c[got]);
+		}
+		Native_Free(&v);
+		Native_Free(&name);
+		if (ok) {
+			Native_SetEmpty(&zero, NV_TUPLE);
+			for (int i = 0; i < 3; i++) {
+				Native_SetInt(Native_Append(&zero), 0);
+			}
+			ok = Mode_VSet(&kb, "Ang", &zero) && LvN_SetS(&kb, "ActCtrl", "FakeSpeech");
+			Native_Free(&zero);
 		}
 	}
-	if (!Script_Try("Scrap", "Set", "(ss)", "NewsLogoBmp", "2D/News/LogoTemple.bmp") ||
-		!Script_Try("Scrap", "Set", "(ss)", "BackNewsBmp", "2D/News/BackTemple.bmp")) {
-		FAIL();
+	Native_Free(&d);
+	ok = ok && Mode_GVarSetS("NewsLogoBmp", "2D/News/LogoTemple.bmp") && Mode_GVarSetS("BackNewsBmp", "2D/News/BackTemple.bmp");
+	if (ok && !have) {
+		ok = Native_Raise(NE_NAME, "kb");
 	}
-	if (!kb) {
-		PyErr_SetString(PyExc_NameError, "kb");
-		FAIL();
+	Native_SetNone(&kn);
+	ok = ok && Mode_VGet(&kb, "Name", &kn) && Mode_GVarSet("NewsHead", &kn);
+	for (size_t i = 0; ok && i < sizeof(panel) / sizeof(panel[0]); i++) {
+		ok = Mode_GVarSetI(panel[i].var, panel[i].v);
 	}
-	PyObject *kn = K(Script_GetAttr(kb, "Name"));
-	if (!kn || !Script_Try("Scrap", "Set", "(sO)", "NewsHead", kn)) {
-		FAIL();
-	}
-	for (size_t i = 0; i < sizeof(panel) / sizeof(panel[0]); i++) {
-		if (!Script_Try("Scrap", "Set", "(si)", panel[i].var, panel[i].v)) {
-			FAIL();
-		}
-	}
-	PyObject *back = K(Script_Ask("Scrap", "Get", "(s)", "BackNewsBmp"));
-	PyObject *logo = back && Script_Try("SScorer", "PreloadTexture", "(O)", back) ? K(Script_Ask("Scrap", "Get", "(s)", "NewsLogoBmp")) : NULL;
-	byte ok = logo && Script_Try("SScorer", "PreloadTexture", "(O)", logo) && Script_Try("SSound", "SetMusic", "(sd)", "Music/ArchBishop.ogg", 1.0);
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+	Native_Free(&kb);
+	Native_Free(&kn);
+	return ok && Ma_Preload("BackNewsBmp") && Ma_Preload("NewsLogoBmp") && LvN_SetMusic("Music/ArchBishop.ogg", 1.0);
 }
 
 /* Init(LevelPath): the gatekeeper against Dtritus, the door through UseDoor, the scene and the news panel */
-static PyObject *Ma_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	(void)self;
-	return PyArg_ParseTuple(args, "O", &path) && Script_Try("MissionsFuncs", "SetMissionTarget", "(s)", "DM_Door_Teleporter_01") &&
+static byte Ma_Init(void) {
+	return LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "s", "DM_Door_Teleporter_01") &&
 		Tp_Gate("GateKeeper_Portalis", NULL, "DtritusGroupGateKeeper", "Mission_MeetArchbishop.UseDoor") &&
-		Tp_Do(MA, "LoadYakuzziScene", PyTuple_New(0)) && Tp_Do(MA, "CreateFakeSpeech", PyTuple_New(0)) ? Py_ReturnNone() : NULL;
+		Tp_Do(MA, "LoadYakuzziScene") && Tp_Do(MA, "CreateFakeSpeech");
 }
 
+static byte Ma_UseDoor_C(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Ma_UseDoor(a);
+}
+
+LV_CORE0(Ma_TestEndOfElevator)
+LV_CORE0(Ma_CreateFakeSpeech)
+LV_CORE0(Ma_Init)
+
+LV_FN(Ma, UseDoorPy, 4, Ma_UseDoor_C)
+LV_FN(Ma, TestEndOfElevatorPy, 0, Ma_TestEndOfElevator_C)
+LV_FN(Ma, CreateFakeSpeechPy, 0, Ma_CreateFakeSpeech_C)
+LV_FN(Ma, InitPy, 1, Ma_Init_C)
+
 PyMethodDef g_TempleMeetArchbishopMethods[] = {
-	{ "UseDoor", Ma_UseDoor, 1, NULL },
-	{ "TestEndOfElevator", Ma_TestEndOfElevator, 1, NULL },
-	{ "CreateFakeSpeech", Ma_CreateFakeSpeech, 1, NULL },
-	{ "Init", Ma_Init, 1, NULL },
+	{ "UseDoor", Ma_UseDoorPy, 1, NULL },
+	{ "TestEndOfElevator", Ma_TestEndOfElevatorPy, 1, NULL },
+	{ "CreateFakeSpeech", Ma_CreateFakeSpeechPy, 1, NULL },
+	{ "Init", Ma_InitPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
