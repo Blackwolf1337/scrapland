@@ -5,470 +5,662 @@
  * LoadFinal and MapSnd are data (the files in data/levels/ab). The module variables (the BOSS_ numbers, the hint
  * times, respawnTime, bossName, numTaunt, pos, time, FASE, HINT_COUNTER, PrevCreateStdShips; Map's SpawnPositions,
  * asttype, SinglePlayer, idctr, LastTime, ctrTimer, Duplicate) stay in the scripts.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h). The variables of both
+ * modules are read where the script reads them and written through at once; ShipMaker.StdShips is changed in place,
+ * the function values put into ShipMaker, Chars, Parking, Traffic and Menu are the objects of the module (OBJLIB 5).
+ * The boss, its shield and the asteroids are handle values (OBJLIB 7). The alarm, the save variables, the regeneration,
+ * the ammo of the weapons, the cinema bars and the action set are C; Scrap.CreateEntity, Scrap.Set, Scrap.SetAlarm, Scrap.Rand,
+ * Scrap.Preload3DObject, Scrap.DeleteScheduledFuncs, Scrap.AddScheduledFunc, Scrap.UsrEntity, SSound.SetMusic,
+ * SScorer.Set and SScorer.Fade go through their seams (OBJLIB 7: cases record them). The engine call of the shield
+ * (Scrap.SetCallFunc, AddParams, AddParami, Execute: no C entry with text and int parameters) and SAI.SetStateVehicle
+ * (its state handlers take Python arguments) stay by name (OBJLIB 7); Speech, Vehicles, VehiclesNPC, ShipMaker,
+ * Traffic, Elevator, Scorer, Menu, SaveGame and the functions of the modules go by name (OBJLIB 3).
  */
-#include "scrap/script.h"
+#include <string.h>
+
+#include "scrap/alarm.h"
+#include "scrap/game.h"
+#include "scrap/logic.h"
+#include "scrap/scorer.h"
+#include "scrap/scrap.h"
+#include "scrap/world.h"
 #include "Levels.h"
 
 #define FF "MapFinalFight"
 
-#define GLOBAL(n) Sf_Global(&f, FF, n)
+/* ---- shared lines ---- */
+
+/* Scrap.SetLockAlarm(lock) */
+static void Ab_LockAlarm(int lock) {
+	Alarm_SetLock(&g_pWorld->alarm, lock != 0);
+}
+
+/* Scrap.SetAlarm(0) through its seam */
+static byte Ab_AlarmOff(void) {
+	nativeVal_t zero;
+	Native_SetInt(&zero, 0);
+	return Mode_SetAlarm(&zero);
+}
+
+/* SLogic.SetShipToRegenerate(name, speed, endSpeed) ("sff": a ship that is no Car regenerates none) */
+static byte Ab_Regen(const nativeVal_t *name, const nativeVal_t *speed, const nativeVal_t *endSpeed) {
+	const char *n;
+	double a, b;
+	if (!Native_ArgStr(name, 1, &n) || !Native_ArgDouble(speed, &a) || !Native_ArgDouble(endSpeed, &b)) {
+		return 0;
+	}
+	cEntity *e = World_FindEntity(n);
+	if (e) {
+		ShipRegen_Set(&g_pWorld->logic.shipRegen, Entity_IsType(e, TYEN_CAR) ? e : NULL, (float)a, (float)b);
+	}
+	return 1;
+}
+
+/* the same with the ship and the two speeds globals of the module (read in this order) */
+static byte Ab_RegenG(const char *name, const char *speed, const char *endSpeed) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *n = Mode_V(&t), *a = Mode_V(&t), *b = Mode_V(&t);
+	byte ok = Mode_G(FF, name, n) && Mode_G(FF, speed, a) && Mode_G(FF, endSpeed, b) && Ab_Regen(n, a, b);
+	return Mode_Done(&t, ok);
+}
+
+/* Scrap.Set(name, i) with an int (as the script sets it) */
+static byte Ab_SetI(const char *name, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return Mode_GVarSet(name, &v);
+}
+
+/* Scrap.Set(name, v) with v a global of the module */
+static byte Ab_SetG(const char *name, const char *global) {
+	nativeVal_t v;
+	byte ok = Mode_G(FF, global, &v) && Mode_GVarSet(name, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+/* e.var = the global of the module */
+static byte Ab_SetAttrG(const nativeVal_t *e, const char *var, const char *module, const char *global) {
+	nativeVal_t v;
+	byte ok = Mode_G(module, global, &v) && Mode_VSet(e, var, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+/* module.var = i */
+static byte Ab_ModI(const char *module, const char *var, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return Mode_SetModVar(module, var, &v);
+}
+
+/* module.var = d */
+static byte Ab_ModF(const char *module, const char *var, double d) {
+	nativeVal_t v;
+	Native_SetFloat(&v, d);
+	return Mode_SetModVar(module, var, &v);
+}
+
+/* Speech.AddRemoteCom(key, who) */
+static byte Ab_Com(const char *key, const char *who) {
+	return LvN_Com(key, who, NULL, NULL, NULL);
+}
+
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func, (args)) with func a global of the module and delay a global
+ * too (delay NULL: d) */
+static byte Ab_LaterG(const char *module, const char *delay, double d, const char *func, const nativeVal_t *args, int n) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *now = Mode_V(&t), *dv = Mode_V(&t), *at = Mode_V(&t);
+	Native_SetFloat(now, Mode_Time());
+	if (delay) {
+		if (!Mode_G(module, delay, dv)) {
+			return Mode_Done(&t, 0);
+		}
+	} else {
+		Native_SetFloat(dv, d);
+	}
+	PyObject *fn = LvN_Arith('+', now, dv, at) ? Mode_GlobalPy(module, func) : NULL;
+	byte ok = fn && Mode_Schedule(at, fn, args, n, NULL);
+	Py_XDECREF(fn);
+	return Mode_Done(&t, ok);
+}
+
+/* ---- MapFinalFight ---- */
 
 /* GetBossProfile(): the AI profile of the boss ship */
-static PyObject *Ff_GetBossProfile(PyObject *self, PyObject *args) {
+static byte Ff_GetBossProfile(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const profile[] = { "Ship=SBOSS1", "StupidPathFinding=0", "ControlStrafe=2", "ControlBrake=0",
 		"GoNextItemRace=1", "ControlHookRace=0", "CadenceShootCM=3", "UsePercSonic=70", "UsePercCloud=15",
 		"UsePercElectro=15", "UsePercHook=0", "FactorHookMap=8", "CadenceShoot=13", "ControlAim=8", "AngAttack=0.7",
 		"CounterAttack=0.9", "ControlBoost=1", "ControlBoostItemLife=1", "ControlBoostItemAmmo=1",
 		"FactorDamageGetAway=0.40", "FactorDamageItemLife=0.3", "FactorItemAmmo=0.1", "ControlStrafeEvasion=1",
 		"UsePercHookGetAway=10", "TimeMaxStrafe=8", "VelMaxStrafe=1.0", NULL };
-	(void)self;
-	return Lv_ProfileFunc(args, FF, profile);
+	(void)a;
+	return LvN_Profile(profile, out);
+}
+
+/* the ship of a standard ship table: (model, motor 1, motor 2, ..., weapons, mass) */
+static void Ff_StdShip(nativeVal_t *ship, const char *const *texts, long n) {
+	Native_SetEmpty(ship, NV_TUPLE);
+	for (int i = 0; i < 6; i++) {
+		LvN_Str(Native_Append(ship), texts[i]);
+	}
+	Native_SetInt(Native_Append(ship), n);
 }
 
 /* FakeShips(): ShipMaker.CreateStdShips while the level runs: the standard ships and the boss ship */
-static PyObject *Ff_FakeShips(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Ff_FakeShips(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const boss[] = { "SBoss1", "MBoss1", "MBoss1", "", "", "15,15,15,15,15,15" };
+	nativeVal_t ship, key;
+	(void)a;
+	(void)out;
+	if (!Mode_Import("ShipMaker") || !LV_OWN(FF, "PrevCreateStdShips", NULL, "")) {
+		return 0;
 	}
-	Sf_Import(&f, "ShipMaker");
-	Sf_Call(&f, GLOBAL("PrevCreateStdShips"), "()");
-	PyObject *ship = Sf_Build(&f, "(ssssssi)", "SBoss1", "MBoss1", "MBoss1", "", "", "15,15,15,15,15,15", 150);
-	Sf_SetItem(&f, Sf_Mod(&f, "ShipMaker", "StdShips"), Sf_Str(&f, "SBOSS1"), ship);
-	return Sf_None(&f);
+	Ff_StdShip(&ship, boss, 150);
+	LvN_Str(&key, "SBOSS1");
+	byte ok = Mode_ModDictPut("ShipMaker", "StdShips", &key, &ship);
+	Native_Free(&ship);
+	Native_Free(&key);
+	return ok;
 }
 
 /* InitStatus(LevelPath): FakeShips replaces ShipMaker.CreateStdShips (the old one kept in PrevCreateStdShips) */
-static PyObject *Ff_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte Ff_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	if (!Mode_Import("ShipMaker")) {
+		return 0;
 	}
-	Sf_Import(&f, "ShipMaker");
-	Sf_SetGlobal(&f, FF, "PrevCreateStdShips", Sf_Mod(&f, "ShipMaker", "CreateStdShips"));
-	Sf_SetMod(&f, "ShipMaker", "CreateStdShips", GLOBAL("FakeShips"));
-	return Sf_None(&f);
+	/* OBJLIB 5: the function object of ShipMaker */
+	PyObject *prev = Script_Attr("ShipMaker", "CreateStdShips");
+	/* Script_SetGlobal takes the reference over */
+	return prev && Script_SetGlobal(FF, "PrevCreateStdShips", prev) &&
+		LvN_ModSetGlobal("ShipMaker", "CreateStdShips", FF, "FakeShips");
 }
 
 /* Init(LevelPath): the start time, no alarm, the callbacks of the player's death and of the ship changes, the music */
-static PyObject *Ff_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
+static byte Ff_Init(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const mods[] = { "Speech", "Chars", "Parking", "Vehicles", "SSound" };
+	nativeVal_t now, model;
+	(void)a;
+	(void)out;
 	for (int i = 0; i < 5; i++) {
-		Sf_Import(&f, mods[i]);
+		if (!Mode_Import(mods[i])) {
+			return 0;
+		}
 	}
-	Sf_SetGlobal(&f, FF, "time", Sf_Time(&f));
-	Sf_Run(&f, "Scrap", "SetLockAlarm", "(i)", 0);
-	Sf_Run(&f, "Scrap", "SetAlarm", "(i)", 0);
-	Sf_Run(&f, "Scrap", "SetLockAlarm", "(i)", 1);
-	Sf_Run(&f, "Speech", "AddRemoteCom", "(ss)", "Mission_FinalFight_RemoteMessage1", "CrazyGambler");
-	Sf_SetMod(&f, "Chars", "OnMainCharDeath", GLOBAL("OnPlayerDeath"));
-	Sf_SetMod(&f, "Vehicles", "DelPlayerShipOnDeath", Sf_Int(&f, 0));
-	Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", GLOBAL("CreateBoss"));
-	Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", GLOBAL("BossRelax"));
-	Sf_Run(&f, "Scrap", "Set", "(si)", "InfernoTurnSpeed", 60);
-	Sf_Run(&f, "Scrap", "Preload3DObject", "(s)", "Models/GFX/BossShield/BossShield.m3d");
-	Sf_Run(&f, "Scrap", "Set", "(si)", "useDynamicMusic", 0);
-	Sf_Run(&f, "SSound", "SetMusic", "(sd)", "Music/FinalFight.ogg", 1.0);
-	return Sf_None(&f);
+	Native_SetFloat(&now, Mode_Time());
+	if (!Mode_Put(FF, "time", NULL, &now)) {
+		return 0;
+	}
+	Ab_LockAlarm(0);
+	if (!Ab_AlarmOff()) {
+		return 0;
+	}
+	Ab_LockAlarm(1);
+	if (!Ab_Com("Mission_FinalFight_RemoteMessage1", "CrazyGambler") ||
+		!LvN_ModSetGlobal("Chars", "OnMainCharDeath", FF, "OnPlayerDeath") || !Ab_ModI("Vehicles", "DelPlayerShipOnDeath", 0) ||
+		!LvN_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", FF, "CreateBoss") ||
+		!LvN_ModSetGlobal("Parking", "SwitchCharMissionCallback", FF, "BossRelax") || !Ab_SetI("InfernoTurnSpeed", 60)) {
+		return 0;
+	}
+	LvN_Str(&model, "Models/GFX/BossShield/BossShield.m3d");
+	byte ok = Mode_Preload(&model) && Ab_SetI("useDynamicMusic", 0) && LvN_SetMusic("Music/FinalFight.ogg", 1.0);
+	Native_Free(&model);
+	return ok;
 }
 
 /* the boss gets its profile again: pd = GetBossProfile(); VehiclesNPC.SetStdProperties(e.Name, pd.Ship);
  * VehiclesNPC.ModAIProff(e, pd) */
-static void Ff_Profile(scriptFrame_t *f, PyObject *e) {
-	int mark = f->n;
-	Lv_StdProfile(f, FF, "GetBossProfile", e);
-	Sf_Release(f, mark);
+static byte Ff_Profile(const nativeVal_t *e) {
+	nativeVal_t pd;
+	Native_SetNone(&pd);
+	byte ok = LvN_StdProfile(FF, "GetBossProfile", e, &pd);
+	Native_Free(&pd);
+	return ok;
+}
+
+/* the shield of the boss (the first CreateBoss): the shield item without its link */
+static byte Ff_Shield(nativeVal_t *shield) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *zero = Mode_V(&t), *off = Mode_V(&t);
+	Native_SetInt(zero, 0);
+	Native_SetEmpty(off, NV_TUPLE);
+	for (int i = 0; i < 3; i++) {
+		Native_SetInt(Native_Append(off), 0);
+	}
+	byte ok = LvN_Create(Mode_S(&t, "BossShield"), zero, zero, zero, "Item", shield) &&
+		Mode_VModel(shield, Mode_S(&t, "Models/GFX/BossShield/BossShield.m3d")) && LvN_SetI(shield, "Active", 0) &&
+		Mode_VSet(shield, "OffModPos", off) && LvN_SetI(shield, "DeltaOffMul", 4) && LvN_SetI(shield, "OffMul", 0) &&
+		LvN_SetI(shield, "UseLinkAng", 1);
+	return Mode_Done(&t, ok);
+}
+
+/* the boss at its dummy (the first CreateBoss): phase 1, the regeneration, the taunts every 30 s, the scorer */
+static byte Ff_Boss(nativeVal_t *e) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *dummy = Mode_V(&t), *pos = Mode_V(&t), *name = Mode_V(&t);
+	LvN_Dummy("DM_Boss_Spawn", 1, dummy);
+	byte ok = LvN_Item(dummy, 1, pos) && Mode_Put(FF, "pos", NULL, pos) &&
+		LV_CALL("VehiclesNPC", "MakeAI", e, "ssii", "SBoss1", "Boss", 0L, 0L) && Ab_SetAttrG(e, "Pos", FF, "pos") &&
+		Ff_Profile(e) && LvN_SetS(e, "WeapList", "0,15,0,0,0,0") && LvN_SetI(e, "Money", -1) && LvN_SetS(e, "TgType", "red") &&
+		LvN_SetI(e, "LaunchTaunts", 0) && LvN_Life(e, FF, "BOSS_LIFE") &&
+		LvN_SetS(e, "OnDeath", "MapFinalFight.OnBossDestroyed") && Mode_VGet(e, "Name", name) &&
+		Mode_Put(FF, "bossName", NULL, name) && LvN_SetS(e, "OnDamage", "!FXBossOnDamage") &&
+		Ab_SetG("LifeToLaunchCallback", "BOSS_LIFE_BULLET") &&
+		Mode_GVarSetS("LifeReachedCallback", "MapFinalFight.OnBossRecoversZero") &&
+		Ab_RegenG("bossName", "BOSS_RegenInit", "BOSS_RegenEnd") && Ab_Com("Mission_FinalFight_RemoteMessage2", "Boss") &&
+		Mode_Later(30, FF, "LaunchTaunt", NULL, 0, "LaunchTaunt") && LvN_ScorerCallG(FF, "MissionScorer") && LvN_Draw();
+	return Mode_Done(&t, ok);
 }
 
 /* CreateBoss(): the switch to the ship: the first time the shield and the boss at its dummy (phase 1, the scorer, the
  * taunts every 30 s); then the boss attacks */
-static PyObject *Ff_CreateBoss(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
+static byte Ff_CreateBoss(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const mods[] = { "Speech", "Vehicles", "VehiclesNPC", "OutMap" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *boss = Mode_V(&t), *shield = Mode_V(&t), *e = Mode_V(&t), *name = Mode_V(&t), *link = Mode_V(&t);
+	(void)a;
+	(void)out;
 	for (int i = 0; i < 4; i++) {
-		Sf_Import(&f, mods[i]);
-	}
-	int first = Sf_EqS(&f, GLOBAL("bossName"), "");
-	if (first > 0) {
-		PyObject *shield = Sf_Ask(&f, "Scrap", "CreateEntity", "(siiis)", "BossShield", 0, 0, 0, "Item");
-		Sf_Method(&f, shield, "SetModel", "(s)", "Models/GFX/BossShield/BossShield.m3d");
-		Sf_SetAttrI(&f, shield, "Active", 0);
-		Sf_SetAttr(&f, shield, "OffModPos", Sf_Build(&f, "(iii)", 0, 0, 0));
-		Sf_SetAttrI(&f, shield, "DeltaOffMul", 4);
-		Sf_SetAttrI(&f, shield, "OffMul", 0);
-		Sf_SetAttrI(&f, shield, "UseLinkAng", 1);
-		PyObject *dummy = Lv_Dummy(&f, "DM_Boss_Spawn", 1);
-		Sf_SetGlobal(&f, FF, "pos", Sf_Item(&f, dummy, 1));
-		PyObject *e = Sf_Ask(&f, "VehiclesNPC", "MakeAI", "(ssii)", "SBoss1", "Boss", 0, 0);
-		Sf_SetAttr(&f, e, "Pos", GLOBAL("pos"));
-		Ff_Profile(&f, e);
-		Sf_SetAttrS(&f, e, "WeapList", "0,15,0,0,0,0");
-		Sf_SetAttrI(&f, e, "Money", -1);
-		Sf_SetAttrS(&f, e, "TgType", "red");
-		Sf_SetAttrI(&f, e, "LaunchTaunts", 0);
-		PyObject *life = GLOBAL("BOSS_LIFE");
-		Sf_SetAttr(&f, e, "Life", life);
-		Sf_SetAttr(&f, e, "MaxLife", life);
-		Sf_SetAttrS(&f, e, "OnDeath", "MapFinalFight.OnBossDestroyed");
-		Sf_SetGlobal(&f, FF, "bossName", Sf_Attr(&f, e, "Name"));
-		Sf_SetAttrS(&f, e, "OnDamage", "!FXBossOnDamage");
-		Sf_Run(&f, "Scrap", "Set", "(sO)", "LifeToLaunchCallback", GLOBAL("BOSS_LIFE_BULLET"));
-		Sf_Run(&f, "Scrap", "Set", "(ss)", "LifeReachedCallback", "MapFinalFight.OnBossRecoversZero");
-		Sf_Run(&f, "SLogic", "SetShipToRegenerate", "(OOO)", GLOBAL("bossName"), GLOBAL("BOSS_RegenInit"),
-			GLOBAL("BOSS_RegenEnd"));
-		Sf_Run(&f, "Speech", "AddRemoteCom", "(ss)", "Mission_FinalFight_RemoteMessage2", "Boss");
-		Sf_Schedule(&f, Sf_OpI(&f, Sf_Time(&f), '+', 30), GLOBAL("LaunchTaunt"), Sf_Build(&f, "()"), "LaunchTaunt");
-		Sf_SetMod(&f, "Menu", "MissionScorerCall", GLOBAL("MissionScorer"));
-		Sf_Run(&f, "Menu", "DrawScorer", "(iO)", 0, Sf_Ask(&f, "SInput", "GetActionSet", "()"));
-		if (Sf_True(&f, shield) > 0) {
-			Sf_SetAttrI(&f, shield, "Active", 1);
-			Sf_SetAttrS(&f, shield, "LinkModel", ",");
-			Sf_SetAttr(&f, shield, "LinkModel", Sf_Cat(&f, "Oss", Sf_Attr(&f, e, "Name"), ",", "DC_Player_01"));
-			Sf_Call(&f, GLOBAL("SetShieldPhase"), "()");
+		if (!Mode_Import(mods[i])) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	Sf_Call(&f, GLOBAL("BossAttacks"), "()");
-	return Sf_None(&f);
+	if (!Mode_G(FF, "bossName", boss)) {
+		return Mode_Done(&t, 0);
+	}
+	if (LvN_EqS(boss, "")) {
+		if (!Ff_Shield(shield) || !Ff_Boss(e)) {
+			return Mode_Done(&t, 0);
+		}
+		if (Native_True(shield)) {
+			byte ok = LvN_SetI(shield, "Active", 1) && LvN_SetS(shield, "LinkModel", ",") && Mode_VGet(e, "Name", name) &&
+				Mode_Cat(&t, link, 3, name, Mode_S(&t, ","), Mode_S(&t, "DC_Player_01")) &&
+				Mode_VSet(shield, "LinkModel", link) && LV_OWN(FF, "SetShieldPhase", NULL, "");
+			if (!ok) {
+				return Mode_Done(&t, 0);
+			}
+		}
+	}
+	return Mode_Done(&t, LV_OWN(FF, "BossAttacks", NULL, ""));
 }
 
 /* SetShieldPhase(): the shield effect of the phase (FASE) */
-static PyObject *Ff_SetShieldPhase(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Ff_SetShieldPhase(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t phase;
+	(void)a;
+	(void)out;
+	/* OBJLIB 7: the engine call function by name (no C entry with text and int parameters) */
+	if (!LV_CALL("Scrap", "SetCallFunc", NULL, "s", "!FXBossShieldSet") || !LV_CALL("Scrap", "AddParams", NULL, "s", "BossShield") ||
+		!Mode_G(FF, "FASE", &phase)) {
+		return 0;
 	}
-	Sf_Run(&f, "Scrap", "SetCallFunc", "(s)", "!FXBossShieldSet");
-	Sf_Run(&f, "Scrap", "AddParams", "(s)", "BossShield");
-	Sf_Run(&f, "Scrap", "AddParami", "(O)", GLOBAL("FASE"));
-	Sf_Run(&f, "Scrap", "Execute", "()");
-	return Sf_None(&f);
+	byte ok = LV_CALL("Scrap", "AddParami", NULL, "v", &phase) && LV_CALL("Scrap", "Execute", NULL, "");
+	Native_Free(&phase);
+	return ok;
 }
 
 /* MissionScorer(id): the text of the phase and the regeneration bar of the boss */
-static PyObject *Ff_MissionScorer(PyObject *self, PyObject *args) {
-	PyObject *id;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id)) {
-		return NULL;
+static byte Ff_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *one = Mode_V(&t), *fone = Mode_V(&t), *back = Mode_V(&t), *main = Mode_V(&t), *black = Mode_V(&t);
+	const nativeVal_t *id = &a[0];
+	(void)out;
+	Native_SetInt(one, 1);
+	Native_SetFloat(fone, 1.0);
+	if (!Mode_Import("Scorer") || !LvN_ScorerTextBegin(id, "BossText", 0) || !LvN_ScorerTextEnd(id, "BossText") ||
+		!LvN_ScorerSet(id, "BossText", "Visible", one) || !Mode_ScorerAdd(id, Mode_S(&t, "RegenerationBar"), "Bar")) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Scorer");
-	Lv_ScorerTextBegin(&f, id, "BossText", 0);
-	Lv_ScorerTextEnd(&f, id, "BossText");
-	Lv_ScorerSet(&f, id, "BossText", "Visible", Sf_Int(&f, 1));
-	Sf_Run(&f, "SScorer", "Add", "(Oss)", id, "RegenerationBar", "Bar");
-	Sf_Run(&f, "Scorer", "MissionScorerBar_SetDefaults", "(OsOOO)", id, "RegenerationBar",
-		Sf_Mod(&f, "Scorer", "MissionScorerBar_ColorBack"), Sf_Mod(&f, "Scorer", "MissionScorerBar_ColorMain"),
-		Sf_Mod(&f, "Scorer", "MissionScorerBar_ColorBlack"));
-	Lv_ScorerSet(&f, id, "RegenerationBar", "MaxValue", Sf_Float(&f, 1.0));
-	Lv_ScorerSet(&f, id, "RegenerationBar", "Value", Sf_Float(&f, 1.0));
-	Lv_ScorerSet(&f, id, "RegenerationBar", "Visible", Sf_Int(&f, 1));
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "RegenerationItem", "RegenerationBar");
-	Sf_Call(&f, GLOBAL("SetFase"), "()");
-	return Sf_None(&f);
+	/* Scorer.MissionScorerBar_SetDefaults(id, "RegenerationBar", back, main, black): the function read first */
+	PyObject *fn = Script_Attr("Scorer", "MissionScorerBar_SetDefaults");
+	byte ok = fn && LvN_ModGet("Scorer", "MissionScorerBar_ColorBack", back) &&
+		LvN_ModGet("Scorer", "MissionScorerBar_ColorMain", main) && LvN_ModGet("Scorer", "MissionScorerBar_ColorBlack", black);
+	if (ok) {
+		ok = Native_HookCall(fn, NULL, "vsvvv", id, "RegenerationBar", back, main, black);
+	} else {
+		Py_XDECREF(fn);
+	}
+	ok = ok && LvN_ScorerSet(id, "RegenerationBar", "MaxValue", fone) && LvN_ScorerSet(id, "RegenerationBar", "Value", fone) &&
+		LvN_ScorerSet(id, "RegenerationBar", "Visible", one) && Mode_GVarSetS("RegenerationItem", "RegenerationBar") &&
+		LV_OWN(FF, "SetFase", NULL, "");
+	return Mode_Done(&t, ok);
 }
 
 /* SetFase(): the text and the bar colours of the phase, the shield */
-static PyObject *Ff_SetFase(PyObject *self, PyObject *args) {
+static byte Ff_SetFase(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const vars[] = { "MainRed", "MainGreen", "MainBlue", "BlackRed", "BlackGreen", "BlackBlue" };
 	static const int colors[3][6] = { { 255, 255, 255, 0, 255, 0 }, { 0, 255, 0, 255, 0, 0 }, { 255, 0, 0, 0, 0, 0 } };
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *id = Mode_V(&t), *phase = Mode_V(&t), *rep = Mode_V(&t), *key = Mode_V(&t), *lang = Mode_V(&t);
+	nativeVal_t *text = Mode_V(&t), *c = Mode_V(&t);
+	(void)a;
+	(void)out;
+	Native_SetInt(id, 0);
+	if (!Mode_G(FF, "FASE", phase)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *id = Sf_Int(&f, 0);
-	PyObject *key = Sf_Cat(&f, "sO", "Mission_FinalFight_Scorer_", Sf_Repr(&f, GLOBAL("FASE")));
-	Lv_ScorerSet(&f, id, "BossText", "Text", Sf_Op(&f, Sf_Lang(&f, key), '+', Sf_Str(&f, ":")));
-	int phase = 2;
-	if (Sf_EqI(&f, GLOBAL("FASE"), 1) > 0) {
-		phase = 0;
-	} else if (!f.failed && Sf_EqI(&f, GLOBAL("FASE"), 2) > 0) {
-		phase = 1;
+	Mode_Repr(phase, rep);
+	if (!Mode_Cat(&t, key, 2, Mode_S(&t, "Mission_FinalFight_Scorer_"), rep)) {
+		return Mode_Done(&t, 0);
 	}
-	for (int i = 0; i < 6 && !f.failed; i++) {
-		Lv_ScorerSet(&f, id, "RegenerationBar", vars[i], Sf_Int(&f, colors[phase][i]));
+	Mode_Lang(Native_Text(key), lang);
+	if (!LvN_Arith('+', lang, Mode_S(&t, ":"), text) || !LvN_ScorerSet(id, "BossText", "Text", text)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Call(&f, GLOBAL("SetShieldPhase"), "()");
-	return Sf_None(&f);
+	int is = LvN_GEqI(FF, "FASE", 1), p = 0;
+	if (is == 0) {
+		is = LvN_GEqI(FF, "FASE", 2);
+		p = is > 0 ? 1 : 2;
+	}
+	byte ok = is >= 0;
+	for (int i = 0; i < 6 && ok; i++) {
+		Native_SetInt(c, colors[p][i]);
+		ok = LvN_ScorerSet(id, "RegenerationBar", vars[i], c);
+	}
+	return Mode_Done(&t, ok && LV_OWN(FF, "SetShieldPhase", NULL, ""));
 }
 
 /* BossAttacks(): the boss attacks the player */
-static PyObject *Ff_BossAttacks(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Ff_BossAttacks(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *boss = Mode_V(&t), *name = Mode_V(&t);
+	(void)a;
+	(void)out;
+	byte ok = Mode_UsrHandle(usr);
+	if (ok && Native_True(usr)) {
+		/* OBJLIB 7: SAI.SetStateVehicle by name */
+		ok = Mode_G(FF, "bossName", boss) && Mode_VGet(usr, "Name", name) &&
+			LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, boss, name);
 	}
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	if (Sf_True(&f, usr) > 0) {
-		Sf_Run(&f, "SAI", "SetStateVehicle", "(iOO)", 2, GLOBAL("bossName"), Sf_Attr(&f, usr, "Name"));
-	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
 /* BossRelax(): the boss goes back to its spawn point */
-static PyObject *Ff_BossRelax(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Ff_BossRelax(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *boss = Mode_V(&t), *e = Mode_V(&t), *name = Mode_V(&t), *pos = Mode_V(&t);
+	nativeVal_t *x = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t);
+	(void)a;
+	(void)out;
+	byte ok = Mode_G(FF, "bossName", boss) && Mode_EntityH(boss, e);
+	if (ok && Native_True(e)) {
+		ok = Mode_VGet(e, "Name", name) && Mode_G(FF, "pos", pos) && LvN_Item(pos, 0, x) && LvN_Item(pos, 1, y) &&
+			LvN_Item(pos, 2, z) && LV_CALL("SAI", "SetStateVehicle", NULL, "ivvvvi", 1L, name, x, y, z, 1000L);
 	}
-	PyObject *e = Sf_Entity(&f, GLOBAL("bossName"));
-	if (Sf_True(&f, e) > 0) {
-		PyObject *name = Sf_Attr(&f, e, "Name"), *pos = GLOBAL("pos");
-		Sf_Run(&f, "SAI", "SetStateVehicle", "(iOOOOi)", 1, name, Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1),
-			Sf_Item(&f, pos, 2), 1000);
-	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
 /* OnPlayerDeath(LooserName, WinnerName): the boss goes back and heals, the time of the fight counts for the hints,
  * the player respawns where he died */
-static PyObject *Ff_OnPlayerDeath(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &looser, &winner)) {
-		return NULL;
+static byte Ff_OnPlayerDeath(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *name = Mode_V(&t), *sv = Mode_V(&t), *hints = Mode_V(&t), *now = Mode_V(&t);
+	nativeVal_t *start = Mode_V(&t), *d = Mode_V(&t), *sum = Mode_V(&t), *e = Mode_V(&t), *rt = Mode_V(&t);
+	nativeVal_t *at = Mode_V(&t), *args = Mode_V(&t), *boss = Mode_V(&t), *life = Mode_V(&t);
+	const nativeVal_t *looser = &a[0];
+	(void)out;
+	if (!Mode_UsrHandle(usr) || !Mode_VGet(usr, "Name", name)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	if (Sf_Compare(&f, Sf_Attr(&f, usr, "Name"), "==", looser) > 0) {
-		Sf_Call(&f, GLOBAL("BossRelax"), "()");
-		PyObject *hints = Sf_ToFloat(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "FinalBossHintsTime"));
-		PyObject *t = Sf_Op(&f, hints, '+', Sf_Op(&f, Sf_Time(&f), '-', GLOBAL("time")));
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "FinalBossHintsTime", Sf_Repr(&f, t));
-		PyObject *e = Sf_Entity(&f, looser);
-		PyObject *at = Sf_Op(&f, Sf_Time(&f), '+', GLOBAL("respawnTime"));
-		Sf_Schedule(&f, at, GLOBAL("RespawnPlayer"), Sf_Build(&f, "(OOO)", looser, Sf_Attr(&f, e, "Pos"),
-			Sf_Attr(&f, e, "Ang")), NULL);
-		PyObject *boss = Sf_Ask(&f, "Scrap", "GetEntity", "(s)", "Boss");
-		Sf_SetAttr(&f, boss, "Life", Sf_Attr(&f, boss, "MaxLife"));
+	if (Native_Compare(name, looser)) {
+		return Mode_Done(&t, 1);
 	}
-	return Sf_None(&f);
+	if (!LV_OWN(FF, "BossRelax", NULL, "")) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("FinalBossHintsTime", sv);
+	if (!Native_ToFloat(sv, hints)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetFloat(now, Mode_Time());
+	if (!Mode_G(FF, "time", start) || !LvN_Arith('-', now, start, d) || !LvN_Arith('+', hints, d, sum)) {
+		return Mode_Done(&t, 0);
+	}
+	LvN_SaveRepr("FinalBossHintsTime", sum);
+	Native_SetFloat(now, Mode_Time());
+	if (!Mode_EntityH(looser, e) || !Mode_G(FF, "respawnTime", rt) || !LvN_Arith('+', now, rt, at)) {
+		return Mode_Done(&t, 0);
+	}
+	PyObject *fn = Mode_GlobalPy(FF, "RespawnPlayer");
+	Native_SetEmpty(args, NV_TUPLE);
+	Native_Copy(Native_Append(args), looser);
+	byte ok = fn && Mode_VGet(e, "Pos", Native_Append(args)) && Mode_VGet(e, "Ang", Native_Append(args)) &&
+		Mode_Schedule(at, fn, args->items, args->n, NULL);
+	Py_XDECREF(fn);
+	ok = ok && LvN_Entity("Boss", boss) && Mode_VGet(boss, "MaxLife", life) && Mode_VSet(boss, "Life", life);
+	return Mode_Done(&t, ok);
 }
 
 /* Speech.CancelRemoteCom(); Speech.AddRemoteCom(Mission_FinalFight_RemoteMessage<n>, "CrazyGambler") */
-static void Ff_Hint(scriptFrame_t *f, int n) {
+static byte Ff_Hint(int n) {
 	char key[0x40];
 	Str_Printf(key, sizeof(key), "Mission_FinalFight_RemoteMessage%d", n);
-	Sf_Run(f, "Speech", "CancelRemoteCom", "()");
-	Sf_Run(f, "Speech", "AddRemoteCom", "(ss)", key, "CrazyGambler");
+	return LV_CALL("Speech", "CancelRemoteCom", NULL, "") && Ab_Com(key, "CrazyGambler");
 }
 
 /* RespawnPlayer(Usrname, respawnPos, ang): the player's ship again; every fifth time from the fourth a hint of the
  * phase; the boss attacks */
-static PyObject *Ff_RespawnPlayer(PyObject *self, PyObject *args) {
+static byte Ff_RespawnPlayer(const nativeVal_t *a, nativeVal_t *out) {
 	static const int hints[] = { 5, 13, 21 };
-	PyObject *name, *pos, *ang;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &name, &pos, &ang)) {
-		return NULL;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *count = Mode_V(&t), *five = Mode_V(&t), *m = Mode_V(&t);
+	(void)out;
+	if (!Mode_Import("Vehicles") || !Mode_Import("Speech") || !LV_CALL("Vehicles", "ReSpawnShip", NULL, "v", &a[0]) ||
+		!Mode_EntityH(&a[0], usr) || !Mode_VSet(usr, "Pos", &a[1]) || !Mode_VSet(usr, "Ang", &a[2]) ||
+		!LvN_GAdd(FF, "HINT_COUNTER", 1, NULL) || !Mode_G(FF, "HINT_COUNTER", count)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "Speech");
-	Sf_Run(&f, "Vehicles", "ReSpawnShip", "(O)", name);
-	PyObject *usr = Sf_Entity(&f, name);
-	Sf_SetAttr(&f, usr, "Pos", pos);
-	Sf_SetAttr(&f, usr, "Ang", ang);
-	Sf_SetGlobal(&f, FF, "HINT_COUNTER", Sf_OpI(&f, GLOBAL("HINT_COUNTER"), '+', 1));
-	if (Sf_EqI(&f, Sf_OpI(&f, GLOBAL("HINT_COUNTER"), '%', 5), 4) > 0) {
+	Native_SetInt(five, 5);
+	if (!LvN_Arith('%', count, five, m)) {
+		return Mode_Done(&t, 0);
+	}
+	if (LvN_EqI(m, 4)) {
 		for (int i = 0; i < 3; i++) {
-			int is = Sf_EqI(&f, GLOBAL("FASE"), i + 1);
-			if (is > 0) {
-				Ff_Hint(&f, hints[i]);
+			int is = LvN_GEqI(FF, "FASE", i + 1);
+			if (is > 0 && !Ff_Hint(hints[i])) {
+				return Mode_Done(&t, 0);
 			}
-			if (is != 0) {
+			if (is < 0) {
+				return Mode_Done(&t, 0);
+			}
+			if (is) {
 				break;
 			}
 		}
 	}
-	Sf_Call(&f, GLOBAL("BossAttacks"), "()");
-	return Sf_None(&f);
+	return Mode_Done(&t, LV_OWN(FF, "BossAttacks", NULL, ""));
 }
 
 /* Speech.AddRemoteCom("Mission_FinalFight_RemoteMessage" + `base + mul*(numTaunt % mod)`, "Boss") */
-static void Ff_Taunt(scriptFrame_t *f, long base, long mul, long mod) {
-	int mark = f->n;
-	PyObject *m = Sf_OpI(f, Sf_Global(f, FF, "numTaunt"), '%', mod);
-	PyObject *k = Sf_Op(f, Sf_Int(f, base), '+', mul == 1 ? m : Sf_Op(f, Sf_Int(f, mul), '*', m));
-	PyObject *key = Sf_Cat(f, "sO", "Mission_FinalFight_RemoteMessage", Sf_Repr(f, k));
-	Sf_Run(f, "Speech", "AddRemoteCom", "(Os)", key, "Boss");
-	Sf_Release(f, mark);
+static byte Ff_Taunt(long base, long mul, long mod) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *n = Mode_V(&t), *m = Mode_V(&t), *p = Mode_V(&t), *k = Mode_V(&t), *rep = Mode_V(&t), *key = Mode_V(&t);
+	byte ok = Mode_G(FF, "numTaunt", n) && LvN_Arith('%', n, Mode_I(&t, mod), m) &&
+		(mul == 1 || LvN_Arith('*', Mode_I(&t, mul), m, p)) && LvN_Arith('+', Mode_I(&t, base), mul == 1 ? m : p, k);
+	if (ok) {
+		Mode_Repr(k, rep);
+		ok = Mode_Cat(&t, key, 2, Mode_S(&t, "Mission_FinalFight_RemoteMessage"), rep) &&
+			LV_CALL("Speech", "AddRemoteCom", NULL, "vs", key, "Boss");
+	}
+	return Mode_Done(&t, ok);
 }
 
 /* LaunchTaunt(): a taunt of the boss every 30 s: by phase, by the hints given and in phase 3 by the boss' life */
-static PyObject *Ff_LaunchTaunt(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Ff_LaunchTaunt(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *hc = Mode_V(&t), *boss = Mode_V(&t), *e = Mode_V(&t), *life = Mode_V(&t);
+	(void)a;
+	(void)out;
+	if (!Mode_Import("Speech") || !Mode_Later(30, FF, "LaunchTaunt", NULL, 0, "LaunchTaunt")) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Speech");
-	Sf_Schedule(&f, Sf_OpI(&f, Sf_Time(&f), '+', 30), GLOBAL("LaunchTaunt"), Sf_Build(&f, "()"), "LaunchTaunt");
-	for (int phase = 1; phase <= 3 && !f.failed; phase++) {
-		int is = Sf_EqI(&f, GLOBAL("FASE"), phase);
+	for (int phase = 1; phase <= 3; phase++) {
+		int is = LvN_GEqI(FF, "FASE", phase);
 		if (is == 0) {
 			continue;
 		}
-		if (is < 0) {
-			break;
+		if (is < 0 || !Mode_G(FF, "HINT_COUNTER", hc)) {
+			return Mode_Done(&t, 0);
 		}
-		int few = Sf_Compare(&f, GLOBAL("HINT_COUNTER"), "<", Sf_Int(&f, 3));
-		if (few > 0) {
-			Ff_Taunt(&f, phase == 1 ? 2 : phase == 2 ? 10 : 18, 1, 3);
-		} else if (few == 0 && phase < 3) {
-			Ff_Taunt(&f, phase == 1 ? 6 : 14, 1, 3);
-		} else if (few == 0) {
-			PyObject *e = Sf_Entity(&f, GLOBAL("bossName"));
-			int low = Sf_Compare(&f, Sf_Attr(&f, e, "Life"), "<", Sf_Int(&f, 400));
-			if (low >= 0) {
-				Ff_Taunt(&f, low ? 22 : 23, 2, 2);
-			}
+		byte ok;
+		if (Native_Compare(hc, Mode_I(&t, 3)) < 0) {
+			ok = Ff_Taunt(phase == 1 ? 2 : phase == 2 ? 10 : 18, 1, 3);
+		} else if (phase < 3) {
+			ok = Ff_Taunt(phase == 1 ? 6 : 14, 1, 3);
+		} else {
+			ok = Mode_G(FF, "bossName", boss) && Mode_EntityH(boss, e) && Mode_VGet(e, "Life", life) &&
+				Ff_Taunt(Native_Compare(life, Mode_I(&t, 400)) < 0 ? 22 : 23, 2, 2);
+		}
+		if (!ok) {
+			return Mode_Done(&t, 0);
 		}
 		break;
 	}
-	Sf_SetGlobal(&f, FF, "numTaunt", Sf_OpI(&f, GLOBAL("numTaunt"), '+', 1));
-	return Sf_None(&f);
+	return Mode_Done(&t, LvN_GAdd(FF, "numTaunt", 1, NULL));
 }
 
 /* the boss after its life reached the mark of a phase (phase 2 or 3): the profile, the counters, the hint of the
  * phase, the weapons and the life, the next mark, the regeneration, the scorer blinks for 2.5 s */
-static PyObject *Ff_NextPhase(PyObject *args, int phase) {
-	PyObject *name, *idx;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "OO", &name, &idx)) {
-		return NULL;
+static byte Ff_NextPhase(const nativeVal_t *a, int phase) {
+	static const char *const ammo[] = { "Ammo00", "Ammo01", "Ammo02" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *am = Mode_V(&t), *blink = Mode_V(&t), *speed = Mode_V(&t);
+	Native_SetFloat(speed, 0.05);
+	if (!Mode_Import("Speech") || (phase == 3 && !Mode_Import("VehiclesNPC"))) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Speech");
-	if (phase == 3) {
-		Sf_Import(&f, "VehiclesNPC");
+	if (!LvN_EqI(&a[1], -1)) {
+		return Mode_Done(&t, 1);
 	}
-	if (Sf_EqI(&f, idx, -1) <= 0) {
-		return Sf_None(&f);
+	if (!Mode_EntityH(&a[0], e)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *e = Sf_Entity(&f, name);
-	if (Sf_True(&f, e) <= 0) {
-		return Sf_None(&f);
+	if (!Native_True(e)) {
+		return Mode_Done(&t, 1);
 	}
-	Ff_Profile(&f, e);
-	Sf_SetGlobal(&f, FF, "FASE", Sf_Int(&f, phase));
-	Sf_SetGlobal(&f, FF, "numTaunt", Sf_Int(&f, 0));
-	Sf_SetGlobal(&f, FF, "HINT_COUNTER", Sf_Int(&f, 0));
-	Ff_Hint(&f, phase == 2 ? 9 : 17);
-	Sf_SetAttrS(&f, e, "WeapList", phase == 2 ? "15,0,0,15,0,0" : "6,9,6,9,6,9");
-	Sf_SetAttr(&f, e, "MaxLife", GLOBAL(phase == 2 ? "BOSS_LIFE_BULLET" : "BOSS_LIFE_FINAL"));
-	Sf_SetAttr(&f, e, "Life", GLOBAL("BOSS_LIFE_BULLET"));
-	if (phase == 3) {
-		static const char *const ammo[] = { "Ammo00", "Ammo01", "Ammo02" };
-		for (int i = 0; i < 3; i++) {
-			Sf_SetAttr(&f, e, ammo[i], Sf_Ask(&f, "SWeap", "GetFAmmo", "(is)", i, "Max"));
+	byte ok = Ff_Profile(e) && LvN_PutI(FF, "FASE", phase) && LvN_PutI(FF, "numTaunt", 0) && LvN_PutI(FF, "HINT_COUNTER", 0) &&
+		Ff_Hint(phase == 2 ? 9 : 17) && LvN_SetS(e, "WeapList", phase == 2 ? "15,0,0,15,0,0" : "6,9,6,9,6,9") &&
+		Ab_SetAttrG(e, "MaxLife", FF, phase == 2 ? "BOSS_LIFE_BULLET" : "BOSS_LIFE_FINAL") &&
+		Ab_SetAttrG(e, "Life", FF, "BOSS_LIFE_BULLET");
+	for (int i = 0; i < 3 && ok && phase == 3; i++) {
+		/* SWeap.GetFAmmo(i, "Max") */
+		float value;
+		if (cAmmoInfo_GetF(TABLE_AT(g_pWorld->ammo, i), "Max", &value)) {
+			Native_SetFloat(am, (double)value);
+		} else {
+			Native_SetNone(am);
 		}
+		ok = Mode_VSet(e, ammo[i], am);
 	}
-	Sf_SetAttrS(&f, e, "OnDeath", "MapFinalFight.OnBossDestroyed");
-	Sf_SetAttrS(&f, e, "OnDamage", "!FXBossOnDamage");
-	if (phase == 2) {
-		Sf_Run(&f, "Scrap", "Set", "(sO)", "LifeToLaunchCallback", GLOBAL("BOSS_LIFE_FINAL"));
-		Sf_Run(&f, "Scrap", "Set", "(ss)", "LifeReachedCallback", "MapFinalFight.OnBossRecoversEnd");
-		Sf_Run(&f, "SLogic", "SetShipToRegenerate", "(OOO)", GLOBAL("bossName"), GLOBAL("BOSS_Last_RegenInit"),
-			GLOBAL("BOSS_Last_RegenEnd"));
-	} else {
-		Sf_Run(&f, "Scrap", "Set", "(si)", "LifeToLaunchCallback", 0);
-		Sf_Run(&f, "Scrap", "Set", "(ss)", "LifeReachedCallback", "");
-		Sf_Run(&f, "SLogic", "SetShipToRegenerate", "(sdd)", "Boss", 0.05, 0.05);
+	ok = ok && LvN_SetS(e, "OnDeath", "MapFinalFight.OnBossDestroyed") && LvN_SetS(e, "OnDamage", "!FXBossOnDamage");
+	if (ok && phase == 2) {
+		ok = Ab_SetG("LifeToLaunchCallback", "BOSS_LIFE_FINAL") &&
+			Mode_GVarSetS("LifeReachedCallback", "MapFinalFight.OnBossRecoversEnd") &&
+			Ab_RegenG("bossName", "BOSS_Last_RegenInit", "BOSS_Last_RegenEnd");
+	} else if (ok) {
+		ok = Ab_SetI("LifeToLaunchCallback", 0) && Mode_GVarSetS("LifeReachedCallback", "") &&
+			Ab_Regen(Mode_S(&t, "Boss"), speed, speed);
 	}
-	Sf_Call(&f, GLOBAL("SetFase"), "()");
-	Sf_Run(&f, "SScorer", "Set", "(issi)", 0, "RegenerationBar", "Blink", 1);
-	Sf_Later(&f, Sf_Float(&f, 2.5), Sf_Mod(&f, "SScorer", "Set"), Sf_Build(&f, "(issi)", 0, "RegenerationBar", "Blink", 0),
-		NULL);
-	return Sf_None(&f);
+	ok = ok && LV_OWN(FF, "SetFase", NULL, "") &&
+		Mode_ScorerSet(Mode_I(&t, 0), Mode_S(&t, "RegenerationBar"), "Blink", Mode_I(&t, 1));
+	if (ok) {
+		Native_SetEmpty(blink, NV_TUPLE);
+		Native_SetInt(Native_Append(blink), 0);
+		LvN_Str(Native_Append(blink), "RegenerationBar");
+		LvN_Str(Native_Append(blink), "Blink");
+		Native_SetInt(Native_Append(blink), 0);
+		ok = Mode_LaterIn(2.5, "SScorer", "Set", blink->items, blink->n, NULL);
+	}
+	return Mode_Done(&t, ok);
 }
 
 /* OnBossRecoversZero(name, idx), OnBossRecoversEnd(name, idx): the engine callback of the life mark (idx -1) */
-static PyObject *Ff_OnBossRecoversZero(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ff_NextPhase(args, 2);
+static byte Ff_OnBossRecoversZero(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Ff_NextPhase(a, 2);
 }
 
-static PyObject *Ff_OnBossRecoversEnd(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ff_NextPhase(args, 3);
+static byte Ff_OnBossRecoversEnd(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Ff_NextPhase(a, 3);
 }
 
 /* OnBossDestroyed(LooserName, WinnerName): the death of the boss: its death taunt, no more taunts, the alarm falls,
  * a way point, PreLoadFinal in 4 s */
-static PyObject *Ff_OnBossDestroyed(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &looser, &winner)) {
-		return NULL;
+static byte Ff_OnBossDestroyed(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	if (!Mode_Import("Vehicles") || !Mode_Import("SaveGame") || !Ab_ModI("Vehicles", "ForceDeathTaunt", 1) ||
+		!LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1]) || !Mode_DelSchedS("LaunchTaunt")) {
+		return 0;
 	}
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "SaveGame");
-	Sf_SetMod(&f, "Vehicles", "ForceDeathTaunt", Sf_Int(&f, 1));
-	Sf_Run(&f, "Vehicles", "OnDeath", "(OO)", looser, winner);
-	Sf_Run(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "LaunchTaunt");
-	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "FinalBossHintsTime");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "BossDestroyed", "1");
-	Sf_Run(&f, "Scrap", "Set", "(sd)", "AlarmFallDelta", -0.05);
-	Sf_Run(&f, "Scrap", "SetAlarm", "(i)", 0);
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Schedule(&f, Sf_OpI(&f, Sf_Time(&f), '+', 4), GLOBAL("PreLoadFinal"), Sf_Build(&f, "()"), NULL);
-	return Sf_None(&f);
+	SaveVars_Delete("FinalBossHintsTime");
+	SaveVar_Set("BossDestroyed", "1");
+	if (!Mode_GVarSetN("AlarmFallDelta", -0.05)) {
+		return 0;
+	}
+	return Ab_AlarmOff() && LV_CALL("SaveGame", "QWayPoint", NULL, "") && Mode_Later(4, FF, "PreLoadFinal", NULL, 0, NULL);
 }
 
 /* PreLoadFinal(): no input, no scorer, fade to black, LoadFinal in 4 s */
-static PyObject *Ff_PreLoadFinal(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Ff_PreLoadFinal(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	if (!Mode_Import("Menu")) {
+		return 0;
 	}
-	Sf_Import(&f, "Menu");
-	Sf_Run(&f, "SInput", "SetActionSet", "(s)", "Inactive");
-	Sf_Run(&f, "Menu", "DrawScorer", "(is)", 0, "Inactive");
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "EscapeEvent", "");
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "MainMissionEvent", "");
-	Sf_Run(&f, "SScorer", "SetCinema", "(iii)", 0, 0, 0);
-	Lv_Fade(&f, lv_clear, lv_black, 4.0);
-	Sf_Schedule(&f, Sf_OpI(&f, Sf_Time(&f), '+', 4), GLOBAL("LoadFinal"), Sf_Build(&f, "()"), NULL);
-	return Sf_None(&f);
+	Mode_SetActionSet("Inactive");
+	if (!LV_CALL("Menu", "DrawScorer", NULL, "is", 0L, "Inactive") || !Mode_GVarSetS("EscapeEvent", "") ||
+		!Mode_GVarSetS("MainMissionEvent", "")) {
+		return 0;
+	}
+	/* SScorer.SetCinema(0, 0, 0) */
+	cScorer *sc = Scorer_Get(0);
+	if (sc) {
+		ScorerCinema_Set(&sc->cinema, 0, 0.0f);
+	}
+	return Mode_Fade(0, lv_clear, lv_black, 4.0) && Mode_Later(4, FF, "LoadFinal", NULL, 0, NULL);
 }
 
+LV_FN(Ff, GetBossProfilePy, 0, Ff_GetBossProfile)
+LV_FN(Ff, FakeShipsPy, 0, Ff_FakeShips)
+LV_FN(Ff, InitStatusPy, 1, Ff_InitStatus)
+LV_FN(Ff, InitPy, 1, Ff_Init)
+LV_FN(Ff, CreateBossPy, 0, Ff_CreateBoss)
+LV_FN(Ff, SetShieldPhasePy, 0, Ff_SetShieldPhase)
+LV_FN(Ff, MissionScorerPy, 1, Ff_MissionScorer)
+LV_FN(Ff, SetFasePy, 0, Ff_SetFase)
+LV_FN(Ff, BossAttacksPy, 0, Ff_BossAttacks)
+LV_FN(Ff, BossRelaxPy, 0, Ff_BossRelax)
+LV_FN(Ff, OnPlayerDeathPy, 2, Ff_OnPlayerDeath)
+LV_FN(Ff, RespawnPlayerPy, 3, Ff_RespawnPlayer)
+LV_FN(Ff, LaunchTauntPy, 0, Ff_LaunchTaunt)
+LV_FN(Ff, OnBossRecoversZeroPy, 2, Ff_OnBossRecoversZero)
+LV_FN(Ff, OnBossRecoversEndPy, 2, Ff_OnBossRecoversEnd)
+LV_FN(Ff, OnBossDestroyedPy, 2, Ff_OnBossDestroyed)
+LV_FN(Ff, PreLoadFinalPy, 0, Ff_PreLoadFinal)
+
 PyMethodDef g_ABFinalFightMethods[] = {
-	{ "GetBossProfile", Ff_GetBossProfile, 1, NULL },
-	{ "FakeShips", Ff_FakeShips, 1, NULL },
-	{ "InitStatus", Ff_InitStatus, 1, NULL },
-	{ "Init", Ff_Init, 1, NULL },
-	{ "CreateBoss", Ff_CreateBoss, 1, NULL },
-	{ "SetShieldPhase", Ff_SetShieldPhase, 1, NULL },
-	{ "MissionScorer", Ff_MissionScorer, 1, NULL },
-	{ "SetFase", Ff_SetFase, 1, NULL },
-	{ "BossAttacks", Ff_BossAttacks, 1, NULL },
-	{ "BossRelax", Ff_BossRelax, 1, NULL },
-	{ "OnPlayerDeath", Ff_OnPlayerDeath, 1, NULL },
-	{ "RespawnPlayer", Ff_RespawnPlayer, 1, NULL },
-	{ "LaunchTaunt", Ff_LaunchTaunt, 1, NULL },
-	{ "OnBossRecoversZero", Ff_OnBossRecoversZero, 1, NULL },
-	{ "OnBossRecoversEnd", Ff_OnBossRecoversEnd, 1, NULL },
-	{ "OnBossDestroyed", Ff_OnBossDestroyed, 1, NULL },
-	{ "PreLoadFinal", Ff_PreLoadFinal, 1, NULL },
+	{ "GetBossProfile", Ff_GetBossProfilePy, 1, NULL },
+	{ "FakeShips", Ff_FakeShipsPy, 1, NULL },
+	{ "InitStatus", Ff_InitStatusPy, 1, NULL },
+	{ "Init", Ff_InitPy, 1, NULL },
+	{ "CreateBoss", Ff_CreateBossPy, 1, NULL },
+	{ "SetShieldPhase", Ff_SetShieldPhasePy, 1, NULL },
+	{ "MissionScorer", Ff_MissionScorerPy, 1, NULL },
+	{ "SetFase", Ff_SetFasePy, 1, NULL },
+	{ "BossAttacks", Ff_BossAttacksPy, 1, NULL },
+	{ "BossRelax", Ff_BossRelaxPy, 1, NULL },
+	{ "OnPlayerDeath", Ff_OnPlayerDeathPy, 1, NULL },
+	{ "RespawnPlayer", Ff_RespawnPlayerPy, 1, NULL },
+	{ "LaunchTaunt", Ff_LaunchTauntPy, 1, NULL },
+	{ "OnBossRecoversZero", Ff_OnBossRecoversZeroPy, 1, NULL },
+	{ "OnBossRecoversEnd", Ff_OnBossRecoversEndPy, 1, NULL },
+	{ "OnBossDestroyed", Ff_OnBossDestroyedPy, 1, NULL },
+	{ "PreLoadFinal", Ff_PreLoadFinalPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
@@ -477,211 +669,270 @@ PyMethodDef g_ABFinalFightMethods[] = {
 #define MAP "Map"
 
 /* onTrackCreate(o): a traffic asteroid: fixed model, life 20, no money */
-static PyObject *AbMap_onTrackCreate(PyObject *self, PyObject *args) {
-	PyObject *o;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &o)) {
-		return NULL;
-	}
-	Sf_SetAttrI(&f, o, "FixedModel", 1);
-	PyObject *life = Sf_Int(&f, 20);
-	Sf_SetAttr(&f, o, "Life", life);
-	Sf_SetAttr(&f, o, "MinLife", life);
-	Sf_SetAttr(&f, o, "MaxLife", life);
-	Sf_SetAttrI(&f, o, "Money", -1);
-	return Sf_None(&f);
+static byte AbMap_onTrackCreate(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t life;
+	(void)out;
+	Native_SetInt(&life, 20);
+	return LvN_SetI(&a[0], "FixedModel", 1) && Mode_VSet(&a[0], "Life", &life) && Mode_VSet(&a[0], "MinLife", &life) &&
+		Mode_VSet(&a[0], "MaxLife", &life) && LvN_SetI(&a[0], "Money", -1);
 }
 
 /* InitStatus(LevelPath): single player only: an outdoor map without police and traffic, quick hull deaths, the
  * traffic asteroids through onTrackCreate */
-static PyObject *AbMap_InitStatus(PyObject *self, PyObject *args) {
+static byte AbMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const mods[] = { "Init", "Chars", "Elevator", "OutPolice", "Traffic", "Vehicles" };
 	static const char *const lists[] = { "AcNormalShips", "AcMediumShips", "AcHeavyShips" };
 	static const char *const nums[] = { "NumNormal", "NumMedium", "NumHeavy" };
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	if (Sf_True(&f, Sf_Global(&f, MAP, "SinglePlayer")) <= 0) {
-		return Sf_None(&f);
+	nativeVal_t v;
+	(void)a;
+	(void)out;
+	int single = LvN_GTrue(MAP, "SinglePlayer");
+	if (single <= 0) {
+		return single == 0;
 	}
 	for (int i = 0; i < 6; i++) {
-		Sf_Import(&f, mods[i]);
+		if (!Mode_Import(mods[i])) {
+			return 0;
+		}
 	}
-	Sf_SetMod(&f, "Vehicles", "HullLifeTimeDeath", Sf_Build(&f, "(dd)", 0.01, 0.02));
-	Sf_SetMod(&f, "Init", "Outdoor", Sf_Int(&f, 1));
-	Sf_SetMod(&f, "OutPolice", "PoliceActive", Sf_Int(&f, 0));
-	Sf_Run(&f, "Scrap", "Set", "(si)", "iTrafficNumber", 0);
-	for (int i = 0; i < 3; i++) {
-		Sf_SetMod(&f, "Traffic", lists[i], Sf_Build(&f, "[]"));
+	Native_SetEmpty(&v, NV_TUPLE);
+	Native_SetFloat(Native_Append(&v), 0.01);
+	Native_SetFloat(Native_Append(&v), 0.02);
+	byte ok = Mode_SetModVar("Vehicles", "HullLifeTimeDeath", &v) && Ab_ModI("Init", "Outdoor", 1) &&
+		Ab_ModI("OutPolice", "PoliceActive", 0) && Ab_SetI("iTrafficNumber", 0);
+	Native_Free(&v);
+	Native_SetEmpty(&v, NV_LIST);
+	for (int i = 0; i < 3 && ok; i++) {
+		ok = Mode_SetModVar("Traffic", lists[i], &v);
 	}
-	for (int i = 0; i < 3; i++) {
-		Sf_SetMod(&f, "Traffic", nums[i], Sf_Int(&f, 0));
+	for (int i = 0; i < 3 && ok; i++) {
+		ok = Ab_ModI("Traffic", nums[i], 0);
 	}
-	Sf_SetMod(&f, "Traffic", "onTrackCreate", Sf_Global(&f, MAP, "onTrackCreate"));
-	return Sf_None(&f);
+	return ok && LvN_ModSetGlobal("Traffic", "onTrackCreate", MAP, "onTrackCreate");
+}
+
+/* the standard ship of an asteroid type at its name: ShipMaker.AddShip, AddShipTon, AddShipBalance, InitAnmShip and
+ * ShipMaker.StdShips[string.upper(name)] */
+static byte AbMap_Type(const nativeVal_t *name) {
+	static const char *const texts[] = { "", "", "", "", "0,0,0,0,0,0" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *bal = Mode_V(&t), *none = Mode_V(&t), *ship = Mode_V(&t), *key = Mode_V(&t);
+	Native_SetEmpty(bal, NV_TUPLE);
+	for (int i = 0; i < 4; i++) {
+		Native_SetInt(Native_Append(bal), 0);
+	}
+	byte ok = LV_CALL("ShipMaker", "AddShip", NULL, "viii", name, 20000L, 1000L, 10000L) &&
+		LV_CALL("ShipMaker", "AddShipTon", NULL, "viii", name, 20L, 20L, 30000L) &&
+		LV_CALL("ShipMaker", "AddShipBalance", NULL, "vv", name, bal) &&
+		LV_CALL("ShipMaker", "InitAnmShip", NULL, "vvvvv", name, none, none, none, none);
+	if (ok) {
+		Native_SetEmpty(ship, NV_TUPLE);
+		Native_Copy(Native_Append(ship), name);
+		for (int i = 0; i < 5; i++) {
+			LvN_Str(Native_Append(ship), texts[i]);
+		}
+		Native_SetInt(Native_Append(ship), 20);
+		ok = Native_Upper(name, key) && Mode_ModDictPut("ShipMaker", "StdShips", key, ship);
+	}
+	return Mode_Done(&t, ok);
 }
 
 /* Init(LevelPath): the free space magnet around the mission centre, the teleporter, the asteroid ship types, an
  * asteroid at every spawn position */
-static PyObject *AbMap_Init(PyObject *self, PyObject *args) {
+static byte AbMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const axes[] = { "FreeSpaceMagnetCenterX", "FreeSpaceMagnetCenterY", "FreeSpaceMagnetCenterZ" };
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *dummy = Mode_V(&t), *p = Mode_V(&t), *x = Mode_V(&t), *from = Mode_V(&t), *to = Mode_V(&t);
+	nativeVal_t *types = Mode_V(&t), *spawns = Mode_V(&t), *item = Mode_V(&t);
+	(void)a;
+	(void)out;
+	if (!Mode_Import("Elevator") || !Ab_SetI("FreeSpaceMagnet", 1)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Elevator");
-	Sf_Run(&f, "Scrap", "Set", "(si)", "FreeSpaceMagnet", 1);
-	PyObject *dummy = Lv_Dummy(&f, "DM_Mission_Centre", 1);
+	LvN_Dummy("DM_Mission_Centre", 1, dummy);
 	for (int i = 0; i < 3; i++) {
-		Sf_Run(&f, "Scrap", "Set", "(sO)", axes[i], Sf_Item(&f, Sf_Item(&f, dummy, 1), i));
-	}
-	Sf_Run(&f, "Scrap", "Set", "(si)", "FreeSpaceMagnetHiRadius", 95000);
-	Sf_Run(&f, "Scrap", "Set", "(si)", "FreeSpaceMagnetAccel", 56000);
-	Sf_Run(&f, "Elevator", "ConnectElevators", "([s][s])", "DM_Door_Teleporter_GamblinDen", "GamblinDen");
-	Sf_Run(&f, "Traffic", "SetPath", "()");
-	PyObject *types = Sf_Global(&f, MAP, "asttype");
-	for (int i = 0; !f.failed; i++) {
-		int mark = f.n;
-		PyObject *name = Sf_Next(&f, types, i);
-		if (!name) {
-			break;
+		Native_Free(p);
+		Native_Free(x);
+		if (!LvN_Item(dummy, 1, p) || !LvN_Item(p, i, x) || !Mode_GVarSet(axes[i], x)) {
+			return Mode_Done(&t, 0);
 		}
-		Sf_Run(&f, "ShipMaker", "AddShip", "(Oiii)", name, 20000, 1000, 10000);
-		Sf_Run(&f, "ShipMaker", "AddShipTon", "(Oiii)", name, 20, 20, 30000);
-		Sf_Run(&f, "ShipMaker", "AddShipBalance", "(O(iiii))", name, 0, 0, 0, 0);
-		Sf_Run(&f, "ShipMaker", "InitAnmShip", "(OOOOO)", name, Py_None, Py_None, Py_None, Py_None);
-		PyObject *ship = Sf_Build(&f, "(Osssssi)", name, "", "", "", "", "0,0,0,0,0,0", 20);
-		Sf_SetItem(&f, Sf_Mod(&f, "ShipMaker", "StdShips"), Sf_Ask(&f, "string", "upper", "(O)", name), ship);
-		Sf_Release(&f, mark);
 	}
-	Sf_Run(&f, "Traffic", "ResetPath", "()");
-	PyObject *spawns = Sf_Global(&f, MAP, "SpawnPositions");
-	for (int i = 0; !f.failed; i++) {
-		int mark = f.n;
-		PyObject *pos = Sf_Next(&f, spawns, i);
-		if (!pos) {
-			break;
+	Native_SetEmpty(from, NV_LIST);
+	LvN_Str(Native_Append(from), "DM_Door_Teleporter_GamblinDen");
+	Native_SetEmpty(to, NV_LIST);
+	LvN_Str(Native_Append(to), "GamblinDen");
+	if (!Ab_SetI("FreeSpaceMagnetHiRadius", 95000) || !Ab_SetI("FreeSpaceMagnetAccel", 56000) ||
+		!LV_CALL("Elevator", "ConnectElevators", NULL, "vv", from, to) || !LV_CALL("Traffic", "SetPath", NULL, "") ||
+		!LvN_GElems(MAP, "asttype", types)) {
+		return Mode_Done(&t, 0);
+	}
+	int n = Native_ForCount(types);
+	for (int i = 0; i < n; i++) {
+		Native_Free(item);
+		if (!Native_SeqItem(types, i, item) || !AbMap_Type(item)) {
+			return Mode_Done(&t, 0);
 		}
-		Sf_Call(&f, Sf_Global(&f, MAP, "CreateAsteroid"), "(sO)", "Asteroid", pos);
-		Sf_Release(&f, mark);
 	}
-	return Sf_None(&f);
+	if (n < 0 || !LV_CALL("Traffic", "ResetPath", NULL, "") || !LvN_GElems(MAP, "SpawnPositions", spawns)) {
+		return Mode_Done(&t, 0);
+	}
+	n = Native_ForCount(spawns);
+	for (int i = 0; i < n; i++) {
+		Native_Free(item);
+		if (!Native_SeqItem(spawns, i, item) || !LV_OWN(MAP, "CreateAsteroid", NULL, "sv", "Asteroid", item)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	return Mode_Done(&t, n >= 0);
 }
 
 /* CreateAsteroid(name, SpwPos): an asteroid of the next type that drifts with the traffic for 0.5 to 2 s: the
  * asteroid */
-static PyObject *AbMap_CreateAsteroid(PyObject *self, PyObject *args) {
-	PyObject *name, *pos;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &name, &pos)) {
-		return NULL;
+static byte AbMap_CreateAsteroid(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *types = Mode_V(&t), *id = Mode_V(&t), *k = Mode_V(&t), *type = Mode_V(&t), *name = Mode_V(&t);
+	nativeVal_t *r = Mode_V(&t), *ang = Mode_V(&t), *now = Mode_V(&t), *at = Mode_V(&t);
+	int len;
+	if (!LV_CALL("Traffic", "SetPath", NULL, "") || !LvN_CreateAt(&a[0], &a[1], "Car", out) || !Mode_G(MAP, "asttype", types) ||
+		!Mode_G(MAP, "idctr", id) || (len = Native_Size(types)) < 0 || !LvN_Arith('%', id, Mode_I(&t, len), k) ||
+		!Native_Subscript(types, k, type) || !Mode_VGet(out, "Name", name) ||
+		!LV_CALL("Vehicles", "SetStdProperties", NULL, "vvs", name, type, "")) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Run(&f, "Traffic", "SetPath", "()");
-	PyObject *p = Sf_Ask(&f, "Scrap", "CreateEntity", "(OOOOs)", name, Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1),
-		Sf_Item(&f, pos, 2), "Car");
-	PyObject *types = Sf_Global(&f, MAP, "asttype");
-	PyObject *type = Sf_GetItem(&f, types, Sf_OpI(&f, Sf_Global(&f, MAP, "idctr"), '%', Sf_Len(&f, types)));
-	Sf_Run(&f, "Vehicles", "SetStdProperties", "(OOs)", Sf_Attr(&f, p, "Name"), type, "");
-	Sf_SetAttrI(&f, p, "FixedModel", 1);
-	Sf_SetAttrI(&f, p, "Money", -1);
-	Sf_SetAttrS(&f, p, "OnDeath", "Map.OnDeath");
-	Sf_SetAttrI(&f, p, "Traf_Active", 1);
-	Sf_SetAttrI(&f, p, "Traf_Speed", 28000);
-	Sf_SetAttrI(&f, p, "MaxSpeed", 28000);
-	Sf_SetAttr(&f, p, "Fric", Sf_Float(&f, 1.0));
-	Sf_SetAttr(&f, p, "InCtrl_Acc", Sf_Float(&f, 0.125));
-	Sf_SetAttr(&f, p, "InCtrl_HRot", Sf_Float(&f, 0.05));
-	Sf_SetAttr(&f, p, "Ang", Sf_Build(&f, "(iOi)", 0, Sf_Ask(&f, "Scrap", "Rand", "(ii)", -180, 180), 0));
-	Sf_Run(&f, "Traffic", "ResetPath", "()");
-	Sf_SetGlobal(&f, MAP, "idctr", Sf_OpI(&f, Sf_Global(&f, MAP, "idctr"), '+', 1));
-	PyObject *at = Sf_Op(&f, Sf_Time(&f), '+', Sf_Ask(&f, "Scrap", "Rand", "(di)", 0.5, 2));
-	Sf_Schedule(&f, at, Sf_Global(&f, MAP, "detraffic"), Sf_Build(&f, "(O)", Sf_Attr(&f, p, "Name")), NULL);
-	return Sf_Return(&f, p);
+	byte ok = LvN_SetI(out, "FixedModel", 1) && LvN_SetI(out, "Money", -1) && LvN_SetS(out, "OnDeath", "Map.OnDeath") &&
+		LvN_SetI(out, "Traf_Active", 1) && LvN_SetI(out, "Traf_Speed", 28000) && LvN_SetI(out, "MaxSpeed", 28000) &&
+		LvN_SetF(out, "Fric", 1.0) && LvN_SetF(out, "InCtrl_Acc", 0.125) && LvN_SetF(out, "InCtrl_HRot", 0.05) &&
+		Mode_Rand(Mode_I(&t, -180), Mode_I(&t, 180), r);
+	if (ok) {
+		Native_SetEmpty(ang, NV_TUPLE);
+		Native_SetInt(Native_Append(ang), 0);
+		Native_Copy(Native_Append(ang), r);
+		Native_SetInt(Native_Append(ang), 0);
+		Native_Free(r);
+		ok = Mode_VSet(out, "Ang", ang) && LV_CALL("Traffic", "ResetPath", NULL, "") && LvN_GAdd(MAP, "idctr", 1, NULL);
+	}
+	if (ok) {
+		/* Scrap.AddScheduledFunc(Scrap.GetTime() + Scrap.Rand(0.5, 2), detraffic, (p.Name,)) */
+		Native_SetFloat(now, Mode_Time());
+		nativeVal_t half;
+		Native_SetFloat(&half, 0.5);
+		ok = Mode_Rand(&half, Mode_I(&t, 2), r) && LvN_Arith('+', now, r, at);
+		PyObject *fn = ok ? Mode_GlobalPy(MAP, "detraffic") : NULL;
+		/* p.Name read again where the script reads it */
+		Native_Free(name);
+		ok = fn && Mode_VGet(out, "Name", name);
+		ok = ok && Mode_Schedule(at, fn, name, 1, NULL);
+		Py_XDECREF(fn);
+	}
+	if (!ok) {
+		Native_Free(out);
+		Native_SetNone(out);
+	}
+	return Mode_Done(&t, ok);
 }
 
 /* detraffic(Name): the asteroid leaves the traffic paths */
-static PyObject *AbMap_detraffic(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+static byte AbMap_detraffic(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t e;
+	(void)out;
+	if (!Mode_EntityH(&a[0], &e)) {
+		return 0;
 	}
-	PyObject *e = Sf_Entity(&f, name);
-	if (Sf_True(&f, e) > 0) {
-		Sf_SetAttrI(&f, e, "Traf_Active", 0);
-	}
-	return Sf_None(&f);
+	byte ok = !Native_True(&e) || LvN_SetI(&e, "Traf_Active", 0);
+	Native_Free(&e);
+	return ok;
 }
 
 /* OnDeath(LooserName, WinnerName): deaths in the same frame are spread 0.05 s apart */
-static PyObject *AbMap_OnDeath(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &looser, &winner)) {
-		return NULL;
+static byte AbMap_OnDeath(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *now = Mode_V(&t), *last = Mode_V(&t), *timer = Mode_V(&t), *sum = Mode_V(&t);
+	(void)out;
+	Native_SetFloat(now, Mode_Time());
+	if (!Mode_G(MAP, "LastTime", last)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *now = Sf_Time(&f);
-	int same = Sf_Compare(&f, now, "==", Sf_Global(&f, MAP, "LastTime"));
-	if (same > 0) {
-		PyObject *at = Sf_Op(&f, Sf_Time(&f), '+', Sf_Global(&f, MAP, "ctrTimer"));
-		Sf_Schedule(&f, at, Sf_Global(&f, MAP, "RealOnDeath"), Sf_Build(&f, "(OO)", looser, winner), NULL);
-		Sf_SetGlobal(&f, MAP, "ctrTimer", Sf_Op(&f, Sf_Global(&f, MAP, "ctrTimer"), '+', Sf_Float(&f, 0.05)));
-	} else if (same == 0) {
-		Sf_SetGlobal(&f, MAP, "LastTime", now);
-		Sf_Call(&f, Sf_Global(&f, MAP, "RealOnDeath"), "(OO)", looser, winner);
-		Sf_SetGlobal(&f, MAP, "ctrTimer", Sf_Float(&f, 0.05));
+	nativeVal_t step;
+	Native_SetFloat(&step, 0.05);
+	byte ok;
+	if (!Native_Compare(now, last)) {
+		ok = Ab_LaterG(MAP, "ctrTimer", 0, "RealOnDeath", a, 2) && Mode_G(MAP, "ctrTimer", timer) &&
+			LvN_Arith('+', timer, &step, sum) && Mode_Put(MAP, "ctrTimer", NULL, sum);
+	} else {
+		ok = Mode_Put(MAP, "LastTime", NULL, now) && LV_OWN(MAP, "RealOnDeath", NULL, "vv", &a[0], &a[1]) &&
+			Mode_Put(MAP, "ctrTimer", NULL, &step);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
+}
+
+/* a = CreateAsteroid("Asteroids", pos); a.Vel = SVec.Sub((0, 0, 0), vel) */
+static byte AbMap_Split(const nativeVal_t *pos, const nativeVal_t *vel) {
+	nativeVal_t ast, zero, back;
+	Native_SetNone(&ast);
+	Native_SetNone(&back);
+	Native_SetEmpty(&zero, NV_TUPLE);
+	for (int i = 0; i < 3; i++) {
+		Native_SetInt(Native_Append(&zero), 0);
+	}
+	byte ok = LV_OWN(MAP, "CreateAsteroid", &ast, "sv", "Asteroids", pos) && Mode_VecSub(&zero, vel, &back) &&
+		Mode_VSet(&ast, "Vel", &back);
+	Native_Free(&ast);
+	Native_Free(&zero);
+	Native_Free(&back);
+	return ok;
 }
 
 /* RealOnDeath(LooserName, WinnerName): a small explosion in place; every second death two asteroids fly apart from
  * where it died */
-static PyObject *AbMap_RealOnDeath(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &looser, &winner)) {
-		return NULL;
+static byte AbMap_RealOnDeath(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *scale = Mode_V(&t), *e = Mode_V(&t), *pos = Mode_V(&t), *ast = Mode_V(&t), *r = Mode_V(&t);
+	nativeVal_t *v = Mode_V(&t), *vel = Mode_V(&t);
+	(void)out;
+	if (!Ab_ModI("Vehicles", "ShipExplosionForceInplace", 1) || !Mode_RandD(0.55, 0.65, scale) ||
+		!Mode_SetModVar("Vehicles", "ShipExplosionScaleFactor", scale) || !LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1]) ||
+		!Ab_ModI("Vehicles", "ShipExplosionForceInplace", 0) || !Ab_ModF("Vehicles", "ShipExplosionScaleFactor", 1.0)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_SetMod(&f, "Vehicles", "ShipExplosionForceInplace", Sf_Int(&f, 1));
-	Sf_SetMod(&f, "Vehicles", "ShipExplosionScaleFactor", Sf_Ask(&f, "Scrap", "Rand", "(dd)", 0.55, 0.65));
-	Sf_Run(&f, "Vehicles", "OnDeath", "(OO)", looser, winner);
-	Sf_SetMod(&f, "Vehicles", "ShipExplosionForceInplace", Sf_Int(&f, 0));
-	Sf_SetMod(&f, "Vehicles", "ShipExplosionScaleFactor", Sf_Float(&f, 1.0));
-	int dup = Sf_True(&f, Sf_Global(&f, MAP, "Duplicate"));
-	if (dup >= 0) {
-		Sf_SetGlobal(&f, MAP, "Duplicate", Sf_Int(&f, !dup));
+	int dup = LvN_GTrue(MAP, "Duplicate");
+	if (dup < 0 || !LvN_PutI(MAP, "Duplicate", !dup)) {
+		return Mode_Done(&t, 0);
 	}
-	if (dup == 0) {
-		PyObject *pos = Sf_Attr(&f, Sf_Entity(&f, looser), "Pos");
-		PyObject *a = Sf_Call(&f, Sf_Global(&f, MAP, "CreateAsteroid"), "(sO)", "Asteroids", pos);
-		PyObject *r1 = Sf_Ask(&f, "Scrap", "Rand", "(ii)", -180, 180);
-		PyObject *r2 = Sf_Ask(&f, "Scrap", "Rand", "(ii)", -180, 180);
-		PyObject *r3 = Sf_Ask(&f, "Scrap", "Rand", "(ii)", -180, 180);
-		PyObject *vel = Sf_Ask(&f, "SVec", "Rotate3D", "((iii)(OOO))", 0, 28000, 0, r1, r2, r3);
-		Sf_SetAttr(&f, a, "Vel", vel);
-		a = Sf_Call(&f, Sf_Global(&f, MAP, "CreateAsteroid"), "(sO)", "Asteroids", pos);
-		Sf_SetAttr(&f, a, "Vel", Sf_Ask(&f, "SVec", "Sub", "((iii)O)", 0, 0, 0, vel));
+	if (dup) {
+		return Mode_Done(&t, 1);
 	}
-	return Sf_None(&f);
+	if (!Mode_EntityH(&a[0], e) || !Mode_VGet(e, "Pos", pos) || !LV_OWN(MAP, "CreateAsteroid", ast, "sv", "Asteroids", pos)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetEmpty(r, NV_TUPLE);
+	for (int i = 0; i < 3; i++) {
+		if (!Mode_Rand(Mode_I(&t, -180), Mode_I(&t, 180), Native_Append(r))) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	Native_SetEmpty(v, NV_TUPLE);
+	Native_SetInt(Native_Append(v), 0);
+	Native_SetInt(Native_Append(v), 28000);
+	Native_SetInt(Native_Append(v), 0);
+	byte ok = Mode_Rotate(v, r, vel) && Mode_VSet(ast, "Vel", vel) && AbMap_Split(pos, vel);
+	return Mode_Done(&t, ok);
 }
 
+LV_FN(AbMap, onTrackCreatePy, 1, AbMap_onTrackCreate)
+LV_FN(AbMap, InitStatusPy, 1, AbMap_InitStatus)
+LV_FN(AbMap, InitPy, 1, AbMap_Init)
+LV_FN(AbMap, CreateAsteroidPy, 2, AbMap_CreateAsteroid)
+LV_FN(AbMap, detrafficPy, 1, AbMap_detraffic)
+LV_FN(AbMap, OnDeathPy, 2, AbMap_OnDeath)
+LV_FN(AbMap, RealOnDeathPy, 2, AbMap_RealOnDeath)
+
 PyMethodDef g_ABMapMethods[] = {
-	{ "onTrackCreate", AbMap_onTrackCreate, 1, NULL },
-	{ "InitStatus", AbMap_InitStatus, 1, NULL },
-	{ "Init", AbMap_Init, 1, NULL },
-	{ "CreateAsteroid", AbMap_CreateAsteroid, 1, NULL },
-	{ "detraffic", AbMap_detraffic, 1, NULL },
-	{ "OnDeath", AbMap_OnDeath, 1, NULL },
-	{ "RealOnDeath", AbMap_RealOnDeath, 1, NULL },
+	{ "onTrackCreate", AbMap_onTrackCreatePy, 1, NULL },
+	{ "InitStatus", AbMap_InitStatusPy, 1, NULL },
+	{ "Init", AbMap_InitPy, 1, NULL },
+	{ "CreateAsteroid", AbMap_CreateAsteroidPy, 1, NULL },
+	{ "detraffic", AbMap_detrafficPy, 1, NULL },
+	{ "OnDeath", AbMap_OnDeathPy, 1, NULL },
+	{ "RealOnDeath", AbMap_RealOnDeathPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
