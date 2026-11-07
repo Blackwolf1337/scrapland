@@ -16,5 +16,8 @@
 /* the exec statement of the bytecode loop (dropped with it) */
 #define PyRun_File(fp, file, start, g, l) ((void)(fp), (void)(start), (void)(g), (void)(l), \
 	(PyObject *)Py_NoInterpreter(PyExc_SystemError, file))
+/* PE links keep exec_statement (the x64 unwind data), so its PyRun_String needs no definition elsewhere either */
+#define PyRun_String(s, start, g, l) ((void)(s), (void)(start), (void)(g), (void)(l), \
+	(PyObject *)Py_NoInterpreter(PyExc_SystemError, "exec"))
 
 #include "Python/ceval.c"
