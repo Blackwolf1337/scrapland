@@ -8,7 +8,24 @@
  * are the plain functions of the missions. The module variables of the missions (their counters, states, names and
  * constants) and the module code (the save variables they create, MapRace.Races) stay in the scripts; the functions
  * read and write them as their globals.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on native values (Levels.h) and call the engine in C
+ * (save variables, Scrap.Get, the alarm, the entity lists, the scorer items, the vector math, the money). The variables
+ * of the modules are read where the script reads them and written through at once; the lists of the transports, the
+ * functionaries and the taunts are changed in place on the objects of the modules (OBJLIB 5). The ships, the items,
+ * the phone cabs and the cameras are handle values, the profiles VehiclesNPC.cShipAI instances (OBJLIB 7). The engine
+ * functions the cases record or swap go through their seams (OBJLIB 7): Scrap.AddScheduledFunc, DeleteScheduledFuncs,
+ * DelSaveVars, CreateEntity, Set, SetAlarm, UsrEntity, Rand and GetAlarm, SScorer.Set, SetMsgText and SAct. By name on
+ * purpose (OBJLIB 7): SAI.SetStateVehicle (its state handlers take Python arguments), the calls the cases record with
+ * _bon (SScorer.CancelSpeech, SetSpeechCallback, AddModel, SSound.StopVoice, Scrap.IncSaveVar), the camera (Scrap.GetCam,
+ * SetCam), SAI.GetOD, SetInertia and SetRotStaticObj, SLogic.IsEnemyActive and GetNearestShip, Scrap.GetFarestParked,
+ * CreateEntityList, SInput.GetDefinedEntry and the call function of the inferno fire (Scrap.SetCallFunc, AddParams,
+ * Execute: static in ScrapPy.c). Speech, MissionsFuncs, SaveGame, RaceMaker, RacerScorer, VehiclesNPC, Vehicles,
+ * PhoneCab, Parking, Elevator, Metro, Traffic, Items, Scene, Menu, Scorer, string and the functions of the modules go
+ * by name (OBJLIB 3); the keyword calls (RaceMaker.InitRace, Speech.AutoAddNI with HeadName) stay Python calls.
  */
+#include <limits.h>
+
 #include "Levels.h"
 
 #define FC "Mission_FirstContactPress"
@@ -23,101 +40,93 @@
 #define PM "Mission_ProtectMayorTransport"
 #define SM "Mission_StealMayorShip"
 
-#define ENT(n) Sf_Ask(&f, "Scrap", "GetEntity", "(s)", n)
-#define USR() Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0)
-#define SAVE(n) Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", n)
-#define G(m, n) Sf_Global(&f, m, n)
-#define NOARGS Sf_Build(&f, "()")
+/* ---- native lines of the level (Levels.h) ---- */
 
-/* the parameter of InitStatus(LevelPath) and Init(LevelPath) */
-#define PATH_ARGS() \
-	PyObject *path; \
-	SF_ARGS("O", &path); \
-	(void)path
+/* a value of the function's modeVals_t t (None) */
+#define TV() Mode_V(&t)
 
-/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, Speech.AddRemoteCom, args[, name]) */
-static byte Dt_LaterCom(scriptFrame_t *f, PyObject *delay, PyObject *args, const char *name) {
-	int mark = f->n;
-	PyObject *t = Sf_Op(f, Sf_Time(f), '+', delay);
-	Sf_Schedule(f, t, Sf_Mod(f, "Speech", "AddRemoteCom"), args, name);
-	Sf_Release(f, mark);
-	return !f->failed;
+/* the same with Speech.AddRemoteCom, and with a float delay */
+/* Rusty's remote com key 10 s later, then Scorer.ShowMissionScorer(0, 2) */
+static byte Dt_RustyLater(const char *key) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *args = TV(), *rusty = TV(), *show = TV(), *pair = TV();
+	LvN_Str(args, key);
+	LvN_Str(rusty, "Rusty");
+	Native_SetEmpty(pair, NV_TUPLE);
+	Native_SetInt(Native_Append(pair), 0);
+	Native_SetInt(Native_Append(pair), 2);
+	byte ok = Mode_Import("Scorer") && LvN_ModGet("Scorer", "ShowMissionScorer", show) && Mode_LaterComF(10.0, args, 4);
+	return Mode_Done(&t, ok);
 }
 
-/* the timer of a mission scorer counting TimeSpecialUse, with the function of its end (visible: Visible 1) */
-static byte Dt_Timer(scriptFrame_t *f, PyObject *id, const char *item, PyObject *x, PyObject *y, const char *expired, int visible) {
-	int mark = f->n;
-	Sf_Run(f, "SScorer", "Add", "(Oss)", id, item, "Timer");
-	Sf_Run(f, "SScorer", "Set", "(OssO)", id, item, "X", x);
-	Sf_Run(f, "SScorer", "Set", "(OssO)", id, item, "Y", y);
-	Sf_Run(f, "SScorer", "Set", "(Osss)", id, item, "Align", "Left");
-	Sf_Run(f, "SScorer", "Set", "(Osss)", id, item, "TimerType", "TimeSpecialUse");
-	Sf_Run(f, "SScorer", "Set", "(Osss)", id, item, "OnTimeExpired", expired);
-	Lv_Colour(f, id, item);
-	if (visible) {
-		Sf_Run(f, "SScorer", "Set", "(Ossi)", id, item, "Visible", 1);
+/*
+ * UsePhoneCab of a mission (UsrName, CharName, optId, FullOption in a): the audio com of the phone cab into the global
+ * pc of module, the police warning police of who while the alarm is on, else the NI talk key of who with the end
+ * function end of module (reset: the cab's use back to the default first)
+ */
+static byte Dt_UsePhone(const nativeVal_t *a, const char *module, const char *police, const char *who, const char *key, const char *end,
+	byte reset) {
+	nativeVal_t pc = { 0 };
+	Native_SetNone(&pc);
+	int alarm = Mode_PhoneUse(module, a);
+	byte ok = alarm >= 0;
+	if (alarm > 0) {
+		ok = Mode_G(module, "pc", &pc) && LV_CALL("Speech", "StartObjSpch", NULL, "vss", &pc, police, who);
+	} else if (alarm == 0) {
+		ok = (!reset || (Mode_G(module, "pc", &pc) && LvN_SetS(&pc, "UseFunc", "PhoneCab.DefUseAudioCom"))) && Mode_Read(module, "pc", &pc) &&
+			LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &pc, 0L) && LvN_OnEnd(module, end, NULL) && Mode_NISpeech(who, key);
 	}
-	Sf_Release(f, mark);
-	return !f->failed;
-}
-
-/* `e and e.Active` */
-static int Dt_Active(scriptFrame_t *f, PyObject *e) {
-	int t = Sf_True(f, e);
-	return t > 0 ? Sf_True(f, Sf_Attr(f, e, "Active")) : t;
+	Native_Free(&pc);
+	return ok;
 }
 
 /* ---- Map ---- */
 
 /* InitStatus(LevelPath): outdoors by the engine; the elevator by the map the player comes from, the metro; the
  * traffic by who controls the robots */
-static PyObject *DownTown_InitStatus(PyObject *self, PyObject *args) {
+static byte DownTown_InitStatus(void) {
 	static const char *const mods[] = { "Init", "Chars", "Elevator", "Traffic", "OutPolice", "string", "SAI", NULL };
-	PATH_ARGS();
-	for (int i = 0; mods[i]; i++) {
-		Sf_Import(&f, mods[i]);
+	modeVals_t t = { .n = 0 };
+	byte ok = 1;
+	for (int i = 0; ok && mods[i]; i++) {
+		ok = Mode_Import(mods[i]);
 	}
-	Sf_SetMod(&f, "Init", "Outdoor", Sf_Int(&f, 0));
-	Sf_Ask(&f, "SAI", "GetOD", "()");
-	Sf_SetMod(&f, "Init", "Outdoor", Sf_Ask(&f, "SAI", "GetOD", "()"));
-	Sf_Except(&f);
-	PyObject *pm = Sf_Ask(&f, "string", "upper", "(O)", Sf_Slice(&f, SAVE("PrevMap"), 7, 0x7fffffff));
-	int press = Sf_EqS(&f, pm, "PRESS");
-	if (press > 0) {
-		Sf_Run(&f, "Elevator", "SetDef", "(ss)", "Elevator", "DM_Door_Elevator_Press");
-	} else if (press == 0) {
-		Sf_Run(&f, "Elevator", "SetDef", "(ss)", "Elevator", "DM_Door_Elevator_TownHall");
+	if (!ok || !LvN_ModSetI("Init", "Outdoor", 0)) {
+		return 0;
 	}
-	Sf_Run(&f, "Elevator", "SetDef", "(ss)", "Metro", "DM_Door_MetroExt_Downtown");
-	Sf_Run(&f, "Elevator", "SetDef", "(ss)", "MetroExt", "DM_Door_MetroExt_Downtown");
-	int boss = Sf_EqS(&f, SAVE("RobotsControlledByBoss"), "1");
-	if (boss > 0) {
-		Lv_BossTraffic(&f, 1);
-	} else if (boss == 0) {
-		Sf_Run(&f, "Scrap", "Set", "(si)", "iTrafficNumber", 14);
-		Sf_Run(&f, "Scrap", "Set", "(si)", "MaxChasingShips", -1);
-		Sf_SetMod(&f, "Traffic", "AcHeavyShips", Sf_Build(&f, "[]"));
-		Sf_SetMod(&f, "Traffic", "NumNormal", Sf_Int(&f, 80));
-		Sf_SetMod(&f, "Traffic", "NumMedium", Sf_Int(&f, 20));
-		Sf_SetMod(&f, "Traffic", "NumHeavy", Sf_Int(&f, 0));
+	nativeVal_t *od = TV(), *prev = TV(), *tail = TV(), *pm = TV();
+	if (!LV_CALL("SAI", "GetOD", NULL, "") || !LV_CALL("SAI", "GetOD", od, "") || !Mode_SetModVar("Init", "Outdoor", od)) {
+		/* except: pass (OBJLIB 7: the error is the Python exception until errors are a C state) */
+		PyErr_Clear();
 	}
-	return Sf_None(&f);
+	Mode_SaveVar("PrevMap", prev);
+	ok = Native_Slice(prev, 7, INT_MAX, tail) && Native_Upper(tail, pm) &&
+		LV_CALL("Elevator", "SetDef", NULL, "ss", "Elevator", LvN_EqS(pm, "PRESS") ? "DM_Door_Elevator_Press" : "DM_Door_Elevator_TownHall") &&
+		LV_CALL("Elevator", "SetDef", NULL, "ss", "Metro", "DM_Door_MetroExt_Downtown") &&
+		LV_CALL("Elevator", "SetDef", NULL, "ss", "MetroExt", "DM_Door_MetroExt_Downtown");
+	if (ok && LvN_SaveIs("RobotsControlledByBoss", "1")) {
+		ok = Mode_BossTraffic(1);
+	} else if (ok) {
+		ok = Mode_GVarSetI("iTrafficNumber", 14) && Mode_GVarSetI("MaxChasingShips", -1) && Mode_ModEmpty("Traffic", "AcHeavyShips") &&
+			LvN_ModSetI("Traffic", "NumNormal", 80) && LvN_ModSetI("Traffic", "NumMedium", 20) && LvN_ModSetI("Traffic", "NumHeavy", 0);
+	}
+	return Mode_Done(&t, ok);
 }
 
 /* Init(LevelPath): the elevators to the townhall and the press, the metro */
-static PyObject *DownTown_Init(PyObject *self, PyObject *args) {
-	PATH_ARGS();
-	Sf_Import(&f, "Elevator");
-	Sf_Import(&f, "Metro");
-	Sf_Run(&f, "Elevator", "ConnectElevators", "([s][s])", "DM_Door_Elevator_TownHall", "TownHall");
-	Sf_Run(&f, "Elevator", "ConnectElevators", "([s][s])", "DM_Door_Elevator_Press", "Press");
-	Sf_Run(&f, "Metro", "SetAsMetro", "(s)", "DM_Door_MetroExt_Downtown");
-	return Sf_None(&f);
+static byte DownTown_Init(void) {
+	return Mode_Import("Elevator") && Mode_Import("Metro") && Mode_Connect("DM_Door_Elevator_TownHall", "TownHall", 0) &&
+		Mode_Connect("DM_Door_Elevator_Press", "Press", 0) && LV_CALL("Metro", "SetAsMetro", NULL, "s", "DM_Door_MetroExt_Downtown");
 }
 
+LV_CORE0(DownTown_InitStatus)
+LV_CORE0(DownTown_Init)
+LV_FN(DownTown, InitStatusPy, 1, DownTown_InitStatus_C)
+LV_FN(DownTown, InitPy, 1, DownTown_Init_C)
+
 PyMethodDef g_DownTownMapMethods[] = {
-	{ "InitStatus", DownTown_InitStatus, 1, NULL },
-	{ "Init", DownTown_Init, 1, NULL },
+	{ "InitStatus", DownTown_InitStatusPy, 1, NULL },
+	{ "Init", DownTown_InitPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
@@ -178,169 +187,166 @@ static PyObject *Press_InitStatus(PyObject *self, PyObject *args) {
 
 /* Init(LevelPath): Berto's call, then on to the press; C although the converter made it data, because the .def
  * reader keeps the quotes of the texts in the tuple of parameters ("Mission_MeetBoss" with its quotes) */
-static PyObject *Press_Init(PyObject *self, PyObject *args) {
-	PATH_ARGS();
-	Sf_Import(&f, "MissionsFuncs");
-	Sf_Import(&f, "Speech");
-	Lv_Com(&f, "Mission_FirstContactPress_RemoteMessage1", "Berto", Sf_Mod(&f, "MissionsFuncs", "SetNextMission"),
-		Sf_Build(&f, "(ss)", "Mission_MeetBoss", "Press"));
-	return Sf_None(&f);
+static byte Press_Init(void) {
+	nativeVal_t p = { 0 };
+	if (!Mode_Import("MissionsFuncs") || !Mode_Import("Speech")) {
+		return 0;
+	}
+	Native_SetEmpty(&p, NV_TUPLE);
+	LvN_Str(Native_Append(&p), "Mission_MeetBoss");
+	LvN_Str(Native_Append(&p), "Press");
+	byte ok = LvN_Com("Mission_FirstContactPress_RemoteMessage1", "Berto", "MissionsFuncs", "SetNextMission", &p);
+	Native_Free(&p);
+	return ok;
 }
+
+LV_CORE0(Press_Init)
+LV_FN(Press, InitPy, 1, Press_Init_C)
 
 PyMethodDef g_DownTownFirstContactPressMethods[] = {
 	{ "InitStatus", Press_InitStatus, 1, NULL },
-	{ "Init", Press_Init, 1, NULL },
+	{ "Init", Press_InitPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
 /* ---- Mission_BertoMassacre: the evil Bertos in waves; after the last of the bar one of them carries the matrix ---- */
 
 /* InitStatus(LevelPath): no Bertos before DeepThroat's message */
-static PyObject *Berto_InitStatus(PyObject *self, PyObject *args) {
-	PATH_ARGS();
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "CreateBertos", "0");
-	Lv_AcShips(&f, BM, "[\"SFunc1\",\"SHump1\",\"SBetty1\"]");
-	return Sf_None(&f);
+static byte Berto_InitStatus(void) {
+	return Mode_SaveS("CreateBertos", "0") && LvN_AcShips(BM, "[\"SFunc1\",\"SHump1\",\"SBetty1\"]");
 }
 
 /* StartMission(): the scorer, the waves of Bertos and their callbacks */
-static PyObject *Berto_StartMission(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "Parking");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_BertoMassacre_MissionText1", 1);
-	Lv_ScorerCall(&f, G(BM, "MissionScorer"));
-	Sf_DrawScorer(&f);
-	Sf_Run(&f, "MissionsFuncs", "CreateBertos", "()");
-	Sf_SetMod(&f, "MissionsFuncs", "OnNewWaveCallback", G(BM, "DeepThroatMessage"));
-	Sf_SetMod(&f, "MissionsFuncs", "OnBertoDeathCallback", G(BM, "CheckBertoDeath"));
-	Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallbackAux", Sf_Mod(&f, "MissionsFuncs", "ReassignBertosPlayerTarget"));
-	Sf_SetMod(&f, "Parking", "SwitchCharMissionCallbackAux", Sf_Mod(&f, "MissionsFuncs", "ReassignBertosPlayerTarget"));
-	return Sf_None(&f);
+static byte Berto_StartMission(void) {
+	return Mode_Import("Parking") && Mode_MMDesc("Mission_BertoMassacre_MissionText1", 1) && LvN_ScorerCallG(BM, "MissionScorer") &&
+		LvN_Draw() && LV_CALL("MissionsFuncs", "CreateBertos", NULL, "") &&
+		LvN_ModSetGlobal("MissionsFuncs", "OnNewWaveCallback", BM, "DeepThroatMessage") &&
+		LvN_ModSetGlobal("MissionsFuncs", "OnBertoDeathCallback", BM, "CheckBertoDeath") &&
+		Mode_ModTo("Parking", "SwitchVehicleMissionCallbackAux", "MissionsFuncs", "ReassignBertosPlayerTarget") &&
+		Mode_ModTo("Parking", "SwitchCharMissionCallbackAux", "MissionsFuncs", "ReassignBertosPlayerTarget");
 }
 
 /* DeepThroatMessage(): a new wave, the bar full again */
-static PyObject *Berto_DeepThroatMessage(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_SetGlobal(&f, BM, "initBar", Sf_Int(&f, 1));
-	Sf_DrawScorer(&f);
-	Lv_Com(&f, "Mission_BertoMassacre_RemoteMessage2", "DeepThroat", NULL, NULL);
-	return Sf_None(&f);
+static byte Berto_DeepThroatMessage(void) {
+	return LvN_PutI(BM, "initBar", 1) && LvN_Draw() && LvN_Com("Mission_BertoMassacre_RemoteMessage2", "DeepThroat", NULL, NULL, NULL);
 }
 
 /* CheckBertoDeath(LooserName, WinnerName, deathPos): the first death a message, the found Berto drops the matrix; a
  * Berto the player killed counts on the bar */
-static PyObject *Berto_CheckBertoDeath(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner, *pos;
-	SF_ARGS("OOO", &looser, &winner, &pos);
-	int first = Sf_True(&f, G(BM, "firstDeath"));
-	if (first > 0) {
-		Sf_SetGlobal(&f, BM, "firstDeath", Sf_Int(&f, 0));
-		Lv_Com(&f, "Mission_BertoMassacre_RemoteMessage1", "DeepThroat", NULL, NULL);
-	} else if (first == 0) {
-		int found = Sf_True(&f, G(BM, "bertoFound"));
-		if (found > 0) {
-			found = Sf_Compare(&f, looser, "==", G(BM, "bertoName"));
+static byte Berto_CheckBertoDeath(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *name = TV(), *usr = TV();
+	byte ok;
+	int c = LvN_GTrue(BM, "firstDeath");
+	if (c > 0) {
+		ok = LvN_PutI(BM, "firstDeath", 0) && LvN_Com("Mission_BertoMassacre_RemoteMessage1", "DeepThroat", NULL, NULL, NULL);
+	} else {
+		c = c < 0 ? -1 : LvN_GTrue(BM, "bertoFound");
+		if (c > 0) {
+			c = Mode_G(BM, "bertoName", name) ? !Native_Compare(&a[0], name) : -1;
 		}
-		if (found > 0) {
-			Sf_Own(&f, BM, "DropMatrix", "(O)", pos);
-		}
+		ok = c >= 0 && (!c || LV_OWN(BM, "DropMatrix", NULL, "v", &a[2]));
 	}
-	if (Lv_UsrNameIs(&f, USR(), winner) > 0) {
-		Sf_SetGlobal(&f, BM, "bertoDeath", Sf_Int(&f, 1));
-		Sf_DrawScorer(&f);
-	}
-	return Sf_None(&f);
+	c = ok && Mode_UsrHandle(usr) ? LvN_UsrNameIs(usr, &a[1]) : -1;
+	ok = c >= 0 && (!c || (LvN_PutI(BM, "bertoDeath", 1) && LvN_Draw()));
+	return Mode_Done(&t, ok);
 }
 
 /* OnBertoFound(): no scorer, the order to destroy that Berto */
-static PyObject *Berto_OnBertoFound(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Lv_ScorerCall(&f, Py_None);
-	Sf_DrawScorer(&f);
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_DestroyBerto_MissionText1", 1);
-	return Sf_None(&f);
+static byte Berto_OnBertoFound(void) {
+	return LvN_ScorerOff() && LvN_Draw() && Mode_MMDesc("Mission_DestroyBerto_MissionText1", 1);
 }
 
 /* DropMatrix(pos): no more waves, the matrix of D-Tritus where the Berto died */
-static PyObject *Berto_DropMatrix(PyObject *self, PyObject *args) {
-	PyObject *pos;
-	SF_ARGS("O", &pos);
-	Sf_SetMod(&f, "MissionsFuncs", "OnNewWaveCallback", Py_None);
-	Sf_SetMod(&f, "MissionsFuncs", "OnBertoDeathCallback", Py_None);
-	Lv_Drop(&f, BM, pos, "DTritusMatrix", "DTritusMatrixModel", "DTritusMatrixRadius", 1, "Mission_BertoMassacre.TakeMatrix", "TakeMatrixExt",
-		"MissionCheckArrow");
-	return Sf_None(&f);
+static byte Berto_DropMatrix(const nativeVal_t *a) {
+	return LvN_ModNone("MissionsFuncs", "OnNewWaveCallback") && LvN_ModNone("MissionsFuncs", "OnBertoDeathCallback") &&
+		Mode_Drop(BM, &a[0], "DTritusMatrix", "DTritusMatrixModel", "DTritusMatrixRadius", 1, "Mission_BertoMassacre.TakeMatrix",
+			"TakeMatrixExt", "MissionCheckArrow");
 }
 
 /* TakeMatrix(ItemName, CharName) */
-static PyObject *Berto_TakeMatrix(PyObject *self, PyObject *args) {
-	PyObject *item, *ch;
-	SF_ARGS("OO", &item, &ch);
-	Lv_Taken(&f, Sf_Str(&f, "DTritusMatrix"), Sf_Str(&f, "MissionCheckArrow"));
-	Lv_Com(&f, "Mission_DestroyBerto_RemoteMessage1", "DeepThroat", G(BM, "SetNextMission"), NULL);
-	return Sf_None(&f);
+static byte Berto_TakeMatrix(void) {
+	modeVals_t t = { .n = 0 };
+	byte ok = Mode_Taken(Mode_S(&t, "DTritusMatrix"), Mode_S(&t, "MissionCheckArrow")) &&
+		LvN_Com("Mission_DestroyBerto_RemoteMessage1", "DeepThroat", BM, "SetNextMission", NULL);
+	return Mode_Done(&t, ok);
 }
 
 /* GetBerto(): the first Berto of the wave carries the matrix (tried again every second until there is one) */
-static PyObject *Berto_GetBerto(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	int any = Sf_Compare(&f, Sf_Int(&f, Sf_Len(&f, Sf_Mod(&f, "MissionsFuncs", "currentBertos"))), ">", Sf_Int(&f, 0));
-	if (any > 0) {
-		Sf_SetGlobal(&f, BM, "bertoName", Sf_Item(&f, Sf_Mod(&f, "MissionsFuncs", "currentBertos"), 0));
-		PyObject *e = Sf_Entity(&f, G(BM, "bertoName"));
-		if (Sf_True(&f, e) > 0) {
-			Sf_SetAttrI(&f, e, "Money", -1);
-		}
-		Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", G(BM, "bertoName"));
-		Lv_Com(&f, "Mission_BertoMassacre_RemoteMessage3", "DeepThroat", G(BM, "OnBertoFound"), NULL);
-	} else if (any == 0) {
-		Sf_Later(&f, Sf_Int(&f, 1), G(BM, "GetBerto"), NOARGS, NULL);
+static byte Berto_GetBerto(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cur = TV(), *name = TV(), *e = TV();
+	int n = LvN_ModGet("MissionsFuncs", "currentBertos", cur) ? Native_Size(cur) : -1;
+	byte ok = n >= 0;
+	if (n > 0) {
+		Native_Free(cur);
+		ok = LvN_ModGet("MissionsFuncs", "currentBertos", cur) && LvN_Item(cur, 0, name) && Mode_Put(BM, "bertoName", NULL, name) &&
+			Mode_Read(BM, "bertoName", name) && Mode_EntityH(name, e) && (!Native_True(e) || LvN_SetI(e, "Money", -1)) &&
+			Mode_Read(BM, "bertoName", name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name) &&
+			LvN_Com("Mission_BertoMassacre_RemoteMessage3", "DeepThroat", BM, "OnBertoFound", NULL);
+	} else if (n == 0) {
+		ok = Mode_Later(1, BM, "GetBerto", NULL, 0, NULL);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
 /* MissionScorer(id): the bar of the Bertos left before the one with the matrix */
-static PyObject *Berto_MissionScorer(PyObject *self, PyObject *args) {
-	PyObject *id;
-	SF_ARGS("O", &id);
-	Sf_Import(&f, "Scorer");
-	Lv_Text(&f, id, "MassacreText", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_BertoMassacre_Scorer1"), Sf_Int(&f, 1));
-	const char *bar = "MassacreScorer";
-	Sf_Run(&f, "SScorer", "Add", "(Oss)", id, bar, "Bar");
-	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "MaxValue", G(BM, "MaxBarValue"));
-	Sf_Run(&f, "SScorer", "Set", "(Ossi)", id, bar, "IsAutoUpdatable", 0);
-	Sf_Run(&f, "SScorer", "Set", "(Ossi)", id, bar, "Visible", 1);
-	if (Sf_True(&f, G(BM, "initBar")) > 0) {
-		Sf_SetGlobal(&f, BM, "initBar", Sf_Int(&f, 0));
-		Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "Value", G(BM, "MaxBarValue"));
-	}
-	if (Sf_True(&f, G(BM, "bertoFound")) == 0 && Sf_True(&f, G(BM, "bertoDeath")) > 0) {
-		Sf_SetGlobal(&f, BM, "bertoDeath", Sf_Int(&f, 0));
-		PyObject *v = Sf_OpI(&f, Sf_Ask(&f, "SScorer", "Get", "(Oss)", id, bar, "Value"), '-', 1);
-		if (Sf_Compare(&f, v, "<=", Sf_Int(&f, 0)) > 0) {
-			v = Sf_Int(&f, 0);
-			Sf_SetGlobal(&f, BM, "bertoFound", Sf_Int(&f, 1));
-			Sf_SetMod(&f, "MissionsFuncs", "OnNewWaveCallback", Py_None);
-			Lv_ScorerCall(&f, Py_None);
-			Sf_DrawScorer(&f);
-			Sf_Own(&f, BM, "GetBerto", "()");
+static byte Berto_MissionScorer(const nativeVal_t *id) {
+	static const char bar[] = "MassacreScorer";
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *max = TV(), *v = TV(), *nv = TV();
+	byte ok = Mode_Import("Scorer") && Mode_LvLabel(id, "MassacreText", 0, "Mission_BertoMassacre_Scorer1", 1) && Mode_ScorerAddS(id, bar, "Bar") &&
+		Mode_G(BM, "MaxBarValue", max) && LvN_ScorerSet(id, bar, "MaxValue", max) && Mode_ScorerSetI(id, bar, "IsAutoUpdatable", 0) &&
+		Mode_ScorerSetI(id, bar, "Visible", 1);
+	int c = ok ? LvN_GTrue(BM, "initBar") : -1;
+	ok = c >= 0 && (!c || (LvN_PutI(BM, "initBar", 0) && Mode_Read(BM, "MaxBarValue", max) && LvN_ScorerSet(id, bar, "Value", max)));
+	c = ok ? LvN_GTrue(BM, "bertoFound") : -1;
+	if (c == 0) {
+		c = LvN_GTrue(BM, "bertoDeath");
+		if (c > 0) {
+			ok = LvN_PutI(BM, "bertoDeath", 0) && Mode_ScorerGetV(id, bar, "Value", v) && Native_Arith('-', v, Mode_I(&t, 1), nv);
+			if (ok && Native_Compare(nv, Mode_I(&t, 0)) <= 0) {
+				Native_Free(nv);
+				Native_SetInt(nv, 0);
+				ok = LvN_PutI(BM, "bertoFound", 1) && LvN_ModNone("MissionsFuncs", "OnNewWaveCallback") && LvN_ScorerOff() && LvN_Draw() &&
+					LV_OWN(BM, "GetBerto", NULL, "");
+			}
+			ok = ok && LvN_ScorerSet(id, bar, "Value", nv);
 		}
-		Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "Value", v);
 	}
-	Lv_BarDefaults(&f, id, bar, NULL, NULL);
-	return Sf_None(&f);
+	ok = ok && c >= 0 && Mode_BarDefaults(id, bar, NULL, NULL);
+	return Mode_Done(&t, ok);
 }
 
+LV_CORE0(Berto_InitStatus)
+LV_CORE0(Berto_StartMission)
+LV_CORE0(Berto_DeepThroatMessage)
+LV_COREA(Berto_CheckBertoDeath)
+LV_CORE0(Berto_OnBertoFound)
+LV_COREA(Berto_DropMatrix)
+LV_CORE0(Berto_TakeMatrix)
+LV_CORE0(Berto_GetBerto)
+LV_COREA(Berto_MissionScorer)
+LV_FN(Berto, InitStatusPy, 1, Berto_InitStatus_C)
+LV_FN(Berto, StartMissionPy, 0, Berto_StartMission_C)
+LV_FN(Berto, DeepThroatMessagePy, 0, Berto_DeepThroatMessage_C)
+LV_FN(Berto, CheckBertoDeathPy, 3, Berto_CheckBertoDeath_C)
+LV_FN(Berto, OnBertoFoundPy, 0, Berto_OnBertoFound_C)
+LV_FN(Berto, DropMatrixPy, 1, Berto_DropMatrix_C)
+LV_FN(Berto, TakeMatrixPy, 2, Berto_TakeMatrix_C)
+LV_FN(Berto, GetBertoPy, 0, Berto_GetBerto_C)
+LV_FN(Berto, MissionScorerPy, 1, Berto_MissionScorer_C)
+
 PyMethodDef g_DownTownBertoMassacreMethods[] = {
-	{ "InitStatus", Berto_InitStatus, 1, NULL },
-	{ "StartMission", Berto_StartMission, 1, NULL },
-	{ "DeepThroatMessage", Berto_DeepThroatMessage, 1, NULL },
-	{ "CheckBertoDeath", Berto_CheckBertoDeath, 1, NULL },
-	{ "OnBertoFound", Berto_OnBertoFound, 1, NULL },
-	{ "DropMatrix", Berto_DropMatrix, 1, NULL },
-	{ "TakeMatrix", Berto_TakeMatrix, 1, NULL },
-	{ "GetBerto", Berto_GetBerto, 1, NULL },
-	{ "MissionScorer", Berto_MissionScorer, 1, NULL },
+	{ "InitStatus", Berto_InitStatusPy, 1, NULL },
+	{ "StartMission", Berto_StartMissionPy, 1, NULL },
+	{ "DeepThroatMessage", Berto_DeepThroatMessagePy, 1, NULL },
+	{ "CheckBertoDeath", Berto_CheckBertoDeathPy, 1, NULL },
+	{ "OnBertoFound", Berto_OnBertoFoundPy, 1, NULL },
+	{ "DropMatrix", Berto_DropMatrixPy, 1, NULL },
+	{ "TakeMatrix", Berto_TakeMatrixPy, 1, NULL },
+	{ "GetBerto", Berto_GetBertoPy, 1, NULL },
+	{ "MissionScorer", Berto_MissionScorerPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
@@ -363,93 +369,122 @@ static PyObject *Gambler_InitStatus(PyObject *self, PyObject *args) {
 	return Lv_AcShipsStatus(args, CG, "[\"SFunc1\",\"SBerto1\",\"SBetty1\"]");
 }
 
+/* int(Scrap.GetSaveVar("NumCrazyGamblerLifes")) into out */
+static byte Gambler_Lifes(nativeVal_t *out) {
+	nativeVal_t s = { 0 };
+	Mode_SaveVar("NumCrazyGamblerLifes", &s);
+	Native_SetNone(out);
+	byte ok = Native_ToInt(&s, out);
+	Native_Free(&s);
+	return ok;
+}
+
+/* lifes == CrazyGamblerLifesNextMission: 1, 0, -1 */
+static int Gambler_Last(const nativeVal_t *lifes) {
+	nativeVal_t n = { 0 };
+	int r = Mode_G(CG, "CrazyGamblerLifesNextMission", &n) ? !Native_Compare(lifes, &n) : -1;
+	Native_Free(&n);
+	return r;
+}
+
 /* Init(LevelPath): the gambler and his taunts, or the next mission when he has lost enough lives */
-static PyObject *Gambler_Init(PyObject *self, PyObject *args) {
-	PATH_ARGS();
-	int done = Sf_Compare(&f, Sf_ToInt(&f, SAVE("NumCrazyGamblerLifes")), "==", G(CG, "CrazyGamblerLifesNextMission"));
+static byte Gambler_Init(void) {
+	nativeVal_t lifes = { 0 };
+	int done = Gambler_Lifes(&lifes) ? Gambler_Last(&lifes) : -1;
+	Native_Free(&lifes);
 	if (done > 0) {
-		Sf_Own(&f, CG, "PreSetNextMission", "()");
-	} else if (done == 0) {
-		Sf_Run(&f, "SScorer", "AddModel", "(isssii)", 0, "EvilGambler", "Models/Heads/HeadEvilGambler/HeadEvilGambler", "", 4, 20);
-		Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "Enemies", "OnDeath", "Mission_DefeatCrazyGambler1.OnCrazyGamblerDeath");
-		Sf_Own(&f, CG, "CreateCrazyGambler", "()");
-		Sf_Later(&f, Sf_Int(&f, 3), G(CG, "LaunchTaunts"), NOARGS, NULL);
-		Lv_ScorerCall(&f, G(CG, "MissionScorer"));
-		Sf_DrawScorer(&f);
+		return LV_OWN(CG, "PreSetNextMission", NULL, "");
 	}
-	return Sf_None(&f);
+	return done == 0 &&
+		LV_CALL("SScorer", "AddModel", NULL, "isssii", 0L, "EvilGambler", "Models/Heads/HeadEvilGambler/HeadEvilGambler", "", 4L, 20L) &&
+		Mode_ListSet("Enemies", "OnDeath", "Mission_DefeatCrazyGambler1.OnCrazyGamblerDeath") && LV_OWN(CG, "CreateCrazyGambler", NULL, "") &&
+		Mode_Later(3, CG, "LaunchTaunts", NULL, 0, NULL) && LvN_ScorerCallG(CG, "MissionScorer") && LvN_Draw();
 }
 
 /* LaunchTaunts(): a taunt of the five while the gambler lives, every 12 s */
-static PyObject *Gambler_LaunchTaunts(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *e = Sf_Entity(&f, G(CG, "crazyGamblerName"));
-	if (Sf_True(&f, e) > 0) {
-		PyObject *key = Sf_Cat(&f, "sO", "Mission_DefeatCrazyGambler1_RemoteMessage", Sf_Repr(&f, Sf_Op(&f, Sf_Int(&f, 2), '+', G(CG, "numTaunt"))));
-		Sf_Run(&f, "Speech", "RemoteComunication", "(Os)", key, "EvilGambler");
-		Sf_SetGlobal(&f, CG, "numTaunt", Sf_OpI(&f, Sf_OpI(&f, G(CG, "numTaunt"), '+', 1), '%', 5));
+static byte Gambler_LaunchTaunts(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *name = TV(), *e = TV(), *n = TV(), *s = TV(), *rep = TV(), *key = TV(), *n1 = TV();
+	byte ok = Mode_G(CG, "crazyGamblerName", name) && Mode_EntityH(name, e);
+	if (ok && Native_True(e)) {
+		ok = Mode_G(CG, "numTaunt", n) && Native_Arith('+', Mode_I(&t, 2), n, s);
+		if (ok) {
+			Mode_Repr(s, rep);
+		}
+		ok = ok && Native_Arith('+', Mode_S(&t, "Mission_DefeatCrazyGambler1_RemoteMessage"), rep, key) &&
+			LV_CALL("Speech", "RemoteComunication", NULL, "vs", key, "EvilGambler") && Mode_Read(CG, "numTaunt", n) &&
+			Native_Arith('+', n, Mode_I(&t, 1), n1) && Mode_Arith('%', n1, Mode_I(&t, 5), s) && Mode_Put(CG, "numTaunt", NULL, s);
 	}
-	Sf_Later(&f, Sf_Int(&f, 12), G(CG, "LaunchTaunts"), NOARGS, NULL);
-	return Sf_None(&f);
+	ok = ok && Mode_Later(12, CG, "LaunchTaunts", NULL, 0, NULL);
+	return Mode_Done(&t, ok);
 }
 
 /* CreateCrazyGambler(): the gambler at a free spawn point, the target of the mission */
-static PyObject *Gambler_CreateCrazyGambler(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "VehiclesNPC");
-	Sf_Import(&f, "OutMap");
-	PyObject *h = Lv_SpawnCar(&f, "CrazyGambler", 0);
-	Lv_StdProfile(&f, CG, "GetCrazyGamblerProfile", h);
-	Sf_SetAttrI(&f, h, "LaunchTaunts", 0);
-	Sf_SetAttr(&f, h, "MPil0", G(CG, "pilotName"));
-	Sf_SetAttrS(&f, h, "TgType", "red");
-	Sf_SetAttrS(&f, h, "EntityList", "Enemies");
-	PyObject *life = G(CG, "CRAZY_GAMBLER_LIFE");
-	Sf_SetAttr(&f, h, "Life", life);
-	Sf_SetAttr(&f, h, "MaxLife", life);
-	Sf_SetGlobal(&f, CG, "crazyGamblerName", Sf_Attr(&f, h, "Name"));
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", G(CG, "crazyGamblerName"));
-	return Sf_None(&f);
+static byte Gambler_CreateCrazyGambler(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *h = TV(), *pd = TV(), *pilot = TV(), *name = TV();
+	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_SpawnCar("CrazyGambler", 0, h, NULL) &&
+		LvN_StdProfile(CG, "GetCrazyGamblerProfile", h, pd) && LvN_SetI(h, "LaunchTaunts", 0) && Mode_G(CG, "pilotName", pilot) &&
+		Mode_VSet(h, "MPil0", pilot) && LvN_SetS(h, "TgType", "red") && LvN_SetS(h, "EntityList", "Enemies") &&
+		LvN_Life(h, CG, "CRAZY_GAMBLER_LIFE") && Mode_VGet(h, "Name", name) && Mode_Put(CG, "crazyGamblerName", NULL, name) &&
+		Mode_Read(CG, "crazyGamblerName", name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name);
+	return Mode_Done(&t, ok);
 }
 
 /* OnCrazyGamblerDeath(LooserName, WinnerName): a life fewer; he comes back or the mission ends */
-static PyObject *Gambler_OnCrazyGamblerDeath(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	SF_ARGS("OO", &looser, &winner);
-	Sf_Import(&f, "Vehicles");
-	Sf_Run(&f, "SScorer", "CancelSpeech", "()");
-	Sf_Run(&f, "Vehicles", "OnDeath", "(OO)", looser, winner);
-	PyObject *lifes = Sf_OpI(&f, Sf_ToInt(&f, SAVE("NumCrazyGamblerLifes")), '-', 1);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "NumCrazyGamblerLifes", Sf_Repr(&f, lifes));
-	int done = Sf_Compare(&f, lifes, "==", G(CG, "CrazyGamblerLifesNextMission"));
-	if (done > 0) {
-		Lv_ScorerCall(&f, Py_None);
-		Sf_Later(&f, Sf_Int(&f, 7), G(CG, "PreSetNextMission"), NOARGS, NULL);
-	} else if (done == 0) {
-		Sf_Later(&f, Sf_Int(&f, 3), G(CG, "CreateCrazyGambler"), NOARGS, NULL);
+static byte Gambler_OnCrazyGamblerDeath(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *lifes = TV(), *left = TV(), *rep = TV();
+	byte ok = Mode_Import("Vehicles") && LV_CALL("SScorer", "CancelSpeech", NULL, "") && LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1]) &&
+		Gambler_Lifes(lifes) && Native_Arith('-', lifes, Mode_I(&t, 1), left);
+	if (ok) {
+		Mode_Repr(left, rep);
+		ok = Mode_SetSaveVar("NumCrazyGamblerLifes", rep);
 	}
-	Sf_DrawScorer(&f);
-	return Sf_None(&f);
+	int done = ok ? Gambler_Last(left) : -1;
+	if (done > 0) {
+		ok = LvN_ScorerOff() && Mode_Later(7, CG, "PreSetNextMission", NULL, 0, NULL);
+	} else if (done == 0) {
+		ok = Mode_Later(3, CG, "CreateCrazyGambler", NULL, 0, NULL);
+	}
+	ok = ok && done >= 0 && LvN_Draw();
+	return Mode_Done(&t, ok);
 }
 
 /* MissionScorer(id): the lives left */
-static PyObject *Gambler_MissionScorer(PyObject *self, PyObject *args) {
-	PyObject *id;
-	SF_ARGS("O", &id);
-	Sf_Import(&f, "Scorer");
-	Lv_Text(&f, id, "RemainingLifesText", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_DefeatCrazyGambler1_Scorer1"), NULL);
-	Lv_Text(&f, id, "RemainingLifes", Lv_TextY(&f, 20), SAVE("NumCrazyGamblerLifes"), NULL);
-	return Sf_None(&f);
+static byte Gambler_MissionScorer(const nativeVal_t *id) {
+	nativeVal_t y = { 0 }, n = { 0 };
+	Native_SetNone(&y);
+	Native_SetNone(&n);
+	byte ok = Mode_Import("Scorer") && Mode_LvLabel(id, "RemainingLifesText", 0, "Mission_DefeatCrazyGambler1_Scorer1", 0) && LvN_TextY(20, &y);
+	if (ok) {
+		Mode_SaveVar("NumCrazyGamblerLifes", &n);
+		ok = Mode_LvText(id, "RemainingLifes", &y, &n, NULL);
+	}
+	Native_Free(&y);
+	Native_Free(&n);
+	return ok;
 }
+
+LV_CORE0(Gambler_Init)
+LV_CORE0(Gambler_LaunchTaunts)
+LV_CORE0(Gambler_CreateCrazyGambler)
+LV_COREA(Gambler_OnCrazyGamblerDeath)
+LV_COREA(Gambler_MissionScorer)
+LV_FN(Gambler, InitPy, 1, Gambler_Init_C)
+LV_FN(Gambler, LaunchTauntsPy, 0, Gambler_LaunchTaunts_C)
+LV_FN(Gambler, CreateCrazyGamblerPy, 0, Gambler_CreateCrazyGambler_C)
+LV_FN(Gambler, OnCrazyGamblerDeathPy, 2, Gambler_OnCrazyGamblerDeath_C)
+LV_FN(Gambler, MissionScorerPy, 1, Gambler_MissionScorer_C)
 
 PyMethodDef g_DownTownDefeatCrazyGambler1Methods[] = {
 	{ "GetCrazyGamblerProfile", Gambler_GetCrazyGamblerProfile, 1, NULL },
 	{ "InitStatus", Gambler_InitStatus, 1, NULL },
-	{ "Init", Gambler_Init, 1, NULL },
-	{ "LaunchTaunts", Gambler_LaunchTaunts, 1, NULL },
-	{ "CreateCrazyGambler", Gambler_CreateCrazyGambler, 1, NULL },
-	{ "OnCrazyGamblerDeath", Gambler_OnCrazyGamblerDeath, 1, NULL },
-	{ "MissionScorer", Gambler_MissionScorer, 1, NULL },
+	{ "Init", Gambler_InitPy, 1, NULL },
+	{ "LaunchTaunts", Gambler_LaunchTauntsPy, 1, NULL },
+	{ "CreateCrazyGambler", Gambler_CreateCrazyGamblerPy, 1, NULL },
+	{ "OnCrazyGamblerDeath", Gambler_OnCrazyGamblerDeathPy, 1, NULL },
+	{ "MissionScorer", Gambler_MissionScorerPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
@@ -475,144 +510,144 @@ static PyObject *Mayor_InitStatus(PyObject *self, PyObject *args) {
 
 /* Init(LevelPath): the mayor is not at the townhall; DeepThroat's warning and the mayor's taunt once the player is in
  * a ship, or the phone cab after the fight */
-static PyObject *Mayor_Init(PyObject *self, PyObject *args) {
-	PATH_ARGS();
-	Sf_Import(&f, "Speech");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "MayorAtTownHall", "0");
-	int begin = Sf_EqS(&f, SAVE("CrazyMayor"), "Begin");
-	if (begin > 0) {
-		Sf_Import(&f, "Parking");
-		Dt_LaterCom(&f, Sf_Float(&f, 1.5), Sf_Build(&f, "(ss)", "Mission_FaceTheMayor_RemoteMessage1", "DeepThroat"), NULL);
-		Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", G(FM, "PreLaunchTaunt"));
-	} else if (begin == 0) {
-		Sf_Own(&f, FM, "SetPhoneCab", "()");
+static byte Mayor_Init(void) {
+	modeVals_t t = { .n = 0 };
+	if (!Mode_Import("Speech") || !Mode_SaveS("MayorAtTownHall", "0")) {
+		return 0;
 	}
-	return Sf_None(&f);
+	byte ok;
+	if (LvN_SaveIs("CrazyMayor", "Begin")) {
+		nativeVal_t *args = TV();
+		LvN_Str(args, "Mission_FaceTheMayor_RemoteMessage1");
+		LvN_Str(TV(), "DeepThroat");
+		ok = Mode_Import("Parking") && Mode_LaterComF(1.5, args, 2) &&
+			LvN_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", FM, "PreLaunchTaunt");
+	} else {
+		ok = LV_OWN(FM, "SetPhoneCab", NULL, "");
+	}
+	return Mode_Done(&t, ok);
 }
 
-static PyObject *Mayor_PreLaunchTaunt(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Later(&f, Sf_Float(&f, 3.0), G(FM, "LaunchMayorInitialTaunt"), NOARGS, NULL);
-	return Sf_None(&f);
+static byte Mayor_PreLaunchTaunt(void) {
+	return Mode_Later(3.0, FM, "LaunchMayorInitialTaunt", NULL, 0, NULL);
 }
 
 /* LaunchMayorInitialTaunt(): the taunt when the player is in a ship, else a second later */
-static PyObject *Mayor_LaunchMayorInitialTaunt(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *usr = USR();
-	int car = Sf_True(&f, usr);
+static byte Mayor_LaunchMayorInitialTaunt(void) {
+	nativeVal_t usr = { 0 };
+	Native_SetNone(&usr);
+	int car = Mode_UsrHandle(&usr) ? (Native_True(&usr) ? Mode_VIsType(&usr, "Car") : 0) : -1;
+	Native_Free(&usr);
 	if (car > 0) {
-		car = Sf_True(&f, Sf_Method(&f, usr, "IsType", "(s)", "Car"));
+		return Mode_Import("Parking") && LvN_Com("Mission_FaceTheMayor_RemoteMessage2", "Mayor", FM, "CreateCrazyMayor", LvN_NoArgs()) &&
+			LvN_ModNone("Parking", "SwitchVehicleMissionCallback");
 	}
-	if (car > 0) {
-		Sf_Import(&f, "Parking");
-		Lv_Com(&f, "Mission_FaceTheMayor_RemoteMessage2", "Mayor", G(FM, "CreateCrazyMayor"), NOARGS);
-		Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Py_None);
-	} else if (car == 0) {
-		Sf_Later(&f, Sf_Float(&f, 1.0), G(FM, "LaunchMayorInitialTaunt"), NOARGS, NULL);
-	}
-	return Sf_None(&f);
+	return car == 0 && Mode_Later(1.0, FM, "LaunchMayorInitialTaunt", NULL, 0, NULL);
 }
 
 /* CreateCrazyMayor(): the mayor's ship instead of one of the traffic, an enemy and the target */
-static PyObject *Mayor_CreateCrazyMayor(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "MissionsFuncs");
-	Sf_Import(&f, "VehiclesNPC");
-	Sf_Import(&f, "OutMap");
-	Sf_Run(&f, "Scrap", "Set", "(sO)", "iTrafficNumber", Sf_OpI(&f, Sf_Ask(&f, "Scrap", "Get", "(s)", "iTrafficNumber"), '-', 1));
-	Sf_SetGlobal(&f, FM, "SMayor1", Lv_SpawnCar(&f, "NormalTraffic", 0));
-	PyObject *pd = Sf_Own(&f, FM, "GetMayorProfile", "()");
-	Sf_Run(&f, "VehiclesNPC", "SetStdProperties", "(OO)", Sf_Attr(&f, G(FM, "SMayor1"), "Name"), Sf_Attr(&f, pd, "Ship"));
-	Sf_Run(&f, "VehiclesNPC", "ModAIProff", "(OO)", G(FM, "SMayor1"), pd);
-	Sf_SetAttrS(&f, G(FM, "SMayor1"), "WeapList", "2,2,2,2,2,0,1");
-	Sf_SetAttrS(&f, G(FM, "SMayor1"), "EntityList", "Enemies");
-	Sf_SetAttrS(&f, G(FM, "SMayor1"), "OnDeath", "Mission_FaceTheMayor.MayorOnDeath");
-	PyObject *life = G(FM, "MAYOR_LIFE");
-	Sf_SetAttr(&f, G(FM, "SMayor1"), "Life", life);
-	Sf_SetAttr(&f, G(FM, "SMayor1"), "MaxLife", life);
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, G(FM, "SMayor1"), "Name"));
-	return Sf_None(&f);
+static byte Mayor_CreateCrazyMayor(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *n = TV(), *n1 = TV(), *h = TV(), *pd = TV(), *m = TV(), *name = TV();
+	byte ok = Mode_Import("MissionsFuncs") && Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Native_GVarGet("iTrafficNumber", n) &&
+		Native_Arith('-', n, Mode_I(&t, 1), n1) && Mode_GVarSet("iTrafficNumber", n1) && Mode_SpawnCar("NormalTraffic", 0, h, NULL) &&
+		Mode_Put(FM, "SMayor1", NULL, h) && LV_OWN(FM, "GetMayorProfile", pd, "") && Mode_G(FM, "SMayor1", m) && LvN_StdAI(m, pd) &&
+		LvN_SetS(m, "WeapList", "2,2,2,2,2,0,1") && LvN_SetS(m, "EntityList", "Enemies") &&
+		LvN_SetS(m, "OnDeath", "Mission_FaceTheMayor.MayorOnDeath") && LvN_Life(m, FM, "MAYOR_LIFE") && Mode_VGet(m, "Name", name) &&
+		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name);
+	return Mode_Done(&t, ok);
 }
 
 /* MayorOnDeath(Looser, Winner): the alarm, the mayor killed, the phone cab */
-static PyObject *Mayor_MayorOnDeath(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	SF_ARGS("OO", &looser, &winner);
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "Init");
-	Sf_SetGlobal(&f, FM, "SMayor1", Py_None);
-	Sf_Run(&f, "Scrap", "SetAlarm", "(i)", 1);
-	Sf_Run(&f, "Vehicles", "OnDeath", "(OO)", looser, winner);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "CrazyMayor", "Killed");
-	Sf_Own(&f, FM, "SetPhoneCab", "()");
-	return Sf_None(&f);
+static byte Mayor_MayorOnDeath(const nativeVal_t *a) {
+	nativeVal_t none = { 0 }, one = { 0 };
+	Native_SetNone(&none);
+	Native_SetInt(&one, 1);
+	return Mode_Import("Vehicles") && Mode_Import("Init") && Mode_Put(FM, "SMayor1", NULL, &none) && Mode_SetAlarm(&one) &&
+		LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1]) && Mode_SaveS("CrazyMayor", "Killed") && LV_OWN(FM, "SetPhoneCab", NULL, "");
 }
 
 /* SetPhoneCab(): a free phone cab as the target; DeepThroat speaks once the alarm is over */
-static PyObject *Mayor_SetPhoneCab(PyObject *self, PyObject *args) {
+static byte Mayor_SetPhoneCab_C(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const mods[] = { "Vehicles", "Speech", "Alarm", "SaveGame", "PhoneCab", "MissionsFuncs", NULL };
-	SF_ARGS("");
-	for (int i = 0; mods[i]; i++) {
-		Sf_Import(&f, mods[i]);
+	nativeVal_t fn = { 0 };
+	byte ok = 1;
+	(void)a;
+	for (int i = 0; ok && mods[i]; i++) {
+		ok = Mode_Import(mods[i]);
 	}
-	PyObject *pc = Sf_Ask(&f, "PhoneCab", "GetFree", "()");
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, pc, "Name"));
-	Sf_SetAttrS(&f, pc, "UseFunc", "Mission_FaceTheMayor.UsePhoneCab");
-	int alarm = Lv_Alarm(&f);
+	int alarm = ok && Mode_PhoneCab("Mission_FaceTheMayor.UsePhoneCab", 1, NULL, out) ? Mode_AlarmOn() : -1;
 	if (alarm > 0) {
-		Lv_Com(&f, "Mission_FaceTheMayor_RemoteMessage3", "DeepThroat", G(FM, "FleeFromPolice"), NULL);
-		Sf_Method(&f, Sf_Mod(&f, "Alarm", "SetAlarmCallback"), "append", "(O)", G(FM, "SetAlarmCallback"));
-	} else if (alarm == 0) {
-		Sf_Own(&f, FM, "SetAlarmCallback", "(i)", 1);
+		Native_SetNone(&fn);
+		ok = LvN_Com("Mission_FaceTheMayor_RemoteMessage3", "DeepThroat", FM, "FleeFromPolice", NULL) &&
+			LvN_GObj(FM, "SetAlarmCallback", &fn) && LvN_ModAppend("Alarm", "SetAlarmCallback", &fn);
+		Native_Free(&fn);
+		return ok;
 	}
-	return Sf_Return(&f, pc);
+	return alarm == 0 && LV_OWN(FM, "SetAlarmCallback", NULL, "i", 1L);
 }
 
 /* UsePhoneCab(UsrName, CharName, optId, FullOption): DeepThroat at the phone, the end of the mission after the talk */
-static PyObject *Mayor_UsePhoneCab(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	SF_ARGS("OOOO", &usr, &ch, &opt, &full);
-	Sf_SetMod(&f, "Speech", "NPCName", ch);
-	Sf_Run(&f, "PhoneCab", "UseAudioCom", "(OOOO)", usr, ch, opt, full);
-	PyObject *pc = Sf_Entity(&f, ch);
-	int alarm = Lv_Alarm(&f);
+static byte Mayor_UsePhoneCab(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *pc = TV(), *params = TV();
+	int alarm = Mode_SetModVar("Speech", "NPCName", &a[1]) && LV_CALL("PhoneCab", "UseAudioCom", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]) &&
+		Mode_EntityH(&a[1], pc) ? Mode_AlarmOn() : -1;
+	byte ok = alarm >= 0;
 	if (alarm > 0) {
-		Sf_Run(&f, "Speech", "StartObjSpch", "(Oss)", pc, "Mission_TalkToDeepThroat1_RemoteMessage2", "DeepThroat");
+		ok = LV_CALL("Speech", "StartObjSpch", NULL, "vss", pc, "Mission_TalkToDeepThroat1_RemoteMessage2", "DeepThroat");
 	} else if (alarm == 0) {
-		Sf_Run(&f, "Speech", "OnObjSpch", "(Osss)", pc, "DeepThroat", "Mission_TalkToDeepThroat1_ComDeepThroat_NI_1Msg",
-			"Mission_TalkToDeepThroat1_ComDeepThroat_NI_1Ans");
-		Sf_SpeechEnd(&f, G(FM, "EndOfMission"), Sf_Build(&f, "(O)", pc));
+		Native_SetEmpty(params, NV_TUPLE);
+		Native_Copy(Native_Append(params), pc);
+		ok = LV_CALL("Speech", "OnObjSpch", NULL, "vsss", pc, "DeepThroat", "Mission_TalkToDeepThroat1_ComDeepThroat_NI_1Msg",
+			"Mission_TalkToDeepThroat1_ComDeepThroat_NI_1Ans") && LvN_OnEnd(FM, "EndOfMission", params);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
 /* EndOfMission(pc): on to Mission_ApologizeMayor, the places of the characters */
-static PyObject *Mayor_EndOfMission(PyObject *self, PyObject *args) {
+static byte Mayor_EndOfMission(const nativeVal_t *a) {
 	static const char *const places[] = { "MayorAtTownHall", "1", "MayorAtGambinDen", "0", "BankMasterAtBank", "1",
 		"Journalist.Humphrey_Defaut", "Press", "Journalist.Betty_Defaut", "TownHall", "Journalist.Berto_Defaut", "TownHall", NULL };
-	PyObject *pc;
-	SF_ARGS("O", &pc);
-	Sf_SetAttrS(&f, pc, "UseFunc", "PhoneCab.DefUseAudioCom");
-	Sf_SetAttrS(&f, pc, "HeadModel", "");
-	Sf_Run(&f, "MissionsFuncs", "SetNextMission", "(ss)", "Mission_ApologizeMayor", "TownHall");
-	Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", Sf_Mod(&f, "Speech", "ObjEntity"), 0);
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_ApologizeMayor_MissionText1", 1);
-	Lv_Saves(&f, places);
-	return Sf_None(&f);
+	nativeVal_t obj = { 0 };
+	Native_SetNone(&obj);
+	byte ok = LvN_SetS(&a[0], "UseFunc", "PhoneCab.DefUseAudioCom") && LvN_SetS(&a[0], "HeadModel", "") &&
+		LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_ApologizeMayor", "TownHall") && LvN_ModGet("Speech", "ObjEntity", &obj) &&
+		LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &obj, 0L) && Mode_MMDesc("Mission_ApologizeMayor_MissionText1", 1);
+	Native_Free(&obj);
+	if (ok) {
+		Mode_Saves(places);
+	}
+	return ok;
 }
+
+LV_CORE0(Mayor_Init)
+LV_CORE0(Mayor_PreLaunchTaunt)
+LV_CORE0(Mayor_LaunchMayorInitialTaunt)
+LV_CORE0(Mayor_CreateCrazyMayor)
+LV_COREA(Mayor_MayorOnDeath)
+LV_COREA(Mayor_UsePhoneCab)
+LV_COREA(Mayor_EndOfMission)
+LV_FN(Mayor, InitPy, 1, Mayor_Init_C)
+LV_FN(Mayor, PreLaunchTauntPy, 0, Mayor_PreLaunchTaunt_C)
+LV_FN(Mayor, LaunchMayorInitialTauntPy, 0, Mayor_LaunchMayorInitialTaunt_C)
+LV_FN(Mayor, CreateCrazyMayorPy, 0, Mayor_CreateCrazyMayor_C)
+LV_FN(Mayor, MayorOnDeathPy, 2, Mayor_MayorOnDeath_C)
+LV_FN(Mayor, SetPhoneCabPy, 0, Mayor_SetPhoneCab_C)
+LV_FN(Mayor, UsePhoneCabPy, 4, Mayor_UsePhoneCab_C)
+LV_FN(Mayor, EndOfMissionPy, 1, Mayor_EndOfMission_C)
 
 PyMethodDef g_DownTownFaceTheMayorMethods[] = {
 	{ "GetMayorProfile", Mayor_GetMayorProfile, 1, NULL },
 	{ "InitStatus", Mayor_InitStatus, 1, NULL },
-	{ "Init", Mayor_Init, 1, NULL },
-	{ "PreLaunchTaunt", Mayor_PreLaunchTaunt, 1, NULL },
-	{ "LaunchMayorInitialTaunt", Mayor_LaunchMayorInitialTaunt, 1, NULL },
-	{ "CreateCrazyMayor", Mayor_CreateCrazyMayor, 1, NULL },
-	{ "MayorOnDeath", Mayor_MayorOnDeath, 1, NULL },
-	{ "SetPhoneCab", Mayor_SetPhoneCab, 1, NULL },
-	{ "UsePhoneCab", Mayor_UsePhoneCab, 1, NULL },
-	{ "EndOfMission", Mayor_EndOfMission, 1, NULL },
+	{ "Init", Mayor_InitPy, 1, NULL },
+	{ "PreLaunchTaunt", Mayor_PreLaunchTauntPy, 1, NULL },
+	{ "LaunchMayorInitialTaunt", Mayor_LaunchMayorInitialTauntPy, 1, NULL },
+	{ "CreateCrazyMayor", Mayor_CreateCrazyMayorPy, 1, NULL },
+	{ "MayorOnDeath", Mayor_MayorOnDeathPy, 1, NULL },
+	{ "SetPhoneCab", Mayor_SetPhoneCabPy, 1, NULL },
+	{ "UsePhoneCab", Mayor_UsePhoneCabPy, 1, NULL },
+	{ "EndOfMission", Mayor_EndOfMissionPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
@@ -623,128 +658,144 @@ static PyObject *Massacre_InitStatus(PyObject *self, PyObject *args) {
 	return Lv_AcShipsStatus(args, MS, "[\"SMayor1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]");
 }
 
-/* Init(LevelPath): the callback of the deaths, the timer between two of them, the scorer, Igor and Rusty */
-static PyObject *Massacre_Init(PyObject *self, PyObject *args) {
-	PATH_ARGS();
-	Sf_SetMod(&f, "Vehicles", "OnDeathCallback", G(MS, "OnVehicleCallback"));
-	Sf_Run(&f, "Scrap", "Set", "(si)", "CounterType", 2);
-	Sf_Run(&f, "Scrap", "Set", "(sO)", "TimeSpecialUseTimer", G(MS, "betweenDeathsTime"));
-	Lv_ScorerCall(&f, G(MS, "MissionScorer"));
-	Sf_DrawScorer(&f);
-	Lv_Com(&f, "Mission_Massacre_RemoteMessage4", "Igor", NULL, NULL);
-	Sf_Run(&f, "SScorer", "AddModel", "(isssii)", 0, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3, 25);
-	return Sf_None(&f);
+/* Scrap.Set("TimeSpecialUseTimer", betweenDeathsTime + add) (add 0: the value itself) */
+static byte Ms_Timer(long add) {
+	nativeVal_t v = { 0 }, r = { 0 }, n = { 0 };
+	Native_SetNone(&r);
+	Native_SetInt(&n, add);
+	byte ok = Mode_G(MS, "betweenDeathsTime", &v) && (add ? Native_Arith('+', &v, &n, &r) : (Native_Copy(&r, &v), 1)) &&
+		Mode_GVarSet("TimeSpecialUseTimer", &r);
+	Native_Free(&v);
+	Native_Free(&r);
+	return ok;
 }
 
-/* `a <= lo and b > lo` of the percentages */
-static int Ms_Crossed(scriptFrame_t *f, PyObject *prev, PyObject *now, double lo) {
-	int t = Sf_Compare(f, prev, "<=", Sf_Float(f, lo));
-	return t > 0 ? Sf_Compare(f, now, ">", Sf_Float(f, lo)) : t;
+/* Init(LevelPath): the callback of the deaths, the timer between two of them, the scorer, Igor and Rusty */
+static byte Massacre_Init(void) {
+	return LvN_ModSetGlobal("Vehicles", "OnDeathCallback", MS, "OnVehicleCallback") && Mode_GVarSetI("CounterType", 2) && Ms_Timer(0) &&
+		LvN_ScorerCallG(MS, "MissionScorer") && LvN_Draw() && LvN_Com("Mission_Massacre_RemoteMessage4", "Igor", NULL, NULL, NULL) &&
+		LV_CALL("SScorer", "AddModel", NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L);
+}
+
+/* `prev <= lo and now > lo` of the percentages */
+static byte Ms_Crossed(const nativeVal_t *prev, const nativeVal_t *now, double lo) {
+	nativeVal_t l = { 0 };
+	Native_SetFloat(&l, lo);
+	return Native_Compare(prev, &l) <= 0 && Native_Compare(now, &l) > 0;
+}
+
+/* float(x) / float(MAX_POINTS) */
+static byte Ms_Percent(modeVals_t *t, const nativeVal_t *x, nativeVal_t *out) {
+	nativeVal_t *fx = Mode_V(t), *max = Mode_V(t), *fm = Mode_V(t);
+	return Native_ToFloat(x, fx) && Mode_G(MS, "MAX_POINTS", max) && Native_ToFloat(max, fm) && Native_Arith('/', fx, fm, out);
 }
 
 /* OnVehicleCallback(LooserName, WinnerName): the points of an AI ship the player destroyed (its weapon slots and its
  * kind), Igor at each quarter, the end at 100 % */
-static PyObject *Massacre_OnVehicleCallback(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	SF_ARGS("OO", &looser, &winner);
-	PyObject *usr = USR();
-	if (Sf_True(&f, usr) == 0) {
-		return Sf_None(&f);
+static byte Massacre_OnVehicleCallback(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = TV(), *name = TV(), *v = TV(), *x = TV(), *model = TV(), *slots = TV(), *typo = TV(), *found = TV();
+	nativeVal_t *sv = TV(), *ac = TV(), *prev = TV(), *sum = TV(), *total = TV(), *rep = TV(), *now = TV();
+	long points = 5;
+	if (!Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
 	}
-	if (Sf_Compare(&f, Sf_Attr(&f, usr, "Name"), "!=", winner) > 0) {
-		return Sf_None(&f);
+	if (!Native_True(usr)) {
+		return Mode_Done(&t, 1);
 	}
-	PyObject *v = Sf_Entity(&f, looser);
-	if (Sf_True(&f, Sf_Attr(&f, v, "isAI")) == 0) {
-		return Sf_None(&f);
+	if (!Mode_VGet(usr, "Name", name)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *model = Sf_Ask(&f, "string", "upper", "(O)", Sf_Attr(&f, v, "Model"));
-	PyObject *slots = Sf_Attr(&f, v, "nSlot00");
-	long points = 0;
-	int traf = Sf_True(&f, Sf_Attr(&f, v, "Traf_Active"));
-	if (traf > 0) {
-		PyObject *typo = Sf_Attr(&f, v, "Traf_Type");
-		int heavy = Sf_EqS(&f, typo, "Heavy");
-		int medium = heavy == 0 ? Sf_EqS(&f, typo, "Medium") : 0;
-		points = heavy > 0 ? 3 : medium > 0 ? 2 : 1;
-	} else if (traf == 0) {
-		Sf_True(&f, Sf_Ask(&f, "string", "find", "(Os)", model, "POLI"));
-		points = 5;
+	if (Native_Compare(name, &a[1])) {
+		return Mode_Done(&t, 1);
 	}
-	PyObject *ac = Sf_Eval(&f, SAVE("Mission_Massacre.Points"), MS);
-	PyObject *prev = Sf_Op(&f, Sf_ToFloat(&f, ac), '/', Sf_ToFloat(&f, G(MS, "MAX_POINTS")));
-	PyObject *total = Sf_Op(&f, Sf_Op(&f, slots, '+', Sf_Int(&f, points)), '+', ac);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "Mission_Massacre.Points", Sf_Repr(&f, total));
-	Sf_Run(&f, "SScorer", "Set", "(issO)", 0, "MassacreScorer", "Value", total);
-	PyObject *now = Sf_Op(&f, Sf_ToFloat(&f, total), '/', Sf_ToFloat(&f, G(MS, "MAX_POINTS")));
-	Sf_Print(&f, "OsOs", prev, "<= 0.25 and", now, "> 0.25");
-	int c = Ms_Crossed(&f, prev, now, 0.25);
-	if (c > 0) {
-		Lv_Com(&f, "Mission_Massacre_RemoteMessage1", "Igor", NULL, NULL);
-	} else if (c == 0 && (c = Ms_Crossed(&f, prev, now, 0.5)) > 0) {
-		Lv_Com(&f, "Mission_Massacre_RemoteMessage1", "Igor", NULL, NULL);
-	} else if (c == 0 && (c = Ms_Crossed(&f, prev, now, 0.75)) > 0) {
-		Lv_Com(&f, "Mission_Massacre_RemoteMessage2", "Igor", NULL, NULL);
-	} else if (c == 0 && Sf_Compare(&f, now, ">=", Sf_Float(&f, 1.0)) > 0) {
-		Sf_SetMod(&f, "Vehicles", "OnDeathCallback", Py_None);
-		Lv_ScorerCall(&f, Py_None);
-		Sf_DrawScorer(&f);
-		Lv_Com(&f, "Mission_Massacre_RemoteMessage3", "Igor", G(MS, "SetNextMission"), NOARGS);
+	if (!Mode_EntityH(&a[0], v) || !Mode_VGet(v, "isAI", x)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Run(&f, "Scrap", "Set", "(sO)", "TimeSpecialUseTimer", Sf_OpI(&f, G(MS, "betweenDeathsTime"), '+', 1));
-	Sf_Run(&f, "Scrap", "Set", "(si)", "CounterType", 0);
-	return Sf_None(&f);
+	if (!Native_True(x)) {
+		return Mode_Done(&t, 1);
+	}
+	byte ok = Mode_VRead(v, "Model", x) && Native_Upper(x, model) && Mode_VGet(v, "nSlot00", slots) &&
+		Mode_VRead(v, "Traf_Active", x);
+	if (ok && Native_True(x)) {
+		ok = Mode_VGet(v, "Traf_Type", typo);
+		points = LvN_EqS(typo, "Heavy") ? 3 : LvN_EqS(typo, "Medium") ? 2 : 1;
+	} else if (ok) {
+		/* `elif string.find(Model, "POLI")`: 5 either way */
+		ok = LV_CALL("string", "find", found, "vs", model, "POLI");
+	}
+	if (ok) {
+		Mode_SaveVar("Mission_Massacre.Points", sv);
+	}
+	ok = ok && Native_EvalText(MS, sv, ac) && Ms_Percent(&t, ac, prev) && Native_Arith('+', slots, Mode_I(&t, points), sum) &&
+		Native_Arith('+', sum, ac, total);
+	if (ok) {
+		Mode_Repr(total, rep);
+		ok = Mode_SetSaveVar("Mission_Massacre.Points", rep) && LvN_Set0("MassacreScorer", "Value", total) && Ms_Percent(&t, total, now);
+	}
+	if (ok) {
+		const nativeVal_t *items[4] = { prev, Mode_S(&t, "<= 0.25 and"), now, Mode_S(&t, "> 0.25") };
+		ok = Mode_Print(items, 4);
+	}
+	if (ok && (Ms_Crossed(prev, now, 0.25) || Ms_Crossed(prev, now, 0.5))) {
+		ok = LvN_Com("Mission_Massacre_RemoteMessage1", "Igor", NULL, NULL, NULL);
+	} else if (ok && Ms_Crossed(prev, now, 0.75)) {
+		ok = LvN_Com("Mission_Massacre_RemoteMessage2", "Igor", NULL, NULL, NULL);
+	} else if (ok) {
+		Native_SetFloat(x, 1.0);
+		ok = Native_Compare(now, x) < 0 || (LvN_ModNone("Vehicles", "OnDeathCallback") && LvN_ScorerOff() && LvN_Draw() &&
+			LvN_Com("Mission_Massacre_RemoteMessage3", "Igor", MS, "SetNextMission", LvN_NoArgs()));
+	}
+	ok = ok && Ms_Timer(1) && Mode_GVarSetI("CounterType", 0);
+	return Mode_Done(&t, ok);
 }
 
 /* MissionScorer(id): the bar of the points and the timer between two deaths */
-static PyObject *Massacre_MissionScorer(PyObject *self, PyObject *args) {
-	PyObject *id;
-	SF_ARGS("O", &id);
-	Sf_Import(&f, "Scorer");
-	Lv_Text(&f, id, "MassacreText", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_Massacre_Scorer_1"), Sf_Int(&f, 1));
-	const char *bar = "MassacreScorer";
-	Sf_Run(&f, "SScorer", "Add", "(Oss)", id, bar, "Bar");
-	Lv_BarDefaults(&f, id, bar, NULL, NULL);
-	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "MaxValue", G(MS, "MAX_POINTS"));
-	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "Value", Sf_Eval(&f, SAVE("Mission_Massacre.Points"), MS));
-	Sf_Run(&f, "SScorer", "Set", "(Ossi)", id, bar, "Visible", 1);
-	Dt_Timer(&f, id, "BetweenDeathsTimer", Lv_TextX(&f, 40), Lv_TextY(&f, 60), "Mission_Massacre.TimeExpired", 1);
-	return Sf_None(&f);
+static byte Massacre_MissionScorer(const nativeVal_t *id) {
+	static const char bar[] = "MassacreScorer";
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *max = TV(), *sv = TV(), *pts = TV(), *x = TV(), *y = TV();
+	byte ok = Mode_Import("Scorer") && Mode_LvLabel(id, "MassacreText", 0, "Mission_Massacre_Scorer_1", 1) && Mode_ScorerAddS(id, bar, "Bar") &&
+		Mode_BarDefaults(id, bar, NULL, NULL) && Mode_G(MS, "MAX_POINTS", max) && LvN_ScorerSet(id, bar, "MaxValue", max);
+	if (ok) {
+		Mode_SaveVar("Mission_Massacre.Points", sv);
+	}
+	ok = ok && Native_EvalText(MS, sv, pts) && LvN_ScorerSet(id, bar, "Value", pts) && Mode_ScorerSetI(id, bar, "Visible", 1) && LvN_TextX(40, x) &&
+		LvN_TextY(60, y) && Mode_LvTimer(id, "BetweenDeathsTimer", x, y, "Mission_Massacre.TimeExpired", 1);
+	return Mode_Done(&t, ok);
 }
 
 /* TimeExpired(): the points back to 0 */
-static PyObject *Massacre_TimeExpired(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Lv_Com(&f, "Mission_Massacre_RemoteMessage5", "Igor", NULL, NULL);
-	Sf_Run(&f, "Scrap", "Set", "(sO)", "TimeSpecialUseTimer", G(MS, "betweenDeathsTime"));
-	Sf_Run(&f, "Scrap", "Set", "(si)", "CounterType", 2);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "Mission_Massacre.Points", Sf_ReprI(&f, 0));
-	Sf_Run(&f, "SScorer", "Set", "(issi)", 0, "MassacreScorer", "Value", 0);
-	return Sf_None(&f);
+static byte Massacre_TimeExpired(void) {
+	return LvN_Com("Mission_Massacre_RemoteMessage5", "Igor", NULL, NULL, NULL) && Ms_Timer(0) && Mode_GVarSetI("CounterType", 2) &&
+		Mode_SaveS("Mission_Massacre.Points", "0") && LvN_Set0I("MassacreScorer", "Value", 0);
 }
 
 /* SetNextMission(): the next mission of NextMissionData, the blueprints of Berto's and Betty's ships, Rusty later */
-static PyObject *Massacre_SetNextMission(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "Mission_Massacre");
-	PyObject *apply = Sf_Mod(&f, "__builtin__", "apply");
-	Sf_Call(&f, apply, "(OO)", Sf_Mod(&f, "MissionsFuncs", "SetNextMission"), G(MS, "NextMissionData"));
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_ArrangeIgorCombat_MissionText1", 1);
-	Lv_SaveCat(&f, MS, "PressBlueprints.Ships", "[ss]", "SBerto1", "SBetty1");
-	Lv_SaveCat(&f, MS, "PressBlueprints.Engines", "[ss]", "MBerto1", "MBetty1");
-	Sf_Import(&f, "Scorer");
-	Dt_LaterCom(&f, Sf_Float(&f, 10.0),
-		Sf_Build(&f, "(ssO(ii))", "Mission_ArrangeIgorCombat_RemoteMessage1", "Rusty", Sf_Mod(&f, "Scorer", "ShowMissionScorer"), 0, 2), NULL);
-	return Sf_None(&f);
+static byte Massacre_SetNextMission(void) {
+	return Mode_DelSaveVars("Mission_Massacre") && Mode_ApplyNext(MS) && Mode_MMDesc("Mission_ArrangeIgorCombat_MissionText1", 1) &&
+		Mode_SaveCat2(MS, "PressBlueprints.Ships", "SBerto1", "SBetty1") && Mode_SaveCat2(MS, "PressBlueprints.Engines", "MBerto1", "MBetty1") &&
+		Dt_RustyLater("Mission_ArrangeIgorCombat_RemoteMessage1");
 }
+
+LV_CORE0(Massacre_Init)
+LV_COREA(Massacre_OnVehicleCallback)
+LV_COREA(Massacre_MissionScorer)
+LV_CORE0(Massacre_TimeExpired)
+LV_CORE0(Massacre_SetNextMission)
+LV_FN(Massacre, InitPy, 1, Massacre_Init_C)
+LV_FN(Massacre, OnVehicleCallbackPy, 2, Massacre_OnVehicleCallback_C)
+LV_FN(Massacre, MissionScorerPy, 1, Massacre_MissionScorer_C)
+LV_FN(Massacre, TimeExpiredPy, 0, Massacre_TimeExpired_C)
+LV_FN(Massacre, SetNextMissionPy, 0, Massacre_SetNextMission_C)
 
 PyMethodDef g_DownTownMassacreMethods[] = {
 	{ "InitStatus", Massacre_InitStatus, 1, NULL },
-	{ "Init", Massacre_Init, 1, NULL },
-	{ "OnVehicleCallback", Massacre_OnVehicleCallback, 1, NULL },
-	{ "MissionScorer", Massacre_MissionScorer, 1, NULL },
-	{ "TimeExpired", Massacre_TimeExpired, 1, NULL },
-	{ "SetNextMission", Massacre_SetNextMission, 1, NULL },
+	{ "Init", Massacre_InitPy, 1, NULL },
+	{ "OnVehicleCallback", Massacre_OnVehicleCallbackPy, 1, NULL },
+	{ "MissionScorer", Massacre_MissionScorerPy, 1, NULL },
+	{ "TimeExpired", Massacre_TimeExpiredPy, 1, NULL },
+	{ "SetNextMission", Massacre_SetNextMissionPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
@@ -771,676 +822,625 @@ static PyObject *Data_InitStatus(PyObject *self, PyObject *args) {
 
 /* Init(LevelPath): the list of the transports and its callbacks, the first transport, the mission while the player is
  * in a ship, the boss */
-static PyObject *Data_Init(PyObject *self, PyObject *args) {
-	PATH_ARGS();
-	Sf_Import(&f, "Parking");
-	Sf_Run(&f, "Scrap", "Preload3DObject", "(O)", G(GD, "DataCubeModel"));
-	Sf_Run(&f, "Scrap", "CreateEntityList", "(s)", "Transports");
-	Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "Transports", "OnDeath", "Mission_GetDataPart1.OnTransportsDeath");
-	Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "Transports", "OnDamage", "Mission_GetDataPart1.OnTransportsDamage");
-	if (Sf_Compare(&f, Sf_ToInt(&f, SAVE("NumData")), ">=", G(GD, "MAX_DATA_UNITS")) > 0) {
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "NumData", Sf_Repr(&f, Sf_OpI(&f, G(GD, "MAX_DATA_UNITS"), '-', 1)));
+static byte Data_Init(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *model = TV(), *nd = TV(), *max = TV(), *m1 = TV(), *rep = TV();
+	byte ok = Mode_Import("Parking") && Mode_G(GD, "DataCubeModel", model) && Mode_Preload(model) &&
+		LV_CALL("Scrap", "CreateEntityList", NULL, "s", "Transports") &&
+		Mode_ListSet("Transports", "OnDeath", "Mission_GetDataPart1.OnTransportsDeath") &&
+		Mode_ListSet("Transports", "OnDamage", "Mission_GetDataPart1.OnTransportsDamage") && Mode_SaveInt("NumData", nd);
+	int c = ok ? Mode_CmpG(nd, ">=", GD, "MAX_DATA_UNITS") : -1;
+	if (c > 0) {
+		ok = Mode_G(GD, "MAX_DATA_UNITS", max) && Native_Arith('-', max, Mode_I(&t, 1), m1);
+		if (ok) {
+			Mode_Repr(m1, rep);
+			ok = Mode_SetSaveVar("NumData", rep);
+		}
 	}
-	Sf_Own(&f, GD, "AddTransportToList", "()");
-	Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", G(GD, "InitMission"));
-	Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", G(GD, "StopMission"));
-	int first = Sf_EqS(&f, SAVE("MissionState"), "FirstTime");
-	if (first > 0) {
-		Lv_Com(&f, "MissionGetDataPart1_RemoteMessage1", "Boss", NULL, NULL);
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "MissionState", "GetData");
-	} else if (first == 0) {
-		Lv_Com(&f, "MissionGetDataPart1_RemoteMessage5", "Boss", NULL, NULL);
+	ok = ok && c >= 0 && LV_OWN(GD, "AddTransportToList", NULL, "") && LvN_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", GD, "InitMission") &&
+		LvN_ModSetGlobal("Parking", "SwitchCharMissionCallback", GD, "StopMission");
+	if (ok && LvN_SaveIs("MissionState", "FirstTime")) {
+		ok = LvN_Com("MissionGetDataPart1_RemoteMessage1", "Boss", NULL, NULL, NULL) && Mode_SaveS("MissionState", "GetData");
+	} else if (ok) {
+		ok = LvN_Com("MissionGetDataPart1_RemoteMessage5", "Boss", NULL, NULL, NULL);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
 /* `nd and int(nd) op global` of the data units taken */
-static int Gd_DataCmp(scriptFrame_t *f, PyObject *nd, const char *op, const char *name) {
-	int t = Sf_True(f, nd);
-	return t > 0 ? Sf_Compare(f, Sf_ToInt(f, nd), op, Sf_Global(f, GD, name)) : t;
-}
-
-/* `usr and usr.IsType("Car")` */
-static int Dt_UsrInCar(scriptFrame_t *f, PyObject *usr) {
-	int t = Sf_True(f, usr);
-	return t > 0 ? Sf_True(f, Sf_Method(f, usr, "IsType", "(s)", "Car")) : t;
+static int Gd_DataCmp(const nativeVal_t *nd, const char *op, const char *name) {
+	nativeVal_t n = { 0 };
+	if (!Native_True(nd)) {
+		return 0;
+	}
+	Native_SetNone(&n);
+	int r = Native_ToInt(nd, &n) ? Mode_CmpG(&n, op, GD, name) : -1;
+	Native_Free(&n);
+	return r;
 }
 
 /* InitMission(): the scorer; past half of the data the functionaries come for the transport */
-static PyObject *Data_InitMission(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Lv_ScorerCall(&f, G(GD, "MissionScorer"));
-	Sf_DrawScorer(&f);
-	PyObject *nd = SAVE("NumData");
-	int go = Sf_True(&f, G(GD, "funcsSpawned"));
-	go = go == 0 ? Gd_DataCmp(&f, nd, ">", "NumDataFuncsAttackTransport") : go > 0 ? 0 : -1;
-	if (go > 0) {
-		Sf_SetGlobal(&f, GD, "funcsSpawned", Sf_Int(&f, 1));
-		Lv_Com(&f, "MissionGetDataPart1_RemoteMessage8", "Functionary", NULL, NULL);
-		Sf_Own(&f, GD, "SpawnFunctionaries", "(i)", 2);
-		PyObject *e = Sf_Entity(&f, G(GD, "currentTransport"));
-		PyObject *usr = USR();
-		int t = Sf_True(&f, e);
-		if (t > 0) {
-			t = Dt_UsrInCar(&f, usr);
-		}
-		if (t > 0) {
-			Sf_SetAttr(&f, usr, "Target", G(GD, "currentTransport"));
-		}
+static byte Data_InitMission(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *nd = TV(), *cur = TV(), *e = TV(), *usr = TV();
+	byte ok = LvN_ScorerCallG(GD, "MissionScorer") && LvN_Draw();
+	if (ok) {
+		Mode_SaveVar("NumData", nd);
 	}
-	return Sf_None(&f);
+	int go = ok ? LvN_GTrue(GD, "funcsSpawned") : -1;
+	go = go == 0 ? Gd_DataCmp(nd, ">", "NumDataFuncsAttackTransport") : go > 0 ? 0 : -1;
+	if (go > 0) {
+		ok = LvN_PutI(GD, "funcsSpawned", 1) && LvN_Com("MissionGetDataPart1_RemoteMessage8", "Functionary", NULL, NULL, NULL) &&
+			LV_OWN(GD, "SpawnFunctionaries", NULL, "i", 2L) && Mode_G(GD, "currentTransport", cur) && Mode_EntityH(cur, e) && Mode_UsrHandle(usr);
+		int c = ok ? (Native_True(e) ? Mode_UsrInCar(usr) : 0) : -1;
+		ok = c >= 0 && (!c || (Mode_Read(GD, "currentTransport", cur) && Mode_VSet(usr, "Target", cur)));
+	}
+	return Mode_Done(&t, ok && go >= 0);
+}
+
+/* o1.Ang = (0, spw[1], 0) */
+static byte Dt_SpawnAng(const nativeVal_t *o1, const nativeVal_t *spw) {
+	nativeVal_t ang = { 0 };
+	Native_SetEmpty(&ang, NV_TUPLE);
+	Native_SetInt(Native_Append(&ang), 0);
+	byte ok = LvN_Item(spw, 1, Native_Append(&ang));
+	Native_SetInt(Native_Append(&ang), 0);
+	ok = ok && Mode_VSet(o1, "Ang", &ang);
+	Native_Free(&ang);
+	return ok;
+}
+
+/* usr = Scrap.UsrEntity(0); if usr and usr.IsType("Car"): usr.Target = target */
+static byte Dt_UsrTarget(const nativeVal_t *target) {
+	nativeVal_t usr = { 0 };
+	Native_SetNone(&usr);
+	int c = Mode_UsrHandle(&usr) ? Mode_UsrInCar(&usr) : -1;
+	byte ok = c >= 0 && (!c || Mode_VSet(&usr, "Target", target));
+	Native_Free(&usr);
+	return ok;
 }
 
 /* CreateTransport(): a transport of the light traffic at a free spawn point, the player's target */
-static PyObject *Data_CreateTransport(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "VehiclesNPC");
-	Sf_Import(&f, "OutMap");
-	Sf_Import(&f, "Traffic");
-	Sf_Run(&f, "Traffic", "SetPath", "()");
-	PyObject *spw = Sf_Ask(&f, "OutMap", "GetFreeSpawnPos", "()");
-	PyObject *fn = Sf_Mod(&f, "Scrap", "CreateEntity");
-	PyObject *p = Sf_Item(&f, spw, 0);
-	PyObject *o1 = Sf_Call(&f, fn, "(sOOOs)", "Transport", Sf_Item(&f, p, 0), Sf_Item(&f, p, 1), Sf_Item(&f, p, 2), "Car");
-	Sf_SetAttrS(&f, o1, "TgType", "red");
-	Sf_SetAttr(&f, o1, "Ang", Sf_Build(&f, "(iOi)", 0, Sf_Item(&f, spw, 1), 0));
-	PyObject *pd = Sf_Ask(&f, "VehiclesNPC", "GetIAProf", "(s)", "TLight2");
-	Sf_Run(&f, "VehiclesNPC", "SetStdProperties", "(OO)", Sf_Attr(&f, o1, "Name"), Sf_Attr(&f, pd, "Ship"));
-	Sf_Run(&f, "VehiclesNPC", "SetAIProfile", "(Os)", pd, "Pilot");
-	Sf_Run(&f, "VehiclesNPC", "ModAIProff", "(OO)", o1, pd);
-	Sf_Run(&f, "SAI", "SetInertia", "(Oi)", Sf_Attr(&f, o1, "Name"), 0);
-	PyObject *life = G(GD, "TRANSPORT_LIFE");
-	Sf_SetAttr(&f, o1, "Life", life);
-	Sf_SetAttr(&f, o1, "MaxLife", life);
-	Sf_Run(&f, "Traffic", "ResetPath", "()");
-	PyObject *usr = USR();
-	if (Dt_UsrInCar(&f, usr) > 0) {
-		Sf_SetAttr(&f, usr, "Target", Sf_Attr(&f, o1, "Name"));
-	}
-	return Sf_Return(&f, o1);
+static byte Data_CreateTransport_C(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *spw = TV(), *pd = TV(), *name = TV(), *ship = TV();
+	(void)a;
+	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_Import("Traffic") && LV_CALL("Traffic", "SetPath", NULL, "") &&
+		Mode_SpawnCar("Transport", 0, out, spw) && LvN_SetS(out, "TgType", "red") && Dt_SpawnAng(out, spw) &&
+		LV_CALL("VehiclesNPC", "GetIAProf", pd, "s", "TLight2") && Mode_VGet(out, "Name", name) && Mode_VGet(pd, "Ship", ship) &&
+		LV_CALL("VehiclesNPC", "SetStdProperties", NULL, "vv", name, ship) && LV_CALL("VehiclesNPC", "SetAIProfile", NULL, "vs", pd, "Pilot") &&
+		LV_CALL("VehiclesNPC", "ModAIProff", NULL, "vv", out, pd) && Mode_VRead(out, "Name", name) &&
+		LV_CALL("SAI", "SetInertia", NULL, "vi", name, 0L) && LvN_Life(out, GD, "TRANSPORT_LIFE") && LV_CALL("Traffic", "ResetPath", NULL, "") &&
+		Mode_VRead(out, "Name", name) && Dt_UsrTarget(name);
+	return Mode_Done(&t, ok);
 }
 
 /* CreateFunctionary(): a functionary fighter at a free spawn point */
-static PyObject *Data_CreateFunctionary(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "VehiclesNPC");
-	Sf_Import(&f, "OutMap");
-	Sf_Import(&f, "Traffic");
-	PyObject *spw = Sf_Ask(&f, "OutMap", "GetFreeSpawnPos", "()");
-	PyObject *fn = Sf_Mod(&f, "Scrap", "CreateEntity");
-	PyObject *p = Sf_Item(&f, spw, 0);
-	PyObject *o1 = Sf_Call(&f, fn, "(sOOOs)", "FuncFighter", Sf_Item(&f, p, 0), Sf_Item(&f, p, 1), Sf_Item(&f, p, 2), "Car");
-	Sf_SetAttrS(&f, o1, "TgType", "red");
-	Sf_SetAttr(&f, o1, "Ang", Sf_Build(&f, "(iOi)", 0, Sf_Item(&f, spw, 1), 0));
-	Lv_StdProfile(&f, GD, "GetFuncEnemiesProfile", o1);
-	PyObject *life = G(GD, "FUNCS_LIFE");
-	Sf_SetAttr(&f, o1, "Life", life);
-	Sf_SetAttr(&f, o1, "MaxLife", life);
-	return Sf_Return(&f, o1);
+static byte Data_CreateFunctionary_C(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *spw = TV(), *pd = TV();
+	(void)a;
+	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_Import("Traffic") && Mode_SpawnCar("FuncFighter", 0, out, spw) &&
+		LvN_SetS(out, "TgType", "red") && Dt_SpawnAng(out, spw) && LvN_StdProfile(GD, "GetFuncEnemiesProfile", out, pd) &&
+		LvN_Life(out, GD, "FUNCS_LIFE");
+	return Mode_Done(&t, ok);
 }
 
 /* AddTransportToList(): a new transport (the farthest one leaves a full list), the target of the mission */
-static PyObject *Data_AddTransportToList(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *usr = USR();
-	if (Sf_True(&f, usr) == 0) {
-		return Sf_None(&f);
+static byte Data_AddTransportToList(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = TV(), *upos = TV(), *lst = TV(), *max = TV(), *dist = TV(), *remove = TV(), *name = TV(), *e = TV();
+	nativeVal_t *pos = TV(), *sub = TV(), *d = TV(), *trans = TV(), *cur = TV();
+	if (!Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *usrPos = Sf_Attr(&f, usr, "Pos");
-	PyObject *transports = G(GD, "transports");
-	if (Sf_Compare(&f, Sf_Int(&f, Sf_Len(&f, transports)), "==", G(GD, "MAX_TRANSPORTS")) > 0) {
-		PyObject *dist = Sf_Int(&f, 0), *remove = Sf_Str(&f, ""), *name;
-		int mark = f.n;
-		for (int k = 0; (name = Sf_Next(&f, transports, k)) != NULL; k++) {
-			PyObject *t = Sf_Entity(&f, name);
-			if (Sf_True(&f, t) > 0) {
-				PyObject *d = Sf_Ask(&f, "SVec", "ModSqr", "(O)", Sf_Ask(&f, "SVec", "Sub", "(OO)", usrPos, Sf_Attr(&f, t, "Pos")));
-				if (Sf_Compare(&f, d, ">", dist) > 0) {
-					dist = d;
-					remove = name;
+	if (!Native_True(usr)) {
+		return Mode_Done(&t, 1);
+	}
+	int n = Mode_VGet(usr, "Pos", upos) && Mode_G(GD, "transports", lst) ? Native_Size(lst) : -1;
+	byte ok = n >= 0 && Mode_G(GD, "MAX_TRANSPORTS", max);
+	if (ok && Native_Compare(Mode_I(&t, n), max) == 0) {
+		Native_SetInt(dist, 0);
+		LvN_Str(remove, "");
+		Native_Free(lst);
+		int cnt = LvN_GElems(GD, "transports", lst) ? Native_ForCount(lst) : -1;
+		ok = cnt >= 0;
+		for (int k = 0; ok && k < cnt; k++) {
+			int mark = t.n;
+			nativeVal_t *it = TV();
+			ok = Native_SeqItem(lst, k, it) && Mode_EntityH(it, e);
+			if (ok && Native_True(e)) {
+				ok = Mode_VGet(e, "Pos", pos) && Mode_VecSub(upos, pos, sub) && Mode_VecModSqr(sub, d);
+				if (ok && Native_Compare(d, dist) > 0) {
+					Native_Free(dist);
+					Native_Copy(dist, d);
+					Native_Free(remove);
+					Native_Copy(remove, it);
 				}
 			}
-			PyObject *keep[2] = { dist, remove };
-			Sf_ReleaseKeep(&f, mark, keep, 2);
+			Native_Free(e);
+			Native_Free(pos);
+			Native_Free(sub);
+			Native_Free(d);
+			Mode_Release(&t, mark);
 		}
-		if (Sf_In(&f, remove, transports) > 0) {
-			Sf_Method(&f, transports, "remove", "(O)", remove);
-		}
+		int in = ok && Mode_Read(GD, "transports", lst) ? Native_Contains(lst, remove) : -1;
+		ok = in >= 0 && (!in || Mode_Remove(GD, "transports", remove));
 	}
-	PyObject *trans = Sf_Own(&f, GD, "CreateTransport", "()");
-	Sf_SetGlobal(&f, GD, "currentTransport", Sf_Attr(&f, trans, "Name"));
-	Sf_SetGlobal(&f, GD, "currentTransportSpawnedData", Sf_Int(&f, 0));
-	Sf_Run(&f, "SAI", "SetStateVehicle", "(iOidd)", 3, G(GD, "currentTransport"), 0, 3.0, 2.0);
-	Sf_SetAttrS(&f, trans, "EntityList", "Transports");
-	Sf_Method(&f, G(GD, "transports"), "append", "(O)", G(GD, "currentTransport"));
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", G(GD, "currentTransport"));
-	return Sf_None(&f);
+	ok = ok && LV_OWN(GD, "CreateTransport", trans, "") && Mode_VGet(trans, "Name", name) && Mode_Put(GD, "currentTransport", NULL, name) &&
+		LvN_PutI(GD, "currentTransportSpawnedData", 0) && Mode_G(GD, "currentTransport", cur) &&
+		LV_CALL("SAI", "SetStateVehicle", NULL, "ividd", 3L, cur, 0L, 3.0, 2.0) && LvN_SetS(trans, "EntityList", "Transports") &&
+		Mode_Read(GD, "currentTransport", cur) && Mode_Append(GD, "transports", cur) && Mode_Read(GD, "currentTransport", cur) &&
+		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", cur);
+	return Mode_Done(&t, ok);
 }
 
 /* SpawnFunctionaries(numFuncs): functionaries as enemies, or with only the rail after the transport once the player
  * has more than half of the data (later when the transport is not there) */
-static PyObject *Data_SpawnFunctionaries(PyObject *self, PyObject *args) {
-	PyObject *num;
-	SF_ARGS("O", &num);
-	Sf_Import(&f, "VehiclesNPC");
-	int attack = 0;
-	PyObject *nd = SAVE("NumData");
-	if (Sf_True(&f, nd) == 0) {
-		return Sf_None(&f);
+static byte Data_SpawnFunctionaries(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *nd = TV(), *n = TV(), *cur = TV(), *e = TV(), *fn = TV(), *name = TV(), *one = TV();
+	if (!Mode_Import("VehiclesNPC")) {
+		return Mode_Done(&t, 0);
 	}
-	if (Sf_Compare(&f, Sf_ToInt(&f, nd), ">", G(GD, "NumDataFuncsAttackTransport")) > 0) {
-		attack = 1;
+	Mode_SaveVar("NumData", nd);
+	if (!Native_True(nd)) {
+		return Mode_Done(&t, 1);
 	}
-	PyObject *e = Sf_Entity(&f, G(GD, "currentTransport"));
-	int noE = Sf_True(&f, e) == 0;
-	if (f.failed) {
-		return Sf_None(&f);
+	int attack = Native_ToInt(nd, n) ? Mode_CmpG(n, ">", GD, "NumDataFuncsAttackTransport") : -1;
+	byte ok = attack >= 0 && Mode_G(GD, "currentTransport", cur) && Mode_EntityH(cur, e);
+	if (!ok) {
+		return Mode_Done(&t, 0);
 	}
+	byte noE = !Native_True(e);
 	if (attack && noE) {
-		Sf_Later(&f, Sf_Int(&f, 3), G(GD, "SpawnFunctionaries"), Sf_Build(&f, "(i)", 1), NULL);
-		return Sf_None(&f);
+		Native_SetInt(one, 1);
+		return Mode_Done(&t, Mode_Later(3, GD, "SpawnFunctionaries", one, 1, NULL));
 	}
-	long n = 0;
-	Sf_Check(&f, Script_Range(num, &n));
-	for (long i = 0; i < n && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *fn = Sf_Own(&f, GD, "CreateFunctionary", "()");
-		Sf_SetAttrS(&f, fn, "OnDeath", "Mission_GetDataPart1.OnFunctionaryDeath");
-		if (!attack || noE) {
-			Sf_SetAttrS(&f, fn, "EntityList", "Enemies");
-		} else {
-			Sf_SetAttrS(&f, fn, "WeapList", "0,0,0,0,1,0,1");
-			Sf_Method(&f, G(GD, "funcsAttackingTransport"), "append", "(O)", Sf_Attr(&f, fn, "Name"));
-			Sf_Run(&f, "SAI", "SetStateVehicle", "(iOO)", 2, Sf_Attr(&f, fn, "Name"), G(GD, "currentTransport"));
+	long count;
+	ok = Mode_Range(&a[0], &count);
+	for (long i = 0; ok && i < count; i++) {
+		ok = LV_OWN(GD, "CreateFunctionary", fn, "") && LvN_SetS(fn, "OnDeath", "Mission_GetDataPart1.OnFunctionaryDeath");
+		if (ok && (!attack || noE)) {
+			ok = LvN_SetS(fn, "EntityList", "Enemies");
+		} else if (ok) {
+			ok = LvN_SetS(fn, "WeapList", "0,0,0,0,1,0,1") && Mode_VGet(fn, "Name", name) && Mode_Append(GD, "funcsAttackingTransport", name) &&
+				Mode_VRead(fn, "Name", name) && Mode_Read(GD, "currentTransport", cur) &&
+				LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, name, cur);
 		}
-		Sf_Release(&f, mark);
+		Native_Free(fn);
+		Native_Free(name);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
 /* OnFunctionaryDeath(LooserName, WinnerName): another one 10 s later */
-static PyObject *Data_OnFunctionaryDeath(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	SF_ARGS("OO", &looser, &winner);
-	Sf_Import(&f, "Vehicles");
-	if (Sf_In(&f, looser, G(GD, "funcsAttackingTransport")) > 0) {
-		Sf_Method(&f, G(GD, "funcsAttackingTransport"), "remove", "(O)", looser);
-	}
-	Sf_Run(&f, "Vehicles", "OnDeath", "(OO)", looser, winner);
-	Sf_Later(&f, Sf_Int(&f, 10), G(GD, "SpawnFunctionaries"), Sf_Build(&f, "(i)", 1), NULL);
-	return Sf_None(&f);
+static byte Data_OnFunctionaryDeath(const nativeVal_t *a) {
+	nativeVal_t one = { 0 };
+	Native_SetInt(&one, 1);
+	return Mode_Import("Vehicles") && Mode_RemoveIn(&a[0], GD, "funcsAttackingTransport") &&
+		LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1]) && Mode_Later(10, GD, "SpawnFunctionaries", &one, 1, NULL);
 }
 
 /* OnTransportsDeath(LooserName, WinnerName): the transport explodes, its functionaries become enemies; a transport
  * that still had data gives a new one */
-static PyObject *Data_OnTransportsDeath(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner, *name;
-	SF_ARGS("OO", &looser, &winner);
-	Sf_SetAttrI(&f, Sf_Entity(&f, looser), "Ammo01", 500);
-	Sf_Run(&f, "Scrap", "SetCallFunc", "(s)", "!InfernoFire");
-	Sf_Run(&f, "Scrap", "AddParams", "(O)", looser);
-	Sf_Run(&f, "Scrap", "Execute", "()");
-	PyObject *funcs = G(GD, "funcsAttackingTransport");
-	int mark = f.n;
-	for (int k = 0; (name = Sf_Next(&f, funcs, k)) != NULL; k++) {
-		PyObject *e = Sf_Entity(&f, name);
-		if (Sf_True(&f, e) > 0) {
-			Sf_SetAttrS(&f, e, "EntityList", "Enemies");
-		}
-		Sf_Release(&f, mark);
+static byte Data_OnTransportsDeath(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = TV(), *lst = TV(), *rs = TV(), *empty = TV();
+	/* Scrap.SetCallFunc, AddParams, Execute by name (OBJLIB 7: the call function is static in ScrapPy.c) */
+	byte ok = Mode_EntityH(&a[0], e) && LvN_SetI(e, "Ammo01", 500) && LV_CALL("Scrap", "SetCallFunc", NULL, "s", "!InfernoFire") &&
+		LV_CALL("Scrap", "AddParams", NULL, "v", &a[0]) && LV_CALL("Scrap", "Execute", NULL, "");
+	int cnt = ok && LvN_GElems(GD, "funcsAttackingTransport", lst) ? Native_ForCount(lst) : -1;
+	ok = cnt >= 0;
+	for (int k = 0; ok && k < cnt; k++) {
+		nativeVal_t it = { 0 };
+		Native_Free(e);
+		ok = Native_SeqItem(lst, k, &it) && Mode_EntityH(&it, e) && (!Native_True(e) || LvN_SetS(e, "EntityList", "Enemies"));
+		Native_Free(&it);
 	}
-	Sf_SetGlobal(&f, GD, "funcsAttackingTransport", Sf_Build(&f, "[]"));
-	if (Sf_In(&f, looser, G(GD, "transportsTaunts")) > 0) {
-		Sf_Method(&f, G(GD, "transportsTaunts"), "remove", "(O)", looser);
+	Native_SetEmpty(empty, NV_LIST);
+	ok = ok && Mode_Put(GD, "funcsAttackingTransport", NULL, empty) && Mode_RemoveIn(&a[0], GD, "transportsTaunts");
+	int in = ok ? Mode_InG(&a[0], GD, "transports") : -1;
+	if (in > 0) {
+		Native_Free(e);
+		int data = Mode_EntityH(&a[0], e) ? (Native_True(e) ? (Mode_VGet(e, "RadarShow", rs) ? LvN_EqI(rs, 1) : -1) : 0) : -1;
+		ok = data >= 0 && (!data || (LvN_PutI(GD, "droppedData", 0) && LvN_Com("MissionGetDataPart1_RemoteMessage3", "Boss", NULL, NULL, NULL) &&
+			Mode_Later(2, GD, "AddTransportToList", NULL, 0, "AddTransport")));
 	}
-	if (Sf_In(&f, looser, G(GD, "transports")) > 0) {
-		PyObject *e = Sf_Entity(&f, looser);
-		int data = Sf_True(&f, e);
-		if (data > 0) {
-			data = Sf_EqI(&f, Sf_Attr(&f, e, "RadarShow"), 1);
-		}
-		if (data > 0) {
-			Sf_SetGlobal(&f, GD, "droppedData", Sf_Int(&f, 0));
-			Lv_Com(&f, "MissionGetDataPart1_RemoteMessage3", "Boss", NULL, NULL);
-			Sf_Later(&f, Sf_Int(&f, 2), G(GD, "AddTransportToList"), NOARGS, "AddTransport");
-		}
-	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok && in >= 0);
 }
 
 /* OnTransportsDamage(LooserName, WinnerName, Damage): the player hits the transport with data: the functionaries, a
  * taunt, the data cubes start to fall */
-static PyObject *Data_OnTransportsDamage(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner, *damage;
-	SF_ARGS("OOO", &looser, &winner, &damage);
-	PyObject *usr = USR();
-	if (Sf_True(&f, usr) == 0) {
-		return Sf_None(&f);
+static byte Data_OnTransportsDamage(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = TV(), *e = TV(), *rs = TV(), *name = TV(), *nd = TV(), *dd = TV(), *delay = TV();
+	if (!Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *e = Sf_Entity(&f, looser);
-	int off = Sf_True(&f, e);
-	if (off > 0) {
-		off = Sf_Compare(&f, Sf_Attr(&f, e, "RadarShow"), "!=", Sf_Int(&f, 1));
+	if (!Native_True(usr)) {
+		return Mode_Done(&t, 1);
 	}
-	if (off > 0 || Sf_In(&f, winner, G(GD, "funcsAttackingTransport")) > 0) {
-		return Sf_None(&f);
+	int off = Mode_EntityH(&a[0], e) ? (Native_True(e) ? (Mode_VGet(e, "RadarShow", rs) ? !LvN_EqI(rs, 1) : -1) : 0) : -1;
+	if (off == 0) {
+		off = Mode_InG(&a[1], GD, "funcsAttackingTransport");
 	}
-	if (Sf_Compare(&f, Sf_Attr(&f, usr, "Name"), "==", winner) > 0) {
-		if (Sf_True(&f, G(GD, "funcsSpawned")) == 0) {
-			Sf_SetGlobal(&f, GD, "funcsSpawned", Sf_Int(&f, 1));
-			Sf_Own(&f, GD, "SpawnFunctionaries", "(i)", 2);
+	if (off != 0) {
+		return Mode_Done(&t, off > 0);
+	}
+	if (!Mode_VGet(usr, "Name", name)) {
+		return Mode_Done(&t, 0);
+	}
+	byte ok = 1;
+	if (!Native_Compare(name, &a[1])) {
+		int c = LvN_GTrue(GD, "funcsSpawned");
+		ok = c >= 0 && (c || (LvN_PutI(GD, "funcsSpawned", 1) && LV_OWN(GD, "SpawnFunctionaries", NULL, "i", 2L)));
+		if (ok) {
+			Mode_SaveVar("NumData", nd);
 		}
-		PyObject *nd = SAVE("NumData");
-		if (Gd_DataCmp(&f, nd, "<=", "NumDataFuncsAttackTransport") > 0 && Sf_In(&f, looser, G(GD, "transportsTaunts")) == 0) {
-			Lv_Com(&f, "MissionGetDataPart1_RemoteMessage7", "Functionary", NULL, NULL);
-			Sf_Method(&f, G(GD, "transportsTaunts"), "append", "(O)", looser);
+		c = ok ? Gd_DataCmp(nd, "<=", "NumDataFuncsAttackTransport") : -1;
+		if (c > 0) {
+			c = Mode_InG(&a[0], GD, "transportsTaunts");
+			ok = c >= 0 && (c || (LvN_Com("MissionGetDataPart1_RemoteMessage7", "Functionary", NULL, NULL, NULL) &&
+				Mode_Append(GD, "transportsTaunts", &a[0])));
 		}
-		if (Sf_EqI(&f, G(GD, "droppedData"), 0) > 0) {
-			Sf_Later(&f, G(GD, "TimeBetweenData"), G(GD, "SpawnData"), NOARGS, NULL);
-			Sf_SetGlobal(&f, GD, "droppedData", Sf_Int(&f, 1));
+		ok = ok && c >= 0 && Mode_G(GD, "droppedData", dd);
+		if (ok && LvN_EqI(dd, 0)) {
+			ok = Mode_G(GD, "TimeBetweenData", delay) && Mode_LaterV(delay, GD, "SpawnData", NULL, 0, NULL) && LvN_PutI(GD, "droppedData", 1);
 		}
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
 /* SpawnData(): the current transport drops a data cube, four in a row */
-static PyObject *Data_SpawnData(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *e = Sf_Entity(&f, G(GD, "currentTransport"));
-	if (Sf_True(&f, e) > 0 && Sf_Compare(&f, Sf_ToInt(&f, SAVE("NumData")), "<", G(GD, "MAX_DATA_UNITS")) > 0) {
-		Sf_Own(&f, GD, "DropData", "(O)", Sf_Attr(&f, e, "Pos"));
-		int more = Sf_Compare(&f, G(GD, "droppedData"), "!=", Sf_Int(&f, 3));
-		if (more > 0) {
-			Sf_Later(&f, G(GD, "TimeBetweenData"), G(GD, "SpawnData"), NOARGS, "SpawnData");
-			Sf_SetGlobal(&f, GD, "droppedData", Sf_OpI(&f, G(GD, "droppedData"), '+', 1));
-		} else if (more == 0) {
-			Sf_SetGlobal(&f, GD, "droppedData", Sf_Int(&f, 0));
+static byte Data_SpawnData(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cur = TV(), *e = TV(), *n = TV(), *pos = TV(), *dd = TV(), *delay = TV();
+	byte ok = Mode_G(GD, "currentTransport", cur) && Mode_EntityH(cur, e);
+	int c = ok ? (Native_True(e) ? (Mode_SaveInt("NumData", n) ? Mode_CmpG(n, "<", GD, "MAX_DATA_UNITS") : -1) : 0) : -1;
+	if (c > 0) {
+		ok = Mode_VGet(e, "Pos", pos) && LV_OWN(GD, "DropData", NULL, "v", pos) && Mode_G(GD, "droppedData", dd);
+		if (ok && !LvN_EqI(dd, 3)) {
+			ok = Mode_G(GD, "TimeBetweenData", delay) && Mode_LaterV(delay, GD, "SpawnData", NULL, 0, "SpawnData") && LvN_GAdd(GD, "droppedData", 1, NULL);
+		} else if (ok) {
+			ok = LvN_PutI(GD, "droppedData", 0);
 		}
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok && c >= 0);
 }
 
 /* DropData(pos): a data cube that goes away after TimeDataDisappears */
-static PyObject *Data_DropData(PyObject *self, PyObject *args) {
-	PyObject *pos;
-	SF_ARGS("O", &pos);
-	PyObject *l = Sf_Ask(&f, "Scrap", "CreateEntity", "(sOOOs)", "DroppedData", Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1), Sf_Item(&f, pos, 2), "Item");
-	Sf_Method(&f, l, "SetModel", "(O)", G(GD, "DataCubeModel"));
-	Sf_SetAttrI(&f, l, "Radius", 3500);
-	Sf_SetAttrI(&f, l, "AppearsIfFree", 0);
-	Sf_SetAttrI(&f, l, "AutoFace", 0);
-	Sf_SetAttrI(&f, l, "OnlyUser", 1);
-	Sf_SetAttr(&f, l, "rTime", Sf_Float(&f, 0.25));
-	Sf_SetAttrS(&f, l, "OnTake", "Mission_GetDataPart1.TakeData");
-	Sf_Import(&f, "Items");
-	Sf_Run(&f, "Items", "SetSound", "(Os)", l, "TakeDataCube");
-	Sf_Later(&f, G(GD, "TimeDataDisappears"), G(GD, "DelData"), Sf_Build(&f, "(O)", Sf_Attr(&f, l, "Name")), NULL);
-	return Sf_None(&f);
+static byte Data_DropData(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *l = TV(), *model = TV(), *delay = TV(), *name = TV();
+	byte ok = LvN_CreateAt(Mode_S(&t, "DroppedData"), &a[0], "Item", l) && Mode_G(GD, "DataCubeModel", model) && Mode_VModel(l, model) &&
+		LvN_SetI(l, "Radius", 3500) && LvN_SetI(l, "AppearsIfFree", 0) && LvN_SetI(l, "AutoFace", 0) && LvN_SetI(l, "OnlyUser", 1) &&
+		LvN_SetF(l, "rTime", 0.25) && LvN_SetS(l, "OnTake", "Mission_GetDataPart1.TakeData") && Mode_Import("Items") &&
+		LV_CALL("Items", "SetSound", NULL, "vs", l, "TakeDataCube") && Mode_G(GD, "TimeDataDisappears", delay) && Mode_VGet(l, "Name", name) &&
+		Mode_LaterV(delay, GD, "DelData", name, 1, NULL);
+	return Mode_Done(&t, ok);
 }
 
-static PyObject *Data_DelData(PyObject *self, PyObject *args) {
-	PyObject *name;
-	SF_ARGS("O", &name);
-	PyObject *e = Sf_Entity(&f, name);
-	if (Sf_True(&f, e) > 0) {
-		Sf_Method(&f, e, "Del", "()");
-	}
-	return Sf_None(&f);
+static byte Data_DelData(const nativeVal_t *a) {
+	nativeVal_t e = { 0 };
+	Native_SetNone(&e);
+	byte ok = Mode_EntityH(&a[0], &e) && (!Native_True(&e) || Mode_VDel(&e));
+	Native_Free(&e);
+	return ok;
 }
 
 /* the functionaries after the transport with only the rail */
-static byte Gd_FuncsAttack(scriptFrame_t *f) {
-	PyObject *name;
-	PyObject *fname = Sf_Ask(f, "Scrap", "EntityListGet", "(ss)", "Enemies", "First");
-	PyObject *fn = Sf_Entity(f, fname);
-	int mark = f->n;
-	while (Sf_True(f, fn) > 0) {
-		Sf_Method(f, Sf_Global(f, GD, "funcsAttackingTransport"), "append", "(O)", fname);
-		fname = Sf_Attr(f, fn, "NextInList");
-		fn = Sf_Entity(f, fname);
-		PyObject *keep[2] = { fname, fn };
-		Sf_ReleaseKeep(f, mark, keep, 2);
+static byte Gd_FuncsAttack(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *fname = TV(), *fn = TV(), *lst = TV(), *cur = TV();
+	byte ok = Mode_ListGet("Enemies", "First", fname) && Mode_EntityH(fname, fn);
+	while (ok && Native_True(fn)) {
+		ok = Mode_Append(GD, "funcsAttackingTransport", fname);
+		Native_Free(fname);
+		ok = ok && Mode_VGet(fn, "NextInList", fname);
+		Native_Free(fn);
+		ok = ok && Mode_EntityH(fname, fn);
 	}
-	PyObject *funcs = Sf_Global(f, GD, "funcsAttackingTransport");
-	mark = f->n;
-	for (int k = 0; (name = Sf_Next(f, funcs, k)) != NULL; k++) {
-		fn = Sf_Entity(f, name);
-		Sf_SetAttrS(f, fn, "WeapList", "0,0,0,0,1,0,1");
-		Sf_SetAttrS(f, fn, "EntityList", "");
-		Sf_Run(f, "SAI", "SetStateVehicle", "(iOO)", 2, name, Sf_Global(f, GD, "currentTransport"));
-		Sf_Release(f, mark);
+	int cnt = ok && LvN_GElems(GD, "funcsAttackingTransport", lst) ? Native_ForCount(lst) : -1;
+	ok = cnt >= 0;
+	for (int k = 0; ok && k < cnt; k++) {
+		nativeVal_t it = { 0 };
+		Native_Free(fn);
+		ok = Native_SeqItem(lst, k, &it) && Mode_EntityH(&it, fn) && LvN_SetS(fn, "WeapList", "0,0,0,0,1,0,1") && LvN_SetS(fn, "EntityList", "") &&
+			Mode_Read(GD, "currentTransport", cur) && LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, &it, cur);
+		Native_Free(&it);
 	}
-	return !f->failed;
+	return Mode_Done(&t, ok);
 }
 
 /* the transport gives no more data: not a target any more */
-static byte Gd_TransportDone(scriptFrame_t *f, PyObject *e) {
-	if (Sf_True(f, e) > 0) {
-		Sf_SetAttrS(f, e, "TgType", "none");
-		Sf_Run(f, "MissionsFuncs", "ActivateTarget", "(Oi)", e, 0);
-	}
-	return !f->failed;
+static byte Gd_TransportDone(const nativeVal_t *e) {
+	return !Native_True(e) || (LvN_SetS(e, "TgType", "none") && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 0L));
 }
 
 /* TakeData(ItemName, CharName): a data unit more; all of them end the mission, the transport's share a new transport */
-static PyObject *Data_TakeData(PyObject *self, PyObject *args) {
-	PyObject *item, *ch, *name;
-	SF_ARGS("OO", &item, &ch);
-	if (Lv_UsrNameIs(&f, USR(), ch) <= 0) {
-		return Sf_None(&f);
+static byte Data_TakeData(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = TV(), *itm = TV(), *sv = TV(), *ni = TV(), *num = TV(), *max = TV(), *rep = TV(), *cur = TV(), *e = TV();
+	nativeVal_t *lst = TV(), *fn = TV(), *sd = TV();
+	int c = Mode_UsrHandle(usr) ? LvN_UsrNameIs(usr, &a[1]) : -1;
+	if (c <= 0) {
+		return Mode_Done(&t, c == 0);
 	}
-	PyObject *itm = Sf_Entity(&f, item);
-	Sf_SetAttrI(&f, itm, "rTime", 20);
-	Sf_Later(&f, Sf_Int(&f, 5), Sf_Attr(&f, itm, "Del"), NOARGS, NULL);
-	if (f.failed) {
-		return Sf_None(&f);
+	if (!Mode_EntityH(&a[0], itm) || !Mode_DelLater(itm)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *num = Sf_OpI(&f, Sf_ToInt(&f, SAVE("NumData")), '+', 1);
-	int over = Sf_Compare(&f, num, ">", G(GD, "MAX_DATA_UNITS"));
-	if (Sf_Except(&f) || over > 0) {
-		return Sf_None(&f);
+	Mode_SaveVar("NumData", sv);
+	if (!Native_ToInt(sv, ni) || !Native_Arith('+', ni, Mode_I(&t, 1), num) || !Mode_G(GD, "MAX_DATA_UNITS", max)) {
+		/* except: return (OBJLIB 7: the error is the Python exception until errors are a C state) */
+		PyErr_Clear();
+		return Mode_Done(&t, 1);
 	}
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "NumData", Sf_Repr(&f, num));
-	PyObject *e = Sf_Entity(&f, G(GD, "currentTransport"));
-	int all = Sf_Compare(&f, num, "==", G(GD, "MAX_DATA_UNITS"));
+	if (Native_Compare(num, max) > 0) {
+		return Mode_Done(&t, 1);
+	}
+	Mode_Repr(num, rep);
+	byte ok = Mode_SetSaveVar("NumData", rep) && Mode_G(GD, "currentTransport", cur) && Mode_EntityH(cur, e);
+	int all = ok ? Mode_CmpG(num, "==", GD, "MAX_DATA_UNITS") : -1;
 	if (all > 0) {
-		Gd_TransportDone(&f, e);
-		Sf_Run(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "SpawnData");
-		Sf_Run(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "AddTransport");
-		Sf_Import(&f, "Parking");
-		Lv_ScorerCall(&f, Py_None);
-		Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Py_None);
-		PyObject *funcs = G(GD, "funcsAttackingTransport");
-		int mark = f.n;
-		for (int k = 0; (name = Sf_Next(&f, funcs, k)) != NULL; k++) {
-			PyObject *fn = Sf_Entity(&f, name);
-			Sf_SetAttrS(&f, fn, "EntityList", "Traffic");
-			Sf_SetAttrS(&f, fn, "TgType", "none");
-			Sf_Release(&f, mark);
+		ok = Gd_TransportDone(e) && Mode_DelSchedS("SpawnData") && Mode_DelSchedS("AddTransport") && Mode_Import("Parking") && LvN_ScorerOff() &&
+			LvN_ModNone("Parking", "SwitchVehicleMissionCallback");
+		int cnt = ok && LvN_GElems(GD, "funcsAttackingTransport", lst) ? Native_ForCount(lst) : -1;
+		ok = cnt >= 0;
+		for (int k = 0; ok && k < cnt; k++) {
+			nativeVal_t it = { 0 };
+			Native_Free(fn);
+			ok = Native_SeqItem(lst, k, &it) && Mode_EntityH(&it, fn) && LvN_SetS(fn, "EntityList", "Traffic") && LvN_SetS(fn, "TgType", "none");
+			Native_Free(&it);
 		}
-		Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "Transports", "OnDeath", "");
-		Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "Transports", "OnDamage", "");
-		Lv_Com(&f, "MissionGetDataPart1_RemoteMessage6", "Boss", G(GD, "SetNextMission"), NOARGS);
+		ok = ok && Mode_ListSet("Transports", "OnDeath", "") && Mode_ListSet("Transports", "OnDamage", "") &&
+			LvN_Com("MissionGetDataPart1_RemoteMessage6", "Boss", GD, "SetNextMission", LvN_NoArgs());
 	} else if (all == 0) {
-		int attack = Sf_Compare(&f, num, ">", G(GD, "NumDataFuncsAttackTransport"));
+		int attack = Mode_CmpG(num, ">", GD, "NumDataFuncsAttackTransport");
 		if (attack > 0) {
-			attack = Sf_True(&f, e);
+			attack = Native_True(e);
 		}
 		if (attack > 0) {
-			if (Sf_True(&f, G(GD, "funcsAttackTransportMessage")) == 0) {
-				Sf_SetGlobal(&f, GD, "funcsAttackTransportMessage", Sf_Int(&f, 1));
-				Lv_Com(&f, "MissionGetDataPart1_RemoteMessage8", "Functionary", NULL, NULL);
-			}
-			Gd_FuncsAttack(&f);
+			c = LvN_GTrue(GD, "funcsAttackTransportMessage");
+			ok = c >= 0 && (c || (LvN_PutI(GD, "funcsAttackTransportMessage", 1) &&
+				LvN_Com("MissionGetDataPart1_RemoteMessage8", "Functionary", NULL, NULL, NULL))) && Gd_FuncsAttack();
 		}
-		Sf_SetGlobal(&f, GD, "currentTransportSpawnedData", Sf_OpI(&f, G(GD, "currentTransportSpawnedData"), '+', 1));
-		if (Sf_Compare(&f, G(GD, "currentTransportSpawnedData"), ">=", G(GD, "MAX_TRANSPORTS_DATA_UNITS")) > 0) {
-			Gd_TransportDone(&f, e);
-			Sf_SetGlobal(&f, GD, "droppedData", Sf_Int(&f, 0));
-			Sf_Run(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "SpawnData");
-			Lv_Com(&f, "MissionGetDataPart1_RemoteMessage2", "Boss", G(GD, "AddTransportToList"), NOARGS);
-		}
+		ok = ok && attack >= 0 && LvN_GAdd(GD, "currentTransportSpawnedData", 1, NULL) && Mode_G(GD, "currentTransportSpawnedData", sd);
+		c = ok ? Mode_CmpG(sd, ">=", GD, "MAX_TRANSPORTS_DATA_UNITS") : -1;
+		ok = c >= 0 && (!c || (Gd_TransportDone(e) && LvN_PutI(GD, "droppedData", 0) && Mode_DelSchedS("SpawnData") &&
+			LvN_Com("MissionGetDataPart1_RemoteMessage2", "Boss", GD, "AddTransportToList", LvN_NoArgs())));
 	}
-	Sf_DrawScorer(&f);
-	return Sf_None(&f);
+	ok = ok && all >= 0 && LvN_Draw();
+	return Mode_Done(&t, ok);
 }
 
 /* SetNextMission(): on to Mission_GetDataPart2 in the bank */
-static PyObject *Data_SetNextMission(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "MissionsFuncs");
-	Gd_TransportDone(&f, Sf_Entity(&f, G(GD, "currentTransport")));
-	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "MissionState");
-	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "NumData");
-	Lv_Next(&f, "Mission_GetDataPart2", "Bank", "Mission_TalkToBoss2_MissionText1");
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	return Sf_None(&f);
+static byte Data_SetNextMission(void) {
+	nativeVal_t cur = { 0 }, e = { 0 };
+	Native_SetNone(&cur);
+	Native_SetNone(&e);
+	byte ok = Mode_Import("MissionsFuncs") && Mode_G(GD, "currentTransport", &cur) && Mode_EntityH(&cur, &e) && Gd_TransportDone(&e) &&
+		Mode_DelSaveVars("MissionState") && Mode_DelSaveVars("NumData") &&
+		LvN_Next("Mission_GetDataPart2", "Bank", "Mission_TalkToBoss2_MissionText1") && Mode_WayPoint();
+	Native_Free(&cur);
+	Native_Free(&e);
+	return ok;
 }
 
 /* MissionScorer(id): the bar of the data units */
-static PyObject *Data_MissionScorer(PyObject *self, PyObject *args) {
-	PyObject *id;
-	SF_ARGS("O", &id);
-	Lv_Text(&f, id, "DataStatusText", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_GetDataPart1_Scorer_1"), NULL);
-	const char *bar = "DataStatus";
-	Sf_Run(&f, "SScorer", "Add", "(Oss)", id, bar, "Bar");
-	Lv_BarDefaults(&f, id, bar, NULL, NULL);
-	Sf_Run(&f, "SScorer", "Set", "(Ossi)", id, bar, "IsAutoUpdatable", 0);
-	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "MaxValue", G(GD, "MAX_DATA_UNITS"));
-	Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "Value", Sf_ToInt(&f, SAVE("NumData")));
-	return Sf_None(&f);
+static byte Data_MissionScorer(const nativeVal_t *id) {
+	static const char bar[] = "DataStatus";
+	nativeVal_t max = { 0 }, n = { 0 };
+	Native_SetNone(&max);
+	Native_SetNone(&n);
+	byte ok = Mode_LvLabel(id, "DataStatusText", 0, "Mission_GetDataPart1_Scorer_1", 0) && Mode_ScorerAddS(id, bar, "Bar") &&
+		Mode_BarDefaults(id, bar, NULL, NULL) && Mode_ScorerSetI(id, bar, "IsAutoUpdatable", 0) && Mode_G(GD, "MAX_DATA_UNITS", &max) &&
+		LvN_ScorerSet(id, bar, "MaxValue", &max) && Mode_SaveInt("NumData", &n) && LvN_ScorerSet(id, bar, "Value", &n);
+	Native_Free(&max);
+	Native_Free(&n);
+	return ok;
 }
+
+LV_CORE0(Data_Init)
+LV_CORE0(Data_InitMission)
+LV_CORE0(Data_AddTransportToList)
+LV_COREA(Data_SpawnFunctionaries)
+LV_COREA(Data_OnFunctionaryDeath)
+LV_COREA(Data_OnTransportsDeath)
+LV_COREA(Data_OnTransportsDamage)
+LV_CORE0(Data_SpawnData)
+LV_COREA(Data_DropData)
+LV_COREA(Data_DelData)
+LV_COREA(Data_TakeData)
+LV_CORE0(Data_SetNextMission)
+LV_COREA(Data_MissionScorer)
+LV_FN(Data, InitPy, 1, Data_Init_C)
+LV_FN(Data, InitMissionPy, 0, Data_InitMission_C)
+LV_FN(Data, CreateTransportPy, 0, Data_CreateTransport_C)
+LV_FN(Data, CreateFunctionaryPy, 0, Data_CreateFunctionary_C)
+LV_FN(Data, AddTransportToListPy, 0, Data_AddTransportToList_C)
+LV_FN(Data, SpawnFunctionariesPy, 1, Data_SpawnFunctionaries_C)
+LV_FN(Data, OnFunctionaryDeathPy, 2, Data_OnFunctionaryDeath_C)
+LV_FN(Data, OnTransportsDeathPy, 2, Data_OnTransportsDeath_C)
+LV_FN(Data, OnTransportsDamagePy, 3, Data_OnTransportsDamage_C)
+LV_FN(Data, SpawnDataPy, 0, Data_SpawnData_C)
+LV_FN(Data, DropDataPy, 1, Data_DropData_C)
+LV_FN(Data, DelDataPy, 1, Data_DelData_C)
+LV_FN(Data, TakeDataPy, 2, Data_TakeData_C)
+LV_FN(Data, SetNextMissionPy, 0, Data_SetNextMission_C)
+LV_FN(Data, MissionScorerPy, 1, Data_MissionScorer_C)
 
 PyMethodDef g_DownTownGetDataPart1Methods[] = {
 	{ "GetFuncEnemiesProfile", Data_GetFuncEnemiesProfile, 1, NULL },
 	{ "InitStatus", Data_InitStatus, 1, NULL },
-	{ "Init", Data_Init, 1, NULL },
-	{ "InitMission", Data_InitMission, 1, NULL },
-	{ "CreateTransport", Data_CreateTransport, 1, NULL },
-	{ "CreateFunctionary", Data_CreateFunctionary, 1, NULL },
-	{ "AddTransportToList", Data_AddTransportToList, 1, NULL },
-	{ "SpawnFunctionaries", Data_SpawnFunctionaries, 1, NULL },
-	{ "OnFunctionaryDeath", Data_OnFunctionaryDeath, 1, NULL },
-	{ "OnTransportsDeath", Data_OnTransportsDeath, 1, NULL },
-	{ "OnTransportsDamage", Data_OnTransportsDamage, 1, NULL },
-	{ "SpawnData", Data_SpawnData, 1, NULL },
-	{ "DropData", Data_DropData, 1, NULL },
-	{ "DelData", Data_DelData, 1, NULL },
-	{ "TakeData", Data_TakeData, 1, NULL },
-	{ "SetNextMission", Data_SetNextMission, 1, NULL },
-	{ "MissionScorer", Data_MissionScorer, 1, NULL },
+	{ "Init", Data_InitPy, 1, NULL },
+	{ "InitMission", Data_InitMissionPy, 1, NULL },
+	{ "CreateTransport", Data_CreateTransportPy, 1, NULL },
+	{ "CreateFunctionary", Data_CreateFunctionaryPy, 1, NULL },
+	{ "AddTransportToList", Data_AddTransportToListPy, 1, NULL },
+	{ "SpawnFunctionaries", Data_SpawnFunctionariesPy, 1, NULL },
+	{ "OnFunctionaryDeath", Data_OnFunctionaryDeathPy, 1, NULL },
+	{ "OnTransportsDeath", Data_OnTransportsDeathPy, 1, NULL },
+	{ "OnTransportsDamage", Data_OnTransportsDamagePy, 1, NULL },
+	{ "SpawnData", Data_SpawnDataPy, 1, NULL },
+	{ "DropData", Data_DropDataPy, 1, NULL },
+	{ "DelData", Data_DelDataPy, 1, NULL },
+	{ "TakeData", Data_TakeDataPy, 1, NULL },
+	{ "SetNextMission", Data_SetNextMissionPy, 1, NULL },
+	{ "MissionScorer", Data_MissionScorerPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
 /* ---- Mission_HumphreyRace: the first crazy bet, a race against Humphrey with the doors of the level closed ---- */
 
 /* InitStatus(LevelPath): the challenge of the race (only the first race of the level) or none */
-static PyObject *Bet_InitStatus(PyObject *self, PyObject *args) {
+static byte Bet_InitStatus(void) {
 	static const char *const race[] = { "Revenge.NumEnemies", "3", "Challenge.NumEnemies", "3", "Challenge.Type", "Race", "Challenge.Foe",
 		"Humphrey", "Challenge.Money", "0", NULL };
 	static const char *const none[] = { "Revenge.Type", "", "Revenge.Foe", "", "Revenge.NumEnemies", "", "Challenge.NumEnemies", "",
 		"Challenge.Type", "", "Challenge.Foe", "", "Challenge.Money", "", "Race.Profile", "", NULL };
-	PATH_ARGS();
-	Lv_AcShips(&f, HR, "[\"SMayor1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]");
-	Sf_Import(&f, "MapRace");
-	int racing = Sf_EqS(&f, SAVE("MissionState"), "HumphreyRace");
-	if (racing > 0) {
-		Lv_Saves(&f, race);
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "Race.Profile", G(HR, "RACE_PROFILE"));
-		Sf_SetMod(&f, "MapRace", "Races", Sf_Build(&f, "[O]", Sf_Mod(&f, "MapRace", "EasyRaceDownTown1")));
-		Lv_Com(&f, "Mission_FirstCrazyBet_RemoteMessage5", "CrazyGambler", G(HR, "ShowSystemMessage"), NOARGS);
-	} else if (racing == 0) {
-		Lv_Saves(&f, none);
-		Sf_SetMod(&f, "MapRace", "Races", Sf_Build(&f, "[]"));
+	if (!LvN_AcShips(HR, "[\"SMayor1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]") || !Mode_Import("MapRace")) {
+		return 0;
 	}
-	return Sf_None(&f);
+	if (LvN_SaveIs("MissionState", "HumphreyRace")) {
+		Mode_Saves(race);
+		return Mode_SaveG("Race.Profile", HR, "RACE_PROFILE") && Mode_ModList1("MapRace", "Races", "MapRace", "EasyRaceDownTown1") &&
+			LvN_Com("Mission_FirstCrazyBet_RemoteMessage5", "CrazyGambler", HR, "ShowSystemMessage", LvN_NoArgs());
+	}
+	Mode_Saves(none);
+	return Mode_ModEmpty("MapRace", "Races");
 }
 
-static PyObject *Bet_ShowSystemMessage(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "RaceMaker");
-	Sf_Run(&f, "RaceMaker", "ShowSystemMessage", "(O)", Sf_Lang(&f, Sf_Str(&f, "RaceSystemGetShip")));
-	return Sf_None(&f);
+static byte Bet_ShowSystemMessage(void) {
+	return LvN_SystemMessage("RaceSystemGetShip");
 }
 
 /* Init(LevelPath): the doors of the level closed; the race with its callbacks and the boost message, or the call of
  * the crazy gambler after it */
-static PyObject *Bet_Init(PyObject *self, PyObject *args) {
-	PATH_ARGS();
-	Sf_Import(&f, "RaceMaker");
-	Sf_Import(&f, "Parking");
-	Sf_Run(&f, "SScorer", "AddModel", "(isssii)", 0, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3, 25);
-	Sf_EntSetS(&f, "DM_Door_CityDoorA_00", "OnObjSlot", "!CloseDoorSlot");
-	Sf_EntSetI(&f, "DM_Door_MetroExt_Downtown", "ArrowCanUse", 0);
-	Sf_EntSetS(&f, "DM_Door_Outmap_Commercial", "OnObjSlot", "!CloseDoorSlot");
-	Sf_EntSetS(&f, "DM_Door_Outmap_Scrapyard", "OnObjSlot", "!CloseDoorSlot");
-	Sf_EntSetS(&f, "DM_Door_Outmap_Outskirts", "OnObjSlot", "!CloseDoorSlot");
-	Sf_EntSetS(&f, "DM_Door_Elevator_Press", "UseFunc", "Mission_HumphreyRace.OnTryingToExit");
-	int racing = Sf_EqS(&f, SAVE("MissionState"), "HumphreyRace");
-	if (racing > 0) {
-		Sf_Run(&f, "Scrap", "Set", "(si)", "TimeToCancelCurrentMission", 0);
-		Sf_SetMod(&f, "RaceMaker", "SkipTimer", Sf_Int(&f, 1));
-		Sf_SetMod(&f, "RaceMaker", "OnPlayerWinsRace", G(HR, "OnPlayerWinsRace"));
-		Sf_SetMod(&f, "RaceMaker", "OnPlayerLoosesRace", G(HR, "OnPlayerLoosesRace"));
-		Sf_SetMod(&f, "RaceMaker", "OnPreInitRace", G(HR, "DelRacers"));
-		Sf_SetMod(&f, "RaceMaker", "OnInitRace", G(HR, "SetMissionTarget"));
-		Sf_SetMod(&f, "RaceMaker", "OnCheckPointCallback", G(HR, "ClosePressHangar"));
-		Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "BadBoy0");
-		Sf_SetGlobal(&f, HR, "prevSwitchVehicleMissionCallback", Sf_Mod(&f, "Parking", "SwitchVehicleMissionCallback"));
-		Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", G(HR, "ShowBoostMessage"));
-	} else if (racing == 0) {
-		Sf_Own(&f, HR, "CallCrazyGambler", "()");
+static byte Bet_Init(void) {
+	nativeVal_t prev = { 0 };
+	byte ok = Mode_Import("RaceMaker") && Mode_Import("Parking") &&
+		LV_CALL("SScorer", "AddModel", NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L) &&
+		Mode_EntSetS("DM_Door_CityDoorA_00", "OnObjSlot", "!CloseDoorSlot") && Mode_EntSetI("DM_Door_MetroExt_Downtown", "ArrowCanUse", 0) &&
+		Mode_EntSetS("DM_Door_Outmap_Commercial", "OnObjSlot", "!CloseDoorSlot") &&
+		Mode_EntSetS("DM_Door_Outmap_Scrapyard", "OnObjSlot", "!CloseDoorSlot") &&
+		Mode_EntSetS("DM_Door_Outmap_Outskirts", "OnObjSlot", "!CloseDoorSlot") &&
+		Mode_EntSetS("DM_Door_Elevator_Press", "UseFunc", "Mission_HumphreyRace.OnTryingToExit");
+	if (!ok) {
+		return 0;
 	}
-	return Sf_None(&f);
+	if (!LvN_SaveIs("MissionState", "HumphreyRace")) {
+		return LV_OWN(HR, "CallCrazyGambler", NULL, "");
+	}
+	Native_SetNone(&prev);
+	ok = Mode_GVarSetI("TimeToCancelCurrentMission", 0) && LvN_ModSetI("RaceMaker", "SkipTimer", 1) &&
+		LvN_ModSetGlobal("RaceMaker", "OnPlayerWinsRace", HR, "OnPlayerWinsRace") &&
+		LvN_ModSetGlobal("RaceMaker", "OnPlayerLoosesRace", HR, "OnPlayerLoosesRace") && LvN_ModSetGlobal("RaceMaker", "OnPreInitRace", HR, "DelRacers") &&
+		LvN_ModSetGlobal("RaceMaker", "OnInitRace", HR, "SetMissionTarget") &&
+		LvN_ModSetGlobal("RaceMaker", "OnCheckPointCallback", HR, "ClosePressHangar") && Mode_Target("BadBoy0") &&
+		LvN_ModGet("Parking", "SwitchVehicleMissionCallback", &prev) && Mode_Put(HR, "prevSwitchVehicleMissionCallback", NULL, &prev) &&
+		LvN_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", HR, "ShowBoostMessage");
+	Native_Free(&prev);
+	return ok;
 }
 
 /* ShowBoostMessage(): the callback it replaced, then the message of the boost key */
-static PyObject *Bet_ShowBoostMessage(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "Parking");
-	Sf_Import(&f, "RaceMaker");
-	PyObject *prev = G(HR, "prevSwitchVehicleMissionCallback");
-	if (Sf_True(&f, prev) > 0) {
-		Sf_Call(&f, prev, "()");
-	}
-	Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", G(HR, "prevSwitchVehicleMissionCallback"));
-	PyObject *text = Sf_Lang(&f, Sf_Str(&f, "Mission_FirstCrazyBet_SystemMessage4"));
-	PyObject *msg = Sf_Op(&f, text, '%', Sf_Ask(&f, "SInput", "GetDefinedEntry", "(isss)", 0, "Racer", "Boost", "Mouse"));
-	Sf_Run(&f, "SScorer", "SetMsgText", "(OO)", msg, Sf_OpI(&f, Sf_Time(&f), '+', 10));
-	return Sf_None(&f);
+static byte Bet_ShowBoostMessage(void) {
+	return LvN_BoostMessage(HR);
 }
 
 /* ClosePressHangar(): at the first checkpoint the door of the press hangar closes */
-static PyObject *Bet_ClosePressHangar(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "RaceMaker");
-	Sf_EntSetS(&f, "DM_Door_CityDoorA_01", "OnObjSlot", "!CloseDoorSlot");
-	Sf_SetMod(&f, "RaceMaker", "OnCheckPointCallback", Py_None);
-	return Sf_None(&f);
+static byte Bet_ClosePressHangar(void) {
+	return LvN_ClosePressHangar();
 }
 
 /* DelRacers(names): the other racers go, only Humphrey races */
-static PyObject *Bet_DelRacers(PyObject *self, PyObject *args) {
-	PyObject *names, *name;
-	SF_ARGS("O", &names);
-	int mark = f.n;
-	for (int k = 0; (name = Sf_Next(&f, names, k)) != NULL; k++) {
-		PyObject *e = Sf_Entity(&f, name);
-		if (Sf_True(&f, e) > 0) {
-			Sf_Method(&f, e, "Del", "()");
-		}
-		Sf_Release(&f, mark);
-	}
-	return Sf_None(&f);
+static byte Bet_DelRacers(const nativeVal_t *a) {
+	return Mode_DelNames(&a[0]);
 }
 
-/* the phone cab of a mission (CallCrazyGambler, CallHumphrey, CallDeepThroat and the like) */
-static PyObject *Dt_CallCab(PyObject *args, const char *use) {
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Lv_PhoneCab(&f, use, 1, NULL);
-	return Sf_None(&f);
+static byte Bet_CallCrazyGambler(void) {
+	return Mode_PhoneCab("Mission_HumphreyRace.UsePhoneCab", 1, NULL, NULL);
 }
 
-static PyObject *Bet_CallCrazyGambler(PyObject *self, PyObject *args) {
-	(void)self;
-	return Dt_CallCab(args, "Mission_HumphreyRace.UsePhoneCab");
-}
-
-/*
- * UsePhoneCab of a mission (UsrName, CharName, optId, FullOption): the audio com of the phone cab into the global pc
- * of module, the police warning police of who while the alarm is on, else the NI talk key of who with the end
- * function end of module (reset: the cab's use back to the default first)
- */
-static PyObject *Dt_UsePhone(PyObject *args, const char *module, const char *police, const char *who, const char *key, const char *end, int reset) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
-	}
-	Sf_Import(&f, "PhoneCab");
-	Sf_SetMod(&f, "Speech", "NPCName", ch);
-	Sf_SetMod(&f, "Speech", "PlayerName", usr);
-	Sf_Run(&f, "PhoneCab", "UseAudioCom", "(OOOO)", usr, ch, opt, full);
-	Sf_SetGlobal(&f, module, "pc", Sf_Entity(&f, ch));
-	int alarm = Lv_Alarm(&f);
-	if (alarm > 0) {
-		Sf_Run(&f, "Speech", "StartObjSpch", "(Oss)", G(module, "pc"), police, who);
-	} else if (alarm == 0) {
-		if (reset) {
-			Sf_SetAttrS(&f, G(module, "pc"), "UseFunc", "PhoneCab.DefUseAudioCom");
-		}
-		Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(module, "pc"), 0);
-		Sf_SpeechEnd(&f, G(module, end), NULL);
-		Sf_NISpeech(&f, who, key);
-	}
-	return Sf_None(&f);
-}
-
-static PyObject *Bet_UsePhoneCab(PyObject *self, PyObject *args) {
-	(void)self;
-	return Dt_UsePhone(args, HR, "Generics_StillPolice1_CrazyGambler", "CrazyGambler", "Mission_FirstCrazyBet_ComCrazyGambler_NI_1Msg",
+static byte Bet_UsePhoneCab(const nativeVal_t *a) {
+	return Dt_UsePhone(a, HR, "Generics_StillPolice1_CrazyGambler", "CrazyGambler", "Mission_FirstCrazyBet_ComCrazyGambler_NI_1Msg",
 		"PreGivePlans", 1);
 }
 
 /* PreGivePlans2(): the blueprints of the mercenary ship and engine, the next mission, the plans 5 s later */
-static PyObject *Bet_PreGivePlans2(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Lv_SaveAdd(&f, HR, "Hangar.shipsToEditList", "SMerc1");
-	Lv_SaveAdd(&f, HR, "Hangar.availableEnginesList", "MMERC1");
-	Sf_Own(&f, HR, "SetNextMission", "()");
-	Sf_Later(&f, Sf_Int(&f, 5), G(HR, "GivePlans"), NOARGS, NULL);
-	return Sf_None(&f);
+static byte Bet_PreGivePlans2(void) {
+	return Mode_SaveAdd(HR, "Hangar.shipsToEditList", "SMerc1") && Mode_SaveAdd(HR, "Hangar.availableEnginesList", "MMERC1") &&
+		LV_OWN(HR, "SetNextMission", NULL, "") && Mode_Later(5, HR, "GivePlans", NULL, 0, NULL);
 }
 
 /* GivePlans(): the message of the new blueprints and Rusty */
-static PyObject *Bet_GivePlans(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *cad = Sf_Lang(&f, Sf_Str(&f, "Mission_FirstCrazyBet_SystemMessage3"));
-	PyObject *t = Sf_Time(&f);
-	Sf_Run(&f, "SScorer", "SetMsgText", "(OO)", cad, Sf_Op(&f, t, '+', Sf_Ask(&f, "Speech", "CalculateSpeechTime", "(O)", cad)));
-	Sf_Run(&f, "Scrap", "IncSaveVar", "(si)", "NewBluePrintAvaliable", 2);
-	Lv_Com(&f, "Mission_FirstCrazyBet_RemoteMessage9", "Rusty", NULL, NULL);
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	return Sf_None(&f);
+static byte Bet_GivePlans(void) {
+	nativeVal_t cad = { 0 };
+	Mode_Lang("Mission_FirstCrazyBet_SystemMessage3", &cad);
+	byte ok = Mode_SpeechMsg(&cad) && LV_CALL("Scrap", "IncSaveVar", NULL, "si", "NewBluePrintAvaliable", 2L) &&
+		LvN_Com("Mission_FirstCrazyBet_RemoteMessage9", "Rusty", NULL, NULL, NULL) && Mode_WayPoint();
+	Native_Free(&cad);
+	return ok;
 }
 
 /* SetNextMission(): the doors open again, on to Mission_MeetArchbishop, the places of the characters */
-static PyObject *Bet_SetNextMission(PyObject *self, PyObject *args) {
+static byte Bet_SetNextMission(void) {
 	static const char *const doors[] = { "DM_Door_CityDoorA_00", "DM_Door_CityDoorA_01", "DM_Door_Outmap_Commercial", "DM_Door_Outmap_Scrapyard",
 		"DM_Door_Outmap_Outskirts", NULL };
 	static const char *const places[] = { "MayorAtTownHall", "1", "PoliceBossAtPolice", "1", "BankMasterAtBank", "1",
 		"Journalist.Humphrey_Defaut", "Temple", "Journalist.Betty_Defaut", "Press", "Journalist.Berto_Defaut", "Temple", NULL };
-	SF_ARGS("");
-	Sf_Import(&f, "PhoneCab");
-	Sf_EntSetI(&f, "DM_Door_MetroExt_Downtown", "ArrowCanUse", 1);
-	for (int i = 0; doors[i]; i++) {
-		Sf_EntSetS(&f, doors[i], "OnObjSlot", "!AutoDoorSlot");
+	nativeVal_t pc = { 0 };
+	byte ok = Mode_Import("PhoneCab") && Mode_EntSetI("DM_Door_MetroExt_Downtown", "ArrowCanUse", 1);
+	for (int i = 0; ok && doors[i]; i++) {
+		ok = Mode_EntSetS(doors[i], "OnObjSlot", "!AutoDoorSlot");
 	}
-	PyObject *pc = Sf_Ask(&f, "PhoneCab", "GetFree", "()");
-	Sf_SetAttrS(&f, pc, "UseFunc", "PhoneCab.DefUseAudioCom");
-	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "HumphreyRaceTutorial");
-	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "MissionState");
-	Lv_Next(&f, "Mission_MeetArchbishop", "Temple", "Mission_FirstContactPress_MissionText3");
-	Lv_Saves(&f, places);
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	return Sf_None(&f);
+	Native_SetNone(&pc);
+	ok = ok && LV_CALL("PhoneCab", "GetFree", &pc, "") && LvN_SetS(&pc, "UseFunc", "PhoneCab.DefUseAudioCom") &&
+		Mode_DelSaveVars("HumphreyRaceTutorial") && Mode_DelSaveVars("MissionState") &&
+		LvN_Next("Mission_MeetArchbishop", "Temple", "Mission_FirstContactPress_MissionText3");
+	Native_Free(&pc);
+	if (ok) {
+		Mode_Saves(places);
+	}
+	return ok && Mode_WayPoint();
 }
 
+LV_CORE0(Bet_InitStatus)
+LV_CORE0(Bet_ShowSystemMessage)
+LV_CORE0(Bet_Init)
+LV_CORE0(Bet_ShowBoostMessage)
+LV_CORE0(Bet_ClosePressHangar)
+LV_COREA(Bet_DelRacers)
+LV_CORE0(Bet_CallCrazyGambler)
+LV_COREA(Bet_UsePhoneCab)
+LV_CORE0(Bet_PreGivePlans2)
+LV_CORE0(Bet_GivePlans)
+LV_CORE0(Bet_SetNextMission)
+LV_FN(Bet, InitStatusPy, 1, Bet_InitStatus_C)
+LV_FN(Bet, ShowSystemMessagePy, 0, Bet_ShowSystemMessage_C)
+LV_FN(Bet, InitPy, 1, Bet_Init_C)
+LV_FN(Bet, ShowBoostMessagePy, 0, Bet_ShowBoostMessage_C)
+LV_FN(Bet, ClosePressHangarPy, 0, Bet_ClosePressHangar_C)
+LV_FN(Bet, DelRacersPy, 1, Bet_DelRacers_C)
+LV_FN(Bet, CallCrazyGamblerPy, 0, Bet_CallCrazyGambler_C)
+LV_FN(Bet, UsePhoneCabPy, 4, Bet_UsePhoneCab_C)
+LV_FN(Bet, PreGivePlans2Py, 0, Bet_PreGivePlans2_C)
+LV_FN(Bet, GivePlansPy, 0, Bet_GivePlans_C)
+LV_FN(Bet, SetNextMissionPy, 0, Bet_SetNextMission_C)
+
 PyMethodDef g_DownTownHumphreyRaceMethods[] = {
-	{ "InitStatus", Bet_InitStatus, 1, NULL },
-	{ "ShowSystemMessage", Bet_ShowSystemMessage, 1, NULL },
-	{ "Init", Bet_Init, 1, NULL },
-	{ "ShowBoostMessage", Bet_ShowBoostMessage, 1, NULL },
-	{ "ClosePressHangar", Bet_ClosePressHangar, 1, NULL },
-	{ "DelRacers", Bet_DelRacers, 1, NULL },
-	{ "CallCrazyGambler", Bet_CallCrazyGambler, 1, NULL },
-	{ "UsePhoneCab", Bet_UsePhoneCab, 1, NULL },
-	{ "PreGivePlans2", Bet_PreGivePlans2, 1, NULL },
-	{ "GivePlans", Bet_GivePlans, 1, NULL },
-	{ "SetNextMission", Bet_SetNextMission, 1, NULL },
+	{ "InitStatus", Bet_InitStatusPy, 1, NULL },
+	{ "ShowSystemMessage", Bet_ShowSystemMessagePy, 1, NULL },
+	{ "Init", Bet_InitPy, 1, NULL },
+	{ "ShowBoostMessage", Bet_ShowBoostMessagePy, 1, NULL },
+	{ "ClosePressHangar", Bet_ClosePressHangarPy, 1, NULL },
+	{ "DelRacers", Bet_DelRacersPy, 1, NULL },
+	{ "CallCrazyGambler", Bet_CallCrazyGamblerPy, 1, NULL },
+	{ "UsePhoneCab", Bet_UsePhoneCabPy, 1, NULL },
+	{ "PreGivePlans2", Bet_PreGivePlans2Py, 1, NULL },
+	{ "GivePlans", Bet_GivePlansPy, 1, NULL },
+	{ "SetNextMission", Bet_SetNextMissionPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
@@ -1464,486 +1464,452 @@ static PyObject *Hump_InitStatus(PyObject *self, PyObject *args) {
 }
 
 /* Init(LevelPath): the step of the mission by MissionState */
-static PyObject *Hump_Init(PyObject *self, PyObject *args) {
-	PATH_ARGS();
-	Sf_Run(&f, "Scrap", "Preload3DObject", "(O)", G(DH, "MeetingPoint_ModelFile"));
-	PyObject *state = SAVE("MissionState");
-	int s = Sf_EqS(&f, state, "CallHumphrey");
-	if (s > 0) {
-		Sf_Own(&f, DH, "CallHumphrey", "()");
-	} else if (s == 0 && (s = Sf_EqS(&f, state, "DistractHumphrey")) > 0) {
-		int again = Sf_EqS(&f, SAVE("DistractionStart"), "1");
-		if (again > 0) {
-			Lv_Com(&f, "Mission_DistractHumphrey_RemoteMessage6", "DeepThroat", G(DH, "CreateWaypoint"), NOARGS);
-		} else if (again == 0) {
-			Sf_Own(&f, DH, "CreateWaypoint", "()");
-		}
-	} else if (s == 0 && Sf_EqS(&f, state, "CallDeepThroat") > 0) {
-		Sf_Own(&f, DH, "PreCallDeepThroat", "()");
+static byte Hump_Init(void) {
+	nativeVal_t model = { 0 };
+	byte ok = Mode_G(DH, "MeetingPoint_ModelFile", &model) && Mode_Preload(&model);
+	Native_Free(&model);
+	if (!ok) {
+		return 0;
 	}
-	return Sf_None(&f);
+	if (LvN_SaveIs("MissionState", "CallHumphrey")) {
+		return LV_OWN(DH, "CallHumphrey", NULL, "");
+	}
+	if (LvN_SaveIs("MissionState", "DistractHumphrey")) {
+		return LvN_SaveIs("DistractionStart", "1") ?
+			LvN_Com("Mission_DistractHumphrey_RemoteMessage6", "DeepThroat", DH, "CreateWaypoint", LvN_NoArgs()) :
+			LV_OWN(DH, "CreateWaypoint", NULL, "");
+	}
+	return !LvN_SaveIs("MissionState", "CallDeepThroat") || LV_OWN(DH, "PreCallDeepThroat", NULL, "");
 }
 
-static PyObject *Hump_CallHumphrey(PyObject *self, PyObject *args) {
-	(void)self;
-	return Dt_CallCab(args, "Mission_DistractHumphrey.UsePhoneCab");
+static byte Hump_CallHumphrey(void) {
+	return Mode_PhoneCab("Mission_DistractHumphrey.UsePhoneCab", 1, NULL, NULL);
 }
 
-static PyObject *Hump_UsePhoneCab(PyObject *self, PyObject *args) {
-	(void)self;
-	return Dt_UsePhone(args, DH, "Generics_StillPolice1_Humphrey", "Humphrey", "Mission_TalkToHumphrey_ComHumphrey_NI_1Msg", "PreDistractHumphrey", 0);
+static byte Hump_UsePhoneCab(const nativeVal_t *a) {
+	return Dt_UsePhone(a, DH, "Generics_StillPolice1_Humphrey", "Humphrey", "Mission_TalkToHumphrey_ComHumphrey_NI_1Msg", "PreDistractHumphrey", 0);
 }
 
 /* CreateWaypoint(): the meeting point at the dummy of the mission */
-static PyObject *Hump_CreateWaypoint(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *dummy = Lv_Dummy(&f, "DM_Mission_DistractHumphrey", 1);
-	if (Sf_True(&f, dummy) == 0) {
-		Sf_RaiseText(&f, "No existe el dummy para esta misi\xf3n: 'DM_Mission_DistractHumphrey'");
-		return Sf_None(&f);
+static byte Hump_CreateWaypoint(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *dummy = TV(), *p = TV(), *wp = TV(), *model = TV(), *ang = TV();
+	LvN_Dummy("DM_Mission_DistractHumphrey", 1, dummy);
+	if (!Native_True(dummy)) {
+		return Mode_Done(&t, LvN_RaiseText("No existe el dummy para esta misi\xf3n: 'DM_Mission_DistractHumphrey'"));
 	}
-	PyObject *p = Sf_Item(&f, dummy, 1);
-	PyObject *x = Sf_Item(&f, p, 0), *y = Sf_Item(&f, p, 1), *z = Sf_Item(&f, p, 2);
-	Sf_SetGlobal(&f, DH, "missionStartWaypoint", Sf_Ask(&f, "Scrap", "CreateEntity", "(sOOOs)", "MissionStart", x, y, z, "Item"));
-	Sf_Method(&f, G(DH, "missionStartWaypoint"), "SetModel", "(O)", G(DH, "MeetingPoint_ModelFile"));
-	Sf_SetAttrI(&f, G(DH, "missionStartWaypoint"), "RadarShow", 1);
-	Sf_SetAttrI(&f, G(DH, "missionStartWaypoint"), "Radius", 3500);
-	Sf_SetAttr(&f, G(DH, "missionStartWaypoint"), "Ang", Sf_Build(&f, "(iii)", 0, 180, 0));
-	Sf_SetAttrS(&f, G(DH, "missionStartWaypoint"), "OnTake", "Mission_DistractHumphrey.OnStartDistraction");
-	Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(DH, "missionStartWaypoint"), 1);
-	return Sf_None(&f);
+	byte ok = LvN_Item(dummy, 1, p) && LvN_CreateAt(Mode_S(&t, "MissionStart"), p, "Item", wp) && Mode_Put(DH, "missionStartWaypoint", NULL, wp) &&
+		Mode_G(DH, "MeetingPoint_ModelFile", model) && Mode_VModel(wp, model) && LvN_SetI(wp, "RadarShow", 1) && LvN_SetI(wp, "Radius", 3500);
+	if (ok) {
+		Mode_Ints3(ang, 0, 180, 0);
+		ok = Mode_VSet(wp, "Ang", ang) && LvN_SetS(wp, "OnTake", "Mission_DistractHumphrey.OnStartDistraction") &&
+			LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", wp, 1L);
+	}
+	return Mode_Done(&t, ok);
 }
 
 /* OnStartDistraction(ItemName, VehicleName): the player's ship at the meeting point starts the distraction (not with
  * the alarm on or an enemy around) */
-static PyObject *Hump_OnStartDistraction(PyObject *self, PyObject *args) {
-	PyObject *item, *vehicle;
-	SF_ARGS("OO", &item, &vehicle);
-	Sf_Import(&f, "Parking");
-	PyObject *usr = USR();
-	if (Sf_True(&f, usr) == 0 || Sf_Compare(&f, Sf_Attr(&f, usr, "Name"), "!=", vehicle) > 0) {
-		return Sf_None(&f);
+static byte Hump_OnStartDistraction(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = TV(), *name = TV(), *busy = TV(), *wp = TV(), *pos = TV();
+	if (!Mode_Import("Parking") || !Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
 	}
-	int busy = Sf_True(&f, Sf_Ask(&f, "SLogic", "IsEnemyActive", "()"));
-	if (busy == 0) {
-		busy = Lv_Alarm(&f);
+	if (!Native_True(usr)) {
+		return Mode_Done(&t, 1);
 	}
-	if (busy > 0) {
-		Sf_SetAttrS(&f, G(DH, "missionStartWaypoint"), "OnTake", "");
-		Lv_Com(&f, "Mission_DistractHumphrey_RemoteMessage11", "Humphrey", G(DH, "EnableMissionWaypoint"), NULL);
-		return Sf_None(&f);
+	if (!Mode_VGet(usr, "Name", name)) {
+		return Mode_Done(&t, 0);
 	}
-	if (Sf_EqS(&f, SAVE("DistractionStart"), "0") > 0) {
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "DistractionStart", "1");
+	if (Native_Compare(name, &a[1])) {
+		return Mode_Done(&t, 1);
 	}
-	Sf_SetAttrI(&f, G(DH, "missionStartWaypoint"), "Active", 0);
-	Sf_Own(&f, DH, "CreateHumphrey", "(O)", Sf_Attr(&f, G(DH, "missionStartWaypoint"), "Pos"));
-	Sf_Own(&f, DH, "StartCameraTravelling", "()");
-	return Sf_None(&f);
+	int b = LV_CALL("SLogic", "IsEnemyActive", busy, "") ? Native_True(busy) : -1;
+	if (b == 0) {
+		b = Mode_AlarmOn();
+	}
+	if (b != 0) {
+		return Mode_Done(&t, b > 0 && Mode_G(DH, "missionStartWaypoint", wp) && LvN_SetS(wp, "OnTake", "") &&
+			LvN_Com("Mission_DistractHumphrey_RemoteMessage11", "Humphrey", DH, "EnableMissionWaypoint", NULL));
+	}
+	byte ok = (!LvN_SaveIs("DistractionStart", "0") || Mode_SaveS("DistractionStart", "1")) && Mode_G(DH, "missionStartWaypoint", wp) &&
+		LvN_SetI(wp, "Active", 0) && Mode_Read(DH, "missionStartWaypoint", wp) && Mode_VGet(wp, "Pos", pos) &&
+		LV_OWN(DH, "CreateHumphrey", NULL, "v", pos) && LV_OWN(DH, "StartCameraTravelling", NULL, "");
+	return Mode_Done(&t, ok);
 }
 
-static PyObject *Hump_EnableMissionWaypoint(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	if (Sf_True(&f, G(DH, "missionStartWaypoint")) > 0) {
-		Sf_SetAttrS(&f, G(DH, "missionStartWaypoint"), "OnTake", "Mission_DistractHumphrey.OnStartDistraction");
-	}
-	return Sf_None(&f);
+static byte Hump_EnableMissionWaypoint(void) {
+	nativeVal_t wp = { 0 };
+	byte ok = Mode_G(DH, "missionStartWaypoint", &wp) &&
+		(!Native_True(&wp) || LvN_SetS(&wp, "OnTake", "Mission_DistractHumphrey.OnStartDistraction"));
+	Native_Free(&wp);
+	return ok;
 }
 
 /* StartCameraTravelling(): the player's ship flies to the meeting point while a camera comes close to it */
-static PyObject *Hump_StartCameraTravelling(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *usr = USR();
-	int t = Sf_True(&f, usr);
-	if (t > 0) {
-		t = Sf_Compare(&f, Sf_Attr(&f, usr, "UsrControl"), "!=", Sf_Int(&f, 0));
-	}
-	if (t > 0) {
-		return Sf_None(&f);
-	}
-	Sf_Import(&f, "Menu");
-	Sf_Run(&f, "Menu", "MovieScorer", "(i)", 0);
-	Sf_SetAttrI(&f, usr, "UsrControl", -1);
-	Sf_SetAttr(&f, usr, "Vel", Sf_Build(&f, "(iii)", 0, 0, 0));
-	Sf_SetAttr(&f, usr, "MovePos", Sf_Attr(&f, G(DH, "missionStartWaypoint"), "Pos"));
-	Sf_SetAttr(&f, usr, "MoveAng", Sf_Attr(&f, G(DH, "missionStartWaypoint"), "Ang"));
-	Sf_SetAttr(&f, usr, "MoveTime", Sf_Float(&f, 1.0));
-	Sf_SetAttrI(&f, usr, "MoveFade", 2);
-	Sf_SetAttrI(&f, usr, "AvoidCrash", 1);
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "EscapeEvent", "");
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "MainMissionEvent", "");
-	PyObject *prev = Sf_Ask(&f, "Scrap", "GetCam", "(i)", 0);
-	PyObject *ang = Sf_Ask(&f, "SVec", "Add", "(O(iii))", Sf_Attr(&f, G(DH, "missionStartWaypoint"), "Ang"), 15, 0, 0);
-	PyObject *r0 = Sf_Ask(&f, "SVec", "Rotate3D", "((iii)O)", 0, 0, -8000, ang);
-	PyObject *p0 = Sf_Ask(&f, "SVec", "Add", "(OO)", r0, Sf_Attr(&f, G(DH, "missionStartWaypoint"), "Pos"));
-	PyObject *r1 = Sf_Ask(&f, "SVec", "Rotate3D", "((iii)O)", 0, 0, -2000, ang);
-	PyObject *p1 = Sf_Ask(&f, "SVec", "Add", "(OO)", r1, Sf_Attr(&f, G(DH, "missionStartWaypoint"), "Pos"));
-	PyObject *cam = Sf_Ask(&f, "Scrap", "CreateEntity", "(sOOOs)", "RaceCamera", Sf_Item(&f, p0, 0), Sf_Item(&f, p0, 1), Sf_Item(&f, p0, 2),
-		"CamPath");
-	Sf_SetAttrI(&f, cam, "nWayPoint", 2);
-	Sf_SetAttr(&f, cam, "TgtCam00", prev);
-	Sf_SetAttrS(&f, cam, "TgtCam00", "");
-	Sf_SetAttr(&f, cam, "Pos00", p0);
-	Sf_SetAttr(&f, cam, "Ang00", ang);
-	Sf_SetAttrI(&f, cam, "FadeIn00", 1);
-	Sf_SetAttrI(&f, cam, "FadeOut00", 0);
-	Sf_SetAttr(&f, cam, "Time00", Sf_Float(&f, 5.0));
-	Sf_SetAttr(&f, cam, "TgtCam01", prev);
-	Sf_SetAttrS(&f, cam, "TgtCam01", "");
-	Sf_SetAttr(&f, cam, "Pos01", p1);
-	PyObject *a0 = Sf_Op(&f, Sf_Item(&f, ang, 0), '/', Sf_Float(&f, 4.0));
-	Sf_SetAttr(&f, cam, "Ang01", Sf_Build(&f, "(OOO)", a0, Sf_Item(&f, ang, 1), Sf_Item(&f, ang, 2)));
-	Sf_SetAttrI(&f, cam, "FadeIn01", 0);
-	Sf_SetAttrI(&f, cam, "FadeOut01", 1);
-	Sf_SetAttrI(&f, cam, "Time", 0);
-	Sf_Run(&f, "Scrap", "SetCam", "(iO)", 0, Sf_Attr(&f, cam, "Name"));
-	PyObject *tt = Sf_Attr(&f, cam, "Time00");
-	PyObject *at = Sf_Op(&f, Sf_Op(&f, Sf_Time(&f), '+', tt), '+', Sf_Float(&f, 0.2));
-	Sf_Schedule(&f, at, G(DH, "AbortCameraTravelling"), Sf_Build(&f, "(OO)", Sf_Attr(&f, usr, "Name"), prev), NULL);
-	Sf_Import(&f, "Scene");
-	Sf_Run(&f, "Scene", "SetText", "(sO)", "Mission_DistractHumphrey_RemoteMessage12", tt);
-	return Sf_None(&f);
+static byte Hump_StartCameraTravelling(void) {
+	return LvN_CamTravel(DH, "Mission_DistractHumphrey_RemoteMessage12", 0);
 }
 
 /* AbortCameraTravelling(UsrEntityName, prevCamera): the player's control and camera back, the mission starts */
-static PyObject *Hump_AbortCameraTravelling(PyObject *self, PyObject *args) {
-	PyObject *name, *prev;
-	SF_ARGS("OO", &name, &prev);
-	if (Sf_True(&f, prev) > 0) {
-		PyObject *usr = Sf_Entity(&f, name);
-		if (Sf_True(&f, usr) > 0) {
-			Sf_SetAttr(&f, usr, "MoveTime", Sf_Float(&f, 0.0));
-			Sf_SetAttrI(&f, usr, "UsrControl", 0);
-		}
-		Sf_Run(&f, "Scrap", "Set", "(ss)", "EscapeEvent", "Menu.Init");
-		Sf_Run(&f, "Scrap", "Set", "(ss)", "MainMissionEvent", "MissionsFuncs.ShowMissionInfo");
-		Sf_Method(&f, Sf_Entity(&f, Sf_Ask(&f, "Scrap", "GetCam", "(i)", 0)), "Del", "()");
-		Sf_Run(&f, "Scrap", "SetCam", "(iO)", 0, prev);
-	}
-	Sf_Own(&f, DH, "LaunchMission", "()");
-	return Sf_None(&f);
+static byte Hump_AbortCameraTravelling(const nativeVal_t *a) {
+	return LvN_CamTravelEnd(a, DH, 0);
 }
 
 /* CreateHumphrey(targetPos): Humphrey (again), 5000 beside the meeting point flying to it, or after a ship */
-static PyObject *Hump_CreateHumphrey(PyObject *self, PyObject *args) {
-	PyObject *target;
-	SF_ARGS("O", &target);
-	Sf_Import(&f, "VehiclesNPC");
-	Sf_Import(&f, "RaceMaker");
-	Sf_Import(&f, "OutMap");
-	PyObject *initial = target;
-	if (Sf_True(&f, initial) > 0) {
-		PyObject *x = Sf_OpI(&f, Sf_Item(&f, target, 0), '+', 5000);
-		initial = Sf_Build(&f, "(OOO)", x, Sf_Item(&f, target, 1), Sf_Item(&f, target, 2));
+static byte Hump_CreateHumphrey(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	const nativeVal_t *target = &a[0];
+	nativeVal_t *initial = TV(), *x = TV(), *hn = TV(), *h = TV(), *pd = TV(), *name = TV(), *tx = TV(), *ty = TV(), *tz = TV();
+	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("RaceMaker") && Mode_Import("OutMap");
+	if (ok && Native_True(target)) {
+		Native_SetEmpty(initial, NV_TUPLE);
+		ok = LvN_Item(target, 0, x) && Native_Arith('+', x, Mode_I(&t, 5000), Native_Append(initial)) && LvN_Item(target, 1, Native_Append(initial)) &&
+			LvN_Item(target, 2, Native_Append(initial));
+	} else {
+		Native_Copy(initial, target);
 	}
-	PyObject *h = Sf_Entity(&f, G(DH, "humphreyName"));
-	if (Sf_True(&f, h) > 0) {
-		Sf_Method(&f, h, "Del", "()");
+	ok = ok && Mode_G(DH, "humphreyName", hn) && Mode_EntityH(hn, h) && (!Native_True(h) || Mode_VDel(h));
+	Native_Free(h);
+	ok = ok && Mode_SpawnCar("Humphrey", 0, h, NULL) && LvN_StdProfile(DH, "GetHumphreyProfile", h, pd) && LvN_SetS(h, "TgType", "green") &&
+		LvN_SetS(h, "OnDeath", "Mission_DistractHumphrey.OnHumphreyDeath") && LvN_SetS(h, "OnDamage", "Mission_DistractHumphrey.OnHumphreyDamage") &&
+		LvN_Life(h, DH, "HUMPHREY_LIFE") && LvN_SetS(h, "WeapList", "0,0,7,0,7,0") && Mode_VGet(h, "Name", name) && Mode_Put(DH, "humphreyName", NULL, name);
+	if (ok && Native_True(initial)) {
+		ok = Mode_VSet(h, "Pos", initial) && LV_CALL("RaceMaker", "PointObjectTo", NULL, "vv", h, target) && Mode_VRead(h, "Name", name) &&
+			LvN_Item(target, 0, tx) && LvN_Item(target, 1, ty) && LvN_Item(target, 2, tz) &&
+			LV_CALL("SAI", "SetStateVehicle", NULL, "ivvvviiddd", 1L, name, tx, ty, tz, 4500L, 0L, 0.1, 20.0, 20.0);
+	} else if (ok) {
+		ok = LV_OWN(DH, "AssignNewHumphreyTarget", NULL, "");
 	}
-	h = Lv_SpawnCar(&f, "Humphrey", 0);
-	Lv_StdProfile(&f, DH, "GetHumphreyProfile", h);
-	Sf_SetAttrS(&f, h, "TgType", "green");
-	Sf_SetAttrS(&f, h, "OnDeath", "Mission_DistractHumphrey.OnHumphreyDeath");
-	Sf_SetAttrS(&f, h, "OnDamage", "Mission_DistractHumphrey.OnHumphreyDamage");
-	PyObject *life = G(DH, "HUMPHREY_LIFE");
-	Sf_SetAttr(&f, h, "Life", life);
-	Sf_SetAttr(&f, h, "MaxLife", life);
-	Sf_SetAttrS(&f, h, "WeapList", "0,0,7,0,7,0");
-	Sf_SetGlobal(&f, DH, "humphreyName", Sf_Attr(&f, h, "Name"));
-	int go = Sf_True(&f, initial);
-	if (go > 0) {
-		Sf_SetAttr(&f, h, "Pos", initial);
-		Sf_Run(&f, "RaceMaker", "PointObjectTo", "(OO)", h, target);
-		Sf_Run(&f, "SAI", "SetStateVehicle", "(iOOOOiiddd)", 1, Sf_Attr(&f, h, "Name"), Sf_Item(&f, target, 0), Sf_Item(&f, target, 1),
-			Sf_Item(&f, target, 2), 4500, 0, 0.1, 20.0, 20.0);
-	} else if (go == 0) {
-		Sf_Own(&f, DH, "AssignNewHumphreyTarget", "()");
-	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
 /* LaunchMission(): the damage callback, the timer and the scorer, Humphrey's target, DeepThroat's messages */
-static PyObject *Hump_LaunchMission(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "RacerScorer");
-	Sf_Import(&f, "Vehicles");
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "OnGeneralDamage", "Mission_DistractHumphrey.OnGeneralDamage");
-	Sf_Run(&f, "Scrap", "Set", "(sO)", "TimeSpecialUseTimer", G(DH, "missionTime"));
-	Sf_Run(&f, "Scrap", "Set", "(si)", "CounterType", 0);
-	Sf_Run(&f, "RacerScorer", "InitMissionScorer", "(iiO)", 0, 0, Sf_Repr(&f, G(DH, "maxShips")));
-	Lv_ScorerCall(&f, G(DH, "MissionScorer"));
-	Sf_DrawScorer(&f);
-	Sf_Own(&f, DH, "AssignNewHumphreyTarget", "()");
-	Sf_Method(&f, G(DH, "missionStartWaypoint"), "Del", "()");
-	Sf_SetGlobal(&f, DH, "missionStartWaypoint", Py_None);
-	PyObject *iv = Sf_OpI(&f, G(DH, "missionTime"), '/', 4);
-	Dt_LaterCom(&f, Sf_Int(&f, 2), Sf_Build(&f, "(ss)", "Mission_DistractHumphrey_RemoteMessage1", "DeepThroat"), "DTMessages");
-	Dt_LaterCom(&f, iv, Sf_Build(&f, "(ss)", "Mission_DistractHumphrey_RemoteMessage2", "DeepThroat"), "DTMessages");
-	Dt_LaterCom(&f, Sf_Op(&f, Sf_Int(&f, 2), '*', iv), Sf_Build(&f, "(ss)", "Mission_DistractHumphrey_RemoteMessage3", "DeepThroat"), "DTMessages");
-	Dt_LaterCom(&f, Sf_Op(&f, Sf_Int(&f, 3), '*', iv), Sf_Build(&f, "(ss)", "Mission_DistractHumphrey_RemoteMessage4", "DeepThroat"), "DTMessages");
-	Sf_SetMod(&f, "Vehicles", "OnDeathCallback", G(DH, "OnDeath"));
-	return Sf_None(&f);
+static byte Hump_LaunchMission(void) {
+	static const char *const keys[] = { "Mission_DistractHumphrey_RemoteMessage1", "Mission_DistractHumphrey_RemoteMessage2",
+		"Mission_DistractHumphrey_RemoteMessage3", "Mission_DistractHumphrey_RemoteMessage4" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *mt = TV(), *max = TV(), *rep = TV(), *wp = TV(), *iv = TV(), *d = TV(), *com = TV(), *who = TV();
+	byte ok = Mode_Import("Menu") && Mode_Import("RacerScorer") && Mode_Import("Vehicles") &&
+		Mode_GVarSetS("OnGeneralDamage", "Mission_DistractHumphrey.OnGeneralDamage") && Mode_G(DH, "missionTime", mt) &&
+		Mode_GVarSet("TimeSpecialUseTimer", mt) && Mode_GVarSetI("CounterType", 0) && Mode_G(DH, "maxShips", max);
+	if (ok) {
+		Mode_Repr(max, rep);
+		ok = LV_CALL("RacerScorer", "InitMissionScorer", NULL, "iiv", 0L, 0L, rep) && LvN_ScorerCallG(DH, "MissionScorer") && LvN_Draw() &&
+			LV_OWN(DH, "AssignNewHumphreyTarget", NULL, "") && Mode_G(DH, "missionStartWaypoint", wp) && Mode_VDel(wp) &&
+			(Native_SetNone(d), Mode_Put(DH, "missionStartWaypoint", NULL, d)) && Mode_Read(DH, "missionTime", mt) &&
+			Mode_Arith('/', mt, Mode_I(&t, 4), iv);
+	}
+	LvN_Str(who, "DeepThroat");
+	for (long i = 0; ok && i < 4; i++) {
+		Native_Free(d);
+		Native_Free(com);
+		LvN_Str(com, keys[i]);
+		if (i == 0) {
+			Native_SetInt(d, 2);
+		} else {
+			ok = i == 1 ? (Native_Copy(d, iv), 1) : Mode_Arith('*', Mode_I(&t, i), iv, d);
+		}
+		/* com and who are the two parameters (one after the other in t) */
+		ok = ok && Mode_LaterSpeech("AddRemoteCom", d, com, 2, "DTMessages");
+	}
+	ok = ok && LvN_ModSetGlobal("Vehicles", "OnDeathCallback", DH, "OnDeath");
+	return Mode_Done(&t, ok);
 }
 
-/* Humphrey after the ship name: SAI.SetStateVehicle(2, humphreyName, name); a ship he takes stops its own moves */
-static int Hp_Attack(scriptFrame_t *f, PyObject *e, PyObject *name) {
-	if (Dt_Active(f, e) <= 0) {
-		return f->failed ? -1 : 0;
+/* Humphrey after the ship name: SAI.SetStateVehicle(2, humphreyName, name); a ship he takes stops its own moves (1
+ * when he changed his state, 0, -1 with the error) */
+static int Hp_Attack(const nativeVal_t *e, const nativeVal_t *name) {
+	nativeVal_t hn = { 0 }, changed = { 0 };
+	int c = Mode_Active(e);
+	if (c <= 0) {
+		return c;
 	}
-	PyObject *changed = Sf_Ask(f, "SAI", "SetStateVehicle", "(iOO)", 2, Sf_Global(f, DH, "humphreyName"), name);
-	int t = Sf_True(f, changed);
-	if (t > 0) {
-		Sf_SetAttrI(f, e, "AI_Repos", 0);
+	Native_SetNone(&changed);
+	c = Mode_G(DH, "humphreyName", &hn) && LV_CALL("SAI", "SetStateVehicle", &changed, "ivv", 2L, &hn, name) ? Native_True(&changed) : -1;
+	if (c > 0 && !LvN_SetI(e, "AI_Repos", 0)) {
+		c = -1;
 	}
-	return t;
+	Native_Free(&hn);
+	Native_Free(&changed);
+	return c;
 }
 
 /* AssignNewHumphreyTarget(): Humphrey after the ship the player is shooting, or the ship nearest the player (tried
  * again every second until he has one) */
-static PyObject *Hump_AssignNewHumphreyTarget(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *h = Sf_Entity(&f, G(DH, "humphreyName"));
-	if (Sf_True(&f, h) == 0) {
-		return Sf_None(&f);
+static byte Hump_AssignNewHumphreyTarget(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *hn = TV(), *h = TV(), *st = TV(), *e = TV(), *r = TV(), *p = TV(), *usr = TV(), *pos = TV(), *name = TV();
+	if (!Mode_G(DH, "humphreyName", hn) || !Mode_EntityH(hn, h)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Native_True(h)) {
+		return Mode_Done(&t, 1);
 	}
 	int changed = 0;
-	PyObject *e = Sf_Entity(&f, G(DH, "shipNameForTaunt"));
-	int taunt = Sf_True(&f, e);
+	int taunt = Mode_G(DH, "shipNameForTaunt", st) && Mode_EntityH(st, e) ? Native_True(e) : -1;
 	if (taunt > 0) {
-		taunt = Sf_Compare(&f, Sf_Ask(&f, "Scrap", "Rand", "(dd)", 0.0, 0.99), "<", G(DH, "probHumpreyAttacksPlayerTarget"));
+		taunt = Mode_RandD(0.0, 0.99, r) && Mode_G(DH, "probHumpreyAttacksPlayerTarget", p) ? Native_Compare(r, p) < 0 : -1;
 	}
 	if (taunt > 0) {
-		changed = Hp_Attack(&f, e, G(DH, "shipNameForTaunt"));
+		changed = Mode_Read(DH, "shipNameForTaunt", st) ? Hp_Attack(e, st) : -1;
 	} else if (taunt == 0) {
-		PyObject *usr = USR();
-		if (Sf_True(&f, usr) > 0) {
-			PyObject *name = Sf_Ask(&f, "SLogic", "GetNearestShip", "(OO)", Sf_Attr(&f, usr, "Pos"), G(DH, "shipNameForTaunt"));
-			changed = Hp_Attack(&f, Sf_Entity(&f, name), name);
+		int u = LvN_Usr(usr);
+		if (u > 0) {
+			Native_Free(e);
+			changed = Mode_VGet(usr, "Pos", pos) && Mode_Read(DH, "shipNameForTaunt", st) &&
+				LV_CALL("SLogic", "GetNearestShip", name, "vv", pos, st) && Mode_EntityH(name, e) ? Hp_Attack(e, name) : -1;
+		} else if (u < 0) {
+			changed = -1;
 		}
+	} else {
+		changed = -1;
 	}
-	if (changed == 0 && !f.failed) {
-		Sf_Later(&f, Sf_Int(&f, 1), G(DH, "AssignNewHumphreyTarget"), NOARGS, NULL);
-	}
-	return Sf_None(&f);
+	byte ok = changed >= 0 && (changed || Mode_Later(1, DH, "AssignNewHumphreyTarget", NULL, 0, NULL));
+	return Mode_Done(&t, ok);
 }
 
 /* OnHumphreyDeath(LooserName, WinnerName): his target moves again; during the mission it starts over, after it he
  * comes back */
-static PyObject *Hump_OnHumphreyDeath(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	SF_ARGS("OO", &looser, &winner);
-	Sf_Import(&f, "Vehicles");
-	Sf_Run(&f, "Vehicles", "OnDeath", "(OO)", looser, winner);
-	PyObject *e = Sf_Entity(&f, Sf_Attr(&f, Sf_Entity(&f, looser), "AI_Target"));
-	if (Dt_Active(&f, e) > 0) {
-		Sf_SetAttrI(&f, e, "AI_Repos", 1);
+static byte Hump_OnHumphreyDeath(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *l = TV(), *tg = TV(), *e = TV(), *none = TV();
+	byte ok = Mode_Import("Vehicles") && LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1]) && Mode_EntityH(&a[0], l) &&
+		Mode_VGet(l, "AI_Target", tg) && Mode_EntityH(tg, e);
+	int c = ok ? Mode_Active(e) : -1;
+	ok = c >= 0 && (!c || LvN_SetI(e, "AI_Repos", 1));
+	c = ok ? LvN_GTrue(DH, "missionComplete") : -1;
+	if (c == 0) {
+		ok = LV_OWN(DH, "StopMission", NULL, "") && LvN_Com("Mission_DistractHumphrey_RemoteMessage6", "DeepThroat", DH, "CreateWaypoint", LvN_NoArgs());
+	} else if (c > 0 && !LvN_SaveIs("MissionState", "CallDeepThroat")) {
+		ok = Mode_Later(3, DH, "CreateHumphrey", none, 1, NULL);
 	}
-	int complete = Sf_True(&f, G(DH, "missionComplete"));
-	if (complete == 0) {
-		Sf_Own(&f, DH, "StopMission", "()");
-		Lv_Com(&f, "Mission_DistractHumphrey_RemoteMessage6", "DeepThroat", G(DH, "CreateWaypoint"), NOARGS);
-	} else if (complete > 0 && Sf_Compare(&f, SAVE("MissionState"), "!=", Sf_Str(&f, "CallDeepThroat")) > 0) {
-		Sf_Later(&f, Sf_Int(&f, 3), G(DH, "CreateHumphrey"), Sf_Build(&f, "(O)", Py_None), NULL);
-	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok && c >= 0);
 }
 
 /* OnHumphreyDamage(LooserName, WinnerName, Damage): only the player can hurt him */
-static PyObject *Hump_OnHumphreyDamage(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner, *damage;
-	SF_ARGS("OOO", &looser, &winner, &damage);
-	PyObject *usr = USR();
-	if (Sf_True(&f, usr) == 0) {
-		return Sf_None(&f);
+static byte Hump_OnHumphreyDamage(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = TV(), *name = TV(), *h = TV(), *life = TV(), *sum = TV();
+	if (!Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
 	}
-	if (Sf_Compare(&f, winner, "!=", Sf_Attr(&f, usr, "Name")) > 0) {
-		PyObject *h = Sf_Entity(&f, looser);
-		Sf_SetAttr(&f, h, "Life", Sf_Op(&f, Sf_Attr(&f, h, "Life"), '+', damage));
+	if (!Native_True(usr)) {
+		return Mode_Done(&t, 1);
 	}
-	return Sf_None(&f);
+	byte ok = Mode_VGet(usr, "Name", name);
+	if (ok && Native_Compare(&a[1], name)) {
+		ok = Mode_EntityH(&a[0], h) && Mode_VGet(h, "Life", life) && Native_Arith('+', life, &a[2], sum) && Mode_VSet(h, "Life", sum);
+	}
+	return Mode_Done(&t, ok);
 }
 
 /* OnGeneralDamage(LooserName, WinnerName, Damage): the ship the player hits is the one Humphrey may snatch */
-static PyObject *Hump_OnGeneralDamage(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner, *damage;
-	SF_ARGS("OOO", &looser, &winner, &damage);
-	PyObject *usr = USR();
-	if (Sf_True(&f, usr) == 0) {
-		return Sf_None(&f);
+static byte Hump_OnGeneralDamage(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = TV(), *name = TV(), *hn = TV();
+	if (!Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
 	}
-	int t = Sf_Compare(&f, winner, "==", Sf_Attr(&f, usr, "Name"));
-	if (t > 0) {
-		t = Sf_Compare(&f, looser, "!=", G(DH, "humphreyName"));
+	if (!Native_True(usr)) {
+		return Mode_Done(&t, 1);
 	}
-	if (t > 0) {
-		Sf_SetGlobal(&f, DH, "shipNameForTaunt", looser);
+	int c = Mode_VGet(usr, "Name", name) ? !Native_Compare(&a[1], name) : -1;
+	if (c > 0) {
+		c = Mode_G(DH, "humphreyName", hn) ? Native_Compare(&a[0], hn) != 0 : -1;
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, c >= 0 && (!c || Mode_Put(DH, "shipNameForTaunt", NULL, &a[0])));
 }
 
 /* the end of the count when one side reached maxShips: the mission stops, Humphrey leaves; done when the time ran out
  * before (DeepThroat next), else it starts over */
-static byte Hp_End(scriptFrame_t *f, const char *doneKey, const char *failKey) {
-	Sf_Own(f, DH, "StopMission", "()");
-	if (Sf_True(f, Sf_Ask(f, "Scrap", "GetEntity", "(O)", Sf_Global(f, DH, "humphreyName"))) > 0) {
-		Sf_Run(f, "SAI", "SetStateVehicle", "(iOi)", 3, Sf_Global(f, DH, "humphreyName"), 0);
-	}
-	int done = Sf_True(f, Sf_Global(f, DH, "missionComplete"));
+static byte Hp_End(const char *doneKey, const char *failKey) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *hn = TV(), *h = TV();
+	byte ok = LV_OWN(DH, "StopMission", NULL, "") && Mode_G(DH, "humphreyName", hn) && Mode_EntityH(hn, h) &&
+		(!Native_True(h) || (Mode_Read(DH, "humphreyName", hn) && LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, hn, 0L)));
+	int done = ok ? LvN_GTrue(DH, "missionComplete") : -1;
 	if (done > 0) {
-		Sf_Run(f, "Scrap", "SetSaveVar", "(ss)", "MissionState", "CallDeepThroat");
-		Sf_Run(f, "Speech", "AddRemoteCom", "(ss)", doneKey, "Humphrey");
-		Sf_Run(f, "Speech", "AddRemoteCom", "(ssOO)", "Mission_DistractHumphrey_RemoteMessage17", "DeepThroat",
-			Sf_Global(f, DH, "PreCallDeepThroat"), Sf_Build(f, "()"));
+		ok = Mode_SaveS("MissionState", "CallDeepThroat") && LvN_Com(doneKey, "Humphrey", NULL, NULL, NULL) &&
+			LvN_Com("Mission_DistractHumphrey_RemoteMessage17", "DeepThroat", DH, "PreCallDeepThroat", LvN_NoArgs());
 	} else if (done == 0) {
-		Sf_Run(f, "Speech", "AddRemoteCom", "(ss)", failKey, "Humphrey");
-		Sf_Run(f, "Speech", "AddRemoteCom", "(ssOO)", "Mission_DistractHumphrey_RemoteMessage6", "DeepThroat",
-			Sf_Global(f, DH, "CreateWaypoint"), Sf_Build(f, "()"));
+		ok = LvN_Com(failKey, "Humphrey", NULL, NULL, NULL) &&
+			LvN_Com("Mission_DistractHumphrey_RemoteMessage6", "DeepThroat", DH, "CreateWaypoint", LvN_NoArgs());
 	}
-	return Sf_SetGlobal(f, DH, "missionComplete", Sf_Int(f, 0));
+	return Mode_Done(&t, ok && done >= 0 && LvN_PutI(DH, "missionComplete", 0));
 }
 
-/* `if e: if SAI.GetStateVehicle(humphreyName) == 0 or LooserName == e.AI_Target: AssignNewHumphreyTarget 1 s later`
- * with e Humphrey */
-static byte Hp_Retarget(scriptFrame_t *f, PyObject *looser) {
-	PyObject *e = Sf_Ask(f, "Scrap", "GetEntity", "(O)", Sf_Global(f, DH, "humphreyName"));
-	if (Sf_True(f, e) > 0) {
-		int t = Sf_EqI(f, Sf_Ask(f, "SAI", "GetStateVehicle", "(O)", Sf_Global(f, DH, "humphreyName")), 0);
-		if (t == 0) {
-			t = Sf_Compare(f, looser, "==", Sf_Attr(f, e, "AI_Target"));
+/* `e = Scrap.GetEntity(humphreyName); if e: if SAI.GetStateVehicle(humphreyName) == 0 or LooserName == e.AI_Target:
+ * AssignNewHumphreyTarget 1 s later` */
+static byte Hp_Retarget(const nativeVal_t *looser) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *hn = TV(), *e = TV(), *st = TV(), *tg = TV();
+	byte ok = Mode_G(DH, "humphreyName", hn) && Mode_EntityH(hn, e);
+	if (ok && Native_True(e)) {
+		int c = Mode_Read(DH, "humphreyName", hn) && Mode_AIState(hn, st) ? LvN_EqI(st, 0) : -1;
+		if (c == 0) {
+			c = Mode_VGet(e, "AI_Target", tg) ? !Native_Compare(looser, tg) : -1;
 		}
-		if (t > 0) {
-			Sf_Later(f, Sf_Int(f, 1), Sf_Global(f, DH, "AssignNewHumphreyTarget"), Sf_Build(f, "()"), NULL);
-		}
+		ok = c >= 0 && (!c || Mode_Later(1, DH, "AssignNewHumphreyTarget", NULL, 0, NULL));
 	}
-	return !f->failed;
+	return Mode_Done(&t, ok);
 }
 
 /* OnDeath(LooserName, WinnerName): the count of the ships Humphrey and the player destroyed */
-static PyObject *Hump_OnDeath(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	SF_ARGS("OO", &looser, &winner);
-	Sf_Import(&f, "RacerScorer");
-	PyObject *usr = USR();
-	int t = Sf_True(&f, usr);
-	PyObject *usrName = t == 0 ? Sf_Str(&f, "") : Sf_Attr(&f, usr, "Name");
-	PyObject *e = Sf_Entity(&f, looser);
-	t = Sf_True(&f, e);
-	if (t > 0) {
-		t = Sf_EqI(&f, Sf_Attr(&f, e, "ArrowCanUse"), 1);
+static byte Hump_OnDeath(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = TV(), *uname = TV(), *e = TV(), *acu = TV(), *hn = TV(), *mine = TV(), *max = TV(), *st = TV(), *nt = TV(), *n = TV();
+	nativeVal_t *rep = TV(), *key = TV(), *kp = TV(), *kh = TV(), *n1 = TV();
+	if (!Mode_Import("RacerScorer") || !Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
 	}
-	if (t > 0) {
-		Sf_Run(&f, "Speech", "RemoteComunication", "(ss)", "Mission_DistractHumphrey_RemoteMessage13", "Humphrey");
-		return Sf_None(&f);
+	if (!Native_True(usr)) {
+		LvN_Str(uname, "");
+	} else if (!Mode_VGet(usr, "Name", uname)) {
+		return Mode_Done(&t, 0);
 	}
-	int byHump = Sf_Compare(&f, winner, "==", G(DH, "humphreyName"));
-	int byUsr = byHump == 0 ? Sf_Compare(&f, winner, "==", usrName) : 0;
-	if (byHump > 0 || byUsr > 0) {
-		const char *mine = byHump > 0 ? "shipsKilledHumphrey" : "shipsKilledPlayer";
-		Sf_SetGlobal(&f, DH, "shipsKilledPlayer", Sf_OpI(&f, G(DH, "shipsKilledPlayer"), '+', byHump > 0 ? -1 : 1));
-		Sf_SetGlobal(&f, DH, "shipsKilledHumphrey", Sf_OpI(&f, G(DH, "shipsKilledHumphrey"), '+', byHump > 0 ? 1 : -1));
-		int end = Sf_Compare(&f, G(DH, mine), "==", G(DH, "maxShips"));
-		if (end > 0) {
-			if (byHump > 0) {
-				Hp_End(&f, "Mission_DistractHumphrey_RemoteMessage10", "Mission_DistractHumphrey_RemoteMessage7");
-			} else {
-				Hp_End(&f, "Mission_DistractHumphrey_RemoteMessage9", "Mission_DistractHumphrey_RemoteMessage8");
+	int c = Mode_EntityH(&a[0], e) ? (Native_True(e) ? (Mode_VGet(e, "ArrowCanUse", acu) ? LvN_EqI(acu, 1) : -1) : 0) : -1;
+	if (c != 0) {
+		return Mode_Done(&t, c > 0 && LV_CALL("Speech", "RemoteComunication", NULL, "ss", "Mission_DistractHumphrey_RemoteMessage13", "Humphrey"));
+	}
+	if (!Mode_G(DH, "humphreyName", hn)) {
+		return Mode_Done(&t, 0);
+	}
+	byte byHump = !Native_Compare(&a[1], hn), ok = 1;
+	if (byHump || !Native_Compare(&a[1], uname)) {
+		ok = LvN_GAdd(DH, "shipsKilledPlayer", byHump ? -1 : 1, NULL) && LvN_GAdd(DH, "shipsKilledHumphrey", byHump ? 1 : -1, NULL) &&
+			Mode_G(DH, byHump ? "shipsKilledHumphrey" : "shipsKilledPlayer", mine) && Mode_G(DH, "maxShips", max);
+		if (ok && !Native_Compare(mine, max)) {
+			ok = byHump ? Hp_End("Mission_DistractHumphrey_RemoteMessage10", "Mission_DistractHumphrey_RemoteMessage7") :
+				Hp_End("Mission_DistractHumphrey_RemoteMessage9", "Mission_DistractHumphrey_RemoteMessage8");
+		} else if (ok && byHump) {
+			ok = Mode_G(DH, "shipNameForTaunt", st);
+			if (ok && !Native_Compare(&a[0], st)) {
+				ok = Mode_G(DH, "numTaunt", nt) && Native_Arith('+', nt, Mode_I(&t, 14), n);
+				if (ok) {
+					Mode_Repr(n, rep);
+				}
+				ok = ok && Native_Arith('+', Mode_S(&t, "Mission_DistractHumphrey_RemoteMessage"), rep, key) &&
+					LV_CALL("Speech", "AddRemoteCom", NULL, "vs", key, "Humphrey") && Mode_Read(DH, "numTaunt", nt) &&
+					Native_Arith('+', nt, Mode_I(&t, 1), n1) && Mode_Arith('%', n1, Mode_I(&t, 3), n) && Mode_Put(DH, "numTaunt", NULL, n);
 			}
-		} else if (end == 0 && byHump > 0) {
-			if (Sf_Compare(&f, looser, "==", G(DH, "shipNameForTaunt")) > 0) {
-				PyObject *key = Sf_Cat(&f, "sO", "Mission_DistractHumphrey_RemoteMessage", Sf_Repr(&f, Sf_OpI(&f, G(DH, "numTaunt"), '+', 14)));
-				Sf_Run(&f, "Speech", "AddRemoteCom", "(Os)", key, "Humphrey");
-				Sf_SetGlobal(&f, DH, "numTaunt", Sf_OpI(&f, Sf_OpI(&f, G(DH, "numTaunt"), '+', 1), '%', 3));
-			}
-			Sf_Run(&f, "RacerScorer", "UpdateMissionScorer", "(iOO)", 0, G(DH, "shipsKilledPlayer"), G(DH, "shipsKilledHumphrey"));
-			Sf_Later(&f, Sf_Int(&f, 1), G(DH, "AssignNewHumphreyTarget"), NOARGS, NULL);
-		} else if (end == 0) {
-			Sf_Run(&f, "RacerScorer", "UpdateMissionScorer", "(iOO)", 0, G(DH, "shipsKilledPlayer"), G(DH, "shipsKilledHumphrey"));
-			Hp_Retarget(&f, looser);
+			ok = ok && Mode_G(DH, "shipsKilledPlayer", kp) && Mode_G(DH, "shipsKilledHumphrey", kh) &&
+				LV_CALL("RacerScorer", "UpdateMissionScorer", NULL, "ivv", 0L, kp, kh) &&
+				Mode_Later(1, DH, "AssignNewHumphreyTarget", NULL, 0, NULL);
+		} else if (ok) {
+			ok = Mode_G(DH, "shipsKilledPlayer", kp) && Mode_G(DH, "shipsKilledHumphrey", kh) &&
+				LV_CALL("RacerScorer", "UpdateMissionScorer", NULL, "ivv", 0L, kp, kh) && Hp_Retarget(&a[0]);
 		}
-	} else if (byUsr == 0) {
-		Hp_Retarget(&f, looser);
+	} else {
+		ok = Hp_Retarget(&a[0]);
 	}
-	if (Sf_Compare(&f, looser, "==", G(DH, "shipNameForTaunt")) > 0) {
-		Sf_SetGlobal(&f, DH, "shipNameForTaunt", Sf_Str(&f, ""));
-	}
-	return Sf_None(&f);
+	ok = ok && Mode_Read(DH, "shipNameForTaunt", st) && (Native_Compare(&a[0], st) || LvN_PutS(DH, "shipNameForTaunt", ""));
+	return Mode_Done(&t, ok);
 }
 
 /* StopMission(): Humphrey back to the traffic, no callbacks, the counts to 0, no scorer */
-static PyObject *Hump_StopMission(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "Vehicles");
-	PyObject *h = Sf_Entity(&f, G(DH, "humphreyName"));
-	if (Sf_True(&f, h) > 0) {
-		Sf_SetAttrS(&f, h, "OnDeath", "");
-		Sf_SetAttrS(&f, h, "OnDamage", "");
-		Sf_SetAttrS(&f, h, "TgType", "none");
-		Sf_SetAttrS(&f, h, "EntityList", "Traffic");
-	}
-	Sf_SetMod(&f, "Vehicles", "OnDeathCallback", Py_None);
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "OnGeneralDamage", "");
-	Sf_Run(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "DTMessages");
-	Sf_SetGlobal(&f, DH, "shipsKilledPlayer", Sf_Int(&f, 0));
-	Sf_SetGlobal(&f, DH, "shipsKilledHumphrey", Sf_Int(&f, 0));
-	Sf_SetGlobal(&f, DH, "shipNameForTaunt", Sf_Str(&f, ""));
-	Sf_SetGlobal(&f, DH, "numTaunt", Sf_Int(&f, 0));
-	Sf_SetMod(&f, "Vehicles", "OnDeathCallback", Py_None);
-	Lv_ScorerCall(&f, Py_None);
-	Sf_DrawScorer(&f);
-	return Sf_None(&f);
+static byte Hump_StopMission(void) {
+	nativeVal_t hn = { 0 }, h = { 0 };
+	Native_SetNone(&h);
+	byte ok = Mode_Import("Vehicles") && Mode_G(DH, "humphreyName", &hn) && Mode_EntityH(&hn, &h) &&
+		(!Native_True(&h) || (LvN_SetS(&h, "OnDeath", "") && LvN_SetS(&h, "OnDamage", "") && LvN_SetS(&h, "TgType", "none") &&
+			LvN_SetS(&h, "EntityList", "Traffic"))) &&
+		LvN_ModNone("Vehicles", "OnDeathCallback") && Mode_GVarSetS("OnGeneralDamage", "") && Mode_DelSchedS("DTMessages") &&
+		LvN_PutI(DH, "shipsKilledPlayer", 0) && LvN_PutI(DH, "shipsKilledHumphrey", 0) && LvN_PutS(DH, "shipNameForTaunt", "") &&
+		LvN_PutI(DH, "numTaunt", 0) && LvN_ModNone("Vehicles", "OnDeathCallback") && LvN_ScorerOff() && LvN_Draw();
+	Native_Free(&hn);
+	Native_Free(&h);
+	return ok;
 }
 
-static PyObject *Hump_CallDeepThroat(PyObject *self, PyObject *args) {
-	(void)self;
-	return Dt_CallCab(args, "Mission_DistractHumphrey.UsePhoneCab2");
+static byte Hump_CallDeepThroat(void) {
+	return Mode_PhoneCab("Mission_DistractHumphrey.UsePhoneCab2", 1, NULL, NULL);
 }
 
-static PyObject *Hump_UsePhoneCab2(PyObject *self, PyObject *args) {
-	(void)self;
-	return Dt_UsePhone(args, DH, "Generics_StillPolice1_Functionary", "DeepThroat", "Mission_TalkToDeepThroat9_ComDeepThroat_NI_1Msg", "SetNextMission",
-		0);
+static byte Hump_UsePhoneCab2(const nativeVal_t *a) {
+	return Dt_UsePhone(a, DH, "Generics_StillPolice1_Functionary", "DeepThroat", "Mission_TalkToDeepThroat9_ComDeepThroat_NI_1Msg",
+		"SetNextMission", 0);
 }
 
 /* MissionScorer(id): the time left (hidden once it ran out) and the counts of RacerScorer */
-static PyObject *Hump_MissionScorer(PyObject *self, PyObject *args) {
-	PyObject *id, *wh[2] = { NULL, NULL };
-	SF_ARGS("O", &id);
-	Sf_Import(&f, "RacerScorer");
-	Lv_Text(&f, id, "RemainingTime", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_DistractHumphrey_Scorer1"), NULL);
-	if (Sf_True(&f, G(DH, "missionComplete")) > 0) {
-		Sf_Run(&f, "SScorer", "Set", "(Ossi)", id, "RemainingTime", "Visible", 0);
+static byte Hump_MissionScorer(const nativeVal_t *id) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *lab = TV(), *area = TV(), *wh = TV(), *h = TV(), *x = TV(), *xw = TV(), *x30 = TV(), *y = TV();
+	(void)h;
+	byte ok = Mode_Import("RacerScorer") && Mode_LvLabel(id, "RemainingTime", 0, "Mission_DistractHumphrey_Scorer1", 0);
+	int c = ok ? LvN_GTrue(DH, "missionComplete") : -1;
+	ok = c >= 0 && (!c || Mode_ScorerSetI(id, "RemainingTime", "Visible", 0));
+	if (ok) {
+		LvN_Label("Mission_DistractHumphrey_Scorer1", lab);
+		ok = Mode_TextArea("Horatio", lab, area) && Mode_Unpack(area, 2, wh) && LvN_TextX(0, x) && Native_Arith('+', x, &wh[0], xw) &&
+			Native_Arith('+', xw, Mode_I(&t, 30), x30) && LvN_TextY(12, y) &&
+			Mode_LvTimer(id, "MissionTimer", x30, y, "Mission_DistractHumphrey.TimeExpired", 0) && LV_CALL("RacerScorer", "MissionScorer", NULL, "i", 0L);
 	}
-	PyObject *area = Sf_Ask(&f, "SScorer", "GetTextArea", "(sO)", "Horatio", Lv_Label(&f, "Mission_DistractHumphrey_Scorer1"));
-	Sf_Unpack(&f, area, 2, wh);
-	Dt_Timer(&f, id, "MissionTimer", Sf_OpI(&f, Sf_Op(&f, Lv_TextX(&f, 0), '+', wh[0]), '+', 30), Lv_TextY(&f, 12),
-		"Mission_DistractHumphrey.TimeExpired", 0);
-	Sf_Run(&f, "RacerScorer", "MissionScorer", "(i)", 0);
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
+
+LV_CORE0(Hump_Init)
+LV_CORE0(Hump_CallHumphrey)
+LV_COREA(Hump_UsePhoneCab)
+LV_CORE0(Hump_CreateWaypoint)
+LV_COREA(Hump_OnStartDistraction)
+LV_CORE0(Hump_EnableMissionWaypoint)
+LV_CORE0(Hump_StartCameraTravelling)
+LV_COREA(Hump_AbortCameraTravelling)
+LV_COREA(Hump_CreateHumphrey)
+LV_CORE0(Hump_LaunchMission)
+LV_CORE0(Hump_AssignNewHumphreyTarget)
+LV_COREA(Hump_OnHumphreyDeath)
+LV_COREA(Hump_OnHumphreyDamage)
+LV_COREA(Hump_OnGeneralDamage)
+LV_COREA(Hump_OnDeath)
+LV_CORE0(Hump_StopMission)
+LV_CORE0(Hump_CallDeepThroat)
+LV_COREA(Hump_UsePhoneCab2)
+LV_COREA(Hump_MissionScorer)
+LV_FN(Hump, InitPy, 1, Hump_Init_C)
+LV_FN(Hump, CallHumphreyPy, 0, Hump_CallHumphrey_C)
+LV_FN(Hump, UsePhoneCabPy, 4, Hump_UsePhoneCab_C)
+LV_FN(Hump, CreateWaypointPy, 0, Hump_CreateWaypoint_C)
+LV_FN(Hump, OnStartDistractionPy, 2, Hump_OnStartDistraction_C)
+LV_FN(Hump, EnableMissionWaypointPy, 0, Hump_EnableMissionWaypoint_C)
+LV_FN(Hump, StartCameraTravellingPy, 0, Hump_StartCameraTravelling_C)
+LV_FN(Hump, AbortCameraTravellingPy, 2, Hump_AbortCameraTravelling_C)
+LV_FN(Hump, CreateHumphreyPy, 1, Hump_CreateHumphrey_C)
+LV_FN(Hump, LaunchMissionPy, 0, Hump_LaunchMission_C)
+LV_FN(Hump, AssignNewHumphreyTargetPy, 0, Hump_AssignNewHumphreyTarget_C)
+LV_FN(Hump, OnHumphreyDeathPy, 2, Hump_OnHumphreyDeath_C)
+LV_FN(Hump, OnHumphreyDamagePy, 3, Hump_OnHumphreyDamage_C)
+LV_FN(Hump, OnGeneralDamagePy, 3, Hump_OnGeneralDamage_C)
+LV_FN(Hump, OnDeathPy, 2, Hump_OnDeath_C)
+LV_FN(Hump, StopMissionPy, 0, Hump_StopMission_C)
+LV_FN(Hump, CallDeepThroatPy, 0, Hump_CallDeepThroat_C)
+LV_FN(Hump, UsePhoneCab2Py, 4, Hump_UsePhoneCab2_C)
+LV_FN(Hump, MissionScorerPy, 1, Hump_MissionScorer_C)
 
 PyMethodDef g_DownTownDistractHumphreyMethods[] = {
 	{ "GetHumphreyProfile", Hump_GetHumphreyProfile, 1, NULL },
 	{ "InitStatus", Hump_InitStatus, 1, NULL },
-	{ "Init", Hump_Init, 1, NULL },
-	{ "CallHumphrey", Hump_CallHumphrey, 1, NULL },
-	{ "UsePhoneCab", Hump_UsePhoneCab, 1, NULL },
-	{ "CreateWaypoint", Hump_CreateWaypoint, 1, NULL },
-	{ "OnStartDistraction", Hump_OnStartDistraction, 1, NULL },
-	{ "EnableMissionWaypoint", Hump_EnableMissionWaypoint, 1, NULL },
-	{ "StartCameraTravelling", Hump_StartCameraTravelling, 1, NULL },
-	{ "AbortCameraTravelling", Hump_AbortCameraTravelling, 1, NULL },
-	{ "CreateHumphrey", Hump_CreateHumphrey, 1, NULL },
-	{ "LaunchMission", Hump_LaunchMission, 1, NULL },
-	{ "AssignNewHumphreyTarget", Hump_AssignNewHumphreyTarget, 1, NULL },
-	{ "OnHumphreyDeath", Hump_OnHumphreyDeath, 1, NULL },
-	{ "OnHumphreyDamage", Hump_OnHumphreyDamage, 1, NULL },
-	{ "OnGeneralDamage", Hump_OnGeneralDamage, 1, NULL },
-	{ "OnDeath", Hump_OnDeath, 1, NULL },
-	{ "StopMission", Hump_StopMission, 1, NULL },
-	{ "CallDeepThroat", Hump_CallDeepThroat, 1, NULL },
-	{ "UsePhoneCab2", Hump_UsePhoneCab2, 1, NULL },
-	{ "MissionScorer", Hump_MissionScorer, 1, NULL },
+	{ "Init", Hump_InitPy, 1, NULL },
+	{ "CallHumphrey", Hump_CallHumphreyPy, 1, NULL },
+	{ "UsePhoneCab", Hump_UsePhoneCabPy, 1, NULL },
+	{ "CreateWaypoint", Hump_CreateWaypointPy, 1, NULL },
+	{ "OnStartDistraction", Hump_OnStartDistractionPy, 1, NULL },
+	{ "EnableMissionWaypoint", Hump_EnableMissionWaypointPy, 1, NULL },
+	{ "StartCameraTravelling", Hump_StartCameraTravellingPy, 1, NULL },
+	{ "AbortCameraTravelling", Hump_AbortCameraTravellingPy, 1, NULL },
+	{ "CreateHumphrey", Hump_CreateHumphreyPy, 1, NULL },
+	{ "LaunchMission", Hump_LaunchMissionPy, 1, NULL },
+	{ "AssignNewHumphreyTarget", Hump_AssignNewHumphreyTargetPy, 1, NULL },
+	{ "OnHumphreyDeath", Hump_OnHumphreyDeathPy, 1, NULL },
+	{ "OnHumphreyDamage", Hump_OnHumphreyDamagePy, 1, NULL },
+	{ "OnGeneralDamage", Hump_OnGeneralDamagePy, 1, NULL },
+	{ "OnDeath", Hump_OnDeathPy, 1, NULL },
+	{ "StopMission", Hump_StopMissionPy, 1, NULL },
+	{ "CallDeepThroat", Hump_CallDeepThroatPy, 1, NULL },
+	{ "UsePhoneCab2", Hump_UsePhoneCab2Py, 1, NULL },
+	{ "MissionScorer", Hump_MissionScorerPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
@@ -1963,30 +1929,21 @@ static PyObject *Plus_GetFunctionaryProfile(PyObject *self, PyObject *args) {
 }
 
 /* InitStatus(LevelPath): the race of the mission is the only one of the level, no alarm */
-static PyObject *Plus_InitStatus(PyObject *self, PyObject *args) {
-	PATH_ARGS();
-	Sf_Import(&f, "MapRace");
-	Sf_SetMod(&f, "MapRace", "Races", Sf_Build(&f, "[O]", G(MR, "RaceList")));
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "AlarmActive", "0");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "AlarmStatus", "0");
-	Lv_AcShips(&f, MR, "[\"SMayor1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]");
-	return Sf_None(&f);
+static byte Plus_InitStatus(void) {
+	return Mode_Import("MapRace") && Mode_ModListG("MapRace", "Races", MR, "RaceList") && Mode_SaveS("AlarmActive", "0") &&
+		Mode_SaveS("AlarmStatus", "0") && LvN_AcShips(MR, "[\"SMayor1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]");
 }
 
 /* Init(LevelPath): the race, the phone cab of Ficus or the hunt of Stupidus by the step of the mission */
-static PyObject *Plus_Init(PyObject *self, PyObject *args) {
-	static const char *const cab[] = { "Alarm", "Left", "Loose", "KillStupidus", NULL };
-	PATH_ARGS();
-	int s = Sf_EqS(&f, SAVE("MultiplusRace"), "Begin");
-	if (s > 0) {
-		Sf_Own(&f, MR, "InitRace", "()");
-	} else if (s == 0 && Sf_InS(&f, SAVE("MultiplusRace"), cab) > 0) {
-		Sf_Own(&f, MR, "SetPhoneCab", "()");
+static byte Plus_Init(void) {
+	byte ok = 1;
+	if (LvN_SaveIs("MultiplusRace", "Begin")) {
+		ok = LV_OWN(MR, "InitRace", NULL, "");
+	} else if (LvN_SaveIs("MultiplusRace", "Alarm") || LvN_SaveIs("MultiplusRace", "Left") || LvN_SaveIs("MultiplusRace", "Loose") ||
+		LvN_SaveIs("MultiplusRace", "KillStupidus")) {
+		ok = LV_OWN(MR, "SetPhoneCab", NULL, "");
 	}
-	if (Sf_EqS(&f, SAVE("MultiplusRace"), "Killing") > 0) {
-		Sf_Own(&f, MR, "InitKill", "()");
-	}
-	return Sf_None(&f);
+	return ok && (!LvN_SaveIs("MultiplusRace", "Killing") || LV_OWN(MR, "InitKill", NULL, ""));
 }
 
 /* RaceList(): the checkpoints of the race (those of EasyRaceDownTown2) */
@@ -2004,314 +1961,302 @@ static PyObject *Plus_GetDealType(PyObject *self, PyObject *args) {
 }
 
 /* EndOfRace(ItemName, VehicleName): Ficus on the end of the race (the police, a win, a defeat), his phone cab */
-static PyObject *Plus_EndOfRace(PyObject *self, PyObject *args) {
-	static const char *const police[] = { "Alarm", "Killed", "CounterMeasure", NULL };
-	PyObject *item, *vehicle;
-	SF_ARGS("OO", &item, &vehicle);
-	int stop = Sf_InS(&f, vehicle, police);
-	if (stop > 0) {
-		Lv_Com(&f, "Mission_WinRaceMultiplus_RemoteMessage1", "Ficus", NULL, NULL);
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "MultiplusRace", "Alarm");
-	} else if (stop == 0) {
-		int won = Sf_Compare(&f, vehicle, "==", Sf_Attr(&f, USR(), "Name"));
-		if (won > 0) {
-			Lv_Com(&f, "Mission_WinRaceMultiplus_RemoteMessage3", "Ficus", G(MR, "PreKillStupidus"), NOARGS);
-		} else if (won == 0) {
-			Lv_Com(&f, "Mission_WinRaceMultiplus_RemoteMessage2", "Ficus", NULL, NULL);
-			int left = Sf_EqS(&f, vehicle, "Left");
-			if (left >= 0) {
-				Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "MultiplusRace", left ? "Left" : "Loose");
-			}
-		}
+static byte Plus_EndOfRace(const nativeVal_t *a) {
+	const nativeVal_t *vehicle = &a[1];
+	nativeVal_t usr = { 0 }, name = { 0 };
+	byte ok;
+	Native_SetNone(&usr);
+	Native_SetNone(&name);
+	if (LvN_EqS(vehicle, "Alarm") || LvN_EqS(vehicle, "Killed") || LvN_EqS(vehicle, "CounterMeasure")) {
+		ok = LvN_Com("Mission_WinRaceMultiplus_RemoteMessage1", "Ficus", NULL, NULL, NULL) && Mode_SaveS("MultiplusRace", "Alarm");
+	} else if (Mode_UsrHandle(&usr) && Mode_VGet(&usr, "Name", &name)) {
+		ok = !Native_Compare(vehicle, &name) ?
+			LvN_Com("Mission_WinRaceMultiplus_RemoteMessage3", "Ficus", MR, "PreKillStupidus", LvN_NoArgs()) :
+			LvN_Com("Mission_WinRaceMultiplus_RemoteMessage2", "Ficus", NULL, NULL, NULL) &&
+				Mode_SaveS("MultiplusRace", LvN_EqS(vehicle, "Left") ? "Left" : "Loose");
+	} else {
+		ok = 0;
 	}
-	Sf_Later(&f, Sf_Float(&f, 0.5), G(MR, "SetPhoneCab"), NOARGS, NULL);
-	return Sf_None(&f);
+	Native_Free(&usr);
+	Native_Free(&name);
+	return ok && Mode_Later(0.5, MR, "SetPhoneCab", NULL, 0, NULL);
 }
 
-static PyObject *Plus_SetPhoneCab(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *pc = Sf_Ask(&f, "PhoneCab", "GetFree", "()");
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, pc, "Name"));
-	Sf_SetAttrS(&f, pc, "UseFunc", "Mission_MultiplusRace.UsePhoneCab");
-	return Sf_None(&f);
+static byte Plus_SetPhoneCab(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *pc = TV(), *name = TV();
+	byte ok = LV_CALL("PhoneCab", "GetFree", pc, "") && Mode_VGet(pc, "Name", name) &&
+		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name) && LvN_SetS(pc, "UseFunc", "Mission_MultiplusRace.UsePhoneCab");
+	return Mode_Done(&t, ok);
 }
 
 /* UsePhoneCab(UsrName, CharName, optId, FullOption): Ficus by the end of the race: the race again or the hunt of
  * Stupidus */
-static PyObject *Plus_UsePhoneCab(PyObject *self, PyObject *args) {
+static byte Plus_UsePhoneCab(const nativeVal_t *a) {
 	static const char *const steps[][3] = {
 		{ "Alarm", "Mission_WinRaceMultiplus_ComFicus_InitMsg1", "Mission_WinRaceMultiplus_ComFicus_InitAns1" },
 		{ "Left", "Mission_WinRaceMultiplus_ComFicus_InitMsg2", "Mission_WinRaceMultiplus_ComFicus_InitAns2" },
 		{ "Loose", "Mission_WinRaceMultiplus_ComFicus_InitMsg3", "Mission_WinRaceMultiplus_ComFicus_InitAns3" },
 		{ "KillStupidus", "Mission_WinRaceMultiplus_ComFicus_InitMsg4", "Mission_WinRaceMultiplus_ComFicus_InitAns4" },
 	};
-	PyObject *usr, *ch, *opt, *full;
-	SF_ARGS("OOOO", &usr, &ch, &opt, &full);
-	int again = 0;
-	Sf_SetMod(&f, "Speech", "NPCName", ch);
-	Sf_Run(&f, "PhoneCab", "UseAudioCom", "(OOOO)", usr, ch, opt, full);
-	PyObject *pc = Sf_Entity(&f, ch);
-	int alarm = Lv_Alarm(&f);
+	nativeVal_t pc = { 0 };
+	Native_SetNone(&pc);
+	int alarm = Mode_SetModVar("Speech", "NPCName", &a[1]) && LV_CALL("PhoneCab", "UseAudioCom", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]) &&
+		Mode_EntityH(&a[1], &pc) ? Mode_AlarmOn() : -1;
+	byte ok = alarm >= 0;
 	if (alarm > 0) {
-		Sf_Run(&f, "Speech", "OnObjSpch", "(Osss)", pc, "Ficus", "Mission_WinRaceMultiplus_ComFicus_InitMsg1", "Mission_WinRaceMultiplus_RemoteMessage1");
+		ok = LV_CALL("Speech", "OnObjSpch", NULL, "vsss", &pc, "Ficus", "Mission_WinRaceMultiplus_ComFicus_InitMsg1",
+			"Mission_WinRaceMultiplus_RemoteMessage1");
 	} else if (alarm == 0) {
-		int i = 0, s = 0;
-		for (; i < 4 && (s = Sf_EqS(&f, SAVE("MultiplusRace"), steps[i][0])) == 0; i++) {
+		int i = 0;
+		while (i < 4 && !LvN_SaveIs("MultiplusRace", steps[i][0])) {
+			i++;
 		}
-		if (s > 0) {
-			Sf_Run(&f, "Speech", "OnObjSpch", "(Osss)", pc, "Ficus", steps[i][1], steps[i][2]);
-			if (i < 3) {
-				again = 1;
-			} else {
-				Sf_SpeechEnd(&f, G(MR, "PreInitKill"), NULL);
-			}
-		} else if (s == 0) {
-			Sf_Run(&f, "PhoneCab", "DefUseAudioCom", "(OOOO)", usr, ch, opt, full);
-		}
-		if (again && !f.failed) {
-			Sf_SpeechEnd(&f, G(MR, "InitRace"), NULL);
-			Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "MultiplusRace", "Begin");
+		if (i == 4) {
+			ok = LV_CALL("PhoneCab", "DefUseAudioCom", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
+		} else {
+			ok = LV_CALL("Speech", "OnObjSpch", NULL, "vsss", &pc, "Ficus", steps[i][1], steps[i][2]) &&
+				(i < 3 ? LvN_OnEnd(MR, "InitRace", NULL) && Mode_SaveS("MultiplusRace", "Begin") : LvN_OnEnd(MR, "PreInitKill", NULL));
 		}
 	}
-	return Sf_None(&f);
+	Native_Free(&pc);
+	return ok;
 }
 
 /* InitRace(): the race against the police with the callbacks of the mission */
-static PyObject *Plus_InitRace(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *usr = USR();
-	Sf_Run(&f, "Scrap", "SetAlarm", "(i)", 0);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Challenge.Money", "0");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "Race.Profile", G(MR, "RACE_PROFILE"));
-	Sf_SetMod(&f, "RaceMaker", "GetDealType", G(MR, "GetDealType"));
-	Sf_SetMod(&f, "RaceMaker", "EndOfRaceCallback", G(MR, "EndOfRace"));
-	Sf_SetMod(&f, "RaceMaker", "OnInitialTaunt", G(MR, "AfterInitRaceTaunt"));
-	PyObject *fn = Sf_Mod(&f, "RaceMaker", "InitRace");
-	PyObject *onShip = Sf_Method(&f, usr, "IsType", "(s)", "Car");
-	PyObject *kw = Sf_Build(&f, "{sisisO}", "numply", 5, "waypointlimit", 15, "userOnShip", onShip);
-	Sf_CallKw(&f, fn, f.failed ? NULL : Py_BuildValue("(s)", "Police"), kw);
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Mod(&f, "RaceMaker", "ChallengerName"));
-	Sf_SetGlobal(&f, MR, "outOfRange", Sf_Mod(&f, "Speech", "OnOutOfRange"));
-	Sf_SetMod(&f, "Speech", "OnOutOfRange", Py_None);
-	return Sf_None(&f);
+static byte Plus_InitRace(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = TV(), *zero = TV(), *police = TV(), *name = TV(), *oor = TV();
+	Native_SetInt(zero, 0);
+	LvN_Str(police, "Police");
+	byte ok = Mode_UsrHandle(usr) && Mode_SetAlarm(zero) && Mode_SaveS("Challenge.Money", "0") && Mode_SaveG("Race.Profile", MR, "RACE_PROFILE") &&
+		LvN_ModSetGlobal("RaceMaker", "GetDealType", MR, "GetDealType") && LvN_ModSetGlobal("RaceMaker", "EndOfRaceCallback", MR, "EndOfRace") &&
+		LvN_ModSetGlobal("RaceMaker", "OnInitialTaunt", MR, "AfterInitRaceTaunt");
+	int car = ok ? Mode_VIsType(usr, "Car") : -1;
+	ok = car >= 0 && Mode_CallKw("RaceMaker", "InitRace", NULL, police, 1,
+		Py_BuildValue("{sisisi}", "numply", 5, "waypointlimit", 15, "userOnShip", car)) &&
+		LvN_ModGet("RaceMaker", "ChallengerName", name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name) &&
+		LvN_ModGet("Speech", "OnOutOfRange", oor) && Mode_Put(MR, "outOfRange", NULL, oor) && LvN_ModNone("Speech", "OnOutOfRange");
+	return Mode_Done(&t, ok);
 }
 
-static PyObject *Plus_AfterInitRaceTaunt(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *oor = G(MR, "outOfRange");
-	if (Sf_True(&f, oor) > 0) {
-		Sf_Call(&f, oor, "()");
-		Sf_Run(&f, "Scrap", "Set", "(sd)", "RemainTalkTime", 0.0);
-	}
-	return Sf_None(&f);
+static byte Plus_AfterInitRaceTaunt(void) {
+	byte called;
+	return Mode_CallIf(MR, "outOfRange", &called) && (!called || Mode_GVarSetN("RemainTalkTime", 0.0));
 }
 
 /* InitKill(): the scorer, Stupidus, the warning when the player leaves his ship */
-static PyObject *Plus_InitKill(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Lv_ScorerCall(&f, G(MR, "MissionScorer"));
-	Sf_DrawScorer(&f);
-	Sf_Own(&f, MR, "SpawnStupidus", "()");
-	Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", G(MR, "HeyYouFight"));
-	return Sf_None(&f);
+static byte Plus_InitKill(void) {
+	return LvN_ScorerCallG(MR, "MissionScorer") && LvN_Draw() && LV_OWN(MR, "SpawnStupidus", NULL, "") &&
+		LvN_ModSetGlobal("Parking", "SwitchCharMissionCallback", MR, "HeyYouFight");
 }
 
-/* a functionary of Stupidus' gang: NormalTraffic at a free spawn point with the profile of the mission */
-static PyObject *Mr_Functionary(scriptFrame_t *f, const char *global) {
-	PyObject *e = Lv_SpawnCar(f, "NormalTraffic", 0);
-	if (global) {
-		Sf_SetGlobal(f, MR, global, e);
-		e = Sf_Global(f, MR, global);
-	}
-	PyObject *pd = Sf_Own(f, MR, "GetFunctionaryProfile", "()");
-	Sf_Run(f, "VehiclesNPC", "SetStdProperties", "(OO)", Sf_Attr(f, e, "Name"), Sf_Attr(f, pd, "Ship"));
-	Sf_Run(f, "VehiclesNPC", "ModAIProff", "(OOi)", e, pd, 1);
-	PyObject *life = Sf_Global(f, MR, "FUNC_LIFE");
-	Sf_SetAttr(f, e, "Life", life);
-	Sf_SetAttr(f, e, "MaxLife", life);
-	return e;
+/* a functionary of Stupidus' gang into e: NormalTraffic at a free spawn point with the profile of the mission (global:
+ * the global of the module it goes to first, read back) */
+static byte Mr_Functionary(const char *global, nativeVal_t *e) {
+	nativeVal_t pd = { 0 }, name = { 0 }, ship = { 0 };
+	Native_SetNone(&pd);
+	Native_SetNone(&name);
+	Native_SetNone(&ship);
+	byte ok = Mode_SpawnCar("NormalTraffic", 0, e, NULL) && (!global || (Mode_Put(MR, global, NULL, e) && Mode_Read(MR, global, e))) &&
+		LV_OWN(MR, "GetFunctionaryProfile", &pd, "") && Mode_VGet(e, "Name", &name) && Mode_VGet(&pd, "Ship", &ship) &&
+		LV_CALL("VehiclesNPC", "SetStdProperties", NULL, "vv", &name, &ship) && LV_CALL("VehiclesNPC", "ModAIProff", NULL, "vvi", e, &pd, 1L) &&
+		LvN_Life(e, MR, "FUNC_LIFE");
+	Native_Free(&pd);
+	Native_Free(&name);
+	Native_Free(&ship);
+	return ok;
+}
+
+/* TOTAL_STUPIDUS_LIVES - d op lives: 1, 0, -1 */
+static int Mr_LivesAre(const nativeVal_t *lives, const char *op, long d) {
+	nativeVal_t total = { 0 }, x = { 0 };
+	Native_SetNone(&x);
+	int r = Mode_G(MR, "TOTAL_STUPIDUS_LIVES", &total) && Native_Arith('-', &total, &(nativeVal_t){ .type = NV_INT, .i = d }, &x) ?
+		Mode_Cmp(lives, op, &x) : -1;
+	Native_Free(&total);
+	Native_Free(&x);
+	return r;
 }
 
 /* SpawnStupidus(): Stupidus again; after his first life he brings messages and, from the fourth, friends */
-static PyObject *Plus_SpawnStupidus(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "Speech");
-	Sf_Import(&f, "VehiclesNPC");
-	Sf_Import(&f, "OutMap");
-	PyObject *st = Mr_Functionary(&f, "Stupidus");
-	Sf_SetAttrS(&f, st, "OnDeath", "Mission_MultiplusRace.StupidusOnDeath");
-	Sf_Run(&f, "SAI", "SetStateVehicle", "(iOi)", 3, Sf_Attr(&f, st, "Name"), 0);
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, st, "Name"));
-	PyObject *lives = Sf_ToInt(&f, SAVE("MultiplusRace.Lives"));
-	PyObject *total = G(MR, "TOTAL_STUPIDUS_LIVES");
-	int first = Sf_Compare(&f, lives, "==", total);
-	if (first > 0) {
-		Sf_SetAttrS(&f, st, "OnDamage", "Mission_MultiplusRace.StupidusDamage");
-		Sf_SetAttrS(&f, st, "TgType", "red");
-	} else if (first == 0) {
-		Sf_SetAttrS(&f, st, "EntityList", "Enemies");
-		int s = Sf_Compare(&f, lives, "==", Sf_OpI(&f, G(MR, "TOTAL_STUPIDUS_LIVES"), '-', 1));
+static byte Plus_SpawnStupidus(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *st = TV(), *name = TV(), *lives = TV(), *num = TV();
+	byte ok = Mode_Import("Speech") && Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mr_Functionary("Stupidus", st) &&
+		LvN_SetS(st, "OnDeath", "Mission_MultiplusRace.StupidusOnDeath") && Mode_VGet(st, "Name", name) &&
+		LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, name, 0L) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name) &&
+		Mode_SaveInt("MultiplusRace.Lives", lives);
+	int c = ok ? Mr_LivesAre(lives, "==", 0) : -1;
+	if (c > 0) {
+		ok = LvN_SetS(st, "OnDamage", "Mission_MultiplusRace.StupidusDamage") && LvN_SetS(st, "TgType", "red");
+	} else if (c == 0) {
+		ok = LvN_SetS(st, "EntityList", "Enemies");
+		int s = ok ? Mr_LivesAre(lives, "==", 1) : -1;
 		if (s > 0) {
-			Lv_Com(&f, "Mission_KillStupidus_RemoteMessage2", "Stupidus", NULL, NULL);
-		} else if (s == 0 && (s = Sf_Compare(&f, lives, "==", Sf_OpI(&f, G(MR, "TOTAL_STUPIDUS_LIVES"), '-', 2))) > 0) {
-			Lv_Com(&f, "Mission_KillStupidus_RemoteMessage3", "Stupidus", NULL, NULL);
-		} else if (s == 0 && Sf_Compare(&f, lives, "<=", Sf_OpI(&f, G(MR, "TOTAL_STUPIDUS_LIVES"), '-', 3)) > 0) {
-			if (Sf_Compare(&f, lives, "==", Sf_OpI(&f, G(MR, "TOTAL_STUPIDUS_LIVES"), '-', 3)) > 0) {
-				Lv_Com(&f, "Mission_KillStupidus_RemoteMessage4", "Stupidus", NULL, NULL);
-			}
-			if (Sf_EqI(&f, Sf_Ask(&f, "Scrap", "EntityListGet", "(ss)", "Enemies", "Num"), 1) > 0) {
-				Sf_Own(&f, MR, "SpawnStupidusFriends", "(i)", 2);
-			}
+			ok = LvN_Com("Mission_KillStupidus_RemoteMessage2", "Stupidus", NULL, NULL, NULL);
+		} else if (s == 0 && (s = Mr_LivesAre(lives, "==", 2)) > 0) {
+			ok = LvN_Com("Mission_KillStupidus_RemoteMessage3", "Stupidus", NULL, NULL, NULL);
+		} else if (s == 0 && (s = Mr_LivesAre(lives, "<=", 3)) > 0) {
+			s = Mr_LivesAre(lives, "==", 3);
+			ok = s >= 0 && (!s || LvN_Com("Mission_KillStupidus_RemoteMessage4", "Stupidus", NULL, NULL, NULL)) &&
+				Mode_ListGet("Enemies", "Num", num) && (!LvN_EqI(num, 1) || LV_OWN(MR, "SpawnStupidusFriends", NULL, "i", 2L));
 		}
+		ok = ok && s >= 0;
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok && c >= 0);
 }
 
 /* SpawnStupidusFriends(numFriends): enemy functionaries beside Stupidus */
-static PyObject *Plus_SpawnStupidusFriends(PyObject *self, PyObject *args) {
-	PyObject *num;
-	SF_ARGS("O", &num);
-	Sf_Import(&f, "VehiclesNPC");
-	Sf_Import(&f, "OutMap");
-	long n = 0;
-	Sf_Check(&f, Script_Range(num, &n));
-	for (long i = 0; i < n && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *e = Mr_Functionary(&f, NULL);
-		Sf_SetAttrS(&f, e, "OnDeath", "Mission_MultiplusRace.StupidusFriendOnDeath");
-		Sf_SetAttrS(&f, e, "EntityList", "Enemies");
-		Sf_Release(&f, mark);
+static byte Plus_SpawnStupidusFriends(const nativeVal_t *a) {
+	long count;
+	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_Range(&a[0], &count);
+	for (long i = 0; ok && i < count; i++) {
+		nativeVal_t e = { 0 };
+		ok = Mr_Functionary(NULL, &e) && LvN_SetS(&e, "OnDeath", "Mission_MultiplusRace.StupidusFriendOnDeath") &&
+			LvN_SetS(&e, "EntityList", "Enemies");
+		Native_Free(&e);
 	}
-	return Sf_None(&f);
+	return ok;
 }
 
-static PyObject *Plus_StupidusFriendOnDeath(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	SF_ARGS("OO", &looser, &winner);
-	Sf_Run(&f, "Vehicles", "OnDeath", "(OO)", looser, winner);
-	Sf_Later(&f, Sf_Float(&f, 5.0), G(MR, "SpawnStupidusFriends"), Sf_Build(&f, "(i)", 1), NULL);
-	return Sf_None(&f);
+static byte Plus_StupidusFriendOnDeath(const nativeVal_t *a) {
+	nativeVal_t one = { 0 };
+	Native_SetInt(&one, 1);
+	return LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1]) && Mode_Later(5.0, MR, "SpawnStupidusFriends", &one, 1, NULL);
 }
 
 /* RestoreEnemies(): the enemies back to the traffic, Ficus ends the mission */
-static PyObject *Plus_RestoreEnemies(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *name = Sf_Ask(&f, "Scrap", "EntityListGet", "(ss)", "Enemies", "First");
-	PyObject *e = Sf_Entity(&f, name);
-	int mark = f.n;
-	while (Sf_True(&f, e) > 0) {
-		Sf_SetAttrS(&f, e, "OnDeath", "Vehicles.OnDeath");
-		name = Sf_Attr(&f, e, "NextInList");
-		Sf_SetAttrS(&f, e, "EntityList", "Traffic");
-		Sf_SetAttrS(&f, e, "TgType", "none");
-		Sf_Run(&f, "SAI", "SetStateVehicle", "(iOi)", 3, Sf_Attr(&f, e, "Name"), 1);
-		e = Sf_Entity(&f, name);
-		PyObject *keep[2] = { name, e };
-		Sf_ReleaseKeep(&f, mark, keep, 2);
+static byte Plus_RestoreEnemies(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = TV(), *next = TV(), *name = TV();
+	byte ok = Mode_FirstOf("Enemies", e);
+	while (ok && Native_True(e)) {
+		Native_Free(next);
+		Native_Free(name);
+		ok = LvN_SetS(e, "OnDeath", "Vehicles.OnDeath") && Mode_VGet(e, "NextInList", next) && LvN_SetS(e, "EntityList", "Traffic") &&
+			LvN_SetS(e, "TgType", "none") && Mode_VGet(e, "Name", name) && LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, name, 1L);
+		Native_Free(e);
+		ok = ok && Mode_EntityH(next, e);
 	}
-	Lv_Com(&f, "Mission_KillStupidus_RemoteMessage6", "Ficus", G(MR, "SetNextMission"), NOARGS);
-	return Sf_None(&f);
+	ok = ok && LvN_Com("Mission_KillStupidus_RemoteMessage6", "Ficus", MR, "SetNextMission", LvN_NoArgs());
+	return Mode_Done(&t, ok);
 }
 
 /* `int(Scrap.GetSaveVar("MultiplusRace.Lives")) + 1`: the lives shown */
-static PyObject *Mr_Lives(scriptFrame_t *f) {
-	return Sf_Repr(f, Sf_OpI(f, Sf_ToInt(f, Sf_Ask(f, "Scrap", "GetSaveVar", "(s)", "MultiplusRace.Lives")), '+', 1));
+static byte Mr_Lives(nativeVal_t *out) {
+	nativeVal_t n = { 0 }, n1 = { 0 }, one = { 0 };
+	Native_SetNone(&n1);
+	Native_SetInt(&one, 1);
+	byte ok = Mode_SaveInt("MultiplusRace.Lives", &n) && Native_Arith('+', &n, &one, &n1);
+	if (ok) {
+		Mode_Repr(&n1, out);
+	}
+	Native_Free(&n);
+	Native_Free(&n1);
+	return ok;
 }
 
 /* StupidusOnDeath(Looser, Winner): a life fewer and Stupidus again 5 s later, or the end of the gang */
-static PyObject *Plus_StupidusOnDeath(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	SF_ARGS("OO", &looser, &winner);
-	Sf_Run(&f, "Vehicles", "OnDeath", "(OO)", looser, winner);
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Py_None);
-	PyObject *lives = Sf_OpI(&f, Sf_ToInt(&f, SAVE("MultiplusRace.Lives")), '-', 1);
-	int over = Sf_Compare(&f, lives, "<", Sf_Int(&f, 0));
-	if (over > 0) {
-		Sf_Later(&f, Sf_Float(&f, 0.5), G(MR, "RestoreEnemies"), NOARGS, NULL);
-		Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", Py_None);
-		Lv_ScorerCall(&f, Py_None);
-		Sf_DrawScorer(&f);
-	} else if (over == 0) {
-		Sf_Later(&f, Sf_Float(&f, 5.0), G(MR, "SpawnStupidus"), NOARGS, NULL);
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "MultiplusRace.Lives", Sf_Repr(&f, lives));
-		Sf_Run(&f, "SScorer", "Set", "(issO)", 0, "RemainingLivesScorer", "Text", Mr_Lives(&f));
+static byte Plus_StupidusOnDeath(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *n = TV(), *lives = TV(), *rep = TV(), *shown = TV();
+	byte ok = LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1]) && Mode_Target(NULL) && Mode_SaveInt("MultiplusRace.Lives", n) &&
+		Native_Arith('-', n, Mode_I(&t, 1), lives);
+	if (ok && Native_Compare(lives, Mode_I(&t, 0)) < 0) {
+		ok = Mode_Later(0.5, MR, "RestoreEnemies", NULL, 0, NULL) && LvN_ModNone("Parking", "SwitchCharMissionCallback") && LvN_ScorerOff() &&
+			LvN_Draw();
+	} else if (ok) {
+		Mode_Repr(lives, rep);
+		ok = Mode_Later(5.0, MR, "SpawnStupidus", NULL, 0, NULL) && Mode_SetSaveVar("MultiplusRace.Lives", rep) && Mr_Lives(shown) &&
+			LvN_Set0("RemainingLivesScorer", "Text", shown);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
 /* MissionScorer(id): Stupidus' lives left */
-static PyObject *Plus_MissionScorer(PyObject *self, PyObject *args) {
-	PyObject *id;
-	SF_ARGS("O", &id);
-	Sf_Import(&f, "Scorer");
-	Lv_Text(&f, id, "RemainingLives", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_KillStupidus_Scorer_1"), NULL);
-	Lv_Text(&f, id, "RemainingLivesScorer", Lv_TextY(&f, 20), Mr_Lives(&f), NULL);
-	return Sf_None(&f);
+static byte Plus_MissionScorer(const nativeVal_t *id) {
+	nativeVal_t y = { 0 }, lives = { 0 };
+	Native_SetNone(&y);
+	Native_SetNone(&lives);
+	byte ok = Mode_Import("Scorer") && Mode_LvLabel(id, "RemainingLives", 0, "Mission_KillStupidus_Scorer_1", 0) && LvN_TextY(20, &y) &&
+		Mr_Lives(&lives) && Mode_LvText(id, "RemainingLivesScorer", &y, &lives, NULL);
+	Native_Free(&y);
+	Native_Free(&lives);
+	return ok;
 }
 
 /* SetNextMission(): the places of the characters, the next mission of NextMissionData, the crazy gambler 2 s later */
-static PyObject *Plus_SetNextMission(PyObject *self, PyObject *args) {
+static byte Plus_SetNextMission(void) {
 	static const char *const places[] = { "MayorAtTownHall", "1", "PoliceBossAtPolice", "1", "BankMasterAtBank", "1",
 		"Journalist.Humphrey_Defaut", "Police", "Journalist.Betty_Defaut", "Press", "Journalist.Berto_Defaut", "Police", NULL };
-	SF_ARGS("");
-	Sf_Import(&f, "Init");
-	Lv_Saves(&f, places);
-	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "MultiplusRace");
-	PyObject *apply = Sf_Mod(&f, "__builtin__", "apply");
-	Sf_Call(&f, apply, "(OO)", Sf_Mod(&f, "MissionsFuncs", "SetNextMission"), G(MR, "NextMissionData"));
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_TalkToFicus3_MissionText1", 1);
-	Sf_Later(&f, Sf_Int(&f, 2), G(MR, "CGCalls"), NOARGS, NULL);
-	return Sf_None(&f);
+	if (!Mode_Import("Init")) {
+		return 0;
+	}
+	Mode_Saves(places);
+	return Mode_DelSaveVars("MultiplusRace") && Mode_ApplyNext(MR) && Mode_MMDesc("Mission_TalkToFicus3_MissionText1", 1) &&
+		Mode_Later(2, MR, "CGCalls", NULL, 0, NULL);
 }
 
-/* CGCalls() of the missions: the crazy gambler's message by the number of crazy deals done (none during the twelfth) */
-static PyObject *Dt_CGCalls(PyObject *args, const char *const *keys, int n) {
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	if (Sf_Compare(&f, SAVE("SuperDeal.Library"), "!=", Sf_Str(&f, "SuperDeal_Twelfth")) > 0) {
-		PyObject *num = Sf_Ask(&f, "MissionsFuncs", "GetNumCrazyDealCompleted", "()");
-		for (int i = 0; i < n; i++) {
-			int s = Sf_EqI(&f, num, i);
-			if (s != 0) {
-				if (s > 0) {
-					Lv_Com(&f, keys[i], "CrazyGambler", NULL, NULL);
-				}
-				break;
-			}
-		}
-	}
-	return Sf_None(&f);
-}
-
-static PyObject *Plus_CGCalls(PyObject *self, PyObject *args) {
+static byte Plus_CGCalls(void) {
 	static const char *const keys[] = { "Mission_TalkToFicus3_RemoteMessage4", "Mission_TalkToFicus3_RemoteMessage5",
 		"Mission_TalkToFicus3_RemoteMessage6", "Mission_TalkToFicus3_RemoteMessage7" };
-	(void)self;
-	return Dt_CGCalls(args, keys, 4);
+	return Mode_CGCalls(keys, 4);
 }
+
+LV_CORE0(Plus_InitStatus)
+LV_CORE0(Plus_Init)
+LV_COREA(Plus_EndOfRace)
+LV_CORE0(Plus_SetPhoneCab)
+LV_COREA(Plus_UsePhoneCab)
+LV_CORE0(Plus_InitRace)
+LV_CORE0(Plus_AfterInitRaceTaunt)
+LV_CORE0(Plus_InitKill)
+LV_CORE0(Plus_SpawnStupidus)
+LV_COREA(Plus_SpawnStupidusFriends)
+LV_COREA(Plus_StupidusFriendOnDeath)
+LV_CORE0(Plus_RestoreEnemies)
+LV_COREA(Plus_StupidusOnDeath)
+LV_COREA(Plus_MissionScorer)
+LV_CORE0(Plus_SetNextMission)
+LV_CORE0(Plus_CGCalls)
+LV_FN(Plus, InitStatusPy, 1, Plus_InitStatus_C)
+LV_FN(Plus, InitPy, 1, Plus_Init_C)
+LV_FN(Plus, EndOfRacePy, 2, Plus_EndOfRace_C)
+LV_FN(Plus, SetPhoneCabPy, 0, Plus_SetPhoneCab_C)
+LV_FN(Plus, UsePhoneCabPy, 4, Plus_UsePhoneCab_C)
+LV_FN(Plus, InitRacePy, 0, Plus_InitRace_C)
+LV_FN(Plus, AfterInitRaceTauntPy, 0, Plus_AfterInitRaceTaunt_C)
+LV_FN(Plus, InitKillPy, 0, Plus_InitKill_C)
+LV_FN(Plus, SpawnStupidusPy, 0, Plus_SpawnStupidus_C)
+LV_FN(Plus, SpawnStupidusFriendsPy, 1, Plus_SpawnStupidusFriends_C)
+LV_FN(Plus, StupidusFriendOnDeathPy, 2, Plus_StupidusFriendOnDeath_C)
+LV_FN(Plus, RestoreEnemiesPy, 0, Plus_RestoreEnemies_C)
+LV_FN(Plus, StupidusOnDeathPy, 2, Plus_StupidusOnDeath_C)
+LV_FN(Plus, MissionScorerPy, 1, Plus_MissionScorer_C)
+LV_FN(Plus, SetNextMissionPy, 0, Plus_SetNextMission_C)
+LV_FN(Plus, CGCallsPy, 0, Plus_CGCalls_C)
 
 PyMethodDef g_DownTownMultiplusRaceMethods[] = {
 	{ "GetFunctionaryProfile", Plus_GetFunctionaryProfile, 1, NULL },
-	{ "InitStatus", Plus_InitStatus, 1, NULL },
-	{ "Init", Plus_Init, 1, NULL },
+	{ "InitStatus", Plus_InitStatusPy, 1, NULL },
+	{ "Init", Plus_InitPy, 1, NULL },
 	{ "RaceList", Plus_RaceList, 1, NULL },
 	{ "GetDealType", Plus_GetDealType, 1, NULL },
-	{ "EndOfRace", Plus_EndOfRace, 1, NULL },
-	{ "SetPhoneCab", Plus_SetPhoneCab, 1, NULL },
-	{ "UsePhoneCab", Plus_UsePhoneCab, 1, NULL },
-	{ "InitRace", Plus_InitRace, 1, NULL },
-	{ "AfterInitRaceTaunt", Plus_AfterInitRaceTaunt, 1, NULL },
-	{ "InitKill", Plus_InitKill, 1, NULL },
-	{ "SpawnStupidus", Plus_SpawnStupidus, 1, NULL },
-	{ "SpawnStupidusFriends", Plus_SpawnStupidusFriends, 1, NULL },
-	{ "StupidusFriendOnDeath", Plus_StupidusFriendOnDeath, 1, NULL },
-	{ "RestoreEnemies", Plus_RestoreEnemies, 1, NULL },
-	{ "StupidusOnDeath", Plus_StupidusOnDeath, 1, NULL },
-	{ "MissionScorer", Plus_MissionScorer, 1, NULL },
-	{ "SetNextMission", Plus_SetNextMission, 1, NULL },
-	{ "CGCalls", Plus_CGCalls, 1, NULL },
+	{ "EndOfRace", Plus_EndOfRacePy, 1, NULL },
+	{ "SetPhoneCab", Plus_SetPhoneCabPy, 1, NULL },
+	{ "UsePhoneCab", Plus_UsePhoneCabPy, 1, NULL },
+	{ "InitRace", Plus_InitRacePy, 1, NULL },
+	{ "AfterInitRaceTaunt", Plus_AfterInitRaceTauntPy, 1, NULL },
+	{ "InitKill", Plus_InitKillPy, 1, NULL },
+	{ "SpawnStupidus", Plus_SpawnStupidusPy, 1, NULL },
+	{ "SpawnStupidusFriends", Plus_SpawnStupidusFriendsPy, 1, NULL },
+	{ "StupidusFriendOnDeath", Plus_StupidusFriendOnDeathPy, 1, NULL },
+	{ "RestoreEnemies", Plus_RestoreEnemiesPy, 1, NULL },
+	{ "StupidusOnDeath", Plus_StupidusOnDeathPy, 1, NULL },
+	{ "MissionScorer", Plus_MissionScorerPy, 1, NULL },
+	{ "SetNextMission", Plus_SetNextMissionPy, 1, NULL },
+	{ "CGCalls", Plus_CGCallsPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
@@ -2328,495 +2273,472 @@ static const char *const merc_profile[] = {
 };
 
 /* GetMercEnemiesProfile(TypeShip) */
-static PyObject *Escort_GetMercEnemiesProfile(PyObject *self, PyObject *args) {
-	PyObject *ship;
-	SF_ARGS("O", &ship);
-	Sf_Import(&f, "VehiclesNPC");
-	PyObject *sp = Sf_Ask(&f, "VehiclesNPC", "cShipAI", "()");
-	Sf_SetAttr(&f, sp, "Ship", ship);
-	Sf_SetAttrs(&f, sp, PM, merc_profile);
-	return Sf_Return(&f, sp);
+static byte Escort_GetMercEnemiesProfile_C(const nativeVal_t *a, nativeVal_t *out) {
+	return Mode_Import("VehiclesNPC") && LV_CALL("VehiclesNPC", "cShipAI", out, "") && Mode_VSet(out, "Ship", &a[0]) &&
+		Mode_SetAttrs(out, merc_profile);
 }
 
 /* InitStatus(LevelPath): no hired mercenaries, the traffic of the mission */
-static PyObject *Escort_InitStatus(PyObject *self, PyObject *args) {
-	PATH_ARGS();
-	Sf_Import(&f, "VehiclesNPC");
-	Sf_SetMod(&f, "VehiclesNPC", "UseMercs", Sf_Int(&f, 0));
-	Lv_AcShips(&f, PM, "[\"SBanker1\",\"SBishop1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\",\"SBankMaster1\",\"SArchbishop1\"]");
-	return Sf_None(&f);
+static byte Escort_InitStatus(void) {
+	return Mode_Import("VehiclesNPC") && LvN_ModSetI("VehiclesNPC", "UseMercs", 0) &&
+		LvN_AcShips(PM, "[\"SBanker1\",\"SBishop1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\",\"SBankMaster1\",\"SArchbishop1\"]");
 }
 
 /* Init(LevelPath): the taunts of the mercenaries, Rusty; the escort or the hunt by the step of the mission */
-static PyObject *Escort_Init(PyObject *self, PyObject *args) {
-	PATH_ARGS();
-	Sf_Own(&f, PM, "MercTauntMessager", "()");
-	Sf_Run(&f, "SScorer", "AddModel", "(isssii)", 0, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3, 25);
-	int s = Sf_EqS(&f, SAVE("CrazyMayor"), "Transport");
-	if (s > 0) {
-		Sf_Own(&f, PM, "MissionInit", "()");
-	} else if (s == 0 && Sf_EqS(&f, SAVE("CrazyMayor"), "KillThem") > 0) {
-		Sf_Own(&f, PM, "KillThem", "()");
+static byte Escort_Init(void) {
+	if (!LV_OWN(PM, "MercTauntMessager", NULL, "") ||
+		!LV_CALL("SScorer", "AddModel", NULL, "isssii", 0L, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3L, 25L)) {
+		return 0;
 	}
-	return Sf_None(&f);
+	if (LvN_SaveIs("CrazyMayor", "Transport")) {
+		return LV_OWN(PM, "MissionInit", NULL, "");
+	}
+	return !LvN_SaveIs("CrazyMayor", "KillThem") || LV_OWN(PM, "KillThem", NULL, "");
 }
 
-/* Scrap.CreateEntity(name, pos[0], pos[1], pos[2], "Item") with pos a global of the mission */
-static PyObject *Pt_Item(scriptFrame_t *f, const char *name, const char *pos) {
-	PyObject *fn = Sf_Mod(f, "Scrap", "CreateEntity");
-	PyObject *x = Sf_Item(f, Sf_Global(f, PM, pos), 0), *y = Sf_Item(f, Sf_Global(f, PM, pos), 1), *z = Sf_Item(f, Sf_Global(f, PM, pos), 2);
-	return Sf_Call(f, fn, "(sOOOs)", name, x, y, z, "Item");
+/* Scrap.CreateEntity(name, pos[0], pos[1], pos[2], "Item") with pos a global of the mission, the handle into out */
+static byte Pt_Item(const char *name, const char *pos, nativeVal_t *out) {
+	nativeVal_t p = { 0 }, n = { 0 };
+	LvN_Str(&n, name);
+	byte ok = Mode_G(PM, pos, &p) && LvN_CreateAt(&n, &p, "Item", out);
+	Native_Free(&p);
+	Native_Free(&n);
+	return ok;
 }
 
 /* MissionInit(): the meeting point where the escort starts, the mayor's call */
-static PyObject *Escort_MissionInit(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *l = Pt_Item(&f, "Winit", "MissionBegin");
-	Sf_Method(&f, l, "SetModel", "(s)", "models/Misc/MeetingPoint/MeetingPoint.m3d");
-	Sf_SetAttrI(&f, l, "RadarShow", 1);
-	Sf_SetAttrI(&f, l, "Radius", 3500);
-	Sf_SetAttr(&f, l, "Ang", Sf_Build(&f, "(iii)", 0, 180, 0));
-	Sf_SetAttrI(&f, l, "OnlyUser", 1);
-	Sf_SetAttrS(&f, l, "OnTake", "Mission_ProtectMayorTransport.OnMissionStart");
-	PyObject *t = Sf_Op(&f, Sf_Time(&f), '+', Sf_Float(&f, 4.0));
-	Sf_Schedule(&f, t, Sf_Mod(&f, "Speech", "RemoteComunication"), Sf_Build(&f, "(ss)", "Mission_ProtectMayorTransport_RemoteMessage1", "Mayor"),
-		NULL);
-	return Sf_None(&f);
+static byte Escort_MissionInit(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *l = TV(), *ang = TV(), *d = TV(), *args = TV(), *who = TV();
+	Mode_Ints3(ang, 0, 180, 0);
+	Native_SetFloat(d, 4.0);
+	LvN_Str(args, "Mission_ProtectMayorTransport_RemoteMessage1");
+	LvN_Str(who, "Mayor");
+	byte ok = Pt_Item("Winit", "MissionBegin", l) && Mode_VModel(l, Mode_S(&t, "models/Misc/MeetingPoint/MeetingPoint.m3d")) &&
+		LvN_SetI(l, "RadarShow", 1) && LvN_SetI(l, "Radius", 3500) && Mode_VSet(l, "Ang", ang) && LvN_SetI(l, "OnlyUser", 1) &&
+		LvN_SetS(l, "OnTake", "Mission_ProtectMayorTransport.OnMissionStart") && Mode_LaterSpeech("RemoteComunication", d, args, 2, NULL);
+	return Mode_Done(&t, ok);
 }
 
 /* OnMissionStart(ItemName, VehicleName): the player at the meeting point (not with the alarm on): the transport and
  * the scene of the start */
-static PyObject *Escort_OnMissionStart(PyObject *self, PyObject *args) {
-	PyObject *item, *vehicle;
-	SF_ARGS("OO", &item, &vehicle);
-	Sf_Import(&f, "Scene");
-	Sf_Import(&f, "Chars");
-	PyObject *usr = USR();
-	if (Sf_Compare(&f, vehicle, "!=", Sf_Attr(&f, usr, "Name")) > 0) {
-		return Sf_None(&f);
+static byte Escort_OnMissionStart(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = TV(), *name = TV(), *itm = TV(), *v = TV(), *zero = TV(), *tr = TV(), *desc = TV(), *pos = TV();
+	Mode_Ints3(zero, 0, 0, 0);
+	byte ok = Mode_Import("Scene") && Mode_Import("Chars") && Mode_UsrHandle(usr) && Mode_VGet(usr, "Name", name);
+	if (!ok || Native_Compare(&a[1], name)) {
+		return Mode_Done(&t, ok);
 	}
-	PyObject *itm = Sf_Entity(&f, item);
-	Sf_SetAttr(&f, usr, "Pos", Sf_Attr(&f, itm, "Pos"));
-	Sf_SetAttr(&f, usr, "Ang", Sf_Attr(&f, itm, "Ang"));
-	Sf_SetAttr(&f, usr, "Vel", Sf_Build(&f, "(iii)", 0, 0, 0));
-	Sf_SetAttrI(&f, itm, "rTime", 15);
-	if (Lv_Alarm(&f) > 0) {
-		Sf_Run(&f, "Speech", "RemoteComunication", "(ss)", "Mission_ProtectMayorTransport_RemoteMessage2", "Mayor");
-		return Sf_None(&f);
+	int alarm = Mode_EntityH(&a[0], itm) && Mode_VGet(itm, "Pos", v) && Mode_VSet(usr, "Pos", v) && Mode_VRead(itm, "Ang", v) &&
+		Mode_VSet(usr, "Ang", v) && Mode_VSet(usr, "Vel", zero) && LvN_SetI(itm, "rTime", 15) ? Mode_AlarmOn() : -1;
+	if (alarm != 0) {
+		return Mode_Done(&t, alarm > 0 &&
+			LV_CALL("Speech", "RemoteComunication", NULL, "ss", "Mission_ProtectMayorTransport_RemoteMessage2", "Mayor"));
 	}
-	Sf_Method(&f, itm, "Del", "()");
-	Sf_Run(&f, "Scene", "InitOutDoorScene", "()");
-	Sf_Run(&f, "Traffic", "SetPath", "()");
-	Sf_SetGlobal(&f, PM, "trans", Sf_Ask(&f, "VehiclesNPC", "MakeAI", "(ssii)", "TLight2", "Transporter", 0, 0));
-	Sf_Run(&f, "Traffic", "ResetPath", "()");
-	Sf_SetAttr(&f, G(PM, "trans"), "Pos", G(PM, "RouteBegin"));
-	Sf_SetAttr(&f, G(PM, "trans"), "Ang", Sf_Build(&f, "(iii)", 0, 0, 0));
-	Sf_SetAttrS(&f, G(PM, "trans"), "TgType", "green");
-	PyObject *life = G(PM, "TRANSPORT_LIFE");
-	Sf_SetAttr(&f, G(PM, "trans"), "Life", life);
-	Sf_SetAttr(&f, G(PM, "trans"), "MaxLife", life);
-	Sf_SetAttrS(&f, G(PM, "trans"), "OnDeath", "Mission_ProtectMayorTransport.FailMission");
-	Sf_SetAttrS(&f, G(PM, "trans"), "OnDamage", "Mission_ProtectMayorTransport.ActualizeScorer");
-	Sf_SetAttr(&f, G(PM, "trans"), "Descriptor", Sf_Lang(&f, Sf_Str(&f, "Mission_ProtectMayorTransport_Scorer1")));
-	Sf_Run(&f, "Scrap", "Set", "(sO)", "CurrentWaypointName", Sf_Attr(&f, G(PM, "trans"), "Name"));
-	Sf_Own(&f, PM, "TransGoto", "(O)", G(PM, "RouteEnd"));
-	Sf_Own(&f, PM, "OnMissionStart2", "()");
-	return Sf_None(&f);
+	ok = Mode_VDel(itm) && LV_CALL("Scene", "InitOutDoorScene", NULL, "") && LV_CALL("Traffic", "SetPath", NULL, "") &&
+		LV_CALL("VehiclesNPC", "MakeAI", tr, "ssii", "TLight2", "Transporter", 0L, 0L) && Mode_Put(PM, "trans", NULL, tr) &&
+		LV_CALL("Traffic", "ResetPath", NULL, "") && Mode_Read(PM, "trans", tr) && Mode_G(PM, "RouteBegin", pos) && Mode_VSet(tr, "Pos", pos) &&
+		Mode_VSet(tr, "Ang", zero) && LvN_SetS(tr, "TgType", "green") && LvN_Life(tr, PM, "TRANSPORT_LIFE") &&
+		LvN_SetS(tr, "OnDeath", "Mission_ProtectMayorTransport.FailMission") &&
+		LvN_SetS(tr, "OnDamage", "Mission_ProtectMayorTransport.ActualizeScorer");
+	if (ok) {
+		Mode_Lang("Mission_ProtectMayorTransport_Scorer1", desc);
+		ok = Mode_VSet(tr, "Descriptor", desc) && Mode_VRead(tr, "Name", name) && Mode_GVarSet("CurrentWaypointName", name) &&
+			Mode_Read(PM, "RouteEnd", pos) && LV_OWN(PM, "TransGoto", NULL, "v", pos) && LV_OWN(PM, "OnMissionStart2", NULL, "");
+	}
+	return Mode_Done(&t, ok);
 }
 
 /* a shot of the scene: the camera at dist, rot (and ang unless noAng) turning by turn around the global target, the
  * voices stopped, the text of the shot for secs, the function of the next shot */
-static byte Pt_Shot(scriptFrame_t *f, long dist, long rot, long ang, int noAng, long turn, const char *target, const char *text, long secs,
-	const char *next) {
-	int mark = f->n;
-	PyObject *cam = Sf_Entity(f, Sf_Ask(f, "Scrap", "GetCam", "(i)", 0));
-	Sf_SetAttrI(f, cam, "CamDist", dist);
-	Sf_SetAttrI(f, cam, "CamRot", rot);
-	if (!noAng) {
-		Sf_SetAttrI(f, cam, "CamAng", ang);
+static byte Pt_Shot(long dist, long rot, long ang, int noAng, long turn, const char *target, const char *text, long secs, const char *next) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cn = TV(), *cam = TV(), *tg = TV(), *name = TV();
+	byte ok = LV_CALL("Scrap", "GetCam", cn, "i", 0L) && Mode_EntityH(cn, cam) && LvN_SetI(cam, "CamDist", dist) && LvN_SetI(cam, "CamRot", rot) &&
+		(noAng || LvN_SetI(cam, "CamAng", ang)) && LvN_SetI(cam, "AddTurn", turn) && Mode_G(PM, target, tg) && Mode_VGet(tg, "Name", name) &&
+		Mode_VSet(cam, "Target", name);
+	for (long i = 0; ok && i < 3; i++) {
+		ok = LV_CALL("SSound", "StopVoice", NULL, "i", i);
 	}
-	Sf_SetAttrI(f, cam, "AddTurn", turn);
-	Sf_SetAttr(f, cam, "Target", Sf_Attr(f, Sf_Global(f, PM, target), "Name"));
-	for (int i = 0; i < 3; i++) {
-		Sf_Run(f, "SSound", "StopVoice", "(i)", i);
-	}
-	Sf_Run(f, "Scene", "SetText", "(sl)", text, secs);
-	Sf_Run(f, "SScorer", "SetSpeechCallback", "(s)", next);
-	Sf_Release(f, mark);
-	return !f->failed;
+	ok = ok && LV_CALL("Scene", "SetText", NULL, "si", text, secs) && LV_CALL("SScorer", "SetSpeechCallback", NULL, "s", next);
+	return Mode_Done(&t, ok);
 }
 
 /* OnMissionStart2(): the camera on the transport, the player's death ends the game during the escort */
-static PyObject *Escort_OnMissionStart2(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "Scene");
-	Sf_Import(&f, "Chars");
-	Pt_Shot(&f, 4000, 0, 0, 0, 90 + 45, "trans", "Mission_Scene_ProtectMayorTransport_1", 8, "Mission_ProtectMayorTransport.AppearsBadGuys");
-	Sf_SetMod(&f, "Chars", "OnMainCharDeath", G(PM, "OnPlayerDeathScorting"));
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "EscapeEvent", "Mission_ProtectMayorTransport.AbortConversation");
-	return Sf_None(&f);
+static byte Escort_OnMissionStart2(void) {
+	return Mode_Import("Scene") && Mode_Import("Chars") &&
+		Pt_Shot(4000, 0, 0, 0, 90 + 45, "trans", "Mission_Scene_ProtectMayorTransport_1", 8, "Mission_ProtectMayorTransport.AppearsBadGuys") &&
+		LvN_ModSetGlobal("Chars", "OnMainCharDeath", PM, "OnPlayerDeathScorting") &&
+		Mode_GVarSetS("EscapeEvent", "Mission_ProtectMayorTransport.AbortConversation");
 }
 
 /* TransGoto(Pos): the transport flies to Pos */
-static PyObject *Escort_TransGoto(PyObject *self, PyObject *args) {
-	PyObject *pos;
-	SF_ARGS("O", &pos);
-	PyObject *fn = Sf_Mod(&f, "SAI", "SetStateVehicle");
-	Sf_Call(&f, fn, "(iOOOOiiddd)", 1, Sf_Attr(&f, G(PM, "trans"), "Name"), Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1), Sf_Item(&f, pos, 2), 3000, 0,
-		1.0, 2.0, 0.025);
-	Sf_SetAttrI(&f, G(PM, "trans"), "Traf_Active", 1);
-	Sf_SetAttr(&f, G(PM, "trans"), "Traf_Begin", G(PM, "RouteBegin"));
-	Sf_SetAttr(&f, G(PM, "trans"), "Traf_End", G(PM, "RouteBegin"));
-	Sf_SetAttrI(&f, G(PM, "trans"), "Traf_Speed", 100 * 28);
-	return Sf_None(&f);
+static byte Escort_TransGoto(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *tr = TV(), *name = TV(), *x = TV(), *y = TV(), *z = TV(), *rb = TV();
+	byte ok = Mode_G(PM, "trans", tr) && Mode_VGet(tr, "Name", name) && LvN_Item(&a[0], 0, x) && LvN_Item(&a[0], 1, y) && LvN_Item(&a[0], 2, z) &&
+		LV_CALL("SAI", "SetStateVehicle", NULL, "ivvvviiddd", 1L, name, x, y, z, 3000L, 0L, 1.0, 2.0, 0.025) && LvN_SetI(tr, "Traf_Active", 1) &&
+		Mode_G(PM, "RouteBegin", rb) && Mode_VSet(tr, "Traf_Begin", rb) && Mode_Read(PM, "RouteBegin", rb) && Mode_VSet(tr, "Traf_End", rb) &&
+		LvN_SetI(tr, "Traf_Speed", 100 * 28);
+	return Mode_Done(&t, ok);
 }
 
 /* CreateBadGuy(idnum): a mercenary (Bad1 or Bad2) after the transport, or an enemy of the player without it */
-static PyObject *Escort_CreateBadGuy(PyObject *self, PyObject *args) {
-	PyObject *idnum;
-	SF_ARGS("O", &idnum);
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "OutMap");
-	Sf_SetGlobal(&f, PM, "BornMercTaunt", Sf_OpI(&f, G(PM, "BornMercTaunt"), '+', 1));
-	if (Sf_Compare(&f, G(PM, "BornMercTaunt"), ">", Sf_Int(&f, 2)) > 0) {
-		Sf_SetGlobal(&f, PM, "BornMercTaunt", Sf_Int(&f, 0));
+static byte Escort_CreateBadGuy(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *bmt = TV(), *e = TV(), *pd = TV(), *who = TV(), *name = TV(), *ship = TV(), *at = TV(), *ang = TV(), *tr = TV(), *tn = TV();
+	byte ok = Mode_Import("Vehicles") && Mode_Import("OutMap") && LvN_GAdd(PM, "BornMercTaunt", 1, NULL) && Mode_G(PM, "BornMercTaunt", bmt);
+	ok = ok && (Native_Compare(bmt, Mode_I(&t, 2)) <= 0 || LvN_PutI(PM, "BornMercTaunt", 0));
+	if (!ok) {
+		return Mode_Done(&t, 0);
 	}
-	int first = Sf_EqI(&f, idnum, 0);
-	if (first < 0) {
-		return Sf_None(&f);
-	}
+	byte first = LvN_EqI(&a[0], 0);
 	const char *bad = first ? "Bad1" : "Bad2";
-	Sf_SetGlobal(&f, PM, bad, Lv_SpawnCar(&f, first ? "Bad1_Fighter" : "Bad2_Fighter", 0));
-	PyObject *pd = Sf_Own(&f, PM, "GetMercEnemiesProfile", "(s)", first ? "SMerc2" : "SMerc1");
-	Sf_Run(&f, "VehiclesNPC", "SetStdProperties", "(OO)", Sf_Attr(&f, G(PM, bad), "Name"), Sf_Attr(&f, pd, "Ship"));
-	Sf_Run(&f, "VehiclesNPC", "ModAIProff", "(OO)", G(PM, bad), pd);
-	if (Sf_Compare(&f, G(PM, "BornMercTaunt"), "<", Sf_Int(&f, 0)) > 0) {
-		PyObject *at = first ? Sf_Build(&f, "(ddd)", -383020.28125, -63158.125, 337138.46875) :
-			Sf_Build(&f, "(ddd)", -388646.28125, -64070.9414063, 342182.59375);
-		Sf_SetAttr(&f, G(PM, bad), "Pos", at);
+	ok = Mode_SpawnCar(first ? "Bad1_Fighter" : "Bad2_Fighter", 0, e, NULL) && Mode_Put(PM, bad, NULL, e) &&
+		LV_OWN(PM, "GetMercEnemiesProfile", pd, "s", first ? "SMerc2" : "SMerc1") && Mode_G(PM, bad, who) && Mode_VGet(who, "Name", name) &&
+		Mode_VGet(pd, "Ship", ship) && LV_CALL("VehiclesNPC", "SetStdProperties", NULL, "vv", name, ship) &&
+		LV_CALL("VehiclesNPC", "ModAIProff", NULL, "vv", who, pd) && Mode_Read(PM, "BornMercTaunt", bmt);
+	if (ok && Native_Compare(bmt, Mode_I(&t, 0)) < 0) {
+		if (first) {
+			Native_SetVec(at, -383020.28125, -63158.125, 337138.46875);
+		} else {
+			Native_SetVec(at, -388646.28125, -64070.9414063, 342182.59375);
+		}
+		ok = Mode_VSet(who, "Pos", at);
 	}
-	PyObject *who = G(PM, bad);
-	Sf_SetAttr(&f, who, "Ang", Sf_Build(&f, "(iii)", 0, -75, 0));
-	Sf_SetAttrS(&f, who, "TgType", "red");
-	Sf_SetAttrI(&f, who, "InCtrl_Acc", 1);
-	PyObject *life = G(PM, "MERCS_LIFE");
-	Sf_SetAttr(&f, who, "Life", life);
-	Sf_SetAttr(&f, who, "MaxLife", life);
-	int t = Sf_True(&f, G(PM, "trans"));
-	if (t > 0) {
-		Sf_SetAttrS(&f, who, "EntityList", "MadGuys");
-		Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "MadGuys", "OnDamage", "Mission_ProtectMayorTransport.MadGuyDamage");
-		Sf_Run(&f, "SAI", "SetStateVehicle", "(iOO)", 2, Sf_Attr(&f, who, "Name"), Sf_Attr(&f, G(PM, "trans"), "Name"));
-	} else if (t == 0) {
-		Sf_SetAttrS(&f, who, "EntityList", "Enemies");
-		Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", who, 1);
+	Mode_Ints3(ang, 0, -75, 0);
+	ok = ok && Mode_Read(PM, bad, who) && Mode_VSet(who, "Ang", ang) && LvN_SetS(who, "TgType", "red") && LvN_SetI(who, "InCtrl_Acc", 1) &&
+		LvN_Life(who, PM, "MERCS_LIFE") && Mode_G(PM, "trans", tr);
+	if (ok && Native_True(tr)) {
+		ok = LvN_SetS(who, "EntityList", "MadGuys") && Mode_ListSet("MadGuys", "OnDamage", "Mission_ProtectMayorTransport.MadGuyDamage") &&
+			Mode_VRead(who, "Name", name) && Mode_Read(PM, "trans", tr) && Mode_VGet(tr, "Name", tn) &&
+			LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, name, tn);
+	} else if (ok) {
+		ok = LvN_SetS(who, "EntityList", "Enemies") && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", who, 1L);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
+}
+
+/* SAI.SetRotStaticObj(Bad1.Name, a, b) and the same for Bad2 */
+static byte Pt_RotBad(double a, double b) {
+	nativeVal_t bad = { 0 }, name = { 0 };
+	Native_SetNone(&name);
+	byte ok = Mode_G(PM, "Bad1", &bad) && Mode_VGet(&bad, "Name", &name) && LV_CALL("SAI", "SetRotStaticObj", NULL, "vdd", &name, a, b);
+	Native_Free(&name);
+	ok = ok && Mode_Read(PM, "Bad2", &bad) && Mode_VGet(&bad, "Name", &name) && LV_CALL("SAI", "SetRotStaticObj", NULL, "vdd", &name, a, b);
+	Native_Free(&bad);
+	Native_Free(&name);
+	return ok;
 }
 
 /* AppearsBadGuys(): the lists of the mercenaries, the two of them standing still for the scene */
-static PyObject *Escort_AppearsBadGuys(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "Scene");
-	Sf_Run(&f, "Scrap", "CreateEntityList", "(s)", "MadGuys");
-	Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "MadGuys", "OnDeath", "Mission_ProtectMayorTransport.MadGuyDeath");
-	Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "Enemies", "OnDeath", "Mission_ProtectMayorTransport.MadGuyDeath");
-	Sf_Own(&f, PM, "CreateBadGuy", "(i)", 0);
-	Sf_Own(&f, PM, "CreateBadGuy", "(i)", 1);
-	Sf_Run(&f, "SAI", "SetRotStaticObj", "(Odd)", Sf_Attr(&f, G(PM, "Bad1"), "Name"), 3.0, 2.0);
-	Sf_Run(&f, "SAI", "SetRotStaticObj", "(Odd)", Sf_Attr(&f, G(PM, "Bad2"), "Name"), 3.0, 2.0);
-	Sf_Later(&f, Sf_Float(&f, 0.25), G(PM, "AppearsBadGuys2"), NOARGS, NULL);
-	return Sf_None(&f);
+static byte Escort_AppearsBadGuys(void) {
+	return Mode_Import("Scene") && LV_CALL("Scrap", "CreateEntityList", NULL, "s", "MadGuys") &&
+		Mode_ListSet("MadGuys", "OnDeath", "Mission_ProtectMayorTransport.MadGuyDeath") &&
+		Mode_ListSet("Enemies", "OnDeath", "Mission_ProtectMayorTransport.MadGuyDeath") && LV_OWN(PM, "CreateBadGuy", NULL, "i", 0L) &&
+		LV_OWN(PM, "CreateBadGuy", NULL, "i", 1L) && Pt_RotBad(3.0, 2.0) && Mode_Later(0.25, PM, "AppearsBadGuys2", NULL, 0, NULL);
 }
 
-static PyObject *Escort_AppearsBadGuys2(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "Scene");
-	Pt_Shot(&f, 1600, 0, 0, 1, 30, "Bad2", "Mission_Scene_ProtectMayorTransport_2", 4, "Mission_ProtectMayorTransport.NextBadGuy");
-	return Sf_None(&f);
+static byte Escort_AppearsBadGuys2(void) {
+	return Mode_Import("Scene") &&
+		Pt_Shot(1600, 0, 0, 1, 30, "Bad2", "Mission_Scene_ProtectMayorTransport_2", 4, "Mission_ProtectMayorTransport.NextBadGuy");
 }
 
-static PyObject *Escort_NextBadGuy(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "Scene");
-	Pt_Shot(&f, 3500, 0, 0, 0, 200, "Bad1", "Mission_Scene_ProtectMayorTransport_3", 5, "Mission_ProtectMayorTransport.BackToTheTransport");
-	return Sf_None(&f);
+static byte Escort_NextBadGuy(void) {
+	return Mode_Import("Scene") &&
+		Pt_Shot(3500, 0, 0, 0, 200, "Bad1", "Mission_Scene_ProtectMayorTransport_3", 5, "Mission_ProtectMayorTransport.BackToTheTransport");
 }
 
-static PyObject *Escort_BackToTheTransport(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "Scene");
-	Pt_Shot(&f, 3000, +90, -90, 0, 0, "trans", "Mission_Scene_ProtectMayorTransport_4", 7, "Mission_ProtectMayorTransport.BackToPlayer");
-	return Sf_None(&f);
+static byte Escort_BackToTheTransport(void) {
+	return Mode_Import("Scene") &&
+		Pt_Shot(3000, +90, -90, 0, 0, "trans", "Mission_Scene_ProtectMayorTransport_4", 7, "Mission_ProtectMayorTransport.BackToPlayer");
 }
 
 /* BackToPlayer(): the end of the scene: the scorer, the mercenaries turn fast again, the transport to its target */
-static PyObject *Escort_BackToPlayer(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "Scene");
-	for (int i = 0; i < 3; i++) {
-		Sf_Run(&f, "SSound", "StopVoice", "(i)", i);
+static byte Escort_BackToPlayer(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *rt = TV(), *l = TV(), *tr = TV();
+	byte ok = Mode_Import("Scene");
+	for (long i = 0; ok && i < 3; i++) {
+		ok = LV_CALL("SSound", "StopVoice", NULL, "i", i);
 	}
-	Lv_ScorerCall(&f, G(PM, "MissionScorer"));
-	Sf_Run(&f, "Scene", "EndOutDoorScene", "()");
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "EscapeEvent", "Menu.Init");
-	Sf_Run(&f, "SAI", "SetRotStaticObj", "(Odd)", Sf_Attr(&f, G(PM, "Bad1"), "Name"), 20.0, 20.0);
-	Sf_Run(&f, "SAI", "SetRotStaticObj", "(Odd)", Sf_Attr(&f, G(PM, "Bad2"), "Name"), 20.0, 20.0);
-	Sf_Own(&f, PM, "TransGoto", "(O)", G(PM, "RouteTarget"));
-	PyObject *l = Pt_Item(&f, "Wend", "RouteTarget");
-	Sf_SetAttrI(&f, l, "Radius", 4000);
-	Sf_SetAttrS(&f, l, "OnTake", "Mission_ProtectMayorTransport.OnTravelComplete");
-	Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(PM, "trans"), 1);
-	Sf_Run(&f, "Speech", "RemoteComunication", "(ss)", "Mission_ProtectMayorTransport_RemoteMessage3", "Mayor");
-	return Sf_None(&f);
+	ok = ok && LvN_ScorerCallG(PM, "MissionScorer") && LV_CALL("Scene", "EndOutDoorScene", NULL, "") && Mode_GVarSetS("EscapeEvent", "Menu.Init") &&
+		Pt_RotBad(20.0, 20.0) && Mode_G(PM, "RouteTarget", rt) && LV_OWN(PM, "TransGoto", NULL, "v", rt) && Pt_Item("Wend", "RouteTarget", l) &&
+		LvN_SetI(l, "Radius", 4000) && LvN_SetS(l, "OnTake", "Mission_ProtectMayorTransport.OnTravelComplete") && Mode_G(PM, "trans", tr) &&
+		LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", tr, 1L) &&
+		LV_CALL("Speech", "RemoteComunication", NULL, "ss", "Mission_ProtectMayorTransport_RemoteMessage3", "Mayor");
+	return Mode_Done(&t, ok);
+}
+
+/* Scrap.SetSaveVar(name, `v`) */
+static byte Dt_SaveRepr(const char *name, const nativeVal_t *v) {
+	LvN_SaveRepr(name, v);
+	return 1;
 }
 
 /* MadGuyDeath(MainCharnName, Param2): without the transport a mercenary more counts; a dead mercenary comes back */
-static PyObject *Escort_MadGuyDeath(PyObject *self, PyObject *args) {
-	PyObject *name, *p2;
-	SF_ARGS("OO", &name, &p2);
-	Sf_Import(&f, "Vehicles");
-	if (Sf_Compare(&f, G(PM, "trans"), "==", Py_None) > 0) {
-		Sf_SetGlobal(&f, PM, "NumTargets", Sf_OpI(&f, G(PM, "NumTargets"), '+', 1));
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "CrazyMayor.KillThem", Sf_Repr(&f, G(PM, "NumTargets")));
-		Sf_Run(&f, "SScorer", "Set", "(issO)", 0, "RemainingCharsScorer", "Text", Lv_Count(&f, PM, "NumTargets", "MaxTargets"));
-		if (Sf_Compare(&f, G(PM, "NumTargets"), ">=", G(PM, "MaxTargets")) > 0) {
-			Lv_ScorerCall(&f, Py_None);
-			Sf_DrawScorer(&f);
-			Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "CrazyMayor.KillThem", Sf_Repr(&f, Sf_OpI(&f, G(PM, "MaxTargets"), '-', 1)));
-			Lv_Com(&f, "Mission_KillMercs_RemoteMessage1", "Mayor", G(PM, "PreLaunchTraitorius"), NULL);
+static byte Escort_MadGuyDeath(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *tr = TV(), *n = TV(), *max = TV(), *cnt = TV(), *m1 = TV(), *n1 = TV(), *bad1 = TV(), *name = TV(), *arg = TV();
+	byte ok = Mode_Import("Vehicles") && Mode_G(PM, "trans", tr);
+	if (ok && tr->type == NV_NONE) {
+		ok = LvN_GAdd(PM, "NumTargets", 1, NULL) && Mode_G(PM, "NumTargets", n) && Dt_SaveRepr("CrazyMayor.KillThem", n) &&
+			Mode_CountText(PM, "NumTargets", "MaxTargets", cnt) && LvN_Set0("RemainingCharsScorer", "Text", cnt) && Mode_Read(PM, "NumTargets", n) &&
+			Mode_G(PM, "MaxTargets", max);
+		if (ok && Native_Compare(n, max) >= 0) {
+			ok = LvN_ScorerOff() && LvN_Draw() && Mode_Read(PM, "MaxTargets", max) && Native_Arith('-', max, Mode_I(&t, 1), m1) &&
+				Dt_SaveRepr("CrazyMayor.KillThem", m1) && LvN_Com("Mission_KillMercs_RemoteMessage1", "Mayor", PM, "PreLaunchTraitorius", NULL);
 		}
-		if (Sf_Compare(&f, Sf_OpI(&f, G(PM, "NumTargets"), '+', 1), ">=", G(PM, "MaxTargets")) > 0) {
-			return Sf_None(&f);
+		ok = ok && Mode_Read(PM, "NumTargets", n) && Native_Arith('+', n, Mode_I(&t, 1), n1) && Mode_Read(PM, "MaxTargets", max);
+		if (!ok || Native_Compare(n1, max) >= 0) {
+			return Mode_Done(&t, ok);
 		}
 	}
-	int one = Sf_True(&f, G(PM, "Bad1"));
-	if (one > 0) {
-		one = Sf_Compare(&f, name, "==", Sf_Attr(&f, G(PM, "Bad1"), "Name"));
+	int one = ok && Mode_G(PM, "Bad1", bad1) ? (Native_True(bad1) ? (Mode_VGet(bad1, "Name", name) ? !Native_Compare(&a[0], name) : -1) : 0) : -1;
+	ok = one >= 0 && Mode_Read(PM, "trans", tr);
+	if (ok) {
+		byte tv = Native_True(tr);
+		Native_SetInt(arg, one ? 0 : 1);
+		ok = Mode_Later(one ? (tv ? 10 : 5) : (tv ? 15 : 10), PM, "CreateBadGuy", arg, 1, NULL) && (Native_SetNone(n), Mode_Put(PM, one ? "Bad1" : "Bad2", NULL, n));
 	}
-	if (one < 0) {
-		return Sf_None(&f);
-	}
-	int t = Sf_True(&f, G(PM, "trans"));
-	long delay = one ? (t > 0 ? 10 : 5) : (t > 0 ? 15 : 10);
-	if (t >= 0) {
-		Sf_Later(&f, Sf_Int(&f, delay), G(PM, "CreateBadGuy"), Sf_Build(&f, "(i)", one ? 0 : 1), NULL);
-	}
-	Sf_SetGlobal(&f, PM, one ? "Bad1" : "Bad2", Py_None);
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
-static PyObject *Escort_PreLaunchTraitorius(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Later(&f, Sf_Int(&f, 3), G(PM, "TraitoriusCom"), NOARGS, NULL);
-	return Sf_None(&f);
+static byte Escort_PreLaunchTraitorius(void) {
+	return Mode_Later(3, PM, "TraitoriusCom", NULL, 0, NULL);
 }
 
 /* SetNextMission(): on to Mission_Ambush, the blueprints of Humphrey's ship, Rusty 10 s later */
-static PyObject *Escort_SetNextMission(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "Menu");
-	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "CrazyMayor");
-	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "TransportState");
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Lv_Next(&f, "Mission_Ambush", "Scrapyard", "Mission_Ambush1_MissionText1");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "MayorAtTownHall", "1");
-	Lv_SaveAppend(&f, "PressBlueprints.Ships", Lv_SaveList(&f, "PressBlueprints.Ships", PM), Sf_Str(&f, "SHump1"));
-	Lv_SaveAppend(&f, "PressBlueprints.Engines", Lv_SaveList(&f, "PressBlueprints.Engines", PM), Sf_Str(&f, "MHump1"));
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "MayorAtGambinDen", "1");
-	Sf_Import(&f, "Scorer");
-	Dt_LaterCom(&f, Sf_Float(&f, 10.0),
-		Sf_Build(&f, "(ssO(ii))", "Mission_ProtectMayorTransport_RemoteMessage6", "Rusty", Sf_Mod(&f, "Scorer", "ShowMissionScorer"), 0, 2), NULL);
-	return Sf_None(&f);
+static byte Escort_SetNextMission(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *lst = TV();
+	byte ok = Mode_Import("Menu") && Mode_DelSaveVars("CrazyMayor") && Mode_DelSaveVars("TransportState") && Mode_WayPoint() &&
+		LvN_Next("Mission_Ambush", "Scrapyard", "Mission_Ambush1_MissionText1") && Mode_SaveS("MayorAtTownHall", "1") &&
+		LvN_SaveList("PressBlueprints.Ships", PM, lst) && LvN_SaveAppend("PressBlueprints.Ships", lst, Mode_S(&t, "SHump1")) &&
+		(Native_Free(lst), 1) && LvN_SaveList("PressBlueprints.Engines", PM, lst) &&
+		LvN_SaveAppend("PressBlueprints.Engines", lst, Mode_S(&t, "MHump1")) && Mode_SaveS("MayorAtGambinDen", "1") &&
+		Dt_RustyLater("Mission_ProtectMayorTransport_RemoteMessage6");
+	return Mode_Done(&t, ok);
 }
 
 /* MadGuyDamage(Name, LUser, DamageNum): the mercenary the player hits turns on him */
-static PyObject *Escort_MadGuyDamage(PyObject *self, PyObject *args) {
-	PyObject *name, *luser, *damage;
-	SF_ARGS("OOO", &name, &luser, &damage);
-	Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "MadGuys", "OnDamage", "");
-	PyObject *usr = USR();
-	if (Sf_True(&f, usr) > 0) {
-		int one = Sf_True(&f, G(PM, "Bad1"));
-		if (one > 0) {
-			one = Sf_Compare(&f, Sf_Attr(&f, G(PM, "Bad1"), "Name"), "==", name);
-		}
-		const char *bad = one > 0 ? "Bad1" : one == 0 && Sf_True(&f, G(PM, "Bad2")) > 0 ? "Bad2" : NULL;
-		if (bad) {
-			Sf_SetAttrS(&f, G(PM, bad), "EntityList", "Enemies");
-			Sf_Run(&f, "SAI", "SetStateVehicle", "(iOO)", 2, Sf_Attr(&f, G(PM, bad), "Name"), Sf_Attr(&f, usr, "Name"));
+static byte Escort_MadGuyDamage(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = TV(), *bad = TV(), *name = TV(), *un = TV();
+	byte ok = Mode_ListSet("MadGuys", "OnDamage", "") && Mode_UsrHandle(usr);
+	if (ok && Native_True(usr)) {
+		int one = Mode_G(PM, "Bad1", bad) ? (Native_True(bad) ? (Mode_VGet(bad, "Name", name) ? !Native_Compare(name, &a[0]) : -1) : 0) : -1;
+		int two = one == 0 ? (Mode_Read(PM, "Bad2", bad) ? Native_True(bad) : -1) : 0;
+		ok = one >= 0 && two >= 0;
+		if (ok && (one || two)) {
+			ok = LvN_SetS(bad, "EntityList", "Enemies") && Mode_VRead(bad, "Name", name) && Mode_VGet(usr, "Name", un) &&
+				LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, name, un);
 		}
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
 /* MercTauntMessager(): again 10 to 20 s later while the mission lasts */
-static PyObject *Escort_MercTauntMessager(PyObject *self, PyObject *args) {
-	static const char *const steps[] = { "Transport", "KillThem", NULL };
-	SF_ARGS("");
-	Sf_Import(&f, "Vehicles");
-	if (Sf_InS(&f, SAVE("CrazyMayor"), steps) > 0) {
-		PyObject *t = Sf_Time(&f);
-		t = Sf_Op(&f, t, '+', Sf_Ask(&f, "Scrap", "Rand", "(ii)", 10, 20));
-		Sf_Schedule(&f, t, G(PM, "MercTauntMessager"), NOARGS, NULL);
+static byte Escort_MercTauntMessager(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *now = TV(), *r = TV(), *at = TV();
+	byte ok = Mode_Import("Vehicles");
+	if (ok && (LvN_SaveIs("CrazyMayor", "Transport") || LvN_SaveIs("CrazyMayor", "KillThem"))) {
+		Native_SetFloat(now, Mode_Time());
+		ok = Mode_Rand(Mode_I(&t, 10), Mode_I(&t, 20), r) && Native_Arith('+', now, r, at) && Mode_AtG(at, PM, "MercTauntMessager", NULL, 0);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
 /* OnTravelComplete(ItemName, VehicleName): the transport at its target: it lands, the reward, the hunt of the
  * mercenaries */
-static PyObject *Escort_OnTravelComplete(PyObject *self, PyObject *args) {
-	PyObject *item, *vehicle;
-	SF_ARGS("OO", &item, &vehicle);
-	int none = Sf_Compare(&f, G(PM, "trans"), "==", Py_None);
-	if (none > 0) {
-		PyObject *itm = Sf_Entity(&f, item);
-		Sf_SetAttrI(&f, itm, "rTime", 15);
-		Sf_Method(&f, itm, "Del", "()");
-	} else if (none == 0 && Sf_Compare(&f, vehicle, "==", Sf_Attr(&f, G(PM, "trans"), "Name")) > 0) {
-		PyObject *itm = Sf_Entity(&f, item);
-		Sf_SetAttrI(&f, itm, "rTime", 15);
-		Sf_SetAttr(&f, G(PM, "trans"), "MovePos", Sf_Attr(&f, itm, "Pos"));
-		Sf_SetAttr(&f, G(PM, "trans"), "MoveAng", Sf_Attr(&f, itm, "Ang"));
-		Sf_SetAttr(&f, G(PM, "trans"), "MoveTime", Sf_Float(&f, 2.5));
-		Sf_SetAttr(&f, G(PM, "trans"), "Life", Sf_Attr(&f, G(PM, "trans"), "MaxLife"));
-		Sf_SetAttrS(&f, G(PM, "trans"), "OnDeath", "Vehicles.OnDeath");
-		Sf_SetAttrS(&f, G(PM, "trans"), "OnDamage", "");
-		Sf_SetAttrS(&f, G(PM, "trans"), "TgType", "None");
-		Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(PM, "trans"), 0);
-		Sf_Run(&f, "Scrap", "Set", "(ss)", "CurrentWaypointName", "");
-		Sf_Later(&f, Sf_Int(&f, 30), G(PM, "RestoreTransport"), Sf_Build(&f, "(O)", Sf_Attr(&f, G(PM, "trans"), "Name")), NULL);
-		Sf_Method(&f, itm, "Del", "()");
-		Sf_Run(&f, "Scrap", "SetMoney", "(O)", Sf_Op(&f, Sf_Ask(&f, "Scrap", "GetMoney", "()"), '+', G(PM, "ScortReward")));
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "TransportState", "Saved");
-		Lv_Com(&f, "Mission_ProtectMayorTransport_RemoteMessage5", "Mayor", G(PM, "InitKillBadGuys"), NULL);
+static byte Escort_OnTravelComplete(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *tr = TV(), *name = TV(), *itm = TV(), *v = TV(), *money = TV(), *rw = TV(), *sum = TV();
+	byte ok = Mode_G(PM, "trans", tr);
+	if (ok && tr->type == NV_NONE) {
+		ok = Mode_EntityH(&a[0], itm) && LvN_SetI(itm, "rTime", 15) && Mode_VDel(itm);
+	} else if (ok && Mode_VGet(tr, "Name", name) && !Native_Compare(&a[1], name)) {
+		ok = Mode_EntityH(&a[0], itm) && LvN_SetI(itm, "rTime", 15) && Mode_VGet(itm, "Pos", v) && Mode_VSet(tr, "MovePos", v) &&
+			Mode_VRead(itm, "Ang", v) && Mode_VSet(tr, "MoveAng", v) && LvN_SetF(tr, "MoveTime", 2.5) && Mode_VRead(tr, "MaxLife", v) &&
+			Mode_VSet(tr, "Life", v) && LvN_SetS(tr, "OnDeath", "Vehicles.OnDeath") && LvN_SetS(tr, "OnDamage", "") &&
+			LvN_SetS(tr, "TgType", "None") && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", tr, 0L) &&
+			Mode_GVarSetS("CurrentWaypointName", "") && Mode_VRead(tr, "Name", name) && Mode_Later(30, PM, "RestoreTransport", name, 1, NULL) &&
+			Mode_VDel(itm) && (Native_SetInt(money, Mode_GetMoney()), 1) && Mode_G(PM, "ScortReward", rw) && Native_Arith('+', money, rw, sum) &&
+			Mode_SetMoney(sum) && Mode_SaveS("TransportState", "Saved") &&
+			LvN_Com("Mission_ProtectMayorTransport_RemoteMessage5", "Mayor", PM, "InitKillBadGuys", NULL);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
 /* ActualizeScorer(Name, LUser, DamageNum): the life of the transport on its bar */
-static PyObject *Escort_ActualizeScorer(PyObject *self, PyObject *args) {
-	PyObject *name, *luser, *damage;
-	SF_ARGS("OOO", &name, &luser, &damage);
-	Sf_Run(&f, "SScorer", "Set", "(issO)", 0, "RemainingLifeScorer", "MaxValue", Sf_Attr(&f, G(PM, "trans"), "MaxLife"));
-	Sf_Run(&f, "SScorer", "Set", "(issO)", 0, "RemainingLifeScorer", "Value", Sf_Attr(&f, G(PM, "trans"), "Life"));
-	return Sf_None(&f);
+static byte Escort_ActualizeScorer(void) {
+	nativeVal_t tr = { 0 }, v = { 0 };
+	Native_SetNone(&v);
+	byte ok = Mode_G(PM, "trans", &tr) && Mode_VGet(&tr, "MaxLife", &v) && LvN_Set0("RemainingLifeScorer", "MaxValue", &v);
+	Native_Free(&v);
+	ok = ok && Mode_Read(PM, "trans", &tr) && Mode_VGet(&tr, "Life", &v) && LvN_Set0("RemainingLifeScorer", "Value", &v);
+	Native_Free(&tr);
+	Native_Free(&v);
+	return ok;
 }
 
 /* MissionScorer(id): the life of the transport, or the count of the mercenaries */
-static PyObject *Escort_MissionScorer(PyObject *self, PyObject *args) {
-	PyObject *id;
-	SF_ARGS("O", &id);
-	Sf_Import(&f, "Scorer");
-	int t = Sf_True(&f, G(PM, "trans"));
-	if (t > 0) {
-		Lv_Text(&f, id, "RemainingLifeText", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_ProtectMayorTransport_Scorer1"), Sf_Int(&f, 1));
-		const char *bar = "RemainingLifeScorer";
-		Sf_Run(&f, "SScorer", "Add", "(Oss)", id, bar, "Bar");
-		Lv_BarDefaults(&f, id, bar, NULL, NULL);
-		Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "MaxValue", Sf_Attr(&f, G(PM, "trans"), "MaxLife"));
-		Sf_Run(&f, "SScorer", "Set", "(OssO)", id, bar, "Value", Sf_Attr(&f, G(PM, "trans"), "Life"));
-		Sf_Run(&f, "SScorer", "Set", "(Ossi)", id, bar, "Visible", 1);
-	} else if (t == 0) {
-		Lv_Text(&f, id, "RemainingCharsText", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_KillMercs_Scorer1"), Sf_Int(&f, 1));
-		Lv_Text(&f, id, "RemainingCharsScorer", Lv_TextY(&f, 26), Lv_Count(&f, PM, "NumTargets", "MaxTargets"), Sf_Int(&f, 1));
+static byte Escort_MissionScorer(const nativeVal_t *id) {
+	static const char bar[] = "RemainingLifeScorer";
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *tr = TV(), *v = TV(), *y = TV(), *cnt = TV();
+	byte ok = Mode_Import("Scorer") && Mode_G(PM, "trans", tr);
+	if (ok && Native_True(tr)) {
+		ok = Mode_LvLabel(id, "RemainingLifeText", 0, "Mission_ProtectMayorTransport_Scorer1", 1) && Mode_ScorerAddS(id, bar, "Bar") &&
+			Mode_BarDefaults(id, bar, NULL, NULL) && Mode_Read(PM, "trans", tr) && Mode_VGet(tr, "MaxLife", v) && LvN_ScorerSet(id, bar, "MaxValue", v) &&
+			Mode_Read(PM, "trans", tr) && Mode_VRead(tr, "Life", v) && LvN_ScorerSet(id, bar, "Value", v) && Mode_ScorerSetI(id, bar, "Visible", 1);
+	} else if (ok) {
+		ok = Mode_LvLabel(id, "RemainingCharsText", 0, "Mission_KillMercs_Scorer1", 1) && LvN_TextY(26, y) &&
+			Mode_CountText(PM, "NumTargets", "MaxTargets", cnt) && Mode_LvText(id, "RemainingCharsScorer", y, cnt, Mode_I(&t, 1));
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
 /* KillThem(): the mayor calls for the hunt of the mercenaries */
-static PyObject *Escort_KillThem(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	int killed = Sf_EqS(&f, SAVE("TransportState"), "Killed");
-	if (killed >= 0) {
-		Lv_Com(&f, killed ? "Mission_KillMercs_RemoteMessage3" : "Mission_KillMercs_RemoteMessage4", "Mayor", G(PM, "InitKillThemMission"), NULL);
-	}
-	return Sf_None(&f);
+static byte Escort_KillThem(void) {
+	return LvN_Com(LvN_SaveIs("TransportState", "Killed") ? "Mission_KillMercs_RemoteMessage3" : "Mission_KillMercs_RemoteMessage4", "Mayor", PM,
+		"InitKillThemMission", NULL);
 }
 
 /* InitKillThemMission(id=None): the mercenaries (the second only while more than one is left), the hunt */
-static PyObject *Escort_InitKillThemMission(PyObject *self, PyObject *args, PyObject *kw) {
+static byte Escort_InitKillThemMission(void) {
+	nativeVal_t n = { 0 }, n1 = { 0 }, one = { 0 };
+	Native_SetNone(&n1);
+	Native_SetInt(&one, 1);
+	byte ok = LV_OWN(PM, "CreateBadGuy", NULL, "i", 0L) && Mode_SaveInt("CrazyMayor.KillThem", &n) && Native_Arith('+', &n, &one, &n1);
+	int c = ok ? Mode_CmpG(&n1, "<", PM, "MaxTargets") : -1;
+	ok = c >= 0 && (!c || LV_OWN(PM, "CreateBadGuy", NULL, "i", 1L)) && LV_OWN(PM, "InitKillBadGuys", NULL, "");
+	Native_Free(&n);
+	Native_Free(&n1);
+	return ok;
+}
+
+/* InitKillBadGuys(itm=None): the hunt of the mercenaries: no transport, the count from the save variable */
+static byte Escort_InitKillBadGuys(void) {
+	static const char *const bads[] = { "Bad1", "Bad2" };
+	nativeVal_t n = { 0 }, bad = { 0 };
+	Native_SetNone(&bad);
+	byte ok = Mode_Import("Chars") && LvN_ModNone("Chars", "OnMainCharDeath") && Mode_SaveS("CrazyMayor", "KillThem") &&
+		Mode_MMDesc("Mission_KillMercs_MissionText1", 1) && Mode_WayPoint() && Mode_SaveInt("CrazyMayor.KillThem", &n) && Mode_Put(PM, "NumTargets", NULL, &n) &&
+		(Native_Free(&n), Mode_Put(PM, "trans", NULL, &n)) && LvN_ScorerCallG(PM, "MissionScorer") && LvN_Draw() &&
+		Mode_ListSet("Enemies", "OnDeath", "Mission_ProtectMayorTransport.MadGuyDeath");
+	for (int i = 0; ok && i < 2; i++) {
+		ok = Mode_Read(PM, bads[i], &bad) &&
+			(!Native_True(&bad) || (LvN_SetS(&bad, "EntityList", "Enemies") && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &bad, 1L)));
+	}
+	Native_Free(&n);
+	Native_Free(&bad);
+	return ok;
+}
+
+static byte Escort_RestoreTransport(const nativeVal_t *a) {
+	nativeVal_t v = { 0 };
+	Native_SetNone(&v);
+	byte ok = Mode_EntityH(&a[0], &v) && (!Native_True(&v) || LvN_SetI(&v, "MoveTime", 0));
+	Native_Free(&v);
+	return ok;
+}
+
+/* the keyword adapters (InitKillThemMission(id=None), InitKillBadGuys(itm=None)) */
+static PyObject *Escort_InitKillThemMissionPy(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", NULL };
 	PyObject *id = Py_None;
-	scriptFrame_t f = { 0 };
 	(void)self;
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &id)) {
 		return NULL;
 	}
-	Sf_Own(&f, PM, "CreateBadGuy", "(i)", 0);
-	PyObject *n = Sf_OpI(&f, Sf_ToInt(&f, SAVE("CrazyMayor.KillThem")), '+', 1);
-	if (Sf_Compare(&f, n, "<", G(PM, "MaxTargets")) > 0) {
-		Sf_Own(&f, PM, "CreateBadGuy", "(i)", 1);
-	}
-	Sf_Own(&f, PM, "InitKillBadGuys", "()");
-	return Sf_None(&f);
+	return Mode_Result(Escort_InitKillThemMission());
 }
 
-/* InitKillBadGuys(itm=None): the hunt of the mercenaries: no transport, the count from the save variable */
-static PyObject *Escort_InitKillBadGuys(PyObject *self, PyObject *args, PyObject *kw) {
+static PyObject *Escort_InitKillBadGuysPy(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "itm", NULL };
-	static const char *const bads[] = { "Bad1", "Bad2" };
 	PyObject *itm = Py_None;
-	scriptFrame_t f = { 0 };
 	(void)self;
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &itm)) {
 		return NULL;
 	}
-	Sf_Import(&f, "Chars");
-	Sf_SetMod(&f, "Chars", "OnMainCharDeath", Py_None);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "CrazyMayor", "KillThem");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_KillMercs_MissionText1", 1);
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Sf_SetGlobal(&f, PM, "NumTargets", Sf_ToInt(&f, SAVE("CrazyMayor.KillThem")));
-	Sf_SetGlobal(&f, PM, "trans", Py_None);
-	Lv_ScorerCall(&f, G(PM, "MissionScorer"));
-	Sf_DrawScorer(&f);
-	Sf_Run(&f, "Scrap", "EntityListSet", "(sss)", "Enemies", "OnDeath", "Mission_ProtectMayorTransport.MadGuyDeath");
-	for (int i = 0; i < 2; i++) {
-		if (Sf_True(&f, G(PM, bads[i])) > 0) {
-			Sf_SetAttrS(&f, G(PM, bads[i]), "EntityList", "Enemies");
-			Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", G(PM, bads[i]), 1);
-		}
-	}
-	return Sf_None(&f);
+	return Mode_Result(Escort_InitKillBadGuys());
 }
 
-static PyObject *Escort_RestoreTransport(PyObject *self, PyObject *args) {
-	PyObject *name;
-	SF_ARGS("O", &name);
-	PyObject *v = Sf_Entity(&f, name);
-	if (Sf_True(&f, v) > 0) {
-		Sf_SetAttrI(&f, v, "MoveTime", 0);
-	}
-	return Sf_None(&f);
-}
+LV_CORE0(Escort_InitStatus)
+LV_CORE0(Escort_Init)
+LV_CORE0(Escort_MissionInit)
+LV_COREA(Escort_OnMissionStart)
+LV_CORE0(Escort_OnMissionStart2)
+LV_COREA(Escort_TransGoto)
+LV_COREA(Escort_CreateBadGuy)
+LV_CORE0(Escort_AppearsBadGuys)
+LV_CORE0(Escort_AppearsBadGuys2)
+LV_CORE0(Escort_NextBadGuy)
+LV_CORE0(Escort_BackToTheTransport)
+LV_CORE0(Escort_BackToPlayer)
+LV_COREA(Escort_MadGuyDeath)
+LV_CORE0(Escort_PreLaunchTraitorius)
+LV_CORE0(Escort_SetNextMission)
+LV_COREA(Escort_MadGuyDamage)
+LV_CORE0(Escort_MercTauntMessager)
+LV_COREA(Escort_OnTravelComplete)
+LV_CORE0(Escort_ActualizeScorer)
+LV_COREA(Escort_MissionScorer)
+LV_CORE0(Escort_KillThem)
+LV_COREA(Escort_RestoreTransport)
+LV_FN(Escort, GetMercEnemiesProfilePy, 1, Escort_GetMercEnemiesProfile_C)
+LV_FN(Escort, InitStatusPy, 1, Escort_InitStatus_C)
+LV_FN(Escort, InitPy, 1, Escort_Init_C)
+LV_FN(Escort, MissionInitPy, 0, Escort_MissionInit_C)
+LV_FN(Escort, OnMissionStartPy, 2, Escort_OnMissionStart_C)
+LV_FN(Escort, OnMissionStart2Py, 0, Escort_OnMissionStart2_C)
+LV_FN(Escort, TransGotoPy, 1, Escort_TransGoto_C)
+LV_FN(Escort, CreateBadGuyPy, 1, Escort_CreateBadGuy_C)
+LV_FN(Escort, AppearsBadGuysPy, 0, Escort_AppearsBadGuys_C)
+LV_FN(Escort, AppearsBadGuys2Py, 0, Escort_AppearsBadGuys2_C)
+LV_FN(Escort, NextBadGuyPy, 0, Escort_NextBadGuy_C)
+LV_FN(Escort, BackToTheTransportPy, 0, Escort_BackToTheTransport_C)
+LV_FN(Escort, BackToPlayerPy, 0, Escort_BackToPlayer_C)
+LV_FN(Escort, MadGuyDeathPy, 2, Escort_MadGuyDeath_C)
+LV_FN(Escort, PreLaunchTraitoriusPy, 0, Escort_PreLaunchTraitorius_C)
+LV_FN(Escort, SetNextMissionPy, 0, Escort_SetNextMission_C)
+LV_FN(Escort, MadGuyDamagePy, 3, Escort_MadGuyDamage_C)
+LV_FN(Escort, MercTauntMessagerPy, 0, Escort_MercTauntMessager_C)
+LV_FN(Escort, OnTravelCompletePy, 2, Escort_OnTravelComplete_C)
+LV_FN(Escort, ActualizeScorerPy, 3, Escort_ActualizeScorer_C)
+LV_FN(Escort, MissionScorerPy, 1, Escort_MissionScorer_C)
+LV_FN(Escort, KillThemPy, 0, Escort_KillThem_C)
+LV_FN(Escort, RestoreTransportPy, 1, Escort_RestoreTransport_C)
 
 PyMethodDef g_DownTownProtectMayorTransportMethods[] = {
-	{ "GetMercEnemiesProfile", Escort_GetMercEnemiesProfile, 1, NULL },
-	{ "InitStatus", Escort_InitStatus, 1, NULL },
-	{ "Init", Escort_Init, 1, NULL },
-	{ "MissionInit", Escort_MissionInit, 1, NULL },
-	{ "OnMissionStart", Escort_OnMissionStart, 1, NULL },
-	{ "OnMissionStart2", Escort_OnMissionStart2, 1, NULL },
-	{ "TransGoto", Escort_TransGoto, 1, NULL },
-	{ "CreateBadGuy", Escort_CreateBadGuy, 1, NULL },
-	{ "AppearsBadGuys", Escort_AppearsBadGuys, 1, NULL },
-	{ "AppearsBadGuys2", Escort_AppearsBadGuys2, 1, NULL },
-	{ "NextBadGuy", Escort_NextBadGuy, 1, NULL },
-	{ "BackToTheTransport", Escort_BackToTheTransport, 1, NULL },
-	{ "BackToPlayer", Escort_BackToPlayer, 1, NULL },
-	{ "MadGuyDeath", Escort_MadGuyDeath, 1, NULL },
-	{ "PreLaunchTraitorius", Escort_PreLaunchTraitorius, 1, NULL },
-	{ "SetNextMission", Escort_SetNextMission, 1, NULL },
-	{ "MadGuyDamage", Escort_MadGuyDamage, 1, NULL },
-	{ "MercTauntMessager", Escort_MercTauntMessager, 1, NULL },
-	{ "OnTravelComplete", Escort_OnTravelComplete, 1, NULL },
-	{ "ActualizeScorer", Escort_ActualizeScorer, 1, NULL },
-	{ "MissionScorer", Escort_MissionScorer, 1, NULL },
-	{ "KillThem", Escort_KillThem, 1, NULL },
-	{ "InitKillThemMission", KW(Escort_InitKillThemMission), NULL },
-	{ "InitKillBadGuys", KW(Escort_InitKillBadGuys), NULL },
-	{ "RestoreTransport", Escort_RestoreTransport, 1, NULL },
+	{ "GetMercEnemiesProfile", Escort_GetMercEnemiesProfilePy, 1, NULL },
+	{ "InitStatus", Escort_InitStatusPy, 1, NULL },
+	{ "Init", Escort_InitPy, 1, NULL },
+	{ "MissionInit", Escort_MissionInitPy, 1, NULL },
+	{ "OnMissionStart", Escort_OnMissionStartPy, 1, NULL },
+	{ "OnMissionStart2", Escort_OnMissionStart2Py, 1, NULL },
+	{ "TransGoto", Escort_TransGotoPy, 1, NULL },
+	{ "CreateBadGuy", Escort_CreateBadGuyPy, 1, NULL },
+	{ "AppearsBadGuys", Escort_AppearsBadGuysPy, 1, NULL },
+	{ "AppearsBadGuys2", Escort_AppearsBadGuys2Py, 1, NULL },
+	{ "NextBadGuy", Escort_NextBadGuyPy, 1, NULL },
+	{ "BackToTheTransport", Escort_BackToTheTransportPy, 1, NULL },
+	{ "BackToPlayer", Escort_BackToPlayerPy, 1, NULL },
+	{ "MadGuyDeath", Escort_MadGuyDeathPy, 1, NULL },
+	{ "PreLaunchTraitorius", Escort_PreLaunchTraitoriusPy, 1, NULL },
+	{ "SetNextMission", Escort_SetNextMissionPy, 1, NULL },
+	{ "MadGuyDamage", Escort_MadGuyDamagePy, 1, NULL },
+	{ "MercTauntMessager", Escort_MercTauntMessagerPy, 1, NULL },
+	{ "OnTravelComplete", Escort_OnTravelCompletePy, 1, NULL },
+	{ "ActualizeScorer", Escort_ActualizeScorerPy, 1, NULL },
+	{ "MissionScorer", Escort_MissionScorerPy, 1, NULL },
+	{ "KillThem", Escort_KillThemPy, 1, NULL },
+	{ "InitKillThemMission", KW(Escort_InitKillThemMissionPy), NULL },
+	{ "InitKillBadGuys", KW(Escort_InitKillBadGuysPy), NULL },
+	{ "RestoreTransport", Escort_RestoreTransportPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
@@ -2827,343 +2749,332 @@ static PyObject *Steal_InitStatus(PyObject *self, PyObject *args) {
 	return Lv_AcShipsStatus(args, SM, "[\"SMayor1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]");
 }
 
-/* `numCopsKilled < COPS_TO_KILL` */
-static int Sm_Hunting(scriptFrame_t *f) {
-	return Sf_Compare(f, Sf_Global(f, SM, "numCopsKilled"), "<", Sf_Global(f, SM, "COPS_TO_KILL"));
+/* `numCopsKilled < COPS_TO_KILL`: 1, 0, -1 */
+static int Sm_Hunting(void) {
+	nativeVal_t n = { 0 };
+	int r = Mode_G(SM, "numCopsKilled", &n) ? Mode_CmpG(&n, "<", SM, "COPS_TO_KILL") : -1;
+	Native_Free(&n);
+	return r;
 }
 
 /* Init(LevelPath): the hunt of the police or the parking by the count, the mayor's ship half a second later and
  * every 5 s */
-static PyObject *Steal_Init(PyObject *self, PyObject *args) {
-	PATH_ARGS();
-	Sf_Import(&f, "Parking");
-	Sf_Import(&f, "Vehicles");
-	Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", G(SM, "StartMission"));
-	Sf_SetGlobal(&f, SM, "numCopsKilled", Sf_ToInt(&f, SAVE("NumCopsKilled")));
-	int hunt = Sm_Hunting(&f);
+static byte Steal_Init(void) {
+	nativeVal_t n = { 0 };
+	byte ok = Mode_Import("Parking") && Mode_Import("Vehicles") && LvN_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", SM, "StartMission") &&
+		Mode_SaveInt("NumCopsKilled", &n) && Mode_Put(SM, "numCopsKilled", NULL, &n);
+	Native_Free(&n);
+	int hunt = ok ? Sm_Hunting() : -1;
 	if (hunt > 0) {
-		Sf_SetMod(&f, "Vehicles", "OnDeathCallback", G(SM, "OnPoliceDeath"));
-		Lv_Com(&f, "Mission_TestMayorShip_RemoteMessage1", "Trurl", NULL, NULL);
+		ok = LvN_ModSetGlobal("Vehicles", "OnDeathCallback", SM, "OnPoliceDeath") &&
+			LvN_Com("Mission_TestMayorShip_RemoteMessage1", "Trurl", NULL, NULL, NULL);
 	} else if (hunt == 0) {
-		Lv_Com(&f, "Mission_ParkMayorShip_RemoteMessage2", "Trurl", NULL, NULL);
+		ok = LvN_Com("Mission_ParkMayorShip_RemoteMessage2", "Trurl", NULL, NULL, NULL);
 	}
-	Sf_Later(&f, Sf_Float(&f, 0.5), G(SM, "CreateMissionShip"), NOARGS, NULL);
-	Sf_Later(&f, Sf_Float(&f, 5.0), G(SM, "TestForMissionShip"), NOARGS, "TestForMissionShip");
-	return Sf_None(&f);
-}
-
-/* `string.find(string.upper(v.Model), text) != -1` */
-static int Sm_ModelHas(scriptFrame_t *f, PyObject *v, const char *text) {
-	PyObject *model = Sf_Ask(f, "string", "upper", "(O)", Sf_Attr(f, v, "Model"));
-	return Sf_Compare(f, Sf_Ask(f, "string", "find", "(Os)", model, text), "!=", Sf_Int(f, -1));
+	return ok && hunt >= 0 && Mode_Later(0.5, SM, "CreateMissionShip", NULL, 0, NULL) &&
+		Mode_Later(5.0, SM, "TestForMissionShip", NULL, 0, "TestForMissionShip");
 }
 
 /* CreateMissionShip(): the player's mayor ship (not his own) is the mission ship, else a parked mayor ship instead of
  * the farthest parked one */
-static PyObject *Steal_CreateMissionShip(PyObject *self, PyObject *args) {
-	PyObject *ep[2] = { NULL, NULL };
-	SF_ARGS("");
-	Sf_Import(&f, "Parking");
-	PyObject *usr = USR();
-	int t = Dt_UsrInCar(&f, usr);
-	if (t > 0) {
-		t = Sf_True(&f, Sf_Mod(&f, "Parking", "PlayerShip"));
+static byte Steal_CreateMissionShip(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = TV(), *ps = TV(), *name = TV(), *pn = TV(), *fp = TV(), *ep = TV(), *ep1 = TV(), *e = TV(), *ship = TV();
+	(void)ep1;
+	byte ok = Mode_Import("Parking") && Mode_UsrHandle(usr);
+	int c = ok ? Mode_UsrInCar(usr) : -1;
+	if (c > 0) {
+		c = LvN_ModGet("Parking", "PlayerShip", ps) ? Native_True(ps) : -1;
 	}
-	if (t > 0) {
-		int mayor = Sm_ModelHas(&f, usr, "MAYOR");
+	if (c > 0) {
+		int mayor = Mode_ModelHas(usr, "MAYOR");
 		if (mayor > 0) {
-			mayor = Sf_Compare(&f, Sf_Attr(&f, usr, "Name"), "!=", Sf_Attr(&f, Sf_Mod(&f, "Parking", "PlayerShip"), "Name"));
+			Native_Free(ps);
+			mayor = Mode_VGet(usr, "Name", name) && LvN_ModGet("Parking", "PlayerShip", ps) && Mode_VGet(ps, "Name", pn) ? Native_Compare(name, pn) != 0 :
+				-1;
 		}
 		if (mayor > 0) {
-			Sf_SetGlobal(&f, SM, "missionShipName", Sf_Attr(&f, usr, "Name"));
-			int hunt = Sm_Hunting(&f);
-			if (hunt > 0) {
-				Sf_Own(&f, SM, "SetPoliceTargets", "()");
-			} else if (hunt == 0) {
-				Sf_Own(&f, SM, "SetPlatformTarget", "()");
-			}
-			return Sf_None(&f);
+			int hunt = Mode_VRead(usr, "Name", name) && Mode_Put(SM, "missionShipName", NULL, name) ? Sm_Hunting() : -1;
+			ok = hunt >= 0 && (hunt ? LV_OWN(SM, "SetPoliceTargets", NULL, "") : LV_OWN(SM, "SetPlatformTarget", NULL, ""));
+			return Mode_Done(&t, ok);
 		}
+		c = mayor;
 	}
-	Sf_Unpack(&f, Sf_Ask(&f, "Scrap", "GetFarestParked", "()"), 2, ep);
-	if (Sf_Compare(&f, ep[0], "!=", Sf_Str(&f, "")) > 0) {
-		PyObject *e = Sf_Entity(&f, ep[0]);
-		if (Sf_True(&f, e) > 0) {
-			Sf_Method(&f, e, "Del", "()");
-		}
+	ok = c >= 0 && LV_CALL("Scrap", "GetFarestParked", fp, "") && Mode_Unpack(fp, 2, ep);
+	if (ok && !LvN_EqS(&ep[0], "")) {
+		ok = Mode_EntityH(&ep[0], e) && (!Native_True(e) || Mode_VDel(e));
 	}
-	PyObject *ship = Sf_Ask(&f, "Parking", "CreateParkedShip", "(Ois)", ep[1], 0, "Mayor");
-	Sf_SetGlobal(&f, SM, "missionShipName", Sf_Attr(&f, ship, "Name"));
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", G(SM, "missionShipName"));
-	return Sf_None(&f);
+	ok = ok && LV_CALL("Parking", "CreateParkedShip", ship, "vis", &ep[1], 0L, "Mayor") && Mode_VRead(ship, "Name", name) &&
+		Mode_Put(SM, "missionShipName", NULL, name) && Mode_Read(SM, "missionShipName", name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name);
+	return Mode_Done(&t, ok);
 }
 
 /* TestForMissionShip(): the mayor's ship again when it is gone, every 5 s */
-static PyObject *Steal_TestForMissionShip(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	if (Sf_True(&f, Sf_Entity(&f, G(SM, "missionShipName"))) == 0) {
-		Sf_Own(&f, SM, "CreateMissionShip", "()");
-		Lv_Com(&f, "Mission_ParkMayorShip_RemoteMessage2", "Trurl", NULL, NULL);
-	}
-	Sf_Later(&f, Sf_Float(&f, 5.0), G(SM, "TestForMissionShip"), NOARGS, "TestForMissionShip");
-	return Sf_None(&f);
+static byte Steal_TestForMissionShip(void) {
+	nativeVal_t name = { 0 }, e = { 0 };
+	byte ok = Mode_G(SM, "missionShipName", &name) && Mode_EntityH(&name, &e) &&
+		(Native_True(&e) || (LV_OWN(SM, "CreateMissionShip", NULL, "") && LvN_Com("Mission_ParkMayorShip_RemoteMessage2", "Trurl", NULL, NULL, NULL))) &&
+		Mode_Later(5.0, SM, "TestForMissionShip", NULL, 0, "TestForMissionShip");
+	Native_Free(&name);
+	Native_Free(&e);
+	return ok;
 }
 
 /* SetPlatformTarget(): the phone cab is the platform where the ship is parked */
-static PyObject *Steal_SetPlatformTarget(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "PhoneCab");
-	Sf_Import(&f, "Parking");
-	Sf_SetGlobal(&f, SM, "pc", Sf_Ask(&f, "PhoneCab", "GetFree", "()"));
-	Sf_SetAttrS(&f, G(SM, "pc"), "UseFunc", "Mission_StealMayorShip.UsePhoneCab");
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, G(SM, "pc"), "Name"));
-	Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", G(SM, "TestForCorrectPlatform"));
-	return Sf_None(&f);
+static byte Steal_SetPlatformTarget(void) {
+	return Mode_Import("PhoneCab") && Mode_Import("Parking") && Mode_PhoneCab("Mission_StealMayorShip.UsePhoneCab", 0, SM, NULL) &&
+		LvN_ModSetGlobal("Parking", "SwitchCharMissionCallback", SM, "TestForCorrectPlatform");
 }
 
 /* TestForCorrectPlatform(): the player leaves the ship: at the platform (70 m across) the ship stays, else Trurl
  * complains */
-static PyObject *Steal_TestForCorrectPlatform(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	PyObject *usr = USR();
-	int t = Sf_True(&f, usr);
-	if (t > 0) {
-		t = Sf_True(&f, G(SM, "pc"));
+static byte Steal_TestForCorrectPlatform(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = TV(), *pc = TV(), *up = TV(), *pp = TV(), *sub = TV(), *d = TV(), *name = TV(), *e = TV();
+	int c = LvN_Usr(usr);
+	if (c > 0) {
+		c = Mode_G(SM, "pc", pc) ? Native_True(pc) : -1;
 	}
-	if (t > 0) {
-		PyObject *d = Sf_Ask(&f, "SVec", "ModSqr", "(O)", Sf_Ask(&f, "SVec", "Sub", "(OO)", Sf_Attr(&f, usr, "Pos"), Sf_Attr(&f, G(SM, "pc"), "Pos")));
-		int far = Sf_Compare(&f, d, ">", Sf_Int(&f, 49000000));
-		if (far > 0) {
-			Lv_Com(&f, "Mission_ParkMayorShip_RemoteMessage1", "Trurl", NULL, NULL);
-		} else if (far == 0) {
-			PyObject *e = Sf_Entity(&f, G(SM, "missionShipName"));
-			if (Sf_True(&f, e) > 0) {
-				Sf_Import(&f, "Parking");
-				Sf_Run(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "TestForMissionShip");
-				Sf_SetAttrS(&f, e, "UseFunc", "Mission_StealMayorShip.UseParkedMayorShip");
-				Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", Py_None);
-				Lv_Com(&f, "Mission_ParkMayorShip_RemoteMessage3", "Trurl", NULL, NULL);
-				Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-				Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_ByeByeTrurl_MissionText1", 1);
-			}
+	byte ok = c >= 0;
+	if (c > 0) {
+		ok = Mode_VGet(usr, "Pos", up) && Mode_Read(SM, "pc", pc) && Mode_VGet(pc, "Pos", pp) && Mode_VecSub(up, pp, sub) && Mode_VecModSqr(sub, d);
+		if (ok && Native_Compare(d, Mode_I(&t, 49000000)) > 0) {
+			ok = LvN_Com("Mission_ParkMayorShip_RemoteMessage1", "Trurl", NULL, NULL, NULL);
+		} else if (ok && Mode_G(SM, "missionShipName", name) && Mode_EntityH(name, e)) {
+			ok = !Native_True(e) || (Mode_Import("Parking") && Mode_DelSchedS("TestForMissionShip") &&
+				LvN_SetS(e, "UseFunc", "Mission_StealMayorShip.UseParkedMayorShip") && LvN_ModNone("Parking", "SwitchCharMissionCallback") &&
+				LvN_Com("Mission_ParkMayorShip_RemoteMessage3", "Trurl", NULL, NULL, NULL) && Mode_WayPoint() &&
+				Mode_MMDesc("Mission_ByeByeTrurl_MissionText1", 1));
+		} else {
+			ok = 0;
 		}
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
 /* UseParkedMayorShip(UsrName, CharName, optId, FullOption): the parked ship is not to be used any more */
-static PyObject *Steal_UseParkedMayorShip(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	SF_ARGS("OOOO", &usr, &ch, &opt, &full);
-	Sf_Import(&f, "RaceMaker");
-	Sf_Run(&f, "RaceMaker", "ShowSystemMessage", "(O)", Sf_Lang(&f, Sf_Str(&f, "Mission_ParkMayorShip_SystemMessage1")));
-	return Sf_None(&f);
+static byte Steal_UseParkedMayorShip(void) {
+	return LvN_SystemMessage("Mission_ParkMayorShip_SystemMessage1");
 }
 
 /* UsePhoneCab(UsrName, CharName, optId, FullOption): Trurl's farewell and DeepThroat at the phone of the platform */
-static PyObject *Steal_UsePhoneCab(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	SF_ARGS("OOOO", &usr, &ch, &opt, &full);
-	Sf_Import(&f, "PhoneCab");
-	Sf_SetMod(&f, "Speech", "NPCName", ch);
-	Sf_SetMod(&f, "Speech", "PlayerName", usr);
-	Sf_Run(&f, "PhoneCab", "UseAudioCom", "(OOOO)", usr, ch, opt, full);
-	int alarm = Lv_Alarm(&f);
+static byte Steal_UsePhoneCab(const nativeVal_t *a) {
+	nativeVal_t pc = { 0 }, key = { 0 };
+	int alarm = Mode_Import("PhoneCab") && Mode_SetModVar("Speech", "NPCName", &a[1]) && Mode_SetModVar("Speech", "PlayerName", &a[0]) &&
+		LV_CALL("PhoneCab", "UseAudioCom", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]) ? Mode_AlarmOn() : -1;
+	byte ok = alarm >= 0;
 	if (alarm > 0) {
-		Sf_Run(&f, "Speech", "StartObjSpch", "(Oss)", G(SM, "pc"), "Generics_StillPolice1_Messenger", "Trurl");
+		ok = Mode_G(SM, "pc", &pc) && LV_CALL("Speech", "StartObjSpch", NULL, "vss", &pc, "Generics_StillPolice1_Messenger", "Trurl");
 	} else if (alarm == 0) {
-		Sf_SpeechEnd(&f, G(SM, "SetNextMission"), NULL);
-		Sf_Run(&f, "Speech", "NISpeech", "(s)", "Messenger");
-		Sf_Run(&f, "Speech", "AutoAddNI", "(s)", "Mission_ByeByeTrurl_ComTrurl_NI_1Msg");
-		PyObject *fn = Sf_Mod(&f, "Speech", "AutoAddNI");
-		Sf_CallKw(&f, fn, f.failed ? NULL : Py_BuildValue("(s)", "Mission_ByeByeTrurl_ComDeepThroat_NI_1Msg"),
-			Sf_Build(&f, "{ss}", "HeadName", "DeepThroat"));
-		Sf_Run(&f, "Speech", "RunNI", "()");
+		LvN_Str(&key, "Mission_ByeByeTrurl_ComDeepThroat_NI_1Msg");
+		ok = LvN_OnEnd(SM, "SetNextMission", NULL) && LV_CALL("Speech", "NISpeech", NULL, "s", "Messenger") &&
+			LV_CALL("Speech", "AutoAddNI", NULL, "s", "Mission_ByeByeTrurl_ComTrurl_NI_1Msg") &&
+			Mode_CallKw("Speech", "AutoAddNI", NULL, &key, 1, Py_BuildValue("{ss}", "HeadName", "DeepThroat")) && LV_CALL("Speech", "RunNI", NULL, "");
 	}
-	return Sf_None(&f);
+	Native_Free(&pc);
+	Native_Free(&key);
+	return ok;
 }
 
 /* SetNextMission(): on to Mission_ThreeStooges, the places of the characters, the crazy gambler 2 s later */
-static PyObject *Steal_SetNextMission(PyObject *self, PyObject *args) {
+static byte Steal_SetNextMission(void) {
 	static const char *const places[] = { "MayorAtTownHall", "1", "PoliceBossAtPolice", "1", "PoliceBossAtTownHall", "0", "BankMasterAtBank", "1",
 		"Journalist.Humphrey_Defaut", "GamblinDen", "Journalist.Betty_Defaut", "Press", "Journalist.Berto_Defaut", "GamblinDen", NULL };
-	SF_ARGS("");
-	Sf_SetAttrS(&f, G(SM, "pc"), "UseFunc", "PhoneCab.DefUseAudioCom");
-	Sf_SetMod(&f, "Speech", "OnOutOfRange", Py_None);
-	Sf_Run(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "");
-	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "NumCopsKilled");
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Lv_Next(&f, "Mission_ThreeStooges", "GamblinDen", "Mission_FirstContactMercs_MissionText1");
-	Lv_Saves(&f, places);
-	Sf_Later(&f, Sf_Int(&f, 2), G(SM, "CGCalls"), NOARGS, NULL);
-	return Sf_None(&f);
+	byte ok = LvN_PcDefault(SM) && LvN_ModNone("Speech", "OnOutOfRange") && Mode_Target("") &&
+		Mode_DelSaveVars("NumCopsKilled") && Mode_WayPoint() && LvN_Next("Mission_ThreeStooges", "GamblinDen", "Mission_FirstContactMercs_MissionText1");
+	if (ok) {
+		Mode_Saves(places);
+	}
+	return ok && Mode_Later(2, SM, "CGCalls", NULL, 0, NULL);
 }
 
-static PyObject *Steal_CGCalls(PyObject *self, PyObject *args) {
+static byte Steal_CGCalls(void) {
 	static const char *const keys[] = { "Mission_FirstContactMercs_RemoteMessage1", "Mission_FirstContactMercs_RemoteMessage2",
 		"Mission_FirstContactMercs_RemoteMessage3" };
-	(void)self;
-	return Dt_CGCalls(args, keys, 3);
+	return Mode_CGCalls(keys, 3);
 }
 
-/* `usr and usr.Name != missionShipName`: the player is not in the mayor's ship */
-static int Sm_NotInShip(scriptFrame_t *f, PyObject *usr) {
-	int t = Sf_True(f, usr);
-	return t > 0 ? Sf_Compare(f, Sf_Attr(f, usr, "Name"), "!=", Sf_Global(f, SM, "missionShipName")) : t;
+/* `usr and usr.Name != missionShipName` with usr = Scrap.UsrEntity(0): the player is not in the mayor's ship (1, 0,
+ * -1) */
+static int Sm_NotInShip(void) {
+	nativeVal_t usr = { 0 }, name = { 0 }, ms = { 0 };
+	int r = Mode_UsrHandle(&usr) ? (Native_True(&usr) ? (Mode_VGet(&usr, "Name", &name) && Mode_G(SM, "missionShipName", &ms) ?
+		Native_Compare(&name, &ms) != 0 : -1) : 0) : -1;
+	Native_Free(&usr);
+	Native_Free(&name);
+	Native_Free(&ms);
+	return r;
 }
 
 /* StartMission(): the player in the mayor's ship: the hunt of the police or the platform */
-static PyObject *Steal_StartMission(PyObject *self, PyObject *args) {
+static byte Steal_StartMission(void) {
 	static const char *const mods[] = { "Menu", "Parking", "OutPolice", "Speech", NULL };
-	SF_ARGS("");
-	for (int i = 0; mods[i]; i++) {
-		Sf_Import(&f, mods[i]);
+	nativeVal_t name = { 0 }, e = { 0 };
+	byte ok = 1;
+	for (int i = 0; ok && mods[i]; i++) {
+		ok = Mode_Import(mods[i]);
 	}
-	if (Sm_NotInShip(&f, USR()) > 0) {
-		return Sf_None(&f);
+	int c = ok ? Sm_NotInShip() : -1;
+	if (c != 0) {
+		return c > 0;
 	}
-	PyObject *e = Sf_Entity(&f, G(SM, "missionShipName"));
-	if (Sf_True(&f, e) == 0) {
-		return Sf_None(&f);
+	ok = Mode_G(SM, "missionShipName", &name) && Mode_EntityH(&name, &e);
+	if (ok && Native_True(&e)) {
+		int hunt = LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &e, 0L) ? Sm_Hunting() : -1;
+		ok = hunt >= 0 && (hunt ? LvN_Com("Mission_TestMayorShip_RemoteMessage5", "Trurl", NULL, NULL, NULL) && LV_OWN(SM, "SetPoliceTargets", NULL, "") :
+			LV_OWN(SM, "SetPlatformTarget", NULL, ""));
 	}
-	Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", e, 0);
-	int hunt = Sm_Hunting(&f);
-	if (hunt > 0) {
-		Lv_Com(&f, "Mission_TestMayorShip_RemoteMessage5", "Trurl", NULL, NULL);
-		Sf_Own(&f, SM, "SetPoliceTargets", "()");
-	} else if (hunt == 0) {
-		Sf_Own(&f, SM, "SetPlatformTarget", "()");
-	}
-	return Sf_None(&f);
+	Native_Free(&name);
+	Native_Free(&e);
+	return ok;
 }
 
 /* ContinueMission(): back in a ship: the mission goes on in the mayor's, else Trurl complains */
-static PyObject *Steal_ContinueMission(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	int t = Sm_NotInShip(&f, USR());
-	if (t > 0) {
-		Sf_Import(&f, "Menu");
-		Lv_ScorerCall(&f, Py_None);
-		Sf_DrawScorer(&f);
-		Lv_Com(&f, "Mission_TestMayorShip_RemoteMessage3", "Trurl", NULL, NULL);
-		return Sf_None(&f);
+static byte Steal_ContinueMission(void) {
+	int c = Sm_NotInShip();
+	if (c > 0) {
+		return Mode_Import("Menu") && LvN_ScorerOff() && LvN_Draw() && LvN_Com("Mission_TestMayorShip_RemoteMessage3", "Trurl", NULL, NULL, NULL);
 	}
-	Sf_Own(&f, SM, "StartMission", "()");
-	return Sf_None(&f);
+	return c == 0 && LV_OWN(SM, "StartMission", NULL, "");
 }
 
 /* SetPoliceListTargetStatus(status): the police ships of the list OutCop as targets or not */
-static PyObject *Steal_SetPoliceListTargetStatus(PyObject *self, PyObject *args) {
-	PyObject *status;
-	SF_ARGS("O", &status);
-	PyObject *name = Sf_Ask(&f, "Scrap", "EntityListGet", "(ss)", "OutCop", "First");
-	int mark = f.n;
-	while (Sf_True(&f, name) > 0) {
-		PyObject *e = Sf_Entity(&f, name);
-		if (Sf_True(&f, e) <= 0) {
+static byte Steal_SetPoliceListTargetStatus(const nativeVal_t *a) {
+	nativeVal_t name = { 0 }, e = { 0 };
+	byte ok = Mode_ListGet("OutCop", "First", &name);
+	while (ok && Native_True(&name)) {
+		Native_Free(&e);
+		ok = Mode_EntityH(&name, &e);
+		if (!ok || !Native_True(&e)) {
 			break;
 		}
-		Sf_Own(&f, SM, "SetPoliceShipTargetStatus", "(OO)", e, status);
-		name = Sf_Attr(&f, e, "NextInList");
-		Sf_ReleaseKeep(&f, mark, &name, 1);
+		Native_Free(&name);
+		ok = LV_OWN(SM, "SetPoliceShipTargetStatus", NULL, "vv", &e, &a[0]) && Mode_VGet(&e, "NextInList", &name);
 	}
-	return Sf_None(&f);
+	Native_Free(&name);
+	Native_Free(&e);
+	return ok;
 }
 
 /* ComeBack(): the player left the mayor's ship: the ship is the target again, not the police */
-static PyObject *Steal_ComeBack(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Import(&f, "Parking");
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "OutPolice");
-	PyObject *e = Sf_Entity(&f, G(SM, "missionShipName"));
-	if (Sf_True(&f, e) > 0) {
-		Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", e, 1);
-	}
-	Sf_SetMod(&f, "OutPolice", "OnPoliceCreatedCallback", Py_None);
-	Sf_Own(&f, SM, "SetPoliceListTargetStatus", "(i)", 0);
-	Lv_Com(&f, "Mission_TestMayorShip_RemoteMessage2", "Trurl", NULL, NULL);
-	Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", Py_None);
-	Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", G(SM, "ContinueMission"));
-	return Sf_None(&f);
+static byte Steal_ComeBack(void) {
+	nativeVal_t name = { 0 }, e = { 0 };
+	byte ok = Mode_Import("Parking") && Mode_Import("Menu") && Mode_Import("OutPolice") && Mode_G(SM, "missionShipName", &name) &&
+		Mode_EntityH(&name, &e) && (!Native_True(&e) || LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &e, 1L)) &&
+		LvN_ModNone("OutPolice", "OnPoliceCreatedCallback") && LV_OWN(SM, "SetPoliceListTargetStatus", NULL, "i", 0L) &&
+		LvN_Com("Mission_TestMayorShip_RemoteMessage2", "Trurl", NULL, NULL, NULL) && LvN_ModNone("Parking", "SwitchCharMissionCallback") &&
+		LvN_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", SM, "ContinueMission");
+	Native_Free(&name);
+	Native_Free(&e);
+	return ok;
 }
 
 /* MissionScorer(id): the police ships destroyed */
-static PyObject *Steal_MissionScorer(PyObject *self, PyObject *args) {
-	PyObject *id;
-	SF_ARGS("O", &id);
-	Sf_Import(&f, "Scorer");
-	Lv_Text(&f, id, "RemainingCharsText", Lv_TextY(&f, 0), Lv_Label(&f, "Mission_TestMayorShip_Scorer_1"), NULL);
-	Lv_Text(&f, id, "RemainingCharsScorer", Lv_TextY(&f, 20), Lv_Count(&f, SM, "numCopsKilled", "COPS_TO_KILL"), NULL);
-	return Sf_None(&f);
+static byte Steal_MissionScorer(const nativeVal_t *id) {
+	nativeVal_t y = { 0 }, cnt = { 0 };
+	byte ok = Mode_Import("Scorer") && Mode_LvLabel(id, "RemainingCharsText", 0, "Mission_TestMayorShip_Scorer_1", 0) && LvN_TextY(20, &y) &&
+		Mode_CountText(SM, "numCopsKilled", "COPS_TO_KILL", &cnt) && Mode_LvText(id, "RemainingCharsScorer", &y, &cnt, NULL);
+	Native_Free(&y);
+	Native_Free(&cnt);
+	return ok;
 }
 
 /* OnPoliceDeath(LooserName, WinnerName): a police ship the player destroyed in the mayor's ship counts; at twenty the
  * ship is to be parked */
-static PyObject *Steal_OnPoliceDeath(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	SF_ARGS("OO", &looser, &winner);
-	PyObject *usr = USR();
-	if (Sf_True(&f, usr) == 0 || Sf_Compare(&f, Sf_Attr(&f, usr, "Name"), "!=", winner) > 0) {
-		return Sf_None(&f);
+static byte Steal_OnPoliceDeath(const nativeVal_t *a) {
+	static const char *const mods[] = { "Menu", "Parking", "Vehicles", "OutPolice", NULL };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = TV(), *name = TV(), *v = TV(), *ms = TV(), *n = TV(), *cnt = TV();
+	int c = Mode_UsrHandle(usr) ? (Native_True(usr) ? (Mode_VGet(usr, "Name", name) ? !Native_Compare(name, &a[1]) : -1) : 0) : -1;
+	if (c <= 0) {
+		return Mode_Done(&t, c == 0);
 	}
-	if (Sm_ModelHas(&f, Sf_Entity(&f, looser), "POLI") == 0) {
-		return Sf_None(&f);
+	c = Mode_EntityH(&a[0], v) ? Mode_ModelHas(v, "POLI") : -1;
+	if (c <= 0) {
+		return Mode_Done(&t, c == 0);
 	}
-	if (Sf_Compare(&f, Sf_Attr(&f, usr, "Name"), "!=", G(SM, "missionShipName")) > 0) {
-		Lv_Com(&f, "Mission_TestMayorShip_RemoteMessage3", "Trurl", NULL, NULL);
-		return Sf_None(&f);
+	if (!Mode_G(SM, "missionShipName", ms)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_SetGlobal(&f, SM, "numCopsKilled", Sf_OpI(&f, G(SM, "numCopsKilled"), '+', 1));
-	int done = Sf_Compare(&f, G(SM, "numCopsKilled"), "==", G(SM, "COPS_TO_KILL"));
+	if (Native_Compare(name, ms)) {
+		return Mode_Done(&t, LvN_Com("Mission_TestMayorShip_RemoteMessage3", "Trurl", NULL, NULL, NULL));
+	}
+	byte ok = LvN_GAdd(SM, "numCopsKilled", 1, NULL) && Mode_G(SM, "numCopsKilled", n);
+	int done = ok ? Mode_CmpG(n, "==", SM, "COPS_TO_KILL") : -1;
 	if (done > 0) {
-		static const char *const mods[] = { "Menu", "Parking", "Vehicles", "OutPolice", NULL };
-		for (int i = 0; mods[i]; i++) {
-			Sf_Import(&f, mods[i]);
+		for (int i = 0; ok && mods[i]; i++) {
+			ok = Mode_Import(mods[i]);
 		}
-		Sf_Own(&f, SM, "SetPoliceListTargetStatus", "(i)", 0);
-		Sf_SetMod(&f, "OutPolice", "OnPoliceCreatedCallback", Py_None);
-		Sf_SetMod(&f, "Vehicles", "OnDeathCallback", Py_None);
-		Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", Py_None);
-		Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Py_None);
-		Lv_ScorerCall(&f, Py_None);
-		Sf_DrawScorer(&f);
-		Lv_Com(&f, "Mission_TestMayorShip_RemoteMessage4", "Trurl", G(SM, "ParkMayorShip"), NULL);
+		ok = ok && LV_OWN(SM, "SetPoliceListTargetStatus", NULL, "i", 0L) && LvN_ModNone("OutPolice", "OnPoliceCreatedCallback") &&
+			LvN_ModNone("Vehicles", "OnDeathCallback") && LvN_ModNone("Parking", "SwitchCharMissionCallback") &&
+			LvN_ModNone("Parking", "SwitchVehicleMissionCallback") && LvN_ScorerOff() && LvN_Draw() &&
+			LvN_Com("Mission_TestMayorShip_RemoteMessage4", "Trurl", SM, "ParkMayorShip", NULL);
 	} else if (done == 0) {
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "NumCopsKilled", Sf_Repr(&f, G(SM, "numCopsKilled")));
-		Sf_Run(&f, "SScorer", "Set", "(issO)", 0, "RemainingCharsScorer", "Text", Lv_Count(&f, SM, "numCopsKilled", "COPS_TO_KILL"));
+		ok = Mode_Read(SM, "numCopsKilled", n) && Dt_SaveRepr("NumCopsKilled", n) && Mode_CountText(SM, "numCopsKilled", "COPS_TO_KILL", cnt) &&
+			LvN_Set0("RemainingCharsScorer", "Text", cnt);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok && done >= 0);
 }
 
 /* ParkMayorShip(): to the platform with the ship; Berto's ship parked at the press */
-static PyObject *Steal_ParkMayorShip(PyObject *self, PyObject *args) {
-	SF_ARGS("");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "NumCopsKilled", Sf_Repr(&f, G(SM, "COPS_TO_KILL")));
-	Sf_Own(&f, SM, "SetPlatformTarget", "()");
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_ParkMayorShip_MissionText1", 1);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Parked.Press", "['SBERTO1']");
-	return Sf_None(&f);
+static byte Steal_ParkMayorShip(void) {
+	nativeVal_t n = { 0 };
+	byte ok = Mode_G(SM, "COPS_TO_KILL", &n) && Dt_SaveRepr("NumCopsKilled", &n) && LV_OWN(SM, "SetPlatformTarget", NULL, "") && Mode_WayPoint() &&
+		Mode_MMDesc("Mission_ParkMayorShip_MissionText1", 1) && Mode_SaveS("Parked.Press", "['SBERTO1']");
+	Native_Free(&n);
+	return ok;
 }
+
+LV_CORE0(Steal_Init)
+LV_CORE0(Steal_CreateMissionShip)
+LV_CORE0(Steal_TestForMissionShip)
+LV_CORE0(Steal_SetPlatformTarget)
+LV_CORE0(Steal_TestForCorrectPlatform)
+LV_CORE0(Steal_UseParkedMayorShip)
+LV_COREA(Steal_UsePhoneCab)
+LV_CORE0(Steal_SetNextMission)
+LV_CORE0(Steal_CGCalls)
+LV_CORE0(Steal_StartMission)
+LV_CORE0(Steal_ContinueMission)
+LV_COREA(Steal_SetPoliceListTargetStatus)
+LV_CORE0(Steal_ComeBack)
+LV_COREA(Steal_MissionScorer)
+LV_COREA(Steal_OnPoliceDeath)
+LV_CORE0(Steal_ParkMayorShip)
+LV_FN(Steal, InitPy, 1, Steal_Init_C)
+LV_FN(Steal, CreateMissionShipPy, 0, Steal_CreateMissionShip_C)
+LV_FN(Steal, TestForMissionShipPy, 0, Steal_TestForMissionShip_C)
+LV_FN(Steal, SetPlatformTargetPy, 0, Steal_SetPlatformTarget_C)
+LV_FN(Steal, TestForCorrectPlatformPy, 0, Steal_TestForCorrectPlatform_C)
+LV_FN(Steal, UseParkedMayorShipPy, 4, Steal_UseParkedMayorShip_C)
+LV_FN(Steal, UsePhoneCabPy, 4, Steal_UsePhoneCab_C)
+LV_FN(Steal, SetNextMissionPy, 0, Steal_SetNextMission_C)
+LV_FN(Steal, CGCallsPy, 0, Steal_CGCalls_C)
+LV_FN(Steal, StartMissionPy, 0, Steal_StartMission_C)
+LV_FN(Steal, ContinueMissionPy, 0, Steal_ContinueMission_C)
+LV_FN(Steal, SetPoliceListTargetStatusPy, 1, Steal_SetPoliceListTargetStatus_C)
+LV_FN(Steal, ComeBackPy, 0, Steal_ComeBack_C)
+LV_FN(Steal, MissionScorerPy, 1, Steal_MissionScorer_C)
+LV_FN(Steal, OnPoliceDeathPy, 2, Steal_OnPoliceDeath_C)
+LV_FN(Steal, ParkMayorShipPy, 0, Steal_ParkMayorShip_C)
 
 PyMethodDef g_DownTownStealMayorShipMethods[] = {
 	{ "InitStatus", Steal_InitStatus, 1, NULL },
-	{ "Init", Steal_Init, 1, NULL },
-	{ "CreateMissionShip", Steal_CreateMissionShip, 1, NULL },
-	{ "TestForMissionShip", Steal_TestForMissionShip, 1, NULL },
-	{ "SetPlatformTarget", Steal_SetPlatformTarget, 1, NULL },
-	{ "TestForCorrectPlatform", Steal_TestForCorrectPlatform, 1, NULL },
-	{ "UseParkedMayorShip", Steal_UseParkedMayorShip, 1, NULL },
-	{ "UsePhoneCab", Steal_UsePhoneCab, 1, NULL },
-	{ "SetNextMission", Steal_SetNextMission, 1, NULL },
-	{ "CGCalls", Steal_CGCalls, 1, NULL },
-	{ "StartMission", Steal_StartMission, 1, NULL },
-	{ "ContinueMission", Steal_ContinueMission, 1, NULL },
-	{ "SetPoliceListTargetStatus", Steal_SetPoliceListTargetStatus, 1, NULL },
-	{ "ComeBack", Steal_ComeBack, 1, NULL },
-	{ "MissionScorer", Steal_MissionScorer, 1, NULL },
-	{ "OnPoliceDeath", Steal_OnPoliceDeath, 1, NULL },
-	{ "ParkMayorShip", Steal_ParkMayorShip, 1, NULL },
+	{ "Init", Steal_InitPy, 1, NULL },
+	{ "CreateMissionShip", Steal_CreateMissionShipPy, 1, NULL },
+	{ "TestForMissionShip", Steal_TestForMissionShipPy, 1, NULL },
+	{ "SetPlatformTarget", Steal_SetPlatformTargetPy, 1, NULL },
+	{ "TestForCorrectPlatform", Steal_TestForCorrectPlatformPy, 1, NULL },
+	{ "UseParkedMayorShip", Steal_UseParkedMayorShipPy, 1, NULL },
+	{ "UsePhoneCab", Steal_UsePhoneCabPy, 1, NULL },
+	{ "SetNextMission", Steal_SetNextMissionPy, 1, NULL },
+	{ "CGCalls", Steal_CGCallsPy, 1, NULL },
+	{ "StartMission", Steal_StartMissionPy, 1, NULL },
+	{ "ContinueMission", Steal_ContinueMissionPy, 1, NULL },
+	{ "SetPoliceListTargetStatus", Steal_SetPoliceListTargetStatusPy, 1, NULL },
+	{ "ComeBack", Steal_ComeBackPy, 1, NULL },
+	{ "MissionScorer", Steal_MissionScorerPy, 1, NULL },
+	{ "OnPoliceDeath", Steal_OnPoliceDeathPy, 1, NULL },
+	{ "ParkMayorShip", Steal_ParkMayorShipPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };

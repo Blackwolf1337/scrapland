@@ -35,20 +35,13 @@
 
 /* ---- shared lines ---- */
 
-/* module.var = v of another module as Script_SetVar sets it: an error is dropped (OBJLIB 5) */
-static void Tp_SetVar(const char *module, const char *var, const nativeVal_t *v) {
-	if (!Mode_SetModVar(module, var, v)) {
-		PyErr_Clear();
-	}
-}
-
 /* the same with the global name of src (a function) */
 static byte Tp_SetVarG(const char *module, const char *var, const char *src, const char *name) {
 	nativeVal_t f;
 	if (!LvN_GObj(src, name, &f)) {
 		return 0;
 	}
-	Tp_SetVar(module, var, &f);
+	LvN_SetVar(module, var, &f);
 	Native_Free(&f);
 	return 1;
 }
@@ -80,25 +73,11 @@ static byte Tp_ComAt(double delay, const char *key, const char *who, const char 
 	return ok;
 }
 
-/* SScorer.SetMsgText(cad, Scrap.GetTime() + Speech.CalculateSpeechTime(cad)) */
-static byte Tp_MsgFor(const nativeVal_t *cad) {
-	nativeVal_t now, dur, t;
-	double d;
-	Native_SetFloat(&now, Mode_Time());
-	Native_SetNone(&dur);
-	Native_SetNone(&t);
-	byte ok = LV_CALL("Speech", "CalculateSpeechTime", &dur, "v", cad) && Native_Arith('+', &now, &dur, &t) &&
-		Native_ArgDouble(&t, &d) && Mode_MsgText(cad, d);
-	Native_Free(&dur);
-	Native_Free(&t);
-	return ok;
-}
-
 /* the hint text of key for its speech time */
 static byte Tp_Hint(const char *key) {
 	nativeVal_t cad;
 	Mode_Lang(key, &cad);
-	byte ok = Tp_MsgFor(&cad);
+	byte ok = Mode_SpeechMsg(&cad);
 	Native_Free(&cad);
 	return ok;
 }
@@ -203,12 +182,12 @@ static byte TpMap_InitStatus(void) {
 		return 0;
 	}
 	Native_SetInt(&v, 0);
-	Tp_SetVar("Init", "Outdoor", &v);
+	LvN_SetVar("Init", "Outdoor", &v);
 	LvN_Str(&v, "Commercial");
-	Tp_SetVar("Init", "OutArea", &v);
+	LvN_SetVar("Init", "OutArea", &v);
 	Native_Free(&v);
 	Native_SetInt(&v, 0);
-	Tp_SetVar("Messenger", "MakeMDP", &v);
+	LvN_SetVar("Messenger", "MakeMDP", &v);
 	if (!LV_CALL("Elevator", "SetDef", NULL, "ss", "Metro", "DM_Door_Metro_Templo00") ||
 		!LV_CALL("Elevator", "SetDef", NULL, "ss", "MetroExt", "DM_Door_Metro_Templo00") ||
 		!LV_CALL("Elevator", "SetDef", NULL, "ss", "Elevator", "DM_Door_Elevator_Commercial") ||
@@ -260,7 +239,7 @@ static byte TpMap_EndOfAppears(void) {
 		return 0;
 	}
 	Native_SetNone(&none);
-	Tp_SetVar("Elevator", "OnElevatorReachDown", &none);
+	LvN_SetVar("Elevator", "OnElevatorReachDown", &none);
 	return Tp_Arrive("DM_Player_Spawn_GDB");
 }
 
@@ -317,7 +296,7 @@ static byte Xl_TakeExtraLife(const nativeVal_t *item, const nativeVal_t *usr) {
 		if (ok) {
 			LvN_SaveRepr("Player.NumLives", &more);
 			Mode_Lang("StealLife_SystemMessage", &cad);
-			ok = Tp_MsgFor(&cad) && Tp_SellLife("", usr);
+			ok = Mode_SpeechMsg(&cad) && Tp_SellLife("", usr);
 			Native_Free(&cad);
 		}
 		Native_Free(&more);
@@ -718,7 +697,7 @@ static byte Ad_TakeProofPhoto(const nativeVal_t *proof, nativeVal_t *out) {
 		Mode_G(AD, "NumProofsWithPhoto", &n) && Native_Arith('+', &n, &one, &m) && Mode_Put(AD, "NumProofsWithPhoto", NULL, &m);
 	if (ok && LvN_EqI(&m, 3)) {
 		Native_SetNone(&none);
-		Tp_SetVar("CharAct", "TakenPhoto", &none);
+		LvN_SetVar("CharAct", "TakenPhoto", &none);
 		ok = Tp_ComAt(1.0, "Mission_ArchbishopKilled_RemoteMessage2", "Humphrey", AD, "ShowDeepThroatMessage");
 		if (ok) {
 			SaveVar_Set("Mission_ArchbishopDead.Status", "DeepThroat");
@@ -807,10 +786,10 @@ static byte Tp_DeepThroatSpeech(const char *module, const nativeVal_t *usr, cons
 		Native_Free(&next);
 		return 0;
 	}
-	Tp_SetVar("Speech", "PlayerName", usr);
-	Tp_SetVar("Speech", "NPCName", ch);
-	Tp_SetVar("Speech", "OnEndOfSpeech", &next);
-	Tp_SetVar("Speech", "OnEndOfSpeechParams", LvN_NoArgs());
+	LvN_SetVar("Speech", "PlayerName", usr);
+	LvN_SetVar("Speech", "NPCName", ch);
+	LvN_SetVar("Speech", "OnEndOfSpeech", &next);
+	LvN_SetVar("Speech", "OnEndOfSpeechParams", LvN_NoArgs());
 	Native_Free(&next);
 	return Mode_NISpeech("DeepThroat", ni);
 }

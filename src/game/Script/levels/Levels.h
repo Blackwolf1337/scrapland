@@ -56,120 +56,17 @@ extern PyMethodDef g_GDBIntoTheGDBMethods[];
 extern PyMethodDef g_GDBReinsertOwnMatrixMethods[];
 extern PyMethodDef g_GDBReinsertOwnMatrix2Methods[];
 
-/* ---- lines the level scripts share (src/game/Script/levels/LevelCommon.c); all do nothing after the frame failed */
+/* ---- whole functions and data the level scripts share (src/game/Script/levels/LevelCommon.c) */
 
-/* `not Scrap.Get("IsXbox") or name` with name a global of the map script (the discardable characters): 1, 0, -1 */
-int Lv_PcOr(scriptFrame_t *f, const char *module, const char *name);
-/* CharsNPC.CharRes[name].CallbackFunc.append(func) with func the global of module, and the same after
- * CharsNPC.CreateMissionChar(name) */
-void Lv_Callback(scriptFrame_t *f, const char *name, const char *module, const char *func);
-void Lv_MissionChar(scriptFrame_t *f, const char *name, const char *module, const char *func);
-/* Speech.PlayerName = usr; Speech.NPCName = ch */
-void Lv_Speakers(scriptFrame_t *f, PyObject *usr, PyObject *ch);
-/* Speech.OnEndOfSpeech = func (the global of module); Speech.OnEndOfSpeechParams = params (NULL for ()) */
-void Lv_OnEnd(scriptFrame_t *f, const char *module, const char *func, PyObject *params);
-/* a character stays where it is: LLogicDefaultState, LLogicDefaultTarget, LLogicState, LLogicTarget, then
- * LLogicIdle 1 and 0 (the lines the scripts repeat for every mission character) */
-void Lv_Stay(scriptFrame_t *f, PyObject *e, long state, PyObject *target);
-/* SScorer.Set(id, item, var, v) */
-void Lv_ScorerSet(scriptFrame_t *f, PyObject *id, const char *item, const char *var, PyObject *v);
-/* lst = eval(Scrap.GetSaveVar(var)) (in the globals of module): the list (borrowed, kept by the frame) */
-PyObject *Lv_SaveList(scriptFrame_t *f, const char *var, const char *module);
-/* lst.append(item); Scrap.SetSaveVar(var, `lst`) */
-void Lv_SaveAppend(scriptFrame_t *f, const char *var, PyObject *lst, PyObject *item);
-/* Scrap.GetSaveVar(name) == text: 1, 0, -1 */
-int Lv_SaveIs(scriptFrame_t *f, const char *name, const char *text);
-/* SScorer.Fade(0, (r,g,b,a), (r,g,b,a), time), with the colours black (0,0,0,255) and clear (0,0,0,0) */
+/* the colours black (0,0,0,255) and clear (0,0,0,0) of SScorer.Fade (Mode_Fade) */
 extern const int lv_black[4], lv_clear[4];
-void Lv_Fade(scriptFrame_t *f, const int from[4], const int to[4], double time);
-/* Scrap.StartDummySearch(pattern, flag); dummy = Scrap.NextDummySearch() (borrowed) */
-PyObject *Lv_Dummy(scriptFrame_t *f, const char *pattern, int flag);
-
-/* InitStatus of the missions: import Traffic; Scrap.SetSaveVar("Traffic.AcShips", ships); Traffic.AcShips =
- * eval(Scrap.GetSaveVar("Traffic.AcShips")) (in the globals of module) */
-byte Lv_AcShips(scriptFrame_t *f, const char *module, const char *ships);
-/* import VehiclesNPC; sp = VehiclesNPC.cShipAI() with the "name=value" attributes of vars (Sf_SetAttrs): sp */
-PyObject *Lv_Profile(scriptFrame_t *f, const char *module, const char *const *vars);
-/* a ship at a free spawn point: SpwPos = OutMap.GetFreeSpawnPos(); Scrap.CreateEntity(name, SpwPos[0][0],
- * SpwPos[0][1], SpwPos[0][2], "Car"), or with nearest OutMap.GetNearestFreeSpawnPos() and SpwPos[0], [1], [2] */
-PyObject *Lv_SpawnCar(scriptFrame_t *f, const char *name, byte nearest);
-/* Lv_SpawnCar that also gives the spawn position SpwPos (borrowed, kept by the frame) */
-PyObject *Lv_SpawnCarAt(scriptFrame_t *f, const char *name, byte nearest, PyObject **spw);
-/* VehiclesNPC.SetStdProperties(e.Name, pd.Ship); VehiclesNPC.ModAIProff(e, pd) */
-byte Lv_StdAI(scriptFrame_t *f, PyObject *e, PyObject *pd);
-/* pd = profile() (a global of module) and Lv_StdAI(e, pd): pd */
-PyObject *Lv_StdProfile(scriptFrame_t *f, const char *module, const char *profile, PyObject *e);
-/* e.Life = e.MaxLife = the global life of module */
-byte Lv_Life(scriptFrame_t *f, PyObject *e, const char *module, const char *life);
-/* import PhoneCab; pc = PhoneCab.GetFree() with pc.UseFunc = use and the cab as the mission target (targetFirst: the
- * target is set before the UseFunc, as most missions do; pcModule: the global pc of that module is the cab right after
- * GetFree, NULL: a local): pc */
-PyObject *Lv_PhoneCab(scriptFrame_t *f, const char *use, byte targetFirst, const char *pcModule);
-/* InitStatus(LevelPath) of a mission with only the lines of Lv_AcShips */
+/* InitStatus(LevelPath) of a mission with only the lines of LvN_AcShips */
 PyObject *Lv_AcShipsStatus(PyObject *args, const char *module, const char *ships);
-/* the profile function itself (no arguments, returns the Lv_Profile of vars) */
+/* the profile function itself (no arguments, returns the LvN_Profile of vars) */
 PyObject *Lv_ProfileFunc(PyObject *args, const char *module, const char *const *vars);
-/* Scrap.SetSaveVar of pairs of name and value, ending with NULL */
-void Lv_Saves(scriptFrame_t *f, const char *const *pairs);
 /* a race of MapRace (no arguments): import RaceMaker; RaceMaker.StartPos = [] and the n points appended as
  * ((x, y, z), angle) */
 PyObject *Lv_StartPos(PyObject *args, const double (*pos)[4], int n);
-/* the colour Scorer.MissionScorerText_Color of a scorer item (Red, Green, Blue, Alpha) */
-void Lv_Colour(scriptFrame_t *f, PyObject *id, const char *item);
-/* Scorer.MissionScorerBar_SetDefaults(id, item, the back colour of Scorer, main, black); NULL main or black: the colours
- * of Scorer */
-void Lv_BarDefaults(scriptFrame_t *f, PyObject *id, const char *item, PyObject *main, PyObject *black);
-/* `usr and usr.Name == name`: 1, 0, -1 */
-int Lv_UsrNameIs(scriptFrame_t *f, PyObject *usr, PyObject *name);
-/* `a and b` of two values already there: 1, 0, -1 */
-int Lv_And(scriptFrame_t *f, PyObject *a, PyObject *b);
-/* Scrap.GetAlarm()[0] as a condition: 1, 0, -1 */
-int Lv_Alarm(scriptFrame_t *f);
-/* Speech.AddRemoteCom(key, who[, then[, params]]) (then NULL: two arguments; params NULL: three) */
-byte Lv_Com(scriptFrame_t *f, const char *key, const char *who, PyObject *then, PyObject *params);
-/* MissionsFuncs.SetNextMission(lib, map); SaveGame.MMDesc(desc, 1) */
-byte Lv_Next(scriptFrame_t *f, const char *lib, const char *map, const char *desc);
-/* Menu.MissionScorerCall = v */
-byte Lv_ScorerCall(scriptFrame_t *f, PyObject *v);
-/* SScorer.Set(0, item, var, v) */
-byte Lv_Set0(scriptFrame_t *f, const char *item, const char *var, PyObject *v);
-/* Scorer.MissionScorerText_X + d and Scorer.MissionScorerText_Y + d (d 0: the value itself); Scrap.GetLangStr(key) +
- * ":" */
-PyObject *Lv_TextX(scriptFrame_t *f, long d);
-PyObject *Lv_TextY(scriptFrame_t *f, long d);
-PyObject *Lv_Label(scriptFrame_t *f, const char *key);
-/* the text item of a mission scorer in Horatio with a shadow at the left, at Lv_TextX(0) and y (visible NULL: not set) */
-byte Lv_Text(scriptFrame_t *f, PyObject *id, const char *item, PyObject *y, PyObject *text, PyObject *visible);
-/* `num` + "/" + `max` of two globals of module (num read first) */
-PyObject *Lv_Count(scriptFrame_t *f, const char *module, const char *num, const char *max);
-/* SScorer.SetMsgText(cad, Scrap.GetTime() + Speech.CalculateSpeechTime(cad)) */
-byte Lv_MsgText(scriptFrame_t *f, PyObject *cad);
-/* Scrap.CreateEntity(name, p[0], p[1], p[2], type) with name a value */
-PyObject *Lv_CreateAt(scriptFrame_t *f, PyObject *name, PyObject *p, const char *type);
-/* `lst = eval(Scrap.GetSaveVar(var)); if not (item in lst): lst.append(item); Scrap.SetSaveVar(var, `lst`)` */
-byte Lv_SaveAdd(scriptFrame_t *f, const char *module, const char *var, const char *item);
-/* `bp = eval(Scrap.GetSaveVar(var)); bp = bp + items; Scrap.SetSaveVar(var, `bp`)` with items the Py_BuildValue of fmt */
-byte Lv_SaveCat(scriptFrame_t *f, const char *module, const char *var, const char *fmt, ...);
-/* a blueprint of a list of the hangar: Lv_SaveAdd of item, and when it was new the message msg (NULL: none; delay:
- * RaceMaker.ShowSystemMessageDelay(text, 0.25), else import RaceMaker; RaceMaker.ShowSystemMessage(text)) and
- * NewBluePrintAvaliable + 1 */
-byte Lv_Blueprint(scriptFrame_t *f, const char *module, const char *var, const char *item, const char *msg, byte delay);
-/* pc.UseFunc = "PhoneCab.DefUseAudioCom" with pc the global of module */
-byte Lv_PcDefault(scriptFrame_t *f, const char *module);
-/*
- * a mission item dropped at pos (money, amplifier, data, matrix): the model and radius are globals of module (radius
- * NULL: 3500), with the take sound and a mission arrow above it named arrow (NULL: the item's name + "CheckArrow")
- */
-byte Lv_Drop(scriptFrame_t *f, const char *module, PyObject *pos, const char *name, const char *model, const char *radius,
-	int onlyUser, const char *onTake, const char *sound, const char *arrow);
-/* a mission item taken: itm.rTime = 20, deleted 5 s later, its arrow deleted now (the names of both) */
-byte Lv_Taken(scriptFrame_t *f, PyObject *item, PyObject *arrow);
-
-/* Scrap.GetLangStr(key) % SInput.GetDefinedEntry(0, "Walk", action, "Mouse") */
-PyObject *Lv_KeyText(scriptFrame_t *f, const char *key, const char *action);
-/* InitStatus of an outdoor map while the boss controls the robots: police and traffic 5 (comSats: none when the level
- * Init.UpperMap is in ComSatsMissionsMapsFinished, and OutPolice.PoliceActive = 0), no ships of the traffic */
-void Lv_BossTraffic(scriptFrame_t *f, byte comSats);
 /* Mission_DestroyCommSats1, 2 and 3: one script in three levels */
 extern PyMethodDef g_OutskirtsDestroyCommSats1Methods[];
 extern PyMethodDef g_CommercialDestroyCommSats2Methods[];
@@ -209,11 +106,11 @@ PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table);
 /*
  * ---- native lines of the level scripts (docs/objlib-plan.md, stage 2) ----
  *
- * The same lines for the levels whose functions work on native values (scrap/scriptmodes.h). Each returns 1, or 0
+ * The lines the level scripts repeat, on native values (scrap/scriptmodes.h). Each returns 1, or 0
  * with the error of the script raised; conditions are 1, 0, or -1 with the error. Entities the script holds are
  * handle values (NV_OBJ, OBJLIB 7). Calls of other ports go by name (OBJLIB 3), the functions of the level module
  * through its globals (a mission may replace one), the variables of the level module are read where the script reads
- * them and written through at once (OBJLIB 5). The frame helpers above stay for the levels still on Sf_ frames.
+ * them and written through at once (OBJLIB 5).
  */
 
 /* a function of the module through its global (a mission may replace it); another port by name (OBJLIB 3) */
@@ -221,18 +118,18 @@ PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table);
 #define LV_CALL(mod, name, out, ...) Native_CallMod(mod, name, out, __VA_ARGS__)
 
 /* module.var of another module as a value (any object: a handle, a function, a module as NV_OBJ) */
-byte LvN_ModGet(const char *module, const char *var, nativeVal_t *out);
+#define LvN_ModGet Mode_ModGet
 /* module.var = the global name of src as the object it is (a function: the one a mission put there; OBJLIB 5) */
-byte LvN_ModSetGlobal(const char *module, const char *var, const char *src, const char *name);
+#define LvN_ModSetGlobal Mode_ModSetGlobal
 /* module.var = None */
-byte LvN_ModNone(const char *module, const char *var);
+#define LvN_ModNone Mode_ModNone
 /* module.var.method(v) of a variable of another module, in place (the method of whatever value is there), and
  * module.var.append(v) */
 byte LvN_ModMethod(const char *module, const char *var, const char *method, const nativeVal_t *v);
 byte LvN_ModAppend(const char *module, const char *var, const nativeVal_t *v);
 /* module.var.append(name) with name the global of gmod (a function): the variable, then the global, then the append
  * method of whatever value is there (OBJLIB 5: the list of another module in place) */
-byte LvN_ModAppendG(const char *module, const char *var, const char *gmod, const char *name);
+#define LvN_ModAppendG Mode_AppendG
 /* the global name of module (a function, a list: any object) as a value */
 byte LvN_GObj(const char *module, const char *name, nativeVal_t *out);
 /* global name = name + add of the module; the new value into out (NULL: dropped) */
@@ -244,21 +141,19 @@ byte LvN_PutS(const char *module, const char *name, const char *s);
 int LvN_GTrue(const char *module, const char *name);
 int LvN_GEqI(const char *module, const char *name, long i);
 /* a == i, a == "text" of the script (Native_Compare can not fail on native values) */
-byte LvN_EqI(const nativeVal_t *a, long i);
+#define LvN_EqI Mode_EqI
 byte LvN_EqS(const nativeVal_t *a, const char *s);
 /* h.var = i, = "text", = d of a handle value */
-byte LvN_SetI(const nativeVal_t *h, const char *var, long i);
-byte LvN_SetS(const nativeVal_t *h, const char *var, const char *s);
-byte LvN_SetF(const nativeVal_t *h, const char *var, double d);
+#define LvN_SetI Mode_VSetI
+#define LvN_SetS Mode_VSetS
+#define LvN_SetF Mode_VSetF
 /* x[i] of the script (a dict looks the int up; an NV_OBJ, e.g. a list that holds entity handles, the Python way, the
  * item as Native_Arg makes it) */
-byte LvN_Item(const nativeVal_t *x, long i, nativeVal_t *out);
-/* a value whose items a loop takes one by one: a list or tuple held as one NV_OBJ (it holds handles) as a native list
- * or tuple of its items as Native_Arg makes them, any other value copied; the global name of module the same way */
-void LvN_Elems(const nativeVal_t *v, nativeVal_t *out);
+#define LvN_Item Mode_Item
+/* the global name of module as a value whose items a loop takes one by one (Mode_Elems) */
 byte LvN_GElems(const char *module, const char *name, nativeVal_t *out);
-/* raise "text" (a string exception of the script; OBJLIB 7: the Python exception until errors are a C state): 0 */
-byte LvN_RaiseText(const char *text);
+/* raise "text" (a string exception of the script): 0 */
+#define LvN_RaiseText Mode_RaiseText
 /* Scrap.StartDummySearch(pattern, flag); dummy = Scrap.NextDummySearch() */
 void LvN_Dummy(const char *pattern, int flag, nativeVal_t *dummy);
 /* (dummy[1][0], dummy[1][1], dummy[1][2]) and (dummy[2][0], dummy[2][1], 0) of a dummy search */
@@ -301,8 +196,8 @@ byte LvN_ScorerTextEnd(const nativeVal_t *id, const char *item);
 byte LvN_ScorerSet(const nativeVal_t *id, const char *item, const char *var, const nativeVal_t *v);
 byte LvN_ScorerSetS(const nativeVal_t *id, const char *item, const char *var, const char *s);
 /* SScorer.Set(0, item, var, v) and the same with an int */
-byte LvN_Set0(const char *item, const char *var, const nativeVal_t *v);
-byte LvN_Set0I(const char *item, const char *var, long i);
+#define LvN_Set0 Mode_Set0
+#define LvN_Set0I Mode_Set0I
 /* module.var = i of another module */
 byte LvN_ModSetI(const char *module, const char *var, long i);
 /* e.Life = e.MaxLife = the global life of module */
@@ -317,7 +212,7 @@ byte LvN_StdAI(const nativeVal_t *e, const nativeVal_t *pd);
 /* pd = profile() (a global of module) and LvN_StdAI(e, pd) */
 byte LvN_StdProfile(const char *module, const char *profile, const nativeVal_t *e, nativeVal_t *pd);
 /* `usr and usr.Name == name` */
-int LvN_UsrNameIs(const nativeVal_t *usr, const nativeVal_t *name);
+#define LvN_UsrNameIs Mode_UsrNameIs
 /* Menu.DrawScorer(0, SInput.GetActionSet()) */
 byte LvN_Draw(void);
 /* Menu.MissionScorerCall = None, = the global func of module */
@@ -380,15 +275,64 @@ byte LvN_ModTexts(const char *module, const char *var, const char *const *texts)
 byte LvN_SetInts3(const nativeVal_t *h, const char *var, long x, long y, long z);
 /* e.var = prefix + Scrap.GetLangStr(key) */
 byte LvN_SetLangOpt(const nativeVal_t *e, const char *var, const char *prefix, const char *key);
-/* MissionsFuncs.ActivateTarget(var, on) of a global var of the module (a handle) */
+/* MissionsFuncs.ActivateTarget(v, on), of a global var of the module (a handle) */
+byte LvN_Activate(const nativeVal_t *v, long on);
 byte LvN_GActivate(const char *module, const char *var, long on);
 /* Speech.SpeechRoutines[key] = fn */
 byte LvN_Routine(const char *key, const nativeVal_t *fn);
-/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func, args) with delay a value (the time added first, as the
- * scripts do) and func the global of module (its NameError; OBJLIB 4) */
-byte LvN_LaterV(const nativeVal_t *delay, const char *module, const char *func, const nativeVal_t *args, int n);
-/* the same with delay a global of module too (read first) */
+/* Mode_LaterV with delay a global of module (read first) */
 byte LvN_LaterG(const char *module, const char *delay, const char *func, const nativeVal_t *args, int n);
+/* pc.UseFunc = "PhoneCab.DefUseAudioCom" of the global pc of the module: the phone cab back to normal */
+byte LvN_PcDefault(const char *module);
+/* MissionsFuncs.SetMissionTarget(v), of h.Name, of the global name of module (a handle) .Name */
+byte LvN_Target(const nativeVal_t *v);
+byte LvN_TargetName(const nativeVal_t *h);
+byte LvN_TargetG(const char *module, const char *name);
+/* the global handle name of module .var into out */
+byte LvN_GAttr(const char *module, const char *name, const char *var, nativeVal_t *out);
+/* the global name of module = None */
+byte LvN_PutNone(const char *module, const char *name);
+/* h.var = the global name of module */
+byte LvN_SetG(const nativeVal_t *h, const char *var, const char *module, const char *name);
+/* module.var = v of another module as Script_SetVar sets it: an error is dropped (OBJLIB 5) */
+void LvN_SetVar(const char *module, const char *var, const nativeVal_t *v);
+/* the player is there (usr into *usr): 1, 0, -1 */
+int LvN_Usr(nativeVal_t *usr);
+/* `usr.ActCtrl == ctrl` of a handle: 1, 0, -1 */
+int LvN_CtrlIs(const nativeVal_t *usr, const char *ctrl);
+/* `text + v` of the script into out */
+byte LvN_Cat(const char *text, const nativeVal_t *v, nativeVal_t *out);
+/* the empty text "" as a value */
+const nativeVal_t *LvN_Empty(void);
+/* h.var = Scrap.GetLangStr(key) */
+byte LvN_SetLang(const nativeVal_t *h, const char *var, const char *key);
+/* CharsNPC.SetReposChars(name, n) */
+byte LvN_Repos(const char *name, long n);
+/* the scan bar ScanRemainingTime of mission scorer 0 blinks (lost: Blink 1, IsAutoUpdatable 0) or runs */
+byte LvN_ScanBlink(int lost);
+/* InTraffic.<list> = the n models (n -1: up to NULL) and InTraffic.<num> = count */
+byte LvN_InTraffic(const char *list, const char *const *models, int n, const char *num, long count);
+/*
+ * StartCameraTravelling() of the missions that start at missionStartWaypoint of module (DownTown's DistractHumphrey,
+ * Outskirts' FunctionaryHunting): the player's ship flies to the waypoint while a camera path comes close to it, the
+ * scene text text, AbortCameraTravelling(UsrName, prevCamera) of module scheduled at the end of the path (again: the
+ * script reads missionStartWaypoint again for each use of its Ang and Pos)
+ */
+byte LvN_CamTravel(const char *module, const char *text, byte again);
+/* AbortCameraTravelling(UsrEntityName, prevCamera) of those missions: the player's control, the menus and the camera
+ * back (racerScorer: RacerScorer.Create(0) too), then LaunchMission() of module */
+byte LvN_CamTravelEnd(const nativeVal_t *a, const char *module, byte racerScorer);
+/* import RaceMaker; RaceMaker.ShowSystemMessage(Scrap.GetLangStr(key)) */
+byte LvN_SystemMessage(const char *key);
+/* ShowBoostMessage() of the Humphrey races (DownTown's HumphreyRace, Outskirts' Demo_HumphreyRace): the callback of
+ * Parking that module.prevSwitchVehicleMissionCallback holds called when set and put back, the message of the boost key */
+byte LvN_BoostMessage(const char *module);
+/* ClosePressHangar() of the same races: the door of the press hangar closes, RaceMaker.OnCheckPointCallback = None */
+byte LvN_ClosePressHangar(void);
+/* Speech.SpeechRoutines[kind](UsrName, CharName, optId, FullOption) with the four arguments a */
+byte LvN_RoutineCall(const char *kind, const nativeVal_t *a);
+/* SAI.SetStateChar(3, human.Name, usr.Name, 1.0) with human the global of module: the human follows the player */
+byte LvN_HumanFollow(const char *module, const nativeVal_t *usr);
 /* the parameters of the native helpers: an int, a text */
 void LvN_Int(nativeVal_t *v, long i);
 void LvN_Str(nativeVal_t *v, const char *s);

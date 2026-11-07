@@ -16,139 +16,7 @@
 
 #include "Levels.h"
 
-/* the frame helpers whose lines have a native twin below run the twin (the frame fails with its error) */
-
-int Lv_PcOr(scriptFrame_t *f, const char *module, const char *name) {
-	if (f->failed) {
-		return -1;
-	}
-	int r = LvN_PcOr(module, name);
-	Sf_Check(f, r >= 0);
-	return r;
-}
-
-void Lv_Callback(scriptFrame_t *f, const char *name, const char *module, const char *func) {
-	if (!f->failed) {
-		Sf_Check(f, LvN_Callback(name, module, func));
-	}
-}
-
-void Lv_MissionChar(scriptFrame_t *f, const char *name, const char *module, const char *func) {
-	if (!f->failed) {
-		Sf_Check(f, LvN_MissionChar(name, module, func));
-	}
-}
-
-void Lv_Speakers(scriptFrame_t *f, PyObject *usr, PyObject *ch) {
-	Sf_SetMod(f, "Speech", "PlayerName", usr);
-	Sf_SetMod(f, "Speech", "NPCName", ch);
-}
-
-void Lv_OnEnd(scriptFrame_t *f, const char *module, const char *func, PyObject *params) {
-	Sf_SetMod(f, "Speech", "OnEndOfSpeech", Sf_Global(f, module, func));
-	Sf_SetMod(f, "Speech", "OnEndOfSpeechParams", params ? params : Sf_Build(f, "()"));
-}
-
-void Lv_Stay(scriptFrame_t *f, PyObject *e, long state, PyObject *target) {
-	Sf_SetAttrI(f, e, "LLogicDefaultState", state);
-	Sf_SetAttr(f, e, "LLogicDefaultTarget", target);
-	Sf_SetAttrI(f, e, "LLogicState", state);
-	Sf_SetAttr(f, e, "LLogicTarget", target);
-	Sf_SetAttrI(f, e, "LLogicIdle", 1);
-	Sf_SetAttrI(f, e, "LLogicIdle", 0);
-}
-
-void Lv_ScorerSet(scriptFrame_t *f, PyObject *id, const char *item, const char *var, PyObject *v) {
-	if (v) {
-		Sf_Ask(f, "SScorer", "Set", "(OssO)", id, item, var, v);
-	} else {
-		Sf_Check(f, 0);
-	}
-}
-
-PyObject *Lv_SaveList(scriptFrame_t *f, const char *var, const char *module) {
-	return Sf_Eval(f, Sf_Ask(f, "Scrap", "GetSaveVar", "(s)", var), module);
-}
-
-void Lv_SaveAppend(scriptFrame_t *f, const char *var, PyObject *lst, PyObject *item) {
-	Sf_Method(f, lst, "append", "(O)", item);
-	Sf_Ask(f, "Scrap", "SetSaveVar", "(sO)", var, Sf_Repr(f, lst));
-}
-
 const int lv_black[4] = { 0, 0, 0, 255 }, lv_clear[4] = { 0, 0, 0, 0 };
-
-int Lv_SaveIs(scriptFrame_t *f, const char *name, const char *text) {
-	return f->failed ? -1 : LvN_SaveIs(name, text);
-}
-
-void Lv_Fade(scriptFrame_t *f, const int from[4], const int to[4], double time) {
-	if (!f->failed) {
-		Sf_Check(f, Mode_Fade(0, from, to, time));
-	}
-}
-
-PyObject *Lv_Dummy(scriptFrame_t *f, const char *pattern, int flag) {
-	Sf_Ask(f, "Scrap", "StartDummySearch", "(si)", pattern, flag);
-	return Sf_Ask(f, "Scrap", "NextDummySearch", "()");
-}
-
-byte Lv_AcShips(scriptFrame_t *f, const char *module, const char *ships) {
-	return !f->failed && Sf_Check(f, LvN_AcShips(module, ships));
-}
-
-PyObject *Lv_Profile(scriptFrame_t *f, const char *module, const char *const *vars) {
-	Sf_Import(f, "VehiclesNPC");
-	PyObject *sp = Sf_Ask(f, "VehiclesNPC", "cShipAI", "()");
-	Sf_SetAttrs(f, sp, module, vars);
-	return sp;
-}
-
-PyObject *Lv_SpawnCarAt(scriptFrame_t *f, const char *name, byte nearest, PyObject **spw) {
-	PyObject *s = Sf_Ask(f, "OutMap", nearest ? "GetNearestFreeSpawnPos" : "GetFreeSpawnPos", "()");
-	PyObject *fn = Sf_Mod(f, "Scrap", "CreateEntity");
-	PyObject *p = nearest ? s : Sf_Item(f, s, 0);
-	PyObject *x = Sf_Item(f, p, 0), *y = Sf_Item(f, p, 1), *z = Sf_Item(f, p, 2);
-	if (spw) {
-		*spw = s;
-	}
-	return Sf_Call(f, fn, "(sOOOs)", name, x, y, z, "Car");
-}
-
-PyObject *Lv_SpawnCar(scriptFrame_t *f, const char *name, byte nearest) {
-	return Lv_SpawnCarAt(f, name, nearest, NULL);
-}
-
-byte Lv_StdAI(scriptFrame_t *f, PyObject *e, PyObject *pd) {
-	Sf_Run(f, "VehiclesNPC", "SetStdProperties", "(OO)", Sf_Attr(f, e, "Name"), Sf_Attr(f, pd, "Ship"));
-	return Sf_Run(f, "VehiclesNPC", "ModAIProff", "(OO)", e, pd);
-}
-
-PyObject *Lv_StdProfile(scriptFrame_t *f, const char *module, const char *profile, PyObject *e) {
-	PyObject *pd = Sf_Own(f, module, profile, "()");
-	Lv_StdAI(f, e, pd);
-	return pd;
-}
-
-byte Lv_Life(scriptFrame_t *f, PyObject *e, const char *module, const char *life) {
-	PyObject *v = Sf_Global(f, module, life);
-	return Sf_SetAttr(f, e, "Life", v) && Sf_SetAttr(f, e, "MaxLife", v);
-}
-
-PyObject *Lv_PhoneCab(scriptFrame_t *f, const char *use, byte targetFirst, const char *pcModule) {
-	Sf_Import(f, "PhoneCab");
-	PyObject *pc = Sf_Ask(f, "PhoneCab", "GetFree", "()");
-	if (pcModule) {
-		Sf_SetGlobal(f, pcModule, "pc", pc);
-	}
-	if (!targetFirst) {
-		Sf_SetAttrS(f, pc, "UseFunc", use);
-	}
-	Sf_Run(f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(f, pc, "Name"));
-	if (targetFirst) {
-		Sf_SetAttrS(f, pc, "UseFunc", use);
-	}
-	return pc;
-}
 
 /* ---- whole functions the level tables share (native: docs/objlib-plan.md, stage 2) ---- */
 
@@ -438,12 +306,6 @@ PyObject *Lv_ProfileFunc(PyObject *args, const char *module, const char *const *
 	LV_WHOLE(0, LvN_Profile(vars, out));
 }
 
-void Lv_Saves(scriptFrame_t *f, const char *const *pairs) {
-	if (!f->failed) {
-		Mode_Saves(pairs);
-	}
-}
-
 static byte Lv_StartPosCore(const double (*pos)[4], int n) {
 	nativeVal_t empty;
 	Native_SetEmpty(&empty, NV_LIST);
@@ -466,209 +328,6 @@ static byte Lv_StartPosCore(const double (*pos)[4], int n) {
 
 PyObject *Lv_StartPos(PyObject *args, const double (*pos)[4], int n) {
 	LV_WHOLE(0, Lv_StartPosCore(pos, n));
-}
-
-void Lv_Colour(scriptFrame_t *f, PyObject *id, const char *item) {
-	static const char *const rgba[] = { "Red", "Green", "Blue", "Alpha" };
-	for (int i = 0; i < 4 && !f->failed; i++) {
-		int mark = f->n;
-		Lv_ScorerSet(f, id, item, rgba[i], Sf_Item(f, Sf_Mod(f, "Scorer", "MissionScorerText_Color"), i));
-		Sf_Release(f, mark);
-	}
-}
-
-void Lv_BarDefaults(scriptFrame_t *f, PyObject *id, const char *item, PyObject *main, PyObject *black) {
-	int mark = f->n;
-	PyObject *fn = Sf_Mod(f, "Scorer", "MissionScorerBar_SetDefaults");
-	PyObject *back = Sf_Mod(f, "Scorer", "MissionScorerBar_ColorBack");
-	main = main ? main : Sf_Mod(f, "Scorer", "MissionScorerBar_ColorMain");
-	black = black ? black : Sf_Mod(f, "Scorer", "MissionScorerBar_ColorBlack");
-	Sf_Call(f, fn, "(OsOOO)", id, item, back, main, black);
-	Sf_Release(f, mark);
-}
-
-int Lv_UsrNameIs(scriptFrame_t *f, PyObject *usr, PyObject *name) {
-	int t = Sf_True(f, usr);
-	return t > 0 ? Sf_Compare(f, Sf_Attr(f, usr, "Name"), "==", name) : t;
-}
-
-int Lv_And(scriptFrame_t *f, PyObject *a, PyObject *b) {
-	int t = Sf_True(f, a);
-	return t > 0 ? Sf_True(f, b) : t;
-}
-
-int Lv_Alarm(scriptFrame_t *f) {
-	return Sf_True(f, Sf_Item(f, Sf_Ask(f, "Scrap", "GetAlarm", "()"), 0));
-}
-
-byte Lv_Com(scriptFrame_t *f, const char *key, const char *who, PyObject *then, PyObject *params) {
-	if (!then) {
-		return Sf_Run(f, "Speech", "AddRemoteCom", "(ss)", key, who);
-	}
-	return params ? Sf_Run(f, "Speech", "AddRemoteCom", "(ssOO)", key, who, then, params) :
-		Sf_Run(f, "Speech", "AddRemoteCom", "(ssO)", key, who, then);
-}
-
-byte Lv_Next(scriptFrame_t *f, const char *lib, const char *map, const char *desc) {
-	return !f->failed && Sf_Check(f, LvN_Next(lib, map, desc));
-}
-
-byte Lv_ScorerCall(scriptFrame_t *f, PyObject *v) {
-	return Sf_SetMod(f, "Menu", "MissionScorerCall", v);
-}
-
-byte Lv_Set0(scriptFrame_t *f, const char *item, const char *var, PyObject *v) {
-	return Sf_Run(f, "SScorer", "Set", "(issO)", 0, item, var, v);
-}
-
-PyObject *Lv_TextX(scriptFrame_t *f, long d) {
-	PyObject *x = Sf_Mod(f, "Scorer", "MissionScorerText_X");
-	return d ? Sf_OpI(f, x, '+', d) : x;
-}
-
-PyObject *Lv_TextY(scriptFrame_t *f, long d) {
-	PyObject *y = Sf_Mod(f, "Scorer", "MissionScorerText_Y");
-	return d ? Sf_OpI(f, y, '+', d) : y;
-}
-
-PyObject *Lv_Label(scriptFrame_t *f, const char *key) {
-	return Sf_Cat(f, "Os", Sf_Lang(f, Sf_Str(f, key)), ":");
-}
-
-byte Lv_Text(scriptFrame_t *f, PyObject *id, const char *item, PyObject *y, PyObject *text, PyObject *visible) {
-	return Sf_MissionText(f, id, item, "Text", Lv_TextX(f, 0), y, "Horatio", "Shadow", text, "Left", visible);
-}
-
-PyObject *Lv_Count(scriptFrame_t *f, const char *module, const char *num, const char *max) {
-	PyObject *n = Sf_Repr(f, Sf_Global(f, module, num));
-	return Sf_Cat(f, "OsO", n, "/", Sf_Repr(f, Sf_Global(f, module, max)));
-}
-
-byte Lv_MsgText(scriptFrame_t *f, PyObject *cad) {
-	int mark = f->n;
-	PyObject *fn = Sf_Mod(f, "SScorer", "SetMsgText");
-	PyObject *t = Sf_Time(f);
-	Sf_Call(f, fn, "(OO)", cad, Sf_Op(f, t, '+', Sf_Ask(f, "Speech", "CalculateSpeechTime", "(O)", cad)));
-	Sf_Release(f, mark);
-	return !f->failed;
-}
-
-PyObject *Lv_CreateAt(scriptFrame_t *f, PyObject *name, PyObject *p, const char *type) {
-	PyObject *fn = Sf_Mod(f, "Scrap", "CreateEntity");
-	PyObject *x = Sf_Item(f, p, 0), *y = Sf_Item(f, p, 1), *z = Sf_Item(f, p, 2);
-	return Sf_Call(f, fn, "(OOOOs)", name, x, y, z, type);
-}
-
-byte Lv_SaveAdd(scriptFrame_t *f, const char *module, const char *var, const char *item) {
-	int mark = f->n;
-	PyObject *lst = Lv_SaveList(f, var, module);
-	if (Sf_In(f, Sf_Str(f, item), lst) == 0) {
-		Lv_SaveAppend(f, var, lst, Sf_Str(f, item));
-	}
-	Sf_Release(f, mark);
-	return !f->failed;
-}
-
-byte Lv_SaveCat(scriptFrame_t *f, const char *module, const char *var, const char *fmt, ...) {
-	int mark = f->n;
-	PyObject *lst = Lv_SaveList(f, var, module);
-	if (!f->failed) {
-		va_list va;
-		va_start(va, fmt);
-		PyObject *items = Py_VaBuildValue((char *)fmt, va);
-		va_end(va);
-		lst = Sf_Op(f, lst, '+', Sf_Keep(f, items));
-	}
-	Sf_Run(f, "Scrap", "SetSaveVar", "(sO)", var, Sf_Repr(f, lst));
-	Sf_Release(f, mark);
-	return !f->failed;
-}
-
-byte Lv_Blueprint(scriptFrame_t *f, const char *module, const char *var, const char *item, const char *msg, byte delay) {
-	int mark = f->n;
-	PyObject *lst = Lv_SaveList(f, var, module);
-	int in = Sf_In(f, Sf_Str(f, item), lst);
-	if (in == 0) {
-		Lv_SaveAppend(f, var, lst, Sf_Str(f, item));
-		if (msg && delay) {
-			Sf_Run(f, "RaceMaker", "ShowSystemMessageDelay", "(Od)", Sf_Lang(f, Sf_Str(f, msg)), 0.25);
-		} else if (msg) {
-			Sf_Import(f, "RaceMaker");
-			Sf_Run(f, "RaceMaker", "ShowSystemMessage", "(O)", Sf_Lang(f, Sf_Str(f, msg)));
-		}
-		Sf_Run(f, "Scrap", "IncSaveVar", "(s)", "NewBluePrintAvaliable");
-	}
-	Sf_Release(f, mark);
-	return !f->failed;
-}
-
-byte Lv_PcDefault(scriptFrame_t *f, const char *module) {
-	int mark = f->n;
-	Sf_SetAttrS(f, Sf_Global(f, module, "pc"), "UseFunc", "PhoneCab.DefUseAudioCom");
-	Sf_Release(f, mark);
-	return !f->failed;
-}
-
-byte Lv_Drop(scriptFrame_t *f, const char *module, PyObject *pos, const char *name, const char *model, const char *radius,
-	int onlyUser, const char *onTake, const char *sound, const char *arrow) {
-	int mark = f->n;
-	PyObject *x = Sf_Item(f, pos, 0), *y = Sf_Item(f, pos, 1), *z = Sf_Item(f, pos, 2);
-	PyObject *l = Sf_Ask(f, "Scrap", "CreateEntity", "(sOOOs)", name, x, y, z, "Item");
-	Sf_Method(f, l, "SetModel", "(O)", Sf_Global(f, module, model));
-	Sf_SetAttr(f, l, "Radius", radius ? Sf_Global(f, module, radius) : Sf_Int(f, 3500));
-	Sf_SetAttrI(f, l, "AppearsIfFree", 0);
-	Sf_SetAttrI(f, l, "AutoFace", 0);
-	Sf_SetAttrI(f, l, "OnlyUser", onlyUser);
-	Sf_SetAttr(f, l, "rTime", Sf_Float(f, 0.25));
-	Sf_SetAttrS(f, l, "OnTake", onTake);
-	Sf_Import(f, "Items");
-	Sf_Run(f, "Items", "SetSound", "(Os)", l, sound);
-	PyObject *an = arrow ? Sf_Str(f, arrow) : Sf_Cat(f, "Os", Sf_Attr(f, l, "Name"), "CheckArrow");
-	x = Sf_Item(f, pos, 0), y = Sf_Item(f, pos, 1), z = Sf_Item(f, pos, 2);
-	PyObject *l2 = Sf_Ask(f, "Scrap", "CreateEntity", "(OOOOs)", an, x, y, z, "WithLife");
-	Sf_SetAttr(f, l2, "CamTgt", Sf_Build(f, "(iii)", 0, 1000, 0));
-	Sf_Run(f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(f, l2, "Name"));
-	Sf_Release(f, mark);
-	return !f->failed;
-}
-
-byte Lv_Taken(scriptFrame_t *f, PyObject *item, PyObject *arrow) {
-	int mark = f->n;
-	PyObject *itm = Sf_Entity(f, item);
-	Sf_SetAttrI(f, itm, "rTime", 20);
-	Sf_Later(f, Sf_Int(f, 5), Sf_Attr(f, itm, "Del"), Sf_Build(f, "()"), NULL);
-	Sf_Method(f, Sf_Entity(f, arrow), "Del", "()");
-	Sf_Release(f, mark);
-	return !f->failed;
-}
-
-PyObject *Lv_KeyText(scriptFrame_t *f, const char *key, const char *action) {
-	PyObject *t = Sf_Lang(f, Sf_Str(f, key));
-	return Sf_Op(f, t, '%', Sf_Ask(f, "SInput", "GetDefinedEntry", "(isss)", 0, "Walk", action, "Mouse"));
-}
-
-void Lv_BossTraffic(scriptFrame_t *f, byte comSats) {
-	int mark = f->n;
-	int done = 0;
-	if (comSats) {
-		PyObject *upper = Sf_Mod(f, "Init", "UpperMap");
-		done = Sf_In(f, upper, Sf_Eval(f, Sf_Ask(f, "Scrap", "GetSaveVar", "(s)", "ComSatsMissionsMapsFinished"), "Map"));
-	}
-	if (done > 0) {
-		Sf_Run(f, "Scrap", "Set", "(si)", "MaxChasingShips", 0);
-		Sf_Run(f, "Scrap", "Set", "(si)", "iTrafficNumber", 0);
-		Sf_SetMod(f, "OutPolice", "PoliceActive", Sf_Int(f, 0));
-	} else if (done == 0) {
-		Sf_Run(f, "Scrap", "Set", "(si)", "iTrafficNumber", 5);
-		Sf_Run(f, "Scrap", "Set", "(si)", "MaxChasingShips", 5);
-	}
-	Sf_SetMod(f, "Traffic", "AcNormalShips", Sf_Build(f, "[]"));
-	Sf_SetMod(f, "Traffic", "NumNormal", Sf_Int(f, 0));
-	Sf_SetMod(f, "Traffic", "AcMediumShips", Sf_Build(f, "[]"));
-	Sf_SetMod(f, "Traffic", "NumMedium", Sf_Int(f, 0));
-	Sf_SetMod(f, "Traffic", "AcHeavyShips", Sf_Build(f, "[]"));
-	Sf_SetMod(f, "Traffic", "NumHeavy", Sf_Int(f, 0));
-	Sf_Release(f, mark);
 }
 
 /* ---- Mission_DestroyCommSats1, 2 and 3 (Outskirts, Commercial, DownTown): one script with the level's details ---- */
@@ -1022,28 +681,6 @@ void LvN_Str(nativeVal_t *v, const char *s) {
 	Native_SetText(v, s, (int)strlen(s));
 }
 
-byte LvN_ModGet(const char *module, const char *var, nativeVal_t *out) {
-	PyObject *o = Script_Attr(module, var);
-	Native_SetNone(out);
-	if (!o) {
-		return 0;
-	}
-	Native_Arg(o, out);
-	Py_DECREF(o);
-	return 1;
-}
-
-byte LvN_ModSetGlobal(const char *module, const char *var, const char *src, const char *name) {
-	PyObject *o = Mode_GlobalPy(src, name);
-	byte ok = o && Mode_SetModPy(module, var, o);
-	Py_XDECREF(o);
-	return ok;
-}
-
-byte LvN_ModNone(const char *module, const char *var) {
-	return Mode_SetModPy(module, var, Py_None);
-}
-
 byte LvN_ModMethod(const char *module, const char *var, const char *method, const nativeVal_t *v) {
 	PyObject *o = Script_Attr(module, var);
 	PyObject *x = o ? Native_ToPy(v) : NULL;
@@ -1056,16 +693,6 @@ byte LvN_ModMethod(const char *module, const char *var, const char *method, cons
 
 byte LvN_ModAppend(const char *module, const char *var, const nativeVal_t *v) {
 	return LvN_ModMethod(module, var, "append", v);
-}
-
-byte LvN_ModAppendG(const char *module, const char *var, const char *gmod, const char *name) {
-	PyObject *o = Script_Attr(module, var);
-	PyObject *fn = o ? Mode_GlobalPy(gmod, name) : NULL;
-	PyObject *r = fn ? Script_Method(o, "append", "(O)", fn) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(fn);
-	Py_XDECREF(o);
-	return r != NULL;
 }
 
 byte LvN_GObj(const char *module, const char *name, nativeVal_t *out) {
@@ -1121,12 +748,6 @@ int LvN_GEqI(const char *module, const char *name, long i) {
 	return r;
 }
 
-byte LvN_EqI(const nativeVal_t *a, long i) {
-	nativeVal_t b;
-	Native_SetInt(&b, i);
-	return !Native_Compare(a, &b);
-}
-
 byte LvN_EqS(const nativeVal_t *a, const char *s) {
 	nativeVal_t b;
 	LvN_Str(&b, s);
@@ -1135,83 +756,12 @@ byte LvN_EqS(const nativeVal_t *a, const char *s) {
 	return eq;
 }
 
-byte LvN_SetI(const nativeVal_t *h, const char *var, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return Mode_VSet(h, var, &v);
-}
-
-byte LvN_SetS(const nativeVal_t *h, const char *var, const char *s) {
-	nativeVal_t v;
-	LvN_Str(&v, s);
-	byte ok = Mode_VSet(h, var, &v);
-	Native_Free(&v);
-	return ok;
-}
-
-byte LvN_SetF(const nativeVal_t *h, const char *var, double d) {
-	nativeVal_t v;
-	Native_SetFloat(&v, d);
-	return Mode_VSet(h, var, &v);
-}
-
-byte LvN_Item(const nativeVal_t *x, long i, nativeVal_t *out) {
-	nativeVal_t k;
-	Native_SetNone(out);
-	if (x->type == NV_OBJ) {
-		/* OBJLIB 7 */
-		PyObject *n = PyInt_FromLong(i), *r = n ? PyObject_GetItem(x->obj, n) : NULL;
-		Py_XDECREF(n);
-		if (!r) {
-			return 0;
-		}
-		Native_Arg(r, out);
-		Py_DECREF(r);
-		return 1;
-	}
-	Native_SetInt(&k, i);
-	return Native_Subscript(x, &k, out);
-}
-
-void LvN_Elems(const nativeVal_t *v, nativeVal_t *out) {
-	PyObject *o = v->type == NV_OBJ ? v->obj : NULL;
-	if (!o || (!PyList_Check(o) && !PyTuple_Check(o))) {
-		Native_Copy(out, v);
-		return;
-	}
-	/* OBJLIB 7 */
-	int n = PyObject_Length(o);
-	Native_SetEmpty(out, PyList_Check(o) ? NV_LIST : NV_TUPLE);
-	for (int i = 0; i < n; i++) {
-		PyObject *x = PySequence_GetItem(o, i);
-		if (!x) {
-			PyErr_Clear();
-			break;
-		}
-		Native_Arg(x, Native_Append(out));
-		Py_DECREF(x);
-	}
-}
-
 byte LvN_GElems(const char *module, const char *name, nativeVal_t *out) {
-	nativeVal_t v;
-	if (!LvN_GObj(module, name, &v)) {
-		Native_SetNone(out);
+	if (!LvN_GObj(module, name, out)) {
 		return 0;
 	}
-	LvN_Elems(&v, out);
-	Native_Free(&v);
+	Mode_Elems(out);
 	return 1;
-}
-
-byte LvN_RaiseText(const char *text) {
-	/* OBJLIB 7 */
-	PyObject *s = PyString_FromString((char *)text);
-	if (s) {
-		PyErr_SetObject(s, Py_None);
-		Py_DECREF(s);
-	}
-	return 0;
 }
 
 void LvN_Dummy(const char *pattern, int flag, nativeVal_t *dummy) {
@@ -1500,17 +1050,6 @@ byte LvN_StdProfile(const char *module, const char *profile, const nativeVal_t *
 	return LV_OWN(module, profile, pd, "") && LvN_StdAI(e, pd);
 }
 
-int LvN_UsrNameIs(const nativeVal_t *usr, const nativeVal_t *name) {
-	nativeVal_t n;
-	if (!Native_True(usr)) {
-		return 0;
-	}
-	Native_SetNone(&n);
-	int r = Mode_VGet(usr, "Name", &n) ? !Native_Compare(&n, name) : -1;
-	Native_Free(&n);
-	return r;
-}
-
 byte LvN_Draw(void) {
 	nativeVal_t set;
 	PyObject *fn = Script_Attr("Menu", "DrawScorer");
@@ -1718,32 +1257,12 @@ byte LvN_ScorerSetS(const nativeVal_t *id, const char *item, const char *var, co
 
 byte LvN_MissionText(const nativeVal_t *id, const char *item, const char *type, const nativeVal_t *x, const nativeVal_t *y,
 	const char *font, const char *effect, const nativeVal_t *text, const char *align, const nativeVal_t *visible) {
-	static const char *const rgba[] = { "Red", "Green", "Blue", "Alpha" };
-	nativeVal_t it;
-	if (type) {
-		LvN_Str(&it, item);
-		byte ok = Mode_ScorerAdd(id, &it, type);
-		Native_Free(&it);
-		if (!ok) {
-			return 0;
-		}
-	}
-	if (!LvN_ScorerSet(id, item, "X", x) || !LvN_ScorerSet(id, item, "Y", y) || !LvN_ScorerSetS(id, item, "Font", font) ||
-		(effect && !LvN_ScorerSetS(id, item, "Effect", effect)) || !LvN_ScorerSet(id, item, "Text", text) ||
-		!LvN_ScorerSetS(id, item, "Align", align)) {
+	if ((type && !Mode_ScorerAddS(id, item, type)) || !LvN_ScorerSet(id, item, "X", x) || !LvN_ScorerSet(id, item, "Y", y) ||
+		!LvN_ScorerSetS(id, item, "Font", font) || (effect && !LvN_ScorerSetS(id, item, "Effect", effect)) ||
+		!LvN_ScorerSet(id, item, "Text", text) || !LvN_ScorerSetS(id, item, "Align", align)) {
 		return 0;
 	}
-	for (int i = 0; i < 4; i++) {
-		nativeVal_t c, k;
-		Native_SetNone(&k);
-		byte ok = LvN_ModGet("Scorer", "MissionScorerText_Color", &c) && LvN_Item(&c, i, &k) && LvN_ScorerSet(id, item, rgba[i], &k);
-		Native_Free(&c);
-		Native_Free(&k);
-		if (!ok) {
-			return 0;
-		}
-	}
-	return !visible || LvN_ScorerSet(id, item, "Visible", visible);
+	return Mode_TextColour(id, item) && (!visible || LvN_ScorerSet(id, item, "Visible", visible));
 }
 
 byte LvN_SetOnFloor(const nativeVal_t *name) {
@@ -1766,18 +1285,6 @@ byte LvN_ModSetI(const char *module, const char *var, long i) {
 	nativeVal_t v;
 	Native_SetInt(&v, i);
 	return Mode_SetModVar(module, var, &v);
-}
-
-byte LvN_Set0(const char *item, const char *var, const nativeVal_t *v) {
-	nativeVal_t id;
-	Native_SetInt(&id, 0);
-	return LvN_ScorerSet(&id, item, var, v);
-}
-
-byte LvN_Set0I(const char *item, const char *var, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return LvN_Set0(item, var, &v);
 }
 
 /* ---- helpers both halves of the levels had (batch F and G files) ---- */
@@ -1810,9 +1317,13 @@ byte LvN_SetLangOpt(const nativeVal_t *e, const char *var, const char *prefix, c
 	return ok;
 }
 
+byte LvN_Activate(const nativeVal_t *v, long on) {
+	return LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", v, on);
+}
+
 byte LvN_GActivate(const char *module, const char *var, long on) {
 	nativeVal_t h;
-	byte ok = Mode_G(module, var, &h) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &h, on);
+	byte ok = Mode_G(module, var, &h) && LvN_Activate(&h, on);
 	Native_Free(&h);
 	return ok;
 }
@@ -1825,18 +1336,230 @@ byte LvN_Routine(const char *key, const nativeVal_t *fn) {
 	return ok;
 }
 
-byte LvN_LaterV(const nativeVal_t *delay, const char *module, const char *func, const nativeVal_t *args, int n) {
-	nativeVal_t now, t;
-	Native_SetFloat(&now, Mode_Time());
-	Native_SetNone(&t);
-	byte ok = Native_Arith('+', &now, delay, &t) && Mode_AtG(&t, module, func, args, n);
+byte LvN_LaterG(const char *module, const char *delay, const char *func, const nativeVal_t *args, int n) {
+	nativeVal_t d;
+	byte ok = Mode_G(module, delay, &d) && Mode_LaterV(&d, module, func, args, n, NULL);
+	Native_Free(&d);
+	return ok;
+}
+
+byte LvN_PcDefault(const char *module) {
+	return Mode_GSetS(module, "pc", "UseFunc", "PhoneCab.DefUseAudioCom");
+}
+
+byte LvN_Target(const nativeVal_t *v) {
+	return LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", v);
+}
+
+byte LvN_TargetName(const nativeVal_t *h) {
+	nativeVal_t n;
+	Native_SetNone(&n);
+	byte ok = Mode_VGet(h, "Name", &n) && LvN_Target(&n);
+	Native_Free(&n);
+	return ok;
+}
+
+byte LvN_TargetG(const char *module, const char *name) {
+	nativeVal_t h;
+	byte ok = Mode_G(module, name, &h) && LvN_TargetName(&h);
+	Native_Free(&h);
+	return ok;
+}
+
+byte LvN_GAttr(const char *module, const char *name, const char *var, nativeVal_t *out) {
+	nativeVal_t h;
+	Native_SetNone(out);
+	byte ok = Mode_G(module, name, &h) && Mode_VGet(&h, var, out);
+	Native_Free(&h);
+	return ok;
+}
+
+byte LvN_PutNone(const char *module, const char *name) {
+	nativeVal_t v;
+	Native_SetNone(&v);
+	return Mode_Put(module, name, NULL, &v);
+}
+
+byte LvN_SetG(const nativeVal_t *h, const char *var, const char *module, const char *name) {
+	nativeVal_t v;
+	byte ok = Mode_G(module, name, &v) && Mode_VSet(h, var, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+void LvN_SetVar(const char *module, const char *var, const nativeVal_t *v) {
+	if (!Mode_SetModVar(module, var, v)) {
+		/* OBJLIB 7 */
+		PyErr_Clear();
+	}
+}
+
+int LvN_Usr(nativeVal_t *usr) {
+	return Mode_UsrHandle(usr) ? Native_True(usr) : -1;
+}
+
+int LvN_CtrlIs(const nativeVal_t *usr, const char *ctrl) {
+	nativeVal_t a;
+	Native_SetNone(&a);
+	int r = Mode_VGet(usr, "ActCtrl", &a) ? LvN_EqS(&a, ctrl) : -1;
+	Native_Free(&a);
+	return r;
+}
+
+byte LvN_Cat(const char *text, const nativeVal_t *v, nativeVal_t *out) {
+	nativeVal_t a;
+	LvN_Str(&a, text);
+	Native_SetNone(out);
+	byte ok = Native_Arith('+', &a, v, out);
+	Native_Free(&a);
+	return ok;
+}
+
+const nativeVal_t *LvN_Empty(void) {
+	static nativeVal_t empty = { .type = NV_STR };
+	return &empty;
+}
+
+byte LvN_SetLang(const nativeVal_t *h, const char *var, const char *key) {
+	nativeVal_t t;
+	Mode_Lang(key, &t);
+	byte ok = Mode_VSet(h, var, &t);
 	Native_Free(&t);
 	return ok;
 }
 
-byte LvN_LaterG(const char *module, const char *delay, const char *func, const nativeVal_t *args, int n) {
-	nativeVal_t d;
-	byte ok = Mode_G(module, delay, &d) && LvN_LaterV(&d, module, func, args, n);
-	Native_Free(&d);
+byte LvN_Repos(const char *name, long n) {
+	return LV_CALL("CharsNPC", "SetReposChars", NULL, "si", name, n);
+}
+
+byte LvN_ScanBlink(int lost) {
+	return LvN_Set0I("ScanRemainingTime", "Blink", lost) && LvN_Set0I("ScanRemainingTime", "IsAutoUpdatable", !lost);
+}
+
+byte LvN_InTraffic(const char *list, const char *const *models, int n, const char *num, long count) {
+	nativeVal_t l, c;
+	Mode_Texts(&l, models, n);
+	Native_SetInt(&c, count);
+	byte ok = Mode_SetModVar("InTraffic", list, &l) && Mode_SetModVar("InTraffic", num, &c);
+	Native_Free(&l);
+	return ok;
+}
+
+/* wp = module.missionStartWaypoint read again, out = wp.var (both slots hold a value) of the camera travelling */
+static byte LvN_WayPointAgain(const char *module, nativeVal_t *wp, const char *var, nativeVal_t *out) {
+	return Mode_Read(module, "missionStartWaypoint", wp) && Mode_VRead(wp, var, out);
+}
+
+byte LvN_CamTravel(const char *module, const char *text, byte again) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *uc = Mode_V(&t), *wp = Mode_V(&t), *v = Mode_V(&t), *prev = Mode_V(&t), *wang = Mode_V(&t);
+	nativeVal_t *add = Mode_V(&t), *ang = Mode_V(&t), *rot = Mode_V(&t), *r0 = Mode_V(&t), *wpos = Mode_V(&t), *p0 = Mode_V(&t);
+	nativeVal_t *r1 = Mode_V(&t), *p1 = Mode_V(&t), *cam = Mode_V(&t), *ang1 = Mode_V(&t), *name = Mode_V(&t), *tt = Mode_V(&t);
+	nativeVal_t *now = Mode_V(&t), *at1 = Mode_V(&t), *at = Mode_V(&t), *args = Mode_V(&t), *args2 = Mode_V(&t);
+	int c = Mode_UsrHandle(usr) ? (Native_True(usr) ? (Mode_VGet(usr, "UsrControl", uc) ? !LvN_EqI(uc, 0) : -1) : 0) : -1;
+	if (c != 0) {
+		return Mode_Done(&t, c > 0);
+	}
+	Mode_Ints3(v, 0, 0, 0);
+	byte ok = Mode_Import("Menu") && LV_CALL("Menu", "MovieScorer", NULL, "i", 0L) && LvN_SetI(usr, "UsrControl", -1) && Mode_VSet(usr, "Vel", v) &&
+		Mode_G(module, "missionStartWaypoint", wp) && Mode_VGet(wp, "Pos", wpos) && Mode_VSet(usr, "MovePos", wpos) && Mode_VGet(wp, "Ang", wang) &&
+		Mode_VSet(usr, "MoveAng", wang) && LvN_SetF(usr, "MoveTime", 1.0) && LvN_SetI(usr, "MoveFade", 2) && LvN_SetI(usr, "AvoidCrash", 1) &&
+		Mode_GVarSetS("EscapeEvent", "") && Mode_GVarSetS("MainMissionEvent", "") && LV_CALL("Scrap", "GetCam", prev, "i", 0L);
+	if (ok) {
+		Mode_Ints3(add, 15, 0, 0);
+		Mode_Ints3(rot, 0, 0, -8000);
+		ok = (!again || LvN_WayPointAgain(module, wp, "Ang", wang)) && Mode_VecAdd(wang, add, ang) && Mode_Rotate(rot, ang, r0) &&
+			(!again || LvN_WayPointAgain(module, wp, "Pos", wpos)) && Mode_VecAdd(r0, wpos, p0);
+	}
+	if (ok) {
+		Native_Free(rot);
+		Mode_Ints3(rot, 0, 0, -2000);
+		ok = Mode_Rotate(rot, ang, r1) && (!again || LvN_WayPointAgain(module, wp, "Pos", wpos)) && Mode_VecAdd(r1, wpos, p1) &&
+			LvN_CreateAt(Mode_S(&t, "RaceCamera"), p0, "CamPath", cam) && LvN_SetI(cam, "nWayPoint", 2) && Mode_VSet(cam, "TgtCam00", prev) &&
+			LvN_SetS(cam, "TgtCam00", "") && Mode_VSet(cam, "Pos00", p0) && Mode_VSet(cam, "Ang00", ang) && LvN_SetI(cam, "FadeIn00", 1) &&
+			LvN_SetI(cam, "FadeOut00", 0) && LvN_SetF(cam, "Time00", 5.0) && Mode_VSet(cam, "TgtCam01", prev) && LvN_SetS(cam, "TgtCam01", "") &&
+			Mode_VSet(cam, "Pos01", p1) && (Native_Free(v), LvN_Item(ang, 0, v));
+	}
+	if (ok) {
+		nativeVal_t four = { 0 };
+		Native_SetFloat(&four, 4.0);
+		Native_SetEmpty(ang1, NV_TUPLE);
+		ok = Native_Arith('/', v, &four, Native_Append(ang1)) && LvN_Item(ang, 1, Native_Append(ang1)) && LvN_Item(ang, 2, Native_Append(ang1)) &&
+			Mode_VSet(cam, "Ang01", ang1) && LvN_SetI(cam, "FadeIn01", 0) && LvN_SetI(cam, "FadeOut01", 1) && LvN_SetI(cam, "Time", 0) &&
+			Mode_VGet(cam, "Name", name) && LV_CALL("Scrap", "SetCam", NULL, "iv", 0L, name) && Mode_VGet(cam, "Time00", tt);
+	}
+	if (ok) {
+		nativeVal_t d = { 0 };
+		Native_SetFloat(now, Mode_Time());
+		Native_SetFloat(&d, 0.2);
+		ok = Native_Arith('+', now, tt, at1) && Native_Arith('+', at1, &d, at) && Mode_VGet(usr, "Name", args) && (Native_Copy(args2, prev), 1) &&
+			Mode_AtG(at, module, "AbortCameraTravelling", args, 2) && Mode_Import("Scene") &&
+			LV_CALL("Scene", "SetText", NULL, "sv", text, tt);
+	}
+	return Mode_Done(&t, ok);
+}
+
+byte LvN_CamTravelEnd(const nativeVal_t *a, const char *module, byte racerScorer) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *cn = Mode_V(&t), *cam = Mode_V(&t);
+	byte ok = 1;
+	if (Native_True(&a[1])) {
+		ok = Mode_EntityH(&a[0], usr) && (!Native_True(usr) || (LvN_SetF(usr, "MoveTime", 0.0) && LvN_SetI(usr, "UsrControl", 0))) &&
+			Mode_GVarSetS("EscapeEvent", "Menu.Init") && Mode_GVarSetS("MainMissionEvent", "MissionsFuncs.ShowMissionInfo") &&
+			LV_CALL("Scrap", "GetCam", cn, "i", 0L) && Mode_EntityH(cn, cam) && Mode_VDel(cam) && LV_CALL("Scrap", "SetCam", NULL, "iv", 0L, &a[1]) &&
+			(!racerScorer || (Mode_Import("RacerScorer") && LV_CALL("RacerScorer", "Create", NULL, "i", 0L)));
+	}
+	return Mode_Done(&t, ok && LV_OWN(module, "LaunchMission", NULL, ""));
+}
+
+byte LvN_SystemMessage(const char *key) {
+	nativeVal_t text = { 0 };
+	if (!Mode_Import("RaceMaker")) {
+		return 0;
+	}
+	Mode_Lang(key, &text);
+	byte ok = LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
+	Native_Free(&text);
+	return ok;
+}
+
+byte LvN_BoostMessage(const char *module) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *prev = Mode_V(&t), *text = Mode_V(&t), *key = Mode_V(&t), *msg = Mode_V(&t);
+	byte called;
+	byte ok = Mode_Import("Parking") && Mode_Import("RaceMaker") && Mode_CallIf(module, "prevSwitchVehicleMissionCallback", &called) &&
+		Mode_G(module, "prevSwitchVehicleMissionCallback", prev) && Mode_SetModVar("Parking", "SwitchVehicleMissionCallback", prev);
+	if (ok) {
+		Mode_Lang("Mission_FirstCrazyBet_SystemMessage4", text);
+		ok = LV_CALL("SInput", "GetDefinedEntry", key, "isss", 0L, "Racer", "Boost", "Mouse") && Native_Arith('%', text, key, msg) &&
+			Mode_MsgText(msg, Mode_Time() + 10);
+	}
+	return Mode_Done(&t, ok);
+}
+
+byte LvN_ClosePressHangar(void) {
+	return Mode_Import("RaceMaker") && Mode_EntSetS("DM_Door_CityDoorA_01", "OnObjSlot", "!CloseDoorSlot") &&
+		LvN_ModNone("RaceMaker", "OnCheckPointCallback");
+}
+
+byte LvN_RoutineCall(const char *kind, const nativeVal_t *a) {
+	/* OBJLIB 5: the functions of Speech as the objects its table holds */
+	PyObject *r = Script_Attr("Speech", "SpeechRoutines");
+	PyObject *k = r ? PyString_FromString((char *)kind) : NULL;
+	PyObject *fn = k ? PyObject_GetItem(r, k) : NULL;
+	byte ok = fn && Native_Call(fn, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
+	Py_XDECREF(fn);
+	Py_XDECREF(k);
+	Py_XDECREF(r);
+	return ok;
+}
+
+byte LvN_HumanFollow(const char *module, const nativeVal_t *usr) {
+	nativeVal_t hn, un;
+	Native_SetNone(&un);
+	byte ok = LvN_GAttr(module, "human", "Name", &hn) && Mode_VGet(usr, "Name", &un) &&
+		LV_CALL("SAI", "SetStateChar", NULL, "ivvd", 3L, &hn, &un, 1.0);
+	Native_Free(&hn);
+	Native_Free(&un);
 	return ok;
 }

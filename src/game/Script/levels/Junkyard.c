@@ -40,23 +40,15 @@
 
 /* Scrap.SetMoney(i) */
 static byte Jy_SetMoney(long i) {
-	JY_SEAM("Scrap", "SetMoney", "i", i);
 	nativeVal_t v = { 0 };
 	Native_SetInt(&v, i);
-	return Mode_SetMoney(&v);
+	return Mode_SetMoneySeam(&v);
 }
 
 /* Scrap.SetTimeSpeed(i) */
 static byte Jy_TimeSpeed(long i) {
 	JY_SEAM("Scrap", "SetTimeSpeed", "i", i);
 	Mode_SetTimeSpeed((double)i);
-	return 1;
-}
-
-/* SInput.SetActionSet(name) */
-static byte Jy_ActionSet(const char *name) {
-	JY_SEAM("SInput", "SetActionSet", "s", name);
-	Mode_SetActionSet(name);
 	return 1;
 }
 
@@ -107,14 +99,6 @@ static byte Jy_EntDel(const char *name) {
 	Native_SetNone(&e);
 	byte ok = LvN_Entity(name, &e) && Mode_VDel(&e);
 	Native_Free(&e);
-	return ok;
-}
-
-/* g.var = i of a global g of the module (a handle) */
-static byte Jy_GSet(const char *module, const char *g, const char *var, long i) {
-	nativeVal_t h = { 0 };
-	byte ok = Mode_G(module, g, &h) && LvN_SetI(&h, var, i);
-	Native_Free(&h);
 	return ok;
 }
 
@@ -296,7 +280,7 @@ static byte MapShipEdit_OnEndOfShipEdit(const nativeVal_t *a) {
 	Native_SetNone(&kb);
 	Native_SetNone(&state);
 	byte ok = Jy_At(&now, 0.25, &when) && LvN_Entity("DM_EditKeyboard", &kb) && Mode_AtG(&when, MSE, "SetInteract", &kb, 1) &&
-		Jy_GSet(MSE, "LastPlayer", "UsrControl", 0) && Mode_G(MSE, "ArrowMissionState", &state);
+		Mode_GSetI(MSE, "LastPlayer", "UsrControl", 0) && Mode_G(MSE, "ArrowMissionState", &state);
 	if (ok && state.type != NV_NONE) {
 		Native_Free(&kb);
 		ok = LvN_Entity("DM_EditKeyboard", &kb) && Mode_VSet(&kb, "ArrowCanMission", &state);
@@ -500,7 +484,7 @@ static byte Rusty_Init(void) {
 	}
 	if (!LvN_SaveIs("ComeFrom", "")) {
 		ok = Jy_SetMoney(1100) && LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_TalkToRusty_MissionText1", 1L) &&
-			Jy_GSet(RF, "kb", "ArrowCanUse", 0) && Mode_GSetS(RF, "kb", "UseFunc", "") && LvN_GActivate(RF, "rusty", 1) &&
+			Mode_GSetI(RF, "kb", "ArrowCanUse", 0) && Mode_GSetS(RF, "kb", "UseFunc", "") && LvN_GActivate(RF, "rusty", 1) &&
 			LvN_GActivate(RF, "kb", 0) && LvN_GObj(RF, "RustyFirstSpeech", &fn) && LvN_Routine("Rusty", &fn) &&
 			LV_OWN(RF, "CreateFakeBertoShip", NULL, "") && LV_OWN(RF, "LoadMecanicScene", NULL, "");
 	} else {
@@ -712,7 +696,7 @@ static byte Rusty_BertoGoHome(void) {
 	Native_SetNone(&reach);
 	LvN_Str(&set, "Inactive");
 	byte ok = LV_CALL("Elevator", "ElevatorActiveToGet", NULL, "s", "DM_Door_EditShip_00") &&
-		LvN_ModSetGlobal("Elevator", "OnElevatorReachUp", RF, "BackDownBerto") && Jy_ActionSet("Inactive") &&
+		LvN_ModSetGlobal("Elevator", "OnElevatorReachUp", RF, "BackDownBerto") && Mode_ActionSet("Inactive") &&
 		LV_CALL("Menu", "DrawScorer", NULL, "iv", 0L, &set) && Jy_CamLink("DM_Door_EditShip_00") &&
 		LvN_ModGet("Elevator", "TELEPORTER_UP_REACH", &reach);
 	Native_Free(&set);
@@ -744,7 +728,7 @@ static byte Rusty_BackDownBerto(const nativeVal_t *a) {
 static byte Rusty_EndOfBertoBye(void) {
 	nativeVal_t set = { 0 };
 	LvN_Str(&set, "Walk");
-	byte ok = Jy_ActionSet("Walk") && LV_CALL("Menu", "DrawScorer", NULL, "iv", 0L, &set) && Jy_CamLink("") &&
+	byte ok = Mode_ActionSet("Walk") && LV_CALL("Menu", "DrawScorer", NULL, "iv", 0L, &set) && Jy_CamLink("") &&
 		LvN_ModNone("Elevator", "OnElevatorReachDown");
 	Native_Free(&set);
 	return ok;
@@ -757,8 +741,8 @@ static byte Rusty_StartInitBuildShip(void) {
 	Native_SetNone(&gen);
 	Native_SetNone(&path);
 	SaveVar_Set("Hangar.iHangarShip", "-1");
-	byte ok = LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_BuildFirstShip_MissionText2", 1L) && Jy_GSet(RF, "kb", "ArrowCanUse", 1) &&
-		Jy_GSet(RF, "kb", "ArrnOpt", 0) && Mode_G(RF, "kb", &kb) &&
+	byte ok = LV_CALL("SaveGame", "MMDesc", NULL, "si", "Mission_BuildFirstShip_MissionText2", 1L) && Mode_GSetI(RF, "kb", "ArrowCanUse", 1) &&
+		Mode_GSetI(RF, "kb", "ArrnOpt", 0) && Mode_G(RF, "kb", &kb) &&
 		LvN_SetLangOpt(&kb, "ArrOpt0", "EditShip:", "HINT_Junkyard_ShipEdit") && LvN_GActivate(RF, "rusty", 0) &&
 		LvN_ModGet("CharsNPC", "GenericNPCSpeech", &gen) && LvN_Routine("Rusty", &gen) && Mode_Import("Init") &&
 		LvN_ModGet("Init", "Path", &path) &&
@@ -887,7 +871,7 @@ static byte Rusty_EnterEditShipTutorial(const nativeVal_t *a) {
 		return 0;
 	}
 	ok = LV_CALL("MapShipEdit", "EnterEditShip", NULL, "vsss", &name, "", "", "") &&
-		LvN_ModSetGlobal("ShipEdit", "EndShipEditCallBack", RF, "OnEndOfShipEditTutorial") && Jy_ActionSet("Inactive");
+		LvN_ModSetGlobal("ShipEdit", "EndShipEditCallBack", RF, "OnEndOfShipEditTutorial") && Mode_ActionSet("Inactive");
 	Native_Free(&name);
 	if (ok) {
 		nativeVal_t e = { 0 };
@@ -925,18 +909,11 @@ static byte Rusty_EnterEditShipTutorial(const nativeVal_t *a) {
 	return ok;
 }
 
-/* SScorer.Set(id, item, var, i) as a line of the tutorial */
-static byte Jy_SetI(const nativeVal_t *id, const char *item, const char *var, long i) {
-	nativeVal_t v = { 0 };
-	Native_SetInt(&v, i);
-	return LvN_ScorerSet(id, item, var, &v);
-}
-
 /* the two typing texts of the tutorial: Add, Text, X 320, Y, CentralText, the colour without alpha, hidden, no cursor */
 static byte Jy_TypingText(const nativeVal_t *id, const char *item, const nativeVal_t *text, long y) {
 	static const char *const rgb[] = { "Red", "Green", "Blue" };
-	byte ok = Jy_ScorerAdd(id, item, "TextTyping", 1) && LvN_ScorerSet(id, item, "Text", text) && Jy_SetI(id, item, "X", 320) &&
-		Jy_SetI(id, item, "Y", y) && Jy_SetI(id, item, "CentralText", 1);
+	byte ok = Jy_ScorerAdd(id, item, "TextTyping", 1) && LvN_ScorerSet(id, item, "Text", text) && Mode_ScorerSetI(id, item, "X", 320) &&
+		Mode_ScorerSetI(id, item, "Y", y) && Mode_ScorerSetI(id, item, "CentralText", 1);
 	for (int i = 0; i < 3 && ok; i++) {
 		nativeVal_t c = { 0 }, k = { 0 };
 		Native_SetNone(&k);
@@ -944,7 +921,7 @@ static byte Jy_TypingText(const nativeVal_t *id, const char *item, const nativeV
 		Native_Free(&c);
 		Native_Free(&k);
 	}
-	return ok && Jy_SetI(id, item, "Visible", 0) && Jy_SetI(id, item, "CursorAtInit", 0) && Jy_SetI(id, item, "CursorAtEnd", 0);
+	return ok && Mode_ScorerSetI(id, item, "Visible", 0) && Mode_ScorerSetI(id, item, "CursorAtInit", 0) && Mode_ScorerSetI(id, item, "CursorAtEnd", 0);
 }
 
 /* TutorialMsgInit(id, control): the panel and the two texts of the tutorial messages, hidden */
@@ -958,7 +935,7 @@ static byte Rusty_TutorialMsgInit(const nativeVal_t *a) {
 		return 0;
 	}
 	for (int i = 0; i < 11; i++) {
-		if (!Jy_SetI(id, "TutorialMsgBack", vars[i], vals[i])) {
+		if (!Mode_ScorerSetI(id, "TutorialMsgBack", vars[i], vals[i])) {
 			return 0;
 		}
 	}

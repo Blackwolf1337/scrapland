@@ -84,11 +84,6 @@ static byte Ab_ModF(const char *module, const char *var, double d) {
 	return Mode_SetModVar(module, var, &v);
 }
 
-/* Speech.AddRemoteCom(key, who) */
-static byte Ab_Com(const char *key, const char *who) {
-	return LvN_Com(key, who, NULL, NULL, NULL);
-}
-
 /* ---- MapFinalFight ---- */
 
 /* GetBossProfile(): the AI profile of the boss ship */
@@ -161,7 +156,7 @@ static byte Ff_Init(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_SetLockAlarmI(0) || !Ab_AlarmOff() || !Mode_SetLockAlarmI(1)) {
 		return 0;
 	}
-	if (!Ab_Com("Mission_FinalFight_RemoteMessage1", "CrazyGambler") ||
+	if (!LvN_Com("Mission_FinalFight_RemoteMessage1", "CrazyGambler", NULL, NULL, NULL) ||
 		!LvN_ModSetGlobal("Chars", "OnMainCharDeath", FF, "OnPlayerDeath") || !LvN_ModSetI("Vehicles", "DelPlayerShipOnDeath", 0) ||
 		!LvN_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", FF, "CreateBoss") ||
 		!LvN_ModSetGlobal("Parking", "SwitchCharMissionCallback", FF, "BossRelax") || !Mode_GVarSetI("InfernoTurnSpeed", 60)) {
@@ -212,7 +207,7 @@ static byte Ff_Boss(nativeVal_t *e) {
 		Mode_Put(FF, "bossName", NULL, name) && LvN_SetS(e, "OnDamage", "!FXBossOnDamage") &&
 		Ab_SetG("LifeToLaunchCallback", "BOSS_LIFE_BULLET") &&
 		Mode_GVarSetS("LifeReachedCallback", "MapFinalFight.OnBossRecoversZero") &&
-		Ab_RegenG("bossName", "BOSS_RegenInit", "BOSS_RegenEnd") && Ab_Com("Mission_FinalFight_RemoteMessage2", "Boss") &&
+		Ab_RegenG("bossName", "BOSS_RegenInit", "BOSS_RegenEnd") && LvN_Com("Mission_FinalFight_RemoteMessage2", "Boss", NULL, NULL, NULL) &&
 		Mode_Later(30, FF, "LaunchTaunt", NULL, 0, "LaunchTaunt") && LvN_ScorerCallG(FF, "MissionScorer") && LvN_Draw();
 	return Mode_Done(&t, ok);
 }
@@ -400,7 +395,7 @@ static byte Ff_OnPlayerDeath(const nativeVal_t *a, nativeVal_t *out) {
 static byte Ff_Hint(int n) {
 	char key[0x40];
 	Str_Printf(key, sizeof(key), "Mission_FinalFight_RemoteMessage%d", n);
-	return LV_CALL("Speech", "CancelRemoteCom", NULL, "") && Ab_Com(key, "CrazyGambler");
+	return LV_CALL("Speech", "CancelRemoteCom", NULL, "") && LvN_Com(key, "CrazyGambler", NULL, NULL, NULL);
 }
 
 /* RespawnPlayer(Usrname, respawnPos, ang): the player's ship again; every fifth time from the fourth a hint of the

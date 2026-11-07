@@ -27,47 +27,17 @@
 		return 0; \
 	}
 
-/* SScorer.Set(id, item, var, i), = d, = "text" */
-static byte Abi_ScI(const nativeVal_t *id, const char *item, const char *var, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return LvN_ScorerSet(id, item, var, &v);
-}
-
+/* SScorer.Set(id, item, var, d) */
 static byte Abi_ScF(const nativeVal_t *id, const char *item, const char *var, double d) {
 	nativeVal_t v;
 	Native_SetFloat(&v, d);
 	return LvN_ScorerSet(id, item, var, &v);
 }
 
-/* SScorer.Add(id, item, type) */
-static byte Abi_Add(const nativeVal_t *id, const char *item, const char *type) {
-	nativeVal_t it;
-	LvN_Str(&it, item);
-	byte ok = Mode_ScorerAdd(id, &it, type);
-	Native_Free(&it);
-	return ok;
-}
-
 /* Scrap.StartDummySearch(pattern, 1); dummy = Scrap.NextDummySearch(), through their seams (fc-abi swaps both) */
 static byte Abi_Dummy(const char *pattern, nativeVal_t *dummy) {
 	Native_SetNone(dummy);
-	{
-		ABI_SEAM("Scrap", "StartDummySearch");
-		if (seam) {
-			if (!Native_HookCall(hook, NULL, "si", pattern, 1L)) {
-				return 0;
-			}
-		} else {
-			Mode_DummyStart(pattern, 1);
-		}
-	}
-	ABI_SEAM("Scrap", "NextDummySearch");
-	if (seam) {
-		return Native_HookCall(hook, dummy, "");
-	}
-	Mode_DummyNext(dummy);
-	return 1;
+	return Mode_DummyStartSeam(pattern, 1) && Mode_DummyNextSeam(dummy);
 }
 
 /* InitStatus(LevelPath): an indoor map; the four friends of Dtritus, the mission after the final fight */
@@ -263,26 +233,26 @@ static byte Abi_ShowEndTitle(const nativeVal_t *a, nativeVal_t *out) {
 	const nativeVal_t *id = &a[0];
 	nativeVal_t text;
 	(void)out;
-	if (!Abi_Add(id, "BlackSquare", "Sprite")) {
+	if (!Mode_ScorerAddS(id, "BlackSquare", "Sprite")) {
 		return 0;
 	}
 	for (int i = 0; i < 8; i++) {
-		if (!Abi_ScI(id, "BlackSquare", square[i], squareV[i])) {
+		if (!Mode_ScorerSetI(id, "BlackSquare", square[i], squareV[i])) {
 			return 0;
 		}
 	}
-	if (!Abi_Add(id, "EndTitle", "TextTyping") || !Abi_ScI(id, "EndTitle", "X", 320) || !Abi_ScI(id, "EndTitle", "Y", 240) ||
+	if (!Mode_ScorerAddS(id, "EndTitle", "TextTyping") || !Mode_ScorerSetI(id, "EndTitle", "X", 320) || !Mode_ScorerSetI(id, "EndTitle", "Y", 240) ||
 		!LvN_ScorerSetS(id, "EndTitle", "Font", "ScrapBig") || !LvN_ScorerSetS(id, "EndTitle", "Effect", "Outline")) {
 		return 0;
 	}
 	Mode_Lang("GameFinal", &text);
 	byte ok = LvN_ScorerSet(id, "EndTitle", "Text", &text);
 	Native_Free(&text);
-	return ok && Abi_ScI(id, "EndTitle", "CentralText", 1) && Abi_ScI(id, "EndTitle", "Red", 70) &&
-		Abi_ScI(id, "EndTitle", "Green", 173) && Abi_ScI(id, "EndTitle", "Blue", 255) && Abi_ScI(id, "EndTitle", "Alpha", 255) &&
+	return ok && Mode_ScorerSetI(id, "EndTitle", "CentralText", 1) && Mode_ScorerSetI(id, "EndTitle", "Red", 70) &&
+		Mode_ScorerSetI(id, "EndTitle", "Green", 173) && Mode_ScorerSetI(id, "EndTitle", "Blue", 255) && Mode_ScorerSetI(id, "EndTitle", "Alpha", 255) &&
 		Abi_ScF(id, "EndTitle", "TypingTime", -1.0) && Abi_ScF(id, "EndTitle", "TypingSpeed", 0.15) &&
-		Abi_ScI(id, "EndTitle", "CursorAtInit", 1) && Abi_ScI(id, "EndTitle", "CursorAtEnd", 0) &&
-		Abi_ScI(id, "EndTitle", "TypingSound", 0) && Mode_GVarSetI("MotionBlurFactorBegin", 0) &&
+		Mode_ScorerSetI(id, "EndTitle", "CursorAtInit", 1) && Mode_ScorerSetI(id, "EndTitle", "CursorAtEnd", 0) &&
+		Mode_ScorerSetI(id, "EndTitle", "TypingSound", 0) && Mode_GVarSetI("MotionBlurFactorBegin", 0) &&
 		Mode_GVarSetN("MotionBlurFactorEnd", 0.75) && Mode_GVarSetN("MotionBlurTime", 0.0) && Mode_GVarSetN("MotionBlurEndTime", 3.0) &&
 		Mode_GVarSetI("MotionBlurOffVar", 0);
 }

@@ -233,6 +233,8 @@ byte Mode_SetSaveVar(const char *name, const nativeVal_t *value);
 byte Mode_Import(const char *name);
 /* the global name of the module into slot (freed first), as the functions read it */
 byte Mode_Read(const char *module, const char *name, nativeVal_t *slot);
+/* Mode_VGet into a slot that may hold a value (it is freed first) */
+byte Mode_VRead(const nativeVal_t *h, const char *var, nativeVal_t *slot);
 
 /* the PyObject of a module variable as its functions read it (a new reference; the NameError of a missing global) */
 PyObject *Mode_GlobalPy(const char *module, const char *name);
@@ -403,8 +405,9 @@ byte Mode_WayPoint(void);
 byte Mode_Target(const char *name);
 /* Elevator.ConnectElevators([a], [b]), or Elevator.ConnectElevators([a, b], [], 0) for pair (OBJLIB 3) */
 byte Mode_Connect(const char *a, const char *b, byte pair);
-/* var.attr = "text" of the global var of module (a handle) */
+/* var.attr = "text", = i of the global var of module (a handle) */
 byte Mode_GSetS(const char *module, const char *var, const char *attr, const char *s);
+byte Mode_GSetI(const char *module, const char *var, const char *attr, long i);
 /* Scrap.AddScheduledFunc(time, func, args) with time a value and func the global of module (its NameError; OBJLIB 4) */
 byte Mode_AtG(const nativeVal_t *time, const char *module, const char *func, const nativeVal_t *args, int n);
 /* a op b of the script as Native_Arith, with the long ints of 1.5.2 for * / % too (a case can put a long int into a
@@ -415,16 +418,6 @@ byte Mode_GVarSetDef(const char *name);
 
 /* ---- the native level files of batch H (Commercial, Police, Press) ---- */
 
-/* SScorer.Set(0, item, var, v) and the same with an int, through the seam */
-byte Mode_Set0(const char *item, const char *var, const nativeVal_t *v);
-byte Mode_Set0I(const char *item, const char *var, long i);
-/* Scorer.MissionScorerText_X + d, Scorer.MissionScorerText_Y + d (d 0: the value itself) */
-byte Mode_TextX(long d, nativeVal_t *out);
-byte Mode_TextY(long d, nativeVal_t *out);
-/* a text of a mission scorer as the missions set it (Sf_MissionText on values): SScorer.Add(id, item, type) (type NULL:
- * none), X, Y, Font, Effect (NULL: none), Text, Align, the colour Scorer.MissionScorerText_Color and Visible (NULL: none) */
-byte Mode_MissionText(const nativeVal_t *id, const char *item, const char *type, const nativeVal_t *x, const nativeVal_t *y,
-	const char *font, const char *effect, const nativeVal_t *text, const char *align, const nativeVal_t *visible);
 /* the sprite behind a number of a mission scorer (Sf_MissionSprite on values): Add, X, Y, ScaleX 30, ScaleY 19, Unit 1,
  * Alpha, Red, Green, Blue */
 byte Mode_MissionSprite(const nativeVal_t *id, const char *item, const nativeVal_t *x, const nativeVal_t *y, long alpha, long r,
@@ -448,9 +441,6 @@ byte Mode_Taken(const nativeVal_t *item, const nativeVal_t *arrow);
 /* InitStatus of an outdoor map while the boss controls the robots: police and traffic 5 (comSats: none when the level
  * Init.UpperMap is in ComSatsMissionsMapsFinished, and OutPolice.PoliceActive = 0), no ships of the traffic */
 byte Mode_BossTraffic(byte comSats);
-/* import Traffic; Scrap.SetSaveVar("Traffic.AcShips", ships); Traffic.AcShips = eval(Scrap.GetSaveVar("Traffic.AcShips"))
- * in the globals of module */
-byte Mode_AcShips(const char *module, const char *ships);
 /* Scrap.DelSaveVars(prefix) through its seam (fr7b.py records it) */
 byte Mode_DelSaveVars(const char *prefix);
 /* del name of a global of the module (the NameError of the script when it is not there) */
@@ -478,8 +468,6 @@ byte Mode_CallKw(const char *module, const char *name, nativeVal_t *out, const n
 /* GateKeeper.DoorFoe(gk, GateKeeper.<group>) with the group object itself (OBJLIB 5: the group lists of GateKeeper keep
  * their identity) */
 byte Mode_DoorFoe(const char *gk, const char *group);
-/* SSound.PlaySound(pos, name, volume) through its seam (fr7b.py records it), else Mode_PlaySound */
-byte Mode_PlaySoundSeam(const nativeVal_t *pos, const nativeVal_t *name, const nativeVal_t *volume);
 /* Scrap.GetLangStr(key) of a value (the TypeError of "s" for one that is no text) into out */
 byte Mode_LangV(const nativeVal_t *key, nativeVal_t *out);
 /* SAct.CreateClass(name), SAct.GetClass(name) or SAct.CreateAction(name) through their seams (fn the name of the SAct
@@ -492,12 +480,10 @@ byte Mode_PathSet(byte cls, const char *name, const char *rest);
 /* Scrap.CreateEntity(dummy[0], dummy[1][0], dummy[1][1], dummy[1][2], type) through its seam, then e.Ang = (dummy[2][0],
  * dummy[2][1], 0): the handle into e */
 byte Mode_FromDummy(const nativeVal_t *dummy, const char *type, nativeVal_t *e);
-/* the crazy gambler's call after a mission (unless the save variable SuperDeal.Library is SuperDeal_Twelfth):
- * Speech.AddRemoteCom(msgs[n], "CrazyGambler") for n = MissionsFuncs.GetNumCrazyDealCompleted() from 0 to 3 */
-byte Mode_CGCalls(const char *const *msgs);
-/* module.var.append(name) with name the global of gmod (a function; OBJLIB 5: the list of another module changed in
- * place) */
-byte Mode_AppendG(const char *module, const char *var, const char *gmod, const char *name);
+/* CGCalls() of the missions, the crazy gambler's call after a mission (unless the save variable SuperDeal.Library is
+ * SuperDeal_Twelfth): Speech.AddRemoteCom(msgs[i], "CrazyGambler") for the i < n that equals
+ * MissionsFuncs.GetNumCrazyDealCompleted() */
+byte Mode_CGCalls(const char *const *msgs, int n);
 /* the global name of module = name op v of the script (op of Native_Arith: '+', '-', ...), and with an int i */
 byte Mode_GOp(const char *module, const char *name, char op, const nativeVal_t *v);
 byte Mode_GOpI(const char *module, const char *name, char op, long i);
@@ -509,6 +495,94 @@ byte Mode_LoadSoundSeam(const nativeVal_t *file);
 void Mode_Elems(nativeVal_t *v);
 /* the count of items a loop of the script takes from *v (Native_ForCount) after Mode_Elems */
 int Mode_Loop(nativeVal_t *v);
+
+/* ---- helpers of batch I (the super deals and the native level files of batch I) ---- */
+
+/* h.var = i, = "text", = d of a handle value */
+byte Mode_VSetI(const nativeVal_t *h, const char *var, long i);
+byte Mode_VSetS(const nativeVal_t *h, const char *var, const char *s);
+byte Mode_VSetF(const nativeVal_t *h, const char *var, double d);
+/* x[i] of the script (a dict looks the int up; an NV_OBJ, e.g. a list that holds entity handles, the Python way, the
+ * item as Native_Arg makes it) */
+byte Mode_Item(const nativeVal_t *x, long i, nativeVal_t *out);
+/* module.var of another module as a value (any object: a handle, a function, a module as NV_OBJ) */
+byte Mode_ModGet(const char *module, const char *var, nativeVal_t *out);
+/* module.var = None */
+byte Mode_ModNone(const char *module, const char *var);
+/* SScorer.Add(id, item, type) */
+byte Mode_ScorerAddS(const nativeVal_t *id, const char *item, const char *type);
+/* SScorer.Set(id, item, var, i) */
+byte Mode_ScorerSetI(const nativeVal_t *id, const char *item, const char *var, long i);
+/* SScorer.Get(id, item, var) (the TypeError of "i" for an id that is no number) */
+byte Mode_ScorerGetV(const nativeVal_t *id, const char *item, const char *var, nativeVal_t *out);
+/* the text item of a mission scorer in Horatio with a shadow at the left (Lv_Text): X, y, text, visible (NULL: not
+ * set) */
+byte Mode_LvText(const nativeVal_t *id, const char *item, const nativeVal_t *y, const nativeVal_t *text, const nativeVal_t *visible);
+/* Mode_LvText at Scorer.MissionScorerText_Y + dy with Scrap.GetLangStr(key) + ":" (visible: Visible 1) */
+byte Mode_LvLabel(const nativeVal_t *id, const char *item, long dy, const char *key, byte visible);
+/* Scrap.SetSaveVar(name, text) */
+byte Mode_SaveS(const char *name, const char *text);
+/* module.var = [] */
+byte Mode_ModEmpty(const char *module, const char *var);
+/* module.var = src.name of another module as the object it is (a function of that module) */
+byte Mode_ModTo(const char *module, const char *var, const char *src, const char *name);
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, Speech.<func>, args[, name]) of n values (name NULL: none) */
+byte Mode_LaterSpeech(const char *func, const nativeVal_t *delay, const nativeVal_t *args, int n, const char *name);
+/* the same with Speech.AddRemoteCom and a float delay (no name) */
+byte Mode_LaterComF(double delay, const nativeVal_t *args, int n);
+/* `num` + "/" + `max` of two globals of module (num read first) */
+byte Mode_CountText(const char *module, const char *num, const char *max, nativeVal_t *out);
+/* the timer of a mission scorer counting TimeSpecialUse, with the function of its end (visible: Visible 1) */
+byte Mode_LvTimer(const nativeVal_t *id, const char *item, const nativeVal_t *x, const nativeVal_t *y, const char *expired, byte visible);
+/* bp = eval(Scrap.GetSaveVar(var)); bp = bp + [a, b]; Scrap.SetSaveVar(var, `bp`) (eval in the globals of module) */
+byte Mode_SaveCat2(const char *module, const char *var, const char *a, const char *b);
+/* the same with the n texts of texts */
+byte Mode_SaveCat(const char *module, const char *var, const char *const *texts, int n);
+/* `e and e.Active`: 1, 0, -1 */
+int Mode_Active(const nativeVal_t *e);
+/* `for name in names: e = Scrap.GetEntity(name); if e: e.Del()` */
+byte Mode_DelNames(const nativeVal_t *names);
+/* Scrap.SetSaveVar(name, the global var of module) */
+byte Mode_SaveG(const char *name, const char *module, const char *var);
+/* module.var = [src.name] of a function of another module */
+byte Mode_ModList1(const char *module, const char *var, const char *src, const char *name);
+/* module.var = [the global name of module] */
+byte Mode_ModListG(const char *module, const char *var, const char *src, const char *name);
+/* `if fn: fn()` of the global function fn of module (*called: it was set) */
+byte Mode_CallIf(const char *module, const char *name, byte *called);
+/* apply(MissionsFuncs.SetNextMission, NextMissionData) of the module */
+byte Mode_ApplyNext(const char *module);
+/* a op the global name of the module: 1, 0, -1 */
+int Mode_CmpG(const nativeVal_t *a, const char *op, const char *module, const char *name);
+/* a == i of the script (Native_Compare can not fail on native values) */
+byte Mode_EqI(const nativeVal_t *a, long i);
+/* raise "text" (a string exception of the script; OBJLIB 7: the Python exception until errors are a C state): 0 */
+byte Mode_RaiseText(const char *text);
+/* `usr and usr.Name == name`: 1, 0, -1 */
+int Mode_UsrNameIs(const nativeVal_t *usr, const nativeVal_t *name);
+/* module.var = the global name of src as the object it is (a function: the one a mission put there; OBJLIB 5) */
+byte Mode_ModSetGlobal(const char *module, const char *var, const char *src, const char *name);
+/* the global name of the module op v, op i: 1, 0, -1 (a missing global: its NameError) */
+int Mode_GCmp(const char *module, const char *name, const char *op, const nativeVal_t *v);
+int Mode_GCmpI(const char *module, const char *name, const char *op, long i);
+/* `usr and usr.IsType("Car")`: 1, 0, -1 */
+int Mode_UsrInCar(const nativeVal_t *usr);
+/* `x in` the global list name: 1, 0, -1 */
+int Mode_InG(const nativeVal_t *x, const char *module, const char *name);
+/* if x in list: list.remove(x) of a global list of the module */
+byte Mode_RemoveIn(const nativeVal_t *x, const char *module, const char *name);
+/* e = Scrap.GetEntity(Scrap.EntityListGet(list, "First")) as the handle value (the start of the loops over an entity
+ * list) */
+byte Mode_FirstOf(const char *list, nativeVal_t *e);
+/* itm.rTime = 20 and its Del 5 s later (a mission item taken) */
+byte Mode_DelLater(const nativeVal_t *itm);
+/* the start of UsePhoneCab(UsrName, CharName, optId, FullOption) of the missions (a): Speech.NPCName and PlayerName,
+ * the audio com of the cab, the global pc of module the cab; the alarm state (1, 0, -1 after an error) */
+int Mode_PhoneUse(const char *module, const nativeVal_t *a);
+/* SScorer.Set(0, Scrap.Get("MissionScorerName"), "ForceMap", map) (the map of the mission scorer) */
+byte Mode_ForceMap(const char *map);
+/* `string.find(string.upper(v.Model), text) != -1` (OBJLIB 3: string.find by name): 1, 0, -1 */
+int Mode_ModelHas(const nativeVal_t *v, const char *text);
 
 /* ---- the hubs of batch J (Traffic, OutMap, Challenge, CharConversor, RaceMaker, Doors) ---- */
 
@@ -622,5 +696,12 @@ byte Mode_DelItemG(const char *module, const char *var, int i);
 
 /* `if module.var:` of a variable of another module (any object, read as its attribute): 1, 0, -1 with the error */
 int Mode_ModTrue(const char *module, const char *var);
+
+/* module.var.append(gmod.name), the list changed in place */
+byte Mode_AppendG(const char *module, const char *var, const char *gmod, const char *name);
+
+/* SScorer.Set(0, item, var, v), and with an int */
+byte Mode_Set0(const char *item, const char *var, const nativeVal_t *v);
+byte Mode_Set0I(const char *item, const char *var, long i);
 
 #endif

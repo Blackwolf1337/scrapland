@@ -141,16 +141,6 @@ static byte ThMap_CreateGearMayor(const nativeVal_t *a, nativeVal_t *out) {
 	return LvN_Stay(&a[0], 4, &t);
 }
 
-/* InTraffic.<list> = the n models and InTraffic.<num> = count */
-static byte Th_Traffic(const char *list, const char *const *models, int n, const char *num, long count) {
-	nativeVal_t l = { 0 }, c = { 0 };
-	Mode_Texts(&l, models, n);
-	Native_SetInt(&c, count);
-	byte ok = Mode_SetModVar("InTraffic", list, &l) && Mode_SetModVar("InTraffic", num, &c);
-	Native_Free(&l);
-	return ok;
-}
-
 /* Init(LevelPath): the elevators and teleporters, the metro, the locked elevator to the orbit, the fake traffic */
 static byte ThMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const light[] = { "TLight1B", "TLight2B", "TLight3B" };
@@ -169,8 +159,8 @@ static byte ThMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	byte ok = LvN_Entity("DM_Door_ElevatorOrbit_Orbit", &e) && LvN_SetS(&e, "UseFunc", "Map.OrbitLockMsg") &&
 		LvN_SetI(&e, "ArrnOpt", 0);
 	Native_Free(&e);
-	return ok && Mode_Import("InTraffic") && Th_Traffic("N_TrafficList", light, 3, "N_NumTraffic", 20) &&
-		Th_Traffic("M_TrafficList", med, 3, "M_NumTraffic", 5) && Th_Traffic("H_TrafficList", NULL, 0, "H_NumTraffic", 0) &&
+	return ok && Mode_Import("InTraffic") && LvN_InTraffic("N_TrafficList", light, 3, "N_NumTraffic", 20) &&
+		LvN_InTraffic("M_TrafficList", med, 3, "M_NumTraffic", 5) && LvN_InTraffic("H_TrafficList", NULL, 0, "H_NumTraffic", 0) &&
 		LV_CALL("InTraffic", "LoadFakeTraffic", NULL, "") && LV_CALL("InTraffic", "FakeTraffic", NULL, "");
 }
 
@@ -1157,18 +1147,6 @@ static byte ThSm_BlabliblaN(const nativeVal_t *name) {
 
 TH_KWFN(SheriffMayor_Blablibla, "EntityName", "Mayor_SheriffMayor", ThSm_BlabliblaN)
 
-/* Speech.SpeechRoutines["PoliceBoss"](usr, ch, opt, full) (OBJLIB 5: the table of Speech as the objects it holds) */
-static byte Sm_Routine(const nativeVal_t *a) {
-	PyObject *routines = Script_Attr("Speech", "SpeechRoutines");
-	PyObject *k = routines ? PyString_FromString("PoliceBoss") : NULL;
-	PyObject *fn = k ? PyObject_GetItem(routines, k) : NULL;
-	byte ok = fn && Native_Call(fn, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
-	Py_XDECREF(fn);
-	Py_XDECREF(k);
-	Py_XDECREF(routines);
-	return ok;
-}
-
 /* PoliceBossMissionSpeech(UsrName, CharName, optId, FullOption): the police boss tells his clues to the mayor, or
  * sells them to Dtritus (OnPay); after that his usual talk */
 static byte ThSm_PoliceBossMissionSpeech(const nativeVal_t *a, nativeVal_t *out) {
@@ -1186,7 +1164,7 @@ static byte ThSm_PoliceBossMissionSpeech(const nativeVal_t *a, nativeVal_t *out)
 	if (done) {
 		int talked = LvN_GTrue(SM, "alreadyTalked");
 		if (talked <= 0) {
-			return talked == 0 && Sm_Routine(a);
+			return talked == 0 && LvN_RoutineCall("PoliceBoss", a);
 		}
 		int mayor = Mode_UsrIs("Mayor");
 		if (mayor < 0) {

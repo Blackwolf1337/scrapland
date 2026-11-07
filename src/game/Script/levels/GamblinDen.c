@@ -853,7 +853,7 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 	}
 	args[0] = *merc;
 	args[1] = *ctr;
-	return Mode_Done(&t, LvN_LaterV(delay, "Map", "MercDrink", args, 2));
+	return Mode_Done(&t, Mode_LaterV(delay, "Map", "MercDrink", args, 2, NULL));
 }
 
 static PyObject *Den_MercDrink(PyObject *self, PyObject *args, PyObject *kw) {
@@ -947,7 +947,7 @@ static byte Den_CharDanceC(const nativeVal_t *a, nativeVal_t *out) {
 	} else if (!LV_OWN("Map", "CharUsrAct", NULL, "vs", &a[0], "Dance")) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, Den_Rand(Mode_I(&t, 5), Mode_I(&t, 10), delay) && LvN_LaterV(delay, "Map", "CharDance", &a[0], 1));
+	return Mode_Done(&t, Den_Rand(Mode_I(&t, 5), Mode_I(&t, 10), delay) && Mode_LaterV(delay, "Map", "CharDance", &a[0], 1, NULL));
 }
 
 /* MercenarySpeech(UsrName, CharName, optId, FullOption): hire a mercenary for three lives */
