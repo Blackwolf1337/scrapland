@@ -1679,6 +1679,12 @@ byte Mode_SetAlarm(const nativeVal_t *level) {
 	return 1;
 }
 
+byte Mode_GVarSetI(const char *name, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return Mode_GVarSet(name, &v);
+}
+
 /* ---- the native level files of batch G ---- */
 
 byte Mode_Calls(const char *module, const char *const *lines) {
