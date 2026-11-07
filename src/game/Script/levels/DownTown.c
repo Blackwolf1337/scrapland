@@ -281,8 +281,8 @@ static byte Berto_GetBerto(void) {
 	if (n > 0) {
 		Native_Free(cur);
 		ok = LvN_ModGet("MissionsFuncs", "currentBertos", cur) && LvN_Item(cur, 0, name) && Mode_Put(BM, "bertoName", NULL, name) &&
-			Mode_G(BM, "bertoName", name) && Mode_EntityH(name, e) && (!Native_True(e) || LvN_SetI(e, "Money", -1)) &&
-			Mode_G(BM, "bertoName", name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name) &&
+			Mode_Read(BM, "bertoName", name) && Mode_EntityH(name, e) && (!Native_True(e) || LvN_SetI(e, "Money", -1)) &&
+			Mode_Read(BM, "bertoName", name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name) &&
 			LvN_Com("Mission_BertoMassacre_RemoteMessage3", "DeepThroat", BM, "OnBertoFound", NULL);
 	} else if (n == 0) {
 		ok = Mode_Later(1, BM, "GetBerto", NULL, 0, NULL);
@@ -715,8 +715,8 @@ static byte Massacre_OnVehicleCallback(const nativeVal_t *a) {
 	if (!Native_True(x)) {
 		return Mode_Done(&t, 1);
 	}
-	byte ok = Mode_VGet(v, "Model", x) && Native_Upper(x, model) && Mode_VGet(v, "nSlot00", slots) &&
-		Mode_VGet(v, "Traf_Active", x);
+	byte ok = Mode_VRead(v, "Model", x) && Native_Upper(x, model) && Mode_VGet(v, "nSlot00", slots) &&
+		Mode_VRead(v, "Traf_Active", x);
 	if (ok && Native_True(x)) {
 		ok = Mode_VGet(v, "Traf_Type", typo);
 		points = LvN_EqS(typo, "Heavy") ? 3 : LvN_EqS(typo, "Medium") ? 2 : 1;
@@ -909,9 +909,9 @@ static byte Data_CreateTransport_C(const nativeVal_t *a, nativeVal_t *out) {
 		Mode_SpawnCar("Transport", 0, out, spw) && LvN_SetS(out, "TgType", "red") && Dt_SpawnAng(out, spw) &&
 		LV_CALL("VehiclesNPC", "GetIAProf", pd, "s", "TLight2") && Mode_VGet(out, "Name", name) && Mode_VGet(pd, "Ship", ship) &&
 		LV_CALL("VehiclesNPC", "SetStdProperties", NULL, "vv", name, ship) && LV_CALL("VehiclesNPC", "SetAIProfile", NULL, "vs", pd, "Pilot") &&
-		LV_CALL("VehiclesNPC", "ModAIProff", NULL, "vv", out, pd) && Mode_VGet(out, "Name", name) &&
+		LV_CALL("VehiclesNPC", "ModAIProff", NULL, "vv", out, pd) && Mode_VRead(out, "Name", name) &&
 		LV_CALL("SAI", "SetInertia", NULL, "vi", name, 0L) && LvN_Life(out, GD, "TRANSPORT_LIFE") && LV_CALL("Traffic", "ResetPath", NULL, "") &&
-		Mode_VGet(out, "Name", name) && Dt_UsrTarget(name);
+		Mode_VRead(out, "Name", name) && Dt_UsrTarget(name);
 	return Mode_Done(&t, ok);
 }
 
@@ -1005,7 +1005,7 @@ static byte Data_SpawnFunctionaries(const nativeVal_t *a) {
 			ok = LvN_SetS(fn, "EntityList", "Enemies");
 		} else if (ok) {
 			ok = LvN_SetS(fn, "WeapList", "0,0,0,0,1,0,1") && Mode_VGet(fn, "Name", name) && Mode_Append(GD, "funcsAttackingTransport", name) &&
-				Mode_VGet(fn, "Name", name) && Mode_Read(GD, "currentTransport", cur) &&
+				Mode_VRead(fn, "Name", name) && Mode_Read(GD, "currentTransport", cur) &&
 				LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, name, cur);
 		}
 		Native_Free(fn);
@@ -1576,7 +1576,7 @@ static byte Hump_CreateHumphrey(const nativeVal_t *a) {
 		LvN_SetS(h, "OnDeath", "Mission_DistractHumphrey.OnHumphreyDeath") && LvN_SetS(h, "OnDamage", "Mission_DistractHumphrey.OnHumphreyDamage") &&
 		LvN_Life(h, DH, "HUMPHREY_LIFE") && LvN_SetS(h, "WeapList", "0,0,7,0,7,0") && Mode_VGet(h, "Name", name) && Mode_Put(DH, "humphreyName", NULL, name);
 	if (ok && Native_True(initial)) {
-		ok = Mode_VSet(h, "Pos", initial) && LV_CALL("RaceMaker", "PointObjectTo", NULL, "vv", h, target) && Mode_VGet(h, "Name", name) &&
+		ok = Mode_VSet(h, "Pos", initial) && LV_CALL("RaceMaker", "PointObjectTo", NULL, "vv", h, target) && Mode_VRead(h, "Name", name) &&
 			LvN_Item(target, 0, tx) && LvN_Item(target, 1, ty) && LvN_Item(target, 2, tz) &&
 			LV_CALL("SAI", "SetStateVehicle", NULL, "ivvvviiddd", 1L, name, tx, ty, tz, 4500L, 0L, 0.1, 20.0, 20.0);
 	} else if (ok) {
@@ -2330,7 +2330,7 @@ static byte Escort_OnMissionStart(const nativeVal_t *a) {
 	if (!ok || Native_Compare(&a[1], name)) {
 		return Mode_Done(&t, ok);
 	}
-	int alarm = Mode_EntityH(&a[0], itm) && Mode_VGet(itm, "Pos", v) && Mode_VSet(usr, "Pos", v) && Mode_VGet(itm, "Ang", v) &&
+	int alarm = Mode_EntityH(&a[0], itm) && Mode_VGet(itm, "Pos", v) && Mode_VSet(usr, "Pos", v) && Mode_VRead(itm, "Ang", v) &&
 		Mode_VSet(usr, "Ang", v) && Mode_VSet(usr, "Vel", zero) && LvN_SetI(itm, "rTime", 15) ? Mode_AlarmOn() : -1;
 	if (alarm != 0) {
 		return Mode_Done(&t, alarm > 0 &&
@@ -2338,14 +2338,14 @@ static byte Escort_OnMissionStart(const nativeVal_t *a) {
 	}
 	ok = Mode_VDel(itm) && LV_CALL("Scene", "InitOutDoorScene", NULL, "") && LV_CALL("Traffic", "SetPath", NULL, "") &&
 		LV_CALL("VehiclesNPC", "MakeAI", tr, "ssii", "TLight2", "Transporter", 0L, 0L) && Mode_Put(PM, "trans", NULL, tr) &&
-		LV_CALL("Traffic", "ResetPath", NULL, "") && Mode_G(PM, "trans", tr) && Mode_G(PM, "RouteBegin", pos) && Mode_VSet(tr, "Pos", pos) &&
+		LV_CALL("Traffic", "ResetPath", NULL, "") && Mode_Read(PM, "trans", tr) && Mode_G(PM, "RouteBegin", pos) && Mode_VSet(tr, "Pos", pos) &&
 		Mode_VSet(tr, "Ang", zero) && LvN_SetS(tr, "TgType", "green") && LvN_Life(tr, PM, "TRANSPORT_LIFE") &&
 		LvN_SetS(tr, "OnDeath", "Mission_ProtectMayorTransport.FailMission") &&
 		LvN_SetS(tr, "OnDamage", "Mission_ProtectMayorTransport.ActualizeScorer");
 	if (ok) {
 		Mode_Lang("Mission_ProtectMayorTransport_Scorer1", desc);
-		ok = Mode_VSet(tr, "Descriptor", desc) && Mode_VGet(tr, "Name", name) && Mode_GVarSet("CurrentWaypointName", name) &&
-			Mode_G(PM, "RouteEnd", pos) && LV_OWN(PM, "TransGoto", NULL, "v", pos) && LV_OWN(PM, "OnMissionStart2", NULL, "");
+		ok = Mode_VSet(tr, "Descriptor", desc) && Mode_VRead(tr, "Name", name) && Mode_GVarSet("CurrentWaypointName", name) &&
+			Mode_Read(PM, "RouteEnd", pos) && LV_OWN(PM, "TransGoto", NULL, "v", pos) && LV_OWN(PM, "OnMissionStart2", NULL, "");
 	}
 	return Mode_Done(&t, ok);
 }
@@ -2412,7 +2412,7 @@ static byte Escort_CreateBadGuy(const nativeVal_t *a) {
 		LvN_Life(who, PM, "MERCS_LIFE") && Mode_G(PM, "trans", tr);
 	if (ok && Native_True(tr)) {
 		ok = LvN_SetS(who, "EntityList", "MadGuys") && Mode_ListSet("MadGuys", "OnDamage", "Mission_ProtectMayorTransport.MadGuyDamage") &&
-			Mode_VGet(who, "Name", name) && Mode_Read(PM, "trans", tr) && Mode_VGet(tr, "Name", tn) &&
+			Mode_VRead(who, "Name", name) && Mode_Read(PM, "trans", tr) && Mode_VGet(tr, "Name", tn) &&
 			LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, name, tn);
 	} else if (ok) {
 		ok = LvN_SetS(who, "EntityList", "Enemies") && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", who, 1L);
@@ -2532,7 +2532,7 @@ static byte Escort_MadGuyDamage(const nativeVal_t *a) {
 		int two = one == 0 ? (Mode_Read(PM, "Bad2", bad) ? Native_True(bad) : -1) : 0;
 		ok = one >= 0 && two >= 0;
 		if (ok && (one || two)) {
-			ok = LvN_SetS(bad, "EntityList", "Enemies") && Mode_VGet(bad, "Name", name) && Mode_VGet(usr, "Name", un) &&
+			ok = LvN_SetS(bad, "EntityList", "Enemies") && Mode_VRead(bad, "Name", name) && Mode_VGet(usr, "Name", un) &&
 				LV_CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, name, un);
 		}
 	}
@@ -2561,10 +2561,10 @@ static byte Escort_OnTravelComplete(const nativeVal_t *a) {
 		ok = Mode_EntityH(&a[0], itm) && LvN_SetI(itm, "rTime", 15) && Mode_VDel(itm);
 	} else if (ok && Mode_VGet(tr, "Name", name) && !Native_Compare(&a[1], name)) {
 		ok = Mode_EntityH(&a[0], itm) && LvN_SetI(itm, "rTime", 15) && Mode_VGet(itm, "Pos", v) && Mode_VSet(tr, "MovePos", v) &&
-			Mode_VGet(itm, "Ang", v) && Mode_VSet(tr, "MoveAng", v) && LvN_SetF(tr, "MoveTime", 2.5) && Mode_VGet(tr, "MaxLife", v) &&
+			Mode_VRead(itm, "Ang", v) && Mode_VSet(tr, "MoveAng", v) && LvN_SetF(tr, "MoveTime", 2.5) && Mode_VRead(tr, "MaxLife", v) &&
 			Mode_VSet(tr, "Life", v) && LvN_SetS(tr, "OnDeath", "Vehicles.OnDeath") && LvN_SetS(tr, "OnDamage", "") &&
 			LvN_SetS(tr, "TgType", "None") && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", tr, 0L) &&
-			Mode_GVarSetS("CurrentWaypointName", "") && Mode_VGet(tr, "Name", name) && Mode_Later(30, PM, "RestoreTransport", name, 1, NULL) &&
+			Mode_GVarSetS("CurrentWaypointName", "") && Mode_VRead(tr, "Name", name) && Mode_Later(30, PM, "RestoreTransport", name, 1, NULL) &&
 			Mode_VDel(itm) && (Native_SetInt(money, Mode_GetMoney()), 1) && Mode_G(PM, "ScortReward", rw) && Native_Arith('+', money, rw, sum) &&
 			Mode_SetMoney(sum) && Mode_SaveS("TransportState", "Saved") &&
 			LvN_Com("Mission_ProtectMayorTransport_RemoteMessage5", "Mayor", PM, "InitKillBadGuys", NULL);
@@ -2593,7 +2593,7 @@ static byte Escort_MissionScorer(const nativeVal_t *id) {
 	if (ok && Native_True(tr)) {
 		ok = Mode_LvLabel(id, "RemainingLifeText", 0, "Mission_ProtectMayorTransport_Scorer1", 1) && Mode_ScorerAddS(id, bar, "Bar") &&
 			Mode_BarDefaults(id, bar, NULL, NULL) && Mode_Read(PM, "trans", tr) && Mode_VGet(tr, "MaxLife", v) && LvN_ScorerSet(id, bar, "MaxValue", v) &&
-			Mode_Read(PM, "trans", tr) && Mode_VGet(tr, "Life", v) && LvN_ScorerSet(id, bar, "Value", v) && Mode_ScorerSetI(id, bar, "Visible", 1);
+			Mode_Read(PM, "trans", tr) && Mode_VRead(tr, "Life", v) && LvN_ScorerSet(id, bar, "Value", v) && Mode_ScorerSetI(id, bar, "Visible", 1);
 	} else if (ok) {
 		ok = Mode_LvLabel(id, "RemainingCharsText", 0, "Mission_KillMercs_Scorer1", 1) && LvN_TextY(26, y) &&
 			Mode_CountText(PM, "NumTargets", "MaxTargets", cnt) && Mode_LvText(id, "RemainingCharsScorer", y, cnt, Mode_I(&t, 1));
@@ -2794,7 +2794,7 @@ static byte Steal_CreateMissionShip(void) {
 				-1;
 		}
 		if (mayor > 0) {
-			int hunt = Mode_VGet(usr, "Name", name) && Mode_Put(SM, "missionShipName", NULL, name) ? Sm_Hunting() : -1;
+			int hunt = Mode_VRead(usr, "Name", name) && Mode_Put(SM, "missionShipName", NULL, name) ? Sm_Hunting() : -1;
 			ok = hunt >= 0 && (hunt ? LV_OWN(SM, "SetPoliceTargets", NULL, "") : LV_OWN(SM, "SetPlatformTarget", NULL, ""));
 			return Mode_Done(&t, ok);
 		}
@@ -2804,8 +2804,8 @@ static byte Steal_CreateMissionShip(void) {
 	if (ok && !LvN_EqS(&ep[0], "")) {
 		ok = Mode_EntityH(&ep[0], e) && (!Native_True(e) || Mode_VDel(e));
 	}
-	ok = ok && LV_CALL("Parking", "CreateParkedShip", ship, "vis", &ep[1], 0L, "Mayor") && Mode_VGet(ship, "Name", name) &&
-		Mode_Put(SM, "missionShipName", NULL, name) && Mode_G(SM, "missionShipName", name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name);
+	ok = ok && LV_CALL("Parking", "CreateParkedShip", ship, "vis", &ep[1], 0L, "Mayor") && Mode_VRead(ship, "Name", name) &&
+		Mode_Put(SM, "missionShipName", NULL, name) && Mode_Read(SM, "missionShipName", name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name);
 	return Mode_Done(&t, ok);
 }
 

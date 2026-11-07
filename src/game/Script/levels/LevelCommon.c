@@ -1467,10 +1467,9 @@ byte LvN_InTraffic(const char *list, const char *const *models, int n, const cha
 	return ok;
 }
 
-/* (Native_Free(out), wp = module.missionStartWaypoint read again, out = wp.var) of the camera travelling */
+/* wp = module.missionStartWaypoint read again, out = wp.var (both slots hold a value) of the camera travelling */
 static byte LvN_WayPointAgain(const char *module, nativeVal_t *wp, const char *var, nativeVal_t *out) {
-	Native_Free(out);
-	return Mode_Read(module, "missionStartWaypoint", wp) && Mode_VGet(wp, var, out);
+	return Mode_Read(module, "missionStartWaypoint", wp) && Mode_VRead(wp, var, out);
 }
 
 byte LvN_CamTravel(const char *module, const char *text, byte again) {

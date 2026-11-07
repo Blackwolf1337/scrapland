@@ -233,6 +233,8 @@ byte Mode_SetSaveVar(const char *name, const nativeVal_t *value);
 byte Mode_Import(const char *name);
 /* the global name of the module into slot (freed first), as the functions read it */
 byte Mode_Read(const char *module, const char *name, nativeVal_t *slot);
+/* Mode_VGet into a slot that may hold a value (it is freed first) */
+byte Mode_VRead(const nativeVal_t *h, const char *var, nativeVal_t *slot);
 
 /* the PyObject of a module variable as its functions read it (a new reference; the NameError of a missing global) */
 PyObject *Mode_GlobalPy(const char *module, const char *name);

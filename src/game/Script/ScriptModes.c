@@ -1252,6 +1252,11 @@ byte Mode_Read(const char *module, const char *name, nativeVal_t *slot) {
 	return Mode_G(module, name, slot);
 }
 
+byte Mode_VRead(const nativeVal_t *h, const char *var, nativeVal_t *slot) {
+	Native_Free(slot);
+	return Mode_VGet(h, var, slot);
+}
+
 PyObject *Mode_GlobalPy(const char *module, const char *name) {
 	return Script_Global(module, name);
 }

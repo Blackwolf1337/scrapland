@@ -281,11 +281,11 @@ static byte Win2nd_InitRace(void) {
 				LvN_CreateAt(vn, spos, "Car", v) && Mode_G(WR, "racersList", rl) && LvN_Item(rl, i, rname) && Mode_G(WR, "RACE_PROFILE", prof) &&
 				LV_CALL("RaceMaker", "InitShipIAProfile", NULL, "vv", rname, prof) && Mode_Read(WR, "racersList", rl) &&
 				(Native_Free(rname), LvN_Item(rl, i, rname)) && Mode_Read(WR, "RACE_PROFILE", prof) &&
-				LV_CALL("RaceMaker", "GetRandomShipIAProfile", ship, "vv", rname, prof) && (Native_Free(vn), Mode_VGet(v, "Name", vn)) &&
+				LV_CALL("RaceMaker", "GetRandomShipIAProfile", ship, "vv", rname, prof) && Mode_VRead(v, "Name", vn) &&
 				Mode_DictPut(WR, "racersDict", NULL, vn, ship) && LV_CALL("VehiclesNPC", "SetIAProf", NULL, "vv", v, ship) &&
 				LV_CALL("SAI", "SetStateVehicle", NULL, "iv", 0L, vn) && LvN_SetS(v, "TgType", "None") && LvN_SetS(v, "EntityList", "Race") &&
 				Wr_StartAng(zero3) && Mode_VSet(v, "Ang", zero3) && Mode_VGet(v, "Pos", vp) && Mode_VSet(v, "MovePos", vp) &&
-				(Native_Free(vp), Mode_VGet(v, "Ang", vp)) && Mode_VSet(v, "MoveAng", vp) && LvN_SetF(v, "MoveTime", 0.001) &&
+				Mode_VRead(v, "Ang", vp) && Mode_VSet(v, "MoveAng", vp) && LvN_SetF(v, "MoveTime", 0.001) &&
 				Mode_Append(WR, "racers", vn) && Mode_DictPut(WR, "BayScorer", NULL, vn, Mode_I(&t, 0)) &&
 				LV_CALL("VehiclesNPC", "GetIAProf", pd, "v", ship) && LvN_SetI(pd, "StupidPathFinding", 0) &&
 				LV_CALL("VehiclesNPC", "ModAIProff", NULL, "vv", v, pd) && Mode_VGet(pd, "GoNextItemRace", gn) &&
@@ -297,8 +297,8 @@ static byte Win2nd_InitRace(void) {
 		Mode_VModel(l, Mode_S(&t, "models/Misc/Wayp/Wayp.m3d")) && LvN_SetS(l, "OnTake", "Mission_Win2ndRace.OnRaceStart") &&
 		LvN_SetI(l, "RadarShow", 1) && LvN_SetI(l, "Radius", 2400) && Wr_StartAng(ang) && Mode_VSet(l, "Ang", ang) && Mode_VGet(l, "Name", name) &&
 		Native_Arith('+', name, Mode_S(&t, "_Trigg"), wn) && (Native_Free(pos), Wr_Start("iStartPos", 0, pos)) && LvN_CreateAt(wn, pos, "Item", l2) &&
-		(Native_Free(pos), Mode_VGet(l, "Pos", pos)) && Mode_VSet(l2, "Pos", pos) && LvN_SetI(l2, "Radius", 20000) &&
-		Mode_Preload(Mode_S(&t, "models/misc/MeetingPoint-Race/MeetingPoint-Race.m3d")) && (Native_Free(name), Mode_VGet(l, "Name", name)) &&
+		Mode_VRead(l, "Pos", pos) && Mode_VSet(l2, "Pos", pos) && LvN_SetI(l2, "Radius", 20000) &&
+		Mode_Preload(Mode_S(&t, "models/misc/MeetingPoint-Race/MeetingPoint-Race.m3d")) && Mode_VRead(l, "Name", name) &&
 		Mode_Put(WR, "waypointName", NULL, name) && Mode_Read(WR, "waypointName", name) && Mode_GVarSet("CurrentWaypointName", name);
 	return Mode_Done(&t, ok);
 }
@@ -530,7 +530,7 @@ static byte Win2nd_OnCheckPoint(const nativeVal_t *a) {
 	}
 	ok = ok && Wr_NextIndex(idx) && Mode_Put(WR, "iStartPos", NULL, idx) && Wr_Start("iStartPos", 0, pos) && Mode_VSet(l, "Pos", pos) &&
 		Wr_StartAng(ang) && Mode_VSet(l, "Ang", ang) && LvN_SetS(l, "OnTake", "Mission_Win2ndRace.OnCheckPoint") &&
-		Native_Arith('+', &a[0], Mode_S(&t, "_Trigg"), tn) && Mode_EntityH(tn, l2) && (Native_Free(pos), Mode_VGet(l, "Pos", pos)) &&
+		Native_Arith('+', &a[0], Mode_S(&t, "_Trigg"), tn) && Mode_EntityH(tn, l2) && Mode_VRead(l, "Pos", pos) &&
 		Mode_VSet(l2, "Pos", pos) && LvN_SetS(l2, "OnTake", "Mission_Win2ndRace.OnNearCheckPoint") && Mode_ListGet("Race", "First", pn) &&
 		(Native_Free(e), Mode_EntityH(pn, e));
 	while (ok && Native_True(e)) {
@@ -587,7 +587,7 @@ static byte Win2nd_OnNearCheckPoint(const nativeVal_t *a) {
 	if (!ok || !Native_Compare(ns, n2)) {
 		return Mode_Done(&t, ok);
 	}
-	ok = Mode_Put(WR, "nextStartPos", NULL, n2) && Wr_Start("nextStartPos", 0, pos) && (Native_Free(uc), Mode_VGet(ply, "UsrControl", uc));
+	ok = Mode_Put(WR, "nextStartPos", NULL, n2) && Wr_Start("nextStartPos", 0, pos) && Mode_VRead(ply, "UsrControl", uc);
 	int user = !ok ? -1 : LvN_EqI(uc, 0);
 	if (user > 0) {
 		user = Mode_G(WR, "NumOponNotGoNextItem", nn) ? LvN_EqI(nn, 0) : -1;
@@ -1143,7 +1143,7 @@ static byte Transport_InitTransport(void) {
 	byte ok = LV_CALL("Traffic", "SetPath", NULL, "") && LV_CALL("VehiclesNPC", "MakeAI", tr, "ss", "TLight2", "Transporter") &&
 		Mode_Put(TK, "trans", NULL, tr) && LV_CALL("Traffic", "ResetPath", NULL, "") && Mode_Read(TK, "trans", tr) && LvN_SetS(tr, "TgType", "red") &&
 		LvN_SetI(tr, "Money", -1) && LvN_Life(tr, TK, "TRANSPORT_LIFE") && LvN_SetI(tr, "Traf_Active", 1) && Mode_VGet(tr, "Pos", pos) &&
-		Mode_VSet(tr, "Traf_Begin", pos) && (Native_Free(pos), Mode_VGet(tr, "Pos", pos)) && Mode_VSet(tr, "Traf_End", pos) &&
+		Mode_VSet(tr, "Traf_Begin", pos) && Mode_VRead(tr, "Pos", pos) && Mode_VSet(tr, "Traf_End", pos) &&
 		LvN_SetI(tr, "Traf_Speed", 100 * 28 + 2000) && Mode_VGet(tr, "Name", name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name) &&
 		LV_CALL("SAI", "SetStateVehicle", NULL, "ividd", 3L, name, 0L, 2.0, 0.025) && LvN_SetS(tr, "OnDamage", "Mission_TransportKiller.TryToDamage") &&
 		LvN_SetS(tr, "OnDeath", "Mission_TransportKiller.TryToDeath") && Mode_G(TK, "Model_Datapack", model) && Mode_PreloadOnes(model);
@@ -1515,7 +1515,7 @@ static byte Merc_InitIdentifyMerc(void) {
 	if (ok) {
 		Native_SetVec(v, -252843.578125, 67933.2734375, -187826.109375);
 		ok = Mode_VSet(tr, "Pos", v) && LvN_SetI(tr, "MaxLife", 1) && LvN_SetI(tr, "Life", 1) && LvN_SetI(tr, "Money", -1) &&
-			(Native_Free(name), Mode_VGet(tr, "Name", name)) && LV_CALL("SAI", "SetStateVehicle", NULL, "iv", 0L, name) && Mode_UsrHandle(u2) &&
+			Mode_VRead(tr, "Name", name) && LV_CALL("SAI", "SetStateVehicle", NULL, "iv", 0L, name) && Mode_UsrHandle(u2) &&
 			Mode_VGet(u2, "Pos", up) && LV_CALL("RaceMaker", "PointObjectTo", NULL, "vv", tr, up) && Im_Camera(1000, 20, name) &&
 			LV_CALL("Scene", "SetText", NULL, "si", "Mission_MeetingWithMrX_RemoteMessage1", 0L) &&
 			Mode_Later(3.0, IM, "CreateLonelyMercInScene", NULL, 0, NULL);
@@ -1581,7 +1581,7 @@ static byte Merc_CreateLonelyMercCore(const nativeVal_t *difficulty, nativeVal_t
 		ok = Mode_G(IM, "prevWeapList", v) && Mode_VSet(m, "WeapList", v) && (Native_Free(v), Mode_G(IM, "prevAmmo", v)) && Mode_VSet(m, "Ammo01", v) &&
 			LvN_Life(m, IM, "LONELY_MERC_LIFE");
 	} else if (ok) {
-		ok = Mode_VGet(m, "WeapList", v) && Mode_Put(IM, "prevWeapList", NULL, v) && (Native_Free(v), Mode_VGet(m, "Ammo01", v)) &&
+		ok = Mode_VGet(m, "WeapList", v) && Mode_Put(IM, "prevWeapList", NULL, v) && Mode_VRead(m, "Ammo01", v) &&
 			Mode_Put(IM, "prevAmmo", NULL, v) && LvN_SetS(m, "WeapList", "0,15,0,0,0,0");
 	}
 	ok = ok && Mode_VGet(m, "Name", name) && Mode_GVarSet("CurrentWaypointName", name) && Mode_G(IM, "lonelyMerc", out);
@@ -2358,7 +2358,7 @@ static byte Debtors_SelectNewMissionTarget(void) {
 		LvN_SetS(o1, "OnDeath", "Mission_DestroyBadDebtors.OnMissionTargetDeath") && LvN_SetS(o1, "OnDamage", "Mission_DestroyBadDebtors.OnMissionTargetDamage") &&
 		LV_CALL("OutMap", "GetFreeSpawnPos", spw, "") && LvN_Item(spw, 0, p) && Mode_VSet(o1, "Pos", p) && Mode_VGet(o1, "Name", name) &&
 		LV_CALL("SAI", "SetStateVehicle", NULL, "ividd", 3L, name, 0L, 2.0, 0.025) && LV_CALL("Traffic", "ResetPath", NULL, "") &&
-		(Native_Free(name), Mode_VGet(o1, "Name", name)) && Mode_Put(BD, "currentMissionTarget", NULL, name);
+		Mode_VRead(o1, "Name", name) && Mode_Put(BD, "currentMissionTarget", NULL, name);
 	return Mode_Done(&t, ok);
 }
 
@@ -2402,7 +2402,7 @@ static byte Debtors_DropTreasure(const nativeVal_t *a) {
 	if (ok) {
 		Mode_Ints3(cam, 0, 1000, 0);
 		Native_SetFloat(now, Mode_Time());
-		ok = Mode_VSet(l2, "CamTgt", cam) && Native_Arith('+', now, Mode_I(&t, 20), at) && (Native_Free(ln), Mode_VGet(l, "Name", ln)) &&
+		ok = Mode_VSet(l2, "CamTgt", cam) && Native_Arith('+', now, Mode_I(&t, 20), at) && Mode_VRead(l, "Name", ln) &&
 			Mode_AtG(at, BD, "DelTreasure", ln, 1) && Mode_G(BD, "mercsActive", lst) && LV_OWN(BD, "SendShipToGetTreasure", NULL, "vv", lst, pos) &&
 			Mode_Read(BD, "bankers", lst) && LV_OWN(BD, "SendShipToGetTreasure", NULL, "vv", lst, pos);
 	}
@@ -2657,7 +2657,7 @@ static byte Bd_CreateBanker(const nativeVal_t *follow, const nativeVal_t *pos) {
 		Native_Free(ep);
 		ok = Mode_VGet(o1, "Name", Native_Append(one)) && Mode_VGet(e, "Pos", ep) && LV_OWN(BD, "SendShipToGetTreasure", NULL, "vv", one, ep);
 	}
-	ok = ok && (Native_Free(name), Mode_VGet(o1, "Name", name)) && Mode_Append(BD, "bankers", name) && Bd_NoMoney(name);
+	ok = ok && Mode_VRead(o1, "Name", name) && Mode_Append(BD, "bankers", name) && Bd_NoMoney(name);
 	return Mode_Done(&t, ok);
 }
 
@@ -3142,10 +3142,10 @@ static byte Traitorius_CreateTraitorius(void) {
 		Mode_Read(AT, "pd", pd) && Mode_VGet(pd, "Ship", ship) && LV_CALL("VehiclesNPC", "SetStdProperties", NULL, "vv", name, ship) &&
 		Mode_VGet(tr, "Style", st) && Mode_G(AT, "styleOffset", off) && Native_Arith('-', st, off, st2) && Mode_VSet(tr, "Style", st2) &&
 		LvN_SetS(tr, "Descriptor", "Traitorius") && Mode_Read(AT, "pd", pd) && LV_CALL("VehiclesNPC", "ModAIProff", NULL, "vv", tr, pd) &&
-		LvN_Life(tr, AT, "TRAITORIUS_LIFE") && LvN_SetS(tr, "WeapList", "1,1,1,0,0,0") && (Native_Free(name), Mode_VGet(tr, "Name", name)) &&
+		LvN_Life(tr, AT, "TRAITORIUS_LIFE") && LvN_SetS(tr, "WeapList", "1,1,1,0,0,0") && Mode_VRead(tr, "Name", name) &&
 		LV_CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, name, 0L) &&
 		Mode_ListSet("Traitorius", "OnDamage", "Mission_AttackTraitorius.OnTraitoriusDamage") &&
-		Mode_ListSet("Traitorius", "OnDeath", "Mission_AttackTraitorius.OnTraitoriusDeath") && (Native_Free(name), Mode_VGet(tr, "Name", name)) &&
+		Mode_ListSet("Traitorius", "OnDeath", "Mission_AttackTraitorius.OnTraitoriusDeath") && Mode_VRead(tr, "Name", name) &&
 		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name) && LvN_ScorerCallG(AT, "MissionScorer") && LvN_Draw();
 	return Mode_Done(&t, ok);
 }
@@ -3228,7 +3228,7 @@ static byte Traitorius_OnTraitoriusDamage(const nativeVal_t *a) {
 	if (skip != 0) {
 		return Mode_Done(&t, skip > 0);
 	}
-	int scared = At_LifeBar() && Mode_Read(AT, "traitorius", tr) && (Native_Free(life), Mode_VGet(tr, "Life", life)) ? At_LifeCmp(tr, life, "<=") : -1;
+	int scared = At_LifeBar() && Mode_Read(AT, "traitorius", tr) && Mode_VRead(tr, "Life", life) ? At_LifeCmp(tr, life, "<=") : -1;
 	if (scared > 0) {
 		int call = At_Calm(0) ? At_CallsPolice() : -1;
 		if (call != 0) {
