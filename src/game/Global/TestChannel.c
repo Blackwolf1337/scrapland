@@ -57,8 +57,14 @@
 
 #include <eval.h>
 
-/* STAGE 7 of the removal of the interpreter: set TC_PYTHON to 0 (the "py" command goes with the interpreter) */
+/* STAGE 7 of the removal of the interpreter: TC_PYTHON is 0 in the build without it (SCRAP_NO_PYTHON); the "py"
+ * command answers an error there */
+#ifdef SCRAP_NO_PYTHON
+#define TC_PYTHON 0
+#else
 #define TC_PYTHON 1
+#endif
+#define TC_NOPYTHON "error: SystemError: py: no Python interpreter in this build\n"
 
 #define TC_CMD "test_cmd.txt"
 #define TC_REPLY "test_reply.txt"
@@ -1460,9 +1466,11 @@ static void TC_Line(tcBuf *b, const char *line) {
 			TC_AddError(b);
 			TC_Add(b, "\n", 1);
 		}
-#if TC_PYTHON
 	} else if (TC_Verb(line, "py", &arg)) {
+#if TC_PYTHON
 		TC_Python(b, arg);
+#else
+		TC_Add(b, TC_NOPYTHON, -1);
 #endif
 	} else {
 		byte quiet = TC_Verb(line, "do", &arg);
@@ -1487,17 +1495,19 @@ static void TC_Line(tcBuf *b, const char *line) {
 
 /* runs the body of a command file (CR dropped) */
 static void TC_Run(tcBuf *b, char *body) {
-#if TC_PYTHON
 	if (!strncmp(body, "py\n", 3)) {
+#if TC_PYTHON
 		if (g_PythonReady) {
 			TC_Python(b, body + 3);
 			PyErr_Clear();
 		} else {
 			TC_Add(b, "error: the script modules are not ready\n", -1);
 		}
+#else
+		TC_Add(b, TC_NOPYTHON, -1);
+#endif
 		return;
 	}
-#endif
 	for (char *line = body; line && *line;) {
 		char *nl = strchr(line, '\n');
 		if (nl) {

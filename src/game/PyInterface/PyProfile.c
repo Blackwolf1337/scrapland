@@ -15,10 +15,20 @@
  * the rest (functions, methods, lambdas). "shadowed" counts the calls
  * of a function while the module global of its name is a C function: a C or data version exists, yet the Python one
  * ran (a reference kept from before the loader replaced it).
+ *
+ * The build without the interpreter (SCRAP_NO_PYTHON) runs no code objects: Start and End do nothing there.
  */
 #include "scrap/global.h"
 #include "scrap/platform.h"
 #include "scrap/python.h"
+
+#ifdef SCRAP_NO_PYTHON
+void PyProfile_Start(void) {
+}
+
+void PyProfile_End(void) {
+}
+#else
 
 #include <frameobject.h>
 #include <opcode.h>
@@ -230,3 +240,4 @@ void PyProfile_End(void) {
 		PyProf_Write(pyprof_path);
 	}
 }
+#endif

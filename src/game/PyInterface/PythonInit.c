@@ -238,8 +238,15 @@ void Python_Init(void) {
 		Py_LineEnd(Py_LineCallText("Init.Init", g_pApp->levelPath));
 	}
 	/* STAGE 7: the engine variable PythonExecute (the command line, the MCP harness) is Python; it goes with the
-	 * interpreter (a C command channel takes the harness) */
+	 * interpreter (a C command channel takes the harness): the build without it says so when it is set */
+#ifdef SCRAP_NO_PYTHON
+	if (g_PythonExecute && *g_PythonExecute && (!GVar_PythonExecute.def.s ||
+		strcmp(g_PythonExecute, GVar_PythonExecute.def.s))) {
+		Con_Errorf("PythonExecute ignored, no Python interpreter in this build: %s\n", g_PythonExecute);
+	}
+#else
 	PyRun_ScrapString(g_PythonExecute);
+#endif
 	/* the marshal buffer of Pack_PreloadLibrary is not needed after the start */
 	cStaticBuffer *buf = g_PyStaticBuffer;
 	CHECK(!buf->lock);
@@ -271,10 +278,34 @@ void Python_Shutdown(void) {
  * "packlog" (the import while the engine records the files of the packs) and "refused". With SCRAP_PY_REFUSE=1 as
  * well no module code runs: a module without a C definition stays out of sys.modules (an import of it raises
  * ImportError). Without the variables nothing changes.
+ *
+ * The build without the interpreter (SCRAP_NO_PYTHON) always refuses: a module without a C definition is not
+ * loaded (a .pyc of the packs or of a mod, a .py or .pyc the import would read), a console line says so the first
+ * time for each name; the gate log lines need SCRAP_PY_GATE as before.
  */
 static int py_gate = -1;
 static byte py_refuse;
 static FILE *py_gateFile;
+
+#ifdef SCRAP_NO_PYTHON
+#define PY_IGNORED_MAX 512
+
+/* the console line of a module the build without the interpreter does not load, once for each name */
+static void Py_IgnoredOnce(const char *name, const char *file) {
+	static char seen[PY_IGNORED_MAX][0x40];
+	static int n;
+
+	for (int i = 0; i < n; i++) {
+		if (!strncmp(seen[i], name, sizeof(seen[i]) - 1)) {
+			return;
+		}
+	}
+	if (n < PY_IGNORED_MAX) {
+		Str_Copy(seen[n++], name, sizeof(seen[0]));
+	}
+	Con_Printf("%s (%s) not loaded: it is Python code, this build has no interpreter\n", name, file);
+}
+#endif
 
 static byte Py_GateOn(void) {
 	if (py_gate < 0) {
@@ -304,9 +335,13 @@ void Py_GateNote(const char *what, const char *name, const char *file) {
 
 /* 1 when the module code may run; else the refusal is logged and ImportError set */
 static byte Py_GateAllow(const char *name, const char *file) {
+#ifdef SCRAP_NO_PYTHON
+	Py_IgnoredOnce(name, file);
+#else
 	if (!Py_GateOn() || !py_refuse) {
 		return 1;
 	}
+#endif
 	Py_GateNote("refused", name, file);
 	PyErr_Format(PyExc_ImportError, "pack module %.100s (%.100s) refused: no C definition", name, file);
 	return 0;
@@ -338,9 +373,13 @@ void Pack_PreloadLibrary(const char *name, const char *file) {
 
 	cFilePack_ctor(&f);
 	CHECK(Py_IsReady());
+#ifdef SCRAP_NO_PYTHON
+	g_PyImportGate = Py_GateImport;
+#else
 	if (Py_GateOn()) {
 		g_PyImportGate = Py_GateImport;
 	}
+#endif
 	if (PackLog_Closed()) {
 		if (PyDict_GetItemString(PyImport_GetModuleDict(), (char *)name)) {
 			Py_GateNote("loaded", name, file);
@@ -353,6 +392,7 @@ void Pack_PreloadLibrary(const char *name, const char *file) {
 				}
 				CHECK(m != NULL);
 			} else if (Py_GateAllow(name, file)) {
+#ifndef SCRAP_NO_PYTHON /* never there: Py_GateAllow refuses */
 				Py_GateNote("pyc", name, file);
 				CHECK(cFilePack_Open(&f.file.base, file, FILE_MODE_READ));
 				int size = cFilePack_Size(&f.file.base);
@@ -371,6 +411,7 @@ void Pack_PreloadLibrary(const char *name, const char *file) {
 				Py_DECREF(co);
 				CHECK(m != NULL);
 				Script_ModuleLoaded(name, m);
+#endif
 			} else {
 				PyErr_Clear();
 			}

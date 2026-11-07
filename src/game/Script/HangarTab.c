@@ -566,9 +566,14 @@ static PyObject *Ht_Eval(scriptFrame_t *f, PyObject *text, PyObject *locals) {
 			return Sf_Keep(f, found > 0 ? v : NULL);
 		}
 	}
-	/* STAGE 7: another expression (only a caller of ComputeShipTotalCost from the console) becomes an error when the
-	 * interpreter goes */
+	/* STAGE 7: another expression (only a caller of ComputeShipTotalCost from the console) is Script_NotRead's error in
+	 * the build without the interpreter */
+#ifdef SCRAP_NO_PYTHON
+	return Sf_Keep(f, Script_NotRead("ComputeShipTotalCost", text && PyString_Check(text) ? PyString_AsString(text) :
+		""));
+#else
 	return Sf_Ask(f, "__builtin__", "eval", "(OOO)", text, g, locals);
+#endif
 }
 
 /* ComputeShipTotalCost(cad="prevShip"): the price of the ship cad names (an expression the function evaluates): the
