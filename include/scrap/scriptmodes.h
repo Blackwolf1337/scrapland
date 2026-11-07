@@ -3,9 +3,11 @@
  * (NetModes.c), the split screen (Split.c) and the single player super deals (SuperDeals.c). They call the engine in
  * C on native values. The engine functions the case files of these modules record or swap go through a seam
  * (OBJLIB 7, see Native_Seam): Scrap.AddScheduledFunc, Scrap.DeleteScheduledFuncs, Scrap.Set, Scrap.Rand,
- * Scrap.ConsoleError, SNet.SendUsrString, SNet.ModifyUsrData, SNet.IsClient, SNet.IsServer, SScorer.SetMsgText,
- * SScorer.SetLabelText, SScorer.SetMPFunc, SScorer.Set, SScorer.Fade, SInput.Bind, SSound.Play, SAI.GetStateVehicle
- * and SAI.SetStateVehicle. Every function returns 1, or 0 with the error of the script raised.
+ * Scrap.ConsoleError, Scrap.Preload3DObject, SNet.SendUsrString, SNet.ModifyUsrData, SNet.IsClient, SNet.IsServer,
+ * SScorer.SetMsgText, SScorer.SetLabelText, SScorer.SetMPFunc, SScorer.Set, SScorer.Fade, SInput.Bind, SSound.Play and
+ * SAI.GetStateVehicle (Net seams Scrap.LoadLevel itself; SAI.SetStateVehicle and the odd values of SVec.Add and
+ * Rotate3D are called by name). Imports stay with the module objects (OBJLIB 6). Every function returns 1, or 0 with
+ * the error of the script raised.
  */
 #ifndef SCRAP_SCRIPTMODES_H
 #define SCRAP_SCRIPTMODES_H
