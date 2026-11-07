@@ -147,13 +147,9 @@ byte Native_Literal(const char *s, nativeVal_t *out);
  * no script makes them).
  */
 
-/* a deep copy of v into *out (a dict keeps its slots: the same order) */
-void Native_Copy(nativeVal_t *out, const nativeVal_t *v);
-/* the truth of v (PyObject_IsTrue) */
-byte Native_Truth(const nativeVal_t *v);
 /* cmp(a, b) of 1.5.2 as -1, 0 or 1 (PyObject_Compare: numbers coerced, other types of one kind by their values,
- * different types by the names of the types with the numbers below all others). Two different dicts of the same
- * length are only told apart (1, not the order of 1.5.2) */
+ * different types by the names of the types with the numbers below all others, two NV_OBJ by Python). Two different
+ * dicts of the same length are only told apart (1, not the order of 1.5.2) */
 int Native_Compare(const nativeVal_t *a, const nativeVal_t *b);
 /* a op b for op '+', '-', '*', '/', '%' (PyNumber_Add and the others, the concatenation and repetition of texts,
  * lists and tuples, the division and modulo rounding down; '%' on a text is Native_Format) */
@@ -164,12 +160,12 @@ byte Native_Format(const nativeVal_t *format, const nativeVal_t *args, nativeVal
 /* int(v) and float(v) (PyNumber_Int, PyNumber_Float: numbers and texts) */
 byte Native_ToInt(const nativeVal_t *v, nativeVal_t *out);
 byte Native_ToFloat(const nativeVal_t *v, nativeVal_t *out);
-/* len(v): -1 with the TypeError of a value without length */
-int Native_Len(const nativeVal_t *v);
-/* v[i] of a text, list or tuple (PySequence_GetItem: a negative i counts from the end) */
+/* len(v) of the script (PyObject_Length: a dict too): -1 with the TypeError of a value without length */
+int Native_Size(const nativeVal_t *v);
+/* v[i] of a text, list or tuple as a copy (PySequence_GetItem through Native_GetItem) */
 byte Native_SeqItem(const nativeVal_t *v, long i, nativeVal_t *out);
-/* v[key] (PyObject_GetItem: a dict by its key, a sequence by an int) */
-byte Native_GetItem(const nativeVal_t *v, const nativeVal_t *key, nativeVal_t *out);
+/* v[key] as a copy (PyObject_GetItem: a dict by any key, a sequence by an int) */
+byte Native_Subscript(const nativeVal_t *v, const nativeVal_t *key, nativeVal_t *out);
 /* v[lo:hi] of a text, list or tuple (PySequence_GetSlice) */
 byte Native_Slice(const nativeVal_t *v, long lo, long hi, nativeVal_t *out);
 /* x in seq (PySequence_Contains): 1 or 0, -1 with the error */
@@ -218,9 +214,6 @@ byte Native_Split(const nativeVal_t *s, const char *sep, nativeVal_t *out);
 /* the number of argument v of an engine function as its "d" or "f" reads it: 1 with *out, else 0 with the TypeError
  * of PyFloat_AsDouble ("illegal argument type for built-in operation") */
 byte Native_ArgDouble(const nativeVal_t *v, double *out);
-/* the number of argument v of an engine function as its "i" or "l" reads it (PyInt_AsLong: a float rounds toward 0):
- * 1 with *out (an "i" takes the low bits), else 0 with its TypeError or OverflowError */
-byte Native_ArgInt(const nativeVal_t *v, long *out);
 /* eval(text) of a value the game wrote, as Script_EvalIn(module, text) reads it: the checks of builtin eval (a text
  * without 0 bytes), then Native_Literal of the text after its leading blanks; 1 with *out (Native_Free it), else 0
  * with the error (SyntaxError of Script_NotRead for a text no reader takes) */
