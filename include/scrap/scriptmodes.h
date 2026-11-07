@@ -735,4 +735,10 @@ double Mode_ModGetN(const char *module, const char *var, double def);
 void Mode_ModPut(const char *module, const char *var, const nativeVal_t *v);
 void Mode_ModPutI(const char *module, const char *var, long i);
 
+/* ---- the multiplayer menus of batch R (MenuNet) ---- */
+
+/* module.var as Script_GetString reads it: its text (up to the first 0 byte) cut to size, else "" (no error; a missing
+ * variable or module is "" too); out */
+const char *Mode_ModGetS(const char *module, const char *var, char *out, int size);
+
 #endif
