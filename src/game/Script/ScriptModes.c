@@ -2044,14 +2044,8 @@ static byte Mode_ScorerAddS(const nativeVal_t *id, const char *item, const char 
 	return ok;
 }
 
-byte Mode_MissionText(const nativeVal_t *id, const char *item, const char *type, const nativeVal_t *x, const nativeVal_t *y,
-	const char *font, const char *effect, const nativeVal_t *text, const char *align, const nativeVal_t *visible) {
+byte Mode_TextColour(const nativeVal_t *id, const char *item) {
 	static const char *const rgba[] = { "Red", "Green", "Blue", "Alpha" };
-	if ((type && !Mode_ScorerAddS(id, item, type)) || !LvN_ScorerSet(id, item, "X", x) || !LvN_ScorerSet(id, item, "Y", y) ||
-		!Mode_ScorerSetS(id, item, "Font", font) || (effect && !Mode_ScorerSetS(id, item, "Effect", effect)) ||
-		!LvN_ScorerSet(id, item, "Text", text) || !Mode_ScorerSetS(id, item, "Align", align)) {
-		return 0;
-	}
 	for (int i = 0; i < 4; i++) {
 		nativeVal_t c, k;
 		Native_SetNone(&k);
@@ -2062,7 +2056,17 @@ byte Mode_MissionText(const nativeVal_t *id, const char *item, const char *type,
 			return 0;
 		}
 	}
-	return !visible || LvN_ScorerSet(id, item, "Visible", visible);
+	return 1;
+}
+
+byte Mode_MissionText(const nativeVal_t *id, const char *item, const char *type, const nativeVal_t *x, const nativeVal_t *y,
+	const char *font, const char *effect, const nativeVal_t *text, const char *align, const nativeVal_t *visible) {
+	if ((type && !Mode_ScorerAddS(id, item, type)) || !LvN_ScorerSet(id, item, "X", x) || !LvN_ScorerSet(id, item, "Y", y) ||
+		!Mode_ScorerSetS(id, item, "Font", font) || (effect && !Mode_ScorerSetS(id, item, "Effect", effect)) ||
+		!LvN_ScorerSet(id, item, "Text", text) || !Mode_ScorerSetS(id, item, "Align", align)) {
+		return 0;
+	}
+	return Mode_TextColour(id, item) && (!visible || LvN_ScorerSet(id, item, "Visible", visible));
 }
 
 byte Mode_MissionSprite(const nativeVal_t *id, const char *item, const nativeVal_t *x, const nativeVal_t *y, long alpha, long r,
@@ -2328,4 +2332,24 @@ byte Mode_SpeechMsg(const nativeVal_t *cad) {
 	Native_Free(&r);
 	Native_Free(&t);
 	return ok;
+}
+
+byte Mode_CallKw(const char *module, const char *name, nativeVal_t *out, const nativeVal_t *args, int n, PyObject *kw) {
+	nativeVal_t t;
+	PyObject *fn = kw ? Script_Attr(module, name) : NULL;
+	Native_SetEmpty(&t, NV_TUPLE);
+	for (int i = 0; i < n; i++) {
+		Native_Copy(Native_Append(&t), &args[i]);
+	}
+	PyObject *a = fn ? Native_ToPy(&t) : NULL;
+	Native_Free(&t);
+	PyObject *r = a ? Script_CallObject(fn, a, kw) : NULL;
+	if (r && out) {
+		Native_Arg(r, out);
+	}
+	Py_XDECREF(r);
+	Py_XDECREF(a);
+	Py_XDECREF(fn);
+	Py_XDECREF(kw);
+	return r != NULL;
 }
