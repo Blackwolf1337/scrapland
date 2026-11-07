@@ -140,16 +140,16 @@ static byte Metro_OutDoor(PyObject *door, PyObject *val) {
 	}
 	Native_ActAction("Down");
 	/* SAct.GetAct("AnmTotalTime") - 0.1 */
-	nativeVal_t total, v;
+	nativeVal_t total, tenth, v;
 	Native_ActVar("AnmTotalTime", &total);
-	double d;
-	if (total.type == NV_STR || !Native_ArgDouble(&total, &d)) {
-		Native_Free(&total);
-		PyErr_Clear();
-		return Native_Raise(NE_TYPE, "bad operand type(s) for -");
+	Native_SetFloat(&tenth, 0.1);
+	byte ok = Native_Arith('-', &total, &tenth, &v);
+	Native_Free(&total);
+	if (!ok) {
+		return 0;
 	}
-	Native_SetFloat(&v, total.type == NV_INT ? (double)total.i - 0.1 : d - 0.1);
 	Native_ActSet("AddEventAtTime", &v);
+	Native_Free(&v);
 	Native_SetStr(&v, "Recover");
 	Native_ActSet("EventName", &v);
 	Native_SetStr(&v, "Metro.RecoverUsr");
@@ -201,27 +201,26 @@ static byte Metro_SetUsrParams(const nativeVal_t *name, const nativeVal_t *ang) 
 		return ok;
 	}
 	/* ply.Ang = (0, ply.Ang[1] + Ang, 0) */
-	nativeVal_t cur, tmp;
-	double y, a;
+	nativeVal_t cur, tmp, ny = { 0 };
 	if (!Native_EntVar(ply, ref, "Ang", &cur)) {
 		return 0;
 	}
 	const nativeVal_t *cy = Native_GetItem(&cur, 1, 1, &tmp);
-	ok = cy != NULL;
-	if (ok && (!Native_ArgDouble(cy, &y) || ang->type == NV_STR || !Native_ArgDouble(ang, &a))) {
-		/* float + a value that is no number */
-		PyErr_Clear();
-		ok = Native_Raise(NE_TYPE, "number coercion failed");
-	}
+	ok = cy && Native_Arith('+', cy, ang, &ny);
 	if (cy == &tmp) {
 		Native_Free(&tmp);
 	}
 	Native_Free(&cur);
-	if (!ok) {
-		return 0;
+	if (ok) {
+		/* (0, ny, 0) */
+		Native_SetEmpty(&v, NV_TUPLE);
+		Native_SetInt(Native_Append(&v), 0);
+		*Native_Append(&v) = ny;
+		Native_SetInt(Native_Append(&v), 0);
+		ok = Native_EntSet(ply, ref, "Ang", &v);
+		Native_Free(&v);
 	}
-	Native_SetVec(&v, 0.0, y + a, 0.0);
-	return Native_EntSet(ply, ref, "Ang", &v);
+	return ok;
 }
 
 /* UseMetro(id, control): the station picked (control is Station_<name>): back to the game, the elevator ride, the
@@ -241,18 +240,16 @@ static byte Metro_UseMetro(const nativeVal_t *id, const nativeVal_t *control) {
 		nativeVal_t tmp;
 		if (i == 2) {
 			/* "MoveLevel " + control[8:] */
-			if (control->type == NV_STR) {
-				nativeBuf_t b;
-				Native_BufInit(&b);
-				Native_BufAdd(&b, "MoveLevel ", -1);
-				if (control->n > 8) {
-					Native_BufAdd(&b, Native_Text(control) + 8, control->n - 8);
-				}
-				cp[i] = PyString_FromStringAndSize(b.p, b.len);
-				Native_BufFree(&b);
-			} else {
-				ok = Native_Raise(NE_TYPE, control->type == NV_LIST || control->type == NV_TUPLE || control->type == NV_VEC ?
-					"illegal argument type for built-in operation" : "unsliceable object");
+			nativeVal_t head, tail, ml;
+			Native_SetStr(&head, "MoveLevel ");
+			ok = Native_Slice(control, 8, INT_MAX, &tail);
+			if (ok) {
+				ok = Native_Arith('+', &head, &tail, &ml);
+				Native_Free(&tail);
+			}
+			if (ok) {
+				cp[i] = Native_ToPy(&ml);
+				Native_Free(&ml);
 			}
 		} else if (Metro_Read(MV_PARAMS)) {
 			const nativeVal_t *p = Native_GetItem(&metro.callParams, i, 1, &tmp);
@@ -328,20 +325,15 @@ static byte Metro_UseMetro(const nativeVal_t *id, const nativeVal_t *control) {
 	return 1;
 }
 
-/* the text of v in capitals, as string.upper(v[from:]) of the script */
+/* string.upper(v[from:]) of the script */
 static byte Metro_UpperTail(const nativeVal_t *v, int from, nativeVal_t *out) {
-	if (v->type == NV_STR) {
-		nativeVal_t tail;
-		Native_SetText(&tail, Native_Text(v) + (v->n > from ? from : v->n), v->n > from ? v->n - from : 0);
-		byte ok = Native_Upper(&tail, out);
-		Native_Free(&tail);
-		return ok;
+	nativeVal_t tail;
+	if (!Native_Slice(v, from, INT_MAX, &tail)) {
+		return 0;
 	}
-	if (v->type == NV_LIST || v->type == NV_TUPLE || v->type == NV_VEC) {
-		/* the slice is a list or tuple */
-		return Native_Raise(NE_TYPE, "read-only character buffer, %s", v->type == NV_LIST ? "list" : "tuple");
-	}
-	return Native_Raise(NE_TYPE, "unsliceable object");
+	byte ok = Native_Upper(&tail, out);
+	Native_Free(&tail);
+	return ok;
 }
 
 /* CreateStation(X, Y, Name, SpriteIndex=6): a station button of the map (metro.def sections): 0 with the error set */
