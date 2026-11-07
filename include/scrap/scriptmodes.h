@@ -350,4 +350,18 @@ byte Mode_SetAlarm(const nativeVal_t *level);
 /* Scrap.Set(name, i) with an int, as the scripts set it (Mode_GVarSetN sets a float) */
 byte Mode_GVarSetI(const char *name, long i);
 
+/* ---- helpers of batch I (the super deals and the native level files of batch I) ---- */
+
+/* h.var = i, = "text", = d of a handle value */
+byte Mode_VSetI(const nativeVal_t *h, const char *var, long i);
+byte Mode_VSetS(const nativeVal_t *h, const char *var, const char *s);
+byte Mode_VSetF(const nativeVal_t *h, const char *var, double d);
+/* x[i] of the script (a dict looks the int up; an NV_OBJ, e.g. a list that holds entity handles, the Python way, the
+ * item as Native_Arg makes it) */
+byte Mode_Item(const nativeVal_t *x, long i, nativeVal_t *out);
+/* module.var of another module as a value (any object: a handle, a function, a module as NV_OBJ) */
+byte Mode_ModGet(const char *module, const char *var, nativeVal_t *out);
+/* module.var = None */
+byte Mode_ModNone(const char *module, const char *var);
+
 #endif

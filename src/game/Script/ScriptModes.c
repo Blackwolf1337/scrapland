@@ -1683,3 +1683,58 @@ byte Mode_GVarSetI(const char *name, long i) {
 	Native_SetInt(&v, i);
 	return Mode_GVarSet(name, &v);
 }
+
+/* ---- helpers of batch I (the super deals and the native level files of batch I) ---- */
+
+byte Mode_VSetI(const nativeVal_t *h, const char *var, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	return Mode_VSet(h, var, &v);
+}
+
+byte Mode_VSetS(const nativeVal_t *h, const char *var, const char *s) {
+	nativeVal_t v;
+	Native_SetText(&v, s, (int)strlen(s));
+	byte ok = Mode_VSet(h, var, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+byte Mode_VSetF(const nativeVal_t *h, const char *var, double d) {
+	nativeVal_t v;
+	Native_SetFloat(&v, d);
+	return Mode_VSet(h, var, &v);
+}
+
+byte Mode_Item(const nativeVal_t *x, long i, nativeVal_t *out) {
+	nativeVal_t k;
+	Native_SetNone(out);
+	if (x->type == NV_OBJ) {
+		/* OBJLIB 7 */
+		PyObject *n = PyInt_FromLong(i), *r = n ? PyObject_GetItem(x->obj, n) : NULL;
+		Py_XDECREF(n);
+		if (!r) {
+			return 0;
+		}
+		Native_Arg(r, out);
+		Py_DECREF(r);
+		return 1;
+	}
+	Native_SetInt(&k, i);
+	return Native_Subscript(x, &k, out);
+}
+
+byte Mode_ModGet(const char *module, const char *var, nativeVal_t *out) {
+	PyObject *o = Script_Attr(module, var);
+	Native_SetNone(out);
+	if (!o) {
+		return 0;
+	}
+	Native_Arg(o, out);
+	Py_DECREF(o);
+	return 1;
+}
+
+byte Mode_ModNone(const char *module, const char *var) {
+	return Mode_SetModPy(module, var, Py_None);
+}

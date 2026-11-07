@@ -1068,26 +1068,11 @@ void LvN_Str(nativeVal_t *v, const char *s) {
 	Native_SetText(v, s, (int)strlen(s));
 }
 
-byte LvN_ModGet(const char *module, const char *var, nativeVal_t *out) {
-	PyObject *o = Script_Attr(module, var);
-	Native_SetNone(out);
-	if (!o) {
-		return 0;
-	}
-	Native_Arg(o, out);
-	Py_DECREF(o);
-	return 1;
-}
-
 byte LvN_ModSetGlobal(const char *module, const char *var, const char *src, const char *name) {
 	PyObject *o = Mode_GlobalPy(src, name);
 	byte ok = o && Mode_SetModPy(module, var, o);
 	Py_XDECREF(o);
 	return ok;
-}
-
-byte LvN_ModNone(const char *module, const char *var) {
-	return Mode_SetModPy(module, var, Py_None);
 }
 
 byte LvN_ModAppend(const char *module, const char *var, const nativeVal_t *v) {
@@ -1165,44 +1150,6 @@ byte LvN_EqS(const nativeVal_t *a, const char *s) {
 	byte eq = !Native_Compare(a, &b);
 	Native_Free(&b);
 	return eq;
-}
-
-byte LvN_SetI(const nativeVal_t *h, const char *var, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return Mode_VSet(h, var, &v);
-}
-
-byte LvN_SetS(const nativeVal_t *h, const char *var, const char *s) {
-	nativeVal_t v;
-	LvN_Str(&v, s);
-	byte ok = Mode_VSet(h, var, &v);
-	Native_Free(&v);
-	return ok;
-}
-
-byte LvN_SetF(const nativeVal_t *h, const char *var, double d) {
-	nativeVal_t v;
-	Native_SetFloat(&v, d);
-	return Mode_VSet(h, var, &v);
-}
-
-byte LvN_Item(const nativeVal_t *x, long i, nativeVal_t *out) {
-	nativeVal_t k;
-	Native_SetNone(out);
-	if (x->type == NV_OBJ) {
-		/* OBJLIB 7 */
-		PyObject *n = PyInt_FromLong(i), *r = n ? PyObject_GetItem(x->obj, n) : NULL;
-		Py_XDECREF(n);
-		if (!r) {
-			return 0;
-		}
-		Native_Arg(r, out);
-		Py_DECREF(r);
-		return 1;
-	}
-	Native_SetInt(&k, i);
-	return Native_Subscript(x, &k, out);
 }
 
 void LvN_Elems(const nativeVal_t *v, nativeVal_t *out) {

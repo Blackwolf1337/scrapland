@@ -230,11 +230,11 @@ PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table);
 #define LV_CALL(mod, name, out, ...) Native_CallMod(mod, name, out, __VA_ARGS__)
 
 /* module.var of another module as a value (any object: a handle, a function, a module as NV_OBJ) */
-byte LvN_ModGet(const char *module, const char *var, nativeVal_t *out);
+#define LvN_ModGet Mode_ModGet
 /* module.var = the global name of src as the object it is (a function: the one a mission put there; OBJLIB 5) */
 byte LvN_ModSetGlobal(const char *module, const char *var, const char *src, const char *name);
 /* module.var = None */
-byte LvN_ModNone(const char *module, const char *var);
+#define LvN_ModNone Mode_ModNone
 /* module.var.append(v) of a list variable of another module, in place (the method of whatever value is there) */
 byte LvN_ModAppend(const char *module, const char *var, const nativeVal_t *v);
 /* the global name of module (a function, a list: any object) as a value */
@@ -251,12 +251,12 @@ int LvN_GEqI(const char *module, const char *name, long i);
 byte LvN_EqI(const nativeVal_t *a, long i);
 byte LvN_EqS(const nativeVal_t *a, const char *s);
 /* h.var = i, = "text", = d of a handle value */
-byte LvN_SetI(const nativeVal_t *h, const char *var, long i);
-byte LvN_SetS(const nativeVal_t *h, const char *var, const char *s);
-byte LvN_SetF(const nativeVal_t *h, const char *var, double d);
+#define LvN_SetI Mode_VSetI
+#define LvN_SetS Mode_VSetS
+#define LvN_SetF Mode_VSetF
 /* x[i] of the script (a dict looks the int up; an NV_OBJ, e.g. a list that holds entity handles, the Python way, the
  * item as Native_Arg makes it) */
-byte LvN_Item(const nativeVal_t *x, long i, nativeVal_t *out);
+#define LvN_Item Mode_Item
 /* a value whose items a loop takes one by one: a list or tuple held as one NV_OBJ (it holds handles) as a native list
  * or tuple of its items as Native_Arg makes them, any other value copied; the global name of module the same way */
 void LvN_Elems(const nativeVal_t *v, nativeVal_t *out);
