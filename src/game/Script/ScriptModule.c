@@ -19,8 +19,9 @@
  *	call <expr>			an expression whose value is dropped (a load time call)
  *	del x				(DELETE_NAME)
  *	if <expr> / else / end		the lines between only when the value is true
- *	class C[(B, ...)] ... end	a class, the lines between make its dict (no methods yet)
- *	c <name>			a C hook (module_hooks) for what the lines cannot say
+ *	class C[(B, ...)] ... end	a class, the lines between make its dict (a method through a C hook)
+ *	c <name>			a C hook (module_hooks) for what the lines cannot say: a for loop of the
+ *					module code (Script_ModuleFor), a method of a class
  * An <expr> is a Python expression as the module code had it: numbers (parsenumber: ints through strtol or strtoul,
  * L longs, floats through atof as marshal read them), strings in quotes with the escapes of parsestr, None, tuple,
  * list and dict displays (a dict value before its key, as com_dictmaker), names (the locals, the module, the
@@ -58,8 +59,39 @@ static const struct {
 	const char *name;
 	moduleHook_t fn;
 } module_hooks[] = {
+	{ "Init", "LoadChars", Init_ModLoadChars },
+	{ "Init", "ExtraExecs", Init_ModExtraExecs },
+	{ "NewsPanel", "Settings", NewsPanel_ModSettings },
+	{ "CharsNPC", "SpawnPosInit", CharsNPC_ModSpawnPosInit },
+	{ "CharsNPC", "SpawnPosClass", CharsNPC_ModSpawnPosClass },
 	{ NULL, NULL, NULL },
 };
+
+PyObject *Script_ModuleName(PyObject *locals, const char *text) {
+	PyObject *v;
+	int found = Script_NameChain(locals, locals, text, &v);
+	if (found == 0) {
+		PyErr_Format(PyExc_SystemError, "module code: cannot load %.100s", text);
+	}
+	return found > 0 ? v : NULL;
+}
+
+byte Script_ModuleFor(PyObject *locals, const char *var, PyObject *seq, scriptForBody_t body, void *ctx) {
+	PyObject *key = PyString_InternFromString((char *)var);
+	byte ok = key != NULL;
+	for (int i = 0; ok; i++) {
+		PyObject *item;
+		int n = Script_Next(seq, i, &item);
+		if (n <= 0) {
+			ok = n == 0;
+			break;
+		}
+		ok = PyDict_SetItem(locals, key, item) == 0 && body(locals, item, ctx);
+		Py_DECREF(item);
+	}
+	Py_XDECREF(key);
+	return ok;
+}
 
 enum { MOD_NAME = 0x80, MOD_DEPTH = 64 };
 

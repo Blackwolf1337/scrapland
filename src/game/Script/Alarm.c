@@ -5,8 +5,9 @@
  * DM_NewsPanel_ dummies, their options from the language texts of the act and the news on the monitor.
  *
  * The hooks (SetAlarmCallback, AbortMissionCallback, RestoreMissionCallback and the Temp ones), the state of the
- * panels (Panels, ShowingNews, MissionUse, NewsOnMem, act, NewsList) and the module code (the engine variables of the
- * panels, Scrap.Set("AlarmCallback", ...)) stay in the modules; the functions read them as their globals.
+ * panels (Panels, ShowingNews, MissionUse, NewsOnMem, act, NewsList) stay in the modules; the functions read them as
+ * their globals. The module code is data/modules/alarm.mod and newspanel.mod; the loop of newspanel.py over the
+ * engine variables of the panels is the hook NewsPanel_ModSettings.
  */
 #include <string.h>
 
@@ -306,6 +307,50 @@ static PyObject *NewsPanel_SwitchAlarm(PyObject *self, PyObject *args) {
 		Sf_Release(&f, mark);
 	}
 	return Sf_None(&f);
+}
+
+static byte News_SettingsBody(PyObject *locals, PyObject *f, void *ctx) {
+	(void)ctx;
+	PyObject *apply = Script_ModuleName(locals, "apply");
+	PyObject *set = apply ? Script_ModuleName(locals, "Scrap.Set") : NULL;
+	PyObject *res = set ? Script_CallObject(apply, Py_BuildValue("(OO)", set, f), NULL) : NULL;
+	Py_XDECREF(apply);
+	Py_XDECREF(set);
+	Py_XDECREF(res);
+	return res != NULL;
+}
+
+/* newspanel.py:7, `for f in (("NewsLogoBmp", "2D/News/LogoNews.bmp"), ...): apply(Scrap.Set, f)` */
+int NewsPanel_ModSettings(PyObject *module, PyObject *locals) {
+	static const struct {
+		const char *var;
+		const char *text;	/* a string value, else num */
+		double num;
+		byte isFloat;
+	} vars[] = {
+		{ "NewsLogoBmp", "2D/News/LogoNews.bmp", 0, 0 }, { "BackNewsBmp", "2D/News/BackNews.bmp", 0, 0 },
+		{ "NewsHead", "Betty", 0, 0 }, { "NewsPanelDistance", NULL, 70, 0 }, { "NewsPanelDisplacement", NULL, 5, 0 },
+		{ "NewsPanelMove", NULL, 18, 0 }, { "NewsPanelX", NULL, 350, 0 }, { "NewsPanelY", NULL, 20, 0 },
+		{ "NewsPanelW", NULL, 270, 0 }, { "NewsPanelH", NULL, 180, 0 }, { "NewsPanelOpenSpeed", NULL, 3.0, 1 },
+		{ "NewsPanelCloseSpeed", NULL, 4.0, 1 },
+	};
+	enum { NUM_VARS = sizeof(vars) / sizeof(vars[0]) };
+	(void)module;
+	PyObject *seq = PyTuple_New(NUM_VARS);
+	for (int i = 0; seq && i < NUM_VARS; i++) {
+		PyObject *v = vars[i].text ? Script_StrConst(vars[i].text, (int)strlen(vars[i].text)) :
+			vars[i].isFloat ? PyFloat_FromDouble(vars[i].num) : PyInt_FromLong((long)vars[i].num);
+		PyObject *pair = v ? Py_BuildValue("(NN)", Script_StrConst(vars[i].var, (int)strlen(vars[i].var)), v) : NULL;
+		if (!pair) {
+			Py_DECREF(seq);
+			seq = NULL;
+			break;
+		}
+		PyTuple_SET_ITEM(seq, i, pair);
+	}
+	byte ok = seq && Script_ModuleFor(locals, "f", seq, News_SettingsBody, NULL);
+	Py_XDECREF(seq);
+	return ok;
 }
 
 PyMethodDef g_NewsPanelMethods[] = {
