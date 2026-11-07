@@ -221,6 +221,9 @@ typedef struct nativeVar_s {
 /* the variables of the table (ends with a NULL name) from the dict of module into C: 0 with the error set when one
  * is missing or of a form the C does not take (TypeError naming it) */
 byte Native_Import(const char *module, const nativeVar_t *vars);
+/* Native_Import for variables a function of the script reads as its globals: a missing one is the NameError of the
+ * script ("global name"), not the AttributeError of the module attribute */
+byte Native_ImportGlobals(const char *module, const nativeVar_t *vars);
 /* the C value of var (index: the item of a list, ignored for a plain variable) into the dict of module: 0 with the
  * error set */
 byte Native_Put(const char *module, const nativeVar_t *var, int index);
