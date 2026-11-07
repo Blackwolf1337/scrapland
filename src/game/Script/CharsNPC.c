@@ -58,18 +58,27 @@ static PyObject *Npc_SpawnPosInit(PyObject *self, PyObject *args) {
 
 static PyMethodDef npc_spawnPosInit = { "__init__", Npc_SpawnPosInit, 1, NULL };
 
+/* the __init__ methods made since the interpreter started (a list, NULL before the first), for CharsNPC_Close */
+static PyObject *npc_spawnPosInits;
+
 /*
  * The __init__ of CharSpawnPos is a method object around the C function: instance_getattr binds it to the instance
  * as it binds a Python function (a C function alone in the class would get no self). The class does not exist yet
  * when the body of the class statement runs, so the hook in the body (where the script defines __init__, which
  * keeps the key order of the class dict) makes the method with None as its class, and the hook after the class
- * statement puts the class in (im_class) without a write to the dict.
+ * statement puts the class in (im_class) without a write to the dict. The class and the method then hold each other,
+ * which the module cleanup of Py_Finalize does not break (a Python function holds the module dict, which the cleanup
+ * clears): CharsNPC_Close does.
  */
 int CharsNPC_ModSpawnPosInit(PyObject *module, PyObject *locals) {
 	(void)module;
 	PyObject *f = Script_CheckFunction(&npc_spawnPosInit, NULL, "CharsNPC");
 	PyObject *m = f ? PyMethod_New(f, NULL, Py_None) : NULL;
-	int err = m ? PyDict_SetItemString(locals, "__init__", m) : -1;
+	if (m && !npc_spawnPosInits) {
+		npc_spawnPosInits = PyList_New(0);
+	}
+	int err = m && npc_spawnPosInits ? PyList_Append(npc_spawnPosInits, m) : -1;
+	err = err ? err : PyDict_SetItemString(locals, "__init__", m);
 	Py_XDECREF(m);
 	Py_XDECREF(f);
 	return err == 0;
@@ -88,6 +97,23 @@ int CharsNPC_ModSpawnPosClass(PyObject *module, PyObject *locals) {
 	}
 	Py_XDECREF(cls);
 	return !PyErr_Occurred();
+}
+
+/*
+ * Before Py_Finalize: the __init__ methods made by CharsNPC_ModSpawnPosInit let go of their class (im_class None
+ * again), so the module cleanup frees the class, its dict and the method as it frees a class of Python functions
+ */
+void CharsNPC_Close(void) {
+	PyObject *list = npc_spawnPosInits;
+	npc_spawnPosInits = NULL;
+	for (int i = 0; list && i < PyList_GET_SIZE(list); i++) {
+		PyMethodObject *m = (PyMethodObject *)PyList_GET_ITEM(list, i);
+		PyObject *cls = m->im_class;
+		Py_INCREF(Py_None);
+		m->im_class = Py_None;
+		Py_XDECREF(cls);
+	}
+	Py_XDECREF(list);
 }
 
 /*

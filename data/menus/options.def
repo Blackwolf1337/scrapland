@@ -229,7 +229,8 @@ set Back Down $tab
 ud %Menu.VerticalMenuLastControl Back
 call Menu.DrawCircuitMenu $id
 
-# ---- the pad: $tab is Char or Ship ----
+# ---- the pad (FillControllerMenu): $tab is the tab, $link Char or Ship (Char for the tab Char), $set Walk or Racer
+# with it; the rows come from the module variable PCMenu.options (run padoptions) ----
 
 section pad
 call Menu.StartNewMenu $id
@@ -253,13 +254,13 @@ call Menu.VerticalMenu $id None [options] PCMenu.ControlsMenu YStart=90 MinYStar
 run padoptions
 default Item1
 do padpicture
-run padtext
+run padtext $set
 list tabs
 	Char	PCMenu.ControllerConfigCharMenu	"{XBox_Menu_Controller_Character_Tab}"
 	Ship	PCMenu.ControllerConfigShipMenu	"{XBox_Menu_Controller_Ship_Tab}"
 call Menu.AddTabs $id [tabs] $tab ParamTabSize=37 Hint=0 CenterTextInTabs=1
-ud $tab Item1
-ud Item4 $tab
+ud $link Item1
+ud Item4 $link
 call Menu.DrawCircuitMenu $id
 
 # the picture of the pad with the action of each button and stick (the texts come from run padtext)

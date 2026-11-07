@@ -21,7 +21,6 @@ static struct {
 	char actions[KEYS_MAX][0x40];	/* its actions, "Racer.Forward" */
 	int numActions;
 	char keys[0x800];		/* the keys of the last action read, kept when a read fails (as the script) */
-	const char *actionSet;		/* the pad menu: Walk or Racer */
 } controls;
 
 static void Controls_RunMenu(int id, const char *section, PyObject *vars);
@@ -150,32 +149,26 @@ static const padOption_t pad_ship[4] = {
 	{ "InvertTriggersShip", "XBInvertLRVehicle", "Menu_Question_Yes", "Menu_Question_No" },
 };
 
-static const padOption_t *Pad_Options(void) {
-	return strcmp(controls.actionSet, "Walk") ? pad_ship : pad_char;
-}
-
-static void Pad_SetValue(int id, const padOption_t *o) {
-	Script_SetStr(id, o->item, "Text", Script_Lang(GVar_GetNum(o->var, 0) == 1 ? o->on : o->off));
-}
-
-/* the value of option n (1..4) right of the middle, the option left of it */
+/*
+ * The option rows of the pad menu as FillControllerMenu of the script makes them, from the module variable options
+ * (optionsChar or optionsShip, which the menu functions put there): its keys sorted, then for each
+ * PlaceMenuOption(id, i, options[key][1]) and SetOptionValue(id, options[key][1]) of the module
+ */
 static void Step_PadOptions(int id, PyObject *args) {
+	scriptFrame_t f = { 0 };
 	(void)args;
-	const padOption_t *opts = Pad_Options();
-	for (int n = 1; n <= 4; n++) {
-		const char *name = opts[n - 1].item;
-		char item[0x10];
-		Str_Printf(item, sizeof(item), "Item%d", n);
-		double y = Script_GetNum(id, item, "Y");
-		Script_SetNum(id, item, "X", 330 - Script_GetNum(id, item, "W") - 5);
-		Script_Add(id, name, "Text");
-		Script_SetStr(id, name, "Font", "Horatio");
-		Script_SetNum(id, name, "X", 330);
-		Script_SetNum(id, name, "Y", y);
-		Script_SetNum(id, name, "Visible", 1);
-		Controls_SetColor(id, name, 183, 220, 255);
-		Pad_SetValue(id, &opts[n - 1]);
+	PyObject *keys = Sf_Method(&f, Sf_Global(&f, "PCMenu", "options"), "keys", "()");
+	PyObject *key;
+	Sf_Method(&f, keys, "sort", "()");
+	int mark = f.n;
+	for (int i = 0; (key = Sf_Next(&f, keys, i)) != NULL; i++) {
+		PyObject *name = Sf_Item(&f, Sf_GetItem(&f, Sf_Global(&f, "PCMenu", "options"), key), 1);
+		Sf_Own(&f, "PCMenu", "PlaceMenuOption", "(iiO)", id, i + 1, name);
+		name = Sf_Item(&f, Sf_GetItem(&f, Sf_Global(&f, "PCMenu", "options"), key), 1);
+		Sf_Own(&f, "PCMenu", "SetOptionValue", "(iO)", id, name);
+		Sf_Release(&f, mark);
 	}
+	Sf_Done(&f, NULL);
 }
 
 static void Pad_Show(int id, const char *item, const char *key, int x) {
@@ -188,7 +181,21 @@ static void Pad_Show(int id, const char *item, const char *key, int x) {
 	Script_SetNum(id, item, "Visible", 1);
 }
 
-/* the actions of the buttons and sticks of the action set, the lines to the digital cross */
+/*
+ * The lines to the digital cross as ShowPadConfig of the script hides them after the picture (which shows all three):
+ * the straight line when the cross is analog in the action set (Racer or Walk), else the two of the bend
+ */
+static void Pad_Lines(int id, const char *set) {
+	if ((!strcmp(set, "Racer") && GVar_GetNum("XBVDigitalAsAnalog", 0) == 1) ||
+		(!strcmp(set, "Walk") && GVar_GetNum("XBCDigitalAsAnalog", 0) == 1)) {
+		Script_SetNum(id, "DCrossLine", "Visible", 0);
+	} else {
+		Script_SetNum(id, "DCrossLine1", "Visible", 0);
+		Script_SetNum(id, "DCrossLine2", "Visible", 0);
+	}
+}
+
+/* UpdatePadText of the script: the actions of the buttons and sticks of the action set */
 static void Pad_Text(int id, const char *set) {
 	static const struct {
 		const char *button;
@@ -199,11 +206,6 @@ static void Pad_Text(int id, const char *set) {
 	static const char *const sticks[] = { "DCrossLR", "DCrossUD", "LeftThumbstickLR", "LeftThumbstickUD",
 		"RightThumbstickLR", "RightThumbstickUD" };
 	byte walk = !strcmp(set, "Walk");
-	byte digitalAsAnalog = GVar_GetNum(walk ? "XBCDigitalAsAnalog" : "XBVDigitalAsAnalog", 0) == 1;
-
-	Script_SetNum(id, "DCrossLine", "Visible", !digitalAsAnalog);
-	Script_SetNum(id, "DCrossLine1", "Visible", digitalAsAnalog);
-	Script_SetNum(id, "DCrossLine2", "Visible", digitalAsAnalog);
 
 	for (size_t i = 0; i < sizeof(buttons) / sizeof(buttons[0]); i++) {
 		char key[0x80], text[0x100];
@@ -256,31 +258,28 @@ static void Pad_Text(int id, const char *set) {
 	}
 }
 
+/* UpdatePadText(id, set) for any set: the texts of a text, else the TypeError where the script stops (the first
+ * SInput.GetEntry("Pad1", button, set)); 0 with the error set */
+static byte Pad_TextOf(int id, PyObject *set) {
+	if (PyString_Check(set)) {
+		Pad_Text(id, PyString_AS_STRING(set));
+		return 1;
+	}
+	PyObject *r = Script_Ask("SInput", "GetEntry", "(ssO)", "Pad1", "BACK", set);
+	if (r) {
+		Py_DECREF(r);
+		PyErr_SetString(PyExc_TypeError, "UpdatePadText: the action set is not a text");
+	}
+	return 0;
+}
+
+/* padtext <set>: the end of ShowPadConfig after the picture, the lines and the texts of the action set */
 static void Step_PadText(int id, PyObject *args) {
-	(void)args;
-	Pad_Text(id, controls.actionSet);
-}
-
-/* a section of the pad menu with $tab (Char, Ship) */
-static void Pad_RunTab(int id, const char *section, const char *tab) {
-	PyObject *vars = Py_BuildValue("{s:s}", "tab", tab);
-	Controls_RunMenu(id, section, vars);
-	Py_XDECREF(vars);
-}
-
-static void Pad_Run(int id, const char *section) {
-	Pad_RunTab(id, section, strcmp(controls.actionSet, "Walk") ? "Ship" : "Char");
-}
-
-static void Pad_Menu(int id, const char *actionSet) {
-	controls.actionSet = actionSet;
-	Pad_Run(id, "pad");
-}
-
-/* the picture again after an option changed (the items are there, they get their places back) and the texts */
-static void Pad_Picture(int id) {
-	Pad_Run(id, "padpicture");
-	Step_PadText(id, NULL);
+	const char *set;
+	if (PyArg_ParseTuple(args, "s", &set)) {
+		Pad_Lines(id, set);
+		Pad_Text(id, set);
+	}
 }
 
 /* ---- the mouse ---- */
@@ -333,6 +332,20 @@ static const scriptStep_t controls_steps[] = {
 
 static void Controls_RunMenu(int id, const char *section, PyObject *vars) {
 	Script_RunFile(id, OPTIONS_FILE, section, options_def, controls_steps, vars);
+}
+
+/*
+ * FillControllerMenu(id, control, tab) of the script, the section pad: the rows of the module variable options, the
+ * pad on foot for the tab Char and in a ship for any other, the tabs with tab chosen and the links to Char or Ship;
+ * it stops where the script stops (0 with the error set)
+ */
+static byte Pad_Fill(int id, const char *tab) {
+	byte chr = !strcmp(tab, "Char");
+	PyObject *vars = Py_BuildValue("{s:s,s:s,s:s}", "tab", tab, "link", chr ? "Char" : "Ship", "set",
+		chr ? "Walk" : "Racer");
+	byte ok = vars && Script_RunFileTry(id, OPTIONS_FILE, "pad", options_def, controls_steps, vars);
+	Py_XDECREF(vars);
+	return ok;
 }
 
 #define CONTROLS_ARGS(args) \
@@ -547,39 +560,48 @@ static PyObject *PCMenu_MouseSensitivitySliderFocus_Add(PyObject *self, PyObject
 	return Mouse_Step(args, 1.0);
 }
 
-/* ControllerConfig: the pad menu of the mode the player was in (on foot or in a ship) */
+/*
+ * The pad menus as the script opens them: `global options, currentActionSet`, the action set (NULL: already set) and
+ * the rows of the module (optionsChar or optionsShip) into them, then FillControllerMenu(id, control, tab) of the
+ * module. Each global is stored as often as the script stores it (a store may resize the dict of the module)
+ */
+static PyObject *Pad_Open(scriptFrame_t *f, int id, PyObject *control, PyObject *set, byte ship) {
+	if (set) {
+		Sf_SetGlobal(f, "PCMenu", "currentActionSet", set);
+	}
+	Sf_SetGlobal(f, "PCMenu", "options", Sf_Global(f, "PCMenu", ship ? "optionsShip" : "optionsChar"));
+	Sf_Own(f, "PCMenu", "FillControllerMenu", "(iOs)", id, control, ship ? "Ship" : "Char");
+	return Sf_None(f);
+}
+
+/* ControllerConfig: the pad menu of the mode the player was in (Menu.LastMode Walk: on foot, else in a ship) */
 static PyObject *PCMenu_ControllerConfig(PyObject *self, PyObject *args) {
-	char mode[0x20];
-	(void)self;
-	CONTROLS_ARGS(args);
-	(void)control;
-	Script_GetString("Menu", "LastMode", mode, sizeof(mode));
-	Pad_Menu(id, strcmp(mode, "Walk") ? "Racer" : "Walk");
-	return Py_ReturnNone();
+	int id;
+	PyObject *control;
+	SF_ARGS("iO", &id, &control);
+	Sf_Import(&f, "Menu");
+	PyObject *mode = Sf_Mod(&f, "Menu", "LastMode");
+	Sf_SetGlobal(&f, "PCMenu", "currentActionSet", mode);
+	int walk = Sf_EqS(&f, mode, "Walk");
+	return walk ? Pad_Open(&f, id, control, NULL, 0) : Pad_Open(&f, id, control, Sf_Str(&f, "Racer"), 1);
 }
 
 static PyObject *PCMenu_ControllerConfigCharMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	CONTROLS_ARGS(args);
-	(void)control;
-	Pad_Menu(id, "Walk");
-	return Py_ReturnNone();
+	int id;
+	PyObject *control;
+	SF_ARGS("iO", &id, &control);
+	return Pad_Open(&f, id, control, Sf_Str(&f, "Walk"), 0);
 }
 
 static PyObject *PCMenu_ControllerConfigShipMenu(PyObject *self, PyObject *args) {
-	(void)self;
-	CONTROLS_ARGS(args);
-	(void)control;
-	Pad_Menu(id, "Racer");
-	return Py_ReturnNone();
+	int id;
+	PyObject *control;
+	SF_ARGS("iO", &id, &control);
+	return Pad_Open(&f, id, control, Sf_Str(&f, "Racer"), 1);
 }
 
-/*
- * FillControllerMenu(id, control, actualTab): the pad menu of the tab as its callers draw it. The script took the
- * option rows from the module variable options, which its callers set to match the tab; here the rows and the
- * picture follow the tab (Char: on foot, anything else: in a ship). A tab other than Char and Ship is the default tab
- * and the link target, where the script linked Ship
- */
+/* FillControllerMenu(id, control, actualTab): the pad menu of the tab with the option rows of the module variable
+ * options, which the callers set to match the tab */
 static PyObject *PCMenu_FillControllerMenu(PyObject *self, PyObject *args) {
 	int id;
 	PyObject *control;
@@ -588,14 +610,12 @@ static PyObject *PCMenu_FillControllerMenu(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "iOs", &id, &control, &tab)) {
 		return NULL;
 	}
-	controls.actionSet = strcmp(tab, "Char") ? "Racer" : "Walk";
-	Pad_RunTab(id, "pad", tab);
-	return Py_ReturnNone();
+	return Pad_Fill(id, tab) ? Py_ReturnNone() : NULL;
 }
 
 /*
- * The helpers of the pad menu in pcmenu.py that the menu above does not call (it has the steps of options.def);
- * PCMenu has them as the script does.
+ * The helpers of the pad menu in pcmenu.py, called through the module as the script calls them (the step padoptions:
+ * PlaceMenuOption and SetOptionValue; SwitchOption: SetOptionValue and ShowPadConfig).
  */
 
 /* PlaceMenuOption(id, n, controlName): the option Item<n> left of the middle, the value controlName right of it */
@@ -640,18 +660,18 @@ static PyObject *PCMenu_SetOptionValue(PyObject *self, PyObject *args) {
 /* UpdatePadText(id, ActionSet): the texts of the buttons and sticks of the pad picture */
 static PyObject *PCMenu_UpdatePadText(PyObject *self, PyObject *args) {
 	int id;
-	const char *set;
+	PyObject *set;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "is", &id, &set)) {
+	if (!PyArg_ParseTuple(args, "iO", &id, &set)) {
 		return NULL;
 	}
-	Pad_Text(id, set);
-	return Py_ReturnNone();
+	return Pad_TextOf(id, set) ? Py_ReturnNone() : NULL;
 }
 
 /*
  * ShowPadConfig(id, ActionSet, YOffset=0): the pad picture (the section padpicture, the items moved down by YOffset)
- * with the lines to the digital cross as the script shows them, then UpdatePadText
+ * with the lines to the digital cross as the script shows them, then UpdatePadText (which raises for a set that is
+ * not a text, after the picture as in the script)
  */
 static PyObject *PCMenu_ShowPadConfig(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *kwlist[] = { "id", "ActionSet", "YOffset", NULL };
@@ -662,40 +682,37 @@ static PyObject *PCMenu_ShowPadConfig(PyObject *self, PyObject *args, PyObject *
 		"Pad", "DCrossLR", "DCrossUD", "LeftThumbstickLR", "LeftThumbstickUD", "RightThumbstickLR",
 		"RightThumbstickUD" };
 	int id;
-	const char *set;
+	PyObject *set;
 	double yoff = 0;
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "is|d", kwlist, &id, &set, &yoff)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "iO|d", kwlist, &id, &set, &yoff)) {
 		return NULL;
 	}
-	Pad_RunTab(id, "padpicture", strcmp(set, "Walk") ? "Ship" : "Char");
+	Controls_RunMenu(id, "padpicture", NULL);
 	for (size_t i = 0; yoff != 0 && i < sizeof(items) / sizeof(items[0]); i++) {
 		Script_SetNum(id, items[i], "Y", Script_GetNum(id, items[i], "Y") + yoff);
 	}
-	Pad_Text(id, set);
-	byte digital = (!strcmp(set, "Racer") && GVar_GetNum("XBVDigitalAsAnalog", 0) == 1) ||
-		(!strcmp(set, "Walk") && GVar_GetNum("XBCDigitalAsAnalog", 0) == 1);
-	Script_SetNum(id, "DCrossLine", "Visible", !digital);
-	Script_SetNum(id, "DCrossLine1", "Visible", digital);
-	Script_SetNum(id, "DCrossLine2", "Visible", digital);
-	return Py_ReturnNone();
+	Pad_Lines(id, PyString_Check(set) ? PyString_AS_STRING(set) : "");
+	return Pad_TextOf(id, set) ? Py_ReturnNone() : NULL;
 }
 
-/* SwitchOption(id, control): control is Item1..Item4, the option of the pad menu */
+/*
+ * SwitchOption(id, control): the option control (Item1..Item4) of the module variable options, (variable, value
+ * item), switched between 0 and 1 (0 becomes 1, anything else 0), the keys of the pad reset, the value and the pad
+ * picture of currentActionSet shown again
+ */
 static PyObject *PCMenu_SwitchOption(PyObject *self, PyObject *args) {
-	(void)self;
-	CONTROLS_ARGS(args);
-	if (!controls.actionSet || strncmp(control, "Item", 4) || control[4] < '1' || control[4] > '4' || control[5]) {
-		PyErr_SetString(PyExc_KeyError, control);
-		return NULL;
-	}
-	const padOption_t *o = &Pad_Options()[control[4] - '1'];
-	Script_SetInt("PCMenu", "SaveOptions", 1);
-	GVar_SetNum(o->var, GVar_GetNum(o->var, 0) == 0);
-	Input_ResetToDefault();
-	Pad_SetValue(id, o);
-	Pad_Picture(id);
-	return Py_ReturnNone();
+	int id;
+	PyObject *control, *opt[2] = { NULL, NULL };
+	SF_ARGS("iO", &id, &control);
+	Sf_SetGlobal(&f, "PCMenu", "SaveOptions", Sf_Int(&f, 1));
+	Sf_Unpack(&f, Sf_GetItem(&f, Sf_Global(&f, "PCMenu", "options"), control), 2, opt);
+	int off = Sf_EqI(&f, Sf_Ask(&f, "Scrap", "Get", "(O)", opt[0]), 0);
+	Sf_Run(&f, "Scrap", "Set", "(Oi)", opt[0], off == 1);
+	Sf_Run(&f, "SInput", "ResetToDefault", "()");
+	Sf_Own(&f, "PCMenu", "SetOptionValue", "(iO)", id, opt[1]);
+	Sf_Own(&f, "PCMenu", "ShowPadConfig", "(iO)", id, Sf_Global(&f, "PCMenu", "currentActionSet"));
+	return Sf_None(&f);
 }
 
 PyMethodDef g_MenuControlsMethods[] = {

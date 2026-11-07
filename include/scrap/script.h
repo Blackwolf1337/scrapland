@@ -64,6 +64,8 @@ int Init_ModExtraExecs(PyObject *module, PyObject *locals);
 int NewsPanel_ModSettings(PyObject *module, PyObject *locals);
 int CharsNPC_ModSpawnPosInit(PyObject *module, PyObject *locals);
 int CharsNPC_ModSpawnPosClass(PyObject *module, PyObject *locals);
+/* before Py_Finalize: breaks the cycle of the CharSpawnPos class and its C __init__ (CharsNPC.c) */
+void CharsNPC_Close(void);
 /* the function name of module from the C tables (script_modules, the last table that has it), a new reference; NULL
  * without an error when no table has it */
 PyObject *Script_TableFunction(const char *module, const char *name);
