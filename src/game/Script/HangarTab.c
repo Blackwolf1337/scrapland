@@ -9,176 +9,335 @@
  * miniShip, prevHangar, currentHangar, currentShipToEdit, currentPilot, holograms, shipTotalCost, isXbox, UseTxt and
  * the layout constants (hangarBaseX, baseShipInfoX, speedRampX and the others). The module code (the save variable
  * Hangar.iHangarShip) stays in the script.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, the PyMethodDef entries are adapters with
+ * the argument formats of the C port. The variables of the module are read where the script reads them and written at
+ * once (OBJLIB 5); prevShip, miniShip and the ships of ShipEdit.editedShips are handle values (OBJLIB 7), the lists of
+ * ShipEdit are changed in place on their objects. ShipEdit, ShipMaker, Vehicles, Menu's link functions and the
+ * module's own functions the script calls as its globals stay by name (OBJLIB 3); ComputeShipTotalCost evaluates its
+ * text through the name chain of the module (OBJLIB 6), the .def runner takes Python values (OBJLIB 6).
  */
 #include <string.h>
 
 #include "scrap/scrap.h"
+#include "game/Script/levels/Levels.h"
 #include "ShipEdit.h"
 
-#define G(name) Sf_Global(&f, HT, name)
-#define GF(name) Sf_Global(f, HT, name)
-#define SEA(name) Se_Mod(&f, SE, name)
-#define SEAF(name) Se_Mod(f, SE, name)
+static const nativeVal_t ht_none = { 0 };
+
+/* a global of HangarTab as its functions read it (the NameError of a missing one) */
+static byte Ht_G(const char *name, nativeVal_t *out) {
+	return Mode_G(HT, name, out);
+}
+
+/* the int value i */
+static const nativeVal_t *Ht_I(nativeVal_t *v, long i) {
+	Native_SetInt(v, i);
+	return v;
+}
+
+/* prevShip.<var> with prevShip the global */
+static byte Ht_ShipGet(const char *var, nativeVal_t *out) {
+	nativeVal_t s = { 0 };
+	byte ok = Ht_G("prevShip", &s) && Mode_VGet(&s, var, out);
+	Native_Free(&s);
+	return ok;
+}
+
+/* ShipEdit.<var>[global] (the list first, as Python evaluates it) */
+static byte Ht_AtG(const char *var, const char *global, nativeVal_t *out) {
+	nativeVal_t l = { 0 }, k = { 0 };
+	Native_SetNone(out);
+	byte ok = LvN_ModGet(SE, var, &l) && Ht_G(global, &k) && Mode_Sub(&l, &k, out);
+	Native_Free(&l);
+	Native_Free(&k);
+	return ok;
+}
+
+/* ShipEdit.<var>[currentHangar] */
+static byte Ht_AtCur(const char *var, nativeVal_t *out) {
+	return Ht_AtG(var, "currentHangar", out);
+}
+
+/* ShipEdit.<var>[i] */
+static byte Ht_AtI(const char *var, long i, nativeVal_t *out) {
+	nativeVal_t l = { 0 };
+	Native_SetNone(out);
+	byte ok = LvN_ModGet(SE, var, &l) && LvN_Item(&l, i, out);
+	Native_Free(&l);
+	return ok;
+}
+
+/* ShipEdit.<var>[currentHangar] = v, in place */
+static byte Ht_SetAtCur(const char *var, const nativeVal_t *v) {
+	nativeVal_t k = { 0 };
+	byte ok = Ht_G("currentHangar", &k) && Mode_ModDictPut(SE, var, &k, v);
+	Native_Free(&k);
+	return ok;
+}
+
+/* ShipEdit.<var>[global] op x: 1, 0, -1 */
+static int Ht_AtCmp(const char *var, const char *global, const char *op, const nativeVal_t *x) {
+	nativeVal_t v = { 0 };
+	int r = Ht_AtG(var, global, &v) ? Mode_Cmp(&v, op, x) : -1;
+	Native_Free(&v);
+	return r;
+}
+
+/* the global == i: 1, 0, -1 */
+static int Ht_GEq(const char *name, long i) {
+	return LvN_GEqI(HT, name, i);
+}
 
 /* ShipEdit.IsEditingMultiplayer() and not isXbox: the pilots of a network game (1, 0, -1) */
-static int Ht_Pilots(scriptFrame_t *f) {
-	int mp = Se_Multi(f, 0);
+static int Ht_Pilots(void) {
+	int mp = Sn_Multi(0);
 	if (mp > 0) {
-		int x = Sf_True(f, GF("isXbox"));
+		int x = LvN_GTrue(HT, "isXbox");
 		return x < 0 ? -1 : !x;
 	}
 	return mp;
 }
 
-/* int((`v - float(int(v))`)[2]): the first decimal of v as the script reads it; *whole int(v) */
-static PyObject *Ht_Decimal(scriptFrame_t *f, PyObject *v, PyObject **whole, byte asInt) {
-	*whole = Sf_ToInt(f, v);
-	PyObject *fl = f->failed ? NULL : Sf_Keep(f, PyNumber_Float(*whole));
-	PyObject *ch = Sf_Item(f, Sf_Repr(f, Sf_Op(f, v, '-', fl)), 2);
-	return asInt ? Sf_ToInt(f, ch) : ch;
+/* not ShipEdit.IsEditingMultiplayer(): 1, 0, -1 */
+static int Ht_Single(void) {
+	int mp = Sn_Multi(0);
+	return mp < 0 ? -1 : !mp;
+}
+
+/* int(v) into whole and the first decimal of v as the script reads it, int((`v - float(int(v))`)[2]) (asInt), or the
+ * character */
+static byte Ht_Decimal(const nativeVal_t *v, nativeVal_t *whole, nativeVal_t *dec, byte asInt) {
+	nativeVal_t fl = { 0 }, d = { 0 }, r = { 0 }, ch = { 0 };
+	byte ok = Native_ToInt(v, whole) && Native_ToFloat(whole, &fl) && Mode_Arith('-', v, &fl, &d);
+	if (ok) {
+		Mode_Repr(&d, &r);
+		ok = Native_SeqItem(&r, 2, asInt ? &ch : dec) && (!asInt || Native_ToInt(&ch, dec));
+	}
+	Native_Free(&fl);
+	Native_Free(&d);
+	Native_Free(&r);
+	Native_Free(&ch);
+	return ok;
+}
+
+/* the text `whole` "." dec of a boost time */
+static byte Ht_BoostText(const nativeVal_t *t, nativeVal_t *out) {
+	nativeVal_t whole = { 0 }, dec = { 0 }, r = { 0 }, a = { 0 };
+	byte ok = Ht_Decimal(t, &whole, &dec, 0);
+	if (ok) {
+		Mode_Repr(&whole, &r);
+		ok = Sn_Cat("", &r, ".", &a) && Native_Arith('+', &a, &dec, out);
+	}
+	Native_Free(&whole);
+	Native_Free(&dec);
+	Native_Free(&r);
+	Native_Free(&a);
+	return ok;
+}
+
+/* SScorer.Set(id, item, var, `v`) */
+static byte Ht_SetRepr(int id, const char *item, const char *var, const nativeVal_t *v) {
+	nativeVal_t r = { 0 };
+	Mode_Repr(v, &r);
+	byte ok = Sn_SetC(id, item, var, &r);
+	Native_Free(&r);
+	return ok;
+}
+
+/* SScorer.Set(id, item, var, `int(v)`) */
+static byte Ht_SetReprInt(int id, const char *item, const char *var, const nativeVal_t *v) {
+	nativeVal_t i = { 0 };
+	byte ok = Native_ToInt(v, &i) && Ht_SetRepr(id, item, var, &i);
+	Native_Free(&i);
+	return ok;
+}
+
+/* the global of HangarTab into the variable of the item */
+static byte Ht_SetG(int id, const char *item, const char *var, const char *global) {
+	nativeVal_t v = { 0 };
+	byte ok = Ht_G(global, &v) && Sn_SetC(id, item, var, &v);
+	Native_Free(&v);
+	return ok;
 }
 
 /* ShowBoostPrediction(id, newWeight): the arrow of the boost time a new weight gives (up, down or equal) */
-static PyObject *HT_ShowBoostPrediction(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	PyObject *weight, *curInt, *newInt;
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO", &id, &weight)) {
-		return NULL;
-	}
-	Sf_Import(&f, "ShipMaker");
+static byte Ht_BoostPrediction(int id, const nativeVal_t *weight) {
 	static const char *const arrows[] = { "BoostUp", "BoostDown", "BoostEqual", "BoostBack" };
+	nativeVal_t cur = { 0 }, model = { 0 }, nb = { 0 }, ci = { 0 }, cd = { 0 }, ni = { 0 }, nd = { 0 };
+	if (!Mode_Import("ShipMaker")) {
+		return 0;
+	}
 	for (int i = 0; i < 4; i++) {
-		Se_SetI(&f, id, arrows[i], "Visible", 0);
+		Script_SetNum(id, arrows[i], "Visible", 0);
 	}
-	PyObject *cur = Sf_Attr(&f, G("prevShip"), "BoostTime");
-	PyObject *nb = Sf_Ask(&f, "ShipMaker", "GetBoostFactor", "(OO)", Sf_Attr(&f, G("prevShip"), "Model"), weight);
-	PyObject *curDec = Ht_Decimal(&f, cur, &curInt, 1);
-	PyObject *newDec = Ht_Decimal(&f, nb, &newInt, 1);
+	byte ok = Ht_ShipGet("BoostTime", &cur) && Ht_ShipGet("Model", &model) &&
+		Native_CallMod("ShipMaker", "GetBoostFactor", &nb, "vv", &model, weight) && Ht_Decimal(&cur, &ci, &cd, 1) &&
+		Ht_Decimal(&nb, &ni, &nd, 1);
 	const char *arrow = "BoostEqual";
-	if (Sf_Compare(&f, newInt, "<", curInt) > 0) {
+	int c = ok ? Mode_Cmp(&ni, "<", &ci) : -1;
+	if (c > 0) {
 		arrow = "BoostDown";
-	} else if (Sf_Compare(&f, newInt, ">", curInt) > 0) {
+	} else if (c == 0 && (c = Mode_Cmp(&ni, ">", &ci)) > 0) {
 		arrow = "BoostUp";
-	} else if (Sf_Compare(&f, newDec, "<", curDec) > 0) {
+	} else if (c == 0 && (c = Mode_Cmp(&nd, "<", &cd)) > 0) {
 		arrow = "BoostDown";
-	} else if (Sf_Compare(&f, newDec, ">", curDec) > 0) {
+	} else if (c == 0 && (c = Mode_Cmp(&nd, ">", &cd)) > 0) {
 		arrow = "BoostUp";
 	}
-	Se_SetI(&f, id, arrow, "Visible", 1);
-	Se_SetI(&f, id, "BoostBack", "Visible", 1);
-	return Sf_None(&f);
+	ok = c >= 0;
+	if (ok) {
+		Script_SetNum(id, arrow, "Visible", 1);
+		Script_SetNum(id, "BoostBack", "Visible", 1);
+	}
+	Native_Free(&cur);
+	Native_Free(&model);
+	Native_Free(&nb);
+	Native_Free(&ci);
+	Native_Free(&cd);
+	Native_Free(&ni);
+	Native_Free(&nd);
+	return ok;
 }
 
 /* for t in ShipEdit.tabs[1:]: SScorer.Set(id, "ShipEditTab" + t, "OnAccept", on and "ShipEdit.ChangeTab" or "") */
-static void Ht_TabsAccept(scriptFrame_t *f, int id, byte on) {
-	PyObject *rest = Sf_Slice(f, SEAF("tabs"), 1, 0x7fffffff);
-	for (int i = 0; !f->failed; i++) {
-		int mark = f->n;
-		PyObject *t = Sf_Next(f, rest, i);
-		if (!t) {
-			break;
-		}
-		Se_SetOO(f, id, Sf_Cat(f, "sO", "ShipEditTab", t), "OnAccept", Sf_Str(f, on ? "ShipEdit.ChangeTab" : ""));
-		Sf_Release(f, f->failed ? f->n : mark);
+static byte Ht_TabsAccept(int id, byte on) {
+	nativeVal_t tabs = { 0 }, rest = { 0 }, t = { 0 }, name = { 0 }, v;
+	Native_SetStr(&v, on ? "ShipEdit.ChangeTab" : "");
+	byte ok = LvN_ModGet(SE, "tabs", &tabs) && Sn_Rest(&tabs, &rest);
+	int n = ok ? Native_ForCount(&rest) : -1;
+	ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		ok = Native_SeqItem(&rest, i, &t) && Sn_Cat("ShipEditTab", &t, NULL, &name) && Sn_Set(id, &name, "OnAccept", &v);
+		Native_Free(&t);
+		Native_Free(&name);
 	}
+	Native_Free(&tabs);
+	Native_Free(&rest);
+	return ok;
+}
+
+/* the tabs of ShipEdit.tabs: the ring of links, on or off */
+static byte Ht_TabRing(int id, const char *fn) {
+	nativeVal_t tabs = { 0 };
+	byte ok = LvN_ModGet(SE, "tabs", &tabs) && Sn_TabRing(id, &tabs, fn);
+	Native_Free(&tabs);
+	return ok;
+}
+
+static byte Ht_TabsOn(int id, byte on) {
+	nativeVal_t tabs = { 0 };
+	byte ok = LvN_ModGet(SE, "tabs", &tabs) && Sn_TabsOn(id, &tabs, on);
+	Native_Free(&tabs);
+	return ok;
+}
+
+/* SScorer.<fn>(id, text) by name (SetOnNext, SetOnPrev, SetDefault, SetOnCancel) */
+static byte Ht_Scorer(const char *fn, int id, const char *s) {
+	return Native_CallMod("SScorer", fn, NULL, "is", (long)id, s);
+}
+
+/* the tab keys of the scorer: ShipEdit.ChangeTabRight and Left, or none */
+static byte Ht_NextPrev(int id, byte on) {
+	return Ht_Scorer("SetOnNext", id, on ? "ShipEdit.ChangeTabRight" : "") &&
+		Ht_Scorer("SetOnPrev", id, on ? "ShipEdit.ChangeTabLeft" : "");
 }
 
 /* the buttons that change the ship on the platform: OnAccept of the hangars, the tabs, Sell, Exit, the ship type
  * buttons and the pilot buttons; off while the platform moves */
-static void Ht_PlatformButtons_(scriptFrame_t *f, int id, byte on) {
+static byte Ht_PlatformButtons(int id, byte on) {
 	for (int i = 0; i < 9; i++) {
 		char name[0x10];
 		Str_Printf(name, sizeof(name), "Hangar%d", i + 1);
-		Se_SetS(f, id, name, "OnAccept", on ? "HangarTab.SelectItem" : "");
+		Script_SetStr(id, name, "OnAccept", on ? "HangarTab.SelectItem" : "");
 	}
-	Se_SetS(f, id, "HangarAux", "OnAccept", on ? "HangarTab.SelectItem" : "");
+	Script_SetStr(id, "HangarAux", "OnAccept", on ? "HangarTab.SelectItem" : "");
 	if (!on) {
-		Ht_TabsAccept(f, id, 0);
+		if (!Ht_TabsAccept(id, 0)) {
+			return 0;
+		}
 	} else {
-		int c = Sf_True(f, Sf_GetItem(f, SEAF("editedShips"), GF("currentHangar")));
+		nativeVal_t e = { 0 };
+		int c = Ht_AtCur("editedShips", &e) ? Native_True(&e) : -1;
+		Native_Free(&e);
 		if (c > 0) {
-			c = Sf_Compare(f, GF("currentHangar"), "!=", Sf_Int(f, 9));
+			c = Ht_GEq("currentHangar", 9);
+			c = c < 0 ? -1 : !c;
 		}
 		if (c > 0) {
-			c = Sf_Compare(f, Sf_GetItem(f, SEAF("destroyedShips"), GF("currentHangar")), "!=", Sf_Int(f, 1));
+			Native_SetInt(&e, 1);
+			c = Ht_AtCmp("destroyedShips", "currentHangar", "!=", &e);
 		}
-		if (c > 0) {
-			Se_TabRing(f, id, SEAF("tabs"), "LinkLR");
-			Ht_TabsAccept(f, id, 1);
+		if (c < 0 || (c > 0 && (!Ht_TabRing(id, "LinkLR") || !Ht_TabsAccept(id, 1)))) {
+			return 0;
 		}
 	}
-	Se_SetS(f, id, "Sell", "OnAccept", on ? "HangarTab.SellShip" : "");
-	Se_SetS(f, id, "Exit", "OnAccept", on ? "ShipEdit.ExitEditShipMenu" : "");
-	Se_SetS(f, id, "ShipType", "OnAccept", on ? "HangarTab.BuyShip" : "");
-	Se_SetS(f, id, "PrevShip", "OnAccept", on ? "HangarTab.PrevShipToEdit" : "");
-	Se_SetS(f, id, "NextShip", "OnAccept", on ? "HangarTab.NextShipToEdit" : "");
-	if (Ht_Pilots(f) > 0) {
-		Se_SetS(f, id, "PrevPilot", "OnAccept", on ? "HangarTab.PrevPilot" : "");
-		Se_SetS(f, id, "NextPilot", "OnAccept", on ? "HangarTab.NextPilot" : "");
+	Script_SetStr(id, "Sell", "OnAccept", on ? "HangarTab.SellShip" : "");
+	Script_SetStr(id, "Exit", "OnAccept", on ? "ShipEdit.ExitEditShipMenu" : "");
+	Script_SetStr(id, "ShipType", "OnAccept", on ? "HangarTab.BuyShip" : "");
+	Script_SetStr(id, "PrevShip", "OnAccept", on ? "HangarTab.PrevShipToEdit" : "");
+	Script_SetStr(id, "NextShip", "OnAccept", on ? "HangarTab.NextShipToEdit" : "");
+	int p = Ht_Pilots();
+	if (p < 0) {
+		return 0;
 	}
-	if (!on) {
-		Se_TabRing(f, id, SEAF("tabs"), "UnLinkLR");
+	if (p) {
+		Script_SetStr(id, "PrevPilot", "OnAccept", on ? "HangarTab.PrevPilot" : "");
+		Script_SetStr(id, "NextPilot", "OnAccept", on ? "HangarTab.NextPilot" : "");
 	}
-	Sf_Ask(f, "SScorer", "SetOnCancel", "(is)", id, on ? "ShipEdit.ExitEditShipMenu" : "");
+	return (on || Ht_TabRing(id, "UnLinkLR")) && Ht_Scorer("SetOnCancel", id, on ? "ShipEdit.ExitEditShipMenu" : "");
 }
 
-static void Ht_PlatformButtons(scriptFrame_t *f, int id, byte on) {
-	SE_SUB(f, Ht_PlatformButtons_(&g, id, on));
+/* DisableChangePlatformButtons(id), EnableChangePlatformButtons(id) */
+static byte Ht_Platform(int id, byte on) {
+	return Sn_From(on ? "LinkLR" : "UnLinkLR") && Mode_Import(SE) && Ht_PlatformButtons(id, on);
 }
 
-static PyObject *Ht_PlatformArgs(PyObject *args, byte on) {
-	scriptFrame_t f = { 0 };
-	int id;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	Sf_From(&f, "Menu", on ? "LinkLR" : "UnLinkLR");
-	Sf_Import(&f, SE);
-	Ht_PlatformButtons(&f, id, on);
-	return Sf_None(&f);
+/* SScorer.Set(id, ShipMaker.PilotsList[currentPilot], "Visible", v) */
+static byte Ht_PilotVisible(int id, long v) {
+	nativeVal_t k = { 0 }, item = { 0 }, x;
+	Native_SetInt(&x, v);
+	nativeVal_t l = { 0 };
+	byte ok = LvN_ModGet("ShipMaker", "PilotsList", &l) && Ht_G("currentPilot", &k) && Mode_Sub(&l, &k, &item) &&
+		Sn_Set(id, &item, "Visible", &x);
+	Native_Free(&l);
+	Native_Free(&k);
+	Native_Free(&item);
+	return ok;
 }
 
-static PyObject *HT_DisableChangePlatformButtons(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ht_PlatformArgs(args, 0);
-}
-
-static PyObject *HT_EnableChangePlatformButtons(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ht_PlatformArgs(args, 1);
+/* len(ShipMaker.PilotsList) */
+static int Ht_Pilots_(void) {
+	nativeVal_t l = { 0 };
+	int n = LvN_ModGet("ShipMaker", "PilotsList", &l) ? Mode_Len(&l) : -1;
+	Native_Free(&l);
+	return n;
 }
 
 /* PrevPilot(id, control), NextPilot(id, control): the head of the pilot before or after the current one */
-static PyObject *Ht_Pilot(PyObject *args, int step) {
-	scriptFrame_t f = { 0 };
-	PyObject *control;
-	int id;
-	if (!PyArg_ParseTuple(args, "iO", &id, &control)) {
-		return NULL;
+static byte Ht_Pilot(int id, int step) {
+	nativeVal_t v = { 0 }, x;
+	if (!Mode_Import("ShipMaker") || !Ht_PilotVisible(id, 0) || !Mode_GOpI(HT, "currentPilot", step < 0 ? '-' : '+', 1) ||
+		!Ht_G("currentPilot", &v)) {
+		Native_Free(&v);
+		return 0;
 	}
-	Sf_Import(&f, "ShipMaker");
-	Se_SetOO(&f, id, Sf_GetItem(&f, Sf_Mod(&f, "ShipMaker", "PilotsList"), G("currentPilot")), "Visible", Sf_Int(&f, 0));
-	Sf_SetGlobal(&f, HT, "currentPilot", Sf_OpI(&f, G("currentPilot"), step < 0 ? '-' : '+', 1));
-	int n = step < 0 ? 0 : Sf_Len(&f, Sf_Mod(&f, "ShipMaker", "PilotsList"));
-	if (step < 0 && Sf_Compare(&f, G("currentPilot"), "<", Sf_Int(&f, 0)) > 0) {
-		Sf_SetGlobal(&f, HT, "currentPilot", Sf_Int(&f, Sf_Len(&f, Sf_Mod(&f, "ShipMaker", "PilotsList")) - 1));
-	} else if (step > 0 && Sf_Compare(&f, G("currentPilot"), ">", Sf_Int(&f, n - 1)) > 0) {
-		Sf_SetGlobal(&f, HT, "currentPilot", Sf_Int(&f, 0));
+	int c, n = 0;
+	if (step < 0) {
+		c = Mode_CmpI(&v, "<", 0);
+		if (c > 0) {
+			n = Ht_Pilots_();
+			c = n < 0 ? -1 : 1;
+		}
+	} else {
+		n = Ht_Pilots_();
+		c = n < 0 ? -1 : Mode_CmpI(&v, ">", n - 1);
 	}
-	Se_SetOO(&f, id, Sf_GetItem(&f, Sf_Mod(&f, "ShipMaker", "PilotsList"), G("currentPilot")), "Visible", Sf_Int(&f, 1));
-	return Sf_None(&f);
-}
-
-static PyObject *HT_PrevPilot(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ht_Pilot(args, -1);
-}
-
-static PyObject *HT_NextPilot(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ht_Pilot(args, 1);
+	Native_Free(&v);
+	if (c < 0 || (c > 0 && !Mode_Put(HT, "currentPilot", NULL, Ht_I(&x, step < 0 ? n - 1 : 0)))) {
+		return 0;
+	}
+	return Ht_PilotVisible(id, 1);
 }
 
 /* the items of the buttons that show and hide together */
@@ -193,1574 +352,1953 @@ static const char *const ht_pilot[] = { "PrevPilot", "PrevPilotBack", "PrevPilot
 	"PrevPilotCircuit3", "NextPilot", "NextPilotBack", "NextPilotCircuit1", "NextPilotCircuit2", "NextPilotCircuit3",
 	"PilotRect", "PilotText", "PilotTextRect", "PilotName", "PilotNameTab", NULL };
 
-/* SetSellVisible, SetExitVisible, SetShipTypeVisible, SetPilotVisible (id, bVisible) */
-static PyObject *Ht_Visible(PyObject *args, const char *const *items, const char *import) {
-	scriptFrame_t f = { 0 };
-	PyObject *v;
-	int id;
-	if (!PyArg_ParseTuple(args, "iO", &id, &v)) {
-		return NULL;
+/* SetSellVisible, SetExitVisible, SetShipTypeVisible, SetPilotVisible (id, bVisible): the value as it is */
+static byte Ht_Visible(int id, const nativeVal_t *v, const char *const *items, const char *import) {
+	if (import && !Mode_Import(import)) {
+		return 0;
 	}
-	if (import) {
-		Sf_Import(&f, import);
+	for (; *items; items++) {
+		if (!Sn_SetC(id, *items, "Visible", v)) {
+			return 0;
+		}
 	}
-	Se_SetAll(&f, id, items, "Visible", v);
-	return Sf_None(&f);
-}
-
-static PyObject *HT_SetSellVisible(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ht_Visible(args, ht_sell, SE);
-}
-
-static PyObject *HT_SetExitVisible(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ht_Visible(args, ht_exit, NULL);
-}
-
-static PyObject *HT_SetShipTypeVisible(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ht_Visible(args, ht_shipType, NULL);
-}
-
-static PyObject *HT_SetPilotVisible(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ht_Visible(args, ht_pilot, NULL);
+	return 1;
 }
 
 /* the same lists from C, with a number */
-static void Ht_Show(scriptFrame_t *f, int id, const char *const *items, long v) {
+static void Ht_Show(int id, const char *const *items, long v) {
 	for (; *items; items++) {
-		Se_SetI(f, id, *items, "Visible", v);
+		Script_SetNum(id, *items, "Visible", v);
 	}
 }
 
 /* SetSellActive(id, bActive): the Sell button works or is greyed */
-static void Ht_SellActive(scriptFrame_t *f, int id, int on) {
-	Se_SetI(f, id, "Sell", "HighLight", on);
-	Se_SetI(f, id, "Sell", "W", on ? 35 : 0);
-	Se_SetI(f, id, "Sell", "H", on ? 35 : 0);
-	Se_SetI(f, id, "Sell", "SpriteIndex", on ? 8 : 10);
-	Se_SetS(f, id, "Sell", "OnAccept", on ? "HangarTab.SellShip" : "");
-}
-
-static PyObject *HT_SetSellActive(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	PyObject *v;
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO", &id, &v)) {
-		return NULL;
-	}
-	int on = Sf_True(&f, v);
-	if (on >= 0) {
-		Ht_SellActive(&f, id, on);
-	}
-	return Sf_None(&f);
+static void Ht_SellActive(int id, int on) {
+	Script_SetNum(id, "Sell", "HighLight", on);
+	Script_SetNum(id, "Sell", "W", on ? 35 : 0);
+	Script_SetNum(id, "Sell", "H", on ? 35 : 0);
+	Script_SetNum(id, "Sell", "SpriteIndex", on ? 8 : 10);
+	Script_SetStr(id, "Sell", "OnAccept", on ? "HangarTab.SellShip" : "");
 }
 
 /* the words of the language text key (string.split), each the item prefix<word>: Visible v */
-static void Ht_Words_(scriptFrame_t *f, int id, const char *key, const char *prefix, long v) {
-	PyObject *words = Sf_Ask(f, "string", "split", "(O)", Sf_Str(f, f->failed ? "" : Script_Lang(key)));
-	for (int i = 0; !f->failed; i++) {
-		int mark = f->n;
-		PyObject *w = Sf_Next(f, words, i);
-		if (!w) {
-			break;
-		}
-		Se_SetOO(f, id, Sf_Cat(f, "sO", prefix, w), "Visible", Sf_Int(f, v));
-		Sf_Release(f, f->failed ? f->n : mark);
+static byte Ht_Words(int id, const char *key, const char *prefix, long v) {
+	nativeVal_t text = { 0 }, words = { 0 }, w = { 0 }, name = { 0 }, x;
+	Native_SetInt(&x, v);
+	Mode_Lang(key, &text);
+	byte ok = Native_Split(&text, NULL, &words);
+	for (int i = 0; ok && i < words.n; i++) {
+		ok = Native_SeqItem(&words, i, &w) && Sn_Cat(prefix, &w, NULL, &name) && Sn_Set(id, &name, "Visible", &x);
+		Native_Free(&w);
+		Native_Free(&name);
 	}
-}
-
-static void Ht_Words(scriptFrame_t *f, int id, const char *key, const char *prefix, long v) {
-	SE_SUB(f, Ht_Words_(&g, id, key, prefix, v));
+	Native_Free(&text);
+	Native_Free(&words);
+	return ok;
 }
 
 /* HideShipMiniInfo(id, control, lostFocus): the mini information of a hangar hides */
-static void Ht_HideMini_(scriptFrame_t *f, int id) {
-	Sf_Import(f, "string");
-	if (Sf_True(f, GF("miniShip")) > 0) {
-		Sf_SetGlobal(f, HT, "miniShip", Py_None);
-	}
-	Ht_Words(f, id, "ShipEdit_AvailableHangar", "AvailableHangarText_", 0);
-	Ht_Words(f, id, "ShipEdit_UncompletedShip", "UncompletedShipText_", 0);
-	Ht_Words(f, id, "ShipEdit_DestroyedShip", "DestroyedShipText_", 0);
+static byte Ht_HideMini(int id) {
 	static const char *const items[] = { "HangarShip", "MiniMaxSpeedText", "MiniMaxSpeed", "MiniSpeedRamp1",
 		"MiniSpeedRamp2", "MiniBoostRechargeTime", "MiniBoostRechargeTimeText", "MiniHullText", "MiniHullValue",
 		"MiniWeight", "MiniCurrentWeight", "MiniMaxWeight", "MiniSlashWeight", "MiniShipInfo", "HLine", "VLine", "MLine",
 		"AuxShipText", NULL };
-	Ht_Show(f, id, items, 0);
-}
-
-static void Ht_HideMini(scriptFrame_t *f, int id) {
-	SE_SUB(f, Ht_HideMini_(&g, id));
-}
-
-static PyObject *HT_HideShipMiniInfo(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	PyObject *control, *lost;
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOO", &id, &control, &lost)) {
-		return NULL;
+	if (!Mode_Import("string")) {
+		return 0;
 	}
-	Ht_HideMini(&f, id);
-	return Sf_None(&f);
+	int t = LvN_GTrue(HT, "miniShip");
+	if (t < 0 || (t > 0 && !Mode_Put(HT, "miniShip", NULL, &ht_none))) {
+		return 0;
+	}
+	if (!Ht_Words(id, "ShipEdit_AvailableHangar", "AvailableHangarText_", 0) ||
+		!Ht_Words(id, "ShipEdit_UncompletedShip", "UncompletedShipText_", 0) ||
+		!Ht_Words(id, "ShipEdit_DestroyedShip", "DestroyedShipText_", 0)) {
+		return 0;
+	}
+	Ht_Show(id, items, 0);
+	return 1;
 }
 
 /* HideHangarPanel(id): the items of the Hangar panel hide */
-static PyObject *HT_HideHangarPanel(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	Sf_Import(&f, SE);
-	Sf_Import(&f, "ShipMaker");
+static byte Ht_HideHangarPanel(int id) {
 	static const char *const aux[] = { "HangarAux", "AuxShipText", "LittleShipAux", "nAux", NULL };
-	Ht_Show(&f, id, aux, 0);
+	static const char *const parts[] = { "LittleShip", "Hangar", "n" };
+	if (!Mode_Import(SE) || !Mode_Import("ShipMaker")) {
+		return 0;
+	}
+	Ht_Show(id, aux, 0);
 	for (int n = 1; n <= 9; n++) {
-		static const char *const parts[] = { "LittleShip", "Hangar", "n" };
 		for (int k = 0; k < 3; k++) {
 			char name[0x20];
 			Str_Printf(name, sizeof(name), "%s%d", parts[k], n);
-			Se_SetI(&f, id, name, "Visible", 0);
+			Script_SetNum(id, name, "Visible", 0);
 		}
 	}
-	Se_SetOO(&f, id, Sf_GetItem(&f, Sf_Mod(&f, "ShipMaker", "PilotsList"), G("currentPilot")), "Visible", Sf_Int(&f, 0));
-	Ht_Show(&f, id, ht_pilot, 0);
-	Ht_Show(&f, id, ht_sell, 0);
-	Ht_HideMini(&f, id);
-	Sf_From(&f, "Menu", "UnLinkLR");
-	Se_Link(&f, "UnLinkLR", id, "Sell", "Exit");
-	return Sf_None(&f);
+	if (!Ht_PilotVisible(id, 0)) {
+		return 0;
+	}
+	Ht_Show(id, ht_pilot, 0);
+	Ht_Show(id, ht_sell, 0);
+	return Ht_HideMini(id) && Sn_From("UnLinkLR") && Sn_Link("UnLinkLR", id, "Sell", "Exit");
 }
 
 /* the colour of an item: normal (83, 114, 193), selected (212, 200, 80) or destroyed (255, 32, 32) */
-static void Ht_Color(scriptFrame_t *f, int id, const char *name, int kind) {
+static void Ht_Color(int id, const char *name, int kind) {
 	static const long rgb[3][3] = { { 83, 114, 193 }, { 212, 200, 80 }, { 255, 32, 32 } };
-	Se_SetI(f, id, name, "Red", rgb[kind][0]);
-	Se_SetI(f, id, name, "Green", rgb[kind][1]);
-	Se_SetI(f, id, name, "Blue", rgb[kind][2]);
+	Script_SetNum(id, name, "Red", rgb[kind][0]);
+	Script_SetNum(id, name, "Green", rgb[kind][1]);
+	Script_SetNum(id, name, "Blue", rgb[kind][2]);
 }
 
 /* IsShipValid(ship): the ship has engines (the lifeboat always counts): the NEng value that decided, 0 or 1 */
-static PyObject *Ht_IsShipValid_(scriptFrame_t *f, PyObject *ship) {
-	if (Sf_Compare(f, ship, "==", Py_None) != 0) {
-		return f->failed ? NULL : Sf_Int(f, 0);
+static byte Ht_IsShipValid(const nativeVal_t *ship, nativeVal_t *out) {
+	nativeVal_t model = { 0 };
+	Native_SetNone(out);
+	int c = Mode_Cmp(ship, "==", &ht_none);
+	if (c != 0) {
+		Native_SetInt(out, 0);
+		return c > 0;
 	}
-	if (Sf_EqS(f, Sf_Attr(f, ship, "Model"), "SLifeBoat") != 0) {
-		return f->failed ? NULL : Sf_Int(f, 1);
+	if (!Mode_VGet(ship, "Model", &model)) {
+		return 0;
 	}
-	PyObject *has = Sf_Int(f, 0);
-	for (int i = 0; i < 4 && !f->failed; i++) {
+	c = LvN_EqS(&model, "SLifeBoat");
+	Native_Free(&model);
+	if (c) {
+		Native_SetInt(out, 1);
+		return 1;
+	}
+	Native_SetInt(out, 0);
+	for (int i = 0; i < 4; i++) {
 		char var[8];
 		Str_Printf(var, sizeof(var), "NEng%d", i);
-		has = Sf_Attr(f, ship, var);
-		if (Sf_True(f, has) != 0) {
+		Native_Free(out);
+		if (!Mode_VGet(ship, var, out)) {
+			return 0;
+		}
+		if (Native_True(out)) {
 			break;
 		}
 	}
-	return has;
+	return 1;
 }
 
-static PyObject *Ht_IsShipValid(scriptFrame_t *f, PyObject *ship) {
-	PyObject *r = NULL;
-	if (!f->failed) {
-		scriptFrame_t g = { 0 };
-		r = Se_JoinValue(f, &g, Ht_IsShipValid_(&g, ship));
-	}
+/* `if IsShipValid(ship):` (the C function): 1, 0, -1 */
+static int Ht_Valid(const nativeVal_t *ship) {
+	nativeVal_t v = { 0 };
+	int r = Ht_IsShipValid(ship, &v) ? Native_True(&v) : -1;
+	Native_Free(&v);
 	return r;
 }
 
-static PyObject *HT_IsShipValid(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	PyObject *ship;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &ship)) {
-		return NULL;
+/* the hint of a hangar: key % UseTxt, or the language text key */
+static byte Ht_Hint(int id, const char *hangar, const char *key, byte use) {
+	if (use) {
+		return Sn_SetUseC(id, hangar, "Hint", key, HT);
 	}
-	return Sf_Return(&f, Ht_IsShipValid(&f, ship));
+	Script_SetStr(id, hangar, "Hint", Script_Lang(key));
+	return 1;
 }
 
 /* UpdateHangars(id): the hangars in their state: selected, empty, with a valid, incomplete or destroyed ship, and
  * their hints */
-static void Ht_UpdateHangars_(scriptFrame_t *f, int id) {
-	Sf_Import(f, SE);
-	if (Se_Multi(f, 0) == 0) {
-		Se_SetI(f, id, "HangarAux", "Visible", 1);
-		Se_SetI(f, id, "AuxShipText", "Visible", 0);
-		Se_SetI(f, id, "LittleShipAux", "Visible", 1);
-		Se_SetI(f, id, "nAux", "Visible", 1);
+static byte Ht_UpdateHangars(int id) {
+	if (!Mode_Import(SE)) {
+		return 0;
 	}
-	Se_SetI(f, id, "LittleShipAux", "SpriteIndex", 4);
-	Ht_Color(f, id, "LittleShipAux", 0);
-	Se_SetI(f, id, "nAux", "SpriteIndex", 4);
-	Ht_Color(f, id, "nAux", 0);
-	int aux = Sf_EqI(f, GF("currentHangar"), 9);
-	if (aux > 0) {
-		Se_SetLang(f, id, "HangarAux", "Hint", "HINT_Hangar18");
-		Se_SetI(f, id, "HangarAux", "SpriteIndex", 2);
-		Se_SetO(f, id, "HangarAux", "Alpha", GF("SelectedColorAlpha"));
-	} else if (aux == 0) {
-		Se_SetUse(f, id, Sf_Str(f, "HangarAux"), "Hint", "HINT_Hangar17", HT);
-		Se_SetI(f, id, "HangarAux", "SpriteIndex", 1);
-		Se_SetO(f, id, "HangarAux", "Alpha", GF("NormalColorAlpha"));
+	int mp = Sn_Multi(0);
+	if (mp < 0) {
+		return 0;
 	}
-	if (aux >= 0) {
-		Ht_Color(f, id, "LittleShipAux", aux);
-		Ht_Color(f, id, "nAux", aux);
+	if (!mp) {
+		Script_SetNum(id, "HangarAux", "Visible", 1);
+		Script_SetNum(id, "AuxShipText", "Visible", 0);
+		Script_SetNum(id, "LittleShipAux", "Visible", 1);
+		Script_SetNum(id, "nAux", "Visible", 1);
 	}
-	for (int n = 1; n <= 9 && !f->failed; n++) {
-		int mark = f->n;
+	Script_SetNum(id, "LittleShipAux", "SpriteIndex", 4);
+	Ht_Color(id, "LittleShipAux", 0);
+	Script_SetNum(id, "nAux", "SpriteIndex", 4);
+	Ht_Color(id, "nAux", 0);
+	int aux = Ht_GEq("currentHangar", 9);
+	if (aux < 0) {
+		return 0;
+	}
+	if (aux) {
+		Script_SetStr(id, "HangarAux", "Hint", Script_Lang("HINT_Hangar18"));
+		Script_SetNum(id, "HangarAux", "SpriteIndex", 2);
+		if (!Ht_SetG(id, "HangarAux", "Alpha", "SelectedColorAlpha")) {
+			return 0;
+		}
+	} else {
+		if (!Sn_SetUseC(id, "HangarAux", "Hint", "HINT_Hangar17", HT)) {
+			return 0;
+		}
+		Script_SetNum(id, "HangarAux", "SpriteIndex", 1);
+		if (!Ht_SetG(id, "HangarAux", "Alpha", "NormalColorAlpha")) {
+			return 0;
+		}
+	}
+	Ht_Color(id, "LittleShipAux", aux);
+	Ht_Color(id, "nAux", aux);
+	nativeVal_t e = { 0 }, k = { 0 }, x = { 0 }, cur = { 0 };
+	byte ok = 1;
+	for (int n = 1; ok && n <= 9; n++) {
 		char hangar[0x10], little[0x20], num[0x10];
 		Str_Printf(hangar, sizeof(hangar), "Hangar%d", n);
 		Str_Printf(little, sizeof(little), "LittleShip%d", n);
 		Str_Printf(num, sizeof(num), "n%d", n);
-		int none = Sf_Compare(f, Sf_Item(f, SEAF("editedShips"), n - 1), "==", Py_None);
+		Native_Free(&e);
+		int none = Ht_AtI("editedShips", n - 1, &e) ? Mode_Cmp(&e, "==", &ht_none) : -1;
 		int exists = none < 0 ? -1 : !none;
-		Se_SetI(f, id, hangar, "Visible", 1);
-		Se_SetI(f, id, hangar, "Red", 255);
-		Se_SetI(f, id, hangar, "Green", 255);
-		Se_SetI(f, id, hangar, "Blue", 255);
-		if (exists > 0) {
-			Se_SetUse(f, id, Sf_Str(f, hangar), "Hint", "HINT_Hangar10", HT);
-		} else if (exists == 0) {
-			int sput = Sf_True(f, SEAF("fromSputnik"));
-			if (sput > 0) {
-				Se_SetLang(f, id, hangar, "Hint", "HINT_Hangar19");
-			} else if (sput == 0) {
-				int cur = Sf_EqI(f, GF("currentHangar"), n - 1);
-				if (cur > 0) {
-					Se_SetLang(f, id, hangar, "Hint", "HINT_Hangar11");
-				} else if (cur == 0) {
-					Se_SetUse(f, id, Sf_Str(f, hangar), "Hint", "HINT_Hangar10", HT);
-				}
+		if (exists < 0) {
+			ok = 0;
+			break;
+		}
+		Script_SetNum(id, hangar, "Visible", 1);
+		Script_SetNum(id, hangar, "Red", 255);
+		Script_SetNum(id, hangar, "Green", 255);
+		Script_SetNum(id, hangar, "Blue", 255);
+		if (exists) {
+			ok = Ht_Hint(id, hangar, "HINT_Hangar10", 1);
+		} else {
+			int sput = Mode_ModTrue(SE, "fromSputnik");
+			int c = sput == 0 ? Ht_GEq("currentHangar", n - 1) : 0;
+			ok = sput >= 0 && c >= 0 && Ht_Hint(id, hangar, sput ? "HINT_Hangar19" : c ? "HINT_Hangar11" : "HINT_Hangar10",
+				!sput && !c);
+		}
+		Native_Free(&cur);
+		int c = ok && Ht_G("currentHangar", &cur) ? Mode_Cmp(Ht_I(&k, n - 1), "==", &cur) : -1;
+		if (c < 0) {
+			ok = 0;
+			break;
+		}
+		Script_SetNum(id, hangar, "Visible", 1);
+		Script_SetNum(id, hangar, "SpriteIndex", c ? 2 : 1);
+		if (!Ht_SetG(id, hangar, "Alpha", c ? "SelectedColorAlpha" : "NormalColorAlpha")) {
+			ok = 0;
+			break;
+		}
+		Script_SetNum(id, little, "Visible", 1);
+		Script_SetNum(id, little, "SpriteIndex", 4);
+		Ht_Color(id, little, c);
+		Script_SetNum(id, num, "Visible", 1);
+		Ht_Color(id, num, c);
+		Script_SetNum(id, little, "Visible", exists);
+		if (!exists) {
+			continue;
+		}
+		Native_Free(&x);
+		int lost = Ht_AtI("destroyedShips", n - 1, &x) ? LvN_EqI(&x, 1) : -1;
+		if (lost > 0) {
+			lost = Ht_Single();
+		}
+		if (lost < 0) {
+			ok = 0;
+		} else if (lost) {
+			Script_SetNum(id, little, "Visible", 1);
+			Ht_Color(id, little, 2);
+			Ht_Color(id, num, 2);
+			int sput = Mode_ModTrue(SE, "fromSputnik");
+			int here = sput == 0 ? Ht_GEq("currentHangar", n - 1) : 0;
+			ok = sput >= 0 && here >= 0 && Ht_Hint(id, hangar, sput || here ? "HINT_Hangar13" : "HINT_Hangar10", !sput && !here);
+		} else {
+			Native_Free(&e);
+			int valid = Ht_AtI("editedShips", n - 1, &e) ? Ht_Valid(&e) : -1;
+			int here = valid >= 0 ? Ht_GEq("currentHangar", n - 1) : -1;
+			int sput = here >= 0 ? Mode_ModTrue(SE, "fromSputnik") : -1;
+			if (sput < 0) {
+				ok = 0;
+			} else if (sput) {
+				ok = Ht_Hint(id, hangar, valid ? "HINT_Hangar20" : "HINT_Hangar21", 0);
+			} else {
+				ok = Ht_Hint(id, hangar, here ? (valid ? "HINT_Hangar15" : "HINT_Hangar14") : "HINT_Hangar10", !here);
 			}
 		}
-		int cur = Sf_Compare(f, Sf_Int(f, n - 1), "==", GF("currentHangar"));
-		if (cur >= 0) {
-			Se_SetI(f, id, hangar, "Visible", 1);
-			Se_SetI(f, id, hangar, "SpriteIndex", cur ? 2 : 1);
-			Se_SetO(f, id, hangar, "Alpha", GF(cur ? "SelectedColorAlpha" : "NormalColorAlpha"));
-			Se_SetI(f, id, little, "Visible", 1);
-			Se_SetI(f, id, little, "SpriteIndex", 4);
-			Ht_Color(f, id, little, cur);
-			Se_SetI(f, id, num, "Visible", 1);
-			Ht_Color(f, id, num, cur);
-		}
-		if (exists >= 0) {
-			Se_SetI(f, id, little, "Visible", exists);
-		}
-		if (exists > 0) {
-			int lost = Sf_EqI(f, Sf_Item(f, SEAF("destroyedShips"), n - 1), 1);
-			if (lost > 0) {
-				int mp = Se_Multi(f, 0);
-				lost = mp < 0 ? -1 : !mp;
-			}
-			if (lost > 0) {
-				Se_SetI(f, id, little, "Visible", 1);
-				Ht_Color(f, id, little, 2);
-				Ht_Color(f, id, num, 2);
-				int sput = Sf_True(f, SEAF("fromSputnik"));
-				int here = sput == 0 ? Sf_EqI(f, GF("currentHangar"), n - 1) : 0;
-				if (sput > 0 || here > 0) {
-					Se_SetLang(f, id, hangar, "Hint", "HINT_Hangar13");
-				} else if (here == 0 && !f->failed) {
-					Se_SetUse(f, id, Sf_Str(f, hangar), "Hint", "HINT_Hangar10", HT);
-				}
-			} else if (lost == 0) {
-				int valid = Sf_True(f, Ht_IsShipValid(f, Sf_Item(f, SEAF("editedShips"), n - 1)));
-				int here = valid >= 0 ? Sf_EqI(f, GF("currentHangar"), n - 1) : -1;
-				int sput = here >= 0 ? Sf_True(f, SEAF("fromSputnik")) : -1;
-				if (sput > 0) {
-					Se_SetLang(f, id, hangar, "Hint", valid ? "HINT_Hangar20" : "HINT_Hangar21");
-				} else if (sput == 0 && here > 0) {
-					Se_SetLang(f, id, hangar, "Hint", valid ? "HINT_Hangar15" : "HINT_Hangar14");
-				} else if (sput == 0) {
-					Se_SetUse(f, id, Sf_Str(f, hangar), "Hint", "HINT_Hangar10", HT);
-				}
-			}
-		}
-		Sf_Release(f, f->failed ? f->n : mark);
 	}
-}
-
-static void Ht_UpdateHangars(scriptFrame_t *f, int id) {
-	SE_SUB(f, Ht_UpdateHangars_(&g, id));
-}
-
-static PyObject *HT_UpdateHangars(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	Ht_UpdateHangars(&f, id);
-	return Sf_None(&f);
+	Native_Free(&e);
+	Native_Free(&x);
+	Native_Free(&cur);
+	return ok;
 }
 
 /* ShowHangarPanel(id): the items of the Hangar panel show; Sell works for an intact ship of a hangar */
-static PyObject *HT_ShowHangarPanel(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
+static byte Ht_ShowHangarPanel(int id) {
+	if (!Mode_Import(SE) || !Mode_Import("ShipMaker") || !Sn_From("LinkUD") || !Sn_From("LinkLR") || !Ht_PilotVisible(id, 1)) {
+		return 0;
 	}
-	Sf_Import(&f, SE);
-	Sf_Import(&f, "ShipMaker");
-	Sf_From(&f, "Menu", "LinkUD");
-	Sf_From(&f, "Menu", "LinkLR");
-	Se_SetOO(&f, id, Sf_GetItem(&f, Sf_Mod(&f, "ShipMaker", "PilotsList"), G("currentPilot")), "Visible", Sf_Int(&f, 1));
-	Ht_Show(&f, id, ht_pilot, 1);
-	if (Ht_Pilots(&f) > 0) {
-		Se_Link(&f, "LinkLR", id, "PrevPilot", "NextPilot");
-		Se_Link(&f, "LinkUD", id, "NextPilot", "PilotName");
-		Se_Link(&f, "LinkUD", id, "PrevPilot", "PilotName");
-		Se_Link(&f, "LinkUD", id, "PilotName", "Sell");
-		Se_Link(&f, "LinkUD", id, "PilotName", "Exit");
+	Ht_Show(id, ht_pilot, 1);
+	int p = Ht_Pilots();
+	if (p < 0 || (p && (!Sn_Link("LinkLR", id, "PrevPilot", "NextPilot") || !Sn_Link("LinkUD", id, "NextPilot", "PilotName") ||
+		!Sn_Link("LinkUD", id, "PrevPilot", "PilotName") || !Sn_Link("LinkUD", id, "PilotName", "Sell") ||
+		!Sn_Link("LinkUD", id, "PilotName", "Exit")))) {
+		return 0;
 	}
-	if (Sf_True(&f, SEA("fromSputnik")) == 0) {
-		Ht_Show(&f, id, ht_sell, 1);
+	int sput = Mode_ModTrue(SE, "fromSputnik");
+	if (sput < 0) {
+		return 0;
 	}
-	Ht_SellActive(&f, id, 0);
-	int c = Sf_True(&f, SEA("fromSputnik"));
+	if (!sput) {
+		Ht_Show(id, ht_sell, 1);
+	}
+	Ht_SellActive(id, 0);
+	nativeVal_t x;
+	int c = Mode_ModTrue(SE, "fromSputnik");
 	c = c < 0 ? -1 : !c;
 	if (c > 0) {
-		c = Sf_Compare(&f, G("currentHangar"), ">", Sf_Int(&f, -1));
+		nativeVal_t cur = { 0 };
+		c = Ht_G("currentHangar", &cur) ? Mode_CmpI(&cur, ">", -1) : -1;
+		Native_Free(&cur);
 	}
 	if (c > 0) {
-		c = Sf_Compare(&f, G("currentHangar"), "<", Sf_Int(&f, 9));
+		nativeVal_t cur = { 0 };
+		c = Ht_G("currentHangar", &cur) ? Mode_CmpI(&cur, "<", 9) : -1;
+		Native_Free(&cur);
 	}
 	if (c > 0) {
-		c = Sf_Compare(&f, Sf_GetItem(&f, SEA("editedShips"), G("currentHangar")), "!=", Py_None);
+		c = Ht_AtCmp("editedShips", "currentHangar", "!=", &ht_none);
 	}
 	if (c > 0) {
-		c = Sf_Compare(&f, Sf_GetItem(&f, SEA("destroyedShips"), G("currentHangar")), "!=", Sf_Int(&f, 1));
+		c = Ht_AtCmp("destroyedShips", "currentHangar", "!=", Ht_I(&x, 1));
 	}
-	if (c > 0) {
-		Ht_SellActive(&f, id, 1);
-		Se_Link(&f, "LinkLR", id, "Sell", "Exit");
+	if (c < 0) {
+		return 0;
 	}
-	Ht_UpdateHangars(&f, id);
-	return Sf_None(&f);
+	if (c) {
+		Ht_SellActive(id, 1);
+		if (!Sn_Link("LinkLR", id, "Sell", "Exit")) {
+			return 0;
+		}
+	}
+	return Ht_UpdateHangars(id);
 }
 
 /* eval(text) in a function of HangarTab (its globals, locals the dict of the function's variables); a name with
  * attributes and subscripts ("prevShip.Model", "ShipEdit.editedShips[3].NEng0", all the game passes) is looked up
- * directly */
-static PyObject *Ht_Eval(scriptFrame_t *f, PyObject *text, PyObject *locals) {
-	PyObject *g = Sf_Mod(f, HT, "__dict__"), *v;
-	if (g && text && PyString_Check(text) && PyDict_Check(locals) &&
-		(int)strlen(PyString_AsString(text)) == PyString_Size(text)) {
-		const char *s = PyString_AsString(text);
+ * directly (OBJLIB 6: the name chain on the module dict) */
+static byte Ht_Eval(const nativeVal_t *text, PyObject *locals, nativeVal_t *out) {
+	PyObject *g = Script_Attr(HT, "__dict__"), *v;
+	Native_SetNone(out);
+	if (!g) {
+		return 0;
+	}
+	if (text->type == NV_STR && strlen(Native_Text(text)) == (size_t)text->n) {
+		const char *s = Native_Text(text);
 		while (*s == ' ' || *s == '\t') {
 			s++;
 		}
 		int found = Script_NameChain(locals, g, s, &v);
 		if (found) {
-			return Sf_Keep(f, found > 0 ? v : NULL);
+			Py_DECREF(g);
+			if (found < 0) {
+				return 0;
+			}
+			Native_Arg(v, out);
+			Py_DECREF(v);
+			return 1;
 		}
 	}
 	/* STAGE 7: another expression (only a caller of ComputeShipTotalCost from the console) is Script_NotRead's error in
 	 * the build without the interpreter */
 #ifdef SCRAP_NO_PYTHON
-	return Sf_Keep(f, Script_NotRead("ComputeShipTotalCost", text && PyString_Check(text) ? PyString_AsString(text) :
-		""));
+	Py_DECREF(g);
+	PyObject *r = Script_NotRead("ComputeShipTotalCost", Native_Text(text));
 #else
-	return Sf_Ask(f, "__builtin__", "eval", "(OOO)", text, g, locals);
+	PyObject *t = Native_ToPy(text);
+	PyObject *r = t ? Script_Ask("__builtin__", "eval", "(OOO)", t, g, locals) : NULL;
+	Py_XDECREF(t);
+	Py_DECREF(g);
 #endif
+	if (!r) {
+		return 0;
+	}
+	Native_Arg(r, out);
+	Py_DECREF(r);
+	return 1;
+}
+
+/* eval(cad + attr) */
+static byte Ht_EvalAttr(const nativeVal_t *cad, const char *attr, PyObject *locals, nativeVal_t *out) {
+	nativeVal_t s = { 0 };
+	byte ok = Sn_Cat("", cad, attr, &s) && Ht_Eval(&s, locals, out);
+	Native_Free(&s);
+	return ok;
+}
+
+/* eval(cad + attr + v) */
+static byte Ht_EvalAttrV(const nativeVal_t *cad, const char *attr, const nativeVal_t *v, PyObject *locals,
+	nativeVal_t *out) {
+	nativeVal_t s = { 0 }, s2 = { 0 };
+	byte ok = Sn_Cat("", cad, attr, &s) && Native_Arith('+', &s, v, &s2) && Ht_Eval(&s2, locals, out);
+	Native_Free(&s);
+	Native_Free(&s2);
+	return ok;
 }
 
 /* ComputeShipTotalCost(cad="prevShip"): the price of the ship cad names (an expression the function evaluates): the
  * model, its engines, its weapons and the armour above the minimum */
-static PyObject *Ht_TotalCost_(scriptFrame_t *f, PyObject *cad) {
-	Sf_Import(f, SE);
-	Sf_Import(f, "ShipMaker");
-	Sf_Import(f, "string");
-	PyObject *loc = Sf_Build(f, "{s:O}", "cad", cad);
+static byte Ht_TotalCost(const nativeVal_t *cad, nativeVal_t *out) {
 	static const char *const mods[] = { SE, "ShipMaker", "string" };
-	for (int i = 0; i < 3 && !f->failed; i++) {
-		PyObject *m = Sf_Keep(f, PyImport_ImportModule((char *)mods[i]));
-		Sf_SetItem(f, loc, Sf_Str(f, mods[i]), m);
-	}
-	PyObject *shipName = Ht_Eval(f, Sf_Cat(f, "Os", cad, ".Model"), loc);
-	PyObject *cost = Sf_ToInt(f, Sf_Ask(f, "ShipMaker", "GetShipPrice", "(O)", shipName));
-	int n = Sf_Len(f, Sf_GetItem(f, SEAF("shipsEnginesLayouts"), shipName));
-	for (int i = 0; i < n && !f->failed; i++) {
-		int mark = f->n;
-		PyObject *num = Ht_Eval(f, Sf_Cat(f, "OsO", cad, ".NEng", Sf_ReprI(f, i)), loc);
-		if (Sf_Compare(f, num, ">", Sf_Int(f, 0)) > 0) {
-			PyObject *price = Sf_Ask(f, "ShipMaker", "GetEnginePrice", "(O)", Ht_Eval(f, Sf_Cat(f, "OsO", cad, ".MEng",
-				Sf_ReprI(f, i)), loc));
-			cost = Sf_Op(f, cost, '+', Sf_Op(f, num, '*', price));
+	static const char *const slots[] = { "A", "B", "C", "D" };
+	static const char *const weap[][2] = { { "Vulcan", "00" }, { "Devastator", "03" }, { "Tesla", "02" }, { "ATPC", "04" },
+		{ "Inferno", "05" }, { "Swarm", "01" } };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *name = Mode_V(&t), *price = Mode_V(&t), *cost = Mode_V(&t), *layouts = Mode_V(&t), *layout = Mode_V(&t);
+	nativeVal_t *num = Mode_V(&t), *eng = Mode_V(&t), *p = Mode_V(&t), *a = Mode_V(&t), *b = Mode_V(&t), *wid = Mode_V(&t);
+	nativeVal_t *ids = Mode_V(&t), *key = Mode_V(&t), *val = Mode_V(&t), *up = Mode_V(&t), *costs = Mode_V(&t);
+	Native_SetNone(out);
+	for (int i = 0; i < 3; i++) {
+		if (!Mode_Import(mods[i])) {
+			return Mode_Done(&t, 0);
 		}
-		Sf_ReleaseKeep(f, mark, &cost, f->failed ? 0 : 1);
 	}
-	PyObject *slotId = Sf_Build(f, "(ssss)", "A", "B", "C", "D");
-	PyObject *weapId = Sf_Build(f, "{s:s,s:s,s:s,s:s,s:s,s:s}", "Vulcan", "00", "Devastator", "03", "Tesla", "02", "ATPC",
-		"04", "Inferno", "05", "Swarm", "01");
-	PyObject *keys = Sf_Method(f, weapId, "keys", "()");
-	for (int k = 0; !f->failed; k++) {
-		int mark = f->n;
-		PyObject *weapon = Sf_Next(f, keys, k);
-		if (!weapon) {
-			break;
-		}
-		for (int i = 0; i < 2 && !f->failed; i++) {
-			PyObject *wid = Sf_Op(f, Sf_Item(f, slotId, i), '+', Sf_GetItem(f, weapId, weapon));
-			PyObject *loaded = Ht_Eval(f, Sf_Cat(f, "OsO", cad, ".Weap", wid), loc);
-			if (Sf_True(f, loaded) > 0) {
-				PyObject *wc = Sf_GetItem(f, Sf_Mod(f, "ShipMaker", "WeaponCosts"), Sf_Ask(f, "string", "upper", "(O)", weapon));
-				cost = Sf_Op(f, cost, '+', wc);
+	/* OBJLIB 6: the locals of the function as the name chain reads them */
+	PyObject *loc = PyDict_New(), *c = loc ? Native_ToPy(cad) : NULL;
+	byte ok = c && PyDict_SetItemString(loc, "cad", c) == 0;
+	Py_XDECREF(c);
+	for (int i = 0; ok && i < 3; i++) {
+		PyObject *m = PyImport_ImportModule((char *)mods[i]);
+		ok = m && PyDict_SetItemString(loc, (char *)mods[i], m) == 0;
+		Py_XDECREF(m);
+	}
+	ok = ok && Ht_EvalAttr(cad, ".Model", loc, name) && Native_CallMod("ShipMaker", "GetShipPrice", price, "v", name) &&
+		Native_ToInt(price, cost) && LvN_ModGet(SE, "shipsEnginesLayouts", layouts) && Mode_Sub(layouts, name, layout);
+	int n = ok ? Mode_Len(layout) : -1;
+	ok = n >= 0;
+	Native_Free(price);
+	for (int i = 0; ok && i < n; i++) {
+		Mode_Repr(Ht_I(key, i), a);
+		ok = Ht_EvalAttrV(cad, ".NEng", a, loc, num);
+		int more = ok ? Mode_CmpI(num, ">", 0) : -1;
+		if (more > 0) {
+			ok = Ht_EvalAttrV(cad, ".MEng", a, loc, eng) && Native_CallMod("ShipMaker", "GetEnginePrice", price, "v", eng) &&
+				Mode_Arith('*', num, price, p) && Mode_Arith('+', cost, p, b);
+			if (ok) {
+				Native_Free(cost);
+				*cost = *b;
+				Native_SetNone(b);
 			}
 		}
-		Sf_ReleaseKeep(f, mark, &cost, f->failed ? 0 : 1);
+		ok = ok && more >= 0;
+		Native_Free(a);
+		Native_Free(num);
+		Native_Free(eng);
+		Native_Free(price);
+		Native_Free(p);
 	}
-	PyObject *hull = Sf_Op(f, Ht_Eval(f, Sf_Cat(f, "Os", cad, ".MaxLife"), loc), '-', Ht_Eval(f, Sf_Cat(f, "Os", cad,
-		".MinLife"), loc));
-	return Sf_Op(f, cost, '+', Sf_Op(f, hull, '*', Sf_Mod(f, "ShipMaker", "armorPieceCost")));
+	/* slotId = ("A", "B", "C", "D"); weapId = {...}: the keys in the order of the 1.5.2 dict */
+	Native_SetEmpty(ids, NV_DICT);
+	for (int i = 0; ok && i < 6; i++) {
+		Native_SetStr(key, weap[i][0]);
+		Native_SetStr(val, weap[i][1]);
+		ok = Native_DictSet(ids, key, val);
+	}
+	const nativeVal_t *k, *v;
+	for (int pos = 0; ok && Native_DictNext(ids, &pos, &k, &v);) {
+		for (int i = 0; ok && i < 2; i++) {
+			Native_SetStr(a, slots[i]);
+			ok = Native_Arith('+', a, v, wid) && Ht_EvalAttrV(cad, ".Weap", wid, loc, num);
+			if (ok && Native_True(num)) {
+				ok = LvN_ModGet("ShipMaker", "WeaponCosts", costs) && Native_Upper(k, up) && Mode_Sub(costs, up, p) &&
+					Mode_Arith('+', cost, p, b);
+				if (ok) {
+					Native_Free(cost);
+					*cost = *b;
+					Native_SetNone(b);
+				}
+			}
+			Native_Free(wid);
+			Native_Free(num);
+			Native_Free(costs);
+			Native_Free(up);
+			Native_Free(p);
+		}
+	}
+	ok = ok && Ht_EvalAttr(cad, ".MaxLife", loc, a) && Ht_EvalAttr(cad, ".MinLife", loc, b) && Mode_Arith('-', a, b, num) &&
+		LvN_ModGet("ShipMaker", "armorPieceCost", costs) && Mode_Arith('*', num, costs, p) && Mode_Arith('+', cost, p, out);
+	Py_XDECREF(loc);
+	return Mode_Done(&t, ok);
 }
 
-static PyObject *Ht_TotalCost(scriptFrame_t *f, PyObject *cad) {
-	PyObject *r = NULL;
-	if (!f->failed) {
-		scriptFrame_t g = { 0 };
-		r = Se_JoinValue(f, &g, Ht_TotalCost_(&g, cad));
-	}
-	return r;
+/* ComputeShipTotalCost(cad) as the script calls its global (a mission may replace it) */
+static byte Ht_OwnTotalCost(const nativeVal_t *cad, nativeVal_t *out) {
+	return Native_CallGlobal(HT, "ComputeShipTotalCost", out, "v", cad);
 }
 
-static PyObject *HT_ComputeShipTotalCost(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "cad", NULL };
-	scriptFrame_t f = { 0 };
-	PyObject *cad = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &cad)) {
-		return NULL;
-	}
-	return Sf_Return(&f, Ht_TotalCost(&f, cad ? Sf_Ref(&f, cad) : Sf_Str(&f, "prevShip")));
+/* "ShipEdit.editedShips[" + `n` + "]" */
+static byte Ht_ShipText(const nativeVal_t *n, nativeVal_t *out) {
+	nativeVal_t r = { 0 };
+	Mode_Repr(n, &r);
+	byte ok = Sn_Cat("ShipEdit.editedShips[", &r, "]", out);
+	Native_Free(&r);
+	return ok;
 }
 
-/* the money prediction: the text sign + cost, red (Green 0) when money - cost < 0 (money NULL: never red) */
-static void Ht_Predict(scriptFrame_t *f, int id, const char *sign, PyObject *cost, PyObject *money) {
-	Se_SetI(f, id, "MoneyPredict", "Green", 255);
-	if (money && Sf_Compare(f, Sf_Op(f, money, '-', cost), "<", Sf_Int(f, 0)) > 0) {
-		Se_SetI(f, id, "MoneyPredict", "Green", 0);
+/* the money prediction: the text sign + `cost`, red (Green 0) when money - cost < 0 (money NULL: never red) */
+static byte Ht_Predict(int id, const char *sign, const nativeVal_t *cost, const nativeVal_t *money) {
+	nativeVal_t d = { 0 }, r = { 0 }, s = { 0 };
+	Script_SetNum(id, "MoneyPredict", "Green", 255);
+	int red = money ? (Mode_Arith('-', money, cost, &d) ? Mode_CmpI(&d, "<", 0) : -1) : 0;
+	if (red > 0) {
+		Script_SetNum(id, "MoneyPredict", "Green", 0);
 	}
-	Se_SetO(f, id, "MoneyPredict", "Text", Sf_Cat(f, "sO", sign, Sf_Repr(f, cost)));
-	Se_SetI(f, id, "MoneyPredict", "Visible", 1);
+	byte ok = red >= 0;
+	if (ok) {
+		Mode_Repr(cost, &r);
+		ok = Sn_Cat(sign, &r, NULL, &s) && Sn_SetC(id, "MoneyPredict", "Text", &s);
+	}
+	if (ok) {
+		Script_SetNum(id, "MoneyPredict", "Visible", 1);
+	}
+	Native_Free(&d);
+	Native_Free(&r);
+	Native_Free(&s);
+	return ok;
+}
+
+/* int(control[-1]) - 1 as the script takes the hangar from the control name, len(control) - 1 first */
+static byte Ht_ControlHangar(const nativeVal_t *control, nativeVal_t *out) {
+	nativeVal_t c, ch = { 0 }, i = { 0 }, one;
+	Native_Copy(&c, control);
+	int l = Mode_Len(&c);
+	Native_SetInt(&one, 1);
+	byte ok = l >= 0 && LvN_Item(&c, l - 1, &ch) && Native_ToInt(&ch, &i) && Mode_Arith('-', &i, &one, out);
+	Native_Free(&c);
+	Native_Free(&ch);
+	Native_Free(&i);
+	return ok;
+}
+
+/* SScorer.Get(id, item, a) + SScorer.Get(id, item, b) / 2 (half 0: + SScorer.Get(id, item, b)) */
+static byte Ht_Mid(int id, const char *item, const char *a, const char *b, byte half, nativeVal_t *out) {
+	nativeVal_t x = { 0 }, w = { 0 }, h = { 0 }, two;
+	Native_SetInt(&two, 2);
+	Mode_ScorerGet(id, item, a, &x);
+	Mode_ScorerGet(id, item, b, &w);
+	byte ok = half ? Mode_Arith('/', &w, &two, &h) && Mode_Arith('+', &x, &h, out) : Mode_Arith('+', &x, &w, out);
+	Native_Free(&x);
+	Native_Free(&w);
+	Native_Free(&h);
+	return ok;
 }
 
 /* ShowShipMiniInfo(id, control, lostFocus): the mini information of the hangar under the cursor, linked to it by the
  * lines; the texts of an available hangar, a destroyed or an incomplete ship */
-static void Ht_ShowMini_(scriptFrame_t *f, int id, PyObject *control) {
-	Sf_Import(f, SE);
-	Sf_Import(f, "ShipMaker");
-	Sf_Import(f, "string");
-	PyObject *i = NULL;
-	int isAux = Sf_EqS(f, control, "HangarAux");
-	if (isAux > 0) {
-		if (Se_Multi(f, 0) == 0) {
-			Se_SetI(f, id, "AuxShipText", "Visible", 1);
+static byte Ht_ShowMini(int id, const nativeVal_t *control) {
+	static const char *const show[] = { "MiniMaxSpeedText", "MiniMaxSpeed", "MiniSpeedRamp1", "MiniSpeedRamp2",
+		"MiniBoostRechargeTime", "MiniBoostRechargeTimeText", NULL };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *i = Mode_V(&t), *mini = Mode_V(&t), *v = Mode_V(&t), *w = Mode_V(&t), *x = Mode_V(&t), *off = Mode_V(&t);
+	nativeVal_t *o0 = Mode_V(&t), *o1 = Mode_V(&t), *hname = Mode_V(&t), *sx = Mode_V(&t), *sy = Mode_V(&t);
+	nativeVal_t *ex = Mode_V(&t), *ey = Mode_V(&t), *k = Mode_V(&t), *cur = Mode_V(&t);
+	if (!Mode_Import(SE) || !Mode_Import("ShipMaker") || !Mode_Import("string")) {
+		return Mode_Done(&t, 0);
+	}
+	int isAux = LvN_EqS(control, "HangarAux");
+	if (isAux) {
+		int mp = Sn_Multi(0);
+		if (mp < 0) {
+			return Mode_Done(&t, 0);
 		}
-		Sf_SetGlobal(f, HT, "miniShip", Sf_Item(f, SEAF("editedShips"), 9));
-		int t = Sf_True(f, GF("miniShip"));
-		int stop = t < 0 ? -1 : !t;
+		if (!mp) {
+			Script_SetNum(id, "AuxShipText", "Visible", 1);
+		}
+		if (!Ht_AtI("editedShips", 9, v) || !Mode_Put(HT, "miniShip", NULL, v)) {
+			return Mode_Done(&t, 0);
+		}
+		int tr = LvN_GTrue(HT, "miniShip");
+		int stop = tr < 0 ? -1 : !tr;
 		if (stop == 0) {
-			stop = Sf_EqI(f, GF("currentHangar"), 9);
+			stop = Ht_GEq("currentHangar", 9);
 		}
 		if (stop != 0) {
-			return;
+			return Mode_Done(&t, stop > 0);
 		}
-	} else if (isAux == 0) {
-		Se_SetI(f, id, "AuxShipText", "Visible", 0);
-		int l = Sf_Len(f, control) - 1;
-		i = Sf_OpI(f, Sf_ToInt(f, Sf_Item(f, control, l)), '-', 1);
-		Sf_SetGlobal(f, HT, "miniShip", Sf_GetItem(f, SEAF("editedShips"), i));
-		if (Sf_Compare(f, i, "==", GF("currentHangar")) != 0) {
-			return;
+	} else {
+		Script_SetNum(id, "AuxShipText", "Visible", 0);
+		if (!Ht_ControlHangar(control, i) || !LvN_ModGet(SE, "editedShips", w) || !Mode_Sub(w, i, v) ||
+			!Mode_Put(HT, "miniShip", NULL, v)) {
+			return Mode_Done(&t, 0);
 		}
-	}
-	Se_SetI(f, id, "MiniShipInfo", "Visible", 1);
-	if (Sf_True(f, GF("miniShip")) > 0) {
-		Se_SetI(f, id, "MiniMaxSpeedText", "Visible", 0);
-		Se_SetI(f, id, "MiniMaxSpeed", "Visible", 0);
-		Se_SetO(f, id, "HangarShip", "TargetName", Sf_Attr(f, GF("miniShip"), "Name"));
-		Se_SetI(f, id, "HangarShip", "Visible", 1);
-		PyObject *speed = Sf_ToInt(f, Sf_OpI(f, Sf_Attr(f, GF("miniShip"), "MaxSpeed"), '/', 28));
-		Se_SetO(f, id, "MiniMaxSpeed", "Text", Sf_Repr(f, speed));
-		Se_SetI(f, id, "MiniHullText", "Visible", 1);
-		Se_SetO(f, id, "MiniHullValue", "Text", Sf_Repr(f, Sf_Attr(f, GF("miniShip"), "MaxLife")));
-		Se_SetI(f, id, "MiniHullValue", "Visible", 1);
-		Se_SetI(f, id, "MiniWeight", "Visible", 1);
-		Se_SetO(f, id, "MiniCurrentWeight", "Text", Sf_Repr(f, Sf_ToInt(f, Sf_Attr(f, GF("miniShip"), "AcMass"))));
-		Se_SetI(f, id, "MiniCurrentWeight", "Visible", 1);
-		PyObject *ton = Sf_GetItem(f, Sf_Mod(f, "ShipMaker", "ShipTon"), Sf_Ask(f, "string", "upper", "(O)",
-			Sf_Attr(f, GF("miniShip"), "Model")));
-		Se_SetO(f, id, "MiniMaxWeight", "Text", Sf_Repr(f, Sf_ToInt(f, Sf_Item(f, ton, 2))));
-		Se_SetI(f, id, "MiniMaxWeight", "Visible", 1);
-		Se_SetI(f, id, "MiniSlashWeight", "Visible", 1);
-		PyObject *whole;
-		PyObject *dec = Ht_Decimal(f, Sf_Attr(f, GF("miniShip"), "BoostTime"), &whole, 0);
-		Se_SetO(f, id, "MiniBoostRechargeTime", "Text", Sf_Cat(f, "OsO", Sf_Repr(f, whole), ".", dec));
-		if (Sf_True(f, Ht_IsShipValid(f, GF("miniShip"))) > 0) {
-			static const char *const show[] = { "MiniMaxSpeedText", "MiniMaxSpeed", "MiniSpeedRamp1", "MiniSpeedRamp2",
-				"MiniBoostRechargeTime", "MiniBoostRechargeTimeText", NULL };
-			Ht_Show(f, id, show, 1);
-			PyObject *off = Sf_Own(f, HT, "GetSpeedRampOffsets", "(O)", GF("miniShip"));
-			Sf_Own(f, HT, "ScaleSpeedRamp", "(iOOi)", id, Sf_Item(f, off, 0), Sf_Item(f, off, 1), 1);
+		int c = Ht_G("currentHangar", cur) ? Mode_Cmp(i, "==", cur) : -1;
+		if (c != 0) {
+			return Mode_Done(&t, c > 0);
 		}
 	}
-	PyObject *hangarName = isAux > 0 ? Sf_Str(f, "HangarAux") : Sf_Cat(f, "sO", "Hangar", Sf_Repr(f, Sf_OpI(f, i, '+', 1)));
-	PyObject *sx = Sf_Op(f, Sf_Ask(f, "SScorer", "Get", "(iOs)", id, hangarName, "X"), '+', Sf_OpI(f,
-		Sf_Ask(f, "SScorer", "Get", "(iOs)", id, hangarName, "W"), '/', 2));
-	PyObject *sy = Sf_Op(f, Sf_Ask(f, "SScorer", "Get", "(iOs)", id, hangarName, "Y"), '+', Sf_OpI(f,
-		Sf_Ask(f, "SScorer", "Get", "(iOs)", id, hangarName, "H"), '/', 2));
-	PyObject *ex = Sf_Op(f, Sf_Ask(f, "SScorer", "Get", "(iss)", id, "MiniShipInfo", "X"), '+', Sf_OpI(f,
-		Sf_Ask(f, "SScorer", "Get", "(iss)", id, "MiniShipInfo", "W"), '/', 2));
-	PyObject *ey = Sf_Op(f, Sf_Ask(f, "SScorer", "Get", "(iss)", id, "MiniShipInfo", "Y"), '+',
-		Sf_Ask(f, "SScorer", "Get", "(iss)", id, "MiniShipInfo", "H"));
-	Se_SetO(f, id, "VLine", "X", ex);
-	Se_SetO(f, id, "VLine", "Y", ey);
-	Se_SetI(f, id, "VLine", "ScaleX", 2);
-	Se_SetO(f, id, "VLine", "ScaleY", Sf_OpI(f, Sf_Op(f, sy, '-', ey), '+', 2));
-	Se_SetI(f, id, "VLine", "Visible", 1);
-	int invert = Sf_Compare(f, sx, ">", ex);
-	if (invert > 0) {
-		PyObject *t = ex;
-		ex = sx;
-		sx = t;
+	Script_SetNum(id, "MiniShipInfo", "Visible", 1);
+	int has = LvN_GTrue(HT, "miniShip");
+	if (has < 0) {
+		return Mode_Done(&t, 0);
 	}
-	Se_SetO(f, id, "HLine", "X", sx);
-	Se_SetO(f, id, "HLine", "Y", sy);
-	Se_SetO(f, id, "HLine", "ScaleX", Sf_Op(f, ex, '-', sx));
-	Se_SetI(f, id, "HLine", "ScaleY", 2);
-	Se_SetI(f, id, "HLine", "Visible", 1);
-	Se_SetO(f, id, "MLine", "X", invert > 0 ? ex : sx);
-	Se_SetO(f, id, "MLine", "Y", Sf_OpI(f, sy, '+', 1));
-	Se_SetI(f, id, "MLine", "Visible", 1);
-	if (isAux == 0) {
-		int valid = Sf_True(f, Ht_IsShipValid(f, GF("miniShip")));
-		int ship = valid >= 0 ? Sf_True(f, GF("miniShip")) : -1;
-		int lost = 0;
-		if (ship > 0) {
-			int mp = Se_Multi(f, 0);
-			lost = mp == 0 ? Sf_EqI(f, Sf_GetItem(f, SEAF("destroyedShips"), i), 1) : mp < 0 ? -1 : 0;
+	if (has) {
+		Script_SetNum(id, "MiniMaxSpeedText", "Visible", 0);
+		Script_SetNum(id, "MiniMaxSpeed", "Visible", 0);
+		Native_Free(v);
+		Native_Free(w);
+		byte ok = Ht_G("miniShip", mini) && Mode_VGet(mini, "Name", v) && Sn_SetC(id, "HangarShip", "TargetName", v);
+		if (ok) {
+			Script_SetNum(id, "HangarShip", "Visible", 1);
 		}
-		if (ship == 0) {
-			Ht_Words(f, id, "ShipEdit_AvailableHangar", "AvailableHangarText_", 1);
-		} else if (lost > 0) {
-			Ht_Words(f, id, "ShipEdit_DestroyedShip", "DestroyedShipText_", 1);
-		} else if (lost == 0 && valid == 0) {
-			Ht_Words(f, id, "ShipEdit_UncompletedShip", "UncompletedShipText_", 1);
+		Native_Free(v);
+		Native_Free(mini);
+		ok = ok && Ht_G("miniShip", mini) && Mode_VGet(mini, "MaxSpeed", v) && Mode_Arith('/', v, Ht_I(k, 28), w) &&
+			Ht_SetReprInt(id, "MiniMaxSpeed", "Text", w);
+		if (ok) {
+			Script_SetNum(id, "MiniHullText", "Visible", 1);
 		}
-		if (Se_Multi(f, 0) == 0) {
-			Sf_EqI(f, Sf_GetItem(f, SEAF("destroyedShips"), i), 0);
+		Native_Free(v);
+		Native_Free(mini);
+		ok = ok && Ht_G("miniShip", mini) && Mode_VGet(mini, "MaxLife", v) && Ht_SetRepr(id, "MiniHullValue", "Text", v);
+		if (ok) {
+			Script_SetNum(id, "MiniHullValue", "Visible", 1);
+			Script_SetNum(id, "MiniWeight", "Visible", 1);
+		}
+		Native_Free(v);
+		Native_Free(mini);
+		ok = ok && Ht_G("miniShip", mini) && Mode_VGet(mini, "AcMass", v) && Ht_SetReprInt(id, "MiniCurrentWeight", "Text", v);
+		if (ok) {
+			Script_SetNum(id, "MiniCurrentWeight", "Visible", 1);
+		}
+		Native_Free(v);
+		Native_Free(w);
+		Native_Free(mini);
+		ok = ok && LvN_ModGet("ShipMaker", "ShipTon", x) && Ht_G("miniShip", mini) && Mode_VGet(mini, "Model", v) &&
+			Native_Upper(v, w) && Mode_Sub(x, w, o0) && LvN_Item(o0, 2, o1) && Ht_SetReprInt(id, "MiniMaxWeight", "Text", o1);
+		if (ok) {
+			Script_SetNum(id, "MiniMaxWeight", "Visible", 1);
+			Script_SetNum(id, "MiniSlashWeight", "Visible", 1);
+		}
+		Native_Free(v);
+		Native_Free(w);
+		Native_Free(mini);
+		Native_Free(o0);
+		Native_Free(o1);
+		ok = ok && Ht_G("miniShip", mini) && Mode_VGet(mini, "BoostTime", v) && Ht_BoostText(v, w) &&
+			Sn_SetC(id, "MiniBoostRechargeTime", "Text", w);
+		Native_Free(mini);
+		int valid = ok && Ht_G("miniShip", mini) ? Ht_Valid(mini) : -1;
+		if (valid < 0) {
+			return Mode_Done(&t, 0);
+		}
+		if (valid) {
+			Ht_Show(id, show, 1);
+			Native_Free(mini);
+			ok = Ht_G("miniShip", mini) && Native_CallGlobal(HT, "GetSpeedRampOffsets", off, "v", mini) && LvN_Item(off, 0, o0) &&
+				LvN_Item(off, 1, o1) && Native_CallGlobal(HT, "ScaleSpeedRamp", NULL, "ivvi", (long)id, o0, o1, 1L);
+			if (!ok) {
+				return Mode_Done(&t, 0);
+			}
 		}
 	}
-}
-
-static void Ht_ShowMini(scriptFrame_t *f, int id, PyObject *control) {
-	SE_SUB(f, Ht_ShowMini_(&g, id, control));
-}
-
-static PyObject *HT_ShowShipMiniInfo(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	PyObject *control, *lost;
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOO", &id, &control, &lost)) {
-		return NULL;
+	if (isAux) {
+		Native_SetStr(hname, "HangarAux");
+	} else {
+		Native_Free(v);
+		Native_Free(w);
+		if (!Mode_Arith('+', i, Ht_I(k, 1), w)) {
+			return Mode_Done(&t, 0);
+		}
+		Mode_Repr(w, v);
+		if (!Sn_Cat("Hangar", v, NULL, hname)) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	Ht_ShowMini(&f, id, control);
-	return Sf_None(&f);
+	const char *hn = Native_Text(hname);
+	if (!Ht_Mid(id, hn, "X", "W", 1, sx) || !Ht_Mid(id, hn, "Y", "H", 1, sy) || !Ht_Mid(id, "MiniShipInfo", "X", "W", 1, ex) ||
+		!Ht_Mid(id, "MiniShipInfo", "Y", "H", 0, ey)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(v);
+	Native_Free(w);
+	if (!Sn_SetC(id, "VLine", "X", ex) || !Sn_SetC(id, "VLine", "Y", ey)) {
+		return Mode_Done(&t, 0);
+	}
+	Script_SetNum(id, "VLine", "ScaleX", 2);
+	if (!Mode_Arith('-', sy, ey, v) || !Mode_Arith('+', v, Ht_I(k, 2), w) || !Sn_SetC(id, "VLine", "ScaleY", w)) {
+		return Mode_Done(&t, 0);
+	}
+	Script_SetNum(id, "VLine", "Visible", 1);
+	int invert = Mode_Cmp(sx, ">", ex);
+	if (invert < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (invert) {
+		nativeVal_t tmp = *ex;
+		*ex = *sx;
+		*sx = tmp;
+	}
+	Native_Free(v);
+	if (!Sn_SetC(id, "HLine", "X", sx) || !Sn_SetC(id, "HLine", "Y", sy) || !Mode_Arith('-', ex, sx, v) ||
+		!Sn_SetC(id, "HLine", "ScaleX", v)) {
+		return Mode_Done(&t, 0);
+	}
+	Script_SetNum(id, "HLine", "ScaleY", 2);
+	Script_SetNum(id, "HLine", "Visible", 1);
+	Native_Free(w);
+	if (!Sn_SetC(id, "MLine", "X", invert ? ex : sx) || !Mode_Arith('+', sy, Ht_I(k, 1), w) || !Sn_SetC(id, "MLine", "Y", w)) {
+		return Mode_Done(&t, 0);
+	}
+	Script_SetNum(id, "MLine", "Visible", 1);
+	if (isAux) {
+		return Mode_Done(&t, 1);
+	}
+	Native_Free(mini);
+	int valid = Ht_G("miniShip", mini) ? Ht_Valid(mini) : -1;
+	int ship = valid >= 0 ? LvN_GTrue(HT, "miniShip") : -1;
+	int lost = 0;
+	if (ship > 0) {
+		int mp = Sn_Multi(0);
+		Native_Free(v);
+		lost = mp == 0 ? (Sn_At(SE, "destroyedShips", i, v) ? LvN_EqI(v, 1) : -1) : mp < 0 ? -1 : 0;
+	}
+	if (ship < 0 || lost < 0) {
+		return Mode_Done(&t, 0);
+	}
+	byte ok = 1;
+	if (!ship) {
+		ok = Ht_Words(id, "ShipEdit_AvailableHangar", "AvailableHangarText_", 1);
+	} else if (lost) {
+		ok = Ht_Words(id, "ShipEdit_DestroyedShip", "DestroyedShipText_", 1);
+	} else if (!valid) {
+		ok = Ht_Words(id, "ShipEdit_UncompletedShip", "UncompletedShipText_", 1);
+	}
+	int mp = ok ? Sn_Multi(0) : -1;
+	if (mp == 0) {
+		/* the script compares destroyedShips[i] with 0 and does nothing with it */
+		Native_Free(v);
+		ok = Sn_At(SE, "destroyedShips", i, v);
+	}
+	return Mode_Done(&t, ok && mp >= 0);
 }
 
 /* ShowRebuildShipMoney(id, control, lostFocus): the cost of rebuilding the destroyed ship of the hangar (Sputnik's
  * screen), then its mini information */
-static PyObject *HT_ShowRebuildShipMoney(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	PyObject *control, *lost;
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOO", &id, &control, &lost)) {
-		return NULL;
+static byte Ht_ShowRebuildShipMoney(int id, const nativeVal_t *control) {
+	nativeVal_t money = { 0 }, n = { 0 }, text = { 0 }, cost = { 0 };
+	if (!Mode_Import("SputnikInterface")) {
+		return 0;
 	}
-	Sf_Import(&f, "SputnikInterface");
-	Se_SetI(&f, id, "MoneyPredict", "Green", 255);
-	PyObject *money = Sf_Ask(&f, "Scrap", "GetMoney", "()");
-	int l = Sf_Len(&f, control) - 1;
-	PyObject *n = Sf_OpI(&f, Sf_ToInt(&f, Sf_Item(&f, control, l)), '-', 1);
-	PyObject *cost = Sf_Own(&f, HT, "ComputeShipTotalCost", "(O)", Sf_Cat(&f, "sOs", "ShipEdit.editedShips[", Sf_Repr(&f, n),
-		"]"));
-	Ht_Predict(&f, id, "-", cost, money);
-	Sf_SetMod(&f, "SputnikInterface", "rebuildCost", cost);
-	Ht_ShowMini(&f, id, control);
-	return Sf_None(&f);
+	Script_SetNum(id, "MoneyPredict", "Green", 255);
+	Native_SetInt(&money, Mode_GetMoney());
+	byte ok = Ht_ControlHangar(control, &n) && Ht_ShipText(&n, &text) && Ht_OwnTotalCost(&text, &cost) &&
+		Ht_Predict(id, "-", &cost, &money) && Mode_SetModVar("SputnikInterface", "rebuildCost", &cost) && Ht_ShowMini(id, control);
+	Native_Free(&n);
+	Native_Free(&text);
+	Native_Free(&cost);
+	return ok;
 }
 
 /* HideRebuildShipMoney(id, control, lostFocus) */
-static PyObject *HT_HideRebuildShipMoney(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	PyObject *control, *lost;
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iOO", &id, &control, &lost)) {
-		return NULL;
-	}
-	Se_SetI(&f, id, "MoneyPredict", "Visible", 0);
-	Ht_HideMini(&f, id);
-	return Sf_None(&f);
+static byte Ht_HideRebuildShipMoney(int id) {
+	Script_SetNum(id, "MoneyPredict", "Visible", 0);
+	return Ht_HideMini(id);
 }
 
 /* the ship list of the type buttons: auxShipsToEditList, or shipsToEditList while it is empty; *rebuild: the current
  * entry is the destroyed ship */
-static PyObject *Ht_ShipsList(scriptFrame_t *f, int *rebuild) {
+static byte Ht_ShipsList(nativeVal_t *list, int *rebuild) {
+	nativeVal_t aux = { 0 }, empty, x = { 0 }, cur = { 0 };
 	*rebuild = 0;
-	int empty = Sf_Compare(f, SEAF("auxShipsToEditList"), "==", Sf_Keep(f, PyList_New(0)));
-	if (empty > 0) {
-		return SEAF("shipsToEditList");
+	Native_SetEmpty(&empty, NV_LIST);
+	int e = LvN_ModGet(SE, "auxShipsToEditList", &aux) ? Mode_Cmp(&aux, "==", &empty) : -1;
+	Native_Free(&aux);
+	if (e != 0) {
+		return e > 0 && LvN_ModGet(SE, "shipsToEditList", list);
 	}
-	PyObject *list = SEAF("auxShipsToEditList");
-	if (Sf_EqS(f, Sf_GetItem(f, list, GF("currentShipToEdit")), "Rebuild") > 0) {
+	byte ok = LvN_ModGet(SE, "auxShipsToEditList", list) && Ht_G("currentShipToEdit", &cur) && Mode_Sub(list, &cur, &x);
+	if (ok && LvN_EqS(&x, "Rebuild")) {
 		*rebuild = 1;
 	}
-	return list;
+	Native_Free(&x);
+	Native_Free(&cur);
+	return ok;
+}
+
+/* list[currentShipToEdit] */
+static byte Ht_AtShip(const nativeVal_t *list, nativeVal_t *out) {
+	nativeVal_t cur = { 0 };
+	Native_SetNone(out);
+	byte ok = Ht_G("currentShipToEdit", &cur) && Mode_Sub(list, &cur, out);
+	Native_Free(&cur);
+	return ok;
+}
+
+/* int(ShipMaker.GetShipPrice(list[currentShipToEdit])) */
+static byte Ht_ShipPrice(const nativeVal_t *list, nativeVal_t *out) {
+	nativeVal_t kind = { 0 }, p = { 0 };
+	byte ok = Ht_AtShip(list, &kind) && Native_CallMod("ShipMaker", "GetShipPrice", &p, "v", &kind) && Native_ToInt(&p, out);
+	Native_Free(&kind);
+	Native_Free(&p);
+	return ok;
 }
 
 /* AuxShowMoney(id, symbol): the money a new ship costs ("-") or a sold or rebuilt one gives or costs (its whole
  * price, shipTotalCost) */
-static void Ht_AuxShowMoney_(scriptFrame_t *f, int id, const char *symbol) {
-	Sf_Import(f, SE);
-	Sf_Import(f, "ShipMaker");
-	Sf_Import(f, "string");
-	byte minus = !strcmp(symbol, "-");
-	PyObject *money = Sf_Ask(f, "Scrap", "GetMoney", "()");
-	int rebuild;
-	PyObject *list = Ht_ShipsList(f, &rebuild);
-	PyObject *cost;
-	if (minus && !rebuild) {
-		cost = Sf_ToInt(f, Sf_Ask(f, "ShipMaker", "GetShipPrice", "(O)", Sf_GetItem(f, list, GF("currentShipToEdit"))));
-	} else {
-		if (Sf_True(f, GF("prevShip")) == 0) {
-			return;
-		}
-		cost = Ht_TotalCost(f, Sf_Str(f, "prevShip"));
-		Sf_SetGlobal(f, HT, "shipTotalCost", cost);
+static byte Ht_AuxShowMoney(int id, const char *symbol) {
+	nativeVal_t money, list = { 0 }, cost = { 0 }, cad;
+	if (!Mode_Import(SE) || !Mode_Import("ShipMaker") || !Mode_Import("string")) {
+		return 0;
 	}
-	Ht_Predict(f, id, symbol, cost, minus ? money : NULL);
+	byte minus = !strcmp(symbol, "-");
+	Native_SetInt(&money, Mode_GetMoney());
+	int rebuild;
+	byte ok = Ht_ShipsList(&list, &rebuild);
+	if (ok && minus && !rebuild) {
+		ok = Ht_ShipPrice(&list, &cost);
+	} else if (ok) {
+		int has = LvN_GTrue(HT, "prevShip");
+		if (has == 0) {
+			Native_Free(&list);
+			return 1;
+		}
+		Native_SetStr(&cad, "prevShip");
+		ok = has > 0 && Ht_TotalCost(&cad, &cost) && Mode_Put(HT, "shipTotalCost", NULL, &cost);
+	}
+	ok = ok && Ht_Predict(id, symbol, &cost, minus ? &money : NULL);
+	Native_Free(&list);
+	Native_Free(&cost);
+	return ok;
 }
 
-static void Ht_AuxShowMoney(scriptFrame_t *f, int id, const char *symbol) {
-	SE_SUB(f, Ht_AuxShowMoney_(&g, id, symbol));
+/* ScaleSpeedRamp(id, offsetX, offsetY, isMiniShip=0): the speed ramp of the ship information (or of the mini
+ * information): the time to the top speed (offsetX, at most 1) and the top speed (offsetY), both 0 to 1 */
+static byte Ht_ScaleSpeedRamp(int id, const nativeVal_t *offX, const nativeVal_t *oy, const nativeVal_t *mini) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ox = Mode_V(&t), *one = Mode_V(&t), *two = Mode_V(&t), *a = Mode_V(&t), *b = Mode_V(&t), *c = Mode_V(&t);
+	nativeVal_t *d = Mode_V(&t), *e = Mode_V(&t), *sx = Mode_V(&t), *sy = Mode_V(&t), *k = Mode_V(&t);
+	Native_SetFloat(one, 1.0);
+	int big = Mode_Cmp(offX, ">", one);
+	if (big < 0) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Copy(ox, big ? one : offX);
+	int isMini = mini ? Native_True(mini) : 0;
+	Native_SetInt(one, 1);
+	Native_SetInt(two, 2);
+	byte ok;
+	/* the operands in the order Python evaluates them */
+#define HT_OP(op, x, y, out) (Native_Free(out), Mode_Arith(op, x, y, out))
+	if (isMini) {
+		Native_SetFloat(sx, 20.0 / 32.0);
+		Native_SetFloat(sy, 53.0 / 64.0);
+		ok = Ht_G("baseMiniShipInfoX", a) && HT_OP('+', a, Ht_I(k, 93), b) && Sn_SetC(id, "MiniSpeedRamp1", "X", b);
+		Native_Free(a);
+		ok = ok && Ht_G("baseMiniShipInfoY", a) && HT_OP('-', a, Ht_I(k, 51), b) && HT_OP('-', one, oy, c);
+		if (ok) {
+			Native_Free(d);
+			Mode_ScorerGet(id, "MiniSpeedRamp1", "H", d);
+		}
+		ok = ok && HT_OP('*', c, d, e) && HT_OP('+', b, e, a) && Sn_SetC(id, "MiniSpeedRamp1", "Y", a) &&
+			HT_OP('*', two, ox, b) && HT_OP('*', b, sx, c) && Sn_SetC(id, "MiniSpeedRamp1", "ScaleX", c) &&
+			HT_OP('*', oy, sy, c) && Sn_SetC(id, "MiniSpeedRamp1", "ScaleY", c);
+		if (ok) {
+			Native_Free(d);
+			Mode_ScorerGet(id, "MiniSpeedRamp1", "W", d);
+		}
+		ok = ok && HT_OP('*', d, two, b) && HT_OP('*', b, ox, e);
+		if (ok) {
+			Native_Free(d);
+			Mode_ScorerGet(id, "MiniSpeedRamp1", "X", d);
+		}
+		ok = ok && HT_OP('+', d, e, a) && Sn_SetC(id, "MiniSpeedRamp2", "X", a);
+		if (ok) {
+			Native_Free(d);
+			Mode_ScorerGet(id, "MiniSpeedRamp1", "Y", d);
+		}
+		ok = ok && Sn_SetC(id, "MiniSpeedRamp2", "Y", d) && HT_OP('-', one, ox, a) && HT_OP('*', a, two, b) &&
+			HT_OP('*', b, sx, c) && Sn_SetC(id, "MiniSpeedRamp2", "ScaleX", c) && HT_OP('*', oy, sy, c) &&
+			Sn_SetC(id, "MiniSpeedRamp2", "ScaleY", c);
+	} else {
+		ok = Ht_G("baseShipInfoX", a) && Ht_G("speedRampX", b) && HT_OP('+', a, b, c) && Sn_SetC(id, "SpeedRamp1", "X", c);
+		Native_Free(a);
+		Native_Free(b);
+		ok = ok && Ht_G("baseShipInfoY", a) && Ht_G("speedRampY", b) && HT_OP('+', a, b, c) && HT_OP('-', one, oy, d);
+		if (ok) {
+			Native_Free(e);
+			Mode_ScorerGet(id, "SpeedRamp1", "H", e);
+		}
+		ok = ok && HT_OP('*', d, e, a) && HT_OP('+', c, a, b) && Sn_SetC(id, "SpeedRamp1", "Y", b) && HT_OP('*', two, ox, a) &&
+			Sn_SetC(id, "SpeedRamp1", "ScaleX", a) && Sn_SetC(id, "SpeedRamp1", "ScaleY", oy) && HT_OP('-', one, ox, a) &&
+			HT_OP('*', a, two, b) && Sn_SetC(id, "SpeedRamp2", "ScaleX", b) && Sn_SetC(id, "SpeedRamp2", "ScaleY", oy);
+		if (ok) {
+			Native_Free(c);
+			Native_Free(d);
+			Mode_ScorerGet(id, "SpeedRamp1", "W", c);
+			Mode_ScorerGet(id, "SpeedRamp1", "ScaleX", d);
+		}
+		ok = ok && HT_OP('*', c, d, e);
+		if (ok) {
+			Native_Free(c);
+			Mode_ScorerGet(id, "SpeedRamp1", "X", c);
+		}
+		ok = ok && HT_OP('+', c, e, a) && Sn_SetC(id, "SpeedRamp2", "X", a);
+		if (ok) {
+			Native_Free(c);
+			Mode_ScorerGet(id, "SpeedRamp1", "Y", c);
+		}
+		ok = ok && Sn_SetC(id, "SpeedRamp2", "Y", c);
+	}
+#undef HT_OP
+	return Mode_Done(&t, ok);
 }
 
-static PyObject *Ht_MoneyArgs(PyObject *args, const char *symbol) {
-	scriptFrame_t f = { 0 };
-	PyObject *control, *lost;
-	int id;
-	if (!PyArg_ParseTuple(args, "iOO", &id, &control, &lost)) {
+/* GetMaxSpeedTime(v): the time the ship v needs to reach its top speed */
+static byte Ht_MaxSpeedTime(const nativeVal_t *v, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ft = Mode_V(&t), *neg = Mode_V(&t), *a = Mode_V(&t), *b = Mode_V(&t), *sq = Mode_V(&t), *k = Mode_V(&t);
+	nativeVal_t *fric = Mode_V(&t), *max = Mode_V(&t), *in = Mode_V(&t), *root = Mode_V(&t), *num = Mode_V(&t);
+	nativeVal_t *den = Mode_V(&t), *c = Mode_V(&t);
+	Native_SetNone(out);
+	if (!Mode_Import("math")) {
+		return Mode_Done(&t, 0);
+	}
+	byte ok = Mode_VGet(v, "FrwTrust", ft) && Mode_Neg(ft, neg) && Mode_VGet(v, "FrwTrust", a) && Mode_VGet(v, "FrwTrust", b) &&
+		Mode_Arith('*', a, b, sq);
+	Native_Free(a);
+	Native_Free(b);
+	ok = ok && Mode_VGet(v, "FrwTrust", a) && Mode_Arith('*', Ht_I(c, 4), a, b) && Mode_VGet(v, "Fric", fric) &&
+		Mode_Arith('*', b, fric, k);
+	Native_Free(b);
+	Native_Free(fric);
+	ok = ok && Mode_VGet(v, "MaxSpeed", max) && Mode_Arith('*', k, max, b) && Mode_Arith('+', sq, b, in) &&
+		Native_CallMod("math", "sqrt", root, "v", in) && Mode_Arith('+', neg, root, num);
+	Native_Free(a);
+	Native_Free(b);
+	ok = ok && Mode_VGet(v, "FrwTrust", a) && Mode_Arith('*', Ht_I(c, 2), a, b) && Mode_VGet(v, "Fric", fric) &&
+		Mode_Arith('*', b, fric, den) && Mode_Arith('/', num, den, out);
+	return Mode_Done(&t, ok);
+}
+
+/* GetSpeedRampOffsets(v): (GetMaxSpeedTime(v) / 0.3, v.MaxSpeed / 19600.0) */
+static byte Ht_SpeedRampOffsets(const nativeVal_t *v, nativeVal_t *out) {
+	nativeVal_t m = { 0 }, a = { 0 }, s = { 0 }, b = { 0 }, k;
+	Native_SetNone(out);
+	Native_SetFloat(&k, 0.3);
+	byte ok = Native_CallGlobal(HT, "GetMaxSpeedTime", &m, "v", v) && Mode_Arith('/', &m, &k, &a) && Mode_VGet(v, "MaxSpeed", &s);
+	Native_SetFloat(&k, 19600.0);
+	ok = ok && Mode_Arith('/', &s, &k, &b);
+	if (ok) {
+		Native_SetEmpty(out, NV_TUPLE);
+		*Native_Append(out) = a;
+		*Native_Append(out) = b;
+	} else {
+		Native_Free(&a);
+		Native_Free(&b);
+	}
+	Native_Free(&m);
+	Native_Free(&s);
+	return ok;
+}
+
+/* CmSec2Value(val): cm/s to the speed unit of the screen, int(val/28) */
+static byte Ht_CmSec2Value(const nativeVal_t *v, nativeVal_t *out) {
+	nativeVal_t k, d = { 0 };
+	byte ok = Mode_Arith('/', v, Ht_I(&k, 28), &d) && Native_ToInt(&d, out);
+	Native_Free(&d);
+	return ok;
+}
+
+/* AddReferenceShipControls(id): the mini information of a hangar: the words of the three hangar texts, the ship
+ * window, the speed, boost, hull and weight, the lines to the hangar */
+static byte Ht_Reference(int id) {
+	static const char *const texts[][2] = { { "ShipEdit_UncompletedShip", "UncompletedShipText_" },
+		{ "ShipEdit_DestroyedShip", "DestroyedShipText_" }, { "ShipEdit_AvailableHangar", "AvailableHangarText_" } };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *x = Mode_V(&t), *base = Mode_V(&t), *y = Mode_V(&t), *y2 = Mode_V(&t), *text = Mode_V(&t);
+	nativeVal_t *words = Mode_V(&t), *w = Mode_V(&t), *name = Mode_V(&t), *k = Mode_V(&t);
+	if (!Mode_Import("string") || !Ht_G("baseMiniShipInfoX", base) || !Mode_Arith('+', base, Ht_I(k, 72), x)) {
+		return Mode_Done(&t, 0);
+	}
+	byte ok = 1;
+	for (int i = 0; ok && i < 3; i++) {
+		Native_Free(base);
+		Native_Free(y);
+		ok = Ht_G("baseMiniShipInfoY", base) && Mode_Arith('-', base, Ht_I(k, 30), y);
+		Native_Free(text);
+		Native_Free(words);
+		if (ok) {
+			Mode_Lang(texts[i][0], text);
+			ok = Native_Split(text, NULL, words);
+		}
+		for (int j = 0; ok && j < words->n; j++) {
+			ok = Native_SeqItem(words, j, w) && Sn_Cat(texts[i][1], w, NULL, name);
+			PyObject *vars = ok ? Sn_Vars(4, "name", name, "word", w, "x", x, "y", y) : NULL;
+			ok = vars && Sn_Def(id, "word", vars, HT) && Mode_Arith('+', y, Ht_I(k, 22), y2);
+			Py_XDECREF(vars);
+			if (ok) {
+				Native_Free(y);
+				*y = *y2;
+				Native_SetNone(y2);
+			}
+			Native_Free(w);
+			Native_Free(name);
+		}
+	}
+	return Mode_Done(&t, ok && Sn_Def(id, "reference", NULL, HT));
+}
+
+/* SetHangarPanel(id): the Hangar panel (the layout of shipedit.def): the mini information, the hint, the emergency
+ * ship and the nine hangars, the ship information, the money, Sell and Exit, the pilots, the ship type buttons */
+static byte Ht_SetHangarPanel(int id) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *mp = Mode_V(&t), *sput = Mode_V(&t), *aux9 = Mode_V(&t), *n = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t);
+	nativeVal_t *money = Mode_V(&t), *l = Mode_V(&t), *name = Mode_V(&t), *model = Mode_V(&t), *nick = Mode_V(&t);
+	nativeVal_t *k = Mode_V(&t);
+	if (!Mode_Import("Menu") || !Mode_Import(SE) || !Mode_Import("ShipMaker") || !Sn_From("LinkLR") || !Sn_From("LinkUD") ||
+		!Ht_Reference(id)) {
+		return Mode_Done(&t, 0);
+	}
+	int m = Sn_Multi(0);
+	int s = m >= 0 ? Mode_ModTrue(SE, "fromSputnik") : -1;
+	int a = s >= 0 ? Ht_GEq("currentHangar", 9) : -1;
+	if (a < 0) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetInt(mp, m);
+	Native_SetInt(sput, s);
+	Native_SetInt(aux9, a);
+	PyObject *vars = Sn_Vars(3, "mp", mp, "sputnik", sput, "aux9", aux9);
+	byte ok = vars && Sn_Def(id, "panel", vars, HT);
+	Py_XDECREF(vars);
+	for (int i = 0; ok && i < 3; i++) {
+		for (int j = 0; ok && j < 3; j++) {
+			Native_SetInt(n, i * 3 + j + 1);
+			Native_SetInt(x, 52 + 42 * j);
+			Native_SetInt(y, 204 + 42 * i);
+			vars = Sn_Vars(4, "n", n, "x", x, "y", y, "sputnik", sput);
+			ok = vars && Sn_Def(id, "hangar", vars, HT);
+			Py_XDECREF(vars);
+		}
+	}
+	if (!ok) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_Repr(Ht_I(k, Mode_GetMoney()), money);
+	vars = Sn_Vars(3, "mp", mp, "sputnik", sput, "money", money);
+	ok = vars && Sn_Def(id, "info", vars, HT);
+	Py_XDECREF(vars);
+	int pilots = ok ? Ht_Pilots() : -1;
+	if (pilots < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (pilots) {
+		int cnt = Ht_Pilots_();
+		ok = cnt >= 0;
+		for (int i = 0; ok && i < cnt; i++) {
+			Native_Free(l);
+			Native_Free(name);
+			Native_Free(model);
+			ok = LvN_ModGet("ShipMaker", "PilotsList", l) && LvN_Item(l, i, name);
+			Native_Free(l);
+			Native_Free(x);
+			ok = ok && LvN_ModGet("ShipMaker", "PilotsList", l) && LvN_Item(l, i, x) && Native_Slice(x, 2, 0x7fffffff, model);
+			vars = ok ? Sn_Vars(2, "name", name, "model", model) : NULL;
+			ok = vars && Sn_Def(id, "pilot", vars, HT);
+			Py_XDECREF(vars);
+		}
+		ok = ok && Ht_PilotVisible(id, 1);
+		Native_SetStr(nick, "");
+		int p = ok ? Ht_Pilots() : -1;
+		if (p > 0) {
+			Native_Free(nick);
+			ok = Native_GVarGet("PlayerName", nick);
+			if (ok && LvN_EqS(nick, "")) {
+				Native_Free(nick);
+				Mode_Lang("ShipEdit_Pilot", nick);
+			}
+		}
+		vars = ok && p >= 0 ? Sn_Vars(1, "nick", nick) : NULL;
+		ok = vars && Sn_Def(id, "pilots", vars, HT);
+		Py_XDECREF(vars);
+	}
+	int noship = 0;
+	if (ok && pilots) {
+		noship = Ht_AtCmp("editedShips", "currentHangar", "==", &ht_none);
+	}
+	if (!ok || noship < 0) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetInt(n, pilots);
+	Native_SetInt(x, noship);
+	vars = Sn_Vars(3, "mp", mp, "pilots", n, "noship", x);
+	ok = vars && Sn_Def(id, "links", vars, HT);
+	Py_XDECREF(vars);
+	return Mode_Done(&t, ok);
+}
+
+static const char *const ht_speedInfo[] = { "MaxSpeedText", "MaxSpeed", "BoostRechargeTime", "BoostRechargeTimeUnits",
+	"BoostRechargeTimeText", "SpeedRamp1", "SpeedRamp2", NULL };
+
+/* the offsets of the speed ramp of the ship: ScaleSpeedRamp(id, *GetSpeedRampOffsets(ship)) through the globals */
+static byte Ht_Ramp(int id, const nativeVal_t *ship) {
+	nativeVal_t off = { 0 }, a = { 0 }, b = { 0 };
+	byte ok = Native_CallGlobal(HT, "GetSpeedRampOffsets", &off, "v", ship) && LvN_Item(&off, 0, &a) && LvN_Item(&off, 1, &b) &&
+		Native_CallGlobal(HT, "ScaleSpeedRamp", NULL, "ivv", (long)id, &a, &b);
+	Native_Free(&off);
+	Native_Free(&a);
+	Native_Free(&b);
+	return ok;
+}
+
+/* ShowShipInfo(id, showAmmoInfo=1): the information of the ship on the platform (of the selected hangar on Sputnik's
+ * screen): speed, hull, weight, boost, the speed ramp for a valid ship, the weapon counts */
+static byte Ht_ShowInfo(int id, int ammo) {
+	static const char *const mods[] = { "ShipMaker", SE, HT, "string" };
+	static const char *const items[][2] = { { "NumVulcans", "nWeap00" }, { "NumDevastators", "nWeap03" },
+		{ "NumTeslas", "nWeap02" }, { "NumATPCs", "nWeap04" }, { "NumSwarmMissiles", "nWeap01" },
+		{ "NumInfernoMissiles", "nWeap05" } };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ship = Mode_V(&t), *l = Mode_V(&t), *k = Mode_V(&t), *v = Mode_V(&t), *w = Mode_V(&t), *x = Mode_V(&t);
+	nativeVal_t *ton = Mode_V(&t), *e = Mode_V(&t);
+	for (int i = 0; i < 4; i++) {
+		if (!Mode_Import(mods[i])) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	int sput = Mode_ModTrue(SE, "fromSputnik");
+	byte ok = sput > 0 ? LvN_ModGet(SE, "editedShips", l) && LvN_ModGet(HT, "currentHangar", k) && Mode_Sub(l, k, ship) :
+		sput == 0 && Ht_G("prevShip", ship);
+	int c = ok ? Mode_Cmp(ship, "!=", &ht_none) : -1;
+	if (c <= 0) {
+		return Mode_Done(&t, c == 0);
+	}
+	ok = LvN_SetI(ship, "Active", 1) && Mode_VGet(ship, "MaxSpeed", v) && Native_CallGlobal(HT, "CmSec2Value", w, "v", v) &&
+		Ht_SetRepr(id, "MaxSpeed", "Text", w);
+	if (ok) {
+		Script_SetNum(id, "Slash", "Visible", 1);
+	}
+	Native_Free(v);
+	Native_Free(w);
+	ok = ok && Mode_VGet(ship, "MaxLife", v) && Ht_SetRepr(id, "Hull", "Text", v);
+	Native_Free(v);
+	ok = ok && Mode_VGet(ship, "AcMass", v) && Ht_SetReprInt(id, "CurrentWeight", "Text", v);
+	Native_Free(v);
+	ok = ok && LvN_ModGet("ShipMaker", "ShipTon", l) && Mode_VGet(ship, "Model", v) && Native_Upper(v, w) && Mode_Sub(l, w, ton) &&
+		LvN_Item(ton, 2, x) && Ht_SetReprInt(id, "MaxWeight", "Text", x);
+	Native_Free(v);
+	Native_Free(w);
+	ok = ok && Mode_VGet(ship, "BoostTime", v) && Ht_BoostText(v, w) && Sn_SetC(id, "BoostRechargeTime", "Text", w);
+	c = ok && Ht_AtCur("editedShips", e) ? Ht_Valid(e) : -1;
+	if (c > 0) {
+		c = Ht_AtCur("destroyedShips", v) ? LvN_EqI(v, 0) : -1;
+		if (c == 0) {
+			c = Sn_Multi(0);
+		}
+	}
+	if (c > 0) {
+		Native_Free(e);
+		c = Ht_AtCur("editedShips", e) && Ht_Ramp(id, e) ? 1 : -1;
+	}
+	if (c < 0) {
+		return Mode_Done(&t, 0);
+	}
+	Ht_Show(id, ht_speedInfo, c);
+	for (int i = 0; ammo && i < 6; i++) {
+		Native_Free(v);
+		if (!Mode_VGet(ship, items[i][1], v) || !Ht_SetReprInt(id, items[i][0], "Text", v)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	sput = Mode_ModTrue(SE, "fromSputnik");
+	return Mode_Done(&t, sput == 0 || (sput > 0 && LvN_SetI(ship, "Active", 0)));
+}
+
+/* HideShipInfo(id): the ship information empties */
+static void Ht_HideInfo(int id) {
+	static const char *const text[] = { "MaxSpeed", NULL, "Hull", "CurrentWeight", "MaxWeight", NULL, "NumVulcans",
+		"NumDevastators", "NumInfernoMissiles", "NumSwarmMissiles", "NumTeslas", "NumATPCs" };
+	static const char *const hide[] = { NULL, "MaxSpeedText", NULL, NULL, NULL, "Slash" };
+	static const char *const rest[] = { "SpeedRamp1", "SpeedRamp2", "BoostRechargeTime", "BoostRechargeTimeText", NULL };
+	for (int i = 0; i < 12; i++) {
+		if (text[i]) {
+			Script_SetStr(id, text[i], "Text", "");
+		} else {
+			Script_SetNum(id, hide[i], "Visible", 0);
+		}
+	}
+	Ht_Show(id, rest, 0);
+}
+
+/* SetShipTypeButtonsState(id, state): the ship type button buys ("Build") or rebuilds ("Rebuild") */
+static byte Ht_TypeState(int id, byte rebuild) {
+	Script_SetNum(id, "ShipType", "SpriteIndex", rebuild ? 14 : 11);
+	Script_SetNum(id, "ShipType", "FocusSpriteIndex", rebuild ? 15 : 12);
+	return Sn_SetUseC(id, "ShipType", "Hint", rebuild ? "HINT_Hangar7" : "HINT_Hangar6", HT);
+}
+
+/* the weapon sprites (on) or the ammo sprites (off) of the ship information */
+static void Ht_WeaponSprites(int id, long on) {
+	static const char *const weapons[] = { "VulcanSpr", "DevastatorSpr", "TeslaSpr", "ATPCSpr", "InfernoSpr", "SwarmSpr",
+		NULL };
+	static const char *const ammo[] = { "ProjectilesAmmo", "EnergyAmmo", "MissilesAmmo", NULL };
+	Ht_Show(id, weapons, on);
+	Ht_Show(id, ammo, !on);
+}
+
+/* the slot counts of the ship information empty */
+static void Ht_NoSlots(int id) {
+	Script_SetStr(id, "NumSlotsParticleWeapons", "Text", "");
+	Script_SetStr(id, "NumSlotsEnergyWeapons", "Text", "");
+	Script_SetStr(id, "NumSlotsMissileWeapons", "Text", "");
+}
+
+/* SSound.SetPS(name, var, d), SSound.SetPS(name, var, i) and SSound.SetPS(name, var, v) by name */
+static byte Ht_SetPSd(const char *name, const char *var, double d) {
+	return Native_CallMod("SSound", "SetPS", NULL, "ssd", name, var, d);
+}
+
+static byte Ht_SetPSi(const char *name, const char *var, long i) {
+	return Native_CallMod("SSound", "SetPS", NULL, "ssi", name, var, i);
+}
+
+static byte Ht_SetPSv(const char *name, const char *var, const nativeVal_t *v) {
+	return Native_CallMod("SSound", "SetPS", NULL, "ssv", name, var, v);
+}
+
+/* the hologram sounds: the start sound at the camera and the loop (holograms) */
+static byte Ht_HologramSound(void) {
+	static const char *const xyz[] = { "X", "Y", "Z" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cn = Mode_V(&t), *cam = Mode_V(&t), *pos = Mode_V(&t), *snd = Mode_V(&t), *vol = Mode_V(&t), *c = Mode_V(&t);
+	if (!Mode_Put(HT, "holograms", NULL, Ht_I(c, 1))) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_CamName(0, cn);
+	Native_SetFloat(vol, 0.35);
+	byte ok = Mode_EntitySeam(cn, cam) && Mode_VGet(cam, "camPos", pos) && Mode_ModVar("Sound", "HologramStartSound", snd) &&
+		Mode_PlaySoundSeam(pos, snd, vol) && Native_CallMod("SSound", "CreatePS", NULL, "s", "EditHologramLoopSound");
+	Native_Free(snd);
+	ok = ok && Mode_ModVar("Sound", "HologramLoopSound", snd) && Ht_SetPSv("EditHologramLoopSound", "Sound", snd);
+	for (int i = 0; ok && i < 3; i++) {
+		Native_Free(pos);
+		Native_Free(c);
+		ok = Mode_VGet(cam, "camPos", pos) && LvN_Item(pos, i, c) && Ht_SetPSv("EditHologramLoopSound", xyz[i], c);
+	}
+	ok = ok && Ht_SetPSi("EditHologramLoopSound", "Loop", 1) && Ht_SetPSd("EditHologramLoopSound", "Volume", 0.17);
+	return Mode_Done(&t, ok);
+}
+
+/* SelectShipToEdit(id): the plan of the ship type to buy (a hologram on the platform) or the destroyed ship to
+ * rebuild, its slots and information; the other tabs are off; the hologram sound starts */
+static byte Ht_SelectShipToEdit(int id) {
+	static const char *const mods[] = { SE, HT, "Sound", "string" };
+	static const char *const off[] = { "MaxSpeedText", "MaxSpeed", "Slash", "BoostRechargeTime", "BoostRechargeTimeText",
+		NULL };
+	static const char *const slots[][2] = { { "NumSlotsParticleWeapons", "nSlot00" }, { "NumSlotsMissileWeapons", "nSlot01" },
+		{ "NumSlotsEnergyWeapons", "nSlot02" } };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *x = Mode_V(&t), *list = Mode_V(&t), *kind = Mode_V(&t), *up = Mode_V(&t), *key = Mode_V(&t);
+	nativeVal_t *text = Mode_V(&t), *ship = Mode_V(&t), *v = Mode_V(&t);
+	if (!Sn_From("LinkUD")) {
+		return Mode_Done(&t, 0);
+	}
+	for (int i = 0; i < 4; i++) {
+		if (!Mode_Import(mods[i])) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	Ht_Show(id, off, 0);
+	int rebuild = Ht_Single();
+	if (rebuild > 0) {
+		rebuild = LvN_ModGet(SE, "auxShipsToEditList", list) && Ht_AtShip(list, x) ? LvN_EqS(x, "Rebuild") : -1;
+		Native_Free(list);
+	}
+	byte ok = rebuild >= 0 && LvN_ModGet(SE, rebuild ? "shipsToEditList" : "auxShipsToEditList", list) && Ht_AtShip(list, kind) &&
+		Native_Upper(kind, up) && Sn_Cat("SHIP_", up, NULL, key) && Mode_LangV(key, text);
+	if (!ok) {
+		return Mode_Done(&t, 0);
+	}
+	Ht_Show(id, ht_shipType, 1);
+	int build = rebuild == 0 ? 1 : Sn_Multi(0);
+	ok = Sn_SetC(id, "ShipTypeName", "Text", text) && build >= 0;
+	if (ok && build) {
+		Native_Free(list);
+		Native_Free(kind);
+		ok = LvN_ModGet(SE, "auxShipsToEditList", list) && Ht_AtShip(list, kind) &&
+			Native_CallGlobal(HT, "CreateEmptyShip", NULL, "v", kind) && Ht_TypeState(id, 0);
+	} else if (ok) {
+		ok = Ht_AtCur("editedShips", ship) && Mode_Put(HT, "prevShip", NULL, ship);
+		Native_Free(ship);
+		ok = ok && Ht_G("prevShip", ship) && LvN_SetI(ship, "Active", 1);
+		Native_Free(ship);
+		ok = ok && Ht_G("prevShip", ship) && LvN_SetI(ship, "RenderEffect", 1) &&
+			Native_CallMod(SE, "StopRotateLoop", NULL, "") && Native_CallMod(SE, "StartRotateLoop", NULL, "") &&
+			Ht_TypeState(id, 1);
+	}
+	if (!ok) {
+		return Mode_Done(&t, 0);
+	}
+	Ht_WeaponSprites(id, 0);
+	for (int i = 0; i < 3; i++) {
+		Native_Free(v);
+		if (!Ht_ShipGet(slots[i][1], v) || !Ht_SetReprInt(id, slots[i][0], "Text", v)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	if (!Ht_ShowInfo(id, 0) || !Ht_TabsOn(id, 0)) {
+		return Mode_Done(&t, 0);
+	}
+	int h = LvN_GTrue(HT, "holograms");
+	return Mode_Done(&t, h > 0 || (h == 0 && Ht_HologramSound()));
+}
+
+/* PrevShipToEdit(id, control), NextShipToEdit(id, control): the ship type before or after the current one */
+static byte Ht_ShipToEdit(int id, int step) {
+	nativeVal_t list = { 0 }, x = { 0 }, cur = { 0 }, ship = { 0 };
+	if (!Mode_Import(SE)) {
+		return 0;
+	}
+	int rebuild = LvN_ModGet(SE, "auxShipsToEditList", &list) && Ht_AtShip(&list, &x) ? LvN_EqS(&x, "Rebuild") : -1;
+	Native_Free(&list);
+	Native_Free(&x);
+	if (rebuild < 0 || !Mode_GOpI(HT, "currentShipToEdit", step < 0 ? '-' : '+', 1) || !Ht_G("currentShipToEdit", &cur)) {
+		Native_Free(&cur);
+		return 0;
+	}
+	int c;
+	if (step < 0) {
+		c = Mode_CmpI(&cur, "<", 0);
+		int n = c > 0 ? (LvN_ModGet(SE, "auxShipsToEditList", &list) ? Mode_Len(&list) : -1) : 0;
+		c = n < 0 ? -1 : c;
+		Native_SetInt(&x, n - 1);
+	} else {
+		int n = LvN_ModGet(SE, "auxShipsToEditList", &list) ? Mode_Len(&list) : -1;
+		c = n < 0 ? -1 : LvN_EqI(&cur, n);
+		Native_SetInt(&x, 0);
+	}
+	Native_Free(&list);
+	Native_Free(&cur);
+	byte ok = c >= 0 && (c == 0 || Mode_Put(HT, "currentShipToEdit", NULL, &x));
+	if (ok && rebuild == 0) {
+		c = Ht_TypeState(id, 0) && Ht_G("prevShip", &ship) ? Mode_Cmp(&ship, "!=", &ht_none) : -1;
+		ok = c == 0 || (c > 0 && Mode_VDel(&ship) && Mode_Put(HT, "prevShip", NULL, &ht_none));
+	} else if (ok) {
+		ok = Ht_TypeState(id, 1) && Ht_G("prevShip", &ship) && LvN_SetI(&ship, "Active", 0);
+	}
+	Native_Free(&ship);
+	if (!ok || !Ht_SelectShipToEdit(id)) {
+		return 0;
+	}
+	c = Ht_G("prevShip", &ship) ? Mode_Cmp(&ship, "!=", &ht_none) : -1;
+	Native_Free(&ship);
+	return c == 0 || (c > 0 && Native_CallMod(SE, "StartRotateLoop", NULL, ""));
+}
+
+/* the hangar of the global name has no ship, or (single player) a destroyed one: 1, 0, -1 */
+static int Ht_Empty(const char *name) {
+	nativeVal_t x;
+	int c = Ht_AtCmp("editedShips", name, "==", &ht_none);
+	if (c == 0) {
+		c = Ht_AtCmp("destroyedShips", name, "==", Ht_I(&x, 1));
+		if (c > 0) {
+			c = Ht_Single();
+		}
+	}
+	return c;
+}
+
+/* SScorer.Set(id, control, "Hint", Scrap.GetLangStr(key)) */
+static byte Ht_ControlHint(int id, const nativeVal_t *control, const char *key) {
+	nativeVal_t text = { 0 };
+	Mode_Lang(key, &text);
+	byte ok = Sn_Set(id, control, "Hint", &text);
+	Native_Free(&text);
+	return ok;
+}
+
+/* SScorer.SetDefault(id, "Hangar" + `currentHangar + 1`) */
+static byte Ht_DefaultHangar(int id) {
+	nativeVal_t cur = { 0 }, n = { 0 }, r = { 0 }, s = { 0 }, k;
+	byte ok = Ht_G("currentHangar", &cur) && Mode_Arith('+', &cur, Ht_I(&k, 1), &n);
+	if (ok) {
+		Mode_Repr(&n, &r);
+		ok = Sn_Cat("Hangar", &r, NULL, &s) && Native_CallMod("SScorer", "SetDefault", NULL, "iv", (long)id, &s);
+	}
+	Native_Free(&cur);
+	Native_Free(&n);
+	Native_Free(&r);
+	Native_Free(&s);
+	return ok;
+}
+
+/* Menu.LinkLR(id, a, b) of the hangars at the right side and b */
+static byte Ht_RightSide(int id, const char *b) {
+	return Sn_Link("LinkLR", id, "Hangar3", b) && Sn_Link("LinkLR", id, "Hangar9", b) && Sn_Link("LinkLR", id, "Hangar6", b);
+}
+
+/* SelectHangar(id, control="", skipanim=0): the hangar currentHangar is selected: its ship comes up on the platform
+ * (the animation, or at once with skipanim), an empty or destroyed one shows the ship plans when the platform is up */
+static byte Ht_SelectHangar(int id, const nativeVal_t *control, int skipanim) {
+	static const char *const links[] = { "LinkLR", "LinkUD", "UnLinkUD", "UnLinkLR" };
+	nativeVal_t a = { 0 }, b = { 0 }, x;
+	for (int i = 0; i < 4; i++) {
+		if (!Sn_From(links[i])) {
+			return 0;
+		}
+	}
+	if (!Mode_Import(SE) || !Ht_SetPSd("EditHologramLoopSound", "Volume", 0.0)) {
+		return 0;
+	}
+	int c = Ht_G("prevHangar", &a) && Ht_G("currentHangar", &b) ? Mode_Cmp(&a, "==", &b) : -1;
+	Native_Free(&a);
+	Native_Free(&b);
+	if (c != 0) {
+		return c > 0;
+	}
+	c = Ht_AtG("editedShips", "prevHangar", &a) ? !Native_True(&a) : -1;
+	Native_Free(&a);
+	if (c == 0) {
+		c = Ht_AtCmp("destroyedShips", "prevHangar", "==", Ht_I(&x, 1));
+		if (c > 0) {
+			c = Ht_Single();
+		}
+	}
+	if (c > 0) {
+		c = Ht_G("prevShip", &a) ? Mode_Cmp(&a, "!=", &ht_none) : -1;
+		c = c > 0 ? (LvN_SetI(&a, "Active", 0) ? 1 : -1) : c;
+		Native_Free(&a);
+	}
+	if (c < 0) {
+		return 0;
+	}
+	Ht_Show(id, ht_shipType, 0);
+	int pilots = Ht_Pilots();
+	if (pilots > 0) {
+		int none = Ht_AtCmp("editedShips", "currentHangar", "==", &ht_none);
+		if (none < 0 || (none > 0 && !Sn_Link("LinkLR", id, "NextShip", "PrevPilot"))) {
+			return 0;
+		}
+		if (!none) {
+			Script_SetStr(id, "PrevPilot", "Left", "Hangar6");
+		}
+		if (!Sn_Link("UnLinkUD", id, "PilotName", "Sell") || !Sn_Link("LinkUD", id, "PilotName", "Exit")) {
+			return 0;
+		}
+		Script_SetStr(id, "Exit", "Left", "");
+		Script_SetStr(id, "Exit", "Up", "PilotName");
+	} else if (pilots < 0 || !Sn_Link("LinkLR", id, "NextShip", "Exit")) {
+		return 0;
+	}
+	int empty = Ht_Empty("currentHangar");
+	if (empty > 0) {
+		static const char *const nums[] = { "NumVulcans", "NumDevastators", "NumInfernoMissiles", "NumSwarmMissiles",
+			"NumTeslas", "NumATPCs" };
+		static const char *const texts[] = { "MaxSpeed", "Hull", "CurrentWeight", "MaxWeight" };
+		for (int i = 0; i < 6; i++) {
+			Script_SetStr(id, nums[i], "Text", "");
+		}
+		c = Ht_AtCmp("editedShips", "prevHangar", "!=", &ht_none);
+		if (c < 0) {
+			return 0;
+		}
+		if (c) {
+			for (int i = 0; i < 4; i++) {
+				Script_SetStr(id, texts[i], "Text", "");
+			}
+			Ht_NoSlots(id);
+		}
+		Ht_SellActive(id, 0);
+		Script_SetStr(id, "Hangar9", "Right", "PrevShip");
+		Script_SetStr(id, "Hangar6", "Right", "PrevShip");
+		Script_SetStr(id, "Hangar3", "Right", "PrevShip");
+		int mp = Sn_Multi(0);
+		if (mp < 0) {
+			return 0;
+		}
+		if (!mp) {
+			Script_SetStr(id, "HangarAux", "Right", "PrevShip");
+		}
+		c = Ht_AtCmp("editedShips", "prevHangar", "!=", &ht_none);
+		if (c < 0) {
+			return 0;
+		}
+		if (c) {
+			Ht_HideInfo(id);
+		}
+		if (!Ht_PlatformButtons(id, 0) || !Ht_Scorer("SetOnNext", id, "") || !Ht_Scorer("SetOnPrev", id, "")) {
+			return 0;
+		}
+		int lost = Ht_AtCmp("destroyedShips", "currentHangar", "==", Ht_I(&x, 1));
+		if (lost > 0) {
+			lost = Ht_Single();
+		}
+		if (lost < 0 || (lost > 0 && !Ht_ControlHint(id, control, "HINT_Hangar13"))) {
+			return 0;
+		}
+		if (skipanim) {
+			return Native_CallMod(SE, "ChangeShip", NULL, "vvi", &ht_none, &ht_none, 0L) &&
+				Native_CallMod(SE, "VerifyChangeShip", NULL, "vvi", &ht_none, &ht_none, 0L);
+		}
+		return Native_CallMod(SE, "LaunchPlatformAnim", NULL, "");
+	}
+	if (empty < 0) {
+		return 0;
+	}
+	Ht_WeaponSprites(id, 1);
+	int notAux = Ht_GEq("currentHangar", 9);
+	notAux = notAux < 0 ? -1 : !notAux;
+	if (notAux > 0) {
+		int p = Ht_Pilots();
+		if (p < 0 || (p && (!Sn_Link("LinkUD", id, "PilotName", "Exit") || !Sn_Link("LinkUD", id, "PilotName", "Sell")))) {
+			return 0;
+		}
+		Ht_SellActive(id, 1);
+		if (!Ht_NextPrev(id, 1) || !Ht_RightSide(id, "Sell")) {
+			return 0;
+		}
+		int mp = Sn_Multi(0);
+		if (mp < 0) {
+			return 0;
+		}
+		if (!mp) {
+			Script_SetStr(id, "HangarAux", "Right", "Sell");
+		}
+		if (!Sn_Link("LinkLR", id, "Sell", "Exit") || !Ht_TabsOn(id, 1) || !Ht_TabRing(id, "LinkLR")) {
+			return 0;
+		}
+	} else if (notAux == 0) {
+		if (!Ht_PlatformButtons(id, 0) || !Mode_Import(SE) || !Ht_TabsOn(id, 0) || !Ht_TabRing(id, "UnLinkLR")) {
+			return 0;
+		}
+		int mp = Sn_Multi(0);
+		if (mp < 0 || (!mp && !Sn_Link("LinkLR", id, "HangarAux", "Exit")) || !Ht_RightSide(id, "Exit")) {
+			return 0;
+		}
+		Ht_SellActive(id, 0);
+		if (!Ht_NextPrev(id, 0)) {
+			return 0;
+		}
+	} else {
+		return 0;
+	}
+	Ht_NoSlots(id);
+	if (!LvN_EqS(control, "HangarAux")) {
+		int valid = Ht_AtCur("editedShips", &a) ? Ht_Valid(&a) : -1;
+		Native_Free(&a);
+		if (valid < 0 || !Ht_ControlHint(id, control, valid ? "HINT_Hangar12" : "HINT_Hangar14")) {
+			return 0;
+		}
+	} else if (!Ht_ControlHint(id, control, "HINT_Hangar18")) {
+		return 0;
+	}
+	Ht_HideInfo(id);
+	if (LvN_EqS(control, "HangarAux") ? !Ht_Scorer("SetDefault", id, "HangarAux") : !Ht_DefaultHangar(id)) {
+		return 0;
+	}
+	return Ht_PlatformButtons(id, 0) && Native_CallMod(SE, "LaunchPlatformAnim", NULL, "");
+}
+
+/* SelectItem(id, control): a hangar clicked: it becomes currentHangar and is selected */
+static byte Ht_SelectItem(int id, const nativeVal_t *control) {
+	nativeVal_t c, s = { 0 }, h = { 0 }, x;
+	if (!Mode_Import(SE) || !Sn_From("LinkUD") || !Mode_Put(HT, "holograms", NULL, Ht_I(&x, 0)) ||
+		!Ht_SetPSi("EditHologramSound", "Loop", 0) || !Ht_SetPSd("EditHologramSound", "Volume", 0.0) ||
+		!Mode_StopAllSounds()) {
+		return 0;
+	}
+	int aux = LvN_EqS(control, "HangarAux");
+	Native_Copy(&c, control);
+	int last = aux ? 0 : Mode_Len(&c) - 1;
+	byte ok = last >= -1;
+	int is = aux;
+	if (ok && !aux) {
+		ok = Native_Slice(&c, 0, last, &s);
+		is = ok && LvN_EqS(&s, "Hangar");
+	}
+	if (ok && is) {
+		ok = Ht_G("currentHangar", &h) && Mode_Put(HT, "prevHangar", NULL, &h);
+		Native_Free(&h);
+		ok = ok && (aux ? Mode_Put(HT, "currentHangar", NULL, Ht_I(&x, 9)) : Ht_ControlHangar(control, &h) &&
+			Mode_Put(HT, "currentHangar", NULL, &h)) && Ht_SelectHangar(id, control, 0) && Ht_HideMini(id);
+	}
+	Native_Free(&c);
+	Native_Free(&s);
+	Native_Free(&h);
+	return ok && Ht_UpdateHangars(id);
+}
+
+/* CreateEmptyShip(kind): the plan of a new ship of the model kind on the platform (prevShip) */
+static byte Ht_CreateEmptyShip(const nativeVal_t *kind) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *dummy = Mode_V(&t), *pos = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t), *ship = Mode_V(&t);
+	nativeVal_t *ang = Mode_V(&t), *ton = Mode_V(&t), *life = Mode_V(&t), *name = Mode_V(&t), *list = Mode_V(&t);
+	if (!Mode_Import("Vehicles") || !Mode_Import("ShipMaker") || !Mode_Import(SE)) {
+		return Mode_Done(&t, 0);
+	}
+	byte ok = LvN_ModGet(SE, "editShipPosDummy", dummy) && LvN_Item(dummy, 1, pos) && LvN_Item(pos, 0, x) &&
+		LvN_Item(pos, 1, y) && LvN_Item(pos, 2, z) && LvN_Create(kind, x, y, z, "Car", ship) &&
+		Mode_Put(HT, "prevShip", NULL, ship);
+	Native_Free(ship);
+	ok = ok && Ht_G("prevShip", ship) && LvN_SetI(ship, "ActiveCMask", 0);
+	Native_Free(ship);
+	Native_Free(dummy);
+	ok = ok && LvN_ModGet(SE, "editShipPosDummy", dummy) && Sn_FrontAng(dummy, NULL, ang) && Ht_G("prevShip", ship) &&
+		Mode_VSet(ship, "Ang", ang);
+	Native_Free(ship);
+	ok = ok && Native_CallMod("ShipMaker", "GetShipTon", ton, "v", kind) && LvN_Item(ton, 0, life) && Ht_G("prevShip", ship) &&
+		Mode_VGet(ship, "Name", name) &&
+		Native_CallMod("Vehicles", "SetProperties", NULL, "vvvsssssssi", name, kind, life, "P_None", "", "", "", "",
+			"0,0,0,0,0,0", "Pilot", 1L);
+	Native_Free(ship);
+	ok = ok && Ht_G("prevShip", ship) && LvN_SetI(ship, "RenderEffect", 1);
+	Native_Free(ship);
+	if (ok && Ht_G("prevShip", ship)) {
+		Native_SetEmpty(list, NV_LIST);
+		Native_Copy(Native_Append(list), ship);
+		ok = Native_CallMod(SE, "SetupForEdit", NULL, "v", list);
+	} else {
+		ok = 0;
+	}
+	return Mode_Done(&t, ok);
+}
+
+/* the link of the emergency ship to b in single player, of the right side to b */
+static byte Ht_AuxRight(int id, const char *b) {
+	int mp = Sn_Multi(0);
+	return mp >= 0 && (mp || Sn_Link("LinkLR", id, "HangarAux", b)) && Ht_RightSide(id, b);
+}
+
+/* BuyShip(id, control): the ship type shown is bought (or the destroyed ship rebuilt) for the hangar */
+static byte Ht_BuyShip(int id) {
+	static const char *const mods[] = { SE, "ShipMaker", "string", "Sound" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *list = Mode_V(&t), *money = Mode_V(&t), *cost = Mode_V(&t), *left = Mode_V(&t), *cur = Mode_V(&t);
+	nativeVal_t *text = Mode_V(&t), *x = Mode_V(&t), *aux = Mode_V(&t), *e = Mode_V(&t), *ship = Mode_V(&t), *k = Mode_V(&t);
+	if (!Sn_From("LinkLR") || !Sn_From("LinkUD")) {
+		return Mode_Done(&t, 0);
+	}
+	for (int i = 0; i < 4; i++) {
+		if (!Mode_Import(mods[i])) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	int rebuild;
+	int mp = Ht_ShipsList(list, &rebuild) ? Sn_Multi(0) : -1;
+	if (mp < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (!mp) {
+		Native_SetInt(money, Mode_GetMoney());
+		byte ok = rebuild ? Ht_G("currentHangar", cur) && Ht_ShipText(cur, text) && Ht_OwnTotalCost(text, cost) :
+			Ht_ShipPrice(list, cost);
+		int c = ok && Mode_Arith('-', money, cost, left) ? Mode_CmpI(left, "<", 0) : -1;
+		if (c != 0) {
+			return Mode_Done(&t, c > 0);
+		}
+		ok = Mode_SetMoneySeam(left) && Ht_SetRepr(id, "Money", "Text", left) && Ht_SetAtCur("destroyedShips", Ht_I(k, 0));
+		int n = ok && LvN_ModGet(SE, "auxShipsToEditList", aux) ? Mode_Len(aux) : -1;
+		ok = n >= 0;
+		for (int i = 0; ok && i < n; i++) {
+			Native_Free(aux);
+			Native_Free(x);
+			ok = LvN_ModGet(SE, "auxShipsToEditList", aux) && LvN_Item(aux, i, x);
+			if (ok && LvN_EqS(x, "Rebuild")) {
+				ok = Mode_Put(HT, "currentShipToEdit", NULL, Ht_I(k, i));
+				break;
+			}
+		}
+		Native_Free(aux);
+		Native_SetEmpty(e, NV_LIST);
+		ok = ok && Mode_SetModVar(SE, "auxShipsToEditList", e);
+		n = ok && LvN_ModGet(SE, "shipsToEditList", aux) ? Mode_Len(aux) : -1;
+		ok = n >= 0;
+		for (int i = 0; ok && i < n; i++) {
+			Native_Free(aux);
+			Native_Free(x);
+			ok = LvN_ModGet(SE, "shipsToEditList", aux) && LvN_Item(aux, i, x) && LvN_ModAppend(SE, "auxShipsToEditList", x);
+		}
+		if (!ok) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	if (!Mode_Put(HT, "holograms", NULL, Ht_I(k, 0)) || !Ht_SetPSi("EditHologramLoopSound", "Loop", 0) ||
+		!Ht_SetPSd("EditHologramLoopSound", "Volume", 0.0) || !Mode_StopAllSounds()) {
+		return Mode_Done(&t, 0);
+	}
+	byte ok;
+	if (rebuild) {
+		ok = Ht_G("prevShip", ship) && Mode_VSetFX(ship, "ShipEditBuild");
+	} else {
+		int c = Ht_AtCmp("editedShips", "currentHangar", "!=", &ht_none);
+		ok = c == 0 || (c > 0 && Ht_AtCur("editedShips", e) && Mode_VDel(e));
+		ok = ok && Ht_G("prevShip", ship) && Mode_VSetFX(ship, "ShipEditBuild");
+		Native_Free(ship);
+		ok = ok && Ht_G("prevShip", ship) && Ht_SetAtCur("editedShips", ship);
+	}
+	if (!ok) {
+		return Mode_Done(&t, 0);
+	}
+	Ht_WeaponSprites(id, 1);
+	Ht_Show(id, ht_shipType, 0);
+	Ht_NoSlots(id);
+	if (!Ht_ShowInfo(id, 1) || !Ht_UpdateHangars(id) || !Ht_TabsOn(id, 1) || !Ht_TabRing(id, "LinkLR") || !Ht_NextPrev(id, 1)) {
+		return Mode_Done(&t, 0);
+	}
+	Ht_SellActive(id, 1);
+	if (!Mode_Sound("ShipEditLoadShipSound", "ShipEditLoadShipVolume") || !Ht_AuxRight(id, "Sell") ||
+		!Sn_Link("LinkLR", id, "Sell", "Exit")) {
+		return Mode_Done(&t, 0);
+	}
+	int p = Ht_Pilots();
+	if (p < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (p) {
+		Script_SetStr(id, "PrevPilot", "Left", "Hangar6");
+		if (!Sn_Link("LinkUD", id, "PilotName", "Sell")) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	return Mode_Done(&t, Ht_UpdateHangars(id) && Ht_DefaultHangar(id));
+}
+
+/* SellShip(id, control): the ship of the hangar is sold (its whole price in single player) */
+static byte Ht_SellShip(int id) {
+	static const char *const links[] = { "LinkLR", "LinkUD", "UnLinkLR", "UnLinkUD" };
+	static const char *const vars[] = { "Highlight", "TextColorAlpha", "TextColorRed", "TextColorGreen", "TextColorBlue" };
+	static const long vals[] = { 0, 255, 161, 161, 161 };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *money = Mode_V(&t), *cost = Mode_V(&t), *sum = Mode_V(&t), *e = Mode_V(&t), *k = Mode_V(&t);
+	nativeVal_t *tabs = Mode_V(&t), *rest = Mode_V(&t), *tab = Mode_V(&t), *name = Mode_V(&t), *cur = Mode_V(&t);
+	nativeVal_t *r = Mode_V(&t), *control = Mode_V(&t);
+	for (int i = 0; i < 4; i++) {
+		if (!Sn_From(links[i])) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	if (!Mode_Import(SE) || !Mode_Import("ShipMaker") || !Mode_Import("Sound")) {
+		return Mode_Done(&t, 0);
+	}
+	int c = Ht_AtCmp("editedShips", "currentHangar", "!=", &ht_none);
+	if (c <= 0) {
+		return Mode_Done(&t, c == 0);
+	}
+	int mp = Sn_Multi(0);
+	if (mp < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (!mp) {
+		Native_SetInt(money, Mode_GetMoney());
+		if (!Ht_G("shipTotalCost", cost) || !Mode_Arith('+', money, cost, sum) || !Mode_SetMoneySeam(sum) ||
+			!Ht_SetRepr(id, "Money", "Text", sum) || !Ht_SetAtCur("destroyedShips", Ht_I(k, 0))) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	if (!Ht_AtCur("editedShips", e) || !Mode_VDel(e) || !Ht_SetAtCur("editedShips", &ht_none) ||
+		!Mode_Put(HT, "prevShip", NULL, &ht_none) || !Ht_UpdateHangars(id)) {
+		return Mode_Done(&t, 0);
+	}
+	Ht_SellActive(id, 0);
+	if (!Mode_Sound("ShipEditUnLoadSound", "ShipEditUnLoadVolume") || !Ht_RightSide(id, "Exit")) {
+		return Mode_Done(&t, 0);
+	}
+	int p = Ht_Pilots();
+	if (p < 0 || (p && (!Sn_Link("UnLinkUD", id, "PilotName", "Sell") || !Sn_Link("LinkUD", id, "PilotName", "Exit")))) {
+		return Mode_Done(&t, 0);
+	}
+	Ht_HideInfo(id);
+	/* the script unlinks the whole ring of tabs once per tab */
+	byte ok = LvN_ModGet(SE, "tabs", tabs) && Sn_Rest(tabs, rest);
+	int n = ok ? Native_ForCount(rest) : -1;
+	ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		ok = Native_SeqItem(rest, i, tab) && Sn_Cat("ShipEditTab", tab, NULL, name);
+		for (int j = 0; ok && j < 5; j++) {
+			ok = Sn_Set(id, name, vars[j], Ht_I(k, vals[j]));
+		}
+		Native_SetStr(k, "");
+		Native_Free(tabs);
+		ok = ok && Sn_Set(id, name, "OnAccept", k) && LvN_ModGet(SE, "tabs", tabs) && Sn_TabRing(id, tabs, "UnLinkLR");
+		Native_Free(tab);
+		Native_Free(name);
+	}
+	if (!ok || !Ht_NextPrev(id, 0) || !Mode_Put(HT, "prevHangar", NULL, Ht_I(k, -1)) || !Ht_G("currentHangar", cur)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_Repr(cur, r);
+	Native_Free(cur);
+	ok = Sn_Cat("Hangar", r, NULL, control) && Ht_SelectHangar(id, control, 1) && Ht_G("currentHangar", cur) &&
+		Mode_Put(HT, "prevHangar", NULL, cur);
+	return Mode_Done(&t, ok);
+}
+
+/* ---- adapters: the argument formats of the C port (the errors of PyArg), the objects as native values ---- */
+
+/* f(id) */
+#define HT_I(name, call) \
+	static PyObject *HT_##name(PyObject *self, PyObject *args) { \
+		int id; \
+		(void)self; \
+		if (!PyArg_ParseTuple(args, "i", &id)) { \
+			return NULL; \
+		} \
+		return Mode_Result(call); \
+	}
+/* f(id, a) and f(id, control, lostFocus) with a and control as native values */
+#define HT_IO(name, fmt, call) \
+	static PyObject *HT_##name(PyObject *self, PyObject *args) { \
+		PyObject *o, *o2 = NULL; \
+		nativeVal_t a = { 0 }; \
+		int id; \
+		(void)self; \
+		if (!PyArg_ParseTuple(args, fmt, &id, &o, &o2)) { \
+			return NULL; \
+		} \
+		Native_Arg(o, &a); \
+		byte ok = call; \
+		Native_Free(&a); \
+		return Mode_Result(ok); \
+	}
+/* f(v) with a result */
+#define HT_V(name, call) \
+	static PyObject *HT_##name(PyObject *self, PyObject *args) { \
+		PyObject *o; \
+		nativeVal_t a = { 0 }, out = { 0 }; \
+		(void)self; \
+		if (!PyArg_ParseTuple(args, "O", &o)) { \
+			return NULL; \
+		} \
+		Native_Arg(o, &a); \
+		byte ok = call; \
+		Native_Free(&a); \
+		return Mode_Return(ok, &out); \
+	}
+
+HT_IO(ShowBoostPrediction, "iO", Ht_BoostPrediction(id, &a))
+HT_I(DisableChangePlatformButtons, Ht_Platform(id, 0))
+HT_I(EnableChangePlatformButtons, Ht_Platform(id, 1))
+HT_IO(PrevPilot, "iO", Ht_Pilot(id, -1))
+HT_IO(NextPilot, "iO", Ht_Pilot(id, 1))
+HT_IO(SetSellVisible, "iO", Ht_Visible(id, &a, ht_sell, SE))
+HT_IO(SetExitVisible, "iO", Ht_Visible(id, &a, ht_exit, NULL))
+HT_IO(SetShipTypeVisible, "iO", Ht_Visible(id, &a, ht_shipType, NULL))
+HT_IO(SetPilotVisible, "iO", Ht_Visible(id, &a, ht_pilot, NULL))
+HT_IO(SetSellActive, "iO", (Ht_SellActive(id, Native_True(&a)), 1))
+HT_IO(HideShipMiniInfo, "iOO", Ht_HideMini(id))
+HT_I(HideHangarPanel, Ht_HideHangarPanel(id))
+HT_I(UpdateHangars, Ht_UpdateHangars(id))
+HT_I(ShowHangarPanel, Ht_ShowHangarPanel(id))
+HT_V(IsShipValid, Ht_IsShipValid(&a, &out))
+HT_IO(ShowShipMiniInfo, "iOO", Ht_ShowMini(id, &a))
+HT_IO(ShowRebuildShipMoney, "iOO", Ht_ShowRebuildShipMoney(id, &a))
+HT_IO(HideRebuildShipMoney, "iOO", Ht_HideRebuildShipMoney(id))
+HT_IO(ShowMoneyBuyingShip, "iOO", Ht_AuxShowMoney(id, "-"))
+HT_IO(ShowMoneySellingShip, "iOO", Ht_AuxShowMoney(id, "+"))
+HT_IO(HideMoney, "iOO", (Script_SetNum(id, "MoneyPredict", "Visible", 0), 1))
+HT_V(GetSpeedRampOffsets, Ht_SpeedRampOffsets(&a, &out))
+HT_V(GetMaxSpeedTime, Ht_MaxSpeedTime(&a, &out))
+HT_I(SetHangarPanel, Ht_SetHangarPanel(id))
+HT_V(CmSec2Value, Ht_CmSec2Value(&a, &out))
+HT_I(HideShipInfo, (Ht_HideInfo(id), 1))
+HT_IO(PrevShipToEdit, "iO", Ht_ShipToEdit(id, -1))
+HT_IO(NextShipToEdit, "iO", Ht_ShipToEdit(id, 1))
+HT_IO(SetShipTypeButtonsState, "iO", LvN_EqS(&a, "Build") ? Ht_TypeState(id, 0) : LvN_EqS(&a, "Rebuild") ? Ht_TypeState(id, 1) : 1)
+HT_I(SelectShipToEdit, Ht_SelectShipToEdit(id))
+HT_IO(SelectItem, "iO", Ht_SelectItem(id, &a))
+HT_IO(BuyShip, "iO", Ht_BuyShip(id))
+HT_IO(SellShip, "iO", Ht_SellShip(id))
+HT_I(AddReferenceShipControls, Ht_Reference(id))
+
+static PyObject *HT_CreateEmptyShip(PyObject *self, PyObject *args) {
+	PyObject *o;
+	nativeVal_t a = { 0 };
+	(void)self;
+	if (!PyArg_ParseTuple(args, "O", &o)) {
 		return NULL;
 	}
-	if (symbol) {
-		Ht_AuxShowMoney(&f, id, symbol);
-	} else {
-		Se_SetI(&f, id, "MoneyPredict", "Visible", 0);
-	}
-	return Sf_None(&f);
+	Native_Arg(o, &a);
+	byte ok = Ht_CreateEmptyShip(&a);
+	Native_Free(&a);
+	return Mode_Result(ok);
 }
 
 static PyObject *HT_AuxShowMoney(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
 	char *symbol;
 	int id;
 	(void)self;
 	if (!PyArg_ParseTuple(args, "is", &id, &symbol)) {
 		return NULL;
 	}
-	Ht_AuxShowMoney(&f, id, symbol);
-	return Sf_None(&f);
+	return Mode_Result(Ht_AuxShowMoney(id, symbol));
 }
 
-static PyObject *HT_ShowMoneyBuyingShip(PyObject *self, PyObject *args) {
+static PyObject *HT_ComputeShipTotalCost(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "cad", NULL };
+	PyObject *o = NULL;
+	nativeVal_t cad = { 0 }, out = { 0 };
 	(void)self;
-	return Ht_MoneyArgs(args, "-");
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &o)) {
+		return NULL;
+	}
+	if (o) {
+		Native_Arg(o, &cad);
+	} else {
+		Native_SetStr(&cad, "prevShip");
+	}
+	byte ok = Ht_TotalCost(&cad, &out);
+	Native_Free(&cad);
+	return Mode_Return(ok, &out);
 }
 
-static PyObject *HT_ShowMoneySellingShip(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ht_MoneyArgs(args, "+");
-}
-
-static PyObject *HT_HideMoney(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ht_MoneyArgs(args, NULL);
-}
-
-/* ScaleSpeedRamp(id, offsetX, offsetY, isMiniShip=0): the speed ramp of the ship information (or of the mini
- * information): the time to the top speed (offsetX, at most 1) and the top speed (offsetY), both 0 to 1 */
 static PyObject *HT_ScaleSpeedRamp(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "offsetX", "offsetY", "isMiniShip", NULL };
-	scriptFrame_t f = { 0 };
 	PyObject *ox, *oy, *mini = NULL;
+	nativeVal_t a = { 0 }, b = { 0 }, c = { 0 };
 	int id;
 	(void)self;
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "iOO|O", names, &id, &ox, &oy, &mini)) {
 		return NULL;
 	}
-	if (Sf_Compare(&f, ox, ">", Sf_Float(&f, 1.0)) > 0) {
-		ox = Sf_Float(&f, 1.0);
+	Native_Arg(ox, &a);
+	Native_Arg(oy, &b);
+	if (mini) {
+		Native_Arg(mini, &c);
 	}
-	int isMini = mini ? Sf_True(&f, mini) : 0;
-	PyObject *one = Sf_Int(&f, 1), *two = Sf_Int(&f, 2);
-	if (isMini > 0) {
-		PyObject *sx = Sf_Float(&f, 20.0 / 32.0), *sy = Sf_Float(&f, 53.0 / 64.0);
-		Se_SetO(&f, id, "MiniSpeedRamp1", "X", Sf_OpI(&f, G("baseMiniShipInfoX"), '+', 93));
-		Se_SetO(&f, id, "MiniSpeedRamp1", "Y", Sf_Op(&f, Sf_OpI(&f, G("baseMiniShipInfoY"), '-', 51), '+', Sf_Op(&f,
-			Sf_Op(&f, one, '-', oy), '*', Sf_Ask(&f, "SScorer", "Get", "(iss)", id, "MiniSpeedRamp1", "H"))));
-		Se_SetO(&f, id, "MiniSpeedRamp1", "ScaleX", Sf_Op(&f, Sf_Op(&f, two, '*', ox), '*', sx));
-		Se_SetO(&f, id, "MiniSpeedRamp1", "ScaleY", Sf_Op(&f, oy, '*', sy));
-		PyObject *w = Sf_Op(&f, Sf_OpI(&f, Sf_Ask(&f, "SScorer", "Get", "(iss)", id, "MiniSpeedRamp1", "W"), '*', 2), '*', ox);
-		Se_SetO(&f, id, "MiniSpeedRamp2", "X", Sf_Op(&f, Sf_Ask(&f, "SScorer", "Get", "(iss)", id, "MiniSpeedRamp1", "X"), '+',
-			w));
-		Se_SetO(&f, id, "MiniSpeedRamp2", "Y", Sf_Ask(&f, "SScorer", "Get", "(iss)", id, "MiniSpeedRamp1", "Y"));
-		Se_SetO(&f, id, "MiniSpeedRamp2", "ScaleX", Sf_Op(&f, Sf_OpI(&f, Sf_Op(&f, one, '-', ox), '*', 2), '*', sx));
-		Se_SetO(&f, id, "MiniSpeedRamp2", "ScaleY", Sf_Op(&f, oy, '*', sy));
-	} else if (isMini == 0) {
-		Se_SetO(&f, id, "SpeedRamp1", "X", Sf_Op(&f, G("baseShipInfoX"), '+', G("speedRampX")));
-		Se_SetO(&f, id, "SpeedRamp1", "Y", Sf_Op(&f, Sf_Op(&f, G("baseShipInfoY"), '+', G("speedRampY")), '+', Sf_Op(&f,
-			Sf_Op(&f, one, '-', oy), '*', Sf_Ask(&f, "SScorer", "Get", "(iss)", id, "SpeedRamp1", "H"))));
-		Se_SetO(&f, id, "SpeedRamp1", "ScaleX", Sf_Op(&f, two, '*', ox));
-		Se_SetO(&f, id, "SpeedRamp1", "ScaleY", oy);
-		Se_SetO(&f, id, "SpeedRamp2", "ScaleX", Sf_OpI(&f, Sf_Op(&f, one, '-', ox), '*', 2));
-		Se_SetO(&f, id, "SpeedRamp2", "ScaleY", oy);
-		PyObject *w = Sf_Op(&f, Sf_Ask(&f, "SScorer", "Get", "(iss)", id, "SpeedRamp1", "W"), '*',
-			Sf_Ask(&f, "SScorer", "Get", "(iss)", id, "SpeedRamp1", "ScaleX"));
-		Se_SetO(&f, id, "SpeedRamp2", "X", Sf_Op(&f, Sf_Ask(&f, "SScorer", "Get", "(iss)", id, "SpeedRamp1", "X"), '+', w));
-		Se_SetO(&f, id, "SpeedRamp2", "Y", Sf_Ask(&f, "SScorer", "Get", "(iss)", id, "SpeedRamp1", "Y"));
-	}
-	return Sf_None(&f);
-}
-
-/* GetMaxSpeedTime(v): the time the ship v needs to reach its top speed */
-static PyObject *Ht_MaxSpeedTime_(scriptFrame_t *f, PyObject *v) {
-	Sf_Import(f, "math");
-	PyObject *ft = Sf_Attr(f, v, "FrwTrust");
-	PyObject *neg = f->failed ? NULL : Sf_Keep(f, PyNumber_Negative(ft));
-	PyObject *sq = Sf_Op(f, Sf_Attr(f, v, "FrwTrust"), '*', Sf_Attr(f, v, "FrwTrust"));
-	PyObject *k = Sf_Op(f, Sf_Op(f, Sf_Op(f, Sf_Int(f, 4), '*', Sf_Attr(f, v, "FrwTrust")), '*', Sf_Attr(f, v, "Fric")), '*',
-		Sf_Attr(f, v, "MaxSpeed"));
-	PyObject *in = Sf_Op(f, sq, '+', k);
-	PyObject *num = Sf_Op(f, neg, '+', Sf_Ask(f, "math", "sqrt", "(O)", in));
-	PyObject *den = Sf_Op(f, Sf_Op(f, Sf_Int(f, 2), '*', Sf_Attr(f, v, "FrwTrust")), '*', Sf_Attr(f, v, "Fric"));
-	return Sf_Op(f, num, '/', den);
-}
-
-static PyObject *Ht_MaxSpeedTime(scriptFrame_t *f, PyObject *v) {
-	PyObject *r = NULL;
-	if (!f->failed) {
-		scriptFrame_t g = { 0 };
-		r = Se_JoinValue(f, &g, Ht_MaxSpeedTime_(&g, v));
-	}
-	return r;
-}
-
-static PyObject *HT_GetMaxSpeedTime(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	PyObject *v;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &v)) {
-		return NULL;
-	}
-	return Sf_Return(&f, Ht_MaxSpeedTime(&f, v));
-}
-
-/* GetSpeedRampOffsets(v): (GetMaxSpeedTime(v) / 0.3, v.MaxSpeed / 19600.0) */
-static PyObject *HT_GetSpeedRampOffsets(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	PyObject *v;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &v)) {
-		return NULL;
-	}
-	PyObject *a = Sf_Op(&f, Sf_Own(&f, HT, "GetMaxSpeedTime", "(O)", v), '/', Sf_Float(&f, 0.3));
-	PyObject *b = Sf_Op(&f, Sf_Attr(&f, v, "MaxSpeed"), '/', Sf_Float(&f, 19600.0));
-	return Sf_Return(&f, Sf_Build(&f, "(OO)", a, b));
-}
-
-/* CmSec2Value(val): cm/s to the speed unit of the screen, int(val/28) */
-static PyObject *HT_CmSec2Value(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	PyObject *v;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &v)) {
-		return NULL;
-	}
-	return Sf_Return(&f, Sf_ToInt(&f, Sf_OpI(&f, v, '/', 28)));
-}
-
-/* AddReferenceShipControls(id): the mini information of a hangar: the words of the three hangar texts, the ship
- * window, the speed, boost, hull and weight, the lines to the hangar */
-static void Ht_Reference_(scriptFrame_t *f, int id) {
-	Sf_Import(f, "string");
-	PyObject *x = Sf_Op(f, GF("baseMiniShipInfoX"), '+', Sf_OpI(f, Sf_Int(f, 144), '/', 2));
-	static const char *const texts[][2] = { { "ShipEdit_UncompletedShip", "UncompletedShipText_" },
-		{ "ShipEdit_DestroyedShip", "DestroyedShipText_" }, { "ShipEdit_AvailableHangar", "AvailableHangarText_" } };
-	for (int k = 0; k < 3 && !f->failed; k++) {
-		PyObject *y = Sf_OpI(f, GF("baseMiniShipInfoY"), '-', 30);
-		PyObject *words = Sf_Ask(f, "string", "split", "(O)", Sf_Str(f, Script_Lang(texts[k][0])));
-		for (int i = 0; !f->failed; i++) {
-			int mark = f->n;
-			PyObject *w = Sf_Next(f, words, i);
-			if (!w) {
-				break;
-			}
-			PyObject *vars = Sf_Build(f, "{s:O,s:O,s:O,s:O}", "name", Sf_Cat(f, "sO", texts[k][1], w), "word", w, "x", x, "y", y);
-			Se_Def(f, id, "word", vars, HT);
-			y = Sf_OpI(f, y, '+', 22);
-			Sf_ReleaseKeep(f, mark, &y, f->failed ? 0 : 1);
-		}
-	}
-	Se_Def(f, id, "reference", NULL, HT);
-}
-
-static void Ht_Reference(scriptFrame_t *f, int id) {
-	SE_SUB(f, Ht_Reference_(&g, id));
-}
-
-static PyObject *HT_AddReferenceShipControls(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	Ht_Reference(&f, id);
-	return Sf_None(&f);
-}
-
-/* SetHangarPanel(id): the Hangar panel (the layout of shipedit.def): the mini information, the hint, the emergency
- * ship and the nine hangars, the ship information, the money, Sell and Exit, the pilots, the ship type buttons */
-static PyObject *HT_SetHangarPanel(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, SE);
-	Sf_Import(&f, "ShipMaker");
-	Sf_From(&f, "Menu", "LinkLR");
-	Sf_From(&f, "Menu", "LinkUD");
-	Ht_Reference(&f, id);
-	int mp = Se_Multi(&f, 0);
-	int sput = Sf_True(&f, SEA("fromSputnik"));
-	int aux9 = Sf_EqI(&f, G("currentHangar"), 9);
-	PyObject *vars = Sf_Build(&f, "{s:i,s:i,s:i}", "mp", mp, "sputnik", sput, "aux9", aux9);
-	Se_Def(&f, id, "panel", vars, HT);
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
-			PyObject *v = Sf_Build(&f, "{s:i,s:i,s:i,s:i}", "n", i * 3 + j + 1, "x", 52 + 42 * j, "y", 204 + 42 * i, "sputnik",
-				sput);
-			Se_Def(&f, id, "hangar", v, HT);
-		}
-	}
-	Sf_Release(&f, f.failed ? f.n : 0);
-	vars = Sf_Build(&f, "{s:i,s:i,s:O}", "mp", mp, "sputnik", sput, "money", Sf_Repr(&f, Sf_Ask(&f, "Scrap", "GetMoney",
-		"()")));
-	Se_Def(&f, id, "info", vars, HT);
-	int pilots = Ht_Pilots(&f);
-	if (pilots > 0) {
-		PyObject *list = Sf_Mod(&f, "ShipMaker", "PilotsList");
-		int n = Sf_Len(&f, list);
-		for (int i = 0; i < n && !f.failed; i++) {
-			int mark = f.n;
-			PyObject *name = Sf_Item(&f, Sf_Mod(&f, "ShipMaker", "PilotsList"), i);
-			PyObject *model = Sf_Slice(&f, Sf_Item(&f, Sf_Mod(&f, "ShipMaker", "PilotsList"), i), 2, 0x7fffffff);
-			Se_Def(&f, id, "pilot", Sf_Build(&f, "{s:O,s:O}", "name", name, "model", model), HT);
-			Sf_Release(&f, f.failed ? f.n : mark);
-		}
-		Se_SetOO(&f, id, Sf_GetItem(&f, Sf_Mod(&f, "ShipMaker", "PilotsList"), G("currentPilot")), "Visible", Sf_Int(&f, 1));
-		PyObject *nick = Sf_Str(&f, "");
-		if (Ht_Pilots(&f) > 0) {
-			nick = Sf_Ask(&f, "Scrap", "Get", "(s)", "PlayerName");
-			if (Sf_EqS(&f, nick, "") > 0) {
-				nick = Sf_Str(&f, Script_Lang("ShipEdit_Pilot"));
-			}
-		}
-		Se_Def(&f, id, "pilots", Sf_Build(&f, "{s:O}", "nick", nick), HT);
-	}
-	int noship = 0;
-	if (pilots > 0) {
-		noship = Sf_Compare(&f, Sf_GetItem(&f, SEA("editedShips"), G("currentHangar")), "==", Py_None);
-	}
-	vars = Sf_Build(&f, "{s:i,s:i,s:i}", "mp", mp, "pilots", pilots > 0, "noship", noship);
-	Se_Def(&f, id, "links", vars, HT);
-	return Sf_None(&f);
-}
-
-/* the boost time as the screen shows it: int(t) "." the first decimal */
-static PyObject *Ht_BoostText(scriptFrame_t *f, PyObject *ship) {
-	PyObject *whole;
-	PyObject *dec = Ht_Decimal(f, Sf_Attr(f, ship, "BoostTime"), &whole, 0);
-	return Sf_Cat(f, "OsO", Sf_Repr(f, whole), ".", dec);
-}
-
-static const char *const ht_speedInfo[] = { "MaxSpeedText", "MaxSpeed", "BoostRechargeTime", "BoostRechargeTimeUnits",
-	"BoostRechargeTimeText", "SpeedRamp1", "SpeedRamp2", NULL };
-
-/* ShowShipInfo(id, showAmmoInfo=1): the information of the ship on the platform (of the selected hangar on Sputnik's
- * screen): speed, hull, weight, boost, the speed ramp for a valid ship, the weapon counts */
-static void Ht_ShowInfo_(scriptFrame_t *f, int id, int ammo) {
-	Sf_Import(f, "ShipMaker");
-	Sf_Import(f, SE);
-	Sf_Import(f, HT);
-	Sf_Import(f, "string");
-	int sput = Sf_True(f, SEAF("fromSputnik"));
-	PyObject *ship = sput > 0 ? Sf_GetItem(f, SEAF("editedShips"), Se_Mod(f, HT, "currentHangar")) : sput == 0 ? GF("prevShip") :
-		NULL;
-	if (Sf_Compare(f, ship, "!=", Py_None) <= 0) {
-		return;
-	}
-	Sf_SetAttrI(f, ship, "Active", 1);
-	Se_SetO(f, id, "MaxSpeed", "Text", Sf_Repr(f, Sf_Own(f, HT, "CmSec2Value", "(O)", Sf_Attr(f, ship, "MaxSpeed"))));
-	Se_SetI(f, id, "Slash", "Visible", 1);
-	Se_SetO(f, id, "Hull", "Text", Sf_Repr(f, Sf_Attr(f, ship, "MaxLife")));
-	Se_SetO(f, id, "CurrentWeight", "Text", Sf_Repr(f, Sf_ToInt(f, Sf_Attr(f, ship, "AcMass"))));
-	PyObject *ton = Sf_GetItem(f, Sf_Mod(f, "ShipMaker", "ShipTon"), Sf_Ask(f, "string", "upper", "(O)", Sf_Attr(f, ship,
-		"Model")));
-	Se_SetO(f, id, "MaxWeight", "Text", Sf_Repr(f, Sf_ToInt(f, Sf_Item(f, ton, 2))));
-	Se_SetO(f, id, "BoostRechargeTime", "Text", Ht_BoostText(f, ship));
-	int c = Sf_True(f, Ht_IsShipValid(f, Sf_GetItem(f, SEAF("editedShips"), GF("currentHangar"))));
-	if (c > 0) {
-		c = Sf_EqI(f, Sf_GetItem(f, SEAF("destroyedShips"), GF("currentHangar")), 0);
-		if (c == 0) {
-			c = Se_Multi(f, 0);
-		}
-	}
-	if (c > 0) {
-		PyObject *off = Sf_Own(f, HT, "GetSpeedRampOffsets", "(O)", Sf_GetItem(f, SEAF("editedShips"), GF("currentHangar")));
-		Sf_Own(f, HT, "ScaleSpeedRamp", "(iOO)", id, Sf_Item(f, off, 0), Sf_Item(f, off, 1));
-	}
-	if (c >= 0) {
-		Ht_Show(f, id, ht_speedInfo, c);
-	}
-	if (ammo) {
-		static const char *const items[][2] = { { "NumVulcans", "nWeap00" }, { "NumDevastators", "nWeap03" },
-			{ "NumTeslas", "nWeap02" }, { "NumATPCs", "nWeap04" }, { "NumSwarmMissiles", "nWeap01" },
-			{ "NumInfernoMissiles", "nWeap05" } };
-		for (int i = 0; i < 6; i++) {
-			Se_SetO(f, id, items[i][0], "Text", Sf_Repr(f, Sf_ToInt(f, Sf_Attr(f, ship, items[i][1]))));
-		}
-	}
-	if (Sf_True(f, SEAF("fromSputnik")) > 0) {
-		Sf_SetAttrI(f, ship, "Active", 0);
-	}
-}
-
-static void Ht_ShowInfo(scriptFrame_t *f, int id, int ammo) {
-	SE_SUB(f, Ht_ShowInfo_(&g, id, ammo));
+	byte ok = Ht_ScaleSpeedRamp(id, &a, &b, mini ? &c : NULL);
+	Native_Free(&a);
+	Native_Free(&b);
+	Native_Free(&c);
+	return Mode_Result(ok);
 }
 
 static PyObject *HT_ShowShipInfo(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "showAmmoInfo", NULL };
-	scriptFrame_t f = { 0 };
 	PyObject *ammo = NULL;
+	nativeVal_t a = { 0 };
 	int id;
 	(void)self;
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "i|O", names, &id, &ammo)) {
 		return NULL;
 	}
-	int a = ammo ? Sf_True(&f, ammo) : 1;
-	if (a >= 0) {
-		Ht_ShowInfo(&f, id, a);
+	if (ammo) {
+		Native_Arg(ammo, &a);
 	}
-	return Sf_None(&f);
-}
-
-/* HideShipInfo(id): the ship information empties */
-static void Ht_HideInfo(scriptFrame_t *f, int id) {
-	static const char *const text[] = { "MaxSpeed", NULL, "Hull", "CurrentWeight", "MaxWeight", NULL, "NumVulcans",
-		"NumDevastators", "NumInfernoMissiles", "NumSwarmMissiles", "NumTeslas", "NumATPCs" };
-	static const char *const hide[] = { NULL, "MaxSpeedText", NULL, NULL, NULL, "Slash" };
-	for (int i = 0; i < 12; i++) {
-		if (text[i]) {
-			Se_SetS(f, id, text[i], "Text", "");
-		} else {
-			Se_SetI(f, id, hide[i], "Visible", 0);
-		}
-	}
-	static const char *const rest[] = { "SpeedRamp1", "SpeedRamp2", "BoostRechargeTime", "BoostRechargeTimeText", NULL };
-	Ht_Show(f, id, rest, 0);
-}
-
-static PyObject *HT_HideShipInfo(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	Ht_HideInfo(&f, id);
-	return Sf_None(&f);
-}
-
-/* SetShipTypeButtonsState(id, state): the ship type button buys ("Build") or rebuilds ("Rebuild") */
-static void Ht_TypeState(scriptFrame_t *f, int id, byte rebuild) {
-	Se_SetI(f, id, "ShipType", "SpriteIndex", rebuild ? 14 : 11);
-	Se_SetI(f, id, "ShipType", "FocusSpriteIndex", rebuild ? 15 : 12);
-	Se_SetUse(f, id, Sf_Str(f, "ShipType"), "Hint", rebuild ? "HINT_Hangar7" : "HINT_Hangar6", HT);
-}
-
-static PyObject *HT_SetShipTypeButtonsState(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	PyObject *state;
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO", &id, &state)) {
-		return NULL;
-	}
-	if (Sf_EqS(&f, state, "Build") > 0) {
-		Ht_TypeState(&f, id, 0);
-	} else if (Sf_EqS(&f, state, "Rebuild") > 0) {
-		Ht_TypeState(&f, id, 1);
-	}
-	return Sf_None(&f);
-}
-
-/* the weapon sprites (on) or the ammo sprites (off) of the ship information */
-static void Ht_WeaponSprites(scriptFrame_t *f, int id, long on) {
-	static const char *const weapons[] = { "VulcanSpr", "DevastatorSpr", "TeslaSpr", "ATPCSpr", "InfernoSpr", "SwarmSpr",
-		NULL };
-	static const char *const ammo[] = { "ProjectilesAmmo", "EnergyAmmo", "MissilesAmmo", NULL };
-	Ht_Show(f, id, weapons, on);
-	Ht_Show(f, id, ammo, !on);
-}
-
-/* the slot counts of the ship information empty */
-static void Ht_NoSlots(scriptFrame_t *f, int id) {
-	Se_SetS(f, id, "NumSlotsParticleWeapons", "Text", "");
-	Se_SetS(f, id, "NumSlotsEnergyWeapons", "Text", "");
-	Se_SetS(f, id, "NumSlotsMissileWeapons", "Text", "");
-}
-
-/* SelectShipToEdit(id): the plan of the ship type to buy (a hologram on the platform) or the destroyed ship to
- * rebuild, its slots and information; the other tabs are off; the hologram sound starts */
-static void Ht_SelectShipToEdit_(scriptFrame_t *f, int id) {
-	Sf_From(f, "Menu", "LinkUD");
-	static const char *const mods[] = { SE, HT, "Sound", "string" };
-	for (int i = 0; i < 4; i++) {
-		Sf_Import(f, mods[i]);
-	}
-	static const char *const off[] = { "MaxSpeedText", "MaxSpeed", "Slash", "BoostRechargeTime", "BoostRechargeTimeText",
-		NULL };
-	Ht_Show(f, id, off, 0);
-	int rebuild = Se_Multi(f, 0);
-	rebuild = rebuild < 0 ? -1 : !rebuild;
-	if (rebuild > 0) {
-		rebuild = Sf_EqS(f, Sf_GetItem(f, SEAF("auxShipsToEditList"), GF("currentShipToEdit")), "Rebuild");
-	}
-	PyObject *list = rebuild > 0 ? SEAF("shipsToEditList") : SEAF("auxShipsToEditList");
-	PyObject *text = Sf_Lang(f, Sf_Cat(f, "sO", "SHIP_", Sf_Ask(f, "string", "upper", "(O)", Sf_GetItem(f, list,
-		GF("currentShipToEdit")))));
-	Ht_Show(f, id, ht_shipType, 1);
-	Se_SetO(f, id, "ShipTypeName", "Text", text);
-	int build = rebuild == 0 ? 1 : Se_Multi(f, 0);
-	if (build > 0) {
-		Sf_Own(f, HT, "CreateEmptyShip", "(O)", Sf_GetItem(f, SEAF("auxShipsToEditList"), GF("currentShipToEdit")));
-		Ht_TypeState(f, id, 0);
-	} else if (build == 0) {
-		Sf_SetGlobal(f, HT, "prevShip", Sf_GetItem(f, SEAF("editedShips"), GF("currentHangar")));
-		Sf_SetAttrI(f, GF("prevShip"), "Active", 1);
-		Sf_SetAttrI(f, GF("prevShip"), "RenderEffect", 1);
-		Sf_Ask(f, SE, "StopRotateLoop", "()");
-		Sf_Ask(f, SE, "StartRotateLoop", "()");
-		Ht_TypeState(f, id, 1);
-	}
-	Sf_Release(f, f->failed ? f->n : 0);
-	Ht_WeaponSprites(f, id, 0);
-	Se_SetO(f, id, "NumSlotsParticleWeapons", "Text", Sf_Repr(f, Sf_ToInt(f, Sf_Attr(f, GF("prevShip"), "nSlot00"))));
-	Se_SetO(f, id, "NumSlotsMissileWeapons", "Text", Sf_Repr(f, Sf_ToInt(f, Sf_Attr(f, GF("prevShip"), "nSlot01"))));
-	Se_SetO(f, id, "NumSlotsEnergyWeapons", "Text", Sf_Repr(f, Sf_ToInt(f, Sf_Attr(f, GF("prevShip"), "nSlot02"))));
-	Sf_Release(f, f->failed ? f->n : 0);
-	Ht_ShowInfo(f, id, 0);
-	Se_TabsOn(f, id, SEAF("tabs"), 0);
-	if (Sf_True(f, GF("holograms")) == 0) {
-		Sf_SetGlobal(f, HT, "holograms", Sf_Int(f, 1));
-		PyObject *cam = Sf_Entity(f, Sf_Ask(f, "Scrap", "GetCam", "(i)", 0));
-		Sf_Ask(f, "SSound", "PlaySound", "(OOd)", Sf_Attr(f, cam, "camPos"), Sf_Mod(f, "Sound", "HologramStartSound"), 0.35);
-		Sf_Ask(f, "SSound", "CreatePS", "(s)", "EditHologramLoopSound");
-		Sf_Ask(f, "SSound", "SetPS", "(ssO)", "EditHologramLoopSound", "Sound", Sf_Mod(f, "Sound", "HologramLoopSound"));
-		static const char *const xyz[] = { "X", "Y", "Z" };
-		for (int i = 0; i < 3; i++) {
-			Sf_Ask(f, "SSound", "SetPS", "(ssO)", "EditHologramLoopSound", xyz[i], Sf_Item(f, Sf_Attr(f, cam, "camPos"), i));
-		}
-		Sf_Ask(f, "SSound", "SetPS", "(ssi)", "EditHologramLoopSound", "Loop", 1);
-		Sf_Ask(f, "SSound", "SetPS", "(ssd)", "EditHologramLoopSound", "Volume", 0.17);
-	}
-}
-
-static void Ht_SelectShipToEdit(scriptFrame_t *f, int id) {
-	SE_SUB(f, Ht_SelectShipToEdit_(&g, id));
-}
-
-static PyObject *HT_SelectShipToEdit(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	Ht_SelectShipToEdit(&f, id);
-	return Sf_None(&f);
-}
-
-/* PrevShipToEdit(id, control), NextShipToEdit(id, control): the ship type before or after the current one */
-static PyObject *Ht_ShipToEdit(PyObject *args, int step) {
-	scriptFrame_t f = { 0 };
-	PyObject *control;
-	int id;
-	if (!PyArg_ParseTuple(args, "iO", &id, &control)) {
-		return NULL;
-	}
-	Sf_Import(&f, SE);
-	int rebuild = Sf_EqS(&f, Sf_GetItem(&f, SEA("auxShipsToEditList"), G("currentShipToEdit")), "Rebuild");
-	Sf_SetGlobal(&f, HT, "currentShipToEdit", Sf_OpI(&f, G("currentShipToEdit"), step < 0 ? '-' : '+', 1));
-	if (step < 0) {
-		if (Sf_Compare(&f, G("currentShipToEdit"), "<", Sf_Int(&f, 0)) > 0) {
-			Sf_SetGlobal(&f, HT, "currentShipToEdit", Sf_Int(&f, Sf_Len(&f, SEA("auxShipsToEditList")) - 1));
-		}
-	} else {
-		int n = Sf_Len(&f, SEA("auxShipsToEditList"));
-		if (n >= 0 && Sf_EqI(&f, G("currentShipToEdit"), n) > 0) {
-			Sf_SetGlobal(&f, HT, "currentShipToEdit", Sf_Int(&f, 0));
-		}
-	}
-	if (rebuild == 0) {
-		Ht_TypeState(&f, id, 0);
-		if (Sf_Compare(&f, G("prevShip"), "!=", Py_None) > 0) {
-			Sf_Method(&f, G("prevShip"), "Del", "()");
-			Sf_SetGlobal(&f, HT, "prevShip", Py_None);
-		}
-	} else if (rebuild > 0) {
-		Ht_TypeState(&f, id, 1);
-		Sf_SetAttrI(&f, G("prevShip"), "Active", 0);
-	}
-	Ht_SelectShipToEdit(&f, id);
-	if (Sf_Compare(&f, G("prevShip"), "!=", Py_None) > 0) {
-		Sf_Ask(&f, SE, "StartRotateLoop", "()");
-	}
-	return Sf_None(&f);
-}
-
-static PyObject *HT_PrevShipToEdit(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ht_ShipToEdit(args, -1);
-}
-
-static PyObject *HT_NextShipToEdit(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ht_ShipToEdit(args, 1);
-}
-
-/* the hangar n of ShipEdit.editedShips has no ship, or (single player) a destroyed one: 1, 0, -1 */
-static int Ht_Empty(scriptFrame_t *f, PyObject *n) {
-	int c = Sf_Compare(f, Sf_GetItem(f, SEAF("editedShips"), n), "==", Py_None);
-	if (c == 0) {
-		c = Sf_EqI(f, Sf_GetItem(f, SEAF("destroyedShips"), n), 1);
-		if (c > 0) {
-			int mp = Se_Multi(f, 0);
-			c = mp < 0 ? -1 : !mp;
-		}
-	}
-	return c;
-}
-
-/* SelectHangar(id, control="", skipanim=0): the hangar currentHangar is selected: its ship comes up on the platform
- * (the animation, or at once with skipanim), an empty or destroyed one shows the ship plans when the platform is up */
-static void Ht_SelectHangar_(scriptFrame_t *f, int id, PyObject *control, int skipanim) {
-	static const char *const links[] = { "LinkLR", "LinkUD", "UnLinkUD", "UnLinkLR" };
-	for (int i = 0; i < 4; i++) {
-		Sf_From(f, "Menu", links[i]);
-	}
-	Sf_Import(f, SE);
-	Sf_Ask(f, "SSound", "SetPS", "(ssd)", "EditHologramLoopSound", "Volume", 0.0);
-	if (Sf_Compare(f, GF("prevHangar"), "==", GF("currentHangar")) != 0) {
-		return;
-	}
-	int c = Sf_True(f, Sf_GetItem(f, SEAF("editedShips"), GF("prevHangar")));
-	c = c < 0 ? -1 : !c;
-	if (c == 0) {
-		c = Sf_EqI(f, Sf_GetItem(f, SEAF("destroyedShips"), GF("prevHangar")), 1);
-		if (c > 0) {
-			int mp = Se_Multi(f, 0);
-			c = mp < 0 ? -1 : !mp;
-		}
-	}
-	if (c > 0 && Sf_Compare(f, GF("prevShip"), "!=", Py_None) > 0) {
-		Sf_SetAttrI(f, GF("prevShip"), "Active", 0);
-	}
-	Sf_Release(f, f->failed ? f->n : 0);
-	Ht_Show(f, id, ht_shipType, 0);
-	int pilots = Ht_Pilots(f);
-	if (pilots > 0) {
-		if (Sf_Compare(f, Sf_GetItem(f, SEAF("editedShips"), GF("currentHangar")), "==", Py_None) > 0) {
-			Se_Link(f, "LinkLR", id, "NextShip", "PrevPilot");
-		} else {
-			Se_SetS(f, id, "PrevPilot", "Left", "Hangar6");
-		}
-		Se_Link(f, "UnLinkUD", id, "PilotName", "Sell");
-		Se_Link(f, "LinkUD", id, "PilotName", "Exit");
-		Se_SetS(f, id, "Exit", "Left", "");
-		Se_SetS(f, id, "Exit", "Up", "PilotName");
-	} else if (pilots == 0) {
-		Se_Link(f, "LinkLR", id, "NextShip", "Exit");
-	}
-	Sf_Release(f, f->failed ? f->n : 0);
-	int empty = Ht_Empty(f, GF("currentHangar"));
-	if (empty > 0) {
-		static const char *const nums[] = { "NumVulcans", "NumDevastators", "NumInfernoMissiles", "NumSwarmMissiles",
-			"NumTeslas", "NumATPCs" };
-		for (int i = 0; i < 6; i++) {
-			Se_SetS(f, id, nums[i], "Text", "");
-		}
-		if (Sf_Compare(f, Sf_GetItem(f, SEAF("editedShips"), GF("prevHangar")), "!=", Py_None) > 0) {
-			static const char *const texts[] = { "MaxSpeed", "Hull", "CurrentWeight", "MaxWeight" };
-			for (int i = 0; i < 4; i++) {
-				Se_SetS(f, id, texts[i], "Text", "");
-			}
-			Ht_NoSlots(f, id);
-		}
-		Ht_SellActive(f, id, 0);
-		Se_SetS(f, id, "Hangar9", "Right", "PrevShip");
-		Se_SetS(f, id, "Hangar6", "Right", "PrevShip");
-		Se_SetS(f, id, "Hangar3", "Right", "PrevShip");
-		if (Se_Multi(f, 0) == 0) {
-			Se_SetS(f, id, "HangarAux", "Right", "PrevShip");
-		}
-		if (Sf_Compare(f, Sf_GetItem(f, SEAF("editedShips"), GF("prevHangar")), "!=", Py_None) > 0) {
-			Ht_HideInfo(f, id);
-		}
-		Ht_PlatformButtons(f, id, 0);
-		Sf_Ask(f, "SScorer", "SetOnNext", "(is)", id, "");
-		Sf_Ask(f, "SScorer", "SetOnPrev", "(is)", id, "");
-		int lost = Sf_EqI(f, Sf_GetItem(f, SEAF("destroyedShips"), GF("currentHangar")), 1);
-		if (lost > 0) {
-			int mp = Se_Multi(f, 0);
-			lost = mp < 0 ? -1 : !mp;
-		}
-		if (lost > 0) {
-			Se_SetOO(f, id, control, "Hint", Sf_Str(f, Script_Lang("HINT_Hangar13")));
-		}
-		if (skipanim) {
-			Sf_Ask(f, SE, "ChangeShip", "(OOi)", Py_None, Py_None, 0);
-			Sf_Ask(f, SE, "VerifyChangeShip", "(OOi)", Py_None, Py_None, 0);
-		} else {
-			Sf_Ask(f, SE, "LaunchPlatformAnim", "()");
-		}
-		return;
-	}
-	if (empty < 0) {
-		return;
-	}
-	Sf_Release(f, f->failed ? f->n : 0);
-	Ht_WeaponSprites(f, id, 1);
-	int notAux = Sf_Compare(f, GF("currentHangar"), "!=", Sf_Int(f, 9));
-	if (notAux > 0) {
-		if (Ht_Pilots(f) > 0) {
-			Se_Link(f, "LinkUD", id, "PilotName", "Exit");
-			Se_Link(f, "LinkUD", id, "PilotName", "Sell");
-		}
-		Ht_SellActive(f, id, 1);
-		Sf_Ask(f, "SScorer", "SetOnNext", "(is)", id, "ShipEdit.ChangeTabRight");
-		Sf_Ask(f, "SScorer", "SetOnPrev", "(is)", id, "ShipEdit.ChangeTabLeft");
-		Se_Link(f, "LinkLR", id, "Hangar3", "Sell");
-		Se_Link(f, "LinkLR", id, "Hangar9", "Sell");
-		Se_Link(f, "LinkLR", id, "Hangar6", "Sell");
-		if (Se_Multi(f, 0) == 0) {
-			Se_SetS(f, id, "HangarAux", "Right", "Sell");
-		}
-		Se_Link(f, "LinkLR", id, "Sell", "Exit");
-		Se_TabsOn(f, id, SEAF("tabs"), 1);
-		Se_TabRing(f, id, SEAF("tabs"), "LinkLR");
-	} else if (notAux == 0) {
-		Ht_PlatformButtons(f, id, 0);
-		Sf_Import(f, SE);
-		Se_TabsOn(f, id, SEAF("tabs"), 0);
-		Se_TabRing(f, id, SEAF("tabs"), "UnLinkLR");
-		if (Se_Multi(f, 0) == 0) {
-			Se_Link(f, "LinkLR", id, "HangarAux", "Exit");
-		}
-		Se_Link(f, "LinkLR", id, "Hangar3", "Exit");
-		Se_Link(f, "LinkLR", id, "Hangar9", "Exit");
-		Se_Link(f, "LinkLR", id, "Hangar6", "Exit");
-		Ht_SellActive(f, id, 0);
-		Sf_Ask(f, "SScorer", "SetOnNext", "(is)", id, "");
-		Sf_Ask(f, "SScorer", "SetOnPrev", "(is)", id, "");
-	}
-	Sf_Release(f, f->failed ? f->n : 0);
-	Ht_NoSlots(f, id);
-	int isAux = Sf_Compare(f, control, "!=", Sf_Str(f, "HangarAux"));
-	if (isAux > 0) {
-		int valid = Sf_True(f, Ht_IsShipValid(f, Sf_GetItem(f, SEAF("editedShips"), GF("currentHangar"))));
-		if (valid >= 0) {
-			Se_SetOO(f, id, control, "Hint", Sf_Str(f, Script_Lang(valid ? "HINT_Hangar12" : "HINT_Hangar14")));
-		}
-	} else if (isAux == 0) {
-		Se_SetOO(f, id, control, "Hint", Sf_Str(f, Script_Lang("HINT_Hangar18")));
-	}
-	Sf_Release(f, f->failed ? f->n : 0);
-	Ht_HideInfo(f, id);
-	if (Sf_EqS(f, control, "HangarAux") > 0) {
-		Sf_Ask(f, "SScorer", "SetDefault", "(is)", id, "HangarAux");
-	} else {
-		Sf_Ask(f, "SScorer", "SetDefault", "(iO)", id, Sf_Cat(f, "sO", "Hangar", Sf_Repr(f, Sf_OpI(f, GF("currentHangar"), '+',
-			1))));
-	}
-	Ht_PlatformButtons(f, id, 0);
-	Sf_Ask(f, SE, "LaunchPlatformAnim", "()");
-}
-
-static void Ht_SelectHangar(scriptFrame_t *f, int id, PyObject *control, int skipanim) {
-	SE_SUB(f, Ht_SelectHangar_(&g, id, control, skipanim));
+	byte ok = Ht_ShowInfo(id, ammo ? Native_True(&a) : 1);
+	Native_Free(&a);
+	return Mode_Result(ok);
 }
 
 static PyObject *HT_SelectHangar(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "control", "skipanim", NULL };
-	scriptFrame_t f = { 0 };
 	PyObject *control = NULL, *skip = NULL;
+	nativeVal_t a = { 0 }, s = { 0 };
 	int id;
 	(void)self;
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "i|OO", names, &id, &control, &skip)) {
 		return NULL;
 	}
-	control = control ? Sf_Ref(&f, control) : Sf_Str(&f, "");
-	int s = skip ? Sf_True(&f, skip) : 0;
-	if (s >= 0) {
-		Ht_SelectHangar(&f, id, control, s);
-	}
-	return Sf_None(&f);
-}
-
-/* SelectItem(id, control): a hangar clicked: it becomes currentHangar and is selected */
-static PyObject *HT_SelectItem(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	PyObject *control;
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO", &id, &control)) {
-		return NULL;
-	}
-	Sf_Import(&f, SE);
-	Sf_From(&f, "Menu", "LinkUD");
-	Sf_SetGlobal(&f, HT, "holograms", Sf_Int(&f, 0));
-	Sf_Ask(&f, "SSound", "SetPS", "(ssi)", "EditHologramSound", "Loop", 0);
-	Sf_Ask(&f, "SSound", "SetPS", "(ssd)", "EditHologramSound", "Volume", 0.0);
-	Sf_Ask(&f, "SSound", "StopAllSounds", "()");
-	int aux = Sf_EqS(&f, control, "HangarAux");
-	int last = aux == 0 ? Sf_Len(&f, control) - 1 : 0;
-	if (aux > 0 || (aux == 0 && Sf_EqS(&f, Sf_Slice(&f, control, 0, last), "Hangar") > 0)) {
-		Sf_SetGlobal(&f, HT, "prevHangar", G("currentHangar"));
-		Sf_SetGlobal(&f, HT, "currentHangar", aux ? Sf_Int(&f, 9) : Sf_OpI(&f, Sf_ToInt(&f, Sf_Item(&f, control, last)), '-', 1));
-		Ht_SelectHangar(&f, id, control, 0);
-		Ht_HideMini(&f, id);
-	}
-	Ht_UpdateHangars(&f, id);
-	return Sf_None(&f);
-}
-
-/* CreateEmptyShip(kind): the plan of a new ship of the model kind on the platform (prevShip) */
-static PyObject *HT_CreateEmptyShip(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	PyObject *kind;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &kind)) {
-		return NULL;
-	}
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "ShipMaker");
-	Sf_Import(&f, SE);
-	PyObject *pos = Sf_Item(&f, SEA("editShipPosDummy"), 1);
-	Sf_SetGlobal(&f, HT, "prevShip", Sf_Ask(&f, "Scrap", "CreateEntity", "(OOOOs)", kind, Sf_Item(&f, pos, 0), Sf_Item(&f,
-		pos, 1), Sf_Item(&f, pos, 2), "Car"));
-	Sf_SetAttrI(&f, G("prevShip"), "ActiveCMask", 0);
-	Sf_SetAttr(&f, G("prevShip"), "Ang", Se_FrontAng(&f, SEA("editShipPosDummy"), NULL));
-	PyObject *life = Sf_Item(&f, Sf_Ask(&f, "ShipMaker", "GetShipTon", "(O)", kind), 0);
-	Sf_Ask(&f, "Vehicles", "SetProperties", "(OOOsssssssi)", Sf_Attr(&f, G("prevShip"), "Name"), kind, life, "P_None", "", "",
-		"", "", "0,0,0,0,0,0", "Pilot", 1);
-	Sf_SetAttrI(&f, G("prevShip"), "RenderEffect", 1);
-	Sf_Ask(&f, SE, "SetupForEdit", "([O])", G("prevShip"));
-	return Sf_None(&f);
-}
-
-/* BuyShip(id, control): the ship type shown is bought (or the destroyed ship rebuilt) for the hangar */
-static PyObject *HT_BuyShip(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	PyObject *control;
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO", &id, &control)) {
-		return NULL;
-	}
-	Sf_From(&f, "Menu", "LinkLR");
-	Sf_From(&f, "Menu", "LinkUD");
-	static const char *const mods[] = { SE, "ShipMaker", "string", "Sound" };
-	for (int i = 0; i < 4; i++) {
-		Sf_Import(&f, mods[i]);
-	}
-	int rebuild;
-	PyObject *list = Ht_ShipsList(&f, &rebuild);
-	if (Se_Multi(&f, 0) == 0) {
-		PyObject *money = Sf_Ask(&f, "Scrap", "GetMoney", "()");
-		PyObject *cost;
-		if (rebuild) {
-			cost = Sf_Own(&f, HT, "ComputeShipTotalCost", "(O)", Sf_Cat(&f, "sOs", "ShipEdit.editedShips[", Sf_Repr(&f,
-				G("currentHangar")), "]"));
-		} else {
-			cost = Sf_ToInt(&f, Sf_Ask(&f, "ShipMaker", "GetShipPrice", "(O)", Sf_GetItem(&f, list, G("currentShipToEdit"))));
-		}
-		if (Sf_Compare(&f, Sf_Op(&f, money, '-', cost), "<", Sf_Int(&f, 0)) != 0) {
-			return Sf_None(&f);
-		}
-		PyObject *left = Sf_Op(&f, money, '-', cost);
-		Sf_Ask(&f, "Scrap", "SetMoney", "(O)", left);
-		Se_SetO(&f, id, "Money", "Text", Sf_Repr(&f, left));
-		Sf_SetItem(&f, SEA("destroyedShips"), G("currentHangar"), Sf_Int(&f, 0));
-		int n = Sf_Len(&f, SEA("auxShipsToEditList"));
-		for (int i = 0; i < n && !f.failed; i++) {
-			int mark = f.n;
-			if (Sf_EqS(&f, Sf_Item(&f, SEA("auxShipsToEditList"), i), "Rebuild") > 0) {
-				Sf_SetGlobal(&f, HT, "currentShipToEdit", Sf_Int(&f, i));
-				break;
-			}
-			Sf_Release(&f, mark);
-		}
-		Sf_SetMod(&f, SE, "auxShipsToEditList", Sf_Keep(&f, PyList_New(0)));
-		n = Sf_Len(&f, SEA("shipsToEditList"));
-		for (int i = 0; i < n && !f.failed; i++) {
-			int mark = f.n;
-			Sf_Method(&f, SEA("auxShipsToEditList"), "append", "(O)", Sf_Item(&f, SEA("shipsToEditList"), i));
-			Sf_Release(&f, f.failed ? f.n : mark);
-		}
-	}
-	Sf_Release(&f, f.failed ? f.n : 0);
-	Sf_SetGlobal(&f, HT, "holograms", Sf_Int(&f, 0));
-	Sf_Ask(&f, "SSound", "SetPS", "(ssi)", "EditHologramLoopSound", "Loop", 0);
-	Sf_Ask(&f, "SSound", "SetPS", "(ssd)", "EditHologramLoopSound", "Volume", 0.0);
-	Sf_Ask(&f, "SSound", "StopAllSounds", "()");
-	if (rebuild) {
-		Sf_Method(&f, G("prevShip"), "SetFX", "(s)", "ShipEditBuild");
+	if (control) {
+		Native_Arg(control, &a);
 	} else {
-		if (Sf_Compare(&f, Sf_GetItem(&f, SEA("editedShips"), G("currentHangar")), "!=", Py_None) > 0) {
-			Sf_Method(&f, Sf_GetItem(&f, SEA("editedShips"), G("currentHangar")), "Del", "()");
-		}
-		Sf_Method(&f, G("prevShip"), "SetFX", "(s)", "ShipEditBuild");
-		Sf_SetItem(&f, SEA("editedShips"), G("currentHangar"), G("prevShip"));
+		Native_SetStr(&a, "");
 	}
-	Sf_Release(&f, f.failed ? f.n : 0);
-	Ht_WeaponSprites(&f, id, 1);
-	Ht_Show(&f, id, ht_shipType, 0);
-	Ht_NoSlots(&f, id);
-	Ht_ShowInfo(&f, id, 1);
-	Ht_UpdateHangars(&f, id);
-	Se_TabsOn(&f, id, SEA("tabs"), 1);
-	Se_TabRing(&f, id, SEA("tabs"), "LinkLR");
-	Sf_Ask(&f, "SScorer", "SetOnNext", "(is)", id, "ShipEdit.ChangeTabRight");
-	Sf_Ask(&f, "SScorer", "SetOnPrev", "(is)", id, "ShipEdit.ChangeTabLeft");
-	Ht_SellActive(&f, id, 1);
-	Sf_Release(&f, f.failed ? f.n : 0);
-	Sf_Ask(&f, "SSound", "Play", "(OO)", Sf_Mod(&f, "Sound", "ShipEditLoadShipSound"), Sf_Mod(&f, "Sound",
-		"ShipEditLoadShipVolume"));
-	if (Se_Multi(&f, 0) == 0) {
-		Se_Link(&f, "LinkLR", id, "HangarAux", "Sell");
+	if (skip) {
+		Native_Arg(skip, &s);
 	}
-	Se_Link(&f, "LinkLR", id, "Hangar3", "Sell");
-	Se_Link(&f, "LinkLR", id, "Hangar9", "Sell");
-	Se_Link(&f, "LinkLR", id, "Hangar6", "Sell");
-	Se_Link(&f, "LinkLR", id, "Sell", "Exit");
-	if (Ht_Pilots(&f) > 0) {
-		Se_SetS(&f, id, "PrevPilot", "Left", "Hangar6");
-		Se_Link(&f, "LinkUD", id, "PilotName", "Sell");
-	}
-	Ht_UpdateHangars(&f, id);
-	Sf_Ask(&f, "SScorer", "SetDefault", "(iO)", id, Sf_Cat(&f, "sO", "Hangar", Sf_Repr(&f, Sf_OpI(&f, G("currentHangar"), '+',
-		1))));
-	return Sf_None(&f);
-}
-
-/* SellShip(id, control): the ship of the hangar is sold (its whole price in single player) */
-static PyObject *HT_SellShip(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	PyObject *control;
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "iO", &id, &control)) {
-		return NULL;
-	}
-	static const char *const links[] = { "LinkLR", "LinkUD", "UnLinkLR", "UnLinkUD" };
-	for (int i = 0; i < 4; i++) {
-		Sf_From(&f, "Menu", links[i]);
-	}
-	Sf_Import(&f, SE);
-	Sf_Import(&f, "ShipMaker");
-	Sf_Import(&f, "Sound");
-	if (Sf_Compare(&f, Sf_GetItem(&f, SEA("editedShips"), G("currentHangar")), "!=", Py_None) <= 0) {
-		return Sf_None(&f);
-	}
-	if (Se_Multi(&f, 0) == 0) {
-		PyObject *money = Sf_Op(&f, Sf_Ask(&f, "Scrap", "GetMoney", "()"), '+', G("shipTotalCost"));
-		Sf_Ask(&f, "Scrap", "SetMoney", "(O)", money);
-		Se_SetO(&f, id, "Money", "Text", Sf_Repr(&f, money));
-		Sf_SetItem(&f, SEA("destroyedShips"), G("currentHangar"), Sf_Int(&f, 0));
-	}
-	Sf_Release(&f, f.failed ? f.n : 0);
-	Sf_Method(&f, Sf_GetItem(&f, SEA("editedShips"), G("currentHangar")), "Del", "()");
-	Sf_SetItem(&f, SEA("editedShips"), G("currentHangar"), Py_None);
-	Sf_SetGlobal(&f, HT, "prevShip", Py_None);
-	Ht_UpdateHangars(&f, id);
-	Ht_SellActive(&f, id, 0);
-	Sf_Ask(&f, "SSound", "Play", "(OO)", Sf_Mod(&f, "Sound", "ShipEditUnLoadSound"), Sf_Mod(&f, "Sound",
-		"ShipEditUnLoadVolume"));
-	Se_Link(&f, "LinkLR", id, "Hangar3", "Exit");
-	Se_Link(&f, "LinkLR", id, "Hangar9", "Exit");
-	Se_Link(&f, "LinkLR", id, "Hangar6", "Exit");
-	if (Ht_Pilots(&f) > 0) {
-		Se_Link(&f, "UnLinkUD", id, "PilotName", "Sell");
-		Se_Link(&f, "LinkUD", id, "PilotName", "Exit");
-	}
-	Sf_Release(&f, f.failed ? f.n : 0);
-	Ht_HideInfo(&f, id);
-	/* the script unlinks the whole ring of tabs once per tab */
-	PyObject *rest = Sf_Slice(&f, SEA("tabs"), 1, 0x7fffffff);
-	for (int i = 0; !f.failed; i++) {
-		int mark = f.n;
-		PyObject *t = Sf_Next(&f, rest, i);
-		if (!t) {
-			break;
-		}
-		PyObject *name = Sf_Cat(&f, "sO", "ShipEditTab", t);
-		static const char *const vars[] = { "Highlight", "TextColorAlpha", "TextColorRed", "TextColorGreen",
-			"TextColorBlue" };
-		static const long vals[] = { 0, 255, 161, 161, 161 };
-		for (int k = 0; k < 5; k++) {
-			Se_SetOO(&f, id, name, vars[k], Sf_Int(&f, vals[k]));
-		}
-		Se_SetOO(&f, id, name, "OnAccept", Sf_Str(&f, ""));
-		Se_TabRing(&f, id, SEA("tabs"), "UnLinkLR");
-		Sf_Release(&f, f.failed ? f.n : mark);
-	}
-	Sf_Ask(&f, "SScorer", "SetOnNext", "(is)", id, "");
-	Sf_Ask(&f, "SScorer", "SetOnPrev", "(is)", id, "");
-	Sf_SetGlobal(&f, HT, "prevHangar", Sf_Int(&f, -1));
-	Ht_SelectHangar(&f, id, Sf_Cat(&f, "sO", "Hangar", Sf_Repr(&f, G("currentHangar"))), 1);
-	Sf_SetGlobal(&f, HT, "prevHangar", G("currentHangar"));
-	return Sf_None(&f);
+	byte ok = Ht_SelectHangar(id, &a, skip ? Native_True(&s) : 0);
+	Native_Free(&a);
+	Native_Free(&s);
+	return Mode_Result(ok);
 }
 
 PyMethodDef g_HangarTabMethods[] = {
