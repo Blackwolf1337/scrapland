@@ -3,6 +3,10 @@
  * action class, is a .def file in data/chars/ (a pack in mods/ with scrapc/chars/<name>.def replaces it); the
  * parts that compute or are called back by the engine are here: steps of the files and the callbacks of each
  * character module. The module code of a script (file names and other values) stays in the script.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the steps and the missile events of Gear read and set the current action
+ * in C on C values. The $names of the files (OBJLIB 6), Init.Path and the table of Speech the speech step fills
+ * (OBJLIB 3, 5) stay Python.
  */
 #include <string.h>
 
@@ -10,6 +14,7 @@
 #include "scrap/console.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptnative.h"
 
 static const char betty_def[] = {
 #embed "../../../data/chars/betty.def"
@@ -117,28 +122,29 @@ static const char human_def[] = {
 
 /* ---- the steps of the files ---- */
 
-/* a number of SAct's current action as SAct.GetAct gives it (a new reference, None when it is not there) */
-static PyObject *Char_ActVar(const char *var) {
+/* a number of SAct's current action as SAct.GetAct gives it (None when it is not there or no number) */
+static void Char_ActVar(const char *var, nativeVal_t *out) {
 	char *s;
 	double d = 0.0;
 	int i = 0;
 	switch (g_pAuxAction ? cAction_Var(g_pAuxAction, var, 0, &s, &d, &i) : ACTVAR_NONE) {
 	case ACTVAR_DOUBLE:
-		return PyFloat_FromDouble(d);
+		Native_SetFloat(out, d);
+		return;
 	case ACTVAR_INT:
-		return PyInt_FromLong(i);
+		Native_SetInt(out, i);
+		return;
 	}
-	return Py_ReturnNone();
+	Native_SetNone(out);
 }
 
 /* the time of a frame of SAct's current action (0 when it is not there) */
 static double Char_Frame(int frame) {
 	char var[0x20];
+	nativeVal_t v;
 	Str_Printf(var, sizeof(var), "TimeOfFrame%d", frame);
-	PyObject *v = Char_ActVar(var);
-	double d = PyFloat_Check(v) ? PyFloat_AsDouble(v) : PyInt_Check(v) ? (double)PyInt_AsLong(v) : 0.0;
-	Py_DECREF(v);
-	return d;
+	Char_ActVar(var, &v);
+	return v.type == NV_FLOAT ? v.f : v.type == NV_INT ? (double)v.i : 0.0;
 }
 
 /* an event of SAct's current action, as the script set it */
@@ -163,6 +169,7 @@ static void Step_Speech(int id, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "sss", &name, &module, &func)) {
 		return;
 	}
+	/* OBJLIB 3, 5: a function of a module by name into the table of Speech */
 	PyObject *speech = PyImport_ImportModule("Speech");
 	PyObject *routines = speech ? PyObject_GetAttrString(speech, "SpeechRoutines") : NULL;
 	PyObject *m = routines ? PyImport_ImportModule(module) : NULL;
@@ -211,11 +218,13 @@ static void Step_TimedName(int id, PyObject *args) {
 		PyErr_Print();
 		return;
 	}
-	PyObject *t = Char_ActVar("AnmTotalTime");
-	PyObject *r = t ? PyObject_Repr(t) : NULL;
-	Str_Printf(n, sizeof(n), "%s%s", name, r ? PyString_AsString(r) : "");
-	Py_XDECREF(r);
-	Py_XDECREF(t);
+	nativeVal_t t;
+	nativeBuf_t r;
+	Char_ActVar("AnmTotalTime", &t);
+	Native_BufInit(&r);
+	Native_Repr(&r, &t, NR_REPR);
+	Str_Printf(n, sizeof(n), "%s%s", name, r.p);
+	Native_BufFree(&r);
 	Char_Event(0.0, n, func);
 }
 
@@ -243,6 +252,7 @@ static const scriptStep_t char_steps[] = {
 /* the Init of a character: its file, the values it may use (more in vars when it is not NULL) */
 static void Char_InitVars(const char *name, const char *file, const char *builtin, PyObject *vars) {
 	char level[0x100];
+	/* OBJLIB 5: Init.Path is a variable of Init; OBJLIB 6: the .def runner takes its $names as a dict */
 	Script_GetString("Init", "Path", level, sizeof(level));
 	for (char *p = level; *p; p++) {
 		if (*p >= 'a' && *p <= 'z') {
@@ -404,23 +414,60 @@ static PyObject *Police_LoadSirenActs(PyObject *self, PyObject *args) {
 	return Char_Callback("chars/police.def", police_def, "LoadSirenActs", args);
 }
 
+/* text + frame of the script into v (Native_Free it) */
+static byte Gear_Cat(const char *text, const nativeVal_t *frame, nativeVal_t *v) {
+	nativeVal_t t;
+	Native_SetStr(&t, text);
+	return Native_Arith('+', &t, frame, v);
+}
+
+/* the two events of DropMissileEvent: SAct.GetAct("TimeOfFrame" + frame), then SetAct of AddEventAtTime, EventName
+ * (name + frame) and EventFunc */
+static byte Gear_MissileEvents(const char *const what[2][2], const nativeVal_t *frame) {
+	for (int i = 0; i < 2; i++) {
+		nativeVal_t key, t, v;
+		const char *k;
+		if (!Gear_Cat("TimeOfFrame", &frame[i], &key)) {
+			return 0;
+		}
+		byte ok = Native_ArgStr(&key, 1, &k);
+		if (ok) {
+			Native_ActVar(k, &t);
+			Native_ActSet("AddEventAtTime", &t);
+			Native_Free(&t);
+		}
+		Native_Free(&key);
+		if (!ok || !Gear_Cat(what[i][0], &frame[i], &v)) {
+			return 0;
+		}
+		Native_ActSet("EventName", &v);
+		Native_Free(&v);
+		Native_SetStr(&v, what[i][1]);
+		Native_ActSet("EventFunc", &v);
+	}
+	return 1;
+}
+
 /* Gear.DropMissileEvent(LoadFrame, DropFrame): the events of loading and shooting the missile on the current action
  * at the two frames (texts, "TimeOfFrame" + LoadFrame like the script); gear.def writes its own two events */
 static PyObject *Gear_DropMissileEvent(PyObject *self, PyObject *args) {
 	static const char *const what[2][2] = { { "LoadMissile", "!GearShootLoad" }, { "DropMissile", "!GearShoot" } };
-	PyObject *frame[2];
-	scriptFrame_t f = { 0 };
+	PyObject *o[2];
+	nativeVal_t frame[2];
 	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &frame[0], &frame[1])) {
+	if (!PyArg_ParseTuple(args, "OO", &o[0], &o[1])) {
 		return NULL;
 	}
-	for (int i = 0; i < 2 && !f.failed; i++) {
-		PyObject *t = Sf_Ask(&f, "SAct", "GetAct", "(O)", Sf_Cat(&f, "sO", "TimeOfFrame", frame[i]));
-		Sf_Ask(&f, "SAct", "SetAct", "(sO)", "AddEventAtTime", t);
-		Sf_Ask(&f, "SAct", "SetAct", "(sO)", "EventName", Sf_Cat(&f, "sO", what[i][0], frame[i]));
-		Sf_Ask(&f, "SAct", "SetAct", "(ss)", "EventFunc", what[i][1]);
+	for (int i = 0; i < 2; i++) {
+		/* OBJLIB 7: a value without a native form is refused by the + below as None is */
+		if (!Native_FromPyAny(o[i], &frame[i])) {
+			Native_SetNone(&frame[i]);
+		}
 	}
-	return Sf_None(&f);
+	byte ok = Gear_MissileEvents(what, frame);
+	Native_Free(&frame[0]);
+	Native_Free(&frame[1]);
+	return ok ? Py_ReturnNone() : NULL;
 }
 
 PyMethodDef g_GearDefFuncs[] = {
