@@ -766,9 +766,13 @@ byte Sf_Exec(scriptFrame_t *f, PyObject *code, const char *module, PyObject *loc
 		}
 		return !f->failed;
 	}
-	/* STAGE 7: a line in another form (the console, a hand-edited save, a mod) becomes Script_NotRead's error when the
-	 * interpreter goes */
+	/* STAGE 7: a line in another form (the console, a hand-edited save, a mod) is Script_NotRead's error in the build
+	 * without the interpreter */
+#ifdef SCRAP_NO_PYTHON
+	return Sf_Keep(f, Script_NotRead("exec", s)) != NULL;
+#else
 	return Sf_Keep(f, PyRun_String((char *)s, Py_file_input, g, locals)) != NULL;
+#endif
 }
 
 PyObject *Sf_Eval(scriptFrame_t *f, PyObject *text, const char *module) {

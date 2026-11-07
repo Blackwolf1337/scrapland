@@ -21,10 +21,15 @@
 #include "scrap/world.h"
 
 /*
- * STAGE 7 of the removal of the interpreter: set CONSOLE_PYTHON to 0. Until then a line the table does not know runs
- * as Python (a "/command" as QuickConsole.command(args), any other line as a Python statement), as before the table.
+ * STAGE 7 of the removal of the interpreter: CONSOLE_PYTHON is 0 in the build without it (SCRAP_NO_PYTHON). Until then
+ * a line the table does not know runs as Python (a "/command" as QuickConsole.command(args), any other line as a
+ * Python statement), as before the table.
  */
+#ifdef SCRAP_NO_PYTHON
+#define CONSOLE_PYTHON 0
+#else
 #define CONSOLE_PYTHON 1
+#endif
 
 #define CON_COLOR_OUT 0xff0000		/* the color of Python's print (Scrap.ConsoleOut) */
 #define CON_MAXARGS 9

@@ -1333,7 +1333,8 @@ static PyObject *Mf_SuperDealEnd(PyObject *args, const char *var, byte victory) 
 		if (code) {
 			Mf_RunCode(&f, code, g, locals);
 		} else {
-			/* STAGE 7: an unknown text becomes a logged error when the interpreter goes */
+			/* STAGE 7: an unknown text goes to the reader of Sf_Exec, which raises Script_NotRead's error for it in
+			 * the build without the interpreter */
 			Sf_Exec(&f, cad, MF, locals);
 		}
 	}

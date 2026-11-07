@@ -7,6 +7,10 @@
 int PyRun_ScrapString(const char *command);
 void Py_FiniObjects(void);
 
+/* SCRAP_NO_PYTHON (src/python/nopy): sets exc "<what>: no Python interpreter in this build" unless an error is set
+ * already; NULL */
+void *Py_NoInterpreter(PyObject *exc, const char *what);
+
 /* the parts of Py_FiniObjects in the files whose statics they free */
 void _PyDict_FiniDummy(void);
 void _PyString_FiniInterned(void);

@@ -235,14 +235,19 @@ static PyObject *It_WeapVar(PyObject *obj, const char *prefix, PyObject *weap, P
 		return Script_HSet(obj, name, Script_Ref(value)) ? Py_ReturnNone() : NULL;
 	}
 	/* STAGE 7: only a weapon number that is no int >= 0 (a call from the console; the item scripts pass 0 to 5) runs
-	 * the text through the interpreter; it becomes an error when the interpreter goes */
+	 * the text through the interpreter; it is Script_NotRead's error in the build without it */
 	char head[0x20];
 	Str_Printf(head, sizeof(head), "obj.%s", prefix);
 	PyObject *m = PyImport_ImportModule("Items"), *r = m ? PyObject_Repr(weap) : NULL;
 	PyObject *text = r ? Script_SPlus(head, r) : NULL;
 	text = text && rest ? Script_PlusS(text, rest) : text;
+#ifdef SCRAP_NO_PYTHON
+	(void)loc;
+	PyObject *v = text ? Script_NotRead("Items.BaseOnTakeUpgrade", PyString_AsString(text)) : NULL;
+#else
 	PyObject *v = text ? PyRun_String(PyString_AsString(text), rest ? Py_file_input : Py_eval_input,
 		PyModule_GetDict(m), loc) : NULL;
+#endif
 	Py_XDECREF(text);
 	Py_XDECREF(r);
 	Py_XDECREF(m);

@@ -112,6 +112,12 @@ target_include_directories(scrapcode PRIVATE ${SHADER_DIR} ${FFMPEG_DIR}/include
 # Python 1.5.2 for ScrapC.exe from third_party/python-1.5.2 (unchanged), configured like the one in Scrap.exe: our
 # config.h and inittab, pyshim.h for its libc (the exe's C runtime and the engine's Python pool) and the files of
 # src/python that add the engine's changes around the vendored ones (docs/standalone.md)
+# SCRAP_NO_PYTHON (stage 7 of the removal of Python, docs/scripts.md): the library without the interpreter. No
+# parser, tokenizer, grammar, compiler or bytecode loop, no import of .py/.pyc files, no PyRun_*; eval, execfile,
+# compile and input of the builtins and code objects of marshal and new raise. The object library stays. The files
+# of src/python/nopy wrap the vendored ones that keep a part, with the references to what is gone made refusals;
+# --gc-sections drops the rest of them (the bytecode loop, the runners, the compiler, the frame functions).
+option(SCRAP_NO_PYTHON "build without the Python interpreter (only the object library of Python 1.5.2)" OFF)
 set(PY152 third_party/python-1.5.2)
 add_library(python152 STATIC
 	src/python/classobject.c
@@ -127,7 +133,6 @@ add_library(python152 STATIC
 	${PY152}/Modules/getbuildinfo.c
 	${PY152}/Modules/_localemodule.c
 	${PY152}/Modules/mathmodule.c
-	${PY152}/Modules/newmodule.c
 	${PY152}/Modules/regexmodule.c
 	${PY152}/Modules/regexpr.c
 	${PY152}/Modules/signalmodule.c
@@ -148,18 +153,7 @@ add_library(python152 STATIC
 	${PY152}/Objects/sliceobject.c
 	${PY152}/Objects/tupleobject.c
 	${PY152}/Objects/typeobject.c
-	${PY152}/Parser/acceler.c
-	${PY152}/Parser/bitset.c
-	${PY152}/Parser/grammar1.c
-	${PY152}/Parser/listnode.c
 	${PY152}/Parser/myreadline.c
-	${PY152}/Parser/node.c
-	${PY152}/Parser/parser.c
-	${PY152}/Parser/parsetok.c
-	${PY152}/Parser/tokenizer.c
-	${PY152}/Python/bltinmodule.c
-	${PY152}/Python/ceval.c
-	${PY152}/Python/compile.c
 	${PY152}/Python/errors.c
 	${PY152}/Python/frozen.c
 	${PY152}/Python/getargs.c
@@ -168,9 +162,7 @@ add_library(python152 STATIC
 	${PY152}/Python/getmtime.c
 	${PY152}/Python/getplatform.c
 	${PY152}/Python/getversion.c
-	${PY152}/Python/graminit.c
 	${PY152}/Python/importdl.c
-	${PY152}/Python/marshal.c
 	${PY152}/Python/modsupport.c
 	${PY152}/Python/mystrtoul.c
 	${PY152}/Python/pyfpe.c
@@ -179,6 +171,35 @@ add_library(python152 STATIC
 	${PY152}/Python/sysmodule.c
 	${PY152}/Python/traceback.c
 )
+if(SCRAP_NO_PYTHON)
+	target_sources(python152 PRIVATE
+		src/python/nopy/bltinmodule.c
+		src/python/nopy/ceval.c
+		src/python/nopy/compile.c
+		src/python/nopy/marshal.c
+		src/python/nopy/newmodule.c
+		src/python/nopy/nopy.c
+	)
+	target_compile_definitions(python152 PRIVATE SCRAP_NO_PYTHON=1)
+	target_compile_options(python152 PRIVATE -ffunction-sections -fdata-sections)
+else()
+	target_sources(python152 PRIVATE
+		${PY152}/Modules/newmodule.c
+		${PY152}/Parser/acceler.c
+		${PY152}/Parser/bitset.c
+		${PY152}/Parser/grammar1.c
+		${PY152}/Parser/listnode.c
+		${PY152}/Parser/node.c
+		${PY152}/Parser/parser.c
+		${PY152}/Parser/parsetok.c
+		${PY152}/Parser/tokenizer.c
+		${PY152}/Python/bltinmodule.c
+		${PY152}/Python/ceval.c
+		${PY152}/Python/compile.c
+		${PY152}/Python/graminit.c
+		${PY152}/Python/marshal.c
+	)
+endif()
 if(WIN32)
 	# the registry lookup of modules and the DLL handle of the Windows build
 	target_sources(python152 PRIVATE ${PY152}/PC/dl_nt.c ${PY152}/PC/import_nt.c)
@@ -216,4 +237,8 @@ else()
 	target_link_libraries(ScrapC PRIVATE scrapcode python152 ${FFMPEG_LIBS} ${SDL3_LIB} m dl pthread)
 	# the FFmpeg libraries next to the game
 	set_target_properties(ScrapC PROPERTIES BUILD_RPATH "$ORIGIN" INSTALL_RPATH "$ORIGIN")
+endif()
+if(SCRAP_NO_PYTHON)
+	target_compile_definitions(scrapcode PUBLIC SCRAP_NO_PYTHON=1)
+	target_link_options(ScrapC PRIVATE -Wl,--gc-sections)
 endif()

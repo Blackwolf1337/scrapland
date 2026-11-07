@@ -7,6 +7,9 @@ SCRAP_TEST_CHANNEL=1 and no Python of the test.
   run.py collect <game folder> <timeout>   the answers into <game folder>/sdtest.out (the transforms of a third field
                                            done here), then the interpreter checks (sdpy.py) through the channel's py
                                            command (STAGE 7: they go with the interpreter), their lines, then done.
+                                           With GOLDEN_NOPY=1 (a build without the interpreter, SCRAP_NO_PYTHON) the
+                                           interpreter checks are skipped: done follows the API checks, and
+                                           <game folder>/sdtest.expected gets the API part of the stored output.
 """
 import os
 import sys
@@ -81,6 +84,13 @@ def collect(game, timeout):
             a = '%s = %s' % (name, transform(kind, value))
         out.append(a)
     out += answers[i:]
+    if os.environ.get('GOLDEN_NOPY') == '1':
+        with open(os.path.join(HERE, 'sdtest.out')) as f:
+            stored = f.read().split('\n')
+        for name, lines in (('sdtest.out', out), ('sdtest.expected', stored[:len(out)])):
+            with open(os.path.join(game, name), 'w') as f:
+                f.write('\n'.join(lines + ['done']) + '\n')
+        return
     with open(os.path.join(game, 'sdtest.out'), 'w') as f:
         f.write('\n'.join(out) + '\n')
     r = channel.send(game, "py\nOUT = 'sdpy.out'\nexecfile('sdlib.py')\nexecfile('sdpy.py')\nfinish()\nresult = 'ok'",
