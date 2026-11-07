@@ -157,12 +157,6 @@ static byte Npc_G(const char *name, nativeVal_t *out) {
 	return Mode_G(NPC, name, out);
 }
 
-/* Scrap.GetSaveVar(name) == text */
-static byte Npc_SaveIs(const char *name, const char *text) {
-	const char *v = SaveVar_Get(name);
-	return v && !strcmp(v, text);
-}
-
 /* v is one of the texts (NULL ends them) */
 static byte Npc_In(const nativeVal_t *v, const char *const *texts) {
 	for (; *texts; texts++) {
@@ -181,12 +175,6 @@ static int Npc_Count(const nativeVal_t *v) {
 	int n = Mode_Loop(&c);
 	Native_Free(&c);
 	return n;
-}
-
-/* h.var as any value into a slot that may hold one (it is freed first) */
-static byte Npc_Attr(const nativeVal_t *h, const char *var, nativeVal_t *slot) {
-	Native_Free(slot);
-	return Mode_VObj(h, var, slot);
 }
 
 /* lst.insert(0, v) of a list of the function */
@@ -474,8 +462,8 @@ static byte Npc_CreateChar(const nativeVal_t *csp, const nativeVal_t *fixed, nat
 	} else if (fix == 0) {
 		ok = Mode_VObj(c, "Name", n) && LvN_SetOnFloor(n);
 	}
-	ok = ok && Npc_AssignAttrib(c) && Npc_Attr(c, "Name", n) && Native_CallMod("InPolice", "Include", NULL, "v", n) &&
-		Npc_Attr(c, "Name", n) && Npc_CharNPCInclude(n) && Mode_VObj(csp, "repos", repos);
+	ok = ok && Npc_AssignAttrib(c) && Mode_VObjRead(c, "Name", n) && Native_CallMod("InPolice", "Include", NULL, "v", n) &&
+		Mode_VObjRead(c, "Name", n) && Npc_CharNPCInclude(n) && Mode_VObj(csp, "repos", repos);
 	ok = ok && (!Native_True(repos) || (Npc_G("Repos", rv) && Mode_VSet(c, "AI_Repos", rv))) &&
 		Mode_VObj(csp, "CallbackFunc", funcs);
 	for (int i = 0; ok && i < Npc_Count(funcs); i++) {
@@ -566,7 +554,7 @@ static byte Npc_Respawn(const nativeVal_t *cspArg) {
 		swap = on < 0 ? -1 : !on;
 	}
 	if (swap > 0) {
-		swap = Mode_ModGet(NPC, "CharRes", res) && Npc_Attr(csp, "Name", n) && Native_Slice(n, 4, INT_MAX, tail) &&
+		swap = Mode_ModGet(NPC, "CharRes", res) && Mode_VObjRead(csp, "Name", n) && Native_Slice(n, 4, INT_MAX, tail) &&
 			LvN_Cat("Police", tail, key) && Mode_Sub(res, key, v) ? 1 : -1;
 		if (swap > 0) {
 			Native_Free(csp);
@@ -574,12 +562,12 @@ static byte Npc_Respawn(const nativeVal_t *cspArg) {
 			Native_SetNone(v);
 		}
 	}
-	int dorepos = swap >= 0 && Mode_UsrHandle(usr) && Npc_Attr(csp, "repos", repos) ? Native_True(repos) : -1;
+	int dorepos = swap >= 0 && Mode_UsrHandle(usr) && Mode_VObjRead(csp, "repos", repos) ? Native_True(repos) : -1;
 	if (dorepos > 0) {
 		dorepos = Native_True(usr);
 	}
 	if (dorepos > 0) {
-		dorepos = Mode_VObj(usr, "Pos", upos) && Npc_Attr(csp, "ActCtrl", act) &&
+		dorepos = Mode_VObj(usr, "Pos", upos) && Mode_VObjRead(csp, "ActCtrl", act) &&
 			Native_CallMod("SAI", "GetReposCharPos", rpos, "vv", upos, act) ? Native_True(rpos) : -1;
 		if (dorepos > 0 && !Mode_VSet(csp, "Pos", rpos)) {
 			dorepos = -1;
@@ -605,7 +593,7 @@ static byte Npc_Respawn(const nativeVal_t *cspArg) {
 	}
 	int later = hit;
 	if (later == 0) {
-		int in = Npc_Attr(csp, "ActCtrl", act) && Npc_G("RespawnChars", chars) ? Mode_In(chars, act) : -1;
+		int in = Mode_VObjRead(csp, "ActCtrl", act) && Npc_G("RespawnChars", chars) ? Mode_In(chars, act) : -1;
 		later = in < 0 ? -1 : in ? 0 : Mode_AlarmOn();
 	}
 	if (later) {
@@ -621,7 +609,7 @@ static byte Npc_Respawn(const nativeVal_t *cspArg) {
 			Native_CallMod("SAI", "GetReposCharPos", NULL, "vvv", p, a, n);
 	}
 	Native_Free(v);
-	int target = ok && Npc_Attr(c, "Name", n) && Native_CallMod("MissionsFuncs", "IsCharMissionObjective", v, "v", n) ?
+	int target = ok && Mode_VObjRead(c, "Name", n) && Native_CallMod("MissionsFuncs", "IsCharMissionObjective", v, "v", n) ?
 		Native_True(v) : -1;
 	if (target > 0) {
 		if (Native_CallMod("MissionsFuncs", "ActivateTarget", NULL, "vi", c, 1L)) {
@@ -665,8 +653,8 @@ static byte Npc_CheckActualEntity(const nativeVal_t *ename) {
 
 /* MercsHired(): one of the three mercenaries is a friend of the player */
 static byte Npc_MercsHired(void) {
-	return !(Npc_SaveIs("MercFriends.MercenaryA_Smartie", "0") && Npc_SaveIs("MercFriends.MercenaryB_Dumber", "0") &&
-		Npc_SaveIs("MercFriends.MercenaryC_Brutus", "0"));
+	return !(LvN_SaveIs("MercFriends.MercenaryA_Smartie", "0") && LvN_SaveIs("MercFriends.MercenaryB_Dumber", "0") &&
+		LvN_SaveIs("MercFriends.MercenaryC_Brutus", "0"));
 }
 
 /* IncludeSubOptions(option): the sub options that contain option move from subOptionsList to optionsList */
@@ -816,7 +804,7 @@ static byte Npc_ClassifyOptions(const nativeVal_t *type, nativeVal_t *out) {
 	if (d < 0) {
 		return Mode_Done(&t, 0);
 	}
-	if (!Native_IsStr(type, "Bishop") || Npc_SaveIs("Player.InfiniteLives", "0")) {
+	if (!Native_IsStr(type, "Bishop") || LvN_SaveIs("Player.InfiniteLives", "0")) {
 		Native_Free(key);
 		int c = Mode_Cat(&t, key, 4, Mode_S(&t, "Generics_Special"), type, Mode_S(&t, "_"), Mode_S(&t, "1Opt")) ?
 			Npc_Entries(key, special) : -1;
@@ -865,7 +853,7 @@ static byte Npc_PlayOption(const nativeVal_t *opt, const nativeVal_t *msg, const
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (!Npc_SaveIs("Player.InfiniteLives", "0")) {
+	if (!LvN_SaveIs("Player.InfiniteLives", "0")) {
 		return Mode_Done(&t, 1);
 	}
 	if (n < 0) {
@@ -944,7 +932,7 @@ static byte Npc_GenericNPCSpeech(const nativeVal_t *usr, const nativeVal_t *chna
 			return Mode_Done(&t, said == 0);
 		}
 		int n = 0;
-		if (Npc_SaveIs("GameAct", "Epilogue")) {
+		if (LvN_SaveIs("GameAct", "Epilogue")) {
 			if (Native_IsStr(type, "Bishop") || Native_IsStr(type, "Mercs")) {
 				n = Mode_Cat(&t, key, 4, Mode_S(&t, "Generics_Special"), type, Mode_S(&t, "_"), Mode_S(&t, "1Opt")) &&
 					Native_CallMod("Scrap", "GetLangEntries", special, "v", key) && Mode_Item(special, 0, first) ? 0 : -1;
@@ -961,7 +949,7 @@ static byte Npc_GenericNPCSpeech(const nativeVal_t *usr, const nativeVal_t *chna
 		if (n < 0) {
 			return Mode_Done(&t, 0);
 		}
-		if (Npc_SaveIs("Player.InfiniteLives", "0") && (!Native_IsStr(type, "Mercs") || !Npc_MercsHired())) {
+		if (LvN_SaveIs("Player.InfiniteLives", "0") && (!Native_IsStr(type, "Mercs") || !Npc_MercsHired())) {
 			return Mode_Done(&t, Npc_AddChallenge(ch, usr, n));
 		}
 		return Mode_Done(&t, 1);

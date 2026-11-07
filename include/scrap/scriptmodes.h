@@ -802,5 +802,20 @@ void Mode_ModPutS(const char *module, const char *var, const char *s);
  * error (any error set after the compare, also for equal values); and against the int i */
 int Mode_CmpOp(const nativeVal_t *a, const nativeVal_t *b, char op);
 int Mode_CmpOpI(const nativeVal_t *a, long i, char op);
+/* h.var as any value (Mode_VObj) into a slot that may hold one (it is freed first) */
+byte Mode_VObjRead(const nativeVal_t *h, const char *var, nativeVal_t *slot);
+/* the global name of module (a list) .append(h.Name), in place */
+byte Mode_AppendName(const char *module, const char *name, const nativeVal_t *h);
+/* h.Ang = (0, x, 0) */
+byte Mode_SetAng(const nativeVal_t *h, const nativeVal_t *x);
+/* the system message (Mode_SpeechMsg) of the language text of key */
+byte Mode_LangMsg(const char *key);
+/* an adapter of a script function of two arguments that does nothing (the arity error of "OO", None) */
+PyObject *Mode_PyNone2(PyObject *self, PyObject *args);
+/* Flag.var = v with Flag the global of the module (OBJLIB 7: the flag is the entity handle in the module dict) */
+byte Mode_FlagSet(const char *module, const char *var, const nativeVal_t *v);
+/* Scrap.GetEntity(Scrap.GetCam(0)) through the seam of GetEntity; its EntityLink = link */
+byte Mode_Cam0(nativeVal_t *out);
+byte Mode_CamLink(const nativeVal_t *link);
 
 #endif

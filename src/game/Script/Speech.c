@@ -121,15 +121,6 @@ static byte Sp_Entity(const char *var, nativeVal_t *out) {
 	return ok;
 }
 
-/* the entity of camera 0 */
-static byte Sp_Cam(nativeVal_t *out) {
-	nativeVal_t name;
-	Mode_CamName(0, &name);
-	byte ok = Mode_EntitySeam(&name, out);
-	Native_Free(&name);
-	return ok;
-}
-
 /* Scrap.UsrEntity(0) */
 static byte Sp_Usr(nativeVal_t *out) {
 	Native_SetNone(out);
@@ -387,7 +378,7 @@ static byte Sp_NormalAbortSpeech(void) {
 	if (listen < 0) {
 		return Mode_Done(&t, 0);
 	}
-	if (listen && (!Sp_Entity("NPCName", ch) || !Sp_Cam(cam) || !Sp_HSetF(cam, "VSpeed", 1.1) || !Sp_HSetF(cam, "HSpeed", 1.1) ||
+	if (listen && (!Sp_Entity("NPCName", ch) || !Mode_Cam0(cam) || !Sp_HSetF(cam, "VSpeed", 1.1) || !Sp_HSetF(cam, "HSpeed", 1.1) ||
 		(Native_True(ch) && (!Sp_RotAng(me, ch, vang) || !Sp_Turned(vang, 25, turned) || !Mode_VSet(me, "ViewAng", turned) ||
 		!Sp_HSetI(me, "DisplAng", 25))))) {
 		return Mode_Done(&t, 0);
@@ -567,7 +558,7 @@ static int Sp_SetPlayerToTalk(const nativeVal_t *me, const nativeVal_t *ch) {
 	/* globals().get('TalkNI') == None or globals().get('CurrNI') == 0 */
 	byte hasNI = Sp_Has("TalkNI", ni), hasCur = Sp_Has("CurrNI", cur);
 	if (!hasNI || ni->type == NV_NONE || (hasCur && Sp_NumCmp(cur, 0) == 0)) {
-		int fcam = Sp_Cam(cam) ? Mode_VIsType(cam, "FCam") : -1;
+		int fcam = Mode_Cam0(cam) ? Mode_VIsType(cam, "FCam") : -1;
 		/* the script keeps the speeds in a local it never uses */
 		if (fcam < 0 || (fcam && (!Mode_VObj(cam, "VSpeed", v) || !Mode_VObj(cam, "HSpeed", h) || !Sp_HSetF(cam, "VSpeed", 1.1) ||
 			!Sp_HSetF(cam, "HSpeed", 1.1)))) {
@@ -1003,7 +994,7 @@ static int Sp_DoRemote(void) {
 	} else if ((Mode_ActionSetName(set), Native_IsStr(set, "Inactive")) || e->type == NV_NONE) {
 		doit = 0;
 		if (Mode_ModGetI("Init", "HasSuperDeal", 0) && e->type == NV_NONE) {
-			if (!Sp_Cam(cam)) {
+			if (!Mode_Cam0(cam)) {
 				doit = -1;
 			} else if (Native_True(cam)) {
 				int fcam = Sp_HIs(cam, "Type", "FCam");

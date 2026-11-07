@@ -28,12 +28,6 @@
 /* a function of the module through its global (a mission, a net weapon or a case may replace it) */
 #define VEH_OWN(name, out, ...) Native_CallGlobal(VEH, name, out, __VA_ARGS__)
 
-/* the value of o.var into slot (freed first; the errors of the attribute) */
-static byte Veh_Attr(const nativeVal_t *o, const char *var, nativeVal_t *slot) {
-	Native_Free(slot);
-	return Mode_VObj(o, var, slot);
-}
-
 /* if SVec.Mod(Vel) > 1000: Vel = SVec.Prod(SVec.Norm(Vel), 1000) */
 static byte Veh_Limit(const nativeVal_t *vel, nativeVal_t *out) {
 	nativeVal_t mod, norm, k;
@@ -101,8 +95,8 @@ static byte Veh_Boom(const nativeVal_t *pos, const nativeVal_t *vel, const nativ
 		}
 		soundPos = at;
 	}
-	return Mode_Done(&t, Mode_G(VEH, "ShipExplosionSoundVol", vol) && Veh_Attr(e, var, radius) &&
-		Veh_Att(radius, "ShipExplosionSoundAttIni", "ShipExplosionSoundAttIniRadiusFactor", ini) && Veh_Attr(e, var, radius) &&
+	return Mode_Done(&t, Mode_G(VEH, "ShipExplosionSoundVol", vol) && Mode_VObjRead(e, var, radius) &&
+		Veh_Att(radius, "ShipExplosionSoundAttIni", "ShipExplosionSoundAttIniRadiusFactor", ini) && Mode_VObjRead(e, var, radius) &&
 		Veh_Att(radius, "ShipExplosionSoundAttEnd", "ShipExplosionSoundAttEndRadiusFactor", end) &&
 		Native_CallMod("SSound", "PlaySound", NULL, "vsvvvi", soundPos, sound, vol, ini, end, 0L));
 }
@@ -341,7 +335,7 @@ static byte Veh_Hull(const nativeVal_t *v, const nativeVal_t *name, const native
 	} else if (!Veh_ModelFile(&t, "Models/Vehicles/Ships/", model, file)) {
 		return Mode_Done(&t, 0);
 	}
-	if (!Mode_VModel(l, file) || !Veh_Attr(v, "WRadius", wr) || !Mode_VSet(l, "Radius", wr) || !Veh_Attr(v, "WRadius", wr) ||
+	if (!Mode_VModel(l, file) || !Mode_VObjRead(v, "WRadius", wr) || !Mode_VSet(l, "Radius", wr) || !Mode_VObjRead(v, "WRadius", wr) ||
 		!Mode_VSet(l, "TopRadius", wr) || !LvN_SetI(l, "RadiusGrow", 0) || !LvN_SetS(l, "OnHit", "Vehicles.DumbShipHit") ||
 		!Veh_SetFX(l, "DumbMotor") || !Veh_MotorLoop(l) || !Veh_Jitter(pos, at)) {
 		return Mode_Done(&t, 0);
@@ -528,14 +522,14 @@ static byte Veh_FreeHunters(const nativeVal_t *looser, const nativeVal_t *winner
 		return Mode_Done(&t, 0);
 	}
 	while (Native_True(e)) {
-		if (!Veh_Attr(e, "NextInList", next) || !Veh_Attr(e, "Name", ename)) {
+		if (!Mode_VObjRead(e, "NextInList", next) || !Mode_VObjRead(e, "Name", ename)) {
 			return Mode_Done(&t, 0);
 		}
 		int other = Mode_Cmp(ename, "!=", winner);
 		if (other > 0) {
-			other = Veh_Attr(e, "AI_Target", target) ? Mode_Cmp(target, "==", looser) : -1;
+			other = Mode_VObjRead(e, "AI_Target", target) ? Mode_Cmp(target, "==", looser) : -1;
 		}
-		if (other < 0 || (other && (!LvN_SetS(e, "EntityList", "Traffic") || !Veh_Attr(e, "Name", ename) ||
+		if (other < 0 || (other && (!LvN_SetS(e, "EntityList", "Traffic") || !Mode_VObjRead(e, "Name", ename) ||
 			!Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 3L, ename)))) {
 			return Mode_Done(&t, 0);
 		}
@@ -700,7 +694,7 @@ static byte Veh_OnDeathN(const nativeVal_t *looser, const nativeVal_t *winner) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *v = Mode_V(&t), *x = Mode_V(&t), *split = Mode_V(&t), *cb = Mode_V(&t);
 	if (!Mode_Import("string") || !Mode_Import("Init") || !Mode_Import("Parking") || !Mode_Import("Speech") || !Mode_EntitySeam(looser, v) ||
-		!Veh_Attr(v, "Pos", x) || !Veh_Attr(v, "Ang", x) || !Veh_Attr(v, "Vel", x) || !Veh_Attr(v, "Model", x) ||
+		!Mode_VObjRead(v, "Pos", x) || !Mode_VObjRead(v, "Ang", x) || !Mode_VObjRead(v, "Vel", x) || !Mode_VObjRead(v, "Model", x) ||
 		!VEH_OWN("OnClientDeath", NULL, "vv", looser, winner)) {
 		return Mode_Done(&t, 0);
 	}
@@ -743,7 +737,7 @@ static byte Veh_SetActiveCamN(const nativeVal_t *plyName, const nativeVal_t *cam
 	nativeVal_t *cam = Mode_V(&t), *ply = Mode_V(&t), *cname = Mode_V(&t), *pname = Mode_V(&t);
 	return Mode_Done(&t, Mode_EntitySeam(camName, cam) && Mode_EntitySeam(plyName, ply) && Mode_VObj(cam, "Name", cname) &&
 		Native_CallMod("Scrap", "SetCam", NULL, "vv", id, cname) && LvN_SetS(cam, "OnSwitch", "Vehicles.SwitchView") &&
-		Mode_VObj(ply, "Name", pname) && Mode_VSet(cam, "MainTarget", pname) && Veh_Attr(ply, "Name", pname) &&
+		Mode_VObj(ply, "Name", pname) && Mode_VSet(cam, "MainTarget", pname) && Mode_VObjRead(ply, "Name", pname) &&
 		Mode_VSet(cam, "Target", pname) && LvN_SetI(cam, "FreeCam", 0));
 }
 

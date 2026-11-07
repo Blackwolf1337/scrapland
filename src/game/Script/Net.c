@@ -92,12 +92,6 @@ static PyObject *Net_Spectate(PyObject *self, PyObject *args) {
 	return Mode_Result(ok);
 }
 
-static PyObject *Net_ClientCreateDef(PyObject *self, PyObject *args) {
-	PyObject *name, *res;
-	(void)self;
-	return PyArg_ParseTuple(args, "OO", &name, &res) ? Py_ReturnNone() : NULL;
-}
-
 static PyObject *Net_ClientJoinDef(PyObject *self, PyObject *args) {
 	PyObject *a[11];
 	(void)self;
@@ -120,8 +114,8 @@ static PyObject *Net_LoadSinglePlayer(PyObject *self, PyObject *args) {
 PyMethodDef g_NetMethods[] = {
 	{ "PurgeServerMapList", Net_PurgeServerMapList, 1, NULL },
 	{ "Spectate", Net_Spectate, 1, NULL },
-	{ "ClientCreateDef", Net_ClientCreateDef, 1, NULL },
-	{ "ClientAfterCreateDef", Net_ClientCreateDef, 1, NULL },
+	{ "ClientCreateDef", Mode_PyNone2, 1, NULL },
+	{ "ClientAfterCreateDef", Mode_PyNone2, 1, NULL },
 	{ "ClientJoinDef", Net_ClientJoinDef, 1, NULL },
 	{ "LoadSinglePlayer", Net_LoadSinglePlayer, 1, NULL },
 	{ NULL, NULL, 0, NULL },

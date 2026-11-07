@@ -300,16 +300,6 @@ static int WT_IsMulti(void) {
 	return r;
 }
 
-/* DoNothing(id, control) */
-static PyObject *WT_DoNothing(PyObject *self, PyObject *args) {
-	PyObject *id, *control;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &id, &control)) {
-		return NULL;
-	}
-	return Py_ReturnNone();
-}
-
 /* ShowWeightPrediction(id, control, lostfocus): the mass and boost after loading or unloading the slot; whether the
  * slot was loaded */
 static byte WT_WeightPrediction(int id, const nativeVal_t *control, nativeVal_t *out) {
@@ -1491,7 +1481,7 @@ static byte WT_HideWeaponsPanel(int id) {
 WT_I(WT_HideWeaponsPanelPy, WT_HideWeaponsPanel(id))
 
 PyMethodDef g_WeaponsTabMethods[] = {
-	{ "DoNothing", WT_DoNothing, 1, NULL },
+	{ "DoNothing", Mode_PyNone2, 1, NULL },
 	{ "ShowWeightPrediction", WT_ShowWeightPrediction, 1, NULL },
 	{ "HideWeightPrediction", WT_HideWeightPrediction, 1, NULL },
 	{ "ShowWeaponDesc", WT_ShowWeaponDescPy, 1, NULL },

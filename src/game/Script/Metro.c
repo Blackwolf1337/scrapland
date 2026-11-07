@@ -532,13 +532,6 @@ static PyObject *Metro_CalculateMissionMap(PyObject *self, PyObject *args) {
 	return PyArg_ParseTuple(args, "O", &name) ? Mode_Result(Metro_MissionMap()) : NULL;
 }
 
-/* WrongOpt(id, control), DoNothing(id, control): a station the player cannot go to */
-static PyObject *Metro_WrongOpt(PyObject *self, PyObject *args) {
-	PyObject *id, *control;
-	(void)self;
-	return PyArg_ParseTuple(args, "OO", &id, &control) ? Py_ReturnNone() : NULL;
-}
-
 static PyObject *Metro_RecoverUsrPy(PyObject *self, PyObject *args) {
 	PyObject *name, *event, *time;
 	(void)self;
@@ -703,13 +696,13 @@ static PyObject *Metro_ObjInitializator(PyObject *self, PyObject *args) {
 
 PyMethodDef g_MetroMethods[] = {
 	{ "CalculateMissionMap", Metro_CalculateMissionMap, 1, NULL },
-	{ "WrongOpt", Metro_WrongOpt, 1, NULL },
+	{ "WrongOpt", Mode_PyNone2, 1, NULL },
 	{ "RecoverUsr", Metro_RecoverUsrPy, 1, NULL },
 	{ "OutDoorInitializator", Metro_OutDoorInitializator, 1, NULL },
 	{ "SetUsrParams", Metro_SetUsrParamsPy, 1, NULL },
 	{ "UseMetro", Metro_UseMetroPy, 1, NULL },
 	{ "CreateStation", Metro_CreateStation, 1, NULL },
-	{ "DoNothing", Metro_WrongOpt, 1, NULL },
+	{ "DoNothing", Mode_PyNone2, 1, NULL },
 	{ "ShowHint", Metro_ShowHintPy, 1, NULL },
 	{ "HideHint", Metro_HideHintPy, 1, NULL },
 	{ "OnUse", Metro_OnUsePy, 1, NULL },

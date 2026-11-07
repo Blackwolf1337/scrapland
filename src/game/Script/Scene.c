@@ -79,15 +79,6 @@ static byte Sc_NoText(void) {
 		Mode_SpeechText(empty, zero, full, full, full));
 }
 
-/* Scrap.GetEntity(Scrap.GetCam(0)) */
-static byte Sc_Cam(nativeVal_t *cam) {
-	nativeVal_t name;
-	Mode_CamName(0, &name);
-	byte ok = Mode_EntitySeam(&name, cam);
-	Native_Free(&name);
-	return ok;
-}
-
 /* fn(args...) with fn the global of the module read first (a level may replace it) */
 static byte Sc_Own(const char *fn, const nativeVal_t *args, int n) {
 	nativeVal_t f = { 0 };
@@ -432,7 +423,7 @@ static byte Sc_EndOfScene(const nativeVal_t *ename) {
 	nativeVal_t *actr = Mode_V(&t), *name = Mode_V(&t), *v = Mode_V(&t), *time = Mode_V(&t), *cb = Mode_V(&t);
 	Native_SetNone(none);
 	if (!Mode_Put(SC, "SceneName", NULL, none) || !Mode_StopAllSounds() || !Mode_GVarSetI("ForceNoActionMusic", 0) ||
-		!Mode_StopVoice(Mode_I(&t, 0)) || !Mode_StopVoice(Mode_I(&t, 1)) || !Mode_StopVoice(Mode_I(&t, 2)) || !Sc_Cam(cam) ||
+		!Mode_StopVoice(Mode_I(&t, 0)) || !Mode_StopVoice(Mode_I(&t, 1)) || !Mode_StopVoice(Mode_I(&t, 2)) || !Mode_Cam0(cam) ||
 		!LvN_SetS(cam, "EntityLink", "") || !Sc_Own("UnhideChars", NULL, 0) || !Sc_Del(ename) ||
 		!Native_Slice(ename, 9, INT_MAX, sname) || !Sc_G("Actors", actors) || !Mode_Sub(actors, sname, list)) {
 		return Mode_Done(&t, 0);
@@ -681,7 +672,7 @@ static byte Sc_Play(const nativeVal_t *cls) {
 	Native_SetInt(Native_Append(ang), 0);
 	Native_Free(name);
 	if (!Mode_VSet(l, "Ang", ang) || !Mode_Cat(&t, name, 2, Mode_S(&t, "Scene"), cls) || !Mode_VSet(l, "ActCtrl", name) ||
-		!Sc_Cam(cam) || !Mode_VObj(l, "Name", lname) || !Mode_VSet(cam, "EntityLink", lname) || !Sc_Own("HideChars", NULL, 0) ||
+		!Mode_Cam0(cam) || !Mode_VObj(l, "Name", lname) || !Mode_VSet(cam, "EntityLink", lname) || !Sc_Own("HideChars", NULL, 0) ||
 		!LvN_ModGet("Init", "Outdoor", outdoor) || (Native_True(outdoor) && !Sc_Own("HideVehiclesToo", NULL, 0)) ||
 		!Mode_UsrHandle(usr) || !Mode_Put(SC, "usr", NULL, usr) || !Mode_GVarSetI("PauseInactivityTime", 1) ||
 		!Mode_GVarSetI("CameraScene", 1) || !Mode_Import("Menu") || !Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L) ||
@@ -800,7 +791,7 @@ static byte Sc_EndOutDoorScene(void) {
 	} else if (!Sc_Own("UnhideChars", NULL, 0)) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, Sc_Cam(cam) && Mode_VObj(cam, "MainTarget", target) && Mode_VSet(cam, "Target", target) &&
+	return Mode_Done(&t, Mode_Cam0(cam) && Mode_VObj(cam, "MainTarget", target) && Mode_VSet(cam, "Target", target) &&
 		LvN_SetI(cam, "AddTurn", 0) && Sc_G("PrevInput", prev) && Mode_ActionSetV(prev) && Mode_Read(SC, "PrevInput", prev) &&
 		Native_CallMod("Menu", "DrawScorer", NULL, "iv", 0L, prev));
 }

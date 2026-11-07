@@ -1376,12 +1376,9 @@ static byte Bet_PreGivePlans2(void) {
 
 /* GivePlans(): the message of the new blueprints and Rusty */
 static byte Bet_GivePlans(void) {
-	nativeVal_t cad = { 0 };
-	Mode_Lang("Mission_FirstCrazyBet_SystemMessage3", &cad);
-	byte ok = Mode_SpeechMsg(&cad) && LV_CALL("Scrap", "IncSaveVar", NULL, "si", "NewBluePrintAvaliable", 2L) &&
+	return Mode_LangMsg("Mission_FirstCrazyBet_SystemMessage3") &&
+		LV_CALL("Scrap", "IncSaveVar", NULL, "si", "NewBluePrintAvaliable", 2L) &&
 		LvN_Com("Mission_FirstCrazyBet_RemoteMessage9", "Rusty", NULL, NULL, NULL) && Mode_WayPoint();
-	Native_Free(&cad);
-	return ok;
 }
 
 /* SetNextMission(): the doors open again, on to Mission_MeetArchbishop, the places of the characters */

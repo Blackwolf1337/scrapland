@@ -132,15 +132,6 @@ static byte Cm_GEmpty(const char *module, const char *name, byte del) {
 	return ok;
 }
 
-/* the global name of module (a list) .append(h.Name) */
-static byte Cm_AppendName(const char *module, const char *name, const nativeVal_t *h) {
-	nativeVal_t n;
-	Native_SetNone(&n);
-	byte ok = Mode_VGet(h, "Name", &n) && Mode_Append(module, name, &n);
-	Native_Free(&n);
-	return ok;
-}
-
 /* Vehicles.OnDeath(LooserName, WinnerName) */
 static byte Cm_OnDeath(const nativeVal_t *a) {
 	return LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1]);
@@ -201,22 +192,10 @@ static void Cm_Ints4(nativeVal_t *out, long a, long b, long c, long d) {
 	Native_SetInt(Native_Append(out), d);
 }
 
-/* h.Ang = (0, x, 0) */
-static byte Cm_SetAng(const nativeVal_t *h, const nativeVal_t *x) {
-	nativeVal_t a;
-	Native_SetEmpty(&a, NV_TUPLE);
-	Native_SetInt(Native_Append(&a), 0);
-	Native_Copy(Native_Append(&a), x);
-	Native_SetInt(Native_Append(&a), 0);
-	byte ok = Mode_VSet(h, "Ang", &a);
-	Native_Free(&a);
-	return ok;
-}
-
 /* h.Ang = (0, spw[1], 0) of a spawn position */
 static byte Cm_SpawnAng(const nativeVal_t *h, const nativeVal_t *spw) {
 	nativeVal_t y;
-	byte ok = LvN_Item(spw, 1, &y) && Cm_SetAng(h, &y);
+	byte ok = LvN_Item(spw, 1, &y) && Mode_SetAng(h, &y);
 	Native_Free(&y);
 	return ok;
 }
@@ -461,7 +440,7 @@ static byte Mickus_CreateTransports(const nativeVal_t *a, nativeVal_t *out) {
 		Native_Free(&tn);
 		ok = ok && Mode_VGet(&trans, "Name", &tn) && STATE("ividd", 3L, &tn, 0L, 2.0, 1.0) && LvN_SetS(&trans, "EntityList", "Transports");
 		Native_Free(&tn);
-		ok = ok && Cm_AppendName(DMK, "transports", &trans);
+		ok = ok && Mode_AppendName(DMK, "transports", &trans);
 		Native_Free(&name);
 		Native_Free(&trans);
 		if (!ok) {
@@ -1632,7 +1611,7 @@ static byte Race_InitTimeRace(const nativeVal_t *a, nativeVal_t *out) {
 		Wr_StartPos(Mode_I(&t, 0), 0, pos) && LvN_CreateAt(Mode_S(&t, "RaceWaypoint"), pos, "Item", l) &&
 		Mode_VModel(l, Mode_S(&t, "models/Misc/Wayp/Wayp.m3d")) && LvN_SetS(l, "OnTake", "Mission_Win1stRace.OnRaceStart") &&
 		LvN_SetI(l, "OnlyUser", 1) && LvN_SetI(l, "RadarShow", 1) && LvN_SetI(l, "Radius", 2400) && Wr_StartPos(Mode_I(&t, 0), 1, ang) &&
-		Cm_SetAng(l, ang) && Mode_Preload(Mode_S(&t, "models/misc/MeetingPoint-Race/MeetingPoint-Race.m3d")) && Mode_VGet(l, "Name", name) &&
+		Mode_SetAng(l, ang) && Mode_Preload(Mode_S(&t, "models/misc/MeetingPoint-Race/MeetingPoint-Race.m3d")) && Mode_VGet(l, "Name", name) &&
 		Mode_Put(WR, "waypointName", NULL, name);
 	Native_Free(name);
 	ok = ok && Mode_G(WR, "waypointName", name) && Cm_Waypoint(name);
@@ -1714,7 +1693,7 @@ static byte Race_OnCheckPoint(const nativeVal_t *a, nativeVal_t *out) {
 		}
 		Native_Free(i);
 		Native_Free(p);
-		if (!Mode_G(WR, "iStartPos", i) || !Wr_StartPos(i, 1, p) || !Cm_SetAng(l, p)) {
+		if (!Mode_G(WR, "iStartPos", i) || !Wr_StartPos(i, 1, p) || !Mode_SetAng(l, p)) {
 			return Mode_Done(&t, 0);
 		}
 	} else {
@@ -2127,7 +2106,7 @@ static byte Data_CreateWave(const nativeVal_t *a, nativeVal_t *out) {
 		nativeVal_t fn, name;
 		Native_SetNone(&fn);
 		Native_SetNone(&name);
-		byte ok = LV_OWN(GD, "CreateFunctionary", &fn, "") && LvN_SetS(&fn, "EntityList", "Funcs") && Cm_AppendName(GD, "funcsInWave", &fn);
+		byte ok = LV_OWN(GD, "CreateFunctionary", &fn, "") && LvN_SetS(&fn, "EntityList", "Funcs") && Mode_AppendName(GD, "funcsInWave", &fn);
 		if (ok && i == 0) {
 			Native_Free(dataPos);
 			ok = Mode_VGet(&fn, "Pos", dataPos) && Mode_VGet(&fn, "Name", &name) && Mode_Put(GD, "funcWithDataName", NULL, &name);
@@ -2216,7 +2195,7 @@ static byte Data_ReinsertFunctionaryInWave(const nativeVal_t *a, nativeVal_t *ou
 		Native_Free(&e);
 		Native_Free(&s);
 	}
-	if (!ok || !LV_OWN(GD, "CreateFunctionary", fn, "") || !LvN_SetS(fn, "EntityList", "Enemies") || !Cm_AppendName(GD, "funcsInWave", fn)) {
+	if (!ok || !LV_OWN(GD, "CreateFunctionary", fn, "") || !LvN_SetS(fn, "EntityList", "Enemies") || !Mode_AppendName(GD, "funcsInWave", fn)) {
 		return Mode_Done(&t, 0);
 	}
 	if (withData) {
@@ -2732,7 +2711,7 @@ static byte Gambler_CreateCrazyGambler(const nativeVal_t *a, nativeVal_t *out) {
 	byte ok = Mode_Import("VehiclesNPC") && Mode_Import("OutMap") && Mode_SpawnCar("CrazyGambler", 0, &h, NULL) &&
 		LvN_StdProfile(CG, "GetCrazyGamblerProfile", &h, &pd) && LvN_SetI(&h, "LaunchTaunts", 0) && LvN_SetI(&h, "Money", -1) &&
 		LvN_SetG(&h, "MPil0", CG, "pilotName") && LvN_SetS(&h, "TgType", "red") && LvN_SetS(&h, "EntityList", "Enemies") &&
-		LvN_Life(&h, CG, "GAMBLER_LIFE") && Cm_AppendName(CG, "crazyGamblers", &h) && LvN_Activate(&h, 1);
+		LvN_Life(&h, CG, "GAMBLER_LIFE") && Mode_AppendName(CG, "crazyGamblers", &h) && LvN_Activate(&h, 1);
 	Native_Free(&h);
 	Native_Free(&pd);
 	return ok;
@@ -3001,7 +2980,7 @@ static byte Porkins_CreateMayorTransport(const nativeVal_t *a, nativeVal_t *out)
 	(void)a;
 	(void)out;
 	byte ok = Pt_Transport("TVoteMayor", "MAYOR_TRANSPORT_LIFE", "Mission_DestroyPorkinsTransports.OnMayorTransportDeath", "green", &p) &&
-		Cm_AppendName(PT, "mayorTransports", &p);
+		Mode_AppendName(PT, "mayorTransports", &p);
 	Native_Free(&p);
 	return ok;
 }
@@ -3011,7 +2990,7 @@ static byte Porkins_CreatePorkinsTransport(const nativeVal_t *a, nativeVal_t *ou
 	(void)a;
 	(void)out;
 	byte ok = Pt_Transport("TVoteBishop", "BISHOP_TRANSPORT_LIFE", "Mission_DestroyPorkinsTransports.OnPorkinsTransportDeath", "red", &p) &&
-		LvN_Activate(&p, 1) && Cm_AppendName(PT, "bishopTransports", &p);
+		LvN_Activate(&p, 1) && Mode_AppendName(PT, "bishopTransports", &p);
 	Native_Free(&p);
 	return ok;
 }
@@ -3032,7 +3011,7 @@ static byte Porkins_CreateBishopN(const nativeVal_t *taunt) {
 	Native_SetNone(&name);
 	byte ok = Mode_SpawnCar("Bishop", 0, &p, NULL) && LvN_SetS(&p, "TgType", "red") && LvN_StdProfile(PT, "GetBishopsEnemiesProfile", &p, &pd) &&
 		LvN_Life(&p, PT, "BISHOPS_LIFE") && Mode_VGet(&p, "Name", &name) && LV_OWN(PT, "AttackMayorTransport", NULL, "v", &name) &&
-		Cm_AppendName(PT, "bishops", &p);
+		Mode_AppendName(PT, "bishops", &p);
 	Native_Free(&p);
 	Native_Free(&pd);
 	Native_Free(&name);

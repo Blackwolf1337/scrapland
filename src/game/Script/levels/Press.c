@@ -2461,15 +2461,6 @@ static byte Pr_KeyMsg(const char *key, const char *action) {
 	return ok;
 }
 
-/* the system message of the text of key */
-static byte Pr_LangMsg(const char *key) {
-	nativeVal_t t;
-	Mode_Lang(key, &t);
-	byte ok = Mode_SpeechMsg(&t);
-	Native_Free(&t);
-	return ok;
-}
-
 /* BertoPossession(): the three crazy deals, the first super deal, the possession key, the warnings every 20 s */
 static byte MeetBoss_BertoPossession(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
@@ -2494,7 +2485,7 @@ static byte MeetBoss_OnWarning(const nativeVal_t *a, nativeVal_t *out) {
 static byte MeetBoss_OnActionPressed(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Pr_LangMsg("Mission_TalkToCrazy_SystemMessage1");
+	return Mode_LangMsg("Mission_TalkToCrazy_SystemMessage1");
 }
 
 /* Speech.RemoteCom.remove(the last queued com of key) (OBJLIB 5: the list of Speech in place) */
@@ -2550,7 +2541,7 @@ static byte MeetBoss_OnPossession(const nativeVal_t *a, nativeVal_t *out) {
 	if (conv <= 0) {
 		Native_Free(&b);
 		Native_Free(&act);
-		return conv == 0 && Pr_LangMsg("Generics_ForbiddenPossession_SystemMessage");
+		return conv == 0 && Mode_LangMsg("Generics_ForbiddenPossession_SystemMessage");
 	}
 	Native_Free(&act);
 	int berto = Mode_VGet(&b, "ActCtrl", &act) ? LvN_EqS(&act, "Berto") : -1;

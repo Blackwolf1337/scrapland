@@ -424,16 +424,6 @@ static byte Cc_Fx(long step) {
 	return ok;
 }
 
-/* the entity of the camera of player 0 with EntityLink = link */
-static byte Cc_CamLink(const nativeVal_t *link) {
-	nativeVal_t cam, ce = { 0 };
-	Mode_CamName(0, &cam);
-	byte ok = Mode_EntitySeam(&cam, &ce) && Mode_VSet(&ce, "EntityLink", link);
-	Native_Free(&cam);
-	Native_Free(&ce);
-	return ok;
-}
-
 /* EndOfScene(EntityName, EventName, Time): the end of the machine's action: the camera and the control back to the
  * player, afterExitConversor or the first conversion warning, the sentinels look (OBJLIB 3, 7: Menu, CharScorer and
  * SLogic.SendSentinelToWatch by name) */
@@ -441,7 +431,7 @@ static byte Cc_EndOfScene(const nativeVal_t *ename) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *usr = Mode_V(&t), *e = Mode_V(&t), *after = Mode_V(&t), *sv = Mode_V(&t), *act = Mode_V(&t);
 	nativeVal_t *msg = Mode_V(&t), *pos = Mode_V(&t);
-	if (!Mode_Import("Menu") || !Mode_Import("CharScorer") || !Cc_CamLink(Mode_S(&t, "")) || !Mode_UsrHandle(usr) ||
+	if (!Mode_Import("Menu") || !Mode_Import("CharScorer") || !Mode_CamLink(Mode_S(&t, "")) || !Mode_UsrHandle(usr) ||
 		!LvN_SetI(usr, "AutoSelect", 1) || !LvN_SetI(usr, "MoveTime", 0) || !Mode_EntitySeam(ename, e) ||
 		!Mode_ActionSet("Walk") || !Native_CallMod("CharScorer", "Create", NULL, "i", 0L) ||
 		!LvN_GObj(CC, "afterExitConversor", after)) {
@@ -550,12 +540,8 @@ static byte Cc_ConvertExecute(void) {
 
 /* the message of a possession that is not allowed */
 static byte Cc_Forbidden(const nativeVal_t *act) {
-	nativeVal_t cad;
-	Mode_Lang(LvN_EqS(act, "Human") ? "Generics_ForbiddenPossession2_SystemMessage" :
-		"Generics_ForbiddenPossession_SystemMessage", &cad);
-	byte ok = Mode_SpeechMsg(&cad);
-	Native_Free(&cad);
-	return ok;
+	return Mode_LangMsg(LvN_EqS(act, "Human") ? "Generics_ForbiddenPossession2_SystemMessage" :
+		"Generics_ForbiddenPossession_SystemMessage");
 }
 
 /* Cam.<var> = v and AuxInterp.<var> = v of the module's globals (read at each set) */

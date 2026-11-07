@@ -128,18 +128,6 @@ static byte Sd_KwArg(PyObject *args, PyObject *kw, char *name, long def, nativeV
 	return 1;
 }
 
-/* e.Ang = (0, ang, 0) */
-static byte Sd_Ang(const nativeVal_t *e, const nativeVal_t *ang) {
-	nativeVal_t a;
-	Native_SetEmpty(&a, NV_TUPLE);
-	Native_SetInt(Native_Append(&a), 0);
-	Native_Copy(Native_Append(&a), ang);
-	Native_SetInt(Native_Append(&a), 0);
-	byte ok = Mode_VSet(e, "Ang", &a);
-	Native_Free(&a);
-	return ok;
-}
-
 /* e = Scrap.CreateEntity(name, pos[0], pos[1], pos[2], cls) as the handle value */
 static byte Sd_Create(const nativeVal_t *name, const nativeVal_t *pos, const char *cls, nativeVal_t *out) {
 	cEntity *e;
@@ -161,7 +149,7 @@ static byte Sd_SpawnCarAng(const nativeVal_t *name, nativeVal_t *out) {
 	nativeVal_t sp, ang;
 	Native_SetNone(&sp);
 	Native_SetNone(&ang);
-	byte ok = Sd_SpawnCar(name, &sp, out) && Mode_Item(&sp, 1, &ang) && Sd_Ang(out, &ang);
+	byte ok = Sd_SpawnCar(name, &sp, out) && Mode_Item(&sp, 1, &ang) && Mode_SetAng(out, &ang);
 	Native_Free(&sp);
 	Native_Free(&ang);
 	return ok;
@@ -172,15 +160,6 @@ static void Sd_Numbered(const char *prefix, long i, nativeVal_t *out) {
 	char name[0x40];
 	Str_Printf(name, sizeof(name), "%s%ld", prefix, i);
 	Native_SetStr(out, name);
-}
-
-/* list.append(e.Name) of a global list of the module, in place */
-static byte Sd_AppendName(const char *mod, const char *list, const nativeVal_t *e) {
-	nativeVal_t n;
-	Native_SetNone(&n);
-	byte ok = Mode_VGet(e, "Name", &n) && Mode_Append(mod, list, &n);
-	Native_Free(&n);
-	return ok;
 }
 
 /* if x in list: list.remove(x), of a global list of the module (slot its copy in C), in place */
@@ -503,7 +482,7 @@ static byte Sd_SpawnAt(const nativeVal_t *usr) {
 	byte ok = CALL("OutMap", "GetSpawnPos", &sp, "") && Mode_Item(&sp, 0, &v) && Mode_VSet(usr, "Pos", &v);
 	Native_Free(&sp);
 	Native_Free(&v);
-	ok = ok && CALL("OutMap", "GetSpawnPos", &sp, "") && Mode_Item(&sp, 1, &v) && Sd_Ang(usr, &v);
+	ok = ok && CALL("OutMap", "GetSpawnPos", &sp, "") && Mode_Item(&sp, 1, &v) && Mode_SetAng(usr, &v);
 	Native_Free(&sp);
 	Native_Free(&v);
 	return ok;
@@ -523,7 +502,7 @@ static byte Sd_RespawnPlayerC(const nativeVal_t *name) {
 	byte ok = Mode_EntityH(name, &me) && CALL("OutMap", "GetSpawnPos", &sp, "") && Mode_Item(&sp, 0, &v) &&
 		Mode_VSet(&me, "Pos", &v);
 	Native_Free(&v);
-	ok = ok && Mode_Item(&sp, 1, &v) && Sd_Ang(&me, &v);
+	ok = ok && Mode_Item(&sp, 1, &v) && Mode_SetAng(&me, &v);
 	Native_Free(&me);
 	Native_Free(&sp);
 	Native_Free(&v);
@@ -896,7 +875,7 @@ static byte Vs_CreateEnemyC(const nativeVal_t *mark) {
 	nativeVal_t *e = Mode_V(&t), *v = Mode_V(&t), *ship = Mode_V(&t);
 	if (!Mode_Import("RaceMaker") || !Mode_Import("VehiclesNPC") || !Mode_Import("MissionsFuncs") || !Mode_Import("OutMap") ||
 		!CALL("OutMap", "GetSpawnPos", sp, "") || !Mode_Unpack(sp, 2, pos) ||
-		!Sd_Create(Mode_S(&t, "Enemy"), &pos[0], "Car", e) || !Sd_Ang(e, &pos[1]) || !Mode_VGet(e, "Name", v) ||
+		!Sd_Create(Mode_S(&t, "Enemy"), &pos[0], "Car", e) || !Mode_SetAng(e, &pos[1]) || !Mode_VGet(e, "Name", v) ||
 		!Mode_Put(VS, "enemyName", &vs.enemyName, v)) {
 		return Mode_Done(&t, 0);
 	}
@@ -1267,7 +1246,7 @@ static byte Tdm_CreateTeam(byte enemy) {
 		nativeVal_t *name = Mode_V(&t), *e = Mode_V(&t);
 		Sd_Numbered(enemy ? "Enemy" : "Friend", i, name);
 		ok = Sd_SpawnCarAng(name, e) && OWN(TDM, enemy ? "SetEnemyProfile" : "SetFriendProfile", NULL, "v", e) &&
-			Sd_AppendName(TDM, enemy ? "enemies" : "friends", e) && Mode_VSetI(e, "Invulnerable", 1);
+			Mode_AppendName(TDM, enemy ? "enemies" : "friends", e) && Mode_VSetI(e, "Invulnerable", 1);
 		Mode_Release(&t, mark);
 	}
 	return Mode_Done(&t, ok);
@@ -1458,7 +1437,7 @@ static byte Tdm_Respawn(byte enemy, const nativeVal_t *name) {
 		return Mode_Done(&t, 1);
 	}
 	return Mode_Done(&t, Sd_SpawnCarAng(name, e) && Mode_VSetS(e, "EntityList", entityList) &&
-		OWN(TDM, enemy ? "SetEnemyProfile" : "SetFriendProfile", NULL, "v", e) && Sd_AppendName(TDM, enemy ? "enemies" : "friends", e));
+		OWN(TDM, enemy ? "SetEnemyProfile" : "SetFriendProfile", NULL, "v", e) && Mode_AppendName(TDM, enemy ? "enemies" : "friends", e));
 }
 
 MODE_FN(Tdm, RespawnEnemy, 1, Tdm_Respawn(1, &a[0]))
@@ -1625,7 +1604,7 @@ static byte Ctf_CreateTeam(byte enemy) {
 		nativeVal_t *name = Mode_V(&t), *e = Mode_V(&t);
 		Sd_Numbered(enemy ? "Enemy" : "Friend", i, name);
 		ok = Sd_SpawnCarAng(name, e) && OWN(CTF, "SetProfile", NULL, "vi", e, (long)enemy) &&
-			Sd_AppendName(CTF, enemy ? "enemies" : "friends", e);
+			Mode_AppendName(CTF, enemy ? "enemies" : "friends", e);
 		Mode_Release(&t, mark);
 	}
 	return Mode_Done(&t, ok);
@@ -1846,7 +1825,7 @@ static byte Ctf_RespawnEnemyC(const nativeVal_t *leader) {
 	byte ok = Mode_Import("OutMap") && Sd_SpawnCarAng(&name, &e) && Mode_VSetS(&e, "TgType", "red") &&
 		Mode_VSetS(&e, "EntityList", "CTFEnemies") && OWN(CTF, "SetProfile", NULL, "vi", &e, 1L) &&
 		(!Native_True(leader) || (Mode_VSetI(&e, "LLogicIsLeader", 1) && CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &e, 1L))) &&
-		Sd_AppendName(CTF, "enemies", &e);
+		Mode_AppendName(CTF, "enemies", &e);
 	Native_Free(&e);
 	return ok;
 }
@@ -1868,7 +1847,7 @@ static byte Ctf_RespawnFriendC(void) {
 	Native_SetNone(&e);
 	Native_SetStr(&name, "Friend");
 	byte ok = Mode_Import("OutMap") && Sd_SpawnCarAng(&name, &e) && Mode_VSetS(&e, "TgType", "green") &&
-		Mode_VSetS(&e, "EntityList", "CTFFriends") && OWN(CTF, "SetProfile", NULL, "vi", &e, 0L) && Sd_AppendName(CTF, "friends", &e);
+		Mode_VSetS(&e, "EntityList", "CTFFriends") && OWN(CTF, "SetProfile", NULL, "vi", &e, 0L) && Mode_AppendName(CTF, "friends", &e);
 	Native_Free(&e);
 	return ok;
 }
@@ -1953,7 +1932,7 @@ static byte Ctf_CreateFlagC(const nativeVal_t *pos, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (!Sd_AppendName(CTF, "flagsActive", flag) || !Mode_VGet(flag, "Name", name) ||
+	if (!Mode_AppendName(CTF, "flagsActive", flag) || !Mode_VGet(flag, "Name", name) ||
 		!Mode_GVarSet("CurrentWaypointName", name) || !Ctf_SetFirst("LeaderFlag") || !Mode_VGet(flag, "Name", out)) {
 		return Mode_Done(&t, 0);
 	}
@@ -2366,8 +2345,8 @@ static byte Dom_CreateTeam(byte enemy) {
 		Sd_Numbered(enemy ? "Enemy" : "Friend", i, name);
 		ok = Mode_Item(spawns, i, sp) && Mode_Item(sp, 0, pos) && Mode_Item(sp, 1, ang) &&
 			Sd_Create(name, pos, "Car", e) && Mode_VSetS(e, "WeapList", "15,15,15,15,15,0") &&
-			(!enemy || Mode_VSetI(e, "LaunchTaunts", 0)) && Sd_Ang(e, ang) && (!enemy || i || Mode_VSetI(e, "Money", -1)) &&
-			OWN(DOM, "SetProfile", NULL, "vi", e, (long)enemy) && Sd_AppendName(DOM, enemy ? "enemies" : "friends", e) &&
+			(!enemy || Mode_VSetI(e, "LaunchTaunts", 0)) && Mode_SetAng(e, ang) && (!enemy || i || Mode_VSetI(e, "Money", -1)) &&
+			OWN(DOM, "SetProfile", NULL, "vi", e, (long)enemy) && Mode_AppendName(DOM, enemy ? "enemies" : "friends", e) &&
 			Mode_VGet(e, "Name", en) && CALL("SAI", "SetStateVehicle", NULL, "iv", 0L, en);
 		Mode_Release(&t, mark);
 	}
@@ -2964,13 +2943,13 @@ static byte Dom_Respawn(byte enemy, const nativeVal_t *leader) {
 	byte lead = enemy && Native_True(leader);
 	if (!Mode_Import("OutMap") || !Sd_SpawnCar(Mode_S(&t, enemy ? "Enemy" : "Friend"), sp, e) ||
 		!Mode_VSetS(e, "WeapList", "15,15,15,15,15,0") || (enemy ? !Mode_VSetI(e, "LaunchTaunts", 0) : !Mode_VSetI(e, "Money", -1)) ||
-		!Mode_Item(sp, 1, ang) || !Sd_Ang(e, ang) || !Mode_VSetS(e, "TgType", enemy ? "red" : "green") ||
+		!Mode_Item(sp, 1, ang) || !Mode_SetAng(e, ang) || !Mode_VSetS(e, "TgType", enemy ? "red" : "green") ||
 		!Mode_VSetS(e, "EntityList", enemy ? "DominationEnemies" : "DominationFriends") || (lead && !Mode_VSetI(e, "Money", -1)) ||
 		!OWN(DOM, "SetProfile", NULL, "vi", e, (long)enemy) ||
 		(enemy && Native_True(leader) && (!Mode_VGet(e, "Name", name) || !Mode_GVarSet("LeaderName", name)))) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, Sd_AppendName(DOM, enemy ? "enemies" : "friends", e));
+	return Mode_Done(&t, Mode_AppendName(DOM, enemy ? "enemies" : "friends", e));
 }
 
 MODE_FN(Dom, RespawnEnemy, 1, Dom_Respawn(1, &a[0]))
@@ -3457,11 +3436,11 @@ static byte Mr_InitRaceC(const nativeVal_t *first) {
 		Native_Free(ang);
 		ok = ok && CALL("VehiclesNPC", "SetIAProf", NULL, "vv", v, ship) && Mode_VGet(v, "Name", vn) &&
 			CALL("SAI", "SetStateVehicle", NULL, "iv", 0L, vn) && Mode_VSetS(v, "TgType", "none") && Mode_VSetS(v, "EntityList", "Race") &&
-			Mr_AtStart(1, ang) && Sd_Ang(v, ang) && Mode_VSetI(v, "Money", -1) && Mr_Copy(v, "Pos", "MovePos") &&
+			Mr_AtStart(1, ang) && Mode_SetAng(v, ang) && Mode_VSetI(v, "Money", -1) && Mr_Copy(v, "Pos", "MovePos") &&
 			Mr_Copy(v, "Ang", "MoveAng") && Mode_VSetF(v, "MoveTime", 0.001) && Mode_VSetI(v, "LaunchTaunts", 0) && Mr_FullAmmo(v);
 		Native_Free(vn);
 		ok = ok && Mode_VGet(v, "Name", vn) && Mode_DictPut(MR, "BayScorer", &mr.bayScorer, vn, Mode_I(&t, 0)) &&
-			Sd_AppendName(MR, "racers", v);
+			Mode_AppendName(MR, "racers", v);
 		Mode_Release(&t, mark);
 	}
 	return Mode_Done(&t, ok && (!Native_True(first) || OWN(MR, "CreateFirstWaypoint", NULL, "")));
@@ -3492,7 +3471,7 @@ static byte Mr_CreateFirstWaypointC(nativeVal_t *out) {
 	Native_Free(out);
 	return Mode_Done(&t, Mr_AtStart(0, pos) && Sd_Create(Mode_S(&t, "CheckPoint"), pos, "Item", out) &&
 		Mode_Read(MR, "WayPointModel", &mr.model) && Mode_VModel(out, &mr.model) && Mode_VSetS(out, "OnTake", "MortalRace.OnRaceStart") &&
-		Mode_VSetI(out, "RadarShow", 2) && Mode_VSetI(out, "Radius", 2400) && Mr_AtStart(1, ang) && Sd_Ang(out, ang) &&
+		Mode_VSetI(out, "RadarShow", 2) && Mode_VSetI(out, "Radius", 2400) && Mr_AtStart(1, ang) && Mode_SetAng(out, ang) &&
 		Mode_VSetI(out, "FadeInEffect", 0) && Mode_VSetI(out, "FadeOutEffect", 0) && Mode_VGet(out, "Name", name) &&
 		Mode_Put(MR, "waypointName", &mr.waypointName, name) && Mode_Read(MR, "waypointName", &mr.waypointName) &&
 		Mode_GVarSet("CurrentWaypointName", &mr.waypointName));
@@ -3725,7 +3704,7 @@ static byte Mr_PlayerCheckPoint(nativeVal_t *l, const nativeVal_t *usrName) {
 			}
 		}
 		Native_Free(pos);
-		return Mode_Done(&t, Mr_AtStart(0, pos) && Mode_VSet(l, "Pos", pos) && Mr_AtStart(1, ang) && Sd_Ang(l, ang) &&
+		return Mode_Done(&t, Mr_AtStart(0, pos) && Mode_VSet(l, "Pos", pos) && Mr_AtStart(1, ang) && Mode_SetAng(l, ang) &&
 			Mode_VSetI(l, "Active", 0));
 	}
 	if (!Mode_Read(MR, "YourScore", &mr.yourScore) || !Mode_Read(MR, "numWaypoints", &mr.numWaypoints)) {
@@ -3839,7 +3818,7 @@ static byte Mr_MoveWaypointC(nativeVal_t *out) {
 	nativeVal_t *l = Mode_V(&t), *pos = Mode_V(&t), *ang = Mode_V(&t);
 	if (!Mode_Import("RaceMaker") || !Mr_NextPos() || !Mode_Read(MR, "waypointName", &mr.waypointName) ||
 		!Mode_EntityH(&mr.waypointName, l) || !Mr_AtStart(0, pos) || !Mode_VSet(l, "Pos", pos) || !Mr_AtStart(1, ang) ||
-		!Sd_Ang(l, ang) || !Mode_VSetS(l, "OnTake", "MortalRace.OnCheckPoint") || !Mode_VSetI(l, "Active", 1)) {
+		!Mode_SetAng(l, ang) || !Mode_VSetS(l, "OnTake", "MortalRace.OnCheckPoint") || !Mode_VSetI(l, "Active", 1)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetEmpty(out, NV_TUPLE);
@@ -4080,7 +4059,7 @@ static byte Mr_RespawnRacerC(const nativeVal_t *name, const nativeVal_t *foe) {
 		!Mode_DictPut(MR, "nameProfileDict", &mr.nameProfileDict, vn, foe) || !Mr_RacerProfile(foe, ship) ||
 		!CALL("VehiclesNPC", "SetIAProf", NULL, "vv", v, ship) || !CALL("SAI", "SetStateVehicle", NULL, "iv", 0L, vn) ||
 		!Mode_VSetS(v, "TgType", "green") || !Mode_VSetS(v, "EntityList", "Race") || !Mode_VSetI(v, "Money", -1) ||
-		!Mode_VSetI(v, "LaunchTaunts", 0) || !Mr_FullAmmo(v) || !Sd_AppendName(MR, "racers", v) ||
+		!Mode_VSetI(v, "LaunchTaunts", 0) || !Mr_FullAmmo(v) || !Mode_AppendName(MR, "racers", v) ||
 		!Sd_EachInList("Race", Mr_RedFirst, &red)) {
 		return Mode_Done(&t, 0);
 	}

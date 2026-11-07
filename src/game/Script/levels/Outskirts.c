@@ -822,11 +822,7 @@ static byte Demo_CallCrazyGambler(void) {
 }
 
 static byte Demo_ShowRustyMapsSystemMessage(void) {
-	nativeVal_t cad = { 0 };
-	Mode_Lang("Mission_FirstCrazyBet_SystemMessage3", &cad);
-	byte ok = Mode_SpeechMsg(&cad);
-	Native_Free(&cad);
-	return ok;
+	return Mode_LangMsg("Mission_FirstCrazyBet_SystemMessage3");
 }
 
 /* UsePhoneCab(UsrName, CharName, optId, FullOption): the police warning while the alarm is on, else the boss */

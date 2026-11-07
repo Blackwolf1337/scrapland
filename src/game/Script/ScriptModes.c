@@ -3831,3 +3831,65 @@ int Mode_CmpOpI(const nativeVal_t *a, long i, char op) {
 	Native_SetInt(&b, i);
 	return Mode_CmpOp(a, &b, op);
 }
+
+byte Mode_VObjRead(const nativeVal_t *h, const char *var, nativeVal_t *slot) {
+	Native_Free(slot);
+	return Mode_VObj(h, var, slot);
+}
+
+byte Mode_AppendName(const char *module, const char *name, const nativeVal_t *h) {
+	nativeVal_t n;
+	Native_SetNone(&n);
+	byte ok = Mode_VGet(h, "Name", &n) && Mode_Append(module, name, &n);
+	Native_Free(&n);
+	return ok;
+}
+
+byte Mode_SetAng(const nativeVal_t *h, const nativeVal_t *x) {
+	nativeVal_t a;
+	Native_SetEmpty(&a, NV_TUPLE);
+	Native_SetInt(Native_Append(&a), 0);
+	Native_Copy(Native_Append(&a), x);
+	Native_SetInt(Native_Append(&a), 0);
+	byte ok = Mode_VSet(h, "Ang", &a);
+	Native_Free(&a);
+	return ok;
+}
+
+byte Mode_LangMsg(const char *key) {
+	nativeVal_t t;
+	Mode_Lang(key, &t);
+	byte ok = Mode_SpeechMsg(&t);
+	Native_Free(&t);
+	return ok;
+}
+
+PyObject *Mode_PyNone2(PyObject *self, PyObject *args) {
+	PyObject *a, *b;
+	(void)self;
+	return PyArg_ParseTuple(args, "OO", &a, &b) ? Py_ReturnNone() : NULL;
+}
+
+byte Mode_FlagSet(const char *module, const char *var, const nativeVal_t *v) {
+	PyObject *flag = Mode_GlobalPy(module, "Flag");
+	byte ok = flag && Mode_HSet(flag, var, v);
+	Py_XDECREF(flag);
+	return ok;
+}
+
+byte Mode_Cam0(nativeVal_t *out) {
+	nativeVal_t name;
+	Mode_CamName(0, &name);
+	byte ok = Mode_EntitySeam(&name, out);
+	Native_Free(&name);
+	return ok;
+}
+
+byte Mode_CamLink(const nativeVal_t *link) {
+	nativeVal_t cam, e = { 0 };
+	Mode_CamName(0, &cam);
+	byte ok = Mode_EntitySeam(&cam, &e) && Mode_VSet(&e, "EntityLink", link);
+	Native_Free(&cam);
+	Native_Free(&e);
+	return ok;
+}

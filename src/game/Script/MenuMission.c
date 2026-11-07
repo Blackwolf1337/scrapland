@@ -16,6 +16,7 @@
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
+#include "game/Script/levels/Levels.h"
 
 static const char mission_def[] = {
 #embed "../../../data/menus/mission.def"
@@ -218,11 +219,6 @@ static void Mission_Notes(int id) {
 	}
 }
 
-static byte Mission_SaveVarIs(const char *var, const char *value) {
-	const char *s = SaveVar_Get(var);
-	return s && !strcmp(s, value);
-}
-
 /* the description of the crazy deal page, and its objectives */
 static void Mission_DealDesc(int id, char *desc, int size) {
 	if (Mission_ModInt("Init", "HasSuperDeal", 0)) {
@@ -243,11 +239,11 @@ static void Mission_DealDesc(int id, char *desc, int size) {
 		Native_Free(&mod);
 		return;
 	}
-	if (Mission_SaveVarIs("JackInTheBox.Active", "0")) {
+	if (LvN_SaveIs("JackInTheBox.Active", "0")) {
 		Str_Copy(desc, Script_Lang("CrazyDeal_Menu_None"), size);
 		return;
 	}
-	if (Mission_SaveVarIs("JackInTheBox.Active", "2")) {
+	if (LvN_SaveIs("JackInTheBox.Active", "2")) {
 		Str_Copy(desc, Script_Lang("CrazyDeal_Menu_SuperDealsComplete"), size);
 		return;
 	}
@@ -330,7 +326,7 @@ static void Step_Content(int id, PyObject *args) {
 		Script_SetNum(id, "Mission", "Status2", 0);
 		Str_Printf(title, sizeof(title), "%s:", Script_Lang("Notes_Title"));
 		const char *nb = SaveVar_Get("NewBluePrintAvaliable");
-		if (Mission_SaveVarIs("GameAct", "Prologue") && Mission_SaveVarIs("JackInTheBox.Active", "0") &&
+		if (LvN_SaveIs("GameAct", "Prologue") && LvN_SaveIs("JackInTheBox.Active", "0") &&
 			(!nb || atoi(nb) <= 0)) {
 			Str_Copy(desc, Script_Lang("Notes_None"), sizeof(desc));
 		} else {
