@@ -27,19 +27,6 @@
 		return 0; \
 	}
 
-/* Scrap.Set(name, i) and Scrap.Set(name, d) through the seam */
-static byte Abi_SetI(const char *name, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return Mode_GVarSet(name, &v);
-}
-
-static byte Abi_SetF(const char *name, double d) {
-	nativeVal_t v;
-	Native_SetFloat(&v, d);
-	return Mode_GVarSet(name, &v);
-}
-
 /* SScorer.Set(id, item, var, i), = d, = "text" */
 static byte Abi_ScI(const nativeVal_t *id, const char *item, const char *var, long i) {
 	nativeVal_t v;
@@ -132,7 +119,7 @@ static byte Abi_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 static byte Abi_Init(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	if (!Mode_Import("Menu") || !Abi_SetI("isActionIndoor", 0) || !LvN_SetMusic("Music/AfterFinalFight.ogg", 1.0)) {
+	if (!Mode_Import("Menu") || !Mode_GVarSetI("isActionIndoor", 0) || !LvN_SetMusic("Music/AfterFinalFight.ogg", 1.0)) {
 		return 0;
 	}
 	byte ok;
@@ -266,7 +253,7 @@ static byte Abi_LaunchCinematic(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t name, zero;
 	(void)a;
 	(void)out;
-	if (!Mode_Import("Menu") || !Abi_SetI("isActionIndoor", 0) || !LvN_SetMusic("Music/Mantrap.ogg", 1.0)) {
+	if (!Mode_Import("Menu") || !Mode_GVarSetI("isActionIndoor", 0) || !LvN_SetMusic("Music/Mantrap.ogg", 1.0)) {
 		return 0;
 	}
 	LvN_Str(&name, "CheckArrow");
@@ -303,9 +290,9 @@ static byte Abi_ShowEndTitle(const nativeVal_t *a, nativeVal_t *out) {
 		Abi_ScI(id, "EndTitle", "Green", 173) && Abi_ScI(id, "EndTitle", "Blue", 255) && Abi_ScI(id, "EndTitle", "Alpha", 255) &&
 		Abi_ScF(id, "EndTitle", "TypingTime", -1.0) && Abi_ScF(id, "EndTitle", "TypingSpeed", 0.15) &&
 		Abi_ScI(id, "EndTitle", "CursorAtInit", 1) && Abi_ScI(id, "EndTitle", "CursorAtEnd", 0) &&
-		Abi_ScI(id, "EndTitle", "TypingSound", 0) && Abi_SetI("MotionBlurFactorBegin", 0) &&
-		Abi_SetF("MotionBlurFactorEnd", 0.75) && Abi_SetF("MotionBlurTime", 0.0) && Abi_SetF("MotionBlurEndTime", 3.0) &&
-		Abi_SetI("MotionBlurOffVar", 0);
+		Abi_ScI(id, "EndTitle", "TypingSound", 0) && Mode_GVarSetI("MotionBlurFactorBegin", 0) &&
+		Mode_GVarSetN("MotionBlurFactorEnd", 0.75) && Mode_GVarSetN("MotionBlurTime", 0.0) && Mode_GVarSetN("MotionBlurEndTime", 3.0) &&
+		Mode_GVarSetI("MotionBlurOffVar", 0);
 }
 
 /* Scrap.MusicPlayer(name, cmd, volume) through its seam (fc-lvl-menu swaps it) */
@@ -321,7 +308,7 @@ static byte Abi_MusicPlayer(const char *name, const char *cmd, double volume) {
 /* FadeEndTitle(id): the music fades out in 5 s, the black square fades in over the end title */
 static byte Abi_FadeEndTitle(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
-	return Abi_MusicPlayer("", "fadeout", 1 / 5.0) && Abi_SetF("FadeOutFinalTime", 3.0) &&
+	return Abi_MusicPlayer("", "fadeout", 1 / 5.0) && Mode_GVarSetN("FadeOutFinalTime", 3.0) &&
 		Abi_ScS(&a[0], "BlackSquare", "OnRender", "!ScorerSpriteFadeOutFinal");
 }
 

@@ -110,13 +110,6 @@ static const char *const fake2_scene[] = {
 
 /* ---- shared lines ---- */
 
-/* Scrap.Set(name, i) */
-static byte Fk_SetI(const char *name, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return Mode_GVarSet(name, &v);
-}
-
 /* module.var = a list of texts (NULL ends them) */
 static byte Fk_ModList(const char *module, const char *var, const char *const *texts) {
 	nativeVal_t v;
@@ -218,7 +211,7 @@ static byte Fk_PlayFake2(void) {
 	}
 	Native_SetFloat(nearV, 50.0);
 	Native_SetFloat(farV, 400000.0);
-	return Mode_Done(&t, n >= 0 && Fk_Clip(nearV, farV, 0) && Fk_SetI("R_UseMLOD", 0) && Fk_SetI("FXEngineGlowDistFadeMult", 100));
+	return Mode_Done(&t, n >= 0 && Fk_Clip(nearV, farV, 0) && Mode_GVarSetI("R_UseMLOD", 0) && Mode_GVarSetI("FXEngineGlowDistFadeMult", 100));
 }
 
 /* NextLevel(usr=None): the end of the intro: the first mission with Rusty in the Junkyard */
@@ -233,7 +226,7 @@ static byte Fk_NextLevel(void) {
 	SaveVar_Set("ComeFrom", "DoorEditShip");
 	SaveVar_Set("PrevMap", "Levels/Outskirts");
 	Mode_SaveVar("Map", &map);
-	byte ok = LV_CALL("SaveGame", "QLoad", NULL, "v", &map) && Fk_SetI("R_UseMLOD", 1) && Fk_SetI("FXEngineGlowDistFadeMult", 1);
+	byte ok = LV_CALL("SaveGame", "QLoad", NULL, "v", &map) && Mode_GVarSetI("R_UseMLOD", 1) && Mode_GVarSetI("FXEngineGlowDistFadeMult", 1);
 	Native_Free(&map);
 	return ok;
 }
@@ -267,7 +260,7 @@ static byte Fk_CreateFakeBertoShip(void) {
 	nativeVal_t *nam = Mode_V(&t), *next = Mode_V(&t);
 	char var[0x20];
 	Native_SetInt(zero, 0);
-	if (!Mode_Import("Fx") || !Mode_Import("InTraffic") || !Mode_Import("string") || !Fk_SetI("FXVehicleFloatingFactor", 0) ||
+	if (!Mode_Import("Fx") || !Mode_Import("InTraffic") || !Mode_Import("string") || !Mode_GVarSetI("FXVehicleFloatingFactor", 0) ||
 		!LvN_Create(Mode_S(&t, "Actor_SBerto1"), zero, zero, zero, "Car", made) || !Mode_Put(MAP, "BertoShip", NULL, made) ||
 		!Mode_G(MAP, "BertoShip", ship) || !Mode_VModel(ship, Mode_S(&t, "SBerto1")) ||
 		!LV_CALL("Fx", "GetMotorClass", mcls, "s", "MBerto1")) {

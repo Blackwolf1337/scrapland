@@ -113,13 +113,6 @@ static byte Mn_DebrisSys(const nativeVal_t *name) {
 
 /* ---- shared lines ---- */
 
-/* Scrap.Set(name, i), Scrap.Set(name, d), Scrap.Set(name, "text") */
-static byte Mn_SetI(const char *name, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return Mode_GVarSet(name, &v);
-}
-
 /* `if Scrap.Get(name):` */
 static int Mn_GetTrue(const char *name) {
 	nativeVal_t v;
@@ -254,7 +247,7 @@ static byte Menu_SetMotionBlur(const nativeVal_t *a, nativeVal_t *out) {
 	if (strcmp(TABLE_AT(g_ActionSets, Input_GetActionSet())->name, "Inactive")) {
 		return 1;
 	}
-	return Mn_SetI("MotionBlurOffVar", 0) && Mn_SetI("MotionBlurTime", 0) && Mode_GVarSetN("MotionBlurEndTime", 0.45) &&
+	return Mode_GVarSetI("MotionBlurOffVar", 0) && Mode_GVarSetI("MotionBlurTime", 0) && Mode_GVarSetN("MotionBlurEndTime", 0.45) &&
 		Mode_GVarSetN("MotionBlurFactorBegin", 0.0) && Mode_GVarSetN("MotionBlurFactorEnd", 0.5);
 }
 
@@ -308,7 +301,7 @@ static byte Mn_Asteroids(void) {
 		}
 	}
 	int j = n < 0 ? -1 : Mn_GetTrue("JoinServerOnStartup");
-	if (j < 0 || (j && (!Mode_Import("PCMenu") || !Mn_SetI("JoinServerOnStartup", 0) ||
+	if (j < 0 || (j && (!Mode_Import("PCMenu") || !Mode_GVarSetI("JoinServerOnStartup", 0) ||
 		!LV_CALL("PCMenu", "TryJoin", NULL, "is", 0L, "")))) {
 		return Mode_Done(&t, 0);
 	}
@@ -328,7 +321,7 @@ static byte Mn_Asteroids(void) {
 		Native_Free(tim);
 		Native_Copy(tim, next);
 	}
-	return Mode_Done(&t, n >= 0 && Mn_Own("drotorito") && Mn_SetI("IsMapOutDoor", 0));
+	return Mode_Done(&t, n >= 0 && Mn_Own("drotorito") && Mode_GVarSetI("IsMapOutDoor", 0));
 }
 
 /* Init(LevelPath): the menu scene, the menu (unless the credits show), the music and the asteroids */
@@ -337,11 +330,11 @@ static byte Menu_Init(const nativeVal_t *a, nativeVal_t *out) {
 		"MotionBlurFactorEnd" };
 	(void)a;
 	(void)out;
-	if (!Mode_Import("Menu") || !Mode_Import("SAct") || !Mn_SetI("DrawNextFrame", 0) || !Mn_SetI("CameraCloudAlpha", 0)) {
+	if (!Mode_Import("Menu") || !Mode_Import("SAct") || !Mode_GVarSetI("DrawNextFrame", 0) || !Mode_GVarSetI("CameraCloudAlpha", 0)) {
 		return 0;
 	}
 	for (int i = 0; i < 5; i++) {
-		if (!Mn_SetI(blur[i], 0)) {
+		if (!Mode_GVarSetI(blur[i], 0)) {
 			return 0;
 		}
 	}
@@ -361,7 +354,7 @@ static byte Menu_Init(const nativeVal_t *a, nativeVal_t *out) {
 			return 0;
 		}
 		Mode_SetActionSet("Inactive");
-		if (!LV_CALL("Menu", "MovieScorer", NULL, "i", 0L) || !Mn_Own("ShowCredits") || !Mn_SetI("ShowCredits", 0) ||
+		if (!LV_CALL("Menu", "MovieScorer", NULL, "i", 0L) || !Mn_Own("ShowCredits") || !Mode_GVarSetI("ShowCredits", 0) ||
 			!LvN_SetMusic("Music/Creditos.ogg", 1.0)) {
 			return 0;
 		}

@@ -14,13 +14,6 @@
 
 #define MAP "Map"
 
-/* Scrap.Set(name, i) through the seam */
-static byte Small_SetI(const char *name, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return Mode_GVarSet(name, &v);
-}
-
 /* ---- TucZone ---- */
 
 /* Init(LevelPath): the keypad at its dummy that takes the player to Nano */
@@ -148,10 +141,10 @@ static byte Se_Init(const nativeVal_t *a, nativeVal_t *out) {
 		ok = 0;
 	}
 	ok = ok && Se_SetTriple(&cam, "camPos", -6, -1243, 1451) && Se_SetTriple(&cam, "camAng", 15, -180, 0) &&
-		LvN_SetI(&cam, "Fov", 70) && Small_SetI("CameraCloudAlpha", 0) && LV_CALL("ShipEdit", "EnterEditShipMenu", NULL, "is", 0L, "");
+		LvN_SetI(&cam, "Fov", 70) && Mode_GVarSetI("CameraCloudAlpha", 0) && LV_CALL("ShipEdit", "EnterEditShipMenu", NULL, "is", 0L, "");
 	if (ok) {
 		Mode_SetTimeSpeed(1);
-		ok = Small_SetI("IsMapOutDoor", 0);
+		ok = Mode_GVarSetI("IsMapOutDoor", 0);
 	}
 	Native_Free(&name);
 	Native_Free(&cam);

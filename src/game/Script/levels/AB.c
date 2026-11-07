@@ -65,13 +65,6 @@ static byte Ab_RegenG(const char *name, const char *speed, const char *endSpeed)
 	return Mode_Done(&t, ok);
 }
 
-/* Scrap.Set(name, i) with an int (as the script sets it) */
-static byte Ab_SetI(const char *name, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return Mode_GVarSet(name, &v);
-}
-
 /* Scrap.Set(name, v) with v a global of the module */
 static byte Ab_SetG(const char *name, const char *global) {
 	nativeVal_t v;
@@ -203,11 +196,11 @@ static byte Ff_Init(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Ab_Com("Mission_FinalFight_RemoteMessage1", "CrazyGambler") ||
 		!LvN_ModSetGlobal("Chars", "OnMainCharDeath", FF, "OnPlayerDeath") || !Ab_ModI("Vehicles", "DelPlayerShipOnDeath", 0) ||
 		!LvN_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", FF, "CreateBoss") ||
-		!LvN_ModSetGlobal("Parking", "SwitchCharMissionCallback", FF, "BossRelax") || !Ab_SetI("InfernoTurnSpeed", 60)) {
+		!LvN_ModSetGlobal("Parking", "SwitchCharMissionCallback", FF, "BossRelax") || !Mode_GVarSetI("InfernoTurnSpeed", 60)) {
 		return 0;
 	}
 	LvN_Str(&model, "Models/GFX/BossShield/BossShield.m3d");
-	byte ok = Mode_Preload(&model) && Ab_SetI("useDynamicMusic", 0) && LvN_SetMusic("Music/FinalFight.ogg", 1.0);
+	byte ok = Mode_Preload(&model) && Mode_GVarSetI("useDynamicMusic", 0) && LvN_SetMusic("Music/FinalFight.ogg", 1.0);
 	Native_Free(&model);
 	return ok;
 }
@@ -562,7 +555,7 @@ static byte Ff_NextPhase(const nativeVal_t *a, int phase) {
 			Mode_GVarSetS("LifeReachedCallback", "MapFinalFight.OnBossRecoversEnd") &&
 			Ab_RegenG("bossName", "BOSS_Last_RegenInit", "BOSS_Last_RegenEnd");
 	} else if (ok) {
-		ok = Ab_SetI("LifeToLaunchCallback", 0) && Mode_GVarSetS("LifeReachedCallback", "") &&
+		ok = Mode_GVarSetI("LifeToLaunchCallback", 0) && Mode_GVarSetS("LifeReachedCallback", "") &&
 			Ab_Regen(Mode_S(&t, "Boss"), speed, speed);
 	}
 	ok = ok && LV_OWN(FF, "SetFase", NULL, "") &&
@@ -699,7 +692,7 @@ static byte AbMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetFloat(Native_Append(&v), 0.01);
 	Native_SetFloat(Native_Append(&v), 0.02);
 	byte ok = Mode_SetModVar("Vehicles", "HullLifeTimeDeath", &v) && Ab_ModI("Init", "Outdoor", 1) &&
-		Ab_ModI("OutPolice", "PoliceActive", 0) && Ab_SetI("iTrafficNumber", 0);
+		Ab_ModI("OutPolice", "PoliceActive", 0) && Mode_GVarSetI("iTrafficNumber", 0);
 	Native_Free(&v);
 	Native_SetEmpty(&v, NV_LIST);
 	for (int i = 0; i < 3 && ok; i++) {
@@ -746,7 +739,7 @@ static byte AbMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t *types = Mode_V(&t), *spawns = Mode_V(&t), *item = Mode_V(&t);
 	(void)a;
 	(void)out;
-	if (!Mode_Import("Elevator") || !Ab_SetI("FreeSpaceMagnet", 1)) {
+	if (!Mode_Import("Elevator") || !Mode_GVarSetI("FreeSpaceMagnet", 1)) {
 		return Mode_Done(&t, 0);
 	}
 	LvN_Dummy("DM_Mission_Centre", 1, dummy);
@@ -761,7 +754,7 @@ static byte AbMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	LvN_Str(Native_Append(from), "DM_Door_Teleporter_GamblinDen");
 	Native_SetEmpty(to, NV_LIST);
 	LvN_Str(Native_Append(to), "GamblinDen");
-	if (!Ab_SetI("FreeSpaceMagnetHiRadius", 95000) || !Ab_SetI("FreeSpaceMagnetAccel", 56000) ||
+	if (!Mode_GVarSetI("FreeSpaceMagnetHiRadius", 95000) || !Mode_GVarSetI("FreeSpaceMagnetAccel", 56000) ||
 		!LV_CALL("Elevator", "ConnectElevators", NULL, "vv", from, to) || !LV_CALL("Traffic", "SetPath", NULL, "") ||
 		!LvN_GElems(MAP, "asttype", types)) {
 		return Mode_Done(&t, 0);

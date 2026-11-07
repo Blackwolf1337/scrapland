@@ -58,13 +58,6 @@ static byte Tp_Do(const char *module, const char *fn) {
 	return LV_OWN(module, fn, NULL, "");
 }
 
-/* Scrap.Set(name, i) */
-static byte Tp_GVarI(const char *name, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return Mode_GVarSet(name, &v);
-}
-
 /* the text of an argument of an engine function ("s" of argument arg) */
 static byte Tp_Str(const nativeVal_t *v, int arg, const char **s) {
 	return Native_ArgStr(v, arg, s);
@@ -295,7 +288,7 @@ static byte TpMap_Init(void) {
 	if (!Tp_Gate("GateKeeper_GDB", "DM_Door_TempleTeleporter_GDB", "BishopGroupGateKeeper", "GateKeeper.UseDoor")) {
 		return 0;
 	}
-	return !LvN_SaveIs("Mission.Library", "Mission_MeetArchbishop") || Tp_GVarI("isActionIndoor", 0);
+	return !LvN_SaveIs("Mission.Library", "Mission_MeetArchbishop") || Mode_GVarSetI("isActionIndoor", 0);
 }
 
 /* EndOfAppears(elv): the arrival by the teleporter from GDB, the player on the floor at its spawn */
@@ -376,7 +369,7 @@ static byte Xl_TakeExtraLife(const nativeVal_t *item, const nativeVal_t *usr) {
 	}
 	if (ok) {
 		Native_SetInt(&alarm, 1);
-		ok = Mode_SetAlarm(&alarm) && Tp_GVarI("BishopAttackOnAlarm", 1);
+		ok = Mode_SetAlarm(&alarm) && Mode_GVarSetI("BishopAttackOnAlarm", 1);
 	}
 	Native_Free(&l);
 	Native_Free(&nl);
@@ -488,7 +481,7 @@ static byte Xl_SwitchAlarm(const nativeVal_t *status) {
 	if (Native_True(status)) {
 		return Xl_Move(600);
 	}
-	return Tp_GVarI("BishopAttackOnAlarm", 0) && Xl_Move(-600);
+	return Mode_GVarSetI("BishopAttackOnAlarm", 0) && Xl_Move(-600);
 }
 
 /* -v of the script (PyNumber_Negative: -0.0 for 0.0, the OverflowError of the smallest int, others by Python) */
@@ -1146,7 +1139,7 @@ static byte Ma_CreateFakeSpeech(void) {
 	Native_SetNone(&kn);
 	ok = ok && Mode_VGet(&kb, "Name", &kn) && Mode_GVarSet("NewsHead", &kn);
 	for (size_t i = 0; ok && i < sizeof(panel) / sizeof(panel[0]); i++) {
-		ok = Tp_GVarI(panel[i].var, panel[i].v);
+		ok = Mode_GVarSetI(panel[i].var, panel[i].v);
 	}
 	Native_Free(&kb);
 	Native_Free(&kn);

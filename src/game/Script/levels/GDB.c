@@ -49,13 +49,6 @@ static byte Gd_Set0G(const char *item, const char *var, const char *module, cons
 	return ok;
 }
 
-/* Scrap.Set(name, i) and Scrap.Set(name, "text") */
-static byte Gd_GVarI(const char *name, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return Mode_GVarSet(name, &v);
-}
-
 /* Scrap.SetAlarm(level) through its seam */
 static byte Gd_Alarm(long level) {
 	nativeVal_t v;
@@ -250,7 +243,7 @@ static byte GDB_InitStatus(void) {
 	Native_SetInt(&v, 1);
 	byte ok = Mode_SetModVar("Init", "Outdoor", &v);
 	Native_SetInt(&v, 0);
-	ok = ok && Mode_SetModVar("OutPolice", "PoliceActive", &v) && Gd_GVarI("iTrafficNumber", 0);
+	ok = ok && Mode_SetModVar("OutPolice", "PoliceActive", &v) && Mode_GVarSetI("iTrafficNumber", 0);
 	if (ok) {
 		SaveVar_Set("Char", "Bishop");
 		ok = LV_CALL("Elevator", "SetDef", NULL, "ss", "TempleTeleporter", "DM_Door_TempleTeleporter_Temple");
@@ -262,8 +255,8 @@ static byte GDB_InitStatus(void) {
  * bishops as the police */
 static byte GDB_Init(void) {
 	nativeVal_t mp, from, to;
-	if (!Mode_Import("Init") || !Gd_GVarI("CameraCloudRed", 191) || !Gd_GVarI("CameraCloudGreen", 123) ||
-		!Gd_GVarI("CameraCloudBlue", 184) || !Mode_DelSchedS("InitMercs") || !LvN_ModGet("Init", "MultiPlayer", &mp)) {
+	if (!Mode_Import("Init") || !Mode_GVarSetI("CameraCloudRed", 191) || !Mode_GVarSetI("CameraCloudGreen", 123) ||
+		!Mode_GVarSetI("CameraCloudBlue", 184) || !Mode_DelSchedS("InitMercs") || !LvN_ModGet("Init", "MultiPlayer", &mp)) {
 		return 0;
 	}
 	int multi = Native_True(&mp);
