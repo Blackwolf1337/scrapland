@@ -83,10 +83,17 @@ def _nent(n, vs):
 			r.append((v, '?'))
 	return r
 def _nbots():
-	# NDeathMatchBots has no .pyc in the packs (init.py would stop in PreloadLibrary): its source compiled into a
-	# .pyc next to the game, which PreloadLibrary reads from disk as a file not in the pack index
+	# NDeathMatchBots has no .pyc in the packs (init.py would stop in PreloadLibrary). Pack runs: its source (copied
+	# into the game folder from REGRESS_PACK_SRC) compiled into a .pyc next to the game, which PreloadLibrary reads
+	# from disk as a file not in the pack index. C runs (no source there): ScrapC makes the module from
+	# data/modules/ndeathmatchbots.mod, the file is not read.
+	try:
+		src = open('ndeathmatchbots.py', 'rb').read()
+	except IOError:
+		Scrap.PreloadLibrary('NDeathMatchBots', 'nmbots.pyc')
+		m = __import__('NDeathMatchBots')
+		return filter(lambda k, m=m: callable(getattr(m, k)) and k[0] != '_', dir(m))
 	import marshal, imp
-	src = open('ndeathmatchbots.py', 'rb').read()
 	import string
 	src = string.replace(src, '\r\n', '\n') + '\n'
 	co = compile(src, 'Scripts/Net/NDeathMatchBots.py', 'exec')

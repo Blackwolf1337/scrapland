@@ -178,13 +178,14 @@ def _python(self, code, timeout=10.0):
 scrap_mcp.Game.python = _python
 
 
-def copy_helpers(game):
-	"""The Python helpers of the cases (helpers/*.py) into the game folder, where the case lines load them; the source
-	of NDeathMatchBots (pack only, fc-nm-bots) from REGRESS_PACK_SRC (the root of the extracted packs) when set."""
+def copy_helpers(game, pack):
+	"""The Python helpers of the cases (helpers/*.py) into the game folder, where the case lines load them; for pack
+	runs the source of NDeathMatchBots (no .pyc in the packs, fc-nm-bots) from REGRESS_PACK_SRC (the root of the
+	extracted packs). C runs make that module from data/modules/ndeathmatchbots.mod."""
 	for p in glob.glob(os.path.join(HELPERS, '*.py')):
 		shutil.copy(p, os.path.join(game, os.path.basename(p)))
 	src = os.environ.get('REGRESS_PACK_SRC')
-	if src:
+	if src and pack:
 		p = os.path.join(src, 'Data.packed', 'scripts', 'net', 'ndeathmatchbots.py')
 		if os.path.isfile(p):
 			shutil.copy(p, os.path.join(game, 'ndeathmatchbots.py'))
@@ -374,7 +375,7 @@ class Lane:
 			opts['harness'] = HARNESS
 			g.start(opts)
 			if HARNESS == 'python':
-				copy_helpers(g.game)
+				copy_helpers(g.game, self.pack)
 			end = time.time() + 300
 			while True:
 				if not g.running() or time.time() > end:

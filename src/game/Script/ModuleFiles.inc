@@ -287,6 +287,9 @@ static const char mod_modules_ffa[] = {
 static const char mod_modules_ndeathmatch[] = {
 #embed "../../../data/modules/ndeathmatch.mod"
 	, 0 };
+static const char mod_modules_ndeathmatchbots[] = {
+#embed "../../../data/modules/ndeathmatchbots.mod"
+	, 0 };
 static const char mod_modules_nflaghunt[] = {
 #embed "../../../data/modules/nflaghunt.mod"
 	, 0 };
@@ -1030,6 +1033,7 @@ static const moduleFile_t module_files[] = {
 	{ NULL, "TeamDeathMatch", "modules/teamdeathmatch.mod", mod_modules_teamdeathmatch },
 	{ NULL, "Ffa", "modules/ffa.mod", mod_modules_ffa },
 	{ NULL, "NDeathMatch", "modules/ndeathmatch.mod", mod_modules_ndeathmatch },
+	{ NULL, "NDeathMatchBots", "modules/ndeathmatchbots.mod", mod_modules_ndeathmatchbots },
 	{ NULL, "NFlagHunt", "modules/nflaghunt.mod", mod_modules_nflaghunt },
 	{ NULL, "NPostman", "modules/npostman.mod", mod_modules_npostman },
 	{ NULL, "NTeamDM", "modules/nteamdm.mod", mod_modules_nteamdm },

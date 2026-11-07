@@ -28,3 +28,6 @@ _nent = lambda n, vs: (lambda e: [n] + map(lambda v: tc_try(lambda: (v, _sdn(get
 	if e else (n, None))(Scrap.GetEntity(n))
 _nmod = lambda m, vs: (lambda mod: map(lambda v: tc_try(lambda: (lambda x: (v, _sdn(x)))((lambda x: map(lambda k: (k, _sdn(x[k])),
 	tc_sorted(x.keys())) if type(x) == type({}) else x)(getattr(mod, v))), (), (v, '?')), vs))(__import__(m))
+# _nbots on the C build: the module made from data/modules/ndeathmatchbots.mod (the pack source runs only in pack runs)
+_nbots = lambda: (Scrap.PreloadLibrary('NDeathMatchBots', 'nmbots.pyc'), (lambda m: filter(lambda k: callable(getattr(m, k))
+	and k[0] != '_', dir(m)))(__import__('NDeathMatchBots')))[1]
