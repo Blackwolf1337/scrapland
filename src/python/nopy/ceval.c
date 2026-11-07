@@ -8,10 +8,13 @@
 #define PyEval_EvalCode Py_NoEvalCode
 
 #include "Python.h"
+#include "pythonrun.h"
+#include "pyengine.h"
 
 #undef PyFunction_Check
 #define PyFunction_Check(op) 0
-/* PyEval_GetLocals of the frame that never is */
-#define PyFrame_FastToLocals(f) ((void)(f))
+/* the exec statement of the bytecode loop (dropped with it) */
+#define PyRun_File(fp, file, start, g, l) ((void)(fp), (void)(start), (void)(g), (void)(l), \
+	(PyObject *)Py_NoInterpreter(PyExc_SystemError, file))
 
 #include "Python/ceval.c"

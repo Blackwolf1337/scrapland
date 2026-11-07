@@ -113,9 +113,10 @@ target_include_directories(scrapcode PRIVATE ${SHADER_DIR} ${FFMPEG_DIR}/include
 # config.h and inittab, pyshim.h for its libc (the exe's C runtime and the engine's Python pool) and the files of
 # src/python that add the engine's changes around the vendored ones (docs/standalone.md)
 # SCRAP_NO_PYTHON (stage 7 of the removal of Python, docs/scripts.md): the library without the interpreter. No
-# parser, tokenizer, compiler, frames or bytecode loop, no import of .py/.pyc files, no PyRun_*; eval, execfile,
+# parser, tokenizer, grammar, compiler or bytecode loop, no import of .py/.pyc files, no PyRun_*; eval, execfile,
 # compile and input of the builtins and code objects of marshal and new raise. The object library stays. The files
-# of src/python/nopy wrap the vendored ones that keep a part; the rest of them goes with --gc-sections.
+# of src/python/nopy wrap the vendored ones that keep a part, with the references to what is gone made refusals;
+# --gc-sections drops the rest of them (the bytecode loop, the runners, the compiler, the frame functions).
 option(SCRAP_NO_PYTHON "build without the Python interpreter (only the object library of Python 1.5.2)" OFF)
 set(PY152 third_party/python-1.5.2)
 add_library(python152 STATIC
@@ -142,6 +143,7 @@ add_library(python152 STATIC
 	${PY152}/Objects/complexobject.c
 	${PY152}/Objects/fileobject.c
 	${PY152}/Objects/floatobject.c
+	${PY152}/Objects/frameobject.c
 	${PY152}/Objects/funcobject.c
 	${PY152}/Objects/longobject.c
 	${PY152}/Objects/methodobject.c
@@ -183,7 +185,6 @@ if(SCRAP_NO_PYTHON)
 else()
 	target_sources(python152 PRIVATE
 		${PY152}/Modules/newmodule.c
-		${PY152}/Objects/frameobject.c
 		${PY152}/Parser/acceler.c
 		${PY152}/Parser/bitset.c
 		${PY152}/Parser/grammar1.c
