@@ -506,4 +506,27 @@ void Mode_Elems(nativeVal_t *v);
 /* the count of items a loop of the script takes from *v (Native_ForCount) after Mode_Elems */
 int Mode_Loop(nativeVal_t *v);
 
+/* ---- the hubs of batch J (Traffic, OutMap, Challenge, CharConversor, RaceMaker, Doors) ---- */
+
+/* len(v) of the script with a list or tuple held as one NV_OBJ (it holds handles) made native first (Mode_Elems):
+ * -1 with the TypeError of a value without length */
+int Mode_Len(nativeVal_t *v);
+/* v[key] of the script (an NV_OBJ, e.g. a list that holds handles, the Python way, the item as Native_Arg makes it) */
+byte Mode_Sub(const nativeVal_t *v, const nativeVal_t *key, nativeVal_t *out);
+/* SAI.GetNextRacePoint(pos, minDist, maxDist) through its seam (fc-om-dt swaps it): a vector, None outdoors without
+ * a point (a pos that is no three numbers goes to the engine function by name for its error) */
+byte Mode_RacePoint(const nativeVal_t *pos, long minDist, long maxDist, nativeVal_t *out);
+/* Scrap.TestSphere(pos[0], pos[1], pos[2], r, list) through its seam (fc-om-dt swaps it), else Mode_TestSphere */
+byte Mode_TestSpherePos(const nativeVal_t *pos, long r, const char *list, nativeVal_t *out);
+/* Scrap.StartDummySearch(name, flag) and Scrap.NextDummySearch() through their seams (fc-om-dt, fc-abi and fc-acc-dt
+ * swap them) */
+byte Mode_DummyStartSeam(const char *name, long flag);
+byte Mode_DummyNextSeam(nativeVal_t *out);
+/* Scrap.SetGrid(x, y, z) through its seam (fc-om-dt records it) */
+byte Mode_SetGrid(double x, double y, double z);
+/* Scrap.GetEntity(name) through its seam (fc-om-dt swaps it): the handle value or None */
+byte Mode_EntitySeam(const nativeVal_t *name, nativeVal_t *out);
+/* SInput.SetActionSet(name) through its seam (fc-om-dt and the _bon lists of fr6b.py record it) */
+byte Mode_ActionSet(const char *name);
+
 #endif
