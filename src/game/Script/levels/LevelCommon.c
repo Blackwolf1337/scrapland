@@ -1466,3 +1466,71 @@ byte LvN_InTraffic(const char *list, const char *const *models, int n, const cha
 	Native_Free(&l);
 	return ok;
 }
+
+/* (Native_Free(out), wp = module.missionStartWaypoint read again, out = wp.var) of the camera travelling */
+static byte LvN_WayPointAgain(const char *module, nativeVal_t *wp, const char *var, nativeVal_t *out) {
+	Native_Free(out);
+	return Mode_Read(module, "missionStartWaypoint", wp) && Mode_VGet(wp, var, out);
+}
+
+byte LvN_CamTravel(const char *module, const char *text, byte again) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *uc = Mode_V(&t), *wp = Mode_V(&t), *v = Mode_V(&t), *prev = Mode_V(&t), *wang = Mode_V(&t);
+	nativeVal_t *add = Mode_V(&t), *ang = Mode_V(&t), *rot = Mode_V(&t), *r0 = Mode_V(&t), *wpos = Mode_V(&t), *p0 = Mode_V(&t);
+	nativeVal_t *r1 = Mode_V(&t), *p1 = Mode_V(&t), *cam = Mode_V(&t), *ang1 = Mode_V(&t), *name = Mode_V(&t), *tt = Mode_V(&t);
+	nativeVal_t *now = Mode_V(&t), *at1 = Mode_V(&t), *at = Mode_V(&t), *args = Mode_V(&t), *args2 = Mode_V(&t);
+	int c = Mode_UsrHandle(usr) ? (Native_True(usr) ? (Mode_VGet(usr, "UsrControl", uc) ? !LvN_EqI(uc, 0) : -1) : 0) : -1;
+	if (c != 0) {
+		return Mode_Done(&t, c > 0);
+	}
+	Mode_Ints3(v, 0, 0, 0);
+	byte ok = Mode_Import("Menu") && LV_CALL("Menu", "MovieScorer", NULL, "i", 0L) && LvN_SetI(usr, "UsrControl", -1) && Mode_VSet(usr, "Vel", v) &&
+		Mode_G(module, "missionStartWaypoint", wp) && Mode_VGet(wp, "Pos", wpos) && Mode_VSet(usr, "MovePos", wpos) && Mode_VGet(wp, "Ang", wang) &&
+		Mode_VSet(usr, "MoveAng", wang) && LvN_SetF(usr, "MoveTime", 1.0) && LvN_SetI(usr, "MoveFade", 2) && LvN_SetI(usr, "AvoidCrash", 1) &&
+		Mode_GVarSetS("EscapeEvent", "") && Mode_GVarSetS("MainMissionEvent", "") && LV_CALL("Scrap", "GetCam", prev, "i", 0L);
+	if (ok) {
+		Mode_Ints3(add, 15, 0, 0);
+		Mode_Ints3(rot, 0, 0, -8000);
+		ok = (!again || LvN_WayPointAgain(module, wp, "Ang", wang)) && Mode_VecAdd(wang, add, ang) && Mode_Rotate(rot, ang, r0) &&
+			(!again || LvN_WayPointAgain(module, wp, "Pos", wpos)) && Mode_VecAdd(r0, wpos, p0);
+	}
+	if (ok) {
+		Native_Free(rot);
+		Mode_Ints3(rot, 0, 0, -2000);
+		ok = Mode_Rotate(rot, ang, r1) && (!again || LvN_WayPointAgain(module, wp, "Pos", wpos)) && Mode_VecAdd(r1, wpos, p1) &&
+			LvN_CreateAt(Mode_S(&t, "RaceCamera"), p0, "CamPath", cam) && LvN_SetI(cam, "nWayPoint", 2) && Mode_VSet(cam, "TgtCam00", prev) &&
+			LvN_SetS(cam, "TgtCam00", "") && Mode_VSet(cam, "Pos00", p0) && Mode_VSet(cam, "Ang00", ang) && LvN_SetI(cam, "FadeIn00", 1) &&
+			LvN_SetI(cam, "FadeOut00", 0) && LvN_SetF(cam, "Time00", 5.0) && Mode_VSet(cam, "TgtCam01", prev) && LvN_SetS(cam, "TgtCam01", "") &&
+			Mode_VSet(cam, "Pos01", p1) && (Native_Free(v), LvN_Item(ang, 0, v));
+	}
+	if (ok) {
+		nativeVal_t four = { 0 };
+		Native_SetFloat(&four, 4.0);
+		Native_SetEmpty(ang1, NV_TUPLE);
+		ok = Native_Arith('/', v, &four, Native_Append(ang1)) && LvN_Item(ang, 1, Native_Append(ang1)) && LvN_Item(ang, 2, Native_Append(ang1)) &&
+			Mode_VSet(cam, "Ang01", ang1) && LvN_SetI(cam, "FadeIn01", 0) && LvN_SetI(cam, "FadeOut01", 1) && LvN_SetI(cam, "Time", 0) &&
+			Mode_VGet(cam, "Name", name) && LV_CALL("Scrap", "SetCam", NULL, "iv", 0L, name) && Mode_VGet(cam, "Time00", tt);
+	}
+	if (ok) {
+		nativeVal_t d = { 0 };
+		Native_SetFloat(now, Mode_Time());
+		Native_SetFloat(&d, 0.2);
+		ok = Native_Arith('+', now, tt, at1) && Native_Arith('+', at1, &d, at) && Mode_VGet(usr, "Name", args) && (Native_Copy(args2, prev), 1) &&
+			Mode_AtG(at, module, "AbortCameraTravelling", args, 2) && Mode_Import("Scene") &&
+			LV_CALL("Scene", "SetText", NULL, "sv", text, tt);
+	}
+	return Mode_Done(&t, ok);
+}
+
+byte LvN_CamTravelEnd(const nativeVal_t *a, const char *module, byte racerScorer) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *cn = Mode_V(&t), *cam = Mode_V(&t);
+	byte ok = 1;
+	if (Native_True(&a[1])) {
+		ok = Mode_EntityH(&a[0], usr) && (!Native_True(usr) || (LvN_SetF(usr, "MoveTime", 0.0) && LvN_SetI(usr, "UsrControl", 0))) &&
+			Mode_GVarSetS("EscapeEvent", "Menu.Init") && Mode_GVarSetS("MainMissionEvent", "MissionsFuncs.ShowMissionInfo") &&
+			LV_CALL("Scrap", "GetCam", cn, "i", 0L) && Mode_EntityH(cn, cam) && Mode_VDel(cam) && LV_CALL("Scrap", "SetCam", NULL, "iv", 0L, &a[1]) &&
+			(!racerScorer || (Mode_Import("RacerScorer") && LV_CALL("RacerScorer", "Create", NULL, "i", 0L)));
+	}
+	return Mode_Done(&t, ok && LV_OWN(module, "LaunchMission", NULL, ""));
+}

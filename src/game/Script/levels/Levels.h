@@ -312,6 +312,16 @@ byte LvN_Repos(const char *name, long n);
 byte LvN_ScanBlink(int lost);
 /* InTraffic.<list> = the n models (n -1: up to NULL) and InTraffic.<num> = count */
 byte LvN_InTraffic(const char *list, const char *const *models, int n, const char *num, long count);
+/*
+ * StartCameraTravelling() of the missions that start at missionStartWaypoint of module (DownTown's DistractHumphrey,
+ * Outskirts' FunctionaryHunting): the player's ship flies to the waypoint while a camera path comes close to it, the
+ * scene text text, AbortCameraTravelling(UsrName, prevCamera) of module scheduled at the end of the path (again: the
+ * script reads missionStartWaypoint again for each use of its Ang and Pos)
+ */
+byte LvN_CamTravel(const char *module, const char *text, byte again);
+/* AbortCameraTravelling(UsrEntityName, prevCamera) of those missions: the player's control, the menus and the camera
+ * back (racerScorer: RacerScorer.Create(0) too), then LaunchMission() of module */
+byte LvN_CamTravelEnd(const nativeVal_t *a, const char *module, byte racerScorer);
 /* the parameters of the native helpers: an int, a text */
 void LvN_Int(nativeVal_t *v, long i);
 void LvN_Str(nativeVal_t *v, const char *s);
