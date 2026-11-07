@@ -558,4 +558,9 @@ byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time
 #define MODE_PRINT_MAX 12
 byte Mode_PrintN(const nativeVal_t *const *items, int n);
 
+/* ---- the vehicle modules of batch L (Vehicles, VehiclesNPC, ShipMaker, SputnikInterface) ---- */
+
+/* `if module.var:` of a variable of another module (any object, read as its attribute): 1, 0, -1 with the error */
+int Mode_ModTrue(const char *module, const char *var);
+
 #endif

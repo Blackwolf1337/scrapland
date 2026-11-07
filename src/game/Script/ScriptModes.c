@@ -2816,3 +2816,12 @@ byte Mode_PrintN(const nativeVal_t *const *items, int n) {
 	}
 	return ok;
 }
+
+/* ---- the vehicle modules of batch L (Vehicles, VehiclesNPC, ShipMaker, SputnikInterface) ---- */
+
+int Mode_ModTrue(const char *module, const char *var) {
+	nativeVal_t v;
+	int r = LvN_ModGet(module, var, &v) ? Native_True(&v) : -1;
+	Native_Free(&v);
+	return r;
+}
