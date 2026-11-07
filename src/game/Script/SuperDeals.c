@@ -87,6 +87,11 @@ static byte Sd_SetS(const nativeVal_t *h, const char *var, const char *s) {
 	return ok;
 }
 
+static byte Sd_SetF(const nativeVal_t *h, const char *var, double d) {
+	nativeVal_t v;
+	Native_SetFloat(&v, d);
+	return Mode_VSet(h, var, &v);
+}
 
 /* module.var of another module as a value (any object, a handle as NV_OBJ) */
 static byte Sd_ModGet(const char *module, const char *var, nativeVal_t *out) {
@@ -152,11 +157,16 @@ static int Sd_Text(const nativeVal_t *cad) {
 	return Native_True(cad) && !Native_IsStr(cad, "");
 }
 
-/* a == b, a < b, a >= b of the script (Native_Compare can not fail on native values) */
+/* a == b and a == i of the script (Native_Compare can not fail on native values) */
 static byte Sd_Eq(const nativeVal_t *a, const nativeVal_t *b) {
 	return !Native_Compare(a, b);
 }
 
+static byte Sd_EqI(const nativeVal_t *a, long i) {
+	nativeVal_t b;
+	Native_SetInt(&b, i);
+	return !Native_Compare(a, &b);
+}
 
 /* name = name + add of a global of the module (slot its copy in C), the new value in the slot */
 static byte Sd_Add(const char *mod, const char *name, nativeVal_t *slot, long add) {
@@ -175,7 +185,45 @@ static byte Sd_PutI(const char *mod, const char *name, nativeVal_t *slot, long i
 	return Mode_Put(mod, name, slot, &v);
 }
 
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func of the module, args) (Mode_Later for a number) with delay a
+ * value of the script (a global of the module, the result of a function) */
+static byte Sd_LaterV(const nativeVal_t *delay, const char *mod, const char *func, const nativeVal_t *args, int n) {
+	nativeVal_t now, t;
+	PyObject *fn = Mode_GlobalPy(mod, func);
+	if (!fn) {
+		return 0;
+	}
+	Native_SetFloat(&now, Mode_Time());
+	Native_SetNone(&t);
+	byte ok = Native_Arith('+', &now, delay, &t) && Mode_Schedule(&t, fn, args, n, NULL);
+	Native_Free(&t);
+	Py_DECREF(fn);
+	return ok;
+}
 
+/* the same with func an object (Speech.ForceRemoteCom, MissionsFuncs.OnSuperDealFinish) at Scrap.GetTime() + delay */
+static byte Sd_LaterObj(double delay, PyObject *fn, const nativeVal_t *args, int n) {
+	nativeVal_t t;
+	Native_SetFloat(&t, Mode_Time() + delay);
+	return Mode_Schedule(&t, fn, args, n, NULL);
+}
+
+/* the keyword argument of a function (one, optional) as a value: def when it is not given */
+static byte Sd_KwArg(PyObject *args, PyObject *kw, char *name, long def, nativeVal_t *out) {
+	char *names[] = { name, NULL };
+	PyObject *o = NULL;
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &o)) {
+		return 0;
+	}
+	if (o) {
+		Native_Arg(o, out);
+	} else if (def < 0) {
+		Native_SetNone(out);
+	} else {
+		Native_SetInt(out, def);
+	}
+	return 1;
+}
 
 /* e.Ang = (0, ang, 0) */
 static byte Sd_Ang(const nativeVal_t *e, const nativeVal_t *ang) {
@@ -230,9 +278,39 @@ static void Sd_Numbered(const char *prefix, long i, nativeVal_t *out) {
 	Native_SetStr(out, name);
 }
 
+/* list.append(e.Name) of a global list of the module, in place */
+static byte Sd_AppendName(const char *mod, const char *list, const nativeVal_t *e) {
+	nativeVal_t n;
+	Native_SetNone(&n);
+	byte ok = Mode_VGet(e, "Name", &n) && Mode_Append(mod, list, &n);
+	Native_Free(&n);
+	return ok;
+}
 
+/* if x in list: list.remove(x), of a global list of the module (slot its copy in C), in place */
+static byte Sd_RemoveIn(const char *mod, const char *list, nativeVal_t *slot, const nativeVal_t *x) {
+	if (!Mode_Read(mod, list, slot)) {
+		return 0;
+	}
+	int in = Native_Contains(slot, x);
+	return in > 0 ? Mode_Remove(mod, list, x) && Mode_Read(mod, list, slot) : in == 0;
+}
 
+/* Scrap.GetEntity(name).Del() */
+static byte Sd_Del(const nativeVal_t *name) {
+	cEntity *e;
+	return Mode_Ent(name, &e) && Mode_Del(e) >= 0;
+}
 
+/* the same for name + "CheckArrow" (the arrow of a baton) */
+static byte Sd_DelArrow(const nativeVal_t *item) {
+	nativeVal_t s, n;
+	Native_SetStr(&s, "CheckArrow");
+	Native_SetNone(&n);
+	byte ok = Native_Arith('+', item, &s, &n) && Sd_Del(&n);
+	Native_Free(&n);
+	return ok;
+}
 
 /* SInput.GetActionSet() */
 static void Sd_ActionSet(nativeVal_t *out) {
@@ -344,6 +422,16 @@ static byte Sd_UsrSafe(void) {
 	return ok;
 }
 
+/* usr = Scrap.UsrEntity(0); if usr: usr.Invulnerable = 1 */
+static byte Sd_UsrInvulnerable(void) {
+	nativeVal_t usr;
+	if (!Mode_UsrHandle(&usr)) {
+		return 0;
+	}
+	byte ok = !Native_True(&usr) || Sd_SetI(&usr, "Invulnerable", 1);
+	Native_Free(&usr);
+	return ok;
+}
 
 /* if (Parking.PlayerShip): Parking.PlayerShip.Invulnerable = 1 */
 static byte Sd_ShipSafe(void) {
@@ -438,6 +526,30 @@ static byte Sd_MarkShips(const nativeVal_t *names, const char *tg, const char *l
 	return ok;
 }
 
+/* the ships of the entity list from the first by NextInList: fn(e, name, arg) for each (e the handle value, name the
+ * one the loop read: EntityListGet or NextInList), 1 to go on, 0 to stop, -1 with the error */
+typedef int (*sdEach_t)(const nativeVal_t *e, const nativeVal_t *name, void *arg);
+
+static byte Sd_EachInList(const char *list, sdEach_t fn, void *arg) {
+	nativeVal_t name, e;
+	Native_SetNone(&name);
+	Native_SetNone(&e);
+	byte ok = Mode_ListGet(list, "First", &name) && Mode_EntityH(&name, &e);
+	while (ok && Native_True(&e)) {
+		int r = fn(&e, &name, arg);
+		if (r <= 0) {
+			ok = r == 0;
+			break;
+		}
+		Native_Free(&name);
+		ok = Mode_VGet(&e, "NextInList", &name);
+		Native_Free(&e);
+		ok = ok && Mode_EntityH(&name, &e);
+	}
+	Native_Free(&name);
+	Native_Free(&e);
+	return ok;
+}
 
 /* GetMenuDescription(): string.replace(the text of the deal, "<n1>", Scrap.GetSaveVar(var)) (string by name, OBJLIB
  * 3) */
@@ -488,6 +600,19 @@ static byte Sd_SetVulnerableC(void) {
 	return ok;
 }
 
+static byte Sd_SpawnAt(const nativeVal_t *usr) {
+	nativeVal_t sp, v;
+	Native_SetNone(&sp);
+	Native_SetNone(&v);
+	byte ok = CALL("OutMap", "GetSpawnPos", &sp, "") && Sd_Item(&sp, 0, &v) && Mode_VSet(usr, "Pos", &v);
+	Native_Free(&sp);
+	Native_Free(&v);
+	ok = ok && CALL("OutMap", "GetSpawnPos", &sp, "") && Sd_Item(&sp, 1, &v) && Sd_Ang(usr, &v);
+	Native_Free(&sp);
+	Native_Free(&v);
+	return ok;
+}
+
 /* RespawnPlayer(LooserName) of DeathMatch and TeamDeathMatch: the player's ship again at a spawn point (one
  * GetSpawnPos for both) */
 static byte Sd_RespawnPlayerC(const nativeVal_t *name) {
@@ -519,353 +644,6 @@ MODE_FN(Sd, AbortRemoteMessages, 0, Sd_AbortRemoteMessagesC())
 MODE_FN(Sd, SetVulnerable, 0, Sd_SetVulnerableC())
 MODE_FN(Sd, RespawnPlayer, 1, Sd_RespawnPlayerC(&a[0]))
 MODE_FN(Sd, Restart, 2, Sd_RestartC())
-
-/* Scrap.GetEntity(name).Del() */
-static byte Sd_Del(const nativeVal_t *name) {
-	cEntity *e;
-	return Mode_Ent(name, &e) && Mode_Del(e) >= 0;
-}
-
-/* the same with func an object (Speech.ForceRemoteCom, MissionsFuncs.OnSuperDealFinish) at Scrap.GetTime() + delay */
-static byte Sd_LaterObj(double delay, PyObject *fn, const nativeVal_t *args, int n) {
-	nativeVal_t t;
-	Native_SetFloat(&t, Mode_Time() + delay);
-	return Mode_Schedule(&t, fn, args, n, NULL);
-}
-
-static byte Sd_EqI(const nativeVal_t *a, long i) {
-	nativeVal_t b;
-	Native_SetInt(&b, i);
-	return !Native_Compare(a, &b);
-}
-
-/* list.append(e.Name) of a global list of the module, in place */
-static byte Sd_AppendName(const char *mod, const char *list, const nativeVal_t *e) {
-	nativeVal_t n;
-	Native_SetNone(&n);
-	byte ok = Mode_VGet(e, "Name", &n) && Mode_Append(mod, list, &n);
-	Native_Free(&n);
-	return ok;
-}
-
-/* if x in list: list.remove(x), of a global list of the module (slot its copy in C), in place */
-static byte Sd_RemoveIn(const char *mod, const char *list, nativeVal_t *slot, const nativeVal_t *x) {
-	if (!Mode_Read(mod, list, slot)) {
-		return 0;
-	}
-	int in = Native_Contains(slot, x);
-	return in > 0 ? Mode_Remove(mod, list, x) && Mode_Read(mod, list, slot) : in == 0;
-}
-
-/* the ships of the entity list from the first by NextInList: fn(e, name, arg) for each (e the handle value, name the
- * one the loop read: EntityListGet or NextInList), 1 to go on, 0 to stop, -1 with the error */
-typedef int (*sdEach_t)(const nativeVal_t *e, const nativeVal_t *name, void *arg);
-
-static byte Sd_EachInList(const char *list, sdEach_t fn, void *arg) {
-	nativeVal_t name, e;
-	Native_SetNone(&name);
-	Native_SetNone(&e);
-	byte ok = Mode_ListGet(list, "First", &name) && Mode_EntityH(&name, &e);
-	while (ok && Native_True(&e)) {
-		int r = fn(&e, &name, arg);
-		if (r <= 0) {
-			ok = r == 0;
-			break;
-		}
-		Native_Free(&name);
-		ok = Mode_VGet(&e, "NextInList", &name);
-		Native_Free(&e);
-		ok = ok && Mode_EntityH(&name, &e);
-	}
-	Native_Free(&name);
-	Native_Free(&e);
-	return ok;
-}
-
-/* usr = Scrap.UsrEntity(0); if usr: usr.Invulnerable = 1 */
-static byte Sd_UsrInvulnerable(void) {
-	nativeVal_t usr;
-	if (!Mode_UsrHandle(&usr)) {
-		return 0;
-	}
-	byte ok = !Native_True(&usr) || Sd_SetI(&usr, "Invulnerable", 1);
-	Native_Free(&usr);
-	return ok;
-}
-
-/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func of the module, args) (Mode_Later for a number) with delay a
- * value of the script (a global of the module, the result of a function) */
-static byte Sd_LaterV(const nativeVal_t *delay, const char *mod, const char *func, const nativeVal_t *args, int n) {
-	nativeVal_t now, t;
-	PyObject *fn = Mode_GlobalPy(mod, func);
-	if (!fn) {
-		return 0;
-	}
-	Native_SetFloat(&now, Mode_Time());
-	Native_SetNone(&t);
-	byte ok = Native_Arith('+', &now, delay, &t) && Mode_Schedule(&t, fn, args, n, NULL);
-	Native_Free(&t);
-	Py_DECREF(fn);
-	return ok;
-}
-
-static byte Sd_SetF(const nativeVal_t *h, const char *var, double d) {
-	nativeVal_t v;
-	Native_SetFloat(&v, d);
-	return Mode_VSet(h, var, &v);
-}
-
-static byte Sd_SpawnAt(const nativeVal_t *usr) {
-	nativeVal_t sp, v;
-	Native_SetNone(&sp);
-	Native_SetNone(&v);
-	byte ok = CALL("OutMap", "GetSpawnPos", &sp, "") && Sd_Item(&sp, 0, &v) && Mode_VSet(usr, "Pos", &v);
-	Native_Free(&sp);
-	Native_Free(&v);
-	ok = ok && CALL("OutMap", "GetSpawnPos", &sp, "") && Sd_Item(&sp, 1, &v) && Sd_Ang(usr, &v);
-	Native_Free(&sp);
-	Native_Free(&v);
-	return ok;
-}
-
-/* the keyword argument of a function (one, optional) as a value: def when it is not given */
-static byte Sd_KwArg(PyObject *args, PyObject *kw, char *name, long def, nativeVal_t *out) {
-	char *names[] = { name, NULL };
-	PyObject *o = NULL;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &o)) {
-		return 0;
-	}
-	if (o) {
-		Native_Arg(o, out);
-	} else if (def < 0) {
-		Native_SetNone(out);
-	} else {
-		Native_SetInt(out, def);
-	}
-	return 1;
-}
-
-/* the same for name + "CheckArrow" (the arrow of a baton) */
-static byte Sd_DelArrow(const nativeVal_t *item) {
-	nativeVal_t s, n;
-	Native_SetStr(&s, "CheckArrow");
-	Native_SetNone(&n);
-	byte ok = Native_Arith('+', item, &s, &n) && Sd_Del(&n);
-	Native_Free(&n);
-	return ok;
-}
-
-/* ---- the lines of the modes still on Sf_ frames (until each mode is native) ---- */
-
-/* Scrap.GetSaveVar(name), int(Scrap.GetSaveVar(name)), Scrap.SetSaveVar(name, "text") */
-static PyObject *Sdf_Save(scriptFrame_t *f, const char *name) {
-	return Sf_Ask(f, "Scrap", "GetSaveVar", "(s)", name);
-}
-
-static PyObject *Sdf_SaveInt(scriptFrame_t *f, const char *name) {
-	return Sf_ToInt(f, Sdf_Save(f, name));
-}
-
-/* Scrap.UsrEntity(0), Scrap.GetLangStr("key"), Scrap.Set(var, v), Scrap.Set(var, "text") */
-static PyObject *Sdf_Usr(scriptFrame_t *f) {
-	return Sf_Ask(f, "Scrap", "UsrEntity", "(i)", 0);
-}
-
-static PyObject *Sdf_Lang(scriptFrame_t *f, const char *key) {
-	return Sf_Lang(f, Sf_Str(f, key));
-}
-
-static void Sdf_Set(scriptFrame_t *f, const char *var, PyObject *v) {
-	if (v) {
-		Sf_Ask(f, "Scrap", "Set", "(sO)", var, v);
-	}
-}
-
-static void Sdf_SetS(scriptFrame_t *f, const char *var, const char *text) {
-	Sf_Ask(f, "Scrap", "Set", "(ss)", var, text);
-}
-
-/* a function of a module as its functions call it, with Py_BuildValue arguments */
-#define Sdf_Call(f, mod, func, ...) Sf_Call(f, Sf_Global(f, mod, func), __VA_ARGS__)
-
-/* `usr and usr.Name == name`, `usr and usr.IsType("Car")`, `cad and cad != ""` as conditions */
-static int Sdf_UsrIs(scriptFrame_t *f, PyObject *usr, PyObject *name) {
-	int t = Sf_True(f, usr);
-	return t > 0 ? Sf_Compare(f, Sf_Attr(f, usr, "Name"), "==", name) : t;
-}
-
-static int Sdf_UsrCar(scriptFrame_t *f, PyObject *usr) {
-	int t = Sf_True(f, usr);
-	return t > 0 ? Sf_True(f, Sf_Method(f, usr, "IsType", "(s)", "Car")) : t;
-}
-
-/* name = name + 1 (or - 1) of a module global, the new value */
-static PyObject *Sdf_Add(scriptFrame_t *f, const char *mod, const char *name, long add) {
-	PyObject *v = Sf_OpI(f, Sf_Global(f, mod, name), '+', add);
-	Sf_SetGlobal(f, mod, name, v);
-	return v;
-}
-
-/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func of the module, args) */
-static void Sdf_Later(scriptFrame_t *f, PyObject *delay, const char *mod, const char *func, PyObject *args) {
-	Sf_Later(f, delay, Sf_Global(f, mod, func), args, NULL);
-}
-
-/* e.Ang = (0, ang, 0) */
-static void Sdf_Ang(scriptFrame_t *f, PyObject *e, PyObject *ang) {
-	Sf_SetAttr(f, e, "Ang", Sf_Build(f, "(iOi)", 0, ang, 0));
-}
-
-/* Scrap.CreateEntity(name, pos[0], pos[1], pos[2], cls) */
-static PyObject *Sdf_Create(scriptFrame_t *f, PyObject *name, PyObject *pos, const char *cls) {
-	PyObject *x = Sf_Item(f, pos, 0), *y = Sf_Item(f, pos, 1), *z = Sf_Item(f, pos, 2);
-	return Sf_Ask(f, "Scrap", "CreateEntity", "(OOOOs)", name, x, y, z, cls);
-}
-
-/* list.append(e.Name) of a module global list */
-static void Sdf_AppendName(scriptFrame_t *f, const char *mod, const char *list, PyObject *e) {
-	Sf_Method(f, Sf_Global(f, mod, list), "append", "(O)", Sf_Attr(f, e, "Name"));
-}
-
-/* if x in list: list.remove(x), of a module global list */
-static void Sdf_RemoveIn(scriptFrame_t *f, const char *mod, const char *list, PyObject *x) {
-	if (Sf_In(f, x, Sf_Global(f, mod, list)) > 0) {
-		Sf_Method(f, Sf_Global(f, mod, list), "remove", "(O)", x);
-	}
-}
-
-/* Scrap.GetEntity(name).Del() */
-static void Sdf_Del(scriptFrame_t *f, PyObject *name) {
-	Sf_Method(f, Sf_Entity(f, name), "Del", "()");
-}
-
-/* Menu.DrawScorer(0, SInput.GetActionSet()), with Menu.MissionScorerCall = None before it */
-static void Sdf_Draw(scriptFrame_t *f) {
-	Sf_Ask(f, "Menu", "DrawScorer", "(iO)", 0, Sf_Ask(f, "SInput", "GetActionSet", "()"));
-}
-
-static void Sdf_ScorerOff(scriptFrame_t *f) {
-	Sf_SetMod(f, "Menu", "MissionScorerCall", Py_None);
-	Sdf_Draw(f);
-}
-
-/* RacerScorer.UpdateMissionScorer(0, a, b) */
-static void Sdf_Update(scriptFrame_t *f, PyObject *a, PyObject *b) {
-	Sf_Ask(f, "RacerScorer", "UpdateMissionScorer", "(iOO)", 0, a, b);
-}
-
-/* SSound.Play(Sound.<snd>, Sound.<vol>) */
-static void Sdf_Sound(scriptFrame_t *f, const char *snd, const char *vol) {
-	PyObject *s = Sf_Mod(f, "Sound", snd);
-	Sf_Ask(f, "SSound", "Play", "(OO)", s, Sf_Mod(f, "Sound", vol));
-}
-
-/* Speech.<how>(cad, who, AfterRemoteComFunc = func, Parameters = params) */
-static void Sdf_Remote(scriptFrame_t *f, const char *how, PyObject *cad, PyObject *who, PyObject *func,
-	PyObject *params) {
-	PyObject *fn = Sf_Mod(f, "Speech", how);
-	PyObject *kw = Sf_Build(f, "{sOsO}", "AfterRemoteComFunc", func, "Parameters", params);
-	Sf_CallKw(f, fn, kw ? Py_BuildValue("(OO)", cad, who) : NULL, kw);
-}
-
-/* usr = Scrap.UsrEntity(0); if usr: (if usr.IsType("Car"): usr.Life = usr.MaxLife); usr.Invulnerable = 1 */
-static void Sdf_UsrSafe(scriptFrame_t *f) {
-	PyObject *usr = Sdf_Usr(f);
-	if (Sf_True(f, usr) > 0) {
-		if (Sf_True(f, Sf_Method(f, usr, "IsType", "(s)", "Car")) > 0) {
-			Sf_SetAttr(f, usr, "Life", Sf_Attr(f, usr, "MaxLife"));
-		}
-		Sf_SetAttrI(f, usr, "Invulnerable", 1);
-	}
-}
-
-/* MissionsFuncs.cameraData = MissionsFuncs.mapsCameraData[map] */
-static void Sdf_Camera(scriptFrame_t *f, const char *map) {
-	PyObject *cams = Sf_Mod(f, "MissionsFuncs", "mapsCameraData");
-	Sf_SetMod(f, "MissionsFuncs", "cameraData", Sf_GetItem(f, cams, Sf_Str(f, map)));
-}
-
-/* the same when Scrap.GetSaveVar("Mission.Library") is one of the libraries */
-static void Sdf_CameraFor(scriptFrame_t *f, const char *const *libraries, const char *map) {
-	if (Sf_InS(f, Sdf_Save(f, "Mission.Library"), libraries) > 0) {
-		Sdf_Camera(f, map);
-	}
-}
-
-/* GetMenuDescription(): the text of the deal with its number */
-static PyObject *Sdf_MenuDescription(PyObject *args, const char *key, const char *var) {
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "string");
-	PyObject *text = Sdf_Lang(&f, key);
-	return Sf_Return(&f, Sf_Ask(&f, "string", "replace", "(OsO)", text, "<n1>", Sdf_Save(&f, var)));
-}
-
-/* import Chars, Parking, Vehicles[, more]; the player and his ship invulnerable when created, no ship lost on death */
-static void Sdf_Status(scriptFrame_t *f, const char *mod, const char *more) {
-	Sf_Import(f, "Chars");
-	Sf_Import(f, "Parking");
-	Sf_Import(f, "Vehicles");
-	if (more) {
-		Sf_Import(f, more);
-	}
-	Sf_SetMod(f, "Chars", "OnCreateMainChar", Sf_Global(f, mod, "SetInvulnerableStatus"));
-	Sf_SetMod(f, "Parking", "OnCreatePlayerShip", Sf_Global(f, mod, "SetInvulnerableStatus"));
-	Sf_SetMod(f, "Vehicles", "DelPlayerShipOnDeath", Sf_Int(f, 0));
-}
-
-/* LostBatonMessage() of Domination and MortalRace: the message that the player lost the baton */
-static PyObject *Sdf_LostBaton(PyObject *args, const char *key) {
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	PyObject *cad = Sdf_Lang(&f, key);
-	PyObject *t = Sf_Time(&f);
-	t = Sf_Op(&f, t, '+', Sf_Ask(&f, "Speech", "CalculateSpeechTime", "(O)", cad));
-	Sf_Ask(&f, "SScorer", "SetMsgText", "(OO)", cad, t);
-	return Sf_None(&f);
-}
-
-/* the baton of Domination and MortalRace: l = the item "Baton" at pos with its model, radius and OnTake */
-static PyObject *Sdf_Baton(scriptFrame_t *f, const char *mod, PyObject *pos, const char *onTake) {
-	PyObject *l = Sdf_Create(f, Sf_Str(f, "Baton"), pos, "Item");
-	Sf_Method(f, l, "SetModel", "(O)", Sf_Global(f, mod, "BatonModel"));
-	Sf_SetAttr(f, l, "Radius", Sf_Global(f, mod, "BatonRadius"));
-	Sf_SetAttrI(f, l, "AppearsIfFree", 0);
-	Sf_SetAttrI(f, l, "AutoFace", 0);
-	Sf_SetAttrI(f, l, "OnlyUser", 0);
-	Sf_SetAttr(f, l, "rTime", Sf_Float(f, 0.25));
-	Sf_SetAttrS(f, l, "OnTake", onTake);
-	return l;
-}
-
-/* l2 = Scrap.CreateEntity(l.Name + "CheckArrow", pos..., "WithLife"); l2.CamTgt = 0, 1000, 0 */
-static PyObject *Sdf_BatonArrow(scriptFrame_t *f, PyObject *l, PyObject *pos) {
-	PyObject *l2 = Sdf_Create(f, Sf_Cat(f, "Os", Sf_Attr(f, l, "Name"), "CheckArrow"), pos, "WithLife");
-	Sf_SetAttr(f, l2, "CamTgt", Sf_Build(f, "(iii)", 0, 1000, 0));
-	return l2;
-}
-
-/* the ships of the entity list from the first by NextInList: fn(f, e, name, arg) for each, 1 to go on; the name is
- * the one the loop read (EntityListGet or NextInList) */
-static void Sdf_EachInList(scriptFrame_t *f, const char *list, int (*fn)(scriptFrame_t *f, PyObject *e, PyObject *name,
-	void *arg), void *arg) {
-	PyObject *name = Sf_Ask(f, "Scrap", "EntityListGet", "(ss)", list, "First");
-	PyObject *e = Sf_Entity(f, name);
-	int mark = f->n;
-	while (Sf_True(f, e) > 0) {
-		if (!fn(f, e, name, arg)) {
-			break;
-		}
-		name = Sf_Attr(f, e, "NextInList");
-		e = Sf_Entity(f, name);
-		PyObject *keep[2] = { name, e };
-		Sf_ReleaseKeep(f, mark, keep, 2);
-	}
-}
 
 /* ---- DeathMatch: all against all in the CA, the first with CombatDeaths frags wins ---- */
 
@@ -1557,8 +1335,6 @@ PyMethodDef g_VersusMethods[] = {
 	{ NULL, NULL, 0, NULL }
 };
 
-
-
 /* ---- TeamDeathMatch: the player's team against the enemies in the QF, CombatDeaths frags of a team win ---- */
 
 static struct {
@@ -2180,7 +1956,6 @@ static byte Ctf_EndOfCTFC(void) {
 }
 
 MODE_FN(Ctf, EndOfCTF, 0, Ctf_EndOfCTFC())
-
 
 /* RespawnEnemy(isLeader = 0): an enemy at a spawn point, the leader with the target */
 static byte Ctf_RespawnEnemyC(const nativeVal_t *leader) {
@@ -3443,918 +3218,1116 @@ PyMethodDef g_DominationMethods[] = {
 /* ---- MortalRace: the race of the FZ with the baton; only the ship with the baton counts the buoys, the others hunt
  * it ---- */
 
-static PyObject *MortalRace_GetMenuDescription(PyObject *self, PyObject *args) {
-	(void)self;
-	return Sdf_MenuDescription(args, "SuperDeal_MortalRace_Description", "MortalRaceWaypoints");
-}
+static struct {
+	nativeVal_t bayScorer, nameProfileDict;	/* dicts: the buoys of each racer, the profile of each racer name */
+	nativeVal_t racers;			/* the racer names (a list) */
+	nativeVal_t bestScorer, yourScore, iStartPos, waypointName, userWithBaton, shipWithBaton, messageKillShipThrown;
+	nativeVal_t numWaypoints, profileType, respawnTime, batonRadius, model;
+	nativeVal_t baton, prof;		/* the baton's handle and the AI profile object of VehiclesNPC (OBJLIB 7, 5) */
+} mr;
+
+MODE_FN(Mr, GetMenuDescription, 0, Sd_MenuDescriptionC("SuperDeal_MortalRace_Description", "MortalRaceWaypoints", out))
 
 /* InitStatus(LevelPath): no police and no traffic, the AI reports the places it reached */
-static PyObject *MortalRace_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Sdf_Status(&f, MR, "OutPolice");
-	Sf_SetMod(&f, "OutPolice", "PoliceActive", Sf_Int(&f, 0));
-	Sf_Ask(&f, "Scrap", "Set", "(si)", "iTrafficNumber", 0);
-	Sf_Ask(&f, "Scrap", "Set", "(si)", "MaxFightingTrafficSize", 0);
-	Sdf_SetS(&f, "OnItemTakenAI", "MortalRace.OnPositionReached");
-	return Sf_None(&f);
+static byte Mr_InitStatusC(void) {
+	nativeVal_t zero;
+	Native_SetInt(&zero, 0);
+	return Sd_StatusC(MR, "OutPolice") && Mode_SetModVar("OutPolice", "PoliceActive", &zero) &&
+		Mode_GVarSet("iTrafficNumber", &zero) && Mode_GVarSet("MaxFightingTrafficSize", &zero) &&
+		Mode_GVarSetS("OnItemTakenAI", "MortalRace.OnPositionReached");
+}
+
+MODE_FN(Mr, InitStatus, 1, Mr_InitStatusC())
+
+/* var of the module = conv(Scrap.GetSaveVar(save)) (conv: int, float or the text) */
+static byte Mr_FromSave(const char *var, nativeVal_t *slot, const char *save, char conv) {
+	nativeVal_t s, v;
+	Mode_SaveVar(save, &s);
+	Native_SetNone(&v);
+	byte ok = conv == 'i' ? Native_ToInt(&s, &v) : conv == 'f' ? Native_ToFloat(&s, &v) : (Native_Copy(&v, &s), 1);
+	ok = ok && Mode_Put(MR, var, slot, &v);
+	Native_Free(&s);
+	Native_Free(&v);
+	return ok;
 }
 
 /* Init(LevelPath): the race of the save variables (buoys, racers' profile, respawn time), the models, the start when
  * the player boards; the baton drops when he leaves the ship */
-static PyObject *MortalRace_Init(PyObject *self, PyObject *args) {
+static byte Mr_InitC(void) {
 	static const char *const libs[] = { "SuperDeal_Second", "SuperDeal_Seventh", "SuperDeal_Twelfth", NULL };
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+	nativeVal_t none, text, start, aim;
+	if (!Mode_Import("Parking") || !Mode_Import("Chars") || !Mode_Import("RaceMaker") || !Sd_CameraFor(libs, "FZ")) {
+		return 0;
 	}
-	Sf_Import(&f, "Parking");
-	Sf_Import(&f, "Chars");
-	Sf_Import(&f, "RaceMaker");
-	Sdf_CameraFor(&f, libs, "FZ");
-	Sf_SetMod(&f, "MissionsFuncs", "cameraData", Sf_Build(&f, "()"));
-	Sf_Ask(&f, "RaceMaker", "PreloadCnDnResources", "()");
-	Sf_Ask(&f, "Scrap", "Preload3DObject", "(O)", Sf_Global(&f, MR, "BatonModel"));
-	Sf_Ask(&f, "Scrap", "Preload3DObject", "(O)", Sf_Global(&f, MR, "WayPointModel"));
-	Sf_SetMod(&f, "Chars", "OnMainCharDeath", Sf_Global(&f, MR, "OnPlayerDeath"));
-	Sf_SetMod(&f, "RaceMaker", "StartPos", Sf_Eval(&f, Sdf_Save(&f, "MortalRaceRace"), MR));
-	Sf_SetGlobal(&f, MR, "numWaypoints", Sdf_SaveInt(&f, "MortalRaceWaypoints"));
-	Sf_SetGlobal(&f, MR, "respawnTime", Sf_ToFloat(&f, Sdf_Save(&f, "MortalRaceRespawnTime")));
-	Sf_SetGlobal(&f, MR, "profileType", Sdf_Save(&f, "MortalRaceRacersProfile"));
-	Sf_SetGlobal(&f, MR, "FightingFreezeControlAim", Sdf_SaveInt(&f, "MortalRaceFightingFreezeControlAim"));
-	Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Sf_Global(&f, MR, "CrazyGamblerStartMortalRace"));
-	Sf_SetMod(&f, "Parking", "SwitchCharMissionCallback", Sf_Global(&f, MR, "ReleaseBaton"));
-	return Sf_None(&f);
+	Native_SetEmpty(&none, NV_TUPLE);
+	Native_SetNone(&start);
+	Native_SetNone(&aim);
+	byte ok = Mode_SetModVar("MissionsFuncs", "cameraData", &none) && CALL("RaceMaker", "PreloadCnDnResources", NULL, "") &&
+		Sd_PreloadVar(MR, "BatonModel", &mr.model) && Sd_PreloadVar(MR, "WayPointModel", &mr.model) &&
+		Sd_GlobalTo("Chars", "OnMainCharDeath", MR, "OnPlayerDeath");
+	if (ok) {
+		Mode_SaveVar("MortalRaceRace", &text);
+		ok = Native_EvalText(MR, &text, &start) && Mode_SetModVar("RaceMaker", "StartPos", &start);
+		Native_Free(&text);
+	}
+	ok = ok && Mr_FromSave("numWaypoints", &mr.numWaypoints, "MortalRaceWaypoints", 'i') &&
+		Mr_FromSave("respawnTime", &mr.respawnTime, "MortalRaceRespawnTime", 'f') &&
+		Mr_FromSave("profileType", &mr.profileType, "MortalRaceRacersProfile", 's') &&
+		Mr_FromSave("FightingFreezeControlAim", &aim, "MortalRaceFightingFreezeControlAim", 'i') &&
+		Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", MR, "CrazyGamblerStartMortalRace") &&
+		Sd_GlobalTo("Parking", "SwitchCharMissionCallback", MR, "ReleaseBaton");
+	Native_Free(&start);
+	Native_Free(&aim);
+	return ok;
 }
 
-/* RaceMaker.StartPos[i] */
-static PyObject *Mr_StartPos(scriptFrame_t *f, PyObject *i) {
-	return Sf_GetItem(f, Sf_Mod(f, "RaceMaker", "StartPos"), i);
+MODE_FN(Mr, Init, 1, Mr_InitC())
+
+/* RaceMaker.StartPos[i][k] (the variable of RaceMaker read again, OBJLIB 5) */
+static byte Mr_StartPos(const nativeVal_t *i, long k, nativeVal_t *out) {
+	nativeVal_t sp, p;
+	Native_SetNone(&sp);
+	Native_SetNone(&p);
+	byte ok = Mode_ModVar("RaceMaker", "StartPos", &sp) && Native_Subscript(&sp, i, &p) && Sd_Item(&p, k, out);
+	Native_Free(&sp);
+	Native_Free(&p);
+	return ok;
+}
+
+/* RaceMaker.StartPos[iStartPos][k] */
+static byte Mr_AtStart(long k, nativeVal_t *out) {
+	return Mode_Read(MR, "iStartPos", &mr.iStartPos) && Mr_StartPos(&mr.iStartPos, k, out);
+}
+
+/* len(RaceMaker.StartPos): -1 with the error */
+static int Mr_Count(void) {
+	nativeVal_t sp;
+	Native_SetNone(&sp);
+	int n = Mode_ModVar("RaceMaker", "StartPos", &sp) ? Native_Size(&sp) : -1;
+	Native_Free(&sp);
+	return n;
 }
 
 /* iStartPos - 1, at least 0 */
-static PyObject *Mr_PrevPos(scriptFrame_t *f) {
-	PyObject *i = Sf_OpI(f, Sf_Global(f, MR, "iStartPos"), '-', 1);
-	return Sf_Compare(f, i, "<", Sf_Int(f, 0)) > 0 ? Sf_Int(f, 0) : i;
+static byte Mr_PrevPos(nativeVal_t *out) {
+	nativeVal_t one, zero;
+	Native_SetInt(&one, 1);
+	Native_SetInt(&zero, 0);
+	if (!Mode_Read(MR, "iStartPos", &mr.iStartPos) || !Native_Arith('-', &mr.iStartPos, &one, out)) {
+		return 0;
+	}
+	if (Native_Compare(out, &zero) < 0) {
+		Native_Free(out);
+		Native_SetInt(out, 0);
+	}
+	return 1;
 }
 
 /* iStartPos = (iStartPos + 1) % len(RaceMaker.StartPos) */
-static void Mr_NextPos(scriptFrame_t *f) {
-	PyObject *i = Sf_OpI(f, Sf_Global(f, MR, "iStartPos"), '+', 1);
-	PyObject *n = Sf_Int(f, Sf_Len(f, Sf_Mod(f, "RaceMaker", "StartPos")));
-	Sf_SetGlobal(f, MR, "iStartPos", Sf_Op(f, i, '%', n));
+static byte Mr_NextPos(void) {
+	nativeVal_t one, i, n, r;
+	Native_SetInt(&one, 1);
+	Native_SetNone(&i);
+	Native_SetNone(&r);
+	byte ok = Mode_Read(MR, "iStartPos", &mr.iStartPos) && Native_Arith('+', &mr.iStartPos, &one, &i);
+	int count = ok ? Mr_Count() : -1;
+	if (count >= 0) {
+		Native_SetInt(&n, count);
+		ok = Native_Arith('%', &i, &n, &r) && Mode_Put(MR, "iStartPos", &mr.iStartPos, &r);
+	} else {
+		ok = 0;
+	}
+	Native_Free(&i);
+	Native_Free(&r);
+	return ok;
 }
 
 /* sp = VehiclesNPC.cShipAI(); VehiclesNPC.SetAIProfile(sp, MortalRaceRacersProfile); the ship races to pos */
-static void Mr_GoTo(scriptFrame_t *f, PyObject *name, PyObject *pos, PyObject *radius) {
-	PyObject *sp = Sf_Ask(f, "VehiclesNPC", "cShipAI", "()");
-	Sf_Ask(f, "VehiclesNPC", "SetAIProfile", "(OO)", sp, Sdf_Save(f, "MortalRaceRacersProfile"));
-	PyObject *x = Sf_Item(f, pos, 0), *y = Sf_Item(f, pos, 1), *z = Sf_Item(f, pos, 2);
-	Sf_Ask(f, "SAI", "SetStateVehicle", "(iOOOOOO)", 6, name, x, y, z, radius, Sf_Attr(f, sp, "ControlBoostRace"));
+static byte Mr_GoTo(const nativeVal_t *name, const nativeVal_t *pos, const nativeVal_t *radius) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *sp = Mode_V(&t), *prof = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t), *boost = Mode_V(&t);
+	if (!CALL("VehiclesNPC", "cShipAI", sp, "")) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("MortalRaceRacersProfile", prof);
+	return Mode_Done(&t, CALL("VehiclesNPC", "SetAIProfile", NULL, "vv", sp, prof) && Sd_Item(pos, 0, x) && Sd_Item(pos, 1, y) &&
+		Sd_Item(pos, 2, z) && Mode_VGet(sp, "ControlBoostRace", boost) &&
+		CALL("SAI", "SetStateVehicle", NULL, "ivvvvvv", 6L, name, x, y, z, radius, boost));
+}
+
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, MoveRacersToPos, (pos, BatonRadius)) */
+static byte Mr_MoveLater(double delay, const nativeVal_t *pos) {
+	nativeVal_t args[2];
+	Native_Copy(&args[0], pos);
+	Native_SetNone(&args[1]);
+	byte ok = Mode_Read(MR, "BatonRadius", &args[1]) && Mode_Later(delay, MR, "MoveRacersToPos", args, 2, NULL);
+	Native_Free(&args[0]);
+	Native_Free(&args[1]);
+	return ok;
 }
 
 /* ReleaseBaton(): the player left his ship with the baton: it drops at the last buoy and every racer goes for it */
-static PyObject *MortalRace_ReleaseBaton(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Mr_ReleaseBatonC(void) {
+	nativeVal_t i, one, zero, pos;
+	if (!Mode_Import("RaceMaker") || !Mode_Read(MR, "userWithBaton", &mr.userWithBaton)) {
+		return 0;
 	}
-	Sf_Import(&f, "RaceMaker");
-	if (Sf_True(&f, Sf_Global(&f, MR, "userWithBaton")) > 0) {
-		Sdf_Later(&f, Sf_Float(&f, 0.3), MR, "LostBatonMessage", Sf_Build(&f, "()"));
-		Sf_SetGlobal(&f, MR, "userWithBaton", Sf_Int(&f, 0));
-		Sf_SetGlobal(&f, MR, "shipWithBaton", Sf_Str(&f, ""));
-		PyObject *i = Sf_OpI(&f, Sf_Global(&f, MR, "iStartPos"), '-', 1);
-		if (Sf_Compare(&f, i, "<", Sf_Int(&f, 0)) > 0) {
-			i = Sf_Int(&f, Sf_Len(&f, Sf_Mod(&f, "RaceMaker", "StartPos")) - 1);
-		}
-		PyObject *pos = Sf_Item(&f, Mr_StartPos(&f, i), 0);
-		Sdf_Call(&f, MR, "CreateBaton", "(O)", pos);
-		Sdf_Later(&f, Sf_Float(&f, 0.2), MR, "MoveRacersToPos", Sf_Build(&f, "(OO)", pos, Sf_Global(&f, MR,
-			"BatonRadius")));
+	if (!Native_True(&mr.userWithBaton)) {
+		return 1;
 	}
-	return Sf_None(&f);
+	if (!Mode_Later(0.3, MR, "LostBatonMessage", NULL, 0, NULL) || !Sd_BatonFree(MR, &mr.userWithBaton, &mr.shipWithBaton) ||
+		!Mode_Read(MR, "iStartPos", &mr.iStartPos)) {
+		return 0;
+	}
+	/* i = iStartPos - 1; if (i < 0): i = len(RaceMaker.StartPos) - 1 */
+	Native_SetInt(&one, 1);
+	Native_SetInt(&zero, 0);
+	Native_SetNone(&i);
+	Native_SetNone(&pos);
+	byte ok = Native_Arith('-', &mr.iStartPos, &one, &i);
+	if (ok && Native_Compare(&i, &zero) < 0) {
+		int n = Mr_Count();
+		ok = n >= 0;
+		Native_Free(&i);
+		Native_SetInt(&i, n - 1);
+	}
+	ok = ok && Mr_StartPos(&i, 0, &pos) && OWN(MR, "CreateBaton", NULL, "v", &pos) && Mr_MoveLater(0.2, &pos);
+	Native_Free(&i);
+	Native_Free(&pos);
+	return ok;
 }
 
-static PyObject *MortalRace_LostBatonMessage(PyObject *self, PyObject *args) {
-	(void)self;
-	return Sdf_LostBaton(args, "Mission_WinMortalRace_SystemMessage5");
-}
+MODE_FN(Mr, ReleaseBaton, 0, Mr_ReleaseBatonC())
+MODE_FN(Mr, LostBatonMessage, 0, Sd_LostBaton("Mission_WinMortalRace_SystemMessage5"))
 
 /* CrazyGamblerStartMortalRace(): the player boarded: the racers line up, the crazy gambler's message puts the first
  * buoy */
-static PyObject *MortalRace_CrazyGamblerStartMortalRace(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Mr_CrazyGamblerStartMortalRaceC(void) {
+	nativeVal_t cad, none;
+	PyObject *fn;
+	if (!Mode_Import("Parking") || !Mode_Import("Speech") || !Sd_ModSetI("Parking", "PlayerShip", "Invulnerable", 0) ||
+		!Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", MR, "SetVulnerable")) {
+		return 0;
 	}
-	Sf_Import(&f, "Parking");
-	Sf_Import(&f, "Speech");
-	Sf_SetAttrI(&f, Sf_Mod(&f, "Parking", "PlayerShip"), "Invulnerable", 0);
-	Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Sf_Global(&f, MR, "SetVulnerable"));
-	PyObject *cad = Sdf_Save(&f, "MortalRaceStartTextCad");
-	Sf_Ask(&f, "Speech", "AddRemoteCom", "(OsO())", cad, CG, Sf_Global(&f, MR, "CreateFirstWaypoint"));
-	Sdf_Call(&f, MR, "InitRace", "()");
-	return Sf_None(&f);
+	Mode_SaveVar("MortalRaceStartTextCad", &cad);
+	Native_SetEmpty(&none, NV_TUPLE);
+	byte ok = (fn = Mode_GlobalPy(MR, "CreateFirstWaypoint")) != NULL && CALL("Speech", "AddRemoteCom", NULL, "vsOv", &cad, CG, fn, &none);
+	Py_XDECREF(fn);
+	Native_Free(&cad);
+	return ok && OWN(MR, "InitRace", NULL, "");
 }
+
+MODE_FN(Mr, CrazyGamblerStartMortalRace, 0, Mr_CrazyGamblerStartMortalRaceC())
 
 /* CreateBaton(pos): the baton at pos, the mission target on its arrow */
-static PyObject *MortalRace_CreateBaton(PyObject *self, PyObject *args) {
-	PyObject *pos;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &pos)) {
-		return NULL;
-	}
-	PyObject *l = Sdf_Baton(&f, MR, pos, "MortalRace.TakeBaton");
-	PyObject *l2 = Sdf_BatonArrow(&f, l, pos);
-	Sf_SetGlobal(&f, MR, "baton", l);
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, l2, "Name"));
-	Sdf_Set(&f, "CurrentWaypointName", Sf_Attr(&f, l2, "Name"));
-	return Sf_None(&f);
+static byte Mr_CreateBatonC(const nativeVal_t *pos) {
+	nativeVal_t l, l2;
+	Native_SetNone(&l);
+	Native_SetNone(&l2);
+	byte ok = Sd_Baton(MR, pos, "MortalRace.TakeBaton", &l) && Sd_BatonArrow(&l, pos, &l2) && Mode_Put(MR, "baton", &mr.baton, &l) &&
+		Sd_BatonTarget(&l2);
+	Native_Free(&l);
+	Native_Free(&l2);
+	return ok;
 }
 
+MODE_FN(Mr, CreateBaton, 1, Mr_CreateBatonC(&a[0]))
+
 /* TakeBaton(ItemName, VehicleName): a racer or the player took the baton: the buoy comes back, the others hunt him */
-static PyObject *MortalRace_TakeBaton(PyObject *self, PyObject *args) {
-	PyObject *item, *who;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &item, &who)) {
-		return NULL;
+static byte Mr_TakeBatonC(const nativeVal_t *item, const nativeVal_t *who) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *e = Mode_V(&t), *pos = Mode_V(&t), *un = Mode_V(&t), *v = Mode_V(&t);
+	if (!Mode_Import("RaceMaker") || !Mode_Import("Sound") || !Mode_Import("VehiclesNPC") || !Mode_UsrHandle(usr) ||
+		!Mode_Read(MR, "baton", &mr.baton)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "RaceMaker");
-	Sf_Import(&f, "Sound");
-	Sf_Import(&f, "VehiclesNPC");
-	PyObject *usr = Sdf_Usr(&f);
-	if (Sf_True(&f, Sf_Global(&f, MR, "baton")) <= 0) {
-		return Sf_None(&f);
+	if (!Native_True(&mr.baton)) {
+		return Mode_Done(&t, 1);
 	}
-	PyObject *e = Sf_Entity(&f, Sf_Global(&f, MR, "waypointName"));
-	Sf_SetAttrI(&f, e, "Active", 1);
-	Sf_SetAttrS(&f, e, "OnTake", "MortalRace.OnCheckPoint");
-	Sdf_Del(&f, item);
-	Sdf_Del(&f, Sf_Cat(&f, "Os", item, "CheckArrow"));
-	Sf_SetGlobal(&f, MR, "baton", Py_None);
-	PyObject *pos = Sf_Attr(&f, e, "Pos");
-	int u = Sf_True(&f, usr);
-	int racer = u == 0 ? 1 : u > 0 ? Sf_Compare(&f, who, "!=", Sf_Attr(&f, usr, "Name")) : -1;
-	if (racer > 0) {
-		if (Sf_True(&f, Sf_Global(&f, MR, "messageKillShipThrown")) == 0) {
-			int show = u == 0 ? 1 : Sf_True(&f, Sf_Method(&f, usr, "IsType", "(s)", "Car"));
-			if (show > 0) {
-				Sf_Ask(&f, "RaceMaker", "ShowSystemMessage", "(O)", Sdf_Lang(&f,
-					"Mission_WinMortalRace_SystemMessage2"));
+	if (!Mode_Read(MR, "waypointName", &mr.waypointName) || !Mode_EntityH(&mr.waypointName, e) || !Sd_SetI(e, "Active", 1) ||
+		!Sd_SetS(e, "OnTake", "MortalRace.OnCheckPoint") || !Sd_Del(item) || !Sd_DelArrow(item) ||
+		!Mode_Put(MR, "baton", &mr.baton, Mode_V(&t)) || !Mode_VGet(e, "Pos", pos)) {
+		return Mode_Done(&t, 0);
+	}
+	int u = Native_True(usr);
+	int racer = 1;
+	if (u) {
+		racer = Mode_VGet(usr, "Name", un) ? !Sd_Eq(who, un) : -1;
+	}
+	if (racer < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (racer) {
+		if (!Mode_Read(MR, "messageKillShipThrown", &mr.messageKillShipThrown)) {
+			return Mode_Done(&t, 0);
+		}
+		if (!Native_True(&mr.messageKillShipThrown)) {
+			int show = u ? Mode_VIsType(usr, "Car") : 1;
+			if (show < 0 || (show && !Sd_SystemMessage("Mission_WinMortalRace_SystemMessage2")) ||
+				!Sd_PutI(MR, "messageKillShipThrown", &mr.messageKillShipThrown, 1)) {
+				return Mode_Done(&t, 0);
 			}
-			Sf_SetGlobal(&f, MR, "messageKillShipThrown", Sf_Int(&f, 1));
 		}
-		Sf_SetGlobal(&f, MR, "shipWithBaton", who);
-		PyObject *v = Sf_Entity(&f, who);
-		Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", v, 1);
-		Mr_GoTo(&f, who, pos, Sf_Global(&f, MR, "BatonRadius"));
-		Sdf_Call(&f, MR, "RacersAttackShip", "(O)", who);
-		if (Sdf_UsrCar(&f, usr) > 0) {
-			Sf_SetAttr(&f, usr, "Target", who);
+		int car;
+		if (!Mode_Put(MR, "shipWithBaton", &mr.shipWithBaton, who) || !Mode_EntityH(who, v) ||
+			!CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", v, 1L) || !Mode_Read(MR, "BatonRadius", &mr.batonRadius) ||
+			!Mr_GoTo(who, pos, &mr.batonRadius) || !OWN(MR, "RacersAttackShip", NULL, "v", who) || (car = Sd_UsrCar(usr)) < 0 ||
+			(car && !Mode_VSet(usr, "Target", who)) || !Mode_GVarSet("CurrentWaypointName", who) || !Sd_SetS(v, "TgType", "red")) {
+			return Mode_Done(&t, 0);
 		}
-		Sdf_Set(&f, "CurrentWaypointName", who);
-		Sf_SetAttrS(&f, v, "TgType", "red");
-		Sdf_Sound(&f, "EneWaySound", "EneWayVolume");
-	} else if (racer == 0 && Sdf_UsrIs(&f, usr, who) > 0) {
-		Sf_Ask(&f, "RaceMaker", "ShowSystemMessage", "(O)", Sdf_Lang(&f, "Mission_WinMortalRace_SystemMessage1"));
-		Sf_SetGlobal(&f, MR, "messageKillShipThrown", Sf_Int(&f, 0));
-		Sf_SetGlobal(&f, MR, "userWithBaton", Sf_Int(&f, 1));
-		Sf_SetGlobal(&f, MR, "shipWithBaton", who);
-		Sdf_Call(&f, MR, "RacersAttackShip", "(O)", who);
-		Sdf_Set(&f, "CurrentWaypointName", Sf_Global(&f, MR, "waypointName"));
-		Sdf_Sound(&f, "WaySound", "WayVolume");
+		return Mode_Done(&t, Mode_Sound("EneWaySound", "EneWayVolume"));
 	}
-	return Sf_None(&f);
+	int me = Sd_UsrIs(usr, who);
+	if (me <= 0) {
+		return Mode_Done(&t, me == 0);
+	}
+	return Mode_Done(&t, Sd_SystemMessage("Mission_WinMortalRace_SystemMessage1") &&
+		Sd_PutI(MR, "messageKillShipThrown", &mr.messageKillShipThrown, 0) && Sd_PutI(MR, "userWithBaton", &mr.userWithBaton, 1) &&
+		Mode_Put(MR, "shipWithBaton", &mr.shipWithBaton, who) && OWN(MR, "RacersAttackShip", NULL, "v", who) &&
+		Mode_Read(MR, "waypointName", &mr.waypointName) && Mode_GVarSet("CurrentWaypointName", &mr.waypointName) &&
+		Mode_Sound("WaySound", "WayVolume"));
+}
+
+MODE_FN(Mr, TakeBaton, 2, Mr_TakeBatonC(&a[0], &a[1]))
+
+/* v.Ammo00 to v.Ammo02 = SWeap.GetFAmmo(a, "Max") (None without the value) */
+static byte Mr_FullAmmo(const nativeVal_t *v) {
+	static const char *const ammo[] = { "Ammo00", "Ammo01", "Ammo02" };
+	for (int a = 0; a < 3; a++) {
+		nativeVal_t x;
+		float f;
+		if (cAmmoInfo_GetF(TABLE_AT(g_pWorld->ammo, a), "Max", &f)) {
+			Native_SetFloat(&x, (double)f);
+		} else {
+			Native_SetNone(&x);
+		}
+		if (!Mode_VSet(v, ammo[a], &x)) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+/* RaceMaker.InitShipIAProfile(foe, profileType); ship = RaceMaker.GetRandomShipIAProfile(foe, profileType) (ship the
+ * profile) */
+static byte Mr_RacerProfile(const nativeVal_t *foe, nativeVal_t *ship) {
+	return Mode_Read(MR, "profileType", &mr.profileType) &&
+		CALL("RaceMaker", "InitShipIAProfile", NULL, "vv", foe, &mr.profileType) && Mode_Read(MR, "profileType", &mr.profileType) &&
+		CALL("RaceMaker", "GetRandomShipIAProfile", ship, "vv", foe, &mr.profileType);
+}
+
+/* h.to = h.from of a handle value */
+static byte Mr_Copy(const nativeVal_t *h, const char *from, const char *to) {
+	nativeVal_t v;
+	Native_SetNone(&v);
+	byte ok = Mode_VGet(h, from, &v) && Mode_VSet(h, to, &v);
+	Native_Free(&v);
+	return ok;
 }
 
 /* InitRace(createFirstWaypoint = 0): the racers of MortalRaceRacers in a circle around the first start position,
  * static until the start, with full ammo; the AI profile of the first one is kept for the fights */
-static PyObject *MortalRace_InitRace(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "createFirstWaypoint", NULL };
-	static const char *const mods[] = { "Alarm", "Speech", "Parking", "RaceMaker", "RacerScorer", "VehiclesNPC", "math",
-		NULL };
-	PyObject *first = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &first)) {
-		return NULL;
-	}
-	if (!first) {
-		first = Sf_Int(&f, 0);
-	}
+static byte Mr_InitRaceC(const nativeVal_t *first) {
+	static const char *const mods[] = { "Alarm", "Speech", "Parking", "RaceMaker", "RacerScorer", "VehiclesNPC", "math", NULL };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *empty = Mode_V(&t), *text = Mode_V(&t), *racers = Mode_V(&t);
 	for (int i = 0; mods[i]; i++) {
-		Sf_Import(&f, mods[i]);
+		if (!Mode_Import(mods[i])) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	Sf_SetGlobal(&f, MR, "iStartPos", Sf_Int(&f, 0));
-	Sf_SetGlobal(&f, MR, "BayScorer", Sf_Keep(&f, PyDict_New()));
-	Sf_SetGlobal(&f, MR, "YourScore", Sf_Int(&f, -1));
-	Sf_Ask(&f, "Scrap", "EntityListSet", "(sss)", "Race", "OnDeath", "MortalRace.RacerKilled");
-	Sf_Ask(&f, "Scrap", "EntityListSet", "(sss)", "Race", "OnDamage", "MortalRace.RacerDamaged");
-	Sf_SetGlobal(&f, MR, "iStartPos", Sf_Int(&f, 0));
-	PyObject *racers = Sf_Eval(&f, Sdf_Save(&f, "MortalRaceRacers"), MR);
-	int n = Sf_Len(&f, racers);
-	int profile = 1;
-	for (int i = 0; i < n && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *start = Mr_StartPos(&f, Sf_Global(&f, MR, "iStartPos"));
-		PyObject *start2 = Mr_StartPos(&f, Sf_Global(&f, MR, "iStartPos"));
-		PyObject *rot = Sf_Ask(&f, "SVec", "Rotate3D", "((iii)(iOi))", 0, 2200, 0, 0, Sf_Item(&f, start2, 1),
-			90 + 360 * i / n);
-		PyObject *spos = Sf_Ask(&f, "SVec", "Add", "(OO)", Sf_Item(&f, start, 0), rot);
-		PyObject *foe = Sf_Item(&f, racers, i);
-		PyObject *v = Sdf_Create(&f, Sf_Cat(&f, "sO", "MortalRace_Racer_", foe), spos, "Car");
-		Sf_SetItem(&f, Sf_Global(&f, MR, "nameProfileDict"), Sf_Attr(&f, v, "Name"), foe);
-		Sf_Ask(&f, "RaceMaker", "InitShipIAProfile", "(OO)", foe, Sf_Global(&f, MR, "profileType"));
-		PyObject *ship = Sf_Ask(&f, "RaceMaker", "GetRandomShipIAProfile", "(OO)", foe, Sf_Global(&f, MR,
-			"profileType"));
-		if (profile && !f.failed) {
+	Native_SetEmpty(empty, NV_DICT);
+	if (!Sd_PutI(MR, "iStartPos", &mr.iStartPos, 0) || !Mode_Put(MR, "BayScorer", &mr.bayScorer, empty) ||
+		!Sd_PutI(MR, "YourScore", &mr.yourScore, -1) || !Mode_ListSet("Race", "OnDeath", "MortalRace.RacerKilled") ||
+		!Mode_ListSet("Race", "OnDamage", "MortalRace.RacerDamaged") || !Sd_PutI(MR, "iStartPos", &mr.iStartPos, 0)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("MortalRaceRacers", text);
+	if (!Native_EvalText(MR, text, racers)) {
+		return Mode_Done(&t, 0);
+	}
+	int n = Native_Size(racers);
+	byte ok = n >= 0, profile = 1;
+	for (int i = 0; ok && i < n; i++) {
+		int mark = t.n;
+		nativeVal_t *start = Mode_V(&t), *ang = Mode_V(&t), *rot = Mode_V(&t), *spos = Mode_V(&t), *foe = Mode_V(&t);
+		nativeVal_t *name = Mode_V(&t), *v = Mode_V(&t), *vn = Mode_V(&t), *ship = Mode_V(&t), *x = Mode_V(&t);
+		nativeVal_t *base = Mode_V(&t), *r = Mode_V(&t);
+		/* SVec.Rotate3D((0, 2200, 0), (0, start[1], 90 + 360 * i / n)): the angle in C ints, as the script's ints */
+		Native_SetEmpty(base, NV_TUPLE);
+		Native_SetInt(Native_Append(base), 0);
+		Native_SetInt(Native_Append(base), 2200);
+		Native_SetInt(Native_Append(base), 0);
+		ok = Mr_AtStart(0, start) && Mr_AtStart(1, ang);
+		if (ok) {
+			Native_SetEmpty(r, NV_TUPLE);
+			Native_SetInt(Native_Append(r), 0);
+			Native_Copy(Native_Append(r), ang);
+			Native_SetInt(Native_Append(r), 90 + 360 * i / n);
+		}
+		ok = ok && Mode_Rotate(base, r, rot) && Mode_VecAdd(start, rot, spos) && Sd_Item(racers, i, foe) &&
+			Mode_Cat(&t, name, 2, Mode_S(&t, "MortalRace_Racer_"), foe) && Sd_Create(name, spos, "Car", v) &&
+			Mode_VGet(v, "Name", vn) && Mode_DictPut(MR, "nameProfileDict", &mr.nameProfileDict, vn, foe) &&
+			Mr_RacerProfile(foe, ship);
+		if (ok && profile) {
 			profile = 0;
-			Sf_SetGlobal(&f, MR, "prof", Sf_Ask(&f, "VehiclesNPC", "GetIAProf", "(O)", ship));
-			Sf_SetGlobal(&f, MR, "prevCadenceShoot", Sf_Attr(&f, Sf_Global(&f, MR, "prof"), "CadenceShoot"));
-			Sf_SetGlobal(&f, MR, "prevControlAim", Sf_Attr(&f, Sf_Global(&f, MR, "prof"), "ControlAim"));
+			ok = CALL("VehiclesNPC", "GetIAProf", x, "v", ship) && Mode_Put(MR, "prof", &mr.prof, x) &&
+				Mode_Read(MR, "prof", &mr.prof) && Mode_VGet(&mr.prof, "CadenceShoot", Mode_V(&t)) &&
+				Mode_Put(MR, "prevCadenceShoot", NULL, &t.v[t.n - 1]) && Mode_Read(MR, "prof", &mr.prof) &&
+				Mode_VGet(&mr.prof, "ControlAim", Mode_V(&t)) && Mode_Put(MR, "prevControlAim", NULL, &t.v[t.n - 1]);
 		}
-		Sf_Ask(&f, "VehiclesNPC", "SetIAProf", "(OO)", v, ship);
-		Sf_Ask(&f, "SAI", "SetStateVehicle", "(iO)", 0, Sf_Attr(&f, v, "Name"));
-		Sf_SetAttrS(&f, v, "TgType", "none");
-		Sf_SetAttrS(&f, v, "EntityList", "Race");
-		Sdf_Ang(&f, v, Sf_Item(&f, Mr_StartPos(&f, Sf_Global(&f, MR, "iStartPos")), 1));
-		Sf_SetAttrI(&f, v, "Money", -1);
-		Sf_SetAttr(&f, v, "MovePos", Sf_Attr(&f, v, "Pos"));
-		Sf_SetAttr(&f, v, "MoveAng", Sf_Attr(&f, v, "Ang"));
-		Sf_SetAttr(&f, v, "MoveTime", Sf_Float(&f, 0.001));
-		Sf_SetAttrI(&f, v, "LaunchTaunts", 0);
-		static const char *const ammo[] = { "Ammo00", "Ammo01", "Ammo02" };
-		for (int a = 0; a < 3; a++) {
-			Sf_SetAttr(&f, v, ammo[a], Sf_Ask(&f, "SWeap", "GetFAmmo", "(is)", a, "Max"));
-		}
-		Sf_SetItem(&f, Sf_Global(&f, MR, "BayScorer"), Sf_Attr(&f, v, "Name"), Sf_Int(&f, 0));
-		Sdf_AppendName(&f, MR, "racers", v);
-		Sf_Release(&f, mark);
+		Native_Free(vn);
+		Native_Free(ang);
+		ok = ok && CALL("VehiclesNPC", "SetIAProf", NULL, "vv", v, ship) && Mode_VGet(v, "Name", vn) &&
+			CALL("SAI", "SetStateVehicle", NULL, "iv", 0L, vn) && Sd_SetS(v, "TgType", "none") && Sd_SetS(v, "EntityList", "Race") &&
+			Mr_AtStart(1, ang) && Sd_Ang(v, ang) && Sd_SetI(v, "Money", -1) && Mr_Copy(v, "Pos", "MovePos") &&
+			Mr_Copy(v, "Ang", "MoveAng") && Sd_SetF(v, "MoveTime", 0.001) && Sd_SetI(v, "LaunchTaunts", 0) && Mr_FullAmmo(v);
+		Native_Free(vn);
+		ok = ok && Mode_VGet(v, "Name", vn) && Mode_DictPut(MR, "BayScorer", &mr.bayScorer, vn, Mode_I(&t, 0)) &&
+			Sd_AppendName(MR, "racers", v);
+		Mode_Release(&t, mark);
 	}
-	if (Sf_True(&f, first) > 0) {
-		Sdf_Call(&f, MR, "CreateFirstWaypoint", "()");
-	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok && (!Native_True(first) || OWN(MR, "CreateFirstWaypoint", NULL, "")));
 }
 
-/* CreateFirstWaypoint(): the buoy of the start at the first start position (once), the way point */
-static PyObject *MortalRace_CreateFirstWaypoint(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
+static PyObject *Mr_InitRace(PyObject *self, PyObject *args, PyObject *kw) {
+	nativeVal_t first;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
+	if (!Sd_KwArg(args, kw, "createFirstWaypoint", 0, &first)) {
 		return NULL;
 	}
-	Sf_Import(&f, "RaceMaker");
-	Sf_Import(&f, "Speech");
-	Sdf_Call(&f, MR, "AbortRemoteMessages", "()");
-	PyObject *l = Sf_Entity(&f, Sf_Global(&f, MR, "waypointName"));
-	if (Sf_True(&f, l) == 0) {
-		PyObject *pos = Sf_Item(&f, Mr_StartPos(&f, Sf_Global(&f, MR, "iStartPos")), 0);
-		l = Sdf_Create(&f, Sf_Str(&f, "CheckPoint"), pos, "Item");
-		Sf_Method(&f, l, "SetModel", "(O)", Sf_Global(&f, MR, "WayPointModel"));
-		Sf_SetAttrS(&f, l, "OnTake", "MortalRace.OnRaceStart");
-		Sf_SetAttrI(&f, l, "RadarShow", 2);
-		Sf_SetAttrI(&f, l, "Radius", 2400);
-		Sdf_Ang(&f, l, Sf_Item(&f, Mr_StartPos(&f, Sf_Global(&f, MR, "iStartPos")), 1));
-		Sf_SetAttrI(&f, l, "FadeInEffect", 0);
-		Sf_SetAttrI(&f, l, "FadeOutEffect", 0);
-		Sf_SetGlobal(&f, MR, "waypointName", Sf_Attr(&f, l, "Name"));
-		Sdf_Set(&f, "CurrentWaypointName", Sf_Global(&f, MR, "waypointName"));
-	}
-	return Sf_Return(&f, l);
+	byte ok = Mr_InitRaceC(&first);
+	Native_Free(&first);
+	return Mode_Result(ok);
 }
+
+/* CreateFirstWaypoint(): the buoy of the start at the first start position (once), the way point; the buoy */
+static byte Mr_CreateFirstWaypointC(nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *pos = Mode_V(&t), *ang = Mode_V(&t), *name = Mode_V(&t);
+	if (!Mode_Import("RaceMaker") || !Mode_Import("Speech") || !OWN(MR, "AbortRemoteMessages", NULL, "") ||
+		!Mode_Read(MR, "waypointName", &mr.waypointName) || !Mode_EntityH(&mr.waypointName, out)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_True(out)) {
+		return Mode_Done(&t, 1);
+	}
+	Native_Free(out);
+	return Mode_Done(&t, Mr_AtStart(0, pos) && Sd_Create(Mode_S(&t, "CheckPoint"), pos, "Item", out) &&
+		Mode_Read(MR, "WayPointModel", &mr.model) && Mode_VModel(out, &mr.model) && Sd_SetS(out, "OnTake", "MortalRace.OnRaceStart") &&
+		Sd_SetI(out, "RadarShow", 2) && Sd_SetI(out, "Radius", 2400) && Mr_AtStart(1, ang) && Sd_Ang(out, ang) &&
+		Sd_SetI(out, "FadeInEffect", 0) && Sd_SetI(out, "FadeOutEffect", 0) && Mode_VGet(out, "Name", name) &&
+		Mode_Put(MR, "waypointName", &mr.waypointName, name) && Mode_Read(MR, "waypointName", &mr.waypointName) &&
+		Mode_GVarSet("CurrentWaypointName", &mr.waypointName));
+}
+
+MODE_FN(Mr, CreateFirstWaypoint, 0, Mr_CreateFirstWaypointC(out))
 
 /* OnRaceStart(ItemName, VehicleName): the player at the first buoy: the camera travels to him, the count down,
  * RaceGo at its end */
-static PyObject *MortalRace_OnRaceStart(PyObject *self, PyObject *args) {
-	PyObject *item, *who;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &item, &who)) {
-		return NULL;
+static byte Mr_OnRaceStartC(const nativeVal_t *item, const nativeVal_t *who) {
+	nativeVal_t usr, tm, args[2];
+	if (!Mode_Import("RaceMaker") || !Mode_UsrHandle(&usr)) {
+		return 0;
 	}
-	Sf_Import(&f, "RaceMaker");
-	PyObject *user = Sdf_Usr(&f);
-	if (Sdf_UsrIs(&f, user, who) > 0) {
-		PyObject *t = Sf_Ask(&f, "RaceMaker", "StartCameraTravelling", "(OO)", item, who);
-		Sdf_Later(&f, t, MR, "RaceGo", Sf_Build(&f, "(OO)", item, who));
-		Sf_Ask(&f, "RaceMaker", "CreateRaceCountDown", "()");
+	int u = Sd_UsrIs(&usr, who);
+	Native_Free(&usr);
+	if (u <= 0) {
+		return u == 0;
 	}
-	return Sf_None(&f);
+	Native_SetNone(&tm);
+	Native_Copy(&args[0], item);
+	Native_Copy(&args[1], who);
+	byte ok = CALL("RaceMaker", "StartCameraTravelling", &tm, "vv", item, who) && Sd_LaterV(&tm, MR, "RaceGo", args, 2) &&
+		CALL("RaceMaker", "CreateRaceCountDown", NULL, "");
+	Native_Free(&tm);
+	Native_Free(&args[0]);
+	Native_Free(&args[1]);
+	return ok;
+}
+
+MODE_FN(Mr, OnRaceStart, 2, Mr_OnRaceStartC(&a[0], &a[1]))
+
+/* RacerScorer.InitMissionScorer(0, 0, `numWaypoints`); Menu.MissionScorerCall = RacerScorer.MissionScorer; the scorer
+ * drawn */
+static byte Mr_Scorer(void) {
+	nativeVal_t limit;
+	if (!Mode_Read(MR, "numWaypoints", &mr.numWaypoints)) {
+		return 0;
+	}
+	Sd_Repr(&mr.numWaypoints, &limit);
+	byte ok = CALL("RacerScorer", "InitMissionScorer", NULL, "iiv", 0L, 0L, &limit) &&
+		Sd_ModTo("Menu", "MissionScorerCall", "RacerScorer", "MissionScorer") && Sd_Draw();
+	Native_Free(&limit);
+	return ok;
 }
 
 /* RaceGo(ItemName, VehicleName): the start: the first buoy counts, the scorer, the check of the hunters every 2 s */
-static PyObject *MortalRace_RaceGo(PyObject *self, PyObject *args) {
-	PyObject *item, *who;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &item, &who)) {
-		return NULL;
-	}
-	Sf_Import(&f, "RaceMaker");
-	Sf_Import(&f, "RacerScorer");
-	Sf_Ask(&f, "RaceMaker", "AbortCameraTravelling", "()");
-	Sf_Ask(&f, "RaceMaker", "DestroyRaceCountDown", "()");
-	Sdf_Call(&f, MR, "OnCheckPoint", "(OO)", item, who);
-	Sf_Ask(&f, "RacerScorer", "InitMissionScorer", "(iiO)", 0, 0, Sf_Repr(&f, Sf_Global(&f, MR, "numWaypoints")));
-	Sf_SetMod(&f, "Menu", "MissionScorerCall", Sf_Mod(&f, "RacerScorer", "MissionScorer"));
-	Sdf_Draw(&f);
-	Sdf_Later(&f, Sf_Int(&f, 2), MR, "CheckShipsState", Sf_Build(&f, "()"));
-	return Sf_None(&f);
+static byte Mr_RaceGoC(const nativeVal_t *item, const nativeVal_t *who) {
+	return Mode_Import("RaceMaker") && Mode_Import("RacerScorer") && CALL("RaceMaker", "AbortCameraTravelling", NULL, "") &&
+		CALL("RaceMaker", "DestroyRaceCountDown", NULL, "") && OWN(MR, "OnCheckPoint", NULL, "vv", item, who) && Mr_Scorer() &&
+		Mode_Later(2.0, MR, "CheckShipsState", NULL, 0, NULL);
 }
+
+MODE_FN(Mr, RaceGo, 2, Mr_RaceGoC(&a[0], &a[1]))
 
 /* the hunters of CheckShipsState: the attackers far from the ship with the baton and the waiting ones near it */
 typedef struct {
-	PyObject *ship, *attack, *freeze;
+	const nativeVal_t *ship;
+	nativeVal_t attack, freeze;
 } mrHunt_t;
 
-static int Mr_Hunter(scriptFrame_t *f, PyObject *e, PyObject *name, void *arg) {
+/* g * g of a global of the module */
+static byte Mr_Square(const char *name, nativeVal_t *out) {
+	nativeVal_t a, b;
+	Native_SetNone(&a);
+	Native_SetNone(&b);
+	byte ok = Mode_Read(MR, name, &a) && Mode_Read(MR, name, &b) && Native_Arith('*', &a, &b, out);
+	Native_Free(&a);
+	Native_Free(&b);
+	return ok;
+}
+
+static int Mr_Hunter(const nativeVal_t *e, const nativeVal_t *name, void *arg) {
 	mrHunt_t *h = arg;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *en = Mode_V(&t), *sn = Mode_V(&t), *state = Mode_V(&t), *sp = Mode_V(&t), *ep = Mode_V(&t), *d = Mode_V(&t);
+	nativeVal_t *dsq = Mode_V(&t), *lim = Mode_V(&t);
 	(void)name;
-	if (Sf_Compare(f, Sf_Attr(f, e, "Name"), "!=", Sf_Attr(f, h->ship, "Name")) > 0) {
-		PyObject *state = Sf_Ask(f, "SAI", "GetStateVehicle", "(O)", Sf_Attr(f, e, "Name"));
-		int st = Sf_EqI(f, state, 2) > 0 ? 2 : !f->failed && Sf_EqI(f, state, 8) > 0 ? 8 : 0;
-		if (st) {
-			PyObject *d = Sf_Ask(f, "SVec", "ModSqr", "(O)", Sf_Ask(f, "SVec", "Sub", "(OO)", Sf_Attr(f, h->ship,
-				"Pos"), Sf_Attr(f, e, "Pos")));
-			PyObject *lim = Sf_Global(f, MR, st == 2 ? "MIN_CHASE_DIST" : "MAX_FIGHTING_FREEZE_DIST");
-			lim = Sf_Op(f, lim, '*', Sf_Global(f, MR, st == 2 ? "MIN_CHASE_DIST" : "MAX_FIGHTING_FREEZE_DIST"));
-			if (Sf_Compare(f, d, st == 2 ? ">" : "<", lim) > 0) {
-				Sf_Method(f, st == 2 ? h->attack : h->freeze, "append", "(O)", Sf_Attr(f, e, "Name"));
-			}
-		}
+	if (!Mode_VGet(e, "Name", en) || !Mode_VGet(h->ship, "Name", sn)) {
+		return Mode_Done(&t, 0) - 1;
 	}
-	return !f->failed;
+	if (Sd_Eq(en, sn)) {
+		return Mode_Done(&t, 1);
+	}
+	Native_Free(en);
+	if (!Mode_VGet(e, "Name", en) || !Mode_AIState(en, state)) {
+		return Mode_Done(&t, 0) - 1;
+	}
+	int st = Sd_EqI(state, 2) ? 2 : Sd_EqI(state, 8) ? 8 : 0;
+	if (!st) {
+		return Mode_Done(&t, 1);
+	}
+	if (!Mode_VGet(h->ship, "Pos", sp) || !Mode_VGet(e, "Pos", ep) || !Mode_VecSub(sp, ep, d) || !Mode_VecModSqr(d, dsq) ||
+		!Mr_Square(st == 2 ? "MIN_CHASE_DIST" : "MAX_FIGHTING_FREEZE_DIST", lim)) {
+		return Mode_Done(&t, 0) - 1;
+	}
+	int c = Native_Compare(dsq, lim);
+	if (st == 2 ? c > 0 : c < 0) {
+		Native_Free(en);
+		if (!Mode_VGet(e, "Name", en)) {
+			return Mode_Done(&t, 0) - 1;
+		}
+		Native_Copy(Native_Append(st == 2 ? &h->attack : &h->freeze), en);
+	}
+	return Mode_Done(&t, 1);
 }
 
 /* CheckShipsState(): one racer keeps attacking the ship with the baton, the other attackers wait some buoys ahead;
  * the waiting ones it reached attack again with their profile (every 2 s) */
-static PyObject *MortalRace_CheckShipsState(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "VehiclesNPC");
-	mrHunt_t h = { .ship = Sf_Entity(&f, Sf_Global(&f, MR, "shipWithBaton")) };
-	if (Sf_True(&f, h.ship) > 0) {
-		h.attack = Sf_Keep(&f, PyList_New(0));
-		h.freeze = Sf_Keep(&f, PyList_New(0));
-		Sdf_EachInList(&f, "Race", Mr_Hunter, &h);
-		int n = Sf_Len(&f, h.attack);
-		if (n > 1) {
-			Sf_Import(&f, "RaceMaker");
-			for (int i = 1; i < n && !f.failed; i++) {
-				int mark = f.n;
-				PyObject *at = Sf_OpI(&f, Sf_Op(&f, Sf_Global(&f, MR, "iStartPos"), '+', Sf_Global(&f, MR,
-					"NUM_WAYPOINTS_AHEAD")), '+', i - 1);
-				PyObject *ip = Sf_Op(&f, at, '%', Sf_Int(&f, Sf_Len(&f, Sf_Mod(&f, "RaceMaker", "StartPos"))));
-				PyObject *pos = Sf_Item(&f, Mr_StartPos(&f, ip), 0);
-				PyObject *x = Sf_Item(&f, pos, 0), *y = Sf_Item(&f, pos, 1), *z = Sf_Item(&f, pos, 2);
-				Sf_Ask(&f, "SAI", "SetStateVehicle", "(iOOOOO)", 1, Sf_Item(&f, h.attack, i), x, y, z, Sf_Global(&f, MR,
-					"WaypRadius"));
-				Sf_Release(&f, mark);
+static byte Mr_CheckShipsStateC(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ship = Mode_V(&t);
+	mrHunt_t h = { .ship = ship };
+	Native_SetEmpty(&h.attack, NV_LIST);
+	Native_SetEmpty(&h.freeze, NV_LIST);
+	byte ok = Mode_Import("VehiclesNPC") && Mode_Read(MR, "shipWithBaton", &mr.shipWithBaton) &&
+		Mode_EntityH(&mr.shipWithBaton, ship);
+	if (ok && Native_True(ship)) {
+		ok = Sd_EachInList("Race", Mr_Hunter, &h);
+		if (ok && h.attack.n > 1) {
+			ok = Mode_Import("RaceMaker");
+			for (int i = 1; ok && i < h.attack.n; i++) {
+				int mark = t.n;
+				nativeVal_t *ahead = Mode_V(&t), *at = Mode_V(&t), *at2 = Mode_V(&t), *cnt = Mode_V(&t), *ip = Mode_V(&t);
+				nativeVal_t *pos = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t), *rad = Mode_V(&t);
+				int count;
+				ok = Mode_Read(MR, "iStartPos", &mr.iStartPos) && Mode_Read(MR, "NUM_WAYPOINTS_AHEAD", ahead) &&
+					Native_Arith('+', &mr.iStartPos, ahead, at) && Native_Arith('+', at, Mode_I(&t, i - 1), at2) &&
+					(count = Mr_Count()) >= 0;
+				if (ok) {
+					Native_SetInt(cnt, count);
+					ok = Native_Arith('%', at2, cnt, ip) && Mr_StartPos(ip, 0, pos) && Sd_Item(pos, 0, x) && Sd_Item(pos, 1, y) &&
+						Sd_Item(pos, 2, z) && Mode_Read(MR, "WaypRadius", rad) &&
+						CALL("SAI", "SetStateVehicle", NULL, "ivvvvv", 1L, &h.attack.items[i], x, y, z, rad);
+				}
+				Mode_Release(&t, mark);
 			}
 		}
-		n = Sf_Len(&f, h.freeze);
-		for (int i = 0; i < n && !f.failed; i++) {
-			int mark = f.n;
-			PyObject *e = Sf_Entity(&f, Sf_Item(&f, h.freeze, i));
-			if (Sf_True(&f, e) > 0) {
-				Sf_SetAttr(&f, Sf_Global(&f, MR, "prof"), "CadenceShoot", Sf_Global(&f, MR, "prevCadenceShoot"));
-				Sf_SetAttr(&f, Sf_Global(&f, MR, "prof"), "ControlAim", Sf_Global(&f, MR, "prevControlAim"));
-				Sf_Ask(&f, "VehiclesNPC", "ModAIProff", "(OO)", e, Sf_Global(&f, MR, "prof"));
-				Sf_Ask(&f, "SAI", "SetStateVehicle", "(iOO)", 2, Sf_Item(&f, h.freeze, i), Sf_Attr(&f, h.ship, "Name"));
+		for (int i = 0; ok && i < h.freeze.n; i++) {
+			int mark = t.n;
+			nativeVal_t *e = Mode_V(&t), *v = Mode_V(&t), *sn = Mode_V(&t);
+			ok = Mode_EntityH(&h.freeze.items[i], e);
+			if (ok && Native_True(e)) {
+				ok = Mode_Read(MR, "prevCadenceShoot", v) && Mode_Read(MR, "prof", &mr.prof) &&
+					Mode_VSet(&mr.prof, "CadenceShoot", v) && Mode_Read(MR, "prevControlAim", v) && Mode_Read(MR, "prof", &mr.prof) &&
+					Mode_VSet(&mr.prof, "ControlAim", v) && Mode_Read(MR, "prof", &mr.prof) &&
+					CALL("VehiclesNPC", "ModAIProff", NULL, "vv", e, &mr.prof) && Mode_VGet(ship, "Name", sn) &&
+					CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, &h.freeze.items[i], sn);
 			}
-			Sf_Release(&f, mark);
+			Mode_Release(&t, mark);
 		}
 	}
-	Sdf_Later(&f, Sf_Int(&f, 2), MR, "CheckShipsState", Sf_Build(&f, "()"));
-	return Sf_None(&f);
+	Native_Free(&h.attack);
+	Native_Free(&h.freeze);
+	return Mode_Done(&t, ok && Mode_Later(2.0, MR, "CheckShipsState", NULL, 0, NULL));
+}
+
+MODE_FN(Mr, CheckShipsState, 0, Mr_CheckShipsStateC())
+
+/* prof.CadenceShoot = mod.<cadence>; prof.ControlAim = mod.<aim>; VehiclesNPC.ModAIProff(e, prof) */
+static byte Mr_Prof(const char *cadence, const char *aim, const nativeVal_t *e) {
+	nativeVal_t v;
+	Native_SetNone(&v);
+	byte ok = Mode_Read(MR, cadence, &v) && Mode_Read(MR, "prof", &mr.prof) && Mode_VSet(&mr.prof, "CadenceShoot", &v) &&
+		Mode_Read(MR, aim, &v) && Mode_Read(MR, "prof", &mr.prof) && Mode_VSet(&mr.prof, "ControlAim", &v);
+	Native_Free(&v);
+	return ok && (!e || (Mode_Read(MR, "prof", &mr.prof) && CALL("VehiclesNPC", "ModAIProff", NULL, "vv", e, &mr.prof)));
 }
 
 /* OnPositionReached(VehicleName): a racer reached the buoy where it waits: it fights there, shooting often and badly */
-static PyObject *MortalRace_OnPositionReached(PyObject *self, PyObject *args) {
-	PyObject *who;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &who)) {
-		return NULL;
+static byte Mr_OnPositionReachedC(const nativeVal_t *who) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ship = Mode_V(&t), *state = Mode_V(&t), *e = Mode_V(&t), *sn = Mode_V(&t);
+	if (!Mode_Import("VehiclesNPC") || !Mode_Read(MR, "shipWithBaton", &mr.shipWithBaton) ||
+		!Mode_EntityH(&mr.shipWithBaton, ship)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "VehiclesNPC");
-	PyObject *ship = Sf_Entity(&f, Sf_Global(&f, MR, "shipWithBaton"));
-	if (Sf_True(&f, ship) > 0 && Sf_EqI(&f, Sf_Ask(&f, "SAI", "GetStateVehicle", "(O)", who), 1) > 0) {
-		Sf_Import(&f, "VehiclesNPC");
-		Sf_SetAttr(&f, Sf_Global(&f, MR, "prof"), "CadenceShoot", Sf_Global(&f, MR, "FightingFreezeCadenceShoot"));
-		Sf_SetAttr(&f, Sf_Global(&f, MR, "prof"), "ControlAim", Sf_Global(&f, MR, "FightingFreezeControlAim"));
-		PyObject *e = Sf_Entity(&f, who);
-		Sf_Ask(&f, "VehiclesNPC", "ModAIProff", "(OO)", e, Sf_Global(&f, MR, "prof"));
-		Sf_Ask(&f, "SAI", "SetStateVehicle", "(iOO)", 8, who, Sf_Attr(&f, ship, "Name"));
+	if (!Native_True(ship)) {
+		return Mode_Done(&t, 1);
 	}
-	return Sf_None(&f);
+	if (!Mode_AIState(who, state)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Sd_EqI(state, 1)) {
+		return Mode_Done(&t, 1);
+	}
+	return Mode_Done(&t, Mode_Import("VehiclesNPC") && Mr_Prof("FightingFreezeCadenceShoot", "FightingFreezeControlAim", NULL) &&
+		Mode_EntityH(who, e) && Mode_Read(MR, "prof", &mr.prof) && CALL("VehiclesNPC", "ModAIProff", NULL, "vv", e, &mr.prof) &&
+		Mode_VGet(ship, "Name", sn) && CALL("SAI", "SetStateVehicle", NULL, "ivv", 8L, who, sn));
+}
+
+MODE_FN(Mr, OnPositionReached, 1, Mr_OnPositionReachedC(&a[0]))
+
+/* RacerScorer.UpdateMissionScorer(0, YourScore, BestScorer); the scorer drawn */
+static byte Mr_Update(void) {
+	return Mode_Read(MR, "YourScore", &mr.yourScore) && Mode_Read(MR, "BestScorer", &mr.bestScorer) &&
+		Sd_Update(&mr.yourScore, &mr.bestScorer) && Sd_Draw();
+}
+
+/* the player took a buoy (with the baton, or his first at the start) */
+static byte Mr_PlayerCheckPoint(nativeVal_t *l, const nativeVal_t *usrName) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *pos = Mode_V(&t), *ang = Mode_V(&t);
+	if (!Mode_Read(MR, "YourScore", &mr.yourScore)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_Compare(&mr.yourScore, Mode_I(&t, -1)) > 0) {
+		/* a buoy counts only with the baton */
+		if (!Mode_Read(MR, "shipWithBaton", &mr.shipWithBaton)) {
+			return Mode_Done(&t, 0);
+		}
+		if (!Sd_Eq(&mr.shipWithBaton, usrName)) {
+			return Mode_Done(&t, 1);
+		}
+	}
+	if (!Mode_Sound("WaySound", "WayVolume") || !Sd_Add(MR, "YourScore", &mr.yourScore, 1)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Sd_EqI(&mr.yourScore, 0)) {
+		/* the first buoy: the baton at the next start position, the racers go for it, the buoy one further */
+		if (!Mr_NextPos() || !Mr_AtStart(0, pos) || !OWN(MR, "CreateBaton", NULL, "v", pos) ||
+			!Mode_Read(MR, "BatonRadius", &mr.batonRadius) || !OWN(MR, "MoveRacersToPos", NULL, "vv", pos, &mr.batonRadius) ||
+			!Mr_NextPos()) {
+			return Mode_Done(&t, 0);
+		}
+		if (!Native_True(l)) {
+			Native_Free(l);
+			if (!OWN(MR, "CreateFirstWaypoint", l, "")) {
+				return Mode_Done(&t, 0);
+			}
+		}
+		Native_Free(pos);
+		return Mode_Done(&t, Mr_AtStart(0, pos) && Mode_VSet(l, "Pos", pos) && Mr_AtStart(1, ang) && Sd_Ang(l, ang) &&
+			Sd_SetI(l, "Active", 0));
+	}
+	if (!Mode_Read(MR, "YourScore", &mr.yourScore) || !Mode_Read(MR, "numWaypoints", &mr.numWaypoints)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_Compare(&mr.yourScore, &mr.numWaypoints) >= 0) {
+		return Mode_Done(&t, Mode_VDel(l) && Sd_ScorerOff() && OWN(MR, "PreOnVictory", NULL, ""));
+	}
+	return Mode_Done(&t, Mr_Update() && OWN(MR, "MoveWaypoint", NULL, ""));
+}
+
+/* a racer with the baton took a buoy: the race lost at numWaypoints, else the best racer's count and the next buoy */
+static byte Mr_RacerCheckPoint(const nativeVal_t *l, const nativeVal_t *who) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *n = Mode_V(&t), *r = Mode_V(&t), *e = Mode_V(&t), *cad = Mode_V(&t), *foe = Mode_V(&t), *params = Mode_V(&t);
+	nativeVal_t *keys = Mode_V(&t), *pr = Mode_V(&t);
+	Mode_V(&t);
+	nativeVal_t *res = Mode_V(&t);
+	if (!Mode_Read(MR, "shipWithBaton", &mr.shipWithBaton)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Sd_Eq(&mr.shipWithBaton, who)) {
+		return Mode_Done(&t, 1);
+	}
+	if (!Sd_SetI(l, "Active", 0) || !Mode_Read(MR, "BayScorer", &mr.bayScorer) || !Native_Subscript(&mr.bayScorer, who, n) ||
+		!Native_Arith('+', n, Mode_I(&t, 1), r) || !Mode_DictPut(MR, "BayScorer", &mr.bayScorer, who, r) ||
+		!Mode_Sound("EneWaySound", "EneWayVolume") || !Mode_Read(MR, "BayScorer", &mr.bayScorer)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(n);
+	if (!Native_Subscript(&mr.bayScorer, who, n) || !Mode_Read(MR, "numWaypoints", &mr.numWaypoints)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_Compare(n, &mr.numWaypoints) >= 0) {
+		/* the race lost */
+		PyObject *func;
+		if (!Mode_VDel(l) || !Mode_EntityH(who, e) || !CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 0L) ||
+			!Sd_ScorerOff() || !(func = Script_Attr("MissionsFuncs", "OnSuperDealFinish"))) {
+			return Mode_Done(&t, 0);
+		}
+		Sd_Params(0, "MortalRace", "MortalRace.RestartRace", params);
+		Mode_SaveVar("MortalRaceFinishPlayerLoosesTextCad", cad);
+		Mode_SaveVar("MortalRaceFinishPlayerLoosesTextFoe", foe);
+		byte ok = Sd_Remote("ForceRemoteCom", cad, foe, func, params);
+		Py_DECREF(func);
+		return Mode_Done(&t, ok && OWN(MR, "EndOfMortalRace", NULL, ""));
+	}
+	/* BestScorer = the most buoys of a racer */
+	if (!Sd_PutI(MR, "BestScorer", &mr.bestScorer, 0) || !Mode_Keys(MR, "BayScorer", 1, keys)) {
+		return Mode_Done(&t, 0);
+	}
+	int count = Native_ForCount(keys);
+	byte ok = count >= 0;
+	for (int i = 0; ok && i < count; i++) {
+		nativeVal_t k, c;
+		Native_SetNone(&c);
+		ok = Native_SeqItem(keys, i, &k) && Mode_Read(MR, "BayScorer", &mr.bayScorer) && Native_Subscript(&mr.bayScorer, &k, &c) &&
+			Mode_Read(MR, "BestScorer", &mr.bestScorer);
+		if (ok && Native_Compare(&c, &mr.bestScorer) > 0) {
+			Native_Free(&c);
+			ok = Mode_Read(MR, "BayScorer", &mr.bayScorer) && Native_Subscript(&mr.bayScorer, &k, &c) &&
+				Mode_Put(MR, "BestScorer", &mr.bestScorer, &c);
+		}
+		Native_Free(&k);
+		Native_Free(&c);
+	}
+	return Mode_Done(&t, ok && OWN(MR, "MoveWaypoint", res, "") && Mode_Unpack(res, 2, pr) &&
+		Mode_Read(MR, "BatonRadius", &mr.batonRadius) && Mr_GoTo(who, &pr[0], &mr.batonRadius) && Mr_Update());
 }
 
 /* OnCheckPoint(ItemName, VehicleName): a buoy taken. The player's first one (YourScore -1 to 0) puts the baton at the
  * next start position; with the baton the player or a racer counts it, numWaypoints win (or lose) the race */
-static PyObject *MortalRace_OnCheckPoint(PyObject *self, PyObject *args) {
-	PyObject *item, *who;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &item, &who)) {
-		return NULL;
+static byte Mr_OnCheckPointC(const nativeVal_t *item, const nativeVal_t *who) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usrName = Mode_S(&t, ""), *usr = Mode_V(&t), *l = Mode_V(&t);
+	if (!Mode_Import("RaceMaker") || !Mode_Import("RacerScorer") || !Mode_Import("Sound") || !Mode_Import("VehiclesNPC") ||
+		!Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "RaceMaker");
-	Sf_Import(&f, "RacerScorer");
-	Sf_Import(&f, "Sound");
-	Sf_Import(&f, "VehiclesNPC");
-	PyObject *usrName = Sf_Str(&f, "");
-	PyObject *usr = Sdf_Usr(&f);
-	if (Sf_True(&f, usr) > 0) {
-		usrName = Sf_Attr(&f, usr, "Name");
-	}
-	int before = Sf_EqI(&f, Sf_Global(&f, MR, "YourScore"), -1);
-	if (before > 0) {
-		before = Sf_Compare(&f, who, "!=", usrName);
-	}
-	if (before != 0) {
-		if (before > 0 && Sf_EqI(&f, Sf_Global(&f, MR, "YourScore"), -1) > 0) {
-			Sf_SetGlobal(&f, MR, "YourScore", Sf_Int(&f, 0));
-		}
-		return Sf_None(&f);
-	}
-	PyObject *l = Sf_Entity(&f, item);
-	int mine = Sf_True(&f, usr);
-	if (mine > 0) {
-		mine = Sf_Compare(&f, usrName, "==", who);
-	}
-	if (mine > 0) {
-		int locked = Sf_Compare(&f, Sf_Global(&f, MR, "YourScore"), ">", Sf_Int(&f, -1));
-		if (locked > 0) {
-			locked = Sf_Compare(&f, Sf_Global(&f, MR, "shipWithBaton"), "!=", usrName);
-		}
-		if (locked != 0) {
-			return Sf_None(&f);
-		}
-		Sdf_Sound(&f, "WaySound", "WayVolume");
-		PyObject *score = Sdf_Add(&f, MR, "YourScore", 1);
-		if (Sf_EqI(&f, score, 0) > 0) {
-			Mr_NextPos(&f);
-			PyObject *pos = Sf_Item(&f, Mr_StartPos(&f, Sf_Global(&f, MR, "iStartPos")), 0);
-			Sdf_Call(&f, MR, "CreateBaton", "(O)", pos);
-			Sdf_Call(&f, MR, "MoveRacersToPos", "(OO)", pos, Sf_Global(&f, MR, "BatonRadius"));
-			Mr_NextPos(&f);
-			if (Sf_True(&f, l) == 0) {
-				l = Sdf_Call(&f, MR, "CreateFirstWaypoint", "()");
-			}
-			Sf_SetAttr(&f, l, "Pos", Sf_Item(&f, Mr_StartPos(&f, Sf_Global(&f, MR, "iStartPos")), 0));
-			Sdf_Ang(&f, l, Sf_Item(&f, Mr_StartPos(&f, Sf_Global(&f, MR, "iStartPos")), 1));
-			Sf_SetAttrI(&f, l, "Active", 0);
-			return Sf_None(&f);
-		}
-		if (Sf_Compare(&f, Sf_Global(&f, MR, "YourScore"), ">=", Sf_Global(&f, MR, "numWaypoints")) > 0) {
-			Sf_Method(&f, l, "Del", "()");
-			Sdf_ScorerOff(&f);
-			Sdf_Call(&f, MR, "PreOnVictory", "()");
-			return Sf_None(&f);
-		}
-		Sdf_Update(&f, Sf_Global(&f, MR, "YourScore"), Sf_Global(&f, MR, "BestScorer"));
-		Sdf_Draw(&f);
-		Sdf_Call(&f, MR, "MoveWaypoint", "()");
-	} else if (mine == 0 && Sf_True(&f, Sf_Method(&f, Sf_Global(&f, MR, "BayScorer"), "has_key", "(O)", who)) > 0) {
-		if (Sf_Compare(&f, Sf_Global(&f, MR, "shipWithBaton"), "!=", who) != 0) {
-			return Sf_None(&f);
-		}
-		Sf_SetAttrI(&f, l, "Active", 0);
-		PyObject *n = Sf_OpI(&f, Sf_GetItem(&f, Sf_Global(&f, MR, "BayScorer"), who), '+', 1);
-		Sf_SetItem(&f, Sf_Global(&f, MR, "BayScorer"), who, n);
-		Sdf_Sound(&f, "EneWaySound", "EneWayVolume");
-		PyObject *count = Sf_GetItem(&f, Sf_Global(&f, MR, "BayScorer"), who);
-		int lost = Sf_Compare(&f, count, ">=", Sf_Global(&f, MR, "numWaypoints"));
-		if (lost > 0) {
-			Sf_Method(&f, l, "Del", "()");
-			Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", Sf_Entity(&f, who), 0);
-			Sdf_ScorerOff(&f);
-			PyObject *func = Sf_Mod(&f, "MissionsFuncs", "OnSuperDealFinish");
-			PyObject *params = Sf_Build(&f, "(iss)", 0, "MortalRace", "MortalRace.RestartRace");
-			PyObject *cad = Sdf_Save(&f, "MortalRaceFinishPlayerLoosesTextCad");
-			Sdf_Remote(&f, "ForceRemoteCom", cad, Sdf_Save(&f, "MortalRaceFinishPlayerLoosesTextFoe"), func, params);
-			Sdf_Call(&f, MR, "EndOfMortalRace", "()");
-			return Sf_None(&f);
-		} else if (lost == 0) {
-			Sf_SetGlobal(&f, MR, "BestScorer", Sf_Int(&f, 0));
-			PyObject *keys = Sf_Method(&f, Sf_Global(&f, MR, "BayScorer"), "keys", "()");
-			for (int i = 0;; i++) {
-				int mark = f.n;
-				PyObject *k = Sf_Next(&f, keys, i);
-				if (!k) {
-					break;
-				}
-				PyObject *c = Sf_GetItem(&f, Sf_Global(&f, MR, "BayScorer"), k);
-				if (Sf_Compare(&f, c, ">", Sf_Global(&f, MR, "BestScorer")) > 0) {
-					Sf_SetGlobal(&f, MR, "BestScorer", Sf_GetItem(&f, Sf_Global(&f, MR, "BayScorer"), k));
-				}
-				Sf_Release(&f, mark);
-			}
-			PyObject *pr[2];
-			Sf_Unpack(&f, Sdf_Call(&f, MR, "MoveWaypoint", "()"), 2, pr);
-			Mr_GoTo(&f, who, pr[0], Sf_Global(&f, MR, "BatonRadius"));
-			Sdf_Update(&f, Sf_Global(&f, MR, "YourScore"), Sf_Global(&f, MR, "BestScorer"));
-			Sdf_Draw(&f);
+	if (Native_True(usr)) {
+		Native_Free(usrName);
+		if (!Mode_VGet(usr, "Name", usrName)) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	return Sf_None(&f);
+	/* before the player's first buoy the racers' buoys only start the count */
+	if (!Mode_Read(MR, "YourScore", &mr.yourScore)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Sd_EqI(&mr.yourScore, -1) && !Sd_Eq(who, usrName)) {
+		return Mode_Done(&t, !Mode_Read(MR, "YourScore", &mr.yourScore) ? 0 :
+			!Sd_EqI(&mr.yourScore, -1) || Sd_PutI(MR, "YourScore", &mr.yourScore, 0));
+	}
+	if (!Mode_EntityH(item, l)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_True(usr) && Sd_Eq(usrName, who)) {
+		return Mode_Done(&t, Mr_PlayerCheckPoint(l, usrName));
+	}
+	int has = Mode_HasKey(MR, "BayScorer", 1, who);
+	return Mode_Done(&t, has <= 0 ? has == 0 : Mr_RacerCheckPoint(l, who));
 }
 
+MODE_FN(Mr, OnCheckPoint, 2, Mr_OnCheckPointC(&a[0], &a[1]))
 /* Restart(): the score table of a lost race */
-static PyObject *MortalRace_Restart(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Ask(&f, "MissionsFuncs", "OnSuperDealFinish", "(iss)", 2, "MortalRace", "MortalRace.RestartRace");
-	return Sf_None(&f);
-}
+MODE_FN(Mr, Restart, 0, CALL("MissionsFuncs", "OnSuperDealFinish", NULL, "iss", 2L, "MortalRace", "MortalRace.RestartRace"))
 
 /* MoveWaypoint(): the buoy at the next start position, active; (its Pos, its Radius) */
-static PyObject *MortalRace_MoveWaypoint(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Mr_MoveWaypointC(nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *l = Mode_V(&t), *pos = Mode_V(&t), *ang = Mode_V(&t);
+	if (!Mode_Import("RaceMaker") || !Mr_NextPos() || !Mode_Read(MR, "waypointName", &mr.waypointName) ||
+		!Mode_EntityH(&mr.waypointName, l) || !Mr_AtStart(0, pos) || !Mode_VSet(l, "Pos", pos) || !Mr_AtStart(1, ang) ||
+		!Sd_Ang(l, ang) || !Sd_SetS(l, "OnTake", "MortalRace.OnCheckPoint") || !Sd_SetI(l, "Active", 1)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "RaceMaker");
-	Mr_NextPos(&f);
-	PyObject *l = Sf_Entity(&f, Sf_Global(&f, MR, "waypointName"));
-	Sf_SetAttr(&f, l, "Pos", Sf_Item(&f, Mr_StartPos(&f, Sf_Global(&f, MR, "iStartPos")), 0));
-	Sdf_Ang(&f, l, Sf_Item(&f, Mr_StartPos(&f, Sf_Global(&f, MR, "iStartPos")), 1));
-	Sf_SetAttrS(&f, l, "OnTake", "MortalRace.OnCheckPoint");
-	Sf_SetAttrI(&f, l, "Active", 1);
-	PyObject *pos = Sf_Attr(&f, l, "Pos");
-	return Sf_Return(&f, Sf_Build(&f, "(OO)", pos, Sf_Attr(&f, l, "Radius")));
+	Native_SetEmpty(out, NV_TUPLE);
+	return Mode_Done(&t, Mode_VGet(l, "Pos", Native_Append(out)) && Mode_VGet(l, "Radius", Native_Append(out)));
 }
+
+MODE_FN(Mr, MoveWaypoint, 0, Mr_MoveWaypointC(out))
 
 /* EndOfMortalRace(): the buoy gone, the racers back to the traffic */
-static PyObject *MortalRace_EndOfMortalRace(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Mr_EndOfMortalRaceC(void) {
+	nativeVal_t e;
+	if (!Mode_Import("Vehicles") || !Sd_ModNone("Vehicles", "OnDeathCallback") || !Sd_ScorerOff() ||
+		!Mode_Read(MR, "waypointName", &mr.waypointName) || !Mode_EntityH(&mr.waypointName, &e)) {
+		return 0;
 	}
-	Sf_Import(&f, "Vehicles");
-	Sf_SetMod(&f, "Vehicles", "OnDeathCallback", Py_None);
-	Sdf_ScorerOff(&f);
-	PyObject *e = Sf_Entity(&f, Sf_Global(&f, MR, "waypointName"));
-	if (Sf_True(&f, e) > 0) {
-		Sf_Method(&f, e, "Del", "()");
-	}
-	Sdf_SetS(&f, "OnItemTakenAI", "");
-	Sdf_Call(&f, MR, "MoveRacersToTraffic", "()");
-	return Sf_None(&f);
+	byte ok = (!Native_True(&e) || Mode_VDel(&e)) && Mode_GVarSetS("OnItemTakenAI", "") &&
+		OWN(MR, "MoveRacersToTraffic", NULL, "");
+	Native_Free(&e);
+	return ok;
 }
 
-static int Mr_Collect(scriptFrame_t *f, PyObject *e, PyObject *name, void *players) {
+MODE_FN(Mr, EndOfMortalRace, 0, Mr_EndOfMortalRaceC())
+
+static int Mr_Collect(const nativeVal_t *e, const nativeVal_t *name, void *players) {
 	(void)name;
-	Sf_Method(f, players, "append", "(O)", Sf_Attr(f, e, "Name"));
-	return !f->failed;
+	return Mode_VGet(e, "Name", Native_Append(players)) ? 1 : -1;
 }
 
 /* MoveRacersToTraffic(): the racers become safe traffic; the race state at its start values */
-static PyObject *MortalRace_MoveRacersToTraffic(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	PyObject *players = Sf_Keep(&f, PyList_New(0));
-	Sdf_EachInList(&f, "Race", Mr_Collect, players);
-	for (int i = 0;; i++) {
-		int mark = f.n;
-		PyObject *n = Sf_Next(&f, players, i);
-		if (!n) {
-			break;
+static byte Mr_MoveRacersToTrafficC(void) {
+	nativeVal_t players, empty;
+	Native_SetEmpty(&players, NV_LIST);
+	byte ok = Sd_EachInList("Race", Mr_Collect, &players);
+	for (int i = 0; ok && i < players.n; i++) {
+		nativeVal_t e, n;
+		Native_SetNone(&n);
+		ok = Mode_EntityH(&players.items[i], &e);
+		if (ok && Native_True(&e)) {
+			ok = Sd_SetS(&e, "TgType", "none") && Sd_SetF(&e, "MoveTime", 0.0) && Sd_SetS(&e, "EntityList", "Traffic") &&
+				Sd_SetI(&e, "Invulnerable", 1) && Mode_VGet(&e, "Name", &n) && CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, &n, 1L);
 		}
-		PyObject *e = Sf_Entity(&f, n);
-		if (Sf_True(&f, e) > 0) {
-			Sf_SetAttrS(&f, e, "TgType", "none");
-			Sf_SetAttr(&f, e, "MoveTime", Sf_Float(&f, 0.0));
-			Sf_SetAttrS(&f, e, "EntityList", "Traffic");
-			Sf_SetAttrI(&f, e, "Invulnerable", 1);
-			Sf_Ask(&f, "SAI", "SetStateVehicle", "(iOi)", 3, Sf_Attr(&f, e, "Name"), 1);
-		}
-		Sf_Release(&f, mark);
+		Native_Free(&e);
+		Native_Free(&n);
 	}
-	Sf_SetGlobal(&f, MR, "YourScore", Sf_Int(&f, -1));
-	Sf_SetGlobal(&f, MR, "waypointName", Sf_Str(&f, ""));
-	Sf_SetGlobal(&f, MR, "iStartPos", Sf_Int(&f, 0));
-	return Sf_None(&f);
+	Native_Free(&players);
+	Native_SetStr(&empty, "");
+	return ok && Sd_PutI(MR, "YourScore", &mr.yourScore, -1) && Mode_Put(MR, "waypointName", &mr.waypointName, &empty) &&
+		Sd_PutI(MR, "iStartPos", &mr.iStartPos, 0);
 }
+
+MODE_FN(Mr, MoveRacersToTraffic, 0, Mr_MoveRacersToTrafficC())
 
 /* MoveRacersToPos(pos, radius): every active racer races to pos */
 typedef struct {
-	PyObject *pos, *radius;
+	const nativeVal_t *pos, *radius;
 } mrPlace_t;
 
-static int Mr_Race(scriptFrame_t *f, PyObject *e, PyObject *name, void *arg) {
+static int Mr_Race(const nativeVal_t *e, const nativeVal_t *name, void *arg) {
 	mrPlace_t *p = arg;
-	if (Sf_True(f, Sf_Attr(f, e, "Active")) > 0) {
-		Sf_SetAttrS(f, e, "TgType", "green");
-		Sf_SetAttr(f, e, "MoveTime", Sf_Float(f, 0.0));
-		Mr_GoTo(f, name, p->pos, p->radius);
+	nativeVal_t act;
+	Native_SetNone(&act);
+	if (!Mode_VGet(e, "Active", &act)) {
+		return -1;
 	}
-	return !f->failed;
+	byte on = Native_True(&act);
+	Native_Free(&act);
+	return !on || (Sd_SetS(e, "TgType", "green") && Sd_SetF(e, "MoveTime", 0.0) && Mr_GoTo(name, p->pos, p->radius)) ? 1 : -1;
 }
 
-static PyObject *MortalRace_MoveRacersToPos(PyObject *self, PyObject *args) {
-	mrPlace_t p;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &p.pos, &p.radius)) {
-		return NULL;
-	}
-	Sf_Import(&f, "RacerScorer");
-	Sf_Import(&f, "VehiclesNPC");
-	Sdf_EachInList(&f, "Race", Mr_Race, &p);
-	Sdf_Update(&f, Sf_Global(&f, MR, "YourScore"), Sf_Global(&f, MR, "BestScorer"));
-	Sdf_Draw(&f);
-	return Sf_None(&f);
+static byte Mr_MoveRacersToPosC(const nativeVal_t *pos, const nativeVal_t *radius) {
+	mrPlace_t p = { pos, radius };
+	return Mode_Import("RacerScorer") && Mode_Import("VehiclesNPC") && Sd_EachInList("Race", Mr_Race, &p) && Mr_Update();
 }
+
+MODE_FN(Mr, MoveRacersToPos, 2, Mr_MoveRacersToPosC(&a[0], &a[1]))
 
 /* RacersAttackShip(VehicleName): every racer attacks the ship with the baton, with the profile's aim against the
  * player and a bad one against a racer */
 typedef struct {
-	PyObject *ship;
+	const nativeVal_t *ship;
 	byte usr;
 } mrAttack_t;
 
-static int Mr_Attack(scriptFrame_t *f, PyObject *e, PyObject *name, void *arg) {
+static int Mr_Attack(const nativeVal_t *e, const nativeVal_t *name, void *arg) {
 	mrAttack_t *a = arg;
-	if (a->usr || Sf_Compare(f, name, "!=", a->ship) > 0) {
-		Sf_Ask(f, "VehiclesNPC", "ModAIProff", "(OO)", e, Sf_Global(f, MR, "prof"));
-		Sf_Ask(f, "SAI", "SetStateVehicle", "(iOO)", 2, name, a->ship);
+	if (!a->usr && Sd_Eq(name, a->ship)) {
+		return 1;
 	}
-	return !f->failed;
+	return Mode_Read(MR, "prof", &mr.prof) && CALL("VehiclesNPC", "ModAIProff", NULL, "vv", e, &mr.prof) &&
+		CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, name, a->ship) ? 1 : -1;
 }
 
-static PyObject *MortalRace_RacersAttackShip(PyObject *self, PyObject *args) {
-	mrAttack_t a;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &a.ship)) {
-		return NULL;
+static byte Mr_RacersAttackShipC(const nativeVal_t *ship) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *name = Mode_V(&t), *aim = Mode_V(&t);
+	mrAttack_t a = { .ship = ship };
+	cEntity *e;
+	if (!Mode_Import("VehiclesNPC") || !Mode_UsrHandle(usr) || !Mode_ListGet("Race", "First", name) || !Mode_Ent(name, &e)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "VehiclesNPC");
-	PyObject *usr = Sdf_Usr(&f);
-	PyObject *name = Sf_Ask(&f, "Scrap", "EntityListGet", "(ss)", "Race", "First");
-	Sf_Entity(&f, name);
-	int u = Sdf_UsrIs(&f, usr, a.ship);
-	if (u >= 0) {
-		a.usr = u > 0;
-		Sf_SetAttr(&f, Sf_Global(&f, MR, "prof"), "ControlAim", u > 0 ? Sf_Global(&f, MR, "prevControlAim") : Sf_Int(&f,
-			2));
-		Sdf_EachInList(&f, "Race", Mr_Attack, &a);
+	int u = Sd_UsrIs(usr, ship);
+	if (u < 0) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	a.usr = (byte)u;
+	if (u) {
+		if (!Mode_Read(MR, "prevControlAim", aim)) {
+			return Mode_Done(&t, 0);
+		}
+	} else {
+		Native_SetInt(aim, 2);
+	}
+	return Mode_Done(&t, Mode_Read(MR, "prof", &mr.prof) && Mode_VSet(&mr.prof, "ControlAim", aim) &&
+		Sd_EachInList("Race", Mr_Attack, &a));
+}
+
+MODE_FN(Mr, RacersAttackShip, 1, Mr_RacersAttackShipC(&a[0]))
+
+/* the baton drops where the ship of dead (a handle value) is: MR.CreateBaton(dead.Pos), the racers go for it 0.2 s
+ * later */
+static byte Mr_DropBaton(const nativeVal_t *dead) {
+	nativeVal_t pos;
+	Native_SetNone(&pos);
+	byte ok = Sd_BatonAt(MR, dead) && Mode_VGet(dead, "Pos", &pos) && Mr_MoveLater(0.2, &pos);
+	Native_Free(&pos);
+	return ok;
 }
 
 /* OnPlayerDeath(LooserName, WinnerName): the player drops the baton where he died; he comes back after respawnTime */
-static PyObject *MortalRace_OnPlayerDeath(PyObject *self, PyObject *args) {
-	PyObject *loser, *winner;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &loser, &winner)) {
-		return NULL;
+static byte Mr_OnPlayerDeathC(const nativeVal_t *loser) {
+	nativeVal_t e, args[3];
+	Native_SetNone(&e);
+	for (int i = 0; i < 3; i++) {
+		Native_SetNone(&args[i]);
 	}
-	PyObject *e = Sf_Entity(&f, loser);
-	if (Sf_Compare(&f, loser, "==", Sf_Global(&f, MR, "shipWithBaton")) > 0) {
-		Sf_SetGlobal(&f, MR, "userWithBaton", Sf_Int(&f, 0));
-		Sf_SetGlobal(&f, MR, "shipWithBaton", Sf_Str(&f, ""));
-		Sdf_Call(&f, MR, "CreateBaton", "(O)", Sf_Attr(&f, e, "Pos"));
-		Sdf_Later(&f, Sf_Float(&f, 0.2), MR, "MoveRacersToPos", Sf_Build(&f, "(OO)", Sf_Attr(&f, e, "Pos"), Sf_Global(&f,
-			MR, "BatonRadius")));
+	byte ok = Mode_EntityH(loser, &e) && Mode_Read(MR, "shipWithBaton", &mr.shipWithBaton);
+	if (ok && Sd_Eq(loser, &mr.shipWithBaton)) {
+		ok = Sd_BatonFree(MR, &mr.userWithBaton, &mr.shipWithBaton) && Mr_DropBaton(&e);
 	}
-	PyObject *pos = Sf_Attr(&f, e, "Pos");
-	Sdf_Later(&f, Sf_Global(&f, MR, "respawnTime"), MR, "RespawnPlayer", Sf_Build(&f, "(OOO)", loser, pos, Sf_Attr(&f, e,
-		"Ang")));
-	return Sf_None(&f);
+	Native_Copy(&args[0], loser);
+	ok = ok && Mode_VGet(&e, "Pos", &args[1]) && Mode_VGet(&e, "Ang", &args[2]) && Mode_Read(MR, "respawnTime", &mr.respawnTime) &&
+		Sd_LaterV(&mr.respawnTime, MR, "RespawnPlayer", args, 3);
+	Native_Free(&e);
+	for (int i = 0; i < 3; i++) {
+		Native_Free(&args[i]);
+	}
+	return ok;
 }
+
+MODE_FN(Mr, OnPlayerDeath, 2, Mr_OnPlayerDeathC(&a[0]))
 
 /* RacerKilled(LooserName, WinnerName): a racer died (it drops the baton when it had it); it comes back after
  * respawnTime */
-static PyObject *MortalRace_RacerKilled(PyObject *self, PyObject *args) {
-	PyObject *loser, *winner;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &loser, &winner)) {
-		return NULL;
+static byte Mr_RacerKilledC(const nativeVal_t *loser, const nativeVal_t *winner) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *radar = Mode_V(&t), *empty = Mode_S(&t, ""), *args = Mode_V(&t);
+	Mode_V(&t);
+	if (!Mode_Import("Vehicles") || !CALL("Vehicles", "OnDeath", NULL, "vv", loser, winner) ||
+		!Sd_RemoveIn(MR, "racers", &mr.racers, loser) || !Mode_EntityH(loser, e)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Vehicles");
-	Sf_Ask(&f, "Vehicles", "OnDeath", "(OO)", loser, winner);
-	Sdf_RemoveIn(&f, MR, "racers", loser);
-	PyObject *e = Sf_Entity(&f, loser);
-	int drop = Sf_True(&f, e);
-	if (drop > 0) {
-		drop = Sf_EqI(&f, Sf_Attr(&f, e, "RadarShow"), 1);
+	int drop = Native_True(e);
+	if (drop) {
+		drop = Mode_VGet(e, "RadarShow", radar) ? Sd_EqI(radar, 1) : -1;
 	}
-	if (drop > 0) {
-		Sf_SetGlobal(&f, MR, "shipWithBaton", Sf_Str(&f, ""));
-		Sdf_Call(&f, MR, "CreateBaton", "(O)", Sf_Attr(&f, e, "Pos"));
-		Sdf_Later(&f, Sf_Float(&f, 0.2), MR, "MoveRacersToPos", Sf_Build(&f, "(OO)", Sf_Attr(&f, e, "Pos"), Sf_Global(&f,
-			MR, "BatonRadius")));
+	if (drop < 0 || (drop && (!Mode_Put(MR, "shipWithBaton", &mr.shipWithBaton, empty) || !Mr_DropBaton(e)))) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *foe = Sf_GetItem(&f, Sf_Global(&f, MR, "nameProfileDict"), loser);
-	Sdf_Later(&f, Sf_Global(&f, MR, "respawnTime"), MR, "RespawnRacer", Sf_Build(&f, "(OO)", loser, foe));
-	Sdf_Del(&f, loser);
-	if (Sf_True(&f, Sf_Method(&f, Sf_Global(&f, MR, "nameProfileDict"), "has_key", "(O)", loser)) > 0) {
-		Sf_DelItem(&f, Sf_Global(&f, MR, "nameProfileDict"), loser);
+	Native_Copy(&args[0], loser);
+	if (!Mode_Read(MR, "nameProfileDict", &mr.nameProfileDict) || !Native_Subscript(&mr.nameProfileDict, loser, &args[1]) ||
+		!Mode_Read(MR, "respawnTime", &mr.respawnTime) || !Sd_LaterV(&mr.respawnTime, MR, "RespawnRacer", args, 2) ||
+		!Sd_Del(loser)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	int has = Mode_HasKey(MR, "nameProfileDict", 1, loser);
+	return Mode_Done(&t, has <= 0 ? has == 0 : Mode_DictDel(MR, "nameProfileDict", &mr.nameProfileDict, loser));
 }
+
+MODE_FN(Mr, RacerKilled, 2, Mr_RacerKilledC(&a[0], &a[1]))
 
 /* RacerDamaged(LooserName, WinnerName, Damage): the player hit a racer before the start: the race starts from the
  * first buoy */
-static PyObject *MortalRace_RacerDamaged(PyObject *self, PyObject *args) {
-	PyObject *loser, *winner, *damage;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &loser, &winner, &damage)) {
-		return NULL;
+static byte Mr_RacerDamagedC(const nativeVal_t *winner) {
+	nativeVal_t usr, un;
+	if (!Mode_Import("RacerScorer") || !Mode_UsrHandle(&usr)) {
+		return 0;
 	}
-	Sf_Import(&f, "RacerScorer");
-	PyObject *usr = Sdf_Usr(&f);
-	if (Sf_True(&f, usr) == 0) {
-		return Sf_None(&f);
+	Native_SetNone(&un);
+	byte ok = !Native_True(&usr) ? 1 : Mode_VGet(&usr, "Name", &un) && Mode_Read(MR, "YourScore", &mr.yourScore);
+	if (ok && Native_True(&usr) && Sd_Eq(&un, winner) && Sd_EqI(&mr.yourScore, -1)) {
+		ok = Mode_ListSet("Race", "OnDamage", "") && Mr_Scorer() && Mode_Read(MR, "waypointName", &mr.waypointName) &&
+			OWN(MR, "OnCheckPoint", NULL, "vv", &mr.waypointName, winner);
 	}
-	if (Sf_Compare(&f, Sf_Attr(&f, usr, "Name"), "==", winner) > 0 && Sf_EqI(&f, Sf_Global(&f, MR, "YourScore"),
-		-1) > 0) {
-		Sf_Ask(&f, "Scrap", "EntityListSet", "(sss)", "Race", "OnDamage", "");
-		Sf_Ask(&f, "RacerScorer", "InitMissionScorer", "(iiO)", 0, 0, Sf_Repr(&f, Sf_Global(&f, MR, "numWaypoints")));
-		Sf_SetMod(&f, "Menu", "MissionScorerCall", Sf_Mod(&f, "RacerScorer", "MissionScorer"));
-		Sdf_Draw(&f);
-		Sdf_Call(&f, MR, "OnCheckPoint", "(OO)", Sf_Global(&f, MR, "waypointName"), winner);
-	}
-	return Sf_None(&f);
+	Native_Free(&usr);
+	Native_Free(&un);
+	return ok;
 }
+
+MODE_FN(Mr, RacerDamaged, 3, Mr_RacerDamagedC(&a[1]))
 
 /* RespawnRacer(racerName, foeType): the racer again at the last start position while the race runs; it attacks the
  * ship with the baton, else goes for the baton or the player */
-static int Mr_RedFirst(scriptFrame_t *f, PyObject *e, PyObject *name, void *arg) {
-	PyObject **v = arg;
-	int red = Sf_EqS(f, Sf_Attr(f, e, "TgType"), "red");
+typedef struct {
+	const nativeVal_t *v;
+	byte found;
+} mrRed_t;
+
+static int Mr_RedFirst(const nativeVal_t *e, const nativeVal_t *name, void *arg) {
+	mrRed_t *r = arg;
+	nativeVal_t tg, vn;
+	Native_SetNone(&tg);
+	Native_SetNone(&vn);
+	int red = Mode_VGet(e, "TgType", &tg) ? Native_IsStr(&tg, "red") : -1;
 	if (red > 0) {
-		Sf_Ask(f, "SAI", "SetStateVehicle", "(iOO)", 2, Sf_Attr(f, v[0], "Name"), name);
-		v[1] = Py_True;
+		red = Mode_VGet(r->v, "Name", &vn) && CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, &vn, name) ? 1 : -1;
+		r->found = 1;
 	}
-	return red == 0;
+	Native_Free(&tg);
+	Native_Free(&vn);
+	return red < 0 ? -1 : !red;
 }
 
-static PyObject *MortalRace_RespawnRacer(PyObject *self, PyObject *args) {
-	PyObject *name, *foe;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &name, &foe)) {
-		return NULL;
+static byte Mr_RespawnRacerC(const nativeVal_t *name, const nativeVal_t *foe) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *w = Mode_V(&t), *prev = Mode_V(&t), *pos = Mode_V(&t), *v = Mode_V(&t), *vn = Mode_V(&t), *ship = Mode_V(&t);
+	nativeVal_t *bp = Mode_V(&t), *usr = Mode_V(&t), *un = Mode_V(&t);
+	mrRed_t red = { .v = v };
+	if (!Mode_Import("RaceMaker") || !Mode_Import("VehiclesNPC") || !Mode_Import("OutMap") ||
+		!Mode_Read(MR, "waypointName", &mr.waypointName) || !Mode_EntityH(&mr.waypointName, w)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "RaceMaker");
-	Sf_Import(&f, "VehiclesNPC");
-	Sf_Import(&f, "OutMap");
-	if (Sf_True(&f, Sf_Entity(&f, Sf_Global(&f, MR, "waypointName"))) == 0) {
-		return Sf_None(&f);
+	if (!Native_True(w)) {
+		return Mode_Done(&t, 1);
 	}
-	PyObject *pos = Sf_Item(&f, Mr_StartPos(&f, Mr_PrevPos(&f)), 0);
-	PyObject *v = Sdf_Create(&f, name, pos, "Car");
-	Sf_SetItem(&f, Sf_Global(&f, MR, "nameProfileDict"), Sf_Attr(&f, v, "Name"), foe);
-	Sf_Ask(&f, "RaceMaker", "InitShipIAProfile", "(OO)", foe, Sf_Global(&f, MR, "profileType"));
-	PyObject *ship = Sf_Ask(&f, "RaceMaker", "GetRandomShipIAProfile", "(OO)", foe, Sf_Global(&f, MR, "profileType"));
-	Sf_Ask(&f, "VehiclesNPC", "SetIAProf", "(OO)", v, ship);
-	Sf_Ask(&f, "SAI", "SetStateVehicle", "(iO)", 0, Sf_Attr(&f, v, "Name"));
-	Sf_SetAttrS(&f, v, "TgType", "green");
-	Sf_SetAttrS(&f, v, "EntityList", "Race");
-	Sf_SetAttrI(&f, v, "Money", -1);
-	Sf_SetAttrI(&f, v, "LaunchTaunts", 0);
-	static const char *const ammo[] = { "Ammo00", "Ammo01", "Ammo02" };
-	for (int a = 0; a < 3; a++) {
-		Sf_SetAttr(&f, v, ammo[a], Sf_Ask(&f, "SWeap", "GetFAmmo", "(is)", a, "Max"));
+	if (!Mr_PrevPos(prev) || !Mr_StartPos(prev, 0, pos) || !Sd_Create(name, pos, "Car", v) || !Mode_VGet(v, "Name", vn) ||
+		!Mode_DictPut(MR, "nameProfileDict", &mr.nameProfileDict, vn, foe) || !Mr_RacerProfile(foe, ship) ||
+		!CALL("VehiclesNPC", "SetIAProf", NULL, "vv", v, ship) || !CALL("SAI", "SetStateVehicle", NULL, "iv", 0L, vn) ||
+		!Sd_SetS(v, "TgType", "green") || !Sd_SetS(v, "EntityList", "Race") || !Sd_SetI(v, "Money", -1) ||
+		!Sd_SetI(v, "LaunchTaunts", 0) || !Mr_FullAmmo(v) || !Sd_AppendName(MR, "racers", v) ||
+		!Sd_EachInList("Race", Mr_RedFirst, &red)) {
+		return Mode_Done(&t, 0);
 	}
-	Sdf_AppendName(&f, MR, "racers", v);
-	PyObject *found[2] = { v, NULL };
-	Sdf_EachInList(&f, "Race", Mr_RedFirst, found);
-	if (found[1] || f.failed) {
-		return Sf_None(&f);
+	if (red.found) {
+		return Mode_Done(&t, 1);
 	}
-	PyObject *baton = Sf_Global(&f, MR, "baton");
-	if (Sf_True(&f, baton) > 0) {
-		PyObject *bp = Sf_Attr(&f, Sf_Global(&f, MR, "baton"), "Pos");
-		Mr_GoTo(&f, Sf_Attr(&f, v, "Name"), bp, Sf_Global(&f, MR, "BatonRadius"));
-	} else if (!f.failed && Sf_True(&f, Sdf_Usr(&f)) > 0) {
-		Sf_Ask(&f, "SAI", "SetStateVehicle", "(iOO)", 2, Sf_Attr(&f, v, "Name"), Sf_Attr(&f, Sdf_Usr(&f), "Name"));
-	} else if (!f.failed) {
-		Sf_Ask(&f, "SAI", "SetStateVehicle", "(iOi)", 3, Sf_Attr(&f, v, "Name"), 0);
+	if (!Mode_Read(MR, "baton", &mr.baton)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	Native_Free(vn);
+	if (Native_True(&mr.baton)) {
+		return Mode_Done(&t, Mode_Read(MR, "baton", &mr.baton) && Mode_VGet(&mr.baton, "Pos", bp) && Mode_VGet(v, "Name", vn) &&
+			Mode_Read(MR, "BatonRadius", &mr.batonRadius) && Mr_GoTo(vn, bp, &mr.batonRadius));
+	}
+	if (!Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_True(usr)) {
+		Native_Free(usr);
+		return Mode_Done(&t, Mode_VGet(v, "Name", vn) && Mode_UsrHandle(usr) && Mode_VGet(usr, "Name", un) &&
+			CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, vn, un));
+	}
+	return Mode_Done(&t, Mode_VGet(v, "Name", vn) && CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, vn, 0L));
 }
+
+MODE_FN(Mr, RespawnRacer, 2, Mr_RespawnRacerC(&a[0], &a[1]))
 
 /* the racer with the waypoint marker gets the target "" (racerWithWaypoint of the script is never set) */
-static int Mr_Marker(scriptFrame_t *f, PyObject *e, PyObject *name, void *arg) {
+static int Mr_Marker(const nativeVal_t *e, const nativeVal_t *name, void *arg) {
+	nativeVal_t v;
 	(void)name;
 	(void)arg;
-	int m = Sf_EqI(f, Sf_Attr(f, e, "RadarShow"), 1);
-	if (m > 0) {
-		Sf_SetAttrS(f, e, "Target", "");
+	Native_SetNone(&v);
+	int m = Mode_VGet(e, "RadarShow", &v) ? Sd_EqI(&v, 1) : -1;
+	Native_Free(&v);
+	if (m > 0 && !Sd_SetS(e, "Target", "")) {
+		return -1;
 	}
-	return m == 0;
+	return m < 0 ? -1 : !m;
 }
 
 /* RespawnPlayer(Usrname, pos, ang): the player's ship where it died, at the last start position when the baton lies
  * there */
-static PyObject *MortalRace_RespawnPlayer(PyObject *self, PyObject *args) {
-	PyObject *name, *pos, *ang;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &name, &pos, &ang)) {
-		return NULL;
+static byte Mr_RespawnPlayerC(const nativeVal_t *name, const nativeVal_t *pos, const nativeVal_t *ang) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *un = Mode_V(&t), *bp = Mode_V(&t), *d = Mode_V(&t), *dsq = Mode_V(&t), *r = Mode_V(&t);
+	nativeVal_t *rf = Mode_V(&t), *i = Mode_V(&t), *sp = Mode_V(&t), *sa = Mode_V(&t), *a2 = Mode_V(&t);
+	const nativeVal_t *spawnPos = pos, *spawnAng = ang;
+	if (!Mode_Import("Vehicles") || !Mode_Import("OutMap") || !Mode_Import("RaceMaker") || !Mode_EntityH(name, usr) ||
+		!Mode_VGet(usr, "Name", un) || !CALL("Vehicles", "ReSpawnShip", NULL, "v", un) || !Mode_Read(MR, "baton", &mr.baton)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "OutMap");
-	Sf_Import(&f, "RaceMaker");
-	PyObject *usr = Sf_Entity(&f, name);
-	Sf_Ask(&f, "Vehicles", "ReSpawnShip", "(O)", Sf_Attr(&f, usr, "Name"));
-	PyObject *spawnPos = pos, *spawnAng = ang;
-	if (Sf_True(&f, Sf_Global(&f, MR, "baton")) > 0) {
-		PyObject *d = Sf_Ask(&f, "SVec", "ModSqr", "(O)", Sf_Ask(&f, "SVec", "Sub", "(OO)", Sf_Attr(&f, Sf_Global(&f,
-			MR, "baton"), "Pos"), pos));
-		PyObject *r = Sf_Op(&f, Sf_Global(&f, MR, "BatonRadius"), '*', Sf_Global(&f, MR, "BatonRadius"));
-		if (Sf_Compare(&f, d, "<", Sf_ToFloat(&f, r)) > 0) {
-			PyObject *i = Mr_PrevPos(&f);
-			spawnPos = Sf_Item(&f, Mr_StartPos(&f, i), 0);
-			spawnAng = Sf_Build(&f, "(iOi)", 0, Sf_Item(&f, Mr_StartPos(&f, i), 1), 0);
+	if (Native_True(&mr.baton)) {
+		if (!Mode_Read(MR, "baton", &mr.baton) || !Mode_VGet(&mr.baton, "Pos", bp) || !Mode_VecSub(bp, pos, d) ||
+			!Mode_VecModSqr(d, dsq) || !Mr_Square("BatonRadius", r) || !Native_ToFloat(r, rf)) {
+			return Mode_Done(&t, 0);
+		}
+		if (Native_Compare(dsq, rf) < 0) {
+			if (!Mr_PrevPos(i) || !Mr_StartPos(i, 0, sp) || !Mr_StartPos(i, 1, sa)) {
+				return Mode_Done(&t, 0);
+			}
+			Native_SetEmpty(a2, NV_TUPLE);
+			Native_SetInt(Native_Append(a2), 0);
+			Native_Copy(Native_Append(a2), sa);
+			Native_SetInt(Native_Append(a2), 0);
+			spawnPos = sp;
+			spawnAng = a2;
 		}
 	}
-	Sf_SetAttr(&f, usr, "Pos", spawnPos);
-	Sf_SetAttr(&f, usr, "Ang", spawnAng);
-	Sdf_EachInList(&f, "Race", Mr_Marker, NULL);
-	return Sf_None(&f);
+	return Mode_Done(&t, Mode_VSet(usr, "Pos", spawnPos) && Mode_VSet(usr, "Ang", spawnAng) &&
+		Sd_EachInList("Race", Mr_Marker, NULL));
 }
+
+MODE_FN(Mr, RespawnPlayer, 3, Mr_RespawnPlayerC(&a[0], &a[1], &a[2]))
 
 /* PreOnVictory(): the race over, the player safe, the last message, then the score table */
-static PyObject *MortalRace_PreOnVictory(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Mr_PreOnVictoryC(void) {
+	nativeVal_t cad, foe, params;
+	PyObject *func;
+	if (!OWN(MR, "EndOfMortalRace", NULL, "") || !Sd_UsrSafe() || !Mode_GVarSetS("OnItemTakenAI", "")) {
+		return 0;
 	}
-	Sdf_Call(&f, MR, "EndOfMortalRace", "()");
-	Sdf_UsrSafe(&f);
-	Sdf_SetS(&f, "OnItemTakenAI", "");
-	PyObject *cad = Sdf_Save(&f, "MortalRaceFinishPlayerWinsTextCad");
-	Sdf_Remote(&f, "ForceRemoteCom", cad, Sdf_Save(&f, "MortalRaceFinishPlayerWinsTextFoe"), Sf_Mod(&f, "MissionsFuncs",
-		"OnSuperDealFinish"),
-		Sf_Build(&f, "(iss)", 1, "MortalRace", ""));
-	return Sf_None(&f);
+	Mode_SaveVar("MortalRaceFinishPlayerWinsTextCad", &cad);
+	Mode_SaveVar("MortalRaceFinishPlayerWinsTextFoe", &foe);
+	Sd_Params(1, "MortalRace", "", &params);
+	byte ok = (func = Script_Attr("MissionsFuncs", "OnSuperDealFinish")) != NULL && Sd_Remote("ForceRemoteCom", &cad, &foe, func, &params);
+	Py_XDECREF(func);
+	Native_Free(&cad);
+	Native_Free(&foe);
+	Native_Free(&params);
+	return ok;
 }
 
+MODE_FN(Mr, PreOnVictory, 0, Mr_PreOnVictoryC())
+
 PyMethodDef g_MortalRaceMethods[] = {
-	{ "GetMenuDescription", MortalRace_GetMenuDescription, 1, NULL },
-	{ "InitStatus", MortalRace_InitStatus, 1, NULL },
-	{ "Init", MortalRace_Init, 1, NULL },
-	{ "ReleaseBaton", MortalRace_ReleaseBaton, 1, NULL },
-	{ "LostBatonMessage", MortalRace_LostBatonMessage, 1, NULL },
+	{ "GetMenuDescription", Mr_GetMenuDescription, 1, NULL },
+	{ "InitStatus", Mr_InitStatus, 1, NULL },
+	{ "Init", Mr_Init, 1, NULL },
+	{ "ReleaseBaton", Mr_ReleaseBaton, 1, NULL },
+	{ "LostBatonMessage", Mr_LostBatonMessage, 1, NULL },
 	{ "SetInvulnerableStatus", Sd_SetInvulnerable, 1, NULL },
 	{ "AbortRemoteMessages", Sd_AbortRemoteMessages, 1, NULL },
-	{ "CrazyGamblerStartMortalRace", MortalRace_CrazyGamblerStartMortalRace, 1, NULL },
+	{ "CrazyGamblerStartMortalRace", Mr_CrazyGamblerStartMortalRace, 1, NULL },
 	{ "SetVulnerable", Sd_SetVulnerable, 1, NULL },
-	{ "CreateBaton", MortalRace_CreateBaton, 1, NULL },
-	{ "TakeBaton", MortalRace_TakeBaton, 1, NULL },
-	{ "InitRace", (PyCFunction)(void (*)(void))MortalRace_InitRace, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "CreateFirstWaypoint", MortalRace_CreateFirstWaypoint, 1, NULL },
-	{ "OnRaceStart", MortalRace_OnRaceStart, 1, NULL },
-	{ "RaceGo", MortalRace_RaceGo, 1, NULL },
-	{ "CheckShipsState", MortalRace_CheckShipsState, 1, NULL },
-	{ "OnPositionReached", MortalRace_OnPositionReached, 1, NULL },
-	{ "OnCheckPoint", MortalRace_OnCheckPoint, 1, NULL },
-	{ "Restart", MortalRace_Restart, 1, NULL },
+	{ "CreateBaton", Mr_CreateBaton, 1, NULL },
+	{ "TakeBaton", Mr_TakeBaton, 1, NULL },
+	{ "InitRace", (PyCFunction)(void (*)(void))Mr_InitRace, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "CreateFirstWaypoint", Mr_CreateFirstWaypoint, 1, NULL },
+	{ "OnRaceStart", Mr_OnRaceStart, 1, NULL },
+	{ "RaceGo", Mr_RaceGo, 1, NULL },
+	{ "CheckShipsState", Mr_CheckShipsState, 1, NULL },
+	{ "OnPositionReached", Mr_OnPositionReached, 1, NULL },
+	{ "OnCheckPoint", Mr_OnCheckPoint, 1, NULL },
+	{ "Restart", Mr_Restart, 1, NULL },
 	{ "RestartRace", Sd_Restart, 1, NULL },
-	{ "MoveWaypoint", MortalRace_MoveWaypoint, 1, NULL },
-	{ "EndOfMortalRace", MortalRace_EndOfMortalRace, 1, NULL },
-	{ "MoveRacersToTraffic", MortalRace_MoveRacersToTraffic, 1, NULL },
-	{ "MoveRacersToPos", MortalRace_MoveRacersToPos, 1, NULL },
-	{ "RacersAttackShip", MortalRace_RacersAttackShip, 1, NULL },
-	{ "OnPlayerDeath", MortalRace_OnPlayerDeath, 1, NULL },
-	{ "RacerKilled", MortalRace_RacerKilled, 1, NULL },
-	{ "RacerDamaged", MortalRace_RacerDamaged, 1, NULL },
-	{ "RespawnRacer", MortalRace_RespawnRacer, 1, NULL },
-	{ "RespawnPlayer", MortalRace_RespawnPlayer, 1, NULL },
-	{ "PreOnVictory", MortalRace_PreOnVictory, 1, NULL },
+	{ "MoveWaypoint", Mr_MoveWaypoint, 1, NULL },
+	{ "EndOfMortalRace", Mr_EndOfMortalRace, 1, NULL },
+	{ "MoveRacersToTraffic", Mr_MoveRacersToTraffic, 1, NULL },
+	{ "MoveRacersToPos", Mr_MoveRacersToPos, 1, NULL },
+	{ "RacersAttackShip", Mr_RacersAttackShip, 1, NULL },
+	{ "OnPlayerDeath", Mr_OnPlayerDeath, 1, NULL },
+	{ "RacerKilled", Mr_RacerKilled, 1, NULL },
+	{ "RacerDamaged", Mr_RacerDamaged, 1, NULL },
+	{ "RespawnRacer", Mr_RespawnRacer, 1, NULL },
+	{ "RespawnPlayer", Mr_RespawnPlayer, 1, NULL },
+	{ "PreOnVictory", Mr_PreOnVictory, 1, NULL },
 	{ NULL, NULL, 0, NULL }
 };
