@@ -1,0 +1,3 @@
+# line 21: one line after MayorActionPress the drunk Mayor is in ActionInit or already in Action (its DefLoop): the
+# start animation ends within a few frames, a C python run on the RTX reads it after the change
+sub \('Action', 'ActionInit'\), \('DefLoop', 'Action'\) => ('Action', 'Action'), ('DefLoop', 'Action')

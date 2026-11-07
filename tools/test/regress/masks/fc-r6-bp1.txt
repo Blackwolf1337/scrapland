@@ -2,3 +2,6 @@
 ignore _r6res()
 # line 46: NPC walk, idle and talk state and spawn position change from run to run (CharsNPC timing)
 ignore (_sd(__import__('Mission_BeatPickus').DisableIAFunctionary, 'Pickus'), _sd(__import__('Mission_BeatPickus').DisableIAFunctionary, 'Nobody'), _r6ent(('Functionary_Pickus',)))
+# line 59: Traitorius right after PreTalkToTraitoriusAgain: still in its talk state (LLogicState 6, ArrowCanUse 1,
+# Relax) or already walking off (1, 0, Run), NPC timing (a 610M pack run and a C python run on the RTX show the second)
+sub 'Traitorius', 6, '', [16], '', 1\.0, 0, [01], 1, 1, 600, 45, '(?:Relax|Run|Walk)' => 'Traitorius', 6, '', LSTATE, '', 1.0, 0, ARROW, 1, 1, 600, 45, ACTION

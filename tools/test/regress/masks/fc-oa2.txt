@@ -1,0 +1,8 @@
+# the racers bump into each other and the traffic during the lines: their Life (line 6 and the other _bent lines of the
+# racers) depends on the game time the lines took (pack runs show 60 to 105 for BadBoy2, C runs 85 for BadBoy1 too)
+sub \('(BadBoy\d)', 'none', 'Race', '\?', \d+\) => ('\1', 'none', 'Race', '?', LIFE)
+# lines 37 to 39: when the first racer named BadBoy2 is already gone (deleted after the cancelled race of the lines
+# before), InitRace makes the new one as 'BadBoy2' without the engine's counter: timing of that delete against the
+# harness's answer (C channel runs on the RTX 2 of 2, the python runs not); racer names of one digit count as entity
+# numbers too
+sub 'BadBoy\d' => 'BadBoy#'
