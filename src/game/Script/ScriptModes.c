@@ -1968,3 +1968,11 @@ byte Mode_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t
 	Py_XDECREF(x);
 	return r != NULL;
 }
+
+byte Mode_GVarSetDef(const char *name) {
+	nativeVal_t d;
+	Native_SetNone(&d);
+	byte ok = Native_GVarDef(name, &d) && Mode_GVarSet(name, &d);
+	Native_Free(&d);
+	return ok;
+}
