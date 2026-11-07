@@ -3152,3 +3152,11 @@ byte Mode_DelItemG(const char *module, const char *var, int i) {
 	Py_XDECREF(l);
 	return r == 0;
 }
+/* ---- the vehicle modules of batch L (Vehicles, VehiclesNPC, ShipMaker, SputnikInterface) ---- */
+
+int Mode_ModTrue(const char *module, const char *var) {
+	nativeVal_t v;
+	int r = LvN_ModGet(module, var, &v) ? Native_True(&v) : -1;
+	Native_Free(&v);
+	return r;
+}

@@ -618,5 +618,9 @@ byte Mode_Apply(const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out)
  * item i deleted (OBJLIB 5: other modules and the cases hold the list) */
 byte Mode_ListAddG(const char *module, const char *var, const nativeVal_t *v, byte first);
 byte Mode_DelItemG(const char *module, const char *var, int i);
+/* ---- the vehicle modules of batch L (Vehicles, VehiclesNPC, ShipMaker, SputnikInterface) ---- */
+
+/* `if module.var:` of a variable of another module (any object, read as its attribute): 1, 0, -1 with the error */
+int Mode_ModTrue(const char *module, const char *var);
 
 #endif
