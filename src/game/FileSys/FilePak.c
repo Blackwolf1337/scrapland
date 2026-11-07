@@ -840,7 +840,8 @@ void Pack_Build(const char *dir, const char *outName, int mode) {
 	cFile_dtor(&in);
 }
 
-/* compiles one Python file with its time stamp through PyCompile.py */
+/* compiles one Python file with its time stamp through PyCompile.py (STAGE 7: the pack build of the scripts, a line
+ * of Python through the console fallback; goes with the interpreter) */
 static void Python_CompileFile(const char *path) {
 	byte st[0x24];		/* struct _stat32, st_mtime at 0x1c */
 	char cmd[0x100];

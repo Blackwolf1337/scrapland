@@ -551,7 +551,8 @@ static PyObject *HT_ShowHangarPanel(PyObject *self, PyObject *args) {
 }
 
 /* eval(text) in a function of HangarTab (its globals, locals the dict of the function's variables); a name with
- * attributes ("prevShip.Model") is looked up directly */
+ * attributes and subscripts ("prevShip.Model", "ShipEdit.editedShips[3].NEng0", all the game passes) is looked up
+ * directly */
 static PyObject *Ht_Eval(scriptFrame_t *f, PyObject *text, PyObject *locals) {
 	PyObject *g = Sf_Mod(f, HT, "__dict__"), *v;
 	if (g && text && PyString_Check(text) && PyDict_Check(locals) &&
@@ -565,6 +566,8 @@ static PyObject *Ht_Eval(scriptFrame_t *f, PyObject *text, PyObject *locals) {
 			return Sf_Keep(f, found > 0 ? v : NULL);
 		}
 	}
+	/* STAGE 7: another expression (only a caller of ComputeShipTotalCost from the console) becomes an error when the
+	 * interpreter goes */
 	return Sf_Ask(f, "__builtin__", "eval", "(OOO)", text, g, locals);
 }
 

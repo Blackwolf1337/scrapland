@@ -706,7 +706,8 @@ static PyObject *SaveGame_QSaveReg(PyObject *self, PyObject *args) {
 	return SG_Call("SaveReg", "(sO)", "MissionStatus", reg) ? Py_ReturnNone() : NULL;
 }
 
-/* GetReg(name): a new class whose attributes are the values of a register (exec "res.<attr> = <saved repr>") */
+/* GetReg(name): a new class whose attributes are the values of a register (exec "res.<attr> = <saved repr>", the
+ * saved literals read in C) */
 static PyObject *SaveGame_GetReg(PyObject *self, PyObject *args) {
 	scriptRefs_t r = { .n = 0 };
 	PyObject *name;
@@ -725,8 +726,8 @@ static PyObject *SaveGame_GetReg(PyObject *self, PyObject *args) {
 	if (lst == Py_None) {
 		lst = K(PyString_FromString("[]"));
 	}
-	PyObject *regs = K(Script_EvalIn("SaveGame", lst)), *locals = regs ? K(Py_BuildValue("{s:O,s:O,s:O}", "name", name, "res", res, "lst", lst)) : NULL;
-	if (!locals) {
+	PyObject *regs = K(Script_EvalIn("SaveGame", lst));
+	if (!regs) {
 		FAIL();
 	}
 	PyObject *a;
@@ -738,14 +739,13 @@ static PyObject *SaveGame_GetReg(PyObject *self, PyObject *args) {
 		PyObject *key = Script_Keep(&t, Script_Plus(Script_PlusS(Script_Ref(name), "."), a));
 		PyObject *val = key ? Script_Keep(&t, Script_Ask("Scrap", "GetSaveVar", "(O)", key)) : NULL;
 		PyObject *code = val ? Script_Keep(&t, Script_Plus(Script_PlusS(Script_SPlus("res.", a), " = "), val)) : NULL;
-		/* res.<reg> = <a literal> made directly */
+		/* the exec'd res.<reg> = <value> made directly: STORE_ATTR of the literal; another register name or value is
+		 * exec's SyntaxError, nothing runs */
 		byte plain = code && PyString_Check(code) && PyString_Check(a) &&
-			Script_IsName(PyString_AsString(a), PyString_Size(a)) && PyString_Check(val) &&
-			(int)strlen(PyString_AsString(val)) == PyString_Size(val);
-		PyObject *lit = plain ? Script_Keep(&t, Script_Literal(g, PyString_AsString(val))) : NULL;
-		PyObject *done = lit ? (PyObject_SetAttrString(res, PyString_AsString(a), lit) == 0 ? Py_None : NULL) :
-			code && PyString_Check(code) && PyDict_SetItemString(locals, "reg", a) == 0 ?
-			Script_Keep(&t, PyRun_String(PyString_AsString(code), Py_file_input, g, locals)) : NULL;
+			Script_IsName(PyString_AsString(a), PyString_Size(a)) && PyString_Check(val);
+		PyObject *lit = !code ? NULL : plain ? Script_Keep(&t, Script_EvalValue(g, val)) :
+			Script_NotRead("SaveGame.GetReg", PyString_Check(code) ? PyString_AsString(code) : "");
+		PyObject *done = lit && PyObject_SetAttrString(res, PyString_AsString(a), lit) == 0 ? Py_None : NULL;
 		Script_Done(&t, NULL);
 		if (!done) {
 			FAIL();

@@ -6,6 +6,7 @@
  * number and sequence rules of Python 1.5.2, PyObject_Compare for the comparisons, repr for the backquotes). Where a
  * value helper of ScriptValue.c does the operation, the frame helper only keeps its result.
  */
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -485,6 +486,256 @@ byte Sf_Unpack(scriptFrame_t *f, PyObject *v, int n, PyObject **out) {
 	return 1;
 }
 
+/*
+ * The lines the game execs (scene generic lines, the imports and calls the ports build, the code strings of the
+ * save games), read in C: statements split by ';' (one may end the line), each "import NAME", a chain NAME(.NAME |
+ * (args))* or such a chain ending in .NAME set to a value ("=" with blanks or not). Arguments and values are
+ * literals (Script_Literal) or two literals joined by * or / (1/2.0). A line in another form (keywords, newlines,
+ * comments, a leading blank, other expressions) is not taken and nothing of it runs, as exec compiles the whole text
+ * first.
+ */
+#define SF_LINE_STMTS 8
+#define SF_LINE_TRAILERS 8
+#define SF_LINE_NAME 0x40
+
+typedef struct {
+	char kind;		/* '.' an attribute, '(' a call */
+	const char *text;	/* the attribute name, or the arguments up to the closing bracket */
+	int len;
+} sfTrailer_t;
+
+typedef struct {
+	byte import;		/* import <name> */
+	char name[SF_LINE_NAME];	/* the module, or the first name of the chain */
+	sfTrailer_t t[SF_LINE_TRAILERS];
+	int n;
+	const char *value;	/* the value of an assignment to the last attribute (NULL: none) */
+	int valueLen;
+} sfStmt_t;
+
+static void Sf_LineBlanks(const char **p) {
+	while (**p == ' ' || **p == '\t') {
+		(*p)++;
+	}
+}
+
+/* the length of the NAME at p (0 when there is none or it is a keyword) */
+static int Sf_LineName(const char *p) {
+	int len = 0;
+	while (isalnum((unsigned char)p[len]) || p[len] == '_') {
+		len++;
+	}
+	return len < SF_LINE_NAME && Script_IsName(p, len) ? len : 0;
+}
+
+/* the end of a value at p: the first ',', ';' or unmatched closing bracket outside quotes and brackets, or the end
+ * of the text; NULL when a quote does not close */
+static const char *Sf_ValueEnd(const char *p) {
+	int depth = 0;
+	for (; *p; p++) {
+		if (*p == '\'' || *p == '"') {
+			char q = *p;
+			for (p++; *p && *p != q; p++) {
+				if (*p == '\\' && p[1]) {
+					p++;
+				}
+			}
+			if (!*p) {
+				return NULL;
+			}
+		} else if (*p == '(' || *p == '[' || *p == '{') {
+			depth++;
+		} else if (*p == ')' || *p == ']' || *p == '}') {
+			if (depth-- == 0) {
+				return p;
+			}
+		} else if (depth == 0 && (*p == ',' || *p == ';')) {
+			return p;
+		}
+	}
+	return p;
+}
+
+/* a value s[0:len] in globals: a literal, or two literals joined by * or / (BINARY_MULTIPLY, BINARY_DIVIDE, done only
+ * when run is set). A new reference; NULL without an error for another form, with the error of the operation */
+static PyObject *Sf_LineValue(PyObject *globals, const char *s, int len, byte run) {
+	char buf[0x200], *op = NULL;
+	Sf_LineBlanks(&s);
+	while (len > 0 && (s[len - 1] == ' ' || s[len - 1] == '\t')) {
+		len--;
+	}
+	if (len <= 0 || len >= (int)sizeof(buf)) {
+		return NULL;
+	}
+	memcpy(buf, s, len);
+	buf[len] = '\0';
+	const char *end = Sf_ValueEnd(buf);
+	if (!end || *end) {
+		return NULL;
+	}
+	int depth = 0;
+	for (char *p = buf; *p; p++) {
+		if (*p == '\'' || *p == '"') {
+			char q = *p;
+			for (p++; *p != q; p++) {
+				if (*p == '\\') {
+					p++;
+				}
+			}
+		} else if (*p == '(' || *p == '[' || *p == '{') {
+			depth++;
+		} else if (*p == ')' || *p == ']' || *p == '}') {
+			depth--;
+		} else if (depth == 0 && (*p == '*' || *p == '/')) {
+			if (op) {
+				return NULL;
+			}
+			op = p;
+		}
+	}
+	if (!op) {
+		return Script_Literal(globals, buf);
+	}
+	char o = *op;
+	const char *right = op + 1;
+	for (*op = '\0'; op > buf && (op[-1] == ' ' || op[-1] == '\t'); op--) {
+		op[-1] = '\0';
+	}
+	Sf_LineBlanks(&right);
+	PyObject *a = Script_Literal(globals, buf), *b = a ? Script_Literal(globals, right) : NULL;
+	PyObject *v = !b ? NULL : !run ? Script_Ref(b) : o == '*' ? PyNumber_Multiply(a, b) : PyNumber_Divide(a, b);
+	Py_XDECREF(a);
+	Py_XDECREF(b);
+	return v;
+}
+
+/* one statement at *p into st; 1 with *p after it (at ';' or the end), 0 when it has another form */
+static byte Sf_LineStmt(PyObject *globals, const char **pp, sfStmt_t *st) {
+	const char *p = *pp;
+	int len;
+	memset(st, 0, sizeof(*st));
+	if (!strncmp(p, "import", 6) && (p[6] == ' ' || p[6] == '\t')) {
+		p += 6;
+		Sf_LineBlanks(&p);
+		st->import = 1;
+	}
+	if ((len = Sf_LineName(p)) == 0) {
+		return 0;
+	}
+	memcpy(st->name, p, len);
+	p += len;
+	while (!st->import) {
+		const char *q = p;
+		Sf_LineBlanks(&q);
+		if (*q != '.' && *q != '(') {
+			break;
+		}
+		if (st->n >= SF_LINE_TRAILERS) {
+			return 0;
+		}
+		sfTrailer_t *t = &st->t[st->n++];
+		t->kind = *q++;
+		Sf_LineBlanks(&q);
+		t->text = q;
+		if (t->kind == '.') {
+			if ((t->len = Sf_LineName(q)) == 0) {
+				return 0;
+			}
+			p = q + t->len;
+			continue;
+		}
+		while (*q != ')') {
+			const char *e = Sf_ValueEnd(q);
+			PyObject *v = e && (*e == ',' || *e == ')') ? Sf_LineValue(globals, q, (int)(e - q), 0) : NULL;
+			if (!v) {
+				return 0;
+			}
+			Py_DECREF(v);
+			q = *e == ',' ? e + 1 : e;
+			Sf_LineBlanks(&q);
+		}
+		t->len = (int)(q - t->text);
+		p = q + 1;
+	}
+	Sf_LineBlanks(&p);
+	if (!st->import && *p == '=' && p[1] != '=') {
+		/* only an attribute is set (a name would go into the locals) */
+		if (st->n == 0 || st->t[st->n - 1].kind != '.') {
+			return 0;
+		}
+		p++;
+		Sf_LineBlanks(&p);
+		const char *e = Sf_ValueEnd(p);
+		PyObject *v = e && (*e == ';' || *e == '\0') ? Sf_LineValue(globals, p, (int)(e - p), 0) : NULL;
+		if (!v) {
+			return 0;
+		}
+		Py_DECREF(v);
+		st->value = p;
+		st->valueLen = (int)(e - p);
+		p = e;
+	}
+	if (*p && *p != ';') {
+		return 0;
+	}
+	*pp = p;
+	return 1;
+}
+
+/* the arguments of a call trailer as a tuple (each value made in order, as the call pushes them) */
+static PyObject *Sf_LineArgs(PyObject *globals, const sfTrailer_t *t) {
+	PyObject *list = PyList_New(0);
+	for (const char *q = t->text; list && q < t->text + t->len;) {
+		const char *e = Sf_ValueEnd(q);
+		PyObject *v = Sf_LineValue(globals, q, (int)(e - q), 1);
+		if (!v || PyList_Append(list, v) != 0) {
+			Py_DECREF(list);
+			list = NULL;
+		}
+		Py_XDECREF(v);
+		q = *e == ',' ? e + 1 : e;
+		Sf_LineBlanks(&q);
+	}
+	PyObject *args = list ? PyList_AsTuple(list) : NULL;
+	Py_XDECREF(list);
+	return args;
+}
+
+/* a statement as exec runs it in globals and locals: LOAD_NAME through the locals, the globals and the builtins; an
+ * import stored in the locals; the value of an assignment made before its target; the result of a call dropped */
+static void Sf_LineRun(scriptFrame_t *f, const char *module, const sfStmt_t *st, PyObject *globals, PyObject *locals) {
+	if (st->import) {
+		Sf_ImportTo(f, module, locals, Sf_Keep(f, PyString_InternFromString((char *)st->name)));
+		return;
+	}
+	PyObject *value = st->value ? Sf_LineValue(globals, st->value, st->valueLen, 1) : NULL, *v;
+	if ((st->value && !Sf_Keep(f, value)) || !Sf_Check(f, Script_NameChain(locals, globals, st->name, &v) > 0)) {
+		return;
+	}
+	Sf_Keep(f, v);
+	int last = st->value ? st->n - 1 : st->n;
+	for (int i = 0; i < last && !f->failed; i++) {
+		const sfTrailer_t *t = &st->t[i];
+		char name[SF_LINE_NAME];
+		if (t->kind == '.') {
+			Str_Copy(name, t->text, t->len + 1);
+			v = Sf_Attr(f, v, name);
+		} else if (i == last - 1 && !st->value) {
+			PyObject *args = Sf_LineArgs(globals, t), *r = args ? Script_Invoke(v, args) : NULL;
+			Py_XDECREF(r);
+			Sf_Check(f, r != NULL);
+		} else {
+			v = Sf_CallArgs(f, v, Sf_LineArgs(globals, t));
+			Sf_Check(f, v != NULL);
+		}
+	}
+	if (st->value && !f->failed) {
+		char name[SF_LINE_NAME];
+		Str_Copy(name, st->t[last].text, st->t[last].len + 1);
+		Sf_SetAttr(f, v, name, value);
+	}
+}
+
 byte Sf_Exec(scriptFrame_t *f, PyObject *code, const char *module, PyObject *locals) {
 	PyObject *m = code && locals ? Sf_Module(f, module) : NULL;
 	if (!m) {
@@ -493,33 +744,36 @@ byte Sf_Exec(scriptFrame_t *f, PyObject *code, const char *module, PyObject *loc
 	if (!PyString_Check(code)) {
 		return Sf_Raise(f, PyExc_TypeError, "exec 1st arg must be string, code or file object");
 	}
-	const char *s = PyString_AsString(code);
+	const char *s = PyString_AsString(code), *p = s;
 	if ((int)strlen(s) != PyString_Size(code)) {
 		return Sf_Raise(f, PyExc_ValueError, "embedded '\\0' in exec string");
 	}
-	return Sf_Keep(f, PyRun_String((char *)s, Py_file_input, PyModule_GetDict(m), locals)) != NULL;
+	PyObject *g = PyModule_GetDict(m);
+	sfStmt_t st[SF_LINE_STMTS];
+	int n = 0;
+	/* a line that starts with a blank is exec's SyntaxError (also when it has nothing else); "" is nothing */
+	byte known = Script_HasBuiltins(g) && *p != ' ' && *p != '\t';
+	while (known && *p) {
+		known = n < SF_LINE_STMTS && Sf_LineStmt(g, &p, &st[n++]);
+		if (known && *p == ';') {
+			p++;
+			Sf_LineBlanks(&p);
+		}
+	}
+	if (known) {
+		for (int i = 0; i < n && !f->failed; i++) {
+			Sf_LineRun(f, module, &st[i], g, locals);
+		}
+		return !f->failed;
+	}
+	/* STAGE 7: a line in another form (the console, a hand-edited save, a mod) becomes Script_NotRead's error when the
+	 * interpreter goes */
+	return Sf_Keep(f, PyRun_String((char *)s, Py_file_input, g, locals)) != NULL;
 }
 
 PyObject *Sf_Eval(scriptFrame_t *f, PyObject *text, const char *module) {
 	PyObject *m = text ? Sf_Module(f, module) : NULL;
-	if (!m) {
-		return NULL;
-	}
-	if (!PyString_Check(text)) {
-		Sf_Raise(f, PyExc_TypeError, "eval() argument 1 must be string or code object");
-		return NULL;
-	}
-	const char *s = PyString_AsString(text);
-	if ((int)strlen(s) != PyString_Size(text)) {
-		Sf_Raise(f, PyExc_ValueError, "embedded '\\0' in string arg");
-		return NULL;
-	}
-	while (*s == ' ' || *s == '\t') {
-		s++;
-	}
-	PyObject *g = PyModule_GetDict(m), *v = Script_Literal(g, s);
-	/* STAGE 7: eval of a text that is no literal goes with the interpreter */
-	return Sf_Keep(f, v ? v : PyRun_String((char *)s, Py_eval_input, g, g));
+	return m ? Sf_Keep(f, Script_EvalValue(PyModule_GetDict(m), text)) : NULL;
 }
 
 byte Sf_RaiseValue(scriptFrame_t *f, PyObject *o) {

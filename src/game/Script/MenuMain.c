@@ -907,7 +907,7 @@ static PyObject *Menu_DebugSet_AI(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-/* the Python code of XboxPyDebug runs */
+/* the Python code of XboxPyDebug runs (STAGE 7: a debug line typed by the user, goes with the interpreter) */
 static PyObject *Menu_DebugSet_XboxPyDebug(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;

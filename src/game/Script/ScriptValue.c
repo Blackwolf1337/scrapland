@@ -273,21 +273,33 @@ byte Script_Hook(const char *module, const char *target, const char *name, const
 
 PyObject *Script_EvalIn(const char *module, PyObject *text) {
 	PyObject *mod = PyImport_ImportModule((char *)module);
-	PyObject *g = mod ? PyModule_GetDict(mod) : NULL, *v = NULL;
-	/* the checks of builtin eval before it parses: a string without NUL, its leading blanks skipped */
-	if (g && PyString_Check(text) && (int)strlen(PyString_AsString(text)) == PyString_Size(text)) {
-		const char *s = PyString_AsString(text);
-		while (*s == ' ' || *s == '\t') {
-			s++;
-		}
-		v = Script_Literal(g, s);
-	}
-	if (g && !v) {
-		/* STAGE 7: a text that is no literal becomes an error when the interpreter goes */
-		v = Script_Ask("__builtin__", "eval", "(OO)", text, g);
-	}
+	PyObject *v = mod ? Script_EvalValue(PyModule_GetDict(mod), text) : NULL;
 	Py_XDECREF(mod);
 	return v;
+}
+
+PyObject *Script_NotRead(const char *where, const char *text) {
+	Py_GateNote("notread", where, text);
+	PyErr_SetString(PyExc_SyntaxError, "invalid syntax");
+	return NULL;
+}
+
+PyObject *Script_EvalValue(PyObject *globals, PyObject *text) {
+	/* the checks of builtin eval before it parses: a string without NUL, its leading blanks skipped */
+	if (!PyString_Check(text)) {
+		PyErr_SetString(PyExc_TypeError, "eval() argument 1 must be string or code object");
+		return NULL;
+	}
+	const char *s = PyString_AsString(text);
+	if ((int)strlen(s) != PyString_Size(text)) {
+		PyErr_SetString(PyExc_ValueError, "embedded '\\0' in string arg");
+		return NULL;
+	}
+	while (*s == ' ' || *s == '\t') {
+		s++;
+	}
+	PyObject *v = Script_Literal(globals, s);
+	return v ? v : Script_NotRead("eval", s);
 }
 
 PyObject *Script_Entity(PyObject *name) {
@@ -313,8 +325,8 @@ PyObject *Script_AskKw(const char *module, const char *func, PyObject *args, PyO
  * of ceval). Only the tokens whose value cannot differ are taken, and the name None (looked up as LOAD_NAME does):
  * ints, longs and floats in decimal (exponents too), strings in single or double quotes with the escapes of parsestr,
  * lists, tuples and dicts. Anything else (other names, octal or hex numbers, raw or triple quoted strings, adjacent
- * strings, control characters, newlines, comments, deep nesting) gives NULL and the caller runs eval (STAGE 7: the
- * fallback becomes an error when the interpreter goes).
+ * strings, control characters, newlines, comments, deep nesting) gives NULL: the values the game writes and reads
+ * back never have those forms, Script_EvalValue raises SyntaxError for them.
  */
 #define LIT_NAME_CHARS "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
 #define LIT_DEPTH 32
@@ -688,8 +700,7 @@ PyObject *Script_EvalMain(const char *text) {
 	PyObject *main = PyImport_AddModule("__main__");
 	PyObject *v = main ? Script_Literal(PyModule_GetDict(main), text) : NULL;
 	PyErr_Clear();
-	/* STAGE 7: eval of a text that is no literal goes with the interpreter */
-	return v ? v : Script_Eval(text);
+	return v;
 }
 
 byte Script_IsName(const char *s, int len) {
@@ -721,24 +732,40 @@ byte Script_IsQuotable(PyObject *o) {
 	return 1;
 }
 
+/* "[n]" at p (n a decimal int as repr writes it: 0 or no leading zero, no sign): its length and n, else 0 */
+static int Lit_Subscript(const char *p, long *n) {
+	int len = (int)strspn(p + 1, "0123456789");
+	if (p[0] != '[' || len == 0 || len > 9 || (p[1] == '0' && len > 1) || p[len + 1] != ']') {
+		return 0;
+	}
+	*n = strtol(p + 1, NULL, 10);
+	return len + 2;
+}
+
 int Script_NameChain(PyObject *locals, PyObject *globals, const char *text, PyObject **out) {
+	long n;
 	*out = NULL;
 	if (!Lit_Builtins(globals)) {
 		return 0;
 	}
 	for (const char *p = text;; p++) {
-		int len = (int)strspn(p, LIT_NAME_CHARS);
-		if (!Script_IsName(p, len) || (p[len] != '.' && p[len] != '\0')) {
+		int len = (int)strspn(p, LIT_NAME_CHARS), sub;
+		if (!Script_IsName(p, len)) {
 			return 0;
 		}
-		p += len;
+		for (p += len; (sub = Lit_Subscript(p, &n)) > 0;) {
+			p += sub;
+		}
+		if (*p != '.' && *p != '\0') {
+			return 0;
+		}
 		if (!*p) {
 			break;
 		}
 	}
 	PyObject *b = Lit_BuiltinsDict(globals), *v = NULL;
 	for (const char *p = text;; p++) {
-		int len = (int)strspn(p, LIT_NAME_CHARS);
+		int len = (int)strspn(p, LIT_NAME_CHARS), sub;
 		char name[0x100];
 		if (len >= (int)sizeof(name)) {
 			Py_XDECREF(v);
@@ -761,10 +788,16 @@ int Script_NameChain(PyObject *locals, PyObject *globals, const char *text, PyOb
 			Py_DECREF(v);
 			v = x;
 		}
+		/* BINARY_SUBSCR of the constant n (a list with an int: the same IndexError as the fast path of ceval) */
+		for (p += len; v && (sub = Lit_Subscript(p, &n)) > 0; p += sub) {
+			PyObject *k = PyInt_FromLong(n), *x = k ? PyObject_GetItem(v, k) : NULL;
+			Py_XDECREF(k);
+			Py_DECREF(v);
+			v = x;
+		}
 		if (!v) {
 			return -1;
 		}
-		p += len;
 		if (!*p) {
 			break;
 		}

@@ -237,17 +237,24 @@ PyObject *Script_AskKw(const char *module, const char *func, PyObject *args, PyO
 /* `global last; last = target.name; target.name = name` in a function of the script module (name its global, the
  * chain of callbacks the net weapons and Vehicles put in front of Net's): 0 with the error set */
 byte Script_Hook(const char *module, const char *target, const char *name, const char *last);
-/* eval(text) in a function of the script module (its globals): a new reference, NULL with the error set */
+/* eval(text) of a value the game wrote (save and engine variables, network messages, event names, data lines) in
+ * globals: the checks of builtin eval (TypeError, ValueError), then Script_Literal of the text after its leading
+ * blanks; any other text raises Script_NotRead's SyntaxError, no Python runs. Script_EvalIn the same in the globals
+ * of a script module. A new reference, NULL with the error set */
+PyObject *Script_EvalValue(PyObject *globals, PyObject *text);
 PyObject *Script_EvalIn(const char *module, PyObject *text);
+/* the error for a text of Python that no C reader takes and nothing runs: SyntaxError "invalid syntax" (the last
+ * line of the traceback eval or exec print for it), noted in the gate log (SCRAP_PY_GATE, event "notread", where
+ * names the reader); NULL */
+PyObject *Script_NotRead(const char *where, const char *text);
 /* what eval of s (after the blanks eval skips) in globals gives when s is a plain literal: an int, long or float in
  * decimal (with exponent), a string in single or double quotes (with escapes), None, a list, tuple or dict of those,
  * '-' before a number, blanks between (the constants shared and interned as the compiler makes them). A new
- * reference, else NULL without an error: the caller evals s then (anything else, also when the globals lack valid
- * __builtins__, so nothing can differ) */
+ * reference, else NULL without an error (anything else, also when the globals lack valid __builtins__) */
 PyObject *Script_Literal(PyObject *globals, const char *s);
 /* the globals give a frame valid builtins (a dict or a module in __builtins__), as exec and eval need */
 byte Script_HasBuiltins(PyObject *globals);
-/* Script_Eval(text) with a plain literal made directly */
+/* the plain literal text in the globals of __main__ (Script_Literal), NULL without an error for any other text */
 PyObject *Script_EvalMain(const char *text);
 /* a string constant of len chars as the compiler makes it (interned when it has only name characters) */
 PyObject *Script_StrConst(const char *s, int len);
@@ -255,8 +262,10 @@ PyObject *Script_StrConst(const char *s, int len);
 byte Script_IsName(const char *s, int len);
 /* o is a string that between single quotes in a line of Python is itself again */
 byte Script_IsQuotable(PyObject *o);
-/* a NAME(.NAME)* text evaluated with the locals, the globals and their builtins (no blanks): 1 with a new reference
- * in *out, -1 with the error of the lookup set (NameError, AttributeError), 0 when text is not such a chain */
+/* a NAME(.NAME)* text evaluated with the locals, the globals and their builtins (no blanks; each name may be followed
+ * by subscripts [n] of a decimal int as repr writes it, "ShipEdit.editedShips[3].Model"): 1 with a new reference in
+ * *out, -1 with the error of the lookup set (NameError, AttributeError, IndexError), 0 when text is not such a
+ * chain */
 int Script_NameChain(PyObject *locals, PyObject *globals, const char *text, PyObject **out);
 
 /*
@@ -366,20 +375,20 @@ PyObject *Sf_Time(scriptFrame_t *f);
 byte Sf_Schedule(scriptFrame_t *f, PyObject *time, PyObject *func, PyObject *args, const char *name);
 byte Sf_Later(scriptFrame_t *f, PyObject *delay, PyObject *func, PyObject *args, const char *name);
 /* print with fmt items ('s' a C string, 'O' an object), a, b = v, exec code in a function of module (locals a dict
- * of its variables) */
+ * of its variables: a line in the forms the game execs runs in C, "import M", calls of names and attributes with
+ * literal arguments, an attribute set to a literal, split by ';'; STAGE 7: any other line still runs in Python) */
 byte Sf_Print(scriptFrame_t *f, const char *fmt, ...);
 byte Sf_Unpack(scriptFrame_t *f, PyObject *v, int n, PyObject **out);
 byte Sf_Exec(scriptFrame_t *f, PyObject *code, const char *module, PyObject *locals);
-/* eval(text) in a function of module (the module's globals; the expressions of the scripts are literals, made
- * directly by Script_Literal) */
+/* eval(text) in a function of module: Script_EvalValue in the module's globals (a literal, else SyntaxError) */
 PyObject *Sf_Eval(scriptFrame_t *f, PyObject *text, const char *module);
 /* `raise o` of a script (a string, a class, an instance or a tuple of them; else its TypeError): 0 */
 byte Sf_RaiseValue(scriptFrame_t *f, PyObject *o);
 /* exec("import " + name) in a function of module (locals: the dict of its variables, the import is stored there);
- * a name that is not a plain module name runs through exec */
+ * a name that is not a plain module name goes to Sf_Exec */
 byte Sf_ImportTo(scriptFrame_t *f, const char *module, PyObject *locals, PyObject *name);
 /* exec("import " + target + ";" + target + "." + func + "()") in a function of module (locals as for Sf_ImportTo),
- * func a string; one that is not a name runs through exec (its SyntaxError) */
+ * func a string; one that is not a name goes to Sf_Exec (its SyntaxError) */
 byte Sf_ImportCall(scriptFrame_t *f, const char *module, PyObject *locals, const char *target, PyObject *func);
 /* callable(Py_BuildValue args) as a statement of a script: the result is dropped at once (no reference kept) */
 byte Sf_Line(scriptFrame_t *f, PyObject *callable, const char *fmt, ...);
