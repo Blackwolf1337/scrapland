@@ -120,6 +120,26 @@ void Native_Free(nativeVal_t *v) {
 	Native_Clear(v, NV_NONE);
 }
 
+void Native_Copy(nativeVal_t *out, const nativeVal_t *v) {
+	*out = *v;
+	if (v->text) {
+		out->text = Mem_Alloc((uint32_t)v->n + 1);
+		memcpy(out->text, v->text, (size_t)v->n + 1);
+	}
+	if (v->items) {
+		/* a list or tuple has max items of room, a dict 2 * max slots (free ones copied as they are) */
+		int n = v->type == NV_DICT ? 2 * v->max : v->max, used = v->type == NV_DICT ? n : v->n;
+		out->items = Mem_Alloc((uint32_t)(n * sizeof(nativeVal_t)));
+		for (int i = 0; i < used; i++) {
+			if (v->items[i].type == NV_FREE) {
+				out->items[i] = v->items[i];
+			} else {
+				Native_Copy(&out->items[i], &v->items[i]);
+			}
+		}
+	}
+}
+
 byte Native_IsStr(const nativeVal_t *v, const char *text) {
 	return v->type == NV_STR && !strcmp(Native_Text(v), text);
 }

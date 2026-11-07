@@ -75,6 +75,8 @@ const char *Native_Text(const nativeVal_t *v);
 void Native_SetEmpty(nativeVal_t *v, nativeType_t type);
 /* a new item at the end of the list or tuple, None: fill it with a setter */
 nativeVal_t *Native_Append(nativeVal_t *list);
+/* *out a copy of v that owns its own memory (Native_Free it) */
+void Native_Copy(nativeVal_t *out, const nativeVal_t *v);
 /* frees what the value owns; it is None after */
 void Native_Free(nativeVal_t *v);
 /* the value is the text */
