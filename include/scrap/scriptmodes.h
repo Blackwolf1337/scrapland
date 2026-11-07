@@ -265,6 +265,8 @@ byte Mode_Index(const nativeVal_t *list, const nativeVal_t *x, nativeVal_t *out)
 /* var.append(v) of a list variable of the module, in place (the method of whatever value is there, as the script
  * calls it) */
 byte Mode_Append(const char *module, const char *var, const nativeVal_t *v);
+/* var.method(v) of a variable of a module (global as for Mode_Keys), in place: append, remove, ... */
+byte Mode_VarCall(const char *module, const char *var, byte global, const char *method, const nativeVal_t *v);
 /* a, b, ... = v: the n items of a sequence of n (the errors of unpacking) */
 byte Mode_Unpack(const nativeVal_t *v, int n, nativeVal_t *out);
 

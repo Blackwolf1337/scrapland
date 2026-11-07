@@ -682,13 +682,7 @@ void LvN_Str(nativeVal_t *v, const char *s) {
 }
 
 byte LvN_ModMethod(const char *module, const char *var, const char *method, const nativeVal_t *v) {
-	PyObject *o = Script_Attr(module, var);
-	PyObject *x = o ? Native_ToPy(v) : NULL;
-	PyObject *r = x ? Script_Method(o, method, "(O)", x) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(x);
-	Py_XDECREF(o);
-	return r != NULL;
+	return Mode_VarCall(module, var, 0, method, v);
 }
 
 byte LvN_ModAppend(const char *module, const char *var, const nativeVal_t *v) {

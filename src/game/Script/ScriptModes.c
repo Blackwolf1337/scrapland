@@ -1343,14 +1343,28 @@ static PyObject *Mode_VarMethod(const char *module, const char *var, byte global
 	return r;
 }
 
-byte Mode_Keys(const char *module, const char *var, byte global, nativeVal_t *out) {
-	PyObject *r = Mode_VarMethod(module, var, global, "keys", NULL);
+/* var.method() of a variable of a module (keys, values) as a native value */
+static byte Mode_VarList(const char *module, const char *var, byte global, const char *method, nativeVal_t *out) {
+	PyObject *r = Mode_VarMethod(module, var, global, method, NULL);
 	if (!r) {
 		return 0;
 	}
-	byte ok = Native_FromPyAny(r, out) || Native_Raise(NE_TYPE, "%s.%s.keys(): not a value native C takes", module, var);
+	byte ok = Native_FromPyAny(r, out) || Native_Raise(NE_TYPE, "%s.%s.%s(): not a value native C takes", module, var, method);
 	Py_DECREF(r);
 	return ok;
+}
+
+/* var.method(v) of a variable of a module (append, remove), in place */
+byte Mode_VarCall(const char *module, const char *var, byte global, const char *method, const nativeVal_t *v) {
+	PyObject *x = Native_ToPy(v);
+	PyObject *r = x ? Mode_VarMethod(module, var, global, method, x) : NULL;
+	Py_XDECREF(r);
+	Py_XDECREF(x);
+	return r != NULL;
+}
+
+byte Mode_Keys(const char *module, const char *var, byte global, nativeVal_t *out) {
+	return Mode_VarList(module, var, global, "keys", out);
 }
 
 int Mode_HasKey(const char *module, const char *var, byte global, const nativeVal_t *key) {
@@ -1377,11 +1391,7 @@ byte Mode_Index(const nativeVal_t *list, const nativeVal_t *x, nativeVal_t *out)
 
 byte Mode_Append(const char *module, const char *var, const nativeVal_t *v) {
 	/* the append method of whatever value is there (a value that is no list: the AttributeError of the script) */
-	PyObject *x = Native_ToPy(v);
-	PyObject *r = x ? Mode_VarMethod(module, var, 1, "append", x) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(x);
-	return r != NULL;
+	return Mode_VarCall(module, var, 1, "append", v);
 }
 
 byte Mode_Unpack(const nativeVal_t *v, int n, nativeVal_t *out) {
@@ -1503,21 +1513,11 @@ PyObject *Mode_Return(byte ok, nativeVal_t *v) {
 /* ---- helpers of the native super deals (SuperDeals.c) ---- */
 
 byte Mode_Values(const char *module, const char *var, byte global, nativeVal_t *out) {
-	PyObject *r = Mode_VarMethod(module, var, global, "values", NULL);
-	if (!r) {
-		return 0;
-	}
-	byte ok = Native_FromPyAny(r, out) || Native_Raise(NE_TYPE, "%s.%s.values(): not a value native C takes", module, var);
-	Py_DECREF(r);
-	return ok;
+	return Mode_VarList(module, var, global, "values", out);
 }
 
 byte Mode_Remove(const char *module, const char *var, const nativeVal_t *v) {
-	PyObject *x = Native_ToPy(v);
-	PyObject *r = x ? Mode_VarMethod(module, var, 1, "remove", x) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(x);
-	return r != NULL;
+	return Mode_VarCall(module, var, 1, "remove", v);
 }
 
 byte Mode_ListSet(const char *list, const char *var, const char *value) {
