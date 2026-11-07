@@ -18,6 +18,19 @@
  * alarmFallDelta, human, conv, dd), Mission_JailBreak (PuffTurn, PuffWalk, ActPress), Mission_PoliceBossCheats
  * (NextMissionData, SpawnConversionPoint, the poker players PoliceBoss, Dumb1, Dumb2 and their cards PoliceBossc,
  * Dumb1c, Dumb2c).
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on C values, read the globals of their module where the
+ * script reads them and write them back at once (OBJLIB 5), and call the engine in C: save variables, engine
+ * variables, the dummy search, the language texts, the time speed and the action set. The engine functions the cases
+ * record or swap go through their seams (AddScheduledFunc, DeleteScheduledFuncs, CreateEntity, UsrEntity, Set,
+ * SetAlarm, GetAlarm, ConsoleError, DelSaveVars, SScorer.Fade, the SAct functions; OBJLIB 7). The entities the script
+ * holds are handle values (OBJLIB 7). The calls of other ports (Speech, MissionsFuncs, SaveGame, CharsNPC, Chars,
+ * CharConversor, Elevator, Teleport, Metro, InTraffic, GateKeeper, Scene, RaceMaker, Menu, MapSnd), SAI.SetStateChar
+ * and GetStateChar, SLogic.SetOnFloor, the call of the map elements (Scrap.SetCallFunc and its parameters),
+ * SAct.GetCls, SScorer.SetSpeechText, __builtin__.apply and the keyword call of Speech.OnObjSpch stay by name
+ * (OBJLIB 3, 7); CharsNPC.CharRes and the GateKeeper groups are the objects they are (OBJLIB 5); the module's own
+ * functions go through its globals (a mission may replace one), the scheduler keeps Python callables (OBJLIB 4).
+ * MapSnd.SndElements and MapPlanes are LevelCommon's.
  */
 #include "scrap/scrap.h"
 #include "Levels.h"
@@ -31,178 +44,388 @@
 #define JB "Mission_JailBreak"
 #define PC "Mission_PoliceBossCheats"
 
-/* e = Scrap.CreateEntity(dummy[0], dummy[1][0], dummy[1][1], dummy[1][2], type); e.Ang = dummy[2][0], dummy[2][1], 0 */
-static PyObject *Po_FromDummy(scriptFrame_t *f, PyObject *dummy, const char *type) {
-	PyObject *pos = Sf_Item(f, dummy, 1);
-	PyObject *e = Sf_Ask(f, "Scrap", "CreateEntity", "(OOOOs)", Sf_Item(f, dummy, 0), Sf_Item(f, pos, 0), Sf_Item(f, pos, 1),
-		Sf_Item(f, pos, 2), type);
-	PyObject *ang = Sf_Item(f, dummy, 2);
-	Sf_SetAttr(f, e, "Ang", Sf_Build(f, "(OOi)", Sf_Item(f, ang, 0), Sf_Item(f, ang, 1), 0));
-	return e;
+/* SAI.SetStateChar(...) by name (OBJLIB 7: the cases record it) */
+#define CHAR_STATE(...) LV_CALL("SAI", "SetStateChar", NULL, __VA_ARGS__)
+
+/* ---- native helpers of this file ---- */
+
+/* MissionsFuncs.SetMissionTarget(v), of h.Name, and with None (OBJLIB 3) */
+static byte Po_Target(const nativeVal_t *v) {
+	return LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", v);
+}
+
+static byte Po_TargetName(const nativeVal_t *h) {
+	nativeVal_t n;
+	Native_SetNone(&n);
+	byte ok = Mode_VGet(h, "Name", &n) && Po_Target(&n);
+	Native_Free(&n);
+	return ok;
+}
+
+static byte Po_TargetNone(void) {
+	return Mode_Target(NULL);
+}
+
+/* the global name of module (a handle) as the target, and its activation */
+static byte Po_TargetG(const char *module, const char *name) {
+	nativeVal_t h;
+	byte ok = Mode_G(module, name, &h) && Po_TargetName(&h);
+	Native_Free(&h);
+	return ok;
+}
+
+static byte Po_ActivateG(const char *module, const char *name, long on) {
+	nativeVal_t h;
+	byte ok = Mode_G(module, name, &h) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &h, on);
+	Native_Free(&h);
+	return ok;
+}
+
+/* the global handle name of module .var into out */
+static byte Po_GAttr(const char *module, const char *name, const char *var, nativeVal_t *out) {
+	nativeVal_t h;
+	Native_SetNone(out);
+	byte ok = Mode_G(module, name, &h) && Mode_VGet(&h, var, out);
+	Native_Free(&h);
+	return ok;
+}
+
+/* the global name of module = None */
+static byte Po_GNone(const char *module, const char *name) {
+	nativeVal_t v;
+	Native_SetNone(&v);
+	return Mode_Put(module, name, NULL, &v);
+}
+
+/* Speech.AddRemoteCom(key, who) */
+static byte Po_Com(const char *key, const char *who) {
+	return LvN_Com(key, who, NULL, NULL, NULL);
+}
+
+/* h.var = i, = "text" of the global handle name of module */
+static byte Po_GSetI(const char *module, const char *name, const char *var, long i) {
+	nativeVal_t h;
+	byte ok = Mode_G(module, name, &h) && LvN_SetI(&h, var, i);
+	Native_Free(&h);
+	return ok;
+}
+
+/* h.var = the global src of module (a function, a value) */
+static byte Po_SetG(const nativeVal_t *h, const char *var, const char *module, const char *src) {
+	nativeVal_t v;
+	byte ok = Mode_G(module, src, &v) && Mode_VSet(h, var, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+/* h.var = Scrap.GetLangStr(key) */
+static byte Po_SetLang(const nativeVal_t *h, const char *var, const char *key) {
+	nativeVal_t t;
+	Mode_Lang(key, &t);
+	byte ok = Mode_VSet(h, var, &t);
+	Native_Free(&t);
+	return ok;
+}
+
+/* h.ArrOpt0 = "Talk:" + Scrap.GetLangStr("TalkOpt") */
+static byte Po_TalkOpt(const nativeVal_t *h) {
+	nativeVal_t a, b, r;
+	LvN_Str(&a, "Talk:");
+	Mode_Lang("TalkOpt", &b);
+	Native_SetNone(&r);
+	byte ok = Native_Arith('+', &a, &b, &r) && Mode_VSet(h, "ArrOpt0", &r);
+	Native_Free(&a);
+	Native_Free(&b);
+	Native_Free(&r);
+	return ok;
+}
+
+/* `text + v` of the script into out */
+static byte Po_Cat(const char *text, const nativeVal_t *v, nativeVal_t *out) {
+	nativeVal_t a;
+	LvN_Str(&a, text);
+	Native_SetNone(out);
+	byte ok = Native_Arith('+', &a, v, out);
+	Native_Free(&a);
+	return ok;
+}
+
+/* the entity "<prefix><i>" (`prefix + `i``) as a handle value */
+static byte Po_EntI(const char *prefix, long i, nativeVal_t *out) {
+	char s[0x40];
+	Str_Printf(s, sizeof(s), "%s%ld", prefix, i);
+	return LvN_Entity(s, out);
+}
+
+/* the entity of the player's name: Scrap.GetEntity(UsrName).ActCtrl == ctrl: 1, 0, -1 */
+static int Po_NameIs(const nativeVal_t *usrName, const char *ctrl) {
+	nativeVal_t e, a;
+	Native_SetNone(&e);
+	Native_SetNone(&a);
+	int r = Mode_EntityH(usrName, &e) && Mode_VGet(&e, "ActCtrl", &a) ? LvN_EqS(&a, ctrl) : -1;
+	Native_Free(&e);
+	Native_Free(&a);
+	return r;
+}
+
+/* `usr.ActCtrl == ctrl` of a handle: 1, 0, -1 */
+static int Po_CtrlIs(const nativeVal_t *usr, const char *ctrl) {
+	nativeVal_t a;
+	Native_SetNone(&a);
+	int r = Mode_VGet(usr, "ActCtrl", &a) ? LvN_EqS(&a, ctrl) : -1;
+	Native_Free(&a);
+	return r;
+}
+
+/* `usr and usr.ActCtrl == ctrl` of the player (usr into *usr): 1, 0, -1 */
+static int Po_UsrCtrl(nativeVal_t *usr, const char *ctrl) {
+	if (!Mode_UsrHandle(usr)) {
+		return -1;
+	}
+	return Native_True(usr) ? Po_CtrlIs(usr, ctrl) : 0;
+}
+
+/* an item at pos (Scrap.CreateEntity(name, pos[0], pos[1], pos[2], "Item") through its seam) with Radius, OnlyUser (-1:
+ * not set) and OnTake */
+static byte Po_Item(const char *name, const nativeVal_t *pos, long radius, long onlyUser, const char *onTake, nativeVal_t *out) {
+	nativeVal_t n;
+	LvN_Str(&n, name);
+	byte ok = LvN_CreateAt(&n, pos, "Item", out) && LvN_SetI(out, "Radius", radius) && (onlyUser < 0 || LvN_SetI(out, "OnlyUser", onlyUser)) &&
+		LvN_SetS(out, "OnTake", onTake);
+	Native_Free(&n);
+	return ok;
+}
+
+/* SScorer.Fade(0, from, to, time) through its seam */
+static byte Po_Fade(const int *from, const int *to, double time) {
+	return Mode_Fade(0, from, to, time);
+}
+
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, SScorer.Fade, (0, from, to, time)) (OBJLIB 4: the function of
+ * SScorer the scheduler keeps) */
+static byte Po_FadeLater(double delay, const int *from, const int *to, double time) {
+	nativeVal_t args[4];
+	Native_SetInt(&args[0], 0);
+	Native_SetEmpty(&args[1], NV_TUPLE);
+	Native_SetEmpty(&args[2], NV_TUPLE);
+	for (int i = 0; i < 4; i++) {
+		Native_SetInt(Native_Append(&args[1]), from[i]);
+		Native_SetInt(Native_Append(&args[2]), to[i]);
+	}
+	Native_SetFloat(&args[3], time);
+	byte ok = Mode_LaterIn(delay, "SScorer", "Fade", args, 4, NULL);
+	Native_Free(&args[1]);
+	Native_Free(&args[2]);
+	return ok;
+}
+
+/* Speech.AddNI(msg, ans) of the pairs (they end with NULL) */
+static byte Po_AddNI(const char *const *pairs) {
+	for (; *pairs; pairs += 2) {
+		if (!LV_CALL("Speech", "AddNI", NULL, "ss", pairs[0], pairs[1])) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+/* Speech.NISpeech(who); the AddNI pairs; Speech.RunNI() */
+static byte Po_NI(const char *who, const char *const *pairs) {
+	return LV_CALL("Speech", "NISpeech", NULL, "s", who) && Po_AddNI(pairs) && LV_CALL("Speech", "RunNI", NULL, "");
+}
+
+/* CharsNPC.GenericNPCSpeech(UsrName, CharName, optId, FullOption) */
+static byte Po_Generic(const nativeVal_t *a) {
+	return LV_CALL("CharsNPC", "GenericNPCSpeech", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
+}
+
+/* the scheduled call of a global function of module after delay s without arguments, and with one */
+#define PO_LATER(s, module, func) Mode_Later(s, module, func, NULL, 0, NULL)
+#define PO_LATER1(s, module, func, v) Mode_Later(s, module, func, v, 1, NULL)
+
+/* module.var = the global name of src (a function) and = None (OBJLIB 5) */
+#define PO_HOOK(module, var, src, name) LvN_ModSetGlobal(module, var, src, name)
+
+/* (x, y, z) of three ints as h.var */
+static byte Po_SetInts3(const nativeVal_t *h, const char *var, long x, long y, long z) {
+	nativeVal_t v;
+	Mode_Ints3(&v, x, y, z);
+	byte ok = Mode_VSet(h, var, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+/* the entity of a C name with h.var = "text", = i (Scrap.GetEntity(name).var = ...: the error of None when it is not
+ * there) */
+#define PO_ENTS(name, var, s) Mode_EntSetS(name, var, s)
+#define PO_ENTI(name, var, i) Mode_EntSetI(name, var, i)
+
+/* the empty text "" as a value */
+static const nativeVal_t *Po_Empty(void) {
+	static nativeVal_t empty = { .type = NV_STR };
+	return &empty;
 }
 
 /* ---- Map ---- */
 
 /* CreateFicusDeadClass(): the class of Ficus' body; dead and still, or in his loop in Mission_FicusDead */
-static PyObject *PoliceMap_CreateFicusDeadClass(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte PoMap_CreateFicusDeadClass(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	byte fd = LvN_SaveIs("Mission.Library", "Mission_FicusDead");
+	if (!Mode_Import("Init") || !Mode_SAct("CreateClass", "FicusDead") || !Mode_SActSet(1, "ModelFilePath", "Models/Chars/Police/Police.m3d", 0) ||
+		!Mode_SAct("CreateAction", "FicusDead") || !Mode_SActSet(0, "AnmFilePath", "Models/Chars/Police/Anm/FicusDead.M3D", 0) || !Mode_SActSet(0, "isLoop", NULL, 0)) {
+		return 0;
 	}
-	int fd = Lv_SaveIs(&f, "Mission.Library", "Mission_FicusDead");
-	Sf_Import(&f, "Init");
-	Sf_Ask(&f, "SAct", "CreateClass", "(s)", "FicusDead");
-	Sf_Ask(&f, "SAct", "SetCls", "(ss)", "ModelFilePath", "Models/Chars/Police/Police.m3d");
-	Sf_Ask(&f, "SAct", "CreateAction", "(s)", "FicusDead");
-	Sf_Ask(&f, "SAct", "SetAct", "(ss)", "AnmFilePath", "Models/Chars/Police/Anm/FicusDead.M3D");
-	Sf_Ask(&f, "SAct", "SetAct", "(si)", "isLoop", 0);
-	if (fd > 0 && !f.failed) {
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "Police.FicusDeath", "1");
-		Sf_Ask(&f, "SAct", "CreateAction", "(s)", "FicusLoop");
-		Sf_Ask(&f, "SAct", "SetAct", "(ss)", "AnmFilePath", "Models/Chars/Police/Anm/FicusLoop.M3D");
-		Sf_Ask(&f, "SAct", "SetAct", "(si)", "isLoop", 1);
-		Sf_Ask(&f, "SAct", "SetCls", "(ss)", "DefAction", "FicusLoop");
-	} else {
-		Sf_Ask(&f, "SAct", "SetCls", "(ss)", "DefAction", "FicusDead");
+	if (!fd) {
+		return Mode_SActSet(1, "DefAction", "FicusDead", 0);
 	}
-	return Sf_None(&f);
+	SaveVar_Set("Police.FicusDeath", "1");
+	return Mode_SAct("CreateAction", "FicusLoop") && Mode_SActSet(0, "AnmFilePath", "Models/Chars/Police/Anm/FicusLoop.M3D", 0) && Mode_SActSet(0, "isLoop", NULL, 1) &&
+		Mode_SActSet(1, "DefAction", "FicusLoop", 0);
 }
 
 /* CreateFicus(): Ficus' body at its dummy (the module variable ficus) */
-static PyObject *PoliceMap_CreateFicus(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte PoMap_CreateFicus(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t dummy, e;
+	(void)a;
+	(void)out;
+	LvN_Dummy("DM_Mission_FicusDead", 1, &dummy);
+	if (dummy.type == NV_NONE) {
+		return 1;
 	}
-	PyObject *dummy = Lv_Dummy(&f, "DM_Mission_FicusDead", 1);
-	if (Sf_Compare(&f, dummy, "!=", Py_None) > 0) {
-		PyObject *pos = Sf_Item(&f, dummy, 1);
-		PyObject *e = Sf_Ask(&f, "Scrap", "CreateEntity", "(OOOOs)", Sf_Item(&f, dummy, 0), Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1),
-			Sf_Item(&f, pos, 2), "WithLife");
-		Sf_SetGlobal(&f, MAP, "ficus", e);
-		PyObject *ang = Sf_Item(&f, dummy, 2);
-		Sf_SetAttr(&f, e, "Ang", Sf_Build(&f, "(OOi)", Sf_Item(&f, ang, 0), Sf_Item(&f, ang, 1), 0));
-		Sf_SetAttrS(&f, e, "ActCtrl", "FicusDead");
-		Sf_SetAttrI(&f, e, "ActiveCMask", 0);
-		Sf_SetAttrI(&f, e, "MapCollision", 1);
-		Sf_SetAttrI(&f, e, "UseAngSel", 1);
-		Sf_SetAttrI(&f, e, "UseAbsAngSel", 0);
-		Sf_SetAttrI(&f, e, "VRadius", 150);
-		Sf_SetAttrI(&f, e, "UseMapCheck", 0);
-	}
-	return Sf_None(&f);
+	Native_SetNone(&e);
+	byte ok = Mode_FromDummy(&dummy, "WithLife", &e) && Mode_Put(MAP, "ficus", NULL, &e) &&
+		LvN_SetS(&e, "ActCtrl", "FicusDead") && LvN_SetI(&e, "ActiveCMask", 0) && LvN_SetI(&e, "MapCollision", 1) &&
+		LvN_SetI(&e, "UseAngSel", 1) && LvN_SetI(&e, "UseAbsAngSel", 0) && LvN_SetI(&e, "VRadius", 150) && LvN_SetI(&e, "UseMapCheck", 0);
+	Native_Free(&dummy);
+	Native_Free(&e);
+	return ok;
 }
 
 /* InitStatus(LevelPath): an indoor map next to Outskirts; the police boss, the elevators, the NPCs that come back */
-static PyObject *PoliceMap_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
+static byte PoMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const mods[] = { "Init", "CharsNPC", "Elevator", "InTraffic" };
+	static const char *const defs[][2] = { { "Metro", "DM_Door_Metro_Press" }, { "MetroExt", "DM_Door_Metro_Press" },
+		{ "Elevator", "DM_Door_Elevator_Outskirts" } };
+	static const struct {
+		const char *var, *name;
+		long n;
+	} repos[] = { { NULL, "Sentinel", 4 }, { NULL, "Police", 6 }, { NULL, "Nurse", 2 }, { NULL, "Desktop", 2 }, { "_BankDirector", "BankDirector", 2 },
+		{ "_Bishop", "Bishop", 2 }, { NULL, "Functionary", 3 } };
+	nativeVal_t v, r;
+	(void)a;
+	(void)out;
 	for (int i = 0; i < 4; i++) {
-		Sf_Import(&f, mods[i]);
+		if (!Mode_Import(mods[i])) {
+			return 0;
+		}
 	}
-	Sf_SetMod(&f, "Init", "Outdoor", Sf_Int(&f, 0));
-	Sf_SetMod(&f, "Init", "OutArea", Sf_Str(&f, "Outskirts"));
-	int boss = Lv_SaveIs(&f, "PoliceBossAtPolice", "1");
-	if (boss > 0) {
-		int m = Sf_True(&f, Sf_Ask(&f, "Init", "isMission", "()"));
-		boss = m < 0 ? -1 : !m;
+	Native_SetInt(&v, 0);
+	LvN_Str(&r, "Outskirts");
+	byte ok = Mode_SetModVar("Init", "Outdoor", &v) && Mode_SetModVar("Init", "OutArea", &r);
+	Native_Free(&r);
+	if (!ok) {
+		return 0;
 	}
-	if (boss > 0) {
-		Sf_Ask(&f, "CharsNPC", "CreateMissionChar", "(s)", "PoliceBoss_Default");
+	if (LvN_SaveIs("PoliceBossAtPolice", "1")) {
+		Native_SetNone(&r);
+		int m = LV_CALL("Init", "isMission", &r, "") ? Native_True(&r) : -1;
+		Native_Free(&r);
+		if (m < 0 || (!m && !LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", "PoliceBoss_Default"))) {
+			return 0;
+		}
 	}
-	Sf_Ask(&f, "Elevator", "SetDef", "(ss)", "Metro", "DM_Door_Metro_Press");
-	Sf_Ask(&f, "Elevator", "SetDef", "(ss)", "MetroExt", "DM_Door_Metro_Press");
-	Sf_Ask(&f, "Elevator", "SetDef", "(ss)", "Elevator", "DM_Door_Elevator_Outskirts");
-	Sf_Ask(&f, "CharsNPC", "SetReposChars", "(si)", "Sentinel", 4);
-	Sf_Ask(&f, "CharsNPC", "SetReposChars", "(si)", "Police", 6);
-	Sf_Ask(&f, "CharsNPC", "SetReposChars", "(si)", "Nurse", 2);
-	Sf_Ask(&f, "CharsNPC", "SetReposChars", "(si)", "Desktop", 2);
-	if (Lv_PcOr(&f, MAP, "_BankDirector") > 0) {
-		Sf_Ask(&f, "CharsNPC", "SetReposChars", "(si)", "BankDirector", 2);
+	for (int i = 0; i < 3; i++) {
+		if (!LV_CALL("Elevator", "SetDef", NULL, "ss", defs[i][0], defs[i][1])) {
+			return 0;
+		}
 	}
-	if (Lv_PcOr(&f, MAP, "_Bishop") > 0) {
-		Sf_Ask(&f, "CharsNPC", "SetReposChars", "(si)", "Bishop", 2);
+	for (int i = 0; i < 7; i++) {
+		int go = repos[i].var ? LvN_PcOr(MAP, repos[i].var) : 1;
+		if (go < 0 || (go && !LV_CALL("CharsNPC", "SetReposChars", NULL, "si", repos[i].name, repos[i].n))) {
+			return 0;
+		}
 	}
-	Sf_Ask(&f, "CharsNPC", "SetReposChars", "(si)", "Functionary", 3);
-	int m = Lv_PcOr(&f, MAP, "_Messenger");
+	int m = LvN_PcOr(MAP, "_Messenger");
 	if (m > 0) {
-		Sf_Ask(&f, "CharsNPC", "SetReposChars", "(si)", "Messenger", 2);
-	} else if (m == 0) {
-		Sf_Import(&f, "Messenger");
-		Sf_SetMod(&f, "Messenger", "MakeMDP", Sf_Int(&f, 0));
+		return LV_CALL("CharsNPC", "SetReposChars", NULL, "si", "Messenger", 2L);
 	}
-	return Sf_None(&f);
+	Native_SetInt(&v, 0);
+	return m == 0 && Mode_Import("Messenger") && Mode_SetModVar("Messenger", "MakeMDP", &v);
 }
 
 /* Init(LevelPath): Ficus' body, the teleporters, the gatekeepers of the security doors, the fake traffic, the costume
  * of the viscoson, the fade after the escape from the jail */
-static PyObject *PoliceMap_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Sf_Own(&f, MAP, "CreateFicusDeadClass", "()");
-	Sf_Own(&f, MAP, "CreateFicus", "()");
+static byte PoMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const mods[] = { "Elevator", "Teleport", "Metro", "InTraffic" };
+	static const char *const light[] = { "TLight1B", "TLight2B", "TLight3B", NULL };
+	nativeVal_t e, v;
+	(void)a;
+	(void)out;
+	if (!LV_OWN(MAP, "CreateFicusDeadClass", NULL, "") || !LV_OWN(MAP, "CreateFicus", NULL, "")) {
+		return 0;
+	}
 	for (int i = 0; i < 4; i++) {
-		Sf_Import(&f, mods[i]);
-	}
-	Sf_Ask(&f, "Teleport", "Link", "(ss)", "DM_Door_Teleporter_01", "DM_Door_Teleporter_05");
-	Sf_Ask(&f, "Teleport", "Link", "(ss)", "DM_Door_Teleporter_06", "DM_Door_Teleporter_07");
-	Sf_Ask(&f, "Elevator", "ConnectElevators", "([s][s])", "DM_Door_Elevator_Outskirts", "Outskirts");
-	Sf_Ask(&f, "Metro", "SetAsMetro", "(s)", "DM_Door_Metro_Press");
-	Sf_Import(&f, "GateKeeper");
-	Sf_Ask(&f, "GateKeeper", "SetDoor", "(ss)", "GateKeeper_07", "DM_Door_Teleporter_07");
-	int dead = Lv_SaveIs(&f, "Police.FicusDeath", "1");
-	if (dead >= 0) {
-		Sf_Ask(&f, "GateKeeper", "DoorFoe", "(sO)", "GateKeeper_07", Sf_Mod(&f, "GateKeeper", dead ? "PoliceGroupGateKeeper" : "NoOneGroupGateKeeper"));
-	}
-	Sf_SetAttrS(&f, Sf_Entity(&f, Sf_Str(&f, "DM_Door_Teleporter_07")), "UseFunc", "GateKeeper.UseDoor");
-	PyObject *e = Sf_Entity(&f, Sf_Str(&f, "DM_Door_PoliceSegurity_00"));
-	if (Sf_True(&f, e) > 0) {
-		Sf_SetAttrS(&f, e, "Action", "Closed");
-		Sf_SetAttrS(&f, e, "DefLoop", "Closed");
-		Sf_SetAttrS(&f, e, "OnObjSlot", "");
-		Sf_Ask(&f, "GateKeeper", "DoorFoe", "(sO)", "GateKeeper_08", Sf_Mod(&f, "GateKeeper", "NoOneGroupGateKeeper"));
-	}
-	Sf_SetMod(&f, "InTraffic", "N_TrafficList", Sf_Build(&f, "[sss]", "TLight1B", "TLight2B", "TLight3B"));
-	Sf_SetMod(&f, "InTraffic", "N_NumTraffic", Sf_Int(&f, 25));
-	Sf_Ask(&f, "InTraffic", "LoadFakeTraffic", "()");
-	Sf_Ask(&f, "InTraffic", "FakeTraffic", "()");
-	if (Lv_SaveIs(&f, "CostumeAtPolice", "1") > 0) {
-		PyObject *dummy = Lv_Dummy(&f, "DM_Mission_Viscoson_00", 1);
-		if (Sf_Compare(&f, dummy, "!=", Py_None) > 0) {
-			PyObject *costume = Po_FromDummy(&f, dummy, "WithLife");
-			Sf_Method(&f, costume, "SetModel", "(s)", "Models/Misc/Viscoson/Viscoson.m3d");
-			Sf_SetAttrI(&f, costume, "ActiveCMask", 0);
-			Sf_SetAttrI(&f, costume, "MapCollision", 1);
+		if (!Mode_Import(mods[i])) {
+			return 0;
 		}
 	}
-	int jail = Lv_SaveIs(&f, "Spawn", "DM_Mission_JailBreak_End");
-	if (jail > 0) {
-		jail = Lv_SaveIs(&f, "ComeFrom", "");
+	if (!LV_CALL("Teleport", "Link", NULL, "ss", "DM_Door_Teleporter_01", "DM_Door_Teleporter_05") ||
+		!LV_CALL("Teleport", "Link", NULL, "ss", "DM_Door_Teleporter_06", "DM_Door_Teleporter_07") ||
+		!Mode_Connect("DM_Door_Elevator_Outskirts", "Outskirts", 0) || !LV_CALL("Metro", "SetAsMetro", NULL, "s", "DM_Door_Metro_Press") ||
+		!Mode_Import("GateKeeper") || !LV_CALL("GateKeeper", "SetDoor", NULL, "ss", "GateKeeper_07", "DM_Door_Teleporter_07") ||
+		!Mode_DoorFoe("GateKeeper_07", LvN_SaveIs("Police.FicusDeath", "1") ? "PoliceGroupGateKeeper" : "NoOneGroupGateKeeper") ||
+		!PO_ENTS("DM_Door_Teleporter_07", "UseFunc", "GateKeeper.UseDoor")) {
+		return 0;
 	}
-	if (jail > 0) {
-		Lv_Fade(&f, lv_black, lv_black, 1.0);
-		Sf_Later(&f, Sf_Float(&f, 0.1), Sf_Mod(&f, "SScorer", "Fade"), Sf_Build(&f, "(i(iiii)(iiii)d)", 0, 0, 0, 0, 255, 0, 0, 0, 0, 1.0), NULL);
+	Native_SetNone(&e);
+	byte ok = LvN_Entity("DM_Door_PoliceSegurity_00", &e) && (!Native_True(&e) || (LvN_SetS(&e, "Action", "Closed") &&
+		LvN_SetS(&e, "DefLoop", "Closed") && LvN_SetS(&e, "OnObjSlot", "") && Mode_DoorFoe("GateKeeper_08", "NoOneGroupGateKeeper")));
+	Native_Free(&e);
+	if (!ok) {
+		return 0;
 	}
-	return Sf_None(&f);
+	Mode_Texts(&v, light, -1);
+	ok = Mode_SetModVar("InTraffic", "N_TrafficList", &v);
+	Native_Free(&v);
+	Native_SetInt(&v, 25);
+	if (!ok || !Mode_SetModVar("InTraffic", "N_NumTraffic", &v) || !LV_CALL("InTraffic", "LoadFakeTraffic", NULL, "") ||
+		!LV_CALL("InTraffic", "FakeTraffic", NULL, "")) {
+		return 0;
+	}
+	if (LvN_SaveIs("CostumeAtPolice", "1")) {
+		nativeVal_t dummy, costume, model;
+		LvN_Dummy("DM_Mission_Viscoson_00", 1, &dummy);
+		if (dummy.type != NV_NONE) {
+			Native_SetNone(&costume);
+			LvN_Str(&model, "Models/Misc/Viscoson/Viscoson.m3d");
+			ok = Mode_FromDummy(&dummy, "WithLife", &costume) && Mode_VModel(&costume, &model) && LvN_SetI(&costume, "ActiveCMask", 0) &&
+				LvN_SetI(&costume, "MapCollision", 1);
+			Native_Free(&costume);
+			Native_Free(&model);
+		}
+		Native_Free(&dummy);
+		if (!ok) {
+			return 0;
+		}
+	}
+	if (!LvN_SaveIs("Spawn", "DM_Mission_JailBreak_End") || !LvN_SaveIs("ComeFrom", "")) {
+		return 1;
+	}
+	return Po_Fade(lv_black, lv_black, 1.0) && Po_FadeLater(0.1, lv_black, lv_clear, 1.0);
 }
 
+LV_FN(PoMap, CreateFicusDeadClassA, 0, PoMap_CreateFicusDeadClass)
+LV_FN(PoMap, CreateFicusA, 0, PoMap_CreateFicus)
+LV_FN(PoMap, InitStatusA, 1, PoMap_InitStatus)
+LV_FN(PoMap, InitA, 1, PoMap_Init)
+
 PyMethodDef g_PoliceMapMethods[] = {
-	{ "CreateFicusDeadClass", PoliceMap_CreateFicusDeadClass, METH_VARARGS, NULL },
-	{ "CreateFicus", PoliceMap_CreateFicus, METH_VARARGS, NULL },
-	{ "InitStatus", PoliceMap_InitStatus, METH_VARARGS, NULL },
-	{ "Init", PoliceMap_Init, METH_VARARGS, NULL },
+	{ "CreateFicusDeadClass", PoMap_CreateFicusDeadClassA, METH_VARARGS, NULL },
+	{ "CreateFicus", PoMap_CreateFicusA, METH_VARARGS, NULL },
+	{ "InitStatus", PoMap_InitStatusA, METH_VARARGS, NULL },
+	{ "Init", PoMap_InitA, METH_VARARGS, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
@@ -243,7 +466,6 @@ static PyObject *MapPlanes_TakenPhoto(PyObject *self, PyObject *args) {
 	return Lv_PlanesPhoto(args, MP, "PoliceBlueprints.Ships", "PoliceBlueprints.Engines");
 }
 
-
 PyMethodDef g_PoliceMapPlanesMethods[] = {
 	{ "Init", MapPlanes_Init, METH_VARARGS, NULL },
 	{ "TakenPhoto", MapPlanes_TakenPhoto, METH_VARARGS, NULL },
@@ -252,2348 +474,2496 @@ PyMethodDef g_PoliceMapPlanesMethods[] = {
 
 /* ---- Mission_BeatPickus ---- */
 
-#define BPG(name) Sf_Global(&f, BP, name)
-#define BPGF(name) Sf_Global(f, BP, name)
-
 /* the entity Police_Thug<i> */
-static PyObject *Bp_Thug(scriptFrame_t *f, int i) {
-	return Sf_Entity(f, Sf_Cat(f, "sO", "Police_Thug", Sf_ReprI(f, i)));
+static byte Bp_Thug(long i, nativeVal_t *out) {
+	return Po_EntI("Police_Thug", i, out);
 }
 
 /* InitStatus(LevelPath): the five police thugs (unless the plans are next) and Traitorius */
-static PyObject *BeatPickus_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	if (Sf_Compare(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "MissionState"), "!=", Sf_Str(&f, "GetFuncShipPlans")) > 0) {
-		for (int i = 1; i < 6; i++) {
-			char name[0x20];
-			Str_Printf(name, sizeof(name), "Police_Thug%d", i);
-			Lv_MissionChar(&f, name, BP, "OnThugRespawn");
+static byte BeatPickus_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t state, plans;
+	(void)a;
+	(void)out;
+	Mode_SaveVar("MissionState", &state);
+	LvN_Str(&plans, "GetFuncShipPlans");
+	int thugs = Mode_Cmp(&state, "!=", &plans);
+	Native_Free(&state);
+	Native_Free(&plans);
+	for (int i = 1; thugs > 0 && i < 6; i++) {
+		char name[0x20];
+		Str_Printf(name, sizeof(name), "Police_Thug%d", i);
+		if (!LvN_MissionChar(name, BP, "OnThugRespawn")) {
+			return 0;
 		}
 	}
-	Lv_MissionChar(&f, "Functionary_Traitorius", BP, "OnTraitoriusRespawn");
-	return Sf_None(&f);
+	return thugs >= 0 && LvN_MissionChar("Functionary_Traitorius", BP, "OnTraitoriusRespawn");
 }
 
 /* Init(LevelPath): Pickus and the thugs wait, Traitorius talks, the scene and Pickus beaten, the state of the mission */
-static PyObject *BeatPickus_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte BeatPickus_Init(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t state, s1, s2, tr;
+	(void)a;
+	(void)out;
+	if (!Mode_GVarSetI("LittlePoliceAsksForMoney", 0) || !Mode_GVarSetS("NotCleanableByGear", "Police")) {
+		return 0;
 	}
-	Sf_Ask(&f, "Scrap", "Set", "(si)", "LittlePoliceAsksForMoney", 0);
-	Sf_Ask(&f, "Scrap", "Set", "(ss)", "NotCleanableByGear", "Police");
-	PyObject *state = Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "MissionState");
-	int early = Sf_Compare(&f, state, "!=", Sf_Str(&f, "GetFuncShipPlans"));
+	Mode_SaveVar("MissionState", &state);
+	LvN_Str(&s1, "GetFuncShipPlans");
+	LvN_Str(&s2, "TalkToTraitoriusAgain");
+	int early = Mode_Cmp(&state, "!=", &s1);
 	if (early > 0) {
-		early = Sf_Compare(&f, state, "!=", Sf_Str(&f, "TalkToTraitoriusAgain"));
+		early = Mode_Cmp(&state, "!=", &s2);
 	}
-	if (early > 0) {
-		Sf_Own(&f, BP, "DisableIAFunctionary", "(s)", "Pickus");
-		Sf_Own(&f, BP, "SetThugsState", "()");
+	Native_Free(&s1);
+	Native_Free(&s2);
+	Native_SetNone(&tr);
+	byte ok = early >= 0 && (!early || (LV_OWN(BP, "DisableIAFunctionary", NULL, "s", "Pickus") && LV_OWN(BP, "SetThugsState", NULL, ""))) &&
+		LV_OWN(BP, "DisableIAFunctionary", &tr, "s", "Traitorius") && Mode_Put(BP, "traitorius", NULL, &tr) && LV_OWN(BP, "LoadScene", NULL, "") &&
+		LV_OWN(BP, "CreatePickusBeatenClass", NULL, "");
+	Native_Free(&tr);
+	if (ok) {
+		if (LvN_EqS(&state, "TalkToTraitorius")) {
+			ok = Po_TargetG(BP, "traitorius");
+		} else if (LvN_EqS(&state, "HireThugs") || LvN_EqS(&state, "BeatPickus")) {
+			ok = LV_OWN(BP, "HireThugs", NULL, "");
+		} else if (LvN_EqS(&state, "GetFuncShipPlans")) {
+			ok = LV_OWN(BP, "GetFuncShipPlans", NULL, "");
+		} else if (LvN_EqS(&state, "TalkToTraitoriusAgain")) {
+			ok = LV_OWN(BP, "TalkToTraitoriusAgain", NULL, "");
+		}
 	}
-	Sf_SetGlobal(&f, BP, "traitorius", Sf_Own(&f, BP, "DisableIAFunctionary", "(s)", "Traitorius"));
-	Sf_Own(&f, BP, "LoadScene", "()");
-	Sf_Own(&f, BP, "CreatePickusBeatenClass", "()");
-	if (Sf_EqS(&f, state, "TalkToTraitorius") > 0) {
-		Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, BPG("traitorius"), "Name"));
-	} else if (Sf_EqS(&f, state, "HireThugs") > 0 || Sf_EqS(&f, state, "BeatPickus") > 0) {
-		Sf_Own(&f, BP, "HireThugs", "()");
-	} else if (Sf_EqS(&f, state, "GetFuncShipPlans") > 0) {
-		Sf_Own(&f, BP, "GetFuncShipPlans", "()");
-	} else if (Sf_EqS(&f, state, "TalkToTraitoriusAgain") > 0) {
-		Sf_Own(&f, BP, "TalkToTraitoriusAgain", "()");
-	}
-	return Sf_None(&f);
+	Native_Free(&state);
+	return ok;
 }
 
 /* DisableIAFunctionary(name): Functionary_<name> stays and talks (Traitorius through TraitoriusSpeech); the entity,
  * None when it is not there */
-static PyObject *BeatPickus_DisableIAFunctionary(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+static byte BeatPickus_DisableIAFunctionary(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t name, key, desc;
+	byte tr = LvN_EqS(&a[0], "Traitorius");
+	Native_SetNone(&name);
+	if (!Po_Cat("Functionary_", &a[0], &name) || !Mode_EntityH(&name, out)) {
+		Native_Free(&name);
+		return 0;
 	}
-	int tr = Sf_EqS(&f, name, "Traitorius");
-	PyObject *e = Sf_Entity(&f, Sf_Cat(&f, "sO", "Functionary_", name));
-	if (Sf_True(&f, e) == 0) {
-		return Sf_None(&f);
+	Native_Free(&name);
+	if (!Native_True(out)) {
+		Native_Free(out);
+		return 1;
 	}
-	if (tr > 0) {
-		Sf_SetAttrS(&f, e, "UseFunc", "Mission_BeatPickus.TraitoriusSpeech");
-	}
-	Sf_SetAttrI(&f, e, "LLogicDefaultState", 6);
-	Sf_SetAttrS(&f, e, "LLogicDefaultTarget", "");
-	Sf_SetAttrI(&f, e, "LLogicState", 6);
-	Sf_SetAttrS(&f, e, "LLogicTarget", "");
-	Sf_SetAttr(&f, e, "LLogicProbTalkWhenWalking", Sf_Float(&f, 1.0));
-	Sf_SetAttrI(&f, e, "LLogicIdle", 1);
-	Sf_SetAttrI(&f, e, "LLogicIdle", 0);
-	Sf_SetAttr(&f, e, "Descriptor", Sf_Lang(&f, Sf_Cat(&f, "sO", "CharName_", name)));
-	return Sf_Return(&f, e);
+	Native_SetNone(&key);
+	Native_SetNone(&desc);
+	byte ok = (!tr || LvN_SetS(out, "UseFunc", "Mission_BeatPickus.TraitoriusSpeech")) && LvN_SetI(out, "LLogicDefaultState", 6) &&
+		LvN_SetS(out, "LLogicDefaultTarget", "") && LvN_SetI(out, "LLogicState", 6) && LvN_SetS(out, "LLogicTarget", "") &&
+		LvN_SetF(out, "LLogicProbTalkWhenWalking", 1.0) && LvN_SetI(out, "LLogicIdle", 1) && LvN_SetI(out, "LLogicIdle", 0) &&
+		Po_Cat("CharName_", &a[0], &key) && Mode_LangV(&key, &desc) && Mode_VSet(out, "Descriptor", &desc);
+	Native_Free(&key);
+	Native_Free(&desc);
+	return ok;
 }
 
 /* OnTraitoriusRespawn(tr): Traitorius back: his name and his talk for the state of the mission */
-static PyObject *BeatPickus_OnTraitoriusRespawn(PyObject *self, PyObject *args) {
-	PyObject *tr;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &tr)) {
-		return NULL;
+static byte BeatPickus_OnTraitoriusRespawn(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t tr, state;
+	(void)out;
+	if (!Mode_Put(BP, "traitorius", NULL, &a[0]) || !Mode_G(BP, "traitorius", &tr)) {
+		return 0;
 	}
-	Sf_SetGlobal(&f, BP, "traitorius", tr);
-	Sf_SetAttr(&f, BPG("traitorius"), "Descriptor", Sf_Lang(&f, Sf_Str(&f, "CharName_Traitorius")));
-	PyObject *state = Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "MissionState");
-	if (Sf_EqS(&f, state, "TalkToTraitorius") > 0) {
-		Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, BPG("traitorius"), "Name"));
-		Sf_SetAttrS(&f, BPG("traitorius"), "UseFunc", "Mission_BeatPickus.TraitoriusSpeech");
-	} else if (Sf_EqS(&f, state, "TalkToTraitoriusAgain") > 0) {
-		Sf_Own(&f, BP, "TalkToTraitoriusAgain", "()");
+	byte ok = Po_SetLang(&tr, "Descriptor", "CharName_Traitorius");
+	Native_Free(&tr);
+	if (!ok) {
+		return 0;
+	}
+	Mode_SaveVar("MissionState", &state);
+	if (LvN_EqS(&state, "TalkToTraitorius")) {
+		ok = Po_TargetG(BP, "traitorius") && Mode_GSetS(BP, "traitorius", "UseFunc", "Mission_BeatPickus.TraitoriusSpeech");
+	} else if (LvN_EqS(&state, "TalkToTraitoriusAgain")) {
+		ok = LV_OWN(BP, "TalkToTraitoriusAgain", NULL, "");
 	} else {
-		Sf_SetAttrS(&f, BPG("traitorius"), "UseFunc", "Mission_BeatPickus.TraitoriusSpeech");
+		ok = Mode_GSetS(BP, "traitorius", "UseFunc", "Mission_BeatPickus.TraitoriusSpeech");
 	}
-	return Sf_None(&f);
+	Native_Free(&state);
+	return ok;
 }
 
 /* OnThugRespawn(thug): a thug back: he follows the player during the beating, or the thugs regroup */
-static PyObject *BeatPickus_OnThugRespawn(PyObject *self, PyObject *args) {
-	PyObject *thug;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &thug)) {
-		return NULL;
-	}
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	if (Sf_True(&f, usr) > 0) {
-		if (Lv_SaveIs(&f, "MissionState", "BeatPickus") > 0) {
-			Sf_Ask(&f, "Scrap", "Set", "(sO)", "GenCharSpecialChaseSpeed", BPG("followPlayerVel"));
-			Sf_Own(&f, BP, "SetState", "(OiO)", thug, 5, Sf_Attr(&f, usr, "Name"));
-		} else if (Lv_SaveIs(&f, "MissionState", "HireThugs") > 0) {
-			Sf_Own(&f, BP, "SetThugsState", "()");
+static byte BeatPickus_OnThugRespawn(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t usr, vel, un;
+	(void)out;
+	Native_SetNone(&usr);
+	Native_SetNone(&vel);
+	Native_SetNone(&un);
+	byte ok = Mode_UsrHandle(&usr);
+	if (ok && Native_True(&usr)) {
+		if (LvN_SaveIs("MissionState", "BeatPickus")) {
+			ok = Mode_G(BP, "followPlayerVel", &vel) && Mode_GVarSet("GenCharSpecialChaseSpeed", &vel) && Mode_VGet(&usr, "Name", &un) &&
+				LV_OWN(BP, "SetState", NULL, "viv", &a[0], 5L, &un);
+		} else if (LvN_SaveIs("MissionState", "HireThugs")) {
+			ok = LV_OWN(BP, "SetThugsState", NULL, "");
 		}
 	}
-	return Sf_None(&f);
+	Native_Free(&usr);
+	Native_Free(&vel);
+	Native_Free(&un);
+	return ok;
+}
+
+/* SetState(thug, state, targetName) of the module through its global, with an int state */
+static byte Bp_State(const nativeVal_t *thug, long state, const nativeVal_t *target) {
+	return LV_OWN(BP, "SetState", NULL, "viv", thug, state, target);
+}
+
+/* SetState(thug, 5, h.Name) */
+static byte Bp_Follow(const nativeVal_t *thug, const nativeVal_t *h) {
+	nativeVal_t n;
+	Native_SetNone(&n);
+	byte ok = Mode_VGet(h, "Name", &n) && Bp_State(thug, 5, &n);
+	Native_Free(&n);
+	return ok;
 }
 
 /* SetThugsState(vel=0.4): vel 0 stops the leader (the others follow him), up to 0.4 the leader walks his route with
  * the others behind, above all thugs follow the player (when he is Dtritus) */
+static byte Bp_SetThugsState(const nativeVal_t *vel) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *thug1 = Mode_V(&t), *usr = Mode_V(&t), *lim = Mode_V(&t);
+	if (!Bp_Thug(1, thug1)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Native_True(thug1)) {
+		return Mode_Done(&t, PO_LATER1(1.0, BP, "SetThugsState", vel));
+	}
+	Native_SetFloat(lim, 0.4);
+	if (!Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
+	}
+	int follow = Mode_Cmp(vel, ">", lim);
+	if (follow > 0) {
+		follow = Native_True(usr);
+	}
+	if (follow > 0) {
+		follow = Po_CtrlIs(usr, "Dtritus");
+	}
+	if (follow < 0 || !Mode_GVarSet("GenCharSpecialChaseSpeed", vel)) {
+		return Mode_Done(&t, 0);
+	}
+	byte ok;
+	if (follow == 0) {
+		Native_SetFloat(lim, 0.0);
+		int stop = Mode_Cmp(vel, "==", lim);
+		if (stop > 0) {
+			ok = Bp_State(thug1, 6, Po_Empty()) && LvN_SetS(thug1, "UseFunc", "Mission_BeatPickus.ThugNormalSpeech");
+		} else if (stop == 0) {
+			ok = Bp_State(thug1, 0, Po_Empty()) && LvN_SetS(thug1, "UseFunc", LvN_SaveIs("MissionState", "TalkToTraitorius") ?
+				"CharsNPC.GenericNPCSpeech" : "Mission_BeatPickus.ThugLeaderSpeech");
+		} else {
+			ok = 0;
+		}
+	} else {
+		ok = Bp_Follow(thug1, usr) && LvN_SetS(thug1, "UseFunc", "Mission_BeatPickus.ThugNormalSpeech");
+	}
+	for (int i = 2; ok && i < 6; i++) {
+		nativeVal_t thug;
+		Native_SetNone(&thug);
+		ok = Bp_Thug(i, &thug) && (!Native_True(&thug) || (follow ? Bp_Follow(&thug, usr) && LvN_SetS(&thug, "UseFunc",
+			"Mission_BeatPickus.ThugNormalSpeech") : Bp_Follow(&thug, thug1) && LvN_SetS(&thug, "UseFunc", "CharsNPC.GenericNPCSpeech")));
+		Native_Free(&thug);
+	}
+	return Mode_Done(&t, ok);
+}
+
 static PyObject *BeatPickus_SetThugsState(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "vel", NULL };
-	PyObject *vel = NULL;
-	scriptFrame_t f = { 0 };
+	PyObject *o = NULL;
+	nativeVal_t vel;
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &vel)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &o)) {
 		return NULL;
 	}
-	vel = vel ? Sf_Ref(&f, vel) : Sf_Float(&f, 0.4);
-	PyObject *thug1 = Bp_Thug(&f, 1);
-	if (Sf_True(&f, thug1) == 0) {
-		Sf_Later(&f, Sf_Float(&f, 1.0), BPG("SetThugsState"), Sf_Build(&f, "(O)", vel), NULL);
-		return Sf_None(&f);
+	if (o) {
+		Native_Arg(o, &vel);
+	} else {
+		Native_SetFloat(&vel, 0.4);
 	}
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	int follow = Sf_Compare(&f, vel, ">", Sf_Float(&f, 0.4));
-	if (follow > 0) {
-		follow = Sf_True(&f, usr);
-	}
-	if (follow > 0) {
-		follow = Sf_EqS(&f, Sf_Attr(&f, usr, "ActCtrl"), "Dtritus");
-	}
-	Sf_Ask(&f, "Scrap", "Set", "(sO)", "GenCharSpecialChaseSpeed", vel);
-	if (follow == 0) {
-		int stop = Sf_Compare(&f, vel, "==", Sf_Float(&f, 0.0));
-		if (stop > 0) {
-			Sf_Own(&f, BP, "SetState", "(Ois)", thug1, 6, "");
-			Sf_SetAttrS(&f, thug1, "UseFunc", "Mission_BeatPickus.ThugNormalSpeech");
-		} else if (stop == 0) {
-			Sf_Own(&f, BP, "SetState", "(Ois)", thug1, 0, "");
-			int talk = Lv_SaveIs(&f, "MissionState", "TalkToTraitorius");
-			if (talk >= 0) {
-				Sf_SetAttrS(&f, thug1, "UseFunc", talk ? "CharsNPC.GenericNPCSpeech" : "Mission_BeatPickus.ThugLeaderSpeech");
-			}
-		}
-	} else if (follow > 0) {
-		Sf_Own(&f, BP, "SetState", "(OiO)", thug1, 5, Sf_Attr(&f, usr, "Name"));
-		Sf_SetAttrS(&f, thug1, "UseFunc", "Mission_BeatPickus.ThugNormalSpeech");
-	}
-	for (int i = 2; i < 6 && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *thug = Bp_Thug(&f, i);
-		if (Sf_True(&f, thug) > 0) {
-			if (follow) {
-				Sf_Own(&f, BP, "SetState", "(OiO)", thug, 5, Sf_Attr(&f, usr, "Name"));
-				Sf_SetAttrS(&f, thug, "UseFunc", "Mission_BeatPickus.ThugNormalSpeech");
-			} else {
-				Sf_Own(&f, BP, "SetState", "(OiO)", thug, 5, Sf_Attr(&f, thug1, "Name"));
-				Sf_SetAttrS(&f, thug, "UseFunc", "CharsNPC.GenericNPCSpeech");
-			}
-		}
-		Sf_Release(&f, mark);
-	}
-	return Sf_None(&f);
+	byte ok = Bp_SetThugsState(&vel);
+	Native_Free(&vel);
+	return Mode_Result(ok);
 }
 
 /* SetState(thug, state, targetName): the state of the local logic (6 stays where he stands) */
-static PyObject *BeatPickus_SetState(PyObject *self, PyObject *args) {
-	PyObject *thug, *state, *target;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &thug, &state, &target)) {
-		return NULL;
+static byte BeatPickus_SetState(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t pos;
+	(void)out;
+	if (LvN_EqI(&a[1], 6)) {
+		Native_SetNone(&pos);
+		byte ok = Mode_VGet(&a[0], "Pos", &pos) && Mode_VSet(&a[0], "LLogicOrigin", &pos);
+		Native_Free(&pos);
+		if (!ok) {
+			return 0;
+		}
 	}
-	if (Sf_EqI(&f, state, 6) > 0) {
-		Sf_SetAttr(&f, thug, "LLogicOrigin", Sf_Attr(&f, thug, "Pos"));
-	}
-	Sf_SetAttr(&f, thug, "LLogicDefaultState", state);
-	Sf_SetAttr(&f, thug, "LLogicDefaultTarget", target);
-	Sf_SetAttr(&f, thug, "LLogicState", state);
-	Sf_SetAttr(&f, thug, "LLogicTarget", target);
-	Sf_SetAttrI(&f, thug, "LLogicIdle", 1);
-	Sf_SetAttrI(&f, thug, "LLogicIdle", 0);
-	return Sf_None(&f);
-}
-
-/* Scrap.GetEntity(UsrName).ActCtrl == ctrl */
-static int Bp_UsrIs(scriptFrame_t *f, PyObject *usr, const char *ctrl) {
-	return Sf_EqS(f, Sf_Attr(f, Sf_Entity(f, usr), "ActCtrl"), ctrl);
-}
-
-/* Speech.AddNI(msg, ans) of the keys prefix + "InitMsg1" and so on (the pairs end with NULL) */
-static void Bp_AddNI(scriptFrame_t *f, const char *const *pairs) {
-	for (; *pairs; pairs += 2) {
-		Sf_Ask(f, "Speech", "AddNI", "(ss)", pairs[0], pairs[1]);
-	}
+	return Mode_VSet(&a[0], "LLogicDefaultState", &a[1]) && Mode_VSet(&a[0], "LLogicDefaultTarget", &a[2]) &&
+		Mode_VSet(&a[0], "LLogicState", &a[1]) && Mode_VSet(&a[0], "LLogicTarget", &a[2]) && LvN_SetI(&a[0], "LLogicIdle", 1) &&
+		LvN_SetI(&a[0], "LLogicIdle", 0);
 }
 
 /* TraitoriusSpeech(UsrName, CharName, optId, FullOption): Traitorius talks to a functionary about the thugs, to
  * Dtritus about flowers; the others get the generic talk */
-static PyObject *BeatPickus_TraitoriusSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+static byte BeatPickus_TraitoriusSpeech(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const ni[] = { "Mission_FlowerPower_Traitorius_InitMsg1", "Mission_FlowerPower_Traitorius_InitAns1",
+		"Mission_FlowerPower_Traitorius_1Msg", "Mission_FlowerPower_Traitorius_1Ans", "Mission_FlowerPower_Traitorius_1_1Msg",
+		"Mission_FlowerPower_Traitorius_1_1Ans", NULL };
+	(void)out;
+	if (!Mode_Import("CharsNPC") || !LvN_Speakers(&a[0], &a[1])) {
+		return 0;
 	}
-	Sf_Import(&f, "CharsNPC");
-	Lv_Speakers(&f, usr, ch);
-	if (Bp_UsrIs(&f, usr, "Functionary") > 0) {
-		int talk = Lv_SaveIs(&f, "MissionState", "TalkToTraitorius");
-		if (talk > 0) {
-			static const char *const ni[] = { "Mission_FlowerPower_Traitorius_InitMsg1", "Mission_FlowerPower_Traitorius_InitAns1",
-				"Mission_FlowerPower_Traitorius_1Msg", "Mission_FlowerPower_Traitorius_1Ans", "Mission_FlowerPower_Traitorius_1_1Msg",
-				"Mission_FlowerPower_Traitorius_1_1Ans", NULL };
-			Lv_OnEnd(&f, BP, "PreHireThugs", Sf_Build(&f, "(O)", ch));
-			Sf_Ask(&f, "Speech", "NISpeech", "(s)", "Functionary");
-			Bp_AddNI(&f, ni);
-			Sf_Ask(&f, "Speech", "RunNI", "()");
-		} else if (talk == 0) {
-			Sf_Ask(&f, "Speech", "OnSpch", "(ss)", "Mission_HireThugs_Traitorius_InitMsg1", "Mission_HireThugs_Traitorius_InitAns1");
+	int fn = Po_NameIs(&a[0], "Functionary");
+	if (fn > 0) {
+		if (!LvN_SaveIs("MissionState", "TalkToTraitorius")) {
+			return Mode_Spch("Mission_HireThugs_Traitorius_InitMsg1", "Mission_HireThugs_Traitorius_InitAns1", NULL);
 		}
-	} else if (Bp_UsrIs(&f, usr, "Dtritus") > 0) {
-		if (Sf_EqS(&f, opt, "Talk") > 0) {
-			Sf_Ask(&f, "Speech", "OnSpch", "(ss)", "Mission_FlowerPower_Traitorius_InitMsg2", "Mission_FlowerPower_Traitorius_InitAns2");
-		}
-	} else {
-		Sf_Ask(&f, "CharsNPC", "GenericNPCSpeech", "(OOOO)", usr, ch, opt, full);
+		nativeVal_t params;
+		Native_SetEmpty(&params, NV_TUPLE);
+		Native_Copy(Native_Append(&params), &a[1]);
+		byte ok = LvN_OnEnd(BP, "PreHireThugs", &params) && Po_NI("Functionary", ni);
+		Native_Free(&params);
+		return ok;
 	}
-	return Sf_None(&f);
+	int dt = fn == 0 ? Po_NameIs(&a[0], "Dtritus") : -1;
+	if (dt > 0) {
+		return !LvN_EqS(&a[2], "Talk") || Mode_Spch("Mission_FlowerPower_Traitorius_InitMsg2", "Mission_FlowerPower_Traitorius_InitAns2", NULL);
+	}
+	return dt == 0 && Po_Generic(a);
 }
 
 /* HireThugs(): the leader of the thugs is the target (as soon as he is there) */
-static PyObject *BeatPickus_HireThugs(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte BeatPickus_HireThugs(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t thug1;
+	(void)a;
+	(void)out;
+	if (!Bp_Thug(1, &thug1)) {
+		return 0;
 	}
-	PyObject *thug1 = Bp_Thug(&f, 1);
-	if (Sf_True(&f, thug1) == 0) {
-		Sf_Later(&f, Sf_Float(&f, 1.0), BPG("HireThugs"), Sf_Build(&f, "()"), NULL);
-		return Sf_None(&f);
-	}
-	Sf_SetAttrS(&f, thug1, "UseFunc", "Mission_BeatPickus.ThugLeaderSpeech");
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, thug1, "Name"));
-	return Sf_None(&f);
+	byte ok = Native_True(&thug1) ? LvN_SetS(&thug1, "UseFunc", "Mission_BeatPickus.ThugLeaderSpeech") && Po_TargetName(&thug1) :
+		PO_LATER(1.0, BP, "HireThugs");
+	Native_Free(&thug1);
+	return ok;
 }
 
 /* ThugLeaderSpeech(UsrName, CharName, optId, FullOption): the leader takes Dtritus' job, PreBeatPickus at the end */
-static PyObject *BeatPickus_ThugLeaderSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+static byte BeatPickus_ThugLeaderSpeech(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const ni[] = { "Mission_HireThugs_Thug_InitMsg1", "Mission_HireThugs_Thug_InitAns1", "Mission_HireThugs_Thug_1Msg",
+		"Mission_HireThugs_Thug_1Ans", NULL };
+	(void)out;
+	if (!LvN_Speakers(&a[0], &a[1])) {
+		return 0;
 	}
-	Lv_Speakers(&f, usr, ch);
-	if (Sf_EqS(&f, opt, "Talk") > 0) {
-		int dt = Bp_UsrIs(&f, usr, "Dtritus");
-		if (dt > 0) {
-			static const char *const ni[] = { "Mission_HireThugs_Thug_InitMsg1", "Mission_HireThugs_Thug_InitAns1", "Mission_HireThugs_Thug_1Msg",
-				"Mission_HireThugs_Thug_1Ans", NULL };
-			Lv_OnEnd(&f, BP, "PreBeatPickus", Sf_Build(&f, "(O)", ch));
-			Sf_Ask(&f, "Speech", "NISpeech", "(s)", "Police");
-			Bp_AddNI(&f, ni);
-			Sf_Ask(&f, "Speech", "RunNI", "()");
-		} else if (dt == 0) {
-			Sf_Ask(&f, "Speech", "OnSpch", "(ss)", "Mission_HireThugs_Thug_InitMsg2", "Mission_HireThugs_Thug_InitAns2");
-		}
+	if (!LvN_EqS(&a[2], "Talk")) {
+		return 1;
 	}
-	return Sf_None(&f);
+	int dt = Po_NameIs(&a[0], "Dtritus");
+	if (dt > 0) {
+		nativeVal_t params;
+		Native_SetEmpty(&params, NV_TUPLE);
+		Native_Copy(Native_Append(&params), &a[1]);
+		byte ok = LvN_OnEnd(BP, "PreBeatPickus", &params) && Po_NI("Police", ni);
+		Native_Free(&params);
+		return ok;
+	}
+	return dt == 0 && Mode_Spch("Mission_HireThugs_Thug_InitMsg2", "Mission_HireThugs_Thug_InitAns2", NULL);
+}
+
+/* SetThugsState(followPlayerVel) of the module */
+static byte Bp_FollowVel(void) {
+	nativeVal_t v;
+	byte ok = Mode_G(BP, "followPlayerVel", &v) && LV_OWN(BP, "SetThugsState", NULL, "v", &v);
+	Native_Free(&v);
+	return ok;
 }
 
 /* ThugNormalSpeech(UsrName, CharName, optId, FullOption): a thug talks; to Dtritus, and then they follow him */
-static PyObject *BeatPickus_ThugNormalSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+static byte BeatPickus_ThugNormalSpeech(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	if (!LvN_Speakers(&a[0], &a[1])) {
+		return 0;
 	}
-	Lv_Speakers(&f, usr, ch);
-	if (Sf_EqS(&f, opt, "Talk") > 0) {
-		int dt = Bp_UsrIs(&f, usr, "Dtritus");
-		if (dt > 0) {
-			Sf_Ask(&f, "Speech", "OnSpch", "(ss)", "Mission_HireThugs_Thug_InitMsg3", "Mission_HireThugs_Thug_InitAns3");
-			Sf_Own(&f, BP, "SetThugsState", "(O)", BPG("followPlayerVel"));
-		} else if (dt == 0) {
-			Sf_Ask(&f, "Speech", "OnSpch", "(ss)", "Mission_HireThugs_Thug_InitMsg2", "Mission_HireThugs_Thug_InitAns2");
-		}
+	if (!LvN_EqS(&a[2], "Talk")) {
+		return 1;
 	}
-	return Sf_None(&f);
+	int dt = Po_NameIs(&a[0], "Dtritus");
+	if (dt > 0) {
+		return Mode_Spch("Mission_HireThugs_Thug_InitMsg3", "Mission_HireThugs_Thug_InitAns3", NULL) && Bp_FollowVel();
+	}
+	return dt == 0 && Mode_Spch("Mission_HireThugs_Thug_InitMsg2", "Mission_HireThugs_Thug_InitAns2", NULL);
 }
 
 /* BeatPickus(): the thugs follow the player to Pickus; the alarm hooks, the launcher of the scene at Pickus, the
  * distance check */
-static PyObject *BeatPickus_BeatPickus(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte BeatPickus_BeatPickus(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t pickus, pos, d;
+	(void)a;
+	(void)out;
+	if (!LvN_Entity("Functionary_Pickus", &pickus)) {
+		return 0;
 	}
-	PyObject *pickus = Sf_Entity(&f, Sf_Str(&f, "Functionary_Pickus"));
-	if (Sf_True(&f, pickus) == 0) {
-		Sf_Later(&f, Sf_Float(&f, 1.0), BPG("BeatPickus"), Sf_Build(&f, "()"), NULL);
-		return Sf_None(&f);
+	if (!Native_True(&pickus)) {
+		Native_Free(&pickus);
+		return PO_LATER(1.0, BP, "BeatPickus");
 	}
-	Sf_SetMod(&f, "Alarm", "RestoreMissionCallback", BPG("OnAlarmDeactivated"));
-	Sf_SetMod(&f, "Alarm", "AbortMissionCallback", BPG("OnAlarmActivated"));
-	Sf_Own(&f, BP, "CreateLauncher", "(O)", Sf_Attr(&f, pickus, "Pos"));
-	Sf_Later(&f, Sf_Float(&f, 1.0), BPG("CheckMaxDist"), Sf_Build(&f, "(i)", 1500), "CheckMaxDist");
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, pickus, "Name"));
-	Sf_Own(&f, BP, "SetThugsState", "(O)", BPG("followPlayerVel"));
-	return Sf_None(&f);
+	Native_SetNone(&pos);
+	Native_SetInt(&d, 1500);
+	byte ok = PO_HOOK("Alarm", "RestoreMissionCallback", BP, "OnAlarmDeactivated") && PO_HOOK("Alarm", "AbortMissionCallback", BP, "OnAlarmActivated") &&
+		Mode_VGet(&pickus, "Pos", &pos) && LV_OWN(BP, "CreateLauncher", NULL, "v", &pos) &&
+		Mode_Later(1.0, BP, "CheckMaxDist", &d, 1, "CheckMaxDist") && Po_TargetName(&pickus) && Bp_FollowVel();
+	Native_Free(&pickus);
+	Native_Free(&pos);
+	return ok;
 }
 
 /* OnAlarmActivated(): the alarm stops the beating: no distance check, Pickus no target, the launcher off */
-static PyObject *BeatPickus_OnAlarmActivated(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte BeatPickus_OnAlarmActivated(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t pickus;
+	(void)a;
+	(void)out;
+	if (!Mode_DelSchedS("CheckMaxDist") || !LvN_Entity("Functionary_Pickus", &pickus)) {
+		return 0;
 	}
-	Sf_Ask(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "CheckMaxDist");
-	PyObject *pickus = Sf_Entity(&f, Sf_Str(&f, "Functionary_Pickus"));
-	if (Sf_True(&f, pickus) > 0) {
-		Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", pickus, 0);
-	}
-	if (Sf_True(&f, BPG("launcher")) > 0) {
-		Sf_SetAttrS(&f, BPG("launcher"), "OnTake", "");
-	}
-	return Sf_None(&f);
+	byte ok = !Native_True(&pickus) || LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &pickus, 0L);
+	Native_Free(&pickus);
+	int l = ok ? LvN_GTrue(BP, "launcher") : -1;
+	return l >= 0 && (!l || Mode_GSetS(BP, "launcher", "OnTake", ""));
 }
 
 /* CheckMaxDist(d): every second: the thugs stop when the player is farther than d, and follow him again */
-static PyObject *BeatPickus_CheckMaxDist(PyObject *self, PyObject *args) {
-	PyObject *d;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &d)) {
-		return NULL;
+static byte BeatPickus_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *pos = Mode_V(&t), *r = Mode_V(&t), *args = Mode_V(&t), *who = Mode_V(&t);
+	(void)out;
+	if (!Mode_Later(1.0, BP, "CheckMaxDist", &a[0], 1, "CheckMaxDist")) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Later(&f, Sf_Float(&f, 1.0), BPG("CheckMaxDist"), Sf_Build(&f, "(O)", d), "CheckMaxDist");
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	if (Sf_True(&f, usr) <= 0) {
-		return Sf_None(&f);
+	int u = Mode_UsrHandle(usr) ? Native_True(usr) : -1;
+	if (u <= 0) {
+		return Mode_Done(&t, u == 0);
 	}
-	int near = Sf_True(&f, Sf_Own(&f, BP, "CheckThugsDist", "(OO)", Sf_Attr(&f, usr, "Pos"), d));
+	int near = Mode_VGet(usr, "Pos", pos) && LV_OWN(BP, "CheckThugsDist", r, "vv", pos, &a[0]) ? Native_True(r) : -1;
 	if (near == 0) {
-		if (Sf_True(&f, BPG("thugsStopped")) == 0) {
-			Sf_SetGlobal(&f, BP, "thugsStopped", Sf_Int(&f, 1));
-			Sf_Own(&f, BP, "SetThugsState", "(d)", 0.0);
-			Sf_Later(&f, Sf_Float(&f, 0.1), Sf_Mod(&f, "Speech", "AddRemoteCom"), Sf_Build(&f, "(ss)", "Mission_HireThugs_RemoteMessage1", "Police"),
-				"NotSoFast");
+		int stopped = LvN_GTrue(BP, "thugsStopped");
+		if (stopped) {
+			return Mode_Done(&t, stopped > 0);
 		}
-	} else if (near > 0) {
-		int c = Sf_True(&f, BPG("thugsStopped"));
-		if (c > 0) {
-			c = Sf_EqS(&f, Sf_Attr(&f, usr, "ActCtrl"), "Dtritus");
-		}
-		if (c > 0) {
-			Sf_SetGlobal(&f, BP, "thugsStopped", Sf_Int(&f, 0));
-			Sf_Own(&f, BP, "SetThugsState", "(O)", BPG("followPlayerVel"));
-		}
+		LvN_Str(args, "Mission_HireThugs_RemoteMessage1");
+		LvN_Str(who, "Police");
+		return Mode_Done(&t, LvN_PutI(BP, "thugsStopped", 1) && LV_OWN(BP, "SetThugsState", NULL, "d", 0.0) &&
+			Mode_LaterIn(0.1, "Speech", "AddRemoteCom", args, 2, "NotSoFast"));
 	}
-	return Sf_None(&f);
+	if (near < 0) {
+		return Mode_Done(&t, 0);
+	}
+	int c = LvN_GTrue(BP, "thugsStopped");
+	if (c > 0) {
+		c = Po_CtrlIs(usr, "Dtritus");
+	}
+	return Mode_Done(&t, c >= 0 && (!c || (LvN_PutI(BP, "thugsStopped", 0) && Bp_FollowVel())));
 }
 
 /* CheckThugsDist(pos, d): 1 when a thug is within d of pos */
-static PyObject *BeatPickus_CheckThugsDist(PyObject *self, PyObject *args) {
-	PyObject *pos, *d;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &pos, &d)) {
-		return NULL;
-	}
-	for (int i = 1; i < 6 && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *e = Bp_Thug(&f, i);
-		if (Sf_True(&f, e) > 0) {
-			PyObject *dist = Sf_Ask(&f, "SVec", "ModSqr", "(O)", Sf_Ask(&f, "SVec", "Sub", "(OO)", pos, Sf_Attr(&f, e, "Pos")));
-			if (Sf_Compare(&f, dist, "<=", Sf_Op(&f, d, '*', d)) > 0) {
-				return Sf_Return(&f, Sf_Int(&f, 1));
-			}
+static byte BeatPickus_CheckThugsDist(const nativeVal_t *a, nativeVal_t *out) {
+	for (long i = 1; i < 6; i++) {
+		nativeVal_t e, ep, sub, dist, dd;
+		Native_SetNone(&e);
+		Native_SetNone(&ep);
+		Native_SetNone(&sub);
+		Native_SetNone(&dist);
+		Native_SetNone(&dd);
+		int near = Bp_Thug(i, &e) ? Native_True(&e) : -1;
+		if (near > 0) {
+			near = Mode_VGet(&e, "Pos", &ep) && Mode_VecSub(&a[0], &ep, &sub) && Mode_VecModSqr(&sub, &dist) && Mode_Arith('*', &a[1], &a[1], &dd) ?
+				Mode_Cmp(&dist, "<=", &dd) : -1;
 		}
-		Sf_Release(&f, mark);
+		Native_Free(&e);
+		Native_Free(&ep);
+		Native_Free(&sub);
+		Native_Free(&dist);
+		Native_Free(&dd);
+		if (near) {
+			Native_SetInt(out, 1);
+			return near > 0;
+		}
 	}
-	return Sf_Return(&f, Sf_Int(&f, 0));
+	Native_SetInt(out, 0);
+	return 1;
 }
 
 /* CreateLauncher(pos): the item at Pickus that starts the scene */
-static PyObject *BeatPickus_CreateLauncher(PyObject *self, PyObject *args) {
-	PyObject *pos;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &pos)) {
-		return NULL;
+static byte BeatPickus_CreateLauncher(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t name, l;
+	(void)out;
+	int there = LvN_GTrue(BP, "launcher");
+	if (there < 0) {
+		return 0;
 	}
-	if (Sf_True(&f, BPG("launcher")) == 0) {
-		PyObject *l = Sf_Ask(&f, "Scrap", "CreateEntity", "(sOOOs)", "PickusFightLauncher", Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1),
-			Sf_Item(&f, pos, 2), "Item");
-		Sf_SetGlobal(&f, BP, "launcher", l);
-		Sf_SetAttrI(&f, BPG("launcher"), "Radius", 600);
-		Sf_SetAttrI(&f, BPG("launcher"), "OnlyUser", 1);
+	if (!there) {
+		LvN_Str(&name, "PickusFightLauncher");
+		Native_SetNone(&l);
+		byte ok = LvN_CreateAt(&name, &a[0], "Item", &l) && Mode_Put(BP, "launcher", NULL, &l) && Po_GSetI(BP, "launcher", "Radius", 600) &&
+			Po_GSetI(BP, "launcher", "OnlyUser", 1);
+		Native_Free(&name);
+		Native_Free(&l);
+		if (!ok) {
+			return 0;
+		}
 	}
-	Sf_SetAttrS(&f, BPG("launcher"), "OnTake", "Mission_BeatPickus.LaunchPickusFightScene");
-	return Sf_None(&f);
+	return Mode_GSetS(BP, "launcher", "OnTake", "Mission_BeatPickus.LaunchPickusFightScene");
+}
+
+/* del Speech.RemoteCom; Speech.RemoteCom = [] (OBJLIB 5: the attribute of the module deleted, the error of a missing
+ * one) */
+static byte Bp_NoComs(void) {
+	nativeVal_t l;
+	PyObject *speech = PyImport_ImportModule("Speech");
+	byte ok = speech && PyObject_SetAttrString(speech, "RemoteCom", NULL) == 0;
+	Py_XDECREF(speech);
+	if (!ok) {
+		return 0;
+	}
+	Native_SetEmpty(&l, NV_LIST);
+	ok = Mode_SetModVar("Speech", "RemoteCom", &l);
+	Native_Free(&l);
+	return ok;
 }
 
 /* LaunchPickusFightScene(ItemName, CharName): Dtritus reached Pickus without the alarm: with the thugs near the scene
  * Beating plays (AskPickus at its end), else the launcher comes back in 0.5 s */
-static PyObject *BeatPickus_LaunchPickusFightScene(PyObject *self, PyObject *args) {
-	PyObject *item, *ch;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &item, &ch)) {
-		return NULL;
+static byte BeatPickus_LaunchPickusFightScene(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *pickus = Mode_V(&t), *usr = Mode_V(&t), *un = Mode_V(&t), *pos = Mode_V(&t), *r = Mode_V(&t), *item = Mode_V(&t);
+	(void)out;
+	if (!LvN_Entity("Functionary_Pickus", pickus)) {
+		return Mode_Done(&t, 0);
 	}
-	if (Sf_True(&f, Sf_Entity(&f, Sf_Str(&f, "Functionary_Pickus"))) <= 0) {
-		return Sf_None(&f);
+	if (!Native_True(pickus)) {
+		return Mode_Done(&t, 1);
 	}
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	int bad = Sf_True(&f, usr);
-	bad = bad < 0 ? -1 : !bad;
+	if (!Mode_UsrHandle(usr)) {
+		return Mode_Done(&t, 0);
+	}
+	int bad = !Native_True(usr);
 	if (bad == 0) {
-		bad = Sf_Compare(&f, Sf_Attr(&f, usr, "Name"), "!=", ch);
+		bad = Mode_VGet(usr, "Name", un) ? Mode_Cmp(un, "!=", &a[1]) : -1;
 	}
 	if (bad == 0) {
-		bad = Sf_Compare(&f, Sf_Attr(&f, usr, "ActCtrl"), "!=", Sf_Str(&f, "Dtritus"));
+		bad = Po_CtrlIs(usr, "Dtritus");
+		bad = bad < 0 ? -1 : !bad;
 	}
-	if (bad != 0 || Sf_True(&f, Sf_Item(&f, Sf_Ask(&f, "Scrap", "GetAlarm", "()"), 0)) != 0) {
-		return Sf_None(&f);
+	if (bad) {
+		return Mode_Done(&t, bad > 0);
 	}
-	Sf_SetAttrS(&f, BPG("launcher"), "OnTake", "");
-	int near = Sf_True(&f, Sf_Own(&f, BP, "CheckThugsDist", "(Oi)", Sf_Attr(&f, usr, "Pos"), 600));
+	int alarm = Mode_AlarmOn();
+	if (alarm) {
+		return Mode_Done(&t, alarm > 0);
+	}
+	if (!Mode_GSetS(BP, "launcher", "OnTake", "")) {
+		return Mode_Done(&t, 0);
+	}
+	int near = Mode_VGet(usr, "Pos", pos) && LV_OWN(BP, "CheckThugsDist", r, "vi", pos, 600L) ? Native_True(r) : -1;
 	if (near > 0) {
-		PyObject *speech = Sf_Keep(&f, PyImport_ImportModule("Speech"));
-		Sf_Check(&f, speech && PyObject_SetAttrString(speech, "RemoteCom", NULL) == 0);
-		Sf_SetMod(&f, "Speech", "RemoteCom", Sf_Build(&f, "[]"));
-		Sf_Ask(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "NotSoFast");
-		Sf_Ask(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "CheckMaxDist");
-		Sf_Own(&f, BP, "LightingActivate", "(i)", 0);
-		Sf_Ask(&f, "Scene", "Play", "(s)", "Beating");
-		Sf_SetMod(&f, "Scene", "EndOfSceneCallback", BPG("AskPickus"));
-	} else if (near == 0) {
-		Sf_Later(&f, Sf_Float(&f, 0.5), BPG("CreateLauncher"), Sf_Build(&f, "(O)", Sf_Attr(&f, Sf_Entity(&f, item), "Pos")), NULL);
+		return Mode_Done(&t, Bp_NoComs() && Mode_DelSchedS("NotSoFast") && Mode_DelSchedS("CheckMaxDist") &&
+			LV_OWN(BP, "LightingActivate", NULL, "i", 0L) && LV_CALL("Scene", "Play", NULL, "s", "Beating") &&
+			PO_HOOK("Scene", "EndOfSceneCallback", BP, "AskPickus"));
 	}
-	return Sf_None(&f);
+	Native_Free(pos);
+	return Mode_Done(&t, near == 0 && Mode_EntityH(&a[0], item) && Mode_VGet(item, "Pos", pos) && PO_LATER1(0.5, BP, "CreateLauncher", pos));
 }
 
 /* CreatePickusBeatenClass(): the class of Pickus beaten (models in the level folder) */
-static PyObject *BeatPickus_CreatePickusBeatenClass(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "Init");
-	Sf_Ask(&f, "SAct", "CreateClass", "(s)", "PickusBeaten");
-	Sf_Ask(&f, "SAct", "SetCls", "(sO)", "ModelFilePath", Sf_Cat(&f, "Os", Sf_Mod(&f, "Init", "Path"), "/Map/Beating/PickusBeaten.m3d"));
-	Sf_Ask(&f, "SAct", "CreateAction", "(s)", "PickusLoop");
-	Sf_Ask(&f, "SAct", "SetAct", "(sO)", "AnmFilePath", Sf_Cat(&f, "Os", Sf_Mod(&f, "Init", "Path"), "/Map/Beating/BeatingAnm/PickusBeaten_Relax.M3D"));
-	Sf_Ask(&f, "SAct", "SetAct", "(si)", "isLoop", 1);
-	Sf_Ask(&f, "SAct", "CreateAction", "(s)", "Talk");
-	Sf_Ask(&f, "SAct", "SetAct", "(sO)", "AnmFilePath", Sf_Cat(&f, "Os", Sf_Mod(&f, "Init", "Path"), "/Map/Beating/BeatingAnm/PickusBeaten_Talk.M3D"));
-	Sf_Ask(&f, "SAct", "SetAct", "(si)", "isLoop", 1);
-	Sf_Ask(&f, "SAct", "SetCls", "(ss)", "DefAction", "PickusLoop");
-	return Sf_None(&f);
+static byte BeatPickus_CreatePickusBeatenClass(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_Import("Init") && Mode_SAct("CreateClass", "PickusBeaten") && Mode_PathSet(1, "ModelFilePath", "/Map/Beating/PickusBeaten.m3d") &&
+		Mode_SAct("CreateAction", "PickusLoop") && Mode_PathSet(0, "AnmFilePath", "/Map/Beating/BeatingAnm/PickusBeaten_Relax.M3D") &&
+		Mode_SActSet(0, "isLoop", NULL, 1) && Mode_SAct("CreateAction", "Talk") && Mode_PathSet(0, "AnmFilePath", "/Map/Beating/BeatingAnm/PickusBeaten_Talk.M3D") &&
+		Mode_SActSet(0, "isLoop", NULL, 1) && Mode_SActSet(1, "DefAction", "PickusLoop", 0);
 }
 
 /* InitPickusBeaten(): Pickus beaten at his dummy, he talks */
-static PyObject *BeatPickus_InitPickusBeaten(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte BeatPickus_InitPickusBeaten(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t dummy, pos, add, np;
+	(void)a;
+	LvN_Dummy("DM_Mission_PickusFight", 1, &dummy);
+	if (!Native_True(&dummy)) {
+		Native_Free(&dummy);
+		return LvN_RaiseText("No existe el dummy para situar al Pickus hecho polvo");
 	}
-	PyObject *dummy = Lv_Dummy(&f, "DM_Mission_PickusFight", 1);
-	if (Sf_True(&f, dummy) == 0) {
-		Sf_RaiseText(&f, "No existe el dummy para situar al Pickus hecho polvo");
-	}
-	PyObject *e = Py_None;
-	if (Sf_Compare(&f, dummy, "!=", Py_None) > 0) {
-		e = Po_FromDummy(&f, dummy, "WithLife");
-		Sf_SetAttrS(&f, e, "ActCtrl", "PickusBeaten");
-		Sf_SetAttrI(&f, e, "ActiveCMask", 0);
-		Sf_SetAttrI(&f, e, "MapCollision", 1);
-		Sf_SetAttrI(&f, e, "UseAngSel", 1);
-		Sf_SetAttrI(&f, e, "UseAbsAngSel", 0);
-		Sf_SetAttrI(&f, e, "VRadius", 150);
-		Sf_SetAttrI(&f, e, "ArrowCanUse", 1);
-		Sf_SetAttrI(&f, e, "UseMapCheck", 0);
-		Sf_SetAttrS(&f, e, "UseFunc", "Mission_BeatPickus.OnTalkToPickus");
-		Sf_SetAttrI(&f, e, "ArrnOpt", 0);
-		Sf_SetAttr(&f, e, "ArrOpt0", Sf_Cat(&f, "sO", "Talk:", Sf_Lang(&f, Sf_Str(&f, "TalkOpt"))));
-		Sf_SetAttr(&f, e, "Descriptor", Sf_Lang(&f, Sf_Str(&f, "CharName_Pickus")));
-		Sf_SetAttrI(&f, e, "OffModPosAsPos", 1);
-		Sf_SetAttr(&f, e, "OffModPos", Sf_Attr(&f, e, "Pos"));
-		Sf_SetAttr(&f, e, "Pos", Sf_Ask(&f, "SVec", "Add", "(O(iii))", Sf_Attr(&f, e, "Pos"), 0, 100, -550));
-	}
-	return Sf_Return(&f, e);
+	Native_SetNone(&pos);
+	Native_SetNone(&np);
+	Mode_Ints3(&add, 0, 100, -550);
+	byte ok = Mode_FromDummy(&dummy, "WithLife", out) && LvN_SetS(out, "ActCtrl", "PickusBeaten") && LvN_SetI(out, "ActiveCMask", 0) &&
+		LvN_SetI(out, "MapCollision", 1) && LvN_SetI(out, "UseAngSel", 1) && LvN_SetI(out, "UseAbsAngSel", 0) && LvN_SetI(out, "VRadius", 150) &&
+		LvN_SetI(out, "ArrowCanUse", 1) && LvN_SetI(out, "UseMapCheck", 0) && LvN_SetS(out, "UseFunc", "Mission_BeatPickus.OnTalkToPickus") &&
+		LvN_SetI(out, "ArrnOpt", 0) && Po_TalkOpt(out) && Po_SetLang(out, "Descriptor", "CharName_Pickus") && LvN_SetI(out, "OffModPosAsPos", 1) &&
+		Mode_VGet(out, "Pos", &pos) && Mode_VSet(out, "OffModPos", &pos);
+	Native_Free(&pos);
+	ok = ok && Mode_VGet(out, "Pos", &pos) && Mode_VecAdd(&pos, &add, &np) && Mode_VSet(out, "Pos", &np);
+	Native_Free(&dummy);
+	Native_Free(&pos);
+	Native_Free(&add);
+	Native_Free(&np);
+	return ok;
 }
 
 /* DelThug(thugName): the thug deleted (as soon as he is there) */
-static PyObject *BeatPickus_DelThug(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+static byte BeatPickus_DelThug(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t thug;
+	(void)out;
+	if (!Mode_EntityH(&a[0], &thug)) {
+		return 0;
 	}
-	PyObject *thug = Sf_Entity(&f, name);
-	int there = Sf_True(&f, thug);
-	if (there > 0) {
-		Sf_Method(&f, thug, "Del", "()");
-	} else if (there == 0) {
-		Sf_Later(&f, Sf_Float(&f, 1.0), BPG("DelThug"), Sf_Build(&f, "(O)", name), NULL);
-	}
-	return Sf_None(&f);
+	byte ok = Native_True(&thug) ? Mode_VDel(&thug) : PO_LATER1(1.0, BP, "DelThug", &a[0]);
+	Native_Free(&thug);
+	return ok;
 }
 
 /* AskPickus(usr=None): after the scene: the lights, no thugs, Pickus beaten in place of Pickus */
+static byte Bp_AskPickus(void) {
+	nativeVal_t e, pickus;
+	if (!LV_OWN(BP, "LightingActivate", NULL, "i", 1L)) {
+		return 0;
+	}
+	for (int i = 1; i < 6; i++) {
+		char name[0x20];
+		Str_Printf(name, sizeof(name), "Police_Thug%d", i);
+		if (!LV_OWN(BP, "DelThug", NULL, "s", name)) {
+			return 0;
+		}
+	}
+	Native_SetNone(&e);
+	Native_SetNone(&pickus);
+	byte ok = LvN_Entity("Functionary_Pickus", &e) && Mode_VDel(&e) && LV_OWN(BP, "InitPickusBeaten", &pickus, "") &&
+		(!Native_True(&pickus) || Po_TargetName(&pickus));
+	Native_Free(&e);
+	Native_Free(&pickus);
+	return ok;
+}
+
 static PyObject *BeatPickus_AskPickus(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "usr", NULL };
 	PyObject *usr = NULL;
-	scriptFrame_t f = { 0 };
 	(void)self;
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &usr)) {
 		return NULL;
 	}
-	Sf_Own(&f, BP, "LightingActivate", "(i)", 1);
-	for (int i = 1; i < 6 && !f.failed; i++) {
-		int mark = f.n;
-		Sf_Own(&f, BP, "DelThug", "(O)", Sf_Cat(&f, "sO", "Police_Thug", Sf_ReprI(&f, i)));
-		Sf_Release(&f, mark);
-	}
-	Sf_Method(&f, Sf_Entity(&f, Sf_Str(&f, "Functionary_Pickus")), "Del", "()");
-	PyObject *pickus = Sf_Own(&f, BP, "InitPickusBeaten", "()");
-	if (Sf_True(&f, pickus) > 0) {
-		Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, pickus, "Name"));
-	}
-	return Sf_None(&f);
+	return Mode_Result(Bp_AskPickus());
 }
 
 /* OnTalkToPickus(UsrName, CharName, optId, FullOption): Pickus tells about the plans (PreGetFuncShipPlans at the
  * end the first time) */
-static PyObject *BeatPickus_OnTalkToPickus(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+static byte BeatPickus_OnTalkToPickus(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t state, plans, args[4];
+	(void)out;
+	if (!LvN_Speakers(&a[0], &a[1])) {
+		return 0;
 	}
-	Lv_Speakers(&f, usr, ch);
-	if (Sf_EqS(&f, opt, "Talk") > 0) {
-		if (Sf_Compare(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "MissionState"), "!=", Sf_Str(&f, "GetFuncShipPlans")) > 0) {
-			Lv_OnEnd(&f, BP, "PreGetFuncShipPlans", NULL);
-		}
-		PyObject *fn = Sf_Mod(&f, "Speech", "OnObjSpch");
-		PyObject *kw = Sf_Build(&f, "{ssss}", "action", "Talk", "defLoop", "PickusLoop");
-		PyObject *a = f.failed ? NULL : Py_BuildValue("(Osss)", Sf_Entity(&f, ch), "Pickus", "Mission_AskPickus_InitMsg1", "Mission_AskPickus_InitAns1");
-		Sf_CallKw(&f, fn, Sf_Check(&f, a != NULL) ? a : NULL, kw);
+	if (!LvN_EqS(&a[2], "Talk")) {
+		return 1;
 	}
-	return Sf_None(&f);
+	Mode_SaveVar("MissionState", &state);
+	LvN_Str(&plans, "GetFuncShipPlans");
+	int first = Mode_Cmp(&state, "!=", &plans);
+	Native_Free(&state);
+	Native_Free(&plans);
+	if (first < 0 || (first && !LvN_OnEnd(BP, "PreGetFuncShipPlans", NULL))) {
+		return 0;
+	}
+	/* Speech.OnObjSpch(Scrap.GetEntity(CharName), "Pickus", msg, ans, action = "Talk", defLoop = "PickusLoop") */
+	Native_SetNone(&args[0]);
+	if (!Mode_EntityH(&a[1], &args[0])) {
+		return 0;
+	}
+	LvN_Str(&args[1], "Pickus");
+	LvN_Str(&args[2], "Mission_AskPickus_InitMsg1");
+	LvN_Str(&args[3], "Mission_AskPickus_InitAns1");
+	byte ok = Mode_CallKw("Speech", "OnObjSpch", NULL, args, 4, Py_BuildValue("{ssss}", "action", "Talk", "defLoop", "PickusLoop"));
+	for (int i = 0; i < 4; i++) {
+		Native_Free(&args[i]);
+	}
+	return ok;
 }
 
 /* PreGetFuncShipPlans(): the alarm hooks off, saved, the plans of the functionaries' ship */
-static PyObject *BeatPickus_PreGetFuncShipPlans(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte BeatPickus_PreGetFuncShipPlans(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	if (!LvN_ModNone("Alarm", "RestoreMissionCallback") || !LvN_ModNone("Alarm", "AbortMissionCallback")) {
+		return 0;
 	}
-	Sf_SetMod(&f, "Alarm", "RestoreMissionCallback", Py_None);
-	Sf_SetMod(&f, "Alarm", "AbortMissionCallback", Py_None);
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "MissionState", "GetFuncShipPlans");
-	Sf_Ask(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_GetFuncShipPlans_MissionText1", 1);
-	Sf_Own(&f, BP, "GetFuncShipPlans", "()");
-	return Sf_None(&f);
+	SaveVar_Set("MissionState", "GetFuncShipPlans");
+	return Mode_WayPoint() && Mode_MMDesc("Mission_GetFuncShipPlans_MissionText1", 1) && LV_OWN(BP, "GetFuncShipPlans", NULL, "");
 }
 
 /* the photo object name at the dummy pattern into plansNames; raise text when the dummy is missing */
-static void Bp_Plan(scriptFrame_t *f, const char *pattern, const char *name, const char *missing) {
-	PyObject *dummy = Lv_Dummy(f, pattern, 1);
-	int there = Sf_True(f, dummy);
-	if (there > 0) {
-		PyObject *p = Sf_Item(f, dummy, 1), *a = Sf_Item(f, dummy, 2);
-		PyObject *pos = Sf_Build(f, "(OOO)", Sf_Item(f, p, 0), Sf_Item(f, p, 1), Sf_Item(f, p, 2));
-		PyObject *ang = Sf_Build(f, "(OOi)", Sf_Item(f, a, 0), Sf_Item(f, a, 1), 0);
-		PyObject *pln = Sf_Ask(f, "MissionsFuncs", "CreatePhotoObject", "(sOO)", name, pos, ang);
-		Sf_Method(f, BPGF("plansNames"), "append", "(O)", Sf_Attr(f, pln, "Name"));
-	} else if (there == 0) {
-		Sf_RaiseText(f, missing);
+static byte Bp_Plan(const char *pattern, const char *name, const char *missing) {
+	nativeVal_t dummy, pos, ang, pln, pn;
+	LvN_Dummy(pattern, 1, &dummy);
+	if (!Native_True(&dummy)) {
+		Native_Free(&dummy);
+		return LvN_RaiseText(missing);
 	}
+	Native_SetNone(&pln);
+	Native_SetNone(&pn);
+	byte ok = LvN_DummyPosAng(&dummy, &pos, &ang) && LV_CALL("MissionsFuncs", "CreatePhotoObject", &pln, "svv", name, &pos, &ang) &&
+		Mode_VGet(&pln, "Name", &pn) && Mode_Append(BP, "plansNames", &pn);
+	Native_Free(&dummy);
+	Native_Free(&pos);
+	Native_Free(&ang);
+	Native_Free(&pln);
+	Native_Free(&pn);
+	return ok;
 }
 
 /* GetFuncShipPlans(): the two blueprints to photograph */
-static PyObject *BeatPickus_GetFuncShipPlans(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte BeatPickus_GetFuncShipPlans(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t plans;
+	(void)a;
+	(void)out;
+	if (!Mode_GVarSetI("LittlePoliceAsksForMoney", 1) || !Mode_GVarSetS("NotCleanableByGear", "") || !Mode_Import("CharAct") ||
+		!PO_HOOK("CharAct", "TakenPhoto", BP, "TakePlanPhoto") ||
+		!Bp_Plan("DM_Mission_FunctionaryShipBlueprint", "PlanoSFunc1", "No existe el dummy de los planos de la nave de los funcionarios") ||
+		!Bp_Plan("DM_Mission_FunctionaryEngineBlueprint", "PlanoMFunc1",
+			"No existe el dummy de los planos de los motores de la nave de los funcionarios") || !Mode_G(BP, "plansNames", &plans)) {
+		return 0;
 	}
-	Sf_Ask(&f, "Scrap", "Set", "(si)", "LittlePoliceAsksForMoney", 1);
-	Sf_Ask(&f, "Scrap", "Set", "(ss)", "NotCleanableByGear", "");
-	Sf_Import(&f, "CharAct");
-	Sf_SetMod(&f, "CharAct", "TakenPhoto", BPG("TakePlanPhoto"));
-	Bp_Plan(&f, "DM_Mission_FunctionaryShipBlueprint", "PlanoSFunc1", "No existe el dummy de los planos de la nave de los funcionarios");
-	Bp_Plan(&f, "DM_Mission_FunctionaryEngineBlueprint", "PlanoMFunc1",
-		"No existe el dummy de los planos de los motores de la nave de los funcionarios");
-	Sf_Ask(&f, "MissionsFuncs", "SetMultipleMissionTargets", "(O)", BPG("plansNames"));
-	return Sf_None(&f);
+	byte ok = LV_CALL("MissionsFuncs", "SetMultipleMissionTargets", NULL, "v", &plans);
+	Native_Free(&plans);
+	return ok;
 }
 
 /* TakePlanPhoto(planName): the photo of a blueprint of the mission (1, else 0); after both Traitorius calls */
-static PyObject *BeatPickus_TakePlanPhoto(PyObject *self, PyObject *args) {
-	PyObject *plan;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &plan)) {
-		return NULL;
+static byte BeatPickus_TakePlanPhoto(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t plans, e, args[3];
+	if (!Mode_Import("CharAct") || !Mode_G(BP, "plansNames", &plans)) {
+		return 0;
 	}
-	Sf_Import(&f, "CharAct");
-	if (Sf_In(&f, plan, BPG("plansNames")) == 0) {
-		return Sf_Return(&f, Sf_Int(&f, 0));
+	int in = Native_Contains(&plans, &a[0]);
+	Native_Free(&plans);
+	if (in <= 0) {
+		Native_SetInt(out, 0);
+		return in == 0;
 	}
-	Sf_Ask(&f, "MissionsFuncs", "UnsetPhotoObject", "(O)", Sf_Entity(&f, plan));
-	int engine = Sf_EqS(&f, plan, "PlanoMFunc1");
-	if (engine > 0) {
-		Lv_Blueprint(&f, BP, "Hangar.availableEnginesList", "MFUNC1", "Mission_GetFuncShipPlans_SystemMessage2", 0);
-	} else if (engine == 0) {
-		Lv_Blueprint(&f, BP, "Hangar.shipsToEditList", "SFunc1", "Mission_GetFuncShipPlans_SystemMessage1", 0);
+	Native_SetNone(&e);
+	byte ok = Mode_EntityH(&a[0], &e) && LV_CALL("MissionsFuncs", "UnsetPhotoObject", NULL, "v", &e);
+	Native_Free(&e);
+	if (!ok) {
+		return 0;
 	}
-	Sf_SetGlobal(&f, BP, "numPlansWithPhoto", Sf_OpI(&f, BPG("numPlansWithPhoto"), '+', 1));
-	if (Sf_EqI(&f, BPG("numPlansWithPhoto"), 2) > 0) {
-		Sf_SetMod(&f, "CharAct", "TakenPhoto", Py_None);
-		Sf_Later(&f, Sf_Float(&f, 1.0), Sf_Mod(&f, "Speech", "AddRemoteCom"),
-			Sf_Build(&f, "(ssO)", "Mission_GetFuncShipPlans_RemoteMessage1", "Traitorius", BPG("PreTalkToTraitoriusAgain")), NULL);
+	ok = LvN_EqS(&a[0], "PlanoMFunc1") ? Mode_Blueprint(BP, "Hangar.availableEnginesList", "MFUNC1", "Mission_GetFuncShipPlans_SystemMessage2", 0) :
+		Mode_Blueprint(BP, "Hangar.shipsToEditList", "SFunc1", "Mission_GetFuncShipPlans_SystemMessage1", 0);
+	int two = ok && LvN_GAdd(BP, "numPlansWithPhoto", 1, NULL) ? LvN_GEqI(BP, "numPlansWithPhoto", 2) : -1;
+	if (two > 0) {
+		if (!LvN_ModNone("CharAct", "TakenPhoto") || !LvN_GObj(BP, "PreTalkToTraitoriusAgain", &args[2])) {
+			return 0;
+		}
+		LvN_Str(&args[0], "Mission_GetFuncShipPlans_RemoteMessage1");
+		LvN_Str(&args[1], "Traitorius");
+		ok = Mode_LaterIn(1.0, "Speech", "AddRemoteCom", args, 3, NULL);
+		for (int i = 0; i < 3; i++) {
+			Native_Free(&args[i]);
+		}
+		if (!ok) {
+			return 0;
+		}
 	}
-	return Sf_Return(&f, Sf_Int(&f, 1));
+	Native_SetInt(out, 1);
+	return two >= 0;
+}
+
+/* traitorius = Scrap.GetEntity("Functionary_Traitorius") */
+static byte Bp_GetTraitorius(void) {
+	nativeVal_t tr;
+	byte ok = LvN_Entity("Functionary_Traitorius", &tr) && Mode_Put(BP, "traitorius", NULL, &tr);
+	Native_Free(&tr);
+	return ok;
 }
 
 /* TalkToTraitoriusAgain(): Traitorius is the target again */
-static PyObject *BeatPickus_TalkToTraitoriusAgain(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_SetGlobal(&f, BP, "traitorius", Sf_Entity(&f, Sf_Str(&f, "Functionary_Traitorius")));
-	if (Sf_True(&f, BPG("traitorius")) > 0) {
-		Sf_SetAttrS(&f, BPG("traitorius"), "UseFunc", "Mission_BeatPickus.TraitoriusAgainSpeech");
-		Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, BPG("traitorius"), "Name"));
-	}
-	return Sf_None(&f);
+static byte BeatPickus_TalkToTraitoriusAgain(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	int there = Bp_GetTraitorius() ? LvN_GTrue(BP, "traitorius") : -1;
+	return there >= 0 && (!there || (Mode_GSetS(BP, "traitorius", "UseFunc", "Mission_BeatPickus.TraitoriusAgainSpeech") &&
+		Po_TargetG(BP, "traitorius")));
 }
 
 /* TraitoriusAgainSpeech(UsrName, CharName, optId, FullOption): the plans brought: Traitorius sends Dtritus on
  * (SetNextMission at the end, once) */
-static PyObject *BeatPickus_TraitoriusAgainSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+static byte BeatPickus_TraitoriusAgainSpeech(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const ni[] = { "Mission_TalkToTraitorius2_Traitorius_InitMsg1", "Mission_TalkToTraitorius2_Traitorius_InitAns1",
+		"Mission_TalkToTraitorius2_Traitorius_1Msg", "Mission_TalkToTraitorius2_Traitorius_1Ans",
+		"Mission_TalkToTraitorius2_Traitorius_2Msg", "Mission_TalkToTraitorius2_Traitorius_2Ans", NULL };
+	(void)out;
+	if (!LvN_Speakers(&a[0], &a[1])) {
+		return 0;
 	}
-	Lv_Speakers(&f, usr, ch);
-	if (Bp_UsrIs(&f, usr, "Functionary") > 0) {
-		int talked = Sf_True(&f, BPG("alreadyTalked"));
-		if (talked == 0) {
-			static const char *const ni[] = { "Mission_TalkToTraitorius2_Traitorius_InitMsg1", "Mission_TalkToTraitorius2_Traitorius_InitAns1",
-				"Mission_TalkToTraitorius2_Traitorius_1Msg", "Mission_TalkToTraitorius2_Traitorius_1Ans",
-				"Mission_TalkToTraitorius2_Traitorius_2Msg", "Mission_TalkToTraitorius2_Traitorius_2Ans", NULL };
-			Sf_SetGlobal(&f, BP, "traitorius", Sf_Entity(&f, Sf_Str(&f, "Functionary_Traitorius")));
-			Sf_SetAttrS(&f, BPG("traitorius"), "UseFunc", "Mission_BeatPickus.TraitoriusSpeech");
-			Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", BPG("traitorius"), 0);
-			Lv_OnEnd(&f, BP, "SetNextMission", NULL);
-			Sf_Ask(&f, "Speech", "NISpeech", "(s)", "Functionary");
-			Bp_AddNI(&f, ni);
-			Sf_Ask(&f, "Speech", "RunNI", "()");
-		} else if (talked > 0) {
-			Sf_Ask(&f, "Speech", "OnSpch", "(ss)", "Mission_Search&DestroyMickus_Traitorius_InitMsg1", "Mission_Search&DestroyMickus_Traitorius_InitAns1");
+	int fn = Po_NameIs(&a[0], "Functionary");
+	if (fn > 0) {
+		int talked = LvN_GTrue(BP, "alreadyTalked");
+		if (talked > 0) {
+			return Mode_Spch("Mission_Search&DestroyMickus_Traitorius_InitMsg1", "Mission_Search&DestroyMickus_Traitorius_InitAns1", NULL);
 		}
-	} else if (Bp_UsrIs(&f, usr, "Dtritus") > 0) {
-		if (Sf_EqS(&f, opt, "Talk") > 0) {
-			Sf_Ask(&f, "Speech", "OnSpch", "(ss)", "Mission_FlowerPower_Traitorius_InitMsg2", "Mission_FlowerPower_Traitorius_InitAns2");
-		}
-	} else {
-		Sf_Ask(&f, "CharsNPC", "GenericNPCSpeech", "(OOOO)", usr, ch, opt, full);
+		return talked == 0 && Bp_GetTraitorius() && Mode_GSetS(BP, "traitorius", "UseFunc", "Mission_BeatPickus.TraitoriusSpeech") &&
+			Po_ActivateG(BP, "traitorius", 0) && LvN_OnEnd(BP, "SetNextMission", NULL) && Po_NI("Functionary", ni);
 	}
-	return Sf_None(&f);
+	int dt = fn == 0 ? Po_NameIs(&a[0], "Dtritus") : -1;
+	if (dt > 0) {
+		return !LvN_EqS(&a[2], "Talk") || Mode_Spch("Mission_FlowerPower_Traitorius_InitMsg2", "Mission_FlowerPower_Traitorius_InitAns2", NULL);
+	}
+	return dt == 0 && Po_Generic(a);
 }
 
-/* LightingActivate(activate=0): the electric effect of the police (PoliceFXLighting01) on or off */
+/* LightingActivate(activate=0): the electric effect of the police (PoliceFXLighting01) on or off (OBJLIB 7: the call
+ * of the map elements by name) */
+static byte Bp_LightingActivate(const nativeVal_t *activate) {
+	static const long params[] = { 5120, -1940, 29000, 1000 };
+	if (!LV_CALL("Scrap", "SetCallFunc", NULL, "s", "!MapElementsActivate") || !LV_CALL("Scrap", "AddParams", NULL, "s", "PoliceFXLighting01")) {
+		return 0;
+	}
+	for (int i = 0; i < 4; i++) {
+		if (!LV_CALL("Scrap", "AddParamf", NULL, "i", params[i])) {
+			return 0;
+		}
+	}
+	return LV_CALL("Scrap", "AddParami", NULL, "v", activate) && LV_CALL("Scrap", "Execute", NULL, "");
+}
+
 static PyObject *BeatPickus_LightingActivate(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "activate", NULL };
-	PyObject *activate = NULL;
-	scriptFrame_t f = { 0 };
+	PyObject *o = NULL;
+	nativeVal_t activate;
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &activate)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &o)) {
 		return NULL;
 	}
-	activate = activate ? Sf_Ref(&f, activate) : Sf_Int(&f, 0);
-	Sf_Ask(&f, "Scrap", "SetCallFunc", "(s)", "!MapElementsActivate");
-	Sf_Ask(&f, "Scrap", "AddParams", "(s)", "PoliceFXLighting01");
-	Sf_Ask(&f, "Scrap", "AddParamf", "(i)", 5120);
-	Sf_Ask(&f, "Scrap", "AddParamf", "(i)", -1940);
-	Sf_Ask(&f, "Scrap", "AddParamf", "(i)", 29000);
-	Sf_Ask(&f, "Scrap", "AddParamf", "(i)", 1000);
-	Sf_Ask(&f, "Scrap", "AddParami", "(O)", activate);
-	Sf_Ask(&f, "Scrap", "Execute", "()");
-	return Sf_None(&f);
+	if (o) {
+		Native_Arg(o, &activate);
+	} else {
+		Native_SetInt(&activate, 0);
+	}
+	byte ok = Bp_LightingActivate(&activate);
+	Native_Free(&activate);
+	return Mode_Result(ok);
 }
 
+LV_FN(BeatPickus, InitStatusA, 1, BeatPickus_InitStatus)
+LV_FN(BeatPickus, InitA, 1, BeatPickus_Init)
+LV_FN(BeatPickus, DisableIAFunctionaryA, 1, BeatPickus_DisableIAFunctionary)
+LV_FN(BeatPickus, OnTraitoriusRespawnA, 1, BeatPickus_OnTraitoriusRespawn)
+LV_FN(BeatPickus, OnThugRespawnA, 1, BeatPickus_OnThugRespawn)
+LV_FN(BeatPickus, SetStateA, 3, BeatPickus_SetState)
+LV_FN(BeatPickus, TraitoriusSpeechA, 4, BeatPickus_TraitoriusSpeech)
+LV_FN(BeatPickus, HireThugsA, 0, BeatPickus_HireThugs)
+LV_FN(BeatPickus, ThugLeaderSpeechA, 4, BeatPickus_ThugLeaderSpeech)
+LV_FN(BeatPickus, ThugNormalSpeechA, 4, BeatPickus_ThugNormalSpeech)
+LV_FN(BeatPickus, BeatPickusA, 0, BeatPickus_BeatPickus)
+LV_FN(BeatPickus, OnAlarmActivatedA, 0, BeatPickus_OnAlarmActivated)
+LV_FN(BeatPickus, CheckMaxDistA, 1, BeatPickus_CheckMaxDist)
+LV_FN(BeatPickus, CheckThugsDistA, 2, BeatPickus_CheckThugsDist)
+LV_FN(BeatPickus, CreateLauncherA, 1, BeatPickus_CreateLauncher)
+LV_FN(BeatPickus, LaunchPickusFightSceneA, 2, BeatPickus_LaunchPickusFightScene)
+LV_FN(BeatPickus, CreatePickusBeatenClassA, 0, BeatPickus_CreatePickusBeatenClass)
+LV_FN(BeatPickus, InitPickusBeatenA, 0, BeatPickus_InitPickusBeaten)
+LV_FN(BeatPickus, DelThugA, 1, BeatPickus_DelThug)
+LV_FN(BeatPickus, OnTalkToPickusA, 4, BeatPickus_OnTalkToPickus)
+LV_FN(BeatPickus, PreGetFuncShipPlansA, 0, BeatPickus_PreGetFuncShipPlans)
+LV_FN(BeatPickus, GetFuncShipPlansA, 0, BeatPickus_GetFuncShipPlans)
+LV_FN(BeatPickus, TakePlanPhotoA, 1, BeatPickus_TakePlanPhoto)
+LV_FN(BeatPickus, TalkToTraitoriusAgainA, 0, BeatPickus_TalkToTraitoriusAgain)
+LV_FN(BeatPickus, TraitoriusAgainSpeechA, 4, BeatPickus_TraitoriusAgainSpeech)
+
 PyMethodDef g_PoliceBeatPickusMethods[] = {
-	{ "InitStatus", BeatPickus_InitStatus, METH_VARARGS, NULL },
-	{ "Init", BeatPickus_Init, METH_VARARGS, NULL },
-	{ "DisableIAFunctionary", BeatPickus_DisableIAFunctionary, METH_VARARGS, NULL },
-	{ "OnTraitoriusRespawn", BeatPickus_OnTraitoriusRespawn, METH_VARARGS, NULL },
-	{ "OnThugRespawn", BeatPickus_OnThugRespawn, METH_VARARGS, NULL },
+	{ "InitStatus", BeatPickus_InitStatusA, METH_VARARGS, NULL },
+	{ "Init", BeatPickus_InitA, METH_VARARGS, NULL },
+	{ "DisableIAFunctionary", BeatPickus_DisableIAFunctionaryA, METH_VARARGS, NULL },
+	{ "OnTraitoriusRespawn", BeatPickus_OnTraitoriusRespawnA, METH_VARARGS, NULL },
+	{ "OnThugRespawn", BeatPickus_OnThugRespawnA, METH_VARARGS, NULL },
 	{ "SetThugsState", (PyCFunction)(void (*)(void))BeatPickus_SetThugsState, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "SetState", BeatPickus_SetState, METH_VARARGS, NULL },
-	{ "TraitoriusSpeech", BeatPickus_TraitoriusSpeech, METH_VARARGS, NULL },
-	{ "HireThugs", BeatPickus_HireThugs, METH_VARARGS, NULL },
-	{ "ThugLeaderSpeech", BeatPickus_ThugLeaderSpeech, METH_VARARGS, NULL },
-	{ "ThugNormalSpeech", BeatPickus_ThugNormalSpeech, METH_VARARGS, NULL },
-	{ "BeatPickus", BeatPickus_BeatPickus, METH_VARARGS, NULL },
-	{ "OnAlarmActivated", BeatPickus_OnAlarmActivated, METH_VARARGS, NULL },
-	{ "CheckMaxDist", BeatPickus_CheckMaxDist, METH_VARARGS, NULL },
-	{ "CheckThugsDist", BeatPickus_CheckThugsDist, METH_VARARGS, NULL },
-	{ "CreateLauncher", BeatPickus_CreateLauncher, METH_VARARGS, NULL },
-	{ "LaunchPickusFightScene", BeatPickus_LaunchPickusFightScene, METH_VARARGS, NULL },
-	{ "CreatePickusBeatenClass", BeatPickus_CreatePickusBeatenClass, METH_VARARGS, NULL },
-	{ "InitPickusBeaten", BeatPickus_InitPickusBeaten, METH_VARARGS, NULL },
-	{ "DelThug", BeatPickus_DelThug, METH_VARARGS, NULL },
+	{ "SetState", BeatPickus_SetStateA, METH_VARARGS, NULL },
+	{ "TraitoriusSpeech", BeatPickus_TraitoriusSpeechA, METH_VARARGS, NULL },
+	{ "HireThugs", BeatPickus_HireThugsA, METH_VARARGS, NULL },
+	{ "ThugLeaderSpeech", BeatPickus_ThugLeaderSpeechA, METH_VARARGS, NULL },
+	{ "ThugNormalSpeech", BeatPickus_ThugNormalSpeechA, METH_VARARGS, NULL },
+	{ "BeatPickus", BeatPickus_BeatPickusA, METH_VARARGS, NULL },
+	{ "OnAlarmActivated", BeatPickus_OnAlarmActivatedA, METH_VARARGS, NULL },
+	{ "CheckMaxDist", BeatPickus_CheckMaxDistA, METH_VARARGS, NULL },
+	{ "CheckThugsDist", BeatPickus_CheckThugsDistA, METH_VARARGS, NULL },
+	{ "CreateLauncher", BeatPickus_CreateLauncherA, METH_VARARGS, NULL },
+	{ "LaunchPickusFightScene", BeatPickus_LaunchPickusFightSceneA, METH_VARARGS, NULL },
+	{ "CreatePickusBeatenClass", BeatPickus_CreatePickusBeatenClassA, METH_VARARGS, NULL },
+	{ "InitPickusBeaten", BeatPickus_InitPickusBeatenA, METH_VARARGS, NULL },
+	{ "DelThug", BeatPickus_DelThugA, METH_VARARGS, NULL },
 	{ "AskPickus", (PyCFunction)(void (*)(void))BeatPickus_AskPickus, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "OnTalkToPickus", BeatPickus_OnTalkToPickus, METH_VARARGS, NULL },
-	{ "PreGetFuncShipPlans", BeatPickus_PreGetFuncShipPlans, METH_VARARGS, NULL },
-	{ "GetFuncShipPlans", BeatPickus_GetFuncShipPlans, METH_VARARGS, NULL },
-	{ "TakePlanPhoto", BeatPickus_TakePlanPhoto, METH_VARARGS, NULL },
-	{ "TalkToTraitoriusAgain", BeatPickus_TalkToTraitoriusAgain, METH_VARARGS, NULL },
-	{ "TraitoriusAgainSpeech", BeatPickus_TraitoriusAgainSpeech, METH_VARARGS, NULL },
+	{ "OnTalkToPickus", BeatPickus_OnTalkToPickusA, METH_VARARGS, NULL },
+	{ "PreGetFuncShipPlans", BeatPickus_PreGetFuncShipPlansA, METH_VARARGS, NULL },
+	{ "GetFuncShipPlans", BeatPickus_GetFuncShipPlansA, METH_VARARGS, NULL },
+	{ "TakePlanPhoto", BeatPickus_TakePlanPhotoA, METH_VARARGS, NULL },
+	{ "TalkToTraitoriusAgain", BeatPickus_TalkToTraitoriusAgainA, METH_VARARGS, NULL },
+	{ "TraitoriusAgainSpeech", BeatPickus_TraitoriusAgainSpeechA, METH_VARARGS, NULL },
 	{ "LightingActivate", (PyCFunction)(void (*)(void))BeatPickus_LightingActivate, METH_VARARGS | METH_KEYWORDS, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
 /* ---- Mission_FicusDead ---- */
 
-#define FDG(name) Sf_Global(&f, FD, name)
-
 /* InitFicusDead(): Ficus' body of the map talks */
-static PyObject *FicusDead_InitFicusDead(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte FicusDead_InitFicusDead(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t ficus, cam;
+	(void)a;
+	(void)out;
+	if (!Mode_Import("Map") || !LvN_ModGet("Map", "ficus", &ficus)) {
+		return 0;
 	}
-	Sf_Import(&f, "Map");
-	Sf_SetGlobal(&f, FD, "ficus", Sf_Mod(&f, "Map", "ficus"));
-	Sf_SetAttr(&f, FDG("ficus"), "CamTgt", Sf_Build(&f, "(iii)", 0, 280, 0));
-	Sf_SetAttrI(&f, FDG("ficus"), "ArrowCanUse", 1);
-	Sf_SetAttrS(&f, FDG("ficus"), "UseFunc", "Mission_FicusDead.OnTalkToFicus");
-	Sf_SetAttrI(&f, FDG("ficus"), "ArrnOpt", 0);
-	Sf_SetAttr(&f, FDG("ficus"), "ArrOpt0", Sf_Cat(&f, "sO", "Talk:", Sf_Lang(&f, Sf_Str(&f, "TalkOpt"))));
-	Sf_SetAttr(&f, FDG("ficus"), "Descriptor", Sf_Lang(&f, Sf_Str(&f, "CharName_Ficus")));
-	return Sf_None(&f);
+	byte ok = Mode_Put(FD, "ficus", NULL, &ficus);
+	Native_Free(&ficus);
+	if (!ok || !Mode_G(FD, "ficus", &ficus)) {
+		return 0;
+	}
+	Mode_Ints3(&cam, 0, 280, 0);
+	ok = Mode_VSet(&ficus, "CamTgt", &cam) && LvN_SetI(&ficus, "ArrowCanUse", 1) && LvN_SetS(&ficus, "UseFunc", "Mission_FicusDead.OnTalkToFicus") &&
+		LvN_SetI(&ficus, "ArrnOpt", 0) && Po_TalkOpt(&ficus) && Po_SetLang(&ficus, "Descriptor", "CharName_Ficus");
+	Native_Free(&ficus);
+	Native_Free(&cam);
+	return ok;
 }
 
 /* Init(LevelPath): Ficus is the target, or Deep Throat's desktop after his message */
-static PyObject *FicusDead_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte FicusDead_Init(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	if (LvN_SaveIs("MissionState", "TalkToDeepThroat")) {
+		return LV_OWN(FD, "AfterDeepThroatMessageShown", NULL, "");
 	}
-	int dt = Lv_SaveIs(&f, "MissionState", "TalkToDeepThroat");
-	if (dt > 0) {
-		Sf_Own(&f, FD, "AfterDeepThroatMessageShown", "()");
-	} else if (dt == 0) {
-		Sf_Own(&f, FD, "InitFicusDead", "()");
-		Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, FDG("ficus"), "Name"));
-	}
-	return Sf_None(&f);
+	return LV_OWN(FD, "InitFicusDead", NULL, "") && Po_TargetG(FD, "ficus");
 }
 
 /* OnTalkToFicus(UsrName, CharName, optId, FullOption): Ficus is dead; Dtritus says so */
-static PyObject *FicusDead_OnTalkToFicus(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+static byte FicusDead_OnTalkToFicus(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t ficus;
+	(void)out;
+	if (!LvN_EqS(&a[2], "Talk")) {
+		return 1;
 	}
-	if (Sf_EqS(&f, opt, "Talk") > 0) {
-		Sf_SetAttrS(&f, FDG("ficus"), "Action", "FicusDead");
-		Sf_SetAttrS(&f, FDG("ficus"), "DefLoop", "FicusDead");
-		Sf_SetAttrI(&f, FDG("ficus"), "ArrowCanUse", 0);
-		Sf_Ask(&f, "Speech", "AddRemoteCom", "(ssOO)", "Mission_TalkToFicus3_Dtritus_InitMsg1", "", FDG("AfterDtritusSpeechShown"), Sf_Build(&f, "()"));
-		Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "");
+	if (!Mode_G(FD, "ficus", &ficus)) {
+		return 0;
 	}
-	return Sf_None(&f);
+	byte ok = LvN_SetS(&ficus, "Action", "FicusDead") && LvN_SetS(&ficus, "DefLoop", "FicusDead") && LvN_SetI(&ficus, "ArrowCanUse", 0);
+	Native_Free(&ficus);
+	return ok && LvN_Com("Mission_TalkToFicus3_Dtritus_InitMsg1", "", FD, "AfterDtritusSpeechShown", LvN_NoArgs()) && Mode_Target("");
+}
+
+/* Dtritus' desktop as the target, the dialog of the desktop the global func of module */
+static byte Po_Desktop(const char *module, const char *func) {
+	nativeVal_t dd;
+	if (!Mode_Import("DTritusDesktop") || !LvN_Entity("DM_DTritusDesktop", &dd)) {
+		return 0;
+	}
+	byte ok = Po_TargetName(&dd) && PO_HOOK("DTritusDesktop", "DialogController", module, func);
+	Native_Free(&dd);
+	return ok;
 }
 
 /* AfterDeepThroatMessageShown(): Dtritus' desktop is the target, Deep Throat talks through it */
-static PyObject *FicusDead_AfterDeepThroatMessageShown(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "DTritusDesktop");
-	PyObject *dd = Sf_Entity(&f, Sf_Str(&f, "DM_DTritusDesktop"));
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, dd, "Name"));
-	Sf_SetMod(&f, "DTritusDesktop", "DialogController", FDG("DeepThroatSpeech"));
-	return Sf_None(&f);
+static byte FicusDead_AfterDeepThroatMessageShown(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Po_Desktop(FD, "DeepThroatSpeech");
+}
+
+/* Scrap.GetEntity("DM_DTritusDesktop") of the scripts that look it up for nothing */
+static byte Po_DesktopLookup(void) {
+	nativeVal_t dd;
+	byte ok = LvN_Entity("DM_DTritusDesktop", &dd);
+	Native_Free(&dd);
+	return ok;
 }
 
 /* DeepThroatSpeech(UsrName, CharName, optId, FullOption): Deep Throat's talk, SetNextMission at the end */
-static PyObject *FicusDead_DeepThroatSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
-	}
-	Sf_Entity(&f, Sf_Str(&f, "DM_DTritusDesktop"));
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "");
-	Lv_Speakers(&f, usr, ch);
-	Lv_OnEnd(&f, FD, "SetNextMission", NULL);
-	Sf_Ask(&f, "Speech", "NISpeech", "(s)", "DeepThroat");
-	Sf_Ask(&f, "Speech", "AutoAddNI", "(s)", "Mission_CallDeepThroat_ComDeepthroat_NI_1Msg");
-	Sf_Ask(&f, "Speech", "RunNI", "()");
-	return Sf_None(&f);
+static byte FicusDead_DeepThroatSpeech(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Po_DesktopLookup() && Mode_Target("") && LvN_Speakers(&a[0], &a[1]) && LvN_OnEnd(FD, "SetNextMission", NULL) &&
+		Mode_NISpeech("DeepThroat", "Mission_CallDeepThroat_ComDeepthroat_NI_1Msg");
 }
 
 /* SetNextMission(): Mission_FunctionaryHunting in Outskirts */
-static PyObject *FicusDead_SetNextMission(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "DTritusDesktop");
-	Sf_SetMod(&f, "DTritusDesktop", "DialogController", Py_None);
-	Sf_Ask(&f, "Scrap", "DelSaveVars", "(s)", "MissionState");
-	Sf_Ask(&f, "MissionsFuncs", "SetNextMission", "(ss)", "Mission_FunctionaryHunting", "Outskirts");
-	Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_FunctionaryHunting_MissionText1", 1);
-	return Sf_None(&f);
+static byte FicusDead_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_Import("DTritusDesktop") && LvN_ModNone("DTritusDesktop", "DialogController") && Mode_DelSaveVars("MissionState") &&
+		LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_FunctionaryHunting", "Outskirts") &&
+		Mode_MMDesc("Mission_FunctionaryHunting_MissionText1", 1);
 }
 
+LV_FN(FicusDead, InitFicusDeadA, 0, FicusDead_InitFicusDead)
+LV_FN(FicusDead, InitA, 1, FicusDead_Init)
+LV_FN(FicusDead, OnTalkToFicusA, 4, FicusDead_OnTalkToFicus)
+LV_FN(FicusDead, AfterDeepThroatMessageShownA, 0, FicusDead_AfterDeepThroatMessageShown)
+LV_FN(FicusDead, DeepThroatSpeechA, 4, FicusDead_DeepThroatSpeech)
+LV_FN(FicusDead, SetNextMissionA, 0, FicusDead_SetNextMission)
+
 PyMethodDef g_PoliceFicusDeadMethods[] = {
-	{ "InitFicusDead", FicusDead_InitFicusDead, METH_VARARGS, NULL },
-	{ "Init", FicusDead_Init, METH_VARARGS, NULL },
-	{ "OnTalkToFicus", FicusDead_OnTalkToFicus, METH_VARARGS, NULL },
-	{ "AfterDeepThroatMessageShown", FicusDead_AfterDeepThroatMessageShown, METH_VARARGS, NULL },
-	{ "DeepThroatSpeech", FicusDead_DeepThroatSpeech, METH_VARARGS, NULL },
-	{ "SetNextMission", FicusDead_SetNextMission, METH_VARARGS, NULL },
+	{ "InitFicusDead", FicusDead_InitFicusDeadA, METH_VARARGS, NULL },
+	{ "Init", FicusDead_InitA, METH_VARARGS, NULL },
+	{ "OnTalkToFicus", FicusDead_OnTalkToFicusA, METH_VARARGS, NULL },
+	{ "AfterDeepThroatMessageShown", FicusDead_AfterDeepThroatMessageShownA, METH_VARARGS, NULL },
+	{ "DeepThroatSpeech", FicusDead_DeepThroatSpeechA, METH_VARARGS, NULL },
+	{ "SetNextMission", FicusDead_SetNextMissionA, METH_VARARGS, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
 /* ---- Mission_GetAuthorization ---- */
 
-#define GAG(name) Sf_Global(&f, GA, name)
-#define GAGF(name) Sf_Global(f, GA, name)
-
 /* InitStatus(LevelPath): the human in the jail */
-static PyObject *GetAuthorization_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Lv_MissionChar(&f, "Human_Default", GA, "CreateHuman");
-	return Sf_None(&f);
+static byte GetAuthorization_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return LvN_MissionChar("Human_Default", GA, "CreateHuman");
 }
 
 /* CreateHuman(e): the human (the module variable human), no talk */
-static PyObject *GetAuthorization_CreateHuman(PyObject *self, PyObject *args) {
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
+static byte GetAuthorization_CreateHuman(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t h;
+	(void)out;
+	if (!Mode_Put(GA, "human", NULL, &a[0]) || !Mode_G(GA, "human", &h)) {
+		return 0;
 	}
-	Sf_SetGlobal(&f, GA, "human", e);
-	Sf_SetAttr(&f, GAG("human"), "Descriptor", Sf_Lang(&f, Sf_Str(&f, "CharName_Human")));
-	Sf_SetAttrS(&f, GAG("human"), "UseFunc", "");
-	Sf_SetAttrI(&f, GAG("human"), "ArrowCanUse", 0);
-	return Sf_None(&f);
+	byte ok = Po_SetLang(&h, "Descriptor", "CharName_Human") && LvN_SetS(&h, "UseFunc", "") && LvN_SetI(&h, "ArrowCanUse", 0);
+	Native_Free(&h);
+	return ok;
 }
 
 /* Init(LevelPath): the scene MeetHuman, the state of the mission */
-static PyObject *GetAuthorization_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte GetAuthorization_Init(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t state;
+	byte ok;
+	(void)a;
+	(void)out;
+	if (!LV_OWN(GA, "LoadScene", NULL, "")) {
+		return 0;
 	}
-	Sf_Own(&f, GA, "LoadScene", "()");
-	PyObject *state = Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "MissionState");
-	if (Sf_EqS(&f, state, "DeepThroatSpeech") > 0) {
-		Sf_Ask(&f, "Speech", "AddRemoteCom", "(ssOO)", "Mission_GoToPolice_RemoteMessage1", "DeepThroat", GAG("AfterDeepThroatMessage"), Sf_Build(&f, "()"));
-	} else if (Sf_EqS(&f, state, "GetAuthorization") > 0) {
-		Sf_Own(&f, GA, "GetAuthorization", "()");
-	} else if (Sf_EqS(&f, state, "GetAuthorization2") > 0) {
-		Sf_Own(&f, GA, "GetAuthorization2", "()");
-	} else if (Sf_EqS(&f, state, "FreeHuman") > 0 || Sf_EqS(&f, state, "FreeHuman2") > 0) {
-		Sf_Own(&f, GA, "FreeHuman", "()");
+	Mode_SaveVar("MissionState", &state);
+	if (LvN_EqS(&state, "DeepThroatSpeech")) {
+		ok = LvN_Com("Mission_GoToPolice_RemoteMessage1", "DeepThroat", GA, "AfterDeepThroatMessage", LvN_NoArgs());
+	} else if (LvN_EqS(&state, "GetAuthorization")) {
+		ok = LV_OWN(GA, "GetAuthorization", NULL, "");
+	} else if (LvN_EqS(&state, "GetAuthorization2")) {
+		ok = LV_OWN(GA, "GetAuthorization2", NULL, "");
+	} else if (LvN_EqS(&state, "FreeHuman") || LvN_EqS(&state, "FreeHuman2")) {
+		ok = LV_OWN(GA, "FreeHuman", NULL, "");
+	} else {
+		ok = 1;
 	}
-	return Sf_None(&f);
+	Native_Free(&state);
+	return ok;
 }
 
 /* AfterDeepThroatMessage(): Dtritus' desktop is the target, Deep Throat talks through it */
-static PyObject *GetAuthorization_AfterDeepThroatMessage(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte GetAuthorization_AfterDeepThroatMessage(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t dd;
+	(void)a;
+	(void)out;
+	if (!LvN_Entity("DM_DTritusDesktop", &dd)) {
+		return 0;
 	}
-	Sf_SetGlobal(&f, GA, "dd", Sf_Entity(&f, Sf_Str(&f, "DM_DTritusDesktop")));
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, GAG("dd"), "Name"));
-	Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_TalkToDeepThroat7_MissionText1", 1);
-	Sf_SetMod(&f, "DTritusDesktop", "DialogController", GAG("DeepThroatSpeech"));
-	return Sf_None(&f);
+	byte ok = Mode_Put(GA, "dd", NULL, &dd);
+	Native_Free(&dd);
+	return ok && Po_TargetG(GA, "dd") && Mode_MMDesc("Mission_TalkToDeepThroat7_MissionText1", 1) &&
+		PO_HOOK("DTritusDesktop", "DialogController", GA, "DeepThroatSpeech");
 }
 
 /* DeepThroatSpeech(UsrName, CharName, optId, FullOption): Deep Throat's talk, PreGetAuthorization at the end */
-static PyObject *GetAuthorization_DeepThroatSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
-	}
-	Lv_Speakers(&f, usr, ch);
-	Lv_OnEnd(&f, GA, "PreGetAuthorization", NULL);
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Py_None);
-	Sf_Ask(&f, "Speech", "NISpeech", "(s)", "DeepThroat");
-	Sf_Ask(&f, "Speech", "AutoAddNI", "(s)", "Mission_TalkToDeepThroat7__ComDeepThroat_NI_1Msg");
-	Sf_Ask(&f, "Speech", "RunNI", "()");
-	return Sf_None(&f);
+static byte GetAuthorization_DeepThroatSpeech(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return LvN_Speakers(&a[0], &a[1]) && LvN_OnEnd(GA, "PreGetAuthorization", NULL) && Po_TargetNone() &&
+		Mode_NISpeech("DeepThroat", "Mission_TalkToDeepThroat7__ComDeepThroat_NI_1Msg");
 }
 
 /* PreGetAuthorization(): saved; a messenger already goes for the password, else first to a conversion point */
-static PyObject *GetAuthorization_PreGetAuthorization(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte GetAuthorization_PreGetAuthorization(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t usr;
+	(void)a;
+	(void)out;
+	if (!LvN_ModNone("DTritusDesktop", "DialogController") || !Po_ActivateG(GA, "dd", 0) || !Mode_MMDesc("Mission_GetPassword_MissionText1", 1) ||
+		!Mode_WayPoint()) {
+		return 0;
 	}
-	Sf_SetMod(&f, "DTritusDesktop", "DialogController", Py_None);
-	Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", GAG("dd"), 0);
-	Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_GetPassword_MissionText1", 1);
-	Sf_Ask(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "MissionState", "GetAuthorization");
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	int m = Sf_True(&f, usr);
+	SaveVar_Set("MissionState", "GetAuthorization");
+	Native_SetNone(&usr);
+	int m = Po_UsrCtrl(&usr, "Messenger");
+	Native_Free(&usr);
 	if (m > 0) {
-		m = Sf_EqS(&f, Sf_Attr(&f, usr, "ActCtrl"), "Messenger");
+		SaveVar_Set("MissionState", "GetAuthorization2");
+		return LV_OWN(GA, "GetAuthorization2", NULL, "");
 	}
-	if (m > 0) {
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "MissionState", "GetAuthorization2");
-		Sf_Own(&f, GA, "GetAuthorization2", "()");
-	} else if (m == 0) {
-		Sf_Own(&f, GA, "GetAuthorization", "()");
-	}
-	return Sf_None(&f);
+	return m == 0 && LV_OWN(GA, "GetAuthorization", NULL, "");
 }
 
 /* GetAuthorization(): the nearest conversion point is the target until the player is a messenger */
-static PyObject *GetAuthorization_GetAuthorization(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_SetMod(&f, "CharConversor", "afterExitConversor", GAG("ShowAfterConversionMessage"));
-	Sf_Own(&f, GA, "ShowNearestConversor", "()");
-	return Sf_None(&f);
+static byte GetAuthorization_GetAuthorization(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return PO_HOOK("CharConversor", "afterExitConversor", GA, "ShowAfterConversionMessage") && LV_OWN(GA, "ShowNearestConversor", NULL, "");
 }
 
 /* ShowNearestConversor(): every 3 s the conversion point nearest to the player is the target */
-static PyObject *GetAuthorization_ShowNearestConversor(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte GetAuthorization_ShowNearestConversor(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t usr, pos, conv;
+	(void)a;
+	(void)out;
+	Native_SetNone(&usr);
+	Native_SetNone(&pos);
+	Native_SetNone(&conv);
+	int u = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
+	byte ok = u >= 0;
+	if (u > 0) {
+		ok = Mode_VGet(&usr, "Pos", &pos) && LV_CALL("CharConversor", "GetNearestConversionPoint", &conv, "v", &pos) &&
+			Mode_Put(GA, "conv", NULL, &conv);
+		int c = ok ? LvN_GTrue(GA, "conv") : -1;
+		ok = c >= 0 && (!c || (Po_TargetG(GA, "conv") && Mode_Later(3, GA, "ShowNearestConversor", NULL, 0, "ShowConversor")));
 	}
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	if (Sf_True(&f, usr) > 0) {
-		Sf_SetGlobal(&f, GA, "conv", Sf_Ask(&f, "CharConversor", "GetNearestConversionPoint", "(O)", Sf_Attr(&f, usr, "Pos")));
-		if (Sf_True(&f, GAG("conv")) > 0) {
-			Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, GAG("conv"), "Name"));
-			Sf_Later(&f, Sf_Int(&f, 3), GAG("ShowNearestConversor"), Sf_Build(&f, "()"), "ShowConversor");
-		}
-	}
-	return Sf_None(&f);
+	Native_Free(&usr);
+	Native_Free(&pos);
+	Native_Free(&conv);
+	return ok;
 }
 
 /* ShowAfterConversionMessage(): out of the conversor as a messenger: Deep Throat's message, the password next */
-static PyObject *GetAuthorization_ShowAfterConversionMessage(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte GetAuthorization_ShowAfterConversionMessage(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t usr, un;
+	(void)a;
+	(void)out;
+	Native_SetNone(&usr);
+	Native_SetNone(&un);
+	int m = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
+	if (m > 0) {
+		m = Mode_VGet(&usr, "Name", &un) ? Po_NameIs(&un, "Messenger") : -1;
 	}
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	if (Sf_True(&f, usr) > 0 && Sf_EqS(&f, Sf_Attr(&f, Sf_Entity(&f, Sf_Attr(&f, usr, "Name")), "ActCtrl"), "Messenger") > 0) {
-		Sf_Ask(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "ShowConversor");
-		Sf_SetMod(&f, "CharConversor", "afterExitConversor", Py_None);
-		Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", GAG("conv"), 0);
-		Sf_Ask(&f, "Speech", "AddRemoteCom", "(ss)", "Mission_GetPassword_RemoteMessage1", "DeepThroat");
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "MissionState", "GetAuthorization2");
-		Sf_SetGlobal(&f, GA, "conv", Py_None);
-		Sf_Own(&f, GA, "GetAuthorization2", "()");
+	Native_Free(&usr);
+	Native_Free(&un);
+	if (m <= 0) {
+		return m == 0;
 	}
-	return Sf_None(&f);
+	if (!Mode_DelSchedS("ShowConversor") || !LvN_ModNone("CharConversor", "afterExitConversor") || !Po_ActivateG(GA, "conv", 0) ||
+		!Po_Com("Mission_GetPassword_RemoteMessage1", "DeepThroat")) {
+		return 0;
+	}
+	SaveVar_Set("MissionState", "GetAuthorization2");
+	return Po_GNone(GA, "conv") && LV_OWN(GA, "GetAuthorization2", NULL, "");
 }
 
 /* OnDataTaken(messengerName): the player took a tube: empty, filled by him, or filled by another */
-static PyObject *GetAuthorization_OnDataTaken(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
-	}
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	int mine = Sf_True(&f, usr);
+static byte GetAuthorization_OnDataTaken(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t usr, un, st;
+	(void)out;
+	Native_SetNone(&usr);
+	Native_SetNone(&un);
+	Native_SetNone(&st);
+	int mine = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
 	if (mine > 0) {
-		mine = Sf_Compare(&f, Sf_Attr(&f, usr, "Name"), "==", name);
+		mine = Mode_VGet(&usr, "Name", &un) ? Mode_Cmp(&un, "==", &a[0]) : -1;
 	}
+	byte ok = mine >= 0;
 	if (mine > 0) {
-		int full = Sf_True(&f, Sf_Ask(&f, "Scrap", "Get", "(s)", "MessengerTubeState"));
-		int byUser = full > 0 ? Sf_True(&f, GAG("filledByUser")) : 0;
-		const char *msg = full == 0 ? "Mission_GetPassword_RemoteMessage2" : byUser > 0 ? "Mission_GetPassword_RemoteMessage3" :
-			"Mission_GetPassword_RemoteMessage6";
-		if (full >= 0 && byUser >= 0) {
-			Sf_Ask(&f, "Speech", "AddRemoteCom", "(ss)", msg, "DeepThroat");
-		}
+		int full = Native_GVarGet("MessengerTubeState", &st) ? Native_True(&st) : -1;
+		int byUser = full > 0 ? LvN_GTrue(GA, "filledByUser") : 0;
+		ok = full >= 0 && byUser >= 0 && Po_Com(full == 0 ? "Mission_GetPassword_RemoteMessage2" : byUser > 0 ?
+			"Mission_GetPassword_RemoteMessage3" : "Mission_GetPassword_RemoteMessage6", "DeepThroat");
 	}
-	return Sf_None(&f);
+	Native_Free(&usr);
+	Native_Free(&un);
+	Native_Free(&st);
+	return ok;
 }
 
 /* OnDataDropped(messengerName, dataStatus): a full tube of the player at a desk wins (if he left it there himself);
  * an empty tube at the recharger tells who fills it */
-static PyObject *GetAuthorization_OnDataDropped(PyObject *self, PyObject *args) {
-	PyObject *name, *status;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &name, &status)) {
-		return NULL;
-	}
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	if (Sf_True(&f, usr) <= 0) {
-		return Sf_None(&f);
-	}
-	int full = Sf_EqI(&f, status, 1);
-	if (full > 0) {
-		full = Sf_True(&f, GAG("filledByUser"));
-	}
-	if (full > 0) {
-		int self_ = Sf_Compare(&f, name, "==", Sf_Attr(&f, usr, "Name"));
-		if (self_ > 0) {
-			Sf_Ask(&f, "Speech", "AddRemoteCom", "(ssOO)", "Mission_GetPassword_RemoteMessage5", "DeepThroat", GAG("PreFreeHuman"), Sf_Build(&f, "()"));
-		} else if (self_ == 0) {
-			Sf_Ask(&f, "Speech", "AddRemoteCom", "(ss)", "Mission_GetPassword_RemoteMessage4", "DeepThroat");
+static byte GetAuthorization_OnDataDropped(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t usr, un;
+	(void)out;
+	Native_SetNone(&usr);
+	Native_SetNone(&un);
+	int u = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
+	byte ok = u >= 0;
+	if (u > 0) {
+		int full = LvN_EqI(&a[1], 1);
+		if (full > 0) {
+			full = LvN_GTrue(GA, "filledByUser");
 		}
-	} else if (full == 0 && Sf_EqI(&f, status, 0) > 0) {
-		int by = Sf_Compare(&f, name, "==", Sf_Attr(&f, usr, "Name"));
-		if (by >= 0) {
-			Sf_SetGlobal(&f, GA, "filledByUser", Sf_Int(&f, by));
+		if (full > 0) {
+			int self = Mode_VGet(&usr, "Name", &un) ? Mode_Cmp(&a[0], "==", &un) : -1;
+			ok = self > 0 ? LvN_Com("Mission_GetPassword_RemoteMessage5", "DeepThroat", GA, "PreFreeHuman", LvN_NoArgs()) :
+				self == 0 && Po_Com("Mission_GetPassword_RemoteMessage4", "DeepThroat");
+		} else if (full == 0 && LvN_EqI(&a[1], 0)) {
+			int by = Mode_VGet(&usr, "Name", &un) ? Mode_Cmp(&a[0], "==", &un) : -1;
+			ok = by >= 0 && LvN_PutI(GA, "filledByUser", by);
+		} else {
+			ok = full >= 0;
 		}
 	}
-	return Sf_None(&f);
+	Native_Free(&usr);
+	Native_Free(&un);
+	return ok;
 }
 
 /* FreeHuman(): the gatekeeper of the security door lets Dtritus pass (StartScene), the trigger of the human */
-static PyObject *GetAuthorization_FreeHuman(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte GetAuthorization_FreeHuman(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t dummy, pos, l;
+	(void)a;
+	(void)out;
+	PyObject *start;
+	if (!Mode_DoorFoe("GateKeeper_08", "DtritusGroupGateKeeper") || !(start = Mode_GlobalPy(GA, "StartScene"))) {
+		return 0;
 	}
-	Sf_Ask(&f, "GateKeeper", "DoorFoe", "(sO)", "GateKeeper_08", Sf_Mod(&f, "GateKeeper", "DtritusGroupGateKeeper"));
-	Sf_Ask(&f, "GateKeeper", "SetDoor", "(ssO)", "GateKeeper_08", "DM_Door_PoliceSegurity_00", GAG("StartScene"));
-	Sf_SetAttrS(&f, Sf_Entity(&f, Sf_Str(&f, "GateKeeper_08")), "UseFunc", "Mission_GetAuthorization.TalkPepe");
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "GateKeeper_08");
-	PyObject *dummy = Lv_Dummy(&f, "DM_Trigger_Human", 1);
-	if (Sf_True(&f, dummy) == 0) {
-		Sf_RaiseText(&f, "No se encuentra el dummy: 'DM_Trigger_Human'");
+	byte ok = LV_CALL("GateKeeper", "SetDoor", NULL, "ssO", "GateKeeper_08", "DM_Door_PoliceSegurity_00", start);
+	Py_DECREF(start);
+	if (!ok || !PO_ENTS("GateKeeper_08", "UseFunc", "Mission_GetAuthorization.TalkPepe") || !Mode_Target("GateKeeper_08")) {
+		return 0;
 	}
-	PyObject *pos = Sf_Item(&f, dummy, 1);
-	PyObject *l = Sf_Ask(&f, "Scrap", "CreateEntity", "(sOOOs)", "TriggerHuman", Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1), Sf_Item(&f, pos, 2), "Item");
-	Sf_SetAttrI(&f, l, "Radius", 500);
-	Sf_SetAttrS(&f, l, "OnTake", "Mission_GetAuthorization.OnTriggerActivated");
-	return Sf_None(&f);
+	LvN_Dummy("DM_Trigger_Human", 1, &dummy);
+	if (!Native_True(&dummy)) {
+		Native_Free(&dummy);
+		return LvN_RaiseText("No se encuentra el dummy: 'DM_Trigger_Human'");
+	}
+	Native_SetNone(&pos);
+	Native_SetNone(&l);
+	ok = LvN_Item(&dummy, 1, &pos) && Po_Item("TriggerHuman", &pos, 500, -1, "Mission_GetAuthorization.OnTriggerActivated", &l);
+	Native_Free(&dummy);
+	Native_Free(&pos);
+	Native_Free(&l);
+	return ok;
 }
 
 /* TalkPepe(UsrName, CharName, optId, FullOption): the gatekeeper talks; Dtritus cannot use the conversion point */
-static PyObject *GetAuthorization_TalkPepe(PyObject *self, PyObject *args) {
-	PyObject *usrName, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usrName, &ch, &opt, &full)) {
-		return NULL;
+static byte GetAuthorization_TalkPepe(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t usr;
+	(void)out;
+	if (!Mode_Import("Speech")) {
+		return 0;
 	}
-	Sf_Import(&f, "Speech");
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	int dt = Sf_True(&f, usr);
-	if (dt > 0) {
-		dt = Sf_EqS(&f, Sf_Attr(&f, usr, "ActCtrl"), "Dtritus");
-	}
-	if (dt > 0) {
-		Sf_SetAttrI(&f, Sf_Entity(&f, Sf_Str(&f, "DM_Conversion_Point_08")), "ArrowCanUse", 0);
-	}
-	Sf_Ask(&f, "Speech", "AutoSpeech", "(OOOO)", usrName, ch, opt, full);
-	return Sf_None(&f);
+	Native_SetNone(&usr);
+	int dt = Po_UsrCtrl(&usr, "Dtritus");
+	Native_Free(&usr);
+	return dt >= 0 && (!dt || PO_ENTI("DM_Conversion_Point_08", "ArrowCanUse", 0)) &&
+		LV_CALL("Speech", "AutoSpeech", NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
 }
 
 /* StartScene(Door, CharName): through the security door: the scene MeetHuman the first time (GoToPress at its
  * end), else straight to the metro */
-static PyObject *GetAuthorization_StartScene(PyObject *self, PyObject *args) {
-	PyObject *door, *ch;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &door, &ch)) {
-		return NULL;
+static byte GetAuthorization_StartScene(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t e, usr;
+	(void)a;
+	(void)out;
+	if (!PO_ENTI("DM_Conversion_Point_08", "ArrowCanUse", 1) || !PO_ENTS("GateKeeper_08", "UseFunc", "Speech.AutoSpeech") || !Po_TargetNone() ||
+		!Mode_DoorFoe("GateKeeper_08", "NoOneGroupGateKeeper") ||
+		!LV_CALL("GateKeeper", "SetDoor", NULL, "ss", "GateKeeper_08", "DM_Door_PoliceSegurity_00")) {
+		return 0;
 	}
-	Sf_SetAttrI(&f, Sf_Entity(&f, Sf_Str(&f, "DM_Conversion_Point_08")), "ArrowCanUse", 1);
-	Sf_SetAttrS(&f, Sf_Entity(&f, Sf_Str(&f, "GateKeeper_08")), "UseFunc", "Speech.AutoSpeech");
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Py_None);
-	Sf_Ask(&f, "GateKeeper", "DoorFoe", "(sO)", "GateKeeper_08", Sf_Mod(&f, "GateKeeper", "NoOneGroupGateKeeper"));
-	Sf_Ask(&f, "GateKeeper", "SetDoor", "(ss)", "GateKeeper_08", "DM_Door_PoliceSegurity_00");
-	int first = Lv_SaveIs(&f, "MissionState", "FreeHuman");
-	if (first > 0) {
-		Sf_SetGlobal(&f, GA, "scenePlayed", Sf_Int(&f, 0));
-		PyObject *e = Sf_Entity(&f, Sf_Str(&f, "DM_Door_PoliceSegurity_00"));
-		Sf_SetAttrS(&f, e, "Action", "Open");
-		Sf_SetAttrS(&f, e, "DefLoop", "Opened");
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "MissionState", "FreeHuman2");
-		Sf_Ask(&f, "Scene", "Play", "(s)", "MeetHuman");
-		Sf_SetMod(&f, "Scene", "EndOfSceneCallback", GAG("GoToPress"));
-		Sf_Ask(&f, "Scrap", "Set", "(ss)", "EscapeEvent", "Scene.AbortScene");
-	} else if (first == 0) {
-		Sf_SetGlobal(&f, GA, "scenePlayed", Sf_Int(&f, 1));
-		Lv_Fade(&f, lv_clear, lv_black, 0.5);
-		PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-		Sf_SetAttrI(&f, usr, "Life", 100);
-		Sf_SetAttrI(&f, usr, "Invulnerable", 1);
-		Sf_Later(&f, Sf_Float(&f, 0.75), GAG("GoToPress"), Sf_Build(&f, "(O)", usr), NULL);
+	if (LvN_SaveIs("MissionState", "FreeHuman")) {
+		if (!LvN_PutI(GA, "scenePlayed", 0) || !LvN_Entity("DM_Door_PoliceSegurity_00", &e)) {
+			return 0;
+		}
+		byte ok = LvN_SetS(&e, "Action", "Open") && LvN_SetS(&e, "DefLoop", "Opened");
+		Native_Free(&e);
+		if (!ok) {
+			return 0;
+		}
+		SaveVar_Set("MissionState", "FreeHuman2");
+		return LV_CALL("Scene", "Play", NULL, "s", "MeetHuman") && PO_HOOK("Scene", "EndOfSceneCallback", GA, "GoToPress") &&
+			Mode_GVarSetS("EscapeEvent", "Scene.AbortScene");
 	}
-	return Sf_None(&f);
+	Native_SetNone(&usr);
+	byte ok = LvN_PutI(GA, "scenePlayed", 1) && Po_Fade(lv_clear, lv_black, 0.5) && Mode_UsrHandle(&usr) && LvN_SetI(&usr, "Life", 100) &&
+		LvN_SetI(&usr, "Invulnerable", 1) && PO_LATER1(0.75, GA, "GoToPress", &usr);
+	Native_Free(&usr);
+	return ok;
 }
 
 /* OnTriggerActivated(ItemName, CharName): the human passed his trigger: the alarm, which does not fall */
-static PyObject *GetAuthorization_OnTriggerActivated(PyObject *self, PyObject *args) {
-	PyObject *item, *ch;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &item, &ch)) {
-		return NULL;
+static byte GetAuthorization_OnTriggerActivated(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t hn, e, fall, one;
+	(void)out;
+	Native_SetNone(&hn);
+	Native_SetNone(&e);
+	Native_SetNone(&fall);
+	int it = Po_GAttr(GA, "human", "Name", &hn) ? Mode_Cmp(&a[1], "==", &hn) : -1;
+	byte ok = it >= 0;
+	if (it > 0) {
+		Native_SetInt(&one, 1);
+		ok = Mode_EntityH(&a[0], &e) && Mode_VDel(&e) && Native_GVarGet("AlarmFallDelta", &fall) && Mode_Put(GA, "alarmFallDelta", NULL, &fall) &&
+			Mode_SetAlarm(&one) && Mode_GVarSetI("AlarmFallDelta", 0);
 	}
-	if (Sf_Compare(&f, ch, "==", Sf_Attr(&f, GAG("human"), "Name")) > 0) {
-		Sf_Method(&f, Sf_Entity(&f, item), "Del", "()");
-		Sf_SetGlobal(&f, GA, "alarmFallDelta", Sf_Ask(&f, "Scrap", "Get", "(s)", "AlarmFallDelta"));
-		Sf_Ask(&f, "Scrap", "SetAlarm", "(i)", 1);
-		Sf_Ask(&f, "Scrap", "Set", "(si)", "AlarmFallDelta", 0);
-	}
-	return Sf_None(&f);
+	Native_Free(&hn);
+	Native_Free(&e);
+	Native_Free(&fall);
+	return ok;
+}
+
+/* SLogic.SetOnFloor(h.Name) by name (OBJLIB 7) */
+static byte Po_OnFloor(const nativeVal_t *h) {
+	nativeVal_t n;
+	Native_SetNone(&n);
+	byte ok = Mode_VGet(h, "Name", &n) && LV_CALL("SLogic", "SetOnFloor", NULL, "v", &n);
+	Native_Free(&n);
+	return ok;
+}
+
+/* SAI.SetStateChar(3, human.Name, usr.Name, 1.0): the human follows the player */
+static byte Ga_Follow(const nativeVal_t *usr) {
+	nativeVal_t hn, un;
+	Native_SetNone(&un);
+	byte ok = Po_GAttr(GA, "human", "Name", &hn) && Mode_VGet(usr, "Name", &un) && CHAR_STATE("ivvd", 3L, &hn, &un, 1.0);
+	Native_Free(&hn);
+	Native_Free(&un);
+	return ok;
 }
 
 /* GoToPress(usr): the door closes; the player and the human out of the jail, the human follows him to the metro */
-static PyObject *GetAuthorization_GoToPress(PyObject *self, PyObject *args) {
-	PyObject *usr;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &usr)) {
-		return NULL;
+static byte GetAuthorization_GoToPress(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t e, h;
+	(void)out;
+	if (!LvN_Entity("DM_Door_PoliceSegurity_00", &e)) {
+		return 0;
 	}
-	PyObject *e = Sf_Entity(&f, Sf_Str(&f, "DM_Door_PoliceSegurity_00"));
-	Sf_SetAttrS(&f, e, "Action", "Close");
-	Sf_SetAttrS(&f, e, "DefLoop", "Closed");
-	Lv_Fade(&f, lv_black, lv_clear, 0.5);
-	if (Sf_True(&f, usr) <= 0) {
-		return Sf_None(&f);
+	byte ok = LvN_SetS(&e, "Action", "Close") && LvN_SetS(&e, "DefLoop", "Closed");
+	Native_Free(&e);
+	if (!ok || !Po_Fade(lv_black, lv_clear, 0.5)) {
+		return 0;
 	}
-	int played = Sf_EqI(&f, GAG("scenePlayed"), 0);
-	if (played >= 0) {
-		Sf_Ask(&f, "Speech", "AddRemoteCom", "(ssOO)", played ? "Mission_FirstMeetHuman_RemoteMessage1" : "Mission_FirstMeetHuman_RemoteMessage2",
-			"DeepThroat", GAG("GoToPress2"), Sf_Build(&f, "()"));
+	if (!Native_True(&a[0])) {
+		return 1;
 	}
-	Sf_SetAttrI(&f, usr, "Invulnerable", 0);
-	Sf_SetAttr(&f, usr, "Pos", Sf_Build(&f, "(iii)", 4227, -1771, 28400));
-	Sf_SetAttr(&f, usr, "Ang", Sf_Build(&f, "(iii)", 0, 160, 0));
-	Sf_Ask(&f, "SLogic", "SetOnFloor", "(O)", Sf_Attr(&f, usr, "Name"));
-	Sf_Import(&f, "MissionsFuncs");
-	Sf_SetAttr(&f, GAG("human"), "Pos", Sf_Build(&f, "(iii)", 4227, -1771, 28866));
-	Sf_SetAttr(&f, GAG("human"), "Ang", Sf_Build(&f, "(iii)", 0, 0, 0));
-	Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", GAG("human"), 2);
-	Sf_Ask(&f, "SLogic", "SetOnFloor", "(O)", Sf_Attr(&f, GAG("human"), "Name"));
-	Sf_Ask(&f, "SAI", "SetStateChar", "(iOOd)", 3, Sf_Attr(&f, GAG("human"), "Name"), Sf_Attr(&f, usr, "Name"), 1.0);
-	Sf_SetMod(&f, "Chars", "OnMainCharDeath", GAG("OnMainCharDeath"));
-	Sf_SetMod(&f, "CharConversor", "OnPossession", GAG("OnPossession"));
-	Sf_SetMod(&f, "CharConversor", "afterExitConversor", GAG("OnExitConversor"));
-	Sf_Own(&f, GA, "CheckMaxDist", "()");
-	return Sf_None(&f);
+	int played = LvN_GEqI(GA, "scenePlayed", 0);
+	if (played < 0 || !LvN_Com(played ? "Mission_FirstMeetHuman_RemoteMessage1" : "Mission_FirstMeetHuman_RemoteMessage2", "DeepThroat", GA,
+		"GoToPress2", LvN_NoArgs()) || !LvN_SetI(&a[0], "Invulnerable", 0) || !Po_SetInts3(&a[0], "Pos", 4227, -1771, 28400) ||
+		!Po_SetInts3(&a[0], "Ang", 0, 160, 0) || !Po_OnFloor(&a[0]) || !Mode_Import("MissionsFuncs") || !Mode_G(GA, "human", &h)) {
+		return 0;
+	}
+	ok = Po_SetInts3(&h, "Pos", 4227, -1771, 28866) && Po_SetInts3(&h, "Ang", 0, 0, 0);
+	Native_Free(&h);
+	if (!ok || !Po_ActivateG(GA, "human", 2) || !Mode_G(GA, "human", &h)) {
+		return 0;
+	}
+	ok = Po_OnFloor(&h);
+	Native_Free(&h);
+	return ok && Ga_Follow(&a[0]) && PO_HOOK("Chars", "OnMainCharDeath", GA, "OnMainCharDeath") &&
+		PO_HOOK("CharConversor", "OnPossession", GA, "OnPossession") && PO_HOOK("CharConversor", "afterExitConversor", GA, "OnExitConversor") &&
+		LV_OWN(GA, "CheckMaxDist", NULL, "");
 }
 
 /* GoToPress2(): the metro to Press is the target */
-static PyObject *GetAuthorization_GoToPress2(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte GetAuthorization_GoToPress2(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t e;
+	(void)a;
+	(void)out;
+	if (!LvN_Entity("DM_Door_Metro_Press", &e)) {
+		return 0;
 	}
-	PyObject *e = Sf_Entity(&f, Sf_Str(&f, "DM_Door_Metro_Press"));
-	Sf_SetAttrS(&f, e, "UseFunc", "Mission_GetAuthorization.OnMetroUsed");
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, e, "Name"));
-	Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_SetHumanFree_MissionText1", 1);
-	Sf_Ask(&f, "SaveGame", "QWayPoint", "()");
-	return Sf_None(&f);
+	byte ok = LvN_SetS(&e, "UseFunc", "Mission_GetAuthorization.OnMetroUsed") && Po_TargetName(&e);
+	Native_Free(&e);
+	return ok && Mode_MMDesc("Mission_SetHumanFree_MissionText1", 1) && Mode_WayPoint();
 }
 
 /* the human stops and asks the player to come back */
-static void Ga_HumanStops(scriptFrame_t *f) {
-	Sf_Ask(f, "SAI", "SetStateChar", "(iO)", 0, Sf_Attr(f, GAGF("human"), "Name"));
-	Sf_Ask(f, "Speech", "AddRemoteCom", "(ss)", "Mission_SetHumanFree_RemoteMessage2", "Human");
+static byte Ga_HumanStops(void) {
+	nativeVal_t hn;
+	byte ok = Po_GAttr(GA, "human", "Name", &hn) && CHAR_STATE("iv", 0L, &hn);
+	Native_Free(&hn);
+	return ok && Po_Com("Mission_SetHumanFree_RemoteMessage2", "Human");
 }
 
 /* OnPossession(newCharName, pos): a possession: the human stops */
-static PyObject *GetAuthorization_OnPossession(PyObject *self, PyObject *args) {
-	PyObject *name, *pos;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &name, &pos)) {
-		return NULL;
-	}
-	Sf_Import(&f, "MissionsFuncs");
-	Ga_HumanStops(&f);
-	Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", GAG("human"), 0);
-	return Sf_None(&f);
+static byte GetAuthorization_OnPossession(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_Import("MissionsFuncs") && Ga_HumanStops() && Po_ActivateG(GA, "human", 0);
 }
 
 /* OnExitConversor(): out of a conversor: the human follows only Dtritus */
-static PyObject *GetAuthorization_OnExitConversor(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte GetAuthorization_OnExitConversor(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t usr;
+	(void)a;
+	(void)out;
+	if (!Mode_Import("MissionsFuncs")) {
+		return 0;
 	}
-	Sf_Import(&f, "MissionsFuncs");
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	if (Sf_True(&f, usr) <= 0) {
-		return Sf_None(&f);
+	Native_SetNone(&usr);
+	int u = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
+	int dt = u > 0 ? Po_CtrlIs(&usr, "Dtritus") : 0;
+	Native_Free(&usr);
+	if (u <= 0) {
+		return u == 0;
 	}
-	int other = Sf_Compare(&f, Sf_Attr(&f, usr, "ActCtrl"), "!=", Sf_Str(&f, "Dtritus"));
-	if (other > 0) {
-		Ga_HumanStops(&f);
-		Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", GAG("human"), 0);
-	} else if (other == 0) {
-		Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", GAG("human"), 2);
+	if (dt == 0) {
+		return Ga_HumanStops() && Po_ActivateG(GA, "human", 0);
 	}
-	return Sf_None(&f);
+	return dt > 0 && Po_ActivateG(GA, "human", 2);
 }
 
 /* CheckMaxDist(): every second: the human stops when the player is too far, and follows Dtritus again */
-static PyObject *GetAuthorization_CheckMaxDist(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte GetAuthorization_CheckMaxDist(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t usr, r, hn, st;
+	(void)a;
+	(void)out;
+	if (!Mode_Later(1.0, GA, "CheckMaxDist", NULL, 0, "CheckMaxDist")) {
+		return 0;
 	}
-	Sf_Later(&f, Sf_Float(&f, 1.0), GAG("CheckMaxDist"), Sf_Build(&f, "()"), "CheckMaxDist");
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	if (Sf_True(&f, usr) <= 0) {
-		return Sf_None(&f);
-	}
-	int near = Sf_True(&f, Sf_Own(&f, GA, "CheckHumanDist", "()"));
-	if (near == 0) {
-		if (Sf_Compare(&f, Sf_Ask(&f, "SAI", "GetStateChar", "(O)", Sf_Attr(&f, GAG("human"), "Name")), "!=", Sf_Int(&f, 0)) > 0) {
-			Ga_HumanStops(&f);
+	Native_SetNone(&usr);
+	Native_SetNone(&r);
+	Native_SetNone(&hn);
+	Native_SetNone(&st);
+	int u = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
+	byte ok = u >= 0;
+	if (u > 0) {
+		int near = LV_OWN(GA, "CheckHumanDist", &r, "") ? Native_True(&r) : -1;
+		if (near == 0) {
+			int moving = Po_GAttr(GA, "human", "Name", &hn) && LV_CALL("SAI", "GetStateChar", &st, "v", &hn) ? Mode_CmpI(&st, "!=", 0) : -1;
+			ok = moving >= 0 && (!moving || Ga_HumanStops());
+		} else if (near > 0) {
+			int dt = Po_CtrlIs(&usr, "Dtritus");
+			ok = dt >= 0 && (!dt || Ga_Follow(&usr));
+		} else {
+			ok = 0;
 		}
-	} else if (near > 0 && Sf_EqS(&f, Sf_Attr(&f, usr, "ActCtrl"), "Dtritus") > 0) {
-		Sf_Ask(&f, "SAI", "SetStateChar", "(iOOd)", 3, Sf_Attr(&f, GAG("human"), "Name"), Sf_Attr(&f, usr, "Name"), 1.0);
 	}
-	return Sf_None(&f);
+	Native_Free(&usr);
+	Native_Free(&r);
+	Native_Free(&hn);
+	Native_Free(&st);
+	return ok;
 }
 
-/* the squared distance from the player to the human */
-static PyObject *Ga_HumanDist(scriptFrame_t *f, PyObject *usr) {
-	return Sf_Ask(f, "SVec", "ModSqr", "(O)", Sf_Ask(f, "SVec", "Sub", "(OO)", Sf_Attr(f, usr, "Pos"), Sf_Attr(f, GAGF("human"), "Pos")));
+/* the squared distance from the player to the human compared with dist * dist of a global dist: `<=`: 1, 0, -1 */
+static int Ga_Near(const nativeVal_t *usr, const char *dist) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *up = Mode_V(&t), *hp = Mode_V(&t), *sub = Mode_V(&t), *d = Mode_V(&t), *m1 = Mode_V(&t), *m2 = Mode_V(&t), *mm = Mode_V(&t);
+	int r = Mode_VGet(usr, "Pos", up) && Po_GAttr(GA, "human", "Pos", hp) && Mode_VecSub(up, hp, sub) && Mode_VecModSqr(sub, d) &&
+		Mode_G(GA, dist, m1) && Mode_G(GA, dist, m2) && Mode_Arith('*', m1, m2, mm) ? Mode_Cmp(d, "<=", mm) : -1;
+	Mode_Done(&t, 1);
+	return r;
 }
 
 /* CheckHumanDist(): 1 when the human is within maxHumanDist of the player */
-static PyObject *GetAuthorization_CheckHumanDist(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte GetAuthorization_CheckHumanDist(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t usr;
+	(void)a;
+	Native_SetNone(&usr);
+	int near = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
+	if (near > 0) {
+		near = Ga_Near(&usr, "maxHumanDist");
 	}
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	if (Sf_True(&f, usr) > 0) {
-		PyObject *dist = Ga_HumanDist(&f, usr);
-		if (Sf_Compare(&f, dist, "<=", Sf_Op(&f, GAG("maxHumanDist"), '*', GAG("maxHumanDist"))) > 0) {
-			return Sf_Return(&f, Sf_Int(&f, 1));
-		}
-	}
-	return Sf_Return(&f, Sf_Int(&f, 0));
+	Native_Free(&usr);
+	Native_SetInt(out, near > 0);
+	return near >= 0;
 }
 
 /* OnMetroUsed(UsrName, MetroName, optId, FullOption): with the human near the metro goes to Press, the mission
  * Mission_TalkToBoss next */
-static PyObject *GetAuthorization_OnMetroUsed(PyObject *self, PyObject *args) {
-	PyObject *usrName, *metro, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usrName, &metro, &opt, &full)) {
-		return NULL;
-	}
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	if (Sf_True(&f, usr) <= 0) {
-		return Sf_None(&f);
-	}
-	PyObject *dist = Ga_HumanDist(&f, usr);
-	int near = Sf_Compare(&f, dist, "<=", Sf_Op(&f, GAG("minHumanDist"), '*', GAG("minHumanDist")));
+static byte GetAuthorization_OnMetroUsed(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const saves[] = { "BankMasterAtBank", "1", "Journalist.Humphrey_Defaut", "Bank", "Journalist.Betty_Defaut", "Bank",
+		"Journalist.Berto_Defaut", "Bank", NULL };
+	nativeVal_t usr;
+	(void)out;
+	Native_SetNone(&usr);
+	int near = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
 	if (near > 0) {
-		Sf_Ask(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "CheckMaxDist");
-		Sf_Ask(&f, "MissionsFuncs", "SetNextMission", "(ss)", "Mission_TalkToBoss", "Press");
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "BankMasterAtBank", "1");
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "Journalist.Humphrey_Defaut", "Bank");
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "Journalist.Betty_Defaut", "Bank");
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "Journalist.Berto_Defaut", "Bank");
-		Sf_Ask(&f, "SaveGame", "QWayPoint", "()");
-		Sf_Ask(&f, "Elevator", "UseElevator", "(OOsO)", usrName, metro, "MoveLevel Press", full);
+		near = Ga_Near(&usr, "minHumanDist");
 	} else if (near == 0) {
-		Sf_Ask(&f, "Speech", "AddRemoteCom", "(ss)", "Mission_SetHumanFree_RemoteMessage2", "Human");
+		Native_Free(&usr);
+		return 1;
 	}
-	return Sf_None(&f);
+	Native_Free(&usr);
+	if (near > 0) {
+		if (!Mode_DelSchedS("CheckMaxDist") || !LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_TalkToBoss", "Press")) {
+			return 0;
+		}
+		Mode_Saves(saves);
+		return Mode_WayPoint() && LV_CALL("Elevator", "UseElevator", NULL, "vvsv", &a[0], &a[1], "MoveLevel Press", &a[3]);
+	}
+	return near == 0 && Po_Com("Mission_SetHumanFree_RemoteMessage2", "Human");
 }
 
+LV_FN(GetAuthorization, InitStatusA, 1, GetAuthorization_InitStatus)
+LV_FN(GetAuthorization, CreateHumanA, 1, GetAuthorization_CreateHuman)
+LV_FN(GetAuthorization, InitA, 1, GetAuthorization_Init)
+LV_FN(GetAuthorization, AfterDeepThroatMessageA, 0, GetAuthorization_AfterDeepThroatMessage)
+LV_FN(GetAuthorization, DeepThroatSpeechA, 4, GetAuthorization_DeepThroatSpeech)
+LV_FN(GetAuthorization, PreGetAuthorizationA, 0, GetAuthorization_PreGetAuthorization)
+LV_FN(GetAuthorization, GetAuthorizationA, 0, GetAuthorization_GetAuthorization)
+LV_FN(GetAuthorization, ShowNearestConversorA, 0, GetAuthorization_ShowNearestConversor)
+LV_FN(GetAuthorization, ShowAfterConversionMessageA, 0, GetAuthorization_ShowAfterConversionMessage)
+LV_FN(GetAuthorization, OnDataTakenA, 1, GetAuthorization_OnDataTaken)
+LV_FN(GetAuthorization, OnDataDroppedA, 2, GetAuthorization_OnDataDropped)
+LV_FN(GetAuthorization, FreeHumanA, 0, GetAuthorization_FreeHuman)
+LV_FN(GetAuthorization, TalkPepeA, 4, GetAuthorization_TalkPepe)
+LV_FN(GetAuthorization, StartSceneA, 2, GetAuthorization_StartScene)
+LV_FN(GetAuthorization, OnTriggerActivatedA, 2, GetAuthorization_OnTriggerActivated)
+LV_FN(GetAuthorization, GoToPressA, 1, GetAuthorization_GoToPress)
+LV_FN(GetAuthorization, GoToPress2A, 0, GetAuthorization_GoToPress2)
+LV_FN(GetAuthorization, OnPossessionA, 2, GetAuthorization_OnPossession)
+LV_FN(GetAuthorization, OnExitConversorA, 0, GetAuthorization_OnExitConversor)
+LV_FN(GetAuthorization, CheckMaxDistA, 0, GetAuthorization_CheckMaxDist)
+LV_FN(GetAuthorization, CheckHumanDistA, 0, GetAuthorization_CheckHumanDist)
+LV_FN(GetAuthorization, OnMetroUsedA, 4, GetAuthorization_OnMetroUsed)
+
 PyMethodDef g_PoliceGetAuthorizationMethods[] = {
-	{ "InitStatus", GetAuthorization_InitStatus, METH_VARARGS, NULL },
-	{ "CreateHuman", GetAuthorization_CreateHuman, METH_VARARGS, NULL },
-	{ "Init", GetAuthorization_Init, METH_VARARGS, NULL },
-	{ "AfterDeepThroatMessage", GetAuthorization_AfterDeepThroatMessage, METH_VARARGS, NULL },
-	{ "DeepThroatSpeech", GetAuthorization_DeepThroatSpeech, METH_VARARGS, NULL },
-	{ "PreGetAuthorization", GetAuthorization_PreGetAuthorization, METH_VARARGS, NULL },
-	{ "GetAuthorization", GetAuthorization_GetAuthorization, METH_VARARGS, NULL },
-	{ "ShowNearestConversor", GetAuthorization_ShowNearestConversor, METH_VARARGS, NULL },
-	{ "ShowAfterConversionMessage", GetAuthorization_ShowAfterConversionMessage, METH_VARARGS, NULL },
-	{ "OnDataTaken", GetAuthorization_OnDataTaken, METH_VARARGS, NULL },
-	{ "OnDataDropped", GetAuthorization_OnDataDropped, METH_VARARGS, NULL },
-	{ "FreeHuman", GetAuthorization_FreeHuman, METH_VARARGS, NULL },
-	{ "TalkPepe", GetAuthorization_TalkPepe, METH_VARARGS, NULL },
-	{ "StartScene", GetAuthorization_StartScene, METH_VARARGS, NULL },
-	{ "OnTriggerActivated", GetAuthorization_OnTriggerActivated, METH_VARARGS, NULL },
-	{ "GoToPress", GetAuthorization_GoToPress, METH_VARARGS, NULL },
-	{ "GoToPress2", GetAuthorization_GoToPress2, METH_VARARGS, NULL },
-	{ "OnPossession", GetAuthorization_OnPossession, METH_VARARGS, NULL },
-	{ "OnExitConversor", GetAuthorization_OnExitConversor, METH_VARARGS, NULL },
-	{ "CheckMaxDist", GetAuthorization_CheckMaxDist, METH_VARARGS, NULL },
-	{ "CheckHumanDist", GetAuthorization_CheckHumanDist, METH_VARARGS, NULL },
-	{ "OnMetroUsed", GetAuthorization_OnMetroUsed, METH_VARARGS, NULL },
+	{ "InitStatus", GetAuthorization_InitStatusA, METH_VARARGS, NULL },
+	{ "CreateHuman", GetAuthorization_CreateHumanA, METH_VARARGS, NULL },
+	{ "Init", GetAuthorization_InitA, METH_VARARGS, NULL },
+	{ "AfterDeepThroatMessage", GetAuthorization_AfterDeepThroatMessageA, METH_VARARGS, NULL },
+	{ "DeepThroatSpeech", GetAuthorization_DeepThroatSpeechA, METH_VARARGS, NULL },
+	{ "PreGetAuthorization", GetAuthorization_PreGetAuthorizationA, METH_VARARGS, NULL },
+	{ "GetAuthorization", GetAuthorization_GetAuthorizationA, METH_VARARGS, NULL },
+	{ "ShowNearestConversor", GetAuthorization_ShowNearestConversorA, METH_VARARGS, NULL },
+	{ "ShowAfterConversionMessage", GetAuthorization_ShowAfterConversionMessageA, METH_VARARGS, NULL },
+	{ "OnDataTaken", GetAuthorization_OnDataTakenA, METH_VARARGS, NULL },
+	{ "OnDataDropped", GetAuthorization_OnDataDroppedA, METH_VARARGS, NULL },
+	{ "FreeHuman", GetAuthorization_FreeHumanA, METH_VARARGS, NULL },
+	{ "TalkPepe", GetAuthorization_TalkPepeA, METH_VARARGS, NULL },
+	{ "StartScene", GetAuthorization_StartSceneA, METH_VARARGS, NULL },
+	{ "OnTriggerActivated", GetAuthorization_OnTriggerActivatedA, METH_VARARGS, NULL },
+	{ "GoToPress", GetAuthorization_GoToPressA, METH_VARARGS, NULL },
+	{ "GoToPress2", GetAuthorization_GoToPress2A, METH_VARARGS, NULL },
+	{ "OnPossession", GetAuthorization_OnPossessionA, METH_VARARGS, NULL },
+	{ "OnExitConversor", GetAuthorization_OnExitConversorA, METH_VARARGS, NULL },
+	{ "CheckMaxDist", GetAuthorization_CheckMaxDistA, METH_VARARGS, NULL },
+	{ "CheckHumanDist", GetAuthorization_CheckHumanDistA, METH_VARARGS, NULL },
+	{ "OnMetroUsed", GetAuthorization_OnMetroUsedA, METH_VARARGS, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
 /* ---- Mission_InitEpilogue ---- */
 
-#define IEG(name) Sf_Global(&f, IE, name)
-
 /* InitStatus(LevelPath): Betty and Berto in the jail, Dtritus wakes up there too, the viscoson's costume */
-static PyObject *InitEpilogue_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte InitEpilogue_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const saves[] = { "Spawn", "DM_Mission_Dtritus_Jail", "ComeFrom", "", "CostumeAtPolice", "1", NULL };
+	(void)a;
+	(void)out;
+	if (!LvN_MissionChar("Betty_Jail", IE, "CreateBettyJail") || !LvN_MissionChar("Berto_Jail", IE, "CreateBertoJail")) {
+		return 0;
 	}
-	Lv_MissionChar(&f, "Betty_Jail", IE, "CreateBettyJail");
-	Lv_MissionChar(&f, "Berto_Jail", IE, "CreateBertoJail");
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "Spawn", "DM_Mission_Dtritus_Jail");
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "ComeFrom", "");
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "CostumeAtPolice", "1");
-	return Sf_None(&f);
+	Mode_Saves(saves);
+	return 1;
 }
 
 /* a prisoner stays at origin facing ang, with his talk */
-static void Ie_Prisoner(scriptFrame_t *f, PyObject *e, const int origin[3], int ang, const char *use) {
-	Sf_SetAttr(f, e, "LLogicOrigin", Sf_Build(f, "(iii)", origin[0], origin[1], origin[2]));
-	Sf_SetAttr(f, e, "LLogicOriginAng", Sf_Build(f, "(iii)", 0, ang, 0));
-	Lv_Stay(f, e, 6, Sf_Str(f, ""));
-	Sf_SetAttrS(f, e, "UseFunc", use);
+static byte Ie_Prisoner(const nativeVal_t *e, const long origin[3], long ang, const char *use) {
+	return Po_SetInts3(e, "LLogicOrigin", origin[0], origin[1], origin[2]) && Po_SetInts3(e, "LLogicOriginAng", 0, ang, 0) &&
+		LvN_Stay(e, 6, Po_Empty()) && LvN_SetS(e, "UseFunc", use);
 }
 
 /* CreateBettyJail(e), CreateBertoJail(e) */
-static PyObject *InitEpilogue_CreateBettyJail(PyObject *self, PyObject *args) {
-	static const int origin[3] = { -743, -1284, 22411 };
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
-	}
-	Ie_Prisoner(&f, e, origin, 130, "Mission_InitEpilogue.OnBettySpeech");
-	return Sf_None(&f);
+static byte InitEpilogue_CreateBettyJail(const nativeVal_t *a, nativeVal_t *out) {
+	static const long origin[3] = { -743, -1284, 22411 };
+	(void)out;
+	return Ie_Prisoner(&a[0], origin, 130, "Mission_InitEpilogue.OnBettySpeech");
 }
 
-static PyObject *InitEpilogue_CreateBertoJail(PyObject *self, PyObject *args) {
-	static const int origin[3] = { 364, -1284, 22524 };
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
-	}
-	Ie_Prisoner(&f, e, origin, 210, "Mission_InitEpilogue.OnBertoSpeech");
-	return Sf_None(&f);
+static byte InitEpilogue_CreateBertoJail(const nativeVal_t *a, nativeVal_t *out) {
+	static const long origin[3] = { 364, -1284, 22524 };
+	(void)out;
+	return Ie_Prisoner(&a[0], origin, 210, "Mission_InitEpilogue.OnBertoSpeech");
 }
 
 /* Init(LevelPath): the crazy gambler calls in 0.25 s */
-static PyObject *InitEpilogue_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Sf_Later(&f, Sf_Float(&f, 0.25), IEG("PreSetNextMission"), Sf_Build(&f, "()"), NULL);
-	return Sf_None(&f);
+static byte InitEpilogue_Init(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return PO_LATER(0.25, IE, "PreSetNextMission");
 }
 
 /* the talk of a prisoner: msg and ans for Talk */
-static PyObject *Ie_Speech(PyObject *args, const char *msg, const char *ans) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
-	}
-	Lv_Speakers(&f, usr, ch);
-	if (Sf_EqS(&f, opt, "Talk") > 0) {
-		Sf_Ask(&f, "Speech", "OnSpch", "(ss)", msg, ans);
-	}
-	return Sf_None(&f);
+static byte Ie_Speech(const nativeVal_t *a, const char *msg, const char *ans) {
+	return LvN_Speakers(&a[0], &a[1]) && (!LvN_EqS(&a[2], "Talk") || Mode_Spch(msg, ans, NULL));
 }
 
 /* OnBettySpeech(UsrName, CharName, optId, FullOption), OnBertoSpeech(...) */
-static PyObject *InitEpilogue_OnBettySpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ie_Speech(args, "Mission_DestroyHumphrey_Betty_InitMsg1", "Mission_DestroyHumphrey_Betty_InitAns1");
+static byte InitEpilogue_OnBettySpeech(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Ie_Speech(a, "Mission_DestroyHumphrey_Betty_InitMsg1", "Mission_DestroyHumphrey_Betty_InitAns1");
 }
 
-static PyObject *InitEpilogue_OnBertoSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	return Ie_Speech(args, "Mission_DestroyHumphrey_Berto_InitMsg1", "Mission_DestroyHumphrey_Berto_InitAns1");
+static byte InitEpilogue_OnBertoSpeech(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Ie_Speech(a, "Mission_DestroyHumphrey_Berto_InitMsg1", "Mission_DestroyHumphrey_Berto_InitAns1");
 }
 
 /* SetNextMission(): the archbishop's ship and engine, Mission_DestroyHumphrey in Outskirts, the hard enemies */
-static PyObject *InitEpilogue_SetNextMission(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte InitEpilogue_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const saves[] = { "BadReputation", "5", "StdShipAIProfile", "MegaAce", "CrazyGamblerAtGambinDen", "1", NULL };
+	nativeVal_t text;
+	(void)a;
+	(void)out;
+	if (!Mode_SaveAdd(IE, "Hangar.shipsToEditList", "SArchbishop1") || !Mode_SaveAdd(IE, "Hangar.availableEnginesList", "MARCHBISHOP1")) {
+		return 0;
 	}
-	Lv_SaveAdd(&f, IE, "Hangar.shipsToEditList", "SArchbishop1");
-	Lv_SaveAdd(&f, IE, "Hangar.availableEnginesList", "MARCHBISHOP1");
-	Sf_Ask(&f, "Scrap", "IncSaveVar", "(si)", "NewBluePrintAvaliable", 2);
-	Sf_Ask(&f, "RaceMaker", "ShowSystemMessage", "(O)", Sf_Lang(&f, Sf_Str(&f, "Mission_DestroyHumphrey_SystemMessage1")));
-	Sf_Ask(&f, "MissionsFuncs", "SetNextMission", "(ss)", "Mission_DestroyHumphrey", "Outskirts");
-	Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_DestroyHumphrey_MissionText1", 1);
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "BadReputation", "5");
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "StdShipAIProfile", "MegaAce");
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "CrazyGamblerAtGambinDen", "1");
-	Sf_Ask(&f, "SaveGame", "QWayPoint", "()");
-	return Sf_None(&f);
+	SaveVar_Inc("NewBluePrintAvaliable", 2);
+	Mode_Lang("Mission_DestroyHumphrey_SystemMessage1", &text);
+	byte ok = LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
+	Native_Free(&text);
+	if (!ok || !LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_DestroyHumphrey", "Outskirts") ||
+		!Mode_MMDesc("Mission_DestroyHumphrey_MissionText1", 1)) {
+		return 0;
+	}
+	Mode_Saves(saves);
+	return Mode_WayPoint();
 }
 
+LV_FN(InitEpilogue, InitStatusA, 1, InitEpilogue_InitStatus)
+LV_FN(InitEpilogue, CreateBettyJailA, 1, InitEpilogue_CreateBettyJail)
+LV_FN(InitEpilogue, CreateBertoJailA, 1, InitEpilogue_CreateBertoJail)
+LV_FN(InitEpilogue, InitA, 1, InitEpilogue_Init)
+LV_FN(InitEpilogue, OnBettySpeechA, 4, InitEpilogue_OnBettySpeech)
+LV_FN(InitEpilogue, OnBertoSpeechA, 4, InitEpilogue_OnBertoSpeech)
+LV_FN(InitEpilogue, SetNextMissionA, 0, InitEpilogue_SetNextMission)
+
 PyMethodDef g_PoliceInitEpilogueMethods[] = {
-	{ "InitStatus", InitEpilogue_InitStatus, METH_VARARGS, NULL },
-	{ "CreateBettyJail", InitEpilogue_CreateBettyJail, METH_VARARGS, NULL },
-	{ "CreateBertoJail", InitEpilogue_CreateBertoJail, METH_VARARGS, NULL },
-	{ "Init", InitEpilogue_Init, METH_VARARGS, NULL },
-	{ "OnBettySpeech", InitEpilogue_OnBettySpeech, METH_VARARGS, NULL },
-	{ "OnBertoSpeech", InitEpilogue_OnBertoSpeech, METH_VARARGS, NULL },
-	{ "SetNextMission", InitEpilogue_SetNextMission, METH_VARARGS, NULL },
+	{ "InitStatus", InitEpilogue_InitStatusA, METH_VARARGS, NULL },
+	{ "CreateBettyJail", InitEpilogue_CreateBettyJailA, METH_VARARGS, NULL },
+	{ "CreateBertoJail", InitEpilogue_CreateBertoJailA, METH_VARARGS, NULL },
+	{ "Init", InitEpilogue_InitA, METH_VARARGS, NULL },
+	{ "OnBettySpeech", InitEpilogue_OnBettySpeechA, METH_VARARGS, NULL },
+	{ "OnBertoSpeech", InitEpilogue_OnBertoSpeechA, METH_VARARGS, NULL },
+	{ "SetNextMission", InitEpilogue_SetNextMissionA, METH_VARARGS, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
 /* ---- Mission_JailBreak ---- */
 
-#define JBG(name) Sf_Global(&f, JB, name)
-
 /* InitStatus(LevelPath): the NPCs of the jail after the level's own are browsed */
-static PyObject *JailBreak_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Sf_Method(&f, Sf_Mod(&f, "CharsNPC", "AfterBrowseNPC"), "append", "(O)", JBG("AfterBrowseNPC"));
-	return Sf_None(&f);
+static byte JailBreak_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_AppendG("CharsNPC", "AfterBrowseNPC", JB, "AfterBrowseNPC");
+}
+
+/* CharsNPC.CharRes[key].var = v (OBJLIB 5: the character objects of CharsNPC) */
+static byte Jb_ResSet(const char *key, const char *var, const nativeVal_t *v) {
+	nativeVal_t k;
+	LvN_Str(&k, key);
+	PyObject *ch = Mode_CharRes(&k);
+	Native_Free(&k);
+	byte ok = ch && Mode_HSet(ch, var, v);
+	Py_XDECREF(ch);
+	return ok;
 }
 
 /* AfterBrowseNPC(): only the gatekeepers stay; Poof the stapler, the guards of the jail, Dtritus (or Berto) with no
  * lives */
-static PyObject *JailBreak_AfterBrowseNPC(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte JailBreak_AfterBrowseNPC(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const lists[] = { "Gear", "Police", "Sentinel" };
+	nativeVal_t keys, v, chars, dt, d;
+	(void)a;
+	(void)out;
+	if (!Mode_Keys("CharsNPC", "CharRes", 0, &keys)) {
+		return 0;
 	}
-	PyObject *keys = Sf_Method(&f, Sf_Mod(&f, "CharsNPC", "CharRes"), "keys", "()");
-	for (int i = 0; !f.failed; i++) {
-		int mark = f.n;
-		PyObject *k = Sf_Next(&f, keys, i);
-		if (!k) {
-			break;
+	int n = Native_ForCount(&keys);
+	byte ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		nativeVal_t k, act;
+		Native_SetNone(&k);
+		Native_SetNone(&act);
+		ok = Native_SeqItem(&keys, i, &k);
+		PyObject *ch = ok ? Mode_CharRes(&k) : NULL;
+		int other = ch && Mode_HGet(ch, "ActCtrl", &act) ? !LvN_EqS(&act, "GateKeeper") : -1;
+		ok = other >= 0 && (!other || Mode_ModDictDel("CharsNPC", "CharRes", &k));
+		Py_XDECREF(ch);
+		Native_Free(&k);
+		Native_Free(&act);
+	}
+	Native_Free(&keys);
+	if (!ok || !LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", "Desktop_JailBreak") || !LvN_Callback("Desktop_JailBreak", JB, "CreatePuff")) {
+		return 0;
+	}
+	Mode_Ints3(&v, 6059, -1846, 26780);
+	ok = Jb_ResSet("Desktop_JailBreak", "Pos", &v);
+	Native_Free(&v);
+	Mode_Ints3(&v, 0, 270, 0);
+	ok = ok && Jb_ResSet("Desktop_JailBreak", "Ang", &v);
+	Native_Free(&v);
+	for (int i = 0; ok && i < 3; i++) {
+		ok = LV_OWN(JB, "CreateMCList", NULL, "s", lists[i]);
+	}
+	if (!ok) {
+		return 0;
+	}
+	SaveVar_Set("Player.NumLives", "0");
+	LvN_Str(&dt, "Dtritus");
+	int in = LvN_ModGet("CharConversor", "AvailableChars", &chars) ? Native_Contains(&chars, &dt) : -1;
+	Native_Free(&chars);
+	Native_Free(&dt);
+	if (in < 0) {
+		return 0;
+	}
+	if (in) {
+		SaveVar_Set("Char", "Dtritus");
+	} else {
+		SaveVar_Set("Char", "Berto");
+		Mode_Lang("Generics_NoMatrix", &v);
+		ok = Mode_SetSaveVar("InitialMessage", &v);
+		Native_Free(&v);
+		if (!ok) {
+			return 0;
 		}
-		PyObject *res = Sf_Mod(&f, "CharsNPC", "CharRes");
-		if (Sf_Compare(&f, Sf_Attr(&f, Sf_GetItem(&f, res, k), "ActCtrl"), "!=", Sf_Str(&f, "GateKeeper")) > 0) {
-			Sf_DelItem(&f, Sf_Mod(&f, "CharsNPC", "CharRes"), k);
-		}
-		Sf_Release(&f, mark);
 	}
-	Sf_Ask(&f, "CharsNPC", "CreateMissionChar", "(s)", "Desktop_JailBreak");
-	Lv_Callback(&f, "Desktop_JailBreak", JB, "CreatePuff");
-	Sf_SetAttr(&f, Sf_GetItem(&f, Sf_Mod(&f, "CharsNPC", "CharRes"), Sf_Str(&f, "Desktop_JailBreak")), "Pos", Sf_Build(&f, "(iii)", 6059, -1846, 26780));
-	Sf_SetAttr(&f, Sf_GetItem(&f, Sf_Mod(&f, "CharsNPC", "CharRes"), Sf_Str(&f, "Desktop_JailBreak")), "Ang", Sf_Build(&f, "(iii)", 0, 270, 0));
-	Sf_Own(&f, JB, "CreateMCList", "(s)", "Gear");
-	Sf_Own(&f, JB, "CreateMCList", "(s)", "Police");
-	Sf_Own(&f, JB, "CreateMCList", "(s)", "Sentinel");
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "Player.NumLives", "0");
-	int dt = Sf_In(&f, Sf_Str(&f, "Dtritus"), Sf_Mod(&f, "CharConversor", "AvailableChars"));
-	if (dt > 0) {
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "Char", "Dtritus");
-	} else if (dt == 0) {
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "Char", "Berto");
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "InitialMessage", Sf_Lang(&f, Sf_Str(&f, "Generics_NoMatrix")));
-	}
-	Sf_Method(&f, Sf_Mod(&f, "CharsNPC", "RespawnChars"), "append", "(s)", "Desktop");
-	return Sf_None(&f);
+	LvN_Str(&d, "Desktop");
+	ok = LvN_ModAppend("CharsNPC", "RespawnChars", &d);
+	Native_Free(&d);
+	return ok;
 }
 
 /* CreateMCList(Name): the mission characters <Name>_JailBreak_0<i> of the dummies there are (the gears stay) */
-static PyObject *JailBreak_CreateMCList(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
-	}
-	for (int i = 0; i < 10 && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *jbn = Sf_Cat(&f, "OsO", name, "_JailBreak_0", Sf_ReprI(&f, i));
-		Sf_Ask(&f, "Scrap", "StartDummySearch", "(Oi)", Sf_Cat(&f, "sO", "DM_Mission_", jbn), 0);
-		Sf_Print(&f, "O", jbn);
-		if (Sf_Compare(&f, Sf_Ask(&f, "Scrap", "NextDummySearch", "()"), "==", Py_None) > 0) {
-			break;
+static byte JailBreak_CreateMCList(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	for (long i = 0; i < 10; i++) {
+		modeVals_t t = { .n = 0 };
+		nativeVal_t *rep = Mode_V(&t), *ri = Mode_V(&t), *jbn = Mode_V(&t), *dn = Mode_V(&t), *dummy = Mode_V(&t);
+		const nativeVal_t *items[1] = { jbn };
+		const char *s;
+		Native_SetInt(rep, i);
+		Mode_Repr(rep, ri);
+		if (!Mode_Cat(&t, jbn, 3, &a[0], Mode_S(&t, "_JailBreak_0"), ri) || !Mode_Cat(&t, dn, 2, Mode_S(&t, "DM_Mission_"), jbn) ||
+			!Native_ArgStr(dn, 1, &s)) {
+			return Mode_Done(&t, 0);
 		}
-		Sf_Ask(&f, "CharsNPC", "CreateMissionChar", "(O)", jbn);
-		if (Sf_EqS(&f, name, "Gear") > 0) {
-			PyObject *cb = Sf_Attr(&f, Sf_GetItem(&f, Sf_Mod(&f, "CharsNPC", "CharRes"), jbn), "CallbackFunc");
-			Sf_Call(&f, Sf_Attr(&f, cb, "append"), "(O)", JBG("CreateGearStay"));
+		Mode_DummyStart(s, 0);
+		if (!Mode_Print(items, 1)) {
+			return Mode_Done(&t, 0);
 		}
-		Sf_Release(&f, mark);
+		Mode_DummyNext(dummy);
+		if (dummy->type == NV_NONE) {
+			return Mode_Done(&t, 1);
+		}
+		byte ok = LV_CALL("CharsNPC", "CreateMissionChar", NULL, "v", jbn) && (!LvN_EqS(&a[0], "Gear") ||
+			LvN_Callback(Native_Text(jbn), JB, "CreateGearStay"));
+		if (!Mode_Done(&t, ok)) {
+			return 0;
+		}
 	}
-	return Sf_None(&f);
+	return 1;
 }
 
 /* CreateGearStay(ch): a gear guard stays */
-static PyObject *JailBreak_CreateGearStay(PyObject *self, PyObject *args) {
-	PyObject *ch;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &ch)) {
-		return NULL;
-	}
-	Lv_Stay(&f, ch, 3, Sf_Str(&f, ""));
-	return Sf_None(&f);
+static byte JailBreak_CreateGearStay(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return LvN_Stay(&a[0], 3, Po_Empty());
 }
 
 /* CreatePuff(e): Poof; unless the player is a guard he starts jumping in 5 s */
-static PyObject *JailBreak_CreatePuff(PyObject *self, PyObject *args) {
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
+static byte JailBreak_CreatePuff(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const guards[] = { "Gear", "Sentinel", "Police", "Desktop" };
+	nativeVal_t usr, act;
+	(void)out;
+	if (!Po_SetLang(&a[0], "Descriptor", "CharName_Poof")) {
+		return 0;
 	}
-	static const char *const guards[] = { "Gear", "Sentinel", "Police", "Desktop", NULL };
-	Sf_SetAttr(&f, e, "Descriptor", Sf_Lang(&f, Sf_Str(&f, "CharName_Poof")));
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	int c = Sf_True(&f, usr);
+	Native_SetNone(&usr);
+	Native_SetNone(&act);
+	int c = Mode_UsrHandle(&usr) ? Native_True(&usr) : -1;
 	if (c > 0) {
-		c = Sf_InS(&f, Sf_Attr(&f, usr, "ActCtrl"), guards);
-		c = c < 0 ? -1 : !c;
+		c = Mode_VGet(&usr, "ActCtrl", &act) ? 1 : -1;
+		for (int i = 0; c > 0 && i < 4; i++) {
+			if (LvN_EqS(&act, guards[i])) {
+				c = 0;
+			}
+		}
 	}
-	if (c > 0) {
-		Sf_Later(&f, Sf_Float(&f, 5.0), JBG("InitPuffReborn"), Sf_Build(&f, "(O)", e), NULL);
-	}
-	return Sf_None(&f);
+	Native_Free(&usr);
+	Native_Free(&act);
+	return c >= 0 && (!c || PO_LATER1(5.0, JB, "InitPuffReborn", &a[0]));
 }
 
 /* InitPuffReborn(e): Poof at his place walks and turns, CheckForJump makes him jump */
-static PyObject *JailBreak_InitPuffReborn(PyObject *self, PyObject *args) {
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
+static byte JailBreak_InitPuffReborn(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t k, v, name;
+	(void)out;
+	if (!LvN_SetI(&a[0], "LLogicDefaultState", 6) || !LvN_SetS(&a[0], "LLogicDefaultTarget", "") || !LvN_SetI(&a[0], "LLogicState", 6) ||
+		!LvN_SetS(&a[0], "LLogicTarget", "") || !LvN_SetI(&a[0], "LLogicIdle", 1) || !LvN_SetI(&a[0], "LLogicAlwaysLock", 1)) {
+		return 0;
 	}
-	Sf_SetAttrI(&f, e, "LLogicDefaultState", 6);
-	Sf_SetAttrS(&f, e, "LLogicDefaultTarget", "");
-	Sf_SetAttrI(&f, e, "LLogicState", 6);
-	Sf_SetAttrS(&f, e, "LLogicTarget", "");
-	Sf_SetAttrI(&f, e, "LLogicIdle", 1);
-	Sf_SetAttrI(&f, e, "LLogicAlwaysLock", 1);
-	PyObject *cr = Sf_GetItem(&f, Sf_Mod(&f, "CharsNPC", "CharRes"), Sf_Str(&f, "Desktop_JailBreak"));
-	Sf_SetAttr(&f, e, "Pos", Sf_Attr(&f, cr, "Pos"));
-	Sf_SetAttr(&f, e, "Ang", Sf_Attr(&f, cr, "Ang"));
-	Sf_SetAttr(&f, e, "InCtrl_Walk", JBG("PuffWalk"));
-	Sf_SetAttr(&f, e, "InCtrl_HRot", JBG("PuffTurn"));
-	Sf_Later(&f, Sf_Float(&f, 2.0), JBG("CheckForJump"), Sf_Build(&f, "(O)", Sf_Attr(&f, e, "Name")), NULL);
-	Sf_SetAttrS(&f, e, "UseFunc", "Mission_JailBreak.StaplerSpeech");
-	return Sf_None(&f);
+	LvN_Str(&k, "Desktop_JailBreak");
+	PyObject *cr = Mode_CharRes(&k);
+	Native_Free(&k);
+	if (!cr) {
+		return 0;
+	}
+	Native_SetNone(&v);
+	byte ok = Mode_HGet(cr, "Pos", &v) && Mode_VSet(&a[0], "Pos", &v);
+	Native_Free(&v);
+	ok = ok && Mode_HGet(cr, "Ang", &v) && Mode_VSet(&a[0], "Ang", &v);
+	Native_Free(&v);
+	Py_DECREF(cr);
+	Native_SetNone(&name);
+	ok = ok && Po_SetG(&a[0], "InCtrl_Walk", JB, "PuffWalk") && Po_SetG(&a[0], "InCtrl_HRot", JB, "PuffTurn") && Mode_VGet(&a[0], "Name", &name) &&
+		PO_LATER1(2.0, JB, "CheckForJump", &name) && LvN_SetS(&a[0], "UseFunc", "Mission_JailBreak.StaplerSpeech");
+	Native_Free(&name);
+	return ok;
 }
 
 /* StaplerSpeech(UsrName, CharName, optId, FullOption) */
-static PyObject *JailBreak_StaplerSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
-	}
-	Lv_Speakers(&f, usr, ch);
-	Sf_Ask(&f, "Speech", "OnSpch", "(ss)", "Mission_JailBreak_Stapler_InitMsg1", "Mission_JailBreak_Stapler_InitAns1");
-	return Sf_None(&f);
+static byte JailBreak_StaplerSpeech(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return LvN_Speakers(&a[0], &a[1]) && Mode_Spch("Mission_JailBreak_Stapler_InitMsg1", "Mission_JailBreak_Stapler_InitAns1", NULL);
 }
 
 /* CheckForJump(Name): Poof walks to the window; there he presses and releases the action key (jumps) */
-static PyObject *JailBreak_CheckForJump(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+static byte JailBreak_CheckForJump(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t e, pos, z, timy;
+	(void)out;
+	if (!Mode_EntityH(&a[0], &e)) {
+		return 0;
 	}
-	PyObject *e = Sf_Entity(&f, name);
-	if (Sf_True(&f, e) <= 0) {
-		return Sf_None(&f);
+	if (!Native_True(&e)) {
+		Native_Free(&e);
+		return 1;
 	}
-	PyObject *timy = NULL;
-	int at = Sf_Compare(&f, Sf_Item(&f, Sf_Attr(&f, e, "Pos"), 2), ">=", Sf_Int(&f, 27170));
+	Native_SetNone(&pos);
+	Native_SetNone(&z);
+	Native_SetNone(&timy);
+	int at = Mode_VGet(&e, "Pos", &pos) && LvN_Item(&pos, 2, &z) ? Mode_CmpI(&z, ">=", 27170) : -1;
+	byte ok = at >= 0;
 	if (at > 0) {
-		Sf_SetAttrI(&f, e, "InCtrl_Walk", 0);
-		Sf_SetAttrI(&f, e, "InCtrl_HRot", 0);
-		int press = Sf_True(&f, JBG("ActPress"));
+		int press = LvN_SetI(&e, "InCtrl_Walk", 0) && LvN_SetI(&e, "InCtrl_HRot", 0) ? LvN_GTrue(JB, "ActPress") : -1;
 		if (press > 0) {
-			Sf_SetAttrI(&f, e, "InCtrl_Act", 0);
-			Sf_SetGlobal(&f, JB, "ActPress", Sf_Int(&f, 0));
-			timy = f.failed ? NULL : Sf_Float(&f, Scrap_RandRange(0.2, 5.0));
+			ok = LvN_SetI(&e, "InCtrl_Act", 0) && LvN_PutI(JB, "ActPress", 0);
+			Native_SetFloat(&timy, Scrap_RandRange(0.2, 5.0));
 		} else if (press == 0) {
-			Sf_SetAttrI(&f, e, "InCtrl_Act", 1);
-			Sf_SetGlobal(&f, JB, "ActPress", Sf_Int(&f, 1));
-			timy = Sf_Float(&f, 0.1);
+			ok = LvN_SetI(&e, "InCtrl_Act", 1) && LvN_PutI(JB, "ActPress", 1);
+			Native_SetFloat(&timy, 0.1);
+		} else {
+			ok = 0;
 		}
 	} else if (at == 0) {
-		timy = Sf_Float(&f, 0.5);
-		Sf_SetAttr(&f, e, "InCtrl_Walk", JBG("PuffWalk"));
-		Sf_SetAttr(&f, e, "InCtrl_HRot", JBG("PuffTurn"));
+		Native_SetFloat(&timy, 0.5);
+		ok = Po_SetG(&e, "InCtrl_Walk", JB, "PuffWalk") && Po_SetG(&e, "InCtrl_HRot", JB, "PuffTurn");
 	}
-	Sf_Later(&f, timy, JBG("CheckForJump"), Sf_Build(&f, "(O)", name), NULL);
-	return Sf_None(&f);
+	ok = ok && Mode_LaterV(&timy, JB, "CheckForJump", &a[0], 1, NULL);
+	Native_Free(&e);
+	Native_Free(&pos);
+	Native_Free(&z);
+	return ok;
 }
 
 /* OnPossession(name, pos): after the first possession anyone may go */
-static PyObject *JailBreak_OnPossession(PyObject *self, PyObject *args) {
-	PyObject *name, *pos;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &name, &pos)) {
-		return NULL;
-	}
-	Sf_Ask(&f, "Scrap", "Set", "(ss)", "GuaranteedChars", ",Anyone,");
-	Sf_SetMod(&f, "CharConversor", "OnPossession", Py_None);
-	return Sf_None(&f);
+static byte JailBreak_OnPossession(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_GVarSetS("GuaranteedChars", ",Anyone,") && LvN_ModNone("CharConversor", "OnPossession");
 }
 
 /* FirstTimeJail(): the warning of the first time in the jail */
-static PyObject *JailBreak_FirstTimeJail(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte JailBreak_FirstTimeJail(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t text;
+	(void)a;
+	(void)out;
+	if (!Mode_Import("Menu")) {
+		return 0;
 	}
-	Sf_Import(&f, "Menu");
-	Sf_Ask(&f, "Menu", "ShowWarning", "(iO)", 0, Sf_Lang(&f, Sf_Str(&f, "Mission_JailBreak_Warning")));
-	return Sf_None(&f);
+	Mode_Lang("Mission_JailBreak_Warning", &text);
+	byte ok = LV_CALL("Menu", "ShowWarning", NULL, "iv", 0L, &text);
+	Native_Free(&text);
+	return ok;
 }
 
 /* Init(LevelPath): the jail door locked, the exit item, the policemen do not fight; the first time a warning */
-static PyObject *JailBreak_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte JailBreak_Init(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t dmm, pos, l, first, now;
+	(void)a;
+	(void)out;
+	if (!PO_ENTS("DM_Door_PoliceJail_00", "OnObjSlot", "!CloseDoorSlot") || !PO_HOOK("CharConversor", "OnPossession", JB, "OnPossession") ||
+		!Mode_MMDesc("Mission_JailBreak_MissionText1", 0)) {
+		return 0;
 	}
-	Sf_SetAttrS(&f, Sf_Entity(&f, Sf_Str(&f, "DM_Door_PoliceJail_00")), "OnObjSlot", "!CloseDoorSlot");
-	Sf_SetMod(&f, "CharConversor", "OnPossession", JBG("OnPossession"));
-	Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_JailBreak_MissionText1", 0);
-	PyObject *dmm = Lv_Dummy(&f, "DM_Mission_JailBreak_End", 0);
-	PyObject *pos = Sf_Item(&f, dmm, 1);
-	PyObject *l = Sf_Ask(&f, "Scrap", "CreateEntity", "(sOOOs)", "ExitJail", Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1), Sf_Item(&f, pos, 2), "Item");
-	Sf_SetAttrI(&f, l, "Radius", 500);
-	Sf_SetAttrI(&f, l, "OnlyUser", 1);
-	Sf_SetAttrS(&f, l, "OnTake", "Mission_JailBreak.NextMission");
-	Sf_Ask(&f, "Scrap", "Set", "(si)", "PoliceLogicBelligerant", 0);
-	if (Sf_Compare(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "FirstJailBreak"), "==", Py_None) > 0) {
-		Sf_Schedule(&f, Sf_Time(&f), JBG("FirstTimeJail"), Sf_Build(&f, "()"), NULL);
-		Sf_Ask(&f, "Scrap", "CreateSaveVar", "(ss)", "FirstJailBreak", "No");
-		Lv_Fade(&f, lv_black, lv_black, 2.0);
-		Sf_Later(&f, Sf_Float(&f, 0.1), Sf_Mod(&f, "SScorer", "Fade"), Sf_Build(&f, "(i(iiii)(iiii)d)", 0, 0, 0, 0, 255, 0, 0, 0, 0, 0.5), NULL);
+	LvN_Dummy("DM_Mission_JailBreak_End", 0, &dmm);
+	Native_SetNone(&pos);
+	Native_SetNone(&l);
+	byte ok = LvN_Item(&dmm, 1, &pos) && Po_Item("ExitJail", &pos, 500, 1, "Mission_JailBreak.NextMission", &l) &&
+		Mode_GVarSetI("PoliceLogicBelligerant", 0);
+	Native_Free(&dmm);
+	Native_Free(&pos);
+	Native_Free(&l);
+	if (!ok) {
+		return 0;
 	}
-	return Sf_None(&f);
+	Mode_SaveVar("FirstJailBreak", &first);
+	byte none = first.type == NV_NONE;
+	Native_Free(&first);
+	if (!none) {
+		return 1;
+	}
+	Native_SetFloat(&now, Mode_Time());
+	if (!Mode_AtG(&now, JB, "FirstTimeJail", NULL, 0)) {
+		return 0;
+	}
+	SaveVar_Create("FirstJailBreak", "No");
+	return Po_Fade(lv_black, lv_black, 2.0) && Po_FadeLater(0.1, lv_black, lv_clear, 0.5);
 }
 
 /* NextMission(ItemName, CharName): out of the jail: black, no input, the level loads again in 0.5 s */
-static PyObject *JailBreak_NextMission(PyObject *self, PyObject *args) {
-	PyObject *item, *ch;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &item, &ch)) {
-		return NULL;
+static byte JailBreak_NextMission(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t x, text, i;
+	(void)out;
+	if (!Mode_Import("Menu") || !Po_Fade(lv_clear, lv_black, 0.5)) {
+		return 0;
 	}
-	Sf_Import(&f, "Menu");
-	Lv_Fade(&f, lv_clear, lv_black, 0.5);
-	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Inactive");
-	Sf_Ask(&f, "Menu", "DrawScorer", "(is)", 0, "Inactive");
-	if (Sf_True(&f, Sf_Ask(&f, "Scrap", "Get", "(s)", "IsXbox")) == 0) {
-		Sf_Ask(&f, "SScorer", "SetSpeechText", "(Oiiii)", Sf_Lang(&f, Sf_Str(&f, "XBox_Load_Msg_1")), 10, 255, 255, 255);
+	Mode_SetActionSet("Inactive");
+	if (!LV_CALL("Menu", "DrawScorer", NULL, "is", 0L, "Inactive") || !Native_GVarGet("IsXbox", &x)) {
+		return 0;
 	}
-	PyObject *i = Sf_Entity(&f, item);
-	Sf_SetAttrI(&f, i, "rTime", 10);
-	Sf_SetAttrI(&f, i, "AppearsIfFree", 1);
-	Sf_Method(&f, i, "Del", "()");
-	Sf_Later(&f, Sf_Float(&f, 0.5), JBG("LoadPolice"), Sf_Build(&f, "()"), NULL);
-	return Sf_None(&f);
+	byte pc = !Native_True(&x);
+	Native_Free(&x);
+	if (pc) {
+		/* SScorer.SetSpeechText by name (OBJLIB 7) */
+		Mode_Lang("XBox_Load_Msg_1", &text);
+		byte ok = LV_CALL("SScorer", "SetSpeechText", NULL, "viiii", &text, 10L, 255L, 255L, 255L);
+		Native_Free(&text);
+		if (!ok) {
+			return 0;
+		}
+	}
+	Native_SetNone(&i);
+	byte ok = Mode_EntityH(&a[0], &i) && LvN_SetI(&i, "rTime", 10) && LvN_SetI(&i, "AppearsIfFree", 1) && Mode_VDel(&i) &&
+		PO_LATER(0.5, JB, "LoadPolice");
+	Native_Free(&i);
+	return ok;
+}
+
+/* Scrap.SetSaveVar(name, Scrap.GetSaveVar(from)) (the TypeError of "s" for a missing one) */
+static byte Jb_SaveCopy(const char *name, const char *from) {
+	nativeVal_t v;
+	Mode_SaveVar(from, &v);
+	byte ok = Mode_SetSaveVar(name, &v);
+	Native_Free(&v);
+	return ok;
 }
 
 /* LoadPolice(): the mission before the jail back, the alarm off, the game starts again at the jail's exit */
-static PyObject *JailBreak_LoadPolice(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte JailBreak_LoadPolice(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	if (!LV_CALL("SaveGame", "MarkWayPoint", NULL, "sss", "Levels/Police", "DM_Mission_JailBreak_End", "") ||
+		!Jb_SaveCopy("Mission.Map", "Mission_JailBreak.Map") || !Jb_SaveCopy("Mission.Library", "Mission_JailBreak.Library")) {
+		return 0;
 	}
-	Sf_Ask(&f, "SaveGame", "MarkWayPoint", "(sss)", "Levels/Police", "DM_Mission_JailBreak_End", "");
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "Mission.Map", Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Mission_JailBreak.Map"));
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "Mission.Library", Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Mission_JailBreak.Library"));
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "AlarmActive", "0");
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "AlarmStatus", "0.0");
-	Sf_Ask(&f, "Scrap", "DelSaveVars", "(s)", "Mission_JailBreak");
-	Sf_Ask(&f, "SaveGame", "StartGame", "()");
-	return Sf_None(&f);
+	SaveVar_Set("AlarmActive", "0");
+	SaveVar_Set("AlarmStatus", "0.0");
+	return Mode_DelSaveVars("Mission_JailBreak") && LV_CALL("SaveGame", "StartGame", NULL, "");
 }
 
+LV_FN(JailBreak, InitStatusA, 1, JailBreak_InitStatus)
+LV_FN(JailBreak, AfterBrowseNPCA, 0, JailBreak_AfterBrowseNPC)
+LV_FN(JailBreak, CreateMCListA, 1, JailBreak_CreateMCList)
+LV_FN(JailBreak, CreateGearStayA, 1, JailBreak_CreateGearStay)
+LV_FN(JailBreak, CreatePuffA, 1, JailBreak_CreatePuff)
+LV_FN(JailBreak, InitPuffRebornA, 1, JailBreak_InitPuffReborn)
+LV_FN(JailBreak, StaplerSpeechA, 4, JailBreak_StaplerSpeech)
+LV_FN(JailBreak, CheckForJumpA, 1, JailBreak_CheckForJump)
+LV_FN(JailBreak, OnPossessionA, 2, JailBreak_OnPossession)
+LV_FN(JailBreak, FirstTimeJailA, 0, JailBreak_FirstTimeJail)
+LV_FN(JailBreak, InitA, 1, JailBreak_Init)
+LV_FN(JailBreak, NextMissionA, 2, JailBreak_NextMission)
+LV_FN(JailBreak, LoadPoliceA, 0, JailBreak_LoadPolice)
+
 PyMethodDef g_PoliceJailBreakMethods[] = {
-	{ "InitStatus", JailBreak_InitStatus, METH_VARARGS, NULL },
-	{ "AfterBrowseNPC", JailBreak_AfterBrowseNPC, METH_VARARGS, NULL },
-	{ "CreateMCList", JailBreak_CreateMCList, METH_VARARGS, NULL },
-	{ "CreateGearStay", JailBreak_CreateGearStay, METH_VARARGS, NULL },
-	{ "CreatePuff", JailBreak_CreatePuff, METH_VARARGS, NULL },
-	{ "InitPuffReborn", JailBreak_InitPuffReborn, METH_VARARGS, NULL },
-	{ "StaplerSpeech", JailBreak_StaplerSpeech, METH_VARARGS, NULL },
-	{ "CheckForJump", JailBreak_CheckForJump, METH_VARARGS, NULL },
-	{ "OnPossession", JailBreak_OnPossession, METH_VARARGS, NULL },
-	{ "FirstTimeJail", JailBreak_FirstTimeJail, METH_VARARGS, NULL },
-	{ "Init", JailBreak_Init, METH_VARARGS, NULL },
-	{ "NextMission", JailBreak_NextMission, METH_VARARGS, NULL },
-	{ "LoadPolice", JailBreak_LoadPolice, METH_VARARGS, NULL },
+	{ "InitStatus", JailBreak_InitStatusA, METH_VARARGS, NULL },
+	{ "AfterBrowseNPC", JailBreak_AfterBrowseNPCA, METH_VARARGS, NULL },
+	{ "CreateMCList", JailBreak_CreateMCListA, METH_VARARGS, NULL },
+	{ "CreateGearStay", JailBreak_CreateGearStayA, METH_VARARGS, NULL },
+	{ "CreatePuff", JailBreak_CreatePuffA, METH_VARARGS, NULL },
+	{ "InitPuffReborn", JailBreak_InitPuffRebornA, METH_VARARGS, NULL },
+	{ "StaplerSpeech", JailBreak_StaplerSpeechA, METH_VARARGS, NULL },
+	{ "CheckForJump", JailBreak_CheckForJumpA, METH_VARARGS, NULL },
+	{ "OnPossession", JailBreak_OnPossessionA, METH_VARARGS, NULL },
+	{ "FirstTimeJail", JailBreak_FirstTimeJailA, METH_VARARGS, NULL },
+	{ "Init", JailBreak_InitA, METH_VARARGS, NULL },
+	{ "NextMission", JailBreak_NextMissionA, METH_VARARGS, NULL },
+	{ "LoadPolice", JailBreak_LoadPoliceA, METH_VARARGS, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
 /* ---- Mission_PoliceBossCheats ---- */
 
-#define PCG(name) Sf_Global(&f, PC, name)
-#define PCGF(name) Sf_Global(f, PC, name)
-
 /* InitStatus(LevelPath): Ficus' friend; the police boss is discardable */
-static PyObject *PoliceBossCheats_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Lv_MissionChar(&f, "Police_FicusPal", PC, "CreatePoliceFicusPal");
-	Sf_Ask(&f, "Chars", "AddNewCharRes", "(si)", "PoliceBoss", 1);
-	return Sf_None(&f);
+static byte PoliceBossCheats_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return LvN_MissionChar("Police_FicusPal", PC, "CreatePoliceFicusPal") && LV_CALL("Chars", "AddNewCharRes", NULL, "si", "PoliceBoss", 1L);
 }
 
 /* Init(LevelPath): the poker game, the scene PoliFight, the state of the mission */
-static PyObject *PoliceBossCheats_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte PoliceBossCheats_Init(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t svv;
+	byte ok = 1;
+	(void)a;
+	(void)out;
+	if (!Mode_Import("Elevator") || !LV_OWN(PC, "CheatingLoop", NULL, "") || !Mode_DelSchedS("CrazyWind")) {
+		return 0;
 	}
-	Sf_Import(&f, "Elevator");
-	Sf_Own(&f, PC, "CheatingLoop", "()");
-	Sf_Ask(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "CrazyWind");
-	PyObject *svv = Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Mission_PoliceBossCheats");
-	if (Sf_EqS(&f, svv, "TalkFicusPal") > 0) {
-		Sf_Own(&f, PC, "LoadPoliFightScene", "()");
-		Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "Police_FicusPal");
-	} else if (Sf_EqS(&f, svv, "BossCheats") > 0) {
-		Sf_Own(&f, PC, "LoadPoliFightScene", "()");
-		Sf_Own(&f, PC, "InitBossCheats", "()");
-	} else if (Sf_EqS(&f, svv, "AskCrazyGambler") > 0) {
-		Sf_Own(&f, PC, "InitAskCrazyGambler", "()");
+	Mode_SaveVar("Mission_PoliceBossCheats", &svv);
+	if (LvN_EqS(&svv, "TalkFicusPal")) {
+		ok = LV_OWN(PC, "LoadPoliFightScene", NULL, "") && Mode_Target("Police_FicusPal");
+	} else if (LvN_EqS(&svv, "BossCheats")) {
+		ok = LV_OWN(PC, "LoadPoliFightScene", NULL, "") && LV_OWN(PC, "InitBossCheats", NULL, "");
+	} else if (LvN_EqS(&svv, "AskCrazyGambler")) {
+		ok = LV_OWN(PC, "InitAskCrazyGambler", NULL, "");
 	}
-	return Sf_None(&f);
+	Native_Free(&svv);
+	return ok;
 }
 
 /* CreatePoliceFicusPal(e): Ficus' friend stays and talks */
-static PyObject *PoliceBossCheats_CreatePoliceFicusPal(PyObject *self, PyObject *args) {
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
-	}
-	Sf_SetAttrS(&f, e, "UseFunc", "Mission_PoliceBossCheats.FicusPalMissionSpeech");
-	Lv_Stay(&f, e, 6, Sf_Str(&f, ""));
-	return Sf_None(&f);
+static byte PoliceBossCheats_CreatePoliceFicusPal(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return LvN_SetS(&a[0], "UseFunc", "Mission_PoliceBossCheats.FicusPalMissionSpeech") && LvN_Stay(&a[0], 6, Po_Empty());
 }
 
-/* Speech.SpeechRoutines["Police"](UsrName, CharName, optId, FullOption) */
-static void Pc_PoliceTalk(scriptFrame_t *f, PyObject *usr, PyObject *ch, PyObject *opt, PyObject *full) {
-	PyObject *fn = Sf_GetItem(f, Sf_Mod(f, "Speech", "SpeechRoutines"), Sf_Str(f, "Police"));
-	Sf_Call(f, fn, "(OOOO)", usr, ch, opt, full);
+/* Speech.SpeechRoutines["Police"](UsrName, CharName, optId, FullOption) (OBJLIB 5: the functions of Speech) */
+static byte Pc_PoliceTalk(const nativeVal_t *a) {
+	PyObject *r = Script_Attr("Speech", "SpeechRoutines");
+	PyObject *k = r ? PyString_FromString("Police") : NULL;
+	PyObject *fn = k ? PyObject_GetItem(r, k) : NULL;
+	byte ok = fn && Native_Call(fn, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
+	Py_XDECREF(fn);
+	Py_XDECREF(k);
+	Py_XDECREF(r);
+	return ok;
 }
 
 /* FicusPalMissionSpeech(UsrName, CharName, optId, FullOption): Ficus' friend tells a policeman that the boss cheats
  * (InitBossCheats at the end); otherwise the police talk */
-static PyObject *PoliceBossCheats_FicusPalMissionSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+static byte PoliceBossCheats_FicusPalMissionSpeech(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t usr, svv;
+	(void)out;
+	if (!LvN_Speakers(&a[0], &a[1])) {
+		return 0;
 	}
-	Lv_Speakers(&f, usr, ch);
-	int other = Sf_Compare(&f, Sf_Attr(&f, Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0), "ActCtrl"), "!=", Sf_Str(&f, "Police"));
-	if (other > 0) {
-		Sf_Ask(&f, "Speech", "OnSpch", "(ss)", "Mission_TalkToFicusFriend_Police_InitMsg2", "Mission_TalkToFicusFriend_Police_InitAns2");
-		return Sf_None(&f);
+	Native_SetNone(&usr);
+	int police = Mode_UsrHandle(&usr) ? Po_CtrlIs(&usr, "Police") : -1;
+	Native_Free(&usr);
+	if (police <= 0) {
+		return police == 0 && Mode_Spch("Mission_TalkToFicusFriend_Police_InitMsg2", "Mission_TalkToFicusFriend_Police_InitAns2", NULL);
 	}
-	PyObject *svv = Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Mission_PoliceBossCheats");
-	int talk = Sf_EqS(&f, opt, "Talk") > 0;
-	if (Sf_EqS(&f, svv, "TalkFicusPal") > 0) {
-		if (talk) {
-			Lv_OnEnd(&f, PC, "InitBossCheats", NULL);
-			Sf_Ask(&f, "Speech", "NISpeech", "()");
-			Sf_Ask(&f, "Speech", "AutoAddNI", "(s)", "Mission_TalkToFicusFriend_Police_NI_1Msg");
-			Sf_Ask(&f, "Speech", "RunNI", "()");
-		} else {
-			Pc_PoliceTalk(&f, usr, ch, opt, full);
-		}
-	} else if (Sf_EqS(&f, svv, "BossCheats") > 0 && talk) {
-		Sf_Ask(&f, "Speech", "OnSpch", "(ss)", "Mission_PhotoPoliceBoss_Police_InitMsg1", "Mission_PhotoPoliceBoss_Police_InitAns1");
+	Mode_SaveVar("Mission_PoliceBossCheats", &svv);
+	byte talk = LvN_EqS(&a[2], "Talk"), ok;
+	if (LvN_EqS(&svv, "TalkFicusPal")) {
+		ok = talk ? LvN_OnEnd(PC, "InitBossCheats", NULL) && Mode_NISpeech(NULL, "Mission_TalkToFicusFriend_Police_NI_1Msg") : Pc_PoliceTalk(a);
+	} else if (LvN_EqS(&svv, "BossCheats") && talk) {
+		ok = Mode_Spch("Mission_PhotoPoliceBoss_Police_InitMsg1", "Mission_PhotoPoliceBoss_Police_InitAns1", NULL);
 	} else {
-		Pc_PoliceTalk(&f, usr, ch, opt, full);
+		ok = Pc_PoliceTalk(a);
 	}
-	return Sf_None(&f);
+	Native_Free(&svv);
+	return ok;
+}
+
+/* the poker player or his cards at the dummy: Scrap.CreateEntity(name, dummy[1][0], [1], [2], type) through its seam,
+ * h.Ang = (0, dummy[2][1] + 180, 0) */
+static byte Pc_AtDummy(const nativeVal_t *dummy, const nativeVal_t *name, const char *type, nativeVal_t *h) {
+	nativeVal_t pos, a, a1, turn, ang;
+	Native_SetNone(&pos);
+	Native_SetNone(&a);
+	Native_SetNone(&a1);
+	Native_SetNone(&turn);
+	Native_SetEmpty(&ang, NV_TUPLE);
+	Native_SetInt(Native_Append(&ang), 0);
+	byte ok = LvN_Item(dummy, 1, &pos) && LvN_CreateAt(name, &pos, type, h) && LvN_Item(dummy, 2, &a) && LvN_Item(&a, 1, &a1);
+	if (ok) {
+		Native_SetInt(&turn, 180);
+		ok = Native_Arith('+', &a1, &turn, Native_Append(&ang));
+	}
+	if (ok) {
+		Native_SetInt(Native_Append(&ang), 0);
+		ok = Mode_VSet(h, "Ang", &ang);
+	}
+	Native_Free(&pos);
+	Native_Free(&a);
+	Native_Free(&a1);
+	Native_Free(&ang);
+	return ok;
 }
 
 /* CreateFakeChar(CharName, CharType, CardType): a poker player at his dummy with his cards: the two entities */
-static PyObject *PoliceBossCheats_CreateFakeChar(PyObject *self, PyObject *args) {
-	PyObject *name, *type, *card;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &name, &type, &card)) {
-		return NULL;
+static byte PoliceBossCheats_CreateFakeChar(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *dummy = Mode_V(&t), *csp = Mode_V(&t), *csp2 = Mode_V(&t), *mv = Mode_V(&t), *ang = Mode_V(&t), *cname = Mode_V(&t);
+	nativeVal_t *cls = Mode_V(&t), *pos = Mode_V(&t), *x = Mode_V(&t), *y1 = Mode_V(&t), *disp = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t);
+	nativeVal_t *p2 = Mode_V(&t);
+	const char *name, *type;
+	if (!Native_ArgStr(&a[0], 1, &name)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Ask(&f, "Scrap", "StartDummySearch", "(Oi)", name, 0);
-	PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-	PyObject *pos = Sf_Item(&f, dummy, 1);
-	PyObject *csp = Sf_Ask(&f, "Scrap", "CreateEntity", "(OOOOs)", name, Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1), Sf_Item(&f, pos, 2), "WalkChar");
-	PyObject *turn = Sf_OpI(&f, Sf_Item(&f, Sf_Item(&f, dummy, 2), 1), '+', 180);
-	Sf_SetAttr(&f, csp, "Ang", Sf_Build(&f, "(iOi)", 0, turn, 0));
-	Sf_SetAttr(&f, csp, "ActCtrl", type);
-	Sf_Ask(&f, "SLogic", "SetOnFloor", "(O)", Sf_Attr(&f, csp, "Name"));
-	Sf_SetAttr(&f, csp, "MoveTime", Sf_Float(&f, 0.1));
-	Sf_SetAttr(&f, csp, "MovePos", Sf_Item(&f, dummy, 1));
-	Sf_SetAttr(&f, csp, "MoveAng", Sf_Attr(&f, csp, "Ang"));
-	Sf_SetAttrI(&f, csp, "Invulnerable", 1);
-	Sf_SetAttrS(&f, csp, "ForceDefLoop", "StayPoker");
-	Sf_SetAttrS(&f, csp, "ForceAction", "StayPoker");
-	pos = Sf_Item(&f, dummy, 1);
-	PyObject *csp2 = Sf_Ask(&f, "Scrap", "CreateEntity", "(OOOOs)", Sf_Cat(&f, "Os", name, "Card"), Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1),
-		Sf_Item(&f, pos, 2), "WithLife");
-	turn = Sf_OpI(&f, Sf_Item(&f, Sf_Item(&f, dummy, 2), 1), '+', 180);
-	Sf_SetAttr(&f, csp2, "Ang", Sf_Build(&f, "(iOi)", 0, turn, 0));
-	Sf_SetAttr(&f, csp2, "ActCtrl", card);
-	Sf_SetAttr(&f, csp2, "MoveTime", Sf_Float(&f, 0.1));
-	Sf_Ask(&f, "SAct", "GetClass", "(O)", type);
-	pos = Sf_Item(&f, dummy, 1);
-	PyObject *x = Sf_Item(&f, pos, 0);
-	PyObject *y = Sf_Op(&f, Sf_Item(&f, Sf_Item(&f, dummy, 1), 1), '+', Sf_Ask(&f, "SAct", "GetCls", "(s)", "YModelDisp"));
-	Sf_SetAttr(&f, csp2, "MovePos", Sf_Build(&f, "(OOO)", x, y, Sf_Item(&f, Sf_Item(&f, dummy, 1), 2)));
-	Sf_SetAttr(&f, csp2, "MoveAng", Sf_Attr(&f, csp2, "Ang"));
-	Sf_SetAttrS(&f, csp2, "DefLoop", "StayPoker");
-	Sf_SetAttrS(&f, csp2, "Action", "StayPoker");
-	Sf_SetAttrI(&f, csp2, "Invulnerable", 1);
-	return Sf_Return(&f, Sf_Build(&f, "(OO)", csp, csp2));
+	Mode_DummyStart(name, 0);
+	Mode_DummyNext(dummy);
+	if (!Pc_AtDummy(dummy, &a[0], "WalkChar", csp) || !Mode_VSet(csp, "ActCtrl", &a[1]) || !Po_OnFloor(csp) || !LvN_SetF(csp, "MoveTime", 0.1) ||
+		!LvN_Item(dummy, 1, mv) || !Mode_VSet(csp, "MovePos", mv) || !Mode_VGet(csp, "Ang", ang) || !Mode_VSet(csp, "MoveAng", ang) ||
+		!LvN_SetI(csp, "Invulnerable", 1) || !LvN_SetS(csp, "ForceDefLoop", "StayPoker") || !LvN_SetS(csp, "ForceAction", "StayPoker") ||
+		!Native_Arith('+', &a[0], Mode_S(&t, "Card"), cname) || !Pc_AtDummy(dummy, cname, "WithLife", csp2) ||
+		!Mode_VSet(csp2, "ActCtrl", &a[2]) || !LvN_SetF(csp2, "MoveTime", 0.1) || !Native_ArgStr(&a[1], 1, &type) ||
+		!LvN_GetClass(type, cls)) {
+		return Mode_Done(&t, 0);
+	}
+	/* (dummy[1][0], dummy[1][1] + SAct.GetCls("YModelDisp"), dummy[1][2]) (OBJLIB 7: SAct.GetCls by name) */
+	Native_SetEmpty(p2, NV_TUPLE);
+	if (!LvN_Item(dummy, 1, pos) || !LvN_Item(pos, 0, x)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(pos);
+	if (!LvN_Item(dummy, 1, pos) || !LvN_Item(pos, 1, y1) || !LV_CALL("SAct", "GetCls", disp, "s", "YModelDisp") ||
+		!Native_Arith('+', y1, disp, y)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(pos);
+	if (!LvN_Item(dummy, 1, pos) || !LvN_Item(pos, 2, z)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Copy(Native_Append(p2), x);
+	Native_Copy(Native_Append(p2), y);
+	Native_Copy(Native_Append(p2), z);
+	Native_Free(ang);
+	if (!Mode_VSet(csp2, "MovePos", p2) || !Mode_VGet(csp2, "Ang", ang) || !Mode_VSet(csp2, "MoveAng", ang) ||
+		!LvN_SetS(csp2, "DefLoop", "StayPoker") || !LvN_SetS(csp2, "Action", "StayPoker") || !LvN_SetI(csp2, "Invulnerable", 1)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetEmpty(out, NV_TUPLE);
+	Native_Copy(Native_Append(out), csp);
+	Native_Copy(Native_Append(out), csp2);
+	return Mode_Done(&t, 1);
 }
 
 /* Scene.CreateLocalAction(cls, 0, name, anm, loop) for the poker actions of cls */
-static void Pc_PokerActions(scriptFrame_t *f, PyObject *cls, byte brup) {
+static byte Pc_PokerActions(const char *cls, byte brup) {
 	static const struct {
 		const char *name, *anm;
-		int loop;
+		long loop;
 	} acts[] = { { "StayPoker", "RelaxPoker", 1 }, { "Stay0Poker", "Relax0Poker", 0 }, { "PlayPoker", "PlayPoker", 0 },
 		{ "BrupPoker", "BrupPoker", 0 }, { "CheatPoker", "CheatPoker", 0 } };
-	int mark = f->n;
 	for (int i = 0; i < (brup ? 4 : 5); i++) {
-		Sf_Ask(f, "Scene", "CreateLocalAction", "(Oissi)", cls, 0, acts[i].name, acts[i].anm, acts[i].loop);
+		if (!LV_CALL("Scene", "CreateLocalAction", NULL, "sissi", cls, 0L, acts[i].name, acts[i].anm, acts[i].loop)) {
+			return 0;
+		}
 	}
-	Sf_Release(f, mark);
+	return 1;
 }
 
 /* an event of the current action: SAct.SetAct AddEventAtTime, EventName, EventFunc */
-static void Pc_Event(scriptFrame_t *f, PyObject *time, const char *name, const char *func) {
-	int mark = f->n;
-	Sf_Ask(f, "SAct", "SetAct", "(sO)", "AddEventAtTime", time);
-	Sf_Ask(f, "SAct", "SetAct", "(ss)", "EventName", name);
-	Sf_Ask(f, "SAct", "SetAct", "(ss)", "EventFunc", func);
-	Sf_Release(f, mark);
+static byte Pc_Event(const nativeVal_t *time, const char *name, const char *func) {
+	return LvN_SetAct("AddEventAtTime", time) && Mode_SActSet(0, "EventName", name, 0) && Mode_SActSet(0, "EventFunc", func, 0);
+}
+
+static byte Pc_EventAt(double time, const char *name, const char *func) {
+	nativeVal_t t;
+	Native_SetFloat(&t, time);
+	return Pc_Event(&t, name, func);
+}
+
+/* the event at the time of SAct.GetAct(frame) */
+static byte Pc_EventFrame(const char *frame, const char *name, const char *func) {
+	nativeVal_t t;
+	byte ok = LvN_GetAct(frame, &t) && Pc_Event(&t, name, func);
+	Native_Free(&t);
+	return ok;
 }
 
 /* try: exec("import MapSnd;MapSnd.<func>()") except: Scrap.ConsoleError(msg) */
-static void Pc_TrySound(scriptFrame_t *f, const char *func, const char *msg) {
-	if (f->failed) {
-		return;
+static byte Pc_TrySound(const char *func, const char *msg) {
+	nativeVal_t m;
+	if (Mode_Import("MapSnd") && LV_CALL("MapSnd", func, NULL, "")) {
+		return 1;
 	}
-	int mark = f->n;
-	PyObject *locals = Sf_Keep(f, PyDict_New());
-	Sf_ImportCall(f, PC, locals, "MapSnd", Sf_Str(f, func));
-	if (Sf_Except(f)) {
-		Sf_Ask(f, "Scrap", "ConsoleError", "(s)", msg);
-	}
-	Sf_Release(f, mark);
+	PyErr_Clear();
+	LvN_Str(&m, msg);
+	byte ok = Mode_ConsoleError(&m);
+	Native_Free(&m);
+	return ok;
 }
 
 /* CheatingLoop(): the poker table: the actions of the players and the cards with the belch events and the photo
  * window of the cheat, their sounds, the three players, the photo hook */
-static PyObject *PoliceBossCheats_CheatingLoop(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_SetMod(&f, "Scene", "SceneName", Sf_Str(&f, "Poker"));
-	Sf_SetItem(&f, Sf_Mod(&f, "Scene", "Actors"), Sf_Mod(&f, "Scene", "SceneName"), Sf_Build(&f, "[]"));
-	Sf_Ask(&f, "SAct", "GetClass", "(s)", "PoliceBoss");
-	Sf_Ask(&f, "SAct", "SetCls", "(si)", "CanBePossessed", 0);
-	Pc_PokerActions(&f, Sf_Str(&f, "PoliceBoss"), 1);
-	Pc_Event(&f, Sf_Float(&f, 1.10), "PoliceBossBrup", "!PoliceBossBrup");
+static byte PoliceBossCheats_CheatingLoop(const nativeVal_t *a, nativeVal_t *out) {
 	static const double fx[] = { 1.21, 1.33, 1.46, 1.61, 1.77, 1.94 };
-	for (int i = 0; i < 6; i++) {
-		Pc_Event(&f, Sf_Float(&f, fx[i]), "FXPoliceBossBrup", "!FXPoliceBossBrup");
-	}
-	Sf_Ask(&f, "Scene", "CreateLocalAction", "(sissi)", "PoliceBoss", 0, "CheatPoker", "CheatPoker", 0);
-	Pc_Event(&f, Sf_Ask(&f, "SAct", "GetAct", "(s)", "TimeOfFrame50"), "DeactivatePhoto", "Mission_PoliceBossCheats.PhotoOn");
-	Pc_Event(&f, Sf_Ask(&f, "SAct", "GetAct", "(s)", "TimeOfFrame140"), "DeactivatePhoto", "Mission_PoliceBossCheats.PhotoOff");
-	Sf_Ask(&f, "SAct", "GetClass", "(s)", "Police");
-	Pc_PokerActions(&f, Sf_Str(&f, "Police"), 0);
 	static const char *const cards[] = { "CartasBoss", "CartasPoli" };
-	for (int i = 0; i < 2; i++) {
-		int mark = f.n;
-		PyObject *type = Sf_Str(&f, cards[i]);
-		Sf_Ask(&f, "Scene", "AddLocalActor", "(OO)", type, type);
-		Pc_PokerActions(&f, type, 0);
-		Sf_Ask(&f, "SAct", "SetCls", "(ss)", "DefAction", "StayPoker");
-		Sf_Ask(&f, "Scrap", "Set", "(sO)", "DefInterpTime", Sf_Ask(&f, "Scrap", "Def", "(s)", "DefInterpTime"));
-		Sf_Release(&f, mark);
-	}
-	Sf_Ask(&f, "SAct", "GetClass", "(s)", "Police");
-	Pc_TrySound(&f, "PoliceCheats", "SOUND ERROR : MapSnd.PoliceCheats() \n");
-	Sf_Ask(&f, "SAct", "GetClass", "(s)", "PoliceBoss");
-	Pc_TrySound(&f, "PoliceBossCheats", "SOUND ERROR : MapSnd.PoliceBossCheats() \n");
 	static const struct {
 		const char *dummy, *type, *card, *player, *cards;
 	} players[] = { { "DM_Mission_Police_Dumb", "Police", "PokerCartasPoli", "Dumb2", "Dumb2c" },
 		{ "DM_Mission_Police_Dumber", "Police", "PokerCartasPoli", "Dumb1", "Dumb1c" },
 		{ "DM_Mission_PoliceBoss_BossCheater", "PoliceBoss", "PokerCartasBoss", "PoliceBoss", "PoliceBossc" } };
-	for (int i = 0; i < 3; i++) {
-		int mark = f.n;
-		PyObject *pair[2];
-		PyObject *r = Sf_Own(&f, PC, "CreateFakeChar", "(sss)", players[i].dummy, players[i].type, players[i].card);
-		if (Sf_Unpack(&f, r, 2, pair)) {
-			Sf_SetGlobal(&f, PC, players[i].player, pair[0]);
-			Sf_SetGlobal(&f, PC, players[i].cards, pair[1]);
-		}
-		Sf_Release(&f, mark);
+	nativeVal_t v, name, empty;
+	(void)a;
+	(void)out;
+	LvN_Str(&v, "Poker");
+	byte ok = Mode_SetModVar("Scene", "SceneName", &v);
+	Native_Free(&v);
+	Native_SetEmpty(&empty, NV_LIST);
+	ok = ok && LvN_ModGet("Scene", "SceneName", &name) && Mode_ModDictPut("Scene", "Actors", &name, &empty);
+	Native_Free(&name);
+	Native_Free(&empty);
+	if (!ok || !Mode_SAct("GetClass", "PoliceBoss") || !Mode_SActSet(1, "CanBePossessed", NULL, 0) || !Pc_PokerActions("PoliceBoss", 1) ||
+		!Pc_EventAt(1.10, "PoliceBossBrup", "!PoliceBossBrup")) {
+		return 0;
 	}
-	Sf_SetAttrI(&f, PCG("PoliceBoss"), "ArrowCanUse", 1);
-	Sf_SetMod(&f, "CharAct", "TakenPhoto", PCG("OnPhoto"));
-	return Sf_None(&f);
+	for (int i = 0; i < 6; i++) {
+		if (!Pc_EventAt(fx[i], "FXPoliceBossBrup", "!FXPoliceBossBrup")) {
+			return 0;
+		}
+	}
+	if (!LV_CALL("Scene", "CreateLocalAction", NULL, "sissi", "PoliceBoss", 0L, "CheatPoker", "CheatPoker", 0L) ||
+		!Pc_EventFrame("TimeOfFrame50", "DeactivatePhoto", "Mission_PoliceBossCheats.PhotoOn") ||
+		!Pc_EventFrame("TimeOfFrame140", "DeactivatePhoto", "Mission_PoliceBossCheats.PhotoOff") || !Mode_SAct("GetClass", "Police") ||
+		!Pc_PokerActions("Police", 0)) {
+		return 0;
+	}
+	for (int i = 0; i < 2; i++) {
+		if (!LV_CALL("Scene", "AddLocalActor", NULL, "ss", cards[i], cards[i]) || !Pc_PokerActions(cards[i], 0) ||
+			!Mode_SActSet(1, "DefAction", "StayPoker", 0) || !Mode_GVarSetDef("DefInterpTime")) {
+			return 0;
+		}
+	}
+	if (!Mode_SAct("GetClass", "Police") || !Pc_TrySound("PoliceCheats", "SOUND ERROR : MapSnd.PoliceCheats() \n") || !Mode_SAct("GetClass", "PoliceBoss") ||
+		!Pc_TrySound("PoliceBossCheats", "SOUND ERROR : MapSnd.PoliceBossCheats() \n")) {
+		return 0;
+	}
+	for (int i = 0; i < 3; i++) {
+		nativeVal_t r, pair[2];
+		Native_SetNone(&r);
+		Native_SetNone(&pair[0]);
+		Native_SetNone(&pair[1]);
+		ok = LV_OWN(PC, "CreateFakeChar", &r, "sss", players[i].dummy, players[i].type, players[i].card);
+		if (ok) {
+			/* (e, cards): a tuple of handles */
+			Mode_Elems(&r);
+			ok = Mode_Unpack(&r, 2, pair) && Mode_Put(PC, players[i].player, NULL, &pair[0]) && Mode_Put(PC, players[i].cards, NULL, &pair[1]);
+		}
+		Native_Free(&r);
+		Native_Free(&pair[0]);
+		Native_Free(&pair[1]);
+		if (!ok) {
+			return 0;
+		}
+	}
+	return Po_GSetI(PC, "PoliceBoss", "ArrowCanUse", 1) && PO_HOOK("CharAct", "TakenPhoto", PC, "OnPhoto");
 }
 
 /* PlayAnm(Ent1, Ent2, Action): the action of a player and of his cards */
-static PyObject *PoliceBossCheats_PlayAnm(PyObject *self, PyObject *args) {
-	PyObject *e1, *e2, *action;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &e1, &e2, &action)) {
-		return NULL;
-	}
-	Sf_SetAttr(&f, e1, "ForceAction", action);
-	Sf_SetAttr(&f, e2, "ForceAction", action);
-	return Sf_None(&f);
+static byte PoliceBossCheats_PlayAnm(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Mode_VSet(&a[0], "ForceAction", &a[2]) && Mode_VSet(&a[1], "ForceAction", &a[2]);
 }
 
 /* PlayAnm(<player>, <player>c, action) of the module's players */
-static void Pc_Play(scriptFrame_t *f, const char *player, const char *action) {
+static byte Pc_Play(const char *player, const char *action) {
 	char cards[0x20];
+	nativeVal_t p, c;
 	Str_Printf(cards, sizeof(cards), "%sc", player);
-	Sf_Own(f, PC, "PlayAnm", "(OOs)", PCGF(player), PCGF(cards), action);
+	Native_SetNone(&c);
+	byte ok = Mode_G(PC, player, &p) && Mode_G(PC, cards, &c) && LV_OWN(PC, "PlayAnm", NULL, "vvs", &p, &c, action);
+	Native_Free(&p);
+	Native_Free(&c);
+	return ok;
 }
 
-/* the same in delay seconds (PokerPlay) */
-static void Pc_PlayLater(scriptFrame_t *f, PyObject *time, double delay, const char *player, const char *action) {
+/* the same in delay seconds after time (now for NULL) (PokerPlay) */
+static byte Pc_PlayLater(const nativeVal_t *time, double delay, const char *player, const char *action) {
 	char cards[0x20];
+	nativeVal_t base, d, at, args[3], name;
 	Str_Printf(cards, sizeof(cards), "%sc", player);
-	PyObject *at = time ? Sf_Op(f, time, '+', Sf_Float(f, delay)) : Sf_Op(f, Sf_Time(f), '+', Sf_Float(f, delay));
-	Sf_Schedule(f, at, PCGF("PlayAnm"), Sf_Build(f, "(OOs)", PCGF(player), PCGF(cards), action), "PokerPlay");
+	if (time) {
+		Native_Copy(&base, time);
+	} else {
+		Native_SetFloat(&base, Mode_Time());
+	}
+	Native_SetFloat(&d, delay);
+	Native_SetNone(&at);
+	byte ok = Native_Arith('+', &base, &d, &at);
+	Native_Free(&base);
+	PyObject *fn = ok ? Mode_GlobalPy(PC, "PlayAnm") : NULL;
+	Native_SetNone(&args[0]);
+	Native_SetNone(&args[1]);
+	LvN_Str(&args[2], action);
+	LvN_Str(&name, "PokerPlay");
+	ok = fn && Mode_G(PC, player, &args[0]) && Mode_G(PC, cards, &args[1]) && Mode_Schedule(&at, fn, args, 3, &name);
+	Py_XDECREF(fn);
+	for (int i = 0; i < 3; i++) {
+		Native_Free(&args[i]);
+	}
+	Native_Free(&at);
+	Native_Free(&name);
+	return ok;
 }
 
 /* WatchEvents(FuncCall): the three players relax one after the other, then the next turn */
-static PyObject *PoliceBossCheats_WatchEvents(PyObject *self, PyObject *args) {
-	PyObject *call;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &call)) {
-		return NULL;
+static byte PoliceBossCheats_WatchEvents(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t time, d, at, name;
+	(void)out;
+	Native_SetFloat(&time, Mode_Time());
+	if (!Pc_PlayLater(&time, 5.0, "Dumb1", "Stay0Poker") || !Pc_PlayLater(&time, 5.5, "Dumb2", "Stay0Poker") ||
+		!Pc_PlayLater(&time, 6.0, "PoliceBoss", "Stay0Poker")) {
+		return 0;
 	}
-	PyObject *time = Sf_Time(&f);
-	Pc_PlayLater(&f, time, 5.0, "Dumb1", "Stay0Poker");
-	Pc_PlayLater(&f, time, 5.5, "Dumb2", "Stay0Poker");
-	Pc_PlayLater(&f, time, 6.0, "PoliceBoss", "Stay0Poker");
-	Sf_Schedule(&f, Sf_Op(&f, time, '+', Sf_Float(&f, 8.0)), call, Sf_Build(&f, "()"), "PokerPlay");
-	return Sf_None(&f);
+	Native_SetFloat(&d, 8.0);
+	Native_SetNone(&at);
+	PyObject *fn = Native_Arith('+', &time, &d, &at) ? Native_ToPy(&a[0]) : NULL;
+	LvN_Str(&name, "PokerPlay");
+	byte ok = fn && Mode_Schedule(&at, fn, NULL, 0, &name);
+	Py_XDECREF(fn);
+	Native_Free(&at);
+	Native_Free(&name);
+	return ok;
 }
 
 /* the turns of the poker game: two plays, then WatchEvents(next) */
-static PyObject *Pc_Turn(PyObject *args, const char *p1, const char *a1, const char *p2, const char *a2, const char *next) {
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Pc_Turn(const char *p1, const char *a1, const char *p2, const char *a2, const char *next) {
+	nativeVal_t n;
+	if (!Pc_Play(p1, a1) || !Pc_Play(p2, a2) || !Mode_G(PC, next, &n)) {
+		return 0;
 	}
-	Pc_Play(&f, p1, a1);
-	Pc_Play(&f, p2, a2);
-	Sf_Own(&f, PC, "WatchEvents", "(O)", PCG(next));
-	return Sf_None(&f);
+	byte ok = LV_OWN(PC, "WatchEvents", NULL, "v", &n);
+	Native_Free(&n);
+	return ok;
 }
 
 /* PlayDumb1(), PlayDumb2(), PlayPoliceBoss() */
-static PyObject *PoliceBossCheats_PlayDumb1(PyObject *self, PyObject *args) {
-	(void)self;
-	return Pc_Turn(args, "Dumb2", "PlayPoker", "PoliceBoss", "Stay0Poker", "CheatPoliceBoss");
+static byte PoliceBossCheats_PlayDumb1(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Pc_Turn("Dumb2", "PlayPoker", "PoliceBoss", "Stay0Poker", "CheatPoliceBoss");
 }
 
-static PyObject *PoliceBossCheats_PlayDumb2(PyObject *self, PyObject *args) {
-	(void)self;
-	return Pc_Turn(args, "Dumb1", "PlayPoker", "Dumb2", "Stay0Poker", "BrupPoliceBoss");
+static byte PoliceBossCheats_PlayDumb2(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Pc_Turn("Dumb1", "PlayPoker", "Dumb2", "Stay0Poker", "BrupPoliceBoss");
 }
 
-static PyObject *PoliceBossCheats_PlayPoliceBoss(PyObject *self, PyObject *args) {
-	(void)self;
-	return Pc_Turn(args, "PoliceBoss", "PlayPoker", "Dumb2", "Stay0Poker", "PlayDumb1");
+static byte PoliceBossCheats_PlayPoliceBoss(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Pc_Turn("PoliceBoss", "PlayPoker", "Dumb2", "Stay0Poker", "PlayDumb1");
+}
+
+/* WatchEvents(next) of the module */
+static byte Pc_Watch(const char *next) {
+	nativeVal_t n;
+	if (!Mode_G(PC, next, &n)) {
+		return 0;
+	}
+	byte ok = LV_OWN(PC, "WatchEvents", NULL, "v", &n);
+	Native_Free(&n);
+	return ok;
 }
 
 /* CheatPoliceBoss(): the boss cheats (the window for the photo) */
-static PyObject *PoliceBossCheats_CheatPoliceBoss(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_SetAttrS(&f, PCG("PoliceBoss"), "ForceAction", "CheatPoker");
-	Pc_PlayLater(&f, NULL, 0.5, "Dumb1", "CheatPoker");
-	Pc_Play(&f, "Dumb2", "CheatPoker");
-	Pc_Play(&f, "PoliceBoss", "CheatPoker");
-	Sf_Own(&f, PC, "WatchEvents", "(O)", PCG("PlayDumb2"));
-	return Sf_None(&f);
+static byte PoliceBossCheats_CheatPoliceBoss(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_GSetS(PC, "PoliceBoss", "ForceAction", "CheatPoker") && Pc_PlayLater(NULL, 0.5, "Dumb1", "CheatPoker") &&
+		Pc_Play("Dumb2", "CheatPoker") && Pc_Play("PoliceBoss", "CheatPoker") && Pc_Watch("PlayDumb2");
 }
 
 /* BrupPoliceBoss(): the boss belches */
-static PyObject *PoliceBossCheats_BrupPoliceBoss(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Pc_Play(&f, "PoliceBoss", "BrupPoker");
-	Pc_Play(&f, "Dumb1", "BrupPoker");
-	Pc_PlayLater(&f, NULL, 0.5, "Dumb2", "BrupPoker");
-	Sf_Own(&f, PC, "WatchEvents", "(O)", PCG("PlayPoliceBoss"));
-	return Sf_None(&f);
+static byte PoliceBossCheats_BrupPoliceBoss(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Pc_Play("PoliceBoss", "BrupPoker") && Pc_Play("Dumb1", "BrupPoker") && Pc_PlayLater(NULL, 0.5, "Dumb2", "BrupPoker") &&
+		Pc_Watch("PlayPoliceBoss");
 }
 
 /* PhotoOn(EntityName, EventName, Time), PhotoOff(...): the events of the cheat open and close the photo window */
-static PyObject *Pc_Photo(PyObject *args, long on) {
-	PyObject *ent, *ev, *time;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "OOO", &ent, &ev, &time)) {
-		return NULL;
-	}
-	Sf_SetAttrI(&f, PCG("PoliceBoss"), "CanPhoto", on);
-	return Sf_None(&f);
+static byte PoliceBossCheats_PhotoOn(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Po_GSetI(PC, "PoliceBoss", "CanPhoto", 1);
 }
 
-static PyObject *PoliceBossCheats_PhotoOn(PyObject *self, PyObject *args) {
-	(void)self;
-	return Pc_Photo(args, 1);
-}
-
-static PyObject *PoliceBossCheats_PhotoOff(PyObject *self, PyObject *args) {
-	(void)self;
-	return Pc_Photo(args, 0);
+static byte PoliceBossCheats_PhotoOff(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Po_GSetI(PC, "PoliceBoss", "CanPhoto", 0);
 }
 
 /* OnPhoto(SelectedEntity): the photo of the cheating boss: the game slows down, the scene follows (1); else 0 */
-static PyObject *PoliceBossCheats_OnPhoto(PyObject *self, PyObject *args) {
-	PyObject *sel;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &sel)) {
-		return NULL;
+static byte PoliceBossCheats_OnPhoto(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t n;
+	int it = Po_GAttr(PC, "PoliceBoss", "Name", &n) ? Mode_Cmp(&a[0], "==", &n) : -1;
+	Native_Free(&n);
+	if (it <= 0) {
+		Native_SetInt(out, 0);
+		return it == 0;
 	}
-	if (Sf_Compare(&f, sel, "==", Sf_Attr(&f, PCG("PoliceBoss"), "Name")) > 0) {
-		Sf_SetMod(&f, "CharAct", "TakenPhoto", Py_None);
-		Sf_Ask(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "PokerPlay");
-		Sf_Ask(&f, "Scrap", "SetTimeSpeed", "(d)", 0.05);
-		Sf_Later(&f, Sf_Float(&f, 0.025), PCG("EndOfPhoto"), Sf_Build(&f, "()"), NULL);
-		Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Inactive");
-		return Sf_Return(&f, Sf_Int(&f, 1));
+	if (!LvN_ModNone("CharAct", "TakenPhoto") || !Mode_DelSchedS("PokerPlay")) {
+		return 0;
 	}
-	return Sf_Return(&f, Sf_Int(&f, 0));
+	Mode_SetTimeSpeed(0.05);
+	if (!PO_LATER(0.025, PC, "EndOfPhoto")) {
+		return 0;
+	}
+	Mode_SetActionSet("Inactive");
+	Native_SetInt(out, 1);
+	return 1;
 }
 
 /* the Active of the three card entities */
-static void Pc_CardsActive(scriptFrame_t *f, long on) {
-	Sf_SetAttrI(f, PCGF("PoliceBossc"), "Active", on);
-	Sf_SetAttrI(f, PCGF("Dumb1c"), "Active", on);
-	Sf_SetAttrI(f, PCGF("Dumb2c"), "Active", on);
+static byte Pc_CardsActive(long on) {
+	return Po_GSetI(PC, "PoliceBossc", "Active", on) && Po_GSetI(PC, "Dumb1c", "Active", on) && Po_GSetI(PC, "Dumb2c", "Active", on);
 }
 
 /* EndOfPhoto(): the scene PoliFight, InitAfterPhoto at its end; the cards hidden */
-static PyObject *PoliceBossCheats_EndOfPhoto(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Walk");
-	Sf_Ask(&f, "Scrap", "SetTimeSpeed", "(d)", 1.0);
-	Lv_Fade(&f, lv_black, lv_clear, 1.0);
-	Sf_Ask(&f, "Scene", "Play", "(s)", "PoliFight");
-	Sf_SetMod(&f, "Scene", "EndOfSceneCallback", PCG("InitAfterPhoto"));
-	Pc_CardsActive(&f, 0);
-	return Sf_None(&f);
+static byte PoliceBossCheats_EndOfPhoto(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	Mode_SetActionSet("Walk");
+	Mode_SetTimeSpeed(1.0);
+	return Po_Fade(lv_black, lv_clear, 1.0) && LV_CALL("Scene", "Play", NULL, "s", "PoliFight") &&
+		PO_HOOK("Scene", "EndOfSceneCallback", PC, "InitAfterPhoto") && Pc_CardsActive(0);
 }
 
 /* InitAfterPhoto(Usr): after the scene: white to black, InitAfterPhoto2 in 2 s */
-static PyObject *PoliceBossCheats_InitAfterPhoto(PyObject *self, PyObject *args) {
+static byte PoliceBossCheats_InitAfterPhoto(const nativeVal_t *a, nativeVal_t *out) {
 	static const int white[4] = { 255, 255, 255, 255 };
-	PyObject *usr;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &usr)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Import("Menu")) {
+		return 0;
 	}
-	Sf_Import(&f, "Menu");
-	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Inactive");
-	Sf_Ask(&f, "Menu", "DrawScorer", "(iO)", 0, Sf_Ask(&f, "SInput", "GetActionSet", "()"));
-	Sf_SetAttrI(&f, usr, "Active", 0);
-	Lv_Fade(&f, white, lv_black, 2.0);
-	Sf_Later(&f, Sf_Float(&f, 2.0), PCG("InitAfterPhoto2"), Sf_Build(&f, "(O)", usr), NULL);
-	return Sf_None(&f);
+	Mode_SetActionSet("Inactive");
+	return LvN_Draw() && LvN_SetI(&a[0], "Active", 0) && Po_Fade(white, lv_black, 2.0) && PO_LATER1(2.0, PC, "InitAfterPhoto2", &a[0]);
 }
 
 /* InitAfterPhoto2(Usr): the policeman beaten: the player is Dtritus at the conversion point */
-static PyObject *PoliceBossCheats_InitAfterPhoto2(PyObject *self, PyObject *args) {
-	PyObject *usr;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &usr)) {
-		return NULL;
-	}
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "Char", "Dtritus");
-	Sf_Ask(&f, "CharConversor", "ConvertChar", "(OOii)", Sf_Attr(&f, usr, "Name"), PCG("SpawnConversionPoint"), 0, 0);
-	Sf_Later(&f, Sf_Float(&f, 1.0), Sf_Mod(&f, "SScorer", "Fade"), Sf_Build(&f, "(i(iiii)(iiii)d)", 0, 0, 0, 0, 255, 255, 255, 255, 0, 2.0), NULL);
-	Sf_Later(&f, Sf_Float(&f, 3.0), PCG("InitAfterPhoto3"), Sf_Build(&f, "(O)", usr), NULL);
-	return Sf_None(&f);
+static byte PoliceBossCheats_InitAfterPhoto2(const nativeVal_t *a, nativeVal_t *out) {
+	static const int to[4] = { 255, 255, 255, 0 };
+	nativeVal_t un, sp;
+	(void)out;
+	SaveVar_Set("Char", "Dtritus");
+	Native_SetNone(&un);
+	Native_SetNone(&sp);
+	byte ok = Mode_VGet(&a[0], "Name", &un) && Mode_G(PC, "SpawnConversionPoint", &sp) &&
+		LV_CALL("CharConversor", "ConvertChar", NULL, "vvii", &un, &sp, 0L, 0L);
+	Native_Free(&un);
+	Native_Free(&sp);
+	return ok && Po_FadeLater(1.0, lv_black, to, 2.0) && PO_LATER1(3.0, PC, "InitAfterPhoto3", &a[0]);
 }
 
 /* InitAfterPhoto3(Usr): the player back in control, a way point, Dtritus' remark, the crazy gambler next */
-static PyObject *PoliceBossCheats_InitAfterPhoto3(PyObject *self, PyObject *args) {
-	PyObject *usrArg;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &usrArg)) {
-		return NULL;
+static byte PoliceBossCheats_InitAfterPhoto3(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t un, usr, path, spawn, sp;
+	(void)a;
+	(void)out;
+	if (!Mode_Import("Init") || !Mode_Import("Menu")) {
+		return 0;
 	}
-	Sf_Import(&f, "Init");
-	Sf_Import(&f, "Menu");
-	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Walk");
-	Sf_Ask(&f, "Menu", "DrawScorer", "(iO)", 0, Sf_Ask(&f, "SInput", "GetActionSet", "()"));
-	PyObject *usr = Sf_Entity(&f, Sf_Mod(&f, "CharConversor", "_usrName"));
-	Sf_SetAttrI(&f, usr, "Active", 1);
-	Sf_SetAttrI(&f, usr, "MoveTime", 0);
-	Sf_SetAttrI(&f, usr, "AutoSelect", 1);
-	Sf_Ask(&f, "SaveGame", "MarkWayPoint", "(OOO)", Sf_Mod(&f, "Init", "Path"), Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Spawn"), PCG("SpawnConversionPoint"));
-	Sf_Ask(&f, "Speech", "RemoteComunication", "(ss)", "Mission_PhotoPoliceBoss_Dtritus_InitMsg1", "");
-	Sf_Own(&f, PC, "InitAskCrazyGambler", "()");
-	Pc_CardsActive(&f, 1);
-	return Sf_None(&f);
+	Mode_SetActionSet("Walk");
+	if (!LvN_Draw() || !LvN_ModGet("CharConversor", "_usrName", &un)) {
+		return 0;
+	}
+	Native_SetNone(&usr);
+	byte ok = Mode_EntityH(&un, &usr) && LvN_SetI(&usr, "Active", 1) && LvN_SetI(&usr, "MoveTime", 0) && LvN_SetI(&usr, "AutoSelect", 1);
+	Native_Free(&un);
+	Native_Free(&usr);
+	if (!ok || !LvN_ModGet("Init", "Path", &path)) {
+		return 0;
+	}
+	Mode_SaveVar("Spawn", &spawn);
+	Native_SetNone(&sp);
+	ok = Mode_G(PC, "SpawnConversionPoint", &sp) && LV_CALL("SaveGame", "MarkWayPoint", NULL, "vvv", &path, &spawn, &sp);
+	Native_Free(&path);
+	Native_Free(&spawn);
+	Native_Free(&sp);
+	return ok && LV_CALL("Speech", "RemoteComunication", NULL, "ss", "Mission_PhotoPoliceBoss_Dtritus_InitMsg1", "") &&
+		LV_OWN(PC, "InitAskCrazyGambler", NULL, "") && Pc_CardsActive(1);
 }
 
 /* InitAskCrazyGambler(): Dtritus' desktop is the target, the crazy gambler talks through it */
-static PyObject *PoliceBossCheats_InitAskCrazyGambler(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "Mission_PoliceBossCheats", "AskCrazyGambler");
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "DM_DTritusDesktop");
-	Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_TalkToCrazyGambler_MissionText1", 1);
-	Sf_Import(&f, "DTritusDesktop");
-	Sf_Entity(&f, Sf_Str(&f, "DM_DTritusDesktop"));
-	Sf_SetMod(&f, "DTritusDesktop", "DialogController", PCG("CrazyGamblerSpeech"));
-	return Sf_None(&f);
+static byte PoliceBossCheats_InitAskCrazyGambler(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	SaveVar_Set("Mission_PoliceBossCheats", "AskCrazyGambler");
+	return Mode_Target("DM_DTritusDesktop") && Mode_MMDesc("Mission_TalkToCrazyGambler_MissionText1", 1) && Mode_Import("DTritusDesktop") &&
+		Po_DesktopLookup() && PO_HOOK("DTritusDesktop", "DialogController", PC, "CrazyGamblerSpeech");
 }
 
 /* CrazyGamblerSpeech(UsrName, CharName, optId, FullOption): the crazy gambler's talk, SetNextMission at the end */
-static PyObject *PoliceBossCheats_CrazyGamblerSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
-	}
-	Sf_Import(&f, "DTritusDesktop");
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "");
-	Sf_SetMod(&f, "DTritusDesktop", "DialogController", Py_None);
-	Sf_Entity(&f, Sf_Str(&f, "DM_DTritusDesktop"));
-	Lv_Speakers(&f, usr, ch);
-	Lv_OnEnd(&f, PC, "SetNextMission", NULL);
-	Sf_Ask(&f, "Speech", "NISpeech", "(s)", "CrazyGambler");
-	Sf_Ask(&f, "Speech", "AutoAddNI", "(s)", "Mission_TalkToCrazyGambler_ComCrazyGambler_NI_1Msg");
-	Sf_Ask(&f, "Speech", "RunNI", "()");
-	return Sf_None(&f);
+static byte PoliceBossCheats_CrazyGamblerSpeech(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Mode_Import("DTritusDesktop") && Mode_Target("") && LvN_ModNone("DTritusDesktop", "DialogController") && Po_DesktopLookup() &&
+		LvN_Speakers(&a[0], &a[1]) && LvN_OnEnd(PC, "SetNextMission", NULL) &&
+		Mode_NISpeech("CrazyGambler", "Mission_TalkToCrazyGambler_ComCrazyGambler_NI_1Msg");
 }
 
 /* SetNextMission(): where the important characters are, the mission of NextMissionData */
-static PyObject *PoliceBossCheats_SetNextMission(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte PoliceBossCheats_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const saves[] = { "MayorAtTownHall", "0", "PoliceBossAtPolice", "0", "BankMasterAtBank", "1", "Journalist.Humphrey_Defaut",
+		"Press", "Journalist.Betty_Defaut", "TownHall", "Journalist.Berto_Defaut", "TownHall", NULL };
+	nativeVal_t data;
+	(void)a;
+	(void)out;
+	Mode_Saves(saves);
+	if (!Po_TargetNone()) {
+		return 0;
 	}
-	static const char *const vars[][2] = { { "MayorAtTownHall", "0" }, { "PoliceBossAtPolice", "0" }, { "BankMasterAtBank", "1" },
-		{ "Journalist.Humphrey_Defaut", "Press" }, { "Journalist.Betty_Defaut", "TownHall" }, { "Journalist.Berto_Defaut", "TownHall" } };
-	for (int i = 0; i < 6; i++) {
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", vars[i][0], vars[i][1]);
+	/* apply(MissionsFuncs.SetNextMission, NextMissionData) (OBJLIB 3: __builtin__.apply by name, its TypeError) */
+	PyObject *fn = Script_Attr("MissionsFuncs", "SetNextMission");
+	if (!fn) {
+		return 0;
 	}
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Py_None);
-	Sf_Ask(&f, "__builtin__", "apply", "(OO)", Sf_Mod(&f, "MissionsFuncs", "SetNextMission"), PCG("NextMissionData"));
-	Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_GetInfoClues_MissionText1", 1);
-	Sf_Ask(&f, "Scrap", "DelSaveVars", "(s)", "Mission_PoliceBossCheats");
-	return Sf_None(&f);
+	byte ok = Mode_G(PC, "NextMissionData", &data) && LV_CALL("__builtin__", "apply", NULL, "Ov", fn, &data);
+	Native_Free(&data);
+	Py_DECREF(fn);
+	return ok && Mode_MMDesc("Mission_GetInfoClues_MissionText1", 1) && Mode_DelSaveVars("Mission_PoliceBossCheats");
 }
 
+LV_FN(PoliceBossCheats, InitStatusA, 1, PoliceBossCheats_InitStatus)
+LV_FN(PoliceBossCheats, InitA, 1, PoliceBossCheats_Init)
+LV_FN(PoliceBossCheats, CreatePoliceFicusPalA, 1, PoliceBossCheats_CreatePoliceFicusPal)
+LV_FN(PoliceBossCheats, FicusPalMissionSpeechA, 4, PoliceBossCheats_FicusPalMissionSpeech)
+LV_FN(PoliceBossCheats, CreateFakeCharA, 3, PoliceBossCheats_CreateFakeChar)
+LV_FN(PoliceBossCheats, CheatingLoopA, 0, PoliceBossCheats_CheatingLoop)
+LV_FN(PoliceBossCheats, PlayAnmA, 3, PoliceBossCheats_PlayAnm)
+LV_FN(PoliceBossCheats, WatchEventsA, 1, PoliceBossCheats_WatchEvents)
+LV_FN(PoliceBossCheats, PlayDumb1A, 0, PoliceBossCheats_PlayDumb1)
+LV_FN(PoliceBossCheats, CheatPoliceBossA, 0, PoliceBossCheats_CheatPoliceBoss)
+LV_FN(PoliceBossCheats, PlayDumb2A, 0, PoliceBossCheats_PlayDumb2)
+LV_FN(PoliceBossCheats, BrupPoliceBossA, 0, PoliceBossCheats_BrupPoliceBoss)
+LV_FN(PoliceBossCheats, PlayPoliceBossA, 0, PoliceBossCheats_PlayPoliceBoss)
+LV_FN(PoliceBossCheats, PhotoOnA, 3, PoliceBossCheats_PhotoOn)
+LV_FN(PoliceBossCheats, PhotoOffA, 3, PoliceBossCheats_PhotoOff)
+LV_FN(PoliceBossCheats, OnPhotoA, 1, PoliceBossCheats_OnPhoto)
+LV_FN(PoliceBossCheats, EndOfPhotoA, 0, PoliceBossCheats_EndOfPhoto)
+LV_FN(PoliceBossCheats, InitAfterPhotoA, 1, PoliceBossCheats_InitAfterPhoto)
+LV_FN(PoliceBossCheats, InitAfterPhoto2A, 1, PoliceBossCheats_InitAfterPhoto2)
+LV_FN(PoliceBossCheats, InitAfterPhoto3A, 1, PoliceBossCheats_InitAfterPhoto3)
+LV_FN(PoliceBossCheats, InitAskCrazyGamblerA, 0, PoliceBossCheats_InitAskCrazyGambler)
+LV_FN(PoliceBossCheats, CrazyGamblerSpeechA, 4, PoliceBossCheats_CrazyGamblerSpeech)
+LV_FN(PoliceBossCheats, SetNextMissionA, 0, PoliceBossCheats_SetNextMission)
+
 PyMethodDef g_PolicePoliceBossCheatsMethods[] = {
-	{ "InitStatus", PoliceBossCheats_InitStatus, METH_VARARGS, NULL },
-	{ "Init", PoliceBossCheats_Init, METH_VARARGS, NULL },
-	{ "CreatePoliceFicusPal", PoliceBossCheats_CreatePoliceFicusPal, METH_VARARGS, NULL },
-	{ "FicusPalMissionSpeech", PoliceBossCheats_FicusPalMissionSpeech, METH_VARARGS, NULL },
-	{ "CreateFakeChar", PoliceBossCheats_CreateFakeChar, METH_VARARGS, NULL },
-	{ "CheatingLoop", PoliceBossCheats_CheatingLoop, METH_VARARGS, NULL },
-	{ "PlayAnm", PoliceBossCheats_PlayAnm, METH_VARARGS, NULL },
-	{ "WatchEvents", PoliceBossCheats_WatchEvents, METH_VARARGS, NULL },
-	{ "PlayDumb1", PoliceBossCheats_PlayDumb1, METH_VARARGS, NULL },
-	{ "CheatPoliceBoss", PoliceBossCheats_CheatPoliceBoss, METH_VARARGS, NULL },
-	{ "PlayDumb2", PoliceBossCheats_PlayDumb2, METH_VARARGS, NULL },
-	{ "BrupPoliceBoss", PoliceBossCheats_BrupPoliceBoss, METH_VARARGS, NULL },
-	{ "PlayPoliceBoss", PoliceBossCheats_PlayPoliceBoss, METH_VARARGS, NULL },
-	{ "PhotoOn", PoliceBossCheats_PhotoOn, METH_VARARGS, NULL },
-	{ "PhotoOff", PoliceBossCheats_PhotoOff, METH_VARARGS, NULL },
-	{ "OnPhoto", PoliceBossCheats_OnPhoto, METH_VARARGS, NULL },
-	{ "EndOfPhoto", PoliceBossCheats_EndOfPhoto, METH_VARARGS, NULL },
-	{ "InitAfterPhoto", PoliceBossCheats_InitAfterPhoto, METH_VARARGS, NULL },
-	{ "InitAfterPhoto2", PoliceBossCheats_InitAfterPhoto2, METH_VARARGS, NULL },
-	{ "InitAfterPhoto3", PoliceBossCheats_InitAfterPhoto3, METH_VARARGS, NULL },
-	{ "InitAskCrazyGambler", PoliceBossCheats_InitAskCrazyGambler, METH_VARARGS, NULL },
-	{ "CrazyGamblerSpeech", PoliceBossCheats_CrazyGamblerSpeech, METH_VARARGS, NULL },
-	{ "SetNextMission", PoliceBossCheats_SetNextMission, METH_VARARGS, NULL },
+	{ "InitStatus", PoliceBossCheats_InitStatusA, METH_VARARGS, NULL },
+	{ "Init", PoliceBossCheats_InitA, METH_VARARGS, NULL },
+	{ "CreatePoliceFicusPal", PoliceBossCheats_CreatePoliceFicusPalA, METH_VARARGS, NULL },
+	{ "FicusPalMissionSpeech", PoliceBossCheats_FicusPalMissionSpeechA, METH_VARARGS, NULL },
+	{ "CreateFakeChar", PoliceBossCheats_CreateFakeCharA, METH_VARARGS, NULL },
+	{ "CheatingLoop", PoliceBossCheats_CheatingLoopA, METH_VARARGS, NULL },
+	{ "PlayAnm", PoliceBossCheats_PlayAnmA, METH_VARARGS, NULL },
+	{ "WatchEvents", PoliceBossCheats_WatchEventsA, METH_VARARGS, NULL },
+	{ "PlayDumb1", PoliceBossCheats_PlayDumb1A, METH_VARARGS, NULL },
+	{ "CheatPoliceBoss", PoliceBossCheats_CheatPoliceBossA, METH_VARARGS, NULL },
+	{ "PlayDumb2", PoliceBossCheats_PlayDumb2A, METH_VARARGS, NULL },
+	{ "BrupPoliceBoss", PoliceBossCheats_BrupPoliceBossA, METH_VARARGS, NULL },
+	{ "PlayPoliceBoss", PoliceBossCheats_PlayPoliceBossA, METH_VARARGS, NULL },
+	{ "PhotoOn", PoliceBossCheats_PhotoOnA, METH_VARARGS, NULL },
+	{ "PhotoOff", PoliceBossCheats_PhotoOffA, METH_VARARGS, NULL },
+	{ "OnPhoto", PoliceBossCheats_OnPhotoA, METH_VARARGS, NULL },
+	{ "EndOfPhoto", PoliceBossCheats_EndOfPhotoA, METH_VARARGS, NULL },
+	{ "InitAfterPhoto", PoliceBossCheats_InitAfterPhotoA, METH_VARARGS, NULL },
+	{ "InitAfterPhoto2", PoliceBossCheats_InitAfterPhoto2A, METH_VARARGS, NULL },
+	{ "InitAfterPhoto3", PoliceBossCheats_InitAfterPhoto3A, METH_VARARGS, NULL },
+	{ "InitAskCrazyGambler", PoliceBossCheats_InitAskCrazyGamblerA, METH_VARARGS, NULL },
+	{ "CrazyGamblerSpeech", PoliceBossCheats_CrazyGamblerSpeechA, METH_VARARGS, NULL },
+	{ "SetNextMission", PoliceBossCheats_SetNextMissionA, METH_VARARGS, NULL },
 	{ NULL, NULL, 0, NULL },
 };
