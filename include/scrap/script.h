@@ -408,8 +408,6 @@ byte Sf_Unpack(scriptFrame_t *f, PyObject *v, int n, PyObject **out);
 byte Sf_Exec(scriptFrame_t *f, PyObject *code, const char *module, PyObject *locals);
 /* eval(text) in a function of module: Script_EvalValue in the module's globals (a literal, else SyntaxError) */
 PyObject *Sf_Eval(scriptFrame_t *f, PyObject *text, const char *module);
-/* `raise o` of a script (a string, a class, an instance or a tuple of them; else its TypeError): 0 */
-byte Sf_RaiseValue(scriptFrame_t *f, PyObject *o);
 /* exec("import " + name) in a function of module (locals: the dict of its variables, the import is stored there);
  * a name that is not a plain module name goes to Sf_Exec */
 byte Sf_ImportTo(scriptFrame_t *f, const char *module, PyObject *locals, PyObject *name);

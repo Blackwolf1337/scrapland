@@ -780,33 +780,6 @@ PyObject *Sf_Eval(scriptFrame_t *f, PyObject *text, const char *module) {
 	return m ? Sf_Keep(f, Script_EvalValue(PyModule_GetDict(m), text)) : NULL;
 }
 
-byte Sf_RaiseValue(scriptFrame_t *f, PyObject *o) {
-	if (f->failed || !o) {
-		return Sf_Check(f, 0);
-	}
-	/* do_raise of ceval with the value and the traceback left out */
-	PyObject *type = Script_Ref(o), *value = Script_Ref(Py_None), *tb = NULL;
-	while (PyTuple_Check(type) && PyTuple_Size(type) > 0) {
-		PyObject *tmp = type;
-		type = Script_Ref(PyTuple_GET_ITEM(type, 0));
-		Py_DECREF(tmp);
-	}
-	if (PyClass_Check(type)) {
-		PyErr_NormalizeException(&type, &value, &tb);
-	} else if (PyInstance_Check(type)) {
-		Py_DECREF(value);
-		value = type;
-		type = Script_Ref((PyObject *)((PyInstanceObject *)type)->in_class);
-	} else if (!PyString_Check(type)) {
-		Py_DECREF(type);
-		Py_DECREF(value);
-		return Sf_Raise(f, PyExc_TypeError, "exceptions must be strings, classes, or instances");
-	}
-	PyErr_Restore(type, value, tb);
-	f->failed = 1;
-	return 0;
-}
-
 byte Sf_ImportTo(scriptFrame_t *f, const char *module, PyObject *locals, PyObject *name) {
 	if (f->failed || !name || !locals || !PyString_Check(name) ||
 		!Script_IsName(PyString_AsString(name), PyString_Size(name))) {
