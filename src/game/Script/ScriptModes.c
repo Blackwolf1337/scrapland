@@ -2688,3 +2688,12 @@ byte Mode_ForceMap(const char *map) {
 	Native_Free(&m);
 	return ok;
 }
+
+int Mode_ModelHas(const nativeVal_t *v, const char *text) {
+	nativeVal_t m = { 0 }, up = { 0 }, at = { 0 };
+	int r = Mode_VGet(v, "Model", &m) && Native_Upper(&m, &up) && LV_CALL("string", "find", &at, "vs", &up, text) ? !LvN_EqI(&at, -1) : -1;
+	Native_Free(&m);
+	Native_Free(&up);
+	Native_Free(&at);
+	return r;
+}

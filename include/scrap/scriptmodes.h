@@ -548,5 +548,7 @@ byte Mode_DelLater(const nativeVal_t *itm);
 int Mode_PhoneUse(const char *module, const nativeVal_t *a);
 /* SScorer.Set(0, Scrap.Get("MissionScorerName"), "ForceMap", map) (the map of the mission scorer) */
 byte Mode_ForceMap(const char *map);
+/* `string.find(string.upper(v.Model), text) != -1` (OBJLIB 3: string.find by name): 1, 0, -1 */
+int Mode_ModelHas(const nativeVal_t *v, const char *text);
 
 #endif
