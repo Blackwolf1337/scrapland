@@ -118,6 +118,8 @@ byte Mode_MPFunc(long id, const char *func);
 byte Mode_ScorerSet(const nativeVal_t *id, const nativeVal_t *item, const char *var, const nativeVal_t *v);
 /* SScorer.Fade(id, (r, g, b, a), (r, g, b, a), time) */
 byte Mode_Fade(long id, const int *from, const int *to, double time);
+/* the same with the time a value of the script (the TypeError of "f" for one that is no number) */
+byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time);
 /* SInput.Bind(id, set, action, func) */
 byte Mode_Bind(const nativeVal_t *id, const char *set, const char *action, const char *func);
 /* Scrap.DeleteScheduledFuncs(name) */
@@ -533,5 +535,13 @@ byte Mode_SetMoneySeam(const nativeVal_t *money);
 byte Mode_IncSaveVar(const char *name);
 /* v is a text and its C text (up to its first 0 byte) is text (Script_Is of the ports) */
 byte Mode_IsText(const nativeVal_t *v, const char *text);
+/* Scrap.SetTimeSpeed(speed) through its seam (fc-r7b-jy records it) */
+byte Mode_TimeSpeed(double speed);
+/* Scrap.GetCam(i): the name of the camera of player i (None when there is none) */
+void Mode_CamName(int i, nativeVal_t *out);
+/* Scrap.GetFloor(y): the floor of the map at the height (the TypeError of "f") */
+byte Mode_Floor(const nativeVal_t *y, nativeVal_t *out);
+/* abs(v) of the script (PyNumber_Absolute: ints, long ints, floats; the errors of 1.5.2) */
+byte Mode_Abs(const nativeVal_t *v, nativeVal_t *out);
 
 #endif
