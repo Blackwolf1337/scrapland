@@ -682,6 +682,20 @@ static PyObject *SAI_EnableAIChar(PyObject *self, PyObject *args) {
  * the original returns None with the error left set, and OutMap's spawn searches took the None as no point and went
  * on to their fallback position (the end of their for loop cleared the error).
  */
+byte AI_NextRacePoint(const vec3_t *initial, float minDist, float maxDist, vec3_t *out) {
+	int outdoor = g_IsMapOutDoor == 1;
+	byte found;
+	for (;;) {
+		found = CNodesWorld_GetRacePoint(g_NodesWorld, out, initial, minDist, maxDist, 0);
+		maxDist += 1000.0f;
+		if (found || outdoor || !(1e8f >= maxDist)) {
+			break;
+		}
+	}
+	CHECK(maxDist <= 1e8f && "Se ha superado la distancia máxima sin haber encontrado un punto");
+	return !outdoor || found;
+}
+
 static PyObject *SAI_GetNextRacePoint(PyObject *self, PyObject *args) {
 	vec3_t initial, out;
 	float minDist, maxDist;
@@ -690,17 +704,7 @@ static PyObject *SAI_GetNextRacePoint(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "(fff)ff", &initial.x, &initial.y, &initial.z, &minDist, &maxDist)) {
 		return NULL;
 	}
-	int outdoor = g_IsMapOutDoor == 1;
-	byte found;
-	for (;;) {
-		found = CNodesWorld_GetRacePoint(g_NodesWorld, &out, &initial, minDist, maxDist, 0);
-		maxDist += 1000.0f;
-		if (found || outdoor || !(1e8f >= maxDist)) {
-			break;
-		}
-	}
-	CHECK(maxDist <= 1e8f && "Se ha superado la distancia máxima sin haber encontrado un punto");
-	if (outdoor && !found) {
+	if (!AI_NextRacePoint(&initial, minDist, maxDist, &out)) {
 		return Py_ReturnNone();
 	}
 	return Py_BuildValue("fff", (double)out.x, (double)out.y, (double)out.z);

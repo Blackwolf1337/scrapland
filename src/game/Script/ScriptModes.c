@@ -2815,3 +2815,295 @@ int Mode_ModelHas(const nativeVal_t *v, const char *text) {
 	Native_Free(&at);
 	return r;
 }
+
+/* ---- the hubs of batch J (Traffic, OutMap, Challenge, CharConversor, RaceMaker, Doors) ---- */
+
+#include <limits.h>
+
+#include "scrap/collisiongrid.h"
+#include "scrap/mapfloors.h"
+
+int Mode_Len(nativeVal_t *v) {
+	Mode_Elems(v);
+	return Native_Size(v);
+}
+
+byte Mode_Sub(const nativeVal_t *v, const nativeVal_t *key, nativeVal_t *out) {
+	Native_SetNone(out);
+	if (v->type != NV_OBJ) {
+		return Native_Subscript(v, key, out);
+	}
+	/* OBJLIB 7: PyObject_GetItem of the object, the item as Native_Arg makes it */
+	PyObject *k = Native_ToPy(key), *r = k ? PyObject_GetItem(v->obj, k) : NULL;
+	Py_XDECREF(k);
+	if (!r) {
+		return 0;
+	}
+	Native_Arg(r, out);
+	Py_DECREF(r);
+	return 1;
+}
+
+byte Mode_RacePoint(const nativeVal_t *pos, long minDist, long maxDist, nativeVal_t *out) {
+	double x[3];
+	MODE_SEAM("SAI", "GetNextRacePoint");
+	if (seam) {
+		return Native_HookCall(hook, out, "vii", pos, minDist, maxDist);
+	}
+	if (!Mode_VecOf(pos, x)) {
+		return Native_CallMod("SAI", "GetNextRacePoint", out, "vii", pos, minDist, maxDist);
+	}
+	vec3_t at = { (float)x[0], (float)x[1], (float)x[2] }, p;
+	if (!AI_NextRacePoint(&at, (float)minDist, (float)maxDist, &p)) {
+		Native_SetNone(out);
+	} else {
+		Native_SetVec(out, (double)p.x, (double)p.y, (double)p.z);
+	}
+	return 1;
+}
+
+byte Mode_TestSpherePos(const nativeVal_t *pos, long r, const char *list, nativeVal_t *out) {
+	nativeVal_t c[3], rad, l;
+	int n = 0;
+	byte ok = 1;
+	Native_SetNone(out);
+	for (; ok && n < 3; n++) {
+		ok = LvN_Item(pos, n, &c[n]);
+	}
+	if (!ok) {
+		Native_Free(&c[--n]);
+	}
+	if (ok) {
+		PyObject *hook;
+		int seam = Native_Seam("Scrap", "TestSphere", &hook);
+		Native_SetInt(&rad, r);
+		Native_SetStr(&l, list);
+		ok = seam < 0 ? 0 : seam ? Native_HookCall(hook, out, "vvvis", &c[0], &c[1], &c[2], r, list) :
+			Mode_TestSphere(&c[0], &c[1], &c[2], &rad, &l, NULL, out);
+	}
+	while (n-- > 0) {
+		Native_Free(&c[n]);
+	}
+	return ok;
+}
+
+byte Mode_DummyStartSeam(const char *name, long flag) {
+	MODE_SEAM("Scrap", "StartDummySearch");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "si", name, flag);
+	}
+	Mode_DummyStart(name, (int)flag);
+	return 1;
+}
+
+byte Mode_DummyNextSeam(nativeVal_t *out) {
+	MODE_SEAM("Scrap", "NextDummySearch");
+	if (seam) {
+		return Native_HookCall(hook, out, "");
+	}
+	Mode_DummyNext(out);
+	return 1;
+}
+
+byte Mode_SetGrid(long x, long y, long z) {
+	MODE_SEAM("Scrap", "SetGrid");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "iii", x, y, z);
+	}
+	vec3_t size = { (float)x, (float)y, (float)z };
+	Grid_Set(&g_pWorld->grid, &size);
+	return 1;
+}
+
+byte Mode_EntitySeam(const nativeVal_t *name, nativeVal_t *out) {
+	Native_SetNone(out);
+	MODE_SEAM("Scrap", "GetEntity");
+	if (seam) {
+		return Native_HookCall(hook, out, "v", name);
+	}
+	return Mode_EntityH(name, out);
+}
+
+byte Mode_ActionSet(const char *name) {
+	MODE_SEAM("SInput", "SetActionSet");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "s", name);
+	}
+	Mode_SetActionSet(name);
+	return 1;
+}
+
+byte Mode_SetMoneySeam(const nativeVal_t *money) {
+	MODE_SEAM("Scrap", "SetMoney");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "v", money);
+	}
+	return Mode_SetMoney(money);
+}
+
+byte Mode_IncSaveVar(const char *name) {
+	MODE_SEAM("Scrap", "IncSaveVar");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "s", name);
+	}
+	SaveVar_Inc(name, 1);
+	return 1;
+}
+
+byte Mode_IsText(const nativeVal_t *v, const char *text) {
+	return v->type == NV_STR && !strcmp(Native_Text(v), text);
+}
+
+byte Mode_TimeSpeed(double speed) {
+	MODE_SEAM("Scrap", "SetTimeSpeed");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "d", speed);
+	}
+	Mode_SetTimeSpeed(speed);
+	return 1;
+}
+
+void Mode_CamName(int i, nativeVal_t *out) {
+	const char *name = cWorld_GetCamName(g_pWorld, i);
+	if (name) {
+		Native_SetText(out, name, (int)strlen(name));
+	} else {
+		Native_SetNone(out);
+	}
+}
+
+byte Mode_Floor(const nativeVal_t *y, nativeVal_t *out) {
+	double d;
+	if (!Native_ArgDouble(y, &d)) {
+		return 0;
+	}
+	Native_SetInt(out, Floor_Get(&g_pWorld->floor, (float)d));
+	return 1;
+}
+
+byte Mode_Abs(const nativeVal_t *v, nativeVal_t *out) {
+	Native_SetNone(out);
+	switch (v->type) {
+	case NV_INT:
+		if (v->i == LONG_MIN) {
+			return Native_Raise(NE_OVERFLOW, "integer negation");
+		}
+		Native_SetInt(out, v->i < 0 ? -v->i : v->i);
+		return 1;
+	case NV_FLOAT:
+		Native_SetFloat(out, fabs(v->f));
+		return 1;
+	case NV_LONG: {
+		const char *d = Native_Text(v);
+		d += *d == '-';
+		Native_SetLong(out, d, (int)strlen(d));
+		return 1;
+	}
+	case NV_OBJ: {
+		/* OBJLIB 7: an object with its own abs */
+		PyObject *r = PyNumber_Absolute(v->obj);
+		if (!r) {
+			return 0;
+		}
+		Native_Arg(r, out);
+		Py_DECREF(r);
+		return 1;
+	}
+	}
+	return Native_Raise(NE_TYPE, "bad operand type for abs()");
+}
+
+byte Mode_CallArgs(const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *args, int n) {
+	nativeVal_t t;
+	Native_SetEmpty(&t, NV_TUPLE);
+	for (int i = 0; i < n; i++) {
+		Native_Copy(Native_Append(&t), &args[i]);
+	}
+	/* OBJLIB 3, 4: the value called the Python way (a function, a bound method, or the TypeError of a value that is no
+	 * callable) */
+	PyObject *fn = Native_ToPy(f), *a = fn ? Native_ToPy(&t) : NULL;
+	Native_Free(&t);
+	PyObject *r = a ? Script_Invoke(fn, a) : NULL;
+	Py_XDECREF(fn);
+	if (!r) {
+		return 0;
+	}
+	if (out) {
+		Native_Arg(r, out);
+	}
+	Py_DECREF(r);
+	return 1;
+}
+
+byte Mode_Neg(const nativeVal_t *v, nativeVal_t *out) {
+	Native_SetNone(out);
+	switch (v->type) {
+	case NV_INT:
+		if (v->i == LONG_MIN) {
+			return Native_Raise(NE_OVERFLOW, "integer negation");
+		}
+		Native_SetInt(out, -v->i);
+		return 1;
+	case NV_FLOAT:
+		Native_SetFloat(out, -v->f);
+		return 1;
+	case NV_LONG: {
+		const char *d = Native_Text(v);
+		if (*d == '-') {
+			Native_SetLong(out, d + 1, (int)strlen(d + 1));
+		} else if (!strcmp(d, "0")) {
+			Native_SetLong(out, d, 1);
+		} else {
+			nativeBuf_t b;
+			Native_BufInit(&b);
+			Native_BufAdd(&b, "-", 1);
+			Native_BufAdd(&b, d, -1);
+			Native_SetLong(out, b.p, b.len);
+			Native_BufFree(&b);
+		}
+		return 1;
+	}
+	case NV_OBJ: {
+		/* OBJLIB 7: an object with its own negation */
+		PyObject *r = PyNumber_Negative(v->obj);
+		if (!r) {
+			return 0;
+		}
+		Native_Arg(r, out);
+		Py_DECREF(r);
+		return 1;
+	}
+	}
+	return Native_Raise(NE_TYPE, "bad operand type for unary -");
+}
+
+byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time) {
+	double d;
+	MODE_SEAM("SScorer", "Fade");
+	if (seam) {
+		PyObject *a = Py_BuildValue("(iiii)", from[0], from[1], from[2], from[3]);
+		PyObject *b = a ? Py_BuildValue("(iiii)", to[0], to[1], to[2], to[3]) : NULL;
+		byte ok = b && Native_HookCall(hook, NULL, "iOOv", id, a, b, time);
+		if (!b) {
+			Py_DECREF(hook);
+		}
+		Py_XDECREF(a);
+		Py_XDECREF(b);
+		return ok;
+	}
+	return Native_ArgDouble(time, &d) && Mode_Fade(id, from, to, d);
+}
+
+byte Mode_PrintN(const nativeVal_t *const *items, int n) {
+	PyObject *o[MODE_PRINT_MAX] = { NULL };
+	byte ok = 1;
+	n = n < MODE_PRINT_MAX ? n : MODE_PRINT_MAX;
+	for (int k = 0; ok && k < n; k++) {
+		ok = (o[k] = Native_ToPy(items[k])) != NULL;
+	}
+	ok = ok && Script_Print(o, n);
+	for (int k = 0; k < n; k++) {
+		Py_XDECREF(o[k]);
+	}
+	return ok;
+}

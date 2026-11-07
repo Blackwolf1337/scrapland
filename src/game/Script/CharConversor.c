@@ -11,11 +11,24 @@
  * prevChar, newChar, the _usrName, _charName, _optId and _fullOption of the last use, KONTROL, Cam, AuxInterp), with
  * the module code (the save variables it creates). The class of the machine is data/missions/conversor.def, the
  * layout of the interface data/menus/charconv.def.
+ *
+ * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the variables of the
+ * module where the script reads them and write them back at once (OBJLIB 5). The save variables, the engine
+ * variables, the camera name, the floor, the loading screen and the language texts are C; Scrap.Set, UsrEntity,
+ * GetEntity, CreateEntity, IncSaveVar, ConsoleError, SetTimeSpeed, the dummy search, SLogic.SetOnFloor,
+ * SScorer.Set, SetMsgText, Fade, SAct.GetClass, SInput.SetActionSet and the scheduler go through their seams, and the
+ * characters and machines are handle values (OBJLIB 7). The other ports (Chars, CharAct, Menu, Speech, SaveGame,
+ * CharScorer, DoorSound, string.replace), the SFX, SLogic.Flash, SendSentinelToWatch, SAct.GetCls,
+ * SInput.GetDefinedEntry and SScorer.Add and SetOnCancel calls stay by name (OBJLIB 3, 7); the module's own functions
+ * are called through its globals as the script calls them; the .def files take their $names as a dict (OBJLIB 6).
  */
 #include <limits.h>
 
+#include "scrap/app.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
+#include "game/Script/levels/Levels.h"
 
 #define CC "CharConversor"
 
@@ -27,656 +40,747 @@ static const char charconv_def[] = {
 #embed "../../../data/menus/charconv.def"
 	, 0 };
 
-/* a function of the module as its functions call it, with Py_BuildValue arguments */
-#define Cc_Call(f, func, ...) Sf_Call(f, Sf_Global(f, CC, func), __VA_ARGS__)
+/* a global of the module as its functions read it (out None before) */
+static byte Cc_G(const char *name, nativeVal_t *out) {
+	return Mode_G(CC, name, out);
+}
+
+/* a function of the module as its functions call it (OBJLIB 3: through its global) */
+#define Cc_Call(func, out, ...) Native_CallGlobal(CC, func, out, __VA_ARGS__)
 
 /* GetNearestConversionPoint(Pos): the conversor nearest to the place (a floor between counts 20000); the second
  * nearest is PrevConv */
-static PyObject *CharConversor_GetNearestConversionPoint(PyObject *self, PyObject *args) {
-	PyObject *pos;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &pos)) {
-		return NULL;
+static byte Cc_GetNearestConversionPoint(const nativeVal_t *pos, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *res = Mode_V(&t), *dist = Mode_V(&t), *y = Mode_V(&t), *iarea = Mode_V(&t), *points = Mode_V(&t);
+	if (!Mode_Put(CC, "PrevConv", NULL, res)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_SetGlobal(&f, CC, "PrevConv", Py_None);
-	PyObject *res = Sf_Ref(&f, Py_None);
-	PyObject *dist = Sf_Int(&f, 3200000);
-	PyObject *iarea = Sf_Ask(&f, "Scrap", "GetFloor", "(O)", Sf_Item(&f, pos, 1));
-	PyObject *points = Sf_Global(&f, CC, "ConversionPoints");
-	int mark = f.n;
-	for (int i = 0;; i++) {
-		PyObject *cp = Sf_Next(&f, points, i);
-		if (!cp) {
-			break;
+	Native_SetInt(dist, 3200000);
+	int n = LvN_Item(pos, 1, y) && Mode_Floor(y, iarea) && Cc_G("ConversionPoints", points) ? Mode_Loop(points) : -1;
+	for (int i = 0; i < n; i++) {
+		int mark = t.n;
+		nativeVal_t *cp = Mode_V(&t), *cpos = Mode_V(&t), *sub = Mode_V(&t), *d = Mode_V(&t), *cpos2 = Mode_V(&t);
+		nativeVal_t *cy = Mode_V(&t), *floor = Mode_V(&t), *diff = Mode_V(&t), *away = Mode_V(&t), *k = Mode_V(&t);
+		nativeVal_t *d2 = Mode_V(&t);
+		int c = Native_SeqItem(points, i, cp) && Mode_VObj(cp, "Pos", cpos) && Mode_VecSub(cpos, pos, sub) &&
+			Mode_VecMod(sub, d) && Mode_VObj(cp, "Pos", cpos2) && LvN_Item(cpos2, 1, cy) && Mode_Floor(cy, floor) &&
+			Mode_Arith('-', iarea, floor, diff) && Mode_Abs(diff, away) &&
+			Mode_Arith('*', away, Mode_I(&t, 20000), k) && Mode_Arith('+', d, k, d2) ? Mode_Cmp(d2, "<", dist) : -1;
+		if (c < 0 || (c && !Mode_Put(CC, "PrevConv", NULL, res))) {
+			return Mode_Done(&t, 0);
 		}
-		PyObject *d = Sf_Ask(&f, "SVec", "Mod", "(O)", Sf_Ask(&f, "SVec", "Sub", "(OO)", Sf_Attr(&f, cp, "Pos"), pos));
-		PyObject *floor = Sf_Ask(&f, "Scrap", "GetFloor", "(O)", Sf_Item(&f, Sf_Attr(&f, cp, "Pos"), 1));
-		PyObject *diff = Sf_Op(&f, iarea, '-', floor);
-		PyObject *away = f.failed ? NULL : Sf_Keep(&f, PyNumber_Absolute(diff));
-		d = Sf_Op(&f, d, '+', Sf_OpI(&f, away, '*', 20000));
-		if (Sf_Compare(&f, d, "<", dist) > 0) {
-			Sf_SetGlobal(&f, CC, "PrevConv", res);
-			res = cp;
-			dist = d;
+		if (c) {
+			Native_Free(res);
+			Native_Free(dist);
+			Native_Copy(res, cp);
+			Native_Copy(dist, d2);
 		}
-		PyObject *keep[2] = { res, dist };
-		Sf_ReleaseKeep(&f, mark, keep, 2);
-		res = keep[0];
-		dist = keep[1];
+		Mode_Release(&t, mark);
 	}
-	return Sf_Return(&f, res);
+	if (n < 0) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Copy(out, res);
+	return Mode_Done(&t, 1);
 }
 
-/* CreateConversorClass(): the class of the machine and its sounds */
-static PyObject *CharConversor_CreateConversorClass(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
+/* CreateConversorClass(): the class of the machine and its sounds (OBJLIB 3: DoorSound by name) */
+static byte Cc_CreateConversorClass(void) {
 	Script_RunFile(0, "missions/conversor.def", "Class", conversor_def, NULL, NULL);
-	Sf_Import(&f, "DoorSound");
-	Sf_Ask(&f, "DoorSound", "ConversorSetSounds", "(s)", "Conversor");
-	return Sf_None(&f);
+	return Mode_Import("DoorSound") && Native_CallMod("DoorSound", "ConversorSetSounds", NULL, "s", "Conversor");
 }
 
 /* Init(): a conversor at every DM_Conversion_Point dummy, into ConversionPoints */
-static PyObject *CharConversor_Init(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Cc_Init(void) {
+	if (!Cc_Call("CreateConversorClass", NULL, "") || !Mode_DummyStartSeam("DM_Conversion_Point*", 1)) {
+		return 0;
 	}
-	Cc_Call(&f, "CreateConversorClass", "()");
-	Sf_Ask(&f, "Scrap", "StartDummySearch", "(si)", "DM_Conversion_Point*", 1);
-	while (!f.failed) {
-		int mark = f.n;
-		PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-		if (Sf_Compare(&f, dummy, "!=", Py_None) <= 0) {
-			break;
+	for (;;) {
+		modeVals_t t = { .n = 0 };
+		nativeVal_t *dummy = Mode_V(&t), *pos = Mode_V(&t), *name = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t);
+		nativeVal_t *z = Mode_V(&t), *kb = Mode_V(&t), *a = Mode_V(&t), *a1 = Mode_V(&t), *ang = Mode_V(&t);
+		nativeVal_t *lang = Mode_V(&t), *opt = Mode_V(&t);
+		if (!Mode_DummyNextSeam(dummy)) {
+			return Mode_Done(&t, 0);
 		}
-		PyObject *pos = Sf_Item(&f, dummy, 1);
-		PyObject *kb = Sf_Ask(&f, "Scrap", "CreateEntity", "(OOOOs)", Sf_Item(&f, dummy, 0), Sf_Item(&f, pos, 0),
-			Sf_Item(&f, pos, 1), Sf_Item(&f, pos, 2), "WithLife");
-		PyObject *y = Sf_OpI(&f, Sf_Item(&f, Sf_Item(&f, dummy, 2), 1), '+', 180);
-		Sf_SetAttr(&f, kb, "Ang", Sf_Build(&f, "(iOi)", 0, y, 0));
-		Sf_SetAttrS(&f, kb, "ActCtrl", "Conversor");
-		Sf_SetAttrI(&f, kb, "VRadius", 60);
-		Sf_SetAttrI(&f, kb, "ArrowCanUse", 1);
-		Sf_SetAttrI(&f, kb, "Life", 0);
-		Sf_SetAttrI(&f, kb, "ActiveCMask", 0);
-		Sf_SetAttrI(&f, kb, "MapCollision", 1);
-		Sf_SetAttrI(&f, kb, "AlwaysUse", 1);
-		Sf_SetAttr(&f, kb, "ArrOpt0", Sf_Cat(&f, "sO", "Convert:", Sf_Lang(&f, Sf_Str(&f, "CharConversor"))));
-		Sf_SetAttrS(&f, kb, "UseFunc", "CharConversor.EnterCharConversor");
-		Sf_Method(&f, Sf_Global(&f, CC, "ConversionPoints"), "append", "(O)", kb);
-		Sf_Release(&f, mark);
+		int none = Mode_Cmp(dummy, "==", Mode_V(&t));
+		if (none) {
+			return Mode_Done(&t, none > 0);
+		}
+		byte ok = LvN_Item(dummy, 1, pos) && LvN_Item(dummy, 0, name) && LvN_Item(pos, 0, x) && LvN_Item(pos, 1, y) &&
+			LvN_Item(pos, 2, z) && LvN_Create(name, x, y, z, "WithLife", kb) && LvN_Item(dummy, 2, a) &&
+			LvN_Item(a, 1, a1) && Mode_Arith('+', a1, Mode_I(&t, 180), ang);
+		if (ok) {
+			Native_Free(a);
+			Mode_Ints3(a, 0, 0, 0);
+			Native_Free(&a->items[1]);
+			Native_Copy(&a->items[1], ang);
+			Mode_Lang("CharConversor", lang);
+			ok = Mode_VSet(kb, "Ang", a) && LvN_SetS(kb, "ActCtrl", "Conversor") && LvN_SetI(kb, "VRadius", 60) &&
+				LvN_SetI(kb, "ArrowCanUse", 1) && LvN_SetI(kb, "Life", 0) && LvN_SetI(kb, "ActiveCMask", 0) &&
+				LvN_SetI(kb, "MapCollision", 1) && LvN_SetI(kb, "AlwaysUse", 1) &&
+				Mode_Cat(&t, opt, 2, Mode_S(&t, "Convert:"), lang) && Mode_VSet(kb, "ArrOpt0", opt) &&
+				LvN_SetS(kb, "UseFunc", "CharConversor.EnterCharConversor") && Mode_Append(CC, "ConversionPoints", kb);
+		}
+		if (!Mode_Done(&t, ok)) {
+			return 0;
+		}
 	}
-	return Sf_None(&f);
 }
 
 /* ConvertChar(UsrName, CharName, optId, FullOption): the player becomes a new character of the class of the save
- * variable Char at the conversor, with the energy of the old one */
-static PyObject *CharConversor_ConvertChar(PyObject *self, PyObject *args) {
-	PyObject *uname, *cname, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &uname, &cname, &opt, &full)) {
-		return NULL;
+ * variable Char at the conversor, with the energy of the old one (OBJLIB 3: Chars by name) */
+static byte Cc_ConvertChar(const nativeVal_t *uname, const nativeVal_t *cname) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *u0 = Mode_V(&t), *prev = Mode_V(&t), *usr = Mode_V(&t), *act = Mode_V(&t), *energy = Mode_V(&t);
+	nativeVal_t *sv = Mode_V(&t), *kb = Mode_V(&t), *ch = Mode_V(&t), *p = Mode_V(&t), *a = Mode_V(&t), *c = Mode_V(&t);
+	nativeVal_t *name = Mode_V(&t), *v = Mode_V(&t), *t001 = Mode_V(&t);
+	Loading_Init();
+	if (!Mode_Import("Chars") || !Mode_Import("string") || !Mode_EntitySeam(uname, u0) || !Mode_VObj(u0, "ActCtrl", prev) ||
+		!Mode_Put(CC, "prevChar", NULL, prev) || !Mode_EntitySeam(uname, usr) || !Mode_VObj(usr, "ActCtrl", act) ||
+		!Mode_VObj(usr, "Energy", energy) || !LvN_SetI(usr, "UsrControl", -1) || !LvN_SetI(usr, "Active", 0) ||
+		!LvN_SetS(usr, "ActCtrl", "") || !Mode_VDel(usr) || !Native_CallMod("Chars", "DiscardRes", NULL, "v", act)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Ask(&f, "Scrap", "InitLoading", "()");
-	Sf_Import(&f, "Chars");
-	Sf_Import(&f, "string");
-	Sf_SetGlobal(&f, CC, "prevChar", Sf_Attr(&f, Sf_Entity(&f, uname), "ActCtrl"));
-	PyObject *usr = Sf_Entity(&f, uname);
-	PyObject *act = Sf_Attr(&f, usr, "ActCtrl");
-	PyObject *energy = Sf_Attr(&f, usr, "Energy");
-	Sf_SetAttrI(&f, usr, "UsrControl", -1);
-	Sf_SetAttrI(&f, usr, "Active", 0);
-	Sf_SetAttrS(&f, usr, "ActCtrl", "");
-	Sf_Method(&f, usr, "Del", "()");
-	Sf_Ask(&f, "Chars", "DiscardRes", "(O)", act);
-	Sf_Ask(&f, "Chars", "LoadRes", "(O)", Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Char"));
-	PyObject *kb = Sf_Entity(&f, cname);
-	int z = Sf_EqS(&f, uname, "PlayerZ");
-	const char *pl = z > 0 ? "Player0" : "PlayerZ";
-	PyObject *fn = Sf_Mod(&f, "Chars", "CreateMainChar");
-	PyObject *ch = Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Char");
-	PyObject *p = Cc_Call(&f, "CPPos", "(O)", kb);
-	PyObject *c = Sf_Call(&f, fn, "(sOOO)", pl, ch, p, Cc_Call(&f, "CPAng", "(O)", kb));
-	Sf_Ask(&f, "SLogic", "SetOnFloor", "(O)", Sf_Attr(&f, c, "Name"));
-	Sf_SetAttr(&f, c, "MovePos", Sf_Attr(&f, c, "Pos"));
-	Sf_SetAttr(&f, c, "MoveAng", Sf_Attr(&f, c, "Ang"));
-	Sf_SetAttr(&f, c, "MoveTime", Sf_Float(&f, 0.001));
-	Sf_SetAttrI(&f, c, "AutoSelect", 0);
-	Sf_SetAttr(&f, c, "Energy", energy);
-	Sf_SetGlobal(&f, CC, "newChar", Sf_Attr(&f, c, "ActCtrl"));
-	Sf_SetGlobal(&f, CC, "_usrName", Sf_Attr(&f, c, "Name"));
-	Sf_Ask(&f, "Scrap", "EndLoading", "()");
-	return Sf_None(&f);
+	Mode_SaveVar("Char", sv);
+	if (!Native_CallMod("Chars", "LoadRes", NULL, "v", sv) || !Mode_EntitySeam(cname, kb)) {
+		return Mode_Done(&t, 0);
+	}
+	const char *pl = LvN_EqS(uname, "PlayerZ") ? "Player0" : "PlayerZ";
+	Mode_SaveVar("Char", ch);
+	Native_SetFloat(t001, 0.001);
+	byte ok = Cc_Call("CPPos", p, "v", kb) && Cc_Call("CPAng", a, "v", kb) &&
+		Native_CallMod("Chars", "CreateMainChar", c, "svvv", pl, ch, p, a) && Mode_VGet(c, "Name", name) &&
+		LvN_SetOnFloor(name) && Mode_VObj(c, "Pos", v) && Mode_VSet(c, "MovePos", v) && (Native_Free(v), 1) &&
+		Mode_VObj(c, "Ang", v) && Mode_VSet(c, "MoveAng", v) && Mode_VSet(c, "MoveTime", t001) &&
+		LvN_SetI(c, "AutoSelect", 0) && Mode_VSet(c, "Energy", energy) && (Native_Free(v), 1) &&
+		Mode_VObj(c, "ActCtrl", v) && Mode_Put(CC, "newChar", NULL, v) && (Native_Free(v), 1) &&
+		Mode_VObj(c, "Name", v) && Mode_Put(CC, "_usrName", NULL, v);
+	if (ok) {
+		Loading_End();
+	}
+	return Mode_Done(&t, ok);
 }
 
 /* CPPos(kb): the place in front of a conversor */
-static PyObject *CharConversor_CPPos(PyObject *self, PyObject *args) {
-	PyObject *kb;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &kb)) {
-		return NULL;
+static byte Cc_CPPos(const nativeVal_t *kb, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *pos = Mode_V(&t), *ka = Mode_V(&t), *y = Mode_V(&t), *ang = Mode_V(&t), *off = Mode_V(&t);
+	nativeVal_t *r = Mode_V(&t);
+	if (!Mode_VObj(kb, "Pos", pos) || !Mode_VObj(kb, "Ang", ka) || !LvN_Item(ka, 1, y)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *pos = Sf_Attr(&f, kb, "Pos");
-	PyObject *ang = Sf_Build(&f, "(iOi)", 0, Sf_Item(&f, Sf_Attr(&f, kb, "Ang"), 1), 0);
-	PyObject *off = Sf_Ask(&f, "SVec", "Rotate3D", "(OO)", Sf_Build(&f, "(iii)", 0, 0, -180), ang);
-	return Sf_Return(&f, Sf_Ask(&f, "SVec", "Add", "(OO)", pos, off));
+	Mode_Ints3(ang, 0, 0, 0);
+	Native_Free(&ang->items[1]);
+	Native_Copy(&ang->items[1], y);
+	Mode_Ints3(off, 0, 0, -180);
+	return Mode_Done(&t, Mode_Rotate(off, ang, r) && Mode_VecAdd(pos, r, out));
 }
 
 /* CPAng(kb): the angle that looks out of a conversor */
-static PyObject *CharConversor_CPAng(PyObject *self, PyObject *args) {
-	PyObject *kb;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &kb)) {
-		return NULL;
+static byte Cc_CPAng(const nativeVal_t *kb, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ka = Mode_V(&t), *y = Mode_V(&t), *y2 = Mode_V(&t);
+	if (!Mode_VObj(kb, "Ang", ka) || !LvN_Item(ka, 1, y) || !Mode_Arith('+', y, Mode_I(&t, 180), y2)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *y = Sf_OpI(&f, Sf_Item(&f, Sf_Attr(&f, kb, "Ang"), 1), '+', 180);
-	return Sf_Return(&f, Sf_Build(&f, "(iOi)", 0, y, 0));
+	Mode_Ints3(out, 0, 0, 0);
+	Native_Free(&out->items[1]);
+	Native_Copy(&out->items[1], y2);
+	return Mode_Done(&t, 1);
 }
 
 /* DrawBackground(id, elem, posX=64, posY=64, sizeX=512, sizeY=352, alpha=92, red=0, green=0, blue=32): a coloured
  * rectangle (the interface no longer calls it) */
-static PyObject *CharConversor_DrawBackground(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "elem", "posX", "posY", "sizeX", "sizeY", "alpha", "red", "green", "blue", NULL };
+static byte Cc_DrawBackground(const nativeVal_t *id, const nativeVal_t *elem, nativeVal_t *const *v) {
 	static const char *const vars[] = { "X", "Y", "ScaleX", "ScaleY", "Unit", "Alpha", "Red", "Green", "Blue" };
 	static const long defs[] = { 64, 64, 512, 352, 1, 92, 0, 0, 32 };
-	PyObject *id, *elem, *v[9] = { NULL };
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|OOOOOOOO", names, &id, &elem, &v[0], &v[1], &v[2], &v[3], &v[5],
-		&v[6], &v[7], &v[8])) {
-		return NULL;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *name = Mode_V(&t);
+	if (!Mode_Cat(&t, name, 2, Mode_S(&t, "BackgroundElement"), elem) ||
+		!Native_CallMod("SScorer", "Add", NULL, "vvs", id, name, "Sprite")) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *name = Sf_Cat(&f, "sO", "BackgroundElement", elem);
-	Sf_Ask(&f, "SScorer", "Add", "(OOs)", id, name, "Sprite");
 	for (int i = 0; i < 9; i++) {
-		PyObject *val = v[i] && i != 4 ? v[i] : Sf_Int(&f, defs[i]);
-		Sf_Ask(&f, "SScorer", "Set", "(OOsO)", id, name, vars[i], val);
+		const nativeVal_t *val = v[i] && i != 4 ? v[i] : Mode_I(&t, defs[i]);
+		if (!Mode_ScorerSet(id, name, vars[i], val)) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, 1);
 }
 
-/* AddInterfaceContent(id): the interface of the characters (data/menus/charconv.def); the game time stops; the
- * description of the player's character, the keyboard links of the buttons, Escape leaves */
-static PyObject *CharConversor_AddInterfaceContent(PyObject *self, PyObject *args) {
-	PyObject *id;
-	int pid = 0;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id)) {
-		return NULL;
-	}
-	Sf_Import(&f, "Menu");
-	Sf_Ask(&f, "Menu", "InitMenuSys", "(i)", 0);
-	Sf_Ask(&f, "Menu", "StartNewMenu", "(O)", id);
-	Sf_Check(&f, f.failed || PyArg_Parse(id, "i", &pid));
-	int total = Sf_Len(&f, Sf_Global(&f, CC, "ConversionChars"));
-	Sf_Len(&f, Sf_Global(&f, CC, "AvailableChars"));
-	int count = 0;
-	for (int i = 0; i < 3 && !f.failed; i++) {
-		for (int j = 0; j < 5 && !f.failed; j++) {
-			count = i * 5 + j;
-			if (count >= total) {
-				break;
+/* the $names of a charconv.def section as the dict Script_RunFile takes (OBJLIB 6): char, x, y, state */
+static PyObject *Cc_Vars(const nativeVal_t *ch, long x, long y, const char *state) {
+	PyObject *c = Native_ToPy(ch);
+	PyObject *d = c ? Py_BuildValue("{s:O,s:i,s:i,s:s}", "char", c, "x", x, "y", y, "state", state) : NULL;
+	Py_XDECREF(c);
+	return d;
+}
+
+/* "Char_" + ConversionChars[i] */
+static byte Cc_CharItem(long i, nativeVal_t *out) {
+	nativeVal_t chars = { 0 }, ch = { 0 }, pre;
+	Native_SetStr(&pre, "Char_");
+	byte ok = Cc_G("ConversionChars", &chars) && LvN_Item(&chars, i, &ch) && Native_Arith('+', &pre, &ch, out);
+	Native_Free(&chars);
+	Native_Free(&ch);
+	return ok;
+}
+
+/* f(id, "Char_" + ConversionChars[a], "Char_" + ConversionChars[b]) of a link function of Menu (b < 0: "CharExit") */
+static byte Cc_Link(PyObject *f, const nativeVal_t *id, long a, long b) {
+	nativeVal_t x = { 0 }, y = { 0 };
+	byte ok = Cc_CharItem(a, &x) && (b < 0 ? (Native_SetStr(&y, "CharExit"), 1) : Cc_CharItem(b, &y)) &&
+		Native_Call(f, NULL, "vvv", id, &x, &y);
+	Native_Free(&x);
+	Native_Free(&y);
+	return ok;
+}
+
+/* the heads and buttons of the characters: count the last index made */
+static byte Cc_Heads(int pid, int total, int *count) {
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 5; j++) {
+			*count = i * 5 + j;
+			if (*count >= total) {
+				return 1;
 			}
-			int mark = f.n;
-			PyObject *ch = Sf_Item(&f, Sf_Global(&f, CC, "ConversionChars"), count);
-			int avail = Sf_In(&f, ch, Sf_Global(&f, CC, "AvailableChars"));
+			modeVals_t t = { .n = 0 };
+			nativeVal_t *chars = Mode_V(&t), *ch = Mode_V(&t), *avl = Mode_V(&t), *n1 = Mode_V(&t), *n2 = Mode_V(&t);
+			nativeVal_t *sv = Mode_V(&t);
+			int avail = Cc_G("ConversionChars", chars) && LvN_Item(chars, *count, ch) && Cc_G("AvailableChars", avl) ?
+				Native_Contains(avl, ch) : -1;
 			/* the names of the items, as the script builds them (a TypeError for a character that is no text) */
-			Sf_Cat(&f, "sO", avail ? "CharHead_" : "CharNotAvailable_", ch);
-			Sf_Cat(&f, "sO", "Char_", ch);
-			int sel = Sf_Compare(&f, ch, "==", Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Char"));
-			PyObject *vars = Sf_Build(&f, "{s:O,s:i,s:i,s:s}", "char", ch, "x", 88 + 95 * j, "y", 76 + 92 * i, "state",
-				sel ? "sel" : avail ? "normal" : "dead");
+			int sel = avail >= 0 && Mode_Cat(&t, n1, 2, Mode_S(&t, avail ? "CharHead_" : "CharNotAvailable_"), ch) &&
+				Mode_Cat(&t, n2, 2, Mode_S(&t, "Char_"), ch) ? (Mode_SaveVar("Char", sv), Mode_Cmp(ch, "==", sv)) : -1;
+			PyObject *vars = sel >= 0 ? Cc_Vars(ch, 88 + 95 * j, 76 + 92 * i, sel ? "sel" : avail ? "normal" : "dead") : NULL;
 			if (vars) {
 				Script_RunFile(pid, "menus/charconv.def", avail ? "head" : "na", charconv_def, NULL, vars);
 				Script_RunFile(pid, "menus/charconv.def", "button", charconv_def, NULL, vars);
+				Py_DECREF(vars);
 			}
-			Sf_Release(&f, mark);
-		}
-		if (count >= total) {
-			break;
-		}
-	}
-	if (!f.failed) {
-		PyObject *vars = Sf_Build(&f, "{}");
-		Script_RunFile(pid, "menus/charconv.def", "rest", charconv_def, NULL, vars);
-	}
-	PyObject *control = Sf_Cat(&f, "sO", "Char_", Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Char"));
-	Cc_Call(&f, "ShowCharDesc", "(OOO)", id, control, Py_None);
-	PyObject *lr = Sf_From(&f, "Menu", "LinkLR");
-	PyObject *ud = Sf_From(&f, "Menu", "LinkUD");
-	Sf_Len(&f, Sf_Global(&f, CC, "ConversionChars"));
-	for (int i = 0; i < 3 && !f.failed; i++) {
-		for (int j = 0; j < 4 && !f.failed; j++) {
-			int mark = f.n;
-			PyObject *chars = Sf_Global(&f, CC, "ConversionChars");
-			PyObject *a = Sf_Cat(&f, "sO", "Char_", Sf_Item(&f, chars, i * 5 + j));
-			PyObject *b = Sf_Cat(&f, "sO", "Char_", Sf_Item(&f, chars, i * 5 + j + 1));
-			Sf_Call(&f, lr, "(OOO)", id, a, b);
-			Sf_Release(&f, mark);
-		}
-	}
-	for (int j = 0; j < 5 && !f.failed; j++) {
-		for (int i = 0; i < 2 && !f.failed; i++) {
-			int mark = f.n;
-			PyObject *chars = Sf_Global(&f, CC, "ConversionChars");
-			PyObject *a = Sf_Cat(&f, "sO", "Char_", Sf_Item(&f, chars, i * 5 + j));
-			PyObject *b = Sf_Cat(&f, "sO", "Char_", Sf_Item(&f, chars, i * 5 + j + 5));
-			if (i * 5 + j < 10) {
-				Sf_Call(&f, ud, "(OOO)", id, a, b);
+			if (!Mode_Done(&t, vars != NULL)) {
+				return 0;
 			}
-			Sf_Release(&f, mark);
 		}
 	}
-	PyObject *last = Sf_Cat(&f, "sO", "Char_", Sf_Item(&f, Sf_Global(&f, CC, "ConversionChars"), 14));
-	Sf_Call(&f, lr, "(OOs)", id, last, "CharExit");
-	for (int i = 10; i < 15 && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *name = Sf_Cat(&f, "sO", "Char_", Sf_Item(&f, Sf_Global(&f, CC, "ConversionChars"), i));
-		Sf_Ask(&f, "SScorer", "Set", "(OOss)", id, name, "Down", "CharExit");
-		Sf_Ask(&f, "SScorer", "Set", "(OssO)", id, "CharExit", "Up", name);
-		Sf_Release(&f, mark);
-	}
-	Sf_Ask(&f, "SScorer", "SetOnCancel", "(Os)", id, "CharConversor.ExitCharConversor");
-	return Sf_None(&f);
+	return 1;
 }
 
-/* SpawnChar(c, ChrConv): a character appears out of a conversor */
-static PyObject *CharConversor_SpawnChar(PyObject *self, PyObject *args) {
-	PyObject *c, *conv;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &c, &conv)) {
-		return NULL;
+/* AddInterfaceContent(id): the interface of the characters (data/menus/charconv.def); the game time stops; the
+ * description of the player's character, the keyboard links of the buttons, Escape leaves (OBJLIB 3: Menu by name) */
+static byte Cc_AddInterfaceContent(const nativeVal_t *id) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *chars = Mode_V(&t), *avl = Mode_V(&t), *sv = Mode_V(&t), *control = Mode_V(&t), *none = Mode_V(&t);
+	nativeVal_t *name = Mode_V(&t);
+	int pid = 0, total = -1, count = 0;
+	if (!Mode_Import("Menu") || !Native_CallMod("Menu", "InitMenuSys", NULL, "i", 0L) ||
+		!Native_CallMod("Menu", "StartNewMenu", NULL, "v", id) || !Native_ArgInt(id, &pid) ||
+		!Cc_G("ConversionChars", chars) || (total = Mode_Len(chars)) < 0 || !Cc_G("AvailableChars", avl) ||
+		Mode_Len(avl) < 0 || !Cc_Heads(pid, total, &count)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Chars");
-	Sf_SetAttr(&f, c, "Pos", Cc_Call(&f, "CPPos", "(O)", conv));
-	PyObject *y = Sf_OpI(&f, Sf_Item(&f, Cc_Call(&f, "CPAng", "(O)", conv), 1), '+', 180);
-	Sf_SetAttr(&f, c, "Ang", Sf_Build(&f, "(iOi)", 0, y, 0));
-	Sf_Ask(&f, "SLogic", "SetOnFloor", "(O)", Sf_Attr(&f, c, "Name"));
-	PyObject *name = Sf_Attr(&f, c, "Name");
-	Sf_Ask(&f, "SFX", "CharacterConversor", "(OOi)", name, Sf_Attr(&f, conv, "Name"), 2);
-	return Sf_None(&f);
+	PyObject *rest = PyDict_New();
+	if (!rest) {
+		return Mode_Done(&t, 0);
+	}
+	Script_RunFile(pid, "menus/charconv.def", "rest", charconv_def, NULL, rest);
+	Py_DECREF(rest);
+	Mode_SaveVar("Char", sv);
+	if (!Mode_Cat(&t, control, 2, Mode_S(&t, "Char_"), sv) || !Cc_Call("ShowCharDesc", NULL, "vvv", id, control, none)) {
+		return Mode_Done(&t, 0);
+	}
+	PyObject *lr = Mode_From("Menu", "LinkLR"), *ud = lr ? Mode_From("Menu", "LinkUD") : NULL;
+	Native_Free(chars);
+	byte ok = ud && Cc_G("ConversionChars", chars) && Mode_Len(chars) >= 0;
+	for (int i = 0; ok && i < 3; i++) {
+		for (int j = 0; ok && j < 4; j++) {
+			ok = Cc_Link(lr, id, i * 5 + j, i * 5 + j + 1);
+		}
+	}
+	for (int j = 0; ok && j < 5; j++) {
+		for (int i = 0; ok && i < 2; i++) {
+			nativeVal_t a = { 0 }, b = { 0 };
+			ok = Cc_CharItem(i * 5 + j, &a) && Cc_CharItem(i * 5 + j + 5, &b) &&
+				(i * 5 + j >= 10 || Native_Call(ud, NULL, "vvv", id, &a, &b));
+			Native_Free(&a);
+			Native_Free(&b);
+		}
+	}
+	ok = ok && Cc_Link(lr, id, 14, -1);
+	for (int i = 10; ok && i < 15; i++) {
+		Native_Free(name);
+		ok = Cc_CharItem(i, name) && Mode_ScorerSet(id, name, "Down", Mode_S(&t, "CharExit")) &&
+			Mode_ScorerSet(id, Mode_S(&t, "CharExit"), "Up", name);
+	}
+	Py_XDECREF(lr);
+	Py_XDECREF(ud);
+	return Mode_Done(&t, ok && Native_CallMod("SScorer", "SetOnCancel", NULL, "vs", id, "CharConversor.ExitCharConversor"));
 }
 
-/* MarkSpawnWaypoint(ChrConvName): a way point at the conversor */
-static PyObject *CharConversor_MarkSpawnWaypoint(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+/* SpawnChar(c, ChrConv): a character appears out of a conversor (OBJLIB 3, 7: SFX by name) */
+static byte Cc_SpawnChar(const nativeVal_t *c, const nativeVal_t *conv) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *p = Mode_V(&t), *a = Mode_V(&t), *y = Mode_V(&t), *y2 = Mode_V(&t), *ang = Mode_V(&t);
+	nativeVal_t *name = Mode_V(&t), *name2 = Mode_V(&t), *cn = Mode_V(&t);
+	if (!Mode_Import("Chars") || !Cc_Call("CPPos", p, "v", conv) || !Mode_VSet(c, "Pos", p) || !Cc_Call("CPAng", a, "v", conv) ||
+		!LvN_Item(a, 1, y) || !Mode_Arith('+', y, Mode_I(&t, 180), y2)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "SaveGame");
-	Sf_Import(&f, "Init");
-	PyObject *fn = Sf_Mod(&f, "SaveGame", "MarkWayPoint");
-	PyObject *path = Sf_Mod(&f, "Init", "Path");
-	Sf_Call(&f, fn, "(OOO)", path, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Spawn"), name);
-	return Sf_None(&f);
+	Mode_Ints3(ang, 0, 0, 0);
+	Native_Free(&ang->items[1]);
+	Native_Copy(&ang->items[1], y2);
+	return Mode_Done(&t, Mode_VSet(c, "Ang", ang) && Mode_VObj(c, "Name", name) && LvN_SetOnFloor(name) &&
+		Mode_VObj(c, "Name", name2) && Mode_VObj(conv, "Name", cn) &&
+		Native_CallMod("SFX", "CharacterConversor", NULL, "vvi", name2, cn, 2L));
+}
+
+/* MarkSpawnWaypoint(ChrConvName): a way point at the conversor (OBJLIB 3: SaveGame by name) */
+static byte Cc_MarkSpawnWaypoint(const nativeVal_t *name) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *path = Mode_V(&t), *spawn = Mode_V(&t);
+	if (!Mode_Import("SaveGame") || !Mode_Import("Init") || !LvN_ModGet("Init", "Path", path)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("Spawn", spawn);
+	return Mode_Done(&t, Native_CallMod("SaveGame", "MarkWayPoint", NULL, "vvv", path, spawn, name));
+}
+
+/* the energy of the player at a conversor: at least 2 batteries, at most the save variable Batteries */
+static byte Cc_Energy(const nativeVal_t *usr) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *f = Mode_V(&t), *s = Mode_V(&t), *prev = Mode_V(&t), *sv = Mode_V(&t);
+	nativeVal_t *full = Mode_V(&t), *two = Mode_V(&t);
+	Native_SetFloat(f, 0.999);
+	Native_SetFloat(two, 2.0);
+	if (!Mode_VObj(usr, "Energy", e) || !Mode_Arith('+', e, f, s) || !Native_ToInt(s, prev)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("Batteries", sv);
+	int c = Native_ToInt(sv, full) ? Mode_Cmp(prev, "<", two) : -1;
+	if (c > 0) {
+		return Mode_Done(&t, Mode_VSet(usr, "Energy", two));
+	}
+	c = c < 0 ? -1 : Mode_Cmp(prev, ">", full);
+	return Mode_Done(&t, c >= 0 && Mode_VSet(usr, "Energy", c ? full : prev));
 }
 
 /* EnterCharConversor(UsrName, CharName, optId, FullOption): the use of a conversor (the UseFunc): the machine plays,
  * the player stands in front of it with at least 2 batteries, a way point, the camera on the machine */
-static PyObject *CharConversor_EnterCharConversor(PyObject *self, PyObject *args) {
-	PyObject *uname, *cname, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &uname, &cname, &opt, &full)) {
-		return NULL;
+static byte Cc_EnterCharConversor(const nativeVal_t *uname, const nativeVal_t *cname, const nativeVal_t *opt,
+	const nativeVal_t *full) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *sv = Mode_V(&t), *cad = Mode_V(&t), *check = Mode_V(&t), *r = Mode_V(&t), *u = Mode_V(&t);
+	nativeVal_t *un = Mode_V(&t), *obj = Mode_V(&t), *usr = Mode_V(&t), *p = Mode_V(&t), *a = Mode_V(&t);
+	nativeVal_t *name = Mode_V(&t), *v = Mode_V(&t), *life = Mode_V(&t), *t001 = Mode_V(&t), *cam = Mode_V(&t);
+	nativeVal_t *ce = Mode_V(&t);
+	if (!Mode_Import("Chars") || !Mode_Import("Menu") || !Mode_Import("Speech") || !Mode_GVarSetI("RemainTalkTime", 0) ||
+		!Mode_GVarSetN("AbortSelectDistance", 0.0)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Chars");
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "Speech");
-	Sf_Ask(&f, "Scrap", "Set", "(si)", "RemainTalkTime", 0);
-	Sf_Ask(&f, "Scrap", "Set", "(sd)", "AbortSelectDistance", 0.0);
-	if (Sf_EqS(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Conversor.ActiveConversors"), "0") > 0) {
-		PyObject *cad = Sf_Lang(&f, Sf_Str(&f, "NoActiveConversorsMessage"));
-		PyObject *t = Sf_Time(&f);
-		t = Sf_Op(&f, t, '+', Sf_Ask(&f, "Speech", "CalculateSpeechTime", "(O)", cad));
-		Sf_Ask(&f, "SScorer", "SetMsgText", "(OO)", cad, t);
-		return Sf_None(&f);
+	Mode_SaveVar("Conversor.ActiveConversors", sv);
+	if (LvN_EqS(sv, "0")) {
+		Mode_Lang("NoActiveConversorsMessage", cad);
+		return Mode_Done(&t, Mode_SpeechMsg(cad));
 	}
-	PyObject *check = Sf_Global(&f, CC, "CheckConversor");
-	if (Sf_True(&f, check) > 0) {
-		if (Sf_True(&f, Sf_Call(&f, check, "(O)", cname)) == 0) {
-			return Sf_None(&f);
+	if (!Cc_G("CheckConversor", check)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_True(check)) {
+		if (!Mode_CallArgs(check, r, cname, 1)) {
+			return Mode_Done(&t, 0);
+		}
+		if (!Native_True(r)) {
+			return Mode_Done(&t, 1);
 		}
 	}
-	int other = Sf_Compare(&f, Sf_Attr(&f, Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0), "Name"), "!=", uname);
-	if (other > 0) {
-		Sf_Ask(&f, "Scrap", "ConsoleError", "(s)", "ERROR AT : EnterCharConversor() \n");
-	} else if (other == 0) {
-		PyObject *obj = Sf_Entity(&f, cname);
-		Sf_SetAttrS(&f, obj, "Action", "Action");
-		PyObject *usr = Sf_Entity(&f, uname);
-		Sf_SetAttrS(&f, usr, "ForceAction", "Relax");
-		Sf_SetAttrI(&f, usr, "AutoSelect", 0);
-		Sf_SetAttrI(&f, usr, "UsrControl", -1);
-		Sf_SetAttrI(&f, usr, "UsrControl", 0);
-		Sf_SetAttr(&f, usr, "Pos", Cc_Call(&f, "CPPos", "(O)", obj));
-		Sf_SetAttr(&f, usr, "Ang", Cc_Call(&f, "CPAng", "(O)", obj));
-		Sf_Ask(&f, "SLogic", "SetOnFloor", "(O)", Sf_Attr(&f, usr, "Name"));
-		Sf_SetAttr(&f, usr, "MovePos", Sf_Attr(&f, usr, "Pos"));
-		Sf_SetAttr(&f, usr, "MoveAng", Sf_Attr(&f, usr, "Ang"));
-		Sf_SetAttr(&f, usr, "MoveTime", Sf_Float(&f, 0.001));
-		Sf_SetAttr(&f, usr, "Life", Sf_Ask(&f, "Scrap", "Get", "(s)", "StdMaxLife"));
-		PyObject *prev = Sf_ToInt(&f, Sf_Op(&f, Sf_Attr(&f, usr, "Energy"), '+', Sf_Float(&f, 0.999)));
-		PyObject *full_e = Sf_ToInt(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Batteries"));
-		if (Sf_Compare(&f, prev, "<", Sf_Float(&f, 2.0)) > 0) {
-			Sf_SetAttr(&f, usr, "Energy", Sf_Float(&f, 2.0));
-		} else if (!f.failed && Sf_Compare(&f, prev, ">", full_e) > 0) {
-			Sf_SetAttr(&f, usr, "Energy", full_e);
-		} else {
-			Sf_SetAttr(&f, usr, "Energy", prev);
-		}
-		Cc_Call(&f, "MarkSpawnWaypoint", "(O)", cname);
-		Sf_SetAttr(&f, Sf_Entity(&f, Sf_Ask(&f, "Scrap", "GetCam", "(i)", 0)), "EntityLink", cname);
-		Sf_SetGlobal(&f, CC, "_usrName", uname);
-		Sf_SetGlobal(&f, CC, "_charName", cname);
-		Sf_SetGlobal(&f, CC, "_optId", opt);
-		Sf_SetGlobal(&f, CC, "_fullOption", full);
-		Sf_Ask(&f, "Menu", "MovieScorer", "(i)", 0);
-		Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Inactive");
+	int other = Mode_UsrHandle(u) && Mode_VObj(u, "Name", un) ? Mode_Cmp(un, "!=", uname) : -1;
+	if (other) {
+		return Mode_Done(&t, other > 0 && Mode_ConsoleError(Mode_S(&t, "ERROR AT : EnterCharConversor() \n")));
 	}
-	return Sf_None(&f);
+	Native_SetFloat(t001, 0.001);
+	byte ok = Mode_EntitySeam(cname, obj) && LvN_SetS(obj, "Action", "Action") && Mode_EntitySeam(uname, usr) &&
+		LvN_SetS(usr, "ForceAction", "Relax") && LvN_SetI(usr, "AutoSelect", 0) && LvN_SetI(usr, "UsrControl", -1) &&
+		LvN_SetI(usr, "UsrControl", 0) && Cc_Call("CPPos", p, "v", obj) && Mode_VSet(usr, "Pos", p) &&
+		Cc_Call("CPAng", a, "v", obj) && Mode_VSet(usr, "Ang", a) && Mode_VObj(usr, "Name", name) && LvN_SetOnFloor(name) &&
+		Mode_VObj(usr, "Pos", v) && Mode_VSet(usr, "MovePos", v) && (Native_Free(v), 1) && Mode_VObj(usr, "Ang", v) &&
+		Mode_VSet(usr, "MoveAng", v) && Mode_VSet(usr, "MoveTime", t001) && Native_GVarGet("StdMaxLife", life) &&
+		Mode_VSet(usr, "Life", life) && Cc_Energy(usr) && Cc_Call("MarkSpawnWaypoint", NULL, "v", cname) &&
+		(Mode_CamName(0, cam), Mode_EntitySeam(cam, ce)) && Mode_VSet(ce, "EntityLink", cname) &&
+		Mode_Put(CC, "_usrName", NULL, uname) && Mode_Put(CC, "_charName", NULL, cname) && Mode_Put(CC, "_optId", NULL, opt) &&
+		Mode_Put(CC, "_fullOption", NULL, full) && Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L) &&
+		Mode_ActionSet("Inactive");
+	return Mode_Done(&t, ok);
 }
 
-/* InitOfScene(EntityName, EventName, Time): the player vanishes into the machine */
-static PyObject *CharConversor_InitOfScene(PyObject *self, PyObject *args) {
-	PyObject *ename, *event, *time;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &ename, &event, &time)) {
-		return NULL;
-	}
-	PyObject *usr = Sf_Global(&f, CC, "_usrName");
-	Sf_Ask(&f, "SFX", "CharacterConversor", "(OOi)", usr, Sf_Global(&f, CC, "_charName"), 1);
-	return Sf_None(&f);
+/* SFX.CharacterConversor(_usrName, _charName, step) of the module's globals (OBJLIB 7: SFX by name) */
+static byte Cc_Fx(long step) {
+	nativeVal_t u = { 0 }, c = { 0 };
+	byte ok = Cc_G("_usrName", &u) && Cc_G("_charName", &c) && Native_CallMod("SFX", "CharacterConversor", NULL, "vvi", &u, &c, step);
+	Native_Free(&u);
+	Native_Free(&c);
+	return ok;
+}
+
+/* the entity of the camera of player 0 with EntityLink = link */
+static byte Cc_CamLink(const nativeVal_t *link) {
+	nativeVal_t cam, ce = { 0 };
+	Mode_CamName(0, &cam);
+	byte ok = Mode_EntitySeam(&cam, &ce) && Mode_VSet(&ce, "EntityLink", link);
+	Native_Free(&cam);
+	Native_Free(&ce);
+	return ok;
 }
 
 /* EndOfScene(EntityName, EventName, Time): the end of the machine's action: the camera and the control back to the
- * player, afterExitConversor or the first conversion warning, the sentinels look */
-static PyObject *CharConversor_EndOfScene(PyObject *self, PyObject *args) {
-	PyObject *ename, *event, *time;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &ename, &event, &time)) {
-		return NULL;
+ * player, afterExitConversor or the first conversion warning, the sentinels look (OBJLIB 3, 7: Menu, CharScorer and
+ * SLogic.SendSentinelToWatch by name) */
+static byte Cc_EndOfScene(const nativeVal_t *ename) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *e = Mode_V(&t), *after = Mode_V(&t), *sv = Mode_V(&t), *act = Mode_V(&t);
+	nativeVal_t *msg = Mode_V(&t), *pos = Mode_V(&t);
+	if (!Mode_Import("Menu") || !Mode_Import("CharScorer") || !Cc_CamLink(Mode_S(&t, "")) || !Mode_UsrHandle(usr) ||
+		!LvN_SetI(usr, "AutoSelect", 1) || !LvN_SetI(usr, "MoveTime", 0) || !Mode_EntitySeam(ename, e) ||
+		!Mode_ActionSet("Walk") || !Native_CallMod("CharScorer", "Create", NULL, "i", 0L) ||
+		!LvN_GObj(CC, "afterExitConversor", after)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "CharScorer");
-	Sf_SetAttrS(&f, Sf_Entity(&f, Sf_Ask(&f, "Scrap", "GetCam", "(i)", 0)), "EntityLink", "");
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	Sf_SetAttrI(&f, usr, "AutoSelect", 1);
-	Sf_SetAttrI(&f, usr, "MoveTime", 0);
-	Sf_Entity(&f, ename);
-	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Walk");
-	Sf_Ask(&f, "CharScorer", "Create", "(i)", 0);
-	PyObject *after = Sf_Global(&f, CC, "afterExitConversor");
-	int t = Sf_True(&f, after);
-	if (t > 0) {
-		Sf_Call(&f, after, "()");
-	} else if (t == 0) {
-		int first = Sf_EqS(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Conversor.FirstConversion"), "1");
-		if (first > 0) {
-			first = Sf_Compare(&f, Sf_Attr(&f, usr, "ActCtrl"), "!=", Sf_Str(&f, "Dtritus"));
+	if (Native_True(after)) {
+		if (!Mode_CallArgs(after, NULL, NULL, 0)) {
+			return Mode_Done(&t, 0);
 		}
-		if (first > 0) {
-			Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "Conversor.FirstConversion", "0");
-			Sf_Ask(&f, "Menu", "ShowWarning", "(iO)", 0, Sf_Lang(&f, Sf_Str(&f, "FirstConversionWarning")));
+	} else {
+		Mode_SaveVar("Conversor.FirstConversion", sv);
+		int first = LvN_EqS(sv, "1");
+		if (first) {
+			first = Mode_VObj(usr, "ActCtrl", act) ? Mode_Cmp(act, "!=", Mode_S(&t, "Dtritus")) : -1;
+		}
+		if (first < 0) {
+			return Mode_Done(&t, 0);
+		}
+		if (first) {
+			Mode_Lang("FirstConversionWarning", msg);
+			if (!Mode_SetSaveVar("Conversor.FirstConversion", Mode_S(&t, "0")) ||
+				!Native_CallMod("Menu", "ShowWarning", NULL, "iv", 0L, msg)) {
+				return Mode_Done(&t, 0);
+			}
 		}
 	}
-	Sf_Ask(&f, "SLogic", "SendSentinelToWatch", "(O)", Sf_Attr(&f, usr, "Pos"));
-	return Sf_None(&f);
+	return Mode_Done(&t, Mode_VObj(usr, "Pos", pos) && Native_CallMod("SLogic", "SendSentinelToWatch", NULL, "v", pos));
 }
 
-/* InitInterfaceEvent(EntityName, EventName, Time): the middle of the machine's action opens the interface */
-static PyObject *CharConversor_InitInterfaceEvent(PyObject *self, PyObject *args) {
-	PyObject *ename, *event, *time;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &ename, &event, &time)) {
-		return NULL;
-	}
-	Cc_Call(&f, "AddInterfaceContent", "(i)", 0);
-	return Sf_None(&f);
+/* ExitCharConversor(id, control): the player appears again, the interface closes (OBJLIB 3: Menu by name) */
+static byte Cc_ExitCharConversor(const nativeVal_t *id) {
+	return Mode_Import("Menu") && Cc_Fx(2) && Mode_GVarSetDef("AbortSelectDistance") &&
+		Native_CallMod("Menu", "BackToGame", NULL, "v", id);
 }
 
-/* ExitCharConversor(id, control): the player appears again, the interface closes */
-static PyObject *CharConversor_ExitCharConversor(PyObject *self, PyObject *args) {
-	PyObject *id, *control;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &id, &control)) {
-		return NULL;
-	}
-	Sf_Import(&f, "Menu");
-	PyObject *usr = Sf_Global(&f, CC, "_usrName");
-	Sf_Ask(&f, "SFX", "CharacterConversor", "(OOi)", usr, Sf_Global(&f, CC, "_charName"), 2);
-	Sf_Ask(&f, "Scrap", "Set", "(sO)", "AbortSelectDistance", Sf_Ask(&f, "Scrap", "Def", "(s)", "AbortSelectDistance"));
-	Sf_Ask(&f, "Menu", "BackToGame", "(O)", id);
-	return Sf_None(&f);
+/* SScorer.Set(id, "CharHead_" + control[5:], "HeadAnimIndex", anim) */
+static byte Cc_HeadAnim(const nativeVal_t *id, const nativeVal_t *control, const nativeVal_t *anim) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *tail = Mode_V(&t), *name = Mode_V(&t);
+	return Mode_Done(&t, Native_Slice(control, 5, INT_MAX, tail) && Mode_Cat(&t, name, 2, Mode_S(&t, "CharHead_"), tail) &&
+		Mode_ScorerSet(id, name, "HeadAnimIndex", anim));
 }
 
 /* ShowCharDesc(id, control, lostfocus): the description of the character with the key of the special action; its
- * head talks, the one that lost the focus stops */
-static PyObject *CharConversor_ShowCharDesc(PyObject *self, PyObject *args) {
-	PyObject *id, *control, *lost;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &id, &control, &lost)) {
-		return NULL;
+ * head talks, the one that lost the focus stops (OBJLIB 7: SInput.GetDefinedEntry by name) */
+static byte Cc_ShowCharDesc(const nativeVal_t *id, const nativeVal_t *control, const nativeVal_t *lost) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *entry = Mode_V(&t), *pair = Mode_V(&t), *lang = Mode_V(&t), *text = Mode_V(&t), *item = Mode_V(&t);
+	nativeVal_t *f = Mode_V(&t), *k = Mode_V(&t), *anim = Mode_V(&t);
+	if (!Native_CallMod("SInput", "GetDefinedEntry", entry, "isss", 0L, "Walk", "Action", "Mouse")) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *entry = Sf_Ask(&f, "SInput", "GetDefinedEntry", "(isss)", 0, "Walk", "Action", "Mouse");
-	if (Sf_EqS(&f, control, "Char_Desktop") > 0) {
-		entry = Sf_Build(&f, "(OO)", entry, entry);
+	if (LvN_EqS(control, "Char_Desktop")) {
+		Native_SetEmpty(pair, NV_TUPLE);
+		Native_Copy(Native_Append(pair), entry);
+		Native_Copy(Native_Append(pair), entry);
+		Native_Free(entry);
+		Native_Copy(entry, pair);
 	}
-	PyObject *text = Sf_Op(&f, Sf_Lang(&f, control), '%', entry);
-	Sf_Ask(&f, "SScorer", "Set", "(OssO)", id, "CharDesc", "Text", text);
-	Sf_Ask(&f, "SScorer", "Set", "(Ossi)", id, "CharDesc", "XAlignCenter", 300);
-	Sf_Ask(&f, "SScorer", "Set", "(Ossi)", id, "CharDesc", "Visible", 1);
-	if (Sf_True(&f, lost) > 0) {
-		PyObject *name = Sf_Cat(&f, "sO", "CharHead_", Sf_Slice(&f, lost, 5, INT_MAX));
-		Sf_Ask(&f, "SScorer", "Set", "(OOsi)", id, name, "HeadAnimIndex", 0);
+	Native_SetStr(item, "CharDesc");
+	if (!Mode_LangV(control, lang) || !Mode_Arith('%', lang, entry, text) || !Mode_ScorerSet(id, item, "Text", text) ||
+		!Mode_ScorerSet(id, item, "XAlignCenter", Mode_I(&t, 300)) || !Mode_ScorerSet(id, item, "Visible", Mode_I(&t, 1)) ||
+		(Native_True(lost) && !Cc_HeadAnim(id, lost, Mode_I(&t, 0)))) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *name = Sf_Cat(&f, "sO", "CharHead_", Sf_Slice(&f, control, 5, INT_MAX));
-	if (!f.failed) {
-		PyObject *anim = Sf_Op(&f, Sf_Int(&f, 1), '+', Sf_ToInt(&f, Sf_Float(&f, Scrap_RandRange(0, 1.99))));
-		Sf_Ask(&f, "SScorer", "Set", "(OOsO)", id, name, "HeadAnimIndex", anim);
-	}
-	return Sf_None(&f);
+	Native_SetFloat(f, Scrap_RandRange(0, 1.99));
+	return Mode_Done(&t, Native_ToInt(f, k) && Mode_Arith('+', Mode_I(&t, 1), k, anim) && Cc_HeadAnim(id, control, anim));
 }
 
 /* HideCharDesc(id, control, gainfocus): no description, the head stops */
-static PyObject *CharConversor_HideCharDesc(PyObject *self, PyObject *args) {
-	PyObject *id, *control, *gain;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &id, &control, &gain)) {
-		return NULL;
-	}
-	Sf_Ask(&f, "SScorer", "Set", "(Osss)", id, "CharDesc", "Text", "");
-	Sf_Ask(&f, "SScorer", "Set", "(Ossi)", id, "CharDesc", "Visible", 0);
-	PyObject *name = Sf_Cat(&f, "sO", "CharHead_", Sf_Slice(&f, control, 5, INT_MAX));
-	Sf_Ask(&f, "SScorer", "Set", "(OOsi)", id, name, "HeadAnimIndex", 0);
-	return Sf_None(&f);
+static byte Cc_HideCharDesc(const nativeVal_t *id, const nativeVal_t *control) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *item = Mode_S(&t, "CharDesc");
+	return Mode_Done(&t, Mode_ScorerSet(id, item, "Text", Mode_S(&t, "")) && Mode_ScorerSet(id, item, "Visible", Mode_I(&t, 0)) &&
+		Cc_HeadAnim(id, control, Mode_I(&t, 0)));
 }
 
 /* Convert(id, control): the pick of a character; the conversion runs after the frame is drawn (ConvertExecute) */
-static PyObject *CharConversor_Convert(PyObject *self, PyObject *args) {
-	PyObject *id, *control;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &id, &control)) {
-		return NULL;
-	}
-	Sf_SetGlobal(&f, CC, "KONTROL", control);
-	Sf_Ask(&f, "Scrap", "Set", "(ss)", "AfterDrawCallback", "CharConversor.ConvertExecute");
-	return Sf_None(&f);
+static byte Cc_Convert(const nativeVal_t *control) {
+	return Mode_Put(CC, "KONTROL", NULL, control) && Mode_GVarSetS("AfterDrawCallback", "CharConversor.ConvertExecute");
 }
 
-/* ConvertExecute(): an available character becomes the player's, the interface closes */
-static PyObject *CharConversor_ConvertExecute(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+/* ConvertExecute(): an available character becomes the player's, the interface closes (OBJLIB 3: string.replace by
+ * name) */
+static byte Cc_ConvertExecute(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *k = Mode_V(&t), *ch = Mode_V(&t), *avl = Mode_V(&t), *u = Mode_V(&t), *c = Mode_V(&t), *o = Mode_V(&t);
+	nativeVal_t *full = Mode_V(&t), *k2 = Mode_V(&t);
+	int in = Mode_Import("string") && Cc_G("KONTROL", k) && Native_CallMod("string", "replace", ch, "vss", k, "Char_", "") &&
+		Cc_G("AvailableChars", avl) ? Native_Contains(avl, ch) : -1;
+	if (in <= 0) {
+		return Mode_Done(&t, in == 0);
 	}
-	Sf_Import(&f, "string");
-	PyObject *ch = Sf_Ask(&f, "string", "replace", "(Oss)", Sf_Global(&f, CC, "KONTROL"), "Char_", "");
-	if (Sf_In(&f, ch, Sf_Global(&f, CC, "AvailableChars")) == 0) {
-		return Sf_None(&f);
+	if (!Mode_SetSaveVar("Char", ch)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "Char", ch);
-	PyObject *fn = Sf_Global(&f, CC, "ConvertChar");
-	PyObject *u = Sf_Global(&f, CC, "_usrName");
-	PyObject *c = Sf_Global(&f, CC, "_charName");
-	PyObject *o = Sf_Global(&f, CC, "_optId");
-	Sf_Call(&f, fn, "(OOOO)", u, c, o, Sf_Global(&f, CC, "_fullOption"));
-	fn = Sf_Global(&f, CC, "ExitCharConversor");
-	Sf_Call(&f, fn, "(iO)", 0, Sf_Global(&f, CC, "KONTROL"));
-	return Sf_None(&f);
+	PyObject *fn = Mode_GlobalPy(CC, "ConvertChar");
+	byte ok = fn && Cc_G("_usrName", u) && Cc_G("_charName", c) && Cc_G("_optId", o) && Cc_G("_fullOption", full) &&
+		Native_Call(fn, NULL, "vvvv", u, c, o, full);
+	Py_XDECREF(fn);
+	fn = ok ? Mode_GlobalPy(CC, "ExitCharConversor") : NULL;
+	ok = fn && Cc_G("KONTROL", k2) && Native_Call(fn, NULL, "iv", 0L, k2);
+	Py_XDECREF(fn);
+	return Mode_Done(&t, ok);
+}
+
+/* the message of a possession that is not allowed */
+static byte Cc_Forbidden(const nativeVal_t *act) {
+	nativeVal_t cad;
+	Mode_Lang(LvN_EqS(act, "Human") ? "Generics_ForbiddenPossession2_SystemMessage" :
+		"Generics_ForbiddenPossession_SystemMessage", &cad);
+	byte ok = Mode_SpeechMsg(&cad);
+	Native_Free(&cad);
+	return ok;
+}
+
+/* Cam.<var> = v and AuxInterp.<var> = v of the module's globals (read at each set) */
+static byte Cc_GSet(const char *g, const char *var, const nativeVal_t *v) {
+	nativeVal_t o = { 0 };
+	byte ok = Cc_G(g, &o) && Mode_VSet(&o, var, v);
+	Native_Free(&o);
+	return ok;
+}
+
+/* the end of Possession: the camera of the possessed class, the slow motion (OBJLIB 3, 7: SAct.GetCls and Menu by
+ * name) */
+static byte Cc_PossessionCam(const nativeVal_t *ent) {
+	static const char *const cams[][2] = { { "Fov", "FOV" }, { "CamDist", "CamDist" }, { "CamAng", "CamAng" },
+		{ "CamRot", "CamRot" } };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *act = Mode_V(&t), *aux = Mode_V(&t), *name = Mode_V(&t), *cls = Mode_V(&t);
+	const char *a;
+	if (!Mode_VObj(ent, "ActCtrl", act) || !Native_ArgStr(act, 1, &a) || !LvN_GetClass(a, cls)) {
+		return Mode_Done(&t, 0);
+	}
+	for (int i = 0; i < 4; i++) {
+		nativeVal_t v = { 0 };
+		byte ok = Native_CallMod("SAct", "GetCls", &v, "s", cams[i][1]) && Cc_GSet("Cam", cams[i][0], &v);
+		Native_Free(&v);
+		if (!ok) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	return Mode_Done(&t, Cc_G("AuxInterp", aux) && Mode_VObj(aux, "Name", name) && Cc_GSet("Cam", "MainTarget", name) &&
+		Cc_GSet("Cam", "Target", name) && Mode_GVarSetN("S_PitchScale", 0.2) && Mode_TimeSpeed(0.2) &&
+		Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L) && Mode_ActionSet("Inactive"));
 }
 
 /* Possession(UserName, PossessedName): the player takes the character it flashed (one of ConversionChars, alive,
  * not invulnerable): the character dies without effects, a new player of its class stands there, the camera flies
- * over in slow motion and NewPlayer finishes */
-static PyObject *CharConversor_Possession(PyObject *self, PyObject *args) {
-	PyObject *uname, *pname;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &uname, &pname)) {
-		return NULL;
+ * over in slow motion and NewPlayer finishes (OBJLIB 3, 7: Chars, CharAct, SLogic.Flash and SFX by name) */
+static byte Cc_Possession(const nativeVal_t *uname, const nativeVal_t *pname) {
+	static const int white[4] = { 255, 255, 255, 255 }, clear[4] = { 255, 255, 255, 0 };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ent = Mode_V(&t), *act = Mode_V(&t), *chars = Mode_V(&t), *life = Mode_V(&t), *inv = Mode_V(&t);
+	nativeVal_t *me = Mode_V(&t), *onp = Mode_V(&t), *name = Mode_V(&t), *pos = Mode_V(&t), *cam = Mode_V(&t);
+	nativeVal_t *ce = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t), *aux = Mode_V(&t), *v = Mode_V(&t);
+	nativeVal_t *ch = Mode_V(&t), *epos = Mode_V(&t), *eang = Mode_V(&t), *newme = Mode_V(&t), *mn = Mode_V(&t);
+	nativeVal_t *nn = Mode_V(&t), *pt = Mode_V(&t), *now = Mode_V(&t), *t1 = Mode_V(&t), *t2 = Mode_V(&t);
+	static const char *const mods[] = { "CharAct", "Chars", "Menu", "Fx", "Speech" };
+	for (int i = 0; i < 5; i++) {
+		if (!Mode_Import(mods[i])) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	Sf_Import(&f, "CharAct");
-	Sf_Import(&f, "Chars");
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "Fx");
-	Sf_Import(&f, "Speech");
-	PyObject *ent = Sf_Entity(&f, pname);
-	if (Sf_In(&f, Sf_Attr(&f, ent, "ActCtrl"), Sf_Global(&f, CC, "ConversionChars")) == 0) {
-		int human = Sf_EqS(&f, Sf_Attr(&f, ent, "ActCtrl"), "Human");
-		PyObject *cad = Sf_Lang(&f, Sf_Str(&f, human ? "Generics_ForbiddenPossession2_SystemMessage" :
-			"Generics_ForbiddenPossession_SystemMessage"));
-		PyObject *t = Sf_Time(&f);
-		t = Sf_Op(&f, t, '+', Sf_Ask(&f, "Speech", "CalculateSpeechTime", "(O)", cad));
-		Sf_Ask(&f, "SScorer", "SetMsgText", "(OO)", cad, t);
-		return Sf_None(&f);
+	int in = Mode_EntitySeam(pname, ent) && Mode_VObj(ent, "ActCtrl", act) && Cc_G("ConversionChars", chars) ?
+		Native_Contains(chars, act) : -1;
+	if (in <= 0) {
+		Native_Free(act);
+		return Mode_Done(&t, in == 0 && Mode_VObj(ent, "ActCtrl", act) && Cc_Forbidden(act));
 	}
-	int go = Sf_Compare(&f, Sf_Attr(&f, ent, "Life"), ">", Sf_Int(&f, 1));
+	int go = Mode_VObj(ent, "Life", life) ? Mode_CmpI(life, ">", 1) : -1;
 	if (go > 0) {
-		int inv = Sf_True(&f, Sf_Attr(&f, ent, "Invulnerable"));
-		go = inv < 0 ? -1 : !inv;
+		go = Mode_VObj(ent, "Invulnerable", inv) ? !Native_True(inv) : -1;
 	}
 	if (go <= 0) {
-		return Sf_None(&f);
+		return Mode_Done(&t, go == 0);
 	}
-	PyObject *me = Sf_Entity(&f, uname);
-	PyObject *onp = Sf_Global(&f, CC, "OnPossession");
-	if (Sf_True(&f, onp) > 0) {
-		PyObject *name = Sf_Attr(&f, ent, "Name");
-		Sf_Call(&f, onp, "(OO)", name, Sf_Attr(&f, me, "Pos"));
+	if (!Mode_EntitySeam(uname, me) || !LvN_GObj(CC, "OnPossession", onp)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Ask(&f, "Scrap", "IncSaveVar", "(s)", "Stats.Possession");
-	Sf_Ask(&f, "SLogic", "Flash", "(Oi)", Sf_Attr(&f, me, "Pos"), 1500);
-	Sf_Ask(&f, "SScorer", "Fade", "(i(iiii)(iiii)i)", 0, 255, 255, 255, 255, 255, 255, 255, 0, 2);
-	Sf_SetGlobal(&f, CC, "Cam", Sf_Entity(&f, Sf_Ask(&f, "Scrap", "GetCam", "(i)", 0)));
-	PyObject *x = Sf_Item(&f, Sf_Attr(&f, me, "Pos"), 0);
-	PyObject *y = Sf_Item(&f, Sf_Attr(&f, me, "Pos"), 1);
-	PyObject *z = Sf_Item(&f, Sf_Attr(&f, me, "Pos"), 2);
-	Sf_SetGlobal(&f, CC, "AuxInterp", Sf_Ask(&f, "Scrap", "CreateEntity", "(sOOOs)", "AuxInterp", x, y, z, "Obj"));
-	PyObject *va = Sf_Attr(&f, me, "ViewAng");
-	Sf_SetAttr(&f, Sf_Global(&f, CC, "AuxInterp"), "Ang", va);
-	Sf_SetAttrI(&f, ent, "Money", 0);
-	Sf_Ask(&f, "CharAct", "NoFXDeath", "(OOi)", ent, uname, 0);
-	Sf_Method(&f, ent, "Del", "()");
-	Sf_SetAttrI(&f, me, "UsrControl", -1);
-	int z1 = Sf_EqS(&f, Sf_Attr(&f, me, "Name"), "PlayerZ");
-	const char *pl = z1 > 0 ? "Player0" : "PlayerZ";
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "Char", Sf_Attr(&f, ent, "ActCtrl"));
-	PyObject *fn = Sf_Mod(&f, "Chars", "CreateMainChar");
-	PyObject *ch = Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Char");
-	PyObject *epos = Sf_Attr(&f, ent, "Pos");
-	PyObject *newme = Sf_Call(&f, fn, "(sOOO)", pl, ch, epos, Sf_Attr(&f, ent, "Ang"));
-	Sf_SetAttrI(&f, newme, "UsrControl", -1);
-	Sf_SetAttrS(&f, newme, "ForceAction", "Flashed");
-	PyObject *mn = Sf_Attr(&f, me, "Name");
-	PyObject *nn = Sf_Attr(&f, newme, "Name");
-	Sf_Ask(&f, "SFX", "CharacterConversion", "(OOO)", mn, nn, Sf_Global(&f, CC, "PossessionTime"));
-	Sf_SetAttr(&f, Sf_Global(&f, CC, "AuxInterp"), "CamTgt", Sf_Attr(&f, newme, "CamTgt"));
-	Sf_SetAttr(&f, Sf_Global(&f, CC, "AuxInterp"), "MovePos", Sf_Attr(&f, newme, "Pos"));
-	Sf_SetAttr(&f, Sf_Global(&f, CC, "AuxInterp"), "MoveAng", Sf_Attr(&f, newme, "ViewAng"));
-	Sf_SetAttrI(&f, Sf_Global(&f, CC, "AuxInterp"), "MoveFade", 3);
-	Sf_SetAttr(&f, Sf_Global(&f, CC, "AuxInterp"), "MoveTime", Sf_Global(&f, CC, "PossessionTime"));
-	PyObject *t = Sf_Op(&f, Sf_Time(&f), '+', Sf_Global(&f, CC, "PossessionTime"));
-	t = Sf_Op(&f, t, '+', Sf_Float(&f, 0.1));
-	Sf_Schedule(&f, t, Sf_Global(&f, CC, "NewPlayer"), Sf_Build(&f, "(OO)", newme, me), NULL);
-	Sf_Ask(&f, "SAct", "GetClass", "(O)", Sf_Attr(&f, ent, "ActCtrl"));
-	static const char *const cams[][2] = { { "Fov", "FOV" }, { "CamDist", "CamDist" }, { "CamAng", "CamAng" },
-		{ "CamRot", "CamRot" } };
-	for (int i = 0; i < 4; i++) {
-		PyObject *v = Sf_Ask(&f, "SAct", "GetCls", "(s)", cams[i][1]);
-		Sf_SetAttr(&f, Sf_Global(&f, CC, "Cam"), cams[i][0], v);
+	if (Native_True(onp)) {
+		nativeVal_t a[2] = { { 0 }, { 0 } };
+		byte ok = Mode_VObj(ent, "Name", &a[0]) && Mode_VObj(me, "Pos", &a[1]) && Mode_CallArgs(onp, NULL, a, 2);
+		Native_Free(&a[0]);
+		Native_Free(&a[1]);
+		if (!ok) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	PyObject *aux = Sf_Attr(&f, Sf_Global(&f, CC, "AuxInterp"), "Name");
-	Sf_SetAttr(&f, Sf_Global(&f, CC, "Cam"), "MainTarget", aux);
-	Sf_SetAttr(&f, Sf_Global(&f, CC, "Cam"), "Target", aux);
-	Sf_Ask(&f, "Scrap", "Set", "(sd)", "S_PitchScale", 0.2);
-	Sf_Ask(&f, "Scrap", "SetTimeSpeed", "(d)", 0.2);
-	Sf_Ask(&f, "Menu", "MovieScorer", "(i)", 0);
-	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Inactive");
-	return Sf_None(&f);
+	Native_Free(pos);
+	Mode_CamName(0, cam);
+	if (!Mode_IncSaveVar("Stats.Possession") || !Mode_VObj(me, "Pos", pos) ||
+		!Native_CallMod("SLogic", "Flash", NULL, "vi", pos, 1500L) || !Mode_FadeV(0, white, clear, Mode_I(&t, 2)) ||
+		!Mode_EntitySeam(cam, ce) || !Mode_Put(CC, "Cam", NULL, ce)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(pos);
+	if (!Mode_VObj(me, "Pos", pos) || !LvN_Item(pos, 0, x) || (Native_Free(pos), !Mode_VObj(me, "Pos", pos)) ||
+		!LvN_Item(pos, 1, y) || (Native_Free(pos), !Mode_VObj(me, "Pos", pos)) || !LvN_Item(pos, 2, z) ||
+		!LvN_Create(Mode_S(&t, "AuxInterp"), x, y, z, "Obj", aux) || !Mode_Put(CC, "AuxInterp", NULL, aux) ||
+		!Mode_VObj(me, "ViewAng", v) || !Cc_GSet("AuxInterp", "Ang", v) || !LvN_SetI(ent, "Money", 0) ||
+		!Native_CallMod("CharAct", "NoFXDeath", NULL, "vvi", ent, uname, 0L) || !Mode_VDel(ent) ||
+		!LvN_SetI(me, "UsrControl", -1) || (Native_Free(name), !Mode_VObj(me, "Name", name))) {
+		return Mode_Done(&t, 0);
+	}
+	const char *pl = LvN_EqS(name, "PlayerZ") ? "Player0" : "PlayerZ";
+	Native_Free(act);
+	if (!Mode_VObj(ent, "ActCtrl", act) || !Mode_SetSaveVar("Char", act)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("Char", ch);
+	Native_Free(v);
+	if (!Mode_VObj(ent, "Pos", epos) || !Mode_VObj(ent, "Ang", eang) ||
+		!Native_CallMod("Chars", "CreateMainChar", newme, "svvv", pl, ch, epos, eang) || !LvN_SetI(newme, "UsrControl", -1) ||
+		!LvN_SetS(newme, "ForceAction", "Flashed") || !Mode_VObj(me, "Name", mn) || !Mode_VObj(newme, "Name", nn) ||
+		!Cc_G("PossessionTime", pt) || !Native_CallMod("SFX", "CharacterConversion", NULL, "vvv", mn, nn, pt) ||
+		!Mode_VObj(newme, "CamTgt", v) || !Cc_GSet("AuxInterp", "CamTgt", v) || (Native_Free(v), !Mode_VObj(newme, "Pos", v)) ||
+		!Cc_GSet("AuxInterp", "MovePos", v) || (Native_Free(v), !Mode_VObj(newme, "ViewAng", v)) ||
+		!Cc_GSet("AuxInterp", "MoveAng", v) || !Cc_GSet("AuxInterp", "MoveFade", Mode_I(&t, 3)) ||
+		(Native_Free(pt), !Cc_G("PossessionTime", pt)) || !Cc_GSet("AuxInterp", "MoveTime", pt)) {
+		return Mode_Done(&t, 0);
+	}
+	nativeVal_t pa[2], tenth;
+	Native_SetFloat(now, Mode_Time());
+	Native_SetFloat(&tenth, 0.1);
+	Native_Free(pt);
+	if (!Cc_G("PossessionTime", pt) || !Mode_Arith('+', now, pt, t1) || !Mode_Arith('+', t1, &tenth, t2)) {
+		return Mode_Done(&t, 0);
+	}
+	/* OBJLIB 4: the scheduler keeps the global NewPlayer */
+	PyObject *fn = Mode_GlobalPy(CC, "NewPlayer");
+	Native_Copy(&pa[0], newme);
+	Native_Copy(&pa[1], me);
+	byte ok = fn && Mode_Schedule(t2, fn, pa, 2, NULL);
+	Native_Free(&pa[0]);
+	Native_Free(&pa[1]);
+	Py_XDECREF(fn);
+	return Mode_Done(&t, ok && Cc_PossessionCam(ent));
 }
 
 /* NewPlayer(newme, me): the end of a possession: the new character takes the camera, the energy (one battery less)
- * and the control, the old one goes, the time runs again and the alarm starts */
-static PyObject *CharConversor_NewPlayer(PyObject *self, PyObject *args) {
-	PyObject *newme, *me;
-	scriptFrame_t f = { 0 };
+ * and the control, the old one goes, the time runs again and the alarm starts (OBJLIB 3: Chars, CharScorer and Menu
+ * by name; OBJLIB 4: the scheduler keeps Scrap.SetAlarm) */
+static byte Cc_NewPlayer(const nativeVal_t *newme, const nativeVal_t *me) {
+	static const char *const mods[] = { "CharAct", "Chars", "CharScorer", "Menu" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *name = Mode_V(&t), *e = Mode_V(&t), *one = Mode_V(&t), *e1 = Mode_V(&t), *act = Mode_V(&t);
+	nativeVal_t *aux = Mode_V(&t), *when = Mode_V(&t), *sv = Mode_V(&t), *msg = Mode_V(&t);
+	for (int i = 0; i < 4; i++) {
+		if (!Mode_Import(mods[i])) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	Native_SetFloat(one, 1.0);
+	if (!Mode_ActionSet("Walk") || !Mode_VObj(newme, "Name", name) || !Cc_GSet("Cam", "MainTarget", name) ||
+		!Cc_GSet("Cam", "Target", name) || !Mode_VObj(me, "Energy", e) || !Mode_Arith('-', e, one, e1) ||
+		!Mode_VSet(newme, "Energy", e1) || !LvN_SetI(newme, "Life", 100) || !LvN_SetI(newme, "UsrControl", 0) ||
+		!Mode_VObj(me, "ActCtrl", act) || !LvN_SetI(me, "Active", 0) || !LvN_SetS(me, "ActCtrl", "") || !Mode_VDel(me) ||
+		!Native_CallMod("Chars", "DiscardRes", NULL, "v", act) || !Cc_G("AuxInterp", aux) || !Mode_VDel(aux) ||
+		!Mode_DelGlobal(CC, "Cam") || !Mode_DelGlobal(CC, "AuxInterp") || !Mode_GVarSetI("S_PitchScale", 1) ||
+		!Mode_TimeSpeed(1.0) || !Native_CallMod("CharScorer", "Create", NULL, "i", 0L)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetFloat(when, Mode_Time() + 0.1);
+	PyObject *alarm = Script_Attr("Scrap", "SetAlarm");
+	byte ok = alarm && Mode_Schedule(when, alarm, Mode_I(&t, 1), 1, NULL) && LvN_SetS(newme, "ForceAction", "FlashedEnd");
+	Py_XDECREF(alarm);
+	if (!ok) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("Conversor.FirstPossession", sv);
+	if (!LvN_EqS(sv, "1")) {
+		return Mode_Done(&t, 1);
+	}
+	Mode_Lang("FirstPossessionWarning", msg);
+	return Mode_Done(&t, Mode_SetSaveVar("Conversor.FirstPossession", Mode_S(&t, "0")) &&
+		Native_CallMod("Menu", "ShowWarning", NULL, "iv", 0L, msg));
+}
+
+/* the adapters (the arity errors of the script's functions) */
+#define CC_FN0(name, call) \
+	static PyObject *CharConversor_##name(PyObject *self, PyObject *args) { \
+		modeVals_t t = { .n = 0 }; \
+		nativeVal_t *out = Mode_V(&t); \
+		(void)self; \
+		(void)out; \
+		if (!PyArg_ParseTuple(args, "")) { \
+			return Mode_Done(&t, 0), NULL; \
+		} \
+		return Mode_Out(&t, call, out); \
+	}
+
+MODE_FN(CharConversor, GetNearestConversionPoint, 1, Cc_GetNearestConversionPoint(&a[0], out))
+CC_FN0(CreateConversorClass, Cc_CreateConversorClass())
+CC_FN0(Init, Cc_Init())
+MODE_FN(CharConversor, ConvertChar, 4, Cc_ConvertChar(&a[0], &a[1]))
+MODE_FN(CharConversor, CPPos, 1, Cc_CPPos(&a[0], out))
+MODE_FN(CharConversor, CPAng, 1, Cc_CPAng(&a[0], out))
+MODE_FN(CharConversor, AddInterfaceContent, 1, Cc_AddInterfaceContent(&a[0]))
+MODE_FN(CharConversor, SpawnChar, 2, Cc_SpawnChar(&a[0], &a[1]))
+MODE_FN(CharConversor, MarkSpawnWaypoint, 1, Cc_MarkSpawnWaypoint(&a[0]))
+MODE_FN(CharConversor, EnterCharConversor, 4, Cc_EnterCharConversor(&a[0], &a[1], &a[2], &a[3]))
+MODE_FN(CharConversor, InitOfScene, 3, Cc_Fx(1))
+MODE_FN(CharConversor, EndOfScene, 3, Cc_EndOfScene(&a[0]))
+MODE_FN(CharConversor, InitInterfaceEvent, 3, Cc_Call("AddInterfaceContent", NULL, "i", 0L))
+MODE_FN(CharConversor, ExitCharConversor, 2, Cc_ExitCharConversor(&a[0]))
+MODE_FN(CharConversor, ShowCharDesc, 3, Cc_ShowCharDesc(&a[0], &a[1], &a[2]))
+MODE_FN(CharConversor, HideCharDesc, 3, Cc_HideCharDesc(&a[0], &a[1]))
+MODE_FN(CharConversor, Convert, 2, Cc_Convert(&a[1]))
+CC_FN0(ConvertExecute, Cc_ConvertExecute())
+MODE_FN(CharConversor, Possession, 2, Cc_Possession(&a[0], &a[1]))
+MODE_FN(CharConversor, NewPlayer, 2, Cc_NewPlayer(&a[0], &a[1]))
+
+static PyObject *CharConversor_DrawBackground(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "id", "elem", "posX", "posY", "sizeX", "sizeY", "alpha", "red", "green", "blue", NULL };
+	PyObject *id, *elem, *o[9] = { NULL };
+	nativeVal_t a[2], v[9], *pv[9] = { NULL };
 	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &newme, &me)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|OOOOOOOO", names, &id, &elem, &o[0], &o[1], &o[2], &o[3], &o[5],
+		&o[6], &o[7], &o[8])) {
 		return NULL;
 	}
-	Sf_Import(&f, "CharAct");
-	Sf_Import(&f, "Chars");
-	Sf_Import(&f, "CharScorer");
-	Sf_Import(&f, "Menu");
-	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Walk");
-	PyObject *name = Sf_Attr(&f, newme, "Name");
-	Sf_SetAttr(&f, Sf_Global(&f, CC, "Cam"), "MainTarget", name);
-	Sf_SetAttr(&f, Sf_Global(&f, CC, "Cam"), "Target", name);
-	Sf_SetAttr(&f, newme, "Energy", Sf_Op(&f, Sf_Attr(&f, me, "Energy"), '-', Sf_Float(&f, 1.0)));
-	Sf_SetAttrI(&f, newme, "Life", 100);
-	Sf_SetAttrI(&f, newme, "UsrControl", 0);
-	PyObject *act = Sf_Attr(&f, me, "ActCtrl");
-	Sf_SetAttrI(&f, me, "Active", 0);
-	Sf_SetAttrS(&f, me, "ActCtrl", "");
-	Sf_Method(&f, me, "Del", "()");
-	Sf_Ask(&f, "Chars", "DiscardRes", "(O)", act);
-	Sf_Method(&f, Sf_Global(&f, CC, "AuxInterp"), "Del", "()");
-	Sf_DelGlobal(&f, CC, "Cam");
-	Sf_DelGlobal(&f, CC, "AuxInterp");
-	Sf_Ask(&f, "Scrap", "Set", "(si)", "S_PitchScale", 1);
-	Sf_Ask(&f, "Scrap", "SetTimeSpeed", "(d)", 1.0);
-	Sf_Ask(&f, "CharScorer", "Create", "(i)", 0);
-	PyObject *t = Sf_Op(&f, Sf_Time(&f), '+', Sf_Float(&f, 0.1));
-	Sf_Schedule(&f, t, Sf_Mod(&f, "Scrap", "SetAlarm"), Sf_Build(&f, "(i)", 1), NULL);
-	Sf_SetAttrS(&f, newme, "ForceAction", "FlashedEnd");
-	if (Sf_EqS(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Conversor.FirstPossession"), "1") > 0) {
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "Conversor.FirstPossession", "0");
-		Sf_Ask(&f, "Menu", "ShowWarning", "(iO)", 0, Sf_Lang(&f, Sf_Str(&f, "FirstPossessionWarning")));
+	Native_Arg(id, &a[0]);
+	Native_Arg(elem, &a[1]);
+	for (int i = 0; i < 9; i++) {
+		Native_SetNone(&v[i]);
+		if (o[i]) {
+			Native_Arg(o[i], &v[i]);
+			pv[i] = &v[i];
+		}
 	}
-	return Sf_None(&f);
+	byte ok = Cc_DrawBackground(&a[0], &a[1], pv);
+	for (int i = 0; i < 9; i++) {
+		Native_Free(&v[i]);
+	}
+	Native_Free(&a[0]);
+	Native_Free(&a[1]);
+	return Mode_Result(ok);
 }
 
 PyMethodDef g_CharConversorMethods[] = {

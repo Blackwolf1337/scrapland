@@ -10,18 +10,21 @@
  * The code reads them as globals like the script (a missing one is a NameError). The tuning by reputation and the
  * waves are data/missions/police.def.
  *
- * InPolice and OutPolice are native C (docs/objlib-plan.md, stage 2): their functions work on C values, read the
- * variables of OutPolice where the script reads them and write them back to the module (OBJLIB 5), and set the engine
- * variables, the money and the save variables in C (Scrap.Set and Scrap.GetAlarm through their seams, OBJLIB 7). The
- * calls of VehiclesNPC, RaceMaker and SAI.EnableAIChar, the ships and profiles they give, the hook
- * OnPoliceCreatedCallback and CharsNPC.CharRes stay Python values called or read by name (OBJLIB 3, 5, 7); the steps of
- * police.def take the arguments of their lines as a tuple (OBJLIB 6). Traffic is still on the Python objects.
+ * The three modules are native C (docs/objlib-plan.md, stage 2): their functions work on C values, read the variables
+ * of their modules where the script reads them and write them back to the module at once (OBJLIB 5: the level files,
+ * ShipMaker, Vehicles and the cases read and set them), and set the engine variables, the money and the save variables
+ * in C (Scrap.Set, SetMoney, SetAlarm, IncSaveVar, UsrEntity and GetAlarm through their seams, OBJLIB 7). The calls of
+ * VehiclesNPC, SaveGame, RaceMaker, SAI.SetStateVehicle and SAI.EnableAIChar, the ships and profiles they give (handle
+ * values), the hooks onTrackCreate and OnPoliceCreatedCallback and CharsNPC.CharRes stay Python values called or read
+ * by name (OBJLIB 3, 5, 7); the steps of police.def take the arguments of their lines as a tuple (OBJLIB 6). The
+ * functions of Traffic call each other in C as the port did (the engine callbacks name them "Traffic.<name>").
  */
 #include <string.h>
 
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
+#include "game/Script/levels/Levels.h"
 
 static const char police_def[] = {
 #embed "../../../data/missions/police.def"
@@ -31,303 +34,229 @@ static const char police_def[] = {
 
 /* ---- Traffic ---- */
 
+/* a global of the Traffic module as its functions read it (out None before) */
+static byte Traffic_G(const char *name, nativeVal_t *out) {
+	return Mode_G("Traffic", name, out);
+}
+
 /* SetPath(): the ship models of the rail traffic come from Path, the format before goes into PrevVal */
-static PyObject *Traffic_SetPath(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	PyObject *prev = Script_Ask("Scrap", "Get", "(s)", "ShipPathFmt");
-	if (!prev || !Script_SetGlobal("Traffic", "PrevVal", prev)) {
-		return NULL;
-	}
-	PyObject *fmt = Script_PlusS(Script_Global("Traffic", "Path"), "%s.m3d");
-	byte ok = fmt && Script_Try("Scrap", "Set", "(sO)", "ShipPathFmt", fmt);
-	Py_XDECREF(fmt);
-	return ok ? Py_ReturnNone() : NULL;
+static byte Traffic_SetPathN(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *prev = Mode_V(&t), *path = Mode_V(&t), *fmt = Mode_V(&t);
+	return Mode_Done(&t, Native_GVarGet("ShipPathFmt", prev) && Mode_Put("Traffic", "PrevVal", NULL, prev) &&
+		Traffic_G("Path", path) && Mode_Cat(&t, fmt, 2, path, Mode_S(&t, "%s.m3d")) && Mode_GVarSet("ShipPathFmt", fmt));
 }
 
 /* ResetPath(): the format of PrevVal back */
-static PyObject *Traffic_ResetPath(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	PyObject *prev = Script_Global("Traffic", "PrevVal");
-	byte ok = prev && Script_Try("Scrap", "Set", "(sO)", "ShipPathFmt", prev);
-	Py_XDECREF(prev);
-	if (!ok || !Script_SetGlobal("Traffic", "PrevVal", Script_Ref(Py_None))) {
-		return NULL;
-	}
-	return Py_ReturnNone();
+static byte Traffic_ResetPathN(void) {
+	nativeVal_t prev = { 0 }, none;
+	Native_SetNone(&none);
+	byte ok = Traffic_G("PrevVal", &prev) && Mode_GVarSet("ShipPathFmt", &prev) && Mode_Put("Traffic", "PrevVal", NULL, &none);
+	Native_Free(&prev);
+	return ok;
 }
 
-/* a profile sp = VehiclesNPC.cShipAI() of ship into VehiclesNPC.AIProf: profile the name of the profile, or NULL
- * for the save variable StdShipAIProfile; hook 0 sets FactorHookMap to 0. 0 with the error set */
-static byte Traffic_Profile(PyObject *ship, const char *profile, byte hook) {
-	scriptRefs_t r = { 0 };
-	PyObject *sp = Script_Keep(&r, Script_Ask("VehiclesNPC", "cShipAI", "()"));
-	PyObject *prof = sp && Script_HSet(sp, "Ship", Script_Ref(ship)) ?
-		Script_Keep(&r, profile ? PyString_FromString(profile) : Script_SaveVar("StdShipAIProfile")) : NULL;
-	byte ok = prof && Script_Try("VehiclesNPC", "SetAIProfile", "(OO)", sp, prof) &&
-		(hook || Script_HSet(sp, "FactorHookMap", PyInt_FromLong(0)));
-	PyObject *all = ok ? Script_Keep(&r, Script_Attr("VehiclesNPC", "AIProf")) : NULL;
-	ok = all && PyObject_SetItem(all, ship, sp) == 0;
-	Script_Done(&r, NULL);
-	return ok;
+/* a profile sp = VehiclesNPC.cShipAI() of ship into VehiclesNPC.AIProf (OBJLIB 3, 7: the profile objects of
+ * VehiclesNPC by name): profile the name of the profile, or NULL for the save variable StdShipAIProfile; hook 0 sets
+ * FactorHookMap to 0 */
+static byte Traffic_Profile(const nativeVal_t *ship, const char *profile, byte hook) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *sp = Mode_V(&t), *prof = Mode_V(&t);
+	if (!Native_CallMod("VehiclesNPC", "cShipAI", sp, "") || !Mode_VSet(sp, "Ship", ship)) {
+		return Mode_Done(&t, 0);
+	}
+	if (profile) {
+		Native_SetStr(prof, profile);
+	} else {
+		Mode_SaveVar("StdShipAIProfile", prof);
+	}
+	return Mode_Done(&t, Native_CallMod("VehiclesNPC", "SetAIProfile", NULL, "vv", sp, prof) &&
+		(hook || LvN_SetI(sp, "FactorHookMap", 0)) && Mode_ModDictPut("VehiclesNPC", "AIProf", ship, sp));
+}
+
+/* the profiles of the ships of a list */
+static byte Traffic_Profiles(nativeVal_t *ships, const char *profile, byte hook) {
+	int n = Mode_Loop(ships);
+	for (int i = 0; i < n; i++) {
+		nativeVal_t item = { 0 };
+		byte ok = Native_SeqItem(ships, i, &item) && Traffic_Profile(&item, profile, hook);
+		Native_Free(&item);
+		if (!ok) {
+			return 0;
+		}
+	}
+	return n >= 0;
 }
 
 /* InitAIProfiles(): the profiles of the traffic ships (StdShipAIProfile) and of the rail traffic (Rookie) */
-static PyObject *Traffic_InitAIProfiles(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "VehiclesNPC", NULL };
-	scriptRefs_t r = { 0 };
-	PyObject *item;
-	int more = 1;
-	(void)self;
-	(void)args;
-	if (!Script_Import(mods)) {
-		return NULL;
-	}
-	PyObject *ships = Script_Keep(&r, Script_Global("Traffic", "AcShips"));
-	for (int i = 0; ships && (more = Script_Next(ships, i, &item)) > 0; i++) {
-		more = Traffic_Profile(item, NULL, 1) ? 1 : -1;
-		Py_DECREF(item);
-		if (more < 0) {
-			break;
-		}
-	}
-	if (!ships || more < 0) {
-		return Script_Done(&r, NULL);
-	}
-	PyObject *rail = Script_Global("Traffic", "AcNormalShips");
-	PyObject *medium = rail ? Script_Keep(&r, Script_Global("Traffic", "AcMediumShips")) : NULL;
-	rail = Script_Plus(rail, medium);
-	PyObject *heavy = rail ? Script_Keep(&r, Script_Global("Traffic", "AcHeavyShips")) : NULL;
-	rail = Script_Keep(&r, Script_Plus(rail, heavy));
-	for (int i = 0; rail && (more = Script_Next(rail, i, &item)) > 0; i++) {
-		more = Traffic_Profile(item, "Rookie", 0) ? 1 : -1;
-		Py_DECREF(item);
-		if (more < 0) {
-			break;
-		}
-	}
-	return Script_Done(&r, rail && more >= 0 ? Py_ReturnNone() : NULL);
+static byte Traffic_InitAIProfilesN(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ships = Mode_V(&t), *normal = Mode_V(&t), *medium = Mode_V(&t), *heavy = Mode_V(&t), *a = Mode_V(&t);
+	nativeVal_t *rail = Mode_V(&t);
+	return Mode_Done(&t, Mode_Import("VehiclesNPC") && Traffic_G("AcShips", ships) && Traffic_Profiles(ships, NULL, 1) &&
+		Traffic_G("AcNormalShips", normal) && Traffic_G("AcMediumShips", medium) && Mode_Arith('+', normal, medium, a) &&
+		Traffic_G("AcHeavyShips", heavy) && Mode_Arith('+', a, heavy, rail) && Traffic_Profiles(rail, "Rookie", 0));
 }
 
-/* EmptyFunc(o): the default of onTrackCreate */
-static PyObject *Traffic_EmptyFunc(PyObject *self, PyObject *args) {
-	PyObject *o;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &o)) {
-		return NULL;
+/* ships[int(Scrap.Rand(0, len(ships)) - 0.1)] of the module list name */
+static byte Traffic_RandomShip(const char *name, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ships = Mode_V(&t), *f = Mode_V(&t), *i = Mode_V(&t);
+	int n = Traffic_G(name, ships) ? Mode_Len(ships) : -1;
+	if (n < 0) {
+		return Mode_Done(&t, 0);
 	}
-	return Py_ReturnNone();
+	Native_SetFloat(f, Scrap_RandRange(0.0, (double)n) - 0.1);
+	return Mode_Done(&t, Native_ToInt(f, i) && Mode_Sub(ships, i, out));
 }
 
-/* ships[int(Scrap.Rand(0, len(ships)) - 0.1)] of the module list name (a new reference) */
-static PyObject *Traffic_RandomShip(const char *name) {
-	PyObject *ships = Script_Global("Traffic", name);
-	int n = ships ? PyObject_Length(ships) : -1;
-	PyObject *ship = NULL;
-	if (n >= 0) {
-		PyObject *f = PyFloat_FromDouble(Scrap_RandRange(0.0, (double)n) - 0.1);
-		PyObject *i = Script_Int(f);
-		ship = i ? PyObject_GetItem(ships, i) : NULL;
-		Py_XDECREF(i);
-		Py_XDECREF(f);
-	}
-	Py_XDECREF(ships);
-	return ship;
-}
-
-/* o1 = VehiclesNPC.MakeAI(random ship of AcShips, list); o1.EntityList = list: 0 with the error set */
+/* o1 = VehiclesNPC.MakeAI(random ship of AcShips, list); o1.EntityList = list (OBJLIB 3: VehiclesNPC by name, the
+ * ship it gives a handle value) */
 static byte Traffic_Make(const char *list) {
-	static const char *const mods[] = { "VehiclesNPC", NULL };
-	PyObject *ship = Script_Import(mods) ? Traffic_RandomShip("AcShips") : NULL;
-	PyObject *o1 = ship ? Script_Ask("VehiclesNPC", "MakeAI", "(Os)", ship, list) : NULL;
-	byte ok = o1 && Script_HSet(o1, "EntityList", PyString_FromString(list));
-	Py_XDECREF(o1);
-	Py_XDECREF(ship);
-	return ok;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ship = Mode_V(&t), *o1 = Mode_V(&t);
+	return Mode_Done(&t, Mode_Import("VehiclesNPC") && Traffic_RandomShip("AcShips", ship) &&
+		Native_CallMod("VehiclesNPC", "MakeAI", o1, "vs", ship, list) && LvN_SetS(o1, "EntityList", list));
 }
 
-/* MakeTrafic(): one ship of the free traffic */
-static PyObject *Traffic_MakeTrafic(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Traffic_Make("Traffic") ? Py_ReturnNone() : NULL;
-}
-
-/* count ships of list from the count object n (range(n)) */
-static PyObject *Traffic_MakeN(PyObject *n, const char *list) {
+/* count ships of list from the count n (range(n)) */
+static byte Traffic_MakeN(const nativeVal_t *n, const char *list) {
 	long count;
-	if (!Script_Range(n, &count)) {
-		return NULL;
+	if (!Mode_Range(n, &count)) {
+		return 0;
 	}
 	for (long f = 0; f < count; f++) {
 		if (!Traffic_Make(list)) {
-			return NULL;
+			return 0;
 		}
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* InitTraffic(): iTrafficNumber ships */
-static PyObject *Traffic_InitTraffic(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	PyObject *n = Script_Ask("Scrap", "Get", "(s)", "iTrafficNumber");
-	PyObject *r = n ? Traffic_MakeN(n, "Traffic") : NULL;
-	Py_XDECREF(n);
-	return r;
+static byte Traffic_InitTrafficN(void) {
+	nativeVal_t n = { 0 };
+	byte ok = Native_GVarGet("iTrafficNumber", &n) && Traffic_MakeN(&n, "Traffic");
+	Native_Free(&n);
+	return ok;
 }
 
-/* OnNeedMoreTraffic(n), OnNeedMoreChasingTraffic(n): the engine asks for more ships */
-static PyObject *Traffic_OnNeedMoreTraffic(PyObject *self, PyObject *args) {
-	PyObject *n;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &n)) {
-		return NULL;
+/* OnPlayerHelpedPolice(): the reward of PlayerHelpedPoliceReward and its message (OBJLIB 3: SaveGame and RaceMaker by
+ * name) */
+static byte Traffic_OnPlayerHelpedPoliceN(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *reward = Mode_V(&t), *lang = Mode_V(&t), *rep = Mode_V(&t), *cad = Mode_V(&t), *money = Mode_V(&t);
+	nativeVal_t *sum = Mode_V(&t);
+	if (!Mode_Import("RaceMaker") || !Mode_Import("SaveGame") || !Mode_Import("string") ||
+		!Native_GVarGet("PlayerHelpedPoliceReward", reward)) {
+		return Mode_Done(&t, 0);
 	}
-	return Traffic_MakeN(n, "Traffic");
+	Mode_Lang("PlayerHelpedPolice", lang);
+	Mode_Repr(reward, rep);
+	Mode_Replace(lang, "<n>", rep, cad);
+	Native_SetInt(money, Mode_GetMoney());
+	return Mode_Done(&t, Mode_Arith('+', money, reward, sum) && Mode_SetMoneySeam(sum) &&
+		Native_CallMod("SaveGame", "SaveMoney", NULL, "") && Native_CallMod("RaceMaker", "ShowSystemMessage", NULL, "v", cad));
 }
 
-static PyObject *Traffic_OnNeedMoreChasingTraffic(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "VehiclesNPC", NULL };
-	PyObject *n;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &n) || !Script_Import(mods)) {
-		return NULL;
+/* RailTrafficDeath(Me, Killer): the alarm and the statistics when the player killed it */
+static byte Traffic_RailDeath(const nativeVal_t *killer) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *u = Mode_V(&t), *name = Mode_V(&t);
+	if (!Mode_UsrHandle(u)) {
+		return Mode_Done(&t, 0);
 	}
-	return Traffic_MakeN(n, "ChasingTraffic");
-}
-
-/* OnPlayerHelpedPolice(): the reward of PlayerHelpedPoliceReward and its message */
-static PyObject *Traffic_OnPlayerHelpedPolice(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "RaceMaker", "SaveGame", "string", NULL };
-	scriptRefs_t r = { 0 };
-	(void)self;
-	(void)args;
-	if (!Script_Import(mods)) {
-		return NULL;
+	int hit = Native_True(u);
+	if (hit) {
+		hit = Mode_VObj(u, "Name", name) ? Mode_Cmp(name, "==", killer) : -1;
 	}
-	PyObject *reward = Script_Keep(&r, Script_Ask("Scrap", "Get", "(s)", "PlayerHelpedPoliceReward"));
-	PyObject *cad = reward ? Script_Keep(&r, Script_Ask("Scrap", "GetLangStr", "(s)", "PlayerHelpedPolice")) : NULL;
-	PyObject *rep = cad ? Script_Keep(&r, Script_Repr(reward)) : NULL;
-	cad = rep ? Script_Keep(&r, Script_Ask("string", "replace", "(OsO)", cad, "<n>", rep)) : NULL;
-	PyObject *money = cad ? Script_Keep(&r, Script_Ask("Scrap", "GetMoney", "()")) : NULL;
-	PyObject *sum = money ? Script_Keep(&r, PyNumber_Add(money, reward)) : NULL;
-	byte ok = sum && Script_Try("Scrap", "SetMoney", "(O)", sum) && Script_Try("SaveGame", "SaveMoney", "()") &&
-		Script_Try("RaceMaker", "ShowSystemMessage", "(O)", cad);
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
-}
-
-/* RailTrafficDeath(Me, Killer): the alarm and the statistics when the player killed it: 0 with the error set */
-static byte Traffic_RailDeath(PyObject *killer) {
-	PyObject *u = Script_Usr();
-	int hit = Script_True(u);
-	if (hit > 0) {
-		PyObject *name = Script_GetAttr(u, "Name");
-		hit = Script_Eq(name, killer);
-		Py_XDECREF(name);
-	}
-	Py_XDECREF(u);
-	return hit >= 0 && (!hit || (Script_Try("Scrap", "SetAlarm", "(i)", 1) &&
-		Script_Try("Scrap", "IncSaveVar", "(s)", "Stats.Traffic")));
-}
-
-static PyObject *Traffic_RailTrafficDeath(PyObject *self, PyObject *args) {
-	PyObject *me, *killer;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &me, &killer)) {
-		return NULL;
-	}
-	return Traffic_RailDeath(killer) ? Py_ReturnNone() : NULL;
+	return Mode_Done(&t, hit >= 0 && (!hit || (Mode_SetAlarm(Mode_I(&t, 1)) && Mode_IncSaveVar("Stats.Traffic"))));
 }
 
 /* the death of a rail ship of list (HeavyTraffic...) from ships (AcHeavyShips...): a new one of type, the hook
- * onTrackCreate, the death, the path back */
-static PyObject *Traffic_TrackDeath(PyObject *args, const char *ships, const char *list, const char *type) {
-	static const char *const mods[] = { "VehiclesNPC", NULL };
-	PyObject *p1, *p2;
-	scriptRefs_t r = { 0 };
-	if (!PyArg_ParseTuple(args, "OO", &p1, &p2) || !Script_Import(mods) ||
-		!Script_Keep(&r, Traffic_SetPath(NULL, NULL))) {
-		return Script_Done(&r, NULL);
+ * onTrackCreate, the death, the path back (OBJLIB 3: VehiclesNPC and SAI.SetStateVehicle by name, the hook a value of
+ * the module) */
+static byte Traffic_TrackDeath(const nativeVal_t *killer, const char *ships, const char *list, const char *type) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ship = Mode_V(&t), *o1 = Mode_V(&t), *name = Mode_V(&t);
+	if (!Mode_Import("VehiclesNPC") || !Traffic_SetPathN() || !Traffic_RandomShip(ships, ship) ||
+		!Native_CallMod("VehiclesNPC", "MakeAI", o1, "vsii", ship, list, 0L, 0L) || !LvN_SetS(o1, "EntityList", list) ||
+		!LvN_SetS(o1, "Traf_Type", type) || !Mode_VGet(o1, "Name", name) ||
+		!Native_CallMod("SAI", "SetStateVehicle", NULL, "iv", 4L, name)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *ship = Script_Keep(&r, Traffic_RandomShip(ships));
-	PyObject *o1 = ship ? Script_Keep(&r, Script_Ask("VehiclesNPC", "MakeAI", "(Osii)", ship, list, 0, 0)) : NULL;
-	PyObject *name = o1 && Script_HSet(o1, "EntityList", PyString_FromString(list)) &&
-		Script_HSet(o1, "Traf_Type", PyString_FromString(type)) ? Script_Keep(&r, Script_GetAttr(o1, "Name")) : NULL;
-	PyObject *hook = name && Script_Try("SAI", "SetStateVehicle", "(iO)", 4, name) ?
-		Script_Keep(&r, Script_Global("Traffic", "onTrackCreate")) : NULL;
-	byte ok = hook && Script_Keep(&r, Script_Invoke(hook, Py_BuildValue("(O)", o1))) && Traffic_RailDeath(p2) &&
-		Script_Keep(&r, Traffic_ResetPath(NULL, NULL));
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
-}
-
-static PyObject *Traffic_HeavyTrafficDeath(PyObject *self, PyObject *args) {
-	(void)self;
-	return Traffic_TrackDeath(args, "AcHeavyShips", "HeavyTraffic", "Heavy");
-}
-
-static PyObject *Traffic_NormalTrafficDeath(PyObject *self, PyObject *args) {
-	(void)self;
-	return Traffic_TrackDeath(args, "AcNormalShips", "NormalTraffic", "Light");
-}
-
-static PyObject *Traffic_MediumTrafficDeath(PyObject *self, PyObject *args) {
-	(void)self;
-	return Traffic_TrackDeath(args, "AcMediumShips", "MediumTraffic", "Medium");
+	PyObject *hook = Mode_GlobalPy("Traffic", "onTrackCreate");
+	byte ok = hook && Native_Call(hook, NULL, "v", o1) && Traffic_RailDeath(killer) && Traffic_ResetPathN();
+	Py_XDECREF(hook);
+	return Mode_Done(&t, ok);
 }
 
 /* InitCivilTraffic(): the death callbacks of the rail lists and NumNormal, NumHeavy and NumMedium ships */
-static PyObject *Traffic_InitCivilTraffic(PyObject *self, PyObject *args) {
+static byte Traffic_InitCivilTrafficN(void) {
 	static const char *const lists[3][2] = {
 		{ "HeavyTraffic", "Traffic.HeavyTrafficDeath" },
 		{ "NormalTraffic", "Traffic.NormalTrafficDeath" },
 		{ "MediumTraffic", "Traffic.MediumTrafficDeath" },
 	};
 	/* the order of the script's loops */
-	static const char *const nums[3] = { "NumNormal", "NumHeavy", "NumMedium" };
-	static PyObject *(*const deaths[3])(PyObject *, PyObject *) = {
-		Traffic_NormalTrafficDeath, Traffic_HeavyTrafficDeath, Traffic_MediumTrafficDeath,
+	static const char *const nums[3][4] = {
+		{ "NumNormal", "AcNormalShips", "NormalTraffic", "Light" },
+		{ "NumHeavy", "AcHeavyShips", "HeavyTraffic", "Heavy" },
+		{ "NumMedium", "AcMediumShips", "MediumTraffic", "Medium" },
 	};
-	(void)self;
-	(void)args;
+	nativeVal_t empty;
 	for (int i = 0; i < 3; i++) {
-		if (!Script_Try("Scrap", "EntityListSet", "(sss)", lists[i][0], "OnDeath", lists[i][1])) {
-			return NULL;
+		if (!Mode_ListSet(lists[i][0], "OnDeath", lists[i][1])) {
+			return 0;
 		}
 	}
-	PyObject *a = Py_BuildValue("(ss)", "", "");
-	for (int i = 0; a && i < 3; i++) {
-		PyObject *num = Script_Global("Traffic", nums[i]);
-		long count;
-		byte ok = Script_Range(num, &count);
-		Py_XDECREF(num);
+	Native_SetStr(&empty, "");
+	for (int i = 0; i < 3; i++) {
+		nativeVal_t num = { 0 };
+		long count = 0;
+		byte ok = Traffic_G(nums[i][0], &num) && Mode_Range(&num, &count);
+		Native_Free(&num);
 		for (long f = 0; ok && f < count; f++) {
-			PyObject *v = deaths[i](NULL, a);
-			ok = v != NULL;
-			Py_XDECREF(v);
+			ok = Traffic_TrackDeath(&empty, nums[i][1], nums[i][2], nums[i][3]);
 		}
 		if (!ok) {
-			Py_DECREF(a);
-			return NULL;
+			return 0;
 		}
 	}
-	Py_XDECREF(a);
-	return a ? Py_ReturnNone() : NULL;
+	return 1;
 }
 
 /* Init(): the profiles, the traffic and the engine callbacks */
-static PyObject *Traffic_Init(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { 0 };
-	(void)self;
-	(void)args;
-	byte ok = Script_Keep(&r, Traffic_InitAIProfiles(NULL, NULL)) && Script_Keep(&r, Traffic_InitTraffic(NULL, NULL)) &&
-		Script_Keep(&r, Traffic_InitCivilTraffic(NULL, NULL)) &&
-		Script_Try("Scrap", "Set", "(ss)", "OnNeedMoreTraffic", "Traffic.OnNeedMoreTraffic") &&
-		Script_Try("Scrap", "Set", "(ss)", "OnNeedMoreChasingTraffic", "Traffic.OnNeedMoreChasingTraffic") &&
-		Script_Try("Scrap", "Set", "(ss)", "OnPlayerHelpedPolice", "Traffic.OnPlayerHelpedPolice");
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+static byte Traffic_InitN(void) {
+	return Traffic_InitAIProfilesN() && Traffic_InitTrafficN() && Traffic_InitCivilTrafficN() &&
+		Mode_GVarSetS("OnNeedMoreTraffic", "Traffic.OnNeedMoreTraffic") &&
+		Mode_GVarSetS("OnNeedMoreChasingTraffic", "Traffic.OnNeedMoreChasingTraffic") &&
+		Mode_GVarSetS("OnPlayerHelpedPolice", "Traffic.OnPlayerHelpedPolice");
 }
+
+/* the adapters (no arguments: the arity of the script's functions is not checked, as the port did) */
+#define TRAFFIC_FN(fn, call) \
+	static PyObject *fn(PyObject *self, PyObject *args) { \
+		(void)self; \
+		(void)args; \
+		return Mode_Result(call); \
+	}
+
+TRAFFIC_FN(Traffic_SetPath, Traffic_SetPathN())
+TRAFFIC_FN(Traffic_ResetPath, Traffic_ResetPathN())
+TRAFFIC_FN(Traffic_InitAIProfiles, Traffic_InitAIProfilesN())
+TRAFFIC_FN(Traffic_MakeTrafic, Traffic_Make("Traffic"))
+TRAFFIC_FN(Traffic_InitTraffic, Traffic_InitTrafficN())
+TRAFFIC_FN(Traffic_OnPlayerHelpedPolice, Traffic_OnPlayerHelpedPoliceN())
+TRAFFIC_FN(Traffic_InitCivilTraffic, Traffic_InitCivilTrafficN())
+TRAFFIC_FN(Traffic_Init, Traffic_InitN())
+MODE_FN(Traffic, EmptyFunc, 1, 1)
+MODE_FN(Traffic, OnNeedMoreTraffic, 1, Traffic_MakeN(&a[0], "Traffic"))
+MODE_FN(Traffic, OnNeedMoreChasingTraffic, 1, Mode_Import("VehiclesNPC") && Traffic_MakeN(&a[0], "ChasingTraffic"))
+MODE_FN(Traffic, RailTrafficDeath, 2, Traffic_RailDeath(&a[1]))
+MODE_FN(Traffic, HeavyTrafficDeath, 2, Traffic_TrackDeath(&a[1], "AcHeavyShips", "HeavyTraffic", "Heavy"))
+MODE_FN(Traffic, NormalTrafficDeath, 2, Traffic_TrackDeath(&a[1], "AcNormalShips", "NormalTraffic", "Light"))
+MODE_FN(Traffic, MediumTrafficDeath, 2, Traffic_TrackDeath(&a[1], "AcMediumShips", "MediumTraffic", "Medium"))
 
 PyMethodDef g_TrafficMethods[] = {
 	{ "SetPath", Traffic_SetPath, 1, NULL },

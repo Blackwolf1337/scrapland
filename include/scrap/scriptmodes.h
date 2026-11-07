@@ -584,4 +584,52 @@ byte Mode_ForceMap(const char *map);
 /* `string.find(string.upper(v.Model), text) != -1` (OBJLIB 3: string.find by name): 1, 0, -1 */
 int Mode_ModelHas(const nativeVal_t *v, const char *text);
 
+/* ---- the hubs of batch J (Traffic, OutMap, Challenge, CharConversor, RaceMaker, Doors) ---- */
+
+/* len(v) of the script with a list or tuple held as one NV_OBJ (it holds handles) made native first (Mode_Elems):
+ * -1 with the TypeError of a value without length */
+int Mode_Len(nativeVal_t *v);
+/* v[key] of the script (an NV_OBJ, e.g. a list that holds handles, the Python way, the item as Native_Arg makes it) */
+byte Mode_Sub(const nativeVal_t *v, const nativeVal_t *key, nativeVal_t *out);
+/* SAI.GetNextRacePoint(pos, minDist, maxDist) through its seam (fc-om-dt swaps it): a vector, None outdoors without
+ * a point (a pos that is no three numbers goes to the engine function by name for its error) */
+byte Mode_RacePoint(const nativeVal_t *pos, long minDist, long maxDist, nativeVal_t *out);
+/* Scrap.TestSphere(pos[0], pos[1], pos[2], r, list) through its seam (fc-om-dt swaps it), else Mode_TestSphere */
+byte Mode_TestSpherePos(const nativeVal_t *pos, long r, const char *list, nativeVal_t *out);
+/* Scrap.StartDummySearch(name, flag) and Scrap.NextDummySearch() through their seams (fc-om-dt, fc-abi and fc-acc-dt
+ * swap them) */
+byte Mode_DummyStartSeam(const char *name, long flag);
+byte Mode_DummyNextSeam(nativeVal_t *out);
+/* Scrap.SetGrid(x, y, z) of three ints through its seam (fc-om-dt records it) */
+byte Mode_SetGrid(long x, long y, long z);
+/* Scrap.GetEntity(name) through its seam (fc-om-dt swaps it): the handle value or None */
+byte Mode_EntitySeam(const nativeVal_t *name, nativeVal_t *out);
+/* SInput.SetActionSet(name) through its seam (fc-om-dt and the _bon lists of fr6b.py record it) */
+byte Mode_ActionSet(const char *name);
+/* Scrap.SetMoney(money) and Scrap.IncSaveVar(name) through their seams (fc-r7b-jy and fc-r7c-dt6 record them) */
+byte Mode_SetMoneySeam(const nativeVal_t *money);
+byte Mode_IncSaveVar(const char *name);
+/* v is a text and its C text (up to its first 0 byte) is text (Script_Is of the ports) */
+byte Mode_IsText(const nativeVal_t *v, const char *text);
+/* Scrap.SetTimeSpeed(speed) through its seam (fc-r7b-jy records it) */
+byte Mode_TimeSpeed(double speed);
+/* Scrap.GetCam(i): the name of the camera of player i (None when there is none) */
+void Mode_CamName(int i, nativeVal_t *out);
+/* Scrap.GetFloor(y): the floor of the map at the height (the TypeError of "f") */
+byte Mode_Floor(const nativeVal_t *y, nativeVal_t *out);
+/* abs(v) of the script (PyNumber_Absolute: ints, long ints, floats; the errors of 1.5.2) */
+byte Mode_Abs(const nativeVal_t *v, nativeVal_t *out);
+/* f(args...) of the script on a value f (a function or method held as NV_OBJ, or the TypeError of a value that is no
+ * callable) with the n values of args: the result into out (NULL: dropped) */
+byte Mode_CallArgs(const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *args, int n);
+/* -v of the script (PyNumber_Negative: ints, long ints, floats; the errors of 1.5.2) */
+byte Mode_Neg(const nativeVal_t *v, nativeVal_t *out);
+
+/* SScorer.Fade(id, (r, g, b, a), (r, g, b, a), time) with the time a value of the script (the recorders see the int the
+ * script passes; the TypeError of "f" for one that is no number), else Mode_Fade */
+byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time);
+/* print a, b, ... as Mode_Print with up to MODE_PRINT_MAX values (Elevator.UseElevator prints 9) */
+#define MODE_PRINT_MAX 12
+byte Mode_PrintN(const nativeVal_t *const *items, int n);
+
 #endif
