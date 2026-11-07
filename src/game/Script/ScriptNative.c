@@ -957,6 +957,23 @@ byte Native_ArgStr(const nativeVal_t *v, int arg, const char **out) {
 	return 1;
 }
 
+byte Native_Upper(const nativeVal_t *in, nativeVal_t *out) {
+	/* strop.upper ("t#": any text, 0 bytes too; islower and toupper of the C library) */
+	if (in->type != NV_STR) {
+		return Native_Raise(NE_TYPE, "read-only character buffer, %s", Native_TypeName(in));
+	}
+	const char *t = Native_Text(in);
+	Native_SetText(out, t, in->n);
+	char *o = out->text ? out->text : out->s;
+	for (int i = 0; i < out->n; i++) {
+		int c = (unsigned char)o[i];
+		if (islower(c)) {
+			o[i] = (char)toupper(c);
+		}
+	}
+	return 1;
+}
+
 byte Native_EvalText(const char *module, const nativeVal_t *text, nativeVal_t *out) {
 	/* Script_EvalValue: the checks of builtin eval, then the literal after the leading blanks */
 	if (text->type != NV_STR) {
@@ -1107,6 +1124,15 @@ static byte Native_ArgNum(const nativeVal_t *v, byte asDouble, double *d, int *i
 	}
 	}
 	return 0;
+}
+
+byte Native_ArgDouble(const nativeVal_t *v, double *out) {
+	int i;
+	if (!Native_ArgNum(v, 1, out, &i)) {
+		/* PyFloat_AsDouble of a value without number methods */
+		return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
+	}
+	return 1;
 }
 
 byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVal_t *v) {

@@ -23,6 +23,9 @@ static inline cEntity *PyEntity_Get(PyObject *self) {
 	return ((cPyEntity *)self)->ref->link.target;
 }
 
+/* o is an entity handle (cPyEntity) */
+byte PyEntity_Check(PyObject *o);
+
 /* the handle of the entity with that name, NULL without one (no Python error set) */
 PyObject *PyEntity_New(const char *name);
 
