@@ -2,14 +2,25 @@
  * The split screen in C (the scripts split/split.py and the four modes sdeathmatch.py, sflaghunt.py, spostman.py and
  * srace.py, issue #2): two players on one screen, the ship choice before a round, the scores, the pause and end menus
  * (data/menus/split.def: the scorer items and the keys), and the modes (the flag to hunt or carry, the race routes of
- * data/split/srace.def). The map tables, MortalProfiles, PlayersReady, Scorer, FirstTime, RespawnTime, ModLib,
- * OnDeathFunc and the spawn functions FuncGetSpawnPos/FuncGetReSpawnPos (the race replaces them) stay variables of
- * Split; ZoneList, Flag, AcFlag, BattonOwner, FlagInitPos, race, pl0, pl1 and the model and sound names variables of
- * the modes. The scripts start a split game by setting SplitScreen and loading a level (init.py preloads Split and
- * the mode of ServerType).
+ * data/split/srace.def). The scripts start a split game by setting SplitScreen and loading a level (init.py preloads
+ * Split and the mode of ServerType).
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on native values and call the engine in C. The state
+ * stays in the module dicts and is read where the script reads the global (OBJLIB 5), because the tests, the modes and
+ * the .def keys read and set it: the map tables, MortalProfiles, PlayersReady, Scorer, FirstTime, RespawnTime,
+ * ModLib, OnDeathFunc and the spawn functions FuncGetSpawnPos/FuncGetReSpawnPos (the race replaces them) of Split;
+ * ZoneList, AcFlag, BattonOwner, FlagInitPos, race and the model and sound names of the modes. The C works on them in
+ * the struct split; the lists of Split are changed in place, as the script does. Flag, pl0 and pl1 are entity handles
+ * and stay Python objects until entities are native values (OBJLIB 7). The functions call each other and the other
+ * ports by name (OBJLIB 3); the .def sections take their $names as a dict (OBJLIB 6).
  */
-#include "scrap/script.h"
+#include <limits.h>
+#include <stdarg.h>
+#include <string.h>
+
 #include "scrap/scrap.h"
+#include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 
 static const char split_def[] = {
 #embed "../../../data/menus/split.def"
@@ -19,728 +30,676 @@ static const char srace_def[] = {
 #embed "../../../data/split/srace.def"
 	, 0 };
 
-#define K(o) Script_Keep(&r, (o))
-#define FAIL() return Script_Done(&r, NULL)
-
 static const scriptStep_t split_steps[] = {
 	{ NULL, NULL },
 };
 
-/* a section of split.def for player id with the values of vars (a dict given away, NULL for none): 0 with the
- * error set when a line raised */
-static byte Split_Run(int id, const char *section, PyObject *vars) {
+static struct {
+	nativeVal_t scorer;		/* Split.Scorer: the points of both players */
+	nativeVal_t mortalProfiles;	/* Split.MortalProfiles: the hangar profile each player looks at */
+	nativeVal_t playersReady;	/* Split.PlayersReady */
+	nativeVal_t zoneList;		/* ZoneList of the mode that runs: the flag positions */
+	nativeVal_t acFlag;		/* AcFlag of the mode: the zone of the flag, or the checkpoint of the race */
+	nativeVal_t race;		/* SRace.race: the checkpoints, (pos, angle) each */
+	nativeVal_t raceBuild;		/* the checkpoints srace.def gives while it runs */
+} split;
+
+/* the functions of a module through its global or attribute, other ports by name (OBJLIB 3) */
+#define OWN(name, out, ...) Native_CallGlobal("Split", name, out, __VA_ARGS__)
+#define CALL(mod, name, out, ...) Native_CallMod(mod, name, out, __VA_ARGS__)
+
+/* a section of split.def for player id with the $names of the n pairs (OBJLIB 6: a dict until the .def runner takes
+ * C values): 0 with the error set when a line raised */
+static byte Split_Run(int id, const char *section, int n, ...) {
+	PyObject *vars = NULL;
+	if (n) {
+		va_list va;
+		va_start(va, n);
+		vars = PyDict_New();
+		for (int i = 0; vars && i < n; i++) {
+			const char *name = va_arg(va, const char *);
+			PyObject *v = Native_ToPy(va_arg(va, const nativeVal_t *));
+			if (!v || PyDict_SetItemString(vars, (char *)name, v) < 0) {
+				Py_XDECREF(v);
+				Py_DECREF(vars);
+				vars = NULL;
+				break;
+			}
+			Py_DECREF(v);
+		}
+		va_end(va);
+		if (!vars) {
+			return 0;
+		}
+	}
 	byte ok = Script_RunFileTry(id, "menus/split.def", section, split_def, split_steps, vars);
 	Py_XDECREF(vars);
 	return ok;
 }
 
-/* fn(args) through the module global fn (args given away): the result, a new reference */
-static PyObject *Split_CallG(const char *module, const char *fn, PyObject *args) {
-	PyObject *f = Script_Global(module, fn);
-	if (!f) {
-		Py_XDECREF(args);
-		return NULL;
+/* "<text>" + `v` */
+static byte Split_Name(modeVals_t *t, const char *text, const nativeVal_t *v, nativeVal_t *out) {
+	nativeBuf_t b;
+	nativeVal_t *rep = Mode_V(t);
+	Native_BufInit(&b);
+	Native_Repr(&b, v, NR_REPR);
+	Native_SetText(rep, b.p, b.len);
+	Native_BufFree(&b);
+	return Mode_Cat(t, out, 2, Mode_S(t, text), rep);
+}
+
+/* Scrap.GetLangStr(key) % (button,), the text alone when button is NULL */
+static byte Split_Lang(const char *key, const char *button, nativeVal_t *out) {
+	nativeVal_t a;
+	if (!button) {
+		Mode_Lang(key, out);
+		return 1;
 	}
-	PyObject *v = Script_Invoke(f, args);
-	Py_DECREF(f);
-	return v;
+	Native_SetEmpty(&a, NV_TUPLE);
+	Native_SetStr(Native_Append(&a), button);
+	byte ok = Mode_LangFmt(key, &a, out);
+	Native_Free(&a);
+	return ok;
 }
 
-/* the same, the result dropped */
-static byte Split_Do(const char *module, const char *fn, PyObject *args) {
-	PyObject *v = Split_CallG(module, fn, args);
-	Py_XDECREF(v);
-	return v != NULL;
-}
-
-/* name[idx] = name[idx] + d of a module global list (Split.Scorer, Split.MortalProfiles) */
-static byte Split_Add(const char *module, const char *name, PyObject *idx, long d) {
-	PyObject *list = Script_Global(module, name), *v = list ? PyObject_GetItem(list, idx) : NULL;
-	PyObject *dv = v ? PyInt_FromLong(d) : NULL, *n = dv ? PyNumber_Add(v, dv) : NULL;
-	int bad = !n || PyObject_SetItem(list, idx, n) < 0;
-	Py_XDECREF(n);
-	Py_XDECREF(dv);
-	Py_XDECREF(v);
-	Py_XDECREF(list);
-	return !bad;
-}
-
-/* name[idx] = v of a module global list (v given away) */
-static byte Split_SetAt(const char *module, const char *name, PyObject *idx, PyObject *v) {
-	PyObject *list = v ? Script_Global(module, name) : NULL;
-	int bad = !list || PyObject_SetItem(list, idx, v) < 0;
-	Py_XDECREF(list);
-	Py_XDECREF(v);
-	return !bad;
-}
-
-/* name[idx] of a module global list (a new reference) */
-static PyObject *Split_At(const char *module, const char *name, PyObject *idx) {
-	PyObject *list = Script_Global(module, name), *v = list ? PyObject_GetItem(list, idx) : NULL;
-	Py_XDECREF(list);
-	return v;
-}
-
-/* "<text>" + `n` (a new reference) */
-static PyObject *Split_Name(const char *text, long n) {
-	PyObject *i = PyInt_FromLong(n), *rep = i ? Script_Repr(i) : NULL, *v = rep ? Script_SPlus(text, rep) : NULL;
-	Py_XDECREF(rep);
-	Py_XDECREF(i);
-	return v;
-}
-
-/* Scrap.GetLangStr(key) % (button,), the text alone when button is NULL (a new reference) */
-static PyObject *Split_Lang(const char *key, const char *button) {
-	PyObject *t = Script_LangOf(PyString_FromString((char *)key));
-	if (!t || !button) {
-		return t;
+/* (0, sp[1], 0) */
+static byte Split_Ang(modeVals_t *t, const nativeVal_t *sp, nativeVal_t *out) {
+	nativeVal_t *a = Mode_V(t);
+	if (!Native_Subscript(sp, Mode_I(t, 1), a)) {
+		return 0;
 	}
-	PyObject *a = Py_BuildValue("(s)", button), *v = a ? Script_Mod(t, a) : NULL;
-	Py_XDECREF(a);
-	Py_DECREF(t);
-	return v;
+	Native_SetEmpty(out, NV_TUPLE);
+	Native_SetInt(Native_Append(out), 0);
+	Native_Copy(Native_Append(out), a);
+	Native_SetInt(Native_Append(out), 0);
+	return 1;
 }
 
-/* (0, sp[1], 0) (a new reference) */
-static PyObject *Split_Ang(PyObject *sp) {
-	PyObject *a = Script_Index(sp, 1), *v = a ? Py_BuildValue("(iOi)", 0, a, 0) : NULL;
-	Py_XDECREF(a);
-	return v;
+/* list[idx] = list[idx] + d of a list global of Split (Split.Scorer, Split.MortalProfiles), in place */
+static byte Split_Add(const char *name, nativeVal_t *slot, const nativeVal_t *idx, long d) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *v = Mode_V(&t), *n = Mode_V(&t);
+	return Mode_Done(&t, Mode_Read("Split", name, slot) && Native_Subscript(slot, idx, v) && Native_Arith('+', v, Mode_I(&t, d), n) &&
+		Mode_DictPut("Split", name, slot, idx, n));
+}
+
+/* the int of a player id as PyInt_AsLong reads it */
+static byte Split_Id(const nativeVal_t *id, int *out) {
+	return Native_ArgInt(id, out);
+}
+
+/* the keys of a player off (StartGame, EndOfGame bind them per player) */
+static byte Split_KeysOff(int id) {
+	return Split_Run(id, "keys_off", 0);
+}
+
+/* the menu texts of player id from row 70, 22 apart (textorl0..2), then the black band */
+static byte Split_Texts(const nativeVal_t *id, nativeVal_t *const *texts, int n) {
+	modeVals_t t = { .n = 0 };
+	for (int i = 0; i < n; i++) {
+		nativeVal_t *obj = Mode_V(&t);
+		if (!Split_Name(&t, "textorl", Mode_I(&t, i), obj) || !OWN("LittleText", NULL, "vvvi", id, obj, texts[i], (long)(70 + i * 22))) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	return Mode_Done(&t, OWN("BlackBack", NULL, "v", id));
 }
 
 /* ---- Split ---- */
 
-static PyObject *Split_PurgeServerMapList(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	PyObject *keep = K(PyList_New(0)), *text = keep ? K(Script_Ask("Scrap", "Get", "(s)", "ServerMapList")) : NULL;
-	PyObject *prev = text ? K(Script_EvalIn("Split", text)) : NULL, *modes = prev ? K(Script_Global("Split", "ModesMap")) : NULL;
-	PyObject *type = modes ? K(Script_Ask("Scrap", "Get", "(s)", "ServerType")) : NULL;
-	PyObject *valid = type ? K(PyObject_GetItem(modes, type)) : NULL, *a;
-	if (!valid) {
-		FAIL();
-	}
-	int more;
-	for (int i = 0; (more = Script_Next(prev, i, &a)) > 0; i++) {
-		int in = PySequence_Contains(valid, a);
-		int bad = in < 0 || (in && PyList_Append(keep, a) < 0);
-		Py_DECREF(a);
-		if (bad) {
-			FAIL();
-		}
-	}
-	PyObject *rep = more == 0 ? K(Script_Repr(keep)) : NULL;
-	return Script_Done(&r, rep && Script_Try("Scrap", "Set", "(sO)", "ServerMapList", rep) ? Py_ReturnNone() : NULL);
-}
-
-/* GetSpawnPos(id) and GetReSpawnPos(v): a spawn point of OutMap */
-static PyObject *Split_GetSpawnPos(PyObject *self, PyObject *args) {
-	PyObject *a;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &a) || !Script_Import((const char *const[]){ "OutMap", NULL })) {
-		return NULL;
-	}
-	return Script_Ask("OutMap", "GetSpawnPos", "()");
-}
-
 /* CreateUserShip(id): Player<id> at a spawn point with its ship, and the camera Cam<id> following it */
-static PyObject *Split_CreateUserShip(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id) || !Script_Import((const char *const[]){ "Vehicles", "OutMap", NULL })) {
-		return NULL;
+static byte Split_CreateUserShipC(const nativeVal_t *id) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *sp = Mode_V(&t), *at = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t), *name = Mode_V(&t);
+	nativeVal_t *ang = Mode_V(&t), *cname = Mode_V(&t), *zero = Mode_V(&t), *pos = Mode_V(&t), *vn = Mode_V(&t), *cn = Mode_V(&t);
+	PyObject *fn;
+	cEntity *v, *cam;
+	if (!Mode_Import("Vehicles") || !Mode_Import("OutMap") || !(fn = Mode_GlobalPy("Split", "FuncGetSpawnPos"))) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *sp = K(Split_CallG("Split", "FuncGetSpawnPos", Py_BuildValue("(O)", id)));
-	PyObject *at = sp ? K(Script_Index(sp, 0)) : NULL, *x = at ? K(Script_Index(at, 0)) : NULL;
-	PyObject *y = x ? K(Script_Index(at, 1)) : NULL, *z = y ? K(Script_Index(at, 2)) : NULL;
-	PyObject *name = z ? K(Script_SPlus("Player", K(Script_Repr(id)))) : NULL;
-	PyObject *v = name ? K(Script_Ask("Scrap", "CreateEntity", "(OOOOs)", name, x, y, z, "Car")) : NULL;
-	if (!v || !Script_HSet(v, "Ang", Split_Ang(sp)) || !Split_Do("Split", "NextShip", Py_BuildValue("(O)", id))) {
-		FAIL();
+	byte ok = Native_Call(fn, sp, "v", id);
+	Py_DECREF(fn);
+	if (!ok || !Native_Subscript(sp, Mode_I(&t, 0), at) || !Native_Subscript(at, Mode_I(&t, 0), x) ||
+		!Native_Subscript(at, Mode_I(&t, 1), y) || !Native_Subscript(at, Mode_I(&t, 2), z) || !Split_Name(&t, "Player", id, name) ||
+		!Mode_Create(name, x, y, z, "Car", &v)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *cname = K(Script_SPlus("Cam", K(Script_Repr(id))));
-	PyObject *cam = cname ? K(Script_Ask("Scrap", "CreateEntity", "(Oddds)", cname, 0.0, 0.0, 0.0, "FCam")) : NULL;
-	PyObject *vn = cam && Script_HSet(cam, "camPos", Script_Index(sp, 0)) && Script_HSet(cam, "camAng", Split_Ang(sp)) ?
-		K(Script_GetAttr(v, "Name")) : NULL;
-	PyObject *cn = vn ? K(Script_GetAttr(cam, "Name")) : NULL;
-	return Script_Done(&r, cn && Script_Try("Vehicles", "SetActiveCam", "(OOO)", vn, cn, id) ? Py_ReturnNone() : NULL);
+	/* the name the handle of the ship keeps */
+	char n[0x80];
+	Str_Copy(n, v ? v->name : Native_Text(name), sizeof(n));
+	if (!Split_Ang(&t, sp, ang) || !Mode_Set(v, n, "Ang", ang) || !OWN("NextShip", NULL, "v", id) || !Split_Name(&t, "Cam", id, cname)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetFloat(zero, 0.0);
+	if (!Mode_Create(cname, zero, zero, zero, "FCam", &cam) || !Native_Subscript(sp, Mode_I(&t, 0), pos) ||
+		!Mode_Set(cam, Native_Text(cname), "camPos", pos) || !Split_Ang(&t, sp, ang) || !Mode_Set(cam, Native_Text(cname), "camAng", ang)) {
+		return Mode_Done(&t, 0);
+	}
+	/* v.Name after NextShip: the handle finds its entity again */
+	return Mode_Done(&t, Mode_NameGet(n, "Name", vn) && Native_EntVar(cam, Native_Text(cname), "Name", cn) &&
+		CALL("Vehicles", "SetActiveCam", NULL, "vvv", vn, cn, id));
 }
 
 /* Init(): the mode's state, both players with ships, the deaths through OnDeathCallback, the ship choice */
-static PyObject *Split_Init(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	PyObject *mod = K(Script_Global("Split", "ModLib"));
-	if (!mod || !K(Script_Method(mod, "InitStatus", "()")) || !Script_Try("Scrap", "Set", "(ss)", "MainMissionEvent", "") ||
-		!Script_Import((const char *const[]){ "Menu", "Vehicles", NULL }) || !Split_Do("Split", "CreateUserShip", Py_BuildValue("(i)", 0)) ||
-		!Split_Do("Split", "CreateUserShip", Py_BuildValue("(i)", 1))) {
-		FAIL();
+static byte Split_InitC(void) {
+	PyObject *mod = Mode_GlobalPy("Split", "ModLib");
+	PyObject *v = mod ? Script_Method(mod, "InitStatus", "()") : NULL;
+	Py_XDECREF(mod);
+	Py_XDECREF(v);
+	if (!v || !Mode_GVarSetS("MainMissionEvent", "") || !Mode_Import("Menu") || !Mode_Import("Vehicles") ||
+		!OWN("CreateUserShip", NULL, "i", 0L) || !OWN("CreateUserShip", NULL, "i", 1L)) {
+		return 0;
 	}
-	PyObject *cb = K(Script_Global("Split", "OnDeathCallback"));
+	/* Vehicles.OnDeathCallback = OnDeathCallback (OBJLIB 3: the function as a value; a failed set is no error) */
+	PyObject *cb = Mode_GlobalPy("Split", "OnDeathCallback");
 	if (!cb) {
-		FAIL();
+		return 0;
 	}
-	Script_SetVar("Vehicles", "OnDeathCallback", Script_Ref(cb));
-	return Script_Done(&r, Split_Do("Split", "ChooseShips", PyTuple_New(0)) ? Py_ReturnNone() : NULL);
+	Script_SetVar("Vehicles", "OnDeathCallback", cb);
+	return OWN("ChooseShips", NULL, "");
 }
 
 /* ReSpawnShip(LooserName): back at a spawn point (the race: where it died) without upgrades */
-static PyObject *Split_ReSpawnShip(PyObject *self, PyObject *args) {
+static byte Split_ReSpawnShipC(const nativeVal_t *name) {
 	static const char *const upgrades[] = { "Upgrd00", "Upgrd01", "Upgrd02", "Upgrd03", "Upgrd04", "Upgrd05", "Upgrd06" };
-	scriptRefs_t r = { .n = 0 };
-	PyObject *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name) || !Script_Import((const char *const[]){ "Vehicles", "OutMap", NULL })) {
-		return NULL;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *sp = Mode_V(&t), *ang = Mode_V(&t), *pos = Mode_V(&t);
+	cEntity *e;
+	PyObject *fn;
+	if (!Mode_Import("Vehicles") || !Mode_Import("OutMap") || !Mode_Ent(name, &e) || !(fn = Mode_GlobalPy("Split", "FuncGetReSpawnPos"))) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *e = K(Script_Entity(name)), *sp = e ? K(Split_CallG("Split", "FuncGetReSpawnPos", Py_BuildValue("(O)", e))) : NULL;
-	if (!sp || !Script_HSet(e, "Ang", Split_Ang(sp)) || !Script_HSet(e, "Pos", Script_Index(sp, 0))) {
-		FAIL();
+	/* the handle of the ship goes to the spawn function (OBJLIB 7) */
+	const char *n = Native_Text(name);
+	PyObject *h = Mode_Handle(e);
+	byte ok = Native_Call(fn, sp, "O", h);
+	Py_DECREF(h);
+	Py_DECREF(fn);
+	cEntity *at = e ? World_FindEntity(n) : NULL;
+	if (!ok || !Split_Ang(&t, sp, ang) || !(e ? Native_EntSet(at, n, "Ang", ang) : Mode_Set(NULL, n, "Ang", ang)) ||
+		!Native_Subscript(sp, Mode_I(&t, 0), pos) || !Native_EntSet(World_FindEntity(n), n, "Pos", pos)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *zero = K(PyInt_FromLong(0));
 	for (int i = 0; i < 7; i++) {
-		if (!zero || !Script_HSet(e, upgrades[i], Script_Ref(zero))) {
-			FAIL();
+		if (!Native_EntSet(World_FindEntity(n), n, upgrades[i], Mode_I(&t, 0))) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	return Script_Done(&r, Script_Try("Vehicles", "ReSpawnShip", "(O)", name) ? Py_ReturnNone() : NULL);
+	return Mode_Done(&t, CALL("Vehicles", "ReSpawnShip", NULL, "v", name));
 }
 
 /* OnDeathCallback(LooserName, WinnerName): the respawn RespawnTime later, then the mode's OnDeathFunc */
-static PyObject *Split_OnDeathCallback(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *looser, *winner;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &looser, &winner)) {
-		return NULL;
+static byte Split_OnDeathCallbackC(const nativeVal_t *looser, const nativeVal_t *winner) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *rt = Mode_V(&t), *f = Mode_V(&t), *cb = Mode_V(&t);
+	if (!Mode_G("Split", "RespawnTime", rt) || !Native_ToFloat(rt, f) || !Mode_LaterIn(f->f, "Split", "ReSpawnShip", looser, 1, NULL)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *t = K(Script_Global("Split", "RespawnTime")), *f = t ? K(PyNumber_Float(t)) : NULL;
-	if (!f || !Script_LaterIn(PyFloat_AsDouble(f), "Split", "ReSpawnShip", Py_BuildValue("(O)", looser), NULL)) {
-		FAIL();
+	PyObject *fn = Mode_GlobalPy("Split", "OnDeathFunc");
+	if (!fn) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *cb = K(Script_Global("Split", "OnDeathFunc"));
-	int set = cb ? Script_True(cb) : -1;
-	if (set < 0 || (set && !K(Script_Invoke(cb, Py_BuildValue("(OO)", looser, winner))))) {
-		FAIL();
-	}
-	return Script_Done(&r, Py_ReturnNone());
+	int set = PyObject_IsTrue(fn);
+	byte ok = set >= 0 && (!set || Native_Call(fn, cb, "vv", looser, winner));
+	Py_DECREF(fn);
+	return Mode_Done(&t, ok);
 }
 
-static PyObject *Split_ChooseShips(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Script_Try("SInput", "SetActionSet", "(s)", "Inactive") && Script_Try("Scrap", "Set", "(ss)", "EscapeEvent", "") &&
-		Split_Do("Split", "InitChooseScorer", Py_BuildValue("(i)", 0)) &&
-		Split_Do("Split", "InitChooseScorer", Py_BuildValue("(i)", 1)) ? Py_ReturnNone() : NULL;
+static byte Split_ChooseShipsC(void) {
+	Mode_SetActionSet("Inactive");
+	return Mode_GVarSetS("EscapeEvent", "") && OWN("InitChooseScorer", NULL, "i", 0L) && OWN("InitChooseScorer", NULL, "i", 1L);
 }
 
-/* ShipMaker.PilotsList[int(Scrap.Rand(0, len(ShipMaker.PilotsList)))] (a new reference) */
-static PyObject *Split_RandomPilot(void) {
-	PyObject *pilots = Script_Attr("ShipMaker", "PilotsList");
-	int n = pilots ? PyObject_Length(pilots) : -1;
-	PyObject *p = n >= 0 ? Script_Index(pilots, (int)Scrap_RandRange(0, n)) : NULL;
-	Py_XDECREF(pilots);
-	return p;
+/* ShipMaker.PilotsList[int(Scrap.Rand(0, len(ShipMaker.PilotsList)))] (the engine's Rand in C, as before) */
+static byte Split_RandomPilot(modeVals_t *t, nativeVal_t *out) {
+	nativeVal_t *pilots = Mode_V(t);
+	if (!Mode_ModVar("ShipMaker", "PilotsList", pilots)) {
+		return 0;
+	}
+	int n = Native_Size(pilots);
+	return n >= 0 && Native_Subscript(pilots, Mode_I(t, (long)Scrap_RandRange(0, n)), out);
 }
 
 /* the ship of hangar profile p for player name when it has an engine: 1 done, 0 no such ship, -1 error */
-static int Split_TryProfile(PyObject *name, PyObject *profile) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *var = K(Script_SPlus("HangarShip", K(Script_Repr(profile))));
-	PyObject *attribs = var ? K(Script_Ask("Scrap", "Get", "(O)", var)) : NULL;
-	if (!attribs) {
-		return Script_Done(&r, NULL), -1;
+static int Split_TryProfile(const nativeVal_t *name, const nativeVal_t *profile) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *var = Mode_V(&t), *attribs = Mode_V(&t), *a = Mode_V(&t), *it[7], *life = Mode_V(&t), *pilot = Mode_V(&t);
+	cEntity *v;
+	if (!Split_Name(&t, "HangarShip", profile, var)) {
+		return Mode_Done(&t, 0), -1;
 	}
-	if (Script_Is(attribs, "")) {
-		return Script_Done(&r, NULL), 0;
+	const char *vn;
+	if (!Native_ArgStr(var, 1, &vn) || !Native_GVarGet(vn, attribs)) {
+		return Mode_Done(&t, 0), -1;
 	}
-	PyObject *a = K(Script_Ask("string", "split", "(Os)", attribs, "<-")), *it[7] = { NULL };
+	if (Native_IsStr(attribs, "")) {
+		return Mode_Done(&t, 0), 0;
+	}
+	if (!Mode_Import("string") || !Native_Split(attribs, "<-", a)) {
+		return Mode_Done(&t, 0), -1;
+	}
 	int any = 0;
-	for (int i = 1; a && i <= 4 && !any; i++) {
-		PyObject *v = K(Script_Index(a, i));
-		if (!v) {
-			return Script_Done(&r, NULL), -1;
+	for (int i = 1; i <= 4 && !any; i++) {
+		nativeVal_t *x = Mode_V(&t);
+		if (!Native_Subscript(a, Mode_I(&t, i), x)) {
+			return Mode_Done(&t, 0), -1;
 		}
-		any = !Script_Is(v, "");
-	}
-	if (!a) {
-		return Script_Done(&r, NULL), -1;
+		any = !Native_IsStr(x, "");
 	}
 	if (!any) {
-		return Script_Done(&r, NULL), 0;
+		return Mode_Done(&t, 0), 0;
 	}
-	PyObject *v = K(Script_Entity(name));
-	int none = v ? Script_Eq(v, Py_None) : -1;
-	if (none < 0 || (!none && !Script_HSet(v, "Active", PyInt_FromLong(0)))) {
-		return Script_Done(&r, NULL), -1;
+	if (!Mode_Ent(name, &v)) {
+		return Mode_Done(&t, 0), -1;
+	}
+	const char *n = Native_Text(name);
+	if (v && !Native_EntSet(v, n, "Active", Mode_I(&t, 0))) {
+		return Mode_Done(&t, 0), -1;
 	}
 	for (int i = 0; i < 7; i++) {
-		if (!(it[i] = K(Script_Index(a, i)))) {
-			return Script_Done(&r, NULL), -1;
+		it[i] = Mode_V(&t);
+		if (!Native_Subscript(a, Mode_I(&t, i), it[i])) {
+			return Mode_Done(&t, 0), -1;
 		}
 	}
-	PyObject *life = K(Script_Int(it[6])), *pilot = life ? K(Split_RandomPilot()) : NULL;
-	PyObject *done = pilot ? K(Script_Ask("Vehicles", "SetProperties", "(OOOOOOOOOOi)", name, it[0], life, pilot, it[1], it[2], it[3],
-		it[4], it[5], name, 1)) : NULL;
-	if (!done || (!none && !Script_HSet(v, "Active", PyInt_FromLong(1)))) {
-		return Script_Done(&r, NULL), -1;
+	if (!Native_ToInt(it[6], life) || !Split_RandomPilot(&t, pilot) ||
+		!CALL("Vehicles", "SetProperties", NULL, "vvvvvvvvvvi", name, it[0], life, pilot, it[1], it[2], it[3], it[4], it[5], name, 1L) ||
+		(v && !Native_EntSet(World_FindEntity(n), n, "Active", Mode_I(&t, 1)))) {
+		return Mode_Done(&t, 0), -1;
 	}
-	Script_Done(&r, NULL);
-	return 1;
+	return Mode_Done(&t, 1);
 }
 
 /* ChangeShip(id, Up=1): the next (or previous) hangar ship of the profiles 1 to 9 with an engine, else a SMerc1 */
-static PyObject *Split_ChangeShip(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "Up", NULL };
-	scriptRefs_t r = { .n = 0 };
-	PyObject *id, *up = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O", names, &id, &up) ||
-		!Script_Import((const char *const[]){ "string", "ShipMaker", "Vehicles", NULL })) {
-		return NULL;
+static byte Split_ChangeShipC(const nativeVal_t *id, const nativeVal_t *up) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *name = Mode_V(&t), *prof = Mode_V(&t), *pilot = Mode_V(&t);
+	if (!Mode_Import("string") || !Mode_Import("ShipMaker") || !Mode_Import("Vehicles")) {
+		return Mode_Done(&t, 0);
 	}
-	int u = up ? Script_True(up) : 1;
-	PyObject *name = K(Script_SPlus("Player", K(Script_Repr(id))));
-	if (u < 0 || !name) {
-		FAIL();
+	int u = up ? Native_True(up) : 1;
+	if (!Split_Name(&t, "Player", id, name)) {
+		return Mode_Done(&t, 0);
 	}
 	for (int n = 0; n < 9; n++) {
-		if (!Split_Add("Split", "MortalProfiles", id, u ? 1 : -1)) {
-			FAIL();
+		if (!Split_Add("MortalProfiles", &split.mortalProfiles, id, u ? 1 : -1) || !Native_Subscript(&split.mortalProfiles, id, prof)) {
+			return Mode_Done(&t, 0);
 		}
-		PyObject *prof = K(Split_At("Split", "MortalProfiles", id));
-		int wrap = prof ? Script_NumCmp(prof, u ? 9 : 1) : -2;
-		if (wrap == -2 || ((u ? wrap > 0 : wrap < 0) && !Split_SetAt("Split", "MortalProfiles", id, PyInt_FromLong(u ? 1 : 9)))) {
-			FAIL();
+		int wrap = Native_Compare(prof, Mode_I(&t, u ? 9 : 1));
+		Native_Free(prof);
+		if ((u ? wrap > 0 : wrap < 0) && !Mode_DictPut("Split", "MortalProfiles", &split.mortalProfiles, id, Mode_I(&t, u ? 1 : 9))) {
+			return Mode_Done(&t, 0);
 		}
-		prof = K(Split_At("Split", "MortalProfiles", id));
-		int got = prof ? Split_TryProfile(name, prof) : -1;
-		if (got < 0) {
-			FAIL();
+		if (!Mode_Read("Split", "MortalProfiles", &split.mortalProfiles) || !Native_Subscript(&split.mortalProfiles, id, prof)) {
+			return Mode_Done(&t, 0);
 		}
+		int got = Split_TryProfile(name, prof);
+		Native_Free(prof);
 		if (got) {
-			return Script_Done(&r, Py_ReturnNone());
+			return Mode_Done(&t, got > 0);
 		}
 	}
-	PyObject *pilot = K(Split_RandomPilot());
-	return Script_Done(&r, pilot && Script_Try("Vehicles", "SetStdProperties", "(OsO)", name, "SMerc1", pilot) ? Py_ReturnNone() : NULL);
-}
-
-static PyObject *Split_NextShip(PyObject *self, PyObject *args) {
-	PyObject *id;
-	(void)self;
-	return PyArg_ParseTuple(args, "O", &id) && Split_Do("Split", "ChangeShip", Py_BuildValue("(Oi)", id, 1)) ? Py_ReturnNone() : NULL;
-}
-
-static PyObject *Split_PrevShip(PyObject *self, PyObject *args) {
-	PyObject *id;
-	(void)self;
-	return PyArg_ParseTuple(args, "O", &id) && Split_Do("Split", "ChangeShip", Py_BuildValue("(Oi)", id, 0)) ? Py_ReturnNone() : NULL;
-}
-
-/* the keys of both players off (StartGame, EndOfGame bind them per player) */
-static byte Split_KeysOff(int id) {
-	return Split_Run(id, "keys_off", NULL);
+	return Mode_Done(&t, Split_RandomPilot(&t, pilot) && CALL("Vehicles", "SetStdProperties", NULL, "vsv", name, "SMerc1", pilot));
 }
 
 /* StartGame(id=0): the round starts (the mode's Init the first time), the scores and separators */
+static byte Split_StartGameC(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *first = Mode_V(&t), *msg = Mode_V(&t);
+	if (!Mode_Import("Menu") || !Split_KeysOff(0) || !Split_KeysOff(1) || !Mode_ScorerClear(Mode_I(&t, 0)) ||
+		!Mode_ScorerClear(Mode_I(&t, 1)) || !Mode_GVarSetS("EscapeEvent", "Split.PauseGame")) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SetActionSet("Racer");
+	if (!CALL("Menu", "DrawScorer", NULL, "is", 0L, "Racer") || !Mode_G("Split", "FirstTime", first)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_True(first)) {
+		PyObject *mod = Mode_GlobalPy("Split", "ModLib");
+		PyObject *v = mod ? Script_Method(mod, "Init", "()") : NULL;
+		Py_XDECREF(mod);
+		Py_XDECREF(v);
+		Native_SetStr(msg, "Cu\xf1" "aaaao");
+		if (!v || !Mode_Put("Split", "FirstTime", NULL, Mode_I(&t, 0)) || !Mode_Print((const nativeVal_t *const[]){ msg }, 1)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	Mode_SetTimeSpeed(1.0);
+	for (int i = 0; i < 2; i++) {
+		if (!OWN("MissionScorer", NULL, "i", (long)i) || !OWN("DefaultSplitScorer", NULL, "i", (long)i)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	return Mode_Done(&t, 1);
+}
+
+/* DefaultSplitScorer(id): the line between the halves */
+static byte Split_DefaultSplitScorerC(int id) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *name = Mode_V(&t);
+	return Mode_Done(&t, Split_Name(&t, "SplitSeparator", Mode_I(&t, id), name) &&
+		Split_Run(id, "separator", 2, "name", name, "y", Mode_I(&t, 239 + id)));
+}
+
+/* EndOfGame(id): player id won; the result for both, the next map 5 s later */
+static byte Split_EndOfGameC(const nativeVal_t *id) {
+	modeVals_t t = { .n = 0 };
+	Mode_SetActionSet("Inactive");
+	if (!Mode_GVarSetS("EscapeEvent", "")) {
+		return Mode_Done(&t, 0);
+	}
+	byte second = !Native_Compare(id, Mode_I(&t, 1));
+	const char *results[2] = { second ? "XBox_Split_You_Loose" : "XBox_Split_You_Win", second ? "XBox_Split_You_Win" : "XBox_Split_You_Loose" };
+	for (int i = 0; i < 2; i++) {
+		nativeVal_t *obj = Mode_V(&t), *text = Mode_V(&t);
+		if (!Split_Name(&t, "Pl", Mode_I(&t, i), obj) || !Mode_ScorerClear(Mode_I(&t, i)) || !Split_Lang(results[i], NULL, text) ||
+			!OWN("LittleText", NULL, "ivvi", (long)i, obj, text, 100L) || !OWN("BlackBack", NULL, "i", (long)i) || !Split_KeysOff(i)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	return Mode_Done(&t, Mode_LaterIn(5.0, "Split", "ReloadNext", NULL, 0, NULL));
+}
+
+/* ReloadNext(): the next map of the server list (or the same) */
+static byte Split_ReloadNextC(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *text = Mode_V(&t), *maps = Mode_V(&t), *path = Mode_V(&t), *here = Mode_V(&t), *at = Mode_V(&t), *nx = Mode_V(&t);
+	nativeVal_t *k = Mode_V(&t), *map = Mode_V(&t), *next = Mode_V(&t), *len = Mode_V(&t);
+	if (!Mode_Import("Init") || !Mode_Import("SaveGame") || !OWN("PurgeServerMapList", NULL, "") || !Native_GVarGet("ServerMapList", text) ||
+		!Native_EvalText("Split", text, maps)) {
+		return Mode_Done(&t, 0);
+	}
+	int any = Native_True(maps), n = any ? Native_Size(maps) : 0;
+	if (n < 0 || !Mode_ModVar("Init", "Path", path)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!any || n == 0) {
+		Native_Copy(next, path);
+	} else {
+		if (!Native_Slice(path, 7, INT_MAX, here)) {
+			return Mode_Done(&t, 0);
+		}
+		int in = Native_Contains(maps, here);
+		byte ok = in >= 0;
+		if (in > 0) {
+			Native_SetInt(len, n);
+			ok = Mode_Index(maps, here, at) && Native_Arith('+', at, Mode_I(&t, 1), nx) && Native_Arith('%', nx, len, k) &&
+				Native_Subscript(maps, k, map);
+		} else if (in == 0) {
+			ok = Native_Subscript(maps, Mode_I(&t, 0), map);
+		}
+		if (!ok || !Mode_Cat(&t, next, 2, Mode_S(&t, "Levels/"), map)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	return Mode_Done(&t, CALL("SaveGame", "QLoad", NULL, "v", next));
+}
+
+/* ActualizeScorer(): a player at FragLimit wins, else the scores are shown */
+static byte Split_ActualizeScorerC(void) {
+	modeVals_t t = { .n = 0 };
+	for (int i = 0; i < 2; i++) {
+		nativeVal_t *v = Mode_V(&t), *limit = Mode_V(&t);
+		if (!Mode_Read("Split", "Scorer", &split.scorer) || !Native_Subscript(&split.scorer, Mode_I(&t, i), v) ||
+			!Native_GVarGet("FragLimit", limit)) {
+			return Mode_Done(&t, 0);
+		}
+		if (Native_Compare(v, limit) >= 0) {
+			return Mode_Done(&t, OWN("EndOfGame", NULL, "i", (long)i));
+		}
+	}
+	for (int i = 0; i < 2; i++) {
+		nativeVal_t *v = Mode_V(&t), *rep = Mode_V(&t);
+		nativeBuf_t b;
+		if (!Mode_Read("Split", "Scorer", &split.scorer) || !Native_Subscript(&split.scorer, Mode_I(&t, i), v)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_BufInit(&b);
+		Native_Repr(&b, v, NR_REPR);
+		Native_SetText(rep, b.p, b.len);
+		Native_BufFree(&b);
+		if (!Mode_ScorerSet(Mode_I(&t, i), Mode_S(&t, "MissionBest"), "Text", rep)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	return Mode_Done(&t, 1);
+}
+
+/* MissionScorer(id): the score, the limit and the tab of player id, then ActualizeScorer */
+static byte Split_MissionScorerC(int id) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *limit = Mode_V(&t), *rep = Mode_V(&t);
+	nativeBuf_t b;
+	if (!Mode_Import("Scorer") || !Mode_Import("Menu") || !Native_GVarGet("FragLimit", limit)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_BufInit(&b);
+	Native_Repr(&b, limit, NR_REPR);
+	Native_SetText(rep, b.p, b.len);
+	Native_BufFree(&b);
+	return Mode_Done(&t, Split_Run(id, "mission", 2, "y", Mode_I(&t, 190 + 240 * id), "limit", rep) && OWN("ActualizeScorer", NULL, ""));
+}
+
+/* SeleShip(id): player id is ready; the round starts when both are */
+static byte Split_SeleShipC(const nativeVal_t *id) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *v = Mode_V(&t);
+	if (!Mode_DictPut("Split", "PlayersReady", &split.playersReady, id, Mode_I(&t, 1))) {
+		return Mode_Done(&t, 0);
+	}
+	int both = 1;
+	for (int i = 0; i < 2 && both; i++) {
+		Native_Free(v);
+		if (!Native_Subscript(&split.playersReady, Mode_I(&t, i), v)) {
+			return Mode_Done(&t, 0);
+		}
+		both = !Native_Compare(v, Mode_I(&t, 1));
+	}
+	return Mode_Done(&t, both ? OWN("StartGame", NULL, "") : OWN("ReadyToStartScorer", NULL, "v", id));
+}
+
+/* InitChooseScorer(id): the ship choice of player id */
+static byte Split_InitChooseScorerC(const nativeVal_t *id) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *tx[3] = { Mode_V(&t), Mode_V(&t), Mode_V(&t) };
+	int i;
+	return Mode_Done(&t, Mode_DictPut("Split", "PlayersReady", &split.playersReady, id, Mode_I(&t, 0)) && Split_Id(id, &i) &&
+		Split_Run(i, "keys_choose", 0) && Mode_ScorerClear(id) && Split_Lang("XBox_Split_SelectShip", NULL, tx[0]) &&
+		Split_Lang("XBox_Split_Start", "\x14", tx[1]) && Split_Lang("XBox_Split_Abort", "\x17", tx[2]) && Split_Texts(Mode_I(&t, i), tx, 3));
+}
+
+/* ReadyToStartScorer(id): player id waits for the other */
+static byte Split_ReadyToStartScorerC(int id) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *wait = Mode_V(&t), *back = Mode_V(&t);
+	return Mode_Done(&t, Mode_ScorerClear(Mode_I(&t, id)) && Split_Lang("XBox_Split_Waiting", NULL, wait) &&
+		OWN("LittleText", NULL, "isvi", (long)id, "ReadyControl", wait, 74L) && Split_Lang("XBox_Split_Back", "\x17", back) &&
+		OWN("LittleText", NULL, "isvi", (long)id, "PresToAbort", back, 124L) && OWN("BlackBack", NULL, "i", (long)id) &&
+		Split_Run(id, "keys_ready", 0));
+}
+
+/* ConfirmAbort(id, event, Execute="Split.Abort", TXT=None): yes runs Execute, no runs event (exec, txt NULL: the
+ * defaults) */
+static byte Split_ConfirmAbortC(const nativeVal_t *id, const nativeVal_t *event, const nativeVal_t *exec, const nativeVal_t *txt) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *tx[3] = { Mode_V(&t), Mode_V(&t), Mode_V(&t) };
+	int i;
+	if (!exec) {
+		exec = Mode_S(&t, "Split.Abort");
+	}
+	if (!txt || txt->type == NV_NONE) {
+		Mode_Lang("XBox_Split_Exit", tx[0]);
+	} else {
+		Native_Copy(tx[0], txt);
+	}
+	return Mode_Done(&t, Split_Id(id, &i) && Split_Run(i, "keys_confirm", 2, "exec", exec, "event", event) && Mode_ScorerClear(id) &&
+		Split_Lang("XBox_Split_Yes", "\x14", tx[1]) && Split_Lang("XBox_Split_No", "\x15", tx[2]) && Split_Texts(Mode_I(&t, i), tx, 3));
+}
+
+/* Abort(id): split screen off, back to the menu level */
+static byte Split_AbortC(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *aspect = Mode_V(&t);
+	Native_SetFloat(aspect, 1.3333);
+	return Mode_Done(&t, Mode_Import("SaveGame") && Mode_GVarSet("r_SplitScreen", Mode_I(&t, 0)) && Mode_GVarSet("SplitScreen", Mode_I(&t, 0)) &&
+		Mode_GVarSet("CameraDefViewAspect", aspect) && CALL("SaveGame", "QLoad", NULL, "s", "Levels/Menu"));
+}
+
+/* Restart(id): the same map again */
+static byte Split_RestartC(void) {
+	nativeVal_t path;
+	Native_SetNone(&path);
+	byte ok = Mode_Import("SaveGame") && Mode_Import("Init") && Mode_ModVar("Init", "Path", &path) && CALL("SaveGame", "QLoad", NULL, "v", &path);
+	Native_Free(&path);
+	return ok;
+}
+
+/* PauseGame(id): the time stops, both get the pause menu */
+static byte Split_PauseGameC(void) {
+	Mode_SetTimeSpeed(0.0);
+	Mode_SetActionSet("Inactive");
+	return Mode_GVarSetS("EscapeEvent", "") && OWN("PauseGameMenu", NULL, "i", 0L) && OWN("PauseGameMenu", NULL, "i", 1L);
+}
+
+/* PauseGameMenu(id): restart, abort or back to the round */
+static byte Split_PauseGameMenuC(const nativeVal_t *id) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *tx[3] = { Mode_V(&t), Mode_V(&t), Mode_V(&t) };
+	int i;
+	return Mode_Done(&t, Mode_DictPut("Split", "PlayersReady", &split.playersReady, id, Mode_I(&t, 0)) && Split_Id(id, &i) &&
+		Split_Run(i, "keys_pause", 0) && Mode_ScorerClear(id) && Split_Lang("XBox_Split_Restart", "\x14", tx[0]) &&
+		Split_Lang("XBox_Split_Abort", "\x17", tx[1]) && Split_Lang("XBox_Split_Return", NULL, tx[2]) && Split_Texts(Mode_I(&t, i), tx, 3));
+}
+
+/* LittleText(id, objName, Text, Pos): a centred line of a menu in the half of player id */
+static byte Split_LittleTextC(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *color = Mode_V(&t), *c[4], *y = Mode_V(&t);
+	int i;
+	if (!Mode_Import("Scorer")) {
+		return Mode_Done(&t, 0);
+	}
+	const nativeVal_t *delta = Mode_I(&t, Native_Compare(&a[0], Mode_I(&t, 0)) == 0 ? 0 : 240);
+	if (!Split_Id(&a[0], &i) || !Mode_ScorerAdd(&a[0], &a[1], "Text") || !Mode_ScorerSet(&a[0], &a[1], "Text", &a[2]) ||
+		!Mode_ModVar("Scorer", "MissionScorerText_Color", color)) {
+		return Mode_Done(&t, 0);
+	}
+	for (int k = 0; k < 4; k++) {
+		c[k] = Mode_V(&t);
+		if (!Native_Subscript(color, Mode_I(&t, k), c[k])) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	return Mode_Done(&t, Native_Arith('+', delta, &a[3], y) &&
+		Split_Run(i, "little", 6, "name", &a[1], "r", c[0], "g", c[1], "b", c[2], "a", c[3], "y", y));
+}
+
+/* BlackBack(id): the dark band behind the menu lines */
+static byte Split_BlackBackC(const nativeVal_t *id) {
+	modeVals_t t = { .n = 0 };
+	int lower = Native_Compare(id, Mode_I(&t, 0)), i;
+	return Mode_Done(&t, Split_Id(id, &i) && Split_Run(i, "black", 1, "y", Mode_I(&t, lower == 0 ? 50 : 290)));
+}
+
+/* the adapters of the module table (OBJLIB 7: arguments, results and the errors of the Python calls) */
+#define SP_FN(name, nargs, call) MODE_FN(Split, name, nargs, call)
+
+static PyObject *Split_PurgeServerMapList(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	return Mode_Result(Mode_PurgeServerMapList("Split"));
+}
+
+/* GetSpawnPos(id) and GetReSpawnPos(v): a spawn point of OutMap */
+SP_FN(GetSpawnPos, 1, Mode_Import("OutMap") && CALL("OutMap", "GetSpawnPos", out, ""))
+SP_FN(CreateUserShip, 1, Split_CreateUserShipC(&a[0]))
+SP_FN(ReSpawnShip, 1, Split_ReSpawnShipC(&a[0]))
+SP_FN(OnDeathCallback, 2, Split_OnDeathCallbackC(&a[0], &a[1]))
+SP_FN(NextShip, 1, OWN("ChangeShip", NULL, "vi", &a[0], 1L))
+SP_FN(PrevShip, 1, OWN("ChangeShip", NULL, "vi", &a[0], 0L))
+SP_FN(EndOfGame, 1, Split_EndOfGameC(&a[0]))
+SP_FN(SeleShip, 1, Split_SeleShipC(&a[0]))
+SP_FN(InitChooseScorer, 1, Split_InitChooseScorerC(&a[0]))
+SP_FN(ConfirmAbortMain, 1, OWN("ConfirmAbort", NULL, "vs", &a[0], "Split.InitChooseScorer"))
+SP_FN(ConfirmAbortPause, 1, OWN("ConfirmAbort", NULL, "vs", &a[0], "Split.PauseGameMenu"))
+SP_FN(ConfirmRestartPause, 1, Split_Lang("XBox_Split_RestartMatch", NULL, out) &&
+	OWN("ConfirmAbort", NULL, "vssv", &a[0], "Split.PauseGameMenu", "Split.Restart", out) && (Native_Free(out), 1))
+SP_FN(Abort, 1, Split_AbortC())
+SP_FN(Restart, 1, Split_RestartC())
+SP_FN(PauseGame, 1, Split_PauseGameC())
+SP_FN(PauseGameMenu, 1, Split_PauseGameMenuC(&a[0]))
+SP_FN(LittleText, 4, Split_LittleTextC(a))
+SP_FN(BlackBack, 1, Split_BlackBackC(&a[0]))
+
+/* the functions without arguments that ignore whatever they get */
+#define SP_NOARGS(name, call) \
+	static PyObject *Split_##name(PyObject *self, PyObject *args) { \
+		(void)self; \
+		(void)args; \
+		return Mode_Result(call); \
+	}
+
+SP_NOARGS(Init, Split_InitC())
+SP_NOARGS(ChooseShips, Split_ChooseShipsC())
+SP_NOARGS(ReloadNext, Split_ReloadNextC())
+SP_NOARGS(ActualizeScorer, Split_ActualizeScorerC())
+
+/* the functions of an "i" argument */
+#define SP_INT(name, call) \
+	static PyObject *Split_##name(PyObject *self, PyObject *args) { \
+		int id; \
+		(void)self; \
+		return PyArg_ParseTuple(args, "i", &id) ? Mode_Result(call) : NULL; \
+	}
+
+SP_INT(DefaultSplitScorer, Split_DefaultSplitScorerC(id))
+SP_INT(MissionScorer, Split_MissionScorerC(id))
+SP_INT(ReadyToStartScorer, Split_ReadyToStartScorerC(id))
+
+static PyObject *Split_ChangeShip(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "id", "Up", NULL };
+	PyObject *id, *up = NULL;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *a = Mode_V(&t), *u = Mode_V(&t), *out = Mode_V(&t);
+	(void)self;
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O", names, &id, &up)) {
+		return Mode_Done(&t, 0), NULL;
+	}
+	Native_Arg(id, a);
+	if (up) {
+		Native_Arg(up, u);
+	}
+	return Mode_Out(&t, Split_ChangeShipC(a, up ? u : NULL), out);
+}
+
 static PyObject *Split_StartGame(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", NULL };
 	PyObject *id = NULL;
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &id) || !Script_Import((const char *const[]){ "Menu", NULL }) ||
-		!Split_KeysOff(0) || !Split_KeysOff(1) || !Script_Try("SScorer", "Clear", "(i)", 0) || !Script_Try("SScorer", "Clear", "(i)", 1) ||
-		!Script_Try("Scrap", "Set", "(ss)", "EscapeEvent", "Split.PauseGame") || !Script_Try("SInput", "SetActionSet", "(s)", "Racer") ||
-		!Script_Try("Menu", "DrawScorer", "(is)", 0, "Racer")) {
-		return NULL;
-	}
-	PyObject *first = Script_Global("Split", "FirstTime");
-	int f = first ? Script_True(first) : -1;
-	Py_XDECREF(first);
-	if (f < 0) {
-		return NULL;
-	}
-	if (f) {
-		PyObject *mod = Script_Global("Split", "ModLib"), *v = mod ? Script_Method(mod, "Init", "()") : NULL;
-		Py_XDECREF(mod);
-		if (!v) {
-			return NULL;
-		}
-		Py_DECREF(v);
-		PyObject *msg = Script_SetGlobal("Split", "FirstTime", PyInt_FromLong(0)) ? PyString_FromString("Cu\xf1" "aaaao") : NULL;
-		byte ok = msg && Script_Print(&msg, 1);
-		Py_XDECREF(msg);
-		if (!ok) {
-			return NULL;
-		}
-	}
-	if (!Script_Try("Scrap", "SetTimeSpeed", "(i)", 1)) {
-		return NULL;
-	}
-	for (int i = 0; i < 2; i++) {
-		if (!Split_Do("Split", "MissionScorer", Py_BuildValue("(i)", i)) || !Split_Do("Split", "DefaultSplitScorer", Py_BuildValue("(i)", i))) {
-			return NULL;
-		}
-	}
-	return Py_ReturnNone();
+	return PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &id) ? Mode_Result(Split_StartGameC()) : NULL;
 }
 
-/* DefaultSplitScorer(id): the line between the halves */
-static PyObject *Split_DefaultSplitScorer(PyObject *self, PyObject *args) {
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id)) {
-		return NULL;
-	}
-	PyObject *name = Split_Name("SplitSeparator", id);
-	byte ok = name && Split_Run(id, "separator", Py_BuildValue("{s:O,s:i}", "name", name, "y", 239 + id));
-	Py_XDECREF(name);
-	return ok ? Py_ReturnNone() : NULL;
-}
-
-/* the menu texts of player id from row 70, 22 apart (textorl0..2), then the black band */
-static byte Split_Texts(int id, PyObject *const *texts, int n) {
-	for (int i = 0; i < n; i++) {
-		PyObject *obj = Split_Name("textorl", i);
-		byte ok = obj && Split_Do("Split", "LittleText", Py_BuildValue("(iOOi)", id, obj, texts[i], 70 + i * 22));
-		Py_XDECREF(obj);
-		if (!ok) {
-			return 0;
-		}
-	}
-	return Split_Do("Split", "BlackBack", Py_BuildValue("(i)", id));
-}
-
-/* EndOfGame(id): player id won; the result for both, the next map 5 s later */
-static PyObject *Split_EndOfGame(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id) || !Script_Try("SInput", "SetActionSet", "(s)", "Inactive") ||
-		!Script_Try("Scrap", "Set", "(ss)", "EscapeEvent", "")) {
-		return NULL;
-	}
-	int second = Script_NumCmp(id, 1);
-	if (second == -2) {
-		return NULL;
-	}
-	const char *results[2] = { "XBox_Split_You_Win", "XBox_Split_You_Loose" };
-	if (second == 0) {
-		results[0] = "XBox_Split_You_Loose";
-		results[1] = "XBox_Split_You_Win";
-	}
-	for (int i = 0; i < 2; i++) {
-		PyObject *obj = K(Split_Name("Pl", i)), *text = obj && Script_Try("SScorer", "Clear", "(i)", i) ? K(Split_Lang(results[i], NULL)) : NULL;
-		if (!text || !Split_Do("Split", "LittleText", Py_BuildValue("(iOOi)", i, obj, text, 100)) ||
-			!Split_Do("Split", "BlackBack", Py_BuildValue("(i)", i)) || !Split_KeysOff(i)) {
-			FAIL();
-		}
-	}
-	return Script_Done(&r, Script_LaterIn(5.0, "Split", "ReloadNext", PyTuple_New(0), NULL) ? Py_ReturnNone() : NULL);
-}
-
-/* ReloadNext(): the next map of the server list (or the same) */
-static PyObject *Split_ReloadNext(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	if (!Script_Import((const char *const[]){ "Init", "SaveGame", NULL }) || !Split_Do("Split", "PurgeServerMapList", PyTuple_New(0))) {
-		return NULL;
-	}
-	PyObject *text = K(Script_Ask("Scrap", "Get", "(s)", "ServerMapList")), *maps = text ? K(Script_EvalIn("Split", text)) : NULL;
-	int any = maps ? Script_True(maps) : -1;
-	int n = any > 0 ? PyObject_Length(maps) : 0;
-	PyObject *path = any >= 0 && n >= 0 ? K(Script_Attr("Init", "Path")) : NULL, *next = NULL;
-	if (!path) {
-		FAIL();
-	}
-	if (!any || n == 0) {
-		next = path;
-	} else {
-		PyObject *here = K(PySequence_GetSlice(path, 7, 0x7fffffff)), *map = NULL;
-		int in = here ? PySequence_Contains(maps, here) : -1;
-		if (in > 0) {
-			PyObject *at = K(Script_Method(maps, "index", "(O)", here)), *one = at ? K(PyInt_FromLong(1)) : NULL, *nx = one ? K(PyNumber_Add(at, one)) : NULL;
-			PyObject *len = nx ? K(PyInt_FromLong(n)) : NULL, *k = len ? K(PyNumber_Remainder(nx, len)) : NULL;
-			map = k ? K(PyObject_GetItem(maps, k)) : NULL;
-		} else if (in == 0) {
-			map = K(Script_Index(maps, 0));
-		}
-		next = map ? K(Script_SPlus("Levels/", map)) : NULL;
-	}
-	return Script_Done(&r, next && Script_Try("SaveGame", "QLoad", "(O)", next) ? Py_ReturnNone() : NULL);
-}
-
-/* ActualizeScorer(): a player at FragLimit wins, else the scores are shown */
-static PyObject *Split_ActualizeScorer(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	for (int i = 0; i < 2; i++) {
-		PyObject *sc = K(Script_Global("Split", "Scorer")), *v = sc ? K(Script_Index(sc, i)) : NULL;
-		PyObject *limit = v ? K(Script_Ask("Scrap", "Get", "(s)", "FragLimit")) : NULL;
-		int c = limit ? PyObject_Compare(v, limit) : 0;
-		if (!limit || PyErr_Occurred()) {
-			FAIL();
-		}
-		if (c >= 0) {
-			return Script_Done(&r, Split_Do("Split", "EndOfGame", Py_BuildValue("(i)", i)) ? Py_ReturnNone() : NULL);
-		}
-	}
-	for (int i = 0; i < 2; i++) {
-		PyObject *sc = K(Script_Global("Split", "Scorer")), *v = sc ? K(Script_Index(sc, i)) : NULL, *rep = v ? K(Script_Repr(v)) : NULL;
-		if (!rep || !Script_Try("SScorer", "Set", "(issO)", i, "MissionBest", "Text", rep)) {
-			FAIL();
-		}
-	}
-	return Script_Done(&r, Py_ReturnNone());
-}
-
-/* MissionScorer(id): the score, the limit and the tab of player id, then ActualizeScorer */
-static PyObject *Split_MissionScorer(PyObject *self, PyObject *args) {
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id) || !Script_Import((const char *const[]){ "Scorer", "Menu", NULL })) {
-		return NULL;
-	}
-	PyObject *limit = Script_Ask("Scrap", "Get", "(s)", "FragLimit"), *rep = limit ? Script_Repr(limit) : NULL;
-	byte ok = rep && Split_Run(id, "mission", Py_BuildValue("{s:i,s:O}", "y", 190 + 240 * id, "limit", rep)) &&
-		Split_Do("Split", "ActualizeScorer", PyTuple_New(0));
-	Py_XDECREF(rep);
-	Py_XDECREF(limit);
-	return ok ? Py_ReturnNone() : NULL;
-}
-
-/* SeleShip(id): player id is ready; the round starts when both are */
-static PyObject *Split_SeleShip(PyObject *self, PyObject *args) {
-	PyObject *id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id)) {
-		return NULL;
-	}
-	PyObject *list = Script_Global("Split", "PlayersReady"), *one = list ? PyInt_FromLong(1) : NULL;
-	int bad = !one || PyObject_SetItem(list, id, one) < 0;
-	int both = 1;
-	for (int i = 0; !bad && i < 2 && both; i++) {
-		PyObject *v = Script_Index(list, i);
-		int c = v ? Script_NumCmp(v, 1) : -2;
-		Py_XDECREF(v);
-		bad = c == -2;
-		both = c == 0;
-	}
-	Py_XDECREF(one);
-	Py_XDECREF(list);
-	if (bad) {
-		return NULL;
-	}
-	byte ok = both ? Split_Do("Split", "StartGame", PyTuple_New(0)) : Split_Do("Split", "ReadyToStartScorer", Py_BuildValue("(O)", id));
-	return ok ? Py_ReturnNone() : NULL;
-}
-
-/* PlayersReady[id] = 0 */
-static byte Split_NotReady(PyObject *id) {
-	PyObject *list = Script_Global("Split", "PlayersReady"), *zero = list ? PyInt_FromLong(0) : NULL;
-	int bad = !zero || PyObject_SetItem(list, id, zero) < 0;
-	Py_XDECREF(zero);
-	Py_XDECREF(list);
-	return !bad;
-}
-
-/* InitChooseScorer(id): the ship choice of player id */
-static PyObject *Split_InitChooseScorer(PyObject *self, PyObject *args) {
-	PyObject *id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id) || !Split_NotReady(id)) {
-		return NULL;
-	}
-	long i = PyInt_AsLong(id);
-	if (PyErr_Occurred() || !Split_Run((int)i, "keys_choose", NULL) || !Script_Try("SScorer", "Clear", "(O)", id)) {
-		return NULL;
-	}
-	PyObject *t[3];
-	t[0] = Split_Lang("XBox_Split_SelectShip", NULL);
-	t[1] = t[0] ? Split_Lang("XBox_Split_Start", "\x14") : NULL;
-	t[2] = t[1] ? Split_Lang("XBox_Split_Abort", "\x17") : NULL;
-	byte ok = t[2] && Split_Texts((int)i, t, 3);
-	Py_XDECREF(t[0]);
-	Py_XDECREF(t[1]);
-	Py_XDECREF(t[2]);
-	return ok ? Py_ReturnNone() : NULL;
-}
-
-/* ReadyToStartScorer(id): player id waits for the other */
-static PyObject *Split_ReadyToStartScorer(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	int id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "i", &id) || !Script_Try("SScorer", "Clear", "(i)", id)) {
-		return NULL;
-	}
-	PyObject *wait = K(Split_Lang("XBox_Split_Waiting", NULL));
-	if (!wait || !Split_Do("Split", "LittleText", Py_BuildValue("(isOi)", id, "ReadyControl", wait, 74))) {
-		FAIL();
-	}
-	PyObject *back = K(Split_Lang("XBox_Split_Back", "\x17"));
-	byte ok = back && Split_Do("Split", "LittleText", Py_BuildValue("(isOi)", id, "PresToAbort", back, 124)) &&
-		Split_Do("Split", "BlackBack", Py_BuildValue("(i)", id)) && Split_Run(id, "keys_ready", NULL);
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
-}
-
-/* ConfirmAbortMain(id), ConfirmAbortPause(id), ConfirmRestartPause(id): the questions of the menus */
-static PyObject *Split_ConfirmAbortMain(PyObject *self, PyObject *args) {
-	PyObject *id;
-	(void)self;
-	return PyArg_ParseTuple(args, "O", &id) &&
-		Split_Do("Split", "ConfirmAbort", Py_BuildValue("(Os)", id, "Split.InitChooseScorer")) ? Py_ReturnNone() : NULL;
-}
-
-static PyObject *Split_ConfirmAbortPause(PyObject *self, PyObject *args) {
-	PyObject *id;
-	(void)self;
-	return PyArg_ParseTuple(args, "O", &id) &&
-		Split_Do("Split", "ConfirmAbort", Py_BuildValue("(Os)", id, "Split.PauseGameMenu")) ? Py_ReturnNone() : NULL;
-}
-
-static PyObject *Split_ConfirmRestartPause(PyObject *self, PyObject *args) {
-	PyObject *id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id)) {
-		return NULL;
-	}
-	PyObject *text = Split_Lang("XBox_Split_RestartMatch", NULL);
-	byte ok = text && Split_Do("Split", "ConfirmAbort", Py_BuildValue("(OssO)", id, "Split.PauseGameMenu", "Split.Restart", text));
-	Py_XDECREF(text);
-	return ok ? Py_ReturnNone() : NULL;
-}
-
-/* ConfirmAbort(id, event, Execute="Split.Abort", TXT=None): yes runs Execute, no runs event */
 static PyObject *Split_ConfirmAbort(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", "event", "Execute", "TXT", NULL };
-	scriptRefs_t r = { .n = 0 };
 	PyObject *id, *event, *exec = NULL, *txt = NULL;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *a = Mode_V(&t), *e = Mode_V(&t), *x = Mode_V(&t), *tx = Mode_V(&t), *out = Mode_V(&t);
 	(void)self;
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|OO", names, &id, &event, &exec, &txt)) {
-		return NULL;
+		return Mode_Done(&t, 0), NULL;
 	}
-	if (!exec) {
-		exec = K(PyString_FromString("Split.Abort"));
+	Native_Arg(id, a);
+	Native_Arg(event, e);
+	if (exec) {
+		Native_Arg(exec, x);
 	}
-	int none = txt ? Script_Eq(txt, Py_None) : 1;
-	if (none < 0) {
-		FAIL();
+	if (txt) {
+		Native_Arg(txt, tx);
 	}
-	if (none) {
-		txt = K(Split_Lang("XBox_Split_Exit", NULL));
-	}
-	long i = txt ? PyInt_AsLong(id) : 0;
-	if (!txt || PyErr_Occurred() || !Split_Run((int)i, "keys_confirm", Py_BuildValue("{s:O,s:O}", "exec", exec, "event", event)) ||
-		!Script_Try("SScorer", "Clear", "(O)", id)) {
-		FAIL();
-	}
-	PyObject *t[3] = { txt, K(Split_Lang("XBox_Split_Yes", "\x14")), NULL };
-	t[2] = t[1] ? K(Split_Lang("XBox_Split_No", "\x15")) : NULL;
-	return Script_Done(&r, t[2] && Split_Texts((int)i, t, 3) ? Py_ReturnNone() : NULL);
+	return Mode_Out(&t, Split_ConfirmAbortC(a, e, exec ? x : NULL, txt ? tx : NULL), out);
 }
 
-/* Abort(id): split screen off, back to the menu level */
-static PyObject *Split_Abort(PyObject *self, PyObject *args) {
-	PyObject *id;
-	(void)self;
-	return PyArg_ParseTuple(args, "O", &id) && Script_Import((const char *const[]){ "SaveGame", NULL }) &&
-		Script_Try("Scrap", "Set", "(si)", "r_SplitScreen", 0) && Script_Try("Scrap", "Set", "(si)", "SplitScreen", 0) &&
-		Script_Try("Scrap", "Set", "(sd)", "CameraDefViewAspect", 1.3333) &&
-		Script_Try("SaveGame", "QLoad", "(s)", "Levels/Menu") ? Py_ReturnNone() : NULL;
-}
-
-/* Restart(id): the same map again */
-static PyObject *Split_Restart(PyObject *self, PyObject *args) {
-	PyObject *id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id) || !Script_Import((const char *const[]){ "SaveGame", "Init", NULL })) {
-		return NULL;
-	}
-	PyObject *path = Script_Attr("Init", "Path");
-	byte ok = path && Script_Try("SaveGame", "QLoad", "(O)", path);
-	Py_XDECREF(path);
-	return ok ? Py_ReturnNone() : NULL;
-}
-
-/* PauseGame(id): the time stops, both get the pause menu */
-static PyObject *Split_PauseGame(PyObject *self, PyObject *args) {
-	PyObject *id;
-	(void)self;
-	return PyArg_ParseTuple(args, "O", &id) && Script_Try("Scrap", "SetTimeSpeed", "(i)", 0) &&
-		Script_Try("SInput", "SetActionSet", "(s)", "Inactive") && Script_Try("Scrap", "Set", "(ss)", "EscapeEvent", "") &&
-		Split_Do("Split", "PauseGameMenu", Py_BuildValue("(i)", 0)) &&
-		Split_Do("Split", "PauseGameMenu", Py_BuildValue("(i)", 1)) ? Py_ReturnNone() : NULL;
-}
-
-/* PauseGameMenu(id): restart, abort or back to the round */
-static PyObject *Split_PauseGameMenu(PyObject *self, PyObject *args) {
-	PyObject *id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id) || !Split_NotReady(id)) {
-		return NULL;
-	}
-	long i = PyInt_AsLong(id);
-	if (PyErr_Occurred() || !Split_Run((int)i, "keys_pause", NULL) || !Script_Try("SScorer", "Clear", "(O)", id)) {
-		return NULL;
-	}
-	PyObject *t[3];
-	t[0] = Split_Lang("XBox_Split_Restart", "\x14");
-	t[1] = t[0] ? Split_Lang("XBox_Split_Abort", "\x17") : NULL;
-	t[2] = t[1] ? Split_Lang("XBox_Split_Return", NULL) : NULL;
-	byte ok = t[2] && Split_Texts((int)i, t, 3);
-	Py_XDECREF(t[0]);
-	Py_XDECREF(t[1]);
-	Py_XDECREF(t[2]);
-	return ok ? Py_ReturnNone() : NULL;
-}
-
-/* LittleText(id, objName, Text, Pos): a centred line of a menu in the half of player id */
-static PyObject *Split_LittleText(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *id, *name, *text, *pos;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &id, &name, &text, &pos) || !Script_Import((const char *const[]){ "Scorer", NULL })) {
-		return NULL;
-	}
-	int lower = Script_NumCmp(id, 0);
-	PyObject *delta = lower == -2 ? NULL : K(PyInt_FromLong(lower == 0 ? 0 : 240));
-	long i = delta ? PyInt_AsLong(id) : 0;
-	if (!delta || PyErr_Occurred() || !Script_Try("SScorer", "Add", "(OOs)", id, name, "Text") ||
-		!Script_Try("SScorer", "Set", "(OOsO)", id, name, "Text", text)) {
-		FAIL();
-	}
-	PyObject *color = K(Script_Attr("Scorer", "MissionScorerText_Color")), *c[4] = { NULL };
-	for (int k = 0; color && k < 4; k++) {
-		if (!(c[k] = K(Script_Index(color, k)))) {
-			FAIL();
-		}
-	}
-	PyObject *y = c[3] ? K(PyNumber_Add(delta, pos)) : NULL;
-	byte ok = y && Split_Run((int)i, "little", Py_BuildValue("{s:O,s:O,s:O,s:O,s:O,s:O}", "name", name, "r", c[0], "g", c[1], "b", c[2],
-		"a", c[3], "y", y));
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
-}
-
-/* BlackBack(id): the dark band behind the menu lines */
-static PyObject *Split_BlackBack(PyObject *self, PyObject *args) {
-	PyObject *id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id)) {
-		return NULL;
-	}
-	int lower = Script_NumCmp(id, 0);
-	long i = lower == -2 ? 0 : PyInt_AsLong(id);
-	if (lower == -2 || PyErr_Occurred()) {
-		return NULL;
-	}
-	return Split_Run((int)i, "black", Py_BuildValue("{s:i}", "y", lower == 0 ? 50 : 290)) ? Py_ReturnNone() : NULL;
-}
+#define KW(fn) (PyCFunction)(void (*)(void))fn, 3
 
 PyMethodDef g_SplitMethods[] = {
 	{ "PurgeServerMapList", Split_PurgeServerMapList, 1, NULL },
@@ -751,10 +710,10 @@ PyMethodDef g_SplitMethods[] = {
 	{ "ReSpawnShip", Split_ReSpawnShip, 1, NULL },
 	{ "OnDeathCallback", Split_OnDeathCallback, 1, NULL },
 	{ "ChooseShips", Split_ChooseShips, 1, NULL },
-	{ "ChangeShip", (PyCFunction)(void (*)(void))Split_ChangeShip, 3, NULL },
+	{ "ChangeShip", KW(Split_ChangeShip), NULL },
 	{ "NextShip", Split_NextShip, 1, NULL },
 	{ "PrevShip", Split_PrevShip, 1, NULL },
-	{ "StartGame", (PyCFunction)(void (*)(void))Split_StartGame, 3, NULL },
+	{ "StartGame", KW(Split_StartGame), NULL },
 	{ "DefaultSplitScorer", Split_DefaultSplitScorer, 1, NULL },
 	{ "EndOfGame", Split_EndOfGame, 1, NULL },
 	{ "ReloadNext", Split_ReloadNext, 1, NULL },
@@ -766,7 +725,7 @@ PyMethodDef g_SplitMethods[] = {
 	{ "ConfirmAbortMain", Split_ConfirmAbortMain, 1, NULL },
 	{ "ConfirmAbortPause", Split_ConfirmAbortPause, 1, NULL },
 	{ "ConfirmRestartPause", Split_ConfirmRestartPause, 1, NULL },
-	{ "ConfirmAbort", (PyCFunction)(void (*)(void))Split_ConfirmAbort, 3, NULL },
+	{ "ConfirmAbort", KW(Split_ConfirmAbort), NULL },
 	{ "Abort", Split_Abort, 1, NULL },
 	{ "Restart", Split_Restart, 1, NULL },
 	{ "PauseGame", Split_PauseGame, 1, NULL },
@@ -778,22 +737,20 @@ PyMethodDef g_SplitMethods[] = {
 
 /* ---- the modes: SDeathMatch, SFlagHunt, SPostman, SRace ---- */
 
-/* `global pl0, pl1; pl0 = Scrap.GetEntity("Player0"); pl1 = ...` and the TgType of both */
-static byte Mode_Players(const char *mod, const char *tg) {
-	PyObject *p0 = Script_Ask("Scrap", "GetEntity", "(s)", "Player0");
-	if (!p0 || !Script_SetGlobal(mod, "pl0", p0)) {
+/* `global pl0, pl1; pl0 = Scrap.GetEntity("Player0"); pl1 = ...` and the TgType of both (OBJLIB 7: the handles stay
+ * in the module) */
+static byte Sm_Players(const char *mod, const char *tg) {
+	cEntity *e0 = World_FindEntity("Player0");
+	if (!Script_SetGlobal(mod, "pl0", Mode_Handle(e0))) {
 		return 0;
 	}
-	PyObject *p1 = Script_Ask("Scrap", "GetEntity", "(s)", "Player1");
-	if (!p1 || !Script_SetGlobal(mod, "pl1", p1)) {
-		return 0;
-	}
-	return Script_HSet(p0, "TgType", PyString_FromString((char *)tg)) && Script_HSet(p1, "TgType", PyString_FromString((char *)tg));
+	cEntity *e1 = World_FindEntity("Player1");
+	return Script_SetGlobal(mod, "pl1", Mode_Handle(e1)) && Mode_SetS(e0, "Player0", "TgType", tg) && Mode_SetS(e1, "Player1", "TgType", tg);
 }
 
 /* import Split; Split.OnDeathFunc = OnDeathFunc (the mode's) */
-static byte Mode_OnDeath(const char *mod) {
-	PyObject *f = Script_Import((const char *const[]){ "Split", NULL }) ? Script_Global(mod, "OnDeathFunc") : NULL;
+static byte Sm_OnDeath(const char *mod) {
+	PyObject *f = Mode_Import("Split") ? Mode_GlobalPy(mod, "OnDeathFunc") : NULL;
 	if (!f) {
 		return 0;
 	}
@@ -801,139 +758,149 @@ static byte Mode_OnDeath(const char *mod) {
 	return 1;
 }
 
-/* pl<i>.var = v of the mode (v given away) */
-static byte Mode_SetPl(const char *mod, int i, const char *var, PyObject *v) {
-	PyObject *pl = Script_Global(mod, i ? "pl1" : "pl0");
-	byte ok = pl && Script_HSet(pl, var, v);
-	if (!pl) {
-		Py_XDECREF(v);
-	}
+/* pl<i>.var = v of the mode */
+static byte Sm_SetPl(const char *mod, int i, const char *var, const nativeVal_t *v) {
+	PyObject *pl = Mode_GlobalPy(mod, i ? "pl1" : "pl0");
+	byte ok = pl && Mode_HSet(pl, var, v);
 	Py_XDECREF(pl);
 	return ok;
 }
 
 /* the score of the player called name (Player0, Player1) changes by d: 1, 0 for another name, -1 error */
-static int Mode_Score(PyObject *name, long d) {
-	int i = Script_Is(name, "Player1") ? 1 : Script_Is(name, "Player0") ? 0 : -1;
+static int Sm_Score(const nativeVal_t *name, long d) {
+	int i = Native_IsStr(name, "Player1") ? 1 : Native_IsStr(name, "Player0") ? 0 : -1;
 	if (i < 0) {
 		return 0;
 	}
-	PyObject *idx = PyInt_FromLong(i);
-	byte ok = idx && Split_Add("Split", "Scorer", idx, d);
-	Py_XDECREF(idx);
-	return ok ? 1 : -1;
+	nativeVal_t idx;
+	Native_SetInt(&idx, i);
+	return Split_Add("Scorer", &split.scorer, &idx, d) ? 1 : -1;
 }
 
-/* `global ZoneList; ZoneList = []` and the positions of the dummies of pattern */
-static byte Mode_Browse(const char *mod, const char *pattern) {
-	PyObject *zones = PyList_New(0);
-	if (!zones || !Script_SetGlobal(mod, "ZoneList", zones) || !Script_Try("Scrap", "StartDummySearch", "(si)", pattern, 1)) {
-		return 0;
+/* `global ZoneList; ZoneList = []` and the positions of the dummies of pattern (appended to the list in place) */
+static byte Sm_Browse(const char *mod, const char *pattern) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *empty = Mode_V(&t), *d = Mode_V(&t), *pos = Mode_V(&t);
+	Native_SetEmpty(empty, NV_LIST);
+	if (!Mode_Put(mod, "ZoneList", &split.zoneList, empty)) {
+		return Mode_Done(&t, 0);
 	}
+	Mode_DummyStart(pattern, 1);
 	for (;;) {
-		PyObject *d = Script_Ask("Scrap", "NextDummySearch", "()");
-		int more = d ? Script_True(d) : -1;
-		PyObject *list = more > 0 ? Script_Global(mod, "ZoneList") : NULL, *pos = list ? Script_Index(d, 1) : NULL;
-		int bad = more < 0 || (more > 0 && (!pos || PyList_Append(list, pos) < 0));
-		Py_XDECREF(pos);
-		Py_XDECREF(list);
-		Py_XDECREF(d);
-		if (bad || !more) {
-			return !bad;
+		Native_Free(d);
+		Native_Free(pos);
+		Mode_DummyNext(d);
+		if (!Native_True(d)) {
+			return Mode_Done(&t, 1);
+		}
+		if (!Native_Subscript(d, Mode_I(&t, 1), pos) || !Mode_Append(mod, "ZoneList", pos)) {
+			return Mode_Done(&t, 0);
 		}
 	}
 }
 
 /* GetRndFlag() of SFlagHunt and SPostman: a random zone, the next one when it is the current */
-static PyObject *Mode_RndFlag(const char *mod) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *zones = K(Script_Global(mod, "ZoneList"));
-	int n = zones ? PyObject_Length(zones) : -1;
+static byte Sm_RndFlag(const char *mod) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *niu = Mode_V(&t), *s = Mode_V(&t), *len = Mode_V(&t), *v = Mode_V(&t);
+	if (!Mode_Read(mod, "ZoneList", &split.zoneList)) {
+		return Mode_Done(&t, 0);
+	}
+	int n = Native_Size(&split.zoneList);
 	if (n < 0) {
-		FAIL();
+		return Mode_Done(&t, 0);
 	}
-	PyObject *niu = K(PyInt_FromLong((long)Scrap_RandRange(0, n))), *ac = niu ? K(Script_Global(mod, "AcFlag")) : NULL;
-	int same = ac ? Script_Eq(niu, ac) : -1;
-	if (same < 0) {
-		FAIL();
+	/* the engine's Rand in C, as before */
+	Native_SetInt(niu, (long)Scrap_RandRange(0, n));
+	if (!Mode_Read(mod, "AcFlag", &split.acFlag)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *v = NULL;
-	if (!same) {
-		v = Script_Ref(niu);
-	} else {
-		PyObject *one = K(PyInt_FromLong(1)), *s = K(PyNumber_Add(ac, one)), *len = s ? K(PyInt_FromLong(n)) : NULL;
-		v = len ? PyNumber_Remainder(s, len) : NULL;
+	if (Native_Compare(niu, &split.acFlag)) {
+		return Mode_Done(&t, Mode_Put(mod, "AcFlag", &split.acFlag, niu));
 	}
-	return Script_Done(&r, v && Script_SetGlobal(mod, "AcFlag", v) ? Py_ReturnNone() : NULL);
+	Native_SetInt(len, n);
+	return Mode_Done(&t, Native_Arith('+', &split.acFlag, Mode_I(&t, 1), s) && Native_Arith('%', s, len, v) &&
+		Mode_Put(mod, "AcFlag", &split.acFlag, v));
 }
 
-/* Flag.var = v of the mode (v given away) */
-static byte Mode_FlagSet(const char *mod, const char *var, PyObject *v) {
-	PyObject *flag = Script_Global(mod, "Flag");
-	byte ok = flag && Script_HSet(flag, var, v);
-	if (!flag) {
-		Py_XDECREF(v);
-	}
+/* Flag.var = v of the mode */
+static byte Sm_FlagSet(const char *mod, const char *var, const nativeVal_t *v) {
+	PyObject *flag = Mode_GlobalPy(mod, "Flag");
+	byte ok = flag && Mode_HSet(flag, var, v);
 	Py_XDECREF(flag);
 	return ok;
 }
 
-/* Flag.method(arg) of the mode */
-static byte Mode_FlagCall(const char *mod, const char *method, PyObject *arg) {
-	PyObject *flag = Script_Global(mod, "Flag"), *v = flag && arg ? Script_Method(flag, method, "(O)", arg) : NULL;
-	Py_XDECREF(v);
+/* Flag.SetModel(file) of the mode */
+static byte Sm_FlagModel(const char *mod, const nativeVal_t *file) {
+	PyObject *flag = Mode_GlobalPy(mod, "Flag");
+	byte ok = flag && Mode_HModel(flag, file);
 	Py_XDECREF(flag);
-	return v != NULL;
+	return ok;
 }
 
-/* ZoneList[AcFlag] of the mode (a new reference) */
-static PyObject *Mode_Zone(const char *mod) {
-	PyObject *zones = Script_Global(mod, "ZoneList"), *ac = zones ? Script_Global(mod, "AcFlag") : NULL;
-	PyObject *z = ac ? PyObject_GetItem(zones, ac) : NULL;
-	Py_XDECREF(ac);
-	Py_XDECREF(zones);
-	return z;
+/* Flag.Pos = ZoneList[AcFlag] of the mode */
+static byte Sm_FlagToZone(const char *mod) {
+	nativeVal_t z;
+	Native_SetNone(&z);
+	byte ok = Mode_Read(mod, "ZoneList", &split.zoneList) && Mode_Read(mod, "AcFlag", &split.acFlag) &&
+		Native_Subscript(&split.zoneList, &split.acFlag, &z) && Sm_FlagSet(mod, "Pos", &z);
+	Native_Free(&z);
+	return ok;
+}
+
+/* Flag.Pos = <global> of the mode */
+static byte Sm_FlagToGlobal(const char *mod, const char *name) {
+	nativeVal_t v;
+	byte ok = Mode_G(mod, name, &v) && Sm_FlagSet(mod, "Pos", &v);
+	Native_Free(&v);
+	return ok;
 }
 
 /* Scrap.Set(var, Flag.Name) */
-static byte Mode_WayToFlag(const char *mod, const char *var) {
-	PyObject *flag = Script_Global(mod, "Flag"), *name = flag ? Script_GetAttr(flag, "Name") : NULL;
-	byte ok = name && Script_Try("Scrap", "Set", "(sO)", var, name);
-	Py_XDECREF(name);
+static byte Sm_WayToFlag(const char *mod, const char *var) {
+	nativeVal_t name;
+	Native_SetNone(&name);
+	PyObject *flag = Mode_GlobalPy(mod, "Flag");
+	byte ok = flag && Mode_HGet(flag, "Name", &name) && Mode_GVarSet(var, &name);
 	Py_XDECREF(flag);
+	Native_Free(&name);
 	return ok;
 }
 
 /* `global Flag; Flag = Scrap.CreateEntity("FlagToBeHunted", 0, 0, 0, "Item")` with the model of the module variable
  * model and the radius */
-static byte Mode_NewFlag(const char *mod, const char *model, long radius) {
-	PyObject *flag = Script_Ask("Scrap", "CreateEntity", "(siiis)", "FlagToBeHunted", 0, 0, 0, "Item");
-	if (!flag || !Script_SetGlobal(mod, "Flag", flag)) {
-		return 0;
+static byte Sm_NewFlag(const char *mod, const char *model, long radius) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *file = Mode_V(&t);
+	cEntity *e;
+	if (!Mode_Create(Mode_S(&t, "FlagToBeHunted"), Mode_I(&t, 0), Mode_I(&t, 0), Mode_I(&t, 0), "Item", &e) ||
+		!Script_SetGlobal(mod, "Flag", Mode_Handle(e))) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *file = Script_Global(mod, model);
-	byte ok = file && Mode_FlagCall(mod, "SetModel", file) && Mode_FlagSet(mod, "Radius", PyInt_FromLong(radius)) &&
-		Mode_FlagSet(mod, "RadarShow", PyInt_FromLong(1));
-	Py_XDECREF(file);
-	return ok;
+	return Mode_Done(&t, Mode_G(mod, model, file) && Sm_FlagModel(mod, file) && Sm_FlagSet(mod, "Radius", Mode_I(&t, radius)) &&
+		Sm_FlagSet(mod, "RadarShow", Mode_I(&t, 1)));
 }
 
-/* SSound.Play(Sound.WaySound, Sound.WayVolume) */
-static byte Mode_WaySound(void) {
-	PyObject *s = Script_Attr("Sound", "WaySound"), *v = s ? Script_Attr("Sound", "WayVolume") : NULL;
-	byte ok = v && Script_Try("SSound", "Play", "(OO)", s, v);
-	Py_XDECREF(v);
-	Py_XDECREF(s);
-	return ok;
+/* Split.ActualizeScorer() */
+static byte Sm_Actualize(void) {
+	return CALL("Split", "ActualizeScorer", NULL, "");
 }
 
-static PyObject *Mode_Pass(PyObject *self, PyObject *args) {
+#define SM_NOARGS(pre, name, call) \
+	static PyObject *pre##_##name(PyObject *self, PyObject *args) { \
+		(void)self; \
+		(void)args; \
+		return Mode_Result(call); \
+	}
+
+static PyObject *Sm_Pass(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
 	return Py_ReturnNone();
 }
 
-static PyObject *Mode_Pass2(PyObject *self, PyObject *args) {
+static PyObject *Sm_Pass2(PyObject *self, PyObject *args) {
 	PyObject *a, *b;
 	(void)self;
 	return PyArg_ParseTuple(args, "OO", &a, &b) ? Py_ReturnNone() : NULL;
@@ -941,27 +908,26 @@ static PyObject *Mode_Pass2(PyObject *self, PyObject *args) {
 
 /* ---- SDeathMatch ---- */
 
-static PyObject *SDeathMatch_Init(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_Players("SDeathMatch", "Killer") && Mode_SetPl("SDeathMatch", 0, "Target", PyString_FromString("Player1")) &&
-		Mode_SetPl("SDeathMatch", 1, "Target", PyString_FromString("Player0")) && Mode_OnDeath("SDeathMatch") ? Py_ReturnNone() : NULL;
+static byte SDeathMatch_InitC(void) {
+	modeVals_t t = { .n = 0 };
+	return Mode_Done(&t, Sm_Players("SDeathMatch", "Killer") && Sm_SetPl("SDeathMatch", 0, "Target", Mode_S(&t, "Player1")) &&
+		Sm_SetPl("SDeathMatch", 1, "Target", Mode_S(&t, "Player0")) && Sm_OnDeath("SDeathMatch"));
 }
 
 /* OnDeathFunc(LooserName, WinnerName): the killer scores, a suicide costs a point */
-static PyObject *SDeathMatch_OnDeathFunc(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &looser, &winner) || !Script_Import((const char *const[]){ "Split", NULL })) {
-		return NULL;
+static byte SDeathMatch_OnDeathFuncC(const nativeVal_t *looser, const nativeVal_t *winner) {
+	if (!Mode_Import("Split")) {
+		return 0;
 	}
-	int self_ = Script_Is(winner, "") ? 1 : Script_Eq(winner, looser);
-	int s = self_ < 0 ? -1 : self_ ? Mode_Score(looser, -1) : Mode_Score(winner, 1);
-	return s >= 0 && Script_Try("Split", "ActualizeScorer", "()") ? Py_ReturnNone() : NULL;
+	int self = Native_IsStr(winner, "") || !Native_Compare(winner, looser);
+	return (self ? Sm_Score(looser, -1) : Sm_Score(winner, 1)) >= 0 && Sm_Actualize();
 }
 
+SM_NOARGS(SDeathMatch, Init, SDeathMatch_InitC())
+MODE_FN(SDeathMatch, OnDeathFunc, 2, SDeathMatch_OnDeathFuncC(&a[0], &a[1]))
+
 PyMethodDef g_SDeathMatchMethods[] = {
-	{ "InitStatus", Mode_Pass, 1, NULL },
+	{ "InitStatus", Sm_Pass, 1, NULL },
 	{ "Init", SDeathMatch_Init, 1, NULL },
 	{ "OnDeathFunc", SDeathMatch_OnDeathFunc, 1, NULL },
 	{ NULL, NULL, 0, NULL },
@@ -969,61 +935,31 @@ PyMethodDef g_SDeathMatchMethods[] = {
 
 /* ---- SFlagHunt ---- */
 
-static PyObject *SFlagHunt_BrowseAreas(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_Browse("SFlagHunt", "DM_Multiplayer_Flag_*") ? Py_ReturnNone() : NULL;
-}
-
-static PyObject *SFlagHunt_GetRndFlag(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_RndFlag("SFlagHunt");
-}
-
 /* TakeFlag(ItemName, VehicleName): a player scores, the flag goes to another zone */
-static PyObject *SFlagHunt_TakeFlag(PyObject *self, PyObject *args) {
-	PyObject *item, *vehicle;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &item, &vehicle) || !Script_Import((const char *const[]){ "Split", "Sound", NULL })) {
-		return NULL;
+static byte SFlagHunt_TakeFlagC(const nativeVal_t *vehicle) {
+	if (!Mode_Import("Split") || !Mode_Import("Sound")) {
+		return 0;
 	}
-	int doit = Mode_Score(vehicle, 1);
-	byte ok = doit == 0 || (doit > 0 && Mode_WaySound() && Script_Try("SFlagHunt", "GetRndFlag", "()") &&
-		Mode_FlagSet("SFlagHunt", "Pos", Mode_Zone("SFlagHunt")) && Script_Try("Split", "ActualizeScorer", "()"));
-	return ok ? Py_ReturnNone() : NULL;
+	int doit = Sm_Score(vehicle, 1);
+	return doit == 0 || (doit > 0 && Mode_Sound("WaySound", "WayVolume") && CALL("SFlagHunt", "GetRndFlag", NULL, "") &&
+		Sm_FlagToZone("SFlagHunt") && Sm_Actualize());
 }
 
-static PyObject *SFlagHunt_CreateFlag(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_NewFlag("SFlagHunt", "FlagModel", 2000) && Script_Try("SFlagHunt", "GetRndFlag", "()") &&
-		Mode_FlagSet("SFlagHunt", "OnTake", PyString_FromString("SFlagHunt.TakeFlag")) &&
-		Mode_FlagSet("SFlagHunt", "Pos", Mode_Zone("SFlagHunt")) && Mode_WayToFlag("SFlagHunt", "CurrentWaypointName") ?
-		Py_ReturnNone() : NULL;
+static byte SFlagHunt_CreateFlagC(void) {
+	modeVals_t t = { .n = 0 };
+	return Mode_Done(&t, Sm_NewFlag("SFlagHunt", "FlagModel", 2000) && CALL("SFlagHunt", "GetRndFlag", NULL, "") &&
+		Sm_FlagSet("SFlagHunt", "OnTake", Mode_S(&t, "SFlagHunt.TakeFlag")) && Sm_FlagToZone("SFlagHunt") &&
+		Sm_WayToFlag("SFlagHunt", "CurrentWaypointName"));
 }
 
-static PyObject *SFlagHunt_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Script_Try("SFlagHunt", "BrowseAreas", "()") && Script_Try("SFlagHunt", "CreateFlag", "()") ? Py_ReturnNone() : NULL;
-}
-
-static PyObject *SFlagHunt_Init(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_Players("SFlagHunt", "Killer") && Mode_OnDeath("SFlagHunt") ? Py_ReturnNone() : NULL;
-}
-
+SM_NOARGS(SFlagHunt, BrowseAreas, Sm_Browse("SFlagHunt", "DM_Multiplayer_Flag_*"))
+SM_NOARGS(SFlagHunt, GetRndFlag, Sm_RndFlag("SFlagHunt"))
+MODE_FN(SFlagHunt, TakeFlag, 2, SFlagHunt_TakeFlagC(&a[1]))
+SM_NOARGS(SFlagHunt, CreateFlag, SFlagHunt_CreateFlagC())
+SM_NOARGS(SFlagHunt, InitStatus, CALL("SFlagHunt", "BrowseAreas", NULL, "") && CALL("SFlagHunt", "CreateFlag", NULL, ""))
+SM_NOARGS(SFlagHunt, Init, Sm_Players("SFlagHunt", "Killer") && Sm_OnDeath("SFlagHunt"))
 /* OnDeathFunc(LooserName, WinnerName): a death costs a point */
-static PyObject *SFlagHunt_OnDeathFunc(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &looser, &winner) || !Script_Import((const char *const[]){ "Split", NULL })) {
-		return NULL;
-	}
-	return Mode_Score(looser, -1) >= 0 && Script_Try("Split", "ActualizeScorer", "()") ? Py_ReturnNone() : NULL;
-}
+MODE_FN(SFlagHunt, OnDeathFunc, 2, Mode_Import("Split") && Sm_Score(&a[0], -1) >= 0 && Sm_Actualize())
 
 PyMethodDef g_SFlagHuntMethods[] = {
 	{ "BrowseAreas", SFlagHunt_BrowseAreas, 1, NULL },
@@ -1038,129 +974,122 @@ PyMethodDef g_SFlagHuntMethods[] = {
 
 /* ---- SPostman ---- */
 
-static PyObject *SPostman_BrowseAreas(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	if (!Mode_Browse("SPostman", "DM_Domination_Zone_*") || !Script_Try("Scrap", "StartDummySearch", "(si)", "DM_Domination_Flag", 1)) {
-		return NULL;
+static byte SPostman_BrowseAreasC(void) {
+	nativeVal_t d, pos;
+	if (!Sm_Browse("SPostman", "DM_Domination_Zone_*")) {
+		return 0;
 	}
-	PyObject *d = Script_Ask("Scrap", "NextDummySearch", "()"), *pos = d ? Script_Index(d, 1) : NULL;
-	Py_XDECREF(d);
-	return pos && Script_SetGlobal("SPostman", "FlagInitPos", pos) ? Py_ReturnNone() : NULL;
+	Mode_DummyStart("DM_Domination_Flag", 1);
+	Mode_DummyNext(&d);
+	Native_SetNone(&pos);
+	byte ok = Native_Subscript(&d, &(nativeVal_t){ .type = NV_INT, .i = 1 }, &pos) && Mode_Put("SPostman", "FlagInitPos", NULL, &pos);
+	Native_Free(&d);
+	Native_Free(&pos);
+	return ok;
 }
 
-static PyObject *SPostman_GetRndFlag(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_RndFlag("SPostman");
+/* the carrier of the data pack is vehicle (BattonOwner): 1, 0, -1 */
+static int SPostman_Carrier(const nativeVal_t *vehicle) {
+	nativeVal_t owner;
+	if (!Mode_G("SPostman", "BattonOwner", &owner)) {
+		return -1;
+	}
+	int c = !Native_Compare(vehicle, &owner);
+	Native_Free(&owner);
+	return c;
 }
 
 /* TakeArea(ItemName, VehicleName): the carrier reaches the zone and scores, the zone moves */
-static PyObject *SPostman_TakeArea(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *item, *vehicle;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &item, &vehicle) || !Script_Import((const char *const[]){ "Split", "Sound", NULL })) {
-		return NULL;
+static byte SPostman_TakeAreaC(const nativeVal_t *vehicle) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *tail = Mode_V(&t), *idx = Mode_V(&t);
+	if (!Mode_Import("Split") || !Mode_Import("Sound")) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *owner = K(Script_Global("SPostman", "BattonOwner"));
-	int carrier = owner ? Script_Eq(vehicle, owner) : -1;
+	int carrier = SPostman_Carrier(vehicle);
 	if (carrier <= 0) {
-		return Script_Done(&r, carrier < 0 ? NULL : Py_ReturnNone());
+		return Mode_Done(&t, carrier == 0);
 	}
-	if (!Script_SetGlobal("SPostman", "BattonOwner", Script_Ref(vehicle)) || !Mode_WaySound() ||
-		!Script_Try("SPostman", "GetRndFlag", "()") || !Mode_FlagSet("SPostman", "Pos", Mode_Zone("SPostman"))) {
-		FAIL();
-	}
-	PyObject *tail = K(PySequence_GetSlice(vehicle, 6, 0x7fffffff)), *idx = tail ? K(Script_Int(tail)) : NULL;
-	return Script_Done(&r, idx && Split_Add("Split", "Scorer", idx, 1) && Script_Try("Split", "ActualizeScorer", "()") ? Py_ReturnNone() : NULL);
+	return Mode_Done(&t, Mode_Put("SPostman", "BattonOwner", NULL, vehicle) && Mode_Sound("WaySound", "WayVolume") &&
+		CALL("SPostman", "GetRndFlag", NULL, "") && Sm_FlagToZone("SPostman") && Native_Slice(vehicle, 6, INT_MAX, tail) &&
+		Native_ToInt(tail, idx) && Split_Add("Scorer", &split.scorer, idx, 1) && Sm_Actualize());
 }
 
 /* TakeFlag(ItemName, VehicleName): a player takes the data pack and has to bring it to the zone */
-static PyObject *SPostman_TakeFlag(PyObject *self, PyObject *args) {
-	PyObject *item, *vehicle;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &item, &vehicle) || !Script_Import((const char *const[]){ "Split", "Sound", NULL })) {
-		return NULL;
+static byte SPostman_TakeFlagC(const nativeVal_t *vehicle) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *model = Mode_V(&t);
+	if (!Mode_Import("Split") || !Mode_Import("Sound")) {
+		return Mode_Done(&t, 0);
 	}
-	if (!Script_In(vehicle, (const char *const[]){ "Player1", "Player0", NULL })) {
-		return Py_ReturnNone();
+	if (!Native_IsStr(vehicle, "Player1") && !Native_IsStr(vehicle, "Player0")) {
+		return Mode_Done(&t, 1);
 	}
-	PyObject *model = Script_Try("Scrap", "DeleteScheduledFuncs", "(s)", "BattonRepos") &&
-		Script_SetGlobal("SPostman", "BattonOwner", Script_Ref(vehicle)) && Mode_WaySound() && Script_Try("SPostman", "GetRndFlag", "()") &&
-		Mode_FlagSet("SPostman", "Pos", Mode_Zone("SPostman")) ? Script_Global("SPostman", "FlagModel") : NULL;
-	byte ok = model && Mode_FlagCall("SPostman", "SetModel", model) &&
-		Mode_FlagSet("SPostman", "OnTake", PyString_FromString("SPostman.TakeArea"));
-	Py_XDECREF(model);
-	if (ok && Script_Is(vehicle, "Player0")) {
-		ok = Mode_WayToFlag("SPostman", "CurrentWaypointName") && Script_Try("Scrap", "Set", "(ss)", "CurrentWaypointName2", "Player0");
-	} else if (ok) {
-		ok = Script_Try("Scrap", "Set", "(ss)", "CurrentWaypointName", "Player1") && Mode_WayToFlag("SPostman", "CurrentWaypointName2");
+	if (!Mode_DelSchedS("BattonRepos") || !Mode_Put("SPostman", "BattonOwner", NULL, vehicle) || !Mode_Sound("WaySound", "WayVolume") ||
+		!CALL("SPostman", "GetRndFlag", NULL, "") || !Sm_FlagToZone("SPostman") || !Mode_G("SPostman", "FlagModel", model) ||
+		!Sm_FlagModel("SPostman", model) || !Sm_FlagSet("SPostman", "OnTake", Mode_S(&t, "SPostman.TakeArea"))) {
+		return Mode_Done(&t, 0);
 	}
-	return ok ? Py_ReturnNone() : NULL;
+	if (Native_IsStr(vehicle, "Player0")) {
+		return Mode_Done(&t, Sm_WayToFlag("SPostman", "CurrentWaypointName") && Mode_GVarSetS("CurrentWaypointName2", "Player0"));
+	}
+	return Mode_Done(&t, Mode_GVarSetS("CurrentWaypointName", "Player1") && Sm_WayToFlag("SPostman", "CurrentWaypointName2"));
 }
 
-static PyObject *SPostman_CreateFlag(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_NewFlag("SPostman", "BattModel", 2000) && Script_Try("SPostman", "GetRndFlag", "()") &&
-		Mode_FlagSet("SPostman", "OnTake", PyString_FromString("SPostman.TakeFlag")) &&
-		Mode_FlagSet("SPostman", "Pos", Script_Global("SPostman", "FlagInitPos")) &&
-		Mode_WayToFlag("SPostman", "CurrentWaypointName") ? Py_ReturnNone() : NULL;
+static byte SPostman_CreateFlagC(void) {
+	modeVals_t t = { .n = 0 };
+	return Mode_Done(&t, Sm_NewFlag("SPostman", "BattModel", 2000) && CALL("SPostman", "GetRndFlag", NULL, "") &&
+		Sm_FlagSet("SPostman", "OnTake", Mode_S(&t, "SPostman.TakeFlag")) && Sm_FlagToGlobal("SPostman", "FlagInitPos") &&
+		Sm_WayToFlag("SPostman", "CurrentWaypointName"));
 }
 
-static PyObject *SPostman_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	if (!Script_Try("SPostman", "BrowseAreas", "()") || !Script_Try("SPostman", "CreateFlag", "()")) {
-		return NULL;
+static byte SPostman_InitStatusC(void) {
+	nativeVal_t f;
+	if (!CALL("SPostman", "BrowseAreas", NULL, "") || !CALL("SPostman", "CreateFlag", NULL, "") || !Mode_G("SPostman", "FlagModel", &f)) {
+		return 0;
 	}
-	PyObject *f = Script_Global("SPostman", "FlagModel");
-	byte ok = f && Script_Try("Scrap", "Preload3DObject", "(O)", f);
-	Py_XDECREF(f);
-	PyObject *b = ok ? Script_Global("SPostman", "BattModel") : NULL;
-	ok = b && Script_Try("Scrap", "Preload3DObject", "(O)", b);
-	Py_XDECREF(b);
-	return ok ? Py_ReturnNone() : NULL;
-}
-
-static PyObject *SPostman_Init(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_Players("SPostman", "Green") && Mode_SetPl("SPostman", 0, "RadarShow", PyInt_FromLong(3)) &&
-		Mode_SetPl("SPostman", 1, "RadarShow", PyInt_FromLong(3)) && Mode_OnDeath("SPostman") ? Py_ReturnNone() : NULL;
+	byte ok = Mode_Preload(&f);
+	Native_Free(&f);
+	ok = ok && Mode_G("SPostman", "BattModel", &f) && Mode_Preload(&f);
+	Native_Free(&f);
+	return ok;
 }
 
 /* OnDeathFunc(LooserName, WinnerName): the carrier drops the data pack where it died; it returns 30 s later */
-static PyObject *SPostman_OnDeathFunc(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *looser, *winner;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &looser, &winner) || !Script_Import((const char *const[]){ "Split", NULL })) {
-		return NULL;
+static byte SPostman_OnDeathFuncC(const nativeVal_t *looser) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *model = Mode_V(&t), *pos = Mode_V(&t);
+	cEntity *e;
+	if (!Mode_Import("Split")) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *owner = K(Script_Global("SPostman", "BattonOwner"));
-	int carrier = owner ? Script_Eq(looser, owner) : -1;
+	int carrier = SPostman_Carrier(looser);
 	if (carrier <= 0) {
-		return Script_Done(&r, carrier < 0 ? NULL : Py_ReturnNone());
+		return Mode_Done(&t, carrier == 0);
 	}
-	PyObject *model = Script_SetGlobal("SPostman", "BattonOwner", PyString_FromString("")) &&
-		Mode_WayToFlag("SPostman", "CurrentWaypointName") && Mode_WayToFlag("SPostman", "CurrentWaypointName2") ?
-		K(Script_Global("SPostman", "BattModel")) : NULL;
-	PyObject *e = model && Mode_FlagCall("SPostman", "SetModel", model) &&
-		Mode_FlagSet("SPostman", "OnTake", PyString_FromString("SPostman.TakeFlag")) ? K(Script_Entity(looser)) : NULL;
-	byte ok = e && Mode_FlagSet("SPostman", "Pos", Script_GetAttr(e, "Pos")) &&
-		Script_LaterIn(30, "SPostman", "BattonRepos", PyTuple_New(0), "BattonRepos");
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+	return Mode_Done(&t, Mode_Put("SPostman", "BattonOwner", NULL, Mode_S(&t, "")) && Sm_WayToFlag("SPostman", "CurrentWaypointName") &&
+		Sm_WayToFlag("SPostman", "CurrentWaypointName2") && Mode_G("SPostman", "BattModel", model) && Sm_FlagModel("SPostman", model) &&
+		Sm_FlagSet("SPostman", "OnTake", Mode_S(&t, "SPostman.TakeFlag")) && Mode_Ent(looser, &e) &&
+		Mode_Get(e, Native_Text(looser), "Pos", pos) && Sm_FlagSet("SPostman", "Pos", pos) &&
+		Mode_LaterIn(30.0, "SPostman", "BattonRepos", NULL, 0, "BattonRepos"));
 }
 
-/* BattonRepos(): the data pack back at its start (the script sets it twice) */
-static PyObject *SPostman_BattonRepos(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_FlagSet("SPostman", "Pos", Script_Global("SPostman", "FlagInitPos")) &&
-		Mode_FlagSet("SPostman", "Pos", Script_Global("SPostman", "FlagInitPos")) ? Py_ReturnNone() : NULL;
+static byte SPostman_InitC(void) {
+	modeVals_t t = { .n = 0 };
+	return Mode_Done(&t, Sm_Players("SPostman", "Green") && Sm_SetPl("SPostman", 0, "RadarShow", Mode_I(&t, 3)) &&
+		Sm_SetPl("SPostman", 1, "RadarShow", Mode_I(&t, 3)) && Sm_OnDeath("SPostman"));
 }
+
+SM_NOARGS(SPostman, BrowseAreas, SPostman_BrowseAreasC())
+SM_NOARGS(SPostman, GetRndFlag, Sm_RndFlag("SPostman"))
+MODE_FN(SPostman, TakeArea, 2, SPostman_TakeAreaC(&a[1]))
+MODE_FN(SPostman, TakeFlag, 2, SPostman_TakeFlagC(&a[1]))
+SM_NOARGS(SPostman, CreateFlag, SPostman_CreateFlagC())
+SM_NOARGS(SPostman, InitStatus, SPostman_InitStatusC())
+SM_NOARGS(SPostman, Init, SPostman_InitC())
+MODE_FN(SPostman, OnDeathFunc, 2, SPostman_OnDeathFuncC(&a[0]))
+/* BattonRepos(): the data pack back at its start (the script sets it twice) */
+SM_NOARGS(SPostman, BattonRepos, Sm_FlagToGlobal("SPostman", "FlagInitPos") && Sm_FlagToGlobal("SPostman", "FlagInitPos"))
 
 PyMethodDef g_SPostmanMethods[] = {
 	{ "BrowseAreas", SPostman_BrowseAreas, 1, NULL },
@@ -1177,17 +1106,20 @@ PyMethodDef g_SPostmanMethods[] = {
 
 /* ---- SRace ---- */
 
-/* the checkpoints of the route that srace.def builds ("run point") */
-static PyObject *g_RacePoints;
-
+/* the step "point <text>" of srace.def: a checkpoint of the route (OBJLIB 6: the steps take Python arguments) */
 static void SRace_StepPoint(int id, PyObject *args) {
+	nativeVal_t text, p;
 	(void)id;
-	PyObject *text = PyTuple_Size(args) == 1 ? PyTuple_GetItem(args, 0) : NULL;
-	PyObject *p = text && g_RacePoints ? Script_EvalIn("SRace", text) : NULL;
-	if (!p || PyList_Append(g_RacePoints, p) < 0) {
+	if (PyTuple_Size(args) != 1 || split.raceBuild.type != NV_LIST) {
+		return;
+	}
+	Native_Arg(PyTuple_GetItem(args, 0), &text);
+	if (Native_EvalText("SRace", &text, &p)) {
+		*Native_Append(&split.raceBuild) = p;
+	} else {
 		PyErr_Clear();
 	}
-	Py_XDECREF(p);
+	Native_Free(&text);
 }
 
 static const scriptStep_t srace_steps[] = {
@@ -1196,196 +1128,211 @@ static const scriptStep_t srace_steps[] = {
 };
 
 /* BrowseAreas(): the route of the map (Init.UpperMap), the race of before on a map without one */
-static PyObject *SRace_BrowseAreas(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	if (!Script_Import((const char *const[]){ "Init", NULL })) {
-		return NULL;
-	}
-	PyObject *map = Script_Attr("Init", "UpperMap");
-	if (!map) {
-		return NULL;
+static byte SRace_BrowseAreasC(void) {
+	nativeVal_t map;
+	if (!Mode_Import("Init") || !Mode_ModVar("Init", "UpperMap", &map)) {
+		return 0;
 	}
 	byte ok = 1;
-	if (PyString_Check(map)) {
-		g_RacePoints = PyList_New(0);
-		Script_RunFile(0, "split/srace.def", PyString_AsString(map), srace_def, srace_steps, NULL);
-		if (g_RacePoints && PyList_Size(g_RacePoints) > 0) {
-			ok = Script_SetGlobal("SRace", "race", PyList_AsTuple(g_RacePoints));
+	if (map.type == NV_STR) {
+		Native_Free(&split.raceBuild);
+		Native_SetEmpty(&split.raceBuild, NV_LIST);
+		Script_RunFile(0, "split/srace.def", Native_Text(&map), srace_def, srace_steps, NULL);
+		if (split.raceBuild.n > 0) {
+			/* race = tuple of the points */
+			split.raceBuild.type = NV_TUPLE;
+			ok = Mode_Put("SRace", "race", &split.race, &split.raceBuild);
 		}
-		Py_XDECREF(g_RacePoints);
-		g_RacePoints = NULL;
+		Native_Free(&split.raceBuild);
 	}
-	Py_DECREF(map);
-	return ok ? Py_ReturnNone() : NULL;
+	Native_Free(&map);
+	return ok;
 }
 
-/* race[AcFlag] (a new reference) */
-static PyObject *SRace_Point(void) {
-	PyObject *race = Script_Global("SRace", "race"), *ac = race ? Script_Global("SRace", "AcFlag") : NULL;
-	PyObject *p = ac ? PyObject_GetItem(race, ac) : NULL;
-	Py_XDECREF(ac);
-	Py_XDECREF(race);
-	return p;
+/* race[AcFlag] into *out */
+static byte SRace_Point(nativeVal_t *out) {
+	return Mode_Read("SRace", "race", &split.race) && Mode_Read("SRace", "AcFlag", &split.acFlag) &&
+		Native_Subscript(&split.race, &split.acFlag, out);
 }
 
 /* Flag.Pos = race[AcFlag][0]; Flag.Ang = 0, race[AcFlag][1], 0 */
 static byte SRace_PlaceFlag(void) {
-	PyObject *p = SRace_Point();
-	byte ok = p && Mode_FlagSet("SRace", "Pos", Script_Index(p, 0));
-	Py_XDECREF(p);
-	p = ok ? SRace_Point() : NULL;
-	ok = p && Mode_FlagSet("SRace", "Ang", Split_Ang(p));
-	Py_XDECREF(p);
-	return ok;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *p = Mode_V(&t), *pos = Mode_V(&t), *ang = Mode_V(&t);
+	if (!SRace_Point(p) || !Native_Subscript(p, Mode_I(&t, 0), pos) || !Sm_FlagSet("SRace", "Pos", pos)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(p);
+	return Mode_Done(&t, SRace_Point(p) && Split_Ang(&t, p, ang) && Sm_FlagSet("SRace", "Ang", ang));
 }
 
 /* GetRndFlag(): the next checkpoint */
-static PyObject *SRace_GetRndFlag(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	PyObject *ac = K(Script_Global("SRace", "AcFlag")), *one = ac ? K(PyInt_FromLong(1)) : NULL;
-	PyObject *s = one ? K(PyNumber_Add(ac, one)) : NULL, *race = s ? K(Script_Global("SRace", "race")) : NULL;
-	int n = race ? PyObject_Length(race) : -1;
-	PyObject *len = n >= 0 ? K(PyInt_FromLong(n)) : NULL, *v = len ? PyNumber_Remainder(s, len) : NULL;
-	return Script_Done(&r, v && Script_SetGlobal("SRace", "AcFlag", v) ? Py_ReturnNone() : NULL);
+static byte SRace_GetRndFlagC(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *s = Mode_V(&t), *len = Mode_V(&t), *v = Mode_V(&t);
+	if (!Mode_Read("SRace", "AcFlag", &split.acFlag) || !Native_Arith('+', &split.acFlag, Mode_I(&t, 1), s) ||
+		!Mode_Read("SRace", "race", &split.race)) {
+		return Mode_Done(&t, 0);
+	}
+	int n = Native_Size(&split.race);
+	if (n < 0) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetInt(len, n);
+	return Mode_Done(&t, Native_Arith('%', s, len, v) && Mode_Put("SRace", "AcFlag", &split.acFlag, v));
 }
 
 /* TakeFlag(ItemName, VehicleName): a player scores, the flag goes to the next checkpoint */
-static PyObject *SRace_TakeFlag(PyObject *self, PyObject *args) {
-	PyObject *item, *vehicle;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &item, &vehicle) || !Script_Import((const char *const[]){ "Split", "Sound", NULL })) {
-		return NULL;
+static byte SRace_TakeFlagC(const nativeVal_t *vehicle) {
+	if (!Mode_Import("Split") || !Mode_Import("Sound")) {
+		return 0;
 	}
-	int doit = Mode_Score(vehicle, 1);
-	byte ok = doit == 0 || (doit > 0 && Mode_WaySound() && Script_Try("SRace", "GetRndFlag", "()") && SRace_PlaceFlag() &&
-		Script_Try("Split", "ActualizeScorer", "()"));
-	return ok ? Py_ReturnNone() : NULL;
+	int doit = Sm_Score(vehicle, 1);
+	return doit == 0 || (doit > 0 && Mode_Sound("WaySound", "WayVolume") && CALL("SRace", "GetRndFlag", NULL, "") && SRace_PlaceFlag() &&
+		Sm_Actualize());
 }
 
-static PyObject *SRace_CreateFlag(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_NewFlag("SRace", "FlagModel", 4000) && Script_Try("SRace", "GetRndFlag", "()") &&
-		Mode_FlagSet("SRace", "OnTake", PyString_FromString("SRace.TakeFlag")) && SRace_PlaceFlag() &&
-		Mode_WayToFlag("SRace", "CurrentWaypointName") ? Py_ReturnNone() : NULL;
+static byte SRace_CreateFlagC(void) {
+	modeVals_t t = { .n = 0 };
+	return Mode_Done(&t, Sm_NewFlag("SRace", "FlagModel", 4000) && CALL("SRace", "GetRndFlag", NULL, "") &&
+		Sm_FlagSet("SRace", "OnTake", Mode_S(&t, "SRace.TakeFlag")) && SRace_PlaceFlag() && Sm_WayToFlag("SRace", "CurrentWaypointName"));
 }
 
 /* InitRacePos(id): beside the checkpoint before the flag, 1500 to the left or right; (pos, angle) */
-static PyObject *SRace_InitRacePos(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *id;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id)) {
-		return NULL;
+static byte SRace_InitRacePosC(const nativeVal_t *id, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *len = Mode_V(&t), *a = Mode_V(&t), *b = Mode_V(&t), *k = Mode_V(&t), *res = Mode_V(&t), *ang = Mode_V(&t);
+	nativeVal_t *src = Mode_V(&t), *rot = Mode_V(&t), *r = Mode_V(&t), *at = Mode_V(&t), *pos = Mode_V(&t), *a2 = Mode_V(&t);
+	if (!Mode_Read("SRace", "race", &split.race) || !Mode_Read("SRace", "AcFlag", &split.acFlag)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *race = K(Script_Global("SRace", "race")), *ac = race ? K(Script_Global("SRace", "AcFlag")) : NULL;
-	int n = ac ? PyObject_Length(race) : -1;
-	PyObject *len = n >= 0 ? K(PyInt_FromLong(n)) : NULL, *a = len ? K(PyNumber_Add(ac, len)) : NULL;
-	PyObject *one = a ? K(PyInt_FromLong(1)) : NULL, *b = one ? K(PyNumber_Subtract(a, one)) : NULL;
-	PyObject *k = b ? K(PyNumber_Remainder(b, len)) : NULL, *res = k ? K(PyObject_GetItem(race, k)) : NULL;
-	int first = res ? Script_NumCmp(id, 0) : -2;
-	if (first == -2) {
-		FAIL();
+	int n = Native_Size(&split.race);
+	if (n < 0) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *ang = K(Script_Index(res, 1)), *rot = ang ? K(Script_Ask("SVec", "Rotate3D", "((iii)(iOi))", first == 0 ? 1500 : -1500,
-		0, 0, 0, ang, 0)) : NULL;
-	PyObject *at = rot ? K(Script_Index(res, 0)) : NULL, *pos = at ? K(Script_Ask("SVec", "Add", "(OO)", rot, at)) : NULL;
-	PyObject *a2 = pos ? K(Script_Index(res, 1)) : NULL;
-	return Script_Done(&r, a2 ? Py_BuildValue("(OO)", pos, a2) : NULL);
+	Native_SetInt(len, n);
+	if (!Native_Arith('+', &split.acFlag, len, a) || !Native_Arith('-', a, Mode_I(&t, 1), b) || !Native_Arith('%', b, len, k) ||
+		!Native_Subscript(&split.race, k, res)) {
+		return Mode_Done(&t, 0);
+	}
+	int first = Native_Compare(id, Mode_I(&t, 0)) == 0;
+	if (!Native_Subscript(res, Mode_I(&t, 1), ang)) {
+		return Mode_Done(&t, 0);
+	}
+	/* SVec.Rotate3D((±1500, 0, 0), (0, ang, 0)); SVec.Add(that, res[0]) */
+	Native_SetEmpty(src, NV_TUPLE);
+	Native_SetInt(Native_Append(src), first ? 1500 : -1500);
+	Native_SetInt(Native_Append(src), 0);
+	Native_SetInt(Native_Append(src), 0);
+	Native_SetEmpty(rot, NV_TUPLE);
+	Native_SetInt(Native_Append(rot), 0);
+	Native_Copy(Native_Append(rot), ang);
+	Native_SetInt(Native_Append(rot), 0);
+	if (!Mode_Rotate(src, rot, r) || !Native_Subscript(res, Mode_I(&t, 0), at) || !Mode_VecAdd(r, at, pos) ||
+		!Native_Subscript(res, Mode_I(&t, 1), a2)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetEmpty(out, NV_TUPLE);
+	Native_Copy(Native_Append(out), pos);
+	Native_Copy(Native_Append(out), a2);
+	return Mode_Done(&t, 1);
 }
 
-/* GetReSpawnPos(v): where the ship is, its heading */
-static PyObject *SRace_GetReSpawnPos(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *v;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &v)) {
-		return NULL;
+/* GetReSpawnPos(v): where the ship is, its heading (v the handle of the ship) */
+static byte SRace_GetReSpawnPosC(const nativeVal_t *v, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *pos = Mode_V(&t), *ang = Mode_V(&t), *a1 = Mode_V(&t);
+	if (!Mode_VGet(v, "Pos", pos) || !Mode_VGet(v, "Ang", ang) || !Native_Subscript(ang, Mode_I(&t, 1), a1)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *pos = K(Script_GetAttr(v, "Pos")), *ang = pos ? K(Script_GetAttr(v, "Ang")) : NULL;
-	PyObject *a1 = ang ? K(Script_Index(ang, 1)) : NULL;
-	return Script_Done(&r, a1 ? Py_BuildValue("(OO)", pos, a1) : NULL);
+	Native_SetEmpty(out, NV_TUPLE);
+	Native_Copy(Native_Append(out), pos);
+	Native_Copy(Native_Append(out), a1);
+	return Mode_Done(&t, 1);
 }
 
 /* SSound.LoadSound("Sounds/Vehicles/Misc/" + <module variable> + ".wav") */
 static byte SRace_LoadSound(const char *var) {
-	PyObject *name = Script_Global("SRace", var);
-	PyObject *file = name ? Script_PlusS(Script_SPlus("Sounds/Vehicles/Misc/", name), ".wav") : NULL;
-	byte ok = file && Script_Try("SSound", "LoadSound", "(O)", file);
-	Py_XDECREF(file);
-	Py_XDECREF(name);
-	return ok;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *name = Mode_V(&t), *file = Mode_V(&t);
+	return Mode_Done(&t, Mode_G("SRace", var, name) && Mode_Cat(&t, file, 3, Mode_S(&t, "Sounds/Vehicles/Misc/"), name, Mode_S(&t, ".wav")) &&
+		Mode_LoadSound(file));
 }
 
 /* InitStatus(): the spawn functions of Split, the count down sounds, the route and the flag */
-static PyObject *SRace_InitStatus(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	PyObject *f1 = Script_Import((const char *const[]){ "Split", NULL }) ? Script_Global("SRace", "InitRacePos") : NULL;
+static byte SRace_InitStatusC(void) {
+	PyObject *f1 = Mode_Import("Split") ? Mode_GlobalPy("SRace", "InitRacePos") : NULL;
 	if (!f1) {
-		return NULL;
+		return 0;
 	}
+	/* OBJLIB 3: the functions as values of Split */
 	Script_SetVar("Split", "FuncGetSpawnPos", f1);
-	PyObject *f2 = Script_Global("SRace", "GetReSpawnPos");
+	PyObject *f2 = Mode_GlobalPy("SRace", "GetReSpawnPos");
 	if (!f2) {
-		return NULL;
+		return 0;
 	}
 	Script_SetVar("Split", "FuncGetReSpawnPos", f2);
-	return SRace_LoadSound("RaceCountDownSound1") && SRace_LoadSound("RaceCountDownSound2") &&
-		Script_Try("SRace", "BrowseAreas", "()") && Script_Try("SRace", "CreateFlag", "()") ? Py_ReturnNone() : NULL;
-}
-
-/* Scrap.AddScheduledFunc(when, fn, args) (args given away) */
-static byte SRace_At(PyObject *when, PyObject *fn, PyObject *args) {
-	byte ok = when && fn && args && Script_Try("Scrap", "AddScheduledFunc", "(OOO)", when, fn, args);
-	Py_XDECREF(args);
-	return ok;
+	return SRace_LoadSound("RaceCountDownSound1") && SRace_LoadSound("RaceCountDownSound2") && CALL("SRace", "BrowseAreas", NULL, "") &&
+		CALL("SRace", "CreateFlag", NULL, "");
 }
 
 /* Init(): both players wait for the count down 3, 2, 1, GO! (ControlToRacers then) */
-static PyObject *SRace_Init(PyObject *self, PyObject *args) {
+static byte SRace_InitC(void) {
 	static const char *const counts[] = { "2", "1", "GO!" };
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	if (!Mode_Players("SRace", "Green") || !Mode_OnDeath("SRace") || !Mode_SetPl("SRace", 0, "UsrControl", PyInt_FromLong(-1)) ||
-		!Mode_SetPl("SRace", 1, "UsrControl", PyInt_FromLong(-1))) {
-		return NULL;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *s1 = Mode_V(&t), *v1 = Mode_V(&t), *t1 = Mode_V(&t);
+	if (!Sm_Players("SRace", "Green") || !Sm_OnDeath("SRace") || !Sm_SetPl("SRace", 0, "UsrControl", Mode_I(&t, -1)) ||
+		!Sm_SetPl("SRace", 1, "UsrControl", Mode_I(&t, -1))) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *time = K(Script_Ask("Scrap", "GetTime", "()")), *one = time ? K(PyInt_FromLong(1)) : NULL;
-	PyObject *t1 = one ? K(PyNumber_Add(time, one)) : NULL;
-	PyObject *s1 = t1 ? K(Script_Global("SRace", "RaceCountDownSound1")) : NULL;
-	PyObject *v1 = s1 ? K(Script_Global("SRace", "RaceCountDownSound1Vol")) : NULL;
-	if (!v1 || !Script_Try("SScorer", "SetMsgText", "(sO)", "3", t1) || !Script_Try("SSound", "Play", "(OO)", s1, v1)) {
-		FAIL();
+	double time = Mode_Time();
+	Native_SetFloat(t1, time + 1.0);
+	if (!Mode_G("SRace", "RaceCountDownSound1", s1) || !Mode_G("SRace", "RaceCountDownSound1Vol", v1) || !Mode_MsgText(Mode_S(&t, "3"), t1->f) ||
+		!Mode_Play(s1, v1)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *msg = K(Script_Attr("SScorer", "SetMsgText")), *play = msg ? K(Script_Attr("SSound", "Play")) : NULL;
-	for (int i = 0; play && i < 3; i++) {
-		PyObject *d = K(PyInt_FromLong(i + 1)), *timy = d ? K(PyNumber_Add(time, d)) : NULL, *end = timy ? K(PyNumber_Add(timy, one)) : NULL;
-		if (!end || !SRace_At(timy, msg, Py_BuildValue("(sO)", counts[i], end))) {
-			FAIL();
+	/* the functions SScorer.SetMsgText and SSound.Play as the modules hold them (OBJLIB 4) */
+	PyObject *msg = Script_Attr("SScorer", "SetMsgText"), *play = msg ? Script_Attr("SSound", "Play") : NULL;
+	byte ok = play != NULL;
+	for (int i = 0; ok && i < 3; i++) {
+		int mark = t.n;
+		nativeVal_t *timy = Mode_V(&t), *args = Mode_V(&t), *s = Mode_V(&t), *v = Mode_V(&t);
+		Native_SetFloat(timy, time + (double)(i + 1));
+		Native_SetEmpty(args, NV_LIST);
+		Native_SetStr(Native_Append(args), counts[i]);
+		Native_SetFloat(Native_Append(args), timy->f + 1.0);
+		ok = Mode_Schedule(timy, msg, args->items, 2, NULL);
+		if (ok && i == 2) {
+			PyObject *ctr = Mode_GlobalPy("SRace", "ControlToRacers");
+			ok = ctr && Mode_Schedule(timy, ctr, NULL, 0, NULL);
+			Py_XDECREF(ctr);
 		}
-		if (i == 2 && !SRace_At(timy, K(Script_Global("SRace", "ControlToRacers")), PyTuple_New(0))) {
-			FAIL();
+		ok = ok && Mode_G("SRace", i == 2 ? "RaceCountDownSound2" : "RaceCountDownSound1", s) &&
+			Mode_G("SRace", i == 2 ? "RaceCountDownSound2Vol" : "RaceCountDownSound1Vol", v);
+		if (ok) {
+			Native_Free(args);
+			Native_SetEmpty(args, NV_LIST);
+			Native_Copy(Native_Append(args), s);
+			Native_Copy(Native_Append(args), v);
+			ok = Mode_Schedule(timy, play, args->items, 2, NULL);
 		}
-		PyObject *s = K(Script_Global("SRace", i == 2 ? "RaceCountDownSound2" : "RaceCountDownSound1"));
-		PyObject *v = s ? K(Script_Global("SRace", i == 2 ? "RaceCountDownSound2Vol" : "RaceCountDownSound1Vol")) : NULL;
-		if (!v || !SRace_At(timy, play, Py_BuildValue("(OO)", s, v))) {
-			FAIL();
-		}
+		Mode_Release(&t, mark);
 	}
-	return Script_Done(&r, play ? Py_ReturnNone() : NULL);
+	Py_XDECREF(play);
+	Py_XDECREF(msg);
+	return Mode_Done(&t, ok);
 }
 
-static PyObject *SRace_ControlToRacers(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Mode_SetPl("SRace", 0, "UsrControl", PyInt_FromLong(0)) && Mode_SetPl("SRace", 1, "UsrControl", PyInt_FromLong(1)) ?
-		Py_ReturnNone() : NULL;
-}
+SM_NOARGS(SRace, BrowseAreas, SRace_BrowseAreasC())
+SM_NOARGS(SRace, GetRndFlag, SRace_GetRndFlagC())
+MODE_FN(SRace, TakeFlag, 2, SRace_TakeFlagC(&a[1]))
+SM_NOARGS(SRace, CreateFlag, SRace_CreateFlagC())
+MODE_FN(SRace, InitRacePos, 1, SRace_InitRacePosC(&a[0], out))
+MODE_FN(SRace, GetReSpawnPos, 1, SRace_GetReSpawnPosC(&a[0], out))
+SM_NOARGS(SRace, InitStatus, SRace_InitStatusC())
+SM_NOARGS(SRace, Init, SRace_InitC())
+SM_NOARGS(SRace, ControlToRacers, Sm_SetPl("SRace", 0, "UsrControl", &(nativeVal_t){ .type = NV_INT, .i = 0 }) &&
+	Sm_SetPl("SRace", 1, "UsrControl", &(nativeVal_t){ .type = NV_INT, .i = 1 }))
 
 PyMethodDef g_SRaceMethods[] = {
 	{ "BrowseAreas", SRace_BrowseAreas, 1, NULL },
@@ -1397,6 +1344,6 @@ PyMethodDef g_SRaceMethods[] = {
 	{ "InitStatus", SRace_InitStatus, 1, NULL },
 	{ "Init", SRace_Init, 1, NULL },
 	{ "ControlToRacers", SRace_ControlToRacers, 1, NULL },
-	{ "OnDeathFunc", Mode_Pass2, 1, NULL },
+	{ "OnDeathFunc", Sm_Pass2, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
