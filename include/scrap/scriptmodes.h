@@ -350,4 +350,19 @@ byte Mode_SetAlarm(const nativeVal_t *level);
 /* Scrap.Set(name, i) with an int, as the scripts set it (Mode_GVarSetN sets a float) */
 byte Mode_GVarSetI(const char *name, long i);
 
+/* ---- the native level files of batch G (Orbit, Townhall, GamblinDen, Scrapyard) ---- */
+
+/* the lines of a call table of the level scripts (Sf_Calls on native values): "Mod.Func|arg|..." calls the attribute
+ * Func of the module Mod (OBJLIB 3 and 7: other ports and the engine by name, a case may record either), "@Func|..." the
+ * global Func of module (a mission may replace it), with the values of LvN_Value (up to 8); 0 with the error of the
+ * first line that fails */
+byte Mode_Calls(const char *module, const char *const *lines);
+/* o.name = value for each "name=value" of pairs (Sf_SetAttrs on a value: the values of LvN_Value) */
+byte Mode_SetAttrs(const nativeVal_t *o, const char *const *pairs);
+/* Speech.NISpeech(who) (Speech.NISpeech() for who NULL), Speech.AutoAddNI(key), Speech.RunNI() (OBJLIB 3) */
+byte Mode_NISpeech(const char *who, const char *key);
+/* Scrap.GetEntity(name).var = "text", = i (the TypeError of None when there is no such entity) */
+byte Mode_EntSetS(const char *name, const char *var, const char *s);
+byte Mode_EntSetI(const char *name, const char *var, long i);
+
 #endif
