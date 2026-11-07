@@ -3597,3 +3597,21 @@ void Mode_ModPutI(const char *module, const char *var, long i) {
 	Native_SetInt(&v, i);
 	Mode_ModPut(module, var, &v);
 }
+
+/* ---- batch P (CharsNPC, GameSounds, MenuMission) ---- */
+
+PyObject *Mode_DefVars(int n, ...) {
+	nativeVal_t d, k, v;
+	va_list va;
+	Native_SetEmpty(&d, NV_DICT);
+	va_start(va, n);
+	for (int i = 0; i < n; i++) {
+		Native_SetStr(&k, va_arg(va, const char *));
+		Native_Copy(&v, va_arg(va, const nativeVal_t *));
+		Native_DictSet(&d, &k, &v);
+	}
+	va_end(va);
+	PyObject *vars = Native_ToPy(&d);
+	Native_Free(&d);
+	return vars;
+}

@@ -738,4 +738,10 @@ double Mode_ModGetN(const char *module, const char *var, double def);
 void Mode_ModPut(const char *module, const char *var, const nativeVal_t *v);
 void Mode_ModPutI(const char *module, const char *var, long i);
 
+/* ---- batch P (CharsNPC, GameSounds, MenuMission) ---- */
+
+/* the $names of a .def section as the dict the runner takes (OBJLIB 6): the n pairs that follow, each a name and a
+ * const nativeVal_t * (the names are short texts); a new reference, NULL with the error */
+PyObject *Mode_DefVars(int n, ...);
+
 #endif

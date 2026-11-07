@@ -7,8 +7,19 @@
  * The module variables stay in the module (CharRes, the class CharSpawnPos, AfterBrowseNPC, ReposChars, NPCAttribs,
  * RespawnChars, Repos, optionsList, subOptionsList, ActualEntityName), because the missions and the character
  * scripts read and change them. The module code is data/modules/charsnpc.mod; the __init__ of CharSpawnPos is a C
- * method (CharsNPC_ModSpawnPosInit). The code reads them as globals of the module like the script (a missing one is a
- * NameError), works on the entity handles and the CharSpawnPos objects, and stops at the first error.
+ * method (CharsNPC_ModSpawnPosInit).
+ *
+ * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the variables of the
+ * module where the script reads them (a missing one is the NameError of the script) and write them back at once,
+ * the dicts and lists in place (OBJLIB 5). The spawn points are instances of the Python class CharSpawnPos and the
+ * characters handle values (OBJLIB 5, 7): their attributes are read and set the Python way, and the lists of
+ * functions in them (CallbackFunc, AfterBrowseNPC) are walked as the loops of the script walk them, read again on
+ * each turn. Scrap.GetEntity, CreateEntity, UsrEntity, ConsoleError, GetAlarm, TestSphere, the dummy search,
+ * SLogic.SetOnFloor, SScorer.SetMsgText and the scheduler go through their seams (OBJLIB 7); the save variables,
+ * the language texts, Scrap.Rand and string.split are C. The other ports (Chars, InPolice, DTritusDesktop,
+ * CharConversor, MissionsFuncs, Speech, Challenge), SAI.EnableAIChar and GetReposCharPos, Scrap.GetLangEntries,
+ * string.find and the range of a value that is no int stay by name (OBJLIB 3, 7). The module's own functions call
+ * each other in C as the port did.
  */
 #include <limits.h>
 #include <string.h>
@@ -16,32 +27,13 @@
 #include "scrap/global.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
-#include "scrap/timer.h"
+#include "scrap/scriptmodes.h"
+#include "game/Script/levels/Levels.h"
 
-/* a global of the module as the function of the script reads it (a new reference; a NameError when missing) */
-static PyObject *Npc_Global(const char *name) {
-	return Script_Global("CharsNPC", name);
-}
+#define NPC "CharsNPC"
 
-/* `global name; name = v` (v given away): 0 with the error set */
-static byte Npc_SetGlobal(const char *name, PyObject *v) {
-	return Script_SetGlobal("CharsNPC", name, v);
-}
-
-/* Scrap.GetSaveVar(name) == "0" */
-static byte Npc_SaveIs(const char *name, const char *text) {
-	const char *v = SaveVar_Get(name);
-	return v && !strcmp(v, text);
-}
-
-/* Scrap.ConsoleError(text) (text given away): 0 with the error set */
-static byte Npc_ConsoleError(PyObject *text) {
-	byte ok = text && Script_Try("Scrap", "ConsoleError", "(O)", text);
-	Py_XDECREF(text);
-	return ok;
-}
-
-/* ---- the spawn points ---- */
+/* ---- the class CharSpawnPos (OBJLIB 9: a class of the Python object library with a C __init__, made by the hooks of
+ * the module code) ---- */
 
 /* CharSpawnPos.__init__(self) of charsnpc.py:20: self.CallbackFunc = [] */
 static PyObject *Npc_SpawnPosInit(PyObject *self, PyObject *args) {
@@ -158,591 +150,541 @@ static PyObject *Npc_NewSpawnPos(PyObject *cls) {
 	return (PyObject *)inst;
 }
 
-/* AddNPCPos(dummy, IsMissionChar=0): a CharSpawnPos from the dummy (name, pos, ang, flag) into CharRes; a name
- * already there gets "_R" (a new reference) */
-static PyObject *Npc_AddNPCPos(PyObject *dummy, PyObject *mission) {
-	static const char *const mods[] = { "string", "Chars", NULL };
-	scriptRefs_t r = { 0 };
-	if (!Script_Import(mods)) {
-		return NULL;
-	}
-	PyObject *flag = Script_Keep(&r, mission ? Script_Ref(mission) : PyInt_FromLong(0));
-	int m = Script_True(flag);
-	if (m < 0) {
-		return Script_Done(&r, NULL);
-	}
-	int starts = m ? 11 : 13, typeid = m ? 2 : 3;
-	PyObject *d0 = Script_Keep(&r, Script_Index(dummy, 0));
-	PyObject *nam = d0 ? Script_Keep(&r, Script_Ask("string", "split", "(Os)", d0, "_")) : NULL;
-	PyObject *act = nam ? Script_Keep(&r, Script_Index(nam, typeid)) : NULL;
-	PyObject *cls = act && Script_Try("Chars", "AddNewCharRes", "(OO)", act, flag) ? Script_Keep(&r, Npc_Global("CharSpawnPos")) : NULL;
-	PyObject *csp = cls ? Script_Keep(&r, Npc_NewSpawnPos(cls)) : NULL;
-	byte ok = csp && Script_HSet(csp, "Pos", Script_Index(dummy, 1)) &&
-		Script_HSet(csp, "Name", PySequence_GetSlice(d0, starts, INT_MAX));
-	PyObject *d2 = ok ? Script_Keep(&r, Script_Index(dummy, 2)) : NULL;
-	PyObject *y = d2 ? Script_Keep(&r, Script_Index(d2, 1)) : NULL;
-	PyObject *turn = y ? Script_Keep(&r, PyInt_FromLong(180)) : NULL;
-	PyObject *yt = turn ? Script_Keep(&r, PyNumber_Add(y, turn)) : NULL;
-	ok = yt && Script_HSet(csp, "Ang", Py_BuildValue("(iOi)", 0, yt, 0)) && Script_HSet(csp, "ActCtrl", Script_Ref(act));
-	PyObject *res = ok ? Script_Keep(&r, Npc_Global("CharRes")) : NULL;
-	PyObject *name = res ? Script_Keep(&r, Script_GetAttr(csp, "Name")) : NULL;
-	int dup = name ? Script_True(Script_Keep(&r, Script_Method(res, "has_key", "(O)", name))) : -1;
-	if (dup > 0) {
-		dup = Npc_ConsoleError(Script_PlusS(Script_Plus(Script_PlusS(Script_Ref(name), "  char duplicated, using "), name), "_R\n")) &&
-			Script_HSet(csp, "Name", Script_PlusS(Script_Ref(name), "_R")) ? 1 : -1;
-	}
-	PyObject *key = dup >= 0 ? Script_Keep(&r, Script_GetAttr(csp, "Name")) : NULL;
-	if (!key || PyObject_SetItem(res, key, csp) != 0) {
-		return Script_Done(&r, NULL);
-	}
-	return Script_Done(&r, Script_Ref(csp));
+/* ---- the values of the module ---- */
+
+/* a global of the module as its functions read it (out None before) */
+static byte Npc_G(const char *name, nativeVal_t *out) {
+	return Mode_G(NPC, name, out);
 }
 
-static PyObject *CharsNPC_AddNPCPos(PyObject *self, PyObject *args) {
-	PyObject *dummy, *mission = NULL;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O|O", &dummy, &mission)) {
-		return NULL;
+/* Scrap.GetSaveVar(name) == text */
+static byte Npc_SaveIs(const char *name, const char *text) {
+	const char *v = SaveVar_Get(name);
+	return v && !strcmp(v, text);
+}
+
+/* v is one of the texts (NULL ends them) */
+static byte Npc_In(const nativeVal_t *v, const char *const *texts) {
+	for (; *texts; texts++) {
+		if (Mode_IsText(v, *texts)) {
+			return 1;
+		}
 	}
-	return Npc_AddNPCPos(dummy, mission);
+	return 0;
+}
+
+/* the count of a for loop over v that the calls in the loop may make grow: the script reads the list again on each
+ * turn (a list held as one NV_OBJ is the list itself); -1 with the TypeError of a value that is no sequence */
+static int Npc_Count(const nativeVal_t *v) {
+	nativeVal_t c;
+	Native_Copy(&c, v);
+	int n = Mode_Loop(&c);
+	Native_Free(&c);
+	return n;
+}
+
+/* h.var as any value into a slot that may hold one (it is freed first) */
+static byte Npc_Attr(const nativeVal_t *h, const char *var, nativeVal_t *slot) {
+	Native_Free(slot);
+	return Mode_VObj(h, var, slot);
+}
+
+/* (a, b, c) of three values */
+static void Npc_Tuple3(nativeVal_t *out, const nativeVal_t *a, const nativeVal_t *b, const nativeVal_t *c) {
+	Native_SetEmpty(out, NV_TUPLE);
+	Native_Copy(Native_Append(out), a);
+	Native_Copy(Native_Append(out), b);
+	Native_Copy(Native_Append(out), c);
+}
+
+/* lst.insert(0, v) of a list of the function */
+static void Npc_Insert0(nativeVal_t *lst, const nativeVal_t *v) {
+	Native_Append(lst);
+	/* the items move up by one, their memory with them; the first slot then gets the copy */
+	memmove(&lst->items[1], &lst->items[0], (size_t)(lst->n - 1) * sizeof(*lst->items));
+	Native_Copy(&lst->items[0], v);
+}
+
+/* Scrap.StartDummySearch(pattern, flag) with the pattern a value of the script, through its seam (the TypeError of "s"
+ * for a text with 0 bytes) */
+static byte Npc_DummyStart(const nativeVal_t *pattern, long flag) {
+	PyObject *hook;
+	const char *s;
+	int seam = Native_Seam("Scrap", "StartDummySearch", &hook);
+	if (seam) {
+		return seam > 0 && Native_HookCall(hook, NULL, "vi", pattern, flag);
+	}
+	if (!Native_ArgStr(pattern, 1, &s)) {
+		return 0;
+	}
+	Mode_DummyStart(s, (int)flag);
+	return 1;
+}
+
+/* CharRes[key] (the global) as the object it is (OBJLIB 5: the spawn points are instances of the Python class) */
+static byte Npc_Res(const nativeVal_t *key, nativeVal_t *out) {
+	PyObject *o = Mode_AtPy(NPC, "CharRes", key);
+	if (!o) {
+		return 0;
+	}
+	Native_Arg(o, out);
+	Py_DECREF(o);
+	return 1;
+}
+
+/* CharSpawnPos() of the global class (OBJLIB 5) */
+static byte Npc_SpawnPos(nativeVal_t *out) {
+	PyObject *cls = Mode_GlobalPy(NPC, "CharSpawnPos");
+	PyObject *csp = cls ? Npc_NewSpawnPos(cls) : NULL;
+	Py_XDECREF(cls);
+	if (!csp) {
+		return 0;
+	}
+	Native_Arg(csp, out);
+	Py_DECREF(csp);
+	return 1;
+}
+
+/* string.find(s, sub) != -1 (OBJLIB 3: string.find by name): 1, 0, -1 with the error set */
+static int Npc_Find(const nativeVal_t *s, const nativeVal_t *sub) {
+	nativeVal_t r = { 0 };
+	int c = Native_CallMod("string", "find", &r, "vv", s, sub) ? Mode_CmpI(&r, "!=", -1) : -1;
+	Native_Free(&r);
+	return c;
+}
+
+/* the count of range(n): an int as it is, any other value through range by name (its errors) */
+static byte Npc_Range(const nativeVal_t *n, long *count) {
+	if (n->type == NV_INT) {
+		*count = n->i;
+		return 1;
+	}
+	nativeVal_t r = { 0 };
+	int k = Native_CallMod("__builtin__", "range", &r, "v", n) ? Native_Size(&r) : -1;
+	Native_Free(&r);
+	*count = k;
+	return k >= 0;
+}
+
+/* ---- the spawn points ---- */
+
+/* AddNPCPos(dummy, IsMissionChar=0): a CharSpawnPos from the dummy (name, pos, ang, flag) into CharRes; a name
+ * already there gets "_R" (mission NULL: not given; the spawn point into out) */
+static byte Npc_AddNPCPos(const nativeVal_t *dummy, const nativeVal_t *mission, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *flag = Mode_V(&t), *d0 = Mode_V(&t), *nam = Mode_V(&t), *act = Mode_V(&t), *csp = Mode_V(&t);
+	nativeVal_t *d1 = Mode_V(&t), *name = Mode_V(&t), *d2 = Mode_V(&t), *y = Mode_V(&t), *yt = Mode_V(&t);
+	nativeVal_t *ang = Mode_V(&t), *cur = Mode_V(&t), *msg = Mode_V(&t), *dup = Mode_V(&t), *key = Mode_V(&t);
+	if (!Mode_Import("string") || !Mode_Import("Chars")) {
+		return Mode_Done(&t, 0);
+	}
+	if (mission) {
+		Native_Copy(flag, mission);
+	} else {
+		Native_SetInt(flag, 0);
+	}
+	byte m = Native_True(flag);
+	long starts = m ? 11 : 13, typeid = m ? 2 : 3;
+	byte ok = Mode_Item(dummy, 0, d0) && Native_Split(d0, "_", nam) && Mode_Item(nam, typeid, act) &&
+		Native_CallMod("Chars", "AddNewCharRes", NULL, "vv", act, flag) && Npc_SpawnPos(csp) && Mode_Item(dummy, 1, d1) &&
+		Mode_VSet(csp, "Pos", d1) && Native_Slice(d0, starts, INT_MAX, name) && Mode_VSet(csp, "Name", name) &&
+		Mode_Item(dummy, 2, d2) && Mode_Item(d2, 1, y) && Mode_Arith('+', y, Mode_I(&t, 180), yt);
+	if (ok) {
+		Npc_Tuple3(ang, Mode_I(&t, 0), yt, Mode_I(&t, 0));
+		ok = Mode_VSet(csp, "Ang", ang) && Mode_VSet(csp, "ActCtrl", act) && Mode_VObj(csp, "Name", cur);
+	}
+	int has = ok ? Mode_HasKey(NPC, "CharRes", 1, cur) : -1;
+	if (has > 0) {
+		has = Mode_Cat(&t, msg, 4, cur, Mode_S(&t, "  char duplicated, using "), cur, Mode_S(&t, "_R\n")) &&
+			Mode_ConsoleError(msg) && Mode_Cat(&t, dup, 2, cur, Mode_S(&t, "_R")) && Mode_VSet(csp, "Name", dup) ? 0 : -1;
+	}
+	ok = has >= 0 && Mode_VObj(csp, "Name", key) && Mode_DictPut(NPC, "CharRes", NULL, key, csp);
+	if (ok && out) {
+		Native_Copy(out, csp);
+	}
+	return Mode_Done(&t, ok);
 }
 
 /* CreateMissionChar(Name): the spawn point of a mission character from its dummy DM_Mission_<Name> */
-static PyObject *CharsNPC_CreateMissionChar(PyObject *self, PyObject *args) {
-	PyObject *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+static byte Npc_CreateMissionChar(const nativeVal_t *name, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *pat = Mode_V(&t), *dummy = Mode_V(&t), *msg = Mode_V(&t);
+	if (!LvN_Cat("DM_Mission_", name, pat) || !Npc_DummyStart(pat, 0) || !Mode_DummyNextSeam(dummy)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *pat = Script_SPlus("DM_Mission_", name);
-	byte ok = pat && Script_Try("Scrap", "StartDummySearch", "(Oi)", pat, 0);
-	Py_XDECREF(pat);
-	PyObject *dummy = ok ? Script_Ask("Scrap", "NextDummySearch", "()") : NULL;
-	int found = Script_True(dummy);
-	PyObject *r = NULL;
-	if (found > 0) {
-		PyObject *one = PyInt_FromLong(1);
-		r = one ? Npc_AddNPCPos(dummy, one) : NULL;
-		Py_XDECREF(one);
-	} else if (found == 0 && Npc_ConsoleError(Script_PlusS(Script_SPlus("TWISTED ERROR : DM_Mission_", name), " Dummy not found\n"))) {
-		r = Py_ReturnNone();
+	if (Native_True(dummy)) {
+		return Mode_Done(&t, Npc_AddNPCPos(dummy, Mode_I(&t, 1), out));
 	}
-	Py_XDECREF(dummy);
-	return r;
+	return Mode_Done(&t, Mode_Cat(&t, msg, 3, Mode_S(&t, "TWISTED ERROR : DM_Mission_"), name, Mode_S(&t, " Dummy not found\n")) &&
+		Mode_ConsoleError(msg));
 }
 
 /* DeleteMissionChar(Name): the entity goes, and its spawn point */
-static PyObject *CharsNPC_DeleteMissionChar(PyObject *self, PyObject *args) {
-	PyObject *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
-	}
-	PyObject *e = Script_Ask("Scrap", "GetEntity", "(O)", name);
-	int there = Script_True(e);
-	PyObject *del = there > 0 ? Script_Method(e, "Del", "()") : NULL;
-	Py_XDECREF(e);
-	if (there < 0 || (there > 0 && !del)) {
-		return NULL;
-	}
-	Py_XDECREF(del);
-	PyObject *res = Npc_Global("CharRes");
-	byte ok = res && PyObject_DelItem(res, name) == 0;
-	Py_XDECREF(res);
-	return ok ? Py_ReturnNone() : NULL;
+static byte Npc_DeleteMissionChar(const nativeVal_t *name) {
+	nativeVal_t e = { 0 };
+	byte ok = Mode_EntitySeam(name, &e) && (!Native_True(&e) || Mode_VDel(&e)) && Mode_DictDel(NPC, "CharRes", NULL, name);
+	Native_Free(&e);
+	return ok;
 }
 
 /* SetReposChars(CharType, Num): how many repositioned characters of a type the level has */
-static PyObject *CharsNPC_SetReposChars(PyObject *self, PyObject *args) {
-	PyObject *type, *num;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &type, &num)) {
-		return NULL;
-	}
-	PyObject *repos = Npc_Global("ReposChars");
-	byte ok = repos && PyObject_SetItem(repos, type, num) == 0;
-	Py_XDECREF(repos);
-	return ok ? Py_ReturnNone() : NULL;
+static byte Npc_SetReposChars(const nativeVal_t *type, const nativeVal_t *num) {
+	return Mode_DictPut(NPC, "ReposChars", NULL, type, num);
 }
 
 /* the next DM_NPC_Repos_ dummy as a repositioned spawn point; a police also gets its Gear (the name with "Gear" in
- * place of characters 13 to 18): 0 with the error set */
+ * place of characters 13 to 18) */
 static byte Npc_ReposOne(byte police) {
-	scriptRefs_t r = { 0 };
-	PyObject *dummy = Script_Keep(&r, Script_Ask("Scrap", "NextDummySearch", "()"));
-	PyObject *csp = dummy ? Script_Keep(&r, Npc_AddNPCPos(dummy, NULL)) : NULL;
-	byte ok = csp && Script_HSet(csp, "repos", PyInt_FromLong(1));
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *dummy = Mode_V(&t), *csp = Mode_V(&t), *d0 = Mode_V(&t), *head = Mode_V(&t), *gear = Mode_V(&t);
+	nativeVal_t *tail = Mode_V(&t), *name = Mode_V(&t), *d1 = Mode_V(&t), *d2 = Mode_V(&t), *d3 = Mode_V(&t);
+	nativeVal_t *dummy2 = Mode_V(&t), *csp2 = Mode_V(&t);
+	byte ok = Mode_DummyNextSeam(dummy) && Npc_AddNPCPos(dummy, NULL, csp) && LvN_SetI(csp, "repos", 1);
 	if (ok && police) {
-		PyObject *d0 = Script_Keep(&r, Script_Index(dummy, 0));
-		PyObject *gear = d0 ? Script_Keep(&r, Script_PlusS(PySequence_GetSlice(d0, 0, 13), "Gear")) : NULL;
-		PyObject *tail = gear ? Script_Keep(&r, PySequence_GetSlice(d0, 19, INT_MAX)) : NULL;
-		PyObject *name = tail ? Script_Keep(&r, Script_Plus(Script_Ref(gear), tail)) : NULL;
-		PyObject *d1 = name ? Script_Keep(&r, Script_Index(dummy, 1)) : NULL;
-		PyObject *d2 = d1 ? Script_Keep(&r, Script_Index(dummy, 2)) : NULL;
-		PyObject *d3 = d2 ? Script_Keep(&r, Script_Index(dummy, 3)) : NULL;
-		PyObject *dummy2 = d3 ? Script_Keep(&r, Py_BuildValue("(OOOO)", name, d1, d2, d3)) : NULL;
-		PyObject *csp2 = dummy2 ? Script_Keep(&r, Npc_AddNPCPos(dummy2, NULL)) : NULL;
-		ok = csp2 && Script_HSet(csp2, "repos", PyInt_FromLong(1));
+		ok = Mode_Item(dummy, 0, d0) && Native_Slice(d0, 0, 13, head) && Mode_Cat(&t, gear, 2, head, Mode_S(&t, "Gear")) &&
+			Native_Slice(d0, 19, INT_MAX, tail) && Mode_Cat(&t, name, 2, gear, tail) && Mode_Item(dummy, 1, d1) &&
+			Mode_Item(dummy, 2, d2) && Mode_Item(dummy, 3, d3);
+		if (ok) {
+			Npc_Tuple3(dummy2, name, d1, d2);
+			Native_Copy(Native_Append(dummy2), d3);
+			ok = Npc_AddNPCPos(dummy2, NULL, csp2) && LvN_SetI(csp2, "repos", 1);
+		}
 	}
-	Script_Done(&r, NULL);
-	return ok;
+	return Mode_Done(&t, ok);
 }
 
 /* CreateReposChars(): the repositioned spawn points of the types in ReposChars, then `del ReposChars` */
 static byte Npc_CreateReposChars(void) {
-	scriptRefs_t r = { 0 };
-	PyObject *repos = Script_Keep(&r, Npc_Global("ReposChars"));
-	PyObject *keys = repos ? Script_Keep(&r, Script_Method(repos, "keys", "()")) : NULL;
-	byte ok = keys != NULL;
-	for (int i = 0; ok && i < PySequence_Length(keys); i++) {
-		scriptRefs_t t = { 0 };
-		PyObject *type = Script_Keep(&t, PySequence_GetItem(keys, i));
-		PyObject *num = type ? Script_Keep(&t, PyObject_GetItem(repos, type)) : NULL;
-		byte police = Script_Is(type, "Police");
-		PyObject *pat = num ? Script_Keep(&t, Script_PlusS(Script_SPlus("DM_NPC_Repos_", type), "_*")) : NULL;
-		PyObject *range = pat && Script_Try("Scrap", "StartDummySearch", "(Oi)", pat, 1) ?
-			Script_Keep(&t, Script_Ask("__builtin__", "range", "(O)", num)) : NULL;
-		ok = range != NULL;
-		for (int j = 0; ok && j < PySequence_Length(range); j++) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *repos = Mode_V(&t), *keys = Mode_V(&t);
+	int n = Npc_G("ReposChars", repos) && Mode_Keys(NPC, "ReposChars", 1, keys) ? Mode_Loop(keys) : -1;
+	for (int i = 0; i < n; i++) {
+		int mark = t.n;
+		nativeVal_t *type = Mode_V(&t), *num = Mode_V(&t), *pat = Mode_V(&t);
+		long count = 0;
+		byte ok = Native_SeqItem(keys, i, type) && Mode_Sub(repos, type, num);
+		byte police = Mode_IsText(type, "Police");
+		ok = ok && Mode_Cat(&t, pat, 3, Mode_S(&t, "DM_NPC_Repos_"), type, Mode_S(&t, "_*")) && Npc_DummyStart(pat, 1) &&
+			Npc_Range(num, &count);
+		for (long j = 0; ok && j < count; j++) {
 			ok = Npc_ReposOne(police);
 		}
-		Script_Done(&t, NULL);
-	}
-	if (ok) {
-		PyObject *m = PyImport_ImportModule("CharsNPC");
-		ok = m && PyDict_DelItemString(PyModule_GetDict(m), "ReposChars") == 0;
-		if (m && !ok) {
-			PyErr_SetString(PyExc_NameError, "ReposChars");
+		if (!ok) {
+			return Mode_Done(&t, 0);
 		}
-		Py_XDECREF(m);
+		Mode_Release(&t, mark);
 	}
-	Script_Done(&r, NULL);
-	return ok;
-}
-
-static PyObject *CharsNPC_CreateReposChars(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Npc_CreateReposChars() ? Py_ReturnNone() : NULL;
+	return Mode_Done(&t, n >= 0 && Mode_DelGlobal(NPC, "ReposChars"));
 }
 
 /* BrowseNPC(): the spawn points of the level (the DM_NPC_Spawn_ dummies with their flag set), then the hooks the
  * missions put into AfterBrowseNPC */
-static PyObject *CharsNPC_BrowseNPC(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	if (!Script_Try("DTritusDesktop", "InitNPCS", "()") || !Npc_CreateReposChars() ||
-		!Script_Try("Scrap", "StartDummySearch", "(si)", "DM_NPC_Spawn_*", 1)) {
-		return NULL;
+static byte Npc_BrowseNPC(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *after = Mode_V(&t);
+	if (!Mode_Import("DTritusDesktop") || !Native_CallMod("DTritusDesktop", "InitNPCS", NULL, "") || !Npc_CreateReposChars() ||
+		!Mode_DummyStartSeam("DM_NPC_Spawn_*", 1)) {
+		return Mode_Done(&t, 0);
 	}
 	for (;;) {
-		PyObject *dummy = Script_Ask("Scrap", "NextDummySearch", "()");
-		if (!dummy) {
-			return NULL;
+		nativeVal_t *dummy = Mode_V(&t), *flag = Mode_V(&t);
+		if (!Mode_DummyNextSeam(dummy)) {
+			return Mode_Done(&t, 0);
 		}
-		if (dummy == Py_None) {
-			Py_DECREF(dummy);
+		if (dummy->type == NV_NONE) {
 			break;
 		}
-		PyObject *flag = Script_Index(dummy, 3);
-		int add = Script_True(flag);
-		PyObject *csp = add > 0 ? Npc_AddNPCPos(dummy, NULL) : NULL;
-		Py_XDECREF(flag);
-		Py_DECREF(dummy);
-		if (add < 0 || (add > 0 && !csp)) {
-			return NULL;
+		if (!Mode_Item(dummy, 3, flag) || (Native_True(flag) && !Npc_AddNPCPos(dummy, NULL, NULL))) {
+			return Mode_Done(&t, 0);
 		}
-		Py_XDECREF(csp);
+		Mode_Release(&t, t.n - 2);
 	}
-	PyObject *after = Npc_Global("AfterBrowseNPC");
-	byte ok = after != NULL;
-	/* the list may grow while the hooks run: the length of each turn, as the for loop of the script */
-	for (int i = 0; ok && i < PySequence_Length(after); i++) {
-		PyObject *f = PySequence_GetItem(after, i);
-		PyObject *v = f ? Script_Invoke(f, PyTuple_New(0)) : NULL;
-		ok = v != NULL;
-		Py_XDECREF(v);
-		Py_XDECREF(f);
+	/* the list may grow while the hooks run */
+	byte ok = Npc_G("AfterBrowseNPC", after);
+	for (int i = 0; ok && i < Npc_Count(after); i++) {
+		nativeVal_t f = { 0 };
+		ok = Mode_Item(after, i, &f) && Mode_CallArgs(&f, NULL, NULL, 0);
+		Native_Free(&f);
 	}
-	Py_XDECREF(after);
-	return ok ? Py_ReturnNone() : NULL;
+	return Mode_Done(&t, ok && Npc_Count(after) >= 0);
 }
 
 /* AssignAttrib(c): money, reward and life of the type from NPCAttribs (else 50, 5, 100), PrevLife as Life */
-static byte Npc_AssignAttrib(PyObject *c) {
-	scriptRefs_t r = { 0 };
-	PyObject *act = Script_Keep(&r, Script_GetAttr(c, "ActCtrl"));
-	PyObject *attribs = act ? Script_Keep(&r, Npc_Global("NPCAttribs")) : NULL;
-	int has = attribs ? Script_True(Script_Keep(&r, Script_Method(attribs, "has_key", "(O)", act))) : -1;
-	PyObject *vals = has > 0 ? Script_Keep(&r, PyObject_GetItem(attribs, act)) : has == 0 ? Script_Keep(&r, Py_BuildValue("(iii)", 50, 5, 100)) : NULL;
-	PyObject *v[3];
-	byte ok = vals && Script_Unpack(vals, 3, v);
+static byte Npc_AssignAttrib(const nativeVal_t *c) {
+	static const char *const vars[3] = { "Money", "MoneyReward", "Life" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *act = Mode_V(&t), *attribs = Mode_V(&t), *vals = Mode_V(&t), *life = Mode_V(&t), *v = Mode_V(&t);
+	Mode_V(&t);
+	Mode_V(&t);
+	int has = Mode_VObj(c, "ActCtrl", act) && Npc_G("NPCAttribs", attribs) ? Mode_HasKey(NPC, "NPCAttribs", 1, act) : -1;
+	if (has == 0) {
+		Mode_Ints3(vals, 50, 5, 100);
+	}
+	byte ok = has > 0 ? Mode_Sub(attribs, act, vals) : has == 0;
 	if (ok) {
-		/* each set takes its value over; the values after a failed one are released */
-		static const char *const vars[3] = { "Money", "MoneyReward", "Life" };
-		for (int i = 0; i < 3; i++) {
-			if (ok) {
-				ok = Script_HSet(c, vars[i], v[i]);
-			} else {
-				Py_DECREF(v[i]);
-			}
-		}
-		ok = ok && Script_HSet(c, "PrevLife", Script_GetAttr(c, "Life"));
+		Mode_Elems(vals);
+		ok = Mode_Unpack(vals, 3, v);
 	}
-	Script_Done(&r, NULL);
-	return ok;
-}
-
-static PyObject *CharsNPC_AssignAttrib(PyObject *self, PyObject *args) {
-	PyObject *c;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &c)) {
-		return NULL;
+	for (int i = 0; ok && i < 3; i++) {
+		ok = Mode_VSet(c, vars[i], &v[i]);
 	}
-	return Npc_AssignAttrib(c) ? Py_ReturnNone() : NULL;
+	return Mode_Done(&t, ok && Mode_VObj(c, "Life", life) && Mode_VSet(c, "PrevLife", life));
 }
 
 /* CharNPCInclude(chrname): the AI and the entity list of the type */
-static byte Npc_CharNPCInclude(PyObject *name) {
+static byte Npc_CharNPCInclude(const nativeVal_t *name) {
 	static const char *const gate[] = { "GateKeeper", "Sebastian", NULL };
 	static const char *const gen[] = { "Mayor", "BankDirector", "BankMaster", "Desktop", "Berto", "Betty", "Boss",
 		"Humphrey", "Bishop", "Functionary", "Rusty", "SputnikJunkyard", "Maintenance", "MercenaryA", "MercenaryB",
 		"MercenaryC", "MercenaryL", "CrazyGambler", "PoliceBoss", "Messenger", "Human", NULL };
-	scriptRefs_t r = { 0 };
-	PyObject *res = Script_Keep(&r, Npc_Global("CharRes"));
-	PyObject *ctr = res ? Script_Keep(&r, PyObject_GetItem(res, name)) : NULL;
-	PyObject *act = ctr ? Script_Keep(&r, Script_GetAttr(ctr, "ActCtrl")) : NULL;
-	if (!act) {
-		Script_Done(&r, NULL);
-		return 0;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ctr = Mode_V(&t), *act = Mode_V(&t), *list = Mode_V(&t), *ch = Mode_V(&t);
+	if (!Npc_Res(name, ctr) || !Mode_VObj(ctr, "ActCtrl", act)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *list = NULL;
 	byte ai = 0;
-	if (Script_Is(act, "Nurse")) {
+	if (Mode_IsText(act, "Nurse")) {
 		ai = 1;
-		list = PyString_FromString("Nurse");
-	} else if (Script_In(act, gate)) {
-		list = PyString_FromString("GateKeeper");
-	} else if (Script_In(act, gen)) {
+		Native_SetStr(list, "Nurse");
+	} else if (Npc_In(act, gate)) {
+		Native_SetStr(list, "GateKeeper");
+	} else if (Npc_In(act, gen)) {
 		ai = 1;
-		list = Script_Is(act, "Bishop") || Script_Is(act, "Messenger") ? Script_Ref(act) : PyString_FromString("GenChars");
+		if (Mode_IsText(act, "Bishop") || Mode_IsText(act, "Messenger")) {
+			Native_Copy(list, act);
+		} else {
+			Native_SetStr(list, "GenChars");
+		}
+	} else {
+		return Mode_Done(&t, 1);
 	}
-	byte ok = 1;
-	if (list) {
-		PyObject *ch = Script_Keep(&r, Script_Ask("Scrap", "GetEntity", "(O)", name));
-		ok = ch && (!ai || Script_Try("SAI", "EnableAIChar", "(Oii)", name, 1, 0)) && Script_HSet(ch, "EntityList", Script_Ref(list));
-		Py_DECREF(list);
-	}
-	Script_Done(&r, NULL);
-	return ok;
-}
-
-static PyObject *CharsNPC_CharNPCInclude(PyObject *self, PyObject *args) {
-	PyObject *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
-	}
-	return Npc_CharNPCInclude(name) ? Py_ReturnNone() : NULL;
+	return Mode_Done(&t, Mode_EntitySeam(name, ch) && (!ai || Native_CallMod("SAI", "EnableAIChar", NULL, "vii", name, 1L, 0L)) &&
+		Mode_VSet(ch, "EntityList", list));
 }
 
 /* CreateChar(csp, Fixed=0): the character of a spawn point, a WalkChar that talks through Speech.AutoSpeech;
- * standing on the floor, or fixed where it is; the callbacks of the spawn point get it (a new reference) */
-static PyObject *Npc_CreateChar(PyObject *csp, PyObject *fixed) {
-	static const char *const mods[] = { "Chars", "InPolice", NULL };
-	scriptRefs_t r = { 0 };
-	if (!Script_Import(mods)) {
-		return NULL;
+ * standing on the floor, or fixed where it is; the callbacks of the spawn point get it (fixed NULL: not given; the
+ * character into out) */
+static byte Npc_CreateChar(const nativeVal_t *csp, const nativeVal_t *fixed, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *name = Mode_V(&t), *pos = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t);
+	nativeVal_t *c = Mode_V(&t), *cname = Mode_V(&t), *msg = Mode_V(&t), *act = Mode_V(&t), *ang = Mode_V(&t);
+	nativeVal_t *key = Mode_V(&t), *desc = Mode_V(&t), *talk = Mode_V(&t), *opt = Mode_V(&t);
+	nativeVal_t *repos = Mode_V(&t), *funcs = Mode_V(&t);
+	if (!Mode_Import("Chars") || !Mode_Import("InPolice") || !Mode_VObj(csp, "Name", name) || !Mode_VObj(csp, "Pos", pos) ||
+		!Mode_Item(pos, 0, x) || !Mode_Item(pos, 1, y) || !Mode_Item(pos, 2, z) || !LvN_Create(name, x, y, z, "WalkChar", c) ||
+		!Mode_VObj(c, "Name", cname)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *name = Script_Keep(&r, Script_GetAttr(csp, "Name"));
-	PyObject *pos = name ? Script_Keep(&r, Script_GetAttr(csp, "Pos")) : NULL;
-	PyObject *x = pos ? Script_Keep(&r, Script_Index(pos, 0)) : NULL;
-	PyObject *y = x ? Script_Keep(&r, Script_Index(pos, 1)) : NULL;
-	PyObject *z = y ? Script_Keep(&r, Script_Index(pos, 2)) : NULL;
-	PyObject *c = z ? Script_Keep(&r, Script_Ask("Scrap", "CreateEntity", "(OOOOs)", name, x, y, z, "WalkChar")) : NULL;
-	PyObject *cname = c ? Script_Keep(&r, Script_GetAttr(c, "Name")) : NULL;
-	if (!cname) {
-		return Script_Done(&r, NULL);
+	int diff = Mode_Cmp(name, "!=", cname);
+	if (diff < 0 || (diff && (!LvN_Cat("Imposible crear el personaje ", name, msg) || !Mode_ConsoleError(msg) ||
+		!Mode_VDel(c)))) {
+		return Mode_Done(&t, 0);
 	}
-	int diff = PyObject_Compare(name, cname);
-	if (PyErr_Occurred()) {
-		return Script_Done(&r, NULL);
+	nativeVal_t *act2 = Mode_V(&t), *cpos = Mode_V(&t), *cang = Mode_V(&t), *n = Mode_V(&t), *rv = Mode_V(&t);
+	byte ok = Mode_VObj(csp, "ActCtrl", act) && Mode_VSet(c, "ActCtrl", act) && Mode_VObj(csp, "Ang", ang) &&
+		Mode_VSet(c, "Ang", ang) && LvN_SetI(c, "ArrowCanUse", 1) && LvN_SetI(c, "ArrowCanView", 1) &&
+		LvN_SetS(c, "UseFunc", "Speech.AutoSpeech") && LvN_SetS(c, "ViewFunc", "Speech.InspectChar") &&
+		Mode_VObj(csp, "ActCtrl", act2) && LvN_Cat("CharName_", act2, key) && Mode_LangV(key, desc) &&
+		Mode_VSet(c, "Descriptor", desc) && LvN_SetI(c, "ArrnOpt", 0);
+	if (ok) {
+		Mode_Lang("TalkOpt", talk);
+		ok = LvN_Cat("Talk:", talk, opt) && Mode_VSet(c, "ArrOpt0", opt);
 	}
-	if (diff) {
-		PyObject *del = Npc_ConsoleError(Script_SPlus("Imposible crear el personaje ", name)) ? Script_Method(c, "Del", "()") : NULL;
-		if (!del) {
-			return Script_Done(&r, NULL);
-		}
-		Py_DECREF(del);
-	}
-	PyObject *act = Script_Keep(&r, Script_GetAttr(csp, "ActCtrl"));
-	byte ok = act && Script_HSet(c, "ActCtrl", Script_Ref(act)) && Script_HSet(c, "Ang", Script_GetAttr(csp, "Ang")) &&
-		Script_HSet(c, "ArrowCanUse", PyInt_FromLong(1)) && Script_HSet(c, "ArrowCanView", PyInt_FromLong(1)) &&
-		Script_HSet(c, "UseFunc", PyString_FromString("Speech.AutoSpeech")) &&
-		Script_HSet(c, "ViewFunc", PyString_FromString("Speech.InspectChar"));
-	PyObject *act2 = ok ? Script_Keep(&r, Script_GetAttr(csp, "ActCtrl")) : NULL;
-	ok = act2 && Script_HSet(c, "Descriptor", Script_LangOf(Script_SPlus("CharName_", act2))) &&
-		Script_HSet(c, "ArrnOpt", PyInt_FromLong(0)) &&
-		Script_HSet(c, "ArrOpt0", Script_SPlus("Talk:", Script_Keep(&r, Script_Ask("Scrap", "GetLangStr", "(s)", "TalkOpt"))));
-	int fix = ok ? (fixed ? Script_True(fixed) : 0) : -1;
+	int fix = ok ? (fixed ? Native_True(fixed) : 0) : -1;
 	if (fix > 0) {
-		ok = Script_HSet(c, "MovePos", Script_GetAttr(c, "Pos")) && Script_HSet(c, "MoveAng", Script_GetAttr(c, "Ang")) &&
-			Script_HSet(c, "MoveTime", PyFloat_FromDouble(0.001)) && Script_HSet(c, "MoveViewAng", PyInt_FromLong(0));
+		ok = Mode_VObj(c, "Pos", cpos) && Mode_VSet(c, "MovePos", cpos) && Mode_VObj(c, "Ang", cang) &&
+			Mode_VSet(c, "MoveAng", cang) && LvN_SetF(c, "MoveTime", 0.001) && LvN_SetI(c, "MoveViewAng", 0);
 	} else if (fix == 0) {
-		PyObject *n = Script_Keep(&r, Script_GetAttr(c, "Name"));
-		ok = n && Script_Try("SLogic", "SetOnFloor", "(O)", n);
-	} else {
-		ok = 0;
+		ok = Mode_VObj(c, "Name", n) && LvN_SetOnFloor(n);
 	}
-	PyObject *n1 = ok && Npc_AssignAttrib(c) ? Script_Keep(&r, Script_GetAttr(c, "Name")) : NULL;
-	PyObject *n2 = n1 && Script_Try("InPolice", "Include", "(O)", n1) ? Script_Keep(&r, Script_GetAttr(c, "Name")) : NULL;
-	PyObject *repos = n2 && Npc_CharNPCInclude(n2) ? Script_Keep(&r, Script_GetAttr(csp, "repos")) : NULL;
-	int rep = Script_True(repos);
-	ok = rep >= 0 && (!rep || Script_HSet(c, "AI_Repos", Npc_Global("Repos")));
-	PyObject *funcs = ok ? Script_Keep(&r, Script_GetAttr(csp, "CallbackFunc")) : NULL;
-	ok = funcs != NULL;
-	for (int i = 0; ok && i < PySequence_Length(funcs); i++) {
-		PyObject *f = PySequence_GetItem(funcs, i);
-		PyObject *v = f ? Script_Invoke(f, Py_BuildValue("(O)", c)) : NULL;
-		ok = v != NULL;
-		Py_XDECREF(v);
-		Py_XDECREF(f);
+	ok = ok && Npc_AssignAttrib(c) && Npc_Attr(c, "Name", n) && Native_CallMod("InPolice", "Include", NULL, "v", n) &&
+		Npc_Attr(c, "Name", n) && Npc_CharNPCInclude(n) && Mode_VObj(csp, "repos", repos);
+	ok = ok && (!Native_True(repos) || (Npc_G("Repos", rv) && Mode_VSet(c, "AI_Repos", rv))) &&
+		Mode_VObj(csp, "CallbackFunc", funcs);
+	for (int i = 0; ok && i < Npc_Count(funcs); i++) {
+		nativeVal_t f = { 0 };
+		ok = Mode_Item(funcs, i, &f) && Mode_CallArgs(&f, NULL, c, 1);
+		Native_Free(&f);
 	}
-	return Script_Done(&r, ok ? Script_Ref(c) : NULL);
-}
-
-static PyObject *CharsNPC_CreateChar(PyObject *self, PyObject *args) {
-	PyObject *csp, *fixed = NULL;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O|O", &csp, &fixed)) {
-		return NULL;
+	ok = ok && Npc_Count(funcs) >= 0;
+	if (ok && out) {
+		Native_Copy(out, c);
 	}
-	return Npc_CreateChar(csp, fixed);
+	return Mode_Done(&t, ok);
 }
 
 /* CallCreateChar(EntityName, x, y, z): the character of a spawn point at another place */
-static PyObject *CharsNPC_CallCreateChar(PyObject *self, PyObject *args) {
-	PyObject *name, *x, *y, *z;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &name, &x, &y, &z)) {
-		return NULL;
+static byte Npc_CallCreateChar(const nativeVal_t *name, const nativeVal_t *x, const nativeVal_t *y, const nativeVal_t *z) {
+	nativeVal_t csp = { 0 }, pos = { 0 };
+	byte ok = Npc_Res(name, &csp);
+	if (ok) {
+		Npc_Tuple3(&pos, x, y, z);
+		ok = Mode_VSet(&csp, "Pos", &pos) && Npc_CreateChar(&csp, NULL, NULL);
 	}
-	PyObject *res = Npc_Global("CharRes");
-	PyObject *csp = res ? PyObject_GetItem(res, name) : NULL;
-	PyObject *c = csp && Script_HSet(csp, "Pos", Py_BuildValue("(OOO)", x, y, z)) ? Npc_CreateChar(csp, NULL) : NULL;
-	Py_XDECREF(res);
-	Py_XDECREF(csp);
-	if (!c) {
-		return NULL;
-	}
-	Py_DECREF(c);
-	return Py_ReturnNone();
+	Native_Free(&pos);
+	Native_Free(&csp);
+	return ok;
 }
 
 /* Init(): the characters of all spawn points (not the Gear of a repositioned police; gatekeepers, Sputnik and
  * Sebastian fixed), then Repos = 1 */
-static PyObject *CharsNPC_Init(PyObject *self, PyObject *args) {
+static byte Npc_Init(void) {
 	static const char *const fixedTypes[] = { "GateKeeper", "Sputnik", "Sebastian", NULL };
-	(void)self;
-	(void)args;
-	PyObject *res = Npc_Global("CharRes");
-	PyObject *keys = res ? Script_Method(res, "keys", "()") : NULL;
-	byte ok = keys != NULL;
-	for (int i = 0; ok && i < PySequence_Length(keys); i++) {
-		scriptRefs_t t = { 0 };
-		PyObject *k = Script_Keep(&t, PySequence_GetItem(keys, i));
-		PyObject *cls = k ? Script_Keep(&t, PyObject_GetItem(res, k)) : NULL;
-		int skip = cls ? Script_True(Script_Keep(&t, Script_GetAttr(cls, "repos"))) : -1;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *res = Mode_V(&t), *keys = Mode_V(&t);
+	int n = Npc_G("CharRes", res) && Mode_Keys(NPC, "CharRes", 1, keys) ? Mode_Loop(keys) : -1;
+	for (int i = 0; i < n; i++) {
+		int mark = t.n;
+		nativeVal_t *k = Mode_V(&t), *cls = Mode_V(&t), *repos = Mode_V(&t), *act = Mode_V(&t);
+		int skip = Native_SeqItem(keys, i, k) && Mode_Sub(res, k, cls) && Mode_VObj(cls, "repos", repos) ?
+			Native_True(repos) : -1;
 		if (skip > 0) {
-			PyObject *act = Script_Keep(&t, Script_GetAttr(cls, "ActCtrl"));
-			skip = act ? Script_Is(act, "Gear") : -1;
+			skip = Mode_VObj(cls, "ActCtrl", act) ? Mode_IsText(act, "Gear") : -1;
 		}
 		if (skip == 0) {
-			PyObject *act = Script_Keep(&t, Script_GetAttr(cls, "ActCtrl"));
-			PyObject *fixed = act ? Script_Keep(&t, PyInt_FromLong(Script_In(act, fixedTypes))) : NULL;
-			skip = fixed && Script_Keep(&t, Npc_CreateChar(cls, fixed)) ? 1 : -1;
+			Native_Free(act);
+			skip = Mode_VObj(cls, "ActCtrl", act) && Npc_CreateChar(cls, Mode_I(&t, Npc_In(act, fixedTypes)), NULL) ? 1 : -1;
 		}
-		ok = skip > 0;
-		Script_Done(&t, NULL);
+		if (skip < 0) {
+			return Mode_Done(&t, 0);
+		}
+		Mode_Release(&t, mark);
 	}
-	Py_XDECREF(keys);
-	Py_XDECREF(res);
-	return ok && Npc_SetGlobal("Repos", PyInt_FromLong(1)) ? Py_ReturnNone() : NULL;
+	return Mode_Done(&t, n >= 0 && Mode_Put(NPC, "Repos", NULL, Mode_I(&t, 1)));
 }
 
 /* ---- the respawn ---- */
 
-/* Scrap.TestSphere at CharConversor.CPPos(conv), radius 200, "rv" (a new reference) */
-static PyObject *Npc_TestConv(PyObject *conv) {
-	scriptRefs_t r = { 0 };
-	PyObject *pos = Script_Keep(&r, Script_Ask("CharConversor", "CPPos", "(O)", conv));
-	PyObject *x = pos ? Script_Keep(&r, Script_Index(pos, 0)) : NULL;
-	PyObject *y = x ? Script_Keep(&r, Script_Index(pos, 1)) : NULL;
-	PyObject *z = y ? Script_Keep(&r, Script_Index(pos, 2)) : NULL;
-	return Script_Done(&r, z ? Script_Ask("Scrap", "TestSphere", "(OOOis)", x, y, z, 200, "rv") : NULL);
-}
-
-/* Scrap.GetAlarm()[0] (a new reference) */
-static PyObject *Npc_Alarm(void) {
-	PyObject *a = Script_Ask("Scrap", "GetAlarm", "()");
-	PyObject *v = a ? Script_Index(a, 0) : NULL;
-	Py_XDECREF(a);
-	return v;
+/* `Scrap.TestSphere(CPPos[0], CPPos[1], CPPos[2], 200, "rv")` of CharPos = CharConversor.CPPos(conv): 1, 0, -1 */
+static int Npc_TestConv(const nativeVal_t *conv) {
+	nativeVal_t pos = { 0 }, hit = { 0 };
+	int c = Native_CallMod("CharConversor", "CPPos", &pos, "v", conv) && Mode_TestSpherePos(&pos, 200, "rv", &hit) ?
+		Native_True(&hit) : -1;
+	Native_Free(&pos);
+	Native_Free(&hit);
+	return c;
 }
 
 /* Respawn(csp): after a death the character comes back at the nearest free conversion point (a repositioned one
  * near the player), else it tries again in 5 s; a Gear of a repositioned police without alarm comes back as the
  * police; a mission target is marked again */
-static PyObject *CharsNPC_Respawn(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "CharConversor", "Chars", "MissionsFuncs", "CharsNPC", NULL };
-	PyObject *csp;
-	scriptRefs_t r = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &csp) || !Script_Import(mods)) {
-		return NULL;
+static byte Npc_Respawn(const nativeVal_t *cspArg) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *csp = Mode_V(&t), *name = Mode_V(&t), *act = Mode_V(&t), *repos = Mode_V(&t), *res = Mode_V(&t);
+	nativeVal_t *tail = Mode_V(&t), *key = Mode_V(&t), *usr = Mode_V(&t), *upos = Mode_V(&t), *rpos = Mode_V(&t);
+	nativeVal_t *cpos = Mode_V(&t), *conv = Mode_V(&t), *prev = Mode_V(&t), *chars = Mode_V(&t), *c = Mode_V(&t);
+	nativeVal_t *v = Mode_V(&t), *msg = Mode_V(&t), *p = Mode_V(&t), *a = Mode_V(&t), *n = Mode_V(&t);
+	Native_Copy(csp, cspArg);
+	if (!Mode_Import("CharConversor") || !Mode_Import("Chars") || !Mode_Import("MissionsFuncs") || !Mode_Import(NPC) ||
+		!Mode_VObj(csp, "Name", name) || !Mode_Print((const nativeVal_t *const[]){ name }, 1) ||
+		!Mode_VObj(csp, "ActCtrl", act)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *name = Script_Keep(&r, Script_GetAttr(csp, "Name"));
-	PyObject *act = name && Script_Print(&name, 1) ? Script_Keep(&r, Script_GetAttr(csp, "ActCtrl")) : NULL;
-	if (!act) {
-		return Script_Done(&r, NULL);
-	}
-	int swap = Script_Is(act, "Gear");
+	int swap = Mode_IsText(act, "Gear");
 	if (swap) {
-		PyObject *repos = Script_Keep(&r, Script_GetAttr(csp, "repos"));
-		swap = repos ? Script_NumCmp(repos, 1) : -2;
-		swap = swap == -2 ? -1 : swap == 0;
+		swap = Mode_VObj(csp, "repos", repos) ? Mode_CmpI(repos, "==", 1) : -1;
 	}
 	if (swap > 0) {
-		PyObject *alarm = Script_Keep(&r, Npc_Alarm());
-		swap = alarm ? Script_NumCmp(alarm, 0) : -2;
-		swap = swap == -2 ? -1 : swap == 0;
+		int on = Mode_AlarmOn();
+		swap = on < 0 ? -1 : !on;
 	}
 	if (swap > 0) {
-		PyObject *res = Script_Keep(&r, Script_Attr("CharsNPC", "CharRes"));
-		PyObject *n = res ? Script_Keep(&r, Script_GetAttr(csp, "Name")) : NULL;
-		PyObject *key = n ? Script_Keep(&r, Script_SPlus("Police", Script_Keep(&r, PySequence_GetSlice(n, 4, INT_MAX)))) : NULL;
-		csp = key ? Script_Keep(&r, PyObject_GetItem(res, key)) : NULL;
+		swap = Mode_ModGet(NPC, "CharRes", res) && Npc_Attr(csp, "Name", n) && Native_Slice(n, 4, INT_MAX, tail) &&
+			LvN_Cat("Police", tail, key) && Mode_Sub(res, key, v) ? 1 : -1;
+		if (swap > 0) {
+			Native_Free(csp);
+			*csp = *v;
+			Native_SetNone(v);
+		}
 	}
-	PyObject *usr = swap >= 0 && csp ? Script_Keep(&r, Script_Ask("Scrap", "UsrEntity", "(i)", 0)) : NULL;
-	int dorepos = usr ? Script_True(Script_Keep(&r, Script_GetAttr(csp, "repos"))) : -1;
+	int dorepos = swap >= 0 && Mode_UsrHandle(usr) && Npc_Attr(csp, "repos", repos) ? Native_True(repos) : -1;
 	if (dorepos > 0) {
-		dorepos = Script_True(usr);
+		dorepos = Native_True(usr);
 	}
 	if (dorepos > 0) {
-		PyObject *upos = Script_Keep(&r, Script_GetAttr(usr, "Pos"));
-		PyObject *ract = upos ? Script_Keep(&r, Script_GetAttr(csp, "ActCtrl")) : NULL;
-		PyObject *rpos = ract ? Script_Keep(&r, Script_Ask("SAI", "GetReposCharPos", "(OO)", upos, ract)) : NULL;
-		dorepos = Script_True(rpos);
-		if (dorepos > 0 && !Script_HSet(csp, "Pos", Script_Ref(rpos))) {
+		dorepos = Mode_VObj(usr, "Pos", upos) && Npc_Attr(csp, "ActCtrl", act) &&
+			Native_CallMod("SAI", "GetReposCharPos", rpos, "vv", upos, act) ? Native_True(rpos) : -1;
+		if (dorepos > 0 && !Mode_VSet(csp, "Pos", rpos)) {
 			dorepos = -1;
 		}
 	}
-	PyObject *cpos = dorepos >= 0 ? Script_Keep(&r, Script_GetAttr(csp, "Pos")) : NULL;
-	PyObject *conv = cpos ? Script_Keep(&r, Script_Ask("CharConversor", "GetNearestConversionPoint", "(O)", cpos)) : NULL;
-	int hit = conv ? Script_True(Script_Keep(&r, Npc_TestConv(conv))) : -1;
-	if (hit > 0) {
-		int u = Script_True(usr);
-		if (u > 0) {
-			PyObject *prev = Script_Keep(&r, Script_Attr("CharConversor", "PrevConv"));
-			int p = Script_True(prev);
-			if (p > 0) {
-				conv = prev;
-			} else if (p == 0) {
-				PyObject *u0 = Script_Keep(&r, Script_Ask("Scrap", "UsrEntity", "(i)", 0));
-				PyObject *upos = u0 ? Script_Keep(&r, Script_GetAttr(u0, "Pos")) : NULL;
-				conv = upos ? Script_Keep(&r, Script_Ask("CharConversor", "GetNearestConversionPoint", "(O)", upos)) : NULL;
-			} else {
-				conv = NULL;
-			}
-			hit = conv ? Script_True(Script_Keep(&r, Npc_TestConv(conv))) : -1;
-		} else if (u < 0) {
+	int hit = dorepos >= 0 && Mode_VObj(csp, "Pos", cpos) &&
+		Native_CallMod("CharConversor", "GetNearestConversionPoint", conv, "v", cpos) ? Npc_TestConv(conv) : -1;
+	if (hit > 0 && Native_True(usr)) {
+		if (!Mode_ModGet("CharConversor", "PrevConv", prev)) {
 			hit = -1;
+		} else if (Native_True(prev)) {
+			Native_Free(conv);
+			Native_Copy(conv, prev);
+		} else {
+			Native_Free(conv);
+			Native_Free(upos);
+			if (!Mode_UsrHandle(v) || !Mode_VObj(v, "Pos", upos) ||
+				!Native_CallMod("CharConversor", "GetNearestConversionPoint", conv, "v", upos)) {
+				hit = -1;
+			}
 		}
+		hit = hit < 0 ? -1 : Npc_TestConv(conv);
 	}
 	int later = hit;
 	if (later == 0) {
-		PyObject *ract = Script_Keep(&r, Script_GetAttr(csp, "ActCtrl"));
-		PyObject *chars = ract ? Script_Keep(&r, Npc_Global("RespawnChars")) : NULL;
-		int in = chars ? PySequence_In(chars, ract) : -1;
-		later = in < 0 ? -1 : in ? 0 : Script_True(Script_Keep(&r, Npc_Alarm()));
-	}
-	if (later < 0) {
-		return Script_Done(&r, NULL);
+		int in = Npc_Attr(csp, "ActCtrl", act) && Npc_G("RespawnChars", chars) ? Mode_In(chars, act) : -1;
+		later = in < 0 ? -1 : in ? 0 : Mode_AlarmOn();
 	}
 	if (later) {
-		return Script_Done(&r, Script_LaterIn(5.0, "CharsNPC", "Respawn", Py_BuildValue("(O)", csp), NULL) ? Py_ReturnNone() : NULL);
+		return Mode_Done(&t, later > 0 && Mode_LaterIn(5.0, NPC, "Respawn", csp, 1, NULL));
 	}
-	PyObject *c = Script_Keep(&r, Npc_CreateChar(csp, NULL));
-	byte ok = c && Script_Try("CharConversor", "SpawnChar", "(OO)", c, conv) &&
-		Script_HSet(c, "LLogicIdle", PyInt_FromLong(1)) && Script_HSet(c, "Invulnerable", PyInt_FromLong(1));
-	PyObject *cn = ok ? Script_Keep(&r, Script_GetAttr(c, "Name")) : NULL;
-	ok = cn && Script_LaterIn(1.5, "CharsNPC", "ActiveSpawned", Py_BuildValue("(O)", cn), NULL);
+	Native_Free(name);
+	Native_Free(n);
+	byte ok = Npc_CreateChar(csp, NULL, c) && Native_CallMod("CharConversor", "SpawnChar", NULL, "vv", c, conv) &&
+		LvN_SetI(c, "LLogicIdle", 1) && LvN_SetI(c, "Invulnerable", 1) && Mode_VObj(c, "Name", name) &&
+		Mode_LaterIn(1.5, NPC, "ActiveSpawned", name, 1, NULL);
 	if (ok && dorepos) {
-		PyObject *p = Script_Keep(&r, Script_GetAttr(c, "Pos"));
-		PyObject *a = p ? Script_Keep(&r, Script_GetAttr(c, "ActCtrl")) : NULL;
-		PyObject *n = a ? Script_Keep(&r, Script_GetAttr(c, "Name")) : NULL;
-		ok = n && Script_Keep(&r, Script_Ask("SAI", "GetReposCharPos", "(OOO)", p, a, n));
+		ok = Mode_VObj(c, "Pos", p) && Mode_VObj(c, "ActCtrl", a) && Mode_VObj(c, "Name", n) &&
+			Native_CallMod("SAI", "GetReposCharPos", NULL, "vvv", p, a, n);
 	}
-	PyObject *n = ok ? Script_Keep(&r, Script_GetAttr(c, "Name")) : NULL;
-	int target = n ? Script_True(Script_Keep(&r, Script_Ask("MissionsFuncs", "IsCharMissionObjective", "(O)", n))) : -1;
+	Native_Free(v);
+	int target = ok && Npc_Attr(c, "Name", n) && Native_CallMod("MissionsFuncs", "IsCharMissionObjective", v, "v", n) ?
+		Native_True(v) : -1;
 	if (target > 0) {
-		PyObject *msg = Script_Try("MissionsFuncs", "ActivateTarget", "(Oi)", c, 1) ?
-			Script_Keep(&r, Script_Ask("Scrap", "GetLangStr", "(s)", "MainMissionCharReborn")) : NULL;
-		target = msg && Script_Try("SScorer", "SetMsgText", "(Od)", msg, (double)Timer_GetTime(&g_pWorld->timer) + 5) ? 0 : -1;
+		if (Native_CallMod("MissionsFuncs", "ActivateTarget", NULL, "vi", c, 1L)) {
+			Mode_Lang("MainMissionCharReborn", msg);
+			target = Mode_MsgText(msg, Mode_Time() + 5) ? 0 : -1;
+		} else {
+			target = -1;
+		}
 	}
-	return Script_Done(&r, target == 0 ? Py_ReturnNone() : NULL);
+	return Mode_Done(&t, target == 0);
 }
 
 /* ActiveSpawned(EntityName): 1.5 s after the respawn the character acts and can be hurt again */
-static PyObject *CharsNPC_ActiveSpawned(PyObject *self, PyObject *args) {
-	PyObject *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
-	}
-	PyObject *c = Script_Ask("Scrap", "GetEntity", "(O)", name);
-	byte ok = c && Script_HSet(c, "LLogicIdle", PyInt_FromLong(0)) && Script_HSet(c, "Invulnerable", PyInt_FromLong(0));
-	Py_XDECREF(c);
-	return ok ? Py_ReturnNone() : NULL;
+static byte Npc_ActiveSpawned(const nativeVal_t *name) {
+	nativeVal_t c = { 0 };
+	byte ok = Mode_EntitySeam(name, &c) && LvN_SetI(&c, "LLogicIdle", 0) && LvN_SetI(&c, "Invulnerable", 0);
+	Native_Free(&c);
+	return ok;
 }
 
 /* ---- the generic talk ---- */
 
 /* CheckActualEntity(Ename): the last talking character (when idle by the talk) gets its state back when another
  * one talks now */
-static byte Npc_CheckActualEntity(PyObject *ename) {
-	static const char *const mods[] = { "Speech", NULL };
-	if (!Script_Import(mods)) {
-		return 0;
+static byte Npc_CheckActualEntity(const nativeVal_t *ename) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cur = Mode_V(&t), *ent = Mode_V(&t), *idle = Mode_V(&t);
+	if (!Mode_Import("Speech") || !Npc_G("ActualEntityName", cur)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *cur = Npc_Global("ActualEntityName");
-	if (!cur) {
-		return 0;
-	}
-	int diff = PyObject_Compare(ename, cur);
-	byte ok = !PyErr_Occurred();
-	if (ok && diff) {
-		PyObject *ent = Script_Ask("Scrap", "GetEntity", "(O)", cur);
-		int idle = Script_True(ent);
-		PyObject *v = idle > 0 ? Script_GetAttr(ent, "LLogicIdle") : NULL;
-		if (idle > 0) {
-			idle = Script_True(v);
+	int diff = Mode_Cmp(ename, "!=", cur);
+	if (diff > 0) {
+		int i = Mode_EntitySeam(cur, ent) ? Native_True(ent) : -1;
+		if (i > 0) {
+			i = Mode_VObj(ent, "LLogicIdle", idle) ? Native_True(idle) : -1;
 		}
-		ok = idle >= 0 && (!idle || Script_Try("Speech", "RestoreState", "(O)", cur));
-		Py_XDECREF(v);
-		Py_XDECREF(ent);
+		diff = i < 0 ? -1 : !i || Native_CallMod("Speech", "RestoreState", NULL, "v", cur) ? 0 : -1;
 	}
-	Py_DECREF(cur);
-	return ok && Npc_SetGlobal("ActualEntityName", Script_Ref(ename));
-}
-
-static PyObject *CharsNPC_CheckActualEntity(PyObject *self, PyObject *args) {
-	PyObject *ename;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &ename)) {
-		return NULL;
-	}
-	return Npc_CheckActualEntity(ename) ? Py_ReturnNone() : NULL;
+	return Mode_Done(&t, diff >= 0 && Mode_Put(NPC, "ActualEntityName", NULL, ename));
 }
 
 /* MercsHired(): one of the three mercenaries is a friend of the player */
@@ -751,402 +693,385 @@ static byte Npc_MercsHired(void) {
 		Npc_SaveIs("MercFriends.MercenaryC_Brutus", "0"));
 }
 
-static PyObject *CharsNPC_MercsHired(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return PyInt_FromLong(Npc_MercsHired());
-}
-
-/* string.find(s, sub) != -1: 1, 0, -1 with the error set */
-static int Npc_Find(PyObject *s, PyObject *sub) {
-	PyObject *f = Script_Ask("string", "find", "(OO)", s, sub);
-	int c = f ? Script_NumCmp(f, -1) : -2;
-	Py_XDECREF(f);
-	return c == -2 ? -1 : c != 0;
-}
-
 /* IncludeSubOptions(option): the sub options that contain option move from subOptionsList to optionsList */
-static byte Npc_IncludeSubOptions(PyObject *opt) {
-	static const char *const mods[] = { "string", NULL };
-	if (!Script_Import(mods)) {
-		return 0;
+static byte Npc_IncludeSubOptions(const nativeVal_t *opt) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *subs = Mode_V(&t), *aux = Mode_V(&t);
+	Native_SetEmpty(aux, NV_LIST);
+	byte ok = Mode_Import("string") && Npc_G("subOptionsList", subs);
+	for (int i = 0; ok && i < Npc_Count(subs); i++) {
+		nativeVal_t s = { 0 };
+		int in = Mode_Item(subs, i, &s) ? Npc_Find(&s, opt) : -1;
+		ok = in >= 0 && (!in || (Mode_Append(NPC, "optionsList", &s) && LvN_Append(aux, &s)));
+		Native_Free(&s);
 	}
-	PyObject *aux = PyList_New(0);
-	PyObject *subs = aux ? Npc_Global("subOptionsList") : NULL;
-	byte ok = subs != NULL;
-	for (int i = 0; ok && i < PySequence_Length(subs); i++) {
-		PyObject *s = PySequence_GetItem(subs, i);
-		int in = s ? Npc_Find(s, opt) : -1;
-		if (in > 0) {
-			PyObject *opts = Npc_Global("optionsList");
-			PyObject *v = opts ? Script_Method(opts, "append", "(O)", s) : NULL;
-			in = v && PyList_Append(aux, s) == 0 ? 1 : -1;
-			Py_XDECREF(v);
-			Py_XDECREF(opts);
-		}
-		ok = in >= 0;
-		Py_XDECREF(s);
+	ok = ok && Npc_Count(subs) >= 0;
+	for (int i = 0; ok && i < aux->n; i++) {
+		ok = Mode_Remove(NPC, "subOptionsList", &aux->items[i]);
 	}
-	for (int i = 0; ok && i < PyList_Size(aux); i++) {
-		PyObject *list = Npc_Global("subOptionsList");
-		PyObject *v = list ? Script_Method(list, "remove", "(O)", PyList_GetItem(aux, i)) : NULL;
-		ok = v != NULL;
-		Py_XDECREF(v);
-		Py_XDECREF(list);
+	return Mode_Done(&t, ok);
+}
+
+/* Classify(l, cad): the entries of l that contain cad, None when there are none */
+static byte Npc_Classify(const nativeVal_t *l, const nativeVal_t *cad, nativeVal_t *out) {
+	nativeVal_t seq, aux;
+	Native_Copy(&seq, l);
+	Native_SetEmpty(&aux, NV_LIST);
+	int n = Mode_Import("string") ? Mode_Loop(&seq) : -1;
+	byte ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		nativeVal_t c = { 0 };
+		int in = Native_SeqItem(&seq, i, &c) ? Npc_Find(&c, cad) : -1;
+		ok = in >= 0 && (!in || LvN_Append(&aux, &c));
+		Native_Free(&c);
 	}
-	Py_XDECREF(subs);
-	Py_XDECREF(aux);
+	if (ok && aux.n > 0) {
+		Native_Free(out);
+		*out = aux;
+	} else {
+		Native_Free(&aux);
+	}
+	Native_Free(&seq);
 	return ok;
 }
 
-static PyObject *CharsNPC_IncludeSubOptions(PyObject *self, PyObject *args) {
-	PyObject *opt;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &opt)) {
-		return NULL;
-	}
-	return Npc_IncludeSubOptions(opt) ? Py_ReturnNone() : NULL;
-}
-
-/* Classify(l, cad): the entries of l that contain cad, None when there are none (a new reference) */
-static PyObject *Npc_Classify(PyObject *l, PyObject *cad) {
-	static const char *const mods[] = { "string", NULL };
-	PyObject *aux = Script_Import(mods) ? PyList_New(0) : NULL;
-	byte ok = aux != NULL;
-	PyObject *c;
-	int st = 1;
-	/* for c in l: (a TypeError "loop over non-sequence" for l that is none) */
-	for (int i = 0; ok && (st = Script_Next(l, i, &c)) > 0; i++) {
-		int in = Npc_Find(c, cad);
-		ok = in >= 0 && (!in || PyList_Append(aux, c) == 0);
-		Py_DECREF(c);
-	}
-	ok = ok && st == 0;
-	if (!ok) {
-		Py_XDECREF(aux);
-		return NULL;
-	}
-	if (PyList_Size(aux) > 0) {
-		return aux;
-	}
-	Py_DECREF(aux);
-	return Py_ReturnNone();
-}
-
-static PyObject *CharsNPC_Classify(PyObject *self, PyObject *args) {
-	PyObject *l, *cad;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &l, &cad)) {
-		return NULL;
-	}
-	return Npc_Classify(l, cad);
-}
-
 /* "Generics_" + act + charType + "_" */
-static PyObject *Npc_Generics(PyObject *act, PyObject *type) {
-	return Script_PlusS(Script_Plus(Script_SPlus("Generics_", act), type), "_");
+static byte Npc_Generics(modeVals_t *t, const nativeVal_t *act, const nativeVal_t *type, nativeVal_t *out) {
+	Native_Free(out);
+	return Mode_Cat(t, out, 4, Mode_S(t, "Generics_"), act, type, Mode_S(t, "_"));
+}
+
+/* Scrap.GetLangEntries(key) (OBJLIB 3: by name) != []: 1, 0, -1 */
+static int Npc_Entries(const nativeVal_t *key, nativeVal_t *out) {
+	nativeVal_t empty;
+	Native_SetEmpty(&empty, NV_LIST);
+	Native_Free(out);
+	return Native_CallMod("Scrap", "GetLangEntries", out, "v", key) ? Mode_Cmp(out, "!=", &empty) : -1;
 }
 
 /* ClassifyOptions(charType): the options of a type in the language file (Generics_<GameAct><type>_<n>..., earlier
  * acts when the act has none), the longest ones as sub options; the disguise option of Rusty and the crazy gambler
- * and the Special option go first. (optsList, subOptsList) (a new reference) */
-static PyObject *Npc_ClassifyOptions(PyObject *type) {
-	scriptRefs_t r = { 0 };
-	PyObject *opts = Script_Keep(&r, PyList_New(0)), *subs = Script_Keep(&r, PyList_New(0));
-	PyObject *empty = Script_Keep(&r, PyList_New(0));
-	PyObject *act = empty ? Script_Keep(&r, Script_Ask("Scrap", "GetSaveVar", "(s)", "GameAct")) : NULL;
-	PyObject *cad = act ? Script_Keep(&r, Npc_Generics(act, type)) : NULL;
-	PyObject *all = NULL;
+ * and the Special option go first. (optsList, subOptsList) into out */
+static byte Npc_ClassifyOptions(const nativeVal_t *type, nativeVal_t *out) {
+	static const char *const disguised[] = { "Rusty", "CrazyGambler", NULL };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *opts = Mode_V(&t), *subs = Mode_V(&t), *act = Mode_V(&t), *cad = Mode_V(&t), *key = Mode_V(&t);
+	nativeVal_t *all = Mode_V(&t), *usr = Mode_V(&t), *ua = Mode_V(&t), *s = Mode_V(&t), *special = Mode_V(&t);
+	nativeVal_t *first = Mode_V(&t);
 	long i = 1, minLen = 1000, maxLen = -1;
-	char num[16];
-	while (cad) {
-		Str_Printf(num, sizeof(num), "%ld", i);
-		PyObject *key = Script_PlusS(Script_PlusS(Script_Ref(cad), num), "Opt");
-		all = key ? Script_Keep(&r, Script_Ask("Scrap", "GetLangEntries", "(O)", key)) : NULL;
-		Py_XDECREF(key);
-		int c = all ? PyObject_Compare(all, empty) : 0;
-		if (!all || PyErr_Occurred()) {
-			return Script_Done(&r, NULL);
-		}
-		const char *next = Script_Is(act, "Prologue") ? "1stMurder" : Script_Is(act, "1stMurder") ? "2ndMurder" :
-			Script_Is(act, "2ndMurder") ? "3rdMurder" : Script_Is(act, "3rdMurder") || Script_Is(act, "Epilogue") ? "" : NULL;
-		if (c != 0 || !next) {
-			break;
-		}
-		act = Script_Keep(&r, PyString_FromString(next));
-		cad = act ? Script_Keep(&r, Npc_Generics(act, type)) : NULL;
-	}
-	if (!cad || !all || !Script_Print(&all, 1)) {
-		return Script_Done(&r, NULL);
+	char num[24];
+	Native_SetEmpty(opts, NV_LIST);
+	Native_SetEmpty(subs, NV_LIST);
+	Mode_SaveVar("GameAct", act);
+	if (!Npc_Generics(&t, act, type, cad)) {
+		return Mode_Done(&t, 0);
 	}
 	for (;;) {
 		Str_Printf(num, sizeof(num), "%ld", i);
-		PyObject *pre = Script_PlusS(Script_Ref(cad), num);
-		PyObject *aux = pre ? Npc_Classify(all, pre) : NULL;
-		Py_XDECREF(pre);
-		int t = Script_True(aux);
-		for (int j = 0; t > 0 && j < PySequence_Length(aux); j++) {
-			PyObject *opt = PySequence_GetItem(aux, j);
-			int l = opt && PyList_Append(opts, opt) == 0 ? PyObject_Length(opt) : -1;
-			Py_XDECREF(opt);
+		Native_Free(key);
+		int c = Mode_Cat(&t, key, 3, cad, Mode_S(&t, num), Mode_S(&t, "Opt")) ? Npc_Entries(key, all) : -1;
+		if (c < 0) {
+			return Mode_Done(&t, 0);
+		}
+		const char *next = Mode_IsText(act, "Prologue") ? "1stMurder" : Mode_IsText(act, "1stMurder") ? "2ndMurder" :
+			Mode_IsText(act, "2ndMurder") ? "3rdMurder" : Mode_IsText(act, "3rdMurder") || Mode_IsText(act, "Epilogue") ? "" :
+			NULL;
+		if (c || !next) {
+			break;
+		}
+		Native_Free(act);
+		Native_SetStr(act, next);
+		if (!Npc_Generics(&t, act, type, cad)) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	if (!Mode_Print((const nativeVal_t *const[]){ all }, 1)) {
+		return Mode_Done(&t, 0);
+	}
+	for (;;) {
+		int mark = t.n;
+		nativeVal_t *pre = Mode_V(&t), *aux = Mode_V(&t);
+		Str_Printf(num, sizeof(num), "%ld", i);
+		if (!Mode_Cat(&t, pre, 2, cad, Mode_S(&t, num)) || !Npc_Classify(all, pre, aux)) {
+			return Mode_Done(&t, 0);
+		}
+		if (!Native_True(aux)) {
+			break;
+		}
+		for (int j = 0; j < aux->n; j++) {
+			const nativeVal_t *opt = &aux->items[j];
+			int l = Native_Size(opt);
 			if (l < 0) {
-				t = -1;
-			} else if (l <= minLen) {
+				return Mode_Done(&t, 0);
+			}
+			Native_Copy(Native_Append(opts), opt);
+			if (l <= minLen) {
 				minLen = l;
 			} else if (l >= maxLen) {
 				maxLen = l;
 			}
 		}
-		Py_XDECREF(aux);
-		if (t < 0) {
-			return Script_Done(&r, NULL);
-		}
-		if (!t) {
-			break;
-		}
+		Mode_Release(&t, mark);
 		i++;
 	}
 	if (minLen != 1000 && maxLen != -1) {
-		PyObject *aux = Script_Keep(&r, PyList_New(0));
-		byte ok = aux != NULL;
-		for (int j = 0; ok && j < PyList_Size(opts); j++) {
-			PyObject *opt = PyList_GetItem(opts, j);
-			int l = PyObject_Length(opt);
-			ok = l >= 0 && (l != maxLen || (PyList_Append(aux, opt) == 0 && PyList_Append(subs, opt) == 0));
-		}
-		for (int j = 0; ok && j < PyList_Size(aux); j++) {
-			PyObject *v = Script_Method(opts, "remove", "(O)", PyList_GetItem(aux, j));
-			ok = v != NULL;
-			Py_XDECREF(v);
-		}
-		if (!ok) {
-			return Script_Done(&r, NULL);
-		}
-	}
-	static const char *const disguised[] = { "Rusty", "CrazyGambler", NULL };
-	PyObject *usr = Script_Keep(&r, Script_Ask("Scrap", "UsrEntity", "(i)", 0));
-	int t = Script_True(usr);
-	if (t > 0) {
-		PyObject *ua = Script_Keep(&r, Script_GetAttr(usr, "ActCtrl"));
-		t = ua ? !Script_Is(ua, "Dtritus") && Script_In(type, disguised) : -1;
-	}
-	if (t > 0) {
-		PyObject *s = Script_Keep(&r, Script_PlusS(Script_SPlus("Generics_Disguise", type), "_1"));
-		t = s && PyList_Insert(opts, 0, s) == 0 ? 0 : -1;
-	}
-	if (t < 0) {
-		return Script_Done(&r, NULL);
-	}
-	if (!Script_Is(type, "Bishop") || Npc_SaveIs("Player.InfiniteLives", "0")) {
-		PyObject *key = Script_Keep(&r, Script_PlusS(Script_PlusS(Script_SPlus("Generics_Special", type), "_"), "1Opt"));
-		PyObject *special = key ? Script_Keep(&r, Script_Ask("Scrap", "GetLangEntries", "(O)", key)) : NULL;
-		int c = special ? PyObject_Compare(special, empty) : 0;
-		if (!special || PyErr_Occurred()) {
-			return Script_Done(&r, NULL);
-		}
-		if (c != 0) {
-			PyObject *first = Script_Keep(&r, Script_Index(special, 0));
-			if (!first || PyList_Insert(opts, 0, first) != 0) {
-				return Script_Done(&r, NULL);
+		nativeVal_t *aux = Mode_V(&t);
+		Native_SetEmpty(aux, NV_LIST);
+		for (int j = 0; j < opts->n; j++) {
+			if (Native_Size(&opts->items[j]) == maxLen) {
+				Native_Copy(Native_Append(aux), &opts->items[j]);
+				Native_Copy(Native_Append(subs), &opts->items[j]);
 			}
 		}
+		for (int j = 0; j < aux->n; j++) {
+			LvN_ListRemove(opts, &aux->items[j]);
+		}
 	}
-	return Script_Done(&r, Py_BuildValue("(OO)", opts, subs));
-}
-
-static PyObject *CharsNPC_ClassifyOptions(PyObject *self, PyObject *args) {
-	PyObject *type;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &type)) {
-		return NULL;
+	int d = Mode_UsrHandle(usr) ? Native_True(usr) : -1;
+	if (d > 0) {
+		d = Mode_VObj(usr, "ActCtrl", ua) ? !Mode_IsText(ua, "Dtritus") && Npc_In(type, disguised) : -1;
 	}
-	return Npc_ClassifyOptions(type);
+	if (d > 0) {
+		d = Mode_Cat(&t, s, 3, Mode_S(&t, "Generics_Disguise"), type, Mode_S(&t, "_1")) ? 0 : -1;
+		if (!d) {
+			Npc_Insert0(opts, s);
+		}
+	}
+	if (d < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Mode_IsText(type, "Bishop") || Npc_SaveIs("Player.InfiniteLives", "0")) {
+		Native_Free(key);
+		int c = Mode_Cat(&t, key, 4, Mode_S(&t, "Generics_Special"), type, Mode_S(&t, "_"), Mode_S(&t, "1Opt")) ?
+			Npc_Entries(key, special) : -1;
+		if (c < 0 || (c && !Mode_Item(special, 0, first))) {
+			return Mode_Done(&t, 0);
+		}
+		if (c) {
+			Npc_Insert0(opts, first);
+		}
+	}
+	Native_SetEmpty(out, NV_TUPLE);
+	Native_Copy(Native_Append(out), opts);
+	Native_Copy(Native_Append(out), subs);
+	return Mode_Done(&t, 1);
 }
 
 /* Speech.StdAnsLst(optionsList); len(optionsList), -1 with the error set */
 static int Npc_ShowOptions(void) {
-	PyObject *opts = Npc_Global("optionsList");
-	byte ok = opts && Script_Try("Speech", "StdAnsLst", "(O)", opts);
-	Py_XDECREF(opts);
-	opts = ok ? Npc_Global("optionsList") : NULL;
-	int n = opts ? PyObject_Length(opts) : -1;
-	Py_XDECREF(opts);
+	nativeVal_t opts = { 0 };
+	int n = Npc_G("optionsList", &opts) && Native_CallMod("Speech", "StdAnsLst", NULL, "v", &opts) &&
+		Mode_Read(NPC, "optionsList", &opts) ? Mode_Len(&opts) : -1;
+	Native_Free(&opts);
 	return n;
+}
+
+/* Challenge.AddChallenge(ch, UsrName, numOpts) */
+static byte Npc_AddChallenge(const nativeVal_t *ch, const nativeVal_t *usr, long n) {
+	return Native_CallMod("Challenge", "AddChallenge", NULL, "vvi", ch, usr, n);
 }
 
 /* PlayOption(optId, msg, ans, UsrName, ch): the talk of an option, its sub options join the list, the arrow on the
  * next option; the challenge options (without infinite lives) */
-static byte Npc_PlayOption(PyObject *opt, PyObject *msg, PyObject *ans, PyObject *usr, PyObject *ch) {
-	static const char *const mods[] = { "Speech", "Challenge", NULL };
-	scriptRefs_t r = { 0 };
-	if (!Script_Import(mods)) {
-		return 0;
+static byte Npc_PlayOption(const nativeVal_t *opt, const nativeVal_t *msg, const nativeVal_t *ans, const nativeVal_t *usr,
+	const nativeVal_t *ch) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *said = Mode_V(&t), *opts = Mode_V(&t), *at = Mode_V(&t), *index = Mode_V(&t);
+	if (!Mode_Import("Speech") || !Mode_Import("Challenge") || !Native_CallMod("Speech", "OnSpch", said, "vv", msg, ans)) {
+		return Mode_Done(&t, 0);
 	}
-	int said = Script_True(Script_Keep(&r, Script_Ask("Speech", "OnSpch", "(OO)", msg, ans)));
 	int n = -1;
-	if (said > 0) {
-		PyObject *opts = Script_Keep(&r, Npc_Global("optionsList"));
-		PyObject *at = opts ? Script_Keep(&r, Script_Method(opts, "index", "(O)", opt)) : NULL;
-		PyObject *one = at ? Script_Keep(&r, PyInt_FromLong(1)) : NULL;
-		PyObject *index = one ? Script_Keep(&r, PyNumber_Add(at, one)) : NULL;
-		n = index && Npc_IncludeSubOptions(opt) ? Npc_ShowOptions() : -1;
-		int last = n >= 0 ? Script_NumCmp(index, n) : -2;
-		if (last == -2 || !Script_HSet(ch, "ArriOpt", last == 0 ? PyInt_FromLong(0) : Script_Ref(index))) {
-			said = -1;
+	if (Native_True(said)) {
+		byte ok = Npc_G("optionsList", opts) && (Mode_Elems(opts), Mode_Index(opts, opt, at)) && Mode_Arith('+', at, Mode_I(&t, 1), index) &&
+			Npc_IncludeSubOptions(opt) && (n = Npc_ShowOptions()) >= 0;
+		int last = ok ? Mode_CmpI(index, "==", n) : -1;
+		if (last < 0 || !Mode_VSet(ch, "ArriOpt", last ? Mode_I(&t, 0) : index)) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	if (said < 0) {
-		Script_Done(&r, NULL);
-		return 0;
+	if (!Npc_SaveIs("Player.InfiniteLives", "0")) {
+		return Mode_Done(&t, 1);
 	}
-	byte ok = 1;
-	if (Npc_SaveIs("Player.InfiniteLives", "0")) {
-		if (n < 0) {
-			/* numOpts is only bound when the speech started */
-			PyErr_SetString(PyExc_NameError, "numOpts");
-			ok = 0;
-		} else {
-			ok = Script_Try("Challenge", "AddChallenge", "(OOi)", ch, usr, n);
-		}
+	if (n < 0) {
+		/* numOpts is only bound when the speech started */
+		return Mode_Done(&t, Native_Raise(NE_NAME, "numOpts"));
 	}
-	Script_Done(&r, NULL);
-	return ok;
+	return Mode_Done(&t, Npc_AddChallenge(ch, usr, n));
 }
 
-static PyObject *CharsNPC_PlayOption(PyObject *self, PyObject *args) {
-	PyObject *opt, *msg, *ans, *usr, *ch;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOOO", &opt, &msg, &ans, &usr, &ch)) {
-		return NULL;
-	}
-	return Npc_PlayOption(opt, msg, ans, usr, ch) ? Py_ReturnNone() : NULL;
+/* Speech.OnSpch(msg + type + msgEnd, ans + type + ansEnd) (msgEnd NULL: msg alone), the talk of a challenge: 1, 0, -1 */
+static int Npc_ChallengeSpch(const char *msg, const nativeVal_t *type, const char *msgEnd, const char *ans, const char *ansEnd) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *m = Mode_V(&t), *a = Mode_V(&t), *r = Mode_V(&t);
+	byte ok = msgEnd ? Mode_Cat(&t, m, 3, Mode_S(&t, msg), type, Mode_S(&t, msgEnd)) : (Native_SetStr(m, msg), 1);
+	int said = ok && Mode_Cat(&t, a, 3, Mode_S(&t, ans), type, Mode_S(&t, ansEnd)) &&
+		Native_CallMod("Speech", "OnSpch", r, "vv", m, a) ? Native_True(r) : -1;
+	Mode_Done(&t, 1);
+	return said;
 }
 
-/* Speech.OnSpch(prefix + type + suffix, ...): the talk of a challenge; 1, 0, -1 with the error set */
-static int Npc_ChallengeSpch(const char *msg, PyObject *type, const char *msgEnd, const char *ans, const char *ansEnd) {
-	PyObject *m = msgEnd ? Script_PlusS(Script_SPlus(msg, type), msgEnd) : PyString_FromString(msg);
-	PyObject *a = m ? Script_PlusS(Script_SPlus(ans, type), ansEnd) : NULL;
-	PyObject *v = a ? Script_Ask("Speech", "OnSpch", "(OO)", m, a) : NULL;
-	int t = Script_True(v);
-	Py_XDECREF(v);
-	Py_XDECREF(a);
-	Py_XDECREF(m);
-	return t;
-}
-
-/* Challenge.challengeType, foeType and SetChallengeOptions(ch): 0 with the error set */
-static byte Npc_StartChallenge(const char *kind, PyObject *foe, PyObject *ch) {
-	Script_SetVar("Challenge", "challengeType", PyString_FromString(kind));
-	Script_SetVar("Challenge", "foeType", Script_Ref(foe));
-	return Script_Try("Challenge", "SetChallengeOptions", "(O)", ch);
+/* Challenge.challengeType, foeType (Script_SetVar of the port: an error is dropped) and SetChallengeOptions(ch) */
+static byte Npc_StartChallenge(const char *kind, const nativeVal_t *foe, const nativeVal_t *ch) {
+	nativeVal_t k;
+	Native_SetStr(&k, kind);
+	LvN_SetVar("Challenge", "challengeType", &k);
+	LvN_SetVar("Challenge", "foeType", foe);
+	return Native_CallMod("Challenge", "SetChallengeOptions", NULL, "v", ch);
 }
 
 /* GenericNPCSpeech(UsrName, CharName, optId, FullOption): the talk with an NPC. Talk: the greeting (one of three
  * answers at random) and the options of the type; an option of the list; the challenge options; anything else
  * prints an error and starts the talk again */
-static PyObject *CharsNPC_GenericNPCSpeech(PyObject *self, PyObject *args) {
+static byte Npc_GenericNPCSpeech(const nativeVal_t *usr, const nativeVal_t *chname, const nativeVal_t *opt,
+	const nativeVal_t *full) {
 	static const char *const mods[] = { "Speech", "Chars", "Challenge", "Menu", "Challenge", "string", NULL };
 	static const char *const mercs[] = { "MercenaryA", "MercenaryB", "MercenaryC", NULL };
-	PyObject *usr, *chname, *opt, *full;
-	scriptRefs_t r = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &chname, &opt, &full) || !Script_Import(mods)) {
-		return NULL;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ch = Mode_V(&t), *e = Mode_V(&t), *type0 = Mode_V(&t), *u = Mode_V(&t), *ua = Mode_V(&t);
+	nativeVal_t *m = Mode_V(&t), *a = Mode_V(&t), *r = Mode_V(&t), *key = Mode_V(&t), *special = Mode_V(&t);
+	nativeVal_t *first = Mode_V(&t), *list = Mode_V(&t), *lists = Mode_V(&t), *v = Mode_V(&t), *opts = Mode_V(&t);
+	Mode_V(&t);
+	for (int i = 0; mods[i]; i++) {
+		if (!Mode_Import(mods[i])) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	PyObject *ch = Script_Keep(&r, Script_Ask("Scrap", "GetEntity", "(O)", chname));
-	if (!ch) {
-		return Script_Done(&r, NULL);
+	if (!Mode_EntitySeam(chname, ch)) {
+		return Mode_Done(&t, 0);
 	}
-	Script_SetVar("Speech", "PlayerName", Script_Ref(usr));
-	Script_SetVar("Speech", "NPCName", Script_Ref(chname));
-	PyObject *e = Script_Keep(&r, Script_Ask("Scrap", "GetEntity", "(O)", chname));
-	PyObject *type0 = e ? Script_Keep(&r, Script_GetAttr(e, "ActCtrl")) : NULL;
-	if (!type0) {
-		return Script_Done(&r, NULL);
+	LvN_SetVar("Speech", "PlayerName", usr);
+	LvN_SetVar("Speech", "NPCName", chname);
+	if (!Mode_EntitySeam(chname, e) || !Mode_VObj(e, "ActCtrl", type0)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *type = Script_In(type0, mercs) ? Script_Keep(&r, PyString_FromString("Mercs")) : type0;
-	if (!type) {
-		return Script_Done(&r, NULL);
-	}
-	byte ok = 1;
-	int t, n;
-	if (Script_Is(opt, "Talk")) {
-		PyObject *u = Npc_CheckActualEntity(chname) ? Script_Keep(&r, Script_Ask("Scrap", "UsrEntity", "(i)", 0)) : NULL;
-		int betty = u ? Script_Is(type, "Betty") : -1;
+	const nativeVal_t *type = Npc_In(type0, mercs) ? Mode_S(&t, "Mercs") : type0;
+	if (Mode_IsText(opt, "Talk")) {
+		int betty = Npc_CheckActualEntity(chname) && Mode_UsrHandle(u) ? Mode_IsText(type, "Betty") : -1;
 		if (betty > 0) {
-			betty = Script_True(u);
+			betty = Native_True(u);
 		}
 		if (betty > 0) {
-			PyObject *ua = Script_Keep(&r, Script_GetAttr(u, "ActCtrl"));
-			betty = ua ? !Script_Is(ua, "Dtritus") : -1;
+			betty = Mode_VObj(u, "ActCtrl", ua) ? !Mode_IsText(ua, "Dtritus") : -1;
 		}
 		if (betty > 0) {
-			ok = Script_Try("Speech", "OnSpch", "(ss)", "Generics_Betty_InitMsg2", "Generics_Betty_InitAns4");
-		} else if (betty == 0) {
-			char num[16];
-			double rnd = Scrap_RandRange(1.0, 3.9);
-			Str_Printf(num, sizeof(num), "%d", (int)rnd);
-			PyObject *m = Script_Keep(&r, Script_PlusS(Script_SPlus("Generics_", type), "_InitMsg1"));
-			PyObject *a = m ? Script_Keep(&r, Script_PlusS(Script_PlusS(Script_SPlus("Generics_", type), "_InitAns"), num)) : NULL;
-			t = a ? Script_True(Script_Keep(&r, Script_Ask("Speech", "OnSpch", "(OO)", m, a))) : -1;
-			if (t > 0) {
-				if (Npc_SaveIs("GameAct", "Epilogue")) {
-					n = 0;
-					if (Script_Is(type, "Bishop") || Script_Is(type, "Mercs")) {
-						PyObject *key = Script_Keep(&r, Script_PlusS(Script_PlusS(Script_SPlus("Generics_Special", type), "_"), "1Opt"));
-						PyObject *special = key ? Script_Keep(&r, Script_Ask("Scrap", "GetLangEntries", "(O)", key)) : NULL;
-						PyObject *first = special ? Script_Keep(&r, Script_Index(special, 0)) : NULL;
-						n = first && Npc_SetGlobal("optionsList", Py_BuildValue("[O]", first)) && Npc_ShowOptions() >= 0 ? 1 : -1;
-					}
-				} else {
-					PyObject *lists = Script_Keep(&r, Npc_ClassifyOptions(type));
-					PyObject *v[2];
-					byte set = lists && Script_Unpack(lists, 2, v);
-					if (set && !(set = Npc_SetGlobal("optionsList", v[0]))) {
-						Py_DECREF(v[1]);
-					}
-					n = set && Npc_SetGlobal("subOptionsList", v[1]) ? Npc_ShowOptions() : -1;
+			return Mode_Done(&t, Mode_Spch("Generics_Betty_InitMsg2", "Generics_Betty_InitAns4", NULL));
+		}
+		if (betty < 0) {
+			return Mode_Done(&t, 0);
+		}
+		char num[16];
+		Str_Printf(num, sizeof(num), "%d", (int)Scrap_RandRange(1.0, 3.9));
+		int said = Mode_Cat(&t, m, 3, Mode_S(&t, "Generics_"), type, Mode_S(&t, "_InitMsg1")) &&
+			Mode_Cat(&t, a, 4, Mode_S(&t, "Generics_"), type, Mode_S(&t, "_InitAns"), Mode_S(&t, num)) &&
+			Native_CallMod("Speech", "OnSpch", r, "vv", m, a) ? Native_True(r) : -1;
+		if (said <= 0) {
+			return Mode_Done(&t, said == 0);
+		}
+		int n = 0;
+		if (Npc_SaveIs("GameAct", "Epilogue")) {
+			if (Mode_IsText(type, "Bishop") || Mode_IsText(type, "Mercs")) {
+				n = Mode_Cat(&t, key, 4, Mode_S(&t, "Generics_Special"), type, Mode_S(&t, "_"), Mode_S(&t, "1Opt")) &&
+					Native_CallMod("Scrap", "GetLangEntries", special, "v", key) && Mode_Item(special, 0, first) ? 0 : -1;
+				if (!n) {
+					Native_SetEmpty(list, NV_LIST);
+					Native_Copy(Native_Append(list), first);
+					n = Mode_Put(NPC, "optionsList", NULL, list) && Npc_ShowOptions() >= 0 ? 1 : -1;
 				}
-				ok = n >= 0;
-				if (ok && Npc_SaveIs("Player.InfiniteLives", "0") && (!Script_Is(type, "Mercs") || !Npc_MercsHired())) {
-					ok = Script_Try("Challenge", "AddChallenge", "(OOi)", ch, usr, n);
-				}
-			} else if (t < 0) {
-				ok = 0;
 			}
 		} else {
-			ok = 0;
+			n = Npc_ClassifyOptions(type, lists) && Mode_Unpack(lists, 2, v) && Mode_Put(NPC, "optionsList", NULL, &v[0]) &&
+				Mode_Put(NPC, "subOptionsList", NULL, &v[1]) ? Npc_ShowOptions() : -1;
 		}
-		return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+		if (n < 0) {
+			return Mode_Done(&t, 0);
+		}
+		if (Npc_SaveIs("Player.InfiniteLives", "0") && (!Mode_IsText(type, "Mercs") || !Npc_MercsHired())) {
+			return Mode_Done(&t, Npc_AddChallenge(ch, usr, n));
+		}
+		return Mode_Done(&t, 1);
 	}
-	PyObject *opts = Script_Keep(&r, Npc_Global("optionsList"));
-	int listed = opts ? PySequence_In(opts, opt) : -1;
-	if (listed > 0) {
-		PyObject *msg = Script_Keep(&r, Script_PlusS(Script_Ref(opt), "Msg"));
-		PyObject *ans = msg ? Script_Keep(&r, Script_PlusS(Script_Ref(opt), "Ans")) : NULL;
-		ok = ans && Npc_PlayOption(opt, msg, ans, usr, ch);
-	} else if (listed < 0) {
-		ok = 0;
-	} else if (Script_Is(opt, "ChallengeRaceStdOpt0") || Script_Is(opt, "ChallengeCombatStdOpt0")) {
-		const char *kind = Script_Is(opt, "ChallengeRaceStdOpt0") ? "Race" : "Combat";
-		const char *pre = kind[0] == 'R' ? "ChallengeRace" : "ChallengeCombat";
-		t = Npc_ChallengeSpch(pre, type, "Opt1", pre, "Msg1");
-		ok = t >= 0 && (!t || Npc_StartChallenge(kind, type0, ch));
-	} else if (Script_Is(opt, "ChallengeRaceStdOpt1") || Script_Is(opt, "ChallengeRaceStdOpt2") || Script_Is(opt, "ChallengeRaceStdOpt3")) {
-		ok = Script_Try("Challenge", "OnChallengeOpt", "(iO)", PyString_AsString(opt)[19] - '0', ch);
-	} else if (Script_Is(opt, "ChallengeRaceStdOpt4")) {
-		t = Npc_ChallengeSpch("ChallengeRaceStdOpt2", type, NULL, "ChallengeRace", "Msg3");
-		n = t > 0 ? Npc_ShowOptions() : 0;
-		ok = t >= 0 && n >= 0 && (!t || Script_Try("Challenge", "AddChallenge", "(OOi)", ch, usr, n));
-	} else {
-		PyObject *head = Script_Keep(&r, PyString_FromString("Error en los argumentos:  ("));
-		PyObject *tail = Script_Keep(&r, PyString_FromString(")"));
-		PyObject *items[6] = { head, usr, chname, opt, full, tail };
-		PyObject *a = head && tail && Script_Print(items, 6) ? Script_Keep(&r, Py_BuildValue("(OOsO)", usr, chname, "Talk", full)) : NULL;
-		ok = a && Script_Keep(&r, CharsNPC_GenericNPCSpeech(NULL, a));
+	int listed = Npc_G("optionsList", opts) ? Mode_In(opts, opt) : -1;
+	if (listed < 0) {
+		return Mode_Done(&t, 0);
 	}
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+	if (listed) {
+		return Mode_Done(&t, Mode_Cat(&t, m, 2, opt, Mode_S(&t, "Msg")) && Mode_Cat(&t, a, 2, opt, Mode_S(&t, "Ans")) &&
+			Npc_PlayOption(opt, m, a, usr, ch));
+	}
+	if (Mode_IsText(opt, "ChallengeRaceStdOpt0") || Mode_IsText(opt, "ChallengeCombatStdOpt0")) {
+		byte race = Mode_IsText(opt, "ChallengeRaceStdOpt0");
+		const char *pre = race ? "ChallengeRace" : "ChallengeCombat";
+		int said = Npc_ChallengeSpch(pre, type, "Opt1", pre, "Msg1");
+		return Mode_Done(&t, said >= 0 && (!said || Npc_StartChallenge(race ? "Race" : "Combat", type0, ch)));
+	}
+	if (Mode_IsText(opt, "ChallengeRaceStdOpt1") || Mode_IsText(opt, "ChallengeRaceStdOpt2") ||
+		Mode_IsText(opt, "ChallengeRaceStdOpt3")) {
+		return Mode_Done(&t, Native_CallMod("Challenge", "OnChallengeOpt", NULL, "iv", (long)(Native_Text(opt)[19] - '0'), ch));
+	}
+	if (Mode_IsText(opt, "ChallengeRaceStdOpt4")) {
+		int said = Npc_ChallengeSpch("ChallengeRaceStdOpt2", type, NULL, "ChallengeRace", "Msg3");
+		int n = said > 0 ? Npc_ShowOptions() : 0;
+		return Mode_Done(&t, said >= 0 && n >= 0 && (!said || Npc_AddChallenge(ch, usr, n)));
+	}
+	const nativeVal_t *items[6] = { Mode_S(&t, "Error en los argumentos:  ("), usr, chname, opt, full, Mode_S(&t, ")") };
+	return Mode_Done(&t, Mode_Print(items, 6) && Npc_GenericNPCSpeech(usr, chname, Mode_S(&t, "Talk"), full));
 }
+
+/* ---- the functions of the module ---- */
+
+/* the functions with an optional second argument (the formats of the port: no keywords) */
+#define NPC_FN2(name, call) \
+	static PyObject *CharsNPC_##name(PyObject *self, PyObject *args) { \
+		PyObject *o, *o2 = NULL; \
+		modeVals_t t = { .n = 0 }; \
+		nativeVal_t *a = Mode_V(&t), *a2 = Mode_V(&t), *out = Mode_V(&t); \
+		(void)self; \
+		if (!PyArg_ParseTuple(args, "O|O", &o, &o2)) { \
+			return Mode_Done(&t, 0), NULL; \
+		} \
+		Native_Arg(o, a); \
+		if (o2) { \
+			Native_Arg(o2, a2); \
+		} \
+		return Mode_Out(&t, call(a, o2 ? a2 : NULL, out), out); \
+	}
+
+/* the functions the port ran without parsing their arguments (any arguments) */
+#define NPC_ANY(name, call) \
+	static PyObject *CharsNPC_##name(PyObject *self, PyObject *args) { \
+		modeVals_t t = { .n = 0 }; \
+		nativeVal_t *out = Mode_V(&t); \
+		(void)self; \
+		(void)args; \
+		return Mode_Out(&t, call, out); \
+	}
+
+/* an int result into out */
+static byte Npc_IntOut(long i, nativeVal_t *out) {
+	Native_SetInt(out, i);
+	return 1;
+}
+
+NPC_FN2(AddNPCPos, Npc_AddNPCPos)
+NPC_FN2(CreateChar, Npc_CreateChar)
+MODE_FN(CharsNPC, CreateMissionChar, 1, Npc_CreateMissionChar(&a[0], out))
+MODE_FN(CharsNPC, DeleteMissionChar, 1, Npc_DeleteMissionChar(&a[0]))
+MODE_FN(CharsNPC, SetReposChars, 2, Npc_SetReposChars(&a[0], &a[1]))
+NPC_ANY(CreateReposChars, Npc_CreateReposChars())
+NPC_ANY(BrowseNPC, Npc_BrowseNPC())
+MODE_FN(CharsNPC, AssignAttrib, 1, Npc_AssignAttrib(&a[0]))
+MODE_FN(CharsNPC, CallCreateChar, 4, Npc_CallCreateChar(&a[0], &a[1], &a[2], &a[3]))
+MODE_FN(CharsNPC, CharNPCInclude, 1, Npc_CharNPCInclude(&a[0]))
+MODE_FN(CharsNPC, Respawn, 1, Npc_Respawn(&a[0]))
+MODE_FN(CharsNPC, ActiveSpawned, 1, Npc_ActiveSpawned(&a[0]))
+NPC_ANY(Init, Npc_Init())
+MODE_FN(CharsNPC, CheckActualEntity, 1, Npc_CheckActualEntity(&a[0]))
+NPC_ANY(MercsHired, Npc_IntOut(Npc_MercsHired(), out))
+MODE_FN(CharsNPC, IncludeSubOptions, 1, Npc_IncludeSubOptions(&a[0]))
+MODE_FN(CharsNPC, Classify, 2, Npc_Classify(&a[0], &a[1], out))
+MODE_FN(CharsNPC, ClassifyOptions, 1, Npc_ClassifyOptions(&a[0], out))
+MODE_FN(CharsNPC, PlayOption, 5, Npc_PlayOption(&a[0], &a[1], &a[2], &a[3], &a[4]))
+MODE_FN(CharsNPC, GenericNPCSpeech, 4, Npc_GenericNPCSpeech(&a[0], &a[1], &a[2], &a[3]))
 
 PyMethodDef g_CharsNPCMethods[] = {
 	{ "AddNPCPos", CharsNPC_AddNPCPos, 1, NULL },
