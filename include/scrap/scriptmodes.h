@@ -306,4 +306,37 @@ byte Mode_ListSet(const char *list, const char *var, const char *value);
  * values (no error set) */
 byte Mode_VecOf(const nativeVal_t *v, double *x);
 
+/* ---- the ship editor tabs (WeaponsTab, EnginesTab) ---- */
+
+/* `v` of the script as a text value into *out */
+void Mode_Repr(const nativeVal_t *v, nativeVal_t *out);
+/* the item name of a scorer call of the ports (Sf_Text): the C text of a text value (up to its first 0 byte), the
+ * TypeError "argument 2: expected string found" for any other value */
+byte Mode_ItemText(const nativeVal_t *v, const char **out);
+/* `from module import name` in a function of a script (OBJLIB 3: the link functions of Menu by name): a new
+ * reference, NULL with the ImportError */
+PyObject *Mode_From(const char *module, const char *name);
+/* the value of HangarTab.prevShip (the handle as NV_OBJ, None, or what a test put there; Native_Free it): 0 with the
+ * AttributeError of the module attribute */
+byte Mode_PrevShip(nativeVal_t *ship);
+/* HangarTab.prevShip.<var> and its set: the ship being edited, read as the attribute of HangarTab at every use
+ * (OBJLIB 5 and 7: a handle in a variable of another module) */
+byte Mode_ShipGet(const char *var, nativeVal_t *out);
+byte Mode_ShipSet(const char *var, const nativeVal_t *v);
+/* ShipMaker.<table>[string.upper(HangarTab.prevShip.Model)][i] (the model read before the table, as the C ports read
+ * it) */
+byte Mode_ShipTable(const char *table, long i, nativeVal_t *out);
+/* string.replace(s, old, new) of three texts (splitfields and joinfields: every old from the left, not overlapping;
+ * old not empty) into *out */
+void Mode_Replace(const nativeVal_t *s, const char *old, const nativeVal_t *with, nativeVal_t *out);
+/* the count of range(n) as its argument parser takes it ("l": an int, a long int that fits, a float cut; the errors of
+ * PyArg_Parse) */
+byte Mode_Range(const nativeVal_t *n, long *count);
+/* SScorer.Get2DPos(pos): the screen place (u, v) of a world point (Mode_VecOf); any other value goes to the engine
+ * function by name (its TypeError) */
+byte Mode_Get2DPos(const nativeVal_t *pos, nativeVal_t *out);
+/* SScorer.GetTextArea(font, text): (width, height) of the text in the font (the TypeError of "s" for a text that is no
+ * text) */
+byte Mode_TextArea(const char *font, const nativeVal_t *text, nativeVal_t *out);
+
 #endif

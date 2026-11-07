@@ -9,11 +9,19 @@
  * ReputationPrice, OnPoliceCreatedCallback, skipPrice), because the level scripts set them before the level starts.
  * The code reads them as globals like the script (a missing one is a NameError). The tuning by reputation and the
  * waves are data/missions/police.def.
+ *
+ * InPolice and OutPolice are native C (docs/objlib-plan.md, stage 2): their functions work on C values, read the
+ * variables of OutPolice where the script reads them and write them back to the module (OBJLIB 5), and set the engine
+ * variables, the money and the save variables in C (Scrap.Set and Scrap.GetAlarm through their seams, OBJLIB 7). The
+ * calls of VehiclesNPC, RaceMaker and SAI.EnableAIChar, the ships and profiles they give, the hook
+ * OnPoliceCreatedCallback and CharsNPC.CharRes stay Python values called or read by name (OBJLIB 3, 5, 7); the steps of
+ * police.def take the arguments of their lines as a tuple (OBJLIB 6). Traffic is still on the Python objects.
  */
 #include <string.h>
 
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 
 static const char police_def[] = {
 #embed "../../../data/missions/police.def"
@@ -379,208 +387,248 @@ static const scriptStep_t police_steps[] = {
 	{ NULL, NULL },
 };
 
-/* int(Scrap.GetSaveVar("BadReputation")) into *rptn: 0 with the error set */
+/* int(Scrap.GetSaveVar("BadReputation")) into *rptn: 0 with the error */
 static byte Police_Reputation(long *rptn) {
-	PyObject *sv = Script_SaveVar("BadReputation");
-	PyObject *i = Script_Int(sv);
-	Py_XDECREF(sv);
-	if (!i) {
-		return 0;
+	nativeVal_t sv, i = { 0 };
+	Mode_SaveVar("BadReputation", &sv);
+	byte ok = Native_ToInt(&sv, &i);
+	if (ok) {
+		*rptn = i.i;
 	}
-	*rptn = PyInt_AsLong(i);
-	Py_DECREF(i);
-	return 1;
+	Native_Free(&sv);
+	Native_Free(&i);
+	return ok;
 }
 
-/* if Scrap.GetSaveVar("RobotsControlledByBoss") == "1": the alarm does not fall. 0 with the error set */
+/* if Scrap.GetSaveVar("RobotsControlledByBoss") == "1": the alarm does not fall. 0 with the error */
 static byte Police_BossRobots(void) {
-	PyObject *sv = Script_SaveVar("RobotsControlledByBoss");
-	byte ok = sv && (!Script_Is(sv, "1") || Script_Try("Scrap", "Set", "(sd)", "AlarmFallDelta", 0.0));
-	Py_XDECREF(sv);
+	nativeVal_t sv;
+	Mode_SaveVar("RobotsControlledByBoss", &sv);
+	byte ok = !Native_IsStr(&sv, "1") || Mode_GVarSetN("AlarmFallDelta", 0.0);
+	Native_Free(&sv);
 	return ok;
+}
+
+/* a global of the OutPolice module as its functions read it (out None before) */
+static byte OutPolice_G(const char *name, nativeVal_t *out) {
+	return Mode_G("OutPolice", name, out);
 }
 
 /* ---- OutPolice ---- */
 
 /* MakePoli(TypeShip): a police ship into OutCop, the hook OnPoliceCreatedCallback */
-static PyObject *OutPolice_MakePoli(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "VehiclesNPC", NULL };
-	PyObject *type;
-	scriptRefs_t r = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &type) || !Script_Import(mods)) {
-		return NULL;
+static byte OutPolice_MakePoliN(const nativeVal_t *type) {
+	nativeVal_t ship = { 0 }, list;
+	/* OBJLIB 3: VehiclesNPC.MakeAI by name; the ship it gives is a Python value (OBJLIB 7) */
+	if (!Mode_Import("VehiclesNPC") || !Native_CallMod("VehiclesNPC", "MakeAI", &ship, "vsi", type, "Police", 1L)) {
+		return 0;
 	}
-	PyObject *o1 = Script_Keep(&r, Script_Ask("VehiclesNPC", "MakeAI", "(Osi)", type, "Police", 1));
-	PyObject *hook = o1 && Script_HSet(o1, "EntityList", PyString_FromString("OutCop")) ?
-		Script_Keep(&r, Script_Global("OutPolice", "OnPoliceCreatedCallback")) : NULL;
-	int t = Script_True(hook);
-	byte ok = t >= 0 && (!t || Script_Keep(&r, Script_Invoke(hook, Py_BuildValue("(O)", o1))));
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+	Native_SetStr(&list, "OutCop");
+	/* OBJLIB 5: the hook is a function value of the module */
+	PyObject *hook = Mode_VSet(&ship, "EntityList", &list) ? Mode_GlobalPy("OutPolice", "OnPoliceCreatedCallback") : NULL;
+	int t = hook ? PyObject_IsTrue(hook) : -1;
+	byte ok = t >= 0 && (!t || Native_Call(hook, NULL, "v", &ship));
+	Py_XDECREF(hook);
+	Native_Free(&ship);
+	return ok;
+}
+
+/* iPoliceWave = v */
+static byte OutPolice_SetWave(const nativeVal_t *v) {
+	return Mode_Put("OutPolice", "iPoliceWave", NULL, v);
 }
 
 /* InitShips(): the ships of the wave iPoliceWave, then the next wave (the last one stays) */
-static PyObject *OutPolice_InitShips(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { 0 };
-	PyObject *item;
-	int more = -1;
-	(void)self;
-	(void)args;
-	PyObject *waves = Script_Keep(&r, Script_Global("OutPolice", "PoliceWaves"));
-	PyObject *i = waves ? Script_Keep(&r, Script_Global("OutPolice", "iPoliceWave")) : NULL;
-	PyObject *wave = i ? Script_Keep(&r, PyObject_GetItem(waves, i)) : NULL;
-	for (int n = 0; wave && (more = Script_Next(wave, n, &item)) > 0; n++) {
-		PyObject *a = Py_BuildValue("(O)", item);
-		PyObject *v = a ? OutPolice_MakePoli(NULL, a) : NULL;
-		Py_XDECREF(a);
-		Py_DECREF(item);
-		if (!v) {
-			more = -1;
-			break;
+static byte OutPolice_InitShipsN(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *waves = Mode_V(&t), *i = Mode_V(&t), *wave = Mode_V(&t), *cur = Mode_V(&t), *next = Mode_V(&t);
+	nativeVal_t *len = Mode_V(&t);
+	if (!OutPolice_G("PoliceWaves", waves) || !OutPolice_G("iPoliceWave", i) || !Native_Subscript(waves, i, wave)) {
+		return Mode_Done(&t, 0);
+	}
+	/* for item in wave */
+	int n = Native_ForCount(wave);
+	if (n < 0) {
+		Native_Raise(NE_TYPE, "loop over non-sequence");
+		return Mode_Done(&t, 0);
+	}
+	for (int k = 0; k < n; k++) {
+		nativeVal_t item = { 0 };
+		byte ok = Native_SeqItem(wave, k, &item) && OutPolice_MakePoliN(&item);
+		Native_Free(&item);
+		if (!ok) {
+			return Mode_Done(&t, 0);
 		}
-		Py_DECREF(v);
 	}
-	if (more < 0) {
-		return Script_Done(&r, NULL);
+	if (!OutPolice_G("iPoliceWave", cur) || !Native_Arith('+', cur, Mode_I(&t, 1), next) || !OutPolice_SetWave(next)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *one = Script_Keep(&r, PyInt_FromLong(1));
-	PyObject *cur = Script_Keep(&r, Script_Global("OutPolice", "iPoliceWave"));
-	if (!cur || !Script_SetGlobal("OutPolice", "iPoliceWave", PyNumber_Add(cur, one))) {
-		return Script_Done(&r, NULL);
+	Native_Free(cur);
+	Native_Free(waves);
+	int count = OutPolice_G("iPoliceWave", cur) && OutPolice_G("PoliceWaves", waves) ? Native_Size(waves) : -1;
+	if (count < 0) {
+		return Mode_Done(&t, 0);
 	}
-	cur = Script_Keep(&r, Script_Global("OutPolice", "iPoliceWave"));
-	waves = cur ? Script_Keep(&r, Script_Global("OutPolice", "PoliceWaves")) : NULL;
-	int n = waves ? PyObject_Length(waves) : -1;
-	PyObject *len = n >= 0 ? Script_Keep(&r, PyInt_FromLong(n)) : NULL;
-	int c = len ? PyObject_Compare(cur, len) : 0;
-	if (!len || PyErr_Occurred()) {
-		return Script_Done(&r, NULL);
+	Native_SetInt(len, count);
+	int c = Native_Compare(cur, len);
+	if (PyErr_Occurred()) {
+		return Mode_Done(&t, 0);
 	}
 	if (c >= 0) {
-		waves = Script_Keep(&r, Script_Global("OutPolice", "PoliceWaves"));
-		n = waves ? PyObject_Length(waves) : -1;
-		if (n < 0 || !Script_SetGlobal("OutPolice", "iPoliceWave", PyInt_FromLong(n - 1))) {
-			return Script_Done(&r, NULL);
+		Native_Free(waves);
+		count = OutPolice_G("PoliceWaves", waves) ? Native_Size(waves) : -1;
+		Native_SetInt(len, count - 1);
+		if (count < 0 || !OutPolice_SetWave(len)) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	return Script_Done(&r, Py_ReturnNone());
+	return Mode_Done(&t, 1);
 }
 
 /* InitWaves(): the alarm speeds and the waves of the reputation (police.def), from the first wave */
-static PyObject *OutPolice_InitWaves(PyObject *self, PyObject *args) {
+static byte OutPolice_InitWavesN(void) {
 	long rptn;
-	(void)self;
-	(void)args;
+	nativeVal_t zero;
 	if (!Police_Reputation(&rptn)) {
-		return NULL;
+		return 0;
 	}
 	if (rptn >= 0 && rptn <= 5) {
 		char section[16];
 		Str_Printf(section, sizeof(section), "waves%ld", rptn);
 		Script_RunFile(0, POLICE_FILE, section, police_def, police_steps, NULL);
 	}
-	return Script_SetGlobal("OutPolice", "iPoliceWave", PyInt_FromLong(0)) ? Py_ReturnNone() : NULL;
+	Native_SetInt(&zero, 0);
+	return OutPolice_SetWave(&zero);
 }
 
-/* InitAIProfiles(): the profiles SPoli1..6 of each skill, as VehiclesNPC.AIProf["SPoli1_Rookie"] */
-static PyObject *OutPolice_InitAIProfiles(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "VehiclesNPC", NULL };
+/* InitAIProfiles(): the profiles SPoli1..6 of each skill, as VehiclesNPC.AIProf["SPoli1_Rookie"] (OBJLIB 3, 7: the
+ * profile objects of VehiclesNPC by name) */
+static byte OutPolice_InitAIProfilesN(void) {
 	static const char *const types[] = { "Rookie", "Pilot", "Veteran", "Elite", "Ace", "MegaAce" };
-	(void)self;
-	(void)args;
-	if (!Script_Import(mods)) {
-		return NULL;
+	if (!Mode_Import("VehiclesNPC")) {
+		return 0;
 	}
 	for (int s = 1; s <= 6; s++) {
 		for (int t = 0; t < 6; t++) {
 			char ship[16], key[32];
+			nativeVal_t sp = { 0 }, name, k;
 			Str_Printf(ship, sizeof(ship), "SPoli%d", s);
 			Str_Printf(key, sizeof(key), "SPoli%d_%s", s, types[t]);
-			scriptRefs_t r = { 0 };
-			PyObject *sp = Script_Keep(&r, Script_Ask("VehiclesNPC", "cShipAI", "()"));
-			byte ok = sp && Script_HSet(sp, "Ship", PyString_FromString(ship)) &&
-				Script_Try("VehiclesNPC", "SetAIProfile", "(Os)", sp, types[t]);
-			PyObject *all = ok ? Script_Keep(&r, Script_Attr("VehiclesNPC", "AIProf")) : NULL;
-			ok = all && PyMapping_SetItemString(all, key, sp) == 0;
-			Script_Done(&r, NULL);
+			Native_SetStr(&name, ship);
+			Native_SetStr(&k, key);
+			byte ok = Native_CallMod("VehiclesNPC", "cShipAI", &sp, "") && Mode_VSet(&sp, "Ship", &name) &&
+				Native_CallMod("VehiclesNPC", "SetAIProfile", NULL, "vs", &sp, types[t]) &&
+				Mode_ModDictPut("VehiclesNPC", "AIProf", &k, &sp);
+			Native_Free(&sp);
 			if (!ok) {
-				return NULL;
+				return 0;
 			}
 		}
 	}
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* Init(): the profiles; while PoliceActive the waves, the first wave and the engine callback for the next */
-static PyObject *OutPolice_Init(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { 0 };
-	(void)self;
-	(void)args;
-	PyObject *active = Script_Keep(&r, OutPolice_InitAIProfiles(NULL, NULL)) ?
-		Script_Keep(&r, Script_Global("OutPolice", "PoliceActive")) : NULL;
-	int t = Script_True(active);
-	byte ok = t >= 0 && (!t || (Script_Keep(&r, OutPolice_InitWaves(NULL, NULL)) &&
-		Script_Keep(&r, OutPolice_InitShips(NULL, NULL)) &&
-		Script_Try("Scrap", "Set", "(ss)", "PoliceWaveEliminated", "OutPolice.NextWave"))) && Police_BossRobots();
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+static byte OutPolice_InitN(void) {
+	nativeVal_t active = { 0 };
+	byte ok = OutPolice_InitAIProfilesN() && OutPolice_G("PoliceActive", &active) &&
+		(!Native_True(&active) || (OutPolice_InitWavesN() && OutPolice_InitShipsN() &&
+		Mode_GVarSetS("PoliceWaveEliminated", "OutPolice.NextWave"))) && Police_BossRobots();
+	Native_Free(&active);
+	return ok;
+}
+
+/* skipPrice = 0 */
+static byte OutPolice_Put0(void) {
+	nativeVal_t zero;
+	Native_SetInt(&zero, 0);
+	return Mode_Put("OutPolice", "skipPrice", NULL, &zero);
 }
 
 /* NextWave(doprice=1): the next wave; after an odd wave (not the first) while the alarm is on the reward
  * WavePrice * wave + ReputationPrice * BadReputation, unless skipPrice skips it once */
-static PyObject *OutPolice_NextWave(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "RaceMaker", NULL };
-	PyObject *doprice = NULL;
-	scriptRefs_t r = { 0 };
+static byte OutPolice_NextWaveN(const nativeVal_t *doprice) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *skip = Mode_V(&t), *i = Mode_V(&t), *r = Mode_V(&t), *wp = Mode_V(&t), *a = Mode_V(&t);
+	nativeVal_t *rp = Mode_V(&t), *sv = Mode_V(&t), *bad = Mode_V(&t), *b = Mode_V(&t), *price = Mode_V(&t);
+	nativeVal_t *money = Mode_V(&t), *sum = Mode_V(&t), *msg = Mode_V(&t), *text = Mode_V(&t);
+	if (!OutPolice_InitShipsN() || !Mode_GVarSetS("PoliceWaveEliminated", "OutPolice.NextWave") ||
+		!OutPolice_G("skipPrice", skip)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_True(skip)) {
+		return Mode_Done(&t, OutPolice_Put0());
+	}
+	int go = doprice ? Native_True(doprice) : 1;
+	if (go) {
+		go = Mode_AlarmOn();
+	}
+	if (go > 0) {
+		/* iPoliceWave != 1 */
+		go = OutPolice_G("iPoliceWave", i) ? Native_Compare(i, Mode_I(&t, 1)) != 0 : -1;
+		if (PyErr_Occurred()) {
+			go = -1;
+		}
+	}
+	if (go > 0) {
+		Native_Free(i);
+		go = OutPolice_G("iPoliceWave", i) && Native_Arith('%', i, Mode_I(&t, 2), r) ? Native_True(r) : -1;
+	}
+	if (go > 0) {
+		Native_Free(i);
+		Mode_SaveVar("BadReputation", sv);
+		/* OBJLIB 3: RaceMaker.ShowSystemMessage by name */
+		go = Mode_Import("RaceMaker") && OutPolice_G("WavePrice", wp) && OutPolice_G("iPoliceWave", i) &&
+			Native_Arith('*', wp, i, a) && OutPolice_G("ReputationPrice", rp) && Native_ToInt(sv, bad) &&
+			Native_Arith('*', rp, bad, b) && Native_Arith('+', a, b, price) &&
+			(Native_SetInt(money, Mode_GetMoney()), Native_Arith('+', money, price, sum)) && Mode_SetMoney(sum) &&
+			(Mode_Lang("OnPoliceWave", msg), Native_Arith('%', msg, price, text)) &&
+			Native_CallMod("RaceMaker", "ShowSystemMessage", NULL, "v", text) ? 1 : -1;
+	}
+	return Mode_Done(&t, go >= 0);
+}
+
+/* the adapters (no arguments: the arity of the script's functions is not checked, as the port did) */
+static PyObject *OutPolice_MakePoli(PyObject *self, PyObject *args) {
+	PyObject *o;
+	nativeVal_t type;
 	(void)self;
-	if (!PyArg_ParseTuple(args, "|O", &doprice)) {
+	if (!PyArg_ParseTuple(args, "O", &o)) {
 		return NULL;
 	}
-	PyObject *skip = Script_Keep(&r, OutPolice_InitShips(NULL, NULL)) &&
-		Script_Try("Scrap", "Set", "(ss)", "PoliceWaveEliminated", "OutPolice.NextWave") ?
-		Script_Keep(&r, Script_Global("OutPolice", "skipPrice")) : NULL;
-	int t = Script_True(skip);
-	if (t < 0) {
-		return Script_Done(&r, NULL);
+	Native_Arg(o, &type);
+	byte ok = OutPolice_MakePoliN(&type);
+	Native_Free(&type);
+	return Mode_Result(ok);
+}
+
+#define OUTPOLICE_FN(fn, call) \
+	static PyObject *fn(PyObject *self, PyObject *args) { \
+		(void)self; \
+		(void)args; \
+		return Mode_Result(call); \
 	}
-	if (t) {
-		return Script_Done(&r, Script_SetGlobal("OutPolice", "skipPrice", PyInt_FromLong(0)) ? Py_ReturnNone() : NULL);
+
+OUTPOLICE_FN(OutPolice_InitShips, OutPolice_InitShipsN())
+OUTPOLICE_FN(OutPolice_InitWaves, OutPolice_InitWavesN())
+OUTPOLICE_FN(OutPolice_InitAIProfiles, OutPolice_InitAIProfilesN())
+OUTPOLICE_FN(OutPolice_Init, OutPolice_InitN())
+
+static PyObject *OutPolice_NextWave(PyObject *self, PyObject *args) {
+	PyObject *o = NULL;
+	nativeVal_t doprice;
+	(void)self;
+	if (!PyArg_ParseTuple(args, "|O", &o)) {
+		return NULL;
 	}
-	t = doprice ? Script_True(doprice) : 1;
-	if (t > 0) {
-		PyObject *alarm = Script_Keep(&r, Script_Ask("Scrap", "GetAlarm", "()"));
-		t = Script_True(alarm ? Script_Keep(&r, Script_Index(alarm, 0)) : NULL);
+	if (o) {
+		Native_Arg(o, &doprice);
 	}
-	PyObject *i = NULL;
-	if (t > 0) {
-		i = Script_Keep(&r, Script_Global("OutPolice", "iPoliceWave"));
-		PyObject *one = i ? Script_Keep(&r, PyInt_FromLong(1)) : NULL;
-		t = one ? Script_Eq(i, one) : -1;
-		t = t < 0 ? -1 : !t;
+	byte ok = OutPolice_NextWaveN(o ? &doprice : NULL);
+	if (o) {
+		Native_Free(&doprice);
 	}
-	if (t > 0) {
-		i = Script_Keep(&r, Script_Global("OutPolice", "iPoliceWave"));
-		PyObject *two = i ? Script_Keep(&r, PyInt_FromLong(2)) : NULL;
-		t = Script_True(two ? Script_Keep(&r, Script_Mod(i, two)) : NULL);
-	}
-	if (t > 0) {
-		if (!Script_Import(mods)) {
-			return Script_Done(&r, NULL);
-		}
-		PyObject *wp = Script_Keep(&r, Script_Global("OutPolice", "WavePrice"));
-		i = wp ? Script_Keep(&r, Script_Global("OutPolice", "iPoliceWave")) : NULL;
-		PyObject *a = i ? Script_Keep(&r, PyNumber_Multiply(wp, i)) : NULL;
-		PyObject *rp = a ? Script_Keep(&r, Script_Global("OutPolice", "ReputationPrice")) : NULL;
-		PyObject *bad = rp ? Script_Keep(&r, Script_Int(Script_Keep(&r, Script_SaveVar("BadReputation")))) : NULL;
-		PyObject *b = bad ? Script_Keep(&r, PyNumber_Multiply(rp, bad)) : NULL;
-		PyObject *price = b ? Script_Keep(&r, PyNumber_Add(a, b)) : NULL;
-		PyObject *money = price ? Script_Keep(&r, Script_Ask("Scrap", "GetMoney", "()")) : NULL;
-		PyObject *sum = money ? Script_Keep(&r, PyNumber_Add(money, price)) : NULL;
-		PyObject *msg = sum && Script_Try("Scrap", "SetMoney", "(O)", sum) ?
-			Script_Keep(&r, Script_Ask("Scrap", "GetLangStr", "(s)", "OnPoliceWave")) : NULL;
-		PyObject *text = msg ? Script_Keep(&r, Script_Mod(msg, price)) : NULL;
-		t = text && Script_Try("RaceMaker", "ShowSystemMessage", "(O)", text) ? 1 : -1;
-	}
-	return Script_Done(&r, t >= 0 ? Py_ReturnNone() : NULL);
+	return Mode_Result(ok);
 }
 
 PyMethodDef g_OutPoliceMethods[] = {
@@ -596,54 +644,65 @@ PyMethodDef g_OutPoliceMethods[] = {
 /* ---- InPolice ---- */
 
 /* Include(chrname): a Sentinel, Gear or Police of CharsNPC.CharRes gets its AI and its police list */
-static PyObject *InPolice_Include(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "CharsNPC", NULL };
-	static const char *const own[] = { "Sentinel", "Gear", NULL };
-	PyObject *name;
-	scriptRefs_t r = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name) || !Script_Import(mods)) {
-		return NULL;
+static byte InPolice_IncludeN(const nativeVal_t *name) {
+	nativeVal_t act = { 0 }, el, ch = { 0 };
+	if (!Mode_Import("CharsNPC")) {
+		return 0;
 	}
-	PyObject *res = Script_Keep(&r, Script_Attr("CharsNPC", "CharRes"));
-	PyObject *ctr = res ? Script_Keep(&r, PyObject_GetItem(res, name)) : NULL;
-	PyObject *act = ctr ? Script_Keep(&r, Script_GetAttr(ctr, "ActCtrl")) : NULL;
-	if (!act) {
-		return Script_Done(&r, NULL);
+	/* OBJLIB 5 and 7: CharRes holds the character objects of CharsNPC; CharRes[chrname] the Python way */
+	PyObject *res = Script_Attr("CharsNPC", "CharRes"), *key = res ? Native_ToPy(name) : NULL;
+	PyObject *ctr = key ? PyObject_GetItem(res, key) : NULL;
+	byte ok = ctr && Mode_HGet(ctr, "ActCtrl", &act);
+	Py_XDECREF(ctr);
+	Py_XDECREF(key);
+	Py_XDECREF(res);
+	if (!ok) {
+		return 0;
 	}
-	PyObject *el = Script_In(act, own) ? act : Script_Is(act, "Police") ? Script_Keep(&r, PyString_FromString("PoliceSmall")) : NULL;
-	if (el) {
-		PyObject *ch = Script_Keep(&r, Script_Entity(name));
-		if (!ch || !Script_Try("SAI", "EnableAIChar", "(Oii)", name, 1, 0) || !Script_HSet(ch, "EntityList", Script_Ref(el))) {
-			return Script_Done(&r, NULL);
-		}
+	const char *s = act.type == NV_STR ? Native_Text(&act) : NULL;
+	byte police = s && !strcmp(s, "Police");
+	if (s && (!strcmp(s, "Sentinel") || !strcmp(s, "Gear") || police)) {
+		Native_SetStr(&el, police ? "PoliceSmall" : s);
+		/* OBJLIB 7: SAI.EnableAIChar by name (its NULL result for a name the AI table does not have) */
+		ok = Mode_EntityH(name, &ch) && Native_CallMod("SAI", "EnableAIChar", NULL, "vii", name, 1L, 0L) &&
+			Mode_VSet(&ch, "EntityList", &el);
 	}
-	return Script_Done(&r, Py_ReturnNone());
+	Native_Free(&act);
+	Native_Free(&ch);
+	return ok;
 }
 
 /* SetGVars(): the alarm speeds and the police tuning of the reputation (police.def: in0, in1, in2 for the rest) */
-static PyObject *InPolice_SetGVars(PyObject *self, PyObject *args) {
-	static const char *const mods[] = { "CharAct", NULL };
+static byte InPolice_SetGVarsN(void) {
 	long rptn;
-	(void)self;
-	(void)args;
-	if (!Script_Import(mods) || !Police_Reputation(&rptn)) {
-		return NULL;
+	if (!Mode_Import("CharAct") || !Police_Reputation(&rptn)) {
+		return 0;
 	}
 	Script_RunFile(0, POLICE_FILE, rptn == 0 ? "in0" : rptn == 1 ? "in1" : "in2", police_def, police_steps, NULL);
-	return Py_ReturnNone();
+	return 1;
 }
 
 /* Init(): the tuning and the engine callbacks that create Gears and Police */
-static PyObject *InPolice_Init(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { 0 };
-	(void)self;
-	(void)args;
-	byte ok = Script_Keep(&r, InPolice_SetGVars(NULL, NULL)) &&
-		Script_Try("Scrap", "Set", "(ss)", "CreateGear", "CharsNPC.CallCreateChar") &&
-		Script_Try("Scrap", "Set", "(ss)", "CreatePolice", "CharsNPC.CallCreateChar") && Police_BossRobots();
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+static byte InPolice_InitN(void) {
+	return InPolice_SetGVarsN() && Mode_GVarSetS("CreateGear", "CharsNPC.CallCreateChar") &&
+		Mode_GVarSetS("CreatePolice", "CharsNPC.CallCreateChar") && Police_BossRobots();
 }
+
+static PyObject *InPolice_Include(PyObject *self, PyObject *args) {
+	PyObject *o;
+	nativeVal_t name;
+	(void)self;
+	if (!PyArg_ParseTuple(args, "O", &o)) {
+		return NULL;
+	}
+	Native_Arg(o, &name);
+	byte ok = InPolice_IncludeN(&name);
+	Native_Free(&name);
+	return Mode_Result(ok);
+}
+
+OUTPOLICE_FN(InPolice_SetGVars, InPolice_SetGVarsN())
+OUTPOLICE_FN(InPolice_Init, InPolice_InitN())
 
 PyMethodDef g_InPoliceMethods[] = {
 	{ "Include", InPolice_Include, 1, NULL },
