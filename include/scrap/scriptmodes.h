@@ -410,6 +410,9 @@ byte Mode_AtG(const nativeVal_t *time, const char *module, const char *func, con
  * variable; OBJLIB 9: those go through the Python number functions) */
 byte Mode_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
 
+/* Scrap.Set(name, Scrap.Def(name)): the engine variable back to its default */
+byte Mode_GVarSetDef(const char *name);
+
 /* ---- helpers of batch I (the super deals and the native level files of batch I) ---- */
 
 /* h.var = i, = "text", = d of a handle value */
