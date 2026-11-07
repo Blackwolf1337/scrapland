@@ -1950,6 +1950,25 @@ byte Mode_AtG(const nativeVal_t *time, const char *module, const char *func, con
 	return ok;
 }
 
+byte Mode_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
+	if ((op != '*' && op != '/' && op != '%') || (a->type != NV_LONG && b->type != NV_LONG)) {
+		return Native_Arith(op, a, b, out);
+	}
+	/* OBJLIB 9 */
+	PyObject *x = Native_ToPy(a), *y = x ? Native_ToPy(b) : NULL, *r = NULL;
+	if (y) {
+		r = op == '*' ? PyNumber_Multiply(x, y) : op == '/' ? PyNumber_Divide(x, y) : PyNumber_Remainder(x, y);
+	}
+	Native_SetNone(out);
+	if (r) {
+		Native_Arg(r, out);
+	}
+	Py_XDECREF(r);
+	Py_XDECREF(y);
+	Py_XDECREF(x);
+	return r != NULL;
+}
+
 /* ---- helpers of batch I (the super deals and the native level files of batch I) ---- */
 
 byte Mode_VSetI(const nativeVal_t *h, const char *var, long i) {
