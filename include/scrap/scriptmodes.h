@@ -488,5 +488,8 @@ byte Mode_PathSet(byte cls, const char *name, const char *rest);
 /* Scrap.CreateEntity(dummy[0], dummy[1][0], dummy[1][1], dummy[1][2], type) through its seam, then e.Ang = (dummy[2][0],
  * dummy[2][1], 0): the handle into e */
 byte Mode_FromDummy(const nativeVal_t *dummy, const char *type, nativeVal_t *e);
+/* the crazy gambler's call after a mission (unless the save variable SuperDeal.Library is SuperDeal_Twelfth):
+ * Speech.AddRemoteCom(msgs[n], "CrazyGambler") for n = MissionsFuncs.GetNumCrazyDealCompleted() from 0 to 3 */
+byte Mode_CGCalls(const char *const *msgs);
 
 #endif
