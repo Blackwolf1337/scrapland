@@ -1732,12 +1732,13 @@ static byte Rm_GetRandomShipIAProfile(const nativeVal_t *foe, const nativeVal_t 
 	nativeVal_t *ais = Mode_V(&t), *ships = Mode_V(&t), *len = Mode_V(&t), *ni = Mode_V(&t), *n1 = Mode_V(&t);
 	nativeVal_t *r = Mode_V(&t), *head = Mode_V(&t), *n = Mode_V(&t), *rep = Mode_V(&t), *f = Mode_V(&t), *nine = Mode_V(&t);
 	nativeVal_t *s = Mode_V(&t);
-	int turn = Rm_InS(foe, groups);
-	int l = Rm_G("AISHIPS", ais) && Mode_Sub(ais, foe, ships) ? Mode_Len(ships) : -1;
-	if (l < 0) {
-		return Mode_Done(&t, 0);
-	}
+	int turn = Rm_InS(foe, groups), l;
+	/* the order of the script: the count of the ships first in turn, the head first at random */
 	if (turn) {
+		l = Rm_G("AISHIPS", ais) && Mode_Sub(ais, foe, ships) ? Mode_Len(ships) : -1;
+		if (l < 0) {
+			return Mode_Done(&t, 0);
+		}
 		Native_SetInt(len, l);
 		Native_Free(ni);
 		if (!Rm_G("nextIAProfile", ni) || !Mode_Arith('+', ni, Mode_I(&t, 1), n1) || !Mode_Arith('%', n1, len, r) ||
@@ -1746,7 +1747,8 @@ static byte Rm_GetRandomShipIAProfile(const nativeVal_t *foe, const nativeVal_t 
 			return Mode_Done(&t, 0);
 		}
 	} else {
-		if (!Mode_Cat(&t, head, 2, Mode_S(&t, "S"), foe)) {
+		l = Mode_Cat(&t, head, 2, Mode_S(&t, "S"), foe) && Rm_G("AISHIPS", ais) && Mode_Sub(ais, foe, ships) ? Mode_Len(ships) : -1;
+		if (l < 0) {
 			return Mode_Done(&t, 0);
 		}
 		Native_SetFloat(f, Scrap_RandRange(1, l));
