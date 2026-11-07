@@ -403,5 +403,8 @@ byte Mode_Connect(const char *a, const char *b, byte pair);
 byte Mode_GSetS(const char *module, const char *var, const char *attr, const char *s);
 /* Scrap.AddScheduledFunc(time, func, args) with time a value and func the global of module (its NameError; OBJLIB 4) */
 byte Mode_AtG(const nativeVal_t *time, const char *module, const char *func, const nativeVal_t *args, int n);
+/* a op b of the script as Native_Arith, with the long ints of 1.5.2 for * / % too (a case can put a long int into a
+ * variable; OBJLIB 9: those go through the Python number functions) */
+byte Mode_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
 
 #endif
