@@ -2,529 +2,566 @@
  * The SaveGame module in C (scripts/savegame.py, issue #2): saving and loading the single player game, the way points
  * (map, spawn point, character, batteries, alarm, money), the start of a new game with its save variables, the level
  * change (QLoad) and the save registers of the missions (SaveReg, GetReg). The module code (the save variables it
- * creates, the photo message) stays in the script. Values keep their Python types and every failing line stops the
- * function like the script.
+ * creates, the photo message) stays in the .mod file. Every failing line stops the function like the script.
+ *
+ * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values. The save variables, the
+ * engine variables, the money, the time, the language texts, the files, the alarm and the save game files are C; the
+ * save texts are made with the 1.5.2 repr of the native layer and read with its literal reader, so
+ * every text the game writes stays byte for byte. Scrap.UsrEntity, GetAlarm, SetAlarm, SetMoney, Set, DelSaveVars,
+ * ConsoleError, AddScheduledFunc, SNet.IsServer, IsClient, SInput.GetActionSet, SetActionSet, SSound.StopVoice,
+ * StopAllSounds and SScorer.SetMsgText go through their seams (OBJLIB 7: the cases record or swap them); Scrap.MusicPlayer,
+ * LoadLevel, Achievement, SNet.CloseServer and CloseClient are called by name as before (the cases record them). The other ports (Scorer, Challenge,
+ * Speech, MissionsFuncs, Menu), string.zfill's twin and the functions of the module the script calls through its
+ * globals stay by name (OBJLIB 3). The registers keep their Python objects: SaveReg reads the attributes of any object
+ * and GetReg makes a class whose attributes are read with the Python literal reader (OBJLIB 6).
  */
 #include <limits.h>
-#include <stdarg.h>
 #include <string.h>
 
+#include "scrap/alarm.h"
+#include "scrap/filepak.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
-#include "scrap/timer.h"
+#include "scrap/scriptmodes.h"
+#include "game/Script/levels/Levels.h"
 
-#define K(o) Script_Keep(&r, (o))
-#define FAIL() return Script_Done(&r, NULL)
+#define SG "SaveGame"
 
-/* Scrap.SetSaveVar(name, v) (v a Python value, not given away) */
-static byte SG_SetSave(const char *name, PyObject *v) {
-	return v && Script_Try("Scrap", "SetSaveVar", "(sO)", name, v);
+/* ---- engine calls of the module ---- */
+
+/* Scrap.GetSaveVar(name) of a name value (the TypeError of "s") */
+static byte SG_SaveVarV(const nativeVal_t *name, nativeVal_t *out) {
+	const char *s;
+	Native_SetNone(out);
+	if (!Native_ArgStr(name, 1, &s)) {
+		return 0;
+	}
+	Mode_SaveVar(s, out);
+	return 1;
 }
 
-static byte SG_SetSaveS(const char *name, const char *v) {
-	return Script_Try("Scrap", "SetSaveVar", "(ss)", name, v);
+/* Scrap.SetSaveVar(name, v) of a name value */
+static byte SG_SetSaveV(const nativeVal_t *name, const nativeVal_t *v) {
+	const char *s;
+	return Native_ArgStr(name, 1, &s) && Mode_SetSaveVar(s, v);
 }
 
-/* Scrap.GetTime() as a Python float (a new reference) */
-static PyObject *SG_Time(void) {
-	return PyFloat_FromDouble((double)Timer_GetTime(&g_pWorld->timer));
+/* Scrap.SetSaveVar(name, text) of two texts */
+static void SG_SetSaveS(const char *name, const char *text) {
+	SaveVar_Set(name, text);
 }
 
-/* a function of this module as other code may have replaced it (the script calls its own globals) */
-static byte SG_Call(const char *func, const char *fmt, ...);
+/* Scrap.DelSaveVars(prefix) of a value through its seam (fr7b.py records it) */
+static byte SG_DelSaveVarsV(const nativeVal_t *prefix) {
+	PyObject *hook;
+	const char *s;
+	int seam = Native_Seam("Scrap", "DelSaveVars", &hook);
+	if (seam) {
+		return seam > 0 && Native_HookCall(hook, NULL, "v", prefix);
+	}
+	if (!Native_ArgStr(prefix, 1, &s)) {
+		return 0;
+	}
+	SaveVars_Delete(s);
+	return 1;
+}
+
+/* Scrap.GetAlarm() through its seam (fc-pk-dt and the edge files swap it): (on, level, value) */
+static byte SG_Alarm(nativeVal_t *out) {
+	PyObject *hook;
+	int seam = Native_Seam("Scrap", "GetAlarm", &hook);
+	if (seam) {
+		return seam > 0 && Native_HookCall(hook, out, "");
+	}
+	/* "ifi" */
+	Native_SetEmpty(out, NV_TUPLE);
+	Native_SetInt(Native_Append(out), g_pWorld->alarm.on != 0);
+	Native_SetFloat(Native_Append(out), (double)g_pWorld->alarm.value);
+	Native_SetInt(Native_Append(out), Alarm_GetValue(&g_pWorld->alarm));
+	return 1;
+}
+
+/* Scrap.SetMoney(money) through its seam (fc-r7b-jy records it); the engine's "i" with the OverflowError of a long
+ * int or a float that does not fit a long (Native_ArgInt raises a TypeError for those) */
+static byte SG_SetMoney(const nativeVal_t *money) {
+	PyObject *hook;
+	int seam = Native_Seam("Scrap", "SetMoney", &hook);
+	if (seam) {
+		return seam > 0 && Native_HookCall(hook, NULL, "v", money);
+	}
+	if (money->type == NV_FLOAT && (money->f < (double)LONG_MIN || money->f > (double)LONG_MAX)) {
+		return Native_Raise(NE_OVERFLOW, "float too large to convert");
+	}
+	nativeVal_t i;
+	if (money->type == NV_LONG && !Native_ToInt(money, &i)) {
+		return 0;
+	}
+	return Mode_SetMoney(money);
+}
+
+/* Scrap.FileExist(name): 1 or 0, -1 with the TypeError of "s" */
+static int SG_FileExist(const nativeVal_t *name) {
+	const char *s;
+	cFilePack pack;
+	if (!Native_ArgStr(name, 1, &s)) {
+		return -1;
+	}
+	cFilePack_ctor(&pack);
+	int r = cFilePack_Exists(&pack.file.base, s) != 0;
+	cFilePack_dtor(&pack);
+	return r;
+}
+
+/* Scrap.SaveGameVars(name, title): 1 or 0 into *out as the engine gives it (the TypeError of "s|s") */
+static byte SG_SaveGameVars(const nativeVal_t *name, const nativeVal_t *title, nativeVal_t *out) {
+	const char *n, *t;
+	if (!Native_ArgStr(name, 1, &n) || !Native_ArgStr(title, 2, &t)) {
+		return 0;
+	}
+	Native_SetInt(out, SaveGame_Save(n, t) != 0);
+	return 1;
+}
+
+/* Scrap.GameplayTime + Scrap.GetTime() of the eval'd save variable into *out (the script's eval in the module) */
+static byte SG_PlayTime(const nativeVal_t *saved, nativeVal_t *out) {
+	nativeVal_t v = { 0 }, now;
+	Native_SetFloat(&now, Mode_Time());
+	byte ok = Mode_EvalSave(SG, saved, &v) && Mode_Arith('+', &v, &now, out);
+	Native_Free(&v);
+	return ok;
+}
+
+/* string.zfill(s, width) of a text (strings.py: the zeros after the sign) */
+static void SG_Zfill(const nativeVal_t *s, int width, nativeVal_t *out) {
+	char buf[NATIVE_TEXT];
+	const char *p = Native_Text(s);
+	int n = s->n;
+	if (n >= width || width >= (int)sizeof(buf)) {
+		Native_Copy(out, s);
+		return;
+	}
+	int k = 0;
+	if (*p == '-' || *p == '+') {
+		buf[k++] = *p++;
+		n--;
+	}
+	while (k + n < width) {
+		buf[k++] = '0';
+	}
+	memcpy(buf + k, p, (size_t)n);
+	Native_SetText(out, buf, k + n);
+}
 
 /* ---- the mission descriptions ---- */
 
 /* MMDesc(Desc, Persist): the primary mission text, its scorer on or off, kept in the save game when Persist */
-static PyObject *SaveGame_MMDesc(PyObject *self, PyObject *args) {
-	PyObject *desc, *persist;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &desc, &persist) || !Script_Import((const char *const[]){ "Scorer", NULL }) ||
-		!Script_Try("Scrap", "Set", "(sO)", "PrimaryMissionDesc", desc)) {
-		return NULL;
+static byte SG_MMDesc(const nativeVal_t *desc, const nativeVal_t *persist) {
+	if (!Mode_Import("Scorer") || !Native_GVarSet("PrimaryMissionDesc", desc)) {
+		return 0;
 	}
-	int on = desc != Py_None ? Script_True(desc) : 0;
-	if (on < 0 || !Script_Try("Scorer", "ShowMissionScorer", "(iii)", 0, 0, on)) {
-		return NULL;
+	long on = desc->type != NV_NONE ? Native_True(desc) : 0;
+	if (!Native_CallMod("Scorer", "ShowMissionScorer", NULL, "iii", 0L, 0L, on)) {
+		return 0;
 	}
-	int keep = Script_True(persist);
-	if (keep < 0 || (keep && !SG_SetSave("PrimaryMissionDesc", desc))) {
-		return NULL;
-	}
-	return Py_ReturnNone();
+	return !Native_True(persist) || Mode_SetSaveVar("PrimaryMissionDesc", desc);
 }
 
 /* SMDesc(Desc, Persist): the secondary mission text */
-static PyObject *SaveGame_SMDesc(PyObject *self, PyObject *args) {
-	PyObject *desc, *persist;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &desc, &persist) || !Script_Import((const char *const[]){ "Scorer", NULL }) ||
-		!Script_Try("Scrap", "Set", "(sO)", "SecondaryMissionDesc", desc)) {
-		return NULL;
+static byte SG_SMDesc(const nativeVal_t *desc, const nativeVal_t *persist) {
+	if (!Mode_Import("Scorer") || !Native_GVarSet("SecondaryMissionDesc", desc)) {
+		return 0;
 	}
-	int keep = Script_True(persist);
-	if (keep < 0 || (keep && !SG_SetSave("SecondaryMissionDesc", desc))) {
-		return NULL;
-	}
-	return Py_ReturnNone();
+	return !Native_True(persist) || Mode_SetSaveVar("SecondaryMissionDesc", desc);
 }
 
 /* ---- the alarm and the money of a way point ---- */
 
 /* SaveAlarm(): the state of the alarm into the save variables (once the level runs) */
 static byte SG_SaveAlarm(void) {
-	if (Timer_GetTime(&g_pWorld->timer) <= 0.0f) {
+	if (Mode_Time() <= 0.0) {
 		return 1;
 	}
-	scriptRefs_t r = { .n = 0 };
-	PyObject *a = K(Script_Ask("Scrap", "GetAlarm", "()")), *on = a ? K(Script_Index(a, 0)) : NULL;
-	int active = on ? Script_True(on) : -1;
-	PyObject *b = active >= 0 && SG_SetSaveS("AlarmActive", active ? "1" : "0") ? K(Script_Ask("Scrap", "GetAlarm", "()")) : NULL;
-	PyObject *level = b ? K(Script_Index(b, 1)) : NULL, *text = level ? K(Script_Repr(level)) : NULL;
-	byte ok = text && SG_SetSave("AlarmStatus", text);
-	Script_Done(&r, NULL);
-	return ok;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *a = Mode_V(&t), *on = Mode_V(&t), *b = Mode_V(&t), *level = Mode_V(&t), *text = Mode_V(&t);
+	if (!SG_Alarm(a) || !Mode_Item(a, 0, on)) {
+		return Mode_Done(&t, 0);
+	}
+	SG_SetSaveS("AlarmActive", Native_True(on) ? "1" : "0");
+	if (!SG_Alarm(b) || !Mode_Item(b, 1, level)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_Repr(level, text);
+	return Mode_Done(&t, Mode_SetSaveVar("AlarmStatus", text));
 }
 
 /* SaveMoney() */
 static byte SG_SaveMoney(void) {
-	if (Timer_GetTime(&g_pWorld->timer) <= 0.0f) {
-		return 1;
+	if (Mode_Time() > 0.0) {
+		nativeVal_t m;
+		Native_SetInt(&m, Mode_GetMoney());
+		LvN_SaveRepr("Money", &m);
 	}
-	scriptRefs_t r = { .n = 0 };
-	PyObject *m = K(Script_Ask("Scrap", "GetMoney", "()")), *text = m ? K(Script_Repr(m)) : NULL;
-	byte ok = text && SG_SetSave("Money", text);
-	Script_Done(&r, NULL);
-	return ok;
-}
-
-static PyObject *SaveGame_SaveAlarm(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return SG_SaveAlarm() ? Py_ReturnNone() : NULL;
-}
-
-static PyObject *SaveGame_SaveMoney(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return SG_SaveMoney() ? Py_ReturnNone() : NULL;
+	return 1;
 }
 
 /* print Scrap.GetLockAlarm(), Scrap.GetSaveVar("Char"), Scrap.GetAlarmChars() (the script's trace of LoadAlarm) */
 static byte SG_PrintAlarm(void) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *items[3];
-	items[0] = K(Script_Ask("Scrap", "GetLockAlarm", "()"));
-	items[1] = items[0] ? K(Script_SaveVar("Char")) : NULL;
-	items[2] = items[1] ? K(Script_Ask("Scrap", "GetAlarmChars", "()")) : NULL;
-	byte ok = items[2] && Script_Print(items, 3);
-	Script_Done(&r, NULL);
+	nativeVal_t lock, ch, chars;
+	Native_SetInt(&lock, Alarm_IsLocked(&g_pWorld->alarm) != 0);
+	Mode_SaveVar("Char", &ch);
+	Native_SetEmpty(&chars, NV_TUPLE);
+	Native_SetText(Native_Append(&chars), g_pWorld->alarm.chars, (int)strlen(g_pWorld->alarm.chars));
+	Native_SetText(Native_Append(&chars), g_pWorld->alarm.lastChars, (int)strlen(g_pWorld->alarm.lastChars));
+	const nativeVal_t *items[3] = { &lock, &ch, &chars };
+	byte ok = Mode_Print(items, 3);
+	Native_Free(&ch);
+	Native_Free(&chars);
 	return ok;
 }
 
 /* LoadAlarm(): the alarm of the save game back (always on while the boss controls the robots) */
-static PyObject *SaveGame_LoadAlarm(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	if (!SG_PrintAlarm()) {
-		FAIL();
+static byte SG_LoadAlarm(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *set = Mode_V(&t), *status = Mode_V(&t), *level = Mode_V(&t), *boss = Mode_V(&t), *active = Mode_V(&t);
+	nativeVal_t *ch = Mode_V(&t), *one = Mode_V(&t);
+	const char *s;
+	if (!SG_PrintAlarm() || !Mode_ActionSetGet(set) || !Mode_ActionSet("Walk")) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *set = K(Script_Ask("SInput", "GetActionSet", "()"));
-	PyObject *status = set && Script_Try("SInput", "SetActionSet", "(s)", "Walk") ? K(Script_SaveVar("AlarmStatus")) : NULL;
-	PyObject *level = status ? K(Script_EvalIn("SaveGame", status)) : NULL;
-	PyObject *boss = level && Script_Try("Scrap", "SetAlarm", "(O)", level) && Script_Try("Scrap", "SetAlarmGrow", "(i)", -1) ?
-		K(Script_SaveVar("RobotsControlledByBoss")) : NULL;
-	PyObject *active = boss ? K(Script_SaveVar("AlarmActive")) : NULL;
-	if (!active) {
-		FAIL();
+	Mode_SaveVar("AlarmStatus", status);
+	if (!Mode_EvalSave(SG, status, level) || !Mode_SetAlarm(level)) {
+		return Mode_Done(&t, 0);
 	}
-	byte bossRobots = Script_Is(boss, "1");
-	if (Script_Is(active, "1") || bossRobots) {
-		if (!Script_Try("Scrap", "SetAlarm", "(i)", 1) || (bossRobots && !Script_Try("Scrap", "Set", "(si)", "AlarmFallDelta", 0))) {
-			FAIL();
-		}
-	} else if (!Script_Try("Scrap", "SetAlarm", "(i)", 0)) {
-		FAIL();
+	Alarm_SetGrow(&g_pWorld->alarm, -1);
+	Mode_SaveVar("RobotsControlledByBoss", boss);
+	Mode_SaveVar("AlarmActive", active);
+	byte bossRobots = Native_IsStr(boss, "1");
+	Native_SetInt(one, Native_IsStr(active, "1") || bossRobots);
+	if (!Mode_SetAlarm(one) || (one->i && bossRobots && !Mode_GVarSetI("AlarmFallDelta", 0))) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *ch = K(Script_SaveVar("Char"));
-	if (!ch || !Script_Try("Scrap", "SetAlarmChar", "(O)", ch) || !Script_Try("SInput", "SetActionSet", "(O)", set) ||
-		!SG_PrintAlarm()) {
-		FAIL();
+	Mode_SaveVar("Char", ch);
+	if (!Native_ArgStr(ch, 1, &s)) {
+		return Mode_Done(&t, 0);
 	}
-	return Script_Done(&r, Py_ReturnNone());
+	Alarm_SetChar(&g_pWorld->alarm, s);
+	return Mode_Done(&t, Mode_ActionSetV(set) && SG_PrintAlarm());
 }
 
 /* LoadMoney() */
-static PyObject *SaveGame_LoadMoney(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	PyObject *m = K(Script_SaveVar("Money")), *v = m ? K(Script_EvalIn("SaveGame", m)) : NULL;
-	if (!v || !Script_Try("Scrap", "SetMoney", "(O)", v)) {
-		FAIL();
-	}
-	return Script_Done(&r, Py_ReturnNone());
+static byte SG_LoadMoney(void) {
+	nativeVal_t m, v = { 0 };
+	Mode_SaveVar("Money", &m);
+	byte ok = Mode_EvalSave(SG, &m, &v) && SG_SetMoney(&v);
+	Native_Free(&m);
+	Native_Free(&v);
+	return ok;
 }
 
-/* InitVars(): the alarm and the money at the start of a single player level */
-static PyObject *SaveGame_InitVars(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return SG_Call("LoadAlarm", "()") && SG_Call("LoadMoney", "()") ? Py_ReturnNone() : NULL;
+/* InitVars(): the alarm and the money at the start of a single player level (through the globals of the module) */
+static byte SG_InitVars(void) {
+	return Native_CallGlobal(SG, "LoadAlarm", NULL, "") && Native_CallGlobal(SG, "LoadMoney", NULL, "");
 }
 
 /* ---- way points ---- */
 
 /* MarkWayPoint(Map, Spawn, ExtraComeFrom=""): where the game goes on, the character and its batteries, the alarm and
  * the money */
-static PyObject *SaveGame_MarkWayPoint(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "Map", "Spawn", "ExtraComeFrom", NULL };
-	scriptRefs_t r = { .n = 0 };
-	PyObject *map, *spawn, *from = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|O", names, &map, &spawn, &from)) {
-		return NULL;
+static byte SG_MarkWayPoint(const nativeVal_t *map, const nativeVal_t *spawn, const nativeVal_t *from) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *type = Mode_V(&t), *bar = Mode_V(&t), *energy = Mode_V(&t), *text = Mode_V(&t);
+	if (!Mode_SetSaveVar("Map", map) || !Mode_SetSaveVar("Spawn", spawn) || !Mode_SetSaveVar("ComeFrom", from) ||
+		!Mode_UsrHandle(e)) {
+		return Mode_Done(&t, 0);
 	}
-	if (!from) {
-		from = K(PyString_FromString(""));
-	}
-	if (!SG_SetSave("Map", map) || !SG_SetSave("Spawn", spawn) || !SG_SetSave("ComeFrom", from)) {
-		FAIL();
-	}
-	PyObject *e = K(Script_Usr());
-	int is = e ? Script_True(e) : -1;
-	if (is < 0) {
-		FAIL();
-	}
-	if (is) {
-		PyObject *w = K(Script_Method(e, "IsType", "(s)", "WalkChar"));
-		int walk = w ? Script_True(w) : -1;
+	if (Native_True(e)) {
+		int walk = Mode_VIsType(e, "WalkChar");
 		if (walk < 0) {
-			FAIL();
+			return Mode_Done(&t, 0);
 		}
 		if (walk) {
-			PyObject *type = K(Script_GetAttr(e, "ActCtrl"));
-			PyObject *bar = type && SG_SetSave("Char", type) ? K(Script_Ask("Scrap", "Get", "(s)", "EnergyBarActive")) : NULL;
-			int on = bar ? Script_True(bar) : -1;
-			if (on < 0) {
-				FAIL();
+			if (!Mode_VObj(e, "ActCtrl", type) || !Mode_SetSaveVar("Char", type) || !Native_GVarGet("EnergyBarActive", bar)) {
+				return Mode_Done(&t, 0);
 			}
-			if (on) {
-				PyObject *energy = K(Script_GetAttr(e, "Energy")), *text = energy ? K(Script_Repr(energy)) : NULL;
-				if (!text || !SG_SetSave("AcBatteries", text)) {
-					FAIL();
+			if (Native_True(bar)) {
+				if (!Mode_VObj(e, "Energy", energy)) {
+					return Mode_Done(&t, 0);
+				}
+				Mode_Repr(energy, text);
+				if (!Mode_SetSaveVar("AcBatteries", text)) {
+					return Mode_Done(&t, 0);
 				}
 			}
 		}
 	}
-	if (!SG_Call("SaveAlarm", "()") || !SG_Call("SaveMoney", "()")) {
-		FAIL();
-	}
-	return Script_Done(&r, Py_ReturnNone());
+	return Mode_Done(&t, Native_CallGlobal(SG, "SaveAlarm", NULL, "") && Native_CallGlobal(SG, "SaveMoney", NULL, ""));
 }
 
 /* QWayPoint(): a way point at the current map, spawn point and arrival */
-static PyObject *SaveGame_QWayPoint(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	PyObject *path = Script_Import((const char *const[]){ "Init", NULL }) ? K(Script_Global("Init", "Path")) : NULL;
-	PyObject *spawn = path ? K(Script_SaveVar("Spawn")) : NULL, *from = spawn ? K(Script_SaveVar("ComeFrom")) : NULL;
-	if (!from || !SG_Call("MarkWayPoint", "(OOO)", path, spawn, from)) {
-		FAIL();
+static byte SG_QWayPoint(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *path = Mode_V(&t), *spawn = Mode_V(&t), *from = Mode_V(&t);
+	if (!Mode_Import("Init") || !Mode_G("Init", "Path", path)) {
+		return Mode_Done(&t, 0);
 	}
-	return Script_Done(&r, Py_ReturnNone());
+	Mode_SaveVar("Spawn", spawn);
+	Mode_SaveVar("ComeFrom", from);
+	return Mode_Done(&t, Native_CallGlobal(SG, "MarkWayPoint", NULL, "vvv", path, spawn, from));
 }
 
 /* ---- the level change ---- */
 
 /* QLoad(MapName, useGameplayTime=1): the level after this frame, the music and voices off, the gameplay time kept */
-static PyObject *SaveGame_QLoad(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "MapName", "useGameplayTime", NULL };
-	scriptRefs_t r = { .n = 0 };
-	PyObject *map, *useTime = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O", names, &map, &useTime) || !Script_Import((const char *const[]){ "string", NULL })) {
-		return NULL;
+static byte SG_QLoad(const nativeVal_t *map, const nativeVal_t *useTime) {
+	static const char *const credits[] = { "LEVELS/MENU", "LEVELS/ORBIT", "LEVELS/FAKE", "LEVELS/JUNKYARD", NULL };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *file = Mode_V(&t), *msg = Mode_V(&t), *saved = Mode_V(&t), *sum = Mode_V(&t), *text = Mode_V(&t);
+	nativeVal_t *upper = Mode_V(&t);
+	if (!Mode_Import("string") || !Mode_Cat(&t, file, 2, map, Mode_S(&t, "/Map/Map3D.SM3"))) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *sm3 = K(Script_PlusS(Script_Ref(map), "/Map/Map3D.SM3"));
-	PyObject *has = sm3 ? K(Script_Ask("Scrap", "FileExist", "(O)", sm3)) : NULL;
-	int found = has ? Script_True(has) : -1;
+	int found = SG_FileExist(file);
 	if (found == 0) {
-		PyObject *m3d = K(Script_PlusS(Script_Ref(map), "/Map/Map3D.M3D"));
-		has = m3d ? K(Script_Ask("Scrap", "FileExist", "(O)", m3d)) : NULL;
-		found = has ? Script_True(has) : -1;
+		Native_Free(file);
+		found = Mode_Cat(&t, file, 2, map, Mode_S(&t, "/Map/Map3D.M3D")) ? SG_FileExist(file) : -1;
 	}
 	if (found < 0) {
-		FAIL();
+		return Mode_Done(&t, 0);
 	}
 	if (!found) {
-		PyObject *msg = K(Script_Mod(K(PyString_FromString("Map not found: %s\n")), map));
-		if (!msg || !Script_Try("Scrap", "ConsoleError", "(O)", msg)) {
-			FAIL();
-		}
-		return Script_Done(&r, Py_ReturnNone());
+		return Mode_Done(&t, Native_Arith('%', Mode_S(&t, "Map not found: %s\n"), map, msg) && Mode_ConsoleError(msg));
 	}
-	if (!Script_Try("Scrap", "MusicPlayer", "(ss)", "", "stop")) {
-		FAIL();
+	if (!Native_CallMod("Scrap", "MusicPlayer", NULL, "ss", "", "stop")) {
+		return Mode_Done(&t, 0);
 	}
-	for (int i = 0; i < 4; i++) {
-		if (!Script_Try("SSound", "StopVoice", "(i)", i)) {
-			FAIL();
+	for (long i = 0; i < 4; i++) {
+		if (!Mode_StopVoice(Mode_I(&t, i))) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	if (!Script_Try("SSound", "StopAllSounds", "()")) {
-		FAIL();
+	if (!Mode_StopAllSounds()) {
+		return Mode_Done(&t, 0);
 	}
-	int keepTime = useTime ? Script_True(useTime) : 1;
-	if (keepTime < 0) {
-		FAIL();
-	}
-	if (keepTime) {
-		PyObject *t = Script_Try("Scrap", "CreateSaveVar", "(ss)", "GameplayTime", "0") ? K(Script_SaveVar("GameplayTime")) : NULL;
-		PyObject *v = t ? K(Script_EvalIn("SaveGame", t)) : NULL, *now = v ? K(SG_Time()) : NULL;
-		PyObject *sum = now ? K(PyNumber_Add(v, now)) : NULL, *text = sum ? K(Script_Repr(sum)) : NULL;
-		if (!text || !SG_SetSave("GameplayTime", text)) {
-			FAIL();
+	if (!useTime || Native_True(useTime)) {
+		SaveVar_Create("GameplayTime", "0");
+		Mode_SaveVar("GameplayTime", saved);
+		if (!SG_PlayTime(saved, sum)) {
+			return Mode_Done(&t, 0);
 		}
+		Mode_Repr(sum, text);
+		SG_SetSaveS("GameplayTime", Native_Text(text));
 	}
-	PyObject *upper = SG_SetSave("Map", map) ? K(Script_Ask("string", "upper", "(O)", map)) : NULL;
-	if (!upper) {
-		FAIL();
+	if (!Mode_SetSaveVar("Map", map) || !Native_Upper(map, upper)) {
+		return Mode_Done(&t, 0);
 	}
 	/* the maps with credits */
-	int credits = Script_In(upper, (const char *const[]){ "LEVELS/MENU", "LEVELS/ORBIT", "LEVELS/FAKE", "LEVELS/JUNKYARD", NULL });
-	if (!Script_Try("Scrap", "Set", "(si)", "R_CreditsRTarget", credits)) {
-		FAIL();
+	long withCredits = 0;
+	for (int i = 0; credits[i] && !withCredits; i++) {
+		withCredits = Native_IsStr(upper, credits[i]);
 	}
-	PyObject *server = K(Script_Ask("SNet", "IsServer", "()"));
-	int s = server ? Script_True(server) : -1;
-	if (s < 0) {
-		FAIL();
+	if (!Mode_GVarSetI("R_CreditsRTarget", withCredits)) {
+		return Mode_Done(&t, 0);
 	}
-	if (s) {
-		if (!Script_Try("SNet", "CloseServer", "(O)", map)) {
-			FAIL();
-		}
-		return Script_Done(&r, Py_ReturnNone());
+	/* OBJLIB 7: SNet.CloseServer and CloseClient by name as before (the online tests run through here) */
+	int server = Mode_IsServer();
+	if (server) {
+		return Mode_Done(&t, server > 0 && Native_CallMod("SNet", "CloseServer", NULL, "v", map));
 	}
-	PyObject *client = K(Script_Ask("SNet", "IsClient", "()"));
-	int c = client ? Script_True(client) : -1;
-	if (c < 0) {
-		FAIL();
+	int client = Mode_IsClient();
+	if (client) {
+		return Mode_Done(&t, client > 0 && Native_CallMod("SNet", "CloseClient", NULL, "v", map));
 	}
-	if (c) {
-		if (!Script_Try("SNet", "CloseClient", "(O)", map)) {
-			FAIL();
-		}
-	} else if (!Script_Import((const char *const[]){ "Speech", NULL }) || !Script_Try("Speech", "CallEndOfSpeech", "()") ||
-		!Script_Try("Scrap", "LoadLevel", "(O)", map)) {
-		FAIL();
-	}
-	return Script_Done(&r, Py_ReturnNone());
+	return Mode_Done(&t, Mode_Import("Speech") && Native_CallMod("Speech", "CallEndOfSpeech", NULL, "") &&
+		Native_CallMod("Scrap", "LoadLevel", NULL, "v", map));
 }
 
 /* StartGame(CleanChallenge=1, CleanRevenge=0): the map of the save game, the current one becomes the previous one,
  * the challenge (and the revenge) cleaned unless kept */
-static PyObject *SaveGame_StartGame(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "CleanChallenge", "CleanRevenge", NULL };
-	scriptRefs_t r = { .n = 0 };
-	PyObject *cleanChallenge = NULL, *cleanRevenge = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|OO", names, &cleanChallenge, &cleanRevenge) ||
-		!Script_Import((const char *const[]){ "Init", "Challenge", NULL })) {
-		return NULL;
+static byte SG_StartGame(const nativeVal_t *cleanChallenge, const nativeVal_t *cleanRevenge) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *path = Mode_V(&t), *map = Mode_V(&t);
+	if (!Mode_Import("Init") || !Mode_Import("Challenge") || !Mode_G("Init", "Path", path) || !Mode_SetSaveVar("PrevMap", path)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *path = K(Script_Global("Init", "Path"));
-	int a = path && SG_SetSave("PrevMap", path) ? (cleanChallenge ? Script_True(cleanChallenge) : 1) : -1;
-	if (a < 0 || (a && !Script_Try("Challenge", "CleanChallenge", "()"))) {
-		FAIL();
+	if ((!cleanChallenge || Native_True(cleanChallenge)) && !Native_CallMod("Challenge", "CleanChallenge", NULL, "")) {
+		return Mode_Done(&t, 0);
 	}
-	int b = cleanRevenge ? Script_True(cleanRevenge) : 0;
-	if (b < 0 || (b && !Script_Try("Challenge", "CleanRevenge", "()"))) {
-		FAIL();
+	if (cleanRevenge && Native_True(cleanRevenge) && !Native_CallMod("Challenge", "CleanRevenge", NULL, "")) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *map = K(Script_SaveVar("Map"));
-	if (!map || !SG_Call("QLoad", "(O)", map)) {
-		FAIL();
-	}
-	return Script_Done(&r, Py_ReturnNone());
+	Mode_SaveVar("Map", map);
+	return Mode_Done(&t, Native_CallGlobal(SG, "QLoad", NULL, "v", map));
 }
 
 /* Restart(): the current level again */
-static PyObject *SaveGame_Restart(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	PyObject *path = Script_Import((const char *const[]){ "Init", NULL }) ? K(Script_Global("Init", "Path")) : NULL;
-	if (!path || !SG_Call("QLoad", "(O)", path)) {
-		FAIL();
-	}
-	return Script_Done(&r, Py_ReturnNone());
+static byte SG_Restart(void) {
+	nativeVal_t path = { 0 };
+	byte ok = Mode_Import("Init") && Mode_G("Init", "Path", &path) && Native_CallGlobal(SG, "QLoad", NULL, "v", &path);
+	Native_Free(&path);
+	return ok;
 }
 
 /* ---- saving and loading ---- */
 
+/* "Save/Save" + `iSlot` + ".sav" into *out */
+static byte SG_SlotFile(modeVals_t *t, const nativeVal_t *slot, nativeVal_t *out) {
+	nativeVal_t *rep = Mode_V(t);
+	Mode_Repr(slot, rep);
+	return Mode_Cat(t, out, 3, Mode_S(t, "Save/Save"), rep, Mode_S(t, ".sav"));
+}
+
+/* the debug save of the developers: Save/<map> (<mission map> - <mission>).sav */
+static byte SG_DebugSave(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *m = Mode_V(&t), *mm = Mode_V(&t), *lib = Mode_V(&t), *nam = Mode_V(&t), *nam2 = Mode_V(&t), *nam3 = Mode_V(&t);
+	nativeVal_t *f = Mode_V(&t), *ok = Mode_V(&t);
+	Mode_SaveVar("Map", m);
+	Mode_SaveVar("Mission.Map", mm);
+	Mode_SaveVar("Mission.Library", lib);
+	return Mode_Done(&t, Native_Slice(m, 7, INT_MAX, nam) && Mode_Cat(&t, nam2, 3, nam, Mode_S(&t, " ("), mm) &&
+		Mode_Cat(&t, nam3, 3, nam2, Mode_S(&t, " - "), lib) &&
+		Mode_Cat(&t, f, 4, Mode_S(&t, "Save/"), nam3, Mode_S(&t, ")"), Mode_S(&t, ".sav")) && SG_SaveGameVars(f, nam3, ok));
+}
+
 /* InstantSaveGame(iSlot, showMsgOnFailure=1): the game into Save/Save<n>.sav with the map and the gameplay time as its
  * name, the message of the result, the autosave slot 0 too */
-static PyObject *SaveGame_InstantSaveGame(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "iSlot", "showMsgOnFailure", NULL };
-	scriptRefs_t r = { .n = 0 };
-	PyObject *slot, *show = NULL;
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O", names, &slot, &show) ||
-		!Script_Import((const char *const[]){ "string", "Speech", "Init", NULL }) ||
-		!SG_SetSaveS("AutoSaveGameOnLoad", "0") || !SG_Call("QWayPoint", "()")) {
-		return NULL;
-	}
-	PyObject *t = K(Script_SaveVar("GameplayTime")), *v = t ? K(Script_EvalIn("SaveGame", t)) : NULL, *now = v ? K(SG_Time()) : NULL;
-	PyObject *gpt = now ? K(PyNumber_Add(v, now)) : NULL, *text = gpt ? K(Script_Repr(gpt)) : NULL;
-	if (!text || !SG_SetSave("GameplayTime", text)) {
-		FAIL();
-	}
-	/* "Save/Save" + `iSlot` + ".sav", the map without "Levels/" + " - " + hh:mm:ss */
-	PyObject *file = K(Script_PlusS(Script_SPlus("Save/Save", K(Script_Repr(slot))), ".sav"));
-	PyObject *map = file ? K(Script_SaveVar("Map")) : NULL, *name = map ? K(PySequence_GetSlice(map, 7, INT_MAX)) : NULL;
-	PyObject *secs = name ? K(Script_Int(gpt)) : NULL;
+static byte SG_InstantSaveGame(const nativeVal_t *slot, const nativeVal_t *show) {
 	static const long div[3] = { 60 * 60, 60, 1 };
-	PyObject *desc = secs ? K(Script_PlusS(Script_Ref(name), " - ")) : NULL;
-	for (int i = 0; desc && i < 3; i++) {
-		scriptRefs_t t = { .n = 0 };
-		PyObject *d = Script_Keep(&t, PyInt_FromLong(div[i])), *sixty = Script_Keep(&t, PyInt_FromLong(60));
-		PyObject *q = d ? Script_Keep(&t, PyNumber_Divide(secs, d)) : NULL;
-		PyObject *m = q && sixty ? Script_Keep(&t, PyNumber_Remainder(q, sixty)) : NULL;
-		PyObject *rep = m ? Script_Keep(&t, Script_Repr(m)) : NULL;
-		PyObject *z = rep ? Script_Keep(&t, Script_Ask("string", "zfill", "(Oi)", rep, 2)) : NULL;
-		desc = z ? K(Script_Plus(i ? Script_PlusS(Script_Ref(desc), ":") : Script_Ref(desc), z)) : NULL;
-		Script_Done(&t, NULL);
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *saved = Mode_V(&t), *gpt = Mode_V(&t), *text = Mode_V(&t), *file = Mode_V(&t), *map = Mode_V(&t);
+	nativeVal_t *name = Mode_V(&t), *secs = Mode_V(&t), *desc = Mode_V(&t), *success = Mode_V(&t), *now = Mode_V(&t);
+	nativeVal_t *back = Mode_V(&t), *cad = Mode_V(&t), *len = Mode_V(&t), *when = Mode_V(&t), *dbg = Mode_V(&t);
+	if (!Mode_Import("string") || !Mode_Import("Speech") || !Mode_Import("Init")) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *success = desc ? K(Script_Ask("Scrap", "SaveGameVars", "(OO)", file, desc)) : NULL;
-	PyObject *now2 = success ? K(SG_Time()) : NULL, *back = now2 ? K(PyNumber_Subtract(gpt, now2)) : NULL;
-	PyObject *backText = back ? K(Script_Repr(back)) : NULL;
-	if (!backText || !SG_SetSave("GameplayTime", backText)) {
-		FAIL();
+	SG_SetSaveS("AutoSaveGameOnLoad", "0");
+	if (!Native_CallGlobal(SG, "QWayPoint", NULL, "")) {
+		return Mode_Done(&t, 0);
 	}
-	int ok = Script_True(success), msg = ok;
-	if (!ok) {
-		msg = show ? Script_True(show) : 1;
-		if (msg > 0) {
-			msg = 2;
+	Mode_SaveVar("GameplayTime", saved);
+	if (!SG_PlayTime(saved, gpt)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_Repr(gpt, text);
+	SG_SetSaveS("GameplayTime", Native_Text(text));
+	if (!SG_SlotFile(&t, slot, file)) {
+		return Mode_Done(&t, 0);
+	}
+	/* the map without "Levels/" + " - " + hh:mm:ss */
+	Mode_SaveVar("Map", map);
+	if (!Native_Slice(map, 7, INT_MAX, name) || !Native_ToInt(gpt, secs) || !Mode_Cat(&t, desc, 2, name, Mode_S(&t, " - "))) {
+		return Mode_Done(&t, 0);
+	}
+	for (int i = 0; i < 3; i++) {
+		int mark = t.n;
+		nativeVal_t *q = Mode_V(&t), *m = Mode_V(&t), *rep = Mode_V(&t), *z = Mode_V(&t), *d = Mode_V(&t);
+		nativeVal_t *k = Mode_V(&t);
+		Native_SetInt(d, div[i]);
+		if (!Mode_Arith('/', secs, d, q) || !Mode_Arith('%', q, Mode_I(&t, 60), m)) {
+			return Mode_Done(&t, 0);
 		}
+		Mode_Repr(m, rep);
+		SG_Zfill(rep, 2, z);
+		if (!(i ? Mode_Cat(&t, k, 3, desc, Mode_S(&t, ":"), z) : Mode_Cat(&t, k, 2, desc, z))) {
+			return Mode_Done(&t, 0);
+		}
+		Native_Free(desc);
+		*desc = *k;
+		Native_SetNone(k);
+		Mode_Release(&t, mark);
 	}
-	if (ok < 0 || msg < 0) {
-		FAIL();
+	if (!SG_SaveGameVars(file, desc, success)) {
+		return Mode_Done(&t, 0);
 	}
+	Native_SetFloat(now, Mode_Time());
+	if (!Mode_Arith('-', gpt, now, back)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(text);
+	Mode_Repr(back, text);
+	SG_SetSaveS("GameplayTime", Native_Text(text));
+	byte ok = Native_True(success), msg = ok || !show || Native_True(show);
 	if (msg) {
 		/* the confirmation or the failure of the save */
-		PyObject *cad = K(Script_Ask("Scrap", "GetLangStr", "(s)", ok ? "SaveGameConfirmation" : "SaveGameFailure"));
-		PyObject *len = cad ? K(Script_Ask("Speech", "CalculateSpeechTime", "(O)", cad)) : NULL;
-		PyObject *when = len ? K(PyNumber_Add(K(SG_Time()), len)) : NULL;
-		if (!when || !Script_Try("SScorer", "SetMsgText", "(OO)", cad, when)) {
-			FAIL();
+		Mode_Lang(ok ? "SaveGameConfirmation" : "SaveGameFailure", cad);
+		if (!Native_CallMod("Speech", "CalculateSpeechTime", len, "v", cad)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_SetFloat(now, Mode_Time());
+		if (!Mode_Arith('+', now, len, when) || !Mode_MsgTextV(cad, when)) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	int notAuto = Script_NumCmp(slot, 0);
-	if (notAuto == -2 || (notAuto != 0 && !SG_Call("InstantSaveGame", "(iO)", 0, success))) {
-		FAIL();
+	int notAuto = Mode_CmpI(slot, "!=", 0);
+	if (notAuto < 0 || (notAuto && !Native_CallGlobal(SG, "InstantSaveGame", NULL, "iv", 0L, success))) {
+		return Mode_Done(&t, 0);
 	}
-	/* the debug save of the developers */
-	PyObject *dbg = Script_Try("Scrap", "CreateSaveVar", "(ss)", "DebugSave", "0") ? K(Script_SaveVar("DebugSave")) : NULL;
-	if (!dbg) {
-		FAIL();
-	}
-	if (Script_Is(dbg, "1")) {
-		scriptRefs_t t = { .n = 0 };
-		PyObject *m = Script_Keep(&t, Script_SaveVar("Map"));
-		PyObject *mm = m ? Script_Keep(&t, Script_SaveVar("Mission.Map")) : NULL;
-		PyObject *lib = mm ? Script_Keep(&t, Script_SaveVar("Mission.Library")) : NULL;
-		PyObject *nam = lib ? Script_Keep(&t, PySequence_GetSlice(m, 7, INT_MAX)) : NULL;
-		nam = nam ? Script_Keep(&t, Script_Plus(Script_PlusS(Script_Ref(nam), " ("), mm)) : NULL;
-		nam = nam ? Script_Keep(&t, Script_Plus(Script_PlusS(Script_Ref(nam), " - "), lib)) : NULL;
-		PyObject *f = nam ? Script_Keep(&t, Script_PlusS(Script_PlusS(Script_SPlus("Save/", nam), ")"), ".sav")) : NULL;
-		byte ok = f && Script_Try("Scrap", "SaveGameVars", "(OO)", f, nam);
-		Script_Done(&t, NULL);
-		if (!ok) {
-			FAIL();
-		}
-	}
-	return Script_Done(&r, Py_ReturnNone());
+	SaveVar_Create("DebugSave", "0");
+	Mode_SaveVar("DebugSave", dbg);
+	return Mode_Done(&t, !Native_IsStr(dbg, "1") || SG_DebugSave());
 }
 
 /* SaveGame(iSlot): on the PC the save now (the Xbox shows its message and saves in the next frame) */
-static PyObject *SaveGame_SaveGame(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *slot;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &slot) || !Script_Import((const char *const[]){ "Init", NULL })) {
-		return NULL;
+static byte SG_SaveGame(const nativeVal_t *slot) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *xbox = Mode_V(&t), *path = Mode_V(&t), *prof = Mode_V(&t), *msgTime = Mode_V(&t);
+	if (!Mode_Import("Init") || !Native_GVarGet("IsXbox", xbox)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *xbox = K(Script_Ask("Scrap", "Get", "(s)", "IsXbox"));
-	int x = xbox ? Script_True(xbox) : -1;
-	if (x < 0) {
-		FAIL();
+	if (!Native_True(xbox)) {
+		return Mode_Done(&t, Native_CallGlobal(SG, "InstantSaveGame", NULL, "v", slot));
 	}
-	if (!x) {
-		if (!SG_Call("InstantSaveGame", "(O)", slot)) {
-			FAIL();
-		}
-		return Script_Done(&r, Py_ReturnNone());
+	if (!Native_GVarGet("XboxSavePath", path) || !Native_GVarGet("XboxProfileName", prof) ||
+		!Mode_G("Init", "XboxSavingMsgTime", msgTime) || !Native_GVarSet("XboxSavingMsg", msgTime)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *path = K(Script_Ask("Scrap", "Get", "(s)", "XboxSavePath"));
-	PyObject *prof = path ? K(Script_Ask("Scrap", "Get", "(s)", "XboxProfileName")) : NULL;
-	PyObject *msgTime = prof ? K(Script_Global("Init", "XboxSavingMsgTime")) : NULL;
-	if (!msgTime || !Script_Try("Scrap", "Set", "(sO)", "XboxSavingMsg", msgTime)) {
-		FAIL();
+	if (Native_IsStr(path, "") || Native_IsStr(prof, "")) {
+		return Mode_Done(&t, Mode_GVarSetS("XboxSavingMsgStr", "XBox_Without_Msg_"));
 	}
-	if (Script_Is(path, "") || Script_Is(prof, "")) {
-		if (!Script_Try("Scrap", "Set", "(ss)", "XboxSavingMsgStr", "XBox_Without_Msg_")) {
-			FAIL();
-		}
-	} else if (!Script_Try("Scrap", "Set", "(ss)", "XboxSavingMsgStr", "XBox_Saving_Msg_") ||
-		!Script_LaterIn(0, "SaveGame", "InstantSaveGame", Py_BuildValue("(O)", slot), NULL)) {
-		FAIL();
-	}
-	return Script_Done(&r, Py_ReturnNone());
+	return Mode_Done(&t, Mode_GVarSetS("XboxSavingMsgStr", "XBox_Saving_Msg_") &&
+		Mode_LaterIn(0.0, SG, "InstantSaveGame", slot, 1, NULL));
 }
 
 /* LoadGame(iSlot): the save game back and its level (reloaded when the mission changed) */
-static PyObject *SaveGame_LoadGame(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *slot;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &slot) || !Script_Import((const char *const[]){ "Init", NULL })) {
-		return NULL;
+static byte SG_LoadGame(const nativeVal_t *slot) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *map0 = Mode_V(&t), *lib0 = Mode_V(&t), *file = Mode_V(&t), *map1 = Mode_V(&t), *lib1 = Mode_V(&t);
+	nativeVal_t *map = Mode_V(&t), *msg = Mode_V(&t);
+	const char *s;
+	if (!Mode_Import("Init")) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *map0 = K(Script_SaveVar("Mission.Map")), *lib0 = map0 ? K(Script_SaveVar("Mission.Library")) : NULL;
-	PyObject *file = lib0 ? K(Script_PlusS(Script_SPlus("Save/Save", K(Script_Repr(slot))), ".sav")) : NULL;
-	PyObject *loaded = file ? K(Script_Ask("Scrap", "LoadGameVars", "(O)", file)) : NULL;
-	int ok = loaded ? Script_True(loaded) : -1;
-	if (ok < 0) {
-		FAIL();
+	Mode_SaveVar("Mission.Map", map0);
+	Mode_SaveVar("Mission.Library", lib0);
+	if (!SG_SlotFile(&t, slot, file) || !Native_ArgStr(file, 1, &s)) {
+		return Mode_Done(&t, 0);
 	}
-	if (ok) {
-		PyObject *map1 = K(Script_SaveVar("Mission.Map")), *lib1 = map1 ? K(Script_SaveVar("Mission.Library")) : NULL;
-		int same = lib1 ? Script_Eq(map0, map1) : -1;
+	if (SaveGame_Load(s)) {
+		Mode_SaveVar("Mission.Map", map1);
+		Mode_SaveVar("Mission.Library", lib1);
+		int same = Mode_Cmp(map0, "==", map1);
 		if (same > 0) {
-			same = Script_Eq(lib0, lib1);
+			same = Mode_Cmp(lib0, "==", lib1);
 		}
-		if (same < 0 || (!same && !Script_Try("Scrap", "Set", "(si)", "ForceReload", 1))) {
-			FAIL();
+		if (same < 0 || (!same && !Mode_GVarSetI("ForceReload", 1))) {
+			return Mode_Done(&t, 0);
 		}
-		PyObject *map = K(Script_SaveVar("Map"));
-		if (!map || !SG_Call("QLoad", "(Oi)", map, 0)) {
-			FAIL();
-		}
-	} else {
-		/* the script reaches Menu without importing it: a NameError unless something put it into the module */
-		PyObject *menu = K(Script_Global("SaveGame", "Menu"));
-		PyObject *msg = menu ? K(Script_Ask("Scrap", "GetLangStr", "(s)", "XBox_ErrorLoad_Msg")) : NULL;
-		PyObject *box = msg ? K(Script_Method(menu, "ShowTextBox", "(iOss)", 0, msg, "Menu.MainMenu", "Menu.MainMenu")) : NULL;
-		if (!box) {
-			FAIL();
-		}
+		Mode_SaveVar("Map", map);
+		return Mode_Done(&t, Native_CallGlobal(SG, "QLoad", NULL, "vi", map, 0L));
 	}
-	return Script_Done(&r, Py_ReturnNone());
+	/* the script reaches Menu without importing it: a NameError unless something put it into the module (OBJLIB 3:
+	 * the method of the Menu object by name) */
+	PyObject *menu = Mode_GlobalPy(SG, "Menu");
+	if (!menu) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_Lang("XBox_ErrorLoad_Msg", msg);
+	PyObject *m = Native_ToPy(msg);
+	PyObject *box = m ? Script_Method(menu, "ShowTextBox", "(iOss)", 0, m, "Menu.MainMenu", "Menu.MainMenu") : NULL;
+	Py_XDECREF(box);
+	Py_XDECREF(m);
+	Py_DECREF(menu);
+	return Mode_Done(&t, box != NULL);
 }
 
 /* the save variables of a new game: name, value (the demo has its own where both are given) */
@@ -582,179 +619,256 @@ static const sgVar_t sg_newVars2[] = {
 	{ "BishopsAtGambinDen", "1", NULL },
 };
 
-static byte SG_CreateVars(const sgVar_t *v, int n, int demo) {
+/* Scrap.CreateSaveVar of each variable of the table */
+static void SG_CreateVars(const sgVar_t *v, int n, byte demo) {
 	for (int i = 0; i < n; i++) {
-		if (!Script_Try("Scrap", "CreateSaveVar", "(ss)", v[i].name, demo && v[i].demo ? v[i].demo : v[i].value)) {
-			return 0;
-		}
+		SaveVar_Create(v[i].name, demo && v[i].demo ? v[i].demo : v[i].value);
 	}
-	return 1;
 }
 
 #define SG_COUNT(a) ((int)(sizeof(a) / sizeof((a)[0])))
 
 /* NewGame(): a new single player game (the demo starts in the Gamblin' Den), its level */
-static PyObject *SaveGame_NewGame(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	if (!Script_Import((const char *const[]){ "Init", NULL }) || !Script_Try("Scrap", "DelSaveVars", "(s)", "") ||
-		!SG_SetSaveS("AutoSaveGameOnLoad", "0") || !Script_Try("Scrap", "CreateSaveVar", "(ss)", "GameAct", "Prologue") ||
-		!Script_Try("Scrap", "CreateSaveVar", "(ss)", "BankDebt", "0")) {
-		return NULL;
+static byte SG_NewGame(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *isDemo = Mode_V(&t), *map = Mode_V(&t);
+	if (!Mode_Import("Init") || !Mode_DelSaveVars("")) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *isDemo = K(Script_Global("Init", "isDemo"));
-	int demo = isDemo ? Script_True(isDemo) : -1;
-	if (demo < 0) {
-		FAIL();
+	SG_SetSaveS("AutoSaveGameOnLoad", "0");
+	SaveVar_Create("GameAct", "Prologue");
+	SaveVar_Create("BankDebt", "0");
+	if (!Mode_G("Init", "isDemo", isDemo)) {
+		return Mode_Done(&t, 0);
 	}
+	byte demo = Native_True(isDemo);
 	if (demo) {
-		if (!Script_Import((const char *const[]){ "MissionsFuncs", NULL }) ||
-			!Script_Try("MissionsFuncs", "SetFirstDemoMission", "()") ||
-			!SG_Call("MMDesc", "(si)", "Mission_FirstMeetCrazyGambler_MissionText1", 1) ||
-			!Script_Try("Scrap", "CreateSaveVar", "(ss)", "Map", "Levels/GamblinDen")) {
-			FAIL();
+		if (!Mode_Import("MissionsFuncs") || !Native_CallMod("MissionsFuncs", "SetFirstDemoMission", NULL, "") ||
+			!Native_CallGlobal(SG, "MMDesc", NULL, "si", "Mission_FirstMeetCrazyGambler_MissionText1", 1L)) {
+			return Mode_Done(&t, 0);
 		}
-	} else if (!Script_Try("Scrap", "CreateSaveVar", "(ss)", "Map", "Levels/Orbit") ||
-		!Script_Try("Scrap", "CreateSaveVar", "(ss)", "Mission.Library", "MapDecont")) {
-		FAIL();
+		SaveVar_Create("Map", "Levels/GamblinDen");
+	} else {
+		SaveVar_Create("Map", "Levels/Orbit");
+		SaveVar_Create("Mission.Library", "MapDecont");
 	}
-	if (!SG_CreateVars(sg_newVars, SG_COUNT(sg_newVars), demo) ||
-		!(demo ? SG_CreateVars(sg_demoPlans, SG_COUNT(sg_demoPlans), demo) : SG_CreateVars(sg_gamePlans, SG_COUNT(sg_gamePlans), demo)) ||
-		!SG_CreateVars(sg_newVars2, SG_COUNT(sg_newVars2), demo)) {
-		FAIL();
+	SG_CreateVars(sg_newVars, SG_COUNT(sg_newVars), demo);
+	if (demo) {
+		SG_CreateVars(sg_demoPlans, SG_COUNT(sg_demoPlans), demo);
+	} else {
+		SG_CreateVars(sg_gamePlans, SG_COUNT(sg_gamePlans), demo);
 	}
-	if (!demo && (!Script_Try("Scrap", "Set", "(ss)", "PlayVideo", "Video/Intro.avi") ||
-			!Script_Try("Scrap", "Achievement", "(i)", 1))) {
-		FAIL();
+	SG_CreateVars(sg_newVars2, SG_COUNT(sg_newVars2), demo);
+	if (!demo && (!Mode_GVarSetS("PlayVideo", "Video/Intro.avi") || !Native_CallMod("Scrap", "Achievement", NULL, "i", 1L))) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *map = K(Script_SaveVar("Map"));
-	if (!map || !SG_Call("QLoad", "(Oi)", map, 0)) {
-		FAIL();
-	}
-	return Script_Done(&r, Py_ReturnNone());
+	Mode_SaveVar("Map", map);
+	return Mode_Done(&t, Native_CallGlobal(SG, "QLoad", NULL, "vi", map, 0L));
 }
 
 /* CheckAllBlueprints(): the achievement for all 38 plans of ships and engines */
-static PyObject *SaveGame_CheckAllBlueprints(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	(void)args;
-	PyObject *a = K(Script_SaveVar("Hangar.shipsToEditList")), *la = a ? K(Script_EvalIn("SaveGame", a)) : NULL;
-	PyObject *b = la ? K(Script_SaveVar("Hangar.availableEnginesList")) : NULL, *lb = b ? K(Script_EvalIn("SaveGame", b)) : NULL;
-	int na = lb ? PyObject_Length(la) : -1, nb = na >= 0 ? PyObject_Length(lb) : -1;
+static byte SG_CheckAllBlueprints(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *a = Mode_V(&t), *la = Mode_V(&t), *b = Mode_V(&t), *lb = Mode_V(&t);
+	Mode_SaveVar("Hangar.shipsToEditList", a);
+	if (!Mode_EvalSave(SG, a, la)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("Hangar.availableEnginesList", b);
+	if (!Mode_EvalSave(SG, b, lb)) {
+		return Mode_Done(&t, 0);
+	}
+	int na = Native_Size(la), nb = na >= 0 ? Native_Size(lb) : -1;
 	if (nb < 0) {
-		FAIL();
+		return Mode_Done(&t, 0);
 	}
-	if (na + nb == 38 && !Script_Try("Scrap", "Achievement", "(i)", 13)) {
-		FAIL();
-	}
-	return Script_Done(&r, Py_ReturnNone());
+	return Mode_Done(&t, na + nb != 38 || Native_CallMod("Scrap", "Achievement", NULL, "i", 13L));
 }
 
 /* ---- the save registers of the missions ---- */
 
 /* SaveReg(name, mreg): the attributes of a class or object as save variables name.<attr>, their list as name */
-static PyObject *SaveGame_SaveReg(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *name, *reg;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &name, &reg)) {
-		return NULL;
+static byte SG_SaveReg(const nativeVal_t *name, const nativeVal_t *reg) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *names = Mode_V(&t), *attrs = Mode_V(&t), *list = Mode_V(&t);
+	if (Native_IsStr(name, "MissionStatus") && !Native_CallGlobal(SG, "QWayPoint", NULL, "")) {
+		return Mode_Done(&t, 0);
 	}
-	if (Script_Is(name, "MissionStatus") && !SG_Call("QWayPoint", "()")) {
-		return NULL;
+	if (!SG_DelSaveVarsV(name)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *names = Script_Try("Scrap", "DelSaveVars", "(O)", name) ? K(PyList_New(0)) : NULL;
-	PyObject *attrs = names ? K(Script_Ask("__builtin__", "dir", "(O)", reg)) : NULL;
-	if (!attrs) {
-		FAIL();
+	Native_SetEmpty(names, NV_LIST);
+	/* dir() of any object (OBJLIB 7: the builtin by name) */
+	if (!Native_CallMod("__builtin__", "dir", attrs, "v", reg)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *a;
-	int st;
-	for (int i = 0; (st = Script_Next(attrs, i, &a)) > 0; i++) {
-		/* the references of one turn */
-		scriptRefs_t t = { .n = 0 };
-		Script_Keep(&t, a);
-		if (Script_In(a, (const char *const[]){ "__doc__", "__module__", NULL })) {
-			Script_Done(&t, NULL);
+	int n = Mode_Loop(attrs);
+	if (n < 0) {
+		return Mode_Done(&t, 0);
+	}
+	for (int i = 0; i < n; i++) {
+		int mark = t.n;
+		nativeVal_t *a = Mode_V(&t), *key = Mode_V(&t), *v = Mode_V(&t), *text = Mode_V(&t);
+		if (!Native_SeqItem(attrs, i, a)) {
+			return Mode_Done(&t, 0);
+		}
+		if (Native_IsStr(a, "__doc__") || Native_IsStr(a, "__module__")) {
+			Mode_Release(&t, mark);
 			continue;
 		}
-		PyObject *key = Script_Keep(&t, Script_Plus(Script_PlusS(Script_Ref(name), "."), a));
-		PyObject *v = key ? Script_Keep(&t, PyObject_GetAttr(reg, a)) : NULL;
-		PyObject *text = v ? Script_Keep(&t, Script_Repr(v)) : NULL;
-		byte ok = text && Script_Try("Scrap", "SetSaveVar", "(OO)", key, text) && PyList_Append(names, a) == 0;
-		Script_Done(&t, NULL);
-		if (!ok) {
-			FAIL();
+		if (!Mode_Cat(&t, key, 3, name, Mode_S(&t, "."), a)) {
+			return Mode_Done(&t, 0);
 		}
+		if (!Mode_VObj(reg, Native_Text(a), v)) {
+			return Mode_Done(&t, 0);
+		}
+		Mode_Repr(v, text);
+		if (!SG_SetSaveV(key, text)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_Copy(Native_Append(names), a);
+		Mode_Release(&t, mark);
 	}
-	PyObject *list = st == 0 ? K(Script_Repr(names)) : NULL;
-	if (!list || !Script_Try("Scrap", "SetSaveVar", "(OO)", name, list)) {
-		FAIL();
-	}
-	return Script_Done(&r, Py_ReturnNone());
+	Mode_Repr(names, list);
+	return Mode_Done(&t, SG_SetSaveV(name, list));
 }
 
 /* QSaveReg(mreg): the register of the mission status */
-static PyObject *SaveGame_QSaveReg(PyObject *self, PyObject *args) {
-	PyObject *reg;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &reg)) {
-		return NULL;
-	}
-	return SG_Call("SaveReg", "(sO)", "MissionStatus", reg) ? Py_ReturnNone() : NULL;
+static byte SG_QSaveReg(const nativeVal_t *reg) {
+	return Native_CallGlobal(SG, "SaveReg", NULL, "sv", "MissionStatus", reg);
 }
 
 /* GetReg(name): a new class whose attributes are the values of a register (exec "res.<attr> = <saved repr>", the
- * saved literals read in C) */
-static PyObject *SaveGame_GetReg(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
+ * saved literals read with the Python reader: OBJLIB 6, the class keeps Python objects) */
+static PyObject *SG_GetReg(const nativeVal_t *name) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *lst = Mode_V(&t), *regs = Mode_V(&t);
+	PyObject *mod = PyImport_ImportModule(SG), *g = mod ? PyModule_GetDict(mod) : NULL;
+	PyObject *cdict = g ? Py_BuildValue("{s:s,s:O}", "__module__", SG, "__doc__", Py_None) : NULL;
+	PyObject *bases = cdict ? PyTuple_New(0) : NULL, *cname = bases ? PyString_FromString("res") : NULL;
+	PyObject *res = cname ? PyClass_New(bases, cdict, cname) : NULL;
+	Py_XDECREF(cname);
+	Py_XDECREF(bases);
+	Py_XDECREF(cdict);
+	byte ok = res && SG_SaveVarV(name, lst);
+	if (ok && lst->type == NV_NONE) {
+		Native_SetStr(lst, "[]");
+	}
+	int n = ok && Mode_EvalSave(SG, lst, regs) ? Mode_Loop(regs) : -1;
+	ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		int mark = t.n;
+		nativeVal_t *a = Mode_V(&t), *key = Mode_V(&t), *val = Mode_V(&t), *code = Mode_V(&t);
+		ok = Native_SeqItem(regs, i, a) && Mode_Cat(&t, key, 3, name, Mode_S(&t, "."), a) && SG_SaveVarV(key, val) &&
+			Mode_Cat(&t, code, 4, Mode_S(&t, "res."), a, Mode_S(&t, " = "), val);
+		if (ok) {
+			/* the exec'd res.<reg> = <value> made directly: STORE_ATTR of the literal; another register name or value
+			 * is exec's SyntaxError, nothing runs */
+			PyObject *lit = NULL;
+			if (a->type == NV_STR && Script_IsName(Native_Text(a), a->n) && val->type == NV_STR) {
+				PyObject *v = Native_ToPy(val);
+				lit = v ? Script_EvalValue(g, v) : NULL;
+				Py_XDECREF(v);
+			} else {
+				Script_NotRead("SaveGame.GetReg", Native_Text(code));
+			}
+			ok = lit && PyObject_SetAttrString(res, (char *)Native_Text(a), lit) == 0;
+			Py_XDECREF(lit);
+		}
+		Mode_Release(&t, mark);
+	}
+	Py_XDECREF(mod);
+	Mode_Done(&t, 0);
+	if (!ok) {
+		Py_XDECREF(res);
 		return NULL;
 	}
-	PyObject *mod = K(PyImport_ImportModule("SaveGame")), *g = mod ? PyModule_GetDict(mod) : NULL;
-	PyObject *cdict = g ? K(Py_BuildValue("{s:s,s:O}", "__module__", "SaveGame", "__doc__", Py_None)) : NULL;
-	PyObject *bases = cdict ? K(PyTuple_New(0)) : NULL, *cname = bases ? K(PyString_FromString("res")) : NULL;
-	PyObject *res = cname ? K(PyClass_New(bases, cdict, cname)) : NULL;
-	PyObject *lst = res ? K(Script_Ask("Scrap", "GetSaveVar", "(O)", name)) : NULL;
-	if (!lst) {
-		FAIL();
+	return res;
+}
+
+/* ---- adapters ---- */
+
+/* the functions that take any arguments (the C port ignored them) */
+#define SG_FN0(name, call) \
+	static PyObject *SaveGame_##name(PyObject *self, PyObject *args) { \
+		(void)self; \
+		(void)args; \
+		return Mode_Result(call); \
 	}
-	if (lst == Py_None) {
-		lst = K(PyString_FromString("[]"));
+
+MODE_FN(SaveGame, MMDesc, 2, SG_MMDesc(&a[0], &a[1]))
+MODE_FN(SaveGame, SMDesc, 2, SG_SMDesc(&a[0], &a[1]))
+SG_FN0(SaveAlarm, SG_SaveAlarm())
+SG_FN0(SaveMoney, SG_SaveMoney())
+SG_FN0(LoadAlarm, SG_LoadAlarm())
+SG_FN0(LoadMoney, SG_LoadMoney())
+SG_FN0(InitVars, SG_InitVars())
+SG_FN0(QWayPoint, SG_QWayPoint())
+SG_FN0(Restart, SG_Restart())
+SG_FN0(NewGame, SG_NewGame())
+SG_FN0(CheckAllBlueprints, SG_CheckAllBlueprints())
+MODE_FN(SaveGame, SaveGame, 1, SG_SaveGame(&a[0]))
+MODE_FN(SaveGame, LoadGame, 1, SG_LoadGame(&a[0]))
+MODE_FN(SaveGame, SaveReg, 2, SG_SaveReg(&a[0], &a[1]))
+MODE_FN(SaveGame, QSaveReg, 1, SG_QSaveReg(&a[0]))
+
+static PyObject *SaveGame_GetReg(PyObject *self, PyObject *args) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *a;
+	(void)self;
+	if (!Mode_Args(args, 1, &t, &a)) {
+		return Mode_Done(&t, 0), NULL;
 	}
-	PyObject *regs = K(Script_EvalIn("SaveGame", lst));
-	if (!regs) {
-		FAIL();
+	PyObject *r = SG_GetReg(&a[0]);
+	Mode_Done(&t, 0);
+	return r;
+}
+
+static PyObject *SaveGame_MarkWayPoint(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "Map", "Spawn", "ExtraComeFrom", NULL };
+	nativeVal_t a[3];
+	byte given[3];
+	(void)self;
+	if (!Mode_Kw(args, kw, "OO|O", names, 3, a, given)) {
+		return Mode_KwOut(a, 3, 0, NULL);
 	}
-	PyObject *a;
-	int st;
-	for (int i = 0; (st = Script_Next(regs, i, &a)) > 0; i++) {
-		/* the references of one turn */
-		scriptRefs_t t = { .n = 0 };
-		Script_Keep(&t, a);
-		PyObject *key = Script_Keep(&t, Script_Plus(Script_PlusS(Script_Ref(name), "."), a));
-		PyObject *val = key ? Script_Keep(&t, Script_Ask("Scrap", "GetSaveVar", "(O)", key)) : NULL;
-		PyObject *code = val ? Script_Keep(&t, Script_Plus(Script_PlusS(Script_SPlus("res.", a), " = "), val)) : NULL;
-		/* the exec'd res.<reg> = <value> made directly: STORE_ATTR of the literal; another register name or value is
-		 * exec's SyntaxError, nothing runs */
-		byte plain = code && PyString_Check(code) && PyString_Check(a) &&
-			Script_IsName(PyString_AsString(a), PyString_Size(a)) && PyString_Check(val);
-		PyObject *lit = !code ? NULL : plain ? Script_Keep(&t, Script_EvalValue(g, val)) :
-			Script_NotRead("SaveGame.GetReg", PyString_Check(code) ? PyString_AsString(code) : "");
-		PyObject *done = lit && PyObject_SetAttrString(res, PyString_AsString(a), lit) == 0 ? Py_None : NULL;
-		Script_Done(&t, NULL);
-		if (!done) {
-			FAIL();
-		}
+	if (!given[2]) {
+		Native_SetStr(&a[2], "");
 	}
-	if (st < 0) {
-		FAIL();
+	return Mode_KwOut(a, 3, SG_MarkWayPoint(&a[0], &a[1], &a[2]), NULL);
+}
+
+static PyObject *SaveGame_QLoad(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "MapName", "useGameplayTime", NULL };
+	nativeVal_t a[2];
+	byte given[2];
+	(void)self;
+	if (!Mode_Kw(args, kw, "O|O", names, 2, a, given)) {
+		return Mode_KwOut(a, 2, 0, NULL);
 	}
-	return Script_Done(&r, Script_Ref(res));
+	return Mode_KwOut(a, 2, SG_QLoad(&a[0], given[1] ? &a[1] : NULL), NULL);
+}
+
+static PyObject *SaveGame_StartGame(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "CleanChallenge", "CleanRevenge", NULL };
+	nativeVal_t a[2];
+	byte given[2];
+	(void)self;
+	if (!Mode_Kw(args, kw, "|OO", names, 2, a, given)) {
+		return Mode_KwOut(a, 2, 0, NULL);
+	}
+	return Mode_KwOut(a, 2, SG_StartGame(given[0] ? &a[0] : NULL, given[1] ? &a[1] : NULL), NULL);
+}
+
+static PyObject *SaveGame_InstantSaveGame(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "iSlot", "showMsgOnFailure", NULL };
+	nativeVal_t a[2];
+	byte given[2];
+	(void)self;
+	if (!Mode_Kw(args, kw, "O|O", names, 2, a, given)) {
+		return Mode_KwOut(a, 2, 0, NULL);
+	}
+	return Mode_KwOut(a, 2, SG_InstantSaveGame(&a[0], given[1] ? &a[1] : NULL), NULL);
 }
 
 PyMethodDef g_SaveGameMethods[] = {
@@ -780,16 +894,3 @@ PyMethodDef g_SaveGameMethods[] = {
 	{ "InitVars", SaveGame_InitVars, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
-
-/* the script calls its own functions through the module globals */
-static byte SG_Call(const char *func, const char *fmt, ...) {
-	va_list va;
-	va_start(va, fmt);
-	PyObject *a = Py_VaBuildValue((char *)fmt, va);
-	va_end(va);
-	PyObject *f = Script_Global("SaveGame", func);
-	PyObject *res = Script_Invoke(f, a);
-	Py_XDECREF(f);
-	Py_XDECREF(res);
-	return res != NULL;
-}

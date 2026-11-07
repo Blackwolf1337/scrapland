@@ -3713,6 +3713,39 @@ byte Mode_ListSetSeam(const char *list, const char *var, const char *value) {
 	return Mode_ListSet(list, var, value);
 }
 
+/* ---- the hubs of batch T (MissionsFuncs, SaveGame) ---- */
+
+byte Mode_ActionSetGet(nativeVal_t *out) {
+	MODE_SEAM("SInput", "GetActionSet");
+	if (seam) {
+		return Native_HookCall(hook, out, "");
+	}
+	Mode_ActionSetName(out);
+	return 1;
+}
+
+byte Mode_EvalSave(const char *module, const nativeVal_t *text, nativeVal_t *out) {
+	Native_SetNone(out);
+	if (text->type == NV_STR && (int)strlen(Native_Text(text)) == text->n) {
+		const char *s = Native_Text(text);
+		while (*s == ' ' || *s == '\t') {
+			s++;
+		}
+		if (Native_Literal(s, out)) {
+			return 1;
+		}
+	}
+	/* OBJLIB 6: the bare names, name chains and errors of the reader of Script_EvalIn */
+	PyObject *t = Native_ToPy(text), *v = t ? Script_EvalIn(module, t) : NULL;
+	Py_XDECREF(t);
+	if (!v) {
+		return 0;
+	}
+	Native_Arg(v, out);
+	Py_DECREF(v);
+	return 1;
+}
+
 /* ---- shared after stage 2 (the copies the batches wrote, joined) ---- */
 
 byte Mode_PrintV(const nativeVal_t *v) {

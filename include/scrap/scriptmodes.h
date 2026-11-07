@@ -776,6 +776,15 @@ byte Mode_EvalIn(const char *module, const nativeVal_t *text, nativeVal_t *out);
 /* Scrap.EntityListSet(list, var, value) on texts through its seam, else Mode_ListSet */
 byte Mode_ListSetSeam(const char *list, const char *var, const char *value);
 
+/* ---- the hubs of batch T (MissionsFuncs, SaveGame) ---- */
+
+/* SInput.GetActionSet() through its seam (fc-r6-ib swaps it): the name of the action set as a text value */
+byte Mode_ActionSetGet(nativeVal_t *out);
+/* eval(text) of a save variable in the globals of module, as Script_EvalIn reads it: a literal with the native reader,
+ * any other text (a name, a name chain) and the errors through Script_EvalIn (OBJLIB 6), its result as Native_Arg makes
+ * it */
+byte Mode_EvalSave(const char *module, const nativeVal_t *text, nativeVal_t *out);
+
 /* ---- shared after stage 2 (the copies the batches wrote, joined) ---- */
 
 /* print v, print text: Mode_Print of one value (the text of any length) */
