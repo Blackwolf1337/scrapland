@@ -31,6 +31,9 @@ I.ws = __import__('Sound').WaySound; del __import__('Sound').WaySound; r = (I._n
 # the messages of the server to a client
 (I._nm(FH.OnUsrClient, 0, "F'" + FH.ZoneList.keys()[0] + "','NmRed'"), FH.AcFlag, FH.Flag.Pos == FH.ZoneList[FH.AcFlag])
 (I._nm(FH.OnUsrClient, 1, "F'" + FH.ZoneList.keys()[2] + "',''"), FH.AcFlag)
+# accepted C run (baselines/fc-nm-fl.txt.accepted.xz), next line: eval('(1,') of the 'F' message gives the 1.5.2
+# parser's SyntaxError ('unexpected EOF while parsing', (None, 1, 3, '(1,')) in the pack and the plain 'invalid syntax'
+# of the C reader. The game never sends such a text, and the parser goes at stage 7: not ported.
 (I._nm(FH.OnUsrClient, 0, 'S=abc'), I._nm(FH.OnUsrClient, 0, ''), I._nm(FH.OnUsrClient, 0, 'F1'), I._nm(FH.OnUsrClient, 0, "F'nozone','NmRed'"), FH.AcFlag, I._nm(FH.OnUsrClient, 0, 'F(1,'), I._nm(FH.OnUsrClient, 0, 5), I._nm(FH.OnUsrClient, 0, ['F', 1]))
 (I._nm(TF.OnUsrClient, 0, "F'" + TF.ZoneList.keys()[1] + "','" + I.u.Name + "'"), TF.AcFlag, I._nm(TF.OnUsrClient, 3, 'D(1, 2, 3)'))
 # a client joins the server
