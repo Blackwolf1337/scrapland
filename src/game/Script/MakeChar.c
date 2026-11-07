@@ -4,6 +4,12 @@
  * defaults). They work on SAct's current class and action as the script did, with the same variable sets.
  * MaxSpeed, MinSpeed, RelaxRotLimit, DazedChars and the morph lists stay variables of the module: the character
  * scripts change them.
+ *
+ * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values and call the engine's action
+ * classes in C. The module variables are read where the port read them (as numbers, Script_GetFloat, or by the
+ * membership of a name, errors dropped) and written through at once (OBJLIB 5: the character scripts, Scene and
+ * CharAct read and write them in the dict); DazedChars is changed in place. The adapters parse the arguments as
+ * before (PyArg_ParseTuple and the keyword functions with the script's names).
  */
 #include <string.h>
 
@@ -11,6 +17,8 @@
 #include "scrap/console.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
+#include "game/Script/levels/Levels.h"
 
 /* ---- SAct of the script ---- */
 
@@ -109,30 +117,44 @@ static void MC_Anm(const char *ch, const char *anm) {
 
 /* a number variable of the module (MaxSpeed and the others the character scripts set) */
 static double MC_Var(const char *name, double def) {
-	PyObject *m = PyImport_ImportModule("MakeChar");
-	PyObject *v = m ? PyObject_GetAttrString(m, (char *)name) : NULL;
-	double d = v && PyFloat_Check(v) ? PyFloat_AsDouble(v) : v && PyInt_Check(v) ? (double)PyInt_AsLong(v) : def;
-	PyErr_Clear();
-	Py_XDECREF(v);
-	Py_XDECREF(m);
-	return d;
+	return Mode_ModGetN("MakeChar", name, def);
 }
 
-/* name is in a tuple or list of the module */
-static byte MC_In(const char *list, const char *name) {
-	PyObject *m = PyImport_ImportModule("MakeChar");
-	PyObject *l = m ? PyObject_GetAttrString(m, (char *)list) : NULL;
-	PyObject *s = PyString_FromString(name);
-	int r = l && s ? PySequence_Contains(l, s) : 0;
-	PyErr_Clear();
-	Py_XDECREF(s);
-	Py_XDECREF(l);
-	Py_XDECREF(m);
+/* the name is in a variable of module (a tuple or list of names: `name in var`, an error counts as not) */
+static byte MC_InOf(const char *module, const char *list, const char *name) {
+	nativeVal_t l = { 0 }, s;
+	int r = -1;
+	if (LvN_ModGet(module, list, &l)) {
+		Native_SetText(&s, name, (int)strlen(name));
+		r = Mode_In(&l, &s);
+		Native_Free(&s);
+	}
+	if (r < 0) {
+		Mode_DropError();
+	}
+	Native_Free(&l);
 	return r > 0;
 }
 
-static double MC_Num(PyObject *v) {
-	return PyInt_Check(v) ? (double)PyInt_AsLong(v) : PyFloat_Check(v) ? PyFloat_AsDouble(v) : 0.0;
+static byte MC_In(const char *list, const char *name) {
+	return MC_InOf("MakeChar", list, name);
+}
+
+/* a number argument as the port read it: an int or a float, 0 for any other value */
+static double MC_Num(const nativeVal_t *v) {
+	return v->type == NV_INT ? (double)v->i : v->type == NV_FLOAT ? v->f : 0.0;
+}
+
+/* the same for an argument of an adapter (NULL: not given, def) */
+static double MC_ArgNum(PyObject *o, double def) {
+	nativeVal_t v;
+	if (!o) {
+		return def;
+	}
+	Native_Arg(o, &v);
+	double d = MC_Num(&v);
+	Native_Free(&v);
+	return d;
 }
 
 /* ---- the helpers ---- */
@@ -157,7 +179,7 @@ static PyObject *MakeChar_CreateRelaxAction(PyObject *self, PyObject *args, PyOb
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "sO|ssi", names, &ch, &turn, &name, &anm, &loop)) {
 		return NULL;
 	}
-	MC_RelaxAction(ch, MC_Num(turn), name, anm, loop);
+	MC_RelaxAction(ch, MC_ArgNum(turn, 0.0), name, anm, loop);
 	return Py_ReturnNone();
 }
 
@@ -170,7 +192,7 @@ static PyObject *MakeChar_AddRelaxActions(PyObject *self, PyObject *args, PyObje
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "sO|i", names, &ch, &turnObj, &extra)) {
 		return NULL;
 	}
-	double turn = MC_Num(turnObj);
+	double turn = MC_ArgNum(turnObj, 0.0);
 	MC_GetClass(ch);
 	MC_RelaxAction(ch, turn, "Relax", "Relax", 0);
 	MC_SetNum("isLoop", 1);
@@ -200,7 +222,7 @@ static PyObject *MakeChar_AddRelaxActions(PyObject *self, PyObject *args, PyObje
 	MC_SetNum("AutoFaceOffsetH", 0);
 	MC_SetNum("AutoFaceOffsetV", 0);
 	MC_ClsStr("PhotoPress", "CharAct.ActionPhoto");
-	if (!Script_GetInt("Init", "Outdoor", 0)) {
+	if (!Mode_ModGetI("Init", "Outdoor", 0)) {
 		MC_ClsStr("PossessionPress", "CharConversor.Possession");
 	}
 	return Py_ReturnNone();
@@ -258,31 +280,34 @@ static PyObject *MakeChar_AddMove(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "sssOOi", &ch, &action, &anm, &turn, &disp, &loop)) {
 		return NULL;
 	}
-	MC_Move(ch, action, anm, MC_Num(turn), MC_Num(disp), loop);
+	MC_Move(ch, action, anm, MC_ArgNum(turn, 0.0), MC_ArgNum(disp, 0.0), loop);
 	return Py_ReturnNone();
 }
 
-/* AddWalkActions and its Init and End kin: the moves of a list (and Run...) */
-static PyObject *MC_Walk(PyObject *args, PyObject *kw, const char *const *def, const char *run, int loop, byte end) {
-	static char *names[] = { "CharName", "turnspeed", "isRun", "UseDisp", "ActList", NULL };
-	char *ch;
-	PyObject *turnObj = NULL, *dispObj = NULL, *list = NULL;
-	int isRun = 1;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "s|OiOO", names, &ch, &turnObj, &isRun, &dispObj, &list)) {
-		return NULL;
-	}
-	double turn = turnObj ? MC_Num(turnObj) : 360, disp = dispObj ? MC_Num(dispObj) : 1;
+/* the moves of a list (AddWalkActions and its Init and End kin), list NULL for the four of def; the list's length as
+ * PySequence_Length takes it (its TypeError left set, as the port went on), items that are no text "" */
+static void MC_WalkList(const char *ch, double turn, int isRun, double disp, nativeVal_t *list, const char *const *def,
+	const char *run, int loop, byte end) {
+	int n = 4;
 	MC_GetClass(ch);
-	int n = list ? PySequence_Length(list) : 4;
+	if (list) {
+		Mode_Elems(list);
+		if (!Native_Len(list, &n)) {
+			n = -1;
+		}
+	}
 	for (int i = 0; i < n + (isRun ? 1 : 0); i++) {
 		char act[0x40];
 		if (i == n) {
 			Str_Copy(act, run, sizeof(act));
 		} else if (list) {
-			PyObject *e = PySequence_GetItem(list, i);
-			Str_Copy(act, e && PyString_Check(e) ? PyString_AsString(e) : "", sizeof(act));
-			Py_XDECREF(e);
-			PyErr_Clear();
+			nativeVal_t tmp;
+			const nativeVal_t *e = Native_GetItem(list, i, 0, &tmp);
+			Str_Copy(act, e && e->type == NV_STR ? Native_Text(e) : "", sizeof(act));
+			if (e == &tmp) {
+				Native_Free(&tmp);
+			}
+			Mode_DropError();
 		} else {
 			Str_Copy(act, def[i], sizeof(act));
 		}
@@ -290,6 +315,24 @@ static PyObject *MC_Walk(PyObject *args, PyObject *kw, const char *const *def, c
 		if (end) {
 			MC_SetNum("MinSpeed", MC_Var("MaxSpeed", 1.5));
 		}
+	}
+}
+
+static PyObject *MC_Walk(PyObject *args, PyObject *kw, const char *const *def, const char *run, int loop, byte end) {
+	static char *names[] = { "CharName", "turnspeed", "isRun", "UseDisp", "ActList", NULL };
+	char *ch;
+	PyObject *turnObj = NULL, *dispObj = NULL, *listObj = NULL;
+	int isRun = 1;
+	nativeVal_t list;
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "s|OiOO", names, &ch, &turnObj, &isRun, &dispObj, &listObj)) {
+		return NULL;
+	}
+	if (listObj) {
+		Native_Arg(listObj, &list);
+	}
+	MC_WalkList(ch, MC_ArgNum(turnObj, 360), isRun, MC_ArgNum(dispObj, 1), listObj ? &list : NULL, def, run, loop, end);
+	if (listObj) {
+		Native_Free(&list);
 	}
 	return Py_ReturnNone();
 }
@@ -335,7 +378,7 @@ static PyObject *MakeChar_AddFallAction(PyObject *self, PyObject *args, PyObject
 		MC_Create(acts[i]);
 		MC_Anm(ch, acts[i]);
 		MC_SetNum("isLoop", i == 0);
-		MC_SetNum("RotSpeed", turnObj ? MC_Num(turnObj) : 45);
+		MC_SetNum("RotSpeed", MC_ArgNum(turnObj, 45));
 		MC_SetNum("NodeModifier", -1);
 		MC_SetNum("AngleModifierSpeed", 5.0);
 	}
@@ -385,8 +428,13 @@ static PyObject *MakeChar_AddTalkAct(PyObject *self, PyObject *args, PyObject *k
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "ss|OisO", names, &ch, &anm, &nodeMod, &loop, &extra, &morph)) {
 		return NULL;
 	}
-	MC_TalkAct(ch, anm, nodeMod ? MC_Num(nodeMod) : 0, loop, extra,
-		morph && PyString_Check(morph) ? PyString_AsString(morph) : NULL);
+	nativeVal_t m;
+	Native_SetNone(&m);
+	if (morph) {
+		Native_Arg(morph, &m);
+	}
+	MC_TalkAct(ch, anm, MC_ArgNum(nodeMod, 0), loop, extra, m.type == NV_STR ? Native_Text(&m) : NULL);
+	Native_Free(&m);
 	return Py_ReturnNone();
 }
 
@@ -433,7 +481,7 @@ static PyObject *MakeChar_AddTalkAction(PyObject *self, PyObject *args, PyObject
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "s|Oi", names, &ch, &nodeMod, &extra)) {
 		return NULL;
 	}
-	MC_TalkAction(ch, nodeMod ? MC_Num(nodeMod) : 0, extra);
+	MC_TalkAction(ch, MC_ArgNum(nodeMod, 0), extra);
 	return Py_ReturnNone();
 }
 
@@ -443,7 +491,10 @@ static PyObject *MakeChar_AddTalkMorph(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "O", &morph)) {
 		return NULL;
 	}
-	MC_TalkMorph(PyObject_IsTrue(morph) > 0 && PyString_Check(morph) ? PyString_AsString(morph) : NULL);
+	nativeVal_t m;
+	Native_Arg(morph, &m);
+	MC_TalkMorph(Native_True(&m) && m.type == NV_STR ? Native_Text(&m) : NULL);
+	Native_Free(&m);
 	return Py_ReturnNone();
 }
 
@@ -500,7 +551,7 @@ static PyObject *MakeChar_EventAnimCommand(PyObject *self, PyObject *args, PyObj
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "Os|i", names, &t, &name, &discard)) {
 		return NULL;
 	}
-	double time = MC_Num(t);
+	double time = MC_ArgNum(t, 0);
 	MC_Event(time < 0 ? MC_Get("AnmTotalTime") : time, name, discard, "!AnmCommand");
 	return Py_ReturnNone();
 }
@@ -608,16 +659,12 @@ static PyObject *MakeChar_AddDazeAction(PyObject *self, PyObject *args, PyObject
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "s|i", names, &ch, &listen)) {
 		return NULL;
 	}
-	PyObject *m = PyImport_ImportModule("MakeChar");
-	PyObject *dazed = m ? PyObject_GetAttrString(m, "DazedChars") : NULL;
-	PyObject *s = PyString_FromString(ch);
-	if (dazed && s) {
-		PyList_Append(dazed, s);
+	nativeVal_t s;
+	Native_SetText(&s, ch, (int)strlen(ch));
+	if (!Mode_ListAddG("MakeChar", "DazedChars", &s, 0)) {
+		Mode_DropError();
 	}
-	PyErr_Clear();
-	Py_XDECREF(s);
-	Py_XDECREF(dazed);
-	Py_XDECREF(m);
+	Native_Free(&s);
 	MC_BreakLoop(ch, "Dazed", 202);
 	MC_GetAction("DazedInit");
 	MC_Event(MC_Get("AnmTotalTime") / 4.0, "DazedMoney", -1, "MisItems.DazedCoin");
@@ -656,8 +703,11 @@ static PyObject *MakeChar_InitChar(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "s", &ch)) {
 		return NULL;
 	}
-	Script_SetVar("MakeChar", "MaxSpeed", PyFloat_FromDouble(1.5));
-	Script_SetVar("MakeChar", "MinSpeed", PyFloat_FromDouble(0.8));
+	nativeVal_t v;
+	Native_SetFloat(&v, 1.5);
+	Mode_ModPut("MakeChar", "MaxSpeed", &v);
+	Native_SetFloat(&v, 0.8);
+	Mode_ModPut("MakeChar", "MinSpeed", &v);
 	Str_Printf(text, sizeof(text), "Loading %s ...\n", ch);
 	Con_Print(CON_COLOR_DEBUG, text, 0);
 	CHECK(g_pActClassList);
@@ -680,44 +730,28 @@ static PyObject *MakeChar_InitChar(PyObject *self, PyObject *args) {
 	MC_ClsNum("CamDist", 200);
 	MC_ClsNum("CamAng", 0);
 	MC_ClsNum("CamRot", 0);
-	if (!Script_GetInt("Init", "Outdoor", 0)) {
-		PyObject *m = PyImport_ImportModule("CharConversor");
-		PyObject *l = m ? PyObject_GetAttrString(m, "AvailableChars") : NULL;
-		PyObject *s = PyString_FromString(ch);
-		if (l && s && PySequence_Contains(l, s) > 0) {
-			MC_ClsNum("CanBePossessed", 1);
-		}
-		PyErr_Clear();
-		Py_XDECREF(s);
-		Py_XDECREF(l);
-		Py_XDECREF(m);
+	if (!Mode_ModGetI("Init", "Outdoor", 0) && MC_InOf("CharConversor", "AvailableChars", ch)) {
+		MC_ClsNum("CanBePossessed", 1);
 	}
 	MC_DefMorphs(ch);
 	return Py_ReturnNone();
 }
 
 /* SetNodeRotation(set, node, x, y): the angle pair of a node in hundredths */
-static PyObject *MakeChar_SetNodeRotation(PyObject *self, PyObject *args) {
-	PyObject *set, *node, *x, *y;
+static void MC_NodeRotation(const nativeVal_t *set, const nativeVal_t *node, const nativeVal_t *x, const nativeVal_t *y) {
+	nativeVal_t rs, rn;
 	char name[0x40];
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &set, &node, &x, &y)) {
-		return NULL;
-	}
-	PyObject *rs = PyObject_Repr(set), *rn = PyObject_Repr(node);
-	if (!rs || !rn) {
-		Py_XDECREF(rs);
-		Py_XDECREF(rn);
-		return NULL;
-	}
-	Str_Printf(name, sizeof(name), "Node%s_%sx", PyString_AsString(rn), PyString_AsString(rs));
+	Mode_Repr(set, &rs);
+	Mode_Repr(node, &rn);
+	Str_Printf(name, sizeof(name), "Node%s_%sx", Native_Text(&rn), Native_Text(&rs));
 	MC_ClsNum(name, MC_Num(x) / 100.0);
 	name[strlen(name) - 1] = 'y';
 	MC_ClsNum(name, MC_Num(y) / 100.0);
-	Py_DECREF(rs);
-	Py_DECREF(rn);
-	return Py_ReturnNone();
+	Native_Free(&rs);
+	Native_Free(&rn);
 }
+
+MODE_FN(MakeChar, SetNodeRotation, 4, (MC_NodeRotation(&a[0], &a[1], &a[2], &a[3]), 1))
 
 /* the basic actions of a turret (a character that does not walk) */
 static PyObject *MakeChar_TurretBasicActions(PyObject *self, PyObject *args, PyObject *kw) {
@@ -729,7 +763,7 @@ static PyObject *MakeChar_TurretBasicActions(PyObject *self, PyObject *args, PyO
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "s|Oi", names, &ch, &limitObj, &extra)) {
 		return NULL;
 	}
-	double limit = limitObj ? MC_Num(limitObj) : 720;
+	double limit = MC_ArgNum(limitObj, 720);
 	MC_GetClass(ch);
 	MC_Create("Relax");
 	MC_Anm(ch, "Relax");
@@ -783,7 +817,7 @@ static PyObject *MakeChar_AddTurretTalkAction(PyObject *self, PyObject *args, Py
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "s|O", names, &ch, &nodeMod)) {
 		return NULL;
 	}
-	MC_TalkAction(ch, nodeMod ? MC_Num(nodeMod) : 0, 0);
+	MC_TalkAction(ch, MC_ArgNum(nodeMod, 0), 0);
 	MC_NoTurn("Talk");
 	MC_NoTurn("TalkNPC");
 	MC_NoTurn("TalkListen");
@@ -798,7 +832,7 @@ static PyObject *MakeChar_AddTurretTalkAct(PyObject *self, PyObject *args, PyObj
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "ss|O", names, &ch, &act, &nodeMod)) {
 		return NULL;
 	}
-	MC_TalkAct(ch, act, nodeMod ? MC_Num(nodeMod) : 0, 1, "", NULL);
+	MC_TalkAct(ch, act, MC_ArgNum(nodeMod, 0), 1, "", NULL);
 	MC_NoTurn(act);
 	Str_Printf(npc, sizeof(npc), "%sNPC", act);
 	MC_NoTurn(npc);

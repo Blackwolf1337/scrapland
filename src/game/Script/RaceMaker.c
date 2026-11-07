@@ -1774,35 +1774,6 @@ static byte Rm_GetRandomShipIAProfile(const nativeVal_t *foe, const nativeVal_t 
 		return Mode_Out(&t, call, out); \
 	}
 
-/* a keyword function: n names, the first req of them required; a[i] the arguments, o[i] NULL when not given */
-static byte Rm_Kw(PyObject *args, PyObject *kw, const char *fmt, char **names, int n, PyObject **o, nativeVal_t *a) {
-	for (int i = 0; i < n; i++) {
-		o[i] = NULL;
-		Native_SetNone(&a[i]);
-	}
-	if (!PyArg_ParseTupleAndKeywords(args, kw, (char *)fmt, names, &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &o[6])) {
-		return 0;
-	}
-	for (int i = 0; i < n; i++) {
-		if (o[i]) {
-			Native_Arg(o[i], &a[i]);
-		}
-	}
-	return 1;
-}
-
-/* the values of a keyword function freed, the result as the adapter returns it */
-static PyObject *Rm_KwOut(nativeVal_t *a, int n, byte ok, nativeVal_t *out) {
-	for (int i = 0; i < n; i++) {
-		Native_Free(&a[i]);
-	}
-	PyObject *r = ok ? (!out || out->type == NV_NONE ? Py_ReturnNone() : Native_ToPy(out)) : NULL;
-	if (out) {
-		Native_Free(out);
-	}
-	return r;
-}
-
 MODE_FN(RaceMaker, ShowSystemMessage, 1, Rm_ShowSystemMessage(&a[0]))
 MODE_FN(RaceMaker, ShowSystemMessageDelay, 2, Mode_LaterV(&a[1], RM, "ShowSystemMessage", &a[0], 1, NULL))
 MODE_FN(RaceMaker, NPCCombatKilled, 2, Rm_NPCCombatKilled(&a[0]))
@@ -1840,66 +1811,66 @@ MODE_FN(RaceMaker, GetRandomShipIAProfile, 2, Rm_GetRandomShipIAProfile(&a[0], &
 
 static PyObject *RaceMaker_OnCounterMeasure(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "id", NULL };
-	PyObject *o[7];
 	nativeVal_t a[1];
 	(void)self;
-	if (!Rm_Kw(args, kw, "|O", names, 1, o, a)) {
+	if (!Mode_Kw(args, kw, "|O", names, 1, a, NULL)) {
 		return NULL;
 	}
-	return Rm_KwOut(a, 1, Rm_OnCounterMeasure(), NULL);
+	return Mode_KwOut(a, 1, Rm_OnCounterMeasure(), NULL);
 }
 
 static PyObject *RaceMaker_StartCameraTravelling(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "ItemName", "VehicleName", "isRace", "speed", NULL };
-	PyObject *o[7];
+	byte given[4];
 	nativeVal_t a[4], race, speed, out;
 	(void)self;
-	if (!Rm_Kw(args, kw, "OO|OO", names, 4, o, a)) {
+	if (!Mode_Kw(args, kw, "OO|OO", names, 4, a, given)) {
 		return NULL;
 	}
 	Native_SetInt(&race, 1);
 	Native_SetStr(&speed, "Normal");
 	Native_SetNone(&out);
-	return Rm_KwOut(a, 4, Rm_StartCameraTravelling(&a[0], &a[1], o[2] ? &a[2] : &race, o[3] ? &a[3] : &speed, &out), &out);
+	return Mode_KwOut(a, 4, Rm_StartCameraTravelling(&a[0], &a[1], given[2] ? &a[2] : &race, given[3] ? &a[3] : &speed,
+		&out), &out);
 }
 
 static PyObject *RaceMaker_Counter(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "num", "r", "g", "b", NULL };
-	PyObject *o[7];
+	byte given[4];
 	nativeVal_t a[4];
 	(void)self;
-	if (!Rm_Kw(args, kw, "O|OOO", names, 4, o, a)) {
+	if (!Mode_Kw(args, kw, "O|OOO", names, 4, a, given)) {
 		return NULL;
 	}
-	nativeVal_t *rgb[3] = { o[1] ? &a[1] : NULL, o[2] ? &a[2] : NULL, o[3] ? &a[3] : NULL };
-	return Rm_KwOut(a, 4, Rm_Counter(&a[0], rgb), NULL);
+	nativeVal_t *rgb[3] = { given[1] ? &a[1] : NULL, given[2] ? &a[2] : NULL, given[3] ? &a[3] : NULL };
+	return Mode_KwOut(a, 4, Rm_Counter(&a[0], rgb), NULL);
 }
 
 static PyObject *RaceMaker_InitRace(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "foeType", "numply", "waypointlimit", "shower", "isRevenge", "isCrazyDeal", "userOnShip",
 		NULL };
-	PyObject *o[7];
+	byte given[7];
 	nativeVal_t a[7];
 	(void)self;
-	if (!Rm_Kw(args, kw, "O|OOOOOO", names, 7, o, a)) {
+	if (!Mode_Kw(args, kw, "O|OOOOOO", names, 7, a, given)) {
 		return NULL;
 	}
 	nativeVal_t *opt[6];
 	for (int i = 0; i < 6; i++) {
-		opt[i] = o[i + 1] ? &a[i + 1] : NULL;
+		opt[i] = given[i + 1] ? &a[i + 1] : NULL;
 	}
-	return Rm_KwOut(a, 7, Rm_InitRace(&a[0], opt), NULL);
+	return Mode_KwOut(a, 7, Rm_InitRace(&a[0], opt), NULL);
 }
 
 static PyObject *RaceMaker_InitCombat(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "foeType", "isRevenge", "isCrazyDeal", "numFoes", NULL };
-	PyObject *o[7];
+	byte given[4];
 	nativeVal_t a[4];
 	(void)self;
-	if (!Rm_Kw(args, kw, "O|OOO", names, 4, o, a)) {
+	if (!Mode_Kw(args, kw, "O|OOO", names, 4, a, given)) {
 		return NULL;
 	}
-	return Rm_KwOut(a, 4, Rm_InitCombat(&a[0], o[1] ? &a[1] : NULL), NULL);
+	return Mode_KwOut(a, 4, Rm_InitCombat(&a[0], given[1] ? &a[1] : NULL), NULL);
 }
 
 #define KW(fn) (PyCFunction)(void (*)(void))fn, 3
