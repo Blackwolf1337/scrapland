@@ -839,5 +839,10 @@ byte Mode_Cam0(nativeVal_t *out);
 byte Mode_CamLink(const nativeVal_t *link);
 /* Scrap.GetEntity(<the global name var of the module>) as the handle value (None for none) */
 byte Mode_GEntity(const char *module, const char *var, nativeVal_t *out);
+/* Scrap.GetSaveVar(name) and Scrap.SetSaveVar(name, v) of a name value (the TypeError of "s"); Scrap.SetSaveVar(name,
+ * Scrap.GetSaveVar(from)) (the TypeError of "s" for a missing one) */
+byte Mode_SaveVarV(const nativeVal_t *name, nativeVal_t *out);
+byte Mode_SetSaveV(const nativeVal_t *name, const nativeVal_t *v);
+byte Mode_SaveCopy(const char *name, const char *from);
 
 #endif

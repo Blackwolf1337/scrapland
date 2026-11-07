@@ -45,11 +45,6 @@
 
 /* ---- shared lines ---- */
 
-/* Scrap.SetSaveVar(name, text) */
-static void Sd_SetSave(const char *name, const char *text) {
-	SaveVar_Set(name, text);
-}
-
 /* module.var.attr = i (Parking.PlayerShip.Invulnerable = 0) */
 static byte Sd_ModSetI(const char *module, const char *var, const char *attr, long i) {
 	nativeVal_t h;
@@ -672,7 +667,7 @@ static byte Dm_End(byte safe, byte player, const char *how, const nativeVal_t *c
 		!CALL("MissionsFuncs", "RelaxShipsInList", NULL, "s", "DeathMatch")) {
 		return 0;
 	}
-	Sd_SetSave("PlayerWinsCombat", player ? "1" : "0");
+	Mode_SaveS("PlayerWinsCombat", player ? "1" : "0");
 	Mode_SaveVar(player ? "CombatFinishPlayerWinsTextCad" : "CombatFinishPlayerLoosesTextCad", &cad);
 	byte ok = (cam || (func = Script_Attr("MissionsFuncs", "OnSuperDealFinish")) != NULL) && Sd_ScorerOff() &&
 		Dm_Finish() && Mode_Read(DM, "KeepPlaying", &dm.keepPlaying);
@@ -1047,7 +1042,7 @@ static byte Vs_OnEnemyDeathC(const nativeVal_t *loser) {
 		!Vs_Over()) {
 		return Mode_Done(&t, 0);
 	}
-	Sd_SetSave("PlayerWinsCombat", "1");
+	Mode_SaveS("PlayerWinsCombat", "1");
 	if (!Dm_Finish()) {
 		return Mode_Done(&t, 0);
 	}
@@ -1177,8 +1172,8 @@ MODE_FN(Vs, RespawnPlayer, 3, Vs_RespawnPlayerC(&a[0], &a[1], &a[2]))
 
 /* RestartCombat(id, control): the deaths at 0 and the level again */
 static byte Vs_RestartCombatC(void) {
-	Sd_SetSave("NumEnemyDeaths", "0");
-	Sd_SetSave("NumPlayerDeaths", "0");
+	Mode_SaveS("NumEnemyDeaths", "0");
+	Mode_SaveS("NumPlayerDeaths", "0");
 	return CALL("SaveGame", "Restart", NULL, "");
 }
 
@@ -1327,7 +1322,7 @@ static byte Tdm_End(byte win) {
 	if (!Mode_Import("Menu") || !Mode_Import("Chars") || !Mode_Import("Vehicles") || !Mode_Import("Parking")) {
 		return 0;
 	}
-	Sd_SetSave("PlayerWinsCombat", win ? "1" : "0");
+	Mode_SaveS("PlayerWinsCombat", win ? "1" : "0");
 	Mode_SaveVar(win ? "CombatFinishPlayerWinsTextCad" : "CombatFinishPlayerLoosesTextCad", &cad);
 	Native_SetEmpty(&none, NV_TUPLE);
 	byte ok = (func = Script_Attr("MissionsFuncs", "OnSuperDealFinish")) != NULL && Sd_ScorerOff() &&
@@ -1467,7 +1462,7 @@ static byte Tdm_OnPlayerDeathC(const nativeVal_t *loser, const nativeVal_t *winn
 		if (!Mode_Import("Menu") || !Mode_Import("Chars") || !Mode_Import("Vehicles") || !Mode_Import("Parking")) {
 			return Mode_Done(&t, 0);
 		}
-		Sd_SetSave("PlayerWinsCombat", "0");
+		Mode_SaveS("PlayerWinsCombat", "0");
 		Mode_SaveVar("CombatFinishPlayerLoosesTextCad", cad);
 		if (!Sd_ScorerOff() || !Mode_ModSetGlobal("Chars", "OnMainCharDeath", TDM, "OnPlayerDeath2") ||
 			!Mode_ModNone("Parking", "SwitchCharMissionCallback") || !Mode_Read(TDM, "KeepPlaying", &tdm.keepPlaying)) {
@@ -2982,8 +2977,8 @@ MODE_FN(Dom, PreRestartMenu, 0, Sd_PreEnd(0, "DominationFinishPlayerLoosesTextCa
 
 /* RestartDomin(id, control): the rounds at 0 and the level again */
 static byte Dom_RestartDominC(void) {
-	Sd_SetSave("PlayerRounds", "0");
-	Sd_SetSave("EnemyRounds", "0");
+	Mode_SaveS("PlayerRounds", "0");
+	Mode_SaveS("EnemyRounds", "0");
 	return CALL("SaveGame", "Restart", NULL, "");
 }
 

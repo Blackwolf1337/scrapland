@@ -2227,21 +2227,12 @@ static byte JailBreak_NextMission(const nativeVal_t *a, nativeVal_t *out) {
 	return ok;
 }
 
-/* Scrap.SetSaveVar(name, Scrap.GetSaveVar(from)) (the TypeError of "s" for a missing one) */
-static byte Jb_SaveCopy(const char *name, const char *from) {
-	nativeVal_t v;
-	Mode_SaveVar(from, &v);
-	byte ok = Mode_SetSaveVar(name, &v);
-	Native_Free(&v);
-	return ok;
-}
-
 /* LoadPolice(): the mission before the jail back, the alarm off, the game starts again at the jail's exit */
 static byte JailBreak_LoadPolice(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	if (!LV_CALL("SaveGame", "MarkWayPoint", NULL, "sss", "Levels/Police", "DM_Mission_JailBreak_End", "") ||
-		!Jb_SaveCopy("Mission.Map", "Mission_JailBreak.Map") || !Jb_SaveCopy("Mission.Library", "Mission_JailBreak.Library")) {
+		!Mode_SaveCopy("Mission.Map", "Mission_JailBreak.Map") || !Mode_SaveCopy("Mission.Library", "Mission_JailBreak.Library")) {
 		return 0;
 	}
 	SaveVar_Set("AlarmActive", "0");

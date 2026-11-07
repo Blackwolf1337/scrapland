@@ -3957,3 +3957,26 @@ byte Mode_GEntity(const char *module, const char *var, nativeVal_t *out) {
 	Native_Free(&name);
 	return ok;
 }
+
+byte Mode_SaveVarV(const nativeVal_t *name, nativeVal_t *out) {
+	const char *s;
+	Native_SetNone(out);
+	if (!Native_ArgStr(name, 1, &s)) {
+		return 0;
+	}
+	Mode_SaveVar(s, out);
+	return 1;
+}
+
+byte Mode_SetSaveV(const nativeVal_t *name, const nativeVal_t *v) {
+	const char *s;
+	return Native_ArgStr(name, 1, &s) && Mode_SetSaveVar(s, v);
+}
+
+byte Mode_SaveCopy(const char *name, const char *from) {
+	nativeVal_t v;
+	Mode_SaveVar(from, &v);
+	byte ok = Mode_SetSaveVar(name, &v);
+	Native_Free(&v);
+	return ok;
+}
