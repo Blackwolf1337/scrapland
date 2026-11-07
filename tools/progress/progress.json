@@ -162,9 +162,9 @@
     {
      "item": "Python object library removed",
      "weight": 3,
-     "percent": 15,
+     "percent": 25,
      "status": "in progress",
-     "note": "native value layer done; the C ports move to native C module by module"
+     "note": "native value layer done; most modules and levels on native C, the hub modules running"
     }
    ]
   },
