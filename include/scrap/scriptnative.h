@@ -194,6 +194,13 @@ byte Native_Raise(nativeError_t kind, const char *fmt, ...);
 byte Native_RaiseKey(const nativeVal_t *key);
 /* the name of the Python type of the value, as the errors of 1.5.2 write it ("None", "int", "string", "tuple", ...) */
 const char *Native_TypeName(const nativeVal_t *v);
+/* len(seq) as PySequence_Length takes it (a list, tuple, text or vector): 1 with *n, else 0 with its TypeError */
+byte Native_Len(const nativeVal_t *seq, int *n);
+/* seq[i] as PySequence_GetItem (subscript 0) or the subscript of a script (subscript 1: a dict looks the int up)
+ * gives it, a negative i from the end: the item (a character of a text and a number of a vector in tmp: Native_Free
+ * tmp when the result is tmp), NULL with the error ("unindexable object", "unsubscriptable object", "tuple index out
+ * of range", the KeyError) */
+const nativeVal_t *Native_GetItem(const nativeVal_t *seq, long i, byte subscript, nativeVal_t *tmp);
 /* the text of argument arg (from 1) of an engine function as its "s" reads it: 1 with *out, else 0 with the TypeError
  * of getargs.c ("argument 1: expected string, int found", "... string without null bytes ...") */
 byte Native_ArgStr(const nativeVal_t *v, int arg, const char **out);

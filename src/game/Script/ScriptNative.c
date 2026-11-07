@@ -1092,6 +1092,57 @@ byte Native_EvalText(const char *module, const nativeVal_t *text, nativeVal_t *o
 	return 0;
 }
 
+byte Native_Len(const nativeVal_t *seq, int *n) {
+	*n = 0;
+	switch (seq->type) {
+	case NV_LIST:
+	case NV_TUPLE:
+	case NV_STR:
+		*n = seq->n;
+		return 1;
+	case NV_VEC:
+		*n = 3;
+		return 1;
+	}
+	return Native_Raise(NE_TYPE, "len() of unsized object");
+}
+
+const nativeVal_t *Native_GetItem(const nativeVal_t *seq, long i, byte subscript, nativeVal_t *tmp) {
+	int n;
+	if (seq->type == NV_DICT && subscript) {
+		/* d[i] */
+		nativeVal_t key;
+		Native_SetInt(&key, i);
+		const nativeVal_t *v = Native_DictGet(seq, &key);
+		if (!v) {
+			Native_RaiseKey(&key);
+		}
+		return v;
+	}
+	if (seq->type == NV_DICT || !Native_Len(seq, &n)) {
+		PyErr_Clear();
+		Native_Raise(NE_TYPE, subscript ? "unsubscriptable object" : "unindexable object");
+		return NULL;
+	}
+	if (i < 0) {
+		i += n;
+	}
+	if (i < 0 || i >= n) {
+		Native_Raise(NE_INDEX, "%s index out of range", seq->type == NV_LIST ? "list" : seq->type == NV_STR ? "string" :
+			"tuple");
+		return NULL;
+	}
+	switch (seq->type) {
+	case NV_STR:
+		Native_SetText(tmp, Native_Text(seq) + i, 1);
+		return tmp;
+	case NV_VEC:
+		Native_SetFloat(tmp, seq->v[i]);
+		return tmp;
+	}
+	return &seq->items[i];
+}
+
 byte Native_Index(long i, int count, int *out) {
 	if (i < 0) {
 		i += count;
