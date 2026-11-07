@@ -15,6 +15,7 @@
 
 #include "scrap/console.h"
 #include "scrap/global.h"
+#include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptnative.h"
 
@@ -919,6 +920,64 @@ byte Native_Raise(nativeError_t kind, const char *fmt, ...) {
 	return 0;
 }
 
+byte Native_RaiseKey(const nativeVal_t *key) {
+	/* OBJLIB 7: the KeyError of a dict carries the key itself */
+	PyObject *k = Native_ToPy(key);
+	if (k) {
+		PyErr_SetObject(PyExc_KeyError, k);
+		Py_DECREF(k);
+	}
+	return 0;
+}
+
+const char *Native_TypeName(const nativeVal_t *v) {
+	static const char *const names[] = {
+		[NV_NONE] = "None",
+		[NV_INT] = "int",
+		[NV_FLOAT] = "float",
+		[NV_STR] = "string",
+		[NV_VEC] = "tuple",
+		[NV_LONG] = "long int",
+		[NV_LIST] = "list",
+		[NV_TUPLE] = "tuple",
+		[NV_DICT] = "dictionary",
+	};
+	return names[v->type];
+}
+
+byte Native_ArgStr(const nativeVal_t *v, int arg, const char **out) {
+	/* "s" of getargs.c */
+	if (v->type != NV_STR) {
+		return Native_Raise(NE_TYPE, "argument %d: expected string, %s found", arg, Native_TypeName(v));
+	}
+	if (strlen(Native_Text(v)) != (size_t)v->n) {
+		return Native_Raise(NE_TYPE, "argument %d: expected string without null bytes, string found", arg);
+	}
+	*out = Native_Text(v);
+	return 1;
+}
+
+byte Native_EvalText(const char *module, const nativeVal_t *text, nativeVal_t *out) {
+	/* Script_EvalValue: the checks of builtin eval, then the literal after the leading blanks */
+	if (text->type != NV_STR) {
+		return Native_Raise(NE_TYPE, "eval() argument 1 must be string or code object");
+	}
+	const char *s = Native_Text(text);
+	if (strlen(s) != (size_t)text->n) {
+		return Native_Raise(NE_VALUE, "embedded '\\0' in string arg");
+	}
+	while (*s == ' ' || *s == '\t') {
+		s++;
+	}
+	if (Native_Literal(s, out)) {
+		return 1;
+	}
+	/* OBJLIB 6: the error of a text no reader takes (and its note in the gate log) */
+	(void)module;
+	Script_NotRead("eval", s);
+	return 0;
+}
+
 byte Native_Index(long i, int count, int *out) {
 	if (i < 0) {
 		i += count;
@@ -984,11 +1043,19 @@ byte Native_IntOfText(const char *text, long *out) {
 
 /* ---- the engine ---- */
 
+byte Native_NullResult(void) {
+	return Native_Raise(NE_SYSTEM, "NULL result without error in call_object");
+}
+
 byte Native_EntVar(cEntity *e, const char *ref, const char *name, nativeVal_t *out) {
 	/* PyEntity_GetAttr: the values start at 0, the types in this order */
 	int i = 0;
 	double d = 0.0, x = 0.0, y = 0.0, z = 0.0;
 	char *s = NULL;
+	if (!e) {
+		Con_Errorf("'%s'->%s : Entity invalid.\n", ref, name);
+		return Native_Raise(NE_SYSTEM, "error return without exception set");
+	}
 	if (Entity_VarI(e, name, &i, 0)) {
 		Native_SetInt(out, i);
 	} else if (Entity_VarF(e, name, &d, 0)) {
@@ -1009,6 +1076,101 @@ byte Native_EntVar(cEntity *e, const char *ref, const char *name, nativeVal_t *o
 	return 1;
 }
 
+/* the number of a value as the "i" (int 0) or "d" (int 1) of PyArg_Parse reads it (PyInt_AsLong and PyFloat_AsDouble
+ * of 1.5.2 through the number methods, no range check for "i"): 0 when it reads none */
+static byte Native_ArgNum(const nativeVal_t *v, byte asDouble, double *d, int *i) {
+	switch (v->type) {
+	case NV_INT:
+		*i = (int)v->i;
+		*d = (double)v->i;
+		return 1;
+	case NV_FLOAT:
+		if (!asDouble && (v->f < (double)LONG_MIN || v->f > (double)LONG_MAX)) {
+			/* float_int: "float too large to convert" */
+			return 0;
+		}
+		*i = (int)(long)v->f;
+		*d = v->f;
+		return 1;
+	case NV_LONG: {
+		/* PyLong_AsLong and PyLong_AsDouble: the value must fit */
+		errno = 0;
+		const char *t = Native_Text(v);
+		long l = strtol(t, NULL, 10);
+		if (!asDouble && errno == ERANGE) {
+			return 0;
+		}
+		*i = (int)l;
+		/* PyLong_AsDouble of 1.5.2 has no overflow check (inf) */
+		*d = strtod(t, NULL);
+		return 1;
+	}
+	}
+	return 0;
+}
+
+byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVal_t *v) {
+	/* PyEntity_SetVar: the value is tried as int, float, vector and text, each form that parses goes to the
+	 * variable of that type until one takes it */
+	byte parsed = 0;
+	double d, x[3];
+	int i;
+	if (!e) {
+		Con_Errorf("'%s'->%s : Entity invalid.\n", ref, name);
+		return Native_Raise(NE_SYSTEM, "error return without exception set");
+	}
+	if (Native_ArgNum(v, 0, &d, &i)) {
+		parsed = 1;
+		if (Entity_VarI(e, name, &i, 1)) {
+			return 1;
+		}
+	}
+	if (Native_ArgNum(v, 1, &d, &i)) {
+		parsed = 1;
+		if (Entity_VarF(e, name, &d, 1)) {
+			return 1;
+		}
+	}
+	byte vec = v->type == NV_VEC;
+	if (vec) {
+		x[0] = v->v[0];
+		x[1] = v->v[1];
+		x[2] = v->v[2];
+	} else if (v->type == NV_TUPLE && v->n == 3) {
+		vec = 1;
+		for (int k = 0; vec && k < 3; k++) {
+			vec = Native_ArgNum(&v->items[k], 1, &x[k], &i);
+		}
+	}
+	if (vec) {
+		parsed = 1;
+		if (Entity_VarV(e, name, &x[0], &x[1], &x[2], 1)) {
+			return 1;
+		}
+	}
+	/* "s": a text without 0 bytes */
+	if (v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n) {
+		char *s = (char *)Native_Text(v);
+		if (Entity_VarS(e, name, &s, 1)) {
+			return 1;
+		}
+	} else if (!parsed) {
+		Con_Errorf("'%s'->%s : Invalid type.\n", ref, name);
+		return Native_Raise(NE_SYSTEM, "error return without exception set");
+	}
+	Con_Errorf("'%s'->%s : Member invalid.\n", ref, name);
+	return Native_Raise(NE_SYSTEM, "error return without exception set");
+}
+
+byte Native_GetEntity(const nativeVal_t *name, cEntity **out) {
+	const char *s;
+	if (!Native_ArgStr(name, 1, &s)) {
+		return 0;
+	}
+	*out = World_FindEntity(s);
+	return 1;
+}
+
 int Native_Seam(const char *module, const char *name, PyObject **hook) {
 	PyObject *f = Script_Attr(module, name);
 	if (!f) {
@@ -1021,6 +1183,58 @@ int Native_Seam(const char *module, const char *name, PyObject **hook) {
 	}
 	*hook = f;
 	return 1;
+}
+
+byte Native_GVarGet(const char *name, nativeVal_t *out) {
+	/* GVarValue of Scrap.Get */
+	cGVar *v = GVar_Find(name);
+	if (!v) {
+		Con_Errorf("ERROR: '%s' global variable not defined\n", name);
+		return Native_NullResult();
+	}
+	switch (v->base.type) {
+	case GVAR_STRING:
+		/* Py_BuildValue "s" of NULL is None */
+		if (v->value.s) {
+			Native_SetText(out, v->value.s, (int)strlen(v->value.s));
+		} else {
+			Native_SetNone(out);
+		}
+		return 1;
+	case GVAR_INT:
+		Native_SetInt(out, v->value.i);
+		return 1;
+	case GVAR_FLOAT:
+		Native_SetFloat(out, (double)v->value.f);
+		return 1;
+	case GVAR_FUNCTION:
+		Native_SetStr(out, "<function>");
+		return 1;
+	case GVAR_SCRIPT_FUNCTION:
+		Native_SetStr(out, "<Script function>");
+		return 1;
+	}
+	CHECK(0);
+	return 0;
+}
+
+int Native_NetOff(void) {
+	PyObject *hook;
+	int s = Native_Seam("Scrap", "GetNetFlags", &hook);
+	if (s == 0) {
+		return (g_pApp->flags & 7) == 0;
+	}
+	if (s < 0) {
+		return -1;
+	}
+	/* GetNetFlags() == (0, 0, 0) with what the test put there */
+	PyObject *flags = Script_Invoke(hook, PyTuple_New(0));
+	Py_DECREF(hook);
+	PyObject *off = flags ? Py_BuildValue("(iii)", 0, 0, 0) : NULL;
+	int r = off ? Script_Eq(flags, off) : -1;
+	Py_XDECREF(off);
+	Py_XDECREF(flags);
+	return r;
 }
 
 int Native_NetFlag(int i) {
@@ -1180,6 +1394,23 @@ byte Native_FromPyAny(PyObject *o, nativeVal_t *v) {
 	return Native_FromPyIn(o, v, 0);
 }
 
+/* a value of the mirror from Python into *v (what *v owned is freed first): the short forms of Native_FromPy, and
+ * with a long int, list, tuple or dict among the types any value of those types (texts of any length too) */
+static byte Native_Take(PyObject *o, unsigned types, nativeVal_t *v) {
+	Native_Free(v);
+	if (Native_FromPy(o, types, v)) {
+		return 1;
+	}
+	if (!(types & (1 << NV_LONG | 1 << NV_LIST | 1 << NV_TUPLE | 1 << NV_DICT)) || !Native_FromPyAny(o, v)) {
+		return 0;
+	}
+	if (types & 1 << v->type) {
+		return 1;
+	}
+	Native_Free(v);
+	return 0;
+}
+
 byte Native_Import(const char *module, const nativeVar_t *vars) {
 	for (const nativeVar_t *var = vars; var->name; var++) {
 		PyObject *o = Script_Attr(module, var->name);
@@ -1188,12 +1419,12 @@ byte Native_Import(const char *module, const nativeVar_t *vars) {
 		}
 		byte ok = 1;
 		if (!var->count) {
-			ok = Native_FromPy(o, var->types, var->values);
+			ok = Native_Take(o, var->types, var->values);
 		} else if (!PyList_Check(o) || PyList_Size(o) != var->count) {
 			ok = 0;
 		} else {
 			for (int i = 0; ok && i < var->count; i++) {
-				ok = Native_FromPy(PyList_GetItem(o, i), var->types, &var->values[i]);
+				ok = Native_Take(PyList_GetItem(o, i), var->types, &var->values[i]);
 			}
 		}
 		Py_DECREF(o);
