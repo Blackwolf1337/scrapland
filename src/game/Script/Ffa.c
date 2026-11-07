@@ -141,15 +141,6 @@ static byte Ffa_ClientId(modeVals_t *t, const nativeVal_t *name, nativeVal_t *id
 	return Native_Slice(name, 3, INT_MAX, num) && Native_ToInt(num, id);
 }
 
-/* `x` of the script as a text value */
-static void Ffa_Repr(const nativeVal_t *v, nativeVal_t *out) {
-	nativeBuf_t b;
-	Native_BufInit(&b);
-	Native_Repr(&b, v, NR_REPR);
-	Native_SetText(out, b.p, b.len);
-	Native_BufFree(&b);
-}
-
 /* Scorer[key] into *out (the global read again) */
 static byte Ffa_Score(const nativeVal_t *key, nativeVal_t *out) {
 	return FR(scorer, "Scorer") && Native_Subscript(&ffa.scorer, key, out);
@@ -363,7 +354,7 @@ static byte Ffa_ServerSendPlayerStatusC(const nativeVal_t *name) {
 	if (!Mode_Cat(&t, s, 3, Mode_S(&t, "S+"), name, Mode_S(&t, ":")) || !Ffa_Score(name, score)) {
 		return Mode_Done(&t, 0);
 	}
-	Ffa_Repr(score, rep);
+	Mode_Repr(score, rep);
 	return Mode_Done(&t, Mode_Cat(&t, s, 2, s, rep) && Mode_Send(Mode_I(&t, -1), s) && OWN("ServerSendTeamData", NULL, ""));
 }
 
@@ -378,11 +369,11 @@ static byte Ffa_ServerSendTeamDataC(void) {
 	if (!FR(totalRed, "TotalRed")) {
 		return Mode_Done(&t, 0);
 	}
-	Ffa_Repr(&ffa.totalRed, red);
+	Mode_Repr(&ffa.totalRed, red);
 	if (!Mode_Cat(&t, s, 3, Mode_S(&t, "T"), red, Mode_S(&t, ",")) || !FR(totalGreen, "TotalGreen")) {
 		return Mode_Done(&t, 0);
 	}
-	Ffa_Repr(&ffa.totalGreen, green);
+	Mode_Repr(&ffa.totalGreen, green);
 	return Mode_Done(&t, Mode_Cat(&t, s, 2, s, green) && Mode_Send(Mode_I(&t, -1), s));
 }
 
@@ -521,7 +512,7 @@ static byte Ffa_Scorer2StrC(nativeVal_t *out) {
 			!Ffa_Score(ky, score)) {
 			return Mode_Done(&t, 0);
 		}
-		Ffa_Repr(score, rep);
+		Mode_Repr(score, rep);
 		if (!Mode_Cat(&t, cad, 3, cad, rep, Mode_S(&t, "-"))) {
 			return Mode_Done(&t, 0);
 		}
@@ -590,7 +581,7 @@ static byte Ffa_BuildCfgStringC(nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 		if (i == 1 || i == 9) {
-			Ffa_Repr(v, r);
+			Mode_Repr(v, r);
 			v = r;
 		}
 		if (i ? !Mode_Cat(&t, s, 3, s, Mode_S(&t, "\n"), v) : (Native_Copy(s, v), 0)) {
@@ -1025,7 +1016,7 @@ static byte Ffa_OnUsrServerC(const nativeVal_t *id, const nativeVal_t *s) {
 	nativeVal_t *rep = Mode_V(&t), *name = Mode_V(&t), *c0 = Mode_V(&t), *en = Mode_V(&t), *msg = Mode_V(&t), *rest = Mode_V(&t);
 	nativeVal_t *data = Mode_V(&t), *v[11];
 	cEntity *e;
-	Ffa_Repr(id, rep);
+	Mode_Repr(id, rep);
 	if (!Mode_Import("RacerScorer") || !Mode_Import("string") || !Mode_Cat(&t, name, 2, Mode_S(&t, "net"), rep) || !Mode_Ent(name, &e) ||
 		!Native_Subscript(s, Mode_I(&t, 0), c0)) {
 		return Mode_Done(&t, 0);
@@ -1515,7 +1506,7 @@ static byte Ffa_OnPositionChangeC(const nativeVal_t *a) {
 	} else if (Ffa_Eq(newpos, Mode_I(&t, 2))) {
 		Native_SetStr(txpos, "2nd");
 	} else {
-		Ffa_Repr(newpos, rep);
+		Mode_Repr(newpos, rep);
 		if (!Mode_Cat(&t, txpos, 2, rep, Mode_S(&t, "th"))) {
 			return Mode_Done(&t, 0);
 		}
@@ -1737,7 +1728,7 @@ static byte Ffa_SendGameRulesC(const nativeVal_t *id) {
 	if (!FR(scorerFraglimit, "ScorerFraglimit")) {
 		return Mode_Done(&t, 0);
 	}
-	Ffa_Repr(&ffa.scorerFraglimit, rep);
+	Mode_Repr(&ffa.scorerFraglimit, rep);
 	return Mode_Done(&t, Mode_Cat(&t, s, 2, Mode_S(&t, "G"), rep) && Mode_Send(id, s));
 }
 
@@ -1749,7 +1740,7 @@ static byte Ffa_Set(modeVals_t *t, const nativeVal_t *id, const char *item, cons
 /* SScorer.Set(id, item, "Text", `v`) */
 static byte Ffa_SetRepr(modeVals_t *t, const nativeVal_t *id, const char *item, const nativeVal_t *v) {
 	nativeVal_t *rep = Mode_V(t);
-	Ffa_Repr(v, rep);
+	Mode_Repr(v, rep);
 	return Ffa_Set(t, id, item, "Text", rep);
 }
 
