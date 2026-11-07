@@ -1419,10 +1419,25 @@ byte Native_GVarGet(const char *name, nativeVal_t *out) {
 	return 0;
 }
 
+/* OBJLIB 7: module.name(args) with what a test put there instead of the engine function (hook from Native_Seam,
+ * released; args a new tuple or NULL): 0 with the error set */
+static byte Native_CallHook(PyObject *hook, PyObject *args) {
+	PyObject *r = args ? Script_Invoke(hook, args) : NULL;
+	Py_DECREF(hook);
+	Py_XDECREF(r);
+	return r != NULL;
+}
+
 byte Native_GVarSet(const char *name, const nativeVal_t *v) {
 	/* Scrap.Set: "ss", else "sd"; a variable of another type or no variable gives NULL without an exception */
 	double d;
 	int r;
+	PyObject *hook;
+	int seam = Native_Seam("Scrap", "Set", &hook);
+	if (seam) {
+		PyObject *o = seam > 0 ? Native_ToPy(v) : NULL;
+		return seam > 0 && Native_CallHook(hook, o ? Py_BuildValue("(sN)", name, o) : NULL);
+	}
 	if (v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n) {
 		r = GVar_SetStr(name, Native_Text(v));
 	} else if (Native_ArgDouble(v, &d)) {
@@ -1436,6 +1451,12 @@ byte Native_GVarSet(const char *name, const nativeVal_t *v) {
 byte Native_ScorerSet(int id, const char *item, const char *var, const nativeVal_t *v) {
 	/* SScorer.Set: "isss", else "issd" */
 	double d;
+	PyObject *hook;
+	int seam = Native_Seam("SScorer", "Set", &hook);
+	if (seam) {
+		PyObject *o = seam > 0 ? Native_ToPy(v) : NULL;
+		return seam > 0 && Native_CallHook(hook, o ? Py_BuildValue("(issN)", id, item, var, o) : NULL);
+	}
 	if (v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n) {
 		Script_SetStr(id, item, var, Native_Text(v));
 	} else if (Native_ArgDouble(v, &d)) {

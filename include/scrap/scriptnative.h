@@ -224,10 +224,10 @@ byte Native_GetEntity(const nativeVal_t *name, cEntity **out);
 byte Native_GVarGet(const char *name, nativeVal_t *out);
 /* Scrap.Set(name, v): a text (without 0 bytes) to a text variable, a number to a number variable; 0 with the
  * TypeError of its arguments for other values ("illegal argument type for built-in operation") or Native_NullResult
- * when the variable is not there or of the other type */
+ * when the variable is not there or of the other type. OBJLIB 7: through the seam (fc-om-dt records Scrap.Set) */
 byte Native_GVarSet(const char *name, const nativeVal_t *v);
 /* SScorer.Set(id, item, var, v) with a text or a number (nothing when the item is not there); 0 with the TypeError
- * of its arguments for other values */
+ * of its arguments for other values. OBJLIB 7: through the seam (fc-credits2 records SScorer.Set) */
 byte Native_ScorerSet(int id, const char *item, const char *var, const nativeVal_t *v);
 /* Scrap.GetNetFlags() == (0, 0, 0), one call through the seam: 1 or 0, -1 with the error set */
 int Native_NetOff(void);
