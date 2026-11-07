@@ -313,7 +313,7 @@ static byte Fk_ActivateBertoEngines(const nativeVal_t *a, nativeVal_t *out) {
 static byte Fk_LoadFake2Scene(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Mode_Import("Scene") && Mode_Import("MakeChar") && LvN_Calls(MAP, fake2_scene);
+	return Mode_Import("Scene") && Mode_Import("MakeChar") && Mode_Calls(MAP, fake2_scene);
 }
 
 LV_CORE0(Fk_CreateFakeBertoShip)

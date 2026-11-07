@@ -13,7 +13,7 @@
  * modules are read where the script reads them and written through at once (OBJLIB 5); the keypad, Rusty, the player
  * and HangarTab.prevShip are handle values (OBJLIB 7). Init, Elevator, OutMap, Traffic, ShipEdit, HangarTab, Menu,
  * MapShipEdit, Chars, SaveGame, MissionsFuncs, Scene, MakeChar, SputnikSound, CreditsText, CharsNPC and the functions
- * of the module go by name (OBJLIB 3), the scene tables too (LvN_Calls: each "Module.Func" by name). fc-r7b-jy
+ * of the module go by name (OBJLIB 3), the scene tables too (Mode_Calls: each "Module.Func" by name). fc-r7b-jy
  * records many engine functions, so these go through their seams (OBJLIB 7): Scrap.AddScheduledFunc, CreateEntity,
  * CreateEntityList, Set, SetMoney, SetTimeSpeed, UsrEntity, ConsoleError, SScorer.Add, Set, SetDefault and
  * SetMsgText, SInput.SetActionSet, SSound.SetMusic and the SAct functions of the scene; Scrap.OpenPack,
@@ -733,8 +733,8 @@ static const char *const mecanic_final_actors[] = {
 static byte Rusty_LoadMecanicFinalScene(void) {
 	nativeVal_t t = { 0 };
 	Native_SetNone(&t);
-	byte ok = Mode_Import("Scene") && Mode_Import("MakeChar") && LvN_Calls(RF, mecanic_final_actions) &&
-		LvN_GetAct("TimeOfFrame499", &t) && LvN_SetAct("AddEventAtTime", &t) && LvN_Calls(RF, mecanic_final_actors);
+	byte ok = Mode_Import("Scene") && Mode_Import("MakeChar") && Mode_Calls(RF, mecanic_final_actions) &&
+		LvN_GetAct("TimeOfFrame499", &t) && LvN_SetAct("AddEventAtTime", &t) && Mode_Calls(RF, mecanic_final_actors);
 	Native_Free(&t);
 	return ok;
 }

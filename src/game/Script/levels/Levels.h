@@ -357,10 +357,6 @@ byte LvN_TextY(long d, nativeVal_t *out);
  * (NULL: none) */
 byte LvN_MissionText(const nativeVal_t *id, const char *item, const char *type, const nativeVal_t *x, const nativeVal_t *y,
 	const char *font, const char *effect, const nativeVal_t *text, const char *align, const nativeVal_t *visible);
-/* Sf_Calls on native values: the lines "Module.Func|value|..." of a call table ("@Func" a global of module) called in
- * order as statements, the values as LvN_Value reads them (OBJLIB 3: the functions by name, the recorders of the
- * scene cases see them) */
-byte LvN_Calls(const char *module, const char *const *lines);
 /* the core of a level function (the LV_FN form) that reads none of its arguments, and one on its arguments */
 #define LV_CORE0(fn) \
 	static byte fn##_C(const nativeVal_t *a, nativeVal_t *out) { \

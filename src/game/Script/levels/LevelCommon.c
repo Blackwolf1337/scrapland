@@ -1797,51 +1797,6 @@ byte LvN_MissionText(const nativeVal_t *id, const char *item, const char *type, 
 	return !visible || LvN_ScorerSet(id, item, "Visible", visible);
 }
 
-byte LvN_Calls(const char *module, const char *const *lines) {
-	for (; *lines; lines++) {
-		const char *p = *lines, *bar = strchr(p, '|');
-		char name[0x80];
-		int len = bar ? (int)(bar - p) : (int)strlen(p);
-		if (len >= (int)sizeof(name)) {
-			return Native_Raise(NE_SYSTEM, "bad call in a call table");
-		}
-		memcpy(name, p, len);
-		name[len] = 0;
-		PyObject *fn;
-		if (name[0] == '@') {
-			fn = Mode_GlobalPy(module, name + 1);
-		} else {
-			char *dot = strchr(name, '.');
-			if (!dot) {
-				return Native_Raise(NE_SYSTEM, "bad call in a call table");
-			}
-			*dot = 0;
-			fn = Script_Attr(name, dot + 1);
-		}
-		if (!fn) {
-			return 0;
-		}
-		nativeVal_t args;
-		Native_SetEmpty(&args, NV_TUPLE);
-		byte ok = 1;
-		p = bar;
-		for (int n = 0; p && n < 8 && ok; n++) {
-			const char *next = strchr(p + 1, '|');
-			ok = LvN_Value(p + 1, next ? (int)(next - p - 1) : -1, Native_Append(&args));
-			p = next;
-		}
-		PyObject *a = ok ? Native_ToPy(&args) : NULL;
-		PyObject *r = a ? Script_CallObject(fn, a, NULL) : NULL;
-		Py_XDECREF(r);
-		Py_XDECREF(a);
-		Py_DECREF(fn);
-		Native_Free(&args);
-		if (!r) {
-			return 0;
-		}
-	}
-	return 1;
-}
 
 
 byte LvN_SetOnFloor(const nativeVal_t *name) {
