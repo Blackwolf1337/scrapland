@@ -260,7 +260,7 @@ static byte Mn_Cameras(void) {
 	Native_SetInt(zero, 0);
 	LvN_Dummy("DM_Democam", 1, dummy);
 	byte ok = LvN_Create(Mode_S(&t, "DemoCam"), zero, zero, zero, "WithLife", c) && LvN_Item(dummy, 1, p) &&
-		Mode_VSet(c, "Pos", p) && LvN_Item(dummy, 2, ang) && LvN_Item(ang, 1, a1) && LvN_Arith('-', a1, Mode_I(&t, 180), y);
+		Mode_VSet(c, "Pos", p) && LvN_Item(dummy, 2, ang) && LvN_Item(ang, 1, a1) && Mode_Arith('-', a1, Mode_I(&t, 180), y);
 	if (ok) {
 		Native_SetEmpty(an, NV_TUPLE);
 		Native_SetInt(Native_Append(an), 0);
@@ -315,7 +315,7 @@ static byte Mn_Asteroids(void) {
 		Native_Free(item);
 		Native_Free(next);
 		if (!Native_SeqItem(pos, i, item) || !LV_OWN(MAP, "cremeteoro", NULL, "vv", item, tim) ||
-			!LvN_Arith('+', tim, quarter, next)) {
+			!Mode_Arith('+', tim, quarter, next)) {
 			return Mode_Done(&t, 0);
 		}
 		Native_Free(tim);
@@ -369,12 +369,12 @@ static byte Menu_Init(const nativeVal_t *a, nativeVal_t *out) {
 static byte Mn_Throw(const nativeVal_t *mmr, double *centre, double *impulse) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *m = Mode_V(&t), *q = Mode_V(&t), *qi = Mode_V(&t), *e = Mode_V(&t), *x = Mode_V(&t);
-	if (!LvN_Arith('%', mmr, Mode_I(&t, 4), m)) {
+	if (!Mode_Arith('%', mmr, Mode_I(&t, 4), m)) {
 		return Mode_Done(&t, 0);
 	}
 	if (LvN_EqI(m, 0)) {
 		*centre = Scrap_RandRange(500, -500);
-		if (!LvN_Arith('/', mmr, Mode_I(&t, 4), q) || !Native_ToInt(q, qi) || !LvN_Arith('%', qi, Mode_I(&t, 2), e)) {
+		if (!Mode_Arith('/', mmr, Mode_I(&t, 4), q) || !Native_ToInt(q, qi) || !Mode_Arith('%', qi, Mode_I(&t, 2), e)) {
 			return Mode_Done(&t, 0);
 		}
 		*impulse = LvN_EqI(e, 0) ? Scrap_RandRange(-1000, -500) : Scrap_RandRange(1000, 500);
@@ -427,7 +427,7 @@ static byte Menu_drotorito(const nativeVal_t *a, nativeVal_t *out) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(imp, impulse);
-	if (!LvN_Arith('*', imp, d0, x) || !LvN_Arith('*', imp, d2, z)) {
+	if (!Mode_Arith('*', imp, d0, x) || !Mode_Arith('*', imp, d2, z)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetEmpty(off, NV_TUPLE);

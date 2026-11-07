@@ -12,8 +12,19 @@
  * (NextMissionData, MoneyReward, alreadyTalked), Mission_TalkToMayor (MAX_TAMAYO_MONEY, MIN_TAMAYO_MONEY,
  * functionaryTamayoName, porkinsName, porkinsMoney, tamayoMoney, porkinsHasMoney, tamayoStartOrigin,
  * tamayoHasJustReceivedMoney). Mission_CatchTrurl keeps its state in save variables.
+ *
+ * The functions are native C (docs/objlib-plan.md, stage 2): they work on C values, read the variables of the
+ * missions where the script reads them and write them back to the module at once (OBJLIB 5), and call the engine in C:
+ * save variables, texts, money, entity variables, the scorer; Scrap.UsrEntity, Scrap.Set, Scrap.SetLockAlarm,
+ * Scrap.CreateEntity, Scrap.AddScheduledFunc, Scrap.DeleteScheduledFuncs, SScorer.SetMsgText, SetLabelText, Set and
+ * the SAct functions through their seams (OBJLIB 7). Entities are handle values (OBJLIB 7). The calls of the other
+ * ports (Speech, MissionsFuncs, SaveGame, CharsNPC, Elevator, Metro, InTraffic, Items, RaceMaker, Fx, Scorer, Menu,
+ * string) and the module's own functions go by name (OBJLIB 3), CharsNPC.CharRes and Speech.SpeechRoutines are read
+ * the Python way (OBJLIB 5), the scheduler keeps Python functions (OBJLIB 4). MapSnd.SndElements is LevelCommon's
+ * shared Lv_SndElements, native since batch F (Lv_SndCore on values).
  */
 #include "scrap/scrap.h"
+#include "scrap/scorer.h"
 #include "Levels.h"
 
 #define MAP "Map"
@@ -22,129 +33,182 @@
 #define SM "Mission_SheriffMayor"
 #define TM "Mission_TalkToMayor"
 
-/* Scrap.UsrEntity(0).ActCtrl == ctrl */
-static int Th_UsrIs(scriptFrame_t *f, const char *ctrl) {
-	return Sf_EqS(f, Sf_Attr(f, Sf_Ask(f, "Scrap", "UsrEntity", "(i)", 0), "ActCtrl"), ctrl);
+/* ---- native helpers of this file ---- */
+
+/* "TalkNPC" + `int(Scrap.Rand(0, 1.9))`: one of the two talk animations (the engine's random directly, as the port
+ * did) */
+static void Th_TalkAnim(nativeVal_t *out) {
+	char s[16];
+	Str_Printf(s, sizeof(s), "TalkNPC%ld", (long)Scrap_RandRange(0, 1.9));
+	LvN_Str(out, s);
 }
 
-/* Speech.OnSpch(msg, ans) */
-static void Th_Spch(scriptFrame_t *f, const char *msg, const char *ans) {
-	Sf_Ask(f, "Speech", "OnSpch", "(ss)", msg, ans);
+/* cmp(a, b) of the script: -1, 0 or 1, 2 with the error (only values of other types compared by Python can fail) */
+static int Th_Cmp(const nativeVal_t *a, const nativeVal_t *b) {
+	int c = Native_Compare(a, b);
+	return PyErr_Occurred() ? 2 : c;
 }
 
-/* "TalkNPC" + `int(Scrap.Rand(0, 1.9))`: one of the two talk animations */
-static PyObject *Th_TalkAnim(scriptFrame_t *f) {
-	return Sf_Cat(f, "sO", "TalkNPC", Sf_Repr(f, Sf_ToInt(f, Sf_Float(f, Scrap_RandRange(0, 1.9)))));
+/* the character stays where it is (Lv_Stay with state 6 and no target) */
+static byte Th_Stay6(const nativeVal_t *e) {
+	nativeVal_t empty = { 0 };
+	LvN_Str(&empty, "");
+	return LvN_Stay(e, 6, &empty);
 }
+
+/* the optional keyword argument name of a function (def: its default text) into out */
+static byte Th_KwArg(PyObject *args, PyObject *kw, char *name, const char *def, nativeVal_t *out) {
+	char *names[] = { name, NULL };
+	PyObject *o = NULL;
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &o)) {
+		return 0;
+	}
+	if (o) {
+		Native_Arg(o, out);
+	} else {
+		LvN_Str(out, def);
+	}
+	return 1;
+}
+
+/* the adapter of a function with one keyword argument (core on the value) */
+#define TH_KWFN(fn, name, def, core) \
+	static PyObject *fn(PyObject *self, PyObject *args, PyObject *kw) { \
+		nativeVal_t v = { 0 }; \
+		(void)self; \
+		if (!Th_KwArg(args, kw, name, def, &v)) { \
+			return NULL; \
+		} \
+		byte ok = core(&v); \
+		Native_Free(&v); \
+		return Mode_Result(ok); \
+	}
 
 /* ---- Map ---- */
 
 /* InitStatus(LevelPath): an indoor map; the elevators, the NPCs that come back, the mayor, the police boss */
-static PyObject *TownhallMap_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
+static byte ThMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const mods[] = { "Elevator", "Init", "Chars", "CharsNPC" };
-	for (int i = 0; i < 4; i++) {
-		Sf_Import(&f, mods[i]);
-	}
-	Sf_SetMod(&f, "Init", "Outdoor", Sf_Int(&f, 0));
 	static const char *const defs[][2] = { { "Elevator", "DM_Door_Elevator_DownTown" }, { "ElevatorOrbit", "DM_Door_ElevatorOrbit_Orbit" },
 		{ "ElevatorOrbitB", "DM_Door_ElevatorOrbit_Orbit" }, { "Metro", "DM_Door_Metro_Press" }, { "MetroExt", "DM_Door_Metro_Press" } };
-	for (int i = 0; i < 5; i++) {
-		Sf_Ask(&f, "Elevator", "SetDef", "(ss)", defs[i][0], defs[i][1]);
-	}
 	static const struct {
-		const char *name;
-		int n;
-	} repos[] = { { "Sentinel", 3 }, { "Police", 3 }, { "Nurse", 3 }, { "Desktop", 3 }, { "Messenger", 2 } };
+		const char *var, *name;
+		long n;
+	} repos[] = { { NULL, "Sentinel", 3 }, { NULL, "Police", 3 }, { NULL, "Nurse", 3 }, { NULL, "Desktop", 3 }, { NULL, "Messenger", 2 },
+		{ "_BankDirector", "BankDirector", 3 }, { "_Bishop", "Bishop", 3 }, { "_Functionary", "Functionary", 5 } };
+	nativeVal_t zero = { 0 };
+	(void)a;
+	(void)out;
+	for (int i = 0; i < 4; i++) {
+		if (!Mode_Import(mods[i])) {
+			return 0;
+		}
+	}
+	Native_SetInt(&zero, 0);
+	if (!Mode_SetModVar("Init", "Outdoor", &zero)) {
+		return 0;
+	}
 	for (int i = 0; i < 5; i++) {
-		Sf_Ask(&f, "CharsNPC", "SetReposChars", "(si)", repos[i].name, repos[i].n);
+		if (!LV_CALL("Elevator", "SetDef", NULL, "ss", defs[i][0], defs[i][1])) {
+			return 0;
+		}
 	}
-	if (Lv_PcOr(&f, MAP, "_BankDirector") > 0) {
-		Sf_Ask(&f, "CharsNPC", "SetReposChars", "(si)", "BankDirector", 3);
+	/* the last three only on the PC or when the map keeps them (`not Scrap.Get("IsXbox") or _BankDirector`) */
+	for (int i = 0; i < 8; i++) {
+		int r = repos[i].var ? LvN_PcOr(MAP, repos[i].var) : 1;
+		if (r < 0 || (r && !LV_CALL("CharsNPC", "SetReposChars", NULL, "si", repos[i].name, repos[i].n))) {
+			return 0;
+		}
 	}
-	if (Lv_PcOr(&f, MAP, "_Bishop") > 0) {
-		Sf_Ask(&f, "CharsNPC", "SetReposChars", "(si)", "Bishop", 3);
+	if (LvN_SaveIs("MayorAtTownHall", "1") && (!LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", "Mayor_Default") ||
+		!LvN_MissionChar("Gear_Mayor", MAP, "CreateGearMayor"))) {
+		return 0;
 	}
-	if (Lv_PcOr(&f, MAP, "_Functionary") > 0) {
-		Sf_Ask(&f, "CharsNPC", "SetReposChars", "(si)", "Functionary", 5);
+	if (LvN_SaveIs("PoliceBossAtPolice", "1") && LvN_SaveIs("PoliceBossAtTownHall", "1")) {
+		if (!LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", "PoliceBoss_Default")) {
+			return 0;
+		}
+		SaveVar_Set("PoliceBossAtPolice", "0");
 	}
-	if (Lv_SaveIs(&f, "MayorAtTownHall", "1") > 0) {
-		Sf_Ask(&f, "CharsNPC", "CreateMissionChar", "(s)", "Mayor_Default");
-		Lv_MissionChar(&f, "Gear_Mayor", MAP, "CreateGearMayor");
-	}
-	int boss = Lv_SaveIs(&f, "PoliceBossAtPolice", "1");
-	if (boss > 0) {
-		boss = Lv_SaveIs(&f, "PoliceBossAtTownHall", "1");
-	}
-	if (boss > 0) {
-		Sf_Ask(&f, "CharsNPC", "CreateMissionChar", "(s)", "PoliceBoss_Default");
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "PoliceBossAtPolice", "0");
-	}
-	return Sf_None(&f);
+	return 1;
 }
 
 /* CreateGearMayor(ch): the mayor's gear stays with the mayor */
-static PyObject *TownhallMap_CreateGearMayor(PyObject *self, PyObject *args) {
-	PyObject *ch;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &ch)) {
-		return NULL;
-	}
-	Lv_Stay(&f, ch, 4, Sf_Str(&f, "Mayor_Default"));
-	return Sf_None(&f);
+static byte ThMap_CreateGearMayor(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t t = { 0 };
+	(void)out;
+	LvN_Str(&t, "Mayor_Default");
+	return LvN_Stay(&a[0], 4, &t);
+}
+
+/* InTraffic.<list> = the n models and InTraffic.<num> = count */
+static byte Th_Traffic(const char *list, const char *const *models, int n, const char *num, long count) {
+	nativeVal_t l = { 0 }, c = { 0 };
+	Mode_Texts(&l, models, n);
+	Native_SetInt(&c, count);
+	byte ok = Mode_SetModVar("InTraffic", list, &l) && Mode_SetModVar("InTraffic", num, &c);
+	Native_Free(&l);
+	return ok;
 }
 
 /* Init(LevelPath): the elevators and teleporters, the metro, the locked elevator to the orbit, the fake traffic */
-static PyObject *TownhallMap_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte ThMap_Init(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const light[] = { "TLight1B", "TLight2B", "TLight3B" };
+	static const char *const med[] = { "TMed1B", "TMed2B", "TMed3B" };
+	nativeVal_t e = { 0 };
+	(void)a;
+	(void)out;
+	if (!Mode_Import("Elevator") || !Mode_Import("Metro") || !Mode_Connect("DM_Door_Elevator_DownTown", "DownTown", 0) ||
+		!Mode_Connect("DM_Door_ElevatorOrbit_Orbit", "Orbit", 0) || !Mode_Connect("DM_Door_Teleporter_01", "DM_Door_Teleporter_02", 1) ||
+		!Mode_Connect("DM_Door_Teleporter_04", "DM_Door_Teleporter_05", 1) ||
+		!Mode_Connect("DM_Door_Teleporter_06", "DM_Door_Teleporter_07", 1) ||
+		!LV_CALL("Metro", "SetAsMetro", NULL, "s", "DM_Door_Metro_Press")) {
+		return 0;
 	}
-	Sf_Import(&f, "Elevator");
-	Sf_Import(&f, "Metro");
-	Sf_Ask(&f, "Elevator", "ConnectElevators", "([s][s])", "DM_Door_Elevator_DownTown", "DownTown");
-	Sf_Ask(&f, "Elevator", "ConnectElevators", "([s][s])", "DM_Door_ElevatorOrbit_Orbit", "Orbit");
-	Sf_Ask(&f, "Elevator", "ConnectElevators", "([ss][]i)", "DM_Door_Teleporter_01", "DM_Door_Teleporter_02", 0);
-	Sf_Ask(&f, "Elevator", "ConnectElevators", "([ss][]i)", "DM_Door_Teleporter_04", "DM_Door_Teleporter_05", 0);
-	Sf_Ask(&f, "Elevator", "ConnectElevators", "([ss][]i)", "DM_Door_Teleporter_06", "DM_Door_Teleporter_07", 0);
-	Sf_Ask(&f, "Metro", "SetAsMetro", "(s)", "DM_Door_Metro_Press");
-	PyObject *e = Sf_Entity(&f, Sf_Str(&f, "DM_Door_ElevatorOrbit_Orbit"));
-	Sf_SetAttrS(&f, e, "UseFunc", "Map.OrbitLockMsg");
-	Sf_SetAttrI(&f, e, "ArrnOpt", 0);
-	Sf_Import(&f, "InTraffic");
-	Sf_SetMod(&f, "InTraffic", "N_TrafficList", Sf_Build(&f, "[sss]", "TLight1B", "TLight2B", "TLight3B"));
-	Sf_SetMod(&f, "InTraffic", "N_NumTraffic", Sf_Int(&f, 20));
-	Sf_SetMod(&f, "InTraffic", "M_TrafficList", Sf_Build(&f, "[sss]", "TMed1B", "TMed2B", "TMed3B"));
-	Sf_SetMod(&f, "InTraffic", "M_NumTraffic", Sf_Int(&f, 5));
-	Sf_SetMod(&f, "InTraffic", "H_TrafficList", Sf_Build(&f, "[]"));
-	Sf_SetMod(&f, "InTraffic", "H_NumTraffic", Sf_Int(&f, 0));
-	Sf_Ask(&f, "InTraffic", "LoadFakeTraffic", "()");
-	Sf_Ask(&f, "InTraffic", "FakeTraffic", "()");
-	return Sf_None(&f);
+	Native_SetNone(&e);
+	byte ok = LvN_Entity("DM_Door_ElevatorOrbit_Orbit", &e) && LvN_SetS(&e, "UseFunc", "Map.OrbitLockMsg") &&
+		LvN_SetI(&e, "ArrnOpt", 0);
+	Native_Free(&e);
+	return ok && Mode_Import("InTraffic") && Th_Traffic("N_TrafficList", light, 3, "N_NumTraffic", 20) &&
+		Th_Traffic("M_TrafficList", med, 3, "M_NumTraffic", 5) && Th_Traffic("H_TrafficList", NULL, 0, "H_NumTraffic", 0) &&
+		LV_CALL("InTraffic", "LoadFakeTraffic", NULL, "") && LV_CALL("InTraffic", "FakeTraffic", NULL, "");
+}
+
+/* Scrap.GetTime() + Speech.CalculateSpeechTime(text) + add into *time (OBJLIB 3: the speech time by name) */
+static byte Th_SpeechEnd(const nativeVal_t *text, long add, double *time) {
+	nativeVal_t now = { 0 }, calc = { 0 }, t = { 0 }, n = { 0 }, r = { 0 };
+	Native_SetFloat(&now, Mode_Time());
+	Native_SetNone(&calc);
+	Native_SetNone(&t);
+	Native_SetNone(&r);
+	Native_SetInt(&n, add);
+	byte ok = LV_CALL("Speech", "CalculateSpeechTime", &calc, "v", text) && Native_Arith('+', &now, &calc, &t) &&
+		Native_Arith('+', &t, &n, &r) && Native_ArgDouble(&r, time);
+	Native_Free(&calc);
+	Native_Free(&t);
+	Native_Free(&r);
+	return ok;
 }
 
 /* OrbitLockMsg(UsrName, ElevatorName, optId, FullOption): the elevator to the orbit cannot be used */
-static PyObject *TownhallMap_OrbitLockMsg(PyObject *self, PyObject *args) {
-	PyObject *usr, *elev, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &elev, &opt, &full)) {
-		return NULL;
+static byte ThMap_OrbitLockMsg(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t cad = { 0 };
+	double t;
+	(void)a;
+	(void)out;
+	if (!Mode_Import("Speech")) {
+		return 0;
 	}
-	Sf_Import(&f, "Speech");
-	PyObject *cad = Sf_Lang(&f, Sf_Str(&f, "CantUseOrbitElevator"));
-	PyObject *t = Sf_Op(&f, Sf_Time(&f), '+', Sf_Ask(&f, "Speech", "CalculateSpeechTime", "(O)", cad));
-	Sf_Ask(&f, "SScorer", "SetMsgText", "(OO)", cad, Sf_OpI(&f, t, '+', 6));
-	return Sf_None(&f);
+	Mode_Lang("CantUseOrbitElevator", &cad);
+	byte ok = Th_SpeechEnd(&cad, 6, &t) && Mode_MsgText(&cad, t);
+	Native_Free(&cad);
+	return ok;
 }
+
+LV_FN(TownhallMap, InitStatus, 1, ThMap_InitStatus)
+LV_FN(TownhallMap, CreateGearMayor, 1, ThMap_CreateGearMayor)
+LV_FN(TownhallMap, Init, 1, ThMap_Init)
+LV_FN(TownhallMap, OrbitLockMsg, 4, ThMap_OrbitLockMsg)
 
 PyMethodDef g_TownhallMapMethods[] = {
 	{ "InitStatus", TownhallMap_InitStatus, METH_VARARGS, NULL },
@@ -153,7 +217,6 @@ PyMethodDef g_TownhallMapMethods[] = {
 	{ "OrbitLockMsg", TownhallMap_OrbitLockMsg, METH_VARARGS, NULL },
 	{ NULL, NULL, 0, NULL },
 };
-
 /* ---- MapSnd ---- */
 
 /* the sound elements of the map (the rest of MapSnd is data/levels/townhall/mapsnd.def) */
@@ -194,309 +257,360 @@ PyMethodDef g_TownhallMapSndMethods[] = {
 	{ NULL, NULL, 0, NULL },
 };
 
+
 /* ---- Mission_ApologizeMayor ---- */
 
-#define AMG(name) Sf_Global(&f, AM, name)
-
 /* InitStatus(LevelPath): the mayor's AI after the NPCs are browsed, the staplers come back */
-static PyObject *ApologizeMayor_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte ThAm_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t d = { 0 };
+	(void)a;
+	(void)out;
+	if (!Mode_Import("CharsNPC") || !LvN_ModAppendG("CharsNPC", "AfterBrowseNPC", AM, "AfterBrowseNPC")) {
+		return 0;
 	}
-	Sf_Import(&f, "CharsNPC");
-	Sf_Method(&f, Sf_Mod(&f, "CharsNPC", "AfterBrowseNPC"), "append", "(O)", AMG("AfterBrowseNPC"));
-	Sf_Method(&f, Sf_Mod(&f, "CharsNPC", "RespawnChars"), "append", "(s)", "Desktop");
-	return Sf_None(&f);
+	LvN_Str(&d, "Desktop");
+	byte ok = LvN_ModAppend("CharsNPC", "RespawnChars", &d);
+	Native_Free(&d);
+	return ok;
 }
 
 /* AfterBrowseNPC(): the mayor stays (CreateMayorInit), no gear */
-static PyObject *ApologizeMayor_AfterBrowseNPC(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte ThAm_AfterBrowseNPC(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t key = { 0 };
+	(void)a;
+	(void)out;
+	if (!Mode_Import("CharsNPC") || !LvN_Callback("Mayor_Default", AM, "CreateMayorInit")) {
+		return 0;
 	}
-	Sf_Import(&f, "CharsNPC");
-	Lv_Callback(&f, "Mayor_Default", AM, "CreateMayorInit");
-	Sf_DelItem(&f, Sf_Mod(&f, "CharsNPC", "CharRes"), Sf_Str(&f, "Gear_Mayor"));
-	return Sf_None(&f);
+	/* del CharsNPC.CharRes["Gear_Mayor"] (OBJLIB 5) */
+	LvN_Str(&key, "Gear_Mayor");
+	byte ok = Mode_ModDictDel("CharsNPC", "CharRes", &key);
+	Native_Free(&key);
+	return ok;
 }
 
-/* CreateMayorInit(e): the mayor stays and talks (MayorSpeech) */
-static PyObject *ApologizeMayor_CreateMayorInit(PyObject *self, PyObject *args) {
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
-	}
-	Lv_Stay(&f, e, 6, Sf_Str(&f, ""));
-	Sf_SetAttrS(&f, e, "UseFunc", "Mission_ApologizeMayor.MayorSpeech");
-	return Sf_None(&f);
+/* CreateMayorInit(e) of ApologizeMayor and TalkToMayor: the mayor stays and talks (MayorSpeech of the mission) */
+static byte Th_MayorInit(const nativeVal_t *e, const char *useFunc) {
+	return Th_Stay6(e) && LvN_SetS(e, "UseFunc", useFunc);
+}
+
+static byte ThAm_CreateMayorInit(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Th_MayorInit(&a[0], "Mission_ApologizeMayor.MayorSpeech");
 }
 
 /* Init(LevelPath): the state of the crazy mayor: the forbidden area, the staplers, or the transport */
-static PyObject *ApologizeMayor_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte ThAm_Init(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	if (LvN_SaveIs("CrazyMayor", "Killed")) {
+		return Mode_Target("Mayor_Default") && Mode_GVarSetS("GuaranteedChars",
+			",Police,Nurse,BankDirector,Desktop,Sentinel,Mayor,Gear,Berto,Messenger,Bishop,Functionary,Betty,PoliceBoss,BankMaster,") &&
+			LV_OWN(AM, "ForbiddenMsg", NULL, "");
 	}
-	if (Lv_SaveIs(&f, "CrazyMayor", "Killed") > 0) {
-		Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "Mayor_Default");
-		Sf_Ask(&f, "Scrap", "Set", "(ss)", "GuaranteedChars",
-			",Police,Nurse,BankDirector,Desktop,Sentinel,Mayor,Gear,Berto,Messenger,Bishop,Functionary,Betty,PoliceBoss,BankMaster,");
-		Sf_Own(&f, AM, "ForbiddenMsg", "()");
-	} else if (Lv_SaveIs(&f, "CrazyMayor", "Stapler") > 0) {
-		Sf_Own(&f, AM, "InitStaplerMission", "()");
-	} else if (Lv_SaveIs(&f, "CrazyMayor", "AskTheTransport") > 0) {
-		Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "Mayor_Default");
+	if (LvN_SaveIs("CrazyMayor", "Stapler")) {
+		return LV_OWN(AM, "InitStaplerMission", NULL, "");
 	}
-	return Sf_None(&f);
+	return !LvN_SaveIs("CrazyMayor", "AskTheTransport") || Mode_Target("Mayor_Default");
 }
 
 /* ForbiddenMsg(): the label of the forbidden area, every second */
-static PyObject *ApologizeMayor_ForbiddenMsg(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte ThAm_ForbiddenMsg(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t lang = { 0 }, t = { 0 }, name = { 0 };
+	double now = Mode_Time();
+	(void)a;
+	(void)out;
+	Mode_Lang("Generics_ForbiddenArea_Label", &lang);
+	byte ok = Mode_LabelText(&lang, now + 0.5);
+	Native_Free(&lang);
+	/* OBJLIB 4: the function of the module (a mission may replace it) */
+	PyObject *fn = ok ? Mode_GlobalPy(AM, "ForbiddenMsg") : NULL;
+	if (!fn) {
+		return 0;
 	}
-	PyObject *time = Sf_Time(&f);
-	Sf_Ask(&f, "SScorer", "SetLabelText", "(OO)", Sf_Lang(&f, Sf_Str(&f, "Generics_ForbiddenArea_Label")), Sf_Op(&f, time, '+', Sf_Float(&f, 0.5)));
-	Sf_Schedule(&f, Sf_Op(&f, time, '+', Sf_Float(&f, 1.0)), AMG("ForbiddenMsg"), Sf_Build(&f, "()"), "ForbiddenMsg");
-	return Sf_None(&f);
+	Native_SetFloat(&t, now + 1.0);
+	LvN_Str(&name, "ForbiddenMsg");
+	ok = Mode_Schedule(&t, fn, NULL, 0, &name);
+	Native_Free(&name);
+	Py_DECREF(fn);
+	return ok;
 }
 
 /* MayorSpeech(UsrName, CharName, optId, FullOption): the mayor talks to Dtritus for the state of the mission */
-static PyObject *ApologizeMayor_MayorSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+static byte ThAm_MayorSpeech(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	if (!LvN_Speakers(&a[0], &a[1])) {
+		return 0;
 	}
-	Lv_Speakers(&f, usr, ch);
-	int dt = Th_UsrIs(&f, "Dtritus");
-	if (dt == 0) {
-		Th_Spch(&f, "Mission_ApologizeMayor_Mayor_InitMsg2", "Mission_ApologizeMayor_Mayor_InitAns2");
-	}
+	int dt = Mode_UsrIs("Dtritus");
 	if (dt <= 0) {
-		return Sf_None(&f);
+		return dt == 0 && Mode_Spch("Mission_ApologizeMayor_Mayor_InitMsg2", "Mission_ApologizeMayor_Mayor_InitAns2", NULL);
 	}
-	if (Lv_SaveIs(&f, "CrazyMayor", "Killed") > 0) {
-		int guarded = Sf_Compare(&f, Sf_Ask(&f, "Scrap", "Get", "(s)", "GuaranteedChars"), "!=", Sf_Str(&f, ""));
-		if (guarded > 0) {
-			Sf_Ask(&f, "Speech", "StdAnsLst", "([s])", "Mission_ApologizeMayor_Mayor_1");
-			Th_Spch(&f, "Mission_ApologizeMayor_Mayor_InitMsg1", "Mission_ApologizeMayor_Mayor_InitAns1");
-			Sf_Ask(&f, "Scrap", "Set", "(ss)", "GuaranteedChars", "");
-			Sf_Ask(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "ForbiddenMsg");
-		} else if (guarded == 0) {
-			Sf_Ask(&f, "Speech", "RestoreState", "(O)", ch);
-			Th_Spch(&f, "Mission_ApologizeMayor_Mayor_1Msg", "Mission_ApologizeMayor_Mayor_1Ans");
-			Sf_SetMod(&f, "Speech", "OnEndOfSpeech", AMG("InitStaplerMission"));
+	if (LvN_SaveIs("CrazyMayor", "Killed")) {
+		nativeVal_t g = { 0 };
+		if (!Native_GVarGet("GuaranteedChars", &g)) {
+			return 0;
 		}
-	} else if (Lv_SaveIs(&f, "CrazyMayor", "Stapler") > 0) {
-		Th_Spch(&f, "Mission_KillStaplers_Mayor_InitMsg1", "Mission_KillStaplers_Mayor_InitAns1");
-	} else if (Lv_SaveIs(&f, "CrazyMayor", "AskTheTransport") > 0) {
-		Th_Spch(&f, "Mission_TalkToMayor1_Mayor_InitMsg1", "Mission_TalkToMayor1_Mayor_InitAns1");
-		Sf_SetMod(&f, "Speech", "OnEndOfSpeech", AMG("SetTransportMission"));
-	} else {
-		Th_Spch(&f, "Mission_TalkToMayor1_Mayor_InitMsg2", "Mission_TalkToMayor1_Mayor_InitAns2");
+		byte guarded = !LvN_EqS(&g, "");
+		Native_Free(&g);
+		if (!guarded) {
+			return LV_CALL("Speech", "RestoreState", NULL, "v", &a[1]) &&
+				Mode_Spch("Mission_ApologizeMayor_Mayor_1Msg", "Mission_ApologizeMayor_Mayor_1Ans", NULL) &&
+				LvN_ModSetGlobal("Speech", "OnEndOfSpeech", AM, "InitStaplerMission");
+		}
+		const char *ans = "Mission_ApologizeMayor_Mayor_1";
+		return Mode_AnsLst(&ans, 1) && Mode_Spch("Mission_ApologizeMayor_Mayor_InitMsg1", "Mission_ApologizeMayor_Mayor_InitAns1", NULL) &&
+			Mode_GVarSetS("GuaranteedChars", "") && Mode_DelSchedS("ForbiddenMsg");
 	}
-	return Sf_None(&f);
+	if (LvN_SaveIs("CrazyMayor", "Stapler")) {
+		return Mode_Spch("Mission_KillStaplers_Mayor_InitMsg1", "Mission_KillStaplers_Mayor_InitAns1", NULL);
+	}
+	if (LvN_SaveIs("CrazyMayor", "AskTheTransport")) {
+		return Mode_Spch("Mission_TalkToMayor1_Mayor_InitMsg1", "Mission_TalkToMayor1_Mayor_InitAns1", NULL) &&
+			LvN_ModSetGlobal("Speech", "OnEndOfSpeech", AM, "SetTransportMission");
+	}
+	return Mode_Spch("Mission_TalkToMayor1_Mayor_InitMsg2", "Mission_TalkToMayor1_Mayor_InitAns2", NULL);
+}
+
+/* MissionsFuncs.ActivateTarget(Scrap.GetEntity(name), on) of a value name (OBJLIB 3) */
+static byte Th_Activate(const nativeVal_t *name, long on) {
+	nativeVal_t e = { 0 };
+	Native_SetNone(&e);
+	byte ok = Mode_EntityH(name, &e) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &e, on);
+	Native_Free(&e);
+	return ok;
 }
 
 /* SetTransportMission(): Mission_ProtectMayorTransport in DownTown; the mayor leaves */
-static PyObject *ApologizeMayor_SetTransportMission(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte ThAm_SetTransportMission(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t npc = { 0 };
+	(void)a;
+	(void)out;
+	if (!LvN_SaveIs("CrazyMayor", "AskTheTransport")) {
+		return 1;
 	}
-	if (Lv_SaveIs(&f, "CrazyMayor", "AskTheTransport") > 0) {
-		Sf_Ask(&f, "MissionsFuncs", "SetNextMission", "(ss)", "Mission_ProtectMayorTransport", "DownTown");
-		Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", Sf_Entity(&f, Sf_Mod(&f, "Speech", "NPCName")), 0);
-		Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_ProtectMayorTransport_MissionText1", 1);
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "MayorAtTownHall", "0");
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "CrazyMayor", "Transport");
+	if (!LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_ProtectMayorTransport", "DownTown")) {
+		return 0;
 	}
-	return Sf_None(&f);
+	/* OBJLIB 5: Speech.NPCName as the value it is */
+	byte ok = LvN_ModGet("Speech", "NPCName", &npc) && Th_Activate(&npc, 0);
+	Native_Free(&npc);
+	if (!ok || !Mode_MMDesc("Mission_ProtectMayorTransport_MissionText1", 1L)) {
+		return 0;
+	}
+	SaveVar_Set("MayorAtTownHall", "0");
+	SaveVar_Set("CrazyMayor", "Transport");
+	return 1;
 }
 
 /* ChooseStapler(NotName=""): a stapler of the level at random (not NotName) is the target; none there: again in
  * 2 s */
-static PyObject *ApologizeMayor_ChooseStapler(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "NotName", NULL };
-	PyObject *not = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &not)) {
-		return NULL;
+static byte ThAm_ChooseStaplerN(const nativeVal_t *not) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *mmt = Mode_V(&t), *keys = Mode_V(&t), *stapler = Mode_V(&t), *name = Mode_V(&t);
+	Native_SetEmpty(mmt, NV_LIST);
+	/* for ky in CharsNPC.CharRes.keys(): CharRes read again at each key, as the script reads it (OBJLIB 5) */
+	if (!Mode_Keys("CharsNPC", "CharRes", 0, keys)) {
+		return Mode_Done(&t, 0);
 	}
-	not = not ? Sf_Ref(&f, not) : Sf_Str(&f, "");
-	PyObject *mmt = Sf_Build(&f, "[]");
-	PyObject *keys = Sf_Method(&f, Sf_Mod(&f, "CharsNPC", "CharRes"), "keys", "()");
-	for (int i = 0; !f.failed; i++) {
-		int mark = f.n;
-		PyObject *ky = Sf_Next(&f, keys, i);
-		if (!ky) {
-			break;
-		}
-		int c = Sf_EqS(&f, Sf_Attr(&f, Sf_GetItem(&f, Sf_Mod(&f, "CharsNPC", "CharRes"), ky), "ActCtrl"), "Desktop");
+	int n = Native_ForCount(keys);
+	if (n < 0) {
+		return Mode_Done(&t, 0);
+	}
+	for (int i = 0; i < n; i++) {
+		nativeVal_t ky = { 0 }, act = { 0 };
+		Native_SetNone(&ky);
+		Native_SetNone(&act);
+		int c = Native_SeqItem(keys, i, &ky) ? 1 : -1;
+		PyObject *ch = c > 0 ? Mode_CharRes(&ky) : NULL;
+		c = ch && Mode_HGet(ch, "ActCtrl", &act) ? LvN_EqS(&act, "Desktop") : -1;
+		Py_XDECREF(ch);
+		Native_Free(&act);
 		if (c > 0) {
-			c = Sf_Compare(&f, ky, "!=", not);
+			c = Th_Cmp(&ky, not);
+			c = c == 2 ? -1 : c != 0;
 		}
 		if (c > 0) {
-			int there = Sf_True(&f, Sf_Entity(&f, ky));
-			if (there > 0) {
-				int in = Sf_In(&f, ky, mmt);
-				there = in < 0 ? -1 : !in;
-			}
-			if (there > 0) {
-				Sf_Method(&f, mmt, "append", "(O)", ky);
-			}
+			cEntity *e;
+			c = Native_GetEntity(&ky, &e) ? e != NULL : -1;
 		}
-		Sf_Release(&f, mark);
+		if (c > 0) {
+			int in = Native_Contains(mmt, &ky);
+			c = in < 0 ? -1 : !in;
+		}
+		if (c > 0) {
+			Native_Copy(Native_Append(mmt), &ky);
+		}
+		Native_Free(&ky);
+		if (c < 0) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	PyObject *stapler = Py_None;
-	int n = Sf_Len(&f, mmt);
-	if (n > 0) {
-		PyObject *index = Sf_ToInt(&f, Sf_Float(&f, Scrap_RandRange(0.0, (double)n - 0.05)));
-		stapler = Sf_Entity(&f, Sf_GetItem(&f, mmt, index));
+	if (mmt->n > 0) {
+		/* int(Scrap.Rand(0.0, len(mmt) - 0.05)): the engine's random directly, as the port did */
+		long index = (long)Scrap_RandRange(0.0, (double)mmt->n - 0.05);
+		if (!Mode_EntityH(&mmt->items[index], stapler)) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	int got = Sf_True(&f, stapler);
-	if (got > 0) {
-		Sf_SetAttrS(&f, stapler, "UseFunc", "Mission_ApologizeMayor.StaplerSpeech");
-		Sf_SetAttrI(&f, stapler, "AI_Repos", 0);
-		Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Sf_Attr(&f, stapler, "Name"));
-	} else if (got == 0) {
-		Sf_Later(&f, Sf_Int(&f, 2), AMG("ChooseStapler"), Sf_Build(&f, "(O)", not), NULL);
+	byte ok;
+	if (Native_True(stapler)) {
+		ok = LvN_SetS(stapler, "UseFunc", "Mission_ApologizeMayor.StaplerSpeech") && LvN_SetI(stapler, "AI_Repos", 0) &&
+			Mode_VGet(stapler, "Name", name) && LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "v", name);
+	} else {
+		ok = Mode_Later(2.0, AM, "ChooseStapler", not, 1, NULL);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
+TH_KWFN(ApologizeMayor_ChooseStapler, "NotName", "", ThAm_ChooseStaplerN)
+
 /* InitStaplerMission(): the staplers to kill: the counter, the scorer, the NPC death hook, the first stapler */
-static PyObject *ApologizeMayor_InitStaplerMission(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte ThAm_InitStaplerMission(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	if (!Mode_MMDesc("Mission_KillStaplers_MissionText1", 1L)) {
+		return 0;
 	}
-	Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_KillStaplers_MissionText1", 1);
-	Sf_Ask(&f, "Scrap", "CreateSaveVar", "(ss)", "CrazyMayor.StaplerDeads", "0");
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "CrazyMayor", "Stapler");
-	Sf_SetMod(&f, "Menu", "MissionScorerCall", AMG("MissionScorer"));
-	Sf_Ask(&f, "Menu", "DrawScorer", "(iO)", 0, Sf_Ask(&f, "SInput", "GetActionSet", "()"));
-	Sf_Ask(&f, "Scrap", "Set", "(si)", "RadarMMSelect", 1);
-	Sf_SetMod(&f, "CharAct", "onNPCDeath", AMG("StaplerDead"));
-	Sf_Own(&f, AM, "ChooseStapler", "()");
-	return Sf_None(&f);
+	SaveVar_Create("CrazyMayor.StaplerDeads", "0");
+	SaveVar_Set("CrazyMayor", "Stapler");
+	return LvN_ScorerCallG(AM, "MissionScorer") && LvN_Draw() && Mode_GVarSetI("RadarMMSelect", 1) &&
+		LvN_ModSetGlobal("CharAct", "onNPCDeath", AM, "StaplerDead") && LV_OWN(AM, "ChooseStapler", NULL, "");
 }
 
 /* StaplerSpeech(UsrName, CharName, optId, FullOption) */
-static PyObject *ApologizeMayor_StaplerSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+static byte ThAm_StaplerSpeech(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return LvN_Speakers(&a[0], &a[1]) && Mode_Spch("Mission_KillStaplers_Desktop_InitMsg1", "Mission_KillStaplers_Desktop_InitAns1", NULL);
+}
+
+/* `deads` + "/" + `MaxTargets` (the global read here) into out */
+static byte ThAm_Ratio(const nativeVal_t *deads, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *rd = Mode_V(&t), *mx = Mode_V(&t), *rm = Mode_V(&t);
+	Mode_Repr(deads, rd);
+	if (!Mode_G(AM, "MaxTargets", mx)) {
+		return Mode_Done(&t, 0);
 	}
-	Lv_Speakers(&f, usr, ch);
-	Th_Spch(&f, "Mission_KillStaplers_Desktop_InitMsg1", "Mission_KillStaplers_Desktop_InitAns1");
-	return Sf_None(&f);
+	Mode_Repr(mx, rm);
+	return Mode_Done(&t, Mode_Cat(&t, out, 3, rd, Mode_S(&t, "/"), rm));
+}
+
+/* deads == MaxTargets (the global read here): 1, 0, -1 with the error */
+static int ThAm_Last(const nativeVal_t *deads) {
+	nativeVal_t mx = { 0 };
+	if (!Mode_G(AM, "MaxTargets", &mx)) {
+		Native_Free(&mx);
+		return -1;
+	}
+	int c = Th_Cmp(deads, &mx);
+	Native_Free(&mx);
+	return c == 2 ? -1 : c == 0;
 }
 
 /* StaplerDead(name, pos): the death hook of the NPCs: the target stapler counts, the mayor taunts; the last one ends
  * the hunt; another stapler draws a remark. Always 0 */
-static PyObject *ApologizeMayor_StaplerDead(PyObject *self, PyObject *args) {
-	PyObject *name, *pos;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &name, &pos)) {
-		return NULL;
+static byte ThAm_StaplerDead(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *rs = Mode_V(&t), *dv = Mode_V(&t), *deads = Mode_V(&t), *txt = Mode_V(&t);
+	nativeVal_t *taunt = Mode_V(&t), *t1 = Mode_V(&t), *rt = Mode_V(&t), *msg = Mode_V(&t), *act = Mode_V(&t);
+	Native_SetInt(out, 0);
+	if (!Mode_EntityH(&a[0], e)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *msg = Py_None;
-	PyObject *e = Sf_Entity(&f, name);
-	int target = Sf_True(&f, e);
-	if (target > 0) {
-		target = Sf_EqI(&f, Sf_Attr(&f, e, "RadarShow"), 1);
+	int target = Native_True(e);
+	if (target) {
+		target = Mode_VGet(e, "RadarShow", rs) ? Mode_CmpI(rs, "==", 1) : -1;
 	}
-	if (target > 0) {
-		Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", e, 0);
-		PyObject *deads = Sf_Eval(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "CrazyMayor.StaplerDeads"), AM);
-		deads = Sf_OpI(&f, deads, '+', 1);
-		int last = Sf_Compare(&f, deads, "==", AMG("MaxTargets"));
-		if (last > 0) {
-			Sf_SetMod(&f, "Menu", "MissionScorerCall", Py_None);
-			Sf_Ask(&f, "Menu", "DrawScorer", "(iO)", 0, Sf_Ask(&f, "SInput", "GetActionSet", "()"));
-		} else if (last == 0) {
-			Sf_Ask(&f, "SScorer", "Set", "(issO)", 0, "RemainingStaplersScorer", "Text", Sf_Cat(&f, "OsO", Sf_Repr(&f, deads), "/", Sf_Repr(&f, AMG("MaxTargets"))));
-		}
-		msg = Sf_Cat(&f, "sO", "Mission_KillStaplers_RemoteMessage", Sf_Repr(&f, Sf_OpI(&f, AMG("SMayorTaunt"), '+', 1)));
-		Sf_SetGlobal(&f, AM, "SMayorTaunt", Sf_OpI(&f, AMG("SMayorTaunt"), '+', 1));
-		if (Sf_Compare(&f, AMG("SMayorTaunt"), ">", Sf_Int(&f, 4)) > 0) {
-			Sf_SetGlobal(&f, AM, "SMayorTaunt", Sf_Int(&f, 0));
-		}
-		last = Sf_Compare(&f, deads, "==", AMG("MaxTargets"));
-		if (last > 0) {
-			Sf_Ask(&f, "Speech", "AddRemoteCom", "(ssOO)", "Mission_KillStaplers_RemoteMessage6", "Mayor", AMG("MayorMessage"), Sf_Build(&f, "()"));
-			return Sf_Return(&f, Sf_Int(&f, 0));
-		}
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "CrazyMayor.StaplerDeads", Sf_Repr(&f, deads));
-		Sf_Own(&f, AM, "ChooseStapler", "(O)", name);
-		if (Sf_True(&f, msg) > 0) {
-			Sf_Ask(&f, "Speech", "RemoteComunication", "(Os)", msg, "Mayor");
-		}
-	} else if (target == 0) {
-		int desk = Sf_True(&f, e);
-		if (desk > 0) {
-			desk = Sf_EqS(&f, Sf_Attr(&f, e, "ActCtrl"), "Desktop");
-		}
-		if (desk > 0) {
-			Sf_Ask(&f, "Speech", "RemoteComunication", "(ss)", "Mission_KillStaplers_RemoteMessage7", "Mayor");
-		}
+	if (target < 0) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_Return(&f, Sf_Int(&f, 0));
+	if (!target) {
+		if (!Native_True(e)) {
+			return Mode_Done(&t, 1);
+		}
+		int desk = Mode_VGet(e, "ActCtrl", act) ? LvN_EqS(act, "Desktop") : -1;
+		return Mode_Done(&t, desk >= 0 && (!desk ||
+			LV_CALL("Speech", "RemoteComunication", NULL, "ss", "Mission_KillStaplers_RemoteMessage7", "Mayor")));
+	}
+	if (!LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 0L) || !LvN_SaveList("CrazyMayor.StaplerDeads", AM, dv) ||
+		!Native_Arith('+', dv, Mode_I(&t, 1), deads)) {
+		return Mode_Done(&t, 0);
+	}
+	int last = ThAm_Last(deads);
+	if (last < 0 || (last && !(LvN_ScorerOff() && LvN_Draw())) ||
+		(!last && !(ThAm_Ratio(deads, txt) && LvN_ScorerSet(Mode_I(&t, 0), "RemainingStaplersScorer", "Text", txt)))) {
+		return Mode_Done(&t, 0);
+	}
+	/* msg = "Mission_KillStaplers_RemoteMessage" + `SMayorTaunt + 1`; SMayorTaunt = SMayorTaunt + 1 (0 after 4) */
+	if (!Mode_G(AM, "SMayorTaunt", taunt) || !Native_Arith('+', taunt, Mode_I(&t, 1), t1)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_Repr(t1, rt);
+	Native_Free(taunt);
+	int over;
+	if (!Mode_Cat(&t, msg, 2, Mode_S(&t, "Mission_KillStaplers_RemoteMessage"), rt) || !LvN_GAdd(AM, "SMayorTaunt", 1, NULL) ||
+		!Mode_G(AM, "SMayorTaunt", taunt) || (over = Mode_CmpI(taunt, ">", 4)) < 0 || (over && !LvN_PutI(AM, "SMayorTaunt", 0))) {
+		return Mode_Done(&t, 0);
+	}
+	last = ThAm_Last(deads);
+	if (last) {
+		return Mode_Done(&t, last > 0 && LvN_Com("Mission_KillStaplers_RemoteMessage6", "Mayor", AM, "MayorMessage", LvN_NoArgs()));
+	}
+	LvN_SaveRepr("CrazyMayor.StaplerDeads", deads);
+	return Mode_Done(&t, LV_OWN(AM, "ChooseStapler", NULL, "v", &a[0]) &&
+		(!Native_True(msg) || LV_CALL("Speech", "RemoteComunication", NULL, "vs", msg, "Mayor")));
 }
 
 /* MayorMessage(): the staplers done: the mayor waits to talk about the transport */
-static PyObject *ApologizeMayor_MayorMessage(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte ThAm_MayorMessage(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	if (!LvN_ModNone("CharAct", "onNPCDeath")) {
+		return 0;
 	}
-	Sf_SetMod(&f, "CharAct", "onNPCDeath", Py_None);
-	Sf_Ask(&f, "Scrap", "DelSaveVars", "(s)", "CrazyMayor.StaplerDeads");
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "CrazyMayor", "AskTheTransport");
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "Mayor_Default");
-	Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_TalkToMayor1_MissionText1", 1);
-	return Sf_None(&f);
+	SaveVars_Delete("CrazyMayor.StaplerDeads");
+	SaveVar_Set("CrazyMayor", "AskTheTransport");
+	return Mode_Target("Mayor_Default") && Mode_MMDesc("Mission_TalkToMayor1_MissionText1", 1L);
+}
+
+/* the text item of a mission scorer with its label key + ":" */
+static byte Th_ScorerLabel(const nativeVal_t *id, const char *item, const char *key) {
+	nativeVal_t lab = { 0 };
+	LvN_Label(key, &lab);
+	byte ok = LvN_ScorerTextBegin(id, item, 0) && LvN_ScorerSet(id, item, "Text", &lab) && LvN_ScorerTextEnd(id, item);
+	Native_Free(&lab);
+	return ok;
 }
 
 /* MissionScorer(id): the staplers killed of MaxTargets */
-static PyObject *ApologizeMayor_MissionScorer(PyObject *self, PyObject *args) {
-	PyObject *id;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id)) {
-		return NULL;
+static byte ThAm_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t deads = { 0 }, txt = { 0 };
+	(void)out;
+	if (!Mode_Import("Scorer") || !Th_ScorerLabel(&a[0], "RemainingStaplersText", "Mission_KillStaplers_Scorer") ||
+		!LvN_ScorerTextBegin(&a[0], "RemainingStaplersScorer", 20)) {
+		return 0;
 	}
-	Sf_Import(&f, "Scorer");
-	Lv_ScorerTextBegin(&f, id, "RemainingStaplersText", 0);
-	Lv_ScorerSet(&f, id, "RemainingStaplersText", "Text", Sf_Cat(&f, "Os", Sf_Lang(&f, Sf_Str(&f, "Mission_KillStaplers_Scorer")), ":"));
-	Lv_ScorerTextEnd(&f, id, "RemainingStaplersText");
-	Lv_ScorerTextBegin(&f, id, "RemainingStaplersScorer", 20);
-	PyObject *deads = Sf_Eval(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "CrazyMayor.StaplerDeads"), AM);
-	Lv_ScorerSet(&f, id, "RemainingStaplersScorer", "Text", Sf_Cat(&f, "OsO", Sf_Repr(&f, deads), "/", Sf_Repr(&f, AMG("MaxTargets"))));
-	Lv_ScorerTextEnd(&f, id, "RemainingStaplersScorer");
-	return Sf_None(&f);
+	Native_SetNone(&txt);
+	byte ok = LvN_SaveList("CrazyMayor.StaplerDeads", AM, &deads) && ThAm_Ratio(&deads, &txt) &&
+		LvN_ScorerSet(&a[0], "RemainingStaplersScorer", "Text", &txt) && LvN_ScorerTextEnd(&a[0], "RemainingStaplersScorer");
+	Native_Free(&deads);
+	Native_Free(&txt);
+	return ok;
 }
+
+LV_FN(ApologizeMayor, InitStatus, 1, ThAm_InitStatus)
+LV_FN(ApologizeMayor, AfterBrowseNPC, 0, ThAm_AfterBrowseNPC)
+LV_FN(ApologizeMayor, CreateMayorInit, 1, ThAm_CreateMayorInit)
+LV_FN(ApologizeMayor, Init, 1, ThAm_Init)
+LV_FN(ApologizeMayor, ForbiddenMsg, 0, ThAm_ForbiddenMsg)
+LV_FN(ApologizeMayor, MayorSpeech, 4, ThAm_MayorSpeech)
+LV_FN(ApologizeMayor, SetTransportMission, 0, ThAm_SetTransportMission)
+LV_FN(ApologizeMayor, InitStaplerMission, 0, ThAm_InitStaplerMission)
+LV_FN(ApologizeMayor, StaplerSpeech, 4, ThAm_StaplerSpeech)
+LV_FN(ApologizeMayor, StaplerDead, 2, ThAm_StaplerDead)
+LV_FN(ApologizeMayor, MayorMessage, 0, ThAm_MayorMessage)
+LV_FN(ApologizeMayor, MissionScorer, 1, ThAm_MissionScorer)
 
 PyMethodDef g_TownhallApologizeMayorMethods[] = {
 	{ "InitStatus", ApologizeMayor_InitStatus, METH_VARARGS, NULL },
@@ -517,383 +631,425 @@ PyMethodDef g_TownhallApologizeMayorMethods[] = {
 
 /* ---- Mission_CatchTrurl ---- */
 
-#define CTG(name) Sf_Global(&f, CT, name)
-
-/* eval(Scrap.GetSaveVar(var)) in the globals of the mission */
-static PyObject *Ct_Save(scriptFrame_t *f, const char *var) {
-	return Lv_SaveList(f, var, CT);
-}
-
 /* InitStatus(LevelPath): Trurl is the target, no data packs of the messengers; three functionaries */
-static PyObject *CatchTrurl_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte ThCt_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const funcs[] = { "Functionary_10", "Functionary_23", "Functionary_25" };
+	nativeVal_t zero = { 0 };
+	(void)a;
+	(void)out;
+	Native_SetInt(&zero, 0);
+	if (!Mode_Import("Messenger") || !Mode_SetModVar("Messenger", "MakeMDP", &zero) ||
+		!LvN_MissionChar("Messenger_Trurl", CT, "CreateTrurl")) {
+		return 0;
 	}
-	Sf_Import(&f, "Messenger");
-	Sf_SetMod(&f, "Messenger", "MakeMDP", Sf_Int(&f, 0));
-	Lv_MissionChar(&f, "Messenger_Trurl", CT, "CreateTrurl");
-	Sf_Ask(&f, "CharsNPC", "CreateMissionChar", "(s)", "Functionary_10");
-	Sf_Ask(&f, "CharsNPC", "CreateMissionChar", "(s)", "Functionary_23");
-	Sf_Ask(&f, "CharsNPC", "CreateMissionChar", "(s)", "Functionary_25");
-	return Sf_None(&f);
+	for (int i = 0; i < 3; i++) {
+		if (!LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", funcs[i])) {
+			return 0;
+		}
+	}
+	return 1;
 }
 
 /* Init(LevelPath): Trurl's name; the state of the mission (the first time its save variables) */
-static PyObject *CatchTrurl_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte ThCt_Init(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t trurl = { 0 }, name = { 0 }, data = { 0 };
+	(void)a;
+	(void)out;
+	Native_SetNone(&trurl);
+	Mode_Lang("CharName_Trurl", &name);
+	byte ok = LvN_Entity("Messenger_Trurl", &trurl) && Mode_VSet(&trurl, "Descriptor", &name);
+	Native_Free(&trurl);
+	Native_Free(&name);
+	if (!ok) {
+		return 0;
 	}
-	PyObject *trurl = Sf_Entity(&f, Sf_Str(&f, "Messenger_Trurl"));
-	Sf_SetAttr(&f, trurl, "Descriptor", Sf_Lang(&f, Sf_Str(&f, "CharName_Trurl")));
-	PyObject *data = Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "CatchTrurlMissionData");
-	if (Sf_EqS(&f, data, "CatchTrurl") > 0) {
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "Mission_CatchTrurl_Data", "['Functionary_10', 'Functionary_23', 'Functionary_25']");
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "Mission_CatchTrurl_MapsPos", "[]");
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "Mission_CatchTrurl_NumMapsDropped", "0");
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "Mission_CatchTrurl_NumMapsTaken", "0");
-		Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "Messenger_Trurl");
-	} else if (Sf_EqS(&f, data, "KillFunctionaries") > 0) {
-		Sf_Own(&f, CT, "KillFunctionaries", "()");
-	} else if (Sf_EqS(&f, data, "CatchTrurlAgain") > 0) {
-		Sf_Own(&f, CT, "CatchTrurlAgain", "()");
+	Mode_SaveVar("CatchTrurlMissionData", &data);
+	if (LvN_EqS(&data, "CatchTrurl")) {
+		SaveVar_Set("Mission_CatchTrurl_Data", "['Functionary_10', 'Functionary_23', 'Functionary_25']");
+		SaveVar_Set("Mission_CatchTrurl_MapsPos", "[]");
+		SaveVar_Set("Mission_CatchTrurl_NumMapsDropped", "0");
+		SaveVar_Set("Mission_CatchTrurl_NumMapsTaken", "0");
+		ok = Mode_Target("Messenger_Trurl");
+	} else if (LvN_EqS(&data, "KillFunctionaries")) {
+		ok = LV_OWN(CT, "KillFunctionaries", NULL, "");
+	} else if (LvN_EqS(&data, "CatchTrurlAgain")) {
+		ok = LV_OWN(CT, "CatchTrurlAgain", NULL, "");
 	}
-	return Sf_None(&f);
+	Native_Free(&data);
+	return ok;
 }
 
 /* CreateTrurl(t): Trurl's talk for the state of the mission */
-static PyObject *CatchTrurl_CreateTrurl(PyObject *self, PyObject *args) {
-	PyObject *t;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &t)) {
-		return NULL;
+static byte ThCt_CreateTrurl(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t data = { 0 };
+	byte ok = 1;
+	(void)out;
+	Mode_SaveVar("CatchTrurlMissionData", &data);
+	if (LvN_EqS(&data, "CatchTrurl")) {
+		ok = LvN_SetS(&a[0], "UseFunc", "Mission_CatchTrurl.OnCatchTrurl");
+	} else if (LvN_EqS(&data, "CatchTrurlAgain")) {
+		ok = LvN_SetS(&a[0], "UseFunc", "Mission_CatchTrurl.OnCatchTrurlAgain");
 	}
-	PyObject *data = Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "CatchTrurlMissionData");
-	if (Sf_EqS(&f, data, "CatchTrurl") > 0) {
-		Sf_SetAttrS(&f, t, "UseFunc", "Mission_CatchTrurl.OnCatchTrurl");
-	} else if (Sf_EqS(&f, data, "CatchTrurlAgain") > 0) {
-		Sf_SetAttrS(&f, t, "UseFunc", "Mission_CatchTrurl.OnCatchTrurlAgain");
-	}
-	return Sf_None(&f);
+	Native_Free(&data);
+	return ok;
 }
 
 /* OnCatchTrurl(UsrName, CharName, optId, FullOption): Trurl caught; his talk ends in KillFunctionaries */
-static PyObject *CatchTrurl_OnCatchTrurl(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+static byte ThCt_OnCatchTrurl(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	if (!LvN_Speakers(&a[0], &a[1])) {
+		return 0;
 	}
-	Lv_Speakers(&f, usr, ch);
-	if (Sf_EqS(&f, opt, "Talk") > 0) {
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "CatchTrurlMissionData", "KillFunctionaries");
-		Lv_OnEnd(&f, CT, "KillFunctionaries", NULL);
-		Sf_Ask(&f, "Speech", "NISpeech", "(s)", "Messenger");
-		Sf_Ask(&f, "Speech", "AutoAddNI", "(s)", "Mission_GetTrurl_Trurl_NI_1Msg");
-		Sf_Ask(&f, "Speech", "RunNI", "()");
+	if (!LvN_EqS(&a[2], "Talk")) {
+		return 1;
 	}
-	return Sf_None(&f);
+	SaveVar_Set("CatchTrurlMissionData", "KillFunctionaries");
+	return LvN_OnEnd(CT, "KillFunctionaries", NULL) && Mode_NISpeech("Messenger", "Mission_GetTrurl_Trurl_NI_1Msg");
 }
 
 /* OnCatchTrurlAgain(UsrName, CharName, optId, FullOption): Trurl again; SetNextMission at the end */
-static PyObject *CatchTrurl_OnCatchTrurlAgain(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
-	}
-	Lv_Speakers(&f, usr, ch);
-	if (Sf_EqS(&f, opt, "Talk") > 0) {
-		Lv_OnEnd(&f, CT, "SetNextMission", NULL);
-		Th_Spch(&f, "Mission_GetTrurlAgain_Trurl_InitMsg1", "Mission_GetTrurlAgain_Trurl_InitAns1");
-	}
-	return Sf_None(&f);
+static byte ThCt_OnCatchTrurlAgain(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return LvN_Speakers(&a[0], &a[1]) && (!LvN_EqS(&a[2], "Talk") || (LvN_OnEnd(CT, "SetNextMission", NULL) &&
+		Mode_Spch("Mission_GetTrurlAgain_Trurl_InitMsg1", "Mission_GetTrurlAgain_Trurl_InitAns1", NULL)));
 }
 
 /* FunctionaryMissionSpeech(UsrName, CharName, optId, FullOption): a functionary with blueprints talks */
-static PyObject *CatchTrurl_FunctionaryMissionSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+static byte ThCt_FunctionaryMissionSpeech(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return LvN_Speakers(&a[0], &a[1]) &&
+		(!LvN_EqS(&a[2], "Talk") || Mode_Spch("Mission_GetMayorOutlines_InitMsg1", "Mission_GetMayorOutlines_InitAns1", NULL));
+}
+
+/* module.var = SpawnMap when it is None (OBJLIB 5: the hook of another module as the value it is) */
+static byte Ct_HookSpawn(const char *module, const char *var) {
+	nativeVal_t v = { 0 };
+	if (!LvN_ModGet(module, var, &v)) {
+		return 0;
 	}
-	Lv_Speakers(&f, usr, ch);
-	if (Sf_EqS(&f, opt, "Talk") > 0) {
-		Th_Spch(&f, "Mission_GetMayorOutlines_InitMsg1", "Mission_GetMayorOutlines_InitAns1");
-	}
-	return Sf_None(&f);
+	byte none = v.type == NV_NONE;
+	Native_Free(&v);
+	return !none || LvN_ModSetGlobal(module, var, CT, "SpawnMap");
 }
 
 /* SetCallbackFuncs(missionData): while functionaries live their death or possession drops a blueprint (SpawnMap) */
-static PyObject *CatchTrurl_SetCallbackFuncs(PyObject *self, PyObject *args) {
-	PyObject *data;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &data)) {
-		return NULL;
-	}
-	Sf_Import(&f, "string");
+static byte ThCt_SetCallbackFuncs(const nativeVal_t *a, nativeVal_t *out) {
 	long alive = 0;
-	for (int i = 0; !f.failed; i++) {
-		int mark = f.n;
-		PyObject *target = Sf_Next(&f, data, i);
-		if (!target) {
-			break;
+	(void)out;
+	if (!Mode_Import("string")) {
+		return 0;
+	}
+	int n = Native_ForCount(&a[0]);
+	if (n < 0) {
+		return 0;
+	}
+	for (int i = 0; i < n; i++) {
+		nativeVal_t target = { 0 }, r = { 0 };
+		Native_SetNone(&target);
+		Native_SetNone(&r);
+		/* OBJLIB 3: string.find by name */
+		int c = Native_SeqItem(&a[0], i, &target) && LV_CALL("string", "find", &r, "vs", &target, "Blueprint") ?
+			Mode_CmpI(&r, "==", -1) : -1;
+		Native_Free(&target);
+		Native_Free(&r);
+		if (c < 0) {
+			return 0;
 		}
-		if (Sf_EqI(&f, Sf_Ask(&f, "string", "find", "(Os)", target, "Blueprint"), -1) > 0) {
-			alive++;
-		}
-		Sf_Release(&f, mark);
+		alive += c;
 	}
 	if (alive == 0) {
-		Sf_SetMod(&f, "CharAct", "onNPCDeath", Py_None);
-		Sf_SetMod(&f, "CharConversor", "OnPossession", Py_None);
-	} else {
-		if (Sf_Compare(&f, Sf_Mod(&f, "CharAct", "onNPCDeath"), "==", Py_None) > 0) {
-			Sf_SetMod(&f, "CharAct", "onNPCDeath", CTG("SpawnMap"));
-		}
-		if (Sf_Compare(&f, Sf_Mod(&f, "CharConversor", "OnPossession"), "==", Py_None) > 0) {
-			Sf_SetMod(&f, "CharConversor", "OnPossession", CTG("SpawnMap"));
-		}
+		return LvN_ModNone("CharAct", "onNPCDeath") && LvN_ModNone("CharConversor", "OnPossession");
 	}
-	return Sf_None(&f);
+	return Ct_HookSpawn("CharAct", "onNPCDeath") && Ct_HookSpawn("CharConversor", "OnPossession");
+}
+
+/* the save variables Mission_CatchTrurl_Data and _MapsPos as the script evals them */
+static byte Ct_Lists(nativeVal_t *data, nativeVal_t *maps) {
+	return LvN_SaveList("Mission_CatchTrurl_Data", CT, data) && LvN_SaveList("Mission_CatchTrurl_MapsPos", CT, maps);
+}
+
+/* the save variable name = `int(name) + 1` */
+static byte Ct_Inc(const char *name) {
+	nativeVal_t i = { 0 }, one = { 0 }, r = { 0 };
+	Native_SetInt(&one, 1);
+	Native_SetNone(&r);
+	byte ok = Mode_SaveInt(name, &i) && Native_Arith('+', &i, &one, &r);
+	if (ok) {
+		LvN_SaveRepr(name, &r);
+	}
+	Native_Free(&i);
+	Native_Free(&r);
+	return ok;
 }
 
 /* SpawnMap(name, pos): a functionary of the mission died or was possessed: he drops the next blueprint (1); else 0 */
-static PyObject *CatchTrurl_SpawnMap(PyObject *self, PyObject *args) {
-	PyObject *name, *pos;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &name, &pos)) {
-		return NULL;
+static byte ThCt_SpawnMap(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *data = Mode_V(&t), *maps = Mode_V(&t), *dropped = Mode_V(&t), *e = Mode_V(&t), *en = Mode_V(&t);
+	nativeVal_t *pair = Mode_V(&t), *pn = Mode_V(&t), *pp = Mode_V(&t);
+	if (!Ct_Lists(data, maps)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *data = Ct_Save(&f, "Mission_CatchTrurl_Data");
-	PyObject *maps = Ct_Save(&f, "Mission_CatchTrurl_MapsPos");
-	if (Sf_In(&f, name, data) <= 0) {
-		return Sf_Return(&f, Sf_Int(&f, 0));
+	int in = Native_Contains(data, &a[0]);
+	if (in <= 0) {
+		Native_SetInt(out, 0);
+		return Mode_Done(&t, in == 0);
 	}
-	PyObject *dropped = Sf_ToInt(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Mission_CatchTrurl_NumMapsDropped"));
-	PyObject *e = Sf_Own(&f, CT, "CreateMap", "(OO)", pos, dropped);
-	Sf_Ask(&f, "MissionsFuncs", "DelMissionTarget", "(O)", name);
-	Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", Sf_Entity(&f, name), 0);
-	Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", e, 1);
-	Sf_Method(&f, data, "remove", "(O)", name);
-	Sf_Method(&f, data, "append", "(O)", Sf_Attr(&f, e, "Name"));
-	Sf_Method(&f, maps, "append", "(O)", Sf_Build(&f, "(OO)", Sf_Attr(&f, e, "Name"), Sf_Attr(&f, e, "Pos")));
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "Mission_CatchTrurl_Data", Sf_Repr(&f, data));
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "Mission_CatchTrurl_MapsPos", Sf_Repr(&f, maps));
-	PyObject *n = Sf_OpI(&f, Sf_ToInt(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Mission_CatchTrurl_NumMapsDropped")), '+', 1);
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "Mission_CatchTrurl_NumMapsDropped", Sf_Repr(&f, n));
-	Sf_Own(&f, CT, "SetCallbackFuncs", "(O)", data);
-	return Sf_Return(&f, Sf_Int(&f, 1));
+	if (!Mode_SaveInt("Mission_CatchTrurl_NumMapsDropped", dropped) || !LV_OWN(CT, "CreateMap", e, "vv", &a[1], dropped) ||
+		!LV_CALL("MissionsFuncs", "DelMissionTarget", NULL, "v", &a[0]) || !Th_Activate(&a[0], 0) ||
+		!LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 1L) || !LvN_ListRemove(data, &a[0]) ||
+		!Mode_VGet(e, "Name", en) || !LvN_Append(data, en) || !Mode_VGet(e, "Name", pn) || !Mode_VGet(e, "Pos", pp)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetEmpty(pair, NV_TUPLE);
+	Native_Copy(Native_Append(pair), pn);
+	Native_Copy(Native_Append(pair), pp);
+	if (!LvN_Append(maps, pair)) {
+		return Mode_Done(&t, 0);
+	}
+	LvN_SaveRepr("Mission_CatchTrurl_Data", data);
+	LvN_SaveRepr("Mission_CatchTrurl_MapsPos", maps);
+	Native_SetInt(out, 1);
+	return Mode_Done(&t, Ct_Inc("Mission_CatchTrurl_NumMapsDropped") && LV_OWN(CT, "SetCallbackFuncs", NULL, "v", data));
 }
 
 /* CreateMap(pos, mapType): a blueprint on the floor to photograph: 0 the weapon, 1 the engine, 2 the ship, else the
  * name itself */
-static PyObject *CatchTrurl_CreateMap(PyObject *self, PyObject *args) {
-	PyObject *pos, *type;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &pos, &type)) {
-		return NULL;
-	}
+static byte ThCt_CreateMap(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const names[] = { "PlanoDevastator", "PlanoMMayor1", "PlanoSMayor1" };
-	PyObject *cad = type;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cad = Mode_V(&t), *file = Mode_V(&t);
+	Native_Copy(cad, &a[1]);
 	for (int i = 0; i < 3; i++) {
-		int c = Sf_EqI(&f, type, i);
-		if (c != 0) {
-			cad = c > 0 ? Sf_Str(&f, names[i]) : NULL;
+		int c = Mode_CmpI(&a[1], "==", i);
+		if (c < 0) {
+			return Mode_Done(&t, 0);
+		}
+		if (c) {
+			Native_Free(cad);
+			LvN_Str(cad, names[i]);
 			break;
 		}
 	}
-	PyObject *e = Sf_Ask(&f, "Scrap", "CreateEntity", "(OOOOs)", cad, Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1), Sf_Item(&f, pos, 2), "WithLife");
-	Sf_SetAttrI(&f, e, "ArrowCanView", 1);
-	Sf_SetAttrS(&f, e, "ViewFunc", "");
-	Sf_SetAttrI(&f, e, "CanPhoto", 1);
-	Sf_SetAttrI(&f, e, "VRadius", 30);
-	Sf_Method(&f, e, "SetModel", "(O)", Sf_Cat(&f, "sOs", "Models/Misc/Blueprint/", cad, ".M3D"));
-	Sf_Ask(&f, "Items", "SetInteractiveObjOnFloor", "(O)", e);
-	return Sf_Return(&f, e);
+	/* Scrap.CreateEntity through its seam (fr6.py swaps it) */
+	byte ok = LvN_CreateAt(cad, &a[0], "WithLife", out) && LvN_SetI(out, "ArrowCanView", 1) && LvN_SetS(out, "ViewFunc", "") &&
+		LvN_SetI(out, "CanPhoto", 1) && LvN_SetI(out, "VRadius", 30) &&
+		Mode_Cat(&t, file, 3, Mode_S(&t, "Models/Misc/Blueprint/"), cad, Mode_S(&t, ".M3D")) && Mode_VModel(out, file) &&
+		LV_CALL("Items", "SetInteractiveObjOnFloor", NULL, "v", out);
+	return Mode_Done(&t, ok);
 }
 
 /* the blueprint item into the hangar list of the save variable var (once; always when item is NULL: the weapon), the
  * message, a new blueprint */
-static void Ct_Blueprint(scriptFrame_t *f, const char *var, const char *item, const char *msg) {
-	PyObject *l = Ct_Save(f, var);
-	int add = item ? Sf_In(f, Sf_Str(f, item), l) : 0;
-	if (add == 0) {
-		Lv_SaveAppend(f, var, l, Sf_Str(f, item ? item : "Devastator"));
+static byte Ct_Blueprint(const char *var, const char *item, const char *msg) {
+	nativeVal_t l = { 0 }, it = { 0 }, text = { 0 };
+	int add = 0;
+	if (!LvN_SaveList(var, CT, &l)) {
+		Native_Free(&l);
+		return 0;
 	}
-	Sf_Ask(f, "RaceMaker", "ShowSystemMessage", "(O)", Sf_Lang(f, Sf_Str(f, msg)));
-	Sf_Ask(f, "Scrap", "IncSaveVar", "(s)", "NewBluePrintAvaliable");
+	LvN_Str(&it, item ? item : "Devastator");
+	if (item) {
+		add = Native_Contains(&l, &it);
+	}
+	byte ok = add >= 0 && (add || LvN_SaveAppend(var, &l, &it));
+	Native_Free(&l);
+	Native_Free(&it);
+	if (!ok) {
+		return 0;
+	}
+	Mode_Lang(msg, &text);
+	ok = LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &text);
+	Native_Free(&text);
+	if (ok) {
+		SaveVar_Inc("NewBluePrintAvaliable", 1);
+	}
+	return ok;
 }
 
 /* TakeMapPhoto(mapName): the photo of a blueprint of the mission (1, else 0); after the last Trurl calls */
-static PyObject *CatchTrurl_TakeMapPhoto(PyObject *self, PyObject *args) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+static byte ThCt_TakeMapPhoto(const nativeVal_t *a, nativeVal_t *out) {
+	static const char *const vars[] = { "Mission_CatchTrurl_Data", "Mission_CatchTrurl_MapsPos", "Mission_CatchTrurl_NumMapsDropped",
+		"Mission_CatchTrurl_NumMapsTaken" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *data = Mode_V(&t), *maps = Mode_V(&t), *m = Mode_V(&t);
+	if (!Mode_Import("RaceMaker") || !Ct_Lists(data, maps)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "RaceMaker");
-	PyObject *data = Ct_Save(&f, "Mission_CatchTrurl_Data");
-	PyObject *maps = Ct_Save(&f, "Mission_CatchTrurl_MapsPos");
-	if (Sf_In(&f, name, data) <= 0) {
-		return Sf_Return(&f, Sf_Int(&f, 0));
+	int in = Native_Contains(data, &a[0]);
+	if (in <= 0) {
+		Native_SetInt(out, 0);
+		return Mode_Done(&t, in == 0);
 	}
-	PyObject *m = Sf_Entity(&f, name);
-	Sf_SetAttrI(&f, m, "RadarShow", 0);
-	Sf_SetAttrI(&f, m, "ArrowCanView", 0);
-	Sf_SetAttrI(&f, m, "ArrowCanMission", 0);
-	if (Sf_EqS(&f, name, "PlanoSMayor1") > 0) {
-		Ct_Blueprint(&f, "Hangar.shipsToEditList", "SMayor1", "Mission_GetMayorOutlines_SystemMessage1");
-	} else if (Sf_EqS(&f, name, "PlanoMMayor1") > 0) {
-		Ct_Blueprint(&f, "Hangar.availableEnginesList", "MMAYOR1", "Mission_GetMayorOutlines_SystemMessage2");
+	if (!Mode_EntityH(&a[0], m) || !LvN_SetI(m, "RadarShow", 0) || !LvN_SetI(m, "ArrowCanView", 0) ||
+		!LvN_SetI(m, "ArrowCanMission", 0)) {
+		return Mode_Done(&t, 0);
+	}
+	byte ok;
+	if (LvN_EqS(&a[0], "PlanoSMayor1")) {
+		ok = Ct_Blueprint("Hangar.shipsToEditList", "SMayor1", "Mission_GetMayorOutlines_SystemMessage1");
+	} else if (LvN_EqS(&a[0], "PlanoMMayor1")) {
+		ok = Ct_Blueprint("Hangar.availableEnginesList", "MMAYOR1", "Mission_GetMayorOutlines_SystemMessage2");
 	} else {
-		Ct_Blueprint(&f, "Hangar.availableWeaponsList", NULL, "Mission_GetMayorOutlines_SystemMessage3");
+		ok = Ct_Blueprint("Hangar.availableWeaponsList", NULL, "Mission_GetMayorOutlines_SystemMessage3");
 	}
-	Sf_Method(&f, data, "remove", "(O)", name);
-	for (int i = 0; !f.failed; i++) {
-		int mark = f.n;
-		PyObject *elem = Sf_Next(&f, maps, i);
-		if (!elem) {
+	if (!ok || !LvN_ListRemove(data, &a[0])) {
+		return Mode_Done(&t, 0);
+	}
+	/* for elem in maps: if elem[0] == mapName: maps.remove(elem) */
+	int n = Native_ForCount(maps);
+	if (n < 0) {
+		return Mode_Done(&t, 0);
+	}
+	for (int i = 0; i < n; i++) {
+		nativeVal_t elem = { 0 }, first = { 0 };
+		Native_SetNone(&elem);
+		Native_SetNone(&first);
+		int c = Native_SeqItem(maps, i, &elem) && LvN_Item(&elem, 0, &first) ? Th_Cmp(&first, &a[0]) : 2;
+		ok = c != 2 && (c != 0 || LvN_ListRemove(maps, &elem));
+		Native_Free(&elem);
+		Native_Free(&first);
+		if (!ok) {
+			return Mode_Done(&t, 0);
+		}
+		if (c == 0) {
 			break;
 		}
-		if (Sf_Compare(&f, Sf_Item(&f, elem, 0), "==", name) > 0) {
-			Sf_Method(&f, maps, "remove", "(O)", elem);
-			break;
-		}
-		Sf_Release(&f, mark);
 	}
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "Mission_CatchTrurl_Data", Sf_Repr(&f, data));
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "Mission_CatchTrurl_MapsPos", Sf_Repr(&f, maps));
-	PyObject *n = Sf_OpI(&f, Sf_ToInt(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Mission_CatchTrurl_NumMapsTaken")), '+', 1);
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", "Mission_CatchTrurl_NumMapsTaken", Sf_Repr(&f, n));
-	int left = Sf_Len(&f, data);
+	LvN_SaveRepr("Mission_CatchTrurl_Data", data);
+	LvN_SaveRepr("Mission_CatchTrurl_MapsPos", maps);
+	int left = Ct_Inc("Mission_CatchTrurl_NumMapsTaken") ? Native_Size(data) : -1;
+	if (left < 0) {
+		return Mode_Done(&t, 0);
+	}
 	if (left == 0) {
-		static const char *const vars[] = { "Mission_CatchTrurl_Data", "Mission_CatchTrurl_MapsPos", "Mission_CatchTrurl_NumMapsDropped",
-			"Mission_CatchTrurl_NumMapsTaken" };
 		for (int i = 0; i < 4; i++) {
-			Sf_Ask(&f, "Scrap", "DelSaveVars", "(s)", vars[i]);
+			SaveVars_Delete(vars[i]);
 		}
-		Sf_SetMod(&f, "CharAct", "onNPCDeath", Py_None);
-		Sf_SetMod(&f, "CharConversor", "OnPossession", Py_None);
-		Sf_SetMod(&f, "CharAct", "TakenPhoto", Py_None);
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "CatchTrurlMissionData", "CatchTrurlAgain");
-		Sf_Ask(&f, "Speech", "AddRemoteCom", "(ssO)", "Mission_GetMayorOutlines_RemoteMessage2", "Trurl", CTG("CatchTrurlAgain"));
-	} else if (left > 0) {
-		Sf_Ask(&f, "Speech", "AddRemoteCom", "(ss)", "Mission_GetMayorOutlines_RemoteMessage1", "Trurl");
+		if (!LvN_ModNone("CharAct", "onNPCDeath") || !LvN_ModNone("CharConversor", "OnPossession") ||
+			!LvN_ModNone("CharAct", "TakenPhoto")) {
+			return Mode_Done(&t, 0);
+		}
+		SaveVar_Set("CatchTrurlMissionData", "CatchTrurlAgain");
+		ok = LvN_Com("Mission_GetMayorOutlines_RemoteMessage2", "Trurl", CT, "CatchTrurlAgain", NULL);
+	} else {
+		ok = LvN_Com("Mission_GetMayorOutlines_RemoteMessage1", "Trurl", NULL, NULL, NULL);
 	}
-	return Sf_Return(&f, Sf_Int(&f, 1));
+	Native_SetInt(out, 1);
+	return Mode_Done(&t, ok);
 }
 
 /* KillFunctionaries(): the functionaries with blueprints flee and are the targets; the blueprints already dropped
  * lie again where they fell */
-static PyObject *CatchTrurl_KillFunctionaries(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	PyObject *data = Ct_Save(&f, "Mission_CatchTrurl_Data");
-	PyObject *maps = Ct_Save(&f, "Mission_CatchTrurl_MapsPos");
+static byte ThCt_KillFunctionaries(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *data = Mode_V(&t), *maps = Mode_V(&t);
 	long index = 0;
-	Sf_Len(&f, maps);
-	for (int i = 0; !f.failed; i++) {
-		int mark = f.n;
-		PyObject *fn = Sf_Next(&f, data, i);
-		if (!fn) {
-			break;
-		}
-		PyObject *e = Sf_Entity(&f, fn);
-		int there = Sf_True(&f, e);
-		if (there > 0) {
-			Sf_SetAttr(&f, e, "LLogicProbTalkWhenWalking", Sf_Float(&f, 1.0));
-			Sf_SetAttrI(&f, e, "LLogicEscapeWithinRadius", 1);
-			Sf_SetAttrI(&f, e, "LLogicEscapeRadiusSqr", 562500);
-			Sf_SetAttrS(&f, e, "UseFunc", "Mission_CatchTrurl.FunctionaryMissionSpeech");
-		} else if (there == 0) {
-			Sf_Own(&f, CT, "CreateMap", "(OO)", Sf_Item(&f, Sf_Item(&f, maps, index), 1), fn);
+	(void)a;
+	(void)out;
+	if (!Ct_Lists(data, maps) || Native_Size(maps) < 0) {
+		return Mode_Done(&t, 0);
+	}
+	int n = Native_ForCount(data);
+	if (n < 0) {
+		return Mode_Done(&t, 0);
+	}
+	for (int i = 0; i < n; i++) {
+		nativeVal_t fn = { 0 }, e = { 0 }, mi = { 0 }, pos = { 0 };
+		Native_SetNone(&fn);
+		Native_SetNone(&e);
+		Native_SetNone(&mi);
+		Native_SetNone(&pos);
+		byte ok = Native_SeqItem(data, i, &fn) && Mode_EntityH(&fn, &e);
+		if (ok && Native_True(&e)) {
+			ok = LvN_SetF(&e, "LLogicProbTalkWhenWalking", 1.0) && LvN_SetI(&e, "LLogicEscapeWithinRadius", 1) &&
+				LvN_SetI(&e, "LLogicEscapeRadiusSqr", 562500) && LvN_SetS(&e, "UseFunc", "Mission_CatchTrurl.FunctionaryMissionSpeech");
+		} else if (ok) {
+			ok = LvN_Item(maps, index, &mi) && LvN_Item(&mi, 1, &pos) && LV_OWN(CT, "CreateMap", NULL, "vv", &pos, &fn);
 			index++;
 		}
-		Sf_Release(&f, mark);
+		Native_Free(&fn);
+		Native_Free(&e);
+		Native_Free(&mi);
+		Native_Free(&pos);
+		if (!ok) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	Sf_Ask(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Ask(&f, "MissionsFuncs", "SetMultipleMissionTargets", "(O)", data);
-	Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_GetMayorOutlines_MissionText1", 1);
-	Sf_Own(&f, CT, "SetCallbackFuncs", "(O)", data);
-	Sf_SetMod(&f, "CharAct", "TakenPhoto", CTG("TakeMapPhoto"));
-	return Sf_None(&f);
+	return Mode_Done(&t, Mode_WayPoint() && LV_CALL("MissionsFuncs", "SetMultipleMissionTargets", NULL, "v", data) &&
+		Mode_MMDesc("Mission_GetMayorOutlines_MissionText1", 1L) && LV_OWN(CT, "SetCallbackFuncs", NULL, "v", data) &&
+		LvN_ModSetGlobal("CharAct", "TakenPhoto", CT, "TakeMapPhoto"));
 }
 
 /* CatchTrurlAgain(): saved, Trurl is the target again */
-static PyObject *CatchTrurl_CatchTrurlAgain(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Ask(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "Messenger_Trurl");
-	Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_GetTrurlAgain_MissionText1", 1);
-	Sf_SetAttrS(&f, Sf_Entity(&f, Sf_Str(&f, "Messenger_Trurl")), "UseFunc", "Mission_CatchTrurl.OnCatchTrurlAgain");
-	return Sf_None(&f);
+static byte ThCt_CatchTrurlAgain(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return Mode_WayPoint() && Mode_Target("Messenger_Trurl") && Mode_MMDesc("Mission_GetTrurlAgain_MissionText1", 1L) &&
+		Mode_EntSetS("Messenger_Trurl", "UseFunc", "Mission_CatchTrurl.OnCatchTrurlAgain");
 }
 
 /* SetNextMission(): Mission_StealMayorShip in DownTown, the parked ships, the crazy gambler calls in 2 s */
-static PyObject *CatchTrurl_SetNextMission(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "");
-	Sf_Ask(&f, "Scrap", "DelSaveVars", "(s)", "CatchTrurlMissionData");
-	Sf_Ask(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Ask(&f, "MissionsFuncs", "SetNextMission", "(ss)", "Mission_StealMayorShip", "DownTown");
-	Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_TestMayorShip_MissionText1", 1);
+static byte ThCt_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const parked[][2] = { { "Parked.Police", "['SPOLI1', 'SPOLI2', 'SPOLI3']" }, { "Parked.Mercs", "['SMERC1']" },
 		{ "Parked.TownHall", "['SBANKER1', 'SPOLI2']" }, { "Parked.Bank", "['SBANKER1']" }, { "Parked.Temple", "['SPOLI3']" } };
-	for (int i = 0; i < 5; i++) {
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", parked[i][0], parked[i][1]);
+	(void)a;
+	(void)out;
+	if (!Mode_Target("")) {
+		return 0;
 	}
-	Sf_Later(&f, Sf_Int(&f, 2), CTG("CGCalls"), Sf_Build(&f, "()"), NULL);
-	return Sf_None(&f);
+	SaveVars_Delete("CatchTrurlMissionData");
+	if (!Mode_WayPoint() || !LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_StealMayorShip", "DownTown") ||
+		!Mode_MMDesc("Mission_TestMayorShip_MissionText1", 1L)) {
+		return 0;
+	}
+	for (int i = 0; i < 5; i++) {
+		SaveVar_Set(parked[i][0], parked[i][1]);
+	}
+	return Mode_Later(2.0, CT, "CGCalls", NULL, 0, NULL);
 }
 
 /* CGCalls(): the crazy gambler's call after the first crazy deals */
-static PyObject *CatchTrurl_CGCalls(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	if (Sf_Compare(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "SuperDeal.Library"), "!=", Sf_Str(&f, "SuperDeal_Twelfth")) <= 0) {
-		return Sf_None(&f);
-	}
-	PyObject *num = Sf_Ask(&f, "MissionsFuncs", "GetNumCrazyDealCompleted", "()");
+static byte ThCt_CGCalls(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const msgs[] = { "Mission_GetTrurl_RemoteMessage1", "Mission_GetTrurl_RemoteMessage2", "Mission_GetTrurl_RemoteMessage3" };
+	nativeVal_t lib = { 0 }, num = { 0 };
+	(void)a;
+	(void)out;
+	Mode_SaveVar("SuperDeal.Library", &lib);
+	byte twelfth = LvN_EqS(&lib, "SuperDeal_Twelfth");
+	Native_Free(&lib);
+	if (twelfth) {
+		return 1;
+	}
+	if (!LV_CALL("MissionsFuncs", "GetNumCrazyDealCompleted", &num, "")) {
+		return 0;
+	}
+	byte ok = 1;
 	for (int i = 0; i < 3; i++) {
-		int c = Sf_EqI(&f, num, i);
-		if (c > 0) {
-			Sf_Ask(&f, "Speech", "AddRemoteCom", "(ss)", msgs[i], "CrazyGambler");
-		}
-		if (c != 0) {
+		int c = Mode_CmpI(&num, "==", i);
+		if (c) {
+			ok = c > 0 && LvN_Com(msgs[i], "CrazyGambler", NULL, NULL, NULL);
 			break;
 		}
 	}
-	return Sf_None(&f);
+	Native_Free(&num);
+	return ok;
 }
+
+LV_FN(CatchTrurl, InitStatus, 1, ThCt_InitStatus)
+LV_FN(CatchTrurl, Init, 1, ThCt_Init)
+LV_FN(CatchTrurl, CreateTrurl, 1, ThCt_CreateTrurl)
+LV_FN(CatchTrurl, OnCatchTrurl, 4, ThCt_OnCatchTrurl)
+LV_FN(CatchTrurl, OnCatchTrurlAgain, 4, ThCt_OnCatchTrurlAgain)
+LV_FN(CatchTrurl, FunctionaryMissionSpeech, 4, ThCt_FunctionaryMissionSpeech)
+LV_FN(CatchTrurl, SetCallbackFuncs, 1, ThCt_SetCallbackFuncs)
+LV_FN(CatchTrurl, SpawnMap, 2, ThCt_SpawnMap)
+LV_FN(CatchTrurl, CreateMap, 2, ThCt_CreateMap)
+LV_FN(CatchTrurl, TakeMapPhoto, 1, ThCt_TakeMapPhoto)
+LV_FN(CatchTrurl, KillFunctionaries, 0, ThCt_KillFunctionaries)
+LV_FN(CatchTrurl, CatchTrurlAgain, 0, ThCt_CatchTrurlAgain)
+LV_FN(CatchTrurl, SetNextMission, 0, ThCt_SetNextMission)
+LV_FN(CatchTrurl, CGCalls, 0, ThCt_CGCalls)
 
 PyMethodDef g_TownhallCatchTrurlMethods[] = {
 	{ "InitStatus", CatchTrurl_InitStatus, METH_VARARGS, NULL },
@@ -915,179 +1071,207 @@ PyMethodDef g_TownhallCatchTrurlMethods[] = {
 
 /* ---- Mission_SheriffMayor ---- */
 
-#define SMG(name) Sf_Global(&f, SM, name)
-
 /* InitStatus(LevelPath): the police boss and the mayor of the mission */
-static PyObject *SheriffMayor_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Lv_MissionChar(&f, "PoliceBoss_SheriffMayor", SM, "CreatePoliceBoss");
-	Lv_MissionChar(&f, "Mayor_SheriffMayor", SM, "CreateMayor");
-	return Sf_None(&f);
+static byte ThSm_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return LvN_MissionChar("PoliceBoss_SheriffMayor", SM, "CreatePoliceBoss") && LvN_MissionChar("Mayor_SheriffMayor", SM, "CreateMayor");
 }
 
 /* CreateMayor(e): the mayor stays */
-static PyObject *SheriffMayor_CreateMayor(PyObject *self, PyObject *args) {
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
-	}
-	Lv_Stay(&f, e, 6, Sf_Str(&f, ""));
-	return Sf_None(&f);
+static byte ThSm_CreateMayor(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Th_Stay6(&a[0]);
 }
 
 /* CreatePoliceBoss(e): the police boss stays and talks */
-static PyObject *SheriffMayor_CreatePoliceBoss(PyObject *self, PyObject *args) {
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
-	}
-	Sf_SetAttrS(&f, e, "UseFunc", "Mission_SheriffMayor.PoliceBossMissionSpeech");
-	Lv_Stay(&f, e, 6, Sf_Str(&f, ""));
-	return Sf_None(&f);
+static byte ThSm_CreatePoliceBoss(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return LvN_SetS(&a[0], "UseFunc", "Mission_SheriffMayor.PoliceBossMissionSpeech") && Th_Stay6(&a[0]);
 }
 
-/* `e and e.LLogicIdle == 0 and e.LLogicState == 6`: the value of the and (borrowed, kept) */
-static PyObject *Sm_Ready(scriptFrame_t *f, PyObject *e) {
-	if (Sf_True(f, e) <= 0) {
-		return f->failed ? NULL : e;
-	}
-	int idle = Sf_EqI(f, Sf_Attr(f, e, "LLogicIdle"), 0);
-	if (idle <= 0) {
-		return idle < 0 ? NULL : Sf_Int(f, 0);
-	}
-	int st = Sf_EqI(f, Sf_Attr(f, e, "LLogicState"), 6);
-	return st < 0 ? NULL : Sf_Int(f, st);
+/* e.var == i: 1, 0, -1 with the error */
+static int Th_VarIs(const nativeVal_t *e, const char *var, long i) {
+	nativeVal_t v = { 0 };
+	Native_SetNone(&v);
+	int r = Mode_VObj(e, var, &v) ? Mode_CmpI(&v, "==", i) : -1;
+	Native_Free(&v);
+	return r;
 }
 
-/* ReadyToTalk(e): the character idles in place */
-static PyObject *SheriffMayor_ReadyToTalk(PyObject *self, PyObject *args) {
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
+/* ReadyToTalk(e): `e and e.LLogicIdle == 0 and e.LLogicState == 6`, the value of the and */
+static byte ThSm_ReadyToTalk(const nativeVal_t *a, nativeVal_t *out) {
+	if (!Native_True(&a[0])) {
+		Native_Copy(out, &a[0]);
+		return 1;
 	}
-	return Sf_Return(&f, Sm_Ready(&f, e));
+	int r = Th_VarIs(&a[0], "LLogicIdle", 0);
+	if (r > 0) {
+		r = Th_VarIs(&a[0], "LLogicState", 6);
+	}
+	if (r < 0) {
+		return 0;
+	}
+	Native_SetInt(out, r);
+	return 1;
 }
 
 /* Blablibla(EntityName="Mayor_SheriffMayor"): the police boss and the mayor talk in turns while both idle */
-static PyObject *SheriffMayor_Blablibla(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "EntityName", NULL };
-	PyObject *name = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &name)) {
-		return NULL;
+static byte ThSm_BlabliblaN(const nativeVal_t *name) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *sheriff = Mode_V(&t), *mayor = Mode_V(&t), *me = Mode_V(&t), *doit = Mode_V(&t), *act = Mode_V(&t);
+	nativeVal_t *sl = Mode_V(&t), *anim = Mode_V(&t), *next = Mode_V(&t);
+	if (!LvN_Entity("PoliceBoss_SheriffMayor", sheriff) || !LvN_Entity("Mayor_SheriffMayor", mayor) || !Mode_EntityH(name, me) ||
+		!LV_OWN(SM, "ReadyToTalk", doit, "v", sheriff)) {
+		return Mode_Done(&t, 0);
 	}
-	name = name ? Sf_Ref(&f, name) : Sf_Str(&f, "Mayor_SheriffMayor");
-	PyObject *sheriff = Sf_Entity(&f, Sf_Str(&f, "PoliceBoss_SheriffMayor"));
-	PyObject *mayor = Sf_Entity(&f, Sf_Str(&f, "Mayor_SheriffMayor"));
-	PyObject *me = Sf_Entity(&f, name);
-	PyObject *doit = Sf_Own(&f, SM, "ReadyToTalk", "(O)", sheriff);
-	if (Sf_True(&f, doit) > 0) {
-		doit = Sf_Own(&f, SM, "ReadyToTalk", "(O)", mayor);
+	if (Native_True(doit)) {
+		Native_Free(doit);
+		if (!LV_OWN(SM, "ReadyToTalk", doit, "v", mayor)) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	if (Sf_True(&f, doit) > 0) {
-		int relax = Sf_EqS(&f, Sf_Slice(&f, Sf_Attr(&f, me, "Action"), 0, 5), "Relax");
-		doit = relax < 0 ? NULL : Sf_Int(&f, relax);
+	if (Native_True(doit)) {
+		/* doit = me.Action[:5] == "Relax" */
+		if (!Mode_VGet(me, "Action", act) || !Native_Slice(act, 0, 5, sl)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_Free(doit);
+		Native_SetInt(doit, LvN_EqS(sl, "Relax"));
 	}
-	if (Sf_True(&f, doit) > 0) {
-		Sf_SetAttr(&f, me, "Action", Th_TalkAnim(&f));
+	if (Native_True(doit)) {
+		Th_TalkAnim(anim);
+		if (!Mode_VSet(me, "Action", anim)) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	int notMayor = Sf_Compare(&f, name, "!=", Sf_Str(&f, "Mayor_SheriffMayor"));
-	int other = notMayor < 0 ? -1 : Sf_Compare(&f, doit, "!=", Sf_Int(&f, notMayor));
-	if (other >= 0) {
-		Sf_Later(&f, Sf_Float(&f, 2.0), SMG("Blablibla"), Sf_Build(&f, "(s)", other ? "PoliceBoss_SheriffMayor" : "Mayor_SheriffMayor"), NULL);
+	/* the other one talks next */
+	int notMayor = Th_Cmp(name, Mode_S(&t, "Mayor_SheriffMayor"));
+	int other = notMayor == 2 ? 2 : Th_Cmp(doit, Mode_I(&t, notMayor != 0));
+	if (other == 2) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	LvN_Str(next, other ? "PoliceBoss_SheriffMayor" : "Mayor_SheriffMayor");
+	return Mode_Done(&t, Mode_Later(2.0, SM, "Blablibla", next, 1, NULL));
+}
+
+TH_KWFN(SheriffMayor_Blablibla, "EntityName", "Mayor_SheriffMayor", ThSm_BlabliblaN)
+
+/* Speech.SpeechRoutines["PoliceBoss"](usr, ch, opt, full) (OBJLIB 5: the table of Speech as the objects it holds) */
+static byte Sm_Routine(const nativeVal_t *a) {
+	PyObject *routines = Script_Attr("Speech", "SpeechRoutines");
+	PyObject *k = routines ? PyString_FromString("PoliceBoss") : NULL;
+	PyObject *fn = k ? PyObject_GetItem(routines, k) : NULL;
+	byte ok = fn && Native_Call(fn, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
+	Py_XDECREF(fn);
+	Py_XDECREF(k);
+	Py_XDECREF(routines);
+	return ok;
 }
 
 /* PoliceBossMissionSpeech(UsrName, CharName, optId, FullOption): the police boss tells his clues to the mayor, or
  * sells them to Dtritus (OnPay); after that his usual talk */
-static PyObject *SheriffMayor_PoliceBossMissionSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+static byte ThSm_PoliceBossMissionSpeech(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t pb = { 0 };
+	(void)out;
+	if (!LvN_Speakers(&a[0], &a[1])) {
+		return 0;
 	}
-	Lv_Speakers(&f, usr, ch);
-	int done = Sf_EqI(&f, Sf_Attr(&f, Sf_Entity(&f, Sf_Str(&f, "PoliceBoss_SheriffMayor")), "ArrowCanMission"), 0);
-	if (done > 0) {
-		int talked = Sf_True(&f, SMG("alreadyTalked"));
-		if (talked == 0) {
-			PyObject *fn = Sf_GetItem(&f, Sf_Mod(&f, "Speech", "SpeechRoutines"), Sf_Str(&f, "PoliceBoss"));
-			Sf_Call(&f, fn, "(OOOO)", usr, ch, opt, full);
-		} else if (talked > 0) {
-			int mayor = Th_UsrIs(&f, "Mayor");
-			if (mayor > 0) {
-				Th_Spch(&f, "Mission_Get1stClue_PoliceBoss_InitMsg1", "Mission_Get1stClue_PoliceBoss_InitAns1");
-			} else if (mayor == 0) {
-				Th_Spch(&f, "Mission_GetInfoClues_PoliceBoss_InitMsg3", "Mission_GetInfoClues_PoliceBoss_InitAns3");
-			}
+	Native_SetNone(&pb);
+	int done = LvN_Entity("PoliceBoss_SheriffMayor", &pb) ? Th_VarIs(&pb, "ArrowCanMission", 0) : -1;
+	Native_Free(&pb);
+	if (done < 0) {
+		return 0;
+	}
+	if (done) {
+		int talked = LvN_GTrue(SM, "alreadyTalked");
+		if (talked <= 0) {
+			return talked == 0 && Sm_Routine(a);
 		}
-		return Sf_None(&f);
-	}
-	int mayor = done == 0 ? Th_UsrIs(&f, "Mayor") : -1;
-	if (mayor > 0) {
-		Sf_Ask(&f, "Scrap", "SetLockAlarm", "(i)", 1);
-		Lv_OnEnd(&f, SM, "SetNextMission", NULL);
-		Th_Spch(&f, "Mission_GetInfoClues_PoliceBoss_InitMsg2", "Mission_GetInfoClues_PoliceBoss_InitAns2");
-	} else if (mayor == 0) {
-		int rich = Sf_Compare(&f, Sf_Ask(&f, "Scrap", "GetMoney", "()"), ">=", SMG("MoneyReward"));
-		if (rich > 0) {
-			Sf_Ask(&f, "Scrap", "SetLockAlarm", "(i)", 1);
-			Lv_OnEnd(&f, SM, "OnPay", Sf_Build(&f, "(O)", ch));
-			Th_Spch(&f, "Mission_GetInfoClues_PoliceBoss_InitMsg1", "Mission_GetInfoClues_PoliceBoss_InitAns1");
-		} else if (rich == 0) {
-			Th_Spch(&f, "Mission_GetInfoClues_PoliceBoss_InitMsg3", "Mission_GetInfoClues_PoliceBoss_InitAns3");
+		int mayor = Mode_UsrIs("Mayor");
+		if (mayor < 0) {
+			return 0;
 		}
+		return mayor ? Mode_Spch("Mission_Get1stClue_PoliceBoss_InitMsg1", "Mission_Get1stClue_PoliceBoss_InitAns1", NULL) :
+			Mode_Spch("Mission_GetInfoClues_PoliceBoss_InitMsg3", "Mission_GetInfoClues_PoliceBoss_InitAns3", NULL);
 	}
-	return Sf_None(&f);
+	int mayor = Mode_UsrIs("Mayor");
+	if (mayor < 0) {
+		return 0;
+	}
+	if (mayor) {
+		return Mode_SetLockAlarmI(1) && LvN_OnEnd(SM, "SetNextMission", NULL) &&
+			Mode_Spch("Mission_GetInfoClues_PoliceBoss_InitMsg2", "Mission_GetInfoClues_PoliceBoss_InitAns2", NULL);
+	}
+	nativeVal_t money = { 0 }, reward = { 0 }, params = { 0 };
+	Native_SetInt(&money, Mode_GetMoney());
+	if (!Mode_G(SM, "MoneyReward", &reward)) {
+		Native_Free(&reward);
+		return 0;
+	}
+	int rich = Th_Cmp(&money, &reward);
+	Native_Free(&reward);
+	if (rich == 2) {
+		return 0;
+	}
+	if (rich < 0) {
+		return Mode_Spch("Mission_GetInfoClues_PoliceBoss_InitMsg3", "Mission_GetInfoClues_PoliceBoss_InitAns3", NULL);
+	}
+	if (!Mode_SetLockAlarmI(1)) {
+		return 0;
+	}
+	Native_SetEmpty(&params, NV_TUPLE);
+	Native_Copy(Native_Append(&params), &a[1]);
+	byte ok = LvN_OnEnd(SM, "OnPay", &params);
+	Native_Free(&params);
+	return ok && Mode_Spch("Mission_GetInfoClues_PoliceBoss_InitMsg1", "Mission_GetInfoClues_PoliceBoss_InitAns1", NULL);
 }
 
 /* OnPay(CharName): the clues paid; the police boss carries the money */
-static PyObject *SheriffMayor_OnPay(PyObject *self, PyObject *args) {
-	PyObject *ch;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &ch)) {
-		return NULL;
+static byte ThSm_OnPay(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *money = Mode_V(&t), *reward = Mode_V(&t), *rest = Mode_V(&t), *pb = Mode_V(&t);
+	(void)out;
+	Native_SetInt(money, Mode_GetMoney());
+	if (!Mode_G(SM, "MoneyReward", reward) || !Native_Arith('-', money, reward, rest) || !Mode_SetMoney(rest) ||
+		!LV_CALL("SaveGame", "SaveMoney", NULL, "") || !Mode_EntityH(&a[0], pb)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Ask(&f, "Scrap", "SetMoney", "(O)", Sf_Op(&f, Sf_Ask(&f, "Scrap", "GetMoney", "()"), '-', SMG("MoneyReward")));
-	Sf_Ask(&f, "SaveGame", "SaveMoney", "()");
-	PyObject *pb = Sf_Entity(&f, ch);
-	Sf_SetAttr(&f, pb, "Money", SMG("MoneyReward"));
-	Sf_SetAttrI(&f, pb, "MoneyReward", 1000);
-	Sf_Own(&f, SM, "SetNextMission", "()");
-	return Sf_None(&f);
+	Native_Free(reward);
+	return Mode_Done(&t, Mode_G(SM, "MoneyReward", reward) && Mode_VSet(pb, "Money", reward) && LvN_SetI(pb, "MoneyReward", 1000) &&
+		LV_OWN(SM, "SetNextMission", NULL, ""));
 }
 
 /* SetNextMission(): the police boss goes, the mayor comes back, the mission of NextMissionData */
-static PyObject *SheriffMayor_SetNextMission(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte ThSm_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t data = { 0 };
+	(void)a;
+	(void)out;
+	if (!LvN_PutI(SM, "alreadyTalked", 1) || !Mode_SetLockAlarmI(0)) {
+		return 0;
 	}
-	Sf_SetGlobal(&f, SM, "alreadyTalked", Sf_Int(&f, 1));
-	Sf_Ask(&f, "Scrap", "SetLockAlarm", "(i)", 0);
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "PoliceBossAtPolice", "0");
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "MayorAtTownHall", "1");
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Py_None);
-	Sf_Ask(&f, "__builtin__", "apply", "(OO)", Sf_Mod(&f, "MissionsFuncs", "SetNextMission"), SMG("NextMissionData"));
-	Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_Get1stClue_MissionText1", 1);
-	return Sf_None(&f);
+	SaveVar_Set("PoliceBossAtPolice", "0");
+	SaveVar_Set("MayorAtTownHall", "1");
+	if (!Mode_Target(NULL)) {
+		return 0;
+	}
+	/* apply(MissionsFuncs.SetNextMission, NextMissionData) through __builtin__.apply (OBJLIB 3) */
+	PyObject *fn = Script_Attr("MissionsFuncs", "SetNextMission");
+	byte ok = fn && Mode_G(SM, "NextMissionData", &data) && Native_CallMod("__builtin__", "apply", NULL, "Ov", fn, &data);
+	Py_XDECREF(fn);
+	if (fn) {
+		Native_Free(&data);
+	}
+	return ok && Mode_MMDesc("Mission_Get1stClue_MissionText1", 1L);
 }
+
+LV_FN(SheriffMayor, InitStatus, 1, ThSm_InitStatus)
+LV_FN(SheriffMayor, CreateMayor, 1, ThSm_CreateMayor)
+LV_FN(SheriffMayor, CreatePoliceBoss, 1, ThSm_CreatePoliceBoss)
+LV_FN(SheriffMayor, ReadyToTalk, 1, ThSm_ReadyToTalk)
+LV_FN(SheriffMayor, PoliceBossMissionSpeech, 4, ThSm_PoliceBossMissionSpeech)
+LV_FN(SheriffMayor, OnPay, 1, ThSm_OnPay)
+LV_FN(SheriffMayor, SetNextMission, 0, ThSm_SetNextMission)
 
 PyMethodDef g_TownhallSheriffMayorMethods[] = {
 	{ "InitStatus", SheriffMayor_InitStatus, METH_VARARGS, NULL },
@@ -1103,394 +1287,474 @@ PyMethodDef g_TownhallSheriffMayorMethods[] = {
 
 /* ---- Mission_TalkToMayor ---- */
 
-#define TMG(name) Sf_Global(&f, TM, name)
-#define TMGF(name) Sf_Global(f, TM, name)
-
 /* InitStatus(LevelPath): the mayor's AI after the NPCs are browsed, Porkins the bishop and Corruptus */
-static PyObject *TalkToMayor_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Sf_Method(&f, Sf_Mod(&f, "CharsNPC", "AfterBrowseNPC"), "append", "(O)", TMG("AfterBrowseNPC"));
-	Lv_MissionChar(&f, "Bishop_Porkins", TM, "CreateBishopPorkins");
-	Lv_MissionChar(&f, "Functionary_Tamayo", TM, "CreateFunctionaryTamayo");
-	return Sf_None(&f);
+static byte ThTm_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return LvN_ModAppendG("CharsNPC", "AfterBrowseNPC", TM, "AfterBrowseNPC") && LvN_MissionChar("Bishop_Porkins", TM, "CreateBishopPorkins") &&
+		LvN_MissionChar("Functionary_Tamayo", TM, "CreateFunctionaryTamayo");
 }
 
 /* AfterBrowseNPC(): the mayor stays (CreateMayorInit), his gear stays too */
-static PyObject *TalkToMayor_AfterBrowseNPC(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte ThTm_AfterBrowseNPC(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t key = { 0 }, stay = { 0 };
+	(void)a;
+	(void)out;
+	if (!Mode_Import("CharsNPC") || !LvN_Callback("Mayor_Default", TM, "CreateMayorInit")) {
+		return 0;
 	}
-	Sf_Import(&f, "CharsNPC");
-	Lv_Callback(&f, "Mayor_Default", TM, "CreateMayorInit");
-	Sf_SetAttrS(&f, Sf_GetItem(&f, Sf_Mod(&f, "CharsNPC", "CharRes"), Sf_Str(&f, "Gear_Mayor")), "ExtraInfo", "STAY");
-	return Sf_None(&f);
+	/* CharsNPC.CharRes["Gear_Mayor"].ExtraInfo = "STAY" (OBJLIB 5) */
+	LvN_Str(&key, "Gear_Mayor");
+	PyObject *gear = Mode_CharRes(&key);
+	Native_Free(&key);
+	LvN_Str(&stay, "STAY");
+	byte ok = gear && Mode_HSet(gear, "ExtraInfo", &stay);
+	Native_Free(&stay);
+	Py_XDECREF(gear);
+	return ok;
 }
 
 /* CreateMayorInit(e): the mayor stays and talks (MayorSpeech) */
-static PyObject *TalkToMayor_CreateMayorInit(PyObject *self, PyObject *args) {
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
+static byte ThTm_CreateMayorInit(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Th_MayorInit(&a[0], "Mission_TalkToMayor.MayorSpeech");
+}
+
+/* e.Descriptor = the name text; e.Money = money; e.MoneyReward = money / slaps (the global money read for each); the
+ * global nameVar = e.Name */
+static byte Tm_Rich(const nativeVal_t *e, const char *key, const char *money, long slaps, const char *nameVar) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *desc = Mode_V(&t), *m = Mode_V(&t), *m2 = Mode_V(&t), *r = Mode_V(&t);
+	Mode_Lang(key, desc);
+	if (!Mode_VSet(e, "Descriptor", desc) || !Mode_G(TM, money, m) || !Mode_VSet(e, "Money", m) || !Mode_G(TM, money, m2) ||
+		!Mode_Arith('/', m2, Mode_I(&t, slaps), r) || !Mode_VSet(e, "MoneyReward", r)) {
+		return Mode_Done(&t, 0);
 	}
-	Lv_Stay(&f, e, 6, Sf_Str(&f, ""));
-	Sf_SetAttrS(&f, e, "UseFunc", "Mission_TalkToMayor.MayorSpeech");
-	return Sf_None(&f);
+	if (!nameVar) {
+		return Mode_Done(&t, 1);
+	}
+	Native_Free(desc);
+	return Mode_Done(&t, Mode_VGet(e, "Name", desc) && Mode_Put(TM, nameVar, NULL, desc));
 }
 
 /* CreateBishopPorkins(e): Porkins stays with his money (40 slaps empty him) */
-static PyObject *TalkToMayor_CreateBishopPorkins(PyObject *self, PyObject *args) {
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
-	}
-	Lv_Stay(&f, e, 6, Sf_Str(&f, ""));
-	Sf_SetAttr(&f, e, "Descriptor", Sf_Lang(&f, Sf_Str(&f, "CharName_Porkins")));
-	Sf_SetAttr(&f, e, "Money", TMG("porkinsMoney"));
-	Sf_SetAttr(&f, e, "MoneyReward", Sf_OpI(&f, TMG("porkinsMoney"), '/', 40));
-	Sf_SetGlobal(&f, TM, "porkinsName", Sf_Attr(&f, e, "Name"));
-	return Sf_None(&f);
+static byte ThTm_CreateBishopPorkins(const nativeVal_t *a, nativeVal_t *out) {
+	(void)out;
+	return Th_Stay6(&a[0]) && Tm_Rich(&a[0], "CharName_Porkins", "porkinsMoney", 40, "porkinsName");
+}
+
+/* the global var of the mission = e.attr */
+static byte Tm_Keep(const nativeVal_t *e, const char *attr, const char *var) {
+	nativeVal_t v = { 0 };
+	Native_SetNone(&v);
+	byte ok = Mode_VGet(e, attr, &v) && Mode_Put(TM, var, NULL, &v);
+	Native_Free(&v);
+	return ok;
 }
 
 /* CreateFunctionaryTamayo(e): Corruptus walks around with his money (10 slaps empty him) */
-static PyObject *TalkToMayor_CreateFunctionaryTamayo(PyObject *self, PyObject *args) {
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
-	}
-	Sf_SetAttr(&f, e, "LLogicProbTalkWhenWalking", Sf_Float(&f, 1.0));
-	Sf_SetAttrI(&f, e, "LLogicFastEscape", 0);
-	Sf_SetAttrI(&f, e, "LLogicStopInRelax", 0);
-	Sf_SetAttrI(&f, e, "LLogicDefaultState", 0);
-	Sf_SetAttrS(&f, e, "LLogicDefaultTarget", "");
-	Sf_SetAttrI(&f, e, "LLogicState", 0);
-	Sf_SetAttrS(&f, e, "LLogicTarget", "");
-	Sf_SetAttr(&f, e, "Descriptor", Sf_Lang(&f, Sf_Str(&f, "CharName_Corruptus")));
-	Sf_SetAttr(&f, e, "Money", TMG("tamayoMoney"));
-	Sf_SetAttr(&f, e, "MoneyReward", Sf_OpI(&f, TMG("tamayoMoney"), '/', 10));
-	Sf_SetGlobal(&f, TM, "tamayoStartOrigin", Sf_Attr(&f, e, "LLogicOrigin"));
-	Sf_SetGlobal(&f, TM, "functionaryTamayoName", Sf_Attr(&f, e, "Name"));
-	if (Lv_SaveIs(&f, "MissionState", "StealFunctionary") > 0) {
-		Sf_SetAttrS(&f, e, "UseFunc", "Mission_TalkToMayor.FunctionarySpeech");
-	}
-	return Sf_None(&f);
+static byte ThTm_CreateFunctionaryTamayo(const nativeVal_t *a, nativeVal_t *out) {
+	const nativeVal_t *e = &a[0];
+	(void)out;
+	return LvN_SetF(e, "LLogicProbTalkWhenWalking", 1.0) && LvN_SetI(e, "LLogicFastEscape", 0) && LvN_SetI(e, "LLogicStopInRelax", 0) &&
+		LvN_SetI(e, "LLogicDefaultState", 0) && LvN_SetS(e, "LLogicDefaultTarget", "") && LvN_SetI(e, "LLogicState", 0) &&
+		LvN_SetS(e, "LLogicTarget", "") && Tm_Rich(e, "CharName_Corruptus", "tamayoMoney", 10, NULL) &&
+		Tm_Keep(e, "LLogicOrigin", "tamayoStartOrigin") && Tm_Keep(e, "Name", "functionaryTamayoName") &&
+		(!LvN_SaveIs("MissionState", "StealFunctionary") || LvN_SetS(e, "UseFunc", "Mission_TalkToMayor.FunctionarySpeech"));
 }
 
 /* Init(LevelPath): Rusty's head; the mayor is the target, or the stealing goes on */
-static PyObject *TalkToMayor_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte ThTm_Init(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t state = { 0 }, r = { 0 };
+	(void)a;
+	(void)out;
+	if (!Mode_Import("string")) {
+		return 0;
 	}
-	Sf_Import(&f, "string");
-	Sf_Ask(&f, "SScorer", "AddModel", "(isssii)", 0, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3, 25);
-	PyObject *state = Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "MissionState");
-	if (Sf_Compare(&f, Sf_Ask(&f, "string", "find", "(Os)", state, "TalkToMayor"), "!=", Sf_Int(&f, -1)) > 0) {
-		Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "Mayor_Default");
-	} else if (Sf_EqS(&f, state, "StealFunctionary") > 0) {
-		Sf_Own(&f, TM, "StealFunctionary", "()");
+	/* SScorer.AddModel(0, "Rusty", "Models/Heads/HeadRusty/HeadRusty", "", 3, 25) */
+	cScorer *sc = Scorer_Get(0);
+	if (sc) {
+		cScorer_AddModel(sc, "Rusty", "Models/Heads/HeadRusty/HeadRusty", NULL, 3, 25.0f, 0.0f, 0);
 	}
-	return Sf_None(&f);
+	Mode_SaveVar("MissionState", &state);
+	Native_SetNone(&r);
+	/* OBJLIB 3: string.find by name */
+	int talk = LV_CALL("string", "find", &r, "vs", &state, "TalkToMayor") ? Mode_CmpI(&r, "!=", -1) : -1;
+	Native_Free(&r);
+	byte ok = talk >= 0;
+	if (talk > 0) {
+		ok = Mode_Target("Mayor_Default");
+	} else if (ok && LvN_EqS(&state, "StealFunctionary")) {
+		ok = LV_OWN(TM, "StealFunctionary", NULL, "");
+	}
+	Native_Free(&state);
+	return ok;
 }
 
 /* MayorSpeech(UsrName, CharName, optId, FullOption): the mayor's talk to Dtritus for the state of the mission */
-static PyObject *TalkToMayor_MayorSpeech(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+static byte ThTm_MayorSpeech(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t state = { 0 };
+	(void)out;
+	if (!LvN_Speakers(&a[0], &a[1])) {
+		return 0;
 	}
-	Lv_Speakers(&f, usr, ch);
-	int dt = Th_UsrIs(&f, "Dtritus");
-	if (dt == 0) {
-		Th_Spch(&f, "Mission_TalkToMayor_Mayor_InitMsg2", "Mission_TalkToMayor_Mayor_InitAns2");
-	}
+	int dt = Mode_UsrIs("Dtritus");
 	if (dt <= 0) {
-		return Sf_None(&f);
+		return dt == 0 && Mode_Spch("Mission_TalkToMayor_Mayor_InitMsg2", "Mission_TalkToMayor_Mayor_InitAns2", NULL);
 	}
-	PyObject *state = Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "MissionState");
-	int none = Sf_True(&f, state);
-	if (none == 0) {
-		Th_Spch(&f, "Mission_Campaign2_Mayor_InitMsg1", "Mission_Campaign2_Mayor_InitAns1");
-	} else if (none < 0) {
-	} else if (Sf_EqS(&f, state, "TalkToMayor1") > 0) {
-		if (Sf_EqS(&f, opt, "Talk") > 0) {
-			Th_Spch(&f, "Mission_TalkToMayor_Mayor_InitMsg1", "Mission_TalkToMayor_Mayor_InitAns1");
-			Sf_Ask(&f, "Speech", "StdAnsLst", "([s])", "Mission_TalkToMayor_Mayor_1");
+	Mode_SaveVar("MissionState", &state);
+	byte ok = 1;
+	if (!Native_True(&state)) {
+		ok = Mode_Spch("Mission_Campaign2_Mayor_InitMsg1", "Mission_Campaign2_Mayor_InitAns1", NULL);
+	} else if (LvN_EqS(&state, "TalkToMayor1")) {
+		if (LvN_EqS(&a[2], "Talk")) {
+			const char *ans = "Mission_TalkToMayor_Mayor_1";
+			ok = Mode_Spch("Mission_TalkToMayor_Mayor_InitMsg1", "Mission_TalkToMayor_Mayor_InitAns1", NULL);
+			ok = ok && Mode_AnsLst(&ans, 1);
 		} else {
-			Sf_Ask(&f, "Speech", "RestoreState", "(O)", ch);
-			Th_Spch(&f, "Mission_TalkToMayor_Mayor_1Msg", "Mission_TalkToMayor_Mayor_1Ans");
-			Lv_OnEnd(&f, TM, "PreStealFunctionary", NULL);
+			ok = LV_CALL("Speech", "RestoreState", NULL, "v", &a[1]) &&
+				Mode_Spch("Mission_TalkToMayor_Mayor_1Msg", "Mission_TalkToMayor_Mayor_1Ans", NULL) &&
+				LvN_OnEnd(TM, "PreStealFunctionary", NULL);
 		}
-	} else if (Sf_EqS(&f, state, "StealFunctionary") > 0) {
-		Th_Spch(&f, "Mission_Campaign1_Mayor_InitMsg1", "Mission_Campaign1_Mayor_InitAns1");
-	} else if (Sf_EqS(&f, state, "TalkToMayor2") > 0) {
-		Th_Spch(&f, "Mission_TalkToMayor2_Mayor_InitMsg1", "Mission_TalkToMayor2_Mayor_InitAns1");
-		Lv_OnEnd(&f, TM, "SetNextMission", NULL);
+	} else if (LvN_EqS(&state, "StealFunctionary")) {
+		ok = Mode_Spch("Mission_Campaign1_Mayor_InitMsg1", "Mission_Campaign1_Mayor_InitAns1", NULL);
+	} else if (LvN_EqS(&state, "TalkToMayor2")) {
+		ok = Mode_Spch("Mission_TalkToMayor2_Mayor_InitMsg1", "Mission_TalkToMayor2_Mayor_InitAns1", NULL) &&
+			LvN_OnEnd(TM, "SetNextMission", NULL);
 	}
-	return Sf_None(&f);
+	Native_Free(&state);
+	return ok;
 }
 
 /* BishopSpeech(...), FunctionarySpeech(...): the talks of Porkins and Corruptus */
-static PyObject *Tm_Speech(PyObject *args, const char *msg, const char *ans) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
-	}
-	Lv_Speakers(&f, usr, ch);
-	Th_Spch(&f, msg, ans);
-	return Sf_None(&f);
+static byte Tm_Speech(const nativeVal_t *a, const char *msg, const char *ans) {
+	return LvN_Speakers(&a[0], &a[1]) && Mode_Spch(msg, ans, NULL);
 }
 
-static PyObject *TalkToMayor_BishopSpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	return Tm_Speech(args, "Mission_Campaign1_Porkins_InitMsg1", "Mission_Campaign1_Porkins_InitAns1");
-}
+MODE_FN(TalkToMayor, BishopSpeech, 4, Tm_Speech(a, "Mission_Campaign1_Porkins_InitMsg1", "Mission_Campaign1_Porkins_InitAns1"))
+MODE_FN(TalkToMayor, FunctionarySpeech, 4, Tm_Speech(a, "Mission_Campaign_Functionary_InitMsg1", "Mission_Campaign_Functionary_InitAns1"))
 
-static PyObject *TalkToMayor_FunctionarySpeech(PyObject *self, PyObject *args) {
-	(void)self;
-	return Tm_Speech(args, "Mission_Campaign_Functionary_InitMsg1", "Mission_Campaign_Functionary_InitAns1");
+/* Scrap.GetEntity(<the global name of the mission>) as the handle value */
+static byte Tm_Ent(const char *var, nativeVal_t *out) {
+	nativeVal_t name = { 0 };
+	Native_SetNone(out);
+	byte ok = Mode_G(TM, var, &name) && Mode_EntityH(&name, out);
+	Native_Free(&name);
+	return ok;
 }
 
 /* StealFunctionary(): Porkins and Corruptus are the targets, the money bar, the money check */
-static PyObject *TalkToMayor_StealFunctionary(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte ThTm_StealFunctionary(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *m = Mode_V(&t), *list = Mode_V(&t);
+	(void)a;
+	(void)out;
+	if (!Tm_Ent("porkinsName", e) || (Native_True(e) && !LvN_SetS(e, "UseFunc", "Mission_TalkToMayor.BishopSpeech"))) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *e = Sf_Entity(&f, TMG("porkinsName"));
-	if (Sf_True(&f, e) > 0) {
-		Sf_SetAttrS(&f, e, "UseFunc", "Mission_TalkToMayor.BishopSpeech");
+	Native_Free(e);
+	if (!Tm_Ent("functionaryTamayoName", e) || (Native_True(e) && !(LvN_SetS(e, "UseFunc", "Mission_TalkToMayor.FunctionarySpeech") &&
+		Mode_G(TM, "tamayoMoney", m) && Mode_VSet(e, "Money", m)))) {
+		return Mode_Done(&t, 0);
 	}
-	e = Sf_Entity(&f, TMG("functionaryTamayoName"));
-	if (Sf_True(&f, e) > 0) {
-		Sf_SetAttrS(&f, e, "UseFunc", "Mission_TalkToMayor.FunctionarySpeech");
-		Sf_SetAttr(&f, e, "Money", TMG("tamayoMoney"));
+	Native_SetEmpty(list, NV_LIST);
+	if (!Mode_G(TM, "functionaryTamayoName", Native_Append(list)) || !Mode_G(TM, "porkinsName", Native_Append(list))) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Ask(&f, "MissionsFuncs", "SetMultipleMissionTargets", "([OO])", TMG("functionaryTamayoName"), TMG("porkinsName"));
-	Sf_Own(&f, TM, "CheckTamayoMoney", "()");
-	Sf_SetMod(&f, "Menu", "MissionScorerCall", TMG("MissionScorer"));
-	Sf_Ask(&f, "Menu", "DrawScorer", "(iO)", 0, Sf_Ask(&f, "SInput", "GetActionSet", "()"));
-	return Sf_None(&f);
+	return Mode_Done(&t, LV_CALL("MissionsFuncs", "SetMultipleMissionTargets", NULL, "v", list) && LV_OWN(TM, "CheckTamayoMoney", NULL, "") &&
+		LvN_ScorerCallG(TM, "MissionScorer") && LvN_Draw());
 }
 
 /* Corruptus low on money goes to Porkins and waits in front of him */
-static void Tm_GoToPorkins(scriptFrame_t *f, PyObject *e, PyObject *p) {
-	PyObject *dir = Sf_Ask(f, "SVec", "Rotate3D", "((ddd)O)", 0.0, 0.0, 1.0, Sf_Attr(f, p, "LLogicOriginAng"));
-	PyObject *dist = Sf_OpI(f, Sf_Op(f, Sf_Attr(f, p, "VRadius"), '+', Sf_Attr(f, e, "VRadius")), '+', 50);
-	Sf_SetAttr(f, e, "LLogicOrigin", Sf_Ask(f, "SVec", "Add", "(OO)", Sf_Attr(f, p, "LLogicOrigin"), Sf_Ask(f, "SVec", "Prod", "(OO)", dir, dist)));
-	Sf_SetAttr(f, e, "LLogicOriginAng", Sf_Ask(f, "SVec", "Rotate3D", "((ddd)O)", 0.0, 0.0, -1.0, dir));
-	Lv_Stay(f, e, 6, TMGF("porkinsName"));
-	Sf_SetGlobal(f, TM, "tamayoHasJustReceivedMoney", Sf_Int(f, 0));
+static byte Tm_GoToPorkins(const nativeVal_t *e, const nativeVal_t *p) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *z = Mode_V(&t), *oa = Mode_V(&t), *dir = Mode_V(&t), *pr = Mode_V(&t), *er = Mode_V(&t), *s = Mode_V(&t);
+	nativeVal_t *dist = Mode_V(&t), *po = Mode_V(&t), *prod = Mode_V(&t), *sum = Mode_V(&t), *mz = Mode_V(&t), *ang = Mode_V(&t);
+	nativeVal_t *pn = Mode_V(&t);
+	Native_SetVec(z, 0.0, 0.0, 1.0);
+	Native_SetVec(mz, 0.0, 0.0, -1.0);
+	return Mode_Done(&t, Mode_VGet(p, "LLogicOriginAng", oa) && Mode_Rotate(z, oa, dir) && Mode_VGet(p, "VRadius", pr) &&
+		Mode_VGet(e, "VRadius", er) && Native_Arith('+', pr, er, s) && Native_Arith('+', s, Mode_I(&t, 50), dist) &&
+		Mode_VGet(p, "LLogicOrigin", po) && Mode_VecProd(dir, dist, prod) && Mode_VecAdd(po, prod, sum) &&
+		Mode_VSet(e, "LLogicOrigin", sum) && Mode_Rotate(mz, dir, ang) && Mode_VSet(e, "LLogicOriginAng", ang) &&
+		Mode_G(TM, "porkinsName", pn) && LvN_Stay(e, 6, pn) && LvN_PutI(TM, "tamayoHasJustReceivedMoney", 0));
 }
 
 /* Corruptus in front of Porkins: they talk and Porkins fills Corruptus' money up to MAX_TAMAYO_MONEY */
-static void Tm_Refill(scriptFrame_t *f, PyObject *e, PyObject *p) {
-	if (Sf_Compare(f, Sf_Ask(f, "SVec", "ModSqr", "(O)", Sf_Ask(f, "SVec", "Sub", "(OO)", Sf_Attr(f, e, "Pos"), Sf_Attr(f, p, "Pos"))), "<=",
-		Sf_Int(f, 400 * 400)) <= 0) {
-		return;
+static byte Tm_Refill(const nativeVal_t *e, const nativeVal_t *p) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ep = Mode_V(&t), *pp = Mode_V(&t), *d = Mode_V(&t), *sq = Mode_V(&t), *mz = Mode_V(&t), *pa = Mode_V(&t);
+	nativeVal_t *bdir = Mode_V(&t), *tof = Mode_V(&t), *ang = Mode_V(&t), *anim = Mode_V(&t), *pm = Mode_V(&t);
+	if (!Mode_VGet(e, "Pos", ep) || !Mode_VGet(p, "Pos", pp) || !Mode_VecSub(ep, pp, d) || !Mode_VecModSqr(d, sq)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *bishopDir = Sf_Ask(f, "SVec", "Rotate3D", "((ddd)O)", 0.0, 0.0, -1.0, Sf_Attr(f, p, "Ang"));
-	PyObject *toFunc = Sf_Ask(f, "SVec", "Sub", "(OO)", Sf_Attr(f, e, "Pos"), Sf_Attr(f, p, "Pos"));
-	if (Sf_Compare(f, Sf_Ask(f, "SVec", "GetAngle", "(OO)", bishopDir, toFunc), "<=", Sf_Int(f, 30)) <= 0) {
-		return;
+	int close = Mode_CmpI(sq, "<=", 400 * 400);
+	if (close <= 0) {
+		return Mode_Done(&t, close == 0);
 	}
-	Sf_SetAttr(f, e, "Action", Th_TalkAnim(f));
-	Sf_SetAttr(f, p, "Action", Th_TalkAnim(f));
-	if (Sf_Compare(f, Sf_Attr(f, p, "Money"), ">", Sf_Int(f, 0)) > 0) {
-		Sf_Import(f, "Fx");
-		Sf_Ask(f, "Fx", "MoneyTransfer", "(OOi)", TMGF("porkinsName"), TMGF("functionaryTamayoName"), 1);
-		PyObject *gives = Sf_Op(f, TMGF("MAX_TAMAYO_MONEY"), '-', Sf_Attr(f, e, "Money"));
-		if (Sf_Compare(f, gives, ">", Sf_Attr(f, p, "Money")) > 0) {
-			gives = Sf_Attr(f, p, "Money");
+	Native_SetVec(mz, 0.0, 0.0, -1.0);
+	ep = Mode_V(&t);
+	pp = Mode_V(&t);
+	/* OBJLIB 7: SVec.GetAngle by name */
+	if (!Mode_VGet(p, "Ang", pa) || !Mode_Rotate(mz, pa, bdir) || !Mode_VGet(e, "Pos", ep) || !Mode_VGet(p, "Pos", pp) ||
+		!Mode_VecSub(ep, pp, tof) || !Native_CallMod("SVec", "GetAngle", ang, "vv", bdir, tof)) {
+		return Mode_Done(&t, 0);
+	}
+	int facing = Mode_CmpI(ang, "<=", 30);
+	if (facing <= 0) {
+		return Mode_Done(&t, facing == 0);
+	}
+	Th_TalkAnim(anim);
+	if (!Mode_VSet(e, "Action", anim)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(anim);
+	Th_TalkAnim(anim);
+	int rich = Mode_VSet(p, "Action", anim) && Mode_VGet(p, "Money", pm) ? Mode_CmpI(pm, ">", 0) : -1;
+	if (rich < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (rich) {
+		nativeVal_t *pn = Mode_V(&t), *fn = Mode_V(&t), *mx = Mode_V(&t), *em = Mode_V(&t), *gives = Mode_V(&t), *pm2 = Mode_V(&t);
+		nativeVal_t *em2 = Mode_V(&t), *sum = Mode_V(&t), *pm3 = Mode_V(&t), *rest = Mode_V(&t);
+		int more;
+		/* OBJLIB 3: Fx.MoneyTransfer by name */
+		if (!Mode_Import("Fx") || !Mode_G(TM, "porkinsName", pn) || !Mode_G(TM, "functionaryTamayoName", fn) ||
+			!LV_CALL("Fx", "MoneyTransfer", NULL, "vvi", pn, fn, 1L) || !Mode_G(TM, "MAX_TAMAYO_MONEY", mx) ||
+			!Mode_VGet(e, "Money", em) || !Native_Arith('-', mx, em, gives) || !Mode_VGet(p, "Money", pm2) ||
+			(more = Th_Cmp(gives, pm2)) == 2) {
+			return Mode_Done(&t, 0);
 		}
-		Sf_SetAttr(f, e, "Money", Sf_Op(f, Sf_Attr(f, e, "Money"), '+', gives));
-		Sf_SetAttr(f, p, "Money", Sf_Op(f, Sf_Attr(f, p, "Money"), '-', gives));
+		if (more > 0) {
+			Native_Free(gives);
+			if (!Mode_VGet(p, "Money", gives)) {
+				return Mode_Done(&t, 0);
+			}
+		}
+		if (!Mode_VGet(e, "Money", em2) || !Native_Arith('+', em2, gives, sum) || !Mode_VSet(e, "Money", sum) ||
+			!Mode_VGet(p, "Money", pm3) || !Native_Arith('-', pm3, gives, rest) || !Mode_VSet(p, "Money", rest)) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	Sf_SetGlobal(f, TM, "tamayoHasJustReceivedMoney", Sf_Int(f, 1));
-	Sf_Ask(f, "SAct", "GetClass", "(s)", "Functionary");
-	Sf_Ask(f, "SAct", "GetAction", "(O)", Sf_Attr(f, e, "Action"));
-	PyObject *time = Sf_Ask(f, "SAct", "GetAct", "(s)", "AnmTotalTime");
-	PyObject *at = Sf_Op(f, Sf_Op(f, Sf_Time(f), '+', time), '-', Sf_Float(f, 0.1));
-	Sf_Schedule(f, at, TMGF("RestoreTamayoState"), Sf_Build(f, "()"), NULL);
+	nativeVal_t *r = Mode_V(&t), *act = Mode_V(&t), *anm = Mode_V(&t), *now = Mode_V(&t), *s = Mode_V(&t), *at = Mode_V(&t);
+	const char *action;
+	/* SAct.GetClass, GetAction and GetAct through their seams */
+	if (!LvN_PutI(TM, "tamayoHasJustReceivedMoney", 1) || !LvN_GetClass("Functionary", r) || !Mode_VGet(e, "Action", act) ||
+		!Native_ArgStr(act, 1, &action) || !LvN_GetAction(action, r) || !LvN_GetAct("AnmTotalTime", anm)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetFloat(now, Mode_Time());
+	nativeVal_t *dt = Mode_V(&t);
+	Native_SetFloat(dt, 0.1);
+	if (!Native_Arith('+', now, anm, s) || !Native_Arith('-', s, dt, at)) {
+		return Mode_Done(&t, 0);
+	}
+	/* OBJLIB 4: the function of the module (a mission may replace it) */
+	PyObject *f = Mode_GlobalPy(TM, "RestoreTamayoState");
+	byte ok = f && Mode_Schedule(at, f, NULL, 0, NULL);
+	Py_XDECREF(f);
+	return Mode_Done(&t, ok);
 }
 
 /* CheckTamayoMoney(): every second: Corruptus' money on the bar; low on money he goes to Porkins for more */
-static PyObject *TalkToMayor_CheckTamayoMoney(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte ThTm_CheckTamayoMoney(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *m = Mode_V(&t), *tm = Mode_V(&t), *fm = Mode_V(&t), *p = Mode_V(&t), *min = Mode_V(&t);
+	nativeVal_t *st = Mode_V(&t);
+	(void)a;
+	(void)out;
+	if (!Tm_Ent("functionaryTamayoName", e)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *e = Sf_Entity(&f, TMG("functionaryTamayoName"));
-	if (Sf_True(&f, e) > 0) {
-		Sf_SetGlobal(&f, TM, "tamayoMoney", Sf_Attr(&f, e, "Money"));
-		Sf_Ask(&f, "SScorer", "Set", "(issO)", 0, "TamayoMoneyBar", "Value", Sf_ToFloat(&f, TMG("tamayoMoney")));
-		PyObject *p = Sf_Entity(&f, TMG("porkinsName"));
-		if (Sf_True(&f, p) > 0) {
-			int low = Sf_Compare(&f, TMG("tamayoMoney"), "<=", TMG("MIN_TAMAYO_MONEY"));
-			if (low > 0) {
-				low = Sf_Compare(&f, Sf_Attr(&f, e, "LLogicDefaultState"), "!=", Sf_Int(&f, 6));
+	if (Native_True(e)) {
+		if (!Mode_VGet(e, "Money", m) || !Mode_Put(TM, "tamayoMoney", NULL, m) || !Mode_G(TM, "tamayoMoney", tm) ||
+			!Native_ToFloat(tm, fm) || !LvN_ScorerSet(Mode_I(&t, 0), "TamayoMoneyBar", "Value", fm) || !Tm_Ent("porkinsName", p)) {
+			return Mode_Done(&t, 0);
+		}
+		if (Native_True(p)) {
+			int low, c;
+			Native_Free(tm);
+			if (!Mode_G(TM, "tamayoMoney", tm) || !Mode_G(TM, "MIN_TAMAYO_MONEY", min) || (c = Th_Cmp(tm, min)) == 2) {
+				return Mode_Done(&t, 0);
+			}
+			low = c <= 0;
+			if (low) {
+				low = Mode_VGet(e, "LLogicDefaultState", st) ? Mode_CmpI(st, "!=", 6) : -1;
 			}
 			if (low > 0) {
-				Tm_GoToPorkins(&f, e, p);
+				if (!Tm_GoToPorkins(e, p)) {
+					return Mode_Done(&t, 0);
+				}
 			} else if (low == 0) {
-				int waits = Sf_EqI(&f, Sf_Attr(&f, e, "LLogicDefaultState"), 6);
+				int waits = Th_VarIs(e, "LLogicDefaultState", 6);
 				if (waits > 0) {
-					waits = Sf_EqI(&f, Sf_Attr(&f, p, "LLogicDefaultState"), 6);
+					waits = Th_VarIs(p, "LLogicDefaultState", 6);
 				}
 				if (waits > 0) {
-					waits = Sf_EqI(&f, Sf_Attr(&f, p, "LLogicIdle"), 0);
+					waits = Th_VarIs(p, "LLogicIdle", 0);
 				}
 				if (waits > 0) {
-					waits = Sf_EqI(&f, TMG("tamayoHasJustReceivedMoney"), 0);
+					waits = LvN_GEqI(TM, "tamayoHasJustReceivedMoney", 0);
 				}
-				if (waits > 0) {
-					Tm_Refill(&f, e, p);
+				if (waits < 0 || (waits && !Tm_Refill(e, p))) {
+					return Mode_Done(&t, 0);
 				}
+			} else {
+				return Mode_Done(&t, 0);
 			}
 		}
 	}
-	Sf_Later(&f, Sf_Int(&f, 1), TMG("CheckTamayoMoney"), Sf_Build(&f, "()"), "CheckTamayoMoney");
-	Sf_Own(&f, TM, "OnBankerSteal", "()");
-	return Sf_None(&f);
+	return Mode_Done(&t, Mode_Later(1.0, TM, "CheckTamayoMoney", NULL, 0, "CheckTamayoMoney") && LV_OWN(TM, "OnBankerSteal", NULL, ""));
 }
 
 /* RestoreTamayoState(): after the talk Corruptus walks again from Porkins (or his start) */
-static PyObject *TalkToMayor_RestoreTamayoState(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte ThTm_RestoreTamayoState(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *p = Mode_V(&t), *o = Mode_V(&t), *empty = Mode_V(&t);
+	(void)a;
+	(void)out;
+	if (!Tm_Ent("functionaryTamayoName", e)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *e = Sf_Entity(&f, TMG("functionaryTamayoName"));
-	if (Sf_True(&f, e) <= 0) {
-		return Sf_None(&f);
+	if (!Native_True(e)) {
+		return Mode_Done(&t, 1);
 	}
-	PyObject *p = Sf_Entity(&f, TMG("porkinsName"));
-	int there = Sf_True(&f, p);
-	if (there >= 0) {
-		Sf_SetAttr(&f, e, "LLogicOrigin", there ? Sf_Attr(&f, p, "Pos") : TMG("tamayoStartOrigin"));
+	LvN_Str(empty, "");
+	if (!Tm_Ent("porkinsName", p) || !(Native_True(p) ? Mode_VGet(p, "Pos", o) : Mode_G(TM, "tamayoStartOrigin", o))) {
+		return Mode_Done(&t, 0);
 	}
-	Lv_Stay(&f, e, 0, Sf_Str(&f, ""));
-	Sf_SetAttr(&f, e, "LLogicProbTalkWhenWalking", Sf_Float(&f, 1.0));
-	Sf_SetAttrI(&f, e, "LLogicIgnoreBankerAttack", 0);
-	return Sf_None(&f);
+	return Mode_Done(&t, Mode_VSet(e, "LLogicOrigin", o) && LvN_Stay(e, 0, empty) && LvN_SetF(e, "LLogicProbTalkWhenWalking", 1.0) &&
+		LvN_SetI(e, "LLogicIgnoreBankerAttack", 0));
+}
+
+/* e.var <= the global name of the mission: 1, 0, -1 with the error */
+static int Tm_AtMost(const nativeVal_t *e, const char *var, const char *name) {
+	nativeVal_t v = { 0 }, g = { 0 };
+	Native_SetNone(&v);
+	Native_SetNone(&g);
+	int c = Mode_VGet(e, var, &v) && Mode_G(TM, name, &g) ? Th_Cmp(&v, &g) : 2;
+	Native_Free(&v);
+	Native_Free(&g);
+	return c == 2 ? -1 : c <= 0;
 }
 
 /* OnBankerSteal(): Corruptus without money ends the stealing (the mayor calls); low on money the bankers leave him;
  * Porkins without money once draws the mayor's call */
-static PyObject *TalkToMayor_OnBankerSteal(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte ThTm_OnBankerSteal(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *m = Mode_V(&t), *p = Mode_V(&t);
+	(void)a;
+	(void)out;
+	if (!Tm_Ent("functionaryTamayoName", e)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *e = Sf_Entity(&f, TMG("functionaryTamayoName"));
-	if (Sf_True(&f, e) > 0) {
-		int empty = Sf_Compare(&f, Sf_Attr(&f, e, "Money"), "<=", Sf_Int(&f, 0));
-		if (empty > 0) {
-			Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Py_None);
-			Sf_SetAttrS(&f, e, "UseFunc", "CharsNPC.GenericNPCSpeech");
-			PyObject *p = Sf_Entity(&f, TMG("porkinsName"));
-			if (Sf_True(&f, p) > 0) {
-				Sf_SetAttrS(&f, p, "UseFunc", "CharsNPC.GenericNPCSpeech");
+	if (Native_True(e)) {
+		int empty = Mode_VGet(e, "Money", m) ? Mode_CmpI(m, "<=", 0) : -1;
+		if (empty < 0) {
+			return Mode_Done(&t, 0);
+		}
+		if (empty) {
+			if (!Mode_Target(NULL) || !LvN_SetS(e, "UseFunc", "CharsNPC.GenericNPCSpeech") || !Tm_Ent("porkinsName", p) ||
+				(Native_True(p) && !LvN_SetS(p, "UseFunc", "CharsNPC.GenericNPCSpeech"))) {
+				return Mode_Done(&t, 0);
 			}
-			Sf_Ask(&f, "Speech", "AddRemoteCom", "(ssOO)", "Mission_Campaign1_RemoteMessage1", "Mayor", TMG("EndOfStealFunctionary"), Sf_Build(&f, "()"));
-			Sf_Ask(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "CheckTamayoMoney");
-			return Sf_None(&f);
+			return Mode_Done(&t, LvN_Com("Mission_Campaign1_RemoteMessage1", "Mayor", TM, "EndOfStealFunctionary", LvN_NoArgs()) &&
+				Mode_DelSchedS("CheckTamayoMoney"));
 		}
-		if (empty == 0 && Sf_Compare(&f, Sf_Attr(&f, e, "Money"), "<=", TMG("MIN_TAMAYO_MONEY")) > 0) {
-			Sf_SetAttrI(&f, e, "LLogicIgnoreBankerAttack", 1);
+		int low = Tm_AtMost(e, "Money", "MIN_TAMAYO_MONEY");
+		if (low < 0 || (low && !LvN_SetI(e, "LLogicIgnoreBankerAttack", 1))) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	PyObject *p = Sf_Entity(&f, TMG("porkinsName"));
-	int poor = Sf_True(&f, p);
-	if (poor > 0) {
-		poor = Sf_Compare(&f, Sf_Attr(&f, p, "Money"), "<=", Sf_Int(&f, 0));
+	Native_Free(m);
+	if (!Tm_Ent("porkinsName", p)) {
+		return Mode_Done(&t, 0);
+	}
+	int poor = Native_True(p);
+	if (poor) {
+		poor = Mode_VGet(p, "Money", m) ? Mode_CmpI(m, "<=", 0) : -1;
 	}
 	if (poor > 0) {
-		poor = Sf_True(&f, TMG("porkinsHasMoney"));
+		poor = LvN_GTrue(TM, "porkinsHasMoney");
 	}
-	if (poor > 0) {
-		Sf_SetGlobal(&f, TM, "porkinsHasMoney", Sf_Int(&f, 0));
-		Sf_Ask(&f, "Speech", "AddRemoteCom", "(ss)", "Mission_Campaign1_RemoteMessage2", "Mayor");
+	if (poor < 0) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, !poor || (LvN_PutI(TM, "porkinsHasMoney", 0) &&
+		LvN_Com("Mission_Campaign1_RemoteMessage2", "Mayor", NULL, NULL, NULL)));
 }
 
 /* EndOfStealFunctionary(): the mayor is the target again */
-static PyObject *TalkToMayor_EndOfStealFunctionary(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Ask(&f, "Scrap", "SetSaveVar", "(ss)", "MissionState", "TalkToMayor2");
-	Sf_SetMod(&f, "Menu", "MissionScorerCall", Py_None);
-	Sf_Ask(&f, "Menu", "DrawScorer", "(iO)", 0, Sf_Ask(&f, "SInput", "GetActionSet", "()"));
-	Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_TalkToMayor2_MissionText1", 1);
-	Sf_Ask(&f, "SaveGame", "QWayPoint", "()");
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(s)", "Mayor_Default");
-	return Sf_None(&f);
+static byte ThTm_EndOfStealFunctionary(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	SaveVar_Set("MissionState", "TalkToMayor2");
+	return LvN_ScorerOff() && LvN_Draw() && Mode_MMDesc("Mission_TalkToMayor2_MissionText1", 1L) && Mode_WayPoint() && Mode_Target("Mayor_Default");
+}
+
+/* lst = eval(Scrap.GetSaveVar(var)); lst.append(item); Scrap.SetSaveVar(var, `lst`) */
+static byte Tm_SaveAdd(const char *var, const char *item) {
+	nativeVal_t l = { 0 }, it = { 0 };
+	LvN_Str(&it, item);
+	byte ok = LvN_SaveList(var, TM, &l) && LvN_SaveAppend(var, &l, &it);
+	Native_Free(&l);
+	Native_Free(&it);
+	return ok;
 }
 
 /* SetNextMission(): Mission_DestroyPorkinsTransports in Commercial, two police blueprints more, Rusty calls in 10 s */
-static PyObject *TalkToMayor_SetNextMission(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte ThTm_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
+	nativeVal_t call[4] = { 0 };
+	(void)a;
+	(void)out;
+	SaveVars_Delete("MissionState");
+	if (!Mode_Target(NULL) || !LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_DestroyPorkinsTransports", "Commercial") ||
+		!Mode_MMDesc("Mission_Campaign2_MissionText1", 1L) || !Mode_WayPoint() || !Tm_SaveAdd("PoliceBlueprints.Ships", "SPoli5") ||
+		!Tm_SaveAdd("PoliceBlueprints.Engines", "MPoli5") || !Mode_Import("Scorer")) {
+		return 0;
 	}
-	Sf_Ask(&f, "Scrap", "DelSaveVars", "(s)", "MissionState");
-	Sf_Ask(&f, "MissionsFuncs", "SetMissionTarget", "(O)", Py_None);
-	Sf_Ask(&f, "MissionsFuncs", "SetNextMission", "(ss)", "Mission_DestroyPorkinsTransports", "Commercial");
-	Sf_Ask(&f, "SaveGame", "MMDesc", "(si)", "Mission_Campaign2_MissionText1", 1);
-	Sf_Ask(&f, "SaveGame", "QWayPoint", "()");
-	Lv_SaveAppend(&f, "PoliceBlueprints.Ships", Lv_SaveList(&f, "PoliceBlueprints.Ships", TM), Sf_Str(&f, "SPoli5"));
-	Lv_SaveAppend(&f, "PoliceBlueprints.Engines", Lv_SaveList(&f, "PoliceBlueprints.Engines", TM), Sf_Str(&f, "MPoli5"));
-	Sf_Import(&f, "Scorer");
-	PyObject *call = Sf_Build(&f, "(ssO(ii))", "Mission_Campaign2_RemoteMessage5", "Rusty", Sf_Mod(&f, "Scorer", "ShowMissionScorer"), 0, 2);
-	Sf_Later(&f, Sf_Float(&f, 10.0), Sf_Mod(&f, "Speech", "AddRemoteCom"), call, NULL);
-	return Sf_None(&f);
+	/* Speech.AddRemoteCom in 10 s with ("Mission_Campaign2_RemoteMessage5", "Rusty", Scorer.ShowMissionScorer, (0, 2)) */
+	LvN_Str(&call[0], "Mission_Campaign2_RemoteMessage5");
+	LvN_Str(&call[1], "Rusty");
+	Native_SetEmpty(&call[3], NV_TUPLE);
+	Native_SetInt(Native_Append(&call[3]), 0);
+	Native_SetInt(Native_Append(&call[3]), 2);
+	byte ok = LvN_ModGet("Scorer", "ShowMissionScorer", &call[2]) && Mode_LaterIn(10.0, "Speech", "AddRemoteCom", call, 4, NULL);
+	for (int i = 0; i < 4; i++) {
+		Native_Free(&call[i]);
+	}
+	return ok;
 }
 
 /* MissionScorer(id): Corruptus' money as a bar */
-static PyObject *TalkToMayor_MissionScorer(PyObject *self, PyObject *args) {
-	PyObject *id;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id)) {
-		return NULL;
-	}
-	Lv_ScorerTextBegin(&f, id, "TamayoMoney", 0);
-	Lv_ScorerSet(&f, id, "TamayoMoney", "Text", Sf_Cat(&f, "Os", Sf_Lang(&f, Sf_Str(&f, "Mission_Campaign1_Scorer1")), ":"));
-	Lv_ScorerTextEnd(&f, id, "TamayoMoney");
-	Sf_Ask(&f, "SScorer", "Add", "(Oss)", id, "TamayoMoneyBar", "Bar");
-	Sf_Ask(&f, "Scorer", "MissionScorerBar_SetDefaults", "(OsOOO)", id, "TamayoMoneyBar", Sf_Mod(&f, "Scorer", "MissionScorerBar_ColorBack"),
-		Sf_Mod(&f, "Scorer", "MissionScorerBar_ColorMain"), Sf_Mod(&f, "Scorer", "MissionScorerBar_ColorBlack"));
-	Sf_Ask(&f, "SScorer", "Set", "(Ossi)", id, "TamayoMoneyBar", "IsAutoUpdatable", 0);
-	Sf_Ask(&f, "SScorer", "Set", "(OssO)", id, "TamayoMoneyBar", "MaxValue", TMG("MAX_TAMAYO_MONEY"));
-	Sf_Ask(&f, "SScorer", "Set", "(OssO)", id, "TamayoMoneyBar", "Value", TMG("tamayoMoney"));
-	return Sf_None(&f);
+static byte ThTm_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *item = Mode_V(&t), *back = Mode_V(&t), *mainc = Mode_V(&t), *black = Mode_V(&t), *mx = Mode_V(&t), *v = Mode_V(&t);
+	(void)out;
+	LvN_Str(item, "TamayoMoneyBar");
+	/* OBJLIB 3, 5: Scorer.MissionScorerBar_SetDefaults with the colours of Scorer by name */
+	return Mode_Done(&t, Th_ScorerLabel(&a[0], "TamayoMoney", "Mission_Campaign1_Scorer1") && Mode_ScorerAdd(&a[0], item, "Bar") &&
+		LvN_ModGet("Scorer", "MissionScorerBar_ColorBack", back) && LvN_ModGet("Scorer", "MissionScorerBar_ColorMain", mainc) &&
+		LvN_ModGet("Scorer", "MissionScorerBar_ColorBlack", black) &&
+		LV_CALL("Scorer", "MissionScorerBar_SetDefaults", NULL, "vvvvv", &a[0], item, back, mainc, black) &&
+		Mode_ScorerSet(&a[0], item, "IsAutoUpdatable", Mode_I(&t, 0)) && Mode_G(TM, "MAX_TAMAYO_MONEY", mx) &&
+		Mode_ScorerSet(&a[0], item, "MaxValue", mx) && Mode_G(TM, "tamayoMoney", v) && Mode_ScorerSet(&a[0], item, "Value", v));
 }
+
+LV_FN(TalkToMayor, InitStatus, 1, ThTm_InitStatus)
+LV_FN(TalkToMayor, AfterBrowseNPC, 0, ThTm_AfterBrowseNPC)
+LV_FN(TalkToMayor, CreateMayorInit, 1, ThTm_CreateMayorInit)
+LV_FN(TalkToMayor, CreateBishopPorkins, 1, ThTm_CreateBishopPorkins)
+LV_FN(TalkToMayor, CreateFunctionaryTamayo, 1, ThTm_CreateFunctionaryTamayo)
+LV_FN(TalkToMayor, Init, 1, ThTm_Init)
+LV_FN(TalkToMayor, MayorSpeech, 4, ThTm_MayorSpeech)
+LV_FN(TalkToMayor, StealFunctionary, 0, ThTm_StealFunctionary)
+LV_FN(TalkToMayor, CheckTamayoMoney, 0, ThTm_CheckTamayoMoney)
+LV_FN(TalkToMayor, RestoreTamayoState, 0, ThTm_RestoreTamayoState)
+LV_FN(TalkToMayor, OnBankerSteal, 0, ThTm_OnBankerSteal)
+LV_FN(TalkToMayor, EndOfStealFunctionary, 0, ThTm_EndOfStealFunctionary)
+LV_FN(TalkToMayor, SetNextMission, 0, ThTm_SetNextMission)
+LV_FN(TalkToMayor, MissionScorer, 1, ThTm_MissionScorer)
 
 PyMethodDef g_TownhallTalkToMayorMethods[] = {
 	{ "InitStatus", TalkToMayor_InitStatus, METH_VARARGS, NULL },

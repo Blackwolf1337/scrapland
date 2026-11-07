@@ -2,83 +2,163 @@
  * The scripts of the level Orbit in C (levels/orbit/scripts, issue #2): the Map module (the teleporter and the doors of
  * the entrance), MapDecont (the first mission: the tutorial, the decontamination, the scenes of the bishops, the
  * functionary and the fall to the town hall) and Mission_IntroHuman (the arrival of Bill, three scenes). The scenes
- * are call tables (Sf_Calls). MapSnd is data (data/levels/orbit/mapsnd.def). The module variables
+ * are call tables (Mode_Calls). MapSnd is data (data/levels/orbit/mapsnd.def). The module variables
  * (FXSceneDecontaminationFile, FXSceneBishopsFile, FXSceneBillArrives_AFile) and the module code (the save variable
  * Orbit.Decontaminated) stay in the scripts.
+ *
+ * The functions are native C (docs/objlib-plan.md, stage 2): they work on C values, read the variables of the level
+ * modules where the script reads them (OBJLIB 5) and call the engine in C. The engine functions the cases record go
+ * through their seams or by name (Scrap.CreateEntity, Set, SetAlarm, SetLockAlarm, UsrEntity, AddScheduledFunc,
+ * SScorer.SetMsgText, SAct.GetAct and SetAct, SSound.SetMusic through seams; Scrap.OpenPack, PreloadLibrary,
+ * ClosePack, SetCallFunc, AddParams, Execute, Achievement and SetDebrisSys by name, OBJLIB 7). Entities are handle
+ * values (OBJLIB 7); the other ports, the scene tables and the functions of the module are called by name (OBJLIB 3).
  */
+#include <string.h>
+
 #include "Levels.h"
+#include "scrap/input.h"
+#include "scrap/scrap.h"
+#include "scrap/scorer.h"
 
 #define MD "MapDecont"
 #define IH "Mission_IntroHuman"
 
-#define ENT(n) Sf_Ask(&f, "Scrap", "GetEntity", "(s)", n)
-#define LANG(k) Sf_Lang(&f, Sf_Str(&f, k))
-#define LATER(d, fn, args) Sf_Later(&f, Sf_Float(&f, d), fn, args, NULL)
-
 /* SScorer.SetMsgText(text, Scrap.GetTime() + secs) */
-static byte Ob_Msg(scriptFrame_t *f, PyObject *text, long secs) {
-	int mark = f->n;
-	PyObject *fn = Sf_Mod(f, "SScorer", "SetMsgText");
-	Sf_Call(f, fn, "(OO)", text, Sf_OpI(f, Sf_Time(f), '+', secs));
-	Sf_Release(f, mark);
-	return !f->failed;
+static byte Ob_Msg(const nativeVal_t *text, long secs) {
+	return Mode_MsgText(text, Mode_Time() + (double)secs);
+}
+
+/* the language text of key on the message line for secs */
+static byte Ob_MsgKey(const char *key, long secs) {
+	nativeVal_t t = { 0 };
+	Mode_Lang(key, &t);
+	byte ok = Ob_Msg(&t, secs);
+	Native_Free(&t);
+	return ok;
+}
+
+/* the text of Mode_KeyText on the message line for secs */
+static byte Ob_KeyMsg(const char *key, const char *action, long secs) {
+	nativeVal_t t = { 0 };
+	byte ok = Mode_KeyText(key, action, &t) && Ob_Msg(&t, secs);
+	Native_Free(&t);
+	return ok;
 }
 
 /* e.RadarShow = 1; e.ArrowCanMission = 1; e.ArrowModMission = Scrap.Get("ArrowMissionFile") (0: the first two only) */
-static byte Ob_Arrow(scriptFrame_t *f, PyObject *e, int on) {
-	int mark = f->n;
-	Sf_SetAttrI(f, e, "RadarShow", on);
-	Sf_SetAttrI(f, e, "ArrowCanMission", on);
-	if (on) {
-		Sf_SetAttr(f, e, "ArrowModMission", Sf_Ask(f, "Scrap", "Get", "(s)", "ArrowMissionFile"));
+static byte Ob_Arrow(const nativeVal_t *e, int on) {
+	nativeVal_t file = { 0 };
+	if (!LvN_SetI(e, "RadarShow", on) || !LvN_SetI(e, "ArrowCanMission", on)) {
+		return 0;
 	}
-	Sf_Release(f, mark);
-	return !f->failed;
+	if (!on) {
+		return 1;
+	}
+	Native_SetNone(&file);
+	byte ok = Native_GVarGet("ArrowMissionFile", &file) && Mode_VSet(e, "ArrowModMission", &file);
+	Native_Free(&file);
+	return ok;
 }
 
-/* Scrap.Set(name, file); Scrap.SetDebrisSys(file, 1, 0, 0, 1, 0, 0, Fx.<fx>) with file the global of module */
-static byte Ob_SceneFx(scriptFrame_t *f, const char *module, const char *global, const char *fx) {
-	int mark = f->n;
-	Sf_Import(f, "Fx");
-	Sf_Run(f, "Scrap", "Set", "(sO)", global, Sf_Global(f, module, global));
-	PyObject *fn = Sf_Mod(f, "Scrap", "SetDebrisSys");
-	PyObject *file = Sf_Global(f, module, global);
-	Sf_Call(f, fn, "(OiiiiiiO)", file, 1, 0, 0, 1, 0, 0, Sf_Mod(f, "Fx", fx));
-	Sf_Release(f, mark);
-	return !f->failed;
+/* Ob_Arrow of the entity name */
+static byte Ob_EntArrow(const char *name, int on) {
+	nativeVal_t e = { 0 };
+	byte ok = LvN_Entity(name, &e) && Ob_Arrow(&e, on);
+	Native_Free(&e);
+	return ok;
+}
+
+/* Scrap.Set(global, file); Scrap.SetDebrisSys(file, 1, 0, 0, 1, 0, 0, Fx.<fx>) with file the global of module, read
+ * at each use as the script does */
+static byte Ob_SceneFx(const char *module, const char *global, const char *fx) {
+	nativeVal_t file = { 0 }, c = { 0 };
+	Native_SetNone(&file);
+	Native_SetNone(&c);
+	if (!Mode_Import("Fx") || !Mode_G(module, global, &file) || !Mode_GVarSet(global, &file)) {
+		Native_Free(&file);
+		return 0;
+	}
+	Native_Free(&file);
+	/* OBJLIB 7: SetDebrisSys by name (the scene cases record it) */
+	PyObject *fn = Script_Attr("Scrap", "SetDebrisSys");
+	if (!fn) {
+		return 0;
+	}
+	byte ok = Mode_G(module, global, &file) && LvN_ModGet("Fx", fx, &c);
+	if (ok) {
+		ok = Native_HookCall(fn, NULL, "viiiiiiv", &file, 1L, 0L, 0L, 1L, 0L, 0L, &c);
+	} else {
+		Py_DECREF(fn);
+	}
+	Native_Free(&file);
+	Native_Free(&c);
+	return ok;
+}
+
+/* usr.Pos = (x, y, z); usr.Ang = (0, ang, 0); SLogic.SetOnFloor(usr.Name) */
+static byte Ob_PlaceUsr(const nativeVal_t *usr, long x, long y, long z, long ang) {
+	nativeVal_t pos = { 0 }, a = { 0 }, name = { 0 };
+	Mode_Ints3(&pos, x, y, z);
+	Mode_Ints3(&a, 0, ang, 0);
+	Native_SetNone(&name);
+	byte ok = Mode_VSet(usr, "Pos", &pos) && Mode_VSet(usr, "Ang", &a) && Mode_VGet(usr, "Name", &name) &&
+		Mode_SetOnFloor(&name);
+	Native_Free(&pos);
+	Native_Free(&a);
+	Native_Free(&name);
+	return ok;
+}
+
+/* Items.Hint((x, y, z), Mode_KeyText(key, "Use"), 5, mission): the function read before the text, as the script */
+static byte Ob_KeyHint(long x, long y, long z, const char *key, long mission) {
+	nativeVal_t pos = { 0 }, text = { 0 };
+	/* OBJLIB 3 */
+	PyObject *fn = Script_Attr("Items", "Hint");
+	if (!fn) {
+		return 0;
+	}
+	Mode_Ints3(&pos, x, y, z);
+	byte ok = Mode_KeyText(key, "Use", &text);
+	if (ok) {
+		ok = Native_HookCall(fn, NULL, "vvii", &pos, &text, 5L, mission);
+	} else {
+		Py_DECREF(fn);
+	}
+	Native_Free(&pos);
+	Native_Free(&text);
+	return ok;
+}
+
+/* Scene.EndOfSceneCallback = the global func of module; Scene.Play(scene) (OBJLIB 3, 5) */
+static byte Ob_Play(const char *module, const char *func, const char *scene) {
+	return LvN_ModSetGlobal("Scene", "EndOfSceneCallback", module, func) && LV_CALL("Scene", "Play", NULL, "s", scene);
+}
+
+/* Scene.Play(scene); Scene.EndOfSceneCallback = the global func of module */
+static byte Ob_PlayThen(const char *scene, const char *module, const char *func) {
+	return LV_CALL("Scene", "Play", NULL, "s", scene) && LvN_ModSetGlobal("Scene", "EndOfSceneCallback", module, func);
 }
 
 /* ---- Map ---- */
 
 /* InitStatus(LevelPath): an indoor map */
-static PyObject *Orbit_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Sf_Import(&f, "Init");
-	Sf_SetMod(&f, "Init", "Outdoor", Sf_Int(&f, 0));
-	return Sf_None(&f);
+static byte Orbit_InitStatusN(void) {
+	nativeVal_t zero = { 0 };
+	Native_SetInt(&zero, 0);
+	return Mode_Import("Init") && Mode_SetModVar("Init", "Outdoor", &zero);
 }
 
 /* Init(LevelPath): the teleporters linked, the back doors of the entrance, the music */
-static PyObject *Orbit_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Sf_Import(&f, "Teleport");
-	Sf_Run(&f, "Teleport", "Link", "(ss)", "DM_Door_Teleporter_00", "DM_Door_Teleporter_01");
-	Sf_EntSetS(&f, "DM_Door_OrbitDoorA_04", "OnObjSlot", "!BackDoorSlot");
-	Sf_EntSetS(&f, "DM_Door_OrbitDoorA_03", "OnObjSlot", "!BackDoorSlot");
-	Sf_Import(&f, "SSound");
-	Sf_Run(&f, "SSound", "SetMusic", "(sd)", "Music/Track1.ogg", 1.0);
-	return Sf_None(&f);
+static byte Orbit_InitN(void) {
+	return Mode_Import("Teleport") &&
+		LV_CALL("Teleport", "Link", NULL, "ss", "DM_Door_Teleporter_00", "DM_Door_Teleporter_01") &&
+		Mode_EntSetS("DM_Door_OrbitDoorA_04", "OnObjSlot", "!BackDoorSlot") &&
+		Mode_EntSetS("DM_Door_OrbitDoorA_03", "OnObjSlot", "!BackDoorSlot") && Mode_Import("SSound") &&
+		LvN_SetMusic("Music/Track1.ogg", 1.0);
 }
+
+MODE_FN(Orbit, InitStatus, 1, Orbit_InitStatusN())
+MODE_FN(Orbit, Init, 1, Orbit_InitN())
 
 PyMethodDef g_OrbitMapMethods[] = {
 	{ "InitStatus", Orbit_InitStatus, 1, NULL },
@@ -89,101 +169,72 @@ PyMethodDef g_OrbitMapMethods[] = {
 /* ---- MapDecont ---- */
 
 /* InitStatus(LevelPath): the characters of the mission, the functionary sits down at once, the credits library */
-static PyObject *Decont_InitStatus(PyObject *self, PyObject *args) {
+static byte Decont_InitStatusN(void) {
 	static const char *const chars[] = { "Sentinel_Corridor", "Bishop_00", "Bishop_01", "Functionary_00", NULL };
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+	nativeVal_t fn = { 0 };
+	SaveVar_Set("Challenge", "0");
+	if (!Mode_Import("CharsNPC") || !Mode_Import("Chars") || !LvN_GObj(MD, "AfterBrowseNPC", &fn)) {
+		return 0;
 	}
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Challenge", "0");
-	Sf_Import(&f, "CharsNPC");
-	Sf_Import(&f, "Chars");
-	Sf_Method(&f, Sf_Mod(&f, "CharsNPC", "AfterBrowseNPC"), "append", "(O)", Sf_Global(&f, MD, "AfterBrowseNPC"));
-	for (int i = 0; chars[i]; i++) {
-		Sf_Run(&f, "CharsNPC", "CreateMissionChar", "(s)", chars[i]);
+	byte ok = LvN_ModAppend("CharsNPC", "AfterBrowseNPC", &fn);
+	Native_Free(&fn);
+	for (int i = 0; chars[i] && ok; i++) {
+		ok = LV_CALL("CharsNPC", "CreateMissionChar", NULL, "s", chars[i]);
 	}
-	Sf_Run(&f, "Scrap", "Set", "(sd)", "FunctionaryMinTimeToSitDown", 0.0);
-	Sf_Run(&f, "Scrap", "Set", "(sd)", "FunctionaryMaxTimeToSitDown", 1.0);
-	Sf_Run(&f, "Scrap", "OpenPack", "(s)", "Scripts/Scorer");
-	Sf_Run(&f, "Scrap", "PreloadLibrary", "(ss)", "CreditsText", "CreditsText.pyc");
-	Sf_Run(&f, "Scrap", "ClosePack", "()");
-	return Sf_None(&f);
+	/* OBJLIB 7: the pack calls by name (fc-r6b-or1 records them) */
+	return ok && Mode_GVarSetN("FunctionaryMinTimeToSitDown", 0.0) && Mode_GVarSetN("FunctionaryMaxTimeToSitDown", 1.0) &&
+		LV_CALL("Scrap", "OpenPack", NULL, "s", "Scripts/Scorer") &&
+		LV_CALL("Scrap", "PreloadLibrary", NULL, "ss", "CreditsText", "CreditsText.pyc") &&
+		LV_CALL("Scrap", "ClosePack", NULL, "");
 }
 
 /* Decontamination(UsrName, CharName, optId, FullOption): the keypad goes, the scene plays, the way point */
-static PyObject *Decont_Decontamination(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
-	}
-	PyObject *kb = ENT("Decontamination_keyboard");
-	Sf_SetAttrI(&f, kb, "MapCollision", 0);
-	Sf_Method(&f, kb, "Del", "()");
-	Sf_Import(&f, "Scene");
-	Sf_SetMod(&f, "Scene", "EndOfSceneCallback", Sf_Global(&f, MD, "EndOfScene"));
-	Sf_Run(&f, "Scene", "Play", "(s)", "Decontamination");
-	Sf_Own(&f, MD, "DecontaminatedWaypoint", "()");
-	return Sf_None(&f);
+static byte Decont_DecontaminationN(void) {
+	nativeVal_t kb = { 0 };
+	byte ok = LvN_Entity("Decontamination_keyboard", &kb) && LvN_SetI(&kb, "MapCollision", 0) && Mode_VDel(&kb) &&
+		Mode_Import("Scene") && Ob_Play(MD, "EndOfScene", "Decontamination") && LV_OWN(MD, "DecontaminatedWaypoint", NULL, "");
+	Native_Free(&kb);
+	return ok;
 }
 
 /* EndOfScene(usr): the player behind the decontamination, the voice of the check in, the doors open */
-static PyObject *Decont_EndOfScene(PyObject *self, PyObject *args) {
-	PyObject *usr;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &usr)) {
-		return NULL;
+static byte Decont_EndOfSceneN(const nativeVal_t *usr) {
+	nativeVal_t text = { 0 };
+	if (!Mode_Import("Chars") || !Mode_Import("Speech") || !Ob_PlaceUsr(usr, -20334, 1056, -27485, -90) ||
+		!LV_CALL("Speech", "OffVoice", NULL, "s", "Mission_Checkin_RemoteMessage2")) {
+		return 0;
 	}
-	Sf_Import(&f, "Chars");
-	Sf_Import(&f, "Speech");
-	Sf_SetAttr(&f, usr, "Pos", Sf_Build(&f, "(iii)", -20334, 1056, -27485));
-	Sf_SetAttr(&f, usr, "Ang", Sf_Build(&f, "(iii)", 0, -90, 0));
-	Sf_Run(&f, "SLogic", "SetOnFloor", "(O)", Sf_Attr(&f, usr, "Name"));
-	Sf_Run(&f, "Speech", "OffVoice", "(s)", "Mission_Checkin_RemoteMessage2");
-	Sf_Run(&f, "SScorer", "SetSpeechText", "(Oiiii)", LANG("Mission_Checkin_RemoteMessage2"), 3, 220, 235, 255);
-	Sf_Own(&f, MD, "SetWaypoint", "(i)", 1);
-	Sf_EntSetS(&f, "DM_Door_OrbitDoorA_02", "OnObjSlot", "!FrontDoorSlot");
-	return Sf_None(&f);
+	Mode_Lang("Mission_Checkin_RemoteMessage2", &text);
+	/* "siiii": the text up to its first 0 byte */
+	Scorer_SetSpeechText(Native_Text(&text), 3.0f, 220, 235, 255);
+	Native_Free(&text);
+	return LV_OWN(MD, "SetWaypoint", NULL, "i", 1L) && Mode_EntSetS("DM_Door_OrbitDoorA_02", "OnObjSlot", "!FrontDoorSlot");
 }
 
 /* DecontaminatedWaypoint(): marked as decontaminated, a way point behind the decontamination */
-static PyObject *Decont_DecontaminatedWaypoint(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Decont_DecontaminatedWaypointN(void) {
+	if (!Mode_Import("SaveGame")) {
+		return 0;
 	}
-	Sf_Import(&f, "SaveGame");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Orbit.Decontaminated", "yes");
-	Sf_Run(&f, "SaveGame", "MarkWayPoint", "(ss)", "Levels/Orbit", "DM_Player_Spawn_Decontamination");
-	return Sf_None(&f);
+	SaveVar_Set("Orbit.Decontaminated", "yes");
+	return LV_CALL("SaveGame", "MarkWayPoint", NULL, "ss", "Levels/Orbit", "DM_Player_Spawn_Decontamination");
 }
 
 /* SetWaypoint(Decontaminated): the functionary as the target of the check in, or not yet */
-static PyObject *Decont_SetWaypoint(PyObject *self, PyObject *args) {
-	PyObject *dec;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &dec)) {
-		return NULL;
+static byte Decont_SetWaypointN(const nativeVal_t *dec) {
+	nativeVal_t e = { 0 };
+	if (!LvN_Entity("Functionary_00", &e)) {
+		return 0;
 	}
-	PyObject *e = ENT("Functionary_00");
-	int on = Sf_True(&f, dec);
-	if (on >= 0) {
-		Sf_SetAttrI(&f, e, "RadarShow", on);
-		Sf_SetAttrI(&f, e, "ArrowCanUse", on);
-		Sf_SetAttrI(&f, e, "ArrowCanMission", on);
-		if (on) {
-			Sf_SetAttr(&f, e, "ArrowModMission", Sf_Ask(&f, "Scrap", "Get", "(s)", "ArrowMissionFile"));
-		}
-		Sf_Import(&f, "SaveGame");
-		Sf_Run(&f, "SaveGame", "MMDesc", "(si)", on ? "Mission_Checkin_MissionText1" : "Mission_Decontamination_MissionText1", 1);
-	}
-	return Sf_None(&f);
+	int on = Native_True(dec);
+	nativeVal_t file = { 0 };
+	byte ok = LvN_SetI(&e, "RadarShow", on) && LvN_SetI(&e, "ArrowCanUse", on) && LvN_SetI(&e, "ArrowCanMission", on) &&
+		(!on || (Native_GVarGet("ArrowMissionFile", &file) && Mode_VSet(&e, "ArrowModMission", &file))) &&
+		Mode_Import("SaveGame") &&
+		Mode_MMDesc(on ? "Mission_Checkin_MissionText1" : "Mission_Decontamination_MissionText1", 1L);
+	Native_Free(&e);
+	Native_Free(&file);
+	return ok;
 }
 
 static const char *const decont_scene[] = {
@@ -207,398 +258,428 @@ static const char *const decont_scene[] = {
 };
 
 /* LoadDecontamination(): the scene of the decontamination and its effect */
-static PyObject *Decont_LoadDecontamination(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "Scene");
-	Sf_Import(&f, "MakeChar");
-	Sf_Calls(&f, MD, decont_scene);
-	Ob_SceneFx(&f, MD, "FXSceneDecontaminationFile", "FXSCENEDECONTAMINATION");
-	return Sf_None(&f);
+static byte Decont_LoadDecontaminationN(void) {
+	return Mode_Import("Scene") && Mode_Import("MakeChar") && Mode_Calls(MD, decont_scene) &&
+		Ob_SceneFx(MD, "FXSceneDecontaminationFile", "FXSCENEDECONTAMINATION");
 }
 
-/* the keypad entity name on the dummy pattern, turned to face the room, with its use */
-static PyObject *Ob_Keypad(scriptFrame_t *f, const char *pattern, const char *name) {
-	Sf_Run(f, "Scrap", "StartDummySearch", "(si)", pattern, 1);
-	PyObject *dummy = Sf_Ask(f, "Scrap", "NextDummySearch", "()");
-	PyObject *pos = Sf_Item(f, dummy, 1);
-	PyObject *x = Sf_Item(f, pos, 0), *y = Sf_Item(f, Sf_Item(f, dummy, 1), 1), *z = Sf_Item(f, Sf_Item(f, dummy, 1), 2);
-	PyObject *kb = Sf_Ask(f, "Scrap", "CreateEntity", "(sOOOs)", name, x, y, z, "WithLife");
-	PyObject *a = Sf_OpI(f, Sf_Item(f, Sf_Item(f, dummy, 2), 1), '+', 180);
-	Sf_SetAttr(f, kb, "Ang", Sf_Build(f, "(iOi)", 0, a, 0));
-	return kb;
+/* the keypad entity name on the dummy pattern, turned to face the room (dummy[2][1] + 180) */
+static byte Ob_Keypad(const char *pattern, const char *name, nativeVal_t *kb) {
+	nativeVal_t dummy = { 0 }, pos = { 0 }, c[3] = { 0 }, ang = { 0 }, a = { 0 }, n = { 0 }, d = { 0 };
+	int k = 0;
+	Native_SetNone(&pos);
+	Native_SetNone(&ang);
+	Native_SetNone(&a);
+	Native_SetNone(kb);
+	LvN_Dummy(pattern, 1, &dummy);
+	byte ok = LvN_Item(&dummy, 1, &pos);
+	for (; ok && k < 3; k++) {
+		ok = LvN_Item(&pos, k, &c[k]);
+	}
+	if (ok) {
+		LvN_Str(&n, name);
+		ok = LvN_Create(&n, &c[0], &c[1], &c[2], "WithLife", kb);
+		Native_Free(&n);
+	}
+	ok = ok && LvN_Item(&dummy, 2, &ang) && LvN_Item(&ang, 1, &a);
+	if (ok) {
+		Native_SetInt(&n, 180);
+		Native_SetNone(&d);
+		ok = Native_Arith('+', &a, &n, &d);
+		if (ok) {
+			nativeVal_t t = { 0 };
+			Native_SetEmpty(&t, NV_TUPLE);
+			Native_SetInt(Native_Append(&t), 0);
+			Native_Copy(Native_Append(&t), &d);
+			Native_SetInt(Native_Append(&t), 0);
+			ok = Mode_VSet(kb, "Ang", &t);
+			Native_Free(&t);
+		}
+		Native_Free(&d);
+	}
+	while (k-- > 0) {
+		Native_Free(&c[k]);
+	}
+	Native_Free(&dummy);
+	Native_Free(&pos);
+	Native_Free(&ang);
+	Native_Free(&a);
+	return ok;
 }
 
 /* Init(LevelPath): the start of the mission, before or after the decontamination */
-static PyObject *Decont_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte Decont_InitN(void) {
+	nativeVal_t sv = { 0 }, dec = { 0 }, kb = { 0 }, path = { 0 }, file = { 0 }, fn1 = { 0 }, fn2 = { 0 }, pos = { 0 };
+	nativeVal_t text = { 0 }, e = { 0 };
+	if (!Mode_Import("Init") || !Mode_Import("CreditsText") || !LV_CALL("CreditsText", "Init", NULL, "") ||
+		!Mode_EntSetS("DM_Door_ElevatorOrbitC_TownHall", "OnObjSlot", "")) {
+		return 0;
 	}
-	Sf_Import(&f, "Init");
-	Sf_Import(&f, "CreditsText");
-	Sf_Run(&f, "CreditsText", "Init", "()");
-	Sf_EntSetS(&f, "DM_Door_ElevatorOrbitC_TownHall", "OnObjSlot", "");
-	int mark = f.n;
-	PyObject *dec = Sf_Int(&f, Sf_EqS(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Orbit.Decontaminated"), "yes"));
-	int d = Sf_True(&f, dec);
-	if (d == 0) {
-		Ob_Arrow(&f, ENT("GateKeeper_Portalis"), 1);
-		Sf_Import(&f, "Scorer");
-		Ob_Msg(&f, LANG("Mission_Decontamination_SystemMessage1"), 50);
-		Sf_Later(&f, Sf_Int(&f, 2), Sf_Mod(&f, "Scorer", "Blink"), Sf_Build(&f, "(i)", 20), NULL);
-		Sf_Import(&f, "Items");
-		PyObject *fn = Sf_Mod(&f, "Items", "Hint");
-		PyObject *text = Lv_KeyText(&f, "Mission_Decontamination_SystemMessage5", "Use");
-		Sf_Call(&f, fn, "((iii)Oii)", -18893, -654, -25042, text, 5, 0);
+	Mode_SaveVar("Orbit.Decontaminated", &sv);
+	int d = Native_IsStr(&sv, "yes");
+	Native_Free(&sv);
+	Native_SetInt(&dec, d);
+	if (!d) {
+		nativeVal_t twenty = { 0 };
+		Native_SetInt(&twenty, 20);
+		if (!Ob_EntArrow("GateKeeper_Portalis", 1) || !Mode_Import("Scorer") ||
+			!Ob_MsgKey("Mission_Decontamination_SystemMessage1", 50) || !Mode_LaterIn(2.0, "Scorer", "Blink", &twenty, 1, NULL) ||
+			!Mode_Import("Items") || !Ob_KeyHint(-18893, -654, -25042, "Mission_Decontamination_SystemMessage5", 0)) {
+			return 0;
+		}
 	}
-	Sf_Own(&f, MD, "LoadBishopsScene", "()");
-	Sf_Own(&f, MD, "LoadFunctionaryScene", "()");
-	Sf_Own(&f, MD, "LoadFallingScene", "()");
-	Sf_Own(&f, MD, "CreateBishopsLauncher", "()");
-	Sf_Own(&f, MD, "SetWaypoint", "(O)", dec);
-	if (d > 0) {
-		Sf_EntSetS(&f, "DM_Door_OrbitDoorA_01", "OnObjSlot", "!FrontDoorSlot");
-		Sf_EntSetS(&f, "DM_Door_OrbitDoorA_02", "OnObjSlot", "!FrontDoorSlot");
-	} else if (d == 0) {
-		PyObject *kb = Ob_Keypad(&f, "DM_Keypad_Decontamination", "Decontamination_keyboard");
-		Sf_Method(&f, kb, "SetModel", "(O)", Sf_Cat(&f, "Os", Sf_Mod(&f, "Init", "Path"), "/Map/DecoActive/DecoActive.m3d"));
-		Sf_SetAttrI(&f, kb, "VRadius", 60);
-		Sf_SetAttrI(&f, kb, "ArrowCanUse", 1);
-		Sf_SetAttrI(&f, kb, "Life", 0);
-		Sf_SetAttrI(&f, kb, "ArrnOpt", 0);
-		Sf_SetAttr(&f, kb, "ArrOpt0", Sf_Cat(&f, "sO", "Decontamination:", LANG("Mission_Decontamination_Hint1")));
-		Sf_SetAttrS(&f, kb, "UseFunc", "MapDecont.Decontamination");
-		Sf_SetAttrI(&f, kb, "MapCollision", 1);
-		Sf_Own(&f, MD, "LoadDecontamination", "()");
-		Sf_EntSetS(&f, "DM_Door_OrbitDoorA_01", "OnObjSlot", "!FrontDoorSlot");
-		Sf_EntSetS(&f, "DM_Door_OrbitDoorA_02", "OnObjSlot", "!CloseDoorSlot");
-		Sf_Later(&f, Sf_Int(&f, 5), Sf_Global(&f, MD, "MsgOffVoice"), Sf_Build(&f, "()"), NULL);
+	if (!LV_OWN(MD, "LoadBishopsScene", NULL, "") || !LV_OWN(MD, "LoadFunctionaryScene", NULL, "") ||
+		!LV_OWN(MD, "LoadFallingScene", NULL, "") || !LV_OWN(MD, "CreateBishopsLauncher", NULL, "") ||
+		!LV_OWN(MD, "SetWaypoint", NULL, "v", &dec)) {
+		return 0;
 	}
-	Sf_Release(&f, mark);
-	Sf_Import(&f, "GateKeeper");
-	PyObject *fn = Sf_Mod(&f, "GateKeeper", "SetDoor");
-	Sf_Call(&f, fn, "(ssOO)", "GateKeeper_Portalis", "DM_Door_OrbitDoorA_00", Sf_Global(&f, MD, "OpenGateKeeperDoor"),
-		Sf_Global(&f, MD, "CloseGateKeeperDoor"));
-	Sf_EntSetI(&f, "DM_Door_Teleporter_01", "ArrnOpt", 0);
-	Sf_EntSetS(&f, "DM_Door_Teleporter_01", "UseFunc", "MapDecont.CantUseElevator");
-	Sf_Import(&f, "Items");
-	fn = Sf_Mod(&f, "Items", "Hint");
-	PyObject *pos = Sf_Attr(&f, ENT("DM_Door_Teleporter_01"), "Pos");
-	PyObject *text = LANG("Mission_Decontamination_SystemMessage6");
-	Sf_Call(&f, fn, "(OOiiO)", pos, text, 5, 1, Sf_Global(&f, MD, "SetFirstInfoPointAsMission"));
-	Sf_EntSetS(&f, "DM_Door_OrbitDoorA_03", "OnObjSlot", "");
-	return Sf_None(&f);
+	if (d) {
+		if (!Mode_EntSetS("DM_Door_OrbitDoorA_01", "OnObjSlot", "!FrontDoorSlot") ||
+			!Mode_EntSetS("DM_Door_OrbitDoorA_02", "OnObjSlot", "!FrontDoorSlot")) {
+			return 0;
+		}
+	} else {
+		nativeVal_t tail = { 0 };
+		Native_SetNone(&path);
+		Native_SetNone(&file);
+		LvN_Str(&tail, "/Map/DecoActive/DecoActive.m3d");
+		byte ok = Ob_Keypad("DM_Keypad_Decontamination", "Decontamination_keyboard", &kb) && LvN_ModGet("Init", "Path", &path) &&
+			Native_Arith('+', &path, &tail, &file) && Mode_VModel(&kb, &file) && LvN_SetI(&kb, "VRadius", 60) &&
+			LvN_SetI(&kb, "ArrowCanUse", 1) && LvN_SetI(&kb, "Life", 0) && LvN_SetI(&kb, "ArrnOpt", 0) &&
+			LvN_SetLangOpt(&kb, "ArrOpt0", "Decontamination:", "Mission_Decontamination_Hint1") &&
+			LvN_SetS(&kb, "UseFunc", "MapDecont.Decontamination") && LvN_SetI(&kb, "MapCollision", 1) &&
+			LV_OWN(MD, "LoadDecontamination", NULL, "") && Mode_EntSetS("DM_Door_OrbitDoorA_01", "OnObjSlot", "!FrontDoorSlot") &&
+			Mode_EntSetS("DM_Door_OrbitDoorA_02", "OnObjSlot", "!CloseDoorSlot") &&
+			Mode_Later(5.0, MD, "MsgOffVoice", NULL, 0, NULL);
+		Native_Free(&kb);
+		Native_Free(&path);
+		Native_Free(&tail);
+		Native_Free(&file);
+		if (!ok) {
+			return 0;
+		}
+	}
+	if (!Mode_Import("GateKeeper")) {
+		return 0;
+	}
+	/* OBJLIB 3: GateKeeper.SetDoor with the door functions of the module (read after the function, as the script) */
+	PyObject *fn = Script_Attr("GateKeeper", "SetDoor");
+	if (!fn) {
+		return 0;
+	}
+	if (!LvN_GObj(MD, "OpenGateKeeperDoor", &fn1)) {
+		Py_DECREF(fn);
+		return 0;
+	}
+	byte ok = LvN_GObj(MD, "CloseGateKeeperDoor", &fn2);
+	if (ok) {
+		ok = Native_HookCall(fn, NULL, "ssvv", "GateKeeper_Portalis", "DM_Door_OrbitDoorA_00", &fn1, &fn2);
+	} else {
+		Py_DECREF(fn);
+	}
+	Native_Free(&fn1);
+	Native_Free(&fn2);
+	if (!ok || !Mode_EntSetI("DM_Door_Teleporter_01", "ArrnOpt", 0) ||
+		!Mode_EntSetS("DM_Door_Teleporter_01", "UseFunc", "MapDecont.CantUseElevator") || !Mode_Import("Items")) {
+		return 0;
+	}
+	if (!(fn = Script_Attr("Items", "Hint"))) {
+		return 0;
+	}
+	Native_SetNone(&pos);
+	Native_SetNone(&fn1);
+	ok = LvN_Entity("DM_Door_Teleporter_01", &e) && Mode_VGet(&e, "Pos", &pos);
+	Native_Free(&e);
+	if (ok) {
+		Mode_Lang("Mission_Decontamination_SystemMessage6", &text);
+		ok = LvN_GObj(MD, "SetFirstInfoPointAsMission", &fn1);
+		if (ok) {
+			ok = Native_HookCall(fn, NULL, "vviiv", &pos, &text, 5L, 1L, &fn1);
+		} else {
+			Py_DECREF(fn);
+		}
+		Native_Free(&text);
+	} else {
+		Py_DECREF(fn);
+	}
+	Native_Free(&pos);
+	Native_Free(&fn1);
+	return ok && Mode_EntSetS("DM_Door_OrbitDoorA_03", "OnObjSlot", "");
 }
 
 /* MsgOffVoice(): the voice of the decontamination every 20 s until it is done */
-static PyObject *Decont_MsgOffVoice(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Decont_MsgOffVoiceN(void) {
+	nativeVal_t sv = { 0 };
+	if (!Mode_Import("Speech")) {
+		return 0;
 	}
-	Sf_Import(&f, "Speech");
-	if (Sf_EqS(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Orbit.Decontaminated"), "no") > 0) {
-		Sf_Run(&f, "Speech", "OffVoice", "(s)", "Mission_Decontamination_RemoteMessage1");
-		Sf_Later(&f, Sf_Int(&f, 20), Sf_Global(&f, MD, "MsgOffVoice"), Sf_Build(&f, "()"), NULL);
-	}
-	return Sf_None(&f);
+	Mode_SaveVar("Orbit.Decontaminated", &sv);
+	byte no = Native_IsStr(&sv, "no");
+	Native_Free(&sv);
+	return !no || (LV_CALL("Speech", "OffVoice", NULL, "s", "Mission_Decontamination_RemoteMessage1") &&
+		Mode_Later(20.0, MD, "MsgOffVoice", NULL, 0, NULL));
 }
 
 /* SetFirstInfoPointAsMission(itemname): the keypad becomes the target instead of the teleporter */
-static PyObject *Decont_SetFirstInfoPointAsMission(PyObject *self, PyObject *args) {
-	PyObject *item;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &item)) {
-		return NULL;
-	}
-	Ob_Arrow(&f, ENT("DM_Door_Teleporter_00"), 0);
-	Ob_Arrow(&f, ENT("Decontamination_keyboard"), 1);
-	return Sf_None(&f);
+static byte Decont_SetFirstInfoPointAsMissionN(void) {
+	return Ob_EntArrow("DM_Door_Teleporter_00", 0) && Ob_EntArrow("Decontamination_keyboard", 1);
 }
 
 /* CantUseElevator(UsrName, ElevatorName, optId, FullOption) */
-static PyObject *Decont_CantUseElevator(PyObject *self, PyObject *args) {
-	PyObject *usr, *el, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &el, &opt, &full)) {
-		return NULL;
-	}
-	Ob_Msg(&f, LANG("Mission_Decontamination_SystemMessage7"), 5);
-	return Sf_None(&f);
+static byte Decont_CantUseElevatorN(void) {
+	return Ob_MsgKey("Mission_Decontamination_SystemMessage7", 5);
 }
 
 /* CloseGateKeeperDoor(Door, GateKeeperName): closed, a hint near the gatekeeper */
-static PyObject *Decont_CloseGateKeeperDoor(PyObject *self, PyObject *args) {
-	PyObject *door, *gk;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &door, &gk)) {
-		return NULL;
-	}
-	Sf_SetAttrS(&f, door, "OnObjSlot", "!CloseDoorSlot");
-	Sf_Import(&f, "Items");
-	PyObject *fn = Sf_Mod(&f, "Items", "Hint");
-	Sf_Call(&f, fn, "((iii)Oii)", -16501, -652, -24098, Lv_KeyText(&f, "Mission_Decontamination_SystemMessage2", "Use"), 5, 1);
-	return Sf_None(&f);
+static byte Decont_CloseGateKeeperDoorN(const nativeVal_t *door) {
+	return LvN_SetS(door, "OnObjSlot", "!CloseDoorSlot") && Mode_Import("Items") &&
+		Ob_KeyHint(-16501, -652, -24098, "Mission_Decontamination_SystemMessage2", 1);
 }
 
 /* OpenGateKeeperDoor(Door, GateKeeperName): open, the teleporter becomes the target */
-static PyObject *Decont_OpenGateKeeperDoor(PyObject *self, PyObject *args) {
-	PyObject *door, *gk;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &door, &gk)) {
-		return NULL;
+static byte Decont_OpenGateKeeperDoorN(const nativeVal_t *door) {
+	nativeVal_t empty = { 0 }, when = { 0 }, args[2] = { 0 };
+	LvN_Str(&empty, "");
+	byte ok = LvN_SetS(door, "OnObjSlot", "!AutoDoorSlot") && Ob_EntArrow("GateKeeper_Portalis", 0) &&
+		Ob_EntArrow("DM_Door_Teleporter_00", 1) && Ob_Msg(&empty, 0);
+	Native_Free(&empty);
+	if (!ok) {
+		return 0;
 	}
-	Sf_SetAttrS(&f, door, "OnObjSlot", "!AutoDoorSlot");
-	Ob_Arrow(&f, ENT("GateKeeper_Portalis"), 0);
-	Ob_Arrow(&f, ENT("DM_Door_Teleporter_00"), 1);
-	Ob_Msg(&f, Sf_Str(&f, ""), 0);
-	PyObject *when = Sf_OpI(&f, Sf_Time(&f), '+', 4);
-	PyObject *fn = Sf_Mod(&f, "SScorer", "SetMsgText");
-	PyObject *text = LANG("Mission_Decontamination_SystemMessage4");
-	Sf_Schedule(&f, when, fn, Sf_Build(&f, "(OO)", text, Sf_OpI(&f, Sf_Time(&f), '+', 10)), NULL);
-	return Sf_None(&f);
+	Native_SetFloat(&when, Mode_Time() + 4.0);
+	/* OBJLIB 4: the scheduler keeps SScorer.SetMsgText as the object of the module */
+	PyObject *fn = Script_Attr("SScorer", "SetMsgText");
+	if (!fn) {
+		return 0;
+	}
+	Mode_Lang("Mission_Decontamination_SystemMessage4", &args[0]);
+	Native_SetFloat(&args[1], Mode_Time() + 10.0);
+	ok = Mode_Schedule(&when, fn, args, 2, NULL);
+	Py_DECREF(fn);
+	Native_Free(&args[0]);
+	return ok;
 }
 
 /* AfterBrowseNPC(): the callbacks of the special characters */
-static PyObject *Decont_AfterBrowseNPC(PyObject *self, PyObject *args) {
+static byte Decont_AfterBrowseNPCN(void) {
 	static const char *const pairs[][2] = { { "GateKeeper_Portalis", "CreateGateKeeperInit" }, { "Sentinel_Corridor", "CreateSentinelInit" },
 		{ "Bishop_01", "CreateBishopInit" }, { "Bishop_00", "CreateBishopInit" }, { "Functionary_00", "CreateFunctionaryInit" } };
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+	if (!Mode_Import("CharsNPC")) {
+		return 0;
 	}
-	Sf_Import(&f, "CharsNPC");
-	for (int i = 0; i < 5 && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *res = Sf_GetItem(&f, Sf_Mod(&f, "CharsNPC", "CharRes"), Sf_Str(&f, pairs[i][0]));
-		Sf_Method(&f, Sf_Attr(&f, res, "CallbackFunc"), "append", "(O)", Sf_Global(&f, MD, pairs[i][1]));
-		Sf_Release(&f, mark);
+	for (int i = 0; i < 5; i++) {
+		if (!LvN_Callback(pairs[i][0], MD, pairs[i][1])) {
+			return 0;
+		}
 	}
-	return Sf_None(&f);
+	return 1;
 }
 
 /* CreateFunctionaryInit(e) */
-static PyObject *Decont_CreateFunctionaryInit(PyObject *self, PyObject *args) {
-	static const char *const vars[] = { "ArrowCanUse=1", "UseFunc=MapDecont.PlayFunctionary", "LLogicProbTalkWhenWalking=1.0",
-		"LLogicKeepWorking=1", NULL };
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
-	}
-	Sf_SetAttrs(&f, e, MD, vars);
-	return Sf_None(&f);
-}
+static const char *const functionary_vars[] = { "ArrowCanUse=1", "UseFunc=MapDecont.PlayFunctionary", "LLogicProbTalkWhenWalking=1.0",
+	"LLogicKeepWorking=1", NULL };
 
 /* CreateBishopInit(e) of MapDecont, CreateFixedInit(e) of GamblinDen's Map: the character stands where it is */
 static const char *const fixed_vars[] = { "LLogicDefaultState=6", "LLogicDefaultTarget='", "LLogicState=6", "LLogicTarget='",
 	"LLogicIdle=1", "LLogicIdle=0", NULL };
 
+MODE_FN(Ob, FixedInit, 1, Mode_SetAttrs(&a[0], fixed_vars))
+
 PyObject *Level_FixedInit(PyObject *self, PyObject *args) {
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
-	}
-	Sf_SetAttrs(&f, e, MD, fixed_vars);
-	return Sf_None(&f);
-}
-
-static PyObject *Decont_CreateGateKeeperInit(PyObject *self, PyObject *args) {
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
-	}
-	Sf_SetAttrS(&f, e, "UseFunc", "MapDecont.GateKeeperSpeech");
-	return Sf_None(&f);
-}
-
-static PyObject *Decont_CreateSentinelInit(PyObject *self, PyObject *args) {
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
-	}
-	Sf_SetAttrS(&f, e, "UseFunc", "MapDecont.SentinelSpeech");
-	return Sf_None(&f);
+	return Ob_FixedInit(self, args);
 }
 
 /* ShowSkipConvsMsg(): how to skip the talks */
-static PyObject *Decont_ShowSkipConvsMsg(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Ob_Msg(&f, Lv_KeyText(&f, "Mission_Decontamination_SystemMessage8", "Use"), 10);
-	return Sf_None(&f);
+static byte Decont_ShowSkipConvsMsgN(void) {
+	return Ob_KeyMsg("Mission_Decontamination_SystemMessage8", "Use", 10);
+}
+
+/* Speech.OnEndOfSpeech = GateKeeper.EndOfSpeech (OBJLIB 5: a function of another port) */
+static byte Ob_GateKeeperEnd(void) {
+	nativeVal_t fn = { 0 };
+	byte ok = LvN_ModGet("GateKeeper", "EndOfSpeech", &fn) && Mode_SetModVar("Speech", "OnEndOfSpeech", &fn);
+	Native_Free(&fn);
+	return ok;
 }
 
 /* GateKeeperSpeech(UsrName, CharName, optId, FullOption): the gatekeeper of the entrance and its door */
-static PyObject *Decont_GateKeeperSpeech(PyObject *self, PyObject *args) {
-	PyObject *usrName, *charName, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usrName, &charName, &opt, &full)) {
-		return NULL;
-	}
+static byte Decont_GateKeeperSpeechN(const nativeVal_t *usrName, const nativeVal_t *charName, const nativeVal_t *opt) {
 	static const char *const mods[] = { "Speech", "Chars", "Menu", "string", "GateKeeper", NULL };
+	static const char *const answers[] = { "Mission_Decontamination_GateKeeper_1", "Mission_Decontamination_GateKeeper_2",
+		"Mission_Decontamination_GateKeeper_3", "Mission_Decontamination_GateKeeper_4" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ch = Mode_V(&t), *usr = Mode_V(&t), *gc = Mode_V(&t), *dn = Mode_V(&t), *door = Mode_V(&t);
+	nativeVal_t *cad = Mode_V(&t), *now = Mode_V(&t), *st = Mode_V(&t), *when = Mode_V(&t), *fn = Mode_V(&t);
+	nativeVal_t *params = Mode_V(&t);
 	for (int i = 0; mods[i]; i++) {
-		Sf_Import(&f, mods[i]);
+		if (!Mode_Import(mods[i])) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	PyObject *ch = Sf_Entity(&f, charName);
-	Sf_Entity(&f, usrName);
-	Sf_SpeechNames(&f, usrName, charName);
-	PyObject *gc = Sf_GetItem(&f, Sf_Mod(&f, "GateKeeper", "GateKeepers"), charName);
-	PyObject *door = Sf_Entity(&f, Sf_Attr(&f, gc, "Door"));
-	if (Sf_EqS(&f, opt, "Talk") > 0) {
-		PyObject *cad = LANG("Mission_Decontamination_GateKeeper_InitMsg1");
-		PyObject *t = Sf_Time(&f);
-		PyObject *when = Sf_Op(&f, t, '+', Sf_Ask(&f, "Speech", "CalculateSpeechTime", "(O)", cad));
-		Sf_Schedule(&f, when, Sf_Global(&f, MD, "ShowSkipConvsMsg"), Sf_Build(&f, "()"), NULL);
-		Sf_Run(&f, "Speech", "OnSpch", "(sss)", "Mission_Decontamination_GateKeeper_InitMsg1", "Mission_Decontamination_GateKeeper_InitAns1", "TalkNPC");
-		Sf_Run(&f, "Speech", "StdAnsLst", "([ssss])", "Mission_Decontamination_GateKeeper_1", "Mission_Decontamination_GateKeeper_2",
-			"Mission_Decontamination_GateKeeper_3", "Mission_Decontamination_GateKeeper_4");
-		Sf_Own(&f, MD, "CheckShowNextHowto", "()");
-	} else if (!f.failed && Sf_EqS(&f, opt, "Mission_Decontamination_GateKeeper_3") > 0) {
-		Sf_Run(&f, "Speech", "OnSpch", "(sss)", "Mission_Decontamination_GateKeeper_3Msg", "Mission_Decontamination_GateKeeper_3Ans", "TalkNoNPC");
-		Sf_SetAttrI(&f, ch, "ArriOpt", 3);
-	} else if (!f.failed && Sf_EqS(&f, opt, "Mission_Decontamination_GateKeeper_4") > 0) {
-		Sf_SetAttr(&f, ch, "ArrOpt3", Sf_Cat(&f, "sO", "AllreadyOpen:", LANG("Mission_Decontamination_GateKeeper_4Opt")));
-		Sf_Run(&f, "Speech", "OnSpch", "(sss)", "Mission_Decontamination_GateKeeper_4Msg", "Mission_Decontamination_GateKeeper_4Ans", "TalkNPC");
-		Sf_SetMod(&f, "Speech", "OnEndOfSpeech", Sf_Mod(&f, "GateKeeper", "EndOfSpeech"));
-		Sf_SetMod(&f, "GateKeeper", "LocalCallFunc", Sf_Attr(&f, gc, "CanPassFunc"));
-		Sf_SetMod(&f, "GateKeeper", "LocalParams", Sf_Build(&f, "(OO)", door, charName));
-		Sf_SetAttrS(&f, ch, "AbortSelectFunc", "GateKeeper.RestoreState");
-	} else if (!f.failed && Sf_EqS(&f, opt, "AllreadyOpen") > 0) {
-		Sf_Run(&f, "Speech", "OnSpch", "(sss)", "Mission_Decontamination_GateKeeper_4Msg", "Generics_GateKeeper_InitAns1", "TalkNPC");
-		Sf_SetMod(&f, "Speech", "OnEndOfSpeech", Sf_Mod(&f, "GateKeeper", "EndOfSpeech"));
-		Sf_Call(&f, Sf_Attr(&f, gc, "CanPassFunc"), "(OO)", door, charName);
-		Sf_SetAttrS(&f, ch, "AbortSelectFunc", "GateKeeper.RestoreState");
-	} else if (!f.failed) {
-		Sf_Run(&f, "Speech", "StdOnSpch", "(O)", opt);
+	if (!Mode_EntityH(charName, ch) || !Mode_EntityH(usrName, usr) || !LvN_Speakers(usrName, charName)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	/* OBJLIB 5 and 7: GateKeeper.GateKeepers holds the gatekeeper objects; GateKeepers[CharName] the Python way */
+	PyObject *gks = Script_Attr("GateKeeper", "GateKeepers"), *key = gks ? Native_ToPy(charName) : NULL;
+	PyObject *g = key ? PyObject_GetItem(gks, key) : NULL;
+	Py_XDECREF(key);
+	Py_XDECREF(gks);
+	if (!g) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Arg(g, gc);
+	Py_DECREF(g);
+	if (!Mode_VObj(gc, "Door", dn) || !Mode_EntityH(dn, door)) {
+		return Mode_Done(&t, 0);
+	}
+	byte ok;
+	if (LvN_EqS(opt, "Talk")) {
+		Mode_Lang("Mission_Decontamination_GateKeeper_InitMsg1", cad);
+		Native_SetFloat(now, Mode_Time());
+		ok = LV_CALL("Speech", "CalculateSpeechTime", st, "v", cad) && Native_Arith('+', now, st, when) &&
+			LvN_GObj(MD, "ShowSkipConvsMsg", fn);
+		if (ok) {
+			PyObject *f = Native_ToPy(fn);
+			ok = f && Mode_Schedule(when, f, NULL, 0, NULL);
+			Py_XDECREF(f);
+		}
+		ok = ok &&
+			Mode_Spch("Mission_Decontamination_GateKeeper_InitMsg1", "Mission_Decontamination_GateKeeper_InitAns1", "TalkNPC") &&
+			Mode_AnsLst(answers, 4) && LV_OWN(MD, "CheckShowNextHowto", NULL, "");
+	} else if (LvN_EqS(opt, "Mission_Decontamination_GateKeeper_3")) {
+		ok = Mode_Spch("Mission_Decontamination_GateKeeper_3Msg", "Mission_Decontamination_GateKeeper_3Ans", "TalkNoNPC") &&
+			LvN_SetI(ch, "ArriOpt", 3);
+	} else if (LvN_EqS(opt, "Mission_Decontamination_GateKeeper_4")) {
+		ok = LvN_SetLangOpt(ch, "ArrOpt3", "AllreadyOpen:", "Mission_Decontamination_GateKeeper_4Opt") &&
+			Mode_Spch("Mission_Decontamination_GateKeeper_4Msg", "Mission_Decontamination_GateKeeper_4Ans", "TalkNPC") &&
+			Ob_GateKeeperEnd() && Mode_VObj(gc, "CanPassFunc", fn) && Mode_SetModVar("GateKeeper", "LocalCallFunc", fn);
+		if (ok) {
+			Native_SetEmpty(params, NV_TUPLE);
+			Native_Copy(Native_Append(params), door);
+			Native_Copy(Native_Append(params), charName);
+			ok = Mode_SetModVar("GateKeeper", "LocalParams", params) && LvN_SetS(ch, "AbortSelectFunc", "GateKeeper.RestoreState");
+		}
+	} else if (LvN_EqS(opt, "AllreadyOpen")) {
+		ok = Mode_Spch("Mission_Decontamination_GateKeeper_4Msg", "Generics_GateKeeper_InitAns1", "TalkNPC") &&
+			Ob_GateKeeperEnd() && Mode_VObj(gc, "CanPassFunc", fn);
+		if (ok) {
+			/* gc.CanPassFunc(door, CharName): a function value of the gatekeeper (OBJLIB 3) */
+			PyObject *f = Native_ToPy(fn);
+			ok = f && Native_Call(f, NULL, "vv", door, charName);
+			Py_XDECREF(f);
+		}
+		ok = ok && LvN_SetS(ch, "AbortSelectFunc", "GateKeeper.RestoreState");
+	} else {
+		ok = LV_CALL("Speech", "StdOnSpch", NULL, "v", opt);
+	}
+	return Mode_Done(&t, ok);
 }
 
 /* SentinelSpeech(UsrName, CharName, optId, FullOption): the sentinel of the corridor; its second answer shows the
  * cop meter */
-static PyObject *Decont_SentinelSpeech(PyObject *self, PyObject *args) {
-	PyObject *usrName, *charName, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usrName, &charName, &opt, &full)) {
-		return NULL;
+static byte Decont_SentinelSpeechN(const nativeVal_t *usrName, const nativeVal_t *charName, const nativeVal_t *opt) {
+	static const char *const answers[] = { "Mission_Checkin_Sentinel_1", "Mission_Checkin_Sentinel_2" };
+	if (!Mode_Import("Speech") || !LvN_Speakers(usrName, charName)) {
+		return 0;
 	}
-	Sf_Import(&f, "Speech");
-	Sf_SpeechNames(&f, usrName, charName);
-	if (Sf_EqS(&f, opt, "Talk") > 0) {
-		Sf_Run(&f, "Speech", "OnSpch", "(ss)", "Mission_Checkin_Sentinel_InitMsg1", "Mission_Checkin_Sentinel_InitAns1");
-		Sf_Run(&f, "Speech", "StdAnsLst", "([ss])", "Mission_Checkin_Sentinel_1", "Mission_Checkin_Sentinel_2");
-	} else if (!f.failed && Sf_EqS(&f, opt, "Mission_Checkin_Sentinel_2") > 0) {
-		Sf_Run(&f, "Speech", "StdOnSpch", "(O)", opt);
-		Sf_Later(&f, Sf_Int(&f, 8), Sf_Global(&f, MD, "GaugeBlink"), Sf_Build(&f, "()"), NULL);
-	} else if (!f.failed) {
-		Sf_Run(&f, "Speech", "StdOnSpch", "(O)", opt);
+	if (LvN_EqS(opt, "Talk")) {
+		return Mode_Spch("Mission_Checkin_Sentinel_InitMsg1", "Mission_Checkin_Sentinel_InitAns1", NULL) && Mode_AnsLst(answers, 2);
 	}
-	return Sf_None(&f);
+	if (LvN_EqS(opt, "Mission_Checkin_Sentinel_2")) {
+		return LV_CALL("Speech", "StdOnSpch", NULL, "v", opt) && Mode_Later(8.0, MD, "GaugeBlink", NULL, 0, NULL);
+	}
+	return LV_CALL("Speech", "StdOnSpch", NULL, "v", opt);
 }
 
 /* GaugeBlink(): while the sentinel still talks, the alarm rises and the cop meter blinks */
-static PyObject *Decont_GaugeBlink(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Decont_GaugeBlinkN(void) {
+	nativeVal_t e = { 0 }, act = { 0 }, head = { 0 }, level = { 0 };
+	if (!Mode_Import("Scorer")) {
+		return 0;
 	}
-	Sf_Import(&f, "Scorer");
-	PyObject *act = Sf_Attr(&f, ENT("Sentinel_Corridor"), "Action");
-	if (Sf_EqS(&f, Sf_Slice(&f, act, 0, 7), "TalkNPC") > 0) {
-		Sf_Run(&f, "Scrap", "SetAlarm", "(d)", 0.9);
-		Sf_Run(&f, "Scorer", "Blink", "(is)", 30, "CopMeter");
+	Native_SetNone(&act);
+	Native_SetNone(&head);
+	byte ok = LvN_Entity("Sentinel_Corridor", &e) && Mode_VGet(&e, "Action", &act) && Native_Slice(&act, 0, 7, &head);
+	if (ok && LvN_EqS(&head, "TalkNPC")) {
+		Native_SetFloat(&level, 0.9);
+		ok = Mode_SetAlarm(&level) && LV_CALL("Scorer", "Blink", NULL, "is", 30L, "CopMeter");
 	}
-	return Sf_None(&f);
+	Native_Free(&e);
+	Native_Free(&act);
+	Native_Free(&head);
+	return ok;
 }
 
 /* CheckShowNextHowto(): once the player has the gatekeeper selected with more than one option, how to pick the next */
-static PyObject *Decont_CheckShowNextHowto(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Decont_CheckShowNextHowtoN(void) {
+	nativeVal_t e = { 0 }, n = { 0 }, one = { 0 }, usr = { 0 }, sel = { 0 }, aut = { 0 }, args[2] = { 0 };
+	Native_SetNone(&n);
+	byte ok = LvN_Entity("GateKeeper_Portalis", &e) && Mode_VGet(&e, "ArrnOpt", &n);
+	Native_Free(&e);
+	Native_SetInt(&one, 1);
+	if (!ok || Native_Compare(&n, &one) <= 0) {
+		Native_Free(&n);
+		return ok;
 	}
-	if (Sf_Compare(&f, Sf_Attr(&f, ENT("GateKeeper_Portalis"), "ArrnOpt"), "<=", Sf_Int(&f, 1)) != 0) {
-		return Sf_None(&f);
+	Native_Free(&n);
+	if (!Mode_Import("Scorer") || !Mode_UsrHandle(&usr)) {
+		return 0;
 	}
-	Sf_Import(&f, "Scorer");
-	PyObject *e = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	if (Sf_True(&f, e) > 0) {
-		int sel = Sf_EqS(&f, Sf_Attr(&f, e, "SelectedEntity"), "GateKeeper_Portalis");
-		if (sel > 0) {
-			sel = Sf_True(&f, Sf_Attr(&f, e, "AutoSelect"));
+	if (Native_True(&usr)) {
+		Native_SetNone(&sel);
+		Native_SetNone(&aut);
+		int go = Mode_VGet(&usr, "SelectedEntity", &sel) ? LvN_EqS(&sel, "GateKeeper_Portalis") : -1;
+		if (go > 0) {
+			go = Mode_VGet(&usr, "AutoSelect", &aut) ? Native_True(&aut) : -1;
 		}
-		if (sel > 0) {
-			Ob_Msg(&f, Lv_KeyText(&f, "Mission_Decontamination_SystemMessage3", "NextAction"), 10);
-			Sf_Later(&f, Sf_Int(&f, 1), Sf_Mod(&f, "Scorer", "Blink"), Sf_Build(&f, "(is)", 20, "Talk"), NULL);
-			return Sf_None(&f);
+		Native_Free(&sel);
+		Native_Free(&aut);
+		if (go != 0) {
+			Native_Free(&usr);
+			if (go < 0) {
+				return 0;
+			}
+			Native_SetInt(&args[0], 20);
+			LvN_Str(&args[1], "Talk");
+			ok = Ob_KeyMsg("Mission_Decontamination_SystemMessage3", "NextAction", 10) &&
+				Mode_LaterIn(1.0, "Scorer", "Blink", args, 2, NULL);
+			Native_Free(&args[1]);
+			return ok;
 		}
 	}
-	LATER(0.25, Sf_Global(&f, MD, "CheckShowNextHowto"), Sf_Build(&f, "()"));
-	return Sf_None(&f);
+	Native_Free(&usr);
+	return Mode_Later(0.25, MD, "CheckShowNextHowto", NULL, 0, NULL);
 }
 
 /* CreateBishopsLauncher(): the item that starts the scene of the bishops */
-static PyObject *Decont_CreateBishopsLauncher(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	PyObject *l = Sf_Ask(&f, "Scrap", "CreateEntity", "(siiis)", "BishopsLauncher", -19800, 1150, -31100, "Item");
-	Sf_SetAttrI(&f, l, "Radius", 400);
-	Sf_SetAttrS(&f, l, "OnTake", "MapDecont.PlayBishops");
-	return Sf_None(&f);
+static byte Decont_CreateBishopsLauncherN(void) {
+	nativeVal_t name = { 0 }, x = { 0 }, y = { 0 }, z = { 0 }, l = { 0 };
+	LvN_Str(&name, "BishopsLauncher");
+	Native_SetInt(&x, -19800);
+	Native_SetInt(&y, 1150);
+	Native_SetInt(&z, -31100);
+	byte ok = LvN_Create(&name, &x, &y, &z, "Item", &l) && LvN_SetI(&l, "Radius", 400) &&
+		LvN_SetS(&l, "OnTake", "MapDecont.PlayBishops");
+	Native_Free(&name);
+	Native_Free(&l);
+	return ok;
 }
 
 /* EndOfSceneBishops(usr): the player after the scene, the bishops talk, infinite lives, the back door closes */
-static PyObject *Decont_EndOfSceneBishops(PyObject *self, PyObject *args) {
-	PyObject *usr;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &usr)) {
-		return NULL;
+static byte Decont_EndOfSceneBishopsN(const nativeVal_t *usr) {
+	nativeVal_t one = { 0 }, door = { 0 };
+	Native_SetInt(&one, 1);
+	if (!Mode_Import("Chars") || !Ob_PlaceUsr(usr, -20423, 1046, -31145, 90) || !Mode_Import("Bishop") ||
+		!Mode_SetModVar("Bishop", "skipChallengeOptions", &one) || !Mode_EntSetS("Bishop_01", "UseFunc", "Speech.AutoSpeech") ||
+		!Mode_EntSetS("Bishop_00", "UseFunc", "Speech.AutoSpeech")) {
+		return 0;
 	}
-	Sf_Import(&f, "Chars");
-	Sf_SetAttr(&f, usr, "Pos", Sf_Build(&f, "(iii)", -20423, 1046, -31145));
-	Sf_SetAttr(&f, usr, "Ang", Sf_Build(&f, "(iii)", 0, 90, 0));
-	Sf_Run(&f, "SLogic", "SetOnFloor", "(O)", Sf_Attr(&f, usr, "Name"));
-	Sf_Import(&f, "Bishop");
-	Sf_SetMod(&f, "Bishop", "skipChallengeOptions", Sf_Int(&f, 1));
-	Sf_EntSetS(&f, "Bishop_01", "UseFunc", "Speech.AutoSpeech");
-	Sf_EntSetS(&f, "Bishop_00", "UseFunc", "Speech.AutoSpeech");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Player.NumLives", "0");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Player.InfiniteLives", "1");
-	PyObject *door = ENT("DM_Door_OrbitDoorA_03");
-	Sf_SetAttrS(&f, door, "ForceAction", "Close");
-	Sf_SetAttrS(&f, door, "ForceDefLoop", "Closed");
-	return Sf_None(&f);
+	SaveVar_Set("Player.NumLives", "0");
+	SaveVar_Set("Player.InfiniteLives", "1");
+	byte ok = LvN_Entity("DM_Door_OrbitDoorA_03", &door) && LvN_SetS(&door, "ForceAction", "Close") &&
+		LvN_SetS(&door, "ForceDefLoop", "Closed");
+	Native_Free(&door);
+	return ok;
 }
 
 static const char *const bishops_scene[] = {
@@ -729,58 +810,83 @@ static const char *const bishops_scene[] = {
 };
 
 /* LoadBishopsScene(): the scene of the two bishops and its effect */
-static PyObject *Decont_LoadBishopsScene(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "Scene");
-	Sf_Import(&f, "MakeChar");
-	Sf_Calls(&f, MD, bishops_scene);
-	Ob_SceneFx(&f, MD, "FXSceneBishopsFile", "FXSCENEBISHOPS");
-	return Sf_None(&f);
+static byte Decont_LoadBishopsSceneN(void) {
+	return Mode_Import("Scene") && Mode_Import("MakeChar") && Mode_Calls(MD, bishops_scene) &&
+		Ob_SceneFx(MD, "FXSceneBishopsFile", "FXSCENEBISHOPS");
 }
 
-/* FXBishopsPray(EntityName, EventName, Time): the effect of a bishop selling a life to Dtritus */
-static PyObject *Decont_FXBishopsPray(PyObject *self, PyObject *args) {
-	PyObject *ent, *ev, *t;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &ent, &ev, &t)) {
-		return NULL;
-	}
-	Sf_Run(&f, "Scrap", "SetCallFunc", "(s)", "!FXBishopSellLife");
-	Sf_Run(&f, "Scrap", "AddParams", "(O)", Sf_Cat(&f, "sO", "BishopsBishop", Sf_Item(&f, ev, -1)));
-	Sf_Run(&f, "Scrap", "AddParams", "(s)", "BishopsDtritus");
-	Sf_Run(&f, "Scrap", "Execute", "()");
-	return Sf_None(&f);
+/* FXBishopsPray(EntityName, EventName, Time): the effect of a bishop selling a life to Dtritus (OBJLIB 7: the engine
+ * call by name, fc-r6b-or1 records SetCallFunc, AddParams and Execute) */
+static byte Decont_FXBishopsPrayN(const nativeVal_t *ev) {
+	nativeVal_t pre = { 0 }, last = { 0 }, p = { 0 };
+	Native_SetNone(&last);
+	Native_SetNone(&p);
+	LvN_Str(&pre, "BishopsBishop");
+	byte ok = LV_CALL("Scrap", "SetCallFunc", NULL, "s", "!FXBishopSellLife") && LvN_Item(ev, -1, &last) &&
+		Native_Arith('+', &pre, &last, &p) && LV_CALL("Scrap", "AddParams", NULL, "v", &p) &&
+		LV_CALL("Scrap", "AddParams", NULL, "s", "BishopsDtritus") && LV_CALL("Scrap", "Execute", NULL, "");
+	Native_Free(&pre);
+	Native_Free(&last);
+	Native_Free(&p);
+	return ok;
 }
 
 /* PlayBishops(ItemName=None, CharName=None): the scene of the bishops, started a moment later (an item cannot hide
  * cars or characters) */
+static byte Decont_PlayBishopsN(const nativeVal_t *item, const nativeVal_t *ch) {
+	nativeVal_t none = { 0 }, usr = { 0 }, name = { 0 }, h = { 0 }, when = { 0 }, scene = { 0 };
+	Native_SetNone(&none);
+	int go = !Native_Compare(ch, &none);
+	if (!go) {
+		Native_SetNone(&name);
+		go = Mode_UsrHandle(&usr) && Mode_VGet(&usr, "Name", &name) ? !Native_Compare(ch, &name) : -1;
+		Native_Free(&usr);
+		Native_Free(&name);
+		if (go < 0) {
+			return 0;
+		}
+	}
+	if (!go) {
+		return 1;
+	}
+	if (Native_True(item)) {
+		byte ok = Mode_EntityH(item, &h) && Mode_VDel(&h);
+		Native_Free(&h);
+		if (!ok) {
+			return 0;
+		}
+	}
+	if (!Mode_Import("Scene") || !Mode_EntSetS("DM_Door_OrbitDoorA_03", "OnObjSlot", "") ||
+		!LvN_ModSetGlobal("Scene", "EndOfSceneCallback", MD, "EndOfSceneBishops")) {
+		return 0;
+	}
+	Native_SetFloat(&when, Mode_Time());
+	/* OBJLIB 4: Scene.Play as the object of the module */
+	PyObject *fn = Script_Attr("Scene", "Play");
+	if (!fn) {
+		return 0;
+	}
+	LvN_Str(&scene, "Bishops");
+	byte ok = Mode_Schedule(&when, fn, &scene, 1, NULL);
+	Py_DECREF(fn);
+	Native_Free(&scene);
+	return ok;
+}
+
 static PyObject *Decont_PlayBishops(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "ItemName", "CharName", NULL };
 	PyObject *item = Py_None, *ch = Py_None;
-	scriptFrame_t f = { 0 };
+	nativeVal_t a[2] = { 0 };
 	(void)self;
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "|OO", names, &item, &ch)) {
 		return NULL;
 	}
-	int go = Sf_Compare(&f, ch, "==", Py_None);
-	if (go == 0) {
-		go = Sf_Compare(&f, ch, "==", Sf_Attr(&f, Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0), "Name"));
-	}
-	if (go > 0) {
-		if (Sf_True(&f, item) > 0) {
-			Sf_Method(&f, Sf_Entity(&f, item), "Del", "()");
-		}
-		Sf_Import(&f, "Scene");
-		Sf_EntSetS(&f, "DM_Door_OrbitDoorA_03", "OnObjSlot", "");
-		Sf_SetMod(&f, "Scene", "EndOfSceneCallback", Sf_Global(&f, MD, "EndOfSceneBishops"));
-		Sf_Schedule(&f, Sf_Time(&f), Sf_Mod(&f, "Scene", "Play"), Sf_Build(&f, "(s)", "Bishops"), NULL);
-	}
-	return Sf_None(&f);
+	Native_Arg(item, &a[0]);
+	Native_Arg(ch, &a[1]);
+	byte ok = Decont_PlayBishopsN(&a[0], &a[1]);
+	Native_Free(&a[0]);
+	Native_Free(&a[1]);
+	return Mode_Result(ok);
 }
 
 static const char *const functionary_scene1[] = {
@@ -902,150 +1008,137 @@ static const char *const functionary_scene2[] = {
 };
 
 /* LoadFunctionaryScene(): the scene of the check in at the functionary's desk, with the trap panel */
-static PyObject *Decont_LoadFunctionaryScene(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Decont_LoadFunctionarySceneN(void) {
+	nativeVal_t df = { 0 };
+	if (!Mode_Import("Scene") || !Mode_Import("MakeChar") || !Mode_Calls(MD, functionary_scene1)) {
+		return 0;
 	}
-	Sf_Import(&f, "Scene");
-	Sf_Import(&f, "MakeChar");
-	Sf_Calls(&f, MD, functionary_scene1);
-	PyObject *df = ENT("DM_DesktopFunctionary_00");
-	Sf_SetAttrS(&f, df, "ActCtrl", "BureaucracyDesktopFunctionary");
-	Sf_SetAttrI(&f, df, "MapCollision", 1);
-	Sf_Calls(&f, MD, functionary_scene2);
-	return Sf_None(&f);
+	byte ok = LvN_Entity("DM_DesktopFunctionary_00", &df) && LvN_SetS(&df, "ActCtrl", "BureaucracyDesktopFunctionary") &&
+		LvN_SetI(&df, "MapCollision", 1) && Mode_Calls(MD, functionary_scene2);
+	Native_Free(&df);
+	return ok;
 }
 
 /* AddDF(frame, Action, DefLoop, EntityName="DM_DesktopFunctionary_00"): an event of the current action at the frame
  * that forces the animation of an entity */
+static byte Decont_AddDFN(const nativeVal_t *frame, const nativeVal_t *act, const nativeVal_t *loop,
+	const nativeVal_t *ent) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *rep = Mode_V(&t), *key = Mode_V(&t), *at = Mode_V(&t), *comma = Mode_V(&t), *name = Mode_V(&t);
+	Mode_Repr(frame, rep);
+	LvN_Str(comma, ",");
+	if (!Mode_Cat(&t, key, 2, Mode_S(&t, "TimeOfFrame"), rep) || !LvN_GetAct(Native_Text(key), at) ||
+		!LvN_SetAct("AddEventAtTime", at) || !Mode_Cat(&t, name, 5, act, comma, loop, comma, ent) ||
+		!LvN_SetAct("EventName", name)) {
+		return Mode_Done(&t, 0);
+	}
+	LvN_Str(name, "MapDecont.SetDFAnm");
+	return Mode_Done(&t, LvN_SetAct("EventFunc", name));
+}
+
 static PyObject *Decont_AddDF(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "frame", "Action", "DefLoop", "EntityName", NULL };
-	PyObject *frame, *act, *loop, *ent = NULL;
-	scriptFrame_t f = { 0 };
+	PyObject *o[4] = { NULL, NULL, NULL, NULL };
+	nativeVal_t a[4] = { 0 };
 	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOO|O", names, &frame, &act, &loop, &ent)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOO|O", names, &o[0], &o[1], &o[2], &o[3])) {
 		return NULL;
 	}
-	if (!ent) {
-		ent = Sf_Str(&f, "DM_DesktopFunctionary_00");
+	for (int i = 0; i < 3; i++) {
+		Native_Arg(o[i], &a[i]);
 	}
-	PyObject *t = Sf_Ask(&f, "SAct", "GetAct", "(O)", Sf_Cat(&f, "sO", "TimeOfFrame", Sf_Repr(&f, frame)));
-	Sf_Run(&f, "SAct", "SetAct", "(sO)", "AddEventAtTime", t);
-	Sf_Run(&f, "SAct", "SetAct", "(sO)", "EventName", Sf_Cat(&f, "OsOsO", act, ",", loop, ",", ent));
-	Sf_Run(&f, "SAct", "SetAct", "(ss)", "EventFunc", "MapDecont.SetDFAnm");
-	return Sf_None(&f);
+	if (o[3]) {
+		Native_Arg(o[3], &a[3]);
+	} else {
+		LvN_Str(&a[3], "DM_DesktopFunctionary_00");
+	}
+	byte ok = Decont_AddDFN(&a[0], &a[1], &a[2], &a[3]);
+	for (int i = 0; i < 4; i++) {
+		Native_Free(&a[i]);
+	}
+	return Mode_Result(ok);
 }
 
 /* SetDFAnm(EntityName, EventName, Time): EventName is "action,loop,entity" */
-static PyObject *Decont_SetDFAnm(PyObject *self, PyObject *args) {
-	PyObject *ent, *ev, *t;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &ent, &ev, &t)) {
-		return NULL;
-	}
-	Sf_Import(&f, "string");
-	PyObject *values = Sf_Ask(&f, "string", "split", "(Os)", ev, ",");
-	PyObject *df = Sf_Entity(&f, Sf_Item(&f, values, 2));
-	Sf_SetAttr(&f, df, "ForceAction", Sf_Item(&f, values, 0));
-	Sf_SetAttr(&f, df, "ForceDefLoop", Sf_Item(&f, values, 1));
-	return Sf_None(&f);
+static byte Decont_SetDFAnmN(const nativeVal_t *ev) {
+	nativeVal_t values = { 0 }, name = { 0 }, df = { 0 }, v = { 0 };
+	Native_SetNone(&values);
+	Native_SetNone(&name);
+	Native_SetNone(&df);
+	Native_SetNone(&v);
+	byte ok = Mode_Import("string") && Native_Split(ev, ",", &values) && LvN_Item(&values, 2, &name) &&
+		Mode_EntityH(&name, &df) && LvN_Item(&values, 0, &v) && Mode_VSet(&df, "ForceAction", &v);
+	Native_Free(&v);
+	ok = ok && LvN_Item(&values, 1, &v) && Mode_VSet(&df, "ForceDefLoop", &v);
+	Native_Free(&values);
+	Native_Free(&name);
+	Native_Free(&df);
+	Native_Free(&v);
+	return ok;
 }
 
 /* EndOfSceneFunctionary(usr): the functionary talks normally again, the keypad down to the town hall */
-static PyObject *Decont_EndOfSceneFunctionary(PyObject *self, PyObject *args) {
-	PyObject *usr;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &usr)) {
-		return NULL;
+static byte Decont_EndOfSceneFunctionaryN(void) {
+	nativeVal_t c = { 0 }, one = { 0 };
+	if (!Mode_Import("Functionary") || !Mode_Import("SaveGame") || !LvN_Entity("Functionary_00", &c)) {
+		return 0;
 	}
-	Sf_Import(&f, "Functionary");
-	Sf_Import(&f, "SaveGame");
-	PyObject *c = ENT("Functionary_00");
-	Sf_SetMod(&f, "Functionary", "skipChallengeOptions", Sf_Int(&f, 1));
-	Sf_SetAttrS(&f, c, "UseFunc", "Speech.AutoSpeech");
-	Sf_SetAttrI(&f, c, "ArrowCanMission", 0);
-	Sf_SetAttrI(&f, c, "RadarShow", 0);
-	Sf_Run(&f, "Scrap", "Set", "(sO)", "FunctionaryMinTimeToSitDown", Sf_Ask(&f, "Scrap", "Def", "(s)", "FunctionaryMinTimeToSitDown"));
-	Sf_Run(&f, "Scrap", "Set", "(sO)", "FunctionaryMaxTimeToSitDown", Sf_Ask(&f, "Scrap", "Def", "(s)", "FunctionaryMaxTimeToSitDown"));
-	Sf_Own(&f, MD, "CreateDownKeyPad", "()");
-	Sf_Run(&f, "SaveGame", "MMDesc", "(si)", "Mission_Fake_MissionText1", 0);
-	return Sf_None(&f);
+	Native_SetInt(&one, 1);
+	byte ok = Mode_SetModVar("Functionary", "skipChallengeOptions", &one) && LvN_SetS(&c, "UseFunc", "Speech.AutoSpeech") &&
+		LvN_SetI(&c, "ArrowCanMission", 0) && LvN_SetI(&c, "RadarShow", 0) && Mode_GVarSetDef("FunctionaryMinTimeToSitDown") &&
+		Mode_GVarSetDef("FunctionaryMaxTimeToSitDown") && LV_OWN(MD, "CreateDownKeyPad", NULL, "") &&
+		Mode_MMDesc("Mission_Fake_MissionText1", 0L);
+	Native_Free(&c);
+	return ok;
 }
 
 /* CreateDownKeyPad(): the keypad of the trap panel, the target of the mission */
-static PyObject *Decont_CreateDownKeyPad(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Decont_CreateDownKeyPadN(void) {
+	nativeVal_t kb = { 0 };
+	byte ok = Ob_Keypad("DM_Keypad_CineDown", "DownPanel_keyboard", &kb) && LvN_SetS(&kb, "ActCtrl", "FunctionaryDownPanel") &&
+		LvN_SetS(&kb, "Action", "Loop") && LvN_SetI(&kb, "VRadius", 60) && LvN_SetI(&kb, "ArrowCanUse", 1) &&
+		LvN_SetI(&kb, "Life", 0) && LvN_SetI(&kb, "ArrnOpt", 0) && LvN_SetLangOpt(&kb, "ArrOpt0", "GoDown:", "TownHallGoto") &&
+		LvN_SetS(&kb, "UseFunc", "MapDecont.PlayFalling") && LvN_SetI(&kb, "MapCollision", 1);
+	if (ok) {
+		/* ArrowCanMission, ArrowModMission, then RadarShow as the script sets them */
+		nativeVal_t file = { 0 };
+		Native_SetNone(&file);
+		ok = LvN_SetI(&kb, "ArrowCanMission", 1) && Native_GVarGet("ArrowMissionFile", &file) &&
+			Mode_VSet(&kb, "ArrowModMission", &file) && LvN_SetI(&kb, "RadarShow", 1);
+		Native_Free(&file);
 	}
-	PyObject *kb = Ob_Keypad(&f, "DM_Keypad_CineDown", "DownPanel_keyboard");
-	Sf_SetAttrS(&f, kb, "ActCtrl", "FunctionaryDownPanel");
-	Sf_SetAttrS(&f, kb, "Action", "Loop");
-	Sf_SetAttrI(&f, kb, "VRadius", 60);
-	Sf_SetAttrI(&f, kb, "ArrowCanUse", 1);
-	Sf_SetAttrI(&f, kb, "Life", 0);
-	Sf_SetAttrI(&f, kb, "ArrnOpt", 0);
-	Sf_SetAttr(&f, kb, "ArrOpt0", Sf_Cat(&f, "sO", "GoDown:", LANG("TownHallGoto")));
-	Sf_SetAttrS(&f, kb, "UseFunc", "MapDecont.PlayFalling");
-	Sf_SetAttrI(&f, kb, "MapCollision", 1);
-	Sf_SetAttrI(&f, kb, "ArrowCanMission", 1);
-	Sf_SetAttr(&f, kb, "ArrowModMission", Sf_Ask(&f, "Scrap", "Get", "(s)", "ArrowMissionFile"));
-	Sf_SetAttrI(&f, kb, "RadarShow", 1);
-	return Sf_None(&f);
+	Native_Free(&kb);
+	return ok;
 }
 
 /* PlayFalling(UsrName, CharName, optId, FullOption): the fall through the trap panel */
-static PyObject *Decont_PlayFalling(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
+static byte Decont_PlayFallingN(void) {
+	nativeVal_t e = { 0 };
+	if (!Mode_Import("Scene") || !LvN_Entity("DownPanel_keyboard", &e)) {
+		return 0;
 	}
-	Sf_Import(&f, "Scene");
-	PyObject *e = ENT("DownPanel_keyboard");
-	Sf_SetAttrI(&f, e, "ArrowCanMission", 0);
-	Sf_SetAttrI(&f, e, "ArrowCanUse", 0);
-	Sf_SetMod(&f, "Scene", "EndOfSceneCallback", Sf_Global(&f, MD, "JumpNextMission"));
-	Sf_Run(&f, "Scene", "Play", "(s)", "Falling");
-	return Sf_None(&f);
+	byte ok = LvN_SetI(&e, "ArrowCanMission", 0) && LvN_SetI(&e, "ArrowCanUse", 0) &&
+		Ob_Play(MD, "JumpNextMission", "Falling");
+	Native_Free(&e);
+	return ok;
 }
 
 /* JumpNextMission(usr): the game proper starts in the town hall (Levels/Fake picks the start) */
-static PyObject *Decont_JumpNextMission(PyObject *self, PyObject *args) {
+static byte Decont_JumpNextMissionN(void) {
 	static const char *const mods[] = { "SaveGame", "Init", "MissionsFuncs", "Elevator", NULL };
-	PyObject *usr;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &usr)) {
-		return NULL;
-	}
 	for (int i = 0; mods[i]; i++) {
-		Sf_Import(&f, mods[i]);
+		if (!Mode_Import(mods[i])) {
+			return 0;
+		}
 	}
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Challenge", "1");
-	Sf_Run(&f, "SaveGame", "MarkWayPoint", "(ss)", "Levels/Fake", "DM_Player_Spawn_Orbit");
-	Sf_Run(&f, "SaveGame", "StartGame", "()");
-	return Sf_None(&f);
+	SaveVar_Set("Challenge", "1");
+	return LV_CALL("SaveGame", "MarkWayPoint", NULL, "ss", "Levels/Fake", "DM_Player_Spawn_Orbit") &&
+		LV_CALL("SaveGame", "StartGame", NULL, "");
 }
 
 /* PlayFunctionary(UsrName, CharName, optId, FullOption): the scene of the check in */
-static PyObject *Decont_PlayFunctionary(PyObject *self, PyObject *args) {
-	PyObject *usr, *ch, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &ch, &opt, &full)) {
-		return NULL;
-	}
-	Sf_Import(&f, "Scene");
-	Sf_SetMod(&f, "Scene", "EndOfSceneCallback", Sf_Global(&f, MD, "EndOfSceneFunctionary"));
-	Sf_Run(&f, "Scene", "Play", "(s)", "Functionary");
-	return Sf_None(&f);
+static byte Decont_PlayFunctionaryN(void) {
+	return Mode_Import("Scene") && Ob_Play(MD, "EndOfSceneFunctionary", "Functionary");
 }
 
 static const char *const falling_scene[] = {
@@ -1066,18 +1159,44 @@ static const char *const falling_scene[] = {
 };
 
 /* LoadFallingScene(): the scene of the fall; the back door of the entrance again */
-static PyObject *Decont_LoadFallingScene(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "Scene");
-	Sf_Import(&f, "MakeChar");
-	Sf_Calls(&f, MD, falling_scene);
-	Sf_EntSetS(&f, "DM_Door_OrbitDoorA_03", "OnObjSlot", "!BackDoorSlot");
-	return Sf_None(&f);
+static byte Decont_LoadFallingSceneN(void) {
+	return Mode_Import("Scene") && Mode_Import("MakeChar") && Mode_Calls(MD, falling_scene) &&
+		Mode_EntSetS("DM_Door_OrbitDoorA_03", "OnObjSlot", "!BackDoorSlot");
 }
+
+MODE_FN(Decont, InitStatus, 1, Decont_InitStatusN())
+MODE_FN(Decont, Decontamination, 4, Decont_DecontaminationN())
+MODE_FN(Decont, EndOfScene, 1, Decont_EndOfSceneN(&a[0]))
+MODE_FN(Decont, DecontaminatedWaypoint, 0, Decont_DecontaminatedWaypointN())
+MODE_FN(Decont, SetWaypoint, 1, Decont_SetWaypointN(&a[0]))
+MODE_FN(Decont, LoadDecontamination, 0, Decont_LoadDecontaminationN())
+MODE_FN(Decont, Init, 1, Decont_InitN())
+MODE_FN(Decont, MsgOffVoice, 0, Decont_MsgOffVoiceN())
+MODE_FN(Decont, SetFirstInfoPointAsMission, 1, Decont_SetFirstInfoPointAsMissionN())
+MODE_FN(Decont, CantUseElevator, 4, Decont_CantUseElevatorN())
+MODE_FN(Decont, CloseGateKeeperDoor, 2, Decont_CloseGateKeeperDoorN(&a[0]))
+MODE_FN(Decont, OpenGateKeeperDoor, 2, Decont_OpenGateKeeperDoorN(&a[0]))
+MODE_FN(Decont, AfterBrowseNPC, 0, Decont_AfterBrowseNPCN())
+MODE_FN(Decont, CreateFunctionaryInit, 1, Mode_SetAttrs(&a[0], functionary_vars))
+MODE_FN(Decont, CreateGateKeeperInit, 1, LvN_SetS(&a[0], "UseFunc", "MapDecont.GateKeeperSpeech"))
+MODE_FN(Decont, CreateSentinelInit, 1, LvN_SetS(&a[0], "UseFunc", "MapDecont.SentinelSpeech"))
+MODE_FN(Decont, ShowSkipConvsMsg, 0, Decont_ShowSkipConvsMsgN())
+MODE_FN(Decont, GateKeeperSpeech, 4, Decont_GateKeeperSpeechN(&a[0], &a[1], &a[2]))
+MODE_FN(Decont, SentinelSpeech, 4, Decont_SentinelSpeechN(&a[0], &a[1], &a[2]))
+MODE_FN(Decont, GaugeBlink, 0, Decont_GaugeBlinkN())
+MODE_FN(Decont, CheckShowNextHowto, 0, Decont_CheckShowNextHowtoN())
+MODE_FN(Decont, CreateBishopsLauncher, 0, Decont_CreateBishopsLauncherN())
+MODE_FN(Decont, EndOfSceneBishops, 1, Decont_EndOfSceneBishopsN(&a[0]))
+MODE_FN(Decont, LoadBishopsScene, 0, Decont_LoadBishopsSceneN())
+MODE_FN(Decont, FXBishopsPray, 3, Decont_FXBishopsPrayN(&a[1]))
+MODE_FN(Decont, LoadFunctionaryScene, 0, Decont_LoadFunctionarySceneN())
+MODE_FN(Decont, SetDFAnm, 3, Decont_SetDFAnmN(&a[1]))
+MODE_FN(Decont, EndOfSceneFunctionary, 1, Decont_EndOfSceneFunctionaryN())
+MODE_FN(Decont, CreateDownKeyPad, 0, Decont_CreateDownKeyPadN())
+MODE_FN(Decont, PlayFalling, 4, Decont_PlayFallingN())
+MODE_FN(Decont, JumpNextMission, 1, Decont_JumpNextMissionN())
+MODE_FN(Decont, PlayFunctionary, 4, Decont_PlayFunctionaryN())
+MODE_FN(Decont, LoadFallingScene, 0, Decont_LoadFallingSceneN())
 
 PyMethodDef g_OrbitMapDecontMethods[] = {
 	{ "InitStatus", Decont_InitStatus, 1, NULL },
@@ -1122,107 +1241,80 @@ PyMethodDef g_OrbitMapDecontMethods[] = {
 /* ---- Mission_IntroHuman ---- */
 
 /* InitStatus(LevelPath): the resources of the Gears and of Bill */
-static PyObject *Intro_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Sf_Run(&f, "Chars", "AddNewCharRes", "(s)", "Gear");
-	Sf_Run(&f, "Chars", "AddNewCharRes", "(s)", "Human");
-	return Sf_None(&f);
+static byte Intro_InitStatusN(void) {
+	return LV_CALL("Chars", "AddNewCharRes", NULL, "s", "Gear") && LV_CALL("Chars", "AddNewCharRes", NULL, "s", "Human");
 }
 
 /* the gatekeeper goes on (its time runs, active) */
-static void Ih_GateKeeper(scriptFrame_t *f) {
-	PyObject *gc = Sf_Ask(f, "Scrap", "GetEntity", "(s)", "GateKeeper_Portalis");
-	Sf_SetAttr(f, gc, "TimeSpeed", Sf_Float(f, 1.0));
-	Sf_SetAttrI(f, gc, "Active", 1);
+static byte Ih_GateKeeper(void) {
+	nativeVal_t gc = { 0 };
+	byte ok = LvN_Entity("GateKeeper_Portalis", &gc) && LvN_SetF(&gc, "TimeSpeed", 1.0) && LvN_SetI(&gc, "Active", 1);
+	Native_Free(&gc);
+	return ok;
 }
 
 /* Init(LevelPath): the doors open, the alarm on and locked, the three scenes of Bill's arrival */
-static PyObject *Intro_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte Intro_InitN(void) {
+	nativeVal_t one = { 0 };
+	for (int i = 0; i < 5; i++) {
+		char name[32];
+		nativeVal_t d = { 0 };
+		Str_Printf(name, sizeof(name), "DM_Door_OrbitDoorA_0%d", i);
+		byte ok = LvN_Entity(name, &d) && LvN_SetS(&d, "OnObjSlot", "") && LvN_SetS(&d, "Action", "Opened");
+		Native_Free(&d);
+		if (!ok) {
+			return 0;
+		}
 	}
-	for (int i = 0; i < 5 && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *d = Sf_Entity(&f, Sf_Cat(&f, "sO", "DM_Door_OrbitDoorA_0", Sf_ReprI(&f, i)));
-		Sf_SetAttrS(&f, d, "OnObjSlot", "");
-		Sf_SetAttrS(&f, d, "Action", "Opened");
-		Sf_Release(&f, mark);
-	}
-	Sf_Run(&f, "Scrap", "SetAlarm", "(i)", 1);
-	Sf_Run(&f, "Scrap", "SetLockAlarm", "(i)", 1);
-	Sf_Own(&f, IH, "LoadSceneA", "()");
-	Sf_Own(&f, IH, "LoadSceneB", "()");
-	Sf_Own(&f, IH, "LoadSceneC", "()");
-	Sf_Run(&f, "Scene", "Play", "(s)", "BillArrives_A");
-	Sf_SetMod(&f, "Scene", "EndOfSceneCallback", Sf_Global(&f, IH, "BillArrives_B"));
-	Ih_GateKeeper(&f);
-	return Sf_None(&f);
-}
-
-/* BillArrives_B(usr=None), BillArrives_C(usr=None): the next scene */
-static PyObject *Intro_BillArrives_B(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "usr", NULL };
-	PyObject *usr = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &usr)) {
-		return NULL;
-	}
-	Sf_Run(&f, "Scene", "Play", "(s)", "BillArrives_B");
-	Sf_SetMod(&f, "Scene", "EndOfSceneCallback", Sf_Global(&f, IH, "BillArrives_C"));
-	Ih_GateKeeper(&f);
-	return Sf_None(&f);
-}
-
-static PyObject *Intro_BillArrives_C(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "usr", NULL };
-	PyObject *usr = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &usr)) {
-		return NULL;
-	}
-	Sf_Run(&f, "Scene", "Play", "(s)", "BillArrives_C");
-	Sf_SetMod(&f, "Scene", "EndOfSceneCallback", Sf_Global(&f, IH, "SetNextMission"));
-	return Sf_None(&f);
+	Native_SetInt(&one, 1);
+	return Mode_SetAlarm(&one) && Mode_SetLockAlarm(&one) && LV_OWN(IH, "LoadSceneA", NULL, "") &&
+		LV_OWN(IH, "LoadSceneB", NULL, "") && LV_OWN(IH, "LoadSceneC", NULL, "") &&
+		Ob_PlayThen("BillArrives_A", IH, "BillArrives_B") && Ih_GateKeeper();
 }
 
 /* SetNextMission(usr=None): on to Mission_IntroHuman2 in Press, Bill's ship parked there */
-static PyObject *Intro_SetNextMission(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "usr", NULL };
+static byte Intro_SetNextMissionN(void) {
 	static const char *const saves[][2] = { { "BankMasterAtBank", "1" }, { "Journalist.Humphrey_Defaut", "Press" },
 		{ "Journalist.Betty_Defaut", "Press" }, { "Journalist.Berto_Defaut", "Press" } };
-	PyObject *usr = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &usr)) {
-		return NULL;
+	nativeVal_t zero = { 0 }, l = { 0 }, item = { 0 };
+	Native_SetInt(&zero, 0);
+	/* OBJLIB 7: Achievement by name (the cases record it) */
+	if (!Mode_Import("MissionsFuncs") || !Mode_Import("SaveGame") || !LV_CALL("Scrap", "Achievement", NULL, "i", 5L) ||
+		!Mode_SetLockAlarm(&zero) || !Mode_SetAlarm(&zero) ||
+		!LV_CALL("MissionsFuncs", "SetNextMission", NULL, "ss", "Mission_IntroHuman2", "Press")) {
+		return 0;
 	}
-	Sf_Import(&f, "MissionsFuncs");
-	Sf_Import(&f, "SaveGame");
-	Sf_Run(&f, "Scrap", "Achievement", "(i)", 5);
-	Sf_Run(&f, "Scrap", "SetLockAlarm", "(i)", 0);
-	Sf_Run(&f, "Scrap", "SetAlarm", "(i)", 0);
-	Sf_Run(&f, "MissionsFuncs", "SetNextMission", "(ss)", "Mission_IntroHuman2", "Press");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", "Char", "Dtritus");
-	Sf_Run(&f, "SaveGame", "MarkWayPoint", "(sss)", "Levels/Press", "DM_Player_Spawn_Press", "");
+	SaveVar_Set("Char", "Dtritus");
+	if (!LV_CALL("SaveGame", "MarkWayPoint", NULL, "sss", "Levels/Press", "DM_Player_Spawn_Press", "")) {
+		return 0;
+	}
 	for (int i = 0; i < 4; i++) {
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(ss)", saves[i][0], saves[i][1]);
+		SaveVar_Set(saves[i][0], saves[i][1]);
 	}
-	PyObject *l = Sf_Eval(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Parked.Press"), IH);
-	Sf_Method(&f, l, "append", "(s)", "SHUMP1");
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "Parked.Press", Sf_Repr(&f, l));
-	Sf_Run(&f, "SaveGame", "StartGame", "()");
-	return Sf_None(&f);
+	LvN_Str(&item, "SHUMP1");
+	byte ok = LvN_SaveList("Parked.Press", IH, &l) && LvN_SaveAppend("Parked.Press", &l, &item) &&
+		LV_CALL("SaveGame", "StartGame", NULL, "");
+	Native_Free(&l);
+	Native_Free(&item);
+	return ok;
 }
+
+/* the adapter of a function (usr=None) of the scene chain */
+#define IH_USR_FN(name, call) \
+	static PyObject *Intro_##name(PyObject *self, PyObject *args, PyObject *kw) { \
+		static char *names[] = { "usr", NULL }; \
+		PyObject *usr = NULL; \
+		(void)self; \
+		if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &usr)) { \
+			return NULL; \
+		} \
+		return Mode_Result(call); \
+	}
+
+/* BillArrives_B(usr=None), BillArrives_C(usr=None): the next scene */
+IH_USR_FN(BillArrives_B, Ob_PlayThen("BillArrives_B", IH, "BillArrives_C") && Ih_GateKeeper())
+IH_USR_FN(BillArrives_C, Ob_PlayThen("BillArrives_C", IH, "SetNextMission"))
+IH_USR_FN(SetNextMission, Intro_SetNextMissionN())
 
 static const char *const intro_scene_a[] = {
 	"Scene.Load|BillArrives_A",
@@ -1356,37 +1448,13 @@ static const char *const intro_scene_c[] = {
 
 /* LoadSceneA(), LoadSceneB(), LoadSceneC(): the scenes of Bill's arrival (the capsule lands, Bill looks around, the
  * Gears come with the alarm), A and C with their effects */
-static PyObject *Intro_LoadSceneA(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Calls(&f, IH, intro_scene_a);
-	Ob_SceneFx(&f, IH, "FXSceneBillArrives_AFile", "FXSCENEBILLARRIVES_A");
-	return Sf_None(&f);
-}
-
-static PyObject *Intro_LoadSceneB(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Calls(&f, IH, intro_scene_b);
-	return Sf_None(&f);
-}
-
-static PyObject *Intro_LoadSceneC(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Calls(&f, IH, intro_scene_c);
-	Ob_SceneFx(&f, IH, "FXSceneDecontaminationFile", "FXSCENEDECONTAMINATION");
-	return Sf_None(&f);
-}
+MODE_FN(Intro, InitStatus, 1, Intro_InitStatusN())
+MODE_FN(Intro, Init, 1, Intro_InitN())
+MODE_FN(Intro, LoadSceneA, 0,
+	Mode_Calls(IH, intro_scene_a) && Ob_SceneFx(IH, "FXSceneBillArrives_AFile", "FXSCENEBILLARRIVES_A"))
+MODE_FN(Intro, LoadSceneB, 0, Mode_Calls(IH, intro_scene_b))
+MODE_FN(Intro, LoadSceneC, 0,
+	Mode_Calls(IH, intro_scene_c) && Ob_SceneFx(IH, "FXSceneDecontaminationFile", "FXSCENEDECONTAMINATION"))
 
 PyMethodDef g_OrbitIntroHumanMethods[] = {
 	{ "InitStatus", Intro_InitStatus, 1, NULL },

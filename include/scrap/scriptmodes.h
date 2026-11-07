@@ -126,7 +126,9 @@ byte Mode_DelSchedS(const char *name);
 /* Scrap.AddScheduledFunc(time, func, args[, name]): func a Python callable (OBJLIB 4: the scheduler keeps Python
  * objects), args the tuple of the native values (n of them), name NULL for none */
 byte Mode_Schedule(const nativeVal_t *time, PyObject *func, const nativeVal_t *args, int n, const nativeVal_t *name);
-/* the same at Scrap.GetTime() + delay with func a global of the module (its NameError when it is gone) */
+/* the same at Scrap.GetTime() + delay (func not taken over, name NULL for none) */
+byte Mode_LaterPy(double delay, PyObject *func, const nativeVal_t *args, int n, const char *name);
+/* the same with func a global of the module (its NameError when it is gone) */
 byte Mode_Later(double delay, const char *module, const char *func, const nativeVal_t *args, int n, const char *name);
 /* the same with func the attribute of the module (Script_LaterIn of the ports) */
 byte Mode_LaterIn(double delay, const char *module, const char *func, const nativeVal_t *args, int n, const char *name);
@@ -349,5 +351,66 @@ void Mode_RandomVisPoint(nativeVal_t *out);
 byte Mode_SetAlarm(const nativeVal_t *level);
 /* Scrap.Set(name, i) with an int, as the scripts set it (Mode_GVarSetN sets a float) */
 byte Mode_GVarSetI(const char *name, long i);
+
+/* ---- the native level files of batch G (Orbit, Townhall, GamblinDen, Scrapyard) ---- */
+
+/* the lines of a call table of the level scripts (Sf_Calls on native values): "Mod.Func|arg|..." calls the attribute
+ * Func of the module Mod (OBJLIB 3 and 7: other ports and the engine by name, a case may record either), "@Func|..." the
+ * global Func of module (a mission may replace it), with the values of LvN_Value (up to 8); 0 with the error of the
+ * first line that fails */
+byte Mode_Calls(const char *module, const char *const *lines);
+/* o.name = value for each "name=value" of pairs (Sf_SetAttrs on a value: the values of LvN_Value) */
+byte Mode_SetAttrs(const nativeVal_t *o, const char *const *pairs);
+/* Speech.NISpeech(who) (Speech.NISpeech() for who NULL), Speech.AutoAddNI(key), Speech.RunNI() (OBJLIB 3) */
+byte Mode_NISpeech(const char *who, const char *key);
+/* Scrap.GetEntity(name).var = "text", = i (the TypeError of None when there is no such entity) */
+byte Mode_EntSetS(const char *name, const char *var, const char *s);
+byte Mode_EntSetI(const char *name, const char *var, long i);
+/* Scrap.SetLockAlarm(lock) through its seam (fc-r6b-or2 records it): the TypeError of "i" for a value that is no
+ * number */
+byte Mode_SetLockAlarm(const nativeVal_t *lock);
+/* the same with an int */
+byte Mode_SetLockAlarmI(long lock);
+/* o.var of a value as any value (Mode_VGet takes only native values from an object that is no entity handle: here a
+ * function, an instance or a handle in the attribute is an NV_OBJ, OBJLIB 7); the errors of the attribute */
+byte Mode_VObj(const nativeVal_t *o, const char *var, nativeVal_t *out);
+
+/* (a, b, c) of three ints */
+void Mode_Ints3(nativeVal_t *out, long a, long b, long c);
+/* a list of n texts (n < 0: the texts up to the NULL that ends them) */
+void Mode_Texts(nativeVal_t *out, const char *const *texts, int n);
+/* Scrap.GetLangStr(key) % SInput.GetDefinedEntry(0, "Walk", action, "Mouse") (None for a key without an entry) */
+byte Mode_KeyText(const char *key, const char *action, nativeVal_t *out);
+/* CharsNPC.CharRes[key] (OBJLIB 5: the character objects of CharsNPC): a new reference, NULL with the error */
+PyObject *Mode_CharRes(const nativeVal_t *key);
+/* Scrap.SetSaveVar(name, value) of each pair of texts (a NULL name ends them) */
+void Mode_Saves(const char *const *pairs);
+/* int(Scrap.GetSaveVar(name)) into out (its ValueError) */
+byte Mode_SaveInt(const char *name, nativeVal_t *out);
+/* a op b of the script (op "==", "!=", "<", "<=", ">", ">="), a op i: 1, 0, -1 with the error of a compare that
+ * failed */
+int Mode_Cmp(const nativeVal_t *a, const char *op, const nativeVal_t *b);
+int Mode_CmpI(const nativeVal_t *a, const char *op, long i);
+/* Scrap.UsrEntity(0).ActCtrl == ctrl: 1, 0, -1 with the error */
+int Mode_UsrIs(const char *ctrl);
+/* Speech.OnSpch(msg, ans[, how]) (how NULL: two arguments) and Speech.StdAnsLst([texts]) of n texts (n < 0: up to
+ * the NULL), OBJLIB 3 */
+byte Mode_Spch(const char *msg, const char *ans, const char *how);
+byte Mode_AnsLst(const char *const *texts, int n);
+/* SaveGame.MMDesc(desc, flag), SaveGame.QWayPoint(), MissionsFuncs.SetMissionTarget(name) (None for NULL), OBJLIB 3 */
+byte Mode_MMDesc(const char *desc, long flag);
+byte Mode_WayPoint(void);
+byte Mode_Target(const char *name);
+/* Elevator.ConnectElevators([a], [b]), or Elevator.ConnectElevators([a, b], [], 0) for pair (OBJLIB 3) */
+byte Mode_Connect(const char *a, const char *b, byte pair);
+/* var.attr = "text" of the global var of module (a handle) */
+byte Mode_GSetS(const char *module, const char *var, const char *attr, const char *s);
+/* Scrap.AddScheduledFunc(time, func, args) with time a value and func the global of module (its NameError; OBJLIB 4) */
+byte Mode_AtG(const nativeVal_t *time, const char *module, const char *func, const nativeVal_t *args, int n);
+/* a op b of the script as Native_Arith, with the long ints of 1.5.2 for * / % too (a case can put a long int into a
+ * variable; OBJLIB 9: those go through the Python number functions) */
+byte Mode_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
+/* Scrap.Set(name, Scrap.Def(name)): the engine variable back to its default */
+byte Mode_GVarSetDef(const char *name);
 
 #endif

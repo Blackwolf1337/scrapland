@@ -109,18 +109,6 @@ PyMethodDef g_NanoMapMethods[] = {
 
 /* ---- ShipEdit ---- */
 
-/* cam.var = (x, y, z) of three ints */
-static byte Se_SetTriple(const nativeVal_t *cam, const char *var, long x, long y, long z) {
-	nativeVal_t t;
-	Native_SetEmpty(&t, NV_TUPLE);
-	Native_SetInt(Native_Append(&t), x);
-	Native_SetInt(Native_Append(&t), y);
-	Native_SetInt(Native_Append(&t), z);
-	byte ok = Mode_VSet(cam, var, &t);
-	Native_Free(&t);
-	return ok;
-}
-
 /* Init(LevelPath): the camera of the editor, the ship editor menu */
 static byte Se_Init(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t name, zero, cam, n;
@@ -140,7 +128,7 @@ static byte Se_Init(const nativeVal_t *a, nativeVal_t *out) {
 	} else {
 		ok = 0;
 	}
-	ok = ok && Se_SetTriple(&cam, "camPos", -6, -1243, 1451) && Se_SetTriple(&cam, "camAng", 15, -180, 0) &&
+	ok = ok && LvN_SetInts3(&cam, "camPos", -6, -1243, 1451) && LvN_SetInts3(&cam, "camAng", 15, -180, 0) &&
 		LvN_SetI(&cam, "Fov", 70) && Mode_GVarSetI("CameraCloudAlpha", 0) && LV_CALL("ShipEdit", "EnterEditShipMenu", NULL, "is", 0L, "");
 	if (ok) {
 		Mode_SetTimeSpeed(1);

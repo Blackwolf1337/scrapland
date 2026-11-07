@@ -116,7 +116,7 @@ static int Gd_Scan(const nativeVal_t *e, const nativeVal_t *usr, byte far) {
 	Native_SetNone(&mm);
 	int r = -1;
 	if (Mode_VGet(e, "Pos", &ep) && Mode_VGet(usr, "Pos", &up) && Mode_VecSub(&ep, &up, &d) && Mode_VecModSqr(&d, &sq) &&
-		Mode_G(IG, "MAX_SCANNING_DIST", &m) && Mode_G(IG, "MAX_SCANNING_DIST", &m2) && LvN_Arith('*', &m, &m2, &mm)) {
+		Mode_G(IG, "MAX_SCANNING_DIST", &m) && Mode_G(IG, "MAX_SCANNING_DIST", &m2) && Mode_Arith('*', &m, &m2, &mm)) {
 		int c = Native_Compare(&sq, &mm);
 		r = far ? c > 0 : c < 0;
 	}
@@ -596,22 +596,6 @@ static byte Into_InitMission(void) {
 		Mode_Later(1.0, IG, "ScanShip", NULL, 0, "ScanShip");
 }
 
-/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func, ()) with delay and func globals of the mission */
-static byte Gd_LaterG(const char *delay, const char *func) {
-	nativeVal_t now, d, t;
-	Native_SetFloat(&now, Mode_Time());
-	Native_SetNone(&t);
-	if (!Mode_G(IG, delay, &d)) {
-		return 0;
-	}
-	PyObject *fn = Native_Arith('+', &now, &d, &t) ? Mode_GlobalPy(IG, func) : NULL;
-	byte ok = fn && Mode_Schedule(&t, fn, NULL, 0, NULL);
-	Py_XDECREF(fn);
-	Native_Free(&d);
-	Native_Free(&t);
-	return ok;
-}
-
 /* ScanShip(): every second: the bishop being scanned stays near, else the next bishop near the player is scanned */
 static byte Into_ScanShip(void) {
 	nativeVal_t usr, e, blink, list, cur;
@@ -628,7 +612,7 @@ static byte Into_ScanShip(void) {
 		if (far > 0) {
 			Mode_ScorerGet(0, "ScanRemainingTime", "Blink", &blink);
 			if (LvN_EqI(&blink, 0)) {
-				ok = Gd_Blink(1) && Gd_LaterG("MAX_TIME_TARGET_LOST", "CheckContinueScanning");
+				ok = Gd_Blink(1) && LvN_LaterG(IG, "MAX_TIME_TARGET_LOST", "CheckContinueScanning", NULL, 0);
 			}
 			Native_Free(&blink);
 		} else {

@@ -26,6 +26,7 @@
 #include "scrap/scriptmodes.h"
 #include "scrap/sound.h"
 #include "scrap/timer.h"
+#include "game/Script/levels/Levels.h"
 
 /* ---- the values of a function ---- */
 
@@ -613,23 +614,28 @@ byte Mode_Schedule(const nativeVal_t *time, PyObject *func, const nativeVal_t *a
 	return ok;
 }
 
+byte Mode_LaterPy(double delay, PyObject *func, const nativeVal_t *args, int n, const char *name) {
+	nativeVal_t t, nm;
+	Native_SetFloat(&t, Mode_Time() + delay);
+	if (name) {
+		Native_SetText(&nm, name, (int)strlen(name));
+	}
+	byte ok = Mode_Schedule(&t, func, args, n, name ? &nm : NULL);
+	if (name) {
+		Native_Free(&nm);
+	}
+	return ok;
+}
+
 /* Mode_Later with the function of the module as its global (global 1) or as its attribute */
 static byte Mode_LaterBy(double delay, const char *module, const char *func, const nativeVal_t *args, int n, const char *name,
 	byte global) {
-	nativeVal_t t, nm;
 	/* OBJLIB 4: the function the scheduler keeps is the one of the module (a mission may have replaced it) */
 	PyObject *fn = global ? Script_Global(module, func) : Script_Attr(module, func);
 	if (!fn) {
 		return 0;
 	}
-	Native_SetFloat(&t, Mode_Time() + delay);
-	if (name) {
-		Native_SetText(&nm, name, (int)strlen(name));
-	}
-	byte ok = Mode_Schedule(&t, fn, args, n, name ? &nm : NULL);
-	if (name) {
-		Native_Free(&nm);
-	}
+	byte ok = Mode_LaterPy(delay, fn, args, n, name);
 	Py_DECREF(fn);
 	return ok;
 }
@@ -1682,4 +1688,302 @@ byte Mode_GVarSetI(const char *name, long i) {
 	nativeVal_t v;
 	Native_SetInt(&v, i);
 	return Mode_GVarSet(name, &v);
+}
+
+/* ---- the native level files of batch G ---- */
+
+byte Mode_Calls(const char *module, const char *const *lines) {
+	static const char fmts[] = "vvvvvvvv";
+	for (; *lines; lines++) {
+		const char *p = *lines, *bar = strchr(p, '|');
+		char name[0x80];
+		int len = bar ? (int)(bar - p) : (int)strlen(p);
+		if (len >= (int)sizeof(name)) {
+			return Native_Raise(NE_SYSTEM, "bad call in a call table");
+		}
+		memcpy(name, p, len);
+		name[len] = 0;
+		PyObject *fn;
+		if (name[0] == '@') {
+			fn = Script_Global(module, name + 1);
+		} else {
+			char *dot = strchr(name, '.');
+			if (!dot) {
+				return Native_Raise(NE_SYSTEM, "bad call in a call table");
+			}
+			*dot = 0;
+			fn = Script_Attr(name, dot + 1);
+		}
+		if (!fn) {
+			return 0;
+		}
+		nativeVal_t v[8];
+		int n = 0;
+		byte ok = 1;
+		for (p = bar; p && n < 8 && ok; n++) {
+			const char *next = strchr(p + 1, '|');
+			ok = LvN_Value(p + 1, next ? (int)(next - p - 1) : -1, &v[n]);
+			p = next;
+		}
+		if (ok) {
+			ok = Native_HookCall(fn, NULL, fmts + 8 - n, &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7]);
+		} else {
+			Py_DECREF(fn);
+		}
+		while (n-- > 0) {
+			Native_Free(&v[n]);
+		}
+		if (!ok) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+byte Mode_SetAttrs(const nativeVal_t *o, const char *const *pairs) {
+	for (; *pairs; pairs++) {
+		const char *eq = strchr(*pairs, '=');
+		char name[0x40];
+		int len = eq ? (int)(eq - *pairs) : 0;
+		if (!eq || len >= (int)sizeof(name)) {
+			return Native_Raise(NE_SYSTEM, "bad attribute in a table");
+		}
+		memcpy(name, *pairs, len);
+		name[len] = 0;
+		nativeVal_t v;
+		byte ok = LvN_Value(eq + 1, -1, &v) && Mode_VSet(o, name, &v);
+		Native_Free(&v);
+		if (!ok) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+byte Mode_NISpeech(const char *who, const char *key) {
+	return (who ? Native_CallMod("Speech", "NISpeech", NULL, "s", who) : Native_CallMod("Speech", "NISpeech", NULL, "")) &&
+		Native_CallMod("Speech", "AutoAddNI", NULL, "s", key) && Native_CallMod("Speech", "RunNI", NULL, "");
+}
+
+byte Mode_EntSetS(const char *name, const char *var, const char *s) {
+	nativeVal_t n, v;
+	Native_SetText(&n, name, (int)strlen(name));
+	Native_SetText(&v, s, (int)strlen(s));
+	byte ok = Mode_EntSet(&n, var, &v);
+	Native_Free(&n);
+	Native_Free(&v);
+	return ok;
+}
+
+byte Mode_EntSetI(const char *name, const char *var, long i) {
+	nativeVal_t n, v;
+	Native_SetText(&n, name, (int)strlen(name));
+	Native_SetInt(&v, i);
+	byte ok = Mode_EntSet(&n, var, &v);
+	Native_Free(&n);
+	return ok;
+}
+
+byte Mode_SetLockAlarm(const nativeVal_t *lock) {
+	MODE_SEAM("Scrap", "SetLockAlarm");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "v", lock);
+	}
+	int i;
+	if (!Native_ArgInt(lock, &i)) {
+		return 0;
+	}
+	Alarm_SetLock(&g_pWorld->alarm, i != 0);
+	return 1;
+}
+
+byte Mode_SetLockAlarmI(long lock) {
+	nativeVal_t v;
+	Native_SetInt(&v, lock);
+	return Mode_SetLockAlarm(&v);
+}
+
+byte Mode_VObj(const nativeVal_t *o, const char *var, nativeVal_t *out) {
+	PyObject *po = Native_ToPy(o);
+	if (!po) {
+		return 0;
+	}
+	if (PyEntity_Check(po)) {
+		byte ok = Mode_HGet(po, var, out);
+		Py_DECREF(po);
+		return ok;
+	}
+	PyObject *r = PyObject_GetAttrString(po, (char *)var);
+	Py_DECREF(po);
+	if (!r) {
+		return Mode_AttrFail();
+	}
+	Native_Arg(r, out);
+	Py_DECREF(r);
+	return 1;
+}
+
+void Mode_Ints3(nativeVal_t *out, long a, long b, long c) {
+	Native_SetEmpty(out, NV_TUPLE);
+	Native_SetInt(Native_Append(out), a);
+	Native_SetInt(Native_Append(out), b);
+	Native_SetInt(Native_Append(out), c);
+}
+
+void Mode_Texts(nativeVal_t *out, const char *const *texts, int n) {
+	Native_SetEmpty(out, NV_LIST);
+	for (int i = 0; n < 0 ? texts[i] != NULL : i < n; i++) {
+		Native_SetText(Native_Append(out), texts[i], (int)strlen(texts[i]));
+	}
+}
+
+byte Mode_KeyText(const char *key, const char *action, nativeVal_t *out) {
+	nativeVal_t e;
+	const char *s = Input_GetDefinedEntry(0, "Walk", action, "Mouse", 0);
+	if (s) {
+		Native_SetText(&e, s, (int)strlen(s));
+	} else {
+		Native_SetNone(&e);
+	}
+	Native_SetNone(out);
+	byte ok = Mode_LangFmt(key, &e, out);
+	Native_Free(&e);
+	return ok;
+}
+
+PyObject *Mode_CharRes(const nativeVal_t *key) {
+	PyObject *res = Script_Attr("CharsNPC", "CharRes");
+	PyObject *k = res ? Native_ToPy(key) : NULL;
+	PyObject *ch = k ? PyObject_GetItem(res, k) : NULL;
+	Py_XDECREF(k);
+	Py_XDECREF(res);
+	return ch;
+}
+
+void Mode_Saves(const char *const *pairs) {
+	for (; *pairs; pairs += 2) {
+		SaveVar_Set(pairs[0], pairs[1]);
+	}
+}
+
+byte Mode_SaveInt(const char *name, nativeVal_t *out) {
+	nativeVal_t s;
+	Mode_SaveVar(name, &s);
+	Native_SetNone(out);
+	byte ok = Native_ToInt(&s, out);
+	Native_Free(&s);
+	return ok;
+}
+
+int Mode_Cmp(const nativeVal_t *a, const char *op, const nativeVal_t *b) {
+	int c = Native_Compare(a, b);
+	if (c && PyErr_Occurred()) {
+		return -1;
+	}
+	switch (op[0]) {
+	case '=':
+		return c == 0;
+	case '!':
+		return c != 0;
+	case '<':
+		return op[1] == '=' ? c <= 0 : c < 0;
+	}
+	return op[1] == '=' ? c >= 0 : c > 0;
+}
+
+int Mode_CmpI(const nativeVal_t *a, const char *op, long i) {
+	nativeVal_t b;
+	Native_SetInt(&b, i);
+	return Mode_Cmp(a, op, &b);
+}
+
+int Mode_UsrIs(const char *ctrl) {
+	nativeVal_t u, a;
+	Native_SetNone(&u);
+	Native_SetNone(&a);
+	int r = Mode_UsrHandle(&u) && Mode_VObj(&u, "ActCtrl", &a) ? LvN_EqS(&a, ctrl) : -1;
+	Native_Free(&u);
+	Native_Free(&a);
+	return r;
+}
+
+byte Mode_Spch(const char *msg, const char *ans, const char *how) {
+	return how ? LV_CALL("Speech", "OnSpch", NULL, "sss", msg, ans, how) : LV_CALL("Speech", "OnSpch", NULL, "ss", msg, ans);
+}
+
+byte Mode_AnsLst(const char *const *texts, int n) {
+	nativeVal_t l;
+	Mode_Texts(&l, texts, n);
+	byte ok = LV_CALL("Speech", "StdAnsLst", NULL, "v", &l);
+	Native_Free(&l);
+	return ok;
+}
+
+byte Mode_MMDesc(const char *desc, long flag) {
+	return LV_CALL("SaveGame", "MMDesc", NULL, "si", desc, flag);
+}
+
+byte Mode_WayPoint(void) {
+	return LV_CALL("SaveGame", "QWayPoint", NULL, "");
+}
+
+byte Mode_Target(const char *name) {
+	return name ? LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "s", name) :
+		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "O", Py_None);
+}
+
+byte Mode_Connect(const char *a, const char *b, byte pair) {
+	const char *names[2] = { a, b };
+	nativeVal_t l1, l2;
+	Mode_Texts(&l1, names, pair ? 2 : 1);
+	Mode_Texts(&l2, names + 1, pair ? 0 : 1);
+	byte ok = pair ? LV_CALL("Elevator", "ConnectElevators", NULL, "vvi", &l1, &l2, 0L) :
+		LV_CALL("Elevator", "ConnectElevators", NULL, "vv", &l1, &l2);
+	Native_Free(&l1);
+	Native_Free(&l2);
+	return ok;
+}
+
+byte Mode_GSetS(const char *module, const char *var, const char *attr, const char *s) {
+	nativeVal_t h;
+	byte ok = Mode_G(module, var, &h) && LvN_SetS(&h, attr, s);
+	Native_Free(&h);
+	return ok;
+}
+
+byte Mode_AtG(const nativeVal_t *time, const char *module, const char *func, const nativeVal_t *args, int n) {
+	PyObject *fn = Script_Global(module, func);
+	if (!fn) {
+		return 0;
+	}
+	byte ok = Mode_Schedule(time, fn, args, n, NULL);
+	Py_DECREF(fn);
+	return ok;
+}
+
+byte Mode_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
+	if ((op != '*' && op != '/' && op != '%') || (a->type != NV_LONG && b->type != NV_LONG)) {
+		return Native_Arith(op, a, b, out);
+	}
+	/* OBJLIB 9 */
+	PyObject *x = Native_ToPy(a), *y = x ? Native_ToPy(b) : NULL, *r = NULL;
+	if (y) {
+		r = op == '*' ? PyNumber_Multiply(x, y) : op == '/' ? PyNumber_Divide(x, y) : PyNumber_Remainder(x, y);
+	}
+	Native_SetNone(out);
+	if (r) {
+		Native_Arg(r, out);
+	}
+	Py_XDECREF(r);
+	Py_XDECREF(y);
+	Py_XDECREF(x);
+	return r != NULL;
+}
+
+byte Mode_GVarSetDef(const char *name) {
+	nativeVal_t d;
+	Native_SetNone(&d);
+	byte ok = Native_GVarDef(name, &d) && Mode_GVarSet(name, &d);
+	Native_Free(&d);
+	return ok;
 }

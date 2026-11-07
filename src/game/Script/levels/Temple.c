@@ -63,31 +63,6 @@ static byte Tp_Str(const nativeVal_t *v, int arg, const char **s) {
 	return Native_ArgStr(v, arg, s);
 }
 
-/* var.append(the global name of module) of a list variable of another module: the variable, then the global, then
- * the append method of whatever value is there (OBJLIB 5: in place) */
-static byte Tp_AppendG(const char *target, const char *var, const char *module, const char *name) {
-	PyObject *list = Script_Attr(target, var), *f = list ? Mode_GlobalPy(module, name) : NULL;
-	PyObject *v = f ? Script_Method(list, "append", "(O)", f) : NULL;
-	Py_XDECREF(v);
-	Py_XDECREF(f);
-	Py_XDECREF(list);
-	return v != NULL;
-}
-
-/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, fn, args) with fn an object */
-static byte Tp_At(double delay, PyObject *fn, const nativeVal_t *args, int n, const char *name) {
-	nativeVal_t t, nm;
-	Native_SetFloat(&t, Mode_Time() + delay);
-	if (name) {
-		LvN_Str(&nm, name);
-	}
-	byte ok = Mode_Schedule(&t, fn, args, n, name ? &nm : NULL);
-	if (name) {
-		Native_Free(&nm);
-	}
-	return ok;
-}
-
 /* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, Speech.AddRemoteCom, (key, who, the global then of module)) */
 static byte Tp_ComAt(double delay, const char *key, const char *who, const char *module, const char *then) {
 	nativeVal_t a[3];
@@ -97,7 +72,7 @@ static byte Tp_ComAt(double delay, const char *key, const char *who, const char 
 	}
 	LvN_Str(&a[0], key);
 	LvN_Str(&a[1], who);
-	byte ok = LvN_GObj(module, then, &a[2]) && Tp_At(delay, add, a, 3, NULL);
+	byte ok = LvN_GObj(module, then, &a[2]) && Mode_LaterPy(delay, add, a, 3, NULL);
 	for (int i = 0; i < 3; i++) {
 		Native_Free(&a[i]);
 	}
@@ -216,19 +191,6 @@ static byte Tp_Arrive(const char *dummyName) {
 	return ok;
 }
 
-/* Elevator.ConnectElevators of one door to one level */
-static byte Tp_Connect(const char *door, const char *level) {
-	nativeVal_t a, b;
-	Native_SetEmpty(&a, NV_LIST);
-	LvN_Str(Native_Append(&a), door);
-	Native_SetEmpty(&b, NV_LIST);
-	LvN_Str(Native_Append(&b), level);
-	byte ok = LV_CALL("Elevator", "ConnectElevators", NULL, "vv", &a, &b);
-	Native_Free(&a);
-	Native_Free(&b);
-	return ok;
-}
-
 /* ---- Map ---- */
 
 static byte TpMap_InitStatus(void) {
@@ -267,8 +229,8 @@ static byte TpMap_InitStatus(void) {
 
 static byte TpMap_Init(void) {
 	nativeVal_t a, b;
-	if (!Mode_Import("Metro") || !Mode_Import("Elevator") || !Tp_Connect("DM_Door_TempleTeleporter_GDB", "GDB") ||
-		!Tp_Connect("DM_Door_Elevator_Commercial", "Commercial")) {
+	if (!Mode_Import("Metro") || !Mode_Import("Elevator") || !Mode_Connect("DM_Door_TempleTeleporter_GDB", "GDB", 0) ||
+		!Mode_Connect("DM_Door_Elevator_Commercial", "Commercial", 0)) {
 		return 0;
 	}
 	Native_SetEmpty(&a, NV_LIST);
@@ -475,7 +437,7 @@ static byte Xl_Move(long d) {
 
 /* SwitchAlarm(status): called again on the next alarm change; the lives up with the alarm, down after it */
 static byte Xl_SwitchAlarm(const nativeVal_t *status) {
-	if (!Mode_Import("Alarm") || !Tp_AppendG("Alarm", "SetAlarmCallback", XL, "SwitchAlarm")) {
+	if (!Mode_Import("Alarm") || !LvN_ModAppendG("Alarm", "SetAlarmCallback", XL, "SwitchAlarm")) {
 		return 0;
 	}
 	if (Native_True(status)) {
@@ -585,7 +547,7 @@ static byte Xl_Init(void) {
 	if (on) {
 		return LV_OWN(XL, "SwitchAlarm", NULL, "i", 1L);
 	}
-	return Tp_AppendG("Alarm", "SetAlarmCallback", XL, "SwitchAlarm");
+	return LvN_ModAppendG("Alarm", "SetAlarmCallback", XL, "SwitchAlarm");
 }
 
 /* GetMoney(name): the number after the second "_" of the name */
@@ -850,8 +812,7 @@ static byte Tp_DeepThroatSpeech(const char *module, const nativeVal_t *usr, cons
 	Tp_SetVar("Speech", "OnEndOfSpeech", &next);
 	Tp_SetVar("Speech", "OnEndOfSpeechParams", LvN_NoArgs());
 	Native_Free(&next);
-	return LV_CALL("Speech", "NISpeech", NULL, "s", "DeepThroat") && LV_CALL("Speech", "AutoAddNI", NULL, "s", ni) &&
-		LV_CALL("Speech", "RunNI", NULL, "");
+	return Mode_NISpeech("DeepThroat", ni);
 }
 
 /* l = eval(Scrap.GetSaveVar(var)); item added when missing, the list saved back */
@@ -869,7 +830,7 @@ static byte Ag_AddToList(const char *var, const char *item) {
 }
 
 static byte Ag_InitStatus(void) {
-	return Tp_AppendG("CharsNPC", "AfterBrowseNPC", AG, "AfterBrowseNPC");
+	return LvN_ModAppendG("CharsNPC", "AfterBrowseNPC", AG, "AfterBrowseNPC");
 }
 
 static byte Ag_AfterBrowseNPC(void) {
@@ -1019,7 +980,7 @@ PyMethodDef g_TempleTalkToDeepThroatMethods[] = {
 /* the global fn of the mission at Scrap.GetTime() + 0.1 */
 static byte Ma_Soon(const char *fn) {
 	PyObject *f = Mode_GlobalPy(MA, fn);
-	byte ok = f && Tp_At(0.1, f, NULL, 0, NULL);
+	byte ok = f && Mode_LaterPy(0.1, f, NULL, 0, NULL);
 	Py_XDECREF(f);
 	return ok;
 }
