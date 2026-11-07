@@ -1566,7 +1566,7 @@ static byte Ht_HologramSound(void) {
 	Mode_CamName(0, cn);
 	Native_SetFloat(vol, 0.35);
 	byte ok = Mode_EntitySeam(cn, cam) && Mode_VGet(cam, "camPos", pos) && Mode_ModVar("Sound", "HologramStartSound", snd) &&
-		Mode_PlaySoundSeam(pos, snd, vol) && Native_CallMod("SSound", "CreatePS", NULL, "s", "EditHologramLoopSound");
+		LvN_PlaySound(pos, snd, vol) && Native_CallMod("SSound", "CreatePS", NULL, "s", "EditHologramLoopSound");
 	Native_Free(snd);
 	ok = ok && Mode_ModVar("Sound", "HologramLoopSound", snd) && Ht_SetPSv("EditHologramLoopSound", "Sound", snd);
 	for (int i = 0; ok && i < 3; i++) {
