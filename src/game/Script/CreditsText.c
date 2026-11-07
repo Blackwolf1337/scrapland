@@ -170,8 +170,8 @@ static byte Credits_PrintGuay(double vis) {
 		} else {
 			/* len() of the line fails first (a dict has a length too), a sequence of other things fails at
 			 * txt + tinfo */
-			int ln = line->type == NV_DICT ? line->n : 0;
-			ok = line->type == NV_DICT || Native_Len(line, &ln);
+			int ln = Native_Size(line);
+			ok = ln >= 0;
 			if (ok && ln > 0) {
 				Scrap_RandRange(vis - 1, vis);
 				ok = Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
@@ -206,41 +206,27 @@ static byte Credits_InMovie(void) {
 	return !strcmp(TABLE_AT(g_ActionSets, Input_GetActionSet())->name, "Inactive");
 }
 
-/* cmp(v, n) of the script against a number: the sign for a number, every other type compares greater (numbers are
- * smaller than all other types in 1.5.2) */
-static int Credits_Cmp(const nativeVal_t *v, double n) {
-	double d;
-	if (v->type == NV_INT) {
-		d = (double)v->i;
-	} else if (v->type == NV_FLOAT || v->type == NV_LONG) {
-		Native_ArgDouble(v, &d);
+/* cmp(v, n) of the script against an int (num 0) or a float (num 1) */
+static int Credits_Cmp(const nativeVal_t *v, double n, byte num) {
+	nativeVal_t x;
+	if (num) {
+		Native_SetFloat(&x, n);
 	} else {
-		return 1;
+		Native_SetInt(&x, (long)n);
 	}
-	return d < n ? -1 : d > n;
+	return Native_Compare(v, &x);
 }
 
 /* the next step of ShowUp or ShowDown in 0.05 s with val + d */
 static byte Credits_Step(const char *func, const nativeVal_t *val, double d) {
-	nativeVal_t next;
-	switch (val->type) {
-	case NV_INT:
-	case NV_FLOAT:
-	case NV_LONG: {
-		double v;
-		Native_ArgDouble(val, &v);
-		Native_SetFloat(&next, v + d);
-		break;
-	}
-	case NV_NONE:
-	case NV_DICT:
-	case NV_OBJ:
-		return Native_Raise(NE_TYPE, "bad operand type(s) for +");
-	default:
-		return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
+	nativeVal_t dv, next;
+	Native_SetFloat(&dv, d);
+	if (!Native_Arith('+', val, &dv, &next)) {
+		return 0;
 	}
 	/* OBJLIB 4: the scheduler takes the function by name until it takes C entries */
 	PyObject *n = Native_ToPy(&next);
+	Native_Free(&next);
 	return n && Script_LaterIn(0.05, "CreditsText", func, Py_BuildValue("(N)", n), NULL);
 }
 
@@ -252,7 +238,7 @@ static byte Credits_ShowUp(const nativeVal_t *val) {
 	if (!Credits_Print()) {
 		return 0;
 	}
-	if (Credits_Cmp(val, 0) > 0) {
+	if (Credits_Cmp(val, 0, 0) > 0) {
 		return Credits_Step("ShowUp", val, -0.05);
 	}
 	Script_SetNum(0, CREDITS_ITEM, "Visible", 1);
@@ -275,7 +261,7 @@ static byte Credits_ShowDown(const nativeVal_t *val, PyObject **res) {
 	if (!Credits_InMovie()) {
 		return Credits_Clean();
 	}
-	if (Credits_Cmp(val, 0.5) < 0) {
+	if (Credits_Cmp(val, 0.5, 1) < 0) {
 		return Credits_Step("ShowDown", val, 0.05);
 	}
 	/* OBJLIB 4: EndOfCredits is a function the level puts into the module (ShowDown gives what it gives) */
@@ -288,16 +274,9 @@ static byte Credits_ShowDown(const nativeVal_t *val, PyObject **res) {
 
 /* 590 - x of the script (the right corner) */
 static byte Credits_Right(const nativeVal_t *x, nativeVal_t *out) {
-	double d;
-	if (x->type == NV_INT) {
-		Native_SetInt(out, 590 - x->i);
-	} else if (x->type == NV_FLOAT || x->type == NV_LONG) {
-		Native_ArgDouble(x, &d);
-		Native_SetFloat(out, 590 - d);
-	} else {
-		return Native_Raise(NE_TYPE, "number coercion failed");
-	}
-	return 1;
+	nativeVal_t c;
+	Native_SetInt(&c, 590);
+	return Native_Arith('-', &c, x, out);
 }
 
 /* ShowCredit(num): the page num (rep its repr: the language texts Credits_<num>_1 to _20, "-" or missing for an
@@ -342,7 +321,7 @@ static byte Credits_Show(const char *rep) {
 	}
 	int corner = -1;
 	for (int k = 0; k < 4 && corner < 0; k++) {
-		if (Credits_Cmp(&credits.ctr, k) == 0) {
+		if (Credits_Cmp(&credits.ctr, k, 0) == 0) {
 			corner = k;
 		}
 	}
