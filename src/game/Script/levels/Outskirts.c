@@ -746,7 +746,7 @@ static byte Demo_InitStatus(void) {
 		"Humphrey", "Challenge.Money", "0", NULL };
 	static const char *const none[] = { "Revenge.Type", "", "Revenge.Foe", "", "Revenge.NumEnemies", "", "Challenge.NumEnemies", "",
 		"Challenge.Type", "", "Challenge.Foe", "", "Challenge.Money", "", "Race.Profile", "", NULL };
-	if (!Mode_Import("Init") || !Mode_AcShips(DH, ships_demo) || !Mode_Import("MapRace")) {
+	if (!Mode_Import("Init") || !LvN_AcShips(DH, ships_demo) || !Mode_Import("MapRace")) {
 		return 0;
 	}
 	if (LvN_SaveIs("MissionState", "HumphreyRace")) {
@@ -1000,7 +1000,7 @@ PyMethodDef g_OutskirtsGoToOutskirtsMethods[] = {
 static byte Police_InitStatus(void) {
 	nativeVal_t demo = { 0 };
 	byte ok = Mode_SaveS("AlarmActive", "0") && Mode_SaveS("AlarmStatus", "0") && Mode_Import("Init") && LvN_ModGet("Init", "isDemo", &demo) &&
-		Mode_AcShips(KP, Native_True(&demo) ? ships_demo : ships_police5);
+		LvN_AcShips(KP, Native_True(&demo) ? ships_demo : ships_police5);
 	Native_Free(&demo);
 	return ok;
 }
@@ -1481,7 +1481,7 @@ static byte Merc_CreateLonelyMercProfiles(void) {
 /* InitStatus(LevelPath): no infinite lives, the traffic, the player comes out of the elevator of GamblinDen */
 static byte Merc_InitStatus(void) {
 	static const char *const from[] = { "ComeFrom", "DoorElevator", "PrevMap", "Levels/GamblinDen", "Spawn", "DM_Player_Spawn_GamblinDen", NULL };
-	if (!Mode_Import("Traffic") || !Mode_SaveS("Player.InfiniteLives", "0") || !Mode_AcShips(IM, ships_police5)) {
+	if (!Mode_Import("Traffic") || !Mode_SaveS("Player.InfiniteLives", "0") || !LvN_AcShips(IM, ships_police5)) {
 		return 0;
 	}
 	Mode_Saves(from);
@@ -1902,7 +1902,7 @@ static PyObject *Rudolph_RaceList(PyObject *self, PyObject *args) {
 /* InitStatus(LevelPath): the race of the mission, no alarm, the traffic */
 static byte Rudolph_InitStatus(void) {
 	return Mode_Import("MapRace") && Mode_ModListG("MapRace", "Races", KR, "RaceList") && Mode_SaveS("AlarmActive", "0") &&
-		Mode_SaveS("AlarmStatus", "0") && Mode_AcShips(KR, ships_police5);
+		Mode_SaveS("AlarmStatus", "0") && LvN_AcShips(KR, ships_police5);
 }
 
 /* Init(LevelPath): the race, Rudolph to kill or the call by the state */
@@ -2191,7 +2191,7 @@ static PyObject *Debtors_GetBankerProfile(PyObject *self, PyObject *args) {
 /* InitStatus(LevelPath): less traffic, its ships */
 static byte Debtors_InitStatus(void) {
 	return Mode_Import("Traffic") && LvN_ModSetI("Traffic", "NumNormal", 3) && LvN_ModSetI("Traffic", "NumMedium", 0) &&
-		LvN_ModSetI("Traffic", "NumHeavy", 0) && Mode_AcShips(BD, ships_police4);
+		LvN_ModSetI("Traffic", "NumHeavy", 0) && LvN_AcShips(BD, ships_police4);
 }
 
 /* the meeting point that starts a mission at the dummy pattern: an Item with the OnTake onTake, the global

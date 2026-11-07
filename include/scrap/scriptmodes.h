@@ -415,16 +415,6 @@ byte Mode_GVarSetDef(const char *name);
 
 /* ---- the native level files of batch H (Commercial, Police, Press) ---- */
 
-/* SScorer.Set(0, item, var, v) and the same with an int, through the seam */
-byte Mode_Set0(const char *item, const char *var, const nativeVal_t *v);
-byte Mode_Set0I(const char *item, const char *var, long i);
-/* Scorer.MissionScorerText_X + d, Scorer.MissionScorerText_Y + d (d 0: the value itself) */
-byte Mode_TextX(long d, nativeVal_t *out);
-byte Mode_TextY(long d, nativeVal_t *out);
-/* a text of a mission scorer as the missions set it (Sf_MissionText on values): SScorer.Add(id, item, type) (type NULL:
- * none), X, Y, Font, Effect (NULL: none), Text, Align, the colour Scorer.MissionScorerText_Color and Visible (NULL: none) */
-byte Mode_MissionText(const nativeVal_t *id, const char *item, const char *type, const nativeVal_t *x, const nativeVal_t *y,
-	const char *font, const char *effect, const nativeVal_t *text, const char *align, const nativeVal_t *visible);
 /* the sprite behind a number of a mission scorer (Sf_MissionSprite on values): Add, X, Y, ScaleX 30, ScaleY 19, Unit 1,
  * Alpha, Red, Green, Blue */
 byte Mode_MissionSprite(const nativeVal_t *id, const char *item, const nativeVal_t *x, const nativeVal_t *y, long alpha, long r,
@@ -448,9 +438,6 @@ byte Mode_Taken(const nativeVal_t *item, const nativeVal_t *arrow);
 /* InitStatus of an outdoor map while the boss controls the robots: police and traffic 5 (comSats: none when the level
  * Init.UpperMap is in ComSatsMissionsMapsFinished, and OutPolice.PoliceActive = 0), no ships of the traffic */
 byte Mode_BossTraffic(byte comSats);
-/* import Traffic; Scrap.SetSaveVar("Traffic.AcShips", ships); Traffic.AcShips = eval(Scrap.GetSaveVar("Traffic.AcShips"))
- * in the globals of module */
-byte Mode_AcShips(const char *module, const char *ships);
 /* Scrap.DelSaveVars(prefix) through its seam (fr7b.py records it) */
 byte Mode_DelSaveVars(const char *prefix);
 /* del name of a global of the module (the NameError of the script when it is not there) */
@@ -478,8 +465,6 @@ byte Mode_CallKw(const char *module, const char *name, nativeVal_t *out, const n
 /* GateKeeper.DoorFoe(gk, GateKeeper.<group>) with the group object itself (OBJLIB 5: the group lists of GateKeeper keep
  * their identity) */
 byte Mode_DoorFoe(const char *gk, const char *group);
-/* SSound.PlaySound(pos, name, volume) through its seam (fr7b.py records it), else Mode_PlaySound */
-byte Mode_PlaySoundSeam(const nativeVal_t *pos, const nativeVal_t *name, const nativeVal_t *volume);
 /* Scrap.GetLangStr(key) of a value (the TypeError of "s" for one that is no text) into out */
 byte Mode_LangV(const nativeVal_t *key, nativeVal_t *out);
 /* SAct.CreateClass(name), SAct.GetClass(name) or SAct.CreateAction(name) through their seams (fn the name of the SAct
@@ -496,9 +481,6 @@ byte Mode_FromDummy(const nativeVal_t *dummy, const char *type, nativeVal_t *e);
  * SuperDeal_Twelfth): Speech.AddRemoteCom(msgs[i], "CrazyGambler") for the i < n that equals
  * MissionsFuncs.GetNumCrazyDealCompleted() */
 byte Mode_CGCalls(const char *const *msgs, int n);
-/* module.var.append(name) with name the global of gmod (a function; OBJLIB 5: the list of another module changed in
- * place) */
-byte Mode_AppendG(const char *module, const char *var, const char *gmod, const char *name);
 /* the global name of module = name op v of the script (op of Native_Arith: '+', '-', ...), and with an int i */
 byte Mode_GOp(const char *module, const char *name, char op, const nativeVal_t *v);
 byte Mode_GOpI(const char *module, const char *name, char op, long i);

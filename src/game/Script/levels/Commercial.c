@@ -612,13 +612,13 @@ static byte Mickus_OnMickusDamage(const nativeVal_t *a, nativeVal_t *out) {
 
 /* the scan bar blinks (lost) or runs */
 static byte Mk_Blink(int lost) {
-	return Mode_Set0I("ScanRemainingTime", "Blink", lost) && Mode_Set0I("ScanRemainingTime", "IsAutoUpdatable", !lost);
+	return LvN_Set0I("ScanRemainingTime", "Blink", lost) && LvN_Set0I("ScanRemainingTime", "IsAutoUpdatable", !lost);
 }
 
 /* SScorer.Set(0, "ScanRemainingTime", var, MAX_SCANNING_TIME) */
 static byte Mk_ScanTime(const char *var) {
 	nativeVal_t v;
-	byte ok = Mode_G(DMK, "MAX_SCANNING_TIME", &v) && Mode_Set0("ScanRemainingTime", var, &v);
+	byte ok = Mode_G(DMK, "MAX_SCANNING_TIME", &v) && LvN_Set0("ScanRemainingTime", var, &v);
 	Native_Free(&v);
 	return ok;
 }
@@ -669,8 +669,8 @@ static byte Mickus_ScanShip(const nativeVal_t *a, nativeVal_t *out) {
 		if (near > 0) {
 			ok = Mode_VGet(&h, "Name", &name) && Mode_Put(DMK, "currentScannedShip", NULL, &name);
 			Native_Free(&name);
-			ok = ok && Mode_G(DMK, "currentScannedShip", &name) && Cm_Waypoint(&name) && Mode_Set0I("ScanStatusText", "Visible", 1) &&
-				Mk_Blink(0) && Mk_ScanTime("MaxValue") && Mk_ScanTime("Value") && Mode_Set0I("ScanRemainingTime", "Visible", 1);
+			ok = ok && Mode_G(DMK, "currentScannedShip", &name) && Cm_Waypoint(&name) && LvN_Set0I("ScanStatusText", "Visible", 1) &&
+				Mk_Blink(0) && Mk_ScanTime("MaxValue") && Mk_ScanTime("Value") && LvN_Set0I("ScanRemainingTime", "Visible", 1);
 		}
 		ok = ok && near >= 0;
 		Native_Free(&s);
@@ -703,14 +703,14 @@ static byte Mickus_CheckContinueScanning(const nativeVal_t *a, nativeVal_t *out)
 static byte Mickus_ResetScan(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return LvN_PutS(DMK, "currentScannedShip", "") && Cm_WaypointS("") && Mode_Set0I("ScanRemainingTime", "IsAutoUpdatable", 0) &&
-		Mode_Set0I("ScanRemainingTime", "Visible", 0) && Mode_Set0I("ScanStatusText", "Visible", 0) && CM_LATER(0.1, DMK, "ResetScan2", NULL);
+	return LvN_PutS(DMK, "currentScannedShip", "") && Cm_WaypointS("") && LvN_Set0I("ScanRemainingTime", "IsAutoUpdatable", 0) &&
+		LvN_Set0I("ScanRemainingTime", "Visible", 0) && LvN_Set0I("ScanStatusText", "Visible", 0) && CM_LATER(0.1, DMK, "ResetScan2", NULL);
 }
 
 static byte Mickus_ResetScan2(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Mode_Set0I("ScanRemainingTime", "Blink", 0) && Mk_ScanTime("MaxValue") && Mk_ScanTime("Value");
+	return LvN_Set0I("ScanRemainingTime", "Blink", 0) && Mk_ScanTime("MaxValue") && Mk_ScanTime("Value");
 }
 
 /* OnFinishScan(): the scan bar ran out: Mickus, or one transport fewer */
@@ -719,7 +719,7 @@ static byte Mickus_OnFinishScan(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t *usr = Mode_V(&t), *cur = Mode_V(&t), *m = Mode_V(&t), *e = Mode_V(&t);
 	(void)a;
 	(void)out;
-	if (!Cm_WaypointS("") || !Mode_Set0I("ScanStatusText", "Visible", 0) || !Mode_Set0I("ScanRemainingTime", "Visible", 0)) {
+	if (!Cm_WaypointS("") || !LvN_Set0I("ScanStatusText", "Visible", 0) || !LvN_Set0I("ScanRemainingTime", "Visible", 0)) {
 		return Mode_Done(&t, 0);
 	}
 	int u = Cm_Usr(usr);
@@ -1116,8 +1116,8 @@ static byte Mickus_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	Native_SetInt(vis, scanning);
 	LvN_Label("Mission_Search&DestroyMickus_Scorer_1", label);
-	byte ok = Mode_TextX(0, x) && Mode_TextY(0, y) &&
-		Mode_MissionText(&a[0], "ScanStatusText", "Text", x, y, "Horatio", "Shadow", label, "Left", vis) &&
+	byte ok = LvN_TextX(0, x) && LvN_TextY(0, y) &&
+		LvN_MissionText(&a[0], "ScanStatusText", "Text", x, y, "Horatio", "Shadow", label, "Left", vis) &&
 		Cm_Add(&a[0], "ScanRemainingTime", "Bar") && Mode_BarDefaults(&a[0], "ScanRemainingTime", NULL, NULL) &&
 		Cm_SetI(&a[0], "ScanRemainingTime", "IsAutoUpdatable", 0) && Cm_ScorerG(&a[0], "ScanRemainingTime", "MaxValue", DMK, "MAX_SCANNING_TIME") &&
 		(scanning || Cm_ScorerG(&a[0], "ScanRemainingTime", "Value", DMK, "MAX_SCANNING_TIME")) &&
@@ -1361,7 +1361,7 @@ static byte Pg_Died(const nativeVal_t *a, const char *global, const char *lifes,
 	if (!Mode_Import("Vehicles") || !Cm_GNone(PG, global) || !Mode_GOpI(PG, lifes, '-', 1) || !Cm_GRepr(PG, lifes, &text)) {
 		return 0;
 	}
-	byte ok = Mode_Set0(item, "Text", &text) && Cm_OnDeath(a);
+	byte ok = LvN_Set0(item, "Text", &text) && Cm_OnDeath(a);
 	Native_Free(&text);
 	if (!ok) {
 		return 0;
@@ -1395,7 +1395,7 @@ static byte Gus_OnBishopGusDeath(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Cm_GRepr(PG, "bishopGusLifes", &text)) {
 		return 0;
 	}
-	byte ok = Mode_Set0("BishopGusLifes", "Text", &text) && Cm_OnDeath(a);
+	byte ok = LvN_Set0("BishopGusLifes", "Text", &text) && Cm_OnDeath(a);
 	Native_Free(&text);
 	int eight = ok ? LvN_GEqI(PG, "bishopGusLifes", 8) : -1;
 	if (eight < 0 || (eight && !LvN_Com("Mission_ProtectGus_RemoteMessage2", "DeepThroat", NULL, NULL, NULL))) {
@@ -1480,7 +1480,7 @@ static byte Cm_Y2(long d, long d2, nativeVal_t *out) {
 	nativeVal_t y, k;
 	Native_SetInt(&k, d2);
 	Native_SetNone(out);
-	byte ok = Mode_TextY(d, &y) && Native_Arith('+', &y, &k, out);
+	byte ok = LvN_TextY(d, &y) && Native_Arith('+', &y, &k, out);
 	Native_Free(&y);
 	return ok;
 }
@@ -1499,8 +1499,8 @@ static byte Gus_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
 	for (int i = 0; i < 2; i++) {
 		modeVals_t t = { .n = 0 };
 		nativeVal_t *x = Mode_V(&t), *y = Mode_V(&t), *n = Mode_V(&t), *x0 = Mode_V(&t), *y3 = Mode_V(&t);
-		byte ok = Mode_TextX(15, x) && Cm_Y2(12, rows[i].dy, y) && Cm_GRepr(PG, rows[i].lifes, n) &&
-			Mode_MissionText(&a[0], rows[i].item, "Text", x, y, "BigNumbers", "Shadow", n, "Center", NULL) && Mode_TextX(0, x0) &&
+		byte ok = LvN_TextX(15, x) && Cm_Y2(12, rows[i].dy, y) && Cm_GRepr(PG, rows[i].lifes, n) &&
+			LvN_MissionText(&a[0], rows[i].item, "Text", x, y, "BigNumbers", "Shadow", n, "Center", NULL) && LvN_TextX(0, x0) &&
 			Cm_Y2(3, rows[i].dy, y3) && Mode_MissionSprite(&a[0], rows[i].sprite, x0, y3, 128, 0, 0, 0);
 		if (!Mode_Done(&t, ok)) {
 			return 0;
@@ -1510,7 +1510,7 @@ static byte Gus_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
 		modeVals_t t = { .n = 0 };
 		nativeVal_t *x = Mode_V(&t), *y = Mode_V(&t), *text = Mode_V(&t);
 		Mode_Lang(texts[i][1], text);
-		byte ok = Mode_TextX(34, x) && Mode_TextY(i * 20, y) && Mode_MissionText(&a[0], texts[i][0], "Text", x, y, "Horatio", "Shadow", text,
+		byte ok = LvN_TextX(34, x) && LvN_TextY(i * 20, y) && LvN_MissionText(&a[0], texts[i][0], "Text", x, y, "Horatio", "Shadow", text,
 			"Left", NULL);
 		if (!Mode_Done(&t, ok)) {
 			return 0;
@@ -1887,23 +1887,23 @@ static byte Race_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
 	const nativeVal_t *id = &a[0];
 	(void)out;
 	(void)ar1;
-	if (!Mode_Import("Scorer") || !Mode_TextX(20, x) || !Cm_GRepr(WR, "currentWaypoints", n) ||
-		!Mode_MissionText(id, "MissionBest", "Text", x, Mode_I(&t, 190), "BigNumbers", NULL, n, "Center", NULL) || !Mode_TextX(50, x2) ||
-		!Cm_GRepr(WR, "maxWaypoints", m) || !Mode_MissionText(id, "MissionLimit", "Text", x2, Mode_I(&t, 190), "BigNumbers", NULL, m, "Center", NULL) ||
-		!Mode_TextX(5, x5) || !Mode_MissionSprite(id, "MissionYou", x5, Mode_I(&t, 180), 128, 0, 0, 255) || !Mode_TextX(35, x35) ||
-		!Mode_MissionSprite(id, "MissionSLimit", x35, Mode_I(&t, 180), 92, 0, 0, 0) || !Mode_TextX(0, x0) || !Mode_TextY(0, y0)) {
+	if (!Mode_Import("Scorer") || !LvN_TextX(20, x) || !Cm_GRepr(WR, "currentWaypoints", n) ||
+		!LvN_MissionText(id, "MissionBest", "Text", x, Mode_I(&t, 190), "BigNumbers", NULL, n, "Center", NULL) || !LvN_TextX(50, x2) ||
+		!Cm_GRepr(WR, "maxWaypoints", m) || !LvN_MissionText(id, "MissionLimit", "Text", x2, Mode_I(&t, 190), "BigNumbers", NULL, m, "Center", NULL) ||
+		!LvN_TextX(5, x5) || !Mode_MissionSprite(id, "MissionYou", x5, Mode_I(&t, 180), 128, 0, 0, 255) || !LvN_TextX(35, x35) ||
+		!Mode_MissionSprite(id, "MissionSLimit", x35, Mode_I(&t, 180), 92, 0, 0, 0) || !LvN_TextX(0, x0) || !LvN_TextY(0, y0)) {
 		return Mode_Done(&t, 0);
 	}
 	LvN_Label("Mission_Win1stRace_Scorer1", label);
-	if (!Mode_MissionText(id, "RaceText", "Text", x0, y0, "Horatio", "Shadow", label, "Left", Mode_I(&t, 1))) {
+	if (!LvN_MissionText(id, "RaceText", "Text", x0, y0, "Horatio", "Shadow", label, "Left", Mode_I(&t, 1))) {
 		return Mode_Done(&t, 0);
 	}
 	/* width, height = SScorer.GetTextArea("Horatio", the label of DistractHumphrey) */
 	LvN_Label("Mission_DistractHumphrey_Scorer1", l2);
 	Native_Free(x0);
-	if (!Mode_TextArea("Horatio", l2, area) || !Mode_Unpack(area, 2, ar) || !Cm_Add(id, "RaceTimer", "Timer") || !Mode_TextX(0, x0) ||
+	if (!Mode_TextArea("Horatio", l2, area) || !Mode_Unpack(area, 2, ar) || !Cm_Add(id, "RaceTimer", "Timer") || !LvN_TextX(0, x0) ||
 		!Native_Arith('+', x0, ar, s1) || !Native_Arith('+', s1, Mode_I(&t, 30), s2) || !LvN_ScorerSet(id, "RaceTimer", "X", s2) ||
-		!Mode_TextY(12, y12) || !LvN_ScorerSet(id, "RaceTimer", "Y", y12) || !LvN_ScorerSet(id, "RaceTimer", "Align", Mode_S(&t, "Left")) ||
+		!LvN_TextY(12, y12) || !LvN_ScorerSet(id, "RaceTimer", "Y", y12) || !LvN_ScorerSet(id, "RaceTimer", "Align", Mode_S(&t, "Left")) ||
 		!LvN_ScorerSet(id, "RaceTimer", "TimerType", Mode_S(&t, "TimeSpecialUse")) ||
 		!LvN_ScorerSet(id, "RaceTimer", "OnTimeExpired", Mode_S(&t, "Mission_Win1stRace.TimeExpired")) || !Mode_TextColour(id, "RaceTimer")) {
 		return Mode_Done(&t, 0);
@@ -2559,7 +2559,7 @@ static byte Data_TakeData(const nativeVal_t *a, nativeVal_t *out) {
 				LvN_Com("Mission_GetDataPart3_RemoteMessage1", "Boss", GD, "PreCallDeepThroat", LvN_NoArgs()) && Gd_EndWave("Traffic", 3, usr));
 		}
 		return Mode_Done(&t, all == 0 && LvN_Com("Mission_GetDataPart3_RemoteMessage3", "Boss", NULL, NULL, NULL) &&
-			Mode_Set0("DataStatus", "Value", n) && LvN_Draw() && Gd_EndWave("Enemies", 2, usr) && Native_Arith('+', n, Mode_I(&t, 1), n1) &&
+			LvN_Set0("DataStatus", "Value", n) && LvN_Draw() && Gd_EndWave("Enemies", 2, usr) && Native_Arith('+', n, Mode_I(&t, 1), n1) &&
 			LV_OWN(GD, "CreateWave", NULL, "v", n1));
 	}
 	if (player < 0) {
@@ -2676,8 +2676,8 @@ static byte Data_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetNone(&y);
 	Native_SetNone(&n);
 	LvN_Label("Mission_GetDataPart3_Scorer_1", &label);
-	byte ok = Mode_TextX(0, &x) && Mode_TextY(0, &y) &&
-		Mode_MissionText(&a[0], "DataStatusText", "Text", &x, &y, "Horatio", "Shadow", &label, "Left", NULL) && Cm_Add(&a[0], "DataStatus", "Bar") &&
+	byte ok = LvN_TextX(0, &x) && LvN_TextY(0, &y) &&
+		LvN_MissionText(&a[0], "DataStatusText", "Text", &x, &y, "Horatio", "Shadow", &label, "Left", NULL) && Cm_Add(&a[0], "DataStatus", "Bar") &&
 		Mode_BarDefaults(&a[0], "DataStatus", NULL, NULL) && Cm_SetI(&a[0], "DataStatus", "IsAutoUpdatable", 0) &&
 		Cm_ScorerG(&a[0], "DataStatus", "MaxValue", GD, "MAX_DATA_UNITS") && Mode_SaveInt("NumData", &n) && LvN_ScorerSet(&a[0], "DataStatus", "Value", &n);
 	Native_Free(&x);
@@ -2965,13 +2965,13 @@ static byte Gambler_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t *x = Mode_V(&t), *y = Mode_V(&t), *label = Mode_V(&t), *x2 = Mode_V(&t), *y2 = Mode_V(&t), *lifes = Mode_V(&t);
 	(void)out;
 	LvN_Label("Mission_DefeatCrazyGambler2_Scorer1", label);
-	if (!Mode_Import("Scorer") || !Mode_TextX(0, x) || !Mode_TextY(0, y) ||
-		!Mode_MissionText(&a[0], "RemainingLifesText", "Text", x, y, "Horatio", "Shadow", label, "Left", NULL) || !Mode_TextX(0, x2) ||
-		!Mode_TextY(20, y2)) {
+	if (!Mode_Import("Scorer") || !LvN_TextX(0, x) || !LvN_TextY(0, y) ||
+		!LvN_MissionText(&a[0], "RemainingLifesText", "Text", x, y, "Horatio", "Shadow", label, "Left", NULL) || !LvN_TextX(0, x2) ||
+		!LvN_TextY(20, y2)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("NumCrazyGamblerLifes", lifes);
-	return Mode_Done(&t, Mode_MissionText(&a[0], "RemainingLifes", "Text", x2, y2, "Horatio", "Shadow", lifes, "Left", NULL));
+	return Mode_Done(&t, LvN_MissionText(&a[0], "RemainingLifes", "Text", x2, y2, "Horatio", "Shadow", lifes, "Left", NULL));
 }
 
 LV_FN(Gambler, GetCrazyGamblerProfileA, 0, Gambler_GetCrazyGamblerProfile_C)
@@ -3048,7 +3048,7 @@ static byte Porkins_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 		(LvN_SaveIs("MissionState", "Popularity") && !CM_HOOK("Parking", "SwitchVehicleMissionCallback", PT, "InitMission"))) {
 		return 0;
 	}
-	return Mode_AcShips(PT, ac_ships_bertos);
+	return LvN_AcShips(PT, ac_ships_bertos);
 }
 
 static byte Porkins_Init(const nativeVal_t *a, nativeVal_t *out) {
@@ -3460,8 +3460,8 @@ static byte Porkins_UpdateScorer(const nativeVal_t *a, nativeVal_t *out) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(pop);
-	return Mode_Done(&t, Mode_G(PT, "mayorPopularity", pop) && Mode_Set0("PopularityBar", "Value", pop) && Native_Arith('+', x, ws, xw) &&
-		Mode_Set0("PopularitySeparator", "X", xw));
+	return Mode_Done(&t, Mode_G(PT, "mayorPopularity", pop) && LvN_Set0("PopularityBar", "Value", pop) && Native_Arith('+', x, ws, xw) &&
+		LvN_Set0("PopularitySeparator", "X", xw));
 }
 
 /* MissionScorer(id): the popularity text, bar and separator */
@@ -3475,7 +3475,7 @@ static byte Porkins_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
 	Cm_Ints4(main, 16, 16, 255, 192);
 	Cm_Ints4(black, 255, 16, 192, 192);
 	if (!Cm_Add(id, "PopularityText", "Text") || !Cm_Add(id, "PopularitySeparator", "Sprite") || !Cm_Add(id, "PopularityBar", "Bar") ||
-		!Mode_TextX(0, x) || !Mode_TextY(0, y) || !Mode_MissionText(id, "PopularityText", NULL, x, y, "Horatio", "Shadow", label, "Left", NULL) ||
+		!LvN_TextX(0, x) || !LvN_TextY(0, y) || !LvN_MissionText(id, "PopularityText", NULL, x, y, "Horatio", "Shadow", label, "Left", NULL) ||
 		!Mode_BarDefaults(id, "PopularityBar", main, black) || !Cm_ScorerG(id, "PopularityBar", "MaxValue", PT, "MAX_POPULARITY") ||
 		!Cm_ScorerG(id, "PopularityBar", "Value", PT, "mayorPopularity") || !Cm_SetI(id, "PopularityBar", "Red", 255) ||
 		!Cm_SetI(id, "PopularityBar", "Green", 0) || !Cm_SetI(id, "PopularityBar", "Blue", 0)) {

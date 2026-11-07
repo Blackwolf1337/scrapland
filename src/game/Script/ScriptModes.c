@@ -1990,56 +1990,6 @@ byte Mode_GVarSetDef(const char *name) {
 
 /* ---- the native level files of batch H (Commercial, Police, Press) ---- */
 
-byte Mode_Set0(const char *item, const char *var, const nativeVal_t *v) {
-	nativeVal_t id, it;
-	Native_SetInt(&id, 0);
-	Native_SetText(&it, item, (int)strlen(item));
-	byte ok = Mode_ScorerSet(&id, &it, var, v);
-	Native_Free(&it);
-	return ok;
-}
-
-byte Mode_Set0I(const char *item, const char *var, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return Mode_Set0(item, var, &v);
-}
-
-/* Scorer.<var> + d */
-static byte Mode_TextAt(const char *var, long d, nativeVal_t *out) {
-	nativeVal_t v, n;
-	if (!LvN_ModGet("Scorer", var, &v)) {
-		Native_SetNone(out);
-		return 0;
-	}
-	if (!d) {
-		*out = v;
-		return 1;
-	}
-	Native_SetInt(&n, d);
-	Native_SetNone(out);
-	byte ok = Native_Arith('+', &v, &n, out);
-	Native_Free(&v);
-	return ok;
-}
-
-byte Mode_TextX(long d, nativeVal_t *out) {
-	return Mode_TextAt("MissionScorerText_X", d, out);
-}
-
-byte Mode_TextY(long d, nativeVal_t *out) {
-	return Mode_TextAt("MissionScorerText_Y", d, out);
-}
-
-/* SScorer.Set(id, item, var, "text") */
-static byte Mode_ScorerSetS(const nativeVal_t *id, const char *item, const char *var, const char *s) {
-	nativeVal_t v;
-	Native_SetText(&v, s, (int)strlen(s));
-	byte ok = LvN_ScorerSet(id, item, var, &v);
-	Native_Free(&v);
-	return ok;
-}
-
 byte Mode_ScorerSetI(const nativeVal_t *id, const char *item, const char *var, long i) {
 	nativeVal_t v;
 	Native_SetInt(&v, i);
@@ -2068,16 +2018,6 @@ byte Mode_TextColour(const nativeVal_t *id, const char *item) {
 		}
 	}
 	return 1;
-}
-
-byte Mode_MissionText(const nativeVal_t *id, const char *item, const char *type, const nativeVal_t *x, const nativeVal_t *y,
-	const char *font, const char *effect, const nativeVal_t *text, const char *align, const nativeVal_t *visible) {
-	if ((type && !Mode_ScorerAddS(id, item, type)) || !LvN_ScorerSet(id, item, "X", x) || !LvN_ScorerSet(id, item, "Y", y) ||
-		!Mode_ScorerSetS(id, item, "Font", font) || (effect && !Mode_ScorerSetS(id, item, "Effect", effect)) ||
-		!LvN_ScorerSet(id, item, "Text", text) || !Mode_ScorerSetS(id, item, "Align", align)) {
-		return 0;
-	}
-	return Mode_TextColour(id, item) && (!visible || LvN_ScorerSet(id, item, "Visible", visible));
 }
 
 byte Mode_MissionSprite(const nativeVal_t *id, const char *item, const nativeVal_t *x, const nativeVal_t *y, long alpha, long r,
@@ -2180,13 +2120,6 @@ byte Mode_Taken(const nativeVal_t *item, const nativeVal_t *arrow) {
 	return ok;
 }
 
-/* module.var = i and = [] of another module */
-static byte Mode_ModInt(const char *module, const char *var, long i) {
-	nativeVal_t v;
-	Native_SetInt(&v, i);
-	return Mode_SetModVar(module, var, &v);
-}
-
 byte Mode_ModEmpty(const char *module, const char *var) {
 	nativeVal_t v;
 	Native_SetEmpty(&v, NV_LIST);
@@ -2208,24 +2141,13 @@ byte Mode_BossTraffic(byte comSats) {
 			return 0;
 		}
 	}
-	if (done ? !Mode_GVarSetI("MaxChasingShips", 0) || !Mode_GVarSetI("iTrafficNumber", 0) || !Mode_ModInt("OutPolice", "PoliceActive", 0) :
+	if (done ? !Mode_GVarSetI("MaxChasingShips", 0) || !Mode_GVarSetI("iTrafficNumber", 0) || !LvN_ModSetI("OutPolice", "PoliceActive", 0) :
 		!Mode_GVarSetI("iTrafficNumber", 5) || !Mode_GVarSetI("MaxChasingShips", 5)) {
 		return 0;
 	}
-	return Mode_ModEmpty("Traffic", "AcNormalShips") && Mode_ModInt("Traffic", "NumNormal", 0) &&
-		Mode_ModEmpty("Traffic", "AcMediumShips") && Mode_ModInt("Traffic", "NumMedium", 0) &&
-		Mode_ModEmpty("Traffic", "AcHeavyShips") && Mode_ModInt("Traffic", "NumHeavy", 0);
-}
-
-byte Mode_AcShips(const char *module, const char *ships) {
-	nativeVal_t v;
-	if (!Mode_Import("Traffic")) {
-		return 0;
-	}
-	SaveVar_Set("Traffic.AcShips", ships);
-	byte ok = LvN_SaveList("Traffic.AcShips", module, &v) && Mode_SetModVar("Traffic", "AcShips", &v);
-	Native_Free(&v);
-	return ok;
+	return Mode_ModEmpty("Traffic", "AcNormalShips") && LvN_ModSetI("Traffic", "NumNormal", 0) &&
+		Mode_ModEmpty("Traffic", "AcMediumShips") && LvN_ModSetI("Traffic", "NumMedium", 0) &&
+		Mode_ModEmpty("Traffic", "AcHeavyShips") && LvN_ModSetI("Traffic", "NumHeavy", 0);
 }
 
 byte Mode_DelSaveVars(const char *prefix) {
@@ -2363,14 +2285,6 @@ byte Mode_DoorFoe(const char *gk, const char *group) {
 	return ok;
 }
 
-byte Mode_PlaySoundSeam(const nativeVal_t *pos, const nativeVal_t *name, const nativeVal_t *volume) {
-	MODE_SEAM("SSound", "PlaySound");
-	if (seam) {
-		return Native_HookCall(hook, NULL, "vvv", pos, name, volume);
-	}
-	return Mode_PlaySound(pos, name, volume);
-}
-
 byte Mode_LangV(const nativeVal_t *key, nativeVal_t *out) {
 	const char *s;
 	if (!Native_ArgStr(key, 1, &s)) {
@@ -2451,16 +2365,6 @@ byte Mode_CGCalls(const char *const *msgs, int n) {
 	}
 	Native_Free(&num);
 	return ok;
-}
-
-byte Mode_AppendG(const char *module, const char *var, const char *gmod, const char *name) {
-	PyObject *o = Script_Attr(module, var);
-	PyObject *fn = o ? Mode_GlobalPy(gmod, name) : NULL;
-	PyObject *r = fn ? Script_Method(o, "append", "(O)", fn) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(fn);
-	Py_XDECREF(o);
-	return r != NULL;
 }
 
 byte Mode_GOp(const char *module, const char *name, char op, const nativeVal_t *v) {

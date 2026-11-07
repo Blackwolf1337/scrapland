@@ -1301,32 +1301,12 @@ byte LvN_ScorerSetS(const nativeVal_t *id, const char *item, const char *var, co
 
 byte LvN_MissionText(const nativeVal_t *id, const char *item, const char *type, const nativeVal_t *x, const nativeVal_t *y,
 	const char *font, const char *effect, const nativeVal_t *text, const char *align, const nativeVal_t *visible) {
-	static const char *const rgba[] = { "Red", "Green", "Blue", "Alpha" };
-	nativeVal_t it;
-	if (type) {
-		LvN_Str(&it, item);
-		byte ok = Mode_ScorerAdd(id, &it, type);
-		Native_Free(&it);
-		if (!ok) {
-			return 0;
-		}
-	}
-	if (!LvN_ScorerSet(id, item, "X", x) || !LvN_ScorerSet(id, item, "Y", y) || !LvN_ScorerSetS(id, item, "Font", font) ||
-		(effect && !LvN_ScorerSetS(id, item, "Effect", effect)) || !LvN_ScorerSet(id, item, "Text", text) ||
-		!LvN_ScorerSetS(id, item, "Align", align)) {
+	if ((type && !Mode_ScorerAddS(id, item, type)) || !LvN_ScorerSet(id, item, "X", x) || !LvN_ScorerSet(id, item, "Y", y) ||
+		!LvN_ScorerSetS(id, item, "Font", font) || (effect && !LvN_ScorerSetS(id, item, "Effect", effect)) ||
+		!LvN_ScorerSet(id, item, "Text", text) || !LvN_ScorerSetS(id, item, "Align", align)) {
 		return 0;
 	}
-	for (int i = 0; i < 4; i++) {
-		nativeVal_t c, k;
-		Native_SetNone(&k);
-		byte ok = LvN_ModGet("Scorer", "MissionScorerText_Color", &c) && LvN_Item(&c, i, &k) && LvN_ScorerSet(id, item, rgba[i], &k);
-		Native_Free(&c);
-		Native_Free(&k);
-		if (!ok) {
-			return 0;
-		}
-	}
-	return !visible || LvN_ScorerSet(id, item, "Visible", visible);
+	return Mode_TextColour(id, item) && (!visible || LvN_ScorerSet(id, item, "Visible", visible));
 }
 
 byte LvN_SetOnFloor(const nativeVal_t *name) {
@@ -1408,18 +1388,9 @@ byte LvN_Routine(const char *key, const nativeVal_t *fn) {
 	return ok;
 }
 
-byte LvN_LaterV(const nativeVal_t *delay, const char *module, const char *func, const nativeVal_t *args, int n) {
-	nativeVal_t now, t;
-	Native_SetFloat(&now, Mode_Time());
-	Native_SetNone(&t);
-	byte ok = Native_Arith('+', &now, delay, &t) && Mode_AtG(&t, module, func, args, n);
-	Native_Free(&t);
-	return ok;
-}
-
 byte LvN_LaterG(const char *module, const char *delay, const char *func, const nativeVal_t *args, int n) {
 	nativeVal_t d;
-	byte ok = Mode_G(module, delay, &d) && LvN_LaterV(&d, module, func, args, n);
+	byte ok = Mode_G(module, delay, &d) && Mode_LaterV(&d, module, func, args, n, NULL);
 	Native_Free(&d);
 	return ok;
 }

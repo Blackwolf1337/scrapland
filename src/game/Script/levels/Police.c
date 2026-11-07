@@ -2049,7 +2049,7 @@ PyMethodDef g_PoliceInitEpilogueMethods[] = {
 static byte JailBreak_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Mode_AppendG("CharsNPC", "AfterBrowseNPC", JB, "AfterBrowseNPC");
+	return LvN_ModAppendG("CharsNPC", "AfterBrowseNPC", JB, "AfterBrowseNPC");
 }
 
 /* CharsNPC.CharRes[key].var = v (OBJLIB 5: the character objects of CharsNPC) */

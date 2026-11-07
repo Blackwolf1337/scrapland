@@ -1193,7 +1193,7 @@ static byte Pr_TakenSound(const nativeVal_t *it, const char *key) {
 	Native_SetNone(&pos);
 	LvN_Str(&k, key);
 	byte ok = LvN_ModGet("Sound", "ItemTake", &tab) && Native_Subscript(&tab, &k, &a) && Mode_VGet(it, "Pos", &pos) && LvN_Item(&a, 0, &s) &&
-		LvN_Item(&a, 1, &v) && Mode_PlaySoundSeam(&pos, &s, &v);
+		LvN_Item(&a, 1, &v) && LvN_PlaySound(&pos, &s, &v);
 	Native_Free(&tab);
 	Native_Free(&k);
 	Native_Free(&a);
@@ -1401,7 +1401,7 @@ static byte CrazyData_OnAlarmActivated(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	byte ok = LV_CALL("MissionsFuncs", "SetMultipleMissionTargets", NULL, "v", &switches);
 	Native_Free(&switches);
-	return ok && LvN_PutI(GC, "TimerCanBeSeen", 0) && LvN_PutI(GC, "switchesRemaining", 4) && Mode_Set0I("MissionTimer", "Visible", 0) &&
+	return ok && LvN_PutI(GC, "TimerCanBeSeen", 0) && LvN_PutI(GC, "switchesRemaining", 4) && LvN_Set0I("MissionTimer", "Visible", 0) &&
 		LV_OWN(GC, "MissionScorer", NULL, "i", 0L) && Pr_Remote("Mission_GetCrazyData_RemoteMessage6", "DeepThroat", NULL, NULL, 0);
 }
 
@@ -1450,7 +1450,7 @@ static byte CrazyData_StartTimer(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	byte ok = Mode_GVarSet("TimeSpecialUseTimer", &mt);
 	Native_Free(&mt);
-	return ok && Mode_Set0I("MissionTimer", "Visible", 1) && Pr_DelIfS("Humphrey_Default") && LV_OWN(GC, "MissionScorer", NULL, "i", 0L);
+	return ok && LvN_Set0I("MissionTimer", "Visible", 1) && Pr_DelIfS("Humphrey_Default") && LV_OWN(GC, "MissionScorer", NULL, "i", 0L);
 }
 
 /* TimeExpired(): the switches go off for good; on to the press room */
@@ -1593,7 +1593,7 @@ static byte CrazyData_TrurlSpeech(const nativeVal_t *a, nativeVal_t *out) {
 static byte Pr_ScorerText(const nativeVal_t *id, const char *item, long dy, const nativeVal_t *text) {
 	nativeVal_t x, y;
 	Native_SetNone(&x);
-	byte ok = Mode_TextY(dy, &y) && Mode_TextX(0, &x) && Mode_MissionText(id, item, "Text", &x, &y, "Horatio", "Shadow", text, "Left", NULL);
+	byte ok = LvN_TextY(dy, &y) && LvN_TextX(0, &x) && LvN_MissionText(id, item, "Text", &x, &y, "Horatio", "Shadow", text, "Left", NULL);
 	Native_Free(&x);
 	Native_Free(&y);
 	return ok;
@@ -1611,8 +1611,8 @@ static byte CrazyData_MissionScorer(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	Mode_Repr(y, left);
 	Native_Free(y);
-	if (!Pr_ScorerText(id, "SwitchesRemaining", 20, left) || !Mode_ScorerAdd(id, Mode_S(&t, "MissionTimer"), "Timer") || !Mode_TextX(40, x) ||
-		!LvN_ScorerSet(id, "MissionTimer", "X", x) || !Mode_TextY(60, y) || !LvN_ScorerSet(id, "MissionTimer", "Y", y) ||
+	if (!Pr_ScorerText(id, "SwitchesRemaining", 20, left) || !Mode_ScorerAdd(id, Mode_S(&t, "MissionTimer"), "Timer") || !LvN_TextX(40, x) ||
+		!LvN_ScorerSet(id, "MissionTimer", "X", x) || !LvN_TextY(60, y) || !LvN_ScorerSet(id, "MissionTimer", "Y", y) ||
 		!LvN_ScorerSet(id, "MissionTimer", "Font", Mode_S(&t, "Horatio")) || !LvN_ScorerSet(id, "MissionTimer", "Effect", Mode_S(&t, "Shadow")) ||
 		!LvN_ScorerSet(id, "MissionTimer", "Align", Mode_S(&t, "Left")) || !LvN_ScorerSet(id, "MissionTimer", "TimerType", Mode_S(&t, "TimeSpecialUse")) ||
 		!LvN_ScorerSet(id, "MissionTimer", "OnTimeExpired", Mode_S(&t, "Mission_GetCrazyData.TimeExpired")) || !Mode_TextColour(id, "MissionTimer")) {
@@ -2266,7 +2266,7 @@ PyMethodDef g_PressPressMeetingMethods[] = {
 static byte MeetBoss_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Mode_Import("CharsNPC") && Mode_Import("Chars") && Mode_AppendG("CharsNPC", "AfterBrowseNPC", MB, "AfterBrowseNPC") &&
+	return Mode_Import("CharsNPC") && Mode_Import("Chars") && LvN_ModAppendG("CharsNPC", "AfterBrowseNPC", MB, "AfterBrowseNPC") &&
 		LV_CALL("Chars", "AddNewCharRes", NULL, "s", "Betty") && LvN_MissionChar("Berto_MeetBos", MB, "CreateBertoInit") &&
 		Mode_GVarSetI("DefActionRadius", 1000);
 }
@@ -2701,7 +2701,7 @@ static byte MeetBoss_OnPossession(const nativeVal_t *a, nativeVal_t *out) {
 		!Pr_DtritusKeys("!DtritusActionPress", "CharConversor.Possession") || !Mode_SAct("GetClass", "Berto") ||
 		!Mode_SActSet(1, "ActionPress", "", 0) || !LV_CALL("CharConversor", "Possession", NULL, "vv", &a[0], &a[1]) ||
 		!Pr_Remote("Mission_FirstCrazyBet_RemoteMessage3", "CrazyGambler", MB, "ShowMessage", 1) || !Mode_DelSchedS("Warnings") ||
-		!Mb_UnqueueCom("Mission_FirstCrazyBet_RemoteMessage2") || !Mode_AppendG("Alarm", "SetAlarmCallback", MB, "OnAlarmEnd")) {
+		!Mb_UnqueueCom("Mission_FirstCrazyBet_RemoteMessage2") || !LvN_ModAppendG("Alarm", "SetAlarmCallback", MB, "OnAlarmEnd")) {
 		return 0;
 	}
 	SaveVar_Set("MissionState", "ConvertIntoDtritus");
@@ -2732,7 +2732,7 @@ static byte MeetBoss_OnAlarmEnd(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	if (LvN_EqI(&a[0], 1)) {
-		return Mode_AppendG("Alarm", "SetAlarmCallback", MB, "OnAlarmEnd");
+		return LvN_ModAppendG("Alarm", "SetAlarmCallback", MB, "OnAlarmEnd");
 	}
 	if (!LvN_GObj(MB, "UseConversor", &args[2])) {
 		return 0;
@@ -2990,7 +2990,7 @@ static byte TalkToBoss_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 			SaveVar_Set("ComeFrom", "DoorMetro");
 		}
 	}
-	return Mode_AppendG("CharsNPC", "AfterBrowseNPC", TB, "AfterBrowseNPC");
+	return LvN_ModAppendG("CharsNPC", "AfterBrowseNPC", TB, "AfterBrowseNPC");
 }
 
 /* AfterBrowseNPC() */

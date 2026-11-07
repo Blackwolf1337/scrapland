@@ -213,7 +213,7 @@ PyMethodDef g_DownTownFirstContactPressMethods[] = {
 
 /* InitStatus(LevelPath): no Bertos before DeepThroat's message */
 static byte Berto_InitStatus(void) {
-	return Mode_SaveS("CreateBertos", "0") && Mode_AcShips(BM, "[\"SFunc1\",\"SHump1\",\"SBetty1\"]");
+	return Mode_SaveS("CreateBertos", "0") && LvN_AcShips(BM, "[\"SFunc1\",\"SHump1\",\"SBetty1\"]");
 }
 
 /* StartMission(): the scorer, the waves of Bertos and their callbacks */
@@ -1306,7 +1306,7 @@ static byte Bet_InitStatus(void) {
 		"Humphrey", "Challenge.Money", "0", NULL };
 	static const char *const none[] = { "Revenge.Type", "", "Revenge.Foe", "", "Revenge.NumEnemies", "", "Challenge.NumEnemies", "",
 		"Challenge.Type", "", "Challenge.Foe", "", "Challenge.Money", "", "Race.Profile", "", NULL };
-	if (!Mode_AcShips(HR, "[\"SMayor1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]") || !Mode_Import("MapRace")) {
+	if (!LvN_AcShips(HR, "[\"SMayor1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]") || !Mode_Import("MapRace")) {
 		return 0;
 	}
 	if (LvN_SaveIs("MissionState", "HumphreyRace")) {
@@ -2010,7 +2010,7 @@ static PyObject *Plus_GetFunctionaryProfile(PyObject *self, PyObject *args) {
 /* InitStatus(LevelPath): the race of the mission is the only one of the level, no alarm */
 static byte Plus_InitStatus(void) {
 	return Mode_Import("MapRace") && Mode_ModListG("MapRace", "Races", MR, "RaceList") && Mode_SaveS("AlarmActive", "0") &&
-		Mode_SaveS("AlarmStatus", "0") && Mode_AcShips(MR, "[\"SMayor1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]");
+		Mode_SaveS("AlarmStatus", "0") && LvN_AcShips(MR, "[\"SMayor1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\"]");
 }
 
 /* Init(LevelPath): the race, the phone cab of Ficus or the hunt of Stupidus by the step of the mission */
@@ -2360,7 +2360,7 @@ static byte Escort_GetMercEnemiesProfile_C(const nativeVal_t *a, nativeVal_t *ou
 /* InitStatus(LevelPath): no hired mercenaries, the traffic of the mission */
 static byte Escort_InitStatus(void) {
 	return Mode_Import("VehiclesNPC") && LvN_ModSetI("VehiclesNPC", "UseMercs", 0) &&
-		Mode_AcShips(PM, "[\"SBanker1\",\"SBishop1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\",\"SBankMaster1\",\"SArchbishop1\"]");
+		LvN_AcShips(PM, "[\"SBanker1\",\"SBishop1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\",\"SBankMaster1\",\"SArchbishop1\"]");
 }
 
 /* Init(LevelPath): the taunts of the mercenaries, Rusty; the escort or the hunt by the step of the mission */

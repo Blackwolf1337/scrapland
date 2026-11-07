@@ -279,10 +279,7 @@ byte LvN_SetLangOpt(const nativeVal_t *e, const char *var, const char *prefix, c
 byte LvN_GActivate(const char *module, const char *var, long on);
 /* Speech.SpeechRoutines[key] = fn */
 byte LvN_Routine(const char *key, const nativeVal_t *fn);
-/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func, args) with delay a value (the time added first, as the
- * scripts do) and func the global of module (its NameError; OBJLIB 4) */
-byte LvN_LaterV(const nativeVal_t *delay, const char *module, const char *func, const nativeVal_t *args, int n);
-/* the same with delay a global of module too (read first) */
+/* Mode_LaterV with delay a global of module (read first) */
 byte LvN_LaterG(const char *module, const char *delay, const char *func, const nativeVal_t *args, int n);
 /* the parameters of the native helpers: an int, a text */
 void LvN_Int(nativeVal_t *v, long i);
