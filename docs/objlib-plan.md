@@ -81,7 +81,7 @@ Nothing calls the pure callers from other files. They are the level files, NetMo
 - Errors are Python exceptions that stop the function where the script stopped (`Script_Try`, `Sf_` frames, `Sf_Except` with 9 try blocks, `PyErr_Print` 29). They carry the texts of the interpreter: the TypeError of `PyArg`, IndexError, the NameError of a deleted global, "error return without exception set", and the recursion limit through `Script_CallObject`.
 - Dict iteration follows the 1.5.2 hash order: "keys" 31 and `.keys()` 5 in the ports and the .mod files, `PyDict_Next` 11, `PyDict_Keys` 3.
 - Identity and sharing matter. Lists are held by several modules or put into entities (the `EntityList` of Bureaucracy), and lists are changed in place.
-- Number rules: an int is a C long (64 bit on Linux, 32 bit on Windows, like the build's Python). Int division and `%` round down. Float repr has 17 digits, str has 12. Mixed types compare by type name.
+- Number rules: an int is a C long (64 bit on Linux, 32 bit on Windows, like the build's Python). Int division and `%` round down. Float repr and str both have 12 significant digits (`PyFloat_AsString`, with ".0" after an integral number). The 17 digits are the form of the golden test's `check()` and of the channel's dump. Mixed types compare by type name.
 - Classes and instances: `PyClass_New` 6, instances 3 sites, `PyFunction_Check` 6. Keyword functions: 108.
 - Functions can be replaced: 590 `Sf_Own` calls (a mission may put another function under the name), `Script_Hook` (5 chains that the net weapons and Vehicles put in front of the callbacks of Net) and the 129 .mod aliases.
 
@@ -112,6 +112,17 @@ After this stage there are `include/scrap/scriptnative.h` and `src/game/Script/S
 - The seams are marked OBJLIB 7. `Native_Seam(module, name)` tells whether `module.name` is still the engine's own C function. If a test put something else there, the port calls that the old way. The game itself never replaces engine functions.
 - The mirror is marked OBJLIB 5. It is a table of the module's variables (`nativeVar_t`). `Native_Import` at the entry points takes the dict values into C, and `Native_Put` writes C changes through at once (lists in place). The .mod file still sets the initial values, and other ports and the cases still read and write the dict.
 - The size is small: one file and a header plus the repr and literal reader, about 1000 lines with tests.
+
+Branch objlib-1 did the second part. The value now also has long ints (as decimal text), lists, tuples and dicts, and texts of any length with 0 bytes (owned buffers from `NATIVE_TEXT` bytes on). The dict is the hash table of 1.5.2 (string, int, long, float and tuple hash, `lookdict` probing with the polynomials, growth at 2/3), so keys come out in the order 1.5.2 gives. `Native_Repr` writes repr, str and the `check()` form. `Native_Literal` reads every form `Script_Literal` reads. `Native_ToPy` and `Native_FromPyAny` convert whole values for adapters. The channel reads and prints native values with the command `native`. The check is `tools/test/litfuzz.sh`: 5 seeds of 3200 random texts on the nopy-4 corpus plus 5 on a wider corpus (33780 texts, 15279 taken, and the reprs of those again), plus 77 repr cases, all with 0 differences in text, type and value, in build-linux64 and under ASan with no reports.
+
+Known limits left for later stages:
+
+- The dict has no delete yet. A Python dict with deleted keys keeps its order when converted, but grows from fewer used slots than Python's.
+- `Native_ToPy` of a dict inserts in slot order, so Python's table can order two colliding keys differently. This matters at stage 6, when `Script_Literal` goes over to `Native_Literal` (marked OBJLIB 6).
+- The literal reader repeats the token rules of `Script_Literal` in `ScriptValue.c` until then.
+- The hash of None is the address of Python's None (OBJLIB 9), and the size of a Python dict is read from the struct of the vendored `dictobject.c` (OBJLIB 9).
+- A long int of 3840 bits or more has no hash.
+- How win64 prints inf and nan was not compared, the fuzz runs on Linux.
 
 ### Stage 2: native module cores
 

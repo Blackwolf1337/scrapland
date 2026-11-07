@@ -32,6 +32,7 @@
  *                            to the list __main__.<list> and returns the literal (None), or raises
  *   py <code>                (STAGE 7) Python: an expression gives its repr, statements the repr of the global
  *                            "result" or ok; "py" alone on the first line takes the rest of the file as the code
+ *   native [str|check] <literal>, native py   native values without Python objects (TestNative.c)
  * An error answers "error: <type>: <value>". The channel expressions are a small part of Python's: literals (the
  * reader of the scripts' constants, Script_Literal), inf and nan, tuples and lists of expressions, names (the globals
  * of __main__, the builtins, then the modules by name, imported when needed), attributes, calls with positional and
@@ -53,6 +54,7 @@
 #include "scrap/pyfunction.h"
 #include "scrap/scorer.h"
 #include "scrap/script.h"
+#include "scrap/scriptnative.h"
 #include "scrap/world.h"
 
 #include <eval.h>
@@ -1412,6 +1414,16 @@ static void TC_Python(tcBuf *b, const char *code) {
 
 /* ---- the commands ---- */
 
+/* native ...: the native values of the script ports (TestNative.c) */
+static void TC_Native(tcBuf *b, const char *arg) {
+	nativeBuf_t out;
+
+	Native_BufInit(&out);
+	TestNative_Command(&out, arg);
+	TC_Add(b, out.p, out.len);
+	Native_BufFree(&out);
+}
+
 /* the verb of a line ("word " or the word alone); else 0 */
 static byte TC_Verb(const char *line, const char *verb, const char **arg) {
 	size_t n = strlen(verb);
@@ -1448,6 +1460,10 @@ static void TC_Line(tcBuf *b, const char *line) {
 	}
 	if (TC_Verb(line, "click", &arg)) {
 		TC_Click(b, arg);
+		return;
+	}
+	if (TC_Verb(line, "native", &arg)) {
+		TC_Native(b, arg);
 		return;
 	}
 	if (!g_PythonReady) {
