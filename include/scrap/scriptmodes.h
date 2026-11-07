@@ -468,6 +468,13 @@ byte Mode_SaveAdd(const char *module, const char *var, const char *item);
 byte Mode_Blueprint(const char *module, const char *var, const char *item, const char *msg, byte delay);
 /* SScorer.SetMsgText(cad, Scrap.GetTime() + Speech.CalculateSpeechTime(cad)) */
 byte Mode_SpeechMsg(const nativeVal_t *cad);
+/* the colour Scorer.MissionScorerText_Color of a scorer item: SScorer.Set(id, item, "Red", colour[0]) and Green, Blue,
+ * Alpha */
+byte Mode_TextColour(const nativeVal_t *id, const char *item);
+/* module.name(args..., **kw) with keyword arguments (OBJLIB 3: the calls with keywords stay Python): the n native
+ * arguments and kw a new reference to the dict that the call takes over (NULL: its error is set); the result into out
+ * (NULL: dropped) */
+byte Mode_CallKw(const char *module, const char *name, nativeVal_t *out, const nativeVal_t *args, int n, PyObject *kw);
 
 /* ---- helpers of batch I (the super deals and the native level files of batch I) ---- */
 
