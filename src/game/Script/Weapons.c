@@ -4,8 +4,20 @@
  * the net hooks (each net weapon puts its ClientCreate and ClientAfterCreate in front of Net's), and the missiles of
  * the countermeasures Cloud, EMI and Sonic. File names, forces and times stay variables of the modules, the file and
  * other scripts read them.
+ *
+ * Native C (docs/objlib-plan.md, stage 2): the functions call the engine in C and work on C values; the PyMethodDef
+ * entries are adapters. The variables of the modules are read where the script reads them as its globals and IDWeap,
+ * IDAmmo and SwarmPos written where it writes them (OBJLIB 5). The net hooks (Script_Hook on Net's functions), the
+ * module's own functions a mission may replace (LoadResources, OnHit, OnServerHit, the creation functions the hooks
+ * call) and the function that was in Net before stay by name (OBJLIB 3); the missiles are entity handles where they
+ * leave the module (results, scheduled calls; OBJLIB 7).
  */
+#include <string.h>
+
+#include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
+#include "scrap/weaps.h"
 
 static const char weapons_def[] = {
 #embed "../../../data/weapons/weapons.def"
@@ -16,83 +28,94 @@ static const scriptStep_t weapons_steps[] = {
 	{ NULL, NULL },
 };
 
-#define K(o) Script_Keep(&r, (o))
-#define FAIL() return Script_Done(&r, NULL)
-
 /* a section of weapons.def with $idWeap, $idAmmo and $server (NULL for those a section does not use); it stops where
  * the script stops: 0 with the error set */
-static byte Weap_Run(const char *section, PyObject *idWeap, PyObject *idAmmo, PyObject *server) {
+static byte Weap_Run(const char *section, const nativeVal_t *idWeap, const nativeVal_t *idAmmo, const nativeVal_t *server) {
+	static const char *const names[] = { "idWeap", "idAmmo", "server" };
+	const nativeVal_t *vals[] = { idWeap, idAmmo, server };
+	/* OBJLIB 6: the .def runner takes its $names as a dict until it takes C values */
 	PyObject *vars = PyDict_New();
-	if (!vars) {
-		return 0;
+	byte ok = vars != NULL;
+	for (int i = 0; ok && i < 3; i++) {
+		if (vals[i]) {
+			PyObject *o = Native_ToPy(vals[i]);
+			ok = o && PyDict_SetItemString(vars, (char *)names[i], o) == 0;
+			Py_XDECREF(o);
+		}
 	}
-	if ((idWeap && PyDict_SetItemString(vars, "idWeap", idWeap) < 0) ||
-		(idAmmo && PyDict_SetItemString(vars, "idAmmo", idAmmo) < 0) ||
-		(server && PyDict_SetItemString(vars, "server", server) < 0)) {
-		Py_DECREF(vars);
-		return 0;
-	}
-	byte ok = Script_RunFileTry(0, "weapons/weapons.def", section, weapons_def, weapons_steps, vars);
-	Py_DECREF(vars);
+	ok = ok && Script_RunFileTry(0, "weapons/weapons.def", section, weapons_def, weapons_steps, vars);
+	Py_XDECREF(vars);
 	return ok;
 }
 
 /* `global name; name = "0"+`id`` */
-static byte Weap_SetId(const char *mod, const char *name, PyObject *id) {
-	return Script_SetGlobal(mod, name, Script_SPlus("0", Script_Repr(id)));
+static byte Weap_SetId(const char *mod, const char *name, const nativeVal_t *id) {
+	nativeBuf_t b;
+	nativeVal_t v;
+	Native_BufInit(&b);
+	Native_BufAdd(&b, "0", 1);
+	Native_Repr(&b, id, NR_REPR);
+	Native_SetText(&v, b.p, b.len);
+	Native_BufFree(&b);
+	byte ok = Mode_Put(mod, name, NULL, &v);
+	Native_Free(&v);
+	return ok;
 }
 
 /* import Net; LastClientCreate = Net.ClientCreate; Net.ClientCreate = ClientCreate; the same for ClientAfterCreate */
 static byte Weap_Hook(const char *mod) {
-	return Script_Import((const char *const[]){ "Net", NULL }) && Script_Hook(mod, "Net", "ClientCreate", "LastClientCreate") &&
+	/* OBJLIB 3: the chains of Net's functions stay Python functions until they are C hook pointers */
+	return Mode_Import("Net") && Script_Hook(mod, "Net", "ClientCreate", "LastClientCreate") &&
 		Script_Hook(mod, "Net", "ClientAfterCreate", "LastClientAfterCreate");
 }
 
 /* the section <mod>Res of LoadResources (import Fx first, as the scripts do) */
-static PyObject *Weap_LoadResources(const char *mod) {
+static byte Weap_LoadResources(const char *mod) {
 	char section[0x20];
-	if (!Script_Import((const char *const[]){ "Fx", NULL })) {
-		return NULL;
-	}
 	Str_Printf(section, sizeof(section), "%sRes", mod);
-	return Weap_Run(section, NULL, NULL, NULL) ? Py_ReturnNone() : NULL;
+	return Mode_Import("Fx") && Weap_Run(section, NULL, NULL, NULL);
 }
 
-/* LoadResources() as Init calls it, through the module */
+/* LoadResources() as Init calls it, through the module (OBJLIB 3: a mission may replace it) */
 static byte Weap_CallLoad(const char *mod) {
-	return Script_Try(mod, "LoadResources", "()");
+	return Native_CallMod(mod, "LoadResources", NULL, "");
 }
 
-/* Init(idWeap, idAmmo) of a weapon; net: the hooks first and $server for the fire functions (Swarm, Inferno) */
-static PyObject *Weap_Init(const char *mod, PyObject *args, byte net) {
-	PyObject *idWeap, *idAmmo;
-	if (!PyArg_ParseTuple(args, "OO", &idWeap, &idAmmo) || (net && !Weap_Hook(mod)) ||
-		!Weap_SetId(mod, "IDWeap", idWeap) || !Weap_SetId(mod, "IDAmmo", idAmmo) || !Weap_CallLoad(mod)) {
-		return NULL;
+/* Init(idWeap, idAmmo) of a weapon; net: the hooks first and $server (GetNetFlags()[0]) for the fire functions
+ * (Swarm, Inferno) */
+static byte Weap_Init(const char *mod, const nativeVal_t *a, byte net) {
+	if ((net && !Weap_Hook(mod)) || !Weap_SetId(mod, "IDWeap", &a[0]) || !Weap_SetId(mod, "IDAmmo", &a[1]) ||
+		!Weap_CallLoad(mod)) {
+		return 0;
 	}
-	PyObject *flags = NULL, *server = NULL;
+	nativeVal_t flags = { 0 }, server = { 0 }, zero;
+	byte ok = 1;
 	if (net) {
-		flags = Script_Ask("Scrap", "GetNetFlags", "()");
-		server = flags ? Script_Index(flags, 0) : NULL;
-		if (!server) {
-			Py_XDECREF(flags);
-			return NULL;
-		}
+		Native_SetInt(&zero, 0);
+		ok = Mode_NetFlags(&flags) && Native_Subscript(&flags, &zero, &server);
 	}
-	byte ok = Weap_Run(mod, idWeap, idAmmo, server);
-	Py_XDECREF(server);
-	Py_XDECREF(flags);
-	return ok ? Py_ReturnNone() : NULL;
+	ok = ok && Weap_Run(mod, &a[0], &a[1], net ? &server : NULL);
+	Native_Free(&flags);
+	Native_Free(&server);
+	return ok;
 }
 
 /* Init(IdAmmo) of a countermeasure (Cloud, EMI, Sonic); EMI also keeps IDAmmo */
-static PyObject *Weap_InitCounter(const char *mod, PyObject *args, byte keepId) {
-	PyObject *idAmmo;
-	if (!PyArg_ParseTuple(args, "O", &idAmmo) || (keepId && (!Script_Import((const char *const[]){ "Net", NULL }) ||
-		!Weap_SetId(mod, "IDAmmo", idAmmo))) || !Weap_Hook(mod) || !Weap_CallLoad(mod)) {
-		return NULL;
+static byte Weap_InitCounter(const char *mod, const nativeVal_t *idAmmo, byte keepId) {
+	if ((keepId && (!Mode_Import("Net") || !Weap_SetId(mod, "IDAmmo", idAmmo))) || !Weap_Hook(mod) || !Weap_CallLoad(mod)) {
+		return 0;
 	}
-	return Weap_Run(mod, NULL, idAmmo, NULL) ? Py_ReturnNone() : NULL;
+	return Weap_Run(mod, NULL, idAmmo, NULL);
+}
+
+/* SWeap.NetExec(cmd, name) ("s|s") */
+static byte Weap_NetExec(const char *cmd, const nativeVal_t *name) {
+	const char *n;
+	if (!Native_ArgStr(name, 2, &n)) {
+		return 0;
+	}
+	Missile_NetExec(cmd, n);
+	return 1;
 }
 
 /*
@@ -100,36 +123,27 @@ static PyObject *Weap_InitCounter(const char *mod, PyObject *args, byte keepId) 
  * EntityName) (Swarm, Inferno) or by the module function fn (Cloud, EMI, Sonic; create: the name and six zeros), the
  * others to the function it replaced in Net (last)
  */
-static PyObject *Weap_Client(const char *mod, PyObject *args, const char *exec, const char *fn, byte create,
+static byte Weap_Client(const char *mod, const nativeVal_t *a, const char *exec, const char *fn, byte create,
 	const char *last) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *name, *res;
-	if (!PyArg_ParseTuple(args, "OO", &name, &res)) {
-		return NULL;
+	nativeVal_t mine;
+	if (!Mode_G(mod, "NetResName", &mine)) {
+		return 0;
 	}
-	PyObject *mine = K(Script_Global(mod, "NetResName"));
-	int eq = mine ? Script_Eq(res, mine) : -1;
-	if (eq < 0) {
-		FAIL();
+	int eq = !Native_Compare(&a[1], &mine);
+	Native_Free(&mine);
+	if (PyErr_Occurred()) {
+		/* OBJLIB 7: the compare of an object that raised */
+		return 0;
 	}
 	if (eq && exec) {
-		return Script_Done(&r, Script_Try("SWeap", "NetExec", "(sO)", exec, name) ? Py_ReturnNone() : NULL);
+		return Weap_NetExec(exec, &a[0]);
 	}
-	PyObject *f = K(Script_Global(mod, eq ? fn : last));
-	PyObject *a = !f ? NULL : !eq ? Py_BuildValue("(OO)", name, res) :
-		create ? Py_BuildValue("(Oiiiiii)", name, 0, 0, 0, 0, 0, 0) : Py_BuildValue("(O)", name);
-	PyObject *v = a ? K(Script_Invoke(f, a)) : NULL;
-	return Script_Done(&r, v ? Py_ReturnNone() : NULL);
-}
-
-/* ActivateHitType(v, Hittype) of Cloud and EMI */
-static PyObject *Weap_ActivateHitType(PyObject *self, PyObject *args) {
-	PyObject *v, *type;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &v, &type)) {
-		return NULL;
-	}
-	return Script_HSet(v, "HitType", Script_Ref(type)) ? Py_ReturnNone() : NULL;
+	/* OBJLIB 3: the module's function or the one that was in Net, as values of the module */
+	PyObject *f = Mode_GlobalPy(mod, eq ? fn : last);
+	byte ok = f && (!eq ? Native_Call(f, NULL, "vv", &a[0], &a[1]) :
+		create ? Native_Call(f, NULL, "viiiiii", &a[0], 0L, 0L, 0L, 0L, 0L, 0L) : Native_Call(f, NULL, "v", &a[0]));
+	Py_XDECREF(f);
+	return ok;
 }
 
 /* ---- the missile of a countermeasure: the variables Create<mod> sets, in the order of the script ---- */
@@ -143,61 +157,71 @@ typedef struct {
 	double d;
 } weapStep_t;
 
-/* Create<mod>(Name, PosX, PosY, PosZ, AngX, AngY, AngZ): the missile entity with the steps */
-static PyObject *Weap_Create(const char *mod, PyObject *args, const weapStep_t *steps) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *name, *x, *y, *z, *ax, *ay, *az;
-	if (!PyArg_ParseTuple(args, "OOOOOOO", &name, &x, &y, &z, &ax, &ay, &az)) {
-		return NULL;
+/* one step of Create<mod> on the missile e (ref: the name of its handle; ang: AngX, AngY, AngZ); 0 with the error */
+static byte Weap_Step(const char *mod, cEntity *e, const char *ref, const weapStep_t *s, const nativeVal_t *ang) {
+	nativeVal_t v = { 0 }, w = { 0 }, x = { 0 };
+	byte ok;
+	switch (s->kind) {
+	case WS_STR:
+		return Mode_SetS(e, ref, s->var, s->s);
+	case WS_INT:
+		return Mode_SetI(e, ref, s->var, (long)s->d);
+	case WS_FLOAT:
+		Native_SetFloat(&v, s->d);
+		return Mode_Set(e, ref, s->var, &v);
+	case WS_GLOBAL:
+		ok = Mode_G(mod, s->s, &v) && Mode_Set(e, ref, s->var, &v);
+		break;
+	case WS_ANG:
+		Native_SetEmpty(&v, NV_TUPLE);
+		for (int i = 0; i < 3; i++) {
+			Native_Copy(Native_Append(&v), &ang[i]);
+		}
+		ok = Mode_Set(e, ref, s->var, &v);
+		break;
+	case WS_DEATH:
+		/* 0.5*LifeTime/AmmoNeed */
+		Native_SetFloat(&x, 0.5);
+		ok = Mode_G(mod, "LifeTime", &v) && Native_Arith('*', &x, &v, &w);
+		Native_Free(&v);
+		ok = ok && Mode_G(mod, "AmmoNeed", &v) && Native_Arith('/', &w, &v, &x) && Mode_Set(e, ref, s->var, &x);
+		break;
+	case WS_HITTYPE: {
+		/* the handle and the hit type to ActivateHitType in 0.2 s */
+		nativeVal_t args[2] = { { 0 }, { 0 } };
+		Native_SetStr(&args[1], s->s);
+		ok = Mode_EntHandle(e, &args[0]) && Mode_LaterIn(0.2, mod, "ActivateHitType", args, 2, NULL);
+		Native_Free(&args[0]);
+		break;
 	}
-	PyObject *l = K(Script_Ask("Scrap", "CreateEntity", "(OOOOs)", name, x, y, z, "Missile"));
-	if (!l) {
-		FAIL();
+	case WS_DETONATE:
+		ok = Mode_Get(e, ref, "Name", &v) && Mode_LaterIn(0.2, mod, "SetUpToDetonate", &v, 1, NULL);
+		break;
+	default:
+		ok = Mode_G(mod, s->s, &v) && Mode_SetModel(e, &v);
+		break;
 	}
+	Native_Free(&v);
+	Native_Free(&w);
+	Native_Free(&x);
+	return ok;
+}
+
+/* Create<mod>(Name, PosX, PosY, PosZ, AngX, AngY, AngZ): the missile entity with the steps; its handle in *out */
+static byte Weap_Create(const char *mod, const nativeVal_t *a, const weapStep_t *steps, nativeVal_t *out) {
+	cEntity *e;
+	if (!Mode_Create(&a[0], &a[1], &a[2], &a[3], "Missile", &e)) {
+		return 0;
+	}
+	/* the handle of the script finds the entity by its name */
+	e = e ? World_FindEntity(e->name) : NULL;
+	const char *ref = e ? e->name : "";
 	for (const weapStep_t *s = steps; s->kind >= 0; s++) {
-		byte ok;
-		switch (s->kind) {
-		case WS_STR:
-			ok = Script_HSet(l, s->var, PyString_FromString((char *)s->s));
-			break;
-		case WS_INT:
-			ok = Script_HSet(l, s->var, PyInt_FromLong((long)s->d));
-			break;
-		case WS_FLOAT:
-			ok = Script_HSet(l, s->var, PyFloat_FromDouble(s->d));
-			break;
-		case WS_GLOBAL:
-			ok = Script_HSet(l, s->var, Script_Global(mod, s->s));
-			break;
-		case WS_ANG:
-			ok = Script_HSet(l, s->var, Py_BuildValue("(OOO)", ax, ay, az));
-			break;
-		case WS_DEATH: {
-			/* 0.5*LifeTime/AmmoNeed */
-			PyObject *life = K(Script_Global(mod, "LifeTime")), *half = life ? K(PyFloat_FromDouble(0.5)) : NULL;
-			PyObject *t = half ? K(PyNumber_Multiply(half, life)) : NULL, *need = t ? K(Script_Global(mod, "AmmoNeed")) : NULL;
-			ok = need && Script_HSet(l, s->var, PyNumber_Divide(t, need));
-			break;
-		}
-		case WS_HITTYPE:
-			ok = Script_LaterIn(0.2, mod, "ActivateHitType", Py_BuildValue("(Os)", l, s->s), NULL);
-			break;
-		case WS_DETONATE: {
-			PyObject *n = K(Script_GetAttr(l, "Name"));
-			ok = n && Script_LaterIn(0.2, mod, "SetUpToDetonate", Py_BuildValue("(O)", n), NULL);
-			break;
-		}
-		default: {
-			PyObject *file = K(Script_Global(mod, s->s));
-			ok = file && K(Script_Method(l, "SetModel", "(O)", file));
-			break;
-		}
-		}
-		if (!ok) {
-			FAIL();
+		if (!Weap_Step(mod, e, ref, s, &a[4])) {
+			return 0;
 		}
 	}
-	return Script_Done(&r, Script_Ref(l));
+	return Mode_EntHandle(e, out);
 }
 
 #define WS_END { -1, NULL, NULL, 0 }
@@ -231,62 +255,59 @@ static const weapStep_t sonic_create[] = {
 
 /*
  * the start of SetUp<mod>(Name): l = Scrap.GetEntity(Name), the parent looked up (unused), l.nSwarm = l.NetnSwarm,
- * l.Radius = 100; NULL with the error set
+ * l.Radius = 100; *e the missile (its handle is made for Name)
  */
-static PyObject *Weap_SetUpStart(PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *name;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
-	}
-	PyObject *l = K(Script_Entity(name)), *parent = l ? K(Script_GetAttr(l, "Parent")) : NULL;
-	PyObject *ent = parent ? K(Script_Entity(parent)) : NULL;
-	if (!ent || !Script_HSet(l, "nSwarm", Script_GetAttr(l, "NetnSwarm")) ||
-		!Script_HSet(l, "Radius", PyInt_FromLong(100))) {
-		FAIL();
-	}
-	return Script_Done(&r, Script_Ref(l));
+static byte Weap_SetUpStart(const nativeVal_t *name, cEntity **e) {
+	nativeVal_t parent = { 0 }, n = { 0 };
+	cEntity *p;
+	const char *ref = Native_Text(name);
+	byte ok = Mode_Ent(name, e) && Mode_Get(*e, ref, "Parent", &parent) && Mode_Ent(&parent, &p) &&
+		Mode_Get(*e, ref, "NetnSwarm", &n) && Mode_Set(*e, ref, "nSwarm", &n) && Mode_SetI(*e, ref, "Radius", 100);
+	Native_Free(&parent);
+	Native_Free(&n);
+	return ok;
+}
+
+/* l.var = k * l.nSwarm (k first, as the script multiplies) */
+static byte Weap_PerMissile(cEntity *e, const char *ref, const char *var, const nativeVal_t *k) {
+	nativeVal_t n = { 0 }, v = { 0 };
+	byte ok = Mode_Get(e, ref, "nSwarm", &n) && Native_Arith('*', k, &n, &v) && Mode_Set(e, ref, var, &v);
+	Native_Free(&n);
+	Native_Free(&v);
+	return ok;
 }
 
 /* ---- Weapons ---- */
 
-static PyObject *Weapons_InitAmmo(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Weap_Run("Ammo", NULL, NULL, NULL) ? Py_ReturnNone() : NULL;
+/* Init(): through the module (OBJLIB 3) */
+static byte Weapons_Init(void) {
+	return Native_CallMod("Weapons", "InitAmmo", NULL, "") && Native_CallMod("Weapons", "InitWeapons", NULL, "");
 }
 
-static PyObject *Weapons_InitWeapons(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Weap_Run("Weapons", NULL, NULL, NULL) ? Py_ReturnNone() : NULL;
-}
+/* the adapters of the functions without arguments: the scripts ignore what they are given (no arity check) */
+#define WEAP_NOARGS(fn, call) \
+	static PyObject *fn(PyObject *self, PyObject *args) { \
+		(void)self; \
+		(void)args; \
+		return Mode_Result(call); \
+	}
 
-static PyObject *Weapons_Init(PyObject *self, PyObject *args) {
-	(void)self;
-	(void)args;
-	return Script_Try("Weapons", "InitAmmo", "()") && Script_Try("Weapons", "InitWeapons", "()") ? Py_ReturnNone() : NULL;
-}
+WEAP_NOARGS(Weapons_InitAmmoPy, Weap_Run("Ammo", NULL, NULL, NULL))
+WEAP_NOARGS(Weapons_InitWeaponsPy, Weap_Run("Weapons", NULL, NULL, NULL))
+WEAP_NOARGS(Weapons_InitPy, Weapons_Init())
 
 PyMethodDef g_WeaponsMethods[] = {
-	{ "InitAmmo", Weapons_InitAmmo, 1, NULL },
-	{ "InitWeapons", Weapons_InitWeapons, 1, NULL },
-	{ "Init", Weapons_Init, 1, NULL },
+	{ "InitAmmo", Weapons_InitAmmoPy, 1, NULL },
+	{ "InitWeapons", Weapons_InitWeaponsPy, 1, NULL },
+	{ "Init", Weapons_InitPy, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
 /* ---- the weapons: LoadResources and Init(idWeap, idAmmo) ---- */
 
 #define WEAPON(mod, net) \
-	static PyObject *mod##_LoadResources(PyObject *self, PyObject *args) { \
-		(void)self; \
-		(void)args; \
-		return Weap_LoadResources(#mod); \
-	} \
-	static PyObject *mod##_Init(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return Weap_Init(#mod, args, net); \
-	}
+	WEAP_NOARGS(mod##_LoadResources, Weap_LoadResources(#mod)) \
+	MODE_FN(mod, Init, 2, Weap_Init(#mod, a, net))
 
 WEAPON(Vulcan, 0)
 WEAPON(Devastator, 0)
@@ -309,14 +330,8 @@ PyMethodDef g_LaserMethods[] = {
 
 /* the missiles of Swarm and Inferno are made by the engine (SWeap.NetExec) */
 #define NET_EXEC(mod) \
-	static PyObject *mod##_ClientCreate(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return Weap_Client(#mod, args, "Create" #mod, NULL, 0, "LastClientCreate"); \
-	} \
-	static PyObject *mod##_ClientAfterCreate(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return Weap_Client(#mod, args, "SetUp" #mod, NULL, 0, "LastClientAfterCreate"); \
-	} \
+	MODE_FN(mod, ClientCreate, 2, Weap_Client(#mod, a, "Create" #mod, NULL, 0, "LastClientCreate")) \
+	MODE_FN(mod, ClientAfterCreate, 2, Weap_Client(#mod, a, "SetUp" #mod, NULL, 0, "LastClientAfterCreate")) \
 	PyMethodDef g_##mod##Methods[] = { { "ClientCreate", mod##_ClientCreate, 1, NULL }, \
 		{ "ClientAfterCreate", mod##_ClientAfterCreate, 1, NULL }, { "LoadResources", mod##_LoadResources, 1, NULL }, \
 		{ "Init", mod##_Init, 1, NULL }, { NULL, NULL, 0, NULL } };
@@ -327,45 +342,36 @@ NET_EXEC(Inferno)
 /* ---- the countermeasures: their missiles are made here (Create<mod>, SetUp<mod>) ---- */
 
 #define COUNTER(mod, keepId) \
-	static PyObject *mod##_ClientCreate(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return Weap_Client(#mod, args, NULL, "Create" #mod, 1, "LastClientCreate"); \
-	} \
-	static PyObject *mod##_ClientAfterCreate(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return Weap_Client(#mod, args, NULL, "SetUp" #mod, 0, "LastClientAfterCreate"); \
-	} \
-	static PyObject *mod##_LoadResources(PyObject *self, PyObject *args) { \
-		(void)self; \
-		(void)args; \
-		return Weap_LoadResources(#mod); \
-	} \
-	static PyObject *mod##_Init(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return Weap_InitCounter(#mod, args, keepId); \
-	}
+	MODE_FN(mod, ClientCreate, 2, Weap_Client(#mod, a, NULL, "Create" #mod, 1, "LastClientCreate")) \
+	MODE_FN(mod, ClientAfterCreate, 2, Weap_Client(#mod, a, NULL, "SetUp" #mod, 0, "LastClientAfterCreate")) \
+	WEAP_NOARGS(mod##_LoadResources, Weap_LoadResources(#mod)) \
+	MODE_FN(mod, Init, 1, Weap_InitCounter(#mod, a, keepId))
 
 COUNTER(Cloud, 0)
 COUNTER(EMI, 1)
 COUNTER(Sonic, 0)
 
-static PyObject *Cloud_CreateCloud(PyObject *self, PyObject *args) {
-	(void)self;
-	return Weap_Create("Cloud", args, cloud_create);
-}
+/* ActivateHitType(v, Hittype) of Cloud and EMI: v the handle the creation scheduled (any value the Python way) */
+MODE_FN(Weap, ActivateHitType, 2, Mode_VSet(&a[0], "HitType", &a[1]))
+
+MODE_FN(Cloud, CreateCloud, 7, Weap_Create("Cloud", a, cloud_create, out))
 
 /* SetUpCloud(Name): TopRadius 600 per missile, the Pos read (unused), the effect */
-static PyObject *Cloud_SetUpCloud(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	PyObject *l = K(Weap_SetUpStart(args));
-	PyObject *n = l ? K(Script_GetAttr(l, "nSwarm")) : NULL, *six = n ? K(PyInt_FromLong(600)) : NULL;
-	if (!six || !Script_HSet(l, "TopRadius", PyNumber_Multiply(six, n)) || !Script_HSet(l, "RadiusGrow", PyInt_FromLong(1500)) ||
-		!K(Script_GetAttr(l, "Pos")) || !K(Script_Method(l, "SetFX", "(s)", "Cloud"))) {
-		FAIL();
+static byte Cloud_SetUp(const nativeVal_t *name, nativeVal_t *out) {
+	cEntity *e;
+	nativeVal_t k, pos = { 0 };
+	if (!Weap_SetUpStart(name, &e)) {
+		return 0;
 	}
-	return Script_Done(&r, Script_Ref(l));
+	const char *ref = Native_Text(name);
+	Native_SetInt(&k, 600);
+	byte ok = Weap_PerMissile(e, ref, "TopRadius", &k) && Mode_SetI(e, ref, "RadiusGrow", 1500) &&
+		Mode_Get(e, ref, "Pos", &pos) && Mode_SetFX(e, "Cloud") && Mode_EntHandle(e, out);
+	Native_Free(&pos);
+	return ok;
 }
+
+MODE_FN(Cloud, SetUpCloud, 1, Cloud_SetUp(&a[0], out))
 
 PyMethodDef g_CloudMethods[] = {
 	{ "ClientCreate", Cloud_ClientCreate, 1, NULL },
@@ -378,27 +384,27 @@ PyMethodDef g_CloudMethods[] = {
 	{ NULL, NULL, 0, NULL },
 };
 
-static PyObject *EMI_CreateEMI(PyObject *self, PyObject *args) {
-	(void)self;
-	return Weap_Create("EMI", args, emi_create);
-}
+MODE_FN(EMI, CreateEMI, 7, Weap_Create("EMI", a, emi_create, out))
 
 /* SetUpEMI(Name): TopRadius Radius per missile, it grows to it in a third */
-static PyObject *EMI_SetUpEMI(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	PyObject *l = K(Weap_SetUpStart(args));
-	PyObject *radius = l ? K(Script_Global("EMI", "Radius")) : NULL, *n = radius ? K(Script_GetAttr(l, "nSwarm")) : NULL;
-	if (!n || !Script_HSet(l, "TopRadius", PyNumber_Multiply(radius, n))) {
-		FAIL();
+static byte EMI_SetUp(const nativeVal_t *name, nativeVal_t *out) {
+	cEntity *e;
+	nativeVal_t radius = { 0 }, top = { 0 }, three, grow = { 0 };
+	if (!Weap_SetUpStart(name, &e)) {
+		return 0;
 	}
-	PyObject *top = K(Script_GetAttr(l, "TopRadius")), *three = top ? K(PyInt_FromLong(3)) : NULL;
-	if (!three || !Script_HSet(l, "RadiusGrow", PyNumber_Divide(top, three)) ||
-		!K(Script_Method(l, "SetFX", "(s)", "EMI"))) {
-		FAIL();
-	}
-	return Script_Done(&r, Script_Ref(l));
+	const char *ref = Native_Text(name);
+	Native_SetInt(&three, 3);
+	byte ok = Mode_G("EMI", "Radius", &radius) && Weap_PerMissile(e, ref, "TopRadius", &radius) &&
+		Mode_Get(e, ref, "TopRadius", &top) && Native_Arith('/', &top, &three, &grow) &&
+		Mode_Set(e, ref, "RadiusGrow", &grow) && Mode_SetFX(e, "EMI") && Mode_EntHandle(e, out);
+	Native_Free(&radius);
+	Native_Free(&top);
+	Native_Free(&grow);
+	return ok;
 }
+
+MODE_FN(EMI, SetUpEMI, 1, EMI_SetUp(&a[0], out))
 
 PyMethodDef g_EMIMethods[] = {
 	{ "ClientCreate", EMI_ClientCreate, 1, NULL },
@@ -411,156 +417,175 @@ PyMethodDef g_EMIMethods[] = {
 	{ NULL, NULL, 0, NULL },
 };
 
+/* the values of SonicHit, freed together */
+#define SONIC_VALS 16
+
 /* SonicHit(VehicleName): the vehicle pushed away from SwarmPos, harder near it (at least 700) */
-static PyObject *Sonic_SonicHit(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+static byte Sonic_Hit(const nativeVal_t *name) {
+	cEntity *e;
+	if (!Mode_Ent(name, &e)) {
+		return 0;
 	}
-	PyObject *v = K(Script_Entity(name));
-	int live = v ? Script_True(v) : -1;
-	if (live <= 0) {
-		return Script_Done(&r, live < 0 ? NULL : Py_ReturnNone());
+	if (!e) {
+		return 1;
 	}
-	PyObject *pos = K(Script_GetAttr(v, "Pos")), *at = pos ? K(Script_Global("Sonic", "SwarmPos")) : NULL;
-	PyObject *vec = at ? K(Script_Ask("SVec", "Sub", "(OO)", pos, at)) : NULL;
-	PyObject *xr = vec ? K(Script_Global("Sonic", "XP_Radius")) : NULL, *len = xr ? K(Script_Ask("SVec", "Mod", "(O)", vec)) : NULL;
-	PyObject *d = len ? K(PyNumber_Subtract(xr, len)) : NULL, *mod = d ? K(PyNumber_Divide(d, xr)) : NULL;
-	PyObject *pow = mod ? K(Script_Global("Sonic", "SwarmPow")) : NULL, *mass = pow ? K(Script_GetAttr(v, "Mass")) : NULL;
-	PyObject *k = mass ? K(PyInt_FromLong(1000)) : NULL, *tons = k ? K(PyNumber_Divide(mass, k)) : NULL;
-	PyObject *add = tons ? K(PyNumber_Divide(pow, tons)) : NULL, *speed = add ? K(PyNumber_Multiply(mod, add)) : NULL;
-	int low = speed ? Script_NumCmp(speed, 700) : -2;
-	if (low == -2) {
-		FAIL();
+	const char *ref = Native_Text(name);
+	enum { POS, AT, VEC, XR, LEN, D, MOD, POW, MASS, K, TONS, ADD, SPEED, VEL, NORM, PUSH };
+	nativeVal_t v[SONIC_VALS] = { { 0 } }, sum = { 0 };
+	Native_SetInt(&v[K], 1000);
+	byte ok = Mode_Get(e, ref, "Pos", &v[POS]) && Mode_G("Sonic", "SwarmPos", &v[AT]) && Mode_VecSub(&v[POS], &v[AT], &v[VEC]) &&
+		Mode_G("Sonic", "XP_Radius", &v[XR]) && Mode_VecMod(&v[VEC], &v[LEN]) && Native_Arith('-', &v[XR], &v[LEN], &v[D]) &&
+		Native_Arith('/', &v[D], &v[XR], &v[MOD]) && Mode_G("Sonic", "SwarmPow", &v[POW]) &&
+		Mode_Get(e, ref, "Mass", &v[MASS]) && Native_Arith('/', &v[MASS], &v[K], &v[TONS]) &&
+		Native_Arith('/', &v[POW], &v[TONS], &v[ADD]) && Native_Arith('*', &v[MOD], &v[ADD], &v[SPEED]);
+	if (ok) {
+		nativeVal_t low;
+		Native_SetInt(&low, 700);
+		if (Native_Compare(&v[SPEED], &low) < 0) {
+			Native_Free(&v[SPEED]);
+			v[SPEED] = low;
+		}
+		ok = !PyErr_Occurred();
 	}
-	if (low < 0) {
-		speed = K(PyInt_FromLong(700));
+	ok = ok && Mode_Get(e, ref, "Vel", &v[VEL]) && Mode_VecNorm(&v[VEC], &v[NORM]) &&
+		Mode_VecProd(&v[NORM], &v[SPEED], &v[PUSH]) && Mode_VecAdd(&v[VEL], &v[PUSH], &sum) && Mode_Set(e, ref, "Vel", &sum);
+	int car = ok ? Mode_IsType(e, "Car") : -1;
+	ok = car > 0 ? Mode_SetI(e, ref, "ForceVel", 1) : car == 0;
+	for (int i = 0; i < SONIC_VALS; i++) {
+		Native_Free(&v[i]);
 	}
-	PyObject *vel = K(Script_GetAttr(v, "Vel")), *norm = vel ? K(Script_Ask("SVec", "Norm", "(O)", vec)) : NULL;
-	PyObject *push = norm ? K(Script_Ask("SVec", "Prod", "(OO)", norm, speed)) : NULL;
-	if (!push || !Script_HSet(v, "Vel", Script_Ask("SVec", "Add", "(OO)", vel, push))) {
-		FAIL();
+	Native_Free(&sum);
+	return ok;
+}
+
+MODE_FN(Sonic, SonicHit, 1, Sonic_Hit(&a[0]))
+
+/* Scrap.SetCallFunc("!SonicXplde"), Scrap.AddParamf of pos[0], pos[1], pos[2], Scrap.Execute() */
+static byte Sonic_Explode(const nativeVal_t *pos) {
+	if (pos->type == NV_VEC) {
+		const float p[3] = { (float)pos->v[0], (float)pos->v[1], (float)pos->v[2] };
+		CallFunc_ExecuteF("!SonicXplde", p, 3);
+		return 1;
 	}
-	PyObject *car = K(Script_Method(v, "IsType", "(s)", "Car"));
-	int isCar = car ? Script_True(car) : -1;
-	if (isCar < 0 || (isCar && !Script_HSet(v, "ForceVel", PyInt_FromLong(1)))) {
-		FAIL();
+	/* OBJLIB 7: another value the engine functions take by name, with their errors */
+	if (!Native_CallMod("Scrap", "SetCallFunc", NULL, "s", "!SonicXplde")) {
+		return 0;
 	}
-	return Script_Done(&r, Py_ReturnNone());
+	for (int i = 0; i < 3; i++) {
+		nativeVal_t k, c;
+		Native_SetInt(&k, i);
+		if (!Native_Subscript(pos, &k, &c)) {
+			return 0;
+		}
+		byte ok = Native_CallMod("Scrap", "AddParamf", NULL, "v", &c);
+		Native_Free(&c);
+		if (!ok) {
+			return 0;
+		}
+	}
+	return Native_CallMod("Scrap", "Execute", NULL, "");
 }
 
 /* OnHit(swarm, winner, looser): the boom at the mine and the explosion effect there */
-static PyObject *Sonic_OnHit(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *swarm, *winner, *looser;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &swarm, &winner, &looser)) {
-		return NULL;
-	}
-	PyObject *s = K(Script_Entity(swarm)), *orig = s ? K(Script_GetAttr(s, "Pos")) : NULL;
-	if (!orig || !Script_Try("SSound", "PlaySound", "(Osd)", orig, "SonicBoom", 1.0) ||
-		!Script_Try("Scrap", "SetCallFunc", "(s)", "!SonicXplde")) {
-		FAIL();
-	}
-	for (int i = 0; i < 3; i++) {
-		PyObject *c = K(Script_Index(orig, i));
-		if (!c || !Script_Try("Scrap", "AddParamf", "(O)", c)) {
-			FAIL();
-		}
-	}
-	return Script_Done(&r, Script_Try("Scrap", "Execute", "()") ? Py_ReturnNone() : NULL);
+static byte Sonic_OnHitAt(const nativeVal_t *swarm) {
+	cEntity *e;
+	nativeVal_t orig = { 0 }, snd, vol;
+	Native_SetStr(&snd, "SonicBoom");
+	Native_SetFloat(&vol, 1.0);
+	byte ok = Mode_Ent(swarm, &e) && Mode_Get(e, Native_Text(swarm), "Pos", &orig) && Mode_PlaySound(&orig, &snd, &vol) &&
+		Sonic_Explode(&orig);
+	Native_Free(&orig);
+	return ok;
 }
+
+MODE_FN(Sonic, OnHit, 3, Sonic_OnHitAt(&a[0]))
 
 /* OnServerHit(swarm, winner, looser): the push of everything in reach (SonicHit), then OnHit */
-static PyObject *Sonic_OnServerHit(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *swarm, *winner, *looser;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &swarm, &winner, &looser)) {
-		return NULL;
+static byte Sonic_OnServerHitAt(const nativeVal_t *a) {
+	cEntity *e;
+	if (!Mode_Ent(&a[0], &e)) {
+		return 0;
 	}
-	PyObject *s = K(Script_Entity(swarm));
-	int none = s ? Script_Eq(s, Py_None) : -1;
-	if (none < 0) {
-		FAIL();
+	if (!e) {
+		nativeVal_t t[4];
+		Native_SetStr(&t[0], "MISTERIUS HORROR: THE MINE FAILS, MUST BE FIXED BEFORE");
+		Native_SetStr(&t[1], "OnServerHit('");
+		Native_SetStr(&t[2], "','");
+		Native_SetStr(&t[3], "')");
+		const nativeVal_t *head[] = { &t[0] }, *line[] = { &t[1], &a[0], &t[2], &a[1], &t[2], &a[2], &t[3] };
+		return Mode_Print(head, 1) && Mode_Print(line, 7);
 	}
-	if (none) {
-		PyObject *a = K(PyString_FromString("MISTERIUS HORROR: THE MINE FAILS, MUST BE FIXED BEFORE"));
-		PyObject *b[] = { K(PyString_FromString("OnServerHit('")), swarm, K(PyString_FromString("','")), winner,
-			K(PyString_FromString("','")), looser, K(PyString_FromString("')")) };
-		byte ok = a && b[0] && b[2] && b[4] && b[6] && Script_Print(&a, 1) && Script_Print(b, 7);
-		return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+	nativeVal_t pos = { 0 }, c[3] = { { 0 }, { 0 }, { 0 } }, xr = { 0 }, list, fn;
+	byte ok = Mode_Get(e, Native_Text(&a[0]), "Pos", &pos) && Mode_Put("Sonic", "SwarmPos", NULL, &pos);
+	for (int i = 0; ok && i < 3; i++) {
+		nativeVal_t k;
+		Native_SetInt(&k, i);
+		ok = Native_Subscript(&pos, &k, &c[i]);
 	}
-	PyObject *pos = K(Script_GetAttr(s, "Pos"));
-	if (!pos || !Script_SetGlobal("Sonic", "SwarmPos", Script_Ref(pos))) {
-		FAIL();
-	}
-	PyObject *c[3];
+	Native_SetStr(&list, "VW");
+	Native_SetStr(&fn, "Sonic.SonicHit");
+	ok = ok && Mode_G("Sonic", "XP_Radius", &xr) && Mode_SphereCall(&c[0], &c[1], &c[2], &xr, &list, &fn);
+	Native_Free(&pos);
+	Native_Free(&xr);
 	for (int i = 0; i < 3; i++) {
-		c[i] = K(Script_Index(pos, i));
-		if (!c[i]) {
-			FAIL();
-		}
+		Native_Free(&c[i]);
 	}
-	PyObject *xr = K(Script_Global("Sonic", "XP_Radius"));
-	PyObject *f = xr && Script_Try("Scrap", "SphereCall", "(OOOOss)", c[0], c[1], c[2], xr, "VW", "Sonic.SonicHit") ?
-		K(Script_Global("Sonic", "OnHit")) : NULL;
-	PyObject *a = f ? Py_BuildValue("(OOO)", swarm, winner, looser) : NULL;
-	return Script_Done(&r, a && K(Script_Invoke(f, a)) ? Py_ReturnNone() : NULL);
+	if (!ok) {
+		return 0;
+	}
+	/* OBJLIB 3: OnHit through the module's global (a mission may replace it) */
+	PyObject *f = Mode_GlobalPy("Sonic", "OnHit");
+	ok = f && Native_Call(f, NULL, "vvv", &a[0], &a[1], &a[2]);
+	Py_XDECREF(f);
+	return ok;
 }
+
+MODE_FN(Sonic, OnServerHit, 3, Sonic_OnServerHitAt(a))
 
 /* OnDeath(LooserName, WinnerName): a live mine goes off */
-static PyObject *Sonic_OnDeath(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *looser, *winner;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &looser, &winner)) {
-		return NULL;
+static byte Sonic_OnDeathOf(const nativeVal_t *a) {
+	cEntity *e;
+	nativeVal_t active = { 0 };
+	if (!Mode_Ent(&a[0], &e) || !Mode_Get(e, Native_Text(&a[0]), "Active", &active)) {
+		return 0;
 	}
-	PyObject *s = K(Script_Entity(looser)), *active = s ? K(Script_GetAttr(s, "Active")) : NULL;
-	int on = active ? Script_True(active) : -1;
-	if (on < 0) {
-		FAIL();
+	byte on = Native_True(&active);
+	Native_Free(&active);
+	if (!on) {
+		return 1;
 	}
-	if (on) {
-		PyObject *f = Script_HSet(s, "Active", PyInt_FromLong(0)) ? K(Script_Global("Sonic", "OnServerHit")) : NULL;
-		PyObject *a = f ? Py_BuildValue("(OOs)", looser, winner, "") : NULL;
-		if (!a || !K(Script_Invoke(f, a))) {
-			FAIL();
-		}
+	if (!Mode_SetI(e, Native_Text(&a[0]), "Active", 0)) {
+		return 0;
 	}
-	return Script_Done(&r, Py_ReturnNone());
+	/* OBJLIB 3: OnServerHit through the module's global */
+	PyObject *f = Mode_GlobalPy("Sonic", "OnServerHit");
+	byte ok = f && Native_Call(f, NULL, "vvs", &a[0], &a[1], "");
+	Py_XDECREF(f);
+	return ok;
 }
+
+MODE_FN(Sonic, OnDeath, 2, Sonic_OnDeathOf(a))
 
 /* SetUpToDetonate(EntityName): the mine hits from now on */
-static PyObject *Sonic_SetUpToDetonate(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	PyObject *name;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
-	}
-	PyObject *l = K(Script_Entity(name));
-	byte ok = l && Script_HSet(l, "HitType", PyString_FromString("Hit")) && Script_HSet(l, "VRadius", PyInt_FromLong(100));
-	return Script_Done(&r, ok ? Py_ReturnNone() : NULL);
+static byte Sonic_Detonate(const nativeVal_t *name) {
+	cEntity *e;
+	const char *ref = Native_Text(name);
+	return Mode_Ent(name, &e) && Mode_SetS(e, ref, "HitType", "Hit") && Mode_SetI(e, ref, "VRadius", 100);
 }
 
-static PyObject *Sonic_CreateSonic(PyObject *self, PyObject *args) {
-	(void)self;
-	return Weap_Create("Sonic", args, sonic_create);
-}
+MODE_FN(Sonic, SetUpToDetonate, 1, Sonic_Detonate(&a[0]))
+
+MODE_FN(Sonic, CreateSonic, 7, Weap_Create("Sonic", a, sonic_create, out))
 
 /* SetUpSonic(Name): the mine's size, its hit function and its 3 tons */
-static PyObject *Sonic_SetUpSonic(PyObject *self, PyObject *args) {
-	scriptRefs_t r = { .n = 0 };
-	(void)self;
-	PyObject *l = K(Weap_SetUpStart(args));
-	byte ok = l && Script_HSet(l, "TopRadius", PyInt_FromLong(2300)) && Script_HSet(l, "RadiusGrow", PyInt_FromLong(1000)) &&
-		Script_HSet(l, "OnHit", PyString_FromString("Sonic.OnHit")) && Script_HSet(l, "Mass", PyInt_FromLong(3000));
-	return Script_Done(&r, ok ? Script_Ref(l) : NULL);
+static byte Sonic_SetUp(const nativeVal_t *name, nativeVal_t *out) {
+	cEntity *e;
+	const char *ref = Native_Text(name);
+	return Weap_SetUpStart(name, &e) && Mode_SetI(e, ref, "TopRadius", 2300) && Mode_SetI(e, ref, "RadiusGrow", 1000) &&
+		Mode_SetS(e, ref, "OnHit", "Sonic.OnHit") && Mode_SetI(e, ref, "Mass", 3000) && Mode_EntHandle(e, out);
 }
+
+MODE_FN(Sonic, SetUpSonic, 1, Sonic_SetUp(&a[0], out))
 
 PyMethodDef g_SonicMethods[] = {
 	{ "ClientCreate", Sonic_ClientCreate, 1, NULL },
