@@ -81,13 +81,7 @@ static byte Sy_PutNone(const char *module, const char *name) {
 	return Mode_Put(module, name, NULL, &v);
 }
 
-/* module.var = i, = [texts] of another module (OBJLIB 5) */
-static byte Sy_ModI(const char *module, const char *var, long i) {
-	nativeVal_t v = { 0 };
-	Native_SetInt(&v, i);
-	return Mode_SetModVar(module, var, &v);
-}
-
+/* module.var = [texts] of another module (OBJLIB 5) */
 static byte Sy_ModTexts(const char *module, const char *var, const char *const *texts) {
 	nativeVal_t v = { 0 };
 	Mode_Texts(&v, texts, -1);
@@ -376,13 +370,13 @@ static byte Sy_BossTraffic(byte comSats) {
 			return 0;
 		}
 	}
-	if (done ? !Mode_GVarSetI("MaxChasingShips", 0) || !Mode_GVarSetI("iTrafficNumber", 0) || !Sy_ModI("OutPolice", "PoliceActive", 0) :
+	if (done ? !Mode_GVarSetI("MaxChasingShips", 0) || !Mode_GVarSetI("iTrafficNumber", 0) || !LvN_ModSetI("OutPolice", "PoliceActive", 0) :
 		!Mode_GVarSetI("iTrafficNumber", 5) || !Mode_GVarSetI("MaxChasingShips", 5)) {
 		return 0;
 	}
-	return Sy_ModTexts("Traffic", "AcNormalShips", none) && Sy_ModI("Traffic", "NumNormal", 0) &&
-		Sy_ModTexts("Traffic", "AcMediumShips", none) && Sy_ModI("Traffic", "NumMedium", 0) &&
-		Sy_ModTexts("Traffic", "AcHeavyShips", none) && Sy_ModI("Traffic", "NumHeavy", 0);
+	return Sy_ModTexts("Traffic", "AcNormalShips", none) && LvN_ModSetI("Traffic", "NumNormal", 0) &&
+		Sy_ModTexts("Traffic", "AcMediumShips", none) && LvN_ModSetI("Traffic", "NumMedium", 0) &&
+		Sy_ModTexts("Traffic", "AcHeavyShips", none) && LvN_ModSetI("Traffic", "NumHeavy", 0);
 }
 
 /* raise v of the script after import module (Lv_RaiseValue, the do_raise of ceval without value and traceback): a
@@ -477,7 +471,7 @@ static byte Map_InitStatusN(void) {
 			return 0;
 		}
 	}
-	if (!Sy_ModI("Init", "Outdoor", 1) || !Sy_ModI("Init", "isScrapYard", 1) || !Sy_ModI("OutPolice", "PoliceActive", 1)) {
+	if (!LvN_ModSetI("Init", "Outdoor", 1) || !LvN_ModSetI("Init", "isScrapYard", 1) || !LvN_ModSetI("OutPolice", "PoliceActive", 1)) {
 		return 0;
 	}
 	if (LvN_SaveIs("RobotsControlledByBoss", "1")) {
@@ -485,8 +479,8 @@ static byte Map_InitStatusN(void) {
 			return 0;
 		}
 	} else if (!Mode_GVarSetI("iTrafficNumber", 4) || !Mode_GVarSetI("MaxChasingShips", -1) || !Sy_ModTexts("Traffic", "AcNormalShips", normal) ||
-		!Sy_ModI("Traffic", "NumNormal", 10) || !Sy_ModTexts("Traffic", "AcMediumShips", medium) || !Sy_ModI("Traffic", "NumMedium", 20) ||
-		!Sy_ModTexts("Traffic", "AcHeavyShips", heavy) || !Sy_ModI("Traffic", "NumHeavy", 10)) {
+		!LvN_ModSetI("Traffic", "NumNormal", 10) || !Sy_ModTexts("Traffic", "AcMediumShips", medium) || !LvN_ModSetI("Traffic", "NumMedium", 20) ||
+		!Sy_ModTexts("Traffic", "AcHeavyShips", heavy) || !LvN_ModSetI("Traffic", "NumHeavy", 10)) {
 		return 0;
 	}
 	return LV_CALL("Elevator", "SetDef", NULL, "ss", "Metro", "DM_Door_MetroExt_ScrapYard") &&
@@ -745,8 +739,8 @@ static const char *const am_madhunters_profile[] = { "Ship=MadHunt", "StupidPath
 static byte Ambush_InitStatusN(void) {
 	static const char *const probe[] = { "TProbe", NULL };
 	return Mode_Import("VehiclesNPC") && Mode_Import("Traffic") && Mode_Import("MapTriggers") &&
-		Sy_ModTexts("Traffic", "AcHeavyShips", probe) && Sy_ModI("Traffic", "NumHeavy", 0) &&
-		Sy_ModI("MapTriggers", "WithScrapyardInhabitants", 0) && Sy_AcShips(AM, ac_ships_std);
+		Sy_ModTexts("Traffic", "AcHeavyShips", probe) && LvN_ModSetI("Traffic", "NumHeavy", 0) &&
+		LvN_ModSetI("MapTriggers", "WithScrapyardInhabitants", 0) && Sy_AcShips(AM, ac_ships_std);
 }
 
 /* Init(LevelPath): the state of the save variable NumProbes: call Traitorius (-1), Deep Throat (-2), or the ambush */
@@ -959,7 +953,7 @@ static const char *const cg_mosquito_profile[] = { "Ship=SMOSQUITO", "CadenceSho
 	"FactorDamageItemLife=0.25", "FactorItemAmmo=0.25", "TimeMaxStrafe=2", "VelMaxStrafe=0.25", NULL };
 
 static byte Gambler_InitStatusN(void) {
-	return Mode_Import("MapTriggers") && Sy_ModI("MapTriggers", "WithScrapyardInhabitants", 0) && Sy_AcShips(CG, ac_ships_all);
+	return Mode_Import("MapTriggers") && LvN_ModSetI("MapTriggers", "WithScrapyardInhabitants", 0) && Sy_AcShips(CG, ac_ships_all);
 }
 
 /* int(Scrap.GetSaveVar("NumCrazyGamblerLifes")) == CrazyGamblerLifesNextMission of a number: 1, 0, -1 */
@@ -1732,9 +1726,9 @@ static const char *const mc_mosquito_profile[] = { "Ship=SMOSQUITO", "ControlBra
 
 static byte Clue_InitStatusN(void) {
 	static const char *const mosquito[] = { "SMosquito", NULL };
-	return Mode_Import("MapTriggers") && Sy_ModI("Traffic", "NumNormal", 5) && Sy_ModI("Traffic", "NumMedium", 5) &&
-		Sy_ModI("Traffic", "NumHeavy", 5) && Mode_GVarSetI("iTrafficNumber", 0) && Sy_ModTexts("Traffic", "AcShips", mosquito) &&
-		Sy_ModI("MapTriggers", "WithScrapyardInhabitants", 0) && Sy_AcShips(MC, ac_ships_std);
+	return Mode_Import("MapTriggers") && LvN_ModSetI("Traffic", "NumNormal", 5) && LvN_ModSetI("Traffic", "NumMedium", 5) &&
+		LvN_ModSetI("Traffic", "NumHeavy", 5) && Mode_GVarSetI("iTrafficNumber", 0) && Sy_ModTexts("Traffic", "AcShips", mosquito) &&
+		LvN_ModSetI("MapTriggers", "WithScrapyardInhabitants", 0) && Sy_AcShips(MC, ac_ships_std);
 }
 
 /* Init(LevelPath): the swarm (the lairs from their dummies, the police boss' message the first time) or the call */
@@ -2113,7 +2107,7 @@ static const char *const sm_mosquito_profile[] = { "CadenceShootCM=7", "UsePercS
 
 /* InitStatus(LevelPath) of the two: no mercenaries in the traffic (the first mission: the lairs launch from farther) */
 static byte Sy_MercStatusN(const char *module, byte farther) {
-	return Mode_Import("VehiclesNPC") && Sy_ModI("VehiclesNPC", "UseMercs", 0) && Sy_AcShips(module, ac_ships_std) &&
+	return Mode_Import("VehiclesNPC") && LvN_ModSetI("VehiclesNPC", "UseMercs", 0) && Sy_AcShips(module, ac_ships_std) &&
 		(!farther || (Mode_GVarSetN("MaxMosquitosDist", 60000.0) && Mode_GVarSetN("MaxMadHuntersDist", 90000.0)));
 }
 
