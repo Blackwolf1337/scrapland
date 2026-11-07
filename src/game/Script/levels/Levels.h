@@ -254,8 +254,13 @@ byte LvN_EqS(const nativeVal_t *a, const char *s);
 byte LvN_SetI(const nativeVal_t *h, const char *var, long i);
 byte LvN_SetS(const nativeVal_t *h, const char *var, const char *s);
 byte LvN_SetF(const nativeVal_t *h, const char *var, double d);
-/* x[i] of the script (a dict looks the int up) */
+/* x[i] of the script (a dict looks the int up; an NV_OBJ, e.g. a list that holds entity handles, the Python way, the
+ * item as Native_Arg makes it) */
 byte LvN_Item(const nativeVal_t *x, long i, nativeVal_t *out);
+/* a value whose items a loop takes one by one: a list or tuple held as one NV_OBJ (it holds handles) as a native list
+ * or tuple of its items as Native_Arg makes them, any other value copied; the global name of module the same way */
+void LvN_Elems(const nativeVal_t *v, nativeVal_t *out);
+byte LvN_GElems(const char *module, const char *name, nativeVal_t *out);
 /* raise "text" (a string exception of the script; OBJLIB 7: the Python exception until errors are a C state): 0 */
 byte LvN_RaiseText(const char *text);
 /* Scrap.StartDummySearch(pattern, flag); dummy = Scrap.NextDummySearch() */
@@ -338,6 +343,33 @@ byte LvN_SetAct(const char *name, const nativeVal_t *v);
 byte LvN_SetCls(const char *name, const nativeVal_t *v);
 /* SSound.SetMusic(name, volume) through its seam (fr6b.py _BREC records it) */
 byte LvN_SetMusic(const char *name, double volume);
+/* Scorer.MissionScorerText_X + d, Scorer.MissionScorerText_Y + d (d 0: the value itself) */
+byte LvN_TextX(long d, nativeVal_t *out);
+byte LvN_TextY(long d, nativeVal_t *out);
+/* a text of a mission scorer as the missions set it (Sf_MissionText on values): SScorer.Add(id, item, type) (type
+ * NULL: none), X, Y, Font, Effect (NULL: none), Text, Align, the colour Scorer.MissionScorerText_Color and Visible
+ * (NULL: none) */
+byte LvN_MissionText(const nativeVal_t *id, const char *item, const char *type, const nativeVal_t *x, const nativeVal_t *y,
+	const char *font, const char *effect, const nativeVal_t *text, const char *align, const nativeVal_t *visible);
+/* Sf_Calls on native values: the lines "Module.Func|value|..." of a call table ("@Func" a global of module) called in
+ * order as statements, the values as LvN_Value reads them (OBJLIB 3: the functions by name, the recorders of the
+ * scene cases see them) */
+byte LvN_Calls(const char *module, const char *const *lines);
+/* the core of a level function (the LV_FN form) that reads none of its arguments, and one on its arguments */
+#define LV_CORE0(fn) \
+	static byte fn##_C(const nativeVal_t *a, nativeVal_t *out) { \
+		(void)a; \
+		(void)out; \
+		return fn(); \
+	}
+#define LV_COREA(fn) \
+	static byte fn##_C(const nativeVal_t *a, nativeVal_t *out) { \
+		(void)out; \
+		return fn(a); \
+	}
+/* a op b of the script as Native_Arith, with the long ints of 1.5.2 for * / % too (a test can put a long int into a
+ * module variable; OBJLIB 9: those go through the Python number functions) */
+byte LvN_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
 /* the parameters of the native helpers: an int, a text */
 void LvN_Int(nativeVal_t *v, long i);
 void LvN_Str(nativeVal_t *v, const char *s);

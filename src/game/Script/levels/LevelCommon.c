@@ -16,20 +16,27 @@
 
 #include "Levels.h"
 
+/* the frame helpers whose lines have a native twin below run the twin (the frame fails with its error) */
+
 int Lv_PcOr(scriptFrame_t *f, const char *module, const char *name) {
-	int x = Sf_True(f, Sf_Ask(f, "Scrap", "Get", "(s)", "IsXbox"));
-	return x > 0 ? Sf_True(f, Sf_Global(f, module, name)) : x < 0 ? -1 : 1;
+	if (f->failed) {
+		return -1;
+	}
+	int r = LvN_PcOr(module, name);
+	Sf_Check(f, r >= 0);
+	return r;
 }
 
 void Lv_Callback(scriptFrame_t *f, const char *name, const char *module, const char *func) {
-	PyObject *cb = Sf_Attr(f, Sf_GetItem(f, Sf_Mod(f, "CharsNPC", "CharRes"), Sf_Str(f, name)), "CallbackFunc");
-	PyObject *append = Sf_Attr(f, cb, "append");
-	Sf_Call(f, append, "(O)", Sf_Global(f, module, func));
+	if (!f->failed) {
+		Sf_Check(f, LvN_Callback(name, module, func));
+	}
 }
 
 void Lv_MissionChar(scriptFrame_t *f, const char *name, const char *module, const char *func) {
-	Sf_Ask(f, "CharsNPC", "CreateMissionChar", "(s)", name);
-	Lv_Callback(f, name, module, func);
+	if (!f->failed) {
+		Sf_Check(f, LvN_MissionChar(name, module, func));
+	}
 }
 
 void Lv_Speakers(scriptFrame_t *f, PyObject *usr, PyObject *ch) {
@@ -92,11 +99,13 @@ void Lv_SaveAppend(scriptFrame_t *f, const char *var, PyObject *lst, PyObject *i
 const int lv_black[4] = { 0, 0, 0, 255 }, lv_clear[4] = { 0, 0, 0, 0 };
 
 int Lv_SaveIs(scriptFrame_t *f, const char *name, const char *text) {
-	return Sf_EqS(f, Sf_Ask(f, "Scrap", "GetSaveVar", "(s)", name), text);
+	return f->failed ? -1 : LvN_SaveIs(name, text);
 }
 
 void Lv_Fade(scriptFrame_t *f, const int from[4], const int to[4], double time) {
-	Sf_Ask(f, "SScorer", "Fade", "(i(iiii)(iiii)d)", 0, from[0], from[1], from[2], from[3], to[0], to[1], to[2], to[3], time);
+	if (!f->failed) {
+		Sf_Check(f, Mode_Fade(0, from, to, time));
+	}
 }
 
 PyObject *Lv_Dummy(scriptFrame_t *f, const char *pattern, int flag) {
@@ -104,13 +113,10 @@ PyObject *Lv_Dummy(scriptFrame_t *f, const char *pattern, int flag) {
 	return Sf_Ask(f, "Scrap", "NextDummySearch", "()");
 }
 
+static byte LvN_AcShips(const char *module, const char *ships);
+
 byte Lv_AcShips(scriptFrame_t *f, const char *module, const char *ships) {
-	int mark = f->n;
-	Sf_Import(f, "Traffic");
-	Sf_Run(f, "Scrap", "SetSaveVar", "(ss)", "Traffic.AcShips", ships);
-	Sf_SetMod(f, "Traffic", "AcShips", Sf_Eval(f, Sf_Ask(f, "Scrap", "GetSaveVar", "(s)", "Traffic.AcShips"), module));
-	Sf_Release(f, mark);
-	return !f->failed;
+	return !f->failed && Sf_Check(f, LvN_AcShips(module, ships));
 }
 
 PyObject *Lv_Profile(scriptFrame_t *f, const char *module, const char *const *vars) {
@@ -187,160 +193,323 @@ byte Lv_RaiseValue(scriptFrame_t *f, const char *module, PyObject *o) {
 	return Sf_RaiseValue(f, o);
 }
 
-PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table) {
-	PyObject *name, *x, *y, *z, *angx, *angy;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "OOOOOO", &name, &x, &y, &z, &angx, &angy)) {
-		return NULL;
+/* ---- whole functions the level tables share (native: docs/objlib-plan.md, stage 2) ---- */
+
+/* the adapter of a whole function: its n arguments as values, the core, the result (out, None when it stays None) */
+#define LV_WHOLE(nargs, call) \
+	modeVals_t t = { .n = 0 }; \
+	nativeVal_t *a, *out = Mode_V(&t); \
+	if (!Mode_Args(args, nargs, &t, &a)) { \
+		return Mode_Done(&t, 0), NULL; \
+	} \
+	(void)a; \
+	return Mode_Out(&t, call, out)
+
+/* name + `MapSnd.cntr` (prefix "I" in front with beepI) */
+static byte Lv_SndId(const nativeVal_t *name, byte beepI, nativeVal_t *out) {
+	nativeVal_t cntr, rep, i, x;
+	Native_SetNone(&rep);
+	Native_SetNone(&x);
+	if (!Mode_G("MapSnd", "cntr", &cntr)) {
+		return 0;
 	}
-	Sf_Import(&f, "Sound");
-	Sf_SetGlobal(&f, "MapSnd", "cntr", Sf_OpI(&f, Sf_Global(&f, "MapSnd", "cntr"), '+', 1));
+	Mode_Repr(&cntr, &rep);
+	Native_Free(&cntr);
+	byte ok;
+	if (beepI) {
+		LvN_Str(&i, "I");
+		ok = Native_Arith('+', &i, name, &x) && Native_Arith('+', &x, &rep, out);
+		Native_Free(&i);
+	} else {
+		ok = Native_Arith('+', name, &rep, out);
+	}
+	Native_Free(&rep);
+	Native_Free(&x);
+	return ok;
+}
+
+static byte Lv_SndCore(const nativeVal_t *a, const lvSndElement_t *table) {
+	const nativeVal_t *name = &a[0];
+	if (!Mode_Import("Sound") || !LvN_GAdd("MapSnd", "cntr", 1, NULL)) {
+		return 0;
+	}
 	const lvSndElement_t *el = NULL;
-	for (const lvSndElement_t *t = table; t->name && !el && !f.failed; t++) {
-		if (Sf_EqS(&f, name, t->name) > 0) {
+	for (const lvSndElement_t *t = table; t->name && !el; t++) {
+		if (LvN_EqS(name, t->name)) {
 			el = t;
 		}
 	}
 	if (!el) {
-		return Sf_None(&f);
+		return 1;
 	}
-	if (el->loop && (!el->pc || Sf_True(&f, Sf_Global(&f, "MapSnd", "isPC")) > 0)) {
-		PyObject *id = Sf_Cat(&f, "OO", name, Sf_Repr(&f, Sf_Global(&f, "MapSnd", "cntr")));
-		PyObject *pos = Sf_Build(&f, "(OOO)", x, y, z);
-		if (el->front) {
-			PyObject *off = Sf_Ask(&f, "SVec", "Rotate3D", "((iii)(OOi))", 0, 0, -300, angx, angy, 0);
-			pos = Sf_Ask(&f, "SVec", "Add", "(OO)", pos, off);
+	nativeVal_t id, pos, rot, off, sum, v, loop;
+	Native_SetNone(&id);
+	Native_SetNone(&off);
+	Native_SetNone(&sum);
+	Native_SetEmpty(&pos, NV_TUPLE);
+	for (int i = 1; i <= 3; i++) {
+		Native_Copy(Native_Append(&pos), &a[i]);
+	}
+	byte ok = 1;
+	int pc = !el->loop || !el->pc ? 1 : LvN_GTrue("MapSnd", "isPC");
+	if (pc < 0) {
+		ok = 0;
+	} else if (el->loop && pc) {
+		ok = Lv_SndId(name, 0, &id);
+		if (ok && el->front) {
+			/* SVec.Add(pos, SVec.Rotate3D((0, 0, -300), (angx, angy, 0))) */
+			Native_SetVec(&v, 0, 0, -300);
+			Native_SetEmpty(&rot, NV_TUPLE);
+			Native_Copy(Native_Append(&rot), &a[4]);
+			Native_Copy(Native_Append(&rot), &a[5]);
+			Native_SetInt(Native_Append(&rot), 0);
+			ok = Mode_Rotate(&v, &rot, &off) && Mode_VecAdd(&pos, &off, &sum);
+			Native_Free(&rot);
+			if (ok) {
+				Native_Free(&pos);
+				pos = sum;
+				Native_SetNone(&sum);
+			}
 		}
-		if (el->hasPitch) {
-			Sf_Ask(&f, "Sound", "SetPSLoop", "(OOsdi)", id, pos, el->loop, el->vol, el->pitch);
-		} else {
-			Sf_Ask(&f, "Sound", "SetPSLoop", "(OOsd)", id, pos, el->loop, el->vol);
+		if (ok) {
+			LvN_Str(&loop, el->loop);
+			ok = el->hasPitch ? LV_CALL("Sound", "SetPSLoop", NULL, "vvvdi", &id, &pos, &loop, el->vol, (long)el->pitch) :
+				LV_CALL("Sound", "SetPSLoop", NULL, "vvvd", &id, &pos, &loop, el->vol);
+			Native_Free(&loop);
 		}
 	}
-	if (el->beep && !f.failed) {
+	if (ok && el->beep) {
 		const char *beep = el->beep;
 		if (el->beepXbox) {
-			int pc = Sf_True(&f, Sf_Global(&f, "MapSnd", "isPC"));
-			beep = pc ? el->beep : el->beepXbox;
+			int isPC = LvN_GTrue("MapSnd", "isPC");
+			ok = isPC >= 0;
+			beep = isPC ? el->beep : el->beepXbox;
 		}
-		PyObject *n = Sf_Repr(&f, Sf_Global(&f, "MapSnd", "cntr"));
-		PyObject *id = el->beepI ? Sf_Cat(&f, "sOO", "I", name, n) : Sf_Cat(&f, "OO", name, n);
-		Sf_Ask(&f, "Sound", "SetPSInterval", "(O(OOO)siidi)", id, x, y, z, beep, el->imin, el->imax, el->ivol, 0);
+		Native_Free(&id);
+		Native_Free(&pos);
+		Native_SetEmpty(&pos, NV_TUPLE);
+		for (int i = 1; i <= 3; i++) {
+			Native_Copy(Native_Append(&pos), &a[i]);
+		}
+		ok = ok && Lv_SndId(name, el->beepI, &id) &&
+			LV_CALL("Sound", "SetPSInterval", NULL, "vvsiidi", &id, &pos, beep, (long)el->imin, (long)el->imax, el->ivol, 0L);
 	}
-	return Sf_None(&f);
+	Native_Free(&id);
+	Native_Free(&pos);
+	Native_Free(&off);
+	Native_Free(&sum);
+	return ok;
+}
+
+PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table) {
+	LV_WHOLE(6, Lv_SndCore(a, table));
+}
+
+static byte Lv_PlanesCore(const char *module) {
+	nativeVal_t dummy, n0, plane, ships, engines, both, ang, name, pre, pln, a2, pos;
+	if (!Mode_Import("MissionsFuncs") || !Mode_Import("CharAct") || !LvN_ModSetGlobal("CharAct", "TakenPhotoMap", module, "TakenPhoto")) {
+		return 0;
+	}
+	Mode_DummyStart("DM_LocalPlane_*", 1);
+	byte ok = 1;
+	while (ok) {
+		Mode_DummyNext(&dummy);
+		if (dummy.type == NV_NONE) {
+			break;
+		}
+		Native_SetNone(&n0);
+		Native_SetNone(&plane);
+		Native_SetNone(&ships);
+		Native_SetNone(&engines);
+		Native_SetNone(&both);
+		Native_SetNone(&ang);
+		Native_SetNone(&name);
+		Native_SetNone(&pln);
+		Native_SetNone(&a2);
+		Native_SetNone(&pos);
+		ok = LvN_Item(&dummy, 0, &n0) && Native_Slice(&n0, 14, 0x7fffffff, &plane) && Mode_G(module, "Naves", &ships) &&
+			Mode_G(module, "Motores", &engines) && Native_Arith('+', &ships, &engines, &both);
+		int in = ok ? Native_Contains(&both, &plane) : -1;
+		if (in > 0) {
+			/* "Plano" + dummy[0][14:], dummy[1], (ang[0], ang[1], 0) */
+			LvN_Str(&pre, "Plano");
+			ok = Native_Arith('+', &pre, &plane, &name) && LvN_Item(&dummy, 2, &a2);
+			Native_Free(&pre);
+			if (ok) {
+				Native_SetEmpty(&ang, NV_TUPLE);
+				ok = LvN_Item(&a2, 0, Native_Append(&ang)) && LvN_Item(&a2, 1, Native_Append(&ang));
+				Native_SetInt(Native_Append(&ang), 0);
+			}
+			ok = ok && LvN_Item(&dummy, 1, &pos) && LV_CALL("MissionsFuncs", "CreatePhotoObject", &pln, "vvv", &name, &pos, &ang) &&
+				LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &pln, 0L);
+		} else {
+			ok = in == 0;
+		}
+		Native_Free(&dummy);
+		Native_Free(&n0);
+		Native_Free(&plane);
+		Native_Free(&ships);
+		Native_Free(&engines);
+		Native_Free(&both);
+		Native_Free(&ang);
+		Native_Free(&name);
+		Native_Free(&pln);
+		Native_Free(&a2);
+		Native_Free(&pos);
+	}
+	return ok;
 }
 
 PyObject *Lv_PlanesInit(PyObject *args, const char *module) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+	LV_WHOLE(1, Lv_PlanesCore(module));
+}
+
+/* the photo of a blueprint into its hangar list: the list of the module (Naves, Motores) loses it and is saved, the
+ * hangar list gets item, the message of key with the name of the ship */
+static byte Lv_PhotoTo(const char *module, const char *var, const char *saveVar, const nativeVal_t *plano, const char *hangar,
+	const nativeVal_t *item, const char *msg, const char *prefix, const nativeVal_t *shipName) {
+	nativeVal_t l, lst, up, pre, key, text, name, r;
+	Native_SetNone(&lst);
+	Native_SetNone(&up);
+	Native_SetNone(&key);
+	Native_SetNone(&r);
+	if (!Mode_Remove(module, var, plano) || !Mode_G(module, var, &l)) {
+		return 0;
 	}
-	Sf_Import(&f, "MissionsFuncs");
-	Sf_Import(&f, "CharAct");
-	Sf_SetMod(&f, "CharAct", "TakenPhotoMap", Sf_Global(&f, module, "TakenPhoto"));
-	Sf_Ask(&f, "Scrap", "StartDummySearch", "(si)", "DM_LocalPlane_*", 1);
-	while (!f.failed) {
-		int mark = f.n;
-		PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-		if (Sf_Compare(&f, dummy, "==", Py_None) != 0) {
-			break;
-		}
-		PyObject *plane = Sf_Slice(&f, Sf_Item(&f, dummy, 0), 14, 0x7fffffff);
-		if (Sf_In(&f, plane, Sf_Op(&f, Sf_Global(&f, module, "Naves"), '+', Sf_Global(&f, module, "Motores"))) > 0) {
-			PyObject *ang = Sf_Item(&f, dummy, 2);
-			PyObject *name = Sf_Cat(&f, "sO", "Plano", Sf_Slice(&f, Sf_Item(&f, dummy, 0), 14, 0x7fffffff));
-			PyObject *pln = Sf_Ask(&f, "MissionsFuncs", "CreatePhotoObject", "(OOO)", name, Sf_Item(&f, dummy, 1),
-				Sf_Build(&f, "(OOi)", Sf_Item(&f, ang, 0), Sf_Item(&f, ang, 1), 0));
-			Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", pln, 0);
-		}
-		Sf_Release(&f, mark);
+	LvN_SaveRepr(saveVar, &l);
+	Native_Free(&l);
+	byte ok = LvN_SaveList(hangar, module, &lst) && LvN_SaveAppend(hangar, &lst, item) && Native_Upper(shipName, &up);
+	if (ok) {
+		LvN_Str(&pre, prefix);
+		ok = Native_Arith('+', &pre, &up, &key);
+		Native_Free(&pre);
 	}
-	return Sf_None(&f);
+	const char *k = NULL;
+	ok = ok && Native_ArgStr(&key, 1, &k);
+	if (ok) {
+		/* string.replace(Scrap.GetLangStr(msg), "<n1>", Scrap.GetLangStr(key)) */
+		Mode_Lang(msg, &text);
+		Mode_Lang(k, &name);
+		Mode_Replace(&text, "<n1>", &name, &r);
+		ok = LV_CALL("RaceMaker", "ShowSystemMessage", NULL, "v", &r);
+		Native_Free(&text);
+		Native_Free(&name);
+	}
+	Native_Free(&lst);
+	Native_Free(&up);
+	Native_Free(&key);
+	Native_Free(&r);
+	return ok;
+}
+
+static byte Lv_PhotoCore(const nativeVal_t *name, const char *module, const char *ships, const char *engines, nativeVal_t *out) {
+	nativeVal_t head, plano, list, up, rest, h, zero;
+	Native_SetNone(&head);
+	if (!Native_Slice(name, 0, 5, &head)) {
+		return 0;
+	}
+	int is = LvN_EqS(&head, "Plano");
+	Native_Free(&head);
+	if (!is) {
+		return 1;
+	}
+	Native_SetNone(&plano);
+	Native_SetNone(&up);
+	Native_SetNone(&rest);
+	if (!Mode_Import("string") || !Mode_Import("RaceMaker") || !Native_Slice(name, 5, 0x7fffffff, &plano)) {
+		return 0;
+	}
+	byte ok = Mode_G(module, "Naves", &list);
+	int ship = ok ? Native_Contains(&list, &plano) : -1;
+	Native_Free(&list);
+	int engine = 0;
+	if (ship == 0) {
+		ok = Mode_G(module, "Motores", &list);
+		engine = ok ? Native_Contains(&list, &plano) : -1;
+		Native_Free(&list);
+	}
+	long res = 0;
+	if (ship > 0) {
+		ok = Lv_PhotoTo(module, "Naves", ships, &plano, "Hangar.shipsToEditList", &plano, "OnPhotoShipBlueprints", "SHIP_", &plano);
+		res = 1;
+	} else if (engine > 0) {
+		/* the engine: its name in capitals into the list, the message of SHIP_S + plano[1:] in capitals */
+		ok = Native_Upper(&plano, &up) && Native_Slice(&plano, 1, 0x7fffffff, &rest) &&
+			Lv_PhotoTo(module, "Motores", engines, &plano, "Hangar.availableEnginesList", &up, "OnPhotoEngineBlueprints", "SHIP_S", &rest);
+		res = 1;
+	} else {
+		ok = ship >= 0 && engine >= 0;
+	}
+	Native_Free(&plano);
+	Native_Free(&up);
+	Native_Free(&rest);
+	if (ok && res) {
+		Native_SetNone(&h);
+		Native_SetInt(&zero, 0);
+		ok = Mode_Import("SaveGame") && Mode_EntityH(name, &h) && Mode_VSet(&h, "ArrowCanView", &zero);
+		Native_Free(&h);
+		if (ok) {
+			SaveVar_Inc("NewBluePrintAvaliable", 1);
+			ok = LV_CALL("SaveGame", "CheckAllBlueprints", NULL, "");
+		}
+	}
+	Native_SetInt(out, res);
+	return ok;
 }
 
 PyObject *Lv_PlanesPhoto(PyObject *args, const char *module, const char *ships, const char *engines) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+	LV_WHOLE(1, Lv_PhotoCore(&a[0], module, ships, engines, out));
+}
+
+/* import Traffic; Scrap.SetSaveVar("Traffic.AcShips", ships); Traffic.AcShips = eval(Scrap.GetSaveVar(...)) */
+static byte LvN_AcShips(const char *module, const char *ships) {
+	nativeVal_t v;
+	if (!Mode_Import("Traffic")) {
+		return 0;
 	}
-	if (Sf_EqS(&f, Sf_Slice(&f, name, 0, 5), "Plano") <= 0) {
-		return Sf_None(&f);
-	}
-	long res = 0;
-	Sf_Import(&f, "string");
-	Sf_Import(&f, "RaceMaker");
-	PyObject *plano = Sf_Slice(&f, name, 5, 0x7fffffff);
-	int ship = Sf_In(&f, plano, Sf_Global(&f, module, "Naves"));
-	int engine = ship == 0 ? Sf_In(&f, plano, Sf_Global(&f, module, "Motores")) : 0;
-	if (ship > 0) {
-		Sf_Method(&f, Sf_Global(&f, module, "Naves"), "remove", "(O)", plano);
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", ships, Sf_Repr(&f, Sf_Global(&f, module, "Naves")));
-		Lv_SaveAppend(&f, "Hangar.shipsToEditList", Lv_SaveList(&f, "Hangar.shipsToEditList", module), plano);
-		PyObject *key = Sf_Cat(&f, "sO", "SHIP_", Sf_Ask(&f, "string", "upper", "(O)", plano));
-		PyObject *text = Sf_Ask(&f, "string", "replace", "(OsO)", Sf_Lang(&f, Sf_Str(&f, "OnPhotoShipBlueprints")), "<n1>", Sf_Lang(&f, key));
-		Sf_Ask(&f, "RaceMaker", "ShowSystemMessage", "(O)", text);
-		res = 1;
-	} else if (engine > 0) {
-		Sf_Method(&f, Sf_Global(&f, module, "Motores"), "remove", "(O)", plano);
-		Sf_Ask(&f, "Scrap", "SetSaveVar", "(sO)", engines, Sf_Repr(&f, Sf_Global(&f, module, "Motores")));
-		Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Hangar.availableEnginesList");
-		PyObject *lst = Lv_SaveList(&f, "Hangar.availableEnginesList", module);
-		Lv_SaveAppend(&f, "Hangar.availableEnginesList", lst, Sf_Ask(&f, "string", "upper", "(O)", plano));
-		PyObject *key = Sf_Cat(&f, "sO", "SHIP_S", Sf_Ask(&f, "string", "upper", "(O)", Sf_Slice(&f, plano, 1, 0x7fffffff)));
-		PyObject *text = Sf_Ask(&f, "string", "replace", "(OsO)", Sf_Lang(&f, Sf_Str(&f, "OnPhotoEngineBlueprints")), "<n1>", Sf_Lang(&f, key));
-		Sf_Ask(&f, "RaceMaker", "ShowSystemMessage", "(O)", text);
-		res = 1;
-	}
-	if (res && !f.failed) {
-		Sf_Import(&f, "SaveGame");
-		Sf_SetAttrI(&f, Sf_Entity(&f, name), "ArrowCanView", 0);
-		Sf_Ask(&f, "Scrap", "IncSaveVar", "(s)", "NewBluePrintAvaliable");
-		Sf_Ask(&f, "SaveGame", "CheckAllBlueprints", "()");
-	}
-	return Sf_Return(&f, Sf_Int(&f, res));
+	SaveVar_Set("Traffic.AcShips", ships);
+	byte ok = LvN_SaveList("Traffic.AcShips", module, &v) && Mode_SetModVar("Traffic", "AcShips", &v);
+	Native_Free(&v);
+	return ok;
 }
 
 PyObject *Lv_AcShipsStatus(PyObject *args, const char *module, const char *ships) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Lv_AcShips(&f, module, ships);
-	return Sf_None(&f);
+	LV_WHOLE(1, LvN_AcShips(module, ships));
 }
 
 PyObject *Lv_ProfileFunc(PyObject *args, const char *module, const char *const *vars) {
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Sf_Return(&f, Lv_Profile(&f, module, vars));
+	(void)module;
+	LV_WHOLE(0, LvN_Profile(vars, out));
 }
 
 void Lv_Saves(scriptFrame_t *f, const char *const *pairs) {
 	for (; *pairs && !f->failed; pairs += 2) {
-		int mark = f->n;
-		Sf_Ask(f, "Scrap", "SetSaveVar", "(ss)", pairs[0], pairs[1]);
-		Sf_Release(f, mark);
+		SaveVar_Set(pairs[0], pairs[1]);
 	}
 }
 
+static byte Lv_StartPosCore(const double (*pos)[4], int n) {
+	nativeVal_t empty;
+	Native_SetEmpty(&empty, NV_LIST);
+	if (!Mode_Import("RaceMaker") || !Mode_SetModVar("RaceMaker", "StartPos", &empty)) {
+		return 0;
+	}
+	for (int i = 0; i < n; i++) {
+		nativeVal_t p;
+		Native_SetEmpty(&p, NV_TUPLE);
+		Native_SetVec(Native_Append(&p), pos[i][0], pos[i][1], pos[i][2]);
+		Native_SetFloat(Native_Append(&p), pos[i][3]);
+		byte ok = LvN_ModAppend("RaceMaker", "StartPos", &p);
+		Native_Free(&p);
+		if (!ok) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 PyObject *Lv_StartPos(PyObject *args, const double (*pos)[4], int n) {
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "RaceMaker");
-	Sf_SetMod(&f, "RaceMaker", "StartPos", Sf_Build(&f, "[]"));
-	for (int i = 0; i < n && !f.failed; i++) {
-		int mark = f.n;
-		Sf_Method(&f, Sf_Mod(&f, "RaceMaker", "StartPos"), "append", "((ddd)d)", pos[i][0], pos[i][1], pos[i][2], pos[i][3]);
-		Sf_Release(&f, mark);
-	}
-	return Sf_None(&f);
+	LV_WHOLE(0, Lv_StartPosCore(pos, n));
 }
 
 void Lv_Colour(scriptFrame_t *f, PyObject *id, const char *item) {
@@ -385,7 +554,7 @@ byte Lv_Com(scriptFrame_t *f, const char *key, const char *who, PyObject *then, 
 }
 
 byte Lv_Next(scriptFrame_t *f, const char *lib, const char *map, const char *desc) {
-	return Sf_Run(f, "MissionsFuncs", "SetNextMission", "(ss)", lib, map) && Sf_Run(f, "SaveGame", "MMDesc", "(si)", desc, 1);
+	return !f->failed && Sf_Check(f, LvN_Next(lib, map, desc));
 }
 
 byte Lv_ScorerCall(scriptFrame_t *f, PyObject *v) {
@@ -568,217 +737,296 @@ static const lvProbes_t lv_probes[] = {
 };
 
 /* InitStatus(LevelPath): the probes are the heavy traffic, none of it at the start */
-static PyObject *Probes_InitStatus(PyObject *args, const lvProbes_t *p) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
+static byte Probes_InitStatus(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
+	nativeVal_t l, zero;
+	(void)a;
 	(void)p;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+	(void)out;
+	if (!Mode_Import("VehiclesNPC") || !Mode_Import("Traffic")) {
+		return 0;
 	}
-	Sf_Import(&f, "VehiclesNPC");
-	Sf_Import(&f, "Traffic");
-	Sf_SetMod(&f, "Traffic", "AcHeavyShips", Sf_Build(&f, "[s]", "TProbe"));
-	Sf_SetMod(&f, "Traffic", "NumHeavy", Sf_Int(&f, 0));
-	return Sf_None(&f);
+	Native_SetEmpty(&l, NV_LIST);
+	LvN_Str(Native_Append(&l), "TProbe");
+	Native_SetInt(&zero, 0);
+	byte ok = Mode_SetModVar("Traffic", "AcHeavyShips", &l) && Mode_SetModVar("Traffic", "NumHeavy", &zero);
+	Native_Free(&l);
+	return ok;
 }
 
-static PyObject *Probes_Init(PyObject *args, const lvProbes_t *p) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
+static byte Probes_Init(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return LV_OWN(p->module, "CreateProbes", NULL, "") && LvN_ScorerCallG(p->module, "MissionScorer") && LvN_Draw();
+}
+
+/* SVec.Mod(SVec.Sub(a, b)) < the global limit of the module: 1, 0, -1 with the error */
+static int Probes_Near(const nativeVal_t *a, const nativeVal_t *b, const lvProbes_t *p, const char *limit) {
+	nativeVal_t d, m, l;
+	Native_SetNone(&d);
+	Native_SetNone(&m);
+	int r = Mode_VecSub(a, b, &d) && Mode_VecMod(&d, &m) && Mode_G(p->module, limit, &l) ? Native_Compare(&m, &l) < 0 : -1;
+	if (r >= 0) {
+		Native_Free(&l);
 	}
-	Sf_Own(&f, p->module, "CreateProbes", "()");
-	Lv_ScorerCall(&f, Sf_Global(&f, p->module, "MissionScorer"));
-	Sf_DrawScorer(&f);
-	return Sf_None(&f);
+	Native_Free(&d);
+	Native_Free(&m);
+	return r;
 }
 
 /* IsValidPoint(usrPos, pos, posList): a new point far enough from the player and from the other probes */
-static PyObject *Probes_IsValidPoint(PyObject *args, const lvProbes_t *p) {
-	PyObject *usrPos, *pos, *list;
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "OOO", &usrPos, &pos, &list)) {
-		return NULL;
-	}
-	int in = Sf_In(&f, pos, list);
+static byte Probes_IsValidPoint(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
+	const nativeVal_t *usrPos = &a[0], *pos = &a[1], *list = &a[2];
+	int in = Native_Contains(list, pos);
 	if (in != 0) {
-		return Sf_Return(&f, in > 0 ? Sf_Int(&f, 0) : NULL);
+		Native_SetInt(out, 0);
+		return in > 0;
 	}
-	PyObject *d = Sf_Ask(&f, "SVec", "Mod", "(O)", Sf_Ask(&f, "SVec", "Sub", "(OO)", pos, usrPos));
-	int near = Sf_Compare(&f, d, "<", Sf_Global(&f, p->module, "minPlayerDist"));
+	int near = Probes_Near(pos, usrPos, p, "minPlayerDist");
 	if (near != 0) {
-		return Sf_Return(&f, near > 0 ? Sf_Int(&f, 0) : NULL);
+		Native_SetInt(out, 0);
+		return near > 0;
 	}
-	PyObject *q;
-	for (int k = 0; (q = Sf_Next(&f, list, k)) != NULL; k++) {
-		d = Sf_Ask(&f, "SVec", "Mod", "(O)", Sf_Ask(&f, "SVec", "Sub", "(OO)", q, pos));
-		if (Sf_Compare(&f, d, "<", Sf_Global(&f, p->module, "minDistBetweenProbes")) > 0) {
-			return Sf_Return(&f, Sf_Int(&f, 0));
+	int n = Native_ForCount(list);
+	if (n < 0) {
+		return 0;
+	}
+	for (int k = 0; k < n; k++) {
+		nativeVal_t q;
+		Native_SetNone(&q);
+		near = Native_SeqItem(list, k, &q) ? Probes_Near(&q, pos, p, "minDistBetweenProbes") : -1;
+		Native_Free(&q);
+		if (near != 0) {
+			Native_SetInt(out, 0);
+			return near > 0;
 		}
 	}
-	return Sf_Return(&f, Sf_Int(&f, 1));
+	Native_SetInt(out, 1);
+	return 1;
+}
+
+/* one probe at pos: an AI ship of the traffic path with the life of the module, as a mission target */
+static byte Probes_Make(const lvProbes_t *p, const char *onDeath, const nativeVal_t *pos) {
+	nativeVal_t e, ang, life;
+	Native_SetNone(&e);
+	Native_SetNone(&life);
+	byte ok = LV_CALL("Traffic", "SetPath", NULL, "") && LV_CALL("VehiclesNPC", "MakeAI", &e, "ssii", "TProbe", "ProbeMos", 0L, 0L) &&
+		LV_CALL("Traffic", "ResetPath", NULL, "") && LvN_SetS(&e, "OnDeath", onDeath) && Mode_VSet(&e, "MovePos", pos) &&
+		Mode_VSet(&e, "Pos", pos);
+	if (ok) {
+		Native_SetEmpty(&ang, NV_TUPLE);
+		for (int i = 0; i < 3; i++) {
+			Native_SetInt(Native_Append(&ang), 0);
+		}
+		ok = Mode_VSet(&e, "MoveAng", &ang) && Mode_VSet(&e, "Ang", &ang) && LvN_SetF(&e, "MoveTime", 0.1) &&
+			Mode_G(p->module, "PROBE_LIFE", &life) && Mode_VSet(&e, "Life", &life) && Mode_VSet(&e, "MaxLife", &life) &&
+			Mode_VSet(&e, "MinLife", &life) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &e, 1L);
+		Native_Free(&ang);
+	}
+	Native_Free(&e);
+	Native_Free(&life);
+	return ok;
 }
 
 /* CreateProbes(): the probes left at random visible points */
-static PyObject *Probes_CreateProbes(PyObject *args, const lvProbes_t *p) {
+static byte Probes_CreateProbes(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
 	char onDeath[64];
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
+	nativeVal_t usr, list, usrPos, s, num, i, pos, valid;
+	(void)a;
+	(void)out;
 	Str_Printf(onDeath, sizeof(onDeath), "%s.OnProbeDeath", p->module);
-	Sf_Import(&f, "OutMap");
-	Sf_Import(&f, "VehiclesNPC");
-	Sf_Import(&f, "Traffic");
-	PyObject *usr = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	if (Sf_True(&f, usr) != 1) {
-		return Sf_None(&f);
+	if (!Mode_Import("OutMap") || !Mode_Import("VehiclesNPC") || !Mode_Import("Traffic") || !Mode_UsrHandle(&usr)) {
+		return 0;
 	}
-	PyObject *list = Sf_Build(&f, "[]");
-	PyObject *usrPos = Sf_Attr(&f, usr, "Pos");
-	PyObject *num = Sf_ToInt(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "NumProbes"));
-	long i = 0;
-	for (;;) {
-		int mark = f.n;
-		if (Sf_Compare(&f, Sf_Int(&f, i), "<", num) <= 0) {
+	if (!Native_True(&usr)) {
+		Native_Free(&usr);
+		return 1;
+	}
+	Native_SetEmpty(&list, NV_LIST);
+	Native_SetNone(&usrPos);
+	Native_SetNone(&num);
+	byte ok = Mode_VGet(&usr, "Pos", &usrPos);
+	if (ok) {
+		Mode_SaveVar("NumProbes", &s);
+		ok = Native_ToInt(&s, &num);
+		Native_Free(&s);
+	}
+	long k = 0;
+	while (ok) {
+		Native_SetInt(&i, k);
+		if (Native_Compare(&i, &num) >= 0) {
 			break;
 		}
-		PyObject *pos = Sf_Ask(&f, "SAI", "GetRandomVisibilityPoint", "()");
-		int ok = Sf_True(&f, Sf_Own(&f, p->module, "IsValidPoint", "(OOO)", usrPos, pos, list));
-		if (ok == 0) {
-			Sf_Release(&f, mark);
-			continue;
+		Mode_RandomVisPoint(&pos);
+		Native_SetNone(&valid);
+		ok = LV_OWN(p->module, "IsValidPoint", &valid, "vvv", &usrPos, &pos, &list);
+		if (ok && Native_True(&valid)) {
+			ok = Probes_Make(p, onDeath, &pos);
+			if (ok) {
+				Native_Copy(Native_Append(&list), &pos);
+				k++;
+			}
 		}
-		Sf_Run(&f, "Traffic", "SetPath", "()");
-		PyObject *e = Sf_Ask(&f, "VehiclesNPC", "MakeAI", "(ssii)", "TProbe", "ProbeMos", 0, 0);
-		Sf_Run(&f, "Traffic", "ResetPath", "()");
-		Sf_SetAttrS(&f, e, "OnDeath", onDeath);
-		Sf_SetAttr(&f, e, "MovePos", pos);
-		Sf_SetAttr(&f, e, "Pos", pos);
-		PyObject *ang = Sf_Build(&f, "(iii)", 0, 0, 0);
-		Sf_SetAttr(&f, e, "MoveAng", ang);
-		Sf_SetAttr(&f, e, "Ang", ang);
-		Sf_SetAttr(&f, e, "MoveTime", Sf_Float(&f, 0.1));
-		PyObject *life = Sf_Global(&f, p->module, "PROBE_LIFE");
-		Sf_SetAttr(&f, e, "Life", life);
-		Sf_SetAttr(&f, e, "MaxLife", life);
-		Sf_SetAttr(&f, e, "MinLife", life);
-		Sf_Run(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", e, 1);
-		Sf_Method(&f, list, "append", "(O)", pos);
-		Sf_Release(&f, mark);
-		i++;
+		Native_Free(&pos);
+		Native_Free(&valid);
 	}
-	return Sf_None(&f);
+	Native_Free(&usr);
+	Native_Free(&list);
+	Native_Free(&usrPos);
+	Native_Free(&num);
+	return ok;
 }
 
 /* OnProbeDeath(LooserName, WinnerName): one probe fewer; the last one ends the mission */
-static PyObject *Probes_OnProbeDeath(PyObject *args, const lvProbes_t *p) {
-	PyObject *looser, *winner;
+static byte Probes_OnProbeDeath(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
 	char msg[64];
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "OO", &looser, &winner)) {
-		return NULL;
+	nativeVal_t s, num, one, n, args[4], t;
+	(void)out;
+	if (!Mode_Import("Vehicles") || !LV_CALL("Vehicles", "OnDeath", NULL, "vv", &a[0], &a[1])) {
+		return 0;
 	}
-	Sf_Import(&f, "Vehicles");
-	Sf_Run(&f, "Vehicles", "OnDeath", "(OO)", looser, winner);
-	PyObject *n = Sf_OpI(&f, Sf_ToInt(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "NumProbes")), '-', 1);
-	int last = Sf_EqI(&f, n, 0);
-	if (last > 0) {
-		Sf_Own(&f, p->module, "DestroyEnemyShips", "()");
-		Lv_ScorerCall(&f, Py_None);
-		PyObject *t = Sf_OpI(&f, Sf_Time(&f), '+', 2);
-		PyObject *fn = Sf_Mod(&f, "Speech", "AddRemoteCom");
-		Str_Printf(msg, sizeof(msg), "%s_RemoteMessage1", p->module);
-		Sf_Schedule(&f, t, fn, Sf_Build(&f, "(ssOO)", msg, "CrazyGambler", Sf_Global(&f, p->module, "SetNextMission"), Sf_Build(&f, "()")),
-			NULL);
-	} else if (last == 0) {
-		Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "NumProbes", Sf_Repr(&f, n));
-		Sf_Run(&f, "SaveGame", "QWayPoint", "()");
+	Mode_SaveVar("NumProbes", &s);
+	Native_SetNone(&num);
+	Native_SetNone(&n);
+	Native_SetInt(&one, 1);
+	byte ok = Native_ToInt(&s, &num) && Native_Arith('-', &num, &one, &n);
+	Native_Free(&s);
+	Native_Free(&num);
+	if (ok && LvN_EqI(&n, 0)) {
+		ok = LV_OWN(p->module, "DestroyEnemyShips", NULL, "") && LvN_ScorerOff();
+		if (ok) {
+			/* Scrap.AddScheduledFunc(Scrap.GetTime() + 2, Speech.AddRemoteCom, (msg, "CrazyGambler", SetNextMission, ())) */
+			Native_SetFloat(&t, Mode_Time() + 2);
+			PyObject *fn = Script_Attr("Speech", "AddRemoteCom");
+			Str_Printf(msg, sizeof(msg), "%s_RemoteMessage1", p->module);
+			LvN_Str(&args[0], msg);
+			LvN_Str(&args[1], "CrazyGambler");
+			Native_SetEmpty(&args[3], NV_TUPLE);
+			ok = fn && LvN_GObj(p->module, "SetNextMission", &args[2]) && Mode_Schedule(&t, fn, args, 4, NULL);
+			if (fn) {
+				Native_Free(&args[2]);
+			}
+			Py_XDECREF(fn);
+			Native_Free(&args[0]);
+			Native_Free(&args[1]);
+			Native_Free(&args[3]);
+		}
+	} else if (ok) {
+		LvN_SaveRepr("NumProbes", &n);
+		ok = LV_CALL("SaveGame", "QWayPoint", NULL, "");
 	}
-	Sf_DrawScorer(&f);
-	return Sf_None(&f);
+	Native_Free(&n);
+	return ok && LvN_Draw();
 }
 
 /* DestroyShipsInList(listName): every ship of the list explodes */
-static PyObject *Probes_DestroyShipsInList(PyObject *args, const lvProbes_t *p) {
-	PyObject *name;
-	scriptFrame_t f = { 0 };
+static byte Probes_DestroyShipsInList(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
+	const char *list;
+	nativeVal_t name, e;
 	(void)p;
-	if (!PyArg_ParseTuple(args, "O", &name)) {
-		return NULL;
+	(void)out;
+	/* Scrap.EntityListGet(listName, "First") ("ss") */
+	if (!Native_ArgStr(&a[0], 1, &list)) {
+		return 0;
 	}
-	PyObject *e = Sf_Entity(&f, Sf_Ask(&f, "Scrap", "EntityListGet", "(Os)", name, "First"));
-	int mark = f.n;
-	while (Sf_True(&f, e) > 0) {
-		Sf_SetAttrS(&f, e, "EntityList", "");
-		Sf_SetAttrI(&f, e, "Life", 0);
-		PyObject *next = Sf_Entity(&f, Sf_Ask(&f, "Scrap", "EntityListGet", "(Os)", name, "First"));
-		Sf_ReleaseKeep(&f, mark, &next, 1);
-		e = next;
+	Native_SetNone(&name);
+	Native_SetNone(&e);
+	byte ok = Mode_ListGet(list, "First", &name) && Mode_EntityH(&name, &e);
+	while (ok && Native_True(&e)) {
+		ok = LvN_SetS(&e, "EntityList", "") && LvN_SetI(&e, "Life", 0);
+		Native_Free(&name);
+		Native_Free(&e);
+		ok = ok && Mode_ListGet(list, "First", &name) && Mode_EntityH(&name, &e);
 	}
-	return Sf_None(&f);
+	Native_Free(&name);
+	Native_Free(&e);
+	return ok;
 }
 
 /* DestroyEnemyShips(): no more police (MaxChasingShips of the level) nor traffic, the alarm falls, the ships of the
  * lists explode one after another */
-static PyObject *Probes_DestroyEnemyShips(PyObject *args, const lvProbes_t *p) {
+static byte Probes_DestroyEnemyShips(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
 	static const char *const lists[] = { "EnemiesTraffic", "ChasingTraffic", "Traffic", "OutCop" };
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+	nativeVal_t v, zero;
+	(void)a;
+	(void)out;
+	Native_SetInt(&v, p->maxChasing);
+	Native_SetInt(&zero, 0);
+	if (!Mode_GVarSet("MaxChasingShips", &v) || !Mode_GVarSet("iTrafficNumber", &zero) || !Mode_GVarSetS("PoliceWaveEliminated", "") ||
+		!Mode_GVarSetN("AlarmFallDelta", -0.05) || !Mode_SetAlarm(&zero)) {
+		return 0;
 	}
-	Sf_Run(&f, "Scrap", "Set", "(si)", "MaxChasingShips", (int)p->maxChasing);
-	Sf_Run(&f, "Scrap", "Set", "(si)", "iTrafficNumber", 0);
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "PoliceWaveEliminated", "");
-	Sf_Run(&f, "Scrap", "Set", "(sd)", "AlarmFallDelta", -0.05);
-	Sf_Run(&f, "Scrap", "SetAlarm", "(i)", 0);
 	for (int i = 0; i < 4; i++) {
-		Sf_Later(&f, Sf_Float(&f, 0.5 * i), Sf_Global(&f, p->module, "DestroyShipsInList"), Sf_Build(&f, "(s)", lists[i]), NULL);
+		LvN_Str(&v, lists[i]);
+		byte ok = Mode_Later(0.5 * i, p->module, "DestroyShipsInList", &v, 1, NULL);
+		Native_Free(&v);
+		if (!ok) {
+			return 0;
+		}
 	}
-	return Sf_None(&f);
+	return 1;
 }
 
 /* SetNextMission() of Commercial and DownTown: the level counts as freed (the save variables of the level), on to the
  * next mission (Outskirts' is data) */
-static PyObject *Probes_SetNextMission(PyObject *args, const lvProbes_t *p) {
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Probes_SetNextMission(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
+	nativeVal_t l, map;
+	(void)a;
+	(void)out;
+	SaveVars_Delete("NumProbes");
+	LvN_Str(&map, p->map);
+	byte ok = LvN_SaveList("ComSatsMissionsMapsFinished", p->module, &l) && LvN_SaveAppend("ComSatsMissionsMapsFinished", &l, &map);
+	Native_Free(&l);
+	Native_Free(&map);
+	if (ok && p->saves) {
+		for (const char *const *s = p->saves; *s; s += 2) {
+			SaveVar_Set(s[0], s[1]);
+		}
 	}
-	Sf_Run(&f, "Scrap", "DelSaveVars", "(s)", "NumProbes");
-	PyObject *l = Lv_SaveList(&f, "ComSatsMissionsMapsFinished", p->module);
-	Sf_Method(&f, l, "append", "(s)", p->map);
-	Sf_Run(&f, "Scrap", "SetSaveVar", "(sO)", "ComSatsMissionsMapsFinished", Sf_Repr(&f, l));
-	if (p->saves) {
-		Lv_Saves(&f, p->saves);
-	}
-	Lv_Next(&f, p->nextLib, p->nextMap, p->nextDesc);
-	Sf_Run(&f, "SaveGame", "QWayPoint", "()");
-	return Sf_None(&f);
+	return ok && LvN_Next(p->nextLib, p->nextMap, p->nextDesc) && LV_CALL("SaveGame", "QWayPoint", NULL, "");
 }
 
 /* MissionScorer(id): the probes left */
-static PyObject *Probes_MissionScorer(PyObject *args, const lvProbes_t *p) {
-	PyObject *id;
+static byte Probes_MissionScorer(const nativeVal_t *a, const lvProbes_t *p, nativeVal_t *out) {
 	char key[64];
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "O", &id)) {
-		return NULL;
-	}
+	nativeVal_t label, num;
+	(void)out;
 	Str_Printf(key, sizeof(key), "%s_Scorer1", p->module);
-	Sf_Import(&f, "Scorer");
-	Sf_MissionText(&f, id, "NumProbesText", "Text", Lv_TextX(&f, 0), Lv_TextY(&f, 0), "Horatio", "Shadow", Lv_Label(&f, key), "Left", NULL);
-	Sf_MissionText(&f, id, "NumProbes", "Text", Lv_TextX(&f, 0), Lv_TextY(&f, 20), "Horatio", "Shadow",
-		Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "NumProbes"), "Left", NULL);
-	return Sf_None(&f);
+	if (!Mode_Import("Scorer")) {
+		return 0;
+	}
+	nativeVal_t x, y;
+	LvN_Label(key, &label);
+	Native_SetNone(&y);
+	byte ok = LvN_TextX(0, &x) && LvN_TextY(0, &y) &&
+		LvN_MissionText(&a[0], "NumProbesText", "Text", &x, &y, "Horatio", "Shadow", &label, "Left", NULL);
+	Native_Free(&label);
+	Native_Free(&x);
+	Native_Free(&y);
+	if (ok) {
+		Mode_SaveVar("NumProbes", &num);
+		ok = LvN_TextX(0, &x) && LvN_TextY(20, &y) &&
+			LvN_MissionText(&a[0], "NumProbes", "Text", &x, &y, "Horatio", "Shadow", &num, "Left", NULL);
+		Native_Free(&num);
+		Native_Free(&x);
+		Native_Free(&y);
+	}
+	return ok;
 }
 
 #define PROBES_FN(n, fn) \
-	static PyObject *Probes##n##_##fn(PyObject *self, PyObject *args) { \
-		(void)self; \
-		return Probes_##fn(args, &lv_probes[n]); \
-	}
+	static byte Probes##n##_##fn##_C(const nativeVal_t *a, nativeVal_t *out) { \
+		return Probes_##fn(a, &lv_probes[n], out); \
+	} \
+	LV_FN(Probes##n, fn, PROBES_ARGS_##fn, Probes##n##_##fn##_C)
+#define PROBES_ARGS_InitStatus 1
+#define PROBES_ARGS_Init 1
+#define PROBES_ARGS_IsValidPoint 3
+#define PROBES_ARGS_CreateProbes 0
+#define PROBES_ARGS_OnProbeDeath 2
+#define PROBES_ARGS_DestroyShipsInList 1
+#define PROBES_ARGS_DestroyEnemyShips 0
+#define PROBES_ARGS_SetNextMission 0
+#define PROBES_ARGS_MissionScorer 1
 #define PROBES(n) \
 	PROBES_FN(n, InitStatus) PROBES_FN(n, Init) PROBES_FN(n, IsValidPoint) PROBES_FN(n, CreateProbes) PROBES_FN(n, OnProbeDeath) \
 	PROBES_FN(n, DestroyShipsInList) PROBES_FN(n, DestroyEnemyShips) PROBES_FN(n, MissionScorer)
@@ -941,9 +1189,51 @@ byte LvN_SetF(const nativeVal_t *h, const char *var, double d) {
 
 byte LvN_Item(const nativeVal_t *x, long i, nativeVal_t *out) {
 	nativeVal_t k;
-	Native_SetInt(&k, i);
 	Native_SetNone(out);
+	if (x->type == NV_OBJ) {
+		/* OBJLIB 7 */
+		PyObject *n = PyInt_FromLong(i), *r = n ? PyObject_GetItem(x->obj, n) : NULL;
+		Py_XDECREF(n);
+		if (!r) {
+			return 0;
+		}
+		Native_Arg(r, out);
+		Py_DECREF(r);
+		return 1;
+	}
+	Native_SetInt(&k, i);
 	return Native_Subscript(x, &k, out);
+}
+
+void LvN_Elems(const nativeVal_t *v, nativeVal_t *out) {
+	PyObject *o = v->type == NV_OBJ ? v->obj : NULL;
+	if (!o || (!PyList_Check(o) && !PyTuple_Check(o))) {
+		Native_Copy(out, v);
+		return;
+	}
+	/* OBJLIB 7 */
+	int n = PyObject_Length(o);
+	Native_SetEmpty(out, PyList_Check(o) ? NV_LIST : NV_TUPLE);
+	for (int i = 0; i < n; i++) {
+		PyObject *x = PySequence_GetItem(o, i);
+		if (!x) {
+			PyErr_Clear();
+			break;
+		}
+		Native_Arg(x, Native_Append(out));
+		Py_DECREF(x);
+	}
+}
+
+byte LvN_GElems(const char *module, const char *name, nativeVal_t *out) {
+	nativeVal_t v;
+	if (!LvN_GObj(module, name, &v)) {
+		Native_SetNone(out);
+		return 0;
+	}
+	LvN_Elems(&v, out);
+	Native_Free(&v);
+	return 1;
 }
 
 byte LvN_RaiseText(const char *text) {
@@ -1442,4 +1732,133 @@ byte LvN_SetMusic(const char *name, double volume) {
 	SoundSys_SetMusicVolume(g_pSound, (float)volume);
 	SoundSys_SetMusic(g_pSound, name);
 	return 1;
+}
+
+/* Scorer.<var> + d */
+static byte LvN_TextAt(const char *var, long d, nativeVal_t *out) {
+	nativeVal_t v, n;
+	Native_SetNone(out);
+	if (!LvN_ModGet("Scorer", var, &v)) {
+		return 0;
+	}
+	if (!d) {
+		*out = v;
+		return 1;
+	}
+	Native_SetInt(&n, d);
+	byte ok = Native_Arith('+', &v, &n, out);
+	Native_Free(&v);
+	return ok;
+}
+
+byte LvN_TextX(long d, nativeVal_t *out) {
+	return LvN_TextAt("MissionScorerText_X", d, out);
+}
+
+byte LvN_TextY(long d, nativeVal_t *out) {
+	return LvN_TextAt("MissionScorerText_Y", d, out);
+}
+
+/* SScorer.Set(id, item, var, "text") */
+static byte LvN_ScorerSetS(const nativeVal_t *id, const char *item, const char *var, const char *s) {
+	nativeVal_t v;
+	LvN_Str(&v, s);
+	byte ok = LvN_ScorerSet(id, item, var, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+byte LvN_MissionText(const nativeVal_t *id, const char *item, const char *type, const nativeVal_t *x, const nativeVal_t *y,
+	const char *font, const char *effect, const nativeVal_t *text, const char *align, const nativeVal_t *visible) {
+	static const char *const rgba[] = { "Red", "Green", "Blue", "Alpha" };
+	nativeVal_t it;
+	if (type) {
+		LvN_Str(&it, item);
+		byte ok = Mode_ScorerAdd(id, &it, type);
+		Native_Free(&it);
+		if (!ok) {
+			return 0;
+		}
+	}
+	if (!LvN_ScorerSet(id, item, "X", x) || !LvN_ScorerSet(id, item, "Y", y) || !LvN_ScorerSetS(id, item, "Font", font) ||
+		(effect && !LvN_ScorerSetS(id, item, "Effect", effect)) || !LvN_ScorerSet(id, item, "Text", text) ||
+		!LvN_ScorerSetS(id, item, "Align", align)) {
+		return 0;
+	}
+	for (int i = 0; i < 4; i++) {
+		nativeVal_t c, k;
+		Native_SetNone(&k);
+		byte ok = LvN_ModGet("Scorer", "MissionScorerText_Color", &c) && LvN_Item(&c, i, &k) && LvN_ScorerSet(id, item, rgba[i], &k);
+		Native_Free(&c);
+		Native_Free(&k);
+		if (!ok) {
+			return 0;
+		}
+	}
+	return !visible || LvN_ScorerSet(id, item, "Visible", visible);
+}
+
+byte LvN_Calls(const char *module, const char *const *lines) {
+	for (; *lines; lines++) {
+		const char *p = *lines, *bar = strchr(p, '|');
+		char name[0x80];
+		int len = bar ? (int)(bar - p) : (int)strlen(p);
+		if (len >= (int)sizeof(name)) {
+			return Native_Raise(NE_SYSTEM, "bad call in a call table");
+		}
+		memcpy(name, p, len);
+		name[len] = 0;
+		PyObject *fn;
+		if (name[0] == '@') {
+			fn = Mode_GlobalPy(module, name + 1);
+		} else {
+			char *dot = strchr(name, '.');
+			if (!dot) {
+				return Native_Raise(NE_SYSTEM, "bad call in a call table");
+			}
+			*dot = 0;
+			fn = Script_Attr(name, dot + 1);
+		}
+		if (!fn) {
+			return 0;
+		}
+		nativeVal_t args;
+		Native_SetEmpty(&args, NV_TUPLE);
+		byte ok = 1;
+		p = bar;
+		for (int n = 0; p && n < 8 && ok; n++) {
+			const char *next = strchr(p + 1, '|');
+			ok = LvN_Value(p + 1, next ? (int)(next - p - 1) : -1, Native_Append(&args));
+			p = next;
+		}
+		PyObject *a = ok ? Native_ToPy(&args) : NULL;
+		PyObject *r = a ? Script_CallObject(fn, a, NULL) : NULL;
+		Py_XDECREF(r);
+		Py_XDECREF(a);
+		Py_DECREF(fn);
+		Native_Free(&args);
+		if (!r) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+byte LvN_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out) {
+	if ((op != '*' && op != '/' && op != '%') || (a->type != NV_LONG && b->type != NV_LONG)) {
+		return Native_Arith(op, a, b, out);
+	}
+	/* OBJLIB 9 */
+	PyObject *x = Native_ToPy(a), *y = x ? Native_ToPy(b) : NULL, *r = NULL;
+	if (y) {
+		r = op == '*' ? PyNumber_Multiply(x, y) : op == '/' ? PyNumber_Divide(x, y) : PyNumber_Remainder(x, y);
+	}
+	Native_SetNone(out);
+	if (r) {
+		Native_Arg(r, out);
+	}
+	Py_XDECREF(r);
+	Py_XDECREF(y);
+	Py_XDECREF(x);
+	return r != NULL;
 }
