@@ -6,1479 +6,1977 @@
  * spectating and the team menu, and fills the scorer of the HUD (RacerScorer). The mode supplies TeamGame, the menu
  * entries, DeathFunc, CheckEndOfGame, GetGameDescriptor, ShowHelp, ServerHidePlayer and its init functions.
  *
- * The module variables stay in the script and are read and written as its globals (the N* modes change them):
- * Scorer, isScorerVisible, TotalRed, TotalGreen, ModLib, SpectatorMode, GameFinished, USRCOLOR, STDCOLOR, REDCOLOR,
- * GREENCOLOR, MasterFlag, GameScorer, YourPosition, YourScore, Winner, ScorerFraglimit and GameStart. The functions
- * call each other through the module's globals.
+ * Native C (docs/objlib-plan.md, stage 2): the functions work on native values and call the engine in C; the texts
+ * of the network are made and read by the native repr and literal reader (byte for byte as before). The state is the
+ * struct ffa, mirrored into the module dict (OBJLIB 5): the N* modes, the HUD and the tests read and write Scorer,
+ * isScorerVisible, TotalRed, TotalGreen, SpectatorMode, GameFinished, the colours, MasterFlag, GameScorer,
+ * YourPosition, YourScore, Winner, ScorerFraglimit and GameStart there, so the C reads each where the script reads
+ * the global and writes it through at once (Scorer is changed in place, as the script does). ModLib is the module
+ * of the mode: its variables and functions are read through it (OBJLIB 3). The functions call each other through
+ * the module globals, the other ports by name (OBJLIB 3); the engine functions the cases record go through their
+ * seams (OBJLIB 7, scrap/scriptmodes.h); entity handles are the entities found again by name, as the handle finds
+ * them.
  */
 #include <limits.h>
-#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include "scrap/input.h"
+#include "scrap/net.h"
+#include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 
-#define G(n) Sf_Global(&f, "Ffa", n)
-#define LIB(n) Sf_Attr(&f, G("ModLib"), n)
-#define ENT(n) Sf_Ask(&f, "Scrap", "GetEntity", "(s)", n)
-#define GET(n) Sf_Ask(&f, "Scrap", "Get", "(s)", n)
-#define STR(s) Sf_Str(&f, s)
-#define LANG(k) Sf_Lang(&f, Sf_Str(&f, k))
-#define LATER(d) Sf_Op(&f, Sf_Time(&f), '+', Sf_Float(&f, d))
-#define SPECT() Sf_Mod(&f, "RacerScorer", "SPECTATOR_POINTS")
-#define NOARGS() \
-	scriptFrame_t f = { 0 }; \
-	(void)self; \
-	if (!PyArg_ParseTuple(args, "")) { \
-		return NULL; \
+static struct {
+	nativeVal_t scorer;		/* the score of each ship name (a dict) */
+	nativeVal_t isScorerVisible, totalRed, totalGreen, spectatorMode, gameFinished, masterFlag, gameScorer;
+	nativeVal_t yourPosition, yourScore, winner, scorerFraglimit, gameStart, usrColor, stdColor, redColor, greenColor;
+} ffa;
+
+/* the global of the module into its slot of ffa (as the script reads it), a write through */
+#define FR(field, name) Mode_Read("Ffa", name, &ffa.field)
+#define FW(field, name, v) Mode_Put("Ffa", name, &ffa.field, v)
+/* Scorer[key] = v in place */
+#define SCORER_PUT(key, v) Mode_DictPut("Ffa", "Scorer", &ffa.scorer, key, v)
+/* a function of the module through its global (a mission may replace it), another port by name (OBJLIB 3) */
+#define OWN(name, out, ...) Native_CallGlobal("Ffa", name, out, __VA_ARGS__)
+#define CALL(mod, name, out, ...) Native_CallMod(mod, name, out, __VA_ARGS__)
+
+/* ---- helpers ---- */
+
+/* ModLib.name, the object of the mode's module (a new reference) */
+static PyObject *Ffa_LibObj(const char *name) {
+	PyObject *lib = Script_Global("Ffa", "ModLib");
+	PyObject *o = lib ? PyObject_GetAttrString(lib, (char *)name) : NULL;
+	Py_XDECREF(lib);
+	return o;
+}
+
+/* ModLib.name as a value */
+static byte Ffa_LibGet(const char *name, nativeVal_t *out) {
+	PyObject *o = Ffa_LibObj(name);
+	if (!o) {
+		return 0;
 	}
-/* the eleven arguments of the client callbacks: entityname, ModelName, MaxLife, UsrName, PilotName, Motor0, Motor1,
- * Motor2, Motor3, WeaponBay, TgType */
-#define CFGARGS(a) \
-	PyObject *a[11]; \
-	scriptFrame_t f = { 0 }; \
-	(void)self; \
-	if (!PyArg_ParseTuple(args, "OOOOOOOOOOO", &a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7], &a[8], &a[9], &a[10])) { \
-		return NULL; \
+	Native_Arg(o, out);
+	Py_DECREF(o);
+	return 1;
+}
+
+/* truth(ModLib.TeamGame): 1, 0, -1 with the error */
+static int Ffa_Team(void) {
+	nativeVal_t v;
+	if (!Ffa_LibGet("TeamGame", &v)) {
+		return -1;
 	}
+	int t = Native_True(&v);
+	Native_Free(&v);
+	return t;
+}
 
-/* callable(Py_BuildValue args) as a statement: the result dropped */
-static byte Ffa_CallV(scriptFrame_t *f, PyObject *callable, const char *fmt, va_list va) {
-	int mark = f->n;
-	if (callable && !f->failed) {
-		PyObject *args = Py_VaBuildValue((char *)fmt, va);
-		Sf_CallArgs(f, callable, Sf_Check(f, args != NULL) ? args : NULL);
+/* ModLib.name(...) (n of 0, 1 or 3 values), the result into out (NULL: dropped) */
+static byte Ffa_Lib(const char *name, nativeVal_t *out, int n, const nativeVal_t *a, const nativeVal_t *b,
+	const nativeVal_t *c) {
+	PyObject *fn = Ffa_LibObj(name);
+	if (!fn) {
+		return 0;
 	}
-	Sf_Release(f, mark);
-	return Sf_Check(f, callable != NULL);
+	byte ok = n == 0 ? Native_Call(fn, out, "") : n == 1 ? Native_Call(fn, out, "v", a) : Native_Call(fn, out, "vvv", a, b, c);
+	Py_DECREF(fn);
+	return ok;
 }
 
-/* func(args) of Ffa as its own functions call it (through the global), the result dropped */
-static byte Ffa_Run(scriptFrame_t *f, const char *func, const char *fmt, ...) {
-	int mark = f->n;
-	PyObject *fn = Sf_Global(f, "Ffa", func);
-	va_list va;
-	va_start(va, fmt);
-	Ffa_CallV(f, fn, fmt, va);
-	va_end(va);
-	Sf_Release(f, mark);
-	return !f->failed;
+/* module.var = ModLib.name as the object it is (OBJLIB 5) */
+static byte Ffa_LibToMod(const char *module, const char *var, const char *name) {
+	PyObject *o = Ffa_LibObj(name);
+	byte ok = o && Mode_SetModPy(module, var, o);
+	Py_XDECREF(o);
+	return ok;
 }
 
-/* ModLib.name(args), the result dropped */
-static byte Ffa_Lib(scriptFrame_t *f, const char *name, const char *fmt, ...) {
-	int mark = f->n;
-	PyObject *fn = Sf_Attr(f, Sf_Global(f, "Ffa", "ModLib"), name);
-	va_list va;
-	va_start(va, fmt);
-	Ffa_CallV(f, fn, fmt, va);
-	va_end(va);
-	Sf_Release(f, mark);
-	return !f->failed;
+/* module.var = the global name of Ffa as the object it is (a function of the module) */
+static byte Ffa_GlobalToMod(const char *module, const char *var, const char *name) {
+	PyObject *o = Script_Global("Ffa", name);
+	byte ok = o && Mode_SetModPy(module, var, o);
+	Py_XDECREF(o);
+	return ok;
 }
 
-/* SNet.SendUsrString(id, s) */
-static byte Ffa_Send(scriptFrame_t *f, PyObject *id, PyObject *s) {
-	return Sf_Run(f, "SNet", "SendUsrString", "(OO)", id, s);
+/* RacerScorer.SPECTATOR_POINTS (OBJLIB 5) */
+static byte Ffa_Spect(nativeVal_t *out) {
+	return Mode_ModVar("RacerScorer", "SPECTATOR_POINTS", out);
 }
 
-/* SScorer.Set(id, item, var, v) through the module */
-static byte Ffa_Set(scriptFrame_t *f, PyObject *id, PyObject *item, const char *var, PyObject *v) {
-	return Sf_Run(f, "SScorer", "Set", "(OOsO)", id, item, var, v);
+/* Scrap.Get(name) */
+static byte Ffa_Get(modeVals_t *t, const char *name, nativeVal_t **out) {
+	*out = Mode_V(t);
+	return Native_GVarGet(name, *out);
 }
 
-/* `ent.Pos = pos; ent.Ang = 0, ang, 0` */
-static byte Ffa_Place(scriptFrame_t *f, PyObject *ent, PyObject *pos, PyObject *ang) {
-	Sf_SetAttr(f, ent, "Pos", pos);
-	return Sf_SetAttr(f, ent, "Ang", ang ? Sf_Build(f, "(iOi)", 0, ang) : NULL);
+/* the camera of the network game, Scrap.GetEntity("NetCam") (NULL for None) */
+static cEntity *Ffa_Cam(void) {
+	return World_FindEntity("NetCam");
+}
+
+/* x == y, x != y */
+static byte Ffa_Eq(const nativeVal_t *x, const nativeVal_t *y) {
+	return !Native_Compare(x, y);
+}
+
+/* ent.Pos = pos; ent.Ang = (0, ang, 0) of the handle of name (e NULL: None) */
+static byte Ffa_Place(cEntity *e, const char *name, const nativeVal_t *pos, const nativeVal_t *ang) {
+	nativeVal_t a;
+	Native_SetEmpty(&a, NV_TUPLE);
+	Native_SetInt(Native_Append(&a), 0);
+	Native_Copy(Native_Append(&a), ang);
+	Native_SetInt(Native_Append(&a), 0);
+	byte ok = Mode_Set(e, name, "Pos", pos) && Mode_Set(e ? World_FindEntity(name) : NULL, name, "Ang", &a);
+	Native_Free(&a);
+	return ok;
+}
+
+/* the client id of an entity name, int(name[3:]) */
+static byte Ffa_ClientId(modeVals_t *t, const nativeVal_t *name, nativeVal_t *id) {
+	nativeVal_t *num = Mode_V(t);
+	return Native_Slice(name, 3, INT_MAX, num) && Native_ToInt(num, id);
+}
+
+/* `x` of the script as a text value */
+static void Ffa_Repr(const nativeVal_t *v, nativeVal_t *out) {
+	nativeBuf_t b;
+	Native_BufInit(&b);
+	Native_Repr(&b, v, NR_REPR);
+	Native_SetText(out, b.p, b.len);
+	Native_BufFree(&b);
+}
+
+/* Scorer[key] into *out (the global read again) */
+static byte Ffa_Score(const nativeVal_t *key, nativeVal_t *out) {
+	return FR(scorer, "Scorer") && Native_Subscript(&ffa.scorer, key, out);
 }
 
 /* ---- game flow ---- */
 
 /* InitFfa(): the mission scorer and the multiplayer menu entry of the mode */
-static PyObject *Ffa_InitFfa(PyObject *self, PyObject *args) {
-	NOARGS();
-	Sf_Import(&f, "Menu");
-	Sf_SetMod(&f, "Menu", "MissionScorerCall", G("FfaScorer"));
-	Sf_SetMod(&f, "Menu", "MultiplayerMenu", LIB("MultiplayerMenuOnGame"));
-	Sf_SetGlobal(&f, "Ffa", "SpectatorMode", Sf_Int(&f, 0));
-	return Sf_None(&f);
+static byte Ffa_InitFfaC(void) {
+	return Mode_Import("Menu") && Ffa_GlobalToMod("Menu", "MissionScorerCall", "FfaScorer") &&
+		Ffa_LibToMod("Menu", "MultiplayerMenu", "MultiplayerMenuOnGame") && FW(spectatorMode, "SpectatorMode", &(nativeVal_t){ .type = NV_INT });
 }
 
 /* SetupUserShip(entityname): the camera NetCam on the player's ship, the ship at a spawn point */
-static PyObject *Ffa_SetupUserShip(PyObject *self, PyObject *args) {
-	PyObject *name;
-	SF_ARGS("O", &name);
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "OutMap");
-	PyObject *cam = Sf_Ask(&f, "Scrap", "CreateEntity", "(sddds)", "NetCam", 0.0, 0.0, 0.0, "FCam");
-	Sf_Run(&f, "Vehicles", "SetActiveCam", "(OOi)", name, Sf_Attr(&f, cam, "Name"), 0);
-	PyObject *sp = Sf_Ask(&f, "OutMap", "GetSpawnPos", "()");
-	PyObject *us = Sf_Entity(&f, name);
-	Ffa_Place(&f, us, Sf_Item(&f, sp, 0), Sf_Item(&f, sp, 1));
-	return Sf_None(&f);
+static byte Ffa_SetupUserShipC(const nativeVal_t *name) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cname = Mode_S(&t, "NetCam"), *camName = Mode_V(&t), *sp = Mode_V(&t), *pos = Mode_V(&t), *ang = Mode_V(&t);
+	const nativeVal_t *zero = Mode_I(&t, 0);
+	nativeVal_t *z = Mode_V(&t);
+	cEntity *cam, *us;
+	Native_SetFloat(z, 0.0);
+	if (!Mode_Import("Vehicles") || !Mode_Import("OutMap") || !Mode_Create(cname, z, z, z, "FCam", &cam) ||
+		!Mode_Get(cam, "NetCam", "Name", camName) || !CALL("Vehicles", "SetActiveCam", NULL, "vvv", name, camName, zero) ||
+		!CALL("OutMap", "GetSpawnPos", sp, "") || !Mode_Ent(name, &us) || !Native_Subscript(sp, Mode_I(&t, 0), pos) ||
+		!Native_Subscript(sp, Mode_I(&t, 1), ang)) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, Ffa_Place(us, Native_Text(name), pos, ang));
 }
 
 /* RestartOnPress(id): fire pressed after a death, the restart a second later */
-static PyObject *Ffa_RestartOnPress(PyObject *self, PyObject *args) {
-	PyObject *id;
-	SF_ARGS("O", &id);
-	Sf_Run(&f, "SInput", "Bind", "(Osss)", id, "Racer", "Fire", "");
-	Sf_Run(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "DelayedRestartOnTime");
-	Sf_Later(&f, Sf_Float(&f, 1.0), G("DelayedRestartOnPress"), Sf_Build(&f, "(O)", id), "DelayedRestartOnPress");
-	return Sf_None(&f);
+static byte Ffa_RestartOnPressC(const nativeVal_t *id) {
+	return Mode_Bind(id, "Racer", "Fire", "") && Mode_DelSchedS("DelayedRestartOnTime") &&
+		Mode_Later(1.0, "Ffa", "DelayedRestartOnPress", id, 1, "DelayedRestartOnPress");
+}
+
+/* the game over or the player of this machine a spectator: GameFinished or YourScore == SPECTATOR_POINTS */
+static int Ffa_Out(modeVals_t *t) {
+	nativeVal_t *sp = Mode_V(t);
+	if (!FR(gameFinished, "GameFinished")) {
+		return -1;
+	}
+	if (Native_True(&ffa.gameFinished)) {
+		return 1;
+	}
+	if (!FR(yourScore, "YourScore") || !Ffa_Spect(sp)) {
+		return -1;
+	}
+	return Ffa_Eq(&ffa.yourScore, sp);
+}
+
+/* RacerScorer.ScorerTopMessage = ModLib.GetGameDescriptor() */
+static byte Ffa_TopDescriptor(void) {
+	nativeVal_t d;
+	Native_SetNone(&d);
+	byte ok = Ffa_Lib("GetGameDescriptor", &d, 0, NULL, NULL, NULL) && Mode_SetModVar("RacerScorer", "ScorerTopMessage", &d);
+	Native_Free(&d);
+	return ok;
 }
 
 /* DelayedRestartOnPress(id): the dead player's ship comes back (the client asks the server) */
-static PyObject *Ffa_DelayedRestartOnPress(PyObject *self, PyObject *args) {
-	PyObject *id;
-	SF_ARGS("O", &id);
-	Sf_Import(&f, "OutMap");
-	Sf_Import(&f, "RacerScorer");
-	int c = Sf_True(&f, G("GameFinished"));
-	if (c == 0) {
-		c = Sf_Compare(&f, G("YourScore"), "==", SPECT());
+static byte Ffa_DelayedRestartOnPressC(const nativeVal_t *id) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *target = Mode_V(&t), *act = Mode_V(&t), *tn = Mode_V(&t), *cid = Mode_V(&t);
+	if (!Mode_Import("OutMap") || !Mode_Import("RacerScorer")) {
+		return Mode_Done(&t, 0);
 	}
-	if (c != 0) {
-		return Sf_None(&f);
+	int out = Ffa_Out(&t);
+	if (out) {
+		return Mode_Done(&t, out > 0);
 	}
-	PyObject *cam = ENT("NetCam");
-	if (Sf_Compare(&f, cam, "==", Py_None) != 0) {
-		return Sf_None(&f);
+	cEntity *cam = Ffa_Cam(), *tgt;
+	if (!cam) {
+		return Mode_Done(&t, 1);
 	}
-	PyObject *tgt = Sf_Entity(&f, Sf_Attr(&f, cam, "MainTarget"));
-	if (Sf_True(&f, Sf_Attr(&f, tgt, "Active")) != 0) {
-		return Sf_None(&f);
+	if (!Native_EntVar(cam, "NetCam", "MainTarget", target) || !Mode_Ent(target, &tgt) ||
+		!Mode_Get(tgt, Native_Text(target), "Active", act)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_SetMod(&f, "RacerScorer", "ScorerTopMessage", Sf_Method(&f, G("ModLib"), "GetGameDescriptor", "()"));
-	Sf_SetMod(&f, "RacerScorer", "ScorerBotMessage", STR(""));
-	Ffa_Run(&f, "ShowScorer", "(Oi)", id, 0);
-	PyObject *net = Sf_Ask(&f, "Scrap", "GetNetFlags", "()");
-	int client = Sf_True(&f, Sf_Item(&f, net, 0));
-	if (client > 0) {
-		Ffa_Send(&f, Sf_ToInt(&f, Sf_Slice(&f, Sf_Attr(&f, tgt, "Name"), 3, INT_MAX)), STR("R"));
-	} else if (client == 0) {
-		Ffa_Run(&f, "AbortSpectateMode", "()");
-		Ffa_Run(&f, "SetSpawnPos", "(O)", Sf_Attr(&f, tgt, "Name"));
+	if (Native_True(act)) {
+		return Mode_Done(&t, 1);
 	}
-	Sf_Run(&f, "SScorer", "SetMPFunc", "(is)", 0, "Ffa.ShowScorer");
-	return Sf_None(&f);
+	const char *name = Native_Text(target);
+	if (!Ffa_TopDescriptor() || !Mode_SetModVar("RacerScorer", "ScorerBotMessage", Mode_S(&t, "")) ||
+		!OWN("ShowScorer", NULL, "vi", id, 0L)) {
+		return Mode_Done(&t, 0);
+	}
+	int client = Native_NetFlag(0);
+	if (client < 0) {
+		return Mode_Done(&t, 0);
+	}
+	byte ok;
+	if (client) {
+		ok = Mode_NameGet(name, "Name", tn) && Ffa_ClientId(&t, tn, cid) && Mode_Send(cid, Mode_S(&t, "R"));
+	} else {
+		ok = OWN("AbortSpectateMode", NULL, "") && Mode_NameGet(name, "Name", tn) && OWN("SetSpawnPos", NULL, "v", tn);
+	}
+	return Mode_Done(&t, ok && Mode_MPFunc(0, "Ffa.ShowScorer"));
 }
 
 /* OnDeath(LooserName, WinnerName): the death or kill message of the player of this machine */
-static PyObject *Ffa_OnDeath(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	SF_ARGS("OO", &looser, &winner);
-	PyObject *cam = ENT("NetCam");
-	if (Sf_True(&f, cam) <= 0) {
-		return Sf_None(&f);
+static byte Ffa_OnDeathC(const nativeVal_t *looser, const nativeVal_t *winner) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *target = Mode_V(&t), *desc = Mode_V(&t), *text = Mode_V(&t);
+	cEntity *bad;
+	if (!Ffa_Cam()) {
+		return Mode_Done(&t, 1);
 	}
-	if (Sf_Compare(&f, looser, "==", Sf_Attr(&f, cam, "MainTarget")) > 0) {
-		PyObject *bad = Sf_Entity(&f, winner);
-		int b = Sf_True(&f, bad);
-		if (b > 0) {
-			Ffa_Run(&f, "ShowPresFireMessage", "(iO)", 0, Sf_Op(&f, LANG("Net_Title_Death_Kill"), '%', Sf_Attr(&f, bad, "Descriptor")));
-		} else if (b == 0) {
-			Ffa_Run(&f, "ShowPresFireMessage", "(iO)", 0, LANG("Net_Title_Death_Suicide"));
+	if (!Native_EntVar(Ffa_Cam(), "NetCam", "MainTarget", target)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Ffa_Eq(looser, target)) {
+		if (!Mode_Ent(winner, &bad)) {
+			return Mode_Done(&t, 0);
 		}
-	} else if (!f.failed && Sf_Compare(&f, winner, "==", Sf_Attr(&f, cam, "MainTarget")) > 0) {
-		PyObject *bad = Sf_Entity(&f, looser);
-		PyObject *text = Sf_Op(&f, LANG("Net_Msg_You_Kill"), '%', Sf_Attr(&f, bad, "Descriptor"));
-		Sf_Run(&f, "SScorer", "SetMsgText", "(OO)", text, Sf_OpI(&f, Sf_Time(&f), '+', 5));
+		if (bad) {
+			return Mode_Done(&t, Native_EntVar(bad, Native_Text(winner), "Descriptor", desc) &&
+				Mode_LangFmt("Net_Title_Death_Kill", desc, text) && OWN("ShowPresFireMessage", NULL, "iv", 0L, text));
+		}
+		Mode_Lang("Net_Title_Death_Suicide", text);
+		return Mode_Done(&t, OWN("ShowPresFireMessage", NULL, "iv", 0L, text));
 	}
-	return Sf_None(&f);
+	Native_Free(target);
+	if (!Native_EntVar(Ffa_Cam(), "NetCam", "MainTarget", target)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Ffa_Eq(winner, target)) {
+		return Mode_Done(&t, Mode_Ent(looser, &bad) && Mode_Get(bad, Native_Text(looser), "Descriptor", desc) &&
+			Mode_LangFmt("Net_Msg_You_Kill", desc, text) && Mode_MsgText(text, Mode_Time() + 5.0));
+	}
+	return Mode_Done(&t, 1);
 }
 
 /* ShowPresFireMessage(id, msg): the scorer with msg and "press fire"; fire restarts, after 10 s the restart is
  * automatic */
-static PyObject *Ffa_ShowPresFireMessage(PyObject *self, PyObject *args) {
-	PyObject *id, *msg;
-	SF_ARGS("OO", &id, &msg);
-	if (Sf_True(&f, G("GameFinished")) != 0) {
-		return Sf_None(&f);
+static byte Ffa_ShowPresFireMessageC(const nativeVal_t *id, const nativeVal_t *msg) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *bot = Mode_V(&t), *tm = Mode_V(&t), *args = Mode_V(&t), *name = Mode_V(&t);
+	if (!FR(gameFinished, "GameFinished")) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "RacerScorer");
-	Sf_SetMod(&f, "RacerScorer", "ScorerTopMessage", msg);
-	Sf_SetMod(&f, "RacerScorer", "ScorerBotMessage", LANG("Net_Bott_Press_Fire"));
-	Ffa_Run(&f, "ShowScorer", "(Oi)", id, 1);
-	PyObject *timy = Sf_Time(&f);
-	Sf_Schedule(&f, Sf_Op(&f, timy, '+', Sf_Float(&f, 1.0)), Sf_Mod(&f, "SInput", "Bind"),
-		Sf_Build(&f, "(Osss)", id, "Racer", "Fire", "Ffa.RestartOnPress"), NULL);
-	Sf_Run(&f, "SScorer", "SetMPFunc", "(is)", 0, "");
-	if (Sf_Compare(&f, timy, ">", Sf_Int(&f, 10)) > 0) {
-		Sf_Schedule(&f, Sf_Op(&f, timy, '+', Sf_Float(&f, 10.0)), G("DelayedRestartOnTime"), Sf_Build(&f, "(O)", id),
-			"DelayedRestartOnTime");
+	if (Native_True(&ffa.gameFinished)) {
+		return Mode_Done(&t, 1);
 	}
-	return Sf_None(&f);
+	Mode_Lang("Net_Bott_Press_Fire", bot);
+	if (!Mode_Import("RacerScorer") || !Mode_SetModVar("RacerScorer", "ScorerTopMessage", msg) ||
+		!Mode_SetModVar("RacerScorer", "ScorerBotMessage", bot) || !OWN("ShowScorer", NULL, "vi", id, 1L)) {
+		return Mode_Done(&t, 0);
+	}
+	double timy = Mode_Time();
+	/* AddScheduledFunc(timy + 1.0, SInput.Bind, (id, "Racer", "Fire", "Ffa.RestartOnPress")): the function as the
+	 * module holds it */
+	PyObject *bind = Script_Attr("SInput", "Bind");
+	Native_SetFloat(tm, timy + 1.0);
+	Native_SetEmpty(args, NV_LIST);
+	Native_Copy(Native_Append(args), id);
+	Native_SetStr(Native_Append(args), "Racer");
+	Native_SetStr(Native_Append(args), "Fire");
+	Native_SetStr(Native_Append(args), "Ffa.RestartOnPress");
+	byte ok = bind && Mode_Schedule(tm, bind, args->items, 4, NULL);
+	Py_XDECREF(bind);
+	if (!ok || !Mode_MPFunc(0, "")) {
+		return Mode_Done(&t, 0);
+	}
+	if (timy > 10.0) {
+		PyObject *fn = Script_Global("Ffa", "DelayedRestartOnTime");
+		Native_SetFloat(tm, timy + 10.0);
+		Native_SetStr(name, "DelayedRestartOnTime");
+		ok = fn && Mode_Schedule(tm, fn, id, 1, name);
+		Py_XDECREF(fn);
+	}
+	return Mode_Done(&t, ok);
 }
 
 /* DelayedRestartOnTime(id): the automatic restart */
-static PyObject *Ffa_DelayedRestartOnTime(PyObject *self, PyObject *args) {
-	PyObject *id;
-	SF_ARGS("O", &id);
-	Sf_Run(&f, "Scrap", "DeleteScheduledFuncs", "(s)", "DelayedRestartOnPress");
-	Sf_Run(&f, "SInput", "Bind", "(Osss)", id, "Racer", "Fire", "");
-	Ffa_Run(&f, "DelayedRestartOnPress", "(O)", id);
-	return Sf_None(&f);
+static byte Ffa_DelayedRestartOnTimeC(const nativeVal_t *id) {
+	return Mode_DelSchedS("DelayedRestartOnPress") && Mode_Bind(id, "Racer", "Fire", "") &&
+		OWN("DelayedRestartOnPress", NULL, "v", id);
 }
 
 /* EndOfGame(): the results on the scorer, the screen fades to noise */
-static PyObject *Ffa_EndOfGame(PyObject *self, PyObject *args) {
-	NOARGS();
-	Sf_Import(&f, "RacerScorer");
-	Sf_SetGlobal(&f, "Ffa", "GameFinished", Sf_Int(&f, 1));
-	Sf_Run(&f, "SInput", "Bind", "(isss)", 0, "Racer", "Fire", "");
-	Sf_Run(&f, "SScorer", "SetMPFunc", "(is)", 0, "");
-	int team = Sf_True(&f, LIB("TeamGame"));
-	if (team > 0) {
-		Sf_SetMod(&f, "RacerScorer", "ScorerTopMessage", Sf_Own(&f, "Ffa", "GetGameTeamDescriptor", "()"));
-	} else if (team == 0) {
-		Sf_SetMod(&f, "RacerScorer", "ScorerTopMessage", LANG("Net_Title_Game_Results"));
+static byte Ffa_EndOfGameC(void) {
+	static const int clear[4] = { 0, 0, 0, 0 }, dark[4] = { 0, 0, 0, 128 };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *top = Mode_V(&t), *bot = Mode_V(&t), *one = Mode_V(&t);
+	if (!Mode_Import("RacerScorer") || !FW(gameFinished, "GameFinished", Mode_I(&t, 1)) || !Mode_Bind(Mode_I(&t, 0), "Racer", "Fire", "") ||
+		!Mode_MPFunc(0, "")) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_SetMod(&f, "RacerScorer", "ScorerBotMessage", LANG("Net_Bott_Wait_Next_Match"));
-	Ffa_Run(&f, "ShowScorer", "(ii)", 0, 1);
-	if (Sf_Compare(&f, Sf_Ask(&f, "SInput", "GetActionSet", "()"), "!=", STR("Menu")) > 0) {
-		Sf_Run(&f, "Scrap", "Set", "(si)", "NoiseFactorBegin", 0);
-		Sf_Run(&f, "Scrap", "Set", "(si)", "NoiseFactor", 32);
-		Sf_Run(&f, "Scrap", "Set", "(si)", "NoiseTime", 0);
-		Sf_Run(&f, "Scrap", "Set", "(sd)", "NoiseEndTime", 1.0);
-		Sf_Run(&f, "SScorer", "Fade", "(i(iiii)(iiii)d)", 0, 0, 0, 0, 0, 0, 0, 0, 128, 1.0);
+	int team = Ffa_Team();
+	if (team < 0 || (team ? !OWN("GetGameTeamDescriptor", top, "") : (Mode_Lang("Net_Title_Game_Results", top), 0)) ||
+		!Mode_SetModVar("RacerScorer", "ScorerTopMessage", top)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	Mode_Lang("Net_Bott_Wait_Next_Match", bot);
+	if (!Mode_SetModVar("RacerScorer", "ScorerBotMessage", bot) || !OWN("ShowScorer", NULL, "ii", 0L, 1L)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Mode_ActionSetIs("Menu")) {
+		return Mode_Done(&t, 1);
+	}
+	Native_SetFloat(one, 1.0);
+	return Mode_Done(&t, Mode_GVarSet("NoiseFactorBegin", Mode_I(&t, 0)) && Mode_GVarSet("NoiseFactor", Mode_I(&t, 32)) &&
+		Mode_GVarSet("NoiseTime", Mode_I(&t, 0)) && Mode_GVarSet("NoiseEndTime", one) && Mode_Fade(0, clear, dark, 1.0));
 }
 
 /* ServerSendPlayerStatus(WinnerName): the score of one player to all clients */
-static PyObject *Ffa_ServerSendPlayerStatus(PyObject *self, PyObject *args) {
-	PyObject *name;
-	SF_ARGS("O", &name);
-	PyObject *s = Sf_Op(&f, Sf_Op(&f, STR("S+"), '+', name), '+', STR(":"));
-	s = Sf_Op(&f, s, '+', Sf_Repr(&f, Sf_GetItem(&f, G("Scorer"), name)));
-	Ffa_Send(&f, Sf_Int(&f, -1), s);
-	Ffa_Run(&f, "ServerSendTeamData", "()");
-	return Sf_None(&f);
+static byte Ffa_ServerSendPlayerStatusC(const nativeVal_t *name) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *s = Mode_V(&t), *score = Mode_V(&t), *rep = Mode_V(&t);
+	if (!Mode_Cat(&t, s, 3, Mode_S(&t, "S+"), name, Mode_S(&t, ":")) || !Ffa_Score(name, score)) {
+		return Mode_Done(&t, 0);
+	}
+	Ffa_Repr(score, rep);
+	return Mode_Done(&t, Mode_Cat(&t, s, 2, s, rep) && Mode_Send(Mode_I(&t, -1), s) && OWN("ServerSendTeamData", NULL, ""));
 }
 
 /* ServerSendTeamData(): the team totals to all clients */
-static PyObject *Ffa_ServerSendTeamData(PyObject *self, PyObject *args) {
-	NOARGS();
-	if (Sf_True(&f, LIB("TeamGame")) > 0) {
-		PyObject *s = Sf_Op(&f, STR("T"), '+', Sf_Repr(&f, G("TotalRed")));
-		s = Sf_Op(&f, Sf_Op(&f, s, '+', STR(",")), '+', Sf_Repr(&f, G("TotalGreen")));
-		Ffa_Send(&f, Sf_Int(&f, -1), s);
+static byte Ffa_ServerSendTeamDataC(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *s = Mode_V(&t), *red = Mode_V(&t), *green = Mode_V(&t);
+	int team = Ffa_Team();
+	if (team <= 0) {
+		return Mode_Done(&t, team == 0);
 	}
-	return Sf_None(&f);
+	if (!FR(totalRed, "TotalRed")) {
+		return Mode_Done(&t, 0);
+	}
+	Ffa_Repr(&ffa.totalRed, red);
+	if (!Mode_Cat(&t, s, 3, Mode_S(&t, "T"), red, Mode_S(&t, ",")) || !FR(totalGreen, "TotalGreen")) {
+		return Mode_Done(&t, 0);
+	}
+	Ffa_Repr(&ffa.totalGreen, green);
+	return Mode_Done(&t, Mode_Cat(&t, s, 2, s, green) && Mode_Send(Mode_I(&t, -1), s));
 }
 
 /* ServerEndOfGame(): the frag limit is reached: the ships hide, the next map of ServerMapList loads 10 s later */
-static PyObject *Ffa_ServerEndOfGame(PyObject *self, PyObject *args) {
-	NOARGS();
-	Sf_Import(&f, "Init");
-	Sf_Import(&f, "Net");
-	Ffa_Send(&f, Sf_Int(&f, -1), STR("E"));
-	PyObject *e1 = Sf_Ask(&f, "Scrap", "GetFirst", "()");
-	int mark = f.n;
-	while (Sf_True(&f, e1) > 0) {
-		if (Sf_True(&f, Sf_Method(&f, e1, "IsType", "(s)", "Car")) > 0) {
-			Sf_SetAttrI(&f, e1, "Active", 0);
-		}
-		e1 = Sf_Entity(&f, Sf_Attr(&f, e1, "NextInSlot"));
-		Sf_ReleaseKeep(&f, mark, &e1, 1);
+static byte Ffa_ServerEndOfGameC(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *text = Mode_V(&t), *maps = Mode_V(&t), *next = Mode_V(&t), *path = Mode_V(&t), *tail = Mode_V(&t);
+	nativeVal_t *at = Mode_V(&t), *at1 = Mode_V(&t), *len = Mode_V(&t), *m = Mode_V(&t), *tm = Mode_V(&t);
+	if (!Mode_Import("Init") || !Mode_Import("Net") || !Mode_SendS(-1, "E")) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Run(&f, "Net", "PurgeServerMapList", "()");
-	PyObject *maps = Sf_Eval(&f, GET("ServerMapList"), "Ffa"), *next = NULL;
-	int empty = Sf_True(&f, maps);
-	if (empty >= 0) {
-		empty = !empty;
-		if (!empty) {
-			int n = Sf_Len(&f, maps);
-			empty = n < 0 ? -1 : n == 0;
+	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e;) {
+		if (Entity_IsType(e, "Car") && !Mode_SetI(e, e->name, "Active", 0)) {
+			return Mode_Done(&t, 0);
+		}
+		if (!Mode_NextInSlot(&e)) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	if (empty > 0) {
-		next = Sf_Mod(&f, "Init", "Path");
-	} else if (empty == 0) {
-		PyObject *tail = Sf_Slice(&f, Sf_Mod(&f, "Init", "Path"), 7, INT_MAX);
-		int in = Sf_In(&f, tail, maps);
+	if (!CALL("Net", "PurgeServerMapList", NULL, "") || !Native_GVarGet("ServerMapList", text) || !Native_EvalText("Ffa", text, maps)) {
+		return Mode_Done(&t, 0);
+	}
+	int empty = !Native_True(maps);
+	if (!empty) {
+		int n = Native_Size(maps);
+		if (n < 0) {
+			return Mode_Done(&t, 0);
+		}
+		empty = n == 0;
+	}
+	byte ok;
+	if (empty) {
+		ok = Mode_ModVar("Init", "Path", next);
+	} else {
+		ok = Mode_ModVar("Init", "Path", path) && Native_Slice(path, 7, INT_MAX, tail);
+		int in = ok ? Native_Contains(maps, tail) : -1;
+		ok = in >= 0;
 		if (in > 0) {
-			PyObject *at = Sf_OpI(&f, Sf_Method(&f, maps, "index", "(O)", Sf_Slice(&f, Sf_Mod(&f, "Init", "Path"), 7, INT_MAX)), '+', 1);
-			at = Sf_Op(&f, at, '%', Sf_Int(&f, Sf_Len(&f, maps)));
-			next = Sf_Op(&f, STR("Levels/"), '+', Sf_GetItem(&f, maps, at));
+			Native_Free(path);
+			Native_Free(tail);
+			ok = Mode_ModVar("Init", "Path", path) && Native_Slice(path, 7, INT_MAX, tail) && Mode_Index(maps, tail, at) &&
+				Native_Arith('+', at, Mode_I(&t, 1), at1);
+			int n = ok ? Native_Size(maps) : -1;
+			ok = n >= 0;
+			if (ok) {
+				Native_SetInt(len, n);
+				ok = Native_Arith('%', at1, len, at) && Native_Subscript(maps, at, m) && Mode_Cat(&t, next, 2, Mode_S(&t, "Levels/"), m);
+			}
 		} else if (in == 0) {
-			next = Sf_Op(&f, STR("Levels/"), '+', Sf_Item(&f, maps, 0));
+			ok = Native_Subscript(maps, Mode_I(&t, 0), m) && Mode_Cat(&t, next, 2, Mode_S(&t, "Levels/"), m);
 		}
 	}
-	Sf_Later(&f, Sf_Float(&f, 10.0), Sf_Mod(&f, "SNet", "ServerChangeLevel"), Sf_Build(&f, "(O)", next), NULL);
-	Ffa_Run(&f, "EndOfGame", "()");
-	return Sf_None(&f);
+	if (!ok) {
+		return Mode_Done(&t, 0);
+	}
+	/* AddScheduledFunc(Scrap.GetTime() + 10.0, SNet.ServerChangeLevel, (next,)) */
+	PyObject *fn = Script_Attr("SNet", "ServerChangeLevel");
+	Native_SetFloat(tm, Mode_Time() + 10.0);
+	ok = fn && Mode_Schedule(tm, fn, next, 1, NULL);
+	Py_XDECREF(fn);
+	return Mode_Done(&t, ok && OWN("EndOfGame", NULL, ""));
 }
 
 /* ---- deaths ---- */
 
 /* OnDeathServer(LooserName, WinnerName): the server counts the frag (a suicide or a team kill costs one), sends the
  * changed scores and checks the end of the game */
-static PyObject *Ffa_OnDeathServer(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner, *xname, *add;
-	SF_ARGS("OO", &looser, &winner);
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "Init");
-	Sf_Run(&f, "Vehicles", "OnDeath", "(OO)", looser, winner);
-	int w = Sf_Compare(&f, winner, "!=", STR(""));
-	if (w > 0) {
+static byte Ffa_OnDeathServerC(const nativeVal_t *looser, const nativeVal_t *winner) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *lt = Mode_V(&t), *wt = Mode_V(&t), *xprev = Mode_V(&t), *lprev = Mode_V(&t), *now = Mode_V(&t);
+	nativeVal_t *end = Mode_V(&t);
+	const nativeVal_t *xname, *add;
+	if (!Mode_Import("Vehicles") || !Mode_Import("Init") || !CALL("Vehicles", "OnDeath", NULL, "vv", looser, winner)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_Compare(winner, Mode_S(&t, ""))) {
 		xname = winner;
-		int same = Sf_True(&f, LIB("TeamGame"));
-		if (same > 0) {
-			same = Sf_Compare(&f, Sf_Attr(&f, Sf_Entity(&f, looser), "TgType"), "==", Sf_Attr(&f, Sf_Entity(&f, winner), "TgType"));
+		int same = Ffa_Team();
+		if (same < 0) {
+			return Mode_Done(&t, 0);
 		}
-		add = Sf_Int(&f, same > 0 ? -1 : 1);
+		if (same) {
+			if (!Mode_EntGet(looser, "TgType", lt) || !Mode_EntGet(winner, "TgType", wt)) {
+				return Mode_Done(&t, 0);
+			}
+			same = Ffa_Eq(lt, wt);
+		}
+		add = Mode_I(&t, same ? -1 : 1);
 	} else {
 		xname = looser;
-		add = Sf_Int(&f, -1);
+		add = Mode_I(&t, -1);
 	}
-	if (Sf_True(&f, Sf_Method(&f, G("Scorer"), "has_key", "(O)", xname)) == 0) {
-		Sf_SetItem(&f, G("Scorer"), xname, Sf_Int(&f, 0));
+	int has = Mode_HasKey("Ffa", "Scorer", 1, xname);
+	if (has < 0 || (!has && !SCORER_PUT(xname, Mode_I(&t, 0)))) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *xprev = Sf_GetItem(&f, G("Scorer"), xname);
-	PyObject *lprev = Sf_GetItem(&f, G("Scorer"), looser);
-	Ffa_Lib(&f, "DeathFunc", "(OOO)", xname, looser, add);
-	Ffa_Run(&f, "ActualizeGameScorer", "()");
-	if (Sf_Compare(&f, xprev, "!=", Sf_GetItem(&f, G("Scorer"), xname)) > 0) {
-		Ffa_Run(&f, "ServerSendPlayerStatus", "(O)", xname);
+	if (!Ffa_Score(xname, xprev) || !Ffa_Score(looser, lprev) || !Ffa_Lib("DeathFunc", NULL, 3, xname, looser, add) ||
+		!OWN("ActualizeGameScorer", NULL, "") || !Ffa_Score(xname, now)) {
+		return Mode_Done(&t, 0);
 	}
-	int c = Sf_Compare(&f, xname, "!=", looser);
-	if (c > 0) {
-		c = Sf_Compare(&f, lprev, "!=", Sf_GetItem(&f, G("Scorer"), looser));
+	if (!Ffa_Eq(xprev, now) && !OWN("ServerSendPlayerStatus", NULL, "v", xname)) {
+		return Mode_Done(&t, 0);
 	}
-	if (c > 0) {
-		Ffa_Run(&f, "ServerSendPlayerStatus", "(O)", looser);
+	if (!Ffa_Eq(xname, looser)) {
+		Native_Free(now);
+		if (!Ffa_Score(looser, now) || (!Ffa_Eq(lprev, now) && !OWN("ServerSendPlayerStatus", NULL, "v", looser))) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	if (Sf_True(&f, Sf_Method(&f, G("ModLib"), "CheckEndOfGame", "()")) == 0) {
-		Ffa_Run(&f, "OnDeath", "(OO)", looser, winner);
+	if (!Ffa_Lib("CheckEndOfGame", end, 0, NULL, NULL, NULL) || (!Native_True(end) && !OWN("OnDeath", NULL, "vv", looser, winner))) {
+		return Mode_Done(&t, 0);
 	}
-	Ffa_Lib(&f, "ServerHidePlayer", "(O)", looser);
-	return Sf_None(&f);
+	return Mode_Done(&t, Ffa_Lib("ServerHidePlayer", NULL, 1, looser, NULL, NULL));
 }
 
 /* OnDeathClient(LooserName, WinnerName) */
-static PyObject *Ffa_OnDeathClient(PyObject *self, PyObject *args) {
-	PyObject *looser, *winner;
-	SF_ARGS("OO", &looser, &winner);
-	Sf_Import(&f, "Vehicles");
-	Sf_Run(&f, "Vehicles", "OnClientDeath", "(OO)", looser, winner);
-	Ffa_Run(&f, "OnDeath", "(OO)", looser, winner);
-	return Sf_None(&f);
+static byte Ffa_OnDeathClientC(const nativeVal_t *looser, const nativeVal_t *winner) {
+	return Mode_Import("Vehicles") && CALL("Vehicles", "OnClientDeath", NULL, "vv", looser, winner) &&
+		OWN("OnDeath", NULL, "vv", looser, winner);
 }
 
 /* ---- the scorer strings ---- */
 
 /* Scorer2Str(): "<n>,<score>-..." of all players (net<n>) */
-static PyObject *Ffa_Scorer2Str(PyObject *self, PyObject *args) {
-	NOARGS();
-	PyObject *cad = STR("");
-	PyObject *keys = Sf_Method(&f, G("Scorer"), "keys", "()");
-	int mark = f.n;
-	for (int i = 0; !f.failed; i++) {
-		PyObject *ky = Sf_Next(&f, keys, i);
-		if (!ky) {
-			break;
-		}
-		PyObject *s = Sf_Op(&f, Sf_Op(&f, cad, '+', Sf_Slice(&f, ky, 3, INT_MAX)), '+', STR(","));
-		cad = Sf_Op(&f, Sf_Op(&f, s, '+', Sf_Repr(&f, Sf_GetItem(&f, G("Scorer"), ky))), '+', STR("-"));
-		Sf_ReleaseKeep(&f, mark, &cad, 1);
+static byte Ffa_Scorer2StrC(nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cad = Mode_S(&t, ""), *keys = Mode_V(&t);
+	if (!Mode_Keys("Ffa", "Scorer", 1, keys)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_Return(&f, Sf_Slice(&f, cad, 0, -1));
+	int n = Native_ForCount(keys);
+	for (int i = 0; i < n; i++) {
+		int mark = t.n;
+		nativeVal_t *ky = Mode_V(&t), *num = Mode_V(&t), *score = Mode_V(&t), *rep = Mode_V(&t);
+		if (!Native_SeqItem(keys, i, ky) || !Native_Slice(ky, 3, INT_MAX, num) || !Mode_Cat(&t, cad, 3, cad, num, Mode_S(&t, ",")) ||
+			!Ffa_Score(ky, score)) {
+			return Mode_Done(&t, 0);
+		}
+		Ffa_Repr(score, rep);
+		if (!Mode_Cat(&t, cad, 3, cad, rep, Mode_S(&t, "-"))) {
+			return Mode_Done(&t, 0);
+		}
+		Mode_Release(&t, mark);
+	}
+	return Mode_Done(&t, n >= 0 && Native_Slice(cad, 0, -1, out));
 }
 
 /* Str2Scorer(cad): the scores from the text of Scorer2Str */
-static PyObject *Ffa_Str2Scorer(PyObject *self, PyObject *args) {
-	PyObject *cad;
-	SF_ARGS("O", &cad);
-	Sf_Import(&f, "string");
-	Sf_SetGlobal(&f, "Ffa", "Scorer", Sf_Keep(&f, PyDict_New()));
-	PyObject *parts = Sf_Ask(&f, "string", "split", "(Os)", cad, "-");
-	for (int i = 0; !f.failed; i++) {
-		int mark = f.n;
-		PyObject *ky = Sf_Next(&f, parts, i);
-		if (!ky) {
-			break;
-		}
-		PyObject *vals = Sf_Ask(&f, "string", "split", "(Os)", ky, ",");
-		PyObject *v = Sf_ToInt(&f, Sf_Item(&f, vals, 1));
-		Sf_SetItem(&f, G("Scorer"), Sf_Op(&f, STR("net"), '+', Sf_Item(&f, vals, 0)), v);
-		Sf_Release(&f, mark);
+static byte Ffa_Str2ScorerC(const nativeVal_t *cad) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *empty = Mode_V(&t), *parts = Mode_V(&t);
+	Native_SetEmpty(empty, NV_DICT);
+	if (!Mode_Import("string") || !FW(scorer, "Scorer", empty) || !Native_Split(cad, "-", parts)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	for (int i = 0; i < parts->n; i++) {
+		int mark = t.n;
+		nativeVal_t *vals = Mode_V(&t), *v1 = Mode_V(&t), *v = Mode_V(&t), *v0 = Mode_V(&t), *key = Mode_V(&t);
+		if (!Native_Split(&parts->items[i], ",", vals) || !Native_SeqItem(vals, 1, v1) || !Native_ToInt(v1, v) ||
+			!Native_SeqItem(vals, 0, v0) || !Mode_Cat(&t, key, 2, Mode_S(&t, "net"), v0) || !SCORER_PUT(key, v)) {
+			return Mode_Done(&t, 0);
+		}
+		Mode_Release(&t, mark);
+	}
+	return Mode_Done(&t, 1);
 }
 
 /* ---- clients joining, changing ships, leaving ---- */
 
+#define FFA_A11 "vvvvvvvvvvv"
+#define FFA_ARGS(a) &a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7], &a[8], &a[9], &a[10]
+
 /* ClientJoin(entityname, ...): a new player on the server: its ship, its score 0 to all, the scores and the rules to
  * it */
-static PyObject *Ffa_ClientJoin(PyObject *self, PyObject *args) {
-	CFGARGS(a);
-	Sf_Import(&f, "Net");
-	Sf_CallArgs(&f, Sf_Mod(&f, "Net", "ClientJoin"), Script_Ref(args));
-	PyObject *ply = Sf_CallArgs(&f, G("ClientSetConfig"), Script_Ref(args));
-	Ffa_Run(&f, "SetSpawnPos", "(O)", Sf_Attr(&f, ply, "Name"));
-	Sf_SetItem(&f, G("Scorer"), a[0], Sf_Int(&f, 0));
-	Ffa_Run(&f, "ServerSendPlayerStatus", "(O)", a[0]);
-	PyObject *cid = Sf_ToInt(&f, Sf_Slice(&f, a[0], 3, INT_MAX));
-	Ffa_Send(&f, cid, Sf_Op(&f, STR("S="), '+', Sf_Own(&f, "Ffa", "Scorer2Str", "()")));
-	Ffa_Run(&f, "ServerSendTeamData", "()");
-	Ffa_Run(&f, "SendGameRules", "(O)", cid);
-	Sf_SetAttrI(&f, ply, "Active", 0);
-	Ffa_Run(&f, "ActualizeGameScorer", "()");
-	Ffa_Lib(&f, "ServerHidePlayer", "(O)", Sf_Attr(&f, ply, "Name"));
-	Ffa_Run(&f, "PlayerJoinGame", "(O)", Sf_Attr(&f, ply, "Name"));
-	return Sf_None(&f);
+static byte Ffa_ClientJoinC(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ply = Mode_V(&t), *pn = Mode_V(&t), *cid = Mode_V(&t), *str = Mode_V(&t), *s = Mode_V(&t);
+	if (!Mode_Import("Net") || !CALL("Net", "ClientJoin", NULL, FFA_A11, FFA_ARGS(a)) ||
+		!OWN("ClientSetConfig", ply, FFA_A11, FFA_ARGS(a)) || !Mode_VGet(ply, "Name", pn) || !OWN("SetSpawnPos", NULL, "v", pn) ||
+		!SCORER_PUT(&a[0], Mode_I(&t, 0)) || !OWN("ServerSendPlayerStatus", NULL, "v", &a[0]) || !Ffa_ClientId(&t, &a[0], cid) ||
+		!OWN("Scorer2Str", str, "") || !Mode_Cat(&t, s, 2, Mode_S(&t, "S="), str) || !Mode_Send(cid, s) ||
+		!OWN("ServerSendTeamData", NULL, "") || !OWN("SendGameRules", NULL, "v", cid) || !Mode_VSet(ply, "Active", Mode_I(&t, 0)) ||
+		!OWN("ActualizeGameScorer", NULL, "")) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(pn);
+	if (!Mode_VGet(ply, "Name", pn) || !Ffa_Lib("ServerHidePlayer", NULL, 1, pn, NULL, NULL)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(pn);
+	return Mode_Done(&t, Mode_VGet(ply, "Name", pn) && OWN("PlayerJoinGame", NULL, "v", pn));
 }
 
+/* the ship of the player as the engine variables give it, in the order of the "M" message */
+static const char *const ffa_cfg[10] = { "PlayerModel", "PlayerMaxLife", "PlayerName", "PilotModel", "Motor0Model",
+	"Motor1Model", "Motor2Model", "Motor3Model", "WeaponBayList", "PlayerTeamID" };
+
 /* BuildCfgString(): the player's ship as the "M" message sends it, one value per line */
-static PyObject *Ffa_BuildCfgString(PyObject *self, PyObject *args) {
-	static const char *const vars[] = { "PlayerModel", "PlayerMaxLife", "PlayerName", "PilotModel", "Motor0Model",
-		"Motor1Model", "Motor2Model", "Motor3Model", "WeaponBayList", "PlayerTeamID" };
-	NOARGS();
-	PyObject *s = NULL;
+static byte Ffa_BuildCfgStringC(nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *s = Mode_V(&t);
 	for (int i = 0; i < 10; i++) {
-		PyObject *v = GET(vars[i]);
-		if (i == 1 || i == 9) {
-			v = Sf_Repr(&f, v);
+		nativeVal_t *v, *r = Mode_V(&t);
+		if (!Ffa_Get(&t, ffa_cfg[i], &v)) {
+			return Mode_Done(&t, 0);
 		}
-		s = i ? Sf_Op(&f, Sf_Op(&f, s, '+', STR("\n")), '+', v) : v;
+		if (i == 1 || i == 9) {
+			Ffa_Repr(v, r);
+			v = r;
+		}
+		if (i ? !Mode_Cat(&t, s, 3, s, Mode_S(&t, "\n"), v) : (Native_Copy(s, v), 0)) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	return Sf_Return(&f, s);
+	Native_Copy(out, s);
+	return Mode_Done(&t, 1);
+}
+
+/* the ten engine variables of the player's ship into v[0..9] */
+static byte Ffa_Cfg(modeVals_t *t, nativeVal_t **v) {
+	for (int i = 0; i < 10; i++) {
+		if (!Ffa_Get(t, ffa_cfg[i], &v[i])) {
+			return 0;
+		}
+	}
+	return 1;
 }
 
 /* ModiTry(): the player's ship changed (the ship editor): the client asks the server, the server changes its own */
-static PyObject *Ffa_ModiTry(PyObject *self, PyObject *args) {
-	NOARGS();
-	int c = Sf_True(&f, Sf_Ask(&f, "SNet", "IsClient", "()"));
+static byte Ffa_ModiTryC(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cfg = Mode_V(&t), *s = Mode_V(&t), *ename = Mode_V(&t), *v[10];
+	int c = Mode_IsClient();
 	if (c > 0) {
-		Ffa_Send(&f, Sf_Int(&f, 0), Sf_Op(&f, STR("M"), '+', Sf_Own(&f, "Ffa", "BuildCfgString", "()")));
-	} else if (c == 0 && Sf_True(&f, Sf_Ask(&f, "SNet", "IsServer", "()")) > 0) {
-		PyObject *ename = Sf_Attr(&f, ENT("NetCam"), "MainTarget");
-		Ffa_Run(&f, "ClientModify", "(OOOOOOOOOOO)", ename, GET("PlayerModel"), GET("PlayerMaxLife"), GET("PlayerName"),
-			GET("PilotModel"), GET("Motor0Model"), GET("Motor1Model"), GET("Motor2Model"), GET("Motor3Model"),
-			GET("WeaponBayList"), GET("PlayerTeamID"));
+		return Mode_Done(&t, OWN("BuildCfgString", cfg, "") && Mode_Cat(&t, s, 2, Mode_S(&t, "M"), cfg) && Mode_Send(Mode_I(&t, 0), s));
 	}
-	return Sf_None(&f);
+	if (c < 0) {
+		return Mode_Done(&t, 0);
+	}
+	int srv = Mode_IsServer();
+	if (srv <= 0) {
+		return Mode_Done(&t, srv == 0);
+	}
+	return Mode_Done(&t, Mode_Get(Ffa_Cam(), "NetCam", "MainTarget", ename) && Ffa_Cfg(&t, v) &&
+		OWN("ClientModify", NULL, FFA_A11, ename, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9]));
 }
 
 /* ModifyOnReyoin(entityname, ...): the ship of a rejoining player gets its new set up */
-static PyObject *Ffa_ModifyOnReyoin(PyObject *self, PyObject *args) {
-	CFGARGS(a);
-	PyObject *ply = Sf_Entity(&f, a[0]);
-	Sf_SetAttrS(&f, ply, "ActCtrl", "");
-	Sf_Method(&f, ply, "SetModel", "(s)", "");
-	Sf_CallArgs(&f, G("ClientSetConfig"), Script_Ref(args));
-	Sf_SetAttrI(&f, ply, "Active", 0);
-	return Sf_None(&f);
+static byte Ffa_ModifyOnReyoinC(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	cEntity *ply;
+	if (!Mode_Ent(&a[0], &ply) || !Mode_SetS(ply, Native_Text(&a[0]), "ActCtrl", "")) {
+		return Mode_Done(&t, 0);
+	}
+	/* ply.SetModel(""): the method of the handle */
+	cEntity *e = World_FindEntity(Native_Text(&a[0]));
+	if (!e) {
+		nativeVal_t x;
+		return Mode_Done(&t, Native_EntVar(NULL, Native_Text(&a[0]), "SetModel", &x));
+	}
+	Entity_SetModel(e, "", 1.0f, 1.0f, 1.0f, 1);
+	return Mode_Done(&t, OWN("ClientSetConfig", NULL, FFA_A11, FFA_ARGS(a)) && Mode_NameSet(Native_Text(&a[0]), "Active", Mode_I(&t, 0)));
 }
 
 /* ClientModify(entityname, ...): a pending change of the ship replaced by this one */
-static PyObject *Ffa_ClientModify(PyObject *self, PyObject *args) {
-	CFGARGS(a);
-	Sf_Run(&f, "Scrap", "DeleteScheduledFuncs", "(O)", Sf_Op(&f, a[0], '+', STR("Modify")));
-	Sf_CallArgs(&f, G("TryToModify"), Script_Ref(args));
-	return Sf_None(&f);
+static byte Ffa_ClientModifyC(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *name = Mode_V(&t);
+	return Mode_Done(&t, Mode_Cat(&t, name, 2, &a[0], Mode_S(&t, "Modify")) && Mode_DelSched(name) &&
+		OWN("TryToModify", NULL, FFA_A11, FFA_ARGS(a)));
 }
 
 /* TryToModify(entityname, ...): the ship changes while it is inactive, else it tries again 0.75 s later */
-static PyObject *Ffa_TryToModify(PyObject *self, PyObject *args) {
-	CFGARGS(a);
-	PyObject *ply = Sf_Entity(&f, a[0]);
-	int c = Sf_True(&f, ply);
-	if (c > 0) {
-		c = Sf_True(&f, Sf_Attr(&f, ply, "Active"));
-		c = c < 0 ? c : !c;
+static byte Ffa_TryToModifyC(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *act = Mode_V(&t), *cid = Mode_V(&t), *tm = Mode_V(&t), *name = Mode_V(&t);
+	cEntity *ply;
+	if (!Mode_Ent(&a[0], &ply)) {
+		return Mode_Done(&t, 0);
 	}
-	if (c > 0) {
-		Sf_CallArgs(&f, G("ModifyOnReyoin"), Script_Ref(args));
-		Sf_Run(&f, "SNet", "ModifyUsrData", "(O)", Sf_ToInt(&f, Sf_Slice(&f, a[0], 3, INT_MAX)));
-	} else if (c == 0) {
-		PyObject *t = LATER(0.75), *fn = G("TryToModify");
-		Sf_Ask(&f, "Scrap", "AddScheduledFunc", "(OOOO)", t, fn, args, Sf_Op(&f, a[0], '+', STR("Modify")));
+	int c = ply != NULL;
+	if (c) {
+		if (!Native_EntVar(ply, Native_Text(&a[0]), "Active", act)) {
+			return Mode_Done(&t, 0);
+		}
+		c = !Native_True(act);
 	}
-	return Sf_None(&f);
+	if (c) {
+		return Mode_Done(&t, OWN("ModifyOnReyoin", NULL, FFA_A11, FFA_ARGS(a)) && Ffa_ClientId(&t, &a[0], cid) && Mode_ModifyUsrData(cid));
+	}
+	/* AddScheduledFunc(Scrap.GetTime() + 0.75, TryToModify, args, entityname + "Modify") */
+	PyObject *fn = Script_Global("Ffa", "TryToModify");
+	Native_SetFloat(tm, Mode_Time() + 0.75);
+	byte ok = fn && Mode_Cat(&t, name, 2, &a[0], Mode_S(&t, "Modify")) && Mode_Schedule(tm, fn, a, 11, name);
+	Py_XDECREF(fn);
+	return Mode_Done(&t, ok);
 }
 
 /* PlayerMsgShow(streang, entityname): streang % the player's name for 2.5 s (not in the first 2.5 s of a level) */
-static PyObject *Ffa_PlayerMsgShow(PyObject *self, PyObject *args) {
-	PyObject *text, *name;
-	SF_ARGS("OO", &text, &name);
-	if (Sf_Compare(&f, Sf_Time(&f), ">", Sf_Float(&f, 2.5)) > 0) {
-		PyObject *e = Sf_Entity(&f, name);
-		int c = Sf_True(&f, e);
-		if (c > 0) {
-			c = Sf_Compare(&f, Sf_Attr(&f, e, "Descriptor"), "!=", STR(""));
-		}
-		if (c > 0) {
-			PyObject *msg = Sf_Op(&f, text, '%', Sf_Attr(&f, e, "Descriptor"));
-			Sf_Run(&f, "SScorer", "SetMsgText", "(OO)", msg, LATER(2.5));
-		}
+static byte Ffa_PlayerMsgShowC(const nativeVal_t *text, const nativeVal_t *name) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *desc = Mode_V(&t), *msg = Mode_V(&t);
+	cEntity *e;
+	if (Mode_Time() <= 2.5) {
+		return Mode_Done(&t, 1);
 	}
-	return Sf_None(&f);
-}
-
-/* PlayerDisconected(entityname), PlayerSpectator(entityname) */
-static PyObject *Ffa_Msg(PyObject *self, PyObject *args, const char *text) {
-	PyObject *name;
-	SF_ARGS("O", &name);
-	Ffa_Run(&f, "PlayerMsgShow", "(sO)", text, name);
-	return Sf_None(&f);
-}
-
-static PyObject *Ffa_PlayerDisconected(PyObject *self, PyObject *args) {
-	return Ffa_Msg(self, args, "%s leaves the match.");
-}
-
-static PyObject *Ffa_PlayerSpectator(PyObject *self, PyObject *args) {
-	return Ffa_Msg(self, args, "%s becomes spectator.");
+	if (!Mode_Ent(name, &e)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!e) {
+		return Mode_Done(&t, 1);
+	}
+	if (!Native_EntVar(e, Native_Text(name), "Descriptor", desc)) {
+		return Mode_Done(&t, 0);
+	}
+	if (!Native_Compare(desc, Mode_S(&t, ""))) {
+		return Mode_Done(&t, 1);
+	}
+	Native_Free(desc);
+	return Mode_Done(&t, Native_EntVar(e, Native_Text(name), "Descriptor", desc) && Native_Arith('%', text, desc, msg) &&
+		Mode_MsgText(msg, Mode_Time() + 2.5));
 }
 
 /* PlayerJoinGame(entityname): the join message of the player's team */
-static PyObject *Ffa_PlayerJoinGame(PyObject *self, PyObject *args) {
+static byte Ffa_PlayerJoinGameC(const nativeVal_t *name) {
 	static const char *const types[][2] = { { "killer", "%s joins the game." }, { "red", "%s joins red team." },
 		{ "green", "%s joins green team." } };
-	PyObject *name;
-	SF_ARGS("O", &name);
-	PyObject *e = Sf_Entity(&f, name);
-	if (Sf_True(&f, e) > 0) {
-		for (int i = 0; i < 3; i++) {
-			int c = Sf_EqS(&f, Sf_Attr(&f, e, "TgType"), types[i][0]);
-			if (c != 0) {
-				if (c > 0) {
-					Ffa_Run(&f, "PlayerMsgShow", "(sO)", types[i][1], name);
-				}
-				break;
-			}
+	modeVals_t t = { .n = 0 };
+	cEntity *e;
+	if (!Mode_Ent(name, &e)) {
+		return Mode_Done(&t, 0);
+	}
+	for (int i = 0; e && i < 3; i++) {
+		nativeVal_t *tg = Mode_V(&t);
+		if (!Native_EntVar(e, Native_Text(name), "TgType", tg)) {
+			return Mode_Done(&t, 0);
+		}
+		if (Native_IsStr(tg, types[i][0])) {
+			return Mode_Done(&t, OWN("PlayerMsgShow", NULL, "sv", types[i][1], name));
 		}
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, 1);
 }
 
 /* ClientExit(entityname, ModelName, UsrName): a player leaves: its score goes */
-static PyObject *Ffa_ClientExit(PyObject *self, PyObject *args) {
-	PyObject *name, *model, *usr;
-	SF_ARGS("OOO", &name, &model, &usr);
-	Ffa_Lib(&f, "ServerHidePlayer", "(O)", name);
-	if (Sf_True(&f, Sf_Method(&f, G("Scorer"), "has_key", "(O)", name)) > 0) {
-		Ffa_Run(&f, "PlayerDisconected", "(O)", name);
-		Sf_DelItem(&f, G("Scorer"), name);
-		Ffa_Send(&f, Sf_Int(&f, -1), Sf_Op(&f, STR("S-"), '+', name));
-		Ffa_Run(&f, "ActualizeGameScorer", "()");
+static byte Ffa_ClientExitC(const nativeVal_t *name) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *s = Mode_V(&t);
+	if (!Ffa_Lib("ServerHidePlayer", NULL, 1, name, NULL, NULL)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	int has = Mode_HasKey("Ffa", "Scorer", 1, name);
+	if (has <= 0) {
+		return Mode_Done(&t, has == 0);
+	}
+	return Mode_Done(&t, OWN("PlayerDisconected", NULL, "v", name) && Mode_DictDel("Ffa", "Scorer", &ffa.scorer, name) &&
+		Mode_Cat(&t, s, 2, Mode_S(&t, "S-"), name) && Mode_Send(Mode_I(&t, -1), s) && OWN("ActualizeGameScorer", NULL, ""));
 }
 
 /* ---- spawning ---- */
 
 /* ReSpawnClient(entityName): the ship of a client comes back */
-static PyObject *Ffa_ReSpawnClient(PyObject *self, PyObject *args) {
-	PyObject *name;
-	SF_ARGS("O", &name);
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "RacerScorer");
-	Ffa_Run(&f, "AbortSpectateMode", "()");
-	if (Sf_EqS(&f, Sf_Ask(&f, "SInput", "GetActionSet", "()"), "Racer") > 0) {
-		Sf_Run(&f, "RacerScorer", "Create", "(i)", 0);
+static byte Ffa_ReSpawnClientC(const nativeVal_t *name) {
+	modeVals_t t = { .n = 0 };
+	return Mode_Done(&t, Mode_Import("Vehicles") && Mode_Import("RacerScorer") && OWN("AbortSpectateMode", NULL, "") &&
+		(!Mode_ActionSetIs("Racer") || CALL("RacerScorer", "Create", NULL, "i", 0L)) && CALL("Vehicles", "ReSpawnShip", NULL, "v", name) &&
+		Mode_EntSet(name, "OnDeath", Mode_S(&t, "Ffa.OnDeathClient")));
+}
+
+static byte Ffa_ImportSpawn(void) {
+	static const char *const mods[] = { "Vehicles", "Net", "OutMap", "RacerScorer" };
+	for (int i = 0; i < 4; i++) {
+		if (!Mode_Import(mods[i])) {
+			return 0;
+		}
 	}
-	Sf_Run(&f, "Vehicles", "ReSpawnShip", "(O)", name);
-	Sf_SetAttrS(&f, Sf_Entity(&f, name), "OnDeath", "Ffa.OnDeathClient");
-	return Sf_None(&f);
+	return 1;
 }
 
 /* ServerRemoveSpectatorState(entityName): a spectator plays again with 0 points */
-static PyObject *Ffa_ServerRemoveSpectatorState(PyObject *self, PyObject *args) {
-	PyObject *name;
-	SF_ARGS("O", &name);
-	static const char *const mods[] = { "Vehicles", "Net", "OutMap", "RacerScorer" };
-	for (int i = 0; i < 4; i++) {
-		Sf_Import(&f, mods[i]);
+static byte Ffa_ServerRemoveSpectatorStateC(const nativeVal_t *name) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *score = Mode_V(&t), *sp = Mode_V(&t), *target = Mode_V(&t);
+	if (!Ffa_ImportSpawn()) {
+		return Mode_Done(&t, 0);
 	}
-	int c = Sf_True(&f, Sf_Method(&f, G("Scorer"), "has_key", "(O)", name));
+	int c = Mode_HasKey("Ffa", "Scorer", 1, name);
 	if (c > 0) {
-		c = Sf_Compare(&f, Sf_GetItem(&f, G("Scorer"), name), "==", SPECT());
-	}
-	if (c > 0) {
-		Sf_SetItem(&f, G("Scorer"), name, Sf_Int(&f, 0));
-		Ffa_Run(&f, "ServerSendPlayerStatus", "(O)", name);
-		Ffa_Run(&f, "ActualizeGameScorer", "()");
-		PyObject *cam = ENT("NetCam");
-		int j = Sf_True(&f, cam);
-		j = j < 0 ? j : !j;
-		if (j == 0) {
-			j = Sf_Compare(&f, Sf_Attr(&f, cam, "MainTarget"), "!=", name);
+		if (!Ffa_Score(name, score) || !Ffa_Spect(sp)) {
+			return Mode_Done(&t, 0);
 		}
-		if (j > 0) {
-			Ffa_Run(&f, "PlayerJoinGame", "(O)", name);
-		}
+		c = Ffa_Eq(score, sp);
 	}
-	return Sf_None(&f);
+	if (c <= 0) {
+		return Mode_Done(&t, c == 0);
+	}
+	if (!SCORER_PUT(name, Mode_I(&t, 0)) || !OWN("ServerSendPlayerStatus", NULL, "v", name) || !OWN("ActualizeGameScorer", NULL, "")) {
+		return Mode_Done(&t, 0);
+	}
+	cEntity *cam = Ffa_Cam();
+	int j = !cam;
+	if (!j) {
+		if (!Native_EntVar(cam, "NetCam", "MainTarget", target)) {
+			return Mode_Done(&t, 0);
+		}
+		j = !Ffa_Eq(target, name);
+	}
+	return Mode_Done(&t, !j || OWN("PlayerJoinGame", NULL, "v", name));
 }
 
 /* SetSpawnPos(entityName): the server puts a ship back at a free spawn point (next to the one there when taken) */
-static PyObject *Ffa_SetSpawnPos(PyObject *self, PyObject *args) {
-	PyObject *name;
-	SF_ARGS("O", &name);
-	static const char *const mods[] = { "Vehicles", "Net", "OutMap", "RacerScorer" };
-	for (int i = 0; i < 4; i++) {
-		Sf_Import(&f, mods[i]);
+static byte Ffa_SetSpawnPosC(const nativeVal_t *name) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *pos = Mode_V(&t), *res = Mode_V(&t), *vr1 = Mode_V(&t), *vr2 = Mode_V(&t), *dist = Mode_V(&t);
+	nativeVal_t *p0 = Mode_V(&t), *p1 = Mode_V(&t), *epos = Mode_V(&t), *at = Mode_V(&t), *sp = Mode_V(&t);
+	cEntity *entity, *e;
+	if (!Ffa_ImportSpawn() || !OWN("ServerRemoveSpectatorState", NULL, "v", name) || !CALL("Vehicles", "ReSpawnShip", NULL, "v", name) ||
+		!Mode_Ent(name, &entity) || !CALL("OutMap", "GetFreeSpawn", pos, "") || !Mode_ModVar("OutMap", "SpawRes", res)) {
+		return Mode_Done(&t, 0);
 	}
-	Ffa_Run(&f, "ServerRemoveSpectatorState", "(O)", name);
-	Sf_Run(&f, "Vehicles", "ReSpawnShip", "(O)", name);
-	PyObject *entity = Sf_Entity(&f, name);
-	PyObject *pos = Sf_Ask(&f, "OutMap", "GetFreeSpawn", "()");
-	if (Sf_True(&f, Sf_Mod(&f, "OutMap", "SpawRes")) > 0) {
-		PyObject *e = Sf_Entity(&f, Sf_Mod(&f, "OutMap", "SpawRes"));
-		PyObject *dist = Sf_Op(&f, Sf_Attr(&f, e, "VRadius"), '+', Sf_Attr(&f, entity, "VRadius"));
-		dist = Sf_OpI(&f, Sf_OpI(&f, dist, '+', 10), '/', 2);
-		PyObject *at = Sf_Ask(&f, "SVec", "Add", "(O(OOO))", Sf_Attr(&f, e, "Pos"), dist, dist, dist);
-		pos = Sf_Build(&f, "(OO)", at, Sf_Item(&f, pos, 1));
+	const char *en = Native_Text(name);
+	byte live = entity != NULL;
+	if (Native_True(res)) {
+		Native_Free(res);
+		if (!Mode_ModVar("OutMap", "SpawRes", res) || !Mode_Ent(res, &e) || !Mode_Get(e, Native_Text(res), "VRadius", vr1) ||
+			!(live ? Mode_NameGet(en, "VRadius", vr2) : Mode_Get(NULL, en, "VRadius", vr2)) || !Native_Arith('+', vr1, vr2, dist) ||
+			!Native_Arith('+', dist, Mode_I(&t, 10), vr1) || !Native_Arith('/', vr1, Mode_I(&t, 2), dist) ||
+			!Native_EntVar(e, Native_Text(res), "Pos", epos)) {
+			return Mode_Done(&t, 0);
+		}
+		/* SVec.Add(e.Pos, (dist, dist, dist)) */
+		nativeVal_t *d3 = Mode_V(&t);
+		Native_SetEmpty(d3, NV_TUPLE);
+		for (int k = 0; k < 3; k++) {
+			Native_Copy(Native_Append(d3), dist);
+		}
+		if (!Mode_VecAdd(epos, d3, at)) {
+			return Mode_Done(&t, 0);
+		}
+		if (!Native_Subscript(pos, Mode_I(&t, 1), p1)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_SetEmpty(sp, NV_TUPLE);
+		Native_Copy(Native_Append(sp), at);
+		Native_Copy(Native_Append(sp), p1);
+		Native_Free(pos);
+		Native_Copy(pos, sp);
+		Native_Free(p1);
 	}
-	Ffa_Place(&f, entity, Sf_Item(&f, pos, 0), Sf_Item(&f, pos, 1));
-	Sf_SetAttrS(&f, entity, "OnDeath", "Ffa.OnDeathServer");
-	return Sf_None(&f);
+	if (!Native_Subscript(pos, Mode_I(&t, 0), p0) || !Native_Subscript(pos, Mode_I(&t, 1), p1) ||
+		!Ffa_Place(live ? World_FindEntity(en) : NULL, en, p0, p1)) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, live ? Mode_NameSet(en, "OnDeath", Mode_S(&t, "Ffa.OnDeathServer")) : Mode_SetS(NULL, en, "OnDeath", ""));
 }
 
 /* ---- server and client start ---- */
 
 /* InitServer(dedicated): the server's callbacks, the server player's own ship unless dedicated, the mode */
-static PyObject *Ffa_InitServer(PyObject *self, PyObject *args) {
+static byte Ffa_InitServerC(const nativeVal_t *dedicated) {
 	static const char *const cbs[][2] = { { "OnClientJoin", "Ffa.ClientJoin" }, { "OnClientModify", "Ffa.ModifyOnReyoin" },
 		{ "OnClientExit", "Ffa.ClientExit" }, { "OnUsrString", "Ffa.OnUsrServer" } };
-	PyObject *dedicated;
-	SF_ARGS("O", &dedicated);
-	Ffa_Run(&f, "InitFfa", "()");
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *bot = Mode_V(&t), *z = Mode_V(&t), *pname = Mode_V(&t), *v[10], *pn = Mode_V(&t), *player = Mode_V(&t);
+	char nb[128];
+	cEntity *ply;
+	if (!OWN("InitFfa", NULL, "")) {
+		return Mode_Done(&t, 0);
+	}
 	for (int i = 0; i < 4; i++) {
-		Sf_Run(&f, "Scrap", "Set", "(ss)", cbs[i][0], cbs[i][1]);
+		if (!Mode_GVarSetS(cbs[i][0], cbs[i][1])) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	if (Sf_True(&f, dedicated) == 0) {
-		PyObject *ply = Sf_Ask(&f, "Scrap", "CreateEntity", "(Oddds)", Sf_Ask(&f, "SNet", "GetBotName", "()"), 0.0, 0.0, 0.0, "Car");
-		PyObject *pname = Sf_Attr(&f, ply, "Name");
-		Ffa_Run(&f, "ClientJoin", "(OOOOOOOOOOO)", pname, GET("PlayerModel"), GET("PlayerMaxLife"), GET("PlayerName"),
-			GET("PilotModel"), GET("Motor0Model"), GET("Motor1Model"), GET("Motor2Model"), GET("Motor3Model"),
-			GET("WeaponBayList"), GET("PlayerTeamID"));
-		Ffa_Run(&f, "SetupUserShip", "(O)", Sf_Attr(&f, ply, "Name"));
-		Sf_SetAttr(&f, ply, "Descriptor", GET("PlayerName"));
-		Sf_SetAttrI(&f, ply, "Active", 0);
-		Ffa_Run(&f, "StdInitFfa", "()");
+	if (!Native_True(dedicated)) {
+		Net_GetBotName(nb);
+		Native_SetStr(bot, nb);
+		Native_SetFloat(z, 0.0);
+		if (!Mode_Create(bot, z, z, z, "Car", &ply) || !Mode_Get(ply, NULL, "Name", pname) || !Ffa_Cfg(&t, v) ||
+			!OWN("ClientJoin", NULL, FFA_A11, pname, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9])) {
+			return Mode_Done(&t, 0);
+		}
+		const char *n = Native_Text(pname);
+		if (!Mode_NameGet(n, "Name", pn) || !OWN("SetupUserShip", NULL, "v", pn) || !Native_GVarGet("PlayerName", player) ||
+			!Mode_NameSet(n, "Descriptor", player) || !Mode_NameSet(n, "Active", Mode_I(&t, 0)) || !OWN("StdInitFfa", NULL, "")) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	Ffa_Lib(&f, "InitServerMod", "()");
-	return Sf_None(&f);
+	return Mode_Done(&t, Ffa_Lib("InitServerMod", NULL, 0, NULL, NULL, NULL));
 }
 
 /* ClientSetConfig(entityname, ...): the ship of a player set up (the server's own ship when ForceServerVehicle), its
- * team; a client respawns it or names the death callback */
-static PyObject *Ffa_ClientSetConfig(PyObject *self, PyObject *args) {
-	CFGARGS(a);
-	PyObject *v = NULL;
-	Sf_Import(&f, "Vehicles");
-	int force = Sf_True(&f, GET("ForceServerVehicle"));
-	if (force > 0) {
-		v = Sf_Ask(&f, "Vehicles", "SetProperties", "(OOOOOOOOOO)", a[0], GET("PlayerModel"), GET("PlayerMaxLife"), a[4],
-			GET("Motor0Model"), GET("Motor1Model"), GET("Motor2Model"), GET("Motor3Model"), GET("WeaponBayList"), a[3]);
-	} else if (force == 0) {
-		v = Sf_Ask(&f, "Vehicles", "SetProperties", "(OOOOOOOOOO)", a[0], a[1], a[2], a[4], a[5], a[6], a[7], a[8], a[9], a[3]);
+ * team; a client respawns it or names the death callback; the ship's handle back (OBJLIB 7: as Vehicles gave it) */
+static byte Ffa_ClientSetConfigC(const nativeVal_t *a, nativeVal_t *v) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *force, *g[10], *act = Mode_V(&t), *target = Mode_V(&t);
+	if (!Mode_Import("Vehicles") || !Ffa_Get(&t, "ForceServerVehicle", &force)) {
+		return Mode_Done(&t, 0);
 	}
-	int team = Sf_True(&f, LIB("TeamGame"));
-	if (team > 0) {
-		int red = Sf_EqI(&f, a[10], 0);
-		if (red >= 0) {
-			Sf_SetAttrS(&f, v, "TgType", red ? "red" : "green");
+	byte ok;
+	if (Native_True(force)) {
+		ok = Ffa_Cfg(&t, g) && CALL("Vehicles", "SetProperties", v, "vvvvvvvvvv", &a[0], g[0], g[1], &a[4], g[4], g[5], g[6], g[7],
+			g[8], &a[3]);
+	} else {
+		ok = CALL("Vehicles", "SetProperties", v, "vvvvvvvvvv", &a[0], &a[1], &a[2], &a[4], &a[5], &a[6], &a[7], &a[8], &a[9], &a[3]);
+	}
+	if (!ok) {
+		return Mode_Done(&t, 0);
+	}
+	int team = Ffa_Team();
+	if (team < 0 || !Mode_VSet(v, "TgType", Mode_S(&t, team ? (Ffa_Eq(&a[10], Mode_I(&t, 0)) ? "red" : "green") : "killer"))) {
+		return Mode_Done(&t, 0);
+	}
+	int client = Native_NetFlag(0);
+	if (client < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (client) {
+		if (!Mode_VGet(v, "Active", act)) {
+			return Mode_Done(&t, 0);
 		}
-	} else if (team == 0) {
-		Sf_SetAttrS(&f, v, "TgType", "killer");
-	}
-	PyObject *net = Sf_Ask(&f, "Scrap", "GetNetFlags", "()");
-	if (Sf_True(&f, Sf_Item(&f, net, 0)) > 0) {
-		int act = Sf_True(&f, Sf_Attr(&f, v, "Active"));
-		if (act > 0) {
-			Ffa_Run(&f, "ReSpawnClient", "(O)", a[0]);
-		} else if (act == 0 && Sf_Compare(&f, Sf_Attr(&f, ENT("NetCam"), "MainTarget"), "!=", a[0]) > 0) {
-			Sf_SetAttrS(&f, Sf_Entity(&f, a[0]), "OnDeath", "Ffa.OnDeathClient");
+		if (Native_True(act)) {
+			ok = OWN("ReSpawnClient", NULL, "v", &a[0]);
+		} else {
+			ok = Mode_Get(Ffa_Cam(), "NetCam", "MainTarget", target) &&
+				(Ffa_Eq(target, &a[0]) || Mode_EntSet(&a[0], "OnDeath", Mode_S(&t, "Ffa.OnDeathClient")));
 		}
 	}
-	Ffa_Run(&f, "ActualizeGameScorer", "()");
-	return Sf_Return(&f, v);
-}
-
-/* ClientAfterCreate(EntityName, ResourceName), ClientCreate(EntityName, ResourceName): on to Net's callbacks */
-static PyObject *Ffa_NetCreate(PyObject *self, PyObject *args, const char *func) {
-	PyObject *name, *res;
-	SF_ARGS("OO", &name, &res);
-	Sf_Import(&f, "Net");
-	Sf_Run(&f, "Net", func, "(OO)", name, res);
-	return Sf_None(&f);
-}
-
-static PyObject *Ffa_ClientAfterCreate(PyObject *self, PyObject *args) {
-	return Ffa_NetCreate(self, args, "ClientAfterCreate");
-}
-
-static PyObject *Ffa_ClientCreate(PyObject *self, PyObject *args) {
-	return Ffa_NetCreate(self, args, "ClientCreate");
+	return Mode_Done(&t, ok && OWN("ActualizeGameScorer", NULL, ""));
 }
 
 /* ---- the user strings ---- */
 
-/* OnUsrTest(id, str): prints them */
-static PyObject *Ffa_OnUsrTest(PyObject *self, PyObject *args) {
-	PyObject *id, *s;
-	SF_ARGS("OO", &id, &s);
-	Sf_Print(&f, "OO", id, s);
-	return Sf_None(&f);
+/* SvrShowMsg(Msg): a message on the server and all clients */
+static byte Ffa_SvrShowMsgC(const nativeVal_t *msg) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *s = Mode_V(&t);
+	return Mode_Done(&t, Mode_MsgText(msg, Mode_Time() + 5.0) && Mode_Cat(&t, s, 2, Mode_S(&t, "!"), msg) && Mode_Send(Mode_I(&t, -1), s));
 }
 
-/* SvrShowMsg(Msg): a message on the server and all clients */
-static PyObject *Ffa_SvrShowMsg(PyObject *self, PyObject *args) {
-	PyObject *msg;
-	SF_ARGS("O", &msg);
-	Sf_Run(&f, "SScorer", "SetMsgText", "(OO)", msg, Sf_OpI(&f, Sf_Time(&f), '+', 5));
-	Ffa_Send(&f, Sf_Int(&f, -1), Sf_Op(&f, STR("!"), '+', msg));
-	return Sf_None(&f);
+/* the "S+name:points" message of OnUsrClient */
+static byte Ffa_ScorePlus(modeVals_t *t, const nativeVal_t *s) {
+	nativeVal_t *rest = Mode_V(t), *lst = Mode_V(t), *l0 = Mode_V(t), *l1 = Mode_V(t), *points = Mode_V(t), *target = Mode_V(t);
+	nativeVal_t *score = Mode_V(t), *sp = Mode_V(t);
+	if (!Native_Slice(s, 2, INT_MAX, rest) || !Native_Split(rest, ":", lst) || !Native_Subscript(lst, Mode_I(t, 1), l1) ||
+		!Native_ToInt(l1, points) || !Native_Subscript(lst, Mode_I(t, 0), l0) || !Mode_Get(Ffa_Cam(), "NetCam", "MainTarget", target)) {
+		return 0;
+	}
+	int mainusr = Ffa_Eq(l0, target);
+	if (!mainusr) {
+		int has = Mode_HasKey("Ffa", "Scorer", 1, l0);
+		if (has < 0) {
+			return 0;
+		}
+		if (!has) {
+			if (!Mode_Later(1.0, "Ffa", "PlayerJoinGame", l0, 1, NULL)) {
+				return 0;
+			}
+		} else {
+			if (!Ffa_Score(l0, score) || !Ffa_Spect(sp)) {
+				return 0;
+			}
+			int j = Ffa_Eq(score, sp);
+			if (j) {
+				Native_Free(sp);
+				if (!Ffa_Spect(sp)) {
+					return 0;
+				}
+				j = !Ffa_Eq(points, sp);
+			}
+			if (j && !OWN("PlayerJoinGame", NULL, "v", l0)) {
+				return 0;
+			}
+		}
+	}
+	Native_Free(sp);
+	if (!SCORER_PUT(l0, points) || !Ffa_Spect(sp)) {
+		return 0;
+	}
+	if (Ffa_Eq(points, sp)) {
+		return mainusr ? OWN("CameraSpectator", NULL, "") : OWN("PlayerSpectator", NULL, "v", l0);
+	}
+	return 1;
 }
 
 /* OnUsrClient(id, s): a message of the server on a client: a text, the scores, the team totals, the respawn, the end,
  * the rules */
-static PyObject *Ffa_OnUsrClient(PyObject *self, PyObject *args) {
-	PyObject *id, *s;
-	SF_ARGS("OO", &id, &s);
-	Sf_Import(&f, "string");
-	Sf_Import(&f, "RacerScorer");
-	Sf_Import(&f, "Net");
-	PyObject *c0 = Sf_Item(&f, s, 0);
-	if (Sf_EqS(&f, c0, "!") > 0) {
-		Sf_Run(&f, "SScorer", "SetMsgText", "(OO)", Sf_Slice(&f, s, 1, INT_MAX), Sf_OpI(&f, Sf_Time(&f), '+', 5));
+static byte Ffa_OnUsrClientC(const nativeVal_t *s) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *c0 = Mode_V(&t), *c1 = Mode_V(&t), *rest = Mode_V(&t), *tot = Mode_V(&t), *two = Mode_V(&t);
+	Mode_V(&t);
+	nativeVal_t *target = Mode_V(&t);
+	if (!Mode_Import("string") || !Mode_Import("RacerScorer") || !Mode_Import("Net") || !Native_Subscript(s, Mode_I(&t, 0), c0)) {
+		return Mode_Done(&t, 0);
 	}
-	if (Sf_EqS(&f, c0, "S") > 0) {
-		PyObject *c1 = Sf_Item(&f, s, 1);
-		if (Sf_EqS(&f, c1, "=") > 0) {
-			Ffa_Run(&f, "Str2Scorer", "(O)", Sf_Slice(&f, s, 2, INT_MAX));
-		} else if (!f.failed && Sf_EqS(&f, c1, "+") > 0) {
-			PyObject *lst = Sf_Ask(&f, "string", "split", "(Os)", Sf_Slice(&f, s, 2, INT_MAX), ":");
-			PyObject *points = Sf_ToInt(&f, Sf_Item(&f, lst, 1));
-			int mainusr = Sf_Compare(&f, Sf_Item(&f, lst, 0), "==", Sf_Attr(&f, ENT("NetCam"), "MainTarget"));
-			if (mainusr == 0) {
-				int has = Sf_True(&f, Sf_Method(&f, G("Scorer"), "has_key", "(O)", Sf_Item(&f, lst, 0)));
-				if (has == 0) {
-					Sf_Later(&f, Sf_Float(&f, 1.0), G("PlayerJoinGame"), Sf_Build(&f, "(O)", Sf_Item(&f, lst, 0)), NULL);
-				} else if (has > 0) {
-					int j = Sf_Compare(&f, Sf_GetItem(&f, G("Scorer"), Sf_Item(&f, lst, 0)), "==", SPECT());
-					if (j > 0) {
-						j = Sf_Compare(&f, points, "!=", SPECT());
-					}
-					if (j > 0) {
-						Ffa_Run(&f, "PlayerJoinGame", "(O)", Sf_Item(&f, lst, 0));
-					}
-				}
-			}
-			Sf_SetItem(&f, G("Scorer"), Sf_Item(&f, lst, 0), points);
-			if (Sf_Compare(&f, points, "==", SPECT()) > 0) {
-				if (mainusr) {
-					Ffa_Run(&f, "CameraSpectator", "()");
-				} else {
-					Ffa_Run(&f, "PlayerSpectator", "(O)", Sf_Item(&f, lst, 0));
-				}
-			}
-		} else if (!f.failed && Sf_EqS(&f, c1, "-") > 0) {
-			Ffa_Run(&f, "PlayerDisconected", "(O)", Sf_Slice(&f, s, 2, INT_MAX));
-			Sf_DelItem(&f, G("Scorer"), Sf_Slice(&f, s, 2, INT_MAX));
-		}
-		Ffa_Run(&f, "ActualizeGameScorer", "()");
-	} else if (!f.failed && Sf_EqS(&f, c0, "T") > 0) {
-		PyObject *tot[2];
-		if (Sf_Unpack(&f, Sf_Eval(&f, Sf_Slice(&f, s, 1, INT_MAX), "Ffa"), 2, tot)) {
-			Sf_SetGlobal(&f, "Ffa", "TotalRed", tot[0]);
-			Sf_SetGlobal(&f, "Ffa", "TotalGreen", tot[1]);
-		}
-		Ffa_Run(&f, "ActualizeGameScorer", "()");
-	} else if (!f.failed && Sf_EqS(&f, c0, "R") > 0) {
-		if (Sf_True(&f, G("GameFinished")) == 0) {
-			Ffa_Run(&f, "ReSpawnClient", "(O)", Sf_Attr(&f, ENT("NetCam"), "MainTarget"));
-		}
-	} else if (!f.failed && Sf_EqS(&f, c0, "E") > 0) {
-		Ffa_Run(&f, "EndOfGame", "()");
-	} else if (!f.failed && Sf_EqS(&f, c0, "G") > 0) {
-		Ffa_Run(&f, "SetupGameRules", "(O)", Sf_Slice(&f, s, 1, INT_MAX));
+	if (Native_IsStr(c0, "!") && (!Native_Slice(s, 1, INT_MAX, rest) || !Mode_MsgText(rest, Mode_Time() + 5.0))) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	if (Native_IsStr(c0, "S")) {
+		if (!Native_Subscript(s, Mode_I(&t, 1), c1)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_Free(rest);
+		byte ok = 1;
+		if (Native_IsStr(c1, "=")) {
+			ok = Native_Slice(s, 2, INT_MAX, rest) && OWN("Str2Scorer", NULL, "v", rest);
+		} else if (Native_IsStr(c1, "+")) {
+			ok = Ffa_ScorePlus(&t, s);
+		} else if (Native_IsStr(c1, "-")) {
+			ok = Native_Slice(s, 2, INT_MAX, rest) && OWN("PlayerDisconected", NULL, "v", rest) &&
+				Mode_DictDel("Ffa", "Scorer", &ffa.scorer, rest);
+		}
+		return Mode_Done(&t, ok && OWN("ActualizeGameScorer", NULL, ""));
+	}
+	if (Native_IsStr(c0, "T")) {
+		Native_Free(rest);
+		return Mode_Done(&t, Native_Slice(s, 1, INT_MAX, rest) && Native_EvalText("Ffa", rest, tot) && Mode_Unpack(tot, 2, two) &&
+			FW(totalRed, "TotalRed", &two[0]) && FW(totalGreen, "TotalGreen", &two[1]) && OWN("ActualizeGameScorer", NULL, ""));
+	}
+	if (Native_IsStr(c0, "R")) {
+		if (!FR(gameFinished, "GameFinished")) {
+			return Mode_Done(&t, 0);
+		}
+		return Mode_Done(&t, Native_True(&ffa.gameFinished) ||
+			(Mode_Get(Ffa_Cam(), "NetCam", "MainTarget", target) && OWN("ReSpawnClient", NULL, "v", target)));
+	}
+	if (Native_IsStr(c0, "E")) {
+		return Mode_Done(&t, OWN("EndOfGame", NULL, ""));
+	}
+	if (Native_IsStr(c0, "G")) {
+		Native_Free(rest);
+		return Mode_Done(&t, Native_Slice(s, 1, INT_MAX, rest) && OWN("SetupGameRules", NULL, "v", rest));
+	}
+	return Mode_Done(&t, 1);
 }
 
 /* OnUsrServer(id, s): a request of client id on the server: respawn, spectate, a new ship */
-static PyObject *Ffa_OnUsrServer(PyObject *self, PyObject *args) {
-	PyObject *id, *s;
-	SF_ARGS("OO", &id, &s);
-	Sf_Import(&f, "RacerScorer");
-	Sf_Import(&f, "string");
-	PyObject *e = Sf_Entity(&f, Sf_Op(&f, STR("net"), '+', Sf_Repr(&f, id)));
-	PyObject *c0 = Sf_Item(&f, s, 0);
-	if (Sf_EqS(&f, c0, "R") > 0) {
-		if (Sf_True(&f, G("GameFinished")) == 0) {
-			int c = Sf_True(&f, e);
-			if (c > 0) {
-				Ffa_Run(&f, "SetSpawnPos", "(O)", Sf_Attr(&f, e, "Name"));
-				Ffa_Send(&f, id, STR("R"));
-			} else if (c == 0) {
-				PyObject *msg = Sf_Op(&f, Sf_Op(&f, STR("net"), '+', Sf_Repr(&f, id)), '+', STR(" not found for respawn.\n"));
-				Sf_Run(&f, "Scrap", "ConsoleError", "(O)", msg);
-			}
-		}
-	} else if (!f.failed && Sf_EqS(&f, c0, "V") > 0) {
-		Ffa_Run(&f, "ServerSpectate", "(O)", Sf_Attr(&f, e, "Name"));
-	} else if (!f.failed && Sf_EqS(&f, c0, "M") > 0) {
-		PyObject *data = Sf_Ask(&f, "string", "split", "(Os)", Sf_Slice(&f, s, 1, INT_MAX), "\n"), *v[11];
-		v[0] = Sf_Op(&f, STR("net"), '+', Sf_Repr(&f, id));
-		for (int i = 0; i < 10; i++) {
-			v[i + 1] = Sf_Item(&f, data, i);
-			if (i == 1 || i == 9) {
-				v[i + 1] = Sf_ToInt(&f, v[i + 1]);
-			}
-		}
-		Ffa_Run(&f, "ClientModify", "(OOOOOOOOOOO)", v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10]);
+static byte Ffa_OnUsrServerC(const nativeVal_t *id, const nativeVal_t *s) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *rep = Mode_V(&t), *name = Mode_V(&t), *c0 = Mode_V(&t), *en = Mode_V(&t), *msg = Mode_V(&t), *rest = Mode_V(&t);
+	nativeVal_t *data = Mode_V(&t), *v[11];
+	cEntity *e;
+	Ffa_Repr(id, rep);
+	if (!Mode_Import("RacerScorer") || !Mode_Import("string") || !Mode_Cat(&t, name, 2, Mode_S(&t, "net"), rep) || !Mode_Ent(name, &e) ||
+		!Native_Subscript(s, Mode_I(&t, 0), c0)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	if (Native_IsStr(c0, "R")) {
+		if (!FR(gameFinished, "GameFinished")) {
+			return Mode_Done(&t, 0);
+		}
+		if (Native_True(&ffa.gameFinished)) {
+			return Mode_Done(&t, 1);
+		}
+		if (e) {
+			return Mode_Done(&t, Native_EntVar(e, Native_Text(name), "Name", en) && OWN("SetSpawnPos", NULL, "v", en) &&
+				Mode_Send(id, Mode_S(&t, "R")));
+		}
+		return Mode_Done(&t, Mode_Cat(&t, msg, 3, Mode_S(&t, "net"), rep, Mode_S(&t, " not found for respawn.\n")) &&
+			Mode_ConsoleError(msg));
+	}
+	if (Native_IsStr(c0, "V")) {
+		return Mode_Done(&t, Mode_Get(e, Native_Text(name), "Name", en) && OWN("ServerSpectate", NULL, "v", en));
+	}
+	if (Native_IsStr(c0, "M")) {
+		if (!Native_Slice(s, 1, INT_MAX, rest) || !Native_Split(rest, "\n", data)) {
+			return Mode_Done(&t, 0);
+		}
+		v[0] = Mode_V(&t);
+		if (!Mode_Cat(&t, v[0], 2, Mode_S(&t, "net"), rep)) {
+			return Mode_Done(&t, 0);
+		}
+		for (int i = 0; i < 10; i++) {
+			v[i + 1] = Mode_V(&t);
+			if (!Native_Subscript(data, Mode_I(&t, i), v[i + 1])) {
+				return Mode_Done(&t, 0);
+			}
+			if (i == 1 || i == 9) {
+				nativeVal_t *n = Mode_V(&t);
+				if (!Native_ToInt(v[i + 1], n)) {
+					return Mode_Done(&t, 0);
+				}
+				v[i + 1] = n;
+			}
+		}
+		return Mode_Done(&t, OWN("ClientModify", NULL, FFA_A11, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10]));
+	}
+	return Mode_Done(&t, 1);
 }
 
 /* ---- spectating and the team menus ---- */
 
 /* Spectate(id=0, command=""): back to the game as a spectator, or back into the game */
-static PyObject *Ffa_Spectate(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", "command", NULL };
-	PyObject *id = NULL, *command = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|OO", names, &id, &command)) {
-		return NULL;
-	}
-	id = id ? id : Sf_Int(&f, 0);
-	command = command ? command : STR("");
+static byte Ffa_SpectateC(const nativeVal_t *id, const nativeVal_t *command) {
 	static const char *const mods[] = { "OutMap", "RacerScorer", "Menu" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *fc = Mode_V(&t), *target = Mode_V(&t);
 	for (int i = 0; i < 3; i++) {
-		Sf_Import(&f, mods[i]);
+		if (!Mode_Import(mods[i])) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	Sf_Run(&f, "Menu", "BackToGame", "(OO)", id, command);
-	PyObject *cam = ENT("NetCam");
-	int on = Sf_True(&f, cam);
-	if (on > 0) {
-		on = Sf_EqI(&f, Sf_Attr(&f, cam, "FreeCam"), 0);
+	if (!CALL("Menu", "BackToGame", NULL, "vv", id, command)) {
+		return Mode_Done(&t, 0);
 	}
-	if (on < 0) {
-		return Sf_None(&f);
+	cEntity *cam = Ffa_Cam();
+	int on = cam != NULL;
+	if (on) {
+		if (!Native_EntVar(cam, "NetCam", "FreeCam", fc)) {
+			return Mode_Done(&t, 0);
+		}
+		on = Ffa_Eq(fc, Mode_I(&t, 0));
 	}
-	int client = Sf_True(&f, Sf_Ask(&f, "SNet", "IsClient", "()"));
-	if (client > 0) {
-		Ffa_Send(&f, Sf_Int(&f, 0), STR(on ? "V" : "R"));
-	} else if (client == 0 && on) {
-		Ffa_Run(&f, "ServerSpectate", "(O)", Sf_Attr(&f, cam, "MainTarget"));
-	} else if (client == 0) {
-		Sf_SetAttrI(&f, cam, "FreeCam", 0);
-		Ffa_Run(&f, "ServerRemoveSpectatorState", "(O)", Sf_Attr(&f, cam, "MainTarget"));
-		Ffa_Run(&f, "DelayedRestartOnPress", "(O)", id);
+	int client = Mode_IsClient();
+	if (client < 0) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	if (client) {
+		return Mode_Done(&t, Mode_SendS(0, on ? "V" : "R"));
+	}
+	if (on) {
+		return Mode_Done(&t, Native_EntVar(cam, "NetCam", "MainTarget", target) && OWN("ServerSpectate", NULL, "v", target));
+	}
+	return Mode_Done(&t, Mode_SetI(cam, "NetCam", "FreeCam", 0) && Native_EntVar(cam, "NetCam", "MainTarget", target) &&
+		OWN("ServerRemoveSpectatorState", NULL, "v", target) && OWN("DelayedRestartOnPress", NULL, "v", id));
 }
 
 /* JoinRed(id, control), JoinGreen(id, control): into the team (team id 0 or 2), rejoining when it changes */
-static PyObject *Ffa_Join(PyObject *self, PyObject *args, long team) {
-	PyObject *id, *control;
-	SF_ARGS("OO", &id, &control);
-	PyObject *cam = ENT("NetCam");
-	int c = Sf_EqI(&f, Sf_Attr(&f, cam, "FreeCam"), 1);
-	if (c == 0) {
-		c = Sf_Compare(&f, GET("PlayerTeamID"), "!=", Sf_Int(&f, team));
+static byte Ffa_JoinC(const nativeVal_t *a, long team) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *fc = Mode_V(&t), *tid;
+	if (!Mode_Get(Ffa_Cam(), "NetCam", "FreeCam", fc)) {
+		return Mode_Done(&t, 0);
 	}
-	if (c > 0) {
-		Sf_Run(&f, "Scrap", "Set", "(sl)", "PlayerTeamID", team);
-		Ffa_Run(&f, "ReJoinGame", "(OO)", id, control);
+	int c = Ffa_Eq(fc, Mode_I(&t, 1));
+	if (!c) {
+		if (!Ffa_Get(&t, "PlayerTeamID", &tid)) {
+			return Mode_Done(&t, 0);
+		}
+		c = !Ffa_Eq(tid, Mode_I(&t, team));
 	}
-	Sf_Import(&f, "Menu");
-	Sf_Run(&f, "Menu", "BackToGame", "(OO)", id, control);
-	return Sf_None(&f);
-}
-
-static PyObject *Ffa_JoinRed(PyObject *self, PyObject *args) {
-	return Ffa_Join(self, args, 0);
-}
-
-static PyObject *Ffa_JoinGreen(PyObject *self, PyObject *args) {
-	return Ffa_Join(self, args, 2);
+	if (c && (!Mode_GVarSet("PlayerTeamID", Mode_I(&t, team)) || !OWN("ReJoinGame", NULL, "vv", &a[0], &a[1]))) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, Mode_Import("Menu") && CALL("Menu", "BackToGame", NULL, "vv", &a[0], &a[1]));
 }
 
 /* ReJoinGame(id, control): spectate, send the new ship, join again after a 10 s count down */
-static PyObject *Ffa_ReJoinGame(PyObject *self, PyObject *args) {
-	PyObject *id, *control;
-	SF_ARGS("OO", &id, &control);
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "EscapeEvent", "");
-	PyObject *cam = ENT("NetCam");
-	int c = Sf_True(&f, cam);
-	if (c > 0) {
-		c = Sf_EqI(&f, Sf_Attr(&f, cam, "FreeCam"), 0);
+static byte Ffa_ReJoinGameC(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *fc = Mode_V(&t);
+	if (!Mode_GVarSetS("EscapeEvent", "")) {
+		return Mode_Done(&t, 0);
 	}
-	if (c > 0) {
-		Ffa_Run(&f, "Spectate", "(OO)", id, control);
+	cEntity *cam = Ffa_Cam();
+	int c = cam != NULL;
+	if (c) {
+		if (!Native_EntVar(cam, "NetCam", "FreeCam", fc)) {
+			return Mode_Done(&t, 0);
+		}
+		c = Ffa_Eq(fc, Mode_I(&t, 0));
 	}
-	Ffa_Run(&f, "ModiTry", "()");
-	Ffa_Run(&f, "RejoinMsg", "(iOO)", 10, id, control);
-	return Sf_None(&f);
+	return Mode_Done(&t, (!c || OWN("Spectate", NULL, "vv", &a[0], &a[1])) && OWN("ModiTry", NULL, "") &&
+		OWN("RejoinMsg", NULL, "ivv", 10L, &a[0], &a[1]));
 }
 
 /* RejoinMsg(timer, id, control): the count down, one message a second, then JoinGame */
-static PyObject *Ffa_RejoinMsg(PyObject *self, PyObject *args) {
-	PyObject *timer, *id, *control;
-	SF_ARGS("OOO", &timer, &id, &control);
-	timer = Sf_OpI(&f, timer, '-', 1);
-	int c = Sf_Compare(&f, timer, ">", Sf_Float(&f, 0.5));
-	if (c > 0) {
-		Sf_Run(&f, "SScorer", "SetMsgText", "(OO)", Sf_Op(&f, LANG("Net_Msg_Join_Time"), '%', timer), LATER(1.0));
-		Sf_Later(&f, Sf_Float(&f, 1.0), G("RejoinMsg"), Sf_Build(&f, "(OOO)", timer, id, control), NULL);
-	} else if (c == 0) {
-		Ffa_Run(&f, "JoinGame", "(OO)", id, control);
+static byte Ffa_RejoinMsgC(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *timer = Mode_V(&t), *half = Mode_V(&t), *text = Mode_V(&t), *args = Mode_V(&t);
+	if (!Native_Arith('-', &a[0], Mode_I(&t, 1), timer)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	Native_SetFloat(half, 0.5);
+	if (Native_Compare(timer, half) <= 0) {
+		return Mode_Done(&t, OWN("JoinGame", NULL, "vv", &a[1], &a[2]));
+	}
+	Native_SetEmpty(args, NV_LIST);
+	Native_Copy(Native_Append(args), timer);
+	Native_Copy(Native_Append(args), &a[1]);
+	Native_Copy(Native_Append(args), &a[2]);
+	return Mode_Done(&t, Mode_LangFmt("Net_Msg_Join_Time", timer, text) && Mode_MsgText(text, Mode_Time() + 1.0) &&
+		Mode_Later(1.0, "Ffa", "RejoinMsg", args->items, 3, NULL));
 }
 
 /* JoinGame(id, control): back into the game */
-static PyObject *Ffa_JoinGame(PyObject *self, PyObject *args) {
-	PyObject *id, *control;
-	SF_ARGS("OO", &id, &control);
-	Sf_Run(&f, "Scrap", "Set", "(ss)", "EscapeEvent", "Menu.Init");
-	int client = Sf_True(&f, Sf_Ask(&f, "SNet", "IsClient", "()"));
-	if (client > 0) {
-		Ffa_Send(&f, Sf_Int(&f, 0), STR("R"));
-	} else if (client == 0) {
-		Ffa_Run(&f, "Spectate", "(OO)", id, control);
+static byte Ffa_JoinGameC(const nativeVal_t *a) {
+	if (!Mode_GVarSetS("EscapeEvent", "Menu.Init")) {
+		return 0;
 	}
-	return Sf_None(&f);
+	int client = Mode_IsClient();
+	return client > 0 ? Mode_SendS(0, "R") : client == 0 && OWN("Spectate", NULL, "vv", &a[0], &a[1]);
 }
 
 /* TeamMenu(id, control): the in-game menu of the team modes: red, green and (when playing) spectate */
-static PyObject *Ffa_TeamMenu(PyObject *self, PyObject *args) {
-	PyObject *id, *control;
-	SF_ARGS("OO", &id, &control);
-	Sf_Import(&f, "Menu");
-	Sf_Run(&f, "Menu", "StartNewMenu", "(O)", id);
-	PyObject *red = LANG("Net_Menu_Join_Red"), *green = LANG("Net_Menu_Join_Green");
-	PyObject *opts = Sf_Build(&f, "[[Os][Os]]", red, "Ffa.JoinRed", green, "Ffa.JoinGreen");
-	ENT("NetCam");
-	if (Sf_EqI(&f, G("SpectatorMode"), 0) > 0) {
-		Sf_Method(&f, opts, "append", "(O)", Sf_Build(&f, "[Os]", LANG("Net_Menu_Spectate"), "Ffa.Spectate"));
+static byte Ffa_TeamMenuC(const nativeVal_t *id) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *opts = Mode_V(&t), *title = Mode_V(&t), *ys = Mode_V(&t), *row;
+	if (!Mode_Import("Menu") || !CALL("Menu", "StartNewMenu", NULL, "v", id)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *fn = Sf_Mod(&f, "Menu", "VerticalMenu");
-	PyObject *a = Sf_Build(&f, "(OOOs)", id, LANG("Net_Menu_Game"), opts, "PCMenu.MultiPlayerMenu");
-	PyObject *kw = Sf_Build(&f, "{sO}", "YStart", Sf_Mod(&f, "Menu", "OptionMenuYStart"));
-	Sf_CallKw(&f, fn, Script_Ref(a), kw);
-	Sf_Run(&f, "Menu", "DrawBackOptionMenu", "(O)", id);
-	return Sf_None(&f);
+	Native_SetEmpty(opts, NV_LIST);
+	row = Native_Append(opts);
+	Native_SetEmpty(row, NV_LIST);
+	Mode_Lang("Net_Menu_Join_Red", Native_Append(row));
+	Native_SetStr(Native_Append(row), "Ffa.JoinRed");
+	row = Native_Append(opts);
+	Native_SetEmpty(row, NV_LIST);
+	Mode_Lang("Net_Menu_Join_Green", Native_Append(row));
+	Native_SetStr(Native_Append(row), "Ffa.JoinGreen");
+	if (!FR(spectatorMode, "SpectatorMode")) {
+		return Mode_Done(&t, 0);
+	}
+	if (Ffa_Eq(&ffa.spectatorMode, Mode_I(&t, 0))) {
+		row = Native_Append(opts);
+		Native_SetEmpty(row, NV_LIST);
+		Mode_Lang("Net_Menu_Spectate", Native_Append(row));
+		Native_SetStr(Native_Append(row), "Ffa.Spectate");
+	}
+	/* Menu.VerticalMenu(id, title, opts, "PCMenu.MultiPlayerMenu", YStart = Menu.OptionMenuYStart) (OBJLIB 3: a call
+	 * with a keyword) */
+	PyObject *fn = Script_Attr("Menu", "VerticalMenu");
+	if (!fn) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_Lang("Net_Menu_Game", title);
+	PyObject *pid = Native_ToPy(id), *pt = Native_ToPy(title), *po = Native_ToPy(opts);
+	PyObject *a = pid && pt && po ? Py_BuildValue("(OOOs)", pid, pt, po, "PCMenu.MultiPlayerMenu") : NULL;
+	byte ok = a && Mode_ModVar("Menu", "OptionMenuYStart", ys);
+	PyObject *py = ok ? Native_ToPy(ys) : NULL, *kw = py ? Py_BuildValue("{sO}", "YStart", py) : NULL;
+	PyObject *r = kw ? Script_CallObject(fn, a, kw) : NULL;
+	Py_XDECREF(r);
+	Py_XDECREF(kw);
+	Py_XDECREF(py);
+	Py_XDECREF(a);
+	Py_XDECREF(po);
+	Py_XDECREF(pt);
+	Py_XDECREF(pid);
+	Py_DECREF(fn);
+	return Mode_Done(&t, r && CALL("Menu", "DrawBackOptionMenu", NULL, "v", id));
 }
 
 /* GetGameTeamDescriptor(): the title of a team game: tied, red or green ahead */
-static PyObject *Ffa_GetGameTeamDescriptor(PyObject *self, PyObject *args) {
-	NOARGS();
-	Sf_Import(&f, "string");
-	PyObject *v = NULL;
-	if (Sf_Compare(&f, G("TotalRed"), "==", G("TotalGreen")) > 0) {
-		v = Sf_Op(&f, LANG("Net_Title_Teams_Tied"), '%', G("TotalGreen"));
-	} else if (!f.failed && Sf_Compare(&f, G("TotalRed"), ">=", G("TotalGreen")) > 0) {
-		v = Sf_Op(&f, LANG("Net_Title_Red_Wins"), '%', Sf_Build(&f, "(OO)", G("TotalRed"), G("TotalGreen")));
-	} else if (!f.failed) {
-		v = Sf_Op(&f, LANG("Net_Title_Green_Wins"), '%', Sf_Build(&f, "(OO)", G("TotalGreen"), G("TotalRed")));
+static byte Ffa_GetGameTeamDescriptorC(nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *pair = Mode_V(&t);
+	if (!Mode_Import("string") || !FR(totalRed, "TotalRed") || !FR(totalGreen, "TotalGreen")) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_Return(&f, v);
+	if (Ffa_Eq(&ffa.totalRed, &ffa.totalGreen)) {
+		return Mode_Done(&t, FR(totalGreen, "TotalGreen") && Mode_LangFmt("Net_Title_Teams_Tied", &ffa.totalGreen, out));
+	}
+	if (!FR(totalRed, "TotalRed") || !FR(totalGreen, "TotalGreen")) {
+		return Mode_Done(&t, 0);
+	}
+	byte red = Native_Compare(&ffa.totalRed, &ffa.totalGreen) >= 0;
+	if (!FR(totalRed, "TotalRed") || !FR(totalGreen, "TotalGreen")) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetEmpty(pair, NV_TUPLE);
+	Native_Copy(Native_Append(pair), red ? &ffa.totalRed : &ffa.totalGreen);
+	Native_Copy(Native_Append(pair), red ? &ffa.totalGreen : &ffa.totalRed);
+	return Mode_Done(&t, Mode_LangFmt(red ? "Net_Title_Red_Wins" : "Net_Title_Green_Wins", pair, out));
 }
 
 /* CameraSpectator(): the camera of this machine flies free from the first start point */
-static PyObject *Ffa_CameraSpectator(PyObject *self, PyObject *args) {
-	NOARGS();
+static byte Ffa_CameraSpectatorC(void) {
 	static const char *const mods[] = { "OutMap", "RacerScorer", "PCMenu" };
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *sp = Mode_V(&t), *s0 = Mode_V(&t), *pos = Mode_V(&t), *ang = Mode_V(&t), *a3 = Mode_V(&t);
 	for (int i = 0; i < 3; i++) {
-		Sf_Import(&f, mods[i]);
+		if (!Mode_Import(mods[i])) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	Sf_SetMod(&f, "PCMenu", "MultiplayerMenu", LIB("MultiplayerMenuSpectator"));
-	Sf_SetGlobal(&f, "Ffa", "SpectatorMode", Sf_Int(&f, 1));
-	PyObject *cam = ENT("NetCam");
-	Sf_SetAttrI(&f, cam, "FreeCam", 1);
-	Sf_SetAttr(&f, cam, "camPos", Sf_Item(&f, Sf_Item(&f, Sf_Mod(&f, "OutMap", "StartPos"), 0), 0));
-	PyObject *ang = Sf_Item(&f, Sf_Item(&f, Sf_Mod(&f, "OutMap", "StartPos"), 0), 1);
-	Sf_SetAttr(&f, cam, "camAng", ang ? Sf_Build(&f, "(iOi)", 0, ang) : NULL);
-	Sf_SetMod(&f, "RacerScorer", "ScorerTopMessage", Sf_Method(&f, G("ModLib"), "GetGameDescriptor", "()"));
-	Sf_SetMod(&f, "RacerScorer", "ScorerBotMessage", STR("Spectator mode"));
-	Sf_Run(&f, "SScorer", "SetMPFunc", "(is)", 0, "Ffa.ShowScorer");
-	Ffa_Run(&f, "ShowScorer", "(iO)", 0, G("isScorerVisible"));
-	Ffa_Run(&f, "ActualizeGameScorer", "()");
-	return Sf_None(&f);
+	if (!Ffa_LibToMod("PCMenu", "MultiplayerMenu", "MultiplayerMenuSpectator") || !FW(spectatorMode, "SpectatorMode", Mode_I(&t, 1))) {
+		return Mode_Done(&t, 0);
+	}
+	cEntity *cam = Ffa_Cam();
+	if (!Mode_SetI(cam, "NetCam", "FreeCam", 1) || !Mode_ModVar("OutMap", "StartPos", sp) || !Native_Subscript(sp, Mode_I(&t, 0), s0) ||
+		!Native_Subscript(s0, Mode_I(&t, 0), pos) || !Mode_Set(cam, "NetCam", "camPos", pos)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(sp);
+	Native_Free(s0);
+	if (!Mode_ModVar("OutMap", "StartPos", sp) || !Native_Subscript(sp, Mode_I(&t, 0), s0) || !Native_Subscript(s0, Mode_I(&t, 1), ang)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetEmpty(a3, NV_TUPLE);
+	Native_SetInt(Native_Append(a3), 0);
+	Native_Copy(Native_Append(a3), ang);
+	Native_SetInt(Native_Append(a3), 0);
+	return Mode_Done(&t, Mode_Set(cam, "NetCam", "camAng", a3) && Ffa_TopDescriptor() &&
+		Mode_SetModVar("RacerScorer", "ScorerBotMessage", Mode_S(&t, "Spectator mode")) && Mode_MPFunc(0, "Ffa.ShowScorer") &&
+		FR(isScorerVisible, "isScorerVisible") && OWN("ShowScorer", NULL, "iv", 0L, &ffa.isScorerVisible) &&
+		OWN("ActualizeGameScorer", NULL, ""));
 }
 
 /* AbortSpectateMode(): the camera follows the ship again */
-static PyObject *Ffa_AbortSpectateMode(PyObject *self, PyObject *args) {
-	NOARGS();
-	Sf_Import(&f, "PCMenu");
-	Sf_SetAttrI(&f, ENT("NetCam"), "FreeCam", 0);
-	Sf_SetMod(&f, "PCMenu", "MultiplayerMenu", LIB("MultiplayerMenuOnGame"));
-	Sf_SetGlobal(&f, "Ffa", "SpectatorMode", Sf_Int(&f, 0));
-	return Sf_None(&f);
+static byte Ffa_AbortSpectateModeC(void) {
+	modeVals_t t = { .n = 0 };
+	return Mode_Done(&t, Mode_Import("PCMenu") && Mode_SetI(Ffa_Cam(), "NetCam", "FreeCam", 0) &&
+		Ffa_LibToMod("PCMenu", "MultiplayerMenu", "MultiplayerMenuOnGame") && FW(spectatorMode, "SpectatorMode", Mode_I(&t, 0)));
 }
 
 /* ServerSpectate(EntityName): the server makes a player a spectator */
-static PyObject *Ffa_ServerSpectate(PyObject *self, PyObject *args) {
-	PyObject *name;
-	SF_ARGS("O", &name);
-	Sf_Import(&f, "OutMap");
-	Sf_Import(&f, "RacerScorer");
-	if (Sf_Compare(&f, Sf_GetItem(&f, G("Scorer"), name), "!=", SPECT()) > 0) {
-		PyObject *cam = ENT("NetCam");
-		int c = Sf_True(&f, cam);
-		if (c > 0) {
-			c = Sf_Compare(&f, Sf_Attr(&f, cam, "MainTarget"), "==", name);
-		}
-		if (c > 0) {
-			Ffa_Run(&f, "CameraSpectator", "()");
-		}
-		PyObject *e = Sf_Entity(&f, name);
-		Sf_SetAttrI(&f, e, "Active", 0);
-		Sf_SetItem(&f, G("Scorer"), Sf_Attr(&f, e, "Name"), SPECT());
-		Ffa_Run(&f, "ServerSendPlayerStatus", "(O)", Sf_Attr(&f, e, "Name"));
-		Ffa_Run(&f, "ActualizeGameScorer", "()");
-		Ffa_Lib(&f, "ServerHidePlayer", "(O)", Sf_Attr(&f, e, "Name"));
-		Ffa_Run(&f, "PlayerSpectator", "(O)", Sf_Attr(&f, e, "Name"));
+static byte Ffa_ServerSpectateC(const nativeVal_t *name) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *score = Mode_V(&t), *sp = Mode_V(&t), *target = Mode_V(&t), *en = Mode_V(&t);
+	cEntity *e;
+	if (!Mode_Import("OutMap") || !Mode_Import("RacerScorer") || !Ffa_Score(name, score) || !Ffa_Spect(sp)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	if (Ffa_Eq(score, sp)) {
+		return Mode_Done(&t, 1);
+	}
+	cEntity *cam = Ffa_Cam();
+	if (cam) {
+		if (!Native_EntVar(cam, "NetCam", "MainTarget", target)) {
+			return Mode_Done(&t, 0);
+		}
+		if (Ffa_Eq(target, name) && !OWN("CameraSpectator", NULL, "")) {
+			return Mode_Done(&t, 0);
+		}
+	}
+	if (!Mode_Ent(name, &e) || !Mode_SetI(e, Native_Text(name), "Active", 0) || !Native_EntVar(e, Native_Text(name), "Name", en) ||
+		!Ffa_Spect(sp)) {
+		return Mode_Done(&t, 0);
+	}
+	/* the handle of the player, found again by its name after each call */
+	const char *n = Native_Text(name);
+	byte ok = SCORER_PUT(en, sp) && OWN("ServerSendPlayerStatus", NULL, "v", en) && OWN("ActualizeGameScorer", NULL, "");
+	Native_Free(en);
+	ok = ok && Mode_NameGet(n, "Name", en) && Ffa_Lib("ServerHidePlayer", NULL, 1, en, NULL, NULL);
+	Native_Free(en);
+	return Mode_Done(&t, ok && Mode_NameGet(n, "Name", en) && OWN("PlayerSpectator", NULL, "v", en));
 }
 
 /* InitClient(): the client's callbacks, the HUD, the mode */
-static PyObject *Ffa_InitClient(PyObject *self, PyObject *args) {
+static byte Ffa_InitClientC(void) {
 	static const char *const cbs[][2] = { { "ClientSetPlayer", "Ffa.SetupUserShip" }, { "ClientSetConfig", "Ffa.ClientSetConfig" },
 		{ "ClientCreate", "Ffa.ClientCreate" }, { "ClientAfterCreate", "Ffa.ClientAfterCreate" }, { "OnUsrString", "Ffa.OnUsrClient" } };
-	NOARGS();
-	Ffa_Run(&f, "InitFfa", "()");
-	for (int i = 0; i < 5; i++) {
-		Sf_Run(&f, "Scrap", "Set", "(ss)", cbs[i][0], cbs[i][1]);
+	if (!OWN("InitFfa", NULL, "")) {
+		return 0;
 	}
-	Ffa_Run(&f, "StdInitFfa", "()");
-	Ffa_Lib(&f, "InitClientMod", "()");
-	return Sf_None(&f);
+	for (int i = 0; i < 5; i++) {
+		if (!Mode_GVarSetS(cbs[i][0], cbs[i][1])) {
+			return 0;
+		}
+	}
+	return OWN("StdInitFfa", NULL, "") && Ffa_Lib("InitClientMod", NULL, 0, NULL, NULL, NULL);
 }
 
 /* StdInitFfa(): the ship controls, the "press fire" scorer, the scorer back from a menu */
-static PyObject *Ffa_StdInitFfa(PyObject *self, PyObject *args) {
-	NOARGS();
-	Sf_Import(&f, "RacerScorer");
-	Sf_Run(&f, "SInput", "SetActionSet", "(s)", "Racer");
-	Ffa_Run(&f, "ShowPresFireMessage", "(iO)", 0, Sf_Method(&f, G("ModLib"), "GetGameDescriptor", "()"));
-	Sf_SetMod(&f, "RacerScorer", "BackMenuFunc", G("BackMenuFunc"));
-	return Sf_None(&f);
+static byte Ffa_StdInitFfaC(void) {
+	nativeVal_t d;
+	Native_SetNone(&d);
+	/* SInput.SetActionSet("Racer") */
+	if (!Mode_Import("RacerScorer")) {
+		return 0;
+	}
+	Input_SelectActionSetNamed("Racer");
+	byte ok = Ffa_Lib("GetGameDescriptor", &d, 0, NULL, NULL, NULL) && OWN("ShowPresFireMessage", NULL, "iv", 0L, &d) &&
+		Ffa_GlobalToMod("RacerScorer", "BackMenuFunc", "BackMenuFunc");
+	Native_Free(&d);
+	return ok;
 }
 
 /* ---- the scorer ---- */
 
+static int Ffa_RowCompare(const void *a, const void *b) {
+	return Native_Compare(a, b);
+}
+
+/* list.sort(); list.reverse() of a list of rows (1.5.2 sorts with cmp: the rows differ in their keys) */
+static void Ffa_SortDown(nativeVal_t *list) {
+	if (list->n > 1) {
+		qsort(list->items, (size_t)list->n, sizeof(nativeVal_t), Ffa_RowCompare);
+	}
+	for (int i = 0, j = list->n - 1; i < j; i++, j--) {
+		nativeVal_t x = list->items[i];
+		list->items[i] = list->items[j];
+		list->items[j] = x;
+	}
+}
+
+/* (score, desc, color, back, key) as a new row at the end of list */
+static void Ffa_Row(nativeVal_t *list, const nativeVal_t *score, const nativeVal_t *desc, const nativeVal_t *color,
+	const nativeVal_t *back, const nativeVal_t *key) {
+	nativeVal_t *row = Native_Append(list);
+	const nativeVal_t *items[5] = { score, desc, color, back, key };
+	Native_SetEmpty(row, NV_TUPLE);
+	for (int i = 0; i < 5; i++) {
+		Native_Copy(Native_Append(row), items[i]);
+	}
+}
+
 /* GetScorerInfo(id=0): the rows of the scorer (score, name with the flag mark, text colour, back colour, entity),
  * by team and score; the player of id sorts above an equal score */
-static PyObject *Ffa_GetScorerInfo(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", NULL };
-	PyObject *id = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &id)) {
-		return NULL;
-	}
-	id = id ? id : Sf_Int(&f, 0);
-	Sf_Import(&f, "RacerScorer");
-	PyObject *red = Sf_Keep(&f, PyList_New(0)), *green = Sf_Keep(&f, PyList_New(0));
-	PyObject *spect = Sf_Keep(&f, PyList_New(0)), *killer = Sf_Keep(&f, PyList_New(0));
-	PyObject *userscore = Sf_Float(&f, 0.1);
-	PyObject *keys = Sf_Method(&f, G("Scorer"), "keys", "()");
-	int mark = f.n;
-	for (int i = 0; !f.failed; i++) {
-		PyObject *key = Sf_Next(&f, keys, i);
-		if (!key) {
-			break;
-		}
-		int mf = Sf_Compare(&f, G("MasterFlag"), "==", key);
-		PyObject *flag = mf < 0 ? NULL : STR(mf ? "*" : " ");
-		PyObject *ent = Sf_Entity(&f, key);
-		int isuser = Sf_Compare(&f, Sf_Attr(&f, ent, "UsrControl"), "==", id);
-		PyObject *color = isuser < 0 ? NULL : G(isuser ? "USRCOLOR" : "STDCOLOR");
-		int sp = Sf_Compare(&f, Sf_GetItem(&f, G("Scorer"), key), "==", SPECT());
-		PyObject *row = NULL, *list = NULL;
-		if (sp > 0) {
-			PyObject *score = Sf_GetItem(&f, G("Scorer"), key);
-			row = Sf_Build(&f, "(OOO(iiii)O)", score, Sf_Op(&f, flag, '+', Sf_Attr(&f, ent, "Descriptor")), color, 0, 0, 0, 0, key);
-			list = spect;
-		} else if (sp == 0) {
-			PyObject *typo = Sf_Attr(&f, ent, "TgType");
-			PyObject *score = Sf_ToFloat(&f, Sf_GetItem(&f, G("Scorer"), key));
-			if (isuser) {
-				score = Sf_Op(&f, score, '+', Sf_Float(&f, 0.1));
-				userscore = score;
-			}
-			int r = Sf_EqS(&f, typo, "red"), g = r == 0 ? Sf_EqS(&f, typo, "green") : 0;
-			PyObject *desc = r >= 0 && g >= 0 ? Sf_Op(&f, flag, '+', Sf_Attr(&f, ent, "Descriptor")) : NULL;
-			if (r > 0 || g > 0) {
-				row = Sf_Build(&f, "(OOOOO)", score, desc, color, G(r > 0 ? "REDCOLOR" : "GREENCOLOR"), key);
-				list = r > 0 ? red : green;
-			} else if (r == 0 && g == 0) {
-				row = Sf_Build(&f, "(OOO(iiii)O)", score, desc, color, 0, 0, 0, 0, key);
-				list = killer;
-			}
-		}
-		if (row) {
-			Sf_Check(&f, PyList_Append(list, row) == 0);
-		}
-		Sf_ReleaseKeep(&f, mark, &userscore, 1);
-	}
-	PyObject *lists[4] = { killer, red, green, spect };
+static byte Ffa_GetScorerInfoC(const nativeVal_t *id, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *lists = Mode_V(&t), *userscore = Mode_V(&t), *keys = Mode_V(&t), *none4 = Mode_V(&t), *info = Mode_V(&t);
+	nativeVal_t *tginfo = Mode_V(&t), *tenth = Mode_V(&t);
+	/* killer, red, green, spect */
+	Native_SetEmpty(lists, NV_LIST);
 	for (int i = 0; i < 4; i++) {
-		int mark = f.n;
-		Sf_Method(&f, lists[i], "sort", "()");
-		Sf_Method(&f, lists[i], "reverse", "()");
-		Sf_Release(&f, mark);
+		Native_SetEmpty(Native_Append(lists), NV_LIST);
 	}
-	int gw = Sf_Compare(&f, G("TotalGreen"), ">", G("TotalRed"));
-	PyObject *info = NULL;
-	if (gw >= 0) {
-		info = Sf_Op(&f, Sf_Op(&f, Sf_Op(&f, gw ? green : red, '+', gw ? red : green), '+', killer), '+', spect);
+	nativeVal_t *killer = &lists->items[0], *red = &lists->items[1], *green = &lists->items[2], *spect = &lists->items[3];
+	Native_SetFloat(userscore, 0.1);
+	Native_SetFloat(tenth, 0.1);
+	Native_SetEmpty(none4, NV_TUPLE);
+	for (int i = 0; i < 4; i++) {
+		Native_SetInt(Native_Append(none4), 0);
 	}
-	PyObject *tginfo = Sf_Keep(&f, PyList_New(0));
-	int n = Sf_Len(&f, info);
-	for (int i = 0; i < n && !f.failed; i++) {
-		int mark = f.n;
-		PyObject *item = Sf_Item(&f, info, i), *score = Sf_Item(&f, item, 0);
-		if (Sf_Compare(&f, score, "==", userscore) > 0) {
-			score = Sf_Op(&f, userscore, '-', Sf_Float(&f, 0.1));
+	if (!Mode_Import("RacerScorer") || !Mode_Keys("Ffa", "Scorer", 1, keys)) {
+		return Mode_Done(&t, 0);
+	}
+	int n = Native_ForCount(keys);
+	for (int i = 0; i < n; i++) {
+		int mark = t.n;
+		nativeVal_t *key = Mode_V(&t), *flag = Mode_V(&t), *uc = Mode_V(&t), *score = Mode_V(&t), *sp = Mode_V(&t);
+		nativeVal_t *desc = Mode_V(&t), *d = Mode_V(&t), *typo = Mode_V(&t), *f = Mode_V(&t), *back = Mode_V(&t);
+		cEntity *ent;
+		if (!Native_SeqItem(keys, i, key) || !FR(masterFlag, "MasterFlag")) {
+			return Mode_Done(&t, 0);
 		}
-		PyObject *iscore = Sf_ToInt(&f, score);
-		PyObject *row = Sf_Build(&f, "(OOOOO)", iscore, Sf_Item(&f, item, 1), Sf_Item(&f, item, 2), Sf_Item(&f, item, 3),
-			Sf_Item(&f, item, 4));
-		if (row) {
-			Sf_Check(&f, PyList_Append(tginfo, row) == 0);
+		Native_SetStr(flag, Ffa_Eq(&ffa.masterFlag, key) ? "*" : " ");
+		if (!Mode_Ent(key, &ent) || !Mode_Get(ent, Native_Text(key), "UsrControl", uc)) {
+			return Mode_Done(&t, 0);
 		}
-		Sf_Release(&f, mark);
+		int isuser = Ffa_Eq(uc, id);
+		const nativeVal_t *color;
+		if (isuser ? !FR(usrColor, "USRCOLOR") : !FR(stdColor, "STDCOLOR")) {
+			return Mode_Done(&t, 0);
+		}
+		color = isuser ? &ffa.usrColor : &ffa.stdColor;
+		if (!Ffa_Score(key, score) || !Ffa_Spect(sp)) {
+			return Mode_Done(&t, 0);
+		}
+		if (Ffa_Eq(score, sp)) {
+			Native_Free(score);
+			if (!Ffa_Score(key, score) || !Native_EntVar(ent, Native_Text(key), "Descriptor", d) || !Native_Arith('+', flag, d, desc)) {
+				return Mode_Done(&t, 0);
+			}
+			Ffa_Row(spect, score, desc, color, none4, key);
+		} else {
+			if (!Native_EntVar(ent, Native_Text(key), "TgType", typo)) {
+				return Mode_Done(&t, 0);
+			}
+			Native_Free(score);
+			if (!Ffa_Score(key, score) || !Native_ToFloat(score, f)) {
+				return Mode_Done(&t, 0);
+			}
+			if (isuser) {
+				Native_Free(score);
+				if (!Native_Arith('+', f, tenth, score)) {
+					return Mode_Done(&t, 0);
+				}
+				Native_Free(f);
+				Native_Copy(f, score);
+				Native_Free(userscore);
+				Native_Copy(userscore, score);
+			}
+			int r = Native_IsStr(typo, "red"), g = !r && Native_IsStr(typo, "green");
+			if (!Native_EntVar(ent, Native_Text(key), "Descriptor", d) || !Native_Arith('+', flag, d, desc)) {
+				return Mode_Done(&t, 0);
+			}
+			if (r || g) {
+				if (r ? !FR(redColor, "REDCOLOR") : !FR(greenColor, "GREENCOLOR")) {
+					return Mode_Done(&t, 0);
+				}
+				Ffa_Row(r ? red : green, f, desc, color, r ? &ffa.redColor : &ffa.greenColor, key);
+			} else {
+				Ffa_Row(killer, f, desc, color, none4, key);
+			}
+			(void)back;
+		}
+		Mode_Release(&t, mark);
 	}
-	return Sf_Return(&f, tginfo);
+	if (n < 0) {
+		return Mode_Done(&t, 0);
+	}
+	for (int i = 0; i < 4; i++) {
+		Ffa_SortDown(&lists->items[i]);
+	}
+	if (!FR(totalGreen, "TotalGreen") || !FR(totalRed, "TotalRed")) {
+		return Mode_Done(&t, 0);
+	}
+	int gw = Native_Compare(&ffa.totalGreen, &ffa.totalRed) > 0;
+	if (!Mode_Cat(&t, info, 4, gw ? green : red, gw ? red : green, killer, spect)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetEmpty(tginfo, NV_LIST);
+	for (int i = 0; i < info->n; i++) {
+		int mark = t.n;
+		nativeVal_t *item = &info->items[i], *score = Mode_V(&t), *iscore = Mode_V(&t);
+		nativeVal_t *it[5];
+		for (int k = 0; k < 5; k++) {
+			it[k] = Mode_V(&t);
+			if (!Native_SeqItem(item, k, it[k])) {
+				return Mode_Done(&t, 0);
+			}
+		}
+		Native_Copy(score, it[0]);
+		if (Ffa_Eq(score, userscore)) {
+			Native_Free(score);
+			if (!Native_Arith('-', userscore, tenth, score)) {
+				return Mode_Done(&t, 0);
+			}
+		}
+		if (!Native_ToInt(score, iscore)) {
+			return Mode_Done(&t, 0);
+		}
+		Ffa_Row(tginfo, iscore, it[1], it[2], it[3], it[4]);
+		Mode_Release(&t, mark);
+	}
+	Native_Copy(out, tginfo);
+	return Mode_Done(&t, 1);
 }
 
 /* OnPositionChange(newpos, prevpos, value, prevValue, newwinner, winner): the label of a change of the lead or of the
  * place (free for all only) */
-static PyObject *Ffa_OnPositionChange(PyObject *self, PyObject *args) {
-	PyObject *newpos, *prevpos, *value, *prevvalue, *newwinner, *winner, *txpos = NULL;
-	SF_ARGS("OOOOOO", &newpos, &prevpos, &value, &prevvalue, &newwinner, &winner);
-	if (Sf_EqI(&f, newpos, 1) > 0) {
-		txpos = STR("1st");
-	} else if (!f.failed && Sf_EqI(&f, newpos, 2) > 0) {
-		txpos = STR("2nd");
-	} else if (!f.failed) {
-		txpos = Sf_Op(&f, Sf_Repr(&f, newpos), '+', STR("th"));
-	}
-	int lead = Sf_Compare(&f, newwinner, "!=", winner);
-	if (lead == 0) {
-		lead = Sf_Compare(&f, value, "!=", prevvalue);
-		if (lead > 0) {
-			lead = Sf_Compare(&f, winner, "!=", Sf_Int(&f, -1));
+static byte Ffa_OnPositionChangeC(const nativeVal_t *a) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *txpos = Mode_V(&t), *rep = Mode_V(&t), *text = Mode_V(&t);
+	const nativeVal_t *newpos = &a[0], *prevpos = &a[1], *value = &a[2], *prevvalue = &a[3], *newwinner = &a[4], *winner = &a[5];
+	if (Ffa_Eq(newpos, Mode_I(&t, 1))) {
+		Native_SetStr(txpos, "1st");
+	} else if (Ffa_Eq(newpos, Mode_I(&t, 2))) {
+		Native_SetStr(txpos, "2nd");
+	} else {
+		Ffa_Repr(newpos, rep);
+		if (!Mode_Cat(&t, txpos, 2, rep, Mode_S(&t, "th"))) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	if (lead > 0) {
-		if (Sf_True(&f, LIB("TeamGame")) == 0) {
-			const char *key = NULL;
-			if (Sf_EqI(&f, newwinner, -1) > 0) {
-				key = "Net_Label_Lost_Lead";
-			} else if (!f.failed && Sf_EqI(&f, newwinner, 0) > 0) {
-				key = "Net_Label_Tied_Lead";
-			} else if (!f.failed) {
-				key = "Net_Label_Tied_Leading";
-			}
-			if (key) {
-				Sf_Run(&f, "SScorer", "SetLabelText", "(OO)", LANG(key), Sf_OpI(&f, Sf_Time(&f), '+', 5));
-			}
-		}
-		return Sf_None(&f);
+	int lead = !Ffa_Eq(newwinner, winner);
+	if (!lead) {
+		lead = !Ffa_Eq(value, prevvalue) && !Ffa_Eq(winner, Mode_I(&t, -1));
 	}
-	int place = lead < 0 ? -1 : Sf_Compare(&f, value, "!=", prevvalue);
-	if (place == 0) {
-		place = Sf_Compare(&f, newpos, "!=", prevpos);
-	}
-	if (place > 0 && Sf_True(&f, LIB("TeamGame")) == 0) {
-		const char *key = NULL;
-		if (Sf_Compare(&f, newpos, "<", prevpos) > 0) {
-			key = "Net_Label_Up_to";
-		} else if (!f.failed && Sf_Compare(&f, newpos, ">", prevpos) > 0) {
-			key = "Net_Label_Down_to";
-		} else if (!f.failed) {
-			key = "Net_Label_Still_to";
+	if (lead) {
+		int team = Ffa_Team();
+		if (team != 0) {
+			return Mode_Done(&t, team > 0);
 		}
-		if (key) {
-			Sf_Run(&f, "SScorer", "SetLabelText", "(OO)", Sf_Op(&f, LANG(key), '%', txpos), Sf_OpI(&f, Sf_Time(&f), '+', 5));
-		}
+		const char *key = Ffa_Eq(newwinner, Mode_I(&t, -1)) ? "Net_Label_Lost_Lead" : Ffa_Eq(newwinner, Mode_I(&t, 0)) ?
+			"Net_Label_Tied_Lead" : "Net_Label_Tied_Leading";
+		return Mode_Done(&t, Mode_Label(0, key, 5));
 	}
-	return Sf_None(&f);
+	int place = !Ffa_Eq(value, prevvalue) || !Ffa_Eq(newpos, prevpos);
+	if (!place) {
+		return Mode_Done(&t, 1);
+	}
+	int team = Ffa_Team();
+	if (team != 0) {
+		return Mode_Done(&t, team > 0);
+	}
+	int c = Native_Compare(newpos, prevpos);
+	return Mode_Done(&t, Mode_LangFmt(c < 0 ? "Net_Label_Up_to" : c > 0 ? "Net_Label_Down_to" : "Net_Label_Still_to", txpos, text) &&
+		Mode_LabelText(text, Mode_Time() + 5.0));
 }
 
 /* isTied(value): 1 when value leads GameScorer alone, 0 when tied at the top, -1 when not at the top */
-static PyObject *Ffa_isTied(PyObject *self, PyObject *args) {
-	PyObject *value;
-	SF_ARGS("O", &value);
+static byte Ffa_isTiedC(const nativeVal_t *value, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
 	long pos = -1, ctr = 0;
-	PyObject *list = G("GameScorer");
-	for (int i = 0; !f.failed; i++) {
-		int mark = f.n;
-		PyObject *key = Sf_Next(&f, list, i);
-		if (!key) {
-			break;
+	if (!FR(gameScorer, "GameScorer")) {
+		return Mode_Done(&t, 0);
+	}
+	int n = Native_ForCount(&ffa.gameScorer);
+	for (int i = 0; i < n; i++) {
+		int mark = t.n;
+		nativeVal_t *key = Mode_V(&t), *k0 = Mode_V(&t);
+		if (!Native_SeqItem(&ffa.gameScorer, i, key) || !Native_Subscript(key, Mode_I(&t, 0), k0)) {
+			return Mode_Done(&t, 0);
 		}
-		if (Sf_Compare(&f, Sf_Item(&f, key, 0), "==", value) > 0) {
+		if (Ffa_Eq(k0, value)) {
 			ctr++;
 			if (pos == -1) {
 				pos = i + 1;
 			}
 		}
-		Sf_Release(&f, mark);
+		Mode_Release(&t, mark);
 	}
-	return Sf_Return(&f, Sf_Int(&f, pos != 1 ? -1 : ctr == 1 ? 1 : 0));
+	Native_SetInt(out, pos != 1 ? -1 : ctr == 1 ? 1 : 0);
+	return Mode_Done(&t, n >= 0);
 }
 
 /* CheckGameStart(): the game counts once two active players (one per team in a team game) are in */
-static PyObject *Ffa_CheckGameStart(PyObject *self, PyObject *args) {
-	NOARGS();
-	int c = Sf_True(&f, G("GameStart"));
-	if (c != 0) {
-		return Sf_Return(&f, Sf_Int(&f, 1));
+static byte Ffa_CheckGameStartC(nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *keys = Mode_V(&t);
+	if (!FR(gameStart, "GameStart")) {
+		return Mode_Done(&t, 0);
 	}
-	int n = Sf_Len(&f, Sf_Method(&f, G("Scorer"), "keys", "()"));
-	if (n >= 0 && n <= 1) {
-		return Sf_Return(&f, Sf_Int(&f, 0));
+	if (Native_True(&ffa.gameStart)) {
+		Native_SetInt(out, 1);
+		return Mode_Done(&t, 1);
 	}
-	int team = Sf_True(&f, LIB("TeamGame"));
+	if (!Mode_Keys("Ffa", "Scorer", 1, keys)) {
+		return Mode_Done(&t, 0);
+	}
+	int n = Native_Size(keys);
+	if (n < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (n <= 1) {
+		Native_SetInt(out, 0);
+		return Mode_Done(&t, 1);
+	}
+	int team = Ffa_Team();
 	long red = 0, green = 0;
-	PyObject *keys = team < 0 ? NULL : Sf_Method(&f, G("Scorer"), "keys", "()");
-	for (int i = 0; !f.failed; i++) {
-		int mark = f.n;
-		PyObject *name = Sf_Next(&f, keys, i);
-		if (!name) {
-			break;
+	Native_Free(keys);
+	if (team < 0 || !Mode_Keys("Ffa", "Scorer", 1, keys)) {
+		return Mode_Done(&t, 0);
+	}
+	n = Native_ForCount(keys);
+	for (int i = 0; i < n; i++) {
+		int mark = t.n;
+		nativeVal_t *name = Mode_V(&t), *act = Mode_V(&t), *tg = Mode_V(&t);
+		cEntity *ply;
+		if (!Native_SeqItem(keys, i, name) || !Mode_Ent(name, &ply)) {
+			return Mode_Done(&t, 0);
 		}
-		PyObject *ply = Sf_Entity(&f, name);
-		int on = Sf_True(&f, ply);
-		if (on > 0) {
-			on = Sf_True(&f, Sf_Attr(&f, ply, "Active"));
+		int on = ply != NULL;
+		if (on) {
+			if (!Native_EntVar(ply, Native_Text(name), "Active", act)) {
+				return Mode_Done(&t, 0);
+			}
+			on = Native_True(act);
 		}
-		if (on > 0 && team) {
-			int r = Sf_EqS(&f, Sf_Attr(&f, ply, "TgType"), "red");
-			if (r > 0) {
+		if (on && team) {
+			if (!Native_EntVar(ply, Native_Text(name), "TgType", tg)) {
+				return Mode_Done(&t, 0);
+			}
+			if (Native_IsStr(tg, "red")) {
 				red++;
-			} else if (r == 0) {
+			} else {
 				green++;
 			}
-		} else if (on > 0) {
+		} else if (on) {
 			red++;
 		}
-		Sf_Release(&f, mark);
+		Mode_Release(&t, mark);
 	}
-	if (!f.failed && (team ? green > 0 && red > 0 : red > 1)) {
-		Sf_SetGlobal(&f, "Ffa", "GameStart", Sf_Int(&f, 1));
+	if (n < 0 || ((team ? green > 0 && red > 0 : red > 1) && !FW(gameStart, "GameStart", Mode_I(&t, 1))) || !FR(gameStart, "GameStart")) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_Return(&f, G("GameStart"));
+	Native_Copy(out, &ffa.gameStart);
+	return Mode_Done(&t, 1);
 }
 
 /* UsrPos(info): the place of the player's row (USRCOLOR), 1 when none */
-static PyObject *Ffa_UsrPos(PyObject *self, PyObject *args) {
-	PyObject *info;
-	SF_ARGS("O", &info);
-	for (int i = 0; !f.failed; i++) {
-		int mark = f.n;
-		PyObject *key = Sf_Next(&f, info, i);
-		if (!key) {
-			break;
+static byte Ffa_UsrPosC(const nativeVal_t *info, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	int n = Native_ForCount(info);
+	for (int i = 0; i < n; i++) {
+		int mark = t.n;
+		nativeVal_t *key = Mode_V(&t), *k2 = Mode_V(&t);
+		if (!Native_SeqItem(info, i, key) || !Native_Subscript(key, Mode_I(&t, 2), k2) || !FR(usrColor, "USRCOLOR")) {
+			return Mode_Done(&t, 0);
 		}
-		if (Sf_Compare(&f, Sf_Item(&f, key, 2), "==", G("USRCOLOR")) > 0) {
-			return Sf_Return(&f, Sf_Int(&f, i + 1));
+		if (Ffa_Eq(k2, &ffa.usrColor)) {
+			Native_SetInt(out, i + 1);
+			return Mode_Done(&t, 1);
 		}
-		Sf_Release(&f, mark);
+		Mode_Release(&t, mark);
 	}
-	return Sf_Return(&f, Sf_Int(&f, 1));
+	Native_SetInt(out, 1);
+	return Mode_Done(&t, n >= 0);
 }
 
-/* ActualizeGameScorer(NowShowScorer=1): GameScorer again, the place labels, the scorer shown or its values set */
-static PyObject *Ffa_ActualizeGameScorer(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "NowShowScorer", NULL };
-	PyObject *now = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &now)) {
-		return NULL;
+/* ActualizeGameScorer(NowShowScorer=1): GameScorer again, the place labels, the scorer shown or its values set (now
+ * NULL: the default) */
+static byte Ffa_ActualizeGameScorerC(const nativeVal_t *now) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *gs = Mode_V(&t), *yp = Mode_V(&t), *yp1 = Mode_V(&t), *row = Mode_V(&t), *value = Mode_V(&t), *nw = Mode_V(&t);
+	if (!Mode_Import("RacerScorer") || !OWN("GetScorerInfo", gs, "i", 0L) || !FW(gameScorer, "GameScorer", gs) ||
+		!FR(gameScorer, "GameScorer")) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "RacerScorer");
-	Sf_SetGlobal(&f, "Ffa", "GameScorer", Sf_Own(&f, "Ffa", "GetScorerInfo", "(i)", 0));
-	int n = Sf_Len(&f, G("GameScorer"));
+	int n = Native_Size(&ffa.gameScorer);
+	if (n < 0) {
+		return Mode_Done(&t, 0);
+	}
 	if (n > 0) {
-		PyObject *yp = Sf_Own(&f, "Ffa", "UsrPos", "(O)", G("GameScorer"));
-		PyObject *value = Sf_Item(&f, Sf_GetItem(&f, G("GameScorer"), Sf_OpI(&f, yp, '-', 1)), 0);
-		PyObject *nw = Sf_Own(&f, "Ffa", "isTied", "(O)", value);
-		int c = Sf_Compare(&f, yp, "!=", G("YourPosition"));
-		if (c == 0) {
-			c = Sf_Compare(&f, value, "!=", G("YourScore"));
+		if (!FR(gameScorer, "GameScorer") || !OWN("UsrPos", yp, "v", &ffa.gameScorer) || !FR(gameScorer, "GameScorer") ||
+			!Native_Arith('-', yp, Mode_I(&t, 1), yp1) || !Native_Subscript(&ffa.gameScorer, yp1, row) ||
+			!Native_Subscript(row, Mode_I(&t, 0), value) || !OWN("isTied", nw, "v", value) || !FR(yourPosition, "YourPosition")) {
+			return Mode_Done(&t, 0);
 		}
-		if (c == 0) {
-			c = Sf_Compare(&f, nw, "!=", G("Winner"));
+		int c = !Ffa_Eq(yp, &ffa.yourPosition);
+		if (!c) {
+			if (!FR(yourScore, "YourScore")) {
+				return Mode_Done(&t, 0);
+			}
+			c = !Ffa_Eq(value, &ffa.yourScore);
 		}
-		if (c > 0) {
-			Ffa_Run(&f, "OnPositionChange", "(OOOOOO)", yp, G("YourPosition"), value, G("YourScore"), nw, G("Winner"));
-			Sf_SetGlobal(&f, "Ffa", "YourPosition", yp);
-			Sf_SetGlobal(&f, "Ffa", "YourScore", value);
-			Sf_SetGlobal(&f, "Ffa", "Winner", nw);
+		if (!c) {
+			if (!FR(winner, "Winner")) {
+				return Mode_Done(&t, 0);
+			}
+			c = !Ffa_Eq(nw, &ffa.winner);
+		}
+		if (c && (!FR(yourPosition, "YourPosition") || !FR(yourScore, "YourScore") || !FR(winner, "Winner") ||
+			!OWN("OnPositionChange", NULL, "vvvvvv", yp, &ffa.yourPosition, value, &ffa.yourScore, nw, &ffa.winner) ||
+			!FW(yourPosition, "YourPosition", yp) || !FW(yourScore, "YourScore", value) || !FW(winner, "Winner", nw))) {
+			return Mode_Done(&t, 0);
 		}
 	}
-	if (Sf_True(&f, LIB("TeamGame")) > 0) {
-		Sf_SetMod(&f, "RacerScorer", "ScorerTopMessage", Sf_Method(&f, G("ModLib"), "GetGameDescriptor", "()"));
+	int team = Ffa_Team();
+	if (team < 0 || (team > 0 && !Ffa_TopDescriptor()) || !FR(isScorerVisible, "isScorerVisible")) {
+		return Mode_Done(&t, 0);
 	}
-	int vis = Sf_True(&f, G("isScorerVisible"));
-	if (vis > 0) {
-		if ((now ? Sf_True(&f, now) : 1) > 0) {
-			Ffa_Run(&f, "ShowScorer", "(ii)", 0, 1);
-		}
-	} else if (vis == 0) {
-		Ffa_Run(&f, "SetScorerValues", "(i)", 0);
+	if (Native_True(&ffa.isScorerVisible)) {
+		return Mode_Done(&t, (now && !Native_True(now)) || OWN("ShowScorer", NULL, "ii", 0L, 1L));
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, OWN("SetScorerValues", NULL, "i", 0L));
 }
 
 /* ShowScorer(id, doit): the scores on screen or the plain HUD (not while a menu is up) */
-static PyObject *Ffa_ShowScorer(PyObject *self, PyObject *args) {
-	PyObject *id, *doit;
-	SF_ARGS("OO", &id, &doit);
-	Sf_SetGlobal(&f, "Ffa", "isScorerVisible", doit);
-	Sf_Import(&f, "RacerScorer");
-	if (Sf_EqS(&f, Sf_Ask(&f, "SInput", "GetActionSet", "()"), "Menu") != 0) {
-		return Sf_None(&f);
+static byte Ffa_ShowScorerC(const nativeVal_t *id, const nativeVal_t *doit) {
+	if (!FW(isScorerVisible, "isScorerVisible", doit) || !Mode_Import("RacerScorer")) {
+		return 0;
 	}
-	Ffa_Run(&f, "ActualizeGameScorer", "(i)", 0);
-	int d = Sf_True(&f, doit);
-	if (d > 0) {
-		Sf_Run(&f, "RacerScorer", "ShowScorer", "(OO)", id, G("GameScorer"));
-	} else if (d == 0) {
-		Sf_Run(&f, "RacerScorer", "Create", "(O)", id);
+	if (Mode_ActionSetIs("Menu")) {
+		return 1;
 	}
-	return Sf_None(&f);
-}
-
-/* BackMenuFunc(id): back from a menu, the scorer as it was */
-static PyObject *Ffa_BackMenuFunc(PyObject *self, PyObject *args) {
-	PyObject *id;
-	SF_ARGS("O", &id);
-	Ffa_Run(&f, "ShowScorer", "(OO)", id, G("isScorerVisible"));
-	return Sf_None(&f);
-}
-
-/* ShowHelp(id): the help of the mode */
-static PyObject *Ffa_ShowHelp(PyObject *self, PyObject *args) {
-	PyObject *id;
-	SF_ARGS("O", &id);
-	Ffa_Lib(&f, "ShowHelp", "(O)", id);
-	return Sf_None(&f);
+	if (!OWN("ActualizeGameScorer", NULL, "i", 0L)) {
+		return 0;
+	}
+	if (Native_True(doit)) {
+		return FR(gameScorer, "GameScorer") && CALL("RacerScorer", "ShowScorer", NULL, "vv", id, &ffa.gameScorer);
+	}
+	return CALL("RacerScorer", "Create", NULL, "v", id);
 }
 
 /* SetupGameRules(s): the client gets the frag limit */
-static PyObject *Ffa_SetupGameRules(PyObject *self, PyObject *args) {
-	PyObject *s;
-	SF_ARGS("O", &s);
-	Sf_SetGlobal(&f, "Ffa", "ScorerFraglimit", Sf_ToInt(&f, s));
-	Ffa_Run(&f, "ActualizeGameScorer", "()");
-	return Sf_None(&f);
+static byte Ffa_SetupGameRulesC(const nativeVal_t *s) {
+	nativeVal_t v;
+	if (!Native_ToInt(s, &v)) {
+		return 0;
+	}
+	return FW(scorerFraglimit, "ScorerFraglimit", &v) && OWN("ActualizeGameScorer", NULL, "");
 }
 
 /* SendGameRules(clientid): the server sends the frag limit */
-static PyObject *Ffa_SendGameRules(PyObject *self, PyObject *args) {
-	PyObject *id;
-	SF_ARGS("O", &id);
-	Ffa_Send(&f, id, Sf_Op(&f, STR("G"), '+', Sf_Repr(&f, G("ScorerFraglimit"))));
-	return Sf_None(&f);
+static byte Ffa_SendGameRulesC(const nativeVal_t *id) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *rep = Mode_V(&t), *s = Mode_V(&t);
+	if (!FR(scorerFraglimit, "ScorerFraglimit")) {
+		return Mode_Done(&t, 0);
+	}
+	Ffa_Repr(&ffa.scorerFraglimit, rep);
+	return Mode_Done(&t, Mode_Cat(&t, s, 2, Mode_S(&t, "G"), rep) && Mode_Send(id, s));
+}
+
+/* SScorer.Set(id, item, var, v) */
+static byte Ffa_Set(modeVals_t *t, const nativeVal_t *id, const char *item, const char *var, const nativeVal_t *v) {
+	return Mode_ScorerSet(id, Mode_S(t, item), var, v);
+}
+
+/* SScorer.Set(id, item, "Text", `v`) */
+static byte Ffa_SetRepr(modeVals_t *t, const nativeVal_t *id, const char *item, const nativeVal_t *v) {
+	nativeVal_t *rep = Mode_V(t);
+	Ffa_Repr(v, rep);
+	return Ffa_Set(t, id, item, "Text", rep);
+}
+
+/* GameScorer[i][0] into *out */
+static byte Ffa_ScorerAt(modeVals_t *t, int i, nativeVal_t *out) {
+	nativeVal_t *row = Mode_V(t);
+	return FR(gameScorer, "GameScorer") && Native_Subscript(&ffa.gameScorer, Mode_I(t, i), row) && Native_Subscript(row, Mode_I(t, 0), out);
 }
 
 /* SetScorerValues(id): the numbers of the mission scorer: the limit, the team totals or the best and own score */
-static PyObject *Ffa_SetScorerValues(PyObject *self, PyObject *args) {
-	PyObject *id;
-	SF_ARGS("O", &id);
-	Sf_Import(&f, "RacerScorer");
-	PyObject *cam = ENT("NetCam");
-	int c = Sf_True(&f, cam);
-	if (c > 0) {
-		c = Sf_EqI(&f, Sf_Attr(&f, cam, "FreeCam"), 1);
+static byte Ffa_SetScorerValuesC(const nativeVal_t *id) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *fc = Mode_V(&t), *top = Mode_V(&t), *sp = Mode_V(&t), *pts = Mode_V(&t);
+	if (!Mode_Import("RacerScorer")) {
+		return Mode_Done(&t, 0);
 	}
-	if (c != 0) {
-		return Sf_None(&f);
-	}
-	Ffa_Set(&f, id, STR("MissionLimit"), "Text", Sf_Repr(&f, G("ScorerFraglimit")));
-	int team = Sf_True(&f, LIB("TeamGame"));
-	if (team > 0) {
-		int r = Sf_Compare(&f, G("TotalRed"), ">", G("TotalGreen"));
-		if (r < 0) {
-			return Sf_None(&f);
+	cEntity *cam = Ffa_Cam();
+	if (cam) {
+		if (!Native_EntVar(cam, "NetCam", "FreeCam", fc)) {
+			return Mode_Done(&t, 0);
 		}
+		if (Ffa_Eq(fc, Mode_I(&t, 1))) {
+			return Mode_Done(&t, 1);
+		}
+	}
+	if (!FR(scorerFraglimit, "ScorerFraglimit") || !Ffa_SetRepr(&t, id, "MissionLimit", &ffa.scorerFraglimit)) {
+		return Mode_Done(&t, 0);
+	}
+	int team = Ffa_Team();
+	if (team < 0) {
+		return Mode_Done(&t, 0);
+	}
+	if (team) {
+		if (!FR(totalRed, "TotalRed") || !FR(totalGreen, "TotalGreen")) {
+			return Mode_Done(&t, 0);
+		}
+		int r = Native_Compare(&ffa.totalRed, &ffa.totalGreen) > 0;
 		const char *rc[2] = { r ? "MissionSLimit" : "MissionYou", r ? "MissionBest" : "MissionBad" };
 		const char *gc[2] = { r ? "MissionYou" : "MissionSLimit", r ? "MissionBad" : "MissionBest" };
-		Ffa_Set(&f, id, STR(rc[0]), "Green", Sf_Int(&f, 0));
-		Ffa_Set(&f, id, STR(rc[0]), "Red", Sf_Int(&f, 255));
-		Ffa_Set(&f, id, STR(rc[1]), "Text", Sf_Repr(&f, G("TotalRed")));
-		Ffa_Set(&f, id, STR(gc[0]), "Green", Sf_Int(&f, 255));
-		Ffa_Set(&f, id, STR(gc[0]), "Red", Sf_Int(&f, 0));
-		Ffa_Set(&f, id, STR(gc[1]), "Text", Sf_Repr(&f, G("TotalGreen")));
-		return Sf_None(&f);
+		return Mode_Done(&t, Ffa_Set(&t, id, rc[0], "Green", Mode_I(&t, 0)) && Ffa_Set(&t, id, rc[0], "Red", Mode_I(&t, 255)) &&
+			FR(totalRed, "TotalRed") && Ffa_SetRepr(&t, id, rc[1], &ffa.totalRed) && Ffa_Set(&t, id, gc[0], "Green", Mode_I(&t, 255)) &&
+			Ffa_Set(&t, id, gc[0], "Red", Mode_I(&t, 0)) && FR(totalGreen, "TotalGreen") && Ffa_SetRepr(&t, id, gc[1], &ffa.totalGreen));
 	}
-	if (team < 0) {
-		return Sf_None(&f);
+	if (!FR(gameScorer, "GameScorer")) {
+		return Mode_Done(&t, 0);
 	}
-	int n = Sf_Len(&f, G("GameScorer"));
+	int n = Native_Size(&ffa.gameScorer);
 	if (n == 0) {
-		Ffa_Set(&f, id, STR("MissionBest"), "Text", STR("-"));
-		Ffa_Set(&f, id, STR("MissionBad"), "Text", STR("-"));
-		Ffa_Set(&f, id, STR("MissionYou"), "Blue", Sf_Int(&f, 0));
-		Ffa_Set(&f, id, STR("MissionYou"), "Red", Sf_Int(&f, 0));
-		return Sf_None(&f);
+		return Mode_Done(&t, Ffa_Set(&t, id, "MissionBest", "Text", Mode_S(&t, "-")) && Ffa_Set(&t, id, "MissionBad", "Text", Mode_S(&t, "-")) &&
+			Ffa_Set(&t, id, "MissionYou", "Blue", Mode_I(&t, 0)) && Ffa_Set(&t, id, "MissionYou", "Red", Mode_I(&t, 0)));
 	}
-	if (n < 0) {
-		return Sf_None(&f);
+	if (n < 0 || !FR(yourScore, "YourScore") || !Ffa_ScorerAt(&t, 0, top)) {
+		return Mode_Done(&t, 0);
 	}
-	int best = Sf_Compare(&f, G("YourScore"), "==", Sf_Item(&f, Sf_Item(&f, G("GameScorer"), 0), 0));
-	PyObject *pts;
-	if (best > 0) {
-		Ffa_Set(&f, id, STR("MissionBest"), "Text", Sf_Repr(&f, G("YourScore")));
-		int indx = Sf_Len(&f, G("GameScorer")) > 1 ? 1 : 0;
-		if (Sf_Compare(&f, SPECT(), "==", Sf_Item(&f, Sf_Item(&f, G("GameScorer"), indx), 0)) > 0) {
-			pts = Sf_Int(&f, 0);
-		} else {
-			pts = Sf_Item(&f, Sf_Item(&f, G("GameScorer"), indx), 0);
+	if (Ffa_Eq(&ffa.yourScore, top)) {
+		if (!FR(yourScore, "YourScore") || !Ffa_SetRepr(&t, id, "MissionBest", &ffa.yourScore) || !FR(gameScorer, "GameScorer")) {
+			return Mode_Done(&t, 0);
 		}
-		Ffa_Set(&f, id, STR("MissionBad"), "Text", Sf_Repr(&f, pts));
-		Ffa_Set(&f, id, STR("MissionYou"), "Y", Sf_Int(&f, 180));
-		Ffa_Set(&f, id, STR("MissionYou"), "Blue", Sf_Int(&f, 255));
-		Ffa_Set(&f, id, STR("MissionYou"), "Red", Sf_Int(&f, 0));
-	} else if (best == 0) {
-		/* pts is computed and not used, as in the script */
-		if (Sf_Compare(&f, SPECT(), "==", Sf_Item(&f, Sf_Item(&f, G("GameScorer"), 0), 0)) == 0) {
-			Sf_Item(&f, Sf_Item(&f, G("GameScorer"), 0), 0);
+		int len = Native_Size(&ffa.gameScorer);
+		int indx = len > 1 ? 1 : 0;
+		Native_Free(top);
+		if (len < 0 || !Ffa_Spect(sp) || !Ffa_ScorerAt(&t, indx, top)) {
+			return Mode_Done(&t, 0);
 		}
-		Ffa_Set(&f, id, STR("MissionBest"), "Text", Sf_Repr(&f, Sf_Item(&f, Sf_Item(&f, G("GameScorer"), 0), 0)));
-		Ffa_Set(&f, id, STR("MissionBad"), "Text", Sf_Repr(&f, G("YourScore")));
-		Ffa_Set(&f, id, STR("MissionYou"), "Y", Sf_Int(&f, 200));
-		Ffa_Set(&f, id, STR("MissionYou"), "Blue", Sf_Int(&f, 0));
-		Ffa_Set(&f, id, STR("MissionYou"), "Red", Sf_Int(&f, 255));
+		if (Ffa_Eq(sp, top)) {
+			Native_SetInt(pts, 0);
+		} else if (!Ffa_ScorerAt(&t, indx, pts)) {
+			return Mode_Done(&t, 0);
+		}
+		return Mode_Done(&t, Ffa_SetRepr(&t, id, "MissionBad", pts) && Ffa_Set(&t, id, "MissionYou", "Y", Mode_I(&t, 180)) &&
+			Ffa_Set(&t, id, "MissionYou", "Blue", Mode_I(&t, 255)) && Ffa_Set(&t, id, "MissionYou", "Red", Mode_I(&t, 0)));
 	}
-	return Sf_None(&f);
+	/* pts is computed and not used, as in the script */
+	Native_Free(top);
+	if (!Ffa_Spect(sp) || !Ffa_ScorerAt(&t, 0, top) || (!Ffa_Eq(sp, top) && !Ffa_ScorerAt(&t, 0, pts))) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(top);
+	return Mode_Done(&t, Ffa_ScorerAt(&t, 0, top) && Ffa_SetRepr(&t, id, "MissionBest", top) && FR(yourScore, "YourScore") &&
+		Ffa_SetRepr(&t, id, "MissionBad", &ffa.yourScore) && Ffa_Set(&t, id, "MissionYou", "Y", Mode_I(&t, 200)) &&
+		Ffa_Set(&t, id, "MissionYou", "Blue", Mode_I(&t, 0)) && Ffa_Set(&t, id, "MissionYou", "Red", Mode_I(&t, 255)));
 }
 
 /* FfaScorer(id): Menu.MissionScorerCall: the mission scorer of the HUD with the values (not for a spectator) */
-static PyObject *Ffa_FfaScorer(PyObject *self, PyObject *args) {
-	PyObject *id;
-	SF_ARGS("O", &id);
-	Sf_Import(&f, "RacerScorer");
-	PyObject *cam = ENT("NetCam");
-	int c = Sf_True(&f, cam);
-	if (c > 0) {
-		c = Sf_Compare(&f, Sf_Attr(&f, cam, "FreeCam"), "!=", Sf_Int(&f, 1));
+static byte Ffa_FfaScorerC(const nativeVal_t *id) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *fc = Mode_V(&t);
+	if (!Mode_Import("RacerScorer")) {
+		return Mode_Done(&t, 0);
 	}
-	if (c > 0) {
-		Sf_Run(&f, "RacerScorer", "MissionScorer", "(O)", id);
-		if (Sf_True(&f, LIB("TeamGame")) > 0) {
-			Sf_Run(&f, "RacerScorer", "MissionScorerTeam", "(O)", id);
-		}
-		Ffa_Run(&f, "SetScorerValues", "(O)", id);
+	cEntity *cam = Ffa_Cam();
+	if (!cam) {
+		return Mode_Done(&t, 1);
 	}
-	return Sf_None(&f);
+	if (!Native_EntVar(cam, "NetCam", "FreeCam", fc)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Ffa_Eq(fc, Mode_I(&t, 1))) {
+		return Mode_Done(&t, 1);
+	}
+	if (!CALL("RacerScorer", "MissionScorer", NULL, "v", id)) {
+		return Mode_Done(&t, 0);
+	}
+	int team = Ffa_Team();
+	return Mode_Done(&t, team >= 0 && (!team || CALL("RacerScorer", "MissionScorerTeam", NULL, "v", id)) &&
+		OWN("SetScorerValues", NULL, "v", id));
+}
+
+/* ---- the adapters of the module table (OBJLIB 7: arguments, results and the errors of the Python calls) ---- */
+
+/* the entry of a function of nargs arguments with the core call (a the arguments, out the result) */
+#define FFA_FN(name, nargs, call) MODE_FN(Ffa, name, nargs, call)
+
+FFA_FN(InitFfa, 0, Ffa_InitFfaC())
+FFA_FN(SetupUserShip, 1, Ffa_SetupUserShipC(&a[0]))
+FFA_FN(RestartOnPress, 1, Ffa_RestartOnPressC(&a[0]))
+FFA_FN(DelayedRestartOnPress, 1, Ffa_DelayedRestartOnPressC(&a[0]))
+FFA_FN(OnDeath, 2, Ffa_OnDeathC(&a[0], &a[1]))
+FFA_FN(ShowPresFireMessage, 2, Ffa_ShowPresFireMessageC(&a[0], &a[1]))
+FFA_FN(DelayedRestartOnTime, 1, Ffa_DelayedRestartOnTimeC(&a[0]))
+FFA_FN(EndOfGame, 0, Ffa_EndOfGameC())
+FFA_FN(ServerSendPlayerStatus, 1, Ffa_ServerSendPlayerStatusC(&a[0]))
+FFA_FN(ServerSendTeamData, 0, Ffa_ServerSendTeamDataC())
+FFA_FN(ServerEndOfGame, 0, Ffa_ServerEndOfGameC())
+FFA_FN(OnDeathServer, 2, Ffa_OnDeathServerC(&a[0], &a[1]))
+FFA_FN(OnDeathClient, 2, Ffa_OnDeathClientC(&a[0], &a[1]))
+FFA_FN(Scorer2Str, 0, Ffa_Scorer2StrC(out))
+FFA_FN(Str2Scorer, 1, Ffa_Str2ScorerC(&a[0]))
+FFA_FN(ClientJoin, 11, Ffa_ClientJoinC(a))
+FFA_FN(BuildCfgString, 0, Ffa_BuildCfgStringC(out))
+FFA_FN(ModiTry, 0, Ffa_ModiTryC())
+FFA_FN(ModifyOnReyoin, 11, Ffa_ModifyOnReyoinC(a))
+FFA_FN(ClientModify, 11, Ffa_ClientModifyC(a))
+FFA_FN(TryToModify, 11, Ffa_TryToModifyC(a))
+FFA_FN(PlayerMsgShow, 2, Ffa_PlayerMsgShowC(&a[0], &a[1]))
+FFA_FN(PlayerDisconected, 1, OWN("PlayerMsgShow", NULL, "sv", "%s leaves the match.", &a[0]))
+FFA_FN(PlayerSpectator, 1, OWN("PlayerMsgShow", NULL, "sv", "%s becomes spectator.", &a[0]))
+FFA_FN(PlayerJoinGame, 1, Ffa_PlayerJoinGameC(&a[0]))
+FFA_FN(ClientExit, 3, Ffa_ClientExitC(&a[0]))
+FFA_FN(ReSpawnClient, 1, Ffa_ReSpawnClientC(&a[0]))
+FFA_FN(ServerRemoveSpectatorState, 1, Ffa_ServerRemoveSpectatorStateC(&a[0]))
+FFA_FN(SetSpawnPos, 1, Ffa_SetSpawnPosC(&a[0]))
+FFA_FN(InitServer, 1, Ffa_InitServerC(&a[0]))
+FFA_FN(ClientSetConfig, 11, Ffa_ClientSetConfigC(a, out))
+FFA_FN(ClientAfterCreate, 2, Mode_Import("Net") && CALL("Net", "ClientAfterCreate", NULL, "vv", &a[0], &a[1]))
+FFA_FN(ClientCreate, 2, Mode_Import("Net") && CALL("Net", "ClientCreate", NULL, "vv", &a[0], &a[1]))
+FFA_FN(OnUsrTest, 2, Mode_Print((const nativeVal_t *const[]){ &a[0], &a[1] }, 2))
+FFA_FN(SvrShowMsg, 1, Ffa_SvrShowMsgC(&a[0]))
+FFA_FN(OnUsrClient, 2, Ffa_OnUsrClientC(&a[1]))
+FFA_FN(OnUsrServer, 2, Ffa_OnUsrServerC(&a[0], &a[1]))
+FFA_FN(JoinRed, 2, Ffa_JoinC(a, 0))
+FFA_FN(JoinGreen, 2, Ffa_JoinC(a, 2))
+FFA_FN(ReJoinGame, 2, Ffa_ReJoinGameC(a))
+FFA_FN(RejoinMsg, 3, Ffa_RejoinMsgC(a))
+FFA_FN(JoinGame, 2, Ffa_JoinGameC(a))
+FFA_FN(TeamMenu, 2, Ffa_TeamMenuC(&a[0]))
+FFA_FN(GetGameTeamDescriptor, 0, Ffa_GetGameTeamDescriptorC(out))
+FFA_FN(CameraSpectator, 0, Ffa_CameraSpectatorC())
+FFA_FN(AbortSpectateMode, 0, Ffa_AbortSpectateModeC())
+FFA_FN(ServerSpectate, 1, Ffa_ServerSpectateC(&a[0]))
+FFA_FN(InitClient, 0, Ffa_InitClientC())
+FFA_FN(StdInitFfa, 0, Ffa_StdInitFfaC())
+FFA_FN(OnPositionChange, 6, Ffa_OnPositionChangeC(a))
+FFA_FN(isTied, 1, Ffa_isTiedC(&a[0], out))
+FFA_FN(CheckGameStart, 0, Ffa_CheckGameStartC(out))
+FFA_FN(UsrPos, 1, Ffa_UsrPosC(&a[0], out))
+FFA_FN(ShowScorer, 2, Ffa_ShowScorerC(&a[0], &a[1]))
+FFA_FN(BackMenuFunc, 1, FR(isScorerVisible, "isScorerVisible") && OWN("ShowScorer", NULL, "vv", &a[0], &ffa.isScorerVisible))
+FFA_FN(ShowHelp, 1, Ffa_Lib("ShowHelp", NULL, 1, &a[0], NULL, NULL))
+FFA_FN(SetupGameRules, 1, Ffa_SetupGameRulesC(&a[0]))
+FFA_FN(SendGameRules, 1, Ffa_SendGameRulesC(&a[0]))
+FFA_FN(SetScorerValues, 1, Ffa_SetScorerValuesC(&a[0]))
+FFA_FN(FfaScorer, 1, Ffa_FfaScorerC(&a[0]))
+
+/* the keyword functions: their parameters by name and their defaults */
+static PyObject *Ffa_Spectate(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "id", "command", NULL };
+	PyObject *id = NULL, *command = NULL;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *a = Mode_V(&t), *b = Mode_V(&t), *out = Mode_V(&t);
+	(void)self;
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|OO", names, &id, &command)) {
+		return Mode_Done(&t, 0), NULL;
+	}
+	if (id) {
+		Native_Arg(id, a);
+	} else {
+		Native_SetInt(a, 0);
+	}
+	if (command) {
+		Native_Arg(command, b);
+	} else {
+		Native_SetStr(b, "");
+	}
+	return Mode_Out(&t, Ffa_SpectateC(a, b), out);
+}
+
+static PyObject *Ffa_GetScorerInfo(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "id", NULL };
+	PyObject *id = NULL;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *a = Mode_V(&t), *out = Mode_V(&t);
+	(void)self;
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &id)) {
+		return Mode_Done(&t, 0), NULL;
+	}
+	if (id) {
+		Native_Arg(id, a);
+	} else {
+		Native_SetInt(a, 0);
+	}
+	return Mode_Out(&t, Ffa_GetScorerInfoC(a, out), out);
+}
+
+static PyObject *Ffa_ActualizeGameScorer(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "NowShowScorer", NULL };
+	PyObject *now = NULL;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *a = Mode_V(&t), *out = Mode_V(&t);
+	(void)self;
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &now)) {
+		return Mode_Done(&t, 0), NULL;
+	}
+	if (now) {
+		Native_Arg(now, a);
+	}
+	return Mode_Out(&t, Ffa_ActualizeGameScorerC(now ? a : NULL), out);
 }
 
 #define KW(fn) (PyCFunction)(void (*)(void))fn, 3
