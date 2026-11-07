@@ -370,6 +370,9 @@ byte LvN_Calls(const char *module, const char *const *lines);
 /* a op b of the script as Native_Arith, with the long ints of 1.5.2 for * / % too (a test can put a long int into a
  * module variable; OBJLIB 9: those go through the Python number functions) */
 byte LvN_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
+/* SLogic.SetOnFloor(name) and SSound.PlaySound(pos, name, volume) through their seams (fc-tp-map swaps them) */
+byte LvN_SetOnFloor(const nativeVal_t *name);
+byte LvN_PlaySound(const nativeVal_t *pos, const nativeVal_t *name, const nativeVal_t *volume);
 /* the parameters of the native helpers: an int, a text */
 void LvN_Int(nativeVal_t *v, long i);
 void LvN_Str(nativeVal_t *v, const char *s);
