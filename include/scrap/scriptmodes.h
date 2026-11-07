@@ -746,10 +746,6 @@ PyObject *Mode_DefVars(int n, ...);
 
 /* ---- the menus of batch Q (MenuMain, MenuHud) ---- */
 
-/* module.var as the menus read it (Script_GetInt, Script_GetString): an int (a float cut), def for other values; the
- * text up to its first 0 byte, "" for other values; the error of a missing module or variable dropped */
-int Mode_ModInt(const char *module, const char *var, int def);
-const char *Mode_ModText(const char *module, const char *var, char *out, int size);
 /* SScorer.SetCinema(id, on, time), Scrap.GetCam(i) (the camera name or None) and Scrap.UsrEntity(id) (the handle value or
  * None; the NULL result of a player above 3) through their seams */
 byte Mode_SetCinema(long id, long on, double time);

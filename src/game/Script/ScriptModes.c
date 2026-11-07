@@ -3618,32 +3618,6 @@ PyObject *Mode_DefVars(int n, ...) {
 
 /* ---- the menus of batch Q (MenuMain, MenuHud) ---- */
 
-int Mode_ModInt(const char *module, const char *var, int def) {
-	nativeVal_t v;
-	if (!Mode_ModGet(module, var, &v)) {
-		/* OBJLIB 7: the error of the lookup dropped */
-		PyErr_Clear();
-		return def;
-	}
-	int r = v.type == NV_INT ? (int)v.i : v.type == NV_FLOAT ? (int)v.f : def;
-	Native_Free(&v);
-	return r;
-}
-
-const char *Mode_ModText(const char *module, const char *var, char *out, int size) {
-	nativeVal_t v;
-	out[0] = 0;
-	if (!Mode_ModGet(module, var, &v)) {
-		PyErr_Clear();
-		return out;
-	}
-	if (v.type == NV_STR) {
-		Str_Copy(out, Native_Text(&v), size);
-	}
-	Native_Free(&v);
-	return out;
-}
-
 byte Mode_SetCinema(long id, long on, double time) {
 	MODE_SEAM("SScorer", "SetCinema");
 	if (seam) {

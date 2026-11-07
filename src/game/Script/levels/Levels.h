@@ -295,7 +295,7 @@ byte LvN_PutNone(const char *module, const char *name);
 /* h.var = the global name of module */
 byte LvN_SetG(const nativeVal_t *h, const char *var, const char *module, const char *name);
 /* module.var = v of another module as Script_SetVar sets it: an error is dropped (OBJLIB 5) */
-void LvN_SetVar(const char *module, const char *var, const nativeVal_t *v);
+#define LvN_SetVar Mode_ModPut
 /* the player is there (usr into *usr): 1, 0, -1 */
 int LvN_Usr(nativeVal_t *usr);
 /* `usr.ActCtrl == ctrl` of a handle: 1, 0, -1 */

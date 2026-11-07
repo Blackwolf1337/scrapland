@@ -71,19 +71,6 @@ static void Char_ModAttr(const char *module, const char *var, const char *src, c
 	Native_Free(&v);
 }
 
-/* module.var as Script_GetString reads it: its text cut to size, else "" */
-static const char *Char_ModString(const char *module, const char *var, char *out, int size) {
-	nativeVal_t v = { 0 };
-	out[0] = 0;
-	if (!LvN_ModGet(module, var, &v)) {
-		Mode_DropError();
-	} else if (v.type == NV_STR) {
-		Str_Copy(out, Native_Text(&v), size);
-	}
-	Native_Free(&v);
-	return out;
-}
-
 /* Speech.PlayerName, Speech.NPCName: who talks in the speech that runs */
 static void Char_Speakers(const char *usr, const char *ch) {
 	Char_ModText("Speech", "PlayerName", usr);
@@ -779,8 +766,8 @@ static byte Police_GiveNo(const char *ch) {
 	if (Scrap_RandRange(0, 100) < 50) {
 		char npc[0x80], player[0x80];
 		nativeVal_t me, e, end = { 0 }, res = { 0 };
-		Char_ModString("Speech", "NPCName", npc, sizeof(npc));
-		Char_ModString("Speech", "PlayerName", player, sizeof(player));
+		Mode_ModGetS("Speech", "NPCName", npc, sizeof(npc));
+		Mode_ModGetS("Speech", "PlayerName", player, sizeof(player));
 		Char_Handle(player, &me);
 		Char_Handle(npc, &e);
 		byte ok = LvN_ModGet("Police", "OnEndOfSpeech", &end) &&
@@ -885,8 +872,8 @@ static byte Police_Speech(const char *usr, const char *ch, const char *opt, cons
 /* the end of the bribe speech, by ResState: paid (the steal effect), refused (the police attacks), or waiting */
 static byte Police_EndOfSpeech(void) {
 	char ch[0x80], me[0x80];
-	Char_ModString("Speech", "NPCName", ch, sizeof(ch));
-	Char_ModString("Speech", "PlayerName", me, sizeof(me));
+	Mode_ModGetS("Speech", "NPCName", ch, sizeof(ch));
+	Mode_ModGetS("Speech", "PlayerName", me, sizeof(me));
 	byte hasCh = World_FindEntity(ch) != NULL;
 	long state = Mode_ModGetI("Police", "ResState", 0);
 	if (state == 1) {

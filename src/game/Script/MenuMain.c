@@ -155,7 +155,7 @@ static int Main_SaveGames(byte keep) {
 }
 
 static byte Main_InMainMenu(void) {
-	return Mode_ModInt("Init", "inMainMenu", 0) || Mode_ModInt("Init", "isShipEdit", 0);
+	return Mode_ModGetI("Init", "inMainMenu", 0) || Mode_ModGetI("Init", "isShipEdit", 0);
 }
 
 static byte Main_NetGame(void) {
@@ -164,7 +164,7 @@ static byte Main_NetGame(void) {
 
 /* the mode the player was in before the menu */
 static void Main_LastMode(char *out, int size) {
-	Mode_ModText("Menu", "LastMode", out, size);
+	Mode_ModGetS("Menu", "LastMode", out, size);
 }
 
 static double Main_Now(void) {
@@ -223,7 +223,7 @@ static void Main_Cinema(int id, int on) {
 
 static void Main_MovieScorer(int id) {
 	cScorer *sc = Scorer_Get(id);
-	int marginH = Mode_ModInt("Scorer", "MarginH", 0), marginV = Mode_ModInt("Scorer", "MarginV", 0);
+	int marginH = Mode_ModGetI("Scorer", "MarginH", 0), marginV = Mode_ModGetI("Scorer", "MarginV", 0);
 	if (sc) {
 		cScorer_Clear(sc);
 	}
@@ -520,7 +520,7 @@ static byte Main_SetSkill(int id, const char *control) {
 /* LoadGame(id, "ItemN"): game N, after a question during a single player game */
 static void Main_LoadGame(int id, const char *control) {
 	Main_PutInt("slotToLoad", Main_Digit(control, -1) - 1);
-	if (Mode_ModInt("Menu", "fromSinglePlayer", 0)) {
+	if (Mode_ModGetI("Menu", "fromSinglePlayer", 0)) {
 		Main_YesNo(id, "Menu_LoadGame_Question", "Menu.AuxLoadGame", "Menu.LoadGameMenu");
 	} else {
 		Main_CallS("Menu", "AuxLoadGame", id, control);
@@ -571,7 +571,7 @@ static void Main_AuxSaveGame(int id, const char *control) {
 	}
 	Native_Free(&r);
 	Scorer_SetMsgText(text, (float)(Timer_GetTime(&g_pWorld->timer) + add), "Horatio");
-	Main_SaveCall("SaveGame", Mode_ModInt("Menu", "slotToOverwrite", 0) - 1);
+	Main_SaveCall("SaveGame", Mode_ModGetI("Menu", "slotToOverwrite", 0) - 1);
 	Main_CallS("Menu", "BackToGame", id, control);
 }
 
@@ -579,7 +579,7 @@ static void Main_AuxSaveGame(int id, const char *control) {
 static void Main_SaveGame(int id, const char *control) {
 	int num = Main_Digit(control, -1);
 	int n = Main_SavesLen();
-	if (n < Mode_ModInt("Menu", "saveGamesSlots", 6)) {
+	if (n < Mode_ModGetI("Menu", "saveGamesSlots", 6)) {
 		num--;
 	}
 	if (num <= 0) {
@@ -607,24 +607,24 @@ static void Main_Initialize(void) {
 	}
 	Py_XDECREF(menu);
 	PyErr_Clear();
-	byte main = Mode_ModInt("Init", "inMainMenu", 0) != 0;
-	byte xbox = Mode_ModInt("Menu", "isXbox", 0) != 0;
-	byte outdoor = Mode_ModInt("Init", "Outdoor", 0) != 0;
-	byte shipEdit = Mode_ModInt("Init", "isShipEdit", 0) != 0;
-	byte junkyard = Mode_ModInt("Init", "isJunkYard", 0) != 0;
-	byte multiPlayer = Mode_ModInt("Init", "MultiPlayer", 0) != 0;
+	byte main = Mode_ModGetI("Init", "inMainMenu", 0) != 0;
+	byte xbox = Mode_ModGetI("Menu", "isXbox", 0) != 0;
+	byte outdoor = Mode_ModGetI("Init", "Outdoor", 0) != 0;
+	byte shipEdit = Mode_ModGetI("Init", "isShipEdit", 0) != 0;
+	byte junkyard = Mode_ModGetI("Init", "isJunkYard", 0) != 0;
+	byte multiPlayer = Mode_ModGetI("Init", "MultiPlayer", 0) != 0;
 	byte net = Main_NetGame();
 	byte edit = shipEdit || multiPlayer;
-	if (Mode_ModInt("Init", "isDemo", 0) && xbox) {
+	if (Mode_ModGetI("Init", "isDemo", 0) && xbox) {
 		GVar_SetStr("CheckInactivityFunc", "!ExecuteDemoLauncher");
 	}
 	Main_Run(0, "preload", Py_BuildValue("{s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i}", "main", main,
 		"xbox", xbox, "outdoor", outdoor, "outdoorpc", outdoor && !xbox, "metro", !shipEdit && !junkyard && !xbox,
 		"multi", multiPlayer || net, "editor", junkyard || shipEdit || net, "heads",
 		!main && !(shipEdit && GVar_GetNum("isXbox", 0)), "edit", edit, "bosses",
-		edit || strcmp(Main_SaveVarOr("GameAct"), "Epilogue"), "boss", Mode_ModInt("Menu", "HeadBoss", 0) || edit,
+		edit || strcmp(Main_SaveVarOr("GameAct"), "Epilogue"), "boss", Mode_ModGetI("Menu", "HeadBoss", 0) || edit,
 		"dtritus", !outdoor || edit, "lonelymerc", !strcmp(Main_SaveVarOr("LonelyMercDataActive"), "1"), "bertos",
-		!strcmp(Main_SaveVarOr("CreateBertos"), "1"), "messenger", Mode_ModInt("Menu", "OutHeadMessenger", 0) != 0));
+		!strcmp(Main_SaveVarOr("CreateBertos"), "1"), "messenger", Mode_ModGetI("Menu", "OutHeadMessenger", 0) != 0));
 	if (!main) {
 		const char *scorer = outdoor && !shipEdit ? "RacerScorer" : "CharScorer";
 		Mode_Printed(Native_CallMod(scorer, "Init", NULL, ""), scorer, "Init");
@@ -645,7 +645,7 @@ static void Main_DebugMenu(int id) {
 		}
 	}
 	Str_Printf(debug, sizeof(debug), "%d", (int)GVar_GetNum("Debug", 0));
-	Main_Run(id, "Debug", Py_BuildValue("{s:s,s:s,s:s}", "back", Mode_ModInt("Menu", "fromSinglePlayer", 0) ?
+	Main_Run(id, "Debug", Py_BuildValue("{s:s,s:s,s:s}", "back", Mode_ModGetI("Menu", "fromSinglePlayer", 0) ?
 		"Menu.SinglePlayerMenu" : "Menu.MainMenu", "debug", debug, "ai", ai));
 }
 
@@ -1114,7 +1114,7 @@ static PyObject *Menu_AbortGame(PyObject *self, PyObject *args) {
 static PyObject *Menu_AuxLoadGame(PyObject *self, PyObject *args) {
 	(void)self;
 	MAIN_ARGS(args);
-	Main_SaveCall("LoadGame", Mode_ModInt("Menu", "slotToLoad", 0));
+	Main_SaveCall("LoadGame", Mode_ModGetI("Menu", "slotToLoad", 0));
 	Main_CallS("Menu", "BackToGame", id, control);
 	return Py_ReturnNone();
 }

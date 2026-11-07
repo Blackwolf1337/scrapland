@@ -1379,13 +1379,6 @@ byte LvN_SetG(const nativeVal_t *h, const char *var, const char *module, const c
 	return ok;
 }
 
-void LvN_SetVar(const char *module, const char *var, const nativeVal_t *v) {
-	if (!Mode_SetModVar(module, var, v)) {
-		/* OBJLIB 7 */
-		PyErr_Clear();
-	}
-}
-
 int LvN_Usr(nativeVal_t *usr) {
 	return Mode_UsrHandle(usr) ? Native_True(usr) : -1;
 }
