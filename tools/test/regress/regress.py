@@ -462,13 +462,15 @@ def save(path, res):
 
 def lanes_run(tags, pack, jobs, build, done, exe='native64'):
 	"""jobs: list of (level, case, outpath), longest first; runs them over the lanes; done(job, res) per result. The
-	cases that start a real server have a queue of their own: a lane that gets the port lock (a file lock, so a pack
-	and a C run side by side share it) takes the next of them, else the next other case, so the server cases run
-	spread over the whole run, one at a time."""
+	cases that start a real server have a queue of their own: a lane that gets the port lock (a file lock next to the
+	slots, so the runs of all checkouts that share the game data share it, pack and C side by side) takes the next of
+	them, else the next other case, so the server cases run spread over the whole run, one at a time."""
 	normal, ports = queue.Queue(), queue.Queue()
 	for j in jobs:
 		(ports if j[1] in PORT_CASES else normal).put(j)
-	lockpath = os.path.join(HERE, '.port.lock')
+	# the server port is one for the machine: a lock of this checkout alone let a run of another worktree start its
+	# server at the same time (SNet.InitServer answered 0, fc-ffa2 failed in all lines)
+	lockpath = os.path.join(slot.SLOTS, '.regress-port.lock')
 
 	def worker(tag):
 		lane = Lane(tag, pack, exe)
