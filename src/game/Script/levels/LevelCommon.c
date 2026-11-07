@@ -681,13 +681,6 @@ void LvN_Str(nativeVal_t *v, const char *s) {
 	Native_SetText(v, s, (int)strlen(s));
 }
 
-byte LvN_ModSetGlobal(const char *module, const char *var, const char *src, const char *name) {
-	PyObject *o = Mode_GlobalPy(src, name);
-	byte ok = o && Mode_SetModPy(module, var, o);
-	Py_XDECREF(o);
-	return ok;
-}
-
 byte LvN_ModMethod(const char *module, const char *var, const char *method, const nativeVal_t *v) {
 	PyObject *o = Script_Attr(module, var);
 	PyObject *x = o ? Native_ToPy(v) : NULL;
@@ -765,12 +758,6 @@ int LvN_GEqI(const char *module, const char *name, long i) {
 	return r;
 }
 
-byte LvN_EqI(const nativeVal_t *a, long i) {
-	nativeVal_t b;
-	Native_SetInt(&b, i);
-	return !Native_Compare(a, &b);
-}
-
 byte LvN_EqS(const nativeVal_t *a, const char *s) {
 	nativeVal_t b;
 	LvN_Str(&b, s);
@@ -785,16 +772,6 @@ byte LvN_GElems(const char *module, const char *name, nativeVal_t *out) {
 	}
 	Mode_Elems(out);
 	return 1;
-}
-
-byte LvN_RaiseText(const char *text) {
-	/* OBJLIB 7 */
-	PyObject *s = PyString_FromString((char *)text);
-	if (s) {
-		PyErr_SetObject(s, Py_None);
-		Py_DECREF(s);
-	}
-	return 0;
 }
 
 void LvN_Dummy(const char *pattern, int flag, nativeVal_t *dummy) {
@@ -1081,17 +1058,6 @@ byte LvN_StdAI(const nativeVal_t *e, const nativeVal_t *pd) {
 
 byte LvN_StdProfile(const char *module, const char *profile, const nativeVal_t *e, nativeVal_t *pd) {
 	return LV_OWN(module, profile, pd, "") && LvN_StdAI(e, pd);
-}
-
-int LvN_UsrNameIs(const nativeVal_t *usr, const nativeVal_t *name) {
-	nativeVal_t n;
-	if (!Native_True(usr)) {
-		return 0;
-	}
-	Native_SetNone(&n);
-	int r = Mode_VGet(usr, "Name", &n) ? !Native_Compare(&n, name) : -1;
-	Native_Free(&n);
-	return r;
 }
 
 byte LvN_Draw(void) {

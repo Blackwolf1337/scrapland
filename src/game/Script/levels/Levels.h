@@ -120,7 +120,7 @@ PyObject *Lv_SndElements(PyObject *args, const lvSndElement_t *table);
 /* module.var of another module as a value (any object: a handle, a function, a module as NV_OBJ) */
 #define LvN_ModGet Mode_ModGet
 /* module.var = the global name of src as the object it is (a function: the one a mission put there; OBJLIB 5) */
-byte LvN_ModSetGlobal(const char *module, const char *var, const char *src, const char *name);
+#define LvN_ModSetGlobal Mode_ModSetGlobal
 /* module.var = None */
 #define LvN_ModNone Mode_ModNone
 /* module.var.method(v) of a variable of another module, in place (the method of whatever value is there), and
@@ -141,7 +141,7 @@ byte LvN_PutS(const char *module, const char *name, const char *s);
 int LvN_GTrue(const char *module, const char *name);
 int LvN_GEqI(const char *module, const char *name, long i);
 /* a == i, a == "text" of the script (Native_Compare can not fail on native values) */
-byte LvN_EqI(const nativeVal_t *a, long i);
+#define LvN_EqI Mode_EqI
 byte LvN_EqS(const nativeVal_t *a, const char *s);
 /* h.var = i, = "text", = d of a handle value */
 #define LvN_SetI Mode_VSetI
@@ -152,8 +152,8 @@ byte LvN_EqS(const nativeVal_t *a, const char *s);
 #define LvN_Item Mode_Item
 /* the global name of module as a value whose items a loop takes one by one (Mode_Elems) */
 byte LvN_GElems(const char *module, const char *name, nativeVal_t *out);
-/* raise "text" (a string exception of the script; OBJLIB 7: the Python exception until errors are a C state): 0 */
-byte LvN_RaiseText(const char *text);
+/* raise "text" (a string exception of the script): 0 */
+#define LvN_RaiseText Mode_RaiseText
 /* Scrap.StartDummySearch(pattern, flag); dummy = Scrap.NextDummySearch() */
 void LvN_Dummy(const char *pattern, int flag, nativeVal_t *dummy);
 /* (dummy[1][0], dummy[1][1], dummy[1][2]) and (dummy[2][0], dummy[2][1], 0) of a dummy search */
@@ -212,7 +212,7 @@ byte LvN_StdAI(const nativeVal_t *e, const nativeVal_t *pd);
 /* pd = profile() (a global of module) and LvN_StdAI(e, pd) */
 byte LvN_StdProfile(const char *module, const char *profile, const nativeVal_t *e, nativeVal_t *pd);
 /* `usr and usr.Name == name` */
-int LvN_UsrNameIs(const nativeVal_t *usr, const nativeVal_t *name);
+#define LvN_UsrNameIs Mode_UsrNameIs
 /* Menu.DrawScorer(0, SInput.GetActionSet()) */
 byte LvN_Draw(void);
 /* Menu.MissionScorerCall = None, = the global func of module */

@@ -2692,6 +2692,40 @@ int Mode_CmpG(const nativeVal_t *a, const char *op, const char *module, const ch
 	return r;
 }
 
+byte Mode_EqI(const nativeVal_t *a, long i) {
+	nativeVal_t b;
+	Native_SetInt(&b, i);
+	return !Native_Compare(a, &b);
+}
+
+byte Mode_RaiseText(const char *text) {
+	/* OBJLIB 7 */
+	PyObject *s = PyString_FromString((char *)text);
+	if (s) {
+		PyErr_SetObject(s, Py_None);
+		Py_DECREF(s);
+	}
+	return 0;
+}
+
+int Mode_UsrNameIs(const nativeVal_t *usr, const nativeVal_t *name) {
+	nativeVal_t n;
+	if (!Native_True(usr)) {
+		return 0;
+	}
+	Native_SetNone(&n);
+	int r = Mode_VGet(usr, "Name", &n) ? !Native_Compare(&n, name) : -1;
+	Native_Free(&n);
+	return r;
+}
+
+byte Mode_ModSetGlobal(const char *module, const char *var, const char *src, const char *name) {
+	PyObject *o = Mode_GlobalPy(src, name);
+	byte ok = o && Mode_SetModPy(module, var, o);
+	Py_XDECREF(o);
+	return ok;
+}
+
 int Mode_GCmp(const char *module, const char *name, const char *op, const nativeVal_t *v) {
 	nativeVal_t g = { 0 };
 	int r = Mode_G(module, name, &g) ? Mode_Cmp(&g, op, v) : -1;

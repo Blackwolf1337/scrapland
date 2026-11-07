@@ -50,15 +50,6 @@ static void Sd_SetSave(const char *name, const char *text) {
 	SaveVar_Set(name, text);
 }
 
-/* int(Scrap.GetSaveVar(name)) */
-static byte Sd_SaveInt(const char *name, nativeVal_t *out) {
-	nativeVal_t s;
-	Mode_SaveVar(name, &s);
-	byte ok = Native_ToInt(&s, out);
-	Native_Free(&s);
-	return ok;
-}
-
 /* module.var.attr = i (Parking.PlayerShip.Invulnerable = 0) */
 static byte Sd_ModSetI(const char *module, const char *var, const char *attr, long i) {
 	nativeVal_t h;
@@ -70,39 +61,7 @@ static byte Sd_ModSetI(const char *module, const char *var, const char *attr, lo
 	return ok;
 }
 
-/* module.var = the global name of mod as the object it is (a function of the mode: the one a mission put there) */
-static byte Sd_GlobalTo(const char *module, const char *var, const char *mod, const char *name) {
-	PyObject *o = Mode_GlobalPy(mod, name);
-	byte ok = o && Mode_SetModPy(module, var, o);
-	Py_XDECREF(o);
-	return ok;
-}
-
-/* module.var = src.name of another module as the object it is (Menu.MissionScorerCall = RacerScorer.MissionScorer) */
-static byte Sd_ModTo(const char *module, const char *var, const char *src, const char *name) {
-	PyObject *o = Script_Attr(src, name);
-	byte ok = o && Mode_SetModPy(module, var, o);
-	Py_XDECREF(o);
-	return ok;
-}
-
-/* `usr and usr.Name == name`, `usr and usr.IsType("Car")`, `cad and cad != ""` as conditions: 1, 0, -1 with the
- * error */
-static int Sd_UsrIs(const nativeVal_t *usr, const nativeVal_t *name) {
-	nativeVal_t n;
-	if (!Native_True(usr)) {
-		return 0;
-	}
-	Native_SetNone(&n);
-	int r = Mode_VGet(usr, "Name", &n) ? !Native_Compare(&n, name) : -1;
-	Native_Free(&n);
-	return r;
-}
-
-static int Sd_UsrCar(const nativeVal_t *usr) {
-	return Native_True(usr) ? Mode_VIsType(usr, "Car") : 0;
-}
-
+/* `cad and cad != ""` as a condition: 1, 0, -1 with the error */
 static int Sd_Text(const nativeVal_t *cad) {
 	return Native_True(cad) && !Native_IsStr(cad, "");
 }
@@ -110,12 +69,6 @@ static int Sd_Text(const nativeVal_t *cad) {
 /* a == b and a == i of the script (Native_Compare can not fail on native values) */
 static byte Sd_Eq(const nativeVal_t *a, const nativeVal_t *b) {
 	return !Native_Compare(a, b);
-}
-
-static byte Sd_EqI(const nativeVal_t *a, long i) {
-	nativeVal_t b;
-	Native_SetInt(&b, i);
-	return !Native_Compare(a, &b);
 }
 
 /* name = name + add of a global of the module (slot its copy in C), the new value in the slot */
@@ -277,7 +230,7 @@ static byte Sd_ScorerOff(void) {
  * RacerScorer.MissionScorer(0) */
 static byte Sd_ScorerOn(const nativeVal_t *a, const nativeVal_t *b, const nativeVal_t *c) {
 	return CALL("RacerScorer", "InitMissionScorer", NULL, "vvv", a, b, c) &&
-		Sd_ModTo("Menu", "MissionScorerCall", "RacerScorer", "MissionScorer") &&
+		Mode_ModTo("Menu", "MissionScorerCall", "RacerScorer", "MissionScorer") &&
 		CALL("RacerScorer", "MissionScorer", NULL, "i", 0L);
 }
 
@@ -514,8 +467,8 @@ static byte Sd_StatusC(const char *mod, const char *more) {
 	nativeVal_t zero;
 	Native_SetInt(&zero, 0);
 	return Mode_Import("Chars") && Mode_Import("Parking") && Mode_Import("Vehicles") && (!more || Mode_Import(more)) &&
-		Sd_GlobalTo("Chars", "OnCreateMainChar", mod, "SetInvulnerableStatus") &&
-		Sd_GlobalTo("Parking", "OnCreatePlayerShip", mod, "SetInvulnerableStatus") &&
+		Mode_ModSetGlobal("Chars", "OnCreateMainChar", mod, "SetInvulnerableStatus") &&
+		Mode_ModSetGlobal("Parking", "OnCreatePlayerShip", mod, "SetInvulnerableStatus") &&
 		Mode_SetModVar("Vehicles", "DelPlayerShipOnDeath", &zero);
 }
 
@@ -537,7 +490,7 @@ static byte Sd_SetVulnerableC(void) {
 	if (!Mode_Import("Parking") || !Mode_UsrHandle(&usr)) {
 		return 0;
 	}
-	int car = Sd_UsrCar(&usr);
+	int car = Mode_UsrInCar(&usr);
 	byte ok = car >= 0 && (!car || Mode_VSetI(&usr, "Invulnerable", 0)) && Sd_ModSetI("Parking", "PlayerShip", "Invulnerable", 0);
 	Native_Free(&usr);
 	return ok;
@@ -602,8 +555,8 @@ MODE_FN(Dm, InitStatus, 1, Sd_StatusC(DM, NULL))
 static byte Dm_InitC(void) {
 	static const char *const third[] = { "SuperDeal_Third", NULL };
 	return Mode_Import("Parking") && Mode_Import("Menu") && Sd_CameraFor(third, "CA") && Mode_Import("Chars") &&
-		Sd_GlobalTo("Chars", "OnMainCharDeath", DM, "OnPlayerDeath") && OWN(DM, "CreateEnemies", NULL, "") &&
-		Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", DM, "CrazyGamblerStartCombat");
+		Mode_ModSetGlobal("Chars", "OnMainCharDeath", DM, "OnPlayerDeath") && OWN(DM, "CreateEnemies", NULL, "") &&
+		Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", DM, "CrazyGamblerStartCombat");
 }
 
 MODE_FN(Dm, Init, 1, Dm_InitC())
@@ -615,7 +568,7 @@ static byte Dm_CreateEnemiesC(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *num = Mode_V(&t), *keys = Mode_V(&t);
 	long n = 0;
-	if (!Mode_Import("OutMap") || !Sd_SaveInt("CombatNumEnemies", num) || !Mode_Keys(DM, "enemiesFrags", 1, keys)) {
+	if (!Mode_Import("OutMap") || !Mode_SaveInt("CombatNumEnemies", num) || !Mode_Keys(DM, "enemiesFrags", 1, keys)) {
 		return Mode_Done(&t, 0);
 	}
 	int size = Native_Size(keys);
@@ -653,7 +606,7 @@ static byte Sd_GamblerSays(const char *cadVar, const char *mod, const char *func
 /* CrazyGamblerStartCombat(): the player boarded; the crazy gambler's message starts the combat */
 static byte Dm_CrazyGamblerStartCombatC(void) {
 	return Mode_Import("Parking") && Sd_ModSetI("Parking", "PlayerShip", "Invulnerable", 0) &&
-		Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", DM, "SetVulnerable") &&
+		Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", DM, "SetVulnerable") &&
 		Sd_GamblerSays("CombatStartTextCad", DM, "StartCombat");
 }
 
@@ -665,7 +618,7 @@ static byte Dm_StartCombatC(void) {
 	nativeVal_t *deaths = Mode_V(&t), *keys = Mode_V(&t);
 	const nativeVal_t *zero = Mode_I(&t, 0);
 	if (!Mode_Import("Vehicles") || !Mode_Import("RacerScorer") || !Mode_Import("Menu") ||
-		!Sd_GlobalTo("Vehicles", "OnDeathCallback", DM, "OnEnemyDeath")) {
+		!Mode_ModSetGlobal("Vehicles", "OnDeathCallback", DM, "OnEnemyDeath")) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("CombatDeaths", deaths);
@@ -789,7 +742,7 @@ static int Dm_FragsCmp(const nativeVal_t *winner) {
 	Native_SetNone(&frags);
 	Native_SetNone(&deaths);
 	int c = Mode_Read(DM, "enemiesFrags", &dm.enemiesFrags) && Native_Subscript(&dm.enemiesFrags, winner, &frags) &&
-		Sd_SaveInt("CombatDeaths", &deaths) ? Native_Compare(&frags, &deaths) : -2;
+		Mode_SaveInt("CombatDeaths", &deaths) ? Native_Compare(&frags, &deaths) : -2;
 	Native_Free(&frags);
 	Native_Free(&deaths);
 	return c;
@@ -812,16 +765,16 @@ static byte Dm_OnEnemyDeathC(const nativeVal_t *loser, const nativeVal_t *winner
 	if (!Mode_Import("RacerScorer") || !Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
 	}
-	int u = Sd_UsrIs(usr, loser);
+	int u = Mode_UsrNameIs(usr, loser);
 	if (u) {
 		return Mode_Done(&t, u > 0);
 	}
 	int end = 0, player = 0;
 	if (Native_True(winner)) {
-		u = Sd_UsrIs(usr, winner);
+		u = Mode_UsrNameIs(usr, winner);
 		if (u > 0) {
 			player = 1;
-			end = Sd_Add(DM, "playerFrags", &dm.playerFrags, 1) && Sd_SaveInt("CombatDeaths", deaths) ?
+			end = Sd_Add(DM, "playerFrags", &dm.playerFrags, 1) && Mode_SaveInt("CombatDeaths", deaths) ?
 				Sd_Eq(&dm.playerFrags, deaths) : -1;
 		} else if (u == 0) {
 			int in = Dm_IsEnemy(winner);
@@ -846,7 +799,7 @@ MODE_FN(Dm, OnEnemyDeath, 2, Dm_OnEnemyDeathC(&a[0], &a[1]))
 static byte Dm_RespawnEnemyC(const nativeVal_t *name) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *num = Mode_V(&t), *max = Mode_V(&t), *e = Mode_V(&t);
-	if (!Mode_Import("OutMap") || !Mode_ListGet("DeathMatch", "Num", num) || !Sd_SaveInt("CombatNumEnemies", max)) {
+	if (!Mode_Import("OutMap") || !Mode_ListGet("DeathMatch", "Num", num) || !Mode_SaveInt("CombatNumEnemies", max)) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_Compare(num, max) >= 0) {
@@ -924,10 +877,10 @@ static byte Vs_InitC(void) {
 	Native_SetInt(&zero, 0);
 	Native_SetNone(&deaths);
 	byte ok = Mode_Import("Parking") && Mode_Import("Menu") && Mode_Import("Vehicles") && Sd_Camera("CA") &&
-		Mode_SetModVar("Vehicles", "DelPlayerShipOnDeath", &zero) && Sd_SaveInt("CombatDeaths", &deaths) &&
+		Mode_SetModVar("Vehicles", "DelPlayerShipOnDeath", &zero) && Mode_SaveInt("CombatDeaths", &deaths) &&
 		Mode_Put(VS, "combatDeaths", &vs.combatDeaths, &deaths) && Mode_Import("Chars") &&
-		Sd_GlobalTo("Chars", "OnMainCharDeath", VS, "OnPlayerDeath") && OWN(VS, "CreateEnemy", NULL, "") &&
-		Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", VS, "CrazyGamblerStartCombat");
+		Mode_ModSetGlobal("Chars", "OnMainCharDeath", VS, "OnPlayerDeath") && OWN(VS, "CreateEnemy", NULL, "") &&
+		Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", VS, "CrazyGamblerStartCombat");
 	Native_Free(&deaths);
 	return ok;
 }
@@ -962,7 +915,7 @@ static byte Vs_CreateEnemyC(const nativeVal_t *mark) {
 		!CALL("VehiclesNPC", "SetIAProf", NULL, "vv", e, ship)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Sd_EqI(mark, 1)) {
+	if (Mode_EqI(mark, 1)) {
 		return Mode_Done(&t, Mode_VSetS(e, "TgType", "red") && Mode_VSetS(e, "EntityList", "Enemies") &&
 			CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 1L));
 	}
@@ -984,10 +937,10 @@ static PyObject *Vs_CreateEnemy(PyObject *self, PyObject *args, PyObject *kw) {
 static int Sd_BothZero(const char *a, const char *b) {
 	nativeVal_t n;
 	Native_SetNone(&n);
-	int r = Sd_SaveInt(a, &n) ? Sd_EqI(&n, 0) : -1;
+	int r = Mode_SaveInt(a, &n) ? Mode_EqI(&n, 0) : -1;
 	Native_Free(&n);
 	if (r > 0) {
-		r = Sd_SaveInt(b, &n) ? Sd_EqI(&n, 0) : -1;
+		r = Mode_SaveInt(b, &n) ? Mode_EqI(&n, 0) : -1;
 		Native_Free(&n);
 	}
 	return r;
@@ -1032,8 +985,8 @@ static byte Vs_StartCombatC(void) {
 	nativeVal_t *e = Mode_V(&t), *a = Mode_V(&t), *b = Mode_V(&t), *limit = Mode_V(&t), *type = Mode_V(&t);
 	if (!Mode_Import("Vehicles") || !Mode_Import("RacerScorer") || !Mode_Import("Menu") || !Mode_Import("MissionsFuncs") ||
 		!Mode_Read(VS, "enemyName", &vs.enemyName) || !Mode_EntityH(&vs.enemyName, e) ||
-		!Sd_GlobalTo("Vehicles", "OnDeathCallback", VS, "OnEnemyDeath") || !Sd_SaveInt("NumEnemyDeaths", a) ||
-		!Sd_SaveInt("NumPlayerDeaths", b) || !Mode_Read(VS, "combatDeaths", &vs.combatDeaths)) {
+		!Mode_ModSetGlobal("Vehicles", "OnDeathCallback", VS, "OnEnemyDeath") || !Mode_SaveInt("NumEnemyDeaths", a) ||
+		!Mode_SaveInt("NumPlayerDeaths", b) || !Mode_Read(VS, "combatDeaths", &vs.combatDeaths)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Repr(&vs.combatDeaths, limit);
@@ -1054,7 +1007,7 @@ static byte Vs_Count(const char *name) {
 	Native_SetNone(&r);
 	Native_SetNone(&s);
 	Native_SetInt(&one, 1);
-	byte ok = Sd_SaveInt(name, &n) && Native_Arith('+', &n, &one, &r);
+	byte ok = Mode_SaveInt(name, &n) && Native_Arith('+', &n, &one, &r);
 	if (ok) {
 		Mode_Repr(&r, &s);
 		ok = Mode_SetSaveVar(name, &s);
@@ -1070,7 +1023,7 @@ static byte Vs_Update(void) {
 	nativeVal_t a, b;
 	Native_SetNone(&a);
 	Native_SetNone(&b);
-	byte ok = Sd_SaveInt("NumEnemyDeaths", &a) && Sd_SaveInt("NumPlayerDeaths", &b) && Sd_Update(&a, &b);
+	byte ok = Mode_SaveInt("NumEnemyDeaths", &a) && Mode_SaveInt("NumPlayerDeaths", &b) && Sd_Update(&a, &b);
 	Native_Free(&a);
 	Native_Free(&b);
 	return ok;
@@ -1080,7 +1033,7 @@ static byte Vs_Update(void) {
 static int Vs_Reached(const char *name) {
 	nativeVal_t n;
 	Native_SetNone(&n);
-	int r = Sd_SaveInt(name, &n) && Mode_Read(VS, "combatDeaths", &vs.combatDeaths) ? Sd_Eq(&n, &vs.combatDeaths) : -1;
+	int r = Mode_SaveInt(name, &n) && Mode_Read(VS, "combatDeaths", &vs.combatDeaths) ? Sd_Eq(&n, &vs.combatDeaths) : -1;
 	Native_Free(&n);
 	return r;
 }
@@ -1283,8 +1236,8 @@ MODE_FN(Tdm, InitStatus, 1, Sd_StatusC(TDM, NULL))
 static byte Tdm_InitC(void) {
 	static const char *const libs[] = { "SuperDeal_Fourth", "SuperDeal_Eleventh", "Mission_BankersCombat", NULL };
 	return Mode_Import("Parking") && Mode_Import("Menu") && Sd_CameraFor(libs, "QF") && Mode_Import("Chars") &&
-		Sd_GlobalTo("Chars", "OnMainCharDeath", TDM, "OnPlayerDeath") && OWN(TDM, "CreateFriends", NULL, "") &&
-		OWN(TDM, "CreateEnemies", NULL, "") && Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", TDM, "CrazyGamblerStartCombat");
+		Mode_ModSetGlobal("Chars", "OnMainCharDeath", TDM, "OnPlayerDeath") && OWN(TDM, "CreateFriends", NULL, "") &&
+		OWN(TDM, "CreateEnemies", NULL, "") && Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", TDM, "CrazyGamblerStartCombat");
 }
 
 MODE_FN(Tdm, Init, 1, Tdm_InitC())
@@ -1303,7 +1256,7 @@ static byte Tdm_CreateTeam(byte enemy) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *num = Mode_V(&t);
 	long n = 0;
-	if (!Mode_Import("OutMap") || !Sd_SaveInt(enemy ? "CombatNumEnemies" : "CombatNumFriends", num) ||
+	if (!Mode_Import("OutMap") || !Mode_SaveInt(enemy ? "CombatNumEnemies" : "CombatNumFriends", num) ||
 		!Sd_PutI(TDM, enemy ? "enemiesFrags" : "friendsFrags", enemy ? &tdm.enemiesFrags : &tdm.friendsFrags, 0) ||
 		!Mode_Range(num, &n)) {
 		return Mode_Done(&t, 0);
@@ -1326,16 +1279,16 @@ MODE_FN(Tdm, CreateEnemies, 0, Tdm_CreateTeam(1))
 /* CrazyGamblerStartCombat(): the player boarded; the crazy gambler's message starts the first combat */
 static byte Tdm_CrazyGamblerStartCombatC(void) {
 	if (!Mode_Import("Parking") || !Sd_ModSetI("Parking", "PlayerShip", "Invulnerable", 0) ||
-		!Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", TDM, "OnVehicle") ||
+		!Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", TDM, "OnVehicle") ||
 		!Mode_Read(TDM, "enemiesFrags", &tdm.enemiesFrags)) {
 		return 0;
 	}
-	byte first = Sd_EqI(&tdm.enemiesFrags, 0);
+	byte first = Mode_EqI(&tdm.enemiesFrags, 0);
 	if (first) {
 		if (!Mode_Read(TDM, "friendsFrags", &tdm.friendsFrags)) {
 			return 0;
 		}
-		first = Sd_EqI(&tdm.friendsFrags, 0);
+		first = Mode_EqI(&tdm.friendsFrags, 0);
 	}
 	return first ? Sd_GamblerSays("CombatStartTextCad", TDM, "StartCombat") : OWN(TDM, "StartCombat", NULL, "");
 }
@@ -1403,7 +1356,7 @@ static byte Tdm_End(byte win) {
 		CALL("MissionsFuncs", "SetInvulnerableShipsInList", NULL, "s", "Friends") &&
 		Mode_ListSet("Enemies", "OnDeath", "TeamDeathMatch.OnEnemyDeath2") &&
 		Mode_ListSet("Friends", "OnDeath", "TeamDeathMatch.OnFriendDeath2") &&
-		Sd_GlobalTo("Chars", "OnMainCharDeath", TDM, "OnPlayerDeath2") && Mode_ModNone("Parking", "SwitchCharMissionCallback") &&
+		Mode_ModSetGlobal("Chars", "OnMainCharDeath", TDM, "OnPlayerDeath2") && Mode_ModNone("Parking", "SwitchCharMissionCallback") &&
 		Mode_Read(TDM, "KeepPlaying", &tdm.keepPlaying);
 	if (ok && !Native_True(&tdm.keepPlaying)) {
 		ok = Sd_UsrSafe() && Sd_FinishFn("ForceRemoteCom", &cad, func, win, "TeamDeathMatch", win ? "" : "TeamDeathMatch.RestartCombat");
@@ -1424,7 +1377,7 @@ static byte Tdm_Refill(byte enemy, const nativeVal_t *loser) {
 		return 0;
 	}
 	int n = Native_Size(list);
-	if (n < 0 || !Sd_SaveInt(enemy ? "CombatNumEnemies" : "CombatNumFriends", &num)) {
+	if (n < 0 || !Mode_SaveInt(enemy ? "CombatNumEnemies" : "CombatNumFriends", &num)) {
 		Native_Free(&num);
 		return 0;
 	}
@@ -1446,17 +1399,17 @@ static byte Tdm_Death(byte enemy, const nativeVal_t *loser, const nativeVal_t *w
 		return Mode_Done(&t, 0);
 	}
 	if (enemy) {
-		int u = Sd_UsrIs(usr, loser);
+		int u = Mode_UsrNameIs(usr, loser);
 		if (u) {
 			return Mode_Done(&t, u > 0);
 		}
 	}
-	if (!Sd_RemoveIn(TDM, enemy ? "enemies" : "friends", Tdm_List(enemy), loser) || !Sd_SaveInt("CombatDeaths", deaths)) {
+	if (!Sd_RemoveIn(TDM, enemy ? "enemies" : "friends", Tdm_List(enemy), loser) || !Mode_SaveInt("CombatDeaths", deaths)) {
 		return Mode_Done(&t, 0);
 	}
 	int end = 0;
 	if (Native_True(winner)) {
-		int u = Sd_UsrIs(usr, winner);
+		int u = Mode_UsrNameIs(usr, winner);
 		if (u == 0) {
 			u = Mode_EntityH(winner, e) && Mode_VGet(e, "EntityList", list) ? Native_IsStr(list, enemy ? "Friends" : "Enemies") : -1;
 		}
@@ -1498,7 +1451,7 @@ static byte Tdm_Respawn(byte enemy, const nativeVal_t *name) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *num = Mode_V(&t), *max = Mode_V(&t), *e = Mode_V(&t);
 	if (!Mode_Import("OutMap") || !Mode_ListGet(entityList, "Num", num) ||
-		!Sd_SaveInt(enemy ? "CombatNumEnemies" : "CombatNumFriends", max)) {
+		!Mode_SaveInt(enemy ? "CombatNumEnemies" : "CombatNumFriends", max)) {
 		return Mode_Done(&t, 0);
 	}
 	if (Sd_Eq(num, max)) {
@@ -1525,7 +1478,7 @@ static byte Tdm_OnPlayerDeathC(const nativeVal_t *loser, const nativeVal_t *winn
 	}
 	int end = in;
 	if (end > 0) {
-		end = Mode_Read(TDM, "enemiesFrags", &tdm.enemiesFrags) && Sd_SaveInt("CombatDeaths", deaths) ?
+		end = Mode_Read(TDM, "enemiesFrags", &tdm.enemiesFrags) && Mode_SaveInt("CombatDeaths", deaths) ?
 			Native_Compare(&tdm.enemiesFrags, deaths) >= 0 : -1;
 	}
 	if (end < 0) {
@@ -1537,7 +1490,7 @@ static byte Tdm_OnPlayerDeathC(const nativeVal_t *loser, const nativeVal_t *winn
 		}
 		Sd_SetSave("PlayerWinsCombat", "0");
 		Mode_SaveVar("CombatFinishPlayerLoosesTextCad", cad);
-		if (!Sd_ScorerOff() || !Sd_GlobalTo("Chars", "OnMainCharDeath", TDM, "OnPlayerDeath2") ||
+		if (!Sd_ScorerOff() || !Mode_ModSetGlobal("Chars", "OnMainCharDeath", TDM, "OnPlayerDeath2") ||
 			!Mode_ModNone("Parking", "SwitchCharMissionCallback") || !Mode_Read(TDM, "KeepPlaying", &tdm.keepPlaying)) {
 			return Mode_Done(&t, 0);
 		}
@@ -1601,16 +1554,6 @@ static struct {
 MODE_FN(Ctf, GetMenuDescription, 0, Sd_MenuDescriptionC("SuperDeal_CTF_Description", "CTFFlags", out))
 MODE_FN(Ctf, InitStatus, 1, Sd_StatusC(CTF, NULL))
 
-/* raise "text" (a string exception of the script; OBJLIB 7: the Python exception until errors are a C state) */
-static byte Sd_RaiseText(const char *text) {
-	PyObject *s = PyString_FromString((char *)text);
-	if (s) {
-		PyErr_SetObject(s, Py_None);
-		Py_DECREF(s);
-	}
-	return 0;
-}
-
 /* onDeathSpawnTime = float(Scrap.GetSaveVar(var)); the error of the script when it is under 1 s */
 static byte Sd_SpawnTime(const char *mod, nativeVal_t *slot, const char *var) {
 	nativeVal_t s, d, one;
@@ -1620,7 +1563,7 @@ static byte Sd_SpawnTime(const char *mod, nativeVal_t *slot, const char *var) {
 	Native_Free(&s);
 	Native_Free(&d);
 	Native_SetFloat(&one, 1.0);
-	return ok && (Native_Compare(slot, &one) >= 0 || Sd_RaiseText("Demasiado poco tiempo de respawn"));
+	return ok && (Native_Compare(slot, &one) >= 0 || Mode_RaiseText("Demasiado poco tiempo de respawn"));
 }
 
 /* Init(LevelPath): the camera of the end, the flags to take, the respawn time, both teams, the start when the player
@@ -1629,7 +1572,7 @@ static byte Ctf_InitC(void) {
 	static const char *const libs[] = { "SuperDeal_Fifth", "SuperDeal_Ninth", NULL };
 	nativeVal_t n, two, one, r, max;
 	if (!Mode_Import("Parking") || !Mode_Import("Chars") || !Sd_CameraFor(libs, "FZ") ||
-		!Sd_GlobalTo("Chars", "OnMainCharDeath", CTF, "OnPlayerDeath")) {
+		!Mode_ModSetGlobal("Chars", "OnMainCharDeath", CTF, "OnPlayerDeath")) {
 		return 0;
 	}
 	Native_SetNone(&n);
@@ -1637,11 +1580,11 @@ static byte Ctf_InitC(void) {
 	Native_SetNone(&max);
 	Native_SetInt(&two, 2);
 	Native_SetInt(&one, 1);
-	byte ok = Sd_SaveInt("CTFFlags", &n) && Mode_Put(CTF, "flags", &ctf.flags, &n) && Mode_Read(CTF, "flags", &ctf.flags) &&
+	byte ok = Mode_SaveInt("CTFFlags", &n) && Mode_Put(CTF, "flags", &ctf.flags, &n) && Mode_Read(CTF, "flags", &ctf.flags) &&
 		Native_Arith('*', &ctf.flags, &two, &r) && Native_Arith('-', &r, &one, &max) &&
 		Mode_Put(CTF, "maxFlags", &ctf.maxFlags, &max) && Sd_SpawnTime(CTF, &ctf.onDeathSpawnTime, "CTFOnDeathSpawnTime") &&
 		OWN(CTF, "CreateEnemies", NULL, "") && OWN(CTF, "CreateFriends", NULL, "") &&
-		Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", CTF, "CrazyGamblerStartCTF");
+		Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", CTF, "CrazyGamblerStartCTF");
 	Native_Free(&n);
 	Native_Free(&r);
 	Native_Free(&max);
@@ -1659,7 +1602,7 @@ MODE_FN(Ctf, Init, 1, Ctf_InitC())
  * mode */
 static byte Sd_SetProfileC(const char *mode, const nativeVal_t *ship, const nativeVal_t *enemy) {
 	char type[64], prof[64];
-	byte e = Sd_EqI(enemy, 1);
+	byte e = Mode_EqI(enemy, 1);
 	Str_Printf(type, sizeof(type), "%s%sType", mode, e ? "Enemy" : "Friend");
 	Str_Printf(prof, sizeof(prof), "%s%sProfile", mode, e ? "Enemy" : "Friend");
 	return Sd_Profile(ship, type, prof);
@@ -1673,7 +1616,7 @@ static byte Ctf_CreateTeam(byte enemy) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *num = Mode_V(&t);
 	long n = 0;
-	if (!Mode_Import("OutMap") || !Sd_SaveInt(enemy ? "CTFNumEnemies" : "CTFNumFriends", num) || !Mode_Range(num, &n)) {
+	if (!Mode_Import("OutMap") || !Mode_SaveInt(enemy ? "CTFNumEnemies" : "CTFNumFriends", num) || !Mode_Range(num, &n)) {
 		return Mode_Done(&t, 0);
 	}
 	byte ok = 1;
@@ -1694,7 +1637,7 @@ MODE_FN(Ctf, CreateFriends, 0, Ctf_CreateTeam(0))
 /* CrazyGamblerStartCTF(): the player boarded; the crazy gambler's message starts the CTF */
 static byte Ctf_CrazyGamblerStartCTFC(void) {
 	return Mode_Import("Parking") && Mode_Import("Speech") && Sd_ModSetI("Parking", "PlayerShip", "Invulnerable", 0) &&
-		Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", CTF, "SetVulnerable") &&
+		Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", CTF, "SetVulnerable") &&
 		Sd_GamblerSays("CTFStartTextCad", CTF, "StartCTF");
 }
 
@@ -1716,7 +1659,7 @@ static byte Ctf_StartCTFC(void) {
 	nativeVal_t *limit = Mode_V(&t), *first = Mode_V(&t), *e = Mode_V(&t), *usr = Mode_V(&t), *name = Mode_V(&t);
 	const nativeVal_t *zero = Mode_I(&t, 0);
 	if (!Mode_Import("Vehicles") || !Mode_Import("Menu") || !Mode_Import("RacerScorer") || !Mode_Import("RaceMaker") ||
-		!Sd_GlobalTo("Vehicles", "OnDeathCallback", CTF, "OnVehicleDeathCallback") || !Mode_Read(CTF, "flags", &ctf.flags)) {
+		!Mode_ModSetGlobal("Vehicles", "OnDeathCallback", CTF, "OnVehicleDeathCallback") || !Mode_Read(CTF, "flags", &ctf.flags)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Repr(&ctf.flags, limit);
@@ -1735,7 +1678,7 @@ static byte Ctf_StartCTFC(void) {
 		if (Native_True(e)) {
 			int car;
 			if (!Mode_VSetI(e, "LLogicIsLeader", 1) || !CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 1L) ||
-				!Mode_UsrHandle(usr) || (car = Sd_UsrCar(usr)) < 0 ||
+				!Mode_UsrHandle(usr) || (car = Mode_UsrInCar(usr)) < 0 ||
 				(car && (!Mode_VGet(e, "Name", name) || !Mode_VSet(usr, "Target", name)))) {
 				return Mode_Done(&t, 0);
 			}
@@ -1777,7 +1720,7 @@ static byte Ctf_OnVehicleDeathCallbackC(const nativeVal_t *loser) {
 	if (!Mode_Import("RacerScorer") || !Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
 	}
-	int u = Sd_UsrIs(usr, loser);
+	int u = Mode_UsrNameIs(usr, loser);
 	if (u) {
 		return Mode_Done(&t, u > 0 && Ctf_Drop(usr, "flagsFriends", &ctf.flagsFriends));
 	}
@@ -1795,7 +1738,7 @@ static byte Ctf_OnVehicleDeathCallbackC(const nativeVal_t *loser) {
 		if (!Mode_VGet(e, "LLogicIsLeader", lead)) {
 			return Mode_Done(&t, 0);
 		}
-		byte ok = Sd_EqI(lead, 1) ? Ctf_Drop(e, "flagsEnemies", &ctf.flagsEnemies) && Mode_Read(CTF, "onDeathSpawnTime", &ctf.onDeathSpawnTime) &&
+		byte ok = Mode_EqI(lead, 1) ? Ctf_Drop(e, "flagsEnemies", &ctf.flagsEnemies) && Mode_Read(CTF, "onDeathSpawnTime", &ctf.onDeathSpawnTime) &&
 			Sd_LaterV(&ctf.onDeathSpawnTime, CTF, "RespawnEnemy", one, 1) :
 			Mode_Read(CTF, "onDeathSpawnTime", &ctf.onDeathSpawnTime) && Sd_LaterV(&ctf.onDeathSpawnTime, CTF, "RespawnEnemy", NULL, 0);
 		return Mode_Done(&t, ok && Sd_Del(loser));
@@ -1838,7 +1781,7 @@ static int Sd_IsLeader(const nativeVal_t *e) {
 		return 0;
 	}
 	Native_SetNone(&v);
-	int r = Mode_VGet(e, "LLogicIsLeader", &v) ? Sd_EqI(&v, 1) : -1;
+	int r = Mode_VGet(e, "LLogicIsLeader", &v) ? Mode_EqI(&v, 1) : -1;
 	Native_Free(&v);
 	return r;
 }
@@ -2170,7 +2113,7 @@ static int Ctf_TargetLeader(const nativeVal_t *e, const nativeVal_t *name, void 
 	nativeVal_t v;
 	(void)name;
 	Native_SetNone(&v);
-	int lead = Mode_VGet(e, "LLogicIsLeader", &v) ? Sd_EqI(&v, 1) : -1;
+	int lead = Mode_VGet(e, "LLogicIsLeader", &v) ? Mode_EqI(&v, 1) : -1;
 	Native_Free(&v);
 	if (lead > 0) {
 		lead = Mode_VGet(e, "Name", &v) && Mode_VSet(usr, "Target", &v) ? 1 : -1;
@@ -2304,7 +2247,7 @@ static byte Dom_InitC(void) {
 	nativeVal_t first;
 	Native_SetNone(&first);
 	byte ok = Mode_Import("Parking") && Mode_Import("Chars") && Sd_CameraFor(libs, "OM") &&
-		Sd_PreloadVar(DOM, "BatonModel", &dom.model) && Sd_GlobalTo("Chars", "OnMainCharDeath", DOM, "OnPlayerDeath") &&
+		Sd_PreloadVar(DOM, "BatonModel", &dom.model) && Mode_ModSetGlobal("Chars", "OnMainCharDeath", DOM, "OnPlayerDeath") &&
 		Sd_SpawnTime(DOM, &dom.onDeathSpawnTime, "DominationOnDeathSpawnTime") &&
 		Sd_PutI(DOM, "zonesCanBeTaken", &dom.zonesCanBeTaken, 1) && OWN(DOM, "CreateEnemies", NULL, "") &&
 		OWN(DOM, "CreateFriends", NULL, "") && Mode_GVarSetS("OnDominFriendDeath", "Domination.OnFriendDeath") &&
@@ -2312,8 +2255,8 @@ static byte Dom_InitC(void) {
 		Sd_MarkShips(&dom.enemies, "red", "DominationEnemies") && Mode_Read(DOM, "enemies", &dom.enemies) &&
 		Mode_Item(&dom.enemies, 0, &first) && Mode_GVarSet("LeaderName", &first) && Mode_Read(DOM, "friends", &dom.friends) &&
 		Sd_MarkShips(&dom.friends, "green", "DominationFriends") &&
-		Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", DOM, "CrazyGamblerStartDomination") &&
-		Sd_GlobalTo("Parking", "SwitchCharMissionCallback", DOM, "ReleaseBaton");
+		Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", DOM, "CrazyGamblerStartDomination") &&
+		Mode_ModSetGlobal("Parking", "SwitchCharMissionCallback", DOM, "ReleaseBaton");
 	Native_Free(&first);
 	return ok;
 }
@@ -2413,7 +2356,7 @@ static byte Dom_CreateTeam(byte enemy) {
 		ok = Mode_UsrHandle(num);
 		Native_Free(num);
 	}
-	if (!ok || !Sd_SaveInt(enemy ? "DominationNumEnemies" : "DominationNumFriends", num) || !Mode_Range(num, &n)) {
+	if (!ok || !Mode_SaveInt(enemy ? "DominationNumEnemies" : "DominationNumFriends", num) || !Mode_Range(num, &n)) {
 		return Mode_Done(&t, 0);
 	}
 	for (long i = 0; ok && i < n; i++) {
@@ -2544,10 +2487,10 @@ static byte Dom_CrazyGamblerStartDominationC(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *usr = Mode_V(&t), *v = Mode_V(&t), *fn = Mode_V(&t);
 	if (!Mode_Import("Parking") || !Sd_ModSetI("Parking", "PlayerShip", "Invulnerable", 0) ||
-		!Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", DOM, "OnVehicle") || !Mode_UsrHandle(usr)) {
+		!Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", DOM, "OnVehicle") || !Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
 	}
-	int car = Sd_UsrCar(usr);
+	int car = Mode_UsrInCar(usr);
 	if (car < 0 || (car && !Dom_AimLeader(usr)) || !Mode_Read(DOM, "CrazyGamblerStartDominationFirst", &dom.startFirst)) {
 		return Mode_Done(&t, 0);
 	}
@@ -2598,12 +2541,12 @@ static byte Dom_StartDominationC(void) {
 	nativeVal_t *a = Mode_V(&t), *b = Mode_V(&t), *rounds = Mode_V(&t);
 	if (!Mode_Import("Vehicles") || !Mode_Import("Menu") || !Mode_Import("RacerScorer") || !Mode_Import("RaceMaker") ||
 		!Sd_PutI(DOM, "playerZones", &dom.playerZones, 0) || !Sd_PutI(DOM, "enemyZones", &dom.enemyZones, 0) ||
-		!Sd_SaveInt("PlayerRounds", a) || !Sd_SaveInt("EnemyRounds", b)) {
+		!Mode_SaveInt("PlayerRounds", a) || !Mode_SaveInt("EnemyRounds", b)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("DominationRounds", rounds);
 	if (!CALL("RacerScorer", "InitMissionScorer", NULL, "vvv", a, b, rounds) ||
-		!Sd_GlobalTo("Menu", "MissionScorerCall", DOM, "MissionScorer") || !OWN(DOM, "MissionScorer", NULL, "i", 0L) ||
+		!Mode_ModSetGlobal("Menu", "MissionScorerCall", DOM, "MissionScorer") || !OWN(DOM, "MissionScorer", NULL, "i", 0L) ||
 		!Mode_Read(DOM, "zones", &dom.zones)) {
 		return Mode_Done(&t, 0);
 	}
@@ -2632,7 +2575,7 @@ MODE_FN(Dom, StartDomination, 0, Dom_StartDominationC())
 static int Dom_StateIs(const nativeVal_t *z, long state) {
 	nativeVal_t v;
 	Native_SetNone(&v);
-	int r = Mode_Read(DOM, "zonesStates", &dom.zonesStates) && Native_Subscript(&dom.zonesStates, z, &v) ? Sd_EqI(&v, state) : -1;
+	int r = Mode_Read(DOM, "zonesStates", &dom.zonesStates) && Native_Subscript(&dom.zonesStates, z, &v) ? Mode_EqI(&v, state) : -1;
 	Native_Free(&v);
 	return r;
 }
@@ -2678,7 +2621,7 @@ static byte Dom_TakeBatonC(const nativeVal_t *item, const nativeVal_t *who) {
 			return Mode_Done(&t, 0);
 		}
 	} else {
-		int u = Sd_UsrIs(usr, who);
+		int u = Mode_UsrNameIs(usr, who);
 		if (u < 0) {
 			return Mode_Done(&t, 0);
 		}
@@ -2816,8 +2759,8 @@ static int Dom_ZoneTaken(byte enemy, const nativeVal_t *item, const nativeVal_t 
 	/* the round won: the rounds of the side counted in its save variable */
 	Native_SetInt(one, 1);
 	nativeVal_t *won = enemy ? er : pr;
-	if (!Sd_SaveInt("PlayerRounds", enemy ? pr : rep) || !Sd_SaveInt("EnemyRounds", enemy ? rep : er) ||
-		!Native_Arith('+', rep, one, won) || !Sd_SaveInt("DominationRounds", dr)) {
+	if (!Mode_SaveInt("PlayerRounds", enemy ? pr : rep) || !Mode_SaveInt("EnemyRounds", enemy ? rep : er) ||
+		!Native_Arith('+', rep, one, won) || !Mode_SaveInt("DominationRounds", dr)) {
 		return Mode_Done(&t, 0) ? 1 : -1;
 	}
 	Native_Free(rep);
@@ -2862,7 +2805,7 @@ static byte Dom_TakeZoneC(const nativeVal_t *item, const nativeVal_t *who) {
 	if (!Mode_UsrHandle(usr)) {
 		return Mode_Done(&t, 0);
 	}
-	int isUser = Sd_UsrIs(usr, who);
+	int isUser = Mode_UsrNameIs(usr, who);
 	if (isUser > 0) {
 		isUser = Mode_Read(DOM, "shipWithBaton", &dom.shipWithBaton) && Mode_VGet(usr, "Name", un) ?
 			Sd_Eq(&dom.shipWithBaton, un) : -1;
@@ -2871,7 +2814,7 @@ static byte Dom_TakeZoneC(const nativeVal_t *item, const nativeVal_t *who) {
 	if (isUser < 0 || !Mode_EntityH(who, we) || !Mode_VGet(we, "RadarShow", radar)) {
 		return Mode_Done(&t, 0);
 	}
-	byte isEnemy = Sd_EqI(radar, 1);
+	byte isEnemy = Mode_EqI(radar, 1);
 	if (!isUser && !isEnemy) {
 		/* the player without the baton at a zone that is not his: the system message, once per its time */
 		int msg = Native_True(usr);
@@ -3198,7 +3141,7 @@ static byte Mr_InitC(void) {
 	Native_SetNone(&aim);
 	byte ok = Mode_SetModVar("MissionsFuncs", "cameraData", &none) && CALL("RaceMaker", "PreloadCnDnResources", NULL, "") &&
 		Sd_PreloadVar(MR, "BatonModel", &mr.model) && Sd_PreloadVar(MR, "WayPointModel", &mr.model) &&
-		Sd_GlobalTo("Chars", "OnMainCharDeath", MR, "OnPlayerDeath");
+		Mode_ModSetGlobal("Chars", "OnMainCharDeath", MR, "OnPlayerDeath");
 	if (ok) {
 		Mode_SaveVar("MortalRaceRace", &text);
 		ok = Native_EvalText(MR, &text, &start) && Mode_SetModVar("RaceMaker", "StartPos", &start);
@@ -3208,8 +3151,8 @@ static byte Mr_InitC(void) {
 		Mr_FromSave("respawnTime", &mr.respawnTime, "MortalRaceRespawnTime", 'f') &&
 		Mr_FromSave("profileType", &mr.profileType, "MortalRaceRacersProfile", 's') &&
 		Mr_FromSave("FightingFreezeControlAim", &aim, "MortalRaceFightingFreezeControlAim", 'i') &&
-		Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", MR, "CrazyGamblerStartMortalRace") &&
-		Sd_GlobalTo("Parking", "SwitchCharMissionCallback", MR, "ReleaseBaton");
+		Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", MR, "CrazyGamblerStartMortalRace") &&
+		Mode_ModSetGlobal("Parking", "SwitchCharMissionCallback", MR, "ReleaseBaton");
 	Native_Free(&start);
 	Native_Free(&aim);
 	return ok;
@@ -3340,7 +3283,7 @@ static byte Mr_CrazyGamblerStartMortalRaceC(void) {
 	nativeVal_t cad, none;
 	PyObject *fn;
 	if (!Mode_Import("Parking") || !Mode_Import("Speech") || !Sd_ModSetI("Parking", "PlayerShip", "Invulnerable", 0) ||
-		!Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", MR, "SetVulnerable")) {
+		!Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallback", MR, "SetVulnerable")) {
 		return 0;
 	}
 	Mode_SaveVar("MortalRaceStartTextCad", &cad);
@@ -3405,13 +3348,13 @@ static byte Mr_TakeBatonC(const nativeVal_t *item, const nativeVal_t *who) {
 		int car;
 		if (!Mode_Put(MR, "shipWithBaton", &mr.shipWithBaton, who) || !Mode_EntityH(who, v) ||
 			!CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", v, 1L) || !Mode_Read(MR, "BatonRadius", &mr.batonRadius) ||
-			!Mr_GoTo(who, pos, &mr.batonRadius) || !OWN(MR, "RacersAttackShip", NULL, "v", who) || (car = Sd_UsrCar(usr)) < 0 ||
+			!Mr_GoTo(who, pos, &mr.batonRadius) || !OWN(MR, "RacersAttackShip", NULL, "v", who) || (car = Mode_UsrInCar(usr)) < 0 ||
 			(car && !Mode_VSet(usr, "Target", who)) || !Mode_GVarSet("CurrentWaypointName", who) || !Mode_VSetS(v, "TgType", "red")) {
 			return Mode_Done(&t, 0);
 		}
 		return Mode_Done(&t, Mode_Sound("EneWaySound", "EneWayVolume"));
 	}
-	int me = Sd_UsrIs(usr, who);
+	int me = Mode_UsrNameIs(usr, who);
 	if (me <= 0) {
 		return Mode_Done(&t, me == 0);
 	}
@@ -3564,7 +3507,7 @@ static byte Mr_OnRaceStartC(const nativeVal_t *item, const nativeVal_t *who) {
 	if (!Mode_Import("RaceMaker") || !Mode_UsrHandle(&usr)) {
 		return 0;
 	}
-	int u = Sd_UsrIs(&usr, who);
+	int u = Mode_UsrNameIs(&usr, who);
 	Native_Free(&usr);
 	if (u <= 0) {
 		return u == 0;
@@ -3591,7 +3534,7 @@ static byte Mr_Scorer(void) {
 	}
 	Mode_Repr(&mr.numWaypoints, &limit);
 	byte ok = CALL("RacerScorer", "InitMissionScorer", NULL, "iiv", 0L, 0L, &limit) &&
-		Sd_ModTo("Menu", "MissionScorerCall", "RacerScorer", "MissionScorer") && Sd_Draw();
+		Mode_ModTo("Menu", "MissionScorerCall", "RacerScorer", "MissionScorer") && Sd_Draw();
 	Native_Free(&limit);
 	return ok;
 }
@@ -3638,7 +3581,7 @@ static int Mr_Hunter(const nativeVal_t *e, const nativeVal_t *name, void *arg) {
 	if (!Mode_VGet(e, "Name", en) || !Mode_AIState(en, state)) {
 		return Mode_Done(&t, 0) - 1;
 	}
-	int st = Sd_EqI(state, 2) ? 2 : Sd_EqI(state, 8) ? 8 : 0;
+	int st = Mode_EqI(state, 2) ? 2 : Mode_EqI(state, 8) ? 8 : 0;
 	if (!st) {
 		return Mode_Done(&t, 1);
 	}
@@ -3733,7 +3676,7 @@ static byte Mr_OnPositionReachedC(const nativeVal_t *who) {
 	if (!Mode_AIState(who, state)) {
 		return Mode_Done(&t, 0);
 	}
-	if (!Sd_EqI(state, 1)) {
+	if (!Mode_EqI(state, 1)) {
 		return Mode_Done(&t, 1);
 	}
 	return Mode_Done(&t, Mode_Import("VehiclesNPC") && Mr_Prof("FightingFreezeCadenceShoot", "FightingFreezeControlAim", NULL) &&
@@ -3768,7 +3711,7 @@ static byte Mr_PlayerCheckPoint(nativeVal_t *l, const nativeVal_t *usrName) {
 	if (!Mode_Sound("WaySound", "WayVolume") || !Sd_Add(MR, "YourScore", &mr.yourScore, 1)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Sd_EqI(&mr.yourScore, 0)) {
+	if (Mode_EqI(&mr.yourScore, 0)) {
 		/* the first buoy: the baton at the next start position, the racers go for it, the buoy one further */
 		if (!Mr_NextPos() || !Mr_AtStart(0, pos) || !OWN(MR, "CreateBaton", NULL, "v", pos) ||
 			!Mode_Read(MR, "BatonRadius", &mr.batonRadius) || !OWN(MR, "MoveRacersToPos", NULL, "vv", pos, &mr.batonRadius) ||
@@ -3872,9 +3815,9 @@ static byte Mr_OnCheckPointC(const nativeVal_t *item, const nativeVal_t *who) {
 	if (!Mode_Read(MR, "YourScore", &mr.yourScore)) {
 		return Mode_Done(&t, 0);
 	}
-	if (Sd_EqI(&mr.yourScore, -1) && !Sd_Eq(who, usrName)) {
+	if (Mode_EqI(&mr.yourScore, -1) && !Sd_Eq(who, usrName)) {
 		return Mode_Done(&t, !Mode_Read(MR, "YourScore", &mr.yourScore) ? 0 :
-			!Sd_EqI(&mr.yourScore, -1) || Sd_PutI(MR, "YourScore", &mr.yourScore, 0));
+			!Mode_EqI(&mr.yourScore, -1) || Sd_PutI(MR, "YourScore", &mr.yourScore, 0));
 	}
 	if (!Mode_EntityH(item, l)) {
 		return Mode_Done(&t, 0);
@@ -3998,7 +3941,7 @@ static byte Mr_RacersAttackShipC(const nativeVal_t *ship) {
 	if (!Mode_Import("VehiclesNPC") || !Mode_UsrHandle(usr) || !Mode_ListGet("Race", "First", name) || !Mode_Ent(name, &e)) {
 		return Mode_Done(&t, 0);
 	}
-	int u = Sd_UsrIs(usr, ship);
+	int u = Mode_UsrNameIs(usr, ship);
 	if (u < 0) {
 		return Mode_Done(&t, 0);
 	}
@@ -4061,7 +4004,7 @@ static byte Mr_RacerKilledC(const nativeVal_t *loser, const nativeVal_t *winner)
 	}
 	int drop = Native_True(e);
 	if (drop) {
-		drop = Mode_VGet(e, "RadarShow", radar) ? Sd_EqI(radar, 1) : -1;
+		drop = Mode_VGet(e, "RadarShow", radar) ? Mode_EqI(radar, 1) : -1;
 	}
 	if (drop < 0 || (drop && (!Mode_Put(MR, "shipWithBaton", &mr.shipWithBaton, empty) || !Mr_DropBaton(e)))) {
 		return Mode_Done(&t, 0);
@@ -4088,7 +4031,7 @@ static byte Mr_RacerDamagedC(const nativeVal_t *winner) {
 	Native_SetNone(&un);
 	byte ok = !Native_True(&usr) || Mode_VGet(&usr, "Name", &un);
 	if (ok && Native_True(&usr) && Sd_Eq(&un, winner) && (ok = Mode_Read(MR, "YourScore", &mr.yourScore)) &&
-		Sd_EqI(&mr.yourScore, -1)) {
+		Mode_EqI(&mr.yourScore, -1)) {
 		ok = Mode_ListSet("Race", "OnDamage", "") && Mr_Scorer() && Mode_Read(MR, "waypointName", &mr.waypointName) &&
 			OWN(MR, "OnCheckPoint", NULL, "vv", &mr.waypointName, winner);
 	}
@@ -4171,7 +4114,7 @@ static int Mr_Marker(const nativeVal_t *e, const nativeVal_t *name, void *arg) {
 	(void)name;
 	(void)arg;
 	Native_SetNone(&v);
-	int m = Mode_VGet(e, "RadarShow", &v) ? Sd_EqI(&v, 1) : -1;
+	int m = Mode_VGet(e, "RadarShow", &v) ? Mode_EqI(&v, 1) : -1;
 	Native_Free(&v);
 	if (m > 0 && !Mode_VSetS(e, "Target", "")) {
 		return -1;
