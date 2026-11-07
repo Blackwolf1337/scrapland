@@ -234,6 +234,7 @@ static byte Credits_Step(const char *func, const nativeVal_t *val, double d) {
 	}
 	case NV_NONE:
 	case NV_DICT:
+	case NV_OBJ:
 		return Native_Raise(NE_TYPE, "bad operand type(s) for +");
 	default:
 		return Native_Raise(NE_TYPE, "illegal argument type for built-in operation");
@@ -468,18 +469,9 @@ static PyObject *CreditsText_ShowCredit(PyObject *self, PyObject *args) {
 	/* `num` */
 	nativeBuf_t rep;
 	Native_BufInit(&rep);
-	if (Native_FromPyAny(num, &n)) {
-		Native_Repr(&rep, &n, NR_REPR);
-		Native_Free(&n);
-	} else {
-		/* OBJLIB 7: the repr of a value without a native form */
-		PyObject *r = PyObject_Repr(num);
-		if (!r) {
-			return NULL;
-		}
-		Native_BufAdd(&rep, PyString_AsString(r), PyString_Size(r));
-		Py_DECREF(r);
-	}
+	Native_Arg(num, &n);
+	Native_Repr(&rep, &n, NR_REPR);
+	Native_Free(&n);
 	byte ok = Credits_Show(rep.p);
 	Native_BufFree(&rep);
 	return Credits_Result(ok);
