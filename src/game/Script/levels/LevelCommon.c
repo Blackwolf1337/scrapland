@@ -779,34 +779,11 @@ byte LvN_EqS(const nativeVal_t *a, const char *s) {
 	return eq;
 }
 
-void LvN_Elems(const nativeVal_t *v, nativeVal_t *out) {
-	PyObject *o = v->type == NV_OBJ ? v->obj : NULL;
-	if (!o || (!PyList_Check(o) && !PyTuple_Check(o))) {
-		Native_Copy(out, v);
-		return;
-	}
-	/* OBJLIB 7 */
-	int n = PyObject_Length(o);
-	Native_SetEmpty(out, PyList_Check(o) ? NV_LIST : NV_TUPLE);
-	for (int i = 0; i < n; i++) {
-		PyObject *x = PySequence_GetItem(o, i);
-		if (!x) {
-			PyErr_Clear();
-			break;
-		}
-		Native_Arg(x, Native_Append(out));
-		Py_DECREF(x);
-	}
-}
-
 byte LvN_GElems(const char *module, const char *name, nativeVal_t *out) {
-	nativeVal_t v;
-	if (!LvN_GObj(module, name, &v)) {
-		Native_SetNone(out);
+	if (!LvN_GObj(module, name, out)) {
 		return 0;
 	}
-	LvN_Elems(&v, out);
-	Native_Free(&v);
+	Mode_Elems(out);
 	return 1;
 }
 

@@ -2701,7 +2701,8 @@ int Mode_Active(const nativeVal_t *e) {
 /* `for name in names: e = Scrap.GetEntity(name); if e: e.Del()` */
 byte Mode_DelNames(const nativeVal_t *names) {
 	nativeVal_t lst = { 0 };
-	LvN_Elems(names, &lst);
+	Native_Copy(&lst, names);
+	Mode_Elems(&lst);
 	int cnt = Native_ForCount(&lst);
 	byte ok = cnt >= 0;
 	for (int k = 0; ok && k < cnt; k++) {

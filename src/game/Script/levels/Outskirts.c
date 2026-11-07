@@ -342,7 +342,8 @@ static byte Win2nd_GetRaceWaypointIndex_C(const nativeVal_t *a, nativeVal_t *out
 	}
 	byte ok = LvN_ModGet("RaceMaker", "StartPos", sp);
 	if (ok) {
-		LvN_Elems(sp, lst);
+		Native_Copy(lst, sp);
+		Mode_Elems(lst);
 	}
 	int cnt = ok ? Native_ForCount(lst) : -1;
 	ok = cnt >= 0;
@@ -2459,7 +2460,8 @@ static byte Debtors_SendShipToGetTreasure(const nativeVal_t *a) {
 	modeVals_t t = { .n = 0 };
 	const nativeVal_t *pos = &a[1];
 	nativeVal_t *lst = TV(), *cur = TV(), *min = TV(), *e = TV(), *x = TV(), *y = TV(), *z = TV(), *r = TV();
-	LvN_Elems(&a[0], lst);
+	Native_Copy(lst, &a[0]);
+	Mode_Elems(lst);
 	int n = Native_Size(lst);
 	if (n <= 0) {
 		return Mode_Done(&t, n == 0);

@@ -150,9 +150,7 @@ byte LvN_EqS(const nativeVal_t *a, const char *s);
 /* x[i] of the script (a dict looks the int up; an NV_OBJ, e.g. a list that holds entity handles, the Python way, the
  * item as Native_Arg makes it) */
 #define LvN_Item Mode_Item
-/* a value whose items a loop takes one by one: a list or tuple held as one NV_OBJ (it holds handles) as a native list
- * or tuple of its items as Native_Arg makes them, any other value copied; the global name of module the same way */
-void LvN_Elems(const nativeVal_t *v, nativeVal_t *out);
+/* the global name of module as a value whose items a loop takes one by one (Mode_Elems) */
 byte LvN_GElems(const char *module, const char *name, nativeVal_t *out);
 /* raise "text" (a string exception of the script; OBJLIB 7: the Python exception until errors are a C state): 0 */
 byte LvN_RaiseText(const char *text);
