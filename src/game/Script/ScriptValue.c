@@ -284,21 +284,6 @@ PyObject *Script_NotRead(const char *where, const char *text) {
 	return NULL;
 }
 
-#ifdef SCRAP_NO_PYTHON
-/*
- * STAGE 7, the build without the interpreter: PyRun_String for the one caller outside stage 7 that has not moved yet,
- * the evalpy fallback of Mod_Eval (ScriptModule.c, the module loader; Script_EvalValue reads the same texts). The
- * text is Script_NotRead's error. It goes when Mod_Eval no longer calls it, then the link shows that no caller is
- * left.
- */
-PyObject *PyRun_String(char *str, int start, PyObject *globals, PyObject *locals) {
-	(void)start;
-	(void)globals;
-	(void)locals;
-	return Script_NotRead("PyRun_String", str);
-}
-#endif
-
 PyObject *Script_EvalValue(PyObject *globals, PyObject *text) {
 	/* the checks of builtin eval before it parses: a string without NUL, its leading blanks skipped */
 	if (!PyString_Check(text)) {

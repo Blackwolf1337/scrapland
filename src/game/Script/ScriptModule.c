@@ -28,8 +28,8 @@
  * builtins), attributes, calls with keywords, subscripts and slices, + - * / %, comparisons, not, and, or. Equal
  * constants of one code object (the module, a class body, an eval) are one object and a constant that looks like a
  * name is interned (com_addconst, PyCode_New). eval(s) of the definitions (the save variables) is read by the same
- * parser in the namespace of the module; what it cannot read goes to the eval of Python (logged as "evalpy" by the
- * gate, SCRAP_PY_GATE).
+ * parser in the namespace of the module; what it cannot read goes to Script_EvalValue (the literals of builtin eval,
+ * else its SyntaxError, logged as "notread" by the gate, SCRAP_PY_GATE). No Python runs.
  *
  * Off (the .pyc runs as before) with SCRAP_PACK_SCRIPTS=1 or SCRAP_CMOD=0.
  */
@@ -839,6 +839,9 @@ static PyObject *Mod_Expr(modParse_t *m) {
 /* eval(text) in the namespace of the module (the save variables): this parser, else the eval of Python */
 static PyObject *Mod_Eval(modParse_t *outer, PyObject *text) {
 	const char *s = PyString_AsString(text);
+	if ((int)strlen(s) != PyString_Size(text)) {
+		return Script_EvalValue(outer->globals, text);	/* the ValueError of builtin eval */
+	}
 	modParse_t m = { .p = s, .text = s, .file = "eval", .module = outer->module, .mod = outer->mod,
 		.globals = outer->globals, .locals = outer->locals, .consts = PyList_New(0) };
 	if (!m.consts) {
@@ -854,8 +857,7 @@ static PyObject *Mod_Eval(modParse_t *outer, PyObject *text) {
 	Py_DECREF(m.consts);
 	if (!v && m.syntax) {
 		PyErr_Clear();
-		Py_GateNote("evalpy", outer->module, s);
-		v = PyRun_String((char *)s, Py_eval_input, outer->globals, outer->locals);
+		v = Script_EvalValue(outer->globals, text);
 	}
 	return v;
 }

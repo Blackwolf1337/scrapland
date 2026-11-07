@@ -188,11 +188,6 @@ int Script_EntSet(const char *ent, const char *var, PyObject *v);
 /* `if ent.var:` of a script (0 when the entity or the variable is not there) */
 byte Script_EntTrue(const char *ent, const char *var);
 
-#ifndef SCRAP_NO_PYTHON
-/* the value of a Python expression (the save variables keep lists as their text), NULL when it fails */
-PyObject *Script_Eval(const char *text);
-#endif
-
 /* the arguments of a menu callback: the player and the item (empty when the callback got none) */
 byte Script_Args(PyObject *args, int *id, const char **control);
 

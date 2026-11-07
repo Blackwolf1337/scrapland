@@ -1031,18 +1031,6 @@ void Script_SetInt(const char *module, const char *var, int value) {
 	Script_SetVar(module, var, PyInt_FromLong(value));
 }
 
-#ifndef SCRAP_NO_PYTHON /* no caller left; not in the build without the interpreter */
-PyObject *Script_Eval(const char *text) {
-	PyObject *main = PyImport_AddModule("__main__");
-	PyObject *dict = main ? PyModule_GetDict(main) : NULL;
-	PyObject *r = dict ? PyRun_String((char *)text, Py_eval_input, dict, dict) : NULL;
-	if (!r) {
-		PyErr_Clear();
-	}
-	return r;
-}
-#endif
-
 byte Script_Args(PyObject *args, int *id, const char **control) {
 	PyObject *c = NULL;
 	if (!PyArg_ParseTuple(args, "i|O", id, &c)) {
