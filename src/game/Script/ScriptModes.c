@@ -3727,3 +3727,33 @@ int Mode_SeqLen(const nativeVal_t *seq) {
 	int n;
 	return Native_Len(seq, &n) ? n : -1;
 }
+
+byte Mode_LangUse(const char *module, const char *key, nativeVal_t *out) {
+	nativeVal_t lang, use;
+	Mode_Lang(key, &lang);
+	byte ok = Mode_G(module, "UseTxt", &use) && Native_Arith('%', &lang, &use, out);
+	Native_Free(&lang);
+	Native_Free(&use);
+	return ok;
+}
+
+void Mode_ItemColor(int id, const char *item, const int *c) {
+	Script_SetNum(id, item, "Red", c[0]);
+	Script_SetNum(id, item, "Green", c[1]);
+	Script_SetNum(id, item, "Blue", c[2]);
+}
+
+void Mode_ItemVisible(int id, const char *item, int v) {
+	Script_SetNum(id, item, "Visible", v);
+}
+
+byte Mode_LinkCall(PyObject *fn, int id, const char *a, const char *b) {
+	return Native_Call(fn, NULL, "iss", (long)id, a, b);
+}
+
+byte Mode_SoundOf(const char *name) {
+	char snd[0x40], vol[0x40];
+	Str_Printf(snd, sizeof(snd), "%sSound", name);
+	Str_Printf(vol, sizeof(vol), "%sVolume", name);
+	return Mode_Sound(snd, vol);
+}

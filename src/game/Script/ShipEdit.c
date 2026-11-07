@@ -1205,11 +1205,7 @@ static byte Se_ChangeTab(int id, const nativeVal_t *control0, const nativeVal_t 
 	}
 	if (c > 0) {
 		int fast = Mode_CmpI(swept, "<=", 91);
-		const char *s = fast > 0 ? "RotateShipFast" : "RotateShip";
-		char sv[0x20], vv[0x20];
-		Str_Printf(sv, sizeof(sv), "%sSound", s);
-		Str_Printf(vv, sizeof(vv), "%sVolume", s);
-		c = fast >= 0 && Mode_Sound(sv, vv) ? 1 : -1;
+		c = fast >= 0 && Mode_SoundOf(fast > 0 ? "RotateShipFast" : "RotateShip") ? 1 : -1;
 	}
 	return Mode_Done(&t, c >= 0 && Mode_Put(SE, "prevTab", NULL, control));
 }

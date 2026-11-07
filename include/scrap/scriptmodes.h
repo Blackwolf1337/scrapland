@@ -779,5 +779,13 @@ byte Mode_SchedPy(double time, const char *module, const char *func, PyObject *a
 void Mode_PrintedCall(const char *module, const char *func, long id);
 /* len(seq) as PySequence_Length takes it: -1 with its TypeError */
 int Mode_SeqLen(const nativeVal_t *seq);
+/* the tab editors (EnginesTab, WeaponsTab, HullTab, ShipEdit): Scrap.GetLangStr(key) % module.UseTxt; the Red, Green
+ * and Blue of a menu item from c[0..2]; its Visible; fn(id, a, b) of a link function of Menu on texts of C; a sound of
+ * the Sound module played, SSound.Play(Sound.<name>Sound, Sound.<name>Volume) */
+byte Mode_LangUse(const char *module, const char *key, nativeVal_t *out);
+void Mode_ItemColor(int id, const char *item, const int *c);
+void Mode_ItemVisible(int id, const char *item, int v);
+byte Mode_LinkCall(PyObject *fn, int id, const char *a, const char *b);
+byte Mode_SoundOf(const char *name);
 
 #endif

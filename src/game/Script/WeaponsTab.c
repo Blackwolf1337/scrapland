@@ -88,32 +88,12 @@ static byte WT_ShipS(const char *prefix, const nativeVal_t *text, nativeVal_t *o
 	return WT_Cat(var, prefix, text, "") && Mode_ShipGet(var, out);
 }
 
-/* Scrap.GetLangStr(key) of a key value (the TypeError of "s") */
-static byte WT_LangV(const nativeVal_t *key, nativeVal_t *out) {
-	const char *s;
-	if (!Native_ArgStr(key, 1, &s)) {
-		return 0;
-	}
-	Mode_Lang(s, out);
-	return 1;
-}
-
-/* Scrap.GetLangStr(key) % UseTxt */
-static byte WT_Use(const char *key, nativeVal_t *out) {
-	nativeVal_t lang, use;
-	Mode_Lang(key, &lang);
-	byte ok = WT_G("UseTxt", &use) && Native_Arith('%', &lang, &use, out);
-	Native_Free(&lang);
-	Native_Free(&use);
-	return ok;
-}
-
 /* string.replace(text, "<n>", Scrap.GetLangStr(prefix + name + suffix)): a hint with a name in it */
 static byte WT_Named(const nativeVal_t *text, const char *prefix, const nativeVal_t *name, const char *suffix,
 	nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *key = Mode_V(&t), *n = Mode_V(&t);
-	if (!Mode_Cat(&t, key, 3, Mode_S(&t, prefix), name, Mode_S(&t, suffix)) || !WT_LangV(key, n)) {
+	if (!Mode_Cat(&t, key, 3, Mode_S(&t, prefix), name, Mode_S(&t, suffix)) || !Mode_LangV(key, n)) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_Replace(text, "<n>", n, out);
@@ -124,7 +104,7 @@ static byte WT_Named(const nativeVal_t *text, const char *prefix, const nativeVa
 static byte WT_WeaponHint(const char *key, byte use, const nativeVal_t *weapon, nativeVal_t *out) {
 	nativeVal_t text;
 	if (use) {
-		if (!WT_Use(key, &text)) {
+		if (!Mode_LangUse(MOD, key, &text)) {
 			return 0;
 		}
 	} else {
@@ -139,7 +119,7 @@ static byte WT_WeaponHint(const char *key, byte use, const nativeVal_t *weapon, 
 static byte WT_UpgradeHint(const char *key, const nativeVal_t *upgrade, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *text = Mode_V(&t), *ids = Mode_V(&t), *name = Mode_V(&t);
-	byte ok = WT_Use(key, text) && WT_G("upgradeId", ids) && Native_Subscript(ids, upgrade, name) &&
+	byte ok = Mode_LangUse(MOD, key, text) && WT_G("upgradeId", ids) && Native_Subscript(ids, upgrade, name) &&
 		WT_Named(text, "HINT_UpgradeName_", name, "", out);
 	return Mode_Done(&t, ok);
 }
@@ -159,16 +139,6 @@ static byte WT_PutWeaponHint(int id, const char *item, const char *key, byte use
 	byte ok = WT_WeaponHint(key, use, weapon, &hint) && WT_SetHint(id, item, &hint);
 	Native_Free(&hint);
 	return ok;
-}
-
-static void WT_Color(int id, const char *item, const int *c) {
-	Script_SetNum(id, item, "Red", c[0]);
-	Script_SetNum(id, item, "Green", c[1]);
-	Script_SetNum(id, item, "Blue", c[2]);
-}
-
-static void WT_Visible(int id, const char *item, int v) {
-	Script_SetNum(id, item, "Visible", v);
 }
 
 /* control + "Slot" + `i` */
@@ -323,14 +293,6 @@ static byte WT_ExecCat(const char *prefix, const nativeVal_t *a, const char *mid
 	return Mode_Done(&t, ok && WT_Exec(code));
 }
 
-/* a sound of the Sound module played: SSound.Play(Sound.<name>Sound, Sound.<name>Volume) */
-static byte WT_Sound(const char *name) {
-	char snd[0x40], vol[0x40];
-	Str_Printf(snd, sizeof(snd), "%sSound", name);
-	Str_Printf(vol, sizeof(vol), "%sVolume", name);
-	return Mode_Sound(snd, vol);
-}
-
 /* ShipEdit.IsEditingMultiplayer() into *out */
 static byte WT_Multi(nativeVal_t *out) {
 	/* OBJLIB 3 */
@@ -353,12 +315,6 @@ static int WT_IsMulti(void) {
 	return r;
 }
 
-/* `import a, b, ...` of a function of the script (the names end with NULL; OBJLIB 6: module loading stays with the
- * module objects until then) */
-static byte WT_Import(const char *const *names) {
-	return Script_Import(names);
-}
-
 /* DoNothing(id, control) */
 static PyObject *WT_DoNothing(PyObject *self, PyObject *args) {
 	PyObject *id, *control;
@@ -376,14 +332,14 @@ static byte WT_WeightPrediction(int id, const nativeVal_t *control, nativeVal_t 
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *weapon = Mode_V(&t), *num = Mode_V(&t), *loaded = Mode_V(&t), *w = Mode_V(&t), *am = Mode_V(&t);
 	nativeVal_t *mass = Mode_V(&t), *weight = Mode_V(&t);
-	if (!WT_Import(mods) || !WT_Head(control, 5, weapon) || !WT_Last(control, num) || !WT_Loaded(num, weapon, loaded)) {
+	if (!Script_Import(mods) || !WT_Head(control, 5, weapon) || !WT_Last(control, num) || !WT_Loaded(num, weapon, loaded)) {
 		return Mode_Done(&t, 0);
 	}
 	byte on = Native_True(loaded);
-	WT_Visible(id, on ? "WeightDown" : "WeightUp", 1);
-	WT_Visible(id, "WeightBack", 1);
-	WT_Visible(id, on ? "BoostDown" : "BoostUp", 1);
-	WT_Visible(id, "BoostBack", 1);
+	Mode_ItemVisible(id, on ? "WeightDown" : "WeightUp", 1);
+	Mode_ItemVisible(id, "WeightBack", 1);
+	Mode_ItemVisible(id, on ? "BoostDown" : "BoostUp", 1);
+	Mode_ItemVisible(id, "BoostBack", 1);
 	/* OBJLIB 3 */
 	if (!Native_CallMod("ShipMaker", "GetWeapon", w, "v", weapon) || !Mode_ShipGet("AcMass", am) || !Native_ToInt(am, mass) ||
 		!Native_Arith(Native_True(loaded) ? '-' : '+', mass, w, weight) ||
@@ -461,7 +417,7 @@ static byte WT_ShowWeaponDesc(int id, const nativeVal_t *control) {
 	static const char *const tables[2] = { "WeaponValues", "WeaponCosts" };
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *base = Mode_V(&t), *v[10];
-	if (!WT_Import(mods) || !Native_Arith('+', Mode_S(&t, "ShipEdit_"), control, base)) {
+	if (!Script_Import(mods) || !Native_Arith('+', Mode_S(&t, "ShipEdit_"), control, base)) {
 		return Mode_Done(&t, 0);
 	}
 	for (int i = 0; i < 10; i++) {
@@ -472,7 +428,7 @@ static byte WT_ShowWeaponDesc(int id, const nativeVal_t *control) {
 		}
 		int mark = t.n;
 		nativeVal_t *key = Mode_V(&t), *tab = Mode_V(&t), *up = Mode_V(&t), *x = Mode_V(&t);
-		byte ok = i < 6 ? Native_Arith('+', base, Mode_S(&t, parts[i / 2]), key) && WT_LangV(key, v[i]) :
+		byte ok = i < 6 ? Native_Arith('+', base, Mode_S(&t, parts[i / 2]), key) && Mode_LangV(key, v[i]) :
 			Mode_ModVar("ShipMaker", tables[i / 2 - 3], tab) && Native_Upper(control, up) && Native_Subscript(tab, up, x);
 		if (ok && i >= 6) {
 			Mode_Repr(x, v[i]);
@@ -498,8 +454,8 @@ static byte WT_ShowWeaponDesc(int id, const nativeVal_t *control) {
 	Script_SetStr(id, "WeaponDesc", "Text", Native_Text(desc));
 	Script_SetNum(id, "WeaponDesc", "XAlignRight", 580);
 	WT_FitTab(id, "WeaponDesc", "WeaponDescTab", 40);
-	WT_Visible(id, "WeaponDesc", 1);
-	WT_Visible(id, "WeaponDescTab", 1);
+	Mode_ItemVisible(id, "WeaponDesc", 1);
+	Mode_ItemVisible(id, "WeaponDescTab", 1);
 	return Mode_Done(&t, 1);
 }
 
@@ -536,17 +492,17 @@ static byte WT_ShowWeaponUpgradeDesc(int id, const nativeVal_t *control) {
 		return Mode_Done(&t, 0);
 	}
 	Script_SetNum(id, "WeaponUpgradeDesc", "IsNameValuePair", 0);
-	if (!Native_Arith('+', Mode_S(&t, "ShipEdit_"), name, key) || !WT_LangV(key, text)) {
+	if (!Native_Arith('+', Mode_S(&t, "ShipEdit_"), name, key) || !Mode_LangV(key, text)) {
 		return Mode_Done(&t, 0);
 	}
 	Script_SetStr(id, "WeaponUpgradeDesc", "Text", Native_Text(text));
 	Script_SetNum(id, "WeaponUpgradeDesc", "XAlignRight", 583);
-	WT_Visible(id, "WeaponUpgradeDesc", 1);
+	Mode_ItemVisible(id, "WeaponUpgradeDesc", 1);
 	double sizeY = Script_GetNum(id, "WeaponUpgradeDesc", "SizeY");
 	WT_FitTab(id, "WeaponUpgradeDesc", "WeaponUpgradeDescTab", 30);
 	/* TabQuadSize + TabQuadSize / 2 */
 	Script_SetNum(id, "WeaponUpgradeDescTab", "SizeY", sizeY + 14 + 7);
-	WT_Visible(id, "WeaponUpgradeDescTab", 1);
+	Mode_ItemVisible(id, "WeaponUpgradeDescTab", 1);
 	return Mode_Done(&t, 1);
 }
 
@@ -562,10 +518,10 @@ static byte WT_ShowSlotMarker(int id, const nativeVal_t *control, const nativeVa
 	nativeVal_t *money = Mode_V(&t);
 	nativeVal_t *u = Mode_V(&t), *v = Mode_V(&t);
 	const char *item;
-	if (!WT_Import(mods) || !Mode_ItemText(control, &item)) {
+	if (!Script_Import(mods) || !Mode_ItemText(control, &item)) {
 		return Mode_Done(&t, 0);
 	}
-	WT_Visible(id, "SlotMarker", 1);
+	Mode_ItemVisible(id, "SlotMarker", 1);
 	Mode_ScorerGet(id, item, "SpriteIndex", sprite);
 	int blocked = WT_CmpI(sprite, 16, '=');
 	if (blocked < 0) {
@@ -610,7 +566,7 @@ static byte WT_ShowSlotMarker(int id, const nativeVal_t *control, const nativeVa
 		}
 	}
 	Script_SetStr(id, "MoneyPredict", "Text", Native_Text(text));
-	WT_Visible(id, "MoneyPredict", 1);
+	Mode_ItemVisible(id, "MoneyPredict", 1);
 	return Mode_Done(&t, 1);
 }
 
@@ -618,8 +574,8 @@ WT_ICO(WT_ShowSlotMarkerPy, WT_ShowSlotMarker(id, &control, &lost))
 
 /* HideSlotMarker(id, control, gainfocus) */
 static byte WT_HideSlotMarker(int id, const nativeVal_t *control, const nativeVal_t *gain) {
-	WT_Visible(id, "SlotMarker", 0);
-	WT_Visible(id, "MoneyPredict", 0);
+	Mode_ItemVisible(id, "SlotMarker", 0);
+	Mode_ItemVisible(id, "MoneyPredict", 0);
 	/* OBJLIB 3 */
 	return Native_CallGlobal(MOD, "HideWeightPrediction", NULL, "ivv", (long)id, control, gain);
 }
@@ -697,7 +653,7 @@ static byte WT_LoadWeapon(int id, const nativeVal_t *control) {
 	nativeVal_t *c = Mode_V(&t), *cost = Mode_V(&t), *had = Mode_V(&t), *money = Mode_V(&t), *ci = Mode_V(&t);
 	nativeVal_t *left = Mode_V(&t), *rep = Mode_V(&t), *name = Mode_V(&t), *isLoaded = Mode_V(&t);
 	const char *item;
-	if (!WT_Import(mods) || !WT_Head(control, 5, weapon) || !WT_Last(control, num) || !WT_NameId(num, weapon, nameId) ||
+	if (!Script_Import(mods) || !WT_Head(control, 5, weapon) || !WT_Last(control, num) || !WT_NameId(num, weapon, nameId) ||
 		!Mode_ModVar("ShipMaker", "WeaponCosts", costs) || !Native_Upper(weapon, up) || !Native_Subscript(costs, up, c)) {
 		return Mode_Done(&t, 0);
 	}
@@ -735,7 +691,7 @@ static byte WT_LoadWeapon(int id, const nativeVal_t *control) {
 	Script_SetNum(id, item, "SpriteIndex", on ? 19 : 17);
 	Script_SetNum(id, item, "FocusSpriteIndex", on ? 20 : 18);
 	long slots;
-	if (!WT_Sound(on ? "ShipEditLoadWeapon" : "ShipEditUnLoad") || !WT_SlotCount(weapon, &slots)) {
+	if (!Mode_SoundOf(on ? "ShipEditLoadWeapon" : "ShipEditUnLoad") || !WT_SlotCount(weapon, &slots)) {
 		return Mode_Done(&t, 0);
 	}
 	for (long i = 0; i < slots; i++) {
@@ -787,29 +743,24 @@ static byte WT_HideSlots(int id, const nativeVal_t *control) {
 			if (!WT_Slot(name, control, i)) {
 				return 0;
 			}
-			WT_Visible(id, name, 0);
+			Mode_ItemVisible(id, name, 0);
 		}
 	}
 	if (some < 0 || !WT_Cat(name, "", control, "Upgrade1")) {
 		return 0;
 	}
-	WT_Visible(id, name, 0);
+	Mode_ItemVisible(id, name, 0);
 	if (!WT_Cat(name, "", control, "Upgrade2")) {
 		return 0;
 	}
-	WT_Visible(id, name, 0);
+	Mode_ItemVisible(id, name, 0);
 	for (int i = 0; i < 5; i++) {
-		WT_Visible(id, rest[i], 0);
+		Mode_ItemVisible(id, rest[i], 0);
 	}
 	return 1;
 }
 
 WT_IC(WT_HideSlotsPy, WT_HideSlots(id, &control))
-
-/* fn(id, a, b) of a link function of Menu on texts of C */
-static byte WT_Link(PyObject *fn, int id, const char *a, const char *b) {
-	return Native_Call(fn, NULL, "iss", (long)id, a, b);
-}
 
 /* SScorer.Get(id, item, "HighLight") == 1: 1 or 0, -1 with the error */
 static int WT_Lit(int id, const char *item) {
@@ -830,7 +781,7 @@ static byte WT_UpgradeLinks(int id, const nativeVal_t *control, long slots, PyOb
 		return 0;
 	}
 	if (has1 || has2) {
-		if (!WT_Link(linkUD, id, "Upgrade1Tile", "Exit") || !WT_Link(linkUD, id, "Upgrade2Tile", "Exit")) {
+		if (!Mode_LinkCall(linkUD, id, "Upgrade1Tile", "Exit") || !Mode_LinkCall(linkUD, id, "Upgrade2Tile", "Exit")) {
 			return 0;
 		}
 		Script_SetStr(id, "Upgrade1Tile", "Up", c);
@@ -840,13 +791,13 @@ static byte WT_UpgradeLinks(int id, const nativeVal_t *control, long slots, PyOb
 		return 0;
 	}
 	if (has1 && has2) {
-		return WT_Link(linkLR, id, "Upgrade1Tile", "Upgrade2Tile") && WT_Link(linkLR, id, last, "Upgrade1Tile") &&
-			WT_Link(linkLR, id, "Upgrade2Tile", first);
+		return Mode_LinkCall(linkLR, id, "Upgrade1Tile", "Upgrade2Tile") && Mode_LinkCall(linkLR, id, last, "Upgrade1Tile") &&
+			Mode_LinkCall(linkLR, id, "Upgrade2Tile", first);
 	}
 	if (has1 || has2) {
 		const char *tile = has1 ? "Upgrade1Tile" : "Upgrade2Tile";
-		return WT_Link(unlinkLR, id, "Upgrade1Tile", "Upgrade2Tile") && WT_Link(linkLR, id, last, tile) &&
-			WT_Link(linkLR, id, tile, first);
+		return Mode_LinkCall(unlinkLR, id, "Upgrade1Tile", "Upgrade2Tile") && Mode_LinkCall(linkLR, id, last, tile) &&
+			Mode_LinkCall(linkLR, id, tile, first);
 	}
 	return 1;
 }
@@ -861,7 +812,7 @@ static byte WT_PlaceSlots(int id, const nativeVal_t *control, long slots, double
 		}
 		Script_SetNum(id, name, "X", x + i * 26);
 		Script_SetNum(id, name, "Y", y);
-		WT_Visible(id, name, 1);
+		Mode_ItemVisible(id, name, 1);
 		int heavy = WT_LoadedI(i, control, &loaded) ? WT_TooHeavyFill(&loaded, control) : -1;
 		byte ok = heavy >= 0 && WT_FreeSlot(id, name, control, heavy, "Highlight");
 		if (ok && !heavy) {
@@ -915,11 +866,11 @@ static byte WT_FillSlots(int id, const nativeVal_t *control) {
 	char name[WT_NAME], other[WT_NAME];
 	PyObject *linkLR = Mode_From("Menu", "LinkLR"), *linkUD = linkLR ? Mode_From("Menu", "LinkUD") : NULL;
 	PyObject *unlinkLR = linkUD ? Mode_From("Menu", "UnLinkLR") : NULL;
-	byte ok = unlinkLR && WT_Import(mods) && WT_NumSlots(control, numSlots);
+	byte ok = unlinkLR && Script_Import(mods) && WT_NumSlots(control, numSlots);
 	double textWidth = 0, x = 84, y = 151;
 	long slots = 0;
 	if (ok) {
-		WT_Visible(id, "WeaponSlotText", 1);
+		Mode_ItemVisible(id, "WeaponSlotText", 1);
 		Mode_Lang("ShipEdit_WeaponsMounted", label);
 		nativeVal_t pair[2] = { { 0 }, { 0 } };
 		ok = Mode_TextArea("Horatio", label, area) && Mode_Unpack(area, 2, pair);
@@ -939,23 +890,23 @@ static byte WT_FillSlots(int id, const nativeVal_t *control) {
 		Script_SetNum(id, "WeaponSlotText", "X", x);
 		Script_SetNum(id, "WeaponSlotText", "Y", y);
 		x = x + textWidth + 8;
-		WT_Visible(id, "SlotsBox", 1);
+		Mode_ItemVisible(id, "SlotsBox", 1);
 		multi = WT_IsMulti();
 		ok = multi >= 0;
 	}
 	if (ok) {
 		if (!multi) {
-			WT_Visible(id, "UpgradesBox", 1);
+			Mode_ItemVisible(id, "UpgradesBox", 1);
 		}
-		WT_Visible(id, "SlotsAndUpgradesBox", 1);
+		Mode_ItemVisible(id, "SlotsAndUpgradesBox", 1);
 		ok = Mode_Range(numSlots, &slots) && WT_PlaceSlots(id, control, slots, x, y);
 	}
 	for (long i = 0; ok && i < slots - 1; i++) {
-		ok = WT_Slot(name, control, i) && WT_Slot(other, control, i + 1) && WT_Link(linkLR, id, name, other);
+		ok = WT_Slot(name, control, i) && WT_Slot(other, control, i + 1) && Mode_LinkCall(linkLR, id, name, other);
 	}
 	for (long i = 0; ok && i < slots; i++) {
 		ok = WT_Slot(name, control, i) && Native_Call(linkUD, NULL, "ivs", (long)id, control, name) &&
-			WT_Link(linkUD, id, name, "Exit");
+			Mode_LinkCall(linkUD, id, name, "Exit");
 	}
 	/* list.remove(control) of the six weapons: the others */
 	int skip = -1;
@@ -968,9 +919,9 @@ static byte WT_FillSlots(int id, const nativeVal_t *control) {
 	}
 	ok = ok && (skip >= 0 || Native_Raise(NE_VALUE, "list.remove(x): x not in list")) && WT_Slot(other, control, 0);
 	for (int i = 0; ok && i < 6; i++) {
-		ok = i == skip || WT_Link(linkUD, id, wt_linked[i], other);
+		ok = i == skip || Mode_LinkCall(linkUD, id, wt_linked[i], other);
 	}
-	ok = ok && Native_Call(linkUD, NULL, "ivs", (long)id, control, other) && WT_Link(linkUD, id, other, "Exit") &&
+	ok = ok && Native_Call(linkUD, NULL, "ivs", (long)id, control, other) && Mode_LinkCall(linkUD, id, other, "Exit") &&
 		WT_SlotSprites(id, control, slots);
 	multi = ok ? WT_IsMulti() : -1;
 	if (multi == 0) {
@@ -978,7 +929,7 @@ static byte WT_FillSlots(int id, const nativeVal_t *control) {
 		ok = Native_CallGlobal(MOD, "UpdateUpgrades", NULL, "iv", (long)id, control) &&
 			WT_UpgradeLinks(id, control, slots, linkLR, linkUD, unlinkLR);
 	} else if (multi > 0) {
-		ok = WT_Slot(name, control, slots - 1) && WT_Link(linkLR, id, name, other);
+		ok = WT_Slot(name, control, slots - 1) && Mode_LinkCall(linkLR, id, name, other);
 	}
 	ok = ok && multi >= 0;
 	if (ok) {
@@ -1033,10 +984,10 @@ static byte WT_UpgradeOn(int id, const nativeVal_t *control, int k) {
 		return 0;
 	}
 	Script_SetNum(id, name, "Alpha", 255);
-	WT_Color(id, name, wt_white);
+	Mode_ItemColor(id, name, wt_white);
 	Str_Printf(tile, sizeof(tile), "Upgrade%dTile", k);
 	Script_SetNum(id, tile, "Alpha", 255);
-	WT_Color(id, tile, wt_selected);
+	Mode_ItemColor(id, tile, wt_selected);
 	return 1;
 }
 
@@ -1119,18 +1070,18 @@ static byte WT_UpdateUpgrades(int id, const nativeVal_t *control) {
 	nativeVal_t *upgrade = Mode_V(&t), *u1 = Mode_S(&t, ""), *u2 = Mode_S(&t, ""), *a = Mode_V(&t), *b = Mode_V(&t);
 	nativeVal_t *auxs = Mode_V(&t), *aux = Mode_V(&t), *ai = Mode_V(&t);
 	char name1[WT_NAME], name2[WT_NAME];
-	PyObject *l1 = WT_Import(mods) ? Mode_From("Menu", "LinkLR") : NULL, *l2 = l1 ? Mode_From("Menu", "LinkUD") : NULL;
+	PyObject *l1 = Script_Import(mods) ? Mode_From("Menu", "LinkLR") : NULL, *l2 = l1 ? Mode_From("Menu", "LinkUD") : NULL;
 	byte ok = l2 && WT_Cat(name1, "", control, "Upgrade1") && WT_Cat(name2, "", control, "Upgrade2");
 	Py_XDECREF(l1);
 	Py_XDECREF(l2);
 	if (!ok) {
 		return Mode_Done(&t, 0);
 	}
-	WT_Visible(id, name1, 1);
-	WT_Visible(id, name2, 1);
-	WT_Visible(id, "UpgradeText", 1);
-	WT_Visible(id, "Upgrade1Tile", 1);
-	WT_Visible(id, "Upgrade2Tile", 1);
+	Mode_ItemVisible(id, name1, 1);
+	Mode_ItemVisible(id, name2, 1);
+	Mode_ItemVisible(id, "UpgradeText", 1);
+	Mode_ItemVisible(id, "Upgrade1Tile", 1);
+	Mode_ItemVisible(id, "Upgrade2Tile", 1);
 	int has[2] = { 0, 0 };
 	for (int k = 0; k < 2; k++) {
 		const char *tile = k ? "Upgrade2Tile" : "Upgrade1Tile", *ct = k ? name2 : name1;
@@ -1146,9 +1097,9 @@ static byte WT_UpdateUpgrades(int id, const nativeVal_t *control) {
 			Script_SetNum(id, ct, "SpriteIndex", 32);
 		}
 		Script_SetNum(id, ct, "Alpha", 255);
-		WT_Color(id, ct, wt_grey);
+		Mode_ItemColor(id, ct, wt_grey);
 		Script_SetNum(id, tile, "Alpha", 255);
-		WT_Color(id, tile, wt_normal);
+		Mode_ItemColor(id, tile, wt_normal);
 		Script_SetNum(id, tile, "W", got ? 34 : 0);
 		Script_SetNum(id, tile, "H", got ? 34 : 0);
 		Script_SetNum(id, tile, "HighLight", got);
@@ -1187,16 +1138,16 @@ static byte WT_WeaponColors(int id, const nativeVal_t *w, byte selected) {
 	if (!WT_Cat(name, "", w, "Tile")) {
 		return 0;
 	}
-	WT_Color(id, name, c);
+	Mode_ItemColor(id, name, c);
 	if (!WT_Cat(name, "", w, "Icon")) {
 		return 0;
 	}
-	WT_Color(id, name, selected ? wt_white : wt_grey);
+	Mode_ItemColor(id, name, selected ? wt_white : wt_grey);
 	if (!WT_Cat(name, "", w, "Rect")) {
 		return 0;
 	}
 	Script_SetNum(id, name, "Alpha", 255);
-	WT_Color(id, name, c);
+	Mode_ItemColor(id, name, c);
 	return 1;
 }
 
@@ -1217,7 +1168,7 @@ static byte WT_SelectWeapon(int id, const nativeVal_t *control) {
 			return Mode_Done(&t, 0);
 		}
 		Script_SetNum(id, p, "Alpha", 255);
-		WT_Color(id, p, wt_normal);
+		Mode_ItemColor(id, p, wt_normal);
 		/* OBJLIB 3 */
 		if (!WT_PutWeaponHint(id, p, "HINT_Weapons1", 1, prev) || !WT_WeaponColors(id, prev, 0) ||
 			!Native_CallGlobal(MOD, "HideSlots", NULL, "iv", (long)id, prev)) {
@@ -1228,7 +1179,7 @@ static byte WT_SelectWeapon(int id, const nativeVal_t *control) {
 		return Mode_Done(&t, 0);
 	}
 	Script_SetNum(id, c, "Alpha", 255);
-	WT_Color(id, c, wt_selected);
+	Mode_ItemColor(id, c, wt_selected);
 	if (!WT_PutWeaponHint(id, c, "HINT_Weapons2", 0, control)) {
 		return Mode_Done(&t, 0);
 	}
@@ -1236,7 +1187,7 @@ static byte WT_SelectWeapon(int id, const nativeVal_t *control) {
 	PyObject *unlinkUD = WT_WeaponColors(id, control, 1) ? Mode_From("Menu", "UnLinkUD") : NULL;
 	byte ok = unlinkUD != NULL;
 	for (int i = 0; ok && i < 6; i++) {
-		ok = WT_Link(unlinkUD, id, wt_unlink[i], "Exit");
+		ok = Mode_LinkCall(unlinkUD, id, wt_unlink[i], "Exit");
 	}
 	Py_XDECREF(unlinkUD);
 	if (ok) {
@@ -1276,7 +1227,7 @@ static byte WT_SelectUpgrade(int id, const nativeVal_t *control) {
 	nativeVal_t *b = Mode_V(&t), *k = Mode_V(&t), *wids = Mode_V(&t), *wid = Mode_V(&t), *auxs = Mode_V(&t);
 	nativeVal_t *up = Mode_V(&t), *ui = Mode_V(&t), *keys = Mode_V(&t), *hint = Mode_V(&t);
 	const char *name = "", *c;
-	if (!WT_Import(mods) || !WT_G("prevWeapon", prev)) {
+	if (!Script_Import(mods) || !WT_G("prevWeapon", prev)) {
 		return Mode_Done(&t, 0);
 	}
 	int kind = WT_Upgrade(prev, upgrade) ? WT_Parity(upgrade) : -1;
@@ -1305,12 +1256,12 @@ static byte WT_SelectUpgrade(int id, const nativeVal_t *control) {
 				return Mode_Done(&t, 0);
 			}
 			Script_SetDefault(id, c);
-			if (!WT_Sound("ShipEditUnLoad")) {
+			if (!Mode_SoundOf("ShipEditUnLoad")) {
 				return Mode_Done(&t, 0);
 			}
 		} else if (same == 0) {
 			Script_SetDefault(id, c);
-			if (!WT_Char(control, 5, k) || !WT_PutUpgrade(k) || !WT_Sound("ShipEditLoadWeapon")) {
+			if (!WT_Char(control, 5, k) || !WT_PutUpgrade(k) || !Mode_SoundOf("ShipEditLoadWeapon")) {
 				return Mode_Done(&t, 0);
 			}
 		} else {
@@ -1357,7 +1308,7 @@ static byte WT_SelectUpgrade(int id, const nativeVal_t *control) {
 			return Mode_Done(&t, 0);
 		}
 		Script_SetDefault(id, c);
-		if (!WT_Sound("ShipEditLoadWeapon")) {
+		if (!Mode_SoundOf("ShipEditLoadWeapon")) {
 			return Mode_Done(&t, 0);
 		}
 	}
@@ -1372,7 +1323,7 @@ WT_IC(WT_SelectUpgradePy, WT_SelectUpgrade(id, &control))
 /* SetWeaponsPanel(id): the items of the tab, hidden */
 static byte WT_SetWeaponsPanel(int id) {
 	static const char *const mods[] = { "Menu", "ShipEdit", "string", NULL };
-	if (!WT_Import(mods)) {
+	if (!Script_Import(mods)) {
 		return 0;
 	}
 	/* OBJLIB 6: the .def runner takes its $names as a dict until it takes C values */
@@ -1416,19 +1367,19 @@ WT_I(WT_SetWeaponsPanelPy, WT_SetWeaponsPanel(id))
 /* the six weapon buttons as ShowWeaponsPanel shows them; the ones the player has are appended to controlsToLinkList */
 static byte WT_ShowWeapon(int id, const char *w) {
 	char name[WT_NAME];
-	WT_Visible(id, w, 1);
+	Mode_ItemVisible(id, w, 1);
 	Script_SetNum(id, w, "Alpha", 255);
-	WT_Color(id, w, wt_normal);
+	Mode_ItemColor(id, w, wt_normal);
 	Str_Printf(name, sizeof(name), "%sTile", w);
-	WT_Visible(id, name, 1);
-	WT_Color(id, name, wt_normal);
+	Mode_ItemVisible(id, name, 1);
+	Mode_ItemColor(id, name, wt_normal);
 	Str_Printf(name, sizeof(name), "%sIcon", w);
-	WT_Visible(id, name, 1);
-	WT_Color(id, name, wt_grey);
+	Mode_ItemVisible(id, name, 1);
+	Mode_ItemColor(id, name, wt_grey);
 	Str_Printf(name, sizeof(name), "%sRect", w);
-	WT_Visible(id, name, 1);
+	Mode_ItemVisible(id, name, 1);
 	Script_SetNum(id, name, "Alpha", 255);
-	WT_Color(id, name, wt_normal);
+	Mode_ItemColor(id, name, wt_normal);
 	nativeVal_t v, list = { 0 };
 	Native_SetStr(&v, w);
 	int have = Mode_ModVar("ShipEdit", "availableWeaponsList", &list) ? Native_Contains(&list, &v) : -1;
@@ -1451,12 +1402,12 @@ static byte WT_ShowWeapon(int id, const char *w) {
 	Script_SetNum(id, w, "MaxHintLineWidth", 550);
 	Str_Printf(name, sizeof(name), "%sTile", w);
 	Script_SetNum(id, name, "Alpha", 222);
-	WT_Color(id, name, wt_missing);
+	Mode_ItemColor(id, name, wt_missing);
 	Str_Printf(name, sizeof(name), "%sIcon", w);
 	Script_SetStr(id, name, "File", "2D/ShipEditor/FullEditor.alpha.tga");
 	Script_SetNum(id, name, "SpriteIndex", 32);
 	Script_SetNum(id, name, "Alpha", 255);
-	WT_Color(id, name, wt_grey);
+	Mode_ItemColor(id, name, wt_grey);
 	return 1;
 }
 
@@ -1490,7 +1441,7 @@ static byte WT_ShowWeaponsPanel(int id) {
 	PyObject *linkLR = Mode_From("Menu", "LinkLR"), *linkUD = linkLR ? Mode_From("Menu", "LinkUD") : NULL;
 	nativeVal_t empty, list = { 0 };
 	Native_SetEmpty(&empty, NV_LIST);
-	byte ok = linkUD && WT_Import(mods) && Mode_Put(MOD, "controlsToLinkList", NULL, &empty);
+	byte ok = linkUD && Script_Import(mods) && Mode_Put(MOD, "controlsToLinkList", NULL, &empty);
 	for (int i = 0; ok && i < 6; i++) {
 		ok = WT_ShowWeapon(id, wt_shown[i]);
 	}
@@ -1523,7 +1474,7 @@ static byte WT_HideWeaponsPanel(int id) {
 			char name[WT_NAME];
 			ok = WT_Cat(name, "", &w, parts[k]);
 			if (ok) {
-				WT_Visible(id, name, 0);
+				Mode_ItemVisible(id, name, 0);
 			}
 		}
 		Native_Free(&w);
@@ -1532,9 +1483,9 @@ static byte WT_HideWeaponsPanel(int id) {
 	if (!ok) {
 		return 0;
 	}
-	WT_Visible(id, "SlotsBox", 0);
-	WT_Visible(id, "UpgradesBox", 0);
-	WT_Visible(id, "SlotsAndUpgradesBox", 0);
+	Mode_ItemVisible(id, "SlotsBox", 0);
+	Mode_ItemVisible(id, "UpgradesBox", 0);
+	Mode_ItemVisible(id, "SlotsAndUpgradesBox", 0);
 	for (int i = 0; ok && i < 6; i++) {
 		/* OBJLIB 3 */
 		ok = Native_CallGlobal(MOD, "HideSlots", NULL, "is", (long)id, wt_linked[i]);
@@ -1542,7 +1493,7 @@ static byte WT_HideWeaponsPanel(int id) {
 	PyObject *unlinkUD = ok ? Mode_From("Menu", "UnLinkUD") : NULL, *unlinkLR = unlinkUD ? Mode_From("Menu", "UnLinkLR") : NULL;
 	ok = unlinkLR != NULL;
 	for (int i = 0; ok && i < 6; i++) {
-		ok = WT_Link(unlinkUD, id, wt_unlink[i], "Exit");
+		ok = Mode_LinkCall(unlinkUD, id, wt_unlink[i], "Exit");
 	}
 	int last = ok && WT_G("controlsToLinkList", &list) ? Native_Size(&list) : -1;
 	Native_Free(&list);
