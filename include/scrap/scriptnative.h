@@ -267,8 +267,8 @@ int Native_Seam(const char *module, const char *name, PyObject **hook);
 /*
  * OBJLIB 3, 4 and 7: calls of Python callables with native arguments, for the calls between ports by name, the
  * callbacks and the seams. fmt has one letter per argument: v a const nativeVal_t *, i a long, d a double, s a text,
- * O a PyObject * (borrowed). The result goes into *out (Native_Free it; NULL drops it): any native value, else a
- * TypeError. 0 with the error of the call.
+ * O a PyObject * (borrowed). The result goes into *out (Native_Free it; NULL drops it) as Native_Arg makes it. 0
+ * with the error of the call.
  */
 byte Native_Call(PyObject *callable, nativeVal_t *out, const char *fmt, ...);
 /* the same with the result as it is (a new reference, NULL with the error): an entity handle or another object */

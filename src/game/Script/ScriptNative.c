@@ -2242,10 +2242,12 @@ static byte Native_CallV(PyObject *callable, nativeVal_t *out, const char *fmt, 
 	if (!r) {
 		return 0;
 	}
-	byte ok = !out || Native_FromPyAny(r, out) ||
-		Native_Raise(NE_TYPE, "%s returned a value native C does not take", r->ob_type->tp_name);
+	/* any other object is an NV_OBJ (OBJLIB 7) */
+	if (out) {
+		Native_Arg(r, out);
+	}
 	Py_DECREF(r);
-	return ok;
+	return 1;
 }
 
 PyObject *Native_CallObj(PyObject *callable, const char *fmt, ...) {
@@ -2664,6 +2666,14 @@ byte Native_FromPyAny(PyObject *o, nativeVal_t *v) {
  * with a long int, list, tuple or dict among the types any value of those types (texts of any length too) */
 static byte Native_Take(PyObject *o, unsigned types, nativeVal_t *v) {
 	Native_Free(v);
+	/* a mirror that takes tuples keeps a tuple of three ints a tuple of ints (the short forms would make it a vector
+	 * of floats) */
+	if (types & 1 << NV_TUPLE && PyTuple_Check(o)) {
+		if (Native_FromPyAny(o, v)) {
+			return 1;
+		}
+		return types & 1 << NV_OBJ ? Native_Arg(o, v) : 0;
+	}
 	if (Native_FromPy(o, types, v)) {
 		return 1;
 	}
