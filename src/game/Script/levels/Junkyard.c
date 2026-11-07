@@ -40,23 +40,15 @@
 
 /* Scrap.SetMoney(i) */
 static byte Jy_SetMoney(long i) {
-	JY_SEAM("Scrap", "SetMoney", "i", i);
 	nativeVal_t v = { 0 };
 	Native_SetInt(&v, i);
-	return Mode_SetMoney(&v);
+	return Mode_SetMoneySeam(&v);
 }
 
 /* Scrap.SetTimeSpeed(i) */
 static byte Jy_TimeSpeed(long i) {
 	JY_SEAM("Scrap", "SetTimeSpeed", "i", i);
 	Mode_SetTimeSpeed((double)i);
-	return 1;
-}
-
-/* SInput.SetActionSet(name) */
-static byte Jy_ActionSet(const char *name) {
-	JY_SEAM("SInput", "SetActionSet", "s", name);
-	Mode_SetActionSet(name);
 	return 1;
 }
 
@@ -704,7 +696,7 @@ static byte Rusty_BertoGoHome(void) {
 	Native_SetNone(&reach);
 	LvN_Str(&set, "Inactive");
 	byte ok = LV_CALL("Elevator", "ElevatorActiveToGet", NULL, "s", "DM_Door_EditShip_00") &&
-		LvN_ModSetGlobal("Elevator", "OnElevatorReachUp", RF, "BackDownBerto") && Jy_ActionSet("Inactive") &&
+		LvN_ModSetGlobal("Elevator", "OnElevatorReachUp", RF, "BackDownBerto") && Mode_ActionSet("Inactive") &&
 		LV_CALL("Menu", "DrawScorer", NULL, "iv", 0L, &set) && Jy_CamLink("DM_Door_EditShip_00") &&
 		LvN_ModGet("Elevator", "TELEPORTER_UP_REACH", &reach);
 	Native_Free(&set);
@@ -736,7 +728,7 @@ static byte Rusty_BackDownBerto(const nativeVal_t *a) {
 static byte Rusty_EndOfBertoBye(void) {
 	nativeVal_t set = { 0 };
 	LvN_Str(&set, "Walk");
-	byte ok = Jy_ActionSet("Walk") && LV_CALL("Menu", "DrawScorer", NULL, "iv", 0L, &set) && Jy_CamLink("") &&
+	byte ok = Mode_ActionSet("Walk") && LV_CALL("Menu", "DrawScorer", NULL, "iv", 0L, &set) && Jy_CamLink("") &&
 		LvN_ModNone("Elevator", "OnElevatorReachDown");
 	Native_Free(&set);
 	return ok;
@@ -879,7 +871,7 @@ static byte Rusty_EnterEditShipTutorial(const nativeVal_t *a) {
 		return 0;
 	}
 	ok = LV_CALL("MapShipEdit", "EnterEditShip", NULL, "vsss", &name, "", "", "") &&
-		LvN_ModSetGlobal("ShipEdit", "EndShipEditCallBack", RF, "OnEndOfShipEditTutorial") && Jy_ActionSet("Inactive");
+		LvN_ModSetGlobal("ShipEdit", "EndShipEditCallBack", RF, "OnEndOfShipEditTutorial") && Mode_ActionSet("Inactive");
 	Native_Free(&name);
 	if (ok) {
 		nativeVal_t e = { 0 };

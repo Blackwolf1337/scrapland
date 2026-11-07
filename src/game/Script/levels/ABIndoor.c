@@ -37,22 +37,7 @@ static byte Abi_ScF(const nativeVal_t *id, const char *item, const char *var, do
 /* Scrap.StartDummySearch(pattern, 1); dummy = Scrap.NextDummySearch(), through their seams (fc-abi swaps both) */
 static byte Abi_Dummy(const char *pattern, nativeVal_t *dummy) {
 	Native_SetNone(dummy);
-	{
-		ABI_SEAM("Scrap", "StartDummySearch");
-		if (seam) {
-			if (!Native_HookCall(hook, NULL, "si", pattern, 1L)) {
-				return 0;
-			}
-		} else {
-			Mode_DummyStart(pattern, 1);
-		}
-	}
-	ABI_SEAM("Scrap", "NextDummySearch");
-	if (seam) {
-		return Native_HookCall(hook, dummy, "");
-	}
-	Mode_DummyNext(dummy);
-	return 1;
+	return Mode_DummyStartSeam(pattern, 1) && Mode_DummyNextSeam(dummy);
 }
 
 /* InitStatus(LevelPath): an indoor map; the four friends of Dtritus, the mission after the final fight */
