@@ -13,9 +13,11 @@
  * (the save variables of the hangars) stays in the script. EnginesTab, WeaponsTab and HullTab stay Python and are
  * called through their modules.
  */
+#include <stdarg.h>
 #include <string.h>
 
 #include "scrap/scrap.h"
+#include "game/Script/levels/Levels.h"
 #include "ShipEdit.h"
 
 #define G(name) Sf_Global(&f, SE, name)
@@ -252,6 +254,182 @@ byte Se_Def(scriptFrame_t *f, int id, const char *section, PyObject *vars, const
 	byte ok = Script_RunFileTry(id, "menus/shipedit.def", section, shipedit_def, shipedit_steps, vars);
 	se_useModule = outer;
 	return Sf_Check(f, ok);
+}
+
+/* ---- native helpers shared with HangarTab.c ---- */
+
+int Sn_Multi(byte own) {
+	nativeVal_t v = { 0 };
+	byte ok = own ? Native_CallGlobal(SE, "IsEditingMultiplayer", &v, "") : Native_CallMod(SE, "IsEditingMultiplayer", &v,
+		"");
+	int r = ok ? Native_True(&v) : -1;
+	Native_Free(&v);
+	return r;
+}
+
+byte Sn_Set(int id, const nativeVal_t *item, const char *var, const nativeVal_t *v) {
+	if (item->type == NV_STR && strlen(Native_Text(item)) == (size_t)item->n) {
+		return Native_ScorerSet(id, Native_Text(item), var, v);
+	}
+	return Native_CallMod("SScorer", "Set", NULL, "ivsv", (long)id, item, var, v);
+}
+
+byte Sn_SetC(int id, const char *item, const char *var, const nativeVal_t *v) {
+	return Native_ScorerSet(id, item, var, v);
+}
+
+byte Sn_SetUse(int id, const nativeVal_t *item, const char *var, const char *key, const char *module) {
+	nativeVal_t text = { 0 }, use = { 0 }, v = { 0 };
+	Mode_Lang(key, &text);
+	byte ok = Mode_G(module, "UseTxt", &use) && Native_Arith('%', &text, &use, &v) && Sn_Set(id, item, var, &v);
+	Native_Free(&text);
+	Native_Free(&use);
+	Native_Free(&v);
+	return ok;
+}
+
+byte Sn_SetUseC(int id, const char *item, const char *var, const char *key, const char *module) {
+	nativeVal_t i;
+	Native_SetStr(&i, item);
+	return Sn_SetUse(id, &i, var, key, module);
+}
+
+byte Sn_Link(const char *fn, int id, const char *a, const char *b) {
+	return Native_CallMod("Menu", fn, NULL, "iss", (long)id, a, b);
+}
+
+byte Sn_LinkV(const char *fn, int id, const nativeVal_t *a, const nativeVal_t *b) {
+	return Native_CallMod("Menu", fn, NULL, "ivv", (long)id, a, b);
+}
+
+byte Sn_From(const char *name) {
+	PyObject *o = Mode_From("Menu", name);
+	Py_XDECREF(o);
+	return o != NULL;
+}
+
+byte Sn_Cat(const char *prefix, const nativeVal_t *v, const char *suffix, nativeVal_t *out) {
+	nativeVal_t p, a = { 0 };
+	Native_SetStr(&p, prefix);
+	Native_SetNone(out);
+	/* an empty prefix is no operand: v + suffix */
+	byte ok = 1;
+	if (*prefix) {
+		ok = Native_Arith('+', &p, v, suffix ? &a : out);
+	} else {
+		Native_Copy(suffix ? &a : out, v);
+	}
+	if (ok && suffix) {
+		Native_SetStr(&p, suffix);
+		ok = Native_Arith('+', &a, &p, out);
+	}
+	Native_Free(&a);
+	return ok;
+}
+
+byte Sn_Rest(const nativeVal_t *v, nativeVal_t *out) {
+	nativeVal_t c;
+	Native_Copy(&c, v);
+	Mode_Elems(&c);
+	byte ok = Native_Slice(&c, 1, 0x7fffffff, out);
+	Native_Free(&c);
+	return ok;
+}
+
+byte Sn_TabRing(int id, const nativeVal_t *tabs, const char *fn) {
+	/* for i in range(len(tabs)): fn(id, "ShipEditTab" + tabs[i], "ShipEditTab" + tabs[(i+1)%len(tabs)]) */
+	nativeVal_t l, x = { 0 }, a = { 0 }, b = { 0 };
+	Native_Copy(&l, tabs);
+	int n = Mode_Len(&l);
+	byte ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		ok = LvN_Item(&l, i, &x) && Sn_Cat("ShipEditTab", &x, NULL, &a);
+		Native_Free(&x);
+		ok = ok && LvN_Item(&l, (i + 1) % n, &x) && Sn_Cat("ShipEditTab", &x, NULL, &b) && Sn_LinkV(fn, id, &a, &b);
+		Native_Free(&x);
+		Native_Free(&a);
+		Native_Free(&b);
+	}
+	Native_Free(&l);
+	return ok;
+}
+
+byte Sn_TabsOn(int id, const nativeVal_t *tabs, byte on) {
+	/* for t in tabs[1:]: tabName = "ShipEditTab" + t ... */
+	static const char *const vars[] = { "Highlight", "Alpha", "TextColorAlpha", "TextColorRed", "TextColorGreen",
+		"TextColorBlue" };
+	const double vals[] = { on, 255, 255, on ? 255 : 161, on ? 255 : 161, on ? 255 : 161 };
+	nativeVal_t rest = { 0 }, t = { 0 }, name = { 0 }, v = { 0 };
+	byte ok = Sn_Rest(tabs, &rest);
+	int n = ok ? Native_ForCount(&rest) : -1;
+	ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		ok = Native_SeqItem(&rest, i, &t) && Sn_Cat("ShipEditTab", &t, NULL, &name);
+		for (int k = 0; ok && k < 6; k++) {
+			Native_SetFloat(&v, vals[k]);
+			ok = Sn_Set(id, &name, vars[k], &v);
+		}
+		Native_SetStr(&v, on ? "ShipEdit.ChangeTab" : "");
+		ok = ok && Sn_Set(id, &name, "OnAccept", &v);
+		Native_Free(&t);
+		Native_Free(&name);
+	}
+	Native_Free(&rest);
+	return ok;
+}
+
+byte Sn_At(const char *module, const char *var, const nativeVal_t *key, nativeVal_t *out) {
+	nativeVal_t l = { 0 };
+	Native_SetNone(out);
+	byte ok = LvN_ModGet(module, var, &l) && Mode_Sub(&l, key, out);
+	Native_Free(&l);
+	return ok;
+}
+
+byte Sn_FrontAng(const nativeVal_t *dummy, const nativeVal_t *extra, nativeVal_t *out) {
+	nativeVal_t ang = { 0 }, a0 = { 0 }, a1 = { 0 }, y = { 0 }, y2 = { 0 }, k;
+	Native_SetInt(&k, 180);
+	Native_SetNone(out);
+	byte ok = LvN_Item(dummy, 2, &ang) && LvN_Item(&ang, 0, &a0) && LvN_Item(&ang, 1, &a1) && Mode_Arith('+', &a1, &k, &y) &&
+		(!extra || Mode_Arith('+', &y, extra, &y2));
+	if (ok) {
+		Native_SetEmpty(out, NV_TUPLE);
+		Native_Copy(Native_Append(out), &a0);
+		Native_Copy(Native_Append(out), extra ? &y2 : &y);
+		Native_SetInt(Native_Append(out), 0);
+	}
+	Native_Free(&ang);
+	Native_Free(&a0);
+	Native_Free(&a1);
+	Native_Free(&y);
+	Native_Free(&y2);
+	return ok;
+}
+
+PyObject *Sn_Vars(int n, ...) {
+	PyObject *d = PyDict_New();
+	va_list ap;
+	va_start(ap, n);
+	for (int i = 0; i < n; i++) {
+		const char *name = va_arg(ap, const char *);
+		const nativeVal_t *v = va_arg(ap, const nativeVal_t *);
+		PyObject *o = d ? Native_ToPy(v) : NULL;
+		if (!o || PyDict_SetItemString(d, (char *)name, o) < 0) {
+			Py_XDECREF(d);
+			d = NULL;
+		}
+		Py_XDECREF(o);
+	}
+	va_end(ap);
+	return d;
+}
+
+byte Sn_Def(int id, const char *section, PyObject *vars, const char *module) {
+	const char *outer = se_useModule;
+	se_useModule = module;
+	byte ok = Script_RunFileTry(id, "menus/shipedit.def", section, shipedit_def, shipedit_steps, vars);
+	se_useModule = outer;
+	return ok;
 }
 
 /* ---- the platform ---- */
