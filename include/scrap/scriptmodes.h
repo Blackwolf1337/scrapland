@@ -767,4 +767,10 @@ void Mode_CallVarIf(const char *module, const char *var, long id);
 byte Mode_CreateSeam(const char *type, long x, long y, long z, const char *name, nativeVal_t *out);
 byte Mode_Exit(void);
 
+/* ---- the multiplayer menus of batch R (MenuNet) ---- */
+
+/* module.var as Script_GetString reads it: its text (up to the first 0 byte) cut to size, else "" (no error; a missing
+ * variable or module is "" too); out */
+const char *Mode_ModGetS(const char *module, const char *var, char *out, int size);
+
 #endif

@@ -3730,3 +3730,17 @@ byte Mode_Exit(void) {
 	App_Exit(g_pApp);
 	return 1;
 }
+
+/* ---- the multiplayer menus of batch R (MenuNet) ---- */
+
+const char *Mode_ModGetS(const char *module, const char *var, char *out, int size) {
+	nativeVal_t v = { 0 };
+	out[0] = 0;
+	if (!LvN_ModGet(module, var, &v)) {
+		Mode_DropError();
+	} else if (v.type == NV_STR) {
+		Str_Copy(out, Native_Text(&v), size);
+	}
+	Native_Free(&v);
+	return out;
+}
