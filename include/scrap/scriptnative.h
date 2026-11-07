@@ -30,11 +30,14 @@ typedef enum {
 	NV_LIST,
 	NV_TUPLE,
 	NV_DICT,
+	NV_OBJ,				/* OBJLIB 7: a Python value of another type (an entity handle, a function, a class
+					 * instance), held by reference: only adapters make it (Native_Arg), the native
+					 * functions refuse it with the error the script raised for it */
 } nativeType_t;
 
 /* every type: a mask of nativeVar_t.types for a variable that takes any value */
 #define NV_ANY (1 << NV_NONE | 1 << NV_INT | 1 << NV_FLOAT | 1 << NV_STR | 1 << NV_VEC | 1 << NV_LONG | 1 << NV_LIST | \
-	1 << NV_TUPLE | 1 << NV_DICT)
+	1 << NV_TUPLE | 1 << NV_DICT | 1 << NV_OBJ)
 
 /*
  * A value of the scripts in C: None, an int (a C long, as the int of Python 1.5.2), a float, a text, a vector (the
@@ -57,6 +60,7 @@ typedef struct nativeVal_s {
 	int max;			/* NV_LIST, NV_TUPLE: the room for items; NV_DICT: the slots */
 	char *text;			/* NV_STR, NV_LONG: a text of NATIVE_TEXT or more bytes (owned), else NULL */
 	struct nativeVal_s *items;	/* NV_LIST, NV_TUPLE, NV_DICT (owned), else NULL */
+	PyObject *obj;			/* NV_OBJ: the value (a reference owned), else NULL */
 } nativeVal_t;
 
 void Native_SetNone(nativeVal_t *v);
@@ -148,7 +152,8 @@ typedef enum {
 byte Native_Raise(nativeError_t kind, const char *fmt, ...);
 /* the KeyError of d[key] (the key is the value of the error): 0 */
 byte Native_RaiseKey(const nativeVal_t *key);
-/* the name of the Python type of the value, as the errors of 1.5.2 write it ("None", "int", "string", "tuple", ...) */
+/* the name of the Python type of the value, as the errors of 1.5.2 write it ("None", "int", "string", "tuple", ...;
+ * the type name of an NV_OBJ, "cPyEntity") */
 const char *Native_TypeName(const nativeVal_t *v);
 /* len(seq) as PySequence_Length takes it (a list, tuple, text or vector): 1 with *n, else 0 with its TypeError */
 byte Native_Len(const nativeVal_t *seq, int *n);
@@ -251,9 +256,9 @@ typedef struct nativeVar_s {
 					 * forms of Native_FromPy */
 } nativeVar_t;
 
-/* an argument of an adapter as a native value: 1 (Native_Free it), else 0 with a TypeError for a value without a
- * native form (an entity handle, a function, a module, a class instance), which the native functions do not take
- * (OBJLIB 7) */
+/* an argument of an adapter as a native value (Native_Free it): the native types as Native_FromPyAny takes them, any
+ * other value (an entity handle, a function, a class instance, or a container that holds one) as NV_OBJ (OBJLIB 7);
+ * always 1 */
 byte Native_Arg(PyObject *o, nativeVal_t *v);
 /* the variables of the table (ends with a NULL name) from the dict of module into C: 0 with the error set when one
  * is missing or of a form the C does not take (TypeError naming it) */
