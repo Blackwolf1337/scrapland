@@ -540,7 +540,9 @@ int Init_ModLoadChars(PyObject *module, PyObject *locals) {
 static byte In_ExtraBody(PyObject *locals, PyObject *func, void *ctx) {
 	(void)ctx;
 	PyObject *apply = Script_ModuleName(locals, "apply");
-	PyObject *res = apply ? Script_CallObject(apply, Py_BuildValue("(OO)", apply, func), NULL) : NULL;
+	PyObject *args = apply ? Py_BuildValue("(OO)", apply, func) : NULL;
+	PyObject *res = args ? Script_CallObject(apply, args, NULL) : NULL;
+	Py_XDECREF(args);
 	Py_XDECREF(apply);
 	Py_XDECREF(res);
 	return res != NULL;
