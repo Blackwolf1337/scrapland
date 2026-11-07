@@ -508,21 +508,6 @@ static byte Ch_CreateMainChar(const nativeVal_t *a, nativeVal_t *out) {
 	return Mode_Done(&t, 1);
 }
 
-/* Scrap.StartDummySearch(name, flag) with the name a value of the script, through its seam (the TypeError of "s") */
-static byte Ch_DummyStart(const nativeVal_t *name, long flag) {
-	PyObject *hook;
-	const char *s;
-	int seam = Native_Seam("Scrap", "StartDummySearch", &hook);
-	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "vi", name, flag);
-	}
-	if (!Native_ArgStr(name, 1, &s)) {
-		return 0;
-	}
-	Mode_DummyStart(s, (int)flag);
-	return 1;
-}
-
 /* OBJLIB 6: eval(text) in the globals of the module as the port read the game's texts (Script_EvalIn: a literal, or
  * a bare name looked up in the module) */
 static byte Ch_Eval(const nativeVal_t *text, nativeVal_t *out) {
@@ -550,7 +535,7 @@ static byte Ch_CreateStartupPlayer(nativeVal_t *out) {
 		return Mode_Done(&t, off == 0);
 	}
 	Mode_SaveVar("Spawn", spawn);
-	if (!Ch_DummyStart(spawn, 1) || !Mode_DummyNextSeam(dummy)) {
+	if (!Mode_DummyStartV(spawn, 1) || !Mode_DummyNextSeam(dummy)) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Native_True(dummy)) {

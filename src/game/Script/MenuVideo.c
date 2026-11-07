@@ -163,15 +163,6 @@ static float Video_ValueToGamma(float value) {
 	return value < 0.5f ? 0.5f + value : 1.0f + (value - 0.5f) * 4.0f;
 }
 
-/* the Apply button flashes once something changed */
-static void Video_ApplyActive(int id) {
-	Script_SetStr(id, "Apply", "Effect", "Outline");
-	Script_SetNum(id, "Apply", "Red", 255);
-	Script_SetNum(id, "Apply", "Green", 255);
-	Script_SetNum(id, "Apply", "Blue", 180);
-	Script_SetStr(id, "Apply", "OnRender", "!ScorerSpriteFlash");
-}
-
 static void Video_ShowMode(int id) {
 	Script_SetStr(id, "VideoMode", "Text", Video_ModeText(video.selected));
 }
@@ -325,7 +316,7 @@ static PyObject *PCMenu_ChangeVideoMode(PyObject *self, PyObject *args) {
 	(void)self;
 	VIDEO_ARGS(args);
 	(void)control;
-	Video_ApplyActive(id);
+	Mode_ApplyFlash(id);
 	int before = video.selected;
 	Video_NextMode(id);
 	if (before == video.selected) {
@@ -339,7 +330,7 @@ static PyObject *PCMenu_PrevVideoMode(PyObject *self, PyObject *args) {
 	(void)self;
 	VIDEO_ARGS(args);
 	(void)control;
-	Video_ApplyActive(id);
+	Mode_ApplyFlash(id);
 	Video_PrevMode(id);
 	return Py_ReturnNone();
 }
@@ -348,7 +339,7 @@ static PyObject *PCMenu_NextVideoMode(PyObject *self, PyObject *args) {
 	(void)self;
 	VIDEO_ARGS(args);
 	(void)control;
-	Video_ApplyActive(id);
+	Mode_ApplyFlash(id);
 	Video_NextMode(id);
 	return Py_ReturnNone();
 }
@@ -357,7 +348,7 @@ static PyObject *PCMenu_ChangeTextureFilter(PyObject *self, PyObject *args) {
 	(void)self;
 	VIDEO_ARGS(args);
 	(void)control;
-	Video_ApplyActive(id);
+	Mode_ApplyFlash(id);
 	int i = Video_FilterIndex(id) + 1;
 	if (i >= VIDEO_NUM_FILTERS) {
 		i = 1;
@@ -371,7 +362,7 @@ static PyObject *PCMenu_ChangeTextureDetail(PyObject *self, PyObject *args) {
 	(void)self;
 	VIDEO_ARGS(args);
 	(void)control;
-	Video_ApplyActive(id);
+	Mode_ApplyFlash(id);
 	int i = (Video_Index(id, "TextureDetail", video.detail, 3) + 1) % 3;
 	Script_SetStr(id, "TextureDetail", "Text", video.detail[i]);
 	return Py_ReturnNone();
@@ -381,7 +372,7 @@ static PyObject *PCMenu_ChangeShadowsDetail(PyObject *self, PyObject *args) {
 	(void)self;
 	VIDEO_ARGS(args);
 	(void)control;
-	Video_ApplyActive(id);
+	Mode_ApplyFlash(id);
 	int i = (Video_Index(id, "ShadowsDetail", video.shadows, 4) + 1) % 4;
 	Script_SetStr(id, "ShadowsDetail", "Text", video.shadows[i]);
 	return Py_ReturnNone();
@@ -391,7 +382,7 @@ static PyObject *PCMenu_ChangeShadowsDetail(PyObject *self, PyObject *args) {
 static PyObject *Video_ChangeYesNo(PyObject *args, const char *item, void (*apply)(int id)) {
 	VIDEO_ARGS(args);
 	(void)control;
-	Video_ApplyActive(id);
+	Mode_ApplyFlash(id);
 	Video_SetYes(id, item, !Video_Yes(id, item));
 	if (apply) {
 		apply(id);
@@ -433,7 +424,7 @@ static PyObject *PCMenu_ChangeGamma(PyObject *self, PyObject *args) {
 	(void)self;
 	VIDEO_ARGS(args);
 	(void)control;
-	Video_ApplyActive(id);
+	Mode_ApplyFlash(id);
 	Video_ApplyGamma(id);
 	return Py_ReturnNone();
 }
@@ -448,7 +439,7 @@ static PyObject *Video_GammaStep(PyObject *args, double sign) {
 	double v = Script_GetNum(id, "Gamma", "Value");
 	Script_SetNum(id, "Gamma", "Value", v + sign * Script_GetNum(id, "Gamma", "ValueStep"));
 	Script_SetDefault(id, prev);
-	Video_ApplyActive(id);
+	Mode_ApplyFlash(id);
 	Video_ApplyGamma(id);
 	return Py_ReturnNone();
 }
@@ -468,7 +459,7 @@ static PyObject *PCMenu_ChangeDisplay(PyObject *self, PyObject *args) {
 	VIDEO_ARGS(args);
 	(void)control;
 	static const int next[3] = { 2, 0, 1 };	/* windowed, borderless, fullscreen */
-	Video_ApplyActive(id);
+	Mode_ApplyFlash(id);
 	Script_SetStr(id, "Display", "Text", video.display[next[Video_DisplayIndex(id)]]);
 	return Py_ReturnNone();
 }
@@ -492,7 +483,7 @@ static PyObject *PCMenu_VideoDefaults(PyObject *self, PyObject *args) {
 	VIDEO_ARGS(args);
 	(void)control;
 	Script_SetNum(id, "Gamma", "Value", Video_GammaToValue(1.0f));
-	Video_ApplyActive(id);
+	Mode_ApplyFlash(id);
 	Video_ApplyGamma(id);
 	Script_SetStr(id, "TextureFilter", "Text", video_filters[2]);
 	Video_ApplyTextureFilter(id);

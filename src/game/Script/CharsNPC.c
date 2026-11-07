@@ -197,22 +197,6 @@ static void Npc_Insert0(nativeVal_t *lst, const nativeVal_t *v) {
 	Native_Copy(&lst->items[0], v);
 }
 
-/* Scrap.StartDummySearch(pattern, flag) with the pattern a value of the script, through its seam (the TypeError of "s"
- * for a text with 0 bytes) */
-static byte Npc_DummyStart(const nativeVal_t *pattern, long flag) {
-	PyObject *hook;
-	const char *s;
-	int seam = Native_Seam("Scrap", "StartDummySearch", &hook);
-	if (seam) {
-		return seam > 0 && Native_HookCall(hook, NULL, "vi", pattern, flag);
-	}
-	if (!Native_ArgStr(pattern, 1, &s)) {
-		return 0;
-	}
-	Mode_DummyStart(s, (int)flag);
-	return 1;
-}
-
 /* CharRes[key] (the global) as the object it is (OBJLIB 5: the spawn points are instances of the Python class) */
 static byte Npc_Res(const nativeVal_t *key, nativeVal_t *out) {
 	PyObject *o = Mode_AtPy(NPC, "CharRes", key);
@@ -301,7 +285,7 @@ static byte Npc_AddNPCPos(const nativeVal_t *dummy, const nativeVal_t *mission, 
 static byte Npc_CreateMissionChar(const nativeVal_t *name, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *pat = Mode_V(&t), *dummy = Mode_V(&t), *msg = Mode_V(&t);
-	if (!LvN_Cat("DM_Mission_", name, pat) || !Npc_DummyStart(pat, 0) || !Mode_DummyNextSeam(dummy)) {
+	if (!LvN_Cat("DM_Mission_", name, pat) || !Mode_DummyStartV(pat, 0) || !Mode_DummyNextSeam(dummy)) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(dummy)) {
@@ -356,7 +340,7 @@ static byte Npc_CreateReposChars(void) {
 		long count = 0;
 		byte ok = Native_SeqItem(keys, i, type) && Mode_Sub(repos, type, num);
 		byte police = Native_IsStr(type, "Police");
-		ok = ok && Mode_Cat(&t, pat, 3, Mode_S(&t, "DM_NPC_Repos_"), type, Mode_S(&t, "_*")) && Npc_DummyStart(pat, 1) &&
+		ok = ok && Mode_Cat(&t, pat, 3, Mode_S(&t, "DM_NPC_Repos_"), type, Mode_S(&t, "_*")) && Mode_DummyStartV(pat, 1) &&
 			Npc_Range(num, &count);
 		for (long j = 0; ok && j < count; j++) {
 			ok = Npc_ReposOne(police);

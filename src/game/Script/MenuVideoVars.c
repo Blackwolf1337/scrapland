@@ -73,16 +73,6 @@ static byte Vv_SetYes(int id, const char *item, int yes) {
 		return Mode_Result(ok); \
 	}
 
-/* Apply_SetActive(id, control): the Apply button flashes */
-static byte Vv_ApplyActive(int id) {
-	Script_SetStr(id, "Apply", "Effect", "Outline");
-	Script_SetNum(id, "Apply", "Red", 255);
-	Script_SetNum(id, "Apply", "Green", 255);
-	Script_SetNum(id, "Apply", "Blue", 180);
-	Script_SetStr(id, "Apply", "OnRender", "!ScorerSpriteFlash");
-	return 1;
-}
-
 /* Apply_SetFog(id, control): R_FogEnable from the Fog item */
 static byte Vv_ApplyFog(int id) {
 	int yes = Vv_IsYes(id, "Fog");
@@ -130,7 +120,7 @@ static byte Vv_ChangeBoolean(int id, const nativeVal_t *control) {
 	return ok;
 }
 
-VV_FN(PCMenu_Apply_SetActive, ((void)c, Vv_ApplyActive(id)))
+VV_FN(PCMenu_Apply_SetActive, ((void)c, Mode_ApplyFlash(id)))
 VV_FN(PCMenu_Apply_SetFog, ((void)c, Vv_ApplyFog(id)))
 VV_FN(PCMenu_Apply_SetTextureFilter, ((void)c, Vv_ApplyFilter(id)))
 VV_FN(PCMenu_Apply_SetVideoLock, ((void)c, Vv_ApplyLock(id)))

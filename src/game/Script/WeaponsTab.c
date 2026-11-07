@@ -228,21 +228,6 @@ static byte WT_Last(const nativeVal_t *control, nativeVal_t *out) {
 	return ok;
 }
 
-/* a == b, a > b, a < b of the script: 1 or 0, -1 with the error */
-static int WT_Cmp(const nativeVal_t *a, const nativeVal_t *b, char op) {
-	int c = Native_Compare(a, b);
-	if (PyErr_Occurred()) {
-		return -1;
-	}
-	return op == '=' ? c == 0 : op == '!' ? c != 0 : op == '>' ? c > 0 : c < 0;
-}
-
-static int WT_CmpI(const nativeVal_t *a, long i, char op) {
-	nativeVal_t b;
-	Native_SetInt(&b, i);
-	return WT_Cmp(a, &b, op);
-}
-
 /*
  * exec(code) in a function of the module that imported HangarTab: the lines "HangarTab.prevShip.<name> = <literal>"
  * and "HangarTab.prevShip.<name> = 1 - HangarTab.prevShip.<name>" made directly; a text in another form (made of
@@ -302,7 +287,7 @@ static byte WT_Multi(nativeVal_t *out) {
 /* ShipEdit.IsEditingMultiplayer() != 1 (the single player money): 1 or 0, -1 with the error */
 static int WT_Single(void) {
 	nativeVal_t v = { 0 };
-	int r = WT_Multi(&v) ? WT_CmpI(&v, 1, '!') : -1;
+	int r = WT_Multi(&v) ? Mode_CmpOpI(&v, 1, '!') : -1;
 	Native_Free(&v);
 	return r;
 }
@@ -523,7 +508,7 @@ static byte WT_ShowSlotMarker(int id, const nativeVal_t *control, const nativeVa
 	}
 	Mode_ItemVisible(id, "SlotMarker", 1);
 	Mode_ScorerGet(id, item, "SpriteIndex", sprite);
-	int blocked = WT_CmpI(sprite, 16, '=');
+	int blocked = Mode_CmpOpI(sprite, 16, '=');
 	if (blocked < 0) {
 		return Mode_Done(&t, 0);
 	}
@@ -556,7 +541,7 @@ static byte WT_ShowSlotMarker(int id, const nativeVal_t *control, const nativeVa
 		if (!Native_ToInt(cost, ci)) {
 			return Mode_Done(&t, 0);
 		}
-		int poor = WT_Cmp(money, ci, '<');
+		int poor = Mode_CmpOp(money, ci, '<');
 		if (poor < 0) {
 			return Mode_Done(&t, 0);
 		}
@@ -613,7 +598,7 @@ static int WT_Over(const nativeVal_t *weight, const nativeVal_t *max, const nati
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *values = Mode_V(&t), *up = Mode_V(&t), *w = Mode_V(&t), *sum = Mode_V(&t);
 	int r = Mode_ModVar("ShipMaker", "WeaponValues", values) && Native_Upper(weapon, up) && Native_Subscript(values, up, w) &&
-		Native_Arith('+', weight, w, sum) ? WT_Cmp(sum, max, '>') : -1;
+		Native_Arith('+', weight, w, sum) ? Mode_CmpOp(sum, max, '>') : -1;
 	Mode_Done(&t, 1);
 	return r;
 }
@@ -630,7 +615,7 @@ static int WT_TooHeavy(const nativeVal_t *weapon) {
 /* the mass and limit FillSlots reads before its test, then the test of an empty slot (0 for a loaded one) */
 static int WT_TooHeavyFill(const nativeVal_t *loaded, const nativeVal_t *weapon) {
 	nativeVal_t weight = { 0 }, max = { 0 };
-	int r = WT_Masses(&weight, &max) ? WT_CmpI(loaded, 0, '=') : -1;
+	int r = WT_Masses(&weight, &max) ? Mode_CmpOpI(loaded, 0, '=') : -1;
 	if (r > 0) {
 		r = WT_Over(&weight, &max, weapon);
 	}
@@ -641,7 +626,7 @@ static int WT_TooHeavyFill(const nativeVal_t *loaded, const nativeVal_t *weapon)
 
 /* the hint HINT_Weapons4 (loaded > 0) or HINT_Weapons3 of a slot: 0 with the error */
 static byte WT_SlotHint(int id, const char *name, const nativeVal_t *loaded, const nativeVal_t *weapon) {
-	int full = WT_CmpI(loaded, 0, '>');
+	int full = Mode_CmpOpI(loaded, 0, '>');
 	return full >= 0 && WT_PutWeaponHint(id, name, full ? "HINT_Weapons4" : "HINT_Weapons3", 1, weapon);
 }
 
@@ -671,7 +656,7 @@ static byte WT_LoadWeapon(int id, const nativeVal_t *control) {
 		return Mode_Done(&t, 0);
 	}
 	if (single) {
-		int poor = WT_CmpI(left, 0, '<');
+		int poor = Mode_CmpOpI(left, 0, '<');
 		if (poor) {
 			return Mode_Done(&t, poor == 1);
 		}
@@ -699,9 +684,9 @@ static byte WT_LoadWeapon(int id, const nativeVal_t *control) {
 		nativeVal_t *idx = Mode_V(&t), *has = Mode_V(&t);
 		char slot[WT_NAME];
 		Native_SetInt(idx, i);
-		int other = WT_Loaded(idx, weapon, has) ? WT_Cmp(idx, num, '!') : -1;
+		int other = WT_Loaded(idx, weapon, has) ? Mode_CmpOp(idx, num, '!') : -1;
 		if (other > 0) {
-			other = WT_CmpI(has, 0, '=');
+			other = Mode_CmpOpI(has, 0, '=');
 		}
 		if (other > 0) {
 			int heavy = WT_Slot(slot, weapon, i) ? WT_TooHeavy(weapon) : -1;
@@ -732,7 +717,7 @@ static byte WT_HideSlots(int id, const nativeVal_t *control) {
 	if (!Mode_Import("HangarTab") || !Mode_PrevShip(&ship)) {
 		return 0;
 	}
-	int some = WT_Cmp(&ship, &none, '!');
+	int some = Mode_CmpOp(&ship, &none, '!');
 	Native_Free(&ship);
 	if (some > 0) {
 		long slots;
@@ -766,7 +751,7 @@ WT_IC(WT_HideSlotsPy, WT_HideSlots(id, &control))
 static int WT_Lit(int id, const char *item) {
 	nativeVal_t v;
 	Mode_ScorerGet(id, item, "HighLight", &v);
-	int r = WT_CmpI(&v, 1, '=');
+	int r = Mode_CmpOpI(&v, 1, '=');
 	Native_Free(&v);
 	return r;
 }
@@ -816,7 +801,7 @@ static byte WT_PlaceSlots(int id, const nativeVal_t *control, long slots, double
 		int heavy = WT_LoadedI(i, control, &loaded) ? WT_TooHeavyFill(&loaded, control) : -1;
 		byte ok = heavy >= 0 && WT_FreeSlot(id, name, control, heavy, "Highlight");
 		if (ok && !heavy) {
-			int full = WT_CmpI(&loaded, 0, '>');
+			int full = Mode_CmpOpI(&loaded, 0, '>');
 			nativeVal_t hint = { 0 };
 			ok = full >= 0 && WT_WeaponHint(full ? "HINT_Weapons4" : "HINT_Weapons3", 1, control, &hint) &&
 				Mode_ScorerPut(id, name, "Hint", &hint);
@@ -844,7 +829,7 @@ static byte WT_SlotSprites(int id, const nativeVal_t *control, long slots) {
 			Script_SetNum(id, name, "SpriteIndex", on ? 19 : 17);
 			Script_SetNum(id, name, "FocusSpriteIndex", on ? 20 : 18);
 		}
-		int full = ok ? WT_CmpI(&loaded, 0, '>') : -1;
+		int full = ok ? Mode_CmpOpI(&loaded, 0, '>') : -1;
 		if (full > 0) {
 			/* name[0:len(name) - 5]: the weapon button itself gets the hint */
 			name[strlen(name) >= 5 ? strlen(name) - 5 : 0] = 0;
@@ -955,13 +940,13 @@ static byte WT_FindUpgrades(const nativeVal_t *a, const nativeVal_t *b, nativeVa
 	for (int i = 0; ok && i < n; i++) {
 		nativeVal_t k = { 0 }, ids = { 0 }, v = { 0 };
 		ok = Native_SeqItem(&keys, i, &k) && WT_G("upgradeId", &ids) && Native_Subscript(&ids, &k, &v);
-		int is = ok ? WT_Cmp(&v, a, '=') : -1;
+		int is = ok ? Mode_CmpOp(&v, a, '=') : -1;
 		if (is > 0) {
 			Native_Free(na);
 			Native_Copy(na, &k);
 		} else if (is == 0) {
 			Native_Free(&v);
-			is = Native_Subscript(&ids, &k, &v) ? WT_Cmp(&v, b, '=') : -1;
+			is = Native_Subscript(&ids, &k, &v) ? Mode_CmpOp(&v, b, '=') : -1;
 			if (is > 0) {
 				Native_Free(nb);
 				Native_Copy(nb, &k);
@@ -1020,20 +1005,20 @@ static byte WT_UpgradeOff(int id, const char *tile, int has, const nativeVal_t *
 static int WT_Parity(const nativeVal_t *upgrade) {
 	nativeVal_t r = { 0 }, two;
 	Native_SetInt(&two, 2);
-	int pos = WT_CmpI(upgrade, 0, '>');
+	int pos = Mode_CmpOpI(upgrade, 0, '>');
 	if (pos <= 0) {
 		return pos;
 	}
-	int odd = Native_Arith('%', upgrade, &two, &r) ? WT_CmpI(&r, 0, '!') : -1;
+	int odd = Native_Arith('%', upgrade, &two, &r) ? Mode_CmpOpI(&r, 0, '!') : -1;
 	Native_Free(&r);
 	if (odd) {
 		return odd;
 	}
-	pos = WT_CmpI(upgrade, 0, '>');
+	pos = Mode_CmpOpI(upgrade, 0, '>');
 	if (pos <= 0) {
 		return pos;
 	}
-	int even = Native_Arith('%', upgrade, &two, &r) ? WT_CmpI(&r, 0, '=') : -1;
+	int even = Native_Arith('%', upgrade, &two, &r) ? Mode_CmpOpI(&r, 0, '=') : -1;
 	Native_Free(&r);
 	return even > 0 ? 2 : even;
 }
@@ -1116,7 +1101,7 @@ static byte WT_UpdateUpgrades(int id, const nativeVal_t *control) {
 			WT_UpgradeOn(id, control, 2) && WT_PutUpgradeHint(id, "Upgrade2Tile", "HINT_Weapons7", u2) &&
 			WT_UpgradeOff(id, "Upgrade1Tile", has[0], u1);
 	} else if (kind == 0) {
-		int none = WT_CmpI(upgrade, 0, '=');
+		int none = Mode_CmpOpI(upgrade, 0, '=');
 		ok = none >= 0;
 		if (none > 0) {
 			ok = WT_G("auxUpgradeId", auxs) && Native_Subscript(auxs, control, aux) && Native_ToInt(aux, ai) &&
@@ -1159,7 +1144,7 @@ static byte WT_SelectWeapon(int id, const nativeVal_t *control) {
 	if (!Mode_Import("string") || !WT_G("prevWeapon", prev)) {
 		return Mode_Done(&t, 0);
 	}
-	int some = WT_Cmp(prev, Mode_S(&t, ""), '!');
+	int some = Mode_CmpOp(prev, Mode_S(&t, ""), '!');
 	if (some < 0) {
 		return Mode_Done(&t, 0);
 	}
@@ -1248,7 +1233,7 @@ static byte WT_SelectUpgrade(int id, const nativeVal_t *control) {
 		if (!Mode_ItemText(control, &c)) {
 			return Mode_Done(&t, 0);
 		}
-		int same = WT_Cmp(control, Mode_S(&t, name), '=');
+		int same = Mode_CmpOp(control, Mode_S(&t, name), '=');
 		if (same > 0) {
 			Native_Free(prev);
 			if (!WT_G("weapId", wids) || !WT_G("prevWeapon", prev) || !Native_Subscript(wids, prev, wid) ||
@@ -1274,7 +1259,7 @@ static byte WT_SelectUpgrade(int id, const nativeVal_t *control) {
 			return Mode_Done(&t, 0);
 		}
 		Native_Free(k);
-		int two = WT_Char(control, 5, k) ? WT_Cmp(k, Mode_S(&t, "2"), '=') : -1;
+		int two = WT_Char(control, 5, k) ? Mode_CmpOp(k, Mode_S(&t, "2"), '=') : -1;
 		if (two < 0) {
 			return Mode_Done(&t, 0);
 		}
@@ -1293,7 +1278,7 @@ static byte WT_SelectUpgrade(int id, const nativeVal_t *control) {
 		for (int i = 0; ok && i < n; i++) {
 			nativeVal_t key = { 0 }, ids = { 0 }, v = { 0 };
 			ok = Native_SeqItem(keys, i, &key) && WT_G("upgradeId", &ids) && Native_Subscript(&ids, &key, &v);
-			int is = ok ? WT_Cmp(&v, up, '=') : -1;
+			int is = ok ? Mode_CmpOp(&v, up, '=') : -1;
 			if (is > 0) {
 				Native_Free(un);
 				Native_Copy(un, &key);

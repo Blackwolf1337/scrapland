@@ -162,38 +162,10 @@ static byte ET_OpI(const nativeVal_t *a, char op, long b, nativeVal_t *out) {
 	return Native_Arith(op, a, &n, out);
 }
 
-/* a == b, a != b, a > b, a < b, a >= b, a <= b of the script ('=', '!', '>', '<', 'g', 'l'): 1 or 0, -1 with the
- * error */
-static int ET_Cmp(const nativeVal_t *a, const nativeVal_t *b, char op) {
-	int c = Native_Compare(a, b);
-	if (PyErr_Occurred()) {
-		return -1;
-	}
-	switch (op) {
-	case '=':
-		return c == 0;
-	case '!':
-		return c != 0;
-	case '>':
-		return c > 0;
-	case '<':
-		return c < 0;
-	case 'g':
-		return c >= 0;
-	}
-	return c <= 0;
-}
-
-static int ET_CmpI(const nativeVal_t *a, long i, char op) {
-	nativeVal_t b;
-	Native_SetInt(&b, i);
-	return ET_Cmp(a, &b, op);
-}
-
 static int ET_CmpS(const nativeVal_t *a, const char *s, char op) {
 	nativeVal_t b;
 	Native_SetStr(&b, s);
-	return ET_Cmp(a, &b, op);
+	return Mode_CmpOp(a, &b, op);
 }
 
 /* int(seq[len(seq) - 1]) - 1 of a value (control or currentEngineGroup) */
@@ -365,7 +337,7 @@ static byte ET_Mount(int id, long i, const etLoad_t *l, const nativeVal_t *layou
 		!ET_Op(slots, '*', em, sm) || !ET_Op(w, '+', sm, w2)) {
 		return Mode_Done(&t, 0);
 	}
-	int heavy = ET_Cmp(w2, &l->maxWeight, '>');
+	int heavy = Mode_CmpOp(w2, &l->maxWeight, '>');
 	if (heavy > 0) {
 		if (layout ? !Mode_ShipGet("nEng0", slots2) : (Native_Copy(slots2, &l->slots), 0)) {
 			return Mode_Done(&t, 0);
@@ -373,7 +345,7 @@ static byte ET_Mount(int id, long i, const etLoad_t *l, const nativeVal_t *layou
 		if (!ET_Engine(idx, 0, em2) || !ET_Op(slots2, '*', em2, sm2) || !ET_Op(&l->minMass, '+', sm2, empty)) {
 			return Mode_Done(&t, 0);
 		}
-		int fits = ET_Cmp(empty, &l->maxWeight, 'l');
+		int fits = Mode_CmpOp(empty, &l->maxWeight, 'l');
 		if (fits < 0 || !ET_SetCan(idx, fits ? 0 : 1) || !ET_SetHint(id, tile, fits ? "HINT_Engines4" : "HINT_Engines5", 0)) {
 			return Mode_Done(&t, 0);
 		}
@@ -391,7 +363,7 @@ static byte ET_Mount(int id, long i, const etLoad_t *l, const nativeVal_t *layou
 
 /* the hint of a bay: HINT_Engines6 for a bay without slots, else HINT_Engines<6 + slots> */
 static byte ET_BayHint(int id, const char *item, const nativeVal_t *slots) {
-	int none = ET_CmpI(slots, 0, '=');
+	int none = Mode_CmpOpI(slots, 0, '=');
 	if (none) {
 		return none > 0 && ET_SetHint(id, item, "HINT_Engines6", 1);
 	}
@@ -434,7 +406,7 @@ static byte ET_Highlight(int id, const nativeVal_t *setDefault) {
 	for (int i = 0; i < count; i++) {
 		nativeVal_t a = { 0 }, e = { 0 }, b = { 0 };
 		Native_SetInt(pos, i);
-		int same = Native_Upper(engineName, &a) && ET_EngineI(i, 1, &e) && Native_Upper(&e, &b) ? ET_Cmp(&a, &b, '=') : -1;
+		int same = Native_Upper(engineName, &a) && ET_EngineI(i, 1, &e) && Native_Upper(&e, &b) ? Mode_CmpOp(&a, &b, '=') : -1;
 		Native_Free(&a);
 		Native_Free(&e);
 		Native_Free(&b);
@@ -454,7 +426,7 @@ static byte ET_Highlight(int id, const nativeVal_t *setDefault) {
 		char name[0x20], name2[ET_NAME];
 		Str_Printf(name, sizeof(name), "Engine%d", i + 1);
 		Native_SetInt(n, i);
-		int sel = ET_G("engineIndex", index) && ET_Op(n, '+', index, sum) ? ET_Cmp(sum, pos, '=') : -1;
+		int sel = ET_G("engineIndex", index) && ET_Op(n, '+', index, sum) ? Mode_CmpOp(sum, pos, '=') : -1;
 		Native_Free(index);
 		if (sel > 0) {
 			sel = ET_CmpS(engineName, "", '!');
@@ -473,7 +445,7 @@ static byte ET_Highlight(int id, const nativeVal_t *setDefault) {
 				ET_Name(name2, "Engine", sum2, "InList");
 				Script_SetNum(id, name2, "Alpha", 255);
 				Mode_ItemColor(id, name2, et_selected);
-				int def = ET_CmpI(setDefault, 1, '=');
+				int def = Mode_CmpOpI(setDefault, 1, '=');
 				ok = def >= 0;
 				if (def > 0) {
 					Script_SetDefault(id, name);
@@ -482,7 +454,7 @@ static byte ET_Highlight(int id, const nativeVal_t *setDefault) {
 		} else if (sel == 0) {
 			Script_SetNum(id, name, "Alpha", 255);
 			Mode_ItemColor(id, name, et_normal);
-			int two = ET_G("canBeMounted", list) && ET_Item(list, i, can) ? ET_CmpI(can, 2, '=') : -1;
+			int two = ET_G("canBeMounted", list) && ET_Item(list, i, can) ? Mode_CmpOpI(can, 2, '=') : -1;
 			Native_Free(can);
 			ok = two >= 0 && (!two || ET_SetHint(id, name, "HINT_Engines2", 1));
 		}
@@ -564,7 +536,7 @@ static byte ET_Desc(int id, const nativeVal_t *n, const nativeVal_t *eng) {
 	if (!ET_G("canBeMounted", list) || !Native_Subscript(list, eng, can)) {
 		return Mode_Done(&t, 0);
 	}
-	int c0 = ET_CmpI(can, 0, '='), c1 = c0 == 0 ? ET_CmpI(can, 1, '=') : 0;
+	int c0 = Mode_CmpOpI(can, 0, '='), c1 = c0 == 0 ? Mode_CmpOpI(can, 1, '=') : 0;
 	if (c0 < 0 || c1 < 0) {
 		return Mode_Done(&t, 0);
 	}
@@ -673,7 +645,7 @@ static byte ET_Predict(int id, const nativeVal_t *eng) {
 	if (!ET_Bay(bay) || !ET_ShipUpper("MEng", bay, engineName) || !ET_Engine(eng, 1, name)) {
 		return Mode_Done(&t, 0);
 	}
-	int other = ET_Cmp(engineName, name, '!');
+	int other = Mode_CmpOp(engineName, name, '!');
 	if (other <= 0) {
 		return Mode_Done(&t, other == 0);
 	}
@@ -694,14 +666,14 @@ static byte ET_Predict(int id, const nativeVal_t *eng) {
 		return Mode_Done(&t, 0);
 	}
 	Script_SetNum(id, "MoneyPredict", "Green", 255);
-	int poor = ET_Op(money, '-', cost, left) ? ET_CmpI(left, 0, '<') : -1;
+	int poor = ET_Op(money, '-', cost, left) ? Mode_CmpOpI(left, 0, '<') : -1;
 	if (poor < 0) {
 		return Mode_Done(&t, 0);
 	}
 	if (poor) {
 		Script_SetNum(id, "MoneyPredict", "Green", 0);
 	}
-	int neg = ET_CmpI(cost, 0, '<');
+	int neg = Mode_CmpOpI(cost, 0, '<');
 	if (neg < 0 || (neg && !ET_Abs(cost, a))) {
 		return Mode_Done(&t, 0);
 	}
@@ -727,7 +699,7 @@ static byte ET_Predict(int id, const nativeVal_t *eng) {
 		!ET_Op(groupSlots, '*', em, sm) || !ET_Op(w1, '+', sm, newWeight)) {
 		return Mode_Done(&t, 0);
 	}
-	int up = ET_Cmp(newWeight, weight, '>'), down = up == 0 ? ET_Cmp(newWeight, weight, '<') : 0;
+	int up = Mode_CmpOp(newWeight, weight, '>'), down = up == 0 ? Mode_CmpOp(newWeight, weight, '<') : 0;
 	if (up < 0 || down < 0) {
 		return Mode_Done(&t, 0);
 	}
@@ -740,11 +712,11 @@ static byte ET_Predict(int id, const nativeVal_t *eng) {
 		!Native_CallMod("ShipMaker", "GetMotor", next, "v", name) || !ET_MotorSpeed(cur, sa) || !ET_MotorSpeed(next, sb)) {
 		return Mode_Done(&t, 0);
 	}
-	int faster = ET_Cmp(sa, sb, '<'), slower = 0;
+	int faster = Mode_CmpOp(sa, sb, '<'), slower = 0;
 	if (faster == 0) {
 		Native_Free(sa);
 		Native_Free(sb);
-		slower = ET_MotorSpeed(cur, sa) && ET_MotorSpeed(next, sb) ? ET_Cmp(sa, sb, '>') : -1;
+		slower = ET_MotorSpeed(cur, sa) && ET_MotorSpeed(next, sb) ? Mode_CmpOp(sa, sb, '>') : -1;
 	}
 	if (faster < 0 || slower < 0) {
 		return Mode_Done(&t, 0);
@@ -765,7 +737,7 @@ static byte ET_ShowEngineDesc(int id, const nativeVal_t *control) {
 		return Mode_Done(&t, 0);
 	}
 	int count = ET_Len("enginesList");
-	int inList = count < 0 ? -1 : ET_CmpI(eng, count, '<');
+	int inList = count < 0 ? -1 : Mode_CmpOpI(eng, count, '<');
 	if (inList < 0 || (inList && !ET_Desc(id, n, eng))) {
 		return Mode_Done(&t, 0);
 	}
@@ -797,11 +769,11 @@ static byte ET_RecycleState(int id) {
 	int has = 0;
 	ok = ET_Bay(&bay);
 	for (int i = 0; ok && i < 4; i++) {
-		int is = ET_CmpI(&bay, i, '=');
+		int is = Mode_CmpOpI(&bay, i, '=');
 		if (is) {
 			char var[0x10];
 			Str_Printf(var, sizeof(var), "NEng%d", i);
-			has = is > 0 && Mode_ShipGet(var, &ne) ? ET_CmpI(&ne, 0, '>') : -1;
+			has = is > 0 && Mode_ShipGet(var, &ne) ? Mode_CmpOpI(&ne, 0, '>') : -1;
 			ok = has >= 0;
 			break;
 		}
@@ -899,7 +871,7 @@ static byte ET_BayCost(const nativeVal_t *control, const nativeVal_t *bay, nativ
 /* canBeMounted[i] != 2: 1 or 0, -1 with the error */
 static int ET_NotMountable(const nativeVal_t *i) {
 	nativeVal_t list = { 0 }, v = { 0 };
-	int r = ET_G("canBeMounted", &list) && Native_Subscript(&list, i, &v) ? ET_CmpI(&v, 2, '!') : -1;
+	int r = ET_G("canBeMounted", &list) && Native_Subscript(&list, i, &v) ? Mode_CmpOpI(&v, 2, '!') : -1;
 	Native_Free(&list);
 	Native_Free(&v);
 	return r;
@@ -908,7 +880,7 @@ static int ET_NotMountable(const nativeVal_t *i) {
 /* ShipEdit.IsEditingMultiplayer() != 1: 1 or 0, -1 with the error (OBJLIB 3) */
 static int ET_Single(void) {
 	nativeVal_t v = { 0 };
-	int r = Native_CallMod("ShipEdit", "IsEditingMultiplayer", &v, "") ? ET_CmpI(&v, 1, '!') : -1;
+	int r = Native_CallMod("ShipEdit", "IsEditingMultiplayer", &v, "") ? Mode_CmpOpI(&v, 1, '!') : -1;
 	Native_Free(&v);
 	return r;
 }
@@ -950,7 +922,7 @@ static byte ET_PutEngine(int id, const nativeVal_t *control) {
 			return Mode_Done(&t, 0);
 		}
 		Native_SetInt(money, Mode_GetMoney());
-		int poor = ET_Op(money, '-', cost, left) ? ET_CmpI(left, 0, '<') : -1;
+		int poor = ET_Op(money, '-', cost, left) ? Mode_CmpOpI(left, 0, '<') : -1;
 		if (poor) {
 			return Mode_Done(&t, poor > 0);
 		}
@@ -966,7 +938,7 @@ static byte ET_PutEngine(int id, const nativeVal_t *control) {
 		!ET_ShipUpper("MEng", bay, prev)) {
 		return Mode_Done(&t, 0);
 	}
-	int change = ET_Cmp(model, prev, '!');
+	int change = Mode_CmpOp(model, prev, '!');
 	if (change < 0 || (change && !Mode_SoundOf("ShipEditLoadEngine"))) {
 		return Mode_Done(&t, 0);
 	}
@@ -1489,7 +1461,7 @@ ET_I(ET_CreateLayoutsPy, ET_CreateLayouts(id))
 
 /* Rotate of a bay icon: 0 for a bay of one slot, else pointing out from the middle of the screen */
 static int ET_Rotate(int j, const nativeVal_t *slots, double u) {
-	if (j == 0 && ET_CmpI(slots, j + 1, '=') > 0) {
+	if (j == 0 && Mode_CmpOpI(slots, j + 1, '=') > 0) {
 		return 0;
 	}
 	return u > 320 ? 1 : 3;
@@ -1530,7 +1502,7 @@ static byte ET_Icon(int id, int i, int j, const char *n) {
 	nativeVal_t slots = { 0 }, jv;
 	char name[0x30];
 	Native_SetInt(&jv, j);
-	int used = ET_SlotsOf(i, &slots) ? ET_Cmp(&jv, &slots, '<') : -1;
+	int used = ET_SlotsOf(i, &slots) ? Mode_CmpOp(&jv, &slots, '<') : -1;
 	Native_Free(&slots);
 	if (used > 0) {
 		double u, v;
@@ -1635,7 +1607,7 @@ static byte ET_UpdateLayouts(int id) {
 		for (int j = 0; ok && j < 2; j++) {
 			ok = ET_Icon(id, i, j, ET_IconName(n, sizeof(n), i, j));
 		}
-		int two = ok && ET_SlotsOf(i, &slots) ? ET_CmpI(&slots, 2, 'g') : -1;
+		int two = ok && ET_SlotsOf(i, &slots) ? Mode_CmpOpI(&slots, 2, 'g') : -1;
 		Native_Free(&slots);
 		if (two < 0 || (two && !ET_Lines(id, i))) {
 			return 0;
@@ -1676,7 +1648,7 @@ static byte ET_UpdateLayoutsState(int id, const nativeVal_t *index, const native
 	for (int j = 0; j < 2; j++) {
 		char n[0x20], name[0x40];
 		ET_NameIn(n, sizeof(n), "", index, j ? "B" : "A");
-		int active = ET_CmpI(state, 1, '=');
+		int active = Mode_CmpOpI(state, 1, '=');
 		if (active < 0) {
 			return 0;
 		}
@@ -1719,7 +1691,7 @@ static byte ET_UpdateLayoutsGlow(int id, const nativeVal_t *control) {
 	int some = ET_CmpS(control, "", '!');
 	byte ok = some >= 0;
 	if (some > 0) {
-		int found = Native_CallMod("string", "find", &at, "vs", control, "EngineGroup") ? ET_CmpI(&at, -1, '!') : -1;
+		int found = Native_CallMod("string", "find", &at, "vs", control, "EngineGroup") ? Mode_CmpOpI(&at, -1, '!') : -1;
 		if (found > 0) {
 			ok = ET_Item(control, -1, &c) && Native_CallMod("string", "atoi", &n, "v", &c) && (Native_Free(&tv), 1) &&
 				ET_OpI(&n, '-', 1, &tv);
@@ -1738,7 +1710,7 @@ static byte ET_UpdateLayoutsGlow(int id, const nativeVal_t *control) {
 				ok = Native_Raise(NE_INDEX, "tuple index out of range");
 				break;
 			}
-			int glow = ET_Cmp(&iv, &tv, '=');
+			int glow = Mode_CmpOp(&iv, &tv, '=');
 			ok = glow >= 0;
 			if (ok) {
 				const char *render = glow ? "!ScorerSpriteGlow" : "";
@@ -1770,7 +1742,7 @@ static byte ET_HideEnginesPanel(int id) {
 	static const char *const mods[] = { "ShipEdit", "HangarTab", NULL };
 	nativeVal_t ship = { 0 }, none, layout = { 0 };
 	Native_SetNone(&none);
-	int some = Script_Import(mods) && Mode_PrevShip(&ship) ? ET_Cmp(&ship, &none, '!') : -1;
+	int some = Script_Import(mods) && Mode_PrevShip(&ship) ? Mode_CmpOp(&ship, &none, '!') : -1;
 	Native_Free(&ship);
 	if (some > 0) {
 		int groups = ET_Layout(&layout) ? Native_Size(&layout) : -1;
@@ -1869,7 +1841,7 @@ static byte ET_Step(long d) {
 static int ET_IndexCmp(long plus, long i, char op) {
 	nativeVal_t index = { 0 }, sum = { 0 };
 	int r = ET_G("engineIndex", &index) && (plus ? ET_OpI(&index, '+', plus, &sum) : (Native_Copy(&sum, &index), 1)) ?
-		ET_CmpI(&sum, i, op) : -1;
+		Mode_CmpOpI(&sum, i, op) : -1;
 	Native_Free(&index);
 	Native_Free(&sum);
 	return r;
@@ -1937,7 +1909,7 @@ static byte ET_ScrollDown(int id, const nativeVal_t *control) {
 	}
 	nativeVal_t cv, index = { 0 }, rest = { 0 };
 	Native_SetInt(&cv, count);
-	int more = ET_G("engineIndex", &index) && ET_Op(&cv, '-', &index, &rest) ? ET_CmpI(&rest, 4, '>') : -1;
+	int more = ET_G("engineIndex", &index) && ET_Op(&cv, '-', &index, &rest) ? Mode_CmpOpI(&rest, 4, '>') : -1;
 	Native_Free(&index);
 	Native_Free(&rest);
 	if (more > 0) {

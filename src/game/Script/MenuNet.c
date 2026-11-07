@@ -1616,7 +1616,8 @@ static PyObject *PCMenu_ServerNameGainFocus(PyObject *self, PyObject *args) {
 	return Net_Render(args, NULL, "PCMenu.ServerNameOnRender");
 }
 
-static PyObject *PCMenu_ServerNameLooseFocus(PyObject *self, PyObject *args) {
+/* the LooseFocus of the edit fields (ServerName, PlayersNumber, FragLimit): no OnRender */
+static PyObject *PCMenu_EditLooseFocus(PyObject *self, PyObject *args) {
 	(void)self;
 	return Net_Render(args, NULL, "");
 }
@@ -1626,19 +1627,9 @@ static PyObject *PCMenu_PlayersNumberGainFocus(PyObject *self, PyObject *args) {
 	return Net_Render(args, NULL, "PCMenu.PlayersNumberOnRender");
 }
 
-static PyObject *PCMenu_PlayersNumberLooseFocus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_Render(args, NULL, "");
-}
-
 static PyObject *PCMenu_FragLimitGainFocus(PyObject *self, PyObject *args) {
 	(void)self;
 	return Net_Render(args, NULL, "PCMenu.FragLimitOnRender");
-}
-
-static PyObject *PCMenu_FragLimitLooseFocus(PyObject *self, PyObject *args) {
-	(void)self;
-	return Net_Render(args, NULL, "");
 }
 
 /* while an edit field has the focus its text goes to the engine variable each frame */
@@ -1738,13 +1729,13 @@ PyMethodDef g_MenuNetMethods[] = {
 	{ "MapPreviewOn", PCMenu_MapPreviewOn, 1, NULL },
 	{ "MapPreviewOff", PCMenu_MapPreviewOff, 1, NULL },
 	{ "ServerNameGainFocus", PCMenu_ServerNameGainFocus, 1, NULL },
-	{ "ServerNameLooseFocus", PCMenu_ServerNameLooseFocus, 1, NULL },
+	{ "ServerNameLooseFocus", PCMenu_EditLooseFocus, 1, NULL },
 	{ "ServerNameOnRender", PCMenu_ServerNameOnRender, 1, NULL },
 	{ "PlayersNumberGainFocus", PCMenu_PlayersNumberGainFocus, 1, NULL },
-	{ "PlayersNumberLooseFocus", PCMenu_PlayersNumberLooseFocus, 1, NULL },
+	{ "PlayersNumberLooseFocus", PCMenu_EditLooseFocus, 1, NULL },
 	{ "PlayersNumberOnRender", PCMenu_PlayersNumberOnRender, 1, NULL },
 	{ "FragLimitGainFocus", PCMenu_FragLimitGainFocus, 1, NULL },
-	{ "FragLimitLooseFocus", PCMenu_FragLimitLooseFocus, 1, NULL },
+	{ "FragLimitLooseFocus", PCMenu_EditLooseFocus, 1, NULL },
 	{ "FragLimitOnRender", PCMenu_FragLimitOnRender, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };

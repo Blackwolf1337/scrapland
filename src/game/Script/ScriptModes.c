@@ -3775,3 +3775,59 @@ PyObject *Mode_PyNone(PyObject *self, PyObject *args) {
 	(void)args;
 	return Py_ReturnNone();
 }
+
+byte Mode_ApplyFlash(int id) {
+	Script_SetStr(id, "Apply", "Effect", "Outline");
+	Script_SetNum(id, "Apply", "Red", 255);
+	Script_SetNum(id, "Apply", "Green", 255);
+	Script_SetNum(id, "Apply", "Blue", 180);
+	Script_SetStr(id, "Apply", "OnRender", "!ScorerSpriteFlash");
+	return 1;
+}
+
+byte Mode_DummyStartV(const nativeVal_t *name, long flag) {
+	PyObject *hook;
+	const char *s;
+	int seam = Native_Seam("Scrap", "StartDummySearch", &hook);
+	if (seam) {
+		return seam > 0 && Native_HookCall(hook, NULL, "vi", name, flag);
+	}
+	if (!Native_ArgStr(name, 1, &s)) {
+		return 0;
+	}
+	Mode_DummyStart(s, (int)flag);
+	return 1;
+}
+
+void Mode_ModPutS(const char *module, const char *var, const char *s) {
+	nativeVal_t v;
+	Native_SetText(&v, s, (int)strlen(s));
+	Mode_ModPut(module, var, &v);
+	Native_Free(&v);
+}
+
+int Mode_CmpOp(const nativeVal_t *a, const nativeVal_t *b, char op) {
+	int c = Native_Compare(a, b);
+	if (PyErr_Occurred()) {
+		return -1;
+	}
+	switch (op) {
+	case '=':
+		return c == 0;
+	case '!':
+		return c != 0;
+	case '>':
+		return c > 0;
+	case '<':
+		return c < 0;
+	case 'g':
+		return c >= 0;
+	}
+	return c <= 0;
+}
+
+int Mode_CmpOpI(const nativeVal_t *a, long i, char op) {
+	nativeVal_t b;
+	Native_SetInt(&b, i);
+	return Mode_CmpOp(a, &b, op);
+}

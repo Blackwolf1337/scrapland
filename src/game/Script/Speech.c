@@ -36,14 +36,6 @@ static byte Sp_G(const char *var, nativeVal_t *out) {
 	return Mode_G(SP, var, out);
 }
 
-/* a variable of the module = s as the port set it (Script_SetVar: an error is dropped) */
-static void Sp_SetS(const char *var, const char *s) {
-	nativeVal_t v;
-	Native_SetText(&v, s, (int)strlen(s));
-	Mode_ModPut(SP, var, &v);
-	Native_Free(&v);
-}
-
 /* a global of the module when it is there (globals().get of the script): 1 with *out, else 0 (no error) */
 static byte Sp_Has(const char *var, nativeVal_t *out) {
 	if (Sp_G(var, out)) {
@@ -287,7 +279,7 @@ static byte Sp_CallEndOfSpeech(void) {
 			return 0;
 		}
 	}
-	Sp_SetS("TalkListen", "TalkListen");
+	Mode_ModPutS(SP, "TalkListen", "TalkListen");
 	if (Mode_ModGetI(SP, "LockAlarm", 0)) {
 		Native_SetInt(&ch, 0);
 		if (!Mode_SetLockAlarm(&ch)) {
@@ -313,8 +305,8 @@ static byte Sp_CallEndOfSpeech(void) {
 	if (!ok) {
 		return 0;
 	}
-	Sp_SetS("CurrentRemoteCom", "");
-	Sp_SetS("LaunchedTauntEntityName", "");
+	Mode_ModPutS(SP, "CurrentRemoteCom", "");
+	Mode_ModPutS(SP, "LaunchedTauntEntityName", "");
 	Mode_ModPutI(SP, "CanLaunchRemote", 1);
 	return 1;
 }
@@ -446,14 +438,14 @@ static byte Sp_PerformAnswer(const nativeVal_t *text, const nativeVal_t *time, n
 			!Mode_SpeechCallback("Speech.NormalAbortSpeech") || !Sp_SpeechText(text, rest, "TextColor")) {
 			return Mode_Done(&t, 0);
 		}
-		Sp_SetS("AnsAnima", "TalkNPC");
+		Mode_ModPutS(SP, "AnsAnima", "TalkNPC");
 		Native_SetInt(out, 1);
 		return Mode_Done(&t, 1);
 	}
 	if (answers < 0 || !Sp_AbortSpeech()) {
 		return Mode_Done(&t, 0);
 	}
-	Sp_SetS("AnsAnima", "TalkNPC");
+	Mode_ModPutS(SP, "AnsAnima", "TalkNPC");
 	Native_SetInt(out, 0);
 	return Mode_Done(&t, 1);
 }
@@ -887,7 +879,7 @@ static byte Sp_RunNI(const nativeVal_t *i) {
 	Mode_ModPut(SP, "CurrNI", i);
 	Mode_ModPutI(SP, "LockAlarm", 1);
 	if (ltkn) {
-		Sp_SetS("TalkListen", "TalkListenNPC");
+		Mode_ModPutS(SP, "TalkListen", "TalkListenNPC");
 	}
 	int isWch = Sp_G("NPCName", npc) && Mode_EntitySeam(npc, ch) ? Mode_VIsType(ch, "WalkChar") : -1;
 	if (isWch > 0) {
@@ -1168,10 +1160,10 @@ static byte Sp_LaunchTaunt(const nativeVal_t *ent, const nativeVal_t *typeV, con
 		Str_Copy(prev, Native_Text(prevV), sizeof(prev));
 	}
 	if (!strcmp(taunt, prev)) {
-		Sp_SetS("LaunchedTauntEntityName", "");
+		Mode_ModPutS(SP, "LaunchedTauntEntityName", "");
 		return Mode_Done(&t, 1);
 	}
-	Sp_SetS("prevTaunt", taunt);
+	Mode_ModPutS(SP, "prevTaunt", taunt);
 	const char *bertos = SaveVar_Get("CreateBertos");
 	Str_Copy(head, !strcmp(type, "Berto") && bertos && !strcmp(bertos, "1") ? "EvilBerto" : type, sizeof(head));
 	Native_SetStr(tt, taunt);

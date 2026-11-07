@@ -791,5 +791,16 @@ const nativeVal_t *Mode_IntVal(nativeVal_t *v, long i);
 void Mode_Tuple3(nativeVal_t *out, const nativeVal_t *a, const nativeVal_t *b, const nativeVal_t *c);
 void Mode_RandF(double a, double b, nativeVal_t *out);
 PyObject *Mode_PyNone(PyObject *self, PyObject *args);
+/* the Apply button of the option menus flashes once something changed (1) */
+byte Mode_ApplyFlash(int id);
+/* Scrap.StartDummySearch(name, flag) with the name a value of the script, through its seam (the TypeError of "s" for
+ * a text with 0 bytes) */
+byte Mode_DummyStartV(const nativeVal_t *name, long flag);
+/* module.var = a text (of any length) as Script_SetVar sets it: an error is dropped */
+void Mode_ModPutS(const char *module, const char *var, const char *s);
+/* a == b, a != b, a > b, a < b, a >= b, a <= b of the script (op '=', '!', '>', '<', 'g', 'l'): 1 or 0, -1 with the
+ * error (any error set after the compare, also for equal values); and against the int i */
+int Mode_CmpOp(const nativeVal_t *a, const nativeVal_t *b, char op);
+int Mode_CmpOpI(const nativeVal_t *a, long i, char op);
 
 #endif

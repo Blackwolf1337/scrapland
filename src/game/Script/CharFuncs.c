@@ -52,14 +52,6 @@ static void Char_SetNum(const char *ent, const char *var, double d) {
 	Char_Set(ent, var, &v);
 }
 
-/* module.var = a text as Script_SetVar sets it */
-static void Char_ModText(const char *module, const char *var, const char *s) {
-	nativeVal_t v;
-	Native_SetText(&v, s, (int)strlen(s));
-	Mode_ModPut(module, var, &v);
-	Native_Free(&v);
-}
-
 /* module.var = src.name (the attribute as it is, a function of the module: nothing when it is not there) */
 static void Char_ModAttr(const char *module, const char *var, const char *src, const char *name) {
 	nativeVal_t v = { 0 };
@@ -73,8 +65,8 @@ static void Char_ModAttr(const char *module, const char *var, const char *src, c
 
 /* Speech.PlayerName, Speech.NPCName: who talks in the speech that runs */
 static void Char_Speakers(const char *usr, const char *ch) {
-	Char_ModText("Speech", "PlayerName", usr);
-	Char_ModText("Speech", "NPCName", ch);
+	Mode_ModPutS("Speech", "PlayerName", usr);
+	Mode_ModPutS("Speech", "NPCName", ch);
 }
 
 /* Speech.OnEndOfSpeechParams = (name,) */
@@ -645,8 +637,8 @@ static void Police_Calm(const char *ch) {
 /* Challenge.challengeType, foeType, SetChallengeOptions(ch): 0 with the error set */
 static byte Police_StartChallenge(const char *type, const char *ch) {
 	nativeVal_t e;
-	Char_ModText("Challenge", "challengeType", type);
-	Char_ModText("Challenge", "foeType", "Police");
+	Mode_ModPutS("Challenge", "challengeType", type);
+	Mode_ModPutS("Challenge", "foeType", "Police");
 	Char_Handle(ch, &e);
 	byte ok = Native_CallMod("Challenge", "SetChallengeOptions", NULL, "v", &e);
 	Native_Free(&e);
