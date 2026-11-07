@@ -14,6 +14,9 @@
 #include "scrap/net.h"
 #include "scrap/pyentity.h"
 #include "scrap/ai.h"
+#include "scrap/alarm.h"
+#include "scrap/crt.h"
+#include "scrap/nodesworld.h"
 #include "scrap/game.h"
 #include "scrap/scheduler.h"
 #include "scrap/scorer.h"
@@ -1646,5 +1649,31 @@ byte Mode_TextArea(const char *font, const nativeVal_t *text, nativeVal_t *out) 
 	}
 	Font_TextSize(Font_Get(font), rect, size, 0.0f, 0.0f, "%s", s);
 	Mode_Pair((double)size[0], (double)size[1], out);
+	return 1;
+}
+
+/* ---- helpers of the native level scripts ---- */
+
+void Mode_RandomVisPoint(nativeVal_t *out) {
+	int n = NodesWorld_NumVisPoints(g_NodesWorld);
+	if (n <= 0) {
+		Native_SetNone(out);
+		return;
+	}
+	const vec3_t *p = NodesWorld_GetVisPoint(g_NodesWorld, crt_rand() % n);
+	/* "(fff)" */
+	Native_SetVec(out, (double)p->x, (double)p->y, (double)p->z);
+}
+
+byte Mode_SetAlarm(const nativeVal_t *level) {
+	MODE_SEAM("Scrap", "SetAlarm");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "v", level);
+	}
+	double d;
+	if (!Native_ArgDouble(level, &d)) {
+		return 0;
+	}
+	Alarm_Set(&g_pWorld->alarm, (float)d);
 	return 1;
 }
