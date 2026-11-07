@@ -1,0 +1,3 @@
+# line 24: about 35 s into Press the player is hidden (UsrEntity(0) None) while the start scene of the mission plays;
+# the pack runs read it inside the scene, the C runs mostly after its end (scene timing; C runs show both, 2026-11-07)
+ignore (_bsave(), _c('Mission_HumphreyArchbishopKilled', 'SetNextMission', None), Scrap.UsrEntity(0).Pos, Scrap.UsrEntity(0).Ang, _bback(), _bsv(('MayorAtTownHall', 'PoliceBossAtPolice', 'BankMasterAtBank', 'Journalist.Humphrey_Defaut', 'Journalist.Betty_Defaut', 'Journalist.Berto_Defaut')))

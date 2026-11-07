@@ -1,2 +1,5 @@
 # the spawn points of the NPCs (CharsNPC.CharRes positions) are picked at random at the level start
 ignore _r6res()
+# DM_Door_Teleporter_02 at the level start: the channel answers before the first world update and sees it Opened, the
+# pack and python runs answer once the clock runs and see it closing (channel runs 2 of 2)
+sub 'MoveTele DM_Door_Teleporter_01:Teleport', '(?:Close|Closed|Open|Opened)', '<OnObjSlot> function', '(?:Closed|Opened)' => 'MoveTele DM_Door_Teleporter_01:Teleport', DOOR, '<OnObjSlot> function', DOOR

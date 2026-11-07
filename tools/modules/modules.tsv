@@ -96,6 +96,7 @@ Teleport	-	Data.packed/scripts/missions/teleport.pyc
 TeamDeathMatch	-	Data.packed/scripts/superdeals/teamdeathmatch.pyc
 Ffa	-	Data.packed/scripts/net/ffa.pyc
 NDeathMatch	-	Data.packed/scripts/net/ndeathmatch.pyc
+NDeathMatchBots	-	-
 NFlagHunt	-	Data.packed/scripts/net/nflaghunt.pyc
 NPostman	-	Data.packed/scripts/net/npostman.pyc
 NTeamDM	-	Data.packed/scripts/net/nteamdm.pyc

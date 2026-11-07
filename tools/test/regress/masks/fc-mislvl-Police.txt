@@ -1,0 +1,3 @@
+# a teleporter door still opening at the level start: the channel answers before the first world update, the pack and
+# python runs only once the clock runs (channel runs 2 of 2 see Open with MapCollision 1, the others Opened, 0)
+sub \('Action', 'Open'\), \('DefLoop', 'Opened'\)(, \('Ang', \([^)]*\)\), \('OnObjSlot', '[^']*'\), \('ActiveCMask', \d+\)), \('MapCollision', 1\) => ('Action', 'Opened'), ('DefLoop', 'Opened')\1, ('MapCollision', 0)
