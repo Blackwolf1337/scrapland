@@ -147,11 +147,6 @@ static byte Hud_Multi(void) {
 	return Mode_ModGetI("Init", "isShipEdit", 0) || (g_pApp->flags & 7);
 }
 
-/* module.func(id) of the HUD by name (OBJLIB 3: a mod or a case may replace it), the failure printed */
-static void Hud_Call(const char *module, const char *func, long id) {
-	Mode_Printed(Native_CallMod(module, func, NULL, "i", id), module, func);
-}
-
 /* SScorer.SetCinema(id, 0, 0.25) through its seam, the failure printed as the call by name printed it */
 static void Hud_NoCinema(int id) {
 	Mode_Printed(Mode_SetCinema(id, 0, 0.25), "SScorer", "SetCinema");
@@ -410,15 +405,15 @@ static void Hud_CharCreate(int id) {
 		cScorer_Clear(sc);
 	}
 	Hud_NoCinema(id);
-	Hud_Call("Scorer", "CreateMsgScorer", id);
+	Mode_PrintedCall("Scorer", "CreateMsgScorer", id);
 	Mode_Printed(Native_CallMod("Scorer", "CreateStatusScorer", NULL, "ii", (long)id, 1L), "Scorer",
 		"CreateStatusScorer");
-	Hud_Call("Scorer", "CreateCopMeterScorer", id);
-	Hud_Call("CharScorer", "CreateRadarScorer", id);
+	Mode_PrintedCall("Scorer", "CreateCopMeterScorer", id);
+	Mode_PrintedCall("CharScorer", "CreateRadarScorer", id);
 	Mode_Printed(Native_CallMod("Scorer", "CreateMonitorScorer", NULL, "ii", (long)id, 1L), "Scorer",
 		"CreateMonitorScorer");
 	if (!Mode_ModGetI("Init", "Outdoor", 0) && !Mode_ModGetI("Init", "isJunkYard", 0)) {
-		Hud_Call("CharScorer", "CreateSpecialActionScorer", id);
+		Mode_PrintedCall("CharScorer", "CreateSpecialActionScorer", id);
 	}
 	Mode_CallVarIf("Menu", "MissionScorerCall", id);
 }
@@ -606,8 +601,8 @@ static void Racer_ShowScorerCore(int id, const nativeVal_t *data, int deal, cons
 		cScorer_Clear(sc);
 	}
 	if (deal > 0) {
-		Mode_Printed(Native_CallMod("Menu", "InitMenuSys", NULL, "i", 0L), "Menu", "InitMenuSys");
-		Hud_Call("Menu", "StartNewMenu", id);
+		Mode_PrintedCall("Menu", "InitMenuSys", 0);
+		Mode_PrintedCall("Menu", "StartNewMenu", id);
 	}
 	Mode_ModGetS("RacerScorer", "ScorerBotMessage", bottom, sizeof(bottom));
 	Mode_ModGetS("RacerScorer", "ScorerTopMessage", top, sizeof(top));
@@ -731,10 +726,10 @@ static PyObject *Racer_Create(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	if (Mode_ModGetI("Scorer", "SplitScreen", 0)) {
-		Hud_Call("RacerScorer", "CreateRacer", 0);
-		Hud_Call("RacerScorer", "CreateRacer", 1);
+		Mode_PrintedCall("RacerScorer", "CreateRacer", 0);
+		Mode_PrintedCall("RacerScorer", "CreateRacer", 1);
 	} else {
-		Hud_Call("RacerScorer", "CreateRacer", id);
+		Mode_PrintedCall("RacerScorer", "CreateRacer", id);
 	}
 	return Py_ReturnNone();
 }

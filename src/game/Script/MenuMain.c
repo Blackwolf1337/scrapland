@@ -77,11 +77,7 @@ static void Main_Run(int id, const char *section, PyObject *vars) {
 
 /* ---- values and calls ---- */
 
-/* module.func(id) and module.func(id, text) by name (OBJLIB 3), the failure printed as the call by name printed it */
-static void Main_Call(const char *module, const char *func, long id) {
-	Mode_Printed(Native_CallMod(module, func, NULL, "i", id), module, func);
-}
-
+/* module.func(id, text) by name (OBJLIB 3), the failure printed as the call by name printed it */
 static void Main_CallS(const char *module, const char *func, long id, const char *s) {
 	Mode_Printed(Native_CallMod(module, func, NULL, "is", id, s), module, func);
 }
@@ -167,14 +163,10 @@ static void Main_LastMode(char *out, int size) {
 	Mode_ModGetS("Menu", "LastMode", out, size);
 }
 
-static double Main_Now(void) {
-	return Mode_Time();
-}
-
 /* ---- the menus ---- */
 
 static void Main_Single(int id) {
-	Main_Call("Menu", "StartNewMenu", id);
+	Mode_PrintedCall("Menu", "StartNewMenu", id);
 	int saves = Main_SaveGames(0);
 	byte main = Main_InMainMenu();
 	byte xbox = GVar_GetNum("IsXbox", 0) == 1;
@@ -188,7 +180,7 @@ static void Main_Single(int id) {
 }
 
 static void Main_Create(int id, const char *back) {
-	Main_Call("Menu", "StartNewMenu", id);
+	Mode_PrintedCall("Menu", "StartNewMenu", id);
 	int saves = Main_SaveGames(1);
 	Main_Run(id, "Main", Py_BuildValue("{s:i,s:s,s:i}", "saves", saves > 0, "back", back, "steam", 0));
 }
@@ -280,9 +272,9 @@ static void Main_BackToGame(int id) {
 /* DrawScorer(id, mode): the scorer of a ship, of the character, or of a movie */
 static void Main_DrawScorer(int id, const char *mode) {
 	if (!strcmp(mode, "Racer")) {
-		Main_Call("RacerScorer", "BackMenuFunc", id);
+		Mode_PrintedCall("RacerScorer", "BackMenuFunc", id);
 	} else if (!strcmp(mode, "Walk")) {
-		Main_Call("CharScorer", "BackMenuFunc", id);
+		Mode_PrintedCall("CharScorer", "BackMenuFunc", id);
 	} else if (!strcmp(mode, "Inactive")) {
 		Main_MovieScorer(id);
 	}
@@ -349,7 +341,7 @@ static void Main_Format(const char *fmt, const char *arg, char *out, int size) {
 
 static void Main_SkillMenu(int id, const char *func, const char *back, byte lit) {
 	char current[0x20];
-	Main_Call("Menu", "StartNewMenu", id);
+	Mode_PrintedCall("Menu", "StartNewMenu", id);
 	Str_Printf(current, sizeof(current), "Item%d", (int)GVar_GetNum("GameSkill", 0) + 1);
 	Main_Run(id, "Skill", Py_BuildValue("{s:s,s:s,s:s,s:i}", "func", func, "back", back, "current", current, "lit", lit));
 }
@@ -464,7 +456,7 @@ static void Main_GamesMenu(int id, byte save) {
 		n--;
 	}
 	Mode_ModPut("Menu", "saveGamesList", &list);
-	Main_Call("Menu", "StartNewMenu", id);
+	Mode_PrintedCall("Menu", "StartNewMenu", id);
 	Native_SetEmpty(&entries, NV_LIST);
 	if (save && n < 6) {
 		Main_AddEntry(&entries, Script_Lang("Menu_SaveGame_New"), "Menu.SaveGame");
@@ -583,7 +575,7 @@ static void Main_SaveGame(int id, const char *control) {
 		num--;
 	}
 	if (num <= 0) {
-		Main_Call("SaveGame", "SaveGame", n + 1);
+		Mode_PrintedCall("SaveGame", "SaveGame", n + 1);
 		Main_CallS("Menu", "BackToGame", id, control);
 	} else {
 		Main_PutInt("slotToOverwrite", num);
@@ -637,7 +629,7 @@ static const char *const main_ai[4] = { "None", "ShowNodesAI", "ShowNodes2DAI", 
 
 static void Main_DebugMenu(int id) {
 	char debug[0x20];
-	Main_Call("Menu", "StartNewMenu", id);
+	Mode_PrintedCall("Menu", "StartNewMenu", id);
 	const char *ai = "";
 	for (int i = 1; i < 4; i++) {
 		if (GVar_GetNum(main_ai[i], 0) == 1) {
@@ -874,10 +866,10 @@ static byte Main_TVOff(void) {
 	if (haveName) {
 		Native_SetInt(&v[0], 0);
 		Native_Copy(&v[1], &name);
-		Mode_SchedAt(Main_Now(), "Menu", "SetCam", v, 2, NULL);
+		Mode_SchedAt(Mode_Time(), "Menu", "SetCam", v, 2, NULL);
 		Native_Free(&v[1]);
 	}
-	Mode_SchedAt(Main_Now() + 2.0, "Menu", "TVOffEnd", NULL, 0, NULL);
+	Mode_SchedAt(Mode_Time() + 2.0, "Menu", "TVOffEnd", NULL, 0, NULL);
 	Main_Sound("DeathSound", "DeathVolume");
 	ok = 1;
 done:
@@ -904,7 +896,7 @@ static void Main_TVOffEnd(void) {
 	GVar_SetNum("NoiseFactorBegin", 0);
 	GVar_SetNum("NoiseFactor", 16);
 	Mode_Printed(Mode_Fade(0, clear, dark, 0.75), "SScorer", "Fade");
-	Mode_SchedAt(Main_Now() + 0.6, "Menu", "BlackTV", NULL, 0, NULL);
+	Mode_SchedAt(Mode_Time() + 0.6, "Menu", "BlackTV", NULL, 0, NULL);
 	Main_Sound("TVOffSound", "TVOffVolume");
 }
 
@@ -929,7 +921,7 @@ static PyObject *Menu_AudioMenu(PyObject *self, PyObject *args) {
 	(void)self;
 	MAIN_ARGS(args);
 	(void)control;
-	Main_Call("Menu", "StartNewMenu", id);
+	Mode_PrintedCall("Menu", "StartNewMenu", id);
 	Main_Run(id, "Audio", NULL);
 	return Py_ReturnNone();
 }
@@ -1290,7 +1282,7 @@ static PyObject *Menu_DebugSet_ChangeMapMenu(PyObject *self, PyObject *args) {
 	(void)self;
 	MAIN_ARGS(args);
 	(void)control;
-	Main_Call("Menu", "StartNewMenu", id);
+	Mode_PrintedCall("Menu", "StartNewMenu", id);
 	Main_Run(id, "ChangeMap", NULL);
 	return Py_ReturnNone();
 }
@@ -1321,7 +1313,7 @@ static PyObject *Menu_SetCam(PyObject *self, PyObject *args) {
 	}
 	Native_Arg(o[0], &v[0]);
 	Native_Arg(o[1], &v[1]);
-	Mode_SchedAt(Main_Now(), "Scrap", "SetCam", v, 2, NULL);
+	Mode_SchedAt(Mode_Time(), "Scrap", "SetCam", v, 2, NULL);
 	Native_Free(&v[0]);
 	Native_Free(&v[1]);
 	return Py_ReturnNone();
@@ -1337,7 +1329,7 @@ static PyObject *Menu_TVOffEnd(PyObject *self, PyObject *args) {
 static PyObject *Menu_BlackTV(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	Main_Call("Menu", "DeathInfo", 0);
+	Mode_PrintedCall("Menu", "DeathInfo", 0);
 	return Py_ReturnNone();
 }
 

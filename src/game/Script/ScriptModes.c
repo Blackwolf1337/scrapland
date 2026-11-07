@@ -3640,16 +3640,11 @@ byte Mode_SchedAt(double time, const char *module, const char *func, const nativ
 	for (int i = 0; i < n; i++) {
 		Native_Copy(Native_Append(&t), &args[i]);
 	}
-	PyObject *f = Script_Attr(module, func);
-	PyObject *a = f ? Native_ToPy(&t) : NULL;
+	PyObject *a = Native_ToPy(&t);
 	Native_Free(&t);
-	if (f && a) {
-		Scheduler_Add(&g_pWorld->scheduler, (float)time, f, a, name ? name : "");
-	}
+	byte ok = a && Mode_SchedPy(time, module, func, a, name);
 	PyErr_Clear();
-	byte ok = f && a;
 	Py_XDECREF(a);
-	Py_XDECREF(f);
 	return ok;
 }
 
@@ -3712,4 +3707,23 @@ byte Mode_PrintS(const char *text) {
 	byte ok = Mode_PrintV(&t);
 	Native_Free(&t);
 	return ok;
+}
+
+byte Mode_SchedPy(double time, const char *module, const char *func, PyObject *args, const char *name) {
+	PyObject *f = Script_Attr(module, func);
+	if (f) {
+		Scheduler_Add(&g_pWorld->scheduler, (float)time, f, args, name ? name : "");
+	}
+	PyErr_Clear();
+	Py_XDECREF(f);
+	return f != NULL;
+}
+
+void Mode_PrintedCall(const char *module, const char *func, long id) {
+	Mode_Printed(Native_CallMod(module, func, NULL, "i", id), module, func);
+}
+
+int Mode_SeqLen(const nativeVal_t *seq) {
+	int n;
+	return Native_Len(seq, &n) ? n : -1;
 }

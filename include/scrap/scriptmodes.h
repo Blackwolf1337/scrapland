@@ -772,5 +772,12 @@ const char *Mode_ModGetS(const char *module, const char *var, char *out, int siz
 /* print v, print text: Mode_Print of one value (the text of any length) */
 byte Mode_PrintV(const nativeVal_t *v);
 byte Mode_PrintS(const char *text);
+/* module.func(args) at the time on the scheduler as Mode_SchedAt, with the argument tuple a Python object (borrowed;
+ * OBJLIB 4: Menu.ShowWarning schedules itself again with the tuple it got) */
+byte Mode_SchedPy(double time, const char *module, const char *func, PyObject *args, const char *name);
+/* module.func(id) by name (OBJLIB 3: a mod or a case may replace it), the failure printed as Mode_Printed prints it */
+void Mode_PrintedCall(const char *module, const char *func, long id);
+/* len(seq) as PySequence_Length takes it: -1 with its TypeError */
+int Mode_SeqLen(const nativeVal_t *seq);
 
 #endif

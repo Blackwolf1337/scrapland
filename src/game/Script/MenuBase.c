@@ -44,12 +44,6 @@ static void Base_Link(int id, const char *a, const char *va, const char *b, cons
 
 /* ---- values ---- */
 
-/* len(seq) as PySequence_Length takes it: -1 with its TypeError */
-static int Base_Len(const nativeVal_t *seq) {
-	int n;
-	return Native_Len(seq, &n) ? n : -1;
-}
-
 /* element i of a sequence as a string into out ("" when it is not a string; seq NULL gives "" too) */
 static const char *Base_Str(const nativeVal_t *seq, int i, char *out, int size) {
 	nativeVal_t tmp = { 0 };
@@ -239,7 +233,7 @@ static void Base_TabDefaults(int id, const char *control) {
  */
 static byte Base_AddTabs(int id, const nativeVal_t *menu, const char *actual, int tabSize, int hint, int center) {
 	const int sizeX = 37 * TAB_QUAD, sizeY = 26 * TAB_QUAD, tabX = 320 - sizeX / 2, tabY = 45;
-	int n = Base_Len(menu);
+	int n = Mode_SeqLen(menu);
 	int current = 0;
 	tabSize *= TAB_QUAD;
 	if (n <= 0) {
@@ -354,7 +348,7 @@ static byte Base_VerticalMenu(int id, const nativeVal_t *title, const nativeVal_
 	double xStart = xStartV ? Base_Num(xStartV, &dummy) : -1;
 	double step = stepV ? Base_Num(stepV, &stepInt) : 45;
 	double minY = minV ? Base_Num(minV, &dummy) : 100;
-	int n = Base_Len(menu);
+	int n = Mode_SeqLen(menu);
 	double start;
 	char backText[0x200];
 
@@ -427,7 +421,7 @@ static byte Base_VerticalMenu(int id, const nativeVal_t *title, const nativeVal_
 		if (!e) {
 			return 0;
 		}
-		int len = Base_Len(e);
+		int len = Mode_SeqLen(e);
 		char func[0x80], s[0x80];
 		Base_EntryName(menu, i, 2, "Item", iname, sizeof(iname));
 		const nativeVal_t *text = Native_GetItem(e, 0, 0, &ttmp);
@@ -779,14 +773,7 @@ static PyObject *Menu_ShowWarning(PyObject *self, PyObject *args) {
 		return Mode_Result(r);
 	}
 	/* OBJLIB 4: the scheduler keeps the function of the module and the arguments as Python objects */
-	PyObject *m = PyImport_ImportModule("Menu");
-	PyObject *f = m ? PyObject_GetAttrString(m, "ShowWarning") : NULL;
-	if (f) {
-		Scheduler_Add(&g_pWorld->scheduler, Timer_GetTime(&g_pWorld->timer) + 0.25f, f, args, "ShowWarning");
-	}
-	PyErr_Clear();
-	Py_XDECREF(f);
-	Py_XDECREF(m);
+	Mode_SchedPy(Timer_GetTime(&g_pWorld->timer) + 0.25f, "Menu", "ShowWarning", args, "ShowWarning");
 	return Py_ReturnNone();
 }
 

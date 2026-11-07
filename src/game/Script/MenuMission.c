@@ -365,7 +365,7 @@ static void Mission_Run(int id, const char *section, PyObject *vars) {
 static void Mission_Menu(int id, const char *name) {
 	const missionPage_t *p = Mission_Page(name);
 	char back[0x100];
-	Script_Call("Menu", "StartNewMenu", "(i)", id);
+	Mode_PrintedCall("Menu", "StartNewMenu", id);
 	if (!p) {
 		return;
 	}
@@ -443,7 +443,7 @@ static PyObject *Menu_EnterMissionInfo(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "i", &id)) {
 		return NULL;
 	}
-	Script_Call("Menu", "InitMenuSys", "(i)", 0);
+	Mode_PrintedCall("Menu", "InitMenuSys", 0);
 	const char *map = SaveVar_Get("SuperDeal.Mission.Map");
 	if (map && *map) {
 		Mission_Menu(id, "CrazyDeal");
@@ -467,7 +467,7 @@ static PyObject *Menu_ExitMissionInfo(PyObject *self, PyObject *args) {
 		cPy_Function_SetFunc(&sc->onNext, "");
 		cPy_Function_SetFunc(&sc->onPrev, "");
 	}
-	Script_Call("Menu", "BackToGame", "(i)", id);
+	Mode_PrintedCall("Menu", "BackToGame", id);
 	return Py_ReturnNone();
 }
 
