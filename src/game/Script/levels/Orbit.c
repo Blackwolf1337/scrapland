@@ -68,19 +68,6 @@ static byte Ob_EntArrow(const char *name, int on) {
 	return ok;
 }
 
-/* e.var = Scrap.GetLangStr(key) with the text before it (prefix + text) */
-static byte Ob_SetLangOpt(const nativeVal_t *e, const char *var, const char *prefix, const char *key) {
-	nativeVal_t p = { 0 }, t = { 0 }, v = { 0 };
-	LvN_Str(&p, prefix);
-	Mode_Lang(key, &t);
-	Native_SetNone(&v);
-	byte ok = Native_Arith('+', &p, &t, &v) && Mode_VSet(e, var, &v);
-	Native_Free(&p);
-	Native_Free(&t);
-	Native_Free(&v);
-	return ok;
-}
-
 /* Scrap.Set(global, file); Scrap.SetDebrisSys(file, 1, 0, 0, 1, 0, 0, Fx.<fx>) with file the global of module, read
  * at each use as the script does */
 static byte Ob_SceneFx(const char *module, const char *global, const char *fx) {
@@ -359,7 +346,7 @@ static byte Decont_InitN(void) {
 		byte ok = Ob_Keypad("DM_Keypad_Decontamination", "Decontamination_keyboard", &kb) && LvN_ModGet("Init", "Path", &path) &&
 			Native_Arith('+', &path, &tail, &file) && Mode_VModel(&kb, &file) && LvN_SetI(&kb, "VRadius", 60) &&
 			LvN_SetI(&kb, "ArrowCanUse", 1) && LvN_SetI(&kb, "Life", 0) && LvN_SetI(&kb, "ArrnOpt", 0) &&
-			Ob_SetLangOpt(&kb, "ArrOpt0", "Decontamination:", "Mission_Decontamination_Hint1") &&
+			LvN_SetLangOpt(&kb, "ArrOpt0", "Decontamination:", "Mission_Decontamination_Hint1") &&
 			LvN_SetS(&kb, "UseFunc", "MapDecont.Decontamination") && LvN_SetI(&kb, "MapCollision", 1) &&
 			LV_OWN(MD, "LoadDecontamination", NULL, "") && Mode_EntSetS("DM_Door_OrbitDoorA_01", "OnObjSlot", "!FrontDoorSlot") &&
 			Mode_EntSetS("DM_Door_OrbitDoorA_02", "OnObjSlot", "!CloseDoorSlot") &&
@@ -563,7 +550,7 @@ static byte Decont_GateKeeperSpeechN(const nativeVal_t *usrName, const nativeVal
 		ok = Mode_Spch("Mission_Decontamination_GateKeeper_3Msg", "Mission_Decontamination_GateKeeper_3Ans", "TalkNoNPC") &&
 			LvN_SetI(ch, "ArriOpt", 3);
 	} else if (LvN_EqS(opt, "Mission_Decontamination_GateKeeper_4")) {
-		ok = Ob_SetLangOpt(ch, "ArrOpt3", "AllreadyOpen:", "Mission_Decontamination_GateKeeper_4Opt") &&
+		ok = LvN_SetLangOpt(ch, "ArrOpt3", "AllreadyOpen:", "Mission_Decontamination_GateKeeper_4Opt") &&
 			Mode_Spch("Mission_Decontamination_GateKeeper_4Msg", "Mission_Decontamination_GateKeeper_4Ans", "TalkNPC") &&
 			Ob_GateKeeperEnd() && Mode_VObj(gc, "CanPassFunc", fn) && Mode_SetModVar("GateKeeper", "LocalCallFunc", fn);
 		if (ok) {
@@ -1110,7 +1097,7 @@ static byte Decont_CreateDownKeyPadN(void) {
 	nativeVal_t kb = { 0 };
 	byte ok = Ob_Keypad("DM_Keypad_CineDown", "DownPanel_keyboard", &kb) && LvN_SetS(&kb, "ActCtrl", "FunctionaryDownPanel") &&
 		LvN_SetS(&kb, "Action", "Loop") && LvN_SetI(&kb, "VRadius", 60) && LvN_SetI(&kb, "ArrowCanUse", 1) &&
-		LvN_SetI(&kb, "Life", 0) && LvN_SetI(&kb, "ArrnOpt", 0) && Ob_SetLangOpt(&kb, "ArrOpt0", "GoDown:", "TownHallGoto") &&
+		LvN_SetI(&kb, "Life", 0) && LvN_SetI(&kb, "ArrnOpt", 0) && LvN_SetLangOpt(&kb, "ArrOpt0", "GoDown:", "TownHallGoto") &&
 		LvN_SetS(&kb, "UseFunc", "MapDecont.PlayFalling") && LvN_SetI(&kb, "MapCollision", 1);
 	if (ok) {
 		/* ArrowCanMission, ArrowModMission, then RadarShow as the script sets them */

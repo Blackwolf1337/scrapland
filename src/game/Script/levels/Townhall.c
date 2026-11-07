@@ -43,31 +43,6 @@ static void Th_TalkAnim(nativeVal_t *out) {
 	LvN_Str(out, s);
 }
 
-/* module.var.append(name) with name a global of gmod (a function; OBJLIB 5: the list of another module in place) */
-static byte Th_AppendG(const char *module, const char *var, const char *gmod, const char *name) {
-	PyObject *o = Script_Attr(module, var);
-	PyObject *fn = o ? Mode_GlobalPy(gmod, name) : NULL;
-	PyObject *r = fn ? Script_Method(o, "append", "(O)", fn) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(fn);
-	Py_XDECREF(o);
-	return r != NULL;
-}
-
-/* lst.append(x) of a value of the script (a list in C; another value the Python way, its error) */
-static byte Th_Append(nativeVal_t *lst, const nativeVal_t *x) {
-	if (lst->type == NV_LIST) {
-		Native_Copy(Native_Append(lst), x);
-		return 1;
-	}
-	PyObject *o = Native_ToPy(lst), *v = o ? Native_ToPy(x) : NULL;
-	PyObject *r = v ? Script_Method(o, "append", "(O)", v) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(v);
-	Py_XDECREF(o);
-	return r ? Native_Raise(NE_SYSTEM, "append of a value that is no list") : 0;
-}
-
 /* cmp(a, b) of the script: -1, 0 or 1, 2 with the error (only values of other types compared by Python can fail) */
 static int Th_Cmp(const nativeVal_t *a, const nativeVal_t *b) {
 	int c = Native_Compare(a, b);
@@ -290,7 +265,7 @@ static byte ThAm_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t d = { 0 };
 	(void)a;
 	(void)out;
-	if (!Mode_Import("CharsNPC") || !Th_AppendG("CharsNPC", "AfterBrowseNPC", AM, "AfterBrowseNPC")) {
+	if (!Mode_Import("CharsNPC") || !LvN_ModAppendG("CharsNPC", "AfterBrowseNPC", AM, "AfterBrowseNPC")) {
 		return 0;
 	}
 	LvN_Str(&d, "Desktop");
@@ -823,13 +798,13 @@ static byte ThCt_SpawnMap(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Mode_SaveInt("Mission_CatchTrurl_NumMapsDropped", dropped) || !LV_OWN(CT, "CreateMap", e, "vv", &a[1], dropped) ||
 		!LV_CALL("MissionsFuncs", "DelMissionTarget", NULL, "v", &a[0]) || !Th_Activate(&a[0], 0) ||
 		!LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 1L) || !LvN_ListRemove(data, &a[0]) ||
-		!Mode_VGet(e, "Name", en) || !Th_Append(data, en) || !Mode_VGet(e, "Name", pn) || !Mode_VGet(e, "Pos", pp)) {
+		!Mode_VGet(e, "Name", en) || !LvN_Append(data, en) || !Mode_VGet(e, "Name", pn) || !Mode_VGet(e, "Pos", pp)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_SetEmpty(pair, NV_TUPLE);
 	Native_Copy(Native_Append(pair), pn);
 	Native_Copy(Native_Append(pair), pp);
-	if (!Th_Append(maps, pair)) {
+	if (!LvN_Append(maps, pair)) {
 		return Mode_Done(&t, 0);
 	}
 	LvN_SaveRepr("Mission_CatchTrurl_Data", data);
@@ -1323,7 +1298,7 @@ PyMethodDef g_TownhallSheriffMayorMethods[] = {
 static byte ThTm_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Th_AppendG("CharsNPC", "AfterBrowseNPC", TM, "AfterBrowseNPC") && LvN_MissionChar("Bishop_Porkins", TM, "CreateBishopPorkins") &&
+	return LvN_ModAppendG("CharsNPC", "AfterBrowseNPC", TM, "AfterBrowseNPC") && LvN_MissionChar("Bishop_Porkins", TM, "CreateBishopPorkins") &&
 		LvN_MissionChar("Functionary_Tamayo", TM, "CreateFunctionaryTamayo");
 }
 

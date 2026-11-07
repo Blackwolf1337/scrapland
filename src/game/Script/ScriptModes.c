@@ -614,23 +614,28 @@ byte Mode_Schedule(const nativeVal_t *time, PyObject *func, const nativeVal_t *a
 	return ok;
 }
 
+byte Mode_LaterPy(double delay, PyObject *func, const nativeVal_t *args, int n, const char *name) {
+	nativeVal_t t, nm;
+	Native_SetFloat(&t, Mode_Time() + delay);
+	if (name) {
+		Native_SetText(&nm, name, (int)strlen(name));
+	}
+	byte ok = Mode_Schedule(&t, func, args, n, name ? &nm : NULL);
+	if (name) {
+		Native_Free(&nm);
+	}
+	return ok;
+}
+
 /* Mode_Later with the function of the module as its global (global 1) or as its attribute */
 static byte Mode_LaterBy(double delay, const char *module, const char *func, const nativeVal_t *args, int n, const char *name,
 	byte global) {
-	nativeVal_t t, nm;
 	/* OBJLIB 4: the function the scheduler keeps is the one of the module (a mission may have replaced it) */
 	PyObject *fn = global ? Script_Global(module, func) : Script_Attr(module, func);
 	if (!fn) {
 		return 0;
 	}
-	Native_SetFloat(&t, Mode_Time() + delay);
-	if (name) {
-		Native_SetText(&nm, name, (int)strlen(name));
-	}
-	byte ok = Mode_Schedule(&t, fn, args, n, name ? &nm : NULL);
-	if (name) {
-		Native_Free(&nm);
-	}
+	byte ok = Mode_LaterPy(delay, fn, args, n, name);
 	Py_DECREF(fn);
 	return ok;
 }

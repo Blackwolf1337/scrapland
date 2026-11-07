@@ -235,8 +235,13 @@ byte LvN_ModGet(const char *module, const char *var, nativeVal_t *out);
 byte LvN_ModSetGlobal(const char *module, const char *var, const char *src, const char *name);
 /* module.var = None */
 byte LvN_ModNone(const char *module, const char *var);
-/* module.var.append(v) of a list variable of another module, in place (the method of whatever value is there) */
+/* module.var.method(v) of a variable of another module, in place (the method of whatever value is there), and
+ * module.var.append(v) */
+byte LvN_ModMethod(const char *module, const char *var, const char *method, const nativeVal_t *v);
 byte LvN_ModAppend(const char *module, const char *var, const nativeVal_t *v);
+/* module.var.append(name) with name the global of gmod (a function): the variable, then the global, then the append
+ * method of whatever value is there (OBJLIB 5: the list of another module in place) */
+byte LvN_ModAppendG(const char *module, const char *var, const char *gmod, const char *name);
 /* the global name of module (a function, a list: any object) as a value */
 byte LvN_GObj(const char *module, const char *name, nativeVal_t *out);
 /* global name = name + add of the module; the new value into out (NULL: dropped) */
@@ -269,6 +274,8 @@ void LvN_Dummy(const char *pattern, int flag, nativeVal_t *dummy);
 byte LvN_DummyPosAng(const nativeVal_t *dummy, nativeVal_t *pos, nativeVal_t *ang);
 /* eval(Scrap.GetSaveVar(var)) in the globals of module */
 byte LvN_SaveList(const char *var, const char *module, nativeVal_t *out);
+/* lst.append(x) of a value of the script (a list in C; another value the Python way, its error) */
+byte LvN_Append(nativeVal_t *lst, const nativeVal_t *x);
 /* lst.append(item); Scrap.SetSaveVar(var, `lst`) */
 byte LvN_SaveAppend(const char *var, nativeVal_t *lst, const nativeVal_t *item);
 /* lst.remove(x) of a value (a list in C: the ValueError of 1.5.2 when x is not in it; another value the Python way,
@@ -372,6 +379,24 @@ byte LvN_MissionText(const nativeVal_t *id, const char *item, const char *type, 
 /* SLogic.SetOnFloor(name) and SSound.PlaySound(pos, name, volume) through their seams (fc-tp-map swaps them) */
 byte LvN_SetOnFloor(const nativeVal_t *name);
 byte LvN_PlaySound(const nativeVal_t *pos, const nativeVal_t *name, const nativeVal_t *volume);
+/* import Traffic; Scrap.SetSaveVar("Traffic.AcShips", ships); Traffic.AcShips = eval(Scrap.GetSaveVar(...)) in the
+ * globals of module */
+byte LvN_AcShips(const char *module, const char *ships);
+/* module.var = a list of texts (NULL ends them) of another module (OBJLIB 5) */
+byte LvN_ModTexts(const char *module, const char *var, const char *const *texts);
+/* h.var = (x, y, z) of three ints */
+byte LvN_SetInts3(const nativeVal_t *h, const char *var, long x, long y, long z);
+/* e.var = prefix + Scrap.GetLangStr(key) */
+byte LvN_SetLangOpt(const nativeVal_t *e, const char *var, const char *prefix, const char *key);
+/* MissionsFuncs.ActivateTarget(var, on) of a global var of the module (a handle) */
+byte LvN_GActivate(const char *module, const char *var, long on);
+/* Speech.SpeechRoutines[key] = fn */
+byte LvN_Routine(const char *key, const nativeVal_t *fn);
+/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func, args) with delay a value (the time added first, as the
+ * scripts do) and func the global of module (its NameError; OBJLIB 4) */
+byte LvN_LaterV(const nativeVal_t *delay, const char *module, const char *func, const nativeVal_t *args, int n);
+/* the same with delay a global of module too (read first) */
+byte LvN_LaterG(const char *module, const char *delay, const char *func, const nativeVal_t *args, int n);
 /* the parameters of the native helpers: an int, a text */
 void LvN_Int(nativeVal_t *v, long i);
 void LvN_Str(nativeVal_t *v, const char *s);

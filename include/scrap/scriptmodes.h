@@ -126,7 +126,9 @@ byte Mode_DelSchedS(const char *name);
 /* Scrap.AddScheduledFunc(time, func, args[, name]): func a Python callable (OBJLIB 4: the scheduler keeps Python
  * objects), args the tuple of the native values (n of them), name NULL for none */
 byte Mode_Schedule(const nativeVal_t *time, PyObject *func, const nativeVal_t *args, int n, const nativeVal_t *name);
-/* the same at Scrap.GetTime() + delay with func a global of the module (its NameError when it is gone) */
+/* the same at Scrap.GetTime() + delay (func not taken over, name NULL for none) */
+byte Mode_LaterPy(double delay, PyObject *func, const nativeVal_t *args, int n, const char *name);
+/* the same with func a global of the module (its NameError when it is gone) */
 byte Mode_Later(double delay, const char *module, const char *func, const nativeVal_t *args, int n, const char *name);
 /* the same with func the attribute of the module (Script_LaterIn of the ports) */
 byte Mode_LaterIn(double delay, const char *module, const char *func, const nativeVal_t *args, int n, const char *name);

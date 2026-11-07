@@ -81,28 +81,10 @@ static byte Sy_PutNone(const char *module, const char *name) {
 	return Mode_Put(module, name, NULL, &v);
 }
 
-/* module.var = [texts] of another module (OBJLIB 5) */
-static byte Sy_ModTexts(const char *module, const char *var, const char *const *texts) {
-	nativeVal_t v = { 0 };
-	Mode_Texts(&v, texts, -1);
-	byte ok = Mode_SetModVar(module, var, &v);
-	Native_Free(&v);
-	return ok;
-}
-
 /* h.var into *out where the script reads it (out None before) */
 static byte Sy_Get(const nativeVal_t *h, const char *var, nativeVal_t *out) {
 	Native_SetNone(out);
 	return Mode_VGet(h, var, out);
-}
-
-/* h.var = (x, y, z) of three ints */
-static byte Sy_SetInts3(const nativeVal_t *h, const char *var, long x, long y, long z) {
-	nativeVal_t v = { 0 };
-	Mode_Ints3(&v, x, y, z);
-	byte ok = Mode_VSet(h, var, &v);
-	Native_Free(&v);
-	return ok;
 }
 
 /* MissionsFuncs.SetMissionTarget(v), with None, with h.Name (OBJLIB 3) */
@@ -132,13 +114,8 @@ static byte Sy_OnDeath(const nativeVal_t *looser, const nativeVal_t *winner) {
 
 /* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, fn, ()) of a callable (a bound method; OBJLIB 4); fn is taken over */
 static byte Sy_LaterPy(double delay, PyObject *fn) {
-	nativeVal_t t = { 0 };
-	if (!fn) {
-		return 0;
-	}
-	Native_SetFloat(&t, Mode_Time() + delay);
-	byte ok = Mode_Schedule(&t, fn, NULL, 0, NULL);
-	Py_DECREF(fn);
+	byte ok = fn && Mode_LaterPy(delay, fn, NULL, 0, NULL);
+	Py_XDECREF(fn);
 	return ok;
 }
 
@@ -300,18 +277,6 @@ static byte Sy_SpawnCar(const char *name, byte nearest, nativeVal_t *out) {
 	return ok;
 }
 
-/* Scrap.SetSaveVar("Traffic.AcShips", ships); Traffic.AcShips = eval(Scrap.GetSaveVar("Traffic.AcShips")) (Lv_AcShips) */
-static byte Sy_AcShips(const char *module, const char *ships) {
-	nativeVal_t v = { 0 };
-	if (!Mode_Import("Traffic")) {
-		return 0;
-	}
-	SaveVar_Set("Traffic.AcShips", ships);
-	byte ok = LvN_SaveList("Traffic.AcShips", module, &v) && Mode_SetModVar("Traffic", "AcShips", &v);
-	Native_Free(&v);
-	return ok;
-}
-
 /* pc.UseFunc = "PhoneCab.DefUseAudioCom" with pc the global of module (Lv_PcDefault) */
 static byte Sy_PcDefault(const char *module) {
 	return Mode_GSetS(module, "pc", "UseFunc", "PhoneCab.DefUseAudioCom");
@@ -374,9 +339,9 @@ static byte Sy_BossTraffic(byte comSats) {
 		!Mode_GVarSetI("iTrafficNumber", 5) || !Mode_GVarSetI("MaxChasingShips", 5)) {
 		return 0;
 	}
-	return Sy_ModTexts("Traffic", "AcNormalShips", none) && LvN_ModSetI("Traffic", "NumNormal", 0) &&
-		Sy_ModTexts("Traffic", "AcMediumShips", none) && LvN_ModSetI("Traffic", "NumMedium", 0) &&
-		Sy_ModTexts("Traffic", "AcHeavyShips", none) && LvN_ModSetI("Traffic", "NumHeavy", 0);
+	return LvN_ModTexts("Traffic", "AcNormalShips", none) && LvN_ModSetI("Traffic", "NumNormal", 0) &&
+		LvN_ModTexts("Traffic", "AcMediumShips", none) && LvN_ModSetI("Traffic", "NumMedium", 0) &&
+		LvN_ModTexts("Traffic", "AcHeavyShips", none) && LvN_ModSetI("Traffic", "NumHeavy", 0);
 }
 
 /* raise v of the script after import module (Lv_RaiseValue, the do_raise of ceval without value and traceback): a
@@ -478,9 +443,9 @@ static byte Map_InitStatusN(void) {
 		if (!Sy_BossTraffic(0)) {
 			return 0;
 		}
-	} else if (!Mode_GVarSetI("iTrafficNumber", 4) || !Mode_GVarSetI("MaxChasingShips", -1) || !Sy_ModTexts("Traffic", "AcNormalShips", normal) ||
-		!LvN_ModSetI("Traffic", "NumNormal", 10) || !Sy_ModTexts("Traffic", "AcMediumShips", medium) || !LvN_ModSetI("Traffic", "NumMedium", 20) ||
-		!Sy_ModTexts("Traffic", "AcHeavyShips", heavy) || !LvN_ModSetI("Traffic", "NumHeavy", 10)) {
+	} else if (!Mode_GVarSetI("iTrafficNumber", 4) || !Mode_GVarSetI("MaxChasingShips", -1) || !LvN_ModTexts("Traffic", "AcNormalShips", normal) ||
+		!LvN_ModSetI("Traffic", "NumNormal", 10) || !LvN_ModTexts("Traffic", "AcMediumShips", medium) || !LvN_ModSetI("Traffic", "NumMedium", 20) ||
+		!LvN_ModTexts("Traffic", "AcHeavyShips", heavy) || !LvN_ModSetI("Traffic", "NumHeavy", 10)) {
 		return 0;
 	}
 	return LV_CALL("Elevator", "SetDef", NULL, "ss", "Metro", "DM_Door_MetroExt_ScrapYard") &&
@@ -739,8 +704,8 @@ static const char *const am_madhunters_profile[] = { "Ship=MadHunt", "StupidPath
 static byte Ambush_InitStatusN(void) {
 	static const char *const probe[] = { "TProbe", NULL };
 	return Mode_Import("VehiclesNPC") && Mode_Import("Traffic") && Mode_Import("MapTriggers") &&
-		Sy_ModTexts("Traffic", "AcHeavyShips", probe) && LvN_ModSetI("Traffic", "NumHeavy", 0) &&
-		LvN_ModSetI("MapTriggers", "WithScrapyardInhabitants", 0) && Sy_AcShips(AM, ac_ships_std);
+		LvN_ModTexts("Traffic", "AcHeavyShips", probe) && LvN_ModSetI("Traffic", "NumHeavy", 0) &&
+		LvN_ModSetI("MapTriggers", "WithScrapyardInhabitants", 0) && LvN_AcShips(AM, ac_ships_std);
 }
 
 /* Init(LevelPath): the state of the save variable NumProbes: call Traitorius (-1), Deep Throat (-2), or the ambush */
@@ -815,7 +780,7 @@ static byte Ambush_CreateProbeN(void) {
 	const nativeVal_t *items[1] = { name };
 	byte ok = LV_CALL("Traffic", "SetPath", NULL, "") && LV_CALL("VehiclesNPC", "MakeAI", p, "ssii", "TProbe", "ProbeMos", 0L, 0L) &&
 		LV_CALL("Traffic", "ResetPath", NULL, "") && LvN_SetS(p, "OnDeath", "Mission_Ambush.OnProbeDeath") &&
-		Mode_VSet(p, "MovePos", pos) && Mode_VSet(p, "Pos", pos) && Sy_SetInts3(p, "MoveAng", 0, 0, 0) && Sy_SetInts3(p, "Ang", 0, 0, 0) &&
+		Mode_VSet(p, "MovePos", pos) && Mode_VSet(p, "Pos", pos) && LvN_SetInts3(p, "MoveAng", 0, 0, 0) && LvN_SetInts3(p, "Ang", 0, 0, 0) &&
 		LvN_SetF(p, "MoveTime", 0.1) && Mode_G(AM, "PROBE_LIFE", life) && Mode_VSet(p, "Life", life) && Mode_VSet(p, "MaxLife", life) &&
 		Mode_VSet(p, "MinLife", life) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", p, 1L) && Mode_VGet(p, "Name", name) &&
 		Mode_Print(items, 1);
@@ -953,7 +918,7 @@ static const char *const cg_mosquito_profile[] = { "Ship=SMOSQUITO", "CadenceSho
 	"FactorDamageItemLife=0.25", "FactorItemAmmo=0.25", "TimeMaxStrafe=2", "VelMaxStrafe=0.25", NULL };
 
 static byte Gambler_InitStatusN(void) {
-	return Mode_Import("MapTriggers") && LvN_ModSetI("MapTriggers", "WithScrapyardInhabitants", 0) && Sy_AcShips(CG, ac_ships_all);
+	return Mode_Import("MapTriggers") && LvN_ModSetI("MapTriggers", "WithScrapyardInhabitants", 0) && LvN_AcShips(CG, ac_ships_all);
 }
 
 /* int(Scrap.GetSaveVar("NumCrazyGamblerLifes")) == CrazyGamblerLifesNextMission of a number: 1, 0, -1 */
@@ -1152,7 +1117,7 @@ static byte Dtritus_SetLonelyMercProfileN(nativeVal_t *out) {
 }
 
 static byte Dtritus_InitStatusN(void) {
-	if (!Sy_AcShips(FD, ac_ships_std)) {
+	if (!LvN_AcShips(FD, ac_ships_std)) {
 		return 0;
 	}
 	SaveVar_Set("LonelyMercLairActive", "0");
@@ -1234,7 +1199,7 @@ static byte Dtritus_CreateLonelyMercShipN(void) {
 		LV_CALL("Parking", "CreateParkedShip", ship, "vis", ppos, 0L, "LonelyMerc") &&
 		LvN_SetS(ship, "OnDeath", "Mission_FindDtritusMatrix.OnLonelyMercShipDeath") && LvN_SetI(ship, "Invulnerable", 1) &&
 		Mode_VGet(ship, "Name", name) && Mode_Put(FD, "lonelyMercShipName", NULL, name) && Mode_VGet(ship, "CamTgt", cam) &&
-		Mode_Put(FD, "prevLonelyMercShipCameraPos", NULL, cam) && Sy_SetInts3(ship, "CamTgt", 0, 400, 0);
+		Mode_Put(FD, "prevLonelyMercShipCameraPos", NULL, cam) && LvN_SetInts3(ship, "CamTgt", 0, 400, 0);
 	if (ok) {
 		Native_Free(name);
 		ok = Mode_G(FD, "lonelyMercShipName", name) && Sy_Target(name) && LV_OWN(FD, "CheckLonelyMercShipExist", NULL, "");
@@ -1364,7 +1329,7 @@ static byte Dtritus_OutOfLonelyMercShipN(void) {
 		/* a local of the script (no global statement): the camera of the ship is read and dropped */
 		Native_Free(sn);
 		byte ok = LV_OWN(FD, "ActivateMissionObjects", NULL, "i", 0L) && Mode_VGet(ship, "CamTgt", cam) &&
-			Sy_SetInts3(ship, "CamTgt", 0, 400, 0) && Mode_G(FD, "lonelyMercShipName", sn) && Sy_Target(sn);
+			LvN_SetInts3(ship, "CamTgt", 0, 400, 0) && Mode_G(FD, "lonelyMercShipName", sn) && Sy_Target(sn);
 		return Mode_Done(&t, ok);
 	}
 	if (far == 0) {
@@ -1533,7 +1498,7 @@ static byte Dtritus_CreateDtritusMatrixN(void) {
 		LvN_SetI(m, "AutoFace", 0) && LvN_SetI(m, "OnlyUser", 1) && LvN_SetF(m, "rTime", 0.25) &&
 		LvN_SetS(m, "OnTake", "Mission_FindDtritusMatrix.TakeMatrix") && LvN_SetI(m, "Active", 0) &&
 		LvN_CreateAt(aname, pos, "WithLife", arrow) && Mode_Put(FD, "dtritusMatrixArrow", NULL, arrow) &&
-		Sy_SetInts3(arrow, "CamTgt", 0, 150, 0) && LvN_SetI(arrow, "Active", 0);
+		LvN_SetInts3(arrow, "CamTgt", 0, 150, 0) && LvN_SetI(arrow, "Active", 0);
 	return Mode_Done(&t, ok);
 }
 
@@ -1691,7 +1656,7 @@ static byte Throat_SetNextMissionN(void) {
 	return Sy_PcDefault(TD) && LvN_Next("Mission_DestroyBadDebtors", "Outskirts", "Mission_MeetBankMaster_MissionText1") && Mode_WayPoint();
 }
 
-MODE_FN(Berto, InitStatus, 1, Sy_AcShips(MB, "[\"SMerc1\",\"SMerc2\",\"SBanker1\",\"SBishop1\",\"SFunc1\",\"SBetty1\",\"SArchbishop1\"]"))
+MODE_FN(Berto, InitStatus, 1, LvN_AcShips(MB, "[\"SMerc1\",\"SMerc2\",\"SBanker1\",\"SBishop1\",\"SFunc1\",\"SBetty1\",\"SArchbishop1\"]"))
 MODE_FN(Berto, Init, 1, Sy_PhoneInitN(MB, "Mission_MeetBerto.UsePhoneCab", 1))
 MODE_FN(Berto, UsePhoneCab, 4, Sy_UsePhone(a, MB, &mb_phone))
 MODE_FN(Berto, SetNextMission, 0, Berto_SetNextMissionN())
@@ -1704,7 +1669,7 @@ PyMethodDef g_ScrapyardMeetBertoMethods[] = {
 	{ NULL, NULL, 0, NULL },
 };
 
-MODE_FN(Throat, InitStatus, 1, Sy_AcShips(TD, "[\"SPoliBoss1\", \"SMerc1\",\"SMerc2\",\"SMerc3\",\"SLMerc\",\"SMayor1\",\"SBanker1\",\"SBishop1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\",\"SBankMaster1\",\"SArchbishop1\"]"))
+MODE_FN(Throat, InitStatus, 1, LvN_AcShips(TD, "[\"SPoliBoss1\", \"SMerc1\",\"SMerc2\",\"SMerc3\",\"SLMerc\",\"SMayor1\",\"SBanker1\",\"SBishop1\",\"SFunc1\",\"SBerto1\",\"SHump1\",\"SBetty1\",\"SBankMaster1\",\"SArchbishop1\"]"))
 MODE_FN(Throat, Init, 1, Sy_PhoneInitN(TD, "Mission_TalkToDeepThroat.UsePhoneCab", 0))
 MODE_FN(Throat, UsePhoneCab, 4, Sy_UsePhone(a, TD, &td_phone))
 MODE_FN(Throat, SetNextMission, 0, Throat_SetNextMissionN())
@@ -1727,8 +1692,8 @@ static const char *const mc_mosquito_profile[] = { "Ship=SMOSQUITO", "ControlBra
 static byte Clue_InitStatusN(void) {
 	static const char *const mosquito[] = { "SMosquito", NULL };
 	return Mode_Import("MapTriggers") && LvN_ModSetI("Traffic", "NumNormal", 5) && LvN_ModSetI("Traffic", "NumMedium", 5) &&
-		LvN_ModSetI("Traffic", "NumHeavy", 5) && Mode_GVarSetI("iTrafficNumber", 0) && Sy_ModTexts("Traffic", "AcShips", mosquito) &&
-		LvN_ModSetI("MapTriggers", "WithScrapyardInhabitants", 0) && Sy_AcShips(MC, ac_ships_std);
+		LvN_ModSetI("Traffic", "NumHeavy", 5) && Mode_GVarSetI("iTrafficNumber", 0) && LvN_ModTexts("Traffic", "AcShips", mosquito) &&
+		LvN_ModSetI("MapTriggers", "WithScrapyardInhabitants", 0) && LvN_AcShips(MC, ac_ships_std);
 }
 
 /* Init(LevelPath): the swarm (the lairs from their dummies, the police boss' message the first time) or the call */
@@ -1782,7 +1747,7 @@ static byte Clue_InitSwarmN(void) {
 	nativeVal_t *n = Mode_V(&t), *lairs = Mode_V(&t), *pos = Mode_V(&t), *arrow = Mode_V(&t), *g = Mode_V(&t), *l = Mode_V(&t);
 	byte ok = Mode_SaveInt("Mission_MosquitoClue.NumLairsExplored", n) && Mode_G(MC, "lairsList", lairs) && Native_Subscript(lairs, n, pos) &&
 		Mc_Create("MosquitosLauncherCheckArrow", pos, "WithLife", arrow) && Mode_Put(MC, "checkArrow", NULL, arrow) &&
-		Mode_G(MC, "checkArrow", g) && Sy_SetInts3(g, "CamTgt", 0, 500, 0) && Mc_Create("MosquitosLauncher", pos, "Item", l) &&
+		Mode_G(MC, "checkArrow", g) && LvN_SetInts3(g, "CamTgt", 0, 500, 0) && Mc_Create("MosquitosLauncher", pos, "Item", l) &&
 		LvN_SetI(l, "Radius", 20000) && LvN_SetS(l, "OnTake", "Mission_MosquitoClue.InitMosquito") && LvN_SetI(l, "OnlyUser", 1) &&
 		Sy_TargetG(MC, "checkArrow");
 	return Mode_Done(&t, ok);
@@ -1878,7 +1843,7 @@ static byte Clue_MosquitoDeathN(const nativeVal_t *a) {
 			LvN_SetI(l, "AutoFace", 0) && LvN_SetI(l, "OnlyUser", 1) && LvN_SetF(l, "rTime", 0.25) &&
 			LvN_SetS(l, "OnTake", "Mission_MosquitoClue.TakeDataPack") && Mode_Import("Items") &&
 			LV_CALL("Items", "SetSound", NULL, "vs", l, "TakeBDataPack") && Mc_Create("MissionCheckArrow", pos, "WithLife", l2) &&
-			Sy_SetInts3(l2, "CamTgt", 0, 1000, 0) && Sy_TargetName(l2) && LvN_Com("Mission_Get1stClue_RemoteMessage4", "PoliceBoss", NULL, NULL, NULL);
+			LvN_SetInts3(l2, "CamTgt", 0, 1000, 0) && Sy_TargetName(l2) && LvN_Com("Mission_Get1stClue_RemoteMessage4", "PoliceBoss", NULL, NULL, NULL);
 		return Mode_Done(&t, ok);
 	}
 	if (third < 0) {
@@ -2107,7 +2072,7 @@ static const char *const sm_mosquito_profile[] = { "CadenceShootCM=7", "UsePercS
 
 /* InitStatus(LevelPath) of the two: no mercenaries in the traffic (the first mission: the lairs launch from farther) */
 static byte Sy_MercStatusN(const char *module, byte farther) {
-	return Mode_Import("VehiclesNPC") && LvN_ModSetI("VehiclesNPC", "UseMercs", 0) && Sy_AcShips(module, ac_ships_std) &&
+	return Mode_Import("VehiclesNPC") && LvN_ModSetI("VehiclesNPC", "UseMercs", 0) && LvN_AcShips(module, ac_ships_std) &&
 		(!farther || (Mode_GVarSetN("MaxMosquitosDist", 60000.0) && Mode_GVarSetN("MaxMadHuntersDist", 90000.0)));
 }
 

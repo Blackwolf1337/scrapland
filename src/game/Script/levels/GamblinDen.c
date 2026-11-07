@@ -78,28 +78,6 @@ static byte Gd_ResDel(const char *name) {
 	return ok;
 }
 
-/* module.var.method(v) of a variable of another module, the method of whatever value is there (OBJLIB 5) */
-static byte Gd_ModMethod(const char *module, const char *var, const char *method, const nativeVal_t *v) {
-	PyObject *o = Script_Attr(module, var);
-	PyObject *x = o ? Native_ToPy(v) : NULL;
-	PyObject *r = x ? Script_Method(o, method, "(O)", x) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(x);
-	Py_XDECREF(o);
-	return r != NULL;
-}
-
-/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func, args) with delay a value (the time added first, as the script
- * does) and func the global of module (OBJLIB 4) */
-static byte Gd_LaterV(const nativeVal_t *delay, const char *module, const char *func, const nativeVal_t *args, int n) {
-	nativeVal_t now = { 0 }, t = { 0 };
-	Native_SetFloat(&now, Mode_Time());
-	Native_SetNone(&t);
-	byte ok = Native_Arith('+', &now, delay, &t) && Mode_AtG(&t, module, func, args, n);
-	Native_Free(&t);
-	return ok;
-}
-
 /* the arguments of a keyword function (PyArg_ParseTupleAndKeywords of fmt, "O|O" or "|O", with the Python names): the
  * objects as values into a, a missing one None with given 0 */
 static byte Gd_Kw(PyObject *args, PyObject *kw, const char *fmt, char **names, nativeVal_t *a, byte *given) {
@@ -372,27 +350,10 @@ static byte Gd_GTarget(const char *module, const char *var) {
 	return ok;
 }
 
-/* MissionsFuncs.ActivateTarget(var, on) of a global var of the module */
-static byte Gd_GActivate(const char *module, const char *var, long on) {
-	nativeVal_t h = { 0 };
-	byte ok = Mode_G(module, var, &h) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &h, on);
-	Native_Free(&h);
-	return ok;
-}
-
-/* Speech.SpeechRoutines["CrazyGambler"] = fn (the value first, as the script) */
-static byte Gd_Routine(const nativeVal_t *fn) {
-	nativeVal_t k = { 0 };
-	LvN_Str(&k, "CrazyGambler");
-	byte ok = Mode_ModDictPut("Speech", "SpeechRoutines", &k, fn);
-	Native_Free(&k);
-	return ok;
-}
-
 /* Speech.SpeechRoutines["CrazyGambler"] = the global func of module */
 static byte Gd_RoutineG(const char *module, const char *func) {
 	nativeVal_t fn = { 0 };
-	byte ok = LvN_GObj(module, func, &fn) && Gd_Routine(&fn);
+	byte ok = LvN_GObj(module, func, &fn) && LvN_Routine("CrazyGambler", &fn);
 	Native_Free(&fn);
 	return ok;
 }
@@ -409,7 +370,7 @@ static byte Den_NotAvailable(const char *name) {
 	nativeVal_t vl = { 0 }, av = { 0 };
 	LvN_Str(&vl, name);
 	int in = LvN_ModGet("CharConversor", "AvailableChars", &av) ? Native_Contains(&av, &vl) : -1;
-	byte ok = in >= 0 && (!in || Gd_ModMethod("CharConversor", "AvailableChars", "remove", &vl));
+	byte ok = in >= 0 && (!in || LvN_ModMethod("CharConversor", "AvailableChars", "remove", &vl));
 	Native_Free(&vl);
 	Native_Free(&av);
 	return ok;
@@ -892,7 +853,7 @@ static byte Den_MercDrinkC(const nativeVal_t *merc, const nativeVal_t *ctr0) {
 	}
 	args[0] = *merc;
 	args[1] = *ctr;
-	return Mode_Done(&t, Gd_LaterV(delay, "Map", "MercDrink", args, 2));
+	return Mode_Done(&t, LvN_LaterV(delay, "Map", "MercDrink", args, 2));
 }
 
 static PyObject *Den_MercDrink(PyObject *self, PyObject *args, PyObject *kw) {
@@ -986,7 +947,7 @@ static byte Den_CharDanceC(const nativeVal_t *a, nativeVal_t *out) {
 	} else if (!LV_OWN("Map", "CharUsrAct", NULL, "vs", &a[0], "Dance")) {
 		return Mode_Done(&t, 0);
 	}
-	return Mode_Done(&t, Den_Rand(Mode_I(&t, 5), Mode_I(&t, 10), delay) && Gd_LaterV(delay, "Map", "CharDance", &a[0], 1));
+	return Mode_Done(&t, Den_Rand(Mode_I(&t, 5), Mode_I(&t, 10), delay) && LvN_LaterV(delay, "Map", "CharDance", &a[0], 1));
 }
 
 /* MercenarySpeech(UsrName, CharName, optId, FullOption): hire a mercenary for three lives */
@@ -1576,13 +1537,13 @@ static byte Bankers_LaunchDeepThroatMessageC(const nativeVal_t *a, nativeVal_t *
 static byte Bankers_TalkToDeepThroatC(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Mode_Import("DTritusDesktop") && Gd_GActivate(BK, "dd", 1) && Mode_WayPoint() && Mode_MMDesc("Mission_CallDeepThroat2_MissionText1", 1) &&
+	return Mode_Import("DTritusDesktop") && LvN_GActivate(BK, "dd", 1) && Mode_WayPoint() && Mode_MMDesc("Mission_CallDeepThroat2_MissionText1", 1) &&
 		Gd_Dialog(BK, "DeepThroatSpeech");
 }
 
 static byte Bankers_DeepThroatSpeechC(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
-	if (!Gd_GActivate(BK, "dd", 0) || !LvN_Speakers(&a[0], &a[1]) || !LvN_OnEnd(BK, "TalkToPoliceBoss", NULL)) {
+	if (!LvN_GActivate(BK, "dd", 0) || !LvN_Speakers(&a[0], &a[1]) || !LvN_OnEnd(BK, "TalkToPoliceBoss", NULL)) {
 		return 0;
 	}
 	SaveVar_Set("Mission_ArrangeBankersCombat", "Police");
@@ -1701,7 +1662,7 @@ static byte First_CrazyGamblerSpeechC(const nativeVal_t *a, nativeVal_t *out) {
 	if (!LvN_EqS(&a[2], "Talk")) {
 		return 1;
 	}
-	byte ok = LvN_ModGet("CrazyGambler", "CrazyGamblerSpeech", &fn) && Gd_Routine(&fn);
+	byte ok = LvN_ModGet("CrazyGambler", "CrazyGamblerSpeech", &fn) && LvN_Routine("CrazyGambler", &fn);
 	Native_Free(&fn);
 	if (!ok) {
 		return 0;
@@ -1787,7 +1748,7 @@ static const gdMerc_t first_mercB = { "Mission_IgorFirstContact", "Mission_GetMe
 static byte First_SetNextMissionC(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Mode_WayPoint() && Gd_GActivate(IF, "mercA", 0) && Gd_GActivate(IF, "mercB", 0) && Gd_GActivate(IF, "mercC", 0) &&
+	return Mode_WayPoint() && LvN_GActivate(IF, "mercA", 0) && LvN_GActivate(IF, "mercB", 0) && LvN_GActivate(IF, "mercC", 0) &&
 		LvN_Next("Mission_StupidMercAgain", "Scrapyard", "Mission_GetMercShipPlans_MissionText2");
 }
 
@@ -2203,7 +2164,7 @@ static byte Back_DeepThroatSpeechC(const nativeVal_t *a, nativeVal_t *out) {
 static byte Back_SetNextMissionC(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	return Mode_Import("DTritusDesktop") && LvN_ModNone("DTritusDesktop", "DialogController") && Gd_GActivate(BM, "dd", 0) && Mode_WayPoint() &&
+	return Mode_Import("DTritusDesktop") && LvN_ModNone("DTritusDesktop", "DialogController") && LvN_GActivate(BM, "dd", 0) && Mode_WayPoint() &&
 		LvN_Next("Mission_DestroyBadDebtors", "Outskirts", "Mission_MeetBankMaster_MissionText1");
 }
 
@@ -2281,7 +2242,7 @@ static byte Meet_CrazyGamblerFirstSpeechC(const nativeVal_t *a, nativeVal_t *out
 
 /* EndOfTalk(char=None): his second talk from now on, the elevator back, the next mission */
 static byte Meet_EndOfTalkC(void) {
-	return Mode_Import("CrazyGambler") && Gd_RoutineG(CF, "CrazyGamblerSecondSpeech") && Gd_GActivate(CF, "cg", 0) && Mode_WayPoint() &&
+	return Mode_Import("CrazyGambler") && Gd_RoutineG(CF, "CrazyGamblerSecondSpeech") && LvN_GActivate(CF, "cg", 0) && Mode_WayPoint() &&
 		Mode_EntSetI("DM_Door_Elevator_Outskirts", "ArrowCanUse", 1) && LV_OWN(CF, "SetNextMission", NULL, "");
 }
 
@@ -2415,7 +2376,7 @@ static byte Mortal_InitC(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	return Gd_PutEnt(AM, "cg", "CrazyGambler_Default") && Mode_GSetS(AM, "cg", "UseFunc", "Mission_ArrangeMortalRace.CrazyGamblerSpeech") &&
-		Gd_GActivate(AM, "cg", 1);
+		LvN_GActivate(AM, "cg", 1);
 }
 
 LV_FN(Mortal, InitStatus, 1, Mortal_InitStatusC)

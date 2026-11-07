@@ -93,25 +93,6 @@ static byte Ab_Com(const char *key, const char *who) {
 	return LvN_Com(key, who, NULL, NULL, NULL);
 }
 
-/* Scrap.AddScheduledFunc(Scrap.GetTime() + delay, func, (args)) with func a global of the module and delay a global
- * too (delay NULL: d) */
-static byte Ab_LaterG(const char *module, const char *delay, double d, const char *func, const nativeVal_t *args, int n) {
-	modeVals_t t = { .n = 0 };
-	nativeVal_t *now = Mode_V(&t), *dv = Mode_V(&t), *at = Mode_V(&t);
-	Native_SetFloat(now, Mode_Time());
-	if (delay) {
-		if (!Mode_G(module, delay, dv)) {
-			return Mode_Done(&t, 0);
-		}
-	} else {
-		Native_SetFloat(dv, d);
-	}
-	PyObject *fn = Mode_Arith('+', now, dv, at) ? Mode_GlobalPy(module, func) : NULL;
-	byte ok = fn && Mode_Schedule(at, fn, args, n, NULL);
-	Py_XDECREF(fn);
-	return Mode_Done(&t, ok);
-}
-
 /* ---- MapFinalFight ---- */
 
 /* GetBossProfile(): the AI profile of the boss ship */
@@ -842,7 +823,7 @@ static byte AbMap_OnDeath(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetFloat(&step, 0.05);
 	byte ok;
 	if (!Native_Compare(now, last)) {
-		ok = Ab_LaterG(MAP, "ctrTimer", 0, "RealOnDeath", a, 2) && Mode_G(MAP, "ctrTimer", timer) &&
+		ok = LvN_LaterG(MAP, "ctrTimer", "RealOnDeath", a, 2) && Mode_G(MAP, "ctrTimer", timer) &&
 			Mode_Arith('+', timer, &step, sum) && Mode_Put(MAP, "ctrTimer", NULL, sum);
 	} else {
 		ok = Mode_Put(MAP, "LastTime", NULL, now) && LV_OWN(MAP, "RealOnDeath", NULL, "vv", &a[0], &a[1]) &&

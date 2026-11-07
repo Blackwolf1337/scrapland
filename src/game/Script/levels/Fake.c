@@ -110,18 +110,6 @@ static const char *const fake2_scene[] = {
 
 /* ---- shared lines ---- */
 
-/* module.var = a list of texts (NULL ends them) */
-static byte Fk_ModList(const char *module, const char *var, const char *const *texts) {
-	nativeVal_t v;
-	Native_SetEmpty(&v, NV_LIST);
-	for (; *texts; texts++) {
-		LvN_Str(Native_Append(&v), *texts);
-	}
-	byte ok = Mode_SetModVar(module, var, &v);
-	Native_Free(&v);
-	return ok;
-}
-
 /* cam = Scrap.GetEntity(Scrap.GetCam(0)); cam.clipNear = near; cam.clipFar = far (nearFirst: in this order, else
  * the other way round) */
 static byte Fk_Clip(const nativeVal_t *nearV, const nativeVal_t *farV, byte nearFirst) {
@@ -165,9 +153,9 @@ static byte Fk_Init(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	LvN_Str(&path, "Models/Vehicles/OutTraffic/");
-	byte ok = Mode_Import("InTraffic") && Fk_ModList("InTraffic", "N_TrafficList", light) && LvN_ModSetI("InTraffic", "N_NumTraffic", 0) &&
-		Fk_ModList("InTraffic", "M_TrafficList", med) && LvN_ModSetI("InTraffic", "M_NumTraffic", 0) &&
-		Fk_ModList("InTraffic", "H_TrafficList", none) && LvN_ModSetI("InTraffic", "H_NumTraffic", 0) &&
+	byte ok = Mode_Import("InTraffic") && LvN_ModTexts("InTraffic", "N_TrafficList", light) && LvN_ModSetI("InTraffic", "N_NumTraffic", 0) &&
+		LvN_ModTexts("InTraffic", "M_TrafficList", med) && LvN_ModSetI("InTraffic", "M_NumTraffic", 0) &&
+		LvN_ModTexts("InTraffic", "H_TrafficList", none) && LvN_ModSetI("InTraffic", "H_NumTraffic", 0) &&
 		Mode_SetModVar("InTraffic", "Path", &path) && LV_CALL("InTraffic", "LoadFakeTraffic", NULL, "") &&
 		LV_OWN(MAP, "CreateFakeBertoShip", NULL, "") && Mode_Import("Scene");
 	Native_Free(&path);

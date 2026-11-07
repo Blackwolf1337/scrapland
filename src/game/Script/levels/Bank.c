@@ -57,15 +57,6 @@ static void Ba_List(nativeVal_t *out, const char *a, const char *b) {
 	}
 }
 
-/* module.var.method(v) of a list variable of another module, in place (the method of whatever value is there) */
-static byte Ba_ModMethod(const char *module, const char *var, const char *method, const char *v) {
-	PyObject *o = Script_Attr(module, var);
-	PyObject *r = o ? Script_Method(o, method, "(s)", v) : NULL;
-	Py_XDECREF(r);
-	Py_XDECREF(o);
-	return r != NULL;
-}
-
 /* del name of a global of the module (the NameError of a missing one) */
 static byte Ba_DelGlobal(const char *module, const char *name) {
 	PyObject *m = PyImport_ImportModule((char *)module);
@@ -1537,7 +1528,7 @@ static byte InfiltrateBank_Init(void) {
 		LvN_ModGet("CharConversor", "AvailableChars", &list);
 	int in = ok ? Native_Contains(&list, &bm) : -1;
 	Native_SetInt(&one, 1);
-	ok = in >= 0 && (in == 0 || Ba_ModMethod("CharConversor", "AvailableChars", "remove", "BankMaster")) &&
+	ok = in >= 0 && (in == 0 || LvN_ModMethod("CharConversor", "AvailableChars", "remove", &bm)) &&
 		LvN_ModSetGlobal("CharConversor", "OnPossession", IB, "OnPossession") &&
 		LvN_ModSetGlobal("CharConversor", "afterExitConversor", IB, "ShowDeepThroatMessage") &&
 		LV_CALL("MissionsFuncs", "SetMissionTarget", NULL, "s", "GateKeeper_BankMasterRoom") && LvN_GetClass("BankMaster", &r) &&

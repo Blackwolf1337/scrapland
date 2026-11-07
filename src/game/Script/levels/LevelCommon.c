@@ -113,8 +113,6 @@ PyObject *Lv_Dummy(scriptFrame_t *f, const char *pattern, int flag) {
 	return Sf_Ask(f, "Scrap", "NextDummySearch", "()");
 }
 
-static byte LvN_AcShips(const char *module, const char *ships);
-
 byte Lv_AcShips(scriptFrame_t *f, const char *module, const char *ships) {
 	return !f->failed && Sf_Check(f, LvN_AcShips(module, ships));
 }
@@ -461,8 +459,7 @@ PyObject *Lv_PlanesPhoto(PyObject *args, const char *module, const char *ships, 
 	LV_WHOLE(1, Lv_PhotoCore(&a[0], module, ships, engines, out));
 }
 
-/* import Traffic; Scrap.SetSaveVar("Traffic.AcShips", ships); Traffic.AcShips = eval(Scrap.GetSaveVar(...)) */
-static byte LvN_AcShips(const char *module, const char *ships) {
+byte LvN_AcShips(const char *module, const char *ships) {
 	nativeVal_t v;
 	if (!Mode_Import("Traffic")) {
 		return 0;
@@ -1090,12 +1087,26 @@ byte LvN_ModNone(const char *module, const char *var) {
 	return Mode_SetModPy(module, var, Py_None);
 }
 
-byte LvN_ModAppend(const char *module, const char *var, const nativeVal_t *v) {
+byte LvN_ModMethod(const char *module, const char *var, const char *method, const nativeVal_t *v) {
 	PyObject *o = Script_Attr(module, var);
 	PyObject *x = o ? Native_ToPy(v) : NULL;
-	PyObject *r = x ? Script_Method(o, "append", "(O)", x) : NULL;
+	PyObject *r = x ? Script_Method(o, method, "(O)", x) : NULL;
 	Py_XDECREF(r);
 	Py_XDECREF(x);
+	Py_XDECREF(o);
+	return r != NULL;
+}
+
+byte LvN_ModAppend(const char *module, const char *var, const nativeVal_t *v) {
+	return LvN_ModMethod(module, var, "append", v);
+}
+
+byte LvN_ModAppendG(const char *module, const char *var, const char *gmod, const char *name) {
+	PyObject *o = Script_Attr(module, var);
+	PyObject *fn = o ? Mode_GlobalPy(gmod, name) : NULL;
+	PyObject *r = fn ? Script_Method(o, "append", "(O)", fn) : NULL;
+	Py_XDECREF(r);
+	Py_XDECREF(fn);
 	Py_XDECREF(o);
 	return r != NULL;
 }
@@ -1290,20 +1301,24 @@ void LvN_SaveRepr(const char *var, const nativeVal_t *v) {
 	Native_BufFree(&b);
 }
 
-byte LvN_SaveAppend(const char *var, nativeVal_t *lst, const nativeVal_t *item) {
-	if (lst->type != NV_LIST) {
-		/* the append method of another value: its error, as the script meets it */
-		PyObject *o = Native_ToPy(lst), *x = o ? Native_ToPy(item) : NULL;
-		PyObject *r = x ? Script_Method(o, "append", "(O)", x) : NULL;
-		Py_XDECREF(r);
-		Py_XDECREF(x);
-		Py_XDECREF(o);
-		if (!r) {
-			return 0;
-		}
-		return Native_Raise(NE_SYSTEM, "append of a value that is no list");
+byte LvN_Append(nativeVal_t *lst, const nativeVal_t *x) {
+	if (lst->type == NV_LIST) {
+		Native_Copy(Native_Append(lst), x);
+		return 1;
 	}
-	Native_Copy(Native_Append(lst), item);
+	/* the append method of another value: its error, as the script meets it */
+	PyObject *o = Native_ToPy(lst), *v = o ? Native_ToPy(x) : NULL;
+	PyObject *r = v ? Script_Method(o, "append", "(O)", v) : NULL;
+	Py_XDECREF(r);
+	Py_XDECREF(v);
+	Py_XDECREF(o);
+	return r ? Native_Raise(NE_SYSTEM, "append of a value that is no list") : 0;
+}
+
+byte LvN_SaveAppend(const char *var, nativeVal_t *lst, const nativeVal_t *item) {
+	if (!LvN_Append(lst, item)) {
+		return 0;
+	}
 	LvN_SaveRepr(var, lst);
 	return 1;
 }
@@ -1591,13 +1606,11 @@ byte LvN_Entity(const char *name, nativeVal_t *out) {
 }
 
 byte LvN_LaterObj(double delay, const nativeVal_t *func, const nativeVal_t *args, int n) {
-	nativeVal_t t;
 	PyObject *fn = Native_ToPy(func);
 	if (!fn) {
 		return 0;
 	}
-	Native_SetFloat(&t, Mode_Time() + delay);
-	byte ok = Mode_Schedule(&t, fn, args, n, NULL);
+	byte ok = Mode_LaterPy(delay, fn, args, n, NULL);
 	Py_DECREF(fn);
 	return ok;
 }
@@ -1831,4 +1844,65 @@ byte LvN_Set0I(const char *item, const char *var, long i) {
 	nativeVal_t v;
 	Native_SetInt(&v, i);
 	return LvN_Set0(item, var, &v);
+}
+
+/* ---- helpers both halves of the levels had (batch F and G files) ---- */
+
+byte LvN_ModTexts(const char *module, const char *var, const char *const *texts) {
+	nativeVal_t v;
+	Mode_Texts(&v, texts, -1);
+	byte ok = Mode_SetModVar(module, var, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+byte LvN_SetInts3(const nativeVal_t *h, const char *var, long x, long y, long z) {
+	nativeVal_t v;
+	Mode_Ints3(&v, x, y, z);
+	byte ok = Mode_VSet(h, var, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+byte LvN_SetLangOpt(const nativeVal_t *e, const char *var, const char *prefix, const char *key) {
+	nativeVal_t p, t, v;
+	LvN_Str(&p, prefix);
+	Mode_Lang(key, &t);
+	Native_SetNone(&v);
+	byte ok = Native_Arith('+', &p, &t, &v) && Mode_VSet(e, var, &v);
+	Native_Free(&p);
+	Native_Free(&t);
+	Native_Free(&v);
+	return ok;
+}
+
+byte LvN_GActivate(const char *module, const char *var, long on) {
+	nativeVal_t h;
+	byte ok = Mode_G(module, var, &h) && LV_CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", &h, on);
+	Native_Free(&h);
+	return ok;
+}
+
+byte LvN_Routine(const char *key, const nativeVal_t *fn) {
+	nativeVal_t k;
+	LvN_Str(&k, key);
+	byte ok = Mode_ModDictPut("Speech", "SpeechRoutines", &k, fn);
+	Native_Free(&k);
+	return ok;
+}
+
+byte LvN_LaterV(const nativeVal_t *delay, const char *module, const char *func, const nativeVal_t *args, int n) {
+	nativeVal_t now, t;
+	Native_SetFloat(&now, Mode_Time());
+	Native_SetNone(&t);
+	byte ok = Native_Arith('+', &now, delay, &t) && Mode_AtG(&t, module, func, args, n);
+	Native_Free(&t);
+	return ok;
+}
+
+byte LvN_LaterG(const char *module, const char *delay, const char *func, const nativeVal_t *args, int n) {
+	nativeVal_t d;
+	byte ok = Mode_G(module, delay, &d) && LvN_LaterV(&d, module, func, args, n);
+	Native_Free(&d);
+	return ok;
 }
