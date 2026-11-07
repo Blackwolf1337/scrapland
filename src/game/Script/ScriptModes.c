@@ -3152,3 +3152,50 @@ byte Mode_DelItemG(const char *module, const char *var, int i) {
 	Py_XDECREF(l);
 	return r == 0;
 }
+
+/* ---- the character hubs of batch M (MakeChar, Chars, CharFuncs) ---- */
+
+void Mode_DropError(void) {
+	/* OBJLIB 7: the Python exception until errors are a C state */
+	PyErr_Clear();
+}
+
+long Mode_ModGetI(const char *module, const char *var, long def) {
+	nativeVal_t v = { 0 };
+	long r = def;
+	if (!LvN_ModGet(module, var, &v)) {
+		Mode_DropError();
+	} else if (v.type == NV_INT) {
+		r = (int)v.i;
+	} else if (v.type == NV_FLOAT) {
+		r = (int)v.f;
+	}
+	Native_Free(&v);
+	return r;
+}
+
+double Mode_ModGetN(const char *module, const char *var, double def) {
+	nativeVal_t v = { 0 };
+	double r = def;
+	if (!LvN_ModGet(module, var, &v)) {
+		Mode_DropError();
+	} else if (v.type == NV_FLOAT) {
+		r = v.f;
+	} else if (v.type == NV_INT) {
+		r = (double)v.i;
+	}
+	Native_Free(&v);
+	return r;
+}
+
+void Mode_ModPut(const char *module, const char *var, const nativeVal_t *v) {
+	if (!Mode_SetModVar(module, var, v)) {
+		Mode_DropError();
+	}
+}
+
+void Mode_ModPutI(const char *module, const char *var, long i) {
+	nativeVal_t v;
+	Native_SetInt(&v, i);
+	Mode_ModPut(module, var, &v);
+}

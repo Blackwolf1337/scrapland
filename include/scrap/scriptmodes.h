@@ -619,4 +619,16 @@ byte Mode_Apply(const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out)
 byte Mode_ListAddG(const char *module, const char *var, const nativeVal_t *v, byte first);
 byte Mode_DelItemG(const char *module, const char *var, int i);
 
+/* ---- the character hubs of batch M (MakeChar, Chars, CharFuncs) ---- */
+
+/* the error a port drops (PyErr_Clear of the C ports; OBJLIB 7) */
+void Mode_DropError(void);
+/* module.var as Script_GetInt and Script_GetFloat read it: an int (a float cut) or a number, else def; no error (a
+ * missing variable or module is def too) */
+long Mode_ModGetI(const char *module, const char *var, long def);
+double Mode_ModGetN(const char *module, const char *var, double def);
+/* module.var = v and = i as Script_SetVar sets it (an error is dropped) */
+void Mode_ModPut(const char *module, const char *var, const nativeVal_t *v);
+void Mode_ModPutI(const char *module, const char *var, long i);
+
 #endif
