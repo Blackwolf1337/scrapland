@@ -96,13 +96,6 @@ static byte Sy_ModTexts(const char *module, const char *var, const char *const *
 	return ok;
 }
 
-/* Scrap.Set(name, i) with an int (through the seam of Scrap.Set) */
-static byte Sy_GSetI(const char *name, long i) {
-	nativeVal_t v = { 0 };
-	Native_SetInt(&v, i);
-	return Mode_GVarSet(name, &v);
-}
-
 /* h.var into *out where the script reads it (out None before) */
 static byte Sy_Get(const nativeVal_t *h, const char *var, nativeVal_t *out) {
 	Native_SetNone(out);
@@ -383,8 +376,8 @@ static byte Sy_BossTraffic(byte comSats) {
 			return 0;
 		}
 	}
-	if (done ? !Sy_GSetI("MaxChasingShips", 0) || !Sy_GSetI("iTrafficNumber", 0) || !Sy_ModI("OutPolice", "PoliceActive", 0) :
-		!Sy_GSetI("iTrafficNumber", 5) || !Sy_GSetI("MaxChasingShips", 5)) {
+	if (done ? !Mode_GVarSetI("MaxChasingShips", 0) || !Mode_GVarSetI("iTrafficNumber", 0) || !Sy_ModI("OutPolice", "PoliceActive", 0) :
+		!Mode_GVarSetI("iTrafficNumber", 5) || !Mode_GVarSetI("MaxChasingShips", 5)) {
 		return 0;
 	}
 	return Sy_ModTexts("Traffic", "AcNormalShips", none) && Sy_ModI("Traffic", "NumNormal", 0) &&
@@ -491,7 +484,7 @@ static byte Map_InitStatusN(void) {
 		if (!Sy_BossTraffic(0)) {
 			return 0;
 		}
-	} else if (!Sy_GSetI("iTrafficNumber", 4) || !Sy_GSetI("MaxChasingShips", -1) || !Sy_ModTexts("Traffic", "AcNormalShips", normal) ||
+	} else if (!Mode_GVarSetI("iTrafficNumber", 4) || !Mode_GVarSetI("MaxChasingShips", -1) || !Sy_ModTexts("Traffic", "AcNormalShips", normal) ||
 		!Sy_ModI("Traffic", "NumNormal", 10) || !Sy_ModTexts("Traffic", "AcMediumShips", medium) || !Sy_ModI("Traffic", "NumMedium", 20) ||
 		!Sy_ModTexts("Traffic", "AcHeavyShips", heavy) || !Sy_ModI("Traffic", "NumHeavy", 10)) {
 		return 0;
@@ -509,7 +502,7 @@ static byte Map_InitN(void) {
 	return Mode_Connect("DM_Door_Elevator_GamblinDen", "GamblinDen", 0) &&
 		LV_CALL("Metro", "SetAsMetro", NULL, "s", "DM_Door_MetroExt_ScrapYard") &&
 		(!LvN_SaveIs("LonelyMercLairActive", "1") || LV_CALL("Parking", "CreateLonelyMercParkings", NULL, "")) &&
-		Sy_GSetI("CameraCloudRed", 77) && Sy_GSetI("CameraCloudGreen", 80) && Sy_GSetI("CameraCloudBlue", 60);
+		Mode_GVarSetI("CameraCloudRed", 77) && Mode_GVarSetI("CameraCloudGreen", 80) && Mode_GVarSetI("CameraCloudBlue", 60);
 }
 
 MODE_FN(Scrapyard, InitStatus, 1, Map_InitStatusN())
@@ -1740,7 +1733,7 @@ static const char *const mc_mosquito_profile[] = { "Ship=SMOSQUITO", "ControlBra
 static byte Clue_InitStatusN(void) {
 	static const char *const mosquito[] = { "SMosquito", NULL };
 	return Mode_Import("MapTriggers") && Sy_ModI("Traffic", "NumNormal", 5) && Sy_ModI("Traffic", "NumMedium", 5) &&
-		Sy_ModI("Traffic", "NumHeavy", 5) && Sy_GSetI("iTrafficNumber", 0) && Sy_ModTexts("Traffic", "AcShips", mosquito) &&
+		Sy_ModI("Traffic", "NumHeavy", 5) && Mode_GVarSetI("iTrafficNumber", 0) && Sy_ModTexts("Traffic", "AcShips", mosquito) &&
 		Sy_ModI("MapTriggers", "WithScrapyardInhabitants", 0) && Sy_AcShips(MC, ac_ships_std);
 }
 
@@ -1906,7 +1899,7 @@ static byte Clue_TakeDataPackN(void) {
 	nativeVal_t it = { 0 }, arrow = { 0 };
 	Native_SetNone(&arrow);
 	byte ok = LvN_Entity("MissionDataPack", &it) && LvN_SetI(&it, "rTime", 20) && Sy_LaterPy(5.0, Mode_VBound(&it, "Del")) &&
-		LvN_Entity("MissionCheckArrow", &arrow) && Mode_VDel(&arrow) && Sy_GSetI("RemainTalkTime", 0) &&
+		LvN_Entity("MissionCheckArrow", &arrow) && Mode_VDel(&arrow) && Mode_GVarSetI("RemainTalkTime", 0) &&
 		LvN_Com("Mission_Get1stClue_RemoteMessage5", "PoliceBoss", MC, "InitPoliChat", NULL);
 	Native_Free(&it);
 	Native_Free(&arrow);
@@ -2402,17 +2395,8 @@ static byte Merc_AddATPCPlansN(const nativeVal_t *name, nativeVal_t *out) {
 	return ok;
 }
 
-/* Scrap.Set(name, Scrap.Def(name)) */
-static byte Sm_Default(const char *name) {
-	nativeVal_t d = { 0 };
-	Native_SetNone(&d);
-	byte ok = Native_GVarDef(name, &d) && Mode_GVarSet(name, &d);
-	Native_Free(&d);
-	return ok;
-}
-
 static byte Merc_SetNextMissionN(void) {
-	return Mode_GVarSetS("OnItemTakenAI", "") && Sm_Default("MaxMosquitosDist") && Sm_Default("MaxMadHuntersDist") && Sy_ApplyNext(SM) &&
+	return Mode_GVarSetS("OnItemTakenAI", "") && Mode_GVarSetDef("MaxMosquitosDist") && Mode_GVarSetDef("MaxMadHuntersDist") && Sy_ApplyNext(SM) &&
 		Mode_MMDesc("Mission_InvulnerableTransport_MissionText1", 1L);
 }
 

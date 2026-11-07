@@ -1090,15 +1090,6 @@ static byte Decont_SetDFAnmN(const nativeVal_t *ev) {
 	return ok;
 }
 
-/* Scrap.Set(name, Scrap.Def(name)) */
-static byte Ob_SetDef(const char *name) {
-	nativeVal_t d = { 0 };
-	Native_SetNone(&d);
-	byte ok = Native_GVarDef(name, &d) && Mode_GVarSet(name, &d);
-	Native_Free(&d);
-	return ok;
-}
-
 /* EndOfSceneFunctionary(usr): the functionary talks normally again, the keypad down to the town hall */
 static byte Decont_EndOfSceneFunctionaryN(void) {
 	nativeVal_t c = { 0 }, one = { 0 };
@@ -1107,8 +1098,8 @@ static byte Decont_EndOfSceneFunctionaryN(void) {
 	}
 	Native_SetInt(&one, 1);
 	byte ok = Mode_SetModVar("Functionary", "skipChallengeOptions", &one) && LvN_SetS(&c, "UseFunc", "Speech.AutoSpeech") &&
-		LvN_SetI(&c, "ArrowCanMission", 0) && LvN_SetI(&c, "RadarShow", 0) && Ob_SetDef("FunctionaryMinTimeToSitDown") &&
-		Ob_SetDef("FunctionaryMaxTimeToSitDown") && LV_OWN(MD, "CreateDownKeyPad", NULL, "") &&
+		LvN_SetI(&c, "ArrowCanMission", 0) && LvN_SetI(&c, "RadarShow", 0) && Mode_GVarSetDef("FunctionaryMinTimeToSitDown") &&
+		Mode_GVarSetDef("FunctionaryMaxTimeToSitDown") && LV_OWN(MD, "CreateDownKeyPad", NULL, "") &&
 		Mode_MMDesc("Mission_Fake_MissionText1", 0L);
 	Native_Free(&c);
 	return ok;

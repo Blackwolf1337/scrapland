@@ -492,7 +492,6 @@ TH_KWFN(ApologizeMayor_ChooseStapler, "NotName", "", ThAm_ChooseStaplerN)
 
 /* InitStaplerMission(): the staplers to kill: the counter, the scorer, the NPC death hook, the first stapler */
 static byte ThAm_InitStaplerMission(const nativeVal_t *a, nativeVal_t *out) {
-	nativeVal_t one = { 0 };
 	(void)a;
 	(void)out;
 	if (!Mode_MMDesc("Mission_KillStaplers_MissionText1", 1L)) {
@@ -500,8 +499,7 @@ static byte ThAm_InitStaplerMission(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	SaveVar_Create("CrazyMayor.StaplerDeads", "0");
 	SaveVar_Set("CrazyMayor", "Stapler");
-	Native_SetInt(&one, 1);
-	return LvN_ScorerCallG(AM, "MissionScorer") && LvN_Draw() && Mode_GVarSet("RadarMMSelect", &one) &&
+	return LvN_ScorerCallG(AM, "MissionScorer") && LvN_Draw() && Mode_GVarSetI("RadarMMSelect", 1) &&
 		LvN_ModSetGlobal("CharAct", "onNPCDeath", AM, "StaplerDead") && LV_OWN(AM, "ChooseStapler", NULL, "");
 }
 
