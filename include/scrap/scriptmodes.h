@@ -406,5 +406,7 @@ byte Mode_AtG(const nativeVal_t *time, const char *module, const char *func, con
 /* a op b of the script as Native_Arith, with the long ints of 1.5.2 for * / % too (a case can put a long int into a
  * variable; OBJLIB 9: those go through the Python number functions) */
 byte Mode_Arith(char op, const nativeVal_t *a, const nativeVal_t *b, nativeVal_t *out);
+/* Scrap.Set(name, Scrap.Def(name)): the engine variable back to its default */
+byte Mode_GVarSetDef(const char *name);
 
 #endif
