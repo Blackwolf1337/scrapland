@@ -365,6 +365,10 @@ byte Mode_NISpeech(const char *who, const char *key);
 byte Mode_EntSetS(const char *name, const char *var, const char *s);
 byte Mode_EntSetI(const char *name, const char *var, long i);
 
+/* Scrap.SetLockAlarm(lock) through its seam (fc-r6b-or2 records it): the TypeError of "i" for a value that is no
+ * number */
+byte Mode_SetLockAlarm(const nativeVal_t *lock);
+
 /* ---- helpers of batch I (the super deals and the native level files of batch I) ---- */
 
 /* h.var = i, = "text", = d of a handle value */
