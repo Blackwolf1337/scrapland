@@ -3107,3 +3107,347 @@ byte Mode_PrintN(const nativeVal_t *const *items, int n) {
 	}
 	return ok;
 }
+
+/* ---- the hubs of batch K (CharAct, Alarm, NewsPanel, Scene, Speech) ---- */
+
+int Mode_In(const nativeVal_t *seq, const nativeVal_t *x) {
+	if (seq->type != NV_OBJ && x->type != NV_OBJ) {
+		return Native_Contains(seq, x);
+	}
+	/* OBJLIB 7: PySequence_In of the objects (a list that holds handles, a handle tested) */
+	PyObject *s = Native_ToPy(seq), *o = s ? Native_ToPy(x) : NULL;
+	int r = o ? PySequence_In(s, o) : -1;
+	Py_XDECREF(o);
+	Py_XDECREF(s);
+	return r;
+}
+
+byte Mode_VSetFX(const nativeVal_t *h, const char *type) {
+	cEntity *e;
+	int k = Mode_MethodOf(h, "SetFX", &e);
+	if (k >= 0) {
+		return k && Mode_SetFX(e, type);
+	}
+	return Mode_PyMethod(h, "SetFX", NULL, "s", type);
+}
+
+byte Mode_SActV(const char *fn, const nativeVal_t *name, nativeVal_t *out) {
+	const char *s;
+	Native_SetNone(out);
+	MODE_SEAM("SAct", fn);
+	if (seam) {
+		return Native_HookCall(hook, out, "v", name);
+	}
+	if (!Native_ArgStr(name, 1, &s)) {
+		return 0;
+	}
+	if (!strcmp(fn, "DelClass")) {
+		Native_SetInt(out, cActClassList_Del(g_pActClassList, s) != 0);
+		return 1;
+	}
+	/* the seam was looked at: the LvN_ functions take the engine's way */
+	return !strcmp(fn, "GetClass") ? LvN_GetClass(s, out) : !strcmp(fn, "CreateClass") ? LvN_CreateClass(s, out) :
+		!strcmp(fn, "CreateAction") ? LvN_CreateAction(s, out) : LvN_GetAct(s, out);
+}
+
+byte Mode_ActionSetV(const nativeVal_t *name) {
+	const char *s;
+	MODE_SEAM("SInput", "SetActionSet");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "v", name);
+	}
+	if (!Native_ArgStr(name, 1, &s)) {
+		return 0;
+	}
+	Mode_SetActionSet(s);
+	return 1;
+}
+
+void Mode_ActionSetName(nativeVal_t *out) {
+	const char *s = TABLE_AT(g_ActionSets, Input_GetActionSet())->name;
+	Native_SetText(out, s, (int)strlen(s));
+}
+
+byte Mode_Pack(const nativeVal_t *path) {
+	const char *s;
+	MODE_SEAM("Scrap", path ? "OpenPack" : "ClosePack");
+	if (seam) {
+		return path ? Native_HookCall(hook, NULL, "v", path) : Native_HookCall(hook, NULL, "");
+	}
+	if (!path) {
+		cString_Set(g_PackName, "");
+		return 1;
+	}
+	if (!Native_ArgStr(path, 1, &s)) {
+		return 0;
+	}
+	cString_Printf(g_PackName, "%s/", s);
+	return 1;
+}
+
+/* SScorer.SetMsgText (msg 1) or SetLabelText with the time a value of the script */
+static byte Mode_TextV(byte msg, const nativeVal_t *text, const nativeVal_t *time) {
+	const char *s;
+	double d;
+	MODE_SEAM("SScorer", msg ? "SetMsgText" : "SetLabelText");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "vv", text, time);
+	}
+	if (!Native_ArgStr(text, 1, &s) || !Native_ArgDouble(time, &d)) {
+		return 0;
+	}
+	return msg ? Mode_MsgText(text, d) : Mode_LabelText(text, d);
+}
+
+byte Mode_MsgTextV(const nativeVal_t *text, const nativeVal_t *time) {
+	return Mode_TextV(1, text, time);
+}
+
+byte Mode_LabelTextV(const nativeVal_t *text, const nativeVal_t *time) {
+	return Mode_TextV(0, text, time);
+}
+
+byte Mode_SpeechText(const nativeVal_t *text, const nativeVal_t *time, const nativeVal_t *r, const nativeVal_t *g,
+	const nativeVal_t *b) {
+	const char *s;
+	double d;
+	int c[3];
+	MODE_SEAM("SScorer", "SetSpeechText");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "vvvvv", text, time, r, g, b);
+	}
+	/* "sdiii" */
+	if (!Native_ArgStr(text, 1, &s) || !Native_ArgDouble(time, &d) || !Native_ArgInt(r, &c[0]) || !Native_ArgInt(g, &c[1]) ||
+		!Native_ArgInt(b, &c[2])) {
+		return 0;
+	}
+	Scorer_SetSpeechText(s, (float)d, c[0], c[1], c[2]);
+	return 1;
+}
+
+byte Mode_SpeechCallbackV(const nativeVal_t *func) {
+	const char *s;
+	MODE_SEAM("SScorer", "SetSpeechCallback");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "v", func);
+	}
+	/* "s|O" */
+	if (!Native_ArgStr(func, 1, &s)) {
+		return 0;
+	}
+	Scorer_SetSpeechCallback(s, NULL);
+	return 1;
+}
+
+byte Mode_SpeechCallback(const char *func) {
+	nativeVal_t v;
+	Native_SetText(&v, func, (int)strlen(func));
+	byte ok = Mode_SpeechCallbackV(&v);
+	Native_Free(&v);
+	return ok;
+}
+
+byte Mode_CancelSpeech(void) {
+	MODE_SEAM("SScorer", "CancelSpeech");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "");
+	}
+	Scorer_CancelSpeech(0);
+	return 1;
+}
+
+byte Mode_HeadMonitor(const nativeVal_t *a, const nativeVal_t *b, const nativeVal_t *c) {
+	const char *s, *t;
+	int i;
+	MODE_SEAM("SScorer", "SetHeadMonitor");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "vvv", a, b, c);
+	}
+	if (!Native_ArgStr(a, 1, &s) || !Native_ArgStr(b, 2, &t) || !Native_ArgInt(c, &i)) {
+		return 0;
+	}
+	Scorer_SetHeadMonitor(s, t, i);
+	return 1;
+}
+
+byte Mode_StopVoice(const nativeVal_t *ch) {
+	int i;
+	MODE_SEAM("SSound", "StopVoice");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "v", ch);
+	}
+	if (!Native_ArgInt(ch, &i)) {
+		return 0;
+	}
+	SoundSys_StopVoice(g_pSound, i);
+	return 1;
+}
+
+byte Mode_PlayVoice(const nativeVal_t *ch, const nativeVal_t *text) {
+	const char *s = "";
+	int i;
+	MODE_SEAM("SSound", "PlayVoice");
+	if (seam) {
+		return text ? Native_HookCall(hook, NULL, "vv", ch, text) : Native_HookCall(hook, NULL, "v", ch);
+	}
+	/* "i|s" */
+	if (!Native_ArgInt(ch, &i) || (text && !Native_ArgStr(text, 2, &s))) {
+		return 0;
+	}
+	SoundSys_PlayVoice(g_pSound, i);
+	SoundSys_SetVoiceString(g_pSound, i, s);
+	return 1;
+}
+
+byte Mode_OpenVoice(const nativeVal_t *file, const nativeVal_t *ch, const nativeVal_t *arg) {
+	const char *s;
+	int i, a = 1;
+	MODE_SEAM("SSound", "OpenVoice");
+	if (seam) {
+		return arg ? Native_HookCall(hook, NULL, "vvv", file, ch, arg) : Native_HookCall(hook, NULL, "vv", file, ch);
+	}
+	/* "si|i" */
+	if (!Native_ArgStr(file, 1, &s) || !Native_ArgInt(ch, &i) || (arg && !Native_ArgInt(arg, &a))) {
+		return 0;
+	}
+	SoundSys_OpenVoice(g_pSound, s, i, a);
+	return 1;
+}
+
+byte Mode_VoiceRemain(const nativeVal_t *ch, const nativeVal_t *def, nativeVal_t *out) {
+	int i;
+	double d;
+	float remain;
+	Native_SetNone(out);
+	MODE_SEAM("SSound", "VoiceRemain");
+	if (seam) {
+		return Native_HookCall(hook, out, "vv", ch, def);
+	}
+	/* "id" */
+	if (!Native_ArgInt(ch, &i) || !Native_ArgDouble(def, &d)) {
+		return 0;
+	}
+	if (SoundSys_VoiceRemain(g_pSound, i, &remain)) {
+		d = (double)remain;
+	}
+	Native_SetFloat(out, d);
+	return 1;
+}
+
+byte Mode_VoiceVolume(const nativeVal_t *ch, const nativeVal_t *vol) {
+	int i;
+	double d;
+	MODE_SEAM("SSound", "SetVoiceVolume");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "vv", ch, vol);
+	}
+	if (!Native_ArgInt(ch, &i) || !Native_ArgDouble(vol, &d)) {
+		return 0;
+	}
+	SoundSys_SetVoiceVolume(g_pSound, i, (float)d);
+	return 1;
+}
+
+byte Mode_StopAllSounds(void) {
+	MODE_SEAM("SSound", "StopAllSounds");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "");
+	}
+	SoundSys_StopAllSounds(g_pSound);
+	return 1;
+}
+
+byte Mode_First(nativeVal_t *out) {
+	return Mode_EntHandle(cWorld_GetFirstEntity(g_pWorld), out);
+}
+
+PyObject *Mode_AtPy(const char *module, const char *dict, const nativeVal_t *key) {
+	return Mode_At(module, dict, key);
+}
+
+byte Mode_Kw(PyObject *args, PyObject *kw, const char *fmt, char **names, int n, nativeVal_t *a, byte *given) {
+	PyObject *o[8] = { NULL };
+	for (int i = 0; i < n; i++) {
+		Native_SetNone(&a[i]);
+	}
+	if (!PyArg_ParseTupleAndKeywords(args, kw, (char *)fmt, names, &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &o[6], &o[7])) {
+		return 0;
+	}
+	for (int i = 0; i < n; i++) {
+		if (o[i]) {
+			Native_Arg(o[i], &a[i]);
+		}
+		if (given) {
+			given[i] = o[i] != NULL;
+		}
+	}
+	return 1;
+}
+
+PyObject *Mode_KwOut(nativeVal_t *a, int n, byte ok, nativeVal_t *out) {
+	for (int i = 0; i < n; i++) {
+		Native_Free(&a[i]);
+	}
+	PyObject *r = ok ? (!out || out->type == NV_NONE ? Py_ReturnNone() : Native_ToPy(out)) : NULL;
+	if (out) {
+		Native_Free(out);
+	}
+	return r;
+}
+
+byte Mode_PreloadTexture(const nativeVal_t *name) {
+	const char *s;
+	MODE_SEAM("SScorer", "PreloadTexture");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "v", name);
+	}
+	/* "s|i" */
+	if (!Native_ArgStr(name, 1, &s)) {
+		return 0;
+	}
+	Scorer_PreloadTexture(s, 0);
+	return 1;
+}
+
+byte Mode_Apply(const nativeVal_t *f, const nativeVal_t *args, nativeVal_t *out) {
+	/* OBJLIB 3, 4: apply(f, args) of the objects (the TypeError of an args that is no tuple, of a value that is no
+	 * callable) */
+	PyObject *fn = Native_ToPy(f), *a = fn ? Native_ToPy(args) : NULL;
+	PyObject *r = a ? Script_CallObject(fn, a, NULL) : NULL;
+	Py_XDECREF(a);
+	Py_XDECREF(fn);
+	if (!r) {
+		return 0;
+	}
+	if (out) {
+		Native_Arg(r, out);
+	}
+	Py_DECREF(r);
+	return 1;
+}
+
+byte Mode_ListAddG(const char *module, const char *var, const nativeVal_t *v, byte first) {
+	/* OBJLIB 5: PyList_Append or PyList_Insert on the list object of the global (the SystemError of a value that is no
+	 * list, as the C ports changed it) */
+	PyObject *l = Script_Global(module, var), *x = l ? Native_ToPy(v) : NULL;
+	int r = !x ? -1 : first ? PyList_Insert(l, 0, x) : PyList_Append(l, x);
+	Py_XDECREF(x);
+	Py_XDECREF(l);
+	return r == 0;
+}
+
+byte Mode_DelItemG(const char *module, const char *var, int i) {
+	/* OBJLIB 5: PySequence_DelItem on the object of the global */
+	PyObject *l = Script_Global(module, var);
+	int r = l ? PySequence_DelItem(l, i) : -1;
+	Py_XDECREF(l);
+	return r == 0;
+}
+/* ---- the vehicle modules of batch L (Vehicles, VehiclesNPC, ShipMaker, SputnikInterface) ---- */
+
+int Mode_ModTrue(const char *module, const char *var) {
+	nativeVal_t v;
+	int r = LvN_ModGet(module, var, &v) ? Native_True(&v) : -1;
+	Native_Free(&v);
+	return r;
+}

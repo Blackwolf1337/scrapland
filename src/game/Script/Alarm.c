@@ -8,84 +8,86 @@
  * panels (Panels, ShowingNews, MissionUse, NewsOnMem, act, NewsList) stay in the modules; the functions read them as
  * their globals. The module code is data/modules/alarm.mod and newspanel.mod; the loop of newspanel.py over the
  * engine variables of the panels is the hook NewsPanel_ModSettings.
+ *
+ * Both modules are native C (docs/objlib-plan.md, stage 2): the functions work on C values and read the globals where
+ * the script reads them and write them back at once (OBJLIB 5: the missions, the levels and the cases read and set
+ * them). The hooks and callbacks are called as the values they hold, the panels are handle values and Scrap.Set,
+ * CreateEntity and the dummy search go through their seams (OBJLIB 7). Speech.RemoteComunication, the imports and the
+ * functions of the module through their globals stay by name (OBJLIB 3, 6); a news line that is not the form GetNews
+ * makes runs through the exec reader (OBJLIB 6).
  */
 #include <string.h>
 
+#include "scrap/scrap.h"
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
+#include "game/Script/levels/Levels.h"
 
 /* ---- Alarm ---- */
 
-/* hook (a global of Alarm) when it is set, else once the variable once (set to None before the call) */
-static void Alarm_Hook(scriptFrame_t *f, const char *temp, const char *once) {
-	PyObject *t = Sf_Global(f, "Alarm", temp);
-	int set = Sf_True(f, t);
-	if (set > 0) {
-		Sf_Call(f, t, "()");
-	} else if (set == 0) {
-		PyObject *cb = Sf_Global(f, "Alarm", once);
-		if (Sf_True(f, cb) > 0) {
-			Sf_SetGlobal(f, "Alarm", once, Py_None);
-			Sf_Call(f, cb, "()");
-		}
+/* print text, as the print statement of the script */
+static byte Al_Print(const char *text) {
+	nativeVal_t s;
+	const nativeVal_t *items[1] = { &s };
+	Native_SetText(&s, text, (int)strlen(text));
+	byte ok = Mode_Print(items, 1);
+	Native_Free(&s);
+	return ok;
+}
+
+/* the hook temp (a global of Alarm) when it is set, else once the variable once (set to None before the call) */
+static byte Al_Hook(const char *temp, const char *once) {
+	nativeVal_t t = { 0 }, cb = { 0 }, none;
+	byte ok = Mode_G("Alarm", temp, &t);
+	if (ok && Native_True(&t)) {
+		ok = Mode_CallArgs(&t, NULL, NULL, 0);
+	} else if (ok) {
+		Native_SetNone(&none);
+		ok = Mode_G("Alarm", once, &cb) && (!Native_True(&cb) || (Mode_Put("Alarm", once, NULL, &none) &&
+			Mode_CallArgs(&cb, NULL, NULL, 0)));
 	}
+	Native_Free(&t);
+	Native_Free(&cb);
+	return ok;
 }
 
 /* SetAlarm(status): the alarm goes on or off; the hooks of the mission, then the callbacks waiting in
  * SetAlarmCallback (the list is emptied first, a callback that wants more puts itself back) */
-static PyObject *Alarm_SetAlarm(PyObject *self, PyObject *args) {
-	PyObject *status;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &status)) {
-		return NULL;
+static byte Al_SetAlarm(const nativeVal_t *status) {
+	nativeVal_t prev = { 0 }, empty, func = { 0 };
+	byte ok;
+	if (Native_True(status)) {
+		ok = Al_Print("Sound the alarm !") && Native_CallGlobal("Alarm", "ActivateAlarm", NULL, "") &&
+			Al_Hook("TempAbortMissionCallback", "AbortMissionCallback");
+	} else {
+		ok = Al_Print("Free way!") && Native_CallGlobal("Alarm", "DeactivateAlarm", NULL, "") &&
+			Al_Hook("TempRestoreMissionCallback", "RestoreMissionCallback");
 	}
-	int on = Sf_True(&f, status);
-	if (on > 0) {
-		Sf_Print(&f, "s", "Sound the alarm !");
-		Sf_Call(&f, Sf_Global(&f, "Alarm", "ActivateAlarm"), "()");
-		Alarm_Hook(&f, "TempAbortMissionCallback", "AbortMissionCallback");
-	} else if (on == 0) {
-		Sf_Print(&f, "s", "Free way!");
-		Sf_Call(&f, Sf_Global(&f, "Alarm", "DeactivateAlarm"), "()");
-		Alarm_Hook(&f, "TempRestoreMissionCallback", "RestoreMissionCallback");
+	Native_SetEmpty(&empty, NV_LIST);
+	ok = ok && Mode_G("Alarm", "SetAlarmCallback", &prev) && Mode_Put("Alarm", "SetAlarmCallback", NULL, &empty);
+	int n = ok ? Mode_Loop(&prev) : -1;
+	for (int i = 0; i < n && ok; i++) {
+		ok = Native_SeqItem(&prev, i, &func) && Mode_CallArgs(&func, NULL, status, 1);
+		Native_Free(&func);
 	}
-	PyObject *prev = Sf_Global(&f, "Alarm", "SetAlarmCallback");
-	Sf_SetGlobal(&f, "Alarm", "SetAlarmCallback", Sf_Keep(&f, PyList_New(0)));
-	for (int i = 0;; i++) {
-		int mark = f.n;
-		PyObject *func = Sf_Next(&f, prev, i);
-		if (!func) {
-			break;
-		}
-		Sf_Call(&f, func, "(O)", status);
-		Sf_Release(&f, mark);
-	}
-	return Sf_None(&f);
-}
-
-/* ActivateAlarm(), Init(): nothing */
-static PyObject *Alarm_Nothing(PyObject *self, PyObject *args) {
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	return Py_ReturnNone();
+	Native_Free(&prev);
+	Native_Free(&empty);
+	return ok && n >= 0;
 }
 
 /* DeactivateAlarm(): outdoors the police waves start over */
-static PyObject *Alarm_DeactivateAlarm(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_Import(&f, "Init");
-	if (Sf_True(&f, Sf_Mod(&f, "Init", "InMapSkip")) == 0) {
-		Sf_Import(&f, "OutPolice");
-		Sf_SetMod(&f, "OutPolice", "iPoliceWave", Sf_Int(&f, 0));
-	}
-	return Sf_None(&f);
+static byte Al_DeactivateAlarm(void) {
+	nativeVal_t skip = { 0 };
+	byte ok = Mode_Import("Init") && LvN_ModGet("Init", "InMapSkip", &skip) &&
+		(Native_True(&skip) || (Mode_Import("OutPolice") && LvN_ModSetI("OutPolice", "iPoliceWave", 0)));
+	Native_Free(&skip);
+	return ok;
 }
+
+MODE_FN(Alarm, SetAlarm, 1, Al_SetAlarm(&a[0]))
+/* ActivateAlarm(), Init(): nothing */
+MODE_FN(Alarm, Nothing, 0, 1)
+MODE_FN(Alarm, DeactivateAlarm, 0, Al_DeactivateAlarm())
 
 PyMethodDef g_AlarmMethods[] = {
 	{ "SetAlarm", Alarm_SetAlarm, 1, NULL },
@@ -97,217 +99,245 @@ PyMethodDef g_AlarmMethods[] = {
 
 /* ---- NewsPanel ---- */
 
+/* `n` of the script as a text value of t */
+static nativeVal_t *Np_ReprI(modeVals_t *t, long n) {
+	nativeVal_t *r = Mode_V(t);
+	Mode_Repr(Mode_I(t, n), r);
+	return r;
+}
+
 /* GetNews(): NewsList, the option lines of the news of the act ("kb.ArrOpt<n> = '<n+1>:'+keydata", the text); after
  * the death of the archbishop only the first */
-static PyObject *NewsPanel_GetNews(PyObject *self, PyObject *args) {
+static byte Np_GetNews(void) {
 	static const char *const dead[] = { "Mission_ArchbishopDead", "Mission_HumphreyArchbishopKilled", NULL };
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *empty = Mode_V(&t);
+	Native_SetEmpty(empty, NV_LIST);
+	if (!Mode_Put("NewsPanel", "NewsList", NULL, empty)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_SetGlobal(&f, "NewsPanel", "NewsList", Sf_Keep(&f, PyList_New(0)));
-	for (long n = 0; !f.failed; n++) {
-		int mark = f.n;
-		PyObject *key = Sf_Cat(&f, "sOsO", "News_", Sf_Global(&f, "NewsPanel", "act"), "_Title", Sf_ReprI(&f, n + 1));
-		PyObject *keydata = Sf_Lang(&f, key);
-		if (Sf_True(&f, keydata) <= 0) {
+	for (long n = 0;; n++) {
+		int mark = t.n;
+		nativeVal_t *act = Mode_V(&t), *key = Mode_V(&t), *keydata = Mode_V(&t), *line = Mode_V(&t), *pair = Mode_V(&t);
+		nativeVal_t *lib = Mode_V(&t);
+		if (!Mode_G("NewsPanel", "act", act) || !Mode_Cat(&t, key, 4, Mode_S(&t, "News_"), act, Mode_S(&t, "_Title"),
+			Np_ReprI(&t, n + 1)) || !Mode_LangV(key, keydata)) {
+			return Mode_Done(&t, 0);
+		}
+		if (!Native_True(keydata)) {
 			break;
 		}
-		PyObject *line = Sf_Cat(&f, "sOsOs", "kb.ArrOpt", Sf_ReprI(&f, n), " = '", Sf_ReprI(&f, n + 1), ":'+keydata");
-		Sf_Method(&f, Sf_Global(&f, "NewsPanel", "NewsList"), "append", "((OO))", line, keydata);
-		if (Sf_InS(&f, Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "Mission.Library"), dead)) {
+		if (!Mode_Cat(&t, line, 5, Mode_S(&t, "kb.ArrOpt"), Np_ReprI(&t, n), Mode_S(&t, " = '"), Np_ReprI(&t, n + 1),
+			Mode_S(&t, ":'+keydata"))) {
+			return Mode_Done(&t, 0);
+		}
+		Native_SetEmpty(pair, NV_TUPLE);
+		Native_Copy(Native_Append(pair), line);
+		Native_Copy(Native_Append(pair), keydata);
+		if (!Mode_Append("NewsPanel", "NewsList", pair)) {
+			return Mode_Done(&t, 0);
+		}
+		Mode_SaveVar("Mission.Library", lib);
+		byte stop = 0;
+		for (int i = 0; dead[i]; i++) {
+			stop |= Mode_IsText(lib, dead[i]);
+		}
+		if (stop) {
 			break;
 		}
-		Sf_Release(&f, mark);
+		Mode_Release(&t, mark);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, 1);
 }
 
 /* exec(xqt[0]) of FillNews: a line as GetNews makes it ("kb.<name> = '<text>'+keydata") is kb.<name> = '<text>' +
- * keydata made directly, any other line runs through exec */
-static void Np_Exec(scriptFrame_t *f, PyObject *code, PyObject *kb, PyObject *keydata, PyObject *locals) {
+ * keydata made directly, any other line runs through the exec reader with the locals kb, xqt and keydata (OBJLIB 6) */
+static byte Np_Exec(const nativeVal_t *code, const nativeVal_t *kb, const nativeVal_t *xqt, const nativeVal_t *keydata) {
 	static const char tail[] = "'+keydata";
-	const char *s = !f->failed && code && PyString_Check(code) ? PyString_AsString(code) : NULL;
+	const char *s = code->type == NV_STR ? Native_Text(code) : NULL;
 	const char *eq = s ? strstr(s, " = '") : NULL;
-	int n = s ? PyString_Size(code) : 0, tl = (int)sizeof(tail) - 1;
+	int n = s ? code->n : 0, tl = (int)sizeof(tail) - 1;
 	if (eq && (int)strlen(s) == n && !strncmp(s, "kb.", 3) && Script_IsName(s + 3, (int)(eq - s) - 3) &&
 		eq + 4 <= s + n - tl && !strcmp(s + n - tl, tail)) {
 		char name[0x40];
 		int len = (int)(eq - s) - 3, tlen = (int)(s + n - tl - (eq + 4));
-		PyObject *text = len < (int)sizeof(name) ? Sf_Keep(f, Script_StrConst(eq + 4, tlen)) : NULL;
-		if (text && Script_IsQuotable(text)) {
+		PyObject *quoted = len < (int)sizeof(name) ? Script_StrConst(eq + 4, tlen) : NULL;
+		byte plain = Script_IsQuotable(quoted);
+		Py_XDECREF(quoted);
+		if (plain) {
+			nativeVal_t text, v = { 0 };
 			memcpy(name, s + 3, len);
 			name[len] = '\0';
-			Sf_SetAttr(f, kb, name, Sf_Op(f, text, '+', keydata));
-			return;
+			Native_SetText(&text, eq + 4, tlen);
+			byte ok = Mode_Arith('+', &text, keydata, &v) && Mode_VSet(kb, name, &v);
+			Native_Free(&text);
+			Native_Free(&v);
+			return ok;
 		}
 	}
-	Sf_Exec(f, code, "NewsPanel", locals);
+	scriptFrame_t f = { 0 };
+	PyObject *c = Native_ToPy(code), *k = c ? Native_ToPy(kb) : NULL, *x = k ? Native_ToPy(xqt) : NULL;
+	PyObject *d = x ? Native_ToPy(keydata) : NULL;
+	PyObject *locals = d ? Py_BuildValue("{sOsOsO}", "kb", k, "xqt", x, "keydata", d) : NULL;
+	byte ok = locals && Sf_Exec(&f, c, "NewsPanel", locals);
+	Sf_Release(&f, 0);
+	Py_XDECREF(locals);
+	Py_XDECREF(d);
+	Py_XDECREF(x);
+	Py_XDECREF(k);
+	Py_XDECREF(c);
+	return ok;
 }
 
 /* FillNews(kb): the lines of NewsList run on the panel kb */
-static PyObject *NewsPanel_FillNews(PyObject *self, PyObject *args) {
-	PyObject *kb;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &kb)) {
-		return NULL;
+static byte Np_FillNews(const nativeVal_t *kb) {
+	nativeVal_t list = { 0 }, xqt = { 0 }, keydata = { 0 }, code = { 0 };
+	int n = Mode_G("NewsPanel", "NewsList", &list) ? Mode_Loop(&list) : -1;
+	byte ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		ok = Native_SeqItem(&list, i, &xqt) && LvN_Item(&xqt, 1, &keydata) && LvN_Item(&xqt, 0, &code) &&
+			Np_Exec(&code, kb, &xqt, &keydata);
+		Native_Free(&xqt);
+		Native_Free(&keydata);
+		Native_Free(&code);
 	}
-	PyObject *list = Sf_Global(&f, "NewsPanel", "NewsList");
-	for (int i = 0;; i++) {
-		int mark = f.n;
-		PyObject *xqt = Sf_Next(&f, list, i);
-		if (!xqt) {
-			break;
-		}
-		PyObject *keydata = Sf_Item(&f, xqt, 1);
-		PyObject *code = Sf_Item(&f, xqt, 0);
-		PyObject *locals = Sf_Build(&f, "{sOsOsO}", "kb", kb, "xqt", xqt, "keydata", keydata);
-		Np_Exec(&f, code, kb, keydata, locals);
-		Sf_Release(&f, mark);
-	}
-	return Sf_None(&f);
+	Native_Free(&list);
+	return ok;
 }
 
 /* Init(): the panels at the DM_NewsPanel_ dummies; with news in this act they show them as options */
-static PyObject *NewsPanel_Init(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Np_Init(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *use = Mode_V(&t), *v = Mode_V(&t);
+	if (!Mode_Import("Alarm") || !Mode_Import("string") || !Mode_G("NewsPanel", "MissionUse", use)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Alarm");
-	Sf_Import(&f, "string");
-	int use = Sf_True(&f, Sf_Global(&f, "NewsPanel", "MissionUse"));
-	if (use == 0) {
-		PyObject *list = Sf_Mod(&f, "Alarm", "SetAlarmCallback");
-		PyObject *append = Sf_Attr(&f, list, "append");
-		Sf_Call(&f, append, "(O)", Sf_Global(&f, "NewsPanel", "SwitchAlarm"));
-	} else if (use > 0) {
-		Sf_Ask(&f, "SScorer", "PreloadTexture", "(O)", Sf_Ask(&f, "Scrap", "Get", "(s)", "BackNewsBmp"));
-		Sf_Ask(&f, "SScorer", "PreloadTexture", "(O)", Sf_Ask(&f, "Scrap", "Get", "(s)", "NewsLogoBmp"));
+	if (!Native_True(use)) {
+		if (!Mode_AppendG("Alarm", "SetAlarmCallback", "NewsPanel", "SwitchAlarm")) {
+			return Mode_Done(&t, 0);
+		}
+	} else {
+		static const char *const bmps[] = { "BackNewsBmp", "NewsLogoBmp" };
+		for (int i = 0; i < 2; i++) {
+			Native_Free(v);
+			if (!Native_GVarGet(bmps[i], v) || !Mode_PreloadTexture(v)) {
+				return Mode_Done(&t, 0);
+			}
+		}
 	}
-	if (Sf_True(&f, Sf_Global(&f, "NewsPanel", "NewsOnMem")) > 0) {
-		Sf_Call(&f, Sf_Global(&f, "NewsPanel", "GetNews"), "()");
+	if (!Mode_Read("NewsPanel", "NewsOnMem", v) || (Native_True(v) && !Native_CallGlobal("NewsPanel", "GetNews", NULL, ""))) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Ask(&f, "Scrap", "StartDummySearch", "(si)", "DM_NewsPanel_*", 1);
-	while (!f.failed) {
-		int mark = f.n;
-		PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-		if (Sf_Compare(&f, dummy, "!=", Py_None) <= 0) {
+	if (!Mode_DummyStartSeam("DM_NewsPanel_*", 1)) {
+		return Mode_Done(&t, 0);
+	}
+	for (;;) {
+		int mark = t.n;
+		nativeVal_t *dummy = Mode_V(&t), *d0 = Mode_V(&t), *d1 = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t);
+		nativeVal_t *z = Mode_V(&t), *kb = Mode_V(&t), *d2 = Mode_V(&t), *yaw = Mode_V(&t), *ang = Mode_V(&t);
+		nativeVal_t *c = Mode_V(&t), *letter = Mode_V(&t), *model = Mode_V(&t), *file = Mode_V(&t), *onmem = Mode_V(&t);
+		nativeVal_t *mu = Mode_V(&t), *a1 = Mode_V(&t);
+		if (!Mode_DummyNextSeam(dummy)) {
+			return Mode_Done(&t, 0);
+		}
+		if (dummy->type == NV_NONE) {
 			break;
 		}
-		PyObject *d0 = Sf_Item(&f, dummy, 0), *d1 = Sf_Item(&f, dummy, 1);
-		PyObject *x = Sf_Item(&f, d1, 0), *y = Sf_Item(&f, d1, 1), *z = Sf_Item(&f, d1, 2);
-		PyObject *kb = Sf_Ask(&f, "Scrap", "CreateEntity", "(OOOOs)", d0, x, y, z, "WithLife");
-		PyObject *yaw = Sf_OpI(&f, Sf_Item(&f, Sf_Item(&f, dummy, 2), 1), '+', 180);
-		Sf_SetAttr(&f, kb, "Ang", Sf_Build(&f, "(iOi)", 0, yaw, 0));
-		PyObject *letter = Sf_Ask(&f, "string", "upper", "(O)", Sf_Item(&f, d0, 13));
-		Sf_Method(&f, kb, "SetModel", "(O)", Sf_Cat(&f, "OOs", Sf_Global(&f, "NewsPanel", "NewsPanelModel"), letter, ".m3d"));
-		Sf_SetAttrI(&f, kb, "VRadius", 60);
-		Sf_SetAttrI(&f, kb, "Life", 0);
-		Sf_SetAttrI(&f, kb, "ActiveCMask", 0);
-		Sf_SetAttrI(&f, kb, "MapCollision", 1);
-		Sf_SetAttrI(&f, kb, "UseMapCheck", 0);
-		Sf_SetAttrI(&f, kb, "AlwaysUse", 0);
+		if (!LvN_Item(dummy, 0, d0) || !LvN_Item(dummy, 1, d1) || !LvN_Item(d1, 0, x) || !LvN_Item(d1, 1, y) ||
+			!LvN_Item(d1, 2, z) || !LvN_Create(d0, x, y, z, "WithLife", kb) || !LvN_Item(dummy, 2, d2) ||
+			!LvN_Item(d2, 1, a1) || !Mode_Arith('+', a1, Mode_I(&t, 180), yaw)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_SetEmpty(ang, NV_TUPLE);
+		Native_SetInt(Native_Append(ang), 0);
+		Native_Copy(Native_Append(ang), yaw);
+		Native_SetInt(Native_Append(ang), 0);
+		if (!Mode_VSet(kb, "Ang", ang) || !LvN_Item(d0, 13, c) || !Native_Upper(c, letter) ||
+			!Mode_G("NewsPanel", "NewsPanelModel", model) || !Mode_Cat(&t, file, 3, model, letter, Mode_S(&t, ".m3d")) ||
+			!Mode_VModel(kb, file) || !LvN_SetI(kb, "VRadius", 60) || !LvN_SetI(kb, "Life", 0) ||
+			!LvN_SetI(kb, "ActiveCMask", 0) || !LvN_SetI(kb, "MapCollision", 1) || !LvN_SetI(kb, "UseMapCheck", 0) ||
+			!LvN_SetI(kb, "AlwaysUse", 0) || !Mode_G("NewsPanel", "NewsOnMem", onmem)) {
+			return Mode_Done(&t, 0);
+		}
 		/* NewsOnMem and not MissionUse: the value of the first operand when it is false */
-		PyObject *onmem = Sf_Global(&f, "NewsPanel", "NewsOnMem");
-		int om = Sf_True(&f, onmem);
-		if (om > 0) {
-			int mu = Sf_True(&f, Sf_Global(&f, "NewsPanel", "MissionUse"));
-			Sf_SetAttr(&f, kb, "ArrowCanUse", mu >= 0 ? Sf_Int(&f, !mu) : NULL);
-		} else {
-			Sf_SetAttr(&f, kb, "ArrowCanUse", onmem);
+		if (Native_True(onmem)) {
+			if (!Mode_G("NewsPanel", "MissionUse", mu) || !LvN_SetI(kb, "ArrowCanUse", !Native_True(mu))) {
+				return Mode_Done(&t, 0);
+			}
+		} else if (!Mode_VSet(kb, "ArrowCanUse", onmem)) {
+			return Mode_Done(&t, 0);
 		}
-		if (Sf_True(&f, Sf_Global(&f, "NewsPanel", "NewsOnMem")) > 0) {
-			Sf_Call(&f, Sf_Global(&f, "NewsPanel", "FillNews"), "(O)", kb);
-			Sf_SetAttrS(&f, kb, "UseFunc", "NewsPanel.UseNewsPanel");
+		if (!Mode_Read("NewsPanel", "NewsOnMem", onmem) || (Native_True(onmem) &&
+			(!Native_CallGlobal("NewsPanel", "FillNews", NULL, "v", kb) || !LvN_SetS(kb, "UseFunc", "NewsPanel.UseNewsPanel"))) ||
+			!Mode_Append("NewsPanel", "Panels", kb) || !Mode_GVarSetI("NewsPanelActive", 1)) {
+			return Mode_Done(&t, 0);
 		}
-		Sf_Method(&f, Sf_Global(&f, "NewsPanel", "Panels"), "append", "(O)", kb);
-		Sf_Ask(&f, "Scrap", "Set", "(si)", "NewsPanelActive", 1);
-		Sf_Release(&f, mark);
+		Mode_Release(&t, mark);
 	}
-	if (Sf_True(&f, Sf_Global(&f, "NewsPanel", "NewsOnMem")) > 0) {
-		Sf_DelGlobal(&f, "NewsPanel", "NewsList");
+	return Mode_Done(&t, Mode_Read("NewsPanel", "NewsOnMem", v) && (!Native_True(v) || Mode_DelGlobal("NewsPanel", "NewsList")));
+}
+
+/* panel.var = v for every panel of Panels */
+static byte Np_Panels(const char *var, const nativeVal_t *v) {
+	nativeVal_t panels = { 0 }, p = { 0 };
+	int n = Mode_G("NewsPanel", "Panels", &panels) ? Mode_Loop(&panels) : -1;
+	byte ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		ok = Native_SeqItem(&panels, i, &p) && Mode_VSet(&p, var, v);
+		Native_Free(&p);
 	}
-	return Sf_None(&f);
+	Native_Free(&panels);
+	return ok;
 }
 
 /* UseNewsPanel(UsrName, CharName, optId, FullOption): the news of the option on the monitor; every panel moves on to
  * the next option */
-static PyObject *NewsPanel_UseNewsPanel(PyObject *self, PyObject *args) {
-	PyObject *usr, *charName, *opt, *full;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOOO", &usr, &charName, &opt, &full)) {
-		return NULL;
+static byte Np_UseNewsPanel(const nativeVal_t *charName, const nativeVal_t *opt) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *act = Mode_V(&t), *msg = Mode_V(&t), *end = Mode_V(&t), *r = Mode_V(&t), *ch = Mode_V(&t), *cur = Mode_V(&t);
+	nativeVal_t *next = Mode_V(&t), *num = Mode_V(&t), *iopt = Mode_V(&t);
+	if (!Mode_Import("Speech")) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Speech");
-	PyObject *act = Sf_Ask(&f, "Scrap", "GetSaveVar", "(s)", "GameAct");
-	PyObject *msg = Sf_Cat(&f, "sOsO", "News_", act, "_RemoteMessage", opt);
-	PyObject *end = msg ? Sf_Global(&f, "NewsPanel", "EndOfNews") : NULL;
-	if (Sf_True(&f, Sf_Ask(&f, "Speech", "RemoteComunication", "(OsiO)", msg, "Betty", 1, end)) > 0) {
-		Sf_SetGlobal(&f, "NewsPanel", "ShowingNews", Sf_Int(&f, 1));
-		Sf_Ask(&f, "Scrap", "Set", "(si)", "NewsPanelShowHead", 1);
-		PyObject *ch = Sf_Entity(&f, charName);
-		PyObject *next = Sf_OpI(&f, Sf_Attr(&f, ch, "ArriOpt"), '+', 1);
-		PyObject *iopt = Sf_Op(&f, next, '%', Sf_Attr(&f, ch, "ArrnOpt"));
-		PyObject *panels = Sf_Global(&f, "NewsPanel", "Panels");
-		for (int i = 0;; i++) {
-			int mark = f.n;
-			PyObject *p = Sf_Next(&f, panels, i);
-			if (!p) {
-				break;
-			}
-			Sf_SetAttr(&f, p, "ArriOpt", iopt);
-			Sf_Release(&f, mark);
-		}
+	Mode_SaveVar("GameAct", act);
+	if (!Mode_Cat(&t, msg, 4, Mode_S(&t, "News_"), act, Mode_S(&t, "_RemoteMessage"), opt) ||
+		!Mode_G("NewsPanel", "EndOfNews", end) ||
+		!Native_CallMod("Speech", "RemoteComunication", r, "vsiv", msg, "Betty", 1L, end)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	if (!Native_True(r)) {
+		return Mode_Done(&t, 1);
+	}
+	return Mode_Done(&t, LvN_PutI("NewsPanel", "ShowingNews", 1) && Mode_GVarSetI("NewsPanelShowHead", 1) &&
+		Mode_EntitySeam(charName, ch) && Mode_VObj(ch, "ArriOpt", cur) && Mode_Arith('+', cur, Mode_I(&t, 1), next) &&
+		Mode_VObj(ch, "ArrnOpt", num) && Mode_Arith('%', next, num, iopt) && Np_Panels("ArriOpt", iopt));
 }
 
 /* EndOfNews(): the end of the news on the monitor */
-static PyObject *NewsPanel_EndOfNews(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_SetGlobal(&f, "NewsPanel", "ShowingNews", Sf_Int(&f, 0));
-	Sf_Ask(&f, "Scrap", "Set", "(si)", "NewsPanelShowHead", 0);
-	return Sf_None(&f);
+static byte Np_EndOfNews(void) {
+	return LvN_PutI("NewsPanel", "ShowingNews", 0) && Mode_GVarSetI("NewsPanelShowHead", 0);
 }
 
 /* SwitchAlarm(status): with the alarm on the panels cannot be used and the news stop; it stays an alarm callback */
-static PyObject *NewsPanel_SwitchAlarm(PyObject *self, PyObject *args) {
-	PyObject *status;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &status)) {
-		return NULL;
+static byte Np_SwitchAlarm(const nativeVal_t *status) {
+	nativeVal_t off;
+	if (!Mode_Import("Alarm") || !Mode_AppendG("Alarm", "SetAlarmCallback", "NewsPanel", "SwitchAlarm")) {
+		return 0;
 	}
-	Sf_Import(&f, "Alarm");
-	PyObject *list = Sf_Mod(&f, "Alarm", "SetAlarmCallback");
-	PyObject *append = Sf_Attr(&f, list, "append");
-	Sf_Call(&f, append, "(O)", Sf_Global(&f, "NewsPanel", "SwitchAlarm"));
-	if (Sf_True(&f, status) > 0 && Sf_True(&f, Sf_Global(&f, "NewsPanel", "ShowingNews")) > 0) {
-		Sf_Ask(&f, "Scrap", "Set", "(si)", "RemainTalkTime", 0);
+	int showing = Native_True(status) ? LvN_GTrue("NewsPanel", "ShowingNews") : 0;
+	if (showing < 0 || (showing && !Mode_GVarSetI("RemainTalkTime", 0))) {
+		return 0;
 	}
-	int on = Sf_True(&f, status);
-	PyObject *off = on >= 0 ? Sf_Int(&f, !on) : NULL;
-	PyObject *panels = Sf_Global(&f, "NewsPanel", "Panels");
-	for (int i = 0;; i++) {
-		int mark = f.n;
-		PyObject *kb = Sf_Next(&f, panels, i);
-		if (!kb) {
-			break;
-		}
-		Sf_SetAttr(&f, kb, "ArrowCanUse", off);
-		Sf_Release(&f, mark);
-	}
-	return Sf_None(&f);
+	Native_SetInt(&off, !Native_True(status));
+	return Np_Panels("ArrowCanUse", &off);
 }
+
+MODE_FN(NewsPanel, GetNews, 0, Np_GetNews())
+MODE_FN(NewsPanel, FillNews, 1, Np_FillNews(&a[0]))
+MODE_FN(NewsPanel, Init, 0, Np_Init())
+MODE_FN(NewsPanel, UseNewsPanel, 4, Np_UseNewsPanel(&a[1], &a[2]))
+MODE_FN(NewsPanel, EndOfNews, 0, Np_EndOfNews())
+MODE_FN(NewsPanel, SwitchAlarm, 1, Np_SwitchAlarm(&a[0]))
 
 static byte News_SettingsBody(PyObject *locals, PyObject *f, void *ctx) {
 	(void)ctx;
@@ -320,7 +350,8 @@ static byte News_SettingsBody(PyObject *locals, PyObject *f, void *ctx) {
 	return res != NULL;
 }
 
-/* newspanel.py:7, `for f in (("NewsLogoBmp", "2D/News/LogoNews.bmp"), ...): apply(Scrap.Set, f)` */
+/* newspanel.py:7, `for f in (("NewsLogoBmp", "2D/News/LogoNews.bmp"), ...): apply(Scrap.Set, f)` (OBJLIB 6: the module
+ * code runs with the names of the module) */
 int NewsPanel_ModSettings(PyObject *module, PyObject *locals) {
 	static const struct {
 		const char *var;

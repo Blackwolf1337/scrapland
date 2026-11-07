@@ -47,11 +47,20 @@ checkout (tools/mcp); REGRESS_MCP_DIR takes the tools/mcp of another checkout.
   world clock ran at 0.3 to 0.4 of real time there (slow frames, CApp caps a frame at 0.1 s of game time); on the RTX
   it runs at 1.0. Needs about 300 MB of VRAM per game.
 - `!sleep N` waits N seconds of game time, not real time (so machine load does not change what a case sees). A level
-  load during the wait is seen by a mark in the game's globals (a load starts Python over); the load counts as 20 game
-  seconds (LOAD_CREDIT; the real-time sleeps of the cases covered the load), the new level's time counts from its
-  start. While the world clock stands (a menu stopped it) real seconds count.
+  load is seen in the game output (wine.log of the slot: the engine prints "Loading level at" and "Level loaded in",
+  App.c). When a load started during the case line before the sleep or during the sleep, the wait ends when the new
+  level's own time (Scrap.GetTime(), it starts at 0 with the level) reaches N minus LOAD_CREDIT (20 s), however long
+  the load took in real time. Real seconds count only while the new level answers with its clock standing. Before
+  2026-11-07 the real seconds of a slow load counted too: on the 610M shared with other agents' games a load took 40 s
+  instead of 5, so the read after `!sleep 45` came at the new level's start. The mark in the game's globals remains
+  for a load the output does not show. While the world clock stands (a menu stopped it) real seconds count, as before.
 - Case lines time out after 30 s; two timeouts in a row end the case (status hang); a game that ends is status crash.
-- Cases marked `port` in cases.txt start a real server: only one of them runs at a time.
+  A command waits longer than the timeout while a level load runs or ended less than 15 s ago (LOAD_START), at most
+  240 s more (LOAD_WAIT): Scrap.LoadLevel loads at once and the answer comes after the load.
+- Cases marked `port` in cases.txt start a real server: only one of them runs at a time. The lock file is
+  build-mcp/.regress-port.lock next to the slots (of SCRAP_MCP_ROOT), so the runs of all checkouts that share the game
+  data take turns. A lock per checkout once let another worktree's run start its server at the same time
+  (SNet.InitServer answered 0).
 
 ## Harness
 
@@ -82,9 +91,11 @@ Other variables:
 
 - REGRESS_PY_PROFILE=1: the games run with the Python profile (SCRAP_PY_PROFILE). Each result JSON keeps a
   "pyprofile" text of the Python code objects that ran in that game.
-- REGRESS_PACK_SRC=<root of the extracted packs>: the python harness copies Data.packed/scripts/net/ndeathmatchbots.py
-  into the game folder for fc-nm-bots (its helper _nbots compiles that pack-only module). This line cannot run on the
-  channel.
+- REGRESS_PACK_SRC=<root of the extracted packs>: for pack runs only, the python harness copies
+  Data.packed/scripts/net/ndeathmatchbots.py from that folder into the game folder, and the helper _nbots of
+  fc-nm-bots compiles it (the packs have no .pyc of NDeathMatchBots). C runs make the module from
+  data/modules/ndeathmatchbots.mod (written by hand from that source), so fc-nm-bots runs on both harnesses without
+  it.
 
 ## Comparison (compare.py, normalise.py)
 
@@ -97,6 +108,10 @@ Other variables:
   Pack runs differ but have the same token structure: the differing places are wildcards (number or any), the rest
   must match. Pack runs differ in structure (random list lengths): the line is masked and only has to agree on
   being an error or not.
+  Script_EvalValue (the C eval of the game's texts) raises SyntaxError('invalid syntax') for texts it cannot read; the
+  pack's parser gives the 1.5.2 message with position, e.g. "('unexpected EOF while parsing', (None, 1, 8, 'bad
+  list'))". Two names or numbers with blanks between them get the parser's message in C too, other forms differ
+  (fc-misth2, fc-nm-po, fc-nm-fl, fc-r8r-sg).
 - baselines/<case>.accepted.xz (regress.py accept): a C run whose differences were looked at and accepted; a line
   equal to it (same case line, same normalised reply) passes. Used for the deleted-handle probes fc-nc-* (the C
   raises at other points than the script, the open items of round 8n, e.g. OutMap.GetNearestFreeSpawnPosReal) and
@@ -122,8 +137,15 @@ The runs are pack runs (SCRAP_PACK_SCRIPTS=1, Python) on the build named in the 
 the build still has Python. After stage 7 of the Python removal they are fixed reference data. Remake them after an
 engine change that the pack side sees too (they are pack results on the C engine): `baseline` and
 `baseline --index 2 --lanes ca,ca2,ca3` at the same time, then `baseline --index 3` (three runs catch most of the
-pack's own variation; masks/ covers the rest). Old baselines go to old-<commit>/ (their times still order the
-lanes, longest case first).
+pack's own variation; masks/ covers the rest). Old baselines are kept in git history only. Set REGRESS_PACK_SRC for
+baseline runs (fc-nm-bots needs the source on the pack side).
+
+The baselines were remade on 2026-11-07 at script-loader 250d6e41 (three pack runs per case; fc-r6-am has a fourth run
+because Mayor_Default was missing in run 3).
+
+To check whether a difference between old and new pack runs is an engine change, run the old build (its commit built
+in a scratch folder) with the current runner on a slot and compare. If it gives the old values the engine changed. If
+it gives the new ones the cause is the runner or timing.
 
 ## Cases
 
@@ -136,6 +158,9 @@ random).
 - One run of all 295 cases with 3 lanes took 73 min (2026-11-06, load average about 13 from the other agents' games;
   about 214 lane minutes, mostly the game-time waits of the mission cases). Four lanes (`--lanes ca,ca2,ca3,cax`) bring
   it to about 55 min. The waits are game time, so a slow machine makes the run longer, not the results different.
+  On 2026-11-07, with the 610M shared with the other agents' games (world clock about 0.3 of real time), one pack run
+  of all cases took about 3 h with 3 lanes, and the C runs of both harnesses side by side (3 lanes each) took 213 and
+  215 min.
 - Ctrl-C or SIGTERM to regress.py also ends the lane games. A game left over (a killed runner) is found with
   `pgrep -x ScrapC` and readlink /proc/<pid>/exe (the slot path); kill it by pid.
 - Slots: C lanes ca ca2 ca3 (default for check), pack lanes pa pa2 pa3 (default for baseline), ASan cax

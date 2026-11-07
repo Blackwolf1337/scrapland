@@ -9,198 +9,222 @@
  * The state stays in the module (Actors, LocalActors, SceneName, EndOfSceneCallback, AcActionSet, VoiceChannel,
  * HidenChars, usr, LastDopplerLevel, PrevInput, InvulnerableChars), the functions read and write it as their
  * globals, because the level scripts set EndOfSceneCallback and read the rest.
+ *
+ * The module is native C (docs/objlib-plan.md, stage 2): its functions work on C values, read the globals where the
+ * script reads them and write them back at once, the lists of Actors and LocalActors changed in place (OBJLIB 5).
+ * The entities are handle values, the functions of the module are called through its globals (a level may replace
+ * one) and the callback as the value it holds. Scrap.Set, GetEntity, UsrEntity, CreateEntity, ConsoleError, OpenPack,
+ * ClosePack, GetAlarm, the dummy search and the scheduler, the SAct calls, the voices, SScorer.SetLabelText,
+ * SetMsgText, SetSpeechText and SetSpeechCallback and SInput.SetActionSet go through their seams (OBJLIB 7: the
+ * cases record most of them). MakeChar, Menu, CharScorer, Speech and string.atoi and atof stay by name (OBJLIB 3).
+ * The lines the game execs (the generic lines of a scene, the sound lines of SetDefSounds and Load) go through the
+ * exec reader (OBJLIB 6).
  */
 #include <limits.h>
+#include <string.h>
 
 #include "scrap/script.h"
+#include "scrap/scriptmodes.h"
+#include "game/Script/levels/Levels.h"
 
 #define SC "Scene"
 
-/* a function of the module as its functions call it, with Py_BuildValue arguments */
-#define Sc_Call(f, func, ...) Sf_Call(f, Sf_Global(f, SC, func), __VA_ARGS__)
-
-/* Scrap.Set(name, value) */
-#define Sc_Set(f, ...) Sf_Ask(f, "Scrap", "Set", __VA_ARGS__)
-
-/* SAct.SetAct(var, value) */
-#define Sc_Act(f, ...) Sf_Ask(f, "SAct", "SetAct", __VA_ARGS__)
+/* a global of the module as its functions read it */
+static byte Sc_G(const char *name, nativeVal_t *out) {
+	return Mode_G(SC, name, out);
+}
 
 /* Time = SAct.GetAct("TimeOfFrame" + `frame`); SAct.SetAct("AddEventAtTime", Time) */
-static void Sc_EventAt(scriptFrame_t *f, PyObject *frame) {
-	PyObject *t = Sf_Ask(f, "SAct", "GetAct", "(O)", Sf_Cat(f, "sO", "TimeOfFrame", Sf_Repr(f, frame)));
-	Sc_Act(f, "(sO)", "AddEventAtTime", t);
+static byte Sc_EventAt(const nativeVal_t *frame) {
+	nativeVal_t r, pre, key = { 0 }, t = { 0 };
+	Mode_Repr(frame, &r);
+	Native_SetText(&pre, "TimeOfFrame", 11);
+	byte ok = Native_Arith('+', &pre, &r, &key) && Mode_SActV("GetAct", &key, &t) && LvN_SetAct("AddEventAtTime", &t);
+	Native_Free(&r);
+	Native_Free(&pre);
+	Native_Free(&key);
+	Native_Free(&t);
+	return ok;
+}
+
+/* SAct.SetAct(name, "text") */
+static byte Sc_ActS(const char *name, const char *s) {
+	return Mode_SActSet(0, name, s, 0);
+}
+
+/* SAct.SetAct(name, i), SAct.SetAct(name, d) */
+static byte Sc_ActI(const char *name, long i) {
+	return Mode_SActSet(0, name, NULL, i);
+}
+
+static byte Sc_ActF(const char *name, double d) {
+	nativeVal_t v;
+	Native_SetFloat(&v, d);
+	return LvN_SetAct(name, &v);
 }
 
 /* the motion blur off for a scene */
-static void Sc_NoBlur(scriptFrame_t *f) {
-	Sc_Set(f, "(si)", "MotionBlurFactorBegin", 0);
-	Sc_Set(f, "(sd)", "MotionBlurFactorEnd", 0.0);
-	Sc_Set(f, "(sd)", "MotionBlurTime", 0.0);
-	Sc_Set(f, "(sd)", "MotionBlurEndTime", 0.0);
-	Sc_Set(f, "(sd)", "MotionBlurOffVar", 0.0);
-	Sc_Set(f, "(si)", "R_SceneMotionBlurValue", 0);
+static byte Sc_NoBlur(void) {
+	return Mode_GVarSetI("MotionBlurFactorBegin", 0) && Mode_GVarSetN("MotionBlurFactorEnd", 0.0) &&
+		Mode_GVarSetN("MotionBlurTime", 0.0) && Mode_GVarSetN("MotionBlurEndTime", 0.0) &&
+		Mode_GVarSetN("MotionBlurOffVar", 0.0) && Mode_GVarSetI("R_SceneMotionBlurValue", 0);
 }
 
 /* SScorer.SetLabelText("", 0), SetMsgText("", 0), SetSpeechText("", 0, 255, 255, 255) */
-static void Sc_NoText(scriptFrame_t *f) {
-	Sf_Ask(f, "SScorer", "SetLabelText", "(si)", "", 0);
-	Sf_Ask(f, "SScorer", "SetMsgText", "(si)", "", 0);
-	Sf_Ask(f, "SScorer", "SetSpeechText", "(siiii)", "", 0, 255, 255, 255);
+static byte Sc_NoText(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *empty = Mode_S(&t, "");
+	const nativeVal_t *zero = Mode_I(&t, 0), *full = Mode_I(&t, 255);
+	return Mode_Done(&t, Mode_LabelTextV(empty, zero) && Mode_MsgTextV(empty, zero) &&
+		Mode_SpeechText(empty, zero, full, full, full));
+}
+
+/* Scrap.GetEntity(Scrap.GetCam(0)) */
+static byte Sc_Cam(nativeVal_t *cam) {
+	nativeVal_t name;
+	Mode_CamName(0, &name);
+	byte ok = Mode_EntitySeam(&name, cam);
+	Native_Free(&name);
+	return ok;
+}
+
+/* fn(args...) with fn the global of the module read first (a level may replace it) */
+static byte Sc_Own(const char *fn, const nativeVal_t *args, int n) {
+	nativeVal_t f = { 0 };
+	byte ok = Sc_G(fn, &f) && Mode_CallArgs(&f, NULL, args, n);
+	Native_Free(&f);
+	return ok;
 }
 
 /* BaseAddActor(ActorName, ActorClass, pathfile): an actor of the scene (a tuple of its dummy, entity and class in
  * Actors[SceneName]) and its class */
-static PyObject *Scene_BaseAddActor(PyObject *self, PyObject *args) {
-	PyObject *name, *cls, *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &name, &cls, &path)) {
-		return NULL;
+static byte Sc_BaseAddActor(const nativeVal_t *name, const nativeVal_t *cls, const nativeVal_t *path) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *one = Mode_V(&t), *scene = Mode_V(&t), *actor = Mode_V(&t), *dummy = Mode_V(&t), *r = Mode_V(&t);
+	Native_SetFloat(one, 1.0);
+	if (!Mode_Import("MakeChar") || !Mode_SetModVar("MakeChar", "MaxSpeed", one) || !Mode_SetModVar("MakeChar", "MinSpeed", one) ||
+		!Sc_G("SceneName", scene)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "MakeChar");
-	Sf_SetMod(&f, "MakeChar", "MaxSpeed", Sf_Float(&f, 1.0));
-	Sf_SetMod(&f, "MakeChar", "MinSpeed", Sf_Float(&f, 1.0));
-	PyObject *actors = Sf_Global(&f, SC, "Actors");
-	PyObject *the = Sf_GetItem(&f, actors, Sf_Global(&f, SC, "SceneName"));
-	PyObject *actor = Sf_Op(&f, Sf_Global(&f, SC, "SceneName"), '+', name);
-	PyObject *append = Sf_Attr(&f, the, "append");
-	PyObject *dummy = Sf_Cat(&f, "sO", "Actor_", name);
-	Sf_Call(&f, append, "(OOO)", dummy, actor, cls);
-	Sf_Ask(&f, "SAct", "CreateClass", "(O)", actor);
-	Sf_Ask(&f, "SAct", "SetCls", "(sO)", "ModelFilePath", path);
-	return Sf_None(&f);
+	/* OBJLIB 5: the list of the scene in Actors, appended in place (append of three values makes a tuple in 1.5.2) */
+	PyObject *the = Mode_AtPy(SC, "Actors", scene);
+	PyObject *append = NULL;
+	byte ok = the && Mode_Read(SC, "SceneName", scene) && Native_Arith('+', scene, name, actor) &&
+		(append = PyObject_GetAttrString(the, "append")) != NULL && Mode_Cat(&t, dummy, 2, Mode_S(&t, "Actor_"), name) &&
+		Native_Call(append, NULL, "vvv", dummy, actor, cls);
+	Py_XDECREF(append);
+	Py_XDECREF(the);
+	return Mode_Done(&t, ok && Mode_SActV("CreateClass", actor, r) && LvN_SetCls("ModelFilePath", path));
 }
 
 /* AddCharActor(ActorName, ActorClass): an actor with the model of a character, its relax and morph actions */
-static PyObject *Scene_AddCharActor(PyObject *self, PyObject *args) {
-	PyObject *name, *cls;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &name, &cls)) {
-		return NULL;
+static byte Sc_AddCharActor(const nativeVal_t *name, const nativeVal_t *cls) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *fn = Mode_V(&t), *args = Mode_V(&t);
+	Mode_V(&t);
+	Mode_V(&t);
+	if (!Mode_Import("MakeChar") || !Sc_G("BaseAddActor", fn)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "MakeChar");
-	PyObject *fn = Sf_Global(&f, SC, "BaseAddActor");
-	Sf_Call(&f, fn, "(OOO)", name, cls, Sf_Cat(&f, "sOsOs", "Models/Chars/", cls, "/", cls, ".M3D"));
-	Sf_Ask(&f, "MakeChar", "CreateRelaxAction", "(Oissi)", cls, 0, "Relax", "Relax", 1);
-	Sf_Ask(&f, "MakeChar", "AddDefMorphActions", "(O)", cls);
-	Sf_Ask(&f, "SAct", "SetCls", "(ss)", "DefAction", "Relax");
-	return Sf_None(&f);
+	Native_Copy(&args[0], name);
+	Native_Copy(&args[1], cls);
+	return Mode_Done(&t, Mode_Cat(&t, &args[2], 5, Mode_S(&t, "Models/Chars/"), cls, Mode_S(&t, "/"), cls, Mode_S(&t, ".M3D")) &&
+		Mode_CallArgs(fn, NULL, args, 3) && Native_CallMod("MakeChar", "CreateRelaxAction", NULL, "vissi", cls, 0L, "Relax", "Relax", 1L) &&
+		Native_CallMod("MakeChar", "AddDefMorphActions", NULL, "v", cls) && Mode_SActSet(1, "DefAction", "Relax", 0));
+}
+
+/* LocalActors[SceneName].method(arg) on the list itself (OBJLIB 5); in: `arg in LocalActors[SceneName]` instead */
+static int Sc_LocalList(const nativeVal_t *scene, const char *method, const nativeVal_t *arg) {
+	PyObject *l = Mode_AtPy(SC, "LocalActors", scene);
+	if (!l) {
+		return -1;
+	}
+	int r;
+	if (!method) {
+		nativeVal_t v;
+		Native_Arg(l, &v);
+		r = Mode_In(&v, arg);
+		Native_Free(&v);
+	} else {
+		PyObject *m = PyObject_GetAttrString(l, (char *)method);
+		r = m && Native_Call(m, NULL, "v", arg) ? 1 : -1;
+		Py_XDECREF(m);
+	}
+	Py_DECREF(l);
+	return r;
 }
 
 /* AddLocalActor(ActorName, ActorClass): an actor with a model of the scene's folder; its class goes with the scene
  * (LocalActors) */
-static PyObject *Scene_AddLocalActor(PyObject *self, PyObject *args) {
-	PyObject *name, *cls;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &name, &cls)) {
-		return NULL;
+static byte Sc_AddLocalActor(const nativeVal_t *name, const nativeVal_t *cls) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *fn = Mode_V(&t), *ipath = Mode_V(&t), *scene = Mode_V(&t), *empty = Mode_V(&t), *args = Mode_V(&t);
+	Mode_V(&t);
+	Mode_V(&t);
+	if (!Mode_Import("Init") || !Sc_G("BaseAddActor", fn) || !LvN_ModGet("Init", "Path", ipath) || !Sc_G("SceneName", scene)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Init");
-	PyObject *fn = Sf_Global(&f, SC, "BaseAddActor");
-	PyObject *path = Sf_Cat(&f, "OsOsOs", Sf_Mod(&f, "Init", "Path"), "/Map/", Sf_Global(&f, SC, "SceneName"), "/", cls,
-		".M3D");
-	Sf_Call(&f, fn, "(OOO)", name, cls, path);
-	Sf_Ask(&f, "SAct", "SetCls", "(si)", "Discardable", 1);
-	PyObject *local = Sf_Global(&f, SC, "LocalActors");
-	int has = Sf_True(&f, Sf_Method(&f, local, "has_key", "(O)", Sf_Global(&f, SC, "SceneName")));
-	if (has == 0) {
-		Sf_SetItem(&f, Sf_Global(&f, SC, "LocalActors"), Sf_Global(&f, SC, "SceneName"), Sf_Keep(&f, PyList_New(0)));
+	Native_Copy(&args[0], name);
+	Native_Copy(&args[1], cls);
+	if (!Mode_Cat(&t, &args[2], 6, ipath, Mode_S(&t, "/Map/"), scene, Mode_S(&t, "/"), cls, Mode_S(&t, ".M3D")) ||
+		!Mode_CallArgs(fn, NULL, args, 3) || !Mode_SActSet(1, "Discardable", NULL, 1) || !Mode_Read(SC, "SceneName", scene)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *list = Sf_GetItem(&f, Sf_Global(&f, SC, "LocalActors"), Sf_Global(&f, SC, "SceneName"));
-	if (Sf_In(&f, cls, list) == 0) {
-		list = Sf_GetItem(&f, Sf_Global(&f, SC, "LocalActors"), Sf_Global(&f, SC, "SceneName"));
-		Sf_Method(&f, list, "append", "(O)", cls);
+	int has = Mode_HasKey(SC, "LocalActors", 1, scene);
+	Native_SetEmpty(empty, NV_LIST);
+	if (has < 0 || (!has && (!Mode_Read(SC, "SceneName", scene) || !Mode_DictPut(SC, "LocalActors", NULL, scene, empty)))) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	int in = Mode_Read(SC, "SceneName", scene) ? Sc_LocalList(scene, NULL, cls) : -1;
+	return Mode_Done(&t, in >= 0 && (in || (Mode_Read(SC, "SceneName", scene) && Sc_LocalList(scene, "append", cls) > 0)));
 }
 
-/* ActorAction(frame, Actor, Action, DefAction="Relax"): at the frame the actor changes its action */
-static PyObject *Scene_ActorAction(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "frame", "Actor", "Action", "DefAction", NULL };
-	PyObject *frame, *actor, *action, *def = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOO|O", names, &frame, &actor, &action, &def)) {
-		return NULL;
-	}
-	def = def ? def : Sf_Str(&f, "Relax");
-	Sc_EventAt(&f, frame);
-	Sc_Act(&f, "(sO)", "EventName", Sf_Cat(&f, "sOsOsOs", "'", actor, "','", action, "','", def, "'"));
-	Sc_Act(&f, "(ss)", "EventFunc", "Scene.ActorActEvent");
-	return Sf_None(&f);
+/* EventName "'" + Actor + "','" + Action + "','" + DefAction + "'" and EventFunc func at the frame (ActorAction,
+ * ObjAction) */
+static byte Sc_Action(const nativeVal_t *frame, const nativeVal_t *actor, const nativeVal_t *action, const nativeVal_t *def,
+	const char *func) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *name = Mode_V(&t);
+	return Mode_Done(&t, Sc_EventAt(frame) && Mode_Cat(&t, name, 7, Mode_S(&t, "'"), actor, Mode_S(&t, "','"), action,
+		Mode_S(&t, "','"), def, Mode_S(&t, "'")) && LvN_SetAct("EventName", name) && Sc_ActS("EventFunc", func));
 }
 
-/* Actor, Action, DefAction = eval(EventName); the entity of the scene's actor or the object forces the action */
-static PyObject *Sc_ActEvent(PyObject *args, byte actor) {
-	PyObject *ename, *event, *time, *v[3];
-	scriptFrame_t f = { 0 };
-	if (!PyArg_ParseTuple(args, "OOO", &ename, &event, &time)) {
-		return NULL;
+/* Actor, Action, DefAction = eval(EventName); the entity of the scene's actor (actor 1) or the object forces the
+ * action */
+static byte Sc_ActEvent(const nativeVal_t *ename, const nativeVal_t *event, byte actor) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *val = Mode_V(&t), *v = Mode_V(&t), *tail = Mode_V(&t), *name = Mode_V(&t), *e = Mode_V(&t);
+	Mode_V(&t);
+	Mode_V(&t);
+	if (!Native_EvalText(SC, event, val) || !Mode_Unpack(val, 3, v)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Unpack(&f, Sf_Eval(&f, event, SC), 3, v);
-	PyObject *name = actor ? Sf_Op(&f, Sf_Slice(&f, ename, 9, INT_MAX), '+', v[0]) : v[0];
-	PyObject *e = Sf_Entity(&f, name);
-	Sf_SetAttr(&f, e, "ForceAction", v[1]);
-	Sf_SetAttr(&f, e, "ForceDefLoop", v[2]);
-	return Sf_None(&f);
-}
-
-/* ActorActEvent(EntityName, EventName, Time) */
-static PyObject *Scene_ActorActEvent(PyObject *self, PyObject *args) {
-	(void)self;
-	return Sc_ActEvent(args, 1);
+	if (actor) {
+		if (!Native_Slice(ename, 9, INT_MAX, tail) || !Native_Arith('+', tail, &v[0], name)) {
+			return Mode_Done(&t, 0);
+		}
+	} else {
+		Native_Copy(name, &v[0]);
+	}
+	return Mode_Done(&t, Mode_EntitySeam(name, e) && Mode_VSet(e, "ForceAction", &v[1]) && Mode_VSet(e, "ForceDefLoop", &v[2]));
 }
 
 /* ActorBreakChannel(frame, Actor, Channel): at the frame the actor stops a secondary channel */
-static PyObject *Scene_ActorBreakChannel(PyObject *self, PyObject *args) {
-	PyObject *frame, *actor, *channel;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &frame, &actor, &channel)) {
-		return NULL;
-	}
-	Sc_EventAt(&f, frame);
-	Sc_Act(&f, "(sO)", "EventName", Sf_Cat(&f, "sOsO", "'", actor, "',", Sf_Repr(&f, channel)));
-	Sc_Act(&f, "(ss)", "EventFunc", "Scene.ActorActBreakChanne");
-	return Sf_None(&f);
+static byte Sc_ActorBreakChannel(const nativeVal_t *frame, const nativeVal_t *actor, const nativeVal_t *channel) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *r = Mode_V(&t), *name = Mode_V(&t);
+	Mode_Repr(channel, r);
+	return Mode_Done(&t, Sc_EventAt(frame) && Mode_Cat(&t, name, 4, Mode_S(&t, "'"), actor, Mode_S(&t, "',"), r) &&
+		LvN_SetAct("EventName", name) && Sc_ActS("EventFunc", "Scene.ActorActBreakChanne"));
 }
 
 /* ActorActBreakChanne(EntityName, EventName, Time) */
-static PyObject *Scene_ActorActBreakChanne(PyObject *self, PyObject *args) {
-	PyObject *ename, *event, *time, *v[2];
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &ename, &event, &time)) {
-		return NULL;
-	}
-	Sf_Unpack(&f, Sf_Eval(&f, event, SC), 2, v);
-	PyObject *e = Sf_Entity(&f, Sf_Op(&f, Sf_Slice(&f, ename, 9, INT_MAX), '+', v[0]));
-	Sf_SetAttr(&f, e, "StopSecondary", v[1]);
-	return Sf_None(&f);
-}
-
-/* ObjAction(frame, Actor, Action, DefAction="Relax"): at the frame an object of the level changes its action */
-static PyObject *Scene_ObjAction(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "frame", "Actor", "Action", "DefAction", NULL };
-	PyObject *frame, *actor, *action, *def = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOO|O", names, &frame, &actor, &action, &def)) {
-		return NULL;
-	}
-	def = def ? def : Sf_Str(&f, "Relax");
-	Sc_EventAt(&f, frame);
-	Sc_Act(&f, "(sO)", "EventName", Sf_Cat(&f, "sOsOsOs", "'", actor, "','", action, "','", def, "'"));
-	Sc_Act(&f, "(ss)", "EventFunc", "Scene.ObjActEvent");
-	return Sf_None(&f);
-}
-
-/* ObjActEvent(EntityName, EventName, Time) */
-static PyObject *Scene_ObjActEvent(PyObject *self, PyObject *args) {
-	(void)self;
-	return Sc_ActEvent(args, 0);
+static byte Sc_ActorActBreakChanne(const nativeVal_t *ename, const nativeVal_t *event) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *val = Mode_V(&t), *v = Mode_V(&t), *tail = Mode_V(&t), *name = Mode_V(&t), *e = Mode_V(&t);
+	Mode_V(&t);
+	return Mode_Done(&t, Native_EvalText(SC, event, val) && Mode_Unpack(val, 2, v) && Native_Slice(ename, 9, INT_MAX, tail) &&
+		Native_Arith('+', tail, &v[0], name) && Mode_EntitySeam(name, e) && Mode_VSet(e, "StopSecondary", &v[1]));
 }
 
 /* exec(ActorType + "Sound.SetSounds('" + SceneName + ActorName + "')") of SetDefSounds: the call made directly when
@@ -220,14 +244,17 @@ static void Sc_SetSounds(scriptFrame_t *f, PyObject *locals, PyObject *type, PyO
 }
 
 /* SetDefSounds(ActorName, ActorType): the sounds of the character's sound script on the actor's class, then the
- * MapSnd function of the actor when the level has one */
-static PyObject *Scene_SetDefSounds(PyObject *self, PyObject *args) {
-	PyObject *name, *type;
+ * MapSnd function of the actor when the level has one. OBJLIB 6: the function is its exec lines (an import, a call
+ * of the sound module, the MapSnd call in a try), read by the exec reader in the dict of its variables */
+static byte Sc_SetDefSounds(const nativeVal_t *nameArg, const nativeVal_t *typeArg) {
 	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &name, &type)) {
-		return NULL;
+	PyObject *name = Native_ToPy(nameArg), *type = name ? Native_ToPy(typeArg) : NULL;
+	if (!type) {
+		Py_XDECREF(name);
+		return 0;
 	}
+	Sf_Keep(&f, name);
+	Sf_Keep(&f, type);
 	/* the function has exec, so its variables are a dict the exec'd lines share */
 	PyObject *locals = Sf_Keep(&f, Py_BuildValue("{s:O,s:O}", "ActorName", name, "ActorType", type));
 	if (PyString_Check(type)) {
@@ -237,604 +264,703 @@ static PyObject *Scene_SetDefSounds(PyObject *self, PyObject *args) {
 	}
 	PyObject *scene = Sf_Global(&f, SC, "SceneName");
 	Sc_SetSounds(&f, locals, type, scene, name);
-	if (f.failed) {
-		return Sf_None(&f);
-	}
-	scene = Sf_Global(&f, SC, "SceneName");
-	if (scene && PyString_Check(scene) && PyString_Check(name)) {
-		Sf_ImportCall(&f, SC, locals, "MapSnd", Sf_Op(&f, scene, '+', name));
-	} else {
-		Sf_Exec(&f, Sf_Cat(&f, "sOOs", "import MapSnd;MapSnd.", scene, name, "()"), SC, locals);
-	}
-	if (Sf_Except(&f)) {
+	if (!f.failed) {
 		scene = Sf_Global(&f, SC, "SceneName");
-		Sf_Print(&f, "O", Sf_Cat(&f, "sOOs", "Sound warning: MapSnd.", scene, name, "() not found\n"));
+		if (scene && PyString_Check(scene) && PyString_Check(name)) {
+			Sf_ImportCall(&f, SC, locals, "MapSnd", Sf_Op(&f, scene, '+', name));
+		} else {
+			Sf_Exec(&f, Sf_Cat(&f, "sOOs", "import MapSnd;MapSnd.", scene, name, "()"), SC, locals);
+		}
+		if (Sf_Except(&f)) {
+			scene = Sf_Global(&f, SC, "SceneName");
+			Sf_Print(&f, "O", Sf_Cat(&f, "sOOs", "Sound warning: MapSnd.", scene, name, "() not found\n"));
+		}
 	}
-	return Sf_None(&f);
+	byte ok = !f.failed;
+	Sf_Release(&f, 0);
+	return ok;
 }
 
 /* CreateLocalAction(CharName, turnspeed, Name="Relax", Anm="Relax", Loop=0): an action of an actor with an
  * animation of the scene's folder */
-static PyObject *Scene_CreateLocalAction(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "CharName", "turnspeed", "Name", "Anm", "Loop", NULL };
-	PyObject *ch, *speed, *name = NULL, *anm = NULL, *loop = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|OOO", names, &ch, &speed, &name, &anm, &loop)) {
-		return NULL;
+static byte Sc_CreateLocalAction(const nativeVal_t *ch, const nativeVal_t *speed, const nativeVal_t *name,
+	const nativeVal_t *anm, const nativeVal_t *loop) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *r = Mode_V(&t), *ipath = Mode_V(&t), *scene = Mode_V(&t), *path = Mode_V(&t);
+	if (!Mode_Import("Init") || !Mode_SActV("CreateAction", name, r) || !LvN_ModGet("Init", "Path", ipath) ||
+		!Sc_G("SceneName", scene) || !Mode_Cat(&t, path, 10, ipath, Mode_S(&t, "/Map/"), scene, Mode_S(&t, "/"), scene,
+		Mode_S(&t, "Anm/"), ch, Mode_S(&t, "_"), anm, Mode_S(&t, ".M3D"))) {
+		return Mode_Done(&t, 0);
 	}
-	name = name ? name : Sf_Str(&f, "Relax");
-	anm = anm ? anm : Sf_Str(&f, "Relax");
-	loop = loop ? loop : Sf_Int(&f, 0);
-	Sf_Import(&f, "Init");
-	Sf_Ask(&f, "SAct", "CreateAction", "(O)", name);
-	PyObject *path = Sf_Mod(&f, "Init", "Path");
-	PyObject *scene = Sf_Global(&f, SC, "SceneName");
-	path = Sf_Cat(&f, "OsOsOsOsOs", path, "/Map/", scene, "/", scene, "Anm/", ch, "_", anm, ".M3D");
-	Sc_Act(&f, "(sO)", "AnmFilePath", path);
-	Sc_Act(&f, "(sO)", "isLoop", loop);
-	Sc_Act(&f, "(sO)", "RotSpeed", speed);
-	Sc_Act(&f, "(si)", "AngRotLimit", 90);
-	Sc_Act(&f, "(si)", "UseDisp", 0);
-	Sc_Act(&f, "(si)", "NodeModifier", -1);
-	Sc_Act(&f, "(sd)", "AngleModifierSpeed", 5.0);
-	return Sf_None(&f);
+	return Mode_Done(&t, LvN_SetAct("AnmFilePath", path) && LvN_SetAct("isLoop", loop) && LvN_SetAct("RotSpeed", speed) &&
+		Sc_ActI("AngRotLimit", 90) && Sc_ActI("UseDisp", 0) && Sc_ActI("NodeModifier", -1) && Sc_ActF("AngleModifierSpeed", 5.0));
 }
 
-/* ExecGeneric(EntityName, EventName, Time): the event is a line of Python (the forms of the scene lines run in C,
- * Sf_Exec) */
-static PyObject *Scene_ExecGeneric(PyObject *self, PyObject *args) {
-	PyObject *ename, *event, *time;
+/* ExecGeneric(EntityName, EventName, Time): the event is a line of Python (OBJLIB 6: the forms of the scene lines run
+ * in C, Sf_Exec, with the arguments as the locals of the line) */
+static byte Sc_ExecGeneric(const nativeVal_t *ename, const nativeVal_t *event, const nativeVal_t *time) {
 	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &ename, &event, &time)) {
-		return NULL;
-	}
-	PyObject *locals = Sf_Keep(&f, Py_BuildValue("{s:O,s:O,s:O}", "EntityName", ename, "EventName", event, "Time",
-		time));
-	Sf_Exec(&f, event, SC, locals);
-	return Sf_None(&f);
+	PyObject *a = Native_ToPy(ename), *b = a ? Native_ToPy(event) : NULL, *c = b ? Native_ToPy(time) : NULL;
+	PyObject *locals = c ? Py_BuildValue("{s:O,s:O,s:O}", "EntityName", a, "EventName", b, "Time", c) : NULL;
+	byte ok = locals && Sf_Exec(&f, b, SC, locals);
+	Sf_Release(&f, 0);
+	Py_XDECREF(locals);
+	Py_XDECREF(c);
+	Py_XDECREF(b);
+	Py_XDECREF(a);
+	return ok;
 }
 
 /* AddGeneric(Frame, Event, Discardable=1): a line of Python at the frame */
-static PyObject *Scene_AddGeneric(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "Frame", "Event", "Discardable", NULL };
-	PyObject *frame, *event, *disc = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|O", names, &frame, &event, &disc)) {
-		return NULL;
-	}
-	disc = disc ? disc : Sf_Int(&f, 1);
-	Sc_EventAt(&f, frame);
-	Sc_Act(&f, "(ss)", "EventFunc", "Scene.ExecGeneric");
-	Sc_Act(&f, "(sO)", "EventName", event);
-	Sc_Act(&f, "(sO)", "EventDiscardable", disc);
-	return Sf_None(&f);
+static byte Sc_AddGeneric(const nativeVal_t *frame, const nativeVal_t *event, const nativeVal_t *disc) {
+	return Sc_EventAt(frame) && Sc_ActS("EventFunc", "Scene.ExecGeneric") && LvN_SetAct("EventName", event) &&
+		LvN_SetAct("EventDiscardable", disc);
 }
 
 /* AddStream(frame, filename, vol=1.0): a stream of the stream folder at the frame */
-static PyObject *Scene_AddStream(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "frame", "filename", "vol", NULL };
-	PyObject *frame, *file, *vol = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|O", names, &frame, &file, &vol)) {
-		return NULL;
-	}
-	vol = vol ? vol : Sf_Float(&f, 1.0);
-	Sc_EventAt(&f, frame);
-	Sc_Act(&f, "(sO)", "EventName", Sf_Cat(&f, "OsO", file, "\001", Sf_Repr(&f, vol)));
-	Sc_Act(&f, "(ss)", "EventFunc", "Scene.PlayStream");
-	return Sf_None(&f);
+static byte Sc_AddStream(const nativeVal_t *frame, const nativeVal_t *file, const nativeVal_t *vol) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *r = Mode_V(&t), *name = Mode_V(&t);
+	Mode_Repr(vol, r);
+	return Mode_Done(&t, Sc_EventAt(frame) && Mode_Cat(&t, name, 3, file, Mode_S(&t, "\001"), r) &&
+		LvN_SetAct("EventName", name) && Sc_ActS("EventFunc", "Scene.PlayStream"));
 }
 
 /* PlayStream(EntityName, EventName, Time): opens the stream on voice channel 2 and plays it half a second later at
  * its volume */
-static PyObject *Scene_PlayStream(PyObject *self, PyObject *args) {
-	PyObject *ename, *event, *time;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &ename, &event, &time)) {
-		return NULL;
+static byte Sc_PlayStream(const nativeVal_t *event) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cads = Mode_V(&t), *path = Mode_V(&t), *c0 = Mode_V(&t), *file = Mode_V(&t), *time = Mode_V(&t);
+	nativeVal_t *c1 = Mode_V(&t), *args = Mode_V(&t);
+	Mode_V(&t);
+	if (!Mode_Import("string") || !Native_Split(event, "\001", cads) || !Native_GVarGet("StreamPath", path) ||
+		!LvN_Item(cads, 0, c0) || !Mode_Cat(&t, file, 3, path, c0, Mode_S(&t, ".ogg")) ||
+		!Mode_OpenVoice(file, Mode_I(&t, 2), Mode_I(&t, 0))) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "string");
-	PyObject *cads = Sf_Ask(&f, "string", "split", "(Os)", event, "\001");
-	PyObject *path = Sf_Ask(&f, "Scrap", "Get", "(s)", "StreamPath");
-	path = Sf_Cat(&f, "OOs", path, Sf_Item(&f, cads, 0), ".ogg");
-	Sf_Ask(&f, "SSound", "OpenVoice", "(Oii)", path, 2, 0);
-	PyObject *t = Sf_Op(&f, Sf_Time(&f), '+', Sf_Float(&f, 0.5));
-	PyObject *fn = Sf_Global(&f, SC, "PlayVoiceVol");
-	PyObject *vol = Sf_Ask(&f, "string", "atof", "(O)", Sf_Item(&f, cads, 1));
-	Sf_Schedule(&f, t, fn, Sf_Build(&f, "(iO)", 2, vol), NULL);
-	return Sf_None(&f);
-}
-
-/* PlayVoiceVol(chan, vol) */
-static PyObject *Scene_PlayVoiceVol(PyObject *self, PyObject *args) {
-	PyObject *chan, *vol;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &chan, &vol)) {
-		return NULL;
-	}
-	Sf_Ask(&f, "SSound", "PlayVoice", "(O)", chan);
-	Sf_Ask(&f, "SSound", "SetVoiceVolume", "(OO)", chan, vol);
-	return Sf_None(&f);
+	Native_SetFloat(time, Mode_Time() + 0.5);
+	PyObject *fn = Mode_GlobalPy(SC, "PlayVoiceVol");
+	Native_SetInt(&args[0], 2);
+	byte ok = fn && LvN_Item(cads, 1, c1) && Native_CallMod("string", "atof", &args[1], "v", c1) &&
+		Mode_Schedule(time, fn, args, 2, NULL);
+	Py_XDECREF(fn);
+	return Mode_Done(&t, ok);
 }
 
 /* PlayText(EntityName, EventName, Time): the subtitle of the event ("time\001key") */
-static PyObject *Scene_PlayText(PyObject *self, PyObject *args) {
-	PyObject *ename, *event, *time;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &ename, &event, &time)) {
-		return NULL;
-	}
-	Sf_Import(&f, "string");
-	PyObject *cads = Sf_Ask(&f, "string", "split", "(Os)", event, "\001");
-	PyObject *fn = Sf_Global(&f, SC, "SetText");
-	PyObject *cad = Sf_Item(&f, cads, 1);
-	Sf_Call(&f, fn, "(OO)", cad, Sf_Ask(&f, "string", "atoi", "(O)", Sf_Item(&f, cads, 0)));
-	return Sf_None(&f);
+static byte Sc_PlayText(const nativeVal_t *event) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cads = Mode_V(&t), *fn = Mode_V(&t), *c0 = Mode_V(&t), *args = Mode_V(&t);
+	Mode_V(&t);
+	return Mode_Done(&t, Mode_Import("string") && Native_Split(event, "\001", cads) && Sc_G("SetText", fn) &&
+		LvN_Item(cads, 1, &args[0]) && LvN_Item(cads, 0, c0) && Native_CallMod("string", "atoi", &args[1], "v", c0) &&
+		Mode_CallArgs(fn, NULL, args, 2));
 }
 
 /* SetText(Cad, Time): the voice of the language key on the next voice channel and its text (Time 0: the time the
  * text takes to read) */
-static PyObject *Scene_SetText(PyObject *self, PyObject *args) {
-	PyObject *cad, *time;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &cad, &time)) {
-		return NULL;
+static byte Sc_SetText(const nativeVal_t *cad, const nativeVal_t *timeArg) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *time = Mode_V(&t), *lang = Mode_V(&t), *path = Mode_V(&t), *file = Mode_V(&t), *vc = Mode_V(&t);
+	if (!Mode_Import("Speech")) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Speech");
-	if (Sf_EqI(&f, time, 0) > 0) {
-		time = Sf_Ask(&f, "Speech", "CalculateSpeechTime", "(O)", Sf_Lang(&f, cad));
+	Native_Copy(time, timeArg);
+	if (Mode_CmpI(time, "==", 0) > 0) {
+		Native_Free(time);
+		if (!Mode_LangV(cad, lang) || !Native_CallMod("Speech", "CalculateSpeechTime", time, "v", lang)) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	PyObject *path = Sf_Cat(&f, "OO", Sf_Ask(&f, "Scrap", "Get", "(s)", "VoicePath"), cad);
-	Sf_Ask(&f, "SSound", "OpenVoice", "(OO)", path, Sf_Global(&f, SC, "VoiceChannel"));
-	Sf_Ask(&f, "Speech", "PlayVoiceScheduled", "(Odi)", Sf_Global(&f, SC, "VoiceChannel"), 0.25, 0);
-	int on = Sf_True(&f, Sf_Global(&f, SC, "VoiceChannel"));
-	if (on >= 0) {
-		Sf_SetGlobal(&f, SC, "VoiceChannel", Sf_Int(&f, !on));
+	if (!Native_GVarGet("VoicePath", path) || !Native_Arith('+', path, cad, file) || !Sc_G("VoiceChannel", vc) ||
+		!Mode_OpenVoice(file, vc, NULL) || !Mode_Read(SC, "VoiceChannel", vc) ||
+		!Native_CallMod("Speech", "PlayVoiceScheduled", NULL, "vdi", vc, 0.25, 0L) || !Mode_Read(SC, "VoiceChannel", vc) ||
+		!LvN_PutI(SC, "VoiceChannel", !Native_True(vc)) || !Mode_SpeechCallback("Scene.StopSpeech")) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Ask(&f, "SScorer", "SetSpeechCallback", "(s)", "Scene.StopSpeech");
-	Sf_Ask(&f, "SScorer", "SetSpeechText", "(OOiii)", Sf_Lang(&f, cad), time, 220, 235, 255);
-	return Sf_None(&f);
+	Native_Free(lang);
+	return Mode_Done(&t, Mode_LangV(cad, lang) && Mode_SpeechText(lang, time, Mode_I(&t, 220), Mode_I(&t, 235), Mode_I(&t, 255)));
 }
 
 /* StopSpeech(id=0): the voice that plays */
-static PyObject *Scene_StopSpeech(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "id", NULL };
-	PyObject *id = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &id)) {
-		return NULL;
+static byte Sc_StopSpeech(void) {
+	nativeVal_t vc = { 0 }, ch;
+	if (!Sc_G("VoiceChannel", &vc)) {
+		return 0;
 	}
-	int on = Sf_True(&f, Sf_Global(&f, SC, "VoiceChannel"));
-	if (on >= 0) {
-		Sf_Ask(&f, "SSound", "StopVoice", "(i)", !on);
-	}
-	return Sf_None(&f);
+	Native_SetInt(&ch, !Native_True(&vc));
+	Native_Free(&vc);
+	return Mode_StopVoice(&ch);
 }
 
 /* AddText(frame, lngtext, time=86400): a subtitle at the frame */
-static PyObject *Scene_AddText(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "frame", "lngtext", "time", NULL };
-	PyObject *frame, *text, *time = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|O", names, &frame, &text, &time)) {
-		return NULL;
-	}
-	time = time ? time : Sf_Int(&f, 86400);
-	Sc_EventAt(&f, frame);
-	Sc_Act(&f, "(sO)", "EventName", Sf_Cat(&f, "OsO", Sf_Repr(&f, time), "\001", text));
-	Sc_Act(&f, "(ss)", "EventFunc", "Scene.PlayText");
-	return Sf_None(&f);
+static byte Sc_AddText(const nativeVal_t *frame, const nativeVal_t *text, const nativeVal_t *time) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *r = Mode_V(&t), *name = Mode_V(&t);
+	Mode_Repr(time, r);
+	return Mode_Done(&t, Sc_EventAt(frame) && Mode_Cat(&t, name, 3, r, Mode_S(&t, "\001"), text) &&
+		LvN_SetAct("EventName", name) && Sc_ActS("EventFunc", "Scene.PlayText"));
 }
 
 /* AbortScene(id): Escape ends the scene */
-static PyObject *Scene_AbortScene(PyObject *self, PyObject *args) {
-	PyObject *id;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &id)) {
-		return NULL;
+static byte Sc_AbortScene(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *fn = Mode_V(&t), *args = Mode_V(&t);
+	Mode_V(&t);
+	Mode_V(&t);
+	if (!Sc_G("EndOfScene", fn) || !Sc_G("SceneName", &args[0])) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *fn = Sf_Global(&f, SC, "EndOfScene");
-	Sf_Call(&f, fn, "(Osi)", Sf_Global(&f, SC, "SceneName"), "EndOfScene", 0);
-	return Sf_None(&f);
+	Native_SetStr(&args[1], "EndOfScene");
+	Native_SetInt(&args[2], 0);
+	return Mode_Done(&t, Mode_CallArgs(fn, NULL, args, 3));
+}
+
+/* Scrap.GetEntity(name).Del() */
+static byte Sc_Del(const nativeVal_t *name) {
+	nativeVal_t e = { 0 };
+	byte ok = Mode_EntitySeam(name, &e) && Mode_VDel(&e);
+	Native_Free(&e);
+	return ok;
 }
 
 /* EndOfScene(EntityName, EventName, Time): the scene and its actors go, the characters come back, the camera, the
  * HUD and the input of the player return; EndOfSceneCallback(usr) runs last */
-static PyObject *Scene_EndOfScene(PyObject *self, PyObject *args) {
-	PyObject *ename, *event, *time;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &ename, &event, &time)) {
-		return NULL;
+static byte Sc_EndOfScene(const nativeVal_t *ename) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *none = Mode_V(&t), *cam = Mode_V(&t), *sname = Mode_V(&t), *actors = Mode_V(&t), *list = Mode_V(&t);
+	nativeVal_t *actr = Mode_V(&t), *name = Mode_V(&t), *v = Mode_V(&t), *time = Mode_V(&t), *cb = Mode_V(&t);
+	Native_SetNone(none);
+	if (!Mode_Put(SC, "SceneName", NULL, none) || !Mode_StopAllSounds() || !Mode_GVarSetI("ForceNoActionMusic", 0) ||
+		!Mode_StopVoice(Mode_I(&t, 0)) || !Mode_StopVoice(Mode_I(&t, 1)) || !Mode_StopVoice(Mode_I(&t, 2)) || !Sc_Cam(cam) ||
+		!LvN_SetS(cam, "EntityLink", "") || !Sc_Own("UnhideChars", NULL, 0) || !Sc_Del(ename) ||
+		!Native_Slice(ename, 9, INT_MAX, sname) || !Sc_G("Actors", actors) || !Mode_Sub(actors, sname, list)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_SetGlobal(&f, SC, "SceneName", Py_None);
-	Sf_Ask(&f, "SSound", "StopAllSounds", "()");
-	Sc_Set(&f, "(si)", "ForceNoActionMusic", 0);
-	Sf_Ask(&f, "SSound", "StopVoice", "(i)", 0);
-	Sf_Ask(&f, "SSound", "StopVoice", "(i)", 1);
-	Sf_Ask(&f, "SSound", "StopVoice", "(i)", 2);
-	PyObject *cam = Sf_Entity(&f, Sf_Ask(&f, "Scrap", "GetCam", "(i)", 0));
-	Sf_SetAttrS(&f, cam, "EntityLink", "");
-	Sc_Call(&f, "UnhideChars", "()");
-	PyObject *l = Sf_Entity(&f, ename);
-	Sf_Method(&f, l, "Del", "()");
-	PyObject *sname = Sf_Slice(&f, ename, 9, INT_MAX);
-	PyObject *list = Sf_GetItem(&f, Sf_Global(&f, SC, "Actors"), sname);
-	for (int i = 0;; i++) {
-		int mark = f.n;
-		PyObject *actr = Sf_Next(&f, list, i);
-		if (!actr) {
-			break;
+	int n = Mode_Loop(list);
+	for (int i = 0; i < n; i++) {
+		Native_Free(actr);
+		Native_Free(name);
+		if (!Native_SeqItem(list, i, actr) || !LvN_Item(actr, 1, name) || !Sc_Del(name)) {
+			return Mode_Done(&t, 0);
 		}
-		Sf_Method(&f, Sf_Entity(&f, Sf_Item(&f, actr, 1)), "Del", "()");
-		Sf_Release(&f, mark);
 	}
-	Sf_Import(&f, "CharScorer");
-	Sf_Ask(&f, "CharScorer", "Create", "(i)", 0);
-	Sc_NoText(&f);
-	Sf_Ask(&f, "SInput", "SetActionSet", "(O)", Sf_Global(&f, SC, "AcActionSet"));
-	Sc_Set(&f, "(ss)", "EscapeEvent", "Menu.Init");
-	Sc_Set(&f, "(sO)", "SoundDopplerLevel", Sf_Global(&f, SC, "LastDopplerLevel"));
-	PyObject *t = Sf_Op(&f, Sf_Time(&f), '+', Sf_Float(&f, 0.2));
-	Sf_Schedule(&f, t, Sf_Global(&f, SC, "DelClass"), Sf_Build(&f, "(O)", sname), NULL);
-	Sc_Set(&f, "(si)", "DisableSkipSlot", 0);
-	Sc_Set(&f, "(si)", "PauseInactivityTime", 0);
-	Sc_Set(&f, "(si)", "CameraScene", 0);
-	PyObject *cb = Sf_Global(&f, SC, "EndOfSceneCallback");
-	if (Sf_Compare(&f, cb, "!=", Py_None) > 0) {
-		Sf_SetGlobal(&f, SC, "EndOfSceneCallback", Py_None);
-		Sf_Call(&f, cb, "(O)", Sf_Global(&f, SC, "usr"));
+	if (n < 0 || !Mode_Import("CharScorer") || !Native_CallMod("CharScorer", "Create", NULL, "i", 0L) || !Sc_NoText() ||
+		!Sc_G("AcActionSet", v) || !Mode_ActionSetV(v) || !Mode_GVarSetS("EscapeEvent", "Menu.Init") ||
+		!Mode_Read(SC, "LastDopplerLevel", v) || !Mode_GVarSet("SoundDopplerLevel", v)) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	Native_SetFloat(time, Mode_Time() + 0.2);
+	PyObject *fn = Mode_GlobalPy(SC, "DelClass");
+	byte ok = fn && Mode_Schedule(time, fn, sname, 1, NULL);
+	Py_XDECREF(fn);
+	if (!ok || !Mode_GVarSetI("DisableSkipSlot", 0) || !Mode_GVarSetI("PauseInactivityTime", 0) ||
+		!Mode_GVarSetI("CameraScene", 0) || !Sc_G("EndOfSceneCallback", cb)) {
+		return Mode_Done(&t, 0);
+	}
+	if (cb->type == NV_NONE) {
+		return Mode_Done(&t, 1);
+	}
+	return Mode_Done(&t, Mode_Put(SC, "EndOfSceneCallback", NULL, none) && Mode_Read(SC, "usr", v) && Mode_CallArgs(cb, NULL, v, 1));
 }
 
 /* DelClass(SName): the class of the scene and those of its local actors */
-static PyObject *Scene_DelClass(PyObject *self, PyObject *args) {
-	PyObject *sname;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &sname)) {
-		return NULL;
+static byte Sc_DelClass(const nativeVal_t *sname) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *name = Mode_V(&t), *r = Mode_V(&t), *local = Mode_V(&t), *list = Mode_V(&t), *anam = Mode_V(&t);
+	if (!Mode_Cat(&t, name, 2, Mode_S(&t, "Scene"), sname) || !Mode_SActV("DelClass", name, r)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Ask(&f, "SAct", "DelClass", "(O)", Sf_Cat(&f, "sO", "Scene", sname));
-	PyObject *local = Sf_Global(&f, SC, "LocalActors");
-	if (Sf_True(&f, Sf_Method(&f, local, "has_key", "(O)", sname)) > 0) {
-		PyObject *list = Sf_GetItem(&f, Sf_Global(&f, SC, "LocalActors"), sname);
-		for (int i = 0;; i++) {
-			int mark = f.n;
-			PyObject *anam = Sf_Next(&f, list, i);
-			if (!anam) {
-				break;
-			}
-			Sf_Ask(&f, "SAct", "DelClass", "(O)", Sf_Op(&f, sname, '+', anam));
-			Sf_Release(&f, mark);
+	int has = Mode_HasKey(SC, "LocalActors", 1, sname);
+	if (has <= 0) {
+		return Mode_Done(&t, has == 0);
+	}
+	int n = Sc_G("LocalActors", local) && Mode_Sub(local, sname, list) ? Mode_Loop(list) : -1;
+	for (int i = 0; i < n; i++) {
+		Native_Free(anam);
+		Native_Free(name);
+		Native_Free(r);
+		if (!Native_SeqItem(list, i, anam) || !Native_Arith('+', sname, anam, name) || !Mode_SActV("DelClass", name, r)) {
+			return Mode_Done(&t, 0);
 		}
-		Sf_DelItem(&f, Sf_Global(&f, SC, "LocalActors"), sname);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, n >= 0 && Mode_DictDel(SC, "LocalActors", NULL, sname));
 }
 
 /* AddSound(Frame, SoundName, Vol, Pitch=0, Pan=0): a 2D sound at the frame (the engine's !AnmSound2DEvent) */
-static PyObject *Scene_AddSound(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "Frame", "SoundName", "Vol", "Pitch", "Pan", NULL };
-	PyObject *frame, *sound, *vol, *pitch = NULL, *pan = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OOO|OO", names, &frame, &sound, &vol, &pitch, &pan)) {
-		return NULL;
+static byte Sc_AddSound(const nativeVal_t *frame, const nativeVal_t *sound, const nativeVal_t *vol, const nativeVal_t *pitch,
+	const nativeVal_t *pan) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *rv = Mode_V(&t), *rp = Mode_V(&t), *rn = Mode_V(&t), *name = Mode_V(&t);
+	if (!Sc_EventAt(frame)) {
+		return Mode_Done(&t, 0);
 	}
-	pitch = pitch ? pitch : Sf_Int(&f, 0);
-	pan = pan ? pan : Sf_Int(&f, 0);
-	Sc_EventAt(&f, frame);
-	PyObject *name = Sf_Cat(&f, "OsOsOsO", sound, ":", Sf_Repr(&f, vol), ":", Sf_Repr(&f, pitch), ":",
-		Sf_Repr(&f, pan));
-	Sc_Act(&f, "(sO)", "EventName", name);
-	Sc_Act(&f, "(ss)", "EventFunc", "!AnmSound2DEvent");
-	return Sf_None(&f);
+	Mode_Repr(vol, rv);
+	Mode_Repr(pitch, rp);
+	Mode_Repr(pan, rn);
+	nativeVal_t *colon = Mode_S(&t, ":");
+	return Mode_Done(&t, Mode_Cat(&t, name, 7, sound, colon, rv, colon, rp, colon, rn) && LvN_SetAct("EventName", name) &&
+		Sc_ActS("EventFunc", "!AnmSound2DEvent"));
+}
+
+/* the try of Load: exec("import MapSnd;MapSnd." + SceneClass + "()") with the warning of a scene without sounds
+ * (OBJLIB 6: the exec reader in the dict of the variables of Load) */
+static byte Sc_LoadSounds(const nativeVal_t *clsArg, const nativeVal_t *pathArg) {
+	scriptFrame_t f = { 0 };
+	PyObject *cls = Native_ToPy(clsArg), *path = cls ? Native_ToPy(pathArg) : NULL;
+	PyObject *init = path ? PyImport_ImportModule("Init") : NULL;
+	Sf_Keep(&f, cls);
+	Sf_Keep(&f, path);
+	Sf_Keep(&f, init);
+	if (!f.failed) {
+		/* the function has exec, so its variables (the import of Init too) are a dict the exec'd line shares */
+		PyObject *locals = Sf_Keep(&f, Py_BuildValue("{s:O,s:O,s:O}", "SceneClass", cls, "Init", init, "path", path));
+		if (PyString_Check(cls)) {
+			Sf_ImportCall(&f, SC, locals, "MapSnd", cls);
+		} else {
+			Sf_Exec(&f, Sf_Cat(&f, "sOs", "import MapSnd;MapSnd.", cls, "()"), SC, locals);
+		}
+		if (Sf_Except(&f)) {
+			Sf_Print(&f, "O", Sf_Cat(&f, "sOs", "Sound warning: MapSnd.", cls, "() not found\n"));
+		}
+	}
+	byte ok = !f.failed;
+	Sf_Release(&f, 0);
+	return ok;
 }
 
 /* Load(SceneClass): the class of the scene from the level's Map/<scene> folder, its Play action ending in
  * EndOfScene, the MapSnd sounds of the scene; a new list of actors */
-static PyObject *Scene_Load(PyObject *self, PyObject *args) {
-	PyObject *cls;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &cls)) {
-		return NULL;
+static byte Sc_Load(const nativeVal_t *cls) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *ipath = Mode_V(&t), *path = Mode_V(&t), *sname = Mode_V(&t), *r = Mode_V(&t), *file = Mode_V(&t);
+	nativeVal_t *total = Mode_V(&t), *end = Mode_V(&t), *tenth = Mode_V(&t), *pack = Mode_V(&t), *scene = Mode_V(&t);
+	nativeVal_t *empty = Mode_V(&t);
+	if (!Mode_Import("Init") || !LvN_ModGet("Init", "Path", ipath) ||
+		!Mode_Cat(&t, path, 4, ipath, Mode_S(&t, "/Map/"), cls, Mode_S(&t, "/")) ||
+		!Mode_Cat(&t, sname, 2, Mode_S(&t, "Scene"), cls) || !Mode_SActV("GetClass", sname, r)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Init");
-	PyObject *path = Sf_Cat(&f, "OsOs", Sf_Mod(&f, "Init", "Path"), "/Map/", cls, "/");
-	PyObject *sname = Sf_Cat(&f, "sO", "Scene", cls);
-	int there = Sf_True(&f, Sf_Ask(&f, "SAct", "GetClass", "(O)", sname));
-	if (there != 0) {
-		return Sf_None(&f);
+	if (Native_True(r)) {
+		return Mode_Done(&t, 1);
 	}
-	Sf_Ask(&f, "SAct", "CreateClass", "(O)", Sf_Cat(&f, "sO", "Scene", cls));
-	Sf_Ask(&f, "SAct", "SetCls", "(si)", "Discardable", 1);
-	Sf_Ask(&f, "SAct", "SetCls", "(sO)", "ModelFilePath", Sf_Cat(&f, "OOs", path, cls, ".m3d"));
-	Sf_Ask(&f, "SAct", "CreateAction", "(s)", "Play");
-	Sc_Act(&f, "(sO)", "AnmFilePath", Sf_Cat(&f, "OOs", path, cls, "Anm/Play.m3d"));
-	Sc_Act(&f, "(si)", "InterpTime", 0);
-	Sc_Act(&f, "(si)", "isLoop", 0);
-	PyObject *end = Sf_Op(&f, Sf_Ask(&f, "SAct", "GetAct", "(s)", "AnmTotalTime"), '-', Sf_Float(&f, 0.1));
-	Sc_Act(&f, "(sO)", "AddEventAtTime", end);
-	Sc_Act(&f, "(ss)", "EventName", "EndOfScene");
-	Sc_Act(&f, "(ss)", "EventFunc", "Scene.EndOfScene");
-	Sf_Ask(&f, "Scrap", "OpenPack", "(O)", Sf_Cat(&f, "Os", Sf_Mod(&f, "Init", "Path"), "/Sounds"));
-	if (f.failed) {
-		return Sf_None(&f);
+	Native_Free(sname);
+	Native_Free(r);
+	if (!Mode_Cat(&t, sname, 2, Mode_S(&t, "Scene"), cls) || !Mode_SActV("CreateClass", sname, r) ||
+		!Mode_SActSet(1, "Discardable", NULL, 1) || !Mode_Cat(&t, file, 3, path, cls, Mode_S(&t, ".m3d")) ||
+		!LvN_SetCls("ModelFilePath", file) || !Mode_SAct("CreateAction", "Play")) {
+		return Mode_Done(&t, 0);
 	}
-	/* the function has exec, so its variables (the import of Init too) are a dict the exec'd line shares */
-	PyObject *init = Sf_Keep(&f, PyImport_ImportModule("Init"));
-	PyObject *locals = Sf_Keep(&f, Py_BuildValue("{s:O,s:O,s:O}", "SceneClass", cls, "Init", init, "path", path));
-	if (PyString_Check(cls)) {
-		Sf_ImportCall(&f, SC, locals, "MapSnd", cls);
-	} else {
-		Sf_Exec(&f, Sf_Cat(&f, "sOs", "import MapSnd;MapSnd.", cls, "()"), SC, locals);
+	Native_Free(file);
+	Native_SetFloat(tenth, 0.1);
+	if (!Mode_Cat(&t, file, 3, path, cls, Mode_S(&t, "Anm/Play.m3d")) || !LvN_SetAct("AnmFilePath", file) ||
+		!Sc_ActI("InterpTime", 0) || !Sc_ActI("isLoop", 0) || !Mode_SActV("GetAct", Mode_S(&t, "AnmTotalTime"), total) ||
+		!Mode_Arith('-', total, tenth, end) || !LvN_SetAct("AddEventAtTime", end) || !Sc_ActS("EventName", "EndOfScene") ||
+		!Sc_ActS("EventFunc", "Scene.EndOfScene") || !LvN_ModGet("Init", "Path", ipath) ||
+		!Mode_Cat(&t, pack, 2, ipath, Mode_S(&t, "/Sounds")) || !Mode_Pack(pack) || !Sc_LoadSounds(cls, path) ||
+		!Mode_Pack(NULL)) {
+		return Mode_Done(&t, 0);
 	}
-	if (Sf_Except(&f)) {
-		Sf_Print(&f, "O", Sf_Cat(&f, "sOs", "Sound warning: MapSnd.", cls, "() not found\n"));
-	}
-	Sf_Ask(&f, "Scrap", "ClosePack", "()");
-	Sf_Ask(&f, "SAct", "GetClass", "(O)", Sf_Cat(&f, "sO", "Scene", cls));
-	Sf_Ask(&f, "SAct", "SetCls", "(ss)", "DefAction", "Play");
-	Sf_SetGlobal(&f, SC, "SceneName", cls);
-	Sf_SetItem(&f, Sf_Global(&f, SC, "Actors"), Sf_Global(&f, SC, "SceneName"), Sf_Keep(&f, PyList_New(0)));
-	return Sf_None(&f);
+	Native_Free(sname);
+	Native_Free(r);
+	Native_SetEmpty(empty, NV_LIST);
+	return Mode_Done(&t, Mode_Cat(&t, sname, 2, Mode_S(&t, "Scene"), cls) && Mode_SActV("GetClass", sname, r) &&
+		Mode_SActSet(1, "DefAction", "Play", 0) && Mode_Put(SC, "SceneName", NULL, cls) && Sc_G("SceneName", scene) &&
+		Mode_DictPut(SC, "Actors", NULL, scene, empty));
 }
 
 /* UnhideChars(): the entities HideThis hid are active again */
-static PyObject *Scene_UnhideChars(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Sc_UnhideChars(void) {
+	nativeVal_t list = { 0 }, ch = { 0 }, e = { 0 };
+	int n = Sc_G("HidenChars", &list) ? Mode_Loop(&list) : -1;
+	byte ok = n >= 0;
+	for (int i = 0; ok && i < n; i++) {
+		ok = Native_SeqItem(&list, i, &ch) && Mode_EntitySeam(&ch, &e) &&
+			(!Native_True(&e) || (LvN_SetI(&e, "Active", 1) && LvN_SetI(&e, "TimeSpeed", 1)));
+		Native_Free(&ch);
+		Native_Free(&e);
 	}
-	PyObject *list = Sf_Global(&f, SC, "HidenChars");
-	for (int i = 0;; i++) {
-		int mark = f.n;
-		PyObject *ch = Sf_Next(&f, list, i);
-		if (!ch) {
-			break;
-		}
-		PyObject *e = Sf_Entity(&f, ch);
-		if (Sf_True(&f, e) > 0) {
-			Sf_SetAttrI(&f, e, "Active", 1);
-			Sf_SetAttrI(&f, e, "TimeSpeed", 1);
-		}
-		Sf_Release(&f, mark);
-	}
-	return Sf_None(&f);
+	Native_Free(&list);
+	return ok;
 }
 
 /* HideThis(e): an active entity goes inactive and frozen, its name into HidenChars */
-static PyObject *Scene_HideThis(PyObject *self, PyObject *args) {
-	PyObject *e;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &e)) {
-		return NULL;
-	}
-	int hide = Sf_True(&f, e);
-	if (hide > 0) {
-		hide = Sf_True(&f, Sf_Attr(&f, e, "Active"));
-	}
-	if (hide > 0) {
-		Sf_Method(&f, Sf_Global(&f, SC, "HidenChars"), "append", "(O)", Sf_Attr(&f, e, "Name"));
-		Sf_SetAttrI(&f, e, "Active", 0);
-		Sf_SetAttrI(&f, e, "TimeSpeed", 0);
-	}
-	return Sf_None(&f);
+static byte Sc_HideThis(const nativeVal_t *e) {
+	nativeVal_t active = { 0 }, name = { 0 };
+	byte ok = !Native_True(e) || (Mode_VObj(e, "Active", &active) && (!Native_True(&active) ||
+		(Mode_VObj(e, "Name", &name) && Mode_Append(SC, "HidenChars", &name) && LvN_SetI(e, "Active", 0) &&
+		LvN_SetI(e, "TimeSpeed", 0))));
+	Native_Free(&active);
+	Native_Free(&name);
+	return ok;
 }
 
-/* the entities of the slots from the first one: HideThis for those of the type */
-static void Sc_HideType(scriptFrame_t *f, const char *type) {
-	int mark = f->n;
-	PyObject *e = Sf_Ask(f, "Scrap", "GetFirst", "()");
-	while (Sf_True(f, e) > 0) {
-		if (Sf_True(f, Sf_Method(f, e, "IsType", "(s)", type)) > 0) {
-			Sc_Call(f, "HideThis", "(O)", e);
-		}
-		e = Sf_Entity(f, Sf_Attr(f, e, "NextInSlot"));
-		Sf_ReleaseKeep(f, mark, &e, 1);
+/* the entities of the slots from the first one: HideThis (the global of the module) for those of the type */
+static byte Sc_HideType(const char *type) {
+	nativeVal_t e = { 0 }, next = { 0 };
+	byte ok = Mode_First(&e);
+	while (ok && Native_True(&e)) {
+		int is = Mode_VIsType(&e, type);
+		ok = is >= 0 && (!is || Sc_Own("HideThis", &e, 1)) && Mode_VObj(&e, "NextInSlot", &next);
+		Native_Free(&e);
+		ok = ok && Mode_EntitySeam(&next, &e);
+		Native_Free(&next);
 	}
+	Native_Free(&e);
+	return ok;
 }
 
 /* HideChars(): the walking characters hide (the player does not select anything during the scene) */
-static PyObject *Scene_HideChars(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sf_SetGlobal(&f, SC, "HidenChars", Sf_Keep(&f, PyList_New(0)));
-	PyObject *e = Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0);
-	int walk = Sf_True(&f, e);
+static byte Sc_HideChars(void) {
+	nativeVal_t empty, e = { 0 };
+	Native_SetEmpty(&empty, NV_LIST);
+	int walk = Mode_Put(SC, "HidenChars", NULL, &empty) && Mode_UsrHandle(&e) ? Native_True(&e) : -1;
 	if (walk > 0) {
-		walk = Sf_True(&f, Sf_Method(&f, e, "IsType", "(s)", "WalkChar"));
+		walk = Mode_VIsType(&e, "WalkChar");
 	}
-	if (walk > 0) {
-		Sf_SetAttrS(&f, e, "SelectedEntity", "");
-	}
-	Sc_HideType(&f, "WalkChar");
-	return Sf_None(&f);
+	byte ok = walk >= 0 && (!walk || LvN_SetS(&e, "SelectedEntity", "")) && Sc_HideType("WalkChar");
+	Native_Free(&empty);
+	Native_Free(&e);
+	return ok;
 }
 
-/* HideVehiclesToo(): the ships hide too */
-static PyObject *Scene_HideVehiclesToo(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+/* the entity of an actor of the list at the scene entity l: linked to its dummy, the morph eyes of its class */
+static byte Sc_SetActor(const nativeVal_t *actr, const nativeVal_t *l) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *name = Mode_V(&t), *a = Mode_V(&t), *lname = Mode_V(&t), *dummy = Mode_V(&t), *link = Mode_V(&t);
+	nativeVal_t *zero = Mode_V(&t), *cls = Mode_V(&t), *eyes = Mode_V(&t);
+	Mode_Ints3(zero, 0, 0, 0);
+	if (!LvN_Item(actr, 1, name) || !Mode_EntitySeam(name, a) || !Mode_VSet(a, "ActCtrl", name) || !Mode_VObj(l, "Name", lname) ||
+		!LvN_Item(actr, 0, dummy) || !Mode_Cat(&t, link, 3, lname, Mode_S(&t, ","), dummy) || !Mode_VSet(a, "LinkModel", link) ||
+		!Mode_VSet(a, "OffModPos", zero) || !LvN_SetI(a, "DeltaOffMul", 1) || !LvN_SetI(a, "OffMul", 1) ||
+		!LvN_SetI(a, "UseLinkAng", 1) || !LvN_Item(actr, 2, cls) || !LvN_ModGet("MakeChar", "MorphEyesList", eyes)) {
+		return Mode_Done(&t, 0);
 	}
-	Sc_HideType(&f, "Car");
-	return Sf_None(&f);
+	int morph = Mode_In(eyes, cls);
+	return Mode_Done(&t, morph >= 0 && (!morph || LvN_SetS(a, "Action", "MorphEyes")));
 }
 
 /* Play(SceneClass): loads the scene, creates its actors and the scene entity at the dummy DM_Scene_<name>, links
  * the camera, hides the characters (and outdoors the ships), the cinema HUD, no input, no doppler, no music */
-static PyObject *Scene_Play(PyObject *self, PyObject *args) {
-	PyObject *cls;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &cls)) {
-		return NULL;
+static byte Sc_Play(const nativeVal_t *cls) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *actors = Mode_V(&t), *list = Mode_V(&t), *actr = Mode_V(&t), *name = Mode_V(&t), *e = Mode_V(&t);
+	nativeVal_t *dm = Mode_V(&t), *dummy = Mode_V(&t), *msg = Mode_V(&t), *pos = Mode_V(&t), *x = Mode_V(&t);
+	nativeVal_t *y = Mode_V(&t), *z = Mode_V(&t), *l = Mode_V(&t), *ang = Mode_V(&t), *a = Mode_V(&t), *cam = Mode_V(&t);
+	nativeVal_t *lname = Mode_V(&t), *outdoor = Mode_V(&t), *usr = Mode_V(&t), *v = Mode_V(&t), *time = Mode_V(&t);
+	nativeVal_t *args = Mode_V(&t);
+	Mode_V(&t);
+	const nativeVal_t *zero = Mode_I(&t, 0);
+	if (!Mode_Import("MakeChar") || !Mode_Import("Init") || !Sc_NoBlur() || !Mode_GVarSetI("DrawNextFrame", 0) ||
+		!Sc_Own("Load", cls, 1) || !Sc_G("Actors", actors) || !Mode_Sub(actors, cls, list)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "MakeChar");
-	Sf_Import(&f, "Init");
-	Sc_NoBlur(&f);
-	Sc_Set(&f, "(si)", "DrawNextFrame", 0);
-	Sc_Call(&f, "Load", "(O)", cls);
-	PyObject *list = Sf_GetItem(&f, Sf_Global(&f, SC, "Actors"), cls);
-	for (int i = 0;; i++) {
-		int mark = f.n;
-		PyObject *actr = Sf_Next(&f, list, i);
-		if (!actr) {
-			break;
+	int n = Mode_Loop(list);
+	for (int i = 0; i < n; i++) {
+		Native_Free(actr);
+		Native_Free(name);
+		Native_Free(e);
+		if (!Native_SeqItem(list, i, actr) || !LvN_Item(actr, 1, name) || !LvN_Create(name, zero, zero, zero, "WithLife", e)) {
+			return Mode_Done(&t, 0);
 		}
-		Sf_Ask(&f, "Scrap", "CreateEntity", "(Oiiis)", Sf_Item(&f, actr, 1), 0, 0, 0, "WithLife");
-		Sf_Release(&f, mark);
 	}
-	Sf_Ask(&f, "Scrap", "StartDummySearch", "(Oi)", Sf_Cat(&f, "sO", "DM_Scene_", cls), 1);
-	PyObject *dummy = Sf_Ask(&f, "Scrap", "NextDummySearch", "()");
-	if (Sf_Compare(&f, dummy, "==", Py_None) > 0) {
-		Sf_Ask(&f, "Scrap", "ConsoleError", "(O)", Sf_Cat(&f, "sOs", "TERROR : DM_Scene_", cls, " Dummy never exists!\n"));
-		return Sf_None(&f);
+	if (n < 0 || !Mode_Cat(&t, dm, 2, Mode_S(&t, "DM_Scene_"), cls) || !Mode_DummyStartSeam(Native_Text(dm), 1) ||
+		!Mode_DummyNextSeam(dummy)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *pos = Sf_Item(&f, dummy, 1);
-	PyObject *l = Sf_Ask(&f, "Scrap", "CreateEntity", "(OOOOs)", Sf_Item(&f, dummy, 0), Sf_Item(&f, pos, 0),
-		Sf_Item(&f, pos, 1), Sf_Item(&f, pos, 2), "WithLife");
-	PyObject *ang = Sf_Item(&f, dummy, 2);
-	Sf_SetAttr(&f, l, "Ang", Sf_Build(&f, "(OOi)", Sf_Item(&f, ang, 0), Sf_Item(&f, ang, 1), 0));
-	Sf_SetAttr(&f, l, "ActCtrl", Sf_Cat(&f, "sO", "Scene", cls));
-	PyObject *cam = Sf_Entity(&f, Sf_Ask(&f, "Scrap", "GetCam", "(i)", 0));
-	Sf_SetAttr(&f, cam, "EntityLink", Sf_Attr(&f, l, "Name"));
-	Sc_Call(&f, "HideChars", "()");
-	if (Sf_True(&f, Sf_Mod(&f, "Init", "Outdoor")) > 0) {
-		Sc_Call(&f, "HideVehiclesToo", "()");
+	if (dummy->type == NV_NONE) {
+		return Mode_Done(&t, Mode_Cat(&t, msg, 3, Mode_S(&t, "TERROR : DM_Scene_"), cls, Mode_S(&t, " Dummy never exists!\n")) &&
+			Mode_ConsoleError(msg));
 	}
-	Sf_SetGlobal(&f, SC, "usr", Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0));
-	Sc_Set(&f, "(si)", "PauseInactivityTime", 1);
-	Sc_Set(&f, "(si)", "CameraScene", 1);
-	Sf_Import(&f, "Menu");
-	Sf_Ask(&f, "Menu", "MovieScorer", "(i)", 0);
-	Sc_NoText(&f);
-	Sf_SetGlobal(&f, SC, "AcActionSet", Sf_Ask(&f, "SInput", "GetActionSet", "()"));
-	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Inactive");
-	Sc_Set(&f, "(ss)", "EscapeEvent", "Scene.AbortScene");
-	Sf_SetGlobal(&f, SC, "SceneName", Sf_Attr(&f, l, "Name"));
-	Sf_SetGlobal(&f, SC, "LastDopplerLevel", Sf_Ask(&f, "Scrap", "Get", "(s)", "SoundDopplerLevel"));
-	Sc_Set(&f, "(sd)", "SoundDopplerLevel", 0.0);
-	Sf_Ask(&f, "SSound", "StopAllSounds", "()");
-	Sc_Set(&f, "(si)", "ForceNoActionMusic", 1);
-	PyObject *t = Sf_Time(&f);
-	Sf_Schedule(&f, t, Sf_Mod(&f, "Scrap", "Set"), Sf_Build(&f, "(si)", "DisableSkipSlot", 1), NULL);
-	list = Sf_GetItem(&f, Sf_Global(&f, SC, "Actors"), cls);
-	for (int i = 0;; i++) {
-		int mark = f.n;
-		PyObject *actr = Sf_Next(&f, list, i);
-		if (!actr) {
-			break;
+	Native_SetEmpty(ang, NV_TUPLE);
+	if (!LvN_Item(dummy, 1, pos) || !LvN_Item(dummy, 0, name) || !LvN_Item(pos, 0, x) || !LvN_Item(pos, 1, y) ||
+		!LvN_Item(pos, 2, z) || !LvN_Create(name, x, y, z, "WithLife", l) || !LvN_Item(dummy, 2, a) ||
+		!LvN_Item(a, 0, Native_Append(ang)) || !LvN_Item(a, 1, Native_Append(ang))) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetInt(Native_Append(ang), 0);
+	Native_Free(name);
+	if (!Mode_VSet(l, "Ang", ang) || !Mode_Cat(&t, name, 2, Mode_S(&t, "Scene"), cls) || !Mode_VSet(l, "ActCtrl", name) ||
+		!Sc_Cam(cam) || !Mode_VObj(l, "Name", lname) || !Mode_VSet(cam, "EntityLink", lname) || !Sc_Own("HideChars", NULL, 0) ||
+		!LvN_ModGet("Init", "Outdoor", outdoor) || (Native_True(outdoor) && !Sc_Own("HideVehiclesToo", NULL, 0)) ||
+		!Mode_UsrHandle(usr) || !Mode_Put(SC, "usr", NULL, usr) || !Mode_GVarSetI("PauseInactivityTime", 1) ||
+		!Mode_GVarSetI("CameraScene", 1) || !Mode_Import("Menu") || !Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L) ||
+		!Sc_NoText()) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_ActionSetName(v);
+	Native_Free(lname);
+	if (!Mode_Put(SC, "AcActionSet", NULL, v) || !Mode_ActionSet("Inactive") || !Mode_GVarSetS("EscapeEvent", "Scene.AbortScene") ||
+		!Mode_VObj(l, "Name", lname) || !Mode_Put(SC, "SceneName", NULL, lname)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(v);
+	if (!Native_GVarGet("SoundDopplerLevel", v) || !Mode_Put(SC, "LastDopplerLevel", NULL, v) ||
+		!Mode_GVarSetN("SoundDopplerLevel", 0.0) || !Mode_StopAllSounds() || !Mode_GVarSetI("ForceNoActionMusic", 1)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_SetFloat(time, Mode_Time());
+	Native_SetStr(&args[0], "DisableSkipSlot");
+	Native_SetInt(&args[1], 1);
+	/* OBJLIB 4: the scheduler keeps Scrap.Set itself */
+	PyObject *set = Script_Attr("Scrap", "Set");
+	byte ok = set && Mode_Schedule(time, set, args, 2, NULL);
+	Py_XDECREF(set);
+	Native_Free(actors);
+	Native_Free(list);
+	n = ok && Sc_G("Actors", actors) && Mode_Sub(actors, cls, list) ? Mode_Loop(list) : -1;
+	for (int i = 0; i < n; i++) {
+		Native_Free(actr);
+		if (!Native_SeqItem(list, i, actr) || !Sc_SetActor(actr, l)) {
+			return Mode_Done(&t, 0);
 		}
-		PyObject *a = Sf_Entity(&f, Sf_Item(&f, actr, 1));
-		Sf_SetAttr(&f, a, "ActCtrl", Sf_Item(&f, actr, 1));
-		Sf_SetAttr(&f, a, "LinkModel", Sf_Cat(&f, "OsO", Sf_Attr(&f, l, "Name"), ",", Sf_Item(&f, actr, 0)));
-		Sf_SetAttr(&f, a, "OffModPos", Sf_Build(&f, "(iii)", 0, 0, 0));
-		Sf_SetAttrI(&f, a, "DeltaOffMul", 1);
-		Sf_SetAttrI(&f, a, "OffMul", 1);
-		Sf_SetAttrI(&f, a, "UseLinkAng", 1);
-		if (Sf_In(&f, Sf_Item(&f, actr, 2), Sf_Mod(&f, "MakeChar", "MorphEyesList")) > 0) {
-			Sf_SetAttrS(&f, a, "Action", "MorphEyes");
-		}
-		Sf_Release(&f, mark);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, n >= 0);
+}
+
+/* HideThis(o) of the global of the module, the value read before the global as the script reads it */
+static byte Sc_HideOf(const nativeVal_t *o) {
+	return Sc_Own("HideThis", o, 1);
+}
+
+/* module.var.Invulnerable = i (a handle of another module, Scrap.UsrEntity(0) for module NULL) */
+static byte Sc_Invulnerable(const char *module, const char *var, long i) {
+	nativeVal_t e = { 0 };
+	byte ok = (module ? LvN_ModGet(module, var, &e) : Mode_UsrHandle(&e)) && LvN_SetI(&e, "Invulnerable", i);
+	Native_Free(&e);
+	return ok;
 }
 
 /* InitOutDoorScene(HideChars=1): the police (during an alarm) and the enemies hide; the ship of the player, the
  * player and Sputnik hide too, or (HideChars 0) stay and cannot be hurt; no input, the cinema HUD */
-static PyObject *Scene_InitOutDoorScene(PyObject *self, PyObject *args, PyObject *kw) {
-	static char *names[] = { "HideChars", NULL };
-	PyObject *hide = NULL;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &hide)) {
-		return NULL;
+static byte Sc_InitOutDoorScene(const nativeVal_t *hide) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *empty = Mode_V(&t), *list = Mode_V(&t), *next = Mode_V(&t), *o = Mode_V(&t), *v = Mode_V(&t);
+	if (!Mode_Import("Parking") || !Mode_Import("Menu") || !Mode_Import("Sputnik") || !Sc_NoBlur() || !Mode_First(e)) {
+		return Mode_Done(&t, 0);
 	}
-	hide = hide ? hide : Sf_Int(&f, 1);
-	Sf_Import(&f, "Parking");
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "Sputnik");
-	Sc_NoBlur(&f);
-	int mark = f.n;
-	PyObject *e = Sf_Ask(&f, "Scrap", "GetFirst", "()");
-	Sf_SetGlobal(&f, SC, "HidenChars", Sf_Keep(&f, PyList_New(0)));
-	Sf_ReleaseKeep(&f, mark, &e, 1);
-	while (Sf_True(&f, e) > 0) {
-		int police = Sf_True(&f, Sf_Item(&f, Sf_Ask(&f, "Scrap", "GetAlarm", "()"), 0));
+	Native_SetEmpty(empty, NV_LIST);
+	if (!Mode_Put(SC, "HidenChars", NULL, empty)) {
+		return Mode_Done(&t, 0);
+	}
+	while (Native_True(e)) {
+		int police = Mode_AlarmOn();
 		if (police > 0) {
-			police = Sf_EqS(&f, Sf_Attr(&f, e, "EntityList"), "Police");
+			police = Mode_VObj(e, "EntityList", list) ? Mode_IsText(list, "Police") : -1;
+			Native_Free(list);
 		}
-		if (police > 0 || (police == 0 && Sf_EqS(&f, Sf_Attr(&f, e, "EntityList"), "EnemiesTraffic") > 0)) {
-			Sc_Call(&f, "HideThis", "(O)", e);
+		int enemy = 0;
+		if (police == 0) {
+			enemy = Mode_VObj(e, "EntityList", list) ? Mode_IsText(list, "EnemiesTraffic") : -1;
+			Native_Free(list);
 		}
-		e = Sf_Entity(&f, Sf_Attr(&f, e, "NextInSlot"));
-		Sf_ReleaseKeep(&f, mark, &e, 1);
+		if (police < 0 || enemy < 0 || ((police > 0 || enemy > 0) && !Sc_HideOf(e)) || !Mode_VObj(e, "NextInSlot", next)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_Free(e);
+		byte ok = Mode_EntitySeam(next, e);
+		Native_Free(next);
+		if (!ok) {
+			return Mode_Done(&t, 0);
+		}
 	}
-	int on = Sf_True(&f, hide);
-	if (on >= 0) {
-		Sf_SetGlobal(&f, SC, "InvulnerableChars", Sf_Int(&f, !on));
+	byte on = Native_True(hide);
+	if (!LvN_PutI(SC, "InvulnerableChars", !on)) {
+		return Mode_Done(&t, 0);
 	}
-	if (on > 0) {
-		Sc_Call(&f, "HideThis", "(O)", Sf_Mod(&f, "Parking", "PlayerShip"));
-		Sc_Call(&f, "HideThis", "(O)", Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0));
-		Sc_Call(&f, "HideThis", "(O)", Sf_Mod(&f, "Sputnik", "spt"));
-	} else if (on == 0) {
-		Sf_SetAttrI(&f, Sf_Mod(&f, "Parking", "PlayerShip"), "Invulnerable", 1);
-		Sf_SetAttrI(&f, Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0), "Invulnerable", 1);
-		Sf_SetAttrI(&f, Sf_Mod(&f, "Sputnik", "spt"), "Invulnerable", 1);
+	if (on) {
+		if (!LvN_ModGet("Parking", "PlayerShip", o) || !Sc_HideOf(o) || !Mode_UsrHandle(v) || !Sc_HideOf(v)) {
+			return Mode_Done(&t, 0);
+		}
+		Native_Free(o);
+		if (!LvN_ModGet("Sputnik", "spt", o) || !Sc_HideOf(o)) {
+			return Mode_Done(&t, 0);
+		}
+	} else if (!Sc_Invulnerable("Parking", "PlayerShip", 1) || !Sc_Invulnerable(NULL, NULL, 1) ||
+		!Sc_Invulnerable("Sputnik", "spt", 1)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_SetGlobal(&f, SC, "PrevInput", Sf_Ask(&f, "SInput", "GetActionSet", "()"));
-	Sf_Ask(&f, "SInput", "SetActionSet", "(s)", "Inactive");
-	Sf_Ask(&f, "Menu", "MovieScorer", "(i)", 0);
-	return Sf_None(&f);
+	Native_Free(v);
+	Mode_ActionSetName(v);
+	return Mode_Done(&t, Mode_Put(SC, "PrevInput", NULL, v) && Mode_ActionSet("Inactive") &&
+		Native_CallMod("Menu", "MovieScorer", NULL, "i", 0L));
 }
 
 /* EndOutDoorScene(): back from InitOutDoorScene, the camera on its main target, the input and the HUD of before */
-static PyObject *Scene_EndOutDoorScene(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
+static byte Sc_EndOutDoorScene(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *inv = Mode_V(&t), *cam = Mode_V(&t), *target = Mode_V(&t), *prev = Mode_V(&t);
+	if (!Mode_Import("Menu") || !Mode_Import("Parking") || !Mode_Import("Sputnik") || !Sc_G("InvulnerableChars", inv)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Native_True(inv)) {
+		if (!Sc_Invulnerable("Parking", "PlayerShip", 0) || !Sc_Invulnerable(NULL, NULL, 0) || !Sc_Invulnerable("Sputnik", "spt", 0)) {
+			return Mode_Done(&t, 0);
+		}
+	} else if (!Sc_Own("UnhideChars", NULL, 0)) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, Sc_Cam(cam) && Mode_VObj(cam, "MainTarget", target) && Mode_VSet(cam, "Target", target) &&
+		LvN_SetI(cam, "AddTurn", 0) && Sc_G("PrevInput", prev) && Mode_ActionSetV(prev) && Mode_Read(SC, "PrevInput", prev) &&
+		Native_CallMod("Menu", "DrawScorer", NULL, "iv", 0L, prev));
+}
+
+/* ---- adapters ---- */
+
+MODE_FN(Scene, BaseAddActor, 3, Sc_BaseAddActor(&a[0], &a[1], &a[2]))
+MODE_FN(Scene, AddCharActor, 2, Sc_AddCharActor(&a[0], &a[1]))
+MODE_FN(Scene, AddLocalActor, 2, Sc_AddLocalActor(&a[0], &a[1]))
+MODE_FN(Scene, ActorActEvent, 3, Sc_ActEvent(&a[0], &a[1], 1))
+MODE_FN(Scene, ActorBreakChannel, 3, Sc_ActorBreakChannel(&a[0], &a[1], &a[2]))
+MODE_FN(Scene, ActorActBreakChanne, 3, Sc_ActorActBreakChanne(&a[0], &a[1]))
+MODE_FN(Scene, ObjActEvent, 3, Sc_ActEvent(&a[0], &a[1], 0))
+MODE_FN(Scene, SetDefSounds, 2, Sc_SetDefSounds(&a[0], &a[1]))
+MODE_FN(Scene, ExecGeneric, 3, Sc_ExecGeneric(&a[0], &a[1], &a[2]))
+MODE_FN(Scene, PlayStream, 3, Sc_PlayStream(&a[1]))
+MODE_FN(Scene, PlayVoiceVol, 2, Mode_PlayVoice(&a[0], NULL) && Mode_VoiceVolume(&a[0], &a[1]))
+MODE_FN(Scene, PlayText, 3, Sc_PlayText(&a[1]))
+MODE_FN(Scene, SetText, 2, Sc_SetText(&a[0], &a[1]))
+MODE_FN(Scene, AbortScene, 1, Sc_AbortScene())
+MODE_FN(Scene, EndOfScene, 3, Sc_EndOfScene(&a[0]))
+MODE_FN(Scene, DelClass, 1, Sc_DelClass(&a[0]))
+MODE_FN(Scene, Load, 1, Sc_Load(&a[0]))
+MODE_FN(Scene, UnhideChars, 0, Sc_UnhideChars())
+MODE_FN(Scene, HideThis, 1, Sc_HideThis(&a[0]))
+MODE_FN(Scene, HideChars, 0, Sc_HideChars())
+MODE_FN(Scene, HideVehiclesToo, 0, Sc_HideType("Car"))
+MODE_FN(Scene, Play, 1, Sc_Play(&a[0]))
+MODE_FN(Scene, EndOutDoorScene, 0, Sc_EndOutDoorScene())
+
+/* the keyword functions: the arguments by PyArg_ParseTupleAndKeywords, the defaults of the script */
+static PyObject *Scene_ActorAction(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "frame", "Actor", "Action", "DefAction", NULL };
+	nativeVal_t a[4];
+	byte given[4];
 	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
+	if (!Mode_Kw(args, kw, "OOO|O", names, 4, a, given)) {
 		return NULL;
 	}
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "Parking");
-	Sf_Import(&f, "Sputnik");
-	int inv = Sf_True(&f, Sf_Global(&f, SC, "InvulnerableChars"));
-	if (inv > 0) {
-		Sf_SetAttrI(&f, Sf_Mod(&f, "Parking", "PlayerShip"), "Invulnerable", 0);
-		Sf_SetAttrI(&f, Sf_Ask(&f, "Scrap", "UsrEntity", "(i)", 0), "Invulnerable", 0);
-		Sf_SetAttrI(&f, Sf_Mod(&f, "Sputnik", "spt"), "Invulnerable", 0);
-	} else if (inv == 0) {
-		Sc_Call(&f, "UnhideChars", "()");
+	if (!given[3]) {
+		Native_SetStr(&a[3], "Relax");
 	}
-	PyObject *cam = Sf_Entity(&f, Sf_Ask(&f, "Scrap", "GetCam", "(i)", 0));
-	Sf_SetAttr(&f, cam, "Target", Sf_Attr(&f, cam, "MainTarget"));
-	Sf_SetAttrI(&f, cam, "AddTurn", 0);
-	Sf_Ask(&f, "SInput", "SetActionSet", "(O)", Sf_Global(&f, SC, "PrevInput"));
-	Sf_Ask(&f, "Menu", "DrawScorer", "(iO)", 0, Sf_Global(&f, SC, "PrevInput"));
-	return Sf_None(&f);
+	return Mode_KwOut(a, 4, Sc_Action(&a[0], &a[1], &a[2], &a[3], "Scene.ActorActEvent"), NULL);
+}
+
+static PyObject *Scene_ObjAction(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "frame", "Actor", "Action", "DefAction", NULL };
+	nativeVal_t a[4];
+	byte given[4];
+	(void)self;
+	if (!Mode_Kw(args, kw, "OOO|O", names, 4, a, given)) {
+		return NULL;
+	}
+	if (!given[3]) {
+		Native_SetStr(&a[3], "Relax");
+	}
+	return Mode_KwOut(a, 4, Sc_Action(&a[0], &a[1], &a[2], &a[3], "Scene.ObjActEvent"), NULL);
+}
+
+static PyObject *Scene_CreateLocalAction(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "CharName", "turnspeed", "Name", "Anm", "Loop", NULL };
+	nativeVal_t a[5];
+	byte given[5];
+	(void)self;
+	if (!Mode_Kw(args, kw, "OO|OOO", names, 5, a, given)) {
+		return NULL;
+	}
+	if (!given[2]) {
+		Native_SetStr(&a[2], "Relax");
+	}
+	if (!given[3]) {
+		Native_SetStr(&a[3], "Relax");
+	}
+	if (!given[4]) {
+		Native_SetInt(&a[4], 0);
+	}
+	return Mode_KwOut(a, 5, Sc_CreateLocalAction(&a[0], &a[1], &a[2], &a[3], &a[4]), NULL);
+}
+
+static PyObject *Scene_AddGeneric(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "Frame", "Event", "Discardable", NULL };
+	nativeVal_t a[3];
+	byte given[3];
+	(void)self;
+	if (!Mode_Kw(args, kw, "OO|O", names, 3, a, given)) {
+		return NULL;
+	}
+	if (!given[2]) {
+		Native_SetInt(&a[2], 1);
+	}
+	return Mode_KwOut(a, 3, Sc_AddGeneric(&a[0], &a[1], &a[2]), NULL);
+}
+
+static PyObject *Scene_AddStream(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "frame", "filename", "vol", NULL };
+	nativeVal_t a[3];
+	byte given[3];
+	(void)self;
+	if (!Mode_Kw(args, kw, "OO|O", names, 3, a, given)) {
+		return NULL;
+	}
+	if (!given[2]) {
+		Native_SetFloat(&a[2], 1.0);
+	}
+	return Mode_KwOut(a, 3, Sc_AddStream(&a[0], &a[1], &a[2]), NULL);
+}
+
+static PyObject *Scene_StopSpeech(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "id", NULL };
+	nativeVal_t a[1];
+	(void)self;
+	if (!Mode_Kw(args, kw, "|O", names, 1, a, NULL)) {
+		return NULL;
+	}
+	return Mode_KwOut(a, 1, Sc_StopSpeech(), NULL);
+}
+
+static PyObject *Scene_AddText(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "frame", "lngtext", "time", NULL };
+	nativeVal_t a[3];
+	byte given[3];
+	(void)self;
+	if (!Mode_Kw(args, kw, "OO|O", names, 3, a, given)) {
+		return NULL;
+	}
+	if (!given[2]) {
+		Native_SetInt(&a[2], 86400);
+	}
+	return Mode_KwOut(a, 3, Sc_AddText(&a[0], &a[1], &a[2]), NULL);
+}
+
+static PyObject *Scene_AddSound(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "Frame", "SoundName", "Vol", "Pitch", "Pan", NULL };
+	nativeVal_t a[5];
+	byte given[5];
+	(void)self;
+	if (!Mode_Kw(args, kw, "OOO|OO", names, 5, a, given)) {
+		return NULL;
+	}
+	if (!given[3]) {
+		Native_SetInt(&a[3], 0);
+	}
+	if (!given[4]) {
+		Native_SetInt(&a[4], 0);
+	}
+	return Mode_KwOut(a, 5, Sc_AddSound(&a[0], &a[1], &a[2], &a[3], &a[4]), NULL);
+}
+
+static PyObject *Scene_InitOutDoorScene(PyObject *self, PyObject *args, PyObject *kw) {
+	static char *names[] = { "HideChars", NULL };
+	nativeVal_t a[1];
+	byte given[1];
+	(void)self;
+	if (!Mode_Kw(args, kw, "|O", names, 1, a, given)) {
+		return NULL;
+	}
+	if (!given[0]) {
+		Native_SetInt(&a[0], 1);
+	}
+	return Mode_KwOut(a, 1, Sc_InitOutDoorScene(&a[0]), NULL);
 }
 
 #define KW(fn) (PyCFunction)(void (*)(void))fn, 3

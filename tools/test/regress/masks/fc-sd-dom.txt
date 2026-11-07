@@ -4,3 +4,6 @@ ignore _sdent(('Enemy0', 'Enemy1', 'Enemy2', 'Enemy3', 'Enemy4', 'Friend0', 'Fri
 ignore (_sd(O.RespawnEnemy, 0), _sdent(('Enemy',)), Scrap.Get('LeaderName'), _sdfreeze(O.enemies))
 # line 45: random in C: the case recorder controls Scrap.Rand on the pack side only, the C port calls Scrap_RandRange directly (brief)
 ignore (_sd(O.RespawnEnemy, 1), _sdent(('Enemy',)), Scrap.Get('LeaderName'), _sdmod('Domination', ('enemies',)), _sdfreeze(O.enemies))
+# line 8: the AI states of the enemies and friends at the moment of the line (engine AI timing between case lines; the
+# pack runs differ among themselves too)
+ignore map(__import__('SAI').GetStateVehicle, O.enemies + O.friends)

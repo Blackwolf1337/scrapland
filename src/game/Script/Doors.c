@@ -189,14 +189,6 @@ static byte Dr_PutInfo(const doorInfo_t *d) {
 	return ok;
 }
 
-/* `if module.var:` of another module: 1, 0, -1 with the error */
-static int Dr_ModTrue(const char *module, const char *var) {
-	nativeVal_t v;
-	int r = LvN_ModGet(module, var, &v) ? Native_True(&v) : -1;
-	Native_Free(&v);
-	return r;
-}
-
 /* InitDoorInfo(): the door types, outdoors the parking, indoors the data maker, the ship editor where it is */
 static byte Dr_InitDoorInfo(void) {
 	static const char *const mods[] = { "Elevator", "Teleport", "Init", "Metro" };
@@ -210,17 +202,17 @@ static byte Dr_InitDoorInfo(void) {
 			return 0;
 		}
 	}
-	int skip = Dr_ModTrue("Init", "InMapSkip");
+	int skip = Mode_ModTrue("Init", "InMapSkip");
 	if (skip < 0 || (!skip && (!Mode_Import("Parking") || !Dr_PutInfo(&door_outmap)))) {
 		return 0;
 	}
-	skip = Dr_ModTrue("Init", "OutMapSkip");
+	skip = Mode_ModTrue("Init", "OutMapSkip");
 	if (skip < 0 || (!skip && (!Mode_Import("Messenger") || !Dr_PutInfo(&door_datatmaker)))) {
 		return 0;
 	}
-	skip = Dr_ModTrue("Init", "InMapSkip");
+	skip = Mode_ModTrue("Init", "InMapSkip");
 	if (skip == 0) {
-		skip = Dr_ModTrue("Init", "OutMapSkip");
+		skip = Mode_ModTrue("Init", "OutMapSkip");
 	}
 	int edit = skip == 0;
 	if (skip > 0) {
@@ -1098,7 +1090,7 @@ static byte Elv_PlayerCreatedElevator(void) {
 	}
 	int phone = Elv_Head(from, 0, 9, "DM_Phone_");
 	if (phone > 0) {
-		int out = Dr_ModTrue("Init", "Outdoor");
+		int out = Mode_ModTrue("Init", "Outdoor");
 		phone = out;
 	}
 	if (phone) {
@@ -1107,7 +1099,7 @@ static byte Elv_PlayerCreatedElevator(void) {
 	}
 	int desk = Elv_Head(from, 0, 17, "DM_DTritusDesktop");
 	if (desk > 0) {
-		int out = Dr_ModTrue("Init", "Outdoor");
+		int out = Mode_ModTrue("Init", "Outdoor");
 		desk = out < 0 ? -1 : !out;
 	}
 	return Mode_Done(&t, desk >= 0 && (!desk || Elv_Spawn("DTritusDesktop", NULL)));
