@@ -3,6 +3,7 @@
  * split screen modes and the super deals on native values, the seams of the engine functions their case files record
  * or swap (OBJLIB 7), the module state they read and write in other modules (OBJLIB 5) and their adapters.
  */
+#include <limits.h>
 #include <math.h>
 #include <stdarg.h>
 #include <string.h>
@@ -11,6 +12,7 @@
 #include "scrap/console.h"
 #include "scrap/input.h"
 #include "scrap/logic.h"
+#include "scrap/mapfloors.h"
 #include "scrap/mathlib.h"
 #include "scrap/net.h"
 #include "scrap/pyentity.h"
@@ -531,11 +533,17 @@ byte Mode_ScorerSet(const nativeVal_t *id, const nativeVal_t *item, const char *
 }
 
 byte Mode_Fade(long id, const int *from, const int *to, double time) {
+	nativeVal_t t;
+	Native_SetFloat(&t, time);
+	return Mode_FadeV(id, from, to, &t);
+}
+
+byte Mode_FadeV(long id, const int *from, const int *to, const nativeVal_t *time) {
 	MODE_SEAM("SScorer", "Fade");
 	if (seam) {
 		PyObject *a = Py_BuildValue("(iiii)", from[0], from[1], from[2], from[3]);
 		PyObject *b = a ? Py_BuildValue("(iiii)", to[0], to[1], to[2], to[3]) : NULL;
-		byte ok = b && Native_HookCall(hook, NULL, "iOOd", id, a, b, time);
+		byte ok = b && Native_HookCall(hook, NULL, "iOOv", id, a, b, time);
 		if (!b) {
 			Py_DECREF(hook);
 		}
@@ -543,10 +551,14 @@ byte Mode_Fade(long id, const int *from, const int *to, double time) {
 		Py_XDECREF(b);
 		return ok;
 	}
+	double d;
+	if (!Native_ArgDouble(time, &d)) {
+		return 0;
+	}
 	cScorer *sc = Scorer_Get((int)id);
 	if (sc) {
 		ScorerFade_Start(&sc->fade, Scorer_PackColor((uint32_t)from[0], (uint32_t)from[1], (uint32_t)from[2], (uint32_t)from[3]),
-			Scorer_PackColor((uint32_t)to[0], (uint32_t)to[1], (uint32_t)to[2], (uint32_t)to[3]), (float)time);
+			Scorer_PackColor((uint32_t)to[0], (uint32_t)to[1], (uint32_t)to[2], (uint32_t)to[3]), (float)d);
 	}
 	return 1;
 }
@@ -2646,4 +2658,63 @@ byte Mode_IncSaveVar(const char *name) {
 
 byte Mode_IsText(const nativeVal_t *v, const char *text) {
 	return v->type == NV_STR && !strcmp(Native_Text(v), text);
+}
+
+byte Mode_TimeSpeed(double speed) {
+	MODE_SEAM("Scrap", "SetTimeSpeed");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "d", speed);
+	}
+	Mode_SetTimeSpeed(speed);
+	return 1;
+}
+
+void Mode_CamName(int i, nativeVal_t *out) {
+	const char *name = cWorld_GetCamName(g_pWorld, i);
+	if (name) {
+		Native_SetText(out, name, (int)strlen(name));
+	} else {
+		Native_SetNone(out);
+	}
+}
+
+byte Mode_Floor(const nativeVal_t *y, nativeVal_t *out) {
+	double d;
+	if (!Native_ArgDouble(y, &d)) {
+		return 0;
+	}
+	Native_SetInt(out, Floor_Get(&g_pWorld->floor, (float)d));
+	return 1;
+}
+
+byte Mode_Abs(const nativeVal_t *v, nativeVal_t *out) {
+	Native_SetNone(out);
+	switch (v->type) {
+	case NV_INT:
+		if (v->i == LONG_MIN) {
+			return Native_Raise(NE_OVERFLOW, "integer negation");
+		}
+		Native_SetInt(out, v->i < 0 ? -v->i : v->i);
+		return 1;
+	case NV_FLOAT:
+		Native_SetFloat(out, fabs(v->f));
+		return 1;
+	case NV_LONG: {
+		const char *d = Native_Text(v);
+		d += *d == '-';
+		Native_SetLong(out, d, (int)strlen(d));
+		return 1;
+	}
+	case NV_OBJ: {
+		/* OBJLIB 7: an object with its own abs */
+		PyObject *r = PyNumber_Absolute(v->obj);
+		if (!r) {
+			return 0;
+		}
+		Native_Arg(r, out);
+		Py_DECREF(r);
+		return 1;
+	}
+	}
+	return Native_Raise(NE_TYPE, "bad operand type for abs()");
 }
