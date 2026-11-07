@@ -1383,11 +1383,12 @@ byte Mode_Index(const nativeVal_t *list, const nativeVal_t *x, nativeVal_t *out)
 }
 
 byte Mode_Append(const char *module, const char *var, const nativeVal_t *v) {
-	PyObject *list = Script_Global(module, var), *o = list ? Native_ToPy(v) : NULL;
-	int r = o ? PyList_Append(list, o) : -1;
-	Py_XDECREF(o);
-	Py_XDECREF(list);
-	return r == 0;
+	/* the append method of whatever value is there (a value that is no list: the AttributeError of the script) */
+	PyObject *x = Native_ToPy(v);
+	PyObject *r = x ? Mode_VarMethod(module, var, 1, "append", x) : NULL;
+	Py_XDECREF(r);
+	Py_XDECREF(x);
+	return r != NULL;
 }
 
 byte Mode_Unpack(const nativeVal_t *v, int n, nativeVal_t *out) {
