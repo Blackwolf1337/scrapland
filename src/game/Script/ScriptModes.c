@@ -3479,4 +3479,63 @@ byte Mode_Set0I(const char *item, const char *var, long i) {
 	nativeVal_t v;
 	Native_SetInt(&v, i);
 	return Mode_Set0(item, var, &v);
+/* ---- the menus of batch O (MenuBase, MenuControls, MenuVideo, MenuVideoVars) ---- */
+
+byte Mode_Printed(byte ok, const char *module, const char *func) {
+	if (!ok) {
+		/* OBJLIB 7: the error printed where Script_Call printed it; the menu goes on */
+		Con_Warnf("Script: %s.%s failed\n", module, func);
+		PyErr_Print();
+	}
+	return ok;
+}
+
+byte Mode_GVarGetV(const nativeVal_t *name, nativeVal_t *out) {
+	const char *s;
+	MODE_SEAM("Scrap", "Get");
+	if (seam) {
+		return Native_HookCall(hook, out, "v", name);
+	}
+	return Native_ArgStr(name, 1, &s) && Native_GVarGet(s, out);
+}
+
+byte Mode_ScorerGetV(const nativeVal_t *id, const nativeVal_t *item, const char *var, nativeVal_t *out) {
+	int i;
+	const char *s;
+	MODE_SEAM("SScorer", "Get");
+	if (seam) {
+		return Native_HookCall(hook, out, "vvs", id, item, var);
+	}
+	/* "iss" */
+	if (!Native_ArgInt(id, &i) || !Native_ArgStr(item, 2, &s)) {
+		return 0;
+	}
+	Mode_ScorerGet(i, s, var, out);
+	return 1;
+}
+
+byte Mode_ScorerAddV(const nativeVal_t *id, const nativeVal_t *name, const char *type) {
+	MODE_SEAM("SScorer", "Add");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "vvs", id, name, type);
+	}
+	return Mode_ScorerAdd(id, name, type);
+}
+
+byte Mode_ResetKeys(void) {
+	MODE_SEAM("SInput", "ResetToDefault");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "");
+	}
+	Input_ResetToDefault();
+	return 1;
+}
+
+void Mode_ElemsIn(nativeVal_t *v) {
+	Mode_Elems(v);
+	if (v->type == NV_LIST || v->type == NV_TUPLE) {
+		for (int i = 0; i < v->n; i++) {
+			Mode_Elems(&v->items[i]);
+		}
+	}
 }

@@ -703,5 +703,24 @@ byte Mode_AppendG(const char *module, const char *var, const char *gmod, const c
 /* SScorer.Set(0, item, var, v), and with an int */
 byte Mode_Set0(const char *item, const char *var, const nativeVal_t *v);
 byte Mode_Set0I(const char *item, const char *var, long i);
+/* ---- the menus of batch O (MenuBase, MenuControls, MenuVideo, MenuVideoVars) ---- */
+
+/* the failure of a call by name (ok 0) printed as the menus printed it ("Script: <module>.<func> failed" and the
+ * error; OBJLIB 3 and 7): ok passed on */
+byte Mode_Printed(byte ok, const char *module, const char *func);
+
+/* Scrap.Get(name) through its seam: the value as Native_GVarGet gives it (the TypeError of "s" for a name that is no
+ * text) */
+byte Mode_GVarGetV(const nativeVal_t *name, nativeVal_t *out);
+/* SScorer.Get(id, item, var) and SScorer.Add(id, name, type) with the id and the name values of the script, through
+ * their seams (the TypeErrors of "iss") */
+byte Mode_ScorerGetV(const nativeVal_t *id, const nativeVal_t *item, const char *var, nativeVal_t *out);
+byte Mode_ScorerAddV(const nativeVal_t *id, const nativeVal_t *name, const char *type);
+/* SInput.ResetToDefault() through its seam */
+byte Mode_ResetKeys(void);
+
+/* a list or tuple and each of its items made native item by item where they are held as one NV_OBJ (Mode_Elems: the
+ * menus of [text, function, ...] entries); the objects in them stay NV_OBJ */
+void Mode_ElemsIn(nativeVal_t *v);
 
 #endif
