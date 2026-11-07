@@ -248,9 +248,9 @@ byte Mode_Preload(const nativeVal_t *name) {
 }
 
 byte Mode_Print(const nativeVal_t *const *items, int n) {
-	PyObject *o[8] = { NULL };
+	PyObject *o[12] = { NULL };
 	byte ok = 1;
-	n = n < 8 ? n : 8;
+	n = n < 12 ? n : 12;
 	for (int k = 0; ok && k < n; k++) {
 		ok = (o[k] = Native_ToPy(items[k])) != NULL;
 	}
@@ -2717,4 +2717,26 @@ byte Mode_Abs(const nativeVal_t *v, nativeVal_t *out) {
 	}
 	}
 	return Native_Raise(NE_TYPE, "bad operand type for abs()");
+}
+
+byte Mode_CallArgs(const nativeVal_t *f, nativeVal_t *out, const nativeVal_t *args, int n) {
+	nativeVal_t t;
+	Native_SetEmpty(&t, NV_TUPLE);
+	for (int i = 0; i < n; i++) {
+		Native_Copy(Native_Append(&t), &args[i]);
+	}
+	/* OBJLIB 3, 4: the value called the Python way (a function, a bound method, or the TypeError of a value that is no
+	 * callable) */
+	PyObject *fn = Native_ToPy(f), *a = fn ? Native_ToPy(&t) : NULL;
+	Native_Free(&t);
+	PyObject *r = a ? Script_Invoke(fn, a) : NULL;
+	Py_XDECREF(fn);
+	if (!r) {
+		return 0;
+	}
+	if (out) {
+		Native_Arg(r, out);
+	}
+	Py_DECREF(r);
+	return 1;
 }
