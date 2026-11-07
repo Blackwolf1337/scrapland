@@ -1772,3 +1772,16 @@ byte Mode_EntSetI(const char *name, const char *var, long i) {
 	Native_Free(&n);
 	return ok;
 }
+
+byte Mode_SetLockAlarm(const nativeVal_t *lock) {
+	MODE_SEAM("Scrap", "SetLockAlarm");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "v", lock);
+	}
+	int i;
+	if (!Native_ArgInt(lock, &i)) {
+		return 0;
+	}
+	Alarm_SetLock(&g_pWorld->alarm, i != 0);
+	return 1;
+}
