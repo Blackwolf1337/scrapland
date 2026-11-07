@@ -2353,3 +2353,80 @@ byte Mode_CallKw(const char *module, const char *name, nativeVal_t *out, const n
 	Py_XDECREF(kw);
 	return r != NULL;
 }
+
+byte Mode_DoorFoe(const char *gk, const char *group) {
+	PyObject *g = Script_Attr("GateKeeper", group);
+	if (!g) {
+		return 0;
+	}
+	byte ok = Native_CallMod("GateKeeper", "DoorFoe", NULL, "sO", gk, g);
+	Py_DECREF(g);
+	return ok;
+}
+
+byte Mode_PlaySoundSeam(const nativeVal_t *pos, const nativeVal_t *name, const nativeVal_t *volume) {
+	MODE_SEAM("SSound", "PlaySound");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "vvv", pos, name, volume);
+	}
+	return Mode_PlaySound(pos, name, volume);
+}
+
+byte Mode_LangV(const nativeVal_t *key, nativeVal_t *out) {
+	const char *s;
+	if (!Native_ArgStr(key, 1, &s)) {
+		return 0;
+	}
+	Mode_Lang(s, out);
+	return 1;
+}
+
+byte Mode_SAct(const char *fn, const char *name) {
+	nativeVal_t r;
+	byte ok = !strcmp(fn, "CreateClass") ? LvN_CreateClass(name, &r) : !strcmp(fn, "GetClass") ? LvN_GetClass(name, &r) :
+		LvN_CreateAction(name, &r);
+	Native_Free(&r);
+	return ok;
+}
+
+byte Mode_SActSet(byte cls, const char *name, const char *s, long i) {
+	nativeVal_t v;
+	if (s) {
+		Native_SetText(&v, s, (int)strlen(s));
+	} else {
+		Native_SetInt(&v, i);
+	}
+	byte ok = cls ? LvN_SetCls(name, &v) : LvN_SetAct(name, &v);
+	Native_Free(&v);
+	return ok;
+}
+
+byte Mode_PathSet(byte cls, const char *name, const char *rest) {
+	nativeVal_t p, r, v;
+	Native_SetNone(&v);
+	Native_SetText(&r, rest, (int)strlen(rest));
+	byte ok = LvN_ModGet("Init", "Path", &p) && Native_Arith('+', &p, &r, &v) && (cls ? LvN_SetCls(name, &v) : LvN_SetAct(name, &v));
+	Native_Free(&p);
+	Native_Free(&r);
+	Native_Free(&v);
+	return ok;
+}
+
+byte Mode_FromDummy(const nativeVal_t *dummy, const char *type, nativeVal_t *e) {
+	nativeVal_t name, pos, a, ang;
+	Native_SetNone(&name);
+	Native_SetNone(&pos);
+	Native_SetNone(&a);
+	Native_SetEmpty(&ang, NV_TUPLE);
+	byte ok = LvN_Item(dummy, 0, &name) && LvN_Item(dummy, 1, &pos) && LvN_CreateAt(&name, &pos, type, e) && LvN_Item(dummy, 2, &a) &&
+		LvN_Item(&a, 0, Native_Append(&ang)) && LvN_Item(&a, 1, Native_Append(&ang));
+	if (ok) {
+		Native_SetInt(Native_Append(&ang), 0);
+		ok = Mode_VSet(e, "Ang", &ang);
+	}
+	Native_Free(&name);
+	Native_Free(&pos);
+	Native_Free(&a);
+	Native_Free(&ang);
+	return ok;
+}
