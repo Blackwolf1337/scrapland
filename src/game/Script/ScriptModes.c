@@ -3541,3 +3541,12 @@ void Mode_ElemsIn(nativeVal_t *v) {
 		}
 	}
 }
+
+/* SSound.PlaySound(pos, name, volume) through its seam */
+byte Mode_PlaySoundSeam(const nativeVal_t *pos, const nativeVal_t *name, const nativeVal_t *volume) {
+	MODE_SEAM("SSound", "PlaySound");
+	if (seam) {
+		return Native_HookCall(hook, NULL, "vvv", pos, name, volume);
+	}
+	return Mode_PlaySound(pos, name, volume);
+}

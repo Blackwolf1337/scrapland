@@ -265,7 +265,7 @@ byte LvN_MissionText(const nativeVal_t *id, const char *item, const char *type, 
 	}
 /* SLogic.SetOnFloor(name) and SSound.PlaySound(pos, name, volume) through their seams (fc-tp-map swaps them) */
 byte LvN_SetOnFloor(const nativeVal_t *name);
-byte LvN_PlaySound(const nativeVal_t *pos, const nativeVal_t *name, const nativeVal_t *volume);
+#define LvN_PlaySound Mode_PlaySoundSeam
 /* import Traffic; Scrap.SetSaveVar("Traffic.AcShips", ships); Traffic.AcShips = eval(Scrap.GetSaveVar(...)) in the
  * globals of module */
 byte LvN_AcShips(const char *module, const char *ships);

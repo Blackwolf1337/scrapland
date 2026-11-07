@@ -1273,14 +1273,6 @@ byte LvN_SetOnFloor(const nativeVal_t *name) {
 	return Mode_SetOnFloor(name);
 }
 
-byte LvN_PlaySound(const nativeVal_t *pos, const nativeVal_t *name, const nativeVal_t *volume) {
-	LV_SEAM("SSound", "PlaySound");
-	if (seam) {
-		return Native_HookCall(hook, NULL, "vvv", pos, name, volume);
-	}
-	return Mode_PlaySound(pos, name, volume);
-}
-
 byte LvN_ModSetI(const char *module, const char *var, long i) {
 	nativeVal_t v;
 	Native_SetInt(&v, i);

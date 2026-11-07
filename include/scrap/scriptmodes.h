@@ -723,4 +723,7 @@ byte Mode_ResetKeys(void);
  * menus of [text, function, ...] entries); the objects in them stay NV_OBJ */
 void Mode_ElemsIn(nativeVal_t *v);
 
+/* SSound.PlaySound(pos, name, volume) through its seam */
+byte Mode_PlaySoundSeam(const nativeVal_t *pos, const nativeVal_t *name, const nativeVal_t *volume);
+
 #endif
