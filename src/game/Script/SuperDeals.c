@@ -516,6 +516,25 @@ MODE_FN(Sd, SetVulnerable, 0, Sd_SetVulnerableC())
 MODE_FN(Sd, RespawnPlayer, 1, Sd_RespawnPlayerC(&a[0]))
 MODE_FN(Sd, Restart, 2, Sd_RestartC())
 
+/* Scrap.GetEntity(name).Del() */
+static byte Sd_Del(const nativeVal_t *name) {
+	cEntity *e;
+	return Mode_Ent(name, &e) && Mode_Del(e) >= 0;
+}
+
+/* the same with func an object (Speech.ForceRemoteCom, MissionsFuncs.OnSuperDealFinish) at Scrap.GetTime() + delay */
+static byte Sd_LaterObj(double delay, PyObject *fn, const nativeVal_t *args, int n) {
+	nativeVal_t t;
+	Native_SetFloat(&t, Mode_Time() + delay);
+	return Mode_Schedule(&t, fn, args, n, NULL);
+}
+
+static byte Sd_EqI(const nativeVal_t *a, long i) {
+	nativeVal_t b;
+	Native_SetInt(&b, i);
+	return !Native_Compare(a, &b);
+}
+
 /* ---- the lines of the modes still on Sf_ frames (until each mode is native) ---- */
 
 /* Scrap.GetSaveVar(name), int(Scrap.GetSaveVar(name)), Scrap.SetSaveVar(name, "text") */
@@ -902,13 +921,6 @@ static void Sdf_EachInList(scriptFrame_t *f, const char *list, int (*fn)(scriptF
 	}
 }
 
-/* the end of a deathmatch (and of a team deathmatch): the lines both share after the frag that ends it */
-static void Dmf_Finish(scriptFrame_t *f) {
-	Sf_SetMod(f, "Chars", "OnMainCharDeath", Py_None);
-	Sf_SetMod(f, "Vehicles", "OnDeathCallback", Py_None);
-	Sf_SetMod(f, "Parking", "SwitchCharMissionCallback", Py_None);
-}
-
 /* ---- DeathMatch: all against all in the CA, the first with CombatDeaths frags wins ---- */
 
 static struct {
@@ -1232,315 +1244,381 @@ PyMethodDef g_DeathMatchMethods[] = {
 
 /* ---- Versus: one enemy in the CA, the first with CombatDeaths deaths of the other wins ---- */
 
-static PyObject *Versus_GetMenuDescription(PyObject *self, PyObject *args) {
-	(void)self;
-	return Sdf_MenuDescription(args, "SuperDeal_Versus_Description", "CombatDeaths");
-}
+static struct {
+	nativeVal_t combatDeaths, enemyName, combatEnemyType, combatEnemyProfile, charLangTrans;
+} vs;
 
-static PyObject *Versus_InitStatus(PyObject *self, PyObject *args) {
-	PyObject *path;
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	return Py_ReturnNone();
-}
+MODE_FN(Vs, GetMenuDescription, 0, Sd_MenuDescriptionC("SuperDeal_Versus_Description", "CombatDeaths", out))
+MODE_FN(Vs, InitStatus, 1, 1)
 
 /* Init(LevelPath): the camera of the end, the deaths to reach, the enemy, the start when the player boards */
-static PyObject *Versus_Init(PyObject *self, PyObject *args) {
-	PyObject *path;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &path)) {
-		return NULL;
-	}
-	Sf_Import(&f, "Parking");
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "Vehicles");
-	Sdf_Camera(&f, "CA");
-	Sf_SetMod(&f, "Vehicles", "DelPlayerShipOnDeath", Sf_Int(&f, 0));
-	Sf_SetGlobal(&f, VS, "combatDeaths", Sdf_SaveInt(&f, "CombatDeaths"));
-	Sf_Import(&f, "Chars");
-	Sf_SetMod(&f, "Chars", "OnMainCharDeath", Sf_Global(&f, VS, "OnPlayerDeath"));
-	Sdf_Call(&f, VS, "CreateEnemy", "()");
-	Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Sf_Global(&f, VS, "CrazyGamblerStartCombat"));
-	return Sf_None(&f);
+static byte Vs_InitC(void) {
+	nativeVal_t zero, deaths;
+	Native_SetInt(&zero, 0);
+	Native_SetNone(&deaths);
+	byte ok = Mode_Import("Parking") && Mode_Import("Menu") && Mode_Import("Vehicles") && Sd_Camera("CA") &&
+		Mode_SetModVar("Vehicles", "DelPlayerShipOnDeath", &zero) && Sd_SaveInt("CombatDeaths", &deaths) &&
+		Mode_Put(VS, "combatDeaths", &vs.combatDeaths, &deaths) && Mode_Import("Chars") &&
+		Sd_GlobalTo("Chars", "OnMainCharDeath", VS, "OnPlayerDeath") && OWN(VS, "CreateEnemy", NULL, "") &&
+		Sd_GlobalTo("Parking", "SwitchVehicleMissionCallback", VS, "CrazyGamblerStartCombat");
+	Native_Free(&deaths);
+	return ok;
 }
+
+MODE_FN(Vs, Init, 1, Vs_InitC())
 
 /* CreateEnemy(markAsEnemy = 0): the enemy at a spawn point with the ship of its type and profile; marked as the
  * target, else invulnerable until the start */
-static PyObject *Versus_CreateEnemy(PyObject *self, PyObject *args, PyObject *kw) {
+static byte Vs_CreateEnemyC(const nativeVal_t *mark) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *sp = Mode_V(&t), *pos = Mode_V(&t);
+	Mode_V(&t);
+	nativeVal_t *e = Mode_V(&t), *v = Mode_V(&t), *ship = Mode_V(&t);
+	if (!Mode_Import("RaceMaker") || !Mode_Import("VehiclesNPC") || !Mode_Import("MissionsFuncs") || !Mode_Import("OutMap") ||
+		!CALL("OutMap", "GetSpawnPos", sp, "") || !Mode_Unpack(sp, 2, pos) ||
+		!Sd_Create(Mode_S(&t, "Enemy"), &pos[0], "Car", e) || !Sd_Ang(e, &pos[1]) || !Mode_VGet(e, "Name", v) ||
+		!Mode_Put(VS, "enemyName", &vs.enemyName, v)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(v);
+	Mode_SaveVar("CombatEnemyType", v);
+	if (!Mode_Put(VS, "combatEnemyType", &vs.combatEnemyType, v)) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(v);
+	Mode_SaveVar("CombatEnemyProfile", v);
+	if (!Mode_Put(VS, "combatEnemyProfile", &vs.combatEnemyProfile, v) || !Mode_Read(VS, "combatEnemyType", &vs.combatEnemyType) ||
+		!Mode_Read(VS, "combatEnemyProfile", &vs.combatEnemyProfile) ||
+		!CALL("RaceMaker", "InitShipIAProfile", NULL, "vv", &vs.combatEnemyType, &vs.combatEnemyProfile) ||
+		!Mode_Read(VS, "combatEnemyType", &vs.combatEnemyType) || !Mode_Read(VS, "combatEnemyProfile", &vs.combatEnemyProfile) ||
+		!Mode_Cat(&t, ship, 4, Mode_S(&t, "S"), &vs.combatEnemyType, Mode_S(&t, "1_"), &vs.combatEnemyProfile) ||
+		!CALL("VehiclesNPC", "SetIAProf", NULL, "vv", e, ship)) {
+		return Mode_Done(&t, 0);
+	}
+	if (Sd_EqI(mark, 1)) {
+		return Mode_Done(&t, Sd_SetS(e, "TgType", "red") && Sd_SetS(e, "EntityList", "Enemies") &&
+			CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 1L));
+	}
+	return Mode_Done(&t, Sd_SetI(e, "Invulnerable", 1));
+}
+
+static PyObject *Vs_CreateEnemy(PyObject *self, PyObject *args, PyObject *kw) {
 	static char *names[] = { "markAsEnemy", NULL };
-	PyObject *mark = NULL, *pos[2];
-	scriptFrame_t f = { 0 };
+	PyObject *mark = NULL;
+	nativeVal_t m;
 	(void)self;
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O", names, &mark)) {
 		return NULL;
 	}
-	if (!mark) {
-		mark = Sf_Int(&f, 0);
+	if (mark) {
+		Native_Arg(mark, &m);
+	} else {
+		Native_SetInt(&m, 0);
 	}
-	Sf_Import(&f, "RaceMaker");
-	Sf_Import(&f, "VehiclesNPC");
-	Sf_Import(&f, "MissionsFuncs");
-	Sf_Import(&f, "OutMap");
-	Sf_Unpack(&f, Sf_Ask(&f, "OutMap", "GetSpawnPos", "()"), 2, pos);
-	PyObject *e = Sdf_Create(&f, Sf_Str(&f, "Enemy"), pos[0], "Car");
-	Sdf_Ang(&f, e, pos[1]);
-	Sf_SetGlobal(&f, VS, "enemyName", Sf_Attr(&f, e, "Name"));
-	Sf_SetGlobal(&f, VS, "combatEnemyType", Sdf_Save(&f, "CombatEnemyType"));
-	Sf_SetGlobal(&f, VS, "combatEnemyProfile", Sdf_Save(&f, "CombatEnemyProfile"));
-	PyObject *type = Sf_Global(&f, VS, "combatEnemyType");
-	Sf_Ask(&f, "RaceMaker", "InitShipIAProfile", "(OO)", type, Sf_Global(&f, VS, "combatEnemyProfile"));
-	type = Sf_Global(&f, VS, "combatEnemyType");
-	PyObject *ship = Sf_Cat(&f, "sOsO", "S", type, "1_", Sf_Global(&f, VS, "combatEnemyProfile"));
-	Sf_Ask(&f, "VehiclesNPC", "SetIAProf", "(OO)", e, ship);
-	int m = Sf_EqI(&f, mark, 1);
-	if (m > 0) {
-		Sf_SetAttrS(&f, e, "TgType", "red");
-		Sf_SetAttrS(&f, e, "EntityList", "Enemies");
-		Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", e, 1);
-	} else if (m == 0) {
-		Sf_SetAttrI(&f, e, "Invulnerable", 1);
+	byte ok = Vs_CreateEnemyC(&m);
+	Native_Free(&m);
+	return Mode_Result(ok);
+}
+
+/* int(Scrap.GetSaveVar(a)) == 0 and int(Scrap.GetSaveVar(b)) == 0 (no round played): 1, 0, -1 with the error */
+static int Sd_BothZero(const char *a, const char *b) {
+	nativeVal_t n;
+	Native_SetNone(&n);
+	int r = Sd_SaveInt(a, &n) ? Sd_EqI(&n, 0) : -1;
+	Native_Free(&n);
+	if (r > 0) {
+		r = Sd_SaveInt(b, &n) ? Sd_EqI(&n, 0) : -1;
+		Native_Free(&n);
 	}
-	return Sf_None(&f);
+	return r;
 }
 
 /* CrazyGamblerStartCombat(): the player boarded; the crazy gambler's message starts the first round, a later one
  * starts after 3 s */
-static PyObject *Versus_CrazyGamblerStartCombat(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Vs_CrazyGamblerStartCombatC(void) {
+	if (!Mode_Import("Parking") || !Sd_ModNone("Parking", "SwitchVehicleMissionCallback")) {
+		return 0;
 	}
-	Sf_Import(&f, "Parking");
-	Sf_SetMod(&f, "Parking", "SwitchVehicleMissionCallback", Py_None);
-	int first = Sf_EqI(&f, Sdf_SaveInt(&f, "NumEnemyDeaths"), 0);
-	if (first > 0) {
-		first = Sf_EqI(&f, Sdf_SaveInt(&f, "NumPlayerDeaths"), 0);
-	}
-	if (first > 0) {
-		PyObject *cad = Sdf_Save(&f, "CombatStartTextCad");
-		Sf_Ask(&f, "Speech", "AddRemoteCom", "(OsO)", cad, CG, Sf_Global(&f, VS, "StartCombat"));
-	} else if (first == 0) {
-		Sdf_Later(&f, Sf_Float(&f, 3.0), VS, "StartCombat", Sf_Build(&f, "()"));
-	}
-	return Sf_None(&f);
+	int first = Sd_BothZero("NumEnemyDeaths", "NumPlayerDeaths");
+	return first > 0 ? Sd_GamblerSays("CombatStartTextCad", VS, "StartCombat") :
+		first == 0 && Mode_Later(3.0, VS, "StartCombat", NULL, 0, NULL);
 }
 
+MODE_FN(Vs, CrazyGamblerStartCombat, 0, Vs_CrazyGamblerStartCombatC())
+
 /* the text of the enemy's type (auxText of the script, which is never used): CharLangTrans[type] or the type */
-static void Vs_AuxText(scriptFrame_t *f) {
-	PyObject *trans = Sf_Global(f, VS, "CharLangTrans");
-	PyObject *has = Sf_Attr(f, trans, "has_key");
-	if (Sf_True(f, Sf_Call(f, has, "(O)", Sf_Global(f, VS, "combatEnemyType"))) > 0) {
-		Sf_GetItem(f, Sf_Global(f, VS, "CharLangTrans"), Sf_Global(f, VS, "combatEnemyType"));
-	} else {
-		Sf_Global(f, VS, "combatEnemyType");
+static byte Vs_AuxText(void) {
+	nativeVal_t x;
+	if (!Mode_Read(VS, "combatEnemyType", &vs.combatEnemyType)) {
+		return 0;
 	}
+	int has = Mode_HasKey(VS, "CharLangTrans", 1, &vs.combatEnemyType);
+	if (has < 0) {
+		return 0;
+	}
+	if (!has) {
+		return Mode_Read(VS, "combatEnemyType", &vs.combatEnemyType);
+	}
+	Native_SetNone(&x);
+	byte ok = Mode_Read(VS, "CharLangTrans", &vs.charLangTrans) && Mode_Read(VS, "combatEnemyType", &vs.combatEnemyType) &&
+		Native_Subscript(&vs.charLangTrans, &vs.combatEnemyType, &x);
+	Native_Free(&x);
+	return ok;
+}
+
+/* `x` of the script as a text value */
+static void Sd_Repr(const nativeVal_t *v, nativeVal_t *out) {
+	nativeBuf_t b;
+	Native_BufInit(&b);
+	Native_Repr(&b, v, NR_REPR);
+	Native_SetText(out, b.p, b.len);
+	Native_BufFree(&b);
 }
 
 /* StartCombat(): the deaths counted, the scorer, the enemy as the red target */
-static PyObject *Versus_StartCombat(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
+static byte Vs_StartCombatC(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *e = Mode_V(&t), *a = Mode_V(&t), *b = Mode_V(&t), *limit = Mode_V(&t), *type = Mode_V(&t);
+	if (!Mode_Import("Vehicles") || !Mode_Import("RacerScorer") || !Mode_Import("Menu") || !Mode_Import("MissionsFuncs") ||
+		!Mode_Read(VS, "enemyName", &vs.enemyName) || !Mode_EntityH(&vs.enemyName, e) ||
+		!Sd_GlobalTo("Vehicles", "OnDeathCallback", VS, "OnEnemyDeath") || !Sd_SaveInt("NumEnemyDeaths", a) ||
+		!Sd_SaveInt("NumPlayerDeaths", b) || !Mode_Read(VS, "combatDeaths", &vs.combatDeaths)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "RacerScorer");
-	Sf_Import(&f, "Menu");
-	Sf_Import(&f, "MissionsFuncs");
-	PyObject *e = Sf_Entity(&f, Sf_Global(&f, VS, "enemyName"));
-	Sf_SetMod(&f, "Vehicles", "OnDeathCallback", Sf_Global(&f, VS, "OnEnemyDeath"));
-	PyObject *a = Sdf_SaveInt(&f, "NumEnemyDeaths");
-	PyObject *b = Sdf_SaveInt(&f, "NumPlayerDeaths");
-	Sdf_ScorerOn(&f, a, b, Sf_Repr(&f, Sf_Global(&f, VS, "combatDeaths")));
-	Sf_SetAttrS(&f, e, "TgType", "red");
-	Sf_SetAttrS(&f, e, "EntityList", "Enemies");
-	Sf_SetAttrI(&f, e, "Invulnerable", 0);
-	Sf_Ask(&f, "MissionsFuncs", "ActivateTarget", "(Oi)", e, 1);
-	Sf_SetGlobal(&f, VS, "combatEnemyType", Sdf_Save(&f, "CombatEnemyType"));
-	Vs_AuxText(&f);
-	return Sf_None(&f);
+	Sd_Repr(&vs.combatDeaths, limit);
+	if (!Sd_ScorerOn(a, b, limit) || !Sd_SetS(e, "TgType", "red") || !Sd_SetS(e, "EntityList", "Enemies") ||
+		!Sd_SetI(e, "Invulnerable", 0) || !CALL("MissionsFuncs", "ActivateTarget", NULL, "vi", e, 1L)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("CombatEnemyType", type);
+	return Mode_Done(&t, Mode_Put(VS, "combatEnemyType", &vs.combatEnemyType, type) && Vs_AuxText());
 }
 
+MODE_FN(Vs, StartCombat, 0, Vs_StartCombatC())
+
 /* save variable name = `int(Scrap.GetSaveVar(name)) + 1` */
-static void Vs_Count(scriptFrame_t *f, const char *name) {
-	Sf_Ask(f, "Scrap", "SetSaveVar", "(sO)", name, Sf_Repr(f, Sf_OpI(f, Sdf_SaveInt(f, name), '+', 1)));
+static byte Vs_Count(const char *name) {
+	nativeVal_t n, one, r, s;
+	Native_SetNone(&n);
+	Native_SetNone(&r);
+	Native_SetNone(&s);
+	Native_SetInt(&one, 1);
+	byte ok = Sd_SaveInt(name, &n) && Native_Arith('+', &n, &one, &r);
+	if (ok) {
+		Sd_Repr(&r, &s);
+		ok = Mode_SetSaveVar(name, &s);
+	}
+	Native_Free(&n);
+	Native_Free(&r);
+	Native_Free(&s);
+	return ok;
 }
 
 /* RacerScorer.UpdateMissionScorer(0, int(NumEnemyDeaths), int(NumPlayerDeaths)) */
-static void Vs_Update(scriptFrame_t *f) {
-	PyObject *a = Sdf_SaveInt(f, "NumEnemyDeaths");
-	Sdf_Update(f, a, Sdf_SaveInt(f, "NumPlayerDeaths"));
+static byte Vs_Update(void) {
+	nativeVal_t a, b;
+	Native_SetNone(&a);
+	Native_SetNone(&b);
+	byte ok = Sd_SaveInt("NumEnemyDeaths", &a) && Sd_SaveInt("NumPlayerDeaths", &b) && Sd_Update(&a, &b);
+	Native_Free(&a);
+	Native_Free(&b);
+	return ok;
+}
+
+/* int(Scrap.GetSaveVar(name)) == combatDeaths: 1, 0, -1 with the error */
+static int Vs_Reached(const char *name) {
+	nativeVal_t n;
+	Native_SetNone(&n);
+	int r = Sd_SaveInt(name, &n) && Mode_Read(VS, "combatDeaths", &vs.combatDeaths) ? Sd_Eq(&n, &vs.combatDeaths) : -1;
+	Native_Free(&n);
+	return r;
+}
+
+/* the scorer off and the counts of the rounds gone (the end of a versus) */
+static byte Vs_Over(void) {
+	if (!Sd_ScorerOff()) {
+		return 0;
+	}
+	SaveVars_Delete("NumEnemyDeaths");
+	SaveVars_Delete("NumPlayerDeaths");
+	return 1;
 }
 
 /* OnEnemyDeath(LooserName, WinnerName): the enemy died; the player wins at combatDeaths, else the enemy comes back
  * after 5 s */
-static PyObject *Versus_OnEnemyDeath(PyObject *self, PyObject *args) {
-	PyObject *loser, *winner;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &loser, &winner)) {
-		return NULL;
+static byte Vs_OnEnemyDeathC(const nativeVal_t *loser) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cad = Mode_V(&t), *params = Mode_V(&t);
+	if (!Mode_Read(VS, "enemyName", &vs.enemyName)) {
+		return Mode_Done(&t, 0);
 	}
-	if (Sf_Compare(&f, loser, "==", Sf_Global(&f, VS, "enemyName")) > 0) {
-		Vs_Count(&f, "NumEnemyDeaths");
-		int end = Sf_Compare(&f, Sdf_SaveInt(&f, "NumEnemyDeaths"), "==", Sf_Global(&f, VS, "combatDeaths"));
-		if (end > 0) {
-			Sf_Import(&f, "Menu");
-			Sf_Import(&f, "Chars");
-			Sf_Import(&f, "Vehicles");
-			Sf_Import(&f, "Parking");
-			Sdf_ScorerOff(&f);
-			Sf_Ask(&f, "Scrap", "DelSaveVars", "(s)", "NumEnemyDeaths");
-			Sf_Ask(&f, "Scrap", "DelSaveVars", "(s)", "NumPlayerDeaths");
-			Sdf_SetSave(&f, "PlayerWinsCombat", "1");
-			Dmf_Finish(&f);
-			PyObject *cad = Sdf_Save(&f, "CombatFinishPlayerWinsTextCad");
-			Sdf_UsrSafe(&f);
-			int t = Sdf_Text(&f, cad);
-			if (t > 0) {
-				PyObject *fn = Sf_Mod(&f, "Speech", "ForceRemoteCom");
-				PyObject *a = Sf_Build(&f, "(OsiO(iss))", cad, CG, 1, Sf_Mod(&f, "MissionsFuncs", "OnSuperDealFinish"),
-					1, "Versus", "");
-				Sf_Later(&f, Sf_Int(&f, 2), fn, a, NULL);
-			} else if (t == 0) {
-				PyObject *fn = Sf_Mod(&f, "MissionsFuncs", "OnSuperDealFinish");
-				Sf_Later(&f, Sf_Float(&f, 5.0), fn, Sf_Build(&f, "(iss)", 1, "Versus", ""), NULL);
+	if (!Sd_Eq(loser, &vs.enemyName)) {
+		return Mode_Done(&t, 1);
+	}
+	int end = Vs_Count("NumEnemyDeaths") ? Vs_Reached("NumEnemyDeaths") : -1;
+	if (end == 0) {
+		return Mode_Done(&t, Mode_Import("RacerScorer") && Vs_Update() && Mode_Later(5.0, VS, "RespawnEnemy", NULL, 0, NULL) &&
+			Sd_Del(Mode_S(&t, "Enemy")));
+	}
+	if (end < 0 || !Mode_Import("Menu") || !Mode_Import("Chars") || !Mode_Import("Vehicles") || !Mode_Import("Parking") ||
+		!Vs_Over()) {
+		return Mode_Done(&t, 0);
+	}
+	Sd_SetSave("PlayerWinsCombat", "1");
+	if (!Dm_Finish()) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("CombatFinishPlayerWinsTextCad", cad);
+	if (!Sd_UsrSafe()) {
+		return Mode_Done(&t, 0);
+	}
+	Sd_Params(1, "Versus", "", params);
+	byte ok;
+	if (Sd_Text(cad)) {
+		/* Speech.ForceRemoteCom(cad, "CrazyGambler", 1, MissionsFuncs.OnSuperDealFinish, (1, "Versus", "")) after 2 s */
+		PyObject *fn = Script_Attr("Speech", "ForceRemoteCom");
+		PyObject *func = fn ? Script_Attr("MissionsFuncs", "OnSuperDealFinish") : NULL;
+		ok = func != NULL;
+		if (ok) {
+			nativeVal_t args[5];
+			Native_Copy(&args[0], cad);
+			Native_SetStr(&args[1], CG);
+			Native_SetInt(&args[2], 1);
+			Native_Arg(func, &args[3]);
+			args[4] = *params;
+			Native_SetNone(params);
+			ok = Sd_LaterObj(2.0, fn, args, 5);
+			for (int i = 0; i < 5; i++) {
+				Native_Free(&args[i]);
 			}
-		} else if (end == 0) {
-			Sf_Import(&f, "RacerScorer");
-			Vs_Update(&f);
-			Sdf_Later(&f, Sf_Float(&f, 5.0), VS, "RespawnEnemy", Sf_Build(&f, "()"));
-			Sdf_Del(&f, Sf_Str(&f, "Enemy"));
 		}
+		Py_XDECREF(func);
+		Py_XDECREF(fn);
+	} else {
+		PyObject *fn = Script_Attr("MissionsFuncs", "OnSuperDealFinish");
+		ok = fn && Sd_LaterObj(5.0, fn, params->items, params->n);
+		Py_XDECREF(fn);
 	}
-	return Sf_None(&f);
+	return Mode_Done(&t, ok);
 }
 
+MODE_FN(Vs, OnEnemyDeath, 2, Vs_OnEnemyDeathC(&a[0]))
+
 /* RespawnEnemy(): the enemy again, as the target, and the next round */
-static PyObject *Versus_RespawnEnemy(PyObject *self, PyObject *args) {
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-	Sdf_Call(&f, VS, "CreateEnemy", "(i)", 1);
-	Sdf_Call(&f, VS, "StartCombat", "()");
-	return Sf_None(&f);
+static byte Vs_RespawnEnemyC(void) {
+	return OWN(VS, "CreateEnemy", NULL, "i", 1L) && OWN(VS, "StartCombat", NULL, "");
 }
+
+MODE_FN(Vs, RespawnEnemy, 0, Vs_RespawnEnemyC())
 
 /* OnPlayerDeath(LooserName, WinnerName): the enemy relaxes; the enemy wins at combatDeaths, else the player comes
  * back after 5 s where he died */
-static PyObject *Versus_OnPlayerDeath(PyObject *self, PyObject *args) {
-	PyObject *loser, *winner;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &loser, &winner)) {
-		return NULL;
+static byte Vs_OnPlayerDeathC(const nativeVal_t *loser, const nativeVal_t *winner) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *enemy = Mode_V(&t), *name = Mode_V(&t), *cad = Mode_V(&t), *e = Mode_V(&t), *args = Mode_V(&t);
+	Mode_V(&t);
+	Mode_V(&t);
+	if (!Mode_Read(VS, "enemyName", &vs.enemyName) || !Mode_EntityH(&vs.enemyName, enemy)) {
+		return Mode_Done(&t, 0);
 	}
-	PyObject *enemy = Sf_Entity(&f, Sf_Global(&f, VS, "enemyName"));
-	if (Sf_True(&f, enemy) > 0) {
-		Sf_SetAttrS(&f, enemy, "EntityList", "");
-		Sf_Ask(&f, "SAI", "SetStateVehicle", "(iOi)", 3, Sf_Attr(&f, enemy, "Name"), 0);
+	if (Native_True(enemy) && (!Sd_SetS(enemy, "EntityList", "") || !Mode_VGet(enemy, "Name", name) ||
+		!CALL("SAI", "SetStateVehicle", NULL, "ivi", 3L, name, 0L))) {
+		return Mode_Done(&t, 0);
 	}
-	Vs_Count(&f, "NumPlayerDeaths");
-	int end = Sf_Compare(&f, Sdf_SaveInt(&f, "NumPlayerDeaths"), "==", Sf_Global(&f, VS, "combatDeaths"));
-	if (end > 0) {
-		Sf_Import(&f, "Menu");
-		Sdf_ScorerOff(&f);
-		Sf_Ask(&f, "Scrap", "DelSaveVars", "(s)", "NumEnemyDeaths");
-		Sf_Ask(&f, "Scrap", "DelSaveVars", "(s)", "NumPlayerDeaths");
-		Sdf_CamOnWinner(&f, winner);
-		PyObject *cad = Sdf_Save(&f, "CombatFinishPlayerLoosesTextCad");
-		int t = Sdf_Text(&f, cad);
-		if (t > 0) {
-			Sdf_Later(&f, Sf_Int(&f, 2), VS, "EnemyWins", Sf_Build(&f, "(O)", cad));
-		} else if (t == 0) {
-			PyObject *fn = Sf_Mod(&f, "MissionsFuncs", "OnSuperDealFinish");
-			Sf_Later(&f, Sf_Int(&f, 5), fn, Sf_Build(&f, "(iss)", 0, "Versus", "Versus.RestartCombat"), NULL);
-		}
-	} else if (end == 0) {
-		Sf_Import(&f, "RacerScorer");
-		PyObject *e = Sf_Entity(&f, loser);
-		PyObject *pos = Sf_Attr(&f, e, "Pos");
-		Sdf_Later(&f, Sf_Float(&f, 5.0), VS, "RespawnPlayer", Sf_Build(&f, "(OOO)", loser, pos, Sf_Attr(&f, e, "Ang")));
-		Vs_AuxText(&f);
-		Vs_Update(&f);
+	int end = Vs_Count("NumPlayerDeaths") ? Vs_Reached("NumPlayerDeaths") : -1;
+	if (end < 0) {
+		return Mode_Done(&t, 0);
 	}
-	return Sf_None(&f);
+	if (end == 0) {
+		/* RespawnPlayer(loser, e.Pos, e.Ang) after 5 s */
+		Native_Copy(&args[0], loser);
+		byte ok = Mode_Import("RacerScorer") && Mode_EntityH(loser, e) && Mode_VGet(e, "Pos", &args[1]) &&
+			Mode_VGet(e, "Ang", &args[2]) && Mode_Later(5.0, VS, "RespawnPlayer", args, 3, NULL) && Vs_AuxText() &&
+			Vs_Update();
+		return Mode_Done(&t, ok);
+	}
+	if (!Mode_Import("Menu") || !Vs_Over() || !Sd_CamOnWinner(winner)) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_SaveVar("CombatFinishPlayerLoosesTextCad", cad);
+	if (Sd_Text(cad)) {
+		return Mode_Done(&t, Mode_Later(2.0, VS, "EnemyWins", cad, 1, NULL));
+	}
+	PyObject *fn = Script_Attr("MissionsFuncs", "OnSuperDealFinish");
+	Sd_Params(0, "Versus", "Versus.RestartCombat", args);
+	byte ok = fn && Sd_LaterObj(5.0, fn, args->items, args->n);
+	Py_XDECREF(fn);
+	return Mode_Done(&t, ok);
 }
+
+MODE_FN(Vs, OnPlayerDeath, 2, Vs_OnPlayerDeathC(&a[0], &a[1]))
 
 /* EnemyWins(cad): the enemy's message, then the score table */
-static PyObject *Versus_EnemyWins(PyObject *self, PyObject *args) {
-	PyObject *cad;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "O", &cad)) {
-		return NULL;
+static byte Vs_EnemyWinsC(const nativeVal_t *cad) {
+	nativeVal_t head, params;
+	PyObject *fn;
+	Mode_SaveVar("CombatEnemyTypeHead", &head);
+	if (!(fn = Script_Attr("MissionsFuncs", "OnSuperDealFinish"))) {
+		Native_Free(&head);
+		return 0;
 	}
-	PyObject *head = Sdf_Save(&f, "CombatEnemyTypeHead");
-	PyObject *fn = Sf_Mod(&f, "MissionsFuncs", "OnSuperDealFinish");
-	Sf_Ask(&f, "Speech", "AddRemoteCom", "(OOO(iss))", cad, head, fn, 0, "Versus", "Versus.RestartCombat");
-	return Sf_None(&f);
+	Sd_Params(0, "Versus", "Versus.RestartCombat", &params);
+	byte ok = CALL("Speech", "AddRemoteCom", NULL, "vvOv", cad, &head, fn, &params);
+	Native_Free(&params);
+	Native_Free(&head);
+	Py_DECREF(fn);
+	return ok;
 }
+
+MODE_FN(Vs, EnemyWins, 1, Vs_EnemyWinsC(&a[0]))
 
 /* RespawnPlayer(Usrname, pos, ang): the player's ship again where it died; the enemy attacks it */
-static PyObject *Versus_RespawnPlayer(PyObject *self, PyObject *args) {
-	PyObject *name, *pos, *ang;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OOO", &name, &pos, &ang)) {
-		return NULL;
+static byte Vs_RespawnPlayerC(const nativeVal_t *name, const nativeVal_t *pos, const nativeVal_t *ang) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *usr = Mode_V(&t), *un = Mode_V(&t), *enemy = Mode_V(&t);
+	if (!Mode_Import("Vehicles") || !Mode_Import("OutMap") || !Mode_EntityH(name, usr) || !Mode_VGet(usr, "Name", un) ||
+		!CALL("Vehicles", "ReSpawnShip", NULL, "v", un) || !Mode_VSet(usr, "Pos", pos) || !Mode_VSet(usr, "Ang", ang) ||
+		!Mode_Read(VS, "enemyName", &vs.enemyName) || !Mode_EntityH(&vs.enemyName, enemy)) {
+		return Mode_Done(&t, 0);
 	}
-	Sf_Import(&f, "Vehicles");
-	Sf_Import(&f, "OutMap");
-	PyObject *usr = Sf_Entity(&f, name);
-	Sf_Ask(&f, "Vehicles", "ReSpawnShip", "(O)", Sf_Attr(&f, usr, "Name"));
-	Sf_SetAttr(&f, usr, "Pos", pos);
-	Sf_SetAttr(&f, usr, "Ang", ang);
-	PyObject *enemy = Sf_Entity(&f, Sf_Global(&f, VS, "enemyName"));
-	if (Sf_True(&f, enemy) > 0) {
-		Sf_SetAttrS(&f, enemy, "TgType", "red");
-		Sf_SetAttrS(&f, enemy, "EntityList", "Enemies");
-		PyObject *en = Sf_Global(&f, VS, "enemyName");
-		Sf_Ask(&f, "SAI", "SetStateVehicle", "(iOO)", 2, en, Sf_Attr(&f, usr, "Name"));
+	if (!Native_True(enemy)) {
+		return Mode_Done(&t, 1);
 	}
-	return Sf_None(&f);
+	Native_Free(un);
+	return Mode_Done(&t, Sd_SetS(enemy, "TgType", "red") && Sd_SetS(enemy, "EntityList", "Enemies") &&
+		Mode_Read(VS, "enemyName", &vs.enemyName) && Mode_VGet(usr, "Name", un) &&
+		CALL("SAI", "SetStateVehicle", NULL, "ivv", 2L, &vs.enemyName, un));
 }
+
+MODE_FN(Vs, RespawnPlayer, 3, Vs_RespawnPlayerC(&a[0], &a[1], &a[2]))
 
 /* RestartCombat(id, control): the deaths at 0 and the level again */
-static PyObject *Versus_RestartCombat(PyObject *self, PyObject *args) {
-	PyObject *id, *control;
-	scriptFrame_t f = { 0 };
-	(void)self;
-	if (!PyArg_ParseTuple(args, "OO", &id, &control)) {
-		return NULL;
-	}
-	Sdf_SetSave(&f, "NumEnemyDeaths", "0");
-	Sdf_SetSave(&f, "NumPlayerDeaths", "0");
-	Sf_Ask(&f, "SaveGame", "Restart", "()");
-	return Sf_None(&f);
+static byte Vs_RestartCombatC(void) {
+	Sd_SetSave("NumEnemyDeaths", "0");
+	Sd_SetSave("NumPlayerDeaths", "0");
+	return CALL("SaveGame", "Restart", NULL, "");
 }
 
+MODE_FN(Vs, RestartCombat, 2, Vs_RestartCombatC())
+
 PyMethodDef g_VersusMethods[] = {
-	{ "GetMenuDescription", Versus_GetMenuDescription, 1, NULL },
-	{ "InitStatus", Versus_InitStatus, 1, NULL },
-	{ "Init", Versus_Init, 1, NULL },
-	{ "CreateEnemy", (PyCFunction)(void (*)(void))Versus_CreateEnemy, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "GetMenuDescription", Vs_GetMenuDescription, 1, NULL },
+	{ "InitStatus", Vs_InitStatus, 1, NULL },
+	{ "Init", Vs_Init, 1, NULL },
+	{ "CreateEnemy", (PyCFunction)(void (*)(void))Vs_CreateEnemy, METH_VARARGS | METH_KEYWORDS, NULL },
 	{ "AbortRemoteMessages", Sd_AbortRemoteMessages, 1, NULL },
-	{ "CrazyGamblerStartCombat", Versus_CrazyGamblerStartCombat, 1, NULL },
-	{ "StartCombat", Versus_StartCombat, 1, NULL },
-	{ "OnEnemyDeath", Versus_OnEnemyDeath, 1, NULL },
-	{ "RespawnEnemy", Versus_RespawnEnemy, 1, NULL },
-	{ "OnPlayerDeath", Versus_OnPlayerDeath, 1, NULL },
-	{ "EnemyWins", Versus_EnemyWins, 1, NULL },
-	{ "RespawnPlayer", Versus_RespawnPlayer, 1, NULL },
-	{ "RestartCombat", Versus_RestartCombat, 1, NULL },
+	{ "CrazyGamblerStartCombat", Vs_CrazyGamblerStartCombat, 1, NULL },
+	{ "StartCombat", Vs_StartCombat, 1, NULL },
+	{ "OnEnemyDeath", Vs_OnEnemyDeath, 1, NULL },
+	{ "RespawnEnemy", Vs_RespawnEnemy, 1, NULL },
+	{ "OnPlayerDeath", Vs_OnPlayerDeath, 1, NULL },
+	{ "EnemyWins", Vs_EnemyWins, 1, NULL },
+	{ "RespawnPlayer", Vs_RespawnPlayer, 1, NULL },
+	{ "RestartCombat", Vs_RestartCombat, 1, NULL },
 	{ NULL, NULL, 0, NULL }
 };
+
+
 
 /* ---- TeamDeathMatch: the player's team against the enemies in the QF, CombatDeaths frags of a team win ---- */
 
