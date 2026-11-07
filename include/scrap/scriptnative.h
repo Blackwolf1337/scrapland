@@ -140,6 +140,17 @@ typedef enum {
 /* raises the error kind with the text (printf form); 0, for `return Native_Raise(...)` in a function that returns
  * 1 for success. OBJLIB 7: the Python exception now, a C error state after Python */
 byte Native_Raise(nativeError_t kind, const char *fmt, ...);
+/* the KeyError of d[key] (the key is the value of the error): 0 */
+byte Native_RaiseKey(const nativeVal_t *key);
+/* the name of the Python type of the value, as the errors of 1.5.2 write it ("None", "int", "string", "tuple", ...) */
+const char *Native_TypeName(const nativeVal_t *v);
+/* the text of argument arg (from 1) of an engine function as its "s" reads it: 1 with *out, else 0 with the TypeError
+ * of getargs.c ("argument 1: expected string, int found", "... string without null bytes ...") */
+byte Native_ArgStr(const nativeVal_t *v, int arg, const char **out);
+/* eval(text) of a value the game wrote, as Script_EvalIn(module, text) reads it: the checks of builtin eval (a text
+ * without 0 bytes), then Native_Literal of the text after its leading blanks; 1 with *out (Native_Free it), else 0
+ * with the error (SyntaxError of Script_NotRead for a text no reader takes) */
+byte Native_EvalText(const char *module, const nativeVal_t *text, nativeVal_t *out);
 /* i as an index of a list of count items as Python indexes it (a negative i counts from the end): 1 with *out, else
  * 0 with the IndexError of a list */
 byte Native_Index(long i, int count, int *out);
@@ -149,9 +160,18 @@ byte Native_IntOfText(const char *text, long *out);
 
 /* ---- the engine ---- */
 
+/* the error of an engine function that gives NULL without an exception, as a call from C reports it
+ * (PyEval_CallObjectWithKeywords, "NULL result without error in call_object"): 0 */
+byte Native_NullResult(void);
 /* entity.name as the script handle reads it: an int, float, vector or text variable (a text variable without a text
- * is None). 0 when the entity has no such variable: the console line of the handle and its AttributeError */
+ * is None). 0 when the entity has no such variable: the console line of the handle and its AttributeError; e NULL is
+ * the handle of an entity that is gone (its console line and ceval's SystemError) */
 byte Native_EntVar(cEntity *e, const char *ref, const char *name, nativeVal_t *out);
+/* entity.name = v as the script handle sets it (PyEntity_SetVar: v as an int, float, vector and text, in this order,
+ * each form it reads as goes to the variable of that type until one takes it); 0 when none takes it or e is NULL
+ * (the handle of an entity that is gone): the console line of the handle and ceval's SystemError, as the line of the
+ * script */
+byte Native_EntSet(cEntity *e, const char *ref, const char *name, const nativeVal_t *v);
 
 /*
  * OBJLIB 7, the seam of an engine function that a test case replaces (fc-chat records SNet.SendChatString and
@@ -160,6 +180,14 @@ byte Native_EntVar(cEntity *e, const char *ref, const char *name, nativeVal_t *o
  * the lookup set
  */
 int Native_Seam(const char *module, const char *name, PyObject **hook);
+/* Scrap.GetEntity(name): 1 with the entity in *out (NULL when there is none: the script gets None), 0 with the
+ * TypeError of its argument for a value that is no text */
+byte Native_GetEntity(const nativeVal_t *name, cEntity **out);
+/* Scrap.Get(name): the engine variable as the script gets it (a text, an int, a float, "<function>" or "<Script
+ * function>"); 0 for an unknown name (the console line of Scrap.Get and Native_NullResult) */
+byte Native_GVarGet(const char *name, nativeVal_t *out);
+/* Scrap.GetNetFlags() == (0, 0, 0), one call through the seam: 1 or 0, -1 with the error set */
+int Native_NetOff(void);
 /* Scrap.GetNetFlags()[i] (0 client, 1 server, 2 dedicated): 1 or 0, -1 with the error set (through the seam) */
 int Native_NetFlag(int i);
 
@@ -175,7 +203,9 @@ typedef struct nativeVar_s {
 	const char *name;		/* the variable of the module */
 	nativeVal_t *values;		/* the C value, or the count items of a list */
 	int count;			/* 0: a plain variable; else a list of exactly count items */
-	unsigned types;			/* the NV_ types the C takes (1 << NV_STR | ...) */
+	unsigned types;			/* the NV_ types the C takes (1 << NV_STR | ...); with NV_LONG, NV_LIST, NV_TUPLE or
+					 * NV_DICT among them any value of the types (texts of any length too), else the short
+					 * forms of Native_FromPy */
 } nativeVar_t;
 
 /* the variables of the table (ends with a NULL name) from the dict of module into C: 0 with the error set when one
