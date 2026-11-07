@@ -1,0 +1,39 @@
+# helpers/fffa.py as channel statements (Ffa cases, round 8a): recorders of the network, HUD and menu functions, a call
+# with the scheduler recorded (with the schedule names), state dumps. Loaded into Init's dict.
+import Scrap, sys
+_fr = []
+_fn_ = lambda x: tuple(map(_fn_, x)) if type(x) == type(()) else (map(_fn_, x) if type(x) == type([]) else
+	(map(lambda k: (k, _fn_(x[k])), tc_sorted(x.keys())) if type(x) == type({}) else tc_sdn(x)))
+_frec = lambda n, ret=None: tc_obj(__name__ + '._frec', {'n': n, 'ret': ret}, lambda *a, **kw: (lambda a:
+	(_fr.append((n, _fn_(a), _fn_(kw)) if kw else (n, _fn_(a))), ret)[1])((a[0], 'now+%.1f' % (a[1] - Scrap.GetTime()))
+	if n in ('SetMsgText', 'SetLabelText') and len(a) == 2 and type(a[1]) == type(1.0) else a))
+_fsch = lambda t, fn, args, name=None: _fr.append(('sched', round(t - Scrap.GetTime(), 2), _fn_(fn), _fn_(args), name))
+_fsaved = {}
+_fset = lambda mod, name, v: (_fsaved.has_key((mod, name)) or tc_set(_fsaved, (mod, name), getattr(__import__(mod), name)),
+	setattr(__import__(mod), name, v))[1]
+_fput = lambda mod, name: setattr(__import__(mod), name, _fsaved[(mod, name)])
+_fon = lambda: (map(lambda mn: _fset(mn[0], mn[1], _frec(mn[1])), (('SNet', 'SendUsrString'), ('SNet', 'ModifyUsrData'),
+	('Scrap', 'ConsoleError'), ('SScorer', 'SetMsgText'), ('SScorer', 'SetLabelText'), ('SScorer', 'SetMPFunc'), ('SScorer', 'Fade'),
+	('SInput', 'Bind'), ('Scrap', 'DeleteScheduledFuncs'), ('Vehicles', 'OnDeath'), ('Vehicles', 'OnClientDeath'),
+	('RacerScorer', 'ShowScorer'), ('RacerScorer', 'Create'), ('RacerScorer', 'MissionScorer'), ('RacerScorer', 'MissionScorerTeam'),
+	('Menu', 'BackToGame'), ('Menu', 'StartNewMenu'), ('Menu', 'VerticalMenu'), ('Menu', 'DrawBackOptionMenu'),
+	('Menu', 'ShowWarning'), ('SScorer', 'Set'))), 1)[1]
+# the net flags: (client, server, dedicated)
+_fnet = lambda c, s: (_fset('Scrap', 'GetNetFlags', lambda c=c, s=s: (c, s, 0)), _fset('SNet', 'IsClient', lambda c=c: c),
+	_fset('SNet', 'IsServer', lambda s=s: s), Scrap.GetNetFlags())[3]
+_fnetoff = lambda: (map(lambda mn: _fsaved.has_key(mn) and _fput(mn[0], mn[1]), (('Scrap', 'GetNetFlags'), ('SNet', 'IsClient'),
+	('SNet', 'IsServer'))), Scrap.GetNetFlags())[1]
+_f = lambda f, *a, **kw: (lambda r: (r[1], _fr))((tc_set(__globals__, '_fr', []),
+	tc_swap(Scrap, 'AddScheduledFunc', _fsch,
+		lambda: tc_catch(lambda: _fn_(apply(f, a, kw)), (), None, lambda t, v: 'error: %s: %s' % (t, v))),
+	Scrap.SetTimeSpeed(1)))
+_fst = lambda: (lambda F, R, M, P, c: map(lambda v: (v, _fn_(getattr(F, v, '?'))), ('Scorer', 'GameScorer', 'YourPosition',
+	'YourScore', 'Winner', 'ScorerFraglimit', 'GameStart', 'isScorerVisible', 'SpectatorMode', 'GameFinished', 'TotalRed',
+	'TotalGreen', 'MasterFlag')) + [('Top', R.ScorerTopMessage, 'Bot', R.ScorerBotMessage, 'Menu', M.MultiplayerMenu, 'PCMenu',
+	P.MultiplayerMenu)] + (c and [(lambda S: ('cam', c.MainTarget, c.FreeCam, S.GetActionSet()))(__import__('SInput'))] or []))(
+	__import__('Ffa'), __import__('RacerScorer'), __import__('Menu'), __import__('PCMenu'), Scrap.GetEntity('NetCam'))
+_fent = lambda names: map(lambda n: (lambda e: [n] + map(lambda v: tc_try(lambda: _fn_(getattr(e, v)), (), '?'), ('Active',
+	'TgType', 'Descriptor', 'UsrControl', 'Model', 'ActCtrl')) if e else (n, None))(Scrap.GetEntity(n)), names)
+_fcfg = lambda name: (Scrap.Get('PlayerModel'), Scrap.Get('PlayerMaxLife'), name, Scrap.Get('PilotModel'), Scrap.Get('Motor0Model'),
+	Scrap.Get('Motor1Model'), Scrap.Get('Motor2Model'), Scrap.Get('Motor3Model'), Scrap.Get('WeaponBayList'), 0)
+_fgfs = lambda: (setattr(__import__('OutMap'), 'SpawRes', 'net256'), ((100.0, 200.0, 300.0), 45.0))[1]

@@ -1,0 +1,12 @@
+# helpers/fsd12.py as channel statements (super deals and mission SetVars as data): recorders for the calls that load
+# levels
+import Scrap, sys
+_SD12V = ('CTFFlags', 'CTFNumEnemies', 'CTFFriendProfile', 'CTFEnemyProfile', 'CTFOnDeathSpawnTime', 'OnAbort', 'OnVictory',
+	'Hangar.availableUpgradesList', 'NewBluePrintAvaliable', 'MortalRaceRace', 'DominationZones', 'PlayerRounds', 'EnemyRounds',
+	'PoliceBossAtPolice', 'Hangar.shipsToEditList', 'Hangar.availableEnginesList')
+_sd12on = lambda: (map(lambda n: setattr(MissionsFuncs, n, _sdrec(n)), ('NewCrazyDeal', 'SetNextSuperDeal', 'EndOfSuperDeal',
+	'SetNextMission')), setattr(Scrap, 'Achievement', _sdrec('Achievement')), 1)[2]
+_sd12v = lambda: _r6sv(_SD12V)
+_sd12m = lambda m: (lambda r: r if r[1] == 'import' else (m, _r6fn(m)))(tc_catch(lambda: (m, __import__(m)), (), None,
+	lambda t, v: (m, 'import', t, v)))
+_sd12try = lambda f, *a: tc_catch(lambda: ('ok', apply(_sd, (f,) + a)), (), None, lambda t, v: ('raise', t, str(v)))

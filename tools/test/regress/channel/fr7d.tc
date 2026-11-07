@@ -1,0 +1,15 @@
+# helpers/fr7d.py as channel statements (round 7d: Scrapyard and GDB level scripts), loaded after fsd.tc and fr6b.tc
+import Scrap, sys
+_m = lambda n: sys.modules[n]
+_un = lambda: Scrap.UsrEntity(0).Name
+_YEV = ('TgType', 'EntityList', 'Money', 'Life', 'MaxLife', 'MinLife', 'OnDeath', 'OnDamage', 'Radius', 'TgTypeMarker', 'OnTake',
+	'rTime', 'OnlyUser', 'Active', 'CamTgt', 'Invulnerable', 'UseFunc', 'ArrOpt0', 'ArrnOpt', 'ArrowCanUse', 'VRadius',
+	'ActiveCMask', 'Ammo00', 'MPil0', 'LaunchTaunts', 'CanPhoto', 'AppearsIfFree', 'AutoFace', 'MoveTime', 'RadarShow')
+_ye = lambda names, vs=_YEV: _sdent(names, vs)
+# positions (rounded to 10) of entities
+_ypos = lambda names: map(lambda n: (lambda e: (lambda p: (n, int(p[0] / 10), int(p[1] / 10), int(p[2] / 10)))(e.Pos)
+	if e else (n, None))(Scrap.GetEntity(n)), names)
+# names of list lst not in before
+_ynew = lambda lst, before: filter(lambda n: n not in before, _sdlist(lst))
+_ymods = lambda m, vs: _sdmod(m, vs)
+_ylair = lambda d: map(lambda k: (k, int(d[k][0] / 10), int(d[k][1] / 10), int(d[k][2] / 10)), tc_sorted(d.keys()))

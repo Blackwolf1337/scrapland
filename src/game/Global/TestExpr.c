@@ -12,7 +12,7 @@
  *                  ** * / % + - << >> & ^ |, the comparisons < > == >= <= <> != in, not in, is, is not (chained),
  *                  and, or, "a if c else b" and lambda (parameters with defaults, *args, **kw).
  * Names are found in the locals of the lambdas around them (nested lambdas see the parameters of the outer ones),
- * then in the globals the line runs in, the builtins, the channel's own functions (tc_..., below), the loaded
+ * then in the globals the line runs in (__globals__ is that dict itself), the builtins, the channel's own functions (tc_..., below), the loaded
  * modules, else the module is imported (a name nothing gives raises NameError as Python does).
  * The operators and comparisons do what the byte code of Python 1.5.2 does (the abstract object calls of ceval.c).
  *
@@ -22,9 +22,12 @@
  *                                walked (the _sdn of the super deal cases)
  *   tc_catch(f, args[, kw[, handler]])   f(*args, **kw); an exception gives handler(type, value) (as sys.exc_type
  *                                and sys.exc_value in an except clause), or (type, value) without a handler
+ *   tc_try(f, args, default)     f(*args), or default after any exception (a bare except clause)
+ *   tc_finally(f, args, after)   f(*args), then after() also when f raised (the exception goes on): try/finally
  *   tc_swap(obj, name, value, f) f() while obj.name is value (put back afterwards, also after an exception)
  *   tc_obj(name, attrs[, call[, repr]])   an instance of a new class name ("Module.Class" sets its module) with the
  *                                attributes of the dict attrs; call and repr become its __call__ and __repr__
+ *   tc_class(name[, attrs])      a new class name with the class attributes of the dict attrs
  *   tc_walk(x, next)             [x, next(x), next(next(x)), ...] up to the first value that is not true
  *   tc_sorted(seq)               a sorted list of the items
  *   tc_set(o, key, value), tc_del(o, key), tc_clear(list)   o[key] = value, del o[key], del list[:]
@@ -1154,6 +1157,11 @@ PyObject *TcX_Name(const char *name) {
 static PyObject *X_Name(PyObject *name, tcScope *s) {
 	PyObject *v = s->locals ? PyDict_GetItem(s->locals, name) : NULL;
 
+	if (!v && !strcmp(PyString_AsString(name), "__globals__")) {
+		/* the globals the line or lambda runs in (helpers set their module variables through it) */
+		Py_INCREF(s->globals);
+		return s->globals;
+	}
 	for (PyObject *c = s->chain; !v && c && PyTuple_Check(c); c = PyTuple_GetItem(c, 1)) {
 		v = PyDict_GetItem(PyTuple_GetItem(c, 0), name);
 	}
@@ -1966,6 +1974,54 @@ static PyObject *TP_Catch(PyObject *self, PyObject *args) {
 	return v;
 }
 
+static PyObject *TP_Try(PyObject *self, PyObject *args) {
+	PyObject *f, *fargs, *dflt;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "OOO", &f, &fargs, &dflt)) {
+		return NULL;
+	}
+	PyObject *v = PyEval_CallObject(f, fargs);
+	if (v && PyErr_Occurred()) {
+		Py_DECREF(v);
+		v = NULL;
+	}
+	if (!v) {
+		PyErr_Clear();
+		Py_INCREF(dflt);
+		v = dflt;
+	}
+	return v;
+}
+
+static PyObject *TP_Finally(PyObject *self, PyObject *args) {
+	PyObject *f, *fargs, *after;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "OOO", &f, &fargs, &after)) {
+		return NULL;
+	}
+	PyObject *v = PyEval_CallObject(f, fargs);
+	if (v && PyErr_Occurred()) {
+		Py_DECREF(v);
+		v = NULL;
+	}
+	PyObject *t, *val, *tb;
+	PyErr_Fetch(&t, &val, &tb);
+	PyObject *r = PyEval_CallObject(after, NULL);
+	if (!r) {
+		/* an exception of the cleanup replaces the one before, as in a finally clause */
+		Py_XDECREF(t);
+		Py_XDECREF(val);
+		Py_XDECREF(tb);
+		Py_XDECREF(v);
+		return NULL;
+	}
+	Py_DECREF(r);
+	PyErr_Restore(t, val, tb);
+	return v;
+}
+
 static PyObject *TP_Swap(PyObject *self, PyObject *args) {
 	PyObject *o, *name, *value, *f;
 
@@ -1993,33 +2049,68 @@ static PyObject *TP_Swap(PyObject *self, PyObject *args) {
 	return v;
 }
 
+/* a new class name ("Module.Class" sets its module, else __main__) with the items of the dict attrs; NULL with the error
+ * set */
+static PyObject *TP_MakeClass(const char *name, PyObject *attrs) {
+	char mod[0x80];
+	const char *dot = strrchr(name, '.');
+
+	if (attrs != Py_None && !PyDict_Check(attrs)) {
+		PyErr_SetString(PyExc_TypeError, "the attributes must be a dict");
+		return NULL;
+	}
+	Str_Copy(mod, "__main__", sizeof(mod));
+	if (dot) {
+		snprintf(mod, sizeof(mod), "%.*s", (int)(dot - name), name);
+	}
+	PyObject *cdict = PyDict_New(), *k, *v;
+	int pos = 0;
+	while (cdict && attrs != Py_None && PyDict_Next(attrs, &pos, &k, &v)) {
+		if (PyDict_SetItem(cdict, k, v) != 0) {
+			Py_DECREF(cdict);
+			return NULL;
+		}
+	}
+	PyObject *ms = PyString_FromString(mod);
+	if (!cdict || !ms || PyDict_SetItemString(cdict, "__module__", ms) != 0) {
+		Py_XDECREF(cdict);
+		Py_XDECREF(ms);
+		return NULL;
+	}
+	Py_DECREF(ms);
+	PyObject *bases = PyTuple_New(0);
+	PyObject *cname = PyString_FromString(dot ? dot + 1 : name);
+	PyObject *klass = bases && cname ? PyClass_New(bases, cdict, cname) : NULL;
+	Py_DECREF(cdict);
+	Py_XDECREF(bases);
+	Py_XDECREF(cname);
+	return klass;
+}
+
+static PyObject *TP_Class(PyObject *self, PyObject *args) {
+	char *name;
+	PyObject *attrs = Py_None;
+
+	(void)self;
+	return PyArg_ParseTuple(args, "s|O", &name, &attrs) ? TP_MakeClass(name, attrs) : NULL;
+}
+
 static PyObject *TP_Obj(PyObject *self, PyObject *args) {
-	char *name, mod[0x80];
+	char *name;
 	PyObject *attrs, *call = Py_None, *repr = Py_None;
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "sO|OO", &name, &attrs, &call, &repr)) {
 		return NULL;
 	}
-	const char *dot = strrchr(name, '.');
-	Str_Copy(mod, "__main__", sizeof(mod));
-	if (dot) {
-		snprintf(mod, sizeof(mod), "%.*s", (int)(dot - name), name);
-	}
-	PyObject *cdict = Py_BuildValue("{ss}", "__module__", mod);
-	PyObject *bases = PyTuple_New(0);
-	PyObject *cname = PyString_FromString(dot ? dot + 1 : name);
-	PyObject *klass = cdict && bases && cname ? PyClass_New(bases, cdict, cname) : NULL;
+	PyObject *klass = TP_MakeClass(name, Py_None);
 	PyObject *inst = klass ? PyInstance_New(klass, NULL, NULL) : NULL;
-	Py_XDECREF(cdict);
-	Py_XDECREF(bases);
-	Py_XDECREF(cname);
 	Py_XDECREF(klass);
 	if (inst && attrs != Py_None) {
 		PyObject *k, *v;
 		int pos = 0;
 		if (!PyDict_Check(attrs)) {
-			PyErr_SetString(PyExc_TypeError, "tc_obj: attrs must be a dict");
+			PyErr_SetString(PyExc_TypeError, "the attributes must be a dict");
 			Py_DECREF(inst);
 			return NULL;
 		}
@@ -2125,8 +2216,11 @@ static PyObject *TP_Clear(PyObject *self, PyObject *args) {
 static PyMethodDef tp_functions[] = {
 	{ "tc_sdn", TP_Sdn, METH_VARARGS, NULL },
 	{ "tc_catch", TP_Catch, METH_VARARGS, NULL },
+	{ "tc_try", TP_Try, METH_VARARGS, NULL },
+	{ "tc_finally", TP_Finally, METH_VARARGS, NULL },
 	{ "tc_swap", TP_Swap, METH_VARARGS, NULL },
 	{ "tc_obj", TP_Obj, METH_VARARGS, NULL },
+	{ "tc_class", TP_Class, METH_VARARGS, NULL },
 	{ "tc_walk", TP_Walk, METH_VARARGS, NULL },
 	{ "tc_sorted", TP_Sorted, METH_VARARGS, NULL },
 	{ "tc_set", TP_Set, METH_VARARGS, NULL },

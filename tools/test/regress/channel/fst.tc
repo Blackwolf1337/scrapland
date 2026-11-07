@@ -1,0 +1,23 @@
+# The helpers of helpers/fst.py as channel statements (TestExpr.c): one statement per line, indented lines continue
+# the one before. The runner loads it at the start of every case, as the python harness execfiles fst.py.
+import Scrap, SAct, Init
+_ent = lambda n, vs: (lambda e: map(lambda v: (v, tc_try(getattr, (e, v), '?')), vs))(Scrap.GetEntity(n))
+_gv = lambda vs: map(lambda v: (v, Scrap.Get(v)), vs)
+_mod = lambda m, vs: (lambda mod: map(lambda v: (v, tc_try(lambda: `getattr(mod, v)`, (), '?')), vs))(__import__(m))
+_cls = lambda c, v: (SAct.GetClass(c), SAct.GetCls(v))[1]
+Init._ent = _ent
+Init._gv = _gv
+Init._mod = _mod
+Init._cls = _cls
+# the names of an entity list in a sphere, sorted, through Scrap.SphereCall and a collector function Init.<hook>
+_tccoll = lambda hook, lst, r=300000.0: (lambda n: (setattr(Init, hook, lambda x: n.append(x)),
+	Scrap.SphereCall(0.0, 0.0, 0.0, r, lst, 'Init.' + hook), n.sort(), n)[3])([])
+_items = lambda: _tccoll('_itemcollect', 'i')
+Init._items = _items
+_veh = lambda: map(lambda x: (lambda e: [x] + map(lambda v: tc_try(getattr, (e, v), '?'), ('Model', 'FxClass',
+	'ShipMotorColorR', 'ShipMotorColorG', 'ShipMotorColorB', 'ShipMotorScale', 'ShipMotorOffset')))(Scrap.GetEntity(x)),
+	_tccoll('_vehcollect', 'v'))
+Init._veh = _veh
+_itemvars = lambda: map(lambda x: (lambda e: [x] + map(lambda v: tc_try(getattr, (e, v), '?'), ('NetRes', 'Radius',
+	'TakeSound', 'TakeSoundVol', 'OnTake', 'rTime', 'Owner', 'OnReset', 'BackTime')))(Scrap.GetEntity(x)), _items())
+Init._itemvars = _itemvars

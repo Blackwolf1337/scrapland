@@ -54,6 +54,7 @@ os.environ.setdefault('SCRAP_MCP_ROOT', _data_root())
 sys.path.insert(0, MCP_DIR)
 import scrap_mcp  # noqa: E402
 import slot  # noqa: E402
+import tochannel  # noqa: E402
 from compare import compare, show_diff, load_json  # noqa: E402
 
 DEFAULT_BUILD = os.path.join(REPO, 'build-linux64')
@@ -61,6 +62,9 @@ BASELINES = os.path.join(HERE, 'baselines')
 HELPERS = os.path.join(HERE, 'helpers')
 RESULTS = os.path.join(REPO, 'build-regress')
 VK_DEVICE = os.environ.get('REGRESS_VK_DEVICE', '1002:164e')
+# REGRESS_PY_PROFILE=1: the games run with the Python profile (SCRAP_PY_PROFILE, PyProfile.c), each result keeps the
+# Python code objects that ran in its game (pyprofile): what a case still runs as Python
+PY_PROFILE = os.environ.get('REGRESS_PY_PROFILE', '') not in ('', '0')
 LINE_TIMEOUT = 30.0
 CASE_TIMEOUT = 1500.0
 # game seconds a level load counts for in a !sleep (the real-time sleeps of the cases covered the load)
@@ -129,7 +133,7 @@ def _python(self, code, timeout=10.0):
 		raise RuntimeError('game %s does not run' % self.name)
 	if self.opts.get('harness') == 'channel':
 		try:
-			return scrap_mcp.channel.send(self.game, 'py\n' + code, timeout=timeout, alive=self.running)
+			return scrap_mcp.channel.send(self.game, code, timeout=timeout, alive=self.running)
 		except scrap_mcp.channel.NoAnswer:
 			raise RuntimeError('no answer from game %s in %.0f s' % (self.name, timeout))
 	self.seq += 1
@@ -178,12 +182,39 @@ class Lane:
 		self.game = None
 
 	def q(self, code, timeout=LINE_TIMEOUT):
+		"""a command of the harness (Python, or channel commands with REGRESS_HARNESS=channel)"""
 		return self.game.python(code, timeout=timeout)
+
+	def line(self, line, timeout=LINE_TIMEOUT):
+		"""a case line: as it is to the Python harness; on the channel its commands (tochannel.py) in one command file,
+		the answer the first error of the helper commands, else that of the line"""
+		if HARNESS == 'python':
+			return self.q(line, timeout)
+		try:
+			cmds = tochannel.convert(line)
+		except tochannel.Unconvertible as e:
+			return '!! not on the channel: %s' % e
+		return self.commands(cmds, timeout)
+
+	def commands(self, cmds, timeout=LINE_TIMEOUT):
+		"""channel commands in one command file; the first error answer of all but the last, else the last answer"""
+		if len(cmds) == 1:
+			return self.q(cmds[0], timeout)
+		mark = "'--tc-mark--'"
+		out = self.q('\n'.join(cmds[:-1] + [mark, cmds[-1]]), timeout)
+		head, sep, tail = out.partition(mark + '\n')
+		if not sep:
+			head, sep, tail = out.partition(mark)
+		for ln in head.split('\n'):
+			if ln.startswith('error: '):
+				return ln
+		return tail
 
 	def gstate(self):
 		"""(game time, mark set) or None while the game does not answer (a level loads)."""
 		try:
-			r = self.q("(Scrap.GetTime(), globals().get('_rg_mark'))", timeout=2.0)
+			r = self.q("(Scrap.GetTime(), globals().get('_rg_mark'))" if HARNESS == 'python' else
+					   "(Scrap.GetTime(), __import__('__main__').__dict__.get('_rg_mark'))", timeout=2.0)
 		except RuntimeError:
 			return None
 		m = re.match(r"\(([-\d.e+]+), (\w+)\)", r)
@@ -260,6 +291,8 @@ class Lane:
 			scrap_mcp.GAMES[self.tag] = g
 		self.game = g
 		env = {'SCRAP_VK_DEVICE': VK_DEVICE}
+		if PY_PROFILE:
+			env['SCRAP_PY_PROFILE'] = 'pyprofile.txt'
 		if self.pack:
 			env['SCRAP_PACK_SCRIPTS'] = '1'
 		res = {'case': case, 'level': level, 'tag': self.tag, 'pack': self.pack, 'build': build,
@@ -281,7 +314,12 @@ class Lane:
 				except RuntimeError:
 					pass
 			res['ready'] = round(time.time() - t0, 1)
-			self.q("execfile('fst.py')")
+			if HARNESS == 'python':
+				self.q("execfile('fst.py')")
+			else:
+				r = self.commands(tochannel.helper_load('fst') + ['None'])
+				if r != 'None':
+					raise RuntimeError('channel/fst.tc: %s' % r)
 			timeouts = 0
 			for line in open(case_path(case), encoding='latin1').read().split('\n'):
 				if not line.strip() or line.startswith('#'):
@@ -293,7 +331,7 @@ class Lane:
 					res['status'] = 'timeout'
 					break
 				try:
-					reply = self.q(line)
+					reply = self.line(line)
 					timeouts = 0
 				except RuntimeError as e:
 					if not g.running():
@@ -309,6 +347,13 @@ class Lane:
 		except Exception as e:
 			res['status'] = 'error'
 			res['error'] = '%s: %s' % (type(e).__name__, e)
+		if PY_PROFILE and g.running():
+			# the Python code objects that ran in this game (through all its level loads)
+			try:
+				self.q("Scrap.DumpPyProfile('pyprofile.txt')", timeout=5.0)
+				res['pyprofile'] = open(os.path.join(g.game, 'pyprofile.txt'), errors='replace').read()
+			except (RuntimeError, OSError) as e:
+				res['pyprofile'] = 'no profile: %s' % e
 		try:
 			res['log'] = '\n'.join(g.log('game').splitlines()[-40:])
 		except Exception:

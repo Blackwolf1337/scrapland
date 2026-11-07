@@ -1,0 +1,68 @@
+# helpers/fr6b.py as channel statements (round 6b: Commercial, GamblinDen, Orbit level scripts), loaded after fsd.tc
+# and again after every level load
+import Scrap, sys, string
+_tcfn = lambda m: (lambda d: map(lambda n: (n, 'C' if type(d[n]) == type(len) else 'py'),
+	filter(lambda n: type(d[n]) == type(len) or type(d[n]).__name__ == 'function', tc_sorted(d.keys()))))(sys.modules[m].__dict__)
+_bfn = _tcfn
+_bsv = lambda names: map(lambda n: (n, Scrap.GetSaveVar(n)), names)
+_bgv = lambda names: map(lambda n: (n, tc_try(lambda: _sdn(Scrap.Get(n)), (), '?')), names)
+_BEV = ('ActCtrl', 'UseFunc', 'Descriptor', 'LLogicDefaultState', 'LLogicDefaultTarget', 'LLogicState', 'LLogicTarget',
+	'LLogicIdle', 'LLogicProbTalkWhenWalking', 'LLogicKeepWorking', 'ArrowCanUse', 'ArrowCanMission', 'RadarShow', 'Money',
+	'OnObjSlot', 'Active', 'TgType', 'EntityList', 'OnDeath', 'OnDamage', 'Life', 'MaxLife', 'ArrnOpt', 'ArrOpt0', 'DefLoop')
+_bent = lambda names, vs=_BEV: _sdent(names, vs)
+_bres = lambda: (lambda r: map(lambda k: (k, r[k].ActCtrl, _sdn(getattr(r[k], 'CallbackFunc', '-')),
+	_sdn(getattr(r[k], 'DancePos', '-'))), tc_sorted(r.keys())))(CharsNPC.CharRes)
+_BHOOKS = (('Speech', 'OnEndOfSpeech'), ('Speech', 'OnEndOfSpeechParams'), ('Speech', 'PlayerName'), ('Speech', 'NPCName'),
+	('Speech', 'OnOutOfRange'), ('Alarm', 'TempAbortMissionCallback'), ('Alarm', 'TempRestoreMissionCallback'),
+	('DTritusDesktop', 'DialogController'), ('Menu', 'MissionScorerCall'), ('Scene', 'EndOfSceneCallback'),
+	('Parking', 'SwitchVehicleMissionCallback'), ('Parking', 'SwitchCharMissionCallback'), ('MissionsFuncs', 'currentTarget'),
+	('MissionsFuncs', 'targetsList'), ('Init', 'Outdoor'), ('Init', 'OutArea'), ('CharsNPC', 'AfterBrowseNPC'),
+	('CharConversor', 'AvailableChars'), ('GateKeeper', 'LocalCallFunc'), ('GateKeeper', 'LocalParams'))
+_tchooks = lambda pairs: map(lambda p: (p[0], p[1], _sdn(getattr(sys.modules[p[0]], p[1], '-')))
+	if sys.modules.has_key(p[0]) else (p[0], p[1], '-'), pairs)
+_bhooks = lambda: _tchooks(_BHOOKS)
+_broutines = lambda: (lambda r: map(lambda k: (k, _sdn(r[k])), tc_sorted(r.keys())))(Speech.SpeechRoutines)
+# recorders for the calls with effects that need AI timing, load levels or play scenes; the originals come back with
+# _broff() before a level load
+_BREC = ('Speech.AddRemoteCom', ('Speech.OnSpch', 1), 'Speech.NISpeech', 'Speech.AutoAddNI', 'Speech.RunNI', 'Speech.StdAnsLst',
+	'Speech.StdOnSpch', 'Speech.RestoreState', 'Speech.StartObjSpch', 'Speech.OffVoice', 'Speech.ForceRemoteCom',
+	('Speech.RemoteComunication', 1), ('Speech.CalculateSpeechTime', 2.5), 'SaveGame.QLoad', 'SaveGame.StartGame',
+	'SaveGame.MarkWayPoint', 'SaveGame.QWayPoint', 'SaveGame.MMDesc', 'RaceMaker.ShowSystemMessage', 'Scene.Play',
+	'MissionsFuncs.StartSuperDeal', 'PhoneCab.UseAudioCom', 'CharsNPC.PlayOption', 'CharsNPC.GenericNPCSpeech', 'Menu.MovieScorer',
+	'SSound.SetMusic', 'SSound.SetMusicVolume', 'Scrap.Achievement')
+_borig = []
+_bon1 = lambda n, ret: (lambda mf: sys.modules.has_key(mf[0]) and (_borig.append((sys.modules[mf[0]], mf[1],
+	getattr(sys.modules[mf[0]], mf[1]))), setattr(sys.modules[mf[0]], mf[1], _sdrec(n, ret))))(string.split(n, '.'))
+_bon = lambda extra=None: (map(lambda e: _bon1(e[0], e[1]) if type(e) == type(()) else _bon1(e, None), extra or _BREC), 1)[1]
+_broff = lambda: (map(lambda x: setattr(x[0], x[1], x[2]), (lambda l: (l.reverse(), l)[1])(_borig[:])), tc_clear(_borig), 1)[2]
+_bitems = lambda id, names, attrs: map(lambda n: tuple([n] + map(lambda a: tc_try(lambda: _sdn(SScorer.Get(id, n, a)), (), '?'),
+	attrs)), names)
+_BTEXT = ('X', 'Y', 'Text', 'Font', 'Align', 'Red', 'Green', 'Blue', 'Alpha', 'Visible')
+# the player next to the entity n (d along x)
+_bnear = lambda n, d: (lambda u, p: (setattr(u, 'Pos', (p[0] + d, p[1], p[2])), 1)[1])(Scrap.UsrEntity(0), Scrap.GetEntity(n).Pos)
+_bprof = lambda p: (lambda d: map(lambda k: (k, _sdn(d[k])), tc_sorted(d.keys())))(p.__dict__)
+_BSCEN = ('Scene.Load', 'Scene.AddGeneric', 'Scene.AddText', 'Scene.ActorAction', 'Scene.ObjAction', 'Scene.ActorBreakChannel',
+	'Scene.AddCharActor', 'Scene.AddLocalActor', 'Scene.CreateLocalAction', 'Scene.SetDefSounds', 'MakeChar.CreateRelaxAction',
+	'SAct.SetCls', 'SAct.SetAct', ('SAct.GetAct', 1.5), 'SAct.GetClass', 'SAct.CreateAction', 'Scrap.SetDebrisSys')
+# the name of the current mission target
+_btarget = lambda: (lambda t: t if type(t) == type('') else getattr(t, 'Name', t))(MissionsFuncs.currentTarget)
+_bposv = [None]
+_bsave = lambda: (tc_set(_bposv, 0, Scrap.UsrEntity(0).Pos), 1)[1]
+_bback = lambda: (setattr(Scrap.UsrEntity(0), 'Pos', _bposv[0]), 1)[1]
+_basv = [None]
+_bas = lambda: (tc_set(_basv, 0, SInput.GetActionSet()), 1)[1]
+_basr = lambda: (SInput.SetActionSet(_basv[0]), 1)[1]
+# Scrap.UsrEntity(0) as a functionary (the talks that check the player's character)
+_bfakeusr = tc_obj(__name__ + '._bfakeusr', {'ActCtrl': 'Functionary', 'Name': 'Player0'})
+_BDEN = ('MayorAtGambinDen', 'FunctionaryTwinsAtGambinDen', 'BankersAtGambinDen', 'BishopsAtGambinDen', 'PolicesAtGambinDen', 'PoliceBossAtPolice')
+# the talk of an arranging mission through all its options (accept restores the action set)
+_barrange = lambda fn, prefix: (lambda u: (lambda r: (_bas(), r.append(_sd(fn, u, 'CrazyGambler_Default', prefix + '_1_1', 'x')),
+	_basr(), r.append(_bhooks()[:4]), r)[4])(map(lambda o: _sd(fn, u, 'CrazyGambler_Default', o, 'x'),
+	('Talk', prefix + '_1', prefix + '_1_2', 'Other'))))(Scrap.UsrEntity(0).Name)
+# the talk of a mercenary through all its options
+_bmerc = lambda fn, name, prefix: (lambda u: (lambda r: (r.append(_bhooks()[:4]), r)[1])(map(lambda o: _sd(fn, u, name, o, 'x'),
+	('Talk', prefix + '_1', prefix + '_1_1', prefix + '_1_1_1', 'Other'))))(Scrap.UsrEntity(0).Name)
+# Scrap.Rand(a, b) as a + frac * (b - a), recorded
+_brand = lambda frac: tc_obj(__name__ + '._brand', {'frac': frac},
+	lambda a, b: (_sdr.append(('Scrap.Rand', (a, b))), a + frac * (b - a))[1])
+_brandon = lambda frac: (_borig.append((Scrap, 'Rand', Scrap.Rand)), setattr(Scrap, 'Rand', _brand(frac)), 1)[2]

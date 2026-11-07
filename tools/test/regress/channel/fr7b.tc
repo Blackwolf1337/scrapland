@@ -1,0 +1,24 @@
+# helpers/fr7b.py as channel statements (round 7b: Press, Junkyard): shortcuts on top of fsd.tc and fr6b.tc
+import Scrap, sys
+# _sd of module m's function f
+_c = lambda m, f, *a, **kw: apply(_sd, (getattr(sys.modules[m], f),) + a, kw)
+_fusr = lambda ctrl, name='Player0': tc_obj(__name__ + '._fusr', {'ActCtrl': ctrl, 'Name': name})
+_fuorig = [None]
+# Scrap.UsrEntity(i) gives a fake player of the class ctrl
+_fuon = lambda ctrl: (_fuorig[0] is None and tc_set(_fuorig, 0, Scrap.UsrEntity),
+	setattr(Scrap, 'UsrEntity', lambda i, c=ctrl: _fusr(c)), 1)[2]
+_fuoff = lambda: (_fuorig[0] is not None and (setattr(Scrap, 'UsrEntity', _fuorig[0]), tc_set(_fuorig, 0, None)), 1)[1]
+_rorig = []
+# Speech.SpeechRoutines[name] recorded
+_ron = lambda names: (map(lambda n: (_rorig.append((n, Speech.SpeechRoutines.get(n))),
+	tc_set(Speech.SpeechRoutines, n, _sdrec('Routine.' + n))), names), 1)[1]
+_roff = lambda: (map(lambda x: tc_del(Speech.SpeechRoutines, x[0]) if x[1] is None else tc_set(Speech.SpeechRoutines, x[0], x[1]),
+	(lambda l: (l.reverse(), l)[1])(_rorig[:])), tc_clear(_rorig), 1)[2]
+# the callbacks of a mission character
+_cb = lambda name: _sdn(getattr(CharsNPC.CharRes[name], 'CallbackFunc', '-')) if CharsNPC.CharRes.has_key(name) else '-'
+_hk = lambda *pairs: map(lambda p: (p[0], p[1], _sdn(getattr(sys.modules[p[0]], p[1], '-')))
+	if sys.modules.has_key(p[0]) else (p[0], p[1], '-'), pairs)
+_SPK = ('Speech.AddNI', 'Speech.AutoSpeech', 'MissionsFuncs.SetMissionTarget', 'MissionsFuncs.ActivateTarget', 'MissionsFuncs.SetNextMission',
+	'Scrap.ConsoleError', 'SSound.PlaySound', 'Scrap.DelSaveVars')
+# the arguments of the last recorded call n of the last _sd
+_last = lambda n: reduce(lambda r, x: x[1] if x[0] == n else r, _sdr, None)
