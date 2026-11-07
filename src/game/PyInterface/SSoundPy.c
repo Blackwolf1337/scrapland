@@ -54,26 +54,27 @@ static PyObject *SSound_LoadSound(PyObject *self, PyObject *args) {
 }
 
 /* PlaySound((x,y,z), name, volume[, p1, p2, p3]) : sound at a position; p1, p2 default 0, p3 default 1 */
+void Sound_PlayAt(const vec3_t *pos, const char *name, double volume, double p1, double p2, double p3) {
+	cSoundDesc desc;
+	cSoundDesc_Init(&desc);
+	desc.param1 = (float)p1;
+	desc.param2 = (float)p2;
+	desc.param3 = (float)p3;
+	cSoundDesc_SetPos(&desc, pos);
+	desc.volume += Snd_Volume((float)volume);
+	SoundSys_PlaySound(g_pSound, name, &desc, 0);
+}
+
 static PyObject *SSound_PlaySound(PyObject *self, PyObject *args) {
 	double x, y, z, volume, p1 = 0.0, p2 = 0.0, p3 = 1.0;
 	char *name;
-	cSoundDesc desc;
-	vec3_t pos;
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "(ddd)sd|ddd", &x, &y, &z, &name, &volume, &p1, &p2, &p3)) {
 		return NULL;
 	}
-	cSoundDesc_Init(&desc);
-	desc.param1 = (float)p1;
-	desc.param2 = (float)p2;
-	desc.param3 = (float)p3;
-	pos.x = (float)x;
-	pos.y = (float)y;
-	pos.z = (float)z;
-	cSoundDesc_SetPos(&desc, &pos);
-	desc.volume += Snd_Volume((float)volume);
-	SoundSys_PlaySound(g_pSound, name, &desc, 0);
+	vec3_t pos = { (float)x, (float)y, (float)z };
+	Sound_PlayAt(&pos, name, volume, p1, p2, p3);
 	return Py_ReturnNone();
 }
 

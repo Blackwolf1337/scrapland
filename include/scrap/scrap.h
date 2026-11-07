@@ -199,5 +199,20 @@ void cFuncGvarDevices_Save(struct cFuncGvar *elem, void *f);
 
 /* Scrap.Rand(a, b): a random number between a and b from the game's rand (one call of it) */
 double Scrap_RandRange(double a, double b);
+/* Scrap.TestSphere: the first entity of the list (an entity list name) in the sphere, not the one named exclude ("" for
+ * none), else NULL; *levelHit whether the sphere touches the level */
+cEntity *World_TestSphere(const vec3_t *c, float r, const char *list, const char *exclude, byte *levelHit);
+/* Scrap.TestLine: 1 when the line hits the level or an entity of the list (the point in *hit, the entity in *target,
+ * NULL for the level), else 0 */
+/* Scrap.AddItem(type, name, value) of type "Life" and (type, name, kind, value) of type "Ammo" (kind "Part", "Miss" or
+ * "Ener"): a box of the level logic */
+/* Scrap.SetCallFunc(func), Scrap.AddParamf of the n params, Scrap.Execute(): a call of the function of the engine
+ * ("!name" a C function of the registry) */
+void CallFunc_ExecuteF(const char *func, const float *params, int n);
+/* Scrap.EntityListGet(list, var): 1 a text in *s, 2 a float in *d, 3 an int in *i; 0 (no such variable) and -1 (no
+ * such list) with the console line of the engine */
+int EntityList_Get(const char *listName, const char *var, char **s, double *d, int *i);
+void Logic_AddItem(const char *type, const char *name, const char *kindName, int value);
+byte World_TestLine(const vec3_t *from, const vec3_t *to, const char *list, vec3_t *hit, cEntity **target);
 
 #endif

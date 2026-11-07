@@ -62,6 +62,14 @@ static PyObject *Scrap_AddParamf(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
+void CallFunc_ExecuteF(const char *func, const float *params, int n) {
+	cPy_Function_SetFunc((&g_CallFunc), func);
+	for (int i = 0; i < n; i++) {
+		cPy_Function_AddParamF((&g_CallFunc), params[i]);
+	}
+	cPy_Function_Execute((&g_CallFunc), 0);
+}
+
 /* AddParami(value) */
 static PyObject *Scrap_AddParami(PyObject *self, PyObject *args) {
 	int v;
@@ -1215,23 +1223,37 @@ static PyObject *Scrap_RunApp(PyObject *self, PyObject *args) {
  * Python) for a missing list and for a variable the list cannot give. A missing list still does so: tools/test/golden
  * records it. differs from the original: an unknown variable raises an AttributeError.
  */
-static PyObject *Scrap_EntityListGet(PyObject *self, PyObject *args) {
+int EntityList_Get(const char *listName, const char *var, char **s, double *d, int *i) {
 	/* differs from the original: the values start at 0, as in SScorer.Get */
-	char *listName, *var, *s = NULL;
-	double d = 0.0;
-	int i = 0;
+	*s = NULL;
+	*d = 0.0;
+	*i = 0;
+	void *list = cWorld_GetList(g_pWorld, listName);
+	if (!list) {
+		Con_Errorf("ERROR: EntityListGet '%s','%s' List Not Found.\n", listName, var);
+		return -1;
+	}
+	int kind = cEntityList_Var(list, var, 0, s, d, i);
+	if (kind < 1 || kind > 3) {
+		Con_Errorf("ERROR: EntityListGet '%s','%s' Typecast error.\n", listName, var);
+		return 0;
+	}
+	return kind;
+}
+
+static PyObject *Scrap_EntityListGet(PyObject *self, PyObject *args) {
+	char *listName, *var, *s;
+	double d;
+	int i;
 	char msg[0x100];
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "ss", &listName, &var)) {
 		return NULL;
 	}
-	void *list = cWorld_GetList(g_pWorld, listName);
-	if (!list) {
-		Con_Errorf("ERROR: EntityListGet '%s','%s' List Not Found.\n", listName, var);
+	switch (EntityList_Get(listName, var, &s, &d, &i)) {
+	case -1:
 		return NULL;
-	}
-	switch (cEntityList_Var(list, var, 0, &s, &d, &i)) {
 	case 1:
 		return Py_BuildValue("s", s);
 	case 2:
@@ -1239,7 +1261,6 @@ static PyObject *Scrap_EntityListGet(PyObject *self, PyObject *args) {
 	case 3:
 		return Py_BuildValue("i", i);
 	}
-	Con_Errorf("ERROR: EntityListGet '%s','%s' Typecast error.\n", listName, var);
 	Str_Printf(msg, sizeof(msg), "EntityListGet: list '%.64s' has no variable '%.64s'", listName, var);
 	PyErr_SetString(PyExc_AttributeError, msg);
 	return NULL;
@@ -1379,6 +1400,16 @@ static PyObject *Scrap_GetFarestParked(PyObject *self, PyObject *args) {
  * TestLine((x1,y1,z1), (x2,y2,z2), listName) : ((x, y, z) hit, name) against the level and the entities of the
  * list; "" for a level hit only, None for no hit.
  */
+byte World_TestLine(const vec3_t *from, const vec3_t *to, const char *list, vec3_t *hit, cEntity **target) {
+	vec3_t end = *to;
+	*target = NULL;
+	*hit = end;
+	byte levelHit = Engine_TestLine(from, &end, hit, 0);
+	end = *hit;
+	cWorld_TestLineEntities(g_pWorld, 0, EntityLists_Get(list), from, &end, hit, target, 1);
+	return *target || levelHit;
+}
+
 static PyObject *Scrap_TestLine(PyObject *self, PyObject *args) {
 	double x1, y1, z1, x2, y2, z2;
 	char *listName;
@@ -1387,20 +1418,31 @@ static PyObject *Scrap_TestLine(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "(ddd)(ddd)s", &x1, &y1, &z1, &x2, &y2, &z2, &listName)) {
 		return NULL;
 	}
-	cEntity *target = NULL;
+	cEntity *target;
 	vec3_t from = { (float)x1, (float)y1, (float)z1 };
 	vec3_t to = { (float)x2, (float)y2, (float)z2 };
-	vec3_t hit = to;
-	byte levelHit = Engine_TestLine(&from, &to, &hit, 0);
-	to = hit;
-	cWorld_TestLineEntities(g_pWorld, 0, EntityLists_Get(listName), &from, &to, &hit, &target, 1);
-	if (!target && !levelHit) {
+	vec3_t hit;
+	if (!World_TestLine(&from, &to, listName, &hit, &target)) {
 		return Py_ReturnNone();
 	}
 	return Py_BuildValue("(ddd)s", (double)hit.x, (double)hit.y, (double)hit.z, target ? target->name : "");
 }
 
 /* TestSphere(x, y, z, radius, listName[, exclude]) : name of the entity hit, "" for the level, None for none */
+cEntity *World_TestSphere(const vec3_t *c, float r, const char *list, const char *exclude, byte *levelHit) {
+	cEntity *target = NULL;
+	*levelHit = Engine_TestSphere(c, c, r, 0, 0);
+	cEntity *ex = NULL;
+	if (*exclude) {
+		HashNode *node = HashTable_Find(&g_pWorld->entities, exclude, HashTable_Hash(&g_pWorld->entities, exclude));
+		if (node) {
+			ex = node->value;
+		}
+	}
+	cWorld_TestSphereEntities(g_pWorld, ex, EntityLists_Get(list), c, r, &target, 1, 0);
+	return target;
+}
+
 static PyObject *Scrap_TestSphere(PyObject *self, PyObject *args) {
 	double x, y, z, r;
 	char *listName, *excludeName = "";
@@ -1409,18 +1451,9 @@ static PyObject *Scrap_TestSphere(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "dddds|s", &x, &y, &z, &r, &listName, &excludeName)) {
 		return NULL;
 	}
-	cEntity *target = NULL;
 	vec3_t c = { (float)x, (float)y, (float)z };
-	byte levelHit = Engine_TestSphere(&c, &c, (float)r, 0, 0);
-	cEntity *exclude = NULL;
-	if (*excludeName) {
-		HashNode *node = HashTable_Find(&g_pWorld->entities, excludeName, HashTable_Hash(&g_pWorld->entities,
-			excludeName));
-		if (node) {
-			exclude = node->value;
-		}
-	}
-	cWorld_TestSphereEntities(g_pWorld, exclude, EntityLists_Get(listName), &c, (float)r, &target, 1, 0);
+	byte levelHit;
+	cEntity *target = World_TestSphere(&c, (float)r, listName, excludeName, &levelHit);
 	if (target) {
 		return Py_BuildValue("s", target->name);
 	}
@@ -1541,29 +1574,15 @@ static PyObject *Scrap_SetDebrisValue(PyObject *self, PyObject *args) {
  * As compiled: another kind passes the string pointer of the first argument as kind, and another item type does
  * nothing (no argument check at all).
  */
-static PyObject *Scrap_AddItem(PyObject *self, PyObject *args) {
-	char *type = PyString_AsString(PyTuple_GetItem(args, 0));
-	char *name, *kindName;
+void Logic_AddItem(const char *type, const char *name, const char *kindName, int value) {
 	cItemDesc item;
-
-	(void)self;
+	cString_ctor(&item.name);
+	cString_Set(&item.name, name);
+	item.value = value;
 	if (!strcmp(type, "Life")) {
-		cString_ctor(&item.name);
-		if (!PyArg_ParseTuple(args, "ssi", &type, &name, &item.value)) {
-			cString_dtor(&item.name);
-			return NULL;
-		}
-		cString_Set(&item.name, name);
 		cInfItem_AddLife(&g_pWorld->logic.items, &item);
-		cString_dtor(&item.name);
 	}
-	else if (!strcmp(type, "Ammo")) {
-		cString_ctor(&item.name);
-		if (!PyArg_ParseTuple(args, "sssi", &type, &name, &kindName, &item.value)) {
-			cString_dtor(&item.name);
-			return NULL;
-		}
-		cString_Set(&item.name, name);
+	else {
 		int kind = (int)(intptr_t)type;
 		if (!strcmp(kindName, "Part")) {
 			kind = 0;
@@ -1575,7 +1594,27 @@ static PyObject *Scrap_AddItem(PyObject *self, PyObject *args) {
 			kind = 2;
 		}
 		cInfItem_AddAmmo(&g_pWorld->logic.items, kind, &item);
-		cString_dtor(&item.name);
+	}
+	cString_dtor(&item.name);
+}
+
+static PyObject *Scrap_AddItem(PyObject *self, PyObject *args) {
+	char *type = PyString_AsString(PyTuple_GetItem(args, 0));
+	char *name, *kindName;
+	int value;
+
+	(void)self;
+	if (!strcmp(type, "Life")) {
+		if (!PyArg_ParseTuple(args, "ssi", &type, &name, &value)) {
+			return NULL;
+		}
+		Logic_AddItem(type, name, NULL, value);
+	}
+	else if (!strcmp(type, "Ammo")) {
+		if (!PyArg_ParseTuple(args, "sssi", &type, &name, &kindName, &value)) {
+			return NULL;
+		}
+		Logic_AddItem(type, name, kindName, value);
 	}
 	return Py_ReturnNone();
 }
